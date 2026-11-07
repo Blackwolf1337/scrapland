@@ -3,176 +3,352 @@
  * for network games and Init.Init calls SetChatProc, which names the callbacks of the engine (the chat key, the
  * received lines, the console, the six quick messages). The chat line itself is data/menus/chat.def.
  *
- * SendID (the receiver of each player: "ALL" or the ship "net<n>") and MyShip (the ship of this machine, skipped
- * while cycling) stay variables of the module. A line goes over the network as "<receiver>\t<text>"; the server
- * shows it and sends it on (to all, or to the one receiver).
+ * Native C (docs/objlib-plan.md, the pilot of stage 2): the state is the struct chat, the functions call the engine
+ * in C and work on C texts; the PyMethodDef entries are adapters. SendID (the receiver of each player: "ALL" or the
+ * ship "net<n>") and MyShip (the ship of this machine, skipped while cycling) are mirrored into the module dict
+ * (OBJLIB 5): chat.mod sets them, the tests read and write them there. A line goes over the network as
+ * "<receiver>\t<text>"; the server shows it and sends it on (to all, or to the one receiver).
  */
-#include <limits.h>
 #include <string.h>
 
+#include "scrap/console.h"
+#include "scrap/input.h"
+#include "scrap/net.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
 
 static const char chat_def[] = {
 #embed "../../../data/menus/chat.def"
 	, 0 };
 
-/* the value is the text */
-static byte Chat_Is(PyObject *v, const char *text) {
-	return PyString_Check(v) && !strcmp(PyString_AsString(v), text);
+/* the receivers of SendID, one per local player (chat.mod) */
+#define CHAT_PLAYERS 4
+/* a line of the chat as the C builds it (the network takes 0x80 characters of it) */
+#define CHAT_LINE 0x200
+
+static struct {
+	nativeVal_t sendID[CHAT_PLAYERS];	/* texts */
+	nativeVal_t myShip;			/* a text, or what SNet.GetMyClientShip gave (0 off the network) */
+} chat;
+
+/* OBJLIB 5: the mirror in the module dict, taken in by the entry points that read it */
+static const nativeVar_t chat_vars[] = {
+	{ "SendID", chat.sendID, CHAT_PLAYERS, 1 << NV_STR },
+	{ "MyShip", &chat.myShip, 0, 1 << NV_NONE | 1 << NV_INT | 1 << NV_FLOAT | 1 << NV_STR },
+	{ NULL, NULL, 0, 0 },
+};
+#define CHAT_SENDID (&chat_vars[0])
+#define CHAT_MYSHIP (&chat_vars[1])
+/* only SendID (the table from its entry on would take MyShip too) */
+static const nativeVar_t chat_sendIDOnly[] = {
+	{ "SendID", chat.sendID, CHAT_PLAYERS, 1 << NV_STR },
+	{ NULL, NULL, 0, 0 },
+};
+
+/* `import name` of a function of the script: 0 with the error set */
+static byte Chat_Import(const char *name) {
+	/* OBJLIB 6: module loading stays with the module objects until then */
+	PyObject *m = PyImport_ImportModule((char *)name);
+	Py_XDECREF(m);
+	return m != NULL;
 }
 
-/* a + b + c with the + of Python (b a C text): a new reference, NULL with the error set */
-static PyObject *Chat_Cat(PyObject *a, const char *b, PyObject *c) {
-	PyObject *s = PyString_FromString((char *)b);
-	PyObject *ab = s ? PyNumber_Add(a, s) : NULL;
-	PyObject *r = ab && c ? PyNumber_Add(ab, c) : NULL;
-	Py_XDECREF(s);
+/* a + b + c of the script on texts; c NULL is a value that is no text (the TypeError of string +) */
+static byte Chat_Cat(char *out, const char *a, const char *b, const char *c) {
 	if (!c) {
-		return ab;
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 	}
-	Py_XDECREF(ab);
-	return r;
+	Str_Printf(out, CHAT_LINE, "%s%s%s", a, b, c);
+	return 1;
 }
 
-/* SendID[id] (a new reference) */
-static PyObject *Chat_SendID(int id) {
-	PyObject *ids = Script_Attr("Chat", "SendID");
-	PyObject *v = ids ? PySequence_GetItem(ids, id) : NULL;
-	Py_XDECREF(ids);
-	return v;
+/* SendID[slot] = text */
+static byte Chat_SetTo(int slot, const char *text) {
+	Native_SetStr(&chat.sendID[slot], text);
+	return Native_Put("Chat", CHAT_SENDID, slot);
 }
 
-/* SendID[id] = v (v given away): 0 with the error set */
-static byte Chat_SetSendID(int id, PyObject *v) {
-	PyObject *ids = v ? Script_Attr("Chat", "SendID") : NULL;
-	int r = ids ? PySequence_SetItem(ids, id, v) : -1;
-	Py_XDECREF(ids);
-	Py_XDECREF(v);
-	return r == 0;
+/* SNet.SendChatString(to, line) (OBJLIB 7: through the seam, fc-chat records it) */
+static byte Chat_SendNet(long to, const char *line) {
+	PyObject *hook;
+	int s = Native_Seam("SNet", "SendChatString", &hook);
+	if (s == 0) {
+		Net_SendChatString(line, (int)to);
+		return 1;
+	}
+	PyObject *r = s > 0 ? Script_Invoke(hook, Py_BuildValue("(ls)", to, line)) : NULL;
+	if (s > 0) {
+		Py_DECREF(hook);
+	}
+	Py_XDECREF(r);
+	return r != NULL;
 }
 
-/* Scrap.GetNetFlags()[i]: 1 or 0, -1 with the error set */
-static int Chat_NetFlag(int i) {
-	PyObject *flags = Script_Ask("Scrap", "GetNetFlags", "()");
-	PyObject *f = flags ? PySequence_GetItem(flags, i) : NULL;
-	Py_XDECREF(flags);
-	int r = f ? PyObject_IsTrue(f) : -1;
-	Py_XDECREF(f);
-	return r;
+/* SScorer.AddChatMsg(text, 0, 255, 0) (OBJLIB 7: through the seam, fc-chat records it) */
+static byte Chat_ChatMsg(const char *text) {
+	PyObject *hook;
+	int s = Native_Seam("SScorer", "AddChatMsg", &hook);
+	if (s == 0) {
+		Scorer_AddChatMsg(text, (0 << 8 | 255) << 8 | 0);
+		return 1;
+	}
+	PyObject *r = s > 0 ? Script_Invoke(hook, Py_BuildValue("(siii)", text, 0, 255, 0)) : NULL;
+	if (s > 0) {
+		Py_DECREF(hook);
+	}
+	Py_XDECREF(r);
+	return r != NULL;
+}
+
+/* SNet.GetMyClientShip(): the ship name on a client, else 0 (OBJLIB 7: through the seam, fc-chat swaps it) */
+static byte Chat_ClientShip(nativeVal_t *out) {
+	PyObject *hook;
+	int s = Native_Seam("SNet", "GetMyClientShip", &hook);
+	if (s == 0) {
+		cNetClient *client = Net_IsClient() ? Net_GetClient() : NULL;
+		if (client && client->ship) {
+			Native_SetStr(out, client->ship->name);
+		} else {
+			Native_SetInt(out, 0);
+		}
+		return 1;
+	}
+	PyObject *r = s > 0 ? Script_Invoke(hook, PyTuple_New(0)) : NULL;
+	if (s > 0) {
+		Py_DECREF(hook);
+	}
+	if (!r) {
+		return 0;
+	}
+	byte ok = Native_FromPy(r, CHAT_MYSHIP->types, out);
+	Py_DECREF(r);
+	return ok || Native_Raise(NE_TYPE, "SNet.GetMyClientShip: not a value Chat.MyShip takes");
 }
 
 /* GetID(id): the receiver as the chat line shows it; a receiver that is no longer a ship becomes "ALL" */
-static PyObject *Chat_IdText(int id) {
+static byte Chat_IdText(int slot, nativeVal_t *out) {
 	for (;;) {
-		PyObject *to = Chat_SendID(id);
-		if (!to) {
-			return NULL;
+		const nativeVal_t *to = &chat.sendID[slot];
+		if (Native_IsStr(to, "ALL")) {
+			Native_SetStr(out, "[To All]");
+			return 1;
 		}
-		if (Chat_Is(to, "ALL")) {
-			Py_DECREF(to);
-			return PyString_FromString("[To All]");
+		cEntity *e = World_FindEntity(to->s);
+		if (e && Entity_IsType(e, "Car")) {
+			return Native_EntVar(e, to->s, "Descriptor", out);
 		}
-		PyObject *v = Script_Ask("Scrap", "GetEntity", "(O)", to);
-		Py_DECREF(to);
-		if (!v) {
-			return NULL;
-		}
-		int car = PyObject_IsTrue(v);
-		if (car > 0) {
-			PyObject *r = Script_Method(v, "IsType", "(s)", "Car");
-			car = r ? PyObject_IsTrue(r) : -1;
-			Py_XDECREF(r);
-		}
-		if (car) {
-			PyObject *d = car > 0 ? Script_GetAttr(v, "Descriptor") : NULL;
-			Py_DECREF(v);
-			return d;
-		}
-		Py_DECREF(v);
-		if (!Chat_SetSendID(id, PyString_FromString("ALL"))) {
-			return NULL;
+		if (!Chat_SetTo(slot, "ALL")) {
+			return 0;
 		}
 	}
-}
-
-static PyObject *Chat_GetID(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	return Chat_IdText(id);
 }
 
 /* CycleUp, CycleDown: the next ship net<n> up or down that exists and is not mine, "ALL" past the ends (n 0 to
- * 257); 0 with the error set */
-static byte Chat_Cycle(int id, int step) {
+ * 257) */
+static byte Chat_Cycle(int slot, int step) {
 	for (;;) {
-		PyObject *to = Chat_SendID(id);
-		if (!to) {
+		const nativeVal_t *to = &chat.sendID[slot];
+		long ctr = step > 0 ? -1 : 257;
+		/* int(SendID[id][3:]) */
+		if (!Native_IsStr(to, "ALL") && !Native_IntOfText(strlen(to->s) > 3 ? to->s + 3 : "", &ctr)) {
 			return 0;
 		}
-		long ctr = step > 0 ? -1 : 257;
-		if (!Chat_Is(to, "ALL")) {
-			PyObject *tail = PySequence_GetSlice(to, 3, INT_MAX);
-			PyObject *n = tail ? PyNumber_Int(tail) : NULL;
-			Py_XDECREF(tail);
-			if (!n) {
-				Py_DECREF(to);
-				return 0;
-			}
-			ctr = PyInt_AsLong(n);
-			Py_DECREF(n);
-		}
-		Py_DECREF(to);
 		ctr += step;
 		if (step > 0 ? ctr > 257 : ctr < 0) {
-			return Chat_SetSendID(id, PyString_FromString("ALL"));
+			return Chat_SetTo(slot, "ALL");
 		}
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "net%ld", ctr);
-		if (!Chat_SetSendID(id, PyString_FromString(name))) {
+		if (!Chat_SetTo(slot, name)) {
 			return 0;
 		}
-		PyObject *v = Script_Ask("Scrap", "GetEntity", "(s)", name);
-		if (!v) {
-			return 0;
-		}
-		int none = v == Py_None;
-		Py_DECREF(v);
-		if (none) {
-			continue;
-		}
-		PyObject *mine = Script_Attr("Chat", "MyShip");
-		to = mine ? Chat_SendID(id) : NULL;
-		int same = to ? PyObject_Compare(to, mine) == 0 : 0;
-		Py_XDECREF(to);
-		Py_XDECREF(mine);
-		if (!to || PyErr_Occurred()) {
-			return 0;
-		}
-		if (!same) {
+		if (World_FindEntity(name) && !Native_Equal(&chat.sendID[slot], &chat.myShip)) {
 			return 1;
 		}
 	}
 }
 
-/* CycleUpAndSet, CycleDownAndSet: the cycle and the receiver on the chat line */
-static PyObject *Chat_CycleSet(PyObject *args, int step, byte set) {
-	int id;
-	if (!PyArg_ParseTuple(args, "i", &id) || !Chat_Cycle(id, step)) {
+/* SScorer.Set(id, "SendID", "Text", t) with the receiver text (a number goes in as a number) */
+static byte Chat_ShowTo(int id, const nativeVal_t *t) {
+	switch (t->type) {
+	case NV_STR:
+		Script_SetStr(id, "SendID", "Text", t->s);
+		return 1;
+	case NV_INT:
+		Script_SetNum(id, "SendID", "Text", (double)t->i);
+		return 1;
+	case NV_FLOAT:
+		Script_SetNum(id, "SendID", "Text", t->f);
+		return 1;
+	}
+	/* the error of the engine function for any other value (a Descriptor that is None or a vector) */
+	return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+}
+
+/* ServerReSendChat(sendto, cad): the server sends a line on, to all or to the client of the ship net<n> (the script
+ * tests the number with "or", so every number passes); cad NULL is a value that is no text */
+static byte Chat_ReSend(const char *sendto, const char *cad) {
+	char line[CHAT_LINE];
+	if (!Chat_Import("string")) {
+		return 0;
+	}
+	if (!strcmp(sendto, "ALL")) {
+		return Chat_Cat(line, sendto, "\t", cad) && Chat_SendNet(-1, line);
+	}
+	if (strncmp(sendto, "net", 3)) {
+		return 1;
+	}
+	long val;
+	return Native_IntOfText(sendto + 3, &val) && Chat_Cat(line, sendto, "\t", cad) && Chat_SendNet(val, line);
+}
+
+/* PrintChatString(id, Str): a line "<receiver>\t<text>" arrives: the server sends it on; the text goes to the chat
+ * and the console (a line without a tab is dropped) */
+static byte Chat_Print(const char *str) {
+	if (!Chat_Import("string")) {
+		return 0;
+	}
+	/* cadinfo[0] and cadinfo[1] of string.split(Str, "\t") */
+	const char *tab = strchr(str, '\t');
+	if (!tab) {
+		return 1;
+	}
+	const char *end = strchr(tab + 1, '\t');
+	char to[CHAT_LINE], text[CHAT_LINE], line[CHAT_LINE];
+	Str_Copy(to, str, (int)(tab - str) + 1 < CHAT_LINE ? (int)(tab - str) + 1 : CHAT_LINE);
+	Str_Copy(text, tab + 1, end && (int)(end - tab) < CHAT_LINE ? (int)(end - tab) : CHAT_LINE);
+	int server = Native_NetFlag(1);
+	if (server < 0 || (server && !Chat_ReSend(to, text)) || !Chat_ChatMsg(text)) {
+		return 0;
+	}
+	/* Scrap.Print(text + "\n") */
+	Str_Printf(line, sizeof(line), "%s\n", text);
+	Con_Print(0, line, 0);
+	return 1;
+}
+
+/* EndChat(id): the chat line closes, back to the game */
+static byte Chat_End(int id) {
+	if (!Chat_Import("Menu")) {
+		return 0;
+	}
+	/* SInput.Bind x3, SInput.SetInputFunc(id, ""), SScorer.SetOnCancel(id, "") */
+	Input_Bind(id, "Menu", "Cancel", "");
+	Input_Bind(id, "Menu", "PgUp", "");
+	Input_Bind(id, "Menu", "PgDown", "");
+	if ((unsigned)id < MAX_LOCAL_PLAYERS) {
+		cPlayerInput_SetInputFunc(&g_PlayerInput[id], "");
+	}
+	cScorer *sc = Scorer_Get(id);
+	if (sc) {
+		cPy_Function_SetFunc(&sc->onCancel, "");
+	}
+	/* OBJLIB 3: the call of another port goes through its module until the ports call each other in C */
+	return Script_Try("Menu", "BackToGame", "(is)", id, "");
+}
+
+/* SendChatString(id, ChatStr, console=0): "<player> text" to the receiver of the player; the server shows it at
+ * once, a client sends it (and shows a private line itself); the chat line closes unless it came from the console.
+ * text NULL is a value that is no text. */
+static byte Chat_Send(int id, const char *text, int console) {
+	int slot;
+	char named[CHAT_LINE], str[CHAT_LINE], full[CHAT_LINE];
+	if (!Chat_Cat(named, "<", GVar_GetStr("PlayerName"), "> ") || !Chat_Cat(str, named, "", text) ||
+		!Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_Cat(full, chat.sendID[slot].s, "\t", str)) {
+		return 0;
+	}
+	int server = Native_NetFlag(1);
+	byte ok = server >= 0;
+	if (ok && server) {
+		ok = Chat_Print(full);
+	} else if (ok) {
+		ok = (Native_IsStr(&chat.sendID[slot], "ALL") || Chat_Print(full)) && Chat_SendNet(-1, full);
+	}
+	return ok && (console || Chat_End(id));
+}
+
+/* MyShip into the module, as the Script_SetVar of the script port: a failed set is no error */
+static void Chat_PutShip(void) {
+	if (!Native_Put("Chat", CHAT_MYSHIP, 0)) {
+		PyErr_Clear();
+	}
+}
+
+/* GetMyShip(): the ship of this machine (a client asks the network, the server has net256 when it plays) */
+static byte Chat_MyShip(void) {
+	int client = Native_NetFlag(0);
+	if (client < 0) {
+		return 0;
+	}
+	if (client) {
+		nativeVal_t ship;
+		if (!Chat_ClientShip(&ship)) {
+			return 0;
+		}
+		chat.myShip = ship;
+	} else if (World_FindEntity("net256")) {
+		Native_SetStr(&chat.myShip, "net256");
+	} else {
+		/* the script sets "net256" first, then "" */
+		Native_SetStr(&chat.myShip, "net256");
+		Chat_PutShip();
+		Native_SetStr(&chat.myShip, "");
+	}
+	Chat_PutShip();
+	return 1;
+}
+
+/* InitChat(id): the chat key opens the chat line */
+static byte Chat_Init(int id) {
+	int slot;
+	nativeVal_t t;
+	if (!Chat_Import("Menu") || !Chat_MyShip() || !Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_IdText(slot, &t)) {
+		return 0;
+	}
+	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
+	PyObject *st = Native_ToPy(&t);
+	PyObject *vars = st ? Py_BuildValue("{s:O}", "sendid", st) : NULL;
+	Py_XDECREF(st);
+	if (!vars) {
+		return 0;
+	}
+	Script_RunFile(id, "menus/chat.def", "InitChat", chat_def, NULL, vars);
+	Py_DECREF(vars);
+	return 1;
+}
+
+/* ---- the adapters of the module table (OBJLIB 7: arguments, the mirror and the errors of the Python calls) ---- */
+
+/* the text of a Python argument, NULL when it is no text */
+static const char *Chat_Text(PyObject *o) {
+	return PyString_Check(o) ? PyString_AsString(o) : NULL;
+}
+
+static PyObject *Chat_Result(byte ok) {
+	return ok ? Py_ReturnNone() : NULL;
+}
+
+static PyObject *Chat_GetID(PyObject *self, PyObject *args) {
+	int id, slot;
+	nativeVal_t t;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &id) || !Native_Import("Chat", chat_sendIDOnly) || !Native_Index(id, CHAT_PLAYERS, &slot) ||
+		!Chat_IdText(slot, &t)) {
 		return NULL;
 	}
-	if (set) {
-		PyObject *t = Chat_IdText(id);
-		byte ok = t && Script_Try("SScorer", "Set", "(issO)", id, "SendID", "Text", t);
-		Py_XDECREF(t);
-		if (!ok) {
-			return NULL;
-		}
+	return Native_ToPy(&t);
+}
+
+/* CycleUp(AndSet), CycleDown(AndSet): the cycle and, with set, the receiver on the chat line */
+static PyObject *Chat_CycleSet(PyObject *args, int step, byte set) {
+	int id, slot;
+	nativeVal_t t;
+	if (!PyArg_ParseTuple(args, "i", &id) || !Native_Import("Chat", chat_vars) || !Native_Index(id, CHAT_PLAYERS, &slot) ||
+		!Chat_Cycle(slot, step)) {
+		return NULL;
 	}
-	return Py_ReturnNone();
+	return Chat_Result(!set || (Chat_IdText(slot, &t) && Chat_ShowTo(id, &t)));
 }
 
 static PyObject *Chat_CycleUp(PyObject *self, PyObject *args) {
@@ -195,81 +371,18 @@ static PyObject *Chat_CycleDownAndSet(PyObject *self, PyObject *args) {
 	return Chat_CycleSet(args, -1, 1);
 }
 
-/* ServerReSendChat(sendto, cad): the server sends a line on, to all or to the client of the ship net<n> (the
- * script tests the number with "or", so every number passes) */
-static byte Chat_ReSend(PyObject *sendto, PyObject *cad) {
-	PyObject *string = PyImport_ImportModule("string");
-	if (!string) {
-		return 0;
-	}
-	Py_DECREF(string);
-	if (Chat_Is(sendto, "ALL")) {
-		PyObject *line = Chat_Cat(sendto, "\t", cad);
-		byte ok = line && Script_Try("SNet", "SendChatString", "(iO)", -1, line);
-		Py_XDECREF(line);
-		return ok;
-	}
-	PyObject *head = PySequence_GetSlice(sendto, 0, 3);
-	if (!head) {
-		return 0;
-	}
-	int net = Chat_Is(head, "net");
-	Py_DECREF(head);
-	if (!net) {
-		return 1;
-	}
-	PyObject *tail = PySequence_GetSlice(sendto, 3, INT_MAX);
-	PyObject *val = tail ? PyNumber_Int(tail) : NULL;
-	Py_XDECREF(tail);
-	PyObject *line = val ? Chat_Cat(sendto, "\t", cad) : NULL;
-	byte ok = line && Script_Try("SNet", "SendChatString", "(OO)", val, line);
-	Py_XDECREF(line);
-	Py_XDECREF(val);
-	return ok;
-}
-
 static PyObject *Chat_ServerReSendChat(PyObject *self, PyObject *args) {
 	PyObject *sendto, *cad;
 	(void)self;
 	if (!PyArg_ParseTuple(args, "OO", &sendto, &cad)) {
 		return NULL;
 	}
-	return Chat_ReSend(sendto, cad) ? Py_ReturnNone() : NULL;
-}
-
-/* PrintChatString(id, Str): a line "<receiver>\t<text>" arrives: the server sends it on; the text goes to the chat
- * and the console (a line without a tab is dropped) */
-static byte Chat_Print(PyObject *str) {
-	PyObject *string = PyImport_ImportModule("string");
-	if (!string) {
-		return 0;
+	if (!Chat_Text(sendto)) {
+		/* sendto[0:3] == "net" of the script: another sequence is not "net", anything else cannot be sliced */
+		PySequenceMethods *sq = sendto->ob_type->tp_as_sequence;
+		return Chat_Result(Chat_Import("string") && (sq && sq->sq_slice ? 1 : Native_Raise(NE_TYPE, "unsliceable object")));
 	}
-	Py_DECREF(string);
-	if (!PyString_Check(str)) {
-		/* the error of string.split on a non-string */
-		char msg[0x80];
-		Str_Printf(msg, sizeof(msg), "argument 1: expected read-only character buffer, %.50s found", str->ob_type->tp_name);
-		PyErr_SetString(PyExc_TypeError, msg);
-		return 0;
-	}
-	/* cadinfo[0] and cadinfo[1] of string.split(Str, "\t") */
-	const char *s = PyString_AsString(str), *tab = strchr(s, '\t');
-	if (!tab) {
-		return 1;
-	}
-	const char *end = strchr(tab + 1, '\t');
-	PyObject *to = PyString_FromStringAndSize((char *)s, (int)(tab - s));
-	PyObject *text = to ? PyString_FromStringAndSize((char *)tab + 1, end ? (int)(end - tab - 1) : (int)strlen(tab + 1)) :
-		NULL;
-	int server = text ? Chat_NetFlag(1) : -1;
-	byte ok = server >= 0 && (!server || Chat_ReSend(to, text)) &&
-		Script_Try("SScorer", "AddChatMsg", "(Oiii)", text, 0, 255, 0);
-	PyObject *line = ok ? Chat_Cat(text, "\n", NULL) : NULL;
-	ok = line && Script_Try("Scrap", "Print", "(O)", line);
-	Py_XDECREF(line);
-	Py_XDECREF(text);
-	Py_XDECREF(to);
-	return ok;
+	return Chat_Result(Chat_ReSend(Chat_Text(sendto), Chat_Text(cad)));
 }
 
 static PyObject *Chat_PrintChatString(PyObject *self, PyObject *args) {
@@ -278,129 +391,40 @@ static PyObject *Chat_PrintChatString(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "OO", &id, &str)) {
 		return NULL;
 	}
-	return Chat_Print(str) ? Py_ReturnNone() : NULL;
+	if (!Chat_Text(str)) {
+		/* the error of string.split on a value that is no text, after the import */
+		return Chat_Result(Chat_Import("string") && Native_Raise(NE_TYPE,
+			"argument 1: expected read-only character buffer, %.50s found", str->ob_type->tp_name));
+	}
+	return Chat_Result(Chat_Print(Chat_Text(str)));
 }
 
-/* EndChat(id): the chat line closes, back to the game */
-static byte Chat_End(int id) {
-	PyObject *menu = PyImport_ImportModule("Menu");
-	if (!menu) {
-		return 0;
+static PyObject *Chat_SendChatString(PyObject *self, PyObject *args) {
+	int id;
+	PyObject *text, *console = NULL;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "iO|O", &id, &text, &console)) {
+		return NULL;
 	}
-	Py_DECREF(menu);
-	return Script_Try("SInput", "Bind", "(isss)", id, "Menu", "Cancel", "") &&
-		Script_Try("SInput", "Bind", "(isss)", id, "Menu", "PgUp", "") &&
-		Script_Try("SInput", "Bind", "(isss)", id, "Menu", "PgDown", "") &&
-		Script_Try("SInput", "SetInputFunc", "(is)", id, "") && Script_Try("SScorer", "SetOnCancel", "(is)", id, "") &&
-		Script_Try("Menu", "BackToGame", "(is)", id, "");
+	int c = console ? PyObject_IsTrue(console) : 0;
+	return Chat_Result(c >= 0 && Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, Chat_Text(text), c));
 }
 
 static PyObject *Chat_EndChat(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	return Chat_End(id) ? Py_ReturnNone() : NULL;
-}
-
-/* SendChatString(id, ChatStr, console=0): "<player> text" to the receiver of the player; the server shows it at
- * once, a client sends it (and shows a private line itself); the chat line closes unless it came from the console */
-static byte Chat_Send(int id, PyObject *chat, int console) {
-	PyObject *player = Script_Ask("Scrap", "Get", "(s)", "PlayerName");
-	PyObject *open = player ? PyString_FromString("<") : NULL;
-	PyObject *named = open ? Chat_Cat(open, "", player) : NULL;
-	PyObject *str = named ? Chat_Cat(named, "> ", chat) : NULL;
-	Py_XDECREF(named);
-	Py_XDECREF(open);
-	Py_XDECREF(player);
-	PyObject *to = str ? Chat_SendID(id) : NULL;
-	PyObject *full = to ? Chat_Cat(to, "\t", str) : NULL;
-	Py_XDECREF(to);
-	Py_XDECREF(str);
-	int server = full ? Chat_NetFlag(1) : -1;
-	byte ok = server >= 0;
-	if (ok && server) {
-		ok = Chat_Print(full);
-	} else if (ok) {
-		to = Chat_SendID(id);
-		ok = to != NULL;
-		if (ok && !Chat_Is(to, "ALL")) {
-			ok = Chat_Print(full);
-		}
-		Py_XDECREF(to);
-		ok = ok && Script_Try("SNet", "SendChatString", "(iO)", -1, full);
-	}
-	Py_XDECREF(full);
-	return ok && (console || Chat_End(id));
-}
-
-static PyObject *Chat_SendChatString(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *chat, *console = NULL;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO|O", &id, &chat, &console)) {
-		return NULL;
-	}
-	int c = console ? PyObject_IsTrue(console) : 0;
-	return c >= 0 && Chat_Send(id, chat, c) ? Py_ReturnNone() : NULL;
-}
-
-/* GetMyShip(): the ship of this machine (a client asks the network, the server has net256 when it plays) */
-static byte Chat_MyShip(void) {
-	int client = Chat_NetFlag(0);
-	if (client < 0) {
-		return 0;
-	}
-	if (client) {
-		PyObject *ship = Script_Ask("SNet", "GetMyClientShip", "()");
-		if (!ship) {
-			return 0;
-		}
-		Script_SetVar("Chat", "MyShip", ship);
-		return 1;
-	}
-	Script_SetVar("Chat", "MyShip", PyString_FromString("net256"));
-	PyObject *v = Script_Ask("Scrap", "GetEntity", "(s)", "net256");
-	if (!v) {
-		return 0;
-	}
-	if (v == Py_None) {
-		Script_SetVar("Chat", "MyShip", PyString_FromString(""));
-	}
-	Py_DECREF(v);
-	return 1;
+	return PyArg_ParseTuple(args, "i", &id) ? Chat_Result(Chat_End(id)) : NULL;
 }
 
 static PyObject *Chat_GetMyShip(PyObject *self, PyObject *args) {
 	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Chat_MyShip() ? Py_ReturnNone() : NULL;
+	return PyArg_ParseTuple(args, "") ? Chat_Result(Chat_MyShip()) : NULL;
 }
 
-/* InitChat(id): the chat key opens the chat line */
 static PyObject *Chat_InitChat(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	PyObject *menu = PyImport_ImportModule("Menu");
-	if (!menu) {
-		return NULL;
-	}
-	Py_DECREF(menu);
-	PyObject *t = Chat_MyShip() ? Chat_IdText(id) : NULL;
-	PyObject *vars = t ? Py_BuildValue("{s:O}", "sendid", t) : NULL;
-	Py_XDECREF(t);
-	if (!vars) {
-		return NULL;
-	}
-	Script_RunFile(id, "menus/chat.def", "InitChat", chat_def, NULL, vars);
-	Py_DECREF(vars);
-	return Py_ReturnNone();
+	return PyArg_ParseTuple(args, "i", &id) && Native_Import("Chat", chat_sendIDOnly) ? Chat_Result(Chat_Init(id)) : NULL;
 }
 
 /* ConsoleChatString(estrin): a line of the full screen console goes to the receiver of player 0 */
@@ -410,7 +434,7 @@ static PyObject *Chat_ConsoleChatString(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &str)) {
 		return NULL;
 	}
-	return Chat_Send(0, str, 1) ? Py_ReturnNone() : NULL;
+	return Chat_Result(Native_Import("Chat", chat_sendIDOnly) && Chat_Send(0, Chat_Text(str), 1));
 }
 
 /* qchat1 .. qchat6(id): the quick message QuickMessageString<n> */
@@ -421,10 +445,7 @@ static PyObject *Chat_Quick(PyObject *args, int n) {
 		return NULL;
 	}
 	Str_Printf(var, sizeof(var), "QuickMessageString%d", n);
-	PyObject *str = Script_Ask("Scrap", "Get", "(s)", var);
-	byte ok = str && Chat_Send(id, str, 1);
-	Py_XDECREF(str);
-	return ok ? Py_ReturnNone() : NULL;
+	return Chat_Result(Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, GVar_GetStr(var), 1));
 }
 
 #define CHAT_QUICK(n) \
