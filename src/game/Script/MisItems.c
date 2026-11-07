@@ -722,27 +722,9 @@ static byte Cw_AllInList(nativeVal_t *out) {
 /* the prize text key with <n> as the amount, on the message line for 6 s (string.replace of the text) */
 static byte Cw_PrizeMsg(const char *key, const nativeVal_t *prize) {
 	nativeVal_t text, amount, msg;
-	nativeBuf_t b, out;
 	Mode_Lang(key, &text);
-	Native_BufInit(&b);
-	Native_Repr(&b, prize, NR_REPR);
-	Native_SetText(&amount, b.p, b.len);
-	Native_BufFree(&b);
-	/* string.replace(text, "<n>", amount): splitfields and joinfields */
-	Native_BufInit(&out);
-	const char *s = Native_Text(&text);
-	int from = 0;
-	for (int i = 0; i + 3 <= text.n; i++) {
-		if (!memcmp(s + i, "<n>", 3)) {
-			Native_BufAdd(&out, s + from, i - from);
-			Native_BufAdd(&out, Native_Text(&amount), amount.n);
-			from = i + 3;
-			i += 2;
-		}
-	}
-	Native_BufAdd(&out, s + from, text.n - from);
-	Native_SetText(&msg, out.p, out.len);
-	Native_BufFree(&out);
+	Mode_Repr(prize, &amount);
+	Mode_Replace(&text, "<n>", &amount, &msg);
 	byte ok = Mode_MsgText(&msg, Mode_Time() + 6.0);
 	Native_Free(&text);
 	Native_Free(&amount);
