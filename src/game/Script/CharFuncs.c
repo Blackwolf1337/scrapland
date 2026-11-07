@@ -4,6 +4,15 @@
  * on entity variables and module state, so they are C. Each table goes into its module next to the one of
  * Characters.c (script_modules in Script.c). Module variables other scripts may read or change (Functionary.PressOk,
  * CrazyGambler.CDcompl, speedFactor and the like) stay variables of the module.
+ *
+ * The functions are native C (docs/objlib-plan.md, stage 2): they work on C texts and values and on the entity
+ * variables in C. The module variables are read where the port read them (Script_GetInt, Script_GetFloat and
+ * Script_GetString forms, errors dropped) and written through at once with the port's dropped errors (OBJLIB 5).
+ * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity
+ * (OBJLIB 5). The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called by name
+ * (OBJLIB 3); the engine functions the port called by name go through their seams (OBJLIB 7: SetMsgText,
+ * CreateEntity, Scrap.Set, SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
+ * The adapters parse the arguments as before.
  */
 #include <string.h>
 
@@ -13,34 +22,111 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/timer.h"
+#include "game/Script/levels/Levels.h"
+
+/* ent.var = v as the port set it (Script_EntSet: the console line of the handle, no error) */
+static void Char_Set(const char *ent, const char *var, const nativeVal_t *v) {
+	if (!Native_EntSet(World_FindEntity(ent), ent, var, v)) {
+		Mode_DropError();
+	}
+}
 
 static void Char_SetText(const char *ent, const char *var, const char *s) {
-	Script_EntSet(ent, var, PyString_FromString(s));
+	nativeVal_t v;
+	Native_SetText(&v, s, (int)strlen(s));
+	Char_Set(ent, var, &v);
+	Native_Free(&v);
+}
+
+static void Char_SetInt(const char *ent, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	Char_Set(ent, var, &v);
+}
+
+static void Char_SetNum(const char *ent, const char *var, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	Char_Set(ent, var, &v);
+}
+
+/* module.var = a text as Script_SetVar sets it */
+static void Char_ModText(const char *module, const char *var, const char *s) {
+	nativeVal_t v;
+	Native_SetText(&v, s, (int)strlen(s));
+	Mode_ModPut(module, var, &v);
+	Native_Free(&v);
+}
+
+/* module.var = src.name (the attribute as it is, a function of the module: nothing when it is not there) */
+static void Char_ModAttr(const char *module, const char *var, const char *src, const char *name) {
+	nativeVal_t v = { 0 };
+	if (LvN_ModGet(src, name, &v)) {
+		Mode_ModPut(module, var, &v);
+	} else {
+		Mode_DropError();
+	}
+	Native_Free(&v);
+}
+
+/* module.var as Script_GetString reads it: its text cut to size, else "" */
+static const char *Char_ModString(const char *module, const char *var, char *out, int size) {
+	nativeVal_t v = { 0 };
+	out[0] = 0;
+	if (!LvN_ModGet(module, var, &v)) {
+		Mode_DropError();
+	} else if (v.type == NV_STR) {
+		Str_Copy(out, Native_Text(&v), size);
+	}
+	Native_Free(&v);
+	return out;
 }
 
 /* Speech.PlayerName, Speech.NPCName: who talks in the speech that runs */
 static void Char_Speakers(const char *usr, const char *ch) {
-	Script_SetVar("Speech", "PlayerName", PyString_FromString(usr));
-	Script_SetVar("Speech", "NPCName", PyString_FromString(ch));
+	Char_ModText("Speech", "PlayerName", usr);
+	Char_ModText("Speech", "NPCName", ch);
 }
 
-/* `if Speech.OnSpch(msg, ans):` of a script: 1 or 0, -1 with the error left set */
+/* Speech.OnEndOfSpeechParams = (name,) */
+static void Char_EndParams(const nativeVal_t *v) {
+	nativeVal_t t;
+	Native_SetEmpty(&t, NV_TUPLE);
+	Native_Copy(Native_Append(&t), v);
+	Mode_ModPut("Speech", "OnEndOfSpeechParams", &t);
+	Native_Free(&t);
+}
+
+static void Char_EndParamsS(const char *name) {
+	nativeVal_t v;
+	Native_SetText(&v, name, (int)strlen(name));
+	Char_EndParams(&v);
+	Native_Free(&v);
+}
+
+/* Speech.OnSpch(msg, ans) as a line of a script, and `if Speech.OnSpch(msg, ans):` (1 or 0, -1 with the error) */
+static byte Char_OnSpch(const char *msg, const char *ans) {
+	return Native_CallMod("Speech", "OnSpch", NULL, "ss", msg, ans);
+}
+
 static int Char_Spch(const char *msg, const char *ans) {
-	PyObject *r = Script_Ask("Speech", "OnSpch", "(ss)", msg, ans);
-	int ok = r ? PyObject_IsTrue(r) > 0 : -1;
-	Py_XDECREF(r);
+	nativeVal_t r = { 0 };
+	int ok = Native_CallMod("Speech", "OnSpch", &r, "ss", msg, ans) ? Native_True(&r) : -1;
+	Native_Free(&r);
 	return ok;
 }
 
-/* Scrap.GetEntity(name): the handle (a new reference, None when there is no such entity) */
-static PyObject *Char_Handle(const char *name) {
-	PyObject *e = name ? PyEntity_New(name) : NULL;
-	if (!e) {
-		Py_INCREF(Py_None);
-		e = Py_None;
-	}
-	return e;
+/* CharsNPC.GenericNPCSpeech(usr, ch, opt, full) */
+static byte Char_Generic(const char *usr, const char *ch, const char *opt, const nativeVal_t *full) {
+	return Native_CallMod("CharsNPC", "GenericNPCSpeech", NULL, "sssv", usr, ch, opt, full);
+}
+
+/* Scrap.GetEntity(name) of a C name: the handle value, None when there is no such entity */
+static void Char_Handle(const char *name, nativeVal_t *out) {
+	Native_SetNone(out);
+	Mode_EntHandle(World_FindEntity(name), out);
 }
 
 /* the name of the entity the player controls (NULL when there is none) */
@@ -71,27 +157,56 @@ static void Char_SetCls(const char *cls, const char *var, double d) {
 	}
 }
 
+/* the adapter of a function on the entity name (PyArg "s", the further n arguments any values the C does not read) */
+#define CHAR_FN(pre, name, fmt, call) \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		char *ent; \
+		PyObject *x1, *x2; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, fmt, &ent, &x1, &x2)) { \
+			return NULL; \
+		} \
+		return Mode_Result(call); \
+	}
+
+/* the adapter of a speech routine (usr, ch, opt, full): "sssO" */
+#define CHAR_SPEECH(pre, name, core) \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		char *usr, *ch, *opt; \
+		PyObject *o; \
+		nativeVal_t full; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, "sssO", &usr, &ch, &opt, &o)) { \
+			return NULL; \
+		} \
+		Native_Arg(o, &full); \
+		byte ok = core(usr, ch, opt, &full); \
+		Native_Free(&full); \
+		return Mode_Result(ok); \
+	}
+
 /* SScorer.SetMsgText(Scrap.GetLangStr("INSPECT_CHAR_CantTalk"), Scrap.GetTime() + 2): the speech of a character that
  * does not talk */
-static PyObject *Char_CantTalk(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	if (!Script_Try("SScorer", "SetMsgText", "(sd)", Script_Lang("INSPECT_CHAR_CantTalk"),
-			(double)Timer_GetTime(&g_pWorld->timer) + 2.0)) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+static byte Char_CantTalkC(void) {
+	nativeVal_t text;
+	Mode_Lang("INSPECT_CHAR_CantTalk", &text);
+	byte ok = Mode_MsgText(&text, (double)Timer_GetTime(&g_pWorld->timer) + 2.0);
+	Native_Free(&text);
+	return ok;
 }
+
+MODE_FN(Char, CantTalk, 4, Char_CantTalkC())
 
 /* ---- Functionary: the slow motion of his special action, while the energy bar empties ---- */
 
 static void Functionary_Enter(const char *name) {
-	Script_EntSet(name, "TimeSpeed", Script_Attr("Functionary", "charSpeed"));
-	PyErr_Clear();
-	Timer_SetSpeed(&g_pWorld->timer, (float)Script_GetFloat("Functionary", "worldSpeed", 1.0));
+	nativeVal_t v = { 0 };
+	if (LvN_ModGet("Functionary", "charSpeed", &v)) {
+		Char_Set(name, "TimeSpeed", &v);
+	}
+	Mode_DropError();
+	Native_Free(&v);
+	Timer_SetSpeed(&g_pWorld->timer, (float)Mode_ModGetN("Functionary", "worldSpeed", 1.0));
 	if (GVar_GetNum("R_SceneMotionBlurRTarget", 0) == 1) {
 		GVar_SetNum("MotionBlurFactorBegin", 0.0);
 		GVar_SetNum("MotionBlurFactorEnd", 0.75);
@@ -109,11 +224,11 @@ static void Functionary_Enter(const char *name) {
 }
 
 static void Functionary_Exit(const char *name) {
-	double speed = Script_GetFloat("Functionary", "speedFactor", 1.0);
-	Script_EntSet(name, "EnergyBarConstantDecr", PyFloat_FromDouble(0.0));
+	double speed = Mode_ModGetN("Functionary", "speedFactor", 1.0);
+	Char_SetNum(name, "EnergyBarConstantDecr", 0.0);
 	Char_SetText(name, "OnEnergyBarFull", "");
 	Char_SetCls("Functionary", "FOVInterpTime", 0.5 * speed);
-	Script_EntSet(name, "TimeSpeed", PyInt_FromLong(1));
+	Char_SetInt(name, "TimeSpeed", 1);
 	Timer_SetSpeed(&g_pWorld->timer, 1.0f);
 	if (GVar_GetNum("R_SceneMotionBlurRTarget", 0) == 1) {
 		GVar_SetNum("MotionBlurFactorBegin", 0.75);
@@ -130,61 +245,36 @@ static void Functionary_Exit(const char *name) {
 	GVar_SetNum("S_PitchScale", 1.0);
 }
 
-static PyObject *Functionary_EnterFastEffect(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	Functionary_Enter(name);
-	return Py_ReturnNone();
-}
-
-/* also the OnEnergyBarFull of the entity while the action runs */
-static PyObject *Functionary_ExitFastEffect(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	Functionary_Exit(name);
-	return Py_ReturnNone();
-}
-
 /* the player presses the action: slow motion when there is energy enough, the bar empties in 60 s */
-static PyObject *Functionary_ActionPress(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	Script_SetInt("Functionary", "PressOk", 0);
+static byte Functionary_Press(const char *name) {
+	Mode_ModPutI("Functionary", "PressOk", 0);
 	if (Script_EntNum(name, "UsrControl", -1) == 0 && Script_EntNum(name, "ActionPriority", -1) == 0 &&
 		Script_EntNum(name, "Energy", 0) >= GVar_GetNum("FunctionarySpecialActionLow", 0)) {
-		double speed = Script_GetFloat("Functionary", "speedFactor", 1.0);
-		Script_EntSet(name, "EnergyBarConstantDecr", PyFloat_FromDouble(60.0 * speed));
+		double speed = Mode_ModGetN("Functionary", "speedFactor", 1.0);
+		Char_SetNum(name, "EnergyBarConstantDecr", 60.0 * speed);
 		Char_SetText(name, "OnEnergyBarFull", "Functionary.ExitFastEffect");
 		Functionary_Enter(Script_EntStr(name, "Name", name));
-		Script_SetInt("Functionary", "PressOk", 1);
+		Mode_ModPutI("Functionary", "PressOk", 1);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *Functionary_ActionRelease(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
+static byte Functionary_Release(const char *name) {
 	if (Script_EntNum(name, "UsrControl", -1) == 0) {
-		Script_EntSet(name, "EnergyBarConstantDecr", PyFloat_FromDouble(0.0));
+		Char_SetNum(name, "EnergyBarConstantDecr", 0.0);
 		Char_SetText(name, "OnEnergyBarFull", "");
-		if (Script_EntNum(name, "Energy", 0) != 0.0 && Script_GetInt("Functionary", "PressOk", 0)) {
+		if (Script_EntNum(name, "Energy", 0) != 0.0 && Mode_ModGetI("Functionary", "PressOk", 0)) {
 			Functionary_Exit(Script_EntStr(name, "Name", name));
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+CHAR_FN(Functionary, EnterFastEffect, "s", (Functionary_Enter(ent), 1))
+/* also the OnEnergyBarFull of the entity while the action runs */
+CHAR_FN(Functionary, ExitFastEffect, "s", (Functionary_Exit(ent), 1))
+CHAR_FN(Functionary, ActionPress, "s", Functionary_Press(ent))
+CHAR_FN(Functionary, ActionRelease, "s", Functionary_Release(ent))
 
 PyMethodDef g_FunctionaryFuncs[] = {
 	{ "EnterFastEffect", Functionary_EnterFastEffect, 1, NULL },
@@ -211,41 +301,33 @@ PyMethodDef g_RustyFuncs[] = {
 /* ---- Boss ---- */
 
 /* his action, unless the player falls or does another */
-static PyObject *Boss_ActionPress(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
+static byte Boss_Press(const char *name) {
 	const char *usr = Char_Usr0();
 	if (!usr) {
 		/* the script reads Scrap.UsrEntity(0).isFalling */
-		PyErr_SetString(PyExc_AttributeError, "isFalling");
-		return NULL;
+		return Native_Raise(NE_ATTRIBUTE, "isFalling");
 	}
 	if (!Script_EntNum(usr, "isFalling", 0) && Script_EntNum(usr, "ActionPriority", -1) == 0) {
 		Char_SetText(name, "Action", "Action");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *Boss_BossSpeech(PyObject *self, PyObject *args) {
-	char *usr, *ch, *opt;
-	PyObject *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sssO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
+static byte Boss_Speech(const char *usr, const char *ch, const char *opt, const nativeVal_t *full) {
+	(void)full;
 	Char_Speakers(usr, ch);
 	if (!strcmp(opt, "Talk")) {
-		if (!Script_Try("Speech", "OnSpch", "(ss)", "Generics_Boss_InitMsg1", "Generics_Boss_InitAns1")) {
-			return NULL;
+		if (!Char_OnSpch("Generics_Boss_InitMsg1", "Generics_Boss_InitAns1")) {
+			return 0;
 		}
-		Script_SetVar("Speech", "OnEndOfSpeech", Script_Attr("Speech", "RestoreState"));
-		Script_SetVar("Speech", "OnEndOfSpeechParams", Py_BuildValue("(s)", ch));
+		Char_ModAttr("Speech", "OnEndOfSpeech", "Speech", "RestoreState");
+		Char_EndParamsS(ch);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+CHAR_FN(Boss, ActionPress, "s", Boss_Press(ent))
+CHAR_SPEECH(Boss, BossSpeech, Boss_Speech)
 
 PyMethodDef g_BossFuncs[] = {
 	{ "ActionPress", Boss_ActionPress, 1, NULL },
@@ -255,33 +337,25 @@ PyMethodDef g_BossFuncs[] = {
 
 /* ---- Mayor: the action loops while the key is held ---- */
 
-static PyObject *Mayor_MayorActionPress(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
+static byte Mayor_Press(const char *name) {
 	Char_SetText(name, "Action", "ActionInit");
 	if (!strcmp(Script_EntStr(name, "Action", ""), "ActionInit")) {
 		Char_SetText(name, "DefLoop", "Action");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* an event of his action: again while the key is held */
-static PyObject *Mayor_MayorReCheckAction(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *event, *time;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sOO", &name, &event, &time)) {
-		return NULL;
-	}
+static byte Mayor_ReCheck(const char *name) {
 	if (Script_EntNum(name, "ActionPress", 0)) {
 		Char_SetText(name, "ForceAction", "ActionInit");
 		Char_SetText(name, "ForceDefLoop", "Action");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+CHAR_FN(Mayor, MayorActionPress, "s", Mayor_Press(ent))
+CHAR_FN(Mayor, MayorReCheckAction, "sOO", Mayor_ReCheck(ent))
 
 PyMethodDef g_MayorFuncs[] = {
 	{ "MayorActionPress", Mayor_MayorActionPress, 1, NULL },
@@ -292,34 +366,26 @@ PyMethodDef g_MayorFuncs[] = {
 /* ---- Maintenance, SputnikJunkyard: they do not talk ---- */
 
 /* the event of his work: the effect between him and the ship of the hangar */
-static PyObject *Maintenance_MaintenanceWorkFX(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *event, *time;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sOO", &name, &event, &time)) {
-		return NULL;
+static byte Maintenance_WorkFX(const char *name) {
+	nativeVal_t ship = { 0 }, shipName = { 0 };
+	byte ok = LvN_ModGet("HangarTab", "prevShip", &ship) && Mode_VObj(&ship, "Name", &shipName) &&
+		(shipName.type == NV_STR || Native_Raise(NE_TYPE, "HangarTab.prevShip.Name"));
+	if (ok) {
+		cPy_Function f;
+		cPy_Function_ctor(&f);
+		cPy_Function_SetFunc(&f, "!FXMaintenanceWork");
+		cPy_Function_AddParamS(&f, name);
+		cPy_Function_AddParamS(&f, Native_Text(&shipName));
+		cPy_Function_AddParamF(&f, (float)Scrap_RandRange(0.5, 0.9));
+		cPy_Function_Execute(&f, 0);
+		cPy_Function_dtor(&f);
 	}
-	PyObject *ship = Script_Attr("HangarTab", "prevShip");
-	PyObject *shipName = ship ? Script_GetAttr(ship, "Name") : NULL;
-	Py_XDECREF(ship);
-	if (!shipName || !PyString_Check(shipName)) {
-		Py_XDECREF(shipName);
-		if (!PyErr_Occurred()) {
-			PyErr_SetString(PyExc_TypeError, "HangarTab.prevShip.Name");
-		}
-		return NULL;
-	}
-	cPy_Function f;
-	cPy_Function_ctor(&f);
-	cPy_Function_SetFunc(&f, "!FXMaintenanceWork");
-	cPy_Function_AddParamS(&f, name);
-	cPy_Function_AddParamS(&f, PyString_AsString(shipName));
-	cPy_Function_AddParamF(&f, (float)Scrap_RandRange(0.5, 0.9));
-	cPy_Function_Execute(&f, 0);
-	cPy_Function_dtor(&f);
-	Py_DECREF(shipName);
-	return Py_ReturnNone();
+	Native_Free(&shipName);
+	Native_Free(&ship);
+	return ok;
 }
+
+CHAR_FN(Maintenance, MaintenanceWorkFX, "sOO", Maintenance_WorkFX(ent))
 
 PyMethodDef g_MaintenanceFuncs[] = {
 	{ "MaintenanceTalk", Char_CantTalk, 1, NULL },
@@ -332,144 +398,191 @@ PyMethodDef g_SputnikJunkyardFuncs[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
+/* ---- CharsNPC.optionsList: the options of the talk that runs (OBJLIB 5: the list object itself) ---- */
+
+/* CharsNPC.optionsList as a value (its AttributeError when it is not there) */
+static byte Char_Options(nativeVal_t *out) {
+	return LvN_ModGet("CharsNPC", "optionsList", out);
+}
+
+/* CharsNPC.optionsList.insert(0, text) as the port did it (PyList_Insert: the SystemError of a value that is no list) */
+static byte Char_OptionsFirst(const char *text) {
+	PyObject *list = Script_Attr("CharsNPC", "optionsList"), *item = list ? PyString_FromString(text) : NULL;
+	int r = item ? PyList_Insert(list, 0, item) : -1;
+	Py_XDECREF(item);
+	Py_XDECREF(list);
+	return r == 0;
+}
+
+/* CharsNPC.optionsList, CharsNPC.subOptionsList = lists[0], lists[1] of a result of CharsNPC.ClassifyOptions (the
+ * objects themselves, Script_SetVar's dropped errors): 0 with the error of an item */
+static byte Char_SetOptionLists(PyObject *lists) {
+	PyObject *a = PySequence_GetItem(lists, 0), *b = PySequence_GetItem(lists, 1);
+	byte ok = a && b;
+	if (ok) {
+		if (!Mode_SetModPy("CharsNPC", "optionsList", a) || !Mode_SetModPy("CharsNPC", "subOptionsList", b)) {
+			Mode_DropError();
+		}
+	}
+	Py_XDECREF(a);
+	Py_XDECREF(b);
+	return ok;
+}
+
+/* Speech.StdAnsLst(CharsNPC.optionsList): 0 with the error set */
+static byte Char_StdOptions(void) {
+	nativeVal_t list = { 0 };
+	byte ok = Char_Options(&list) && Native_CallMod("Speech", "StdAnsLst", NULL, "v", &list);
+	Native_Free(&list);
+	return ok;
+}
+
+/* Challenge.AddChallenge(ch, usr, n) (when the player has no infinite lives unless always): 0 with the error set */
+static byte Char_Challenge(const char *ch, const char *usr, int n, byte always) {
+	const char *lives = SaveVar_Get("Player.InfiniteLives");
+	byte ok = 1;
+	if (always || (lives && !strcmp(lives, "0"))) {
+		nativeVal_t e;
+		Char_Handle(ch, &e);
+		ok = Native_CallMod("Challenge", "AddChallenge", NULL, "vsi", &e, usr, (long)n);
+		Native_Free(&e);
+	}
+	return ok;
+}
+
 /* ---- CrazyGambler: the mega deal once the three crazy deals are done ---- */
 
 /* CDcompl: how many of the three crazy deals are complete (MissionsFuncs.CrazyDealStatus(i): [.., done, needed]) */
 static int CrazyGambler_Status(void) {
 	int done = 0;
-	Script_SetInt("CrazyGambler", "CDcompl", 0);
+	Mode_ModPutI("CrazyGambler", "CDcompl", 0);
 	for (int i = 1; i <= 3; i++) {
-		PyObject *f = Script_Attr("MissionsFuncs", "CrazyDealStatus");
-		PyObject *cd = f ? Script_Invoke(f, Py_BuildValue("(i)", i)) : NULL;
-		Py_XDECREF(f);
-		PyObject *have = cd ? PySequence_GetItem(cd, 1) : NULL, *need = cd ? PySequence_GetItem(cd, 2) : NULL;
-		if (!have || !need) {
-			Py_XDECREF(have);
-			Py_XDECREF(need);
-			Py_XDECREF(cd);
+		nativeVal_t cd = { 0 }, ta, tb;
+		const nativeVal_t *have = NULL, *need = NULL;
+		if (Native_CallMod("MissionsFuncs", "CrazyDealStatus", &cd, "i", (long)i)) {
+			Mode_Elems(&cd);
+			have = Native_GetItem(&cd, 1, 0, &ta);
+			need = Native_GetItem(&cd, 2, 0, &tb);
+		}
+		byte ok = have && need;
+		if (ok && Native_Compare(have, need) >= 0) {
+			Mode_ModPutI("CrazyGambler", "CDcompl", ++done);
+		}
+		if (have == &ta) {
+			Native_Free(&ta);
+		}
+		if (need == &tb) {
+			Native_Free(&tb);
+		}
+		Native_Free(&cd);
+		if (!ok) {
 			return -1;
 		}
-		if (PyObject_Compare(have, need) >= 0) {
-			Script_SetInt("CrazyGambler", "CDcompl", ++done);
-		}
-		Py_DECREF(have);
-		Py_DECREF(need);
-		Py_DECREF(cd);
 	}
 	return done;
-}
-
-static PyObject *CrazyGambler_CalculateStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return CrazyGambler_Status() < 0 ? NULL : Py_ReturnNone();
 }
 
 /* ArrnOpt > 1: ArriOpt = 1 (the arrow on the first option) */
 static void CrazyGambler_FirstOption(const char *ch) {
 	if (Script_EntNum(ch, "ArrnOpt", 0) > 1) {
-		Script_EntSet(ch, "ArriOpt", PyInt_FromLong(1));
+		Char_SetInt(ch, "ArriOpt", 1);
 	}
 }
 
-/* Speech.StdAnsLst(CharsNPC.optionsList): 0 with the error set */
-static byte CrazyGambler_Options(void) {
-	PyObject *list = Script_Attr("CharsNPC", "optionsList");
-	byte ok = list && Script_Try("Speech", "StdAnsLst", "(O)", list);
-	Py_XDECREF(list);
+/* the talk of the mega deal when the jack in the box is active: the option of the deal first, then the options and
+ * the challenge */
+static byte CrazyGambler_MegaOptions(const char *usr, const char *ch) {
+	int done = CrazyGambler_Status();
+	nativeVal_t list = { 0 };
+	if (done < 0 || !Char_OptionsFirst(done == 3 ? "Generics_CrazyGambler_MegaDeal_Yes_" : "Generics_CrazyGambler_MegaDeal_No_") ||
+		!Char_Options(&list)) {
+		return 0;
+	}
+	byte ok = Native_CallMod("Speech", "StdAnsLst", NULL, "v", &list);
+	if (ok) {
+		int n = 0;
+		Mode_Elems(&list);
+		Native_Len(&list, &n);
+		ok = Char_Challenge(ch, usr, n, 0);
+	}
+	Native_Free(&list);
 	return ok;
 }
 
-static PyObject *CrazyGambler_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	char *usr, *ch, *opt, msg[0x80], ans[0x80];
-	PyObject *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sssO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
+static byte CrazyGambler_Speech(const char *usr, const char *ch, const char *opt, const nativeVal_t *full) {
+	char msg[0x80], ans[0x80];
 	if (!strcmp(opt, "Talk")) {
-		if (!Script_Try("CharsNPC", "GenericNPCSpeech", "(sssO)", usr, ch, opt, full)) {
-			return NULL;
+		if (!Char_Generic(usr, ch, opt, full)) {
+			return 0;
 		}
 		const char *active = SaveVar_Get("JackInTheBox.Active");
-		if (active && !strcmp(active, "1")) {
-			int done = CrazyGambler_Status();
-			if (done < 0) {
-				return NULL;
-			}
-			PyObject *list = Script_Attr("CharsNPC", "optionsList");
-			PyObject *item = PyString_FromString(done == 3 ? "Generics_CrazyGambler_MegaDeal_Yes_" :
-				"Generics_CrazyGambler_MegaDeal_No_");
-			if (!list || !item || PyList_Insert(list, 0, item) < 0) {
-				Py_XDECREF(item);
-				Py_XDECREF(list);
-				return NULL;
-			}
-			Py_DECREF(item);
-			byte ok = Script_Try("Speech", "StdAnsLst", "(O)", list);
-			const char *lives = SaveVar_Get("Player.InfiniteLives");
-			if (ok && lives && !strcmp(lives, "0")) {
-				PyObject *e = Char_Handle(ch);
-				ok = Script_Try("Challenge", "AddChallenge", "(Osi)", e, usr, PySequence_Length(list));
-				Py_DECREF(e);
-			}
-			Py_DECREF(list);
-			if (!ok) {
-				return NULL;
-			}
-		}
-	} else if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_No_")) {
+		return !active || strcmp(active, "1") || CrazyGambler_MegaOptions(usr, ch);
+	}
+	if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_No_")) {
+		nativeVal_t n = { 0 }, r;
 		CrazyGambler_FirstOption(ch);
-		PyObject *n = Script_Attr("CrazyGambler", "CDcompl");
-		PyObject *r = n ? PyObject_Repr(n) : NULL;
-		Py_XDECREF(n);
-		if (!r) {
-			return NULL;
+		if (!LvN_ModGet("CrazyGambler", "CDcompl", &n)) {
+			return 0;
 		}
-		Str_Printf(ans, sizeof(ans), "Generics_CrazyGambler_MegaDeal_No%s_Ans", PyString_AsString(r));
-		Py_DECREF(r);
-		if (!Script_Try("Speech", "OnSpch", "(ss)", "Generics_CrazyGambler_MegaDeal_No_Msg", ans)) {
-			return NULL;
-		}
-	} else if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_Yes_")) {
+		Mode_Repr(&n, &r);
+		Str_Printf(ans, sizeof(ans), "Generics_CrazyGambler_MegaDeal_No%s_Ans", Native_Text(&r));
+		Native_Free(&r);
+		Native_Free(&n);
+		return Char_OnSpch("Generics_CrazyGambler_MegaDeal_No_Msg", ans);
+	}
+	if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_Yes_")) {
+		static const char *const opts[] = { "Generics_CrazyGambler_MegaDeal_Start_", "Generics_CrazyGambler_MegaDeal_Abort_" };
 		const char *lib = SaveVar_Get("SuperDeal.Library");
+		nativeVal_t list;
 		Str_Printf(msg, sizeof(msg), "%sMsg", opt);
 		Str_Printf(ans, sizeof(ans), "%s_Yes_Ans", lib ? lib : "");
-		if (!Script_Try("Speech", "OnSpch", "(ss)", msg, ans) ||
-			!Script_Try("Speech", "StdAnsLst", "([ss])", "Generics_CrazyGambler_MegaDeal_Start_",
-				"Generics_CrazyGambler_MegaDeal_Abort_")) {
-			return NULL;
+		if (!Char_OnSpch(msg, ans)) {
+			return 0;
 		}
-	} else if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_Start_")) {
-		if (!Script_Try("Menu", "MovieScorer", "(i)", 0)) {
-			return NULL;
+		Mode_Texts(&list, opts, 2);
+		byte ok = Native_CallMod("Speech", "StdAnsLst", NULL, "v", &list);
+		Native_Free(&list);
+		return ok;
+	}
+	if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_Start_")) {
+		if (!Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L)) {
+			return 0;
 		}
 		Input_SelectActionSetNamed("Inactive");
 		Str_Printf(msg, sizeof(msg), "%sMsg", opt);
 		Str_Printf(ans, sizeof(ans), "%sAns", opt);
-		if (!Script_Try("Speech", "OnSpch", "(ss)", msg, ans)) {
-			return NULL;
+		if (!Char_OnSpch(msg, ans)) {
+			return 0;
 		}
-		Script_SetVar("Speech", "OnEndOfSpeech", Script_Attr("CrazyGambler", "StartSuperDeal"));
-	} else if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_Abort_")) {
+		Char_ModAttr("Speech", "OnEndOfSpeech", "CrazyGambler", "StartSuperDeal");
+		return 1;
+	}
+	if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_Abort_")) {
 		Str_Printf(msg, sizeof(msg), "%sMsg", opt);
 		Str_Printf(ans, sizeof(ans), "%sAns", opt);
-		if (!Script_Try("Speech", "OnSpch", "(ss)", msg, ans) || !CrazyGambler_Options()) {
-			return NULL;
+		if (!Char_OnSpch(msg, ans) || !Char_StdOptions()) {
+			return 0;
 		}
 		CrazyGambler_FirstOption(ch);
-	} else if (!Script_Try("CharsNPC", "GenericNPCSpeech", "(sssO)", usr, ch, opt, full)) {
-		return NULL;
+		return 1;
 	}
-	return Py_ReturnNone();
+	return Char_Generic(usr, ch, opt, full);
 }
 
 /* the end of the speech that starts the mega deal */
 static PyObject *CrazyGambler_StartSuperDeal(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	return Script_Try("MissionsFuncs", "StartActualSuperDeal", "()") ? Py_ReturnNone() : NULL;
+	return Mode_Result(Native_CallMod("MissionsFuncs", "StartActualSuperDeal", NULL, ""));
 }
+
+static PyObject *CrazyGambler_CalculateStatus(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Mode_Result(CrazyGambler_Status() >= 0);
+}
+
+CHAR_SPEECH(CrazyGambler, CrazyGamblerSpeech, CrazyGambler_Speech)
 
 PyMethodDef g_CrazyGamblerFuncs[] = {
 	{ "CalculateStatus", CrazyGambler_CalculateStatus, 1, NULL },
@@ -480,31 +593,17 @@ PyMethodDef g_CrazyGamblerFuncs[] = {
 
 /* ---- Gear and Police: the siren on channel 1 (its actions are in their files) ---- */
 
-/* the event at the end of SirenInit (Gear) */
-static PyObject *Gear_StartSirenLoop(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *event, *time;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sOO", &name, &event, &time)) {
-		return NULL;
-	}
-	Char_SetText(name, "Action", "Siren");
-	return Py_ReturnNone();
-}
-
 /* an event: the siren ends when it runs */
-static PyObject *Char_AbortSiren(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *event, *time;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sOO", &name, &event, &time)) {
-		return NULL;
-	}
+static byte Char_AbortSirenC(const char *name) {
 	if (Script_EntTrue(name, "ActChan1")) {
 		Char_SetText(name, "Action", "SirenEnd");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+/* the event at the end of SirenInit (Gear) */
+CHAR_FN(Gear, StartSirenLoop, "sOO", (Char_SetText(ent, "Action", "Siren"), 1))
+CHAR_FN(Char, AbortSiren, "sOO", Char_AbortSirenC(ent))
 
 PyMethodDef g_GearFuncs[] = {
 	{ "StartSirenLoop", Gear_StartSirenLoop, 1, NULL },
@@ -514,56 +613,49 @@ PyMethodDef g_GearFuncs[] = {
 
 /* ---- Police: his speech, the bribe and the way to the main mission ---- */
 
-static PyObject *Police_GoToMission(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	Script_EntSet(name, "LLogicGotoMainMission", PyInt_FromLong(1));
-	return Py_ReturnNone();
-}
-
-/* Speech.StdAnsLst(CharsNPC.optionsList [+ ["Generics_PoliceWereIs"]]); its length, -1 with the error set */
+/* Speech.StdAnsLst(CharsNPC.optionsList [+ ["Generics_PoliceWereIs"]]) (PySequence_Concat: a value that is no
+ * sequence can't be concatenated); its length, -1 with the error set */
 static int Police_Options(byte wereIs) {
-	PyObject *list = Script_Attr("CharsNPC", "optionsList");
-	PyObject *more = list && wereIs ? Py_BuildValue("[s]", "Generics_PoliceWereIs") : NULL;
-	PyObject *all = more ? PySequence_Concat(list, more) : list;
-	Py_XDECREF(more);
-	int n = all ? PySequence_Length(all) : -1;
-	if (all && !Script_Try("Speech", "StdAnsLst", "(O)", all)) {
-		n = -1;
+	nativeVal_t list = { 0 }, all = { 0 };
+	int n = -1;
+	if (Char_Options(&list)) {
+		Mode_Elems(&list);
+		byte ok = 1;
+		if (wereIs) {
+			static const char *const more[] = { "Generics_PoliceWereIs" };
+			nativeVal_t m;
+			byte t = list.type;
+			Mode_Texts(&m, more, 1);
+			ok = t == NV_LIST || t == NV_TUPLE || t == NV_STR || t == NV_VEC ? Native_Arith('+', &list, &m, &all) :
+				Native_Raise(NE_TYPE, "object can't be concatenated");
+			Native_Free(&m);
+		} else {
+			Native_Copy(&all, &list);
+		}
+		/* the port called StdAnsLst also after a length that failed (its error left set) */
+		if (ok) {
+			byte len = Native_Len(&all, &n);
+			if (!Native_CallMod("Speech", "StdAnsLst", NULL, "v", &all) || !len) {
+				n = -1;
+			}
+		}
 	}
-	if (all != list) {
-		Py_XDECREF(all);
-	}
-	Py_XDECREF(list);
+	Native_Free(&all);
+	Native_Free(&list);
 	return n;
-}
-
-/* Challenge.AddChallenge(ch, usr, n) (when the player has no infinite lives unless always): 0 with the error set */
-static byte Police_Challenge(const char *ch, const char *usr, int n, byte always) {
-	const char *lives = SaveVar_Get("Player.InfiniteLives");
-	byte ok = 1;
-	if (always || (lives && !strcmp(lives, "0"))) {
-		PyObject *e = Char_Handle(ch);
-		ok = Script_Try("Challenge", "AddChallenge", "(Osi)", e, usr, n);
-		Py_DECREF(e);
-	}
-	return ok;
 }
 
 /* ResState and the actions while the speech of the bribe ends */
 static void Police_Wait(const char *ch, int state) {
-	Script_SetInt("Police", "ResState", state);
+	Mode_ModPutI("Police", "ResState", state);
 	Char_SetText(ch, "ForceAction", "FaceToTalk");
 	Char_SetText(ch, "ForceDefLoop", "TalkListenNPC");
-	Script_SetVar("Speech", "OnEndOfSpeech", Script_Attr("Police", "OnEndOfSpeech"));
+	Char_ModAttr("Speech", "OnEndOfSpeech", "Police", "OnEndOfSpeech");
 }
 
 /* the bribe is paid or refused for good: the police goes back to idle */
 static void Police_Calm(const char *ch) {
-	Script_EntSet(ch, "LLogicState", PyInt_FromLong(0));
+	Char_SetInt(ch, "LLogicState", 0);
 	Char_SetText(ch, "LLogicTarget", "");
 	Char_SetText(ch, "ForceAction", "Relax");
 	Char_SetText(ch, "ForceDefLoop", "Relax");
@@ -571,216 +663,232 @@ static void Police_Calm(const char *ch) {
 
 /* Challenge.challengeType, foeType, SetChallengeOptions(ch): 0 with the error set */
 static byte Police_StartChallenge(const char *type, const char *ch) {
-	Script_SetVar("Challenge", "challengeType", PyString_FromString(type));
-	Script_SetVar("Challenge", "foeType", PyString_FromString("Police"));
-	PyObject *e = Char_Handle(ch);
-	byte ok = Script_Try("Challenge", "SetChallengeOptions", "(O)", e);
-	Py_DECREF(e);
+	nativeVal_t e;
+	Char_ModText("Challenge", "challengeType", type);
+	Char_ModText("Challenge", "foeType", "Police");
+	Char_Handle(ch, &e);
+	byte ok = Native_CallMod("Challenge", "SetChallengeOptions", NULL, "v", &e);
+	Native_Free(&e);
 	return ok;
 }
 
-static PyObject *Police_PoliceSpeech(PyObject *self, PyObject *args) {
-	char *usr, *ch, *opt, msg[0x80], ans[0x80];
-	PyObject *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sssO", &usr, &ch, &opt, &full)) {
-		return NULL;
+/* the place of opt in CharsNPC.optionsList from 1 (PySequence_In and PySequence_Index), 0 when it is not there or
+ * the list can not be searched (no error) */
+static int Police_OptionIndex(const char *opt) {
+	nativeVal_t list = { 0 }, key;
+	int index = 0;
+	Native_SetText(&key, opt, (int)strlen(opt));
+	int in = Char_Options(&list) ? Mode_In(&list, &key) : -1;
+	if (in > 0) {
+		Mode_Elems(&list);
+		for (int i = 0; !index && i < Native_ForCount(&list); i++) {
+			nativeVal_t tmp;
+			const nativeVal_t *x = Native_GetItem(&list, i, 0, &tmp);
+			if (x && !Native_Compare(x, &key)) {
+				index = i + 1;
+			}
+			if (x == &tmp) {
+				Native_Free(&tmp);
+			}
+		}
 	}
-	Char_Speakers(usr, ch);
-	PyObject *list = Script_Attr("CharsNPC", "optionsList");
-	PyObject *key = PyString_FromString(opt);
-	int listed = list && key ? PySequence_In(list, key) : 0;
-	int index = listed > 0 ? PySequence_Index(list, key) + 1 : 0;
-	Py_XDECREF(key);
-	Py_XDECREF(list);
-	PyErr_Clear();
+	Mode_DropError();
+	Native_Free(&key);
+	Native_Free(&list);
+	return index;
+}
+
+/* the first talk: where the main mission is, or the greeting and the options (ClassifyOptions) */
+static byte Police_Talk(const char *usr, const char *ch) {
+	char ans[0x80];
+	nativeVal_t e, state = { 0 };
 	int r;
-	if (!strcmp(opt, "Talk")) {
-		if (!Script_Try("CharsNPC", "CheckActualEntity", "(s)", ch)) {
-			return NULL;
+	if (!Native_CallMod("CharsNPC", "CheckActualEntity", NULL, "s", ch)) {
+		return 0;
+	}
+	/* ch.LLogicState of the script: an AttributeError when there is no such character */
+	Char_Handle(ch, &e);
+	byte got = Mode_VObj(&e, "LLogicState", &state);
+	nativeVal_t ten;
+	Native_SetInt(&ten, 10);
+	byte isTen = got && !Native_Compare(&state, &ten);
+	Native_Free(&state);
+	Native_Free(&e);
+	if (!got) {
+		return 0;
+	}
+	if (isTen) {
+		return Char_OnSpch("Generics_PoliceWereIsGoInitMsg1", "Generics_PoliceWereIsGoInitAns1");
+	}
+	Str_Printf(ans, sizeof(ans), "Generics_Police_InitAns%d", (int)Scrap_RandRange(1.0, 3.9));
+	if ((r = Char_Spch("Generics_Police_InitMsg1", ans)) <= 0) {
+		return r == 0;
+	}
+	PyObject *f = Script_Attr("CharsNPC", "ClassifyOptions");
+	PyObject *lists = f ? Native_CallObj(f, "s", "Police") : NULL;
+	Py_XDECREF(f);
+	byte ok = lists && Char_SetOptionLists(lists);
+	Py_XDECREF(lists);
+	if (!ok) {
+		return 0;
+	}
+	int n = Police_Options(1);
+	return n >= 0 && Char_Challenge(ch, usr, n, 0);
+}
+
+/* the bribe is paid when the player has the money */
+static byte Police_GiveYes(const char *ch) {
+	nativeVal_t money, price = { 0 }, rest = { 0 };
+	int r;
+	Native_SetInt(&money, Mode_GetMoney());
+	if (!Native_GVarGet("PoliceStealQuanto", &price)) {
+		return 0;
+	}
+	byte rich = Native_Compare(&money, &price) >= 0;
+	if (rich) {
+		nativeVal_t zero;
+		Native_SetInt(&zero, 0);
+		byte ok = Mode_Arith('-', &money, &price, &rest) && Mode_SetMoneySeam(&rest) && Mode_SetAlarm(&zero);
+		Native_Free(&rest);
+		Native_Free(&price);
+		if (!ok) {
+			return 0;
 		}
-		/* ch.LLogicState of the script: an AttributeError when there is no such character */
-		PyObject *e = Char_Handle(ch), *state = Script_GetAttr(e, "LLogicState");
-		int ten = state ? Script_NumCmp(state, 10) == 0 : -1;
-		Py_DECREF(e);
-		Py_XDECREF(state);
-		if (ten < 0) {
-			return NULL;
-		}
-		if (ten) {
-			if (!Script_Try("Speech", "OnSpch", "(ss)", "Generics_PoliceWereIsGoInitMsg1", "Generics_PoliceWereIsGoInitAns1")) {
-				return NULL;
-			}
-		} else {
-			Str_Printf(ans, sizeof(ans), "Generics_Police_InitAns%d", (int)Scrap_RandRange(1.0, 3.9));
-			if ((r = Char_Spch("Generics_Police_InitMsg1", ans)) < 0) {
-				return NULL;
-			}
-			if (r) {
-				PyObject *lists = Script_Ask("CharsNPC", "ClassifyOptions", "(s)", "Police");
-				PyObject *a = lists ? PySequence_GetItem(lists, 0) : NULL, *b = lists ? PySequence_GetItem(lists, 1) : NULL;
-				Py_XDECREF(lists);
-				if (!a || !b) {
-					Py_XDECREF(a);
-					Py_XDECREF(b);
-					return NULL;
-				}
-				Script_SetVar("CharsNPC", "optionsList", a);
-				Script_SetVar("CharsNPC", "subOptionsList", b);
-				int n = Police_Options(1);
-				if (n < 0 || !Police_Challenge(ch, usr, n, 0)) {
-					return NULL;
-				}
-			}
-		}
-	} else if (listed > 0) {
-		Str_Printf(msg, sizeof(msg), "%sMsg", opt);
-		Str_Printf(ans, sizeof(ans), "%sAns", opt);
-		if ((r = Char_Spch(msg, ans)) < 0) {
-			return NULL;
+		Mode_ModPutI("Police", "ResState", 1);
+		Police_Calm(ch);
+		if ((r = Char_Spch("Generics_PoliceBribeGiveYesAns", "Generics_PoliceBribeGiveYesMsg")) < 0) {
+			return 0;
 		}
 		if (r) {
-			if (!Script_Try("CharsNPC", "IncludeSubOptions", "(s)", opt)) {
-				return NULL;
-			}
-			int n = Police_Options(1);
-			if (n < 0) {
-				return NULL;
-			}
-			Script_EntSet(ch, "ArriOpt", PyInt_FromLong(index));
-			if (!Police_Challenge(ch, usr, n, 0)) {
-				return NULL;
-			}
+			Char_ModAttr("Speech", "OnEndOfSpeech", "Police", "OnEndOfSpeech");
 		}
-	} else if (!strcmp(opt, "Generics_PoliceWereIs")) {
-		Script_EntSet(ch, "LLogicGotoMainMission", PyInt_FromLong(1));
-		Script_EntSet(ch, "LLogicState", PyInt_FromLong(0));
-		Script_EntSet(ch, "LLogicIdle", PyInt_FromLong(1));
+		return 1;
+	}
+	Native_Free(&price);
+	if ((r = Char_Spch("Generics_PoliceBribeCantDoAns", "Generics_PoliceBribeCantDoMsg")) < 0) {
+		return 0;
+	}
+	if (r) {
+		Police_Wait(ch, 0);
+	}
+	return 1;
+}
+
+/* the bribe is refused: half the time the player answers and the police attacks */
+static byte Police_GiveNo(const char *ch) {
+	if (Scrap_RandRange(0, 100) < 50) {
+		char npc[0x80], player[0x80];
+		nativeVal_t me, e, end = { 0 }, res = { 0 };
+		Char_ModString("Speech", "NPCName", npc, sizeof(npc));
+		Char_ModString("Speech", "PlayerName", player, sizeof(player));
+		Char_Handle(player, &me);
+		Char_Handle(npc, &e);
+		byte ok = LvN_ModGet("Police", "OnEndOfSpeech", &end) &&
+			Native_CallMod("Speech", "PlayerAns", &res, "vvsv", &me, &e, "Generics_PoliceBribeGiveNoAns", &end);
+		if (ok && Native_True(&res)) {
+			Mode_ModPutI("Police", "ResState", -1);
+			Mode_ModPut("Speech", "OnEndOfSpeech", &end);
+		}
+		Native_Free(&res);
+		Native_Free(&end);
+		Native_Free(&e);
+		Native_Free(&me);
+		return ok;
+	}
+	Police_Calm(ch);
+	return Char_OnSpch("Generics_PoliceBribeGiveNoAns", "Generics_PoliceBribeGiveNoMsg");
+}
+
+static byte Police_Speech(const char *usr, const char *ch, const char *opt, const nativeVal_t *full) {
+	char msg[0x80], ans[0x80];
+	int r;
+	Char_Speakers(usr, ch);
+	int index = Police_OptionIndex(opt);
+	if (!strcmp(opt, "Talk")) {
+		return Police_Talk(usr, ch);
+	}
+	if (index > 0) {
+		Str_Printf(msg, sizeof(msg), "%sMsg", opt);
+		Str_Printf(ans, sizeof(ans), "%sAns", opt);
+		if ((r = Char_Spch(msg, ans)) <= 0) {
+			return r == 0;
+		}
+		if (!Native_CallMod("CharsNPC", "IncludeSubOptions", NULL, "s", opt)) {
+			return 0;
+		}
+		int n = Police_Options(1);
+		if (n < 0) {
+			return 0;
+		}
+		Char_SetInt(ch, "ArriOpt", index);
+		return Char_Challenge(ch, usr, n, 0);
+	}
+	if (!strcmp(opt, "Generics_PoliceWereIs")) {
+		Char_SetInt(ch, "LLogicGotoMainMission", 1);
+		Char_SetInt(ch, "LLogicState", 0);
+		Char_SetInt(ch, "LLogicIdle", 1);
 		if (Script_EntNum(ch, "LLogicPoliceResult", 0) == 0) {
-			if (!Script_Try("Speech", "OnSpch", "(ss)", "Generics_PoliceWereIsMsg", "Generics_PoliceWereIsNo")) {
-				return NULL;
+			if (!Char_OnSpch("Generics_PoliceWereIsMsg", "Generics_PoliceWereIsNo")) {
+				return 0;
 			}
-			Script_EntSet(ch, "ArriOpt", PyInt_FromLong(0));
-		} else {
-			Script_SetVar("Speech", "OnEndOfSpeech", Script_Attr("Police", "GoToMission"));
-			Script_SetVar("Speech", "OnEndOfSpeechParams", Py_BuildValue("(s)", Script_EntStr(ch, "Name", ch)));
-			if (!Script_Try("Speech", "OnSpch", "(ss)", "Generics_PoliceWereIsMsg", "Generics_PoliceWereIsYes") ||
-				!Script_Try("Speech", "RestoreState", "(s)", ch)) {
-				return NULL;
-			}
+			Char_SetInt(ch, "ArriOpt", 0);
+			return 1;
 		}
-	} else if (!strcmp(opt, "ChallengeRaceStdOpt0") || !strcmp(opt, "ChallengeCombatStdOpt0")) {
+		Char_ModAttr("Speech", "OnEndOfSpeech", "Police", "GoToMission");
+		Char_EndParamsS(Script_EntStr(ch, "Name", ch));
+		return Char_OnSpch("Generics_PoliceWereIsMsg", "Generics_PoliceWereIsYes") &&
+			Native_CallMod("Speech", "RestoreState", NULL, "s", ch);
+	}
+	if (!strcmp(opt, "ChallengeRaceStdOpt0") || !strcmp(opt, "ChallengeCombatStdOpt0")) {
 		const char *type = opt[9] == 'R' ? "Race" : "Combat";
 		Str_Printf(msg, sizeof(msg), "Challenge%sPoliceOpt1", type);
 		Str_Printf(ans, sizeof(ans), "Challenge%sPoliceMsg1", type);
-		if ((r = Char_Spch(msg, ans)) < 0 || (r && !Police_StartChallenge(type, ch))) {
-			return NULL;
+		return (r = Char_Spch(msg, ans)) >= 0 && (!r || Police_StartChallenge(type, ch));
+	}
+	if (!strncmp(opt, "ChallengeRaceStdOpt", 19) && opt[19] >= '1' && opt[19] <= '3' && !opt[20]) {
+		nativeVal_t e;
+		Char_Handle(ch, &e);
+		byte ok = Native_CallMod("Challenge", "OnChallengeOpt", NULL, "iv", (long)(opt[19] - '0'), &e);
+		Native_Free(&e);
+		return ok;
+	}
+	if (!strcmp(opt, "ChallengeRaceStdOpt4")) {
+		if ((r = Char_Spch("ChallengeRaceStdOpt2", "ChallengeRacePoliceMsg3")) <= 0) {
+			return r == 0;
 		}
-	} else if (!strncmp(opt, "ChallengeRaceStdOpt", 19) && opt[19] >= '1' && opt[19] <= '3' && !opt[20]) {
-		PyObject *e = Char_Handle(ch);
-		byte ok = Script_Try("Challenge", "OnChallengeOpt", "(iO)", opt[19] - '0', e);
-		Py_DECREF(e);
-		if (!ok) {
-			return NULL;
-		}
-	} else if (!strcmp(opt, "ChallengeRaceStdOpt4")) {
-		if ((r = Char_Spch("ChallengeRaceStdOpt2", "ChallengeRacePoliceMsg3")) < 0) {
-			return NULL;
-		}
-		if (r) {
-			int n = Police_Options(0);
-			if (n < 0 || !Police_Challenge(ch, usr, n, 1)) {
-				return NULL;
-			}
-		}
-	} else if (!strcmp(opt, "GiveWhy")) {
+		int n = Police_Options(0);
+		return n >= 0 && Char_Challenge(ch, usr, n, 1);
+	}
+	if (!strcmp(opt, "GiveWhy")) {
 		if ((r = Char_Spch("Generics_PoliceBribeGiveWhyAns", "Generics_PoliceBribeGiveWhyMsg")) < 0) {
-			return NULL;
+			return 0;
 		}
 		if (r) {
 			Police_Wait(ch, 0);
 		}
-	} else if (!strcmp(opt, "GiveYes")) {
-		PyObject *money = Script_Ask("Scrap", "GetMoney", "()");
-		PyObject *price = money ? Script_Ask("Scrap", "Get", "(s)", "PoliceStealQuanto") : NULL;
-		int rich = price ? PyObject_Compare(money, price) >= 0 : 0;
-		PyObject *rest = price && rich ? PyNumber_Subtract(money, price) : NULL;
-		Py_XDECREF(money);
-		Py_XDECREF(price);
-		if (!price || (rich && !rest)) {
-			return NULL;
-		}
-		if (rich) {
-			byte ok = Script_Try("Scrap", "SetMoney", "(O)", rest) && Script_Try("Scrap", "SetAlarm", "(i)", 0);
-			Py_DECREF(rest);
-			if (!ok) {
-				return NULL;
-			}
-			Script_SetInt("Police", "ResState", 1);
-			Police_Calm(ch);
-			if ((r = Char_Spch("Generics_PoliceBribeGiveYesAns", "Generics_PoliceBribeGiveYesMsg")) < 0) {
-				return NULL;
-			}
-			if (r) {
-				Script_SetVar("Speech", "OnEndOfSpeech", Script_Attr("Police", "OnEndOfSpeech"));
-			}
-		} else {
-			if ((r = Char_Spch("Generics_PoliceBribeCantDoAns", "Generics_PoliceBribeCantDoMsg")) < 0) {
-				return NULL;
-			}
-			if (r) {
-				Police_Wait(ch, 0);
-			}
-		}
-	} else if (!strcmp(opt, "GiveNo")) {
-		if (Scrap_RandRange(0, 100) < 50) {
-			char npc[0x80], player[0x80];
-			Script_GetString("Speech", "NPCName", npc, sizeof(npc));
-			Script_GetString("Speech", "PlayerName", player, sizeof(player));
-			PyObject *me = Char_Handle(player), *e = Char_Handle(npc);
-			PyObject *end = Script_Attr("Police", "OnEndOfSpeech");
-			PyObject *res = end ? Script_Ask("Speech", "PlayerAns", "(OOsO)", me, e, "Generics_PoliceBribeGiveNoAns", end) : NULL;
-			Py_DECREF(me);
-			Py_DECREF(e);
-			if (!res) {
-				Py_XDECREF(end);
-				return NULL;
-			}
-			if (PyObject_IsTrue(res) > 0) {
-				Script_SetInt("Police", "ResState", -1);
-				Script_SetVar("Speech", "OnEndOfSpeech", end);
-				end = NULL;
-			}
-			Py_DECREF(res);
-			Py_XDECREF(end);
-		} else {
-			Police_Calm(ch);
-			if (!Script_Try("Speech", "OnSpch", "(ss)", "Generics_PoliceBribeGiveNoAns", "Generics_PoliceBribeGiveNoMsg")) {
-				return NULL;
-			}
-		}
-	} else {
-		PyObject *text = PyObject_Str(full);
-		Con_Printf("Error PoliceSpeech( %s %s %s %s )\n", usr, ch, opt, text ? PyString_AsString(text) : "");
-		Py_XDECREF(text);
-		PyErr_Clear();
-		PyObject *again = Py_BuildValue("(sssO)", usr, ch, "Talk", full);
-		PyObject *r = again ? Police_PoliceSpeech(self, again) : NULL;
-		Py_XDECREF(again);
-		return r;
+		return 1;
 	}
-	return Py_ReturnNone();
+	if (!strcmp(opt, "GiveYes")) {
+		return Police_GiveYes(ch);
+	}
+	if (!strcmp(opt, "GiveNo")) {
+		return Police_GiveNo(ch);
+	}
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, full, NR_STR);
+	Con_Printf("Error PoliceSpeech( %s %s %s %s )\n", usr, ch, opt, b.p);
+	Native_BufFree(&b);
+	return Police_Speech(usr, ch, "Talk", full);
 }
 
 /* the end of the bribe speech, by ResState: paid (the steal effect), refused (the police attacks), or waiting */
-static PyObject *Police_OnEndOfSpeech(PyObject *self, PyObject *args) {
+static byte Police_EndOfSpeech(void) {
 	char ch[0x80], me[0x80];
-	(void)self;
-	(void)args;
-	Script_GetString("Speech", "NPCName", ch, sizeof(ch));
-	Script_GetString("Speech", "PlayerName", me, sizeof(me));
+	Char_ModString("Speech", "NPCName", ch, sizeof(ch));
+	Char_ModString("Speech", "PlayerName", me, sizeof(me));
 	byte hasCh = World_FindEntity(ch) != NULL;
-	int state = Script_GetInt("Police", "ResState", 0);
+	long state = Mode_ModGetI("Police", "ResState", 0);
 	if (state == 1) {
 		if (hasCh) {
 			Char_SetText(ch, "ForceAction", "ActionOK");
@@ -788,26 +896,34 @@ static PyObject *Police_OnEndOfSpeech(PyObject *self, PyObject *args) {
 		Char_Effect("!FXPoliceSteal", ch, Script_EntStr(me, "Name", me));
 	} else if (state == -1) {
 		if (hasCh) {
-			Script_EntSet(ch, "LLogicPoliceResult", PyInt_FromLong(-1));
+			Char_SetInt(ch, "LLogicPoliceResult", -1);
 		}
 		Char_SetText(me, "ForceAction", "Relax");
 		Char_SetText(me, "ForceDefLoop", "Relax");
-		Script_EntSet(me, "AutoSelect", PyInt_FromLong(1));
+		Char_SetInt(me, "AutoSelect", 1);
 	} else if (hasCh) {
 		if (!strncmp(Script_EntStr(ch, "Action", ""), "Relax", 5)) {
-			Script_EntSet(ch, "LLogicIdle", PyInt_FromLong(state));
-			Script_EntSet(ch, "LLogicPoliceResult", PyInt_FromLong(state));
+			Char_SetInt(ch, "LLogicIdle", state);
+			Char_SetInt(ch, "LLogicPoliceResult", state);
 			Char_SetText(ch, "ForceAction", "ActionNPC");
 			Char_SetText(ch, "ForceDefLoop", "ActionNPC");
 		}
 		const char *usr = Char_Usr0();
 		if (!usr) {
-			PyErr_SetString(PyExc_AttributeError, "Name");
-			return NULL;
+			return Native_Raise(NE_ATTRIBUTE, "Name");
 		}
 		Char_SetText(ch, "SelectedEntity", usr);
 	}
-	return Py_ReturnNone();
+	return 1;
+}
+
+CHAR_FN(Police, GoToMission, "s", (Char_SetInt(ent, "LLogicGotoMainMission", 1), 1))
+CHAR_SPEECH(Police, PoliceSpeech, Police_Speech)
+
+static PyObject *Police_OnEndOfSpeech(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Mode_Result(Police_EndOfSpeech());
 }
 
 PyMethodDef g_PoliceFuncs[] = {
@@ -820,189 +936,150 @@ PyMethodDef g_PoliceFuncs[] = {
 
 /* ---- Bishop: he sells three lives for BishopLivePrice ---- */
 
-/* three lives more (up to MaxPlayerLives) for the price, and a quick save */
-static int Bishop_AddLifes(void) {
+/* int(Scrap.GetSaveVar("Player.NumLives")) (the text "" when there is none; the ValueError of int()) */
+static byte Bishop_Lives(nativeVal_t *out) {
 	const char *saved = SaveVar_Get("Player.NumLives");
-	PyObject *text = PyString_FromString(saved ? saved : "");
-	PyObject *lives = text ? PyNumber_Int(text) : NULL;
-	Py_XDECREF(text);
-	PyObject *three = PyInt_FromLong(3);
-	PyObject *n = lives ? PyNumber_Add(lives, three) : NULL;
-	Py_XDECREF(three);
-	Py_XDECREF(lives);
-	PyObject *max = n ? Script_Ask("Scrap", "Get", "(s)", "MaxPlayerLives") : NULL;
-	if (!max) {
-		Py_XDECREF(n);
-		return -1;
+	nativeVal_t text;
+	Native_SetText(&text, saved ? saved : "", saved ? (int)strlen(saved) : 0);
+	byte ok = Native_ToInt(&text, out);
+	Native_Free(&text);
+	return ok;
+}
+
+/* three lives more (up to MaxPlayerLives) for the price, and a quick save */
+static byte Bishop_AddLifes(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lives = Mode_V(&t), *n = Mode_V(&t), *max = Mode_V(&t), *money = Mode_V(&t), *price = Mode_V(&t);
+	nativeVal_t *rest = Mode_V(&t);
+	if (!Bishop_Lives(lives) || !Mode_Arith('+', lives, Mode_I(&t, 3), n) || !Native_GVarGet("MaxPlayerLives", max)) {
+		return Mode_Done(&t, 0);
 	}
-	if (PyObject_Compare(n, max) > 0) {
-		Py_DECREF(n);
-		Py_INCREF(max);
-		n = max;
+	LvN_SaveRepr("Player.NumLives", Native_Compare(n, max) > 0 ? max : n);
+	Native_SetInt(money, Mode_GetMoney());
+	return Mode_Done(&t, Native_GVarGet("BishopLivePrice", price) && Mode_Arith('-', money, price, rest) &&
+		Mode_SetMoneySeam(rest) && Native_CallMod("SaveGame", "QWayPoint", NULL, ""));
+}
+
+/* the answer of the option of the lives: none left to buy, no money, or the sale after the speech */
+static byte Bishop_Option(const char *ch, const char **ans) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lives = Mode_V(&t), *max = Mode_V(&t), *money = Mode_V(&t), *price = Mode_V(&t), *e = Mode_V(&t);
+	*ans = NULL;
+	if (!Char_Usr0()) {
+		/* the script used ans without setting it */
+		return Native_Raise(NE_NAME, "ans");
 	}
-	Py_DECREF(max);
-	PyObject *r = PyObject_Repr(n);
-	Py_DECREF(n);
-	if (!r) {
-		return -1;
+	if (!Bishop_Lives(lives) || !Native_GVarGet("MaxPlayerLives", max)) {
+		return Mode_Done(&t, 0);
 	}
-	SaveVar_Set("Player.NumLives", PyString_AsString(r));
-	Py_DECREF(r);
-	PyObject *money = Script_Ask("Scrap", "GetMoney", "()");
-	PyObject *price = money ? Script_Ask("Scrap", "Get", "(s)", "BishopLivePrice") : NULL;
-	PyObject *rest = price ? PyNumber_Subtract(money, price) : NULL;
-	Py_XDECREF(money);
-	Py_XDECREF(price);
-	if (!rest) {
-		return -1;
+	Native_SetInt(money, Mode_GetMoney());
+	if (!Native_GVarGet("BishopLivePrice", price)) {
+		return Mode_Done(&t, 0);
 	}
-	byte ok = Script_Try("Scrap", "SetMoney", "(O)", rest);
-	Py_DECREF(rest);
-	return ok && Script_Try("SaveGame", "QWayPoint", "()") ? 0 : -1;
+	if (Native_Compare(lives, max) == 0) {
+		*ans = "Generics_SpecialBishop_3Ans";
+	} else if (Native_Compare(money, price) < 0) {
+		*ans = "Generics_SpecialBishop_2Ans";
+	} else {
+		*ans = "Generics_SpecialBishop_1Ans";
+		Char_ModAttr("Speech", "OnEndOfSpeech", "Bishop", "StartSellingLife");
+		Char_Handle(ch, e);
+		Char_EndParams(e);
+	}
+	return Mode_Done(&t, 1);
+}
+
+/* the option of the lives shows the price: "<n1>" in ArrOpt00 becomes `Scrap.Get("BishopLivePrice")` */
+static byte Bishop_Price(const char *ch) {
+	const char *opt0 = Script_EntStr(ch, "ArrOpt00", "");
+	if (strncmp(opt0, "Generics_SpecialBishop_1:", 25)) {
+		return 1;
+	}
+	nativeVal_t price = { 0 }, r;
+	if (!Native_GVarGet("BishopLivePrice", &price)) {
+		return 0;
+	}
+	Mode_Repr(&price, &r);
+	Native_Free(&price);
+	char out[0x200];
+	int n = 0;
+	for (const char *p = opt0; *p && n < (int)sizeof(out) - 1;) {
+		if (!strncmp(p, "<n1>", 4)) {
+			for (const char *q = Native_Text(&r); *q && n < (int)sizeof(out) - 1; q++) {
+				out[n++] = *q;
+			}
+			p += 4;
+		} else {
+			out[n++] = *p++;
+		}
+	}
+	out[n] = 0;
+	Native_Free(&r);
+	Char_SetText(ch, "ArrOpt00", out);
+	return 1;
+}
+
+static byte Bishop_Speech(const char *usr, const char *ch, const char *opt, const nativeVal_t *full) {
+	char msg[0x80];
+	nativeVal_t e;
+	Char_Handle(ch, &e);
+	Char_Speakers(usr, ch);
+	byte ok;
+	if (!strcmp(opt, "Generics_SpecialBishop_1")) {
+		const char *ans;
+		ok = Bishop_Option(ch, &ans);
+		if (ok) {
+			Str_Printf(msg, sizeof(msg), "%sMsg", opt);
+			ok = Native_CallMod("CharsNPC", "PlayOption", NULL, "ssssv", opt, msg, ans, usr, &e);
+		}
+	} else {
+		ok = Char_Generic(usr, ch, opt, full);
+	}
+	Native_Free(&e);
+	return ok && Bishop_Price(ch);
+}
+
+/* the end of the speech: he walks to the player to sell (e the entity handle). A Name that is no text gives NULL
+ * without an exception, as the port (the caller's SystemError; OBJLIB 7) */
+static byte Bishop_StartSelling(const nativeVal_t *e) {
+	nativeVal_t name = { 0 };
+	char ch[0x80];
+	if (!Mode_VObj(e, "Name", &name) || name.type != NV_STR) {
+		Native_Free(&name);
+		return 0;
+	}
+	Str_Copy(ch, Native_Text(&name), sizeof(ch));
+	Native_Free(&name);
+	Char_SetText(ch, "Action", "SellLife");
+	Char_SetText(ch, "DefLoop", "Relax");
+	const char *usr = Char_Usr0();
+	if (!usr) {
+		return Native_Raise(NE_ATTRIBUTE, "Name");
+	}
+	Char_SetText(ch, "SelectedEntity", usr);
+	return 1;
 }
 
 static PyObject *Bishop_AddLifesPy(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	return Bishop_AddLifes() < 0 ? NULL : Py_ReturnNone();
+	return Mode_Result(Bishop_AddLifes());
 }
 
-static PyObject *Bishop_BishopSpeech(PyObject *self, PyObject *args) {
-	char *usr, *ch, *opt, msg[0x80];
-	PyObject *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sssO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	PyObject *e = Char_Handle(ch);
-	Char_Speakers(usr, ch);
-	if (!strcmp(opt, "Generics_SpecialBishop_1")) {
-		const char *ans = NULL;
-		if (Char_Usr0()) {
-			const char *saved = SaveVar_Get("Player.NumLives");
-			PyObject *text = PyString_FromString(saved ? saved : "");
-			PyObject *lives = text ? PyNumber_Int(text) : NULL;
-			PyObject *max = lives ? Script_Ask("Scrap", "Get", "(s)", "MaxPlayerLives") : NULL;
-			PyObject *money = max ? Script_Ask("Scrap", "GetMoney", "()") : NULL;
-			PyObject *price = money ? Script_Ask("Scrap", "Get", "(s)", "BishopLivePrice") : NULL;
-			if (price) {
-				if (PyObject_Compare(lives, max) == 0) {
-					ans = "Generics_SpecialBishop_3Ans";
-				} else if (PyObject_Compare(money, price) < 0) {
-					ans = "Generics_SpecialBishop_2Ans";
-				} else {
-					ans = "Generics_SpecialBishop_1Ans";
-					Script_SetVar("Speech", "OnEndOfSpeech", Script_Attr("Bishop", "StartSellingLife"));
-					Script_SetVar("Speech", "OnEndOfSpeechParams", Py_BuildValue("(O)", e));
-				}
-			}
-			Py_XDECREF(text);
-			Py_XDECREF(lives);
-			Py_XDECREF(max);
-			Py_XDECREF(money);
-			Py_XDECREF(price);
-			if (!ans) {
-				Py_DECREF(e);
-				return NULL;
-			}
-		} else {
-			/* the script used ans without setting it */
-			PyErr_SetString(PyExc_NameError, "ans");
-			Py_DECREF(e);
-			return NULL;
-		}
-		Str_Printf(msg, sizeof(msg), "%sMsg", opt);
-		byte ok = Script_Try("CharsNPC", "PlayOption", "(ssssO)", opt, msg, ans, usr, e);
-		Py_DECREF(e);
-		if (!ok) {
-			return NULL;
-		}
-	} else {
-		Py_DECREF(e);
-		if (!Script_Try("CharsNPC", "GenericNPCSpeech", "(sssO)", usr, ch, opt, full)) {
-			return NULL;
-		}
-	}
-	/* the option of the lives shows the price */
-	const char *opt0 = Script_EntStr(ch, "ArrOpt00", "");
-	if (!strncmp(opt0, "Generics_SpecialBishop_1:", 25)) {
-		PyObject *price = Script_Ask("Scrap", "Get", "(s)", "BishopLivePrice");
-		PyObject *r = price ? PyObject_Repr(price) : NULL;
-		Py_XDECREF(price);
-		if (!r) {
-			return NULL;
-		}
-		char out[0x200];
-		int n = 0;
-		for (const char *p = opt0; *p && n < (int)sizeof(out) - 1;) {
-			if (!strncmp(p, "<n1>", 4)) {
-				for (const char *q = PyString_AsString(r); *q && n < (int)sizeof(out) - 1; q++) {
-					out[n++] = *q;
-				}
-				p += 4;
-			} else {
-				out[n++] = *p++;
-			}
-		}
-		out[n] = 0;
-		Py_DECREF(r);
-		Char_SetText(ch, "ArrOpt00", out);
-	}
-	return Py_ReturnNone();
-}
-
-/* the end of the speech: he walks to the player to sell (ch the entity handle) */
-static PyObject *Bishop_StartSellingLife(PyObject *self, PyObject *args) {
-	PyObject *e;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	PyObject *name = Script_GetAttr(e, "Name");
-	if (!name || !PyString_Check(name)) {
-		Py_XDECREF(name);
-		return NULL;
-	}
-	char ch[0x80];
-	Str_Copy(ch, PyString_AsString(name), sizeof(ch));
-	Py_DECREF(name);
-	Char_SetText(ch, "Action", "SellLife");
-	Char_SetText(ch, "DefLoop", "Relax");
-	const char *usr = Char_Usr0();
-	if (!usr) {
-		PyErr_SetString(PyExc_AttributeError, "Name");
-		return NULL;
-	}
-	Char_SetText(ch, "SelectedEntity", usr);
-	return Py_ReturnNone();
-}
-
+CHAR_SPEECH(Bishop, BishopSpeech, Bishop_Speech)
+MODE_FN(Bishop, StartSellingLife, 1, Bishop_StartSelling(&a[0]))
 /* SellLife(EntityName, EventName, Time): the event of the sale (the script does not use the entity name: any value) */
-static PyObject *Bishop_SellLife(PyObject *self, PyObject *args) {
-	PyObject *name, *event, *time;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &event, &time)) {
-		return NULL;
-	}
-	if (Char_Usr0() && Bishop_AddLifes() < 0) {
-		return NULL;
-	}
-	return Py_ReturnNone();
-}
+MODE_FN(Bishop, SellLife, 3, !Char_Usr0() || Bishop_AddLifes())
 
-static PyObject *Bishop_FXBishopSellLife(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *event, *time;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sOO", &name, &event, &time)) {
-		return NULL;
-	}
+static byte Bishop_SellFX(const char *name) {
 	const char *usr = Char_Usr0();
 	if (usr) {
 		Char_Effect("!FXBishopSellLife", name, usr);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+CHAR_FN(Bishop, FXBishopSellLife, "sOO", Bishop_SellFX(ent))
 
 PyMethodDef g_BishopFuncs[] = {
 	{ "AddLifes", Bishop_AddLifesPy, 1, NULL },
@@ -1015,26 +1092,39 @@ PyMethodDef g_BishopFuncs[] = {
 
 /* ---- Messenger: the data pack he carries (Messenger.MDP, MakeMDP stay module variables) ---- */
 
+static byte Messenger_MakePack(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *mdp = Mode_V(&t), *name = Mode_V(&t), *zero = Mode_V(&t);
+	Native_SetInt(zero, 0);
+	if (!LvN_Create(Mode_S(&t, "MessengerDataPack"), zero, zero, zero, "Item", mdp)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_ModPut("Messenger", "MDP", mdp);
+	return Mode_Done(&t, Mode_VModel(mdp, Mode_S(&t, "Models/Chars/Messenger/DataPack.M3D")) && LvN_SetI(mdp, "Radius", 250) &&
+		Mode_VObj(mdp, "Name", name) && Native_GVarSet("MessengerDataPack", name));
+}
+
+/* the data pack at the node of its elevator, or none is made */
+static byte Messenger_ObjInit(const nativeVal_t *elv) {
+	nativeVal_t mdp = { 0 }, pos = { 0 };
+	if (!LvN_ModGet("Messenger", "MDP", &mdp)) {
+		return 0;
+	}
+	byte ok = 1;
+	if (Native_True(&mdp)) {
+		ok = Mode_VObj(elv, "NT_NodePos_DC_DataPack", &pos) && Mode_VSet(&mdp, "Pos", &pos);
+	} else {
+		Mode_ModPutI("Messenger", "MakeMDP", 0);
+	}
+	Native_Free(&pos);
+	Native_Free(&mdp);
+	return ok;
+}
+
 static PyObject *Messenger_MakeDataPack(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	PyObject *mdp = Script_Ask("Scrap", "CreateEntity", "(siiis)", "MessengerDataPack", 0, 0, 0, "Item");
-	if (!mdp) {
-		return NULL;
-	}
-	Py_INCREF(mdp);
-	Script_SetVar("Messenger", "MDP", mdp);
-	PyObject *r = Script_Method(mdp, "SetModel", "(s)", "Models/Chars/Messenger/DataPack.M3D");
-	int ok = r && Script_HSet(mdp, "Radius", PyInt_FromLong(250));
-	Py_XDECREF(r);
-	PyObject *name = ok ? Script_GetAttr(mdp, "Name") : NULL;
-	Py_DECREF(mdp);
-	if (!name) {
-		return NULL;
-	}
-	byte ok2 = Script_Try("Scrap", "Set", "(sO)", "MessengerDataPack", name);
-	Py_DECREF(name);
-	return ok2 ? Py_ReturnNone() : NULL;
+	return Mode_Result(Messenger_MakePack());
 }
 
 /* the teleport script asks the doors and objects of the level */
@@ -1047,27 +1137,7 @@ static PyObject *Messenger_DoorInitializator(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* the data pack at the node of its elevator, or none is made */
-static PyObject *Messenger_ObjInitializator(PyObject *self, PyObject *args) {
-	PyObject *elv, *info;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &elv, &info)) {
-		return NULL;
-	}
-	PyObject *mdp = Script_Attr("Messenger", "MDP");
-	if (!mdp) {
-		return NULL;
-	}
-	int ok = 1;
-	if (PyObject_IsTrue(mdp) > 0) {
-		PyObject *pos = Script_GetAttr(elv, "NT_NodePos_DC_DataPack");
-		ok = pos && Script_HSet(mdp, "Pos", pos);
-	} else {
-		Script_SetInt("Messenger", "MakeMDP", 0);
-	}
-	Py_DECREF(mdp);
-	return ok ? Py_ReturnNone() : NULL;
-}
+MODE_FN(Messenger, ObjInitializator, 2, Messenger_ObjInit(&a[0]))
 
 PyMethodDef g_MessengerFuncs[] = {
 	{ "MakeDataPack", Messenger_MakeDataPack, 1, NULL },
