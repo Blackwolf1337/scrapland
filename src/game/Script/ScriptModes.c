@@ -1139,6 +1139,21 @@ byte Mode_ListGet(const char *list, const char *var, nativeVal_t *out) {
 	return Native_Raise(NE_ATTRIBUTE, "EntityListGet: list '%.64s' has no variable '%.64s'", list, var);
 }
 
+byte Mode_ListSet(const char *list, const char *var, const char *value) {
+	void *l = cWorld_GetList(g_pWorld, list);
+	if (!l) {
+		Con_Errorf("ERROR: EntityListSet '%s','%s','%s' list not found.\n", list, var, value);
+		return Native_NullResult();
+	}
+	char *s = (char *)value;
+	cEntityList_Var(l, var, 1, &s, NULL, NULL);
+	return 1;
+}
+
+byte Mode_VecOf(const nativeVal_t *v, double *x) {
+	return Mode_Vec3(v, x);
+}
+
 byte Mode_SetOnFloor(const nativeVal_t *name) {
 	const char *n;
 	if (!Native_ArgStr(name, 1, &n)) {
@@ -1334,6 +1349,24 @@ int Mode_HasKey(const char *module, const char *var, byte global, const nativeVa
 	Py_XDECREF(r);
 	Py_XDECREF(k);
 	return t;
+}
+
+byte Mode_Values(const char *module, const char *var, byte global, nativeVal_t *out) {
+	PyObject *r = Mode_VarMethod(module, var, global, "values", NULL);
+	if (!r) {
+		return 0;
+	}
+	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.values(): not a value native C takes", module, var);
+	Py_DECREF(r);
+	return ok;
+}
+
+byte Mode_Remove(const char *module, const char *var, const nativeVal_t *v) {
+	PyObject *x = Native_ToPy(v);
+	PyObject *r = x ? Mode_VarMethod(module, var, 1, "remove", x) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(x);
+	return r != NULL;
 }
 
 byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out) {
