@@ -8,326 +8,653 @@
  *
  * The module variables and the module code stay in the scripts: Map (Libraries, the alarm and blueprint save
  * variables), MapShipEdit (LastPlayer, ArrowMissionState), Mission_RustyFirstContact (kb, rusty, Params).
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of the
+ * modules are read where the script reads them and written through at once (OBJLIB 5); the keypad, Rusty, the player
+ * and HangarTab.prevShip are handle values (OBJLIB 7). Init, Elevator, OutMap, Traffic, ShipEdit, HangarTab, Menu,
+ * MapShipEdit, Chars, SaveGame, MissionsFuncs, Scene, MakeChar, SputnikSound, CreditsText, CharsNPC and the functions
+ * of the module go by name (OBJLIB 3), the scene tables too (LvN_Calls: each "Module.Func" by name). fc-r7b-jy
+ * records many engine functions, so these go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, CreateEntity,
+ * CreateEntityList, Set, SetMoney, SetTimeSpeed, UsrEntity, ConsoleError, SScorer.Add, Set, SetDefault and
+ * SetMsgText, SInput.SetActionSet, SSound.SetMusic and the SAct functions of the scene; Scrap.OpenPack,
+ * PreloadLibrary and ClosePack (Mission_RustyFirstContact.InitStatus) and the default form of Scrap.Def stay by name.
  */
+#include <string.h>
+
+#include "scrap/scrap.h"
 #include "Levels.h"
 
 #define MAP "Map"
 #define MSE "MapShipEdit"
 #define RF "Mission_RustyFirstContact"
 
-#define ENT(n) Sf_Ask(&f, "Scrap", "GetEntity", "(s)", n)
-#define USR() Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0)
-#define LANG(k) Sf_Lang(&f, Sf_Str(&f, k))
-#define SAVE(n) Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", n)
-#define G(m, n) Sf_Global(&f, m, n)
-#define NOARGS Sf_Build(&f, "()")
+/* ---- engine calls through their seams (OBJLIB 7: fc-r7b-jy records them) ---- */
+
+/* the hook a case put at module.name: called (ok in *ok, 1), or 0 when the engine's own C function is there */
+#define JY_SEAM(mod, name, ...) \
+	PyObject *hook; \
+	int seam = Native_Seam(mod, name, &hook); \
+	if (seam) { \
+		return seam > 0 && Native_HookCall(hook, NULL, __VA_ARGS__); \
+	}
+
+/* Scrap.SetMoney(i) */
+static byte Jy_SetMoney(long i) {
+	JY_SEAM("Scrap", "SetMoney", "i", i);
+	nativeVal_t v = { 0 };
+	Native_SetInt(&v, i);
+	return Mode_SetMoney(&v);
+}
+
+/* Scrap.SetTimeSpeed(i) */
+static byte Jy_TimeSpeed(long i) {
+	JY_SEAM("Scrap", "SetTimeSpeed", "i", i);
+	Mode_SetTimeSpeed((double)i);
+	return 1;
+}
+
+/* SInput.SetActionSet(name) */
+static byte Jy_ActionSet(const char *name) {
+	JY_SEAM("SInput", "SetActionSet", "s", name);
+	Mode_SetActionSet(name);
+	return 1;
+}
+
+/* SScorer.Add(id, item, type, flag) */
+static byte Jy_ScorerAdd(const nativeVal_t *id, const char *item, const char *type, long flag) {
+	JY_SEAM("SScorer", "Add", "vssi", id, item, type, flag);
+	int i;
+	if (!Native_ArgInt(id, &i)) {
+		return 0;
+	}
+	cScorer *sc = Scorer_Get(i);
+	if (sc) {
+		cScorer_AddItem(sc, item, type, flag != 0);
+	}
+	return 1;
+}
+
+/* SScorer.SetDefault(id, item) */
+static byte Jy_SetDefault(const nativeVal_t *id, const char *item) {
+	JY_SEAM("SScorer", "SetDefault", "vs", id, item);
+	int i;
+	if (!Native_ArgInt(id, &i)) {
+		return 0;
+	}
+	cScorer *sc = Scorer_Get(i);
+	if (sc) {
+		cScorer_SetDefault(sc, item);
+	}
+	return 1;
+}
+
+/* Scrap.CreateEntityList(name) (the TypeError of "s"; the CHECK of the engine) */
+static byte Jy_NewList(const nativeVal_t *name) {
+	JY_SEAM("Scrap", "CreateEntityList", "v", name);
+	const char *n;
+	if (!Native_ArgStr(name, 1, &n)) {
+		return 0;
+	}
+	CHECK(cWorld_NewEntityList(g_pWorld, n));
+	return 1;
+}
+
+/* ---- shared lines ---- */
+
+/* Scrap.GetEntity(name).var = i, = "text" */
+static byte Jy_EntSetI(const char *name, const char *var, long i) {
+	nativeVal_t e = { 0 };
+	Native_SetNone(&e);
+	byte ok = LvN_Entity(name, &e) && LvN_SetI(&e, var, i);
+	Native_Free(&e);
+	return ok;
+}
+
+/* Scrap.GetEntity(name).Del() */
+static byte Jy_EntDel(const char *name) {
+	nativeVal_t e = { 0 };
+	Native_SetNone(&e);
+	byte ok = LvN_Entity(name, &e) && Mode_VDel(&e);
+	Native_Free(&e);
+	return ok;
+}
+
+/* g.var = i, = "text" of a global g of the module (a handle) */
+static byte Jy_GSet(const char *module, const char *g, const char *var, long i) {
+	nativeVal_t h = { 0 };
+	byte ok = Mode_G(module, g, &h) && LvN_SetI(&h, var, i);
+	Native_Free(&h);
+	return ok;
+}
+
+static byte Jy_GSetS(const char *module, const char *g, const char *var, const char *s) {
+	nativeVal_t h = { 0 };
+	byte ok = Mode_G(module, g, &h) && LvN_SetS(&h, var, s);
+	Native_Free(&h);
+	return ok;
+}
+
+/* MissionsFuncs.ActivateTarget(g, on) with g a global of the module */
+static byte Jy_Target(const char *module, const char *g, long on) {
+	nativeVal_t h = { 0 };
+	byte ok = Mode_G(module, g, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
+	Native_Free(&h);
+	return ok;
+}
+
+/* "EditShip:" + Scrap.GetLangStr("HINT_Junkyard_ShipEdit") as ArrOpt0 of the keypad h */
+static byte Jy_KeyOption(const nativeVal_t *h) {
+	nativeVal_t p = { 0 }, t = { 0 }, r = { 0 };
+	LvN_Str(&p, "EditShip:");
+	Mode_Lang("HINT_Junkyard_ShipEdit", &t);
+	Native_SetNone(&r);
+	byte ok = LvN_Arith('+', &p, &t, &r) && Mode_VSet(h, "ArrOpt0", &r);
+	Native_Free(&p);
+	Native_Free(&t);
+	Native_Free(&r);
+	return ok;
+}
+
+/* Speech.SpeechRoutines["Rusty"] = v */
+static byte Jy_Routine(const nativeVal_t *v) {
+	nativeVal_t k = { 0 };
+	LvN_Str(&k, "Rusty");
+	byte ok = Mode_ModDictPut("Speech", "SpeechRoutines", &k, v);
+	Native_Free(&k);
+	return ok;
+}
+
+/* Scrap.GetEntity(Scrap.GetCam(0)).EntityLink = link */
+static byte Jy_CamLink(const char *link) {
+	nativeVal_t name = { 0 }, cam = { 0 };
+	const char *s = cWorld_GetCamName(g_pWorld, 0);
+	if (s) {
+		LvN_Str(&name, s);
+	} else {
+		Native_SetNone(&name);
+	}
+	Native_SetNone(&cam);
+	byte ok = Mode_EntityH(&name, &cam) && LvN_SetS(&cam, "EntityLink", link);
+	Native_Free(&name);
+	Native_Free(&cam);
+	return ok;
+}
+
+/* Scrap.UsrEntity(0).Name */
+static byte Jy_UsrName(nativeVal_t *out) {
+	nativeVal_t usr = { 0 };
+	Native_SetNone(out);
+	byte ok = Mode_UsrHandle(&usr) && Mode_VGet(&usr, "Name", out);
+	Native_Free(&usr);
+	return ok;
+}
+
+/* the values a, b (the arguments of a function) as one tuple (Params) */
+static void Jy_Tuple(nativeVal_t *out, const nativeVal_t *a, int n) {
+	Native_SetEmpty(out, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(out), &a[i]);
+	}
+}
+
+/* Scrap.AddScheduledFunc(at, fn, args) with fn an object (the global func of the module, or module.func) and the n
+ * args */
+static byte Jy_Sched(const nativeVal_t *at, const char *module, const char *func, byte global, const nativeVal_t *args, int n) {
+	PyObject *fn = global ? Mode_GlobalPy(module, func) : Script_Attr(module, func);
+	if (!fn) {
+		return 0;
+	}
+	byte ok = Mode_Schedule(at, fn, args, n, NULL);
+	Py_DECREF(fn);
+	return ok;
+}
+
+/* time + d into out (time a float of the script) */
+static byte Jy_At(const nativeVal_t *time, double d, nativeVal_t *out) {
+	nativeVal_t x = { 0 };
+	Native_SetFloat(&x, d);
+	Native_SetNone(out);
+	return LvN_Arith('+', time, &x, out);
+}
 
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): an indoor map, the junkyard; the editor elevator, the atmosphere, no traffic ships, the junk
  * points the scrap collector goes to */
-static PyObject *JunkyardMap_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "Init");
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
-	Sf_SetMod(&f, "Init", "isJunkYard", Sf_Int(&f, 1));
-	Sf_Import(&f, "Elevator");
-	Sf_Run(&f, "Elevator", "SetDef", "(ss)", "EditShip", "DM_Door_EditShip_00");
-	Sf_Import(&f, "OutMap");
-	Sf_Run(&f, "OutMap", "BrowseAtmospherePos", "()");
-	Sf_Import(&f, "Traffic");
-	Sf_SetMod(&f, "Traffic", "AcNormalShips", Sf_Build(&f, "[]"));
-	Sf_SetMod(&f, "Traffic", "AcMediumShips", Sf_Build(&f, "[]"));
-	Sf_SetMod(&f, "Traffic", "AcHeavyShips", Sf_Build(&f, "[]"));
-	PyObject *list = Sf_Ask(&f, "Scrap", "Get", "(s)", "JunkPointsListName");
-	Sf_Run(&f, "Scrap", "CreateEntityList", "(O)", list);
-	Sf_Run(&f, "Scrap", "StartDummySearch", "(si)", "DM_JunkPoint_*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
+static byte JunkyardMap_InitStatus(void) {
+	static const char *const lists[] = { "AcNormalShips", "AcMediumShips", "AcHeavyShips" };
+	nativeVal_t v = { 0 }, list = { 0 };
+	Native_SetInt(&v, 0);
+	if (!Mode_Import("Init") || !Mode_SetModVar("Init", "Outdoor", &v)) {
+		return 0;
+	}
+	Native_SetInt(&v, 1);
+	if (!Mode_SetModVar("Init", "isJunkYard", &v) || !Mode_Import("Elevator") ||
+		!LV_CALL("Elevator", "SetDef", NULL, "ss", "EditShip", "DM_Door_EditShip_00") || !Mode_Import("OutMap") ||
+		!LV_CALL("OutMap", "BrowseAtmospherePos", NULL, "") || !Mode_Import("Traffic")) {
+		return 0;
+	}
+	for (int i = 0; i < 3; i++) {
+		Native_SetEmpty(&v, NV_LIST);
+		if (!Mode_SetModVar("Traffic", lists[i], &v)) {
+			return 0;
+		}
+	}
+	if (!Native_GVarGet("JunkPointsListName", &list)) {
+		return 0;
+	}
+	byte ok = Jy_NewList(&list);
+	if (ok) {
+		Mode_DummyStart("DM_JunkPoint_*", 1);
+	}
+	while (ok) {
+		nativeVal_t dummy = { 0 }, pos = { 0 }, name = { 0 }, c[3] = { 0 }, l = { 0 }, ang = { 0 }, a = { 0 };
+		Mode_DummyNext(&dummy);
+		if (dummy.type == NV_NONE) {
 			break;
 		}
-		PyObject *pos = Sf_Item(&f, dummy, 1);
-		PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Item(&f, dummy, 0), Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-			Sf_Item(&f, pos, 2), "Item");
-		PyObject *ang = Sf_Item(&f, dummy, 2);
-		Sf_SetAttr(&f, l, "Ang", Sf_Build(&f, "(OOi)", Sf_Item(&f, ang, 0), Sf_Item(&f, ang, 1), 0));
-		Sf_SetAttr(&f, l, "EntityList", list);
-		Sf_SetAttrI(&f, l, "Radius", 100);
-		Sf_Release(&f, mark);
+		Native_SetNone(&pos);
+		Native_SetNone(&name);
+		Native_SetNone(&l);
+		Native_SetNone(&ang);
+		Native_SetNone(&a);
+		for (int i = 0; i < 3; i++) {
+			Native_SetNone(&c[i]);
+		}
+		ok = LvN_Item(&dummy, 1, &pos) && LvN_Item(&dummy, 0, &name) && LvN_Item(&pos, 0, &c[0]) && LvN_Item(&pos, 1, &c[1]) &&
+			LvN_Item(&pos, 2, &c[2]) && LvN_Create(&name, &c[0], &c[1], &c[2], "Item", &l) && LvN_Item(&dummy, 2, &ang);
+		if (ok) {
+			Native_SetEmpty(&a, NV_TUPLE);
+			ok = LvN_Item(&ang, 0, Native_Append(&a)) && LvN_Item(&ang, 1, Native_Append(&a));
+			if (ok) {
+				Native_SetInt(Native_Append(&a), 0);
+			}
+		}
+		ok = ok && Mode_VSet(&l, "Ang", &a) && Mode_VSet(&l, "EntityList", &list) && LvN_SetI(&l, "Radius", 100);
+		Native_Free(&dummy);
+		Native_Free(&pos);
+		Native_Free(&name);
+		Native_Free(&l);
+		Native_Free(&ang);
+		Native_Free(&a);
+		for (int i = 0; i < 3; i++) {
+			Native_Free(&c[i]);
+		}
 	}
-	return Sf_None(&f);
+	Native_Free(&list);
+	return ok;
 }
 
 /* Init(LevelPath): the editor elevator goes back to the previous level; no energy bar, no special action, the music */
-static PyObject *JunkyardMap_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "Elevator");
-	PyObject *prev = Sf_Slice(&f, SAVE("PrevMap"), 7, 0x7fffffff);
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][O])", "DM_Door_EditShip_00", prev);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "EnergyBarActive", 0);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "SpecialActionActive", 0);
-	Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/Track1.ogg", 1.0);
-	return Sf_None(&f);
+static byte JunkyardMap_Init(void) {
+	nativeVal_t save = { 0 }, prev = { 0 }, a = { 0 }, b = { 0 };
+	if (!Mode_Import("Elevator")) {
+		return 0;
+	}
+	Mode_SaveVar("PrevMap", &save);
+	Native_SetNone(&prev);
+	byte ok = Native_Slice(&save, 7, 0x7fffffff, &prev);
+	if (ok) {
+		Native_SetEmpty(&a, NV_LIST);
+		LvN_Str(Native_Append(&a), "DM_Door_EditShip_00");
+		Native_SetEmpty(&b, NV_LIST);
+		Native_Copy(Native_Append(&b), &prev);
+		ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &a, &b);
+		Native_Free(&a);
+		Native_Free(&b);
+	}
+	Native_Free(&save);
+	Native_Free(&prev);
+	return ok && Mode_GVarSetI("EnergyBarActive", 0) && Mode_GVarSetI("SpecialActionActive", 0) && LvN_SetMusic("Music/Track1.ogg", 1.0);
 }
 
+LV_CORE0(JunkyardMap_InitStatus)
+LV_CORE0(JunkyardMap_Init)
+LV_FN(JunkyardMap, InitStatusPy, 1, JunkyardMap_InitStatus_C)
+LV_FN(JunkyardMap, InitPy, 1, JunkyardMap_Init_C)
+
 PyMethodDef g_JunkyardMapMethods[] = {
-	{ "InitStatus", JunkyardMap_InitStatus, METH_VARARGS, NULL },
-	{ "Init", JunkyardMap_Init, METH_VARARGS, NULL },
+	{ "InitStatus", JunkyardMap_InitStatusPy, METH_VARARGS, NULL },
+	{ "Init", JunkyardMap_InitPy, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- MapShipEdit ---- */
 
 /* EnterEditShip(UsrName, CharName, optId, FullOption): the ship editor opens; the keypad off, the player frozen */
-static PyObject *MapShipEdit_EnterEditShip(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Menu", "InitMenuSys", "(i)", 0);
-	Sf_Run(&f, "Scrap", "SetTimeSpeed", "(i)", 1);
-	Sf_Run(&f, "ShipEdit", "EnterEditShipMenu", "(is)", 0, "");
-	Sf_Run(&f, "SScorer", "Set", "(issi)", 0, "Cursor", "Visible", 0);
-	PyObject *kb = ENT("DM_EditKeyboard");
-	Sf_SetGlobal(&f, MSE, "ArrowMissionState", Sf_Attr(&f, kb, "ArrowCanMission"));
-	Sf_SetAttrI(&f, kb, "ArrowCanMission", 0);
-	Sf_SetAttrI(&f, kb, "ArrowCanUse", 0);
-	PyObject *last = USR();
-	Sf_SetGlobal(&f, MSE, "LastPlayer", last);
-	Sf_SetAttrI(&f, last, "UsrControl", -1);
-	return Sf_None(&f);
+static byte MapShipEdit_EnterEditShip(void) {
+	nativeVal_t kb = { 0 }, v = { 0 }, last = { 0 };
+	if (!Mode_Import("ShipEdit") || !Mode_Import("Menu") || !LV_CALL("Menu", "InitMenuSys", NULL, "i", 0L) || !Jy_TimeSpeed(1) ||
+		!LV_CALL("ShipEdit", "EnterEditShipMenu", NULL, "is", 0L, "") || !LvN_Set0I("Cursor", "Visible", 0)) {
+		return 0;
+	}
+	Native_SetNone(&v);
+	Native_SetNone(&last);
+	byte ok = LvN_Entity("DM_EditKeyboard", &kb) && Mode_VGet(&kb, "ArrowCanMission", &v) && Mode_Put(MSE, "ArrowMissionState", NULL, &v) &&
+		LvN_SetI(&kb, "ArrowCanMission", 0) && LvN_SetI(&kb, "ArrowCanUse", 0) && Mode_UsrHandle(&last) &&
+		Mode_Put(MSE, "LastPlayer", NULL, &last) && LvN_SetI(&last, "UsrControl", -1);
+	Native_Free(&kb);
+	Native_Free(&v);
+	Native_Free(&last);
+	return ok;
 }
 
 /* SetInteract(o) */
-static PyObject *MapShipEdit_SetInteract(PyObject *self, PyObject *args) {
-	PyObject *o;
-	SF_ARGS("O", &o);
-	Sf_SetAttrI(&f, o, "ArrowCanUse", 1);
-	return Sf_None(&f);
+static byte MapShipEdit_SetInteract(const nativeVal_t *a) {
+	return LvN_SetI(&a[0], "ArrowCanUse", 1);
 }
 
 /* OnEndOfShipEdit(id, control): back to the game; the keypad usable again after 0.25 s, its mission arrow back */
-static PyObject *MapShipEdit_OnEndOfShipEdit(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	Sf_Import(&f, "HangarTab");
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Menu", "BackToGame", "(O)", id);
-	PyObject *when = Sf_Op(&f, Sf_Time(&f), '+', Sf_Float(&f, 0.25));
-	Sf_Schedule(&f, when, G(MSE, "SetInteract"), Sf_Build(&f, "(O)", ENT("DM_EditKeyboard")), NULL);
-	Sf_SetAttrI(&f, G(MSE, "LastPlayer"), "UsrControl", 0);
-	PyObject *state = G(MSE, "ArrowMissionState");
-	if (Sf_Compare(&f, state, "!=", Py_None) > 0) {
-		Sf_SetAttr(&f, ENT("DM_EditKeyboard"), "ArrowCanMission", state);
+static byte MapShipEdit_OnEndOfShipEdit(const nativeVal_t *a) {
+	nativeVal_t now = { 0 }, when = { 0 }, kb = { 0 }, state = { 0 };
+	if (!Mode_Import("HangarTab") || !Mode_Import("Parking") || !Mode_Import("Menu") || !LV_CALL("Menu", "BackToGame", NULL, "v", &a[0])) {
+		return 0;
 	}
-	return Sf_None(&f);
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&kb);
+	Native_SetNone(&state);
+	byte ok = Jy_At(&now, 0.25, &when) && LvN_Entity("DM_EditKeyboard", &kb) && Jy_Sched(&when, MSE, "SetInteract", 1, &kb, 1) &&
+		Jy_GSet(MSE, "LastPlayer", "UsrControl", 0) && Mode_G(MSE, "ArrowMissionState", &state);
+	if (ok && state.type != NV_NONE) {
+		Native_Free(&kb);
+		ok = LvN_Entity("DM_EditKeyboard", &kb) && Mode_VSet(&kb, "ArrowCanMission", &state);
+	}
+	Native_Free(&when);
+	Native_Free(&kb);
+	Native_Free(&state);
+	return ok;
 }
 
 /* CanUseElevator(UsrName, ElevatorName, optId, FullOption): 1 with a valid ship on the platform, else 0 and why */
-static PyObject *MapShipEdit_CanUseElevator(PyObject *self, PyObject *args) {
-	PyObject *usr, *el, *opt, *full;
-	SF_ARGS("OOOO", &usr, &el, &opt, &full);
-	Sf_Import(&f, "HangarTab");
+static byte MapShipEdit_CanUseElevator(nativeVal_t *out) {
+	nativeVal_t ship = { 0 }, valid = { 0 }, text = { 0 };
 	const char *why = NULL;
-	if (Sf_Compare(&f, Sf_Mod(&f, "HangarTab", "prevShip"), "==", Py_None) > 0) {
+	Native_SetNone(&valid);
+	if (!Mode_Import("HangarTab") || !LvN_ModGet("HangarTab", "prevShip", &ship)) {
+		return 0;
+	}
+	byte ok = 1;
+	if (ship.type == NV_NONE) {
 		why = "JUNKYARD_Exit1";
-	} else if (!f.failed) {
-		int valid = Sf_True(&f, Sf_Ask(&f, "HangarTab", "IsShipValid", "(O)", Sf_Mod(&f, "HangarTab", "prevShip")));
-		if (valid == 0) {
+	} else {
+		Native_Free(&ship);
+		ok = LvN_ModGet("HangarTab", "prevShip", &ship) && LV_CALL("HangarTab", "IsShipValid", &valid, "v", &ship);
+		if (ok && !Native_True(&valid)) {
 			why = "JUNKYARD_Exit2";
 		}
 	}
-	if (why) {
-		PyObject *fn = Sf_Mod(&f, "SScorer", "SetMsgText");
-		Sf_Call(&f, fn, "(OO)", LANG(why), Sf_OpI(&f, Sf_Time(&f), '+', 5));
+	if (ok && why) {
+		Mode_Lang(why, &text);
+		ok = Mode_MsgText(&text, Mode_Time() + 5);
+		Native_Free(&text);
 	}
-	return Sf_Return(&f, Sf_Int(&f, why ? 0 : 1));
+	Native_Free(&ship);
+	Native_Free(&valid);
+	Native_SetInt(out, why ? 0 : 1);
+	return ok;
 }
 
 /* UseElevator(UsrName, ElevatorName, optId, FullOption): the characters of the junkyard go, then the elevator */
-static PyObject *MapShipEdit_UseElevator(PyObject *self, PyObject *args) {
+static byte MapShipEdit_UseElevator(const nativeVal_t *a) {
 	static const char *const chars[] = { "Rusty_0", "Maintenance_00", "SputnikJunkyard_0", "SputnikJunkyard_1", "SputnikJunkyard_2" };
-	PyObject *usr, *el, *opt, *full;
-	SF_ARGS("OOOO", &usr, &el, &opt, &full);
-	Sf_Import(&f, "Elevator");
-	if (Sf_True(&f, Sf_Own(&f, MSE, "CanUseElevator", "(OOOO)", usr, el, opt, full)) > 0) {
-		for (int i = 0; i < 5 && !f.failed; i++) {
-			int mark = f.n;
-			PyObject *e = ENT(chars[i]);
-			if (Sf_True(&f, e) > 0) {
-				Sf_Method(&f, e, "Del", "()");
-			}
-			Sf_Release(&f, mark);
+	nativeVal_t r = { 0 };
+	Native_SetNone(&r);
+	byte ok = Mode_Import("Elevator") && LV_OWN(MSE, "CanUseElevator", &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	if (ok && Native_True(&r)) {
+		for (int i = 0; i < 5 && ok; i++) {
+			nativeVal_t e = { 0 };
+			ok = LvN_Entity(chars[i], &e) && (!Native_True(&e) || Mode_VDel(&e));
+			Native_Free(&e);
 		}
-		Sf_Run(&f, "Elevator", "UseElevator", "(OOOO)", usr, el, opt, full);
+		ok = ok && LV_CALL("Elevator", "UseElevator", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 	}
-	return Sf_None(&f);
+	Native_Free(&r);
+	return ok;
 }
 
 /* Init(LevelPath): the keypad of the editor, the player's ship on the platform, the platform's use */
-static PyObject *MapShipEdit_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	PyObject *dummy = Lv_Dummy(&f, "DM_EditKeyboard", 0);
-	PyObject *pos = Sf_Item(&f, dummy, 1);
-	PyObject *kb = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "DM_EditKeyboard", Sf_Item(&f, pos, 0), Sf_Item(&f, Sf_Item(&f, dummy, 1), 1),
-		Sf_Item(&f, Sf_Item(&f, dummy, 1), 2), "WithLife");
-	Sf_SetAttr(&f, kb, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180), 0));
-	Sf_SetAttrI(&f, kb, "VRadius", 60);
-	Sf_SetAttrI(&f, kb, "ArrowCanUse", 1);
-	Sf_SetAttrI(&f, kb, "Life", 0);
-	Sf_SetAttrI(&f, kb, "ArrnOpt", 0);
-	Sf_SetAttr(&f, kb, "ArrOpt0", Sf_Cat(&f, "sO", "EditShip:", LANG("HINT_Junkyard_ShipEdit")));
-	Sf_SetAttrS(&f, kb, "UseFunc", "MapShipEdit.EnterEditShip");
-	Sf_SetAttrI(&f, kb, "ActiveCMask", 0);
-	Sf_SetAttrI(&f, kb, "RadarShow", 2);
-	Sf_SetAttrI(&f, kb, "ArrowCanMission", 1);
-	Sf_SetAttr(&f, kb, "ArrowModMission", Sf_Ask(&f, "Scrap", "Get", "(s)", "ArrowTargetFile"));
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "HangarTab");
-	int missing = Sf_Compare(&f, Sf_Mod(&f, "ShipEdit", "editShipPosDummy"), "==", Py_None);
-	if (missing == 0) {
-		missing = Sf_Compare(&f, Sf_Mod(&f, "ShipEdit", "editPlatform"), "==", Py_None);
+static byte MapShipEdit_Init(void) {
+	nativeVal_t dummy = { 0 }, p = { 0 }, c[3] = { 0 }, name = { 0 }, kb = { 0 }, d2 = { 0 }, ay = { 0 }, v = { 0 };
+	nativeVal_t ship = { 0 }, posd = { 0 }, plat = { 0 };
+	Native_SetNone(&p);
+	Native_SetNone(&kb);
+	Native_SetNone(&d2);
+	Native_SetNone(&ay);
+	Native_SetNone(&v);
+	Native_SetNone(&ship);
+	Native_SetNone(&posd);
+	Native_SetNone(&plat);
+	for (int i = 0; i < 3; i++) {
+		Native_SetNone(&c[i]);
 	}
-	if (missing > 0) {
-		Sf_Run(&f, "Scrap", "ConsoleError", "(s)", "No existe el dummy 'DM_Door_EditShip_*'\n");
-		return Sf_None(&f);
+	LvN_Dummy("DM_EditKeyboard", 0, &dummy);
+	LvN_Str(&name, "DM_EditKeyboard");
+	byte ok = LvN_Item(&dummy, 1, &p) && LvN_Item(&p, 0, &c[0]) && LvN_Item(&p, 1, &c[1]) && LvN_Item(&p, 2, &c[2]) &&
+		LvN_Create(&name, &c[0], &c[1], &c[2], "WithLife", &kb) && LvN_Item(&dummy, 2, &d2) && LvN_Item(&d2, 1, &ay);
+	if (ok) {
+		nativeVal_t a = { 0 }, k = { 0 };
+		Native_SetInt(&k, 180);
+		Native_SetEmpty(&a, NV_TUPLE);
+		Native_SetInt(Native_Append(&a), 0);
+		ok = LvN_Arith('+', &ay, &k, Native_Append(&a));
+		if (ok) {
+			Native_SetInt(Native_Append(&a), 0);
+			ok = Mode_VSet(&kb, "Ang", &a);
+		}
+		Native_Free(&a);
 	}
-	Sf_Run(&f, "ShipEdit", "CreatePlayerShip", "()");
-	if (Sf_Compare(&f, Sf_Mod(&f, "HangarTab", "prevShip"), "!=", Py_None) > 0) {
-		Sf_SetAttr(&f, Sf_Mod(&f, "HangarTab", "prevShip"), "Pos", Sf_Item(&f, Sf_Mod(&f, "ShipEdit", "editShipPosDummy"), 1));
-		Sf_SetAttrI(&f, Sf_Mod(&f, "HangarTab", "prevShip"), "ActiveCMask", 1);
-		Sf_Run(&f, "ShipEdit", "SetupForEdit", "([O])", Sf_Mod(&f, "HangarTab", "prevShip"));
+	ok = ok && LvN_SetI(&kb, "VRadius", 60) && LvN_SetI(&kb, "ArrowCanUse", 1) && LvN_SetI(&kb, "Life", 0) &&
+		LvN_SetI(&kb, "ArrnOpt", 0) && Jy_KeyOption(&kb) && LvN_SetS(&kb, "UseFunc", "MapShipEdit.EnterEditShip") &&
+		LvN_SetI(&kb, "ActiveCMask", 0) && LvN_SetI(&kb, "RadarShow", 2) && LvN_SetI(&kb, "ArrowCanMission", 1) &&
+		Native_GVarGet("ArrowTargetFile", &v) && Mode_VSet(&kb, "ArrowModMission", &v) && Mode_Import("ShipEdit") &&
+		Mode_Import("Parking") && Mode_Import("HangarTab") && LvN_ModGet("ShipEdit", "editShipPosDummy", &posd);
+	byte missing = ok && posd.type == NV_NONE;
+	if (ok && !missing) {
+		ok = LvN_ModGet("ShipEdit", "editPlatform", &plat);
+		missing = ok && plat.type == NV_NONE;
 	}
-	Sf_SetAttrS(&f, Sf_Mod(&f, "ShipEdit", "editPlatform"), "UseFunc", "MapShipEdit.UseElevator");
-	return Sf_None(&f);
+	if (ok && missing) {
+		Native_Free(&v);
+		LvN_Str(&v, "No existe el dummy 'DM_Door_EditShip_*'\n");
+		ok = Mode_ConsoleError(&v);
+	} else if (ok) {
+		ok = LV_CALL("ShipEdit", "CreatePlayerShip", NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship);
+		if (ok && ship.type != NV_NONE) {
+			nativeVal_t pos = { 0 }, l = { 0 };
+			Native_SetNone(&pos);
+			Native_Free(&posd);
+			Native_Free(&ship);
+			ok = LvN_ModGet("ShipEdit", "editShipPosDummy", &posd) && LvN_Item(&posd, 1, &pos) && LvN_ModGet("HangarTab", "prevShip", &ship) &&
+				Mode_VSet(&ship, "Pos", &pos);
+			Native_Free(&ship);
+			ok = ok && LvN_ModGet("HangarTab", "prevShip", &ship) && LvN_SetI(&ship, "ActiveCMask", 1);
+			Native_Free(&ship);
+			if (ok && LvN_ModGet("HangarTab", "prevShip", &ship)) {
+				Native_SetEmpty(&l, NV_LIST);
+				Native_Copy(Native_Append(&l), &ship);
+				ok = LV_CALL("ShipEdit", "SetupForEdit", NULL, "v", &l);
+				Native_Free(&l);
+			} else {
+				ok = 0;
+			}
+			Native_Free(&pos);
+		}
+		Native_Free(&plat);
+		ok = ok && LvN_ModGet("ShipEdit", "editPlatform", &plat) && LvN_SetS(&plat, "UseFunc", "MapShipEdit.UseElevator");
+	}
+	Native_Free(&dummy);
+	Native_Free(&p);
+	Native_Free(&name);
+	Native_Free(&kb);
+	Native_Free(&d2);
+	Native_Free(&ay);
+	Native_Free(&v);
+	Native_Free(&ship);
+	Native_Free(&posd);
+	Native_Free(&plat);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&c[i]);
+	}
+	return ok;
 }
 
+LV_CORE0(MapShipEdit_EnterEditShip)
+LV_COREA(MapShipEdit_SetInteract)
+LV_COREA(MapShipEdit_OnEndOfShipEdit)
+LV_COREA(MapShipEdit_UseElevator)
+LV_CORE0(MapShipEdit_Init)
+
+static byte MapShipEdit_CanUseElevator_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	return MapShipEdit_CanUseElevator(out);
+}
+
+LV_FN(MapShipEdit, EnterEditShipPy, 4, MapShipEdit_EnterEditShip_C)
+LV_FN(MapShipEdit, SetInteractPy, 1, MapShipEdit_SetInteract_C)
+LV_FN(MapShipEdit, OnEndOfShipEditPy, 2, MapShipEdit_OnEndOfShipEdit_C)
+LV_FN(MapShipEdit, CanUseElevatorPy, 4, MapShipEdit_CanUseElevator_C)
+LV_FN(MapShipEdit, UseElevatorPy, 4, MapShipEdit_UseElevator_C)
+LV_FN(MapShipEdit, InitPy, 1, MapShipEdit_Init_C)
+
 PyMethodDef g_JunkyardMapShipEditMethods[] = {
-	{ "EnterEditShip", MapShipEdit_EnterEditShip, METH_VARARGS, NULL },
-	{ "SetInteract", MapShipEdit_SetInteract, METH_VARARGS, NULL },
-	{ "OnEndOfShipEdit", MapShipEdit_OnEndOfShipEdit, METH_VARARGS, NULL },
-	{ "CanUseElevator", MapShipEdit_CanUseElevator, METH_VARARGS, NULL },
-	{ "UseElevator", MapShipEdit_UseElevator, METH_VARARGS, NULL },
-	{ "Init", MapShipEdit_Init, METH_VARARGS, NULL },
+	{ "EnterEditShip", MapShipEdit_EnterEditShipPy, METH_VARARGS, NULL },
+	{ "SetInteract", MapShipEdit_SetInteractPy, METH_VARARGS, NULL },
+	{ "OnEndOfShipEdit", MapShipEdit_OnEndOfShipEditPy, METH_VARARGS, NULL },
+	{ "CanUseElevator", MapShipEdit_CanUseElevatorPy, METH_VARARGS, NULL },
+	{ "UseElevator", MapShipEdit_UseElevatorPy, METH_VARARGS, NULL },
+	{ "Init", MapShipEdit_InitPy, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_RustyFirstContact ---- */
 
 /* InitStatus(LevelPath): Berto's resources; coming from the orbit counts as from Outskirts; the credits library */
-static PyObject *Rusty_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "Chars");
-	Sf_Run(&f, "Chars", "AddNewCharRes", "(s)", "Berto");
-	if (Lv_SaveIs(&f, "PrevMap", "Levels/Orbit") > 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "ComeFrom", "DoorEditShip");
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "PrevMap", "Levels/Outskirts");
+static byte Rusty_InitStatus(void) {
+	if (!Mode_Import("Chars") || !LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Berto")) {
+		return 0;
 	}
-	Sf_Run(&f, "Scrap", "OpenPack", "(s)", "Scripts/Scorer");
-	Sf_Run(&f, "Scrap", "PreloadLibrary", "(ss)", "CreditsText", "CreditsText.pyc");
-	Sf_Run(&f, "Scrap", "ClosePack", "()");
-	return Sf_None(&f);
+	if (LvN_SaveIs("PrevMap", "Levels/Orbit")) {
+		SaveVar_Set("ComeFrom", "DoorEditShip");
+		SaveVar_Set("PrevMap", "Levels/Outskirts");
+	}
+	/* OBJLIB 7: the pack functions by name (fc-r7b-jy records them) */
+	return LV_CALL("Scrap", "OpenPack", NULL, "s", "Scripts/Scorer") &&
+		LV_CALL("Scrap", "PreloadLibrary", NULL, "ss", "CreditsText", "CreditsText.pyc") && LV_CALL("Scrap", "ClosePack", NULL, "");
 }
 
 /* Init(LevelPath): arriving with Berto (Rusty is the target, the editor waits) or straight to the editor; the final
  * scene, the credits */
-static PyObject *Rusty_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	PyObject *kb = ENT("DM_EditKeyboard");
-	Sf_SetGlobal(&f, RF, "kb", kb);
-	PyObject *rusty = ENT("Rusty_0");
-	Sf_SetGlobal(&f, RF, "rusty", rusty);
-	int come = Sf_Compare(&f, SAVE("ComeFrom"), "!=", Sf_Str(&f, ""));
-	if (come > 0) {
-		Sf_Run(&f, "Scrap", "SetMoney", "(i)", 1100);
-		Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToRusty_MissionText1", 1);
-		Sf_SetAttrI(&f, G(RF, "kb"), "ArrowCanUse", 0);
-		Sf_SetAttrS(&f, G(RF, "kb"), "UseFunc", "");
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(RF, "rusty"), 1);
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(RF, "kb"), 0);
-		Sf_SetItem(&f, Sf_Mod(&f, "Speech", "SpeechRoutines"), Sf_Str(&f, "Rusty"), G(RF, "RustyFirstSpeech"));
-		Sf_Own(&f, RF, "CreateFakeBertoShip", "()");
-		Sf_Own(&f, RF, "LoadMecanicScene", "()");
-	} else if (come == 0) {
-		Sf_Own(&f, RF, "InitBuildShip", "()");
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(RF, "kb"), 0);
-		Sf_Own(&f, RF, "OnEndOfShipEditFirstTime", "(is)", -1, "");
+static byte Rusty_Init(void) {
+	nativeVal_t kb = { 0 }, rusty = { 0 }, fn = { 0 };
+	Native_SetNone(&rusty);
+	Native_SetNone(&fn);
+	byte ok = LvN_Entity("DM_EditKeyboard", &kb) && Mode_Put(RF, "kb", NULL, &kb) && LvN_Entity("Rusty_0", &rusty) &&
+		Mode_Put(RF, "rusty", NULL, &rusty);
+	Native_Free(&kb);
+	Native_Free(&rusty);
+	if (!ok) {
+		return 0;
 	}
-	Sf_Own(&f, RF, "LoadMecanicFinalScene", "()");
-	Sf_Import(&f, "CreditsText");
-	Sf_Run(&f, "CreditsText", "Init", "()");
-	return Sf_None(&f);
+	if (!LvN_SaveIs("ComeFrom", "")) {
+		ok = Jy_SetMoney(1100) && LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TalkToRusty_MissionText1", 1L) &&
+			Jy_GSet(RF, "kb", "ArrowCanUse", 0) && Jy_GSetS(RF, "kb", "UseFunc", "") && Jy_Target(RF, "rusty", 1) &&
+			Jy_Target(RF, "kb", 0) && LvN_GObj(RF, "RustyFirstSpeech", &fn) && Jy_Routine(&fn) &&
+			LV_OWN(RF, "CreateFakeBertoShip", NULL, "") && LV_OWN(RF, "LoadMecanicScene", NULL, "");
+	} else {
+		ok = LV_OWN(RF, "InitBuildShip", NULL, "") && Jy_Target(RF, "kb", 0) && LV_OWN(RF, "OnEndOfShipEditFirstTime", NULL, "is", -1L, "");
+	}
+	Native_Free(&fn);
+	return ok && LV_OWN(RF, "LoadMecanicFinalScene", NULL, "") && Mode_Import("CreditsText") && LV_CALL("CreditsText", "Init", NULL, "");
 }
 
 /* CreateFakeBertoShip(): Berto's ship and Berto on the editor platform; the platform's arrival starts the scene */
-static PyObject *Rusty_CreateFakeBertoShip(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *epl = ENT("DM_Door_EditShip_00");
-	PyObject *pos = Sf_Attr(&f, epl, "Pos");
-	PyObject *x = Sf_Item(&f, pos, 0), *y = Sf_Item(&f, pos, 1), *z = Sf_Item(&f, pos, 2);
-	PyObject *v = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "FakeBertoShip", x, y, z, "Car");
-	Sf_Method(&f, v, "SetModel", "(s)", "SBerto1");
-	Sf_SetAttrS(&f, v, "MEng0", "MBerto1");
-	Sf_SetAttrS(&f, v, "MEng1", "MBerto1");
-	Sf_SetAttrS(&f, v, "MEng2", "MBerto1");
-	Sf_SetAttr(&f, v, "LinkModel", Sf_Cat(&f, "Os", Sf_Attr(&f, epl, "Name"), ",DC_ShipLink"));
-	Sf_SetAttrI(&f, v, "OffMul", 1);
-	Sf_SetAttrI(&f, v, "UseLinkAng", 1);
-	x = Sf_Item(&f, pos, 0), y = Sf_Item(&f, pos, 1), z = Sf_Item(&f, pos, 2);
-	PyObject *c = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "FakeBerto", x, y, z, "WalkChar");
-	Sf_SetAttrS(&f, c, "ActCtrl", "Berto");
-	Sf_SetAttr(&f, c, "LinkModel", Sf_Cat(&f, "Oss", Sf_Attr(&f, epl, "Name"), ",", "DC_Platform"));
-	Sf_SetAttr(&f, c, "OffModPos", Sf_Build(&f, "(iOi)", 0, Sf_Attr(&f, c, "FloorDist"), -200));
-	Sf_SetAttrI(&f, c, "OffMul", 1);
-	Sf_SetAttrI(&f, c, "UseLinkAng", 1);
-	Sf_SetMod(&f, "Elevator", "OnElevatorReachDown", G(RF, "StartInitialScene"));
-	return Sf_None(&f);
-}
-
-/* the extras of the junkyard (the three Sputniks and the maintenance robot) come alive */
-static byte Jy_Extras(scriptFrame_t *f) {
-	static const char *const names[] = { "SputnikJunkyard_0", "SputnikJunkyard_1", "SputnikJunkyard_2", "Maintenance_00" };
-	for (int i = 0; i < 4 && !f->failed; i++) {
-		int mark = f->n;
-		PyObject *e = Sf_Ask(f, "Scrap", "GetEntity", "(s)", names[i]);
-		Sf_SetAttrI(f, e, "Active", 1);
-		Sf_SetAttrI(f, e, "TimeSpeed", 1);
-		Sf_Release(f, mark);
+static byte Rusty_CreateFakeBertoShip(void) {
+	nativeVal_t epl = { 0 }, pos = { 0 }, c[3] = { 0 }, name = { 0 }, v = { 0 }, model = { 0 }, en = { 0 };
+	nativeVal_t link = { 0 }, sfx = { 0 }, ch = { 0 }, floor = { 0 }, off = { 0 };
+	const nativeVal_t *vals[] = { &pos, &c[0], &c[1], &c[2], &v, &en, &link, &ch, &floor, &off };
+	for (unsigned i = 0; i < sizeof(vals) / sizeof(*vals); i++) {
+		Native_SetNone((nativeVal_t *)vals[i]);
 	}
-	return !f->failed;
+	LvN_Str(&name, "FakeBertoShip");
+	LvN_Str(&model, "SBerto1");
+	LvN_Str(&sfx, ",DC_ShipLink");
+	byte ok = LvN_Entity("DM_Door_EditShip_00", &epl) && Mode_VGet(&epl, "Pos", &pos) && LvN_Item(&pos, 0, &c[0]) &&
+		LvN_Item(&pos, 1, &c[1]) && LvN_Item(&pos, 2, &c[2]) && LvN_Create(&name, &c[0], &c[1], &c[2], "Car", &v) &&
+		Mode_VModel(&v, &model) && LvN_SetS(&v, "MEng0", "MBerto1") && LvN_SetS(&v, "MEng1", "MBerto1") &&
+		LvN_SetS(&v, "MEng2", "MBerto1") && Mode_VGet(&epl, "Name", &en) && LvN_Arith('+', &en, &sfx, &link) &&
+		Mode_VSet(&v, "LinkModel", &link) && LvN_SetI(&v, "OffMul", 1) && LvN_SetI(&v, "UseLinkAng", 1);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&c[i]);
+	}
+	Native_Free(&name);
+	Native_Free(&en);
+	Native_Free(&link);
+	Native_Free(&sfx);
+	LvN_Str(&name, "FakeBerto");
+	ok = ok && LvN_Item(&pos, 0, &c[0]) && LvN_Item(&pos, 1, &c[1]) && LvN_Item(&pos, 2, &c[2]) &&
+		LvN_Create(&name, &c[0], &c[1], &c[2], "WalkChar", &ch) && LvN_SetS(&ch, "ActCtrl", "Berto") && Mode_VGet(&epl, "Name", &en);
+	if (ok) {
+		nativeVal_t t = { 0 };
+		LvN_Str(&sfx, ",");
+		Native_SetNone(&t);
+		ok = LvN_Arith('+', &en, &sfx, &t);
+		Native_Free(&sfx);
+		LvN_Str(&sfx, "DC_Platform");
+		ok = ok && LvN_Arith('+', &t, &sfx, &link) && Mode_VSet(&ch, "LinkModel", &link) && Mode_VGet(&ch, "FloorDist", &floor);
+		Native_Free(&t);
+		Native_Free(&sfx);
+	}
+	if (ok) {
+		Native_SetEmpty(&off, NV_TUPLE);
+		Native_SetInt(Native_Append(&off), 0);
+		Native_Copy(Native_Append(&off), &floor);
+		Native_SetInt(Native_Append(&off), -200);
+		ok = Mode_VSet(&ch, "OffModPos", &off) && LvN_SetI(&ch, "OffMul", 1) && LvN_SetI(&ch, "UseLinkAng", 1) &&
+			LvN_ModSetGlobal("Elevator", "OnElevatorReachDown", RF, "StartInitialScene");
+	}
+	Native_Free(&epl);
+	Native_Free(&name);
+	Native_Free(&model);
+	for (unsigned i = 0; i < sizeof(vals) / sizeof(*vals); i++) {
+		Native_Free((nativeVal_t *)vals[i]);
+	}
+	return ok;
 }
 
-/* ShowExtras() */
-static PyObject *Rusty_ShowExtras(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Jy_Extras(&f);
-	return Sf_None(&f);
+/* ShowExtras(): the extras of the junkyard (the three Sputniks and the maintenance robot) come alive */
+static byte Rusty_ShowExtras(void) {
+	static const char *const names[] = { "SputnikJunkyard_0", "SputnikJunkyard_1", "SputnikJunkyard_2", "Maintenance_00" };
+	for (int i = 0; i < 4; i++) {
+		nativeVal_t e = { 0 };
+		byte ok = LvN_Entity(names[i], &e) && LvN_SetI(&e, "Active", 1) && LvN_SetI(&e, "TimeSpeed", 1);
+		Native_Free(&e);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 /* StartInitialScene(el): the platform is down: the player in place, the scene with Berto, Rusty and Sputnik */
-static PyObject *Rusty_StartInitialScene(PyObject *self, PyObject *args) {
-	PyObject *el;
-	SF_ARGS("O", &el);
-	Sf_SetMod(&f, "Elevator", "OnElevatorReachDown", Py_None);
-	PyObject *usr = USR();
-	Sf_SetAttr(&f, usr, "Pos", Sf_Build(&f, "(ddd)", -618.68, -1940.08, 955.28));
-	Sf_SetAttr(&f, usr, "Ang", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", G(RF, "BertoGoHome"));
-	Sf_Run(&f, "Scene", "Play", "(s)", "Mecanic");
-	Sf_Import(&f, "SputnikSound");
-	Sf_Run(&f, "SputnikSound", "InitLoops", "(s)", "MecanicSputnik");
-	Sf_Own(&f, RF, "ShowExtras", "()");
-	Sf_SetAttrI(&f, ENT("FakeBertoShip"), "Active", 1);
-	return Sf_None(&f);
+static byte Rusty_StartInitialScene(void) {
+	nativeVal_t usr = { 0 }, p = { 0 };
+	if (!LvN_ModNone("Elevator", "OnElevatorReachDown") || !Mode_UsrHandle(&usr)) {
+		return 0;
+	}
+	Native_SetVec(&p, -618.68, -1940.08, 955.28);
+	byte ok = Mode_VSet(&usr, "Pos", &p);
+	if (ok) {
+		Native_SetEmpty(&p, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetInt(Native_Append(&p), 0);
+		}
+		ok = Mode_VSet(&usr, "Ang", &p);
+		Native_Free(&p);
+	}
+	Native_Free(&usr);
+	return ok && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "BertoGoHome") && LV_CALL("Scene", "Play", NULL, "s", "Mecanic") &&
+		Mode_Import("SputnikSound") && LV_CALL("SputnikSound", "InitLoops", NULL, "s", "MecanicSputnik") &&
+		LV_OWN(RF, "ShowExtras", NULL, "") && Jy_EntSetI("FakeBertoShip", "Active", 1);
 }
 
 static const char *const mecanic_final_actions[] = {
@@ -403,253 +730,304 @@ static const char *const mecanic_final_actors[] = {
 
 /* LoadMecanicFinalScene(): the scene of the farewell with Rusty, Sputnik's effect at frame 499 (the interpolation
  * time is put back by FXMecanicFinalSputnik, where the script has that line) */
-static PyObject *Rusty_LoadMecanicFinalScene(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "MakeChar");
-	Sf_Calls(&f, RF, mecanic_final_actions);
-	PyObject *fn = Sf_Mod(&f, "SAct", "SetAct");
-	Sf_Call(&f, fn, "(sO)", "AddEventAtTime", Sf_Ask(&f, "SAct", "GetAct", "(O)", Sf_Cat(&f, "sO", "TimeOfFrame", Sf_ReprI(&f, 499))));
-	Sf_Calls(&f, RF, mecanic_final_actors);
-	return Sf_None(&f);
+static byte Rusty_LoadMecanicFinalScene(void) {
+	nativeVal_t t = { 0 };
+	Native_SetNone(&t);
+	byte ok = Mode_Import("Scene") && Mode_Import("MakeChar") && LvN_Calls(RF, mecanic_final_actions) &&
+		LvN_GetAct("TimeOfFrame499", &t) && LvN_SetAct("AddEventAtTime", &t) && LvN_Calls(RF, mecanic_final_actors);
+	Native_Free(&t);
+	return ok;
+}
+
+/* Scrap.Def(name) (OBJLIB 7: the default of a float variable in C, any other form by name) */
+static byte Jy_Def(const char *name, nativeVal_t *out) {
+	cGVar *v = GVar_Find(name);
+	Native_SetNone(out);
+	if (v && v->base.type == GVAR_FLOAT) {
+		Native_SetFloat(out, (double)v->def.f);
+		return 1;
+	}
+	return LV_CALL("Scrap", "Def", out, "s", name);
 }
 
 /* FXMecanicFinalSputnik(EntityName, EventName, Time): Sputnik's effect in the scene; the default interpolation time */
-static PyObject *Rusty_FXMecanicFinalSputnik(PyObject *self, PyObject *args) {
-	PyObject *ent, *ev, *time;
-	SF_ARGS("OOO", &ent, &ev, &time);
-	PyObject *e = ENT("MecanicFinalSputnik");
-	if (Sf_True(&f, e) > 0) {
-		Sf_Method(&f, e, "SetFX", "(s)", "CharacterSputnikSceneMecanicFinal");
-	}
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "DefInterpTime", Sf_Ask(&f, "Scrap", "Def", "(s)", "DefInterpTime"));
-	return Sf_None(&f);
+static byte Rusty_FXMecanicFinalSputnik(void) {
+	nativeVal_t name = { 0 }, d = { 0 };
+	cEntity *e;
+	LvN_Str(&name, "MecanicFinalSputnik");
+	byte ok = Mode_Ent(&name, &e) && (!e || Mode_SetFX(e, "CharacterSputnikSceneMecanicFinal"));
+	Native_Free(&name);
+	ok = ok && Jy_Def("DefInterpTime", &d) && Mode_GVarSet("DefInterpTime", &d);
+	Native_Free(&d);
+	return ok;
 }
 
 /* BertoGoHome(usr): the end of the scene: Berto leaves on the platform, the camera follows it, no control */
-static PyObject *Rusty_BertoGoHome(PyObject *self, PyObject *args) {
-	PyObject *usr;
-	SF_ARGS("O", &usr);
-	Sf_Run(&f, "Elevator", "ElevatorActiveToGet", "(s)", "DM_Door_EditShip_00");
-	Sf_SetMod(&f, "Elevator", "OnElevatorReachUp", G(RF, "BackDownBerto"));
-	Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Run(&f, "Menu", "DrawScorer", "(is)", 0, "Inactive");
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0)), "EntityLink", "DM_Door_EditShip_00");
-	PyObject *v = Sf_Build(&f, "(s(OO)i)", "Player0", Sf_Mod(&f, "Elevator", "TELEPORTER_UP_REACH"), Py_None, 0);
-	Sf_SetItem(&f, Sf_Mod(&f, "Elevator", "LinkedElevator"), Sf_Str(&f, "DM_Door_EditShip_00"), v);
-	return Sf_None(&f);
+static byte Rusty_BertoGoHome(void) {
+	nativeVal_t reach = { 0 }, v = { 0 }, k = { 0 }, set = { 0 };
+	Native_SetNone(&reach);
+	LvN_Str(&set, "Inactive");
+	byte ok = LV_CALL("Elevator", "ElevatorActiveToGet", NULL, "s", "DM_Door_EditShip_00") &&
+		LvN_ModSetGlobal("Elevator", "OnElevatorReachUp", RF, "BackDownBerto") && Jy_ActionSet("Inactive") &&
+		LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("DM_Door_EditShip_00") &&
+		LvN_ModGet("Elevator", "TELEPORTER_UP_REACH", &reach);
+	Native_Free(&set);
+	if (ok) {
+		nativeVal_t *p;
+		Native_SetEmpty(&v, NV_TUPLE);
+		LvN_Str(Native_Append(&v), "Player0");
+		p = Native_Append(&v);
+		Native_SetEmpty(p, NV_TUPLE);
+		Native_Copy(Native_Append(p), &reach);
+		Native_SetNone(Native_Append(p));
+		Native_SetInt(Native_Append(&v), 0);
+		LvN_Str(&k, "DM_Door_EditShip_00");
+		ok = Mode_ModDictPut("Elevator", "LinkedElevator", &k, &v);
+		Native_Free(&k);
+		Native_Free(&v);
+	}
+	Native_Free(&reach);
+	return ok;
 }
 
 /* BackDownBerto(elv): up: Berto and his ship go, the platform comes down empty */
-static PyObject *Rusty_BackDownBerto(PyObject *self, PyObject *args) {
-	PyObject *elv;
-	SF_ARGS("O", &elv);
-	Sf_SetAttrS(&f, elv, "Action", "Down");
-	Sf_SetAttrS(&f, elv, "DefLoop", "Closed");
-	Sf_SetMod(&f, "Elevator", "OnElevatorReachUp", Py_None);
-	Sf_Method(&f, ENT("FakeBertoShip"), "Del", "()");
-	Sf_Method(&f, ENT("FakeBerto"), "Del", "()");
-	Sf_SetMod(&f, "Elevator", "OnElevatorReachDown", G(RF, "EndOfBertoBye"));
-	return Sf_None(&f);
+static byte Rusty_BackDownBerto(const nativeVal_t *a) {
+	return LvN_SetS(&a[0], "Action", "Down") && LvN_SetS(&a[0], "DefLoop", "Closed") && LvN_ModNone("Elevator", "OnElevatorReachUp") &&
+		Jy_EntDel("FakeBertoShip") && Jy_EntDel("FakeBerto") && LvN_ModSetGlobal("Elevator", "OnElevatorReachDown", RF, "EndOfBertoBye");
 }
 
 /* EndOfBertoBye(elv): down again: the player walks, the camera is free */
-static PyObject *Rusty_EndOfBertoBye(PyObject *self, PyObject *args) {
-	PyObject *elv;
-	SF_ARGS("O", &elv);
-	Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	Sf_Run(&f, "Menu", "DrawScorer", "(is)", 0, "Walk");
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0)), "EntityLink", "");
-	Sf_SetMod(&f, "Elevator", "OnElevatorReachDown", Py_None);
-	return Sf_None(&f);
+static byte Rusty_EndOfBertoBye(void) {
+	nativeVal_t set = { 0 };
+	LvN_Str(&set, "Walk");
+	byte ok = Jy_ActionSet("Walk") && LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("") &&
+		LvN_ModNone("Elevator", "OnElevatorReachDown");
+	Native_Free(&set);
+	return ok;
 }
 
 /* StartInitBuildShip(): after Rusty's talk: the editor keypad is the target, Rusty talks as usual, a way point */
-static PyObject *Rusty_StartInitBuildShip(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Hangar.iHangarShip", "-1");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_BuildFirstShip_MissionText2", 1);
-	Sf_SetAttrI(&f, G(RF, "kb"), "ArrowCanUse", 1);
-	Sf_SetAttrI(&f, G(RF, "kb"), "ArrnOpt", 0);
-	PyObject *kb = G(RF, "kb");
-	Sf_SetAttr(&f, kb, "ArrOpt0", Sf_Cat(&f, "sO", "EditShip:", LANG("HINT_Junkyard_ShipEdit")));
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(RF, "rusty"), 0);
-	Sf_SetItem(&f, Sf_Mod(&f, "Speech", "SpeechRoutines"), Sf_Str(&f, "Rusty"), Sf_Mod(&f, "CharsNPC", "GenericNPCSpeech"));
-	Sf_Import(&f, "Init");
-	Sf_Run(&f, "SaveGame", "MarkWayPoint", "(Oss)", Sf_Mod(&f, "Init", "Path"), "DM_Player_Spawn_", "");
-	Sf_Own(&f, RF, "InitBuildShip", "()");
-	return Sf_None(&f);
+static byte Rusty_StartInitBuildShip(void) {
+	nativeVal_t kb = { 0 }, gen = { 0 }, path = { 0 };
+	Native_SetNone(&kb);
+	Native_SetNone(&gen);
+	Native_SetNone(&path);
+	SaveVar_Set("Hangar.iHangarShip", "-1");
+	byte ok = LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_BuildFirstShip_MissionText2", 1L) && Jy_GSet(RF, "kb", "ArrowCanUse", 1) &&
+		Jy_GSet(RF, "kb", "ArrnOpt", 0) && Mode_G(RF, "kb", &kb) && Jy_KeyOption(&kb) && Jy_Target(RF, "rusty", 0) &&
+		LvN_ModGet("CharsNPC", "GenericNPCSpeech", &gen) && Jy_Routine(&gen) && Mode_Import("Init") && LvN_ModGet("Init", "Path", &path) &&
+		LV_CALL("SaveGame", "MarkWayPoint", NULL, "vss", &path, "DM_Player_Spawn_", "") && LV_OWN(RF, "InitBuildShip", NULL, "");
+	Native_Free(&kb);
+	Native_Free(&gen);
+	Native_Free(&path);
+	return ok;
 }
 
 /* InitBuildShip(): the keypad opens the editor the first time, with its own end */
-static PyObject *Rusty_InitBuildShip(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_SetAttrS(&f, G(RF, "kb"), "UseFunc", "Mission_RustyFirstContact.EnterEditShipFirstTime");
-	Sf_SetMod(&f, "ShipEdit", "EndShipEditCallBack", G(RF, "OnEndOfShipEditFirstTime"));
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(RF, "kb"), 1);
-	return Sf_None(&f);
+static byte Rusty_InitBuildShip(void) {
+	return Jy_GSetS(RF, "kb", "UseFunc", "Mission_RustyFirstContact.EnterEditShipFirstTime") &&
+		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditFirstTime") && Jy_Target(RF, "kb", 1);
 }
 
 /* EnterEditShipFirstTime(UsrName, CharName, optId, FullOption): the question whether to see the tutorial */
-static PyObject *Rusty_EnterEditShipFirstTime(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(RF, "kb"), 0);
-	Sf_Run(&f, "Menu", "InitMenuSys", "(i)", 0);
-	PyObject *fn = Sf_Mod(&f, "Menu", "YesNoMenu");
-	Sf_Call(&f, fn, "(iOss)", 0, LANG("Mission_BuildFirstShip_Tut_Question"), "Mission_RustyFirstContact.EnterEditShipTutorial",
-		"Mission_RustyFirstContact.NoTutorialEnterEditShip");
-	Sf_Run(&f, "SScorer", "Set", "(issi)", 0, "Cursor", "Visible", 0);
-	Sf_Run(&f, "SScorer", "SetDefault", "(is)", 0, "Yes");
-	return Sf_None(&f);
+static byte Rusty_EnterEditShipFirstTime(void) {
+	nativeVal_t q = { 0 }, zero = { 0 };
+	if (!Mode_Import("Menu") || !Jy_Target(RF, "kb", 0) || !LV_CALL("Menu", "InitMenuSys", NULL, "i", 0L)) {
+		return 0;
+	}
+	PyObject *fn = Script_Attr("Menu", "YesNoMenu");
+	if (!fn) {
+		return 0;
+	}
+	Mode_Lang("Mission_BuildFirstShip_Tut_Question", &q);
+	Native_SetInt(&zero, 0);
+	byte ok = Native_HookCall(fn, NULL, "ivss", 0L, &q, "Mission_RustyFirstContact.EnterEditShipTutorial",
+		"Mission_RustyFirstContact.NoTutorialEnterEditShip") && LvN_Set0I("Cursor", "Visible", 0) && Jy_SetDefault(&zero, "Yes");
+	Native_Free(&q);
+	return ok;
 }
 
 /* NoTutorialEnterEditShip(id, control) */
-static PyObject *Rusty_NoTutorialEnterEditShip(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Menu", "BackToGame", "(Os)", id, "");
-	PyObject *fn = Sf_Mod(&f, "MapShipEdit", "EnterEditShip");
-	Sf_Call(&f, fn, "(Osss)", Sf_Attr(&f, USR(), "Name"), "", "", "");
-	return Sf_None(&f);
+static byte Rusty_NoTutorialEnterEditShip(const nativeVal_t *a) {
+	nativeVal_t name = { 0 };
+	if (!Mode_Import("Menu") || !LV_CALL("Menu", "BackToGame", NULL, "vs", &a[0], "")) {
+		return 0;
+	}
+	PyObject *fn = Script_Attr("MapShipEdit", "EnterEditShip");
+	if (!fn) {
+		return 0;
+	}
+	if (!Jy_UsrName(&name)) {
+		Py_DECREF(fn);
+		return 0;
+	}
+	byte ok = Native_HookCall(fn, NULL, "vsss", &name, "", "", "");
+	Native_Free(&name);
+	return ok;
 }
 
 /* OnEndOfShipEditFirstTime(id, control): with a ship built it is the target and the platform ends the mission, else
  * the keypad again (id -1: only that, from Init) */
-static PyObject *Rusty_OnEndOfShipEditFirstTime(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	PyObject *elevator = ENT("DM_Door_EditShip_00");
-	int ship = Sf_True(&f, Sf_Mod(&f, "HangarTab", "prevShip"));
-	if (ship > 0) {
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", Sf_Mod(&f, "HangarTab", "prevShip"), 1);
-		Sf_SetAttrS(&f, elevator, "UseFunc", "Mission_RustyFirstContact.UseElevatorFirstTime");
-	} else if (ship == 0) {
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(RF, "kb"), 1);
-		Sf_SetAttrS(&f, elevator, "UseFunc", "MapShipEdit.UseElevator");
+static byte Rusty_OnEndOfShipEditFirstTime(const nativeVal_t *a) {
+	nativeVal_t el = { 0 }, ship = { 0 }, minus = { 0 };
+	Native_SetNone(&ship);
+	byte ok = LvN_Entity("DM_Door_EditShip_00", &el) && LvN_ModGet("HangarTab", "prevShip", &ship);
+	if (ok && Native_True(&ship)) {
+		Native_Free(&ship);
+		ok = LvN_ModGet("HangarTab", "prevShip", &ship) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &ship, 1L) &&
+			LvN_SetS(&el, "UseFunc", "Mission_RustyFirstContact.UseElevatorFirstTime");
+	} else if (ok) {
+		ok = Jy_Target(RF, "kb", 1) && LvN_SetS(&el, "UseFunc", "MapShipEdit.UseElevator");
 	}
-	if (Sf_Compare(&f, id, "!=", Sf_Int(&f, -1)) > 0) {
-		Sf_Run(&f, "MapShipEdit", "OnEndOfShipEdit", "(OO)", id, control);
-	}
-	return Sf_None(&f);
+	Native_SetInt(&minus, -1);
+	ok = ok && (!Native_Compare(&a[0], &minus) || LV_CALL("MapShipEdit", "OnEndOfShipEdit", NULL, "vv", &a[0], &a[1]));
+	Native_Free(&el);
+	Native_Free(&ship);
+	return ok;
 }
 
 /* UseElevatorFirstTime(UsrName, ElevatorName, optId, FullOption): with a valid ship the final scene, then the
  * mission ends (the arguments kept in Params for the elevator) */
-static PyObject *Rusty_UseElevatorFirstTime(PyObject *self, PyObject *args) {
-	PyObject *usr, *el, *opt, *full;
-	SF_ARGS("OOOO", &usr, &el, &opt, &full);
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "MapShipEdit");
-	Sf_SetGlobal(&f, RF, "Params", Sf_Build(&f, "(OOOO)", usr, el, opt, full));
-	if (Sf_True(&f, Sf_Ask(&f, "MapShipEdit", "CanUseElevator", "(OOOO)", usr, el, opt, full)) > 0) {
-		Sf_SetMod(&f, "Scene", "EndOfSceneCallback", G(RF, "EndOfMission"));
-		Sf_Run(&f, "Scene", "Play", "(s)", "MecanicFinal");
-		Sf_Import(&f, "SputnikSound");
-		Sf_Run(&f, "SputnikSound", "InitLoops", "(s)", "MecanicFinalSputnik");
-		Sf_Own(&f, RF, "ShowExtras", "()");
-		Sf_SetAttrI(&f, Sf_Mod(&f, "HangarTab", "prevShip"), "Active", 1);
+static byte Rusty_UseElevatorFirstTime(const nativeVal_t *a) {
+	nativeVal_t params = { 0 }, r = { 0 }, ship = { 0 };
+	Native_SetNone(&r);
+	Native_SetNone(&ship);
+	if (!Mode_Import("Menu") || !Mode_Import("MapShipEdit")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	Jy_Tuple(&params, a, 4);
+	byte ok = Mode_Put(RF, "Params", NULL, &params) && LV_CALL("MapShipEdit", "CanUseElevator", &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	if (ok && Native_True(&r)) {
+		ok = LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "EndOfMission") && LV_CALL("Scene", "Play", NULL, "s", "MecanicFinal") &&
+			Mode_Import("SputnikSound") && LV_CALL("SputnikSound", "InitLoops", NULL, "s", "MecanicFinalSputnik") &&
+			LV_OWN(RF, "ShowExtras", NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship) && LvN_SetI(&ship, "Active", 1);
+	}
+	Native_Free(&params);
+	Native_Free(&r);
+	Native_Free(&ship);
+	return ok;
 }
 
 /* EndOfMission(usr): saved, the next mission in Outskirts, out by the elevator */
-static PyObject *Rusty_EndOfMission(PyObject *self, PyObject *args) {
-	PyObject *usr;
-	SF_ARGS("O", &usr);
-	Sf_Import(&f, "MapShipEdit");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_GoToOutskirts", "Outskirts");
-	Sf_Run(&f, "__builtin__", "apply", "(OO)", Sf_Mod(&f, "MapShipEdit", "UseElevator"), G(RF, "Params"));
-	return Sf_None(&f);
+static byte Rusty_EndOfMission(void) {
+	nativeVal_t params = { 0 };
+	if (!Mode_Import("MapShipEdit") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
+		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_GoToOutskirts", "Outskirts")) {
+		return 0;
+	}
+	PyObject *fn = Script_Attr("MapShipEdit", "UseElevator");
+	if (!fn) {
+		return 0;
+	}
+	byte ok = Mode_G(RF, "Params", &params) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &params);
+	Native_Free(&params);
+	Py_DECREF(fn);
+	return ok;
 }
 
 /* EnterEditShipTutorial(id, control): the editor with the tutorial: the menu keys off, the messages, the steps
  * (selling the ships in the hangars first when there are any) */
-static PyObject *Rusty_EnterEditShipTutorial(PyObject *self, PyObject *args) {
+static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", "EnginesTab", "WeaponsTab", "HullTab" };
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
+	nativeVal_t name = { 0 }, time = { 0 }, at = { 0 }, args[3] = { 0 };
 	for (int i = 0; i < 5; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
 	}
-	Sf_Run(&f, "Menu", "BackToGame", "(Os)", id, "");
-	PyObject *name = Sf_Attr(&f, USR(), "Name");
-	Sf_Run(&f, "MapShipEdit", "EnterEditShip", "(Osss)", name, "", "", "");
-	Sf_SetMod(&f, "ShipEdit", "EndShipEditCallBack", G(RF, "OnEndOfShipEditTutorial"));
-	Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "MainMissionEvent", "");
-	Sf_Own(&f, RF, "TutorialMsgInit", "(OO)", id, control);
-	PyObject *time = Sf_Time(&f);
-	Sf_Run(&f, "SScorer", "SetDefault", "(Os)", id, "ShipEditTabHangar");
-	Sf_Run(&f, "ShipEdit", "ChangeTab", "(Os)", id, "ShipEditTabHangar");
+	Native_SetNone(&at);
+	byte ok = LV_CALL("Menu", "BackToGame", NULL, "vs", &a[0], "") && Jy_UsrName(&name);
+	if (!ok) {
+		return 0;
+	}
+	ok = LV_CALL("MapShipEdit", "EnterEditShip", NULL, "vsss", &name, "", "", "") &&
+		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditTutorial") && Jy_ActionSet("Inactive");
+	Native_Free(&name);
+	if (ok) {
+		nativeVal_t e = { 0 };
+		LvN_Str(&e, "");
+		ok = Mode_GVarSet("EscapeEvent", &e) && Mode_GVarSet("MainMissionEvent", &e);
+		Native_Free(&e);
+	}
+	ok = ok && LV_OWN(RF, "TutorialMsgInit", NULL, "vv", &a[0], &a[1]);
+	if (!ok) {
+		return 0;
+	}
+	Native_SetFloat(&time, Mode_Time());
+	ok = Jy_SetDefault(&a[0], "ShipEditTabHangar") && LV_CALL("ShipEdit", "ChangeTab", NULL, "vs", &a[0], "ShipEditTabHangar");
 	int sell = 0;
-	for (int i = 0; i < 9 && !f.failed; i++) {
-		int mark = f.n;
-		if (Sf_Compare(&f, Sf_Item(&f, Sf_Mod(&f, "ShipEdit", "editedShips"), i), "!=", Py_None) > 0) {
+	for (int i = 0; i < 9 && ok; i++) {
+		nativeVal_t ships = { 0 }, s = { 0 };
+		Native_SetNone(&s);
+		ok = LvN_ModGet("ShipEdit", "editedShips", &ships) && LvN_Item(&ships, i, &s);
+		if (ok && s.type != NV_NONE) {
 			sell = 1;
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&ships);
+		Native_Free(&s);
 	}
-	Sf_Schedule(&f, Sf_Op(&f, time, '+', Sf_Float(&f, 1.0)), G(RF, "EditShipTutorial_Step"), Sf_Build(&f, "(OOi)", id, control, sell ? 0 : 1),
-		NULL);
-	return Sf_None(&f);
+	if (ok) {
+		Native_Copy(&args[0], &a[0]);
+		Native_Copy(&args[1], &a[1]);
+		Native_SetInt(&args[2], sell ? 0 : 1);
+		ok = Jy_At(&time, 1.0, &at) && Jy_Sched(&at, RF, "EditShipTutorial_Step", 1, args, 3);
+		for (int i = 0; i < 3; i++) {
+			Native_Free(&args[i]);
+		}
+	}
+	Native_Free(&at);
+	return ok;
 }
 
-/* SScorer.Set(id, item, var, v) as a line of the tutorial */
-static byte Jy_Set(scriptFrame_t *f, PyObject *id, const char *item, const char *var, PyObject *v) {
-	return Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, var, v);
-}
-
-static byte Jy_SetI(scriptFrame_t *f, PyObject *id, const char *item, const char *var, long i) {
-	return Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, var, i);
+/* SScorer.Set(id, item, var, i) as a line of the tutorial */
+static byte Jy_SetI(const nativeVal_t *id, const char *item, const char *var, long i) {
+	nativeVal_t v = { 0 };
+	Native_SetInt(&v, i);
+	return LvN_ScorerSet(id, item, var, &v);
 }
 
 /* the two typing texts of the tutorial: Add, Text, X 320, Y, CentralText, the colour without alpha, hidden, no cursor */
-static byte Jy_TypingText(scriptFrame_t *f, PyObject *id, const char *item, PyObject *text, long y) {
+static byte Jy_TypingText(const nativeVal_t *id, const char *item, const nativeVal_t *text, long y) {
 	static const char *const rgb[] = { "Red", "Green", "Blue" };
-	int mark = f->n;
-	Sf_Run(f, "SScorer", "Add", "(Ossi)", id, item, "TextTyping", 1);
-	Jy_Set(f, id, item, "Text", text);
-	Jy_SetI(f, id, item, "X", 320);
-	Jy_SetI(f, id, item, "Y", y);
-	Jy_SetI(f, id, item, "CentralText", 1);
-	for (int i = 0; i < 3 && !f->failed; i++) {
-		Jy_Set(f, id, item, rgb[i], Sf_Item(f, Sf_Mod(f, "Scorer", "MissionScorerText_Color"), i));
+	byte ok = Jy_ScorerAdd(id, item, "TextTyping", 1) && LvN_ScorerSet(id, item, "Text", text) && Jy_SetI(id, item, "X", 320) &&
+		Jy_SetI(id, item, "Y", y) && Jy_SetI(id, item, "CentralText", 1);
+	for (int i = 0; i < 3 && ok; i++) {
+		nativeVal_t c = { 0 }, k = { 0 };
+		Native_SetNone(&k);
+		ok = LvN_ModGet("Scorer", "MissionScorerText_Color", &c) && LvN_Item(&c, i, &k) && LvN_ScorerSet(id, item, rgb[i], &k);
+		Native_Free(&c);
+		Native_Free(&k);
 	}
-	Jy_SetI(f, id, item, "Visible", 0);
-	Jy_SetI(f, id, item, "CursorAtInit", 0);
-	Jy_SetI(f, id, item, "CursorAtEnd", 0);
-	Sf_Release(f, mark);
-	return !f->failed;
+	return ok && Jy_SetI(id, item, "Visible", 0) && Jy_SetI(id, item, "CursorAtInit", 0) && Jy_SetI(id, item, "CursorAtEnd", 0);
 }
 
 /* TutorialMsgInit(id, control): the panel and the two texts of the tutorial messages, hidden */
-static PyObject *Rusty_TutorialMsgInit(PyObject *self, PyObject *args) {
+static byte Rusty_TutorialMsgInit(const nativeVal_t *a) {
 	static const char *const vars[] = { "BlendingMode", "X", "Y", "SizeX", "SizeY", "Type", "Alpha", "Red", "Green", "Blue", "Visible" };
 	static const long vals[] = { 4, 46, 215 - 45, 640 - 46 * 2, 120, 4, 192, 16, 32, 128, 0 };
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "Scorer");
-	Sf_Run(&f, "SScorer", "Add", "(Ossi)", id, "TutorialMsgBack", "Tab", 1);
-	Sf_Run(&f, "Menu", "SetTabDefaults", "(Os)", id, "TutorialMsgBack");
-	for (int i = 0; i < 11 && !f.failed; i++) {
-		Jy_SetI(&f, id, "TutorialMsgBack", vars[i], vals[i]);
+	const nativeVal_t *id = &a[0];
+	nativeVal_t empty = { 0 }, t = { 0 }, use = { 0 }, text = { 0 };
+	if (!Mode_Import("Menu") || !Mode_Import("ShipEdit") || !Mode_Import("Scorer") || !Jy_ScorerAdd(id, "TutorialMsgBack", "Tab", 1) ||
+		!LV_CALL("Menu", "SetTabDefaults", NULL, "vs", id, "TutorialMsgBack")) {
+		return 0;
 	}
-	Jy_TypingText(&f, id, "TutorialMsg", Sf_Str(&f, ""), 215);
-	PyObject *text = Sf_Op(&f, LANG("Mission_BuildFirstShip_Tut_Continue"), '%', Sf_Mod(&f, "ShipEdit", "UseTxt"));
-	Jy_TypingText(&f, id, "TutorialMsgContinue", text, 215 + 30);
-	return Sf_None(&f);
-}
-
-/* time + k * tf with Python floats */
-static PyObject *Jy_At(scriptFrame_t *f, PyObject *time, double k, double tf) {
-	return Sf_Op(f, time, '+', Sf_Float(f, k * tf));
+	for (int i = 0; i < 11; i++) {
+		if (!Jy_SetI(id, "TutorialMsgBack", vars[i], vals[i])) {
+			return 0;
+		}
+	}
+	LvN_Str(&empty, "");
+	byte ok = Jy_TypingText(id, "TutorialMsg", &empty, 215);
+	Native_Free(&empty);
+	Native_SetNone(&use);
+	Native_SetNone(&text);
+	Mode_Lang("Mission_BuildFirstShip_Tut_Continue", &t);
+	ok = ok && LvN_ModGet("ShipEdit", "UseTxt", &use) && LvN_Arith('%', &t, &use, &text) &&
+		Jy_TypingText(id, "TutorialMsgContinue", &text, 215 + 30);
+	Native_Free(&t);
+	Native_Free(&use);
+	Native_Free(&text);
+	return ok;
 }
 
 /* a step of the tutorial: (when, module, function, item) scheduled as module.function(id, item), when * tf after the
@@ -661,13 +1039,35 @@ typedef struct {
 	const char *item;
 } jyStep_t;
 
-static byte Jy_Steps(scriptFrame_t *f, PyObject *time, double tf, PyObject *id, const jyStep_t *steps) {
-	for (; steps->module && !f->failed; steps++) {
-		int mark = f->n;
-		Sf_Schedule(f, Jy_At(f, time, steps->when, tf), Sf_Mod(f, steps->module, steps->func), Sf_Build(f, "(Os)", id, steps->item), NULL);
-		Sf_Release(f, mark);
+/* Scrap.AddScheduledFunc(time + k, module.func, (id, item)) with item a text value */
+static byte Jy_SchedItem(const nativeVal_t *time, double k, const char *module, const char *func, const nativeVal_t *id,
+	const nativeVal_t *item) {
+	nativeVal_t at = { 0 }, args[2] = { 0 };
+	Native_Copy(&args[0], id);
+	Native_Copy(&args[1], item);
+	byte ok = Jy_At(time, k, &at) && Jy_Sched(&at, module, func, 0, args, 2);
+	Native_Free(&at);
+	Native_Free(&args[0]);
+	Native_Free(&args[1]);
+	return ok;
+}
+
+static byte Jy_SchedItemS(const nativeVal_t *time, double k, const char *module, const char *func, const nativeVal_t *id,
+	const char *item) {
+	nativeVal_t it = { 0 };
+	LvN_Str(&it, item);
+	byte ok = Jy_SchedItem(time, k, module, func, id, &it);
+	Native_Free(&it);
+	return ok;
+}
+
+static byte Jy_Steps(const nativeVal_t *time, double tf, const nativeVal_t *id, const jyStep_t *steps) {
+	for (; steps->module; steps++) {
+		if (!Jy_SchedItemS(time, steps->when * tf, steps->module, steps->func, id, steps->item)) {
+			return 0;
+		}
 	}
-	return !f->failed;
+	return 1;
 }
 
 static const jyStep_t step_hangar[] = {
@@ -715,88 +1115,178 @@ static const jyStep_t step_exit[] = {
 	{ 0, NULL, NULL, NULL },
 };
 
+/* TutorialMsg(id, control, Scrap.GetLangStr(key)) of the module */
+static byte Jy_Msg(const nativeVal_t *a, const char *key) {
+	nativeVal_t t = { 0 };
+	Mode_Lang(key, &t);
+	byte ok = LV_OWN(RF, "TutorialMsg", NULL, "vvv", &a[0], &a[1], &t);
+	Native_Free(&t);
+	return ok;
+}
+
+/* the next step at time + k: EditShipTutorial_Step(id, control, step) */
+static byte Jy_Next(const nativeVal_t *a, const nativeVal_t *time, double k, long step) {
+	nativeVal_t at = { 0 }, args[3] = { 0 };
+	Native_Copy(&args[0], &a[0]);
+	Native_Copy(&args[1], &a[1]);
+	Native_SetInt(&args[2], step);
+	byte ok = Jy_At(time, k, &at) && Jy_Sched(&at, RF, "EditShipTutorial_Step", 1, args, 3);
+	Native_Free(&at);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&args[i]);
+	}
+	return ok;
+}
+
+/* step 0: the ships of the hangars sold one after the other (time moves on per ship) */
+static byte Jy_Recycle(const nativeVal_t *a, nativeVal_t *time, double tf) {
+	if (!Jy_Msg(a, "Mission_BuildFirstShip_Tut_Recycle")) {
+		return 0;
+	}
+	byte ok = 1;
+	for (int n = 0; n < 9 && ok; n++) {
+		nativeVal_t ships = { 0 }, s = { 0 }, num = { 0 }, rep = { 0 }, line = { 0 }, hangar = { 0 };
+		Native_SetNone(&s);
+		Native_SetNone(&line);
+		Native_SetNone(&hangar);
+		ok = LvN_ModGet("ShipEdit", "editedShips", &ships) && LvN_Item(&ships, n, &s);
+		Native_Free(&ships);
+		if (ok && s.type != NV_NONE) {
+			nativeVal_t p = { 0 }, next = { 0 };
+			Native_SetInt(&num, n + 1);
+			Mode_Repr(&num, &rep);
+			LvN_Str(&p, "Recycle Hangar");
+			ok = LvN_Arith('+', &p, &rep, &line);
+			Native_Free(&p);
+			if (ok) {
+				const nativeVal_t *items[1] = { &line };
+				LvN_Str(&p, "Hangar");
+				ok = Mode_Print(items, 1) && LvN_Arith('+', &p, &rep, &hangar) &&
+					Jy_SchedItem(time, 0.0 * tf, "SScorer", "SetDefault", &a[0], &hangar) &&
+					Jy_SchedItem(time, 1.0 * tf, "HangarTab", "SelectItem", &a[0], &hangar) &&
+					Jy_SchedItemS(time, 3.5 * tf, "SScorer", "SetDefault", &a[0], "Sell") &&
+					Jy_SchedItemS(time, 5.0 * tf, "HangarTab", "SellShip", &a[0], "Sell") &&
+					Jy_SchedItem(time, 5.01 * tf, "SScorer", "SetDefault", &a[0], &hangar) && Jy_At(time, 6.5 * tf, &next);
+				Native_Free(&p);
+				if (ok) {
+					Native_Free(time);
+					*time = next;
+				}
+			}
+			Native_Free(&rep);
+		}
+		Native_Free(&s);
+		Native_Free(&line);
+		Native_Free(&hangar);
+	}
+	return ok && Jy_Next(a, time, 1.0 * tf, 1);
+}
+
 /* EditShipTutorial_Step(id, control, step): the message of the step and the clicks of the editor it shows, scheduled
  * (tf 2 s per unit), then the next step */
-static PyObject *Rusty_EditShipTutorial_Step(PyObject *self, PyObject *args) {
+static byte Rusty_EditShipTutorial_Step(const nativeVal_t *a) {
 	static const char *const mods[] = { "Menu", "ShipEdit", "HangarTab", "EnginesTab", "WeaponsTab", "HullTab" };
 	static const char *const msgs[] = { "Mission_BuildFirstShip_Tut_Hangars", "Mission_BuildFirstShip_Tut_Engines",
 		"Mission_BuildFirstShip_Tut_Weapons", "Mission_BuildFirstShip_Tut_Hull", "Mission_BuildFirstShip_Tut_Exit" };
 	static const jyStep_t *const tables[] = { step_hangar, step_engines, step_weapons, step_hull, step_exit };
 	static const double next[] = { 7.5, 8.0, 10.5, 9.5, 0 };
 	const double tf = 2.0;
-	PyObject *id, *control, *step;
-	SF_ARGS("OOO", &id, &control, &step);
+	const nativeVal_t *step = &a[2];
+	nativeVal_t time = { 0 };
 	for (int i = 0; i < 6; i++) {
-		Sf_Import(&f, mods[i]);
-	}
-	PyObject *time = Sf_Time(&f);
-	if (Sf_EqI(&f, step, 0) > 0) {
-		Sf_Own(&f, RF, "TutorialMsg", "(OOO)", id, control, LANG("Mission_BuildFirstShip_Tut_Recycle"));
-		for (int n = 0; n < 9 && !f.failed; n++) {
-			int mark = f.n;
-			if (Sf_Compare(&f, Sf_Item(&f, Sf_Mod(&f, "ShipEdit", "editedShips"), n), "!=", Py_None) > 0) {
-				Sf_Print(&f, "O", Sf_Cat(&f, "sO", "Recycle Hangar", Sf_ReprI(&f, n + 1)));
-				PyObject *hangar = Sf_Cat(&f, "sO", "Hangar", Sf_ReprI(&f, n + 1));
-				Sf_Schedule(&f, Jy_At(&f, time, 0.0, tf), Sf_Mod(&f, "SScorer", "SetDefault"), Sf_Build(&f, "(OO)", id, hangar), NULL);
-				hangar = Sf_Cat(&f, "sO", "Hangar", Sf_ReprI(&f, n + 1));
-				Sf_Schedule(&f, Jy_At(&f, time, 1.0, tf), Sf_Mod(&f, "HangarTab", "SelectItem"), Sf_Build(&f, "(OO)", id, hangar), NULL);
-				Sf_Schedule(&f, Jy_At(&f, time, 3.5, tf), Sf_Mod(&f, "SScorer", "SetDefault"), Sf_Build(&f, "(Os)", id, "Sell"), NULL);
-				Sf_Schedule(&f, Jy_At(&f, time, 5.0, tf), Sf_Mod(&f, "HangarTab", "SellShip"), Sf_Build(&f, "(Os)", id, "Sell"), NULL);
-				hangar = Sf_Cat(&f, "sO", "Hangar", Sf_ReprI(&f, n + 1));
-				Sf_Schedule(&f, Jy_At(&f, time, 5.01, tf), Sf_Mod(&f, "SScorer", "SetDefault"), Sf_Build(&f, "(OO)", id, hangar), NULL);
-				time = Jy_At(&f, time, 6.5, tf);
-				Sf_ReleaseKeep(&f, mark, &time, 1);
-			} else {
-				Sf_Release(&f, mark);
-			}
+		if (!Mode_Import(mods[i])) {
+			return 0;
 		}
-		Sf_Schedule(&f, Jy_At(&f, time, 1.0, tf), G(RF, "EditShipTutorial_Step"), Sf_Build(&f, "(OOi)", id, control, 1), NULL);
 	}
+	Native_SetFloat(&time, Mode_Time());
+	byte ok = !LvN_EqI(step, 0) || Jy_Recycle(a, &time, tf);
 	int which = -1;
-	for (int i = 0; i < 5 && which < 0 && !f.failed; i++) {
-		if (Sf_EqI(&f, step, i + 1) > 0) {
+	for (int i = 0; i < 5 && which < 0 && ok; i++) {
+		if (LvN_EqI(step, i + 1)) {
 			which = i;
 		}
 	}
-	if (which >= 0) {
-		Sf_Own(&f, RF, "TutorialMsg", "(OOO)", id, control, LANG(msgs[which]));
-		Jy_Steps(&f, time, tf, id, tables[which]);
+	if (ok && which >= 0) {
+		ok = Jy_Msg(a, msgs[which]) && Jy_Steps(&time, tf, &a[0], tables[which]);
 		if (which == 3) {
-			for (int i = 0; i < 40 && !f.failed; i++) {
-				int mark = f.n;
-				PyObject *when = Sf_Op(&f, Jy_At(&f, time, 5.5, tf), '+', Sf_Float(&f, i * 0.05 * tf));
-				Sf_Schedule(&f, when, Sf_Mod(&f, "HullTab", "IncrementHull"), Sf_Build(&f, "(Os)", id, "HullUp"), NULL);
-				Sf_Release(&f, mark);
+			nativeVal_t base = { 0 };
+			Native_SetNone(&base);
+			ok = ok && Jy_At(&time, 5.5 * tf, &base);
+			for (int i = 0; i < 40 && ok; i++) {
+				ok = Jy_SchedItemS(&base, i * 0.05 * tf, "HullTab", "IncrementHull", &a[0], "HullUp");
 			}
+			Native_Free(&base);
 		}
-		if (next[which] > 0) {
-			Sf_Schedule(&f, Jy_At(&f, time, next[which], tf), G(RF, "EditShipTutorial_Step"), Sf_Build(&f, "(OOi)", id, control, which + 2),
-				NULL);
+		if (ok && next[which] > 0) {
+			ok = Jy_Next(a, &time, next[which] * tf, which + 2);
 		}
 	}
-	return Sf_None(&f);
+	Native_Free(&time);
+	return ok;
 }
 
+LV_CORE0(Rusty_InitStatus)
+LV_CORE0(Rusty_Init)
+LV_CORE0(Rusty_CreateFakeBertoShip)
+LV_CORE0(Rusty_ShowExtras)
+LV_CORE0(Rusty_StartInitialScene)
+LV_CORE0(Rusty_LoadMecanicFinalScene)
+LV_CORE0(Rusty_FXMecanicFinalSputnik)
+LV_CORE0(Rusty_BertoGoHome)
+LV_COREA(Rusty_BackDownBerto)
+LV_CORE0(Rusty_EndOfBertoBye)
+LV_CORE0(Rusty_StartInitBuildShip)
+LV_CORE0(Rusty_InitBuildShip)
+LV_CORE0(Rusty_EnterEditShipFirstTime)
+LV_COREA(Rusty_NoTutorialEnterEditShip)
+LV_COREA(Rusty_OnEndOfShipEditFirstTime)
+LV_COREA(Rusty_UseElevatorFirstTime)
+LV_CORE0(Rusty_EndOfMission)
+LV_COREA(Rusty_EnterEditShipTutorial)
+LV_COREA(Rusty_TutorialMsgInit)
+LV_COREA(Rusty_EditShipTutorial_Step)
+
+LV_FN(Rusty, InitStatusPy, 1, Rusty_InitStatus_C)
+LV_FN(Rusty, InitPy, 1, Rusty_Init_C)
+LV_FN(Rusty, CreateFakeBertoShipPy, 0, Rusty_CreateFakeBertoShip_C)
+LV_FN(Rusty, ShowExtrasPy, 0, Rusty_ShowExtras_C)
+LV_FN(Rusty, StartInitialScenePy, 1, Rusty_StartInitialScene_C)
+LV_FN(Rusty, LoadMecanicFinalScenePy, 0, Rusty_LoadMecanicFinalScene_C)
+LV_FN(Rusty, FXMecanicFinalSputnikPy, 3, Rusty_FXMecanicFinalSputnik_C)
+LV_FN(Rusty, BertoGoHomePy, 1, Rusty_BertoGoHome_C)
+LV_FN(Rusty, BackDownBertoPy, 1, Rusty_BackDownBerto_C)
+LV_FN(Rusty, EndOfBertoByePy, 1, Rusty_EndOfBertoBye_C)
+LV_FN(Rusty, StartInitBuildShipPy, 0, Rusty_StartInitBuildShip_C)
+LV_FN(Rusty, InitBuildShipPy, 0, Rusty_InitBuildShip_C)
+LV_FN(Rusty, EnterEditShipFirstTimePy, 4, Rusty_EnterEditShipFirstTime_C)
+LV_FN(Rusty, NoTutorialEnterEditShipPy, 2, Rusty_NoTutorialEnterEditShip_C)
+LV_FN(Rusty, OnEndOfShipEditFirstTimePy, 2, Rusty_OnEndOfShipEditFirstTime_C)
+LV_FN(Rusty, UseElevatorFirstTimePy, 4, Rusty_UseElevatorFirstTime_C)
+LV_FN(Rusty, EndOfMissionPy, 1, Rusty_EndOfMission_C)
+LV_FN(Rusty, EnterEditShipTutorialPy, 2, Rusty_EnterEditShipTutorial_C)
+LV_FN(Rusty, TutorialMsgInitPy, 2, Rusty_TutorialMsgInit_C)
+LV_FN(Rusty, EditShipTutorial_StepPy, 3, Rusty_EditShipTutorial_Step_C)
+
 PyMethodDef g_JunkyardRustyFirstContactMethods[] = {
-	{ "InitStatus", Rusty_InitStatus, METH_VARARGS, NULL },
-	{ "Init", Rusty_Init, METH_VARARGS, NULL },
-	{ "CreateFakeBertoShip", Rusty_CreateFakeBertoShip, METH_VARARGS, NULL },
-	{ "ShowExtras", Rusty_ShowExtras, METH_VARARGS, NULL },
-	{ "StartInitialScene", Rusty_StartInitialScene, METH_VARARGS, NULL },
-	{ "LoadMecanicFinalScene", Rusty_LoadMecanicFinalScene, METH_VARARGS, NULL },
-	{ "FXMecanicFinalSputnik", Rusty_FXMecanicFinalSputnik, METH_VARARGS, NULL },
-	{ "BertoGoHome", Rusty_BertoGoHome, METH_VARARGS, NULL },
-	{ "BackDownBerto", Rusty_BackDownBerto, METH_VARARGS, NULL },
-	{ "EndOfBertoBye", Rusty_EndOfBertoBye, METH_VARARGS, NULL },
-	{ "StartInitBuildShip", Rusty_StartInitBuildShip, METH_VARARGS, NULL },
-	{ "InitBuildShip", Rusty_InitBuildShip, METH_VARARGS, NULL },
-	{ "EnterEditShipFirstTime", Rusty_EnterEditShipFirstTime, METH_VARARGS, NULL },
-	{ "NoTutorialEnterEditShip", Rusty_NoTutorialEnterEditShip, METH_VARARGS, NULL },
-	{ "OnEndOfShipEditFirstTime", Rusty_OnEndOfShipEditFirstTime, METH_VARARGS, NULL },
-	{ "UseElevatorFirstTime", Rusty_UseElevatorFirstTime, METH_VARARGS, NULL },
-	{ "EndOfMission", Rusty_EndOfMission, METH_VARARGS, NULL },
-	{ "EnterEditShipTutorial", Rusty_EnterEditShipTutorial, METH_VARARGS, NULL },
-	{ "TutorialMsgInit", Rusty_TutorialMsgInit, METH_VARARGS, NULL },
-	{ "EditShipTutorial_Step", Rusty_EditShipTutorial_Step, METH_VARARGS, NULL },
+	{ "InitStatus", Rusty_InitStatusPy, METH_VARARGS, NULL },
+	{ "Init", Rusty_InitPy, METH_VARARGS, NULL },
+	{ "CreateFakeBertoShip", Rusty_CreateFakeBertoShipPy, METH_VARARGS, NULL },
+	{ "ShowExtras", Rusty_ShowExtrasPy, METH_VARARGS, NULL },
+	{ "StartInitialScene", Rusty_StartInitialScenePy, METH_VARARGS, NULL },
+	{ "LoadMecanicFinalScene", Rusty_LoadMecanicFinalScenePy, METH_VARARGS, NULL },
+	{ "FXMecanicFinalSputnik", Rusty_FXMecanicFinalSputnikPy, METH_VARARGS, NULL },
+	{ "BertoGoHome", Rusty_BertoGoHomePy, METH_VARARGS, NULL },
+	{ "BackDownBerto", Rusty_BackDownBertoPy, METH_VARARGS, NULL },
+	{ "EndOfBertoBye", Rusty_EndOfBertoByePy, METH_VARARGS, NULL },
+	{ "StartInitBuildShip", Rusty_StartInitBuildShipPy, METH_VARARGS, NULL },
+	{ "InitBuildShip", Rusty_InitBuildShipPy, METH_VARARGS, NULL },
+	{ "EnterEditShipFirstTime", Rusty_EnterEditShipFirstTimePy, METH_VARARGS, NULL },
+	{ "NoTutorialEnterEditShip", Rusty_NoTutorialEnterEditShipPy, METH_VARARGS, NULL },
+	{ "OnEndOfShipEditFirstTime", Rusty_OnEndOfShipEditFirstTimePy, METH_VARARGS, NULL },
+	{ "UseElevatorFirstTime", Rusty_UseElevatorFirstTimePy, METH_VARARGS, NULL },
+	{ "EndOfMission", Rusty_EndOfMissionPy, METH_VARARGS, NULL },
+	{ "EnterEditShipTutorial", Rusty_EnterEditShipTutorialPy, METH_VARARGS, NULL },
+	{ "TutorialMsgInit", Rusty_TutorialMsgInitPy, METH_VARARGS, NULL },
+	{ "EditShipTutorial_Step", Rusty_EditShipTutorial_StepPy, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
