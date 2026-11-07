@@ -413,4 +413,101 @@ byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t
 /* Scrap.Set(name, Scrap.Def(name)): the engine variable back to its default */
 byte Mode_GVarSetDef(const char *name);
 
+/* ---- the native level files of batch H (Commercial, Police, Press) ---- */
+
+/* SScorer.Set(0, item, var, v) and the same with an int, through the seam */
+byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v);
+byte Mode_Set0I(const char *item, const char *var, long i);
+/* Scorer.MissionScorerText_X + d, Scorer.MissionScorerText_Y + d (d 0: the value itself) */
+byte Mode_TextX(long d, nativeVal_t *out);
+byte Mode_TextY(long d, nativeVal_t *out);
+/* a text of a mission scorer as the missions set it (Sf_MissionText on values): SScorer.Add(id, item, type) (type NULL:
+ * none), X, Y, Font, Effect (NULL: none), Text, Align, the colour Scorer.MissionScorerText_Color and Visible (NULL: none) */
+byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
+	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible);
+/* the sprite behind a number of a mission scorer (Sf_MissionSprite on values): Add, X, Y, ScaleX 30, ScaleY 19, Unit 1,
+ * Alpha, Red, Green, Blue */
+byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, long alpha, long r,
+	long g, long b);
+/* Scorer.MissionScorerBar_SetDefaults(id, item, the back colour of Scorer, main, black); NULL main or black: the colours
+ * of Scorer (OBJLIB 3) */
+byte Mode_BarDefaults(const nativeVal_t *id, const char *item, const nativeVal_t *main, const nativeVal_t *black);
+/* import PhoneCab; pc = PhoneCab.GetFree() (the global pc of pcModule right after when given), pc.UseFunc = use and the
+ * cab as the mission target (targetFirst: the target before the UseFunc): the cab into out (NULL: dropped) */
+byte Mode_PhoneCab(const char *use, byte targetFirst, const char *pcModule, nativeVal_t *out);
+/* a ship at a free spawn point: SpwPos = OutMap.GetFreeSpawnPos() (nearest: GetNearestFreeSpawnPos()); Scrap.CreateEntity(
+ * name, SpwPos[0] (nearest: SpwPos) [0], [1], [2], "Car") through its seam: the handle into out, SpwPos into spw (NULL:
+ * dropped) */
+byte Mode_SpawnCar(const char *name, byte nearest, nativeVal_t *out, nativeVal_t *spw);
+/* a mission item dropped at pos (money, amplifier, data, matrix): the model and radius are globals of module (radius
+ * NULL: 3500), with the take sound and a mission arrow above it named arrow (NULL: the item's name + "CheckArrow") */
+byte Mode_Drop(const char *module, const nativeVal_t *pos, const char *name, const char *model, const char *radius, long onlyUser,
+	const char *onTake, const char *sound, const char *arrow);
+/* a mission item taken: itm.rTime = 20, its Del 5 s later, its arrow deleted now (the names of both) */
+byte Mode_Taken(const nativeVal_t *item, const nativeVal_t *arrow);
+/* InitStatus of an outdoor map while the boss controls the robots: police and traffic 5 (comSats: none when the level
+ * Init.UpperMap is in ComSatsMissionsMapsFinished, and OutPolice.PoliceActive = 0), no ships of the traffic */
+byte Mode_BossTraffic(byte comSats);
+/* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar("Traffic.AcShips"))
+ * in the globals of module */
+byte Mode_AcShips(const char *module, const char *ships);
+/* Scrap.DelSaveVars(prefix) through its seam (fr7b.py records it) */
+byte Mode_DelSaveVars(const char *prefix);
+/* del name of a global of the module (the NameError of the script when it is not there) */
+byte Mode_DelGlobal(const char *module, const char *name);
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args[, name]) with delay a value of the script and func the
+ * global of module (its NameError; OBJLIB 4) */
+byte Mode_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
+/* Scrap.TestLine(from, to, list) through its seam (fc-r6b-cm1 records it), else Mode_TestLine */
+byte Mode_TestLineSeam(const nativeVal_t *from, const nativeVal_t *to, const nativeVal_t *list, nativeVal_t *out);
+/* `lst = eval(Scrap.GetSaveVar(var)); if not (item in lst): lst.append(item); Scrap.SetSaveVar(var, `lst`)` */
+byte Mode_SaveAdd(const char *module, const char *var, const char *item);
+/* a blueprint of a list of the hangar: Mode_SaveAdd of item, and when it was new the message msg (NULL: none; delay:
+ * RaceMaker.ShowSystemMessageDelay(text, 0.25), else import RaceMaker; RaceMaker.ShowSystemMessage(text)) and
+ * NewBluePrintAvaliable + 1 */
+byte Mode_Blueprint(const char *module, const char *var, const char *item, const char *msg, byte delay);
+/* SScorer.SetMsgText(cad, Scrap.GetTime() + Speech.CalculateSpeechTime(cad)) */
+byte Mode_SpeechMsg(const nativeVal_t *cad);
+/* the colour Scorer.MissionScorerText_Color of a scorer item: SScorer.Set(id, item, "Red", colour[0]) and Green, Blue,
+ * Alpha */
+byte Mode_TextColour(const nativeVal_t *id, const char *item);
+/* module.name(args..., **kw) with keyword arguments (OBJLIB 3: the calls with keywords stay Python): the n native
+ * arguments and kw a new reference to the dict that the call takes over (NULL: its error is set); the result into out
+ * (NULL: dropped) */
+byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const nativeVal_t *args, int n, PyObject *kw);
+/* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5: the group lists of GateKeeper keep
+ * their identity) */
+byte Mode_DoorFoe(const char *gk, const char *group);
+/* SSound.PlaySound(pos, name, volume) through its seam (fr7b.py records it), else Mode_PlaySound */
+byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
+/* Scrap.GetLangStr(key) of a value (the TypeError of "s" for one that is no text) into out */
+byte Mode_LangV(const nativeVal_t *key, nativeVal_t *out);
+/* SAct.CreateClass(name), SAct.GetClass(name) or SAct.CreateAction(name) through their seams (fn the name of the SAct
+ * function; the result dropped) */
+byte Mode_SAct(const char *fn, const char *name);
+/* SAct.SetCls(name, v) (cls 1) or SAct.SetAct(name, v) through their seams, v the text s or the int i for s NULL */
+byte Mode_SActSet(byte cls, const char *name, const char *s, long i);
+/* the same with v = Init.Path + rest (the files in the folder of the level) */
+byte Mode_PathSet(byte cls, const char *name, const char *rest);
+/* Scrap.CreateEntity(dummy[0], dummy[1][0], dummy[1][1], dummy[1][2], type) through its seam, then e.Ang = (dummy[2][0],
+ * dummy[2][1], 0): the handle into e */
+byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e);
+/* the crazy gambler's call after a mission (unless the save variable SuperDeal.Library is SuperDeal_Twelfth):
+ * Speech.AddRemoteCom(msgs[n], "CrazyGambler") for n = MissionsFuncs.GetNumCrazyDealCompleted() from 0 to 3 */
+byte Mode_CGCalls(const char *const *msgs);
+/* module.var.append(name) with name the global of gmod (a function; OBJLIB 5: the list of another module changed in
+ * place) */
+byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name);
+/* the global name of module = name op v of the script (op of Native_Arith: '+', '-', ...), and with an int i */
+byte Mode_GOp(const char *module, const char *name, char op, const nativeVal_t *v);
+byte Mode_GOpI(const char *module, const char *name, char op, long i);
+
+/* SSound.LoadSound(file) through its seam (fc-r7b-pr1 records it), else Mode_LoadSound */
+byte Mode_LoadSoundSeam(const nativeVal_t *file);
+/* a list or tuple held as one NV_OBJ (it holds handles) turned into a native list or tuple of its items in place (the
+ * items as Native_Arg makes them); any other value stays */
+void Mode_Elems(nativeVal_t *v);
+/* the count of items a loop of the script takes from *v (Native_ForCount) after Mode_Elems */
+int Mode_Loop(nativeVal_t *v);
+
 #endif
