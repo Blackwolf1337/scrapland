@@ -1268,7 +1268,7 @@ static byte Transport_InitCall(void) {
 
 /* SetNextMission(): the cab free again, on to NextMissionData */
 static byte Transport_SetNextMission(void) {
-	return Mode_GSetS(TK, "pc", "UseFunc", "PhoneCab.DefUseAudioCom") && Mode_Target(NULL) && Mode_DelSaveVars("Mission_TransportKiller") &&
+	return LvN_PcDefault(TK) && Mode_Target(NULL) && Mode_DelSaveVars("Mission_TransportKiller") &&
 		Mode_ApplyNext(TK) && Mode_MMDesc("Mission_GetReputation_MissionText1", 1);
 }
 
@@ -1783,7 +1783,7 @@ static byte Merc_SetNextMission(void) {
 	nativeVal_t pc = { 0 };
 	byte ok = Mode_DelSaveVars("MissionState") && Mode_G(IM, "pc", &pc) &&
 		(!Native_True(&pc) || (LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pc, 0L) && LvN_SetI(&pc, "ArrowCanUse", 0))) &&
-		Mode_GSetS(IM, "pc", "UseFunc", "PhoneCab.DefUseAudioCom") && LvN_Next("Mission_ProtectGus", "Commercial", "Mission_ProtectGus_MissionText1") &&
+		LvN_PcDefault(IM) && LvN_Next("Mission_ProtectGus", "Commercial", "Mission_ProtectGus_MissionText1") &&
 		Mode_WayPoint();
 	Native_Free(&pc);
 	return ok;
@@ -2094,7 +2094,7 @@ static byte Rudolph_UsePhoneCab(const nativeVal_t *a) {
 static byte Rudolph_SetNextMission2(void) {
 	static const char *const places[] = { "MayorAtTownHall", "1", "PoliceBossAtPolice", "1", "PoliceBossAtTownHall", "1", "BankMasterAtBank",
 		"1", "Journalist.Humphrey_Defaut", "Press", "Journalist.Betty_Defaut", "Press", "Journalist.Berto_Defaut", "TownHall", NULL };
-	if (!Mode_GSetS(KR, "pc", "UseFunc", "PhoneCab.DefUseAudioCom") || !Mode_Target("") || !Mode_DelSaveVars("KillRudolphMissionData")) {
+	if (!LvN_PcDefault(KR) || !Mode_Target("") || !Mode_DelSaveVars("KillRudolphMissionData")) {
 		return 0;
 	}
 	Mode_Saves(places);
@@ -3337,7 +3337,7 @@ static byte Traitorius_UsePhoneCab(const nativeVal_t *a) {
 static byte Traitorius_SetNextMission(void) {
 	static const char *const places[] = { "MayorAtTownHall", "1", "BankMasterAtBank", "1", "Journalist.Humphrey_Defaut", "Police",
 		"Journalist.Betty_Defaut", "Police", "Journalist.Berto_Defaut", "TownHall", NULL };
-	if (!Mode_GSetS(AT, "pc", "UseFunc", "PhoneCab.DefUseAudioCom") || !Mode_Target("") || !Mode_DelSaveVars("TraitoriusFrightened") ||
+	if (!LvN_PcDefault(AT) || !Mode_Target("") || !Mode_DelSaveVars("TraitoriusFrightened") ||
 		!LvN_Next("Mission_BeatPickus", "Police", "Mission_FlowerPower_MissionText1")) {
 		return 0;
 	}

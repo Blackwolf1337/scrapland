@@ -2976,7 +2976,7 @@ static byte Steal_UsePhoneCab(const nativeVal_t *a) {
 static byte Steal_SetNextMission(void) {
 	static const char *const places[] = { "MayorAtTownHall", "1", "PoliceBossAtPolice", "1", "PoliceBossAtTownHall", "0", "BankMasterAtBank", "1",
 		"Journalist.Humphrey_Defaut", "GamblinDen", "Journalist.Betty_Defaut", "Press", "Journalist.Berto_Defaut", "GamblinDen", NULL };
-	byte ok = Mode_GSetS(SM, "pc", "UseFunc", "PhoneCab.DefUseAudioCom") && LvN_ModNone("Speech", "OnOutOfRange") && Mode_Target("") &&
+	byte ok = LvN_PcDefault(SM) && LvN_ModNone("Speech", "OnOutOfRange") && Mode_Target("") &&
 		Mode_DelSaveVars("NumCopsKilled") && Mode_WayPoint() && LvN_Next("Mission_ThreeStooges", "GamblinDen", "Mission_FirstContactMercs_MissionText1");
 	if (ok) {
 		Mode_Saves(places);

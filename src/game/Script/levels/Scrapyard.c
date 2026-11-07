@@ -55,25 +55,6 @@ static int Sy_CmpNone(const nativeVal_t *a, const char *op) {
 	return Mode_Cmp(a, op, &b);
 }
 
-/* the global name of module op i (a missing global: its NameError, -1) */
-static int Sy_GCmpI(const char *module, const char *name, const char *op, long i) {
-	nativeVal_t v = { 0 };
-	int r = Mode_G(module, name, &v) ? Mode_CmpI(&v, op, i) : -1;
-	Native_Free(&v);
-	return r;
-}
-
-/* the global name of module = name op i of the script ('+', '-', ...) */
-static byte Sy_GOp(const char *module, const char *name, char op, long i) {
-	nativeVal_t v = { 0 }, n = { 0 }, r = { 0 };
-	Native_SetInt(&n, i);
-	Native_SetNone(&r);
-	byte ok = Mode_G(module, name, &v) && Native_Arith(op, &v, &n, &r) && Mode_Put(module, name, NULL, &r);
-	Native_Free(&v);
-	Native_Free(&r);
-	return ok;
-}
-
 /* the global name of module = i, = None, = v */
 static byte Sy_PutNone(const char *module, const char *name) {
 	nativeVal_t v = { 0 };
@@ -209,20 +190,6 @@ static byte Sy_DummyStart(const nativeVal_t *name) {
 	return 1;
 }
 
-/* apply(MissionsFuncs.SetNextMission, NextMissionData) with the global of module (OBJLIB 3: __builtin__.apply by name,
- * its TypeError) */
-static byte Sy_ApplyNext(const char *module) {
-	nativeVal_t data = { 0 };
-	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_G(module, "NextMissionData", &data) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data);
-	Native_Free(&data);
-	Py_DECREF(fn);
-	return ok;
-}
-
 /* `usr and name == usr.Name` of the triggers (MapTriggers' order of the compare) */
 static int Sy_UsrIs(const nativeVal_t *usr, const nativeVal_t *name) {
 	nativeVal_t n = { 0 };
@@ -258,91 +225,6 @@ static byte Sy_NearestParked(const nativeVal_t *pos, nativeVal_t *out) {
 }
 
 /* the native lines of LevelCommon's frame helpers (Lv_X) this file needs */
-
-/* SpwPos = OutMap.GetNearestFreeSpawnPos() (nearest) or OutMap.GetFreeSpawnPos(); Scrap.CreateEntity(name, the three
- * numbers of SpwPos, of SpwPos[0] else, "Car") through its seam: the handle (Lv_SpawnCar) */
-static byte Sy_SpawnCar(const char *name, byte nearest, nativeVal_t *out) {
-	nativeVal_t s = { 0 }, p = { 0 }, n = { 0 };
-	Native_SetNone(&s);
-	Native_SetNone(&p);
-	Native_SetNone(out);
-	if (!LV_CALL("OutMap", nearest ? "GetNearestFreeSpawnPos" : "GetFreeSpawnPos", &s, "")) {
-		return 0;
-	}
-	LvN_Str(&n, name);
-	byte ok = (nearest || LvN_Item(&s, 0, &p)) && LvN_CreateAt(&n, nearest ? &s : &p, "Car", out);
-	Native_Free(&n);
-	Native_Free(&s);
-	Native_Free(&p);
-	return ok;
-}
-
-/* pc.UseFunc = "PhoneCab.DefUseAudioCom" with pc the global of module (Lv_PcDefault) */
-static byte Sy_PcDefault(const char *module) {
-	return Mode_GSetS(module, "pc", "UseFunc", "PhoneCab.DefUseAudioCom");
-}
-
-/* pc = PhoneCab.GetFree() (the global pc of pcModule when given), the target, its use (before the target unless
- * targetFirst) (Lv_PhoneCab) */
-static byte Sy_PhoneCab(const char *use, byte targetFirst, const char *pcModule) {
-	nativeVal_t pc = { 0 };
-	Native_SetNone(&pc);
-	byte ok = Mode_Import("PhoneCab") && LV_CALL("PhoneCab", "GetFree", &pc, "") && (!pcModule || Mode_Put(pcModule, "pc", NULL, &pc)) &&
-		(targetFirst || LvN_SetS(&pc, "UseFunc", use)) && Sy_TargetName(&pc) && (!targetFirst || LvN_SetS(&pc, "UseFunc", use));
-	Native_Free(&pc);
-	return ok;
-}
-
-/* the blueprint item into the save list var (the global eval of module) when it is not there: the system message of
- * msg (delayed or not, none for NULL) and NewBluePrintAvaliable (Lv_Blueprint) */
-static byte Sy_Blueprint(const char *module, const char *var, const char *item, const char *msg, byte delay) {
-	nativeVal_t lst = { 0 }, it = { 0 }, text = { 0 };
-	LvN_Str(&it, item);
-	Native_SetNone(&text);
-	byte ok = LvN_SaveList(var, module, &lst);
-	int in = ok ? Native_Contains(&lst, &it) : -1;
-	ok = in >= 0;
-	if (in == 0) {
-		ok = LvN_SaveAppend(var, &lst, &it);
-		if (ok && msg) {
-			Mode_Lang(msg, &text);
-			ok = delay ? LV_CALL("RaceMaker", "ShowSystemMessageDelay", NULL, "vd", &text, 0.25) :
-				Mode_Import("RaceMaker") && LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
-		}
-		if (ok) {
-			SaveVar_Inc("NewBluePrintAvaliable", 1);
-		}
-	}
-	Native_Free(&lst);
-	Native_Free(&it);
-	Native_Free(&text);
-	return ok;
-}
-
-/* the traffic of the levels whose robots the boss controls: none (comSats: also no police when the level's comsats
- * mission is done) (Lv_BossTraffic) */
-static byte Sy_BossTraffic(byte comSats) {
-	static const char *const none[] = { NULL };
-	int done = 0;
-	if (comSats) {
-		nativeVal_t upper = { 0 }, lst = { 0 };
-		Native_SetNone(&lst);
-		done = LvN_ModGet("Init", "UpperMap", &upper) && LvN_SaveList("ComSatsMissionsMapsFinished", "Map", &lst) ?
-			Native_Contains(&lst, &upper) : -1;
-		Native_Free(&upper);
-		Native_Free(&lst);
-		if (done < 0) {
-			return 0;
-		}
-	}
-	if (done ? !Mode_GVarSetI("MaxChasingShips", 0) || !Mode_GVarSetI("iTrafficNumber", 0) || !LvN_ModSetI("OutPolice", "PoliceActive", 0) :
-		!Mode_GVarSetI("iTrafficNumber", 5) || !Mode_GVarSetI("MaxChasingShips", 5)) {
-		return 0;
-	}
-	return LvN_ModTexts("Traffic", "AcNormalShips", none) && LvN_ModSetI("Traffic", "NumNormal", 0) &&
-		LvN_ModTexts("Traffic", "AcMediumShips", none) && LvN_ModSetI("Traffic", "NumMedium", 0) &&
-		LvN_ModTexts("Traffic", "AcHeavyShips", none) && LvN_ModSetI("Traffic", "NumHeavy", 0);
-}
 
 /* raise v of the script after import module (the do_raise of ceval without value and traceback): a text is a string
  * exception, a tuple raises its first item, a class or an instance (OBJLIB 7: Python objects) as Python raises them,
@@ -440,7 +322,7 @@ static byte Map_InitStatusN(void) {
 		return 0;
 	}
 	if (LvN_SaveIs("RobotsControlledByBoss", "1")) {
-		if (!Sy_BossTraffic(0)) {
+		if (!Mode_BossTraffic(0)) {
 			return 0;
 		}
 	} else if (!Mode_GVarSetI("iTrafficNumber", 4) || !Mode_GVarSetI("MaxChasingShips", -1) || !LvN_ModTexts("Traffic", "AcNormalShips", normal) ||
@@ -658,7 +540,7 @@ static const mtTaken_t mt_madhunter_taken = { "shipsAllowedToLaunchMadHunters", 
 static byte MT_CreateShipN(const nativeVal_t *lair, const char *name, const char *profile, const char *list, long money, byte cadence) {
 	nativeVal_t o = { 0 }, pd = { 0 };
 	Native_SetNone(&pd);
-	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Sy_SpawnCar(name, 0, &o) && LvN_StdProfile(MT, profile, &o, &pd) &&
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar(name, 0, &o, NULL) && LvN_StdProfile(MT, profile, &o, &pd) &&
 		LvN_SetS(&o, "EntityList", list) && LvN_SetS(&o, "TgType", "red") && Mode_VSet(&o, "Pos", lair) &&
 		Mode_VSet(&o, "LLogicLairPos", lair) && LvN_SetI(&o, "Money", money) &&
 		(!cadence || LV_OWN(MT, "CheckMosquitoCadenceShoot", NULL, ""));
@@ -731,7 +613,7 @@ static const syPhone_t am_phone2 = { "Generics_StillPolice1_DeepThroat", "DeepTh
 
 /* DeepThroatCom(): after Traitorius: Deep Throat's message, then the ambush */
 static byte Ambush_DeepThroatComN(void) {
-	return Sy_PcDefault(AM) && LvN_ModNone("Speech", "OnOutOfRange") &&
+	return LvN_PcDefault(AM) && LvN_ModNone("Speech", "OnOutOfRange") &&
 		LvN_Com("Mission_Ambush1_RemoteMessage1", "DeepThroat", AM, "PreLaunchAmbush", LvN_NoArgs());
 }
 
@@ -791,7 +673,7 @@ static byte Ambush_CreateProbeN(void) {
 static byte Ambush_CreateMadHunterN(void) {
 	nativeVal_t m = { 0 }, pd = { 0 };
 	Native_SetNone(&pd);
-	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Sy_SpawnCar("Traffic", 0, &m) &&
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("Traffic", 0, &m, NULL) &&
 		LvN_StdProfile(AM, "GetMadHuntersProfile", &m, &pd) && LvN_SetS(&m, "EntityList", "Enemies") && LvN_Life(&m, AM, "MADHUNTER_LIFE");
 	Native_Free(&m);
 	Native_Free(&pd);
@@ -824,7 +706,7 @@ static byte Ambush_OnProbeDeathN(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *first = Mode_V(&t), *m1 = Mode_V(&t), *next = Mode_V(&t), *m2 = Mode_V(&t), *n = Mode_V(&t), *d = Mode_V(&t);
 	nativeVal_t *r = Mode_V(&t), *pre = Mode_V(&t), *key = Mode_V(&t), *four = Mode_V(&t);
-	if (!Sy_OnDeath(&a[0], &a[1]) || !Sy_GOp(AM, "numProbes", '-', 1) || !Mode_ListGet("Enemies", "First", first) ||
+	if (!Sy_OnDeath(&a[0], &a[1]) || !Mode_GOpI(AM, "numProbes", '-', 1) || !Mode_ListGet("Enemies", "First", first) ||
 		!Mode_EntityH(first, m1)) {
 		return Mode_Done(&t, 0);
 	}
@@ -862,7 +744,7 @@ static byte Ambush_PreCallDeepThroatN(void) {
 }
 
 static byte Ambush_SetNextMissionN(void) {
-	if (!Sy_PcDefault(AM)) {
+	if (!LvN_PcDefault(AM)) {
 		return 0;
 	}
 	SaveVars_Delete("NumProbes");
@@ -873,7 +755,7 @@ static byte Ambush_SetNextMissionN(void) {
 MODE_FN(Ambush, GetMadHuntersProfile, 0, LvN_Profile(am_madhunters_profile, out))
 MODE_FN(Ambush, InitStatus, 1, Ambush_InitStatusN())
 MODE_FN(Ambush, Init, 1, Ambush_InitN())
-MODE_FN(Ambush, CallTraitorius, 0, Sy_PhoneCab("Mission_Ambush.UsePhoneCab", 1, NULL))
+MODE_FN(Ambush, CallTraitorius, 0, Mode_PhoneCab("Mission_Ambush.UsePhoneCab", 1, NULL, NULL))
 MODE_FN(Ambush, UsePhoneCab, 4, Sy_UsePhone(a, AM, &am_phone1))
 MODE_FN(Ambush, DeepThroatCom, 0, Ambush_DeepThroatComN())
 MODE_FN(Ambush, IsValidPos, 2, Ambush_IsValidPosN(a, out))
@@ -882,7 +764,7 @@ MODE_FN(Ambush, CreateMadHunter, 0, Ambush_CreateMadHunterN())
 MODE_FN(Ambush, CreateMadHunters, 0, Ambush_CreateMadHuntersN())
 MODE_FN(Ambush, OnProbeDeath, 2, Ambush_OnProbeDeathN(a))
 MODE_FN(Ambush, PreCallDeepThroat, 0, Ambush_PreCallDeepThroatN())
-MODE_FN(Ambush, CallDeepThroat, 0, Sy_PhoneCab("Mission_Ambush.UsePhoneCab2", 1, NULL))
+MODE_FN(Ambush, CallDeepThroat, 0, Mode_PhoneCab("Mission_Ambush.UsePhoneCab2", 1, NULL, NULL))
 MODE_FN(Ambush, UsePhoneCab2, 4, Sy_UsePhone(a, AM, &am_phone2))
 MODE_FN(Ambush, SetNextMission, 0, Ambush_SetNextMissionN())
 
@@ -977,7 +859,7 @@ static byte Gambler_LaunchTauntsN(void) {
 static byte Gambler_CreateMosquitoN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *o1 = Mode_V(&t), *pd = Mode_V(&t), *ammo = Mode_V(&t), *g = Mode_V(&t), *r = Mode_V(&t), *name = Mode_V(&t);
-	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Sy_SpawnCar("Traffic", 1, o1) &&
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("Traffic", 1, o1, NULL) &&
 		LvN_StdProfile(CG, "GetMosquitoProfile", o1, pd) && LvN_SetS(o1, "EntityList", "Enemies");
 	if (ok) {
 		Sy_AmmoMax(ammo);
@@ -1021,7 +903,7 @@ static byte Gambler_CreateMosquitosN(void) {
 static byte Gambler_CreateCrazyGamblerN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *h = Mode_V(&t), *pd = Mode_V(&t), *pilot = Mode_V(&t), *name = Mode_V(&t), *g = Mode_V(&t);
-	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Sy_SpawnCar("CrazyGambler", 1, h) &&
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("CrazyGambler", 1, h, NULL) &&
 		LvN_StdProfile(CG, "GetCrazyGamblerProfile", h, pd) && LvN_SetI(h, "LaunchTaunts", 0) && Mode_G(CG, "pilotName", pilot) &&
 		Mode_VSet(h, "MPil0", pilot) && LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") &&
 		LvN_Life(h, CG, "CRAZY_GAMBLER_LIFE") && Mode_VGet(h, "Name", name) && Mode_Put(CG, "crazyGamblerName", NULL, name) &&
@@ -1372,7 +1254,7 @@ static byte Dtritus_ActivateMissionObjectsN(const nativeVal_t *status) {
 static byte Dtritus_CreateBadGuyN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *bad = Mode_V(&t), *pd = Mode_V(&t), *ship = Mode_V(&t), *pos = Mode_V(&t);
-	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Sy_SpawnCar("TheBadGuy", 0, bad) &&
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("TheBadGuy", 0, bad, NULL) &&
 		LV_OWN(FD, "SetLonelyMercProfile", pd, "") && Mode_VGet(pd, "Ship", ship) && LV_CALL("VehiclesNPC", "SetIAProf", NULL, "vv", bad, ship) &&
 		LV_CALL("OutMap", "GetNearestFreeSpawnPos", pos, "") && (!Native_True(pos) || Mode_VSet(bad, "Pos", pos)) &&
 		LvN_SetS(bad, "EntityList", "Enemies") && LvN_Life(bad, FD, "LONELY_MERC_LIFE");
@@ -1470,7 +1352,7 @@ static byte Dtritus_TakePlanPhotoN(const nativeVal_t *name, nativeVal_t *out) {
 	for (int i = 0; ok && i < 3; i++) {
 		int eq = Sy_CmpS(dummyName, "==", bp[i][0]);
 		if (eq) {
-			ok = eq > 0 && Sy_Blueprint(FD, bp[i][1], bp[i][2], bp[i][3], 1);
+			ok = eq > 0 && Mode_Blueprint(FD, bp[i][1], bp[i][2], bp[i][3], 1);
 			break;
 		}
 	}
@@ -1624,7 +1506,7 @@ static byte Berto_SetNextMissionN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *profile = Mode_V(&t), *life = Mode_V(&t), *r = Mode_V(&t), *chars = Mode_V(&t), *dt = Mode_V(&t);
 	const char *s;
-	if (!Mode_Import("Parking") || !Sy_PcDefault(MB)) {
+	if (!Mode_Import("Parking") || !LvN_PcDefault(MB)) {
 		return Mode_Done(&t, 0);
 	}
 	SaveVar_Set("CreateBertos", "1");
@@ -1653,7 +1535,7 @@ static const syPhone_t td_phone = { "Generics_StillPolice1_DeepThroat", "DeepThr
 	"Mission_TalkToDeepThroat10_ComDeepThroat_NI_1Msg", 1, 0 };
 
 static byte Throat_SetNextMissionN(void) {
-	return Sy_PcDefault(TD) && LvN_Next("Mission_DestroyBadDebtors", "Outskirts", "Mission_MeetBankMaster_MissionText1") && Mode_WayPoint();
+	return LvN_PcDefault(TD) && LvN_Next("Mission_DestroyBadDebtors", "Outskirts", "Mission_MeetBankMaster_MissionText1") && Mode_WayPoint();
 }
 
 MODE_FN(Berto, InitStatus, 1, LvN_AcShips(MB, "[\"SMerc1\",\"SMerc2\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBetty1\",\"SArchbishop1\"]"))
@@ -1801,7 +1683,7 @@ static byte Clue_InitMosquitoN(const nativeVal_t *a) {
 static byte Clue_CreateMosquitoN(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *o1 = Mode_V(&t), *pd = Mode_V(&t), *ammo = Mode_V(&t), *w = Mode_V(&t), *r = Mode_V(&t);
-	byte ok = Mode_Import("OutMap") && Sy_SpawnCar("Traffic", 0, o1) && LvN_StdProfile(MC, "GetMosquitoProfile", o1, pd) &&
+	byte ok = Mode_Import("OutMap") && Mode_SpawnCar("Traffic", 0, o1, NULL) && LvN_StdProfile(MC, "GetMosquitoProfile", o1, pd) &&
 		Mode_VSet(o1, "Pos", &a[0]) && LvN_SetS(o1, "EntityList", "Enemies");
 	if (ok) {
 		Sy_AmmoMax(ammo);
@@ -1825,7 +1707,7 @@ static byte Clue_MosquitoDeathN(const nativeVal_t *a) {
 	nativeVal_t *s = Mode_V(&t), *n = Mode_V(&t), *e = Mode_V(&t), *pos = Mode_V(&t), *l = Mode_V(&t), *model = Mode_V(&t);
 	nativeVal_t *l2 = Mode_V(&t);
 	Native_SetInt(money, Mode_GetMoney());
-	byte ok = Sy_GOp(MC, "numMosquitosKilled", '+', 1) && Native_GVarGet("OnMosquitoDeathMoney", bonus) &&
+	byte ok = Mode_GOpI(MC, "numMosquitosKilled", '+', 1) && Native_GVarGet("OnMosquitoDeathMoney", bonus) &&
 		Native_Arith('+', money, bonus, sum) && Mode_SetMoney(sum);
 	if (!ok) {
 		return Mode_Done(&t, 0);
@@ -1879,7 +1761,7 @@ static byte Sy_CallFrom(const char *module, const char *state, const char *value
 
 /* the end of a mission called from a phone cab: the cab's default use, no target, the next mission of the module */
 static byte Sy_PhoneNext(const char *module, const char *desc, const char *del) {
-	if (!Sy_PcDefault(module) || !Mode_Target(NULL) || !Sy_ApplyNext(module) || !Mode_MMDesc(desc, 1L)) {
+	if (!LvN_PcDefault(module) || !Mode_Target(NULL) || !Mode_ApplyNext(module) || !Mode_MMDesc(desc, 1L)) {
 		return 0;
 	}
 	SaveVars_Delete(del);
@@ -1939,7 +1821,7 @@ static byte Sy_NextWaypoint(const char *module, byte again) {
 	nativeVal_t wps = { 0 }, i = { 0 }, pos = { 0 }, name = { 0 };
 	Native_SetNone(&pos);
 	byte ok = Mode_G(module, "MercWaypoints", &wps) && Mode_G(module, "iWaypoint", &i) && Native_Subscript(&wps, &i, &pos) &&
-		Mode_G(module, "MercName", &name) && Sy_StateTo(&name, &pos, NULL, again) && Sy_GOp(module, "iWaypoint", '+', 1);
+		Mode_G(module, "MercName", &name) && Sy_StateTo(&name, &pos, NULL, again) && Mode_GOpI(module, "iWaypoint", '+', 1);
 	Native_Free(&wps);
 	Native_Free(&i);
 	Native_Free(&pos);
@@ -2012,14 +1894,14 @@ static byte Sy_GotoNextN(const char *module, byte again) {
 			if (third > 0) {
 				ok = LV_OWN(module, "CreateMercs", NULL, "");
 			} else if (third == 0) {
-				int hint = Sy_GCmpI(module, "iWaypoint", ">", 1);
+				int hint = Mode_GCmpI(module, "iWaypoint", ">", 1);
 				ok = hint >= 0 && (!hint || Sy_Hint(module));
 			}
 			if (!ok || !Sy_NextWaypoint(module, again)) {
 				return Mode_Done(&t, 0);
 			}
 		} else if (go == 0) {
-			int hint = Sy_GCmpI(module, "iWaypoint", ">", 1);
+			int hint = Mode_GCmpI(module, "iWaypoint", ">", 1);
 			if (hint > 0) {
 				hint = LvN_GTrue(module, "FirstHint");
 			}
@@ -2244,7 +2126,7 @@ static byte Merc_OnStupidMercDamageN(const nativeVal_t *a) {
 	}
 	Native_Free(life);
 	int c = Mode_VGet(e, "Life", life) && Native_Arith('-', life, &a[2], left) && Mode_Put(SM, "mercLife", NULL, left) ?
-		Sy_GCmpI(SM, "mercLife", ">", 0) : -1;
+		Mode_GCmpI(SM, "mercLife", ">", 0) : -1;
 	byte ok = c == 0 || (c > 0 && Mode_VGet(item, "Pos", pos) && Mode_VGet(item, "Radius", radius) &&
 		Mode_Put(SM, "mercName", NULL, &a[0]) && LvN_PutI(SM, "gettingLife", 1) && Sy_StateTo(&a[0], pos, radius, 0));
 	return Mode_Done(&t, ok);
@@ -2341,7 +2223,7 @@ static byte Merc_AddATPCPlansN(const nativeVal_t *name, nativeVal_t *out) {
 		return c == 0;
 	}
 	Native_SetNone(&text);
-	byte ok = Sy_Blueprint(SM, "Hangar.availableWeaponsList", "ATPC", NULL, 0) && Mode_G(SM, "ATPCPlansName", &pn) &&
+	byte ok = Mode_Blueprint(SM, "Hangar.availableWeaponsList", "ATPC", NULL, 0) && Mode_G(SM, "ATPCPlansName", &pn) &&
 		Mode_EntityH(&pn, &e) && LvN_SetI(&e, "CanPhoto", 0) && LvN_ModNone("CharAct", "TakenPhoto") && Mode_Target(NULL) &&
 		(Mode_Lang("Mission_FollowStupidMerc_SystemMessage1", &text), LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text)) &&
 		LvN_Com("Mission_FollowStupidMerc_RemoteMessage7", "DeepThroat", SM, "SetNextMission", LvN_NoArgs());
@@ -2355,7 +2237,7 @@ static byte Merc_AddATPCPlansN(const nativeVal_t *name, nativeVal_t *out) {
 }
 
 static byte Merc_SetNextMissionN(void) {
-	return Mode_GVarSetS("OnItemTakenAI", "") && Mode_GVarSetDef("MaxMosquitosDist") && Mode_GVarSetDef("MaxMadHuntersDist") && Sy_ApplyNext(SM) &&
+	return Mode_GVarSetS("OnItemTakenAI", "") && Mode_GVarSetDef("MaxMosquitosDist") && Mode_GVarSetDef("MaxMadHuntersDist") && Mode_ApplyNext(SM) &&
 		Mode_MMDesc("Mission_InvulnerableTransport_MissionText1", 1L);
 }
 
@@ -2450,7 +2332,7 @@ static byte Sa_Merc(const char *var, const char *name, const char *ship) {
 		return Mode_Done(&t, none == 0);
 	}
 	Native_Free(o);
-	byte ok = Sy_SpawnCar(name, 0, o) && LV_OWN(SA, "GetMercsEnemiesProfile", pd, "s", ship) && LvN_StdAI(o, pd) &&
+	byte ok = Mode_SpawnCar(name, 0, o, NULL) && LV_OWN(SA, "GetMercsEnemiesProfile", pd, "s", ship) && LvN_StdAI(o, pd) &&
 		LvN_SetS(o, "EntityList", "Enemies") && LvN_Life(o, SA, "MERCS_LIFE") && Mode_VGet(o, "Name", on) && Mode_Put(SA, var, NULL, on);
 	return Mode_Done(&t, ok);
 }
@@ -2516,8 +2398,8 @@ static byte Again_AddMercPlansN(const nativeVal_t *name, nativeVal_t *out) {
 		Native_True(&r) : -1;
 	Native_Free(&r);
 	Native_Free(&e);
-	byte ok = del == 0 || (del > 0 && Sy_Blueprint(SA, "Hangar.shipsToEditList", "SMerc2", "Mission_FollowStupidMerc_SystemMessage1", 0) &&
-		Sy_Blueprint(SA, "Hangar.availableEnginesList", "MMERC2", "Mission_FollowStupidMerc_SystemMessage2", 0) &&
+	byte ok = del == 0 || (del > 0 && Mode_Blueprint(SA, "Hangar.shipsToEditList", "SMerc2", "Mission_FollowStupidMerc_SystemMessage1", 0) &&
+		Mode_Blueprint(SA, "Hangar.availableEnginesList", "MMERC2", "Mission_FollowStupidMerc_SystemMessage2", 0) &&
 		LvN_ModNone("CharAct", "TakenPhoto") && LvN_Com("Mission_GetMercShipPlans_RemoteMessage3", "MercenaryC", SA, "InitEvasion", LvN_NoArgs()));
 	if (ok && del > 0) {
 		SaveVar_Set("Mission_StupidMercAgain", "Evasion");

@@ -1219,24 +1219,11 @@ static byte FicusBanker_TakeCheck(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* apply(MissionsFuncs.SetNextMission, NextMissionData) of module (OBJLIB 3: __builtin__.apply by name, its TypeError) */
-static byte Pr_ApplyNext(const char *module) {
-	nativeVal_t data;
-	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_G(module, "NextMissionData", &data) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data);
-	Native_Free(&data);
-	Py_DECREF(fn);
-	return ok;
-}
-
 /* SetNextMission(): the race of Multiplus in DownTown is next */
 static byte FicusBanker_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Target(NULL) && Pr_ApplyNext(FB) && Mode_MMDesc("Mission_WinRaceMultiplus_MissionText1", 1) &&
+	return Mode_Target(NULL) && Mode_ApplyNext(FB) && Mode_MMDesc("Mission_WinRaceMultiplus_MissionText1", 1) &&
 		Mode_DelSaveVars("Mission_Police_FicusBanker") && Mode_DelSaveVars("CheckPos");
 }
 

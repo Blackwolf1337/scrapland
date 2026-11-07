@@ -551,6 +551,9 @@ byte Mode_CallIf(const char *module, const char *name, byte *called);
 byte Mode_ApplyNext(const char *module);
 /* a op the global name of the module: 1, 0, -1 */
 int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const char *name);
+/* the global name of the module op v, op i: 1, 0, -1 (a missing global: its NameError) */
+int Mode_GCmp(const char *module, const char *name, const char *op, const nativeVal_t *v);
+int Mode_GCmpI(const char *module, const char *name, const char *op, long i);
 /* `usr and usr.IsType("Car")`: 1, 0, -1 */
 int Mode_UsrInCar(const nativeVal_t *usr);
 /* `x in` the global list name: 1, 0, -1 */

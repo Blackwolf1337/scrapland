@@ -2685,6 +2685,19 @@ int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const ch
 	return r;
 }
 
+int Mode_GCmp(const char *module, const char *name, const char *op, const nativeVal_t *v) {
+	nativeVal_t g = { 0 };
+	int r = Mode_G(module, name, &g) ? Mode_Cmp(&g, op, v) : -1;
+	Native_Free(&g);
+	return r;
+}
+
+int Mode_GCmpI(const char *module, const char *name, const char *op, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_GCmp(module, name, op, &v);
+}
+
 /* `usr and usr.IsType("Car")` */
 int Mode_UsrInCar(const nativeVal_t *usr) {
 	return Native_True(usr) ? Mode_VIsType(usr, "Car") : 0;

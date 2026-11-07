@@ -281,6 +281,8 @@ byte LvN_GActivate(const char *module, const char *var, long on);
 byte LvN_Routine(const char *key, const nativeVal_t *fn);
 /* Mode_LaterV with delay a global of module (read first) */
 byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n);
+/* pc.UseFunc = "PhoneCab.DefUseAudioCom" of the global pc of the module: the phone cab back to normal */
+byte LvN_PcDefault(const char *module);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);

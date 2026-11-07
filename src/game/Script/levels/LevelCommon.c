@@ -1394,3 +1394,7 @@ byte LvN_LaterG(const char *module, const char *delay, const char *func, const n
 	Native_Free(&d);
 	return ok;
 }
+
+byte LvN_PcDefault(const char *module) {
+	return Mode_GSetS(module, "pc", "UseFunc", "PhoneCab.DefUseAudioCom");
+}

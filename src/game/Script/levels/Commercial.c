@@ -70,20 +70,6 @@ static int Cm_Scan(const nativeVal_t *e, const nativeVal_t *usr, const char *op)
 	return r;
 }
 
-/* the global name of module op v: 1, 0, -1 */
-static int Cm_GCmp(const char *module, const char *name, const char *op, const nativeVal_t *v) {
-	nativeVal_t g;
-	int r = Mode_G(module, name, &g) ? Mode_Cmp(&g, op, v) : -1;
-	Native_Free(&g);
-	return r;
-}
-
-static int Cm_GCmpI(const char *module, const char *name, const char *op, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Cm_GCmp(module, name, op, &v);
-}
-
 /* `usr.IsType("Car")` of the player (None: its AttributeError): 1, 0, -1 */
 static int Cm_UsrCar(const nativeVal_t *usr) {
 	return Mode_VIsType(usr, "Car");
@@ -1006,7 +992,7 @@ static byte Mickus_OnTransportsDeath(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	if (in) {
-		int cur = Mode_Remove(DMK, "transports", &a[0]) ? Cm_GCmp(DMK, "currentScannedShip", "==", &a[0]) : -1;
+		int cur = Mode_Remove(DMK, "transports", &a[0]) ? Mode_GCmp(DMK, "currentScannedShip", "==", &a[0]) : -1;
 		if (cur < 0 || (cur && (!LV_OWN(DMK, "ResetScan", NULL, "") || !LvN_PutS(DMK, "currentScannedShip", "")))) {
 			return 0;
 		}
@@ -1015,7 +1001,7 @@ static byte Mickus_OnTransportsDeath(const nativeVal_t *a, nativeVal_t *out) {
 	if (by <= 0) {
 		return by == 0;
 	}
-	int mk = Mk_Alarm() ? Cm_GCmp(DMK, "mickus", "==", &a[0]) : -1;
+	int mk = Mk_Alarm() ? Mode_GCmp(DMK, "mickus", "==", &a[0]) : -1;
 	if (mk <= 0) {
 		return mk == 0;
 	}
@@ -1272,9 +1258,9 @@ static byte Gus_AttackEachOther(const nativeVal_t *a, nativeVal_t *out) {
 		missing = t < 0 ? -1 : !t;
 	}
 	if (missing > 0) {
-		int go = Cm_GCmpI(PG, "lonelyMercLifes", ">", 0);
+		int go = Mode_GCmpI(PG, "lonelyMercLifes", ">", 0);
 		if (go > 0) {
-			go = Cm_GCmpI(PG, "bishopGusLifes", ">", 0);
+			go = Mode_GCmpI(PG, "bishopGusLifes", ">", 0);
 		}
 		return go >= 0 && (!go || CM_LATER(2, PG, "AttackEachOther", NULL));
 	}
@@ -1322,7 +1308,7 @@ static byte Gus_CreateBishopGus(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&name);
 	byte ok = Pg_Fighter("bishopGus", "BishopGus", "BishopGus", &h) && LvN_SetS(&h, "OnDeath", "Mission_ProtectGus.OnBishopGusDeath") &&
 		LvN_SetI(&h, "Money", -1) && Pg_Life(&h, "BISHOP_GUS_LIFE");
-	int live = ok ? Cm_GCmpI(PG, "lonelyMercLifes", ">", 0) : -1;
+	int live = ok ? Mode_GCmpI(PG, "lonelyMercLifes", ">", 0) : -1;
 	ok = live >= 0 && (!live || (Cm_Activate(&h, 1) && Mode_VGet(&h, "Name", &name) && Cm_Waypoint(&name)));
 	Native_Free(&h);
 	Native_Free(&name);
@@ -1452,11 +1438,6 @@ static byte Gus_SetPhoneCab(const nativeVal_t *a, nativeVal_t *out) {
 CM_PHONE(Gus_UsePhoneCab, PG, "Generics_StillPolice1_DeepThroat", "DeepThroat", "SetNextMission",
 	"Mission_TalkToDeepThroat3b_ComDeepThroat_NI_1Msg", NULL, NULL, 1, 0, 0)
 
-/* the phone cab of the global pc back to normal */
-static byte Cm_PcDefault(const char *module) {
-	return Mode_GSetS(module, "pc", "UseFunc", "PhoneCab.DefUseAudioCom");
-}
-
 /* SetNextMission(): the phone cab back to normal, on to Mission_IntoTheGDB */
 static byte Gus_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const places[] = { "MayorAtTownHall", "0", "BankMasterAtBank", "1", "Journalist.Humphrey_Defaut", "Temple",
@@ -1465,7 +1446,7 @@ static byte Gus_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&pc);
 	(void)a;
 	(void)out;
-	byte ok = Cm_PcDefault(PG) && Mode_G(PG, "pc", &pc) && LvN_SetI(&pc, "ArrowCanUse", 0);
+	byte ok = LvN_PcDefault(PG) && Mode_G(PG, "pc", &pc) && LvN_SetI(&pc, "ArrowCanUse", 0);
 	Native_Free(&pc);
 	if (!ok || !Cm_ActivateG(PG, "pc", 0) || !Mode_DelSaveVars("MissionState") ||
 		!LvN_Next("Mission_IntoTheGDB", "GDB", "Mission_IntoTheGDB_MissionText1")) {
@@ -1799,7 +1780,7 @@ static byte Race_OnCheckPoint(const nativeVal_t *a, nativeVal_t *out) {
 		if (!LvN_ScorerCallG(WR, "MissionScorer")) {
 			return Mode_Done(&t, 0);
 		}
-		int more = Cm_GCmpI(WR, "currentWaypoints", ">", 0);
+		int more = Mode_GCmpI(WR, "currentWaypoints", ">", 0);
 		if (more < 0 || (more && (!Native_GVarGet("TimeSpecialUseTimer", tm) || !Mode_G(WR, "timeIncrement", inc) ||
 			!Native_Arith('+', tm, inc, sum) || !Mode_GVarSet("TimeSpecialUseTimer", sum)))) {
 			return Mode_Done(&t, 0);
@@ -2604,7 +2585,7 @@ static byte Data_PreGetData(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Parking") || !CM_HOOK("Parking", "SwitchVehicleMissionCallback", GD, "InitMission") ||
-		!CM_HOOK("Parking", "SwitchCharMissionCallback", GD, "StopMission") || !Cm_PcDefault(GD)) {
+		!CM_HOOK("Parking", "SwitchCharMissionCallback", GD, "StopMission") || !LvN_PcDefault(GD)) {
 		return 0;
 	}
 	SaveVar_Set("MissionState", "GetData");
@@ -2660,7 +2641,7 @@ static byte Data_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 		"NoPlace", "Journalist.Berto_Defaut", "Press", NULL };
 	(void)a;
 	(void)out;
-	if (!Cm_PcDefault(GD) || !Mode_DelSaveVars("NumData") || !Mode_DelSaveVars("MissionState") ||
+	if (!LvN_PcDefault(GD) || !Mode_DelSaveVars("NumData") || !Mode_DelSaveVars("MissionState") ||
 		!LvN_Next("Mission_DistractHumphrey", "DownTown", "Mission_TalkToHumphrey_MissionText1")) {
 		return 0;
 	}
@@ -3284,7 +3265,7 @@ static byte Porkins_OnMayorTransportDeath(const nativeVal_t *a, nativeVal_t *out
 		return 0;
 	}
 	Native_SetFloat(&zero, 0.0);
-	int neg = Cm_GCmp(PT, "mayorPopularity", "<", &zero);
+	int neg = Mode_GCmp(PT, "mayorPopularity", "<", &zero);
 	if (neg < 0 || (neg && !Mode_Put(PT, "mayorPopularity", NULL, &zero)) || !LV_OWN(PT, "UpdateScorer", NULL, "") ||
 		!LV_OWN(PT, "CreateMayorTransport", NULL, "") || !LvN_GAdd(PT, "numMayorTransportsDeaths", 1, NULL)) {
 		return 0;
@@ -3419,7 +3400,7 @@ static byte Porkins_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t n, chars, mayor;
 	(void)a;
 	(void)out;
-	if (!Cm_PcDefault(PT) || !Mode_DelSaveVars("MissionState")) {
+	if (!LvN_PcDefault(PT) || !Mode_DelSaveVars("MissionState")) {
 		return 0;
 	}
 	byte ok = Mode_G(PT, "currentTrafficNumber", &n) && Mode_GVarSet("iTrafficNumber", &n);
