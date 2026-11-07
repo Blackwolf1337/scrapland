@@ -42,11 +42,11 @@ static byte Fx_Import(const char *name) {
 	return m != NULL;
 }
 
-/* v == 0 of the script (a number equal to 0; a text is never equal) */
+/* v == 0 of the script (cmp of 1.5.2: a number equal to 0; a text is never equal) */
 static byte Fx_IsZero(const nativeVal_t *v) {
 	nativeVal_t zero;
 	Native_SetInt(&zero, 0);
-	return Native_Equal(v, &zero);
+	return Native_Compare(v, &zero) == 0;
 }
 
 /* Init(): the effect files of the level; $dudv and $shipedit are the two conditions with an "or" of the script */
@@ -106,22 +106,9 @@ static byte Fx_MotorClass(const nativeVal_t *name, nativeVal_t *out) {
 
 /* v * 0.6 of the script on a variable of the entity */
 static byte Fx_Scale(const nativeVal_t *v, nativeVal_t *out) {
-	switch (v->type) {
-	case NV_INT:
-	case NV_LONG:
-	case NV_FLOAT: {
-		double d;
-		Native_ArgDouble(v, &d);
-		Native_SetFloat(out, d * 0.6);
-		return 1;
-	}
-	case NV_STR:
-	case NV_VEC:
-	case NV_LIST:
-	case NV_TUPLE:
-		return Native_Raise(NE_TYPE, "can't multiply sequence with non-int");
-	}
-	return Native_Raise(NE_TYPE, "bad operand type(s) for *");
+	nativeVal_t f;
+	Native_SetFloat(&f, 0.6);
+	return Native_Arith('*', v, &f, out);
 }
 
 /* SetUpShipMotors(e): the motor effects of the ship's model; the indoor traffic (a model ending in B) at 0.6. ref is
@@ -156,9 +143,12 @@ static byte Fx_Motors(const cEntityRef *ref) {
 	Script_RunFile(0, "fx/fx.def", "Motors", fx_def, fx_steps, vars);
 	Py_DECREF(vars);
 	if (indoor) {
-		nativeVal_t scale, v;
-		return Native_EntVar(ref->link.target, ref->name, "ShipMotorScale", &scale) && Fx_Scale(&scale, &v) &&
+		nativeVal_t scale = { 0 }, v = { 0 };
+		byte ok = Native_EntVar(ref->link.target, ref->name, "ShipMotorScale", &scale) && Fx_Scale(&scale, &v) &&
 			Native_EntSet(ref->link.target, ref->name, "ShipMotorScale", &v);
+		Native_Free(&scale);
+		Native_Free(&v);
+		return ok;
 	}
 	return 1;
 }
