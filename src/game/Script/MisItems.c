@@ -154,7 +154,7 @@ static byte Mi_DropBox(modeVals_t *t, const nativeVal_t *v) {
  * or a box with what the player's ship needs most; a ship of nobody goes */
 static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *money = Mode_V(&t), *pos = Mode_V(&t), *y = Mode_V(&t), *atm = Mode_V(&t), *sd = Mode_V(&t);
+	nativeVal_t *money = Mode_V(&t), *pos = Mode_V(&t), *y = Mode_V(&t), *atm = Mode_V(&t);
 	nativeVal_t *traf = Mode_V(&t), *rnd = Mode_V(&t), *six = Mode_V(&t), *cpos = Mode_V(&t), *reward = Mode_V(&t);
 	nativeVal_t *usr = Mode_V(&t);
 	if (!Mode_VGet(v, "Money", money)) {
@@ -170,10 +170,15 @@ static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 		return Mode_Done(&t, 0);
 	}
 	if (drop) {
-		if (!Mode_Import("Init") || !Mi_Init("SuperDealModule", sd)) {
+		/* Init.SuperDealModule holds the module of the running super deal (None without one), which is no native
+		 * value: only its truth is taken, from the Python object */
+		PyObject *sd = Mode_Import("Init") ? Script_Attr("Init", "SuperDealModule") : NULL;
+		int deal = sd ? PyObject_IsTrue(sd) : -1;
+		Py_XDECREF(sd);
+		if (deal < 0) {
 			return Mode_Done(&t, 0);
 		}
-		int coin = !Native_True(sd);
+		int coin = !deal;
 		if (coin) {
 			if (!Mode_VGet(v, "Traf_Active", traf)) {
 				return Mode_Done(&t, 0);
