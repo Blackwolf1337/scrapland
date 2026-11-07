@@ -68,7 +68,7 @@ static byte Sd_Range(const nativeVal_t *n, long *count) {
 	return 1;
 }
 
-/* h.var = i, h.var = "text" of a handle value */
+/* h.var = i, h.var = "text", h.var = d of a handle value */
 static byte Sd_SetI(const nativeVal_t *h, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
@@ -553,6 +553,94 @@ static byte Sd_RemoveIn(const char *mod, const char *list, nativeVal_t *slot, co
 	return in > 0 ? Mode_Remove(mod, list, x) && Mode_Read(mod, list, slot) : in == 0;
 }
 
+/* the ships of the entity list from the first by NextInList: fn(e, name, arg) for each (e the handle value, name the
+ * one the loop read: EntityListGet or NextInList), 1 to go on, 0 to stop, -1 with the error */
+typedef int (*sdEach_t)(const nativeVal_t *e, const nativeVal_t *name, void *arg);
+
+static byte Sd_EachInList(const char *list, sdEach_t fn, void *arg) {
+	nativeVal_t name, e;
+	Native_SetNone(&name);
+	Native_SetNone(&e);
+	byte ok = Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, &e);
+	while (ok && Native_True(&e)) {
+		int r = fn(&e, &name, arg);
+		if (r <= 0) {
+			ok = r == 0;
+			break;
+		}
+		Native_Free(&name);
+		ok = Mode_VGet(&e, "NextInList", &name);
+		Native_Free(&e);
+		ok = ok && Mode_EntityH(&name, &e);
+	}
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
+}
+
+/* usr = Scrap.UsrEntity(0); if usr: usr.Invulnerable = 1 */
+static byte Sd_UsrInvulnerable(void) {
+	nativeVal_t usr;
+	if (!Mode_UsrHandle(&usr)) {
+		return 0;
+	}
+	byte ok = !Native_True(&usr) || Sd_SetI(&usr, "Invulnerable", 1);
+	Native_Free(&usr);
+	return ok;
+}
+
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) (Mode_Later for a number) with delay a
+ * value of the script (a global of the module, the result of a function) */
+static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *func, const nativeVal_t *args, int n) {
+	nativeVal_t now, t;
+	PyObject *fn = Mode_GlobalPy(mod, func);
+	if (!fn) {
+		return 0;
+	}
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&t);
+	byte ok = Native_Arith('+', &now, delay, &t) && Mode_Schedule(&t, fn, args, n, NULL);
+	Native_Free(&t);
+	Py_DECREF(fn);
+	return ok;
+}
+
+static byte Sd_SetF(const nativeVal_t *h, const char *var, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	return Mode_VSet(h, var, &v);
+}
+
+static byte Sd_SpawnAt(const nativeVal_t *usr) {
+	nativeVal_t sp, v;
+	Native_SetNone(&sp);
+	Native_SetNone(&v);
+	byte ok = CALL("OutMap", "GetSpawnPos", &sp, "") && Sd_Item(&sp, 0, &v) && Mode_VSet(usr, "Pos", &v);
+	Native_Free(&sp);
+	Native_Free(&v);
+	ok = ok && CALL("OutMap", "GetSpawnPos", &sp, "") && Sd_Item(&sp, 1, &v) && Sd_Ang(usr, &v);
+	Native_Free(&sp);
+	Native_Free(&v);
+	return ok;
+}
+
+/* the keyword argument of a function (one, optional) as a value: def when it is not given */
+static byte Sd_KwArg(PyObject *args, PyObject *kw, char *name, long def, nativeVal_t *out) {
+	char *names[] = { name, NULL };
+	PyObject *o = NULL;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
+		return 0;
+	}
+	if (o) {
+		Native_Arg(o, out);
+	} else if (def < 0) {
+		Native_SetNone(out);
+	} else {
+		Native_SetInt(out, def);
+	}
+	return 1;
+}
+
 /* ---- the lines of the modes still on Sf_ frames (until each mode is native) ---- */
 
 /* Scrap.GetSaveVar(name), int(Scrap.GetSaveVar(name)), Scrap.SetSaveVar(name, "text") */
@@ -631,14 +719,6 @@ static PyObject *Sdf_SpawnCar(scriptFrame_t *f, PyObject *name, PyObject **sp) {
 	return Sdf_Create(f, name, Sf_Item(f, *sp, 0), "Car");
 }
 
-/* the same with e.Ang = (0, spawnParams[1], 0) right after */
-static PyObject *Sdf_SpawnCarAng(scriptFrame_t *f, PyObject *name) {
-	PyObject *sp;
-	PyObject *e = Sdf_SpawnCar(f, name, &sp);
-	Sdf_Ang(f, e, Sf_Item(f, sp, 1));
-	return e;
-}
-
 /* prefix + `i` */
 static PyObject *Sdf_Numbered(scriptFrame_t *f, const char *prefix, long i) {
 	return Sf_Cat(f, "sO", prefix, Sf_ReprI(f, i));
@@ -669,14 +749,6 @@ static void Sdf_Draw(scriptFrame_t *f) {
 static void Sdf_ScorerOff(scriptFrame_t *f) {
 	Sf_SetMod(f, "Menu", "MissionScorerCall", Py_None);
 	Sdf_Draw(f);
-}
-
-/* RacerScorer.InitMissionScorer(a, b, c); Menu.MissionScorerCall = RacerScorer.MissionScorer;
- * RacerScorer.MissionScorer(0) */
-static void Sdf_ScorerOn(scriptFrame_t *f, PyObject *a, PyObject *b, PyObject *c) {
-	Sf_Ask(f, "RacerScorer", "InitMissionScorer", "(OOO)", a, b, c);
-	Sf_SetMod(f, "Menu", "MissionScorerCall", Sf_Mod(f, "RacerScorer", "MissionScorer"));
-	Sf_Ask(f, "RacerScorer", "MissionScorer", "(i)", 0);
 }
 
 /* RacerScorer.UpdateMissionScorer(0, a, b) */
@@ -727,17 +799,6 @@ static void Sdf_CameraFor(scriptFrame_t *f, const char *const *libraries, const 
 	if (Sf_InS(f, Sdf_Save(f, "Mission.Library"), libraries) > 0) {
 		Sdf_Camera(f, map);
 	}
-}
-
-/* import RaceMaker, VehiclesNPC; the AI profile of the ship from the type and profile save variables */
-static void Sdf_Profile(scriptFrame_t *f, PyObject *ship, const char *typeVar, const char *profVar) {
-	Sf_Import(f, "RaceMaker");
-	Sf_Import(f, "VehiclesNPC");
-	PyObject *type = Sdf_Save(f, typeVar);
-	PyObject *prof = Sdf_Save(f, profVar);
-	Sf_Ask(f, "RaceMaker", "InitShipIAProfile", "(OO)", type, prof);
-	PyObject *s = Sf_Ask(f, "RaceMaker", "GetRandomShipIAProfile", "(OO)", type, prof);
-	Sf_Ask(f, "VehiclesNPC", "SetIAProf", "(OO)", ship, s);
 }
 
 /* `for name in list: e = Scrap.GetEntity(name); if (e): e.TgType = tg; e.EntityList = list` (tg NULL leaves it) */
@@ -811,16 +872,6 @@ static void Sdf_Status(scriptFrame_t *f, const char *mod, const char *more) {
 	Sf_SetMod(f, "Chars", "OnCreateMainChar", Sf_Global(f, mod, "SetInvulnerableStatus"));
 	Sf_SetMod(f, "Parking", "OnCreatePlayerShip", Sf_Global(f, mod, "SetInvulnerableStatus"));
 	Sf_SetMod(f, "Vehicles", "DelPlayerShipOnDeath", Sf_Int(f, 0));
-}
-
-static PyObject *Sdf_InitStatus(PyObject *args, const char *mod) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sdf_Status(&f, mod, NULL);
-	return Sf_None(&f);
 }
 
 /* LostBatonMessage() of Domination and MortalRace: the message that the player lost the baton */
@@ -1281,20 +1332,13 @@ static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
 }
 
 static PyObject *Vs_CreateEnemy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "markAsEnemy", NULL };
-	PyObject *mark = NULL;
-	nativeVal_t m;
+	nativeVal_t mark;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &mark)) {
+	if (!Sd_KwArg(args, kw, "markAsEnemy", 0, &mark)) {
 		return NULL;
 	}
-	if (mark) {
-		Native_Arg(mark, &m);
-	} else {
-		Native_SetInt(&m, 0);
-	}
-	byte ok = Vs_CreateEnemyC(&m);
-	Native_Free(&m);
+	byte ok = Vs_CreateEnemyC(&mark);
+	Native_Free(&mark);
 	return Mode_Result(ok);
 }
 
@@ -1922,551 +1966,651 @@ PyMethodDef g_TeamDeathMatchMethods[] = {
 
 /* ---- CTF: the flags in the FZ, the team of the player against the enemies' leader, flags flags win ---- */
 
-static PyObject *CTF_GetMenuDescription(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_MenuDescription(args, "SuperDeal_CTF_Description", "CTFFlags");
+static struct {
+	nativeVal_t enemies, friends, flagsActive, flagsSpecial;	/* lists of names */
+	nativeVal_t flags, maxFlags, onDeathSpawnTime, flagsEnemies, flagsFriends;
+} ctf;
+
+MODE_FN(Ctf, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_CTF_Description", "CTFFlags", out))
+MODE_FN(Ctf, InitStatus, 1, Sd_StatusC(CTF, NULL))
+
+/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state) */
+static byte Sd_RaiseText(const char *text) {
+	PyObject *s = PyString_FromString((char *)text);
+	if (s) {
+		PyErr_SetObject(s, Py_None);
+		Py_DECREF(s);
+	}
+	return 0;
 }
 
-static PyObject *CTF_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_InitStatus(args, CTF);
+/* onDeathSpawnTime = float(Scrap.GetSaveVar(var)); the error of the script when it is under 1 s */
+static byte Sd_SpawnTime(const char *mod, nativeVal_t *slot, const char *var) {
+	nativeVal_t s, d, one;
+	Mode_SaveVar(var, &s);
+	Native_SetNone(&d);
+	byte ok = Native_ToFloat(&s, &d) && Mode_Put(mod, "onDeathSpawnTime", slot, &d) && Mode_Read(mod, "onDeathSpawnTime", slot);
+	Native_Free(&s);
+	Native_Free(&d);
+	Native_SetFloat(&one, 1.0);
+	return ok && (Native_Compare(slot, &one) >= 0 || Sd_RaiseText("Demasiado poco tiempo de respawn"));
 }
 
 /* Init(LevelPath): the camera of the end, the flags to take, the respawn time, both teams, the start when the player
  * boards */
-static PyObject *CTF_Init(PyObject *self, PyObject *args) {
+static byte Ctf_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Fifth", "SuperDeal_Ninth", NULL };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	nativeVal_t n, two, one, r, max;
+	if (!Mode_Import("Parking") || !Mode_Import("Chars") || !Sd_CameraFor(libs, "FZ") ||
+		!Sd_GlobalTo("Chars", "OnMainCharDeath", CTF, "OnPlayerDeath")) {
+		return 0;
 	}
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Chars");
-	Sdf_CameraFor(&f, libs, "FZ");
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", Sf_Global(&f, CTF, "OnPlayerDeath"));
-	Sf_SetGlobal(&f, CTF, "flags", Sdf_SaveInt(&f, "CTFFlags"));
-	Sf_SetGlobal(&f, CTF, "maxFlags", Sf_OpI(&f, Sf_OpI(&f, Sf_Global(&f, CTF, "flags"), '*', 2), '-', 1));
-	Sf_SetGlobal(&f, CTF, "onDeathSpawnTime", Sf_ToFloat(&f, Sdf_Save(&f, "CTFOnDeathSpawnTime")));
-	if (Sf_Compare(&f, Sf_Global(&f, CTF, "onDeathSpawnTime"), "<", Sf_Float(&f, 1.0)) > 0) {
-		Sf_RaiseText(&f, "Demasiado poco tiempo de respawn");
+	Native_SetNone(&n);
+	Native_SetNone(&r);
+	Native_SetNone(&max);
+	Native_SetInt(&two, 2);
+	Native_SetInt(&one, 1);
+	byte ok = Sd_SaveInt("CTFFlags", &n) && Mode_Put(CTF, "flags", &ctf.flags, &n) && Mode_Read(CTF, "flags", &ctf.flags) &&
+		Native_Arith('*', &ctf.flags, &two, &r) && Native_Arith('-', &r, &one, &max) &&
+		Mode_Put(CTF, "maxFlags", &ctf.maxFlags, &max) && Sd_SpawnTime(CTF, &ctf.onDeathSpawnTime, "CTFOnDeathSpawnTime") &&
+		OWN(CTF, "CreateEnemies", NULL, "") && OWN(CTF, "CreateFriends", NULL, "") &&
+		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", CTF, "CrazyGamblerStartCTF");
+	Native_Free(&n);
+	Native_Free(&r);
+	Native_Free(&max);
+	if (ok) {
+		nativeVal_t flag;
+		Native_SetStr(&flag, "models/Misc/Flag/Flag.m3d");
+		ok = Mode_Preload(&flag);
 	}
-	Sdf_Call(&f, CTF, "CreateEnemies", "()");
-	Sdf_Call(&f, CTF, "CreateFriends", "()");
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Sf_Global(&f, CTF, "CrazyGamblerStartCTF"));
-	Sf_Ask(&f, "Scrap", "Preload3DObject", "(s)", "models/Misc/Flag/Flag.m3d");
-	return Sf_None(&f);
+	return ok;
 }
+
+MODE_FN(Ctf, Init, 1, Ctf_InitC())
 
 /* SetProfile(ship, isEnemy) of CTF and Domination: the AI of a ship of either team from the save variables of the
  * mode */
-static PyObject *Sdf_SetProfile(PyObject *args, const char *mode) {
+static byte Sd_SetProfileC(const char *mode, const nativeVal_t *ship, const nativeVal_t *enemy) {
 	char type[64], prof[64];
-	PyObject *ship, *enemy;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OO", &ship, &enemy)) {
-		return NULL;
-	}
-	int e = Sf_EqI(&f, enemy, 1);
-	if (e >= 0) {
-		Str_Printf(type, sizeof(type), "%s%sType", mode, e ? "Enemy" : "Friend");
-		Str_Printf(prof, sizeof(prof), "%s%sProfile", mode, e ? "Enemy" : "Friend");
-		Sdf_Profile(&f, ship, type, prof);
-	}
-	return Sf_None(&f);
+	byte e = Sd_EqI(enemy, 1);
+	Str_Printf(type, sizeof(type), "%s%sType", mode, e ? "Enemy" : "Friend");
+	Str_Printf(prof, sizeof(prof), "%s%sProfile", mode, e ? "Enemy" : "Friend");
+	return Sd_Profile(ship, type, prof);
 }
 
-static PyObject *CTF_SetProfile(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_SetProfile(args, "CTF");
-}
+MODE_FN(Ctf, SetProfile, 2, Sd_SetProfileC("CTF", &a[0], &a[1]))
 
 /* CreateEnemies() (Enemy1 to EnemyN) and CreateFriends() (Friend1 to Friend<N-1>, the player is the last): the
  * ships of a team at spawn points (CTF) */
-static PyObject *Ctf_CreateTeam(PyObject *args, const char *numVar, long less, const char *prefix, int enemy,
-	const char *list) {
+static byte Ctf_CreateTeam(byte enemy) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *num = Mode_V(&t);
 	long n = 0;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	if (!Mode_Import("OutMap") || !Sd_SaveInt(enemy ? "CTFNumEnemies" : "CTFNumFriends", num) || !Sd_Range(num, &n)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "OutMap");
-	PyObject *num = Sdf_SaveInt(&f, numVar);
-	Sf_Check(&f, f.failed || Script_Range(num, &n));
-	for (long i = 1; i <= n - less && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *e = Sdf_SpawnCarAng(&f, Sdf_Numbered(&f, prefix, i));
-		Sdf_Call(&f, CTF, "SetProfile", "(Oi)", e, enemy);
-		Sdf_AppendName(&f, CTF, list, e);
-		Sf_Release(&f, mark);
+	byte ok = 1;
+	for (long i = 1; ok && i <= n - (enemy ? 0 : 1); i++) {
+		int mark = t.n;
+		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t);
+		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
+		ok = Sd_SpawnCarAng(name, e) && OWN(CTF, "SetProfile", NULL, "vi", e, (long)enemy) &&
+			Sd_AppendName(CTF, enemy ? "enemies" : "friends", e);
+		Mode_Release(&t, mark);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *CTF_CreateEnemies(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ctf_CreateTeam(args, "CTFNumEnemies", 0, "Enemy", 1, "enemies");
-}
-
-static PyObject *CTF_CreateFriends(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ctf_CreateTeam(args, "CTFNumFriends", 1, "Friend", 0, "friends");
-}
+MODE_FN(Ctf, CreateEnemies, 0, Ctf_CreateTeam(1))
+MODE_FN(Ctf, CreateFriends, 0, Ctf_CreateTeam(0))
 
 /* CrazyGamblerStartCTF(): the player boarded; the crazy gambler's message starts the CTF */
-static PyObject *CTF_CrazyGamblerStartCTF(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Speech");
-	Sf_SetAttrI(&f, Sf_Mod(&f, "Parking", "PlayerShip"), "Invulnerable", 0);
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Sf_Global(&f, CTF, "SetVulnerable"));
-	PyObject *cad = Sdf_Save(&f, "CTFStartTextCad");
-	Sf_Ask(&f, "Speech", "AddRemoteCom", "(OsO)", cad, CG, Sf_Global(&f, CTF, "StartCTF"));
-	return Sf_None(&f);
+static byte Ctf_CrazyGamblerStartCTFC(void) {
+	return Mode_Import("Parking") && Mode_Import("Speech") && Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) &&
+		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", CTF, "SetVulnerable") &&
+		Sd_GamblerSays("CTFStartTextCad", CTF, "StartCTF");
+}
+
+MODE_FN(Ctf, CrazyGamblerStartCTF, 0, Ctf_CrazyGamblerStartCTFC())
+
+/* RaceMaker.ShowSystemMessage(Scrap.GetLangStr(key)) */
+static byte Sd_SystemMessage(const char *key) {
+	nativeVal_t text;
+	Mode_Lang(key, &text);
+	byte ok = CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	Native_Free(&text);
+	return ok;
 }
 
 /* StartCTF(): the deaths counted, the scorer, the first flag, the enemies red with the first as the leader, the
  * friends green */
-static PyObject *CTF_StartCTF(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ctf_StartCTFC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *limit = Mode_V(&t), *first = Mode_V(&t), *e = Mode_V(&t), *usr = Mode_V(&t), *name = Mode_V(&t);
+	const nativeVal_t *zero = Mode_I(&t, 0);
+	if (!Mode_Import("Vehicles") || !Mode_Import("Menu") || !Mode_Import("RacerScorer") || !Mode_Import("RaceMaker") ||
+		!Sd_GlobalTo("Vehicles", "OnDeathCallback", CTF, "OnVehicleDeathCallback") || !Mode_Read(CTF, "flags", &ctf.flags)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "RaceMaker");
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Sf_Global(&f, CTF, "OnVehicleDeathCallback"));
-	Sdf_ScorerOn(&f, Sf_Int(&f, 0), Sf_Int(&f, 0), Sf_Repr(&f, Sf_Global(&f, CTF, "flags")));
-	Sdf_Call(&f, CTF, "CreateFlag", "()");
-	Sdf_MarkShips(&f, Sf_Global(&f, CTF, "enemies"), "red", "CTFEnemies");
-	if (Sf_Len(&f, Sf_Global(&f, CTF, "enemies")) > 0) {
-		PyObject *e = Sf_Entity(&f, Sf_Item(&f, Sf_Global(&f, CTF, "enemies"), 0));
-		if (Sf_True(&f, e) > 0) {
-			Sf_SetAttrI(&f, e, "LLogicIsLeader", 1);
-			Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 1);
-			PyObject *usr = Sdf_Usr(&f);
-			if (Sdf_UsrCar(&f, usr) > 0) {
-				Sf_SetAttr(&f, usr, "Target", Sf_Attr(&f, e, "Name"));
+	Sd_Repr(&ctf.flags, limit);
+	if (!Sd_ScorerOn(zero, zero, limit) || !OWN(CTF, "CreateFlag", NULL, "") || !Mode_Read(CTF, "enemies", &ctf.enemies) ||
+		!Sd_MarkShips(&ctf.enemies, "red", "CTFEnemies") || !Mode_Read(CTF, "enemies", &ctf.enemies)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_Size(&ctf.enemies);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (n > 0) {
+		if (!Mode_Read(CTF, "enemies", &ctf.enemies) || !Sd_Item(&ctf.enemies, 0, first) || !Mode_EntityH(first, e)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_True(e)) {
+			int car;
+			if (!Sd_SetI(e, "LLogicIsLeader", 1) || !CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L) ||
+				!Mode_UsrHandle(usr) || (car = Sd_UsrCar(usr)) < 0 ||
+				(car && (!Mode_VGet(e, "Name", name) || !Mode_VSet(usr, "Target", name)))) {
+				return Mode_Done(&t, 0);
 			}
 		}
 	}
-	Sdf_MarkShips(&f, Sf_Global(&f, CTF, "friends"), "green", "CTFFriends");
-	Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sdf_Lang(&f, "SuperDeal_CTF_SystemMessage"));
-	return Sf_None(&f);
+	return Mode_Done(&t, Mode_Read(CTF, "friends", &ctf.friends) && Sd_MarkShips(&ctf.friends, "green", "CTFFriends") &&
+		Sd_SystemMessage("SuperDeal_CTF_SystemMessage"));
+}
+
+MODE_FN(Ctf, StartCTF, 0, Ctf_StartCTFC())
+
+/* list.remove(x) of a global list of the module (slot its copy), in place */
+static byte Sd_Remove(const char *mod, const char *list, nativeVal_t *slot, const nativeVal_t *x) {
+	return Mode_Remove(mod, list, x) && Mode_Read(mod, list, slot);
+}
+
+/* RacerScorer.UpdateMissionScorer(0, flagsFriends, flagsEnemies) */
+static byte Ctf_Update(void) {
+	return Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) && Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies) &&
+		Sd_Update(&ctf.flagsFriends, &ctf.flagsEnemies);
+}
+
+/* CTF.SpawnFlags(pos of the handle, flags<side>); flags<side> = 0; the scorer */
+static byte Ctf_Drop(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
+	nativeVal_t pos;
+	Native_SetNone(&pos);
+	byte ok = Mode_VGet(h, "Pos", &pos) && Mode_Read(CTF, var, slot) && OWN(CTF, "SpawnFlags", NULL, "vv", &pos, slot) &&
+		Sd_PutI(CTF, var, slot, 0) && Ctf_Update();
+	Native_Free(&pos);
+	return ok;
 }
 
 /* OnVehicleDeathCallback(LooserName, WinnerName): the player or the enemies' leader drop the flags they carry; the
  * dead ship of a team comes back after onDeathSpawnTime */
-static PyObject *CTF_OnVehicleDeathCallback(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
+static byte Ctf_OnVehicleDeathCallbackC(const nativeVal_t *loser) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *lead = Mode_V(&t);
+	const nativeVal_t *one = Mode_I(&t, 1);
+	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RacerScorer");
-	PyObject *usr = Sdf_Usr(&f);
-	int u = Sdf_UsrIs(&f, usr, loser);
-	if (u > 0) {
-		Sdf_Call(&f, CTF, "SpawnFlags", "(OO)", Sf_Attr(&f, usr, "Pos"), Sf_Global(&f, CTF, "flagsFriends"));
-		Sf_SetGlobal(&f, CTF, "flagsFriends", Sf_Int(&f, 0));
-		Sdf_Update(&f, Sf_Global(&f, CTF, "flagsFriends"), Sf_Global(&f, CTF, "flagsEnemies"));
-	} else if (u == 0) {
-		int en = Sf_In(&f, loser, Sf_Global(&f, CTF, "enemies"));
-		if (en > 0) {
-			Sf_Method(&f, Sf_Global(&f, CTF, "enemies"), "remove", "(O)", loser);
-			PyObject *e = Sf_Entity(&f, loser);
-			if (Sf_True(&f, e) > 0) {
-				int lead = Sf_EqI(&f, Sf_Attr(&f, e, "LLogicIsLeader"), 1);
-				if (lead > 0) {
-					Sdf_Call(&f, CTF, "SpawnFlags", "(OO)", Sf_Attr(&f, e, "Pos"), Sf_Global(&f, CTF, "flagsEnemies"));
-					Sf_SetGlobal(&f, CTF, "flagsEnemies", Sf_Int(&f, 0));
-					Sdf_Update(&f, Sf_Global(&f, CTF, "flagsFriends"), Sf_Global(&f, CTF, "flagsEnemies"));
-					Sdf_Later(&f, Sf_Global(&f, CTF, "onDeathSpawnTime"), CTF, "RespawnEnemy", Sf_Build(&f, "(i)", 1));
-				} else if (lead == 0) {
-					Sdf_Later(&f, Sf_Global(&f, CTF, "onDeathSpawnTime"), CTF, "RespawnEnemy", Sf_Build(&f, "()"));
-				}
-				Sdf_Del(&f, loser);
-			}
-		} else if (en == 0 && Sf_In(&f, loser, Sf_Global(&f, CTF, "friends")) > 0) {
-			Sf_Method(&f, Sf_Global(&f, CTF, "friends"), "remove", "(O)", loser);
-			Sdf_Later(&f, Sf_Global(&f, CTF, "onDeathSpawnTime"), CTF, "RespawnFriend", Sf_Build(&f, "()"));
+	int u = Sd_UsrIs(usr, loser);
+	if (u) {
+		return Mode_Done(&t, u > 0 && Ctf_Drop(usr, "flagsFriends", &ctf.flagsFriends));
+	}
+	if (!Mode_Read(CTF, "enemies", &ctf.enemies)) {
+		return Mode_Done(&t, 0);
+	}
+	int en = Native_Contains(&ctf.enemies, loser);
+	if (en > 0) {
+		if (!Sd_Remove(CTF, "enemies", &ctf.enemies, loser) || !Mode_EntityH(loser, e)) {
+			return Mode_Done(&t, 0);
 		}
+		if (!Native_True(e)) {
+			return Mode_Done(&t, 1);
+		}
+		if (!Mode_VGet(e, "LLogicIsLeader", lead)) {
+			return Mode_Done(&t, 0);
+		}
+		byte ok = Sd_EqI(lead, 1) ? Ctf_Drop(e, "flagsEnemies", &ctf.flagsEnemies) && Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) &&
+			Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnEnemy", one, 1) :
+			Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) && Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnEnemy", NULL, 0);
+		return Mode_Done(&t, ok && Sd_Del(loser));
 	}
-	return Sf_None(&f);
+	if (en < 0 || !Mode_Read(CTF, "friends", &ctf.friends)) {
+		return Mode_Done(&t, 0);
+	}
+	int fr = Native_Contains(&ctf.friends, loser);
+	return Mode_Done(&t, fr <= 0 ? fr == 0 : Sd_Remove(CTF, "friends", &ctf.friends, loser) &&
+		Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) && Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnFriend", NULL, 0));
 }
+
+MODE_FN(Ctf, OnVehicleDeathCallback, 2, Ctf_OnVehicleDeathCallbackC(&a[0]))
 
 /* OnPlayerDeath(LooserName, WinnerName): the player comes back after onDeathSpawnTime (CTF and Domination's start) */
-static PyObject *CTF_OnPlayerDeath(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
-	}
-	Sdf_Later(&f, Sf_Global(&f, CTF, "onDeathSpawnTime"), CTF, "RespawnPlayer", Sf_Build(&f, "(O)", loser));
-	return Sf_None(&f);
+static byte Sd_RespawnLater(const char *mod, nativeVal_t *slot, const nativeVal_t *loser) {
+	return Mode_Read(mod, "onDeathSpawnTime", slot) && Sd_LaterV(slot, mod, "RespawnPlayer", loser, 1);
 }
 
+MODE_FN(Ctf, OnPlayerDeath, 2, Sd_RespawnLater(CTF, &ctf.onDeathSpawnTime, &a[0]))
+
 /* RemoveFlag(EntityName): the flag gone from the map and from the lists */
-static PyObject *CTF_RemoveFlag(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Ctf_RemoveFlagC(const nativeVal_t *name) {
+	nativeVal_t flag;
+	if (!Mode_EntityH(name, &flag)) {
+		return 0;
 	}
-	PyObject *flag = Sf_Entity(&f, name);
-	if (Sf_True(&f, flag) > 0) {
-		Sf_SetAttrS(&f, flag, "OnTake", "");
-		Sf_Method(&f, flag, "Del", "()");
-		Sdf_RemoveIn(&f, CTF, "flagsActive", name);
-		Sdf_RemoveIn(&f, CTF, "flagsSpecial", name);
+	byte ok = !Native_True(&flag) || (Sd_SetS(&flag, "OnTake", "") && Mode_VDel(&flag) &&
+		Sd_RemoveIn(CTF, "flagsActive", &ctf.flagsActive, name) && Sd_RemoveIn(CTF, "flagsSpecial", &ctf.flagsSpecial, name));
+	Native_Free(&flag);
+	return ok;
+}
+
+MODE_FN(Ctf, RemoveFlag, 1, Ctf_RemoveFlagC(&a[0]))
+
+/* e.LLogicIsLeader == 1 of a handle value that is true: 1, 0, -1 with the error */
+static int Sd_IsLeader(const nativeVal_t *e) {
+	nativeVal_t v;
+	if (!Native_True(e)) {
+		return 0;
 	}
-	return Sf_None(&f);
+	Native_SetNone(&v);
+	int r = Mode_VGet(e, "LLogicIsLeader", &v) ? Sd_EqI(&v, 1) : -1;
+	Native_Free(&v);
+	return r;
 }
 
 /* EndOfCTF(): the leader not the target any more, the flags gone, the ships relax, then the last message */
-static PyObject *CTF_EndOfCTF(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ctf_EndOfCTFC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t);
+	if (!Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") || !Mode_Import("Parking") ||
+		!Mode_Read(CTF, "enemies", &ctf.enemies)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "Parking");
-	PyObject *enemies = Sf_Global(&f, CTF, "enemies");
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *n = Sf_Next(&f, enemies, i);
-		if (!n) {
+	int n = Native_ForCount(&ctf.enemies);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		int lead;
+		ok = Native_SeqItem(&ctf.enemies, i, name) && Mode_EntityH(name, e) && (lead = Sd_IsLeader(e)) >= 0;
+		if (ok && lead) {
+			ok = CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 0L);
 			break;
 		}
-		PyObject *e = Sf_Entity(&f, n);
-		int lead = Sf_True(&f, e);
-		if (lead > 0) {
-			lead = Sf_EqI(&f, Sf_Attr(&f, e, "LLogicIsLeader"), 1);
-		}
-		if (lead > 0) {
-			Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
+		Native_Free(name);
+		Native_Free(e);
+	}
+	/* for name in flagsActive: CTF.RemoveFlag(name), on the list as RemoveFlag changes it (the global read again at
+	 * each step: the loop of the script runs on the object of the module) */
+	for (int i = 0; ok; i++) {
+		Native_Free(name);
+		ok = Mode_Read(CTF, "flagsActive", &ctf.flagsActive);
+		int count = ok ? Native_ForCount(&ctf.flagsActive) : -1;
+		if (count < 0) {
+			ok = 0;
+		} else if (i >= count) {
 			break;
 		}
-		Sf_Release(&f, mark);
+		ok = ok && Native_SeqItem(&ctf.flagsActive, i, name) && OWN(CTF, "RemoveFlag", NULL, "v", name);
 	}
-	PyObject *flags = Sf_Global(&f, CTF, "flagsActive");
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *n = Sf_Next(&f, flags, i);
-		if (!n) {
-			break;
-		}
-		Sdf_Call(&f, CTF, "RemoveFlag", "(O)", n);
-		Sf_Release(&f, mark);
+	if (!ok || !Mode_GVarSetS("LeaderFlag", "") ||
+		!CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "CTFEnemies") ||
+		!CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "CTFFriends") ||
+		!CALL("MissionsFuncs", "RelaxShipsInList", NULL, "s", "CTFEnemies") ||
+		!CALL("MissionsFuncs", "RelaxShipsInList", NULL, "s", "CTFFriends") || !Sd_ScorerOff() ||
+		!Sd_ModNone("Vehicles", "OnDeathCallback") || !Sd_ModNone("Parking", "SwitchCharMissionCallback") ||
+		!Sd_ModNone("Parking", "SwitchVehicleMissionCallback") || !Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) ||
+		!Mode_Read(CTF, "flags", &ctf.flags)) {
+		return Mode_Done(&t, 0);
 	}
-	Sdf_SetS(&f, "LeaderFlag", "");
-	Sf_Ask(&f, "MissionsFuncs", "SetInvulnerableShipsInList", "(s)", "CTFEnemies");
-	Sf_Ask(&f, "MissionsFuncs", "SetInvulnerableShipsInList", "(s)", "CTFFriends");
-	Sf_Ask(&f, "MissionsFuncs", "RelaxShipsInList", "(s)", "CTFEnemies");
-	Sf_Ask(&f, "MissionsFuncs", "RelaxShipsInList", "(s)", "CTFFriends");
-	Sdf_ScorerOff(&f);
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-	int won = Sf_Compare(&f, Sf_Global(&f, CTF, "flagsFriends"), ">=", Sf_Global(&f, CTF, "flags"));
-	if (won > 0) {
-		Sdf_Call(&f, CTF, "PreOnVictory", "()");
-	} else if (won == 0) {
-		Sdf_Call(&f, CTF, "PreRestartMenu", "()");
-	}
-	return Sf_None(&f);
+	return Mode_Done(&t, OWN(CTF, Native_Compare(&ctf.flagsFriends, &ctf.flags) >= 0 ? "PreOnVictory" : "PreRestartMenu", NULL, ""));
 }
 
+MODE_FN(Ctf, EndOfCTF, 0, Ctf_EndOfCTFC())
+
+
 /* RespawnEnemy(isLeader = 0): an enemy at a spawn point, the leader with the target */
-static PyObject *CTF_RespawnEnemy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "isLeader", NULL };
-	PyObject *leader = NULL;
-	scriptFrame_t f = { 0 };
+static byte Ctf_RespawnEnemyC(const nativeVal_t *leader) {
+	nativeVal_t e, name;
+	Native_SetNone(&e);
+	Native_SetStr(&name, "Enemy");
+	byte ok = Mode_Import("OutMap") && Sd_SpawnCarAng(&name, &e) && Sd_SetS(&e, "TgType", "red") &&
+		Sd_SetS(&e, "EntityList", "CTFEnemies") && OWN(CTF, "SetProfile", NULL, "vi", &e, 1L) &&
+		(!Native_True(leader) || (Sd_SetI(&e, "LLogicIsLeader", 1) && CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, 1L))) &&
+		Sd_AppendName(CTF, "enemies", &e);
+	Native_Free(&e);
+	return ok;
+}
+
+static PyObject *Ctf_RespawnEnemy(PyObject *self, PyObject *args, PyObject *kw) {
+	nativeVal_t leader;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &leader)) {
+	if (!Sd_KwArg(args, kw, "isLeader", 0, &leader)) {
 		return NULL;
 	}
-	if (!leader) {
-		leader = Sf_Int(&f, 0);
-	}
-	Sf_Import(&f, "OutMap");
-	PyObject *e = Sdf_SpawnCarAng(&f, Sf_Str(&f, "Enemy"));
-	Sf_SetAttrS(&f, e, "TgType", "red");
-	Sf_SetAttrS(&f, e, "EntityList", "CTFEnemies");
-	Sdf_Call(&f, CTF, "SetProfile", "(Oi)", e, 1);
-	if (Sf_True(&f, leader) > 0) {
-		Sf_SetAttrI(&f, e, "LLogicIsLeader", 1);
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 1);
-	}
-	Sdf_AppendName(&f, CTF, "enemies", e);
-	return Sf_None(&f);
+	byte ok = Ctf_RespawnEnemyC(&leader);
+	Native_Free(&leader);
+	return Mode_Result(ok);
 }
 
 /* RespawnFriend(): a ship of the player's team at a spawn point */
-static PyObject *CTF_RespawnFriend(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "OutMap");
-	PyObject *e = Sdf_SpawnCarAng(&f, Sf_Str(&f, "Friend"));
-	Sf_SetAttrS(&f, e, "TgType", "green");
-	Sf_SetAttrS(&f, e, "EntityList", "CTFFriends");
-	Sdf_Call(&f, CTF, "SetProfile", "(Oi)", e, 0);
-	Sdf_AppendName(&f, CTF, "friends", e);
-	return Sf_None(&f);
+static byte Ctf_RespawnFriendC(void) {
+	nativeVal_t e, name;
+	Native_SetNone(&e);
+	Native_SetStr(&name, "Friend");
+	byte ok = Mode_Import("OutMap") && Sd_SpawnCarAng(&name, &e) && Sd_SetS(&e, "TgType", "green") &&
+		Sd_SetS(&e, "EntityList", "CTFFriends") && OWN(CTF, "SetProfile", NULL, "vi", &e, 0L) && Sd_AppendName(CTF, "friends", &e);
+	Native_Free(&e);
+	return ok;
+}
+
+MODE_FN(Ctf, RespawnFriend, 0, Ctf_RespawnFriendC())
+
+/* Scrap.Set(var, flagsActive[0]) (the global read again) */
+static byte Ctf_SetFirst(const char *var) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	byte ok = Mode_Read(CTF, "flagsActive", &ctf.flagsActive) && Sd_Item(&ctf.flagsActive, 0, &v) && Mode_GVarSet(var, &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* Scrap.Set("CurrentWaypointName", flagsActive[0]) and Scrap.Set("LeaderFlag", flagsActive[0]) while flags are
  * active, else Scrap.Set("LeaderFlag", "") */
-static void Ctf_Waypoint(scriptFrame_t *f) {
-	if (Sf_Len(f, Sf_Global(f, CTF, "flagsActive")) > 0) {
-		Sdf_Set(f, "CurrentWaypointName", Sf_Item(f, Sf_Global(f, CTF, "flagsActive"), 0));
-		Sdf_Set(f, "LeaderFlag", Sf_Item(f, Sf_Global(f, CTF, "flagsActive"), 0));
-	} else if (!f->failed) {
-		Sdf_SetS(f, "LeaderFlag", "");
+static byte Ctf_Waypoint(void) {
+	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive)) {
+		return 0;
 	}
+	int n = Native_Size(&ctf.flagsActive);
+	if (n < 0) {
+		return 0;
+	}
+	return n > 0 ? Ctf_SetFirst("CurrentWaypointName") && Ctf_SetFirst("LeaderFlag") : Mode_GVarSetS("LeaderFlag", "");
 }
 
-/* len(flagsActive) == 0 and len(flagsSpecial) == 0 */
-static int Ctf_NoFlags(scriptFrame_t *f) {
-	int none = Sf_Len(f, Sf_Global(f, CTF, "flagsActive")) == 0;
-	if (none && !f->failed) {
-		none = Sf_Len(f, Sf_Global(f, CTF, "flagsSpecial")) == 0;
+/* len(flagsActive) == 0 and len(flagsSpecial) == 0: 1, 0, -1 with the error */
+static int Ctf_NoFlags(void) {
+	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive)) {
+		return -1;
 	}
-	return f->failed ? -1 : none;
+	int n = Native_Size(&ctf.flagsActive);
+	if (n != 0) {
+		return n < 0 ? -1 : 0;
+	}
+	if (!Mode_Read(CTF, "flagsSpecial", &ctf.flagsSpecial)) {
+		return -1;
+	}
+	n = Native_Size(&ctf.flagsSpecial);
+	return n < 0 ? -1 : n == 0;
 }
 
 /* CreateFlag(pos = None): a flag at a spawn point, or thrown from pos by a dead ship (back after 60 s), while fewer
  * than maxFlags are carried; its name, else "" */
-static PyObject *CTF_CreateFlag(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "pos", NULL };
-	PyObject *pos = Py_None;
-	scriptFrame_t f = { 0 };
+static byte Ctf_CreateFlagC(const nativeVal_t *pos, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *carried = Mode_V(&t), *sp = Mode_V(&t), *at = Mode_V(&t), *flag = Mode_V(&t), *dir = Mode_V(&t);
+	nativeVal_t *norm = Mode_V(&t), *vel = Mode_V(&t), *name = Mode_V(&t);
+	if (!Mode_Import("OutMap") || !Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) ||
+		!Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies) || !Native_Arith('+', &ctf.flagsFriends, &ctf.flagsEnemies, carried) ||
+		!Mode_Read(CTF, "maxFlags", &ctf.maxFlags)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_Compare(carried, &ctf.maxFlags) >= 0) {
+		Native_SetStr(out, "");
+		return Mode_Done(&t, 1);
+	}
+	if (Native_True(pos)) {
+		Native_Copy(at, pos);
+	} else if (!CALL("OutMap", "GetSpawnPos", sp, "") || !Sd_Item(sp, 0, at)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Sd_Create(Mode_S(&t, "Flag"), at, "Item", flag) || !Mode_VModel(flag, Mode_S(&t, "models/Misc/Flag/Flag.m3d")) ||
+		!Sd_SetI(flag, "Radius", 1800) || !Sd_SetF(flag, "rTime", 0.25) || !Sd_SetS(flag, "OnTake", "CTF.TakeFlag") ||
+		!Sd_SetI(flag, "RadarShow", 2)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(pos)) {
+		/* a random direction of the engine's C random numbers, as the script's Scrap.Rand calls */
+		double d[3];
+		for (int i = 0; i < 3; i++) {
+			d[i] = Scrap_RandRange(0.0, 2.0) - 1.0;
+		}
+		Native_SetEmpty(dir, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetFloat(Native_Append(dir), d[i]);
+		}
+		if (!Mode_VecNorm(dir, norm) || !Mode_VecProd(norm, Mode_I(&t, 300), vel) || !Mode_VSet(flag, "Vel", vel) ||
+			!Sd_SetI(flag, "BackTime", 60) || !Sd_SetS(flag, "OnReset", "CTF.ResetFlag")) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Sd_AppendName(CTF, "flagsActive", flag) || !Mode_VGet(flag, "Name", name) ||
+		!Mode_GVarSet("CurrentWaypointName", name) || !Ctf_SetFirst("LeaderFlag") || !Mode_VGet(flag, "Name", out)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, 1);
+}
+
+static PyObject *Ctf_CreateFlag(PyObject *self, PyObject *args, PyObject *kw) {
+	nativeVal_t pos, out;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &pos)) {
+	if (!Sd_KwArg(args, kw, "pos", -1, &pos)) {
 		return NULL;
 	}
-	Sf_Import(&f, "OutMap");
-	PyObject *carried = Sf_Op(&f, Sf_Global(&f, CTF, "flagsFriends"), '+', Sf_Global(&f, CTF, "flagsEnemies"));
-	if (Sf_Compare(&f, carried, "<", Sf_Global(&f, CTF, "maxFlags")) > 0) {
-		int given = Sf_True(&f, pos);
-		PyObject *sp = given == 0 ? Sf_Item(&f, Sf_Ask(&f, "OutMap", "GetSpawnPos", "()"), 0) : pos;
-		PyObject *flag = Sdf_Create(&f, Sf_Str(&f, "Flag"), sp, "Item");
-		Sf_Method(&f, flag, "SetModel", "(s)", "models/Misc/Flag/Flag.m3d");
-		Sf_SetAttrI(&f, flag, "Radius", 1800);
-		Sf_SetAttr(&f, flag, "rTime", Sf_Float(&f, 0.25));
-		Sf_SetAttrS(&f, flag, "OnTake", "CTF.TakeFlag");
-		Sf_SetAttrI(&f, flag, "RadarShow", 2);
-		if (Sf_True(&f, pos) > 0) {
-			double d[3];
-			for (int i = 0; i < 3; i++) {
-				d[i] = Scrap_RandRange(0.0, 2.0) - 1.0;
-			}
-			PyObject *dir = Sf_Build(&f, "(ddd)", d[0], d[1], d[2]);
-			Sf_SetAttr(&f, flag, "Vel", Sf_Ask(&f, "SVec", "Prod", "(Oi)", Sf_Ask(&f, "SVec", "Norm", "(O)", dir),
-				300));
-			Sf_SetAttrI(&f, flag, "BackTime", 60);
-			Sf_SetAttrS(&f, flag, "OnReset", "CTF.ResetFlag");
-		}
-		Sdf_AppendName(&f, CTF, "flagsActive", flag);
-		Sdf_Set(&f, "CurrentWaypointName", Sf_Attr(&f, flag, "Name"));
-		Sdf_Set(&f, "LeaderFlag", Sf_Item(&f, Sf_Global(&f, CTF, "flagsActive"), 0));
-		return Sf_Return(&f, Sf_Attr(&f, flag, "Name"));
-	}
-	return Sf_Return(&f, Sf_Str(&f, ""));
+	Native_SetNone(&out);
+	byte ok = Ctf_CreateFlagC(&pos, &out);
+	Native_Free(&pos);
+	return Mode_Return(ok, &out);
 }
 
 /* ResetFlag(flagName): a thrown flag nobody took goes; a new one when none is left */
-static PyObject *CTF_ResetFlag(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Ctf_ResetFlagC(const nativeVal_t *name) {
+	if (!OWN(CTF, "RemoveFlag", NULL, "v", name) || !Ctf_Waypoint()) {
+		return 0;
 	}
-	Sdf_Call(&f, CTF, "RemoveFlag", "(O)", name);
-	Ctf_Waypoint(&f);
-	if (Ctf_NoFlags(&f) > 0) {
-		Sdf_Call(&f, CTF, "CreateFlag", "()");
-	}
-	return Sf_None(&f);
+	int none = Ctf_NoFlags();
+	return none > 0 ? OWN(CTF, "CreateFlag", NULL, "") : none == 0;
 }
+
+MODE_FN(Ctf, ResetFlag, 1, Ctf_ResetFlagC(&a[0]))
 
 /* TakeFlag(ItemName, CharName): the player or the enemies' leader took a flag; the CTF ends at flags, else a new flag
  * when none is left */
-static PyObject *CTF_TakeFlag(PyObject *self, PyObject *args) {
-	PyObject *item, *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &who)) {
-		return NULL;
+static byte Ctf_TakeFlagC(const nativeVal_t *item, const nativeVal_t *who) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *e = Mode_V(&t), *win = Mode_V(&t);
+	cEntity *flag;
+	if (!Mode_Import("RacerScorer") || !Mode_Import("Sound") || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "Sound");
-	PyObject *usr = Sdf_Usr(&f);
-	if (Sf_True(&f, usr) == 0) {
-		return Sf_None(&f);
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, 1);
 	}
-	int taken = 0;
-	Sf_Entity(&f, item);
-	int u = Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", who);
-	if (u > 0) {
-		Sdf_Add(&f, CTF, "flagsFriends", 1);
+	if (!Mode_Ent(item, &flag) || !Mode_VGet(usr, "Name", un)) {
+		return Mode_Done(&t, 0);
+	}
+	byte taken = 0;
+	if (Sd_Eq(un, who)) {
+		if (!Sd_Add(CTF, "flagsFriends", &ctf.flagsFriends, 1)) {
+			return Mode_Done(&t, 0);
+		}
 		taken = 1;
-		Sdf_Sound(&f, "WaySound", "WayVolume");
-	} else if (u == 0 && Sf_In(&f, who, Sf_Global(&f, CTF, "enemies")) > 0) {
-		PyObject *e = Sf_Entity(&f, who);
-		int lead = Sf_True(&f, e);
-		if (lead > 0) {
-			lead = Sf_EqI(&f, Sf_Attr(&f, e, "LLogicIsLeader"), 1);
+		if (!Mode_Sound("WaySound", "WayVolume")) {
+			return Mode_Done(&t, 0);
 		}
-		if (lead > 0) {
-			Sdf_Add(&f, CTF, "flagsEnemies", 1);
+	} else {
+		int in = Mode_Read(CTF, "enemies", &ctf.enemies) ? Native_Contains(&ctf.enemies, who) : -1;
+		int lead = in > 0 ? (Mode_EntityH(who, e) ? Sd_IsLeader(e) : -1) : in;
+		if (lead < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (lead) {
+			if (!Sd_Add(CTF, "flagsEnemies", &ctf.flagsEnemies, 1)) {
+				return Mode_Done(&t, 0);
+			}
 			taken = 1;
-			Sdf_Sound(&f, "EneWaySound", "EneWayVolume");
+			if (!Mode_Sound("EneWaySound", "EneWayVolume")) {
+				return Mode_Done(&t, 0);
+			}
 		}
 	}
-	if (taken && !f.failed) {
-		Sdf_Call(&f, CTF, "RemoveFlag", "(O)", item);
-		int fresh = Ctf_NoFlags(&f);
-		int lead = Sf_Compare(&f, Sf_Global(&f, CTF, "flagsFriends"), ">", Sf_Global(&f, CTF, "flagsEnemies"));
-		Sdf_Set(&f, "PlayerCTFTeamIsWinning", Sf_Int(&f, lead));
-		Ctf_Waypoint(&f);
-		Sdf_Update(&f, Sf_Global(&f, CTF, "flagsFriends"), Sf_Global(&f, CTF, "flagsEnemies"));
-		int end = Sf_Compare(&f, Sf_Global(&f, CTF, "flagsFriends"), "==", Sf_Global(&f, CTF, "flags"));
-		if (end == 0) {
-			end = Sf_Compare(&f, Sf_Global(&f, CTF, "flagsEnemies"), "==", Sf_Global(&f, CTF, "flags"));
-		}
-		if (end > 0) {
-			Sdf_Call(&f, CTF, "EndOfCTF", "()");
-		} else if (end == 0 && fresh > 0) {
-			Sdf_Call(&f, CTF, "CreateFlag", "()");
-		}
+	if (!taken) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	if (!OWN(CTF, "RemoveFlag", NULL, "v", item)) {
+		return Mode_Done(&t, 0);
+	}
+	int fresh = Ctf_NoFlags();
+	if (fresh < 0 || !Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) || !Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(win, Native_Compare(&ctf.flagsFriends, &ctf.flagsEnemies) > 0);
+	if (!Mode_GVarSet("PlayerCTFTeamIsWinning", win) || !Ctf_Waypoint() || !Ctf_Update() ||
+		!Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) || !Mode_Read(CTF, "flags", &ctf.flags)) {
+		return Mode_Done(&t, 0);
+	}
+	byte end = Sd_Eq(&ctf.flagsFriends, &ctf.flags);
+	if (!end) {
+		if (!Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies) || !Mode_Read(CTF, "flags", &ctf.flags)) {
+			return Mode_Done(&t, 0);
+		}
+		end = Sd_Eq(&ctf.flagsEnemies, &ctf.flags);
+	}
+	return Mode_Done(&t, end ? OWN(CTF, "EndOfCTF", NULL, "") : !fresh || OWN(CTF, "CreateFlag", NULL, ""));
 }
+
+MODE_FN(Ctf, TakeFlag, 2, Ctf_TakeFlagC(&a[0], &a[1]))
 
 /* SpawnFlags(pos, numFlags): the flags a dead ship carried, thrown from pos; the nearest active flag is the player's
  * way point */
-static PyObject *CTF_SpawnFlags(PyObject *self, PyObject *args) {
-	PyObject *pos, *num;
+static byte Ctf_SpawnFlagsC(const nativeVal_t *pos, const nativeVal_t *num) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *minName = Mode_V(&t), *minDist = Mode_V(&t);
 	long n = 0;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &pos, &num)) {
-		return NULL;
+	byte ok = Sd_Range(num, &n);
+	for (long i = 0; ok && i < n; i++) {
+		nativeVal_t name;
+		Native_SetNone(&name);
+		ok = OWN(CTF, "CreateFlag", &name, "v", pos) && Mode_Append(CTF, "flagsSpecial", &name);
+		Native_Free(&name);
 	}
-	Sf_Check(&f, Script_Range(num, &n));
-	for (long i = 0; i < n && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *special = Sf_Global(&f, CTF, "flagsSpecial");
-		Sf_Method(&f, special, "append", "(O)", Sdf_Call(&f, CTF, "CreateFlag", "(O)", pos));
-		Sf_Release(&f, mark);
+	if (!ok || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *usr = Sdf_Usr(&f);
-	int u = Sf_True(&f, usr);
-	if (u == 0) {
-		Sdf_SetS(&f, "CurrentWaypointName", "");
-	} else if (u > 0 && Sf_Len(&f, Sf_Global(&f, CTF, "flagsActive")) > 0) {
-		PyObject *minName = Sf_Str(&f, ""), *minDist = Sf_Int(&f, 2000000);
-		PyObject *flags = Sf_Global(&f, CTF, "flagsActive");
-		int mark = f.n;
-		for (int i = 0;; i++) {
-			PyObject *n = Sf_Next(&f, flags, i);
-			if (!n) {
-				break;
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, Mode_GVarSetS("CurrentWaypointName", ""));
+	}
+	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive)) {
+		return Mode_Done(&t, 0);
+	}
+	int count = Native_Size(&ctf.flagsActive);
+	if (count <= 0) {
+		return Mode_Done(&t, count == 0);
+	}
+	Native_SetStr(minName, "");
+	Native_SetInt(minDist, 2000000);
+	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive) || (count = Native_ForCount(&ctf.flagsActive)) < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; ok && i < count; i++) {
+		int mark = t.n;
+		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t), *ep = Mode_V(&t), *up = Mode_V(&t), *d = Mode_V(&t);
+		nativeVal_t *dist = Mode_V(&t);
+		ok = Native_SeqItem(&ctf.flagsActive, i, name) && Mode_EntityH(name, e);
+		if (ok && Native_True(e)) {
+			ok = Mode_VGet(e, "Pos", ep) && Mode_VGet(usr, "Pos", up) && Mode_VecSub(ep, up, d) && Mode_VecMod(d, dist);
+			if (ok && Native_Compare(dist, minDist) < 0) {
+				Native_Free(minDist);
+				Native_Copy(minDist, dist);
+				Native_Free(minName);
+				Native_Copy(minName, name);
 			}
-			PyObject *e = Sf_Entity(&f, n);
-			if (Sf_True(&f, e) > 0) {
-				PyObject *ep = Sf_Attr(&f, e, "Pos");
-				PyObject *dist = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", ep, Sf_Attr(&f, usr,
-					"Pos")));
-				if (Sf_Compare(&f, dist, "<", minDist) > 0) {
-					minDist = dist;
-					minName = n;
-				}
-			}
-			PyObject *keep[2] = { minName, minDist };
-			Sf_ReleaseKeep(&f, mark, keep, 2);
 		}
-		Sdf_Set(&f, "CurrentWaypointName", minName);
+		Mode_Release(&t, mark);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok && Mode_GVarSet("CurrentWaypointName", minName));
 }
+
+MODE_FN(Ctf, SpawnFlags, 2, Ctf_SpawnFlagsC(&a[0], &a[1]))
 
 /* RespawnPlayer(LooserName): the player's ship at a spawn point, the enemies' leader as its target */
-static int Ctf_TargetLeader(scriptFrame_t *f, PyObject *e, PyObject *name, void *usr) {
+static int Ctf_TargetLeader(const nativeVal_t *e, const nativeVal_t *name, void *usr) {
+	nativeVal_t v;
 	(void)name;
-	int lead = Sf_EqI(f, Sf_Attr(f, e, "LLogicIsLeader"), 1);
+	Native_SetNone(&v);
+	int lead = Mode_VGet(e, "LLogicIsLeader", &v) ? Sd_EqI(&v, 1) : -1;
+	Native_Free(&v);
 	if (lead > 0) {
-		Sf_SetAttr(f, usr, "Target", Sf_Attr(f, e, "Name"));
+		lead = Mode_VGet(e, "Name", &v) && Mode_VSet(usr, "Target", &v) ? 1 : -1;
+		Native_Free(&v);
 	}
-	return lead == 0;
+	return lead < 0 ? -1 : !lead;
 }
 
-static PyObject *CTF_RespawnPlayer(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+/* usr = Scrap.GetEntity(name); Vehicles.ReSpawnShip(name); the ship at a spawn point (CTF and Domination) */
+static byte Sd_RespawnUsr(const nativeVal_t *name, nativeVal_t *usr) {
+	return Mode_Import("Parking") && Mode_Import("Vehicles") && Mode_Import("OutMap") && Mode_EntityH(name, usr) &&
+		CALL("Vehicles", "ReSpawnShip", NULL, "v", name) && Sd_SpawnAt(usr);
+}
+
+static byte Ctf_RespawnPlayerC(const nativeVal_t *name) {
+	nativeVal_t usr;
+	Native_SetNone(&usr);
+	byte ok = Sd_RespawnUsr(name, &usr) && Sd_EachInList("CTFEnemies", Ctf_TargetLeader, &usr);
+	Native_Free(&usr);
+	return ok;
+}
+
+MODE_FN(Ctf, RespawnPlayer, 1, Ctf_RespawnPlayerC(&a[0]))
+
+/* PreRestartMenu() and PreOnVictory() of CTF and Domination: the player safe and the last message of the deal, then
+ * the score table (whoVar NULL: the crazy gambler speaks) */
+static byte Sd_PreEnd(byte win, const char *cadVar, const char *whoVar, const char *mode, const char *retry) {
+	nativeVal_t cad, who, params;
+	if (!Mode_Import("Parking") || !Sd_ShipSafe() || !(win ? Sd_UsrSafe() : Sd_UsrInvulnerable())) {
+		return 0;
 	}
-	PyObject *usr = Sdf_RespawnUsr(&f, name);
-	Sdf_EachInList(&f, "CTFEnemies", Ctf_TargetLeader, usr);
-	return Sf_None(&f);
+	Mode_SaveVar(cadVar, &cad);
+	if (whoVar) {
+		Mode_SaveVar(whoVar, &who);
+	} else {
+		Native_SetStr(&who, CG);
+	}
+	PyObject *func = Script_Attr("MissionsFuncs", "OnSuperDealFinish");
+	Sd_Params(win, mode, retry, &params);
+	byte ok = func && Sd_Remote("ForceRemoteCom", &cad, &who, func, &params);
+	Py_XDECREF(func);
+	Native_Free(&params);
+	Native_Free(&cad);
+	Native_Free(&who);
+	return ok;
 }
 
-static PyObject *CTF_PreRestartMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_PreEnd(args, 0, "CTFFinishPlayerLoosesTextCad", "CTFFriendHead", "CTF", "CTF.RestartCTF");
-}
-
-static PyObject *CTF_PreOnVictory(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_PreEnd(args, 1, "CTFFinishPlayerWinsTextCad", "CTFFriendHead", "CTF", "");
-}
+MODE_FN(Ctf, PreRestartMenu, 0, Sd_PreEnd(0, "CTFFinishPlayerLoosesTextCad", "CTFFriendHead", "CTF", "CTF.RestartCTF"))
+MODE_FN(Ctf, PreOnVictory, 0, Sd_PreEnd(1, "CTFFinishPlayerWinsTextCad", "CTFFriendHead", "CTF", ""))
 
 PyMethodDef g_CTFMethods[] = {
-	{ "GetMenuDescription", CTF_GetMenuDescription, 1, NULL },
-	{ "InitStatus", CTF_InitStatus, 1, NULL },
-	{ "Init", CTF_Init, 1, NULL },
+	{ "GetMenuDescription", Ctf_GetMenuDescription, 1, NULL },
+	{ "InitStatus", Ctf_InitStatus, 1, NULL },
+	{ "Init", Ctf_Init, 1, NULL },
 	{ "SetInvulnerableStatus", Sd_SetInvulnerable, 1, NULL },
 	{ "AbortRemoteMessages", Sd_AbortRemoteMessages, 1, NULL },
-	{ "SetProfile", CTF_SetProfile, 1, NULL },
-	{ "CreateEnemies", CTF_CreateEnemies, 1, NULL },
-	{ "CreateFriends", CTF_CreateFriends, 1, NULL },
-	{ "CrazyGamblerStartCTF", CTF_CrazyGamblerStartCTF, 1, NULL },
+	{ "SetProfile", Ctf_SetProfile, 1, NULL },
+	{ "CreateEnemies", Ctf_CreateEnemies, 1, NULL },
+	{ "CreateFriends", Ctf_CreateFriends, 1, NULL },
+	{ "CrazyGamblerStartCTF", Ctf_CrazyGamblerStartCTF, 1, NULL },
 	{ "SetVulnerable", Sd_SetVulnerable, 1, NULL },
-	{ "StartCTF", CTF_StartCTF, 1, NULL },
-	{ "OnVehicleDeathCallback", CTF_OnVehicleDeathCallback, 1, NULL },
-	{ "OnPlayerDeath", CTF_OnPlayerDeath, 1, NULL },
-	{ "RemoveFlag", CTF_RemoveFlag, 1, NULL },
-	{ "EndOfCTF", CTF_EndOfCTF, 1, NULL },
-	{ "RespawnEnemy", (PyCFunction)(void (*)(void))CTF_RespawnEnemy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "RespawnFriend", CTF_RespawnFriend, 1, NULL },
-	{ "CreateFlag", (PyCFunction)(void (*)(void))CTF_CreateFlag, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "ResetFlag", CTF_ResetFlag, 1, NULL },
-	{ "TakeFlag", CTF_TakeFlag, 1, NULL },
-	{ "SpawnFlags", CTF_SpawnFlags, 1, NULL },
-	{ "RespawnPlayer", CTF_RespawnPlayer, 1, NULL },
-	{ "PreRestartMenu", CTF_PreRestartMenu, 1, NULL },
+	{ "StartCTF", Ctf_StartCTF, 1, NULL },
+	{ "OnVehicleDeathCallback", Ctf_OnVehicleDeathCallback, 1, NULL },
+	{ "OnPlayerDeath", Ctf_OnPlayerDeath, 1, NULL },
+	{ "RemoveFlag", Ctf_RemoveFlag, 1, NULL },
+	{ "EndOfCTF", Ctf_EndOfCTF, 1, NULL },
+	{ "RespawnEnemy", (PyCFunction)(void (*)(void))Ctf_RespawnEnemy, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "RespawnFriend", Ctf_RespawnFriend, 1, NULL },
+	{ "CreateFlag", (PyCFunction)(void (*)(void))Ctf_CreateFlag, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "ResetFlag", Ctf_ResetFlag, 1, NULL },
+	{ "TakeFlag", Ctf_TakeFlag, 1, NULL },
+	{ "SpawnFlags", Ctf_SpawnFlags, 1, NULL },
+	{ "RespawnPlayer", Ctf_RespawnPlayer, 1, NULL },
+	{ "PreRestartMenu", Ctf_PreRestartMenu, 1, NULL },
 	{ "RestartCTF", Sd_Restart, 1, NULL },
-	{ "PreOnVictory", CTF_PreOnVictory, 1, NULL },
+	{ "PreOnVictory", Ctf_PreOnVictory, 1, NULL },
 	{ NULL, NULL, 0, NULL }
 };
 
@@ -2554,10 +2698,7 @@ static PyObject *Domination_LostBatonMessage(PyObject *self, PyObject *args) {
 	return Sdf_LostBaton(args, "SuperDeal_DominationSystemMessage1");
 }
 
-static PyObject *Domination_SetProfile(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_SetProfile(args, "Domination");
-}
+MODE_FN(Domination, SetProfile, 2, Sd_SetProfileC("Domination", &a[0], &a[1]))
 
 /* CreateEnemies() and CreateFriends(): the ships of a team at the spawn dummies of the team; the first enemy (the
  * leader) carries no money */
