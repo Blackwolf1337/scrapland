@@ -6,668 +6,762 @@
  * other scripts read them. The script reads and writes ship variables by built names ("Upgrd0" + `i`) with eval and
  * exec; here they are attribute reads and writes for weapon numbers, which raise the same errors (BaseOnTakeUpgrade
  * runs the script's text for any other iWeap).
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
+ * entries are adapters. The variables are read where the script reads them as its globals; Upgrades is changed in
+ * place on the dict object of the module (Mode_DictPut, OBJLIB 5), Hints stays a Python object (its items hold the
+ * functions of the missions, OBJLIB 5 and 7). The module's own functions that the script calls as its globals
+ * (CreateBox, InitResources, BrowseItemPos, SetInteractiveObjOnFloor, LastClientCreate) and the hook into Net stay by
+ * name (OBJLIB 3); the boxes are entity handles where they leave the module (OBJLIB 7).
  */
 #include <string.h>
 
+#include "scrap/net.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/timer.h"
 
-#define K(o) Script_Keep(&r, (o))
-#define FAIL() return Script_Done(&r, NULL)
+/* the 17 keys of the upgrades (1 to 17) the loops of the script look at */
+#define IT_UPGRADES 17
 
-/* obj.<prefix><n> (a new reference) */
-static PyObject *It_Var(PyObject *obj, const char *prefix, long n) {
-	char name[0x20];
-	Str_Printf(name, sizeof(name), "%s%ld", prefix, n);
-	return Script_GetAttr(obj, name);
+/* ups.has_key(key) as PyMapping_HasKey answers it: ups[key] gives a value (any error is no) */
+static int It_Has(const nativeVal_t *ups, const nativeVal_t *key) {
+	nativeVal_t v;
+	if (!Native_Subscript(ups, key, &v)) {
+		PyErr_Clear();
+		return 0;
+	}
+	Native_Free(&v);
+	return 1;
+}
+
+/* ups[key][i] into *out */
+static byte It_UpItem(const nativeVal_t *ups, const nativeVal_t *key, long i, nativeVal_t *out) {
+	nativeVal_t up, k;
+	if (!Native_Subscript(ups, key, &up)) {
+		return 0;
+	}
+	Native_SetInt(&k, i);
+	byte ok = Native_Subscript(&up, &k, out);
+	Native_Free(&up);
+	return ok;
+}
+
+/* ups[key] = (a, b), the dict object of the module changed in place (the native copy ups with it) */
+static byte It_SetUp(nativeVal_t *ups, const nativeVal_t *key, const nativeVal_t *a, const nativeVal_t *b) {
+	nativeVal_t v;
+	Native_SetEmpty(&v, NV_TUPLE);
+	Native_Copy(Native_Append(&v), a);
+	Native_Copy(Native_Append(&v), b);
+	byte ok = Mode_DictPut("Items", "Upgrades", ups, key, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* a == b of the script (the error of a compare that raised) */
+static int It_Eq(const nativeVal_t *a, const nativeVal_t *b) {
+	int c = Native_Compare(a, b);
+	return PyErr_Occurred() ? -1 : c == 0;
 }
 
 /* SVec.Prod(SVec.Norm((Scrap.Rand(-1,1), Scrap.Rand(-1,1), Scrap.Rand(-1,1))), 100.0): a random speed of a dropped
- * upgrade (a new reference) */
-static PyObject *It_RandomVel(void) {
+ * upgrade */
+static byte It_RandomVel(nativeVal_t *out) {
+	nativeVal_t r, n, k;
 	double x = Scrap_RandRange(-1, 1), y = Scrap_RandRange(-1, 1), z = Scrap_RandRange(-1, 1);
-	PyObject *n = Script_Ask("SVec", "Norm", "((ddd))", x, y, z);
-	PyObject *v = n ? Script_Ask("SVec", "Prod", "(Od)", n, 100.0) : NULL;
-	Py_XDECREF(n);
-	return v;
+	Native_SetVec(&r, x, y, z);
+	Native_SetFloat(&k, 100.0);
+	return Mode_VecNorm(&r, &n) && Mode_VecProd(&n, &k, out);
 }
 
-/* Upgrades[key] (a new reference, NULL with a KeyError like the script) */
-static PyObject *It_Upgrade(PyObject *ups, PyObject *key) {
-	return PyObject_GetItem(ups, key);
+/* "models/Items/" + Kind + "/" + Kind + ".m3d" */
+static byte It_Model(modeVals_t *t, const nativeVal_t *kind, nativeVal_t *out) {
+	return Mode_Cat(t, out, 5, Mode_S(t, "models/Items/"), kind, Mode_S(t, "/"), kind, Mode_S(t, ".m3d"));
 }
 
 /* ---- the upgrades ---- */
 
 /* ResetUpgrade(UgName): an upgrade back at its place with full ammunition */
-static PyObject *Items_ResetUpgrade(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte It_ResetUpgrade(const nativeVal_t *name) {
+	nativeVal_t ups = { 0 }, key, n = { 0 }, full;
+	if (!Mode_G("Items", "Upgrades", &ups)) {
+		return 0;
 	}
-	PyObject *ups = K(Script_Global("Items", "Upgrades"));
-	if (!ups) {
-		FAIL();
-	}
-	for (long i = 0; i < 17; i++) {
-		scriptRefs_t t = { .n = 0 };
-		PyObject *key = Script_Keep(&t, PyInt_FromLong(i + 1));
-		int has = key ? PyMapping_HasKey(ups, key) : -1;
-		byte ok = has >= 0;
-		if (has > 0) {
-			PyObject *up = Script_Keep(&t, It_Upgrade(ups, key)), *n = up ? Script_Keep(&t, Script_Index(up, 0)) : NULL;
-			int same = n ? Script_Eq(n, name) : -1;
-			ok = same >= 0;
-			if (same > 0) {
-				PyObject *e = Script_Keep(&t, Script_Entity(name));
-				PyObject *v = e && Script_HSet(e, "OnReset", PyString_FromString("")) ? Script_Keep(&t, Py_BuildValue("(Oi)", name, 200)) : NULL;
-				ok = v && PyObject_SetItem(ups, key, v) == 0;
-			}
+	Native_SetInt(&full, 200);
+	byte ok = 1;
+	for (long i = 0; ok && i < IT_UPGRADES; i++) {
+		Native_SetInt(&key, i + 1);
+		if (!It_Has(&ups, &key)) {
+			continue;
 		}
-		Script_Done(&t, NULL);
-		if (!ok) {
-			FAIL();
+		int same = It_UpItem(&ups, &key, 0, &n) ? It_Eq(&n, name) : -1;
+		Native_Free(&n);
+		if (same > 0) {
+			cEntity *e;
+			ok = Mode_Ent(name, &e) && Mode_SetS(e, Native_Text(name), "OnReset", "") && It_SetUp(&ups, &key, name, &full);
+		} else {
+			ok = same == 0;
 		}
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	Native_Free(&ups);
+	return ok;
 }
 
 /* RestoreUpgrade(id): the upgrade back at its origin, free and with full ammunition */
-static PyObject *Items_RestoreUpgrade(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
+static byte It_RestoreUpgrade(const nativeVal_t *id) {
+	nativeVal_t ups = { 0 }, n = { 0 }, rt = { 0 }, v = { 0 }, full;
+	if (!Mode_G("Items", "Upgrades", &ups)) {
+		return 0;
 	}
-	PyObject *ups = K(Script_Global("Items", "Upgrades"));
-	int has = ups ? PyMapping_HasKey(ups, id) : -1;
-	if (has < 0) {
-		FAIL();
+	byte ok = 1;
+	if (It_Has(&ups, id)) {
+		cEntity *e;
+		Native_SetInt(&full, 200);
+		ok = It_UpItem(&ups, id, 0, &n) && Mode_Ent(&n, &e) && Mode_G("Items", "UpgradesRTime", &rt);
+		const char *ref = Native_Text(&n);
+		ok = ok && Mode_SetS(e, ref, "Owner", "") && Mode_Set(e, ref, "BackTime", (Native_SetFloat(&v, 0.0), &v)) &&
+			Mode_Set(e, ref, "rTime", &rt) && Mode_Get(e, ref, "Origin", &v) && Mode_Set(e, ref, "Pos", &v);
+		Native_Free(&n);
+		ok = ok && It_UpItem(&ups, id, 0, &n) && It_SetUp(&ups, id, &n, &full);
 	}
-	if (has) {
-		PyObject *up = K(It_Upgrade(ups, id)), *n = up ? K(Script_Index(up, 0)) : NULL;
-		PyObject *itm = n ? K(Script_Entity(n)) : NULL, *rt = itm ? K(Script_Global("Items", "UpgradesRTime")) : NULL;
-		PyObject *origin = rt && Script_HSet(itm, "Owner", PyString_FromString("")) &&
-			Script_HSet(itm, "BackTime", PyFloat_FromDouble(0.0)) && Script_HSet(itm, "rTime", Script_Ref(rt)) ?
-			K(Script_GetAttr(itm, "Origin")) : NULL;
-		PyObject *up2 = origin && Script_HSet(itm, "Pos", Script_Ref(origin)) ? K(It_Upgrade(ups, id)) : NULL;
-		PyObject *n2 = up2 ? K(Script_Index(up2, 0)) : NULL, *v = n2 ? K(Py_BuildValue("(Oi)", n2, 200)) : NULL;
-		if (!v || PyObject_SetItem(ups, id, v) < 0) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	Native_Free(&ups);
+	Native_Free(&n);
+	Native_Free(&rt);
+	Native_Free(&v);
+	return ok;
 }
 
-/* DropUpgrade(VehicleName, id, Ammo): the upgrade id leaves the ship behind it with the ammunition left; the item
- * (a new reference) or None */
-static PyObject *It_DropUpgrade(PyObject *veh, PyObject *id, PyObject *ammo) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *ups = K(Script_Global("Items", "Upgrades"));
-	int nz = ups ? Script_NumCmp(id, 0) : -2;
-	if (nz == -2) {
-		FAIL();
+/* DropUpgrade(VehicleName, id, Ammo): the upgrade id leaves the ship behind it with the ammunition left; the item's
+ * handle (OBJLIB 7) or None in *out */
+static byte It_DropUpgrade(const nativeVal_t *veh, const nativeVal_t *id, const nativeVal_t *ammo, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ups = Mode_V(&t), *zero = Mode_V(&t);
+	Native_SetInt(zero, 0);
+	if (!Mode_G("Items", "Upgrades", ups)) {
+		return Mode_Done(&t, 0);
 	}
-	int has = nz != 0 ? PyMapping_HasKey(ups, id) : 0;
-	if (has < 0) {
-		FAIL();
+	int nz = Native_Compare(id, zero);
+	if (PyErr_Occurred()) {
+		return Mode_Done(&t, 0);
 	}
-	if (!has) {
-		return Script_Done(&r, Py_ReturnNone());
+	if (!nz || !It_Has(ups, id)) {
+		Native_SetNone(out);
+		return Mode_Done(&t, 1);
 	}
-	PyObject *obj = K(Script_Entity(veh)), *up = obj ? K(It_Upgrade(ups, id)) : NULL;
-	PyObject *n = up ? K(Script_Index(up, 0)) : NULL, *itm = n ? K(Script_Entity(n)) : NULL;
-	PyObject *v = itm ? K(Py_BuildValue("(OO)", n, ammo)) : NULL;
-	if (!v || PyObject_SetItem(ups, id, v) < 0 || !Script_HSet(itm, "Owner", PyString_FromString(""))) {
-		FAIL();
+	cEntity *obj, *itm;
+	nativeVal_t *n = Mode_V(&t), *vel = Mode_V(&t), *dir = Mode_V(&t), *pos = Mode_V(&t), *vr = Mode_V(&t), *ir = Mode_V(&t);
+	nativeVal_t *sum = Mode_V(&t), *dist = Mode_V(&t), *back = Mode_V(&t), *at = Mode_V(&t), *speed = Mode_V(&t);
+	nativeVal_t *rt = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_Ent(veh, &obj) || !It_UpItem(ups, id, 0, n) || !Mode_Ent(n, &itm) || !It_SetUp(ups, id, n, ammo)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *ovel = K(Script_GetAttr(obj, "Vel")), *vel = ovel ? K(Script_Ask("SVec", "Norm", "(O)", ovel)) : NULL;
-	PyObject *pos = vel ? K(Script_GetAttr(obj, "Pos")) : NULL;
-	PyObject *vr = pos ? K(Script_GetAttr(obj, "VRadius")) : NULL, *ir = vr ? K(Script_GetAttr(itm, "Radius")) : NULL;
-	PyObject *sum = ir ? K(PyNumber_Add(vr, ir)) : NULL, *ten = sum ? K(PyInt_FromLong(10)) : NULL;
-	PyObject *dist = ten ? K(PyNumber_Add(sum, ten)) : NULL, *back = dist ? K(Script_Ask("SVec", "Prod", "(OO)", vel, dist)) : NULL;
-	PyObject *at = back ? K(Script_Ask("SVec", "Sub", "(OO)", pos, back)) : NULL;
-	PyObject *speed = at && Script_HSet(itm, "Pos", Script_Ref(at)) ? K(Script_Ask("SVec", "Prod", "(Oi)", vel, -100)) : NULL;
-	PyObject *rt = speed && Script_HSet(itm, "Vel", Script_Ref(speed)) ? K(Script_Global("Items", "UpgradesRTime")) : NULL;
-	if (!rt || !Script_HSet(itm, "BackTime", Script_Ref(rt)) || !Script_HSet(itm, "rTime", PyFloat_FromDouble(0.1)) ||
-		!Script_HSet(itm, "OnReset", PyString_FromString("Items.ResetUpgrade"))) {
-		FAIL();
-	}
-	return Script_Done(&r, Script_Ref(itm));
+	const char *oref = Native_Text(veh), *iref = Native_Text(n);
+	Native_SetFloat(v, 0.1);
+	byte ok = Mode_SetS(itm, iref, "Owner", "") && Mode_Get(obj, oref, "Vel", vel) && Mode_VecNorm(vel, dir) &&
+		Mode_Get(obj, oref, "Pos", pos) && Mode_Get(obj, oref, "VRadius", vr) && Mode_Get(itm, iref, "Radius", ir) &&
+		Native_Arith('+', vr, ir, sum) && Native_Arith('+', sum, Mode_I(&t, 10), dist) && Mode_VecProd(dir, dist, back) &&
+		Mode_VecSub(pos, back, at) && Mode_Set(itm, iref, "Pos", at) && Mode_VecProd(dir, Mode_I(&t, -100), speed) &&
+		Mode_Set(itm, iref, "Vel", speed) && Mode_G("Items", "UpgradesRTime", rt) && Mode_Set(itm, iref, "BackTime", rt) &&
+		Mode_Set(itm, iref, "rTime", v) && Mode_SetS(itm, iref, "OnReset", "Items.ResetUpgrade") && Mode_EntHandle(itm, out);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Items_DropUpgrade(PyObject *self, PyObject *args) {
-	PyObject *veh, *id, *ammo;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &veh, &id, &ammo)) {
-		return NULL;
-	}
-	return It_DropUpgrade(veh, id, ammo);
+/* the dropped item flies off in a random direction from the ship (itm: its handle, obj the ship of the script's
+ * handle) */
+static byte It_Scatter(const nativeVal_t *itm, cEntity *obj, const char *oref) {
+	nativeVal_t vel = { 0 }, pos = { 0 };
+	byte ok = It_RandomVel(&vel) && Mode_VSet(itm, "Vel", &vel) && Mode_Get(obj, oref, "Pos", &pos) && Mode_VSet(itm, "Pos", &pos);
+	Native_Free(&vel);
+	Native_Free(&pos);
+	return ok;
 }
 
-/* the dropped item flies off in a random direction from the ship */
-static byte It_Scatter(PyObject *itm, PyObject *obj) {
-	PyObject *vel = It_RandomVel();
-	PyObject *pos = vel && Script_HSet(itm, "Vel", vel) ? Script_GetAttr(obj, "Pos") : NULL;
-	return pos && Script_HSet(itm, "Pos", pos);
+/* obj.<prefix><i> of the ship's handle */
+static byte It_ShipVar(cEntity *obj, const char *oref, const char *prefix, long i, nativeVal_t *out) {
+	char name[0x20];
+	Str_Printf(name, sizeof(name), "%s%ld", prefix, i);
+	return Mode_Get(obj, oref, name, out);
 }
 
 /* DropAll(VehicleName): a network ship that dies leaves all its upgrades */
-static PyObject *Items_DropAll(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *veh;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &veh)) {
-		return NULL;
+static byte It_DropAll(const nativeVal_t *veh) {
+	nativeVal_t split = { 0 }, zero;
+	int off = Native_NetOff();
+	if (off < 0 || !Native_GVarGet("SplitScreen", &split)) {
+		return 0;
 	}
-	PyObject *flags = K(Script_Ask("Scrap", "GetNetFlags", "()")), *off = flags ? K(Py_BuildValue("(iii)", 0, 0, 0)) : NULL;
-	PyObject *split = off ? K(Script_Ask("Scrap", "Get", "(s)", "SplitScreen")) : NULL;
-	if (!split) {
-		FAIL();
+	Native_SetInt(&zero, 0);
+	int single = off && !Native_Compare(&split, &zero);
+	Native_Free(&split);
+	if (single) {
+		return 1;
 	}
-	if (Script_Eq(flags, off) > 0 && Script_NumCmp(split, 0) == 0) {
-		return Script_Done(&r, Py_ReturnNone());
+	cEntity *obj, *obj2;
+	if (!Mode_Ent(veh, &obj)) {
+		return 0;
 	}
-	PyObject *obj = K(Script_Entity(veh)), *nw = obj ? K(Script_Ask("SWeap", "GetNWeap", "()")) : NULL;
-	long n;
-	if (!nw || !Script_Range(nw, &n)) {
-		FAIL();
-	}
+	const char *oref = Native_Text(veh);
+	long n = g_pWorld->weapons.count;
 	for (long i = 0; i < n; i++) {
-		scriptRefs_t t = { .n = 0 };
-		PyObject *up = Script_Keep(&t, It_Var(obj, "Upgrd0", i));
-		PyObject *obj2 = up ? Script_Keep(&t, Script_Entity(veh)) : NULL;
-		PyObject *ammo = obj2 ? Script_Keep(&t, It_Var(obj2, "UAmmo0", i)) : NULL;
-		PyObject *itm = ammo ? Script_Keep(&t, It_DropUpgrade(veh, up, ammo)) : NULL;
-		byte ok = itm && (PyObject_IsTrue(itm) <= 0 || It_Scatter(itm, obj));
-		Script_Done(&t, NULL);
+		nativeVal_t up = { 0 }, ammo = { 0 }, itm = { 0 };
+		byte ok = It_ShipVar(obj, oref, "Upgrd0", i, &up) && Mode_Ent(veh, &obj2) && It_ShipVar(obj2, oref, "UAmmo0", i, &ammo) &&
+			It_DropUpgrade(veh, &up, &ammo, &itm);
+		if (ok && itm.type != NV_NONE) {
+			ok = It_Scatter(&itm, obj, oref);
+		}
+		Native_Free(&up);
+		Native_Free(&ammo);
+		Native_Free(&itm);
 		if (!ok) {
-			FAIL();
+			return 0;
 		}
 	}
 	/* those left, one never knows */
-	PyObject *ups = K(Script_Global("Items", "Upgrades"));
-	if (!ups) {
-		FAIL();
+	nativeVal_t ups = { 0 }, key, full;
+	if (!Mode_G("Items", "Upgrades", &ups)) {
+		return 0;
 	}
-	for (long i = 0; i < 17; i++) {
-		scriptRefs_t t = { .n = 0 };
-		PyObject *key = Script_Keep(&t, PyInt_FromLong(i + 1));
-		int has = key ? PyMapping_HasKey(ups, key) : -1;
-		byte ok = has >= 0;
-		if (has > 0) {
-			PyObject *up = Script_Keep(&t, It_Upgrade(ups, key)), *nm = up ? Script_Keep(&t, Script_Index(up, 0)) : NULL;
-			PyObject *itm = nm ? Script_Keep(&t, Script_Entity(nm)) : NULL;
-			PyObject *owner = itm ? Script_Keep(&t, Script_GetAttr(itm, "Owner")) : NULL;
-			int mine = owner ? Script_Eq(owner, veh) : -1;
-			ok = mine >= 0;
-			if (mine > 0) {
-				PyObject *full = Script_Keep(&t, PyInt_FromLong(200));
-				PyObject *d = full ? Script_Keep(&t, It_DropUpgrade(veh, key, full)) : NULL;
-				ok = d && It_Scatter(itm, obj);
-			}
+	Native_SetInt(&full, 200);
+	byte ok = 1;
+	for (long i = 0; ok && i < IT_UPGRADES; i++) {
+		Native_SetInt(&key, i + 1);
+		if (!It_Has(&ups, &key)) {
+			continue;
 		}
-		Script_Done(&t, NULL);
-		if (!ok) {
-			FAIL();
+		nativeVal_t nm = { 0 }, owner = { 0 }, d = { 0 }, h = { 0 };
+		cEntity *e = NULL;
+		ok = It_UpItem(&ups, &key, 0, &nm) && Mode_Ent(&nm, &e) && Mode_Get(e, Native_Text(&nm), "Owner", &owner);
+		int mine = ok ? It_Eq(&owner, veh) : -1;
+		if (mine > 0) {
+			ok = Mode_EntHandle(e, &h) && It_DropUpgrade(veh, &key, &full, &d) && It_Scatter(&h, obj, oref);
+			/* the upgrades of the module may have changed */
+			Native_Free(&ups);
+			ok = ok && Mode_G("Items", "Upgrades", &ups);
+		} else {
+			ok = mine == 0;
 		}
+		Native_Free(&nm);
+		Native_Free(&owner);
+		Native_Free(&d);
+		Native_Free(&h);
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	Native_Free(&ups);
+	return ok;
 }
 
 /*
  * eval("obj." + prefix + `iWeap`) (exec of it + rest when rest is given) of BaseOnTakeUpgrade with its locals
- * loc: for a weapon number >= 0 the attribute of the ship obj (value set for exec), for any other value the text the
- * script makes, run in the module's globals (its SyntaxError and the like). A new reference, NULL with the error set
+ * (ItemName, VehicleName, iWeap, iupgrd and obj; Upgrades is a global of the module): for a
+ * weapon number >= 0 the attribute of the ship (value set for exec), for any other value the text the script makes,
+ * run in the module's globals (its SyntaxError and the like). The value of eval in *out
  */
-static PyObject *It_WeapVar(PyObject *obj, const char *prefix, PyObject *weap, PyObject *loc, const char *rest,
-	PyObject *value) {
-	if (PyInt_Check(weap) && PyInt_AsLong(weap) >= 0) {
-		if (!rest) {
-			return It_Var(obj, prefix, PyInt_AsLong(weap));
-		}
+static byte It_WeapVar(cEntity *obj, const char *oref, const char *prefix, const nativeVal_t *weap, const nativeVal_t *loc,
+	const char *rest, const nativeVal_t *value, nativeVal_t *out) {
+	if (weap->type == NV_INT && weap->i >= 0) {
 		char name[0x20];
-		Str_Printf(name, sizeof(name), "%s%ld", prefix, PyInt_AsLong(weap));
-		return Script_HSet(obj, name, Script_Ref(value)) ? Py_ReturnNone() : NULL;
+		Str_Printf(name, sizeof(name), "%s%ld", prefix, weap->i);
+		return rest ? Mode_Set(obj, oref, name, value) : Mode_Get(obj, oref, name, out);
 	}
 	/* STAGE 7: only a weapon number that is no int >= 0 (a call from the console; the item scripts pass 0 to 5) runs
 	 * the text through the interpreter; it is Script_NotRead's error in the build without it */
-	char head[0x20];
-	Str_Printf(head, sizeof(head), "obj.%s", prefix);
-	PyObject *m = PyImport_ImportModule("Items"), *r = m ? PyObject_Repr(weap) : NULL;
-	PyObject *text = r ? Script_SPlus(head, r) : NULL;
-	text = text && rest ? Script_PlusS(text, rest) : text;
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_BufAdd(&b, "obj.", 4);
+	Native_BufAdd(&b, prefix, -1);
+	Native_Repr(&b, weap, NR_REPR);
+	if (rest) {
+		Native_BufAdd(&b, rest, -1);
+	}
+	PyObject *m = PyImport_ImportModule("Items"), *l = m ? Native_ToPy(loc) : NULL, *h = l ? PyEntity_New(oref) : NULL;
+	if (l && !h) {
+		h = Py_ReturnNone();
+	}
+	PyObject *v = NULL;
+	if (h && PyDict_SetItemString(l, "obj", h) == 0) {
 #ifdef SCRAP_NO_PYTHON
-	(void)loc;
-	PyObject *v = text ? Script_NotRead("Items.BaseOnTakeUpgrade", PyString_AsString(text)) : NULL;
+		v = Script_NotRead("Items.BaseOnTakeUpgrade", b.p);
 #else
-	PyObject *v = text ? PyRun_String(PyString_AsString(text), rest ? Py_file_input : Py_eval_input,
-		PyModule_GetDict(m), loc) : NULL;
+		v = PyRun_String(b.p, rest ? Py_file_input : Py_eval_input, PyModule_GetDict(m), l);
 #endif
-	Py_XDECREF(text);
-	Py_XDECREF(r);
+	}
+	Native_BufFree(&b);
+	byte ok = v && (rest || Native_Arg(v, out));
+	Py_XDECREF(v);
+	Py_XDECREF(h);
+	Py_XDECREF(l);
 	Py_XDECREF(m);
-	return v;
+	return ok;
 }
 
 /* BaseOnTakeUpgrade(ItemName, VehicleName, iWeap, iupgrd): a ship with the weapon takes its upgrade (and drops the one
  * it had) */
-static PyObject *It_BaseOnTake(PyObject *item, PyObject *veh, PyObject *weap, PyObject *upgrd) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *obj = K(Script_Entity(veh));
-	PyObject *loc = obj ? K(Py_BuildValue("{s:O,s:O,s:O,s:O,s:O}", "ItemName", item, "VehicleName", veh, "iWeap", weap,
-		"iupgrd", upgrd, "obj", obj)) : NULL;
-	PyObject *has = loc ? K(It_WeapVar(obj, "isWpn0", weap, loc, NULL, NULL)) : NULL;
-	int is = has ? Script_True(has) : -1;
-	if (is <= 0) {
-		return is < 0 ? Script_Done(&r, NULL) : Script_Done(&r, Py_ReturnNone());
+static byte It_BaseOnTake(const nativeVal_t *item, const nativeVal_t *veh, const nativeVal_t *weap, const nativeVal_t *upgrd) {
+	modeVals_t t = { .n = 0 };
+	cEntity *obj, *itm;
+	if (!Mode_Ent(veh, &obj)) {
+		return 0;
 	}
-	PyObject *itm = K(Script_Entity(item));
-	PyObject *old = itm && PyDict_SetItemString(loc, "itm", itm) == 0 && Script_HSet(itm, "rTime", PyFloat_FromDouble(0.1)) &&
-		Script_HSet(itm, "Owner", Script_Ref(veh)) ? K(It_WeapVar(obj, "Upgrd0", weap, loc, NULL, NULL)) : NULL;
-	PyObject *ammo = old ? K(It_WeapVar(obj, "UAmmo0", weap, loc, NULL, NULL)) : NULL;
-	PyObject *d = ammo ? K(It_DropUpgrade(veh, old, ammo)) : NULL;
-	PyObject *ups = d ? K(Script_Global("Items", "Upgrades")) : NULL;
-	PyObject *known = ups ? K(Script_Method(ups, "has_key", "(O)", upgrd)) : NULL;
-	int t = known ? Script_True(known) : -1;
-	if (t < 0) {
-		FAIL();
+	const char *oref = Native_Text(veh), *iref = Native_Text(item);
+	/* the locals of the script's eval and exec texts */
+	nativeVal_t *loc = Mode_V(&t), *has = Mode_V(&t), *old = Mode_V(&t), *ammo = Mode_V(&t), *d = Mode_V(&t);
+	nativeVal_t *ups = Mode_V(&t), *left = Mode_V(&t), *tenth = Mode_V(&t);
+	static const char *const names[] = { "ItemName", "VehicleName", "iWeap", "iupgrd" };
+	const nativeVal_t *vals[] = { item, veh, weap, upgrd };
+	Native_SetEmpty(loc, NV_DICT);
+	for (int i = 0; i < 4; i++) {
+		nativeVal_t k, v;
+		Native_SetStr(&k, names[i]);
+		Native_Copy(&v, vals[i]);
+		Native_DictSet(loc, &k, &v);
 	}
-	if (!t) {
-		PyObject *v = K(Py_BuildValue("(Oi)", item, 200));
-		if (!v || PyObject_SetItem(ups, upgrd, v) < 0) {
-			FAIL();
-		}
+	if (!It_WeapVar(obj, oref, "isWpn0", weap, loc, NULL, NULL, has)) {
+		return Mode_Done(&t, 0);
 	}
-	if (!K(It_WeapVar(obj, "Upgrd0", weap, loc, " = iupgrd", upgrd))) {
-		FAIL();
+	if (!Native_True(has)) {
+		return Mode_Done(&t, 1);
+	}
+	Native_SetFloat(tenth, 0.1);
+	if (!Mode_Ent(item, &itm) || !Mode_Set(itm, iref, "rTime", tenth) || !Mode_Set(itm, iref, "Owner", veh) ||
+		!It_WeapVar(obj, oref, "Upgrd0", weap, loc, NULL, NULL, old) || !It_WeapVar(obj, oref, "UAmmo0", weap, loc, NULL, NULL, ammo) ||
+		!It_DropUpgrade(veh, old, ammo, d)) {
+		return Mode_Done(&t, 0);
+	}
+	int known = Mode_HasKey("Items", "Upgrades", 1, upgrd);
+	if (known < 0 || !Mode_G("Items", "Upgrades", ups)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!known && !It_SetUp(ups, upgrd, item, Mode_I(&t, 200))) {
+		return Mode_Done(&t, 0);
+	}
+	if (!It_WeapVar(obj, oref, "Upgrd0", weap, loc, " = iupgrd", upgrd, NULL)) {
+		return Mode_Done(&t, 0);
 	}
 	/* the value first, as the assignment evaluates it (exec of the text for another iWeap evaluates it itself) */
-	byte num = PyInt_Check(weap) && PyInt_AsLong(weap) >= 0;
-	PyObject *up = num ? K(It_Upgrade(ups, upgrd)) : NULL, *left = up ? K(Script_Index(up, 1)) : NULL;
-	if ((num && !left) || !K(It_WeapVar(obj, "UAmmo0", weap, loc, " = Upgrades[iupgrd][1]", left))) {
-		FAIL();
+	byte num = weap->type == NV_INT && weap->i >= 0;
+	if ((num && !It_UpItem(ups, upgrd, 1, left)) || !It_WeapVar(obj, oref, "UAmmo0", weap, loc, " = Upgrades[iupgrd][1]", left, NULL)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *up2 = K(It_Upgrade(ups, upgrd)), *left2 = up2 ? K(Script_Index(up2, 1)) : NULL;
-	PyObject *v = left2 ? K(Py_BuildValue("(OO)", item, left2)) : NULL;
-	if (!v || PyObject_SetItem(ups, upgrd, v) < 0) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
-}
-
-static PyObject *Items_BaseOnTakeUpgrade(PyObject *self, PyObject *args) {
-	PyObject *item, *veh, *weap, *upgrd;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &item, &veh, &weap, &upgrd)) {
-		return NULL;
-	}
-	return It_BaseOnTake(item, veh, weap, upgrd);
+	Native_Free(left);
+	Native_Free(ups);
+	byte ok = Mode_G("Items", "Upgrades", ups) && It_UpItem(ups, upgrd, 1, left) && It_SetUp(ups, upgrd, item, left);
+	return Mode_Done(&t, ok);
 }
 
 /* OnTake<id>(ItemName, VehicleName): the upgrades of the weapons: Inferno (5), ATPC (4), Devastator (3), Tesla (2),
  * Swarm (1), Vulcan (0) */
-#define IT_TAKE(id, weap, upgrd) \
-	static PyObject *Items_OnTake##id(PyObject *self, PyObject *args) { \
-		PyObject *item, *veh, *w, *u, *res; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "OO", &item, &veh)) { \
-			return NULL; \
-		} \
-		w = PyInt_FromLong(weap); \
-		u = PyInt_FromLong(upgrd); \
-		res = w && u ? It_BaseOnTake(item, veh, w, u) : NULL; \
-		Py_XDECREF(w); \
-		Py_XDECREF(u); \
-		return res; \
-	}
+static byte It_OnTake(const nativeVal_t *a, long weap, long upgrd) {
+	nativeVal_t w, u;
+	Native_SetInt(&w, weap);
+	Native_SetInt(&u, upgrd);
+	return It_BaseOnTake(&a[0], &a[1], &w, &u);
+}
 
-IT_TAKE(iXtr, 5, 12)
-IT_TAKE(iSiz, 5, 11)
-IT_TAKE(aBom, 4, 10)
-IT_TAKE(aSpd, 4, 9)
-IT_TAKE(dAim, 3, 8)
-IT_TAKE(dBom, 3, 7)
-IT_TAKE(tAim, 2, 6)
-IT_TAKE(tTra, 2, 5)
-IT_TAKE(sRot, 1, 4)
-IT_TAKE(sRck, 1, 3)
-IT_TAKE(vAim, 0, 2)
-IT_TAKE(vSpd, 0, 1)
+MODE_FN(Items, ResetUpgrade, 1, It_ResetUpgrade(&a[0]))
+MODE_FN(Items, RestoreUpgrade, 1, It_RestoreUpgrade(&a[0]))
+MODE_FN(Items, DropAll, 1, It_DropAll(&a[0]))
+MODE_FN(Items, DropUpgrade, 3, It_DropUpgrade(&a[0], &a[1], &a[2], out))
+MODE_FN(Items, BaseOnTakeUpgrade, 4, It_BaseOnTake(&a[0], &a[1], &a[2], &a[3]))
+MODE_FN(Items, OnTakeiXtr, 2, It_OnTake(a, 5, 12))
+MODE_FN(Items, OnTakeiSiz, 2, It_OnTake(a, 5, 11))
+MODE_FN(Items, OnTakeaBom, 2, It_OnTake(a, 4, 10))
+MODE_FN(Items, OnTakeaSpd, 2, It_OnTake(a, 4, 9))
+MODE_FN(Items, OnTakedAim, 2, It_OnTake(a, 3, 8))
+MODE_FN(Items, OnTakedBom, 2, It_OnTake(a, 3, 7))
+MODE_FN(Items, OnTaketAim, 2, It_OnTake(a, 2, 6))
+MODE_FN(Items, OnTaketTra, 2, It_OnTake(a, 2, 5))
+MODE_FN(Items, OnTakesRot, 2, It_OnTake(a, 1, 4))
+MODE_FN(Items, OnTakesRck, 2, It_OnTake(a, 1, 3))
+MODE_FN(Items, OnTakevAim, 2, It_OnTake(a, 0, 2))
+MODE_FN(Items, OnTakevSpd, 2, It_OnTake(a, 0, 1))
 
 /* ---- the boxes ---- */
 
-/* SetSound(itm, ItemType): the take sound of the kind (Sound.ItemTake) */
-static byte It_SetSound(PyObject *itm, PyObject *type) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *table = Script_Import((const char *const[]){ "Sound", NULL }) ? K(Script_Global("Sound", "ItemTake")) : NULL;
-	int has = table ? PyMapping_HasKey(table, type) : -1;
-	byte ok = has >= 0;
-	if (has > 0) {
-		PyObject *a = K(PyObject_GetItem(table, type)), *snd = a ? K(Script_Index(a, 0)) : NULL;
-		PyObject *vol = snd && Script_HSet(itm, "TakeSound", Script_Ref(snd)) ? K(Script_Index(a, 1)) : NULL;
-		ok = vol && Script_HSet(itm, "TakeSoundVol", Script_Ref(vol));
+/* SetSound(itm, ItemType): the take sound of the kind (Sound.ItemTake); itm the box handle the script gave */
+static byte It_SetSound(const nativeVal_t *itm, const nativeVal_t *type) {
+	nativeVal_t table = { 0 }, a = { 0 }, x = { 0 }, k;
+	if (!Mode_Import("Sound") || !Mode_G("Sound", "ItemTake", &table)) {
+		return 0;
 	}
-	Script_Done(&r, NULL);
+	byte ok = 1;
+	if (It_Has(&table, type)) {
+		ok = Native_Subscript(&table, type, &a) && Native_Subscript(&a, (Native_SetInt(&k, 0), &k), &x) &&
+			Mode_VSet(itm, "TakeSound", &x);
+		Native_Free(&x);
+		ok = ok && Native_Subscript(&a, (Native_SetInt(&k, 1), &k), &x) && Mode_VSet(itm, "TakeSoundVol", &x);
+	}
+	Native_Free(&table);
+	Native_Free(&a);
+	Native_Free(&x);
 	return ok;
 }
 
-static PyObject *Items_SetSound(PyObject *self, PyObject *args) {
-	PyObject *itm, *type;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &itm, &type)) {
-		return NULL;
+MODE_FN(Items, SetSound, 2, It_SetSound(&a[0], &a[1]))
+
+/* CreateBox(Name, x, y, z, Kind): a box of a kind with its model and network resource; its handle in *out */
+static byte It_CreateBox(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *m = Mode_V(&t), *res = Mode_V(&t);
+	cEntity *e;
+	if (!Mode_Create(&a[0], &a[1], &a[2], &a[3], "Item", &e)) {
+		return Mode_Done(&t, 0);
 	}
-	return It_SetSound(itm, type) ? Py_ReturnNone() : NULL;
+	e = e ? World_FindEntity(e->name) : NULL;
+	const char *ref = e ? e->name : "";
+	byte ok = It_Model(&t, &a[4], m) && Mode_SetModel(e, m) && Native_Arith('+', Mode_S(&t, "Box:"), &a[4], res) &&
+		Mode_Set(e, ref, "NetRes", res) && Mode_SetI(e, ref, "Radius", 3500) && Mode_EntHandle(e, out);
+	return Mode_Done(&t, ok);
 }
 
-/* CreateBox(Name, x, y, z, Kind): a box of a kind with its model and network resource (a new reference) */
-static PyObject *Items_CreateBox(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name, *x, *y, *z, *kind;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOOO", &name, &x, &y, &z, &kind)) {
-		return NULL;
-	}
-	PyObject *l = K(Script_Ask("Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "Item"));
-	/* "models/Items/" + Kind + "/" + Kind + ".m3d" */
-	PyObject *m = l ? K(Script_PlusS(Script_Plus(Script_PlusS(Script_SPlus("models/Items/", kind), "/"), kind), ".m3d")) : NULL;
-	PyObject *set = m ? K(Script_Method(l, "SetModel", "(O)", m)) : NULL;
-	if (!set || !Script_HSet(l, "NetRes", Script_SPlus("Box:", kind)) || !Script_HSet(l, "Radius", PyInt_FromLong(3500))) {
-		FAIL();
-	}
-	return Script_Done(&r, Script_Ref(l));
-}
-
-/* the module's CreateBox (the script calls its global) */
-static PyObject *It_CreateBox(PyObject *name, PyObject *x, PyObject *y, PyObject *z, PyObject *kind) {
-	PyObject *f = Script_Global("Items", "CreateBox");
-	PyObject *l = f ? Script_Invoke(f, Py_BuildValue("(OOOOO)", name, x, y, z, kind)) : NULL;
-	Py_XDECREF(f);
-	return l;
-}
+MODE_FN(Items, CreateBox, 5, It_CreateBox(a, out))
 
 /* ClientCreate(EntityName, ResourceName): a box a network client is told to make, else the creation hooked before */
-static PyObject *Items_ClientCreate(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name, *res;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &res)) {
-		return NULL;
+static byte It_ClientCreate(const nativeVal_t *name, const nativeVal_t *res) {
+	nativeVal_t head = { 0 }, kind = { 0 }, l = { 0 }, zero;
+	if (!Native_Slice(res, 0, 4, &head)) {
+		return 0;
 	}
-	PyObject *head = K(PySequence_GetSlice(res, 0, 4));
-	if (!head) {
-		FAIL();
+	byte box = head.type == NV_STR && !strcmp(Native_Text(&head), "Box:");
+	Native_Free(&head);
+	if (!box) {
+		/* OBJLIB 3: the creation that was in Net before, a value of the module */
+		return Native_CallGlobal("Items", "LastClientCreate", NULL, "vv", name, res);
 	}
-	if (Script_Is(head, "Box:")) {
-		PyObject *kind = K(PySequence_GetSlice(res, 4, PySequence_Length(res))), *zero = kind ? K(PyInt_FromLong(0)) : NULL;
-		PyObject *l = zero ? K(It_CreateBox(name, zero, zero, zero, kind)) : NULL;
-		if (!l || !It_SetSound(l, kind)) {
-			FAIL();
+	Native_SetInt(&zero, 0);
+	/* OBJLIB 3: the module's CreateBox (the script calls its global) */
+	byte ok = Native_Slice(res, 4, Native_Size(res), &kind) &&
+		Native_CallGlobal("Items", "CreateBox", &l, "vvvvv", name, &zero, &zero, &zero, &kind) && It_SetSound(&l, &kind);
+	Native_Free(&kind);
+	Native_Free(&l);
+	return ok;
+}
+
+MODE_FN(Items, ClientCreate, 2, It_ClientCreate(&a[0], &a[1]))
+
+/* the box at a dummy of the level (pos its place, typo the kind): its items in the level logic or its take function */
+static byte It_DummyBox(modeVals_t *t, const nativeVal_t *pos, const nativeVal_t *typo) {
+	static const struct {
+		const char *kind;
+		const char *type;
+		int value;
+	} takes[] = { { "Life", "Life", 50 }, { "Part", "Ammo", 250 }, { "Miss", "Ammo", 200 }, { "Ener", "Ammo", 375 } };
+	nativeVal_t *c[3], *nm = Mode_V(t), *l = Mode_V(t), *lname = Mode_V(t), *on = Mode_V(t);
+	char buf[128];
+	for (int i = 0; i < 3; i++) {
+		c[i] = Mode_V(t);
+		if (!Native_Subscript(pos, Mode_I(t, i), c[i])) {
+			return 0;
 		}
-		return Script_Done(&r, Py_ReturnNone());
 	}
-	PyObject *last = K(Script_Global("Items", "LastClientCreate"));
-	PyObject *v = last ? K(Script_Invoke(last, Py_BuildValue("(OO)", name, res))) : NULL;
-	if (!v) {
-		FAIL();
+	/* SNet.GetObjName() */
+	Net_GetObjName(buf);
+	Native_SetStr(nm, buf);
+	/* OBJLIB 3: the module's CreateBox */
+	if (!Native_CallGlobal("Items", "CreateBox", l, "vvvvv", nm, c[0], c[1], c[2], typo) || !It_SetSound(l, typo) ||
+		!Mode_VGet(l, "Name", lname)) {
+		return 0;
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	for (int i = 0; i < 4; i++) {
+		if (Native_IsStr(typo, takes[i].kind)) {
+			const char *s;
+			if (!Native_ArgStr(lname, 2, &s)) {
+				return 0;
+			}
+			Logic_AddItem(takes[i].type, s, takes[i].kind, takes[i].value);
+			Str_Printf(buf, sizeof(buf), "!Take%s", takes[i].kind);
+			return Mode_VSet(l, "OnTake", Mode_S(t, buf));
+		}
+	}
+	return Native_Arith('+', Mode_S(t, "Items.OnTake"), typo, on) && Mode_VSet(l, "OnTake", on);
 }
 
 /* BrowseItemPos(): the boxes at the DM_Item_<kind> dummies (no upgrades offline, fewer in the demo) */
-static PyObject *Items_BrowseItemPos(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	if (!Script_Import((const char *const[]){ "Init", NULL }) || !Script_Try("Scrap", "StartDummySearch", "(si)", "DM_Item_*", 1)) {
-		return NULL;
+static byte It_BrowseItemPos(void) {
+	static const char *const demoSkip[] = { "iXtr", "iSiz", "tAim", "tTra" };
+	if (!Mode_Import("Init")) {
+		return 0;
 	}
+	Mode_DummyStart("DM_Item_*", 1);
 	for (;;) {
-		scriptRefs_t t = { .n = 0 };
-		PyObject *dummy = Script_Keep(&t, Script_Ask("Scrap", "NextDummySearch", "()"));
-		if (!dummy) {
-			Script_Done(&t, NULL);
-			FAIL();
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *dummy = Mode_V(&t), *used = Mode_V(&t), *dname = Mode_V(&t), *typo = Mode_V(&t), *split = Mode_V(&t);
+		nativeVal_t *ids = Mode_V(&t), *demo = Mode_V(&t), *pos = Mode_V(&t);
+		Mode_DummyNext(dummy);
+		if (dummy->type == NV_NONE) {
+			return Mode_Done(&t, 1);
 		}
-		if (dummy == Py_None) {
-			Script_Done(&t, NULL);
-			break;
+		if (!Native_Subscript(dummy, Mode_I(&t, 3), used)) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *used = Script_Keep(&t, Script_Index(dummy, 3));
-		int on = used ? Script_True(used) : -1;
-		byte ok = on >= 0;
-		if (on > 0) {
-			PyObject *dname = Script_Keep(&t, Script_Index(dummy, 0)), *typo = dname ? Script_Keep(&t, PySequence_GetSlice(dname, 8, 12)) : NULL;
-			PyObject *flags = typo ? Script_Keep(&t, Script_Ask("Scrap", "GetNetFlags", "()")) : NULL;
-			PyObject *off = flags ? Script_Keep(&t, Py_BuildValue("(iii)", 0, 0, 0)) : NULL;
-			PyObject *split = off ? Script_Keep(&t, Script_Ask("Scrap", "Get", "(s)", "SplitScreen")) : NULL;
-			PyObject *ids = split ? Script_Keep(&t, Script_Global("Items", "UpgradesID")) : NULL;
-			PyObject *demo = ids ? Script_Keep(&t, Script_Global("Init", "isDemo")) : NULL;
-			int single = demo ? Script_Eq(flags, off) > 0 && Script_NumCmp(split, 0) == 0 : -1;
-			int skip = single > 0 ? PySequence_Contains(ids, typo) : 0;
-			if (single < 0 || skip < 0) {
-				Script_Done(&t, NULL);
-				FAIL();
-			}
-			if (!skip && Script_True(demo) > 0) {
-				skip = Script_In(typo, (const char *const[]){ "iXtr", "iSiz", "tAim", "tTra", NULL });
-			}
-			if (!skip) {
-				PyObject *pos = Script_Keep(&t, Script_Index(dummy, 1));
-				PyObject *x = pos ? Script_Keep(&t, Script_Index(pos, 0)) : NULL, *y = x ? Script_Keep(&t, Script_Index(pos, 1)) : NULL;
-				PyObject *z = y ? Script_Keep(&t, Script_Index(pos, 2)) : NULL;
-				PyObject *nm = z ? Script_Keep(&t, Script_Ask("SNet", "GetObjName", "()")) : NULL;
-				PyObject *l = nm ? Script_Keep(&t, It_CreateBox(nm, x, y, z, typo)) : NULL;
-				PyObject *lname = l && It_SetSound(l, typo) ? Script_Keep(&t, Script_GetAttr(l, "Name")) : NULL;
-				ok = lname != NULL;
-				if (ok && Script_Is(typo, "Life")) {
-					ok = Script_Try("Scrap", "AddItem", "(sOi)", "Life", lname, 50) && Script_HSet(l, "OnTake", PyString_FromString("!TakeLife"));
-				} else if (ok && Script_Is(typo, "Part")) {
-					ok = Script_Try("Scrap", "AddItem", "(sOOi)", "Ammo", lname, typo, 250) && Script_HSet(l, "OnTake", PyString_FromString("!TakePart"));
-				} else if (ok && Script_Is(typo, "Miss")) {
-					ok = Script_Try("Scrap", "AddItem", "(sOOi)", "Ammo", lname, typo, 200) && Script_HSet(l, "OnTake", PyString_FromString("!TakeMiss"));
-				} else if (ok && Script_Is(typo, "Ener")) {
-					ok = Script_Try("Scrap", "AddItem", "(sOOi)", "Ammo", lname, typo, 375) && Script_HSet(l, "OnTake", PyString_FromString("!TakeEner"));
-				} else if (ok) {
-					ok = Script_HSet(l, "OnTake", Script_SPlus("Items.OnTake", typo));
-				}
+		if (!Native_True(used)) {
+			Mode_Done(&t, 0);
+			continue;
+		}
+		int off = Native_Subscript(dummy, Mode_I(&t, 0), dname) && Native_Slice(dname, 8, 12, typo) ? Native_NetOff() : -1;
+		if (off < 0 || !Native_GVarGet("SplitScreen", split) || !Mode_G("Items", "UpgradesID", ids) || !Mode_G("Init", "isDemo", demo)) {
+			return Mode_Done(&t, 0);
+		}
+		int single = off && !Native_Compare(split, Mode_I(&t, 0));
+		int skip = single ? Native_Contains(ids, typo) : 0;
+		if (skip < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (!skip && Native_True(demo)) {
+			for (int i = 0; i < 4 && !skip; i++) {
+				skip = Native_IsStr(typo, demoSkip[i]);
 			}
 		}
-		Script_Done(&t, NULL);
-		if (!ok) {
-			FAIL();
+		if (!skip && (!Native_Subscript(dummy, Mode_I(&t, 1), pos) || !It_DummyBox(&t, pos, typo))) {
+			return Mode_Done(&t, 0);
 		}
+		Mode_Done(&t, 0);
 	}
-	return Script_Done(&r, Py_ReturnNone());
 }
 
 /* InitResources(): the box models and network resources (the upgrades only in multiplayer) */
-static PyObject *Items_InitResources(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *multi = Script_Import((const char *const[]){ "Init", NULL }) ? K(Script_Global("Init", "MultiPlayer")) : NULL;
-	PyObject *itms = multi ? K(Py_BuildValue("[ssss]", "Ener", "Miss", "Part", "Life")) : NULL;
-	int m = itms ? Script_True(multi) : -1;
-	if (m < 0) {
-		FAIL();
+static byte It_InitResources(void) {
+	static const char *const kinds[] = { "Ener", "Miss", "Part", "Life" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *multi = Mode_V(&t), *itms = Mode_V(&t), *ids = Mode_V(&t), *all = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_G("Init", "MultiPlayer", multi)) {
+		return Mode_Done(&t, 0);
 	}
-	if (m) {
-		PyObject *ids = K(Script_Global("Items", "UpgradesID"));
-		itms = ids ? K(PySequence_Concat(itms, ids)) : NULL;
-		if (!itms) {
-			FAIL();
+	Native_SetEmpty(itms, NV_LIST);
+	for (int i = 0; i < 4; i++) {
+		Native_SetStr(Native_Append(itms), kinds[i]);
+	}
+	if (Native_True(multi)) {
+		if (!Mode_G("Items", "UpgradesID", ids) || !Native_Arith('+', itms, ids, all)) {
+			return Mode_Done(&t, 0);
 		}
+		Native_Free(itms);
+		*itms = *all;
+		Native_SetNone(all);
 	}
-	PyObject *kind;
-	int st;
-	for (int i = 0; (st = Script_Next(itms, i, &kind)) > 0; i++) {
-		scriptRefs_t t = { .n = 0 };
-		Script_Keep(&t, kind);
-		PyObject *m3d = Script_Keep(&t, Script_PlusS(Script_Plus(Script_PlusS(Script_SPlus("models/Items/", kind), "/"), kind), ".m3d"));
-		PyObject *res = m3d ? Script_Keep(&t, Script_SPlus("Box:", kind)) : NULL;
-		byte ok = res && Script_Try("Scrap", "Preload3DObject", "(Oiii)", m3d, 1, 1, 1) && Script_Try("SNet", "AddResource", "(O)", res);
-		Script_Done(&t, NULL);
-		if (!ok) {
-			FAIL();
+	int n = Native_ForCount(itms);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *kind = Mode_V(&t), *m3d = Mode_V(&t), *res = Mode_V(&t);
+		const char *s;
+		ok = Native_SeqItem(itms, i, kind) && It_Model(&t, kind, m3d) && Native_Arith('+', Mode_S(&t, "Box:"), kind, res) &&
+			Mode_PreloadOnes(m3d) && Native_ArgStr(res, 1, &s);
+		if (ok && Net_IsServer()) {
+			/* SNet.AddResource(res) */
+			Net_AddResource(s);
 		}
+		Mode_Release(&t, mark);
 	}
-	if (st < 0) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	return Mode_Done(&t, ok);
 }
 
 /* Init(): the resources, the box creation of network clients hooked in, the boxes of the level (not on clients) */
-static PyObject *Items_Init(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	if (!Script_Import((const char *const[]){ "Net", NULL })) {
-		return NULL;
+static byte It_Init(void) {
+	if (!Mode_Import("Net")) {
+		return 0;
 	}
-	PyObject *f = K(Script_Global("Items", "InitResources")), *v = f ? K(Script_Invoke(f, PyTuple_New(0))) : NULL;
-	PyObject *last = v ? K(Script_Global("Net", "ClientCreate")) : NULL;
-	PyObject *mine = last && Script_SetGlobal("Items", "LastClientCreate", Script_Ref(last)) ? K(Script_Global("Items", "ClientCreate")) : NULL;
-	PyObject *flags = mine && Script_SetGlobal("Net", "ClientCreate", Script_Ref(mine)) ? K(Script_Ask("Scrap", "GetNetFlags", "()")) : NULL;
-	PyObject *first = flags ? K(Script_Index(flags, 0)) : NULL;
-	if (!first) {
-		FAIL();
+	/* OBJLIB 3: the module's functions as its globals, Net's ClientCreate as a value of both modules */
+	if (!Native_CallGlobal("Items", "InitResources", NULL, "")) {
+		return 0;
 	}
-	if (Script_NumCmp(first, 0) == 0) {
-		PyObject *b = K(Script_Global("Items", "BrowseItemPos")), *w = b ? K(Script_Invoke(b, PyTuple_New(0))) : NULL;
-		if (!w) {
-			FAIL();
-		}
+	PyObject *last = Mode_GlobalPy("Net", "ClientCreate");
+	byte ok = last && Script_SetGlobal("Items", "LastClientCreate", last);
+	PyObject *mine = ok ? Mode_GlobalPy("Items", "ClientCreate") : NULL;
+	ok = mine && Script_SetGlobal("Net", "ClientCreate", mine);
+	nativeVal_t flags = { 0 }, first = { 0 }, zero;
+	Native_SetInt(&zero, 0);
+	ok = ok && Mode_NetFlags(&flags) && Native_Subscript(&flags, &zero, &first);
+	int client = ok ? Native_Compare(&first, &zero) : 0;
+	Native_Free(&flags);
+	Native_Free(&first);
+	if (!ok || PyErr_Occurred()) {
+		return 0;
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	return client || Native_CallGlobal("Items", "BrowseItemPos", NULL, "");
 }
+
+/* the adapters of the functions without arguments: the script ignores what it is given (no arity check) */
+#define IT_NOARGS(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
+
+IT_NOARGS(Items_BrowseItemPos, It_BrowseItemPos())
+IT_NOARGS(Items_InitResources, It_InitResources())
+IT_NOARGS(Items_Init, It_Init())
 
 /* ---- hints and interactive objects ---- */
 
-/* ShowHint(ItemName, CharName): the text of a hint item when the player takes it; its function; gone when once */
-static PyObject *Items_ShowHint(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *item, *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &ch)) {
-		return NULL;
-	}
-	PyObject *i = K(Script_Entity(item));
-	PyObject *hints = i && Script_HSet(i, "rTime", PyInt_FromLong(10)) && Script_HSet(i, "AppearsIfFree", PyInt_FromLong(1)) ?
-		K(Script_Global("Items", "Hints")) : NULL;
-	PyObject *h = hints ? K(PyObject_GetItem(hints, item)) : NULL;
-	PyObject *text = h ? K(Script_Index(h, 0)) : NULL, *time = text ? K(Script_Index(h, 1)) : NULL;
-	PyObject *when = time ? K(PyNumber_Add(K(PyFloat_FromDouble((double)Timer_GetTime(&g_pWorld->timer))), time)) : NULL;
-	if (!when || !Script_Try("SScorer", "SetMsgText", "(OO)", text, when)) {
-		FAIL();
-	}
-	PyObject *h2 = K(PyObject_GetItem(hints, item)), *extra = h2 ? K(Script_Index(h2, 3)) : NULL;
-	int call = extra ? Script_True(extra) : -1;
-	if (call < 0 || (call && !K(Script_Invoke(extra, Py_BuildValue("(O)", item))))) {
-		FAIL();
-	}
-	PyObject *h3 = K(PyObject_GetItem(hints, item)), *once = h3 ? K(Script_Index(h3, 2)) : NULL;
-	int del = once ? Script_True(once) : -1;
-	if (del < 0 || (del && (PyObject_DelItem(hints, item) < 0 || !K(Script_Method(i, "Del", "()"))))) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
-}
-
-/* Hint(Pos, Text, time=10, delit=0, ExtraFunc=None): an invisible item that shows a text to the player near it */
-static PyObject *Items_Hint(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *pos, *text, *time = NULL, *delit = NULL, *extra = Py_None;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|OOO", &pos, &text, &time, &delit, &extra)) {
-		return NULL;
-	}
-	if (!time) {
-		time = K(PyInt_FromLong(10));
-	}
-	if (!delit) {
-		delit = K(PyInt_FromLong(0));
-	}
-	PyObject *x = K(Script_Index(pos, 0)), *y = x ? K(Script_Index(pos, 1)) : NULL, *z = y ? K(Script_Index(pos, 2)) : NULL;
-	PyObject *l = z ? K(Script_Ask("Scrap", "CreateEntity", "(sOOOs)", "Hint", x, y, z, "Item")) : NULL;
-	PyObject *rad = l ? K(Script_Global("Items", "HINT_RADIUS")) : NULL;
-	PyObject *hints = rad && Script_HSet(l, "Radius", Script_Ref(rad)) && Script_HSet(l, "OnlyUser", PyInt_FromLong(1)) &&
-		Script_HSet(l, "OnTake", PyString_FromString("Items.ShowHint")) ? K(Script_Global("Items", "Hints")) : NULL;
-	PyObject *name = hints ? K(Script_GetAttr(l, "Name")) : NULL;
-	PyObject *v = name ? K(Py_BuildValue("(OOOO)", text, time, delit, extra)) : NULL;
-	if (!v || PyObject_SetItem(hints, name, v) < 0) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
-}
-
-/* SetInteractiveObjOnFloor(c): the object on the floor below it */
-static byte It_OnFloor(PyObject *c) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *pos = K(Script_GetAttr(c, "Pos")), *down = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -10000, 0)) : NULL;
-	PyObject *res = down ? K(Script_Ask("Scrap", "TestLine", "(OOs)", pos, down, "")) : NULL;
-	int hit = res ? Script_True(res) : -1;
-	byte ok = hit >= 0;
-	if (hit > 0) {
-		PyObject *p = K(Script_Index(res, 0)), *p0 = p ? K(Script_Index(p, 0)) : NULL;
-		PyObject *p1 = p0 ? K(Script_Index(p, 1)) : NULL, *p2 = p1 ? K(Script_Index(p, 2)) : NULL;
-		PyObject *vr = p2 ? K(Script_GetAttr(c, "VRadius")) : NULL, *y = vr ? K(PyNumber_Add(p1, vr)) : NULL;
-		ok = y && Script_HSet(c, "Pos", Py_BuildValue("(OOO)", p0, y, p2));
-	} else if (hit == 0) {
-		PyObject *name = K(Script_GetAttr(c, "Name"));
-		PyObject *msg = name ? K(Script_PlusS(Script_SPlus("B R U T A L    E R R O R : ", name), " was created in an invalid position.\n")) : NULL;
-		ok = msg && Script_Try("Scrap", "ConsoleError", "(O)", msg);
-	}
-	Script_Done(&r, NULL);
+/* hints[item][i] of the Hints dict object (OBJLIB 5 and 7: its items hold functions) as a value */
+static byte It_HintItem(PyObject *hints, const nativeVal_t *item, int i, nativeVal_t *out) {
+	PyObject *k = Native_ToPy(item), *h = k ? PyObject_GetItem(hints, k) : NULL, *v = h ? Script_Index(h, i) : NULL;
+	byte ok = v && Native_Arg(v, out);
+	Py_XDECREF(v);
+	Py_XDECREF(h);
+	Py_XDECREF(k);
 	return ok;
 }
 
-static PyObject *Items_SetInteractiveObjOnFloor(PyObject *self, PyObject *args) {
-	PyObject *c;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &c)) {
-		return NULL;
+/* ShowHint(ItemName, CharName): the text of a hint item when the player takes it; its function; gone when once */
+static byte It_ShowHint(const nativeVal_t *item) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *text = Mode_V(&t), *time = Mode_V(&t), *now = Mode_V(&t), *when = Mode_V(&t), *extra = Mode_V(&t);
+	nativeVal_t *once = Mode_V(&t), *h = Mode_V(&t);
+	cEntity *e;
+	const char *ref = Native_Text(item);
+	if (!Mode_Ent(item, &e) || !Mode_SetI(e, ref, "rTime", 10) || !Mode_SetI(e, ref, "AppearsIfFree", 1) ||
+		!Mode_EntHandle(e, h)) {
+		return Mode_Done(&t, 0);
 	}
-	return It_OnFloor(c) ? Py_ReturnNone() : NULL;
+	PyObject *hints = Mode_GlobalPy("Items", "Hints");
+	Native_SetFloat(now, Mode_Time());
+	byte ok = hints && It_HintItem(hints, item, 0, text) && It_HintItem(hints, item, 1, time) &&
+		Native_Arith('+', now, time, when);
+	if (ok) {
+		/* SScorer.SetMsgText(text, when) with when as the number it is */
+		double d;
+		ok = Native_ArgDouble(when, &d) && Mode_MsgText(text, d);
+	}
+	ok = ok && It_HintItem(hints, item, 3, extra);
+	if (ok && Native_True(extra)) {
+		/* OBJLIB 3: the function of the mission (any value the Python way) */
+		PyObject *f = Native_ToPy(extra);
+		ok = f && Native_Call(f, NULL, "v", item);
+		Py_XDECREF(f);
+	}
+	ok = ok && It_HintItem(hints, item, 2, once);
+	if (ok && Native_True(once)) {
+		/* i.Del() of the handle: the entity may be gone after the function */
+		PyObject *k = Native_ToPy(item);
+		ok = k && PyObject_DelItem(hints, k) == 0;
+		Py_XDECREF(k);
+		e = PyEntity_Get(h->obj);
+		ok = ok && (e ? Mode_Del(e) >= 0 : Native_EntVar(NULL, ref, "Del", now));
+	}
+	Py_XDECREF(hints);
+	return Mode_Done(&t, ok);
 }
 
-/* CreateInteractiveObj(Dummy, Radius): an object of the missions at the dummy DM_Misc_<Dummy>, on the floor (a new
- * reference, None when the dummy is missing) */
-static PyObject *Items_CreateInteractiveObj(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *dname, *radius;
+MODE_FN(Items, ShowHint, 2, It_ShowHint(&a[0]))
+
+/* Hint(Pos, Text, time=10, delit=0, ExtraFunc=None): an invisible item that shows a text to the player near it */
+static byte It_Hint(const nativeVal_t *pos, const nativeVal_t *hint) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *c[3], *name = Mode_V(&t), *rad = Mode_V(&t), *hn = Mode_V(&t), *v = Mode_V(&t);
+	for (int i = 0; i < 3; i++) {
+		c[i] = Mode_V(&t);
+		if (!Native_Subscript(pos, Mode_I(&t, i), c[i])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	cEntity *e;
+	Native_SetStr(hn, "Hint");
+	if (!Mode_Create(hn, c[0], c[1], c[2], "Item", &e)) {
+		return Mode_Done(&t, 0);
+	}
+	e = e ? World_FindEntity(e->name) : NULL;
+	const char *ref = e ? e->name : "";
+	Native_SetEmpty(v, NV_TUPLE);
+	for (int i = 0; i < 4; i++) {
+		Native_Copy(Native_Append(v), &hint[i]);
+	}
+	byte ok = Mode_G("Items", "HINT_RADIUS", rad) && Mode_Set(e, ref, "Radius", rad) && Mode_SetI(e, ref, "OnlyUser", 1) &&
+		Mode_SetS(e, ref, "OnTake", "Items.ShowHint") && Mode_Get(e, ref, "Name", name) &&
+		Mode_DictPut("Items", "Hints", NULL, name, v);
+	return Mode_Done(&t, ok);
+}
+
+static PyObject *Items_Hint(PyObject *self, PyObject *args) {
+	PyObject *o[5] = { NULL, NULL, NULL, NULL, NULL };
+	nativeVal_t v[5] = { { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &dname, &radius)) {
+	if (!PyArg_ParseTuple(args, "OO|OOO", &o[0], &o[1], &o[2], &o[3], &o[4])) {
 		return NULL;
 	}
-	PyObject *pat = K(Script_SPlus("DM_Misc_", dname));
-	PyObject *dummy = pat && Script_Try("Scrap", "StartDummySearch", "(Oi)", pat, 0) ? K(Script_Ask("Scrap", "NextDummySearch", "()")) : NULL;
-	int found = dummy ? Script_True(dummy) : -1;
-	if (found < 0) {
-		FAIL();
-	}
-	if (!found) {
-		PyObject *msg = K(Script_PlusS(Script_SPlus("ERROR: <DM_Misc_", dname), "> not found\n"));
-		if (!msg || !Script_Try("Scrap", "ConsoleError", "(O)", msg)) {
-			FAIL();
+	/* time=10, delit=0, ExtraFunc=None */
+	Native_SetInt(&v[2], 10);
+	Native_SetInt(&v[3], 0);
+	for (int i = 0; i < 5; i++) {
+		if (o[i]) {
+			Native_Free(&v[i]);
+			Native_Arg(o[i], &v[i]);
 		}
-		return Script_Done(&r, Py_ReturnNone());
 	}
-	PyObject *n = K(Script_Index(dummy, 0)), *pos = n ? K(Script_Index(dummy, 1)) : NULL;
-	PyObject *x = pos ? K(Script_Index(pos, 0)) : NULL, *y = x ? K(Script_Index(pos, 1)) : NULL, *z = y ? K(Script_Index(pos, 2)) : NULL;
-	PyObject *l = z ? K(Script_Ask("Scrap", "CreateEntity", "(OOOOs)", n, x, y, z, "WithLife")) : NULL;
-	PyObject *f = l && Script_HSet(l, "VRadius", Script_Ref(radius)) ? K(Script_Global("Items", "SetInteractiveObjOnFloor")) : NULL;
-	if (!f || !K(Script_Invoke(f, Py_BuildValue("(O)", l)))) {
-		FAIL();
+	byte ok = It_Hint(&v[0], &v[1]);
+	for (int i = 0; i < 5; i++) {
+		Native_Free(&v[i]);
 	}
-	return Script_Done(&r, Script_Ref(l));
+	return Mode_Result(ok);
 }
+
+/* SetInteractiveObjOnFloor(c): the object on the floor below it (c a handle the script gave, any value the Python way) */
+static byte It_OnFloor(const nativeVal_t *c) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pos = Mode_V(&t), *off = Mode_V(&t), *down = Mode_V(&t), *res = Mode_V(&t), *p = Mode_V(&t);
+	nativeVal_t *vr = Mode_V(&t), *y = Mode_V(&t), *np = Mode_V(&t), *name = Mode_V(&t), *msg = Mode_V(&t);
+	Native_SetEmpty(off, NV_TUPLE);
+	Native_SetInt(Native_Append(off), 0);
+	Native_SetInt(Native_Append(off), -10000);
+	Native_SetInt(Native_Append(off), 0);
+	if (!Mode_VGet(c, "Pos", pos) || !Mode_VecAdd(pos, off, down) || !Mode_TestLine(pos, down, Mode_S(&t, ""), res)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(res)) {
+		nativeVal_t *pc[3];
+		byte ok = Native_Subscript(res, Mode_I(&t, 0), p);
+		for (int i = 0; ok && i < 3; i++) {
+			pc[i] = Mode_V(&t);
+			ok = Native_Subscript(p, Mode_I(&t, i), pc[i]);
+		}
+		ok = ok && Mode_VGet(c, "VRadius", vr) && Native_Arith('+', pc[1], vr, y);
+		if (ok) {
+			Native_SetEmpty(np, NV_TUPLE);
+			Native_Copy(Native_Append(np), pc[0]);
+			Native_Copy(Native_Append(np), y);
+			Native_Copy(Native_Append(np), pc[2]);
+		}
+		return Mode_Done(&t, ok && Mode_VSet(c, "Pos", np));
+	}
+	byte ok = Mode_VGet(c, "Name", name) && Mode_Cat(&t, msg, 3, Mode_S(&t, "B R U T A L    E R R O R : "), name,
+		Mode_S(&t, " was created in an invalid position.\n")) && Mode_ConsoleError(msg);
+	return Mode_Done(&t, ok);
+}
+
+MODE_FN(Items, SetInteractiveObjOnFloor, 1, It_OnFloor(&a[0]))
+
+/* CreateInteractiveObj(Dummy, Radius): an object of the missions at the dummy DM_Misc_<Dummy>, on the floor; its
+ * handle (None when the dummy is missing) in *out */
+static byte It_CreateObj(const nativeVal_t *dname, const nativeVal_t *radius, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pat = Mode_V(&t), *dummy = Mode_V(&t), *msg = Mode_V(&t), *n = Mode_V(&t), *pos = Mode_V(&t), *c[3];
+	const char *s;
+	if (!Native_Arith('+', Mode_S(&t, "DM_Misc_"), dname, pat) || !Native_ArgStr(pat, 1, &s)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_DummyStart(s, 0);
+	Mode_DummyNext(dummy);
+	if (!Native_True(dummy)) {
+		byte ok = Mode_Cat(&t, msg, 3, Mode_S(&t, "ERROR: <DM_Misc_"), dname, Mode_S(&t, "> not found\n")) &&
+			Mode_ConsoleError(msg);
+		Native_SetNone(out);
+		return Mode_Done(&t, ok);
+	}
+	byte ok = Native_Subscript(dummy, Mode_I(&t, 0), n) && Native_Subscript(dummy, Mode_I(&t, 1), pos);
+	for (int i = 0; i < 3; i++) {
+		c[i] = Mode_V(&t);
+		ok = ok && Native_Subscript(pos, Mode_I(&t, i), c[i]);
+	}
+	cEntity *e = NULL;
+	ok = ok && Mode_Create(n, c[0], c[1], c[2], "WithLife", &e);
+	e = e ? World_FindEntity(e->name) : NULL;
+	ok = ok && Mode_Set(e, e ? e->name : "", "VRadius", radius) && Mode_EntHandle(e, out) &&
+		Native_CallGlobal("Items", "SetInteractiveObjOnFloor", NULL, "v", out);
+	return Mode_Done(&t, ok);
+}
+
+MODE_FN(Items, CreateInteractiveObj, 2, It_CreateObj(&a[0], &a[1], out))
 
 PyMethodDef g_ItemsMethods[] = {
 	{ "ResetUpgrade", Items_ResetUpgrade, 1, NULL },
