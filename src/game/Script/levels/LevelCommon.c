@@ -1548,3 +1548,10 @@ byte LvN_Pass(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	return 1;
 }
+
+byte LvN_SetOnFloorOf(const nativeVal_t *v) {
+	nativeVal_t name = { 0 };
+	byte ok = Mode_VObj(v, "Name", &name) && LvN_SetOnFloor(&name);
+	Native_Free(&name);
+	return ok;
+}

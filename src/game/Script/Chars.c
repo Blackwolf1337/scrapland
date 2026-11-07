@@ -386,14 +386,6 @@ static byte Ch_CanDrive(const nativeVal_t *ch, nativeVal_t *out) {
 	return 1;
 }
 
-/* SetOnFloor(char) */
-static byte Ch_SetOnFloor(const nativeVal_t *ch) {
-	nativeVal_t name = { 0 };
-	byte ok = Mode_VObj(ch, "Name", &name) && LvN_SetOnFloor(&name);
-	Native_Free(&name);
-	return ok;
-}
-
 /* MainCharDeath(name, param): the hook of a mission, else the end of the game */
 static byte Ch_MainCharDeath(const nativeVal_t *a) {
 	nativeVal_t hook = { 0 };
@@ -508,19 +500,6 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 	return Mode_Done(&t, 1);
 }
 
-/* OBJLIB 6: eval(text) in the globals of the module as the port read the game's texts (Script_EvalIn: a literal, or
- * a bare name looked up in the module) */
-static byte Ch_Eval(const nativeVal_t *text, nativeVal_t *out) {
-	PyObject *s = Native_ToPy(text), *v = s ? Script_EvalIn(CH, s) : NULL;
-	Py_XDECREF(s);
-	if (!v) {
-		return 0;
-	}
-	Native_Arg(v, out);
-	Py_DECREF(v);
-	return 1;
-}
-
 /* CreateStartupPlayer(): offline, the camera and the character of the player at the spawn point of the save game
  * (or the first deathmatch spawn), with the batteries of the save game */
 static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
@@ -592,7 +571,7 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 	}
 	Native_Free(text);
 	Mode_SaveVar("AcBatteries", text);
-	if (!ok || !Ch_Eval(text, energy)) {
+	if (!ok || !Mode_EvalIn(CH, text, energy)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(two, 2.0);
@@ -626,7 +605,7 @@ MODE_FN(Chars, LoadRes, 1, Ch_LoadRes(&a[0]))
 MODE_FN(Chars, DiscardRes, 1, Ch_DiscardRes(&a[0], out))
 MODE_FN(Chars, TryToDiscardThis, 1, Ch_TryToDiscardThis(&a[0]))
 MODE_FN(Chars, CanDrive, 1, Ch_CanDrive(&a[0], out))
-MODE_FN(Chars, SetOnFloor, 1, Ch_SetOnFloor(&a[0]))
+MODE_FN(Chars, SetOnFloor, 1, LvN_SetOnFloorOf(&a[0]))
 MODE_FN(Chars, MainCharDeath, 2, Ch_MainCharDeath(a))
 MODE_FN(Chars, CreatePlayersList, 0, Ch_CreatePlayersList())
 MODE_FN(Chars, CreateMainChar, 4, Ch_CreateMainChar(a, out))

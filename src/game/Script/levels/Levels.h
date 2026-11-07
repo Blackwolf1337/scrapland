@@ -335,6 +335,8 @@ byte LvN_RoutineCall(const char *kind, const nativeVal_t *a);
 byte LvN_HumanFollow(const char *module, const nativeVal_t *usr);
 /* the core of a level function that does nothing (MapRace.Init, MapSnd.Init of the editor, ...) */
 byte LvN_Pass(const nativeVal_t *a, nativeVal_t *out);
+/* SetOnFloor(v.Name) of a handle value (its Name read as any value) */
+byte LvN_SetOnFloorOf(const nativeVal_t *v);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);
