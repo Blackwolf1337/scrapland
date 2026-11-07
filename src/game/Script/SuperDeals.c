@@ -22,7 +22,11 @@
  */
 #include <string.h>
 
+#include "scrap/ai.h"
+#include "scrap/crt.h"
 #include "scrap/input.h"
+#include "scrap/logic.h"
+#include "scrap/nodesworld.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -641,6 +645,16 @@ static byte Sd_KwArg(PyObject *args, PyObject *kw, char *name, long def, nativeV
 	return 1;
 }
 
+/* the same for name + "CheckArrow" (the arrow of a baton) */
+static byte Sd_DelArrow(const nativeVal_t *item) {
+	nativeVal_t s, n;
+	Native_SetStr(&s, "CheckArrow");
+	Native_SetNone(&n);
+	byte ok = Native_Arith('+', item, &s, &n) && Sd_Del(&n);
+	Native_Free(&n);
+	return ok;
+}
+
 /* ---- the lines of the modes still on Sf_ frames (until each mode is native) ---- */
 
 /* Scrap.GetSaveVar(name), int(Scrap.GetSaveVar(name)), Scrap.SetSaveVar(name, "text") */
@@ -650,10 +664,6 @@ static PyObject *Sdf_Save(scriptFrame_t *f, const char *name) {
 
 static PyObject *Sdf_SaveInt(scriptFrame_t *f, const char *name) {
 	return Sf_ToInt(f, Sdf_Save(f, name));
-}
-
-static void Sdf_SetSave(scriptFrame_t *f, const char *name, const char *text) {
-	Sf_Ask(f, "Scrap", "SetSaveVar", "(ss)", name, text);
 }
 
 /* Scrap.UsrEntity(0), Scrap.GetLangStr("key"), Scrap.Set(var, v), Scrap.Set(var, "text") */
@@ -710,18 +720,6 @@ static void Sdf_Ang(scriptFrame_t *f, PyObject *e, PyObject *ang) {
 static PyObject *Sdf_Create(scriptFrame_t *f, PyObject *name, PyObject *pos, const char *cls) {
 	PyObject *x = Sf_Item(f, pos, 0), *y = Sf_Item(f, pos, 1), *z = Sf_Item(f, pos, 2);
 	return Sf_Ask(f, "Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, cls);
-}
-
-/* spawnParams = OutMap.GetSpawnPos(); e = Scrap.CreateEntity(name, spawnParams[0][0], ..., "Car") (spawnParams in
- * *sp for the angle) */
-static PyObject *Sdf_SpawnCar(scriptFrame_t *f, PyObject *name, PyObject **sp) {
-	*sp = Sf_Ask(f, "OutMap", "GetSpawnPos", "()");
-	return Sdf_Create(f, name, Sf_Item(f, *sp, 0), "Car");
-}
-
-/* prefix + `i` */
-static PyObject *Sdf_Numbered(scriptFrame_t *f, const char *prefix, long i) {
-	return Sf_Cat(f, "sO", prefix, Sf_ReprI(f, i));
 }
 
 /* list.append(e.Name) of a module global list */
@@ -781,13 +779,6 @@ static void Sdf_UsrSafe(scriptFrame_t *f) {
 	}
 }
 
-/* if (Parking.PlayerShip): Parking.PlayerShip.Invulnerable = 1 */
-static void Sdf_ShipSafe(scriptFrame_t *f) {
-	if (Sf_True(f, Sf_Mod(f, "Parking", "PlayerShip")) > 0) {
-		Sf_SetAttrI(f, Sf_Mod(f, "Parking", "PlayerShip"), "Invulnerable", 1);
-	}
-}
-
 /* MissionsFuncs.cameraData = MissionsFuncs.mapsCameraData[map] */
 static void Sdf_Camera(scriptFrame_t *f, const char *map) {
 	PyObject *cams = Sf_Mod(f, "MissionsFuncs", "mapsCameraData");
@@ -799,55 +790,6 @@ static void Sdf_CameraFor(scriptFrame_t *f, const char *const *libraries, const 
 	if (Sf_InS(f, Sdf_Save(f, "Mission.Library"), libraries) > 0) {
 		Sdf_Camera(f, map);
 	}
-}
-
-/* `for name in list: e = Scrap.GetEntity(name); if (e): e.TgType = tg; e.EntityList = list` (tg NULL leaves it) */
-static void Sdf_MarkShips(scriptFrame_t *f, PyObject *names, const char *tg, const char *list) {
-	for (int i = 0;; i++) {
-		int mark = f->n;
-		PyObject *n = Sf_Next(f, names, i);
-		if (!n) {
-			break;
-		}
-		PyObject *e = Sf_Entity(f, n);
-		if (Sf_True(f, e) > 0) {
-			if (tg) {
-				Sf_SetAttrS(f, e, "TgType", tg);
-			}
-			Sf_SetAttrS(f, e, "EntityList", list);
-		}
-		Sf_Release(f, mark);
-	}
-}
-
-/* `for zoneName in zonesStates.keys(): e = Scrap.GetEntity(zoneName); if (e): e.RadarShow = 0` */
-static void Sdf_HideZones(scriptFrame_t *f) {
-	PyObject *keys = Sf_Method(f, Sf_Global(f, DOM, "zonesStates"), "keys", "()");
-	for (int i = 0;; i++) {
-		int mark = f->n;
-		PyObject *z = Sf_Next(f, keys, i);
-		if (!z) {
-			break;
-		}
-		PyObject *e = Sf_Entity(f, z);
-		if (Sf_True(f, e) > 0) {
-			Sf_SetAttrI(f, e, "RadarShow", 0);
-		}
-		Sf_Release(f, mark);
-	}
-}
-
-/* usr = Scrap.GetEntity(name); Vehicles.ReSpawnShip(name); usr.Pos = OutMap.GetSpawnPos()[0];
- * usr.Ang = 0, OutMap.GetSpawnPos()[1], 0 (CTF and Domination) */
-static PyObject *Sdf_RespawnUsr(scriptFrame_t *f, PyObject *name) {
-	Sf_Import(f, "Parking");
-	Sf_Import(f, "Vehicles");
-	Sf_Import(f, "OutMap");
-	PyObject *usr = Sf_Entity(f, name);
-	Sf_Ask(f, "Vehicles", "ReSpawnShip", "(O)", name);
-	Sf_SetAttr(f, usr, "Pos", Sf_Item(f, Sf_Ask(f, "OutMap", "GetSpawnPos", "()"), 0));
-	Sdf_Ang(f, usr, Sf_Item(f, Sf_Ask(f, "OutMap", "GetSpawnPos", "()"), 1));
-	return usr;
 }
 
 /* GetMenuDescription(): the text of the deal with its number */
@@ -905,31 +847,6 @@ static PyObject *Sdf_BatonArrow(scriptFrame_t *f, PyObject *l, PyObject *pos) {
 	PyObject *l2 = Sdf_Create(f, Sf_Cat(f, "Os", Sf_Attr(f, l, "Name"), "CheckArrow"), pos, "WithLife");
 	Sf_SetAttr(f, l2, "CamTgt", Sf_Build(f, "(iii)", 0, 1000, 0));
 	return l2;
-}
-
-/* PreRestartMenu() and PreOnVictory() of CTF and Domination: the player safe and the last message of the deal, then
- * the score table (who NULL: the crazy gambler speaks) */
-static PyObject *Sdf_PreEnd(PyObject *args, byte win, const char *cadVar, const char *whoVar, const char *mode,
-	const char *retry) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Parking");
-	Sdf_ShipSafe(&f);
-	if (win) {
-		Sdf_UsrSafe(&f);
-	} else {
-		PyObject *usr = Sdf_Usr(&f);
-		if (Sf_True(&f, usr) > 0) {
-			Sf_SetAttrI(&f, usr, "Invulnerable", 1);
-		}
-	}
-	PyObject *cad = Sdf_Save(&f, cadVar);
-	PyObject *who = whoVar ? Sdf_Save(&f, whoVar) : Sf_Str(&f, CG);
-	Sdf_Remote(&f, "ForceRemoteCom", cad, who, Sf_Mod(&f, "MissionsFuncs", "OnSuperDealFinish"),
-		Sf_Build(&f, "(iss)", win, mode, retry));
-	return Sf_None(&f);
 }
 
 /* the ships of the entity list from the first by NextInList: fn(f, e, name, arg) for each, 1 to go on; the name is
@@ -2617,743 +2534,909 @@ PyMethodDef g_CTFMethods[] = {
 /* ---- Domination: the zones of the OM, taken with the baton; all zones win a round, DominationRounds rounds the deal
  * ---- */
 
-static PyObject *Domination_GetMenuDescription(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static struct {
+	nativeVal_t zones, enemies, friends;	/* lists: the places (then the names) of the zones, the ship names */
+	nativeVal_t zonesStates;		/* the state of each zone name: 0 neutral, 1 the player's, 2 the enemies' */
+	nativeVal_t zonesCanBeTaken, playerZones, enemyZones, userWithBaton, shipWithBaton, onDeathSpawnTime;
+	nativeVal_t startFirst, msgTime, model, batonRadius;
+} dom;
+
+/* GetMenuDescription(): the text of the deal with the number of zones */
+static byte Dom_GetMenuDescriptionC(nativeVal_t *out) {
+	nativeVal_t text, n;
+	if (!Mode_Import("string")) {
+		return 0;
 	}
-	Sf_Import(&f, "string");
-	PyObject *text = Sdf_Lang(&f, "SuperDeal_Domination_Description");
-	PyObject *n = Sf_ReprI(&f, Sf_Len(&f, Sf_Global(&f, DOM, "zones")));
-	return Sf_Return(&f, Sf_Ask(&f, "string", "replace", "(OsO)", text, "<n1>", n));
+	Mode_Lang("SuperDeal_Domination_Description", &text);
+	Native_SetNone(&n);
+	int len = Mode_Read(DOM, "zones", &dom.zones) ? Native_Size(&dom.zones) : -1;
+	byte ok = len >= 0;
+	if (ok) {
+		char s[0x20];
+		Str_Printf(s, sizeof(s), "%d", len);
+		Native_SetStr(&n, s);
+		ok = CALL("string", "replace", out, "vsv", &text, "<n1>", &n);
+	}
+	Native_Free(&text);
+	Native_Free(&n);
+	return ok;
 }
 
-static PyObject *Domination_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sdf_Status(&f, DOM, NULL);
-	Sf_Ask(&f, "Scrap", "Preload3DObject", "(O)", Sf_Global(&f, DOM, "ZoneModelNeutral"));
-	Sf_Ask(&f, "Scrap", "Preload3DObject", "(O)", Sf_Global(&f, DOM, "ZoneModelFriends"));
-	Sf_Ask(&f, "Scrap", "Preload3DObject", "(O)", Sf_Global(&f, DOM, "ZoneModelEnemies"));
-	return Sf_None(&f);
+MODE_FN(Dom, GetMenuDescription, 0, Dom_GetMenuDescriptionC(out))
+
+/* Scrap.Preload3DObject(name) of a global of the module */
+static byte Sd_PreloadVar(const char *mod, const char *name, nativeVal_t *slot) {
+	return Mode_Read(mod, name, slot) && Mode_Preload(slot);
 }
+
+/* InitStatus(LevelPath): the status of the modes and the zone models loaded */
+static byte Dom_InitStatusC(void) {
+	return Sd_StatusC(DOM, NULL) && Sd_PreloadVar(DOM, "ZoneModelNeutral", &dom.model) &&
+		Sd_PreloadVar(DOM, "ZoneModelFriends", &dom.model) && Sd_PreloadVar(DOM, "ZoneModelEnemies", &dom.model);
+}
+
+MODE_FN(Dom, InitStatus, 1, Dom_InitStatusC())
 
 /* Init(LevelPath): the camera of the end, the respawn time, both teams in their lists, the leader of the enemies,
  * the start when the player boards; the baton drops when he leaves the ship. The script's `zonesStates = {}` is a
  * local of the function (no global statement), so the table of the zones stays as it is. */
-static PyObject *Domination_Init(PyObject *self, PyObject *args) {
+static byte Dom_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Sixth", "SuperDeal_Tenth", NULL };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	nativeVal_t first;
+	Native_SetNone(&first);
+	byte ok = Mode_Import("Parking") && Mode_Import("Chars") && Sd_CameraFor(libs, "OM") &&
+		Sd_PreloadVar(DOM, "BatonModel", &dom.model) && Sd_GlobalTo("Chars", "OnMainCharDeath", DOM, "OnPlayerDeath") &&
+		Sd_SpawnTime(DOM, &dom.onDeathSpawnTime, "DominationOnDeathSpawnTime") &&
+		Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 1) && OWN(DOM, "CreateEnemies", NULL, "") &&
+		OWN(DOM, "CreateFriends", NULL, "") && Mode_GVarSetS("OnDominFriendDeath", "Domination.OnFriendDeath") &&
+		Mode_GVarSetS("OnDominEnemyDeath", "Domination.OnEnemyDeath") && Mode_Read(DOM, "enemies", &dom.enemies) &&
+		Sd_MarkShips(&dom.enemies, "red", "DominationEnemies") && Mode_Read(DOM, "enemies", &dom.enemies) &&
+		Sd_Item(&dom.enemies, 0, &first) && Mode_GVarSet("LeaderName", &first) && Mode_Read(DOM, "friends", &dom.friends) &&
+		Sd_MarkShips(&dom.friends, "green", "DominationFriends") &&
+		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", DOM, "CrazyGamblerStartDomination") &&
+		Sd_GlobalTo("Parking", "SwitchCharMissionCallback", DOM, "ReleaseBaton");
+	Native_Free(&first);
+	return ok;
+}
+
+MODE_FN(Dom, Init, 1, Dom_InitC())
+
+/* `for zoneName in zonesStates.keys(): e = Scrap.GetEntity(zoneName); if (e): e.RadarShow = 0` */
+static byte Dom_HideZones(void) {
+	nativeVal_t keys;
+	if (!Mode_Keys(DOM, "zonesStates", 1, &keys)) {
+		return 0;
 	}
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Chars");
-	Sdf_CameraFor(&f, libs, "OM");
-	Sf_Ask(&f, "Scrap", "Preload3DObject", "(O)", Sf_Global(&f, DOM, "BatonModel"));
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", Sf_Global(&f, DOM, "OnPlayerDeath"));
-	Sf_SetGlobal(&f, DOM, "onDeathSpawnTime", Sf_ToFloat(&f, Sdf_Save(&f, "DominationOnDeathSpawnTime")));
-	if (Sf_Compare(&f, Sf_Global(&f, DOM, "onDeathSpawnTime"), "<", Sf_Float(&f, 1.0)) > 0) {
-		Sf_RaiseText(&f, "Demasiado poco tiempo de respawn");
+	int n = Native_ForCount(&keys);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t z;
+		cEntity *e;
+		ok = Native_SeqItem(&keys, i, &z) && Mode_Ent(&z, &e) && (!e || Mode_SetI(e, Native_Text(&z), "RadarShow", 0));
+		Native_Free(&z);
 	}
-	Sf_SetGlobal(&f, DOM, "zonesCanBeTaken", Sf_Int(&f, 1));
-	Sdf_Call(&f, DOM, "CreateEnemies", "()");
-	Sdf_Call(&f, DOM, "CreateFriends", "()");
-	Sdf_SetS(&f, "OnDominFriendDeath", "Domination.OnFriendDeath");
-	Sdf_SetS(&f, "OnDominEnemyDeath", "Domination.OnEnemyDeath");
-	Sdf_MarkShips(&f, Sf_Global(&f, DOM, "enemies"), "red", "DominationEnemies");
-	Sdf_Set(&f, "LeaderName", Sf_Item(&f, Sf_Global(&f, DOM, "enemies"), 0));
-	Sdf_MarkShips(&f, Sf_Global(&f, DOM, "friends"), "green", "DominationFriends");
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Sf_Global(&f, DOM, "CrazyGamblerStartDomination"));
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Sf_Global(&f, DOM, "ReleaseBaton"));
-	return Sf_None(&f);
+	Native_Free(&keys);
+	return ok;
+}
+
+/* userWithBaton = 0; shipWithBaton = "" (the baton is free) */
+static byte Sd_BatonFree(const char *mod, nativeVal_t *user, nativeVal_t *ship) {
+	nativeVal_t empty;
+	Native_SetStr(&empty, "");
+	return Sd_PutI(mod, "userWithBaton", user, 0) && Mode_Put(mod, "shipWithBaton", ship, &empty);
 }
 
 /* ReleaseBaton(): the player left his ship with the baton: it drops at a random place */
-static PyObject *Domination_ReleaseBaton(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Dom_ReleaseBatonC(void) {
+	if (!Mode_Read(DOM, "userWithBaton", &dom.userWithBaton)) {
+		return 0;
 	}
-	if (Sf_True(&f, Sf_Global(&f, DOM, "userWithBaton")) > 0) {
-		Sdf_Later(&f, Sf_Float(&f, 0.5), DOM, "LostBatonMessage", Sf_Build(&f, "()"));
-		Sf_SetGlobal(&f, DOM, "userWithBaton", Sf_Int(&f, 0));
-		Sf_SetGlobal(&f, DOM, "shipWithBaton", Sf_Str(&f, ""));
-		Sdf_Call(&f, DOM, "CreateBaton", "()");
+	if (Native_True(&dom.userWithBaton) && (!Mode_Later(0.5, DOM, "LostBatonMessage", NULL, 0, NULL) ||
+		!Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) || !OWN(DOM, "CreateBaton", NULL, ""))) {
+		return 0;
 	}
-	Sdf_HideZones(&f);
-	return Sf_None(&f);
+	return Dom_HideZones();
 }
 
-static PyObject *Domination_LostBatonMessage(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_LostBaton(args, "SuperDeal_DominationSystemMessage1");
+MODE_FN(Dom, ReleaseBaton, 0, Dom_ReleaseBatonC())
+
+/* LostBatonMessage() of Domination and MortalRace: the message that the player lost the baton */
+static byte Sd_LostBaton(const char *key) {
+	nativeVal_t cad, now, len, t;
+	double d;
+	Mode_Lang(key, &cad);
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&len);
+	Native_SetNone(&t);
+	byte ok = CALL("Speech", "CalculateSpeechTime", &len, "v", &cad) && Native_Arith('+', &now, &len, &t) &&
+		Native_ArgDouble(&t, &d) && Mode_MsgText(&cad, d);
+	Native_Free(&cad);
+	Native_Free(&len);
+	Native_Free(&t);
+	return ok;
 }
 
-MODE_FN(Domination, SetProfile, 2, Sd_SetProfileC("Domination", &a[0], &a[1]))
+MODE_FN(Dom, LostBatonMessage, 0, Sd_LostBaton("SuperDeal_DominationSystemMessage1"))
+MODE_FN(Dom, SetProfile, 2, Sd_SetProfileC("Domination", &a[0], &a[1]))
 
 /* CreateEnemies() and CreateFriends(): the ships of a team at the spawn dummies of the team; the first enemy (the
  * leader) carries no money */
-static PyObject *Dom_CreateTeam(PyObject *args, const char *dummies, const char *numVar, const char *prefix, int enemy,
-	const char *list) {
+static byte Dom_CreateTeam(byte enemy) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *spawns = Mode_V(&t), *dummy = Mode_V(&t), *num = Mode_V(&t);
 	long n = 0;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *spawns = Sf_Keep(&f, PyList_New(0));
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", dummies, 1);
-	PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-	int mark = f.n;
-	while (Sf_True(&f, dummy) > 0) {
-		PyObject *ang = Sf_Item(&f, Sf_Item(&f, dummy, 2), 1);
-		Sf_Method(&f, spawns, "append", "(O)", Sf_Build(&f, "(OO)", Sf_Item(&f, dummy, 1), ang));
-		dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		Sf_ReleaseKeep(&f, mark, &dummy, 1);
-	}
-	if (!enemy) {
-		Sdf_Usr(&f);
-	}
-	PyObject *num = Sdf_SaveInt(&f, numVar);
-	Sf_Check(&f, f.failed || Script_Range(num, &n));
-	for (long i = 0; i < n && !f.failed; i++) {
-		mark = f.n;
-		PyObject *pos = Sf_Item(&f, Sf_Item(&f, spawns, i), 0);
-		PyObject *ang = Sf_Item(&f, Sf_Item(&f, spawns, i), 1);
-		PyObject *e = Sdf_Create(&f, Sdf_Numbered(&f, prefix, i), pos, "Car");
-		Sf_SetAttrS(&f, e, "WeapList", "15,15,15,15,15,0");
-		if (enemy) {
-			Sf_SetAttrI(&f, e, "LaunchTaunts", 0);
+	Native_SetEmpty(spawns, NV_LIST);
+	Mode_DummyStart(enemy ? "DM_Domination_Enemy_Spawn_*" : "DM_Domination_Friend_Spawn_*", 1);
+	Mode_DummyNext(dummy);
+	byte ok = 1;
+	while (ok && Native_True(dummy)) {
+		/* spawns.append((dummy[1], dummy[2][1])) */
+		nativeVal_t a2, ang, pos;
+		Native_SetNone(&a2);
+		Native_SetNone(&ang);
+		Native_SetNone(&pos);
+		ok = Sd_Item(dummy, 2, &a2) && Sd_Item(&a2, 1, &ang) && Sd_Item(dummy, 1, &pos);
+		if (ok) {
+			nativeVal_t *s = Native_Append(spawns);
+			Native_SetEmpty(s, NV_TUPLE);
+			*Native_Append(s) = pos;
+			*Native_Append(s) = ang;
+		} else {
+			Native_Free(&ang);
+			Native_Free(&pos);
 		}
-		Sdf_Ang(&f, e, ang);
-		if (enemy && i == 0) {
-			Sf_SetAttrI(&f, e, "Money", -1);
-		}
-		Sdf_Call(&f, DOM, "SetProfile", "(Oi)", e, enemy);
-		Sdf_AppendName(&f, DOM, list, e);
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iO)", 0, Sf_Attr(&f, e, "Name"));
-		Sf_Release(&f, mark);
+		Native_Free(&a2);
+		Native_Free(dummy);
+		Mode_DummyNext(dummy);
 	}
-	return Sf_None(&f);
+	if (ok && !enemy) {
+		/* Scrap.UsrEntity(0), its value not used */
+		ok = Mode_UsrHandle(num);
+		Native_Free(num);
+	}
+	if (!ok || !Sd_SaveInt(enemy ? "DominationNumEnemies" : "DominationNumFriends", num) || !Sd_Range(num, &n)) {
+		return Mode_Done(&t, 0);
+	}
+	for (long i = 0; ok && i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *sp = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
+		nativeVal_t *en = Mode_V(&t);
+		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
+		ok = Sd_Item(spawns, i, sp) && Sd_Item(sp, 0, pos) && Sd_Item(spawns, i, sp) && Sd_Item(sp, 1, ang) &&
+			Sd_Create(name, pos, "Car", e) && Sd_SetS(e, "WeapList", "15,15,15,15,15,0") &&
+			(!enemy || Sd_SetI(e, "LaunchTaunts", 0)) && Sd_Ang(e, ang) && (!enemy || i || Sd_SetI(e, "Money", -1)) &&
+			OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) && Sd_AppendName(DOM, enemy ? "enemies" : "friends", e) &&
+			Mode_VGet(e, "Name", en) && CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, en);
+		Mode_Release(&t, mark);
+	}
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Domination_CreateEnemies(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dom_CreateTeam(args, "DM_Domination_Enemy_Spawn_*", "DominationNumEnemies", "Enemy", 1, "enemies");
+MODE_FN(Dom, CreateEnemies, 0, Dom_CreateTeam(1))
+MODE_FN(Dom, CreateFriends, 0, Dom_CreateTeam(0))
+
+/* SAI.GetRandomVisibilityPoint(): a random point of the AI graph (None without points) */
+static void Sd_RandomVisPoint(nativeVal_t *out) {
+	int n = NodesWorld_NumVisPoints(g_NodesWorld);
+	if (n <= 0) {
+		Native_SetNone(out);
+		return;
+	}
+	const vec3_t *p = NodesWorld_GetVisPoint(g_NodesWorld, crt_rand() % n);
+	/* "(fff)" */
+	Native_SetVec(out, (double)p->x, (double)p->y, (double)p->z);
 }
 
-static PyObject *Domination_CreateFriends(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dom_CreateTeam(args, "DM_Domination_Friend_Spawn_*", "DominationNumFriends", "Friend", 0, "friends");
+/* SLogic.ChangeBatonState(pos, state) (other values by name for the errors of "(fff)i") */
+static byte Sd_BatonState(const nativeVal_t *pos, long state) {
+	double x[3];
+	if (!Mode_VecOf(pos, x)) {
+		return CALL("SLogic", "ChangeBatonState", NULL, "vi", pos, state);
+	}
+	vec3_t p = { (float)x[0], (float)x[1], (float)x[2] };
+	Domination_SetBatonState(&p, (int)state);
+	return 1;
+}
+
+/* the baton of Domination and MortalRace: l = the item "Baton" at pos with its model, radius and OnTake (the module's
+ * BatonModel and BatonRadius) */
+static byte Sd_Baton(const char *mod, const nativeVal_t *pos, const char *onTake, nativeVal_t *l) {
+	nativeVal_t name, v;
+	Native_SetStr(&name, "Baton");
+	Native_SetNone(&v);
+	byte ok = Sd_Create(&name, pos, "Item", l) && Mode_Read(mod, "BatonModel", &v) && Mode_VModel(l, &v);
+	Native_Free(&v);
+	ok = ok && Mode_Read(mod, "BatonRadius", &v) && Mode_VSet(l, "Radius", &v) && Sd_SetI(l, "AppearsIfFree", 0) &&
+		Sd_SetI(l, "AutoFace", 0) && Sd_SetI(l, "OnlyUser", 0) && Sd_SetF(l, "rTime", 0.25) && Sd_SetS(l, "OnTake", onTake);
+	Native_Free(&v);
+	return ok;
+}
+
+/* l2 = Scrap.CreateEntity(l.Name + "CheckArrow", pos..., "WithLife"); l2.CamTgt = 0, 1000, 0 */
+static byte Sd_BatonArrow(const nativeVal_t *l, const nativeVal_t *pos, nativeVal_t *l2) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *aname = Mode_V(&t), *tgt = Mode_V(&t);
+	if (!Mode_VGet(l, "Name", name) || !Mode_Cat(&t, aname, 2, name, Mode_S(&t, "CheckArrow")) ||
+		!Sd_Create(aname, pos, "WithLife", l2)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(tgt, NV_TUPLE);
+	Native_SetInt(Native_Append(tgt), 0);
+	Native_SetInt(Native_Append(tgt), 1000);
+	Native_SetInt(Native_Append(tgt), 0);
+	return Mode_Done(&t, Mode_VSet(l2, "CamTgt", tgt));
+}
+
+/* MissionsFuncs.SetMissionTarget(l2.Name); Scrap.Set("CurrentWaypointName", l2.Name) */
+static byte Sd_BatonTarget(const nativeVal_t *l2) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(l2, "Name", &n) && CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	Native_Free(&n);
+	ok = ok && Mode_VGet(l2, "Name", &n) && Mode_GVarSet("CurrentWaypointName", &n);
+	Native_Free(&n);
+	return ok;
 }
 
 /* CreateBaton(pos = None): the baton at pos or at a random point of the AI graph, the mission target on its arrow;
  * the zones off the radar */
-static PyObject *Domination_CreateBaton(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "pos", NULL };
-	PyObject *pos = Py_None;
-	scriptFrame_t f = { 0 };
+static byte Dom_CreateBatonC(const nativeVal_t *given) {
+	nativeVal_t pos, l, l2;
+	Native_SetNone(&l);
+	Native_SetNone(&l2);
+	if (Native_True(given)) {
+		Native_Copy(&pos, given);
+	} else {
+		Sd_RandomVisPoint(&pos);
+	}
+	byte ok = Sd_Baton(DOM, &pos, "Domination.TakeBaton", &l) && Sd_SetI(&l, "RadarShow", 1) && Mode_Import("Items") &&
+		CALL("Items", "SetSound", NULL, "vs", &l, "TakeBDataPack") && Sd_BatonArrow(&l, &pos, &l2) && Sd_BatonTarget(&l2) &&
+		Sd_BatonState(&pos, 0) && Dom_HideZones();
+	Native_Free(&pos);
+	Native_Free(&l);
+	Native_Free(&l2);
+	return ok;
+}
+
+static PyObject *Dom_CreateBaton(PyObject *self, PyObject *args, PyObject *kw) {
+	nativeVal_t pos;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &pos)) {
+	if (!Sd_KwArg(args, kw, "pos", -1, &pos)) {
 		return NULL;
 	}
-	if (Sf_True(&f, pos) == 0) {
-		pos = Sf_Ask(&f, "SAI", "GetRandomVisibilityPoint", "()");
+	byte ok = Dom_CreateBatonC(&pos);
+	Native_Free(&pos);
+	return Mode_Result(ok);
+}
+
+/* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) */
+static byte Sd_GamblerKey(const char *key, const char *mod, const char *func) {
+	nativeVal_t none;
+	PyObject *fn = Mode_GlobalPy(mod, func);
+	if (!fn) {
+		return 0;
 	}
-	PyObject *l = Sdf_Baton(&f, DOM, pos, "Domination.TakeBaton");
-	Sf_SetAttrI(&f, l, "RadarShow", 1);
-	Sf_Import(&f, "Items");
-	Sf_Ask(&f, "Items", "SetSound", "(Os)", l, "TakeBDataPack");
-	PyObject *l2 = Sdf_BatonArrow(&f, l, pos);
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, l2, "Name"));
-	Sdf_Set(&f, "CurrentWaypointName", Sf_Attr(&f, l2, "Name"));
-	Sf_Ask(&f, "SLogic", "ChangeBatonState", "(Oi)", pos, 0);
-	Sdf_HideZones(&f);
-	return Sf_None(&f);
+	Native_SetEmpty(&none, NV_TUPLE);
+	byte ok = CALL("Speech", "AddRemoteCom", NULL, "ssOv", key, CG, fn, &none);
+	Py_DECREF(fn);
+	return ok;
+}
+
+/* usr.Target = Scrap.Get("LeaderName") */
+static byte Dom_AimLeader(const nativeVal_t *usr) {
+	nativeVal_t leader;
+	Native_SetNone(&leader);
+	byte ok = Native_GVarGet("LeaderName", &leader) && Mode_VSet(usr, "Target", &leader);
+	Native_Free(&leader);
+	return ok;
 }
 
 /* CrazyGamblerStartDomination(): the player boarded and aims at the leader; the crazy gambler's message starts the
  * first round */
-static PyObject *Domination_CrazyGamblerStartDomination(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Dom_CrazyGamblerStartDominationC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *v = Mode_V(&t), *fn = Mode_V(&t);
+	if (!Mode_Import("Parking") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
+		!Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", DOM, "OnVehicle") || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Parking");
-	Sf_SetAttrI(&f, Sf_Mod(&f, "Parking", "PlayerShip"), "Invulnerable", 0);
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Sf_Global(&f, DOM, "OnVehicle"));
-	PyObject *usr = Sdf_Usr(&f);
-	if (Sdf_UsrCar(&f, usr) > 0) {
-		Sf_SetAttr(&f, usr, "Target", Sf_Ask(&f, "Scrap", "Get", "(s)", "LeaderName"));
+	int car = Sd_UsrCar(usr);
+	if (car < 0 || (car && !Dom_AimLeader(usr)) || !Mode_Read(DOM, "CrazyGamblerStartDominationFirst", &dom.startFirst)) {
+		return Mode_Done(&t, 0);
 	}
-	int first = Sf_True(&f, Sf_Global(&f, DOM, "CrazyGamblerStartDominationFirst"));
-	if (first > 0) {
-		first = Sf_EqS(&f, Sdf_Save(&f, "PlayerRounds"), "0");
+	byte first = Native_True(&dom.startFirst);
+	if (first) {
+		Mode_SaveVar("PlayerRounds", v);
+		first = Native_IsStr(v, "0");
 	}
-	if (first > 0) {
-		first = Sf_EqS(&f, Sdf_Save(&f, "EnemyRounds"), "0");
+	if (first) {
+		Native_Free(v);
+		Mode_SaveVar("EnemyRounds", v);
+		first = Native_IsStr(v, "0");
 	}
-	if (first > 0) {
-		Sf_SetGlobal(&f, DOM, "CrazyGamblerStartDominationFirst", Sf_Int(&f, 0));
-		PyObject *cad = Sdf_Save(&f, "DominationStartTextCad");
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(OsO())", cad, CG, Sf_Global(&f, DOM, "StartDomination"));
-	} else if (first == 0) {
-		Sdf_Call(&f, DOM, "StartDomination", "()");
+	if (!first) {
+		return Mode_Done(&t, OWN(DOM, "StartDomination", NULL, ""));
 	}
-	return Sf_None(&f);
+	if (!Sd_PutI(DOM, "CrazyGamblerStartDominationFirst", &dom.startFirst, 0)) {
+		return Mode_Done(&t, 0);
+	}
+	PyObject *f = Mode_GlobalPy(DOM, "StartDomination");
+	Native_Free(v);
+	Mode_SaveVar("DominationStartTextCad", v);
+	Native_SetEmpty(fn, NV_TUPLE);
+	byte ok = f && CALL("Speech", "AddRemoteCom", NULL, "vsOv", v, CG, f, fn);
+	Py_XDECREF(f);
+	return Mode_Done(&t, ok);
 }
 
+MODE_FN(Dom, CrazyGamblerStartDomination, 0, Dom_CrazyGamblerStartDominationC())
 /* OnVehicle(): the player's ship can be hit again when he boards it */
-static PyObject *Domination_OnVehicle(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+MODE_FN(Dom, OnVehicle, 0, Mode_Import("Parking") && Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0))
+
+/* SLogic.SetDominationZones(zones): the WithLife entities of the zone names (the CHECKs of the engine function) */
+static void Dom_SetZones(const nativeVal_t *zones) {
+	CHECK(zones->type == NV_LIST && "El argumento pasado no es una lista");
+	CHECK(zones->n > 0 && "El tamaño de la lista es inválido");
+	for (int i = 0; i < zones->n; i++) {
+		CHECK(zones->items[i].type == NV_STR && "El elemento no es un string");
+		cEntity *e = World_FindEntity(Native_Text(&zones->items[i]));
+		CHECK(e && Entity_IsType(e, TYEN_WITH_LIFE) && "La entidad no es un 'WithLifeEntity'");
+		Domination_AddZone(e);
 	}
-	Sf_Import(&f, "Parking");
-	Sf_SetAttrI(&f, Sf_Mod(&f, "Parking", "PlayerShip"), "Invulnerable", 0);
-	return Sf_None(&f);
 }
 
 /* StartDomination(): a round: no zones taken, the scorer, the zones at their places, the baton */
-static PyObject *Domination_StartDomination(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Dom_StartDominationC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *b = Mode_V(&t), *rounds = Mode_V(&t);
+	if (!Mode_Import("Vehicles") || !Mode_Import("Menu") || !Mode_Import("RacerScorer") || !Mode_Import("RaceMaker") ||
+		!Sd_PutI(DOM, "playerZones", &dom.playerZones, 0) || !Sd_PutI(DOM, "enemyZones", &dom.enemyZones, 0) ||
+		!Sd_SaveInt("PlayerRounds", a) || !Sd_SaveInt("EnemyRounds", b)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "RaceMaker");
-	Sf_SetGlobal(&f, DOM, "playerZones", Sf_Int(&f, 0));
-	Sf_SetGlobal(&f, DOM, "enemyZones", Sf_Int(&f, 0));
-	PyObject *a = Sdf_SaveInt(&f, "PlayerRounds");
-	PyObject *b = Sdf_SaveInt(&f, "EnemyRounds");
-	Sf_Ask(&f, "RacerScorer", "InitMissionScorer", "(OOO)", a, b, Sdf_Save(&f, "DominationRounds"));
-	Sf_SetMod(&f, "Menu", "MissionScorerCall", Sf_Global(&f, DOM, "MissionScorer"));
-	Sdf_Call(&f, DOM, "MissionScorer", "(i)", 0);
-	int n = Sf_Len(&f, Sf_Global(&f, DOM, "zones"));
-	for (int i = 0; i < n && !f.failed; i++) {
-		int mark = f.n;
-		Sdf_Call(&f, DOM, "CreateZone", "(iO)", i, Sf_Item(&f, Sf_Global(&f, DOM, "zones"), i));
-		Sf_Release(&f, mark);
+	Mode_SaveVar("DominationRounds", rounds);
+	if (!CALL("RacerScorer", "InitMissionScorer", NULL, "vvv", a, b, rounds) ||
+		!Sd_GlobalTo("Menu", "MissionScorerCall", DOM, "MissionScorer") || !OWN(DOM, "MissionScorer", NULL, "i", 0L) ||
+		!Mode_Read(DOM, "zones", &dom.zones)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "SLogic", "SetDominationZones", "(O)", Sf_Global(&f, DOM, "zones"));
-	Sdf_Call(&f, DOM, "CreateBaton", "()");
-	return Sf_None(&f);
+	int n = Native_Size(&dom.zones);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t pos;
+		Native_SetNone(&pos);
+		ok = Mode_Read(DOM, "zones", &dom.zones) && Sd_Item(&dom.zones, i, &pos) && OWN(DOM, "CreateZone", NULL, "iv", (long)i, &pos);
+		Native_Free(&pos);
+	}
+	if (!ok || !Mode_Read(DOM, "zones", &dom.zones)) {
+		return Mode_Done(&t, 0);
+	}
+	if (dom.zones.type == NV_LIST) {
+		Dom_SetZones(&dom.zones);
+	} else if (!CALL("SLogic", "SetDominationZones", NULL, "v", &dom.zones)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, OWN(DOM, "CreateBaton", NULL, ""));
+}
+
+MODE_FN(Dom, StartDomination, 0, Dom_StartDominationC())
+
+/* zonesStates[z] == state (the global read again): 1, 0, -1 with the error */
+static int Dom_StateIs(const nativeVal_t *z, long state) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	int r = Mode_Read(DOM, "zonesStates", &dom.zonesStates) && Native_Subscript(&dom.zonesStates, z, &v) ? Sd_EqI(&v, state) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+/* zonesStates[z] = state in place */
+static byte Dom_SetState(const nativeVal_t *z, long state) {
+	nativeVal_t v;
+	Native_SetInt(&v, state);
+	return Mode_DictPut(DOM, "zonesStates", &dom.zonesStates, z, &v);
+}
+
+/* the player or the leader took the baton: the baton and its arrow gone, SLogic.ChangeBatonState((0, 0, 0), state),
+ * the holder, the crazy gambler's message and the sound */
+static byte Dom_Took(long state, long user, const nativeVal_t *ship, const char *key,
+	const char *snd, const char *vol) {
+	nativeVal_t zero;
+	Native_SetEmpty(&zero, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		Native_SetInt(Native_Append(&zero), 0);
+	}
+	byte ok = Sd_BatonState(&zero, state) && Sd_PutI(DOM, "userWithBaton", &dom.userWithBaton, user) &&
+		Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, ship) && CALL("Speech", "ForceRemoteCom", NULL, "ss", key, CG) &&
+		Mode_Sound(snd, vol);
+	Native_Free(&zero);
+	return ok;
 }
 
 /* TakeBaton(ItemName, VehicleName): the leader or the player took the baton; with the player the zones he can take
  * show on the radar */
-static PyObject *Domination_TakeBaton(PyObject *self, PyObject *args) {
-	PyObject *item, *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &who)) {
-		return NULL;
+static byte Dom_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *leader = Mode_V(&t), *usr = Mode_V(&t), *keys = Mode_V(&t), *z = Mode_V(&t), *un = Mode_V(&t);
+	cEntity *e;
+	if (!Native_GVarGet("LeaderName", leader) || !Mode_Import("Sound") || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *leader = Sf_Ask(&f, "Scrap", "Get", "(s)", "LeaderName");
-	Sf_Import(&f, "Sound");
-	PyObject *usr = Sdf_Usr(&f);
-	int l = Sf_Compare(&f, who, "==", leader);
-	if (l > 0) {
-		Sdf_Del(&f, item);
-		Sdf_Del(&f, Sf_Cat(&f, "Os", item, "CheckArrow"));
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", who);
-		Sdf_Set(&f, "CurrentWaypointName", who);
-		Sf_Ask(&f, "SLogic", "ChangeBatonState", "((iii)i)", 0, 0, 0, 1);
-		Sf_SetGlobal(&f, DOM, "userWithBaton", Sf_Int(&f, 0));
-		Sf_SetGlobal(&f, DOM, "shipWithBaton", who);
-		Sf_Ask(&f, "Speech", "ForceRemoteCom", "(ss)", "SuperDeal_DominationRemoteMessage6", CG);
-		Sdf_Sound(&f, "EneWaySound", "EneWayVolume");
-	} else if (l == 0 && Sdf_UsrIs(&f, usr, who) > 0) {
-		PyObject *keys = Sf_Method(&f, Sf_Global(&f, DOM, "zonesStates"), "keys", "()");
-		for (int i = 0;; i++) {
-			int mark = f.n;
-			PyObject *z = Sf_Next(&f, keys, i);
-			if (!z) {
-				break;
-			}
-			int show = Sf_EqI(&f, Sf_GetItem(&f, Sf_Global(&f, DOM, "zonesStates"), z), 0);
-			if (show == 0) {
-				show = Sf_EqI(&f, Sf_GetItem(&f, Sf_Global(&f, DOM, "zonesStates"), z), 2);
-			}
-			if (show > 0) {
-				PyObject *e = Sf_Entity(&f, z);
-				if (Sf_True(&f, e) > 0) {
-					Sf_SetAttrI(&f, e, "RadarShow", 1);
-				}
-			}
-			Sf_Release(&f, mark);
+	if (Sd_Eq(who, leader)) {
+		if (!Sd_Del(item) || !Sd_DelArrow(item) || !CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", who) ||
+			!Mode_GVarSet("CurrentWaypointName", who) ||
+			!Dom_Took(1, 0, who, "SuperDeal_DominationRemoteMessage6", "EneWaySound", "EneWayVolume")) {
+			return Mode_Done(&t, 0);
 		}
-		Sdf_Del(&f, item);
-		Sdf_Del(&f, Sf_Cat(&f, "Os", item, "CheckArrow"));
-		Sf_Ask(&f, "SLogic", "ChangeBatonState", "((iii)i)", 0, 0, 0, 2);
-		Sf_SetGlobal(&f, DOM, "userWithBaton", Sf_Int(&f, 1));
-		Sf_SetGlobal(&f, DOM, "shipWithBaton", Sf_Attr(&f, usr, "Name"));
-		Sf_Ask(&f, "Speech", "ForceRemoteCom", "(ss)", "SuperDeal_DominationRemoteMessage5", CG);
-		Sdf_Sound(&f, "WaySound", "WayVolume");
+	} else {
+		int u = Sd_UsrIs(usr, who);
+		if (u < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (u) {
+			if (!Mode_Keys(DOM, "zonesStates", 1, keys)) {
+				return Mode_Done(&t, 0);
+			}
+			int n = Native_ForCount(keys);
+			byte ok = n >= 0;
+			for (int i = 0; ok && i < n; i++) {
+				Native_Free(z);
+				ok = Native_SeqItem(keys, i, z);
+				int show = ok ? Dom_StateIs(z, 0) : -1;
+				if (show == 0) {
+					show = Dom_StateIs(z, 2);
+				}
+				ok = show >= 0 && (!show || (Mode_Ent(z, &e) && (!e || Mode_SetI(e, Native_Text(z), "RadarShow", 1))));
+			}
+			if (!ok || !Sd_Del(item) || !Sd_DelArrow(item) || !Mode_VGet(usr, "Name", un) ||
+				!Dom_Took(2, 1, un, "SuperDeal_DominationRemoteMessage5", "WaySound", "WayVolume")) {
+				return Mode_Done(&t, 0);
+			}
+		}
 	}
-	if (Sf_True(&f, Sf_Entity(&f, leader)) > 0) {
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iO)", 0, leader);
+	if (!Mode_Ent(leader, &e)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, !e || CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, leader));
 }
+
+MODE_FN(Dom, TakeBaton, 2, Dom_TakeBatonC(&a[0], &a[1]))
 
 /* CreateZone(i, pos): the neutral zone i at pos and the WithLife the wingmen guard, whose name replaces the place in
  * zones */
-static PyObject *Domination_CreateZone(PyObject *self, PyObject *args) {
-	PyObject *i, *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &i, &pos)) {
-		return NULL;
+static byte Dom_CreateZoneC(const nativeVal_t *i, const nativeVal_t *pos) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rep = Mode_V(&t), *name = Mode_V(&t), *l = Mode_V(&t), *ln = Mode_V(&t), *wname = Mode_V(&t);
+	nativeVal_t *l2 = Mode_V(&t), *model = Mode_V(&t);
+	Sd_Repr(i, rep);
+	if (!Mode_Cat(&t, name, 2, Mode_S(&t, "Zone"), rep) || !Sd_Create(name, pos, "Item", l) ||
+		!Mode_Read(DOM, "ZoneModelNeutral", model) || !Mode_VModel(l, model) || !Sd_SetI(l, "Radius", 3000) ||
+		!Sd_SetS(l, "OnTake", "Domination.TakeZone") || !Sd_SetI(l, "RadarShow", 0) || !Mode_VGet(l, "Name", ln) ||
+		!Mode_DictPut(DOM, "zonesStates", &dom.zonesStates, ln, Mode_I(&t, 0))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *l = Sdf_Create(&f, Sf_Cat(&f, "sO", "Zone", Sf_Repr(&f, i)), pos, "Item");
-	Sf_Method(&f, l, "SetModel", "(O)", Sf_Global(&f, DOM, "ZoneModelNeutral"));
-	Sf_SetAttrI(&f, l, "Radius", 3000);
-	Sf_SetAttrS(&f, l, "OnTake", "Domination.TakeZone");
-	Sf_SetAttrI(&f, l, "RadarShow", 0);
-	Sf_SetItem(&f, Sf_Global(&f, DOM, "zonesStates"), Sf_Attr(&f, l, "Name"), Sf_Int(&f, 0));
-	l = Sdf_Create(&f, Sf_Cat(&f, "Os", Sf_Attr(&f, l, "Name"), "_WithLife"), pos, "WithLife");
-	Sf_SetItem(&f, Sf_Global(&f, DOM, "zones"), i, Sf_Attr(&f, l, "Name"));
-	return Sf_None(&f);
+	Native_Free(ln);
+	if (!Mode_VGet(l, "Name", ln) || !Mode_Cat(&t, wname, 2, ln, Mode_S(&t, "_WithLife")) || !Sd_Create(wname, pos, "WithLife", l2)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(ln);
+	return Mode_Done(&t, Mode_VGet(l2, "Name", ln) && Mode_DictPut(DOM, "zones", &dom.zones, i, ln));
 }
 
+MODE_FN(Dom, CreateZone, 2, Dom_CreateZoneC(&a[0], &a[1]))
+
 /* lang text + ": %d/%d" % (a, b) */
-static PyObject *Dom_Count(scriptFrame_t *f, const char *key, PyObject *a, PyObject *b) {
-	PyObject *text = Sdf_Lang(f, key);
-	return Sf_Op(f, text, '+', Sf_Op(f, Sf_Str(f, ": %d/%d"), '%', Sf_Build(f, "(OO)", a, b)));
+static byte Dom_Count(const char *key, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	nativeVal_t text, fmt, args, s;
+	Mode_Lang(key, &text);
+	Native_SetStr(&fmt, ": %d/%d");
+	Native_SetEmpty(&args, NV_TUPLE);
+	Native_Copy(Native_Append(&args), a);
+	Native_Copy(Native_Append(&args), b);
+	Native_SetNone(&s);
+	byte ok = Native_Format(&fmt, &args, &s) && Native_Arith('+', &text, &s, out);
+	Native_Free(&text);
+	Native_Free(&args);
+	Native_Free(&s);
+	return ok;
 }
 
 /* SScorer.Set(0, item, "Text", lang text + ": %d/%d" % (count, n)), n NULL for len(zones) */
-static void Dom_SetCount(scriptFrame_t *f, const char *item, const char *key, const char *count, PyObject *n) {
-	PyObject *c = Sf_Global(f, DOM, count);
-	PyObject *text = Dom_Count(f, key, c, n ? n : Sf_Int(f, Sf_Len(f, Sf_Global(f, DOM, "zones"))));
-	Sf_Ask(f, "SScorer", "Set", "(issO)", 0, item, "Text", text);
+static byte Dom_SetCount(const char *item, const char *key, const char *count, nativeVal_t *slot, const nativeVal_t *n) {
+	nativeVal_t len, text, id, it;
+	Native_SetNone(&text);
+	if (!Mode_Read(DOM, count, slot)) {
+		return 0;
+	}
+	if (!n) {
+		if (!Mode_Read(DOM, "zones", &dom.zones)) {
+			return 0;
+		}
+		int k = Native_Size(&dom.zones);
+		if (k < 0) {
+			return 0;
+		}
+		Native_SetInt(&len, k);
+		n = &len;
+	}
+	Native_SetInt(&id, 0);
+	Native_SetStr(&it, item);
+	byte ok = Dom_Count(key, slot, n, &text) && Mode_ScorerSet(&id, &it, "Text", &text);
+	Native_Free(&text);
+	return ok;
+}
+
+/* the zone item taken by a side: the model of the side, the zone state of the engine, the sound, the count and the
+ * table; then the round won by the side when it holds all zones, else the crazy gambler's message. 1 done, 0 when the
+ * zone is the side's already (TakeZone returns at once), -1 with the error */
+static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t *usr, const nativeVal_t *numZones) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *z = Mode_V(&t), *model = Mode_V(&t), *wname = Mode_V(&t), *idx = Mode_V(&t);
+	nativeVal_t *pr = Mode_V(&t), *er = Mode_V(&t), *dr = Mode_V(&t), *one = Mode_V(&t), *rep = Mode_V(&t);
+	nativeVal_t *fmt = Mode_V(&t), *args = Mode_V(&t), *text = Mode_V(&t), *id = Mode_V(&t), *it = Mode_V(&t);
+	nativeVal_t *own = enemy ? &dom.enemyZones : &dom.playerZones, *other = enemy ? &dom.playerZones : &dom.enemyZones;
+	const char *ownVar = enemy ? "enemyZones" : "playerZones", *otherVar = enemy ? "playerZones" : "enemyZones";
+	int was = Dom_StateIs(item, enemy ? 2 : 1);
+	if (was) {
+		Mode_Done(&t, 0);
+		return was > 0 ? 0 : -1;
+	}
+	was = Dom_StateIs(item, enemy ? 1 : 2);
+	if (was < 0 || (was && (!Sd_Add(DOM, otherVar, other, -1) ||
+		!Dom_SetCount(enemy ? "PlayerZonesText" : "EnemyZonesText", enemy ? "SuperDeal_DominationPlayerZones" :
+		"SuperDeal_DominationEnemyZones", otherVar, other, NULL)))) {
+		return Mode_Done(&t, 0) ? 1 : -1;
+	}
+	if (!Mode_EntityH(item, z) || !Mode_Read(DOM, enemy ? "ZoneModelEnemies" : "ZoneModelFriends", model) ||
+		!Mode_VModel(z, model) || (!enemy && !Sd_SetI(z, "RadarShow", 0)) || !Mode_Read(DOM, "zones", &dom.zones) ||
+		!Mode_Cat(&t, wname, 2, item, Mode_S(&t, "_WithLife")) || !Mode_Index(&dom.zones, wname, idx)) {
+		return Mode_Done(&t, 0) ? 1 : -1;
+	}
+	/* SLogic.ChangeZoneState(idx, state) ("ii") */
+	Domination_SetZoneState((int)idx->i, enemy ? 2 : 1);
+	if (!Mode_Sound(enemy ? "EneWaySound" : "WaySound", enemy ? "EneWayVolume" : "WayVolume") || !Sd_Add(DOM, ownVar, own, 1) ||
+		!Dom_SetState(item, enemy ? 2 : 1) || !Dom_SetCount(enemy ? "EnemyZonesText" : "PlayerZonesText", enemy ?
+		"SuperDeal_DominationEnemyZones" : "SuperDeal_DominationPlayerZones", ownVar, own, numZones) || !Sd_Draw() ||
+		!Mode_Read(DOM, ownVar, own)) {
+		return Mode_Done(&t, 0) ? 1 : -1;
+	}
+	if (Native_Compare(own, numZones) < 0) {
+		return Mode_Done(&t, CALL("Speech", "ForceRemoteCom", NULL, "ss", enemy ? "SuperDeal_DominationRemoteMessage4" :
+			"SuperDeal_DominationRemoteMessage3", CG)) ? 1 : -1;
+	}
+	/* the round won: the rounds of the side counted in its save variable */
+	Native_SetInt(one, 1);
+	nativeVal_t *won = enemy ? er : pr;
+	if (!Sd_SaveInt("PlayerRounds", enemy ? pr : rep) || !Sd_SaveInt("EnemyRounds", enemy ? rep : er) ||
+		!Native_Arith('+', rep, one, won) || !Sd_SaveInt("DominationRounds", dr)) {
+		return Mode_Done(&t, 0) ? 1 : -1;
+	}
+	Native_Free(rep);
+	Sd_Repr(won, rep);
+	if (!Mode_SetSaveVar(enemy ? "EnemyRounds" : "PlayerRounds", rep) || !Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 0)) {
+		return Mode_Done(&t, 0) ? 1 : -1;
+	}
+	if (Native_Compare(won, dr) >= 0) {
+		return Mode_Done(&t, OWN(DOM, "EndOfDomination", NULL, "i", enemy ? 0L : 1L)) ? 1 : -1;
+	}
+	if (enemy) {
+		return Mode_Done(&t, Sd_Update(pr, er) && Sd_GamblerKey("SuperDeal_DominationRemoteMessage2", DOM, "RestartDomination")) ? 1 : -1;
+	}
+	/* SScorer.Set(0, "ZonesText", "Text", "%d/%d" % (playerZones, numZones)) */
+	Native_SetStr(fmt, "%d/%d");
+	Native_SetEmpty(args, NV_TUPLE);
+	if (!Mode_Read(DOM, "playerZones", &dom.playerZones)) {
+		return Mode_Done(&t, 0) ? 1 : -1;
+	}
+	Native_Copy(Native_Append(args), &dom.playerZones);
+	Native_Copy(Native_Append(args), numZones);
+	Native_SetInt(id, 0);
+	Native_SetStr(it, "ZonesText");
+	return Mode_Done(&t, Native_Format(fmt, args, text) && Mode_ScorerSet(id, it, "Text", text) && Sd_Update(pr, er) &&
+		Sd_Draw() && Sd_GamblerKey("SuperDeal_DominationRemoteMessage1", DOM, "RestartDomination") &&
+		Sd_SetI(usr, "Invulnerable", 1)) ? 1 : -1;
 }
 
 /* TakeZone(ItemName, CharName): an enemy with the baton marker or the player with the baton takes a zone; all zones
  * win the round (the deal at DominationRounds), else the next one starts after the message */
-static PyObject *Domination_TakeZone(PyObject *self, PyObject *args) {
-	PyObject *item, *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &who)) {
-		return NULL;
+static byte Dom_TakeZoneC(const nativeVal_t *item, const nativeVal_t *who) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *we = Mode_V(&t), *radar = Mode_V(&t), *num = Mode_V(&t);
+	nativeVal_t *now = Mode_V(&t), *cad = Mode_V(&t), *len = Mode_V(&t), *mt = Mode_V(&t);
+	if (!Mode_Import("RacerScorer") || !Mode_Import("Menu") || !Mode_Import("Sound") || !Mode_Import("Speech") ||
+		!Mode_Read(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Sound");
-	Sf_Import(&f, "Speech");
-	if (Sf_True(&f, Sf_Global(&f, DOM, "zonesCanBeTaken")) == 0) {
-		return Sf_None(&f);
+	if (!Native_True(&dom.zonesCanBeTaken)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *usr = Sdf_Usr(&f);
-	int isUser = Sdf_UsrIs(&f, usr, who);
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
+	}
+	int isUser = Sd_UsrIs(usr, who);
 	if (isUser > 0) {
-		isUser = Sf_Compare(&f, Sf_Global(&f, DOM, "shipWithBaton"), "==", Sf_Attr(&f, usr, "Name"));
+		isUser = Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton) && Mode_VGet(usr, "Name", un) ?
+			Sd_Eq(&dom.shipWithBaton, un) : -1;
+		Native_Free(un);
 	}
-	int isEnemy = Sf_EqI(&f, Sf_Attr(&f, Sf_Entity(&f, who), "RadarShow"), 1);
-	if (isUser == 0 && isEnemy == 0) {
-		int msg = Sf_True(&f, usr);
+	if (isUser < 0 || !Mode_EntityH(who, we) || !Mode_VGet(we, "RadarShow", radar)) {
+		return Mode_Done(&t, 0);
+	}
+	byte isEnemy = Sd_EqI(radar, 1);
+	if (!isUser && !isEnemy) {
+		/* the player without the baton at a zone that is not his: the system message, once per its time */
+		int msg = Native_True(usr);
+		if (msg) {
+			msg = Mode_VGet(usr, "Name", un) ? Sd_Eq(who, un) : -1;
+		}
 		if (msg > 0) {
-			msg = Sf_Compare(&f, who, "==", Sf_Attr(&f, usr, "Name"));
+			msg = Dom_StateIs(item, 1);
+			msg = msg < 0 ? -1 : !msg;
 		}
-		if (msg > 0) {
-			msg = Sf_Compare(&f, Sf_GetItem(&f, Sf_Global(&f, DOM, "zonesStates"), item), "!=", Sf_Int(&f, 1));
+		if (msg <= 0) {
+			return Mode_Done(&t, msg == 0);
 		}
-		if (msg > 0) {
-			PyObject *now = Sf_Time(&f);
-			if (Sf_Compare(&f, Sf_Global(&f, DOM, "msgTime"), "<", now) > 0) {
-				PyObject *cad = Sdf_Lang(&f, "SuperDeal_Domination_SystemMessage");
-				Sf_SetGlobal(&f, DOM, "msgTime", Sf_Op(&f, now, '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)",
-					cad)));
-				Sf_Ask(&f, "SScorer", "SetMsgText", "(OO)", cad, Sf_Global(&f, DOM, "msgTime"));
-			}
+		Native_SetFloat(now, Mode_Time());
+		if (!Mode_Read(DOM, "msgTime", &dom.msgTime)) {
+			return Mode_Done(&t, 0);
 		}
-		return Sf_None(&f);
+		if (Native_Compare(&dom.msgTime, now) >= 0) {
+			return Mode_Done(&t, 1);
+		}
+		double d;
+		Mode_Lang("SuperDeal_Domination_SystemMessage", cad);
+		return Mode_Done(&t, CALL("Speech", "CalculateSpeechTime", len, "v", cad) && Native_Arith('+', now, len, mt) &&
+			Mode_Put(DOM, "msgTime", &dom.msgTime, mt) && Mode_Read(DOM, "msgTime", &dom.msgTime) &&
+			Native_ArgDouble(&dom.msgTime, &d) && Mode_MsgText(cad, d));
 	}
-	if (f.failed) {
-		return Sf_None(&f);
+	cEntity *z;
+	if (!Mode_Ent(item, &z) || !Mode_Read(DOM, "zones", &dom.zones)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *z = Sf_Entity(&f, item);
-	PyObject *numZones = Sf_Int(&f, Sf_Len(&f, Sf_Global(&f, DOM, "zones")));
-	PyObject *states = Sf_Global(&f, DOM, "zonesStates");
-	if (isEnemy > 0) {
-		if (Sf_EqI(&f, Sf_GetItem(&f, states, item), 2) != 0) {
-			return Sf_None(&f);
-		}
-		if (Sf_EqI(&f, Sf_GetItem(&f, Sf_Global(&f, DOM, "zonesStates"), item), 1) > 0) {
-			Sdf_Add(&f, DOM, "playerZones", -1);
-			Dom_SetCount(&f, "PlayerZonesText", "SuperDeal_DominationPlayerZones", "playerZones", NULL);
-		}
-		Sf_Method(&f, z, "SetModel", "(O)", Sf_Global(&f, DOM, "ZoneModelEnemies"));
-		PyObject *idx = Sf_Method(&f, Sf_Global(&f, DOM, "zones"), "index", "(O)", Sf_Cat(&f, "Os", item, "_WithLife"));
-		Sf_Ask(&f, "SLogic", "ChangeZoneState", "(Oi)", idx, 2);
-		Sdf_Sound(&f, "EneWaySound", "EneWayVolume");
-		Sdf_Add(&f, DOM, "enemyZones", 1);
-		Sf_SetItem(&f, Sf_Global(&f, DOM, "zonesStates"), item, Sf_Int(&f, 2));
-		Dom_SetCount(&f, "EnemyZonesText", "SuperDeal_DominationEnemyZones", "enemyZones", numZones);
-		Sdf_Draw(&f);
-		int all = Sf_Compare(&f, Sf_Global(&f, DOM, "enemyZones"), ">=", numZones);
-		if (all > 0) {
-			PyObject *pr = Sdf_SaveInt(&f, "PlayerRounds");
-			PyObject *er = Sf_OpI(&f, Sdf_SaveInt(&f, "EnemyRounds"), '+', 1);
-			PyObject *dr = Sdf_SaveInt(&f, "DominationRounds");
-			Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "EnemyRounds", Sf_Repr(&f, er));
-			Sf_SetGlobal(&f, DOM, "zonesCanBeTaken", Sf_Int(&f, 0));
-			int over = Sf_Compare(&f, er, ">=", dr);
-			if (over > 0) {
-				Sdf_Call(&f, DOM, "EndOfDomination", "(i)", 0);
-			} else if (over == 0) {
-				Sdf_Update(&f, pr, er);
-				Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssO())", "SuperDeal_DominationRemoteMessage2", CG, Sf_Global(&f,
-					DOM, "RestartDomination"));
-			}
-		} else if (all == 0) {
-			Sf_Ask(&f, "Speech", "ForceRemoteCom", "(ss)", "SuperDeal_DominationRemoteMessage4", CG);
-		}
-	} else {
-		if (Sf_EqI(&f, Sf_GetItem(&f, states, item), 1) != 0) {
-			return Sf_None(&f);
-		}
-		if (Sf_EqI(&f, Sf_GetItem(&f, Sf_Global(&f, DOM, "zonesStates"), item), 2) > 0) {
-			Sdf_Add(&f, DOM, "enemyZones", -1);
-			Dom_SetCount(&f, "EnemyZonesText", "SuperDeal_DominationEnemyZones", "enemyZones", NULL);
-		}
-		Sf_Method(&f, z, "SetModel", "(O)", Sf_Global(&f, DOM, "ZoneModelFriends"));
-		Sf_SetAttrI(&f, z, "RadarShow", 0);
-		PyObject *idx = Sf_Method(&f, Sf_Global(&f, DOM, "zones"), "index", "(O)", Sf_Cat(&f, "Os", item, "_WithLife"));
-		Sf_Ask(&f, "SLogic", "ChangeZoneState", "(Oi)", idx, 1);
-		Sdf_Sound(&f, "WaySound", "WayVolume");
-		Sdf_Add(&f, DOM, "playerZones", 1);
-		Sf_SetItem(&f, Sf_Global(&f, DOM, "zonesStates"), item, Sf_Int(&f, 1));
-		Dom_SetCount(&f, "PlayerZonesText", "SuperDeal_DominationPlayerZones", "playerZones", numZones);
-		Sdf_Draw(&f);
-		int all = Sf_Compare(&f, Sf_Global(&f, DOM, "playerZones"), ">=", numZones);
-		if (all > 0) {
-			PyObject *pr = Sf_OpI(&f, Sdf_SaveInt(&f, "PlayerRounds"), '+', 1);
-			PyObject *er = Sdf_SaveInt(&f, "EnemyRounds");
-			PyObject *dr = Sdf_SaveInt(&f, "DominationRounds");
-			Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "PlayerRounds", Sf_Repr(&f, pr));
-			Sf_SetGlobal(&f, DOM, "zonesCanBeTaken", Sf_Int(&f, 0));
-			int over = Sf_Compare(&f, pr, ">=", dr);
-			if (over > 0) {
-				Sdf_Call(&f, DOM, "EndOfDomination", "(i)", 1);
-			} else if (over == 0) {
-				PyObject *text = Sf_Op(&f, Sf_Str(&f, "%d/%d"), '%', Sf_Build(&f, "(OO)", Sf_Global(&f, DOM,
-					"playerZones"), numZones));
-				Sf_Ask(&f, "SScorer", "Set", "(issO)", 0, "ZonesText", "Text", text);
-				Sdf_Update(&f, pr, er);
-				Sdf_Draw(&f);
-				Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssO())", "SuperDeal_DominationRemoteMessage1", CG, Sf_Global(&f,
-					DOM, "RestartDomination"));
-				Sf_SetAttrI(&f, usr, "Invulnerable", 1);
-			}
-		} else if (all == 0) {
-			Sf_Ask(&f, "Speech", "ForceRemoteCom", "(ss)", "SuperDeal_DominationRemoteMessage3", CG);
-		}
+	int n = Native_Size(&dom.zones);
+	if (n < 0 || !Mode_Read(DOM, "zonesStates", &dom.zonesStates)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, item);
-	Sf_SetAttrS(&f, e, "OnTake", "");
-	Sdf_Later(&f, Sf_Float(&f, 1.0), DOM, "ActivateZone", Sf_Build(&f, "(O)", item));
-	return Sf_None(&f);
+	Native_SetInt(num, n);
+	int r = Dom_ZoneTaken(isEnemy, item, usr, num);
+	if (r <= 0) {
+		return Mode_Done(&t, r == 0);
+	}
+	cEntity *e;
+	return Mode_Done(&t, Mode_Ent(item, &e) && Mode_SetS(e, Native_Text(item), "OnTake", "") &&
+		Mode_Later(1.0, DOM, "ActivateZone", item, 1, NULL));
 }
+
+MODE_FN(Dom, TakeZone, 2, Dom_TakeZoneC(&a[0], &a[1]))
 
 /* ActivateZone(ItemName): the zone can be taken again */
-static PyObject *Domination_ActivateZone(PyObject *self, PyObject *args) {
-	PyObject *item;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &item)) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, Sf_Entity(&f, item), "OnTake", "Domination.TakeZone");
-	return Sf_None(&f);
+static byte Dom_ActivateZoneC(const nativeVal_t *item) {
+	cEntity *e;
+	return Mode_Ent(item, &e) && Mode_SetS(e, Native_Text(item), "OnTake", "Domination.TakeZone");
 }
 
+MODE_FN(Dom, ActivateZone, 1, Dom_ActivateZoneC(&a[0]))
 /* RestartDomination(): the next round in the level again */
-static PyObject *Domination_RestartDomination(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "SaveGame");
-	Sf_Ask(&f, "SaveGame", "Restart", "()");
-	return Sf_None(&f);
+MODE_FN(Dom, RestartDomination, 0, Mode_Import("SaveGame") && CALL("SaveGame", "Restart", NULL, ""))
+
+/* the baton drops at the dead ship: DOM.CreateBaton(dead.Pos) (and MortalRace) */
+static byte Sd_BatonAt(const char *mod, const nativeVal_t *dead) {
+	nativeVal_t pos;
+	Native_SetNone(&pos);
+	byte ok = Mode_VGet(dead, "Pos", &pos) && OWN(mod, "CreateBaton", NULL, "v", &pos);
+	Native_Free(&pos);
+	return ok;
 }
 
 /* OnPlayerDeath(LooserName, WinnerName): the baton drops where the player died; he comes back after
  * onDeathSpawnTime */
-static PyObject *Domination_OnPlayerDeath(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
+static byte Dom_OnPlayerDeathC(const nativeVal_t *loser) {
+	nativeVal_t dead;
+	Native_SetNone(&dead);
+	byte ok = Mode_EntityH(loser, &dead) && Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton);
+	if (ok && Sd_Eq(&dom.shipWithBaton, loser)) {
+		ok = Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) && Sd_BatonAt(DOM, &dead);
 	}
-	PyObject *dead = Sf_Entity(&f, loser);
-	if (Sf_Compare(&f, Sf_Global(&f, DOM, "shipWithBaton"), "==", loser) > 0) {
-		Sf_SetGlobal(&f, DOM, "userWithBaton", Sf_Int(&f, 0));
-		Sf_SetGlobal(&f, DOM, "shipWithBaton", Sf_Str(&f, ""));
-		Sdf_Call(&f, DOM, "CreateBaton", "(O)", Sf_Attr(&f, dead, "Pos"));
-	}
-	Sdf_HideZones(&f);
-	Sdf_Later(&f, Sf_Global(&f, DOM, "onDeathSpawnTime"), DOM, "RespawnPlayer", Sf_Build(&f, "(O)", loser));
-	return Sf_None(&f);
+	Native_Free(&dead);
+	return ok && Dom_HideZones() && Sd_RespawnLater(DOM, &dom.onDeathSpawnTime, loser);
+}
+
+MODE_FN(Dom, OnPlayerDeath, 2, Dom_OnPlayerDeathC(&a[0]))
+
+/* Vehicles.OnDeath(loser, winner); dead = Scrap.GetEntity(loser); dead.EntityList = ""; if loser in list:
+ * list.remove(loser) (the start of OnEnemyDeath and OnFriendDeath) */
+static byte Dom_Dead(const nativeVal_t *loser, const nativeVal_t *winner, const char *list, nativeVal_t *slot,
+	nativeVal_t *dead) {
+	return Mode_Import("Vehicles") && CALL("Vehicles", "OnDeath", NULL, "vv", loser, winner) && Mode_EntityH(loser, dead) &&
+		Sd_SetS(dead, "EntityList", "") && Sd_RemoveIn(DOM, list, slot, loser);
 }
 
 /* OnEnemyDeath(LooserName, WinnerName): an enemy died (the engine's OnDominEnemyDeath); a new one comes after
  * onDeathSpawnTime, the leader drops the baton */
-static PyObject *Domination_OnEnemyDeath(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
+static byte Dom_OnEnemyDeathC(const nativeVal_t *loser, const nativeVal_t *winner) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dead = Mode_V(&t), *leader = Mode_V(&t), *is = Mode_V(&t), *empty = Mode_V(&t);
+	if (!Dom_Dead(loser, winner, "enemies", &dom.enemies, dead) || !Native_GVarGet("LeaderName", leader)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Ask(&f, "Vehicles", "OnDeath", "(OO)", loser, winner);
-	PyObject *dead = Sf_Entity(&f, loser);
-	Sf_SetAttrS(&f, dead, "EntityList", "");
-	Sdf_RemoveIn(&f, DOM, "enemies", loser);
-	PyObject *leader = Sf_Ask(&f, "Scrap", "Get", "(s)", "LeaderName");
-	int isLeader = Sf_Compare(&f, leader, "==", loser);
-	Sdf_Later(&f, Sf_Global(&f, DOM, "onDeathSpawnTime"), DOM, "RespawnEnemy", Sf_Build(&f, "(i)", isLeader));
-	Sdf_Del(&f, loser);
-	if (isLeader > 0 && !f.failed) {
-		if (Sf_Compare(&f, Sf_Global(&f, DOM, "shipWithBaton"), "==", leader) > 0) {
-			Sdf_SetS(&f, "CurrentWaypointName", "");
-			Sf_SetGlobal(&f, DOM, "shipWithBaton", Sf_Str(&f, ""));
-			Sdf_Call(&f, DOM, "CreateBaton", "(O)", Sf_Attr(&f, dead, "Pos"));
-		}
-		Sdf_SetS(&f, "LeaderName", "");
+	byte isLeader = Sd_Eq(leader, loser);
+	Native_SetInt(is, isLeader);
+	if (!Mode_Read(DOM, "onDeathSpawnTime", &dom.onDeathSpawnTime) || !Sd_LaterV(&dom.onDeathSpawnTime, DOM, "RespawnEnemy", is, 1) ||
+		!Sd_Del(loser)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (!isLeader) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetStr(empty, "");
+	if (Sd_Eq(&dom.shipWithBaton, leader) && (!Mode_GVarSetS("CurrentWaypointName", "") ||
+		!Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, empty) || !Sd_BatonAt(DOM, dead))) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Mode_GVarSetS("LeaderName", ""));
 }
+
+MODE_FN(Dom, OnEnemyDeath, 2, Dom_OnEnemyDeathC(&a[0], &a[1]))
 
 /* OnFriendDeath(LooserName, WinnerName): a ship of the player's team died; a new one comes after onDeathSpawnTime */
-static PyObject *Domination_OnFriendDeath(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Ask(&f, "Vehicles", "OnDeath", "(OO)", loser, winner);
-	Sf_SetAttrS(&f, Sf_Entity(&f, loser), "EntityList", "");
-	Sdf_RemoveIn(&f, DOM, "friends", loser);
-	Sdf_Later(&f, Sf_Global(&f, DOM, "onDeathSpawnTime"), DOM, "RespawnFriend", Sf_Build(&f, "()"));
-	Sdf_Del(&f, loser);
-	return Sf_None(&f);
+static byte Dom_OnFriendDeathC(const nativeVal_t *loser, const nativeVal_t *winner) {
+	nativeVal_t dead;
+	Native_SetNone(&dead);
+	byte ok = Dom_Dead(loser, winner, "friends", &dom.friends, &dead) && Mode_Read(DOM, "onDeathSpawnTime", &dom.onDeathSpawnTime) &&
+		Sd_LaterV(&dom.onDeathSpawnTime, DOM, "RespawnFriend", NULL, 0) && Sd_Del(loser);
+	Native_Free(&dead);
+	return ok;
 }
+
+MODE_FN(Dom, OnFriendDeath, 2, Dom_OnFriendDeathC(&a[0], &a[1]))
 
 /* RespawnPlayer(LooserName): the player's ship at a spawn point, aiming at the leader */
-static PyObject *Domination_RespawnPlayer(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *usr = Sdf_RespawnUsr(&f, name);
-	Sf_SetAttr(&f, usr, "Target", Sf_Ask(&f, "Scrap", "Get", "(s)", "LeaderName"));
-	return Sf_None(&f);
+static byte Dom_RespawnPlayerC(const nativeVal_t *name) {
+	nativeVal_t usr;
+	Native_SetNone(&usr);
+	byte ok = Sd_RespawnUsr(name, &usr) && Dom_AimLeader(&usr);
+	Native_Free(&usr);
+	return ok;
 }
 
-/* RespawnEnemy(isLeader): an enemy at a spawn point, the new leader without money */
-static PyObject *Domination_RespawnEnemy(PyObject *self, PyObject *args) {
-	PyObject *leader, *sp;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &leader)) {
-		return NULL;
+MODE_FN(Dom, RespawnPlayer, 1, Dom_RespawnPlayerC(&a[0]))
+
+/* RespawnEnemy(isLeader) and RespawnFriend(): a ship of a team at a spawn point (the new leader without money and as
+ * LeaderName) */
+static byte Dom_Respawn(byte enemy, const nativeVal_t *leader) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sp = Mode_V(&t), *e = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t);
+	byte lead = enemy && Native_True(leader);
+	if (!Mode_Import("OutMap") || !Sd_SpawnCar(Mode_S(&t, enemy ? "Enemy" : "Friend"), sp, e) ||
+		!Sd_SetS(e, "WeapList", "15,15,15,15,15,0") || (enemy ? !Sd_SetI(e, "LaunchTaunts", 0) : !Sd_SetI(e, "Money", -1)) ||
+		!Sd_Item(sp, 1, ang) || !Sd_Ang(e, ang) || !Sd_SetS(e, "TgType", enemy ? "red" : "green") ||
+		!Sd_SetS(e, "EntityList", enemy ? "DominationEnemies" : "DominationFriends") || (lead && !Sd_SetI(e, "Money", -1)) ||
+		!OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) ||
+		(enemy && Native_True(leader) && (!Mode_VGet(e, "Name", name) || !Mode_GVarSet("LeaderName", name)))) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "OutMap");
-	PyObject *e = Sdf_SpawnCar(&f, Sf_Str(&f, "Enemy"), &sp);
-	Sf_SetAttrS(&f, e, "WeapList", "15,15,15,15,15,0");
-	Sf_SetAttrI(&f, e, "LaunchTaunts", 0);
-	Sdf_Ang(&f, e, Sf_Item(&f, sp, 1));
-	Sf_SetAttrS(&f, e, "TgType", "red");
-	Sf_SetAttrS(&f, e, "EntityList", "DominationEnemies");
-	if (Sf_True(&f, leader) > 0) {
-		Sf_SetAttrI(&f, e, "Money", -1);
-	}
-	Sdf_Call(&f, DOM, "SetProfile", "(Oi)", e, 1);
-	if (Sf_True(&f, leader) > 0) {
-		Sdf_Set(&f, "LeaderName", Sf_Attr(&f, e, "Name"));
-	}
-	Sdf_AppendName(&f, DOM, "enemies", e);
-	return Sf_None(&f);
+	return Mode_Done(&t, Sd_AppendName(DOM, enemy ? "enemies" : "friends", e));
 }
 
-/* RespawnFriend(): a ship of the player's team at a spawn point */
-static PyObject *Domination_RespawnFriend(PyObject *self, PyObject *args) {
-	PyObject *sp;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "OutMap");
-	PyObject *e = Sdf_SpawnCar(&f, Sf_Str(&f, "Friend"), &sp);
-	Sf_SetAttrS(&f, e, "WeapList", "15,15,15,15,15,0");
-	Sf_SetAttrI(&f, e, "Money", -1);
-	Sdf_Ang(&f, e, Sf_Item(&f, sp, 1));
-	Sf_SetAttrS(&f, e, "TgType", "green");
-	Sf_SetAttrS(&f, e, "EntityList", "DominationFriends");
-	Sdf_Call(&f, DOM, "SetProfile", "(Oi)", e, 0);
-	Sdf_AppendName(&f, DOM, "friends", e);
-	return Sf_None(&f);
-}
+MODE_FN(Dom, RespawnEnemy, 1, Dom_Respawn(1, &a[0]))
+MODE_FN(Dom, RespawnFriend, 0, Dom_Respawn(0, NULL))
 
 /* `for name in names: e = Scrap.GetEntity(name); if (e): e.EntityList = ""; e.Invulnerable = 1` */
-static void Dom_Freeze(scriptFrame_t *f, PyObject *names) {
-	for (int i = 0;; i++) {
-		int mark = f->n;
-		PyObject *n = Sf_Next(f, names, i);
-		if (!n) {
-			break;
-		}
-		PyObject *e = Sf_Entity(f, n);
-		if (Sf_True(f, e) > 0) {
-			Sf_SetAttrS(f, e, "EntityList", "");
-			Sf_SetAttrI(f, e, "Invulnerable", 1);
-		}
-		Sf_Release(f, mark);
+static byte Dom_Freeze(const nativeVal_t *names) {
+	int n = Native_ForCount(names);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t name;
+		cEntity *e;
+		ok = Native_SeqItem(names, i, &name) && Mode_Ent(&name, &e) &&
+			(!e || (Mode_SetS(e, Native_Text(&name), "EntityList", "") && Mode_SetI(e, Native_Text(&name), "Invulnerable", 1)));
+		Native_Free(&name);
 	}
+	return ok;
 }
 
 /* EndOfDomination(playerWins): the ships out of their lists and safe, then the last message */
-static PyObject *Domination_EndOfDomination(PyObject *self, PyObject *args) {
-	PyObject *wins;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &wins)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Parking");
-	Dom_Freeze(&f, Sf_Global(&f, DOM, "enemies"));
-	Dom_Freeze(&f, Sf_Global(&f, DOM, "friends"));
-	Sdf_ScorerOff(&f);
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-	int w = Sf_True(&f, wins);
-	if (w > 0) {
-		Sdf_Call(&f, DOM, "PreOnVictory", "()");
-	} else if (w == 0) {
-		Sdf_Call(&f, DOM, "PreRestartMenu", "()");
-	}
-	return Sf_None(&f);
+static byte Dom_EndOfDominationC(const nativeVal_t *wins) {
+	return Mode_Import("Menu") && Mode_Import("Parking") && Mode_Read(DOM, "enemies", &dom.enemies) &&
+		Dom_Freeze(&dom.enemies) && Mode_Read(DOM, "friends", &dom.friends) && Dom_Freeze(&dom.friends) && Sd_ScorerOff() &&
+		Sd_ModNone("Parking", "SwitchCharMissionCallback") && Sd_ModNone("Parking", "SwitchVehicleMissionCallback") &&
+		OWN(DOM, Native_True(wins) ? "PreOnVictory" : "PreRestartMenu", NULL, "");
 }
 
-static PyObject *Domination_PreRestartMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_PreEnd(args, 0, "DominationFinishPlayerLoosesTextCad", NULL, "Domination", "Domination.RestartDomin");
-}
+MODE_FN(Dom, EndOfDomination, 1, Dom_EndOfDominationC(&a[0]))
+MODE_FN(Dom, PreRestartMenu, 0, Sd_PreEnd(0, "DominationFinishPlayerLoosesTextCad", NULL, "Domination", "Domination.RestartDomin"))
 
 /* RestartDomin(id, control): the rounds at 0 and the level again */
-static PyObject *Domination_RestartDomin(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &id, &control)) {
-		return NULL;
-	}
-	Sdf_SetSave(&f, "PlayerRounds", "0");
-	Sdf_SetSave(&f, "EnemyRounds", "0");
-	Sf_Ask(&f, "SaveGame", "Restart", "()");
-	return Sf_None(&f);
+static byte Dom_RestartDominC(void) {
+	Sd_SetSave("PlayerRounds", "0");
+	Sd_SetSave("EnemyRounds", "0");
+	return CALL("SaveGame", "Restart", NULL, "");
 }
 
-static PyObject *Domination_PreOnVictory(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_PreEnd(args, 1, "DominationFinishPlayerWinsTextCad", NULL, "Domination", "");
-}
+MODE_FN(Dom, RestartDomin, 2, Dom_RestartDominC())
+MODE_FN(Dom, PreOnVictory, 0, Sd_PreEnd(1, "DominationFinishPlayerWinsTextCad", NULL, "Domination", ""))
 
 /* a text of the mission scorer: the zones of a side (Y below the scorer's text, on the Xbox lower) */
-static void Dom_ScorerText(scriptFrame_t *f, PyObject *id, const char *item, long yXbox, long yPc, const char *key,
-	const char *count) {
-	PyObject *n = Sf_Int(f, Sf_Len(f, Sf_Global(f, DOM, "zones")));
-	Sf_Ask(f, "SScorer", "Add", "(Oss)", id, item, "Text");
-	Sf_Ask(f, "SScorer", "Set", "(OssO)", id, item, "X", Sf_Mod(f, "Scorer", "MissionScorerText_X"));
-	int xbox = Sf_True(f, Sf_Ask(f, "Scrap", "Get", "(s)", "isXbox"));
-	if (xbox >= 0) {
-		PyObject *y = Sf_OpI(f, Sf_Mod(f, "Scorer", "MissionScorerText_Y"), '+', xbox ? yXbox : yPc);
-		Sf_Ask(f, "SScorer", "Set", "(OssO)", id, item, "Y", y);
-	}
-	Sf_Ask(f, "SScorer", "Set", "(Osss)", id, item, "Font", "Horatio");
-	Sf_Ask(f, "SScorer", "Set", "(Osss)", id, item, "Effect", "Shadow");
-	PyObject *text = Dom_Count(f, key, Sf_Global(f, DOM, count), n);
-	Sf_Ask(f, "SScorer", "Set", "(OssO)", id, item, "Text", text);
-	Sf_Ask(f, "SScorer", "Set", "(Osss)", id, item, "Align", "Left");
+static byte Dom_ScorerText(const nativeVal_t *id, const char *item, long yXbox, long yPc, const char *key,
+	const char *count, nativeVal_t *slot) {
 	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
-	for (int i = 0; i < 4; i++) {
-		PyObject *c = Sf_Item(f, Sf_Mod(f, "Scorer", "MissionScorerText_Color"), i);
-		Sf_Ask(f, "SScorer", "Set", "(OssO)", id, item, rgba[i], c);
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = Mode_V(&t), *it = Mode_S(&t, item), *v = Mode_V(&t), *xbox = Mode_V(&t), *y = Mode_V(&t);
+	nativeVal_t *text = Mode_V(&t), *colors = Mode_V(&t);
+	if (!Mode_Read(DOM, "zones", &dom.zones)) {
+		return Mode_Done(&t, 0);
 	}
+	int len = Native_Size(&dom.zones);
+	if (len < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(n, len);
+	if (!Mode_ScorerAdd(id, it, "Text") || !Mode_ModVar("Scorer", "MissionScorerText_X", v) || !Mode_ScorerSet(id, it, "X", v) ||
+		!Native_GVarGet("isXbox", xbox)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(v);
+	if (!Mode_ModVar("Scorer", "MissionScorerText_Y", v) ||
+		!Native_Arith('+', v, Mode_I(&t, Native_True(xbox) ? yXbox : yPc), y) || !Mode_ScorerSet(id, it, "Y", y) ||
+		!Mode_ScorerSet(id, it, "Font", Mode_S(&t, "Horatio")) || !Mode_ScorerSet(id, it, "Effect", Mode_S(&t, "Shadow")) ||
+		!Mode_Read(DOM, count, slot) || !Dom_Count(key, slot, n, text) || !Mode_ScorerSet(id, it, "Text", text) ||
+		!Mode_ScorerSet(id, it, "Align", Mode_S(&t, "Left"))) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < 4; i++) {
+		Native_Free(colors);
+		Native_Free(v);
+		if (!Mode_ModVar("Scorer", "MissionScorerText_Color", colors) || !Sd_Item(colors, i, v) || !Mode_ScorerSet(id, it, rgba[i], v)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, 1);
 }
 
 /* MissionScorer(id): the zones of both sides above the race scorer */
-static PyObject *Domination_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	Sf_Import(&f, "RacerScorer");
-	Dom_ScorerText(&f, id, "PlayerZonesText", 80, -5, "SuperDeal_DominationPlayerZones", "playerZones");
-	Dom_ScorerText(&f, id, "EnemyZonesText", 105, 20, "SuperDeal_DominationEnemyZones", "enemyZones");
-	Sf_Ask(&f, "RacerScorer", "MissionScorer", "(O)", id);
-	return Sf_None(&f);
+static byte Dom_MissionScorerC(const nativeVal_t *id) {
+	return Mode_Import("RacerScorer") &&
+		Dom_ScorerText(id, "PlayerZonesText", 80, -5, "SuperDeal_DominationPlayerZones", "playerZones", &dom.playerZones) &&
+		Dom_ScorerText(id, "EnemyZonesText", 105, 20, "SuperDeal_DominationEnemyZones", "enemyZones", &dom.enemyZones) &&
+		CALL("RacerScorer", "MissionScorer", NULL, "v", id);
 }
 
+MODE_FN(Dom, MissionScorer, 1, Dom_MissionScorerC(&a[0]))
+
 PyMethodDef g_DominationMethods[] = {
-	{ "GetMenuDescription", Domination_GetMenuDescription, 1, NULL },
-	{ "InitStatus", Domination_InitStatus, 1, NULL },
-	{ "Init", Domination_Init, 1, NULL },
-	{ "ReleaseBaton", Domination_ReleaseBaton, 1, NULL },
-	{ "LostBatonMessage", Domination_LostBatonMessage, 1, NULL },
+	{ "GetMenuDescription", Dom_GetMenuDescription, 1, NULL },
+	{ "InitStatus", Dom_InitStatus, 1, NULL },
+	{ "Init", Dom_Init, 1, NULL },
+	{ "ReleaseBaton", Dom_ReleaseBaton, 1, NULL },
+	{ "LostBatonMessage", Dom_LostBatonMessage, 1, NULL },
 	{ "SetInvulnerableStatus", Sd_SetInvulnerable, 1, NULL },
 	{ "AbortRemoteMessages", Sd_AbortRemoteMessages, 1, NULL },
-	{ "SetProfile", Domination_SetProfile, 1, NULL },
-	{ "CreateEnemies", Domination_CreateEnemies, 1, NULL },
-	{ "CreateFriends", Domination_CreateFriends, 1, NULL },
-	{ "CreateBaton", (PyCFunction)(void (*)(void))Domination_CreateBaton, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "CrazyGamblerStartDomination", Domination_CrazyGamblerStartDomination, 1, NULL },
-	{ "OnVehicle", Domination_OnVehicle, 1, NULL },
-	{ "StartDomination", Domination_StartDomination, 1, NULL },
-	{ "TakeBaton", Domination_TakeBaton, 1, NULL },
-	{ "CreateZone", Domination_CreateZone, 1, NULL },
-	{ "TakeZone", Domination_TakeZone, 1, NULL },
-	{ "ActivateZone", Domination_ActivateZone, 1, NULL },
-	{ "RestartDomination", Domination_RestartDomination, 1, NULL },
-	{ "OnPlayerDeath", Domination_OnPlayerDeath, 1, NULL },
-	{ "OnEnemyDeath", Domination_OnEnemyDeath, 1, NULL },
-	{ "OnFriendDeath", Domination_OnFriendDeath, 1, NULL },
-	{ "RespawnPlayer", Domination_RespawnPlayer, 1, NULL },
-	{ "RespawnEnemy", Domination_RespawnEnemy, 1, NULL },
-	{ "RespawnFriend", Domination_RespawnFriend, 1, NULL },
-	{ "EndOfDomination", Domination_EndOfDomination, 1, NULL },
-	{ "PreRestartMenu", Domination_PreRestartMenu, 1, NULL },
-	{ "RestartDomin", Domination_RestartDomin, 1, NULL },
-	{ "PreOnVictory", Domination_PreOnVictory, 1, NULL },
-	{ "MissionScorer", Domination_MissionScorer, 1, NULL },
+	{ "SetProfile", Dom_SetProfile, 1, NULL },
+	{ "CreateEnemies", Dom_CreateEnemies, 1, NULL },
+	{ "CreateFriends", Dom_CreateFriends, 1, NULL },
+	{ "CreateBaton", (PyCFunction)(void (*)(void))Dom_CreateBaton, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "CrazyGamblerStartDomination", Dom_CrazyGamblerStartDomination, 1, NULL },
+	{ "OnVehicle", Dom_OnVehicle, 1, NULL },
+	{ "StartDomination", Dom_StartDomination, 1, NULL },
+	{ "TakeBaton", Dom_TakeBaton, 1, NULL },
+	{ "CreateZone", Dom_CreateZone, 1, NULL },
+	{ "TakeZone", Dom_TakeZone, 1, NULL },
+	{ "ActivateZone", Dom_ActivateZone, 1, NULL },
+	{ "RestartDomination", Dom_RestartDomination, 1, NULL },
+	{ "OnPlayerDeath", Dom_OnPlayerDeath, 1, NULL },
+	{ "OnEnemyDeath", Dom_OnEnemyDeath, 1, NULL },
+	{ "OnFriendDeath", Dom_OnFriendDeath, 1, NULL },
+	{ "RespawnPlayer", Dom_RespawnPlayer, 1, NULL },
+	{ "RespawnEnemy", Dom_RespawnEnemy, 1, NULL },
+	{ "RespawnFriend", Dom_RespawnFriend, 1, NULL },
+	{ "EndOfDomination", Dom_EndOfDomination, 1, NULL },
+	{ "PreRestartMenu", Dom_PreRestartMenu, 1, NULL },
+	{ "RestartDomin", Dom_RestartDomin, 1, NULL },
+	{ "PreOnVictory", Dom_PreOnVictory, 1, NULL },
+	{ "MissionScorer", Dom_MissionScorer, 1, NULL },
 	{ NULL, NULL, 0, NULL }
 };
 
