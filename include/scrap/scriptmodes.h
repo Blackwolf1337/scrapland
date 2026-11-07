@@ -491,5 +491,11 @@ byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e);
 /* the crazy gambler's call after a mission (unless the save variable SuperDeal.Library is SuperDeal_Twelfth):
  * Speech.AddRemoteCom(msgs[n], "CrazyGambler") for n = MissionsFuncs.GetNumCrazyDealCompleted() from 0 to 3 */
 byte Mode_CGCalls(const char *const *msgs);
+/* module.var.append(name) with name the global of gmod (a function; OBJLIB 5: the list of another module changed in
+ * place) */
+byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name);
+/* the global name of module = name op v of the script (op of Native_Arith: '+', '-', ...), and with an int i */
+byte Mode_GOp(const char *module, const char *name, char op, const nativeVal_t *v);
+byte Mode_GOpI(const char *module, const char *name, char op, long i);
 
 #endif

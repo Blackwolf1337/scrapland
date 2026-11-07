@@ -2453,3 +2453,28 @@ byte Mode_CGCalls(const char *const *msgs) {
 	Native_Free(&num);
 	return ok;
 }
+
+byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name) {
+	PyObject *o = Script_Attr(module, var);
+	PyObject *fn = o ? Mode_GlobalPy(gmod, name) : NULL;
+	PyObject *r = fn ? Script_Method(o, "append", "(O)", fn) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(fn);
+	Py_XDECREF(o);
+	return r != NULL;
+}
+
+byte Mode_GOp(const char *module, const char *name, char op, const nativeVal_t *v) {
+	nativeVal_t g, r;
+	Native_SetNone(&r);
+	byte ok = Mode_G(module, name, &g) && Native_Arith(op, &g, v, &r) && Mode_Put(module, name, NULL, &r);
+	Native_Free(&g);
+	Native_Free(&r);
+	return ok;
+}
+
+byte Mode_GOpI(const char *module, const char *name, char op, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_GOp(module, name, op, &v);
+}
