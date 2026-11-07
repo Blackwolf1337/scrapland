@@ -155,9 +155,9 @@
     {
      "item": "Python interpreter removed",
      "weight": 3,
-     "percent": 35,
+     "percent": 50,
      "status": "in progress",
-     "note": "global modules, save strings and console done; level modules and the rest running"
+     "note": "global modules, code strings, console and test channel done; level modules running"
     },
     {
      "item": "Python object library removed",
