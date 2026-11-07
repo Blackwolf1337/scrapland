@@ -31,14 +31,15 @@ static const nativeVar_t bureaucracy_vars[] = {
 	{ NULL, NULL, 0, 0 },
 };
 
-/* text + v of the script for a v that must be a text: the text (up to a 0 byte, as the engine reads it) into b */
+/* text + v of the script (the engine reads the result up to a 0 byte) into b */
 static byte Bureaucracy_Cat(nativeBuf_t *b, const char *text, const nativeVal_t *v) {
-	if (v->type != NV_STR) {
-		/* string_concat of a value that is no text */
-		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	nativeVal_t t, r;
+	Native_SetStr(&t, text);
+	if (!Native_Arith('+', &t, v, &r)) {
+		return 0;
 	}
-	Native_BufAdd(b, text, -1);
-	Native_BufAdd(b, Native_Text(v), -1);
+	Native_BufAdd(b, Native_Text(&r), -1);
+	Native_Free(&r);
 	return 1;
 }
 
