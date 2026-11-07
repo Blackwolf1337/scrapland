@@ -225,6 +225,10 @@ typedef struct nativeVar_s {
 					 * forms of Native_FromPy */
 } nativeVar_t;
 
+/* an argument of an adapter as a native value: 1 (Native_Free it), else 0 with a TypeError for a value without a
+ * native form (an entity handle, a function, a module, a class instance), which the native functions do not take
+ * (OBJLIB 7) */
+byte Native_Arg(PyObject *o, nativeVal_t *v);
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
  * is missing or of a form the C does not take (TypeError naming it) */
 byte Native_Import(const char *module, const nativeVar_t *vars);

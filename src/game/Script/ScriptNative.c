@@ -1492,6 +1492,10 @@ static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte gl
 	return 1;
 }
 
+byte Native_Arg(PyObject *o, nativeVal_t *v) {
+	return Native_FromPyAny(o, v) || Native_Raise(NE_TYPE, "a value of type %.50s has no native form", o->ob_type->tp_name);
+}
+
 byte Native_Import(const char *module, const nativeVar_t *vars) {
 	return Native_ImportBy(module, vars, 0);
 }
