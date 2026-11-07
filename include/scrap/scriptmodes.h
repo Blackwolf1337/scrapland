@@ -723,4 +723,29 @@ byte Mode_ResetKeys(void);
  * menus of [text, function, ...] entries); the objects in them stay NV_OBJ */
 void Mode_ElemsIn(nativeVal_t *v);
 
+/* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
+
+/* module.var as the menus read it (Script_GetInt, Script_GetString): an int (a float cut), def for other values; the
+ * text up to its first 0 byte, "" for other values; the error of a missing module or variable dropped */
+int Mode_ModInt(const char *module, const char *var, int def);
+const char *Mode_ModText(const char *module, const char *var, char *out, int size);
+/* module.var = v, a failure dropped (Script_SetVar; OBJLIB 5: the variables are in the module dict) */
+void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v);
+/* SScorer.SetCinema(id, on, time), Scrap.GetCam(i) (the camera name or None) and Scrap.UsrEntity(id) (the handle value or
+ * None; the NULL result of a player above 3) through their seams */
+byte Mode_SetCinema(long id, long on, double time);
+byte Mode_CamSeam(long i, nativeVal_t *out);
+byte Mode_UsrSeam(long id, nativeVal_t *out);
+/* module.func(args...) at the time (as a float) on the scheduler itself, not through Scrap.AddScheduledFunc (the menus
+ * schedule this way: a recorder of the cases does not see it); name NULL for none; a missing function dropped. OBJLIB 4:
+ * the scheduler keeps the Python function and the tuple of the n values */
+byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
+/* `if module.var: module.var(id)` of a callback variable (Menu.MissionScorerCall): the error of the call printed, every
+ * error dropped */
+void Mode_CallVarIf(const char *module, const char *var, long id);
+/* Scrap.CreateEntity(type, x, y, z, name) with int places (the handle value or None) and Scrap.Exit() through their
+ * seams */
+byte Mode_CreateSeam(const char *type, long x, long y, long z, const char *name, nativeVal_t *out);
+byte Mode_Exit(void);
+
 #endif
