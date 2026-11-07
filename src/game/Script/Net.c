@@ -16,7 +16,7 @@
 
 /* Spectate(id, value): the camera of player id flies free and its target stops, or back */
 static byte Net_SpectateC(const nativeVal_t *id, int on) {
-	long i;
+	int i;
 	nativeVal_t name, target;
 	cEntity *cam, *t;
 	if (!Native_ArgInt(id, &i)) {
@@ -24,7 +24,7 @@ static byte Net_SpectateC(const nativeVal_t *id, int on) {
 	}
 	/* cam = Scrap.GetEntity(Scrap.GetCam(id)); Scrap.GetEntity(cam.MainTarget).Active = not value;
 	 * cam.FreeCam = value */
-	const char *cn = cWorld_GetCamName(g_pWorld, (int)i);
+	const char *cn = cWorld_GetCamName(g_pWorld, i);
 	if (cn) {
 		Native_SetStr(&name, cn);
 	} else {
@@ -84,7 +84,7 @@ static PyObject *Net_Spectate(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	int on = PyObject_IsTrue(value);
-	if (on < 0 || !Mode_Arg(id, "Net.Spectate", &i)) {
+	if (on < 0 || !Native_Arg(id, &i)) {
 		return NULL;
 	}
 	byte ok = Net_SpectateC(&i, on);
@@ -109,7 +109,7 @@ static PyObject *Net_LoadSinglePlayer(PyObject *self, PyObject *args) {
 	PyObject *path;
 	nativeVal_t p;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Mode_Arg(path, "Net.LoadSinglePlayer", &p)) {
+	if (!PyArg_ParseTuple(args, "O", &path) || !Native_Arg(path, &p)) {
 		return NULL;
 	}
 	byte ok = Net_LoadSinglePlayerC(&p);
