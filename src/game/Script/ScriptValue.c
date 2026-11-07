@@ -299,7 +299,25 @@ PyObject *Script_EvalValue(PyObject *globals, PyObject *text) {
 		s++;
 	}
 	PyObject *v = Script_Literal(globals, s);
-	return v ? v : Script_NotRead("eval", s);
+	if (v) {
+		return v;
+	}
+	/* a name (a save variable written as x, fc-r6b-gd4): LOAD_NAME as eval runs it, its NameError */
+	char name[0x100];
+	int len = (int)strlen(s);
+	while (len > 0 && (s[len - 1] == ' ' || s[len - 1] == '\t' || s[len - 1] == '\n')) {
+		len--;
+	}
+	if (len > 0 && len < (int)sizeof(name)) {
+		memcpy(name, s, len);
+		name[len] = '\0';
+		PyErr_Clear();
+		int found = Script_NameChain(NULL, globals, name, &v);
+		if (found) {
+			return found > 0 ? v : NULL;
+		}
+	}
+	return Script_NotRead("eval", s);
 }
 
 PyObject *Script_Entity(PyObject *name) {
