@@ -339,10 +339,12 @@ PyObject *Script_EvalValue(PyObject *globals, PyObject *text) {
 		s++;
 	}
 	PyObject *v = Script_Literal(globals, s);
-	if (v) {
-		return v;
-	}
+	return v ? v : Script_EvalOther(globals, s);
+}
+
+PyObject *Script_EvalOther(PyObject *globals, const char *s) {
 	/* a name (a save variable written as x, fc-r6b-gd4): LOAD_NAME as eval runs it, its NameError */
+	PyObject *v;
 	char name[0x100];
 	int len = (int)strlen(s);
 	while (len > 0 && (s[len - 1] == ' ' || s[len - 1] == '\t' || s[len - 1] == '\n')) {

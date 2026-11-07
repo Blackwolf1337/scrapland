@@ -1,3 +1,6 @@
 # the save games' play time (Townhall - 00:00:01 or 02) depends on the game time the lines took; the label width and
 # so its X and width follow the text (channel runs 2 of 2 one second less than the pack runs)
 sub '([^']*)\d\d:\d\d:\d\d', [-\d.e+]+, ([-\d.e+]+), [-\d.e+]+, => '\1TIME', X, \2, W, 
+# lines 8 and 14: GetSaveGamesList sorts the slots by file time in whole seconds (SaveVars.c, qsort): two saves written
+# within the same second come in either order (seen in a C channel run on the RTX, where the lines run fast)
+sub \[0, (?:1, 2|2, 1)\]\)$ => [0, ORDER])

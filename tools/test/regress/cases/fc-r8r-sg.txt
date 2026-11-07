@@ -10,6 +10,9 @@ I = __import__('Init'); S = __import__('SaveGame'); r = I._ce(S.GetReg, 'R'); re
 I = __import__('Init'); S = __import__('SaveGame'); r = I._ce(S.GetReg, 'Nothing'); result = (r[0], r[1].__name__, r[1].__dict__.keys())
 I = __import__('Init'); S = __import__('SaveGame'); o = I._R(); o.d = (3, 4); result = (I._ce(S.QSaveReg, o), Scrap.GetSaveVar('MissionStatus'), Scrap.GetSaveVar('MissionStatus.d'), I._rec)
 I = __import__('Init'); S = __import__('SaveGame'); r = I._ce(S.GetReg, 'MissionStatus'); result = (r[0], r[1].a, r[1].b, r[1].c, r[1].d)
+# accepted C run (baselines/fc-r8r-sg.txt.accepted.xz), next line: GetReg execs 'res.zz = 1 +', which gives the 1.5.2
+# parser's SyntaxError ('unexpected EOF while parsing', (None, 1, 12, 'res.zz = 1 +')) in the pack and the plain
+# 'invalid syntax' of the C reader. The game never saves such a text, and the parser goes at stage 7: not ported.
 I = __import__('Init'); S = __import__('SaveGame'); Scrap.SetSaveVar('R', "['zz']"); Scrap.SetSaveVar('R.zz', '1 +'); result = I._ce(S.GetReg, 'R')
 I = __import__('Init'); S = __import__('SaveGame'); result = (I._ce(S.SaveReg, 'R', 5), Scrap.GetSaveVar('R'), I._ce(S.SaveReg, 'R', 'ab'), Scrap.GetSaveVar('R'))
 I = __import__('Init'); S = __import__('SaveGame'); I._rec = []; Scrap.SetSaveVar('Mission.Map', 'Townhall'); Scrap.SetSaveVar('Mission.Library', 'Mission_X'); result = (I._ce(S.SaveGame, 4), I._rec)

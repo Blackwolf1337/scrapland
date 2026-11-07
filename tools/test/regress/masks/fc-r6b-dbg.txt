@@ -1,0 +1,5 @@
+# lines 5 and 7: SetStateVehicle(3) on the first functionary does not hold when its AI is busy at that frame (state 16),
+# and then OnFunctionaryDamage leaves it in Funcs instead of moving it to Enemies: engine AI timing (pack run 2 of
+# 2026-11-06 and a C python run on the RTX)
+sub ^\(1, (?:3|16), \(None, \[\]\), \[\('FuncFighter', '(?:Enemies|Funcs)', 1\)\]\)$ => (1, AISTATE, (None, []), [('FuncFighter', LIST, 1)])
+sub ^\('(?:Enemies|Funcs)', None, 'Enemies'\)$ => (LIST, None, 'Enemies')

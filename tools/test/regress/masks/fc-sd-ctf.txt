@@ -1,0 +1,4 @@
+# line 7: the Active flag of the ships some seconds into the combat: a ship killed early is inactive until its respawn
+# (pack run 1 on the RTX shows Enemy2 inactive, C runs of both harnesses other ships; fc-sd-tdm and fc-sd-dom mask the
+# same line)
+ignore _sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5', 'Friend1', 'Friend2', 'Friend3', 'Friend4'))

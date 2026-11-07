@@ -39,6 +39,9 @@ I.z = PO.ZoneList; PO.ZoneList = {'a': 1}; r = I._nm(PO.AbortZoneKeys); PO.ZoneL
 # the messages of the server to a client
 F.MasterFlag = None; result = (I._nm(PO.OnUsrClient, 0, "F'" + PO.ZoneList.keys()[1] + "','NmRed'"), PO.AcZone, F.MasterFlag)
 (I._nm(PO.OnUsrClient, 0, 'D(10, 20, 30)'), F.MasterFlag, I._nent(PO.Flag.Name, ('Pos', 'LinkModel')))
+# accepted C run (baselines/fc-nm-po.txt.accepted.xz), next line: eval('') of the 'D' message gives the 1.5.2 parser's
+# SyntaxError ('unexpected EOF while parsing', (None, 0, 0, '')) in the pack and the plain 'invalid syntax' of the C
+# reader. The game never sends such a text, and the parser goes at stage 7: not ported.
 (I._nm(PO.OnUsrClient, 0, 'S=abc'), I._nm(PO.OnUsrClient, 0, ''), I._nm(PO.OnUsrClient, 0, 'D'), I._nm(PO.OnUsrClient, 0, 'Dxyz'), I._nm(PO.OnUsrClient, 0, "F'a'"), I._nm(TP.OnUsrClient, 2, "F'" + TP.ZoneList.keys()[0] + "','NmGreen'"), TP.AcZone)
 # a client joins the server
 F.MasterFlag = None; PO.Flag.Pos = (100.7, -200.2, 300.0); result = (I._nm(PO.ClientJoin, 'net5', 'SMerc3', 100, 'Usr', 'P_Dtritus', 'm0', 'm1', 'm2', 'm3', 'w', 0))

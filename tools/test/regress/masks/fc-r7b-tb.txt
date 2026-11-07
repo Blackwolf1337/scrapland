@@ -1,0 +1,3 @@
+# line 9: ArrowCanUse of Boss_00 about 55 s into Press is 1 or 0 depending on where the Boss is in its talk and walk
+# cycle (NPC timing; a 610M pack run and a C channel run on the RTX show 0)
+sub \('Boss_00', 'Boss', 'Boss', [01], => ('Boss_00', 'Boss', 'Boss', ARROW,
