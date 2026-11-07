@@ -2430,3 +2430,26 @@ byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e) 
 	Native_Free(&ang);
 	return ok;
 }
+
+byte Mode_CGCalls(const char *const *msgs) {
+	nativeVal_t lib, twelfth, num;
+	Mode_SaveVar("SuperDeal.Library", &lib);
+	Native_SetText(&twelfth, "SuperDeal_Twelfth", 17);
+	int other = Mode_Cmp(&lib, "!=", &twelfth);
+	Native_Free(&lib);
+	Native_Free(&twelfth);
+	if (other <= 0) {
+		return other == 0;
+	}
+	Native_SetNone(&num);
+	byte ok = Native_CallMod("MissionsFuncs", "GetNumCrazyDealCompleted", &num, "");
+	for (int i = 0; ok && i < 4; i++) {
+		int eq = Mode_CmpI(&num, "==", i);
+		if (eq) {
+			ok = eq > 0 && LvN_Com(msgs[i], "CrazyGambler", NULL, NULL, NULL);
+			break;
+		}
+	}
+	Native_Free(&num);
+	return ok;
+}
