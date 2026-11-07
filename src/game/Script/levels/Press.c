@@ -948,18 +948,6 @@ static byte FicusBanker_CreatePoliceFicusInit(const nativeVal_t *a, nativeVal_t 
 		LvN_SetLang(&a[0], "Descriptor", "CharName_Ficus");
 }
 
-/* Speech.SpeechRoutines[kind](UsrName, CharName, optId, FullOption) (OBJLIB 5: the functions of Speech) */
-static byte Pr_Routine(const char *kind, const nativeVal_t *a) {
-	PyObject *r = Script_Attr("Speech", "SpeechRoutines");
-	PyObject *k = r ? PyString_FromString((char *)kind) : NULL;
-	PyObject *fn = k ? PyObject_GetItem(r, k) : NULL;
-	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
-	Py_XDECREF(fn);
-	Py_XDECREF(k);
-	Py_XDECREF(r);
-	return ok;
-}
-
 /* FicusMissionSpeech(UsrName, CharName, optId, FullOption): Ficus' talks for the state of the mission */
 static byte FicusBanker_FicusMissionSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const ans[] = { "Mission_TalkToFicus_Ficus_1" };
@@ -985,17 +973,17 @@ static byte FicusBanker_FicusMissionSpeech(const nativeVal_t *a, nativeVal_t *ou
 		} else if (LvN_EqI(&first, 1)) {
 			ok = LvN_OnEnd(FB, "InitKillScrapus", NULL) && Mode_Spch("Mission_TalkToFicus_Ficus_1Msg", "Mission_TalkToFicus_Ficus_1Ans", NULL);
 		} else {
-			ok = Pr_Routine("Police", a);
+			ok = LvN_RoutineCall("Police", a);
 		}
 		Native_Free(&first);
 	} else if (LvN_EqS(&svv, "KillScrapus")) {
 		ok = talk || LvN_EqS(&a[2], "Mission_TalkToFicus_Ficus_1") ?
-			Mode_Spch("Mission_KillScrapus_Ficus_InitMsg1", "Mission_KillScrapus_Ficus_InitAns1", NULL) : Pr_Routine("Police", a);
+			Mode_Spch("Mission_KillScrapus_Ficus_InitMsg1", "Mission_KillScrapus_Ficus_InitAns1", NULL) : LvN_RoutineCall("Police", a);
 	} else if (LvN_EqS(&svv, "TalkFicus2")) {
 		ok = talk ? LvN_OnEnd(FB, "SetNextMission", NULL) && Mode_Spch("Mission_TalkToFicus2_Ficus_InitMsg1", "Mission_TalkToFicus2_Ficus_InitAns1", NULL) :
-			Pr_Routine("Police", a);
+			LvN_RoutineCall("Police", a);
 	} else {
-		ok = talk ? Mode_Spch("Mission_TalkToFicus2_Ficus_InitMsg2", "Mission_TalkToFicus2_Ficus_InitAns2", NULL) : Pr_Routine("Police", a);
+		ok = talk ? Mode_Spch("Mission_TalkToFicus2_Ficus_InitMsg2", "Mission_TalkToFicus2_Ficus_InitAns2", NULL) : LvN_RoutineCall("Police", a);
 	}
 	Native_Free(&svv);
 	return ok;
@@ -1022,7 +1010,7 @@ static byte FicusBanker_ScrapusMissionSpeech(const nativeVal_t *a, nativeVal_t *
 	if (kill > 0) {
 		return Mode_Spch("Mission_KillScrapus_Scrapus_InitMsg1", "Mission_KillScrapus_Scrapus_InitAns1", NULL);
 	}
-	return kill == 0 && Pr_Routine("BankDirector", a);
+	return kill == 0 && LvN_RoutineCall("BankDirector", a);
 }
 
 /* module.var = SpawnCheck when it is None, else the console line of its override */
@@ -1642,16 +1630,6 @@ static byte Pr_CheckHumanDist(const char *module, nativeVal_t *out) {
 	return near >= 0;
 }
 
-/* SAI.SetStateChar(3, human.Name, usr.Name, 1.0): the human follows the player */
-static byte Pr_HumanFollow(const char *module, const nativeVal_t *usr) {
-	nativeVal_t hn, un;
-	Native_SetNone(&un);
-	byte ok = LvN_GAttr(module, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) && CHAR_STATE("ivvd", 3L, &hn, &un, 1.0);
-	Native_Free(&hn);
-	Native_Free(&un);
-	return ok;
-}
-
 /* CharsNPC.CharRes[key].var = (x, y, z) (OBJLIB 5: the character objects of CharsNPC) */
 static byte Pr_ResSet(const char *key, const char *var, long x, long y, long z) {
 	nativeVal_t k, v;
@@ -1719,7 +1697,7 @@ static byte GoWithHuman_Init(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetInt(Native_Append(ang), 0);
 	}
 	ok = ok && Mode_VSet(sw, "Ang", ang) && LvN_SetI(sw, "ActiveCMask", 0) && LvN_SetI(sw, "MapCollision", 1) && Mode_VSet(sw, "CamTgt", cam) &&
-		LvN_TargetName(sw) && Mode_UsrHandle(usr) && Pr_HumanFollow(GW, usr) && LvN_GActivate(GW, "human", 2) &&
+		LvN_TargetName(sw) && Mode_UsrHandle(usr) && LvN_HumanFollow(GW, usr) && LvN_GActivate(GW, "human", 2) &&
 		PR_HOOK("CharConversor", "OnPossession", GW, "OnPossession") && PR_HOOK("CharConversor", "afterExitConversor", GW, "OnExitConversor") &&
 		LV_OWN(GW, "CheckMaxDist", NULL, "") && LV_OWN(GW, "LoadScene", NULL, "") && LV_OWN(GW, "LoadScene2", NULL, "");
 	return Mode_Done(&t, ok);
@@ -1773,7 +1751,7 @@ static byte GoWithHuman_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	int follow = Pr_HumanState(GW, "!=", 3);
 	if (follow > 0) {
-		return Mode_Done(&t, Pr_HumanFollow(GW, usr));
+		return Mode_Done(&t, LvN_HumanFollow(GW, usr));
 	}
 	if (follow < 0 || !Mode_G(GW, "human", h) || !Mode_G(GW, "switch", sw)) {
 		return Mode_Done(&t, 0);
@@ -2921,7 +2899,7 @@ static byte TalkToBoss_HideHumanIntoBureau(const nativeVal_t *a, nativeVal_t *ou
 	Native_SetNone(&usr);
 	int u = ok ? LvN_Usr(&usr) : -1;
 	if (u > 0) {
-		ok = Pr_HumanFollow(TB, &usr) && PR_HOOK("CharConversor", "OnPossession", TB, "OnPossession") &&
+		ok = LvN_HumanFollow(TB, &usr) && PR_HOOK("CharConversor", "OnPossession", TB, "OnPossession") &&
 			PR_HOOK("CharConversor", "afterExitConversor", TB, "OnExitConversor") && LV_OWN(TB, "CreateSceneLaunchers", NULL, "") &&
 			LV_OWN(TB, "CheckMaxDist", NULL, "") && Native_GVarGet("AlarmFallDelta", &fall) && Mode_Put(TB, "alarmFallDelta", NULL, &fall) &&
 			Mode_GVarSetI("AlarmFallDelta", 0);
@@ -3065,7 +3043,7 @@ static byte TalkToBoss_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 			Native_Free(&hn);
 		} else if (near > 0) {
 			int dt = LvN_CtrlIs(&usr, "Dtritus");
-			ok = dt >= 0 && (!dt || Pr_HumanFollow(TB, &usr));
+			ok = dt >= 0 && (!dt || LvN_HumanFollow(TB, &usr));
 		} else {
 			ok = 0;
 		}

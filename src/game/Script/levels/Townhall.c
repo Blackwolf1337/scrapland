@@ -1147,18 +1147,6 @@ static byte ThSm_BlabliblaN(const nativeVal_t *name) {
 
 TH_KWFN(SheriffMayor_Blablibla, "EntityName", "Mayor_SheriffMayor", ThSm_BlabliblaN)
 
-/* Speech.SpeechRoutines["PoliceBoss"](usr, ch, opt, full) (OBJLIB 5: the table of Speech as the objects it holds) */
-static byte Sm_Routine(const nativeVal_t *a) {
-	PyObject *routines = Script_Attr("Speech", "SpeechRoutines");
-	PyObject *k = routines ? PyString_FromString("PoliceBoss") : NULL;
-	PyObject *fn = k ? PyObject_GetItem(routines, k) : NULL;
-	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
-	Py_XDECREF(fn);
-	Py_XDECREF(k);
-	Py_XDECREF(routines);
-	return ok;
-}
-
 /* PoliceBossMissionSpeech(UsrName, CharName, optId, FullOption): the police boss tells his clues to the mayor, or
  * sells them to Dtritus (OnPay); after that his usual talk */
 static byte ThSm_PoliceBossMissionSpeech(const nativeVal_t *a, nativeVal_t *out) {
@@ -1176,7 +1164,7 @@ static byte ThSm_PoliceBossMissionSpeech(const nativeVal_t *a, nativeVal_t *out)
 	if (done) {
 		int talked = LvN_GTrue(SM, "alreadyTalked");
 		if (talked <= 0) {
-			return talked == 0 && Sm_Routine(a);
+			return talked == 0 && LvN_RoutineCall("PoliceBoss", a);
 		}
 		int mayor = Mode_UsrIs("Mayor");
 		if (mayor < 0) {

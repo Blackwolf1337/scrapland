@@ -329,6 +329,10 @@ byte LvN_SystemMessage(const char *key);
 byte LvN_BoostMessage(const char *module);
 /* ClosePressHangar() of the same races: the door of the press hangar closes, RaceMaker.OnCheckPointCallback = None */
 byte LvN_ClosePressHangar(void);
+/* Speech.SpeechRoutines[kind](UsrName, CharName, optId, FullOption) with the four arguments a */
+byte LvN_RoutineCall(const char *kind, const nativeVal_t *a);
+/* SAI.SetStateChar(3, human.Name, usr.Name, 1.0) with human the global of module: the human follows the player */
+byte LvN_HumanFollow(const char *module, const nativeVal_t *usr);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);

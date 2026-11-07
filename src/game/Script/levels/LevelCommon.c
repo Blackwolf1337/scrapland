@@ -1563,3 +1563,25 @@ byte LvN_ClosePressHangar(void) {
 	return Mode_Import("RaceMaker") && Mode_EntSetS("DM_Door_CityDoorA_01", "OnObjSlot", "!CloseDoorSlot") &&
 		LvN_ModNone("RaceMaker", "OnCheckPointCallback");
 }
+
+byte LvN_RoutineCall(const char *kind, const nativeVal_t *a) {
+	/* OBJLIB 5: the functions of Speech as the objects its table holds */
+	PyObject *r = Script_Attr("Speech", "SpeechRoutines");
+	PyObject *k = r ? PyString_FromString((char *)kind) : NULL;
+	PyObject *fn = k ? PyObject_GetItem(r, k) : NULL;
+	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	Py_XDECREF(fn);
+	Py_XDECREF(k);
+	Py_XDECREF(r);
+	return ok;
+}
+
+byte LvN_HumanFollow(const char *module, const nativeVal_t *usr) {
+	nativeVal_t hn, un;
+	Native_SetNone(&un);
+	byte ok = LvN_GAttr(module, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) &&
+		LV_CALL("SAI", "SetStateChar", NULL, "ivvd", 3L, &hn, &un, 1.0);
+	Native_Free(&hn);
+	Native_Free(&un);
+	return ok;
+}

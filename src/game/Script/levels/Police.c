@@ -1615,16 +1615,6 @@ static byte Po_OnFloor(const nativeVal_t *h) {
 	return ok;
 }
 
-/* SAI.SetStateChar(3, human.Name, usr.Name, 1.0): the human follows the player */
-static byte Ga_Follow(const nativeVal_t *usr) {
-	nativeVal_t hn, un;
-	Native_SetNone(&un);
-	byte ok = LvN_GAttr(GA, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) && CHAR_STATE("ivvd", 3L, &hn, &un, 1.0);
-	Native_Free(&hn);
-	Native_Free(&un);
-	return ok;
-}
-
 /* GoToPress(usr): the door closes; the player and the human out of the jail, the human follows him to the metro */
 static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t e, h;
@@ -1654,7 +1644,7 @@ static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	ok = Po_OnFloor(&h);
 	Native_Free(&h);
-	return ok && Ga_Follow(&a[0]) && PO_HOOK("Chars", "OnMainCharDeath", GA, "OnMainCharDeath") &&
+	return ok && LvN_HumanFollow(GA, &a[0]) && PO_HOOK("Chars", "OnMainCharDeath", GA, "OnMainCharDeath") &&
 		PO_HOOK("CharConversor", "OnPossession", GA, "OnPossession") && PO_HOOK("CharConversor", "afterExitConversor", GA, "OnExitConversor") &&
 		LV_OWN(GA, "CheckMaxDist", NULL, "");
 }
@@ -1729,7 +1719,7 @@ static byte GetAuthorization_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out
 			ok = moving >= 0 && (!moving || Ga_HumanStops());
 		} else if (near > 0) {
 			int dt = LvN_CtrlIs(&usr, "Dtritus");
-			ok = dt >= 0 && (!dt || Ga_Follow(&usr));
+			ok = dt >= 0 && (!dt || LvN_HumanFollow(GA, &usr));
 		} else {
 			ok = 0;
 		}
@@ -2327,18 +2317,6 @@ static byte PoliceBossCheats_CreatePoliceFicusPal(const nativeVal_t *a, nativeVa
 	return LvN_SetS(&a[0], "UseFunc", "Mission_PoliceBossCheats.FicusPalMissionSpeech") && LvN_Stay(&a[0], 6, LvN_Empty());
 }
 
-/* Speech.SpeechRoutines["Police"](UsrName, CharName, optId, FullOption) (OBJLIB 5: the functions of Speech) */
-static byte Pc_PoliceTalk(const nativeVal_t *a) {
-	PyObject *r = Script_Attr("Speech", "SpeechRoutines");
-	PyObject *k = r ? PyString_FromString("Police") : NULL;
-	PyObject *fn = k ? PyObject_GetItem(r, k) : NULL;
-	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
-	Py_XDECREF(fn);
-	Py_XDECREF(k);
-	Py_XDECREF(r);
-	return ok;
-}
-
 /* FicusPalMissionSpeech(UsrName, CharName, optId, FullOption): Ficus' friend tells a policeman that the boss cheats
  * (InitBossCheats at the end); otherwise the police talk */
 static byte PoliceBossCheats_FicusPalMissionSpeech(const nativeVal_t *a, nativeVal_t *out) {
@@ -2356,11 +2334,11 @@ static byte PoliceBossCheats_FicusPalMissionSpeech(const nativeVal_t *a, nativeV
 	Mode_SaveVar("Mission_PoliceBossCheats", &svv);
 	byte talk = LvN_EqS(&a[2], "Talk"), ok;
 	if (LvN_EqS(&svv, "TalkFicusPal")) {
-		ok = talk ? LvN_OnEnd(PC, "InitBossCheats", NULL) && Mode_NISpeech(NULL, "Mission_TalkToFicusFriend_Police_NI_1Msg") : Pc_PoliceTalk(a);
+		ok = talk ? LvN_OnEnd(PC, "InitBossCheats", NULL) && Mode_NISpeech(NULL, "Mission_TalkToFicusFriend_Police_NI_1Msg") : LvN_RoutineCall("Police", a);
 	} else if (LvN_EqS(&svv, "BossCheats") && talk) {
 		ok = Mode_Spch("Mission_PhotoPoliceBoss_Police_InitMsg1", "Mission_PhotoPoliceBoss_Police_InitAns1", NULL);
 	} else {
-		ok = Pc_PoliceTalk(a);
+		ok = LvN_RoutineCall("Police", a);
 	}
 	Native_Free(&svv);
 	return ok;
