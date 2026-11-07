@@ -2056,7 +2056,7 @@ static byte Deep_CGCalls(const nativeVal_t *a, nativeVal_t *out) {
 		"Mission_TalkToFicus_RemoteMessage3", "Mission_TalkToFicus_RemoteMessage4" };
 	(void)a;
 	(void)out;
-	return Mode_CGCalls(msgs);
+	return Mode_CGCalls(msgs, 4);
 }
 
 LV_FN(Deep, InitA, 1, Deep_Init)

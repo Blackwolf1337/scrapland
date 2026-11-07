@@ -2121,7 +2121,7 @@ static byte ArchbishopKilled_CGCalls(const nativeVal_t *a, nativeVal_t *out) {
 		"Mission_ArchbishopKilled_RemoteMessage5", "Mission_ArchbishopKilled_RemoteMessage6" };
 	(void)a;
 	(void)out;
-	return Mode_CGCalls(msgs);
+	return Mode_CGCalls(msgs, 4);
 }
 
 LV_FN(ArchbishopKilled, SetNextMissionA, 1, ArchbishopKilled_SetNextMission)
