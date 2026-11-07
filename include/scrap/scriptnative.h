@@ -32,6 +32,10 @@ typedef enum {
 	NV_DICT,
 } nativeType_t;
 
+/* every type: a mask of nativeVar_t.types for a variable that takes any value */
+#define NV_ANY (1 << NV_NONE | 1 << NV_INT | 1 << NV_FLOAT | 1 << NV_STR | 1 << NV_VEC | 1 << NV_LONG | 1 << NV_LIST | \
+	1 << NV_TUPLE | 1 << NV_DICT)
+
 /*
  * A value of the scripts in C: None, an int (a C long, as the int of Python 1.5.2), a float, a text, a vector (the
  * tuple of three floats an engine call gives), a long int, a list, a tuple or a dict of values.
@@ -147,6 +151,12 @@ const char *Native_TypeName(const nativeVal_t *v);
 /* the text of argument arg (from 1) of an engine function as its "s" reads it: 1 with *out, else 0 with the TypeError
  * of getargs.c ("argument 1: expected string, int found", "... string without null bytes ...") */
 byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out);
+/* string.upper(v) (strop.upper: islower and toupper on every byte): 1 with *out (Native_Free it), else 0 with the
+ * TypeError of a value that is no text ("read-only character buffer, int") */
+byte Native_Upper(const nativeVal_t *in, nativeVal_t *out);
+/* the number of argument v of an engine function as its "d" or "f" reads it: 1 with *out, else 0 with the TypeError
+ * of PyFloat_AsDouble ("illegal argument type for built-in operation") */
+byte Native_ArgDouble(const nativeVal_t *v, double *out);
 /* eval(text) of a value the game wrote, as Script_EvalIn(module, text) reads it: the checks of builtin eval (a text
  * without 0 bytes), then Native_Literal of the text after its leading blanks; 1 with *out (Native_Free it), else 0
  * with the error (SyntaxError of Script_NotRead for a text no reader takes) */

@@ -129,6 +129,10 @@ PyObject *PyEntity_New(const char *name) {
 	return (PyObject *)self;
 }
 
+byte PyEntity_Check(PyObject *o) {
+	return o->ob_type == &cPyEntity_Type;
+}
+
 /* tp_dealloc */
 static void PyEntity_Dealloc(PyObject *self) {
 	cEntityRef *ref = ((cPyEntity *)self)->ref;
