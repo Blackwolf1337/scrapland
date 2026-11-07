@@ -79,12 +79,13 @@ byte Native_IsStr(const nativeVal_t *v, const char *text);
  * their bytes, None only with None, lists and tuples item by item, dicts by their keys and values; values of other
  * types are never equal (a text never equals a number, a vector is a tuple of three floats) */
 byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b);
-/* hash(v) of Python 1.5.2 (string_hash, int_hash, long_hash, float_hash, tuplehash; None by its address while Python
- * is linked): 1 with *out, 0 for a list or dict (unhashable) */
+/* hash(v) of Python 1.5.2 (string_hash, int_hash, long_hash, float_hash, tuplehash; None by its address, OBJLIB 9):
+ * 1 with *out, 0 for a list or dict (unhashable, in a tuple too) and a long int of 3840 bits or more */
 byte Native_Hash(const nativeVal_t *v, long *out);
 /* d[key] = value as PyDict_SetItem does it (the table grows at the same moment, an equal key keeps the old key and
- * gets the new value): key and value are taken over (moved into the dict, or freed); 0 when the key cannot be
- * hashed (a list or dict, in a tuple too) */
+ * gets the new value): key and value are taken over (moved into the dict, or freed); 0 when the key has no hash.
+ * There is no delete yet (a dict of Python with deleted keys keeps its order through Native_FromPyAny, but grows
+ * from fewer used slots than Python's) */
 byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value);
 /* the value of the key in the dict, NULL when it has none */
 nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key);
@@ -101,6 +102,7 @@ typedef struct nativeBuf_s {
 } nativeBuf_t;
 
 void Native_BufInit(nativeBuf_t *b);
+/* len bytes of s, all up to its 0 for a negative len */
 void Native_BufAdd(nativeBuf_t *b, const char *s, int len);
 void Native_BufFree(nativeBuf_t *b);
 
