@@ -298,8 +298,14 @@ int LvN_PcOr(const char *module, const char *name);
 /* the text item of a mission scorer in two parts (Lv_ScorerTextBegin, Lv_ScorerTextEnd) on values */
 byte LvN_ScorerTextBegin(const nativeVal_t *id, const char *item, long dy);
 byte LvN_ScorerTextEnd(const nativeVal_t *id, const char *item);
-/* SScorer.Set(id, item, var, v) with a C item name */
+/* SScorer.Set(id, item, var, v) with a C item name, and with a C text v */
 byte LvN_ScorerSet(const nativeVal_t *id, const char *item, const char *var, const nativeVal_t *v);
+byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s);
+/* SScorer.Set(0, item, var, v) and the same with an int */
+byte LvN_Set0(const char *item, const char *var, const nativeVal_t *v);
+byte LvN_Set0I(const char *item, const char *var, long i);
+/* module.var = i of another module */
+byte LvN_ModSetI(const char *module, const char *var, long i);
 /* e.Life = e.MaxLife = the global life of module */
 byte LvN_Life(const nativeVal_t *e, const char *module, const char *life);
 /* a value of a table of the level scripts as Sf_Value reads it (an int, a float, "%Module.name", "^Module.Func:text",

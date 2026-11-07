@@ -1759,8 +1759,7 @@ byte LvN_TextY(long d, nativeVal_t *out) {
 	return LvN_TextAt("MissionScorerText_Y", d, out);
 }
 
-/* SScorer.Set(id, item, var, "text") */
-static byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s) {
+byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s) {
 	nativeVal_t v;
 	LvN_Str(&v, s);
 	byte ok = LvN_ScorerSet(id, item, var, &v);
@@ -1877,4 +1876,22 @@ byte LvN_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const native
 		return Native_HookCall(hook, NULL, "vvv", pos, name, volume);
 	}
 	return Mode_PlaySound(pos, name, volume);
+}
+
+byte LvN_ModSetI(const char *module, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_SetModVar(module, var, &v);
+}
+
+byte LvN_Set0(const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t id;
+	Native_SetInt(&id, 0);
+	return LvN_ScorerSet(&id, item, var, v);
+}
+
+byte LvN_Set0I(const char *item, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return LvN_Set0(item, var, &v);
 }
