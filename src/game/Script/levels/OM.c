@@ -3,7 +3,8 @@
  * deals (SuperDeal_Sixth, SuperDeal_Tenth). Their other functions, Map, MapSnd and Mission_BankersCTF are data
  * (the files in data/levels/om).
  */
-#include "scrap/script.h"
+#include "scrap/scrap.h"
+#include "Levels.h"
 
 typedef struct {
 	const char *deal;	/* Sixth, Tenth: the names of the texts and profiles */
@@ -15,87 +16,116 @@ typedef struct {
 static const omDomination_t om_sixth = { "Sixth", "2", "Police", 0 };
 static const omDomination_t om_tenth = { "Tenth", "4", "Bishop", 1 };
 
-static void Om_Texts(scriptFrame_t *f, const omDomination_t *d) {
+static void Om_Texts(const omDomination_t *d) {
 	static const char *const vars[] = { "DominationStartTextCad", "DominationFinishPlayerWinsTextCad",
 		"DominationFinishPlayerLoosesTextCad" };
 	char text[0x40];
-	Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", "DominationOnDeathSpawnTime", "5.0");
+	SaveVar_Set("DominationOnDeathSpawnTime", "5.0");
 	for (int i = 0; i < 3; i++) {
 		Str_Printf(text, sizeof(text), "SuperDeal_%s_RemoteMessage%d", d->deal, i + 1);
-		Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", vars[i], text);
+		SaveVar_Set(vars[i], text);
 	}
+}
+
+/* Scrap.SetSaveVar(name, `v`) of an int */
+static void Om_SaveInt(const char *name, long v) {
+	char text[0x20];
+	Str_Printf(text, sizeof(text), "%ld", v);
+	SaveVar_Set(name, text);
 }
 
 /*
  * SetVars(): the zones of the level into Domination.zones (1 to 4 of them), the teams, the profiles by the bad
  * reputation, the texts and the calls on abort and on victory
  */
-static PyObject *Om_DominationSetVars(PyObject *args, const omDomination_t *d) {
+static byte Om_DominationSetVars(const omDomination_t *d) {
 	static const char *const levels[] = { "Pilot", "Elite", "MegaAce" };
-	scriptFrame_t f = { 0 };
 	char text[0x80];
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	nativeVal_t dummy, pos, zones, rep, r;
+	if (!Mode_Import("Domination")) {
+		return 0;
 	}
-	Sf_Import(&f, "Domination");
-	Sf_Run(&f, "Scrap", "StartDummySearch", "(si)", "DM_Domination_Zone_*", 1);
-	int mark = f.n;
-	PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-	while (Sf_True(&f, dummy) > 0) {
-		Sf_Method(&f, Sf_Mod(&f, "Domination", "zones"), "append", "(O)", Sf_Item(&f, dummy, 1));
-		dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		Sf_ReleaseKeep(&f, mark, &dummy, 1);
+	Mode_DummyStart("DM_Domination_Zone_*", 1);
+	Mode_DummyNext(&dummy);
+	byte ok = 1;
+	while (ok && Native_True(&dummy)) {
+		/* Domination.zones.append(dummy[1]) (OBJLIB 5: the list of Domination, changed in place) */
+		ok = LvN_Item(&dummy, 1, &pos) && LvN_ModAppend("Domination", "zones", &pos);
+		Native_Free(&pos);
+		Native_Free(&dummy);
+		if (ok) {
+			Mode_DummyNext(&dummy);
+		}
 	}
-	int l = Sf_Len(&f, Sf_Mod(&f, "Domination", "zones"));
-	if (!f.failed && (l == 0 || l > 4)) {
-		Sf_RaiseText(&f, "N\xfamero inv\xe1lido de zonas de dominaci\xf3n !!!");
+	Native_Free(&dummy);
+	if (!ok || !LvN_ModGet("Domination", "zones", &zones)) {
+		return 0;
 	}
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "DominationZones", Sf_Repr(&f, Sf_Mod(&f, "Domination", "zones")));
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "DominationRounds", d->rounds);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "DominationNumEnemies", Sf_ReprI(&f, l));
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "DominationEnemyType", d->enemy);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "DominationNumFriends", Sf_ReprI(&f, l - 1));
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "DominationFriendType", "BankDirector");
+	int l = Native_Size(&zones);
+	if (l < 0 || l == 0 || l > 4) {
+		Native_Free(&zones);
+		return l >= 0 && LvN_RaiseText("N\xfamero inv\xe1lido de zonas de dominaci\xf3n !!!");
+	}
+	LvN_SaveRepr("DominationZones", &zones);
+	Native_Free(&zones);
+	SaveVar_Set("DominationRounds", d->rounds);
+	Om_SaveInt("DominationNumEnemies", l);
+	SaveVar_Set("DominationEnemyType", d->enemy);
+	Om_SaveInt("DominationNumFriends", l - 1);
+	SaveVar_Set("DominationFriendType", "BankDirector");
 	if (d->textsFirst) {
-		Om_Texts(&f, d);
+		Om_Texts(d);
 	}
-	PyObject *rep = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "BadReputation"));
-	if (!f.failed) {
-		long r = PyInt_AsLong(rep);
-		const char *level = levels[r < 2 ? 0 : r < 4 ? 1 : 2];
-		Str_Printf(text, sizeof(text), "SuperDeal%sFriends%s", d->deal, level);
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "DominationFriendProfile", text);
-		Str_Printf(text, sizeof(text), "SuperDeal%sEnemies%s", d->deal, level);
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "DominationEnemyProfile", text);
-		Sf_Run(&f, "Scrap", "Set", "(si)", "DominFightingFreezeCadenceShoot", 2);
-		Sf_Run(&f, "Scrap", "Set", "(si)", "DominFightingFreezeControlAim", 6);
+	Mode_SaveVar("BadReputation", &rep);
+	Native_SetNone(&r);
+	ok = Native_ToInt(&rep, &r);
+	Native_Free(&rep);
+	if (!ok) {
+		return 0;
+	}
+	/* int() of a text is an int (a larger one is its ValueError) */
+	long n = r.i;
+	const char *level = levels[n < 2 ? 0 : n < 4 ? 1 : 2];
+	Str_Printf(text, sizeof(text), "SuperDeal%sFriends%s", d->deal, level);
+	SaveVar_Set("DominationFriendProfile", text);
+	Str_Printf(text, sizeof(text), "SuperDeal%sEnemies%s", d->deal, level);
+	SaveVar_Set("DominationEnemyProfile", text);
+	nativeVal_t two, six;
+	Native_SetInt(&two, 2);
+	Native_SetInt(&six, 6);
+	if (!Mode_GVarSet("DominFightingFreezeCadenceShoot", &two) || !Mode_GVarSet("DominFightingFreezeControlAim", &six)) {
+		return 0;
 	}
 	if (!d->textsFirst) {
-		Om_Texts(&f, d);
+		Om_Texts(d);
 	}
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "OnAbort",
-		"import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')");
+	SaveVar_Set("OnAbort", "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')");
 	Str_Printf(text, sizeof(text), "import SuperDeal_%s;SuperDeal_%s.Victory()", d->deal, d->deal);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "OnVictory", text);
-	return Sf_None(&f);
+	SaveVar_Set("OnVictory", text);
+	return 1;
 }
 
-static PyObject *Om_SixthSetVars(PyObject *self, PyObject *args) {
-	(void)self;
-	return Om_DominationSetVars(args, &om_sixth);
+static byte Om_SixthSetVars(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Om_DominationSetVars(&om_sixth);
 }
 
-static PyObject *Om_TenthSetVars(PyObject *self, PyObject *args) {
-	(void)self;
-	return Om_DominationSetVars(args, &om_tenth);
+static byte Om_TenthSetVars(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Om_DominationSetVars(&om_tenth);
 }
+
+LV_FN(Om, SixthSetVarsPy, 0, Om_SixthSetVars)
+LV_FN(Om, TenthSetVarsPy, 0, Om_TenthSetVars)
 
 PyMethodDef g_OmSixthMethods[] = {
-	{ "SetVars", Om_SixthSetVars, 1, NULL },
+	{ "SetVars", Om_SixthSetVarsPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 PyMethodDef g_OmTenthMethods[] = {
-	{ "SetVars", Om_TenthSetVars, 1, NULL },
+	{ "SetVars", Om_TenthSetVarsPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
