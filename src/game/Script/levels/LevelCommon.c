@@ -8,7 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/actions.h"
+#include "scrap/console.h"
 #include "scrap/input.h"
+#include "scrap/sound.h"
 #include "scrap/scrap.h"
 
 #include "Levels.h"
@@ -1347,4 +1350,96 @@ void LvN_Label(const char *key, nativeVal_t *out) {
 	Native_Arith('+', &t, &colon, out);
 	Native_Free(&t);
 	Native_Free(&colon);
+}
+
+/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */
+#define LV_SEAM(module, name) \
+	PyObject *hook; \
+	int seam = Native_Seam(module, name, &hook); \
+	if (seam < 0) { \
+		return 0; \
+	}
+
+byte LvN_GetClass(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "GetClass");
+	if (seam) {
+		return Native_HookCall(hook, out, "s", name);
+	}
+	Native_SetInt(out, Native_ActClass(name));
+	return 1;
+}
+
+byte LvN_CreateClass(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "CreateClass");
+	if (seam) {
+		return Native_HookCall(hook, out, "s", name);
+	}
+	CHECK(g_pActClassList);
+	g_pAuxActClass = cActClassList_Create(g_pActClassList, name);
+	Native_SetInt(out, g_pAuxActClass != NULL);
+	return 1;
+}
+
+byte LvN_GetAction(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "GetAction");
+	if (seam) {
+		return Native_HookCall(hook, out, "s", name);
+	}
+	Native_SetNone(out);
+	Native_ActAction(name);
+	if (g_pAuxActClass) {
+		Native_SetInt(out, g_pAuxAction != NULL);
+	}
+	return 1;
+}
+
+byte LvN_CreateAction(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "CreateAction");
+	if (seam) {
+		return Native_HookCall(hook, out, "s", name);
+	}
+	Native_SetNone(out);
+	if (!g_pAuxActClass) {
+		Con_Debugf("Caution: SAct.CreateAction(): AuxActClass not defined.\n");
+		return 1;
+	}
+	g_pAuxAction = cActClass_CreateAction(g_pAuxActClass, name);
+	Native_SetInt(out, g_pAuxAction != NULL);
+	return 1;
+}
+
+byte LvN_GetAct(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "GetAct");
+	if (seam) {
+		return Native_HookCall(hook, out, "s", name);
+	}
+	Native_ActVar(name, out);
+	return 1;
+}
+
+byte LvN_SetAct(const char *name, const nativeVal_t *v) {
+	LV_SEAM("SAct", "SetAct");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "sv", name, v);
+	}
+	Native_ActSet(name, v);
+	return 1;
+}
+
+byte LvN_SetCls(const char *name, const nativeVal_t *v) {
+	LV_SEAM("SAct", "SetCls");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "sv", name, v);
+	}
+	return Native_ClsSet(name, v);
+}
+
+byte LvN_SetMusic(const char *name, double volume) {
+	LV_SEAM("SSound", "SetMusic");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "sd", name, volume);
+	}
+	SoundSys_SetMusicVolume(g_pSound, (float)volume);
+	SoundSys_SetMusic(g_pSound, name);
+	return 1;
 }

@@ -326,6 +326,18 @@ byte LvN_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t
 byte LvN_CreateAt(const nativeVal_t *name, const nativeVal_t *pos, const char *cls, nativeVal_t *out);
 /* Scrap.GetLangStr(key) + ":" */
 void LvN_Label(const char *key, nativeVal_t *out);
+/* the SAct functions the scene cases record (fr6b.py _BSCEN), through their seams (OBJLIB 7), on the current class and
+ * action as SActPy.c: GetClass, CreateClass, GetAction and CreateAction give 1 or 0 (None for an action without a
+ * class), GetAct the variable (None when there is none) */
+byte LvN_GetClass(const char *name, nativeVal_t *out);
+byte LvN_CreateClass(const char *name, nativeVal_t *out);
+byte LvN_GetAction(const char *name, nativeVal_t *out);
+byte LvN_CreateAction(const char *name, nativeVal_t *out);
+byte LvN_GetAct(const char *name, nativeVal_t *out);
+byte LvN_SetAct(const char *name, const nativeVal_t *v);
+byte LvN_SetCls(const char *name, const nativeVal_t *v);
+/* SSound.SetMusic(name, volume) through its seam (fr6b.py _BREC records it) */
+byte LvN_SetMusic(const char *name, double volume);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);
