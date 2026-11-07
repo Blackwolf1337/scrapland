@@ -21,7 +21,7 @@
  * ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Elevator, Metro, InTraffic, Items, RaceMaker, Fx, Scorer, Menu,
  * string) and the module's own functions go by name (OBJLIB 3), CharsNPC.CharRes and Speech.SpeechRoutines are read
  * the Python way (OBJLIB 5), the scheduler keeps Python functions (OBJLIB 4). MapSnd.SndElements is LevelCommon's
- * shared Lv_SndElements, still on the Sf_ frames.
+ * shared Lv_SndElements, native since batch F (Lv_SndCore on values).
  */
 #include "scrap/scrap.h"
 #include "scrap/scorer.h"
