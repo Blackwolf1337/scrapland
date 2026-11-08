@@ -2592,6 +2592,7 @@ PORT_DECLL(downtown, Mission_Massacre, OnVehicleCallback) /* 2 */
 PORT_DECLL(downtown, Mission_Massacre, MissionScorer) /* 1 */
 PORT_DECLL(downtown, Mission_Massacre, TimeExpired) /* 0 */
 PORT_DECLL(downtown, Mission_Massacre, SetNextMission) /* 0 */
+PORT_DECLL(downtown, Mission_DistractHumphrey, GetHumphreyProfile) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, Init) /* 1 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, CallHumphrey) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, UsePhoneCab) /* 4 */
@@ -2611,6 +2612,7 @@ PORT_DECLL(downtown, Mission_DistractHumphrey, StopMission) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, CallDeepThroat) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, UsePhoneCab2) /* 4 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, MissionScorer) /* 1 */
+PORT_DECLL(downtown, Mission_GetDataPart1, GetFuncEnemiesProfile) /* 0 */
 PORT_DECLL(downtown, Mission_GetDataPart1, Init) /* 1 */
 PORT_DECLL(downtown, Mission_GetDataPart1, InitMission) /* 0 */
 PORT_DECLL(downtown, Mission_GetDataPart1, CreateTransport) /* 0 */
@@ -2725,6 +2727,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_Massacre, MissionScorer, Massacre_MissionScorerPy) \
 	PORT_DEFL(downtown, Mission_Massacre, TimeExpired, Massacre_TimeExpiredPy) \
 	PORT_DEFL(downtown, Mission_Massacre, SetNextMission, Massacre_SetNextMissionPy) \
+	PORT_DEFL(downtown, Mission_DistractHumphrey, GetHumphreyProfile, Hump_GetHumphreyProfile) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, Init, Hump_InitPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, CallHumphrey, Hump_CallHumphreyPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, UsePhoneCab, Hump_UsePhoneCabPy) \
@@ -2744,6 +2747,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_DistractHumphrey, CallDeepThroat, Hump_CallDeepThroatPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, UsePhoneCab2, Hump_UsePhoneCab2Py) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, MissionScorer, Hump_MissionScorerPy) \
+	PORT_DEFL(downtown, Mission_GetDataPart1, GetFuncEnemiesProfile, Data_GetFuncEnemiesProfile) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, Init, Data_InitPy) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, InitMission, Data_InitMissionPy) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, CreateTransport, Data_CreateTransportPy) \
