@@ -3015,28 +3015,6 @@ byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out) {
 	return Native_Raise(NE_TYPE, "bad operand type for abs()");
 }
 
-byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n) {
-	nativeVal_t t;
-	Native_SetEmpty(&t, NV_TUPLE);
-	for (int i = 0; i < n; i++) {
-		Native_Copy(Native_Append(&t), &args[i]);
-	}
-	/* OBJLIB 4: the value called the Python way (a function, a bound method, or the TypeError of a value that is no
-	 * callable) */
-	PyObject *fn = Native_ToPy(f), *a = fn ? Native_ToPy(&t) : NULL;
-	Native_Free(&t);
-	PyObject *r = a ? Script_Invoke(fn, a) : NULL;
-	Py_XDECREF(fn);
-	if (!r) {
-		return 0;
-	}
-	if (out) {
-		Native_Arg(r, out);
-	}
-	Py_DECREF(r);
-	return 1;
-}
-
 byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
 	Native_SetNone(out);
 	switch (v->type) {
@@ -3377,23 +3355,6 @@ byte Mode_PreloadTexture(const nativeVal_t *name) {
 		return 0;
 	}
 	Scorer_PreloadTexture(s, 0);
-	return 1;
-}
-
-byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out) {
-	/* OBJLIB 4: apply(f, args) of the objects (the TypeError of an args that is no tuple, of a value that is no
-	 * callable) */
-	PyObject *fn = Native_ToPy(f), *a = fn ? Native_ToPy(args) : NULL;
-	PyObject *r = a ? Script_CallObject(fn, a, NULL) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(fn);
-	if (!r) {
-		return 0;
-	}
-	if (out) {
-		Native_Arg(r, out);
-	}
-	Py_DECREF(r);
 	return 1;
 }
 
@@ -3792,10 +3753,6 @@ void Mode_ItemColor(int id, const char *item, const int *c) {
 
 void Mode_ItemVisible(int id, const char *item, int v) {
 	Script_SetNum(id, item, "Visible", v);
-}
-
-byte Mode_LinkCall(PyObject *fn, int id, const char *a, const char *b) {
-	return Native_Call(fn, NULL, "iss", (long)id, a, b);
 }
 
 byte Mode_SoundOf(const char *name) {
@@ -4676,4 +4633,64 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control) 
 	}
 	*control = c && c->type == NV_STR ? Native_Text(c) : "";
 	return 1;
+}
+
+/* ---- calls of values (stage 4 of docs/objlib-plan.md, batch 4d): the entry of the port function a value holds
+ * (Port_Value), else the call through Python; one site per call site through the macros of scrap/scriptmodes.h ---- */
+
+byte Mode_CbArgs(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n) {
+	/* a value that is no object is called the Python way too: the TypeError of a value that is no callable */
+	PyObject *fn = Native_ToPy(f);
+	byte ok = fn && Port_Values(site, fn, args, n, out, NULL);
+	Py_XDECREF(fn);
+	return ok;
+}
+
+byte Mode_CbApplyPy(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out) {
+	if (args->type == NV_TUPLE) {
+		return Port_Values(site, fn, args->items, args->n, out, NULL);
+	}
+	/* any other value (a vector is a tuple in Python) through Python: the TypeError of an args that is no tuple */
+	PyObject *a = Native_ToPy(args);
+	PyObject *r = a ? Script_CallObject(fn, a, NULL) : NULL;
+	Py_XDECREF(a);
+	if (!r) {
+		return 0;
+	}
+	if (out) {
+		Native_Arg(r, out);
+	}
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_CbApply(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out) {
+	PyObject *fn = Native_ToPy(f);
+	byte ok = fn && Mode_CbApplyPy(site, fn, args, out);
+	Py_XDECREF(fn);
+	return ok;
+}
+
+byte Mode_CbLink(portSite_t *site, PyObject *fn, int id, const char *a, const char *b) {
+	return Port_Value(site, fn, NULL, "iss", (long)id, a, b);
+}
+
+byte Mode_CbGlobal(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	PyObject *f = Script_Global(module, name);
+	va_start(va, fmt);
+	byte ok = f && Port_ValueVa(site, f, out, fmt, va);
+	va_end(va);
+	Py_XDECREF(f);
+	return ok;
+}
+
+byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	PyObject *f = Script_Attr(module, name);
+	va_start(va, fmt);
+	byte ok = f && Port_ValueVa(site, f, out, fmt, va);
+	va_end(va);
+	Py_XDECREF(f);
+	return ok;
 }
