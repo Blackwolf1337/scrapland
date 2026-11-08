@@ -758,7 +758,7 @@ static byte Tp_CallDeepThroat(const char *module) {
 	}
 	Native_SetNone(&name);
 	byte ok = LvN_Entity("DM_DTritusDesktop", &dd) && Mode_VGet(&dd, "Name", &name) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name) &&
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name) &&
 		Tp_SetVarG("DTritusDesktop", "DialogController", module, "DeepThroatSpeech");
 	Native_Free(&dd);
 	Native_Free(&name);
@@ -816,7 +816,7 @@ static byte Ag_CreateGusInit(const nativeVal_t *e) {
 	Native_SetNone(&name);
 	Mode_Lang("CharName_Gus", &d);
 	byte ok = LvN_SetS(e, "UseFunc", "Mission_AskGus.GusSpeech") && Mode_VSet(e, "Descriptor", &d) && Mode_VGet(e, "Name", &name) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name);
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name);
 	Native_Free(&d);
 	Native_Free(&name);
 	return ok;
@@ -836,7 +836,7 @@ static byte Ag_DeepThroatAppears(const nativeVal_t *name) {
 	}
 	byte ok = !Native_True(&e) || LvN_SetS(&e, "UseFunc", "Bishop.BishopSpeech");
 	Native_Free(&e);
-	ok = ok && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "O", Py_None) && Ag_AddToList("Hangar.shipsToEditList", "SBishop1") &&
+	ok = ok && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "O", Py_None) && Ag_AddToList("Hangar.shipsToEditList", "SBishop1") &&
 		Ag_AddToList("Hangar.availableEnginesList", "MBISHOP1");
 	if (ok) {
 		SaveVar_Inc("NewBluePrintAvaliable", 2);
@@ -964,7 +964,7 @@ static byte Ma_UseDoor(const nativeVal_t *a) {
 	}
 	int t = Native_True(&used);
 	Native_Free(&used);
-	return !t || (LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "") && Ma_Soon("TestEndOfElevator"));
+	return !t || (PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "") && Ma_Soon("TestEndOfElevator"));
 }
 
 /* TestEndOfElevator(): the Yakuzzi scene once the player walks out of the teleporter */
@@ -1079,7 +1079,7 @@ static byte Ma_CreateFakeSpeech(void) {
 
 /* Init(LevelPath): the gatekeeper against Dtritus, the door through UseDoor, the scene and the news panel */
 static byte Ma_Init(void) {
-	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "DM_Door_Teleporter_01") &&
+	return PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "DM_Door_Teleporter_01") &&
 		Tp_Gate("GateKeeper_Portalis", NULL, "DtritusGroupGateKeeper", "Mission_MeetArchbishop.UseDoor") &&
 		Tp_Do(MA, "LoadYakuzziScene") && Tp_Do(MA, "CreateFakeSpeech");
 }
@@ -1105,3 +1105,5 @@ PyMethodDef g_TempleMeetArchbishopMethods[] = {
 	{ "Init", Ma_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Temple)

@@ -344,7 +344,7 @@ static byte Gd_GDescriptor(const char *module, const char *var, const char *key)
 static byte Gd_GTarget(const char *module, const char *var) {
 	nativeVal_t h = { 0 }, n = { 0 };
 	Native_SetNone(&n);
-	byte ok = Mode_G(module, var, &h) && Mode_VObj(&h, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	byte ok = Mode_G(module, var, &h) && Mode_VObj(&h, "Name", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	Native_Free(&h);
 	Native_Free(&n);
 	return ok;
@@ -1321,7 +1321,7 @@ static byte Igor_TalkToCrazyGamblerC(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Native_SetNone(&n);
 	byte ok = LvN_Entity("CrazyGambler_Default", &cg) && LvN_SetS(&cg, "UseFunc", "Mission_ArrangeIgorCombat.CrazyGamblerSpeech") &&
-		Mode_VObj(&cg, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+		Mode_VObj(&cg, "Name", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	Native_Free(&cg);
 	Native_Free(&n);
 	return ok;
@@ -2471,3 +2471,5 @@ PyMethodDef g_GamblinDenThreeStoogesMethods[] = {
 	{ "SetNextMission", Stooges_SetNextMission, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_GamblinDen)

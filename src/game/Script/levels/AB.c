@@ -884,3 +884,5 @@ PyMethodDef g_ABMapMethods[] = {
 	{ "RealOnDeath", AbMap_RealOnDeathPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_AB)

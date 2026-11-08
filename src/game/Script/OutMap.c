@@ -753,3 +753,5 @@ PyMethodDef g_InTrafficMethods[] = {
 	{ "SetSound", It_SetSoundPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(OutMap)

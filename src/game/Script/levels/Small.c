@@ -153,3 +153,5 @@ PyMethodDef g_ShipEditMapSndMethods[] = {
 	{ "Init", Se_SndInitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Small)

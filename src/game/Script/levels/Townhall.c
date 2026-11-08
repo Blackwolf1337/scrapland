@@ -446,7 +446,7 @@ static byte ThAm_ChooseStaplerN(const nativeVal_t *not) {
 	byte ok;
 	if (Native_True(stapler)) {
 		ok = LvN_SetS(stapler, "UseFunc", "Mission_ApologizeMayor.StaplerSpeech") && LvN_SetI(stapler, "AI_Repos", 0) &&
-			Mode_VGet(stapler, "Name", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+			Mode_VGet(stapler, "Name", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	} else {
 		ok = Mode_Later(2.0, AM, "ChooseStapler", not, 1, NULL);
 	}
@@ -1744,3 +1744,5 @@ PyMethodDef g_TownhallTalkToMayorMethods[] = {
 	{ "MissionScorer", TalkToMayor_MissionScorer, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Townhall)

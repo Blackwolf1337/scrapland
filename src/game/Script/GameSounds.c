@@ -530,3 +530,5 @@ PyMethodDef g_DoorSoundMethods[] = {
 	{ "ConversorSetSounds", DoorSound_ConversorSetSounds, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(GameSounds)

@@ -144,7 +144,7 @@ static byte Abi_Ship(const nativeVal_t *pos, nativeVal_t *e) {
 		Native_SetInt(Native_Append(&t), 300);
 		Native_SetInt(Native_Append(&t), 0);
 		ok = Mode_VSet(e, "CamTgt", &t) && LvN_SetS(e, "UseFunc", "Map.LaunchCinematic") && Mode_VGet(e, "Name", &n) &&
-			LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+			PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	}
 	Native_Free(&name);
 	Native_Free(&t);
@@ -289,3 +289,5 @@ PyMethodDef g_ABIndoorMapMethods[] = {
 	{ "FadeEndTitle", Abi_FadeEndTitlePy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_ABIndoor)

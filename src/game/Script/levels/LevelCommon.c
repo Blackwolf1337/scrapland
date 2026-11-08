@@ -1334,7 +1334,7 @@ byte LvN_PcDefault(const char *module) {
 }
 
 byte LvN_Target(const nativeVal_t *v) {
-	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", v);
+	return PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", v);
 }
 
 byte LvN_TargetName(const nativeVal_t *h) {
@@ -1555,3 +1555,5 @@ byte LvN_SetOnFloorOf(const nativeVal_t *v) {
 	Native_Free(&name);
 	return ok;
 }
+
+PORTS(levels_LevelCommon)

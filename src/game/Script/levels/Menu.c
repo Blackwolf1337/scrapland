@@ -519,3 +519,5 @@ PyMethodDef g_MenuMapMethods[] = {
 	{ "cremeteoro", (PyCFunction)(void (*)(void))Menu_cremeteoroPy, 3, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Menu)

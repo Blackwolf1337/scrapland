@@ -639,3 +639,5 @@ PyMethodDef g_InPoliceMethods[] = {
 	{ "Init", InPolice_Init, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Traffic)

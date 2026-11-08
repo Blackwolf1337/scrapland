@@ -282,7 +282,7 @@ static byte Berto_GetBerto(void) {
 		Native_Free(cur);
 		ok = LvN_ModGet("MissionsFuncs", "currentBertos", cur) && LvN_Item(cur, 0, name) && Mode_Put(BM, "bertoName", NULL, name) &&
 			Mode_Read(BM, "bertoName", name) && Mode_EntityH(name, e) && (!Native_True(e) || LvN_SetI(e, "Money", -1)) &&
-			Mode_Read(BM, "bertoName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+			Mode_Read(BM, "bertoName", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) &&
 			LvN_Com("Mission_BertoMassacre_RemoteMessage3", "DeepThroat", BM, "OnBertoFound", NULL);
 	} else if (n == 0) {
 		ok = Mode_Later(1, BM, "GetBerto", NULL, 0, NULL);
@@ -427,7 +427,7 @@ static byte Gambler_CreateCrazyGambler(void) {
 		LvN_StdProfile(CG, "GetCrazyGamblerProfile", h, pd) && LvN_SetI(h, "LaunchTaunts", 0) && Mode_G(CG, "pilotName", pilot) &&
 		Mode_VSet(h, "MPil0", pilot) && LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") &&
 		LvN_Life(h, CG, "CRAZY_GAMBLER_LIFE") && Mode_VGet(h, "Name", name) && Mode_Put(CG, "crazyGamblerName", NULL, name) &&
-		Mode_Read(CG, "crazyGamblerName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+		Mode_Read(CG, "crazyGamblerName", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	return Mode_Done(&t, ok);
 }
 
@@ -554,7 +554,7 @@ static byte Mayor_CreateCrazyMayor(void) {
 		Mode_Put(FM, "SMayor1", NULL, h) && LV_OWN(FM, "GetMayorProfile", pd, "") && Mode_G(FM, "SMayor1", m) && LvN_StdAI(m, pd) &&
 		LvN_SetS(m, "WeapList", "2,2,2,2,2,0,1") && LvN_SetS(m, "EntityList", "Enemies") &&
 		LvN_SetS(m, "OnDeath", "Mission_FaceTheMayor.MayorOnDeath") && LvN_Life(m, FM, "MAYOR_LIFE") && Mode_VGet(m, "Name", name) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	return Mode_Done(&t, ok);
 }
 
@@ -971,7 +971,7 @@ static byte Data_AddTransportToList(void) {
 		LvN_PutI(GD, "currentTransportSpawnedData", 0) && Mode_G(GD, "currentTransport", cur) &&
 		LV_CALL("SAI", "SetStateVehicle", NULL, "ividd", 3L, cur, 0L, 3.0, 2.0) && LvN_SetS(trans, "EntityList", "Transports") &&
 		Mode_Read(GD, "currentTransport", cur) && Mode_Append(GD, "transports", cur) && Mode_Read(GD, "currentTransport", cur) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", cur);
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", cur);
 	return Mode_Done(&t, ok);
 }
 
@@ -1983,7 +1983,7 @@ static byte Plus_SetPhoneCab(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pc = TV(), *name = TV();
 	byte ok = LV_CALL("PhoneCab", "GetFree", pc, "") && Mode_VGet(pc, "Name", name) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) && LvN_SetS(pc, "UseFunc", "Mission_MultiplusRace.UsePhoneCab");
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) && LvN_SetS(pc, "UseFunc", "Mission_MultiplusRace.UsePhoneCab");
 	return Mode_Done(&t, ok);
 }
 
@@ -2032,7 +2032,7 @@ static byte Plus_InitRace(void) {
 	int car = ok ? Mode_VIsType(usr, "Car") : -1;
 	ok = car >= 0 && Mode_CallKw("RaceMaker", "InitRace", NULL, police, 1,
 		Py_BuildValue("{sisisi}", "numply", 5, "waypointlimit", 15, "userOnShip", car)) &&
-		LvN_ModGet("RaceMaker", "ChallengerName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+		LvN_ModGet("RaceMaker", "ChallengerName", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) &&
 		LvN_ModGet("Speech", "OnOutOfRange", oor) && Mode_Put(MR, "outOfRange", NULL, oor) && LvN_ModNone("Speech", "OnOutOfRange");
 	return Mode_Done(&t, ok);
 }
@@ -2082,7 +2082,7 @@ static byte Plus_SpawnStupidus(void) {
 	nativeVal_t *st = TV(), *name = TV(), *lives = TV(), *num = TV();
 	byte ok = Mode_Import("Speech") && Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mr_Functionary("Stupidus", st) &&
 		LvN_SetS(st, "OnDeath", "Mission_MultiplusRace.StupidusOnDeath") && Mode_VGet(st, "Name", name) &&
-		LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+		LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) &&
 		Mode_SaveInt("MultiplusRace.Lives", lives);
 	int c = ok ? Mr_LivesAre(lives, "==", 0) : -1;
 	if (c > 0) {
@@ -2802,7 +2802,7 @@ static byte Steal_CreateMissionShip(void) {
 		ok = Mode_EntityH(&ep[0], e) && (!Native_True(e) || Mode_VDel(e));
 	}
 	ok = ok && LV_CALL("Parking", "CreateParkedShip", ship, "vis", &ep[1], 0L, "Mayor") && Mode_VRead(ship, "Name", name) &&
-		Mode_Put(SM, "missionShipName", NULL, name) && Mode_Read(SM, "missionShipName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+		Mode_Put(SM, "missionShipName", NULL, name) && Mode_Read(SM, "missionShipName", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	return Mode_Done(&t, ok);
 }
 
@@ -3075,3 +3075,5 @@ PyMethodDef g_DownTownStealMayorShipMethods[] = {
 	{ "ParkMayorShip", Steal_ParkMayorShipPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_DownTown)

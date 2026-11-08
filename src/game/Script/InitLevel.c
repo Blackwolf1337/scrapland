@@ -546,3 +546,5 @@ PyMethodDef g_InitMethods[] = {
 	{ "Close", Init_Close, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(InitLevel)

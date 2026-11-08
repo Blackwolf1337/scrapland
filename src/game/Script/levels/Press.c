@@ -3060,7 +3060,7 @@ static byte TalkToBoss_GoTalkToBoss(const nativeVal_t *a, nativeVal_t *out) {
 	if (there <= 0) {
 		return there == 0;
 	}
-	byte ok = Mode_G(TB, "bossName", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	byte ok = Mode_G(TB, "bossName", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
 }
@@ -3456,3 +3456,5 @@ PyMethodDef g_PressWhoIsTheBaddieMethods[] = {
 	{ "LoadScene", Baddie_LoadSceneA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Press)

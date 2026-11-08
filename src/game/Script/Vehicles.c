@@ -980,3 +980,5 @@ PyMethodDef g_VehiclesMethods[] = {
 	{ "Init", Vehicles_Init, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Vehicles)

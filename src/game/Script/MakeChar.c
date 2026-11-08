@@ -861,3 +861,5 @@ PyMethodDef g_MakeCharMethods[] = {
 	{ "AddTurretTalkAct", MC_KW(MakeChar_AddTurretTalkAct), NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MakeChar)

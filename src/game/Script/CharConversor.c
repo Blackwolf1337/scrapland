@@ -793,3 +793,5 @@ PyMethodDef g_CharConversorMethods[] = {
 	{ "NewPlayer", CharConversor_NewPlayer, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(CharConversor)

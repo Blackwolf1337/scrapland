@@ -559,3 +559,5 @@ PyMethodDef g_VehiclesNPCMethods[] = {
 	{ "Init", VehiclesNPC_Init, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(VehiclesNPC)

@@ -638,3 +638,5 @@ PyMethodDef g_CharsMethods[] = {
 	{ "CreateStartupPlayer", Chars_CreateStartupPlayer, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Chars)

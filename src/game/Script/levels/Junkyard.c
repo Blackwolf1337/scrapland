@@ -1217,3 +1217,5 @@ PyMethodDef g_JunkyardRustyFirstContactMethods[] = {
 	{ "EditShipTutorial_Step", Rusty_EditShipTutorial_StepPy, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Junkyard)

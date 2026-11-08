@@ -11,6 +11,8 @@
 #ifndef SCRAP_SCRIPT_H
 #define SCRAP_SCRIPT_H
 
+#include <stdint.h>
+
 #include "scrap/python.h"
 
 /* the C functions of one pack module */
@@ -228,6 +230,11 @@ PyObject *Script_Fail(void);
  * does in eval_code2, so a cycle through C functions raises "RuntimeError: Maximum recursion depth exceeded" like
  * the scripts (also when the C stack runs short first) */
 PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw);
+/* the depth check of Script_CallObject for a call from C that does not go through the interpreter (the direct calls
+ * between ports, OBJLIB 7): frame is the caller's __builtin_frame_address(0). 1 with the call counted (Script_Leave
+ * after it), else 0 with the RuntimeError */
+byte Script_Enter(uintptr_t frame);
+void Script_Leave(void);
 /* a + b (a given away), a + "text" (a given away), "text" + b: new references, NULL stays NULL */
 PyObject *Script_Plus(PyObject *a, PyObject *b);
 PyObject *Script_PlusS(PyObject *a, const char *text);

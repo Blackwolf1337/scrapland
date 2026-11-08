@@ -1628,3 +1628,5 @@ PyMethodDef g_AcceleratorMethods[] = {
 	{ "Init", Accelerator_Init, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Parking)

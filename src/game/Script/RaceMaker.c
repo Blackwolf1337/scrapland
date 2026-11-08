@@ -1917,3 +1917,5 @@ PyMethodDef g_RaceMakerMethods[] = {
 	{ "GetRandomShipIAProfile", RaceMaker_GetRandomShipIAProfile, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(RaceMaker)

@@ -1191,3 +1191,5 @@ PyMethodDef g_TeleportMethods[] = {
 	{ "FXAction", Teleport_FXAction, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Doors)

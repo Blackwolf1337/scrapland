@@ -1140,7 +1140,7 @@ static byte Transport_InitTransport(void) {
 		Mode_Put(TK, "trans", NULL, tr) && LV_CALL("Traffic", "ResetPath", NULL, "") && Mode_Read(TK, "trans", tr) && LvN_SetS(tr, "TgType", "red") &&
 		LvN_SetI(tr, "Money", -1) && LvN_Life(tr, TK, "TRANSPORT_LIFE") && LvN_SetI(tr, "Traf_Active", 1) && Mode_VGet(tr, "Pos", pos) &&
 		Mode_VSet(tr, "Traf_Begin", pos) && Mode_VRead(tr, "Pos", pos) && Mode_VSet(tr, "Traf_End", pos) &&
-		LvN_SetI(tr, "Traf_Speed", 100 * 28 + 2000) && Mode_VGet(tr, "Name", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+		LvN_SetI(tr, "Traf_Speed", 100 * 28 + 2000) && Mode_VGet(tr, "Name", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) &&
 		LV_CALL("SAI", "SetStateVehicle", NULL, "ividd", 3L, name, 0L, 2.0, 0.025) && LvN_SetS(tr, "OnDamage", "Mission_TransportKiller.TryToDamage") &&
 		LvN_SetS(tr, "OnDeath", "Mission_TransportKiller.TryToDeath") && Mode_G(TK, "Model_Datapack", model) && Mode_PreloadOnes(model);
 	return Mode_Done(&t, ok);
@@ -1178,7 +1178,7 @@ static byte Transport_TryToDeath(const nativeVal_t *a) {
 		LV_CALL("Items", "SetSound", NULL, "vs", l, "TakeBDataPack") && LvN_CreateAt(Mode_S(&t, "MissionCheckArrow"), pos, "WithLife", l2);
 	if (ok) {
 		Mode_Ints3(cam, 0, 1000, 0);
-		ok = Mode_VSet(l2, "CamTgt", cam) && Mode_VGet(l2, "Name", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+		ok = Mode_VSet(l2, "CamTgt", cam) && Mode_VGet(l2, "Name", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -1301,7 +1301,7 @@ static PyObject *Humphrey_InitStatus(PyObject *self, PyObject *args) {
 static byte Hu_Enemy(const nativeVal_t *h) {
 	nativeVal_t name = { 0 };
 	byte ok = LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") && Mode_G(HU, "humphreyName", &name) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name);
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name);
 	Native_Free(&name);
 	return ok;
 }
@@ -1613,7 +1613,7 @@ static byte Im_NewNormalMerc(void) {
 /* MissionsFuncs.SetMissionTarget(lonelyMerc.Name) */
 static byte Im_MercTarget(void) {
 	nativeVal_t m = { 0 }, name = { 0 };
-	byte ok = Mode_G(IM, "lonelyMerc", &m) && Mode_VGet(&m, "Name", &name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name);
+	byte ok = Mode_G(IM, "lonelyMerc", &m) && Mode_VGet(&m, "Name", &name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name);
 	Native_Free(&m);
 	Native_Free(&name);
 	return ok;
@@ -1908,7 +1908,7 @@ static PyObject *Rudolph_GetDealType(PyObject *self, PyObject *args) {
 /* MissionsFuncs.SetMissionTarget(rudolphEntityName) */
 static byte Kr_Target(void) {
 	nativeVal_t n = { 0 };
-	byte ok = Mode_G(KR, "rudolphEntityName", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	byte ok = Mode_G(KR, "rudolphEntityName", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
 }
@@ -2323,7 +2323,7 @@ static byte Bd_TargetRed(void) {
 /* MissionsFuncs.SetMissionTarget(currentMissionTarget) */
 static byte Bd_Target(void) {
 	nativeVal_t n = { 0 };
-	byte ok = Mode_G(BD, "currentMissionTarget", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	byte ok = Mode_G(BD, "currentMissionTarget", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
 }
@@ -3134,7 +3134,7 @@ static byte Traitorius_CreateTraitorius(void) {
 		LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L) &&
 		Mode_ListSet("Traitorius", "OnDamage", "Mission_AttackTraitorius.OnTraitoriusDamage") &&
 		Mode_ListSet("Traitorius", "OnDeath", "Mission_AttackTraitorius.OnTraitoriusDeath") && Mode_VRead(tr, "Name", name) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) && LvN_ScorerCallG(AT, "MissionScorer") && LvN_Draw();
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) && LvN_ScorerCallG(AT, "MissionScorer") && LvN_Draw();
 	return Mode_Done(&t, ok);
 }
 
@@ -3808,3 +3808,5 @@ PyMethodDef g_OutskirtsFunctionaryHuntingMethods[] = {
 	{ "AbortCameraTravelling", Hunt_AbortCameraTravellingPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Outskirts)

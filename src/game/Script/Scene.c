@@ -991,3 +991,5 @@ PyMethodDef g_SceneMethods[] = {
 	{ "EndOutDoorScene", Scene_EndOutDoorScene, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Scene)

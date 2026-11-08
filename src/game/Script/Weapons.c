@@ -601,3 +601,5 @@ PyMethodDef g_SonicMethods[] = {
 	{ "Init", Sonic_Init, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Weapons)

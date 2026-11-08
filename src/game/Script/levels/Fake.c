@@ -340,3 +340,5 @@ PyMethodDef g_FakeMapMethods[] = {
 	{ "LoadFake2Scene", Fk_LoadFake2ScenePy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Fake)

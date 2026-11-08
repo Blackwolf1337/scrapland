@@ -259,3 +259,5 @@ PyMethodDef g_SputnikInterfaceMethods[] = {
 	{ "SelectShip", SI_SelectShip, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(SputnikInterface)

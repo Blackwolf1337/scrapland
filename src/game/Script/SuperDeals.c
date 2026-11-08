@@ -2395,7 +2395,7 @@ static byte Sd_BatonArrow(const nativeVal_t *l, const nativeVal_t *pos, nativeVa
 static byte Sd_BatonTarget(const nativeVal_t *l2) {
 	nativeVal_t n;
 	Native_SetNone(&n);
-	byte ok = Mode_VGet(l2, "Name", &n) && CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	byte ok = Mode_VGet(l2, "Name", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	Native_Free(&n);
 	ok = ok && Mode_VGet(l2, "Name", &n) && Mode_GVarSet("CurrentWaypointName", &n);
 	Native_Free(&n);
@@ -2589,7 +2589,7 @@ static byte Dom_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 		return Mode_Done(&t, 0);
 	}
 	if (Sd_Eq(who, leader)) {
-		if (!Sd_Del(item) || !Sd_DelArrow(item) || !CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", who) ||
+		if (!Sd_Del(item) || !Sd_DelArrow(item) || !PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", who) ||
 			!Mode_GVarSet("CurrentWaypointName", who) ||
 			!Dom_Took(1, 0, who, NULL, "SuperDeal_DominationRemoteMessage6", "EneWaySound", "EneWayVolume")) {
 			return Mode_Done(&t, 0);
@@ -4184,3 +4184,5 @@ PyMethodDef g_MortalRaceMethods[] = {
 	{ "PreOnVictory", Mr_PreOnVictory, 1, NULL },
 	{ NULL, NULL, 0, NULL }
 };
+
+PORTS(SuperDeals)

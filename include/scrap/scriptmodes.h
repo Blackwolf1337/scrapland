@@ -283,18 +283,23 @@ byte Mode_PurgeServerMapList(const char *module);
 byte Mode_Args(PyObject *args, int n, modeVals_t *t, nativeVal_t **a);
 /* the result of an adapter: NULL for 0, None when out is None, else out as a Python value; t freed */
 PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
-/* the entry of a function of module mod (prefix pre) with nargs arguments (a) and the core call; out is the result */
+/* a function of a module (prefix pre) with nargs arguments (a) and the core call; out is the result: pre_name_E, its
+ * native entry (portEntry_t: the direct calls of other ports, stage 3), and pre_name, its adapter for the PyMethodDef
+ * table (the arguments as native values, the entry, the result as Python) */
 #define MODE_FN(pre, name, nargs, call) \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)a; \
+		(void)out; \
+		return n == (nargs) ? (call) : Port_Arity(n, nargs); \
+	} \
 	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		modeVals_t t = { .n = 0 }; \
 		nativeVal_t *a, *out = Mode_V(&t); \
 		(void)self; \
-		(void)out; \
 		if (!Mode_Args(args, nargs, &t, &a)) { \
 			return Mode_Done(&t, 0), NULL; \
 		} \
-		(void)a; \
-		return Mode_Out(&t, call, out); \
+		return Mode_Out(&t, pre##_##name##_E(a, nargs, out), out); \
 	}
 /* Py_None for 1, NULL for 0 */
 PyObject *Mode_Result(byte ok);
@@ -402,7 +407,8 @@ int Mode_UsrIs(const char *ctrl);
  * the NULL), OBJLIB 3 */
 byte Mode_Spch(const char *msg, const char *ans, const char *how);
 byte Mode_AnsLst(const char *const *texts, int n);
-/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint(), MissionsFuncs.SetMissionTarget(name) (None for NULL), OBJLIB 3 */
+/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint() (OBJLIB 3), MissionsFuncs.SetMissionTarget(name) (None for NULL,
+ * PORT_CALL) */
 byte Mode_MMDesc(const char *desc, long flag);
 byte Mode_WayPoint(void);
 byte Mode_Target(const char *name);

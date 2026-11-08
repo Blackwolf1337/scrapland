@@ -793,3 +793,5 @@ PyMethodDef g_ItemsMethods[] = {
 	{ "SetInteractiveObjOnFloor", Items_SetInteractiveObjOnFloor, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Items)
