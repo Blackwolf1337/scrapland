@@ -402,10 +402,11 @@ static PyObject *Matrix_EndOFScene(PyObject *self, PyObject *args, PyObject *kw)
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", kwlist, &usr) || !Mode_Fade(0, lv_black, lv_clear, 1.0)) {
 		return NULL;
 	}
-	/* OBJLIB 4: EndFunc is the function object RestoreMatrix put into the module */
+	/* EndFunc is the function value RestoreMatrix put into the module (None, or a function of the data: OBJLIB 6; a
+	 * port's function through its entry) */
 	PyObject *fn = Mode_GlobalPy(MX, "EndFunc");
 	int t = fn ? PyObject_IsTrue(fn) : -1;
-	byte ok = t >= 0 && (!t || Native_Call(fn, NULL, ""));
+	byte ok = t >= 0 && (!t || PORT_VALUE(fn, NULL, ""));
 	Py_XDECREF(fn);
 	return Mode_Result(ok);
 }
