@@ -1493,6 +1493,7 @@ PORT_DECL(Speech, EndObjectAnswer) /* 0 */
 /* Split.c */
 PORT_DECL(Split, GetSpawnPos) /* 1 */
 PORT_DECL(Split, CreateUserShip) /* 1 */
+PORT_DECL(Split, Init) /* ? */
 PORT_DECL(Split, GetReSpawnPos) /* 1 */
 PORT_DECL(Split, ReSpawnShip) /* 1 */
 PORT_DECL(Split, OnDeathCallback) /* 2 */
@@ -1522,6 +1523,7 @@ PORT_DECL(SRace, GetReSpawnPos) /* 1 */
 #define PORTS_Split \
 	PORT_DEF(Split, GetSpawnPos, Split_GetSpawnPos) \
 	PORT_DEF(Split, CreateUserShip, Split_CreateUserShip) \
+	PORT_DEF(Split, Init, Split_Init) \
 	PORT_DEF(Split, GetReSpawnPos, Split_GetSpawnPos) \
 	PORT_DEF(Split, ReSpawnShip, Split_ReSpawnShip) \
 	PORT_DEF(Split, OnDeathCallback, Split_OnDeathCallback) \

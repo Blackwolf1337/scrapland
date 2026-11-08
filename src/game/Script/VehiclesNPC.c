@@ -8,10 +8,13 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
  * variables are read where the script reads them as its globals and StdShips and AIProf changed in place (OBJLIB 5:
  * Traffic, the level files, the police and the cases read them and put profiles into AIProf). The profile objects (a
- * cShipAI instance), the ships (handle values) and the hooks stay Python values (OBJLIB 7); the module's own functions
- * the script calls as its globals stay so (a mission or a case may replace one), Vehicles, OutMap, Parking, Traffic,
- * SAI and SWeap by name (OBJLIB 3). Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their
- * seams (OBJLIB 7). The .def runner takes its $names as a dict (OBJLIB 6).
+ * cShipAI instance), the ships (handle values) and the hooks stay Python values (OBJLIB 7). Vehicles, OutMap, Parking
+ * and Traffic are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
+ * by name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
+ * global: a mission or a case may replace one). The class cShipAI is called as the module's variable (OBJLIB 4), the
+ * scheduler gets InitMercs as a function object (OBJLIB 4), SAI and SWeap stay by name and Scrap.GetEntity,
+ * CreateEntity, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The .def runner takes its $names
+ * as a dict (OBJLIB 6).
  */
 #include <string.h>
 
@@ -54,9 +57,6 @@ static byte Npc_Run(const char *section, const char *const *names, const nativeV
 	Py_XDECREF(vars);
 	return ok;
 }
-
-/* a function of the module through its global (a mission or a case may replace it) */
-#define NPC_OWN(name, out, ...) Native_CallGlobal(NPC, name, out, __VA_ARGS__)
 
 /* StdShips[key] = (the texts and ints of fmt: s a text, i a long), the dict of the module changed in place */
 static byte Npc_Std(const char *key, const char *fmt, ...) {
@@ -176,7 +176,7 @@ static byte Npc_MakeAIN(const nativeVal_t *type, const nativeVal_t *name, const 
 	int f = far ? Native_True(far) : 0;
 	for (int i = 0; i < (f ? 10 : 1); i++) {
 		Native_Free(sp);
-		if (!Native_CallMod("OutMap", "GetFreeSpawnPos", sp, "")) {
+		if (!PORT_CALL(OutMap, GetFreeSpawnPos, sp, "")) {
 			return Mode_Done(&t, 0);
 		}
 		if (!f) {
@@ -207,7 +207,7 @@ static byte Npc_MakeAIN(const nativeVal_t *type, const nativeVal_t *name, const 
 	Native_SetInt(Native_Append(ang), 0);
 	Native_Copy(Native_Append(ang), a);
 	Native_SetInt(Native_Append(ang), 0);
-	return Mode_Done(&t, Mode_VSet(o1, "Ang", ang) && NPC_OWN("SetIAProf", out, "vvv", o1, type, init));
+	return Mode_Done(&t, Mode_VSet(o1, "Ang", ang) && PORT_OWN(VehiclesNPC, SetIAProf, out, "vvv", o1, type, init));
 }
 
 /* GetIAProf(TypeShip): the profile of the type, made once with the profile of the save variable StdShipAIProfile */
@@ -224,11 +224,12 @@ static byte Npc_GetIAProfN(const nativeVal_t *type, nativeVal_t *out) {
 	if (known) {
 		return Mode_Done(&t, Mode_Sub(prof, type, out));
 	}
+	/* OBJLIB 4: the class cShipAI, a variable of the module */
 	if (!LvN_GObj(NPC, "cShipAI", cls) || !Mode_CallArgs(cls, out, NULL, 0) || !Mode_VSet(out, "Ship", type)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("StdShipAIProfile", std);
-	return Mode_Done(&t, NPC_OWN("SetAIProfile", NULL, "vv", out, std) && Mode_DictPut(NPC, "AIProf", NULL, type, out));
+	return Mode_Done(&t, PORT_OWN(VehiclesNPC, SetAIProfile, NULL, "vv", out, std) && Mode_DictPut(NPC, "AIProf", NULL, type, out));
 }
 
 /* ModAIProff(o1, pd, useLife=0): the AI of the ship from the profile (and its life by LifeMult) */
@@ -253,7 +254,7 @@ static byte Npc_ModAIProffN(const nativeVal_t *o1, const nativeVal_t *pd, const 
 	for (int i = 0; ok && i < NVARS; i++) {
 		ok = Mode_VObj(pd, vars[i], &a[i + 2]);
 	}
-	/* SAI.EnableAIVehicle by name with the 26 values (OBJLIB 3) */
+	/* SAI.EnableAIVehicle by name with the 26 values (OBJLIB 7) */
 	ok = ok && LvN_ModGet("SAI", "EnableAIVehicle", &f) && Mode_CallArgs(&f, NULL, a, NVARS + 2);
 	if (ok && use && Native_True(use)) {
 		ok = Mode_VObj(o1, "Life", &l) && Mode_VObj(pd, "LifeMult", &m) && Mode_Arith('*', &l, &m, &life) && Mode_VSet(o1, "Life", &life);
@@ -285,8 +286,9 @@ static byte Npc_LifeMult(const nativeVal_t *o1, const nativeVal_t *pd) {
 static byte Npc_SetIAProfN(const nativeVal_t *o1, const nativeVal_t *type, const nativeVal_t *init, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pd = Mode_V(&t), *name = Mode_V(&t), *ship = Mode_V(&t), *n2 = Mode_V(&t);
-	if (!NPC_OWN("GetIAProf", pd, "v", type) || !Mode_VObj(o1, "Name", name) || !Mode_VObj(pd, "Ship", ship) ||
-		!NPC_OWN("SetStdProperties", NULL, "vv", name, ship) || !NPC_OWN("ModAIProff", NULL, "vv", o1, pd)) {
+	if (!PORT_OWN(VehiclesNPC, GetIAProf, pd, "v", type) || !Mode_VObj(o1, "Name", name) || !Mode_VObj(pd, "Ship", ship) ||
+		!PORT_OWN(VehiclesNPC, SetStdProperties, NULL, "vv", name, ship) ||
+		!PORT_OWN(VehiclesNPC, ModAIProff, NULL, "vv", o1, pd)) {
 		return Mode_Done(&t, 0);
 	}
 	if ((!init || Native_True(init)) && (!Mode_VObj(o1, "Name", n2) || !Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, n2))) {
@@ -334,7 +336,7 @@ static byte Npc_SetStdPropertiesN(const nativeVal_t *name, const nativeVal_t *mo
 	}
 	if (n == 2) {
 		if (!LvN_Item(a, 0, &it[0]) || !LvN_Item(a, 1, &it[1]) ||
-			!Native_CallMod("Vehicles", "SetStdProperties", NULL, "vvv", name, &it[0], &it[1])) {
+			!PORT_CALL(Vehicles, SetStdProperties, NULL, "vvv", name, &it[0], &it[1])) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
@@ -345,12 +347,12 @@ static byte Npc_SetStdPropertiesN(const nativeVal_t *name, const nativeVal_t *mo
 		}
 		Native_Free(up);
 		if (!Native_Upper(model, up) || !Mode_Cat(&t, key, 2, Mode_S(&t, "SHIP_"), up) || !Mode_LangV(key, title) ||
-			!Native_CallMod("Vehicles", "SetProperties", NULL, "vvvvvvvvvv", name, &it[0], &it[1], &it[2], &it[3], &it[4],
+			!PORT_CALL(Vehicles, SetProperties, NULL, "vvvvvvvvvv", name, &it[0], &it[1], &it[2], &it[3], &it[4],
 				&it[5], &it[6], &it[7], title)) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Mode_EntitySeam(name, o1) || !Native_CallMod("Parking", "CheckWeapons", NULL, "v", o1)) {
+	if (!Mode_EntitySeam(name, o1) || !PORT_CALL(Parking, CheckWeapons, NULL, "v", o1)) {
 		return Mode_Done(&t, 0);
 	}
 	static const char *const ammo[] = { "Ammo00", "Ammo01", "Ammo02" };
@@ -374,7 +376,7 @@ static byte Npc_MercOnDeathN(const nativeVal_t *looser, const nativeVal_t *winne
 	nativeVal_t zero;
 	const char *n;
 	Native_SetStr(&zero, "0");
-	return Mode_Import("Vehicles") && Native_CallMod("Vehicles", "OnDeath", NULL, "vv", looser, winner) &&
+	return Mode_Import("Vehicles") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", looser, winner) &&
 		Native_ArgStr(looser, 1, &n) && Mode_SetSaveVar(n, &zero);
 }
 
@@ -391,7 +393,7 @@ static byte Npc_Merc(const nativeVal_t *mercs, const nativeVal_t *key) {
 	if (!Native_IsStr(hired, "1")) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_Cat(&t, usr, 2, key, Mode_S(&t, "_usr")) || !NPC_OWN("GetIAProf", sp, "v", usr)) {
+	if (!Mode_Cat(&t, usr, 2, key, Mode_S(&t, "_usr")) || !PORT_OWN(VehiclesNPC, GetIAProf, sp, "v", usr)) {
 		return Mode_Done(&t, 0);
 	}
 	int lonely = LvN_GTrue(NPC, "lmigd");
@@ -402,7 +404,7 @@ static byte Npc_Merc(const nativeVal_t *mercs, const nativeVal_t *key) {
 	Mode_SaveVar("BadReputation", rep);
 	return Mode_Done(&t, Native_ToInt(rep, rptn) &&
 		Npc_Run("Merc", (const char *const[]){ "sp", "rptn" }, (const nativeVal_t *const[]){ sp, rptn }, 2) &&
-		NPC_OWN("MakeAI", ship, "vvii", usr, var, 0L, 0L) && LvN_SetS(ship, "EntityList", "Friends") &&
+		PORT_OWN(VehiclesNPC, MakeAI, ship, "vvii", usr, var, 0L, 0L) && LvN_SetS(ship, "EntityList", "Friends") &&
 		LvN_SetS(ship, "OnDeath", "VehiclesNPC.MercOnDeath"));
 }
 
@@ -446,9 +448,9 @@ static byte Npc_InitN(void) {
 		return 0;
 	}
 	int y = Mode_ModTrue("Init", "isScrapYard");
-	if (y < 0 || (y && !Npc_Run("ScrapYard", NULL, NULL, 0)) || !Native_CallMod("Traffic", "SetPath", NULL, "") ||
+	if (y < 0 || (y && !Npc_Run("ScrapYard", NULL, NULL, 0)) || !PORT_CALL(Traffic, SetPath, NULL, "") ||
 		!Npc_Classes("AcNormalShips", "Normal") || !Npc_Classes("AcMediumShips", "Medium") || !Npc_Classes("AcHeavyShips", "Heavy") ||
-		!Native_CallMod("Traffic", "ResetPath", NULL, "") || !NPC_OWN("InitStdShips", NULL, "")) {
+		!PORT_CALL(Traffic, ResetPath, NULL, "") || !PORT_OWN(VehiclesNPC, InitStdShips, NULL, "")) {
 		return 0;
 	}
 	int u = LvN_GTrue(NPC, "UseMercs");
