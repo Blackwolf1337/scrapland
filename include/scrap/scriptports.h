@@ -275,6 +275,7 @@ PORT_DECL(Teleport, FXAction) /* 3 */
 	PORT_DEF(Teleport, FXAction, Teleport_FXAction)
 
 /* EnginesTab.c */
+PORT_DECL(EnginesTab, HighlightCurrentMountedEngine) /* ? */
 PORT_DECL(EnginesTab, ShowEngineDesc) /* 3 */
 PORT_DECL(EnginesTab, HideEngineDesc) /* 3 */
 PORT_DECL(EnginesTab, ChangeRecycleButtonState) /* 1 */
@@ -284,9 +285,13 @@ PORT_DECL(EnginesTab, RecycleEngine) /* 2 */
 PORT_DECL(EnginesTab, ShowMoneySellingEngine) /* 3 */
 PORT_DECL(EnginesTab, SelectEngineGroup) /* ? */
 PORT_DECL(EnginesTab, SetEnginesPanel) /* 1 */
+PORT_DECL(EnginesTab, SetPrevNextEngineVisible) /* ? */
+PORT_DECL(EnginesTab, SetRecycleVisible) /* ? */
 PORT_DECL(EnginesTab, ShowEnginesPanel) /* 1 */
 PORT_DECL(EnginesTab, CreateLayouts) /* 1 */
 PORT_DECL(EnginesTab, UpdateLayouts) /* 1 */
+PORT_DECL(EnginesTab, HideLayouts) /* ? */
+PORT_DECL(EnginesTab, UpdateLayoutsState) /* ? */
 PORT_DECL(EnginesTab, UpdateLayoutsGlow) /* 2 */
 PORT_DECL(EnginesTab, LayoutsGainFocus) /* 3 */
 PORT_DECL(EnginesTab, LayoutsLostFocus) /* 3 */
@@ -294,6 +299,7 @@ PORT_DECL(EnginesTab, HideEnginesPanel) /* 1 */
 PORT_DECL(EnginesTab, ScrollEngineListUp) /* 2 */
 PORT_DECL(EnginesTab, ScrollEngineListDown) /* 2 */
 #define PORTS_EnginesTab \
+	PORT_DEF(EnginesTab, HighlightCurrentMountedEngine, ET_HighlightCurrentMountedEngine) \
 	PORT_DEF(EnginesTab, ShowEngineDesc, ET_ShowEngineDescPy) \
 	PORT_DEF(EnginesTab, HideEngineDesc, ET_HideEngineDesc) \
 	PORT_DEF(EnginesTab, ChangeRecycleButtonState, ET_ChangeRecycleButtonState) \
@@ -303,9 +309,13 @@ PORT_DECL(EnginesTab, ScrollEngineListDown) /* 2 */
 	PORT_DEF(EnginesTab, ShowMoneySellingEngine, ET_ShowMoneySellingEnginePy) \
 	PORT_DEF(EnginesTab, SelectEngineGroup, ET_SelectEngineGroupPy) \
 	PORT_DEF(EnginesTab, SetEnginesPanel, ET_SetEnginesPanelPy) \
+	PORT_DEF(EnginesTab, SetPrevNextEngineVisible, ET_SetPrevNextEngineVisible) \
+	PORT_DEF(EnginesTab, SetRecycleVisible, ET_SetRecycleVisible) \
 	PORT_DEF(EnginesTab, ShowEnginesPanel, ET_ShowEnginesPanelPy) \
 	PORT_DEF(EnginesTab, CreateLayouts, ET_CreateLayoutsPy) \
 	PORT_DEF(EnginesTab, UpdateLayouts, ET_UpdateLayoutsPy) \
+	PORT_DEF(EnginesTab, HideLayouts, ET_HideLayouts) \
+	PORT_DEF(EnginesTab, UpdateLayoutsState, ET_UpdateLayoutsStatePy) \
 	PORT_DEF(EnginesTab, UpdateLayoutsGlow, ET_UpdateLayoutsGlowPy) \
 	PORT_DEF(EnginesTab, LayoutsGainFocus, ET_LayoutsGainFocus) \
 	PORT_DEF(EnginesTab, LayoutsLostFocus, ET_LayoutsLostFocus) \

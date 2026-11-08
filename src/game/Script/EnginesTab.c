@@ -11,9 +11,11 @@
  * PyMethodDef entries are adapters. The module's variables are read where the script reads them, canBeMounted,
  * nEngSlots and enginesList changed in place on the module's objects (OBJLIB 5); the ship being edited is
  * HangarTab.prevShip as a handle value (OBJLIB 5 and 7), the tables of ShipMaker and ShipEdit are read as their
- * attributes. The calls of HangarTab, ShipEdit, ShipMaker and string (atoi, find), the link functions of Menu and the
- * module's own functions the script calls as its globals stay by name (OBJLIB 3); the .def runner takes Python values
- * (OBJLIB 6).
+ * attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly while the attribute
+ * holds the port's function, else by name), string.atoi and string.find through their native twins, and the module's
+ * own functions through its globals as the script calls them (PORT_OWN, the same seam on the global). The link
+ * functions of Menu stay by name (OBJLIB 4: a from import, and they have no entry); the .def runner takes Python
+ * values (OBJLIB 6).
  */
 #include <limits.h>
 #include <math.h>
@@ -218,9 +220,9 @@ static byte ET_Motor(const nativeVal_t *key, byte up, long i, nativeVal_t *out) 
 	return ok;
 }
 
-/* ShipMaker.GetEnginePrice(name) (OBJLIB 3) */
+/* ShipMaker.GetEnginePrice(name) */
 static byte ET_Price(const nativeVal_t *name, nativeVal_t *out) {
-	return Native_CallMod("ShipMaker", "GetEnginePrice", out, "v", name);
+	return PORT_CALL(ShipMaker, GetEnginePrice, out, "v", name);
 }
 
 /* slots * ShipMaker.GetEnginePrice(name) */
@@ -466,23 +468,19 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 	return Mode_Done(&t, 1);
 }
 
+static byte ET_HighlightCurrentMountedEngine_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *def = NULL;
+	nativeVal_t one;
+	int id;
+	(void)out;
+	Native_SetInt(&one, 1);
+	return Mode_Parse(a, n, "i|O", &id, &def) && ET_Highlight(id, def ? def : &one);
+}
+
 static PyObject *ET_HighlightCurrentMountedEngine(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "setDefault", NULL };
-	int id;
-	PyObject *o = NULL;
-	nativeVal_t def;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|O", names, &id, &o)) {
-		return NULL;
-	}
-	if (o) {
-		Native_Arg(o, &def);
-	} else {
-		Native_SetInt(&def, 1);
-	}
-	byte ok = ET_Highlight(id, &def);
-	Native_Free(&def);
-	return Mode_Result(ok);
+	return Mode_KwIdEntry(args, kw, "i|O", names, ET_HighlightCurrentMountedEngine_E);
 }
 
 /* the description of engine eng of the list (the tile Engine<n>) */
@@ -666,10 +664,9 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 	Mode_ItemVisible(id, up ? "WeightUp" : down ? "WeightDown" : "WeightEqual", 1);
 	Mode_ItemVisible(id, "WeightBack", 1);
 	Native_Free(name);
-	/* OBJLIB 3 */
-	if (!Native_CallMod("HangarTab", "ShowBoostPrediction", NULL, "iv", (long)id, newWeight) || !ET_ShipN("MEng", bay, mk) ||
-		!Native_CallMod("ShipMaker", "GetMotor", cur, "v", mk) || !ET_Engine(eng, 1, name) ||
-		!Native_CallMod("ShipMaker", "GetMotor", next, "v", name) || !ET_MotorSpeed(cur, sa) || !ET_MotorSpeed(next, sb)) {
+	if (!PORT_CALL(HangarTab, ShowBoostPrediction, NULL, "iv", (long)id, newWeight) || !ET_ShipN("MEng", bay, mk) ||
+		!PORT_CALL(ShipMaker, GetMotor, cur, "v", mk) || !ET_Engine(eng, 1, name) ||
+		!PORT_CALL(ShipMaker, GetMotor, next, "v", name) || !ET_MotorSpeed(cur, sa) || !ET_MotorSpeed(next, sb)) {
 		return Mode_Done(&t, 0);
 	}
 	int faster = Mode_CmpOp(sa, sb, '<'), slower = 0;
@@ -715,7 +712,8 @@ static byte ET_ShowEngineDesc(int id, const nativeVal_t *control) {
 MODE_IFN(ET_ShowEngineDescPy, 3, ET_ShowEngineDesc(id, &a[1]))
 MODE_IFN(ET_HideEngineDesc, 3, ET_Run(id, "hidedesc", NULL))
 
-/* ChangeRecycleButtonState(id): the recycle button works only for a bay with engines; the links follow */
+/* ChangeRecycleButtonState(id): the recycle button works only for a bay with engines; the links follow (OBJLIB 4:
+ * from Menu import LinkLR) */
 static byte ET_RecycleState(int id) {
 	static const char *const mods[] = { "HangarTab", "ShipEdit", NULL };
 	nativeVal_t bay = { 0 }, ne = { 0 }, layout = { 0 };
@@ -794,13 +792,13 @@ static void ET_SpeedText(int id, int v) {
 	}
 }
 
-/* the new state of the ship: SetShipParams, the info panel, the list, the recycle button and the tiles (OBJLIB 3) */
+/* the new state of the ship: SetShipParams, the info panel, the list, the recycle button and the tiles */
 static byte ET_Refresh(int id) {
 	nativeVal_t name = { 0 };
-	byte ok = Mode_ShipGet("Name", &name) && Native_CallMod("ShipMaker", "SetShipParams", NULL, "v", &name) &&
-		Native_CallMod("HangarTab", "ShowShipInfo", NULL, "i", (long)id) &&
-		Native_CallGlobal(MOD, "UpdateEnginesList", NULL, "i", (long)id) &&
-		Native_CallGlobal(MOD, "ChangeRecycleButtonState", NULL, "i", (long)id);
+	byte ok = Mode_ShipGet("Name", &name) && PORT_CALL(ShipMaker, SetShipParams, NULL, "v", &name) &&
+		PORT_CALL(HangarTab, ShowShipInfo, NULL, "i", (long)id) &&
+		PORT_OWN(EnginesTab, UpdateEnginesList, NULL, "i", (long)id) &&
+		PORT_OWN(EnginesTab, ChangeRecycleButtonState, NULL, "i", (long)id);
 	Native_Free(&name);
 	return ok;
 }
@@ -837,10 +835,10 @@ static int ET_NotMountable(const nativeVal_t *i) {
 	return r;
 }
 
-/* ShipEdit.IsEditingMultiplayer() != 1: 1 or 0, -1 with the error (OBJLIB 3) */
+/* ShipEdit.IsEditingMultiplayer() != 1: 1 or 0, -1 with the error */
 static int ET_Single(void) {
 	nativeVal_t v = { 0 };
-	int r = Native_CallMod("ShipEdit", "IsEditingMultiplayer", &v, "") ? Mode_CmpOpI(&v, 1, '!') : -1;
+	int r = PORT_CALL(ShipEdit, IsEditingMultiplayer, &v, "") ? Mode_CmpOpI(&v, 1, '!') : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -938,9 +936,8 @@ static byte ET_PutEngine(int id, const nativeVal_t *control) {
 		return Mode_Done(&t, 0);
 	}
 	int can = ET_NotMountable(inList);
-	/* OBJLIB 3 */
-	byte ok = can > 0 ? Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "ii", (long)id, 0L) :
-		can == 0 && Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "i", (long)id);
+	byte ok = can > 0 ? PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "ii", (long)id, 0L) :
+		can == 0 && PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "i", (long)id);
 	return Mode_Done(&t, ok);
 }
 
@@ -1009,8 +1006,7 @@ static byte ET_RecycleEngine(int id) {
 	if (none) {
 		ET_SpeedText(id, 0);
 	}
-	/* OBJLIB 3 */
-	byte ok = ET_Refresh(id) && Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "i", (long)id) &&
+	byte ok = ET_Refresh(id) && PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "i", (long)id) &&
 		ET_GroupName(1, group);
 	if (ok) {
 		Script_SetDefault(id, group);
@@ -1046,12 +1042,11 @@ static byte ET_ShowMoneySellingEngine(int id) {
 
 MODE_IFN(ET_ShowMoneySellingEnginePy, 3, ET_ShowMoneySellingEngine(id))
 
-/* UpdateLayoutsState(id, string.atoi(currentEngineGroup[-1]) - 1, state) (OBJLIB 3: string.atoi and the module's
- * function by name) */
+/* UpdateLayoutsState(id, string.atoi(currentEngineGroup[-1]) - 1, state) */
 static byte ET_LayoutState(int id, int state) {
 	nativeVal_t g = { 0 }, c = { 0 }, n = { 0 }, index = { 0 };
 	byte ok = ET_G("currentEngineGroup", &g) && ET_Item(&g, -1, &c) && PORT_CALL(string, atoi, &n, "v", &c) &&
-		ET_OpI(&n, '-', 1, &index) && Native_CallGlobal(MOD, "UpdateLayoutsState", NULL, "ivi", (long)id, &index, (long)state);
+		ET_OpI(&n, '-', 1, &index) && PORT_OWN(EnginesTab, UpdateLayoutsState, NULL, "ivi", (long)id, &index, (long)state);
 	Native_Free(&g);
 	Native_Free(&c);
 	Native_Free(&n);
@@ -1091,10 +1086,9 @@ static byte ET_SelectEngineGroup(int id, const nativeVal_t *control, const nativ
 	ok = has >= 0 && (!has || (ET_Group(group) && ET_Bay(&bay) && ET_ShipN("nEng", &bay, &slots) && ET_BayHint(id, group, &slots)));
 	Native_Free(&bay);
 	Native_Free(&slots);
-	/* OBJLIB 3 */
-	ok = ok && Native_CallGlobal(MOD, "UpdateEnginesList", NULL, "i", (long)id) &&
-		Native_CallGlobal(MOD, "ChangeRecycleButtonState", NULL, "i", (long)id) &&
-		Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "ii", (long)id, 0L);
+	ok = ok && PORT_OWN(EnginesTab, UpdateEnginesList, NULL, "i", (long)id) &&
+		PORT_OWN(EnginesTab, ChangeRecycleButtonState, NULL, "i", (long)id) &&
+		PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "ii", (long)id, 0L);
 	if (ok && Native_True(setDefault)) {
 		ok = ET_Group(group);
 		if (ok) {
@@ -1193,9 +1187,8 @@ static byte ET_SetEnginesPanel(int id) {
 	/* 1.3333333333333 in the source; the marshal of the shipped .pyc kept 12 digits */
 	Native_SetFloat(num, 1.33333333333);
 	Native_SetEmpty(empty, NV_LIST);
-	/* OBJLIB 3: the module's CreateLayouts as its global */
 	if (!ET_Op(num, '/', aspect, ratio) || !ET_GroupBoxes(id, ratio) ||
-		!Native_CallGlobal(MOD, "CreateLayouts", NULL, "i", (long)id) || !Mode_Put(MOD, "enginesList", NULL, empty) ||
+		!PORT_OWN(EnginesTab, CreateLayouts, NULL, "i", (long)id) || !Mode_Put(MOD, "enginesList", NULL, empty) ||
 		(Mode_SaveVar("Hangar.availableEnginesList", save), !Native_EvalText(MOD, save, keys))) {
 		return Mode_Done(&t, 0);
 	}
@@ -1237,40 +1230,38 @@ static byte ET_SetEnginesPanel(int id) {
 		ok = vars && ET_Run(id, "slot", vars);
 		Py_XDECREF(vars);
 	}
-	ok = ok && ET_Run(id, "recycle", NULL) && Native_CallGlobal(MOD, "SetRecycleVisible", NULL, "ii", (long)id, 0L) &&
-		ET_Run(id, "arrows", NULL) && Native_CallGlobal(MOD, "SetPrevNextEngineVisible", NULL, "ii", (long)id, 0L);
+	ok = ok && ET_Run(id, "recycle", NULL) && PORT_OWN(EnginesTab, SetRecycleVisible, NULL, "ii", (long)id, 0L) &&
+		ET_Run(id, "arrows", NULL) && PORT_OWN(EnginesTab, SetPrevNextEngineVisible, NULL, "ii", (long)id, 0L);
 	return Mode_Done(&t, ok);
 }
 
 MODE_IFN(ET_SetEnginesPanelPy, 1, ET_SetEnginesPanel(id))
 
 /* the value of a Visible flag the file cannot set raises the TypeError of SScorer.Set */
-static PyObject *ET_SetVisible(PyObject *args, const char *first, const char *section) {
+static byte ET_SetVisible(const nativeVal_t *a, int n, const char *first, const char *section) {
+	const nativeVal_t *v;
 	int id;
-	PyObject *o;
-	nativeVal_t v;
-	if (!PyArg_ParseTuple(args, "iO", &id, &o)) {
-		return NULL;
-	}
-	Native_Arg(o, &v);
-	byte ok = (v.type == NV_INT || v.type == NV_FLOAT || v.type == NV_STR || Mode_ScorerPut(id, first, "Visible", &v)) &&
-		ET_RunV(id, section, &v);
-	Native_Free(&v);
-	return Mode_Result(ok);
+	return Mode_Parse(a, n, "iO", &id, &v) &&
+		(v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || Mode_ScorerPut(id, first, "Visible", v)) &&
+		ET_RunV(id, section, v);
 }
 
 /* SetPrevNextEngineVisible(id, bVisible) and SetRecycleVisible(id, bVisible) */
-static PyObject *ET_SetPrevNextEngineVisible(PyObject *self, PyObject *args) {
-	(void)self;
-	return ET_SetVisible(args, "PrevEngine", "arrowsvisible");
+static byte ET_SetPrevNextEngineVisible_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return ET_SetVisible(a, n, "PrevEngine", "arrowsvisible");
 }
 
-static PyObject *ET_SetRecycleVisible(PyObject *self, PyObject *args) {
-	(void)self;
-	return ET_SetVisible(args, "Recycle", "recyclevisible");
+static byte ET_SetRecycleVisible_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return ET_SetVisible(a, n, "Recycle", "recyclevisible");
 }
 
-/* the links of ShowEnginesPanel between the list, the bays, the recycle button and the exit */
+MODE_ADAPTER(ET, SetPrevNextEngineVisible)
+MODE_ADAPTER(ET, SetRecycleVisible)
+
+/* the links of ShowEnginesPanel between the list, the bays, the recycle button and the exit (OBJLIB 4: from Menu
+ * import LinkLR, LinkUD, UnLinkUD) */
 static byte ET_ShowLinks(int id, int groups) {
 	static const char *const left[] = { "NextEngine", "PrevEngine", "Engine2", "Engine3", "Engine4" };
 	char name[ET_ITEM], other[ET_ITEM];
@@ -1295,7 +1286,8 @@ static byte ET_ShowLinks(int id, int groups) {
 	return ok;
 }
 
-/* ShowEnginesPanel(id): the tab with the list from its start and the bays of the ship */
+/* ShowEnginesPanel(id): the tab with the list from its start and the bays of the ship (OBJLIB 4: from Menu import
+ * LinkUD) */
 static byte ET_ShowEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	static const char *const mods2[] = { "ShipMaker", "string", NULL };
@@ -1307,7 +1299,7 @@ static byte ET_ShowEnginesPanel(int id) {
 	PyObject *linkUD = Mode_From("Menu", "LinkUD");
 	byte ok = linkUD && Script_Import(mods) && Mode_Put(MOD, "engineIndex", NULL, &zero) && ET_Layout(layout);
 	int groups = ok ? Native_Size(layout) : -1;
-	ok = groups >= 0 && Native_CallGlobal(MOD, "SetRecycleVisible", NULL, "ii", (long)id, 1L);
+	ok = groups >= 0 && PORT_OWN(EnginesTab, SetRecycleVisible, NULL, "ii", (long)id, 1L);
 	if (ok) {
 		Script_SetNum(id, "Recycle", "Highlight", 0);
 		Script_SetNum(id, "Recycle", "SpriteIndex", 10);
@@ -1327,7 +1319,7 @@ static byte ET_ShowEnginesPanel(int id) {
 		}
 	}
 	ok = ok && (count < 4 || Mode_LinkCall(linkUD, id, "Engine4", "NextEngine")) &&
-		Native_CallGlobal(MOD, "SetPrevNextEngineVisible", NULL, "ii", (long)id, 1L);
+		PORT_OWN(EnginesTab, SetPrevNextEngineVisible, NULL, "ii", (long)id, 1L);
 	if (count > 4) {
 		count = 4;
 	}
@@ -1364,7 +1356,7 @@ static byte ET_ShowEnginesPanel(int id) {
 		Script_SetNum(id, name, "Y", ENGINES_Y + 64 * i);
 		ok = ET_Mount(id, i, &l, layout);
 	}
-	ok = ok && ET_ShowLinks(id, groups) && Native_CallGlobal(MOD, "ChangeRecycleButtonState", NULL, "i", (long)id);
+	ok = ok && ET_ShowLinks(id, groups) && PORT_OWN(EnginesTab, ChangeRecycleButtonState, NULL, "i", (long)id);
 	if (ok) {
 		Script_SetNum(id, "NextEngine", "W", 25);
 		Script_SetNum(id, "NextEngine", "H", 25);
@@ -1382,7 +1374,7 @@ static byte ET_ShowEnginesPanel(int id) {
 		Script_SetNum(id, "NextEngine", "SpriteIndex", 2);
 		Script_SetStr(id, "Engine4", "Down", "");
 	}
-	ok = ok && Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "ii", (long)id, 0L);
+	ok = ok && PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "ii", (long)id, 0L);
 	ET_LoadFree(&l);
 	Py_XDECREF(linkUD);
 	return Mode_Done(&t, ok);
@@ -1576,11 +1568,11 @@ static const char *const et_iconParts[5] = { "IconEngine", "IconEngineGlow", "Ic
 	"IconEngineLineR" };
 
 /* HideLayouts(id) */
-static PyObject *ET_HideLayouts(PyObject *self, PyObject *args) {
+static byte ET_HideLayouts_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 2; j++) {
@@ -1592,8 +1584,10 @@ static PyObject *ET_HideLayouts(PyObject *self, PyObject *args) {
 			}
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+MODE_ADAPTER(ET, HideLayouts)
 
 /* UpdateLayoutsState(id, index, state): the icons of bay index active (orange) or not (blue) */
 static byte ET_UpdateLayoutsState(int id, const nativeVal_t *index, const nativeVal_t *state) {
@@ -1618,24 +1612,19 @@ static byte ET_UpdateLayoutsState(int id, const nativeVal_t *index, const native
 	return 1;
 }
 
-static PyObject *ET_UpdateLayoutsStatePy(PyObject *self, PyObject *args) {
+static byte ET_UpdateLayoutsStatePy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *index, *state;
 	int id;
-	PyObject *io, *so;
-	nativeVal_t index, state;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &io, &so)) {
-		return NULL;
-	}
-	Native_Arg(io, &index);
-	Native_Arg(so, &state);
-	byte ok = ET_UpdateLayoutsState(id, &index, &state);
-	Native_Free(&index);
-	Native_Free(&state);
-	return Mode_Result(ok);
+	(void)out;
+	return Mode_Parse(a, n, "iOO", &id, &index, &state) && ET_UpdateLayoutsState(id, index, state);
 }
 
-/* UpdateLayoutsGlow(id, control): the icons of the bay control glow, the others not (OBJLIB 3: string.find and
- * string.atoi by name) */
+static PyObject *ET_UpdateLayoutsStatePy(PyObject *self, PyObject *args) {
+	(void)self;
+	return Mode_Entry(args, ET_UpdateLayoutsStatePy_E);
+}
+
+/* UpdateLayoutsGlow(id, control): the icons of the bay control glow, the others not */
 static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 	nativeVal_t tv = { 0 }, at = { 0 }, c = { 0 }, n = { 0 };
 	if (!Mode_Import("string")) {
@@ -1687,11 +1676,11 @@ static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 
 MODE_IFN(ET_UpdateLayoutsGlowPy, 2, ET_UpdateLayoutsGlow(id, &a[1]))
 
-/* LayoutsGainFocus(id, control, lostfocus) and LayoutsLostFocus(id, control, gainfocus) (OBJLIB 3) */
-MODE_IFN(ET_LayoutsGainFocus, 3, Native_CallGlobal(MOD, "UpdateLayoutsGlow", NULL, "iv", (long)id, &a[1]))
-MODE_IFN(ET_LayoutsLostFocus, 3, Native_CallGlobal(MOD, "UpdateLayoutsGlow", NULL, "iv", (long)id, &a[2]))
+/* LayoutsGainFocus(id, control, lostfocus) and LayoutsLostFocus(id, control, gainfocus) */
+MODE_IFN(ET_LayoutsGainFocus, 3, PORT_OWN(EnginesTab, UpdateLayoutsGlow, NULL, "iv", (long)id, &a[1]))
+MODE_IFN(ET_LayoutsLostFocus, 3, PORT_OWN(EnginesTab, UpdateLayoutsGlow, NULL, "iv", (long)id, &a[2]))
 
-/* HideEnginesPanel(id) */
+/* HideEnginesPanel(id) (OBJLIB 4: from Menu import UnLinkLR) */
 static byte ET_HideEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	nativeVal_t ship = { 0 }, none, layout = { 0 };
@@ -1711,9 +1700,8 @@ static byte ET_HideEnginesPanel(int id) {
 			}
 		}
 	}
-	/* OBJLIB 3 */
-	byte ok = some >= 0 && Native_CallGlobal(MOD, "HideLayouts", NULL, "i", (long)id) && ET_Run(id, "hidepredict", NULL) &&
-		Native_CallGlobal(MOD, "SetRecycleVisible", NULL, "ii", (long)id, 0L);
+	byte ok = some >= 0 && PORT_OWN(EnginesTab, HideLayouts, NULL, "i", (long)id) && ET_Run(id, "hidepredict", NULL) &&
+		PORT_OWN(EnginesTab, SetRecycleVisible, NULL, "ii", (long)id, 0L);
 	if (!ok) {
 		return 0;
 	}
@@ -1722,7 +1710,7 @@ static byte ET_HideEnginesPanel(int id) {
 		Str_Printf(name, sizeof(name), "Engine%d", i + 1);
 		Mode_ItemVisible(id, name, 0);
 	}
-	int count = Native_CallGlobal(MOD, "SetPrevNextEngineVisible", NULL, "ii", (long)id, 0L) ? ET_Len("enginesList") : -1;
+	int count = PORT_OWN(EnginesTab, SetPrevNextEngineVisible, NULL, "ii", (long)id, 0L) ? ET_Len("enginesList") : -1;
 	if (count < 0) {
 		return 0;
 	}
@@ -1849,8 +1837,7 @@ static byte ET_ScrollUp(int id, const nativeVal_t *control) {
 		Script_SetStr(id, "Engine1", "Up", "ShipEditTabEngines");
 	}
 	Script_SetStr(id, "Engine4", "Down", "NextEngine");
-	/* OBJLIB 3 */
-	return Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "ii", (long)id, 0L);
+	return PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "ii", (long)id, 0L);
 }
 
 MODE_IFN(ET_ScrollEngineListUp, 2, ET_ScrollUp(id, &a[1]))
@@ -1886,8 +1873,7 @@ static byte ET_ScrollDown(int id, const nativeVal_t *control) {
 	} else if (more < 0) {
 		return 0;
 	}
-	/* OBJLIB 3 */
-	if (!Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "ii", (long)id, 0L)) {
+	if (!PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "ii", (long)id, 0L)) {
 		return 0;
 	}
 	Script_SetNum(id, "PrevEngine", "W", 25);
