@@ -3655,6 +3655,7 @@ PORT_DECLL(police, Mission_BeatPickus, Init) /* 1 */
 PORT_DECLL(police, Mission_BeatPickus, DisableIAFunctionary) /* 1 */
 PORT_DECLL(police, Mission_BeatPickus, OnTraitoriusRespawn) /* 1 */
 PORT_DECLL(police, Mission_BeatPickus, OnThugRespawn) /* 1 */
+PORT_DECLL(police, Mission_BeatPickus, SetThugsState) /* ? */
 PORT_DECLL(police, Mission_BeatPickus, SetState) /* 3 */
 PORT_DECLL(police, Mission_BeatPickus, TraitoriusSpeech) /* 4 */
 PORT_DECLL(police, Mission_BeatPickus, HireThugs) /* 0 */
@@ -3675,6 +3676,7 @@ PORT_DECLL(police, Mission_BeatPickus, GetFuncShipPlans) /* 0 */
 PORT_DECLL(police, Mission_BeatPickus, TakePlanPhoto) /* 1 */
 PORT_DECLL(police, Mission_BeatPickus, TalkToTraitoriusAgain) /* 0 */
 PORT_DECLL(police, Mission_BeatPickus, TraitoriusAgainSpeech) /* 4 */
+PORT_DECLL(police, Mission_BeatPickus, LightingActivate) /* ? */
 PORT_DECLL(police, Mission_FicusDead, InitFicusDead) /* 0 */
 PORT_DECLL(police, Mission_FicusDead, Init) /* 1 */
 PORT_DECLL(police, Mission_FicusDead, OnTalkToFicus) /* 4 */
@@ -3756,6 +3758,7 @@ PORT_DECLL(police, Mission_PoliceBossCheats, SetNextMission) /* 0 */
 	PORT_DEFL(police, Mission_BeatPickus, DisableIAFunctionary, BeatPickus_DisableIAFunctionaryA) \
 	PORT_DEFL(police, Mission_BeatPickus, OnTraitoriusRespawn, BeatPickus_OnTraitoriusRespawnA) \
 	PORT_DEFL(police, Mission_BeatPickus, OnThugRespawn, BeatPickus_OnThugRespawnA) \
+	PORT_DEFLK(police, Mission_BeatPickus, SetThugsState, BeatPickus_SetThugsState) \
 	PORT_DEFL(police, Mission_BeatPickus, SetState, BeatPickus_SetStateA) \
 	PORT_DEFL(police, Mission_BeatPickus, TraitoriusSpeech, BeatPickus_TraitoriusSpeechA) \
 	PORT_DEFL(police, Mission_BeatPickus, HireThugs, BeatPickus_HireThugsA) \
@@ -3776,6 +3779,7 @@ PORT_DECLL(police, Mission_PoliceBossCheats, SetNextMission) /* 0 */
 	PORT_DEFL(police, Mission_BeatPickus, TakePlanPhoto, BeatPickus_TakePlanPhotoA) \
 	PORT_DEFL(police, Mission_BeatPickus, TalkToTraitoriusAgain, BeatPickus_TalkToTraitoriusAgainA) \
 	PORT_DEFL(police, Mission_BeatPickus, TraitoriusAgainSpeech, BeatPickus_TraitoriusAgainSpeechA) \
+	PORT_DEFLK(police, Mission_BeatPickus, LightingActivate, BeatPickus_LightingActivate) \
 	PORT_DEFL(police, Mission_FicusDead, InitFicusDead, FicusDead_InitFicusDeadA) \
 	PORT_DEFL(police, Mission_FicusDead, Init, FicusDead_InitA) \
 	PORT_DEFL(police, Mission_FicusDead, OnTalkToFicus, FicusDead_OnTalkToFicusA) \
