@@ -6,7 +6,9 @@
  *
  * The module variables stay in the script, Parking, Scene and the missions read them: spt (Sputnik's entity), ply,
  * LastPos, LastAng, LastHangar, UseParams (the arguments of Parking.UseShip after the suck animation) and Angulus.
- * Parking and SputnikInterface are called through their modules.
+ * Parking, Menu, CharScorer, SputnikInterface and the module's own Assign (through its global, as the script called
+ * it) are called through their refs (SF_CALL, SF_OWN: the seam, OBJLIB 5); the engine calls stay by name (OBJLIB 7),
+ * apply of Parking.UseShip on the kept UseParams too (OBJLIB 4).
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -118,12 +120,13 @@ static PyObject *Sputnik_BackCamera(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "Parking");
 	Sf_SetAttrS(&f, Spt_Cam(&f), "EntityLink", "");
 	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	Sf_Ask(&f, "CharScorer", "Create", "(i)", 0);
+	SF_CALL(&f, CharScorer, Create, "i", 0L);
 	Sf_SetAttrI(&f, PS(), "ActiveCMask", 1);
 	Sf_SetAttrI(&f, PS(), "Active", 0);
 	Sf_SetAttrI(&f, PLATE(), "Active", 0);
-	Sf_Ask(&f, "Parking", "SetShipRadius", "(Oi)", PS(), 0);
+	SF_CALL(&f, Parking, SetShipRadius, "Oi", PS(), 0L);
 	Sf_Import(&f, "Parking");
+	/* apply(Parking.UseShip, UseParams): the function as a value, by name (OBJLIB 4) */
 	Sf_Call(&f, Sf_Mod(&f, "__builtin__", "apply"), "(OO)", Sf_Mod(&f, "Parking", "UseShip"), G("UseParams"));
 	return Sf_None(&f);
 }
@@ -145,7 +148,7 @@ static PyObject *Sputnik_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
 	int out = other > 0 ? Sf_True(&f, Sf_Attr(&f, PS(), "Active")) : -1;
 	if (other > 0 && out > 0) {
 		Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-		Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
+		SF_CALL(&f, Menu, MovieScorer, "i", 0L);
 		Sf_SetAttrI(&f, PS(), "ActiveCMask", 0);
 		Sf_SetAttrI(&f, PLATE(), "Active", 0);
 		PyObject *vPos = Sf_Attr(&f, PS(), "Pos");
@@ -156,19 +159,19 @@ static PyObject *Sputnik_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
 		Sf_SetAttr(&f, G("spt"), "MoveTime", Sf_Float(&f, 0.01));
 		Sf_SetAttrS(&f, G("spt"), "Action", "Suck");
 		Sf_SetGlobal(&f, SP, "UseParams", Sf_Build(&f, "(OOOOO)", usr, ch, opt, full, box));
-		PyObject *b = Sf_Ask(&f, "Parking", "CreateBox", "(sOOO)", "Parkingson", Sf_Item(&f, vPos, 0), Sf_Item(&f, vPos, 1),
+		PyObject *b = SF_CALL(&f, Parking, CreateBox, "sOOO", "Parkingson", Sf_Item(&f, vPos, 0), Sf_Item(&f, vPos, 1),
 			Sf_Item(&f, vPos, 2));
 		Sf_SetAttrI(&f, b, "rTime", 5);
-		Sf_Ask(&f, "Parking", "SetInvunerable", "(O)", Sf_Entity(&f, ch));
+		SF_CALL(&f, Parking, SetInvunerable, "O", Sf_Entity(&f, ch));
 	} else if (other > 0 && out == 0) {
 		PyObject *vPos = Sf_Attr(&f, PS(), "Pos");
-		Sf_Ask(&f, "Parking", "CreateBox", "(sOOO)", "Parkingson", Sf_Item(&f, vPos, 0), Sf_Item(&f, vPos, 1),
+		SF_CALL(&f, Parking, CreateBox, "sOOO", "Parkingson", Sf_Item(&f, vPos, 0), Sf_Item(&f, vPos, 1),
 			Sf_Item(&f, vPos, 2));
 		Sf_Import(&f, "Parking");
-		Sf_Ask(&f, "Parking", "UseShip", "(OOOOO)", usr, ch, opt, full, box);
+		SF_CALL(&f, Parking, UseShip, "OOOOO", usr, ch, opt, full, box);
 	} else if (other == 0) {
 		Sf_Import(&f, "Parking");
-		Sf_Ask(&f, "Parking", "UseShip", "(OOOOO)", usr, ch, opt, full, box);
+		SF_CALL(&f, Parking, UseShip, "OOOOO", usr, ch, opt, full, box);
 	}
 	return Sf_None(&f);
 }
@@ -186,7 +189,7 @@ static PyObject *Sputnik_ChangeShip(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "Parking");
 	Sf_Import(&f, "SputnikInterface");
 	Sf_SetGlobal(&f, SP, "ply", Sf_Entity(&f, usr));
-	Sf_Own(&f, SP, "Assign", "(OO)", PS(), G("ply"));
+	SF_OWN(&f, Sputnik, Assign, "OO", PS(), G("ply"));
 	Sf_SetAttrI(&f, G("ply"), "Active", 0);
 	Sf_SetAttrS(&f, G("spt"), "Action", "Interface");
 	Sf_SetAttr(&f, Spt_Cam(&f), "EntityLink", Sf_Attr(&f, G("spt"), "Name"));
@@ -194,7 +197,7 @@ static PyObject *Sputnik_ChangeShip(PyObject *self, PyObject *args) {
 	Sf_SetGlobal(&f, SP, "LastAng", Sf_Attr(&f, PS(), "Ang"));
 	Sf_SetAttrS(&f, PS(), "OnDeath", "");
 	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
+	SF_CALL(&f, Menu, MovieScorer, "i", 0L);
 	PyObject *last = G("LastPos");
 	Sf_SetAttr(&f, G("spt"), "MovePos", last);
 	Sf_SetAttr(&f, G("spt"), "Pos", last);
@@ -216,7 +219,7 @@ static PyObject *Sputnik_CreateShip(PyObject *self, PyObject *args) {
 	if (active == 0) {
 		Sf_SetAttrI(&f, PS(), "Active", 1);
 		Sf_SetAttrI(&f, PLATE(), "Active", 1);
-		Sf_Ask(&f, "Parking", "SetShipAsParked", "(O)", Sf_Attr(&f, PS(), "Name"));
+		SF_CALL(&f, Parking, SetShipAsParked, "O", Sf_Attr(&f, PS(), "Name"));
 		Sf_SetAttr(&f, G("spt"), "Pos", Sf_Attr(&f, PS(), "Pos"));
 		Sf_SetGlobal(&f, SP, "LastHangar", Py_None);
 	} else if (active > 0) {
@@ -249,7 +252,7 @@ static PyObject *Sputnik_EnterInterface(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "SputnikInterface");
 	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
 	Sf_SetMod(&f, "SputnikInterface", "EndSputnikCallBack", G("EndOfSelection"));
-	Sf_Ask(&f, "SputnikInterface", "EnterSputnikInterface", "(i)", 0);
+	SF_CALL(&f, SputnikInterface, EnterSputnikInterface, "i", 0L);
 	Sf_SetAttrI(&f, G("spt"), "Active", 0);
 	Sf_SetAttrS(&f, Spt_Cam(&f), "EntityLink", "");
 	Sf_SetAttrS(&f, PS(), "OnDeath", "Vehicles.OnDeath");
@@ -274,19 +277,19 @@ static PyObject *Sputnik_EndOfSelection(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "SputnikInterface");
 	Sf_SetAttrI(&f, G("ply"), "Active", 1);
 	Sf_SetAttrI(&f, G("spt"), "Active", 1);
-	Sf_Ask(&f, "Parking", "CreatePlayerShip", "(O)", G("LastPos"));
-	Sf_Ask(&f, "Parking", "SetShipRadius", "(Oi)", PS(), 0);
+	SF_CALL(&f, Parking, CreatePlayerShip, "O", G("LastPos"));
+	SF_CALL(&f, Parking, SetShipRadius, "Oi", PS(), 0L);
 	Sf_SetAttr(&f, PS(), "Ang", G("LastAng"));
 	Sf_SetAttrI(&f, PS(), "Active", 1);
 	Sf_SetAttrI(&f, PLATE(), "Active", 1);
-	Sf_Ask(&f, "Parking", "SetShipAsParked", "(O)", Sf_Attr(&f, PS(), "Name"));
-	Sf_Own(&f, SP, "Assign", "(OO)", PS(), G("ply"));
+	SF_CALL(&f, Parking, SetShipAsParked, "O", Sf_Attr(&f, PS(), "Name"));
+	SF_OWN(&f, Sputnik, Assign, "OO", PS(), G("ply"));
 	Sf_Ask(&f, "Scrap", "Set", "(si)", "NoiseFactor", 0);
 	if (Sf_Compare(&f, G("LastHangar"), "!=", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Hangar.iHangarShip")) > 0) {
 		Sf_SetAttrS(&f, G("spt"), "Action", "Make");
 		Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
 		Sf_SetAttrI(&f, PLATE(), "Active", 0);
-		Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
+		SF_CALL(&f, Menu, MovieScorer, "i", 0L);
 		Sf_SetAttrI(&f, PS(), "RenderEffect", 2);
 		Sf_SetAttrI(&f, PS(), "RenderEffectParam0", 1);
 	}
@@ -303,7 +306,7 @@ static PyObject *Sputnik_BackControl(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "CharScorer");
 	Sf_Import(&f, "Parking");
 	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	Sf_Ask(&f, "CharScorer", "Create", "(i)", 0);
+	SF_CALL(&f, CharScorer, Create, "i", 0L);
 	Sf_SetAttr(&f, PLATE(), "Active", Sf_Attr(&f, PS(), "Active"));
 	return Sf_None(&f);
 }
