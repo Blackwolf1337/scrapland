@@ -137,7 +137,7 @@ static byte Cm_GEmpty(const char *module, const char *name, byte del) {
 
 /* Vehicles.OnDeath(LooserName, WinnerName) */
 static byte Cm_OnDeath(const nativeVal_t *a) {
-	return LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]);
+	return PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]);
 }
 
 /* `usr and usr.Name == name` of the player: 1, 0, -1 */
@@ -203,12 +203,12 @@ static byte Cm_SpawnAng(const nativeVal_t *h, const nativeVal_t *spw) {
 	return ok;
 }
 
-/* VehiclesNPC.MakeAI(profile, name, InitState = 0) (OBJLIB 3: a call with keywords) */
+/* VehiclesNPC.MakeAI(profile, name, InitState = 0) */
 static byte Cm_MakeAI(const char *profile, const char *name, nativeVal_t *out) {
 	nativeVal_t args[2];
 	LvN_Str(&args[0], profile);
 	LvN_Str(&args[1], name);
-	byte ok = Mode_CallKw("VehiclesNPC", "MakeAI", out, args, 2, Py_BuildValue("{si}", "InitState", 0));
+	byte ok = PORT_CALL(VehiclesNPC, MakeAI, out, "vv;InitState=i", &args[0], &args[1], 0L);
 	Native_Free(&args[0]);
 	Native_Free(&args[1]);
 	return ok;
@@ -216,12 +216,14 @@ static byte Cm_MakeAI(const char *profile, const char *name, nativeVal_t *out) {
 
 /*
  * UsePhoneCab of a mission: the audio com of the phone cab, the police warning while the alarm is on, else the NI
- * talk of who with the end function end of module. global: pc is the global pc of module; activate: the cab stops
- * being the target; stop: the scheduled functions of that name go; after: the cab's use afterwards; outOfRange:
- * Speech.OnOutOfRange = None at the end
+ * talk of who with the end function end (a function of module given by its ref, for Speech.OnEndOfSpeech). global: pc
+ * is the global pc of module; activate: the cab stops being the target; stop: the scheduled functions of that name go;
+ * after: the cab's use afterwards; outOfRange: Speech.OnOutOfRange = None at the end
  */
 typedef struct {
-	const char *police, *who, *end, *ni, *stop, *after;
+	const char *police, *who;
+	const portRef_t *end;
+	const char *ni, *stop, *after;
 	byte global, activate, outOfRange;
 } cmPhone_t;
 
@@ -230,16 +232,16 @@ static byte Cm_UsePhone(const nativeVal_t *a, const char *module, const cmPhone_
 	Native_SetNone(&pc);
 	Native_SetNone(&gpc);
 	byte ok = Mode_Import("PhoneCab") && LvN_Speakers(&a[0], &a[1]) &&
-		LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &pc) &&
+		PORT_CALL(PhoneCab, UseAudioCom, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &pc) &&
 		(!p->global || Mode_Put(module, "pc", NULL, &pc));
 	int alarm = ok ? Mode_AlarmOn() : -1;
 	/* the cab: the global pc read again where the script reads it, else the local */
 	const nativeVal_t *cab = p->global ? &gpc : &pc;
 	if (alarm > 0) {
-		ok = (!p->global || Mode_G(module, "pc", &gpc)) && LV_CALL("Speech", "StartObjSpch", NULL, "vss", cab, p->police, p->who);
+		ok = (!p->global || Mode_G(module, "pc", &gpc)) && PORT_CALL(Speech, StartObjSpch, NULL, "vss", cab, p->police, p->who);
 	} else if (alarm == 0) {
 		ok = (!p->activate || ((!p->global || Mode_G(module, "pc", &gpc)) && LvN_Activate(cab, 0))) && (!p->stop || Mode_DelSchedS(p->stop)) &&
-			LvN_OnEnd(module, p->end, NULL) && Mode_NISpeech(p->who, p->ni) && (!p->after || LvN_SetS(&pc, "UseFunc", p->after));
+			LvN_OnEndRef(p->end, NULL) && Mode_NISpeech(p->who, p->ni) && (!p->after || LvN_SetS(&pc, "UseFunc", p->after));
 	} else {
 		ok = 0;
 	}
@@ -310,7 +312,7 @@ static byte CmMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 		}
 	}
 	for (int i = 0; i < 3; i++) {
-		if (!LV_CALL("Elevator", "SetDef", NULL, "ss", defs[i][0], defs[i][1])) {
+		if (!PORT_CALL(Elevator, SetDef, NULL, "ss", defs[i][0], defs[i][1])) {
 			return 0;
 		}
 	}
@@ -321,7 +323,7 @@ static byte CmMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 static byte CmMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("Metro") && Mode_Import("Elevator") && LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_MetroExt_Comercial") &&
+	return Mode_Import("Metro") && Mode_Import("Elevator") && PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_MetroExt_Comercial") &&
 		Mode_Connect("DM_Door_Elevator_Temple", "Temple", 0) && Mode_GVarSetI("CameraCloudRed", 30) && Mode_GVarSetI("CameraCloudGreen", 60) &&
 		Mode_GVarSetI("CameraCloudBlue", 100);
 }
@@ -399,7 +401,7 @@ static byte Mickus_Init(const nativeVal_t *a, nativeVal_t *out) {
 		!Mode_ListSet("FuncEnemies", "OnDeath", "Mission_DestroyMickus.OnFuncEnemiesDeath")) {
 		return 0;
 	}
-	byte ok = Mode_SaveInt("NumTransports", &n) && LV_OWN(DMK, "CreateTransports", NULL, "v", &n);
+	byte ok = Mode_SaveInt("NumTransports", &n) && PORT_LOWN(Mission_DestroyMickus, CreateTransports, NULL, "v", &n);
 	Native_Free(&n);
 	Native_SetNone(&usr);
 	int car = ok ? LvN_Usr(&usr) : -1;
@@ -407,7 +409,8 @@ static byte Mickus_Init(const nativeVal_t *a, nativeVal_t *out) {
 		car = Cm_UsrCar(&usr);
 	}
 	Native_Free(&usr);
-	if (car < 0 || (car && !LV_OWN(DMK, "InitMission", NULL, "")) || !CM_HOOK("Parking", "SwitchVehicleMissionCallback", DMK, "InitMission") ||
+	if (car < 0 || (car && !PORT_LOWN(Mission_DestroyMickus, InitMission, NULL, "")) ||
+		!CM_HOOK("Parking", "SwitchVehicleMissionCallback", DMK, "InitMission") ||
 		!CM_HOOK("Parking", "SwitchCharMissionCallback", DMK, "StopMission")) {
 		return 0;
 	}
@@ -438,8 +441,8 @@ static byte Mickus_CreateTransports(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&trans);
 		Native_SetNone(&tn);
 		Native_SetInt(&id, 0);
-		byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", &trans, "sv", "TLight2", &name) &&
-			Mode_VGet(&trans, "Name", &tn) && LV_CALL("SAI", "SetInertia", NULL, "vi", &tn, 0L) && LV_CALL("Traffic", "ResetPath", NULL, "");
+		byte ok = PORT_CALL(Traffic, SetPath, NULL, "") && PORT_CALL(VehiclesNPC, MakeAI, &trans, "sv", "TLight2", &name) &&
+			Mode_VGet(&trans, "Name", &tn) && LV_CALL("SAI", "SetInertia", NULL, "vi", &tn, 0L) && PORT_CALL(Traffic, ResetPath, NULL, "");
 		Native_Free(&tn);
 		ok = ok && Mode_VGet(&trans, "Name", &tn) && STATE("ividd", 3L, &tn, 0L, 2.0, 1.0) && LvN_SetS(&trans, "EntityList", "Transports");
 		Native_Free(&tn);
@@ -487,9 +490,9 @@ static byte Mickus_InitMission(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 	}
-	byte ok = Mode_G(DMK, "transports", &lst) && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &lst);
+	byte ok = Mode_G(DMK, "transports", &lst) && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", &lst);
 	Native_Free(&lst);
-	return ok && LvN_ScorerCallG(DMK, "MissionScorer") && LvN_Draw() &&
+	return ok && LV_SCORERG(Mission_DestroyMickus, MissionScorer) && LvN_Draw() &&
 		Mode_GVarSetS("OnFinishAutoUpdate", "Mission_DestroyMickus.OnFinishScan") && CM_LATER(1.0, DMK, "ScanShip", "ScanShip");
 }
 
@@ -509,7 +512,8 @@ static byte Mickus_OnMickusDamage(const nativeVal_t *a, nativeVal_t *out) {
 		return by == 0;
 	}
 	Native_SetNone(&e);
-	byte ok = Mode_EntityH(&a[0], &e) && (!Native_True(&e) || (LvN_SetS(&e, "OnDamage", "") && LV_OWN(DMK, "MickusIdentified", NULL, "")));
+	byte ok = Mode_EntityH(&a[0], &e) && (!Native_True(&e) || (LvN_SetS(&e, "OnDamage", "") &&
+		PORT_LOWN(Mission_DestroyMickus, MickusIdentified, NULL, "")));
 	Native_Free(&e);
 	return ok;
 }
@@ -595,7 +599,7 @@ static byte Mickus_CheckContinueScanning(const nativeVal_t *a, nativeVal_t *out)
 	if (near > 0) {
 		return Mode_Done(&t, LvN_ScanBlink(0));
 	}
-	return Mode_Done(&t, near == 0 && LV_OWN(DMK, "ResetScan", NULL, ""));
+	return Mode_Done(&t, near == 0 && PORT_LOWN(Mission_DestroyMickus, ResetScan, NULL, ""));
 }
 
 /* ResetScan(): no ship scanned, the scorer hidden (refilled a moment later) */
@@ -628,7 +632,7 @@ static byte Mickus_OnFinishScan(const nativeVal_t *a, nativeVal_t *out) {
 	int found = Mode_G(DMK, "currentScannedShip", cur) && Mode_G(DMK, "mickus", m) ? Mode_Cmp(cur, "==", m) : -1;
 	byte ok = found >= 0;
 	if (found > 0) {
-		ok = LV_OWN(DMK, "MickusIdentified", NULL, "");
+		ok = PORT_LOWN(Mission_DestroyMickus, MickusIdentified, NULL, "");
 	} else if (found == 0) {
 		Native_Free(cur);
 		ok = LvN_Com("Mission_Search&DestroyMickus_RemoteMessage2", "Traitorius", NULL, NULL, NULL) && Mode_G(DMK, "currentScannedShip", cur) &&
@@ -636,7 +640,7 @@ static byte Mickus_OnFinishScan(const nativeVal_t *a, nativeVal_t *out) {
 		Native_Free(cur);
 		ok = ok && Mode_G(DMK, "currentScannedShip", cur) && Mode_EntityH(cur, e) && (!Native_True(e) || LvN_Activate(e, 0));
 	}
-	return Mode_Done(&t, ok && LV_OWN(DMK, "ResetScan", NULL, ""));
+	return Mode_Done(&t, ok && PORT_LOWN(Mission_DestroyMickus, ResetScan, NULL, ""));
 }
 
 /* the chase: SAI.SetStateVehicle(5, mickus, usr.Name, MAX_MICKUS_DIST + MAX_MICKUS_DIST / 2) */
@@ -695,8 +699,8 @@ static byte Mickus_MickusIdentified(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Native_True(e)) {
 		return Mode_Done(&t, 1);
 	}
-	byte ok = LvN_Com("Mission_Search&DestroyMickus_RemoteMessage4", "Traitorius", DMK, "TraitoriusFuncEnemiesCom", NULL) && LvN_TargetName(e) &&
-		Mode_VGet(e, "Style", style) && Native_Arith('+', style, Mode_I(&t, 2000), s2) && Mode_VSet(e, "Style", s2) &&
+	byte ok = LV_COM("Mission_Search&DestroyMickus_RemoteMessage4", "Traitorius", Mission_DestroyMickus, TraitoriusFuncEnemiesCom, NULL) &&
+		LvN_TargetName(e) && Mode_VGet(e, "Style", style) && Native_Arith('+', style, Mode_I(&t, 2000), s2) && Mode_VSet(e, "Style", s2) &&
 		LvN_SetS(e, "TgType", "red") && LvN_SetS(e, "OnDamage", "") && LvN_ScorerOff() && LvN_Draw() && Mk_Flee(usr) &&
 		Mode_DelSchedS("ScanShip") && Mode_SaveInt("NumTransports", n);
 	if (ok && LvN_EqI(n, 10)) {
@@ -748,7 +752,7 @@ static byte Mickus_TraitoriusFuncEnemiesCom(const nativeVal_t *a, nativeVal_t *o
 	nativeVal_t args[2];
 	(void)a;
 	(void)out;
-	if (!LV_OWN(DMK, "CreateFuncEnemies", NULL, "i", 2L)) {
+	if (!PORT_LOWN(Mission_DestroyMickus, CreateFuncEnemies, NULL, "i", 2L)) {
 		return 0;
 	}
 	LvN_Str(&args[0], "Mission_Search&DestroyMickus_RemoteMessage7");
@@ -835,10 +839,10 @@ static byte Mickus_CheckMickusVisibility(const nativeVal_t *a, nativeVal_t *out)
 					!LvN_Com("Mission_Search&DestroyMickus_RemoteMessage6", "Traitorius", NULL, NULL, NULL) || !Mode_VDel(mic) ||
 					!LvN_PutS(DMK, "currentScannedShip", "") || !Cm_GEmpty(DMK, "transports", 0) || !LvN_PutS(DMK, "mickus", "") ||
 					!Mode_Import("Parking") || !CM_HOOK("Parking", "SwitchVehicleMissionCallback", DMK, "InitMission") ||
-					!Mode_SaveInt("NumTransports", n) || !LV_OWN(DMK, "CreateTransports", NULL, "v", n)) {
+					!Mode_SaveInt("NumTransports", n) || !PORT_LOWN(Mission_DestroyMickus, CreateTransports, NULL, "v", n)) {
 					return Mode_Done(&t, 0);
 				}
-				return Mode_Done(&t, LV_OWN(DMK, "InitMission", NULL, ""));
+				return Mode_Done(&t, PORT_LOWN(Mission_DestroyMickus, InitMission, NULL, ""));
 			}
 		}
 	}
@@ -861,7 +865,7 @@ static byte Mickus_CreateFuncEnemies(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&pd);
 		Native_SetNone(&fname);
 		Native_SetNone(&uname);
-		ok = Mode_SpawnCar("Functionary", 0, &fn, NULL) && LvN_StdProfile(DMK, "GetFuncEnemiesProfile", &fn, &pd) &&
+		ok = Mode_SpawnCar("Functionary", 0, &fn, NULL) && PORT_LOWN(Mission_DestroyMickus, GetFuncEnemiesProfile, &pd, "") && LvN_StdAI(&fn, &pd) &&
 			LvN_SetS(&fn, "TgType", "red") && LvN_SetS(&fn, "EntityList", "FuncEnemies") && LvN_Life(&fn, DMK, "FUNCS_LIFE") &&
 			Mode_VGet(&fn, "Name", &fname) && Mode_VGet(&usr, "Name", &uname) && STATE("ivv", 2L, &fname, &uname);
 		Native_Free(&fn);
@@ -906,7 +910,7 @@ static byte Mickus_OnTransportsDeath(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	if (in) {
 		int cur = Mode_Remove(DMK, "transports", &a[0]) ? Mode_GCmp(DMK, "currentScannedShip", "==", &a[0]) : -1;
-		if (cur < 0 || (cur && (!LV_OWN(DMK, "ResetScan", NULL, "") || !LvN_PutS(DMK, "currentScannedShip", "")))) {
+		if (cur < 0 || (cur && (!PORT_LOWN(Mission_DestroyMickus, ResetScan, NULL, "") || !LvN_PutS(DMK, "currentScannedShip", "")))) {
 			return 0;
 		}
 	}
@@ -921,7 +925,7 @@ static byte Mickus_OnTransportsDeath(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&e);
 	Native_SetNone(&pos);
 	byte ok = Mode_EntityH(&a[0], &e) && (!Native_True(&e) || (LvN_SetS(&e, "EntityList", "") && Mode_VGet(&e, "Pos", &pos) &&
-		LV_OWN(DMK, "DropMoney", NULL, "v", &pos)));
+		PORT_LOWN(Mission_DestroyMickus, DropMoney, NULL, "v", &pos)));
 	Native_Free(&e);
 	Native_Free(&pos);
 	return ok;
@@ -960,7 +964,7 @@ static byte Mickus_TakeMoney(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	int by = Cm_UsrNameIs(&a[1]);
 	return by >= 0 && (!by || (Cm_TakenS("MickusMoney", "MissionCheckArrow") &&
-		LvN_Com("Mission_Search&DestroyMickus_RemoteMessage8", "Traitorius", DMK, "SetNextMission", NULL)));
+		LV_COM("Mission_Search&DestroyMickus_RemoteMessage8", "Traitorius", Mission_DestroyMickus, SetNextMission, NULL)));
 }
 
 /* SetNextMission(): on to Mission_ArrangeBankersCTF in GamblinDen */
@@ -1105,12 +1109,12 @@ static byte Gus_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (!LvN_SaveIs("MissionState", "ProtectGus")) {
-		return LV_OWN(PG, "SetPhoneCab", NULL, "");
+		return PORT_LOWN(Mission_ProtectGus, SetPhoneCab, NULL, "");
 	}
 	Native_SetNone(&usr);
 	int car = Mode_UsrHandle(&usr) ? Cm_UsrCar(&usr) : -1;
 	Native_Free(&usr);
-	if (car < 0 || (car ? !LV_OWN(PG, "InitMission", NULL, "") :
+	if (car < 0 || (car ? !PORT_LOWN(Mission_ProtectGus, InitMission, NULL, "") :
 		!Mode_Import("Parking") || !CM_HOOK("Parking", "SwitchVehicleMissionCallback", PG, "InitMission"))) {
 		return 0;
 	}
@@ -1122,9 +1126,9 @@ static byte Gus_InitMission(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	return Mode_Import("Parking") && Mode_Import("Menu") && LvN_ModNone("Parking", "SwitchVehicleMissionCallback") &&
-		LvN_ScorerCallG(PG, "MissionScorer") && LvN_Draw() && LV_OWN(PG, "CreateLonelyMercProfile", NULL, "") &&
-		LV_OWN(PG, "CreateLonelyMerc", NULL, "") && LV_OWN(PG, "CreateBishopGusProfile", NULL, "") && LV_OWN(PG, "CreateBishopGus", NULL, "") &&
-		LV_OWN(PG, "AttackEachOther", NULL, "");
+		LV_SCORERG(Mission_ProtectGus, MissionScorer) && LvN_Draw() && PORT_LOWN(Mission_ProtectGus, CreateLonelyMercProfile, NULL, "") &&
+		PORT_LOWN(Mission_ProtectGus, CreateLonelyMerc, NULL, "") && PORT_LOWN(Mission_ProtectGus, CreateBishopGusProfile, NULL, "") &&
+		PORT_LOWN(Mission_ProtectGus, CreateBishopGus, NULL, "") && PORT_LOWN(Mission_ProtectGus, AttackEachOther, NULL, "");
 }
 
 /* `x.Active` of a global handle: 1, 0, -1 */
@@ -1216,7 +1220,7 @@ static byte Gus_CreateBishopGus(const nativeVal_t *a, nativeVal_t *out) {
 /* the fight is over: the mission state, no scorer, DeepThroat's message then the phone cab */
 static byte Pg_Over(const char *msg) {
 	SaveVar_Set("MissionState", "CallDeepThroat");
-	return LvN_ScorerOff() && LvN_Draw() && LvN_Com(msg, "DeepThroat", PG, "PreCallDeepThroat", LvN_NoArgs());
+	return LvN_ScorerOff() && LvN_Draw() && LV_COM(msg, "DeepThroat", Mission_ProtectGus, PreCallDeepThroat, LvN_NoArgs());
 }
 
 /* the next round: the dead fighter again in 2 s, the attack 0.2 s later */
@@ -1312,7 +1316,7 @@ static byte Gus_OnBishopGusDeath(const nativeVal_t *a, nativeVal_t *out) {
 static byte Gus_PreCallDeepThroat(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Cm_Desc("Mission_TalkToDeepThroat3b_MissionText1") && LV_OWN(PG, "SetPhoneCab", NULL, "");
+	return Cm_Desc("Mission_TalkToDeepThroat3b_MissionText1") && PORT_LOWN(Mission_ProtectGus, SetPhoneCab, NULL, "");
 }
 
 /* the imports of SetPhoneCab */
@@ -1333,7 +1337,7 @@ static byte Gus_SetPhoneCab(const nativeVal_t *a, nativeVal_t *out) {
 	return Cm_PhoneImports() && Mode_PhoneCab("Mission_ProtectGus.UsePhoneCab", 1, NULL, NULL);
 }
 
-CM_PHONE(Gus_UsePhoneCab, PG, "Generics_StillPolice1_DeepThroat", "DeepThroat", "SetNextMission",
+CM_PHONE(Gus_UsePhoneCab, PG, "Generics_StillPolice1_DeepThroat", "DeepThroat", &PORT_LREF(Mission_ProtectGus, SetNextMission),
 	"Mission_TalkToDeepThroat3b_ComDeepThroat_NI_1Msg", NULL, NULL, 1, 0, 0)
 
 /* SetNextMission(): the phone cab back to normal, on to Mission_IntoTheGDB */
@@ -1912,8 +1916,8 @@ static byte Deep_SetPhoneCab(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-CM_PHONE(Deep_UsePhoneCab, FM, "Generics_StillPolice1_DeepThroat", "DeepThroat", "SetNextMission", "Mission_FirstMeetDeepThroat_ComDeepthroat_NI_1Msg",
-	"DeepThroatFirstMeet", "PhoneCab.DefUseAudioCom", 0, 0, 0)
+CM_PHONE(Deep_UsePhoneCab, FM, "Generics_StillPolice1_DeepThroat", "DeepThroat", &PORT_LREF(Mission_FirstMeetDeepThroat, SetNextMission),
+	"Mission_FirstMeetDeepThroat_ComDeepthroat_NI_1Msg", "DeepThroatFirstMeet", "PhoneCab.DefUseAudioCom", 0, 0, 0)
 
 /* SetNextMission(): talked; on to Mission_FicusBanker in Press, the crazy gambler calls 2 s later */
 static byte Deep_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
@@ -2476,7 +2480,8 @@ static byte Data_CallBoss(const nativeVal_t *a, nativeVal_t *out) {
 	return Gd_Call("Mission_GetDataPart3.UsePhoneCab");
 }
 
-CM_PHONE(Data_UsePhoneCab, GD, "Generics_StillPolice1_Boss", "Boss", "PreGetData", "Mission_TalkToBoss3_ComBoss_NI_1Msg", NULL, NULL, 0, 1, 0)
+CM_PHONE(Data_UsePhoneCab, GD, "Generics_StillPolice1_Boss", "Boss", &PORT_LREF(Mission_GetDataPart3, PreGetData),
+	"Mission_TalkToBoss3_ComBoss_NI_1Msg", NULL, NULL, 0, 1, 0)
 
 /* PreGetData(): after the boss: the boarding callbacks, the save state, the first wave */
 static byte Data_PreGetData(const nativeVal_t *a, nativeVal_t *out) {
@@ -2530,8 +2535,8 @@ static byte Data_CallDeepThroat(const nativeVal_t *a, nativeVal_t *out) {
 	return Gd_Call("Mission_GetDataPart3.UsePhoneCab2");
 }
 
-CM_PHONE(Data_UsePhoneCab2, GD, "Generics_StillPolice1_DeepThroat", "DeepThroat", "SetNextMission", "Mission_TalkToDeepThroat8_ComDeepThroat_NI_1Msg",
-	NULL, NULL, 1, 1, 0)
+CM_PHONE(Data_UsePhoneCab2, GD, "Generics_StillPolice1_DeepThroat", "DeepThroat", &PORT_LREF(Mission_GetDataPart3, SetNextMission),
+	"Mission_TalkToDeepThroat8_ComDeepThroat_NI_1Msg", NULL, NULL, 1, 1, 0)
 
 /* SetNextMission(): on to Mission_DistractHumphrey in DownTown */
 static byte Data_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
@@ -3290,7 +3295,7 @@ static byte Porkins_CallDeepThroat(const nativeVal_t *a, nativeVal_t *out) {
 	return Mode_PhoneCab("Mission_DestroyPorkinsTransports.UsePhoneCab", 1, NULL, NULL);
 }
 
-CM_PHONE(Porkins_UsePhoneCab, PT, "Generics_StillPolice1_Functionary", "DeepThroat", "SetNextMission",
+CM_PHONE(Porkins_UsePhoneCab, PT, "Generics_StillPolice1_Functionary", "DeepThroat", &PORT_LREF(Mission_DestroyPorkinsTransports, SetNextMission),
 	"Mission_TalkToDeepThroat6__ComDeepThroat_NI_1Msg", NULL, NULL, 1, 1, 1)
 
 /* SetNextMission(): the traffic back, the mayor no longer to possess, the video, on to Orbit */
