@@ -591,24 +591,30 @@ PORT_DECL(HullTab, ShowHullPredictionUp) /* 3 */
 PORT_DECL(HullTab, HideHullPredictionUp) /* 3 */
 PORT_DECL(HullTab, ShowHullPredictionDown) /* 3 */
 PORT_DECL(HullTab, HideHullPredictionDown) /* 3 */
+PORT_DECL(HullTab, TestArrows) /* ? */
 PORT_DECL(HullTab, IncrementHull) /* 2 */
 PORT_DECL(HullTab, DecrementHull) /* 2 */
+PORT_DECL(HullTab, ChangeHull) /* 2 */
 PORT_DECL(HullTab, SetHullState) /* 1 */
 PORT_DECL(HullTab, HullSliderChange) /* 2 */
 PORT_DECL(HullTab, SetHullPanel) /* 1 */
 PORT_DECL(HullTab, ShowHullPanel) /* 1 */
+PORT_DECL(HullTab, SetHullVisible) /* 2 */
 PORT_DECL(HullTab, HideHullPanel) /* 1 */
 #define PORTS_HullTab \
 	PORT_DEF(HullTab, ShowHullPredictionUp, HT_ShowHullPredictionUp) \
 	PORT_DEF(HullTab, HideHullPredictionUp, HT_HideHullPredictionUp) \
 	PORT_DEF(HullTab, ShowHullPredictionDown, HT_ShowHullPredictionDown) \
 	PORT_DEF(HullTab, HideHullPredictionDown, HT_HideHullPredictionDown) \
+	PORT_DEF(HullTab, TestArrows, HT_TestArrows) \
 	PORT_DEF(HullTab, IncrementHull, HT_IncrementHull) \
 	PORT_DEF(HullTab, DecrementHull, HT_DecrementHull) \
+	PORT_DEF(HullTab, ChangeHull, HT_ChangeHullPy) \
 	PORT_DEF(HullTab, SetHullState, HT_SetHullStatePy) \
 	PORT_DEF(HullTab, HullSliderChange, HT_HullSliderChange) \
 	PORT_DEF(HullTab, SetHullPanel, HT_SetHullPanel) \
 	PORT_DEF(HullTab, ShowHullPanel, HT_ShowHullPanel) \
+	PORT_DEF(HullTab, SetHullVisible, HT_SetHullVisible) \
 	PORT_DEF(HullTab, HideHullPanel, HT_HideHullPanel)
 
 /* InitLevel.c */
