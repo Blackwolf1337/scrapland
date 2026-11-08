@@ -1,50 +1,35 @@
 /*
- * Python/pythonrun.c with what the engine added to it in Scrap.exe: PyRun_ScrapString, the PyRun_SimpleString of
- * the console and the startup, and Py_FiniObjects. Both use statics of the file.
+ * Python/pythonrun.c with what the engine added to it in Scrap.exe: Py_FiniObjects, which uses statics of the file.
+ * There is no interpreter: the runners of code (PyRun_*, Py_CompileString, PyParser_Simple*) are not built (NOPY_DROP)
+ * and with them the parse, compile and run helpers of the file; Py_Finalize has no grammar to free.
  */
-/*
- * Without the interpreter (src/python/nopy) the runners of code get other names, so a caller does not link, and
- * --gc-sections drops them; what they would parse is the SyntaxError of an empty parse, a compile or a run of code
- * raises; Py_Finalize has no grammar to free.
- */
-#define PyRun_AnyFile Py_NoRunAnyFile
-#define PyRun_InteractiveLoop Py_NoRunInteractiveLoop
-#define PyRun_InteractiveOne Py_NoRunInteractiveOne
-#define PyRun_SimpleFile Py_NoRunSimpleFile
-#define PyRun_SimpleString Py_NoRunSimpleString
-#define PyRun_String Py_NoRunString
-#define PyRun_File Py_NoRunFile
-#define Py_CompileString Py_NoCompileString
-#define PyParser_SimpleParseFile Py_NoParseFile
-#define PyParser_SimpleParseString Py_NoParseString
 #include "Python.h"
-#include "grammar.h"
 #include "node.h"
-#include "parsetok.h"
-#include "errcode.h"
 #include "pyengine.h"
 
-static node *Py_NoParse(perrdetail *err) {
-	err->error = E_SYNTAX;
-	err->filename = NULL;
-	err->lineno = 0;
-	err->offset = 0;
-	err->text = NULL;
-	return NULL;
-}
-
-#define PyParser_ParseString(s, g, start, err) ((void)(s), (void)(start), Py_NoParse(err))
-#define PyParser_ParseFile(fp, file, g, start, ps1, ps2, err) ((void)(fp), (void)(file), (void)(start), (void)(ps1), \
-	(void)(ps2), Py_NoParse(err))
-#define PyNode_Compile(n, file) ((void)(n), (PyCodeObject *)Py_NoInterpreter(PyExc_SystemError, file))
-#define PyNode_Free(n) ((void)(n))
-#define PyEval_EvalCode(co, g, l) ((void)(co), (void)(g), (void)(l), \
-	(PyObject *)Py_NoInterpreter(PyExc_SystemError, "code"))
+#define PyRun_AnyFile(args...) nopy_PyRun_AnyFile(args)
+#define PyRun_InteractiveLoop(args...) nopy_PyRun_InteractiveLoop(args)
+#define PyRun_InteractiveOne(args...) nopy_PyRun_InteractiveOne(args)
+#define PyRun_SimpleFile(args...) nopy_PyRun_SimpleFile(args)
+#define PyRun_SimpleString(args...) nopy_PyRun_SimpleString(args)
+#define PyRun_String(args...) nopy_PyRun_String(args)
+#define PyRun_File(args...) nopy_PyRun_File(args)
+#define Py_CompileString(args...) nopy_Py_CompileString(args)
+#define PyParser_SimpleParseFile(args...) nopy_PyParser_SimpleParseFile(args)
+#define PyParser_SimpleParseString(args...) nopy_PyParser_SimpleParseString(args)
+NOPY_DROP(int, PyRun_AnyFile);
+NOPY_DROP(int, PyRun_InteractiveLoop);
+NOPY_DROP(int, PyRun_InteractiveOne);
+NOPY_DROP(int, PyRun_SimpleFile);
+NOPY_DROP(int, PyRun_SimpleString);
+NOPY_DROP(PyObject *, PyRun_String);
+NOPY_DROP(PyObject *, PyRun_File);
+NOPY_DROP(PyObject *, Py_CompileString);
+NOPY_DROP(node *, PyParser_SimpleParseFile);
+NOPY_DROP(node *, PyParser_SimpleParseString);
 #define PyGrammar_RemoveAccelerators(g) ((void)0)
 
 #include "Python/pythonrun.c"
-#include "pyengine.h"
-
 
 /*
  * After Py_Finalize, before the engine deletes its Python pool: frees the objects that static pointers of the

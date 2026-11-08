@@ -1,5 +1,5 @@
 /*
- * Python/bltinmodule.c without the interpreter (SCRAP_NO_PYTHON): eval, execfile, compile and input of __builtin__
+ * Python/bltinmodule.c without the interpreter: eval, execfile, compile and input of __builtin__
  * raise SystemError before they look at their arguments (C functions of their own put over the vendored ones, which
  * would read the globals of the frame that never is, or a line of stdin); __import__ and reload find only the
  * built-in and the loaded modules (src/python/import.c refuses files).

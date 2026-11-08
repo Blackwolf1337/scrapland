@@ -1,5 +1,5 @@
 /*
- * Modules/newmodule.c without code objects (SCRAP_NO_PYTHON): new.code raises SystemError, the rest stays.
+ * Modules/newmodule.c without code objects: new.code raises SystemError, the rest stays.
  */
 #include "Python.h"
 #include "compile.h"
