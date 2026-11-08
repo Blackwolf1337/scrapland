@@ -653,9 +653,39 @@ static PyObject *Menu_AddTabs(PyObject *self, PyObject *args, PyObject *kw) {
 	return Mode_Result(ok);
 }
 
+/* the keyword names of VerticalMenu (its ref takes keyword calls, PORT_DEFK) */
+static char *Menu_VerticalMenu_N[] = { "id", "title", "menu", "backfunc", "XStart", "VerticalStep", "Font", "MinYStart",
+	"YStart", "FontTitle", NULL };
+
+/* the entry of VerticalMenu: the slots of "iOOO|OOsOOs" (the arity errors of PyArg_ParseTupleAndKeywords), then the
+ * id and the fonts converted in slot order with the errors of "i" and "s" (the fonts "ScrapBig" when not given) */
+static byte Menu_VerticalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t v[10], menu;
+	byte given[10];
+	int id;
+	const nativeVal_t *o[7];
+	const char *font, *fontTitle;
+	(void)out;
+	if (!Mode_KwSlots(a, n, "OOOO|OOOOOO", v, given)) {
+		return 0;
+	}
+	Mode_KwDefS(v, given, 6, "ScrapBig");
+	Mode_KwDefS(v, given, 9, "ScrapBig");
+	if (!Mode_Parse(v, 10, "iOOOOOsOOs", &id, &o[0], &o[1], &o[2], &o[3], &o[4], &font, &o[5], &o[6], &fontTitle)) {
+		return 0;
+	}
+	/* the menu list is read in place (Mode_ElemsIn): a copy */
+	Native_Copy(&menu, o[1]);
+	Mode_ElemsIn(&menu);
+	byte ok = Base_VerticalMenu(id, o[0], &menu, o[2], given[4] ? o[3] : NULL, given[5] ? o[4] : NULL, font,
+		given[7] ? o[5] : NULL, given[8] ? o[6] : NULL, fontTitle);
+	Native_Free(&menu);
+	return ok;
+}
+
+/* the adapter on the objects as PyArg_ParseTupleAndKeywords takes them (the order of its errors kept) */
 static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "title", "menu", "backfunc", "XStart", "VerticalStep", "Font", "MinYStart", "YStart",
-		"FontTitle", NULL };
+	char **names = Menu_VerticalMenu_N;
 	int id;
 	PyObject *o[7] = { NULL };
 	char *font = "ScrapBig", *fontTitle = "ScrapBig";

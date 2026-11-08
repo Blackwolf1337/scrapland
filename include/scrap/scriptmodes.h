@@ -325,7 +325,7 @@ void Mode_Repr(const nativeVal_t *v, nativeVal_t *out);
 /* the item name of a scorer call of the ports (Sf_Text): the C text of a text value (up to its first 0 byte), the
  * TypeError "argument 2: expected string found" for any other value */
 byte Mode_ItemText(const nativeVal_t *v, const char **out);
-/* `from module import name` in a function of a script (OBJLIB 3: the link functions of Menu by name): a new
+/* `from module import name` in a function of a script (OBJLIB 4, 6: the link functions of Menu by name): a new
  * reference, NULL with the ImportError */
 PyObject *Mode_From(const char *module, const char *name);
 /* the value of HangarTab.prevShip (the handle as NV_OBJ, None, or what a test put there; Native_Free it): 0 with the
@@ -365,13 +365,13 @@ byte Mode_GVarSetI(const char *name, long i);
 /* ---- the native level files of batch G (Orbit, Townhall, GamblinDen, Scrapyard) ---- */
 
 /* the lines of a call table of the level scripts (Sf_Calls on native values): "Mod.Func|arg|..." calls the attribute
- * Func of the module Mod (OBJLIB 3 and 7: other ports and the engine by name, a case may record either), "@Func|..." the
+ * Func of the module Mod (OBJLIB 4 and 7: other ports and the engine by name, a case may record either), "@Func|..." the
  * global Func of module (a mission may replace it), with the values of LvN_Value (up to 8); 0 with the error of the
  * first line that fails */
 byte Mode_Calls(const char *module, const char *const *lines);
 /* o.name = value for each "name=value" of pairs (Sf_SetAttrs on a value: the values of LvN_Value) */
 byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs);
-/* Speech.NISpeech(who) (Speech.NISpeech() for who NULL), Speech.AutoAddNI(key), Speech.RunNI() (OBJLIB 3) */
+/* Speech.NISpeech(who) (Speech.NISpeech() for who NULL), Speech.AutoAddNI(key), Speech.RunNI() (PORT_CALL) */
 byte Mode_NISpeech(const char *who, const char *key);
 /* Scrap.GetEntity(name).var = "text", = i (the TypeError of None when there is no such entity) */
 byte Mode_EntSetS(const char *name, const char *var, const char *s);
@@ -404,15 +404,15 @@ int Mode_CmpI(const nativeVal_t *a, const char *op, long i);
 /* Scrap.UsrEntity(0).ActCtrl == ctrl: 1, 0, -1 with the error */
 int Mode_UsrIs(const char *ctrl);
 /* Speech.OnSpch(msg, ans[, how]) (how NULL: two arguments) and Speech.StdAnsLst([texts]) of n texts (n < 0: up to
- * the NULL), OBJLIB 3 */
+ * the NULL), PORT_CALL */
 byte Mode_Spch(const char *msg, const char *ans, const char *how);
 byte Mode_AnsLst(const char *const *texts, int n);
-/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint() (OBJLIB 3), MissionsFuncs.SetMissionTarget(name) (None for NULL,
- * PORT_CALL) */
+/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint(), MissionsFuncs.SetMissionTarget(name) (None for NULL), all
+ * PORT_CALL */
 byte Mode_MMDesc(const char *desc, long flag);
 byte Mode_WayPoint(void);
 byte Mode_Target(const char *name);
-/* Elevator.ConnectElevators([a], [b]), or Elevator.ConnectElevators([a, b], [], 0) for pair (OBJLIB 3) */
+/* Elevator.ConnectElevators([a], [b]), or Elevator.ConnectElevators([a, b], [], 0) for pair (PORT_CALL) */
 byte Mode_Connect(const char *a, const char *b, byte pair);
 /* var.attr = "text", = i of the global var of module (a handle) */
 byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
@@ -432,7 +432,7 @@ byte Mode_GVarSetDef(const char *name);
 byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, long alpha, long r,
 	long g, long b);
 /* Scorer.MissionScorerBar_SetDefaults(id, item, the back colour of Scorer, main, black); NULL main or black: the colours
- * of Scorer (OBJLIB 3) */
+ * of Scorer (PORT_CALL) */
 byte Mode_BarDefaults(const nativeVal_t *id, const char *item, const nativeVal_t *main, const nativeVal_t *black);
 /* import PhoneCab; pc = PhoneCab.GetFree() (the global pc of pcModule right after when given), pc.UseFunc = use and the
  * cab as the mission target (targetFirst: the target before the UseFunc): the cab into out (NULL: dropped) */
@@ -470,9 +470,9 @@ byte Mode_SpeechMsg(const nativeVal_t *cad);
 /* the colour Scorer.MissionScorerText_Color of a scorer item: SScorer.Set(id, item, "Red", colour[0]) and Green, Blue,
  * Alpha */
 byte Mode_TextColour(const nativeVal_t *id, const char *item);
-/* module.name(args..., **kw) with keyword arguments (OBJLIB 3: the calls with keywords stay Python): the n native
- * arguments and kw a new reference to the dict that the call takes over (NULL: its error is set); the result into out
- * (NULL: dropped) */
+/* module.name(args..., **kw) with keyword arguments by name (OBJLIB 4: PORT_CALL takes keywords for a known name):
+ * the n native arguments and kw a new reference to the dict that the call takes over (NULL: its error is set); the
+ * result into out (NULL: dropped) */
 byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const nativeVal_t *args, int n, PyObject *kw);
 /* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5: the group lists of GateKeeper keep
  * their identity) */
@@ -590,7 +590,7 @@ byte Mode_DelLater(const nativeVal_t *itm);
 int Mode_PhoneUse(const char *module, const nativeVal_t *a);
 /* SScorer.Set(0, Scrap.Get("MissionScorerName"), "ForceMap", map) (the map of the mission scorer) */
 byte Mode_ForceMap(const char *map);
-/* `string.find(string.upper(v.Model), text) != -1` (OBJLIB 3: string.find by name): 1, 0, -1 */
+/* `string.find(string.upper(v.Model), text) != -1` (the native twin of string.find, PORT_CALL): 1, 0, -1 */
 int Mode_ModelHas(const nativeVal_t *v, const char *text);
 
 /* ---- the hubs of batch J (Traffic, OutMap, Challenge, CharConversor, RaceMaker, Doors) ---- */
@@ -689,7 +689,7 @@ PyObject *Mode_KwOut(nativeVal_t *a, int n, byte ok, nativeVal_t *out);
 /* SScorer.PreloadTexture(name) through its seam */
 byte Mode_PreloadTexture(const nativeVal_t *name);
 
-/* apply(f, args) of the script on values (OBJLIB 3, 4: the objects called the Python way): the result into out (NULL:
+/* apply(f, args) of the script on values (OBJLIB 4: the objects called the Python way): the result into out (NULL:
  * dropped) */
 byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
 /* the list of a global of the module changed in place as the C ports change it: v appended (first: inserted at 0), and
@@ -709,8 +709,8 @@ byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v);
 byte Mode_Set0I(const char *item, const char *var, long i);
 /* ---- the menus of batch O (MenuBase, MenuControls, MenuVideo, MenuVideoVars) ---- */
 
-/* the failure of a call by name (ok 0) printed as the menus printed it ("Script: <module>.<func> failed" and the
- * error; OBJLIB 3 and 7): ok passed on */
+/* the failure of a call (ok 0) printed as the menus printed it ("Script: <module>.<func> failed" and the error;
+ * OBJLIB 7): ok passed on */
 byte Mode_Printed(byte ok, const char *module, const char *func);
 /* PORT_CALL(Module, Func, NULL, fmt, ...) with its failure printed so (Script_Call, Mode_PrintedCall of a known name) */
 #define MODE_PRINTED(module, name, ...) \
@@ -802,7 +802,8 @@ byte Mode_PrintS(const char *text);
 /* module.func(args) at the time on the scheduler as Mode_SchedAt, with the argument tuple a Python object (borrowed;
  * OBJLIB 4: Menu.ShowWarning schedules itself again with the tuple it got) */
 byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name);
-/* module.func(id) by name (OBJLIB 3: a mod or a case may replace it), the failure printed as Mode_Printed prints it */
+/* module.func(id) by name (OBJLIB 4: a name known at run time; MODE_PRINTED for a known one), the failure printed as
+ * Mode_Printed prints it */
 void Mode_PrintedCall(const char *module, const char *func, long id);
 /* len(seq) as PySequence_Length takes it: -1 with its TypeError */
 int Mode_SeqLen(const nativeVal_t *seq);

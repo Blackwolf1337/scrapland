@@ -15,10 +15,10 @@
  *
  * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene, GateKeeper,
  * MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN; the callbacks
- * of AfterBrowseNPC by the names of their refs). By name stay Items.Hint (no native entry yet, OBJLIB 3), the scene
- * tables, the scheduled calls and gc.CanPassFunc (Mode_Calls, Mode_Later, Mode_LaterIn, Mode_Schedule, a function
- * value; OBJLIB 4) and the functions set as callbacks or given as values (EndOfSceneCallback, AfterBrowseNPC,
- * Speech.OnEndOfSpeech, GateKeeper.LocalCallFunc, the door functions of SetDoor; OBJLIB 5).
+ * of AfterBrowseNPC by the names of their refs), Items.Hint too. By name stay the scene tables, the scheduled calls and
+ * gc.CanPassFunc (Mode_Calls, Mode_Later, Mode_LaterIn, Mode_Schedule, a function value; OBJLIB 4) and the functions
+ * set as callbacks or given as values (EndOfSceneCallback, AfterBrowseNPC, Speech.OnEndOfSpeech,
+ * GateKeeper.LocalCallFunc, the door functions of SetDoor, the hint function of Items.Hint; OBJLIB 5).
  */
 #include <string.h>
 
@@ -119,21 +119,12 @@ static byte Ob_PlaceUsr(const nativeVal_t *usr, long x, long y, long z, long ang
 	return ok;
 }
 
-/* Items.Hint((x, y, z), Mode_KeyText(key, "Use"), 5, mission): the function read before the text, as the script */
+/* Items.Hint((x, y, z), Mode_KeyText(key, "Use"), 5, mission); the lookup of Hint comes after the text now (it
+ * differs only when both fail) */
 static byte Ob_KeyHint(long x, long y, long z, const char *key, long mission) {
 	nativeVal_t pos = { 0 }, text = { 0 };
-	/* OBJLIB 3: Items.Hint has no native entry yet (Items.c) */
-	PyObject *fn = Script_Attr("Items", "Hint");
-	if (!fn) {
-		return 0;
-	}
 	Mode_Ints3(&pos, x, y, z);
-	byte ok = Mode_KeyText(key, "Use", &text);
-	if (ok) {
-		ok = Native_HookCall(fn, NULL, "vvii", &pos, &text, 5L, mission);
-	} else {
-		Py_DECREF(fn);
-	}
+	byte ok = Mode_KeyText(key, "Use", &text) && PORT_CALL(Items, Hint, NULL, "vvii", &pos, &text, 5L, mission);
 	Native_Free(&pos);
 	Native_Free(&text);
 	return ok;
@@ -382,26 +373,18 @@ static byte Decont_InitN(void) {
 		!Mode_EntSetS("DM_Door_Teleporter_01", "UseFunc", "MapDecont.CantUseElevator") || !Mode_Import("Items")) {
 		return 0;
 	}
-	/* OBJLIB 3: Items.Hint has no native entry yet (Items.c) */
-	PyObject *fn = Script_Attr("Items", "Hint");
-	if (!fn) {
-		return 0;
-	}
+	/* Items.Hint(<the teleporter door>.Pos, the text, 5, 1, SetFirstInfoPointAsMission) (OBJLIB 5: the function as a
+	 * value); the lookup of Hint comes after its arguments now (it differs only when it fails: the door and the
+	 * function are read before its AttributeError then) */
 	Native_SetNone(&pos);
 	Native_SetNone(&fn1);
 	ok = LvN_Entity("DM_Door_Teleporter_01", &e) && Mode_VGet(&e, "Pos", &pos);
 	Native_Free(&e);
 	if (ok) {
 		Mode_Lang("Mission_Decontamination_SystemMessage6", &text);
-		ok = LvN_GObj(MD, "SetFirstInfoPointAsMission", &fn1);
-		if (ok) {
-			ok = Native_HookCall(fn, NULL, "vviiv", &pos, &text, 5L, 1L, &fn1);
-		} else {
-			Py_DECREF(fn);
-		}
+		ok = LvN_GObj(MD, "SetFirstInfoPointAsMission", &fn1) &&
+			PORT_CALL(Items, Hint, NULL, "vviiv", &pos, &text, 5L, 1L, &fn1);
 		Native_Free(&text);
-	} else {
-		Py_DECREF(fn);
 	}
 	Native_Free(&pos);
 	Native_Free(&fn1);

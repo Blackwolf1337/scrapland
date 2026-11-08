@@ -4,7 +4,9 @@
 # rewrite of the sites that have a form through a ref.
 #
 #   tools/script/portcalls.py [files]               per file: the by-name calls left by kind, the sites through refs
-#                                                   (PORT), the OBJLIB 3 marks; the arity check after it
+#                                                   (PORT), the OBJLIB 3 marks (without files also those of the
+#                                                   sources and headers that have no call site); the arity check
+#                                                   after it
 #   tools/script/portcalls.py sites Mod.Func ...    every by-name and PORT site of these functions
 #   tools/script/portcalls.py rewrite [--dry] <Mod.Func | all> [files]
 #                                                   the sites of Mod.Func (all: of every function with a ref) in the
@@ -166,7 +168,19 @@ def kind(f, no, form, module, name, glob, idx, own, cfunc):
 
 
 def marks(f):
-	return open(os.path.join(ports.SCRIPT, f), errors='replace').read().count('OBJLIB 3')
+	"""the OBJLIB 3 marks of a source of src/game/Script or a header (include/scrap/x.h)"""
+	path = os.path.join(ports.ROOT, f) if f.startswith('include/') else os.path.join(ports.SCRIPT, f)
+	return open(path, errors='replace').read().count('OBJLIB 3')
+
+
+def marked():
+	"""the sources and headers with OBJLIB 3 marks, also those without call sites"""
+	inc = os.path.join(ports.ROOT, 'include/scrap')
+	hs = ['include/scrap/' + h for h in sorted(os.listdir(inc)) if h.endswith('.h')]
+	srcs = []
+	for d, _, fs in os.walk(ports.SCRIPT):
+		srcs += [os.path.relpath(os.path.join(d, x), ports.SCRIPT) for x in fs if x.endswith('.h')]
+	return {f for f in ports.sources() + sorted(srcs) + hs if marks(f)}
 
 
 def survey(pp, idx, files):
@@ -183,7 +197,7 @@ def survey(pp, idx, files):
 		if pos is not None and r and r.nargs is not None and len(pos) != r.nargs:
 			bad.append('%s:%d %s %s.%s: %d arguments, the entry takes %d' % (f, no, form, module, name, len(pos), r.nargs))
 	print('%-28s %s %8s' % ('file', ' '.join('%7s' % k for k in kinds), 'OBJLIB3'))
-	for f in sorted(set(rows) | ({f for f in files} if files else set())):
+	for f in sorted(set(rows) | ({f for f in files} if files else marked())):
 		c = rows.get(f, collections.Counter())
 		m = marks(f)
 		total.update(c)

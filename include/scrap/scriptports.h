@@ -698,6 +698,7 @@ PORT_DECL(Items, BrowseItemPos) /* ? */
 PORT_DECL(Items, InitResources) /* ? */
 PORT_DECL(Items, Init) /* ? */
 PORT_DECL(Items, ShowHint) /* 2 */
+PORT_DECL(Items, Hint) /* ? */
 PORT_DECL(Items, CreateInteractiveObj) /* 2 */
 PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 #define PORTS_Items \
@@ -725,6 +726,7 @@ PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 	PORT_DEF(Items, InitResources, Items_InitResources) \
 	PORT_DEF(Items, Init, Items_Init) \
 	PORT_DEF(Items, ShowHint, Items_ShowHint) \
+	PORT_DEF(Items, Hint, Items_Hint) \
 	PORT_DEF(Items, CreateInteractiveObj, Items_CreateInteractiveObj) \
 	PORT_DEF(Items, SetInteractiveObjOnFloor, Items_SetInteractiveObjOnFloor)
 
@@ -747,6 +749,7 @@ PORT_DECL(Menu, DrawBackSubMenu) /* ? */
 PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
 PORT_DECL(Menu, DrawMenuTitleBar) /* ? */
 PORT_DECL(Menu, StartNewMenu) /* ? */
+PORT_DECL(Menu, VerticalMenu) /* ? */
 PORT_DECL(Menu, YesNoMenu) /* ? */
 PORT_DECL(Menu, DisableMenuItem) /* ? */
 PORT_DECL(Menu, ShowTextBox) /* ? */
@@ -762,6 +765,7 @@ PORT_DECL(Menu, SetTabDefaults) /* ? */
 	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
 	PORT_DEF(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
 	PORT_DEF(Menu, StartNewMenu, Menu_StartNewMenu) \
+	PORT_DEFK(Menu, VerticalMenu, Menu_VerticalMenu) \
 	PORT_DEF(Menu, YesNoMenu, Menu_YesNoMenu) \
 	PORT_DEF(Menu, DisableMenuItem, Menu_DisableMenuItem) \
 	PORT_DEF(Menu, ShowTextBox, Menu_ShowTextBox) \
@@ -876,6 +880,13 @@ PORT_DECL(PCMenu, AskPassword) /* ? */
 	PORT_DEF(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
 	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin) \
 	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword)
+
+/* MenuVideoVars.c */
+PORT_DECL(PCMenu, GammaFormula) /* ? */
+PORT_DECL(PCMenu, MouseSensitivityFormula) /* ? */
+#define PORTS_MenuVideoVars \
+	PORT_DEFK(PCMenu, GammaFormula, PCMenu_GammaFormula) \
+	PORT_DEFK(PCMenu, MouseSensitivityFormula, PCMenu_MouseSensitivityFormula)
 
 /* Metro.c */
 PORT_DECL(Metro, SetUsrParams) /* ? */
@@ -1655,6 +1666,55 @@ PORT_DECL(ShipMaker, InitAnmShip) /* ? */
 	PORT_DEF(ShipMaker, Init, ShipMaker_Init) \
 	PORT_DEF(ShipMaker, SetAnmShip, ShipMaker_SetAnmShip) \
 	PORT_DEFK(ShipMaker, InitAnmShip, ShipMaker_InitAnmShip)
+
+/* Sounds.c */
+PORT_DECL(BankDirectorSound, InitLoops) /* 1 */
+PORT_DECL(BankMasterSound, InitLoops) /* 1 */
+PORT_DECL(BertoSound, InitLoops) /* 1 */
+PORT_DECL(BettySound, InitLoops) /* 1 */
+PORT_DECL(BishopSound, InitLoops) /* 1 */
+PORT_DECL(BossSound, InitLoops) /* 1 */
+PORT_DECL(CrazyGamblerSound, InitLoops) /* 1 */
+PORT_DECL(DesktopSound, InitLoops) /* 1 */
+PORT_DECL(DtritusSound, InitLoops) /* 1 */
+PORT_DECL(FunctionarySound, InitLoops) /* 1 */
+PORT_DECL(GateKeeperSound, InitLoops) /* 1 */
+PORT_DECL(GearSound, InitLoops) /* 1 */
+PORT_DECL(MaintenanceSound, InitLoops) /* 1 */
+PORT_DECL(MayorSound, InitLoops) /* 1 */
+PORT_DECL(MessengerSound, InitLoops) /* 1 */
+PORT_DECL(NurseSound, InitLoops) /* 1 */
+PORT_DECL(PoliceSound, InitLoops) /* 1 */
+PORT_DECL(RustySound, InitLoops) /* 1 */
+PORT_DECL(SebastianSound, InitLoops) /* 1 */
+PORT_DECL(SentinelSound, InitLoops) /* 1 */
+PORT_DECL(SputnikJunkyardSound, InitLoops) /* 1 */
+PORT_DECL(SputnikSound, InitLoops) /* 1 */
+PORT_DECL(TestCSound, InitLoops) /* 1 */
+#define PORTS_Sounds \
+	PORT_DEF(BankDirectorSound, InitLoops, BankDirectorSound_InitLoops) \
+	PORT_DEF(BankMasterSound, InitLoops, BankMasterSound_InitLoops) \
+	PORT_DEF(BertoSound, InitLoops, BertoSound_InitLoops) \
+	PORT_DEF(BettySound, InitLoops, BettySound_InitLoops) \
+	PORT_DEF(BishopSound, InitLoops, BishopSound_InitLoops) \
+	PORT_DEF(BossSound, InitLoops, BossSound_InitLoops) \
+	PORT_DEF(CrazyGamblerSound, InitLoops, CrazyGamblerSound_InitLoops) \
+	PORT_DEF(DesktopSound, InitLoops, DesktopSound_InitLoops) \
+	PORT_DEF(DtritusSound, InitLoops, DtritusSound_InitLoops) \
+	PORT_DEF(FunctionarySound, InitLoops, FunctionarySound_InitLoops) \
+	PORT_DEF(GateKeeperSound, InitLoops, GateKeeperSound_InitLoops) \
+	PORT_DEF(GearSound, InitLoops, GearSound_InitLoops) \
+	PORT_DEF(MaintenanceSound, InitLoops, MaintenanceSound_InitLoops) \
+	PORT_DEF(MayorSound, InitLoops, MayorSound_InitLoops) \
+	PORT_DEF(MessengerSound, InitLoops, MessengerSound_InitLoops) \
+	PORT_DEF(NurseSound, InitLoops, NurseSound_InitLoops) \
+	PORT_DEF(PoliceSound, InitLoops, PoliceSound_InitLoops) \
+	PORT_DEF(RustySound, InitLoops, RustySound_InitLoops) \
+	PORT_DEF(SebastianSound, InitLoops, SebastianSound_InitLoops) \
+	PORT_DEF(SentinelSound, InitLoops, SentinelSound_InitLoops) \
+	PORT_DEF(SputnikJunkyardSound, InitLoops, SputnikJunkyardSound_InitLoops) \
+	PORT_DEF(SputnikSound, InitLoops, SputnikSound_InitLoops) \
+	PORT_DEF(TestCSound, InitLoops, TestCSound_InitLoops)
 
 /* Speech.c */
 PORT_DECL(Speech, ScheduledVoiceCallback) /* 2 */

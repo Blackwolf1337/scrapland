@@ -17,8 +17,8 @@
  * the functions RunNI calls (OnSpch, OnObjSpch) are the values of the module. The entities are handle values; the
  * voices, SScorer.SetSpeechText, SetSpeechCallback, SetHeadMonitor, CancelSpeech, SetMsgText and Set, Scrap.Set,
  * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, DeleteScheduledFuncs and the scheduler go through their seams
- * (OBJLIB 7: the cases record most of them); SVec.GetRotAng, NormAng, Scrap.GetLangEntries, string.split and find
- * stay by name (OBJLIB 3, 7).
+ * (OBJLIB 7: the cases record most of them); SVec.GetRotAng, NormAng and Scrap.GetLangEntries stay by name (OBJLIB
+ * 7), string.split and find are the native twins (PORT_CALL; by name for an argument that holds an object, OBJLIB 9).
  */
 #include <string.h>
 
@@ -504,7 +504,7 @@ static byte Sp_StdAnsLst(const nativeVal_t *lstArg) {
 /* ---- a speech ---- */
 
 /* CalculateSpeechTime(cad): len(string.split(cad)) * 0.3 + 2, 0.3 s a word and 2 s. A value that is no string goes
- * to string.split, which raises as in the script (OBJLIB 3) */
+ * to string.split, which raises as in the script (the native twin; an object goes to strop by name, OBJLIB 9) */
 static byte Sp_SpeechTime(const nativeVal_t *text, nativeVal_t *out) {
 	int words = 0;
 	if (text->type != NV_STR) {
@@ -1116,7 +1116,8 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 	nativeVal_t *h = Mode_V(&t), *params = Mode_V(&t);
 	if (typeV->type != NV_STR) {
 		/* string.find(charType, "Mercenary") raises for a value that is no string (one it takes fails at the
-		 * "Generics_" + charType after it); OBJLIB 3: the string port by name */
+		 * "Generics_" + charType after it); the native twin of string.find (an object goes to strop by name,
+		 * OBJLIB 9) */
 		byte ok = PORT_CALL(string, find, r, "vs", typeV, "Mercenary") && Sp_CatS("Generics_", typeV, less);
 		return Mode_Done(&t, ok ? Native_Raise(NE_SYSTEM, "error return without exception set") : 0);
 	}
