@@ -119,18 +119,21 @@ static void Port_Read(const char *fmt, va_list va, portArgs_t *p) {
 	p->n = Native_ReadArgs(letters, va, p->a);
 }
 
-/* the slot of the entry for each argument of fmt (slot[i]) and their count (*m), slot NULL for the check alone: 1, or 0
- * when the entry cannot take them that way (keywords to a ref without names, a name it does not have, a slot given
- * twice) */
-static byte Port_Slots(const portRef_t *ref, const char *fmt, int *slot, int *m) {
+/* the slot of the entry for each argument of a call (slot[i]) and their count (m) */
+typedef struct {
+	signed char slot[PORT_ARGS], m;
+} portSlots_t;
+
+/* the slots of the arguments of fmt: 1, or 0 when the entry cannot take them that way (keywords to a ref without
+ * names, a name it does not have, a slot given twice). Not inlined: its parsing stays off the frame of Port_Run (see
+ * below) */
+static __attribute__((noinline)) byte Port_Slots(const portRef_t *ref, const char *fmt, portSlots_t *ps) {
 	byte used[PORT_ARGS] = { 0 };
 	const char *q;
 	int n = Port_Npos(fmt, &q), most = n;
 	for (int i = 0; i < n; i++) {
 		used[i] = 1;
-		if (slot) {
-			slot[i] = i;
-		}
+		ps->slot[i] = (signed char)i;
 	}
 	for (; q; n++) {
 		const char *name;
@@ -144,14 +147,10 @@ static byte Port_Slots(const portRef_t *ref, const char *fmt, int *slot, int *m)
 			return 0;
 		}
 		used[k] = 1;
-		if (slot) {
-			slot[n] = k;
-		}
+		ps->slot[n] = (signed char)k;
 		most = k + 1 > most ? k + 1 : most;
 	}
-	if (m) {
-		*m = most;
-	}
+	ps->m = (signed char)most;
 	return 1;
 }
 
@@ -192,7 +191,7 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 
 /* the entry of ref on the arguments in their slots (the ones between not given), the result into *r (freed by the
  * caller also on a failure) */
-static byte Port_Fast(const portRef_t *ref, const portArgs_t *p, const int *slot, int m, nativeVal_t *r) {
+static byte Port_Fast(const portRef_t *ref, const portArgs_t *p, const signed char *slot, int m, nativeVal_t *r) {
 	nativeVal_t a[PORT_ARGS];
 	byte ok = 1;
 	for (int i = 0; i < m; i++) {
@@ -221,20 +220,18 @@ static byte Port_Fast(const portRef_t *ref, const portArgs_t *p, const int *slot
 /*
  * The helpers below that read the arguments are not inlined: the arguments and the packed values (about 3.5 KB) stay
  * off the frame of Port_Run, which stays on the stack during a slow call. A script recursion through a port call
- * (an alias of a level function to itself) has one Port_Run per level: 3952 bytes with them, 128 without (gcc -O2
- * x86_64 Linux; mingw-w64 3856 and 176). An endless self call stops at 689 levels instead of 516 (690 by name
+ * (an alias of a level function to itself) has one Port_Run per level: 3952 bytes with them, 144 without (gcc -O2
+ * x86_64 Linux; mingw-w64 3856 and 192). An endless self call stops at 687 levels instead of 516 (690 by name
  * before stage 3).
  */
 
-/* the fast path of Port_Run (the entry can take the arguments of fmt in their slots) */
-static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, nativeVal_t *out, PyObject **pyout,
-	const char *fmt, va_list va) {
+/* the fast path of Port_Run on the arguments of fmt in their slots */
+static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, const portSlots_t *ps, nativeVal_t *out,
+	PyObject **pyout, const char *fmt, va_list va) {
 	portArgs_t p;
-	int slot[PORT_ARGS], m;
 	nativeVal_t r, res;
-	Port_Slots(ref, fmt, slot, &m);
 	Port_Read(fmt, va, &p);
-	byte ok = Port_Fast(ref, &p, slot, m, &r);
+	byte ok = Port_Fast(ref, &p, ps->slot, ps->m, &r);
 	if (pyout) {
 		/* what the adapter returns (Mode_Out) */
 		*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
@@ -313,13 +310,14 @@ static int Port_Twin(const portRef_t *ref, const char *fmt, va_list va, byte dir
  * va is read once, by the path the call takes */
 static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const char *fmt, va_list va) {
 	PyObject *hook = NULL;
+	portSlots_t ps;
 	byte ok = 0;
 	if (!site->listed) {
 		site->listed = 1;
 		site->next = port_sites;
 		port_sites = site;
 	}
-	byte direct = !site->ref->py && Port_Slots(site->ref, fmt, NULL, NULL);
+	byte direct = !site->ref->py && Port_Slots(site->ref, fmt, &ps);
 	int seam = site->ref->adapter ? Port_Look(site->ref, site->global, !direct, &hook) : Port_Twin(site->ref, fmt, va, direct, &hook);
 	if (seam > 0) {
 		site->slow++;
@@ -336,7 +334,7 @@ static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const
 		}
 	} else if (seam == 0) {
 		site->fast++;
-		ok = Port_FastVa(site->ref, out, pyout, fmt, va);
+		ok = Port_FastVa(site->ref, &ps, out, pyout, fmt, va);
 	}
 	if (!ok) {
 		site->errors++;
