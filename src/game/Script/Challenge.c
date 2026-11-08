@@ -635,17 +635,9 @@ static byte Chal_SetOptions(const nativeVal_t *ch, const nativeVal_t *type, cons
 	return Mode_Done(&t, ok && LvN_SetI(ch, "ArriOpt", 0));
 }
 
-/* OBJLIB 3: PhoneCab's call on Python values until the ports call each other in C */
-byte Challenge_SetOptions(PyObject *ch, PyObject *type, PyObject *foe) {
-	nativeVal_t c, t, f;
-	Native_Arg(ch, &c);
-	Native_Arg(type, &t);
-	Native_Arg(foe, &f);
-	byte ok = Chal_SetOptions(&c, &t, &f);
-	Native_Free(&c);
-	Native_Free(&t);
-	Native_Free(&f);
-	return ok;
+/* PhoneCab.SetRevengeOptions shares the options (script.h) */
+byte Challenge_SetOptions(const nativeVal_t *ch, const nativeVal_t *type, const nativeVal_t *foe) {
+	return Chal_SetOptions(ch, type, foe);
 }
 
 /* SetChallengeOptions(ch): the options of the challenge of challengeType against foeType */

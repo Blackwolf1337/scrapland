@@ -12,9 +12,10 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
  * entries are adapters. The variables are read and written where the script does it (OBJLIB 5): the module globals
  * above, Init.Path, the Challenge and Speech variables (set as Script_SetVar does, an error is dropped). The calls of
- * SaveGame, Speech, Challenge, Chars, CharsNPC and the mission's DialogController stay by name (OBJLIB 3), Challenge's
- * options through its C function on Python values. The cabs, communicators and desktops are entity handle values
- * (OBJLIB 7): the module variables keep them and the scripts pass them in.
+ * SaveGame, Speech, Challenge and CharsNPC go through their refs (PORT_CALL), Challenge's options through its C
+ * function; the mission's DialogController is called as the value of the variable (OBJLIB 5), and the module's
+ * functions put into Speech.OnOutOfRange are values (OBJLIB 4). The cabs, communicators and desktops are entity
+ * handle values (OBJLIB 7): the module variables keep them and the scripts pass them in.
  */
 #include <string.h>
 
@@ -135,7 +136,7 @@ static byte Phone_Mark(const nativeVal_t *chname, nativeVal_t *e) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *path = Mode_V(&t), *cur = Mode_V(&t), *next = Mode_V(&t), *n = Mode_V(&t), *v = Mode_V(&t);
 	byte ok = Mode_Import("SaveGame") && Mode_Import("Init") && Mode_Import("Speech") && Mode_ModVar("Init", "Path", path) &&
-		Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvv", path, chname, chname) && Mode_EntityH(chname, e) &&
+		PORT_CALL(SaveGame, MarkWayPoint, NULL, "vvv", path, chname, chname) && Mode_EntityH(chname, e) &&
 		Mode_VGet(e, "ArriOpt", cur) && Native_Arith('+', cur, Mode_I(&t, 1), next) && Mode_VGet(e, "ArrnOpt", n) &&
 		Native_Arith('%', next, n, v) && Mode_VSet(e, "ArriOpt", v);
 	return Mode_Done(&t, ok);
@@ -242,12 +243,8 @@ static byte PhoneCab_RevengeOptions(const nativeVal_t *ch) {
 	}
 	Mode_SaveVar("Revenge.Type", &type);
 	Mode_SaveVar("Revenge.Foe", &foe);
-	/* OBJLIB 3: Challenge's C function on Python values until the ports call each other in C */
-	PyObject *c = Native_ToPy(ch), *t = c ? Native_ToPy(&type) : NULL, *f = t ? Native_ToPy(&foe) : NULL;
-	byte ok = f && Challenge_SetOptions(c, t, f);
-	Py_XDECREF(c);
-	Py_XDECREF(t);
-	Py_XDECREF(f);
+	/* the script's own copy of Challenge's options: Challenge's C function */
+	byte ok = Challenge_SetOptions(ch, &type, &foe);
 	Native_Free(&type);
 	Native_Free(&foe);
 	return ok;
@@ -283,7 +280,7 @@ static byte PhoneCab_ObjSpch(const nativeVal_t *ch, const nativeVal_t *msg, cons
 		return 0;
 	}
 	Mode_SaveVar("Revenge.Foe", &rfoe);
-	byte ok = msg ? Native_CallMod("Speech", "OnObjSpch", &v, "vvvv", &ac, &rfoe, msg, ans) :
+	byte ok = msg ? PORT_CALL(Speech, OnObjSpch, &v, "vvvv", &ac, &rfoe, msg, ans) :
 		Native_Raise(NE_NAME, "initMsg");
 	int t = !ok ? -1 : again ? PhoneCab_Wins() : Native_True(&v);
 	ok = t >= 0 && (!t || PhoneCab_RevengeOptions(ch));
@@ -331,7 +328,7 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 	} else if (!PhoneCab_PrintError(a)) {
 		return Mode_Done(&t, 0);
 	}
-	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 3: the function of the module as a value) */
+	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 4: the function of the module as a value) */
 	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
 	wins = PhoneCab_Wins();
 	if (wins < 0) {
@@ -370,7 +367,7 @@ static byte PhoneCab_Revenge(const nativeVal_t *a) {
 		ok = PhoneCab_ResultTalk(a, ch);
 	} else if (Native_IsStr(opt, "ChallengeRaceStdOpt1") || Native_IsStr(opt, "ChallengeRaceStdOpt2") ||
 		Native_IsStr(opt, "ChallengeRaceStdOpt3")) {
-		ok = Native_CallMod("Challenge", "OnChallengeOpt", NULL, "ivi", (long)(Native_Text(opt)[19] - '0'), ch, 0L);
+		ok = PORT_CALL(Challenge, OnChallengeOpt, NULL, "ivi", (long)(Native_Text(opt)[19] - '0'), ch, 0L);
 	} else if (Native_IsStr(opt, "ChallengeRaceStdOpt4")) {
 		Mode_SaveVar("Revenge.Foe", foe);
 		ok = Mode_ModVar("Challenge", "groups", groups) && Native_Subscript(groups, foe, group);
@@ -384,7 +381,7 @@ static byte PhoneCab_Revenge(const nativeVal_t *a) {
 		if (ok) {
 			Mode_SaveVar("Revenge.Foe", rfoe);
 			ok = Mode_Cat(&t, ans, 3, Mode_S(&t, "ChallengeRace"), foe, Mode_S(&t, "Msg3_Filter")) &&
-				Native_CallMod("Speech", "OnObjSpch", v, "vvsv", ac, rfoe, "ChallengeRaceStdOpt2", ans);
+				PORT_CALL(Speech, OnObjSpch, v, "vvsv", ac, rfoe, "ChallengeRaceStdOpt2", ans);
 		}
 		ok = ok && (!Native_True(v) || PhoneCab_RevengeOptions(ch));
 	} else {
@@ -488,7 +485,7 @@ static byte PhoneCab_Use(const nativeVal_t *a) {
 	int alarm = Mode_AlarmOn();
 	if (alarm > 0) {
 		ok = Native_Arith('+', Mode_S(&t, "Generics_StillPolice1_"), foe, text) &&
-			Native_CallMod("Speech", "StartObjSpch", NULL, "vvv", e, text, foe);
+			PORT_CALL(Speech, StartObjSpch, NULL, "vvv", e, text, foe);
 	} else {
 		int marked = alarm < 0 ? -1 : Phone_Marked(e);
 		ok = marked >= 0 && (!marked || PhoneCab_Revenge(a));
@@ -742,9 +739,10 @@ static byte DTritus_Use(const nativeVal_t *a) {
 	}
 	int alarm = Mode_AlarmOn();
 	if (alarm) {
-		return Mode_Done(&t, alarm > 0 && Native_CallMod("Speech", "AddRemoteCom", NULL, "ss", "Generics_DeepThroatTaunt_1", "DeepThroat"));
+		return Mode_Done(&t, alarm > 0 &&
+			PORT_CALL(Speech, AddRemoteCom, NULL, "ss", "Generics_DeepThroatTaunt_1", "DeepThroat"));
 	}
-	/* OBJLIB 3: the mission's talk function, read again */
+	/* OBJLIB 5: the mission's talk function, the variable read again and called as the value it holds */
 	return Mode_Done(&t, Native_CallGlobal("DTritusDesktop", "DialogController", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]));
 }
 
@@ -835,7 +833,7 @@ static byte DTritus_NPCs(void) {
 			Native_Upper(tail, here);
 		if (ok && Native_Equal(map, here)) {
 			Str_Printf(var, sizeof(var), "%s_Default", names[i]);
-			ok = Native_CallMod("CharsNPC", "CreateMissionChar", NULL, "s", var);
+			ok = PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", var);
 		}
 		if (!Mode_Done(&t, ok)) {
 			return 0;

@@ -7,8 +7,8 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
  * entries are adapters. The module variables (MissionMap, OutOfMetro, WalkCharSpeed; PlayerName and CallParams, which
  * the script creates on the first use) are mirrored from the module dict where the script reads them and written
- * through where it writes them (OBJLIB 5). The calls of Elevator, Menu and Chars, Init.Path and Menu.BackButtonYStart
- * stay by name (OBJLIB 3, 5).
+ * through where it writes them (OBJLIB 5). The calls of Elevator, Menu and Chars go through their refs (stage 3);
+ * Init.Path and Menu.BackButtonYStart stay by name (OBJLIB 5).
  */
 #include <limits.h>
 #include <string.h>
@@ -127,10 +127,10 @@ static byte Metro_RecoverUsr(void) {
 }
 
 /* OutDoorInitializator(DoorClass, val=0): the door of Elevator with the event Recover 0.1 s before the end of Down;
- * door and val as the caller gave them (OBJLIB 3: they go to Elevator by name) */
+ * door and val as the caller gave them (they go to Elevator as they are) */
 static byte Metro_OutDoor(PyObject *door, PyObject *val) {
 	static const char *const mods[] = { "Elevator", NULL };
-	if (!Script_Import(mods) || !Script_Try("Elevator", "DoorInitializator", "(OO)", door, val)) {
+	if (!Script_Import(mods) || !PORT_CALL(Elevator, DoorInitializator, NULL, "OO", door, val)) {
 		return 0;
 	}
 	Native_ActAction("Down");
@@ -223,8 +223,7 @@ static byte Metro_SetUsrParams(const nativeVal_t *name, const nativeVal_t *ang) 
 static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 	static const char *const mods[] = { "Elevator", "Menu", NULL };
 	PyObject *pid = Native_ToPy(id), *pctl = pid ? Native_ToPy(control) : NULL;
-	/* OBJLIB 3: the calls of other ports go through their modules until the ports call each other in C */
-	byte ok = pctl && Script_Import(mods) && Script_Try("Menu", "BackToGame", "(OO)", pid, pctl);
+	byte ok = pctl && Script_Import(mods) && PORT_CALL(Menu, BackToGame, NULL, "OO", pid, pctl);
 	Py_XDECREF(pid);
 	Py_XDECREF(pctl);
 	if (!ok) {
@@ -255,7 +254,7 @@ static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 		}
 		ok = ok && cp[i];
 	}
-	ok = ok && Script_Try("Elevator", "UseElevator", "(OOOO)", cp[0], cp[1], cp[2], cp[3]);
+	ok = ok && PORT_CALL(Elevator, UseElevator, NULL, "OOOO", cp[0], cp[1], cp[2], cp[3]);
 	for (int i = 0; i < 4; i++) {
 		Py_XDECREF(cp[i]);
 	}
@@ -373,14 +372,13 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 	}
 	const char *section = "here";
 	if (ok && !usrhere) {
-		/* OBJLIB 3: Elevator.isOutMap(Name) and Chars.CanDrive(Scrap.UsrEntity(0)) by name (the handle goes to
-		 * Chars) */
-		PyObject *out = Script_Ask("Elevator", "isOutMap", "(O)", pn);
+		/* Elevator.isOutMap(Name) and Chars.CanDrive(Scrap.UsrEntity(0)) (the handle goes to Chars) */
+		PyObject *out = PORT_ASK(Elevator, isOutMap, "O", pn);
 		int cantgo = Script_True(out);
 		Py_XDECREF(out);
 		if (cantgo > 0) {
 			PyObject *usr = Script_Usr();
-			PyObject *drive = usr ? Script_Ask("Chars", "CanDrive", "(O)", usr) : NULL;
+			PyObject *drive = usr ? PORT_ASK(Chars, CanDrive, "O", usr) : NULL;
 			int d = Script_True(drive);
 			cantgo = d < 0 ? -1 : !d;
 			Py_XDECREF(drive);
@@ -460,8 +458,9 @@ static byte Metro_OnUse(nativeVal_t *params) {
 		PyErr_SetString(PyExc_ImportError, "cannot import name BackButtonYStart");
 		return 0;
 	}
-	/* OBJLIB 3: Menu by name; SScorer.SetOnCancel(0, "Menu.BackToGame") */
-	byte ok = Metro_MissionMap() && Script_Try("Menu", "InitMenuSys", "(i)", 0) && Script_Try("Menu", "StartNewMenu", "(i)", 0);
+	/* SScorer.SetOnCancel(0, "Menu.BackToGame") */
+	byte ok = Metro_MissionMap() && PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) &&
+		PORT_CALL(Menu, StartNewMenu, NULL, "i", 0L);
 	if (ok) {
 		cScorer *sc = Scorer_Get(0);
 		if (sc) {
@@ -486,16 +485,19 @@ static byte Metro_OnUse(nativeVal_t *params) {
 }
 
 /* SetAsMetro(EntityName): the door of the level is a metro station; name as the caller gave it (it goes to
- * Elevator by name) */
+ * Elevator as it is) */
 static byte Metro_SetAsMetro(PyObject *name) {
 	static const char *const mods[] = { "Elevator", "Init", NULL };
 	if (!Script_Import(mods)) {
 		return 0;
 	}
-	/* OBJLIB 3, 5: Elevator.ConnectElevators([EntityName], [Init.Path[7:]]) by name */
+	/* Elevator.ConnectElevators([EntityName], [Init.Path[7:]]) (OBJLIB 5: Init.Path is a variable of Init) */
 	PyObject *path = Script_Attr("Init", "Path");
 	PyObject *tail = path ? PySequence_GetSlice(path, 7, INT_MAX) : NULL;
-	byte ok = tail && Script_Try("Elevator", "ConnectElevators", "([O][O])", name, tail);
+	PyObject *names = tail ? Py_BuildValue("[O]", name) : NULL, *maps = names ? Py_BuildValue("[O]", tail) : NULL;
+	byte ok = maps && PORT_CALL(Elevator, ConnectElevators, NULL, "OO", names, maps);
+	Py_XDECREF(maps);
+	Py_XDECREF(names);
 	Py_XDECREF(tail);
 	Py_XDECREF(path);
 	nativeVal_t n = { 0 }, v;
@@ -684,7 +686,7 @@ static PyObject *Metro_ObjInitializator(PyObject *self, PyObject *args) {
 	nativeVal_t v;
 	(void)self;
 	if (!PyArg_ParseTuple(args, "OO", &elv, &extra) || !Script_Import(mods) ||
-		!Script_Try("Elevator", "ObjInitializator", "(OO)", elv, extra)) {
+		!PORT_CALL(Elevator, ObjInitializator, NULL, "OO", elv, extra)) {
 		return NULL;
 	}
 	if (!PyEntity_Check(elv)) {

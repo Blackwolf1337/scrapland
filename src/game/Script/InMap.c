@@ -4,8 +4,8 @@
  * port) and starts the other systems of an interior (conversors, crazy winds, elevators, police, the Dtritus desk,
  * the news panel). Every call stops the start where the script would stop.
  *
- * Native C (docs/objlib-plan.md, stage 2): the engine calls are C; the module has no state. The calls of the other
- * ports and Init.UpperMap stay by name.
+ * Native C (docs/objlib-plan.md, stages 2 and 3): the engine calls are C; the module has no state. The calls of the
+ * other ports go through their refs (PORT_CALL); Init.UpperMap stays by name (OBJLIB 5).
  */
 #include <string.h>
 
@@ -25,13 +25,12 @@ static byte InMap_Start(void) {
 	GVar_SetNum("SoundAutoplayVolume", -60.0);
 	GVar_SetNum("SoundDopplerLevel", 1.0);
 	GVar_SetNum("SoundDistAttenuation", 12.5);
-	/* OBJLIB 3: the calls of other ports go through their modules until the ports call each other in C */
-	if (!Script_Try("Chars", "CreateStartupPlayer", "()") || !Script_Try("CharsNPC", "Init", "()")) {
+	if (!PORT_CALL(Chars, CreateStartupPlayer, NULL, "") || !PORT_CALL(CharsNPC, Init, NULL, "")) {
 		return 0;
 	}
 	GVar_SetNum("CameraCloudDistance", 0);
-	if (!Script_Try("CharConversor", "Init", "()") || !Script_Try("CrazyWing", "InitCrazyWing", "()") ||
-		!Script_Try("Elevator", "PlayerCreatedElevator", "()") || !Script_Try("InPolice", "Init", "()")) {
+	if (!PORT_CALL(CharConversor, Init, NULL, "") || !PORT_CALL(CrazyWing, InitCrazyWing, NULL, "") ||
+		!PORT_CALL(Elevator, PlayerCreatedElevator, NULL, "") || !PORT_CALL(InPolice, Init, NULL, "")) {
 		return 0;
 	}
 	/* the mercenaries only stay friends in Gamblinden and the Junkyard (OBJLIB 5: Init.UpperMap is a variable of
@@ -48,7 +47,7 @@ static byte InMap_Start(void) {
 	}
 	Py_DECREF(upper);
 	GVar_SetNum("CharGrav", 1960);
-	if (!Script_Try("DTritusDesktop", "Init", "()") || !Script_Try("NewsPanel", "Init", "()")) {
+	if (!PORT_CALL(DTritusDesktop, Init, NULL, "") || !PORT_CALL(NewsPanel, Init, NULL, "")) {
 		return 0;
 	}
 	GVar_SetNum("AtmosphereLimit", 1000000000);
