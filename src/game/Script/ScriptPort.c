@@ -3,6 +3,8 @@
  * that tells whether a module attribute is still the port's own C function (OBJLIB 5), the call of its native entry
  * with the arguments packed as the adapter would get them, and the old call through Python when something else is
  * there (OBJLIB 7, with SCRAP_PORT_SLOW=1 forcing it and the counters of each call site for the test channel).
+ * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable) and the callbacks bound
+ * to port functions (Port_Callback, cPy_Function PYF_ENTRY).
  */
 #include <stdint.h>
 #include <stdlib.h>
@@ -24,16 +26,18 @@ static byte Port_Slow(void) {
 	return (byte)slow;
 }
 
+byte Port_IsOwn(const portRef_t *ref, PyObject *f) {
+	return !Port_Slow() && PyCFunction_Check(f) && !PyCFunction_GET_SELF(f) &&
+		((PyCFunctionObject *)f)->m_ml->ml_meth == ref->adapter;
+}
+
 /* Port_Seam, slow 1: what is there as the hook also when it is the port's own (a call the entry cannot take) */
 static int Port_Look(const portRef_t *ref, byte global, byte slow, PyObject **hook) {
 	PyObject *f = global ? Script_Global(ref->module, ref->name) : Script_Attr(ref->module, ref->name);
 	if (!f) {
 		return -1;
 	}
-	/* the port's own: the C function of its table entry (by the adapter: Mission_X.Init and Mission_Y.Init share the
-	 * name), without self (the recorder of the test channel has one) */
-	if (!slow && !Port_Slow() && PyCFunction_Check(f) && !PyCFunction_GET_SELF(f) &&
-		((PyCFunctionObject *)f)->m_ml->ml_meth == ref->adapter) {
+	if (!slow && Port_IsOwn(ref, f)) {
 		Py_DECREF(f);
 		return 0;
 	}
@@ -296,4 +300,74 @@ PyObject *Port_Ask(portSite_t *site, const char *fmt, ...) {
 	PyObject *r = Port_AskVa(site, fmt, va);
 	va_end(va);
 	return r;
+}
+
+/* ---- the registry (stage 4 of docs/objlib-plan.md) ---- */
+
+/* the order of g_PortTable: module, then name */
+static int Port_Order(const portRef_t *ref, const char *module, const char *name) {
+	int c = strcmp(ref->module, module);
+	return c ? c : strcmp(ref->name, name);
+}
+
+/* the index of the first ref of module.name in g_PortTable, PORT_COUNT when there is none */
+static int Port_Index(const char *module, const char *name) {
+	int lo = 0, hi = PORT_COUNT;
+	while (lo < hi) {
+		int mid = lo + (hi - lo) / 2;
+		if (Port_Order(g_PortTable[mid], module, name) < 0) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	return lo < PORT_COUNT && !Port_Order(g_PortTable[lo], module, name) ? lo : PORT_COUNT;
+}
+
+const portRef_t *Port_Find(const char *module, const char *name) {
+	int i = Port_Index(module, name);
+	return i < PORT_COUNT ? g_PortTable[i] : NULL;
+}
+
+/* OBJLIB 7: the counters of the callbacks, one site per ref of the table */
+static portSite_t port_callbacks[PORT_COUNT];
+static portSite_t *port_callbackList;
+
+portSite_t *Port_Callback(const char *module, const char *name, PyObject *f) {
+	for (int i = Port_Index(module, name); i < PORT_COUNT && !Port_Order(g_PortTable[i], module, name); i++) {
+		const portRef_t *ref = g_PortTable[i];
+		/* a function of the same adapter under another name stays Python: the name of the binding is the
+		 * function's own (__name__) */
+		if (ref->py || !Port_IsOwn(ref, f) || strcmp(((PyCFunctionObject *)f)->m_ml->ml_name, ref->name)) {
+			continue;
+		}
+		portSite_t *s = &port_callbacks[i];
+		if (!s->listed) {
+			s->ref = ref;
+			s->file = "callback";
+			s->listed = 1;
+			s->next = port_callbackList;
+			port_callbackList = s;
+		}
+		return s;
+	}
+	return NULL;
+}
+
+portSite_t *Port_Callbacks(void) {
+	return port_callbackList;
+}
+
+byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r) {
+	byte ok = 0;
+	Native_SetNone(r);
+	/* the frame address, as Script_CallObject takes it */
+	if (Script_Enter((uintptr_t)__builtin_frame_address(0))) {
+		ok = ref->entry(a, n, r);
+		Script_Leave();
+		if (!ok && !PyErr_Occurred()) {
+			PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+		}
+	}
+	return ok;
 }

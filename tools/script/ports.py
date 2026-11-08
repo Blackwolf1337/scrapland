@@ -2,12 +2,13 @@
 # The refs of the direct calls between script ports (stage 3 of docs/objlib-plan.md, PORT_CALL in
 # include/scrap/scriptnative.h): writes include/scrap/scriptports.h from the PyMethodDef tables of src/game/Script,
 # their registrations in Script.c and Levels.c and the native entries (<adapter>_E, made by MODE_FN and LV_FN or by
-# hand), found in the preprocessed sources (compile_commands.json of a build folder).
+# hand), found in the preprocessed sources (compile_commands.json of a build folder), and the registry of stage 4:
+# src/game/Script/PortTable.c, all refs sorted by module and name (strcmp order) for Port_Find.
 #
-#   tools/script/ports.py                 write the header (run it after a table or an entry changes, and to resolve a
-#                                         merge of the header)
-#   tools/script/ports.py --check         exit 1 when the header is not what the tool writes or a file with refs has
-#                                         no PORTS(<file>) line
+#   tools/script/ports.py                 write the header and the table (run it after a table or an entry changes,
+#                                         and to resolve a merge of either)
+#   tools/script/ports.py --check         exit 1 when the header or the table is not what the tool writes or a file
+#                                         with refs has no PORTS(<file>) line
 #   tools/script/ports.py --lines         add the missing PORTS(<file>) lines (at the end of the file)
 #   --build <dir>                         the build folder for the preprocessor (default build-linux64)
 #
@@ -21,6 +22,7 @@ import argparse, collections, concurrent.futures, json, os, re, shlex, subproces
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCRIPT = os.path.join(ROOT, 'src/game/Script')
 HEADER = os.path.join(ROOT, 'include/scrap/scriptports.h')
+TABLEFILE = os.path.join(SCRIPT, 'PortTable.c')
 
 TABLE = re.compile(r'\bPyMethodDef\s+(g_\w+)\s*\[\s*\]\s*=\s*\{')
 # a row: { "Name", adapter, ... }, the adapter maybe cast as (PyCFunction) or (PyCFunction)(void (*)(void)) (keywords)
@@ -37,7 +39,8 @@ def sources():
 	out = []
 	for d, _, files in os.walk(SCRIPT):
 		out += [os.path.relpath(os.path.join(d, f), SCRIPT) for f in files if f.endswith('.c')]
-	return sorted(out)
+	# the table this tool writes has no ports
+	return sorted(f for f in out if os.path.join(SCRIPT, f) != TABLEFILE)
 
 
 def tables(pp):
@@ -183,7 +186,32 @@ def header(byfile):
 				o.append('\tPORT_DEF%s(%s, %s, %s) \\' % (k, r.module, r.name, r.adapter))
 		o[-1] = o[-1][:-2]
 		o.append('')
+	o.append('/* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */')
+	o.append('#define PORT_COUNT %d' % sum(len(v) for v in byfile.values()))
+	o.append('')
 	o.append('#endif')
+	return '\n'.join(o) + '\n'
+
+
+def refname(r):
+	return 'port_%s_%s_%s' % (r.level, r.module, r.name) if r.level else 'port_%s_%s' % (r.module, r.name)
+
+
+def table(byfile):
+	"""src/game/Script/PortTable.c: every ref sorted by module and name as strcmp orders them (identifiers are ASCII),
+	the refs of one name in several levels after each other in the order of the header"""
+	rs = sorted((r for f in sorted(byfile) for r in byfile[f]), key=lambda r: (r.module.encode(), r.name.encode()))
+	o = ['/*',
+		' * The registry of the port functions (stage 4 of docs/objlib-plan.md): every ref of include/scrap/scriptports.h',
+		' * sorted by module and name (strcmp), for Port_Find (src/game/Script/ScriptPort.c). A name served by the modules',
+		' * of several levels (Map, Mission_X) has one ref per level, after each other. Made by tools/script/ports.py with',
+		' * the header. Do not edit: run the tool after a table or an entry changes, and to resolve a merge.',
+		' */',
+		'#include "scrap/scriptnative.h"',
+		'',
+		'const portRef_t *const g_PortTable[PORT_COUNT] = {']
+	o += ['\t&%s,' % refname(r) for r in rs]
+	o.append('};')
 	return '\n'.join(o) + '\n'
 
 
@@ -220,25 +248,31 @@ def main():
 	for p in problems:
 		print('ports: ' + p, file=sys.stderr)
 	text = header(byfile)
+	tab = table(byfile)
 	missing = missing_lines(byfile)
 	n = sum(len(v) for v in byfile.values())
 	if a.check:
 		old = open(HEADER).read() if os.path.exists(HEADER) else ''
+		oldtab = open(TABLEFILE).read() if os.path.exists(TABLEFILE) else ''
 		for f in missing:
 			print('ports: %s has no PORTS(%s) line' % (f, listname(f)[6:]))
 		if old != text:
 			print('ports: %s is not up to date (run tools/script/ports.py)' % os.path.relpath(HEADER, ROOT))
-		ok = old == text and not missing
+		if oldtab != tab:
+			print('ports: %s is not up to date (run tools/script/ports.py)' % os.path.relpath(TABLEFILE, ROOT))
+		ok = old == text and oldtab == tab and not missing
 		print('ports: %d refs in %d files%s' % (n, len(byfile), '' if ok else ', not up to date'))
 		return 0 if ok else 1
 	open(HEADER, 'w').write(text)
+	open(TABLEFILE, 'w').write(tab)
 	if a.lines:
 		for f in missing:
 			add_line(f)
 		missing = []
 	for f in missing:
 		print('ports: %s has no PORTS(%s) line (--lines adds it)' % (f, listname(f)[6:]))
-	print('ports: %d refs in %d files written to %s' % (n, len(byfile), os.path.relpath(HEADER, ROOT)))
+	print('ports: %d refs in %d files written to %s and %s' % (n, len(byfile), os.path.relpath(HEADER, ROOT),
+		os.path.relpath(TABLEFILE, ROOT)))
 	return 0
 
 
