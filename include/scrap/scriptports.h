@@ -531,13 +531,23 @@ PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 	PORT_DEF(DoorSound, ConversorSetSounds, DoorSound_ConversorSetSounds)
 
 /* GateKeeper.c */
-PORT_DECL(GateKeeper, UseDoor) /* ? */
+PORT_DECL(GateKeeper, UseDoor) /* 4 */
+PORT_DECL(GateKeeper, OnCreate) /* 1 */
 PORT_DECL(GateKeeper, SetDoor) /* ? */
-PORT_DECL(GateKeeper, DoorFoe) /* ? */
+PORT_DECL(GateKeeper, DoorFoe) /* 2 */
+PORT_DECL(GateKeeper, GetGateKeeperId) /* 1 */
+PORT_DECL(GateKeeper, RestoreState) /* 1 */
+PORT_DECL(GateKeeper, EndOfSpeech) /* 0 */
+PORT_DECL(GateKeeper, GateKeeperSpeech) /* 4 */
 #define PORTS_GateKeeper \
-	PORT_DEFP(GateKeeper, UseDoor, GateKeeper_UseDoor) \
-	PORT_DEFP(GateKeeper, SetDoor, GateKeeper_SetDoor) \
-	PORT_DEFP(GateKeeper, DoorFoe, GateKeeper_DoorFoe)
+	PORT_DEF(GateKeeper, UseDoor, GateKeeper_UseDoor) \
+	PORT_DEF(GateKeeper, OnCreate, GateKeeper_OnCreate) \
+	PORT_DEFK(GateKeeper, SetDoor, GateKeeper_SetDoor) \
+	PORT_DEF(GateKeeper, DoorFoe, GateKeeper_DoorFoe) \
+	PORT_DEF(GateKeeper, GetGateKeeperId, GateKeeper_GetGateKeeperId) \
+	PORT_DEF(GateKeeper, RestoreState, GateKeeper_RestoreState) \
+	PORT_DEF(GateKeeper, EndOfSpeech, GateKeeper_EndOfSpeech) \
+	PORT_DEF(GateKeeper, GateKeeperSpeech, GateKeeper_GateKeeperSpeech)
 
 /* HangarTab.c */
 PORT_DECL(HangarTab, ShowBoostPrediction) /* 2 */
