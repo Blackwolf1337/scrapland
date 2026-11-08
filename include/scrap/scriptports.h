@@ -2339,6 +2339,14 @@ PORT_DECLL(commercial, Map, InitStatus) /* 1 */
 PORT_DECLL(commercial, Map, Init) /* 1 */
 PORT_DECLL(commercial, MapRace, InitStatus) /* 1 */
 PORT_DECLL(commercial, MapRace, Init) /* 1 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial1) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial2) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial3) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial4) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial5) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial6) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial7) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial8) /* ? */
 PORT_DECLL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyMickus, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyMickus, CreateTransports) /* 1 */
@@ -2446,6 +2454,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, InitMission) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, CreateMayorTransport) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, CreatePorkinsTransport) /* 0 */
+PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, CreateBishop) /* ? */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, AttackMayorTransport) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, OnPorkinsTransportDeath) /* 2 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, OnMayorTransportDeath) /* 2 */
@@ -2464,6 +2473,14 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Map, Init, CmMap_InitA) \
 	PORT_DEFL(commercial, MapRace, InitStatus, MapRace_PassA) \
 	PORT_DEFL(commercial, MapRace, Init, MapRace_PassA) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial1, MapRace_Race1) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial2, MapRace_Race2) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial3, MapRace_Race3) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial4, MapRace_Race4) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial5, MapRace_Race5) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial6, MapRace_Race6) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial7, MapRace_Race7) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial8, MapRace_Race8) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile, Mickus_GetFuncEnemiesProfileA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, Init, Mickus_InitA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, CreateTransports, Mickus_CreateTransportsA) \
@@ -2571,6 +2588,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, InitMission, Porkins_InitMissionA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, CreateMayorTransport, Porkins_CreateMayorTransportA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, CreatePorkinsTransport, Porkins_CreatePorkinsTransportA) \
+	PORT_DEFLK(commercial, Mission_DestroyPorkinsTransports, CreateBishop, Porkins_CreateBishop) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, AttackMayorTransport, Porkins_AttackMayorTransportA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, OnPorkinsTransportDeath, Porkins_OnPorkinsTransportDeathA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, OnMayorTransportDeath, Porkins_OnMayorTransportDeathA) \
