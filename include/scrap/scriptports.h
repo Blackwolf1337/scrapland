@@ -830,38 +830,98 @@ PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
 /* Speech.c */
 PORT_DECL(Speech, ScheduledVoiceCallback) /* 2 */
 PORT_DECL(Speech, PlayVoiceScheduled) /* 3 */
+PORT_DECL(Speech, PerformAnswer) /* ? */
+PORT_DECL(Speech, NormalAbortSpeech) /* ? */
+PORT_DECL(Speech, CallEndOfSpeech) /* ? */
+PORT_DECL(Speech, AbortSpeech) /* ? */
 PORT_DECL(Speech, RestoreState) /* 1 */
+PORT_DECL(Speech, AutoAnswer) /* ? */
+PORT_DECL(Speech, StopMenuEvents) /* ? */
+PORT_DECL(Speech, RestartMenuEvents) /* ? */
 PORT_DECL(Speech, RestoreMoveTime) /* 1 */
 PORT_DECL(Speech, StdAnsLst) /* 1 */
+PORT_DECL(Speech, StdOnSpch) /* ? */
 PORT_DECL(Speech, CalculateSpeechTime) /* 1 */
+PORT_DECL(Speech, OnSpch) /* ? */
+PORT_DECL(Speech, OnChallengeSpch) /* ? */
+PORT_DECL(Speech, OnSpeech) /* ? */
 PORT_DECL(Speech, PlayerAnsEnd) /* 0 */
 PORT_DECL(Speech, PlayerAns) /* 4 */
 PORT_DECL(Speech, SetPlayerToTalk) /* 2 */
 PORT_DECL(Speech, InspectChar) /* 4 */
 PORT_DECL(Speech, AutoSpeech) /* 4 */
+PORT_DECL(Speech, NISpeech) /* ? */
+PORT_DECL(Speech, AutoAddNI) /* ? */
+PORT_DECL(Speech, AddNI) /* ? */
+PORT_DECL(Speech, RunNI) /* ? */
+PORT_DECL(Speech, ObjNIEnd) /* ? */
 PORT_DECL(Speech, LaunchTaunt) /* 3 */
+PORT_DECL(Speech, RestoreSpeech) /* ? */
 PORT_DECL(Speech, OffVoice) /* 1 */
+PORT_DECL(Speech, RemoteComunication) /* ? */
+PORT_DECL(Speech, ForceRemoteComInternal) /* ? */
+PORT_DECL(Speech, ForceRemoteCom) /* ? */
+PORT_DECL(Speech, ForceRemoteComunication) /* ? */
+PORT_DECL(Speech, AddRemoteCom) /* ? */
 PORT_DECL(Speech, ProcessRemoteCom) /* 1 */
+PORT_DECL(Speech, CancelRemoteCom) /* ? */
 PORT_DECL(Speech, TestInRange) /* 0 */
+PORT_DECL(Speech, StartObjSpch) /* ? */
 PORT_DECL(Speech, StartObjectSpeech) /* 6 */
+PORT_DECL(Speech, StdObjSpch) /* ? */
+PORT_DECL(Speech, OnObjSpch) /* ? */
+PORT_DECL(Speech, OnChallengeObjSpch) /* ? */
+PORT_DECL(Speech, OnObjectSpeech) /* ? */
+PORT_DECL(Speech, ObjectAutoAnswer) /* ? */
+PORT_DECL(Speech, ObjectAutoAnswer2) /* ? */
 PORT_DECL(Speech, EndObjectAnswer) /* 0 */
 #define PORTS_Speech \
 	PORT_DEF(Speech, ScheduledVoiceCallback, Speech_ScheduledVoiceCallback) \
 	PORT_DEF(Speech, PlayVoiceScheduled, Speech_PlayVoiceScheduled) \
+	PORT_DEF(Speech, PerformAnswer, Speech_PerformAnswer) \
+	PORT_DEF(Speech, NormalAbortSpeech, Speech_NormalAbortSpeech) \
+	PORT_DEF(Speech, CallEndOfSpeech, Speech_CallEndOfSpeech) \
+	PORT_DEF(Speech, AbortSpeech, Speech_AbortSpeech) \
 	PORT_DEF(Speech, RestoreState, Speech_RestoreState) \
+	PORT_DEF(Speech, AutoAnswer, Speech_AutoAnswer) \
+	PORT_DEF(Speech, StopMenuEvents, Speech_StopMenuEvents) \
+	PORT_DEF(Speech, RestartMenuEvents, Speech_RestartMenuEvents) \
 	PORT_DEF(Speech, RestoreMoveTime, Speech_RestoreMoveTime) \
 	PORT_DEF(Speech, StdAnsLst, Speech_StdAnsLst) \
+	PORT_DEF(Speech, StdOnSpch, Speech_StdOnSpch) \
 	PORT_DEF(Speech, CalculateSpeechTime, Speech_CalculateSpeechTime) \
+	PORT_DEF(Speech, OnSpch, Speech_OnSpch) \
+	PORT_DEF(Speech, OnChallengeSpch, Speech_OnChallengeSpch) \
+	PORT_DEF(Speech, OnSpeech, Speech_OnSpeech) \
 	PORT_DEF(Speech, PlayerAnsEnd, Speech_PlayerAnsEnd) \
 	PORT_DEF(Speech, PlayerAns, Speech_PlayerAns) \
 	PORT_DEF(Speech, SetPlayerToTalk, Speech_SetPlayerToTalk) \
 	PORT_DEF(Speech, InspectChar, Speech_InspectChar) \
 	PORT_DEF(Speech, AutoSpeech, Speech_AutoSpeech) \
+	PORT_DEF(Speech, NISpeech, Speech_NISpeech) \
+	PORT_DEF(Speech, AutoAddNI, Speech_AutoAddNI) \
+	PORT_DEF(Speech, AddNI, Speech_AddNI) \
+	PORT_DEF(Speech, RunNI, Speech_RunNI) \
+	PORT_DEF(Speech, ObjNIEnd, Speech_ObjNIEnd) \
 	PORT_DEF(Speech, LaunchTaunt, Speech_LaunchTaunt) \
+	PORT_DEF(Speech, RestoreSpeech, Speech_RestoreSpeech) \
 	PORT_DEF(Speech, OffVoice, Speech_OffVoice) \
+	PORT_DEF(Speech, RemoteComunication, Speech_RemoteComunication) \
+	PORT_DEF(Speech, ForceRemoteComInternal, Speech_ForceRemoteComInternal) \
+	PORT_DEF(Speech, ForceRemoteCom, Speech_ForceRemoteCom) \
+	PORT_DEF(Speech, ForceRemoteComunication, Speech_ForceRemoteComunication) \
+	PORT_DEF(Speech, AddRemoteCom, Speech_AddRemoteCom) \
 	PORT_DEF(Speech, ProcessRemoteCom, Speech_ProcessRemoteCom) \
+	PORT_DEF(Speech, CancelRemoteCom, Speech_CancelRemoteCom) \
 	PORT_DEF(Speech, TestInRange, Speech_TestInRange) \
+	PORT_DEF(Speech, StartObjSpch, Speech_StartObjSpch) \
 	PORT_DEF(Speech, StartObjectSpeech, Speech_StartObjectSpeech) \
+	PORT_DEF(Speech, StdObjSpch, Speech_StdObjSpch) \
+	PORT_DEF(Speech, OnObjSpch, Speech_OnObjSpch) \
+	PORT_DEF(Speech, OnChallengeObjSpch, Speech_OnChallengeObjSpch) \
+	PORT_DEF(Speech, OnObjectSpeech, Speech_OnObjectSpeech) \
+	PORT_DEF(Speech, ObjectAutoAnswer, Speech_ObjectAutoAnswer) \
+	PORT_DEF(Speech, ObjectAutoAnswer2, Speech_ObjectAutoAnswer2) \
 	PORT_DEF(Speech, EndObjectAnswer, Speech_EndObjectAnswer)
 
 /* Split.c */

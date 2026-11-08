@@ -1446,23 +1446,16 @@ static byte Sp_EndObjectAnswer(void) {
 /* ---- adapters ---- */
 
 /* the functions the port called without parsing their arguments (any arguments are taken) */
-#define SP_ANY(name, call) \
-	static PyObject *Speech_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
-SP_ANY(CallEndOfSpeech, Sp_CallEndOfSpeech())
-SP_ANY(NormalAbortSpeech, Sp_NormalAbortSpeech())
-SP_ANY(StopMenuEvents, Sp_StopMenuEvents())
-SP_ANY(RestartMenuEvents, Sp_RestartMenuEvents())
-SP_ANY(AutoAnswer, Sp_AutoAnswer())
-SP_ANY(ObjNIEnd, Sp_ObjNIEnd())
-SP_ANY(RestoreSpeech, Sp_RestoreSpeech())
-SP_ANY(CancelRemoteCom, Mode_CancelSpeech())
-SP_ANY(ObjectAutoAnswer, Sp_ObjectAutoAnswer())
-SP_ANY(ObjectAutoAnswer2, Sp_ObjectAutoAnswer2())
+MODE_ANY(Speech, CallEndOfSpeech, Sp_CallEndOfSpeech())
+MODE_ANY(Speech, NormalAbortSpeech, Sp_NormalAbortSpeech())
+MODE_ANY(Speech, StopMenuEvents, Sp_StopMenuEvents())
+MODE_ANY(Speech, RestartMenuEvents, Sp_RestartMenuEvents())
+MODE_ANY(Speech, AutoAnswer, Sp_AutoAnswer())
+MODE_ANY(Speech, ObjNIEnd, Sp_ObjNIEnd())
+MODE_ANY(Speech, RestoreSpeech, Sp_RestoreSpeech())
+MODE_ANY(Speech, CancelRemoteCom, Mode_CancelSpeech())
+MODE_ANY(Speech, ObjectAutoAnswer, Sp_ObjectAutoAnswer())
+MODE_ANY(Speech, ObjectAutoAnswer2, Sp_ObjectAutoAnswer2())
 
 static PyObject *Speech_DoRemote(PyObject *self, PyObject *args) {
 	(void)self;
@@ -1489,199 +1482,126 @@ MODE_FN(Speech, TestInRange, 0, Sp_TestInRange())
 MODE_FN(Speech, StartObjectSpeech, 6, Sp_StartObjectSpeech(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5]))
 MODE_FN(Speech, EndObjectAnswer, 0, Sp_EndObjectAnswer())
 
-/* a keyword function: its arguments by name with the defaults of the script (a value of def NULL stays None) */
-#define SP_KW(fmt, n) \
-	nativeVal_t a[8]; \
-	byte given[8]; \
-	(void)self; \
-	if (!Mode_Kw(args, kw, fmt, names, n, a, given)) { \
-		return NULL; \
-	}
-
-/* argument i a text default when not given */
-static void Sp_DefS(nativeVal_t *a, const byte *given, int i, const char *s) {
-	if (!given[i]) {
-		Native_SetStr(&a[i], s);
-	}
+/* the keyword functions: the arguments by name with the defaults of the script (MODE_KW) */
+MODE_KW(Speech, AbortSpeech, "|OOO", "UsrName", "CharName", "extrangextra") {
+	return Sp_AbortSpeech();
 }
 
-static void Sp_DefI(nativeVal_t *a, const byte *given, int i, long v) {
-	if (!given[i]) {
-		Native_SetInt(&a[i], v);
-	}
+MODE_KW(Speech, PerformAnswer, "O|O", "SpeechText", "Time") {
+	Mode_KwDefI(v, given, 1, 6);
+	return Sp_PerformAnswer(&v[0], &v[1], out);
 }
 
-static PyObject *Speech_AbortSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "UsrName", "CharName", "extrangextra", NULL };
-	SP_KW("|OOO", 3)
-	return Mode_KwOut(a, 3, Sp_AbortSpeech(), NULL);
+MODE_KW(Speech, OnSpeech, "O|OO", "SpeechText", "SpeechAnswer", "_AnsAnima_") {
+	Mode_KwDefS(v, given, 1, "");
+	Mode_KwDefS(v, given, 2, "TalkNPC");
+	return Sp_IntOut(Sp_OnSpeech(&v[0], &v[1], &v[2]), out);
 }
 
-static PyObject *Speech_PerformAnswer(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "SpeechText", "Time", NULL };
-	nativeVal_t out = { 0 };
-	SP_KW("O|O", 2)
-	Sp_DefI(a, given, 1, 6);
-	return Mode_KwOut(a, 2, Sp_PerformAnswer(&a[0], &a[1], &out), &out);
+MODE_KW(Speech, OnSpch, "OO|O", "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_") {
+	Mode_KwDefS(v, given, 2, "TalkNPC");
+	return Sp_IntOut(Sp_OnSpch(&v[0], &v[1], &v[2]), out);
 }
 
-static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "SpeechText", "SpeechAnswer", "_AnsAnima_", NULL };
-	nativeVal_t out = { 0 };
-	SP_KW("O|OO", 3)
-	Sp_DefS(a, given, 1, "");
-	Sp_DefS(a, given, 2, "TalkNPC");
-	return Mode_KwOut(a, 3, Sp_IntOut(Sp_OnSpeech(&a[0], &a[1], &a[2]), &out), &out);
+MODE_KW(Speech, OnChallengeSpch, "OO|OO", "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "isMerc") {
+	Mode_KwDefS(v, given, 2, "TalkNPC");
+	return Sp_IntOut(Sp_OnChallengeSpch(&v[0], &v[1], &v[2], given[3] ? &v[3] : NULL), out);
 }
 
-static PyObject *Speech_OnSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", NULL };
-	nativeVal_t out = { 0 };
-	SP_KW("OO|O", 3)
-	Sp_DefS(a, given, 2, "TalkNPC");
-	return Mode_KwOut(a, 3, Sp_IntOut(Sp_OnSpch(&a[0], &a[1], &a[2]), &out), &out);
+MODE_KW(Speech, StdOnSpch, "O|O", "optId", "_AnsAnima_") {
+	Mode_KwDefS(v, given, 1, "TalkNPC");
+	return Sp_StdOnSpch(&v[0], &v[1]);
 }
 
-static PyObject *Speech_OnChallengeSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "isMerc", NULL };
-	nativeVal_t out = { 0 };
-	SP_KW("OO|OO", 4)
-	Sp_DefS(a, given, 2, "TalkNPC");
-	return Mode_KwOut(a, 4, Sp_IntOut(Sp_OnChallengeSpch(&a[0], &a[1], &a[2], given[3] ? &a[3] : NULL), &out), &out);
+MODE_KW(Speech, NISpeech, "|O", "headName") {
+	Mode_KwDefS(v, given, 0, "");
+	return Sp_NISpeech(&v[0]);
 }
 
-static PyObject *Speech_StdOnSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "optId", "_AnsAnima_", NULL };
-	SP_KW("O|O", 2)
-	Sp_DefS(a, given, 1, "TalkNPC");
-	return Mode_KwOut(a, 2, Sp_StdOnSpch(&a[0], &a[1]), NULL);
+MODE_KW(Speech, AddNI, "OO|OO", "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "HeadName") {
+	return Sp_AddNI(&v[0], &v[1], given[2] ? &v[2] : NULL, given[3] ? &v[3] : NULL);
 }
 
-static PyObject *Speech_NISpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "headName", NULL };
-	SP_KW("|O", 1)
-	Sp_DefS(a, given, 0, "");
-	return Mode_KwOut(a, 1, Sp_NISpeech(&a[0]), NULL);
+MODE_KW(Speech, AutoAddNI, "O|OO", "TextBase", "_AnsAnima_", "HeadName") {
+	return Sp_AutoAddNI(&v[0], given[1] ? &v[1] : NULL, given[2] ? &v[2] : NULL);
 }
 
-static PyObject *Speech_AddNI(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "HeadName", NULL };
-	SP_KW("OO|OO", 4)
-	return Mode_KwOut(a, 4, Sp_AddNI(&a[0], &a[1], given[2] ? &a[2] : NULL, given[3] ? &a[3] : NULL), NULL);
+MODE_KW(Speech, RunNI, "|O", "i") {
+	Mode_KwDefI(v, given, 0, 0);
+	return Sp_RunNI(&v[0]);
 }
 
-static PyObject *Speech_AutoAddNI(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "TextBase", "_AnsAnima_", "HeadName", NULL };
-	SP_KW("O|OO", 3)
-	return Mode_KwOut(a, 3, Sp_AutoAddNI(&a[0], given[1] ? &a[1] : NULL, given[2] ? &a[2] : NULL), NULL);
-}
-
-static PyObject *Speech_RunNI(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "i", NULL };
-	SP_KW("|O", 1)
-	Sp_DefI(a, given, 0, 0);
-	return Mode_KwOut(a, 1, Sp_RunNI(&a[0]), NULL);
-}
-
-/* the arguments (SpeechText, HeadName, HeadIndex=1, AfterRemoteComFunc=None, Parameters=()) */
-static byte Sp_RemoteArgs(PyObject *args, PyObject *kw, nativeVal_t *a) {
-	static char *names[] = { "SpeechText", "HeadName", "HeadIndex", "AfterRemoteComFunc", "Parameters", NULL };
-	byte given[5];
-	if (!Mode_Kw(args, kw, "OO|OOO", names, 5, a, given)) {
-		return 0;
-	}
-	Sp_DefI(a, given, 2, 1);
+/* the defaults of (SpeechText, HeadName, HeadIndex=1, AfterRemoteComFunc=None, Parameters=()) */
+static void Sp_RemoteDefs(nativeVal_t *v, const byte *given) {
+	Mode_KwDefI(v, given, 2, 1);
 	if (!given[4]) {
-		Native_SetEmpty(&a[4], NV_TUPLE);
+		Native_SetEmpty(&v[4], NV_TUPLE);
 	}
-	return 1;
 }
 
-static PyObject *Speech_ForceRemoteComunication(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t a[5];
-	(void)self;
-	if (!Sp_RemoteArgs(args, kw, a)) {
-		return NULL;
-	}
-	return Mode_KwOut(a, 5, Sp_ForceRemoteComunication(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
+#define SP_REMOTE(name) MODE_KW(Speech, name, "OO|OOO", "SpeechText", "HeadName", "HeadIndex", "AfterRemoteComFunc", "Parameters")
+
+SP_REMOTE(ForceRemoteComunication) {
+	Sp_RemoteDefs(v, given);
+	return Sp_ForceRemoteComunication(&v[0], &v[1], &v[2], &v[3], &v[4]);
 }
 
-static PyObject *Speech_ForceRemoteComInternal(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t a[5];
-	(void)self;
-	if (!Sp_RemoteArgs(args, kw, a)) {
-		return NULL;
-	}
-	return Mode_KwOut(a, 5, Sp_ForceRemoteComInternal(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
+SP_REMOTE(ForceRemoteComInternal) {
+	Sp_RemoteDefs(v, given);
+	return Sp_ForceRemoteComInternal(&v[0], &v[1], &v[2], &v[3], &v[4]);
 }
 
-static PyObject *Speech_RemoteComunication(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t a[5], out = { 0 };
-	(void)self;
-	if (!Sp_RemoteArgs(args, kw, a)) {
-		return NULL;
-	}
-	return Mode_KwOut(a, 5, Sp_IntOut(Sp_RemoteComunication(&a[0], &a[1], &a[2], &a[3], &a[4]), &out), &out);
+SP_REMOTE(RemoteComunication) {
+	Sp_RemoteDefs(v, given);
+	return Sp_IntOut(Sp_RemoteComunication(&v[0], &v[1], &v[2], &v[3], &v[4]), out);
 }
 
 /* ForceRemoteCom(...): the message first in the queue, the current speech ends */
-static PyObject *Speech_ForceRemoteCom(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t a[5];
-	(void)self;
-	if (!Sp_RemoteArgs(args, kw, a)) {
-		return NULL;
-	}
-	return Mode_KwOut(a, 5, Sp_AddRemoteCom(&a[0], &a[1], &a[3], &a[4], &a[2], 1) && Mode_CancelSpeech(), NULL);
+SP_REMOTE(ForceRemoteCom) {
+	Sp_RemoteDefs(v, given);
+	return Sp_AddRemoteCom(&v[0], &v[1], &v[3], &v[4], &v[2], 1) && Mode_CancelSpeech();
 }
 
-static PyObject *Speech_AddRemoteCom(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "SpeechText", "HeadName", "AfterRemoteComFunc", "Parameters", "HeadIndex", "InsertFirst", NULL };
-	SP_KW("OO|OOOO", 6)
+MODE_KW(Speech, AddRemoteCom, "OO|OOOO", "SpeechText", "HeadName", "AfterRemoteComFunc", "Parameters", "HeadIndex",
+	"InsertFirst") {
 	if (!given[3]) {
-		Native_SetEmpty(&a[3], NV_TUPLE);
+		Native_SetEmpty(&v[3], NV_TUPLE);
 	}
-	Sp_DefI(a, given, 4, 1);
-	return Mode_KwOut(a, 6, Sp_AddRemoteCom(&a[0], &a[1], &a[2], &a[3], &a[4], given[5] && Native_True(&a[5])), NULL);
+	Mode_KwDefI(v, given, 4, 1);
+	return Sp_AddRemoteCom(&v[0], &v[1], &v[2], &v[3], &v[4], given[5] && Native_True(&v[5]));
 }
 
-static PyObject *Speech_StartObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "obj", "text", "charType", "speechCallback", NULL };
-	SP_KW("OOO|O", 4)
-	Sp_DefS(a, given, 3, "Speech.EndObjectAnswer");
-	return Mode_KwOut(a, 4, Sp_StartObjSpch(&a[0], &a[1], &a[2], &a[3]), NULL);
+MODE_KW(Speech, StartObjSpch, "OOO|O", "obj", "text", "charType", "speechCallback") {
+	Mode_KwDefS(v, given, 3, "Speech.EndObjectAnswer");
+	return Sp_StartObjSpch(&v[0], &v[1], &v[2], &v[3]);
 }
 
-static PyObject *Speech_OnObjectSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", NULL };
-	nativeVal_t out = { 0 };
-	SP_KW("OOOO|OO", 6)
-	Sp_DefS(a, given, 4, "Talk");
-	Sp_DefS(a, given, 5, "Talk");
-	return Mode_KwOut(a, 6, Sp_OnObjectSpeech(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &out), &out);
+/* the defaults of action and defLoop (slots i and i + 1) */
+static void Sp_TalkDefs(nativeVal_t *v, const byte *given, int i) {
+	Mode_KwDefS(v, given, i, "Talk");
+	Mode_KwDefS(v, given, i + 1, "Talk");
 }
 
-static PyObject *Speech_OnObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", NULL };
-	SP_KW("OOOO|OO", 6)
-	Sp_DefS(a, given, 4, "Talk");
-	Sp_DefS(a, given, 5, "Talk");
-	return Mode_KwOut(a, 6, Sp_OnObjSpch(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5]), NULL);
+MODE_KW(Speech, OnObjectSpeech, "OOOO|OO", "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action",
+	"defLoop") {
+	Sp_TalkDefs(v, given, 4);
+	return Sp_OnObjectSpeech(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], out);
 }
 
-static PyObject *Speech_StdObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "_ObjEntity", "_ObjCharType", "optId", "action", "defLoop", NULL };
-	SP_KW("OOO|OO", 5)
-	Sp_DefS(a, given, 3, "Talk");
-	Sp_DefS(a, given, 4, "Talk");
-	return Mode_KwOut(a, 5, Sp_StdObjSpch(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
+MODE_KW(Speech, OnObjSpch, "OOOO|OO", "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop") {
+	Sp_TalkDefs(v, given, 4);
+	return Sp_OnObjSpch(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5]);
 }
 
-static PyObject *Speech_OnChallengeObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", "isMerc", NULL };
-	SP_KW("OOOO|OOO", 7)
-	Sp_DefS(a, given, 4, "Talk");
-	Sp_DefS(a, given, 5, "Talk");
-	return Mode_KwOut(a, 7, Sp_OnChallengeObjSpch(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], given[6] ? &a[6] : NULL), NULL);
+MODE_KW(Speech, StdObjSpch, "OOO|OO", "_ObjEntity", "_ObjCharType", "optId", "action", "defLoop") {
+	Sp_TalkDefs(v, given, 3);
+	return Sp_StdObjSpch(&v[0], &v[1], &v[2], &v[3], &v[4]);
+}
+
+MODE_KW(Speech, OnChallengeObjSpch, "OOOO|OOO", "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action",
+	"defLoop", "isMerc") {
+	Sp_TalkDefs(v, given, 4);
+	return Sp_OnChallengeObjSpch(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], given[6] ? &v[6] : NULL);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3
