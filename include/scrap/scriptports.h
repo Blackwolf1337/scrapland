@@ -745,6 +745,7 @@ PORT_DECL(Menu, DrawBackSubMenu) /* ? */
 PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
 PORT_DECL(Menu, DrawMenuTitleBar) /* ? */
 PORT_DECL(Menu, StartNewMenu) /* ? */
+PORT_DECL(Menu, VerticalMenu) /* ? */
 PORT_DECL(Menu, YesNoMenu) /* ? */
 PORT_DECL(Menu, DisableMenuItem) /* ? */
 PORT_DECL(Menu, ShowTextBox) /* ? */
@@ -760,6 +761,7 @@ PORT_DECL(Menu, SetTabDefaults) /* ? */
 	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
 	PORT_DEF(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
 	PORT_DEF(Menu, StartNewMenu, Menu_StartNewMenu) \
+	PORT_DEFK(Menu, VerticalMenu, Menu_VerticalMenu) \
 	PORT_DEF(Menu, YesNoMenu, Menu_YesNoMenu) \
 	PORT_DEF(Menu, DisableMenuItem, Menu_DisableMenuItem) \
 	PORT_DEF(Menu, ShowTextBox, Menu_ShowTextBox) \
