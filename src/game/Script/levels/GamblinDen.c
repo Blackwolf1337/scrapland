@@ -16,10 +16,10 @@
  *
  * Direct calls (stage 3): the other ports (Speech, CharsNPC, Chars, Elevator, MissionsFuncs, Scene, RaceMaker, Menu) and
  * the C functions of the module go through their refs (PORT_CALL, PORT_LOWN, LV_ONEND, LV_COM; the arrange and
- * mercenary talks take the ref of their end function). By name stay Map.CreateFixedInit (OBJLIB 3, see
- * CreateFixedMercInit), the call tables of the scenes and apply (OBJLIB 4), the scheduled calls (Mode_Later,
- * Mode_LaterV, the remote message of LaunchDeepThroatMessage, OBJLIB 4) and the functions set as callbacks
- * (CallbackFunc, AfterBrowseNPC, EndOfSceneCallback, DialogController, SpeechRoutines; OBJLIB 5).
+ * mercenary talks take the ref of their end function; Map.CreateFixedInit has its entry on Orbit.c's
+ * Level_FixedInitN). By name stay the call tables of the scenes and apply (OBJLIB 4), the scheduled calls
+ * (Mode_Later, Mode_LaterV, the remote message of LaunchDeepThroatMessage, OBJLIB 4) and the functions set as
+ * callbacks (CallbackFunc, AfterBrowseNPC, EndOfSceneCallback, DialogController, SpeechRoutines; OBJLIB 5).
  */
 #include <string.h>
 
@@ -506,17 +506,11 @@ static byte Den_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
 		Gd_CallbackG("Berto_Default", "Map", "CreateFixedInit")));
 }
 
-/*
- * Map.CreateFixedInit stays by name in CreateFixedMercInit and CreateLonelyMerc (OBJLIB 3): its adapter is Orbit.c's
- * Level_FixedInit (MapDecont.CreateBishopInit too), whose core is static there; it gets an entry in this file when
- * Orbit.c exports that core
- */
-
 /* CreateFixedMercInit(e): fixed, the hire talk */
 static byte Den_CreateFixedMercInitC(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t line = { 0 };
 	(void)out;
-	if (!LV_OWN("Map", "CreateFixedInit", NULL, "v", &a[0]) || !LvN_SetS(&a[0], "UseFunc", "Map.MercenarySpeech")) {
+	if (!PORT_LOWN(Map, CreateFixedInit, NULL, "v", &a[0]) || !LvN_SetS(&a[0], "UseFunc", "Map.MercenarySpeech")) {
 		return 0;
 	}
 	LvN_Str(&line, "---------------");
@@ -528,7 +522,7 @@ static byte Den_CreateFixedMercInitC(const nativeVal_t *a, nativeVal_t *out) {
 /* CreateLonelyMerc(e): fixed, his own talk */
 static byte Den_CreateLonelyMercC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LV_OWN("Map", "CreateFixedInit", NULL, "v", &a[0]) && LvN_SetS(&a[0], "UseFunc", "Map.LonelyMercSpeech");
+	return PORT_LOWN(Map, CreateFixedInit, NULL, "v", &a[0]) && LvN_SetS(&a[0], "UseFunc", "Map.LonelyMercSpeech");
 }
 
 /* Scrap.Rand(lo, hi) > 0 on two ints: 1 or 0, -1 with the error */
@@ -1021,6 +1015,7 @@ static byte Den_StartContractC(const nativeVal_t *a, nativeVal_t *out) {
 }
 
 LV_FN(Den, InitStatus, 1, Den_InitStatusC)
+MODE_FN(Den, CreateFixedInit, 1, Level_FixedInitN(&a[0]))
 LV_FN(Den, AfterBrowseNPC, 0, Den_AfterBrowseNPCC)
 LV_FN(Den, CreateFixedMercInit, 1, Den_CreateFixedMercInitC)
 LV_FN(Den, CreateLonelyMerc, 1, Den_CreateLonelyMercC)
@@ -1035,7 +1030,7 @@ LV_FN(Den, StartContract, 1, Den_StartContractC)
 PyMethodDef g_GamblinDenMapMethods[] = {
 	{ "InitStatus", Den_InitStatus, 1, NULL },
 	{ "AfterBrowseNPC", Den_AfterBrowseNPC, 1, NULL },
-	{ "CreateFixedInit", Level_FixedInit, 1, NULL },
+	{ "CreateFixedInit", Den_CreateFixedInit, 1, NULL },
 	{ "CreateFixedMercInit", Den_CreateFixedMercInit, 1, NULL },
 	{ "CreateLonelyMerc", Den_CreateLonelyMerc, 1, NULL },
 	{ "Init", Den_Init, 1, NULL },

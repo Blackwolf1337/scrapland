@@ -486,10 +486,8 @@ static const char *const functionary_vars[] = { "ArrowCanUse=1", "UseFunc=MapDec
 static const char *const fixed_vars[] = { "LLogicDefaultState=6", "LLogicDefaultTarget='", "LLogicState=6", "LLogicTarget='",
 	"LLogicIdle=1", "LLogicIdle=0", NULL };
 
-MODE_FN(Ob, FixedInit, 1, Mode_SetAttrs(&a[0], fixed_vars))
-
-PyObject *Level_FixedInit(PyObject *self, PyObject *args) {
-	return Ob_FixedInit(self, args);
+byte Level_FixedInitN(const nativeVal_t *e) {
+	return Mode_SetAttrs(e, fixed_vars);
 }
 
 /* ShowSkipConvsMsg(): how to skip the talks */
@@ -1181,6 +1179,7 @@ MODE_FN(Decont, CloseGateKeeperDoor, 2, Decont_CloseGateKeeperDoorN(&a[0]))
 MODE_FN(Decont, OpenGateKeeperDoor, 2, Decont_OpenGateKeeperDoorN(&a[0]))
 MODE_FN(Decont, AfterBrowseNPC, 0, Decont_AfterBrowseNPCN())
 MODE_FN(Decont, CreateFunctionaryInit, 1, Mode_SetAttrs(&a[0], functionary_vars))
+MODE_FN(Decont, CreateBishopInit, 1, Level_FixedInitN(&a[0]))
 MODE_FN(Decont, CreateGateKeeperInit, 1, LvN_SetS(&a[0], "UseFunc", "MapDecont.GateKeeperSpeech"))
 MODE_FN(Decont, CreateSentinelInit, 1, LvN_SetS(&a[0], "UseFunc", "MapDecont.SentinelSpeech"))
 MODE_FN(Decont, ShowSkipConvsMsg, 0, Decont_ShowSkipConvsMsgN())
@@ -1216,7 +1215,7 @@ PyMethodDef g_OrbitMapDecontMethods[] = {
 	{ "OpenGateKeeperDoor", Decont_OpenGateKeeperDoor, 1, NULL },
 	{ "AfterBrowseNPC", Decont_AfterBrowseNPC, 1, NULL },
 	{ "CreateFunctionaryInit", Decont_CreateFunctionaryInit, 1, NULL },
-	{ "CreateBishopInit", Level_FixedInit, 1, NULL },
+	{ "CreateBishopInit", Decont_CreateBishopInit, 1, NULL },
 	{ "CreateGateKeeperInit", Decont_CreateGateKeeperInit, 1, NULL },
 	{ "CreateSentinelInit", Decont_CreateSentinelInit, 1, NULL },
 	{ "ShowSkipConvsMsg", Decont_ShowSkipConvsMsg, 1, NULL },

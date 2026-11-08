@@ -97,8 +97,10 @@ PyObject *Script_LevelDataFunction(const char *module, const char *name);
 /* the part of Script_ModuleExtras for the level data and the level tables of the module (defs as there) */
 void Script_LevelModuleExtras(const char *name, PyObject *module, PyObject *defs);
 
-/* CreateFixedInit(e) of the level scripts: the character e stands where it is (src/game/Script/levels/Orbit.c) */
-PyObject *Level_FixedInit(PyObject *self, PyObject *args);
+/* the core of CreateFixedInit(e) of the level scripts (MapDecont.CreateBishopInit, GamblinDen's Map.CreateFixedInit):
+ * the character e stands where it is (src/game/Script/levels/Orbit.c) */
+struct nativeVal_s;
+byte Level_FixedInitN(const struct nativeVal_s *e);
 /* a step of a .def file that C does ("run <name> [arg ...]"), args the tuple of the arguments */
 typedef struct scriptStep_s {
 	const char *name;

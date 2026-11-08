@@ -2953,6 +2953,7 @@ PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, PreSetNextMission) /* 4 */
 /* levels/GamblinDen.c */
 PORT_DECLL(gamblinden, Map, InitStatus) /* 1 */
 PORT_DECLL(gamblinden, Map, AfterBrowseNPC) /* 0 */
+PORT_DECLL(gamblinden, Map, CreateFixedInit) /* 1 */
 PORT_DECLL(gamblinden, Map, CreateFixedMercInit) /* 1 */
 PORT_DECLL(gamblinden, Map, CreateLonelyMerc) /* 1 */
 PORT_DECLL(gamblinden, Map, Init) /* 1 */
@@ -3055,6 +3056,7 @@ PORT_DECLL(gamblinden, Mission_ThreeStooges, SetNextMission) /* 1 */
 #define PORTS_levels_GamblinDen \
 	PORT_DEFL(gamblinden, Map, InitStatus, Den_InitStatus) \
 	PORT_DEFL(gamblinden, Map, AfterBrowseNPC, Den_AfterBrowseNPC) \
+	PORT_DEFL(gamblinden, Map, CreateFixedInit, Den_CreateFixedInit) \
 	PORT_DEFL(gamblinden, Map, CreateFixedMercInit, Den_CreateFixedMercInit) \
 	PORT_DEFL(gamblinden, Map, CreateLonelyMerc, Den_CreateLonelyMerc) \
 	PORT_DEFL(gamblinden, Map, Init, Den_Init) \
@@ -3312,6 +3314,7 @@ PORT_DECLL(orbit, MapDecont, CloseGateKeeperDoor) /* 2 */
 PORT_DECLL(orbit, MapDecont, OpenGateKeeperDoor) /* 2 */
 PORT_DECLL(orbit, MapDecont, AfterBrowseNPC) /* 0 */
 PORT_DECLL(orbit, MapDecont, CreateFunctionaryInit) /* 1 */
+PORT_DECLL(orbit, MapDecont, CreateBishopInit) /* 1 */
 PORT_DECLL(orbit, MapDecont, CreateGateKeeperInit) /* 1 */
 PORT_DECLL(orbit, MapDecont, CreateSentinelInit) /* 1 */
 PORT_DECLL(orbit, MapDecont, ShowSkipConvsMsg) /* 0 */
@@ -3353,6 +3356,7 @@ PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneC) /* 0 */
 	PORT_DEFL(orbit, MapDecont, OpenGateKeeperDoor, Decont_OpenGateKeeperDoor) \
 	PORT_DEFL(orbit, MapDecont, AfterBrowseNPC, Decont_AfterBrowseNPC) \
 	PORT_DEFL(orbit, MapDecont, CreateFunctionaryInit, Decont_CreateFunctionaryInit) \
+	PORT_DEFL(orbit, MapDecont, CreateBishopInit, Decont_CreateBishopInit) \
 	PORT_DEFL(orbit, MapDecont, CreateGateKeeperInit, Decont_CreateGateKeeperInit) \
 	PORT_DEFL(orbit, MapDecont, CreateSentinelInit, Decont_CreateSentinelInit) \
 	PORT_DEFL(orbit, MapDecont, ShowSkipConvsMsg, Decont_ShowSkipConvsMsg) \
