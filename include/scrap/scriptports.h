@@ -2313,6 +2313,14 @@ PORT_DECLL(commercial, Map, InitStatus) /* 1 */
 PORT_DECLL(commercial, Map, Init) /* 1 */
 PORT_DECLL(commercial, MapRace, InitStatus) /* 1 */
 PORT_DECLL(commercial, MapRace, Init) /* 1 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial1) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial2) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial3) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial4) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial5) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial6) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial7) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial8) /* ? */
 PORT_DECLL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyMickus, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyMickus, CreateTransports) /* 1 */
@@ -2438,6 +2446,14 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Map, Init, CmMap_InitA) \
 	PORT_DEFL(commercial, MapRace, InitStatus, MapRace_PassA) \
 	PORT_DEFL(commercial, MapRace, Init, MapRace_PassA) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial1, MapRace_Race1) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial2, MapRace_Race2) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial3, MapRace_Race3) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial4, MapRace_Race4) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial5, MapRace_Race5) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial6, MapRace_Race6) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial7, MapRace_Race7) \
+	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial8, MapRace_Race8) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile, Mickus_GetFuncEnemiesProfileA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, Init, Mickus_InitA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, CreateTransports, Mickus_CreateTransportsA) \

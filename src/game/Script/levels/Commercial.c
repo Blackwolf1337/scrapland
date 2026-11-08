@@ -344,11 +344,14 @@ PyMethodDef g_CommercialMapMethods[] = {
 /* InitStatus(LevelPath), Init(LevelPath): nothing */
 LV_FN(MapRace, PassA, 1, LvN_Pass)
 
+/* race k: RaceMaker.StartPos; its entry runs the adapter on Python values (Lv_StartPos of LevelCommon has no native
+ * core outside it, so the ref takes the slow path, OBJLIB 7) */
 #define RACE(k) \
 	static PyObject *MapRace_Race##k(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Lv_StartPos(args, races[k - 1].pos, races[k - 1].n); \
-	}
+	} \
+	MODE_PYENTRY(MapRace_Race##k)
 RACE(1)
 RACE(2)
 RACE(3)
@@ -1457,7 +1460,7 @@ static byte Stupidus_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	/* SScorer.AddModel by name: fc-r6b-cm4 records it (OBJLIB 7) */
 	return LV_CALL("SScorer", "AddModel", NULL, "isssiii", 0L, "EvilBerto", "Models/Heads/HeadEvilBerto/HeadEvilBerto", "", 4L, 25L, 10L) &&
-		Cm_PreloadG(DS, "AmplifierModel") && LV_OWN(DS, "CreateStupidus", NULL, "");
+		Cm_PreloadG(DS, "AmplifierModel") && PORT_LOWN(Mission_DestroyStupidus, CreateStupidus, NULL, "");
 }
 
 /* CreateStupidus(): Stupidus at a free spawn point, wandering until he is shot */
@@ -1474,19 +1477,20 @@ static byte Stupidus_CreateStupidus(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, u == 0);
 	}
 	byte ok = Mode_SpawnCar("FuncFighter", 0, o1, spw) && LvN_SetI(o1, "Money", -1) && LvN_SetS(o1, "TgType", "red") && Cm_SpawnAng(o1, spw) &&
-		Mode_VGet(o1, "Name", name) && LV_OWN(DS, "GetStupidusProfile", pd, "") && Mode_VGet(pd, "Ship", ship) &&
-		LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", name, ship) && LvN_SetS(o1, "OnDeath", "Mission_DestroyStupidus.OnStupidusDeath") &&
-		LvN_SetS(o1, "OnDamage", "Mission_DestroyStupidus.OnStupidusDamage") && LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", o1, pd) &&
+		Mode_VGet(o1, "Name", name) && PORT_LOWN(Mission_DestroyStupidus, GetStupidusProfile, pd, "") && Mode_VGet(pd, "Ship", ship) &&
+		PORT_CALL(VehiclesNPC, SetStdProperties, NULL, "vv", name, ship) && LvN_SetS(o1, "OnDeath", "Mission_DestroyStupidus.OnStupidusDeath") &&
+		LvN_SetS(o1, "OnDamage", "Mission_DestroyStupidus.OnStupidusDamage") && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", o1, pd) &&
 		STATE("ivi", 3L, name, 0L) && LvN_Life(o1, DS, "STUPIDUS_LIFE") && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	return Mode_Done(&t, ok);
 }
 
-/* the entity of LooserName drops its item at its position (the function of module) */
-static byte Cm_DropAt(const nativeVal_t *looser, const char *module, const char *drop) {
+/* the entity of LooserName drops the amplifier at its position */
+static byte Stupidus_DropAt(const nativeVal_t *looser) {
 	nativeVal_t e, pos;
 	Native_SetNone(&e);
 	Native_SetNone(&pos);
-	byte ok = Mode_EntityH(looser, &e) && (!Native_True(&e) || (Mode_VGet(&e, "Pos", &pos) && LV_OWN(module, drop, NULL, "v", &pos)));
+	byte ok = Mode_EntityH(looser, &e) && (!Native_True(&e) || (Mode_VGet(&e, "Pos", &pos) &&
+		PORT_LOWN(Mission_DestroyStupidus, DropAmplifier, NULL, "v", &pos)));
 	Native_Free(&e);
 	Native_Free(&pos);
 	return ok;
@@ -1495,7 +1499,7 @@ static byte Cm_DropAt(const nativeVal_t *looser, const char *module, const char 
 /* OnStupidusDeath(LooserName, WinnerName): he drops the amplifier */
 static byte Stupidus_OnStupidusDeath(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return Mode_Import("Vehicles") && Cm_OnDeath(a) && Cm_DropAt(&a[0], DS, "DropAmplifier");
+	return Mode_Import("Vehicles") && Cm_OnDeath(a) && Stupidus_DropAt(&a[0]);
 }
 
 /* OnStupidusDamage(LooserName, WinnerName, Damage): shot: he attacks the player */
@@ -1530,7 +1534,7 @@ static byte Stupidus_TakeAmplifier(const nativeVal_t *a, nativeVal_t *out) {
 static byte Stupidus_BertoFound(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return LvN_Com("Mission_DestroyStupidus_RemoteMessage2", "DeepThroat", DS, "SetNextMission", NULL);
+	return LV_COM("Mission_DestroyStupidus_RemoteMessage2", "DeepThroat", Mission_DestroyStupidus, SetNextMission, NULL);
 }
 
 static byte Stupidus_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
@@ -1576,18 +1580,18 @@ static byte Race_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	if (!Mode_Import("RaceMaker") || !Mode_Import("RacerScorer") || !Mode_Import("Alarm") ||
 		!CM_HOOK("Alarm", "TempAbortMissionCallback", WR, "OnAlarmOn") || !CM_HOOK("Alarm", "TempRestoreMissionCallback", WR, "OnAlarmOff") ||
-		!LV_CALL("RaceMaker", "PreloadCnDnResources", NULL, "")) {
+		!PORT_CALL(RaceMaker, PreloadCnDnResources, NULL, "")) {
 		return 0;
 	}
 	int alarm = Mode_AlarmOn();
 	if (alarm > 0) {
-		if (!LV_OWN(WR, "OnAlarmOn", NULL, "")) {
+		if (!PORT_LOWN(Mission_Win1stRace, OnAlarmOn, NULL, "")) {
 			return 0;
 		}
 	} else if (alarm == 0) {
 		byte first = LvN_SaveIs("MissionState", "FirstTime");
 		if (!LvN_Com(first ? "Mission_Win1stRace_RemoteMessage1" : "Mission_Win1stRace_RemoteMessage3", first ? "DeepThroat" : "Trurl", NULL, NULL,
-			NULL) || !LV_OWN(WR, "InitTimeRace", NULL, "")) {
+			NULL) || !PORT_LOWN(Mission_Win1stRace, InitTimeRace, NULL, "")) {
 			return 0;
 		}
 	} else {
@@ -1614,7 +1618,7 @@ static byte Race_InitTimeRace(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *pos = Mode_V(&t), *l = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t);
 	(void)a;
 	(void)out;
-	byte ok = Mode_Import("MapRace") && Mode_Import("RaceMaker") && LV_CALL("MapRace", "EasyRaceCommercial8", NULL, "") &&
+	byte ok = Mode_Import("MapRace") && Mode_Import("RaceMaker") && PORT_LCALL(MapRace, EasyRaceCommercial8, NULL, "") &&
 		Wr_StartPos(Mode_I(&t, 0), 0, pos) && LvN_CreateAt(Mode_S(&t, "RaceWaypoint"), pos, "Item", l) &&
 		Mode_VModel(l, Mode_S(&t, "models/Misc/Wayp/Wayp.m3d")) && LvN_SetS(l, "OnTake", "Mission_Win1stRace.OnRaceStart") &&
 		LvN_SetI(l, "OnlyUser", 1) && LvN_SetI(l, "RadarShow", 1) && LvN_SetI(l, "Radius", 2400) && Wr_StartPos(Mode_I(&t, 0), 1, ang) &&
@@ -1637,8 +1641,8 @@ static byte Race_OnRaceStart(const nativeVal_t *a, nativeVal_t *out) {
 		return by == 0;
 	}
 	Native_SetNone(&d);
-	byte ok = LV_CALL("RaceMaker", "StartCameraTravelling", &d, "vv", &a[0], &a[1]) && Mode_LaterV(&d, WR, "RaceGo", a, 2, NULL) &&
-		LV_CALL("RaceMaker", "CreateRaceCountDown", NULL, "");
+	byte ok = PORT_CALL(RaceMaker, StartCameraTravelling, &d, "vv", &a[0], &a[1]) && Mode_LaterV(&d, WR, "RaceGo", a, 2, NULL) &&
+		PORT_CALL(RaceMaker, CreateRaceCountDown, NULL, "");
 	Native_Free(&d);
 	return ok;
 }
@@ -1648,9 +1652,10 @@ static byte Race_RaceGo(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t e;
 	(void)out;
 	Native_SetNone(&e);
-	byte ok = Mode_Import("RaceMaker") && LV_CALL("RaceMaker", "AbortCameraTravelling", NULL, "") &&
-		LV_CALL("RaceMaker", "DestroyRaceCountDown", NULL, "") && Mode_EntityH(&a[0], &e) && LvN_SetS(&e, "OnTake", "Mission_Win1stRace.OnCheckPoint") &&
-		LV_OWN(WR, "OnCheckPoint", NULL, "vv", &a[0], &a[1]) && Mode_GVarSetI("isActionMusic", 1);
+	byte ok = Mode_Import("RaceMaker") && PORT_CALL(RaceMaker, AbortCameraTravelling, NULL, "") &&
+		PORT_CALL(RaceMaker, DestroyRaceCountDown, NULL, "") && Mode_EntityH(&a[0], &e) &&
+		LvN_SetS(&e, "OnTake", "Mission_Win1stRace.OnCheckPoint") && PORT_LOWN(Mission_Win1stRace, OnCheckPoint, NULL, "vv", &a[0], &a[1]) &&
+		Mode_GVarSetI("isActionMusic", 1);
 	Native_Free(&e);
 	return ok;
 }
@@ -1675,11 +1680,11 @@ static byte Race_OnCheckPoint(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	int last = Mode_EntityH(&a[0], l) && Mode_G(WR, "currentWaypoints", cur) && Mode_G(WR, "maxWaypoints", max) ? Mode_Cmp(cur, "==", max) : -1;
 	if (last > 0) {
-		if (!Mode_VDel(l) || !LvN_ScorerOff() || !LV_OWN(WR, "PreSetNextMission", NULL, "")) {
+		if (!Mode_VDel(l) || !LvN_ScorerOff() || !PORT_LOWN(Mission_Win1stRace, PreSetNextMission, NULL, "")) {
 			return Mode_Done(&t, 0);
 		}
 	} else if (last == 0) {
-		if (!LvN_ScorerCallG(WR, "MissionScorer")) {
+		if (!LV_SCORERG(Mission_Win1stRace, MissionScorer)) {
 			return Mode_Done(&t, 0);
 		}
 		int more = Mode_GCmpI(WR, "currentWaypoints", ">", 0);
@@ -1737,14 +1742,15 @@ static byte Race_OnAlarmOff(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	return Mode_Import("Alarm") && CM_HOOK("Alarm", "TempAbortMissionCallback", WR, "OnAlarmOn") &&
-		LvN_Com("Mission_Win1stRace_RemoteMessage3", "Trurl", WR, "InitTimeRace", LvN_NoArgs());
+		LV_COM("Mission_Win1stRace_RemoteMessage3", "Trurl", Mission_Win1stRace, InitTimeRace, LvN_NoArgs());
 }
 
 /* TimeExpired(): out of time: again from the start */
 static byte Race_TimeExpired(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("Alarm") && Wr_Stop() && Wr_Reset() && LvN_Com("Mission_Win1stRace_RemoteMessage3", "Trurl", WR, "InitTimeRace", LvN_NoArgs());
+	return Mode_Import("Alarm") && Wr_Stop() && Wr_Reset() &&
+		LV_COM("Mission_Win1stRace_RemoteMessage3", "Trurl", Mission_Win1stRace, InitTimeRace, LvN_NoArgs());
 }
 
 /* PreSetNextMission(): won: no alarm hooks, Trurl's message, then the next mission */
@@ -1752,7 +1758,8 @@ static byte Race_PreSetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	return Mode_Import("Alarm") && Mode_GVarSetI("isActionMusic", 0) && LvN_ModNone("Alarm", "TempAbortMissionCallback") &&
-		LvN_ModNone("Alarm", "TempRestoreMissionCallback") && LvN_Com("Mission_Win1stRace_RemoteMessage4", "Trurl", WR, "SetNextMission", LvN_NoArgs());
+		LvN_ModNone("Alarm", "TempRestoreMissionCallback") &&
+		LV_COM("Mission_Win1stRace_RemoteMessage4", "Trurl", Mission_Win1stRace, SetNextMission, LvN_NoArgs());
 }
 
 static byte Race_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
