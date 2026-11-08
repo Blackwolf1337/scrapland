@@ -1528,6 +1528,7 @@ PORT_DECL(Vehicles, OnDeath) /* 2 */
 PORT_DECL(Vehicles, SwitchView) /* 2 */
 PORT_DECL(Vehicles, SetActiveCam) /* 3 */
 PORT_DECL(Vehicles, ReSpawnShip) /* 1 */
+PORT_DECL(Vehicles, SetProperties) /* 2 */
 PORT_DECL(Vehicles, SetStdProperties) /* 3 */
 PORT_DECL(Vehicles, Init) /* 0 */
 #define PORTS_Vehicles \
@@ -1545,12 +1546,16 @@ PORT_DECL(Vehicles, Init) /* 0 */
 	PORT_DEF(Vehicles, SwitchView, Vehicles_SwitchView) \
 	PORT_DEF(Vehicles, SetActiveCam, Vehicles_SetActiveCam) \
 	PORT_DEF(Vehicles, ReSpawnShip, Vehicles_ReSpawnShip) \
+	PORT_DEF(Vehicles, SetProperties, Vehicles_SetProperties) \
 	PORT_DEF(Vehicles, SetStdProperties, Vehicles_SetStdProperties) \
 	PORT_DEF(Vehicles, Init, Vehicles_Init)
 
 /* VehiclesNPC.c */
 PORT_DECL(VehiclesNPC, InitStdShips) /* 0 */
+PORT_DECL(VehiclesNPC, MakeAI) /* ? */
 PORT_DECL(VehiclesNPC, GetIAProf) /* 1 */
+PORT_DECL(VehiclesNPC, ModAIProff) /* ? */
+PORT_DECL(VehiclesNPC, SetIAProf) /* 0 */
 PORT_DECL(VehiclesNPC, SetAIProfile) /* 2 */
 PORT_DECL(VehiclesNPC, SetStdProperties) /* 2 */
 PORT_DECL(VehiclesNPC, MercOnDeath) /* 2 */
@@ -1558,7 +1563,10 @@ PORT_DECL(VehiclesNPC, InitMercs) /* 0 */
 PORT_DECL(VehiclesNPC, Init) /* 0 */
 #define PORTS_VehiclesNPC \
 	PORT_DEF(VehiclesNPC, InitStdShips, VehiclesNPC_InitStdShips) \
+	PORT_DEF(VehiclesNPC, MakeAI, VehiclesNPC_MakeAI) \
 	PORT_DEF(VehiclesNPC, GetIAProf, VehiclesNPC_GetIAProf) \
+	PORT_DEF(VehiclesNPC, ModAIProff, VehiclesNPC_ModAIProff) \
+	PORT_DEF(VehiclesNPC, SetIAProf, VehiclesNPC_SetIAProf) \
 	PORT_DEF(VehiclesNPC, SetAIProfile, VehiclesNPC_SetAIProfile) \
 	PORT_DEF(VehiclesNPC, SetStdProperties, VehiclesNPC_SetStdProperties) \
 	PORT_DEF(VehiclesNPC, MercOnDeath, VehiclesNPC_MercOnDeath) \
