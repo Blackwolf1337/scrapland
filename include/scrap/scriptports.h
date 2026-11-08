@@ -806,14 +806,20 @@ PORT_DECL(Menu, BackToGame) /* ? */
 PORT_DECL(Menu, DrawScorer) /* ? */
 PORT_DECL(Menu, InitMenuSys) /* ? */
 PORT_DECL(Menu, MovieScorer) /* ? */
+PORT_DECL(Menu, DeathInfo) /* 1 */
+PORT_DECL(Menu, AuxLoadGame) /* ? */
 PORT_DECL(Menu, GameOver) /* ? */
+PORT_DECL(Menu, TVOff) /* ? */
 #define PORTS_MenuMain \
 	PORT_DEF(Menu, MainMenu, Menu_MainMenu) \
 	PORT_DEF(Menu, BackToGame, Menu_BackToGame) \
 	PORT_DEF(Menu, DrawScorer, Menu_DrawScorer) \
 	PORT_DEF(Menu, InitMenuSys, Menu_InitMenuSys) \
 	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
-	PORT_DEF(Menu, GameOver, Menu_GameOver)
+	PORT_DEF(Menu, DeathInfo, Menu_DeathInfo) \
+	PORT_DEF(Menu, AuxLoadGame, Menu_AuxLoadGame) \
+	PORT_DEF(Menu, GameOver, Menu_GameOver) \
+	PORT_DEF(Menu, TVOff, Menu_TVOff)
 
 /* MenuMission.c */
 PORT_DECL(Menu, EnterMissionInfo) /* ? */
@@ -821,8 +827,10 @@ PORT_DECL(Menu, EnterMissionInfo) /* ? */
 	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo)
 
 /* MenuNet.c */
+PORT_DECL(PCMenu, MultiPlayerMenu) /* ? */
 PORT_DECL(PCMenu, TryJoin) /* ? */
 #define PORTS_MenuNet \
+	PORT_DEF(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
 	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin)
 
 /* Metro.c */

@@ -772,20 +772,19 @@ static void Net_JoinMenu(int id) {
 		return NULL; \
 	}
 
-static PyObject *PCMenu_MultiPlayerMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
-	(void)control;
+/* MultiPlayerMenu(id, control): the join page from the main menu and the editor, else the page of the game */
+static void Net_MultiPlayerMenu(int id) {
 	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	if (Mode_ModGetI("Init", "inMainMenu", 0) || Mode_ModGetI("Init", "isShipEdit", 0)) {
 		Net_JoinMenu(id);
-		return Py_ReturnNone();
+		return;
 	}
 	PyObject *vars = Py_BuildValue("{s:i}", "server", Net_IsServer() != 0);
 	Net_RunMenu(id, "Multiplayer", vars);
 	Py_XDECREF(vars);
-	return Py_ReturnNone();
 }
+
+MODE_IDFN(PCMenu_MultiPlayerMenu, (Net_MultiPlayerMenu(id), 1))
 
 static PyObject *PCMenu_MenuRestartServer(PyObject *self, PyObject *args) {
 	(void)self;
