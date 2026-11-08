@@ -8,9 +8,10 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
  * PyMethodDef entries are adapters. The variables of the other modules are read where the script reads them
  * (HangarTab.prevShip, the ship being edited, as a handle value: OBJLIB 5 and 7; ShipMaker.ShipTon and the costs,
- * ShipEdit.armorPieceWeight). The calls of HangarTab, ShipEdit and ShipMaker, the link functions of Menu and the
- * module's own functions the script calls as its globals stay by name (OBJLIB 3); the .def runner takes Python
- * values (OBJLIB 6).
+ * ShipEdit.armorPieceWeight). HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly
+ * while the attribute holds the port's function, else by name), the module's own functions through its globals as
+ * the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu stay by name (OBJLIB 4: a
+ * from import, and they have no entry); the .def runner takes Python values (OBJLIB 6).
  */
 #include <limits.h>
 
@@ -84,7 +85,7 @@ static byte HT_ShowPrediction(int id, byte up) {
 	Script_SetNum(id, "WeightBack", "Visible", 1);
 	if (!Mode_ShipGet("AcMass", am) || !Native_ToInt(am, mass) || !Mode_ModVar("ShipEdit", "armorPieceWeight", pw) ||
 		!Native_Arith(up ? '+' : '-', mass, pw, weight) ||
-		!Native_CallMod("HangarTab", "ShowBoostPrediction", NULL, "iv", (long)id, weight)) {
+		!PORT_CALL(HangarTab, ShowBoostPrediction, NULL, "iv", (long)id, weight)) {
 		return Mode_Done(&t, 0);
 	}
 	int green = 255;
@@ -190,23 +191,19 @@ static byte HT_Arrows(int id, const nativeVal_t *def) {
 	return ok;
 }
 
+static byte HT_TestArrows_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *change = NULL;
+	nativeVal_t def;
+	int id;
+	(void)out;
+	Native_SetInt(&def, 1);
+	return Mode_Parse(a, n, "i|O", &id, &change) && HT_Arrows(id, change ? change : &def);
+}
+
 static PyObject *HT_TestArrows(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "changeDefault", NULL };
-	int id;
-	PyObject *change = NULL;
-	nativeVal_t def;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|O", names, &id, &change)) {
-		return NULL;
-	}
-	if (change) {
-		Native_Arg(change, &def);
-	} else {
-		Native_SetInt(&def, 1);
-	}
-	byte ok = HT_Arrows(id, &def);
-	Native_Free(&def);
-	return Mode_Result(ok);
+	return Mode_KwIdEntry(args, kw, "i|O", names, HT_TestArrows_E);
 }
 
 /* IncrementHull(id, control) and DecrementHull(id, control): one plate on or off, then the boost prediction */
@@ -214,11 +211,10 @@ static byte HT_StepHull(int id, int step) {
 	static const char *const mods[] = { "HangarTab", "ShipEdit", NULL };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *am = Mode_V(&t), *pw = Mode_V(&t), *weight = Mode_V(&t);
-	/* OBJLIB 3: the module's ChangeHull as its global */
-	byte ok = Script_Import(mods) && Native_CallGlobal("HullTab", "ChangeHull", NULL, "ii", (long)id, (long)step) &&
+	byte ok = Script_Import(mods) && PORT_OWN(HullTab, ChangeHull, NULL, "ii", (long)id, (long)step) &&
 		Mode_ShipGet("AcMass", am) && Mode_ModVar("ShipEdit", "armorPieceWeight", pw) &&
 		Native_Arith(step > 0 ? '+' : '-', am, pw, weight) &&
-		Native_CallMod("HangarTab", "ShowBoostPrediction", NULL, "iv", (long)id, weight);
+		PORT_CALL(HangarTab, ShowBoostPrediction, NULL, "iv", (long)id, weight);
 	return Mode_Done(&t, ok);
 }
 
@@ -229,7 +225,7 @@ MODE_IFN(HT_DecrementHull, 2, HT_StepHull(id, -1))
 static int HT_Single(void) {
 	nativeVal_t v = { 0 }, one;
 	Native_SetInt(&one, 1);
-	if (!Native_CallMod("ShipEdit", "IsEditingMultiplayer", &v, "")) {
+	if (!PORT_CALL(ShipEdit, IsEditingMultiplayer, &v, "")) {
 		return -1;
 	}
 	int c = Native_Compare(&v, &one) != 0;
@@ -243,9 +239,9 @@ static byte HT_Apply(int id, char op, const nativeVal_t *value) {
 	nativeVal_t *ml = Mode_V(&t), *nl = Mode_V(&t), *life = Mode_V(&t), *name = Mode_V(&t);
 	byte ok = Mode_ShipGet("MaxLife", ml) && Native_Arith(op, ml, value, nl) && Mode_ShipSet("MaxLife", nl) &&
 		Mode_ShipGet("MaxLife", life) && Mode_ShipSet("Life", life) && Mode_ShipGet("Name", name) &&
-		Native_CallMod("ShipMaker", "SetShipParams", NULL, "v", name) &&
-		Native_CallMod("HangarTab", "ShowShipInfo", NULL, "i", (long)id) &&
-		Native_CallGlobal("HullTab", "SetHullState", NULL, "i", (long)id);
+		PORT_CALL(ShipMaker, SetShipParams, NULL, "v", name) &&
+		PORT_CALL(HangarTab, ShowShipInfo, NULL, "i", (long)id) &&
+		PORT_OWN(HullTab, SetHullState, NULL, "i", (long)id);
 	return Mode_Done(&t, ok);
 }
 
@@ -404,19 +400,7 @@ static byte HT_ChangeHull(int id, const nativeVal_t *v, nativeVal_t *out) {
 	return ok;
 }
 
-static PyObject *HT_ChangeHullPy(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *value;
-	nativeVal_t v, out = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &value)) {
-		return NULL;
-	}
-	Native_Arg(value, &v);
-	byte ok = HT_ChangeHull(id, &v, &out);
-	Native_Free(&v);
-	return Mode_Return(ok, &out);
-}
+MODE_IFN(HT_ChangeHullPy, 2, HT_ChangeHull(id, &a[1], out))
 
 /* SetHullState(id): the colour and number of the hull text, the bar, the slider and the arrows */
 static byte HT_SetHullState(int id) {
@@ -460,7 +444,7 @@ static byte HT_SetHullState(int id) {
 	if (ok) {
 		Mode_Repr(ml, rep);
 	}
-	ok = ok && Mode_ScorerPut(id, "HullText", "Text", rep) && Native_CallGlobal("HullTab", "TestArrows", NULL, "i", (long)id);
+	ok = ok && Mode_ScorerPut(id, "HullText", "Text", rep) && PORT_OWN(HullTab, TestArrows, NULL, "i", (long)id);
 	return Mode_Done(&t, ok);
 }
 
@@ -486,8 +470,7 @@ static byte HT_SliderChange(int id) {
 	if (!change) {
 		return Mode_Done(&t, 1);
 	}
-	/* OBJLIB 3: the module's ChangeHull as its global */
-	if (!Native_CallGlobal("HullTab", "ChangeHull", ret, "iv", (long)id, diff)) {
+	if (!PORT_OWN(HullTab, ChangeHull, ret, "iv", (long)id, diff)) {
 		return Mode_Done(&t, 0);
 	}
 	int up = HT_Gt(diff, zero);
@@ -506,7 +489,7 @@ static byte HT_SetPanel(int id) {
 	static const char *const mods[] = { "string", "ShipMaker", "HangarTab", NULL };
 	PyObject *a = NULL, *b = NULL;
 	byte ok = Script_Import(mods) && (a = Mode_From("Menu", "LinkUD")) && (b = Mode_From("Menu", "LinkLR")) &&
-		HT_Run(id, "panel", NULL) && Native_CallGlobal("HullTab", "SetHullVisible", NULL, "ii", (long)id, 0L);
+		HT_Run(id, "panel", NULL) && PORT_OWN(HullTab, SetHullVisible, NULL, "ii", (long)id, 0L);
 	Py_XDECREF(a);
 	Py_XDECREF(b);
 	return ok;
@@ -520,7 +503,7 @@ static byte HT_ShowPanel(int id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ml = Mode_V(&t), *rep = Mode_V(&t), *lo = Mode_V(&t), *hi = Mode_V(&t);
 	PyObject *a = Mode_From("Menu", "LinkLR"), *b = a ? Mode_From("Menu", "LinkUD") : NULL;
-	byte ok = b && Script_Import(mods) && Native_CallGlobal("HullTab", "SetHullVisible", NULL, "ii", (long)id, 1L) &&
+	byte ok = b && Script_Import(mods) && PORT_OWN(HullTab, SetHullVisible, NULL, "ii", (long)id, 1L) &&
 		Mode_ShipGet("MaxLife", ml);
 	if (ok) {
 		Mode_Repr(ml, rep);
@@ -532,7 +515,7 @@ static byte HT_ShowPanel(int id) {
 		Script_SetNum(id, "HullSlider", "Value", 0);
 		Script_SetNum(id, "HullSlider", "MaxValueForced", 0);
 	}
-	ok = ok && Native_CallGlobal("HullTab", "SetHullState", NULL, "i", (long)id);
+	ok = ok && PORT_OWN(HullTab, SetHullState, NULL, "i", (long)id);
 	Py_XDECREF(a);
 	Py_XDECREF(b);
 	return Mode_Done(&t, ok);
@@ -554,24 +537,12 @@ static byte HT_SetVisible(int id, const nativeVal_t *v) {
 	return ok;
 }
 
-static PyObject *HT_SetHullVisible(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *o;
-	nativeVal_t v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &o)) {
-		return NULL;
-	}
-	Native_Arg(o, &v);
-	byte ok = HT_SetVisible(id, &v);
-	Native_Free(&v);
-	return Mode_Result(ok);
-}
+MODE_IFN(HT_SetHullVisible, 2, HT_SetVisible(id, &a[1]))
 
 /* HideHullPanel(id) */
 static byte HT_HidePanel(int id) {
 	PyObject *unlink = NULL;
-	byte ok = HT_Run(id, "hide", NULL) && Native_CallGlobal("HullTab", "SetHullVisible", NULL, "ii", (long)id, 0L) &&
+	byte ok = HT_Run(id, "hide", NULL) && PORT_OWN(HullTab, SetHullVisible, NULL, "ii", (long)id, 0L) &&
 		(unlink = Mode_From("Menu", "UnLinkUD")) && Mode_LinkCall(unlink, id, "HullDown", "Exit");
 	Py_XDECREF(unlink);
 	return ok;

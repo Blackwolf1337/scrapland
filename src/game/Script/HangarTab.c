@@ -13,9 +13,12 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the PyMethodDef entries are adapters with
  * the argument formats of the C port. The variables of the module are read where the script reads them and written at
  * once (OBJLIB 5); prevShip, miniShip and the ships of ShipEdit.editedShips are handle values (OBJLIB 7), the lists of
- * ShipEdit are changed in place on their objects. ShipEdit, ShipMaker, Vehicles, Menu's link functions and the
- * module's own functions the script calls as its globals stay by name (OBJLIB 3); ComputeShipTotalCost evaluates its
- * text through the name chain of the module (OBJLIB 6), the .def runner takes Python values (OBJLIB 6).
+ * ShipEdit are changed in place on their objects. ShipEdit, ShipMaker and Vehicles are called through their refs
+ * (PORT_CALL: directly while the attribute holds the port's function, else by name), the module's own functions
+ * through its globals as the script calls them (PORT_OWN, the same seam on the global). Menu's link functions stay by
+ * name (OBJLIB 4: a from import, and they have no entry), and so do the SScorer and SSound calls (OBJLIB 7); the
+ * helpers of ShipEdit.h (Sn_Multi, Sn_Link) are those of ShipEdit.c. ComputeShipTotalCost evaluates its text through
+ * the name chain of the module (OBJLIB 6), the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -166,7 +169,7 @@ static byte Ht_BoostPrediction(int id, const nativeVal_t *weight) {
 		Script_SetNum(id, arrows[i], "Visible", 0);
 	}
 	byte ok = Ht_ShipGet("BoostTime", &cur) && Ht_ShipGet("Model", &model) &&
-		Native_CallMod("ShipMaker", "GetBoostFactor", &nb, "vv", &model, weight) && Ht_Decimal(&cur, &ci, &cd, 1) &&
+		PORT_CALL(ShipMaker, GetBoostFactor, &nb, "vv", &model, weight) && Ht_Decimal(&cur, &ci, &cd, 1) &&
 		Ht_Decimal(&nb, &ni, &nd, 1);
 	const char *arrow = "BoostEqual";
 	int c = ok ? Mode_Cmp(&ni, "<", &ci) : -1;
@@ -226,7 +229,7 @@ static byte Ht_TabsOn(int id, byte on) {
 	return ok;
 }
 
-/* SScorer.<fn>(id, text) by name (SetOnNext, SetOnPrev, SetDefault, SetOnCancel) */
+/* SScorer.<fn>(id, text) by name (SetOnNext, SetOnPrev, SetDefault, SetOnCancel; OBJLIB 7) */
 static byte Ht_Scorer(const char *fn, int id, const char *s) {
 	return Native_CallMod("SScorer", fn, NULL, "is", (long)id, s);
 }
@@ -755,7 +758,7 @@ static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 		ok = m && PyDict_SetItemString(loc, (char *)mods[i], m) == 0;
 		Py_XDECREF(m);
 	}
-	ok = ok && Ht_EvalAttr(cad, ".Model", loc, name) && Native_CallMod("ShipMaker", "GetShipPrice", price, "v", name) &&
+	ok = ok && Ht_EvalAttr(cad, ".Model", loc, name) && PORT_CALL(ShipMaker, GetShipPrice, price, "v", name) &&
 		Native_ToInt(price, cost) && LvN_ModGet(SE, "shipsEnginesLayouts", layouts) && Mode_Sub(layouts, name, layout);
 	int n = ok ? Mode_Len(layout) : -1;
 	ok = n >= 0;
@@ -765,7 +768,7 @@ static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 		ok = Ht_EvalAttrV(cad, ".NEng", a, loc, num);
 		int more = ok ? Mode_CmpI(num, ">", 0) : -1;
 		if (more > 0) {
-			ok = Ht_EvalAttrV(cad, ".MEng", a, loc, eng) && Native_CallMod("ShipMaker", "GetEnginePrice", price, "v", eng) &&
+			ok = Ht_EvalAttrV(cad, ".MEng", a, loc, eng) && PORT_CALL(ShipMaker, GetEnginePrice, price, "v", eng) &&
 				Mode_Arith('*', num, price, p) && Mode_Arith('+', cost, p, b);
 			if (ok) {
 				Native_Free(cost);
@@ -816,7 +819,7 @@ static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 
 /* ComputeShipTotalCost(cad) as the script calls its global (a mission may replace it) */
 static byte Ht_OwnTotalCost(const nativeVal_t *cad, nativeVal_t *out) {
-	return Native_CallGlobal(HT, "ComputeShipTotalCost", out, "v", cad);
+	return PORT_OWN(HangarTab, ComputeShipTotalCost, out, "v", cad);
 }
 
 /* "ShipEdit.editedShips[" + `n` + "]" */
@@ -977,8 +980,8 @@ static byte Ht_ShowMini(int id, const nativeVal_t *control) {
 		if (valid) {
 			Ht_Show(id, show, 1);
 			Native_Free(mini);
-			ok = Ht_G("miniShip", mini) && Native_CallGlobal(HT, "GetSpeedRampOffsets", off, "v", mini) && LvN_Item(off, 0, o0) &&
-				LvN_Item(off, 1, o1) && Native_CallGlobal(HT, "ScaleSpeedRamp", NULL, "ivvi", (long)id, o0, o1, 1L);
+			ok = Ht_G("miniShip", mini) && PORT_OWN(HangarTab, GetSpeedRampOffsets, off, "v", mini) && LvN_Item(off, 0, o0) &&
+				LvN_Item(off, 1, o1) && PORT_OWN(HangarTab, ScaleSpeedRamp, NULL, "ivvi", (long)id, o0, o1, 1L);
 			if (!ok) {
 				return Mode_Done(&t, 0);
 			}
@@ -1120,7 +1123,7 @@ static byte Ht_AtShip(const nativeVal_t *list, nativeVal_t *out) {
 /* int(ShipMaker.GetShipPrice(list[currentShipToEdit])) */
 static byte Ht_ShipPrice(const nativeVal_t *list, nativeVal_t *out) {
 	nativeVal_t kind = { 0 }, p = { 0 };
-	byte ok = Ht_AtShip(list, &kind) && Native_CallMod("ShipMaker", "GetShipPrice", &p, "v", &kind) && Native_ToInt(&p, out);
+	byte ok = Ht_AtShip(list, &kind) && PORT_CALL(ShipMaker, GetShipPrice, &p, "v", &kind) && Native_ToInt(&p, out);
 	Native_Free(&kind);
 	Native_Free(&p);
 	return ok;
@@ -1268,7 +1271,7 @@ static byte Ht_SpeedRampOffsets(const nativeVal_t *v, nativeVal_t *out) {
 	nativeVal_t m = { 0 }, a = { 0 }, s = { 0 }, b = { 0 }, k;
 	Native_SetNone(out);
 	Native_SetFloat(&k, 0.3);
-	byte ok = Native_CallGlobal(HT, "GetMaxSpeedTime", &m, "v", v) && Mode_Arith('/', &m, &k, &a) && Mode_VGet(v, "MaxSpeed", &s);
+	byte ok = PORT_OWN(HangarTab, GetMaxSpeedTime, &m, "v", v) && Mode_Arith('/', &m, &k, &a) && Mode_VGet(v, "MaxSpeed", &s);
 	Native_SetFloat(&k, 19600.0);
 	ok = ok && Mode_Arith('/', &s, &k, &b);
 	if (ok) {
@@ -1426,8 +1429,8 @@ static const char *const ht_speedInfo[] = { "MaxSpeedText", "MaxSpeed", "BoostRe
 /* the offsets of the speed ramp of the ship: ScaleSpeedRamp(id, *GetSpeedRampOffsets(ship)) through the globals */
 static byte Ht_Ramp(int id, const nativeVal_t *ship) {
 	nativeVal_t off = { 0 }, a = { 0 }, b = { 0 };
-	byte ok = Native_CallGlobal(HT, "GetSpeedRampOffsets", &off, "v", ship) && LvN_Item(&off, 0, &a) && LvN_Item(&off, 1, &b) &&
-		Native_CallGlobal(HT, "ScaleSpeedRamp", NULL, "ivv", (long)id, &a, &b);
+	byte ok = PORT_OWN(HangarTab, GetSpeedRampOffsets, &off, "v", ship) && LvN_Item(&off, 0, &a) && LvN_Item(&off, 1, &b) &&
+		PORT_OWN(HangarTab, ScaleSpeedRamp, NULL, "ivv", (long)id, &a, &b);
 	Native_Free(&off);
 	Native_Free(&a);
 	Native_Free(&b);
@@ -1456,7 +1459,7 @@ static byte Ht_ShowInfo(int id, int ammo) {
 	if (c <= 0) {
 		return Mode_Done(&t, c == 0);
 	}
-	ok = LvN_SetI(ship, "Active", 1) && Mode_VGet(ship, "MaxSpeed", v) && Native_CallGlobal(HT, "CmSec2Value", w, "v", v) &&
+	ok = LvN_SetI(ship, "Active", 1) && Mode_VGet(ship, "MaxSpeed", v) && PORT_OWN(HangarTab, CmSec2Value, w, "v", v) &&
 		Ht_SetRepr(id, "MaxSpeed", "Text", w);
 	if (ok) {
 		Script_SetNum(id, "Slash", "Visible", 1);
@@ -1536,7 +1539,7 @@ static void Ht_NoSlots(int id) {
 	Script_SetStr(id, "NumSlotsMissileWeapons", "Text", "");
 }
 
-/* SSound.SetPS(name, var, d), SSound.SetPS(name, var, i) and SSound.SetPS(name, var, v) by name */
+/* SSound.SetPS(name, var, d), SSound.SetPS(name, var, i) and SSound.SetPS(name, var, v) by name (OBJLIB 7) */
 static byte Ht_SetPSd(const char *name, const char *var, double d) {
 	return Native_CallMod("SSound", "SetPS", NULL, "ssd", name, var, d);
 }
@@ -1609,14 +1612,14 @@ static byte Ht_SelectShipToEdit(int id) {
 		Native_Free(list);
 		Native_Free(kind);
 		ok = LvN_ModGet(SE, "auxShipsToEditList", list) && Ht_AtShip(list, kind) &&
-			Native_CallGlobal(HT, "CreateEmptyShip", NULL, "v", kind) && Ht_TypeState(id, 0);
+			PORT_OWN(HangarTab, CreateEmptyShip, NULL, "v", kind) && Ht_TypeState(id, 0);
 	} else if (ok) {
 		ok = Ht_AtCur("editedShips", ship) && Mode_Put(HT, "prevShip", NULL, ship);
 		Native_Free(ship);
 		ok = ok && Ht_G("prevShip", ship) && LvN_SetI(ship, "Active", 1);
 		Native_Free(ship);
 		ok = ok && Ht_G("prevShip", ship) && LvN_SetI(ship, "RenderEffect", 1) &&
-			Native_CallMod(SE, "StopRotateLoop", NULL, "") && Native_CallMod(SE, "StartRotateLoop", NULL, "") &&
+			PORT_CALL(ShipEdit, StopRotateLoop, NULL, "") && PORT_CALL(ShipEdit, StartRotateLoop, NULL, "") &&
 			Ht_TypeState(id, 1);
 	}
 	if (!ok) {
@@ -1675,7 +1678,7 @@ static byte Ht_ShipToEdit(int id, int step) {
 	}
 	c = Ht_G("prevShip", &ship) ? Mode_Cmp(&ship, "!=", &ht_none) : -1;
 	Native_Free(&ship);
-	return c == 0 || (c > 0 && Native_CallMod(SE, "StartRotateLoop", NULL, ""));
+	return c == 0 || (c > 0 && PORT_CALL(ShipEdit, StartRotateLoop, NULL, ""));
 }
 
 /* the hangar of the global name has no ship, or (single player) a destroyed one: 1, 0, -1 */
@@ -1820,10 +1823,10 @@ static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
 			return 0;
 		}
 		if (skipanim) {
-			return Native_CallMod(SE, "ChangeShip", NULL, "vvi", &ht_none, &ht_none, 0L) &&
-				Native_CallMod(SE, "VerifyChangeShip", NULL, "vvi", &ht_none, &ht_none, 0L);
+			return PORT_CALL(ShipEdit, ChangeShip, NULL, "vvi", &ht_none, &ht_none, 0L) &&
+				PORT_CALL(ShipEdit, VerifyChangeShip, NULL, "vvi", &ht_none, &ht_none, 0L);
 		}
-		return Native_CallMod(SE, "LaunchPlatformAnim", NULL, "");
+		return PORT_CALL(ShipEdit, LaunchPlatformAnim, NULL, "");
 	}
 	if (empty < 0) {
 		return 0;
@@ -1879,7 +1882,7 @@ static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
 	if (LvN_EqS(control, "HangarAux") ? !Ht_Scorer("SetDefault", id, "HangarAux") : !Ht_DefaultHangar(id)) {
 		return 0;
 	}
-	return Ht_PlatformButtons(id, 0) && Native_CallMod(SE, "LaunchPlatformAnim", NULL, "");
+	return Ht_PlatformButtons(id, 0) && PORT_CALL(ShipEdit, LaunchPlatformAnim, NULL, "");
 }
 
 /* SelectItem(id, control): a hangar clicked: it becomes currentHangar and is selected */
@@ -1929,9 +1932,9 @@ static byte Ht_CreateEmptyShip(const nativeVal_t *kind) {
 	ok = ok && LvN_ModGet(SE, "editShipPosDummy", dummy) && Sn_FrontAng(dummy, NULL, ang) && Ht_G("prevShip", ship) &&
 		Mode_VSet(ship, "Ang", ang);
 	Native_Free(ship);
-	ok = ok && Native_CallMod("ShipMaker", "GetShipTon", ton, "v", kind) && LvN_Item(ton, 0, life) && Ht_G("prevShip", ship) &&
+	ok = ok && PORT_CALL(ShipMaker, GetShipTon, ton, "v", kind) && LvN_Item(ton, 0, life) && Ht_G("prevShip", ship) &&
 		Mode_VGet(ship, "Name", name) &&
-		Native_CallMod("Vehicles", "SetProperties", NULL, "vvvsssssssi", name, kind, life, "P_None", "", "", "", "",
+		PORT_CALL(Vehicles, SetProperties, NULL, "vvvsssssssi", name, kind, life, "P_None", "", "", "", "",
 			"0,0,0,0,0,0", "Pilot", 1L);
 	Native_Free(ship);
 	ok = ok && Ht_G("prevShip", ship) && LvN_SetI(ship, "RenderEffect", 1);
@@ -1939,7 +1942,7 @@ static byte Ht_CreateEmptyShip(const nativeVal_t *kind) {
 	if (ok && Ht_G("prevShip", ship)) {
 		Native_SetEmpty(list, NV_LIST);
 		Native_Copy(Native_Append(list), ship);
-		ok = Native_CallMod(SE, "SetupForEdit", NULL, "v", list);
+		ok = PORT_CALL(ShipEdit, SetupForEdit, NULL, "v", list);
 	} else {
 		ok = 0;
 	}
@@ -2152,19 +2155,7 @@ MODE_IFN(HT_SelectItem, 2, Ht_SelectItem(id, &a[1]))
 MODE_IFN(HT_BuyShip, 2, Ht_BuyShip(id))
 MODE_IFN(HT_SellShip, 2, Ht_SellShip(id))
 MODE_IFN(HT_AddReferenceShipControls, 1, Ht_Reference(id))
-
-static PyObject *HT_CreateEmptyShip(PyObject *self, PyObject *args) {
-	PyObject *o;
-	nativeVal_t a = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &o)) {
-		return NULL;
-	}
-	Native_Arg(o, &a);
-	byte ok = Ht_CreateEmptyShip(&a);
-	Native_Free(&a);
-	return Mode_Result(ok);
-}
+MODE_FN(HT, CreateEmptyShip, 1, Ht_CreateEmptyShip(&a[0]))
 
 static PyObject *HT_AuxShowMoney(PyObject *self, PyObject *args) {
 	char *symbol;
@@ -2176,43 +2167,38 @@ static PyObject *HT_AuxShowMoney(PyObject *self, PyObject *args) {
 	return Mode_Result(Ht_AuxShowMoney(id, symbol));
 }
 
-static PyObject *HT_ComputeShipTotalCost(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "cad", NULL };
-	PyObject *o = NULL;
-	nativeVal_t cad = { 0 }, out = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
-		return NULL;
-	}
-	if (o) {
-		Native_Arg(o, &cad);
-	} else {
-		Native_SetStr(&cad, "prevShip");
-	}
-	byte ok = Ht_TotalCost(&cad, &out);
+/* ComputeShipTotalCost(cad="prevShip") */
+static byte HT_ComputeShipTotalCostK(const nativeVal_t *const *a, nativeVal_t *out) {
+	nativeVal_t cad;
+	Native_SetStr(&cad, "prevShip");
+	byte ok = Ht_TotalCost(a[0] ? a[0] : &cad, out);
 	Native_Free(&cad);
-	return Mode_Return(ok, &out);
+	return ok;
+}
+
+static byte HT_ComputeShipTotalCost_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "|O", HT_ComputeShipTotalCostK, out);
+}
+
+static char *HT_ComputeShipTotalCost_N[] = { "cad", NULL };
+
+static PyObject *HT_ComputeShipTotalCost(PyObject *self, PyObject *args, PyObject *kw) {
+	(void)self;
+	return Mode_KwCall(args, kw, "|O", HT_ComputeShipTotalCost_N, HT_ComputeShipTotalCostK);
+}
+
+/* ScaleSpeedRamp(id, offsetX, offsetY, isMiniShip=0) */
+static byte HT_ScaleSpeedRamp_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *ox, *oy, *mini = NULL;
+	int id;
+	(void)out;
+	return Mode_Parse(a, n, "iOO|O", &id, &ox, &oy, &mini) && Ht_ScaleSpeedRamp(id, ox, oy, mini);
 }
 
 static PyObject *HT_ScaleSpeedRamp(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "offsetX", "offsetY", "isMiniShip", NULL };
-	PyObject *ox, *oy, *mini = NULL;
-	nativeVal_t a = { 0 }, b = { 0 }, c = { 0 };
-	int id;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "iOO|O", names, &id, &ox, &oy, &mini)) {
-		return NULL;
-	}
-	Native_Arg(ox, &a);
-	Native_Arg(oy, &b);
-	if (mini) {
-		Native_Arg(mini, &c);
-	}
-	byte ok = Ht_ScaleSpeedRamp(id, &a, &b, mini ? &c : NULL);
-	Native_Free(&a);
-	Native_Free(&b);
-	Native_Free(&c);
-	return Mode_Result(ok);
+	return Mode_KwIdEntry(args, kw, "iOO|O", names, HT_ScaleSpeedRamp_E);
 }
 
 /* ShowShipInfo(id, showAmmoInfo=1) */
