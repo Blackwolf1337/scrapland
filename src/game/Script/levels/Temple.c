@@ -14,8 +14,16 @@
  * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
  * Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set, Scrap.SetAlarm, Scrap.GetAlarm,
  * SScorer.SetMsgText, SScorer.SetLabelText, SFX.BishopSellLife, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the
- * SAct functions of the fake speech and SSound.SetMusic (fr6b.py). Speech, MissionsFuncs, SaveGame, GateKeeper,
- * Elevator, Metro, CharsNPC, MisItems, Scene and the functions of the modules go by name (OBJLIB 3).
+ * SAct functions of the fake speech and SSound.SetMusic (fr6b.py).
+ *
+ * Direct calls (stage 3): the functions of the other ports (MissionsFuncs, SaveGame, GateKeeper, Elevator, Metro,
+ * CharsNPC, MisItems, Scene) and the own functions of the modules (their globals) go through their refs (PORT_CALL,
+ * PORT_LOWN, LV_CALLBACK; the seam takes the call by name when a mission or a case has put something else there,
+ * OBJLIB 5). The GateKeeper refs take Python objects and always go by name. By name: the sections of the .def files
+ * (ShowDeepThroatMessage, DeepThroatCalls, LoadYakuzziScene: Tp_Do, OBJLIB 6); string.splitfields of a value that is no
+ * text is the native twin. The functions given to the scheduler (Speech.AddRemoteCom of Tp_ComAt, Mode_Schedule,
+ * Ma_Soon), to Elevator, CharAct, Alarm, CharsNPC, DTritusDesktop, Scene and Speech as callbacks and to the entities
+ * (the UseFunc and OnTake texts) stay values (OBJLIB 4, 5).
  */
 #include <limits.h>
 #include <string.h>
@@ -49,7 +57,7 @@ static byte Tp_SetVarG(const char *module, const char *var, const char *src, con
 	return 1;
 }
 
-/* fn() through the globals of module, the result dropped */
+/* fn() through the globals of module, the result dropped: the sections of the .def files, by name (OBJLIB 6) */
 static byte Tp_Do(const char *module, const char *fn) {
 	return LV_OWN(module, fn, NULL, "");
 }
@@ -88,8 +96,8 @@ static byte Tp_UseFunc(const char *name, const char *func) {
 static byte Tp_Gate(const char *keeper, const char *door, const char *group, const char *use) {
 	/* OBJLIB 5: the group is the object of GateKeeper, as the script passes it */
 	PyObject *g = Mode_Import("GateKeeper") ? Script_Attr("GateKeeper", group) : NULL;
-	byte ok = g && (!door || LV_CALL("GateKeeper", "SetDoor", NULL, "ss", keeper, door)) &&
-		LV_CALL("GateKeeper", "DoorFoe", NULL, "sO", keeper, g) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
+	byte ok = g && (!door || PORT_CALL(GateKeeper, SetDoor, NULL, "ss", keeper, door)) &&
+		PORT_CALL(GateKeeper, DoorFoe, NULL, "sO", keeper, g) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
 	Py_XDECREF(g);
 	return ok;
 }
@@ -182,18 +190,18 @@ static byte TpMap_InitStatus(void) {
 	Native_Free(&v);
 	Native_SetInt(&v, 0);
 	LvN_SetVar("Messenger", "MakeMDP", &v);
-	if (!LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_Metro_Templo00") ||
-		!LV_CALL("Elevator", "SetDef", NULL, "ss", "MetroExt", "DM_Door_Metro_Templo00") ||
-		!LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator", "DM_Door_Elevator_Commercial") ||
-		!LV_CALL("Elevator", "SetDef", NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_GDB") ||
-		!LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Sentinel", 3L) || !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Police", 3L) ||
-		!LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Nurse", 3L)) {
+	if (!PORT_CALL(Elevator, SetDef, NULL, "ss", "Metro", "DM_Door_Metro_Templo00") ||
+		!PORT_CALL(Elevator, SetDef, NULL, "ss", "MetroExt", "DM_Door_Metro_Templo00") ||
+		!PORT_CALL(Elevator, SetDef, NULL, "ss", "Elevator", "DM_Door_Elevator_Commercial") ||
+		!PORT_CALL(Elevator, SetDef, NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_GDB") ||
+		!PORT_CALL(CharsNPC, SetReposChars, NULL, "si", "Sentinel", 3L) || !PORT_CALL(CharsNPC, SetReposChars, NULL, "si", "Police", 3L) ||
+		!PORT_CALL(CharsNPC, SetReposChars, NULL, "si", "Nurse", 3L)) {
 		return 0;
 	}
 	/* if not Scrap.Get("IsXbox") or _<Char>: */
 	for (int i = 0; i < 3; i++) {
 		int on = LvN_PcOr(GM, repos[i].flag);
-		if (on < 0 || (on && !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", repos[i].who, repos[i].n))) {
+		if (on < 0 || (on && !PORT_CALL(CharsNPC, SetReposChars, NULL, "si", repos[i].who, repos[i].n))) {
 			return 0;
 		}
 	}
@@ -210,10 +218,10 @@ static byte TpMap_Init(void) {
 	LvN_Str(Native_Append(&a), "DM_Door_Teleporter_01");
 	LvN_Str(Native_Append(&a), "DM_Door_Teleporter_06");
 	Native_SetEmpty(&b, NV_LIST);
-	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vvi", &a, &b, 0L);
+	byte ok = PORT_CALL(Elevator, ConnectElevators, NULL, "vvi", &a, &b, 0L);
 	Native_Free(&a);
 	Native_Free(&b);
-	if (!ok || !LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Templo00") ||
+	if (!ok || !PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_Metro_Templo00") ||
 		!Tp_Gate("GateKeeper_Portalis", "DM_Door_Teleporter_01", "BishopGroupGateKeeper", "GateKeeper.UseDoor")) {
 		return 0;
 	}
@@ -365,7 +373,7 @@ static byte Xl_MoveLife(const nativeVal_t *l, const nativeVal_t *dist) {
 	if (ok) {
 		Native_SetFloat(&zero, 0.0);
 		if (!Native_Compare(&rt, &zero)) {
-			ok = LV_OWN(XL, "SetRespawnTime", NULL, "v", l) && LvN_SetF(l, "MoveTime", 0.3);
+			ok = PORT_LOWN(MapExtraLifes, SetRespawnTime, NULL, "v", l) && LvN_SetF(l, "MoveTime", 0.3);
 		} else {
 			ok = LvN_SetF(l, "MoveTime", 0.0) && Mode_VGet(l, "MovePos", &p) && Mode_VSet(l, "Pos", &p);
 		}
@@ -405,7 +413,7 @@ static byte Xl_MoveLifes(const nativeVal_t *dist) {
 
 /* MoveLifes(d) of the module through its global */
 static byte Xl_Move(long d) {
-	return LV_OWN(XL, "MoveLifes", NULL, "i", d);
+	return PORT_LOWN(MapExtraLifes, MoveLifes, NULL, "i", d);
 }
 
 /* SwitchAlarm(status): called again on the next alarm change; the lives up with the alarm, down after it */
@@ -458,7 +466,7 @@ static byte Xl_Life(const nativeVal_t *dummy) {
 		Native_Repr(&rep, &neg, NR_REPR);
 		SaveVar_Create(s, rep.p);
 		Native_BufFree(&rep);
-		ok = LV_OWN(XL, "GetMoney", NULL, "v", &name);
+		ok = PORT_LOWN(MapExtraLifes, GetMoney, NULL, "v", &name);
 	}
 	int got = 0;
 	ok = ok && LvN_Item(dummy, 1, &pos);
@@ -472,8 +480,8 @@ static byte Xl_Life(const nativeVal_t *dummy) {
 	while (got-- > 0) {
 		Native_Free(&c[got]);
 	}
-	ok = ok && LV_CALL("MisItems", "GetObjModel", &model, "s", "ExtraLife") && Mode_VModel(&l, &model) &&
-		LV_OWN(XL, "SetRespawnTime", NULL, "v", &l) && LvN_SetI(&l, "OnlyUser", 1) &&
+	ok = ok && PORT_CALL(MisItems, GetObjModel, &model, "s", "ExtraLife") && Mode_VModel(&l, &model) &&
+		PORT_LOWN(MapExtraLifes, SetRespawnTime, NULL, "v", &l) && LvN_SetI(&l, "OnlyUser", 1) &&
 		LvN_ModGet("MisItems", "COIN_RADIUS_INDOOR", &radius) && Mode_VSet(&l, "Radius", &radius) &&
 		LvN_SetS(&l, "OnTake", "MapExtraLifes.TakeExtraLife") && Mode_VGet(&l, "Pos", &v) && Mode_VSet(&l, "MovePos", &v);
 	Native_Free(&v);
@@ -518,7 +526,7 @@ static byte Xl_Init(void) {
 		return 0;
 	}
 	if (on) {
-		return LV_OWN(XL, "SwitchAlarm", NULL, "i", 1L);
+		return PORT_LOWN(MapExtraLifes, SwitchAlarm, NULL, "i", 1L);
 	}
 	return LvN_ModAppendG("Alarm", "SetAlarmCallback", XL, "SwitchAlarm");
 }
@@ -586,7 +594,7 @@ PyMethodDef g_TempleXlMethods[] = {
 
 /* Init(LevelPath): the forbidden area, the gatekeeper against the police; the photos of the proofs or Deep Throat */
 static byte Ad_Init(void) {
-	if (!Mode_GVarSetS("GuaranteedChars", ",Police,Gear,Sentinel,PoliceBoss,") || !Tp_Do(AD, "ForbiddenMsg") ||
+	if (!Mode_GVarSetS("GuaranteedChars", ",Police,Gear,Sentinel,PoliceBoss,") || !PORT_LOWN(Mission_ArchbishopDead, ForbiddenMsg, NULL, "") ||
 		!Tp_Gate("GateKeeper_Portalis", "DM_Door_Teleporter_01", "PoliceGroupGateKeeper", "GateKeeper.UseDoor")) {
 		return 0;
 	}
@@ -594,7 +602,7 @@ static byte Ad_Init(void) {
 		return Tp_Do(AD, "ShowDeepThroatMessage");
 	}
 	return LvN_Com("Mission_ArchbishopKilled_RemoteMessage7", "Humphrey", NULL, NULL, NULL) &&
-		Tp_SetVarG("CharAct", "TakenPhoto", AD, "TakeProofPhoto") && Tp_Do(AD, "CreateViscProofs");
+		Tp_SetVarG("CharAct", "TakenPhoto", AD, "TakeProofPhoto") && PORT_LOWN(Mission_ArchbishopDead, CreateViscProofs, NULL, "");
 }
 
 /* ForbiddenMsg(): the forbidden area label, again each second */
@@ -642,7 +650,7 @@ static byte Ad_CreateViscProofs(void) {
 		Native_SetInt(Native_Append(&off), 0);
 		Native_SetInt(Native_Append(&off), -25);
 		Native_SetInt(Native_Append(&off), 0);
-		ok = LvN_DummyPosAng(&d, &pos, &ang) && LV_CALL("MissionsFuncs", "CreatePhotoObject", &prf, "vvvv", &nm, &pos, &ang, &use) &&
+		ok = LvN_DummyPosAng(&d, &pos, &ang) && PORT_CALL(MissionsFuncs, CreatePhotoObject, &prf, "vvvv", &nm, &pos, &ang, &use) &&
 			Mode_VGet(&prf, "Pos", &p) && Mode_VecAdd(&p, &off, &v) && Mode_VSet(&prf, "MovePos", &v) && Mode_VSet(&prf, "Pos", &v);
 		if (ok) {
 			/* ProofsNames.append(prf.Name): the list read before the name, as the script reads them */
@@ -687,7 +695,7 @@ static byte Ad_TakeProofPhoto(const nativeVal_t *proof, nativeVal_t *out) {
 	Native_SetNone(&n);
 	Native_SetNone(&m);
 	Native_SetInt(&one, 1);
-	byte ok = Mode_EntityH(proof, &e) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", &e) &&
+	byte ok = Mode_EntityH(proof, &e) && PORT_CALL(MissionsFuncs, UnsetPhotoObject, NULL, "v", &e) &&
 		Mode_G(AD, "NumProofsWithPhoto", &n) && Native_Arith('+', &n, &one, &m) && Mode_Put(AD, "NumProofsWithPhoto", NULL, &m);
 	if (ok && LvN_EqI(&m, 3)) {
 		Native_SetNone(&none);
@@ -715,9 +723,9 @@ static byte Ad_AfterDeepThroatMessageShown(void) {
 	const char *msg = "Mission_FirstMeetDeepThroat_RemoteMessage5";
 	if (first) {
 		msg = "Mission_FirstMeetDeepThroat_RemoteMessage4";
-		if (!LvN_PutI(AD, "NextMissionMarked", 1) || !Mode_Import("Init") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
-			!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_FirstMeetDeepThroat", "Commercial") ||
-			!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_FirstMeetDeepthroat_MissionText1", 1L)) {
+		if (!LvN_PutI(AD, "NextMissionMarked", 1) || !Mode_Import("Init") || !PORT_CALL(SaveGame, QWayPoint, NULL, "") ||
+			!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_FirstMeetDeepThroat", "Commercial") ||
+			!PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_FirstMeetDeepthroat_MissionText1", 1L)) {
 			return 0;
 		}
 		SaveVars_Delete("Mission_ArchbishopDead");
@@ -773,7 +781,7 @@ static byte Tp_CallDeepThroat(const char *module) {
 static byte Tp_DeepThroatSpeech(const char *module, const nativeVal_t *usr, const nativeVal_t *ch, const char *ni) {
 	nativeVal_t dd, next;
 	Native_SetNone(&next);
-	byte ok = LvN_Entity("DM_DTritusDesktop", &dd) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &dd, 0L) &&
+	byte ok = LvN_Entity("DM_DTritusDesktop", &dd) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &dd, 0L) &&
 		LvN_GObj(module, "SetNextMission", &next);
 	Native_Free(&dd);
 	if (!ok) {
@@ -807,7 +815,7 @@ static byte Ag_InitStatus(void) {
 }
 
 static byte Ag_AfterBrowseNPC(void) {
-	return LvN_Callback("Bishop_Gus", AG, "CreateGusInit");
+	return LV_CALLBACK("Bishop_Gus", Mission_AskGus, CreateGusInit);
 }
 
 /* CreateGusInit(e): Gus talks about the mission while it is on */
@@ -826,9 +834,10 @@ static byte Ag_CreateGusInit(const nativeVal_t *e) {
 }
 
 static byte Ag_Init(void) {
-	const char *fn = LvN_SaveIs("MissionState", "DeepThroatCalls") ? "DeepThroatCalls" :
-		LvN_SaveIs("MissionState", "AfterDeepThroatCalls") ? "CallDeepThroat" : NULL;
-	return !fn || Tp_Do(AG, fn);
+	if (LvN_SaveIs("MissionState", "DeepThroatCalls")) {
+		return Tp_Do(AG, "DeepThroatCalls");
+	}
+	return !LvN_SaveIs("MissionState", "AfterDeepThroatCalls") || PORT_LOWN(Mission_AskGus, CallDeepThroat, NULL, "");
 }
 
 /* DeepThroatAppears(CharName): Gus as before, the bishop's ship and engine as blueprints, Deep Throat calls */
@@ -876,10 +885,10 @@ static byte Ag_PreCallDeepThroat(void) {
 		Py_XDECREF(av);
 	}
 	Native_Free(&dt);
-	ok = ok && LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TalkToDeepThroat4_MissionText1", 1L);
+	ok = ok && PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_TalkToDeepThroat4_MissionText1", 1L);
 	if (ok) {
 		SaveVar_Set("MissionState", "AfterDeepThroatCalls");
-		ok = Tp_Do(AG, "CallDeepThroat");
+		ok = PORT_LOWN(Mission_AskGus, CallDeepThroat, NULL, "");
 	}
 	return ok;
 }
@@ -962,7 +971,7 @@ static byte Ma_Soon(const char *fn) {
 static byte Ma_UseDoor(const nativeVal_t *a) {
 	nativeVal_t used;
 	Native_SetNone(&used);
-	if (!LV_CALL("GateKeeper", "UseDoor", &used, "vvvv", &a[0], &a[1], &a[2], &a[3])) {
+	if (!PORT_CALL(GateKeeper, UseDoor, &used, "vvvv", &a[0], &a[1], &a[2], &a[3])) {
 		return 0;
 	}
 	int t = Native_True(&used);
@@ -976,7 +985,7 @@ static byte Ma_TestEndOfElevator(void) {
 		return Ma_Soon("TestEndOfElevator");
 	}
 	nativeVal_t head, e;
-	if (!Tp_SetVarG("Scene", "EndOfSceneCallback", MA, "SetNextMission") || !LV_CALL("Scene", "Play", NULL, "s", "Yakuzzi") ||
+	if (!Tp_SetVarG("Scene", "EndOfSceneCallback", MA, "SetNextMission") || !PORT_CALL(Scene, Play, NULL, "s", "Yakuzzi") ||
 		!Native_GVarGet("NewsHead", &head)) {
 		return 0;
 	}
@@ -1084,7 +1093,7 @@ static byte Ma_CreateFakeSpeech(void) {
 static byte Ma_Init(void) {
 	return PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "DM_Door_Teleporter_01") &&
 		Tp_Gate("GateKeeper_Portalis", NULL, "DtritusGroupGateKeeper", "Mission_MeetArchbishop.UseDoor") &&
-		Tp_Do(MA, "LoadYakuzziScene") && Tp_Do(MA, "CreateFakeSpeech");
+		Tp_Do(MA, "LoadYakuzziScene") && PORT_LOWN(Mission_MeetArchbishop, CreateFakeSpeech, NULL, "");
 }
 
 static byte Ma_UseDoor_C(const nativeVal_t *a, nativeVal_t *out) {
