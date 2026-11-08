@@ -2428,6 +2428,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, InitMission) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, CreateMayorTransport) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, CreatePorkinsTransport) /* 0 */
+PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, CreateBishop) /* ? */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, AttackMayorTransport) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, OnPorkinsTransportDeath) /* 2 */
 PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, OnMayorTransportDeath) /* 2 */
@@ -2561,6 +2562,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, InitMission, Porkins_InitMissionA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, CreateMayorTransport, Porkins_CreateMayorTransportA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, CreatePorkinsTransport, Porkins_CreatePorkinsTransportA) \
+	PORT_DEFLK(commercial, Mission_DestroyPorkinsTransports, CreateBishop, Porkins_CreateBishop) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, AttackMayorTransport, Porkins_AttackMayorTransportA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, OnPorkinsTransportDeath, Porkins_OnPorkinsTransportDeathA) \
 	PORT_DEFL(commercial, Mission_DestroyPorkinsTransports, OnMayorTransportDeath, Porkins_OnMayorTransportDeathA) \
