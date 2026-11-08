@@ -17,10 +17,9 @@
  * once (OBJLIB 5); the ships, the camera and the platform are handle values (OBJLIB 7), editedShips and tabPixelX are
  * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, Ffa and the
  * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam,
- * OBJLIB 5). HangarTab.ComputeShipTotalCost has no entry yet and stays by name (marked at its site); the menu of the
- * multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time (OBJLIB 4); the engine calls
- * stay by name (OBJLIB 7); the .def runner takes Python values (OBJLIB 6). The texts of the ships in the save and
- * engine variables are made as before.
+ * OBJLIB 5); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time
+ * (OBJLIB 4); the engine calls stay by name (OBJLIB 7); the .def runner takes Python values (OBJLIB 6). The texts of
+ * the ships in the save and engine variables are made as before.
  */
 #include <stdarg.h>
 #include <string.h>
@@ -74,9 +73,8 @@ static void Step_SputnikHint(int id, PyObject *args) {
 		Script_SetStr(id, name, "Hint", Script_Lang("HINT_Sputnik_NoShip"));
 	} else if (ok && lost) {
 		Mode_Repr(i, r);
-		/* OBJLIB 3: by name until HangarTab.ComputeShipTotalCost has an entry */
 		ok = Mode_Import("string") && Sn_Cat("ShipEdit.editedShips[", r, "]", cad) &&
-			Native_CallGlobal(HT, "ComputeShipTotalCost", cost, "v", cad);
+			PORT_OWN(HangarTab, ComputeShipTotalCost, cost, "v", cad);
 		Native_SetInt(money, Mode_GetMoney());
 		int c = ok ? Mode_Cmp(money, ">=", cost) : -1;
 		if (c > 0) {
