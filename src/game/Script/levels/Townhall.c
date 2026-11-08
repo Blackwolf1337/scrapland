@@ -84,23 +84,23 @@ static byte ThMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	for (int i = 0; i < 5; i++) {
-		if (!LV_CALL("Elevator", "SetDef", NULL, "ss", defs[i][0], defs[i][1])) {
+		if (!PORT_CALL(Elevator, SetDef, NULL, "ss", defs[i][0], defs[i][1])) {
 			return 0;
 		}
 	}
 	/* the last three only on the PC or when the map keeps them (`not Scrap.Get("IsXbox") or _BankDirector`) */
 	for (int i = 0; i < 8; i++) {
 		int r = repos[i].var ? LvN_PcOr(MAP, repos[i].var) : 1;
-		if (r < 0 || (r && !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", repos[i].name, repos[i].n))) {
+		if (r < 0 || (r && !PORT_CALL(CharsNPC, SetReposChars, NULL, "si", repos[i].name, repos[i].n))) {
 			return 0;
 		}
 	}
-	if (LvN_SaveIs("MayorAtTownHall", "1") && (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "Mayor_Default") ||
-		!LvN_MissionChar("Gear_Mayor", MAP, "CreateGearMayor"))) {
+	if (LvN_SaveIs("MayorAtTownHall", "1") && (!PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", "Mayor_Default") ||
+		!LV_MISSIONCHAR("Gear_Mayor", Map, CreateGearMayor))) {
 		return 0;
 	}
 	if (LvN_SaveIs("PoliceBossAtPolice", "1") && LvN_SaveIs("PoliceBossAtTownHall", "1")) {
-		if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "PoliceBoss_Default")) {
+		if (!PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", "PoliceBoss_Default")) {
 			return 0;
 		}
 		SaveVar_Set("PoliceBossAtPolice", "0");
@@ -127,7 +127,7 @@ static byte ThMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 		!Mode_Connect("DM_Door_ElevatorOrbit_Orbit", "Orbit", 0) || !Mode_Connect("DM_Door_Teleporter_01", "DM_Door_Teleporter_02", 1) ||
 		!Mode_Connect("DM_Door_Teleporter_04", "DM_Door_Teleporter_05", 1) ||
 		!Mode_Connect("DM_Door_Teleporter_06", "DM_Door_Teleporter_07", 1) ||
-		!LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Press")) {
+		!PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_Metro_Press")) {
 		return 0;
 	}
 	Native_SetNone(&e);
@@ -136,10 +136,10 @@ static byte ThMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&e);
 	return ok && Mode_Import("InTraffic") && LvN_InTraffic("N_TrafficList", light, 3, "N_NumTraffic", 20) &&
 		LvN_InTraffic("M_TrafficList", med, 3, "M_NumTraffic", 5) && LvN_InTraffic("H_TrafficList", NULL, 0, "H_NumTraffic", 0) &&
-		LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") && LV_CALL("InTraffic", "FakeTraffic", NULL, "");
+		PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "") && PORT_CALL(InTraffic, FakeTraffic, NULL, "");
 }
 
-/* Scrap.GetTime() + Speech.CalculateSpeechTime(text) + add into *time (OBJLIB 3: the speech time by name) */
+/* Scrap.GetTime() + Speech.CalculateSpeechTime(text) + add into *time */
 static byte Th_SpeechEnd(const nativeVal_t *text, long add, double *time) {
 	nativeVal_t now = { 0 }, calc = { 0 }, t = { 0 }, n = { 0 }, r = { 0 };
 	Native_SetFloat(&now, Mode_Time());
@@ -147,7 +147,7 @@ static byte Th_SpeechEnd(const nativeVal_t *text, long add, double *time) {
 	Native_SetNone(&t);
 	Native_SetNone(&r);
 	Native_SetInt(&n, add);
-	byte ok = LV_CALL("Speech", "CalculateSpeechTime", &calc, "v", text) && Native_Arith('+', &now, &calc, &t) &&
+	byte ok = PORT_CALL(Speech, CalculateSpeechTime, &calc, "v", text) && Native_Arith('+', &now, &calc, &t) &&
 		Native_Arith('+', &t, &n, &r) && Native_ArgDouble(&r, time);
 	Native_Free(&calc);
 	Native_Free(&t);
@@ -244,7 +244,7 @@ static byte ThAm_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t key = { 0 };
 	(void)a;
 	(void)out;
-	if (!Mode_Import("CharsNPC") || !LvN_Callback("Mayor_Default", AM, "CreateMayorInit")) {
+	if (!Mode_Import("CharsNPC") || !LV_CALLBACK("Mayor_Default", Mission_ApologizeMayor, CreateMayorInit)) {
 		return 0;
 	}
 	/* del CharsNPC.CharRes["Gear_Mayor"] (OBJLIB 5) */
@@ -271,10 +271,10 @@ static byte ThAm_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (LvN_SaveIs("CrazyMayor", "Killed")) {
 		return Mode_Target("Mayor_Default") && Mode_GVarSetS("GuaranteedChars",
 			",Police,Nurse,BankDirector,Desktop,Sentinel,Mayor,Gear,Berto,Messenger,Bishop,Functionary,Betty,PoliceBoss,BankMaster,") &&
-			LV_OWN(AM, "ForbiddenMsg", NULL, "");
+			PORT_LOWN(Mission_ApologizeMayor, ForbiddenMsg, NULL, "");
 	}
 	if (LvN_SaveIs("CrazyMayor", "Stapler")) {
-		return LV_OWN(AM, "InitStaplerMission", NULL, "");
+		return PORT_LOWN(Mission_ApologizeMayor, InitStaplerMission, NULL, "");
 	}
 	return !LvN_SaveIs("CrazyMayor", "AskTheTransport") || Mode_Target("Mayor_Default");
 }
@@ -319,7 +319,7 @@ static byte ThAm_MayorSpeech(const nativeVal_t *a, nativeVal_t *out) {
 		byte guarded = !LvN_EqS(&g, "");
 		Native_Free(&g);
 		if (!guarded) {
-			return LV_CALL("Speech", "RestoreState", NULL, "v", &a[1]) &&
+			return PORT_CALL(Speech, RestoreState, NULL, "v", &a[1]) &&
 				Mode_Spch("Mission_ApologizeMayor_Mayor_1Msg", "Mission_ApologizeMayor_Mayor_1Ans", NULL) &&
 				LvN_ModSetGlobal("Speech", "OnEndOfSpeech", AM, "InitStaplerMission");
 		}
@@ -337,11 +337,11 @@ static byte ThAm_MayorSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	return Mode_Spch("Mission_TalkToMayor1_Mayor_InitMsg2", "Mission_TalkToMayor1_Mayor_InitAns2", NULL);
 }
 
-/* MissionsFuncs.ActivateTarget(Scrap.GetEntity(name), on) of a value name (OBJLIB 3) */
+/* MissionsFuncs.ActivateTarget(Scrap.GetEntity(name), on) of a value name */
 static byte Th_Activate(const nativeVal_t *name, long on) {
 	nativeVal_t e = { 0 };
 	Native_SetNone(&e);
-	byte ok = Mode_EntityH(name, &e) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, on);
+	byte ok = Mode_EntityH(name, &e) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &e, on);
 	Native_Free(&e);
 	return ok;
 }
@@ -354,7 +354,7 @@ static byte ThAm_SetTransportMission(const nativeVal_t *a, nativeVal_t *out) {
 	if (!LvN_SaveIs("CrazyMayor", "AskTheTransport")) {
 		return 1;
 	}
-	if (!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_ProtectMayorTransport", "DownTown")) {
+	if (!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_ProtectMayorTransport", "DownTown")) {
 		return 0;
 	}
 	/* OBJLIB 5: Speech.NPCName as the value it is */
@@ -443,8 +443,8 @@ static byte ThAm_InitStaplerMission(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	SaveVar_Create("CrazyMayor.StaplerDeads", "0");
 	SaveVar_Set("CrazyMayor", "Stapler");
-	return LvN_ScorerCallG(AM, "MissionScorer") && LvN_Draw() && Mode_GVarSetI("RadarMMSelect", 1) &&
-		LvN_ModSetGlobal("CharAct", "onNPCDeath", AM, "StaplerDead") && LV_OWN(AM, "ChooseStapler", NULL, "");
+	return LV_SCORERG(Mission_ApologizeMayor, MissionScorer) && LvN_Draw() && Mode_GVarSetI("RadarMMSelect", 1) &&
+		LvN_ModSetGlobal("CharAct", "onNPCDeath", AM, "StaplerDead") && PORT_LOWN(Mission_ApologizeMayor, ChooseStapler, NULL, "");
 }
 
 /* StaplerSpeech(UsrName, CharName, optId, FullOption) */
@@ -500,9 +500,9 @@ static byte ThAm_StaplerDead(const nativeVal_t *a, nativeVal_t *out) {
 		}
 		int desk = Mode_VGet(e, "ActCtrl", act) ? LvN_EqS(act, "Desktop") : -1;
 		return Mode_Done(&t, desk >= 0 && (!desk ||
-			LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_KillStaplers_RemoteMessage7", "Mayor")));
+			PORT_CALL(Speech, RemoteComunication, NULL, "ss", "Mission_KillStaplers_RemoteMessage7", "Mayor")));
 	}
-	if (!LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 0L) || !LvN_SaveList("CrazyMayor.StaplerDeads", AM, dv) ||
+	if (!PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 0L) || !LvN_SaveList("CrazyMayor.StaplerDeads", AM, dv) ||
 		!Native_Arith('+', dv, Mode_I(&t, 1), deads)) {
 		return Mode_Done(&t, 0);
 	}
@@ -524,11 +524,11 @@ static byte ThAm_StaplerDead(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	last = ThAm_Last(deads);
 	if (last) {
-		return Mode_Done(&t, last > 0 && LvN_Com("Mission_KillStaplers_RemoteMessage6", "Mayor", AM, "MayorMessage", LvN_NoArgs()));
+		return Mode_Done(&t, last > 0 && LV_COM("Mission_KillStaplers_RemoteMessage6", "Mayor", Mission_ApologizeMayor, MayorMessage, LvN_NoArgs()));
 	}
 	LvN_SaveRepr("CrazyMayor.StaplerDeads", deads);
-	return Mode_Done(&t, LV_OWN(AM, "ChooseStapler", NULL, "v", &a[0]) &&
-		(!Native_True(msg) || LV_CALL("Speech", "RemoteComunication", NULL, "vs", msg, "Mayor")));
+	return Mode_Done(&t, PORT_LOWN(Mission_ApologizeMayor, ChooseStapler, NULL, "v", &a[0]) &&
+		(!Native_True(msg) || PORT_CALL(Speech, RemoteComunication, NULL, "vs", msg, "Mayor")));
 }
 
 /* MayorMessage(): the staplers done: the mayor waits to talk about the transport */
@@ -608,11 +608,11 @@ static byte ThCt_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	Native_SetInt(&zero, 0);
 	if (!Mode_Import("Messenger") || !Mode_SetModVar("Messenger", "MakeMDP", &zero) ||
-		!LvN_MissionChar("Messenger_Trurl", CT, "CreateTrurl")) {
+		!LV_MISSIONCHAR("Messenger_Trurl", Mission_CatchTrurl, CreateTrurl)) {
 		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
-		if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", funcs[i])) {
+		if (!PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", funcs[i])) {
 			return 0;
 		}
 	}
@@ -640,9 +640,9 @@ static byte ThCt_Init(const nativeVal_t *a, nativeVal_t *out) {
 		SaveVar_Set("Mission_CatchTrurl_NumMapsTaken", "0");
 		ok = Mode_Target("Messenger_Trurl");
 	} else if (LvN_EqS(&data, "KillFunctionaries")) {
-		ok = LV_OWN(CT, "KillFunctionaries", NULL, "");
+		ok = PORT_LOWN(Mission_CatchTrurl, KillFunctionaries, NULL, "");
 	} else if (LvN_EqS(&data, "CatchTrurlAgain")) {
-		ok = LV_OWN(CT, "CatchTrurlAgain", NULL, "");
+		ok = PORT_LOWN(Mission_CatchTrurl, CatchTrurlAgain, NULL, "");
 	}
 	Native_Free(&data);
 	return ok;
@@ -673,13 +673,13 @@ static byte ThCt_OnCatchTrurl(const nativeVal_t *a, nativeVal_t *out) {
 		return 1;
 	}
 	SaveVar_Set("CatchTrurlMissionData", "KillFunctionaries");
-	return LvN_OnEnd(CT, "KillFunctionaries", NULL) && Mode_NISpeech("Messenger", "Mission_GetTrurl_Trurl_NI_1Msg");
+	return LV_ONEND(Mission_CatchTrurl, KillFunctionaries, NULL) && Mode_NISpeech("Messenger", "Mission_GetTrurl_Trurl_NI_1Msg");
 }
 
 /* OnCatchTrurlAgain(UsrName, CharName, optId, FullOption): Trurl again; SetNextMission at the end */
 static byte ThCt_OnCatchTrurlAgain(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LvN_Speakers(&a[0], &a[1]) && (!LvN_EqS(&a[2], "Talk") || (LvN_OnEnd(CT, "SetNextMission", NULL) &&
+	return LvN_Speakers(&a[0], &a[1]) && (!LvN_EqS(&a[2], "Talk") || (LV_ONEND(Mission_CatchTrurl, SetNextMission, NULL) &&
 		Mode_Spch("Mission_GetTrurlAgain_Trurl_InitMsg1", "Mission_GetTrurlAgain_Trurl_InitAns1", NULL)));
 }
 
@@ -716,7 +716,7 @@ static byte ThCt_SetCallbackFuncs(const nativeVal_t *a, nativeVal_t *out) {
 		nativeVal_t target = { 0 }, r = { 0 };
 		Native_SetNone(&target);
 		Native_SetNone(&r);
-		/* OBJLIB 3: string.find by name */
+		/* string.find through its native twin */
 		int c = Native_SeqItem(&a[0], i, &target) && PORT_CALL(string, find, &r, "vs", &target, "Blueprint") ?
 			Mode_CmpI(&r, "==", -1) : -1;
 		Native_Free(&target);
@@ -764,9 +764,9 @@ static byte ThCt_SpawnMap(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetInt(out, 0);
 		return Mode_Done(&t, in == 0);
 	}
-	if (!Mode_SaveInt("Mission_CatchTrurl_NumMapsDropped", dropped) || !LV_OWN(CT, "CreateMap", e, "vv", &a[1], dropped) ||
-		!LV_CALL("MissionsFuncs", "DelMissionTarget", NULL, "v", &a[0]) || !Th_Activate(&a[0], 0) ||
-		!LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L) || !LvN_ListRemove(data, &a[0]) ||
+	if (!Mode_SaveInt("Mission_CatchTrurl_NumMapsDropped", dropped) || !PORT_LOWN(Mission_CatchTrurl, CreateMap, e, "vv", &a[1], dropped) ||
+		!PORT_CALL(MissionsFuncs, DelMissionTarget, NULL, "v", &a[0]) || !Th_Activate(&a[0], 0) ||
+		!PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 1L) || !LvN_ListRemove(data, &a[0]) ||
 		!Mode_VGet(e, "Name", en) || !LvN_Append(data, en) || !Mode_VGet(e, "Name", pn) || !Mode_VGet(e, "Pos", pp)) {
 		return Mode_Done(&t, 0);
 	}
@@ -779,7 +779,7 @@ static byte ThCt_SpawnMap(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_SaveRepr("Mission_CatchTrurl_Data", data);
 	LvN_SaveRepr("Mission_CatchTrurl_MapsPos", maps);
 	Native_SetInt(out, 1);
-	return Mode_Done(&t, Ct_Inc("Mission_CatchTrurl_NumMapsDropped") && LV_OWN(CT, "SetCallbackFuncs", NULL, "v", data));
+	return Mode_Done(&t, Ct_Inc("Mission_CatchTrurl_NumMapsDropped") && PORT_LOWN(Mission_CatchTrurl, SetCallbackFuncs, NULL, "v", data));
 }
 
 /* CreateMap(pos, mapType): a blueprint on the floor to photograph: 0 the weapon, 1 the engine, 2 the ship, else the
@@ -804,7 +804,7 @@ static byte ThCt_CreateMap(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = LvN_CreateAt(cad, &a[0], "WithLife", out) && LvN_SetI(out, "ArrowCanView", 1) && LvN_SetS(out, "ViewFunc", "") &&
 		LvN_SetI(out, "CanPhoto", 1) && LvN_SetI(out, "VRadius", 30) &&
 		Mode_Cat(&t, file, 3, Mode_S(&t, "Models/Misc/Blueprint/"), cad, Mode_S(&t, ".M3D")) && Mode_VModel(out, file) &&
-		LV_CALL("Items", "SetInteractiveObjOnFloor", NULL, "v", out);
+		PORT_CALL(Items, SetInteractiveObjOnFloor, NULL, "v", out);
 	return Mode_Done(&t, ok);
 }
 
@@ -828,7 +828,7 @@ static byte Ct_Blueprint(const char *var, const char *item, const char *msg) {
 		return 0;
 	}
 	Mode_Lang(msg, &text);
-	ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	Native_Free(&text);
 	if (ok) {
 		SaveVar_Inc("NewBluePrintAvaliable", 1);
@@ -900,7 +900,7 @@ static byte ThCt_TakeMapPhoto(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		SaveVar_Set("CatchTrurlMissionData", "CatchTrurlAgain");
-		ok = LvN_Com("Mission_GetMayorOutlines_RemoteMessage2", "Trurl", CT, "CatchTrurlAgain", NULL);
+		ok = LV_COM("Mission_GetMayorOutlines_RemoteMessage2", "Trurl", Mission_CatchTrurl, CatchTrurlAgain, NULL);
 	} else {
 		ok = LvN_Com("Mission_GetMayorOutlines_RemoteMessage1", "Trurl", NULL, NULL, NULL);
 	}
@@ -934,7 +934,7 @@ static byte ThCt_KillFunctionaries(const nativeVal_t *a, nativeVal_t *out) {
 			ok = LvN_SetF(&e, "LLogicProbTalkWhenWalking", 1.0) && LvN_SetI(&e, "LLogicEscapeWithinRadius", 1) &&
 				LvN_SetI(&e, "LLogicEscapeRadiusSqr", 562500) && LvN_SetS(&e, "UseFunc", "Mission_CatchTrurl.FunctionaryMissionSpeech");
 		} else if (ok) {
-			ok = LvN_Item(maps, index, &mi) && LvN_Item(&mi, 1, &pos) && LV_OWN(CT, "CreateMap", NULL, "vv", &pos, &fn);
+			ok = LvN_Item(maps, index, &mi) && LvN_Item(&mi, 1, &pos) && PORT_LOWN(Mission_CatchTrurl, CreateMap, NULL, "vv", &pos, &fn);
 			index++;
 		}
 		Native_Free(&fn);
@@ -945,8 +945,8 @@ static byte ThCt_KillFunctionaries(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, Mode_WayPoint() && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", data) &&
-		Mode_MMDesc("Mission_GetMayorOutlines_MissionText1", 1L) && LV_OWN(CT, "SetCallbackFuncs", NULL, "v", data) &&
+	return Mode_Done(&t, Mode_WayPoint() && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", data) &&
+		Mode_MMDesc("Mission_GetMayorOutlines_MissionText1", 1L) && PORT_LOWN(Mission_CatchTrurl, SetCallbackFuncs, NULL, "v", data) &&
 		LvN_ModSetGlobal("CharAct", "TakenPhoto", CT, "TakeMapPhoto"));
 }
 
@@ -968,7 +968,7 @@ static byte ThCt_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	SaveVars_Delete("CatchTrurlMissionData");
-	if (!Mode_WayPoint() || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_StealMayorShip", "DownTown") ||
+	if (!Mode_WayPoint() || !PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_StealMayorShip", "DownTown") ||
 		!Mode_MMDesc("Mission_TestMayorShip_MissionText1", 1L)) {
 		return 0;
 	}
@@ -990,7 +990,7 @@ static byte ThCt_CGCalls(const nativeVal_t *a, nativeVal_t *out) {
 	if (twelfth) {
 		return 1;
 	}
-	if (!LV_CALL("MissionsFuncs", "GetNumCrazyDealCompleted", &num, "")) {
+	if (!PORT_CALL(MissionsFuncs, GetNumCrazyDealCompleted, &num, "")) {
 		return 0;
 	}
 	byte ok = 1;
