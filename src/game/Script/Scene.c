@@ -12,11 +12,11 @@
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
  * script reads them and write them back at once, the lists of Actors and LocalActors changed in place (OBJLIB 5).
- * The entities are handle values, the functions of the module are called through its globals (a level may replace
- * one) and the callback as the value it holds. Scrap.Set, GetEntity, UsrEntity, CreateEntity, ConsoleError, OpenPack,
+ * The entities are handle values, the functions of the module are called through their refs as globals (PORT_OWN:
+ * a level may replace one) and the callback as the value it holds. Scrap.Set, GetEntity, UsrEntity, CreateEntity, ConsoleError, OpenPack,
  * ClosePack, GetAlarm, the dummy search and the scheduler, the SAct calls, the voices, SScorer.SetLabelText,
  * SetMsgText, SetSpeechText and SetSpeechCallback and SInput.SetActionSet go through their seams (OBJLIB 7: the
- * cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof stay by name (OBJLIB 3).
+ * cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof go through refs.
  * The lines the game execs (the generic lines of a scene, the sound lines of SetDefSounds and Load) go through the
  * exec reader (OBJLIB 6).
  */
@@ -79,14 +79,6 @@ static byte Sc_NoText(void) {
 		Mode_SpeechText(empty, zero, full, full, full));
 }
 
-/* fn(args...) with fn the global of the module read first (a level may replace it) */
-static byte Sc_Own(const char *fn, const nativeVal_t *args, int n) {
-	nativeVal_t f = { 0 };
-	byte ok = Sc_G(fn, &f) && Mode_CallArgs(&f, NULL, args, n);
-	Native_Free(&f);
-	return ok;
-}
-
 /* BaseAddActor(ActorName, ActorClass, pathfile): an actor of the scene (a tuple of its dummy, entity and class in
  * Actors[SceneName]) and its class */
 static byte Sc_BaseAddActor(const nativeVal_t *name, const nativeVal_t *cls, const nativeVal_t *path) {
@@ -111,17 +103,12 @@ static byte Sc_BaseAddActor(const nativeVal_t *name, const nativeVal_t *cls, con
 /* AddCharActor(ActorName, ActorClass): an actor with the model of a character, its relax and morph actions */
 static byte Sc_AddCharActor(const nativeVal_t *name, const nativeVal_t *cls) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *fn = Mode_V(&t), *args = Mode_V(&t);
-	Mode_V(&t);
-	Mode_V(&t);
-	if (!Mode_Import("MakeChar") || !Sc_G("BaseAddActor", fn)) {
-		return Mode_Done(&t, 0);
-	}
-	Native_Copy(&args[0], name);
-	Native_Copy(&args[1], cls);
-	return Mode_Done(&t, Mode_Cat(&t, &args[2], 5, Mode_S(&t, "Models/Chars/"), cls, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) &&
-		Mode_CallArgs(fn, NULL, args, 3) && Native_CallMod("MakeChar", "CreateRelaxAction", NULL, "vissi", cls, 0L, "Relax", "Relax", 1L) &&
-		Native_CallMod("MakeChar", "AddDefMorphActions", NULL, "v", cls) && Mode_SActSet(1, "DefAction", "Relax", 0));
+	nativeVal_t *path = Mode_V(&t);
+	/* the global BaseAddActor is looked up after the path is made (the script looked it up first) */
+	return Mode_Done(&t, Mode_Import("MakeChar") &&
+		Mode_Cat(&t, path, 5, Mode_S(&t, "Models/Chars/"), cls, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) &&
+		PORT_OWN(Scene, BaseAddActor, NULL, "vvv", name, cls, path) && PORT_CALL(MakeChar, CreateRelaxAction, NULL, "vissi", cls, 0L, "Relax", "Relax", 1L) &&
+		PORT_CALL(MakeChar, AddDefMorphActions, NULL, "v", cls) && Mode_SActSet(1, "DefAction", "Relax", 0));
 }
 
 /* LocalActors[SceneName].method(arg) on the list itself (OBJLIB 5); in: `arg in LocalActors[SceneName]` instead */
@@ -149,16 +136,13 @@ static int Sc_LocalList(const nativeVal_t *scene, const char *method, const nati
  * (LocalActors) */
 static byte Sc_AddLocalActor(const nativeVal_t *name, const nativeVal_t *cls) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *fn = Mode_V(&t), *ipath = Mode_V(&t), *scene = Mode_V(&t), *empty = Mode_V(&t), *args = Mode_V(&t);
-	Mode_V(&t);
-	Mode_V(&t);
-	if (!Mode_Import("Init") || !Sc_G("BaseAddActor", fn) || !LvN_ModGet("Init", "Path", ipath) || !Sc_G("SceneName", scene)) {
+	nativeVal_t *ipath = Mode_V(&t), *scene = Mode_V(&t), *empty = Mode_V(&t), *path = Mode_V(&t);
+	/* the global BaseAddActor is looked up after Init.Path, SceneName and the path (the script looked it up first) */
+	if (!Mode_Import("Init") || !LvN_ModGet("Init", "Path", ipath) || !Sc_G("SceneName", scene)) {
 		return Mode_Done(&t, 0);
 	}
-	Native_Copy(&args[0], name);
-	Native_Copy(&args[1], cls);
-	if (!Mode_Cat(&t, &args[2], 6, ipath, Mode_S(&t, "/Map/"), scene, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) ||
-		!Mode_CallArgs(fn, NULL, args, 3) || !Mode_SActSet(1, "Discardable", NULL, 1) || !Mode_Read(SC, "SceneName", scene)) {
+	if (!Mode_Cat(&t, path, 6, ipath, Mode_S(&t, "/Map/"), scene, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) ||
+		!PORT_OWN(Scene, BaseAddActor, NULL, "vvv", name, cls, path) || !Mode_SActSet(1, "Discardable", NULL, 1) || !Mode_Read(SC, "SceneName", scene)) {
 		return Mode_Done(&t, 0);
 	}
 	int has = Mode_HasKey(SC, "LocalActors", 1, scene);
@@ -341,11 +325,10 @@ static byte Sc_PlayStream(const nativeVal_t *event) {
 /* PlayText(EntityName, EventName, Time): the subtitle of the event ("time\001key") */
 static byte Sc_PlayText(const nativeVal_t *event) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *cads = Mode_V(&t), *fn = Mode_V(&t), *c0 = Mode_V(&t), *args = Mode_V(&t);
-	Mode_V(&t);
-	return Mode_Done(&t, Mode_Import("string") && Native_Split(event, "\001", cads) && Sc_G("SetText", fn) &&
-		LvN_Item(cads, 1, &args[0]) && LvN_Item(cads, 0, c0) && PORT_CALL(string, atoi, &args[1], "v", c0) &&
-		Mode_CallArgs(fn, NULL, args, 2));
+	nativeVal_t *cads = Mode_V(&t), *c0 = Mode_V(&t), *key = Mode_V(&t), *time = Mode_V(&t);
+	/* the global SetText is looked up after its arguments (the script looked it up first) */
+	return Mode_Done(&t, Mode_Import("string") && Native_Split(event, "\001", cads) && LvN_Item(cads, 1, key) &&
+		LvN_Item(cads, 0, c0) && PORT_CALL(string, atoi, time, "v", c0) && PORT_OWN(Scene, SetText, NULL, "vv", key, time));
 }
 
 /* SetText(Cad, Time): the voice of the language key on the next voice channel and its text (Time 0: the time the
@@ -359,13 +342,13 @@ static byte Sc_SetText(const nativeVal_t *cad, const nativeVal_t *timeArg) {
 	Native_Copy(time, timeArg);
 	if (Mode_CmpI(time, "==", 0) > 0) {
 		Native_Free(time);
-		if (!Mode_LangV(cad, lang) || !Native_CallMod("Speech", "CalculateSpeechTime", time, "v", lang)) {
+		if (!Mode_LangV(cad, lang) || !PORT_CALL(Speech, CalculateSpeechTime, time, "v", lang)) {
 			return Mode_Done(&t, 0);
 		}
 	}
 	if (!Native_GVarGet("VoicePath", path) || !Native_Arith('+', path, cad, file) || !Sc_G("VoiceChannel", vc) ||
 		!Mode_OpenVoice(file, vc, NULL) || !Mode_Read(SC, "VoiceChannel", vc) ||
-		!Native_CallMod("Speech", "PlayVoiceScheduled", NULL, "vdi", vc, 0.25, 0L) || !Mode_Read(SC, "VoiceChannel", vc) ||
+		!PORT_CALL(Speech, PlayVoiceScheduled, NULL, "vdi", vc, 0.25, 0L) || !Mode_Read(SC, "VoiceChannel", vc) ||
 		!LvN_PutI(SC, "VoiceChannel", !Native_True(vc)) || !Mode_SpeechCallback("Scene.StopSpeech")) {
 		return Mode_Done(&t, 0);
 	}
@@ -396,15 +379,9 @@ static byte Sc_AddText(const nativeVal_t *frame, const nativeVal_t *text, const 
 /* AbortScene(id): Escape ends the scene */
 static byte Sc_AbortScene(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *fn = Mode_V(&t), *args = Mode_V(&t);
-	Mode_V(&t);
-	Mode_V(&t);
-	if (!Sc_G("EndOfScene", fn) || !Sc_G("SceneName", &args[0])) {
-		return Mode_Done(&t, 0);
-	}
-	Native_SetStr(&args[1], "EndOfScene");
-	Native_SetInt(&args[2], 0);
-	return Mode_Done(&t, Mode_CallArgs(fn, NULL, args, 3));
+	nativeVal_t *scene = Mode_V(&t);
+	/* the global EndOfScene is looked up after SceneName (the script looked it up first) */
+	return Mode_Done(&t, Sc_G("SceneName", scene) && PORT_OWN(Scene, EndOfScene, NULL, "vsi", scene, "EndOfScene", 0L));
 }
 
 /* Scrap.GetEntity(name).Del() */
@@ -424,7 +401,7 @@ static byte Sc_EndOfScene(const nativeVal_t *ename) {
 	Native_SetNone(none);
 	if (!Mode_Put(SC, "SceneName", NULL, none) || !Mode_StopAllSounds() || !Mode_GVarSetI("ForceNoActionMusic", 0) ||
 		!Mode_StopVoice(Mode_I(&t, 0)) || !Mode_StopVoice(Mode_I(&t, 1)) || !Mode_StopVoice(Mode_I(&t, 2)) || !Mode_Cam0(cam) ||
-		!LvN_SetS(cam, "EntityLink", "") || !Sc_Own("UnhideChars", NULL, 0) || !Sc_Del(ename) ||
+		!LvN_SetS(cam, "EntityLink", "") || !PORT_OWN(Scene, UnhideChars, NULL, "") || !Sc_Del(ename) ||
 		!Native_Slice(ename, 9, INT_MAX, sname) || !Sc_G("Actors", actors) || !Mode_Sub(actors, sname, list)) {
 		return Mode_Done(&t, 0);
 	}
@@ -436,7 +413,7 @@ static byte Sc_EndOfScene(const nativeVal_t *ename) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (n < 0 || !Mode_Import("CharScorer") || !Native_CallMod("CharScorer", "Create", NULL, "i", 0L) || !Sc_NoText() ||
+	if (n < 0 || !Mode_Import("CharScorer") || !PORT_CALL(CharScorer, Create, NULL, "i", 0L) || !Sc_NoText() ||
 		!Sc_G("AcActionSet", v) || !Mode_ActionSetV(v) || !Mode_GVarSetS("EscapeEvent", "Menu.Init") ||
 		!Mode_Read(SC, "LastDopplerLevel", v) || !Mode_GVarSet("SoundDopplerLevel", v)) {
 		return Mode_Done(&t, 0);
@@ -592,7 +569,7 @@ static byte Sc_HideType(const char *type) {
 	byte ok = Mode_First(&e);
 	while (ok && Native_True(&e)) {
 		int is = Mode_VIsType(&e, type);
-		ok = is >= 0 && (!is || Sc_Own("HideThis", &e, 1)) && Mode_VObj(&e, "NextInSlot", &next);
+		ok = is >= 0 && (!is || PORT_OWN(Scene, HideThis, NULL, "v", &e)) && Mode_VObj(&e, "NextInSlot", &next);
 		Native_Free(&e);
 		ok = ok && Mode_EntitySeam(&next, &e);
 		Native_Free(&next);
@@ -643,7 +620,7 @@ static byte Sc_Play(const nativeVal_t *cls) {
 	Mode_V(&t);
 	const nativeVal_t *zero = Mode_I(&t, 0);
 	if (!Mode_Import("MakeChar") || !Mode_Import("Init") || !Sc_NoBlur() || !Mode_GVarSetI("DrawNextFrame", 0) ||
-		!Sc_Own("Load", cls, 1) || !Sc_G("Actors", actors) || !Mode_Sub(actors, cls, list)) {
+		!PORT_OWN(Scene, Load, NULL, "v", cls) || !Sc_G("Actors", actors) || !Mode_Sub(actors, cls, list)) {
 		return Mode_Done(&t, 0);
 	}
 	int n = Mode_Loop(list);
@@ -672,10 +649,10 @@ static byte Sc_Play(const nativeVal_t *cls) {
 	Native_SetInt(Native_Append(ang), 0);
 	Native_Free(name);
 	if (!Mode_VSet(l, "Ang", ang) || !Mode_Cat(&t, name, 2, Mode_S(&t, "Scene"), cls) || !Mode_VSet(l, "ActCtrl", name) ||
-		!Mode_Cam0(cam) || !Mode_VObj(l, "Name", lname) || !Mode_VSet(cam, "EntityLink", lname) || !Sc_Own("HideChars", NULL, 0) ||
-		!LvN_ModGet("Init", "Outdoor", outdoor) || (Native_True(outdoor) && !Sc_Own("HideVehiclesToo", NULL, 0)) ||
+		!Mode_Cam0(cam) || !Mode_VObj(l, "Name", lname) || !Mode_VSet(cam, "EntityLink", lname) || !PORT_OWN(Scene, HideChars, NULL, "") ||
+		!LvN_ModGet("Init", "Outdoor", outdoor) || (Native_True(outdoor) && !PORT_OWN(Scene, HideVehiclesToo, NULL, "")) ||
 		!Mode_UsrHandle(usr) || !Mode_Put(SC, "usr", NULL, usr) || !Mode_GVarSetI("PauseInactivityTime", 1) ||
-		!Mode_GVarSetI("CameraScene", 1) || !Mode_Import("Menu") || !Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) ||
+		!Mode_GVarSetI("CameraScene", 1) || !Mode_Import("Menu") || !PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) ||
 		!Sc_NoText()) {
 		return Mode_Done(&t, 0);
 	}
@@ -711,7 +688,7 @@ static byte Sc_Play(const nativeVal_t *cls) {
 
 /* HideThis(o) of the global of the module, the value read before the global as the script reads it */
 static byte Sc_HideOf(const nativeVal_t *o) {
-	return Sc_Own("HideThis", o, 1);
+	return PORT_OWN(Scene, HideThis, NULL, "v", o);
 }
 
 /* module.var.Invulnerable = i (a handle of another module, Scrap.UsrEntity(0) for module NULL) */
@@ -774,7 +751,7 @@ static byte Sc_InitOutDoorScene(const nativeVal_t *hide) {
 	Native_Free(v);
 	Mode_ActionSetName(v);
 	return Mode_Done(&t, Mode_Put(SC, "PrevInput", NULL, v) && Mode_ActionSet("Inactive") &&
-		Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L));
+		PORT_CALL(Menu, MovieScorer, NULL, "i", 0L));
 }
 
 /* EndOutDoorScene(): back from InitOutDoorScene, the camera on its main target, the input and the HUD of before */
@@ -788,12 +765,12 @@ static byte Sc_EndOutDoorScene(void) {
 		if (!Sc_Invulnerable("Parking", "PlayerShip", 0) || !Sc_Invulnerable(NULL, NULL, 0) || !Sc_Invulnerable("Sputnik", "spt", 0)) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!Sc_Own("UnhideChars", NULL, 0)) {
+	} else if (!PORT_OWN(Scene, UnhideChars, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_Cam0(cam) && Mode_VObj(cam, "MainTarget", target) && Mode_VSet(cam, "Target", target) &&
 		LvN_SetI(cam, "AddTurn", 0) && Sc_G("PrevInput", prev) && Mode_ActionSetV(prev) && Mode_Read(SC, "PrevInput", prev) &&
-		Native_CallMod("Menu", "DrawScorer", NULL, "iv", 0L, prev));
+		PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, prev));
 }
 
 /* ---- adapters ---- */
