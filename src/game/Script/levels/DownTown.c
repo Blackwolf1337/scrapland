@@ -65,7 +65,8 @@ static byte Dt_RustyLater(const char *key) {
 /*
  * UsePhoneCab of a mission (UsrName, CharName, optId, FullOption in a): the audio com of the phone cab into the global
  * pc of module, the police warning police of who while the alarm is on, else the NI talk key of who with the end
- * function end of module (reset: the cab's use back to the default first)
+ * function end of module (reset: the cab's use back to the default first). The end functions of the callers are
+ * sections of the .def files, so Speech.OnEndOfSpeech gets them by name (OBJLIB 6)
  */
 static byte Dt_UsePhone(const nativeVal_t *a, const char *module, const char *police, const char *who, const char *key, const char *end,
 	byte reset) {
@@ -74,10 +75,10 @@ static byte Dt_UsePhone(const nativeVal_t *a, const char *module, const char *po
 	int alarm = Mode_PhoneUse(module, a);
 	byte ok = alarm >= 0;
 	if (alarm > 0) {
-		ok = Mode_G(module, "pc", &pc) && LV_CALL("Speech", "StartObjSpch", NULL, "vss", &pc, police, who);
+		ok = Mode_G(module, "pc", &pc) && PORT_CALL(Speech, StartObjSpch, NULL, "vss", &pc, police, who);
 	} else if (alarm == 0) {
 		ok = (!reset || (Mode_G(module, "pc", &pc) && LvN_SetS(&pc, "UseFunc", "PhoneCab.DefUseAudioCom"))) && Mode_Read(module, "pc", &pc) &&
-			LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pc, 0L) && LvN_OnEnd(module, end, NULL) && Mode_NISpeech(who, key);
+			PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &pc, 0L) && LvN_OnEnd(module, end, NULL) && Mode_NISpeech(who, key);
 	}
 	Native_Free(&pc);
 	return ok;
@@ -104,9 +105,9 @@ static byte DownTown_InitStatus(void) {
 	}
 	Mode_SaveVar("PrevMap", prev);
 	ok = Native_Slice(prev, 7, INT_MAX, tail) && Native_Upper(tail, pm) &&
-		LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator", LvN_EqS(pm, "PRESS") ? "DM_Door_Elevator_Press" : "DM_Door_Elevator_TownHall") &&
-		LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_MetroExt_Downtown") &&
-		LV_CALL("Elevator", "SetDef", NULL, "ss", "MetroExt", "DM_Door_MetroExt_Downtown");
+		PORT_CALL(Elevator, SetDef, NULL, "ss", "Elevator", LvN_EqS(pm, "PRESS") ? "DM_Door_Elevator_Press" : "DM_Door_Elevator_TownHall") &&
+		PORT_CALL(Elevator, SetDef, NULL, "ss", "Metro", "DM_Door_MetroExt_Downtown") &&
+		PORT_CALL(Elevator, SetDef, NULL, "ss", "MetroExt", "DM_Door_MetroExt_Downtown");
 	if (ok && LvN_SaveIs("RobotsControlledByBoss", "1")) {
 		ok = Mode_BossTraffic(1);
 	} else if (ok) {
@@ -119,7 +120,7 @@ static byte DownTown_InitStatus(void) {
 /* Init(LevelPath): the elevators to the townhall and the press, the metro */
 static byte DownTown_Init(void) {
 	return Mode_Import("Elevator") && Mode_Import("Metro") && Mode_Connect("DM_Door_Elevator_TownHall", "TownHall", 0) &&
-		Mode_Connect("DM_Door_Elevator_Press", "Press", 0) && LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_MetroExt_Downtown");
+		Mode_Connect("DM_Door_Elevator_Press", "Press", 0) && PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_MetroExt_Downtown");
 }
 
 LV_CORE0(DownTown_InitStatus)
@@ -198,7 +199,7 @@ static byte Press_Init(void) {
 	Native_SetEmpty(&p, NV_TUPLE);
 	LvN_Str(Native_Append(&p), "Mission_MeetBoss");
 	LvN_Str(Native_Append(&p), "Press");
-	byte ok = LvN_Com("Mission_FirstContactPress_RemoteMessage1", "Berto", "MissionsFuncs", "SetNextMission", &p);
+	byte ok = LvN_ComRef("Mission_FirstContactPress_RemoteMessage1", "Berto", &PORT_REF(MissionsFuncs, SetNextMission), &p);
 	Native_Free(&p);
 	return ok;
 }
@@ -221,8 +222,8 @@ static byte Berto_InitStatus(void) {
 
 /* StartMission(): the scorer, the waves of Bertos and their callbacks */
 static byte Berto_StartMission(void) {
-	return Mode_Import("Parking") && Mode_MMDesc("Mission_BertoMassacre_MissionText1", 1) && LvN_ScorerCallG(BM, "MissionScorer") &&
-		LvN_Draw() && LV_CALL("MissionsFuncs", "CreateBertos", NULL, "") &&
+	return Mode_Import("Parking") && Mode_MMDesc("Mission_BertoMassacre_MissionText1", 1) && LV_SCORERG(Mission_BertoMassacre, MissionScorer) &&
+		LvN_Draw() && PORT_CALL(MissionsFuncs, CreateBertos, NULL, "") &&
 		LvN_ModSetGlobal("MissionsFuncs", "OnNewWaveCallback", BM, "DeepThroatMessage") &&
 		LvN_ModSetGlobal("MissionsFuncs", "OnBertoDeathCallback", BM, "CheckBertoDeath") &&
 		Mode_ModTo("Parking", "SwitchVehicleMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget") &&
@@ -248,7 +249,7 @@ static byte Berto_CheckBertoDeath(const nativeVal_t *a) {
 		if (c > 0) {
 			c = Mode_G(BM, "bertoName", name) ? !Native_Compare(&a[0], name) : -1;
 		}
-		ok = c >= 0 && (!c || LV_OWN(BM, "DropMatrix", NULL, "v", &a[2]));
+		ok = c >= 0 && (!c || PORT_LOWN(Mission_BertoMassacre, DropMatrix, NULL, "v", &a[2]));
 	}
 	c = ok && Mode_UsrHandle(usr) ? LvN_UsrNameIs(usr, &a[1]) : -1;
 	ok = c >= 0 && (!c || (LvN_PutI(BM, "bertoDeath", 1) && LvN_Draw()));
@@ -286,7 +287,7 @@ static byte Berto_GetBerto(void) {
 		ok = LvN_ModGet("MissionsFuncs", "currentBertos", cur) && LvN_Item(cur, 0, name) && Mode_Put(BM, "bertoName", NULL, name) &&
 			Mode_Read(BM, "bertoName", name) && Mode_EntityH(name, e) && (!Native_True(e) || LvN_SetI(e, "Money", -1)) &&
 			Mode_Read(BM, "bertoName", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) &&
-			LvN_Com("Mission_BertoMassacre_RemoteMessage3", "DeepThroat", BM, "OnBertoFound", NULL);
+			LV_COM("Mission_BertoMassacre_RemoteMessage3", "DeepThroat", Mission_BertoMassacre, OnBertoFound, NULL);
 	} else if (n == 0) {
 		ok = Mode_Later(1, BM, "GetBerto", NULL, 0, NULL);
 	}
@@ -312,7 +313,7 @@ static byte Berto_MissionScorer(const nativeVal_t *id) {
 				Native_Free(nv);
 				Native_SetInt(nv, 0);
 				ok = LvN_PutI(BM, "bertoFound", 1) && LvN_ModNone("MissionsFuncs", "OnNewWaveCallback") && LvN_ScorerOff() && LvN_Draw() &&
-					LV_OWN(BM, "GetBerto", NULL, "");
+					PORT_LOWN(Mission_BertoMassacre, GetBerto, NULL, "");
 			}
 			ok = ok && LvN_ScorerSet(id, bar, "Value", nv);
 		}
@@ -362,10 +363,7 @@ static const char *const gambler_profile[] = {
 	"FactorItemAmmo=0.1", "ControlStrafeEvasion=1", "UsePercHookGetAway=20", "TimeMaxStrafe=10", "VelMaxStrafe=1.0", NULL,
 };
 
-static PyObject *Gambler_GetCrazyGamblerProfile(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_ProfileFunc(args, CG, gambler_profile);
-}
+MODE_FN(Gambler, GetCrazyGamblerProfile, 0, LvN_Profile(gambler_profile, out))
 
 static PyObject *Gambler_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
@@ -396,12 +394,14 @@ static byte Gambler_Init(void) {
 	int done = Gambler_Lifes(&lifes) ? Gambler_Last(&lifes) : -1;
 	Native_Free(&lifes);
 	if (done > 0) {
+		/* OBJLIB 6: PreSetNextMission is a section of mission_defeatcrazygambler1.def */
 		return LV_OWN(CG, "PreSetNextMission", NULL, "");
 	}
 	return done == 0 &&
 		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 20L) &&
-		Mode_ListSet("Enemies", "OnDeath", "Mission_DefeatCrazyGambler1.OnCrazyGamblerDeath") && LV_OWN(CG, "CreateCrazyGambler", NULL, "") &&
-		Mode_Later(3, CG, "LaunchTaunts", NULL, 0, NULL) && LvN_ScorerCallG(CG, "MissionScorer") && LvN_Draw();
+		Mode_ListSet("Enemies", "OnDeath", "Mission_DefeatCrazyGambler1.OnCrazyGamblerDeath") &&
+		PORT_LOWN(Mission_DefeatCrazyGambler1, CreateCrazyGambler, NULL, "") &&
+		Mode_Later(3, CG, "LaunchTaunts", NULL, 0, NULL) && LV_SCORERG(Mission_DefeatCrazyGambler1, MissionScorer) && LvN_Draw();
 }
 
 /* LaunchTaunts(): a taunt of the five while the gambler lives, every 12 s */
@@ -415,7 +415,7 @@ static byte Gambler_LaunchTaunts(void) {
 			Mode_Repr(s, rep);
 		}
 		ok = ok && Native_Arith('+', Mode_S(&t, "Mission_DefeatCrazyGambler1_RemoteMessage"), rep, key) &&
-			LV_CALL("Speech", "RemoteComunication", NULL, "vs", key, "EvilGambler") && Mode_Read(CG, "numTaunt", n) &&
+			PORT_CALL(Speech, RemoteComunication, NULL, "vs", key, "EvilGambler") && Mode_Read(CG, "numTaunt", n) &&
 			Native_Arith('+', n, Mode_I(&t, 1), n1) && Mode_Arith('%', n1, Mode_I(&t, 5), s) && Mode_Put(CG, "numTaunt", NULL, s);
 	}
 	ok = ok && Mode_Later(12, CG, "LaunchTaunts", NULL, 0, NULL);
@@ -427,8 +427,8 @@ static byte Gambler_CreateCrazyGambler(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *h = TV(), *pd = TV(), *pilot = TV(), *name = TV();
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("CrazyGambler", 0, h, NULL) &&
-		LvN_StdProfile(CG, "GetCrazyGamblerProfile", h, pd) && LvN_SetI(h, "LaunchTaunts", 0) && Mode_G(CG, "pilotName", pilot) &&
-		Mode_VSet(h, "MPil0", pilot) && LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") &&
+		PORT_LOWN(Mission_DefeatCrazyGambler1, GetCrazyGamblerProfile, pd, "") && LvN_StdAI(h, pd) && LvN_SetI(h, "LaunchTaunts", 0) &&
+		Mode_G(CG, "pilotName", pilot) && Mode_VSet(h, "MPil0", pilot) && LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") &&
 		LvN_Life(h, CG, "CRAZY_GAMBLER_LIFE") && Mode_VGet(h, "Name", name) && Mode_Put(CG, "crazyGamblerName", NULL, name) &&
 		Mode_Read(CG, "crazyGamblerName", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	return Mode_Done(&t, ok);
@@ -438,7 +438,7 @@ static byte Gambler_CreateCrazyGambler(void) {
 static byte Gambler_OnCrazyGamblerDeath(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *lifes = TV(), *left = TV(), *rep = TV();
-	byte ok = Mode_Import("Vehicles") && LV_CALL("SScorer", "CancelSpeech", NULL, "") && LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) &&
+	byte ok = Mode_Import("Vehicles") && LV_CALL("SScorer", "CancelSpeech", NULL, "") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) &&
 		Gambler_Lifes(lifes) && Native_Arith('-', lifes, Mode_I(&t, 1), left);
 	if (ok) {
 		Mode_Repr(left, rep);
@@ -501,10 +501,7 @@ static const char *const mayor_profile[] = {
 	"VelMaxStrafe=0.75", NULL,
 };
 
-static PyObject *Mayor_GetMayorProfile(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_ProfileFunc(args, FM, mayor_profile);
-}
+MODE_FN(Mayor, GetMayorProfile, 0, LvN_Profile(mayor_profile, out))
 
 static PyObject *Mayor_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
@@ -526,7 +523,7 @@ static byte Mayor_Init(void) {
 		ok = Mode_Import("Parking") && Mode_LaterComF(1.5, args, 2) &&
 			LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FM, "PreLaunchTaunt");
 	} else {
-		ok = LV_OWN(FM, "SetPhoneCab", NULL, "");
+		ok = PORT_LOWN(Mission_FaceTheMayor, SetPhoneCab, NULL, "");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -542,7 +539,8 @@ static byte Mayor_LaunchMayorInitialTaunt(void) {
 	int car = Mode_UsrHandle(&usr) ? (Native_True(&usr) ? Mode_VIsType(&usr, "Car") : 0) : -1;
 	Native_Free(&usr);
 	if (car > 0) {
-		return Mode_Import("Parking") && LvN_Com("Mission_FaceTheMayor_RemoteMessage2", "Mayor", FM, "CreateCrazyMayor", LvN_NoArgs()) &&
+		return Mode_Import("Parking") &&
+			LV_COM("Mission_FaceTheMayor_RemoteMessage2", "Mayor", Mission_FaceTheMayor, CreateCrazyMayor, LvN_NoArgs()) &&
 			LvN_ModNone("Parking", "SwitchVehicleMissionCallback");
 	}
 	return car == 0 && Mode_Later(1.0, FM, "LaunchMayorInitialTaunt", NULL, 0, NULL);
@@ -554,8 +552,8 @@ static byte Mayor_CreateCrazyMayor(void) {
 	nativeVal_t *n = TV(), *n1 = TV(), *h = TV(), *pd = TV(), *m = TV(), *name = TV();
 	byte ok = Mode_Import("MissionsFuncs") && Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Native_GVarGet("iTrafficNumber", n) &&
 		Native_Arith('-', n, Mode_I(&t, 1), n1) && Mode_GVarSet("iTrafficNumber", n1) && Mode_SpawnCar("NormalTraffic", 0, h, NULL) &&
-		Mode_Put(FM, "SMayor1", NULL, h) && LV_OWN(FM, "GetMayorProfile", pd, "") && Mode_G(FM, "SMayor1", m) && LvN_StdAI(m, pd) &&
-		LvN_SetS(m, "WeapList", "2,2,2,2,2,0,1") && LvN_SetS(m, "EntityList", "Enemies") &&
+		Mode_Put(FM, "SMayor1", NULL, h) && PORT_LOWN(Mission_FaceTheMayor, GetMayorProfile, pd, "") && Mode_G(FM, "SMayor1", m) &&
+		LvN_StdAI(m, pd) && LvN_SetS(m, "WeapList", "2,2,2,2,2,0,1") && LvN_SetS(m, "EntityList", "Enemies") &&
 		LvN_SetS(m, "OnDeath", "Mission_FaceTheMayor.MayorOnDeath") && LvN_Life(m, FM, "MAYOR_LIFE") && Mode_VGet(m, "Name", name) &&
 		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	return Mode_Done(&t, ok);
@@ -567,7 +565,8 @@ static byte Mayor_MayorOnDeath(const nativeVal_t *a) {
 	Native_SetNone(&none);
 	Native_SetInt(&one, 1);
 	return Mode_Import("Vehicles") && Mode_Import("Init") && Mode_Put(FM, "SMayor1", NULL, &none) && Mode_SetAlarm(&one) &&
-		LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) && Mode_SaveS("CrazyMayor", "Killed") && LV_OWN(FM, "SetPhoneCab", NULL, "");
+		PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) && Mode_SaveS("CrazyMayor", "Killed") &&
+		PORT_LOWN(Mission_FaceTheMayor, SetPhoneCab, NULL, "");
 }
 
 /* SetPhoneCab(): a free phone cab as the target; DeepThroat speaks once the alarm is over */
@@ -587,6 +586,7 @@ static byte Mayor_SetPhoneCab_C(const nativeVal_t *a, nativeVal_t *out) {
 		Native_Free(&fn);
 		return ok;
 	}
+	/* OBJLIB 6: SetAlarmCallback is a section of mission_facethemayor.def */
 	return alarm == 0 && LV_OWN(FM, "SetAlarmCallback", NULL, "i", 1L);
 }
 
@@ -594,16 +594,16 @@ static byte Mayor_SetPhoneCab_C(const nativeVal_t *a, nativeVal_t *out) {
 static byte Mayor_UsePhoneCab(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pc = TV(), *params = TV();
-	int alarm = Mode_SetModVar("Speech", "NPCName", &a[1]) && LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) &&
+	int alarm = Mode_SetModVar("Speech", "NPCName", &a[1]) && PORT_CALL(PhoneCab, UseAudioCom, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) &&
 		Mode_EntityH(&a[1], pc) ? Mode_AlarmOn() : -1;
 	byte ok = alarm >= 0;
 	if (alarm > 0) {
-		ok = LV_CALL("Speech", "StartObjSpch", NULL, "vss", pc, "Mission_TalkToDeepThroat1_RemoteMessage2", "DeepThroat");
+		ok = PORT_CALL(Speech, StartObjSpch, NULL, "vss", pc, "Mission_TalkToDeepThroat1_RemoteMessage2", "DeepThroat");
 	} else if (alarm == 0) {
 		Native_SetEmpty(params, NV_TUPLE);
 		Native_Copy(Native_Append(params), pc);
-		ok = LV_CALL("Speech", "OnObjSpch", NULL, "vsss", pc, "DeepThroat", "Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Msg",
-			"Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Ans") && LvN_OnEnd(FM, "EndOfMission", params);
+		ok = PORT_CALL(Speech, OnObjSpch, NULL, "vsss", pc, "DeepThroat", "Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Msg",
+			"Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Ans") && LV_ONEND(Mission_FaceTheMayor, EndOfMission, params);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -615,8 +615,8 @@ static byte Mayor_EndOfMission(const nativeVal_t *a) {
 	nativeVal_t obj = { 0 };
 	Native_SetNone(&obj);
 	byte ok = LvN_SetS(&a[0], "UseFunc", "PhoneCab.DefUseAudioCom") && LvN_SetS(&a[0], "HeadModel", "") &&
-		LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_ApologizeMayor", "TownHall") && LvN_ModGet("Speech", "ObjEntity", &obj) &&
-		LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &obj, 0L) && Mode_MMDesc("Mission_ApologizeMayor_MissionText1", 1);
+		PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_ApologizeMayor", "TownHall") && LvN_ModGet("Speech", "ObjEntity", &obj) &&
+		PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &obj, 0L) && Mode_MMDesc("Mission_ApologizeMayor_MissionText1", 1);
 	Native_Free(&obj);
 	if (ok) {
 		Mode_Saves(places);
@@ -676,7 +676,7 @@ static byte Ms_Timer(long add) {
 /* Init(LevelPath): the callback of the deaths, the timer between two of them, the scorer, Igor and Rusty */
 static byte Massacre_Init(void) {
 	return LvN_ModSetGlobal("Vehicles", "OnDeathCallback", MS, "OnVehicleCallback") && Mode_GVarSetI("CounterType", 2) && Ms_Timer(0) &&
-		LvN_ScorerCallG(MS, "MissionScorer") && LvN_Draw() && LvN_Com("Mission_Massacre_RemoteMessage4", "Igor", NULL, NULL, NULL) &&
+		LV_SCORERG(Mission_Massacre, MissionScorer) && LvN_Draw() && LvN_Com("Mission_Massacre_RemoteMessage4", "Igor", NULL, NULL, NULL) &&
 		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L);
 }
 
@@ -747,7 +747,7 @@ static byte Massacre_OnVehicleCallback(const nativeVal_t *a) {
 	} else if (ok) {
 		Native_SetFloat(x, 1.0);
 		ok = Native_Compare(now, x) < 0 || (LvN_ModNone("Vehicles", "OnDeathCallback") && LvN_ScorerOff() && LvN_Draw() &&
-			LvN_Com("Mission_Massacre_RemoteMessage3", "Igor", MS, "SetNextMission", LvN_NoArgs()));
+			LV_COM("Mission_Massacre_RemoteMessage3", "Igor", Mission_Massacre, SetNextMission, LvN_NoArgs()));
 	}
 	ok = ok && Ms_Timer(1) && Mode_GVarSetI("CounterType", 0);
 	return Mode_Done(&t, ok);

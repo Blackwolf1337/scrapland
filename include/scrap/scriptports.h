@@ -2572,11 +2572,13 @@ PORT_DECLL(downtown, Mission_BertoMassacre, DropMatrix) /* 1 */
 PORT_DECLL(downtown, Mission_BertoMassacre, TakeMatrix) /* 2 */
 PORT_DECLL(downtown, Mission_BertoMassacre, GetBerto) /* 0 */
 PORT_DECLL(downtown, Mission_BertoMassacre, MissionScorer) /* 1 */
+PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, GetCrazyGamblerProfile) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, Init) /* 1 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, LaunchTaunts) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, CreateCrazyGambler) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, OnCrazyGamblerDeath) /* 2 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, MissionScorer) /* 1 */
+PORT_DECLL(downtown, Mission_FaceTheMayor, GetMayorProfile) /* 0 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, Init) /* 1 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, PreLaunchTaunt) /* 0 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, LaunchMayorInitialTaunt) /* 0 */
@@ -2703,11 +2705,13 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_BertoMassacre, TakeMatrix, Berto_TakeMatrixPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, GetBerto, Berto_GetBertoPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, MissionScorer, Berto_MissionScorerPy) \
+	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, GetCrazyGamblerProfile, Gambler_GetCrazyGamblerProfile) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, Init, Gambler_InitPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, LaunchTaunts, Gambler_LaunchTauntsPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, CreateCrazyGambler, Gambler_CreateCrazyGamblerPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, OnCrazyGamblerDeath, Gambler_OnCrazyGamblerDeathPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, MissionScorer, Gambler_MissionScorerPy) \
+	PORT_DEFL(downtown, Mission_FaceTheMayor, GetMayorProfile, Mayor_GetMayorProfile) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, Init, Mayor_InitPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, PreLaunchTaunt, Mayor_PreLaunchTauntPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, LaunchMayorInitialTaunt, Mayor_LaunchMayorInitialTauntPy) \
