@@ -639,7 +639,7 @@ SP_FN(BlackBack, 1, Split_BlackBackC(&a[0]))
 		return Mode_Result(call); \
 	}
 
-SP_NOARGS(Init, Split_InitC())
+MODE_FNANY(Split, Init, Split_InitC())
 SP_NOARGS(ChooseShips, Split_ChooseShipsC())
 SP_NOARGS(ReloadNext, Split_ReloadNextC())
 SP_NOARGS(ActualizeScorer, Split_ActualizeScorerC())

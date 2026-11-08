@@ -24,9 +24,10 @@
  * The engine calls the cases record or swap go through their seams (OBJLIB 7: SAI.GetNextRacePoint, Scrap.TestSphere,
  * TestLine, UsrEntity, StartDummySearch, NextDummySearch, CreateEntity, GetEntity, Set, SetGrid, GetNetFlags and
  * SInput.SetActionSet); the player and the entities are handle values (OBJLIB 7). The other ports (Ffa, Split,
- * Accelerator, Chars, OutPolice, Traffic, PhoneCab, Elevator, Parking, MissionsFuncs, Items, Vehicles) stay by name
- * (OBJLIB 3) and the module's own functions are called through its globals as the script calls them (a mission or a
- * case may replace them).
+ * Accelerator, Chars, OutPolice, Traffic, PhoneCab, Elevator, Parking, MissionsFuncs, Vehicles) are called through
+ * their refs (PORT_CALL: directly while the attribute holds the port's function, else by name) and the module's own
+ * functions through its globals as the script calls them (PORT_OWN, the same seam on the global: a mission or a case
+ * may replace them). Items.Init stays by name until it has an entry (OBJLIB 3).
  */
 
 /* a global of the module as its functions read it (out None before) */
@@ -61,13 +62,16 @@ static void Om_Pair(nativeVal_t *v, nativeVal_t *out) {
 	Native_SetInt(Native_Append(out), 0);
 }
 
-/* the item 0 of the result of the module's own function func() */
-static byte Om_Own0(const char *func, nativeVal_t *out) {
+/* the item 0 of the result of one of the module's own functions without arguments, called at the site (PORT_OWN's
+ * seam on the global); OM_OWN0(func, out) names the function */
+static byte Om_Own0(portSite_t *site, nativeVal_t *out) {
 	nativeVal_t r = { 0 };
-	byte ok = Native_CallGlobal("OutMap", func, &r, "") && LvN_Item(&r, 0, out);
+	byte ok = Port_Invoke(site, &r, "") && LvN_Item(&r, 0, out);
 	Native_Free(&r);
 	return ok;
 }
+
+#define OM_OWN0(func, out) Om_Own0(PORT_SITE(PORT_REF(OutMap, func), 1), out)
 
 /* BrowseSpawnPos(): the active DM_Spawn dummies into StartPos as (position, angle + 180) */
 static byte Om_BrowseSpawnPos(void) {
@@ -130,9 +134,9 @@ static byte Om_GetFreeSpawnPos(nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(usr)) {
-		return Mode_Done(&t, Native_CallGlobal("OutMap", "GetFreeSpawnPosReal", out, ""));
+		return Mode_Done(&t, PORT_OWN(OutMap, GetFreeSpawnPosReal, out, ""));
 	}
-	if (!Mode_VObj(usr, "Pos", pos) || !Native_CallGlobal("OutMap", "GetNearestFreeSpawnPos", p, "v", pos)) {
+	if (!Mode_VObj(usr, "Pos", pos) || !PORT_OWN(OutMap, GetNearestFreeSpawnPos, p, "v", pos)) {
 		return Mode_Done(&t, 0);
 	}
 	Om_Pair(p, out);
@@ -143,7 +147,7 @@ static byte Om_GetFreeSpawnPos(nativeVal_t *out) {
 static byte Om_GetFreeSpawnPosReal(nativeVal_t *out) {
 	for (int i = 0; i < 3; i++) {
 		nativeVal_t sp = { 0 }, at = { 0 }, pos = { 0 };
-		int ok = Native_CallGlobal("OutMap", "GetSpawnPos", &sp, "") && LvN_Item(&sp, 0, &at) &&
+		int ok = PORT_OWN(OutMap, GetSpawnPos, &sp, "") && LvN_Item(&sp, 0, &at) &&
 			Mode_RacePoint(&at, 0, 2000000, &pos) ? Om_FreePos(&pos, 1) : -1;
 		Native_Free(&sp);
 		Native_Free(&at);
@@ -155,7 +159,7 @@ static byte Om_GetFreeSpawnPosReal(nativeVal_t *out) {
 			return ok > 0;
 		}
 	}
-	return Native_CallGlobal("OutMap", "GetFreeSpawn", out, "");
+	return PORT_OWN(OutMap, GetFreeSpawn, out, "");
 }
 
 /* GetNearestFreeSpawnPosReal(initialPos): a free race point after initialPos (seven tries) */
@@ -172,7 +176,7 @@ static byte Om_GetNearestFreeSpawnPosReal(const nativeVal_t *initial, nativeVal_
 			return 0;
 		}
 	}
-	return Om_Own0("GetFreeSpawn", out);
+	return OM_OWN0(GetFreeSpawn, out);
 }
 
 /* GetFreeSpawn(): the first free spawn point (the next one when none is free); SpawRes the last TestSphere */
@@ -190,7 +194,7 @@ static byte Om_GetFreeSpawn(nativeVal_t *out) {
 	}
 	for (long i = 0; i < count; i++) {
 		nativeVal_t pos = { 0 }, at = { 0 }, res = { 0 };
-		int ok = Native_CallGlobal("OutMap", "GetSpawnPos", &pos, "") && LvN_Item(&pos, 0, &at) &&
+		int ok = PORT_OWN(OutMap, GetSpawnPos, &pos, "") && LvN_Item(&pos, 0, &at) &&
 			Mode_TestSpherePos(&at, 1200, "vr", &res) && Mode_Put("OutMap", "SpawRes", NULL, &res) &&
 			(Native_Free(&res), Om_G("SpawRes", &res)) ? Om_IsNone(&res) : -1;
 		Native_Free(&at);
@@ -204,7 +208,7 @@ static byte Om_GetFreeSpawn(nativeVal_t *out) {
 			return 0;
 		}
 	}
-	return Native_CallGlobal("OutMap", "GetSpawnPos", out, "");
+	return PORT_OWN(OutMap, GetSpawnPos, out, "");
 }
 
 /*
@@ -218,8 +222,8 @@ static byte Om_SpawnPosBy(const nativeVal_t *initialArg, byte nearest, nativeVal
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(usr)) {
-		return Mode_Done(&t, nearest ? Om_Own0("GetFreeSpawnPosReal", out) :
-			Native_CallGlobal("OutMap", "GetFreeSpawnPosReal", out, ""));
+		return Mode_Done(&t, nearest ? OM_OWN0(GetFreeSpawnPosReal, out) :
+			PORT_OWN(OutMap, GetFreeSpawnPosReal, out, ""));
 	}
 	Native_SetFloat(best, nearest ? 2000000.0 : 0.0);
 	if (initialArg && Native_True(initialArg)) {
@@ -263,7 +267,7 @@ static byte Om_SpawnPosBy(const nativeVal_t *initialArg, byte nearest, nativeVal
 		return Mode_Done(&t, 0);
 	}
 	if (none) {
-		return Mode_Done(&t, Om_Own0("GetFreeSpawnPosReal", out));
+		return Mode_Done(&t, OM_OWN0(GetFreeSpawnPosReal, out));
 	}
 	Native_Copy(out, bestPos);
 	return Mode_Done(&t, 1);
@@ -274,10 +278,9 @@ static byte Om_PlayersCam(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cam = Mode_V(&t), *ply = Mode_V(&t), *pn = Mode_V(&t), *cn = Mode_V(&t), *z = Mode_V(&t);
 	Native_SetFloat(z, 0.0);
-	/* OBJLIB 3: Vehicles by name */
 	byte ok = LvN_Create(Mode_S(&t, "Player1Cam"), z, z, z, "FCam", cam) && Mode_EntitySeam(Mode_S(&t, "Player1"), ply) &&
 		Mode_VGet(ply, "Name", pn) && Mode_VGet(cam, "Name", cn) &&
-		Native_CallMod("Vehicles", "SetActiveCam", NULL, "vvi", pn, cn, 0L) && Mode_ActionSet("Racer");
+		PORT_CALL(Vehicles, SetActiveCam, NULL, "vvi", pn, cn, 0L) && Mode_ActionSet("Racer");
 	return Mode_Done(&t, ok);
 }
 
@@ -332,9 +335,8 @@ static byte Om_CreatePlayers(void) {
 		if (!ok && n > 0) {
 			Native_Free(&g[--n]);
 		}
-		/* OBJLIB 3: Vehicles by name */
-		ok = ok && Native_CallMod("Vehicles", "SetProperties", NULL, "vvvvvvvvvv", oname, &g[0], &g[1], &g[2], &g[3],
-			&g[4], &g[5], &g[6], &g[7], &g[8]);
+		ok = ok && PORT_CALL(Vehicles, SetProperties, NULL, "vvvvvvvvvv", oname, &g[0], &g[1], &g[2], &g[3], &g[4],
+			&g[5], &g[6], &g[7], &g[8]);
 		while (n-- > 0) {
 			Native_Free(&g[n]);
 		}
@@ -354,27 +356,28 @@ static byte Om_CreatePlayers(void) {
 	}
 }
 
-/* the module and function of an InitOutMap step: import module; module.func() (OBJLIB 3, 6) */
-static byte Om_Start(const char *module, const char *func) {
-	return Mode_Import(module) && Native_CallMod(module, func, NULL, "");
+/* an InitOutMap step: import module (OBJLIB 6), then module.func() at the site of its ref; OM_START(module, func)
+ * names them */
+static byte Om_Start(const char *module, portSite_t *site) {
+	return Mode_Import(module) && Port_Invoke(site, NULL, "");
 }
+
+#define OM_START(module, func) Om_Start(#module, PORT_SITE(PORT_REF(module, func), 0))
 
 /* InitOutMap(): the players, cameras and scorers of a network client or server, the split screen or the single
  * player game with the police, the traffic, the phone cabs, the elevators and the parkings */
 static byte Om_InitOutMap(void) {
-	static const char *const inits[][2] = { { "Chars", "CreateStartupPlayer" }, { "OutPolice", "Init" },
-		{ "Traffic", "Init" }, { "PhoneCab", "Init" } };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *net = Mode_V(&t), *f = Mode_V(&t), *split = Mode_V(&t), *sv = Mode_V(&t), *stats = Mode_V(&t);
 	if (!Mode_NetFlags(net) || !LvN_Item(net, 0, f)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(f)) {
-		return Mode_Done(&t, Om_Start("Ffa", "InitClient"));
+		return Mode_Done(&t, OM_START(Ffa, InitClient));
 	}
-	int c = Om_Start("Accelerator", "Init") && Native_GVarGet("SplitScreen", split) ? Mode_CmpI(split, "!=", 0) : -1;
+	int c = OM_START(Accelerator, Init) && Native_GVarGet("SplitScreen", split) ? Mode_CmpI(split, "!=", 0) : -1;
 	if (c) {
-		return Mode_Done(&t, c > 0 && Om_Start("Split", "Init"));
+		return Mode_Done(&t, c > 0 && OM_START(Split, Init));
 	}
 	Native_Free(f);
 	if (!LvN_Item(net, 1, f)) {
@@ -382,15 +385,11 @@ static byte Om_InitOutMap(void) {
 	}
 	if (Native_True(f)) {
 		Native_Free(f);
-		return Mode_Done(&t, Mode_Import("Ffa") && LvN_Item(net, 2, f) && Native_CallMod("Ffa", "InitServer", NULL, "v", f));
+		return Mode_Done(&t, Mode_Import("Ffa") && LvN_Item(net, 2, f) && PORT_CALL(Ffa, InitServer, NULL, "v", f));
 	}
-	for (int i = 0; i < 4; i++) {
-		if (!Om_Start(inits[i][0], inits[i][1])) {
-			return Mode_Done(&t, 0);
-		}
-	}
-	if (!Mode_GVarSetS("OnTaunt", "Speech.LaunchTaunt") || !Om_Start("Elevator", "PlayerCreatedElevator") ||
-		!Om_Start("Parking", "Init") || !Mode_Import("MissionsFuncs")) {
+	if (!OM_START(Chars, CreateStartupPlayer) || !OM_START(OutPolice, Init) || !OM_START(Traffic, Init) ||
+		!OM_START(PhoneCab, Init) || !Mode_GVarSetS("OnTaunt", "Speech.LaunchTaunt") ||
+		!OM_START(Elevator, PlayerCreatedElevator) || !OM_START(Parking, Init) || !Mode_Import("MissionsFuncs")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("JackInTheBox.Active", sv);
@@ -400,8 +399,7 @@ static byte Om_InitOutMap(void) {
 	Native_SetInt(stats, 1);
 	for (long i = 1; i <= 3; i++) {
 		nativeVal_t res = { 0 }, a = { 0 }, b = { 0 };
-		/* OBJLIB 3: MissionsFuncs by name */
-		int lt = Native_CallMod("MissionsFuncs", "CrazyDealStatus", &res, "i", i) && LvN_Item(&res, 1, &a) &&
+		int lt = PORT_CALL(MissionsFuncs, CrazyDealStatus, &res, "i", i) && LvN_Item(&res, 1, &a) &&
 			LvN_Item(&res, 2, &b) ? Mode_Cmp(&a, "<", &b) : -1;
 		Native_Free(&res);
 		Native_Free(&a);
@@ -450,11 +448,10 @@ static byte Om_Init(const nativeVal_t *path) {
 		{ "CameraCloudAlpha", 240 }, { "CameraCloudRed", 128 }, { "CameraCloudGreen", 128 }, { "CameraCloudBlue", 140 } };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *file = Mode_V(&t);
-	/* OBJLIB 3: the module's own functions through its globals */
 	if (!Mode_Import("Menu") || !Mode_Import("Init") || !Mode_Cat(&t, file, 2, path, Mode_S(&t, "/2D/Map2D.tga")) ||
 		!Mode_GVarSet("FileNameMap2D", file) || !Mode_GVarSetI("CharGrav", 3000) ||
-		!Native_CallGlobal("OutMap", "BrowseAtmospherePos", NULL, "") ||
-		!Native_CallGlobal("OutMap", "BrowseSpawnPos", NULL, "") || !Mode_GVarSetI("GridUseTopLimit", 1) ||
+		!PORT_OWN(OutMap, BrowseAtmospherePos, NULL, "") ||
+		!PORT_OWN(OutMap, BrowseSpawnPos, NULL, "") || !Mode_GVarSetI("GridUseTopLimit", 1) ||
 		!Mode_SetGrid(50000, 50000, 50000) || !Mode_GVarSetI("Max_Rad_Obj", 10000)) {
 		return Mode_Done(&t, 0);
 	}
@@ -463,7 +460,9 @@ static byte Om_Init(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, Native_CallGlobal("OutMap", "InitOutMap", NULL, "") && Om_Start("Items", "Init") &&
+	/* OBJLIB 3: Items.Init by name until it has an entry */
+	return Mode_Done(&t, PORT_OWN(OutMap, InitOutMap, NULL, "") && Mode_Import("Items") &&
+		Native_CallMod("Items", "Init", NULL, "") &&
 		Mode_PrintV(Mode_S(&t, "Map initialized as Outdor")));
 }
 
@@ -534,8 +533,9 @@ PyMethodDef g_OutMapMethods[] = {
  * InTraffic is native C (docs/objlib-plan.md, stage 2): its functions work on C values and read the variables of the
  * module where the script reads them (OBJLIB 5). The engine calls fc-snd-th records (SWeap.InitAmmo, InitWeap,
  * SetFWeap, SSound.LoadSound, Scrap.Preload3DObject) and Scrap.CreateEntity and Scrap.Set go through their seams
- * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7); Fx.SetUpShipMotors, SAI.EnableAIVehicle,
- * SAI.SetStateVehicle and the module's own functions stay by name (OBJLIB 3, 7).
+ * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7), their SetModel is called as a bound method (OBJLIB 4,
+ * 7). Fx.SetUpShipMotors goes through its ref (PORT_CALL), the module's own functions through its globals (PORT_OWN);
+ * SAI.EnableAIVehicle and SAI.SetStateVehicle stay by name (OBJLIB 7).
  */
 
 /* a global of the module as its functions read it (out None before) */
@@ -597,9 +597,9 @@ static byte It_LoadSound(const char *file) {
 static byte It_LoadFakeTraffic(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *n = Mode_V(&t), *m = Mode_V(&t), *h = Mode_V(&t), *nm = Mode_V(&t), *all = Mode_V(&t);
-	/* OBJLIB 3: the module's FakeWeap as its global */
+	/* the module's FakeWeap as its global */
 	if (!It_LoadSound("Sounds/Vehicles/Engines/EngDiesel98CC.wav") ||
-		!Native_CallGlobal("InTraffic", "FakeWeap", NULL, "") || !It_G("N_TrafficList", n) || !It_G("M_TrafficList", m) ||
+		!PORT_OWN(InTraffic, FakeWeap, NULL, "") || !It_G("N_TrafficList", n) || !It_G("M_TrafficList", m) ||
 		!Native_Arith('+', n, m, nm) || !It_G("H_TrafficList", h) || !Native_Arith('+', nm, h, all)) {
 		return Mode_Done(&t, 0);
 	}
@@ -611,7 +611,7 @@ static byte It_LoadFakeTraffic(void) {
 	}
 	for (int i = 0; i < count; i++) {
 		nativeVal_t name = { 0 }, file = { 0 };
-		byte ok = Native_SeqItem(all, i, &name) && Native_CallGlobal("InTraffic", "GetNam", &file, "v", &name) &&
+		byte ok = Native_SeqItem(all, i, &name) && PORT_OWN(InTraffic, GetNam, &file, "v", &name) &&
 			Mode_PreloadOnes(&file);
 		Native_Free(&name);
 		Native_Free(&file);
@@ -651,14 +651,14 @@ static byte It_Ship(long i, const nativeVal_t *list, const nativeVal_t *typo) {
 	if (n >= 0) {
 		Native_SetFloat(r, Scrap_RandRange(0.0, (double)n - 0.1));
 	}
-	/* OBJLIB 3: Fx and the AI of the vehicle by name */
+	/* SAI by name (OBJLIB 7) */
 	byte ok = n >= 0 && Native_ToInt(r, k) && Native_Subscript(list, k, model) && Native_Call(fn, NULL, "v", model) &&
-		Mode_VSet(v, "Traf_Type", typo) && Native_CallMod("Fx", "SetUpShipMotors", NULL, "v", v) &&
+		Mode_VSet(v, "Traf_Type", typo) && PORT_CALL(Fx, SetUpShipMotors, NULL, "v", v) &&
 		Mode_VGet(v, "Name", vname) &&
 		Native_CallMod("SAI", "EnableAIVehicle", NULL, "vidiiiiidiidd", vname, 1L, 0.1, 2L, 0L, 1L, 0L, 4L, 0.5, 3L, 4L,
 			0.785, 0.25) &&
 		Mode_VGet(v, "Name", vname2) && Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 4L, vname2) &&
-		Mode_VSet(v, "Traf_Active", Mode_I(&t, 1)) && Native_CallGlobal("InTraffic", "SetSound", NULL, "v", v);
+		Mode_VSet(v, "Traf_Active", Mode_I(&t, 1)) && PORT_OWN(InTraffic, SetSound, NULL, "v", v);
 	Py_XDECREF(fn);
 	return Mode_Done(&t, ok);
 }
@@ -690,9 +690,9 @@ static byte It_FakeTraffic(void) {
 	}
 	for (int i = 0; i < 3; i++) {
 		nativeVal_t list = { 0 }, num = { 0 };
-		/* OBJLIB 3: the module's CreateList as its global */
+		/* the module's CreateList as its global */
 		byte ok = It_G(lists[i][0], &list) && It_G(lists[i][1], &num) &&
-			Native_CallGlobal("InTraffic", "CreateList", NULL, "vvs", &list, &num, lists[i][2]);
+			PORT_OWN(InTraffic, CreateList, NULL, "vvs", &list, &num, lists[i][2]);
 		Native_Free(&list);
 		Native_Free(&num);
 		if (!ok) {
