@@ -2077,23 +2077,10 @@ static byte SE_ChangeTab_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_Parse(a, n, "iO|O", &id, &control, &direction) && Se_ChangeTab(id, control, direction ? direction : &none);
 }
 
-/* the adapter: the keywords and the errors of "iO|O", then the entry */
 static PyObject *SE_ChangeTab(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "direction", NULL };
-	PyObject *control, *direction = NULL;
-	nativeVal_t a[3], out;
-	int id;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "iO|O", names, &id, &control, &direction)) {
-		return NULL;
-	}
-	Native_SetInt(&a[0], id);
-	Native_Arg(control, &a[1]);
-	if (direction) {
-		Native_Arg(direction, &a[2]);
-	}
-	Native_SetNone(&out);
-	return Mode_KwOut(a, direction ? 3 : 2, SE_ChangeTab_E(a, direction ? 3 : 2, &out), &out);
+	return Mode_KwIdEntry(args, kw, "iO|O", names, SE_ChangeTab_E);
 }
 
 /* CreateShipFromSaveVar(cad, pos, name="") */

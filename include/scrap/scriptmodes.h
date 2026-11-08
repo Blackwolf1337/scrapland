@@ -875,6 +875,9 @@ typedef byte (*modeKwCore_t)(const nativeVal_t *const *a, nativeVal_t *out);
 PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core);
 /* the entry of such a function: the n arguments given in order (the arity error of fmt), the others not given */
 byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t core, nativeVal_t *out);
+/* the adapter of a keyword function of an int id and "O" arguments, one of them optional at most ("iO|O"): the
+ * keywords and the errors of fmt, then its entry on the arguments given (the id as an int) */
+PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* a function with its adapter named fn whose first argument is an int id ("i"), nargs arguments in all (the others
  * native values in a): fn_E, its entry, and fn, its adapter */
 #define MODE_IFN(fn, nargs, call) \

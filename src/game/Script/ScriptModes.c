@@ -4205,3 +4205,22 @@ byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t cor
 	}
 	return core(p, out);
 }
+
+PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
+	PyObject *o[PORT_ARGS - 1] = { NULL };
+	nativeVal_t a[PORT_ARGS], out;
+	int id, min, max, n = 1;
+	Mode_FmtCount(fmt, &min, &max);
+	/* the arguments given are the first n: the optional ones cannot leave a gap */
+	CHECK(fmt[0] == 'i' && max - min <= 1 && max <= PORT_ARGS);
+	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &id, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6],
+		&o[7], &o[8], &o[9])) {
+		return NULL;
+	}
+	Native_SetInt(&a[0], id);
+	for (; n < max && o[n - 1]; n++) {
+		Native_Arg(o[n - 1], &a[n]);
+	}
+	Native_SetNone(&out);
+	return Mode_KwOut(a, n, entry(a, n, &out), &out);
+}

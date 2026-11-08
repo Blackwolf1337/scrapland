@@ -383,6 +383,79 @@ PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 	PORT_DEF(DoorSound, SetSlide, DoorSound_SetSlide) \
 	PORT_DEF(DoorSound, ConversorSetSounds, DoorSound_ConversorSetSounds)
 
+/* HangarTab.c */
+PORT_DECL(HangarTab, ShowBoostPrediction) /* 2 */
+PORT_DECL(HangarTab, DisableChangePlatformButtons) /* 1 */
+PORT_DECL(HangarTab, EnableChangePlatformButtons) /* 1 */
+PORT_DECL(HangarTab, PrevPilot) /* 2 */
+PORT_DECL(HangarTab, NextPilot) /* 2 */
+PORT_DECL(HangarTab, SetSellVisible) /* 2 */
+PORT_DECL(HangarTab, SetSellActive) /* 2 */
+PORT_DECL(HangarTab, SetExitVisible) /* 2 */
+PORT_DECL(HangarTab, SetShipTypeVisible) /* 2 */
+PORT_DECL(HangarTab, SetPilotVisible) /* 2 */
+PORT_DECL(HangarTab, HideHangarPanel) /* 1 */
+PORT_DECL(HangarTab, UpdateHangars) /* 1 */
+PORT_DECL(HangarTab, ShowHangarPanel) /* 1 */
+PORT_DECL(HangarTab, IsShipValid) /* 1 */
+PORT_DECL(HangarTab, ShowRebuildShipMoney) /* 3 */
+PORT_DECL(HangarTab, HideRebuildShipMoney) /* 3 */
+PORT_DECL(HangarTab, ShowMoneyBuyingShip) /* 3 */
+PORT_DECL(HangarTab, ShowMoneySellingShip) /* 3 */
+PORT_DECL(HangarTab, HideMoney) /* 3 */
+PORT_DECL(HangarTab, GetSpeedRampOffsets) /* 1 */
+PORT_DECL(HangarTab, GetMaxSpeedTime) /* 1 */
+PORT_DECL(HangarTab, SetHangarPanel) /* 1 */
+PORT_DECL(HangarTab, CmSec2Value) /* 1 */
+PORT_DECL(HangarTab, ShowShipInfo) /* ? */
+PORT_DECL(HangarTab, HideShipInfo) /* 1 */
+PORT_DECL(HangarTab, PrevShipToEdit) /* 2 */
+PORT_DECL(HangarTab, NextShipToEdit) /* 2 */
+PORT_DECL(HangarTab, SetShipTypeButtonsState) /* 2 */
+PORT_DECL(HangarTab, SelectShipToEdit) /* 1 */
+PORT_DECL(HangarTab, SelectItem) /* 2 */
+PORT_DECL(HangarTab, BuyShip) /* 2 */
+PORT_DECL(HangarTab, SellShip) /* 2 */
+PORT_DECL(HangarTab, AddReferenceShipControls) /* 1 */
+PORT_DECL(HangarTab, ShowShipMiniInfo) /* 3 */
+PORT_DECL(HangarTab, HideShipMiniInfo) /* 3 */
+#define PORTS_HangarTab \
+	PORT_DEF(HangarTab, ShowBoostPrediction, HT_ShowBoostPrediction) \
+	PORT_DEF(HangarTab, DisableChangePlatformButtons, HT_DisableChangePlatformButtons) \
+	PORT_DEF(HangarTab, EnableChangePlatformButtons, HT_EnableChangePlatformButtons) \
+	PORT_DEF(HangarTab, PrevPilot, HT_PrevPilot) \
+	PORT_DEF(HangarTab, NextPilot, HT_NextPilot) \
+	PORT_DEF(HangarTab, SetSellVisible, HT_SetSellVisible) \
+	PORT_DEF(HangarTab, SetSellActive, HT_SetSellActive) \
+	PORT_DEF(HangarTab, SetExitVisible, HT_SetExitVisible) \
+	PORT_DEF(HangarTab, SetShipTypeVisible, HT_SetShipTypeVisible) \
+	PORT_DEF(HangarTab, SetPilotVisible, HT_SetPilotVisible) \
+	PORT_DEF(HangarTab, HideHangarPanel, HT_HideHangarPanel) \
+	PORT_DEF(HangarTab, UpdateHangars, HT_UpdateHangars) \
+	PORT_DEF(HangarTab, ShowHangarPanel, HT_ShowHangarPanel) \
+	PORT_DEF(HangarTab, IsShipValid, HT_IsShipValid) \
+	PORT_DEF(HangarTab, ShowRebuildShipMoney, HT_ShowRebuildShipMoney) \
+	PORT_DEF(HangarTab, HideRebuildShipMoney, HT_HideRebuildShipMoney) \
+	PORT_DEF(HangarTab, ShowMoneyBuyingShip, HT_ShowMoneyBuyingShip) \
+	PORT_DEF(HangarTab, ShowMoneySellingShip, HT_ShowMoneySellingShip) \
+	PORT_DEF(HangarTab, HideMoney, HT_HideMoney) \
+	PORT_DEF(HangarTab, GetSpeedRampOffsets, HT_GetSpeedRampOffsets) \
+	PORT_DEF(HangarTab, GetMaxSpeedTime, HT_GetMaxSpeedTime) \
+	PORT_DEF(HangarTab, SetHangarPanel, HT_SetHangarPanel) \
+	PORT_DEF(HangarTab, CmSec2Value, HT_CmSec2Value) \
+	PORT_DEF(HangarTab, ShowShipInfo, HT_ShowShipInfo) \
+	PORT_DEF(HangarTab, HideShipInfo, HT_HideShipInfo) \
+	PORT_DEF(HangarTab, PrevShipToEdit, HT_PrevShipToEdit) \
+	PORT_DEF(HangarTab, NextShipToEdit, HT_NextShipToEdit) \
+	PORT_DEF(HangarTab, SetShipTypeButtonsState, HT_SetShipTypeButtonsState) \
+	PORT_DEF(HangarTab, SelectShipToEdit, HT_SelectShipToEdit) \
+	PORT_DEF(HangarTab, SelectItem, HT_SelectItem) \
+	PORT_DEF(HangarTab, BuyShip, HT_BuyShip) \
+	PORT_DEF(HangarTab, SellShip, HT_SellShip) \
+	PORT_DEF(HangarTab, AddReferenceShipControls, HT_AddReferenceShipControls) \
+	PORT_DEF(HangarTab, ShowShipMiniInfo, HT_ShowShipMiniInfo) \
+	PORT_DEF(HangarTab, HideShipMiniInfo, HT_HideShipMiniInfo)
+
 /* InitLevel.c */
 PORT_DECL(Init, LoadCharLib) /* 1 */
 PORT_DECL(Init, AddMLib) /* 1 */
