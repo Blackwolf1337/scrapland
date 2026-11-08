@@ -3227,6 +3227,7 @@ PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneC) /* 0 */
 /* levels/Outskirts.c */
 PORT_DECLL(outskirts, Map, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Map, Init) /* 1 */
+PORT_DECLL(outskirts, Mission_AttackTraitorius, GetTraitoriusProfile) /* 0 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, ReassignTarget) /* 0 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, CreateTraitorius) /* 0 */
@@ -3251,6 +3252,9 @@ PORT_DECLL(outskirts, Mission_Demo_HumphreyRace, ShowRustyMapsSystemMessage) /* 
 PORT_DECLL(outskirts, Mission_Demo_HumphreyRace, UsePhoneCab) /* 4 */
 PORT_DECLL(outskirts, Mission_Demo_HumphreyRace, EnableMetro) /* 0 */
 PORT_DECLL(outskirts, Mission_Demo_HumphreyRace, OnMetroUsed) /* 4 */
+PORT_DECLL(outskirts, Mission_DestroyBadDebtors, GetMercenariesProfile) /* 0 */
+PORT_DECLL(outskirts, Mission_DestroyBadDebtors, GetBankDirectorProfile) /* 0 */
+PORT_DECLL(outskirts, Mission_DestroyBadDebtors, GetBankerProfile) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, CreateWaypoint) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, CreateShip) /* 2 */
@@ -3265,6 +3269,8 @@ PORT_DECLL(outskirts, Mission_DestroyBadDebtors, DelTreasure) /* 1 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, SendShipToGetTreasure) /* 2 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, GetPossibleMercTargets) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, CreateMercs) /* 1 */
+PORT_DECLL(outskirts, Mission_DestroyBadDebtors, CreateBankMaster) /* ? */
+PORT_DECLL(outskirts, Mission_DestroyBadDebtors, CreateBanker) /* ? */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, RespawnBankMaster) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, OnBankMasterDeath) /* 2 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, CheckMercsFreezed) /* 0 */
@@ -3283,6 +3289,8 @@ PORT_DECLL(outskirts, Mission_DestroyHumphrey, HumphreyAttacks) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, LaunchTaunt) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, OnHumphreyDeath) /* 2 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, MissionScorer) /* 1 */
+PORT_DECLL(outskirts, Mission_FunctionaryHunting, GetFuncEnemiesProfile) /* 0 */
+PORT_DECLL(outskirts, Mission_FunctionaryHunting, GetPoliceFriendsProfile) /* 0 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, CreateWaypoint) /* 0 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, EnableMissionWaypoint) /* 0 */
@@ -3367,6 +3375,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 #define PORTS_levels_Outskirts \
 	PORT_DEFL(outskirts, Map, InitStatus, OsMap_InitStatusPy) \
 	PORT_DEFL(outskirts, Map, Init, OsMap_InitPy) \
+	PORT_DEFL(outskirts, Mission_AttackTraitorius, GetTraitoriusProfile, Traitorius_GetTraitoriusProfile) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, Init, Traitorius_InitPy) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, ReassignTarget, Traitorius_ReassignTargetPy) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, CreateTraitorius, Traitorius_CreateTraitoriusPy) \
@@ -3391,6 +3400,9 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_Demo_HumphreyRace, UsePhoneCab, Demo_UsePhoneCabPy) \
 	PORT_DEFL(outskirts, Mission_Demo_HumphreyRace, EnableMetro, Demo_EnableMetroPy) \
 	PORT_DEFL(outskirts, Mission_Demo_HumphreyRace, OnMetroUsed, Demo_OnMetroUsedPy) \
+	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, GetMercenariesProfile, Debtors_GetMercenariesProfile) \
+	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, GetBankDirectorProfile, Debtors_GetBankDirectorProfile) \
+	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, GetBankerProfile, Debtors_GetBankerProfile) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, InitStatus, Debtors_InitStatusPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, CreateWaypoint, Debtors_CreateWaypointPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, CreateShip, Debtors_CreateShipPy) \
@@ -3405,6 +3417,8 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, SendShipToGetTreasure, Debtors_SendShipToGetTreasurePy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, GetPossibleMercTargets, Debtors_GetPossibleMercTargetsPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, CreateMercs, Debtors_CreateMercsPy) \
+	PORT_DEFLK(outskirts, Mission_DestroyBadDebtors, CreateBankMaster, Debtors_CreateBankMasterPy) \
+	PORT_DEFLK(outskirts, Mission_DestroyBadDebtors, CreateBanker, Debtors_CreateBankerPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, RespawnBankMaster, Debtors_RespawnBankMasterPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, OnBankMasterDeath, Debtors_OnBankMasterDeathPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, CheckMercsFreezed, Debtors_CheckMercsFreezedPy) \
@@ -3423,6 +3437,8 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, LaunchTaunt, Humphrey_LaunchTauntPy) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, OnHumphreyDeath, Humphrey_OnHumphreyDeathPy) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, MissionScorer, Humphrey_MissionScorerPy) \
+	PORT_DEFL(outskirts, Mission_FunctionaryHunting, GetFuncEnemiesProfile, Hunt_GetFuncEnemiesProfile) \
+	PORT_DEFL(outskirts, Mission_FunctionaryHunting, GetPoliceFriendsProfile, Hunt_GetPoliceFriendsProfile) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, Init, Hunt_InitPy) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, CreateWaypoint, Hunt_CreateWaypointPy) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, EnableMissionWaypoint, Hunt_EnableMissionWaypointPy) \
