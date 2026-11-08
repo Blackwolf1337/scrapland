@@ -3277,6 +3277,7 @@ PORT_DECLL(outskirts, Mission_DestroyBadDebtors, BankMasterSpeech) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, ShowDeepThroatMessage) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, SetNextMission) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, MissionScorer) /* 1 */
+PORT_DECLL(outskirts, Mission_DestroyHumphrey, GetHumphreyProfile) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, CreateHumphrey) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, HumphreyAttacks) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, LaunchTaunt) /* 0 */
@@ -3310,6 +3311,7 @@ PORT_DECLL(outskirts, Mission_IdentifyMerc, CreateLonelyMercInScene) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, CheckTraitoriusDeath) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, EndOfScene) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, DelLonelyMerc) /* 0 */
+PORT_DECLL(outskirts, Mission_IdentifyMerc, CreateLonelyMerc) /* ? */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, InitMission) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, ScanShip) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, OnFinishScan) /* 0 */
@@ -3329,6 +3331,7 @@ PORT_DECLL(outskirts, Mission_KillPolice, OnAlarm) /* 1 */
 PORT_DECLL(outskirts, Mission_KillPolice, OnPoliceDeath) /* 2 */
 PORT_DECLL(outskirts, Mission_KillPolice, BertoAppears) /* 0 */
 PORT_DECLL(outskirts, Mission_KillPolice, EnableMetro) /* 0 */
+PORT_DECLL(outskirts, Mission_KillRudolph, GetRudolphProfile) /* 0 */
 PORT_DECLL(outskirts, Mission_KillRudolph, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_KillRudolph, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_KillRudolph, InitRace) /* 0 */
@@ -3414,6 +3417,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, ShowDeepThroatMessage, Debtors_ShowDeepThroatMessagePy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, SetNextMission, Debtors_SetNextMissionPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, MissionScorer, Debtors_MissionScorerPy) \
+	PORT_DEFL(outskirts, Mission_DestroyHumphrey, GetHumphreyProfile, Humphrey_GetHumphreyProfile) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, CreateHumphrey, Humphrey_CreateHumphreyPy) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, HumphreyAttacks, Humphrey_HumphreyAttacksPy) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, LaunchTaunt, Humphrey_LaunchTauntPy) \
@@ -3447,6 +3451,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, CheckTraitoriusDeath, Merc_CheckTraitoriusDeathPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, EndOfScene, Merc_EndOfScenePy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, DelLonelyMerc, Merc_DelLonelyMercPy) \
+	PORT_DEFLK(outskirts, Mission_IdentifyMerc, CreateLonelyMerc, Merc_CreateLonelyMercPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, InitMission, Merc_InitMissionPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, ScanShip, Merc_ScanShipPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, OnFinishScan, Merc_OnFinishScanPy) \
@@ -3466,6 +3471,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_KillPolice, OnPoliceDeath, Police_OnPoliceDeathPy) \
 	PORT_DEFL(outskirts, Mission_KillPolice, BertoAppears, Police_BertoAppearsPy) \
 	PORT_DEFL(outskirts, Mission_KillPolice, EnableMetro, Police_EnableMetroPy) \
+	PORT_DEFL(outskirts, Mission_KillRudolph, GetRudolphProfile, Rudolph_GetRudolphProfile) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, InitStatus, Rudolph_InitStatusPy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, Init, Rudolph_InitPy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, InitRace, Rudolph_InitRacePy) \
