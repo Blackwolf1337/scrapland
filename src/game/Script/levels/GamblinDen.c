@@ -117,7 +117,7 @@ static byte Gd_CallbackG(const char *name, const char *module, const char *func)
 
 /* CharsNPC.CreateMissionChar(name) with the callback fn (read before) */
 static byte Gd_MissionChar(const char *name, const nativeVal_t *fn) {
-	return LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", name) && Gd_Callback(name, fn);
+	return PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", name) && Gd_Callback(name, fn);
 }
 
 /* the same with the global func of module */
@@ -170,7 +170,7 @@ static byte Gd_Arrange(const nativeVal_t *a, const char *module, const char *pre
 		return Mode_Spch(Gd_Key(k1, sizeof(k1), prefix, "_InitMsg1"), Gd_Key(k2, sizeof(k2), prefix, "_InitAns1"),
 			NULL) && Mode_AnsLst(ans, -1);
 	}
-	if (!LV_CALL("Speech", "StdOnSpch", NULL, "v", &a[2])) {
+	if (!PORT_CALL(Speech, StdOnSpch, NULL, "v", &a[2])) {
 		return 0;
 	}
 	if (LvN_EqS(&a[2], Gd_Key(k1, sizeof(k1), prefix, "_1"))) {
@@ -178,7 +178,7 @@ static byte Gd_Arrange(const nativeVal_t *a, const char *module, const char *pre
 		return Mode_AnsLst(ans, -1);
 	}
 	if (LvN_EqS(&a[2], Gd_Key(k2, sizeof(k2), prefix, "_1_1"))) {
-		if (!Mode_Import("Menu") || !LV_CALL("Menu", "MovieScorer", NULL, "i", 0L)) {
+		if (!Mode_Import("Menu") || !PORT_CALL(Menu, MovieScorer, NULL, "i", 0L)) {
 			return 0;
 		}
 		Mode_SetActionSet("Inactive");
@@ -222,7 +222,7 @@ static byte Gd_Merc(const nativeVal_t *a, const char *module, const gdMerc_t *m)
 		return Mode_Spch(Gd_Key(k1, sizeof(k1), m->prefix, "_InitMsg2"),
 			Gd_Key(k2, sizeof(k2), m->prefix, "_InitAns2"), NULL);
 	}
-	if (!LV_CALL("Speech", "StdOnSpch", NULL, "v", &a[2])) {
+	if (!PORT_CALL(Speech, StdOnSpch, NULL, "v", &a[2])) {
 		return 0;
 	}
 	Gd_Key(k1, sizeof(k1), m->prefix, "_1");
@@ -297,7 +297,7 @@ static byte Gd_SpeakersOf(const nativeVal_t *usr, const nativeVal_t *npc) {
 /* MissionsFuncs.StartSuperDeal(map, library, mode) after the description desc */
 static byte Gd_Launch(const char *desc, const char *map, const char *library, const char *mode) {
 	return Mode_Import("MissionsFuncs") && Mode_Import("SaveGame") && Mode_MMDesc(desc, 1L) &&
-		LV_CALL("MissionsFuncs", "StartSuperDeal", NULL, "sss", map, library, mode);
+		PORT_CALL(MissionsFuncs, StartSuperDeal, NULL, "sss", map, library, mode);
 }
 
 /* var = Scrap.GetEntity(name) of the module (the handle) */
@@ -381,8 +381,8 @@ static byte Den_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	if (LvN_SaveIs("LonelyMercInGamblinDen", "1")) {
-		if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "MercenaryA_LonelyMerc") ||
-			!LV_CALL("Chars", "AddNewCharRes", NULL, "s", "MercenaryL") ||
+		if (!PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", "MercenaryA_LonelyMerc") ||
+			!PORT_CALL(Chars, AddNewCharRes, NULL, "s", "MercenaryL") ||
 			!Gd_ResSet(Mode_S(&t, "MercenaryA_LonelyMerc"), "ActCtrl", Mode_S(&t, "MercenaryL")) ||
 			!Gd_CallbackG("MercenaryA_LonelyMerc", "Map", "CreateLonelyMerc")) {
 			return Mode_Done(&t, 0);
@@ -399,7 +399,7 @@ static byte Den_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Native_Slice(pv, 7, 0x7fffffff, sl) || !Native_Upper(sl, pm)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator",
+	return Mode_Done(&t, PORT_CALL(Elevator, SetDef, NULL, "ss", "Elevator",
 		LvN_EqS(pm, "SCRAPYARD") ? "DM_Door_Elevator_Scrapyard" : "DM_Door_Elevator_Outskirts"));
 }
 
@@ -499,6 +499,12 @@ static byte Den_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
 		Gd_CallbackG("Berto_Default", "Map", "CreateFixedInit")));
 }
 
+/*
+ * Map.CreateFixedInit stays by name in CreateFixedMercInit and CreateLonelyMerc (OBJLIB 3): its adapter is Orbit.c's
+ * Level_FixedInit (MapDecont.CreateBishopInit too), whose core is static there; it gets an entry in this file when
+ * Orbit.c exports that core
+ */
+
 /* CreateFixedMercInit(e): fixed, the hire talk */
 static byte Den_CreateFixedMercInitC(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t line = { 0 };
@@ -542,7 +548,7 @@ static byte Den_Chat(const char *a, const char *b) {
 	Native_SetEmpty(&vals, NV_TUPLE);
 	LvN_Str(Native_Append(&vals), a);
 	LvN_Str(Native_Append(&vals), b);
-	byte ok = LV_OWN("Map", "ChatNPCs", NULL, "sv", a, &vals);
+	byte ok = PORT_LOWN(Map, ChatNPCs, NULL, "sv", a, &vals);
 	Native_Free(&vals);
 	return ok;
 }
@@ -556,7 +562,7 @@ static byte Den_ChatOrDance(const char *a, const char *b) {
 	if (chat) {
 		return Den_Chat(a, b);
 	}
-	return LV_OWN("Map", "CharDance", NULL, "s", a) && LV_OWN("Map", "CharDance", NULL, "s", b);
+	return PORT_LOWN(Map, CharDance, NULL, "s", a) && PORT_LOWN(Map, CharDance, NULL, "s", b);
 }
 
 /* Init(LevelPath): the elevators, the life in the den, the music (another track each visit) */
@@ -568,18 +574,18 @@ static byte Den_InitC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Elevator") || !Mode_Connect("DM_Door_Elevator_Outskirts", "Outskirts", 0) ||
-		!Mode_Connect("DM_Door_Elevator_Scrapyard", "Scrapyard", 0) || !LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryA_Smartie") ||
-		!LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryB_Dumber") || !LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryC_Brutus")) {
+		!Mode_Connect("DM_Door_Elevator_Scrapyard", "Scrapyard", 0) || !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryA_Smartie") ||
+		!PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryB_Dumber") || !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryC_Brutus")) {
 		return 0;
 	}
-	if (LvN_SaveIs("LonelyMercInGamblinDen", "1") && !LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryA_LonelyMerc")) {
+	if (LvN_SaveIs("LonelyMercInGamblinDen", "1") && !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryA_LonelyMerc")) {
 		return 0;
 	}
-	if (!LV_OWN("Map", "ChatNPCs", NULL, "s", "PoliceBoss_Default")) {
+	if (!PORT_LOWN(Map, ChatNPCs, NULL, "s", "PoliceBoss_Default")) {
 		return 0;
 	}
-	if (LvN_SaveIs("RobotsControlledByBoss", "0") && (!LV_OWN("Map", "CharDance", NULL, "s", "Bishop_Friendly35") ||
-		!LV_OWN("Map", "CharDance", NULL, "s", "Functionary_Friendly00"))) {
+	if (LvN_SaveIs("RobotsControlledByBoss", "0") && (!PORT_LOWN(Map, CharDance, NULL, "s", "Bishop_Friendly35") ||
+		!PORT_LOWN(Map, CharDance, NULL, "s", "Functionary_Friendly00"))) {
 		return 0;
 	}
 	if (!Mode_EntSetS("DM_Door_GamblinDenChupito_00", "OnObjSlot", "") || !Mode_EntSetI("DM_Door_Teleporter_00", "Active", 0)) {
@@ -626,11 +632,11 @@ static byte Den_LonelyMercSpeechC(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	if (LvN_EqS(&a[2], "Talk")) {
-		return Mode_Done(&t, LV_CALL("Speech", "OnSpch", r, "ss", "Mission_FindDtritusMatrix1_Mercenary_InitMsg1",
+		return Mode_Done(&t, PORT_CALL(Speech, OnSpch, r, "ss", "Mission_FindDtritusMatrix1_Mercenary_InitMsg1",
 			"Mission_FindDtritusMatrix1_Mercenary_InitAns1") && (!Native_True(r) || Mode_AnsLst(ans, -1)));
 	}
 	return Mode_Done(&t, Native_Arith('+', &a[2], Mode_S(&t, "Msg"), msg) && Native_Arith('+', &a[2], Mode_S(&t, "Ans"), an) &&
-		LV_CALL("Speech", "OnSpch", NULL, "vv", msg, an));
+		PORT_CALL(Speech, OnSpch, NULL, "vv", msg, an));
 }
 
 /* CharUsrAct(charname, ActName): an idle relaxing character plays the action: 1, else 0 */
@@ -706,7 +712,7 @@ static byte Den_CharUsrDanceC(const nativeVal_t *a, nativeVal_t *out) {
 		args[1] = *next;
 		return Mode_Done(&t, Mode_Later(5.0, "Map", "CharUsrDance", args, 2, NULL));
 	}
-	return Mode_Done(&t, LV_OWN("Map", "MercDrink", NULL, "vi", &a[0], 0L) && Gd_ResGet(&a[0], "Pos", pos) &&
+	return Mode_Done(&t, PORT_LOWN(Map, MercDrink, NULL, "vi", &a[0], 0L) && Gd_ResGet(&a[0], "Pos", pos) &&
 		Mode_VSet(ch, "LLogicOrigin", pos));
 }
 
@@ -740,7 +746,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 		return Mode_Done(&t, 0);
 	}
 	if (!was) {
-		if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", merc, "Cheer")) {
+		if (!PORT_LOWN(Map, CharUsrAct, NULL, "vs", merc, "Cheer")) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
@@ -777,7 +783,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 				} else {
 					if (!Gd_ResGet(merc, "DancePos", res) || !Mode_VSet(mc, "LLogicOrigin", res) ||
 						!Den_RandInt(Mode_I(&t, 10), Mode_I(&t, 20), n) ||
-						!LV_OWN("Map", "CharUsrDance", NULL, "vv", merc, n)) {
+						!PORT_LOWN(Map, CharUsrDance, NULL, "vv", merc, n)) {
 						return Mode_Done(&t, 0);
 					}
 					return Mode_Done(&t, LvN_PutI("Map", "Borrachera", 5));
@@ -787,7 +793,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 					return Mode_Done(&t, 0);
 				}
 			} else {
-				if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", merc, "Drink") || !Den_Rand(Mode_I(&t, -1), Mode_I(&t, 4), r)) {
+				if (!PORT_LOWN(Map, CharUsrAct, NULL, "vs", merc, "Drink") || !Den_Rand(Mode_I(&t, -1), Mode_I(&t, 4), r)) {
 					return Mode_Done(&t, 0);
 				}
 				int empty = Native_Compare(r, Mode_I(&t, 0)) < 0;
@@ -818,7 +824,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 			}
 			Native_SetFloat(x, 7.9);
 			if (!Den_RandInt(Mode_I(&t, 0), x, n) || !Native_Subscript(tbl, n, res) ||
-				!LV_OWN("Map", "CharUsrAct", NULL, "vv", merc, res)) {
+				!PORT_LOWN(Map, CharUsrAct, NULL, "vv", merc, res)) {
 				return Mode_Done(&t, 0);
 			}
 		}
@@ -857,7 +863,7 @@ static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
 		LvN_Str(Native_Append(tbl), xtracts[k]);
 	}
 	Native_SetFloat(x, 2.9);
-	if (!Den_RandInt(Mode_I(&t, 0), x, i) || !Native_Subscript(tbl, i, act) || !LV_OWN("Map", "CharUsrAct", done, "vv", name, act)) {
+	if (!Den_RandInt(Mode_I(&t, 0), x, i) || !Native_Subscript(tbl, i, act) || !PORT_LOWN(Map, CharUsrAct, done, "vv", name, act)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(done)) {
@@ -904,7 +910,7 @@ static byte Den_CharDanceC(const nativeVal_t *a, nativeVal_t *out) {
 		if (!LvN_SetS(ch, "Action", "Dance0") || !LvN_SetS(ch, "DefLoop", "Dance")) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", &a[0], "Dance")) {
+	} else if (!PORT_LOWN(Map, CharUsrAct, NULL, "vs", &a[0], "Dance")) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Den_Rand(Mode_I(&t, 5), Mode_I(&t, 10), delay) && Mode_LaterV(delay, "Map", "CharDance", &a[0], 1, NULL));
@@ -958,7 +964,7 @@ static byte Den_MercenarySpeechC(const nativeVal_t *a, nativeVal_t *out) {
 						return Mode_Done(&t, 0);
 					}
 					SaveVar_Set(s, "1");
-					if (!LvN_OnEnd("Map", "StartContract", params)) {
+					if (!LV_ONEND(Map, StartContract, params)) {
 						return Mode_Done(&t, 0);
 					}
 				}
@@ -969,11 +975,11 @@ static byte Den_MercenarySpeechC(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		LvN_Str(opt, ans);
-		if (!Mode_Cat(&t, msg, 2, &a[2], Mode_S(&t, "Msg")) || !(direct ? LV_CALL("Speech", "OnSpch", NULL, "vv", msg, opt) :
-			LV_CALL("CharsNPC", "PlayOption", NULL, "vvvvv", &a[2], msg, opt, &a[0], ch))) {
+		if (!Mode_Cat(&t, msg, 2, &a[2], Mode_S(&t, "Msg")) || !(direct ? PORT_CALL(Speech, OnSpch, NULL, "vv", msg, opt) :
+			PORT_CALL(CharsNPC, PlayOption, NULL, "vvvvv", &a[2], msg, opt, &a[0], ch))) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!LV_CALL("CharsNPC", "GenericNPCSpeech", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3])) {
+	} else if (!PORT_CALL(CharsNPC, GenericNPCSpeech, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3])) {
 		return Mode_Done(&t, 0);
 	}
 	/* if ch.ArrOpt00[0:25] == "Generics_SpecialBishop_1:": the price of a life into the option */
@@ -1002,7 +1008,7 @@ static byte Den_StartContractC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	Native_SetNone(&n);
 	byte ok = Mode_Import("Speech") && LvN_SetS(&a[0], "Action", "Drink") && LvN_SetS(&a[0], "DefLoop", "Dance") &&
-		Mode_VObj(&a[0], "Name", &n) && LV_CALL("Speech", "RestoreState", NULL, "v", &n);
+		Mode_VObj(&a[0], "Name", &n) && PORT_CALL(Speech, RestoreState, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
 }
