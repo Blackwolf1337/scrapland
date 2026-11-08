@@ -388,11 +388,11 @@ static byte BeatPickus_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	for (int i = 1; thugs > 0 && i < 6; i++) {
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "Police_Thug%d", i);
-		if (!LvN_MissionChar(name, BP, "OnThugRespawn")) {
+		if (!LV_MISSIONCHAR(name, Mission_BeatPickus, OnThugRespawn)) {
 			return 0;
 		}
 	}
-	return thugs >= 0 && LvN_MissionChar("Functionary_Traitorius", BP, "OnTraitoriusRespawn");
+	return thugs >= 0 && LV_MISSIONCHAR("Functionary_Traitorius", Mission_BeatPickus, OnTraitoriusRespawn);
 }
 
 /* Init(LevelPath): Pickus and the thugs wait, Traitorius talks, the scene and Pickus beaten, the state of the mission */
@@ -413,19 +413,20 @@ static byte BeatPickus_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&s1);
 	Native_Free(&s2);
 	Native_SetNone(&tr);
-	byte ok = early >= 0 && (!early || (LV_OWN(BP, "DisableIAFunctionary", NULL, "s", "Pickus") && LV_OWN(BP, "SetThugsState", NULL, ""))) &&
-		LV_OWN(BP, "DisableIAFunctionary", &tr, "s", "Traitorius") && Mode_Put(BP, "traitorius", NULL, &tr) && LV_OWN(BP, "LoadScene", NULL, "") &&
-		LV_OWN(BP, "CreatePickusBeatenClass", NULL, "");
+	/* OBJLIB 6: LoadScene is a section of mission_beatpickus.def */
+	byte ok = early >= 0 && (!early || (PORT_LOWN(Mission_BeatPickus, DisableIAFunctionary, NULL, "s", "Pickus") &&
+		PORT_LOWN(Mission_BeatPickus, SetThugsState, NULL, ""))) && PORT_LOWN(Mission_BeatPickus, DisableIAFunctionary, &tr, "s", "Traitorius") &&
+		Mode_Put(BP, "traitorius", NULL, &tr) && LV_OWN(BP, "LoadScene", NULL, "") && PORT_LOWN(Mission_BeatPickus, CreatePickusBeatenClass, NULL, "");
 	Native_Free(&tr);
 	if (ok) {
 		if (LvN_EqS(&state, "TalkToTraitorius")) {
 			ok = LvN_TargetG(BP, "traitorius");
 		} else if (LvN_EqS(&state, "HireThugs") || LvN_EqS(&state, "BeatPickus")) {
-			ok = LV_OWN(BP, "HireThugs", NULL, "");
+			ok = PORT_LOWN(Mission_BeatPickus, HireThugs, NULL, "");
 		} else if (LvN_EqS(&state, "GetFuncShipPlans")) {
-			ok = LV_OWN(BP, "GetFuncShipPlans", NULL, "");
+			ok = PORT_LOWN(Mission_BeatPickus, GetFuncShipPlans, NULL, "");
 		} else if (LvN_EqS(&state, "TalkToTraitoriusAgain")) {
-			ok = LV_OWN(BP, "TalkToTraitoriusAgain", NULL, "");
+			ok = PORT_LOWN(Mission_BeatPickus, TalkToTraitoriusAgain, NULL, "");
 		}
 	}
 	Native_Free(&state);
@@ -475,7 +476,7 @@ static byte BeatPickus_OnTraitoriusRespawn(const nativeVal_t *a, nativeVal_t *ou
 	if (LvN_EqS(&state, "TalkToTraitorius")) {
 		ok = LvN_TargetG(BP, "traitorius") && Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
 	} else if (LvN_EqS(&state, "TalkToTraitoriusAgain")) {
-		ok = LV_OWN(BP, "TalkToTraitoriusAgain", NULL, "");
+		ok = PORT_LOWN(Mission_BeatPickus, TalkToTraitoriusAgain, NULL, "");
 	} else {
 		ok = Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
 	}
@@ -494,9 +495,9 @@ static byte BeatPickus_OnThugRespawn(const nativeVal_t *a, nativeVal_t *out) {
 	if (ok && Native_True(&usr)) {
 		if (LvN_SaveIs("MissionState", "BeatPickus")) {
 			ok = Mode_G(BP, "followPlayerVel", &vel) && Mode_GVarSet("GenCharSpecialChaseSpeed", &vel) && Mode_VGet(&usr, "Name", &un) &&
-				LV_OWN(BP, "SetState", NULL, "viv", &a[0], 5L, &un);
+				PORT_LOWN(Mission_BeatPickus, SetState, NULL, "viv", &a[0], 5L, &un);
 		} else if (LvN_SaveIs("MissionState", "HireThugs")) {
-			ok = LV_OWN(BP, "SetThugsState", NULL, "");
+			ok = PORT_LOWN(Mission_BeatPickus, SetThugsState, NULL, "");
 		}
 	}
 	Native_Free(&usr);
@@ -507,7 +508,7 @@ static byte BeatPickus_OnThugRespawn(const nativeVal_t *a, nativeVal_t *out) {
 
 /* SetState(thug, state, targetName) of the module through its global, with an int state */
 static byte Bp_State(const nativeVal_t *thug, long state, const nativeVal_t *target) {
-	return LV_OWN(BP, "SetState", NULL, "viv", thug, state, target);
+	return PORT_LOWN(Mission_BeatPickus, SetState, NULL, "viv", thug, state, target);
 }
 
 /* SetState(thug, 5, h.Name) */
@@ -569,22 +570,9 @@ static byte Bp_SetThugsState(const nativeVal_t *vel) {
 	return Mode_Done(&t, ok);
 }
 
-static PyObject *BeatPickus_SetThugsState(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "vel", NULL };
-	PyObject *o = NULL;
-	nativeVal_t vel;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
-		return NULL;
-	}
-	if (o) {
-		Native_Arg(o, &vel);
-	} else {
-		Native_SetFloat(&vel, 0.4);
-	}
-	byte ok = Bp_SetThugsState(&vel);
-	Native_Free(&vel);
-	return Mode_Result(ok);
+MODE_KW(BeatPickus, SetThugsState, "|O", "vel") {
+	Mode_KwDefF(v, given, 0, 0.4);
+	return Bp_SetThugsState(&v[0]);
 }
 
 /* SetState(thug, state, targetName): the state of the local logic (6 stays where he stands) */
@@ -622,6 +610,7 @@ static byte BeatPickus_TraitoriusSpeech(const nativeVal_t *a, nativeVal_t *out) 
 		nativeVal_t params;
 		Native_SetEmpty(&params, NV_TUPLE);
 		Native_Copy(Native_Append(&params), &a[1]);
+		/* OBJLIB 6: PreHireThugs is a section of mission_beatpickus.def */
 		byte ok = LvN_OnEnd(BP, "PreHireThugs", &params) && Po_NI("Functionary", ni);
 		Native_Free(&params);
 		return ok;
@@ -663,6 +652,7 @@ static byte BeatPickus_ThugLeaderSpeech(const nativeVal_t *a, nativeVal_t *out) 
 		nativeVal_t params;
 		Native_SetEmpty(&params, NV_TUPLE);
 		Native_Copy(Native_Append(&params), &a[1]);
+		/* OBJLIB 6: PreBeatPickus is a section of mission_beatpickus.def */
 		byte ok = LvN_OnEnd(BP, "PreBeatPickus", &params) && Po_NI("Police", ni);
 		Native_Free(&params);
 		return ok;
@@ -673,7 +663,7 @@ static byte BeatPickus_ThugLeaderSpeech(const nativeVal_t *a, nativeVal_t *out) 
 /* SetThugsState(followPlayerVel) of the module */
 static byte Bp_FollowVel(void) {
 	nativeVal_t v;
-	byte ok = Mode_G(BP, "followPlayerVel", &v) && LV_OWN(BP, "SetThugsState", NULL, "v", &v);
+	byte ok = Mode_G(BP, "followPlayerVel", &v) && PORT_LOWN(Mission_BeatPickus, SetThugsState, NULL, "v", &v);
 	Native_Free(&v);
 	return ok;
 }
@@ -710,7 +700,7 @@ static byte BeatPickus_BeatPickus(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&pos);
 	Native_SetInt(&d, 1500);
 	byte ok = PO_HOOK("Alarm", "RestoreMissionCallback", BP, "OnAlarmDeactivated") && PO_HOOK("Alarm", "AbortMissionCallback", BP, "OnAlarmActivated") &&
-		Mode_VGet(&pickus, "Pos", &pos) && LV_OWN(BP, "CreateLauncher", NULL, "v", &pos) &&
+		Mode_VGet(&pickus, "Pos", &pos) && PORT_LOWN(Mission_BeatPickus, CreateLauncher, NULL, "v", &pos) &&
 		Mode_Later(1.0, BP, "CheckMaxDist", &d, 1, "CheckMaxDist") && LvN_TargetName(&pickus) && Bp_FollowVel();
 	Native_Free(&pickus);
 	Native_Free(&pos);
@@ -726,7 +716,7 @@ static byte BeatPickus_OnAlarmActivated(const nativeVal_t *a, nativeVal_t *out) 
 	if (!Mode_DelSchedS("CheckMaxDist") || !LvN_Entity("Functionary_Pickus", &pickus)) {
 		return 0;
 	}
-	byte ok = !Native_True(&pickus) || LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pickus, 0L);
+	byte ok = !Native_True(&pickus) || PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &pickus, 0L);
 	Native_Free(&pickus);
 	int l = ok ? LvN_GTrue(BP, "launcher") : -1;
 	return l >= 0 && (!l || Mode_GSetS(BP, "launcher", "OnTake", ""));
@@ -744,7 +734,7 @@ static byte BeatPickus_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
-	int near = Mode_VGet(usr, "Pos", pos) && LV_OWN(BP, "CheckThugsDist", r, "vv", pos, &a[0]) ? Native_True(r) : -1;
+	int near = Mode_VGet(usr, "Pos", pos) && PORT_LOWN(Mission_BeatPickus, CheckThugsDist, r, "vv", pos, &a[0]) ? Native_True(r) : -1;
 	if (near == 0) {
 		int stopped = LvN_GTrue(BP, "thugsStopped");
 		if (stopped) {
@@ -752,7 +742,7 @@ static byte BeatPickus_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 		}
 		LvN_Str(args, "Mission_HireThugs_RemoteMessage1");
 		LvN_Str(who, "Police");
-		return Mode_Done(&t, LvN_PutI(BP, "thugsStopped", 1) && LV_OWN(BP, "SetThugsState", NULL, "d", 0.0) &&
+		return Mode_Done(&t, LvN_PutI(BP, "thugsStopped", 1) && PORT_LOWN(Mission_BeatPickus, SetThugsState, NULL, "d", 0.0) &&
 			Mode_LaterIn(0.1, "Speech", "AddRemoteCom", args, 2, "NotSoFast"));
 	}
 	if (near < 0) {
@@ -864,10 +854,10 @@ static byte BeatPickus_LaunchPickusFightScene(const nativeVal_t *a, nativeVal_t 
 	if (!Mode_GSetS(BP, "launcher", "OnTake", "")) {
 		return Mode_Done(&t, 0);
 	}
-	int near = Mode_VGet(usr, "Pos", pos) && LV_OWN(BP, "CheckThugsDist", r, "vi", pos, 600L) ? Native_True(r) : -1;
+	int near = Mode_VGet(usr, "Pos", pos) && PORT_LOWN(Mission_BeatPickus, CheckThugsDist, r, "vi", pos, 600L) ? Native_True(r) : -1;
 	if (near > 0) {
 		return Mode_Done(&t, Bp_NoComs() && Mode_DelSchedS("NotSoFast") && Mode_DelSchedS("CheckMaxDist") &&
-			LV_OWN(BP, "LightingActivate", NULL, "i", 0L) && LV_CALL("Scene", "Play", NULL, "s", "Beating") &&
+			PORT_LOWN(Mission_BeatPickus, LightingActivate, NULL, "i", 0L) && PORT_CALL(Scene, Play, NULL, "s", "Beating") &&
 			PO_HOOK("Scene", "EndOfSceneCallback", BP, "AskPickus"));
 	}
 	Native_Free(pos);
@@ -925,19 +915,19 @@ static byte BeatPickus_DelThug(const nativeVal_t *a, nativeVal_t *out) {
 /* AskPickus(usr=None): after the scene: the lights, no thugs, Pickus beaten in place of Pickus */
 static byte Bp_AskPickus(void) {
 	nativeVal_t e, pickus;
-	if (!LV_OWN(BP, "LightingActivate", NULL, "i", 1L)) {
+	if (!PORT_LOWN(Mission_BeatPickus, LightingActivate, NULL, "i", 1L)) {
 		return 0;
 	}
 	for (int i = 1; i < 6; i++) {
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "Police_Thug%d", i);
-		if (!LV_OWN(BP, "DelThug", NULL, "s", name)) {
+		if (!PORT_LOWN(Mission_BeatPickus, DelThug, NULL, "s", name)) {
 			return 0;
 		}
 	}
 	Native_SetNone(&e);
 	Native_SetNone(&pickus);
-	byte ok = LvN_Entity("Functionary_Pickus", &e) && Mode_VDel(&e) && LV_OWN(BP, "InitPickusBeaten", &pickus, "") &&
+	byte ok = LvN_Entity("Functionary_Pickus", &e) && Mode_VDel(&e) && PORT_LOWN(Mission_BeatPickus, InitPickusBeaten, &pickus, "") &&
 		(!Native_True(&pickus) || LvN_TargetName(&pickus));
 	Native_Free(&e);
 	Native_Free(&pickus);
@@ -970,7 +960,7 @@ static byte BeatPickus_OnTalkToPickus(const nativeVal_t *a, nativeVal_t *out) {
 	int first = Mode_Cmp(&state, "!=", &plans);
 	Native_Free(&state);
 	Native_Free(&plans);
-	if (first < 0 || (first && !LvN_OnEnd(BP, "PreGetFuncShipPlans", NULL))) {
+	if (first < 0 || (first && !LV_ONEND(Mission_BeatPickus, PreGetFuncShipPlans, NULL))) {
 		return 0;
 	}
 	/* Speech.OnObjSpch(Scrap.GetEntity(CharName), "Pickus", msg, ans, action = "Talk", defLoop = "PickusLoop") */
@@ -981,7 +971,7 @@ static byte BeatPickus_OnTalkToPickus(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_Str(&args[1], "Pickus");
 	LvN_Str(&args[2], "Mission_AskPickus_InitMsg1");
 	LvN_Str(&args[3], "Mission_AskPickus_InitAns1");
-	byte ok = Mode_CallKw("Speech", "OnObjSpch", NULL, args, 4, Py_BuildValue("{ssss}", "action", "Talk", "defLoop", "PickusLoop"));
+	byte ok = PORT_CALL(Speech, OnObjSpch, NULL, "vvvv;action=s,defLoop=s", &args[0], &args[1], &args[2], &args[3], "Talk", "PickusLoop");
 	for (int i = 0; i < 4; i++) {
 		Native_Free(&args[i]);
 	}
@@ -996,7 +986,7 @@ static byte BeatPickus_PreGetFuncShipPlans(const nativeVal_t *a, nativeVal_t *ou
 		return 0;
 	}
 	SaveVar_Set("MissionState", "GetFuncShipPlans");
-	return Mode_WayPoint() && Mode_MMDesc("Mission_GetFuncShipPlans_MissionText1", 1) && LV_OWN(BP, "GetFuncShipPlans", NULL, "");
+	return Mode_WayPoint() && Mode_MMDesc("Mission_GetFuncShipPlans_MissionText1", 1) && PORT_LOWN(Mission_BeatPickus, GetFuncShipPlans, NULL, "");
 }
 
 /* the photo object name at the dummy pattern into plansNames; raise text when the dummy is missing */
@@ -1009,7 +999,7 @@ static byte Bp_Plan(const char *pattern, const char *name, const char *missing) 
 	}
 	Native_SetNone(&pln);
 	Native_SetNone(&pn);
-	byte ok = LvN_DummyPosAng(&dummy, &pos, &ang) && LV_CALL("MissionsFuncs", "CreatePhotoObject", &pln, "svv", name, &pos, &ang) &&
+	byte ok = LvN_DummyPosAng(&dummy, &pos, &ang) && PORT_CALL(MissionsFuncs, CreatePhotoObject, &pln, "svv", name, &pos, &ang) &&
 		Mode_VGet(&pln, "Name", &pn) && Mode_Append(BP, "plansNames", &pn);
 	Native_Free(&dummy);
 	Native_Free(&pos);
@@ -1032,7 +1022,7 @@ static byte BeatPickus_GetFuncShipPlans(const nativeVal_t *a, nativeVal_t *out) 
 			"No existe el dummy de los planos de los motores de la nave de los funcionarios") || !Mode_G(BP, "plansNames", &plans)) {
 		return 0;
 	}
-	byte ok = LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &plans);
+	byte ok = PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", &plans);
 	Native_Free(&plans);
 	return ok;
 }
@@ -1051,7 +1041,7 @@ static byte BeatPickus_TakePlanPhoto(const nativeVal_t *a, nativeVal_t *out) {
 		return in == 0;
 	}
 	Native_SetNone(&e);
-	byte ok = Mode_EntityH(&a[0], &e) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", &e);
+	byte ok = Mode_EntityH(&a[0], &e) && PORT_CALL(MissionsFuncs, UnsetPhotoObject, NULL, "v", &e);
 	Native_Free(&e);
 	if (!ok) {
 		return 0;
@@ -1110,6 +1100,7 @@ static byte BeatPickus_TraitoriusAgainSpeech(const nativeVal_t *a, nativeVal_t *
 		if (talked > 0) {
 			return Mode_Spch("Mission_Search&DestroyMickus_Traitorius_InitMsg1", "Mission_Search&DestroyMickus_Traitorius_InitAns1", NULL);
 		}
+		/* OBJLIB 6: SetNextMission is a section of mission_beatpickus.def */
 		return talked == 0 && Bp_GetTraitorius() && Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech") &&
 			LvN_GActivate(BP, "traitorius", 0) && LvN_OnEnd(BP, "SetNextMission", NULL) && Po_NI("Functionary", ni);
 	}
@@ -1135,22 +1126,9 @@ static byte Bp_LightingActivate(const nativeVal_t *activate) {
 	return LV_CALL("Scrap", "AddParami", NULL, "v", activate) && LV_CALL("Scrap", "Execute", NULL, "");
 }
 
-static PyObject *BeatPickus_LightingActivate(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "activate", NULL };
-	PyObject *o = NULL;
-	nativeVal_t activate;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
-		return NULL;
-	}
-	if (o) {
-		Native_Arg(o, &activate);
-	} else {
-		Native_SetInt(&activate, 0);
-	}
-	byte ok = Bp_LightingActivate(&activate);
-	Native_Free(&activate);
-	return Mode_Result(ok);
+MODE_KW(BeatPickus, LightingActivate, "|O", "activate") {
+	Mode_KwDefI(v, given, 0, 0);
+	return Bp_LightingActivate(&v[0]);
 }
 
 LV_FN(BeatPickus, InitStatusA, 1, BeatPickus_InitStatus)
