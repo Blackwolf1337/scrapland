@@ -19,7 +19,7 @@
  *   do <statements>          the same without an answer (only an error answers)
  *   in <module> [do] <statements>   the statements in the globals of the module (helpers kept in a module)
  *   check <name>\t<expr>     golden: "<name> = <value>": floats with 17 digits, tuples walked, an exception as
- *                            "exception <type>: <value>" (the check() of tools/test/golden/sdlib.py)
+ *                            "exception <type>: <value>" (the check() of the old tools/test/golden/sdlib.py)
  *   print <expr>             what the print statement writes for the value (tp_print of the object, else str)
  *   con <line>               a console line (ConsoleCmd.c): what the console shows
  *   get <var> ...            engine variables: [('name', value), ...]
@@ -34,7 +34,6 @@
  *   recorder <target> <list> [<literal> | raise <exception> <text>]   puts a recorder function at target (a module
  *                            variable, e.g. __main__.f or CharAct.onNPCDeath): each call appends its argument tuple
  *                            to the list __main__.<list> and returns the literal (None), or raises
- *   py <code>                answers an error: there is no Python interpreter (also "py" alone on the first line)
  *   native [str|check] <literal>   native values without Python objects (TestNative.c)
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
  * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code).
@@ -59,8 +58,6 @@
 #include "scrap/world.h"
 #include "testchannel.h"
 
-/* the answer of the "py" command: there is no interpreter */
-#define TC_NOPYTHON "error: SystemError: py: no Python interpreter in this build\n"
 
 #define TC_CMD "test_cmd.txt"
 #define TC_REPLY "test_reply.txt"
@@ -164,7 +161,7 @@ static void TC_Syntax(const char *at) {
 	PyErr_SetString(PyExc_SyntaxError, msg);
 }
 
-/* ---- golden: the value as check() of sdlib.py writes it ---- */
+/* ---- golden: the value as check() of the old sdlib.py wrote it ---- */
 
 static void TC_Fmt(tcBuf *b, PyObject *v) {
 	if (PyFloat_Check(v)) {
@@ -904,8 +901,6 @@ static void TC_Line(tcBuf *b, const char *line) {
 			TC_AddError(b);
 			TC_Add(b, "\n", 1);
 		}
-	} else if (TC_Verb(line, "py", &arg)) {
-		TC_Add(b, TC_NOPYTHON, -1);
 	} else if (TC_Verb(line, "in", &arg)) {
 		TC_In(b, arg);
 	} else {
@@ -918,10 +913,6 @@ static void TC_Line(tcBuf *b, const char *line) {
 
 /* runs the body of a command file (CR dropped) */
 static void TC_Run(tcBuf *b, char *body) {
-	if (!strncmp(body, "py\n", 3)) {
-		TC_Add(b, TC_NOPYTHON, -1);
-		return;
-	}
 	for (char *line = body; line && *line;) {
 		char *nl = strchr(line, '\n');
 		if (nl) {
@@ -1021,8 +1012,8 @@ static void TC_Poll(void) {
 		return;
 	}
 	/* "pace=<s>": not before s seconds of game time after the last answer, as the polling script function of the old
-	 * harness answered (mcpgame.py looked every 0.1 s of game time); at once after a level load (the clock starts
-	 * over) or when the clock stood for 60 frames */
+	 * harness answered (mcpgame.py looked every 0.1 s of game time); at once after a level load (the clock starts over)
+	 * or when the clock stood for 60 frames */
 	double gt = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
 	if (gt != tc_paceLast) {
 		tc_paceStill = 0;

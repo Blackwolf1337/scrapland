@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Regression runner for the Scrapland script ports: runs the case files of cases.txt on the C build and compares
-each with the stored pack baselines (README.md next to this file).
+each with the stored pack baselines (README.md next to this file). The baselines are frozen: the pack runs needed the
+interpreter (regress.py baseline, until tag interp-final).
 
   regress.py check [--build DIR] [--lanes ca,ca2,ca3] [--out DIR] [case ...]   C run, compare, summary, exit code
-  regress.py baseline [--runs 2] [--lanes pa,pa2,pa3] [--add] [case ...]       pack runs into baselines/ (on the
-                                                                               reference build with the interpreter,
-                                                                               default <repo>/build-py64)
   regress.py compare RESULTDIR [case ...]                                      compare stored C results again
   regress.py show RESULTDIR case                                               every difference of one case
   regress.py accept RESULTDIR case ...                                         accept a C run's differences
@@ -13,13 +11,11 @@ each with the stored pack baselines (README.md next to this file).
 A case is given by its file name (fc-x.txt) or by a substring of it; without cases all of cases.txt."""
 import argparse
 import fcntl
-import glob
 import hashlib
 import json
 import os
 import queue
 import re
-import shutil
 import signal
 import sys
 import threading
@@ -48,12 +44,9 @@ def _data_root():
 
 
 # REGRESS_MCP_DIR: the tools/mcp of another checkout; default the scrap_mcp.py of this checkout. The game data and the
-# slots are those of SCRAP_MCP_ROOT (default: _data_root()). REGRESS_HARNESS=channel: the games run with the test
-# channel of the game (scrap_mcp 0.3.0 or newer, no Python code in the game); python: mcpgame.py in the game, only in
-# a build with the interpreter (cmake -DSCRAP_NO_PYTHON=OFF). Unset: channel for a build without the interpreter (the
-# default build), python for one with it (pick_harness).
+# slots are those of SCRAP_MCP_ROOT (default: _data_root()). The games run with the test channel of the game (no
+# Python code in the game; the case lines become channel commands, tochannel.py).
 MCP_DIR = os.environ.get('REGRESS_MCP_DIR', os.path.join(REPO, 'tools', 'mcp'))
-HARNESS = os.environ.get('REGRESS_HARNESS') or None
 os.environ.setdefault('SCRAP_MCP_ROOT', _data_root())
 sys.path.insert(0, MCP_DIR)
 import scrap_mcp  # noqa: E402
@@ -62,15 +55,10 @@ import tochannel  # noqa: E402
 from compare import compare, show_diff, load_json  # noqa: E402
 
 DEFAULT_BUILD = os.path.join(REPO, 'build-linux64')
-# the pack runs of baseline need the interpreter: the reference build made with cmake -DSCRAP_NO_PYTHON=OFF
-REFERENCE_BUILD = os.path.join(REPO, 'build-py64')
 BASELINES = os.path.join(HERE, 'baselines')
 HELPERS = os.path.join(HERE, 'helpers')
 RESULTS = os.path.join(REPO, 'build-regress')
 VK_DEVICE = os.environ.get('REGRESS_VK_DEVICE', '1002:164e')
-# REGRESS_PY_PROFILE=1: the games run with the Python profile (SCRAP_PY_PROFILE, PyProfile.c), each result keeps the
-# Python code objects that ran in its game (pyprofile): what a case still runs as Python
-PY_PROFILE = os.environ.get('REGRESS_PY_PROFILE', '') not in ('', '0')
 LINE_TIMEOUT = 30.0
 CASE_TIMEOUT = 1500.0
 # game seconds a level load counts for in a !sleep (the real-time sleeps of the cases covered the load)
@@ -123,7 +111,9 @@ HELPER = re.compile(r"(?:execfile|open)\('([A-Za-z0-9_]+\.py)'")
 
 
 def case_hash(case):
-	"""Hash of the case file and the helper files it loads (a changed case makes its baseline stale)."""
+	"""Hash of the case file and the helper files it loads (a changed case makes its baseline stale). The helpers are
+	the Python helpers of the pack runs (helpers/*.py, kept as the baselines were made with them); the channel runs
+	load their versions in channel/*.tc."""
 	h = hashlib.sha1()
 	text = open(case_path(case), 'rb').read()
 	h.update(text)
@@ -136,83 +126,38 @@ def case_hash(case):
 	return h.hexdigest()[:16]
 
 
-def _python(self, code, timeout=10.0):
-	"""scrap_mcp.Game.python with a 10 ms poll of the reply file instead of 100 ms (the game answers within 0.1 s of
-	game time; at about 10000 case lines a run this saves a few minutes). Same files and protocol."""
-	if not self.running():
-		raise RuntimeError('game %s does not run' % self.name)
-	# a level load that a command started (Scrap.LoadLevel loads at once, the answer comes after it) does not count
-	# against the timeout: loads took 40 s on the shared 610M (Lane.loads)
-	loading = getattr(self, 'loading', None)
-	if self.opts.get('harness') == 'channel':
-		# paced as the old harness answered: every line at least 0.1 s of game time after the one before
-		seq = scrap_mcp.channel.write(self.game, code, None, 0.1)
-		end = time.time() + timeout
-		while True:
-			try:
-				return scrap_mcp.channel.answer(self.game, seq, max(end - time.time(), 0.5), self.running)
-			except scrap_mcp.channel.NoAnswer:
-				if not (self.running() and loading and loading() and time.time() < end + LOAD_WAIT):
-					raise RuntimeError('no answer from game %s in %.0f s' % (self.name, timeout))
-				end = time.time() + 1.0
-	self.seq += 1
-	reply = os.path.join(self.game, 'mcp_reply.txt')
-	tmp = os.path.join(self.game, 'mcp_cmd.tmp')
-	with open(tmp, 'w', newline='\r\n') as f:
-		f.write('%d\n%s\n' % (self.seq, code))
-	os.replace(tmp, os.path.join(self.game, 'mcp_cmd.txt'))
-	start = time.time()
-	end = start + timeout
-	want = str(self.seq)
-	while time.time() < end:
+def _cmd(g, code, timeout=10.0):
+	"""channel commands in game g, paced as the old harness answered: every command file at least 0.1 s of game time
+	after the answer before; a level load that a command started (Scrap.LoadLevel loads at once, the answer comes after
+	it) does not count against the timeout (loads took 40 s on the shared 610M, Lane.loads)"""
+	if not g.running():
+		raise RuntimeError('game %s does not run' % g.name)
+	loading = getattr(g, 'loading', None)
+	seq = scrap_mcp.channel.write(g.game, code, None, 0.1)
+	end = time.time() + timeout
+	while True:
 		try:
-			with open(reply, 'r', errors='replace') as f:
-				data = f.read().replace('\r\n', '\n')
-		except OSError:
-			data = ''
-		head, _, rest = data.partition('\n')
-		if head.strip() == want and rest.endswith('.end\n'):
-			return rest[:-len('.end\n')].rstrip('\n')
-		if not self.running():
-			break
-		if time.time() >= end and loading and loading() and time.time() < start + timeout + LOAD_WAIT:
+			return scrap_mcp.channel.answer(g.game, seq, max(end - time.time(), 0.5), g.running)
+		except scrap_mcp.channel.NoAnswer:
+			if not (g.running() and loading and loading() and time.time() < end + LOAD_WAIT):
+				raise RuntimeError('no answer from game %s in %.0f s' % (g.name, timeout))
 			end = time.time() + 1.0
-		time.sleep(0.01)
-	raise RuntimeError('no answer from game %s in %.0f s' % (self.name, timeout))
-
-
-scrap_mcp.Game.python = _python
-
-
-def copy_helpers(game, pack):
-	"""The Python helpers of the cases (helpers/*.py) into the game folder, where the case lines load them; for pack
-	runs the source of NDeathMatchBots (no .pyc in the packs, fc-nm-bots) from REGRESS_PACK_SRC (the root of the
-	extracted packs). C runs make that module from data/modules/ndeathmatchbots.mod."""
-	for p in glob.glob(os.path.join(HELPERS, '*.py')):
-		shutil.copy(p, os.path.join(game, os.path.basename(p)))
-	src = os.environ.get('REGRESS_PACK_SRC')
-	if src and pack:
-		p = os.path.join(src, 'Data.packed', 'scripts', 'net', 'ndeathmatchbots.py')
-		if os.path.isfile(p):
-			shutil.copy(p, os.path.join(game, 'ndeathmatchbots.py'))
 
 
 class Lane:
 	"""One slot: resets it, starts the game, runs the case lines."""
 
-	def __init__(self, tag, pack, exe='native64'):
-		self.tag, self.pack, self.exe = tag, pack, exe
+	def __init__(self, tag, exe='native64'):
+		self.tag, self.exe = tag, exe
 		self.game = None
 
 	def q(self, code, timeout=LINE_TIMEOUT):
-		"""a command of the harness (Python, or channel commands with REGRESS_HARNESS=channel)"""
-		return self.game.python(code, timeout=timeout)
+		"""channel commands (one command file)"""
+		return _cmd(self.game, code, timeout)
 
 	def line(self, line, timeout=LINE_TIMEOUT):
-		"""a case line: as it is to the Python harness; on the channel its commands (tochannel.py) in one command file,
-		the answer the first error of the helper commands, else that of the line"""
-		if HARNESS == 'python':
-			return self.q(line, timeout)
+		"""a case line: its commands (tochannel.py) in one command file, the answer the first error of the helper
+		commands, else that of the line"""
 		try:
 			cmds = tochannel.convert(line)
 		except tochannel.Unconvertible as e:
@@ -236,8 +181,7 @@ class Lane:
 	def gstate(self):
 		"""(game time, mark set) or None while the game does not answer (a level loads)."""
 		try:
-			r = self.q("(Scrap.GetTime(), globals().get('_rg_mark'))" if HARNESS == 'python' else
-					   "(Scrap.GetTime(), __import__('__main__').__dict__.get('_rg_mark'))", timeout=2.0)
+			r = self.q("(Scrap.GetTime(), __import__('__main__').__dict__.get('_rg_mark'))", timeout=2.0)
 		except RuntimeError:
 			return None
 		m = re.match(r"\(([-\d.e+]+), (\w+)\)", r)
@@ -369,19 +313,11 @@ class Lane:
 			scrap_mcp.GAMES[self.tag] = g
 		self.game = g
 		env = {'SCRAP_VK_DEVICE': VK_DEVICE}
-		if PY_PROFILE:
-			env['SCRAP_PY_PROFILE'] = 'pyprofile.txt'
-		if self.pack:
-			env['SCRAP_PACK_SCRIPTS'] = '1'
-		res = {'case': case, 'level': level, 'tag': self.tag, 'pack': self.pack, 'build': build,
+		res = {'case': case, 'level': level, 'tag': self.tag, 'pack': False, 'build': build,
 			   'hash': case_hash(case), 'date': time.strftime('%Y-%m-%d %H:%M:%S'), 'blocks': [], 'status': 'ok'}
 		try:
 			opts = {'name': self.tag, 'exe': self.exe, 'map': 'Levels/' + level, 'env': env, 'timeout': 2400}
-			# scrap_mcp picks the channel for a build that has it: the harness is always named
-			opts['harness'] = HARNESS
 			g.start(opts)
-			if HARNESS == 'python':
-				copy_helpers(g.game, self.pack)
 			end = time.time() + 300
 			while True:
 				if not g.running() or time.time() > end:
@@ -392,12 +328,9 @@ class Lane:
 				except RuntimeError:
 					pass
 			res['ready'] = round(time.time() - t0, 1)
-			if HARNESS == 'python':
-				self.q("execfile('fst.py')")
-			else:
-				r = self.commands(tochannel.helper_load('fst') + ['None'])
-				if r != 'None':
-					raise RuntimeError('channel/fst.tc: %s' % r)
+			r = self.commands(tochannel.helper_load('fst') + ['None'])
+			if r != 'None':
+				raise RuntimeError('channel/fst.tc: %s' % r)
 			timeouts = 0
 			for line in open(case_path(case), encoding='latin1').read().split('\n'):
 				if not line.strip() or line.startswith('#'):
@@ -426,13 +359,6 @@ class Lane:
 		except Exception as e:
 			res['status'] = 'error'
 			res['error'] = '%s: %s' % (type(e).__name__, e)
-		if PY_PROFILE and g.running():
-			# the Python code objects that ran in this game (through all its level loads)
-			try:
-				self.q("Scrap.DumpPyProfile('pyprofile.txt')", timeout=5.0)
-				res['pyprofile'] = open(os.path.join(g.game, 'pyprofile.txt'), errors='replace').read()
-			except (RuntimeError, OSError) as e:
-				res['pyprofile'] = 'no profile: %s' % e
 		try:
 			res['log'] = '\n'.join(g.log('game').splitlines()[-40:])
 		except Exception:
@@ -466,10 +392,10 @@ def save(path, res):
 			f.write('>> %s\n%s\n' % (cmd, reply))
 
 
-def lanes_run(tags, pack, jobs, build, done, exe='native64'):
+def lanes_run(tags, jobs, build, done, exe='native64'):
 	"""jobs: list of (level, case, outpath), longest first; runs them over the lanes; done(job, res) per result. The
 	cases that start a real server have a queue of their own: a lane that gets the port lock (a file lock next to the
-	slots, so the runs of all checkouts that share the game data share it, pack and C side by side) takes the next of
+	slots, so the runs of all checkouts that share the game data share it) takes the next of
 	them, else the next other case, so the server cases run spread over the whole run, one at a time."""
 	normal, ports = queue.Queue(), queue.Queue()
 	for j in jobs:
@@ -479,7 +405,7 @@ def lanes_run(tags, pack, jobs, build, done, exe='native64'):
 	lockpath = os.path.join(slot.SLOTS, '.regress-port.lock')
 
 	def worker(tag):
-		lane = Lane(tag, pack, exe)
+		lane = Lane(tag, exe)
 		while True:
 			res = None
 			if not ports.empty():
@@ -516,7 +442,7 @@ def expected_secs(case):
 
 def pack_runs(case):
 	"""The stored pack runs of a case: baselines/<case>.xz (a JSON list of runs, xz), with loose runs
-	baselines/<case>.p<k>.json of a baseline command not folded in yet in place of run k."""
+	baselines/<case>.p<k>.json (of the old baseline command, not folded in) in place of run k."""
 	p = os.path.join(BASELINES, case + '.xz')
 	out = load_json(p) if os.path.isfile(p) else []
 	k = 1
@@ -531,23 +457,6 @@ def pack_runs(case):
 		elif k > len(out):
 			return out
 		k += 1
-
-
-def fold(case):
-	"""Folds the loose runs baselines/<case>.p<k>.json into baselines/<case>.xz (under a file lock: parallel baseline
-	commands fold the same case). The game log of a run is not kept (the results directory has it)."""
-	import lzma
-	with open(os.path.join(BASELINES, '.fold.lock'), 'w') as lk:
-		fcntl.flock(lk, fcntl.LOCK_EX)
-		runs = pack_runs(case)
-		for r in runs:
-			r.pop('log', None)
-		data = json.dumps(runs, indent=0).encode()
-		with lzma.open(os.path.join(BASELINES, case + '.xz.tmp'), 'wb', preset=9 | lzma.PRESET_EXTREME) as f:
-			f.write(data)
-		os.replace(os.path.join(BASELINES, case + '.xz.tmp'), os.path.join(BASELINES, case + '.xz'))
-		for p in glob.glob(os.path.join(BASELINES, glob.escape(case) + '.p*.json')):
-			os.remove(p)
 
 
 def judge(case, cres):
@@ -579,27 +488,6 @@ def judge(case, cres):
 	if ok and cres['status'] == expected:
 		return 'pass', notes
 	return 'FAIL', ['%d differing lines of %d (%d loose)' % (len(diffs), len(cres['blocks']), masked)] + notes
-
-
-def cmd_baseline(a):
-	cases = pick(read_cases(), a.cases)
-	first = a.index or 1
-	if a.add:
-		first = min(len(pack_runs(c)) for l, c in cases) + 1
-	jobs = []
-	for k in range(first, first + a.runs):
-		for level, case in sorted(cases, key=lambda c: -expected_secs(c[1])):
-			jobs.append((level, case, os.path.join(BASELINES, '%s.p%d.json' % (case, k))))
-	t0 = time.time()
-	n = [0]
-
-	def done(j, res):
-		n[0] += 1
-		log('[%d/%d %.0fs] %s %s: %s, %d lines, %.0f s' % (n[0], len(jobs), time.time() - t0, res['tag'], j[1],
-														  res['status'], len(res['blocks']), res['secs']))
-	lanes_run(a.lanes.split(','), True, jobs, a.build, done)
-	for level, case in cases:
-		fold(case)
 
 
 def report(outdir, cases, results, t0=None):
@@ -644,7 +532,7 @@ def cmd_check(a):
 		v, notes = judge(j[1], res)
 		log('[%d/%d %.0fs] %s %s: %s%s' % (len(results), len(jobs), time.time() - t0, res['tag'], j[1], v,
 										   (' - ' + notes[0].split('\n')[0]) if v != 'pass' and notes else ''))
-	lanes_run(a.lanes.split(','), False, jobs, a.build, done, 'native64asan' if a.asan else 'native64')
+	lanes_run(a.lanes.split(','), jobs, a.build, done, 'native64asan' if a.asan else 'native64')
 	return 0 if report(outdir, cases, results, t0) else 1
 
 
@@ -692,46 +580,11 @@ def _stop(signum, frame):
 	os._exit(130)
 
 
-def no_python(build):
-	"""whether the build folder was made without the Python interpreter (SCRAP_NO_PYTHON in its CMakeCache.txt)"""
-	try:
-		with open(os.path.join(build, 'CMakeCache.txt'), errors='replace') as f:
-			return 'SCRAP_NO_PYTHON:BOOL=ON' in f.read().split('\n')
-	except OSError:
-		return False
-
-
-def pick_harness(a):
-	"""HARNESS for the build of a check or baseline run; refuses what needs the interpreter in a build without it"""
-	global HARNESS
-	if a.cmd not in ('check', 'baseline'):
-		return
-	build = a.build + ('-asan' if getattr(a, 'asan', False) else '')
-	nopy = no_python(build)
-	if a.cmd == 'baseline' and nopy:
-		raise SystemExit('regress: baseline runs the scripts of the packs (SCRAP_PACK_SCRIPTS=1, Python code), but %s '
-						 'has no Python interpreter: pass --build with a build made with cmake -DSCRAP_NO_PYTHON=OFF '
-						 '(e.g. build-py64)' % build)
-	if HARNESS == 'python' and nopy:
-		raise SystemExit('regress: REGRESS_HARNESS=python runs Python in the game, but %s has no Python interpreter: '
-						 'use REGRESS_HARNESS=channel (the default there)' % build)
-	if HARNESS is None:
-		HARNESS = 'channel' if nopy else 'python'
-	log('harness %s (%s)' % (HARNESS, 'no Python interpreter in the build' if nopy else 'build with the interpreter'))
-
-
 def main():
 	signal.signal(signal.SIGINT, _stop)
 	signal.signal(signal.SIGTERM, _stop)
 	ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 	sub = ap.add_subparsers(dest='cmd', required=True)
-	b = sub.add_parser('baseline')
-	b.add_argument('--runs', type=int, default=2)
-	b.add_argument('--add', action='store_true', help='add runs after the stored ones')
-	b.add_argument('--index', type=int, help='number of the first run (p<index>.json), default 1')
-	b.add_argument('--lanes', default='pa,pa2,pa3')
-	b.add_argument('--build', default=os.environ.get('FUNC_BUILD', REFERENCE_BUILD))
-	b.add_argument('cases', nargs='*')
 	c = sub.add_parser('check')
 	c.add_argument('--lanes', default='ca,ca2,ca3')
 	c.add_argument('--build', default=os.environ.get('FUNC_BUILD', DEFAULT_BUILD))
@@ -752,8 +605,7 @@ def main():
 	if getattr(a, 'build', None):
 		# scrap_mcp joins a relative build folder to SCRAP_MCP_ROOT (the main checkout of a worktree)
 		a.build = os.path.abspath(a.build)
-	pick_harness(a)
-	return {'baseline': cmd_baseline, 'check': cmd_check, 'compare': cmd_compare, 'show': cmd_show,
+	return {'check': cmd_check, 'compare': cmd_compare, 'show': cmd_show,
 			'accept': cmd_accept}[a.cmd](a) or 0
 
 

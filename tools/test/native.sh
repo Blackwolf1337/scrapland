@@ -9,9 +9,7 @@
 #        NATIVE_LOG   file for the output of the program, default nowhere
 #        HEADLESS_TIMEOUT, HEADLESS_SIZE as in headless.sh; SCRAP_VK_DEVICE (default the AMD 610M, 1002:164e)
 #        SCRAP_VK_VALIDATION=1   the Vulkan validation layer for the program (messages in NATIVE_LOG)
-#        SCRAP_GAME_DIR   another game folder, SCRAP_BUILD another build folder (default build-linux64, the default
-#                         build without the Python interpreter; build-py64 is the usual name of the reference build
-#                         with it, cmake -DSCRAP_NO_PYTHON=OFF)
+#        SCRAP_GAME_DIR   another game folder, SCRAP_BUILD another build folder (default build-linux64)
 root=$(cd "$(dirname "$0")/../.." && pwd)
 build=${SCRAP_BUILD:-$root/build-linux64}
 game=${SCRAP_GAME_DIR:-$build/game}
