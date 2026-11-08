@@ -4,8 +4,10 @@
  * 1) and a Desktop entry at the front of the video modes (VideoDesktop: the size of the desktop).
  *
  * Native C (docs/objlib-plan.md, stage 2): the state is the struct video, the functions call the engine in C; the
- * PyMethodDef entries are adapters (id and the control as a text, anything else as ""). The options menu after Back
- * and Apply is called by name (OBJLIB 3), a failure printed as before.
+ * PyMethodDef entries are adapters (id and the control as a text, anything else as ""). The options menu after Apply
+ * is called through its ref (PORT_CALL: directly while PCMenu holds the port's function, else by name), after Back
+ * by name through the alias Menu.OptionsMenu (OBJLIB 5: a variable of Menu, PCMenu's or XBMenu's function); a failure
+ * is printed as before.
  */
 #include <stdio.h>
 #include <string.h>
@@ -474,6 +476,7 @@ static PyObject *PCMenu_VideoMenuBack(PyObject *self, PyObject *args) {
 	GVar_SetNum("R_FogEnable", video.lastFog);
 	GVar_SetNum("R_VideoLockMode", video.lastLockMode);
 	GVar_SetNum("R_VideoLockBuf", video.lastLockBuf);
+	/* OBJLIB 5: the alias Menu.OptionsMenu (= MLib.OptionsMenu of menu.mod) by name */
 	Mode_Printed(Native_CallMod("Menu", "OptionsMenu", NULL, "is", (long)id, control), "Menu", "OptionsMenu");
 	return Py_ReturnNone();
 }
@@ -552,7 +555,7 @@ static PyObject *PCMenu_ApplyChanges(PyObject *self, PyObject *args) {
 	Video_SetReset("R_SceneMotionBlurRTarget", blur, &reset);
 	Video_SetReset("R_SceneDuDvRTarget", dudv, &reset);
 	Video_SetReset("R_SceneRTarget", bloom || blur || dudv, &reset);
-	Mode_Printed(Native_CallMod("PCMenu", "OptionsMenu", NULL, "is", (long)id, control), "PCMenu", "OptionsMenu");
+	MODE_PRINTED(PCMenu, OptionsMenu, "is", (long)id, control);
 	if (reset || mode != video.current) {
 		Video_SetCurrentMode(mode);
 	}

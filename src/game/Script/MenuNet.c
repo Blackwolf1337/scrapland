@@ -7,9 +7,10 @@
  * sort, the message of the day), the functions call the engine in C; the PyMethodDef entries are adapters (the
  * argument formats as before). The variables of other modules are read where the C read them (Init.inMainMenu,
  * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps; OBJLIB 5),
- * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword, Net.PurgeServerMapList, Scrap.SaveConfig and
- * Scrap.Exit are called by name with their failure printed as before (OBJLIB 3 and 7); the connection status
- * schedules itself as a Python function (OBJLIB 4); the .def runner takes Python values (OBJLIB 6).
+ * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through
+ * their refs (PORT_CALL: directly while the attribute holds the port's function, else by name), Scrap.SaveConfig and
+ * Scrap.Exit by name (OBJLIB 7), their failures printed as before; the connection status schedules itself as a Python
+ * function (OBJLIB 4); the .def runner takes Python values (OBJLIB 6).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,9 +81,13 @@ static void Net_RunMenu(int id, const char *section, PyObject *vars);
 static PyObject *Net_Vars(const char *tab);
 static void Net_JoinMenu(int id);
 
-/* Menu.LinkUD or Menu.LinkLR (id, a, b) by name (OBJLIB 3), a failure printed */
-static void Net_Link(const char *func, int id, const char *a, const char *b) {
-	Mode_Printed(Native_CallMod("Menu", func, NULL, "iss", (long)id, a, b), "Menu", func);
+/* Menu.LinkUD (ud) or Menu.LinkLR (id, a, b) through the module, a failure printed */
+static void Net_Link(byte ud, int id, const char *a, const char *b) {
+	if (ud) {
+		MODE_PRINTED(Menu, LinkUD, "iss", (long)id, a, b);
+	} else {
+		MODE_PRINTED(Menu, LinkLR, "iss", (long)id, a, b);
+	}
 }
 
 /* ---- the server list ---- */
@@ -167,12 +172,12 @@ static void Net_UpdateBrowser(int id) {
 	}
 	const char *tab = !strcmp(net.domain, "Internet") ? "JoinInternet" : !strcmp(net.domain, "Local") ? "JoinLocal" : NULL;
 	if (tab) {
-		Net_Link("LinkUD", id, tab, count ? "BrowserSlot1" : "Refresh");
+		Net_Link(1, id, tab, count ? "BrowserSlot1" : "Refresh");
 	}
 	if (count) {
 		char last[0x20];
 		Str_Printf(last, sizeof(last), "BrowserSlot%d", count);
-		Net_Link("LinkUD", id, last, "Refresh");
+		Net_Link(1, id, last, "Refresh");
 	}
 	Net_UpdateSlider(id);
 }
@@ -284,7 +289,7 @@ static void Net_ConnectionStatus(void) {
 		Script_SetStr(0, "Title", "Text", Script_Lang("Net_Menu_ServerDown"));
 	} else if (!strcmp(status, "need_password")) {
 		Net_CloseClient();
-		Mode_Printed(Native_CallMod("PCMenu", "AskPassword", NULL, "is", 0L, ""), "PCMenu", "AskPassword");
+		MODE_PRINTED(PCMenu, AskPassword, "is", 0L, "");
 		return;
 	} else if (!strcmp(status, "server_is_full")) {
 		static const struct {
@@ -306,7 +311,7 @@ static void Net_ConnectionStatus(void) {
 	double bar = Script_GetNum(0, "TitleBarM", "Y");
 	const char *title = Script_GetStr(0, "Title", "Text");
 	if (strcmp(last, title)) {
-		Mode_Printed(Native_CallMod("Menu", "DrawMenuTitleBar", NULL, "ids", 0L, bar, title), "Menu", "DrawMenuTitleBar");
+		MODE_PRINTED(Menu, DrawMenuTitleBar, "ids", 0L, bar, title);
 	}
 	/* a full server ends the polling (the script deleted its own next call); OBJLIB 4: the scheduler keeps the
 	 * Python function and an empty argument tuple */
@@ -326,7 +331,7 @@ static void Net_TryJoin(int id) {
 	int port = (int)GVar_GetNum("DefaultServerPort", 0);
 
 	Net_InitClient(addr, port);
-	Mode_PrintedCall("Menu", "StartNewMenu", id);
+	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	Str_Printf(address, sizeof(address), "%s:%d", addr, port);
 	/* the text has a %s for the address */
 	const char *fmt = Script_Lang("Net_Menu_Connecting");
@@ -356,7 +361,7 @@ static void Step_InGame(int id, PyObject *args) {
 		func = Native_GetItem(&opt, 1, 0, &tmp);
 	}
 	if (func && func->type == NV_STR && !Native_Text(func)[0]) {
-		Mode_Printed(Native_CallMod("Menu", "DisableMenuItem", NULL, "iii", (long)id, 2L, 5L), "Menu", "DisableMenuItem");
+		MODE_PRINTED(Menu, DisableMenuItem, "iii", (long)id, 2L, 5L);
 	}
 	Mode_DropError();
 	if (func == &tmp) {
@@ -553,12 +558,12 @@ static void Net_UpdateMapList(int id) {
 		Script_SetStr(id, item, "Down", link);
 		slot++;
 		Str_Printf(link, sizeof(link), "MapSlot%d", slot);
-		Net_Link("LinkLR", id, link, slot <= NET_MAP_SLOTS / 2 ? "MapUp" : "MapDown");
+		Net_Link(0, id, link, slot <= NET_MAP_SLOTS / 2 ? "MapUp" : "MapDown");
 	}
-	Net_Link("LinkLR", id, "MapSlot1", "MapUp");
+	Net_Link(0, id, "MapSlot1", "MapUp");
 	Str_Printf(link, sizeof(link), "MapSlot%d", slot);
-	Net_Link("LinkLR", id, link, "MapDown");
-	Net_Link("LinkUD", id, link, "CreateButton");
+	Net_Link(0, id, link, "MapDown");
+	Net_Link(1, id, link, "CreateButton");
 	Net_UpdateMapSlider(id);
 }
 
@@ -577,8 +582,7 @@ static void Net_UpdateServerType(int id) {
 	Font_TextSize(Font_Get("Horatio"), pos, size, 0.0f, 0.0f, "%s", title);
 	Script_SetStr(id, "FragLimitTitle", "Text", title);
 	Script_SetNum(id, "FragLimit", "X", Script_GetNum(id, "FragLimitTitle", "X") + size[0] + 10);
-	/* OBJLIB 3: Net by name */
-	Mode_Printed(Native_CallMod("Net", "PurgeServerMapList", NULL, ""), "Net", "PurgeServerMapList");
+	MODE_PRINTED(Net, PurgeServerMapList, "");
 	Net_UpdateMapList(id);
 }
 
@@ -772,20 +776,19 @@ static void Net_JoinMenu(int id) {
 		return NULL; \
 	}
 
-static PyObject *PCMenu_MultiPlayerMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
-	(void)control;
-	Mode_PrintedCall("Menu", "StartNewMenu", id);
+/* MultiPlayerMenu(id, control): the join page from the main menu and the editor, else the page of the game */
+static void Net_MultiPlayerMenu(int id) {
+	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	if (Mode_ModGetI("Init", "inMainMenu", 0) || Mode_ModGetI("Init", "isShipEdit", 0)) {
 		Net_JoinMenu(id);
-		return Py_ReturnNone();
+		return;
 	}
 	PyObject *vars = Py_BuildValue("{s:i}", "server", Net_IsServer() != 0);
 	Net_RunMenu(id, "Multiplayer", vars);
 	Py_XDECREF(vars);
-	return Py_ReturnNone();
 }
+
+MODE_IDFN(PCMenu_MultiPlayerMenu, (Net_MultiPlayerMenu(id), 1))
 
 static PyObject *PCMenu_MenuRestartServer(PyObject *self, PyObject *args) {
 	(void)self;
@@ -836,18 +839,17 @@ static PyObject *PCMenu_JoinPassword(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-static PyObject *PCMenu_AskPassword(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
-	(void)control;
+/* AskPassword(id, control): the password page of the server */
+static void Net_AskPassword(int id) {
 	const char *title = Script_Lang("Menu_Multiplayer_Advanced_Password");
-	Mode_PrintedCall("Menu", "StartNewMenu", id);
+	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	PyObject *vars = Py_BuildValue("{s:s,s:s}", "title", *title ? title : "Password", "password",
 		GVar_GetStr("ClientPassword"));
 	Net_RunMenu(id, "password", vars);
 	Py_XDECREF(vars);
-	return Py_ReturnNone();
 }
+
+MODE_IDFN(PCMenu_AskPassword, (Net_AskPassword(id), 1))
 
 static PyObject *PCMenu_ShowConectionStatus(PyObject *self, PyObject *args) {
 	(void)self;
@@ -890,8 +892,8 @@ static PyObject *PCMenu_AbortMultiplayerGame(PyObject *self, PyObject *args) {
 	(void)self;
 	NET_ARGS(args);
 	(void)control;
-	Mode_Printed(Native_CallMod("Menu", "YesNoMenu", NULL, "isss", (long)id, Script_Lang("Menu_AbortGame_Question"),
-		"Menu.AuxAbortGame", "PCMenu.MultiPlayerMenu"), "Menu", "YesNoMenu");
+	MODE_PRINTED(Menu, YesNoMenu, "isss", (long)id, Script_Lang("Menu_AbortGame_Question"), "Menu.AuxAbortGame",
+		"PCMenu.MultiPlayerMenu");
 	return Py_ReturnNone();
 }
 
@@ -1025,7 +1027,7 @@ static PyObject *PCMenu_BrowserMenuBack(PyObject *self, PyObject *args) {
 		cPy_Function_SetFunc(&sc->onPrev, "");
 	}
 	Net_DoneBrowser();
-	Mode_Printed(Native_CallMod("Menu", "MainMenu", NULL, "is", (long)id, control), "Menu", "MainMenu");
+	MODE_PRINTED(Menu, MainMenu, "is", (long)id, control);
 	return Py_ReturnNone();
 }
 
@@ -1280,7 +1282,7 @@ static PyObject *PCMenu_AdvancedServer(PyObject *self, PyObject *args) {
 	(void)self;
 	NET_ARGS(args);
 	(void)control;
-	Mode_PrintedCall("Menu", "StartNewMenu", id);
+	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	byte usePass = GVar_GetNum("UseServerPassword", 0) != 0;
 	const char *password = Net_Text("Menu_Multiplayer_Advanced_Password", "Password");
 	Str_Printf(pass, sizeof(pass), usePass ? "\x02 %s:" : "\x03 %s", password);
@@ -1333,8 +1335,8 @@ static PyObject *PCMenu_SwitchUsePass(PyObject *self, PyObject *args) {
 		GVar_SetNum("UseServerPassword", 1);
 		Str_Printf(text, sizeof(text), "\x02 %s:", password);
 		Script_SetStr(id, "Item1", "Text", text);
-		Net_Link("LinkLR", id, "Item1", "Item2");
-		Net_Link("LinkLR", id, "Item2", "Item1");
+		Net_Link(0, id, "Item1", "Item2");
+		Net_Link(0, id, "Item2", "Item1");
 		Script_SetNum(id, "Item2", "Visible", 1);
 	}
 	return Py_ReturnNone();
@@ -1437,8 +1439,7 @@ static PyObject *PCMenu_ServerTypeInfo(PyObject *self, PyObject *args) {
 		name = type;
 		help = "Unofficial modification!";
 	}
-	Mode_Printed(Native_CallMod("Menu", "ShowTextBox", NULL, "isss", (long)id, help, "PCMenu.NetCreateGameMenu",
-		"PCMenu.NetCreateGameMenu"), "Menu", "ShowTextBox");
+	MODE_PRINTED(Menu, ShowTextBox, "isss", (long)id, help, "PCMenu.NetCreateGameMenu", "PCMenu.NetCreateGameMenu");
 	double y = Script_GetNum(id, "MissionDesc", "Y");
 	Script_SetNum(id, "MissionDesc", "Y", y + 45);
 	cScorer *sc = Scorer_Get(id);

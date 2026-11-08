@@ -8,8 +8,10 @@
  * handles to the scheduled calls (PlayerDeathCall, NPCDeathCall), so the characters are handle values (OBJLIB 7) and
  * the values the script reads from them (e.Pos, e.Money / 4) go on to the functions it calls. The hooks are read as
  * the module attributes they are and called as the values they hold. Scrap.GetEntity, the scheduler, SSound.Play and
- * SScorer.Fade and SetMsgText go through their seams (OBJLIB 7: the cases record or swap them); CrazyWing.CrazyPhoto,
- * CharsNPC.CharRes and the imports stay by name (OBJLIB 3, 5, 6).
+ * SScorer.Fade and SetMsgText go through their seams (OBJLIB 7: the cases record or swap them); CrazyWing.CrazyPhoto
+ * is called through its ref (PORT_CALL: directly while the attribute holds the port's function, else by name). The
+ * calls the scheduler keeps by name (CharsNPC.Respawn, MisItems.CreateBattery and CreateCoin; OBJLIB 4), the variable
+ * CharsNPC.CharRes (OBJLIB 5) and the imports (OBJLIB 6) stay.
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -67,7 +69,7 @@ static byte CA_Photograph(const nativeVal_t *sel) {
 			return Mode_Done(&t, 0);
 		}
 		if (Native_IsStr(head, "Crazy")) {
-			if (!Native_CallMod("CrazyWing", "CrazyPhoto", r, "v", e)) {
+			if (!PORT_CALL(CrazyWing, CrazyPhoto, r, "v", e)) {
 				return Mode_Done(&t, 0);
 			}
 			if (Native_True(r)) {

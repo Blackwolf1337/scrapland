@@ -1008,4 +1008,22 @@ PORT_DECL(math, fmod)
 	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out)
 
+/* ---- the menus of stage 3 batch B11 ---- */
+
+/* the arguments (id[, control]) of an entry as Script_Args reads them: control "" when it is no text */
+byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
+/* a menu function (id[, control]) with its adapter named fn (Script_Args): fn_E, its entry, and fn, its adapter
+ * (Mode_Entry); call sees id and control */
+#define MODE_IDFN(fn, call) \
+	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		int id; \
+		const char *control; \
+		(void)out; \
+		return Mode_IdControl(a, n, &id, &control) && (call); \
+	} \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return Mode_Entry(args, fn##_E); \
+	}
+
 #endif

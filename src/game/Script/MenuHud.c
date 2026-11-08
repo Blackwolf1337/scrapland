@@ -8,9 +8,11 @@
  * scorer) as native values. The variables of other modules are read where the C read them (Init.isShipEdit, Outdoor,
  * isJunkYard, OffLineGame, Scorer.MarginH, MarginV, SplitScreen, MissionScorerBar_X and _Y, Menu.MissionScorerCall,
  * RacerScorer.SPECTATOR_POINTS and the texts of the scores), the variables of RacerScorer are written at once
- * (OBJLIB 5). The scorer functions call each other by name and SScorer.SetCinema, Scrap.GetCam, GetEntity and
- * UsrEntity go through their seams (OBJLIB 3, 7); Blink and the ping update schedule themselves as Python functions
- * (OBJLIB 4); the .def runner takes Python values (OBJLIB 6).
+ * (OBJLIB 5). The scorer functions and Menu are called through their refs (PORT_CALL: directly while the attribute
+ * holds the port's function, else by name, a failure printed); the callback Menu.MissionScorerCall is called as the
+ * value it holds (OBJLIB 5); SScorer.SetCinema, Scrap.GetCam, GetEntity and UsrEntity go through their seams
+ * (OBJLIB 7); Blink and the ping update schedule themselves as Python functions (OBJLIB 4); the .def runner takes
+ * Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -207,46 +209,35 @@ static void Hud_BarDefaults(int id, const char *name, const int *c) {
 
 /* ---- the functions of Scorer (adapters) ---- */
 
-static PyObject *Scorer_CreateStatusScorer(PyObject *self, PyObject *args) {
+/* CreateStatusScorer(id, char=0) */
+static byte Scorer_CreateStatusScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, ch = 0;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i|i", &id, &ch)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i|i", &id, &ch)) {
+		return 0;
 	}
 	Hud_Run(id, "status", Py_BuildValue("{s:i,s:i,s:i}", "char", ch != 0, "multi", Hud_Multi(), "split",
 		Mode_ModGetI("Scorer", "SplitScreen", 0) != 0));
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Scorer, CreateStatusScorer)
 
-static PyObject *Scorer_CreateCopMeterScorer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Hud_Run(id, "copmeter", NULL);
-	return Py_ReturnNone();
-}
+MODE_IFN(Scorer_CreateCopMeterScorer, 1, (Hud_Run(id, "copmeter", NULL), 1))
 
-static PyObject *Scorer_CreateMonitorScorer(PyObject *self, PyObject *args) {
+/* CreateMonitorScorer(id, char=0) */
+static byte Scorer_CreateMonitorScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, ch = 0;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i|i", &id, &ch)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i|i", &id, &ch)) {
+		return 0;
 	}
 	Hud_Run(id, "monitor", Py_BuildValue("{s:i}", "char", ch != 0));
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Scorer, CreateMonitorScorer)
 
-static PyObject *Scorer_CreateMsgScorer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Hud_Run(id, "msg", Py_BuildValue("{s:i,s:i}", "splitnow", (int)GVar_GetNum("SplitScreen", 0), "enabled", 1));
-	return Py_ReturnNone();
-}
+MODE_IFN(Scorer_CreateMsgScorer, 1, (Hud_Run(id, "msg", Py_BuildValue("{s:i,s:i}", "splitnow",
+	(int)GVar_GetNum("SplitScreen", 0), "enabled", 1)), 1))
 
 static PyObject *Scorer_CreateMissionScorer(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "enabled", NULL };
@@ -416,39 +407,23 @@ static void Hud_CharCreate(int id) {
 		cScorer_Clear(sc);
 	}
 	Hud_NoCinema(id);
-	Mode_PrintedCall("Scorer", "CreateMsgScorer", id);
-	Mode_Printed(Native_CallMod("Scorer", "CreateStatusScorer", NULL, "ii", (long)id, 1L), "Scorer",
-		"CreateStatusScorer");
-	Mode_PrintedCall("Scorer", "CreateCopMeterScorer", id);
-	Mode_PrintedCall("CharScorer", "CreateRadarScorer", id);
-	Mode_Printed(Native_CallMod("Scorer", "CreateMonitorScorer", NULL, "ii", (long)id, 1L), "Scorer",
-		"CreateMonitorScorer");
+	MODE_PRINTED(Scorer, CreateMsgScorer, "i", (long)id);
+	MODE_PRINTED(Scorer, CreateStatusScorer, "ii", (long)id, 1L);
+	MODE_PRINTED(Scorer, CreateCopMeterScorer, "i", (long)id);
+	MODE_PRINTED(CharScorer, CreateRadarScorer, "i", (long)id);
+	MODE_PRINTED(Scorer, CreateMonitorScorer, "ii", (long)id, 1L);
 	if (!Mode_ModGetI("Init", "Outdoor", 0) && !Mode_ModGetI("Init", "isJunkYard", 0)) {
-		Mode_PrintedCall("CharScorer", "CreateSpecialActionScorer", id);
+		MODE_PRINTED(CharScorer, CreateSpecialActionScorer, "i", (long)id);
 	}
+	/* OBJLIB 5: the callback variable of Menu */
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 
 /* ---- the functions of CharScorer (adapters) ---- */
 
-static PyObject *CharScorer_CreateRadarScorer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Hud_Run(id, "charradar", Py_BuildValue("{s:i}", "outdoor", Mode_ModGetI("Init", "Outdoor", 0) != 0));
-	return Py_ReturnNone();
-}
-
-static PyObject *CharScorer_CreateSpecialActionScorer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	return Mode_Result(Hud_SpecialAction(id));
-}
+MODE_IFN(CharScorer_CreateRadarScorer, 1, (Hud_Run(id, "charradar", Py_BuildValue("{s:i}", "outdoor",
+	Mode_ModGetI("Init", "Outdoor", 0) != 0)), 1))
+MODE_IFN(CharScorer_CreateSpecialActionScorer, 1, Hud_SpecialAction(id))
 
 MODE_IFN(CharScorer_Create, 1, (Hud_CharCreate(id), 1))
 
@@ -506,6 +481,7 @@ static void Racer_CreateRacerCore(int id) {
 		"\nDescriptor"));
 	Native_Free(&cam);
 	Native_Free(&camName);
+	/* OBJLIB 5: the callback variable of Menu */
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 
@@ -598,8 +574,8 @@ static void Racer_ShowScorerCore(int id, const nativeVal_t *data, int deal, cons
 		cScorer_Clear(sc);
 	}
 	if (deal > 0) {
-		Mode_PrintedCall("Menu", "InitMenuSys", 0);
-		Mode_PrintedCall("Menu", "StartNewMenu", id);
+		MODE_PRINTED(Menu, InitMenuSys, "i", 0L);
+		MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	}
 	Mode_ModGetS("RacerScorer", "ScorerBotMessage", bottom, sizeof(bottom));
 	Mode_ModGetS("RacerScorer", "ScorerTopMessage", top, sizeof(top));
@@ -671,9 +647,8 @@ static void Racer_MissionScorerCore(int id) {
 	Racer_Run(id, "mission", pl ? Py_BuildValue("{s:O}", "limit", pl) : NULL);
 	Py_XDECREF(pl);
 	if (haveYou && haveBad) {
-		/* OBJLIB 3: by name, a mod or a case may replace it */
-		Mode_Printed(Native_CallMod("RacerScorer", "UpdateMissionScorer", NULL, "ivv", (long)id, &you, &bad),
-			"RacerScorer", "UpdateMissionScorer");
+		/* through the module: a mod or a case may replace it */
+		MODE_PRINTED(RacerScorer, UpdateMissionScorer, "ivv", (long)id, &you, &bad);
 	}
 	Native_Free(&bad);
 	Native_Free(&you);
@@ -690,23 +665,15 @@ RACER_SECTION(Racer_CreateTargetScorer, "target")
 RACER_SECTION(Racer_CreateWaypointScorer, "waypoint")
 RACER_SECTION(Racer_CreateRadarScorer, "radar")
 
-static PyObject *Racer_CreateRacer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Racer_CreateRacerCore(id);
-	return Py_ReturnNone();
-}
+MODE_IFN(Racer_CreateRacer, 1, (Racer_CreateRacerCore(id), 1))
 
 /* Create(id): both players in split screen */
 static void Racer_CreateCore(int id) {
 	if (Mode_ModGetI("Scorer", "SplitScreen", 0)) {
-		Mode_PrintedCall("RacerScorer", "CreateRacer", 0);
-		Mode_PrintedCall("RacerScorer", "CreateRacer", 1);
+		MODE_PRINTED(RacerScorer, CreateRacer, "i", 0L);
+		MODE_PRINTED(RacerScorer, CreateRacer, "i", 1L);
 	} else {
-		Mode_PrintedCall("RacerScorer", "CreateRacer", id);
+		MODE_PRINTED(RacerScorer, CreateRacer, "i", (long)id);
 	}
 }
 

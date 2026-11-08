@@ -4666,3 +4666,14 @@ portRef_t port_string_splitfields = { "string", "splitfields", NULL, Lib_Split, 
 portRef_t port_math_sqrt = { "math", "sqrt", NULL, Lib_MathSqrt, NULL, 0 };
 portRef_t port_math_fabs = { "math", "fabs", NULL, Lib_MathFabs, NULL, 0 };
 portRef_t port_math_fmod = { "math", "fmod", NULL, Lib_MathFmod, NULL, 0 };
+
+/* ---- the menus of stage 3 batch B11 ---- */
+
+byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control) {
+	const nativeVal_t *c = NULL;
+	if (!Mode_Parse(a, n, "i|O", id, &c)) {
+		return 0;
+	}
+	*control = c && c->type == NV_STR ? Native_Text(c) : "";
+	return 1;
+}
