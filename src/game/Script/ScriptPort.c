@@ -329,9 +329,11 @@ const portRef_t *Port_Find(const char *module, const char *name) {
 	return i < PORT_COUNT ? g_PortTable[i] : NULL;
 }
 
-/* OBJLIB 7: the counters of the callbacks, one site per ref of the table */
+/* OBJLIB 7: the counters of the callbacks, one site per ref of the table, and the C function object a callback of
+ * the ref was first bound to (a reference kept for the Python call of Port_CallbackFunc) */
 static portSite_t port_callbacks[PORT_COUNT];
 static portSite_t *port_callbackList;
+static PyObject *port_callbackFuncs[PORT_COUNT];
 
 portSite_t *Port_Callback(const char *module, const char *name, PyObject *f) {
 	for (int i = Port_Index(module, name); i < PORT_COUNT && !Port_Order(g_PortTable[i], module, name); i++) {
@@ -348,6 +350,8 @@ portSite_t *Port_Callback(const char *module, const char *name, PyObject *f) {
 			s->listed = 1;
 			s->next = port_callbackList;
 			port_callbackList = s;
+			Py_INCREF(f);
+			port_callbackFuncs[i] = f;
 		}
 		return s;
 	}
@@ -356,6 +360,10 @@ portSite_t *Port_Callback(const char *module, const char *name, PyObject *f) {
 
 portSite_t *Port_Callbacks(void) {
 	return port_callbackList;
+}
+
+PyObject *Port_CallbackFunc(const portSite_t *site) {
+	return port_callbackFuncs[site - port_callbacks];
 }
 
 byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r) {
