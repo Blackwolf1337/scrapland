@@ -4423,6 +4423,7 @@ PORT_DECLL(townhall, Mission_ApologizeMayor, Init) /* 1 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, ForbiddenMsg) /* 0 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, MayorSpeech) /* 4 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, SetTransportMission) /* 0 */
+PORT_DECLL(townhall, Mission_ApologizeMayor, ChooseStapler) /* ? */
 PORT_DECLL(townhall, Mission_ApologizeMayor, InitStaplerMission) /* 0 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, StaplerSpeech) /* 4 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, StaplerDead) /* 2 */
@@ -4446,6 +4447,7 @@ PORT_DECLL(townhall, Mission_SheriffMayor, InitStatus) /* 1 */
 PORT_DECLL(townhall, Mission_SheriffMayor, CreateMayor) /* 1 */
 PORT_DECLL(townhall, Mission_SheriffMayor, CreatePoliceBoss) /* 1 */
 PORT_DECLL(townhall, Mission_SheriffMayor, ReadyToTalk) /* 1 */
+PORT_DECLL(townhall, Mission_SheriffMayor, Blablibla) /* ? */
 PORT_DECLL(townhall, Mission_SheriffMayor, PoliceBossMissionSpeech) /* 4 */
 PORT_DECLL(townhall, Mission_SheriffMayor, OnPay) /* 1 */
 PORT_DECLL(townhall, Mission_SheriffMayor, SetNextMission) /* 0 */
@@ -4477,6 +4479,7 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_ApologizeMayor, ForbiddenMsg, ApologizeMayor_ForbiddenMsg) \
 	PORT_DEFL(townhall, Mission_ApologizeMayor, MayorSpeech, ApologizeMayor_MayorSpeech) \
 	PORT_DEFL(townhall, Mission_ApologizeMayor, SetTransportMission, ApologizeMayor_SetTransportMission) \
+	PORT_DEFLK(townhall, Mission_ApologizeMayor, ChooseStapler, ApologizeMayor_ChooseStapler) \
 	PORT_DEFL(townhall, Mission_ApologizeMayor, InitStaplerMission, ApologizeMayor_InitStaplerMission) \
 	PORT_DEFL(townhall, Mission_ApologizeMayor, StaplerSpeech, ApologizeMayor_StaplerSpeech) \
 	PORT_DEFL(townhall, Mission_ApologizeMayor, StaplerDead, ApologizeMayor_StaplerDead) \
@@ -4500,6 +4503,7 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_SheriffMayor, CreateMayor, SheriffMayor_CreateMayor) \
 	PORT_DEFL(townhall, Mission_SheriffMayor, CreatePoliceBoss, SheriffMayor_CreatePoliceBoss) \
 	PORT_DEFL(townhall, Mission_SheriffMayor, ReadyToTalk, SheriffMayor_ReadyToTalk) \
+	PORT_DEFLK(townhall, Mission_SheriffMayor, Blablibla, SheriffMayor_Blablibla) \
 	PORT_DEFL(townhall, Mission_SheriffMayor, PoliceBossMissionSpeech, SheriffMayor_PoliceBossMissionSpeech) \
 	PORT_DEFL(townhall, Mission_SheriffMayor, OnPay, SheriffMayor_OnPay) \
 	PORT_DEFL(townhall, Mission_SheriffMayor, SetNextMission, SheriffMayor_SetNextMission) \
