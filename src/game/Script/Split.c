@@ -16,10 +16,11 @@
  *
  * Direct calls (stage 3): the functions of Split call each other through PORT_OWN (the global, a mission may replace
  * one), the modes call their own functions and Split, and all call the other ports through PORT_CALL
- * (scrap/scriptnative.h: the port seam). What stays by name: the mode's InitStatus and Init through ModLib (a module
- * in a variable, OBJLIB 4), the calls given to the scheduler (ReSpawnShip, ReloadNext, BattonRepos, the race count
- * down; OBJLIB 4), and the functions held in variables (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc) and set as
- * values into Split and Vehicles (OBJLIB 5).
+ * (scrap/scriptnative.h: the port seam). The mode's InitStatus and Init through ModLib (a module in a variable,
+ * OBJLIB 5) and the functions held in variables (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc; OBJLIB 5) are called
+ * through the entries of port functions (PORT_VALUE); the calls given to the scheduler (ReSpawnShip, ReloadNext,
+ * BattonRepos, the race count down; OBJLIB 4) and the functions set as values into Split and Vehicles (OBJLIB 5) stay
+ * Python values.
  */
 #include <limits.h>
 #include <stdarg.h>
@@ -160,7 +161,7 @@ static byte Split_CreateUserShipC(const nativeVal_t *id) {
 	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !(fn = Mode_GlobalPy("Split", "FuncGetSpawnPos"))) {
 		return Mode_Done(&t, 0);
 	}
-	byte ok = Native_Call(fn, sp, "v", id);
+	byte ok = PORT_VALUE(fn, sp, "v", id);
 	Py_DECREF(fn);
 	if (!ok || !Native_Subscript(sp, Mode_I(&t, 0), at) || !Native_Subscript(at, Mode_I(&t, 0), x) ||
 		!Native_Subscript(at, Mode_I(&t, 1), y) || !Native_Subscript(at, Mode_I(&t, 2), z) || !Split_Name(&t, "Player", id, name) ||
@@ -186,10 +187,11 @@ static byte Split_CreateUserShipC(const nativeVal_t *id) {
 /* Init(): the mode's state, both players with ships, the deaths through OnDeathCallback, the ship choice */
 static byte Split_InitC(void) {
 	PyObject *mod = Mode_GlobalPy("Split", "ModLib");
-	PyObject *v = mod ? Script_Method(mod, "InitStatus", "()") : NULL;
+	PyObject *f = mod ? Script_GetAttr(mod, "InitStatus") : NULL;
+	byte ok = f && PORT_VALUE(f, NULL, "");
+	Py_XDECREF(f);
 	Py_XDECREF(mod);
-	Py_XDECREF(v);
-	if (!v || !Mode_GVarSetS("MainMissionEvent", "") || !Mode_Import("Menu") || !Mode_Import("Vehicles") ||
+	if (!ok || !Mode_GVarSetS("MainMissionEvent", "") || !Mode_Import("Menu") || !Mode_Import("Vehicles") ||
 		!PORT_OWN(Split, CreateUserShip, NULL, "i", 0L) || !PORT_OWN(Split, CreateUserShip, NULL, "i", 1L)) {
 		return 0;
 	}
@@ -215,7 +217,7 @@ static byte Split_ReSpawnShipC(const nativeVal_t *name) {
 	/* the handle of the ship goes to the spawn function (OBJLIB 7) */
 	const char *n = Native_Text(name);
 	PyObject *h = Mode_Handle(e);
-	byte ok = Native_Call(fn, sp, "O", h);
+	byte ok = PORT_VALUE(fn, sp, "O", h);
 	Py_DECREF(h);
 	Py_DECREF(fn);
 	cEntity *at = e ? World_FindEntity(n) : NULL;
@@ -243,7 +245,7 @@ static byte Split_OnDeathCallbackC(const nativeVal_t *looser, const nativeVal_t 
 		return Mode_Done(&t, 0);
 	}
 	int set = PyObject_IsTrue(fn);
-	byte ok = set >= 0 && (!set || Native_Call(fn, cb, "vv", looser, winner));
+	byte ok = set >= 0 && (!set || PORT_VALUE(fn, cb, "vv", looser, winner));
 	Py_DECREF(fn);
 	return Mode_Done(&t, ok);
 }
@@ -359,11 +361,12 @@ static byte Split_StartGameC(void) {
 	}
 	if (Native_True(first)) {
 		PyObject *mod = Mode_GlobalPy("Split", "ModLib");
-		PyObject *v = mod ? Script_Method(mod, "Init", "()") : NULL;
+		PyObject *f = mod ? Script_GetAttr(mod, "Init") : NULL;
+		byte ok = f && PORT_VALUE(f, NULL, "");
+		Py_XDECREF(f);
 		Py_XDECREF(mod);
-		Py_XDECREF(v);
 		Native_SetStr(msg, "Cu\xf1" "aaaao");
-		if (!v || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_PrintV(msg)) {
+		if (!ok || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_PrintV(msg)) {
 			return Mode_Done(&t, 0);
 		}
 	}

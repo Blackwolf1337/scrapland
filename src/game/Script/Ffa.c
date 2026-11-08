@@ -17,10 +17,11 @@
  *
  * Direct calls (stage 3): the functions call each other through the module globals and the other ports (Net,
  * Vehicles, OutMap, RacerScorer, Menu) through their refs (PORT_OWN, PORT_CALL; the seam takes the call by name when
- * a mode, a mission or a case has put something else there, OBJLIB 5). By name: ModLib, the module of the mode, read
- * at each call (its variables and functions, OBJLIB 4); the functions Net holds in its variables ClientJoin,
- * ClientCreate and ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5); the functions given to the scheduler
- * and to other modules as values (OBJLIB 4, 5).
+ * a mode, a mission or a case has put something else there, OBJLIB 5). ModLib, the module of the mode, is read at each
+ * call (its variables, OBJLIB 5; its functions through their entries, PORT_VALUE); the functions Net holds in its
+ * variables ClientJoin, ClientCreate and ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5) are bound by the
+ * engine to the entries of the functions they hold (Port_Callback); the functions given to the scheduler stay values
+ * (OBJLIB 4), the ones set into other modules are values of their variables (OBJLIB 5).
  */
 #include <limits.h>
 #include <stdlib.h>
@@ -49,7 +50,7 @@ static struct {
 
 /* ---- helpers ---- */
 
-/* ModLib.name, the object of the mode's module (a new reference; OBJLIB 4: the module is a variable) */
+/* ModLib.name, the object of the mode's module (a new reference; OBJLIB 5: the module is a variable) */
 static PyObject *Ffa_LibObj(const char *name) {
 	PyObject *lib = Script_Global("Ffa", "ModLib");
 	PyObject *o = lib ? PyObject_GetAttrString(lib, (char *)name) : NULL;
@@ -79,14 +80,15 @@ static int Ffa_Team(void) {
 	return t;
 }
 
-/* ModLib.name(...) (n of 0, 1 or 3 values), the result into out (NULL: dropped) */
+/* ModLib.name(...) (n of 0, 1 or 3 values) through the entry of the function there, the result into out (NULL:
+ * dropped) */
 static byte Ffa_Lib(const char *name, nativeVal_t *out, int n, const nativeVal_t *a, const nativeVal_t *b,
 	const nativeVal_t *c) {
 	PyObject *fn = Ffa_LibObj(name);
 	if (!fn) {
 		return 0;
 	}
-	byte ok = n == 0 ? Native_Call(fn, out, "") : n == 1 ? Native_Call(fn, out, "v", a) : Native_Call(fn, out, "vvv", a, b, c);
+	byte ok = n == 0 ? PORT_VALUE(fn, out, "") : n == 1 ? PORT_VALUE(fn, out, "v", a) : PORT_VALUE(fn, out, "vvv", a, b, c);
 	Py_DECREF(fn);
 	return ok;
 }

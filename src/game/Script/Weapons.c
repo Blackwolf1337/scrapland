@@ -11,8 +11,8 @@
  * called through their refs (directly while the module holds the port's function, else by name): Weapons.InitAmmo
  * and InitWeapons, LoadResources through the module (PORT_CALL), OnHit, OnServerHit and the creation functions the
  * hooks call through the module's globals (PORT_OWN). The net hooks (Script_Hook on Net's functions) and the function
- * that was in Net before stay variables (OBJLIB 5); the missiles are entity handles where they leave the module
- * (results, scheduled calls; OBJLIB 7).
+ * that was in Net before stay variables (OBJLIB 5), the latter called through its entry (MODE_CBGLOBAL); the missiles
+ * are entity handles where they leave the module (results, scheduled calls; OBJLIB 7).
  */
 #include <string.h>
 
@@ -134,11 +134,8 @@ static byte Weap_Client(const char *mod, const nativeVal_t *a, const char *exec,
 	if (eq) {
 		return exec ? Weap_NetExec(exec, &a[0]) : own(&a[0]);
 	}
-	/* OBJLIB 5: the function that was in Net, a variable of the module */
-	PyObject *f = Mode_GlobalPy(mod, last);
-	byte ok = f && Native_Call(f, NULL, "vv", &a[0], &a[1]);
-	Py_XDECREF(f);
-	return ok;
+	/* OBJLIB 5: the function that was in Net, a variable of the module, through its entry */
+	return MODE_CBGLOBAL(mod, last, NULL, "vv", &a[0], &a[1]);
 }
 
 /* ---- the missile of a countermeasure: the variables Create<mod> sets, in the order of the script ---- */
