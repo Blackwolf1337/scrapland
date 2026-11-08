@@ -1478,10 +1478,11 @@ static byte Parking_UseShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "OOOO|O", Pk_UseShipN, out);
 }
 
+static char *Parking_UseShip_N[] = { "UsrName", "CharName", "optId", "FullOption", "BoxName", NULL };
+
 static PyObject *Parking_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "UsrName", "CharName", "optId", "FullOption", "BoxName", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "OOOO|O", names, Pk_UseShipN);
+	return Mode_KwCall(args, kw, "OOOO|O", Parking_UseShip_N, Pk_UseShipN);
 }
 
 static PyObject *Parking_SetCameraStart(PyObject *self, PyObject *args, PyObject *kw) {
@@ -1505,10 +1506,11 @@ static byte Parking_CreateParkedShip_E(const nativeVal_t *a, int n, nativeVal_t 
 	return Mode_KwEntry(a, n, "OO|O", Pk_CreateParkedShipN, out);
 }
 
+static char *Parking_CreateParkedShip_N[] = { "Pos", "Angle", "Type", NULL };
+
 static PyObject *Parking_CreateParkedShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Pos", "Angle", "Type", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", names, Pk_CreateParkedShipN);
+	return Mode_KwCall(args, kw, "OO|O", Parking_CreateParkedShip_N, Pk_CreateParkedShipN);
 }
 
 PyMethodDef g_ParkingMethods[] = {

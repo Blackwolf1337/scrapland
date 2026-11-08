@@ -107,10 +107,11 @@ static byte ShipMaker_AddShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "OOOO|OO", Sm_AddShipK, out);
 }
 
+static char *ShipMaker_AddShip_N[] = { "name", "Mass", "Style", "Engine", "BoostTime", "TopBoostTime", NULL };
+
 static PyObject *ShipMaker_AddShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "name", "Mass", "Style", "Engine", "BoostTime", "TopBoostTime", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "OOOO|OO", names, Sm_AddShipK);
+	return Mode_KwCall(args, kw, "OOOO|OO", ShipMaker_AddShip_N, Sm_AddShipK);
 }
 
 /* (anm & bits) of the script with bits the global flag (ints in C; OBJLIB 9: other numbers the Python way): 1 when it
@@ -752,10 +753,11 @@ static byte ShipMaker_InitAnmShip_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	return Mode_KwEntry(a, n, "O|OOOO", Sm_InitAnmShipK, out);
 }
 
+static char *ShipMaker_InitAnmShip_N[] = { "model", "ch0", "ch1", "ch2", "ch3", NULL };
+
 static PyObject *ShipMaker_InitAnmShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "model", "ch0", "ch1", "ch2", "ch3", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "O|OOOO", names, Sm_InitAnmShipK);
+	return Mode_KwCall(args, kw, "O|OOOO", ShipMaker_InitAnmShip_N, Sm_InitAnmShipK);
 }
 
 MODE_FN(ShipMaker, SetShipPrice, 2, Sm_SetShipPriceN(&a[0], &a[1]))

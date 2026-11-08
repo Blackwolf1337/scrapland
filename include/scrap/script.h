@@ -443,6 +443,23 @@ byte Sf_ScorerDefault(scriptFrame_t *f, int id, const char *item);
 /* module.func(Py_BuildValue args) as a statement: the result dropped at once */
 byte Sf_Run(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...);
 /*
+ * the frame's calls of port functions through their refs (Port_Ask, include/scrap/scriptnative.h): fmt and the
+ * arguments of PORT_CALL (v, i a long, d, s, O; keywords after ';'), not of Py_BuildValue. Nothing after an error.
+ *   SF_CALL(f, Module, Func, fmt, ...)    Sf_Ask: the result kept by the frame
+ *   SF_OWN(f, Module, Func, fmt, ...)     Sf_Own: through the module's global
+ *   SF_RUN(f, Module, Func, fmt, ...)     Sf_Run: as a statement, the result dropped at once
+ *   SF_LCALL, SF_LOWN, SF_LRUN            the same for a module of a level (PORT_LEVEL)
+ */
+struct portSite_s;
+PyObject *Sf_Port(scriptFrame_t *f, struct portSite_s *site, const char *fmt, ...);
+byte Sf_PortRun(scriptFrame_t *f, struct portSite_s *site, const char *fmt, ...);
+#define SF_CALL(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_REF(module, name), 0), __VA_ARGS__)
+#define SF_OWN(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_REF(module, name), 1), __VA_ARGS__)
+#define SF_RUN(f, module, name, ...) Sf_PortRun(f, PORT_SITE(PORT_REF(module, name), 0), __VA_ARGS__)
+#define SF_LCALL(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_LREF(module, name), 0), __VA_ARGS__)
+#define SF_LOWN(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_LREF(module, name), 1), __VA_ARGS__)
+#define SF_LRUN(f, module, name, ...) Sf_PortRun(f, PORT_SITE(PORT_LREF(module, name), 0), __VA_ARGS__)
+/*
  * the tables of the level scripts (scenes, ship profiles): a value as text (len -1 for the whole text) is an int
  * ("205"), a float ("0.7"), "%Module.name" (an attribute of a module), "^Module.Func:text" (Module.Func("text")),
  * "'text" (always a string) or else a string; Sf_Calls runs lines "Module.Func|value|..." ("@Func" a global of module,

@@ -2095,10 +2095,11 @@ static byte SE_CreateShipFromSaveVar_E(const nativeVal_t *a, int n, nativeVal_t 
 	return Mode_KwEntry(a, n, "OO|O", SE_CreateShipFromSaveVarK, out);
 }
 
+static char *SE_CreateShipFromSaveVar_N[] = { "cad", "pos", "name", NULL };
+
 static PyObject *SE_CreateShipFromSaveVar(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "cad", "pos", "name", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", names, SE_CreateShipFromSaveVarK);
+	return Mode_KwCall(args, kw, "OO|O", SE_CreateShipFromSaveVar_N, SE_CreateShipFromSaveVarK);
 }
 
 PyMethodDef g_ShipEditMethods[] = {

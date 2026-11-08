@@ -268,9 +268,9 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
 int Native_Seam(const char *module, const char *name, PyObject **hook);
 /*
  * OBJLIB 3, 4 and 7: calls of Python callables with native arguments, for the calls between ports by name, the
- * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text,
- * O a PyObject * (borrowed). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg makes it. 0
- * with the error of the call.
+ * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text
+ * (NULL: None), O a PyObject * (borrowed). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg
+ * makes it. 0 with the error of the call.
  */
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
 /* the same with the result as it is (a new reference, NULL with the error): an entity handle or another object */
@@ -279,6 +279,24 @@ PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...);
 byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...);
 /* Native_HookCall on a va_list (the slow path of Port_Invoke) */
 byte Native_CallVa(PyObject *hook, nativeVal_t *out, const char *fmt, va_list va);
+/* the most arguments of one mini format (Native_ReadArgs) */
+#define NATIVE_ARGS 16
+/* one argument of the mini format as read from the arguments of the call: type the letter, then its value */
+typedef struct {
+	char type;
+	const nativeVal_t *v;
+	long i;
+	double d;
+	const char *s;
+	PyObject *o;
+} nativeArg_t;
+/* the arguments of fmt (at most NATIVE_ARGS) read from va into a: their count */
+int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a);
+/* one argument as Native_Call passes it: a new reference (a NULL text gives None, as for Py_BuildValue; a NULL object
+ * gives NULL without an error), NULL with the error of the conversion */
+PyObject *Native_ArgPy(const nativeArg_t *a);
+/* the tuple of n arguments (NULL as for one of them) */
+PyObject *Native_PyArgs(const nativeArg_t *a, int n);
 /* module.name(...) through the module attribute (an AttributeError when it is not there) */
 byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
 /* name(...) as a function of the module calls a global of its own (the NameError of the script when it is gone) */
@@ -365,10 +383,27 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
  *   PORT_OWN(Module, Func, out, fmt, ...)    Func(...) through the module's global, as a function of the module calls
  *                                            its own (Native_CallGlobal: the NameError of a deleted global)
  *   PORT_LCALL, PORT_LOWN                    the same for a module of a level (Map, Mission_X): its ref is named by
- *                                            the file's PORT_LEVEL (the level of its Levels.c entry, e.g. temple)
+ *                                            the file's PORT_LEVEL (the level of its Levels.c entry, e.g. temple; a
+ *                                            file with the modules of several levels defines it again before each
+ *                                            part, #undef first, or names the level at the call)
+ *   PORT_XCALL(level, Module, Func, ...)     PORT_LCALL and PORT_LOWN with the level named at the call
+ *   PORT_XOWN(level, Module, Func, ...)
+ *   PORT_ASK(Module, Func, fmt, ...)         Script_Ask: the result as the Python object the call gives (a new
+ *   PORT_LASK, PORT_OWNASK, PORT_LOWNASK     reference, NULL with the error), the fast path the entry's result as
+ *                                            its adapter returns it; the Sf_ forms SF_CALL, SF_RUN, SF_OWN are on it
+ *                                            (include/scrap/script.h)
  *
- * fmt and the arguments are those of Native_Call (v, i, d, s, O); out and the result as there. The ref of Module.Func
- * comes from include/scrap/scriptports.h (tools/script/ports.py makes it from the PyMethodDef tables).
+ * fmt and the arguments are those of Native_Call (v, i, d, s, O; a NULL s is None); out and the result as there. The
+ * ref of Module.Func comes from include/scrap/scriptports.h (tools/script/ports.py makes it from the PyMethodDef
+ * tables).
+ *
+ * Keyword arguments follow the positional letters after a ';', as name=letter separated by ',', their values after
+ * the positional ones: PORT_CALL(Speech, AutoAddNI, NULL, "s;HeadName=s", key, "DeepThroat") is
+ * Speech.AutoAddNI(key, HeadName = "DeepThroat"). The slow path passes them as the dict of keywords, in this order
+ * (Mode_CallKw); the fast path puts each one into the slot of the entry its name has (the names of the ref, from the
+ * <adapter>_N list of a keyword entry: MODE_KW, Mode_KwEntry), the slots between not given (Mode_KwSkip). A call the
+ * entry cannot take that way (a ref without names, a name it does not have, a slot given twice) goes the slow way and
+ * gets the error of the adapter.
  */
 
 /* the most arguments of a port function (Mode_Args) */
@@ -385,6 +420,7 @@ typedef struct {
 	const char *name;
 	PyCFunction adapter;		/* OBJLIB 5: what the attribute holds while it is the port's own function */
 	portEntry_t entry;
+	char **kw;			/* the names of the entry's slots for keyword calls, NULL for none */
 } portRef_t;
 
 /* a call site of PORT_CALL or PORT_OWN (one static per site) and the counts of the paths it took (OBJLIB 7) */
@@ -405,6 +441,9 @@ int Port_Seam(const portRef_t *ref, byte global, PyObject **hook);
 /* the call of a site: the seam, then the entry on the arguments packed with Native_Pass and the depth check of
  * Script_CallObject, or the call through Python of Native_HookCall */
 byte Port_Invoke(portSite_t *site, nativeVal_t *out, const char *fmt, ...);
+/* Port_Invoke with the result as the Python object the call gives (a new reference, NULL with the error) */
+PyObject *Port_Ask(portSite_t *site, const char *fmt, ...);
+PyObject *Port_AskVa(portSite_t *site, const char *fmt, va_list va);
 /* the TypeError of PyArg_ParseTuple for n arguments to a function of nargs: 0 */
 byte Port_Arity(int n, int nargs);
 /* the sites that ran since the start, the last one first (OBJLIB 7: the counters of the test channel) */
@@ -412,6 +451,7 @@ portSite_t *Port_Sites(void);
 
 #define PORT_REF(module, name) port_##module##_##name
 #define PORT_LREF(module, name) PORT_LREF1(PORT_LEVEL, module, name)
+#define PORT_XREF(level, module, name) PORT_LREF1(level, module, name)
 #define PORT_LREF1(level, module, name) PORT_LREF2(level, module, name)
 #define PORT_LREF2(level, module, name) port_##level##_##module##_##name
 #define PORT_SITE(pref, own) \
@@ -420,17 +460,29 @@ portSite_t *Port_Sites(void);
 #define PORT_OWN(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_REF(module, name), 1), out, __VA_ARGS__)
 #define PORT_LCALL(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_LREF(module, name), 0), out, __VA_ARGS__)
 #define PORT_LOWN(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_LREF(module, name), 1), out, __VA_ARGS__)
+#define PORT_XCALL(level, module, name, out, ...) Port_Invoke(PORT_SITE(PORT_XREF(level, module, name), 0), out, __VA_ARGS__)
+#define PORT_XOWN(level, module, name, out, ...) Port_Invoke(PORT_SITE(PORT_XREF(level, module, name), 1), out, __VA_ARGS__)
+#define PORT_ASK(module, name, ...) Port_Ask(PORT_SITE(PORT_REF(module, name), 0), __VA_ARGS__)
+#define PORT_OWNASK(module, name, ...) Port_Ask(PORT_SITE(PORT_REF(module, name), 1), __VA_ARGS__)
+#define PORT_LASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF(module, name), 0), __VA_ARGS__)
+#define PORT_LOWNASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF(module, name), 1), __VA_ARGS__)
 
 /* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
  * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL
  * for the modules of a level (the cast through void (*)(void) as in the tables: a keyword adapter has three
- * parameters) */
+ * parameters); PORT_DEFK and PORT_DEFLK for a keyword entry with the names of its slots (adapter_N) */
 #define PORT_DECL(module, name) extern portRef_t port_##module##_##name;
 #define PORT_DECLL(level, module, name) extern portRef_t port_##level##_##module##_##name;
 #define PORT_DEF(module, name, adapter) \
-	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E };
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, NULL };
 #define PORT_DEFL(level, module, name, adapter) \
-	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E };
+	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
+		NULL };
+#define PORT_DEFK(module, name, adapter) \
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, adapter##_N };
+#define PORT_DEFLK(level, module, name, adapter) \
+	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
+		adapter##_N };
 #define PORTS(file) PORTS_##file
 
 /* ---- the test channel ---- */

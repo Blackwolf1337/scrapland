@@ -2213,30 +2213,55 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
 	return Native_Raise(NE_SYSTEM, "error return without exception set");
 }
 
-/* the argument tuple of the mini format of Native_Call (NULL with the error set) */
-static PyObject *Native_Args(const char *fmt, va_list va) {
+int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
 	int n = (int)strlen(fmt);
-	PyObject *t = PyTuple_New(n);
-	for (int i = 0; t && i < n; i++) {
-		PyObject *o = NULL;
+	CHECK(n <= NATIVE_ARGS);
+	for (int i = 0; i < n; i++) {
+		a[i].type = fmt[i];
 		switch (fmt[i]) {
 		case 'v':
-			o = Native_ToPy(va_arg(va, const nativeVal_t *));
+			a[i].v = va_arg(va, const nativeVal_t *);
 			break;
 		case 'i':
-			o = PyInt_FromLong(va_arg(va, long));
+			a[i].i = va_arg(va, long);
 			break;
 		case 'd':
-			o = PyFloat_FromDouble(va_arg(va, double));
+			a[i].d = va_arg(va, double);
 			break;
 		case 's':
-			o = PyString_FromString((char *)va_arg(va, const char *));
+			a[i].s = va_arg(va, const char *);
 			break;
 		case 'O':
-			o = va_arg(va, PyObject *);
-			Py_XINCREF(o);
+			a[i].o = va_arg(va, PyObject *);
 			break;
 		}
+	}
+	return n;
+}
+
+PyObject *Native_ArgPy(const nativeArg_t *a) {
+	/* another letter fails the call without an error, as it always did */
+	switch (a->type) {
+	case 'v':
+		return Native_ToPy(a->v);
+	case 'i':
+		return PyInt_FromLong(a->i);
+	case 'd':
+		return PyFloat_FromDouble(a->d);
+	case 's':
+		/* a NULL text is None, as for Py_BuildValue */
+		return a->s ? PyString_FromString((char *)a->s) : Py_ReturnNone();
+	case 'O':
+		Py_XINCREF(a->o);
+		return a->o;
+	}
+	return NULL;
+}
+
+PyObject *Native_PyArgs(const nativeArg_t *a, int n) {
+	PyObject *t = PyTuple_New(n);
+	for (int i = 0; t && i < n; i++) {
+		PyObject *o = Native_ArgPy(&a[i]);
 		if (!o) {
 			Py_DECREF(t);
 			return NULL;
@@ -2244,6 +2269,13 @@ static PyObject *Native_Args(const char *fmt, va_list va) {
 		PyTuple_SET_ITEM(t, i, o);
 	}
 	return t;
+}
+
+/* the argument tuple of the mini format of Native_Call (NULL with the error set) */
+static PyObject *Native_Args(const char *fmt, va_list va) {
+	nativeArg_t a[NATIVE_ARGS];
+	int n = Native_ReadArgs(fmt, va, a);
+	return Native_PyArgs(a, n);
 }
 
 /* callable(args) (a reference taken over), the result into *out (NULL: dropped) */

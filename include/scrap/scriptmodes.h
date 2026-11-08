@@ -712,6 +712,8 @@ byte Mode_Set0I(const char *item, const char *var, long i);
 /* the failure of a call by name (ok 0) printed as the menus printed it ("Script: <module>.<func> failed" and the
  * error; OBJLIB 3 and 7): ok passed on */
 byte Mode_Printed(byte ok, const char *module, const char *func);
+/* PORT_CALL(Module, Func, NULL, fmt, ...) with its failure printed so (Script_Call, Mode_PrintedCall of a known name) */
+#define MODE_PRINTED(module, name, ...) Mode_Printed(PORT_CALL(module, name, NULL, __VA_ARGS__), #module, #name)
 
 /* Scrap.Get(name) through its seam: the value as Native_GVarGet gives it (the TypeError of "s" for a name that is no
  * text) */
@@ -927,7 +929,8 @@ PyObject *Mode_Entry(PyObject *args, portEntry_t entry);
 /* the core of a keyword function: its arguments by slot, NULL for one not given (the core applies the default) */
 typedef byte (*modeKwCore_t)(const nativeVal_t *const *a, nativeVal_t *out);
 /* the adapter of a keyword function of "O" arguments (fmt and names of PyArg_ParseTupleAndKeywords, up to PORT_ARGS)
- * through its core, the result as Mode_Entry gives it */
+ * through its core, the result as Mode_Entry gives it; the names at file scope as <adapter>_N give the ref the keyword
+ * calls (PORT_DEFK) */
 PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core);
 /* the entry of such a function: the n arguments given in order (the arity error of fmt), the others not given, and
  * an argument skipped with Mode_KwSkip not given (a required one: the arity error of the keywords) */
@@ -974,8 +977,10 @@ void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f);
 PyObject *Mode_KwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* a keyword function of a module (prefix pre): the format (letters O, | before the optional ones, up to 8) and the
  * names of its arguments, then the body of pre_name_K(v, given, out) on the slots of Mode_KwSlots (the defaults of the
- * script with Mode_KwDef*): pre_name_E, its entry, and pre_name, its adapter (Mode_KwAdapter) */
+ * script with Mode_KwDef*): pre_name_E, its entry, pre_name, its adapter (Mode_KwAdapter), and pre_name_N, the names
+ * (the keyword calls through its ref, PORT_DEFK) */
 #define MODE_KW(pre, name, fmt, ...) \
+	static char *pre##_##name##_N[] = { __VA_ARGS__, NULL }; \
 	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out); \
 	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
@@ -984,9 +989,8 @@ PyObject *Mode_KwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **n
 		return Mode_KwSlots(a, n, fmt, v, given) && pre##_##name##_K(v, given, out); \
 	} \
 	static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
-		static char *names[] = { __VA_ARGS__, NULL }; \
 		(void)self; \
-		return Mode_KwAdapter(args, kw, fmt, names, pre##_##name##_E); \
+		return Mode_KwAdapter(args, kw, fmt, pre##_##name##_N, pre##_##name##_E); \
 	} \
 	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out)

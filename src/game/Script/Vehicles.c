@@ -921,11 +921,12 @@ static byte Vehicles_SetProperties_E(const nativeVal_t *a, int n, nativeVal_t *o
 	return Mode_KwEntry(a, n, "OOOOOOOOOO|O", Veh_SetPropertiesN, out);
 }
 
-static PyObject *Vehicles_SetProperties(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "EntityName", "Model", "MaxLife", "Pilot", "Motor0", "Motor1", "Motor2", "Motor3", "WeapList",
+static char *Vehicles_SetProperties_N[] = { "EntityName", "Model", "MaxLife", "Pilot", "Motor0", "Motor1", "Motor2", "Motor3", "WeapList",
 		"PlayerName", "localedit", NULL };
+
+static PyObject *Vehicles_SetProperties(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
-	return Mode_KwCall(args, kw, "OOOOOOOOOO|O", names, Veh_SetPropertiesN);
+	return Mode_KwCall(args, kw, "OOOOOOOOOO|O", Vehicles_SetProperties_N, Veh_SetPropertiesN);
 }
 
 MODE_FN(Vehicles, ClientCreate, 2, Veh_ClientCreateN(&a[0], &a[1]))
