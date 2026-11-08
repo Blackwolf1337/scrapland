@@ -13,10 +13,10 @@
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
  * script reads them and write them back at once, the lists of Actors and LocalActors changed in place (OBJLIB 5).
  * The entities are handle values, the functions of the module are called through their refs as globals (PORT_OWN:
- * a level may replace one) and the callback as the value it holds. Scrap.Set, GetEntity, UsrEntity, CreateEntity, ConsoleError, OpenPack,
- * ClosePack, GetAlarm, the dummy search and the scheduler, the SAct calls, the voices, SScorer.SetLabelText,
- * SetMsgText, SetSpeechText and SetSpeechCallback and SInput.SetActionSet go through their seams (OBJLIB 7: the
- * cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof go through refs.
+ * a level may replace one) and the callback as the value it holds. Scrap.Set, GetEntity, UsrEntity, CreateEntity,
+ * ConsoleError, OpenPack, ClosePack, GetAlarm, the dummy search and the scheduler, the SAct calls, the voices,
+ * SScorer.SetLabelText, SetMsgText, SetSpeechText and SetSpeechCallback and SInput.SetActionSet go through their seams
+ * (OBJLIB 7: the cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof go through refs.
  * The lines the game execs (the generic lines of a scene, the sound lines of SetDefSounds and Load) go through the
  * exec reader (OBJLIB 6).
  */
@@ -107,7 +107,8 @@ static byte Sc_AddCharActor(const nativeVal_t *name, const nativeVal_t *cls) {
 	/* the global BaseAddActor is looked up after the path is made (the script looked it up first) */
 	return Mode_Done(&t, Mode_Import("MakeChar") &&
 		Mode_Cat(&t, path, 5, Mode_S(&t, "Models/Chars/"), cls, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) &&
-		PORT_OWN(Scene, BaseAddActor, NULL, "vvv", name, cls, path) && PORT_CALL(MakeChar, CreateRelaxAction, NULL, "vissi", cls, 0L, "Relax", "Relax", 1L) &&
+		PORT_OWN(Scene, BaseAddActor, NULL, "vvv", name, cls, path) &&
+		PORT_CALL(MakeChar, CreateRelaxAction, NULL, "vissi", cls, 0L, "Relax", "Relax", 1L) &&
 		PORT_CALL(MakeChar, AddDefMorphActions, NULL, "v", cls) && Mode_SActSet(1, "DefAction", "Relax", 0));
 }
 
@@ -142,7 +143,8 @@ static byte Sc_AddLocalActor(const nativeVal_t *name, const nativeVal_t *cls) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_Cat(&t, path, 6, ipath, Mode_S(&t, "/Map/"), scene, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) ||
-		!PORT_OWN(Scene, BaseAddActor, NULL, "vvv", name, cls, path) || !Mode_SActSet(1, "Discardable", NULL, 1) || !Mode_Read(SC, "SceneName", scene)) {
+		!PORT_OWN(Scene, BaseAddActor, NULL, "vvv", name, cls, path) || !Mode_SActSet(1, "Discardable", NULL, 1) ||
+		!Mode_Read(SC, "SceneName", scene)) {
 		return Mode_Done(&t, 0);
 	}
 	int has = Mode_HasKey(SC, "LocalActors", 1, scene);
@@ -328,7 +330,8 @@ static byte Sc_PlayText(const nativeVal_t *event) {
 	nativeVal_t *cads = Mode_V(&t), *c0 = Mode_V(&t), *key = Mode_V(&t), *time = Mode_V(&t);
 	/* the global SetText is looked up after its arguments (the script looked it up first) */
 	return Mode_Done(&t, Mode_Import("string") && Native_Split(event, "\001", cads) && LvN_Item(cads, 1, key) &&
-		LvN_Item(cads, 0, c0) && PORT_CALL(string, atoi, time, "v", c0) && PORT_OWN(Scene, SetText, NULL, "vv", key, time));
+		LvN_Item(cads, 0, c0) && PORT_CALL(string, atoi, time, "v", c0) &&
+		PORT_OWN(Scene, SetText, NULL, "vv", key, time));
 }
 
 /* SetText(Cad, Time): the voice of the language key on the next voice channel and its text (Time 0: the time the
@@ -649,7 +652,8 @@ static byte Sc_Play(const nativeVal_t *cls) {
 	Native_SetInt(Native_Append(ang), 0);
 	Native_Free(name);
 	if (!Mode_VSet(l, "Ang", ang) || !Mode_Cat(&t, name, 2, Mode_S(&t, "Scene"), cls) || !Mode_VSet(l, "ActCtrl", name) ||
-		!Mode_Cam0(cam) || !Mode_VObj(l, "Name", lname) || !Mode_VSet(cam, "EntityLink", lname) || !PORT_OWN(Scene, HideChars, NULL, "") ||
+		!Mode_Cam0(cam) || !Mode_VObj(l, "Name", lname) || !Mode_VSet(cam, "EntityLink", lname) ||
+		!PORT_OWN(Scene, HideChars, NULL, "") ||
 		!LvN_ModGet("Init", "Outdoor", outdoor) || (Native_True(outdoor) && !PORT_OWN(Scene, HideVehiclesToo, NULL, "")) ||
 		!Mode_UsrHandle(usr) || !Mode_Put(SC, "usr", NULL, usr) || !Mode_GVarSetI("PauseInactivityTime", 1) ||
 		!Mode_GVarSetI("CameraScene", 1) || !Mode_Import("Menu") || !PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) ||

@@ -459,7 +459,8 @@ static byte Metro_OnUse(nativeVal_t *params) {
 		return 0;
 	}
 	/* SScorer.SetOnCancel(0, "Menu.BackToGame") */
-	byte ok = Metro_MissionMap() && PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) && PORT_CALL(Menu, StartNewMenu, NULL, "i", 0L);
+	byte ok = Metro_MissionMap() && PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) &&
+		PORT_CALL(Menu, StartNewMenu, NULL, "i", 0L);
 	if (ok) {
 		cScorer *sc = Scorer_Get(0);
 		if (sc) {

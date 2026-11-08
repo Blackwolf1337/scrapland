@@ -739,7 +739,8 @@ static byte DTritus_Use(const nativeVal_t *a) {
 	}
 	int alarm = Mode_AlarmOn();
 	if (alarm) {
-		return Mode_Done(&t, alarm > 0 && PORT_CALL(Speech, AddRemoteCom, NULL, "ss", "Generics_DeepThroatTaunt_1", "DeepThroat"));
+		return Mode_Done(&t, alarm > 0 &&
+			PORT_CALL(Speech, AddRemoteCom, NULL, "ss", "Generics_DeepThroatTaunt_1", "DeepThroat"));
 	}
 	/* OBJLIB 5: the mission's talk function, the variable read again and called as the value it holds */
 	return Mode_Done(&t, Native_CallGlobal("DTritusDesktop", "DialogController", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]));
