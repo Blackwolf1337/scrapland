@@ -2184,8 +2184,9 @@ static byte Dom_InitC(void) {
 	byte ok = Mode_Import("Parking") && Mode_Import("Chars") && Sd_CameraFor(libs, "OM") &&
 		Sd_PreloadVar(DOM, "BatonModel", &dom.model) && Mode_ModSetGlobal("Chars", "OnMainCharDeath", DOM, "OnPlayerDeath") &&
 		Sd_SpawnTime(DOM, &dom.onDeathSpawnTime, "DominationOnDeathSpawnTime") &&
-		Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 1) && OWN(DOM, "CreateEnemies", NULL, "") &&
-		OWN(DOM, "CreateFriends", NULL, "") && Mode_GVarSetS("OnDominFriendDeath", "Domination.OnFriendDeath") &&
+		Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 1) && PORT_OWN(Domination, CreateEnemies, NULL, "") &&
+		PORT_OWN(Domination, CreateFriends, NULL, "") &&
+		Mode_GVarSetS("OnDominFriendDeath", "Domination.OnFriendDeath") &&
 		Mode_GVarSetS("OnDominEnemyDeath", "Domination.OnEnemyDeath") && Mode_Read(DOM, "enemies", &dom.enemies) &&
 		Sd_MarkShips(&dom.enemies, "red", "DominationEnemies") && Mode_Read(DOM, "enemies", &dom.enemies) &&
 		Mode_Item(&dom.enemies, 0, &first) && Mode_GVarSet("LeaderName", &first) && Mode_Read(DOM, "friends", &dom.friends) &&
@@ -2229,7 +2230,7 @@ static byte Dom_ReleaseBatonC(void) {
 		return 0;
 	}
 	if (Native_True(&dom.userWithBaton) && (!Mode_Later(0.5, DOM, "LostBatonMessage", NULL, 0, NULL) ||
-		!Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) || !OWN(DOM, "CreateBaton", NULL, ""))) {
+		!Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) || !PORT_OWN(Domination, CreateBaton, NULL, ""))) {
 		return 0;
 	}
 	return Dom_HideZones();
@@ -2245,7 +2246,7 @@ static byte Sd_LostBaton(const char *key) {
 	Native_SetFloat(&now, Mode_Time());
 	Native_SetNone(&len);
 	Native_SetNone(&t);
-	byte ok = CALL("Speech", "CalculateSpeechTime", &len, "v", &cad) && Native_Arith('+', &now, &len, &t) &&
+	byte ok = PORT_CALL(Speech, CalculateSpeechTime, &len, "v", &cad) && Native_Arith('+', &now, &len, &t) &&
 		Native_ArgDouble(&t, &d) && Mode_MsgText(&cad, d);
 	Native_Free(&cad);
 	Native_Free(&len);
@@ -2302,7 +2303,7 @@ static byte Dom_CreateTeam(byte enemy) {
 		ok = Mode_Item(spawns, i, sp) && Mode_Item(sp, 0, pos) && Mode_Item(sp, 1, ang) &&
 			Sd_Create(name, pos, "Car", e) && Mode_VSetS(e, "WeapList", "15,15,15,15,15,0") &&
 			(!enemy || Mode_VSetI(e, "LaunchTaunts", 0)) && Mode_SetAng(e, ang) && (!enemy || i || Mode_VSetI(e, "Money", -1)) &&
-			OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) && Mode_AppendName(DOM, enemy ? "enemies" : "friends", e) &&
+			PORT_OWN(Domination, SetProfile, NULL, "vi", e, (long)enemy) && Mode_AppendName(DOM, enemy ? "enemies" : "friends", e) &&
 			Mode_VGet(e, "Name", en) && CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, en);
 		Mode_Release(&t, mark);
 	}
@@ -2375,7 +2376,7 @@ static byte Dom_CreateBatonC(const nativeVal_t *given) {
 		Mode_RandomVisPoint(&pos);
 	}
 	byte ok = Sd_Baton(DOM, &pos, "Domination.TakeBaton", &l) && Mode_VSetI(&l, "RadarShow", 1) && Mode_Import("Items") &&
-		CALL("Items", "SetSound", NULL, "vs", &l, "TakeBDataPack") && Sd_BatonArrow(&l, &pos, &l2) && Sd_BatonTarget(&l2) &&
+		PORT_CALL(Items, SetSound, NULL, "vs", &l, "TakeBDataPack") && Sd_BatonArrow(&l, &pos, &l2) && Sd_BatonTarget(&l2) &&
 		Sd_BatonState(&pos, 0) && Dom_HideZones();
 	Native_Free(&pos);
 	Native_Free(&l);
@@ -2387,7 +2388,7 @@ MODE_KW(Dom, CreateBaton, "|O", "pos") {
 	return Dom_CreateBatonC(&v[0]);
 }
 
-/* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) */
+/* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) (mod.func a value, OBJLIB 4) */
 static byte Sd_GamblerKey(const char *key, const char *mod, const char *func) {
 	nativeVal_t none;
 	PyObject *fn = Mode_GlobalPy(mod, func);
@@ -2395,7 +2396,7 @@ static byte Sd_GamblerKey(const char *key, const char *mod, const char *func) {
 		return 0;
 	}
 	Native_SetEmpty(&none, NV_TUPLE);
-	byte ok = CALL("Speech", "AddRemoteCom", NULL, "ssOv", key, CG, fn, &none);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, CG, fn, &none);
 	Py_DECREF(fn);
 	return ok;
 }
@@ -2433,7 +2434,7 @@ static byte Dom_CrazyGamblerStartDominationC(void) {
 		first = Native_IsStr(v, "0");
 	}
 	if (!first) {
-		return Mode_Done(&t, OWN(DOM, "StartDomination", NULL, ""));
+		return Mode_Done(&t, PORT_OWN(Domination, StartDomination, NULL, ""));
 	}
 	if (!Sd_PutI(DOM, "CrazyGamblerStartDominationFirst", &dom.startFirst, 0)) {
 		return Mode_Done(&t, 0);
@@ -2442,7 +2443,7 @@ static byte Dom_CrazyGamblerStartDominationC(void) {
 	Native_Free(v);
 	Mode_SaveVar("DominationStartTextCad", v);
 	Native_SetEmpty(fn, NV_TUPLE);
-	byte ok = f && CALL("Speech", "AddRemoteCom", NULL, "vsOv", v, CG, f, fn);
+	byte ok = f && PORT_CALL(Speech, AddRemoteCom, NULL, "vsOv", v, CG, f, fn);
 	Py_XDECREF(f);
 	return Mode_Done(&t, ok);
 }
@@ -2473,8 +2474,8 @@ static byte Dom_StartDominationC(void) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("DominationRounds", rounds);
-	if (!CALL("RacerScorer", "InitMissionScorer", NULL, "vvv", a, b, rounds) ||
-		!Mode_ModSetGlobal("Menu", "MissionScorerCall", DOM, "MissionScorer") || !OWN(DOM, "MissionScorer", NULL, "i", 0L) ||
+	if (!PORT_CALL(RacerScorer, InitMissionScorer, NULL, "vvv", a, b, rounds) ||
+		!Mode_ModSetGlobal("Menu", "MissionScorerCall", DOM, "MissionScorer") || !PORT_OWN(Domination, MissionScorer, NULL, "i", 0L) ||
 		!Mode_Read(DOM, "zones", &dom.zones)) {
 		return Mode_Done(&t, 0);
 	}
@@ -2483,7 +2484,7 @@ static byte Dom_StartDominationC(void) {
 	for (int i = 0; ok && i < n; i++) {
 		nativeVal_t pos;
 		Native_SetNone(&pos);
-		ok = Mode_Read(DOM, "zones", &dom.zones) && Mode_Item(&dom.zones, i, &pos) && OWN(DOM, "CreateZone", NULL, "iv", (long)i, &pos);
+		ok = Mode_Read(DOM, "zones", &dom.zones) && Mode_Item(&dom.zones, i, &pos) && PORT_OWN(Domination, CreateZone, NULL, "iv", (long)i, &pos);
 		Native_Free(&pos);
 	}
 	if (!ok || !Mode_Read(DOM, "zones", &dom.zones)) {
@@ -2494,7 +2495,7 @@ static byte Dom_StartDominationC(void) {
 	} else if (!CALL("SLogic", "SetDominationZones", NULL, "v", &dom.zones)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, OWN(DOM, "CreateBaton", NULL, ""));
+	return Mode_Done(&t, PORT_OWN(Domination, CreateBaton, NULL, ""));
 }
 
 MODE_FN(Dom, StartDomination, 0, Dom_StartDominationC())
@@ -2526,7 +2527,7 @@ static byte Dom_Took(long state, long user, const nativeVal_t *ship, const nativ
 		Native_SetInt(Native_Append(&zero), 0);
 	}
 	byte ok = Sd_BatonState(&zero, state) && Sd_PutI(DOM, "userWithBaton", &dom.userWithBaton, user) &&
-		(!usr || Mode_VGet(usr, "Name", &un)) && Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, usr ? &un : ship) && CALL("Speech", "ForceRemoteCom", NULL, "ss", key, CG) &&
+		(!usr || Mode_VGet(usr, "Name", &un)) && Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, usr ? &un : ship) && PORT_CALL(Speech, ForceRemoteCom, NULL, "ss", key, CG) &&
 		Mode_Sound(snd, vol);
 	Native_Free(&zero);
 	Native_Free(&un);
@@ -2681,8 +2682,8 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
 	if (Native_Compare(own, numZones) < 0) {
-		return Mode_Done(&t, CALL("Speech", "ForceRemoteCom", NULL, "ss", enemy ? "SuperDeal_DominationRemoteMessage4" :
-			"SuperDeal_DominationRemoteMessage3", CG)) ? 1 : -1;
+		return Mode_Done(&t, PORT_CALL(Speech, ForceRemoteCom, NULL, "ss",
+			enemy ? "SuperDeal_DominationRemoteMessage4" : "SuperDeal_DominationRemoteMessage3", CG)) ? 1 : -1;
 	}
 	/* the round won: the rounds of the side counted in its save variable */
 	Native_SetInt(one, 1);
@@ -2697,7 +2698,7 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
 	if (Native_Compare(won, dr) >= 0) {
-		return Mode_Done(&t, OWN(DOM, "EndOfDomination", NULL, "i", enemy ? 0L : 1L)) ? 1 : -1;
+		return Mode_Done(&t, PORT_OWN(Domination, EndOfDomination, NULL, "i", enemy ? 0L : 1L)) ? 1 : -1;
 	}
 	if (enemy) {
 		return Mode_Done(&t, Sd_Update(pr, er) && Sd_GamblerKey("SuperDeal_DominationRemoteMessage2", DOM, "RestartDomination")) ? 1 : -1;
@@ -2765,7 +2766,7 @@ static byte Dom_TakeZoneC(const nativeVal_t *item, const nativeVal_t *who) {
 		}
 		double d;
 		Mode_Lang("SuperDeal_Domination_SystemMessage", cad);
-		return Mode_Done(&t, CALL("Speech", "CalculateSpeechTime", len, "v", cad) && Native_Arith('+', now, len, mt) &&
+		return Mode_Done(&t, PORT_CALL(Speech, CalculateSpeechTime, len, "v", cad) && Native_Arith('+', now, len, mt) &&
 			Mode_Put(DOM, "msgTime", &dom.msgTime, mt) && Mode_Read(DOM, "msgTime", &dom.msgTime) &&
 			Native_ArgDouble(&dom.msgTime, &d) && Mode_MsgText(cad, d));
 	}
@@ -2797,13 +2798,15 @@ static byte Dom_ActivateZoneC(const nativeVal_t *item) {
 
 MODE_FN(Dom, ActivateZone, 1, Dom_ActivateZoneC(&a[0]))
 /* RestartDomination(): the next round in the level again */
-MODE_FN(Dom, RestartDomination, 0, Mode_Import("SaveGame") && CALL("SaveGame", "Restart", NULL, ""))
+MODE_FN(Dom, RestartDomination, 0, Mode_Import("SaveGame") && PORT_CALL(SaveGame, Restart, NULL, ""))
 
-/* the baton drops at the dead ship: DOM.CreateBaton(dead.Pos) (and MortalRace) */
-static byte Sd_BatonAt(const char *mod, const nativeVal_t *dead) {
+/* the baton drops at the dead ship: CreateBaton(dead.Pos) of Domination (race 0) or MortalRace (race 1) */
+static byte Sd_BatonAt(byte race, const nativeVal_t *dead) {
 	nativeVal_t pos;
 	Native_SetNone(&pos);
-	byte ok = Mode_VGet(dead, "Pos", &pos) && OWN(mod, "CreateBaton", NULL, "v", &pos);
+	byte ok = Mode_VGet(dead, "Pos", &pos) &&
+		(race ? PORT_OWN(MortalRace, CreateBaton, NULL, "v", &pos) :
+		PORT_OWN(Domination, CreateBaton, NULL, "v", &pos));
 	Native_Free(&pos);
 	return ok;
 }
@@ -2815,7 +2818,7 @@ static byte Dom_OnPlayerDeathC(const nativeVal_t *loser) {
 	Native_SetNone(&dead);
 	byte ok = Mode_EntityH(loser, &dead) && Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton);
 	if (ok && Sd_Eq(&dom.shipWithBaton, loser)) {
-		ok = Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) && Sd_BatonAt(DOM, &dead);
+		ok = Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) && Sd_BatonAt(0, &dead);
 	}
 	Native_Free(&dead);
 	return ok && Dom_HideZones() && Sd_RespawnLater(DOM, &dom.onDeathSpawnTime, loser);
@@ -2827,7 +2830,7 @@ MODE_FN(Dom, OnPlayerDeath, 2, Dom_OnPlayerDeathC(&a[0]))
  * list.remove(loser) (the start of OnEnemyDeath and OnFriendDeath) */
 static byte Dom_Dead(const nativeVal_t *loser, const nativeVal_t *winner, const char *list, nativeVal_t *slot,
 	nativeVal_t *dead) {
-	return Mode_Import("Vehicles") && CALL("Vehicles", "OnDeath", NULL, "vv", loser, winner) && Mode_EntityH(loser, dead) &&
+	return Mode_Import("Vehicles") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", loser, winner) && Mode_EntityH(loser, dead) &&
 		Mode_VSetS(dead, "EntityList", "") && Sd_RemoveIn(DOM, list, slot, loser);
 }
 
@@ -2853,7 +2856,7 @@ static byte Dom_OnEnemyDeathC(const nativeVal_t *loser, const nativeVal_t *winne
 	}
 	Native_SetStr(empty, "");
 	if (Sd_Eq(&dom.shipWithBaton, leader) && (!Mode_GVarSetS("CurrentWaypointName", "") ||
-		!Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, empty) || !Sd_BatonAt(DOM, dead))) {
+		!Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, empty) || !Sd_BatonAt(0, dead))) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_GVarSetS("LeaderName", ""));
@@ -2894,7 +2897,7 @@ static byte Dom_Respawn(byte enemy, const nativeVal_t *leader) {
 		!Mode_VSetS(e, "WeapList", "15,15,15,15,15,0") || (enemy ? !Mode_VSetI(e, "LaunchTaunts", 0) : !Mode_VSetI(e, "Money", -1)) ||
 		!Mode_Item(sp, 1, ang) || !Mode_SetAng(e, ang) || !Mode_VSetS(e, "TgType", enemy ? "red" : "green") ||
 		!Mode_VSetS(e, "EntityList", enemy ? "DominationEnemies" : "DominationFriends") || (lead && !Mode_VSetI(e, "Money", -1)) ||
-		!OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) ||
+		!PORT_OWN(Domination, SetProfile, NULL, "vi", e, (long)enemy) ||
 		(enemy && Native_True(leader) && (!Mode_VGet(e, "Name", name) || !Mode_GVarSet("LeaderName", name)))) {
 		return Mode_Done(&t, 0);
 	}
@@ -2923,7 +2926,8 @@ static byte Dom_EndOfDominationC(const nativeVal_t *wins) {
 	return Mode_Import("Menu") && Mode_Import("Parking") && Mode_Read(DOM, "enemies", &dom.enemies) &&
 		Dom_Freeze(&dom.enemies) && Mode_Read(DOM, "friends", &dom.friends) && Dom_Freeze(&dom.friends) && Sd_ScorerOff() &&
 		Mode_ModNone("Parking", "SwitchCharMissionCallback") && Mode_ModNone("Parking", "SwitchVehicleMissionCallback") &&
-		OWN(DOM, Native_True(wins) ? "PreOnVictory" : "PreRestartMenu", NULL, "");
+		(Native_True(wins) ? PORT_OWN(Domination, PreOnVictory, NULL, "") :
+		PORT_OWN(Domination, PreRestartMenu, NULL, ""));
 }
 
 MODE_FN(Dom, EndOfDomination, 1, Dom_EndOfDominationC(&a[0]))
@@ -2933,7 +2937,7 @@ MODE_FN(Dom, PreRestartMenu, 0, Sd_PreEnd(0, "DominationFinishPlayerLoosesTextCa
 static byte Dom_RestartDominC(void) {
 	Mode_SaveS("PlayerRounds", "0");
 	Mode_SaveS("EnemyRounds", "0");
-	return CALL("SaveGame", "Restart", NULL, "");
+	return PORT_CALL(SaveGame, Restart, NULL, "");
 }
 
 MODE_FN(Dom, RestartDomin, 2, Dom_RestartDominC())
@@ -2981,7 +2985,7 @@ static byte Dom_MissionScorerC(const nativeVal_t *id) {
 	return Mode_Import("RacerScorer") &&
 		Dom_ScorerText(id, "PlayerZonesText", 80, -5, "SuperDeal_DominationPlayerZones", "playerZones", &dom.playerZones) &&
 		Dom_ScorerText(id, "EnemyZonesText", 105, 20, "SuperDeal_DominationEnemyZones", "enemyZones", &dom.enemyZones) &&
-		CALL("RacerScorer", "MissionScorer", NULL, "v", id);
+		PORT_CALL(RacerScorer, MissionScorer, NULL, "v", id);
 }
 
 MODE_FN(Dom, MissionScorer, 1, Dom_MissionScorerC(&a[0]))
@@ -3886,7 +3890,7 @@ MODE_FN(Mr, RacersAttackShip, 1, Mr_RacersAttackShipC(&a[0]))
 static byte Mr_DropBaton(const nativeVal_t *dead) {
 	nativeVal_t pos;
 	Native_SetNone(&pos);
-	byte ok = Sd_BatonAt(MR, dead) && Mode_VGet(dead, "Pos", &pos) && Mr_MoveLater(0.2, &pos);
+	byte ok = Sd_BatonAt(1, dead) && Mode_VGet(dead, "Pos", &pos) && Mr_MoveLater(0.2, &pos);
 	Native_Free(&pos);
 	return ok;
 }
