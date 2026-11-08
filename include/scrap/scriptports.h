@@ -589,6 +589,39 @@ PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 #define PORTS_MakeChar \
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
 
+/* MenuHud.c */
+PORT_DECL(Scorer, ShowMissionScorer) /* ? */
+PORT_DECL(Scorer, Blink) /* ? */
+PORT_DECL(Scorer, MissionScorerBar_SetDefaults) /* ? */
+PORT_DECL(CharScorer, Create) /* 1 */
+PORT_DECL(RacerScorer, CreateWeaponScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateCannonScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateTargetScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateWaypointScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateRadarScorer) /* 1 */
+PORT_DECL(RacerScorer, Create) /* 1 */
+PORT_DECL(RacerScorer, ShowScorer) /* ? */
+PORT_DECL(RacerScorer, InitMissionScorer) /* ? */
+PORT_DECL(RacerScorer, MissionScorer) /* 1 */
+PORT_DECL(RacerScorer, MissionScorerTeam) /* 1 */
+PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
+#define PORTS_MenuHud \
+	PORT_DEF(Scorer, ShowMissionScorer, Scorer_ShowMissionScorer) \
+	PORT_DEF(Scorer, Blink, Scorer_Blink) \
+	PORT_DEF(Scorer, MissionScorerBar_SetDefaults, Scorer_MissionScorerBar_SetDefaults) \
+	PORT_DEF(CharScorer, Create, CharScorer_Create) \
+	PORT_DEF(RacerScorer, CreateWeaponScorer, Racer_CreateWeaponScorer) \
+	PORT_DEF(RacerScorer, CreateCannonScorer, Racer_CreateCannonScorer) \
+	PORT_DEF(RacerScorer, CreateTargetScorer, Racer_CreateTargetScorer) \
+	PORT_DEF(RacerScorer, CreateWaypointScorer, Racer_CreateWaypointScorer) \
+	PORT_DEF(RacerScorer, CreateRadarScorer, Racer_CreateRadarScorer) \
+	PORT_DEF(RacerScorer, Create, Racer_Create) \
+	PORT_DEF(RacerScorer, ShowScorer, Racer_ShowScorer) \
+	PORT_DEF(RacerScorer, InitMissionScorer, Racer_InitMissionScorer) \
+	PORT_DEF(RacerScorer, MissionScorer, Racer_MissionScorer) \
+	PORT_DEF(RacerScorer, MissionScorerTeam, Racer_MissionScorerTeam) \
+	PORT_DEF(RacerScorer, UpdateMissionScorer, Racer_UpdateMissionScorer)
+
 /* MisItems.c */
 PORT_DECL(MisItems, OnVehicleDeat) /* 1 */
 PORT_DECL(MisItems, GetTargetReward) /* 1 */
