@@ -1660,7 +1660,7 @@ static byte GoWithHuman_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const last[] = { "GameAct", "Epilogue", "Press.MentalControllerStatus", "0", NULL };
 	(void)a;
 	(void)out;
-	if (!LvN_MissionChar("Human_Entrance", GW, "CreateHuman")) {
+	if (!LV_MISSIONCHAR("Human_Entrance", Mission_GoWithHuman, CreateHuman)) {
 		return 0;
 	}
 	Mode_Saves(first);
@@ -1707,7 +1707,8 @@ static byte GoWithHuman_Init(const nativeVal_t *a, nativeVal_t *out) {
 	ok = ok && Mode_VSet(sw, "Ang", ang) && LvN_SetI(sw, "ActiveCMask", 0) && LvN_SetI(sw, "MapCollision", 1) && Mode_VSet(sw, "CamTgt", cam) &&
 		LvN_TargetName(sw) && Mode_UsrHandle(usr) && LvN_HumanFollow(GW, usr) && LvN_GActivate(GW, "human", 2) &&
 		PR_HOOK("CharConversor", "OnPossession", GW, "OnPossession") && PR_HOOK("CharConversor", "afterExitConversor", GW, "OnExitConversor") &&
-		LV_OWN(GW, "CheckMaxDist", NULL, "") && LV_OWN(GW, "LoadScene", NULL, "") && LV_OWN(GW, "LoadScene2", NULL, "");
+		PORT_LOWN(Mission_GoWithHuman, CheckMaxDist, NULL, "") && LV_OWN(GW, "LoadScene", NULL, "") &&
+		PORT_LOWN(Mission_GoWithHuman, LoadScene2, NULL, "");
 	return Mode_Done(&t, ok);
 }
 
@@ -1747,7 +1748,7 @@ static byte GoWithHuman_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
-	int near = LvN_GAttr(GW, "human", "Name", hn) && LV_OWN(GW, "CheckHumanDist", r, "") ? Native_True(r) : -1;
+	int near = LvN_GAttr(GW, "human", "Name", hn) && PORT_LOWN(Mission_GoWithHuman, CheckHumanDist, r, "") ? Native_True(r) : -1;
 	if (near == 0) {
 		int moving = LV_CALL("SAI", "GetStateChar", st, "v", hn) ? Mode_CmpI(st, "!=", 0) : -1;
 		return Mode_Done(&t, moving >= 0 && (!moving || (CHAR_STATE("iv", 0L, hn) && Pr_Remote("Mission_GoWithHuman_RemoteMessage1", "Human", NULL,
@@ -1798,11 +1799,11 @@ static byte Gw_LoadNextMission(void) {
 		}
 	}
 	Mode_Saves(saves);
-	if (!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_BeforeFinalFight", "GamblinDen")) {
+	if (!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_BeforeFinalFight", "GamblinDen")) {
 		return 0;
 	}
 	SaveVar_Set("Map", "Levels/GamblinDen");
-	return LV_CALL("SaveGame", "QLoad", NULL, "s", "Levels/GamblinDen");
+	return PORT_CALL(SaveGame, QLoad, NULL, "s", "Levels/GamblinDen");
 }
 
 static PyObject *GoWithHuman_LoadNextMission(PyObject *self, PyObject *args, PyObject *kw) {
@@ -1932,16 +1933,16 @@ static byte Pr_FakeSpeech(const char *name, const char *ctrl, const char *talk) 
 	return ok;
 }
 
-/* Scrap.Set("NewsHead", "FakeSpeech"); Scrap.Set("NewsPanelShowHead", 1); NormCamera() */
-static byte Pr_FakeSpeechShow(const char *module) {
-	return Mode_GVarSetS("NewsHead", "FakeSpeech") && Mode_GVarSetI("NewsPanelShowHead", 1) && LV_OWN(module, "NormCamera", NULL, "");
+/* Scrap.Set("NewsHead", "FakeSpeech"); Scrap.Set("NewsPanelShowHead", 1) (the caller then calls its NormCamera) */
+static byte Pr_FakeSpeechShow(void) {
+	return Mode_GVarSetS("NewsHead", "FakeSpeech") && Mode_GVarSetI("NewsPanelShowHead", 1);
 }
 
 /* CreateFakeSpeech(): the boss on the news panel */
 static byte GoWithHuman_CreateFakeSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Pr_FakeSpeech("FakeSpeech", "Boss", NULL) && Pr_FakeSpeechShow(GW);
+	return Pr_FakeSpeech("FakeSpeech", "Boss", NULL) && Pr_FakeSpeechShow() && PORT_LOWN(Mission_GoWithHuman, NormCamera, NULL, "");
 }
 
 LV_FN(GoWithHuman, InitStatusA, 1, GoWithHuman_InitStatus)
@@ -1981,7 +1982,7 @@ static byte ArchbishopKilled_SetNextMission(const nativeVal_t *a, nativeVal_t *o
 		"Press", "Journalist.Betty_Defaut", "Press", "Journalist.Berto_Defaut", "Temple", NULL };
 	(void)a;
 	(void)out;
-	if (!Pr_UsrBack(5670, 163, -283, -110, 1.0) || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_ArchbishopDead", "Temple") ||
+	if (!Pr_UsrBack(5670, 163, -283, -110, 1.0) || !PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_ArchbishopDead", "Temple") ||
 		!Mode_MMDesc("Mission_ArchBishopKilled_MissionText1", 1)) {
 		return 0;
 	}
@@ -2036,9 +2037,9 @@ static byte IntroHuman2_LaunchHumphreySpeech(const nativeVal_t *a, nativeVal_t *
 			Native_Arith('+', x, Mode_I(&t, 180), Native_Append(ang)));
 	}
 	ok = ok && Mode_VSet(h, "Ang", ang) && LvN_OnEnd(IH, "SetNextMission", NULL) && Mode_VGet(usr, "Name", un) && Mode_VGet(h, "Name", hn) &&
-		LvN_Speakers(un, hn) && LV_CALL("Speech", "NISpeech", NULL, "s", "Humphrey") &&
-		LV_CALL("Speech", "AddNI", NULL, "ss", "Mission_IntroHuman_Humphrey_InitMsg1", "Mission_IntroHuman_Humphrey_InitAns1") &&
-		LV_CALL("Speech", "RunNI", NULL, "");
+		LvN_Speakers(un, hn) && PORT_CALL(Speech, NISpeech, NULL, "s", "Humphrey") &&
+		PORT_CALL(Speech, AddNI, NULL, "ss", "Mission_IntroHuman_Humphrey_InitMsg1", "Mission_IntroHuman_Humphrey_InitAns1") &&
+		PORT_CALL(Speech, RunNI, NULL, "");
 	return Mode_Done(&t, ok);
 }
 
@@ -2117,7 +2118,7 @@ static byte PressMeeting_SetNextMission(const nativeVal_t *a, nativeVal_t *out) 
 	(void)out;
 	/* SSound.UsePS by name: the cases record it (OBJLIB 7) */
 	if (!Mode_GVarSetI("isActionIndoor", 1) || !Mode_Fade(0, lv_black, lv_clear, 1.0) || !Mode_WayPoint() ||
-		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_FaceTheMayor", "DownTown") ||
+		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_FaceTheMayor", "DownTown") ||
 		!Mode_MMDesc("Mission_FaceTheMayor_MissionText1", 1) || !LV_CALL("SSound", "UsePS", NULL, "i", 1L)) {
 		return 0;
 	}
@@ -3358,7 +3359,8 @@ static byte Baddie_EndOfScene(const nativeVal_t *a, nativeVal_t *out) {
 static byte Baddie_CreateFakeSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Pr_FakeSpeech("FakeSpeech", "Boss", "TalkAngry") && Pr_FakeSpeech("FakeSpeech2", "Betty", "TalkAlarmed") && Pr_FakeSpeechShow(WB);
+	return Pr_FakeSpeech("FakeSpeech", "Boss", "TalkAngry") && Pr_FakeSpeech("FakeSpeech2", "Betty", "TalkAlarmed") &&
+		Pr_FakeSpeechShow() && PORT_LOWN(Mission_WhoIsTheBaddie, NormCamera, NULL, "");
 }
 
 static const char *const baddie_scene[] = {
