@@ -20,9 +20,8 @@
  * callbacks handed to Speech and Menu by the refs of their functions (LV_COM, LV_ONEND, LV_SCORERG). By name stay:
  * SAI.SetStateVehicle and SetInertia, SScorer.AddModel and CancelSpeech, Scrap.Achievement and Scrap.SetMoney of a long
  * (OBJLIB 7); the functions handed on as values: to the scheduler, as the callbacks of Parking and Alarm, the
- * AfterRemoteComFunc of Speech.ForceRemoteCom (OBJLIB 4, 5). The races of MapRace are Python adapters on LevelCommon's
- * Lv_StartPos: their refs take the slow path. The InitStatus functions that only set the traffic ships, the start
- * positions of the races and Mission_DestroyCommSats2 are LevelCommon's.
+ * AfterRemoteComFunc of Speech.ForceRemoteCom (OBJLIB 4, 5). The InitStatus functions that only set the traffic ships,
+ * the start positions of the races (LvN_StartPos) and Mission_DestroyCommSats2 are LevelCommon's.
  */
 #include "scrap/game.h"
 #include "scrap/input.h"
@@ -349,14 +348,8 @@ PyMethodDef g_CommercialMapMethods[] = {
 /* InitStatus(LevelPath), Init(LevelPath): nothing */
 LV_FN(MapRace, PassA, 1, LvN_Pass)
 
-/* race k: RaceMaker.StartPos; its entry runs the adapter on Python values (Lv_StartPos of LevelCommon has no native
- * core outside it, so the ref takes the slow path, OBJLIB 7) */
-#define RACE(k) \
-	static PyObject *MapRace_Race##k(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Lv_StartPos(args, races[k - 1].pos, races[k - 1].n); \
-	} \
-	MODE_PYENTRY(MapRace_Race##k)
+/* race k: RaceMaker.StartPos (no arguments), MapRace_Race<k> and its entry */
+#define RACE(k) MODE_FN(MapRace, Race##k, 0, LvN_StartPos(races[k - 1].pos, races[k - 1].n))
 RACE(1)
 RACE(2)
 RACE(3)

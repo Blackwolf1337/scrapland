@@ -146,11 +146,8 @@ PyMethodDef g_DownTownMapMethods[] = {
 
 #include "DownTownRaces.inc"
 
-#define RACE(k) \
-	static PyObject *MapRace_Race##k(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Lv_StartPos(args, races[k - 1].pos, races[k - 1].n); \
-	}
+/* race k: RaceMaker.StartPos (no arguments), MapRace_Race<k> and its entry */
+#define RACE(k) MODE_FN(MapRace, Race##k, 0, LvN_StartPos(races[k - 1].pos, races[k - 1].n))
 RACE(1)
 RACE(2)
 RACE(3)

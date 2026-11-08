@@ -26,9 +26,9 @@
  * (RaceMaker.InitRace, Speech.AddRemoteCom with InsertFirst, Speech.AutoAddNI with HeadName) and the own functions of
  * the modules (their globals) go through their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_SCORERG; the seam
  * takes the call by name when a mission or a case has put something else there, OBJLIB 5). By name: the sections of
- * the .def files (OBJLIB 6), the class VehiclesNPC.cShipAI and XBMenu (OBJLIB 4), MapRace.Mission_Win2ndRace_Race
- * (OBJLIB 3: no entry yet); the functions given to the scheduler, to the speech callbacks and to the entities
- * (Mode_Later, Mode_AtG, the OnTake and OnDeath texts, the callback globals) stay values (OBJLIB 4, 5).
+ * the .def files (OBJLIB 6), the class VehiclesNPC.cShipAI and XBMenu (OBJLIB 4); the functions given to the
+ * scheduler, to the speech callbacks and to the entities (Mode_Later, Mode_AtG, the OnTake and OnDeath texts, the
+ * callback globals) stay values (OBJLIB 4, 5).
  */
 #include <limits.h>
 
@@ -179,22 +179,19 @@ PyMethodDef g_OutskirtsMapMethods[] = {
 
 #include "OutskirtsRaces.inc"
 
-#define RACE(fn, k) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Lv_StartPos(args, races[k].pos, races[k].n); \
-	}
-RACE(MapRace_Easy1, 0)
-RACE(MapRace_Easy2, 1)
-RACE(MapRace_Easy3, 2)
-RACE(MapRace_Easy4, 3)
-RACE(MapRace_Easy5, 4)
-RACE(MapRace_Medium1, 5)
-RACE(MapRace_Medium2, 6)
-RACE(MapRace_Medium3, 7)
-RACE(MapRace_Medium4, 8)
-RACE(MapRace_Medium5, 9)
-RACE(MapRace_Win2nd, 10)
+/* race k: RaceMaker.StartPos (no arguments), MapRace_<name> and its entry */
+#define RACE(name, k) MODE_FN(MapRace, name, 0, LvN_StartPos(races[k].pos, races[k].n))
+RACE(Easy1, 0)
+RACE(Easy2, 1)
+RACE(Easy3, 2)
+RACE(Easy4, 3)
+RACE(Easy5, 4)
+RACE(Medium1, 5)
+RACE(Medium2, 6)
+RACE(Medium3, 7)
+RACE(Medium4, 8)
+RACE(Medium5, 9)
+RACE(Win2nd, 10)
 
 PyMethodDef g_OutskirtsMapRaceMethods[] = {
 	{ "EasyRaceOurskirts1", MapRace_Easy1, 1, NULL },
@@ -274,8 +271,7 @@ static byte Win2nd_InitRace(void) {
 	Native_SetEmpty(lst, NV_DICT);
 	ok = ok && Mode_Put(WR, "BayScorer", NULL, lst) && LvN_PutI(WR, "YourScore", -1) && LvN_PutI(WR, "NumOponNotGoNextItem", 0) &&
 		Mode_ListSet("Race", "OnDeath", "Mission_Win2ndRace.RacerKilled") && Mode_ListSet("Race", "OnDamage", "Mission_Win2ndRace.RacerDamaged") &&
-		/* OBJLIB 3: MapRace.Mission_Win2ndRace_Race has no entry: Lv_StartPos (levels/LevelCommon.c) has no native form yet */
-		LV_CALL("MapRace", "Mission_Win2ndRace_Race", NULL, "") && PORT_LOWN(Mission_Win2ndRace, GetRaceWaypointIndex, idx, "") &&
+		PORT_LCALL(MapRace, Mission_Win2ndRace_Race, NULL, "") && PORT_LOWN(Mission_Win2ndRace, GetRaceWaypointIndex, idx, "") &&
 			Mode_Put(WR, "iStartPos", NULL, idx);
 	for (int i = 0; ok && i < numply; i++) {
 		int mark = t.n;
