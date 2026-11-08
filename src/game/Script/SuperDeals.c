@@ -84,7 +84,7 @@ static byte Sd_PutI(const char *mod, const char *name, nativeVal_t *slot, long i
 }
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) (Mode_Later for a number) with delay a
- * value of the script (a global of the module, the result of a function) */
+ * value of the script (a global of the module, the result of a function); func as a value (OBJLIB 4) */
 static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *func, const nativeVal_t *args, int n) {
 	nativeVal_t now, t;
 	PyObject *fn = Mode_GlobalPy(mod, func);
@@ -99,7 +99,8 @@ static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *fun
 	return ok;
 }
 
-/* the same with func an object (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish) at Scrap.GetTime() + delay */
+/* the same with func an object (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish) at Scrap.GetTime() + delay
+ * (OBJLIB 4) */
 static byte Sd_LaterObj(double delay, PyObject *fn, const nativeVal_t *args, int n) {
 	nativeVal_t t;
 	Native_SetFloat(&t, Mode_Time() + delay);
@@ -117,7 +118,7 @@ static byte Sd_Create(const nativeVal_t *name, const nativeVal_t *pos, const cha
 static byte Sd_SpawnCar(const nativeVal_t *name, nativeVal_t *sp, nativeVal_t *out) {
 	nativeVal_t pos;
 	Native_SetNone(&pos);
-	byte ok = CALL("OutMap", "GetSpawnPos", sp, "") && Mode_Item(sp, 0, &pos) && Sd_Create(name, &pos, "Car", out);
+	byte ok = PORT_CALL(OutMap, GetSpawnPos, sp, "") && Mode_Item(sp, 0, &pos) && Sd_Create(name, &pos, "Car", out);
 	Native_Free(&pos);
 	return ok;
 }
@@ -174,7 +175,7 @@ static void Sd_ActionSet(nativeVal_t *out) {
 static byte Sd_Draw(void) {
 	nativeVal_t set;
 	Sd_ActionSet(&set);
-	byte ok = CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set);
+	byte ok = PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set);
 	Native_Free(&set);
 	return ok;
 }
@@ -186,14 +187,14 @@ static byte Sd_ScorerOff(void) {
 /* RacerScorer.InitMissionScorer(a, b, c); Menu.MissionScorerCall = RacerScorer.MissionScorer;
  * RacerScorer.MissionScorer(0) */
 static byte Sd_ScorerOn(const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
-	return CALL("RacerScorer", "InitMissionScorer", NULL, "vvv", a, b, c) &&
+	return PORT_CALL(RacerScorer, InitMissionScorer, NULL, "vvv", a, b, c) &&
 		Mode_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") &&
-		CALL("RacerScorer", "MissionScorer", NULL, "i", 0L);
+		PORT_CALL(RacerScorer, MissionScorer, NULL, "i", 0L);
 }
 
 /* RacerScorer.UpdateMissionScorer(0, a, b) */
 static byte Sd_Update(const nativeVal_t *a, const nativeVal_t *b) {
-	return CALL("RacerScorer", "UpdateMissionScorer", NULL, "ivv", 0L, a, b);
+	return PORT_CALL(RacerScorer, UpdateMissionScorer, NULL, "ivv", 0L, a, b);
 }
 
 /* the parameters (win, mode, retry) of MissionsFuncs.OnSuperDealFinish */
@@ -204,29 +205,17 @@ static void Sd_Params(long win, const char *mode, const char *retry, nativeVal_t
 	Native_SetStr(Native_Append(out), retry);
 }
 
-/* Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params) (OBJLIB 3: a call with keywords) */
+/* Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params), how ForceRemoteCom or AddRemoteCom */
 static byte Sd_Remote(const char *how, const nativeVal_t *cad, const nativeVal_t *who, PyObject *func,
 	const nativeVal_t *params) {
-	PyObject *fn = Script_Attr("Speech", how);
-	if (!fn) {
-		return 0;
+	if (!strcmp(how, "ForceRemoteCom")) {
+		return PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, func, params);
 	}
-	PyObject *p = Native_ToPy(params), *kw = p ? Py_BuildValue("{sOsO}", "AfterRemoteComFunc", func, "Parameters", p) : NULL;
-	PyObject *c = kw ? Native_ToPy(cad) : NULL, *w = c ? Native_ToPy(who) : NULL;
-	PyObject *a = w ? Py_BuildValue("(OO)", c, w) : NULL;
-	PyObject *r = a ? Script_CallObject(fn, a, kw) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(a);
-	Py_XDECREF(w);
-	Py_XDECREF(c);
-	Py_XDECREF(kw);
-	Py_XDECREF(p);
-	Py_DECREF(fn);
-	return r != NULL;
+	return PORT_CALL(Speech, AddRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, func, params);
 }
 
 /* if (cad and cad != ""): Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params) else:
- * apply(func, params) */
+ * apply(func, params) (func a value, OBJLIB 4) */
 static byte Sd_End(const char *how, const nativeVal_t *cad, const nativeVal_t *who, PyObject *func,
 	const nativeVal_t *params) {
 	if (Sd_Text(cad)) {
@@ -337,7 +326,7 @@ static byte Sd_CamOnWinner(const nativeVal_t *winner) {
 	byte ok = Mode_EntityH(&name, &cam);
 	if (ok && Native_True(&cam)) {
 		ok = Mode_VSet(&cam, "Target", winner) && Mode_EntityH(winner, &w) &&
-			CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &w, 0L);
+			PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &w, 0L);
 	}
 	Native_Free(&name);
 	Native_Free(&cam);
@@ -354,9 +343,9 @@ static byte Sd_Profile(const nativeVal_t *ship, const char *typeVar, const char 
 	Mode_SaveVar(typeVar, &type);
 	Mode_SaveVar(profVar, &prof);
 	Native_SetNone(&s);
-	byte ok = CALL("RaceMaker", "InitShipIAProfile", NULL, "vv", &type, &prof) &&
-		CALL("RaceMaker", "GetRandomShipIAProfile", &s, "vv", &type, &prof) &&
-		CALL("VehiclesNPC", "SetIAProf", NULL, "vv", ship, &s);
+	byte ok = PORT_CALL(RaceMaker, InitShipIAProfile, NULL, "vv", &type, &prof) &&
+		PORT_CALL(RaceMaker, GetRandomShipIAProfile, &s, "vv", &type, &prof) &&
+		PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", ship, &s);
 	Native_Free(&type);
 	Native_Free(&prof);
 	Native_Free(&s);
@@ -404,8 +393,7 @@ static byte Sd_EachInList(const char *list, sdEach_t fn, void *arg) {
 	return ok;
 }
 
-/* GetMenuDescription(): string.replace(the text of the deal, "<n1>", Scrap.GetSaveVar(var)) (string by name, OBJLIB
- * 3) */
+/* GetMenuDescription(): string.replace(the text of the deal, "<n1>", Scrap.GetSaveVar(var)) */
 static byte Sd_MenuDescriptionC(const char *key, const char *var, nativeVal_t *out) {
 	nativeVal_t text, n;
 	if (!Mode_Import("string")) {
@@ -457,10 +445,10 @@ static byte Sd_SpawnAt(const nativeVal_t *usr) {
 	nativeVal_t sp, v;
 	Native_SetNone(&sp);
 	Native_SetNone(&v);
-	byte ok = CALL("OutMap", "GetSpawnPos", &sp, "") && Mode_Item(&sp, 0, &v) && Mode_VSet(usr, "Pos", &v);
+	byte ok = PORT_CALL(OutMap, GetSpawnPos, &sp, "") && Mode_Item(&sp, 0, &v) && Mode_VSet(usr, "Pos", &v);
 	Native_Free(&sp);
 	Native_Free(&v);
-	ok = ok && CALL("OutMap", "GetSpawnPos", &sp, "") && Mode_Item(&sp, 1, &v) && Mode_SetAng(usr, &v);
+	ok = ok && PORT_CALL(OutMap, GetSpawnPos, &sp, "") && Mode_Item(&sp, 1, &v) && Mode_SetAng(usr, &v);
 	Native_Free(&sp);
 	Native_Free(&v);
 	return ok;
@@ -471,13 +459,13 @@ static byte Sd_SpawnAt(const nativeVal_t *usr) {
 static byte Sd_RespawnPlayerC(const nativeVal_t *name) {
 	nativeVal_t me, sp, v;
 	if (!Mode_Import("Parking") || !Mode_Import("Vehicles") || !Mode_Import("OutMap") ||
-		!CALL("Vehicles", "ReSpawnShip", NULL, "v", name)) {
+		!PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", name)) {
 		return 0;
 	}
 	Native_SetNone(&me);
 	Native_SetNone(&sp);
 	Native_SetNone(&v);
-	byte ok = Mode_EntityH(name, &me) && CALL("OutMap", "GetSpawnPos", &sp, "") && Mode_Item(&sp, 0, &v) &&
+	byte ok = Mode_EntityH(name, &me) && PORT_CALL(OutMap, GetSpawnPos, &sp, "") && Mode_Item(&sp, 0, &v) &&
 		Mode_VSet(&me, "Pos", &v);
 	Native_Free(&v);
 	ok = ok && Mode_Item(&sp, 1, &v) && Mode_SetAng(&me, &v);
@@ -489,7 +477,7 @@ static byte Sd_RespawnPlayerC(const nativeVal_t *name) {
 
 /* RestartCTF(id, control) and RestartRace(id, control): the level again */
 static byte Sd_RestartC(void) {
-	return CALL("SaveGame", "Restart", NULL, "");
+	return PORT_CALL(SaveGame, Restart, NULL, "");
 }
 
 MODE_FN(Sd, SetInvulnerable, 1, Sd_SetInvulnerableStatusC(&a[0], 0))
@@ -512,7 +500,8 @@ MODE_FN(Dm, InitStatus, 1, Sd_StatusC(DM, NULL))
 static byte Dm_InitC(void) {
 	static const char *const third[] = { "SuperDeal_Third", NULL };
 	return Mode_Import("Parking") && Mode_Import("Menu") && Sd_CameraFor(third, "CA") && Mode_Import("Chars") &&
-		Mode_ModSetGlobal("Chars", "OnMainCharDeath", DM, "OnPlayerDeath") && OWN(DM, "CreateEnemies", NULL, "") &&
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", DM, "OnPlayerDeath") &&
+		PORT_OWN(DeathMatch, CreateEnemies, NULL, "") &&
 		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", DM, "CrazyGamblerStartCombat");
 }
 
@@ -537,7 +526,7 @@ static byte Dm_CreateEnemiesC(void) {
 		int mark = t.n;
 		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t), *en = Mode_V(&t);
 		Sd_Numbered("Enemy", i, name);
-		ok = Sd_SpawnCarAng(name, e) && OWN(DM, "SetProfile", NULL, "v", e) &&
+		ok = Sd_SpawnCarAng(name, e) && PORT_OWN(DeathMatch, SetProfile, NULL, "v", e) &&
 			(size || (Mode_VGet(e, "Name", en) && Mode_DictPut(DM, "enemiesFrags", &dm.enemiesFrags, en, Mode_I(&t, 0))));
 		Mode_Release(&t, mark);
 	}
@@ -546,7 +535,7 @@ static byte Dm_CreateEnemiesC(void) {
 
 MODE_FN(Dm, CreateEnemies, 0, Dm_CreateEnemiesC())
 
-/* Speech.AddRemoteCom(Scrap.GetSaveVar(cadVar), "CrazyGambler", mod.func) */
+/* Speech.AddRemoteCom(Scrap.GetSaveVar(cadVar), "CrazyGambler", mod.func) (mod.func a value, OBJLIB 4) */
 static byte Sd_GamblerSays(const char *cadVar, const char *mod, const char *func) {
 	nativeVal_t cad;
 	PyObject *fn = Mode_GlobalPy(mod, func);
@@ -554,7 +543,7 @@ static byte Sd_GamblerSays(const char *cadVar, const char *mod, const char *func
 		return 0;
 	}
 	Mode_SaveVar(cadVar, &cad);
-	byte ok = CALL("Speech", "AddRemoteCom", NULL, "vsO", &cad, CG, fn);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vsO", &cad, CG, fn);
 	Native_Free(&cad);
 	Py_DECREF(fn);
 	return ok;
@@ -617,7 +606,7 @@ static byte Dm_Finish(void) {
 }
 
 /* the hook of a mission instead of the score table: KeepPlaying(enemiesFrags.keys()), after the message when there
- * is one (how is the Speech function) */
+ * is one (how is the Speech function; the hook a variable, OBJLIB 5) */
 static byte Dm_Keep(const char *how, const nativeVal_t *cad) {
 	nativeVal_t keys, params, who;
 	PyObject *hook = Mode_GlobalPy(DM, "KeepPlaying");
@@ -646,8 +635,8 @@ static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *c
 	nativeVal_t cad;
 	PyObject *func = NULL;
 	if ((safe && !Sd_UsrSafe()) || !Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") ||
-		!Mode_Import("Parking") || !CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "DeathMatch") ||
-		!CALL("MissionsFuncs", "RelaxShipsInList", NULL, "s", "DeathMatch")) {
+		!Mode_Import("Parking") || !PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "DeathMatch") ||
+		!PORT_CALL(MissionsFuncs, RelaxShipsInList, NULL, "s", "DeathMatch")) {
 		return 0;
 	}
 	Mode_SaveS("PlayerWinsCombat", player ? "1" : "0");
@@ -673,7 +662,7 @@ static byte Dm_Next(const nativeVal_t *loser, const char *func) {
 	nativeVal_t max;
 	cEntity *e;
 	Native_SetNone(&max);
-	byte ok = Mode_Read(DM, "playerFrags", &dm.playerFrags) && OWN(DM, "GetMaxFragsEnemies", &max, "") &&
+	byte ok = Mode_Read(DM, "playerFrags", &dm.playerFrags) && PORT_OWN(DeathMatch, GetMaxFragsEnemies, &max, "") &&
 		Sd_Update(&dm.playerFrags, &max) && Mode_Later(5.0, DM, func, loser, 1, NULL) && Mode_Ent(loser, &e) &&
 		Mode_SetI(e, Native_Text(loser), "Active", 0);
 	Native_Free(&max);
@@ -763,7 +752,7 @@ static byte Dm_RespawnEnemyC(const nativeVal_t *name) {
 		return Mode_Done(&t, 1);
 	}
 	return Mode_Done(&t, Sd_SpawnCarAng(name, e) && Mode_VSetS(e, "TgType", "red") && Mode_VSetS(e, "EntityList", "DeathMatch") &&
-		OWN(DM, "SetProfile", NULL, "v", e));
+		PORT_OWN(DeathMatch, SetProfile, NULL, "v", e));
 }
 
 MODE_FN(Dm, RespawnEnemy, 1, Dm_RespawnEnemyC(&a[0]))
@@ -792,7 +781,7 @@ static byte Dm_RestartCombatC(void) {
 	nativeVal_t d;
 	Native_SetEmpty(&d, NV_DICT);
 	byte ok = Mode_Put(DM, "enemiesFrags", &dm.enemiesFrags, &d) && Sd_PutI(DM, "playerFrags", &dm.playerFrags, 0) &&
-		CALL("SaveGame", "Restart", NULL, "");
+		PORT_CALL(SaveGame, Restart, NULL, "");
 	Native_Free(&d);
 	return ok;
 }
