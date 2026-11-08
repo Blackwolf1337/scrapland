@@ -10,8 +10,11 @@
  * action set, the vector math and the random numbers are C; Scrap.Set, Scrap.CreateEntity, the SAct class and action
  * functions, SSound.SetMusic, Scrap.AddScheduledFunc and Scrap.SetDebrisSys, Scrap.SetDebrisValue, Scrap.DropDebris and
  * Scrap.MusicPlayer (fc-lvl-menu swaps the last three) go through their seams (OBJLIB 7). The loading of CreditsText
- * (Scrap.OpenPack, PreloadLibrary, ClosePack) stays by name (OBJLIB 6); CreditsText, Menu, PCMenu, SaveGame and the
- * functions of Map go by name (OBJLIB 3).
+ * (Scrap.OpenPack, PreloadLibrary, ClosePack) stays by name (OBJLIB 6).
+ *
+ * Direct calls (stage 3): CreditsText, Menu, PCMenu, SaveGame and the C functions of Map go through their refs
+ * (PORT_CALL, PORT_LOWN; EndCredits and cremeteoro are keyword entries, MODE_KW). By name stay StartMenu (data, OBJLIB
+ * 6) and the scheduled functions (Mode_LaterIn, OBJLIB 4).
  */
 #include <string.h>
 
@@ -127,11 +130,6 @@ static int Mn_GetTrue(const char *name) {
 	return r;
 }
 
-/* the functions of the module through its globals with no arguments */
-static byte Mn_Own(const char *fn) {
-	return LV_OWN(MAP, fn, NULL, "");
-}
-
 /* ---- the functions ---- */
 
 /* InitStatus(LevelPath): in the main menu; the credits library when the credits are to be shown */
@@ -161,8 +159,9 @@ static byte Menu_EndCredits(const nativeVal_t *id) {
 		return 0;
 	}
 	if (x) {
-		return LV_CALL("SaveGame", "Restart", NULL, "");
+		return PORT_CALL(SaveGame, Restart, NULL, "");
 	}
+	/* OBJLIB 6: StartMenu is data (data/levels/menu/map.def) */
 	return LV_OWN(MAP, "StartMenu", NULL, "v", id) && Mn_MusicPlayer("", "stop", -1) && LvN_SetMusic("Music/Epic.ogg", 0.8);
 }
 
@@ -177,7 +176,7 @@ static byte Menu_FadeOutCreditsEnd(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetFloat(&zero, 0.0);
 	int c = Native_Compare(&f, &zero);
 	Native_Free(&f);
-	return c <= 0 || Mn_Own("EndCredits");
+	return c <= 0 || PORT_LOWN(Map, EndCredits, NULL, "");
 }
 
 /* FadeOutCredits(): the music fades in 4 s, then FadeOutCreditsEnd */
@@ -210,14 +209,14 @@ static byte Menu_NextCredit(const nativeVal_t *a, nativeVal_t *out) {
 		byte end = Native_IsStr(text, ""), skip = Native_IsStr(text, "-");
 		Mode_Release(&t, mark);
 		if (end) {
-			return Mode_Done(&t, Mn_Own("FadeOutCredits"));
+			return Mode_Done(&t, PORT_LOWN(Map, FadeOutCredits, NULL, ""));
 		}
 		if (!skip) {
 			break;
 		}
 	}
 	nativeVal_t *ctr = Mode_V(&t);
-	return Mode_Done(&t, Mode_G(MAP, "CreditsCtr", ctr) && LV_CALL("CreditsText", "ShowCredit", NULL, "v", ctr));
+	return Mode_Done(&t, Mode_G(MAP, "CreditsCtr", ctr) && PORT_CALL(CreditsText, ShowCredit, NULL, "v", ctr));
 }
 
 /* ShowCredits(): the credits from the first page, Escape ends them, the motion blur a moment later */
@@ -231,7 +230,7 @@ static byte Menu_ShowCredits(const nativeVal_t *a, nativeVal_t *out) {
 	/* OBJLIB 5: the function object of Map */
 	LvN_SetVar("CreditsText", "EndOfCredits", &next);
 	Native_Free(&next);
-	return Mn_Own("NextCredit") && Mode_GVarSetS("EscapeEvent", "Map.EndCredits") &&
+	return PORT_LOWN(Map, NextCredit, NULL, "") && Mode_GVarSetS("EscapeEvent", "Map.EndCredits") &&
 		Mode_LaterIn(0.15, MAP, "SetMotionBlur", NULL, 0, NULL);
 }
 
@@ -297,7 +296,7 @@ static byte Mn_Asteroids(void) {
 	}
 	int j = n < 0 ? -1 : Mn_GetTrue("JoinServerOnStartup");
 	if (j < 0 || (j && (!Mode_Import("PCMenu") || !Mode_GVarSetI("JoinServerOnStartup", 0) ||
-		!LV_CALL("PCMenu", "TryJoin", NULL, "is", 0L, "")))) {
+		!PORT_CALL(PCMenu, TryJoin, NULL, "is", 0L, "")))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(tim, 14);
@@ -309,14 +308,14 @@ static byte Mn_Asteroids(void) {
 	for (int i = 0; i < n; i++) {
 		Native_Free(item);
 		Native_Free(next);
-		if (!Native_SeqItem(pos, i, item) || !LV_OWN(MAP, "cremeteoro", NULL, "vv", item, tim) ||
+		if (!Native_SeqItem(pos, i, item) || !PORT_LOWN(Map, cremeteoro, NULL, "vv", item, tim) ||
 			!Mode_Arith('+', tim, quarter, next)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(tim);
 		Native_Copy(tim, next);
 	}
-	return Mode_Done(&t, n >= 0 && Mn_Own("drotorito") && Mode_GVarSetI("IsMapOutDoor", 0));
+	return Mode_Done(&t, n >= 0 && PORT_LOWN(Map, drotorito, NULL, "") && Mode_GVarSetI("IsMapOutDoor", 0));
 }
 
 /* Init(LevelPath): the menu scene, the menu (unless the credits show), the music and the asteroids */
@@ -337,7 +336,8 @@ static byte Menu_Init(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	int m = LvN_GTrue(MAP, "InitMenu");
-	if (m < 0 || (m && !Mn_Own("StartMenu")) || !Mode_Import("SSound")) {
+	/* OBJLIB 6: StartMenu is data */
+	if (m < 0 || (m && !LV_OWN(MAP, "StartMenu", NULL, "")) || !Mode_Import("SSound")) {
 		return 0;
 	}
 	int s = Mn_GetTrue("ShowCredits");
@@ -345,11 +345,11 @@ static byte Menu_Init(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	if (s) {
-		if (!Mode_Import("Init") || !Mode_Import("CreditsText") || !LV_CALL("CreditsText", "Init", NULL, "")) {
+		if (!Mode_Import("Init") || !Mode_Import("CreditsText") || !PORT_CALL(CreditsText, Init, NULL, "")) {
 			return 0;
 		}
 		Mode_SetActionSet("Inactive");
-		if (!LV_CALL("Menu", "MovieScorer", NULL, "i", 0L) || !Mn_Own("ShowCredits") || !Mode_GVarSetI("ShowCredits", 0) ||
+		if (!PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) || !PORT_LOWN(Map, ShowCredits, NULL, "") || !Mode_GVarSetI("ShowCredits", 0) ||
 			!LvN_SetMusic("Music/Creditos.ogg", 1.0)) {
 			return 0;
 		}
@@ -429,7 +429,7 @@ static byte Menu_drotorito(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Copy(Native_Append(off), x);
 	Native_SetFloat(Native_Append(off), centre);
 	Native_Copy(Native_Append(off), z);
-	return Mode_Done(&t, Mode_VecAdd(vec, off, to) && LV_OWN(MAP, "cremeteoro", NULL, "v", to) &&
+	return Mode_Done(&t, Mode_VecAdd(vec, off, to) && PORT_LOWN(Map, cremeteoro, NULL, "v", to) &&
 		Mode_LaterIn(0.25, MAP, "drotorito", NULL, 0, NULL));
 }
 
@@ -470,43 +470,15 @@ LV_FN(Menu, InitPy, 1, Menu_Init)
 LV_FN(Menu, drotoritoPy, 0, Menu_drotorito)
 
 /* EndCredits(id=0) */
-static PyObject *Menu_EndCreditsPy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", NULL };
-	PyObject *id = NULL;
-	nativeVal_t v;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id)) {
-		return NULL;
-	}
-	if (id) {
-		Native_Arg(id, &v);
-	} else {
-		Native_SetInt(&v, 0);
-	}
-	byte ok = Menu_EndCredits(&v);
-	Native_Free(&v);
-	return Mode_Result(ok);
+MODE_KW(Menu, EndCreditsPy, "|O", "id") {
+	Mode_KwDefI(v, given, 0, 0);
+	return Menu_EndCredits(&v[0]);
 }
 
 /* cremeteoro(vec, tim=35) */
-static PyObject *Menu_cremeteoroPy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "vec", "tim", NULL };
-	PyObject *vec, *tim = NULL;
-	nativeVal_t v, t;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &vec, &tim)) {
-		return NULL;
-	}
-	Native_Arg(vec, &v);
-	if (tim) {
-		Native_Arg(tim, &t);
-	} else {
-		Native_SetInt(&t, 35);
-	}
-	byte ok = Menu_cremeteoro(&v, &t);
-	Native_Free(&v);
-	Native_Free(&t);
-	return Mode_Result(ok);
+MODE_KW(Menu, cremeteoroPy, "O|O", "vec", "tim") {
+	Mode_KwDefI(v, given, 1, 35);
+	return Menu_cremeteoro(&v[0], &v[1]);
 }
 
 PyMethodDef g_MenuMapMethods[] = {

@@ -3273,6 +3273,7 @@ PORT_DECLL(outskirts, Mission_DestroyCommSats1, MissionScorer) /* 1 */
 
 /* levels/Menu.c */
 PORT_DECLL(menu, Map, InitStatus) /* 1 */
+PORT_DECLL(menu, Map, EndCredits) /* ? */
 PORT_DECLL(menu, Map, FadeOutCreditsEnd) /* 0 */
 PORT_DECLL(menu, Map, FadeOutCredits) /* 0 */
 PORT_DECLL(menu, Map, NextCredit) /* 0 */
@@ -3280,15 +3281,18 @@ PORT_DECLL(menu, Map, ShowCredits) /* 0 */
 PORT_DECLL(menu, Map, SetMotionBlur) /* 0 */
 PORT_DECLL(menu, Map, Init) /* 1 */
 PORT_DECLL(menu, Map, drotorito) /* 0 */
+PORT_DECLL(menu, Map, cremeteoro) /* ? */
 #define PORTS_levels_Menu \
 	PORT_DEFL(menu, Map, InitStatus, Menu_InitStatusPy) \
+	PORT_DEFLK(menu, Map, EndCredits, Menu_EndCreditsPy) \
 	PORT_DEFL(menu, Map, FadeOutCreditsEnd, Menu_FadeOutCreditsEndPy) \
 	PORT_DEFL(menu, Map, FadeOutCredits, Menu_FadeOutCreditsPy) \
 	PORT_DEFL(menu, Map, NextCredit, Menu_NextCreditPy) \
 	PORT_DEFL(menu, Map, ShowCredits, Menu_ShowCreditsPy) \
 	PORT_DEFL(menu, Map, SetMotionBlur, Menu_SetMotionBlurPy) \
 	PORT_DEFL(menu, Map, Init, Menu_InitPy) \
-	PORT_DEFL(menu, Map, drotorito, Menu_drotoritoPy)
+	PORT_DEFL(menu, Map, drotorito, Menu_drotoritoPy) \
+	PORT_DEFLK(menu, Map, cremeteoro, Menu_cremeteoroPy)
 
 /* levels/OM.c */
 PORT_DECLL(om, SuperDeal_Sixth, SetVars) /* 0 */
