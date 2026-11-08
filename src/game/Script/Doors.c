@@ -557,15 +557,13 @@ static byte Elv_Rest(const nativeVal_t *opt, const char *var, nativeVal_t *out) 
 	return n >= 0 && Native_Slice(opt, n, INT_MAX, out);
 }
 
-/* the module's LinkToElevator(usr, elv, (idcall, tgt)[, 1]) through its global */
-static byte Elv_Link(const nativeVal_t *usr, const nativeVal_t *elv, const nativeVal_t *idcall, const nativeVal_t *tgt,
-	byte instant) {
+/* the module's LinkToElevator(usr, elv, (idcall, tgt), 1) through its global */
+static byte Elv_Link(const nativeVal_t *usr, const nativeVal_t *elv, const nativeVal_t *idcall, const nativeVal_t *tgt) {
 	nativeVal_t opt;
 	Native_SetEmpty(&opt, NV_TUPLE);
 	Native_Copy(Native_Append(&opt), idcall);
 	Native_Copy(Native_Append(&opt), tgt);
-	byte ok = instant ? PORT_OWN(Elevator, LinkToElevator, NULL, "vvvi", usr, elv, &opt, 1L) :
-		PORT_OWN(Elevator, LinkToElevator, NULL, "vvv", usr, elv, &opt);
+	byte ok = PORT_OWN(Elevator, LinkToElevator, NULL, "vvvi", usr, elv, &opt, 1L);
 	Native_Free(&opt);
 	return ok;
 }
@@ -593,7 +591,7 @@ static byte Elv_UseLevel(const nativeVal_t *usrName, const nativeVal_t *elvName,
 	return Mode_Done(&t, Mode_EntitySeam(elvName, el) && Mode_VObj(el, "ActCtrl", act) && Native_ArgStr(act, 1, &a) &&
 		LvN_GetClass(a, r) && LvN_GetAction("Close", r) && LvN_GetAct("AnmTotalTime", t1) && LvN_GetAction("Up", r) &&
 		LvN_GetAct("AnmTotalTime", t2) && Mode_Arith('+', t1, t2, timmy) && Mode_FadeV(0, clear, black, timmy) &&
-		PORT_OWN(Elevator, ElevatorCloseToGo, NULL, "v", elvName) && Elv_Link(usrName, elvName, idcall, tgt, 1) &&
+		PORT_OWN(Elevator, ElevatorCloseToGo, NULL, "v", elvName) && Elv_Link(usrName, elvName, idcall, tgt) &&
 		LvN_SetI(usr, "Invulnerable", 1));
 }
 
@@ -635,7 +633,7 @@ static byte Elv_UseElevator(const nativeVal_t *usrName, const nativeVal_t *elvNa
 	Native_Copy(Native_Append(pair), down);
 	int in = Native_Contains(pair, idcall);
 	return Mode_Done(&t, in >= 0 && (!in || PORT_OWN(Elevator, ElevatorActiveToGet, NULL, "v", tgt)) &&
-		Elv_Link(usrName, elvName, idcall, tgt, 1));
+		Elv_Link(usrName, elvName, idcall, tgt));
 }
 
 /* LinkedElevator.has_key(name) and LinkedElevator[name] into lel when it has it: 1, 0, -1 */
