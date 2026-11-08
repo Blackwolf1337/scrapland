@@ -375,6 +375,7 @@ PORT_DECL(Ffa, OnUsrTest) /* 2 */
 PORT_DECL(Ffa, SvrShowMsg) /* 1 */
 PORT_DECL(Ffa, OnUsrClient) /* 2 */
 PORT_DECL(Ffa, OnUsrServer) /* 2 */
+PORT_DECL(Ffa, Spectate) /* ? */
 PORT_DECL(Ffa, JoinRed) /* 2 */
 PORT_DECL(Ffa, JoinGreen) /* 2 */
 PORT_DECL(Ffa, ReJoinGame) /* 2 */
@@ -387,6 +388,7 @@ PORT_DECL(Ffa, AbortSpectateMode) /* 0 */
 PORT_DECL(Ffa, ServerSpectate) /* 1 */
 PORT_DECL(Ffa, InitClient) /* 0 */
 PORT_DECL(Ffa, StdInitFfa) /* 0 */
+PORT_DECL(Ffa, GetScorerInfo) /* ? */
 PORT_DECL(Ffa, OnPositionChange) /* 6 */
 PORT_DECL(Ffa, isTied) /* 1 */
 PORT_DECL(Ffa, CheckGameStart) /* 0 */
@@ -437,6 +439,7 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, SvrShowMsg, Ffa_SvrShowMsg) \
 	PORT_DEF(Ffa, OnUsrClient, Ffa_OnUsrClient) \
 	PORT_DEF(Ffa, OnUsrServer, Ffa_OnUsrServer) \
+	PORT_DEFK(Ffa, Spectate, Ffa_Spectate) \
 	PORT_DEF(Ffa, JoinRed, Ffa_JoinRed) \
 	PORT_DEF(Ffa, JoinGreen, Ffa_JoinGreen) \
 	PORT_DEF(Ffa, ReJoinGame, Ffa_ReJoinGame) \
@@ -449,6 +452,7 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, ServerSpectate, Ffa_ServerSpectate) \
 	PORT_DEF(Ffa, InitClient, Ffa_InitClient) \
 	PORT_DEF(Ffa, StdInitFfa, Ffa_StdInitFfa) \
+	PORT_DEFK(Ffa, GetScorerInfo, Ffa_GetScorerInfo) \
 	PORT_DEF(Ffa, OnPositionChange, Ffa_OnPositionChange) \
 	PORT_DEF(Ffa, isTied, Ffa_isTied) \
 	PORT_DEF(Ffa, CheckGameStart, Ffa_CheckGameStart) \
@@ -2932,6 +2936,7 @@ PORT_DECLL(gdb, Map, InitPoliceBishops) /* 0 */
 PORT_DECLL(gdb, Map, EndOfAppears) /* 1 */
 PORT_DECLL(gdb, Map, GiveLife) /* 0 */
 PORT_DECLL(gdb, Map, NextWave) /* 0 */
+PORT_DECLL(gdb, Mission_IntoTheGDB, GetBishopProfile) /* 0 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, Init) /* 1 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, CreateBishop) /* 1 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, CreateBishops) /* 2 */
@@ -2949,12 +2954,14 @@ PORT_DECLL(gdb, Mission_IntoTheGDB, RestoreMatrix) /* 0 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, LaunchRestoreMatrixAnim) /* 4 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, RelaxBishops) /* 0 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, MissionScorer) /* 1 */
+PORT_DECLL(gdb, Mission_ReinsertOwnMatrix, GetBishopProfile) /* 0 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix, InitMission) /* 0 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix, BishopsAttackPlayer) /* 0 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix, CreateBishop) /* 0 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix, CreateBishops) /* 1 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix, OnBishopsDeath) /* 2 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix, PreSetNextMission) /* 4 */
+PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, GetBishopProfile) /* 0 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, InitMission) /* 0 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, BishopsAttackPlayer) /* 0 */
 PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, CreateBishop) /* 0 */
@@ -2968,6 +2975,7 @@ PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, PreSetNextMission) /* 4 */
 	PORT_DEFL(gdb, Map, EndOfAppears, GDB_EndOfAppearsPy) \
 	PORT_DEFL(gdb, Map, GiveLife, GDB_GiveLifePy) \
 	PORT_DEFL(gdb, Map, NextWave, GDB_NextWavePy) \
+	PORT_DEFL(gdb, Mission_IntoTheGDB, GetBishopProfile, Into_GetBishopProfile) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, Init, Into_InitPy) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, CreateBishop, Into_CreateBishopPy) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, CreateBishops, Into_CreateBishopsPy) \
@@ -2985,12 +2993,14 @@ PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, PreSetNextMission) /* 4 */
 	PORT_DEFL(gdb, Mission_IntoTheGDB, LaunchRestoreMatrixAnim, Into_LaunchRestoreMatrixAnimPy) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, RelaxBishops, Into_RelaxBishopsPy) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, MissionScorer, Into_MissionScorerPy) \
+	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix, GetBishopProfile, Re1_GetBishopProfile) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix, InitMission, Re1_InitMissionPy) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix, BishopsAttackPlayer, Re1_BishopsAttackPlayerPy) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix, CreateBishop, Re1_CreateBishopPy) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix, CreateBishops, Re1_CreateBishopsPy) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix, OnBishopsDeath, Re1_OnBishopsDeathPy) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix, PreSetNextMission, Re1_PreSetNextMissionPy) \
+	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix2, GetBishopProfile, Re2_GetBishopProfile) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix2, InitMission, Re2_InitMissionPy) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix2, BishopsAttackPlayer, Re2_BishopsAttackPlayerPy) \
 	PORT_DEFL(gdb, Mission_ReinsertOwnMatrix2, CreateBishop, Re2_CreateBishopPy) \

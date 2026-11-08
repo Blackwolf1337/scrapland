@@ -13,9 +13,17 @@
  * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
  * Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.SetAlarm, Scrap.UsrEntity, Scrap.Rand (fc-r7d-gd2), Scrap.CreateEntity
  * (fr6.py), Scrap.Set, SScorer.Set, SScorer.Fade, Scrap.Preload3DObject, Scrap.GetAlarm and SLogic.SetOnFloor;
- * SAI.SetStateVehicle takes Python arguments in its state handlers and is called by name (OBJLIB 7). Speech,
- * MissionsFuncs, RaceMaker, VehiclesNPC, Vehicles, OutPolice, Elevator, Items, Map, MapMatrix and the functions of the
- * modules go by name (OBJLIB 3); the profiles of the bishops are VehiclesNPC.cShipAI instances (OBJLIB 7).
+ * SAI.SetStateVehicle takes Python arguments in its state handlers and is called by name (OBJLIB 7); the profiles of
+ * the bishops are VehiclesNPC.cShipAI instances (OBJLIB 7).
+ *
+ * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, RaceMaker, VehiclesNPC, OutPolice,
+ * Elevator, Items, Scorer through Mode_BarDefaults), the keyword call of Speech.ForceRemoteCom and the own functions of
+ * the modules (Map's attributes, the globals of the missions) go through their refs (PORT_CALL, PORT_LCALL, PORT_LOWN,
+ * LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there, OBJLIB 5). By
+ * name: the sections of the .def files (PreSetNextMission of Mission_IntoTheGDB, SetNextMission of
+ * Mission_ReinsertOwnMatrix, MapMatrix.RestoreMatrix; OBJLIB 6) and __builtin__.range of a count that is no int
+ * (OBJLIB 9); the functions given to the scheduler, to Speech, Parking and Elevator as callbacks and to the entities
+ * stay values (OBJLIB 4, 5).
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -65,7 +73,7 @@ static byte Gd_LangPct(const char *key, const nativeVal_t *arg, nativeVal_t *out
 	return ok;
 }
 
-/* the count of range(1, n + 1) (n + 1 already made): range by name for a value that is no int (its errors) */
+/* the count of range(1, n + 1) (n + 1 already made): range by name for a value that is no int (its errors, OBJLIB 9) */
 static byte Gd_Range1(const nativeVal_t *n1, long *count) {
 	if (n1->type == NV_INT) {
 		*count = n1->i > 1 ? n1->i - 1 : 0;
@@ -122,7 +130,7 @@ static byte Gd_ClearList(const char *list) {
 
 /* the last bishop dead: import Map; Map.GiveLife(); Map.InitPoliceBishops(); Scrap.SetAlarm(1) */
 static byte Gd_LastBishop(void) {
-	if (!Mode_Import("Map") || !LV_CALL("Map", "GiveLife", NULL, "") || !LV_CALL("Map", "InitPoliceBishops", NULL, "")) {
+	if (!Mode_Import("Map") || !PORT_LCALL(Map, GiveLife, NULL, "") || !PORT_LCALL(Map, InitPoliceBishops, NULL, "")) {
 		return 0;
 	}
 	return Gd_Alarm(1);
@@ -191,11 +199,6 @@ static byte Gd_RestoreUsed(const char *module) {
 	return ok;
 }
 
-/* the profile function of a mission: no arguments, the cShipAI of the table */
-static byte Gd_Profile(PyObject *args, const char *const *vars, nativeVal_t *out) {
-	return PyArg_ParseTuple(args, "") && LvN_Profile(vars, out);
-}
-
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): outdoors without police and traffic, the player is the bishop, the teleporter to the temple */
@@ -210,7 +213,7 @@ static byte GDB_InitStatus(void) {
 	ok = ok && Mode_SetModVar("OutPolice", "PoliceActive", &v) && Mode_GVarSetI("iTrafficNumber", 0);
 	if (ok) {
 		SaveVar_Set("Char", "Bishop");
-		ok = LV_CALL("Elevator", "SetDef", NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_Temple");
+		ok = PORT_CALL(Elevator, SetDef, NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_Temple");
 	}
 	return ok;
 }
@@ -235,14 +238,14 @@ static byte GDB_Init(void) {
 	LvN_Str(Native_Append(&from), "DM_Door_TempleTeleporter_Temple");
 	Native_SetEmpty(&to, NV_LIST);
 	LvN_Str(Native_Append(&to), "Temple");
-	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &from, &to);
+	byte ok = PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &from, &to);
 	Native_Free(&from);
 	Native_Free(&to);
 	if (ok && LvN_SaveIs("ComeFrom", "DoorTempleTeleporter")) {
 		ok = LvN_ModSetGlobal("Elevator", "OnElevatorReachDown", GM, "EndOfAppears");
 	}
 	int bishops = ok ? LvN_GTrue(GM, "CreateBishops") : -1;
-	return bishops > 0 ? LV_OWN(GM, "InitPoliceBishops", NULL, "") : bishops == 0;
+	return bishops > 0 ? PORT_LOWN(Map, InitPoliceBishops, NULL, "") : bishops == 0;
 }
 
 /* InitPoliceBishops(): the alarm meter, the four waves of bishops and archbishops, the first one */
@@ -265,7 +268,7 @@ static byte GDB_InitPoliceBishops(void) {
 		ok = LvN_ModAppend("OutPolice", "PoliceWaves", &wave);
 		Native_Free(&wave);
 	}
-	return ok && LV_CALL("OutPolice", "InitShips", NULL, "") && Mode_GVarSetS("PoliceWaveEliminated", "Map.NextWave");
+	return ok && PORT_CALL(OutPolice, InitShips, NULL, "") && Mode_GVarSetS("PoliceWaveEliminated", "Map.NextWave");
 }
 
 /* EndOfAppears(elv): the arrival by the teleporter: the player at the spawn point, the message of the waves (three
@@ -292,7 +295,7 @@ static byte GDB_EndOfAppears(void) {
 	if (ok && Native_True(&doit)) {
 		Native_SetInt(&five, 5);
 		Native_SetInt(&one, 1);
-		ok = Gd_LangPct("OnBishopsWave3", &five, &text) && LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text) &&
+		ok = Gd_LangPct("OnBishopsWave3", &five, &text) && PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text) &&
 			Native_Arith('-', &doit, &one, &left);
 		if (ok) {
 			LvN_SaveRepr("GDB.BishopsMsg", &left);
@@ -333,14 +336,14 @@ static byte GDB_GiveLife(void) {
 		} else if (ok) {
 			Native_SetInt(&incl, 5);
 		}
-		ok = ok && Gd_LangPct("OnBishopsWave", &incl, &text) && LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text) &&
+		ok = ok && Gd_LangPct("OnBishopsWave", &incl, &text) && PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text) &&
 			Native_Arith('+', &lives, &incl, &total);
 		if (ok) {
 			LvN_SaveRepr("Player.NumLives", &total);
 		}
 	} else if (ok) {
 		Mode_Lang("OnBishopsWave2", &text);
-		ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+		ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	}
 	if (ok) {
 		SaveVar_Inc("Stats.GDB", 1);
@@ -361,7 +364,7 @@ static byte GDB_NextWave(void) {
 		return 0;
 	}
 	int on = Mode_AlarmOn();
-	return on >= 0 && (!on || LV_OWN(GM, "GiveLife", NULL, "")) && LV_CALL("OutPolice", "NextWave", NULL, "i", 0L) &&
+	return on >= 0 && (!on || PORT_LOWN(Map, GiveLife, NULL, "")) && PORT_CALL(OutPolice, NextWave, NULL, "i", 0L) &&
 		Mode_GVarSetS("PoliceWaveEliminated", "Map.NextWave");
 }
 
@@ -420,19 +423,27 @@ static const char *const ig_bishop_profile[] = { "Ship=SBISHOP1", "StupidPathFin
 	"ControlBoostItemLife=1", "ControlBoostItemAmmo=1", "FactorDamageGetAway=0.2", "FactorDamageItemLife=0.50", "FactorItemAmmo=0.1",
 	"ControlStrafeEvasion=1", "UsePercHookGetAway=3", "TimeMaxStrafe=6", "VelMaxStrafe=0.75", NULL };
 
-static PyObject *Into_GetBishopProfile(PyObject *self, PyObject *args) {
-	nativeVal_t sp;
-	(void)self;
-	Native_SetNone(&sp);
-	return Mode_Return(Gd_Profile(args, ig_bishop_profile, &sp), &sp);
+/* GetBishopProfile(): the cShipAI of the table */
+MODE_FN(Into, GetBishopProfile, 0, LvN_Profile(ig_bishop_profile, out))
+
+/* the profile of the bishops of a mission (0 IntoTheGDB, 1 ReinsertOwnMatrix, 2 ReinsertOwnMatrix2) through its global
+ * GetBishopProfile */
+static byte Gd_BishopProfile(int mission, nativeVal_t *pd) {
+	if (mission == 0) {
+		return PORT_LOWN(Mission_IntoTheGDB, GetBishopProfile, pd, "");
+	}
+	if (mission == 1) {
+		return PORT_LOWN(Mission_ReinsertOwnMatrix, GetBishopProfile, pd, "");
+	}
+	return PORT_LOWN(Mission_ReinsertOwnMatrix2, GetBishopProfile, pd, "");
 }
 
-/* the bishop of a mission: VehiclesNPC.MakeAI, the profile of the mission, its life */
-static byte Gd_MakeBishop(const char *module, nativeVal_t *bishop) {
+/* the bishop of a mission (Gd_BishopProfile): VehiclesNPC.MakeAI, the profile of the mission, its life */
+static byte Gd_MakeBishop(int mission, nativeVal_t *bishop) {
 	nativeVal_t pd;
 	Native_SetNone(&pd);
-	byte ok = LV_CALL("VehiclesNPC", "MakeAI", bishop, "ss", "SBishop1", "Bishop") && LV_OWN(module, "GetBishopProfile", &pd, "") &&
-		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", bishop, &pd);
+	byte ok = PORT_CALL(VehiclesNPC, MakeAI, bishop, "ss", "SBishop1", "Bishop") && Gd_BishopProfile(mission, &pd) &&
+		PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", bishop, &pd);
 	Native_Free(&pd);
 	return ok;
 }
@@ -476,14 +487,14 @@ static byte Into_Init(void) {
 	}
 	Mode_SaveVar("MissionState", &state);
 	Native_SetInt(&ident, LvN_EqS(&state, "RestoreMatrix"));
-	ok = LV_OWN(IG, "CreateBishops", NULL, "iv", 8L, &ident);
+	ok = PORT_LOWN(Mission_IntoTheGDB, CreateBishops, NULL, "iv", 8L, &ident);
 	int restore = LvN_EqS(&state, "RestoreMatrix");
 	Native_Free(&state);
 	if (!ok) {
 		return 0;
 	}
 	if (restore) {
-		return LV_OWN(IG, "RestoreMatrix", NULL, "");
+		return PORT_LOWN(Mission_IntoTheGDB, RestoreMatrix, NULL, "");
 	}
 	return LvN_Com("Mission_IntoTheGDB_RemoteMessage1", "DeepThroat", NULL, NULL, NULL) &&
 		LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", IG, "InitMission") &&
@@ -503,7 +514,7 @@ static byte Into_CreateBishop(const nativeVal_t *ident, nativeVal_t *out) {
 		return there == 0;
 	}
 	Native_SetNone(&name);
-	byte ok = Gd_MakeBishop(IG, out) && LvN_Life(out, IG, "BISHOP_LIFE");
+	byte ok = Gd_MakeBishop(0, out) && LvN_Life(out, IG, "BISHOP_LIFE");
 	if (ok && !Native_True(ident)) {
 		ok = LvN_SetS(out, "EntityList", "Bishops") && LvN_Activate(out, 1) && Mode_VGet(out, "Name", &name) &&
 			LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &name, 0L);
@@ -528,7 +539,7 @@ static byte Into_CreateBishops(const nativeVal_t *num, const nativeVal_t *ident)
 	byte ok = 1;
 	for (long k = 0; k < count && ok; k++) {
 		Native_SetNone(&bishop);
-		ok = LV_OWN(IG, "CreateBishop", &bishop, "v", ident) && Gd_AppendName(IG, &bishop);
+		ok = PORT_LOWN(Mission_IntoTheGDB, CreateBishop, &bishop, "v", ident) && Gd_AppendName(IG, &bishop);
 		Native_Free(&bishop);
 	}
 	if (!ok || Native_True(ident)) {
@@ -564,11 +575,11 @@ static byte Into_InitMission(void) {
 	if (!Mode_Import("Parking")) {
 		return 0;
 	}
-	/* OBJLIB 5: the list object of the module, as the script passes it */
+	/* OBJLIB 5: the list object of the module, as the script passes it (P: the entry keeps it as the targets) */
 	PyObject *bishops = Mode_GlobalPy(IG, "bishops");
-	byte ok = bishops && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "O", bishops);
+	byte ok = bishops && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "P", bishops);
 	Py_XDECREF(bishops);
-	return ok && LvN_ScorerCallG(IG, "MissionScorer") && LvN_Draw() &&
+	return ok && LV_SCORERG(Mission_IntoTheGDB, MissionScorer) && LvN_Draw() &&
 		Mode_GVarSetS("OnFinishAutoUpdate", "Mission_IntoTheGDB.OnFinishScan") &&
 		Mode_Later(1.0, IG, "ScanShip", NULL, 0, "ScanShip");
 }
@@ -644,7 +655,7 @@ static byte Into_CheckContinueScanning(void) {
 	int near = Gd_EntG(IG, "currentScannedShip", &e) ? Gd_Scanning(&usr, &e) : -1;
 	Native_Free(&usr);
 	Native_Free(&e);
-	return near > 0 ? LvN_ScanBlink(0) : near == 0 && LV_OWN(IG, "ResetScan", NULL, "");
+	return near > 0 ? LvN_ScanBlink(0) : near == 0 && PORT_LOWN(Mission_IntoTheGDB, ResetScan, NULL, "");
 }
 
 /* ResetScan(): no bishop scanned, the scorer hidden (refilled a moment later) */
@@ -727,7 +738,7 @@ static byte Into_OnFinishScan(void) {
 	}
 	Native_Free(&cur);
 	Native_Free(&traitor);
-	return ok && LV_OWN(IG, "ResetScan", NULL, "");
+	return ok && PORT_LOWN(Mission_IntoTheGDB, ResetScan, NULL, "");
 }
 
 /* if x in bishops: bishops.remove(x) of the module, in place */
@@ -779,13 +790,13 @@ static byte Into_OnBishopsDeath(const nativeVal_t *looser, const nativeVal_t *wi
 		if (ok && Native_True(&e)) {
 			LvN_Str(&msg, "Grabe ahora!");
 			ok = Mode_PrintV(&msg) && Mode_GVarSetS("CurrentWaypointName", "") && Mode_DelSchedS("ScanShip") &&
-				LvN_PutS(IG, "traitor", "") && Mode_VGet(&e, "Pos", &pos) && LV_OWN(IG, "DropMatrix", NULL, "v", &pos);
+				LvN_PutS(IG, "traitor", "") && Mode_VGet(&e, "Pos", &pos) && PORT_LOWN(Mission_IntoTheGDB, DropMatrix, NULL, "v", &pos);
 			Native_Free(&msg);
 		}
 	}
 	ok = ok && Mode_G(IG, "currentScannedShip", &cur);
 	if (ok && !Native_Compare(&cur, looser)) {
-		ok = LV_OWN(IG, "ResetScan", NULL, "");
+		ok = PORT_LOWN(Mission_IntoTheGDB, ResetScan, NULL, "");
 	}
 	Native_Free(&usr);
 	Native_Free(&name);
@@ -827,20 +838,15 @@ static byte Into_OnBishopsDamage(void) {
 	return ok && Mode_ListSet("Bishops", "OnDamage", "") && Mode_ListSet("Enemies", "OnDamage", "");
 }
 
-/* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = (param,)) (OBJLIB 3: a call with keywords;
- * the keywords made before the function is read, as the C port did) */
+/* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = (param,)) (func the function object, OBJLIB
+ * 5) */
 static byte Gd_ForceRemote(const char *key, const char *who, PyObject *func, const nativeVal_t *param) {
-	PyObject *p = Native_ToPy(param);
-	PyObject *kw = p ? Py_BuildValue("{s:O,s:(O)}", "AfterRemoteComFunc", func, "Parameters", p) : NULL;
-	PyObject *fn = kw ? Script_Attr("Speech", "ForceRemoteCom") : NULL;
-	PyObject *a = fn ? Py_BuildValue("(ss)", key, who) : NULL;
-	PyObject *r = a ? Script_CallObject(fn, a, kw) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(a);
-	Py_XDECREF(fn);
-	Py_XDECREF(kw);
-	Py_XDECREF(p);
-	return r != NULL;
+	nativeVal_t params;
+	Native_SetEmpty(&params, NV_TUPLE);
+	Native_Copy(Native_Append(&params), param);
+	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O,Parameters=v", key, who, func, &params);
+	Native_Free(&params);
+	return ok;
 }
 
 /* DropMatrix(pos): Gus' matrix (not takeable yet) and its arrow where the traitor died; Deep Throat's message makes it
@@ -855,7 +861,7 @@ static byte Into_DropMatrix(const nativeVal_t *pos) {
 	byte ok = LvN_CreateAt(&name, pos, "Item", &l) && Mode_G(IG, "MatrixModel", &model) && Mode_VModel(&l, &model) &&
 		LvN_SetI(&l, "Radius", 3500) && LvN_SetI(&l, "AppearsIfFree", 0) && LvN_SetI(&l, "AutoFace", 0) &&
 		LvN_SetI(&l, "OnlyUser", 1) && LvN_SetF(&l, "rTime", 0.25) && LvN_SetS(&l, "OnTake", "") && Mode_Import("Items") &&
-		LV_CALL("Items", "SetSound", NULL, "vs", &l, "TakeMatrixExt");
+		PORT_CALL(Items, SetSound, NULL, "vs", &l, "TakeMatrixExt");
 	Native_Free(&name);
 	LvN_Str(&name, "MissionCheckArrow");
 	ok = ok && LvN_CreateAt(&name, pos, "WithLife", &l2);
@@ -922,7 +928,7 @@ static byte Into_TakeMatrix(const nativeVal_t *ch) {
 	if (ok) {
 		SaveVar_Set("MissionState", "RestoreMatrix");
 	}
-	return ok && LV_OWN(IG, "RestoreMatrix", NULL, "");
+	return ok && PORT_LOWN(Mission_IntoTheGDB, RestoreMatrix, NULL, "");
 }
 
 static byte Into_RestoreMatrix(void) {
@@ -931,7 +937,9 @@ static byte Into_RestoreMatrix(void) {
 
 /* LaunchRestoreMatrixAnim(UsrName, CharName, optId, FullOption): the bishops go, the scene of the matrix plays */
 static byte Into_LaunchRestoreMatrixAnim(void) {
-	return Gd_RestoreUsed(IG) && LV_OWN(IG, "RelaxBishops", NULL, "") && LV_OWN(IG, "PreSetNextMission", NULL, "") &&
+	/* OBJLIB 6: PreSetNextMission and MapMatrix.RestoreMatrix are functions of the data
+	 * (data/levels/gdb/mission_intothegdb.def, the scene of MapMatrix) */
+	return Gd_RestoreUsed(IG) && PORT_LOWN(Mission_IntoTheGDB, RelaxBishops, NULL, "") && LV_OWN(IG, "PreSetNextMission", NULL, "") &&
 		Mode_Import("MapMatrix") && LV_CALL("MapMatrix", "RestoreMatrix", NULL, "");
 }
 
@@ -941,12 +949,12 @@ static byte Into_RelaxBishops(void) {
 		!Gd_ClearList("Enemies")) {
 		return 0;
 	}
-	return Gd_Alarm(0) && LV_CALL("Map", "InitPoliceBishops", NULL, "");
+	return Gd_Alarm(0) && PORT_LCALL(Map, InitPoliceBishops, NULL, "");
 }
 
 /* MissionScorer(id): the scan status and its bar, visible while a bishop near the player is scanned */
 static byte Into_MissionScorer(const nativeVal_t *id) {
-	nativeVal_t e, usr, vis, x, y, label, it, v, back, main, black, max;
+	nativeVal_t e, usr, vis, x, y, label, it, v, max;
 	if (!Gd_EntG(IG, "currentScannedShip", &e)) {
 		return 0;
 	}
@@ -962,9 +970,6 @@ static byte Into_MissionScorer(const nativeVal_t *id) {
 	}
 	Native_SetInt(&vis, scanning > 0);
 	Native_SetNone(&y);
-	Native_SetNone(&back);
-	Native_SetNone(&main);
-	Native_SetNone(&black);
 	Native_SetNone(&max);
 	LvN_Str(&it, "ScanRemainingTime");
 	byte ok = LvN_TextX(0, &x) && LvN_TextY(0, &y);
@@ -973,14 +978,8 @@ static byte Into_MissionScorer(const nativeVal_t *id) {
 		ok = LvN_MissionText(id, "ScanStatusText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", &vis);
 		Native_Free(&label);
 	}
-	ok = ok && Mode_ScorerAdd(id, &it, "Bar");
-	if (ok) {
-		PyObject *fn = Script_Attr("Scorer", "MissionScorerBar_SetDefaults");
-		ok = fn && LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", &back) && LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", &main) &&
-			LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &black) &&
-			Native_Call(fn, NULL, "vvvvv", id, &it, &back, &main, &black);
-		Py_XDECREF(fn);
-	}
+	/* the function is looked up after the colours now (Mode_BarDefaults; the same unless both are gone) */
+	ok = ok && Mode_ScorerAdd(id, &it, "Bar") && Mode_BarDefaults(id, "ScanRemainingTime", NULL, NULL);
 	Native_SetInt(&v, 1);
 	ok = ok && LvN_ScorerSet(id, "ScanRemainingTime", "IsAutoUpdatable", &v) && Mode_G(IG, "MAX_SCANNING_TIME", &max) &&
 		LvN_ScorerSet(id, "ScanRemainingTime", "MaxValue", &max);
@@ -992,9 +991,6 @@ static byte Into_MissionScorer(const nativeVal_t *id) {
 	Native_Free(&x);
 	Native_Free(&y);
 	Native_Free(&it);
-	Native_Free(&back);
-	Native_Free(&main);
-	Native_Free(&black);
 	Native_Free(&max);
 	return ok;
 }
@@ -1098,23 +1094,17 @@ static const char *const r2_bishop_profile[] = { "Ship=SBISHOP1", "StupidPathFin
 	"ControlBoostItemLife=0", "ControlBoostItemAmmo=0", "FactorDamageGetAway=1", "FactorDamageItemLife=0", "FactorItemAmmo=0.1",
 	"ControlStrafeEvasion=1", "UsePercHookGetAway=2", "TimeMaxStrafe=6", "VelMaxStrafe=0.75", NULL };
 
-static PyObject *Re1_GetBishopProfile(PyObject *self, PyObject *args) {
-	nativeVal_t sp;
-	(void)self;
-	Native_SetNone(&sp);
-	return Mode_Return(Gd_Profile(args, r1_bishop_profile, &sp), &sp);
-}
+MODE_FN(Re1, GetBishopProfile, 0, LvN_Profile(r1_bishop_profile, out))
+MODE_FN(Re2, GetBishopProfile, 0, LvN_Profile(r2_bishop_profile, out))
 
-static PyObject *Re2_GetBishopProfile(PyObject *self, PyObject *args) {
-	nativeVal_t sp;
-	(void)self;
-	Native_SetNone(&sp);
-	return Mode_Return(Gd_Profile(args, r2_bishop_profile, &sp), &sp);
-}
+/* the functions below take the module of the mission and second: 0 for Mission_ReinsertOwnMatrix, 1 for
+ * Mission_ReinsertOwnMatrix2 (the module of the refs) */
 
 /* InitMission(): the restore point and the eight bishops (the second mission: they attack when the player boards) */
 static byte Re_InitMission(const char *module, const char *use, byte second) {
-	return Gd_RestorePoint(module, use) && LV_OWN(module, "CreateBishops", NULL, "i", 8L) &&
+	return Gd_RestorePoint(module, use) &&
+		(second ? PORT_LOWN(Mission_ReinsertOwnMatrix2, CreateBishops, NULL, "i", 8L) :
+			PORT_LOWN(Mission_ReinsertOwnMatrix, CreateBishops, NULL, "i", 8L)) &&
 		(!second || (Mode_Import("Parking") && LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", module, "BishopsAttackPlayer")));
 }
 
@@ -1156,7 +1146,7 @@ static byte Re_BishopsAttackPlayer(const char *module, byte second) {
 }
 
 /* CreateBishop(): a bishop with the player there, in the enemies (red in the second mission) */
-static byte Re_CreateBishop(const char *module, byte red) {
+static byte Re_CreateBishop(const char *module, byte second) {
 	nativeVal_t usr, bishop;
 	if (!Mode_Import("VehiclesNPC")) {
 		return 0;
@@ -1167,14 +1157,14 @@ static byte Re_CreateBishop(const char *module, byte red) {
 		return there == 0;
 	}
 	Native_SetNone(&bishop);
-	byte ok = Gd_MakeBishop(module, &bishop) && (!red || LvN_SetS(&bishop, "TgType", "red")) &&
+	byte ok = Gd_MakeBishop(1 + second, &bishop) && (!second || LvN_SetS(&bishop, "TgType", "red")) &&
 		LvN_SetS(&bishop, "EntityList", "Enemies") && LvN_Life(&bishop, module, "BISHOP_LIFE") && Gd_AppendName(module, &bishop);
 	Native_Free(&bishop);
 	return ok;
 }
 
 /* CreateBishops(numBishops) */
-static byte Re_CreateBishops(const char *module, const nativeVal_t *num) {
+static byte Re_CreateBishops(byte second, const nativeVal_t *num) {
 	nativeVal_t one, n1;
 	long count = 0;
 	Native_SetInt(&one, 1);
@@ -1182,7 +1172,8 @@ static byte Re_CreateBishops(const char *module, const nativeVal_t *num) {
 	byte ok = Mode_Import("VehiclesNPC") && Native_Arith('+', num, &one, &n1) && Gd_Range1(&n1, &count);
 	Native_Free(&n1);
 	for (long k = 0; k < count && ok; k++) {
-		ok = LV_OWN(module, "CreateBishop", NULL, "");
+		ok = second ? PORT_LOWN(Mission_ReinsertOwnMatrix2, CreateBishop, NULL, "") :
+			PORT_LOWN(Mission_ReinsertOwnMatrix, CreateBishop, NULL, "");
 	}
 	return ok;
 }
@@ -1208,14 +1199,17 @@ static byte Re_PreSetNextMission(const char *module, byte second) {
 	if (ok && second) {
 		SaveVar_Set("CreateBertos", "0");
 	} else if (ok) {
+		/* OBJLIB 6: SetNextMission is a function of the data (data/levels/gdb/mission_reinsertownmatrix.def) */
 		ok = LvN_Com("Mission_ReInsertOwnMatrix_RemoteMessage1", "DeepThroat", module, "SetNextMission", NULL);
 	}
 	if (!ok || !Gd_ClearList("Enemies") || !Gd_ClearList("OutCop") || !Gd_Alarm(0)) {
 		return 0;
 	}
-	if (!Mode_Import("Map") || !LV_CALL("Map", "InitPoliceBishops", NULL, "") || !Mode_Import("MapMatrix")) {
+	if (!Mode_Import("Map") || !PORT_LCALL(Map, InitPoliceBishops, NULL, "") || !Mode_Import("MapMatrix")) {
 		return 0;
 	}
+	/* OBJLIB 6: MapMatrix.RestoreMatrix is the scene of the data (data/levels/gdb/mapmatrix.def); ShowDTMessage a
+	 * function of mission_reinsertownmatrix2.def, passed as the object (OBJLIB 5) */
 	if (!second) {
 		return LV_CALL("MapMatrix", "RestoreMatrix", NULL, "");
 	}
@@ -1225,12 +1219,12 @@ static byte Re_PreSetNextMission(const char *module, byte second) {
 	return ok;
 }
 
-/* the entries of the two missions: the same functions with the module and the differences */
+/* the entries of the two missions: the same functions with the module and the differences (second) */
 #define RE_FNS(n, mod, use, second) \
 	static byte Re##n##_InitMission_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_InitMission(mod, use, second); } \
 	static byte Re##n##_BishopsAttackPlayer_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_BishopsAttackPlayer(mod, second); } \
 	static byte Re##n##_CreateBishop_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_CreateBishop(mod, second); } \
-	static byte Re##n##_CreateBishops_C(const nativeVal_t *a, nativeVal_t *out) { (void)out; return Re_CreateBishops(mod, &a[0]); } \
+	static byte Re##n##_CreateBishops_C(const nativeVal_t *a, nativeVal_t *out) { (void)out; return Re_CreateBishops(second, &a[0]); } \
 	static byte Re##n##_OnBishopsDeath_C(const nativeVal_t *a, nativeVal_t *out) { (void)out; return Re_OnBishopsDeath(mod, &a[0]); } \
 	static byte Re##n##_PreSetNextMission_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_PreSetNextMission(mod, second); } \
 	LV_FN(Re##n, InitMissionPy, 0, Re##n##_InitMission_C) \
