@@ -106,23 +106,6 @@ static byte Sd_LaterObj(double delay, PyObject *fn, const nativeVal_t *args, int
 	return Mode_Schedule(&t, fn, args, n, NULL);
 }
 
-/* the keyword argument of a function (one, optional) as a value: def when it is not given */
-static byte Sd_KwArg(PyObject *args, PyObject *kw, char *name, long def, nativeVal_t *out) {
-	char *names[] = { name, NULL };
-	PyObject *o = NULL;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
-		return 0;
-	}
-	if (o) {
-		Native_Arg(o, out);
-	} else if (def < 0) {
-		Native_SetNone(out);
-	} else {
-		Native_SetInt(out, def);
-	}
-	return 1;
-}
-
 /* e = Scrap.CreateEntity(name, pos[0], pos[1], pos[2], cls) as the handle value */
 static byte Sd_Create(const nativeVal_t *name, const nativeVal_t *pos, const char *cls, nativeVal_t *out) {
 	cEntity *e;
@@ -896,15 +879,9 @@ static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
 	return Mode_Done(&t, Mode_VSetI(e, "Invulnerable", 1));
 }
 
-static PyObject *Vs_CreateEnemy(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t mark;
-	(void)self;
-	if (!Sd_KwArg(args, kw, "markAsEnemy", 0, &mark)) {
-		return NULL;
-	}
-	byte ok = Vs_CreateEnemyC(&mark);
-	Native_Free(&mark);
-	return Mode_Result(ok);
+MODE_KW(Vs, CreateEnemy, "|O", "markAsEnemy") {
+	Mode_KwDefI(v, given, 0, 0);
+	return Vs_CreateEnemyC(&v[0]);
 }
 
 /* int(Scrap.GetSaveVar(a)) == 0 and int(Scrap.GetSaveVar(b)) == 0 (no round played): 1, 0, -1 with the error */
@@ -1825,15 +1802,9 @@ static byte Ctf_RespawnEnemyC(const nativeVal_t *leader) {
 	return ok;
 }
 
-static PyObject *Ctf_RespawnEnemy(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t leader;
-	(void)self;
-	if (!Sd_KwArg(args, kw, "isLeader", 0, &leader)) {
-		return NULL;
-	}
-	byte ok = Ctf_RespawnEnemyC(&leader);
-	Native_Free(&leader);
-	return Mode_Result(ok);
+MODE_KW(Ctf, RespawnEnemy, "|O", "isLeader") {
+	Mode_KwDefI(v, given, 0, 0);
+	return Ctf_RespawnEnemyC(&v[0]);
 }
 
 /* RespawnFriend(): a ship of the player's team at a spawn point */
@@ -1934,16 +1905,8 @@ static byte Ctf_CreateFlagC(const nativeVal_t *pos, nativeVal_t *out) {
 	return Mode_Done(&t, 1);
 }
 
-static PyObject *Ctf_CreateFlag(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t pos, out;
-	(void)self;
-	if (!Sd_KwArg(args, kw, "pos", -1, &pos)) {
-		return NULL;
-	}
-	Native_SetNone(&out);
-	byte ok = Ctf_CreateFlagC(&pos, &out);
-	Native_Free(&pos);
-	return Mode_Return(ok, &out);
+MODE_KW(Ctf, CreateFlag, "|O", "pos") {
+	return Ctf_CreateFlagC(&v[0], out);
 }
 
 /* ResetFlag(flagName): a thrown flag nobody took goes; a new one when none is left */
@@ -2422,15 +2385,8 @@ static byte Dom_CreateBatonC(const nativeVal_t *given) {
 	return ok;
 }
 
-static PyObject *Dom_CreateBaton(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t pos;
-	(void)self;
-	if (!Sd_KwArg(args, kw, "pos", -1, &pos)) {
-		return NULL;
-	}
-	byte ok = Dom_CreateBatonC(&pos);
-	Native_Free(&pos);
-	return Mode_Result(ok);
+MODE_KW(Dom, CreateBaton, "|O", "pos") {
+	return Dom_CreateBatonC(&v[0]);
 }
 
 /* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) */
@@ -3441,15 +3397,9 @@ static byte Mr_InitRaceC(const nativeVal_t *first) {
 	return Mode_Done(&t, ok && (!Native_True(first) || OWN(MR, "CreateFirstWaypoint", NULL, "")));
 }
 
-static PyObject *Mr_InitRace(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeVal_t first;
-	(void)self;
-	if (!Sd_KwArg(args, kw, "createFirstWaypoint", 0, &first)) {
-		return NULL;
-	}
-	byte ok = Mr_InitRaceC(&first);
-	Native_Free(&first);
-	return Mode_Result(ok);
+MODE_KW(Mr, InitRace, "|O", "createFirstWaypoint") {
+	Mode_KwDefI(v, given, 0, 0);
+	return Mr_InitRaceC(&v[0]);
 }
 
 /* CreateFirstWaypoint(): the buoy of the start at the first start position (once), the way point; the buoy */
