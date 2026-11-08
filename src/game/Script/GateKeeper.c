@@ -10,6 +10,7 @@
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 #define GK "GateKeeper"
 
@@ -66,16 +67,6 @@ static PyObject *GateKeeper_OnCreate(PyObject *self, PyObject *args) {
 	PyObject *gc = Sf_Call(&f, G("GateKeeperType"), "()");
 	Sf_SetItem(&f, G("GateKeepers"), name, gc);
 	return Sf_None(&f);
-}
-
-/* DoNothingFunc(Door, CharName): the default door callbacks */
-static PyObject *GateKeeper_DoNothingFunc(PyObject *self, PyObject *args) {
-	PyObject *door, *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &door, &ch)) {
-		return NULL;
-	}
-	return Py_ReturnNone();
 }
 
 /* SetDoor(EntityName, DoorName, CanPassFunc=DoNothingFunc, ClosedFunc=DoNothingFunc): the gatekeeper guards the door,
@@ -236,7 +227,7 @@ static PyObject *GateKeeper_GateKeeperSpeech(PyObject *self, PyObject *args) {
 PyMethodDef g_GateKeeperFuncs[] = {
 	{ "UseDoor", GateKeeper_UseDoor, 1, NULL },
 	{ "OnCreate", GateKeeper_OnCreate, 1, NULL },
-	{ "DoNothingFunc", GateKeeper_DoNothingFunc, 1, NULL },
+	{ "DoNothingFunc", Mode_PyNone2, 1, NULL },
 	{ "SetDoor", (PyCFunction)(void (*)(void))GateKeeper_SetDoor, 3, NULL },
 	{ "DoorFoe", GateKeeper_DoorFoe, 1, NULL },
 	{ "GetGateKeeperId", GateKeeper_GetGateKeeperId, 1, NULL },

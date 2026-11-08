@@ -80,11 +80,6 @@ static void Net_RunMenu(int id, const char *section, PyObject *vars);
 static PyObject *Net_Vars(const char *tab);
 static void Net_JoinMenu(int id);
 
-/* Menu.func(id) by name (OBJLIB 3), a failure printed */
-static void Net_Menu(const char *func, int id) {
-	Mode_Printed(Native_CallMod("Menu", func, NULL, "i", (long)id), "Menu", func);
-}
-
 /* Menu.LinkUD or Menu.LinkLR (id, a, b) by name (OBJLIB 3), a failure printed */
 static void Net_Link(const char *func, int id, const char *a, const char *b) {
 	Mode_Printed(Native_CallMod("Menu", func, NULL, "iss", (long)id, a, b), "Menu", func);
@@ -331,7 +326,7 @@ static void Net_TryJoin(int id) {
 	int port = (int)GVar_GetNum("DefaultServerPort", 0);
 
 	Net_InitClient(addr, port);
-	Net_Menu("StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	Str_Printf(address, sizeof(address), "%s:%d", addr, port);
 	/* the text has a %s for the address */
 	const char *fmt = Script_Lang("Net_Menu_Connecting");
@@ -451,12 +446,6 @@ static byte Net_Script(const char *var, nativeVal_t *out) {
 	return 1;
 }
 
-/* len(seq) as PySequence_Length takes it: -1 with its TypeError */
-static int Net_Len(const nativeVal_t *seq) {
-	int n;
-	return Native_Len(seq, &n) ? n : -1;
-}
-
 /* the C text of seq[i] (PySequence_GetItem; a character of a text goes into tmp, Native_Free it), NULL when it is no
  * text (the error of the item left set) */
 static const char *Net_Item(const nativeVal_t *seq, int i, nativeVal_t *tmp) {
@@ -480,7 +469,7 @@ static void Net_ModeMaps(netMapList_t *list) {
 	if (maps) {
 		Mode_Elems(maps);
 	}
-	for (int i = 0; maps && i < Net_Len(maps) && list->num < NET_MAX_MAPS; i++) {
+	for (int i = 0; maps && i < Mode_SeqLen(maps) && list->num < NET_MAX_MAPS; i++) {
 		nativeVal_t tmp = { 0 };
 		const char *e = Net_Item(maps, i, &tmp);
 		if (e) {
@@ -599,7 +588,7 @@ static int Net_ModeIndex(int *count) {
 	byte there = Net_Script("Modes", &modes);
 	const char *type = GVar_GetStr("ServerType");
 	int found = -1;
-	*count = there ? Net_Len(&modes) : 0;
+	*count = there ? Mode_SeqLen(&modes) : 0;
 	for (int i = 0; i < *count; i++) {
 		nativeVal_t tmp = { 0 };
 		const char *e = Net_Item(&modes, i, &tmp);
@@ -710,7 +699,7 @@ static void Step_MapPreviews(int id, PyObject *args) {
 	}
 	nativeVal_t maps;
 	byte there = Net_Script("NetMaps", &maps);
-	for (int i = 0; there && i < Net_Len(&maps); i++) {
+	for (int i = 0; there && i < Mode_SeqLen(&maps); i++) {
 		nativeVal_t tmp = { 0 };
 		const char *e = Net_Item(&maps, i, &tmp);
 		if (e) {
@@ -787,7 +776,7 @@ static PyObject *PCMenu_MultiPlayerMenu(PyObject *self, PyObject *args) {
 	(void)self;
 	NET_ARGS(args);
 	(void)control;
-	Net_Menu("StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	if (Mode_ModGetI("Init", "inMainMenu", 0) || Mode_ModGetI("Init", "isShipEdit", 0)) {
 		Net_JoinMenu(id);
 		return Py_ReturnNone();
@@ -849,7 +838,7 @@ static PyObject *PCMenu_AskPassword(PyObject *self, PyObject *args) {
 	NET_ARGS(args);
 	(void)control;
 	const char *title = Script_Lang("Menu_Multiplayer_Advanced_Password");
-	Net_Menu("StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	PyObject *vars = Py_BuildValue("{s:s,s:s}", "title", *title ? title : "Password", "password",
 		GVar_GetStr("ClientPassword"));
 	Net_RunMenu(id, "password", vars);
@@ -1288,7 +1277,7 @@ static PyObject *PCMenu_AdvancedServer(PyObject *self, PyObject *args) {
 	(void)self;
 	NET_ARGS(args);
 	(void)control;
-	Net_Menu("StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	byte usePass = GVar_GetNum("UseServerPassword", 0) != 0;
 	const char *password = Net_Text("Menu_Multiplayer_Advanced_Password", "Password");
 	Str_Printf(pass, sizeof(pass), usePass ? "\x02 %s:" : "\x03 %s", password);
@@ -1627,7 +1616,8 @@ static PyObject *PCMenu_ServerNameGainFocus(PyObject *self, PyObject *args) {
 	return Net_Render(args, NULL, "PCMenu.ServerNameOnRender");
 }
 
-static PyObject *PCMenu_ServerNameLooseFocus(PyObject *self, PyObject *args) {
+/* the LooseFocus of the edit fields (ServerName, PlayersNumber, FragLimit): no OnRender */
+static PyObject *PCMenu_EditLooseFocus(PyObject *self, PyObject *args) {
 	(void)self;
 	return Net_Render(args, NULL, "");
 }
@@ -1637,19 +1627,9 @@ static PyObject *PCMenu_PlayersNumberGainFocus(PyObject *self, PyObject *args) {
 	return Net_Render(args, NULL, "PCMenu.PlayersNumberOnRender");
 }
 
-static PyObject *PCMenu_PlayersNumberLooseFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "");
-}
-
 static PyObject *PCMenu_FragLimitGainFocus(PyObject *self, PyObject *args) {
 	(void)self;
 	return Net_Render(args, NULL, "PCMenu.FragLimitOnRender");
-}
-
-static PyObject *PCMenu_FragLimitLooseFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "");
 }
 
 /* while an edit field has the focus its text goes to the engine variable each frame */
@@ -1749,13 +1729,13 @@ PyMethodDef g_MenuNetMethods[] = {
 	{ "MapPreviewOn", PCMenu_MapPreviewOn, 1, NULL },
 	{ "MapPreviewOff", PCMenu_MapPreviewOff, 1, NULL },
 	{ "ServerNameGainFocus", PCMenu_ServerNameGainFocus, 1, NULL },
-	{ "ServerNameLooseFocus", PCMenu_ServerNameLooseFocus, 1, NULL },
+	{ "ServerNameLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
 	{ "ServerNameOnRender", PCMenu_ServerNameOnRender, 1, NULL },
 	{ "PlayersNumberGainFocus", PCMenu_PlayersNumberGainFocus, 1, NULL },
-	{ "PlayersNumberLooseFocus", PCMenu_PlayersNumberLooseFocus, 1, NULL },
+	{ "PlayersNumberLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
 	{ "PlayersNumberOnRender", PCMenu_PlayersNumberOnRender, 1, NULL },
 	{ "FragLimitGainFocus", PCMenu_FragLimitGainFocus, 1, NULL },
-	{ "FragLimitLooseFocus", PCMenu_FragLimitLooseFocus, 1, NULL },
+	{ "FragLimitLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
 	{ "FragLimitOnRender", PCMenu_FragLimitOnRender, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };

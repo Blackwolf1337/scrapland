@@ -39,11 +39,6 @@ typedef struct {
 	int v[3];
 } phoneAttr_t;
 
-/* v is the text as the script's == compares it with a literal in C (up to its first 0 byte) */
-static byte Phone_Is(const nativeVal_t *v, const char *text) {
-	return v->type == NV_STR && !strcmp(Native_Text(v), text);
-}
-
 /* e.var = value for the attributes up to the one with a NULL var (e an entity handle value): 0 with the error set */
 static byte Phone_Set(const nativeVal_t *e, const phoneAttr_t *a) {
 	for (; a->var; a++) {
@@ -325,14 +320,14 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 	if (!Native_Slice(foe, 0, 4, head)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Phone_Is(head, "Merc")) {
+	if (Native_IsStr(head, "Merc")) {
 		Native_Free(foe);
 		Native_SetStr(foe, "Mercs");
 	}
 	const char *prefix = wins ? "Win" : "Loose";
 	Mode_SaveVar("Revenge.Type", type);
-	byte race = Phone_Is(type, "Race");
-	byte known = race || Phone_Is(type, "Combat");
+	byte race = Native_IsStr(type, "Race");
+	byte known = race || Native_IsStr(type, "Combat");
 	if (known) {
 		char key[64];
 		Str_Printf(key, sizeof(key), "%sRevenge%sInitMsg", prefix, race ? "Race" : "Combat");
@@ -379,15 +374,15 @@ static byte PhoneCab_Revenge(const nativeVal_t *a) {
 	Phone_SetVar("Speech", "PlayerName", &a[0]);
 	Phone_SetVar("Speech", "NPCName", &a[1]);
 	byte ok;
-	if (Phone_Is(opt, "Talk")) {
+	if (Native_IsStr(opt, "Talk")) {
 		ok = PhoneCab_ResultTalk(a, ch);
-	} else if (Phone_Is(opt, "ChallengeRaceStdOpt1") || Phone_Is(opt, "ChallengeRaceStdOpt2") ||
-		Phone_Is(opt, "ChallengeRaceStdOpt3")) {
+	} else if (Native_IsStr(opt, "ChallengeRaceStdOpt1") || Native_IsStr(opt, "ChallengeRaceStdOpt2") ||
+		Native_IsStr(opt, "ChallengeRaceStdOpt3")) {
 		ok = Native_CallMod("Challenge", "OnChallengeOpt", NULL, "ivi", (long)(Native_Text(opt)[19] - '0'), ch, 0L);
-	} else if (Phone_Is(opt, "ChallengeRaceStdOpt4")) {
+	} else if (Native_IsStr(opt, "ChallengeRaceStdOpt4")) {
 		Mode_SaveVar("Revenge.Foe", foe);
 		ok = Mode_ModVar("Challenge", "groups", groups) && Native_Subscript(groups, foe, group);
-		if (ok && Phone_Is(group, "Mercs")) {
+		if (ok && Native_IsStr(group, "Mercs")) {
 			Native_Free(foe);
 			Native_SetStr(foe, "Mercs");
 		}
@@ -494,7 +489,7 @@ static byte PhoneCab_Use(const nativeVal_t *a) {
 	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
 	Mode_SaveVar("Revenge.Foe", foe);
 	Mode_SaveVar("Revenge.Type", type);
-	if (Phone_Is(type, "") || Phone_Is(foe, "")) {
+	if (Native_IsStr(type, "") || Native_IsStr(foe, "")) {
 		return Mode_Done(&t, 1);
 	}
 	byte ok;

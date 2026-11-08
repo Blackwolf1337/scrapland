@@ -314,12 +314,6 @@ static byte Se_G(const char *name, nativeVal_t *out) {
 	return Mode_G(SE, name, out);
 }
 
-/* the int value i */
-static const nativeVal_t *Se_I(nativeVal_t *v, long i) {
-	Native_SetInt(v, i);
-	return v;
-}
-
 /* Scrap.GetEntity(name) through its seam */
 static byte Se_Entity(const char *name, nativeVal_t *out) {
 	nativeVal_t n;
@@ -342,14 +336,6 @@ static byte Se_Flat(const nativeVal_t *v, nativeVal_t *out) {
 		Native_Free(&b);
 	}
 	return ok;
-}
-
-/* (a, b, c) of three values (copies) */
-static void Se_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
-	Native_SetEmpty(out, NV_TUPLE);
-	Native_Copy(Native_Append(out), a);
-	Native_Copy(Native_Append(out), b);
-	Native_Copy(Native_Append(out), c);
 }
 
 /* the ship of HangarTab: HangarTab.prevShip (its attribute) */
@@ -484,7 +470,7 @@ static byte Se_PointTo(const nativeVal_t *obj, const nativeVal_t *point) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(z, 0);
-	Se_Tuple3(a, z, c ? neg : ang, z);
+	Mode_Tuple3(a, z, c ? neg : ang, z);
 	return Mode_Done(&t, Mode_VSet(obj, "Ang", a));
 }
 
@@ -515,7 +501,7 @@ static byte Se_LaunchPlatformAnim(void) {
 			LvN_Item(off, 2, o2);
 		if (ok) {
 			Native_Free(a);
-			Se_Tuple3(a, o0, y, o2);
+			Mode_Tuple3(a, o0, y, o2);
 		}
 		ok = ok && Mode_VSet(rusty, "OffModPos", a) && LvN_SetF(rusty, "DeltaOffMul", 0.0) && LvN_SetF(rusty, "OffMul", 1.0) &&
 			LvN_SetS(rusty, "Action", "TalkListenNPC") && LvN_SetS(rusty, "DefLoop", "TalkListenNPC");
@@ -525,15 +511,6 @@ static byte Se_LaunchPlatformAnim(void) {
 	}
 	Native_Free(e);
 	return Mode_Done(&t, Se_G("editPlatform", e) && LvN_SetS(e, "Action", "Change"));
-}
-
-/* Scrap.GetEntity(Scrap.GetCam(0)) */
-static byte Se_Cam(nativeVal_t *out) {
-	nativeVal_t n = { 0 };
-	Mode_CamName(0, &n);
-	byte ok = Mode_EntitySeam(&n, out);
-	Native_Free(&n);
-	return ok;
 }
 
 /* editedShips[HangarTab.currentHangar] != None and (destroyedShips[...] == 0 or IsEditingMultiplayer()): 1, 0, -1 */
@@ -567,7 +544,7 @@ static byte Se_ChangeShip(const nativeVal_t *entityName) {
 	if (c > 0) {
 		int on = Se_Entity("Rusty_0", rusty) ? Se_RustyOn(rusty) : -1;
 		if (on > 0) {
-			byte ok = Se_Cam(cam);
+			byte ok = Mode_Cam0(cam);
 			if (ok && !Native_True(cam)) {
 				ok = Se_Entity("EditCamera", e) && Mode_VGet(e, "Pos", pos) && Se_PointTo(rusty, pos);
 			} else if (ok) {
@@ -607,7 +584,7 @@ static byte Se_RebuildList(const nativeVal_t *ship, const nativeVal_t *isDestroy
 				Native_CallMod("string", "find", pos, "vv", name, x);
 			int f = ok ? Mode_CmpI(pos, "!=", -1) : -1;
 			if (f > 0) {
-				ok = Mode_SetModVar(HT, "currentShipToEdit", Se_I(k, i));
+				ok = Mode_SetModVar(HT, "currentShipToEdit", Mode_IntVal(k, i));
 				break;
 			}
 			ok = ok && f == 0;
@@ -623,7 +600,7 @@ static byte Se_RebuildList(const nativeVal_t *ship, const nativeVal_t *isDestroy
 		Native_Free(cur);
 		bad = n < 0 || !LvN_ModGet(HT, "currentShipToEdit", cur) ? -1 : Mode_CmpI(cur, ">", n - 1);
 	}
-	if (bad < 0 || (bad > 0 && !Mode_SetModVar(HT, "currentShipToEdit", Se_I(k, 0)))) {
+	if (bad < 0 || (bad > 0 && !Mode_SetModVar(HT, "currentShipToEdit", Mode_IntVal(k, 0)))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetEmpty(aux, NV_LIST);
@@ -675,7 +652,7 @@ static byte Se_VerifyChangeShip(const nativeVal_t *entityName) {
 		Native_Free(off);
 		ok = ok && Mode_VGet(rusty, "OffModPos", off) && LvN_Item(off, 2, o2);
 		if (ok) {
-			Se_Tuple3(pos, o0, y, o2);
+			Mode_Tuple3(pos, o0, y, o2);
 		}
 		c = ok && Mode_VSet(rusty, "Pos", pos) && LvN_SetI(rusty, "LLogicState", 9) && LvN_SetS(rusty, "LLogicTarget", "") ? 1 : -1;
 	}
@@ -717,9 +694,9 @@ static byte Se_DoorInitializator(const nativeVal_t *cls) {
 	nativeVal_t *v = Mode_V(&t), *path = Mode_V(&t), *total = Mode_V(&t), *half = Mode_V(&t), *two = Mode_V(&t);
 	nativeVal_t *r = Mode_V(&t);
 	if (!Mode_Import("Elevator") || !Native_CallMod("Elevator", "DoorInitializator", NULL, "v", cls) ||
-		!LvN_SetCls("VRadius", Se_I(v, 500)) || !LvN_CreateAction("Change", r) ||
+		!LvN_SetCls("VRadius", Mode_IntVal(v, 500)) || !LvN_CreateAction("Change", r) ||
 		!Sn_Cat("Models/Doors/", cls, "/Anm/Change.M3D", path) || !LvN_SetAct("AnmFilePath", path) ||
-		!LvN_SetAct("InterpTime", Se_I(v, 0)) || !LvN_SetAct("isLoop", Se_I(v, 0))) {
+		!LvN_SetAct("InterpTime", Mode_IntVal(v, 0)) || !LvN_SetAct("isLoop", Mode_IntVal(v, 0))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(two, 2.0);
@@ -790,7 +767,7 @@ static byte Se_EndMoveEngine(const nativeVal_t *entityName) {
 	ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
 		Native_Free(model);
-		Mode_Repr(Se_I(k, i + 1), r);
+		Mode_Repr(Mode_IntVal(k, i + 1), r);
 		ok = Se_ShipGet("Model", model) && Sn_Cat("", model, "EngineGroup", s) && Native_Arith('+', s, r, name);
 		if (ok && i == 0) {
 			char var[0x10];
@@ -802,7 +779,7 @@ static byte Se_EndMoveEngine(const nativeVal_t *entityName) {
 			} else if (none == 0) {
 				Native_Free(r);
 				Native_Free(s);
-				ok = Mode_Arith('+', Se_I(k, 6), slots, s);
+				ok = Mode_Arith('+', Mode_IntVal(k, 6), slots, s);
 				if (ok) {
 					Mode_Repr(s, r);
 					ok = Sn_Cat("HINT_Engines", r, NULL, key) && Mode_LangV(key, text) && Sn_Set(id, name, "Hint", text);
@@ -811,7 +788,7 @@ static byte Se_EndMoveEngine(const nativeVal_t *entityName) {
 		} else if (ok) {
 			ok = Sn_SetUse(id, name, "Hint", "HINT_Engines6", SE);
 		}
-		ok = ok && Sn_Set(id, name, "Visible", Se_I(k, 1));
+		ok = ok && Sn_Set(id, name, "Visible", Mode_IntVal(k, 1));
 		Native_Free(r);
 		Native_Free(s);
 		Native_Free(name);
@@ -830,7 +807,7 @@ static byte Se_EndMoveEngine(const nativeVal_t *entityName) {
 static byte Se_StopRotate(void) {
 	nativeVal_t z;
 	return Mode_GOpI(SE, "ctnRotating", '+', 1) && Mode_Import(HT) && Se_ShipSetI("MoveTime", 0) &&
-		Mode_Put(SE, "isRotating", NULL, Se_I(&z, 0));
+		Mode_Put(SE, "isRotating", NULL, Mode_IntVal(&z, 0));
 }
 
 /* RotateShip(Angle): the ship turns to Angle in half a second (EndMoveEngine at the end) */
@@ -870,10 +847,10 @@ static byte Se_LoopRotate(const nativeVal_t *rot) {
 		return Mode_Done(&t, c == 0);
 	}
 	byte ok = Se_ShipGet("Pos", pos) && Se_ShipSet("MovePos", pos) && Se_G("editShipPosDummy", dummy) && LvN_Item(dummy, 2, d2) &&
-		LvN_Item(d2, 0, a0) && Se_ShipGet("Ang", ang) && LvN_Item(ang, 1, a1) && Mode_Arith('+', a1, Se_I(k, 170), y);
+		LvN_Item(d2, 0, a0) && Se_ShipGet("Ang", ang) && LvN_Item(ang, 1, a1) && Mode_Arith('+', a1, Mode_IntVal(k, 170), y);
 	if (ok) {
 		Native_SetInt(z, 0);
-		Se_Tuple3(v, a0, y, z);
+		Mode_Tuple3(v, a0, y, z);
 		ok = Se_ShipSet("MoveAng", v);
 	}
 	Native_Free(v);
@@ -886,7 +863,7 @@ static byte Se_LoopRotate(const nativeVal_t *rot) {
 /* StartRotateLoop(): the ship starts turning (a new loop, the old one ends) */
 static byte Se_StartRotate(void) {
 	nativeVal_t v = { 0 };
-	byte ok = Mode_Put(SE, "isRotating", NULL, Se_I(&v, 1)) && Mode_GOpI(SE, "ctnRotating", '+', 1) && Se_G("ctnRotating", &v) &&
+	byte ok = Mode_Put(SE, "isRotating", NULL, Mode_IntVal(&v, 1)) && Mode_GOpI(SE, "ctnRotating", '+', 1) && Se_G("ctnRotating", &v) &&
 		Se_LoopRotate(&v);
 	Native_Free(&v);
 	return ok;
@@ -953,7 +930,7 @@ static byte Se_AddShipEditTabs(int id, const nativeVal_t *tabs) {
 	nativeVal_t *init = Mode_V(&t), *end = Mode_V(&t), *first = Mode_V(&t), *only = Mode_V(&t), *width = Mode_V(&t);
 	nativeVal_t *px = Mode_V(&t), *x2 = Mode_V(&t), *k = Mode_V(&t), *prev = Mode_V(&t), *t0 = Mode_V(&t);
 	if (!Mode_Import("Menu") || !Se_G("offsetX", startX) || !Se_G("TabQuadSize", quad) ||
-		!Mode_Arith('*', quad, Se_I(k, 18), tabSize)) {
+		!Mode_Arith('*', quad, Mode_IntVal(k, 18), tabSize)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Copy(l, tabs);
@@ -965,23 +942,23 @@ static byte Se_AddShipEditTabs(int id, const nativeVal_t *tabs) {
 		counter++;
 		ok = ok && Sn_Cat("ShipEdit_", tab, "TabName", key) && Mode_LangV(key, text);
 		Native_Free(quad);
-		ok = ok && Mode_Arith('*', Se_I(k, counter - 2), tabSize, a) && Se_G("TabQuadSize", quad) && Mode_Arith('/', a, quad, init);
+		ok = ok && Mode_Arith('*', Mode_IntVal(k, counter - 2), tabSize, a) && Se_G("TabQuadSize", quad) && Mode_Arith('/', a, quad, init);
 		Native_Free(a);
 		Native_Free(quad);
-		ok = ok && Mode_Arith('*', Se_I(k, counter - 1), tabSize, a) && Se_G("TabQuadSize", quad) && Mode_Arith('/', a, quad, end);
+		ok = ok && Mode_Arith('*', Mode_IntVal(k, counter - 1), tabSize, a) && Se_G("TabQuadSize", quad) && Mode_Arith('/', a, quad, end);
 		int n = ok ? Native_Size(tabs) : -1;
 		Native_SetInt(first, counter == 2);
 		Native_SetInt(only, n == 1);
 		PyObject *vars = n >= 0 ? Sn_Vars(8, "name", name, "tab", tab, "text", text, "x", startX, "init", init, "end", end,
 			"first", first, "only", only) : NULL;
-		ok = vars && Sn_Def(id, "tab", vars, SE) && Mode_Arith('/', tabSize, Se_I(k, 2), width) &&
+		ok = vars && Sn_Def(id, "tab", vars, SE) && Mode_Arith('/', tabSize, Mode_IntVal(k, 2), width) &&
 			Mode_Arith('+', startX, width, x2);
 		Py_XDECREF(vars);
 		if (ok) {
 			Native_SetEmpty(px, NV_TUPLE);
 			Native_Copy(Native_Append(px), startX);
 			Native_Copy(Native_Append(px), x2);
-			ok = Se_SetAt("tabPixelX", name, px) && Mode_Arith('+', x2, Se_I(k, 1), b);
+			ok = Se_SetAt("tabPixelX", name, px) && Mode_Arith('+', x2, Mode_IntVal(k, 1), b);
 		}
 		if (ok) {
 			Native_Free(startX);
@@ -1003,7 +980,7 @@ static byte Se_AddShipEditTabs(int id, const nativeVal_t *tabs) {
 	if (c > 0) {
 		Native_Free(prev);
 		ok = LvN_Item(tabs, 0, t0) && Sn_Cat("ShipEditTab", t0, NULL, name) && Mode_Put(SE, "prevTab", NULL, name) &&
-			Se_G("prevTab", prev) && Sn_Set(id, prev, "TextColorBlue", Se_I(k, 0));
+			Se_G("prevTab", prev) && Sn_Set(id, prev, "TextColorBlue", Mode_IntVal(k, 0));
 	}
 	return Mode_Done(&t, c >= 0 && ok);
 }
@@ -1013,14 +990,14 @@ static byte Se_AddDefaultPanelContent(int id, const nativeVal_t *ntabs) {
 	/* offsetX + (TabQuadSize*18*ntabs/2) and (TabQuadSize*18*(4-ntabs)/2 + TabQuadSize*6/2) - MarginSize */
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *k = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *x2 = Mode_V(&t), *c = Mode_V(&t), *w2 = Mode_V(&t);
-	byte ok = Mode_Arith('*', Se_I(k, 252), ntabs, a) && Mode_Arith('/', a, Se_I(c, 2), b) && Mode_Arith('+', Se_I(k, 47), b, x2);
+	byte ok = Mode_Arith('*', Mode_IntVal(k, 252), ntabs, a) && Mode_Arith('/', a, Mode_IntVal(c, 2), b) && Mode_Arith('+', Mode_IntVal(k, 47), b, x2);
 	Native_Free(a);
 	Native_Free(b);
-	ok = ok && Mode_Arith('-', Se_I(k, 4), ntabs, a) && Mode_Arith('*', Se_I(c, 252), a, b);
+	ok = ok && Mode_Arith('-', Mode_IntVal(k, 4), ntabs, a) && Mode_Arith('*', Mode_IntVal(c, 252), a, b);
 	Native_Free(a);
-	ok = ok && Mode_Arith('/', b, Se_I(k, 2), a);
+	ok = ok && Mode_Arith('/', b, Mode_IntVal(k, 2), a);
 	Native_Free(b);
-	ok = ok && Mode_Arith('+', a, Se_I(k, 42), b) && Mode_Arith('-', b, Se_I(c, 1), w2);
+	ok = ok && Mode_Arith('+', a, Mode_IntVal(k, 42), b) && Mode_Arith('-', b, Mode_IntVal(c, 1), w2);
 	PyObject *vars = ok ? Sn_Vars(2, "x2", x2, "w2", w2) : NULL;
 	ok = vars && Sn_Def(id, "background", vars, SE);
 	Py_XDECREF(vars);
@@ -1059,7 +1036,7 @@ static byte Se_TabFront(int id, const nativeVal_t *tab, byte front) {
 	}
 	byte ok = Sn_Cat("Tab_", tab, NULL, &name);
 	for (int i = 0; ok && i < 5; i++) {
-		ok = Sn_Set(id, &name, vars[i], Se_I(&v, front ? on[i] : off[i]));
+		ok = Sn_Set(id, &name, vars[i], Mode_IntVal(&v, front ? on[i] : off[i]));
 	}
 	Native_Free(&name);
 	return ok;
@@ -1141,7 +1118,7 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 	} else if (LvN_EqS(prev, "ShipEditTabEngines")) {
 		ok = Se_TabHint(id, prev, "HINT_Tabs6", 1);
 		c = ok ? Mode_Cmp(control, "!=", prev) : -1;
-		ok = c == 0 || (c > 0 && Native_CallMod("EnginesTab", "HideEnginesPanel", NULL, "i", (long)id) && Se_RotateShip(Se_I(k, 0)));
+		ok = c == 0 || (c > 0 && Native_CallMod("EnginesTab", "HideEnginesPanel", NULL, "i", (long)id) && Se_RotateShip(Mode_IntVal(k, 0)));
 		ok = ok && Sn_Link("LinkUD", id, "ShipEditTabEngines", "");
 	} else if (LvN_EqS(prev, "ShipEditTabWeapons")) {
 		ok = Se_TabHint(id, prev, "HINT_Tabs7", 1);
@@ -1153,10 +1130,10 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 			Sn_Link("LinkUD", id, "ShipEditTabHull", "");
 	}
 	Native_Free(p);
-	ok = ok && Se_G("prevTab", p) && Sn_Set(id, p, "TextColorBlue", Se_I(k, 255));
+	ok = ok && Se_G("prevTab", p) && Sn_Set(id, p, "TextColorBlue", Mode_IntVal(k, 255));
 	Native_Free(p);
-	ok = ok && Se_G("prevTab", p) && Sn_Set(id, p, "SpriteIndex", Se_I(k, 18)) && Sn_Set(id, control, "TextColorBlue", Se_I(k, 0)) &&
-		Sn_Set(id, control, "SpriteIndex", Se_I(k, 41));
+	ok = ok && Se_G("prevTab", p) && Sn_Set(id, p, "SpriteIndex", Mode_IntVal(k, 18)) && Sn_Set(id, control, "TextColorBlue", Mode_IntVal(k, 0)) &&
+		Sn_Set(id, control, "SpriteIndex", Mode_IntVal(k, 41));
 	Native_SetInt(swept, -1);
 	int has = ok ? Mode_ModTrue(HT, "prevShip") : -1;
 	if (has > 0) {
@@ -1185,7 +1162,7 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 		Native_SetStr(tab, "ShipEditTabEngines");
 		c = ok && Se_G("prevTab", p) ? Mode_Cmp(p, "!=", tab) : -1;
 		ok = c == 0 || (c > 0 && Native_CallMod("EnginesTab", "ShowEnginesPanel", NULL, "i", (long)id) &&
-			Se_RotateShip(Se_I(k, 180)));
+			Se_RotateShip(Mode_IntVal(k, 180)));
 		ok = ok && Se_TabHint(id, control, "HINT_Tabs2", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
 			Se_LinksUD(id, "ShipEditTabEngines", links) && Se_ShipGet("Model", model) && Sn_Cat("", model, "EngineGroup1", grp) &&
 			Sn_LinkV("LinkUD", id, tab, grp) && Sn_Link("LinkUD", id, "ShipEditTabEngines", "Engine1");
@@ -1193,11 +1170,11 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 		static const char *const weapons[] = { "Devastator", "Tesla", "ATPC", "Inferno", "Swarm", "Vulcan", NULL };
 		ok = Se_Swept(180.0, hasAng ? shipAng : NULL, swept) && Native_CallMod("WeaponsTab", "ShowWeaponsPanel", NULL, "i", (long)id) &&
 			Se_TabHint(id, control, "HINT_Tabs3", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
-			Se_LinksUD(id, "ShipEditTabWeapons", weapons) && Se_RotateShip(Se_I(k, 0));
+			Se_LinksUD(id, "ShipEditTabWeapons", weapons) && Se_RotateShip(Mode_IntVal(k, 0));
 	} else if (LvN_EqS(control, "ShipEditTabHull")) {
 		ok = Se_Swept(90.0, hasAng ? shipAng : NULL, swept) && Native_CallMod("HullTab", "ShowHullPanel", NULL, "i", (long)id) &&
 			Se_TabHint(id, control, "HINT_Tabs4", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
-			Se_RotateShip(Se_I(k, 270));
+			Se_RotateShip(Mode_IntVal(k, 270));
 	}
 	c = ok ? Mode_CmpI(swept, "!=", -1) : -1;
 	if (c > 0) {
@@ -1205,11 +1182,7 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 	}
 	if (c > 0) {
 		int fast = Mode_CmpI(swept, "<=", 91);
-		const char *s = fast > 0 ? "RotateShipFast" : "RotateShip";
-		char sv[0x20], vv[0x20];
-		Str_Printf(sv, sizeof(sv), "%sSound", s);
-		Str_Printf(vv, sizeof(vv), "%sVolume", s);
-		c = fast >= 0 && Mode_Sound(sv, vv) ? 1 : -1;
+		c = fast >= 0 && Mode_SoundOf(fast > 0 ? "RotateShipFast" : "RotateShip") ? 1 : -1;
 	}
 	return Mode_Done(&t, c >= 0 && Mode_Put(SE, "prevTab", NULL, control));
 }
@@ -1236,10 +1209,9 @@ static byte Se_Clean(void) {
 			Native_Free(&e);
 			/* try: editedShips[i].Del() except: print "Ya borrada" (the error of the lookup too) */
 			if (!Se_AtI("editedShips", i, &e) || !Mode_VDel(&e)) {
-				const nativeVal_t *items[1] = { &msg };
 				PyErr_Clear();
 				Native_SetStr(&msg, "Ya borrada");
-				c = Mode_Print(items, 1) ? 1 : -1;
+				c = Mode_PrintV(&msg) ? 1 : -1;
 			}
 		}
 		ok = c >= 0;
@@ -1281,7 +1253,7 @@ static byte Se_CreatePlayerShip(void) {
 	if (LvN_EqI(cur, 9)) {
 		Mode_SaveVar("Hangar.HangarShipAux", cad);
 	} else {
-		byte ok = Mode_Arith('+', cur, Se_I(k, 1), x);
+		byte ok = Mode_Arith('+', cur, Mode_IntVal(k, 1), x);
 		if (ok) {
 			Mode_Repr(x, r);
 			ok = Sn_Cat("Hangar.HangarShip", r, NULL, name);
@@ -1408,7 +1380,7 @@ static byte Se_ShipText(const nativeVal_t *ship, nativeVal_t *out) {
  * (a save variable) or the engine variable HangarShip<hangar+1> */
 static byte Se_SaveShip(const nativeVal_t *ship, const nativeVal_t *hangar, byte save) {
 	nativeVal_t cad = { 0 }, n = { 0 }, r = { 0 }, name = { 0 }, k;
-	byte ok = Se_ShipText(ship, &cad) && Mode_Arith('+', hangar, Se_I(&k, 1), &n);
+	byte ok = Se_ShipText(ship, &cad) && Mode_Arith('+', hangar, Mode_IntVal(&k, 1), &n);
 	if (ok) {
 		Mode_Repr(&n, &r);
 		ok = Sn_Cat(save ? "Hangar.HangarShip" : "HangarShip", &r, NULL, &name) &&
@@ -1554,7 +1526,7 @@ static byte Se_MakeDefault(const nativeVal_t *p, const nativeVal_t *pilot) {
 /* "HangarShip" (prefix) + `i + 1` */
 static byte Se_HangarName(const char *prefix, long i, nativeVal_t *out) {
 	nativeVal_t r = { 0 }, k;
-	Mode_Repr(Se_I(&k, i + 1), &r);
+	Mode_Repr(Mode_IntVal(&k, i + 1), &r);
 	byte ok = Sn_Cat(prefix, &r, NULL, out);
 	Native_Free(&r);
 	return ok;
@@ -1590,15 +1562,15 @@ static byte Se_Camera(void) {
 		ok = 0;
 	}
 	ok = ok && Se_G("EditCameraPitch", pitch) && Se_G("editShipPosDummy", d) && LvN_Item(d, 2, d2) && LvN_Item(d2, 1, a1) &&
-		Mode_Arith('-', a1, Se_I(k, 180), ay);
+		Mode_Arith('-', a1, Mode_IntVal(k, 180), ay);
 	if (ok) {
 		Native_SetInt(k, 0);
-		Se_Tuple3(camAng, pitch, ay, k);
+		Mode_Tuple3(camAng, pitch, ay, k);
 	}
 	ok = ok && Se_G("CameraDist", dist) && Mode_Neg(dist, neg);
 	if (ok) {
 		Native_SetInt(k, 0);
-		Se_Tuple3(back, k, k, neg);
+		Mode_Tuple3(back, k, k, neg);
 	}
 	Native_Free(d);
 	ok = ok && Se_G("editShipPosDummy", d) && LvN_Item(d, 1, p1) && Mode_Rotate(back, camAng, rot) && Mode_VecAdd(p1, rot, pos) &&
@@ -1659,7 +1631,7 @@ static byte Se_SetupEdit(void) {
 			}
 			Native_SetStr(pn, "P_None");
 			Native_Free(ship);
-			ok = ok && Se_MakeDefault(Se_I(n, p), pn) && Mode_SetModVar(HT, "currentHangar", n) && Se_G("editedShips", list) &&
+			ok = ok && Se_MakeDefault(Mode_IntVal(n, p), pn) && Mode_SetModVar(HT, "currentHangar", n) && Se_G("editedShips", list) &&
 				Mode_Sub(list, n, ship) && Mode_SetModVar(HT, "prevShip", ship);
 		} else if (def == 0) {
 			Native_Free(ship);
@@ -1673,7 +1645,7 @@ static byte Se_SetupEdit(void) {
 			Se_SetAt("editedShips", cur, ship);
 		for (int i = 0; ok && i < 9; i++) {
 			Native_Free(cur);
-			int c = LvN_ModGet(HT, "currentHangar", cur) ? Mode_Cmp(Se_I(k, i), "!=", cur) : -1;
+			int c = LvN_ModGet(HT, "currentHangar", cur) ? Mode_Cmp(Mode_IntVal(k, i), "!=", cur) : -1;
 			if (c > 0) {
 				Native_Free(name);
 				Native_Free(cad);
@@ -1734,7 +1706,7 @@ static byte Se_EnterEditShipMenu(int id) {
 	if (c < 0 || (c > 0 && (!Se_G("editPlatform", plt) || !LvN_SetS(plt, "OnObjSlot", "")))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Mode_Put(SE, "prevTab", NULL, &se_none) || !Mode_Put(SE, "fromSputnik", NULL, Se_I(k, 0)) || !Mode_Import("Init")) {
+	if (!Mode_Put(SE, "prevTab", NULL, &se_none) || !Mode_Put(SE, "fromSputnik", NULL, Mode_IntVal(k, 0)) || !Mode_Import("Init")) {
 		return Mode_Done(&t, 0);
 	}
 	c = Mode_ModTrue("Init", "inMainMenu");
@@ -1761,7 +1733,7 @@ static byte Se_EnterEditShipMenu(int id) {
 	Mode_SaveVar("Hangar.DestroyedShips", text);
 	Native_Free(tabs);
 	byte ok = Native_EvalText(SE, text, lost) && Mode_Put(SE, "destroyedShips", NULL, lost) &&
-		Se_SetAt("destroyedShips", Se_I(k, 9), Se_I(z, 0)) && Native_CallMod("Menu", "StartNewMenu", NULL, "i", (long)id) &&
+		Se_SetAt("destroyedShips", Mode_IntVal(k, 9), Mode_IntVal(z, 0)) && Native_CallMod("Menu", "StartNewMenu", NULL, "i", (long)id) &&
 		Se_G("tabs", tabs) && Native_CallGlobal(SE, "AddShipEditTabs", NULL, "iv", (long)id, tabs) &&
 		Native_CallGlobal(SE, "AddDefaultPanelContent", NULL, "ii", (long)id, 4L) &&
 		Native_CallMod(HT, "SetHangarPanel", NULL, "i", (long)id) && Native_CallMod("EnginesTab", "SetEnginesPanel", NULL, "i", (long)id) &&
@@ -1773,7 +1745,7 @@ static byte Se_EnterEditShipMenu(int id) {
 	c = ok && LvN_ModGet(HT, "currentHangar", cur) ? Mode_CmpI(cur, ">=", 0) : -1;
 	if (c > 0) {
 		Native_Free(cur);
-		ok = LvN_ModGet(HT, "currentHangar", cur) && Mode_Arith('+', cur, Se_I(k, 1), x);
+		ok = LvN_ModGet(HT, "currentHangar", cur) && Mode_Arith('+', cur, Mode_IntVal(k, 1), x);
 		if (ok) {
 			Mode_Repr(x, r);
 			ok = Sn_Cat("Hangar", r, NULL, hangar);
@@ -1832,7 +1804,7 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 		byte ok = Se_Entity("DM_Door_EditShip_00", plt) && Mode_VGet(plt, "Pos", pp) && LvN_Item(pp, 0, a) &&
 			Mode_VGet(rusty, "Pos", rp) && LvN_Item(rp, 1, b) && LvN_Item(pp, 2, c2);
 		if (ok) {
-			Se_Tuple3(at, a, b, c2);
+			Mode_Tuple3(at, a, b, c2);
 		}
 		Native_Free(rp);
 		ok = ok && Mode_VGet(rusty, "Pos", rp) && Mode_VecSub(rp, at, vec) && Mode_VecNorm(vec, nv);
@@ -1840,10 +1812,10 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 		Native_Free(b);
 		Native_Free(c2);
 		Native_Free(rp);
-		ok = ok && LvN_Item(nv, 0, a) && Mode_Arith('*', a, Se_I(k, 1000), x) && Mode_VGet(rusty, "Pos", rp) && LvN_Item(rp, 1, b) &&
-			LvN_Item(nv, 2, c2) && Mode_Arith('*', c2, Se_I(k, 1000), z);
+		ok = ok && LvN_Item(nv, 0, a) && Mode_Arith('*', a, Mode_IntVal(k, 1000), x) && Mode_VGet(rusty, "Pos", rp) && LvN_Item(rp, 1, b) &&
+			LvN_Item(nv, 2, c2) && Mode_Arith('*', c2, Mode_IntVal(k, 1000), z);
 		if (ok) {
-			Se_Tuple3(pos, x, b, z);
+			Mode_Tuple3(pos, x, b, z);
 		}
 		c = ok && Mode_VSet(rusty, "Pos", pos) ? 1 : -1;
 	}
@@ -1860,7 +1832,7 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 		Se_G("destroyedShips", lost);
 	if (ok) {
 		Mode_Repr(lost, rep);
-		ok = Mode_SetSaveVar("Hangar.DestroyedShips", rep) && Mode_SetModVar(HT, "holograms", Se_I(k, 0)) &&
+		ok = Mode_SetSaveVar("Hangar.DestroyedShips", rep) && Mode_SetModVar(HT, "holograms", Mode_IntVal(k, 0)) &&
 			Native_CallMod("SSound", "SetPS", NULL, "ssd", "EditHologramLoopSound", "Volume", 0.0) && Mode_StopAllSounds();
 	}
 	c = ok ? Se_HasShip() : -1;
@@ -1958,7 +1930,7 @@ static byte Se_SaveShipAll(int id) {
 					if (has > 0) {
 						setDefault = 0;
 						Native_Free(ship);
-						ok = Se_AtI("editedShips", i, ship) && Mode_SetModVar(HT, "currentHangar", Se_I(k, i));
+						ok = Se_AtI("editedShips", i, ship) && Mode_SetModVar(HT, "currentHangar", Mode_IntVal(k, i));
 						break;
 					}
 					ok = has == 0;
@@ -1992,7 +1964,7 @@ static byte Se_SaveShipAll(int id) {
 		ok = n >= 0;
 		for (int i = 0; ok && i < n - 1; i++) {
 			Native_Free(s);
-			ok = Se_AtI("editedShips", i, s) && Se_SaveShip(s, Se_I(k, i), 0);
+			ok = Se_AtI("editedShips", i, s) && Se_SaveShip(s, Mode_IntVal(k, i), 0);
 		}
 		Native_Free(cur);
 		ok = ok && LvN_ModGet(HT, "currentHangar", cur) && Mode_GVarSet("iHangarShip", cur) &&
@@ -2002,7 +1974,7 @@ static byte Se_SaveShipAll(int id) {
 		ok = n >= 0;
 		for (int i = 0; ok && i < n; i++) {
 			Native_Free(s);
-			ok = Se_AtI("editedShips", i, s) && Se_SaveShip(s, Se_I(k, i), 1);
+			ok = Se_AtI("editedShips", i, s) && Se_SaveShip(s, Mode_IntVal(k, i), 1);
 		}
 		int c = ok && Mode_Import(SE) && Se_AtCur("editedShips", e) ? Mode_Cmp(e, "==", &se_none) : -1;
 		if (c == 0) {
@@ -2034,7 +2006,7 @@ static byte Se_SaveShipAll(int id) {
 			} else {
 				ok = 0;
 			}
-			ok = ok && Mode_SetModVar(HT, "prevShip", &se_none) && Mode_SetModVar(HT, "currentHangar", Se_I(k, -1));
+			ok = ok && Mode_SetModVar(HT, "prevShip", &se_none) && Mode_SetModVar(HT, "currentHangar", Mode_IntVal(k, -1));
 		} else {
 			ok = c == 0;
 		}

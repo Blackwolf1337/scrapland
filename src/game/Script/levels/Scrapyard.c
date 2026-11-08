@@ -632,13 +632,12 @@ static byte Ambush_CreateProbeN(void) {
 		Native_Free(pos);
 		Mode_RandomVisPoint(pos);
 	}
-	const nativeVal_t *items[1] = { name };
 	byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", p, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
 		LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_SetS(p, "OnDeath", "Mission_Ambush.OnProbeDeath") &&
 		Mode_VSet(p, "MovePos", pos) && Mode_VSet(p, "Pos", pos) && LvN_SetInts3(p, "MoveAng", 0, 0, 0) && LvN_SetInts3(p, "Ang", 0, 0, 0) &&
 		LvN_SetF(p, "MoveTime", 0.1) && Mode_G(AM, "PROBE_LIFE", life) && Mode_VSet(p, "Life", life) && Mode_VSet(p, "MaxLife", life) &&
 		Mode_VSet(p, "MinLife", life) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", p, 1L) && Mode_VGet(p, "Name", name) &&
-		Mode_Print(items, 1);
+		Mode_PrintV(name);
 	return Mode_Done(&t, ok);
 }
 
@@ -2421,15 +2420,6 @@ static byte Sa_GiveUp(const nativeVal_t *o) {
 	return ok;
 }
 
-/* the entity of a global name of the module (a handle or None) */
-static byte Sa_Ent(const char *var, nativeVal_t *out) {
-	nativeVal_t n = { 0 };
-	Native_SetNone(out);
-	byte ok = Mode_G(SA, var, &n) && Mode_EntityH(&n, out);
-	Native_Free(&n);
-	return ok;
-}
-
 /* CheckEvasion(): every 2 s: both smart mercenaries dead, or EVASION_TIME away from them: the call to the bishop */
 static byte Again_CheckEvasionN(void) {
 	modeVals_t t = { .n = 0 };
@@ -2439,7 +2429,7 @@ static byte Again_CheckEvasionN(void) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(now, Mode_Time());
-	int dead = Sa_Ent("SmartMercName", o1) && Sa_Ent("MedMercName", o2) ? Sy_CmpNone(o1, "==") : -1;
+	int dead = Mode_GEntity(SA, "SmartMercName", o1) && Mode_GEntity(SA, "MedMercName", o2) ? Sy_CmpNone(o1, "==") : -1;
 	if (dead > 0) {
 		dead = Sy_CmpNone(o2, "==");
 	}

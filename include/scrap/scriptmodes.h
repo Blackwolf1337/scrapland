@@ -71,8 +71,9 @@ void Mode_DummyStart(const char *name, int flag);
 void Mode_DummyNext(nativeVal_t *out);
 /* Scrap.Preload3DObject(name) */
 byte Mode_Preload(const nativeVal_t *name);
-/* print a, b, ... (n values, up to 8) as the script's print statement (OBJLIB 7: through Python's sys.stdout until
- * the console takes C texts) */
+/* print a, b, ... (n values, up to MODE_PRINT_MAX; Elevator.UseElevator prints 9) as the script's print statement
+ * (OBJLIB 7: through Python's sys.stdout until the console takes C texts) */
+#define MODE_PRINT_MAX 12
 byte Mode_Print(const nativeVal_t *const *items, int n);
 /* module.var = v of a Python object as it is (OBJLIB 5: a value passed between modules keeps its identity) */
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
@@ -264,6 +265,8 @@ byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out)
 /* var.append(v) of a list variable of the module, in place (the method of whatever value is there, as the script
  * calls it) */
 byte Mode_Append(const char *module, const char *var, const nativeVal_t *v);
+/* var.method(v) of a variable of a module (global as for Mode_Keys), in place: append, remove, ... */
+byte Mode_VarCall(const char *module, const char *var, byte global, const char *method, const nativeVal_t *v);
 /* a, b, ... = v: the n items of a sequence of n (the errors of unpacking) */
 byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out);
 
@@ -609,8 +612,6 @@ byte Mode_ActionSet(const char *name);
 /* Scrap.SetMoney(money) and Scrap.IncSaveVar(name) through their seams (fc-r7b-jy and fc-r7c-dt6 record them) */
 byte Mode_SetMoneySeam(const nativeVal_t *money);
 byte Mode_IncSaveVar(const char *name);
-/* v is a text and its C text (up to its first 0 byte) is text (Script_Is of the ports) */
-byte Mode_IsText(const nativeVal_t *v, const char *text);
 /* Scrap.SetTimeSpeed(speed) through its seam (fc-r7b-jy records it) */
 byte Mode_TimeSpeed(double speed);
 /* Scrap.GetCam(i): the name of the camera of player i (None when there is none) */
@@ -626,11 +627,8 @@ byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *ar
 byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out);
 
 /* SScorer.Fade(id, (r, g, b, a), (r, g, b, a), time) with the time a value of the script (the recorders see the int the
- * script passes; the TypeError of "f" for one that is no number), else Mode_Fade */
+ * script passes; the TypeError of "f" for one that is no number); Mode_Fade passes a float */
 byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time);
-/* print a, b, ... as Mode_Print with up to MODE_PRINT_MAX values (Elevator.UseElevator prints 9) */
-#define MODE_PRINT_MAX 12
-byte Mode_PrintN(const nativeVal_t *const *items, int n);
 
 /* ---- the hubs of batch K (CharAct, Alarm, NewsPanel, Scene, Speech) ---- */
 
@@ -746,10 +744,6 @@ PyObject *Mode_DefVars(int n, ...);
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
 
-/* module.var as the menus read it (Script_GetInt, Script_GetString): an int (a float cut), def for other values; the
- * text up to its first 0 byte, "" for other values; the error of a missing module or variable dropped */
-int Mode_ModInt(const char *module, const char *var, int def);
-const char *Mode_ModText(const char *module, const char *var, char *out, int size);
 /* SScorer.SetCinema(id, on, time), Scrap.GetCam(i) (the camera name or None) and Scrap.UsrEntity(id) (the handle value or
  * None; the NULL result of a player above 3) through their seams */
 byte Mode_SetCinema(long id, long on, double time);
@@ -790,5 +784,65 @@ byte Mode_ActionSetGet(nativeVal_t *out);
  * any other text (a name, a name chain) and the errors through Script_EvalIn (OBJLIB 6), its result as Native_Arg makes
  * it */
 byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out);
+
+/* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
+
+/* print v, print text: Mode_Print of one value (the text of any length) */
+byte Mode_PrintV(const nativeVal_t *v);
+byte Mode_PrintS(const char *text);
+/* module.func(args) at the time on the scheduler as Mode_SchedAt, with the argument tuple a Python object (borrowed;
+ * OBJLIB 4: Menu.ShowWarning schedules itself again with the tuple it got) */
+byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name);
+/* module.func(id) by name (OBJLIB 3: a mod or a case may replace it), the failure printed as Mode_Printed prints it */
+void Mode_PrintedCall(const char *module, const char *func, long id);
+/* len(seq) as PySequence_Length takes it: -1 with its TypeError */
+int Mode_SeqLen(const nativeVal_t *seq);
+/* the tab editors (EnginesTab, WeaponsTab, HullTab, ShipEdit): Scrap.GetLangStr(key) % module.UseTxt; the Red, Green
+ * and Blue of a menu item from c[0..2]; its Visible; fn(id, a, b) of a link function of Menu on texts of C; a sound of
+ * the Sound module played, SSound.Play(Sound.<name>Sound, Sound.<name>Volume) */
+byte Mode_LangUse(const char *module, const char *key, nativeVal_t *out);
+void Mode_ItemColor(int id, const char *item, const int *c);
+void Mode_ItemVisible(int id, const char *item, int v);
+byte Mode_LinkCall(PyObject *fn, int id, const char *a, const char *b);
+byte Mode_SoundOf(const char *name);
+/* the int value i in v (v returned); (a, b, c) of copies of three values; Scrap.Rand(a, b) as the C ports draw it
+ * (the C directly); an adapter of a script function that does nothing (any arguments, None) */
+const nativeVal_t *Mode_IntVal(nativeVal_t *v, long i);
+void Mode_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c);
+void Mode_RandF(double a, double b, nativeVal_t *out);
+PyObject *Mode_PyNone(PyObject *self, PyObject *args);
+/* the Apply button of the option menus flashes once something changed (1) */
+byte Mode_ApplyFlash(int id);
+/* Scrap.StartDummySearch(name, flag) with the name a value of the script, through its seam (the TypeError of "s" for
+ * a text with 0 bytes) */
+byte Mode_DummyStartV(const nativeVal_t *name, long flag);
+/* module.var = a text (of any length) as Script_SetVar sets it: an error is dropped */
+void Mode_ModPutS(const char *module, const char *var, const char *s);
+/* a == b, a != b, a > b, a < b, a >= b, a <= b of the script (op '=', '!', '>', '<', 'g', 'l'): 1 or 0, -1 with the
+ * error (any error set after the compare, also for equal values); and against the int i */
+int Mode_CmpOp(const nativeVal_t *a, const nativeVal_t *b, char op);
+int Mode_CmpOpI(const nativeVal_t *a, long i, char op);
+/* h.var as any value (Mode_VObj) into a slot that may hold one (it is freed first) */
+byte Mode_VObjRead(const nativeVal_t *h, const char *var, nativeVal_t *slot);
+/* the global name of module (a list) .append(h.Name), in place */
+byte Mode_AppendName(const char *module, const char *name, const nativeVal_t *h);
+/* h.Ang = (0, x, 0) */
+byte Mode_SetAng(const nativeVal_t *h, const nativeVal_t *x);
+/* the system message (Mode_SpeechMsg) of the language text of key */
+byte Mode_LangMsg(const char *key);
+/* an adapter of a script function of two arguments that does nothing (the arity error of "OO", None) */
+PyObject *Mode_PyNone2(PyObject *self, PyObject *args);
+/* Flag.var = v with Flag the global of the module (OBJLIB 7: the flag is the entity handle in the module dict) */
+byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v);
+/* Scrap.GetEntity(Scrap.GetCam(0)) through the seam of GetEntity; its EntityLink = link */
+byte Mode_Cam0(nativeVal_t *out);
+byte Mode_CamLink(const nativeVal_t *link);
+/* Scrap.GetEntity(<the global name var of the module>) as the handle value (None for none) */
+byte Mode_GEntity(const char *module, const char *var, nativeVal_t *out);
+/* Scrap.GetSaveVar(name) and Scrap.SetSaveVar(name, v) of a name value (the TypeError of "s"); Scrap.SetSaveVar(name,
+ * Scrap.GetSaveVar(from)) (the TypeError of "s" for a missing one) */
+byte Mode_SaveVarV(const nativeVal_t *name, nativeVal_t *out);
+byte Mode_SetSaveV(const nativeVal_t *name, const nativeVal_t *v);
+byte Mode_SaveCopy(const char *name, const char *from);
 
 #endif

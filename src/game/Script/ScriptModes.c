@@ -245,9 +245,9 @@ byte Mode_Preload(const nativeVal_t *name) {
 }
 
 byte Mode_Print(const nativeVal_t *const *items, int n) {
-	PyObject *o[8] = { NULL };
+	PyObject *o[MODE_PRINT_MAX] = { NULL };
 	byte ok = 1;
-	n = n < 8 ? n : 8;
+	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
 	for (int k = 0; ok && k < n; k++) {
 		ok = (o[k] = Native_ToPy(items[k])) != NULL;
 	}
@@ -529,12 +529,13 @@ byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *
 	return Native_ArgInt(id, &i) && Native_ArgStr(item, 2, &name) && Native_ScorerSet(i, name, var, v);
 }
 
-byte Mode_Fade(long id, const int *from, const int *to, double time) {
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
+	double d;
 	MODE_SEAM("SScorer", "Fade");
 	if (seam) {
 		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
 		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(hook, NULL, "iOOd", id, a, b, time);
+		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
 		if (!b) {
 			Py_DECREF(hook);
 		}
@@ -542,12 +543,22 @@ byte Mode_Fade(long id, const int *from, const int *to, double time) {
 		Py_XDECREF(b);
 		return ok;
 	}
+	if (!Native_ArgDouble(time, &d)) {
+		return 0;
+	}
 	cScorer *sc = Scorer_Get((int)id);
 	if (sc) {
 		ScorerFade_Start(&sc->fade, Scorer_PackColor((uint32_t)from[0], (uint32_t)from[1], (uint32_t)from[2], (uint32_t)from[3]),
-			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)time);
+			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)d);
 	}
 	return 1;
+}
+
+byte Mode_Fade(long id, const int *from, const int *to, double time) {
+	/* the time as a float value: the recorders see the float "d" gave */
+	nativeVal_t t;
+	Native_SetFloat(&t, time);
+	return Mode_FadeV(id, from, to, &t);
 }
 
 byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const char *func) {
@@ -1332,14 +1343,28 @@ static PyObject *Mode_VarMethod(const char *module, const char *var, byte global
 	return r;
 }
 
-byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *out) {
-	PyObject *r = Mode_VarMethod(module, var, global, "keys", NULL);
+/* var.method() of a variable of a module (keys, values) as a native value */
+static byte Mode_VarList(const char *module, const char *var, byte global, const char *method, nativeVal_t *out) {
+	PyObject *r = Mode_VarMethod(module, var, global, method, NULL);
 	if (!r) {
 		return 0;
 	}
-	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.keys(): not a value native C takes", module, var);
+	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.%s(): not a value native C takes", module, var, method);
 	Py_DECREF(r);
 	return ok;
+}
+
+/* var.method(v) of a variable of a module (append, remove), in place */
+byte Mode_VarCall(const char *module, const char *var, byte global, const char *method, const nativeVal_t *v) {
+	PyObject *x = Native_ToPy(v);
+	PyObject *r = x ? Mode_VarMethod(module, var, global, method, x) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(x);
+	return r != NULL;
+}
+
+byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *out) {
+	return Mode_VarList(module, var, global, "keys", out);
 }
 
 int Mode_HasKey(const char *module, const char *var, byte global, const nativeVal_t *key) {
@@ -1366,11 +1391,7 @@ byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out)
 
 byte Mode_Append(const char *module, const char *var, const nativeVal_t *v) {
 	/* the append method of whatever value is there (a value that is no list: the AttributeError of the script) */
-	PyObject *x = Native_ToPy(v);
-	PyObject *r = x ? Mode_VarMethod(module, var, 1, "append", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	return r != NULL;
+	return Mode_VarCall(module, var, 1, "append", v);
 }
 
 byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out) {
@@ -1492,21 +1513,11 @@ PyObject *Mode_Return(byte ok, nativeVal_t *v) {
 /* ---- helpers of the native super deals (SuperDeals.c) ---- */
 
 byte Mode_Values(const char *module, const char *var, byte global, nativeVal_t *out) {
-	PyObject *r = Mode_VarMethod(module, var, global, "values", NULL);
-	if (!r) {
-		return 0;
-	}
-	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.values(): not a value native C takes", module, var);
-	Py_DECREF(r);
-	return ok;
+	return Mode_VarList(module, var, global, "values", out);
 }
 
 byte Mode_Remove(const char *module, const char *var, const nativeVal_t *v) {
-	PyObject *x = Native_ToPy(v);
-	PyObject *r = x ? Mode_VarMethod(module, var, 1, "remove", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	return r != NULL;
+	return Mode_VarCall(module, var, 1, "remove", v);
 }
 
 byte Mode_ListSet(const char *list, const char *var, const char *value) {
@@ -2950,10 +2961,6 @@ byte Mode_IncSaveVar(const char *name) {
 	return 1;
 }
 
-byte Mode_IsText(const nativeVal_t *v, const char *text) {
-	return v->type == NV_STR && !strcmp(Native_Text(v), text);
-}
-
 byte Mode_TimeSpeed(double speed) {
 	MODE_SEAM("Scrap", "SetTimeSpeed");
 	if (seam) {
@@ -3075,37 +3082,6 @@ byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
 	}
 	}
 	return Native_Raise(NE_TYPE, "bad operand type for unary -");
-}
-
-byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
-	double d;
-	MODE_SEAM("SScorer", "Fade");
-	if (seam) {
-		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
-		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
-		if (!b) {
-			Py_DECREF(hook);
-		}
-		Py_XDECREF(a);
-		Py_XDECREF(b);
-		return ok;
-	}
-	return Native_ArgDouble(time, &d) && Mode_Fade(id, from, to, d);
-}
-
-byte Mode_PrintN(const nativeVal_t *const *items, int n) {
-	PyObject *o[MODE_PRINT_MAX] = { NULL };
-	byte ok = 1;
-	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
-	for (int k = 0; ok && k < n; k++) {
-		ok = (o[k] = Native_ToPy(items[k])) != NULL;
-	}
-	ok = ok && Script_Print(o, n);
-	for (int k = 0; k < n; k++) {
-		Py_XDECREF(o[k]);
-	}
-	return ok;
 }
 
 /* ---- the hubs of batch K (CharAct, Alarm, NewsPanel, Scene, Speech) ---- */
@@ -3618,32 +3594,6 @@ PyObject *Mode_DefVars(int n, ...) {
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
 
-int Mode_ModInt(const char *module, const char *var, int def) {
-	nativeVal_t v;
-	if (!Mode_ModGet(module, var, &v)) {
-		/* OBJLIB 7: the error of the lookup dropped */
-		PyErr_Clear();
-		return def;
-	}
-	int r = v.type == NV_INT ? (int)v.i : v.type == NV_FLOAT ? (int)v.f : def;
-	Native_Free(&v);
-	return r;
-}
-
-const char *Mode_ModText(const char *module, const char *var, char *out, int size) {
-	nativeVal_t v;
-	out[0] = 0;
-	if (!Mode_ModGet(module, var, &v)) {
-		PyErr_Clear();
-		return out;
-	}
-	if (v.type == NV_STR) {
-		Str_Copy(out, Native_Text(&v), size);
-	}
-	Native_Free(&v);
-	return out;
-}
-
 byte Mode_SetCinema(long id, long on, double time) {
 	MODE_SEAM("SScorer", "SetCinema");
 	if (seam) {
@@ -3686,16 +3636,11 @@ byte Mode_SchedAt(double time, const char *module, const char *func, const nativ
 	for (int i = 0; i < n; i++) {
 		Native_Copy(Native_Append(&t), &args[i]);
 	}
-	PyObject *f = Script_Attr(module, func);
-	PyObject *a = f ? Native_ToPy(&t) : NULL;
+	PyObject *a = Native_ToPy(&t);
 	Native_Free(&t);
-	if (f && a) {
-		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, a, name ? name : "");
-	}
+	byte ok = a && Mode_SchedPy(time, module, func, a, name);
 	PyErr_Clear();
-	byte ok = f && a;
 	Py_XDECREF(a);
-	Py_XDECREF(f);
 	return ok;
 }
 
@@ -3799,4 +3744,239 @@ byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out
 	Native_Arg(v, out);
 	Py_DECREF(v);
 	return 1;
+}
+
+/* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
+
+byte Mode_PrintV(const nativeVal_t *v) {
+	const nativeVal_t *items[1] = { v };
+	return Mode_Print(items, 1);
+}
+
+byte Mode_PrintS(const char *text) {
+	nativeVal_t t;
+	Native_SetText(&t, text, (int)strlen(text));
+	byte ok = Mode_PrintV(&t);
+	Native_Free(&t);
+	return ok;
+}
+
+byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name) {
+	PyObject *f = Script_Attr(module, func);
+	if (f) {
+		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, args, name ? name : "");
+	}
+	PyErr_Clear();
+	Py_XDECREF(f);
+	return f != NULL;
+}
+
+void Mode_PrintedCall(const char *module, const char *func, long id) {
+	Mode_Printed(Native_CallMod(module, func, NULL, "i", id), module, func);
+}
+
+int Mode_SeqLen(const nativeVal_t *seq) {
+	int n;
+	return Native_Len(seq, &n) ? n : -1;
+}
+
+byte Mode_LangUse(const char *module, const char *key, nativeVal_t *out) {
+	nativeVal_t lang, use;
+	Mode_Lang(key, &lang);
+	byte ok = Mode_G(module, "UseTxt", &use) && Native_Arith('%', &lang, &use, out);
+	Native_Free(&lang);
+	Native_Free(&use);
+	return ok;
+}
+
+void Mode_ItemColor(int id, const char *item, const int *c) {
+	Script_SetNum(id, item, "Red", c[0]);
+	Script_SetNum(id, item, "Green", c[1]);
+	Script_SetNum(id, item, "Blue", c[2]);
+}
+
+void Mode_ItemVisible(int id, const char *item, int v) {
+	Script_SetNum(id, item, "Visible", v);
+}
+
+byte Mode_LinkCall(PyObject *fn, int id, const char *a, const char *b) {
+	return Native_Call(fn, NULL, "iss", (long)id, a, b);
+}
+
+byte Mode_SoundOf(const char *name) {
+	char snd[0x40], vol[0x40];
+	Str_Printf(snd, sizeof(snd), "%sSound", name);
+	Str_Printf(vol, sizeof(vol), "%sVolume", name);
+	return Mode_Sound(snd, vol);
+}
+
+const nativeVal_t *Mode_IntVal(nativeVal_t *v, long i) {
+	Native_SetInt(v, i);
+	return v;
+}
+
+void Mode_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), a);
+	Native_Copy(Native_Append(out), b);
+	Native_Copy(Native_Append(out), c);
+}
+
+void Mode_RandF(double a, double b, nativeVal_t *out) {
+	Native_SetFloat(out, Scrap_RandRange(a, b));
+}
+
+PyObject *Mode_PyNone(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Py_ReturnNone();
+}
+
+byte Mode_ApplyFlash(int id) {
+	Script_SetStr(id, "Apply", "Effect", "Outline");
+	Script_SetNum(id, "Apply", "Red", 255);
+	Script_SetNum(id, "Apply", "Green", 255);
+	Script_SetNum(id, "Apply", "Blue", 180);
+	Script_SetStr(id, "Apply", "OnRender", "!ScorerSpriteFlash");
+	return 1;
+}
+
+byte Mode_DummyStartV(const nativeVal_t *name, long flag) {
+	PyObject *hook;
+	const char *s;
+	int seam = Native_Seam("Scrap", "StartDummySearch", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "vi", name, flag);
+	}
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Mode_DummyStart(s, (int)flag);
+	return 1;
+}
+
+void Mode_ModPutS(const char *module, const char *var, const char *s) {
+	nativeVal_t v;
+	Native_SetText(&v, s, (int)strlen(s));
+	Mode_ModPut(module, var, &v);
+	Native_Free(&v);
+}
+
+int Mode_CmpOp(const nativeVal_t *a, const nativeVal_t *b, char op) {
+	int c = Native_Compare(a, b);
+	if (PyErr_Occurred()) {
+		return -1;
+	}
+	switch (op) {
+	case '=':
+		return c == 0;
+	case '!':
+		return c != 0;
+	case '>':
+		return c > 0;
+	case '<':
+		return c < 0;
+	case 'g':
+		return c >= 0;
+	}
+	return c <= 0;
+}
+
+int Mode_CmpOpI(const nativeVal_t *a, long i, char op) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return Mode_CmpOp(a, &b, op);
+}
+
+byte Mode_VObjRead(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
+	Native_Free(slot);
+	return Mode_VObj(h, var, slot);
+}
+
+byte Mode_AppendName(const char *module, const char *name, const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && Mode_Append(module, name, &n);
+	Native_Free(&n);
+	return ok;
+}
+
+byte Mode_SetAng(const nativeVal_t *h, const nativeVal_t *x) {
+	nativeVal_t a;
+	Native_SetEmpty(&a, NV_TUPLE);
+	Native_SetInt(Native_Append(&a), 0);
+	Native_Copy(Native_Append(&a), x);
+	Native_SetInt(Native_Append(&a), 0);
+	byte ok = Mode_VSet(h, "Ang", &a);
+	Native_Free(&a);
+	return ok;
+}
+
+byte Mode_LangMsg(const char *key) {
+	nativeVal_t t;
+	Mode_Lang(key, &t);
+	byte ok = Mode_SpeechMsg(&t);
+	Native_Free(&t);
+	return ok;
+}
+
+PyObject *Mode_PyNone2(PyObject *self, PyObject *args) {
+	PyObject *a, *b;
+	(void)self;
+	return PyArg_ParseTuple(args, "OO", &a, &b) ? Py_ReturnNone() : NULL;
+}
+
+byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v) {
+	PyObject *flag = Mode_GlobalPy(module, "Flag");
+	byte ok = flag && Mode_HSet(flag, var, v);
+	Py_XDECREF(flag);
+	return ok;
+}
+
+byte Mode_Cam0(nativeVal_t *out) {
+	nativeVal_t name;
+	Mode_CamName(0, &name);
+	byte ok = Mode_EntitySeam(&name, out);
+	Native_Free(&name);
+	return ok;
+}
+
+byte Mode_CamLink(const nativeVal_t *link) {
+	nativeVal_t cam, e = { 0 };
+	Mode_CamName(0, &cam);
+	byte ok = Mode_EntitySeam(&cam, &e) && Mode_VSet(&e, "EntityLink", link);
+	Native_Free(&cam);
+	Native_Free(&e);
+	return ok;
+}
+
+byte Mode_GEntity(const char *module, const char *var, nativeVal_t *out) {
+	nativeVal_t name = { 0 };
+	Native_SetNone(out);
+	byte ok = Mode_G(module, var, &name) && Mode_EntityH(&name, out);
+	Native_Free(&name);
+	return ok;
+}
+
+byte Mode_SaveVarV(const nativeVal_t *name, nativeVal_t *out) {
+	const char *s;
+	Native_SetNone(out);
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Mode_SaveVar(s, out);
+	return 1;
+}
+
+byte Mode_SetSaveV(const nativeVal_t *name, const nativeVal_t *v) {
+	const char *s;
+	return Native_ArgStr(name, 1, &s) && Mode_SetSaveVar(s, v);
+}
+
+byte Mode_SaveCopy(const char *name, const char *from) {
+	nativeVal_t v;
+	Mode_SaveVar(from, &v);
+	byte ok = Mode_SetSaveVar(name, &v);
+	Native_Free(&v);
+	return ok;
 }

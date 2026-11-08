@@ -66,7 +66,7 @@ static byte CA_Photograph(const nativeVal_t *sel) {
 		if (!Mode_VObj(e, "Action", act) || !Native_Slice(act, 0, 5, head)) {
 			return Mode_Done(&t, 0);
 		}
-		if (Mode_IsText(head, "Crazy")) {
+		if (Native_IsStr(head, "Crazy")) {
 			if (!Native_CallMod("CrazyWing", "CrazyPhoto", r, "v", e)) {
 				return Mode_Done(&t, 0);
 			}
@@ -126,7 +126,7 @@ static byte CA_NPCDeathCall(const nativeVal_t *e) {
 		if (!Mode_VObj(e, "ActCtrl", ctrl) || !Mode_VObj(e, "Pos", pos)) {
 			return Mode_Done(&t, 0);
 		}
-		if (Mode_IsText(ctrl, "Gear")) {
+		if (Native_IsStr(ctrl, "Gear")) {
 			if (!Mode_LaterIn(0.5, "MisItems", "CreateBattery", pos, 1, NULL)) {
 				return Mode_Done(&t, 0);
 			}
@@ -158,7 +158,7 @@ static byte CA_NoFXDeath(const nativeVal_t *e, const nativeVal_t *time) {
 	if (!Mode_Import("MissionsFuncs") || !Mode_VObj(e, "EntityList", &list)) {
 		return 0;
 	}
-	byte player = Mode_IsText(&list, "Players");
+	byte player = Native_IsStr(&list, "Players");
 	Native_Free(&list);
 	byte now = Mode_CmpI(time, "==", 0) > 0;
 	if (!Native_ToFloat(time, &secs)) {

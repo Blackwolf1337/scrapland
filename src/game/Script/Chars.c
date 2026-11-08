@@ -26,20 +26,6 @@
 
 #define CH "Chars"
 
-/* print text as the script's print statement does (sys.stdout, not the console log) */
-static byte Ch_Print(const nativeVal_t *v) {
-	const nativeVal_t *items[1] = { v };
-	return Mode_Print(items, 1);
-}
-
-static byte Ch_PrintS(const char *text) {
-	nativeVal_t t;
-	Native_SetText(&t, text, (int)strlen(text));
-	byte ok = Ch_Print(&t);
-	Native_Free(&t);
-	return ok;
-}
-
 /*
  * SAct.GetClass(cls) and, when there is one, SAct.GetAction(action) as IntSetChar calls them: 1 when both exist, 0
  * when not, -1 with the error set. A cls or action that is no text raises the TypeError of SAct's parse, the action
@@ -400,14 +386,6 @@ static byte Ch_CanDrive(const nativeVal_t *ch, nativeVal_t *out) {
 	return 1;
 }
 
-/* SetOnFloor(char) */
-static byte Ch_SetOnFloor(const nativeVal_t *ch) {
-	nativeVal_t name = { 0 };
-	byte ok = Mode_VObj(ch, "Name", &name) && LvN_SetOnFloor(&name);
-	Native_Free(&name);
-	return ok;
-}
-
 /* MainCharDeath(name, param): the hook of a mission, else the end of the game */
 static byte Ch_MainCharDeath(const nativeVal_t *a) {
 	nativeVal_t hook = { 0 };
@@ -472,7 +450,7 @@ static byte Ch_Init(void) {
 	}
 	Py_DECREF(list);
 	const char *ch = SaveVar_Get("Char");
-	return Native_CallGlobal(CH, "LoadRes", NULL, "s", ch ? ch : "") && Ch_PrintS("Character system initialized.");
+	return Native_CallGlobal(CH, "LoadRes", NULL, "s", ch ? ch : "") && Mode_PrintS("Character system initialized.");
 }
 
 /* CreateMainChar(CharName, CharType, Pos, Ang): the character of the player (made when it is not there), the camera
@@ -509,7 +487,7 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 		}
 		if (other) {
 			return Mode_Done(&t, Mode_Cat(&t, text, 3, Mode_S(&t, "Invalid '"), name, Mode_S(&t, "' character created.")) &&
-				Ch_Print(text));
+				Mode_PrintV(text));
 		}
 	}
 	Mode_CamName(0, cname);
@@ -520,34 +498,6 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Native_Copy(out, c);
 	return Mode_Done(&t, 1);
-}
-
-/* Scrap.StartDummySearch(name, flag) with the name a value of the script, through its seam (the TypeError of "s") */
-static byte Ch_DummyStart(const nativeVal_t *name, long flag) {
-	PyObject *hook;
-	const char *s;
-	int seam = Native_Seam("Scrap", "StartDummySearch", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "vi", name, flag);
-	}
-	if (!Native_ArgStr(name, 1, &s)) {
-		return 0;
-	}
-	Mode_DummyStart(s, (int)flag);
-	return 1;
-}
-
-/* OBJLIB 6: eval(text) in the globals of the module as the port read the game's texts (Script_EvalIn: a literal, or
- * a bare name looked up in the module) */
-static byte Ch_Eval(const nativeVal_t *text, nativeVal_t *out) {
-	PyObject *s = Native_ToPy(text), *v = s ? Script_EvalIn(CH, s) : NULL;
-	Py_XDECREF(s);
-	if (!v) {
-		return 0;
-	}
-	Native_Arg(v, out);
-	Py_DECREF(v);
-	return 1;
 }
 
 /* CreateStartupPlayer(): offline, the camera and the character of the player at the spawn point of the save game
@@ -564,13 +514,13 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 		return Mode_Done(&t, off == 0);
 	}
 	Mode_SaveVar("Spawn", spawn);
-	if (!Ch_DummyStart(spawn, 1) || !Mode_DummyNextSeam(dummy)) {
+	if (!Mode_DummyStartV(spawn, 1) || !Mode_DummyNextSeam(dummy)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(dummy)) {
 		Native_Free(spawn);
 		Mode_SaveVar("Spawn", spawn);
-		if (!Mode_Cat(&t, text, 2, spawn, Mode_S(&t, " Not found!!!!")) || !Ch_Print(text) ||
+		if (!Mode_Cat(&t, text, 2, spawn, Mode_S(&t, " Not found!!!!")) || !Mode_PrintV(text) ||
 			!Mode_DummyStartSeam("DM_Player_Spawn*", 1)) {
 			return Mode_Done(&t, 0);
 		}
@@ -585,12 +535,12 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 			}
 		}
 		if (!Native_True(dummy)) {
-			return Mode_Done(&t, Ch_PrintS("Cannot create a main char!"));
+			return Mode_Done(&t, Mode_PrintS("Cannot create a main char!"));
 		}
 		Native_Free(head);
 		Native_Free(text);
 		if (!LvN_Item(dummy, 0, head) || !Mode_Cat(&t, text, 3, Mode_S(&t, "Using "), head, Mode_S(&t, " indeed.")) ||
-			!Ch_Print(text)) {
+			!Mode_PrintV(text)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -621,7 +571,7 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 	}
 	Native_Free(text);
 	Mode_SaveVar("AcBatteries", text);
-	if (!ok || !Ch_Eval(text, energy)) {
+	if (!ok || !Mode_EvalIn(CH, text, energy)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(two, 2.0);
@@ -655,7 +605,7 @@ MODE_FN(Chars, LoadRes, 1, Ch_LoadRes(&a[0]))
 MODE_FN(Chars, DiscardRes, 1, Ch_DiscardRes(&a[0], out))
 MODE_FN(Chars, TryToDiscardThis, 1, Ch_TryToDiscardThis(&a[0]))
 MODE_FN(Chars, CanDrive, 1, Ch_CanDrive(&a[0], out))
-MODE_FN(Chars, SetOnFloor, 1, Ch_SetOnFloor(&a[0]))
+MODE_FN(Chars, SetOnFloor, 1, LvN_SetOnFloorOf(&a[0]))
 MODE_FN(Chars, MainCharDeath, 2, Ch_MainCharDeath(a))
 MODE_FN(Chars, CreatePlayersList, 0, Ch_CreatePlayersList())
 MODE_FN(Chars, CreateMainChar, 4, Ch_CreateMainChar(a, out))

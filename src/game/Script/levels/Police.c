@@ -2017,7 +2017,6 @@ static byte JailBreak_CreateMCList(const nativeVal_t *a, nativeVal_t *out) {
 	for (long i = 0; i < 10; i++) {
 		modeVals_t t = { .n = 0 };
 		nativeVal_t *rep = Mode_V(&t), *ri = Mode_V(&t), *jbn = Mode_V(&t), *dn = Mode_V(&t), *dummy = Mode_V(&t);
-		const nativeVal_t *items[1] = { jbn };
 		const char *s;
 		Native_SetInt(rep, i);
 		Mode_Repr(rep, ri);
@@ -2026,7 +2025,7 @@ static byte JailBreak_CreateMCList(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_DummyStart(s, 0);
-		if (!Mode_Print(items, 1)) {
+		if (!Mode_PrintV(jbn)) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_DummyNext(dummy);
@@ -2228,21 +2227,12 @@ static byte JailBreak_NextMission(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* Scrap.SetSaveVar(name, Scrap.GetSaveVar(from)) (the TypeError of "s" for a missing one) */
-static byte Jb_SaveCopy(const char *name, const char *from) {
-	nativeVal_t v;
-	Mode_SaveVar(from, &v);
-	byte ok = Mode_SetSaveVar(name, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* LoadPolice(): the mission before the jail back, the alarm off, the game starts again at the jail's exit */
 static byte JailBreak_LoadPolice(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (!LV_CALL("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Police", "DM_Mission_JailBreak_End", "") ||
-		!Jb_SaveCopy("Mission.Map", "Mission_JailBreak.Map") || !Jb_SaveCopy("Mission.Library", "Mission_JailBreak.Library")) {
+		!Mode_SaveCopy("Mission.Map", "Mission_JailBreak.Map") || !Mode_SaveCopy("Mission.Library", "Mission_JailBreak.Library")) {
 		return 0;
 	}
 	SaveVar_Set("AlarmActive", "0");

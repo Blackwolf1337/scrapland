@@ -122,7 +122,7 @@ static const scriptStep_t hud_steps[] = {
 /* a section of a file with the margins of the screen and more values (OBJLIB 6: the $names as a dict given away, or
  * NULL) */
 static void Hud_RunFile(int id, const char *file, const char *builtin, const char *section, PyObject *more) {
-	int mh = Mode_ModInt("Scorer", "MarginH", 0), mv = Mode_ModInt("Scorer", "MarginV", 0);
+	int mh = Mode_ModGetI("Scorer", "MarginH", 0), mv = Mode_ModGetI("Scorer", "MarginV", 0);
 	PyObject *vars = Py_BuildValue("{s:i,s:i,s:i,s:i}", "mh", mh, "mv", mv, "right", 640 - mh, "bottom", 480 - mv);
 	PyObject *k, *v;
 	int pos = 0;
@@ -144,12 +144,7 @@ static void Racer_Run(int id, const char *section, PyObject *more) {
 
 /* a garage or a network game */
 static byte Hud_Multi(void) {
-	return Mode_ModInt("Init", "isShipEdit", 0) || (g_pApp->flags & 7);
-}
-
-/* module.func(id) of the HUD by name (OBJLIB 3: a mod or a case may replace it), the failure printed */
-static void Hud_Call(const char *module, const char *func, long id) {
-	Mode_Printed(Native_CallMod(module, func, NULL, "i", id), module, func);
+	return Mode_ModGetI("Init", "isShipEdit", 0) || (g_pApp->flags & 7);
 }
 
 /* SScorer.SetCinema(id, 0, 0.25) through its seam, the failure printed as the call by name printed it */
@@ -219,7 +214,7 @@ static PyObject *Scorer_CreateStatusScorer(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Hud_Run(id, "status", Py_BuildValue("{s:i,s:i,s:i}", "char", ch != 0, "multi", Hud_Multi(), "split",
-		Mode_ModInt("Scorer", "SplitScreen", 0) != 0));
+		Mode_ModGetI("Scorer", "SplitScreen", 0) != 0));
 	return Py_ReturnNone();
 }
 
@@ -410,26 +405,20 @@ static void Hud_CharCreate(int id) {
 		cScorer_Clear(sc);
 	}
 	Hud_NoCinema(id);
-	Hud_Call("Scorer", "CreateMsgScorer", id);
+	Mode_PrintedCall("Scorer", "CreateMsgScorer", id);
 	Mode_Printed(Native_CallMod("Scorer", "CreateStatusScorer", NULL, "ii", (long)id, 1L), "Scorer",
 		"CreateStatusScorer");
-	Hud_Call("Scorer", "CreateCopMeterScorer", id);
-	Hud_Call("CharScorer", "CreateRadarScorer", id);
+	Mode_PrintedCall("Scorer", "CreateCopMeterScorer", id);
+	Mode_PrintedCall("CharScorer", "CreateRadarScorer", id);
 	Mode_Printed(Native_CallMod("Scorer", "CreateMonitorScorer", NULL, "ii", (long)id, 1L), "Scorer",
 		"CreateMonitorScorer");
-	if (!Mode_ModInt("Init", "Outdoor", 0) && !Mode_ModInt("Init", "isJunkYard", 0)) {
-		Hud_Call("CharScorer", "CreateSpecialActionScorer", id);
+	if (!Mode_ModGetI("Init", "Outdoor", 0) && !Mode_ModGetI("Init", "isJunkYard", 0)) {
+		Mode_PrintedCall("CharScorer", "CreateSpecialActionScorer", id);
 	}
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 
 /* ---- the functions of CharScorer (adapters) ---- */
-
-static PyObject *CharScorer_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
 
 static PyObject *CharScorer_CreateRadarScorer(PyObject *self, PyObject *args) {
 	int id;
@@ -437,7 +426,7 @@ static PyObject *CharScorer_CreateRadarScorer(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &id)) {
 		return NULL;
 	}
-	Hud_Run(id, "charradar", Py_BuildValue("{s:i}", "outdoor", Mode_ModInt("Init", "Outdoor", 0) != 0));
+	Hud_Run(id, "charradar", Py_BuildValue("{s:i}", "outdoor", Mode_ModGetI("Init", "Outdoor", 0) != 0));
 	return Py_ReturnNone();
 }
 
@@ -461,7 +450,7 @@ static PyObject *CharScorer_Create(PyObject *self, PyObject *args) {
 }
 
 PyMethodDef g_CharScorerMethods[] = {
-	{ "Init", CharScorer_Init, 1, NULL },
+	{ "Init", Mode_PyNone, 1, NULL },
 	{ "CreateRadarScorer", CharScorer_CreateRadarScorer, 1, NULL },
 	{ "CreateSpecialActionScorer", CharScorer_CreateSpecialActionScorer, 1, NULL },
 	{ "Create", CharScorer_Create, 1, NULL },
@@ -510,7 +499,7 @@ static void Racer_CreateRacerCore(int id) {
 	}
 	Racer_Run(id, "racer", Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:s}", "net", net, "camera", camera, "spectator",
 		spectator, "target", camera && Hud_True(&cam, "Target"), "showlocal", !spectator || !net, "split",
-		Mode_ModInt("Scorer", "SplitScreen", 0) != 0, "online", Net_IsClient() || Net_IsServer(), "descriptor",
+		Mode_ModGetI("Scorer", "SplitScreen", 0) != 0, "online", Net_IsClient() || Net_IsServer(), "descriptor",
 		"\nDescriptor"));
 	Native_Free(&cam);
 	Native_Free(&camName);
@@ -533,7 +522,7 @@ static void Step_Rows(int id, PyObject *args) {
 	byte small = n > 12;
 	int border = small ? 2 : 3;
 	int step = (small ? 9 : 18) + border * 2;
-	byte showPing = !Mode_ModInt("Init", "OffLineGame", 0);
+	byte showPing = !Mode_ModGetI("Init", "OffLineGame", 0);
 	nativeVal_t spect;
 	byte haveSpect = Mode_ModGet("RacerScorer", "SPECTATOR_POINTS", &spect);
 	PyErr_Clear();
@@ -606,11 +595,11 @@ static void Racer_ShowScorerCore(int id, const nativeVal_t *data, int deal, cons
 		cScorer_Clear(sc);
 	}
 	if (deal > 0) {
-		Mode_Printed(Native_CallMod("Menu", "InitMenuSys", NULL, "i", 0L), "Menu", "InitMenuSys");
-		Hud_Call("Menu", "StartNewMenu", id);
+		Mode_PrintedCall("Menu", "InitMenuSys", 0);
+		Mode_PrintedCall("Menu", "StartNewMenu", id);
 	}
-	Mode_ModText("RacerScorer", "ScorerBotMessage", bottom, sizeof(bottom));
-	Mode_ModText("RacerScorer", "ScorerTopMessage", top, sizeof(top));
+	Mode_ModGetS("RacerScorer", "ScorerBotMessage", bottom, sizeof(bottom));
+	Mode_ModGetS("RacerScorer", "ScorerTopMessage", top, sizeof(top));
 	const nativeVal_t *outer = racer_scores;
 	racer_scores = data;
 	Racer_Run(id, "scores", Py_BuildValue("{s:s,s:s,s:i,s:s,s:s}", "bottom", bottom, "top", top, "deal", deal, "yes",
@@ -707,12 +696,6 @@ RACER_SECTION(Racer_CreateTargetScorer, "target")
 RACER_SECTION(Racer_CreateWaypointScorer, "waypoint")
 RACER_SECTION(Racer_CreateRadarScorer, "radar")
 
-static PyObject *Racer_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 static PyObject *Racer_CreateRacer(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
@@ -730,11 +713,11 @@ static PyObject *Racer_Create(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &id)) {
 		return NULL;
 	}
-	if (Mode_ModInt("Scorer", "SplitScreen", 0)) {
-		Hud_Call("RacerScorer", "CreateRacer", 0);
-		Hud_Call("RacerScorer", "CreateRacer", 1);
+	if (Mode_ModGetI("Scorer", "SplitScreen", 0)) {
+		Mode_PrintedCall("RacerScorer", "CreateRacer", 0);
+		Mode_PrintedCall("RacerScorer", "CreateRacer", 1);
 	} else {
-		Hud_Call("RacerScorer", "CreateRacer", id);
+		Mode_PrintedCall("RacerScorer", "CreateRacer", id);
 	}
 	return Py_ReturnNone();
 }
@@ -815,7 +798,7 @@ static PyObject *Racer_MissionScorer(PyObject *self, PyObject *args) {
 RACER_SECTION(Racer_MissionScorerTeam, "missionteam")
 
 PyMethodDef g_RacerScorerMethods[] = {
-	{ "Init", Racer_Init, 1, NULL },
+	{ "Init", Mode_PyNone, 1, NULL },
 	{ "CreateWeaponScorer", Racer_CreateWeaponScorer, 1, NULL },
 	{ "CreateCannonScorer", Racer_CreateCannonScorer, 1, NULL },
 	{ "CreateTargetScorer", Racer_CreateTargetScorer, 1, NULL },

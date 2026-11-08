@@ -463,9 +463,8 @@ static byte Om_Init(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	const nativeVal_t *msg[1] = { Mode_S(&t, "Map initialized as Outdor") };
 	return Mode_Done(&t, Native_CallGlobal("OutMap", "InitOutMap", NULL, "") && Om_Start("Items", "Init") &&
-		Mode_Print(msg, 1));
+		Mode_PrintV(Mode_S(&t, "Map initialized as Outdor")));
 }
 
 /* the adapters (the arity errors of the script's functions) */

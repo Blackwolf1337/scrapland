@@ -52,14 +52,6 @@ static void Char_SetNum(const char *ent, const char *var, double d) {
 	Char_Set(ent, var, &v);
 }
 
-/* module.var = a text as Script_SetVar sets it */
-static void Char_ModText(const char *module, const char *var, const char *s) {
-	nativeVal_t v;
-	Native_SetText(&v, s, (int)strlen(s));
-	Mode_ModPut(module, var, &v);
-	Native_Free(&v);
-}
-
 /* module.var = src.name (the attribute as it is, a function of the module: nothing when it is not there) */
 static void Char_ModAttr(const char *module, const char *var, const char *src, const char *name) {
 	nativeVal_t v = { 0 };
@@ -71,23 +63,10 @@ static void Char_ModAttr(const char *module, const char *var, const char *src, c
 	Native_Free(&v);
 }
 
-/* module.var as Script_GetString reads it: its text cut to size, else "" */
-static const char *Char_ModString(const char *module, const char *var, char *out, int size) {
-	nativeVal_t v = { 0 };
-	out[0] = 0;
-	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
-	} else if (v.type == NV_STR) {
-		Str_Copy(out, Native_Text(&v), size);
-	}
-	Native_Free(&v);
-	return out;
-}
-
 /* Speech.PlayerName, Speech.NPCName: who talks in the speech that runs */
 static void Char_Speakers(const char *usr, const char *ch) {
-	Char_ModText("Speech", "PlayerName", usr);
-	Char_ModText("Speech", "NPCName", ch);
+	Mode_ModPutS("Speech", "PlayerName", usr);
+	Mode_ModPutS("Speech", "NPCName", ch);
 }
 
 /* Speech.OnEndOfSpeechParams = (name,) */
@@ -286,15 +265,9 @@ PyMethodDef g_FunctionaryFuncs[] = {
 
 /* ---- Rusty: his action presses do nothing (the class names them) ---- */
 
-static PyObject *Char_Nothing(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 PyMethodDef g_RustyFuncs[] = {
-	{ "ActionPress", Char_Nothing, 1, NULL },
-	{ "ActionRelease", Char_Nothing, 1, NULL },
+	{ "ActionPress", Mode_PyNone, 1, NULL },
+	{ "ActionRelease", Mode_PyNone, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -664,8 +637,8 @@ static void Police_Calm(const char *ch) {
 /* Challenge.challengeType, foeType, SetChallengeOptions(ch): 0 with the error set */
 static byte Police_StartChallenge(const char *type, const char *ch) {
 	nativeVal_t e;
-	Char_ModText("Challenge", "challengeType", type);
-	Char_ModText("Challenge", "foeType", "Police");
+	Mode_ModPutS("Challenge", "challengeType", type);
+	Mode_ModPutS("Challenge", "foeType", "Police");
 	Char_Handle(ch, &e);
 	byte ok = Native_CallMod("Challenge", "SetChallengeOptions", NULL, "v", &e);
 	Native_Free(&e);
@@ -779,8 +752,8 @@ static byte Police_GiveNo(const char *ch) {
 	if (Scrap_RandRange(0, 100) < 50) {
 		char npc[0x80], player[0x80];
 		nativeVal_t me, e, end = { 0 }, res = { 0 };
-		Char_ModString("Speech", "NPCName", npc, sizeof(npc));
-		Char_ModString("Speech", "PlayerName", player, sizeof(player));
+		Mode_ModGetS("Speech", "NPCName", npc, sizeof(npc));
+		Mode_ModGetS("Speech", "PlayerName", player, sizeof(player));
 		Char_Handle(player, &me);
 		Char_Handle(npc, &e);
 		byte ok = LvN_ModGet("Police", "OnEndOfSpeech", &end) &&
@@ -885,8 +858,8 @@ static byte Police_Speech(const char *usr, const char *ch, const char *opt, cons
 /* the end of the bribe speech, by ResState: paid (the steal effect), refused (the police attacks), or waiting */
 static byte Police_EndOfSpeech(void) {
 	char ch[0x80], me[0x80];
-	Char_ModString("Speech", "NPCName", ch, sizeof(ch));
-	Char_ModString("Speech", "PlayerName", me, sizeof(me));
+	Mode_ModGetS("Speech", "NPCName", ch, sizeof(ch));
+	Mode_ModGetS("Speech", "PlayerName", me, sizeof(me));
 	byte hasCh = World_FindEntity(ch) != NULL;
 	long state = Mode_ModGetI("Police", "ResState", 0);
 	if (state == 1) {

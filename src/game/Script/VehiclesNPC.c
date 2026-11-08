@@ -388,14 +388,14 @@ static byte Npc_Merc(const nativeVal_t *mercs, const nativeVal_t *key) {
 	}
 	/* Scrap.GetSaveVar(var) with "" for a value that is no text, as the C port read it */
 	Mode_SaveVar(var->type == NV_STR ? Native_Text(var) : "", hired);
-	if (!Mode_IsText(hired, "1")) {
+	if (!Native_IsStr(hired, "1")) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_Cat(&t, usr, 2, key, Mode_S(&t, "_usr")) || !NPC_OWN("GetIAProf", sp, "v", usr)) {
 		return Mode_Done(&t, 0);
 	}
 	int lonely = LvN_GTrue(NPC, "lmigd");
-	if (lonely < 0 || !Mode_VSet(sp, "Ship", lonely && Mode_IsText(key, "SMERC2") ? Mode_S(&t, "SMERC3") : key) ||
+	if (lonely < 0 || !Mode_VSet(sp, "Ship", lonely && Native_IsStr(key, "SMERC2") ? Mode_S(&t, "SMERC3") : key) ||
 		!Npc_Run("MercBase", (const char *const[]){ "sp" }, (const nativeVal_t *const[]){ sp }, 1)) {
 		return Mode_Done(&t, 0);
 	}
@@ -465,7 +465,7 @@ static byte Npc_InitN(void) {
 	if (in < 0) {
 		return Mode_Done(&t, 0);
 	}
-	if (in || Mode_IsText(map, "JUNKYARD")) {
+	if (in || Native_IsStr(map, "JUNKYARD")) {
 		return Mode_Done(&t, 1);
 	}
 	/* OBJLIB 4: the scheduler keeps the function object */

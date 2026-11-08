@@ -73,15 +73,6 @@ static byte Tp_ComAt(double delay, const char *key, const char *who, const char 
 	return ok;
 }
 
-/* the hint text of key for its speech time */
-static byte Tp_Hint(const char *key) {
-	nativeVal_t cad;
-	Mode_Lang(key, &cad);
-	byte ok = Mode_SpeechMsg(&cad);
-	Native_Free(&cad);
-	return ok;
-}
-
 /* e.UseFunc = func of the entity called name */
 static byte Tp_UseFunc(const char *name, const char *func) {
 	nativeVal_t e;
@@ -674,7 +665,7 @@ static byte Ad_CreateViscProofs(void) {
 }
 
 static byte Ad_ViewProof(void) {
-	return Tp_Hint("Mission_ArchbishopDead_ViewProofHint");
+	return Mode_LangMsg("Mission_ArchbishopDead_ViewProofHint");
 }
 
 /* TakeProofPhoto(proofName): a photo of a proof (1), the third ends the photos; 0 for another object */
@@ -849,7 +840,7 @@ static byte Ag_DeepThroatAppears(const nativeVal_t *name) {
 		Ag_AddToList("Hangar.availableEnginesList", "MBISHOP1");
 	if (ok) {
 		SaveVar_Inc("NewBluePrintAvaliable", 2);
-		ok = Tp_Hint("Mission_TalkToGus_SystemMessage1");
+		ok = Mode_LangMsg("Mission_TalkToGus_SystemMessage1");
 	}
 	if (ok) {
 		SaveVar_Set("MissionState", "DeepThroatCalls");

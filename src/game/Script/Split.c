@@ -360,7 +360,7 @@ static byte Split_StartGameC(void) {
 		Py_XDECREF(mod);
 		Py_XDECREF(v);
 		Native_SetStr(msg, "Cu\xf1" "aaaao");
-		if (!v || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_Print((const nativeVal_t *const[]){ msg }, 1)) {
+		if (!v || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_PrintV(msg)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -823,14 +823,6 @@ static byte Sm_RndFlag(const char *mod) {
 		Mode_Put(mod, "AcFlag", &split.acFlag, v));
 }
 
-/* Flag.var = v of the mode */
-static byte Sm_FlagSet(const char *mod, const char *var, const nativeVal_t *v) {
-	PyObject *flag = Mode_GlobalPy(mod, "Flag");
-	byte ok = flag && Mode_HSet(flag, var, v);
-	Py_XDECREF(flag);
-	return ok;
-}
-
 /* Flag.SetModel(file) of the mode */
 static byte Sm_FlagModel(const char *mod, const nativeVal_t *file) {
 	PyObject *flag = Mode_GlobalPy(mod, "Flag");
@@ -844,7 +836,7 @@ static byte Sm_FlagToZone(const char *mod) {
 	nativeVal_t z;
 	Native_SetNone(&z);
 	byte ok = Mode_Read(mod, "ZoneList", &split.zoneList) && Mode_Read(mod, "AcFlag", &split.acFlag) &&
-		Native_Subscript(&split.zoneList, &split.acFlag, &z) && Sm_FlagSet(mod, "Pos", &z);
+		Native_Subscript(&split.zoneList, &split.acFlag, &z) && Mode_FlagSet(mod, "Pos", &z);
 	Native_Free(&z);
 	return ok;
 }
@@ -852,7 +844,7 @@ static byte Sm_FlagToZone(const char *mod) {
 /* Flag.Pos = <global> of the mode */
 static byte Sm_FlagToGlobal(const char *mod, const char *name) {
 	nativeVal_t v;
-	byte ok = Mode_G(mod, name, &v) && Sm_FlagSet(mod, "Pos", &v);
+	byte ok = Mode_G(mod, name, &v) && Mode_FlagSet(mod, "Pos", &v);
 	Native_Free(&v);
 	return ok;
 }
@@ -878,8 +870,8 @@ static byte Sm_NewFlag(const char *mod, const char *model, long radius) {
 		!Script_SetGlobal(mod, "Flag", Mode_Handle(e))) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Mode_G(mod, model, file) && Sm_FlagModel(mod, file) && Sm_FlagSet(mod, "Radius", Mode_I(&t, radius)) &&
-		Sm_FlagSet(mod, "RadarShow", Mode_I(&t, 1)));
+	return Mode_Done(&t, Mode_G(mod, model, file) && Sm_FlagModel(mod, file) && Mode_FlagSet(mod, "Radius", Mode_I(&t, radius)) &&
+		Mode_FlagSet(mod, "RadarShow", Mode_I(&t, 1)));
 }
 
 /* Split.ActualizeScorer() */
@@ -893,18 +885,6 @@ static byte Sm_Actualize(void) {
 		(void)args; \
 		return Mode_Result(call); \
 	}
-
-static PyObject *Sm_Pass(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
-static PyObject *Sm_Pass2(PyObject *self, PyObject *args) {
-	PyObject *a, *b;
-	(void)self;
-	return PyArg_ParseTuple(args, "OO", &a, &b) ? Py_ReturnNone() : NULL;
-}
 
 /* ---- SDeathMatch ---- */
 
@@ -927,7 +907,7 @@ SM_NOARGS(SDeathMatch, Init, SDeathMatch_InitC())
 MODE_FN(SDeathMatch, OnDeathFunc, 2, SDeathMatch_OnDeathFuncC(&a[0], &a[1]))
 
 PyMethodDef g_SDeathMatchMethods[] = {
-	{ "InitStatus", Sm_Pass, 1, NULL },
+	{ "InitStatus", Mode_PyNone, 1, NULL },
 	{ "Init", SDeathMatch_Init, 1, NULL },
 	{ "OnDeathFunc", SDeathMatch_OnDeathFunc, 1, NULL },
 	{ NULL, NULL, 0, NULL },
@@ -948,7 +928,7 @@ static byte SFlagHunt_TakeFlagC(const nativeVal_t *vehicle) {
 static byte SFlagHunt_CreateFlagC(void) {
 	modeVals_t t = { .n = 0 };
 	return Mode_Done(&t, Sm_NewFlag("SFlagHunt", "FlagModel", 2000) && CALL("SFlagHunt", "GetRndFlag", NULL, "") &&
-		Sm_FlagSet("SFlagHunt", "OnTake", Mode_S(&t, "SFlagHunt.TakeFlag")) && Sm_FlagToZone("SFlagHunt") &&
+		Mode_FlagSet("SFlagHunt", "OnTake", Mode_S(&t, "SFlagHunt.TakeFlag")) && Sm_FlagToZone("SFlagHunt") &&
 		Sm_WayToFlag("SFlagHunt", "CurrentWaypointName"));
 }
 
@@ -1027,7 +1007,7 @@ static byte SPostman_TakeFlagC(const nativeVal_t *vehicle) {
 	}
 	if (!Mode_DelSchedS("BattonRepos") || !Mode_Put("SPostman", "BattonOwner", NULL, vehicle) || !Mode_Sound("WaySound", "WayVolume") ||
 		!CALL("SPostman", "GetRndFlag", NULL, "") || !Sm_FlagToZone("SPostman") || !Mode_G("SPostman", "FlagModel", model) ||
-		!Sm_FlagModel("SPostman", model) || !Sm_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeArea"))) {
+		!Sm_FlagModel("SPostman", model) || !Mode_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeArea"))) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_IsStr(vehicle, "Player0")) {
@@ -1039,7 +1019,7 @@ static byte SPostman_TakeFlagC(const nativeVal_t *vehicle) {
 static byte SPostman_CreateFlagC(void) {
 	modeVals_t t = { .n = 0 };
 	return Mode_Done(&t, Sm_NewFlag("SPostman", "BattModel", 2000) && CALL("SPostman", "GetRndFlag", NULL, "") &&
-		Sm_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeFlag")) && Sm_FlagToGlobal("SPostman", "FlagInitPos") &&
+		Mode_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeFlag")) && Sm_FlagToGlobal("SPostman", "FlagInitPos") &&
 		Sm_WayToFlag("SPostman", "CurrentWaypointName"));
 }
 
@@ -1069,8 +1049,8 @@ static byte SPostman_OnDeathFuncC(const nativeVal_t *looser) {
 	}
 	return Mode_Done(&t, Mode_Put("SPostman", "BattonOwner", NULL, Mode_S(&t, "")) && Sm_WayToFlag("SPostman", "CurrentWaypointName") &&
 		Sm_WayToFlag("SPostman", "CurrentWaypointName2") && Mode_G("SPostman", "BattModel", model) && Sm_FlagModel("SPostman", model) &&
-		Sm_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeFlag")) && Mode_Ent(looser, &e) &&
-		Mode_Get(e, Native_Text(looser), "Pos", pos) && Sm_FlagSet("SPostman", "Pos", pos) &&
+		Mode_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeFlag")) && Mode_Ent(looser, &e) &&
+		Mode_Get(e, Native_Text(looser), "Pos", pos) && Mode_FlagSet("SPostman", "Pos", pos) &&
 		Mode_LaterIn(30.0, "SPostman", "BattonRepos", NULL, 0, "BattonRepos"));
 }
 
@@ -1159,11 +1139,11 @@ static byte SRace_Point(nativeVal_t *out) {
 static byte SRace_PlaceFlag(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *p = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t);
-	if (!SRace_Point(p) || !Native_Subscript(p, Mode_I(&t, 0), pos) || !Sm_FlagSet("SRace", "Pos", pos)) {
+	if (!SRace_Point(p) || !Native_Subscript(p, Mode_I(&t, 0), pos) || !Mode_FlagSet("SRace", "Pos", pos)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(p);
-	return Mode_Done(&t, SRace_Point(p) && Split_Ang(&t, p, ang) && Sm_FlagSet("SRace", "Ang", ang));
+	return Mode_Done(&t, SRace_Point(p) && Split_Ang(&t, p, ang) && Mode_FlagSet("SRace", "Ang", ang));
 }
 
 /* GetRndFlag(): the next checkpoint */
@@ -1195,7 +1175,7 @@ static byte SRace_TakeFlagC(const nativeVal_t *vehicle) {
 static byte SRace_CreateFlagC(void) {
 	modeVals_t t = { .n = 0 };
 	return Mode_Done(&t, Sm_NewFlag("SRace", "FlagModel", 4000) && CALL("SRace", "GetRndFlag", NULL, "") &&
-		Sm_FlagSet("SRace", "OnTake", Mode_S(&t, "SRace.TakeFlag")) && SRace_PlaceFlag() && Sm_WayToFlag("SRace", "CurrentWaypointName"));
+		Mode_FlagSet("SRace", "OnTake", Mode_S(&t, "SRace.TakeFlag")) && SRace_PlaceFlag() && Sm_WayToFlag("SRace", "CurrentWaypointName"));
 }
 
 /* InitRacePos(id): beside the checkpoint before the flag, 1500 to the left or right; (pos, angle) */
@@ -1344,6 +1324,6 @@ PyMethodDef g_SRaceMethods[] = {
 	{ "InitStatus", SRace_InitStatus, 1, NULL },
 	{ "Init", SRace_Init, 1, NULL },
 	{ "ControlToRacers", SRace_ControlToRacers, 1, NULL },
-	{ "OnDeathFunc", Sm_Pass2, 1, NULL },
+	{ "OnDeathFunc", Mode_PyNone2, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };

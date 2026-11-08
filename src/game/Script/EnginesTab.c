@@ -38,7 +38,6 @@ static const int et_normal[3] = { 115, 150, 255 };
 static const int et_selected[3] = { 250, 230, 90 };
 static const int et_forbidden[3] = { 200, 30, 30 };
 
-static byte ET_Hint(const char *key, nativeVal_t *out);
 
 /* the step usehint <key>: the Hint of the item, Scrap.GetLangStr(key) % UseTxt (the error left set stops the file) */
 static void ET_StepHint(int id, PyObject *args) {
@@ -46,7 +45,7 @@ static void ET_StepHint(int id, PyObject *args) {
 	const char *k;
 	/* OBJLIB 6: the step takes the arguments of the line as a tuple */
 	PyObject *o = Script_Index(args, 0);
-	byte ok = o && Native_Arg(o, &key) && Mode_ItemText(&key, &k) && ET_Hint(k, &hint);
+	byte ok = o && Native_Arg(o, &key) && Mode_ItemText(&key, &k) && Mode_LangUse(MOD, k, &hint);
 	Py_XDECREF(o);
 	if (ok) {
 		Mode_ScorerPut(id, Script_CurrentItem(), "Hint", &hint);
@@ -79,11 +78,6 @@ static byte ET_G(const char *name, nativeVal_t *out) {
 	return Mode_G(MOD, name, out);
 }
 
-/* `import a, b, ...` of a function of the script (the names end with NULL; OBJLIB 6) */
-static byte ET_Import(const char *const *names) {
-	return Script_Import(names);
-}
-
 /* the C text prefix + `n` + suffix in a buffer of size bytes (a longer one is the engine's fatal check, as in the
  * script's port) */
 static void ET_NameIn(char *out, int size, const char *prefix, const nativeVal_t *n, const char *suffix) {
@@ -105,21 +99,11 @@ static byte ET_ShipN(const char *prefix, const nativeVal_t *n, nativeVal_t *out)
 	return Mode_ShipGet(var, out);
 }
 
-/* Scrap.GetLangStr(key) % UseTxt */
-static byte ET_Hint(const char *key, nativeVal_t *out) {
-	nativeVal_t lang, use;
-	Mode_Lang(key, &lang);
-	byte ok = ET_G("UseTxt", &use) && Native_Arith('%', &lang, &use, out);
-	Native_Free(&lang);
-	Native_Free(&use);
-	return ok;
-}
-
 /* the hint of a key (with UseTxt when use) into the item */
 static byte ET_SetHint(int id, const char *item, const char *key, byte use) {
 	nativeVal_t hint;
 	if (use) {
-		if (!ET_Hint(key, &hint)) {
+		if (!Mode_LangUse(MOD, key, &hint)) {
 			return 0;
 		}
 	} else {
@@ -178,38 +162,10 @@ static byte ET_OpI(const nativeVal_t *a, char op, long b, nativeVal_t *out) {
 	return Native_Arith(op, a, &n, out);
 }
 
-/* a == b, a != b, a > b, a < b, a >= b, a <= b of the script ('=', '!', '>', '<', 'g', 'l'): 1 or 0, -1 with the
- * error */
-static int ET_Cmp(const nativeVal_t *a, const nativeVal_t *b, char op) {
-	int c = Native_Compare(a, b);
-	if (PyErr_Occurred()) {
-		return -1;
-	}
-	switch (op) {
-	case '=':
-		return c == 0;
-	case '!':
-		return c != 0;
-	case '>':
-		return c > 0;
-	case '<':
-		return c < 0;
-	case 'g':
-		return c >= 0;
-	}
-	return c <= 0;
-}
-
-static int ET_CmpI(const nativeVal_t *a, long i, char op) {
-	nativeVal_t b;
-	Native_SetInt(&b, i);
-	return ET_Cmp(a, &b, op);
-}
-
 static int ET_CmpS(const nativeVal_t *a, const char *s, char op) {
 	nativeVal_t b;
 	Native_SetStr(&b, s);
-	return ET_Cmp(a, &b, op);
+	return Mode_CmpOp(a, &b, op);
 }
 
 /* int(seq[len(seq) - 1]) - 1 of a value (control or currentEngineGroup) */
@@ -300,21 +256,6 @@ static byte ET_GroupName(long n, char *out) {
 	return Mode_Done(&t, ok);
 }
 
-static void ET_Color(int id, const char *item, const int *c) {
-	Script_SetNum(id, item, "Red", c[0]);
-	Script_SetNum(id, item, "Green", c[1]);
-	Script_SetNum(id, item, "Blue", c[2]);
-}
-
-static void ET_Visible(int id, const char *item, int v) {
-	Script_SetNum(id, item, "Visible", v);
-}
-
-/* fn(id, a, b) of a link function of Menu on texts of C */
-static byte ET_Link(PyObject *fn, int id, const char *a, const char *b) {
-	return Native_Call(fn, NULL, "iss", (long)id, a, b);
-}
-
 /* the bay loads of the current bay, as the script reads them: mass and number of the engines mounted (0 for none),
  * the slots and the bay number */
 typedef struct {
@@ -396,7 +337,7 @@ static byte ET_Mount(int id, long i, const etLoad_t *l, const nativeVal_t *layou
 		!ET_Op(slots, '*', em, sm) || !ET_Op(w, '+', sm, w2)) {
 		return Mode_Done(&t, 0);
 	}
-	int heavy = ET_Cmp(w2, &l->maxWeight, '>');
+	int heavy = Mode_CmpOp(w2, &l->maxWeight, '>');
 	if (heavy > 0) {
 		if (layout ? !Mode_ShipGet("nEng0", slots2) : (Native_Copy(slots2, &l->slots), 0)) {
 			return Mode_Done(&t, 0);
@@ -404,15 +345,15 @@ static byte ET_Mount(int id, long i, const etLoad_t *l, const nativeVal_t *layou
 		if (!ET_Engine(idx, 0, em2) || !ET_Op(slots2, '*', em2, sm2) || !ET_Op(&l->minMass, '+', sm2, empty)) {
 			return Mode_Done(&t, 0);
 		}
-		int fits = ET_Cmp(empty, &l->maxWeight, 'l');
+		int fits = Mode_CmpOp(empty, &l->maxWeight, 'l');
 		if (fits < 0 || !ET_SetCan(idx, fits ? 0 : 1) || !ET_SetHint(id, tile, fits ? "HINT_Engines4" : "HINT_Engines5", 0)) {
 			return Mode_Done(&t, 0);
 		}
 		Script_SetNum(id, name, "Alpha", 255);
-		ET_Color(id, name, et_forbidden);
+		Mode_ItemColor(id, name, et_forbidden);
 	} else if (heavy == 0) {
 		Script_SetNum(id, name, "Alpha", 255);
-		ET_Color(id, name, et_normal);
+		Mode_ItemColor(id, name, et_normal);
 		if (!ET_SetCan(idx, 2) || !ET_SetHint(id, tile, "HINT_Engines2", 1)) {
 			return Mode_Done(&t, 0);
 		}
@@ -422,7 +363,7 @@ static byte ET_Mount(int id, long i, const etLoad_t *l, const nativeVal_t *layou
 
 /* the hint of a bay: HINT_Engines6 for a bay without slots, else HINT_Engines<6 + slots> */
 static byte ET_BayHint(int id, const char *item, const nativeVal_t *slots) {
-	int none = ET_CmpI(slots, 0, '=');
+	int none = Mode_CmpOpI(slots, 0, '=');
 	if (none) {
 		return none > 0 && ET_SetHint(id, item, "HINT_Engines6", 1);
 	}
@@ -449,7 +390,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *g = Mode_V(&t), *number = Mode_V(&t), *bay = Mode_V(&t), *engineName = Mode_V(&t), *pos = Mode_V(&t);
 	nativeVal_t *ni = Mode_V(&t), *index = Mode_V(&t), *can = Mode_V(&t);
-	if (!ET_Import(mods) || !ET_G("currentEngineGroup", g)) {
+	if (!Script_Import(mods) || !ET_G("currentEngineGroup", g)) {
 		return Mode_Done(&t, 0);
 	}
 	int len = Native_Size(g);
@@ -465,7 +406,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 	for (int i = 0; i < count; i++) {
 		nativeVal_t a = { 0 }, e = { 0 }, b = { 0 };
 		Native_SetInt(pos, i);
-		int same = Native_Upper(engineName, &a) && ET_EngineI(i, 1, &e) && Native_Upper(&e, &b) ? ET_Cmp(&a, &b, '=') : -1;
+		int same = Native_Upper(engineName, &a) && ET_EngineI(i, 1, &e) && Native_Upper(&e, &b) ? Mode_CmpOp(&a, &b, '=') : -1;
 		Native_Free(&a);
 		Native_Free(&e);
 		Native_Free(&b);
@@ -485,7 +426,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 		char name[0x20], name2[ET_NAME];
 		Str_Printf(name, sizeof(name), "Engine%d", i + 1);
 		Native_SetInt(n, i);
-		int sel = ET_G("engineIndex", index) && ET_Op(n, '+', index, sum) ? ET_Cmp(sum, pos, '=') : -1;
+		int sel = ET_G("engineIndex", index) && ET_Op(n, '+', index, sum) ? Mode_CmpOp(sum, pos, '=') : -1;
 		Native_Free(index);
 		if (sel > 0) {
 			sel = ET_CmpS(engineName, "", '!');
@@ -495,7 +436,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 			ok = ET_SetHint(id, name, "HINT_Engines3", 0);
 			if (ok) {
 				Script_SetNum(id, name, "Alpha", 255);
-				ET_Color(id, name, et_selected);
+				Mode_ItemColor(id, name, et_selected);
 				Native_SetInt(n2, i + 1);
 				ok = ET_G("engineIndex", index) && ET_Op(n2, '+', index, sum2);
 				Native_Free(index);
@@ -503,8 +444,8 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 			if (ok) {
 				ET_Name(name2, "Engine", sum2, "InList");
 				Script_SetNum(id, name2, "Alpha", 255);
-				ET_Color(id, name2, et_selected);
-				int def = ET_CmpI(setDefault, 1, '=');
+				Mode_ItemColor(id, name2, et_selected);
+				int def = Mode_CmpOpI(setDefault, 1, '=');
 				ok = def >= 0;
 				if (def > 0) {
 					Script_SetDefault(id, name);
@@ -512,8 +453,8 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 			}
 		} else if (sel == 0) {
 			Script_SetNum(id, name, "Alpha", 255);
-			ET_Color(id, name, et_normal);
-			int two = ET_G("canBeMounted", list) && ET_Item(list, i, can) ? ET_CmpI(can, 2, '=') : -1;
+			Mode_ItemColor(id, name, et_normal);
+			int two = ET_G("canBeMounted", list) && ET_Item(list, i, can) ? Mode_CmpOpI(can, 2, '=') : -1;
 			Native_Free(can);
 			ok = two >= 0 && (!two || ET_SetHint(id, name, "HINT_Engines2", 1));
 		}
@@ -595,7 +536,7 @@ static byte ET_Desc(int id, const nativeVal_t *n, const nativeVal_t *eng) {
 	if (!ET_G("canBeMounted", list) || !Native_Subscript(list, eng, can)) {
 		return Mode_Done(&t, 0);
 	}
-	int c0 = ET_CmpI(can, 0, '='), c1 = c0 == 0 ? ET_CmpI(can, 1, '=') : 0;
+	int c0 = Mode_CmpOpI(can, 0, '='), c1 = c0 == 0 ? Mode_CmpOpI(can, 1, '=') : 0;
 	if (c0 < 0 || c1 < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -657,8 +598,8 @@ static byte ET_Desc(int id, const nativeVal_t *n, const nativeVal_t *eng) {
 	Script_SetNum(id, "EngineDesc", "MinX", 590 - tab + 10);
 	Script_SetNum(id, "EngineDescTab", "SizeX", tab - 2);
 	Script_SetNum(id, "EngineDescTab", "X", 590 - tab);
-	ET_Visible(id, "EngineDesc", 1);
-	ET_Visible(id, "EngineDescTab", 1);
+	Mode_ItemVisible(id, "EngineDesc", 1);
+	Mode_ItemVisible(id, "EngineDescTab", 1);
 	return Mode_Done(&t, 1);
 }
 
@@ -704,7 +645,7 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 	if (!ET_Bay(bay) || !ET_ShipUpper("MEng", bay, engineName) || !ET_Engine(eng, 1, name)) {
 		return Mode_Done(&t, 0);
 	}
-	int other = ET_Cmp(engineName, name, '!');
+	int other = Mode_CmpOp(engineName, name, '!');
 	if (other <= 0) {
 		return Mode_Done(&t, other == 0);
 	}
@@ -725,14 +666,14 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetNum(id, "MoneyPredict", "Green", 255);
-	int poor = ET_Op(money, '-', cost, left) ? ET_CmpI(left, 0, '<') : -1;
+	int poor = ET_Op(money, '-', cost, left) ? Mode_CmpOpI(left, 0, '<') : -1;
 	if (poor < 0) {
 		return Mode_Done(&t, 0);
 	}
 	if (poor) {
 		Script_SetNum(id, "MoneyPredict", "Green", 0);
 	}
-	int neg = ET_CmpI(cost, 0, '<');
+	int neg = Mode_CmpOpI(cost, 0, '<');
 	if (neg < 0 || (neg && !ET_Abs(cost, a))) {
 		return Mode_Done(&t, 0);
 	}
@@ -741,7 +682,7 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetStr(id, "MoneyPredict", "Text", Native_Text(text));
-	ET_Visible(id, "MoneyPredict", 1);
+	Mode_ItemVisible(id, "MoneyPredict", 1);
 	if (!Mode_ShipGet("AcMass", am) || !Native_ToInt(am, weight)) {
 		return Mode_Done(&t, 0);
 	}
@@ -758,12 +699,12 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 		!ET_Op(groupSlots, '*', em, sm) || !ET_Op(w1, '+', sm, newWeight)) {
 		return Mode_Done(&t, 0);
 	}
-	int up = ET_Cmp(newWeight, weight, '>'), down = up == 0 ? ET_Cmp(newWeight, weight, '<') : 0;
+	int up = Mode_CmpOp(newWeight, weight, '>'), down = up == 0 ? Mode_CmpOp(newWeight, weight, '<') : 0;
 	if (up < 0 || down < 0) {
 		return Mode_Done(&t, 0);
 	}
-	ET_Visible(id, up ? "WeightUp" : down ? "WeightDown" : "WeightEqual", 1);
-	ET_Visible(id, "WeightBack", 1);
+	Mode_ItemVisible(id, up ? "WeightUp" : down ? "WeightDown" : "WeightEqual", 1);
+	Mode_ItemVisible(id, "WeightBack", 1);
 	Native_Free(name);
 	/* OBJLIB 3 */
 	if (!Native_CallMod("HangarTab", "ShowBoostPrediction", NULL, "iv", (long)id, newWeight) || !ET_ShipN("MEng", bay, mk) ||
@@ -771,17 +712,17 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 		!Native_CallMod("ShipMaker", "GetMotor", next, "v", name) || !ET_MotorSpeed(cur, sa) || !ET_MotorSpeed(next, sb)) {
 		return Mode_Done(&t, 0);
 	}
-	int faster = ET_Cmp(sa, sb, '<'), slower = 0;
+	int faster = Mode_CmpOp(sa, sb, '<'), slower = 0;
 	if (faster == 0) {
 		Native_Free(sa);
 		Native_Free(sb);
-		slower = ET_MotorSpeed(cur, sa) && ET_MotorSpeed(next, sb) ? ET_Cmp(sa, sb, '>') : -1;
+		slower = ET_MotorSpeed(cur, sa) && ET_MotorSpeed(next, sb) ? Mode_CmpOp(sa, sb, '>') : -1;
 	}
 	if (faster < 0 || slower < 0) {
 		return Mode_Done(&t, 0);
 	}
-	ET_Visible(id, faster ? "SpeedUp" : slower ? "SpeedDown" : "SpeedEqual", 1);
-	ET_Visible(id, "SpeedBack", 1);
+	Mode_ItemVisible(id, faster ? "SpeedUp" : slower ? "SpeedDown" : "SpeedEqual", 1);
+	Mode_ItemVisible(id, "SpeedBack", 1);
 	return Mode_Done(&t, 1);
 }
 
@@ -791,18 +732,18 @@ static byte ET_ShowEngineDesc(int id, const nativeVal_t *control) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", "ShipMaker", "string", NULL };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *n = Mode_V(&t), *index = Mode_V(&t), *sum = Mode_V(&t), *eng = Mode_V(&t);
-	if (!ET_Import(mods) || !ET_LastNum(control, 0, n) || !ET_G("engineIndex", index) || !ET_Op(n, '+', index, sum) ||
+	if (!Script_Import(mods) || !ET_LastNum(control, 0, n) || !ET_G("engineIndex", index) || !ET_Op(n, '+', index, sum) ||
 		!ET_OpI(sum, '-', 1, eng)) {
 		return Mode_Done(&t, 0);
 	}
 	int count = ET_Len("enginesList");
-	int inList = count < 0 ? -1 : ET_CmpI(eng, count, '<');
+	int inList = count < 0 ? -1 : Mode_CmpOpI(eng, count, '<');
 	if (inList < 0 || (inList && !ET_Desc(id, n, eng))) {
 		return Mode_Done(&t, 0);
 	}
 	if (!inList) {
-		ET_Visible(id, "EngineDesc", 0);
-		ET_Visible(id, "EngineDescTab", 0);
+		Mode_ItemVisible(id, "EngineDesc", 0);
+		Mode_ItemVisible(id, "EngineDescTab", 0);
 	}
 	int l = ET_Len("currentEngineGroup");
 	if (l <= 0) {
@@ -819,7 +760,7 @@ static byte ET_RecycleState(int id) {
 	static const char *const mods[] = { "HangarTab", "ShipEdit", NULL };
 	nativeVal_t bay = { 0 }, ne = { 0 }, layout = { 0 };
 	PyObject *linkLR = Mode_From("Menu", "LinkLR");
-	byte ok = linkLR && ET_Import(mods);
+	byte ok = linkLR && Script_Import(mods);
 	int l = ok ? ET_Len("currentEngineGroup") : -1;
 	if (l <= 0) {
 		Py_XDECREF(linkLR);
@@ -828,11 +769,11 @@ static byte ET_RecycleState(int id) {
 	int has = 0;
 	ok = ET_Bay(&bay);
 	for (int i = 0; ok && i < 4; i++) {
-		int is = ET_CmpI(&bay, i, '=');
+		int is = Mode_CmpOpI(&bay, i, '=');
 		if (is) {
 			char var[0x10];
 			Str_Printf(var, sizeof(var), "NEng%d", i);
-			has = is > 0 && Mode_ShipGet(var, &ne) ? ET_CmpI(&ne, 0, '>') : -1;
+			has = is > 0 && Mode_ShipGet(var, &ne) ? Mode_CmpOpI(&ne, 0, '>') : -1;
 			ok = has >= 0;
 			break;
 		}
@@ -852,13 +793,13 @@ static byte ET_RecycleState(int id) {
 	/* the bays 2 .. n first, then bay 1 */
 	for (int i = 0; ok && i < groups; i++) {
 		char name[ET_ITEM];
-		ok = ET_GroupName(i < groups - 1 ? i + 2 : 1, name) && ET_Link(linkLR, id, name, to);
+		ok = ET_GroupName(i < groups - 1 ? i + 2 : 1, name) && Mode_LinkCall(linkLR, id, name, to);
 	}
 	if (ok && groups == 0) {
 		char name[ET_ITEM];
-		ok = ET_GroupName(1, name) && ET_Link(linkLR, id, name, to);
+		ok = ET_GroupName(1, name) && Mode_LinkCall(linkLR, id, name, to);
 	}
-	ok = ok && (!has || ET_Link(linkLR, id, "Recycle", "Exit"));
+	ok = ok && (!has || Mode_LinkCall(linkLR, id, "Recycle", "Exit"));
 	Native_Free(&bay);
 	Native_Free(&ne);
 	Native_Free(&layout);
@@ -872,7 +813,7 @@ ET_I(ET_ChangeRecycleButtonState, ET_RecycleState(id))
 static byte ET_UpdateList(int id) {
 	static const char *const mods[] = { "ShipEdit", "ShipMaker", "string", "HangarTab", NULL };
 	etLoad_t l = { 0 };
-	byte ok = ET_Import(mods) && ET_Load(&l, 0);
+	byte ok = Script_Import(mods) && ET_Load(&l, 0);
 	int count = ok ? ET_Len("enginesList") : -1;
 	ok = count >= 0;
 	for (int i = 0; ok && i < count; i++) {
@@ -889,7 +830,7 @@ static void ET_SpeedText(int id, int v) {
 	static const char *const items[] = { "MaxSpeedText", "MaxSpeed", "BoostRechargeTime", "BoostRechargeTimeUnits",
 		"BoostRechargeTimeText" };
 	for (int i = 0; i < 5; i++) {
-		ET_Visible(id, items[i], v);
+		Mode_ItemVisible(id, items[i], v);
 	}
 }
 
@@ -930,24 +871,16 @@ static byte ET_BayCost(const nativeVal_t *control, const nativeVal_t *bay, nativ
 /* canBeMounted[i] != 2: 1 or 0, -1 with the error */
 static int ET_NotMountable(const nativeVal_t *i) {
 	nativeVal_t list = { 0 }, v = { 0 };
-	int r = ET_G("canBeMounted", &list) && Native_Subscript(&list, i, &v) ? ET_CmpI(&v, 2, '!') : -1;
+	int r = ET_G("canBeMounted", &list) && Native_Subscript(&list, i, &v) ? Mode_CmpOpI(&v, 2, '!') : -1;
 	Native_Free(&list);
 	Native_Free(&v);
 	return r;
 }
 
-/* the sounds of the editor: SSound.Play(Sound.<name>Sound, Sound.<name>Volume) */
-static byte ET_Sound(const char *name) {
-	char snd[0x40], vol[0x40];
-	Str_Printf(snd, sizeof(snd), "%sSound", name);
-	Str_Printf(vol, sizeof(vol), "%sVolume", name);
-	return Mode_Sound(snd, vol);
-}
-
 /* ShipEdit.IsEditingMultiplayer() != 1: 1 or 0, -1 with the error (OBJLIB 3) */
 static int ET_Single(void) {
 	nativeVal_t v = { 0 };
-	int r = Native_CallMod("ShipEdit", "IsEditingMultiplayer", &v, "") ? ET_CmpI(&v, 1, '!') : -1;
+	int r = Native_CallMod("ShipEdit", "IsEditingMultiplayer", &v, "") ? Mode_CmpOpI(&v, 1, '!') : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -962,7 +895,7 @@ static byte ET_PutEngine(int id, const nativeVal_t *control) {
 	nativeVal_t *rep = Mode_V(&t), *list = Mode_V(&t), *row = Mode_V(&t), *model = Mode_V(&t), *prev = Mode_V(&t);
 	nativeVal_t *nCEG = Mode_V(&t), *slots = Mode_V(&t), *one = Mode_V(&t), *li = Mode_V(&t);
 	char group[ET_ITEM];
-	if (!ET_Import(mods) || !ET_G("currentEngineGroup", g)) {
+	if (!Script_Import(mods) || !ET_G("currentEngineGroup", g)) {
 		return Mode_Done(&t, 0);
 	}
 	int l = Native_Size(g);
@@ -989,7 +922,7 @@ static byte ET_PutEngine(int id, const nativeVal_t *control) {
 			return Mode_Done(&t, 0);
 		}
 		Native_SetInt(money, Mode_GetMoney());
-		int poor = ET_Op(money, '-', cost, left) ? ET_CmpI(left, 0, '<') : -1;
+		int poor = ET_Op(money, '-', cost, left) ? Mode_CmpOpI(left, 0, '<') : -1;
 		if (poor) {
 			return Mode_Done(&t, poor > 0);
 		}
@@ -1005,8 +938,8 @@ static byte ET_PutEngine(int id, const nativeVal_t *control) {
 		!ET_ShipUpper("MEng", bay, prev)) {
 		return Mode_Done(&t, 0);
 	}
-	int change = ET_Cmp(model, prev, '!');
-	if (change < 0 || (change && !ET_Sound("ShipEditLoadEngine"))) {
+	int change = Mode_CmpOp(model, prev, '!');
+	if (change < 0 || (change && !Mode_SoundOf("ShipEditLoadEngine"))) {
 		return Mode_Done(&t, 0);
 	}
 	int show = 0;
@@ -1062,7 +995,7 @@ static byte ET_RecycleEngine(int id) {
 	nativeVal_t *slots = Mode_V(&t), *cost = Mode_V(&t), *money = Mode_V(&t), *sum = Mode_V(&t), *rep = Mode_V(&t);
 	nativeVal_t *m = Mode_V(&t), *empty = Mode_S(&t, "");
 	char group[ET_ITEM];
-	if (!ET_Import(mods) || !ET_G("currentEngineGroup", g)) {
+	if (!Script_Import(mods) || !ET_G("currentEngineGroup", g)) {
 		return Mode_Done(&t, 0);
 	}
 	int len = Native_Size(g);
@@ -1085,7 +1018,7 @@ static byte ET_RecycleEngine(int id) {
 		Mode_Repr(sum, rep);
 		Script_SetStr(id, "Money", "Text", Native_Text(rep));
 	}
-	if (!ET_Sound("ShipEditUnLoad")) {
+	if (!Mode_SoundOf("ShipEditUnLoad")) {
 		return Mode_Done(&t, 0);
 	}
 	for (int i = 0; i < 4; i++) {
@@ -1133,7 +1066,7 @@ static byte ET_ShowMoneySellingEngine(int id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *bay = Mode_V(&t), *type = Mode_V(&t), *slots = Mode_V(&t), *cost = Mode_V(&t), *rep = Mode_V(&t);
 	nativeVal_t *text = Mode_V(&t);
-	if (!ET_Import(mods) || !ET_Bay(bay) || !ET_ShipN("MEng", bay, type)) {
+	if (!Script_Import(mods) || !ET_Bay(bay) || !ET_ShipN("MEng", bay, type)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(type)) {
@@ -1146,7 +1079,7 @@ static byte ET_ShowMoneySellingEngine(int id) {
 			return Mode_Done(&t, 0);
 		}
 		Script_SetStr(id, "MoneyPredict", "Text", Native_Text(text));
-		ET_Visible(id, "MoneyPredict", 1);
+		Mode_ItemVisible(id, "MoneyPredict", 1);
 	}
 	return Mode_Done(&t, 1);
 }
@@ -1181,18 +1114,18 @@ static byte ET_SelectEngineGroup(int id, const nativeVal_t *control, const nativ
 	static const int blue[3] = { 57, 139, 202 };
 	nativeVal_t hint = { 0 }, bay = { 0 }, slots = { 0 };
 	char group[ET_ITEM];
-	if (!ET_Import(mods) || !ET_Group(group)) {
+	if (!Script_Import(mods) || !ET_Group(group)) {
 		return 0;
 	}
-	ET_Color(id, group, blue);
-	byte ok = ET_Hint("HINT_Engines6", &hint) && ET_Group(group) && Mode_ScorerPut(id, group, "Hint", &hint);
+	Mode_ItemColor(id, group, blue);
+	byte ok = Mode_LangUse(MOD, "HINT_Engines6", &hint) && ET_Group(group) && Mode_ScorerPut(id, group, "Hint", &hint);
 	Native_Free(&hint);
 	int has = ok ? ET_HasGroup() : -1;
 	ok = has >= 0 && (!has || ET_LayoutState(id, 0)) && Mode_Put(MOD, "currentEngineGroup", NULL, control);
 	has = ok ? ET_HasGroup() : -1;
 	ok = has >= 0 && (!has || ET_LayoutState(id, 1)) && ET_Group(group);
 	if (ok) {
-		ET_Color(id, group, green);
+		Mode_ItemColor(id, group, green);
 	}
 	has = ok ? ET_HasGroup() : -1;
 	ok = has >= 0 && (!has || (ET_Group(group) && ET_Bay(&bay) && ET_ShipN("nEng", &bay, &slots) && ET_BayHint(id, group, &slots)));
@@ -1300,7 +1233,7 @@ static byte ET_SetEnginesPanel(int id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *aspect = Mode_V(&t), *num = Mode_V(&t), *ratio = Mode_V(&t), *empty = Mode_V(&t), *save = Mode_V(&t);
 	nativeVal_t *keys = Mode_V(&t);
-	if (!ET_Import(mods) || !ET_Run(id, "desc", NULL) || !Native_GVarGet("PhysicalAspectRatio", aspect)) {
+	if (!Script_Import(mods) || !ET_Run(id, "desc", NULL) || !Native_GVarGet("PhysicalAspectRatio", aspect)) {
 		return Mode_Done(&t, 0);
 	}
 	/* 1.3333333333333 in the source; the marshal of the shipped .pyc kept 12 digits */
@@ -1391,14 +1324,14 @@ static byte ET_ShowLinks(int id, int groups) {
 	PyObject *unlinkUD = linkUD ? Mode_From("Menu", "UnLinkUD") : NULL;
 	byte ok = unlinkUD && ET_GroupName(1, name);
 	for (int i = 0; ok && i < 5; i++) {
-		ok = ET_Link(linkLR, id, left[i], name);
+		ok = Mode_LinkCall(linkLR, id, left[i], name);
 	}
 	for (int i = groups; ok && i > 0; i--) {
-		ok = ET_GroupName(i, name) && ET_Link(linkLR, id, "Engine1", name) && ET_Link(linkLR, id, name, "Recycle");
+		ok = ET_GroupName(i, name) && Mode_LinkCall(linkLR, id, "Engine1", name) && Mode_LinkCall(linkLR, id, name, "Recycle");
 	}
-	ok = ok && ET_Link(linkLR, id, "Recycle", "Exit");
+	ok = ok && Mode_LinkCall(linkLR, id, "Recycle", "Exit");
 	for (int i = 0; ok && i < groups - 1; i++) {
-		ok = ET_GroupName(i + 1, name) && ET_GroupName(i + 2, other) && ET_Link(linkUD, id, name, other);
+		ok = ET_GroupName(i + 1, name) && ET_GroupName(i + 2, other) && Mode_LinkCall(linkUD, id, name, other);
 	}
 	/* currentEngineGroup = ...: a local of the script, the module variable stays */
 	ok = ok && ET_GroupName(1, name);
@@ -1418,7 +1351,7 @@ static byte ET_ShowEnginesPanel(int id) {
 	nativeVal_t zero;
 	Native_SetInt(&zero, 0);
 	PyObject *linkUD = Mode_From("Menu", "LinkUD");
-	byte ok = linkUD && ET_Import(mods) && Mode_Put(MOD, "engineIndex", NULL, &zero) && ET_Layout(layout);
+	byte ok = linkUD && Script_Import(mods) && Mode_Put(MOD, "engineIndex", NULL, &zero) && ET_Layout(layout);
 	int groups = ok ? Native_Size(layout) : -1;
 	ok = groups >= 0 && Native_CallGlobal(MOD, "SetRecycleVisible", NULL, "ii", (long)id, 1L);
 	if (ok) {
@@ -1427,19 +1360,19 @@ static byte ET_ShowEnginesPanel(int id) {
 		Script_SetStr(id, "Recycle", "OnAccept", "");
 	}
 	int count = ok ? ET_Len("enginesList") : -1;
-	ok = count >= 0 && ET_Link(linkUD, id, "PrevEngine", "Engine1");
+	ok = count >= 0 && Mode_LinkCall(linkUD, id, "PrevEngine", "Engine1");
 	for (int i = 0; ok && i < count; i++) {
 		char name[0x20], next[0x20];
 		Str_Printf(name, sizeof(name), "Engine%d", i + 1);
-		ET_Visible(id, name, 1);
+		Mode_ItemVisible(id, name, 1);
 		if (i + 2 <= count) {
 			Str_Printf(next, sizeof(next), "Engine%d", i + 2);
-			ok = ET_Link(linkUD, id, name, next);
+			ok = Mode_LinkCall(linkUD, id, name, next);
 		} else {
 			Script_SetStr(id, name, "Down", "");
 		}
 	}
-	ok = ok && (count < 4 || ET_Link(linkUD, id, "Engine4", "NextEngine")) &&
+	ok = ok && (count < 4 || Mode_LinkCall(linkUD, id, "Engine4", "NextEngine")) &&
 		Native_CallGlobal(MOD, "SetPrevNextEngineVisible", NULL, "ii", (long)id, 1L);
 	if (count > 4) {
 		count = 4;
@@ -1452,13 +1385,13 @@ static byte ET_ShowEnginesPanel(int id) {
 		ok = ET_EngineI(i, 1, &e) && Mode_Cat(&u, &name, 3, Mode_S(&u, "Engine"), &e, Mode_S(&u, "InList")) &&
 			Mode_ItemText(&name, &s);
 		if (ok) {
-			ET_Visible(id, s, 1);
+			Mode_ItemVisible(id, s, 1);
 		}
 		Mode_Done(&u, 1);
 		Native_Free(&e);
 		Native_Free(&name);
 	}
-	ok = ok && ET_Import(mods2) && ET_LoadMasses(&l);
+	ok = ok && Script_Import(mods2) && ET_LoadMasses(&l);
 	if (ok) {
 		Native_SetInt(&l.mass, 0);
 		ok = Mode_ShipGet("MEng0", key);
@@ -1472,7 +1405,7 @@ static byte ET_ShowEnginesPanel(int id) {
 	for (int i = 0; ok && i < count; i++) {
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "Engine%dInList", i + 1);
-		ET_Visible(id, name, 1);
+		Mode_ItemVisible(id, name, 1);
 		Script_SetNum(id, name, "X", 36);
 		Script_SetNum(id, name, "Y", ENGINES_Y + 64 * i);
 		ok = ET_Mount(id, i, &l, layout);
@@ -1528,7 +1461,7 @@ ET_I(ET_CreateLayoutsPy, ET_CreateLayouts(id))
 
 /* Rotate of a bay icon: 0 for a bay of one slot, else pointing out from the middle of the screen */
 static int ET_Rotate(int j, const nativeVal_t *slots, double u) {
-	if (j == 0 && ET_CmpI(slots, j + 1, '=') > 0) {
+	if (j == 0 && Mode_CmpOpI(slots, j + 1, '=') > 0) {
 		return 0;
 	}
 	return u > 320 ? 1 : 3;
@@ -1569,7 +1502,7 @@ static byte ET_Icon(int id, int i, int j, const char *n) {
 	nativeVal_t slots = { 0 }, jv;
 	char name[0x30];
 	Native_SetInt(&jv, j);
-	int used = ET_SlotsOf(i, &slots) ? ET_Cmp(&jv, &slots, '<') : -1;
+	int used = ET_SlotsOf(i, &slots) ? Mode_CmpOp(&jv, &slots, '<') : -1;
 	Native_Free(&slots);
 	if (used > 0) {
 		double u, v;
@@ -1579,7 +1512,7 @@ static byte ET_Icon(int id, int i, int j, const char *n) {
 		static const char *const prefix[2] = { "IconEngine", "IconEngineGlow" };
 		for (int k = 0; k < 2; k++) {
 			Str_Printf(name, sizeof(name), "%s%s", prefix[k], n);
-			ET_Visible(id, name, k == 0);
+			Mode_ItemVisible(id, name, k == 0);
 			Script_SetNum(id, name, "X", u);
 			Script_SetNum(id, name, "Y", v);
 			Script_SetNum(id, name, "PivotX", 0.5);
@@ -1592,9 +1525,9 @@ static byte ET_Icon(int id, int i, int j, const char *n) {
 		}
 	} else if (used == 0) {
 		Str_Printf(name, sizeof(name), "IconEngine%s", n);
-		ET_Visible(id, name, 0);
+		Mode_ItemVisible(id, name, 0);
 		Str_Printf(name, sizeof(name), "IconEngineGlow%s", n);
-		ET_Visible(id, name, 0);
+		Mode_ItemVisible(id, name, 0);
 	}
 	return used >= 0;
 }
@@ -1632,22 +1565,22 @@ static byte ET_Lines(int id, int i) {
 	}
 	double sizex = maxx - minx, sizey = maxy - miny, offx = 10;
 	Str_Printf(name, sizeof(name), "IconEngineLineL%s", n);
-	ET_Visible(id, name, 1);
+	Mode_ItemVisible(id, name, 1);
 	Script_SetNum(id, name, "X", minx + offx);
 	Script_SetNum(id, name, "Y", v1);
 	Script_SetNum(id, name, "ScaleX", sizex / 2 - offx);
 	Script_SetNum(id, name, "ScaleY", 2);
 	Str_Printf(name, sizeof(name), "IconEngineLineC%s", n);
-	ET_Visible(id, name, 1);
+	Mode_ItemVisible(id, name, 1);
 	Script_SetNum(id, name, "X", minx + sizex / 2);
 	Script_SetNum(id, name, "Y", miny);
 	Script_SetNum(id, name, "ScaleX", 2);
 	Script_SetNum(id, name, "ScaleY", sizey + 2);
 	if (maxy == miny) {
-		ET_Visible(id, name, 0);
+		Mode_ItemVisible(id, name, 0);
 	}
 	Str_Printf(name, sizeof(name), "IconEngineLineR%s", n);
-	ET_Visible(id, name, 1);
+	Mode_ItemVisible(id, name, 1);
 	Script_SetNum(id, name, "X", maxx - sizex / 2);
 	Script_SetNum(id, name, "Y", v2);
 	Script_SetNum(id, name, "ScaleX", sizex / 2 - offx);
@@ -1659,7 +1592,7 @@ static byte ET_Lines(int id, int i) {
 static byte ET_UpdateLayouts(int id) {
 	static const char *const mods[] = { "HangarTab", "ShipEdit", NULL };
 	nativeVal_t tab = { 0 };
-	int other = ET_Import(mods) && Mode_ModVar("ShipEdit", "prevTab", &tab) ? ET_CmpS(&tab, "ShipEditTabEngines", '!') : -1;
+	int other = Script_Import(mods) && Mode_ModVar("ShipEdit", "prevTab", &tab) ? ET_CmpS(&tab, "ShipEditTabEngines", '!') : -1;
 	Native_Free(&tab);
 	if (other) {
 		return other > 0;
@@ -1674,7 +1607,7 @@ static byte ET_UpdateLayouts(int id) {
 		for (int j = 0; ok && j < 2; j++) {
 			ok = ET_Icon(id, i, j, ET_IconName(n, sizeof(n), i, j));
 		}
-		int two = ok && ET_SlotsOf(i, &slots) ? ET_CmpI(&slots, 2, 'g') : -1;
+		int two = ok && ET_SlotsOf(i, &slots) ? Mode_CmpOpI(&slots, 2, 'g') : -1;
 		Native_Free(&slots);
 		if (two < 0 || (two && !ET_Lines(id, i))) {
 			return 0;
@@ -1715,7 +1648,7 @@ static byte ET_UpdateLayoutsState(int id, const nativeVal_t *index, const native
 	for (int j = 0; j < 2; j++) {
 		char n[0x20], name[0x40];
 		ET_NameIn(n, sizeof(n), "", index, j ? "B" : "A");
-		int active = ET_CmpI(state, 1, '=');
+		int active = Mode_CmpOpI(state, 1, '=');
 		if (active < 0) {
 			return 0;
 		}
@@ -1724,9 +1657,7 @@ static byte ET_UpdateLayoutsState(int id, const nativeVal_t *index, const native
 		Script_SetNum(id, name, "SpriteIndex", active ? 36 : 35);
 		for (int k = 2; k < 5; k++) {
 			Str_Printf(name, sizeof(name), "%s%s", et_iconParts[k], n);
-			Script_SetNum(id, name, "Red", c[0]);
-			Script_SetNum(id, name, "Green", c[1]);
-			Script_SetNum(id, name, "Blue", c[2]);
+			Mode_ItemColor(id, name, c);
 			Script_SetNum(id, name, "Alpha", c[3]);
 		}
 	}
@@ -1760,7 +1691,7 @@ static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 	int some = ET_CmpS(control, "", '!');
 	byte ok = some >= 0;
 	if (some > 0) {
-		int found = Native_CallMod("string", "find", &at, "vs", control, "EngineGroup") ? ET_CmpI(&at, -1, '!') : -1;
+		int found = Native_CallMod("string", "find", &at, "vs", control, "EngineGroup") ? Mode_CmpOpI(&at, -1, '!') : -1;
 		if (found > 0) {
 			ok = ET_Item(control, -1, &c) && Native_CallMod("string", "atoi", &n, "v", &c) && (Native_Free(&tv), 1) &&
 				ET_OpI(&n, '-', 1, &tv);
@@ -1779,12 +1710,12 @@ static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 				ok = Native_Raise(NE_INDEX, "tuple index out of range");
 				break;
 			}
-			int glow = ET_Cmp(&iv, &tv, '=');
+			int glow = Mode_CmpOp(&iv, &tv, '=');
 			ok = glow >= 0;
 			if (ok) {
 				const char *render = glow ? "!ScorerSpriteGlow" : "";
 				Str_Printf(name, sizeof(name), "IconEngineGlow%d%c", i, "AB"[j]);
-				ET_Visible(id, name, glow);
+				Mode_ItemVisible(id, name, glow);
 				Script_SetStr(id, name, "OnRender", render);
 				for (int k = 2; k < 5; k++) {
 					Str_Printf(name, sizeof(name), "%s%d%c", et_iconParts[k], i, "AB"[j]);
@@ -1811,7 +1742,7 @@ static byte ET_HideEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	nativeVal_t ship = { 0 }, none, layout = { 0 };
 	Native_SetNone(&none);
-	int some = ET_Import(mods) && Mode_PrevShip(&ship) ? ET_Cmp(&ship, &none, '!') : -1;
+	int some = Script_Import(mods) && Mode_PrevShip(&ship) ? Mode_CmpOp(&ship, &none, '!') : -1;
 	Native_Free(&ship);
 	if (some > 0) {
 		int groups = ET_Layout(&layout) ? Native_Size(&layout) : -1;
@@ -1821,8 +1752,8 @@ static byte ET_HideEnginesPanel(int id) {
 			char name[ET_ITEM];
 			some = ET_GroupName(i + 1, name) ? 1 : -1;
 			if (some > 0) {
-				ET_Visible(id, name, 0);
-				ET_Color(id, name, et_normal);
+				Mode_ItemVisible(id, name, 0);
+				Mode_ItemColor(id, name, et_normal);
 			}
 		}
 	}
@@ -1835,7 +1766,7 @@ static byte ET_HideEnginesPanel(int id) {
 	for (int i = 0; i < 4; i++) {
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "Engine%d", i + 1);
-		ET_Visible(id, name, 0);
+		Mode_ItemVisible(id, name, 0);
 	}
 	int count = Native_CallGlobal(MOD, "SetPrevNextEngineVisible", NULL, "ii", (long)id, 0L) ? ET_Len("enginesList") : -1;
 	if (count < 0) {
@@ -1845,11 +1776,11 @@ static byte ET_HideEnginesPanel(int id) {
 		for (int i = 0; i < count; i++) {
 			char name[0x20];
 			Str_Printf(name, sizeof(name), "Engine%dInList", i + 1);
-			ET_Visible(id, name, 0);
+			Mode_ItemVisible(id, name, 0);
 		}
 	}
 	PyObject *unlinkLR = Mode_From("Menu", "UnLinkLR");
-	ok = unlinkLR && ET_Link(unlinkLR, id, "Recycle", "Exit");
+	ok = unlinkLR && Mode_LinkCall(unlinkLR, id, "Recycle", "Exit");
 	Py_XDECREF(unlinkLR);
 	return ok;
 }
@@ -1861,7 +1792,7 @@ static byte ET_ShowFrom(int id, long first, const etLoad_t *l) {
 	for (long i = first, j = 0; i < first + 4; i++, j++) {
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "Engine%ldInList", i + 1);
-		ET_Visible(id, name, 1);
+		Mode_ItemVisible(id, name, 1);
 		Script_SetNum(id, name, "X", 36);
 		Script_SetNum(id, name, "Y", ENGINES_Y + 64 * j);
 		if (!ET_Mount(id, i, l, NULL)) {
@@ -1874,7 +1805,7 @@ static byte ET_ShowFrom(int id, long first, const etLoad_t *l) {
 /* the imports of the scroll functions and the load of the bay */
 static byte ET_ScrollLoad(etLoad_t *l) {
 	static const char *const mods[] = { "ShipMaker", "string", "ShipEdit", "HangarTab", NULL };
-	return ET_Import(mods) && ET_Load(l, 1);
+	return Script_Import(mods) && ET_Load(l, 1);
 }
 
 /* range(engineIndex + plus) */
@@ -1892,7 +1823,7 @@ static void ET_HideFrom(int id, long first, long end) {
 	for (long i = first; i < end; i++) {
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "Engine%ldInList", i + 1);
-		ET_Visible(id, name, 0);
+		Mode_ItemVisible(id, name, 0);
 	}
 }
 
@@ -1910,7 +1841,7 @@ static byte ET_Step(long d) {
 static int ET_IndexCmp(long plus, long i, char op) {
 	nativeVal_t index = { 0 }, sum = { 0 };
 	int r = ET_G("engineIndex", &index) && (plus ? ET_OpI(&index, '+', plus, &sum) : (Native_Copy(&sum, &index), 1)) ?
-		ET_CmpI(&sum, i, op) : -1;
+		Mode_CmpOpI(&sum, i, op) : -1;
 	Native_Free(&index);
 	Native_Free(&sum);
 	return r;
@@ -1978,7 +1909,7 @@ static byte ET_ScrollDown(int id, const nativeVal_t *control) {
 	}
 	nativeVal_t cv, index = { 0 }, rest = { 0 };
 	Native_SetInt(&cv, count);
-	int more = ET_G("engineIndex", &index) && ET_Op(&cv, '-', &index, &rest) ? ET_CmpI(&rest, 4, '>') : -1;
+	int more = ET_G("engineIndex", &index) && ET_Op(&cv, '-', &index, &rest) ? Mode_CmpOpI(&rest, 4, '>') : -1;
 	Native_Free(&index);
 	Native_Free(&rest);
 	if (more > 0) {

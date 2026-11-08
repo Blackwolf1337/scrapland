@@ -16,6 +16,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 static const char mission_def[] = {
 #embed "../../../data/menus/mission.def"
@@ -66,12 +67,6 @@ static int Mission_ModInt(const char *module, const char *var, int def) {
 	return r;
 }
 
-/* the text value of an int */
-static const nativeVal_t *Mission_Int(nativeVal_t *v, long i) {
-	Native_SetInt(v, i);
-	return v;
-}
-
 /* a text of any length as a value (Native_Free it) */
 static const nativeVal_t *Mission_Text(nativeVal_t *v, const char *s) {
 	Native_SetText(v, s, (int)strlen(s));
@@ -92,10 +87,10 @@ static void Mission_Replace(const char *text, const char *tag, const char *arg, 
 static void Mission_Objective(int id, int num, const nativeVal_t *text1, const nativeVal_t *text2, const int *frame,
 	const int *text) {
 	nativeVal_t v[8];
-	PyObject *vars = Mode_DefVars(10, "num", Mission_Int(&v[0], num), "y", Mission_Int(&v[1], 150 + num * 50), "text1", text1,
-		"text2", text2, "red", Mission_Int(&v[2], frame[0]), "green", Mission_Int(&v[3], frame[1]), "blue",
-		Mission_Int(&v[4], frame[2]), "tred", Mission_Int(&v[5], text[0]), "tgreen", Mission_Int(&v[6], text[1]), "tblue",
-		Mission_Int(&v[7], text[2]));
+	PyObject *vars = Mode_DefVars(10, "num", Mode_IntVal(&v[0], num), "y", Mode_IntVal(&v[1], 150 + num * 50), "text1", text1,
+		"text2", text2, "red", Mode_IntVal(&v[2], frame[0]), "green", Mode_IntVal(&v[3], frame[1]), "blue",
+		Mode_IntVal(&v[4], frame[2]), "tred", Mode_IntVal(&v[5], text[0]), "tgreen", Mode_IntVal(&v[6], text[1]), "tblue",
+		Mode_IntVal(&v[7], text[2]));
 	Mission_Run(id, "objective", vars);
 	Py_XDECREF(vars);
 }
@@ -224,11 +219,6 @@ static void Mission_Notes(int id) {
 	}
 }
 
-static byte Mission_SaveVarIs(const char *var, const char *value) {
-	const char *s = SaveVar_Get(var);
-	return s && !strcmp(s, value);
-}
-
 /* the description of the crazy deal page, and its objectives */
 static void Mission_DealDesc(int id, char *desc, int size) {
 	if (Mission_ModInt("Init", "HasSuperDeal", 0)) {
@@ -249,11 +239,11 @@ static void Mission_DealDesc(int id, char *desc, int size) {
 		Native_Free(&mod);
 		return;
 	}
-	if (Mission_SaveVarIs("JackInTheBox.Active", "0")) {
+	if (LvN_SaveIs("JackInTheBox.Active", "0")) {
 		Str_Copy(desc, Script_Lang("CrazyDeal_Menu_None"), size);
 		return;
 	}
-	if (Mission_SaveVarIs("JackInTheBox.Active", "2")) {
+	if (LvN_SaveIs("JackInTheBox.Active", "2")) {
 		Str_Copy(desc, Script_Lang("CrazyDeal_Menu_SuperDealsComplete"), size);
 		return;
 	}
@@ -336,7 +326,7 @@ static void Step_Content(int id, PyObject *args) {
 		Script_SetNum(id, "Mission", "Status2", 0);
 		Str_Printf(title, sizeof(title), "%s:", Script_Lang("Notes_Title"));
 		const char *nb = SaveVar_Get("NewBluePrintAvaliable");
-		if (Mission_SaveVarIs("GameAct", "Prologue") && Mission_SaveVarIs("JackInTheBox.Active", "0") &&
+		if (LvN_SaveIs("GameAct", "Prologue") && LvN_SaveIs("JackInTheBox.Active", "0") &&
 			(!nb || atoi(nb) <= 0)) {
 			Str_Copy(desc, Script_Lang("Notes_None"), sizeof(desc));
 		} else {
@@ -365,7 +355,7 @@ static void Mission_Run(int id, const char *section, PyObject *vars) {
 static void Mission_Menu(int id, const char *name) {
 	const missionPage_t *p = Mission_Page(name);
 	char back[0x100];
-	Script_Call("Menu", "StartNewMenu", "(i)", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	if (!p) {
 		return;
 	}
@@ -374,10 +364,10 @@ static void Mission_Menu(int id, const char *name) {
 	Str_Printf(back, sizeof(back), "\x15 %s", Script_Lang("XBox_Menu_Back"));
 	nativeVal_t v[12];
 	PyObject *vars = Mode_DefVars(12, "page", Mission_Text(&v[0], p->page), "ltitle", Mission_Text(&v[1], p->left), "rtitle",
-		Mission_Text(&v[2], p->right), "red", Mission_Int(&v[3], p->red), "green", Mission_Int(&v[4], p->green), "blue",
-		Mission_Int(&v[5], p->blue), "tred", Mission_Int(&v[6], p->tred), "tgreen", Mission_Int(&v[7], p->tgreen), "tblue",
-		Mission_Int(&v[8], p->tblue), "xbox", Mission_Int(&v[9], GVar_GetNum("IsXbox", 0) != 0), "outdoor",
-		Mission_Int(&v[10], Mission_ModInt("Init", "Outdoor", 0) != 0), "xboxback", Mission_Text(&v[11], back));
+		Mission_Text(&v[2], p->right), "red", Mode_IntVal(&v[3], p->red), "green", Mode_IntVal(&v[4], p->green), "blue",
+		Mode_IntVal(&v[5], p->blue), "tred", Mode_IntVal(&v[6], p->tred), "tgreen", Mode_IntVal(&v[7], p->tgreen), "tblue",
+		Mode_IntVal(&v[8], p->tblue), "xbox", Mode_IntVal(&v[9], GVar_GetNum("IsXbox", 0) != 0), "outdoor",
+		Mode_IntVal(&v[10], Mission_ModInt("Init", "Outdoor", 0) != 0), "xboxback", Mission_Text(&v[11], back));
 	for (int i = 0; i < 12; i++) {
 		Native_Free(&v[i]);
 	}
@@ -443,7 +433,7 @@ static PyObject *Menu_EnterMissionInfo(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &id)) {
 		return NULL;
 	}
-	Script_Call("Menu", "InitMenuSys", "(i)", 0);
+	Mode_PrintedCall("Menu", "InitMenuSys", 0);
 	const char *map = SaveVar_Get("SuperDeal.Mission.Map");
 	if (map && *map) {
 		Mission_Menu(id, "CrazyDeal");
@@ -467,7 +457,7 @@ static PyObject *Menu_ExitMissionInfo(PyObject *self, PyObject *args) {
 		cPy_Function_SetFunc(&sc->onNext, "");
 		cPy_Function_SetFunc(&sc->onPrev, "");
 	}
-	Script_Call("Menu", "BackToGame", "(i)", id);
+	Mode_PrintedCall("Menu", "BackToGame", id);
 	return Py_ReturnNone();
 }
 

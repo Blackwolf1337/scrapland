@@ -37,32 +37,6 @@
 
 /* ---- helpers of the module ---- */
 
-/* Scrap.GetSaveVar(name) of a name value (the TypeError of "s") */
-static byte Mf_SaveV(const nativeVal_t *name, nativeVal_t *out) {
-	const char *s;
-	Native_SetNone(out);
-	if (!Native_ArgStr(name, 1, &s)) {
-		return 0;
-	}
-	Mode_SaveVar(s, out);
-	return 1;
-}
-
-/* Scrap.SetSaveVar(name, v) of a name value */
-static byte Mf_SetSaveV(const nativeVal_t *name, const nativeVal_t *v) {
-	const char *s;
-	return Native_ArgStr(name, 1, &s) && Mode_SetSaveVar(s, v);
-}
-
-/* Scrap.SetSaveVar(name, Scrap.GetSaveVar(from)) */
-static byte Mf_CopySave(const char *name, const char *from) {
-	nativeVal_t v;
-	Mode_SaveVar(from, &v);
-	byte ok = Mode_SetSaveVar(name, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* v == "text" of the script (a text with the same bytes) */
 static byte Mf_Is(const nativeVal_t *v, const char *text) {
 	return v->type == NV_STR && v->n == (int)strlen(text) && !memcmp(Native_Text(v), text, (size_t)v->n);
@@ -466,7 +440,7 @@ static byte Mf_CancelSecondaryMission(const nativeVal_t *id) {
 		return 0;
 	}
 	Mode_SaveVar("Challenge.Type", &type);
-	byte ok = (!Mode_IsText(&type, "Race") && !Mode_IsText(&type, "Combat")) ||
+	byte ok = (!Native_IsStr(&type, "Race") && !Native_IsStr(&type, "Combat")) ||
 		Native_CallMod("Challenge", "CancelChallenge", NULL, "v", &type);
 	Native_Free(&type);
 	return ok && Native_CallMod("SaveGame", "SMDesc", NULL, "si", "", 1L);
@@ -537,7 +511,7 @@ static byte Mf_SinglePlayerDeath(void) {
 			SaveVar_Set(mercs[i], "0");
 		}
 		Mode_SaveVar("Char", type);
-		if (Mode_IsText(type, "Gear")) {
+		if (Native_IsStr(type, "Gear")) {
 			Native_Free(type);
 			Native_SetStr(type, "Police");
 		}
@@ -745,8 +719,8 @@ static byte Mf_CrazyDealStatus(const nativeVal_t *number, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *var = Mode_V(&t), *name = Mode_V(&t), *val = Mode_V(&t), *tvar = Mode_V(&t), *ttext = Mode_V(&t);
 	nativeVal_t *tgt = Mode_V(&t), *ival = Mode_V(&t);
-	if (!Mf_DealVar(&t, number, ".Var", var) || !Mf_SaveV(var, name) || !Mf_SaveV(name, val) ||
-		!Mf_DealVar(&t, number, ".Tgt", tvar) || !Mf_SaveV(tvar, ttext) || !Native_ToInt(ttext, tgt)) {
+	if (!Mf_DealVar(&t, number, ".Var", var) || !Mode_SaveVarV(var, name) || !Mode_SaveVarV(name, val) ||
+		!Mf_DealVar(&t, number, ".Tgt", tvar) || !Mode_SaveVarV(tvar, ttext) || !Native_ToInt(ttext, tgt)) {
 		return Mode_Done(&t, 0);
 	}
 	if (val->type == NV_NONE) {
@@ -819,12 +793,12 @@ static byte Mf_OnCrazyDealTarget(void) {
 static byte Mf_NewCrazyDeal(const nativeVal_t *number, const nativeVal_t *name, const nativeVal_t *max) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *var = Mode_V(&t), *tvar = Mode_V(&t), *rep = Mode_V(&t);
-	if (!Mf_DealVar(&t, number, ".Var", var) || !Mf_SetSaveV(var, name) || !Mf_SetSaveV(name, Mode_S(&t, "0")) ||
+	if (!Mf_DealVar(&t, number, ".Var", var) || !Mode_SetSaveV(var, name) || !Mode_SetSaveV(name, Mode_S(&t, "0")) ||
 		!Mf_DealVar(&t, number, ".Tgt", tvar)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(max, rep);
-	return Mode_Done(&t, Mf_SetSaveV(tvar, rep));
+	return Mode_Done(&t, Mode_SetSaveV(tvar, rep));
 }
 
 /* SetNextSuperDeal(MapName, MissionName, superDealType): the next super deal */
@@ -841,7 +815,7 @@ static byte Mf_StartActualSuperDeal(void) {
 	if (Native_True(v)) {
 		return Mode_Done(&t, Mode_ConsoleError(Mode_S(&t, "Se ha llamado dos veces a MissionsFuncs.StartActualSuperDeal\n")));
 	}
-	if (!Mf_CopySave("SuperDeal.Mission.Map", "Mission.Map") || !Mf_CopySave("SuperDeal.Mission.Library", "Mission.Library")) {
+	if (!Mode_SaveCopy("SuperDeal.Mission.Map", "Mission.Map") || !Mode_SaveCopy("SuperDeal.Mission.Library", "Mission.Library")) {
 		return Mode_Done(&t, 0);
 	}
 	/* the global StartSuperDeal read before its arguments, as the script */
@@ -860,8 +834,8 @@ static byte Mf_StartActualSuperDeal(void) {
 /* EndOfSuperDeal(DealerMessage): the mission back, to the crazy gambler's meeting room with his message */
 static byte Mf_EndOfSuperDeal(const nativeVal_t *msg) {
 	nativeVal_t text = { 0 };
-	if (!Mode_Import("SaveGame") || !Mf_CopySave("Mission.Map", "SuperDeal.Mission.Map") ||
-		!Mf_CopySave("Mission.Library", "SuperDeal.Mission.Library") || !Mode_DelSaveVars("SuperDeal.Mission.Map") ||
+	if (!Mode_Import("SaveGame") || !Mode_SaveCopy("Mission.Map", "SuperDeal.Mission.Map") ||
+		!Mode_SaveCopy("Mission.Library", "SuperDeal.Mission.Library") || !Mode_DelSaveVars("SuperDeal.Mission.Map") ||
 		!Mode_DelSaveVars("SuperDeal.Mission.Library") || !Mode_LangV(msg, &text)) {
 		return 0;
 	}

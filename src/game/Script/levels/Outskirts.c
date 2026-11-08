@@ -822,11 +822,7 @@ static byte Demo_CallCrazyGambler(void) {
 }
 
 static byte Demo_ShowRustyMapsSystemMessage(void) {
-	nativeVal_t cad = { 0 };
-	Mode_Lang("Mission_FirstCrazyBet_SystemMessage3", &cad);
-	byte ok = Mode_SpeechMsg(&cad);
-	Native_Free(&cad);
-	return ok;
+	return Mode_LangMsg("Mission_FirstCrazyBet_SystemMessage3");
 }
 
 /* UsePhoneCab(UsrName, CharName, optId, FullOption): the police warning while the alarm is on, else the boss */
@@ -2280,18 +2276,10 @@ static byte Bd_BankersFollow(const nativeVal_t *target, const char *targetG) {
 	return ok;
 }
 
-/* the entity of the global name of the module into e */
-static byte Bd_EntityG(const char *var, nativeVal_t *e) {
-	nativeVal_t name = { 0 };
-	byte ok = Mode_G(BD, var, &name) && Mode_EntityH(&name, e);
-	Native_Free(&name);
-	return ok;
-}
-
 /* the position of the current money transport, None when there is none */
 static byte Bd_TargetPos(nativeVal_t *pos) {
 	nativeVal_t e = { 0 };
-	byte ok = Bd_EntityG("currentMissionTarget", &e) && (!Native_True(&e) || Mode_VGet(&e, "Pos", pos));
+	byte ok = Mode_GEntity(BD, "currentMissionTarget", &e) && (!Native_True(&e) || Mode_VGet(&e, "Pos", pos));
 	Native_Free(&e);
 	return ok;
 }
@@ -2327,7 +2315,7 @@ static byte Debtors_OnInitMission(const nativeVal_t *a) {
 /* the current mission target red (when it exists) */
 static byte Bd_TargetRed(void) {
 	nativeVal_t e = { 0 };
-	byte ok = Bd_EntityG("currentMissionTarget", &e) && (!Native_True(&e) || LvN_SetS(&e, "TgType", "red"));
+	byte ok = Mode_GEntity(BD, "currentMissionTarget", &e) && (!Native_True(&e) || LvN_SetS(&e, "TgType", "red"));
 	Native_Free(&e);
 	return ok;
 }
@@ -2376,7 +2364,7 @@ static byte Debtors_OnMissionTargetDeath(const nativeVal_t *a) {
 
 static byte Debtors_BankMasterAttacksMissionTarget(void) {
 	nativeVal_t e = { 0 }, name = { 0 };
-	byte ok = Bd_EntityG("bankMasterName", &e) && (!Native_True(&e) || (Mode_G(BD, "bankMasterName", &name) && Bd_StateG(2, &name, "currentMissionTarget")));
+	byte ok = Mode_GEntity(BD, "bankMasterName", &e) && (!Native_True(&e) || (Mode_G(BD, "bankMasterName", &name) && Bd_StateG(2, &name, "currentMissionTarget")));
 	Native_Free(&e);
 	Native_Free(&name);
 	return ok;
@@ -2486,7 +2474,7 @@ static byte Debtors_GetPossibleMercTargets_C(const nativeVal_t *a, nativeVal_t *
 		Native_Free(&name);
 	}
 	Native_Free(&e);
-	ok = ok && Bd_EntityG("currentMissionTarget", &e) && (!Native_True(&e) || Mode_VGet(&e, "Name", Native_Append(out)));
+	ok = ok && Mode_GEntity(BD, "currentMissionTarget", &e) && (!Native_True(&e) || Mode_VGet(&e, "Name", Native_Append(out)));
 	Native_Free(&lst);
 	Native_Free(&e);
 	return ok;
@@ -2664,7 +2652,7 @@ static byte Bd_CreateBanker(const nativeVal_t *follow, const nativeVal_t *pos) {
 /* RespawnBankMaster(): the bank master back after the transport (later when there is none) */
 static byte Debtors_RespawnBankMaster(void) {
 	nativeVal_t e = { 0 }, name = { 0 };
-	byte ok = Bd_EntityG("currentMissionTarget", &e);
+	byte ok = Mode_GEntity(BD, "currentMissionTarget", &e);
 	if (ok && !Native_True(&e)) {
 		ok = Mode_Later(3, BD, "RespawnBankMaster", NULL, 0, NULL);
 	} else if (ok) {
@@ -3722,9 +3710,8 @@ static byte Hunt_OnMissionStart(const nativeVal_t *a) {
 	}
 	int busy = police > 0 ? Os_Busy() : -1;
 	if (busy > 0) {
-		const nativeVal_t *items[1] = { msg };
 		LvN_Str(msg, "No deberia entrar aqui por segunda vez");
-		return Mode_Done(&t, Mode_Print(items, 1) && Mode_G(FH, "missionStartWaypoint", wp) && LvN_SetS(wp, "OnTake", "") &&
+		return Mode_Done(&t, Mode_PrintV(msg) && Mode_G(FH, "missionStartWaypoint", wp) && LvN_SetS(wp, "OnTake", "") &&
 			LvN_Com("Mission_FunctionaryHunting_RemoteMessage3", "Police", FH, "EnableMissionWaypoint", NULL));
 	}
 	byte ok = busy == 0 && Mode_G(FH, "missionStartWaypoint", wp) && LvN_SetI(wp, "Active", 0) && Mode_Read(FH, "missionStartWaypoint", wp) &&

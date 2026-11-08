@@ -130,14 +130,6 @@ static byte Nm_PosRepr(modeVals_t *t, const nativeVal_t *pos, nativeVal_t *out) 
 	return 1;
 }
 
-/* Flag.var = v of the module (OBJLIB 7: the flag is the entity handle in the module dict) */
-static byte Nm_FlagSet(const char *m, const char *var, const nativeVal_t *v) {
-	PyObject *flag = Mode_GlobalPy(m, "Flag");
-	byte ok = flag && Mode_HSet(flag, var, v);
-	Py_XDECREF(flag);
-	return ok;
-}
-
 static byte Nm_FlagGet(const char *m, const char *var, nativeVal_t *out) {
 	PyObject *flag = Mode_GlobalPy(m, "Flag");
 	byte ok = flag && Mode_HGet(flag, var, out);
@@ -548,7 +540,7 @@ static byte Fl_BrowseAreasC(const char *m, int v) {
 	while (Native_True(dummy)) {
 		int mark = t.n;
 		nativeVal_t *pos = Mode_V(&t), *name = Mode_V(&t), *key = Mode_V(&t);
-		if ((!v && !Mode_Print((const nativeVal_t *const[]){ dummy }, 1)) || !Native_Subscript(dummy, Mode_I(&t, 1), pos) || !Native_Subscript(dummy, Mode_I(&t, 0), name) ||
+		if ((!v && !Mode_PrintV(dummy)) || !Native_Subscript(dummy, Mode_I(&t, 1), pos) || !Native_Subscript(dummy, Mode_I(&t, 0), name) ||
 			!Native_Slice(name, 19, INT_MAX, key) || !Mode_DictPut(m, "ZoneList", zones, key, pos)) {
 			return Mode_Done(&t, 0);
 		}
@@ -577,18 +569,18 @@ static byte Fl_NewFlag(const char *m) {
 static byte Fl_FlagSetup(const char *m, int server, byte postman) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pos = Mode_V(&t);
-	if (!Nm_FlagModel(m, "FlagModel") || !Nm_FlagSet(m, "Radius", Mode_I(&t, 2000)) || !Nm_FlagSet(m, "RadarShow", Mode_I(&t, 1))) {
+	if (!Nm_FlagModel(m, "FlagModel") || !Mode_FlagSet(m, "Radius", Mode_I(&t, 2000)) || !Mode_FlagSet(m, "RadarShow", Mode_I(&t, 1))) {
 		return Mode_Done(&t, 0);
 	}
 	if (server) {
 		nmState_t *st = &nm_state[Nm_Index(m)];
 		byte ok = postman || NM_OWN(m, "GetRndFlag", NULL, "");
-		ok = ok && Nm_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag"));
+		ok = ok && Mode_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag"));
 		if (postman) {
-			ok = ok && Mode_Read(m, "FlagSpawnPos", &st->flagSpawnPos) && Nm_FlagSet(m, "Pos", &st->flagSpawnPos);
+			ok = ok && Mode_Read(m, "FlagSpawnPos", &st->flagSpawnPos) && Mode_FlagSet(m, "Pos", &st->flagSpawnPos);
 		} else {
 			ok = ok && Mode_Read(m, "ZoneList", &st->zoneList) && Mode_Read(m, "AcFlag", &st->ac) &&
-				Native_Subscript(&st->zoneList, &st->ac, pos) && Nm_FlagSet(m, "Pos", pos);
+				Native_Subscript(&st->zoneList, &st->ac, pos) && Mode_FlagSet(m, "Pos", pos);
 		}
 		if (!ok || !Mode_GVarSet("OnClientJoin", Mode_Name(&t, m, "ClientJoin"))) {
 			return Mode_Done(&t, 0);
@@ -627,7 +619,7 @@ static byte Fl_TakeFlagC(const char *m, int v, const nativeVal_t *taker) {
 	nmState_t *st = &nm_state[Nm_Index(m)];
 	nativeVal_t *pos = Mode_V(&t);
 	if (!Mode_Import("Sound") || !Mode_Read(m, "ZoneList", &st->zoneList) || !Mode_Read(m, "AcFlag", &st->ac) ||
-		!Native_Subscript(&st->zoneList, &st->ac, pos) || !Nm_FlagSet(m, "Pos", pos)) {
+		!Native_Subscript(&st->zoneList, &st->ac, pos) || !Mode_FlagSet(m, "Pos", pos)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_Compare(taker, Mode_S(&t, ""))) {
@@ -713,7 +705,7 @@ static byte Fl_ServerTakeFlagC(const char *m, int v, const nativeVal_t *a) {
 		!NM_OWN(m, "CheckEndOfGame", end, "")) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, !Native_True(end) || Nm_FlagSet(m, "OnTake", Mode_S(&t, "")));
+	return Mode_Done(&t, !Native_True(end) || Mode_FlagSet(m, "OnTake", Mode_S(&t, "")));
 }
 
 /* InitServerMod(), InitClientMod() of the flag and postman modes (server; Ffa imported in the postman server, imp) */
@@ -812,7 +804,7 @@ static byte Po_TryLinkFlagToC(const char *m, const nativeVal_t *a) {
 			return Mode_Done(&t, 0);
 		}
 		if (Native_Compare(model, Mode_S(&t, ""))) {
-			return Mode_Done(&t, Mode_Cat(&t, link, 3, &a[0], Mode_S(&t, ","), &a[1]) && Nm_FlagSet(m, "LinkModel", link));
+			return Mode_Done(&t, Mode_Cat(&t, link, 3, &a[0], Mode_S(&t, ","), &a[1]) && Mode_FlagSet(m, "LinkModel", link));
 		}
 	}
 	Native_SetFloat(delay, 0.5);
@@ -862,9 +854,9 @@ static byte Po_TakeFlagC(const char *m, int v, const nativeVal_t *name) {
 		/* the handle of the taker, held since the start of the function */
 		if (!Mode_SetModVar("Ffa", "MasterFlag", name) || !Mode_NameGet(tn, "UsrControl", uc) ||
 			!Nm_FlagModel(m, !Native_Compare(uc, Mode_I(&t, 0)) ? "FlagNoUsrModel" : "FlagPilotModel") ||
-			!NM_OWN(m, "LinkFlagTo", NULL, "vs", name, "DC_Flag_Player") || !Nm_FlagSet(m, "OffModPos", zero) ||
-			!Nm_FlagSet(m, "DeltaOffMul", Mode_I(&t, 4)) || !Nm_FlagSet(m, "OffMul", Mode_I(&t, 0)) ||
-			!Nm_FlagSet(m, "UseLinkAng", Mode_I(&t, 1))) {
+			!NM_OWN(m, "LinkFlagTo", NULL, "vs", name, "DC_Flag_Player") || !Mode_FlagSet(m, "OffModPos", zero) ||
+			!Mode_FlagSet(m, "DeltaOffMul", Mode_I(&t, 4)) || !Mode_FlagSet(m, "OffMul", Mode_I(&t, 0)) ||
+			!Mode_FlagSet(m, "UseLinkAng", Mode_I(&t, 1))) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -896,8 +888,8 @@ static byte Po_DropFlagC(const char *m, int v, const nativeVal_t *pos) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *rt = Mode_V(&t), *none = Mode_V(&t);
 	Native_SetFloat(rt, 0.2);
-	return Mode_Done(&t, Mode_Import("Sound") && Mode_Import("Ffa") && Nm_FlagSet(m, "LinkModel", Mode_S(&t, ",")) &&
-		(!v || Nm_FlagModel(m, "FlagModel")) && Nm_FlagSet(m, "Pos", pos) && Nm_FlagSet(m, "rTime", rt) &&
+	return Mode_Done(&t, Mode_Import("Sound") && Mode_Import("Ffa") && Mode_FlagSet(m, "LinkModel", Mode_S(&t, ",")) &&
+		(!v || Nm_FlagModel(m, "FlagModel")) && Mode_FlagSet(m, "Pos", pos) && Mode_FlagSet(m, "rTime", rt) &&
 		Mode_SetModVar("Ffa", "MasterFlag", none) && (v || Nm_FlagModel(m, "FlagModel")) && Nm_WayToFlag(m) &&
 		Mode_Sound("EneWaySound", "EneWayVolume") && NM_OWN(m, "AbortZoneKeys", NULL, "") &&
 		Native_CallMod("Ffa", "ActualizeGameScorer", NULL, ""));
@@ -985,7 +977,7 @@ static byte Po_ServerDropFlagC(const char *m) {
 	} else {
 		Native_Copy(pos, &st->flagSpawnPos);
 	}
-	return Mode_Done(&t, Po_SendDrop(&t, pos) && Nm_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag")) &&
+	return Mode_Done(&t, Po_SendDrop(&t, pos) && Mode_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag")) &&
 		NM_OWN(m, "DropFlag", NULL, "v", pos));
 }
 
@@ -1010,7 +1002,7 @@ static byte Po_ServerTakeFlagC(const char *m, const nativeVal_t *a) {
 	return Mode_Done(&t, Mode_DelSchedS("RespawnMainFlag") && NM_OWN(m, "GetRndZone", NULL, "") && Mode_Read(m, "AcZone", ac) &&
 		Mode_Cat(&t, s, 5, Mode_S(&t, "F'"), ac, Mode_S(&t, "','"), veh, Mode_S(&t, "'")) && Mode_Send(Mode_I(&t, -1), s) &&
 		NM_OWN(m, "TakeFlag", NULL, "v", veh) && Po_ZoneSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeBase")) &&
-		Nm_FlagSet(m, "OnTake", Mode_S(&t, "")));
+		Mode_FlagSet(m, "OnTake", Mode_S(&t, "")));
 }
 
 /* RespawnFlag(): nobody carries the flag, it goes back to the start */

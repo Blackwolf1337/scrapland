@@ -203,7 +203,7 @@ static byte SI_SelectShipN(const nativeVal_t *id, const nativeVal_t *control) {
 	if (!Mode_Import("HangarTab") || !Mode_Import("ShipEdit")) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_IsText(control, "HangarAux")) {
+	if (Native_IsStr(control, "HangarAux")) {
 		return Mode_Done(&t, SI_StopPrev() && Mode_SetSaveVar("Hangar.iHangarShip", Mode_S(&t, "9")) && SI_Stop(Mode_I(&t, 9)) &&
 			SI_Exit(id, control));
 	}

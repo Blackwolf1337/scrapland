@@ -29,28 +29,6 @@
 
 /* ---- engine calls of the module ---- */
 
-/* Scrap.GetSaveVar(name) of a name value (the TypeError of "s") */
-static byte SG_SaveVarV(const nativeVal_t *name, nativeVal_t *out) {
-	const char *s;
-	Native_SetNone(out);
-	if (!Native_ArgStr(name, 1, &s)) {
-		return 0;
-	}
-	Mode_SaveVar(s, out);
-	return 1;
-}
-
-/* Scrap.SetSaveVar(name, v) of a name value */
-static byte SG_SetSaveV(const nativeVal_t *name, const nativeVal_t *v) {
-	const char *s;
-	return Native_ArgStr(name, 1, &s) && Mode_SetSaveVar(s, v);
-}
-
-/* Scrap.SetSaveVar(name, text) of two texts */
-static void SG_SetSaveS(const char *name, const char *text) {
-	SaveVar_Set(name, text);
-}
-
 /* Scrap.DelSaveVars(prefix) of a value through its seam (fr7b.py records it) */
 static byte SG_DelSaveVarsV(const nativeVal_t *prefix) {
 	PyObject *hook;
@@ -79,24 +57,6 @@ static byte SG_Alarm(nativeVal_t *out) {
 	Native_SetFloat(Native_Append(out), (double)g_pWorld->alarm.value);
 	Native_SetInt(Native_Append(out), Alarm_GetValue(&g_pWorld->alarm));
 	return 1;
-}
-
-/* Scrap.SetMoney(money) through its seam (fc-r7b-jy records it); the engine's "i" with the OverflowError of a long
- * int or a float that does not fit a long (Native_ArgInt raises a TypeError for those) */
-static byte SG_SetMoney(const nativeVal_t *money) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "SetMoney", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "v", money);
-	}
-	if (money->type == NV_FLOAT && (money->f < (double)LONG_MIN || money->f > (double)LONG_MAX)) {
-		return Native_Raise(NE_OVERFLOW, "float too large to convert");
-	}
-	nativeVal_t i;
-	if (money->type == NV_LONG && !Native_ToInt(money, &i)) {
-		return 0;
-	}
-	return Mode_SetMoney(money);
 }
 
 /* Scrap.FileExist(name): 1 or 0, -1 with the TypeError of "s" */
@@ -186,7 +146,7 @@ static byte SG_SaveAlarm(void) {
 	if (!SG_Alarm(a) || !Mode_Item(a, 0, on)) {
 		return Mode_Done(&t, 0);
 	}
-	SG_SetSaveS("AlarmActive", Native_True(on) ? "1" : "0");
+	Mode_SaveS("AlarmActive", Native_True(on) ? "1" : "0");
 	if (!SG_Alarm(b) || !Mode_Item(b, 1, level)) {
 		return Mode_Done(&t, 0);
 	}
@@ -235,8 +195,8 @@ static byte SG_LoadAlarm(void) {
 	Alarm_SetGrow(&g_pWorld->alarm, -1);
 	Mode_SaveVar("RobotsControlledByBoss", boss);
 	Mode_SaveVar("AlarmActive", active);
-	byte bossRobots = Mode_IsText(boss, "1");
-	Native_SetInt(one, Mode_IsText(active, "1") || bossRobots);
+	byte bossRobots = Native_IsStr(boss, "1");
+	Native_SetInt(one, Native_IsStr(active, "1") || bossRobots);
 	if (!Mode_SetAlarm(one) || (one->i && bossRobots && !Mode_GVarSetI("AlarmFallDelta", 0))) {
 		return Mode_Done(&t, 0);
 	}
@@ -252,7 +212,7 @@ static byte SG_LoadAlarm(void) {
 static byte SG_LoadMoney(void) {
 	nativeVal_t m, v = { 0 };
 	Mode_SaveVar("Money", &m);
-	byte ok = Mode_EvalSave(SG, &m, &v) && SG_SetMoney(&v);
+	byte ok = Mode_EvalSave(SG, &m, &v) && Mode_SetMoneySeam(&v);
 	Native_Free(&m);
 	Native_Free(&v);
 	return ok;
@@ -349,7 +309,7 @@ static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_Repr(sum, text);
-		SG_SetSaveS("GameplayTime", Native_Text(text));
+		Mode_SaveS("GameplayTime", Native_Text(text));
 	}
 	if (!Mode_SetSaveVar("Map", map) || !Native_Upper(map, upper)) {
 		return Mode_Done(&t, 0);
@@ -357,7 +317,7 @@ static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 	/* the maps with credits */
 	long withCredits = 0;
 	for (int i = 0; credits[i] && !withCredits; i++) {
-		withCredits = Mode_IsText(upper, credits[i]);
+		withCredits = Native_IsStr(upper, credits[i]);
 	}
 	if (!Mode_GVarSetI("R_CreditsRTarget", withCredits)) {
 		return Mode_Done(&t, 0);
@@ -434,7 +394,7 @@ static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show)
 	if (!Mode_Import("string") || !Mode_Import("Speech") || !Mode_Import("Init")) {
 		return Mode_Done(&t, 0);
 	}
-	SG_SetSaveS("AutoSaveGameOnLoad", "0");
+	Mode_SaveS("AutoSaveGameOnLoad", "0");
 	if (!Native_CallGlobal(SG, "QWayPoint", NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
@@ -443,7 +403,7 @@ static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show)
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(gpt, text);
-	SG_SetSaveS("GameplayTime", Native_Text(text));
+	Mode_SaveS("GameplayTime", Native_Text(text));
 	if (!SG_SlotFile(&t, slot, file)) {
 		return Mode_Done(&t, 0);
 	}
@@ -479,7 +439,7 @@ static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show)
 	}
 	Native_Free(text);
 	Mode_Repr(back, text);
-	SG_SetSaveS("GameplayTime", Native_Text(text));
+	Mode_SaveS("GameplayTime", Native_Text(text));
 	byte ok = Native_True(success), msg = ok || !show || Native_True(show);
 	if (msg) {
 		/* the confirmation or the failure of the save */
@@ -498,7 +458,7 @@ static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show)
 	}
 	SaveVar_Create("DebugSave", "0");
 	Mode_SaveVar("DebugSave", dbg);
-	return Mode_Done(&t, !Mode_IsText(dbg, "1") || SG_DebugSave());
+	return Mode_Done(&t, !Native_IsStr(dbg, "1") || SG_DebugSave());
 }
 
 /* SaveGame(iSlot): on the PC the save now (the Xbox shows its message and saves in the next frame) */
@@ -515,7 +475,7 @@ static byte SG_SaveGame(const nativeVal_t *slot) {
 		!Mode_G("Init", "XboxSavingMsgTime", msgTime) || !Native_GVarSet("XboxSavingMsg", msgTime)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_IsText(path, "") || Mode_IsText(prof, "")) {
+	if (Native_IsStr(path, "") || Native_IsStr(prof, "")) {
 		return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Without_Msg_"));
 	}
 	return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Saving_Msg_") &&
@@ -635,7 +595,7 @@ static byte SG_NewGame(void) {
 	if (!Mode_Import("Init") || !Mode_DelSaveVars("")) {
 		return Mode_Done(&t, 0);
 	}
-	SG_SetSaveS("AutoSaveGameOnLoad", "0");
+	Mode_SaveS("AutoSaveGameOnLoad", "0");
 	SaveVar_Create("GameAct", "Prologue");
 	SaveVar_Create("BankDebt", "0");
 	if (!Mode_G("Init", "isDemo", isDemo)) {
@@ -691,7 +651,7 @@ static byte SG_CheckAllBlueprints(void) {
 static byte SG_SaveReg(const nativeVal_t *name, const nativeVal_t *reg) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *names = Mode_V(&t), *attrs = Mode_V(&t), *list = Mode_V(&t);
-	if (Mode_IsText(name, "MissionStatus") && !Native_CallGlobal(SG, "QWayPoint", NULL, "")) {
+	if (Native_IsStr(name, "MissionStatus") && !Native_CallGlobal(SG, "QWayPoint", NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	if (!SG_DelSaveVarsV(name)) {
@@ -712,7 +672,7 @@ static byte SG_SaveReg(const nativeVal_t *name, const nativeVal_t *reg) {
 		if (!Native_SeqItem(attrs, i, a)) {
 			return Mode_Done(&t, 0);
 		}
-		if (Mode_IsText(a, "__doc__") || Mode_IsText(a, "__module__")) {
+		if (Native_IsStr(a, "__doc__") || Native_IsStr(a, "__module__")) {
 			Mode_Release(&t, mark);
 			continue;
 		}
@@ -723,14 +683,14 @@ static byte SG_SaveReg(const nativeVal_t *name, const nativeVal_t *reg) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_Repr(v, text);
-		if (!SG_SetSaveV(key, text)) {
+		if (!Mode_SetSaveV(key, text)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Copy(Native_Append(names), a);
 		Mode_Release(&t, mark);
 	}
 	Mode_Repr(names, list);
-	return Mode_Done(&t, SG_SetSaveV(name, list));
+	return Mode_Done(&t, Mode_SetSaveV(name, list));
 }
 
 /* QSaveReg(mreg): the register of the mission status */
@@ -750,7 +710,7 @@ static PyObject *SG_GetReg(const nativeVal_t *name) {
 	Py_XDECREF(cname);
 	Py_XDECREF(bases);
 	Py_XDECREF(cdict);
-	byte ok = res && SG_SaveVarV(name, lst);
+	byte ok = res && Mode_SaveVarV(name, lst);
 	if (ok && lst->type == NV_NONE) {
 		Native_SetStr(lst, "[]");
 	}
@@ -759,7 +719,7 @@ static PyObject *SG_GetReg(const nativeVal_t *name) {
 	for (int i = 0; ok && i < n; i++) {
 		int mark = t.n;
 		nativeVal_t *a = Mode_V(&t), *key = Mode_V(&t), *val = Mode_V(&t), *code = Mode_V(&t);
-		ok = Native_SeqItem(regs, i, a) && Mode_Cat(&t, key, 3, name, Mode_S(&t, "."), a) && SG_SaveVarV(key, val) &&
+		ok = Native_SeqItem(regs, i, a) && Mode_Cat(&t, key, 3, name, Mode_S(&t, "."), a) && Mode_SaveVarV(key, val) &&
 			Mode_Cat(&t, code, 4, Mode_S(&t, "res."), a, Mode_S(&t, " = "), val);
 		if (ok) {
 			/* the exec'd res.<reg> = <value> made directly: STORE_ATTR of the literal; another register name or value

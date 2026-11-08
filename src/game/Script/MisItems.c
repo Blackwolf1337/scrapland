@@ -22,11 +22,6 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 
-/* Scrap.Rand(a, b) as the port calls it (the C directly) */
-static void Mi_Rand(double a, double b, nativeVal_t *out) {
-	Native_SetFloat(out, Scrap_RandRange(a, b));
-}
-
 /* Scrap.GetTime() + v of the script */
 static byte Mi_TimePlus(const nativeVal_t *v, nativeVal_t *out) {
 	nativeVal_t now;
@@ -105,7 +100,7 @@ static byte Mi_BoxKind(modeVals_t *t, nativeVal_t *typo) {
 		Native_SetStr(typo, "Life");
 		return 1;
 	}
-	Mi_Rand(0.25, 0.5, rnd);
+	Mode_RandF(0.25, 0.5, rnd);
 	if (!Mode_VGet(usr, "Life", life) || !Mode_VGet(usr, "MinLife", min) || !Native_Arith('/', life, min, ratio)) {
 		return 0;
 	}
@@ -185,7 +180,7 @@ static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 			}
 			coin = Native_True(traf);
 			if (!coin) {
-				Mi_Rand(0, 1, rnd);
+				Mode_RandF(0, 1, rnd);
 				Native_SetFloat(six, 0.6);
 				coin = Native_Compare(rnd, six) > 0;
 			}
@@ -231,7 +226,7 @@ static byte Mi_TargetReward(const nativeVal_t *v, nativeVal_t *out) {
 	}
 	int car = Mode_VIsType(v, "Car");
 	if (car > 0) {
-		Mi_Rand(400, 1200, &rnd);
+		Mode_RandF(400, 1200, &rnd);
 		return Native_ToInt(&rnd, out);
 	}
 	Native_SetInt(out, 1);
@@ -369,7 +364,7 @@ static byte Mi_CreateItem(const nativeVal_t *pos, const nativeVal_t *name, const
 		!Mode_VSet(out, "Radius", rad)) {
 		return Mode_Done(&t, 0);
 	}
-	Mi_Rand(0.25, 1, rt);
+	Mode_RandF(0.25, 1, rt);
 	if (!Mode_VSet(out, "rTime", rt) || !Mode_G("MisItems", "MONEY_TIME", mt) || !Mi_TimePlus(mt, when) ||
 		!Mi_DelLater(out, when, "DeleteCoin") || !Mode_G("MisItems", "MONEY_APPEARS_TIME", at) || !Mi_TimePlus(at, when2)) {
 		return Mode_Done(&t, 0);
@@ -487,8 +482,7 @@ static byte Mi_DazedCoin(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *e = Mode_V(&t), *dr = Mode_V(&t), *limit = Mode_V(&t), *money = Mode_V(&t), *q = Mode_V(&t);
 	nativeVal_t *reward = Mode_V(&t), *pos = Mode_V(&t), *vr = Mode_V(&t), *radius = Mode_V(&t);
-	const nativeVal_t *line[] = { Mode_S(&t, "DazedCoin") };
-	if (!Mode_Print(line, 1) || !Mode_EntityH(name, e) || !Mode_G("MisItems", "DazedReward", dr) ||
+	if (!Mode_PrintV(Mode_S(&t, "DazedCoin")) || !Mode_EntityH(name, e) || !Mode_G("MisItems", "DazedReward", dr) ||
 		!Native_Arith('*', dr, Mode_I(&t, 8), limit) || !Mode_VGet(e, "Money", money)) {
 		return Mode_Done(&t, 0);
 	}

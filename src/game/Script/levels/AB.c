@@ -69,14 +69,6 @@ static byte Ab_SetG(const char *name, const char *global) {
 	return ok;
 }
 
-/* e.var = the global of the module */
-static byte Ab_SetAttrG(const nativeVal_t *e, const char *var, const char *module, const char *global) {
-	nativeVal_t v;
-	byte ok = Mode_G(module, global, &v) && Mode_VSet(e, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* module.var = d */
 static byte Ab_ModF(const char *module, const char *var, double d) {
 	nativeVal_t v;
@@ -200,7 +192,7 @@ static byte Ff_Boss(nativeVal_t *e) {
 	nativeVal_t *dummy = Mode_V(&t), *pos = Mode_V(&t), *name = Mode_V(&t);
 	LvN_Dummy("DM_Boss_Spawn", 1, dummy);
 	byte ok = LvN_Item(dummy, 1, pos) && Mode_Put(FF, "pos", NULL, pos) &&
-		LV_CALL("VehiclesNPC", "MakeAI", e, "ssii", "SBoss1", "Boss", 0L, 0L) && Ab_SetAttrG(e, "Pos", FF, "pos") &&
+		LV_CALL("VehiclesNPC", "MakeAI", e, "ssii", "SBoss1", "Boss", 0L, 0L) && LvN_SetG(e, "Pos", FF, "pos") &&
 		Ff_Profile(e) && LvN_SetS(e, "WeapList", "0,15,0,0,0,0") && LvN_SetI(e, "Money", -1) && LvN_SetS(e, "TgType", "red") &&
 		LvN_SetI(e, "LaunchTaunts", 0) && LvN_Life(e, FF, "BOSS_LIFE") &&
 		LvN_SetS(e, "OnDeath", "MapFinalFight.OnBossDestroyed") && Mode_VGet(e, "Name", name) &&
@@ -500,8 +492,8 @@ static byte Ff_NextPhase(const nativeVal_t *a, int phase) {
 	}
 	byte ok = Ff_Profile(e) && LvN_PutI(FF, "FASE", phase) && LvN_PutI(FF, "numTaunt", 0) && LvN_PutI(FF, "HINT_COUNTER", 0) &&
 		Ff_Hint(phase == 2 ? 9 : 17) && LvN_SetS(e, "WeapList", phase == 2 ? "15,0,0,15,0,0" : "6,9,6,9,6,9") &&
-		Ab_SetAttrG(e, "MaxLife", FF, phase == 2 ? "BOSS_LIFE_BULLET" : "BOSS_LIFE_FINAL") &&
-		Ab_SetAttrG(e, "Life", FF, "BOSS_LIFE_BULLET");
+		LvN_SetG(e, "MaxLife", FF, phase == 2 ? "BOSS_LIFE_BULLET" : "BOSS_LIFE_FINAL") &&
+		LvN_SetG(e, "Life", FF, "BOSS_LIFE_BULLET");
 	for (int i = 0; i < 3 && ok && phase == 3; i++) {
 		/* SWeap.GetFAmmo(i, "Max") */
 		float value;

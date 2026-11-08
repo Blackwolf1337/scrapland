@@ -169,7 +169,7 @@ static byte In_BossShip(void) {
 	nativeVal_t ga = { 0 }, cad = { 0 }, at = { 0 }, rep = { 0 }, ships = { 0 };
 	Mode_SaveVar("GameAct", &ga);
 	byte ok = 1;
-	if (!Mode_IsText(&ga, "Prologue") && !Mode_IsText(&ga, "1stMurder")) {
+	if (!Native_IsStr(&ga, "Prologue") && !Native_IsStr(&ga, "1stMurder")) {
 		int has = -1;
 		if (Mode_Import("string")) {
 			Mode_SaveVar("Traffic.AcShips", &cad);
@@ -252,9 +252,9 @@ static byte In_BossRobots(void) {
 	nativeVal_t robots = { 0 }, help = { 0 }, upper = { 0 }, done = { 0 }, list = { 0 }, lv;
 	Mode_SaveVar("RobotsControlledByBoss", &robots);
 	byte ok = 1;
-	if (Mode_IsText(&robots, "1")) {
+	if (Native_IsStr(&robots, "1")) {
 		Mode_SaveVar("MercsHelpDtritus", &help);
-		if (Mode_IsText(&help, "1")) {
+		if (Native_IsStr(&help, "1")) {
 			static const char *const friends[] = { "MercFriends.MercenaryA_Smartie", "1", "MercFriends.MercenaryC_Brutus", "1",
 				"MercFriends.MercenaryB_Dumber", "1", NULL };
 			Mode_Saves(friends);
@@ -297,7 +297,7 @@ static byte In_InitN(const nativeVal_t *path) {
 		if (!Native_GVarGet("ShowCredits", c)) {
 			return Mode_Done(&t, 0);
 		}
-		xb = Native_True(c) ? 0 : Mode_G(IN, "UpperMap", upper) ? Mode_IsText(upper, "SHIPEDIT") || Mode_IsText(upper, "MENU") : -1;
+		xb = Native_True(c) ? 0 : Mode_G(IN, "UpperMap", upper) ? Native_IsStr(upper, "SHIPEDIT") || Native_IsStr(upper, "MENU") : -1;
 		if (xb > 0 && (!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "XboxMenu", "Scripts/Scorer/XboxMenu.pyc") ||
 			!Native_CallMod("__builtin__", "__import__", menuMod, "s", "XboxMenu") ||
 			!Native_CallGlobal(IN, "AddMLib", NULL, "v", menuMod))) {
@@ -343,7 +343,7 @@ static byte In_InitN(const nativeVal_t *path) {
 		if (has < 0) {
 			return Mode_Done(&t, 0);
 		}
-		if (Mode_IsText(bertos, "1") && !Mode_IsText(upper, "GDB") && !has && (!Mode_Import("MissionsFuncs") ||
+		if (Native_IsStr(bertos, "1") && !Native_IsStr(upper, "GDB") && !has && (!Mode_Import("MissionsFuncs") ||
 			!Mode_Import("Parking") || !Native_CallMod("MissionsFuncs", "CreateBertos", NULL, "") ||
 			!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget") ||
 			!Mode_ModSetGlobal("Parking", "SwitchCharMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget"))) {
@@ -366,7 +366,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	}
 	if (demo) {
 		Mode_SaveVar("Player.NumLives", lives);
-		if (Mode_IsText(lives, "-1")) {
+		if (Native_IsStr(lives, "-1")) {
 			Mode_SaveS("Player.NumLives", "0");
 		}
 	}

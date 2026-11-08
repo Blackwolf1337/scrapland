@@ -295,7 +295,7 @@ byte LvN_PutNone(const char *module, const char *name);
 /* h.var = the global name of module */
 byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name);
 /* module.var = v of another module as Script_SetVar sets it: an error is dropped (OBJLIB 5) */
-void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v);
+#define LvN_SetVar Mode_ModPut
 /* the player is there (usr into *usr): 1, 0, -1 */
 int LvN_Usr(nativeVal_t *usr);
 /* `usr.ActCtrl == ctrl` of a handle: 1, 0, -1 */
@@ -333,6 +333,10 @@ byte LvN_ClosePressHangar(void);
 byte LvN_RoutineCall(const char *kind, const nativeVal_t *a);
 /* SAI.SetStateChar(3, human.Name, usr.Name, 1.0) with human the global of module: the human follows the player */
 byte LvN_HumanFollow(const char *module, const nativeVal_t *usr);
+/* the core of a level function that does nothing (MapRace.Init, MapSnd.Init of the editor, ...) */
+byte LvN_Pass(const nativeVal_t *a, nativeVal_t *out);
+/* SetOnFloor(v.Name) of a handle value (its Name read as any value) */
+byte LvN_SetOnFloorOf(const nativeVal_t *v);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);

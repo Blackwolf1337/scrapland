@@ -682,13 +682,7 @@ void LvN_Str(nativeVal_t *v, const char *s) {
 }
 
 byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *x = o ? Native_ToPy(v) : NULL;
-	PyObject *r = x ? Script_Method(o, method, "(O)", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	Py_XDECREF(o);
-	return r != NULL;
+	return Mode_VarCall(module, var, 0, method, v);
 }
 
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
@@ -1379,13 +1373,6 @@ byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const c
 	return ok;
 }
 
-void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v) {
-	if (!Mode_SetModVar(module, var, v)) {
-		/* OBJLIB 7 */
-		PyErr_Clear();
-	}
-}
-
 int LvN_Usr(nativeVal_t *usr) {
 	return Mode_UsrHandle(usr) ? Native_True(usr) : -1;
 }
@@ -1553,5 +1540,18 @@ byte LvN_HumanFollow(const char *module, const nativeVal_t *usr) {
 		LV_CALL("SAI", "SetStateChar", NULL, "ivvd", 3L, &hn, &un, 1.0);
 	Native_Free(&hn);
 	Native_Free(&un);
+	return ok;
+}
+
+byte LvN_Pass(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return 1;
+}
+
+byte LvN_SetOnFloorOf(const nativeVal_t *v) {
+	nativeVal_t name = { 0 };
+	byte ok = Mode_VObj(v, "Name", &name) && LvN_SetOnFloor(&name);
+	Native_Free(&name);
 	return ok;
 }

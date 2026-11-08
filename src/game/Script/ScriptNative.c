@@ -2122,8 +2122,14 @@ byte Native_ArgDouble(const nativeVal_t *v, double *out) {
 byte Native_ArgInt(const nativeVal_t *v, int *out) {
 	double d;
 	if (!Native_ArgNum(v, 0, &d, out)) {
-		/* PyInt_AsLong of a value without number methods (a float too large for a long: its OverflowError, not
-		 * reached by the ports) */
+		/* PyInt_AsLong: the OverflowError of PyLong_AsLong and float_int for a long int or a float beyond a long, the
+		 * TypeError of a value without number methods */
+		if (v->type == NV_LONG) {
+			return Native_Raise(NE_OVERFLOW, "long int too long to convert");
+		}
+		if (v->type == NV_FLOAT) {
+			return Native_Raise(NE_OVERFLOW, "float too large to convert");
+		}
 		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 	}
 	return 1;

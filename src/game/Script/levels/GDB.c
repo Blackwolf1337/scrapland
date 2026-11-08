@@ -52,27 +52,6 @@ static byte Gd_EntG(const char *module, const char *name, nativeVal_t *out) {
 	return ok;
 }
 
-/* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) */
-static byte Gd_ListFirst(const char *list, nativeVal_t *out) {
-	nativeVal_t n;
-	Native_SetNone(&n);
-	Native_SetNone(out);
-	byte ok = Mode_ListGet(list, "First", &n) && Mode_EntityH(&n, out);
-	Native_Free(&n);
-	return ok;
-}
-
-/* MissionsFuncs.ActivateTarget(e, on) */
-static byte Gd_Target(const nativeVal_t *e, long on) {
-	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, on);
-}
-
-/* print of one value */
-static byte Gd_Print(const nativeVal_t *v) {
-	const nativeVal_t *items[1] = { v };
-	return Mode_Print(items, 1);
-}
-
 /* Scrap.GetLangStr(key) % arg */
 static byte Gd_LangPct(const char *key, const nativeVal_t *arg, nativeVal_t *out) {
 	nativeVal_t t;
@@ -128,11 +107,11 @@ static int Gd_Scan(const nativeVal_t *e, const nativeVal_t *usr, byte far) {
 /* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")); while e: e.EntityList = ""; e.Del(); e = the next first */
 static byte Gd_ClearList(const char *list) {
 	nativeVal_t e;
-	byte ok = Gd_ListFirst(list, &e);
+	byte ok = Mode_FirstOf(list, &e);
 	while (ok && Native_True(&e)) {
 		ok = LvN_SetS(&e, "EntityList", "") && Mode_VDel(&e);
 		Native_Free(&e);
-		ok = ok && Gd_ListFirst(list, &e);
+		ok = ok && Mode_FirstOf(list, &e);
 	}
 	Native_Free(&e);
 	return ok;
@@ -200,7 +179,7 @@ static byte Gd_RestorePoint(const char *module, const char *use) {
 /* the restore point used: no target, no use, off (the global rm of module, read at every line) */
 static byte Gd_RestoreUsed(const char *module) {
 	nativeVal_t rm;
-	byte ok = LvN_GObj(module, "rm", &rm) && Gd_Target(&rm, 0);
+	byte ok = LvN_GObj(module, "rm", &rm) && LvN_Activate(&rm, 0);
 	Native_Free(&rm);
 	ok = ok && LvN_GObj(module, "rm", &rm) && LvN_SetS(&rm, "UseFunc", "");
 	Native_Free(&rm);
@@ -301,7 +280,7 @@ static byte GDB_EndOfAppears(void) {
 	Native_SetNone(&left);
 	Native_SetNone(&msg);
 	LvN_Dummy("DM_Player_Spawn_Temple", 0, &dummy);
-	byte ok = Gd_Print(&dummy) && Mode_UsrHandle(&v) && LvN_Item(&dummy, 1, &pos) && Mode_VSet(&v, "Pos", &pos) &&
+	byte ok = Mode_PrintV(&dummy) && Mode_UsrHandle(&v) && LvN_Item(&dummy, 1, &pos) && Mode_VSet(&v, "Pos", &pos) &&
 		Mode_VGet(&v, "Name", &name) && LvN_SetOnFloor(&name);
 	if (ok) {
 		Mode_SaveVar("GDB.BishopsMsg", &msg);
@@ -523,7 +502,7 @@ static byte Into_CreateBishop(const nativeVal_t *ident, nativeVal_t *out) {
 	Native_SetNone(&name);
 	byte ok = Gd_MakeBishop(IG, out) && LvN_Life(out, IG, "BISHOP_LIFE");
 	if (ok && !Native_True(ident)) {
-		ok = LvN_SetS(out, "EntityList", "Bishops") && Gd_Target(out, 1) && Mode_VGet(out, "Name", &name) &&
+		ok = LvN_SetS(out, "EntityList", "Bishops") && LvN_Activate(out, 1) && Mode_VGet(out, "Name", &name) &&
 			LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &name, 0L);
 	} else if (ok) {
 		ok = LvN_SetS(out, "EntityList", "Enemies");
@@ -697,7 +676,7 @@ static byte Gd_UntargetBishops(byte skipTraitor) {
 			t = ok && Native_Compare(&name, &traitor) != 0;
 		}
 		if (t) {
-			ok = Gd_Target(&e, 0);
+			ok = LvN_Activate(&e, 0);
 		}
 		Native_Free(&s);
 		Native_Free(&e);
@@ -739,7 +718,7 @@ static byte Into_OnFinishScan(void) {
 		Native_SetNone(&e);
 		ok = ok && Gd_EntG(IG, "currentScannedShip", &e);
 		if (ok && Native_True(&e)) {
-			ok = Gd_Target(&e, 0);
+			ok = LvN_Activate(&e, 0);
 		}
 		Native_Free(&e);
 	}
@@ -796,7 +775,7 @@ static byte Into_OnBishopsDeath(const nativeVal_t *looser, const nativeVal_t *wi
 		ok = Mode_EntityH(looser, &e);
 		if (ok && Native_True(&e)) {
 			LvN_Str(&msg, "Grabe ahora!");
-			ok = Gd_Print(&msg) && Mode_GVarSetS("CurrentWaypointName", "") && Mode_DelSchedS("ScanShip") &&
+			ok = Mode_PrintV(&msg) && Mode_GVarSetS("CurrentWaypointName", "") && Mode_DelSchedS("ScanShip") &&
 				LvN_PutS(IG, "traitor", "") && Mode_VGet(&e, "Pos", &pos) && LV_OWN(IG, "DropMatrix", NULL, "v", &pos);
 			Native_Free(&msg);
 		}
@@ -821,7 +800,7 @@ static byte Into_OnBishopsDamage(void) {
 		return 0;
 	}
 	Native_SetEmpty(&list, NV_LIST);
-	byte ok = Gd_ListFirst("Bishops", &e);
+	byte ok = Mode_FirstOf("Bishops", &e);
 	while (ok && Native_True(&e)) {
 		nativeVal_t next;
 		Native_SetNone(&name);
@@ -927,7 +906,7 @@ static byte Into_TakeMatrix(const nativeVal_t *ch) {
 	}
 	byte ok = LvN_Entity("GusMatrix", &e);
 	if (ok && Native_True(&e)) {
-		ok = Gd_Target(&e, 0) && LvN_SetI(&e, "rTime", 20);
+		ok = LvN_Activate(&e, 0) && LvN_SetI(&e, "rTime", 20);
 		/* OBJLIB 4: the scheduler keeps the bound method e.Del */
 		PyObject *del = ok ? Mode_VBound(&e, "Del") : NULL;
 		Native_SetFloat(&t, Mode_Time() + 5);

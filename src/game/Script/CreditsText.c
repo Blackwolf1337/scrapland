@@ -17,6 +17,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapfont.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
 static const char credits_def[] = {
@@ -79,14 +80,6 @@ static int Credits_Max(void) {
 	return v->type == NV_INT ? (int)v->i : v->type == NV_FLOAT ? (int)v->f : 20;
 }
 
-/* `import name` of a function of the script: 0 with the error set */
-static byte Credits_Import(const char *name) {
-	/* OBJLIB 6: module loading stays with the module objects until then */
-	PyObject *m = PyImport_ImportModule((char *)name);
-	Py_XDECREF(m);
-	return m != NULL;
-}
-
 /* the line i of the page: SScorer.Set(id, "Credits", "Text<i>", text) */
 static byte Credits_SetLine(int id, int i, const nativeVal_t *text) {
 	char var[0x20];
@@ -107,7 +100,7 @@ static byte Credits_Empty(int id) {
 
 /* CreditsScorer(id): the item of the page, its lines empty */
 static byte Credits_Scorer(int id) {
-	if (!Credits_Import("Scorer")) {
+	if (!Mode_Import("Scorer")) {
 		return 0;
 	}
 	Script_RunFile(id, "menus/credits.def", "CreditsScorer", credits_def, NULL, NULL);
@@ -116,7 +109,7 @@ static byte Credits_Scorer(int id) {
 
 /* Init(): the scorer of the movie gets the page item too (Menu.MovieScorerCall), and player 0 gets it now */
 static byte Credits_Init(void) {
-	if (!Credits_Import("Menu")) {
+	if (!Mode_Import("Menu")) {
 		return 0;
 	}
 	/* OBJLIB 3, 5: the module's own function goes into a variable of Menu by name */
@@ -370,36 +363,32 @@ static byte Credits_Show(const char *rep) {
 
 /* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
 
-static PyObject *Credits_Result(byte ok) {
-	return ok ? Py_ReturnNone() : NULL;
-}
-
 static PyObject *CreditsText_CreditsScorer(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
-	return PyArg_ParseTuple(args, "i", &id) ? Credits_Result(Credits_Scorer(id)) : NULL;
+	return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(Credits_Scorer(id)) : NULL;
 }
 
 static PyObject *CreditsText_Init(PyObject *self, PyObject *args) {
 	(void)self;
-	return PyArg_ParseTuple(args, "") ? Credits_Result(Credits_Init()) : NULL;
+	return PyArg_ParseTuple(args, "") ? Mode_Result(Credits_Init()) : NULL;
 }
 
 static PyObject *CreditsText_PrintData(PyObject *self, PyObject *args) {
 	PyObject *vis;
 	(void)self;
-	return PyArg_ParseTuple(args, "O", &vis) ? Credits_Result(Credits_Print()) : NULL;
+	return PyArg_ParseTuple(args, "O", &vis) ? Mode_Result(Credits_Print()) : NULL;
 }
 
 static PyObject *CreditsText_PrintDataGuay(PyObject *self, PyObject *args) {
 	double vis;
 	(void)self;
-	return PyArg_ParseTuple(args, "d", &vis) ? Credits_Result(Credits_PrintGuay(vis)) : NULL;
+	return PyArg_ParseTuple(args, "d", &vis) ? Mode_Result(Credits_PrintGuay(vis)) : NULL;
 }
 
 static PyObject *CreditsText_CleanCredits(PyObject *self, PyObject *args) {
 	(void)self;
-	return PyArg_ParseTuple(args, "") ? Credits_Result(Credits_Clean()) : NULL;
+	return PyArg_ParseTuple(args, "") ? Mode_Result(Credits_Clean()) : NULL;
 }
 
 /* the optional argument val of ShowUp and ShowDown (def when it is not given): 0 with the error set */
@@ -423,7 +412,7 @@ static PyObject *CreditsText_ShowUp(PyObject *self, PyObject *args) {
 	}
 	byte ok = Credits_ShowUp(&val);
 	Native_Free(&val);
-	return Credits_Result(ok);
+	return Mode_Result(ok);
 }
 
 static PyObject *CreditsText_ShowDown(PyObject *self, PyObject *args) {
@@ -442,7 +431,7 @@ static PyObject *CreditsText_ShowCredit(PyObject *self, PyObject *args) {
 	PyObject *num;
 	nativeVal_t n;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &num) || !Credits_Import("Scorer")) {
+	if (!PyArg_ParseTuple(args, "O", &num) || !Mode_Import("Scorer")) {
 		return NULL;
 	}
 	/* `num` */
@@ -453,7 +442,7 @@ static PyObject *CreditsText_ShowCredit(PyObject *self, PyObject *args) {
 	Native_Free(&n);
 	byte ok = Credits_Show(rep.p);
 	Native_BufFree(&rep);
-	return Credits_Result(ok);
+	return Mode_Result(ok);
 }
 
 PyMethodDef g_CreditsTextMethods[] = {

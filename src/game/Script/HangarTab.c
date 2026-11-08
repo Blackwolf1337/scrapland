@@ -30,12 +30,6 @@ static byte Ht_G(const char *name, nativeVal_t *out) {
 	return Mode_G(HT, name, out);
 }
 
-/* the int value i */
-static const nativeVal_t *Ht_I(nativeVal_t *v, long i) {
-	Native_SetInt(v, i);
-	return v;
-}
-
 /* prevShip.<var> with prevShip the global */
 static byte Ht_ShipGet(const char *var, nativeVal_t *out) {
 	nativeVal_t s = { 0 };
@@ -334,7 +328,7 @@ static byte Ht_Pilot(int id, int step) {
 		c = n < 0 ? -1 : Mode_CmpI(&v, ">", n - 1);
 	}
 	Native_Free(&v);
-	if (c < 0 || (c > 0 && !Mode_Put(HT, "currentPilot", NULL, Ht_I(&x, step < 0 ? n - 1 : 0)))) {
+	if (c < 0 || (c > 0 && !Mode_Put(HT, "currentPilot", NULL, Mode_IntVal(&x, step < 0 ? n - 1 : 0)))) {
 		return 0;
 	}
 	return Ht_PilotVisible(id, 1);
@@ -568,7 +562,7 @@ static byte Ht_UpdateHangars(int id) {
 				!sput && !c);
 		}
 		Native_Free(&cur);
-		int c = ok && Ht_G("currentHangar", &cur) ? Mode_Cmp(Ht_I(&k, n - 1), "==", &cur) : -1;
+		int c = ok && Ht_G("currentHangar", &cur) ? Mode_Cmp(Mode_IntVal(&k, n - 1), "==", &cur) : -1;
 		if (c < 0) {
 			ok = 0;
 			break;
@@ -659,7 +653,7 @@ static byte Ht_ShowHangarPanel(int id) {
 		c = Ht_AtCmp("editedShips", "currentHangar", "!=", &ht_none);
 	}
 	if (c > 0) {
-		c = Ht_AtCmp("destroyedShips", "currentHangar", "!=", Ht_I(&x, 1));
+		c = Ht_AtCmp("destroyedShips", "currentHangar", "!=", Mode_IntVal(&x, 1));
 	}
 	if (c < 0) {
 		return 0;
@@ -767,7 +761,7 @@ static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 	ok = n >= 0;
 	Native_Free(price);
 	for (int i = 0; ok && i < n; i++) {
-		Mode_Repr(Ht_I(key, i), a);
+		Mode_Repr(Mode_IntVal(key, i), a);
 		ok = Ht_EvalAttrV(cad, ".NEng", a, loc, num);
 		int more = ok ? Mode_CmpI(num, ">", 0) : -1;
 		if (more > 0) {
@@ -941,7 +935,7 @@ static byte Ht_ShowMini(int id, const nativeVal_t *control) {
 		}
 		Native_Free(v);
 		Native_Free(mini);
-		ok = ok && Ht_G("miniShip", mini) && Mode_VGet(mini, "MaxSpeed", v) && Mode_Arith('/', v, Ht_I(k, 28), w) &&
+		ok = ok && Ht_G("miniShip", mini) && Mode_VGet(mini, "MaxSpeed", v) && Mode_Arith('/', v, Mode_IntVal(k, 28), w) &&
 			Ht_SetReprInt(id, "MiniMaxSpeed", "Text", w);
 		if (ok) {
 			Script_SetNum(id, "MiniHullText", "Visible", 1);
@@ -995,7 +989,7 @@ static byte Ht_ShowMini(int id, const nativeVal_t *control) {
 	} else {
 		Native_Free(v);
 		Native_Free(w);
-		if (!Mode_Arith('+', i, Ht_I(k, 1), w)) {
+		if (!Mode_Arith('+', i, Mode_IntVal(k, 1), w)) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_Repr(w, v);
@@ -1014,7 +1008,7 @@ static byte Ht_ShowMini(int id, const nativeVal_t *control) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetNum(id, "VLine", "ScaleX", 2);
-	if (!Mode_Arith('-', sy, ey, v) || !Mode_Arith('+', v, Ht_I(k, 2), w) || !Sn_SetC(id, "VLine", "ScaleY", w)) {
+	if (!Mode_Arith('-', sy, ey, v) || !Mode_Arith('+', v, Mode_IntVal(k, 2), w) || !Sn_SetC(id, "VLine", "ScaleY", w)) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetNum(id, "VLine", "Visible", 1);
@@ -1035,7 +1029,7 @@ static byte Ht_ShowMini(int id, const nativeVal_t *control) {
 	Script_SetNum(id, "HLine", "ScaleY", 2);
 	Script_SetNum(id, "HLine", "Visible", 1);
 	Native_Free(w);
-	if (!Sn_SetC(id, "MLine", "X", invert ? ex : sx) || !Mode_Arith('+', sy, Ht_I(k, 1), w) || !Sn_SetC(id, "MLine", "Y", w)) {
+	if (!Sn_SetC(id, "MLine", "X", invert ? ex : sx) || !Mode_Arith('+', sy, Mode_IntVal(k, 1), w) || !Sn_SetC(id, "MLine", "Y", w)) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetNum(id, "MLine", "Visible", 1);
@@ -1181,9 +1175,9 @@ static byte Ht_ScaleSpeedRamp(int id, const nativeVal_t *offX, const nativeVal_t
 	if (isMini) {
 		Native_SetFloat(sx, 20.0 / 32.0);
 		Native_SetFloat(sy, 53.0 / 64.0);
-		ok = Ht_G("baseMiniShipInfoX", a) && HT_OP('+', a, Ht_I(k, 93), b) && Sn_SetC(id, "MiniSpeedRamp1", "X", b);
+		ok = Ht_G("baseMiniShipInfoX", a) && HT_OP('+', a, Mode_IntVal(k, 93), b) && Sn_SetC(id, "MiniSpeedRamp1", "X", b);
 		Native_Free(a);
-		ok = ok && Ht_G("baseMiniShipInfoY", a) && HT_OP('-', a, Ht_I(k, 51), b) && HT_OP('-', one, oy, c);
+		ok = ok && Ht_G("baseMiniShipInfoY", a) && HT_OP('-', a, Mode_IntVal(k, 51), b) && HT_OP('-', one, oy, c);
 		if (ok) {
 			Native_Free(d);
 			Mode_ScorerGet(id, "MiniSpeedRamp1", "H", d);
@@ -1256,7 +1250,7 @@ static byte Ht_MaxSpeedTime(const nativeVal_t *v, nativeVal_t *out) {
 		Mode_Arith('*', a, b, sq);
 	Native_Free(a);
 	Native_Free(b);
-	ok = ok && Mode_VGet(v, "FrwTrust", a) && Mode_Arith('*', Ht_I(c, 4), a, b) && Mode_VGet(v, "Fric", fric) &&
+	ok = ok && Mode_VGet(v, "FrwTrust", a) && Mode_Arith('*', Mode_IntVal(c, 4), a, b) && Mode_VGet(v, "Fric", fric) &&
 		Mode_Arith('*', b, fric, k);
 	Native_Free(b);
 	Native_Free(fric);
@@ -1264,7 +1258,7 @@ static byte Ht_MaxSpeedTime(const nativeVal_t *v, nativeVal_t *out) {
 		Native_CallMod("math", "sqrt", root, "v", in) && Mode_Arith('+', neg, root, num);
 	Native_Free(a);
 	Native_Free(b);
-	ok = ok && Mode_VGet(v, "FrwTrust", a) && Mode_Arith('*', Ht_I(c, 2), a, b) && Mode_VGet(v, "Fric", fric) &&
+	ok = ok && Mode_VGet(v, "FrwTrust", a) && Mode_Arith('*', Mode_IntVal(c, 2), a, b) && Mode_VGet(v, "Fric", fric) &&
 		Mode_Arith('*', b, fric, den) && Mode_Arith('/', num, den, out);
 	return Mode_Done(&t, ok);
 }
@@ -1293,7 +1287,7 @@ static byte Ht_SpeedRampOffsets(const nativeVal_t *v, nativeVal_t *out) {
 /* CmSec2Value(val): cm/s to the speed unit of the screen, int(val/28) */
 static byte Ht_CmSec2Value(const nativeVal_t *v, nativeVal_t *out) {
 	nativeVal_t k, d = { 0 };
-	byte ok = Mode_Arith('/', v, Ht_I(&k, 28), &d) && Native_ToInt(&d, out);
+	byte ok = Mode_Arith('/', v, Mode_IntVal(&k, 28), &d) && Native_ToInt(&d, out);
 	Native_Free(&d);
 	return ok;
 }
@@ -1306,14 +1300,14 @@ static byte Ht_Reference(int id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *x = Mode_V(&t), *base = Mode_V(&t), *y = Mode_V(&t), *y2 = Mode_V(&t), *text = Mode_V(&t);
 	nativeVal_t *words = Mode_V(&t), *w = Mode_V(&t), *name = Mode_V(&t), *k = Mode_V(&t);
-	if (!Mode_Import("string") || !Ht_G("baseMiniShipInfoX", base) || !Mode_Arith('+', base, Ht_I(k, 72), x)) {
+	if (!Mode_Import("string") || !Ht_G("baseMiniShipInfoX", base) || !Mode_Arith('+', base, Mode_IntVal(k, 72), x)) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
 	for (int i = 0; ok && i < 3; i++) {
 		Native_Free(base);
 		Native_Free(y);
-		ok = Ht_G("baseMiniShipInfoY", base) && Mode_Arith('-', base, Ht_I(k, 30), y);
+		ok = Ht_G("baseMiniShipInfoY", base) && Mode_Arith('-', base, Mode_IntVal(k, 30), y);
 		Native_Free(text);
 		Native_Free(words);
 		if (ok) {
@@ -1323,7 +1317,7 @@ static byte Ht_Reference(int id) {
 		for (int j = 0; ok && j < words->n; j++) {
 			ok = Native_SeqItem(words, j, w) && Sn_Cat(texts[i][1], w, NULL, name);
 			PyObject *vars = ok ? Sn_Vars(4, "name", name, "word", w, "x", x, "y", y) : NULL;
-			ok = vars && Sn_Def(id, "word", vars, HT) && Mode_Arith('+', y, Ht_I(k, 22), y2);
+			ok = vars && Sn_Def(id, "word", vars, HT) && Mode_Arith('+', y, Mode_IntVal(k, 22), y2);
 			Py_XDECREF(vars);
 			if (ok) {
 				Native_Free(y);
@@ -1373,7 +1367,7 @@ static byte Ht_SetHangarPanel(int id) {
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
-	Mode_Repr(Ht_I(k, Mode_GetMoney()), money);
+	Mode_Repr(Mode_IntVal(k, Mode_GetMoney()), money);
 	vars = Sn_Vars(3, "mp", mp, "sputnik", sput, "money", money);
 	ok = vars && Sn_Def(id, "info", vars, HT);
 	Py_XDECREF(vars);
@@ -1560,7 +1554,7 @@ static byte Ht_HologramSound(void) {
 	static const char *const xyz[] = { "X", "Y", "Z" };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cn = Mode_V(&t), *cam = Mode_V(&t), *pos = Mode_V(&t), *snd = Mode_V(&t), *vol = Mode_V(&t), *c = Mode_V(&t);
-	if (!Mode_Put(HT, "holograms", NULL, Ht_I(c, 1))) {
+	if (!Mode_Put(HT, "holograms", NULL, Mode_IntVal(c, 1))) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_CamName(0, cn);
@@ -1689,7 +1683,7 @@ static int Ht_Empty(const char *name) {
 	nativeVal_t x;
 	int c = Ht_AtCmp("editedShips", name, "==", &ht_none);
 	if (c == 0) {
-		c = Ht_AtCmp("destroyedShips", name, "==", Ht_I(&x, 1));
+		c = Ht_AtCmp("destroyedShips", name, "==", Mode_IntVal(&x, 1));
 		if (c > 0) {
 			c = Ht_Single();
 		}
@@ -1709,7 +1703,7 @@ static byte Ht_ControlHint(int id, const nativeVal_t *control, const char *key) 
 /* SScorer.SetDefault(id, "Hangar" + `currentHangar + 1`) */
 static byte Ht_DefaultHangar(int id) {
 	nativeVal_t cur = { 0 }, n = { 0 }, r = { 0 }, s = { 0 }, k;
-	byte ok = Ht_G("currentHangar", &cur) && Mode_Arith('+', &cur, Ht_I(&k, 1), &n);
+	byte ok = Ht_G("currentHangar", &cur) && Mode_Arith('+', &cur, Mode_IntVal(&k, 1), &n);
 	if (ok) {
 		Mode_Repr(&n, &r);
 		ok = Sn_Cat("Hangar", &r, NULL, &s) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, &s);
@@ -1748,7 +1742,7 @@ static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
 	c = Ht_AtG("editedShips", "prevHangar", &a) ? !Native_True(&a) : -1;
 	Native_Free(&a);
 	if (c == 0) {
-		c = Ht_AtCmp("destroyedShips", "prevHangar", "==", Ht_I(&x, 1));
+		c = Ht_AtCmp("destroyedShips", "prevHangar", "==", Mode_IntVal(&x, 1));
 		if (c > 0) {
 			c = Ht_Single();
 		}
@@ -1818,7 +1812,7 @@ static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
 		if (!Ht_PlatformButtons(id, 0) || !Ht_Scorer("SetOnNext", id, "") || !Ht_Scorer("SetOnPrev", id, "")) {
 			return 0;
 		}
-		int lost = Ht_AtCmp("destroyedShips", "currentHangar", "==", Ht_I(&x, 1));
+		int lost = Ht_AtCmp("destroyedShips", "currentHangar", "==", Mode_IntVal(&x, 1));
 		if (lost > 0) {
 			lost = Ht_Single();
 		}
@@ -1891,7 +1885,7 @@ static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
 /* SelectItem(id, control): a hangar clicked: it becomes currentHangar and is selected */
 static byte Ht_SelectItem(int id, const nativeVal_t *control) {
 	nativeVal_t c, s = { 0 }, h = { 0 }, x;
-	if (!Mode_Import(SE) || !Sn_From("LinkUD") || !Mode_Put(HT, "holograms", NULL, Ht_I(&x, 0)) ||
+	if (!Mode_Import(SE) || !Sn_From("LinkUD") || !Mode_Put(HT, "holograms", NULL, Mode_IntVal(&x, 0)) ||
 		!Ht_SetPSi("EditHologramSound", "Loop", 0) || !Ht_SetPSd("EditHologramSound", "Volume", 0.0) ||
 		!Mode_StopAllSounds()) {
 		return 0;
@@ -1908,7 +1902,7 @@ static byte Ht_SelectItem(int id, const nativeVal_t *control) {
 	if (ok && is) {
 		ok = Ht_G("currentHangar", &h) && Mode_Put(HT, "prevHangar", NULL, &h);
 		Native_Free(&h);
-		ok = ok && (aux ? Mode_Put(HT, "currentHangar", NULL, Ht_I(&x, 9)) : Ht_ControlHangar(control, &h) &&
+		ok = ok && (aux ? Mode_Put(HT, "currentHangar", NULL, Mode_IntVal(&x, 9)) : Ht_ControlHangar(control, &h) &&
 			Mode_Put(HT, "currentHangar", NULL, &h)) && Ht_SelectHangar(id, control, 0) && Ht_HideMini(id);
 	}
 	Native_Free(&c);
@@ -1985,7 +1979,7 @@ static byte Ht_BuyShip(int id) {
 		if (c != 0) {
 			return Mode_Done(&t, c > 0);
 		}
-		ok = Mode_SetMoneySeam(left) && Ht_SetRepr(id, "Money", "Text", left) && Ht_SetAtCur("destroyedShips", Ht_I(k, 0));
+		ok = Mode_SetMoneySeam(left) && Ht_SetRepr(id, "Money", "Text", left) && Ht_SetAtCur("destroyedShips", Mode_IntVal(k, 0));
 		int n = ok && LvN_ModGet(SE, "auxShipsToEditList", aux) ? Mode_Len(aux) : -1;
 		ok = n >= 0;
 		for (int i = 0; ok && i < n; i++) {
@@ -1993,7 +1987,7 @@ static byte Ht_BuyShip(int id) {
 			Native_Free(x);
 			ok = LvN_ModGet(SE, "auxShipsToEditList", aux) && LvN_Item(aux, i, x);
 			if (ok && LvN_EqS(x, "Rebuild")) {
-				ok = Mode_Put(HT, "currentShipToEdit", NULL, Ht_I(k, i));
+				ok = Mode_Put(HT, "currentShipToEdit", NULL, Mode_IntVal(k, i));
 				break;
 			}
 		}
@@ -2011,7 +2005,7 @@ static byte Ht_BuyShip(int id) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Mode_Put(HT, "holograms", NULL, Ht_I(k, 0)) || !Ht_SetPSi("EditHologramLoopSound", "Loop", 0) ||
+	if (!Mode_Put(HT, "holograms", NULL, Mode_IntVal(k, 0)) || !Ht_SetPSi("EditHologramLoopSound", "Loop", 0) ||
 		!Ht_SetPSd("EditHologramLoopSound", "Volume", 0.0) || !Mode_StopAllSounds()) {
 		return Mode_Done(&t, 0);
 	}
@@ -2080,7 +2074,7 @@ static byte Ht_SellShip(int id) {
 	if (!mp) {
 		Native_SetInt(money, Mode_GetMoney());
 		if (!Ht_G("shipTotalCost", cost) || !Mode_Arith('+', money, cost, sum) || !Mode_SetMoneySeam(sum) ||
-			!Ht_SetRepr(id, "Money", "Text", sum) || !Ht_SetAtCur("destroyedShips", Ht_I(k, 0))) {
+			!Ht_SetRepr(id, "Money", "Text", sum) || !Ht_SetAtCur("destroyedShips", Mode_IntVal(k, 0))) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -2104,7 +2098,7 @@ static byte Ht_SellShip(int id) {
 	for (int i = 0; ok && i < n; i++) {
 		ok = Native_SeqItem(rest, i, tab) && Sn_Cat("ShipEditTab", tab, NULL, name);
 		for (int j = 0; ok && j < 5; j++) {
-			ok = Sn_Set(id, name, vars[j], Ht_I(k, vals[j]));
+			ok = Sn_Set(id, name, vars[j], Mode_IntVal(k, vals[j]));
 		}
 		Native_SetStr(k, "");
 		Native_Free(tabs);
@@ -2112,7 +2106,7 @@ static byte Ht_SellShip(int id) {
 		Native_Free(tab);
 		Native_Free(name);
 	}
-	if (!ok || !Ht_NextPrev(id, 0) || !Mode_Put(HT, "prevHangar", NULL, Ht_I(k, -1)) || !Ht_G("currentHangar", cur)) {
+	if (!ok || !Ht_NextPrev(id, 0) || !Mode_Put(HT, "prevHangar", NULL, Mode_IntVal(k, -1)) || !Ht_G("currentHangar", cur)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(cur, r);

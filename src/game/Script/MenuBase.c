@@ -44,33 +44,6 @@ static void Base_Link(int id, const char *a, const char *va, const char *b, cons
 
 /* ---- values ---- */
 
-/* the int of a variable of another module as the menus read it: an int, a float cut to an int, else def (also when
- * the module or the variable is not there) */
-static int Base_ModInt(const char *module, const char *var, int def) {
-	nativeVal_t v;
-	if (!LvN_ModGet(module, var, &v)) {
-		/* OBJLIB 7: the error of the lookup dropped */
-		PyErr_Clear();
-		return def;
-	}
-	int r = v.type == NV_INT ? (int)v.i : v.type == NV_FLOAT ? (int)v.f : def;
-	Native_Free(&v);
-	return r;
-}
-
-/* module.var = v; a failure is dropped (OBJLIB 5: the variables of Menu are in its dict) */
-static void Base_ModSet(const char *module, const char *var, const nativeVal_t *v) {
-	if (!Mode_SetModVar(module, var, v)) {
-		PyErr_Clear();
-	}
-}
-
-/* len(seq) as PySequence_Length takes it: -1 with its TypeError */
-static int Base_Len(const nativeVal_t *seq) {
-	int n;
-	return Native_Len(seq, &n) ? n : -1;
-}
-
 /* element i of a sequence as a string into out ("" when it is not a string; seq NULL gives "" too) */
 static const char *Base_Str(const nativeVal_t *seq, int i, char *out, int size) {
 	nativeVal_t tmp = { 0 };
@@ -199,10 +172,10 @@ static void Base_TitleBar(int id, const nativeVal_t *y, const char *text, const 
 /* the circuit; in the main menu the version, in a game the dark background */
 static void Base_Circuit(int id, byte drawBack) {
 	char version[0x40], *sp;
-	byte inMain = Base_ModInt("Init", "inMainMenu", 0) != 0;
-	byte mainMenu = (inMain || Base_ModInt("Init", "isShipEdit", 0)) && !Base_ModInt("Menu", "isXbox", 0);
+	byte inMain = Mode_ModGetI("Init", "inMainMenu", 0) != 0;
+	byte mainMenu = (inMain || Mode_ModGetI("Init", "isShipEdit", 0)) && !Mode_ModGetI("Menu", "isXbox", 0);
 	byte back = !inMain && drawBack;
-	int marginH = Base_ModInt("Scorer", "MarginH", 0), marginV = Base_ModInt("Scorer", "MarginV", 0);
+	int marginH = Mode_ModGetI("Scorer", "MarginH", 0), marginV = Mode_ModGetI("Scorer", "MarginV", 0);
 
 	Str_Printf(version, sizeof(version), "Version %s", Version_Get());
 	if ((sp = strchr(version + 8, ' '))) {
@@ -212,7 +185,7 @@ static void Base_Circuit(int id, byte drawBack) {
 		GVar_SetNum("R_SceneBlurValue", 1);
 	}
 	PyObject *vars = Py_BuildValue("{s:i,s:i,s:s,s:s,s:i,s:i,s:i,s:i,s:i}", "mainmenu", mainMenu, "demo",
-		Base_ModInt("Init", "isDemo", 0) != 0, "version", version, "copyright",
+		Mode_ModGetI("Init", "isDemo", 0) != 0, "version", version, "copyright",
 		"2004 \xa9 Mercury Steam Entertainment SL.", "back", back, "left", marginH + 5, "right", 640 - marginH - 5,
 		"bottom", 480 - marginV - 20, "bottom2", 480 - marginV - 40);
 	Base_Run(id, "circuit", vars);
@@ -238,7 +211,7 @@ static void Base_NewMenu(int id) {
 		Script_SetNum(id, "Cursor", "Visible", visible);
 	}
 	Native_SetFloat(&pitch, GVar_GetNum("S_PitchScale", 0));
-	Base_ModSet("Menu", "currentSoundPitch", &pitch);
+	Mode_ModPut("Menu", "currentSoundPitch", &pitch);
 	GVar_SetNum("S_PitchScale", 1.0);
 	GVar_SetNum("NoiseFactor", 0);
 	GVar_SetNum("MotionBlurFactorBegin", 0);
@@ -260,7 +233,7 @@ static void Base_TabDefaults(int id, const char *control) {
  */
 static byte Base_AddTabs(int id, const nativeVal_t *menu, const char *actual, int tabSize, int hint, int center) {
 	const int sizeX = 37 * TAB_QUAD, sizeY = 26 * TAB_QUAD, tabX = 320 - sizeX / 2, tabY = 45;
-	int n = Base_Len(menu);
+	int n = Mode_SeqLen(menu);
 	int current = 0;
 	tabSize *= TAB_QUAD;
 	if (n <= 0) {
@@ -375,7 +348,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 	double xStart = xStartV ? Base_Num(xStartV, &dummy) : -1;
 	double step = stepV ? Base_Num(stepV, &stepInt) : 45;
 	double minY = minV ? Base_Num(minV, &dummy) : 100;
-	int n = Base_Len(menu);
+	int n = Mode_SeqLen(menu);
 	double start;
 	char backText[0x200];
 
@@ -411,7 +384,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 		Script_SetNum(id, "Title", "Green", 234);
 		Script_SetNum(id, "Title", "Blue", 177);
 		Script_SetStr(id, "Title", "Effect", "Shadow");
-		Native_SetFloat(&y, start + Base_ModInt("Menu", "TitleBarYOff", -2));
+		Native_SetFloat(&y, start + Mode_ModGetI("Menu", "TitleBarYOff", -2));
 		Base_TitleBar(id, &y, tt, fontTitle);
 		Native_BufFree(&tb);
 		start += step + 16;
@@ -436,7 +409,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 		Script_SetNum(id, "BackB", "W", 0);
 		Script_SetNum(id, "BackB", "H", 0);
 		Script_SetNum(id, "BackB", "X", 320);
-		Script_SetNum(id, "BackB", "Y", Base_ModInt("Menu", "BackButtonYStart", 430));
+		Script_SetNum(id, "BackB", "Y", Mode_ModGetI("Menu", "BackButtonYStart", 430));
 		Script_SetNum(id, "BackB", "CentralText", 1);
 		Script_SetStr(id, "BackB", "Effect", "Shadow");
 	}
@@ -448,7 +421,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 		if (!e) {
 			return 0;
 		}
-		int len = Base_Len(e);
+		int len = Mode_SeqLen(e);
 		char func[0x80], s[0x80];
 		Base_EntryName(menu, i, 2, "Item", iname, sizeof(iname));
 		const nativeVal_t *text = Native_GetItem(e, 0, 0, &ttmp);
@@ -491,12 +464,12 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 	}
 	nativeVal_t last;
 	Native_SetStr(&last, iname);
-	Base_ModSet("Menu", "VerticalMenuLastControl", &last);
+	Mode_ModPut("Menu", "VerticalMenuLastControl", &last);
 	/* Back always at the same place */
 	if (!strcmp(lastText, backText) && !xbox) {
 		Script_SetStr(id, iname, "Font", "ScrapBig");
 		Script_SetNum(id, iname, "X", 320);
-		Script_SetNum(id, iname, "Y", Base_ModInt("Menu", "BackButtonYStart", 430));
+		Script_SetNum(id, iname, "Y", Mode_ModGetI("Menu", "BackButtonYStart", 430));
 		Script_SetNum(id, iname, "CentralText", 1);
 	}
 	char a[0x80], b[0x80];
@@ -681,12 +654,6 @@ static PyObject *Menu_AddTabs(PyObject *self, PyObject *args, PyObject *kw) {
 	return Mode_Result(ok);
 }
 
-static PyObject *Menu_DummyFunc(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "title", "menu", "backfunc", "XStart", "VerticalStep", "Font", "MinYStart", "YStart",
 		"FontTitle", NULL };
@@ -728,10 +695,10 @@ static PyObject *Menu_YesNoMenu(PyObject *self, PyObject *args) {
 	nativeVal_t t;
 	Native_Arg(title, &t);
 	Base_NewMenu(id);
-	int y = Base_ModInt("Menu", "QuestionMenuYStart", 230);
+	int y = Mode_ModGetI("Menu", "QuestionMenuYStart", 230);
 	PyObject *pt = Native_ToPy(&t);
 	PyObject *vars = pt ? Py_BuildValue("{s:O,s:s,s:s,s:i,s:i,s:i}", "title", pt, "yes", yes, "no", no, "y", y,
-		"bary", y + Base_ModInt("Menu", "TitleBarYOff", -2), "exit", !strcmp(yes, "Menu.ExitGame")) : NULL;
+		"bary", y + (int)Mode_ModGetI("Menu", "TitleBarYOff", -2), "exit", !strcmp(yes, "Menu.ExitGame")) : NULL;
 	Py_XDECREF(pt);
 	Native_Free(&t);
 	Base_Run(id, "yesno", vars);
@@ -800,14 +767,7 @@ static PyObject *Menu_ShowWarning(PyObject *self, PyObject *args) {
 		return Mode_Result(r);
 	}
 	/* OBJLIB 4: the scheduler keeps the function of the module and the arguments as Python objects */
-	PyObject *m = PyImport_ImportModule("Menu");
-	PyObject *f = m ? PyObject_GetAttrString(m, "ShowWarning") : NULL;
-	if (f) {
-		Scheduler_Add(&g_pWorld->scheduler, Timer_GetTime(&g_pWorld->timer) + 0.25f, f, args, "ShowWarning");
-	}
-	PyErr_Clear();
-	Py_XDECREF(f);
-	Py_XDECREF(m);
+	Mode_SchedPy(Timer_GetTime(&g_pWorld->timer) + 0.25f, "Menu", "ShowWarning", args, "ShowWarning");
 	return Py_ReturnNone();
 }
 
@@ -881,7 +841,7 @@ PyMethodDef g_MenuBaseMethods[] = {
 	{ "DrawMenuTitleBar", Menu_DrawMenuTitleBar, 1, NULL },
 	{ "StartNewMenu", Menu_StartNewMenu, 1, NULL },
 	{ "AddTabs", (PyCFunction)(void (*)(void))Menu_AddTabs, 3, NULL },
-	{ "DummyFunc", Menu_DummyFunc, 1, NULL },
+	{ "DummyFunc", Mode_PyNone, 1, NULL },
 	{ "VerticalMenu", (PyCFunction)(void (*)(void))Menu_VerticalMenu, 3, NULL },
 	{ "YesNoMenu", Menu_YesNoMenu, 1, NULL },
 	{ "DisableMenuItem", Menu_DisableMenuItem, 1, NULL },

@@ -13,6 +13,7 @@
 #include "scrap/fx.h"
 #include "scrap/pyentity.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
 static const char fx_def[] = {
@@ -33,14 +34,6 @@ static const char *const fx_motors[] = { "NONE", "LIFEBOAT", "MOSQUITO", "MPOLI1
 static struct {
 	nativeVal_t motor[FX_MOTORS];	/* FXMOTOR_<name> */
 } fx;
-
-/* `import name` of a function of the script: 0 with the error set */
-static byte Fx_Import(const char *name) {
-	/* OBJLIB 6: module loading stays with the module objects until then */
-	PyObject *m = PyImport_ImportModule((char *)name);
-	Py_XDECREF(m);
-	return m != NULL;
-}
 
 /* v == 0 of the script (cmp of 1.5.2: a number equal to 0; a text is never equal) */
 static byte Fx_IsZero(const nativeVal_t *v) {
@@ -175,14 +168,14 @@ static byte Fx_MoneyTransfer(const nativeVal_t *from, const nativeVal_t *to, con
 static PyObject *Fx_InitPy(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	return Fx_Import("Init") && Fx_Init() ? Py_ReturnNone() : NULL;
+	return Mode_Import("Init") && Fx_Init() ? Py_ReturnNone() : NULL;
 }
 
 static PyObject *Fx_GetMotorClass(PyObject *self, PyObject *args) {
 	PyObject *name;
 	nativeVal_t n, r;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name) || !Fx_Import("string")) {
+	if (!PyArg_ParseTuple(args, "O", &name) || !Mode_Import("string")) {
 		return NULL;
 	}
 	if (!Native_FromPyAny(name, &n)) {
@@ -197,7 +190,7 @@ static PyObject *Fx_GetMotorClass(PyObject *self, PyObject *args) {
 static PyObject *Fx_SetUpShipMotors(PyObject *self, PyObject *args) {
 	PyObject *e;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e) || !Fx_Import("string")) {
+	if (!PyArg_ParseTuple(args, "O", &e) || !Mode_Import("string")) {
 		return NULL;
 	}
 	if (!PyEntity_Check(e)) {

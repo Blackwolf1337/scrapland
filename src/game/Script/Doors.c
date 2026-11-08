@@ -389,26 +389,16 @@ static byte Elv_isOutMap(const nativeVal_t *map, nativeVal_t *out) {
 	return 1;
 }
 
-/* the entity of camera 0 with EntityLink = link */
-static byte Elv_CamLink(const nativeVal_t *link) {
-	nativeVal_t cam, e = { 0 };
-	Mode_CamName(0, &cam);
-	byte ok = Mode_EntitySeam(&cam, &e) && Mode_VSet(&e, "EntityLink", link);
-	Native_Free(&cam);
-	Native_Free(&e);
-	return ok;
-}
-
 /* ElevatorCamera(ElevatorName): the camera rides with the elevator, the HUD of a movie (OBJLIB 3: Menu by name) */
 static byte Elv_ElevatorCamera(const nativeVal_t *name) {
-	return Elv_CamLink(name) && Mode_Import("Menu") && Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L);
+	return Mode_CamLink(name) && Mode_Import("Menu") && Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L);
 }
 
 /* ElevatorBackCamera(): the camera back on the player, the HUD on foot (OBJLIB 3: CharScorer by name) */
 static byte Elv_ElevatorBackCamera(void) {
 	nativeVal_t empty;
 	Native_SetStr(&empty, "");
-	return Elv_CamLink(&empty) && Mode_Import("CharScorer") && Native_CallMod("CharScorer", "Create", NULL, "i", 0L) &&
+	return Mode_CamLink(&empty) && Mode_Import("CharScorer") && Native_CallMod("CharScorer", "Create", NULL, "i", 0L) &&
 		Mode_GVarSetI("DrawNextFrame", 0);
 }
 
@@ -664,7 +654,7 @@ static byte Elv_UseElevator(const nativeVal_t *usrName, const nativeVal_t *elvNa
 	if (is == 0) {
 		const nativeVal_t *items[9] = { Mode_S(&t, "Unknow command at Elevator.UseElevator("), usrName, Mode_S(&t, ","),
 			elvName, Mode_S(&t, ","), opt, Mode_S(&t, ","), full, Mode_S(&t, ")") };
-		return Mode_Done(&t, Mode_PrintN(items, 9));
+		return Mode_Done(&t, Mode_Print(items, 9));
 	}
 	if (is < 0 || !Mode_EntitySeam(tgt, e) || !LvN_SetS(e, "OnObjSlot", "") ||
 		!Native_CallGlobal(ELV, "ElevatorCloseToGo", NULL, "v", elvName) || !Dr_G(ELV, "TELEPORTER_UP", up) ||
