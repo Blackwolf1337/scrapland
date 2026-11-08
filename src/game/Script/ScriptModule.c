@@ -40,6 +40,7 @@
 
 #include "scrap/console.h"
 #include "scrap/filepak.h"
+#include "scrap/modvars.h"
 #include "scrap/script.h"
 
 typedef struct {
@@ -1304,6 +1305,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 		/* the writes the loader makes after the module code (the functions of the C tables the script does not have,
 		 * the sets that may resize the dict), as after the .pyc */
 		Script_ModuleExtras(name, m, mp.defs);
+		/* the names of the module for the registry of the module variables (a mod's own, the hooks' too) */
+		ModVar_Made(name, mf->level, d);
 	}
 	Py_XDECREF(mp.defs);
 	if (!ok) {
