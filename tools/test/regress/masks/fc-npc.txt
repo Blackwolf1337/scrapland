@@ -13,5 +13,17 @@ ignore __import__('Init')._ent('Nurse_01', ('ActCtrl','LLogicIdle','Invulnerable
 # line 132: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
 ignore __import__('Init')._res()
 # line 26: the Mayor's Action right after _sp starts the talk: FaceToTalk while it turns to the player, TalkListenNPC
-# once it faces it (talk timing; pack run 1 of 2026-11-06 and a C channel run on the RTX show TalkListenNPC)
-sub \('Action', '(?:FaceToTalk|TalkListenNPC)'\), \('ArrOpt0', 'Talk:Talk'\) => ('Action', TALK), ('ArrOpt0', 'Talk:Talk')
+# once it faces it (talk timing; pack run 1 of 2026-11-06 and a C channel run on the RTX show TalkListenNPC).
+# Lines 26 and 43 (Mayor_Default, Berto_Default): Relax when the NPC had not turned to the talk yet, in pack and C
+# alike (pack: Mayor 2 and Berto 3 of 54 runs, C: Mayor 2 and Berto 5 of 98 runs, RTX, 2026-11-08)
+sub \('Action', '(?:FaceToTalk|TalkListenNPC|Relax)'\), \('ArrOpt0', 'Talk:Talk'\) => ('Action', TALK), ('ArrOpt0', 'Talk:Talk')
+# line 125: Sentinel_01 can see the player in the half second the case keeps the alarm on (SetAlarm(1.0) to
+# SetAlarm(0.0)) and go to its accuse state; that state sets the alarm to 1 once more after SetAlarm(0.0)
+# (SentinelLogic.c, cSentinelLocalLogic_UpdateState), so Respawn keeps waiting and Desktop_02 stays away. Engine AI
+# timing, pack and C alike: 3 of 54 pack runs and 10 of 98 C runs on the RTX on 2026-11-08; a build with a print in
+# Alarm_Set showed Sentinel_01's accuse state as the setter in the 3 such runs it had (1 pack, 2 C), and in no other run
+sub ^\(\(1, 1\.0, 1\), 1\)$ => ((0, 0.0, -1), 0)
+# line 121: the grow sign of the alarm right after SetAlarm(1.0): -1 (falls), 0 when a character's alert stops the
+# fall, 1 (with the level at 1.0) when Sentinel_01 already accuses (see line 125); pack 1 of 54 runs with 0, C 2 of
+# 98 runs with 1 (RTX, 2026-11-08). The alarm being on and its level are still compared
+sub ^\(1, ([0-9.]+), (?:-1|0|1)\)$ => (1, \1, GROW)
