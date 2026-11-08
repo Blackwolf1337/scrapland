@@ -4,9 +4,11 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the pages work on C texts and values. The save variables, the engine
  * variables, the scorer and the language texts are C; Init.Outdoor, HasSuperDeal, isDemo and Menu.UseTxt are read as
- * the attributes of those modules (OBJLIB 5); MissionsFuncs.CrazyDealStatus, the GetMenuDescription of the running
- * super deal and the Menu functions stay by name (OBJLIB 3), their errors printed as before (OBJLIB 7). The .def
- * runner takes its $names as a dict and the texts of the content step as Python values (OBJLIB 6).
+ * the attributes of those modules (OBJLIB 5); MissionsFuncs.CrazyDealStatus and the Menu functions are called through
+ * their refs (PORT_CALL: directly while the attribute holds the port's function, else by name), the GetMenuDescription
+ * of the running super deal by name (OBJLIB 4: its module is a variable of Init); their errors are printed as before
+ * (OBJLIB 7). The .def runner takes its $names as a dict and the texts of the content step as Python values
+ * (OBJLIB 6).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -103,9 +105,9 @@ static void Mission_ObjectiveText(int id, int num, const char *text1, const char
 	Native_Free(&b);
 }
 
-/* MissionsFuncs.CrazyDealStatus(num) (OBJLIB 3): (name, done, needed) into out, 0 after the error was printed */
+/* MissionsFuncs.CrazyDealStatus(num): (name, done, needed) into out, 0 after the error was printed */
 static byte Mission_DealStatus(int num, nativeVal_t *out) {
-	if (Native_CallMod("MissionsFuncs", "CrazyDealStatus", out, "i", (long)num)) {
+	if (PORT_CALL(MissionsFuncs, CrazyDealStatus, out, "i", (long)num)) {
 		/* a tuple held as one object (it holds others) as its items */
 		Mode_Elems(out);
 		return 1;
@@ -222,7 +224,7 @@ static void Mission_Notes(int id) {
 /* the description of the crazy deal page, and its objectives */
 static void Mission_DealDesc(int id, char *desc, int size) {
 	if (Mission_ModInt("Init", "HasSuperDeal", 0)) {
-		/* Init.SuperDealModule.GetMenuDescription() (OBJLIB 3: the module of the running super deal) */
+		/* Init.SuperDealModule.GetMenuDescription() (OBJLIB 4: the module of the running super deal) */
 		nativeVal_t mod = { 0 }, f = { 0 }, r = { 0 };
 		desc[0] = 0;
 		if (Mode_ModGet("Init", "SuperDealModule", &mod) && Mode_VObj(&mod, "GetMenuDescription", &f) &&
@@ -355,7 +357,7 @@ static void Mission_Run(int id, const char *section, PyObject *vars) {
 static void Mission_Menu(int id, const char *name) {
 	const missionPage_t *p = Mission_Page(name);
 	char back[0x100];
-	Mode_PrintedCall("Menu", "StartNewMenu", id);
+	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	if (!p) {
 		return;
 	}
@@ -433,7 +435,7 @@ static byte Menu_EnterMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	if (!Mode_Parse(a, n, "i", &id)) {
 		return 0;
 	}
-	Mode_PrintedCall("Menu", "InitMenuSys", 0);
+	MODE_PRINTED(Menu, InitMenuSys, "i", 0L);
 	const char *map = SaveVar_Get("SuperDeal.Mission.Map");
 	if (map && *map) {
 		Mission_Menu(id, "CrazyDeal");
@@ -458,7 +460,7 @@ static PyObject *Menu_ExitMissionInfo(PyObject *self, PyObject *args) {
 		cPy_Function_SetFunc(&sc->onNext, "");
 		cPy_Function_SetFunc(&sc->onPrev, "");
 	}
-	Mode_PrintedCall("Menu", "BackToGame", id);
+	MODE_PRINTED(Menu, BackToGame, "i", (long)id);
 	return Py_ReturnNone();
 }
 
