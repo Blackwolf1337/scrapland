@@ -730,16 +730,42 @@ PORT_DECL(RaceMaker, GetRandomShipIAProfile) /* 2 */
 PORT_DECL(SaveGame, MMDesc) /* 2 */
 PORT_DECL(SaveGame, SMDesc) /* 2 */
 PORT_DECL(SaveGame, SaveGame) /* 1 */
+PORT_DECL(SaveGame, InstantSaveGame) /* ? */
 PORT_DECL(SaveGame, LoadGame) /* 1 */
+PORT_DECL(SaveGame, NewGame) /* ? */
+PORT_DECL(SaveGame, CheckAllBlueprints) /* ? */
+PORT_DECL(SaveGame, MarkWayPoint) /* ? */
+PORT_DECL(SaveGame, QWayPoint) /* ? */
+PORT_DECL(SaveGame, SaveAlarm) /* ? */
+PORT_DECL(SaveGame, LoadAlarm) /* ? */
+PORT_DECL(SaveGame, SaveMoney) /* ? */
+PORT_DECL(SaveGame, LoadMoney) /* ? */
+PORT_DECL(SaveGame, QLoad) /* ? */
+PORT_DECL(SaveGame, StartGame) /* ? */
+PORT_DECL(SaveGame, Restart) /* ? */
 PORT_DECL(SaveGame, QSaveReg) /* 1 */
 PORT_DECL(SaveGame, SaveReg) /* 2 */
+PORT_DECL(SaveGame, InitVars) /* ? */
 #define PORTS_SaveGame \
 	PORT_DEF(SaveGame, MMDesc, SaveGame_MMDesc) \
 	PORT_DEF(SaveGame, SMDesc, SaveGame_SMDesc) \
 	PORT_DEF(SaveGame, SaveGame, SaveGame_SaveGame) \
+	PORT_DEF(SaveGame, InstantSaveGame, SaveGame_InstantSaveGame) \
 	PORT_DEF(SaveGame, LoadGame, SaveGame_LoadGame) \
+	PORT_DEF(SaveGame, NewGame, SaveGame_NewGame) \
+	PORT_DEF(SaveGame, CheckAllBlueprints, SaveGame_CheckAllBlueprints) \
+	PORT_DEF(SaveGame, MarkWayPoint, SaveGame_MarkWayPoint) \
+	PORT_DEF(SaveGame, QWayPoint, SaveGame_QWayPoint) \
+	PORT_DEF(SaveGame, SaveAlarm, SaveGame_SaveAlarm) \
+	PORT_DEF(SaveGame, LoadAlarm, SaveGame_LoadAlarm) \
+	PORT_DEF(SaveGame, SaveMoney, SaveGame_SaveMoney) \
+	PORT_DEF(SaveGame, LoadMoney, SaveGame_LoadMoney) \
+	PORT_DEF(SaveGame, QLoad, SaveGame_QLoad) \
+	PORT_DEF(SaveGame, StartGame, SaveGame_StartGame) \
+	PORT_DEF(SaveGame, Restart, SaveGame_Restart) \
 	PORT_DEF(SaveGame, QSaveReg, SaveGame_QSaveReg) \
-	PORT_DEF(SaveGame, SaveReg, SaveGame_SaveReg)
+	PORT_DEF(SaveGame, SaveReg, SaveGame_SaveReg) \
+	PORT_DEF(SaveGame, InitVars, SaveGame_InitVars)
 
 /* Scene.c */
 PORT_DECL(Scene, BaseAddActor) /* 3 */

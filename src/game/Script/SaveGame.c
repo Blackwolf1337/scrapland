@@ -748,25 +748,18 @@ static PyObject *SG_GetReg(const nativeVal_t *name) {
 
 /* ---- adapters ---- */
 
-/* the functions that take any arguments (the C port ignored them) */
-#define SG_FN0(name, call) \
-	static PyObject *SaveGame_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
 MODE_FN(SaveGame, MMDesc, 2, SG_MMDesc(&a[0], &a[1]))
 MODE_FN(SaveGame, SMDesc, 2, SG_SMDesc(&a[0], &a[1]))
-SG_FN0(SaveAlarm, SG_SaveAlarm())
-SG_FN0(SaveMoney, SG_SaveMoney())
-SG_FN0(LoadAlarm, SG_LoadAlarm())
-SG_FN0(LoadMoney, SG_LoadMoney())
-SG_FN0(InitVars, SG_InitVars())
-SG_FN0(QWayPoint, SG_QWayPoint())
-SG_FN0(Restart, SG_Restart())
-SG_FN0(NewGame, SG_NewGame())
-SG_FN0(CheckAllBlueprints, SG_CheckAllBlueprints())
+/* the functions that take any arguments (the C port ignored them) */
+MODE_ANY(SaveGame, SaveAlarm, SG_SaveAlarm())
+MODE_ANY(SaveGame, SaveMoney, SG_SaveMoney())
+MODE_ANY(SaveGame, LoadAlarm, SG_LoadAlarm())
+MODE_ANY(SaveGame, LoadMoney, SG_LoadMoney())
+MODE_ANY(SaveGame, InitVars, SG_InitVars())
+MODE_ANY(SaveGame, QWayPoint, SG_QWayPoint())
+MODE_ANY(SaveGame, Restart, SG_Restart())
+MODE_ANY(SaveGame, NewGame, SG_NewGame())
+MODE_ANY(SaveGame, CheckAllBlueprints, SG_CheckAllBlueprints())
 MODE_FN(SaveGame, SaveGame, 1, SG_SaveGame(&a[0]))
 MODE_FN(SaveGame, LoadGame, 1, SG_LoadGame(&a[0]))
 MODE_FN(SaveGame, SaveReg, 2, SG_SaveReg(&a[0], &a[1]))
@@ -784,51 +777,22 @@ static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
 	return r;
 }
 
-static PyObject *SaveGame_MarkWayPoint(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Map", "Spawn", "ExtraComeFrom", NULL };
-	nativeVal_t a[3];
-	byte given[3];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
-		return Mode_KwOut(a, 3, 0, NULL);
-	}
-	if (!given[2]) {
-		Native_SetStr(&a[2], "");
-	}
-	return Mode_KwOut(a, 3, SG_MarkWayPoint(&a[0], &a[1], &a[2]), NULL);
+/* the keyword functions (MODE_KW) */
+MODE_KW(SaveGame, MarkWayPoint, "OO|O", "Map", "Spawn", "ExtraComeFrom") {
+	Mode_KwDefS(v, given, 2, "");
+	return SG_MarkWayPoint(&v[0], &v[1], &v[2]);
 }
 
-static PyObject *SaveGame_QLoad(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "MapName", "useGameplayTime", NULL };
-	nativeVal_t a[2];
-	byte given[2];
-	(void)self;
-	if (!Mode_Kw(args, kw, "O|O", names, 2, a, given)) {
-		return Mode_KwOut(a, 2, 0, NULL);
-	}
-	return Mode_KwOut(a, 2, SG_QLoad(&a[0], given[1] ? &a[1] : NULL), NULL);
+MODE_KW(SaveGame, QLoad, "O|O", "MapName", "useGameplayTime") {
+	return SG_QLoad(&v[0], given[1] ? &v[1] : NULL);
 }
 
-static PyObject *SaveGame_StartGame(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CleanChallenge", "CleanRevenge", NULL };
-	nativeVal_t a[2];
-	byte given[2];
-	(void)self;
-	if (!Mode_Kw(args, kw, "|OO", names, 2, a, given)) {
-		return Mode_KwOut(a, 2, 0, NULL);
-	}
-	return Mode_KwOut(a, 2, SG_StartGame(given[0] ? &a[0] : NULL, given[1] ? &a[1] : NULL), NULL);
+MODE_KW(SaveGame, StartGame, "|OO", "CleanChallenge", "CleanRevenge") {
+	return SG_StartGame(given[0] ? &v[0] : NULL, given[1] ? &v[1] : NULL);
 }
 
-static PyObject *SaveGame_InstantSaveGame(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "iSlot", "showMsgOnFailure", NULL };
-	nativeVal_t a[2];
-	byte given[2];
-	(void)self;
-	if (!Mode_Kw(args, kw, "O|O", names, 2, a, given)) {
-		return Mode_KwOut(a, 2, 0, NULL);
-	}
-	return Mode_KwOut(a, 2, SG_InstantSaveGame(&a[0], given[1] ? &a[1] : NULL), NULL);
+MODE_KW(SaveGame, InstantSaveGame, "O|O", "iSlot", "showMsgOnFailure") {
+	return SG_InstantSaveGame(&v[0], given[1] ? &v[1] : NULL);
 }
 
 PyMethodDef g_SaveGameMethods[] = {
