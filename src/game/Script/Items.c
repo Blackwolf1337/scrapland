@@ -640,8 +640,10 @@ static byte It_ShowHint(const nativeVal_t *item) {
 
 MODE_FN(Items, ShowHint, 2, It_ShowHint(&a[0]))
 
-/* Hint(Pos, Text, time=10, delit=0, ExtraFunc=None): an invisible item that shows a text to the player near it */
-static byte It_Hint(const nativeVal_t *pos, const nativeVal_t *hint) {
+/* Hint(Pos, Text, time=10, delit=0, ExtraFunc=None): an invisible item that shows a text to the player near it (the
+ * arguments not given NULL, their defaults here) */
+static byte It_Hint(const nativeVal_t *pos, const nativeVal_t *text, const nativeVal_t *time, const nativeVal_t *delit,
+	const nativeVal_t *extra) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *c[3], *name = Mode_V(&t), *rad = Mode_V(&t), *hn = Mode_V(&t), *v = Mode_V(&t);
 	for (int i = 0; i < 3; i++) {
@@ -658,8 +660,13 @@ static byte It_Hint(const nativeVal_t *pos, const nativeVal_t *hint) {
 	e = e ? World_FindEntity(e->name) : NULL;
 	const char *ref = e ? e->name : "";
 	Native_SetEmpty(v, NV_TUPLE);
-	for (int i = 0; i < 4; i++) {
-		Native_Copy(Native_Append(v), &hint[i]);
+	Native_Copy(Native_Append(v), text);
+	Native_Copy(Native_Append(v), time ? time : Mode_I(&t, 10));
+	Native_Copy(Native_Append(v), delit ? delit : Mode_I(&t, 0));
+	if (extra) {
+		Native_Copy(Native_Append(v), extra);
+	} else {
+		Native_SetNone(Native_Append(v));
 	}
 	byte ok = Mode_G("Items", "HINT_RADIUS", rad) && Mode_Set(e, ref, "Radius", rad) && Mode_SetI(e, ref, "OnlyUser", 1) &&
 		Mode_SetS(e, ref, "OnTake", "Items.ShowHint") && Mode_Get(e, ref, "Name", name) &&
@@ -667,28 +674,8 @@ static byte It_Hint(const nativeVal_t *pos, const nativeVal_t *hint) {
 	return Mode_Done(&t, ok);
 }
 
-static PyObject *Items_Hint(PyObject *self, PyObject *args) {
-	PyObject *o[5] = { NULL, NULL, NULL, NULL, NULL };
-	nativeVal_t v[5] = { { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|OOO", &o[0], &o[1], &o[2], &o[3], &o[4])) {
-		return NULL;
-	}
-	/* time=10, delit=0, ExtraFunc=None */
-	Native_SetInt(&v[2], 10);
-	Native_SetInt(&v[3], 0);
-	for (int i = 0; i < 5; i++) {
-		if (o[i]) {
-			Native_Free(&v[i]);
-			Native_Arg(o[i], &v[i]);
-		}
-	}
-	byte ok = It_Hint(&v[0], &v[1]);
-	for (int i = 0; i < 5; i++) {
-		Native_Free(&v[i]);
-	}
-	return Mode_Result(ok);
-}
+/* "OO|OOO" */
+MODE_FNOPT(Items, Hint, 2, 5, It_Hint(&a[0], &a[1], MODE_OPT(2), MODE_OPT(3), MODE_OPT(4)))
 
 /* SetInteractiveObjOnFloor(c): the object on the floor below it (c a handle the script gave, any value the Python way) */
 static byte It_OnFloor(const nativeVal_t *c) {

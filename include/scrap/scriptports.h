@@ -694,6 +694,7 @@ PORT_DECL(Items, BrowseItemPos) /* ? */
 PORT_DECL(Items, InitResources) /* ? */
 PORT_DECL(Items, Init) /* ? */
 PORT_DECL(Items, ShowHint) /* 2 */
+PORT_DECL(Items, Hint) /* ? */
 PORT_DECL(Items, CreateInteractiveObj) /* 2 */
 PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 #define PORTS_Items \
@@ -721,6 +722,7 @@ PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 	PORT_DEF(Items, InitResources, Items_InitResources) \
 	PORT_DEF(Items, Init, Items_Init) \
 	PORT_DEF(Items, ShowHint, Items_ShowHint) \
+	PORT_DEF(Items, Hint, Items_Hint) \
 	PORT_DEF(Items, CreateInteractiveObj, Items_CreateInteractiveObj) \
 	PORT_DEF(Items, SetInteractiveObjOnFloor, Items_SetInteractiveObjOnFloor)
 
