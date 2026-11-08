@@ -1579,65 +1579,121 @@ PORT_DECL(Speech, EndObjectAnswer) /* 0 */
 	PORT_DEF(Speech, EndObjectAnswer, Speech_EndObjectAnswer)
 
 /* Split.c */
+PORT_DECL(Split, PurgeServerMapList) /* ? */
 PORT_DECL(Split, GetSpawnPos) /* 1 */
 PORT_DECL(Split, CreateUserShip) /* 1 */
 PORT_DECL(Split, Init) /* ? */
 PORT_DECL(Split, GetReSpawnPos) /* 1 */
 PORT_DECL(Split, ReSpawnShip) /* 1 */
 PORT_DECL(Split, OnDeathCallback) /* 2 */
+PORT_DECL(Split, ChooseShips) /* ? */
+PORT_DECL(Split, ChangeShip) /* ? */
 PORT_DECL(Split, NextShip) /* 1 */
 PORT_DECL(Split, PrevShip) /* 1 */
+PORT_DECL(Split, StartGame) /* ? */
+PORT_DECL(Split, DefaultSplitScorer) /* 1 */
 PORT_DECL(Split, EndOfGame) /* 1 */
+PORT_DECL(Split, ReloadNext) /* ? */
+PORT_DECL(Split, ActualizeScorer) /* ? */
+PORT_DECL(Split, MissionScorer) /* 1 */
 PORT_DECL(Split, SeleShip) /* 1 */
 PORT_DECL(Split, InitChooseScorer) /* 1 */
+PORT_DECL(Split, ReadyToStartScorer) /* 1 */
 PORT_DECL(Split, ConfirmAbortMain) /* 1 */
 PORT_DECL(Split, ConfirmAbortPause) /* 1 */
 PORT_DECL(Split, ConfirmRestartPause) /* 1 */
+PORT_DECL(Split, ConfirmAbort) /* ? */
 PORT_DECL(Split, Abort) /* 1 */
 PORT_DECL(Split, Restart) /* 1 */
 PORT_DECL(Split, PauseGame) /* 1 */
 PORT_DECL(Split, PauseGameMenu) /* 1 */
 PORT_DECL(Split, LittleText) /* 4 */
 PORT_DECL(Split, BlackBack) /* 1 */
+PORT_DECL(SDeathMatch, Init) /* ? */
 PORT_DECL(SDeathMatch, OnDeathFunc) /* 2 */
+PORT_DECL(SFlagHunt, BrowseAreas) /* ? */
+PORT_DECL(SFlagHunt, GetRndFlag) /* ? */
 PORT_DECL(SFlagHunt, TakeFlag) /* 2 */
+PORT_DECL(SFlagHunt, CreateFlag) /* ? */
+PORT_DECL(SFlagHunt, InitStatus) /* ? */
+PORT_DECL(SFlagHunt, Init) /* ? */
 PORT_DECL(SFlagHunt, OnDeathFunc) /* 2 */
+PORT_DECL(SPostman, BrowseAreas) /* ? */
+PORT_DECL(SPostman, GetRndFlag) /* ? */
 PORT_DECL(SPostman, TakeArea) /* 2 */
 PORT_DECL(SPostman, TakeFlag) /* 2 */
+PORT_DECL(SPostman, CreateFlag) /* ? */
+PORT_DECL(SPostman, InitStatus) /* ? */
+PORT_DECL(SPostman, Init) /* ? */
 PORT_DECL(SPostman, OnDeathFunc) /* 2 */
+PORT_DECL(SPostman, BattonRepos) /* ? */
+PORT_DECL(SRace, BrowseAreas) /* ? */
+PORT_DECL(SRace, GetRndFlag) /* ? */
 PORT_DECL(SRace, TakeFlag) /* 2 */
+PORT_DECL(SRace, CreateFlag) /* ? */
 PORT_DECL(SRace, InitRacePos) /* 1 */
 PORT_DECL(SRace, GetReSpawnPos) /* 1 */
+PORT_DECL(SRace, InitStatus) /* ? */
+PORT_DECL(SRace, Init) /* ? */
+PORT_DECL(SRace, ControlToRacers) /* ? */
 #define PORTS_Split \
+	PORT_DEF(Split, PurgeServerMapList, Split_PurgeServerMapList) \
 	PORT_DEF(Split, GetSpawnPos, Split_GetSpawnPos) \
 	PORT_DEF(Split, CreateUserShip, Split_CreateUserShip) \
 	PORT_DEF(Split, Init, Split_Init) \
 	PORT_DEF(Split, GetReSpawnPos, Split_GetSpawnPos) \
 	PORT_DEF(Split, ReSpawnShip, Split_ReSpawnShip) \
 	PORT_DEF(Split, OnDeathCallback, Split_OnDeathCallback) \
+	PORT_DEF(Split, ChooseShips, Split_ChooseShips) \
+	PORT_DEFK(Split, ChangeShip, Split_ChangeShip) \
 	PORT_DEF(Split, NextShip, Split_NextShip) \
 	PORT_DEF(Split, PrevShip, Split_PrevShip) \
+	PORT_DEFK(Split, StartGame, Split_StartGame) \
+	PORT_DEF(Split, DefaultSplitScorer, Split_DefaultSplitScorer) \
 	PORT_DEF(Split, EndOfGame, Split_EndOfGame) \
+	PORT_DEF(Split, ReloadNext, Split_ReloadNext) \
+	PORT_DEF(Split, ActualizeScorer, Split_ActualizeScorer) \
+	PORT_DEF(Split, MissionScorer, Split_MissionScorer) \
 	PORT_DEF(Split, SeleShip, Split_SeleShip) \
 	PORT_DEF(Split, InitChooseScorer, Split_InitChooseScorer) \
+	PORT_DEF(Split, ReadyToStartScorer, Split_ReadyToStartScorer) \
 	PORT_DEF(Split, ConfirmAbortMain, Split_ConfirmAbortMain) \
 	PORT_DEF(Split, ConfirmAbortPause, Split_ConfirmAbortPause) \
 	PORT_DEF(Split, ConfirmRestartPause, Split_ConfirmRestartPause) \
+	PORT_DEFK(Split, ConfirmAbort, Split_ConfirmAbort) \
 	PORT_DEF(Split, Abort, Split_Abort) \
 	PORT_DEF(Split, Restart, Split_Restart) \
 	PORT_DEF(Split, PauseGame, Split_PauseGame) \
 	PORT_DEF(Split, PauseGameMenu, Split_PauseGameMenu) \
 	PORT_DEF(Split, LittleText, Split_LittleText) \
 	PORT_DEF(Split, BlackBack, Split_BlackBack) \
+	PORT_DEF(SDeathMatch, Init, SDeathMatch_Init) \
 	PORT_DEF(SDeathMatch, OnDeathFunc, SDeathMatch_OnDeathFunc) \
+	PORT_DEF(SFlagHunt, BrowseAreas, SFlagHunt_BrowseAreas) \
+	PORT_DEF(SFlagHunt, GetRndFlag, SFlagHunt_GetRndFlag) \
 	PORT_DEF(SFlagHunt, TakeFlag, SFlagHunt_TakeFlag) \
+	PORT_DEF(SFlagHunt, CreateFlag, SFlagHunt_CreateFlag) \
+	PORT_DEF(SFlagHunt, InitStatus, SFlagHunt_InitStatus) \
+	PORT_DEF(SFlagHunt, Init, SFlagHunt_Init) \
 	PORT_DEF(SFlagHunt, OnDeathFunc, SFlagHunt_OnDeathFunc) \
+	PORT_DEF(SPostman, BrowseAreas, SPostman_BrowseAreas) \
+	PORT_DEF(SPostman, GetRndFlag, SPostman_GetRndFlag) \
 	PORT_DEF(SPostman, TakeArea, SPostman_TakeArea) \
 	PORT_DEF(SPostman, TakeFlag, SPostman_TakeFlag) \
+	PORT_DEF(SPostman, CreateFlag, SPostman_CreateFlag) \
+	PORT_DEF(SPostman, InitStatus, SPostman_InitStatus) \
+	PORT_DEF(SPostman, Init, SPostman_Init) \
 	PORT_DEF(SPostman, OnDeathFunc, SPostman_OnDeathFunc) \
+	PORT_DEF(SPostman, BattonRepos, SPostman_BattonRepos) \
+	PORT_DEF(SRace, BrowseAreas, SRace_BrowseAreas) \
+	PORT_DEF(SRace, GetRndFlag, SRace_GetRndFlag) \
 	PORT_DEF(SRace, TakeFlag, SRace_TakeFlag) \
+	PORT_DEF(SRace, CreateFlag, SRace_CreateFlag) \
 	PORT_DEF(SRace, InitRacePos, SRace_InitRacePos) \
-	PORT_DEF(SRace, GetReSpawnPos, SRace_GetReSpawnPos)
+	PORT_DEF(SRace, GetReSpawnPos, SRace_GetReSpawnPos) \
+	PORT_DEF(SRace, InitStatus, SRace_InitStatus) \
+	PORT_DEF(SRace, Init, SRace_Init) \
+	PORT_DEF(SRace, ControlToRacers, SRace_ControlToRacers)
 
 /* Sputnik.c */
 PORT_DECL(Sputnik, Assign) /* ? */
