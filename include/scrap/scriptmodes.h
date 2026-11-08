@@ -407,7 +407,8 @@ int Mode_UsrIs(const char *ctrl);
  * the NULL), OBJLIB 3 */
 byte Mode_Spch(const char *msg, const char *ans, const char *how);
 byte Mode_AnsLst(const char *const *texts, int n);
-/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint(), MissionsFuncs.SetMissionTarget(name) (None for NULL), OBJLIB 3 */
+/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint() (OBJLIB 3), MissionsFuncs.SetMissionTarget(name) (None for NULL,
+ * PORT_CALL) */
 byte Mode_MMDesc(const char *desc, long flag);
 byte Mode_WayPoint(void);
 byte Mode_Target(const char *name);

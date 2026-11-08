@@ -1944,8 +1944,8 @@ byte Mode_WayPoint(void) {
 }
 
 byte Mode_Target(const char *name) {
-	return name ? LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", name) :
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "O", Py_None);
+	return name ? PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", name) :
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "O", Py_None);
 }
 
 byte Mode_Connect(const char *a, const char *b, byte pair) {
@@ -2078,7 +2078,7 @@ byte Mode_PhoneCab(const char *use, byte targetFirst, const char *pcModule, nati
 	Native_SetNone(&name);
 	byte ok = Mode_Import("PhoneCab") && Native_CallMod("PhoneCab", "GetFree", &pc, "") && (!pcModule || Mode_Put(pcModule, "pc", NULL, &pc)) &&
 		(targetFirst || LvN_SetS(&pc, "UseFunc", use)) && Mode_VGet(&pc, "Name", &name) &&
-		Native_CallMod("MissionsFuncs", "SetMissionTarget", NULL, "v", &name) && (!targetFirst || LvN_SetS(&pc, "UseFunc", use));
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name) && (!targetFirst || LvN_SetS(&pc, "UseFunc", use));
 	Native_Free(&name);
 	if (ok && out) {
 		*out = pc;
@@ -2129,7 +2129,7 @@ byte Mode_Drop(const char *module, const nativeVal_t *pos, const char *name, con
 	}
 	Mode_Ints3(cam, 0, 1000, 0);
 	ok = ok && LvN_CreateAt(an, pos, "WithLife", l2) && Mode_VSet(l2, "CamTgt", cam) && Mode_VGet(l2, "Name", ln) &&
-		Native_CallMod("MissionsFuncs", "SetMissionTarget", NULL, "v", ln);
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", ln);
 	return Mode_Done(&t, ok);
 }
 

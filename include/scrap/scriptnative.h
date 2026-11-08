@@ -414,7 +414,8 @@ portSite_t *Port_Sites(void);
 #define PORT_LREF(module, name) PORT_LREF1(PORT_LEVEL, module, name)
 #define PORT_LREF1(level, module, name) PORT_LREF2(level, module, name)
 #define PORT_LREF2(level, module, name) port_##level##_##module##_##name
-#define PORT_SITE(ref, own) (&(static portSite_t){ .ref = &(ref), .global = (own), .file = __FILE__, .line = __LINE__ })
+#define PORT_SITE(pref, own) \
+	(&(static portSite_t){ .ref = &(pref), .global = (own), .file = __FILE__, .line = __LINE__ })
 #define PORT_CALL(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_REF(module, name), 0), out, __VA_ARGS__)
 #define PORT_OWN(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_REF(module, name), 1), out, __VA_ARGS__)
 #define PORT_LCALL(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_LREF(module, name), 0), out, __VA_ARGS__)

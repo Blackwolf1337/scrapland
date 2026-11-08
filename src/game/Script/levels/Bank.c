@@ -816,7 +816,7 @@ static byte CatchRudolph_OnCatchRudolph(const nativeVal_t *a) {
 /* SetNextMission(): Mission_KillRudolph in Outskirts, a character that can drive, the level changes */
 static byte CatchRudolph_SetNextMission(void) {
 	nativeVal_t ch = { 0 }, list = { 0 };
-	if (!LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
+	if (!PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
 		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_KillRudolph", "Outskirts") ||
 		!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_KillRudolph_MissionText1", 1L) || !Mode_Import("Chars")) {
 		return 0;
@@ -1504,7 +1504,7 @@ static byte InfiltrateBank_Init(void) {
 	ok = in >= 0 && (in == 0 || LvN_ModMethod("CharConversor", "AvailableChars", "remove", &bm)) &&
 		LvN_ModSetGlobal("CharConversor", "OnPossession", IB, "OnPossession") &&
 		LvN_ModSetGlobal("CharConversor", "afterExitConversor", IB, "ShowDeepThroatMessage") &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "GateKeeper_BankMasterRoom") && LvN_GetClass("BankMaster", &r) &&
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "GateKeeper_BankMasterRoom") && LvN_GetClass("BankMaster", &r) &&
 		LvN_SetCls("CanBePossessed", &one) && LV_OWN(IB, "LoadScene", NULL, "");
 	Native_Free(&elv);
 	Native_Free(&list);
@@ -1554,7 +1554,7 @@ static byte InfiltrateBank_ReAssignTarget(void) {
 	if (there <= 0) {
 		return there == 0 && Mode_Later(0.5, IB, "ReAssignTarget", NULL, 0, NULL);
 	}
-	byte ok = Mode_G(IB, "BankMasterName", &name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name);
+	byte ok = Mode_G(IB, "BankMasterName", &name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name);
 	Native_Free(&name);
 	return ok;
 }
@@ -1565,7 +1565,7 @@ static byte InfiltrateBank_AfterDTMessage(void) {
 	Native_SetNone(&elv);
 	Native_SetNone(&name);
 	byte ok = LvN_Entity("DM_Door_Teleporter_02", &elv) && Mode_VGet(&elv, "Name", &name) &&
-		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name);
+		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name);
 	Native_Free(&elv);
 	Native_Free(&name);
 	return ok;
@@ -1614,7 +1614,7 @@ static byte InfiltrateBank_CreateBankMaster(const nativeVal_t *e) {
 /* LaunchScene(Usr): the scene DirectorDiscovered, LaunchScene2 at its end; the player is Dtritus again */
 static byte InfiltrateBank_LaunchScene(const nativeVal_t *usr) {
 	return Mode_Import("Elevator") && Mode_Import("GateKeeper") && LvN_ModNone("GateKeeper", "AfterGateKeeperSpeech") &&
-		LvN_ModNone("Elevator", "OnElevatorReachUp") && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "") &&
+		LvN_ModNone("Elevator", "OnElevatorReachUp") && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "") &&
 		LV_CALL("Scene", "Play", NULL, "s", "DirectorDiscovered") && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", IB, "LaunchScene2") &&
 		LvN_SetS(usr, "ActCtrl", "Dtritus");
 }

@@ -163,7 +163,7 @@ static byte Gd_RestorePoint(const char *module, const char *use) {
 	}
 	Native_Free(&n);
 	if (ok) {
-		ok = Mode_VGet(&rm, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+		ok = Mode_VGet(&rm, "Name", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	}
 	Native_Free(&dummy);
 	Native_Free(&p);
@@ -864,7 +864,7 @@ static byte Into_DropMatrix(const nativeVal_t *pos) {
 		ok = Mode_VSet(&l2, "CamTgt", &tgt);
 		Native_Free(&tgt);
 	}
-	ok = ok && Gd_UntargetBishops(0) && Mode_VGet(&l2, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	ok = ok && Gd_UntargetBishops(0) && Mode_VGet(&l2, "Name", &n) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &n);
 	Native_Free(&n);
 	if (ok) {
 		Native_SetEmpty(&empty, NV_LIST);

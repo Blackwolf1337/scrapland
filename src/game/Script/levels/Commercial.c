@@ -1470,7 +1470,7 @@ static byte Stupidus_CreateStupidus(const nativeVal_t *a, nativeVal_t *out) {
 		Mode_VGet(o1, "Name", name) && LV_OWN(DS, "GetStupidusProfile", pd, "") && Mode_VGet(pd, "Ship", ship) &&
 		LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", name, ship) && LvN_SetS(o1, "OnDeath", "Mission_DestroyStupidus.OnStupidusDeath") &&
 		LvN_SetS(o1, "OnDamage", "Mission_DestroyStupidus.OnStupidusDamage") && LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", o1, pd) &&
-		STATE("ivi", 3L, name, 0L) && LvN_Life(o1, DS, "STUPIDUS_LIFE") && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+		STATE("ivi", 3L, name, 0L) && LvN_Life(o1, DS, "STUPIDUS_LIFE") && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name);
 	return Mode_Done(&t, ok);
 }
 
@@ -2452,7 +2452,7 @@ static byte Data_TakeData(const nativeVal_t *a, nativeVal_t *out) {
 	ok = ok && Mode_EntityH(&a[1], e);
 	if (ok && Native_True(e)) {
 		Native_Free(un);
-		ok = Mode_Put(GD, "funcWithDataName", NULL, &a[1]) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &a[1]) &&
+		ok = Mode_Put(GD, "funcWithDataName", NULL, &a[1]) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &a[1]) &&
 			LvN_SetS(e, "EntityList", "Funcs") && Mode_VGet(usr, "Name", un) && STATE("ivvi", 5L, &a[1], un, 100000L);
 	}
 	return Mode_Done(&t, ok);
