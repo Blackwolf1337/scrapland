@@ -126,12 +126,12 @@ Known limits left for later stages:
 
 ### Stage 2: native module cores
 
-After this stage every port is typed C inside. Its functions take C arguments, keep module state in a static struct, call the engine's C functions (3561 call sites) and return C values and `Native_Raise` errors. The `PyMethodDef` entries are adapters: `PyArg_ParseTuple`, `Native_Import`, the C call, and the result as a Python object. Calls between ports stay by name, because the adapters are the boundary. Imports, `Script_RunFile` and the calls of other ports are marked OBJLIB 3 or 6.
+After this stage every port is typed C inside, except Sputnik and GateKeeper, which still ran on the `Sf_` frame helpers. Its functions take C arguments, keep module state in a static struct, call the engine's C functions (3561 call sites) and return C values and `Native_Raise` errors. The `PyMethodDef` entries are adapters: `PyArg_ParseTuple`, `Native_Import`, the C call, and the result as a Python object. Calls between ports stay by name, because the adapters are the boundary. Imports, `Script_RunFile` and the calls of other ports are marked OBJLIB 3 or 6.
 
 - The order is free, because each module is independent at this stage. The work starts with the leaves and pure callers (Chat is done, then Net, InMap, Fx, Bureaucracy, Metro, CreditsText, CharAct, the sound and character tables, the menus, the level files). The hubs follow (Speech, MissionsFuncs, SaveGame, Menu, Init, Parking, RaceMaker, Scene, Traffic, Doors).
 - The engine's C entry points get a header each where they are missing. Most exist (`GVar_*`, `Scorer_*`, `Input_*`, `Net_*`, `Entity_Var*`, `World_FindEntity`, `SaveVar_*`).
 - The Python number and string rules that matter for results are kept in helpers (`Native_IntOfText`, floor division, repr of floats) instead of per site.
-- The `Sf_` frame and `Script_` value helpers lose callers module by module. `ScriptFrame.c` and `ScriptValue.c` go at the end of stage 3.
+- The `Sf_` frame and `Script_` value helpers lose callers module by module. B28 removed the functions of `ScriptFrame.c` and `ScriptValue.c` that had no caller left, and the rest goes with stage 6.
 - The size is the bulk of the work: 80000 lines of ports. The pilot took Chat (482 lines) in one step with its checks. Parallel module agents fit here, one module file per agent, each with its own worktree and slots.
 
 #### State of stage 2 (2026-11-07)
@@ -197,9 +197,9 @@ Things the checks could not cover are listed in the batch hand-backs: levels tha
 
 ### Stage 3: direct calls between ports
 
-After this stage the 1686 by-name calls between ports are C calls of the typed cores. Functions that a mission, a mod .mod line or another port replaces at run time become explicit C hook pointers in the module struct. They come from the `Sf_Own` sites, `Script_Hook`, the .mod aliases and the recorders of the cases. After this stage only data and engine callbacks call by name.
+Stage 3 is done (see the state below). After this stage the 1686 by-name calls between ports are C calls of the typed cores. Functions that a mission, a mod .mod line or another port replaces at run time become explicit C hook pointers in the module struct. They come from the `Sf_Own` sites, `Script_Hook`, the .mod aliases and the recorders of the cases. After this stage only data and engine callbacks call by name.
 
-The chosen design is the port seam described under "Design of stage 3" below, not hook pointers in the module structs.
+The design that was built is the port seam described under "Design of stage 3" below, not hook pointers in the module structs.
 
 - The order is callees before callers. The hubs come first (Speech, MissionsFuncs, SaveGame, Menu, Init, Parking, Scene), and the level files and NetModes come last.
 - The recorders of the cases on port functions (77) need hook pointers that can be set from the channel.
@@ -234,6 +234,33 @@ Two pieces help to debug (OBJLIB 7). `SCRAP_PORT_SLOW=1` sends every call the sl
 The pilot is `MissionsFuncs.SetMissionTarget` at all 41 sites in 13 files (`ScriptModes.c`, `LevelCommon.c`, `SuperDeals.c` and ten level files), rewritten with `portcalls.py rewrite`. The checks ran on the RTX with the channel harness: 43 regress cases near the sites plus the edge file `fc-ol3-0` (Temple, kept in the scratchpad of batch 0). The counters show 36 of the 41 sites reached by the cases (38 with the edge file), each with only fast calls in the plain run and only slow calls under `SCRAP_PORT_SLOW=1`, with the same totals; the slow calls of the plain run are the cases that record SetMissionTarget. Raw replies, base against new and new against slow: 28 cases identical, the other lines are live state (idle animations, entity numbers, AI timing, random taunts). Two lines kept their split in the first reruns (fc-r6b-cm3 TakeData, fc-r7d-sy6 OnStupidMercDeath); five more runs of each binary gave both outcomes in base, new and slow. The edge file (attribute deleted, None, an int, lambdas of the wrong arity, a raising lambda, other C functions of the port and of the mission, a recorder, fol3 on two functions and a missing module, arity errors of the caller) is identical line by line base against new and new against slow, on both harnesses. The sites ABIndoor.c 147 and DownTown.c 285 and 2035 were not reached and are checked by compile and review only. Golden gives 9961, and the four builds have 0 warnings.
 
 For the next batches, phase A writes the hand entries and runs `ports.py`. Phase B uses `portcalls.py rewrite` for the plain sites and converts the rest by hand. Keyword calls, `Script_Try` and the name helpers (`LvN_OnEnd`, `LvN_ScorerCallG`) still need a form (B1). A file with level-module own calls needs `#define PORT_LEVEL <level>` first. `Small.c` serves three levels and needs care.
+
+#### State of stage 3 (2026-11-08)
+
+Stage 3 is done. Batch 0 (the mechanism), phase A (the hand adapters) and the batches B1 to B28 (by level and module) are merged into script-loader on 2026-11-08.
+
+- `include/scrap/scriptports.h` is generated by `tools/script/ports.py`: 2347 refs in 74 files (`--check` passes).
+- `tools/script/portcalls.py` finds 0 by-name port, own or global call sites, 0 OBJLIB 3 marks in the tree and 0 arity mismatches. 2221 `PORT` sites exist. What stays by name is marked with the later stage: OBJLIB 4 (scheduler, callbacks, apply and call tables), 5 (values and variables), 6 (.def data functions), 7 (engine functions) and 9 (builtins).
+
+- B28 made Sputnik and GateKeeper native with direct calls. They were the two modules that still ran on the `Sf_` frame helpers after stage 2, and the GateKeeper refs are no longer always slow. B28 removed the 71 functions of `ScriptFrame.c` and `ScriptValue.c` that had no caller left (64 `Sf_`, 7 `Script_`) and the `SF_` macros.
+- `ScriptFrame.c` is still used by `Sf_Exec`, `Sf_ImportTo`, `Sf_ImportCall` and `Sf_Line` with the helpers they use. The callers are the scene generic lines (`Scene.c`) and the save code strings (`MissionsFuncs.c`), plus single `Sf_Exec` uses in `WeaponsTab.c`, `Chars.c`, `Doors.c` and `Alarm.c`. These are data paths of stage 6.
+
+The seam works as designed. A call takes the C entry while the module attribute is still the port's own function. It takes the call by name when a mission, a mod or a test recorder replaced the attribute. `SCRAP_PORT_SLOW=1` forces the slow path for checks, and the channel command `native ports` shows the fast and slow counts per site.
+
+Things the batches found:
+
+- B1 added the keyword form (names after a `;` in `fmt`, taken from the ref's name list), the forms that give a Python result (`PORT_ASK`), `PORT_LEVEL` for the level files and native twins of `string` and `math`.
+- B25 gave the race start positions a native core (`LvN_StartPos`), so all races take direct calls. The "SystemError: error return without exception set" seen in several batches is the engine's own "Member invalid" path, the same in the original scripts.
+- B27 made `Port_Run` keep no arguments on its frame (3952 to 144 bytes on linux64). An endless self call stops at about 687 levels again (690 before stage 3, 516 in between). A fast call costs about 20 ns more than before. B27 also fixed a real bug that the hang of the regress case fc-r8e-init showed: `cTabScorer_ctor` left the size and cell fields unset, so a tab created without `SizeX` could draw up to 2^31 cells per frame.
+
+#### How the stage 3 batches were checked
+
+- Raw replies of every regress case that loads the level of the batch: base, new and new with `SCRAP_PORT_SLOW=1`. Reruns went on until every difference showed as live state.
+- Port counters per site, and edge files for the sites no case reaches.
+- The fol3 recorder logs, base against new, for the arguments the converted sites pass.
+- Mission starts on the interpreter build, and saves both ways.
+- Golden (1481 and 9961 checks), litfuzz and the four builds with 0 warnings.
+- Per merge the full run: golden, litfuzz, ASan levels (29) and the sweep (29 of 29).
 
 ### Stage 4: callbacks by name through a C registry
 
