@@ -105,7 +105,12 @@ def entries(lines):
 	text = '\n'.join(t for _, t in lines)
 	out = {}
 	for m in ENTRY.finditer(text):
-		a = ARITY.search(text, m.end(), m.end() + 600)
+		# the count in the entry's own body (an entry without one is followed by other functions)
+		depth, i = 1, m.end()
+		while depth and i < len(text):
+			depth += {'{': 1, '}': -1}.get(text[i], 0)
+			i += 1
+		a = ARITY.search(text, m.end(), i)
 		out[m.group(1)] = int(a.group(1)) if a else None
 	return out
 

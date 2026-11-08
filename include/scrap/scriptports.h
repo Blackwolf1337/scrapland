@@ -1071,7 +1071,7 @@ PORT_DECL(ShipMaker, SetShipParams) /* 1 */
 PORT_DECL(ShipMaker, CreateStdShips) /* 0 */
 PORT_DECL(ShipMaker, Init) /* 0 */
 PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
-PORT_DECL(ShipMaker, InitAnmShip) /* 2 */
+PORT_DECL(ShipMaker, InitAnmShip) /* ? */
 #define PORTS_ShipMaker \
 	PORT_DEF(ShipMaker, SetShipPrice, ShipMaker_SetShipPrice) \
 	PORT_DEF(ShipMaker, GetShipPrice, ShipMaker_GetShipPrice) \
@@ -1487,7 +1487,7 @@ PORT_DECL(Traffic, HeavyTrafficDeath) /* 2 */
 PORT_DECL(Traffic, NormalTrafficDeath) /* 2 */
 PORT_DECL(Traffic, MediumTrafficDeath) /* 2 */
 PORT_DECL(Traffic, InitCivilTraffic) /* ? */
-PORT_DECL(Traffic, Init) /* 1 */
+PORT_DECL(Traffic, Init) /* ? */
 PORT_DECL(OutPolice, MakePoli) /* 1 */
 PORT_DECL(OutPolice, Init) /* ? */
 PORT_DECL(OutPolice, NextWave) /* ? */
@@ -1538,7 +1538,7 @@ PORT_DECL(Vehicles, OnDeath) /* 2 */
 PORT_DECL(Vehicles, SwitchView) /* 2 */
 PORT_DECL(Vehicles, SetActiveCam) /* 3 */
 PORT_DECL(Vehicles, ReSpawnShip) /* 1 */
-PORT_DECL(Vehicles, SetProperties) /* 2 */
+PORT_DECL(Vehicles, SetProperties) /* ? */
 PORT_DECL(Vehicles, SetStdProperties) /* 3 */
 PORT_DECL(Vehicles, Init) /* 0 */
 #define PORTS_Vehicles \
@@ -1565,7 +1565,7 @@ PORT_DECL(VehiclesNPC, InitStdShips) /* 0 */
 PORT_DECL(VehiclesNPC, MakeAI) /* ? */
 PORT_DECL(VehiclesNPC, GetIAProf) /* 1 */
 PORT_DECL(VehiclesNPC, ModAIProff) /* ? */
-PORT_DECL(VehiclesNPC, SetIAProf) /* 0 */
+PORT_DECL(VehiclesNPC, SetIAProf) /* ? */
 PORT_DECL(VehiclesNPC, SetAIProfile) /* 2 */
 PORT_DECL(VehiclesNPC, SetStdProperties) /* 2 */
 PORT_DECL(VehiclesNPC, MercOnDeath) /* 2 */
