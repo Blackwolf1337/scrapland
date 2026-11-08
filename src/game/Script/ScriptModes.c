@@ -4092,8 +4092,8 @@ static const char *Mode_ParseGroup(const nativeVal_t *v, const char **f, va_list
 	return NULL;
 }
 
-/* convertitem of getargs.c on v for the format at *f: NULL, or the text for "expected %s found" (seterror leaves an
- * error raised already) */
+/* convertitem of getargs.c on v for the format at *f: NULL, or the text for "expected %s found" ("string, int": the
+ * expected one and the type found; seterror leaves an error raised already) */
 static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list *va, int *levels, char *buf, int size,
 	byte top) {
 	const char *msg = NULL;
@@ -4119,7 +4119,10 @@ static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list 
 		*va_arg(*va, const nativeVal_t **) = v;
 	}
 	if (msg) {
+		/* convertsimple: the type of the value after the expected one */
 		levels[0] = 0;
+		snprintf(buf, size, "%.50s, %.50s", msg, Native_TypeName(v));
+		msg = buf;
 	}
 	return msg;
 }
