@@ -1531,7 +1531,7 @@ static byte Ctf_InitC(void) {
 	byte ok = Mode_SaveInt("CTFFlags", &n) && Mode_Put(CTF, "flags", &ctf.flags, &n) && Mode_Read(CTF, "flags", &ctf.flags) &&
 		Native_Arith('*', &ctf.flags, &two, &r) && Native_Arith('-', &r, &one, &max) &&
 		Mode_Put(CTF, "maxFlags", &ctf.maxFlags, &max) && Sd_SpawnTime(CTF, &ctf.onDeathSpawnTime, "CTFOnDeathSpawnTime") &&
-		OWN(CTF, "CreateEnemies", NULL, "") && OWN(CTF, "CreateFriends", NULL, "") &&
+		PORT_OWN(CTF, CreateEnemies, NULL, "") && PORT_OWN(CTF, CreateFriends, NULL, "") &&
 		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", CTF, "CrazyGamblerStartCTF");
 	Native_Free(&n);
 	Native_Free(&r);
@@ -1572,7 +1572,7 @@ static byte Ctf_CreateTeam(byte enemy) {
 		int mark = t.n;
 		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t);
 		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
-		ok = Sd_SpawnCarAng(name, e) && OWN(CTF, "SetProfile", NULL, "vi", e, (long)enemy) &&
+		ok = Sd_SpawnCarAng(name, e) && PORT_OWN(CTF, SetProfile, NULL, "vi", e, (long)enemy) &&
 			Mode_AppendName(CTF, enemy ? "enemies" : "friends", e);
 		Mode_Release(&t, mark);
 	}
@@ -1595,7 +1595,7 @@ MODE_FN(Ctf, CrazyGamblerStartCTF, 0, Ctf_CrazyGamblerStartCTFC())
 static byte Sd_SystemMessage(const char *key) {
 	nativeVal_t text;
 	Mode_Lang(key, &text);
-	byte ok = CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	byte ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	Native_Free(&text);
 	return ok;
 }
@@ -1611,7 +1611,7 @@ static byte Ctf_StartCTFC(void) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(&ctf.flags, limit);
-	if (!Sd_ScorerOn(zero, zero, limit) || !OWN(CTF, "CreateFlag", NULL, "") || !Mode_Read(CTF, "enemies", &ctf.enemies) ||
+	if (!Sd_ScorerOn(zero, zero, limit) || !PORT_OWN(CTF, CreateFlag, NULL, "") || !Mode_Read(CTF, "enemies", &ctf.enemies) ||
 		!Sd_MarkShips(&ctf.enemies, "red", "CTFEnemies") || !Mode_Read(CTF, "enemies", &ctf.enemies)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1625,7 +1625,7 @@ static byte Ctf_StartCTFC(void) {
 		}
 		if (Native_True(e)) {
 			int car;
-			if (!Mode_VSetI(e, "LLogicIsLeader", 1) || !CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L) ||
+			if (!Mode_VSetI(e, "LLogicIsLeader", 1) || !PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 1L) ||
 				!Mode_UsrHandle(usr) || (car = Mode_UsrInCar(usr)) < 0 ||
 				(car && (!Mode_VGet(e, "Name", name) || !Mode_VSet(usr, "Target", name)))) {
 				return Mode_Done(&t, 0);
@@ -1653,7 +1653,7 @@ static byte Ctf_Update(void) {
 static byte Ctf_Drop(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
 	nativeVal_t pos;
 	Native_SetNone(&pos);
-	byte ok = Mode_VGet(h, "Pos", &pos) && Mode_Read(CTF, var, slot) && OWN(CTF, "SpawnFlags", NULL, "vv", &pos, slot) &&
+	byte ok = Mode_VGet(h, "Pos", &pos) && Mode_Read(CTF, var, slot) && PORT_OWN(CTF, SpawnFlags, NULL, "vv", &pos, slot) &&
 		Sd_PutI(CTF, var, slot, 0) && Ctf_Update();
 	Native_Free(&pos);
 	return ok;
@@ -1748,7 +1748,7 @@ static byte Ctf_EndOfCTFC(void) {
 		int lead;
 		ok = Native_SeqItem(&ctf.enemies, i, name) && Mode_EntityH(name, e) && (lead = Sd_IsLeader(e)) >= 0;
 		if (ok && lead) {
-			ok = CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 0L);
+			ok = PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 0L);
 			break;
 		}
 		Native_Free(name);
@@ -1768,20 +1768,21 @@ static byte Ctf_EndOfCTFC(void) {
 		Native_Free(name);
 		Native_Arg(item, name);
 		Py_DECREF(item);
-		ok = OWN(CTF, "RemoveFlag", NULL, "v", name);
+		ok = PORT_OWN(CTF, RemoveFlag, NULL, "v", name);
 	}
 	Py_XDECREF(flags);
 	if (!ok || !Mode_GVarSetS("LeaderFlag", "") ||
-		!CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "CTFEnemies") ||
-		!CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "CTFFriends") ||
-		!CALL("MissionsFuncs", "RelaxShipsInList", NULL, "s", "CTFEnemies") ||
-		!CALL("MissionsFuncs", "RelaxShipsInList", NULL, "s", "CTFFriends") || !Sd_ScorerOff() ||
+		!PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "CTFEnemies") ||
+		!PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "CTFFriends") ||
+		!PORT_CALL(MissionsFuncs, RelaxShipsInList, NULL, "s", "CTFEnemies") ||
+		!PORT_CALL(MissionsFuncs, RelaxShipsInList, NULL, "s", "CTFFriends") || !Sd_ScorerOff() ||
 		!Mode_ModNone("Vehicles", "OnDeathCallback") || !Mode_ModNone("Parking", "SwitchCharMissionCallback") ||
 		!Mode_ModNone("Parking", "SwitchVehicleMissionCallback") || !Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) ||
 		!Mode_Read(CTF, "flags", &ctf.flags)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, OWN(CTF, Native_Compare(&ctf.flagsFriends, &ctf.flags) >= 0 ? "PreOnVictory" : "PreRestartMenu", NULL, ""));
+	return Mode_Done(&t, Native_Compare(&ctf.flagsFriends, &ctf.flags) >= 0 ? PORT_OWN(CTF, PreOnVictory, NULL, "") :
+		PORT_OWN(CTF, PreRestartMenu, NULL, ""));
 }
 
 MODE_FN(Ctf, EndOfCTF, 0, Ctf_EndOfCTFC())
@@ -1792,8 +1793,8 @@ static byte Ctf_RespawnEnemyC(const nativeVal_t *leader) {
 	Native_SetNone(&e);
 	Native_SetStr(&name, "Enemy");
 	byte ok = Mode_Import("OutMap") && Sd_SpawnCarAng(&name, &e) && Mode_VSetS(&e, "TgType", "red") &&
-		Mode_VSetS(&e, "EntityList", "CTFEnemies") && OWN(CTF, "SetProfile", NULL, "vi", &e, 1L) &&
-		(!Native_True(leader) || (Mode_VSetI(&e, "LLogicIsLeader", 1) && CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, 1L))) &&
+		Mode_VSetS(&e, "EntityList", "CTFEnemies") && PORT_OWN(CTF, SetProfile, NULL, "vi", &e, 1L) &&
+		(!Native_True(leader) || (Mode_VSetI(&e, "LLogicIsLeader", 1) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &e, 1L))) &&
 		Mode_AppendName(CTF, "enemies", &e);
 	Native_Free(&e);
 	return ok;
@@ -1810,7 +1811,7 @@ static byte Ctf_RespawnFriendC(void) {
 	Native_SetNone(&e);
 	Native_SetStr(&name, "Friend");
 	byte ok = Mode_Import("OutMap") && Sd_SpawnCarAng(&name, &e) && Mode_VSetS(&e, "TgType", "green") &&
-		Mode_VSetS(&e, "EntityList", "CTFFriends") && OWN(CTF, "SetProfile", NULL, "vi", &e, 0L) && Mode_AppendName(CTF, "friends", &e);
+		Mode_VSetS(&e, "EntityList", "CTFFriends") && PORT_OWN(CTF, SetProfile, NULL, "vi", &e, 0L) && Mode_AppendName(CTF, "friends", &e);
 	Native_Free(&e);
 	return ok;
 }
@@ -1872,7 +1873,7 @@ static byte Ctf_CreateFlagC(const nativeVal_t *pos, nativeVal_t *out) {
 	}
 	if (Native_True(pos)) {
 		Native_Copy(at, pos);
-	} else if (!CALL("OutMap", "GetSpawnPos", sp, "") || !Mode_Item(sp, 0, at)) {
+	} else if (!PORT_CALL(OutMap, GetSpawnPos, sp, "") || !Mode_Item(sp, 0, at)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Sd_Create(Mode_S(&t, "Flag"), at, "Item", flag) || !Mode_VModel(flag, Mode_S(&t, "models/Misc/Flag/Flag.m3d")) ||
@@ -1908,11 +1909,11 @@ MODE_KW(Ctf, CreateFlag, "|O", "pos") {
 
 /* ResetFlag(flagName): a thrown flag nobody took goes; a new one when none is left */
 static byte Ctf_ResetFlagC(const nativeVal_t *name) {
-	if (!OWN(CTF, "RemoveFlag", NULL, "v", name) || !Ctf_Waypoint()) {
+	if (!PORT_OWN(CTF, RemoveFlag, NULL, "v", name) || !Ctf_Waypoint()) {
 		return 0;
 	}
 	int none = Ctf_NoFlags();
-	return none > 0 ? OWN(CTF, "CreateFlag", NULL, "") : none == 0;
+	return none > 0 ? PORT_OWN(CTF, CreateFlag, NULL, "") : none == 0;
 }
 
 MODE_FN(Ctf, ResetFlag, 1, Ctf_ResetFlagC(&a[0]))
@@ -1960,7 +1961,7 @@ static byte Ctf_TakeFlagC(const nativeVal_t *item, const nativeVal_t *who) {
 	if (!taken) {
 		return Mode_Done(&t, 1);
 	}
-	if (!OWN(CTF, "RemoveFlag", NULL, "v", item)) {
+	if (!PORT_OWN(CTF, RemoveFlag, NULL, "v", item)) {
 		return Mode_Done(&t, 0);
 	}
 	int fresh = Ctf_NoFlags();
@@ -1979,7 +1980,7 @@ static byte Ctf_TakeFlagC(const nativeVal_t *item, const nativeVal_t *who) {
 		}
 		end = Sd_Eq(&ctf.flagsEnemies, &ctf.flags);
 	}
-	return Mode_Done(&t, end ? OWN(CTF, "EndOfCTF", NULL, "") : !fresh || OWN(CTF, "CreateFlag", NULL, ""));
+	return Mode_Done(&t, end ? PORT_OWN(CTF, EndOfCTF, NULL, "") : !fresh || PORT_OWN(CTF, CreateFlag, NULL, ""));
 }
 
 MODE_FN(Ctf, TakeFlag, 2, Ctf_TakeFlagC(&a[0], &a[1]))
@@ -1996,7 +1997,7 @@ static byte Ctf_SpawnFlagsC(const nativeVal_t *pos, const nativeVal_t *num) {
 		nativeVal_t name;
 		Native_SetNone(&name);
 		PyObject *list = Mode_GlobalPy(CTF, "flagsSpecial"), *x = NULL, *r = NULL;
-		ok = list && OWN(CTF, "CreateFlag", &name, "v", pos) && (x = Native_ToPy(&name)) != NULL &&
+		ok = list && PORT_OWN(CTF, CreateFlag, &name, "v", pos) && (x = Native_ToPy(&name)) != NULL &&
 			(r = Script_Method(list, "append", "(O)", x)) != NULL;
 		Py_XDECREF(r);
 		Py_XDECREF(x);
@@ -2059,7 +2060,7 @@ static int Ctf_TargetLeader(const nativeVal_t *e, const nativeVal_t *name, void 
 /* usr = Scrap.GetEntity(name); Vehicles.ReSpawnShip(name); the ship at a spawn point (CTF and Domination) */
 static byte Sd_RespawnUsr(const nativeVal_t *name, nativeVal_t *usr) {
 	return Mode_Import("Parking") && Mode_Import("Vehicles") && Mode_Import("OutMap") && Mode_EntityH(name, usr) &&
-		CALL("Vehicles", "ReSpawnShip", NULL, "v", name) && Sd_SpawnAt(usr);
+		PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", name) && Sd_SpawnAt(usr);
 }
 
 static byte Ctf_RespawnPlayerC(const nativeVal_t *name) {
