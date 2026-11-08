@@ -11,12 +11,14 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
  * tables are read where the script reads them as its globals and changed in place on the module's objects (OBJLIB 5:
- * the .mod file, the editor tabs, Vehicles and the cases read them). The module's own functions the script calls as
- * its globals stay so (a mission or a case may replace one), Fx, VehiclesNPC, the ships (handle values) and the
- * functions ShipCallback holds stay Python values called by name (OBJLIB 3, 7). Scrap.GetEntity, Preload3DObject and
- * the SAct calls go through their seams (fc-om-dt, fc-r7b-fb and the scene cases swap or record them, OBJLIB 7);
- * Scrap.PreloadAnm, Verbose, SWeap.GetNWeap and GetSWeap stay by name. The .def runner takes its $names as a dict and
- * its step stdship the values of its line (OBJLIB 6).
+ * the .mod file, the editor tabs, Vehicles and the cases read them). The module's own functions are called through
+ * its globals as the script calls them (PORT_OWN: directly while the global holds the port's function, else by name,
+ * so a mission's replacement such as AB's FakeShips for CreateStdShips, or a case's, still gets the call), Fx and
+ * VehiclesNPC through their refs (PORT_CALL); the ships (handle values) and the functions ShipCallback holds stay
+ * Python values (OBJLIB 7). Scrap.GetEntity, Preload3DObject and the SAct calls go through their seams (fc-om-dt,
+ * fc-r7b-fb and the scene cases swap or record them, OBJLIB 7); Scrap.PreloadAnm, Verbose, SWeap.GetNWeap and GetSWeap
+ * stay by name (OBJLIB 7). The .def runner takes its $names as a dict and its step stdship the values of its line
+ * (OBJLIB 6).
  */
 #include <string.h>
 
@@ -235,7 +237,7 @@ static byte Sm_IncludeMotorN(const nativeVal_t *a, nativeVal_t *out) {
 		}
 		int motor = Sm_HasAnm(&v[3], "MOTOR_ANM");
 		if (motor < 0 || (motor && !Sm_SetNum(e, "EngAnmM", s, Mode_S(&t, "Motor"))) ||
-			!Native_CallMod("Fx", "GetMotorClass", cls, "v", name) || !Sm_SetNum(e, "EngFxClass", s, cls)) {
+			!PORT_CALL(Fx, GetMotorClass, cls, "v", name) || !Sm_SetNum(e, "EngFxClass", s, cls)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -266,9 +268,6 @@ static byte Sm_GetWeaponN(const nativeVal_t *name, nativeVal_t *out) {
 	return ok;
 }
 
-/* a function of the module through its global (a mission or a case may replace it) */
-#define SM_OWN(name, out, ...) Native_CallGlobal(SM, name, out, __VA_ARGS__)
-
 /* CalculateVerticalBalance(e): the engine power of each group weighted by the balance of the hull */
 static byte Sm_CalculateVerticalBalanceN(const nativeVal_t *e) {
 	static const char *const eng[] = { "MEng0", "MEng1", "MEng2", "MEng3" };
@@ -277,14 +276,14 @@ static byte Sm_CalculateVerticalBalanceN(const nativeVal_t *e) {
 	nativeVal_t *dist = Mode_V(&t), *total = Mode_V(&t), *model = Mode_V(&t), *balance = Mode_V(&t);
 	Native_SetFloat(dist, 0.0);
 	Native_SetFloat(total, 0.0);
-	if (!Mode_VGet(e, "Model", model) || !SM_OWN("GetShipBalance", balance, "v", model)) {
+	if (!Mode_VGet(e, "Model", model) || !PORT_OWN(ShipMaker, GetShipBalance, balance, "v", model)) {
 		return Mode_Done(&t, 0);
 	}
 	for (int i = 0; i < 4; i++) {
 		int mark = t.n;
 		nativeVal_t *m = Mode_V(&t), *motor = Mode_V(&t), *p2 = Mode_V(&t), *n = Mode_V(&t), *power = Mode_V(&t);
 		nativeVal_t *b = Mode_V(&t), *pb = Mode_V(&t), *d = Mode_V(&t), *s = Mode_V(&t);
-		if (!Mode_VGet(e, eng[i], m) || !SM_OWN("GetMotor", motor, "v", m) || !LvN_Item(motor, 2, p2) ||
+		if (!Mode_VGet(e, eng[i], m) || !PORT_OWN(ShipMaker, GetMotor, motor, "v", m) || !LvN_Item(motor, 2, p2) ||
 			!Mode_VGet(e, num[i], n) || !Mode_Arith('*', p2, n, power) || !LvN_Item(balance, i, b) ||
 			!Mode_Arith('*', power, b, pb) || !Native_Arith('+', dist, pb, d) || !Native_Arith('+', total, power, s)) {
 			return Mode_Done(&t, 0);
@@ -370,8 +369,8 @@ static byte Sm_ShipAndTon(const nativeVal_t *model, modeVals_t *t, nativeVal_t *
 	*ton = Mode_V(t);
 	Mode_V(t);
 	Mode_V(t);
-	return SM_OWN("GetShip", a, "v", model) && Mode_Unpack(a, 5, *s) && SM_OWN("GetShipTon", b, "v", model) &&
-		Mode_Unpack(b, 3, *ton);
+	return PORT_OWN(ShipMaker, GetShip, a, "v", model) && Mode_Unpack(a, 5, *s) &&
+		PORT_OWN(ShipMaker, GetShipTon, b, "v", model) && Mode_Unpack(b, 3, *ton);
 }
 
 /* GetBoostFactor(Model, NewMass): the boost time grows from BoostTime to TopBoostTime with the mass up to TopWeight */
@@ -418,7 +417,8 @@ static byte Sm_SetShipParamsN(const nativeVal_t *name, nativeVal_t *out) {
 		Mode_V(&t);
 		Mode_V(&t);
 		if (!Mode_VGet(e, eng[i], m) || !Mode_VGet(e, num[i], n) ||
-			!SM_OWN("IncludeMotor", r, "vivvvvv", e, (long)i, m, n, mass, style, engine) || !Mode_Unpack(r, 3, mse)) {
+			!PORT_OWN(ShipMaker, IncludeMotor, r, "vivvvvv", e, (long)i, m, n, mass, style, engine) ||
+			!Mode_Unpack(r, 3, mse)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(mass);
@@ -432,14 +432,15 @@ static byte Sm_SetShipParamsN(const nativeVal_t *name, nativeVal_t *out) {
 		Native_SetNone(&mse[2]);
 		Mode_Release(&t, mark);
 	}
-	if (!Native_CallMod("Fx", "SetUpShipMotors", NULL, "v", e) || !Native_CallMod("SWeap", "GetNWeap", nweap, "") ||
+	if (!PORT_CALL(Fx, SetUpShipMotors, NULL, "v", e) || !Native_CallMod("SWeap", "GetNWeap", nweap, "") ||
 		!Mode_Range(nweap, &count)) {
 		return Mode_Done(&t, 0);
 	}
 	for (long iw = 0; iw < count; iw++) {
 		int mark = t.n;
 		nativeVal_t *wn = Mode_V(&t), *wMass = Mode_V(&t);
-		if (!Native_CallMod("SWeap", "GetSWeap", wn, "is", iw, "Name") || !SM_OWN("GetWeapon", wMass, "v", wn)) {
+		if (!Native_CallMod("SWeap", "GetSWeap", wn, "is", iw, "Name") ||
+			!PORT_OWN(ShipMaker, GetWeapon, wMass, "v", wn)) {
 			return Mode_Done(&t, 0);
 		}
 		int heavy = Mode_CmpI(wMass, ">", 0);
@@ -492,8 +493,9 @@ static byte Sm_SetShipParamsN(const nativeVal_t *name, nativeVal_t *out) {
 	Native_Free(cur2);
 	if (!Mode_VGet(e, "MaxLife", cur) || !Mode_VGet(e, "MinLife", cur2) || !Native_Arith('-', cur, cur2, armour) ||
 		!Native_GVarGet("AmorPieceWeight", apw) || !Mode_Arith('*', armour, apw, aw) || !Native_Arith('+', mass, aw, total) ||
-		!SM_OWN("GetBoostFactor", boost, "vv", model, total) || !Mode_VSet(e, "BoostTime", boost) ||
-		!SM_OWN("CalculateVerticalBalance", NULL, "v", e) || !SM_OWN("SetUpChars", NULL, "v", name) ||
+		!PORT_OWN(ShipMaker, GetBoostFactor, boost, "vv", model, total) || !Mode_VSet(e, "BoostTime", boost) ||
+		!PORT_OWN(ShipMaker, CalculateVerticalBalance, NULL, "v", e) ||
+		!PORT_OWN(ShipMaker, SetUpChars, NULL, "v", name) ||
 		!Native_ToInt(topWeight, ti) || !Native_ToInt(total, mi)) {
 		return Mode_Done(&t, 0);
 	}
@@ -654,12 +656,12 @@ static byte Sm_InitN(void) {
 			}
 			all = LvN_EqI(g, 1) || LvN_EqS(pilot, "P_Dtritus");
 		}
-		if (!SM_OWN("AddChar", NULL, "vv", pilot, all ? all5 : none)) {
+		if (!PORT_OWN(ShipMaker, AddChar, NULL, "vv", pilot, all ? all5 : none)) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, n >= 0 && SM_OWN("CreateStdShips", NULL, "") && Mode_Import("VehiclesNPC") &&
-		Native_CallMod("VehiclesNPC", "Init", NULL, ""));
+	return Mode_Done(&t, n >= 0 && PORT_OWN(ShipMaker, CreateStdShips, NULL, "") && Mode_Import("VehiclesNPC") &&
+		PORT_CALL(VehiclesNPC, Init, NULL, ""));
 }
 
 /* SetAnmShip(v, model): the class of the animated ship and its procedural actions (ShipCallback[model]) */
