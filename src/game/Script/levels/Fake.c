@@ -9,9 +9,14 @@
  * and Scene.EndOfSceneCallback get new values as the script sets them (OBJLIB 5). Berto's ship and the traffic ships are
  * handle values, TrafficList holds them and is looped as a list of handle values (OBJLIB 7). The camera, the engine variables, the
  * save variables, string.split and the eval of the event name are C; Scrap.CreateEntity and Scrap.Set go through their
- * seams (OBJLIB 7). The call table of the flight scene runs its "Module.Func" names by name (the scene recorders of the
- * cases see them); InTraffic, Scene, Fx, CreditsText, SaveGame, MissionsFuncs and the functions of Map go by name
- * (OBJLIB 3).
+ * seams (OBJLIB 7).
+ *
+ * Direct calls (stage 3): the functions of the other ports (InTraffic, Scene, Fx, CreditsText, SaveGame, MissionsFuncs)
+ * and the own functions of Map (CreateFakeBertoShip, LoadFake2Scene) go through their refs (PORT_CALL, PORT_LOWN; the
+ * seam takes the call by name when a case has put something else there, OBJLIB 5). By name: the sections of map.def
+ * (LoadFake0Scene, LoadFake1Scene, PlayFake0; OBJLIB 6) and the call table of the flight scene, whose "Module.Func"
+ * names the scene recorders of the cases see (OBJLIB 4); Scene.EndOfSceneCallback and the event functions of the scene
+ * are values (OBJLIB 5).
  */
 #include <string.h>
 
@@ -149,7 +154,6 @@ static byte Fk_Link(const nativeVal_t *o, const nativeVal_t *model) {
 
 /* Init(LevelPath): the fake traffic, Berto's ship, the three scenes, the first one starts; the credits */
 static byte Fk_Init(const nativeVal_t *a, nativeVal_t *out) {
-	static const char *const scenes[] = { "LoadFake0Scene", "LoadFake1Scene", "LoadFake2Scene", "PlayFake0" };
 	static const char *const light[] = { "TLight1", "TLight2", "TLight3", NULL }, *const med[] = { "TMed1", "TMed2", NULL };
 	static const char *const none[] = { NULL };
 	nativeVal_t path, n, f;
@@ -159,15 +163,15 @@ static byte Fk_Init(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Mode_Import("InTraffic") && LvN_ModTexts("InTraffic", "N_TrafficList", light) && LvN_ModSetI("InTraffic", "N_NumTraffic", 0) &&
 		LvN_ModTexts("InTraffic", "M_TrafficList", med) && LvN_ModSetI("InTraffic", "M_NumTraffic", 0) &&
 		LvN_ModTexts("InTraffic", "H_TrafficList", none) && LvN_ModSetI("InTraffic", "H_NumTraffic", 0) &&
-		Mode_SetModVar("InTraffic", "Path", &path) && LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") &&
-		LV_OWN(MAP, "CreateFakeBertoShip", NULL, "") && Mode_Import("Scene");
+		Mode_SetModVar("InTraffic", "Path", &path) && PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "") &&
+		PORT_LOWN(Map, CreateFakeBertoShip, NULL, "") && Mode_Import("Scene");
 	Native_Free(&path);
-	for (int i = 0; i < 4 && ok; i++) {
-		ok = LV_OWN(MAP, scenes[i], NULL, "");
-	}
+	/* LoadFake0Scene, LoadFake1Scene and PlayFake0 are sections of map.def (OBJLIB 6) */
+	ok = ok && LV_OWN(MAP, "LoadFake0Scene", NULL, "") && LV_OWN(MAP, "LoadFake1Scene", NULL, "") &&
+		PORT_LOWN(Map, LoadFake2Scene, NULL, "") && LV_OWN(MAP, "PlayFake0", NULL, "");
 	Native_SetInt(&n, 50);
 	Native_SetInt(&f, 100000);
-	return ok && Fk_Clip(&n, &f, 1) && Mode_Import("CreditsText") && LV_CALL("CreditsText", "Init", NULL, "");
+	return ok && Fk_Clip(&n, &f, 1) && Mode_Import("CreditsText") && PORT_CALL(CreditsText, Init, NULL, "");
 }
 
 /* PlayFake2(usr=None): the flight: Berto's ship and the traffic linked to the scene, the far plane, no model LOD */
@@ -175,7 +179,7 @@ static byte Fk_PlayFake2(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ship = Mode_V(&t), *list = Mode_V(&t), *dat = Mode_V(&t), *name = Mode_V(&t), *model = Mode_V(&t);
 	nativeVal_t *v = Mode_V(&t), *nearV = Mode_V(&t), *farV = Mode_V(&t);
-	if (!Mode_Import("Scene") || !LV_CALL("Scene", "Play", NULL, "s", "Fake2") ||
+	if (!Mode_Import("Scene") || !PORT_CALL(Scene, Play, NULL, "s", "Fake2") ||
 		!LvN_ModSetGlobal("Scene", "EndOfSceneCallback", MAP, "NextLevel") || !Mode_G(MAP, "BertoShip", ship) ||
 		!Fk_Link(ship, Mode_S(&t, "DM_Scene_Fake2,NAVEBERTO")) || !LvN_GElems(MAP, "TrafficList", list)) {
 		return Mode_Done(&t, 0);
@@ -202,15 +206,15 @@ static byte Fk_PlayFake2(void) {
 static byte Fk_NextLevel(void) {
 	nativeVal_t map;
 	if (!Mode_Import("SaveGame") || !Mode_Import("MissionsFuncs") ||
-		!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TalkToRusty_MissionText1", 1L) ||
-		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_RustyFirstContact", "Junkyard") ||
-		!LV_CALL("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Junkyard", "DM_Player_Spawn_Outskirts", "DTritus")) {
+		!PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_TalkToRusty_MissionText1", 1L) ||
+		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_RustyFirstContact", "Junkyard") ||
+		!PORT_CALL(SaveGame, MarkWayPoint, NULL, "sss", "Levels/Junkyard", "DM_Player_Spawn_Outskirts", "DTritus")) {
 		return 0;
 	}
 	SaveVar_Set("ComeFrom", "DoorEditShip");
 	SaveVar_Set("PrevMap", "Levels/Outskirts");
 	Mode_SaveVar("Map", &map);
-	byte ok = LV_CALL("SaveGame", "QLoad", NULL, "v", &map) && Mode_GVarSetI("R_UseMLOD", 1) && Mode_GVarSetI("FXEngineGlowDistFadeMult", 1);
+	byte ok = PORT_CALL(SaveGame, QLoad, NULL, "v", &map) && Mode_GVarSetI("R_UseMLOD", 1) && Mode_GVarSetI("FXEngineGlowDistFadeMult", 1);
 	Native_Free(&map);
 	return ok;
 }
@@ -220,7 +224,7 @@ static byte Fk_Traffic(const nativeVal_t *nam, const nativeVal_t *ctr) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *dat = Mode_V(&t), *v = Mode_V(&t), *model = Mode_V(&t);
 	if (!Native_Split(nam, "_", dat) || !LvN_Create(nam, ctr, ctr, ctr, "Car", v) || !LvN_Item(dat, 1, model) ||
-		!Mode_VModel(v, model) || !LV_CALL("Fx", "SetUpShipMotors", NULL, "v", v) || !LvN_SetI(v, "Active", 0) ||
+		!Mode_VModel(v, model) || !PORT_CALL(Fx, SetUpShipMotors, NULL, "v", v) || !LvN_SetI(v, "Active", 0) ||
 		!LvN_SetI(v, "Traf_Active", 1)) {
 		return Mode_Done(&t, 0);
 	}
@@ -247,7 +251,7 @@ static byte Fk_CreateFakeBertoShip(void) {
 	if (!Mode_Import("Fx") || !Mode_Import("InTraffic") || !Mode_Import("string") || !Mode_GVarSetI("FXVehicleFloatingFactor", 0) ||
 		!LvN_Create(Mode_S(&t, "Actor_SBerto1"), zero, zero, zero, "Car", made) || !Mode_Put(MAP, "BertoShip", NULL, made) ||
 		!Mode_G(MAP, "BertoShip", ship) || !Mode_VModel(ship, Mode_S(&t, "SBerto1")) ||
-		!LV_CALL("Fx", "GetMotorClass", mcls, "s", "MBerto1")) {
+		!PORT_CALL(Fx, GetMotorClass, mcls, "s", "MBerto1")) {
 		return Mode_Done(&t, 0);
 	}
 	for (int i = 0; i < 3; i++) {
@@ -264,7 +268,7 @@ static byte Fk_CreateFakeBertoShip(void) {
 		}
 	}
 	Native_SetEmpty(empty, NV_LIST);
-	if (!LV_CALL("Fx", "SetUpShipMotors", NULL, "v", ship) || !LvN_SetI(ship, "Active", 0) ||
+	if (!PORT_CALL(Fx, SetUpShipMotors, NULL, "v", ship) || !LvN_SetI(ship, "Active", 0) ||
 		!Mode_Put(MAP, "TrafficList", NULL, empty) || !Native_GVarGet("ShipPathFmt", prev) ||
 		!LvN_ModGet("InTraffic", "Path", path) || !Native_Arith('+', path, Mode_S(&t, "%s.m3d"), fmt) ||
 		!Mode_GVarSet("ShipPathFmt", fmt) || !LvN_GElems(MAP, "TrafficDummyList", names)) {
