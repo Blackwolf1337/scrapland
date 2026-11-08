@@ -213,6 +213,45 @@ PORT_DECL(Teleport, FXAction) /* 3 */
 	PORT_DEF(Teleport, Link, Teleport_Link) \
 	PORT_DEF(Teleport, FXAction, Teleport_FXAction)
 
+/* EnginesTab.c */
+PORT_DECL(EnginesTab, ShowEngineDesc) /* 3 */
+PORT_DECL(EnginesTab, HideEngineDesc) /* 3 */
+PORT_DECL(EnginesTab, ChangeRecycleButtonState) /* 1 */
+PORT_DECL(EnginesTab, UpdateEnginesList) /* 1 */
+PORT_DECL(EnginesTab, PutEngine) /* 2 */
+PORT_DECL(EnginesTab, RecycleEngine) /* 2 */
+PORT_DECL(EnginesTab, ShowMoneySellingEngine) /* 3 */
+PORT_DECL(EnginesTab, SelectEngineGroup) /* ? */
+PORT_DECL(EnginesTab, SetEnginesPanel) /* 1 */
+PORT_DECL(EnginesTab, ShowEnginesPanel) /* 1 */
+PORT_DECL(EnginesTab, CreateLayouts) /* 1 */
+PORT_DECL(EnginesTab, UpdateLayouts) /* 1 */
+PORT_DECL(EnginesTab, UpdateLayoutsGlow) /* 2 */
+PORT_DECL(EnginesTab, LayoutsGainFocus) /* 3 */
+PORT_DECL(EnginesTab, LayoutsLostFocus) /* 3 */
+PORT_DECL(EnginesTab, HideEnginesPanel) /* 1 */
+PORT_DECL(EnginesTab, ScrollEngineListUp) /* 2 */
+PORT_DECL(EnginesTab, ScrollEngineListDown) /* 2 */
+#define PORTS_EnginesTab \
+	PORT_DEF(EnginesTab, ShowEngineDesc, ET_ShowEngineDescPy) \
+	PORT_DEF(EnginesTab, HideEngineDesc, ET_HideEngineDesc) \
+	PORT_DEF(EnginesTab, ChangeRecycleButtonState, ET_ChangeRecycleButtonState) \
+	PORT_DEF(EnginesTab, UpdateEnginesList, ET_UpdateEnginesList) \
+	PORT_DEF(EnginesTab, PutEngine, ET_PutEnginePy) \
+	PORT_DEF(EnginesTab, RecycleEngine, ET_RecycleEnginePy) \
+	PORT_DEF(EnginesTab, ShowMoneySellingEngine, ET_ShowMoneySellingEnginePy) \
+	PORT_DEF(EnginesTab, SelectEngineGroup, ET_SelectEngineGroupPy) \
+	PORT_DEF(EnginesTab, SetEnginesPanel, ET_SetEnginesPanelPy) \
+	PORT_DEF(EnginesTab, ShowEnginesPanel, ET_ShowEnginesPanelPy) \
+	PORT_DEF(EnginesTab, CreateLayouts, ET_CreateLayoutsPy) \
+	PORT_DEF(EnginesTab, UpdateLayouts, ET_UpdateLayoutsPy) \
+	PORT_DEF(EnginesTab, UpdateLayoutsGlow, ET_UpdateLayoutsGlowPy) \
+	PORT_DEF(EnginesTab, LayoutsGainFocus, ET_LayoutsGainFocus) \
+	PORT_DEF(EnginesTab, LayoutsLostFocus, ET_LayoutsLostFocus) \
+	PORT_DEF(EnginesTab, HideEnginesPanel, ET_HideEnginesPanelPy) \
+	PORT_DEF(EnginesTab, ScrollEngineListUp, ET_ScrollEngineListUp) \
+	PORT_DEF(EnginesTab, ScrollEngineListDown, ET_ScrollEngineListDown)
+
 /* Ffa.c */
 PORT_DECL(Ffa, InitFfa) /* 0 */
 PORT_DECL(Ffa, SetupUserShip) /* 1 */
@@ -455,6 +494,31 @@ PORT_DECL(HangarTab, HideShipMiniInfo) /* 3 */
 	PORT_DEF(HangarTab, AddReferenceShipControls, HT_AddReferenceShipControls) \
 	PORT_DEF(HangarTab, ShowShipMiniInfo, HT_ShowShipMiniInfo) \
 	PORT_DEF(HangarTab, HideShipMiniInfo, HT_HideShipMiniInfo)
+
+/* HullTab.c */
+PORT_DECL(HullTab, ShowHullPredictionUp) /* 3 */
+PORT_DECL(HullTab, HideHullPredictionUp) /* 3 */
+PORT_DECL(HullTab, ShowHullPredictionDown) /* 3 */
+PORT_DECL(HullTab, HideHullPredictionDown) /* 3 */
+PORT_DECL(HullTab, IncrementHull) /* 2 */
+PORT_DECL(HullTab, DecrementHull) /* 2 */
+PORT_DECL(HullTab, SetHullState) /* 1 */
+PORT_DECL(HullTab, HullSliderChange) /* 2 */
+PORT_DECL(HullTab, SetHullPanel) /* 1 */
+PORT_DECL(HullTab, ShowHullPanel) /* 1 */
+PORT_DECL(HullTab, HideHullPanel) /* 1 */
+#define PORTS_HullTab \
+	PORT_DEF(HullTab, ShowHullPredictionUp, HT_ShowHullPredictionUp) \
+	PORT_DEF(HullTab, HideHullPredictionUp, HT_HideHullPredictionUp) \
+	PORT_DEF(HullTab, ShowHullPredictionDown, HT_ShowHullPredictionDown) \
+	PORT_DEF(HullTab, HideHullPredictionDown, HT_HideHullPredictionDown) \
+	PORT_DEF(HullTab, IncrementHull, HT_IncrementHull) \
+	PORT_DEF(HullTab, DecrementHull, HT_DecrementHull) \
+	PORT_DEF(HullTab, SetHullState, HT_SetHullStatePy) \
+	PORT_DEF(HullTab, HullSliderChange, HT_HullSliderChange) \
+	PORT_DEF(HullTab, SetHullPanel, HT_SetHullPanel) \
+	PORT_DEF(HullTab, ShowHullPanel, HT_ShowHullPanel) \
+	PORT_DEF(HullTab, HideHullPanel, HT_HideHullPanel)
 
 /* InitLevel.c */
 PORT_DECL(Init, LoadCharLib) /* 1 */
@@ -1476,6 +1540,39 @@ PORT_DECL(Sonic, Init) /* 1 */
 	PORT_DEF(Sonic, CreateSonic, Sonic_CreateSonic) \
 	PORT_DEF(Sonic, SetUpSonic, Sonic_SetUpSonic) \
 	PORT_DEF(Sonic, Init, Sonic_Init)
+
+/* WeaponsTab.c */
+PORT_DECL(WeaponsTab, ShowWeightPrediction) /* 3 */
+PORT_DECL(WeaponsTab, HideWeightPrediction) /* 3 */
+PORT_DECL(WeaponsTab, ShowWeaponDesc) /* 3 */
+PORT_DECL(WeaponsTab, ShowWeaponUpgradeDesc) /* 3 */
+PORT_DECL(WeaponsTab, ShowSlotMarker) /* 3 */
+PORT_DECL(WeaponsTab, HideSlotMarker) /* 3 */
+PORT_DECL(WeaponsTab, LoadWeapon) /* 2 */
+PORT_DECL(WeaponsTab, HideSlots) /* 2 */
+PORT_DECL(WeaponsTab, FillSlots) /* 2 */
+PORT_DECL(WeaponsTab, UpdateUpgrades) /* 2 */
+PORT_DECL(WeaponsTab, SelectWeapon) /* 2 */
+PORT_DECL(WeaponsTab, SelectUpgrade) /* 2 */
+PORT_DECL(WeaponsTab, SetWeaponsPanel) /* 1 */
+PORT_DECL(WeaponsTab, ShowWeaponsPanel) /* 1 */
+PORT_DECL(WeaponsTab, HideWeaponsPanel) /* 1 */
+#define PORTS_WeaponsTab \
+	PORT_DEF(WeaponsTab, ShowWeightPrediction, WT_ShowWeightPrediction) \
+	PORT_DEF(WeaponsTab, HideWeightPrediction, WT_HideWeightPrediction) \
+	PORT_DEF(WeaponsTab, ShowWeaponDesc, WT_ShowWeaponDescPy) \
+	PORT_DEF(WeaponsTab, ShowWeaponUpgradeDesc, WT_ShowWeaponUpgradeDescPy) \
+	PORT_DEF(WeaponsTab, ShowSlotMarker, WT_ShowSlotMarkerPy) \
+	PORT_DEF(WeaponsTab, HideSlotMarker, WT_HideSlotMarkerPy) \
+	PORT_DEF(WeaponsTab, LoadWeapon, WT_LoadWeaponPy) \
+	PORT_DEF(WeaponsTab, HideSlots, WT_HideSlotsPy) \
+	PORT_DEF(WeaponsTab, FillSlots, WT_FillSlotsPy) \
+	PORT_DEF(WeaponsTab, UpdateUpgrades, WT_UpdateUpgradesPy) \
+	PORT_DEF(WeaponsTab, SelectWeapon, WT_SelectWeaponPy) \
+	PORT_DEF(WeaponsTab, SelectUpgrade, WT_SelectUpgradePy) \
+	PORT_DEF(WeaponsTab, SetWeaponsPanel, WT_SetWeaponsPanelPy) \
+	PORT_DEF(WeaponsTab, ShowWeaponsPanel, WT_ShowWeaponsPanelPy) \
+	PORT_DEF(WeaponsTab, HideWeaponsPanel, WT_HideWeaponsPanelPy)
 
 /* levels/AB.c */
 PORT_DECLL(ab, MapFinalFight, GetBossProfile) /* 0 */
