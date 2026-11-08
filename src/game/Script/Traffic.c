@@ -14,10 +14,12 @@
  * of their modules where the script reads them and write them back to the module at once (OBJLIB 5: the level files,
  * ShipMaker, Vehicles and the cases read and set them), and set the engine variables, the money and the save variables
  * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams, OBJLIB 7). The calls of
- * VehiclesNPC, SaveGame, RaceMaker, SAI.SetStateVehicle and SAI.EnableAIChar, the ships and profiles they give (handle
- * values), the hooks onTrackCreate and OnPoliceCreatedCallback and CharsNPC.CharRes stay Python values called or read
- * by name (OBJLIB 3, 5, 7); the steps of police.def take the arguments of their lines as a tuple (OBJLIB 6). The
- * functions of Traffic call each other in C as the port did (the engine callbacks name them "Traffic.<name>").
+ * VehiclesNPC, SaveGame and RaceMaker go through their refs (PORT_CALL: the seam, OBJLIB 5). The class
+ * VehiclesNPC.cShipAI is called by name (OBJLIB 4); SAI.SetStateVehicle and SAI.EnableAIChar, the ships and profiles
+ * the calls give (handle values), the hooks onTrackCreate and OnPoliceCreatedCallback and CharsNPC.CharRes stay Python
+ * values called or read by name (OBJLIB 5, 7); the steps of police.def take the arguments of their lines as a tuple
+ * (OBJLIB 6). The functions of Traffic call each other in C as the port did (the engine callbacks name them
+ * "Traffic.<name>").
  */
 #include <string.h>
 
@@ -56,9 +58,9 @@ static byte Traffic_ResetPathN(void) {
 	return ok;
 }
 
-/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf (OBJLIB 3, 7: the profile objects of
- * VehiclesNPC by name): profile the name of the profile, or NULL for the save variable StdShipAIProfile; hook 0 sets
- * FactorHookMap to 0 */
+/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf (OBJLIB 4: the class by name; the profile
+ * objects are Python values, OBJLIB 7): profile the name of the profile, or NULL for the save variable
+ * StdShipAIProfile; hook 0 sets FactorHookMap to 0 */
 static byte Traffic_Profile(const nativeVal_t *ship, const char *profile, byte hook) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *sp = Mode_V(&t), *prof = Mode_V(&t);
@@ -70,7 +72,7 @@ static byte Traffic_Profile(const nativeVal_t *ship, const char *profile, byte h
 	} else {
 		Mode_SaveVar("StdShipAIProfile", prof);
 	}
-	return Mode_Done(&t, Native_CallMod("VehiclesNPC", "SetAIProfile", NULL, "vv", sp, prof) &&
+	return Mode_Done(&t, PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", sp, prof) &&
 		(hook || LvN_SetI(sp, "FactorHookMap", 0)) && Mode_ModDictPut("VehiclesNPC", "AIProf", ship, sp));
 }
 
@@ -110,13 +112,12 @@ static byte Traffic_RandomShip(const char *name, nativeVal_t *out) {
 	return Mode_Done(&t, Native_ToInt(f, i) && Mode_Sub(ships, i, out));
 }
 
-/* o1 = VehiclesNPC.MakeAI(random ship of AcShips, list); o1.EntityList = list (OBJLIB 3: VehiclesNPC by name, the
- * ship it gives a handle value) */
+/* o1 = VehiclesNPC.MakeAI(random ship of AcShips, list); o1.EntityList = list (the ship it gives a handle value) */
 static byte Traffic_Make(const char *list) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ship = Mode_V(&t), *o1 = Mode_V(&t);
 	return Mode_Done(&t, Mode_Import("VehiclesNPC") && Traffic_RandomShip("AcShips", ship) &&
-		Native_CallMod("VehiclesNPC", "MakeAI", o1, "vs", ship, list) && LvN_SetS(o1, "EntityList", list));
+		PORT_CALL(VehiclesNPC, MakeAI, o1, "vs", ship, list) && LvN_SetS(o1, "EntityList", list));
 }
 
 /* count ships of list from the count n (range(n)) */
@@ -141,8 +142,7 @@ static byte Traffic_InitTrafficN(void) {
 	return ok;
 }
 
-/* OnPlayerHelpedPolice(): the reward of PlayerHelpedPoliceReward and its message (OBJLIB 3: SaveGame and RaceMaker by
- * name) */
+/* OnPlayerHelpedPolice(): the reward of PlayerHelpedPoliceReward and its message */
 static byte Traffic_OnPlayerHelpedPoliceN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *reward = Mode_V(&t), *lang = Mode_V(&t), *rep = Mode_V(&t), *cad = Mode_V(&t), *money = Mode_V(&t);
@@ -156,7 +156,7 @@ static byte Traffic_OnPlayerHelpedPoliceN(void) {
 	Mode_Replace(lang, "<n>", rep, cad);
 	Native_SetInt(money, Mode_GetMoney());
 	return Mode_Done(&t, Mode_Arith('+', money, reward, sum) && Mode_SetMoneySeam(sum) &&
-		Native_CallMod("SaveGame", "SaveMoney", NULL, "") && Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", cad));
+		PORT_CALL(SaveGame, SaveMoney, NULL, "") && PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", cad));
 }
 
 /* RailTrafficDeath(Me, Killer): the alarm and the statistics when the player killed it */
@@ -174,13 +174,13 @@ static byte Traffic_RailDeath(const nativeVal_t *killer) {
 }
 
 /* the death of a rail ship of list (HeavyTraffic...) from ships (AcHeavyShips...): a new one of type, the hook
- * onTrackCreate, the death, the path back (OBJLIB 3: VehiclesNPC and SAI.SetStateVehicle by name, the hook a value of
- * the module) */
+ * onTrackCreate, the death, the path back (OBJLIB 7: SAI.SetStateVehicle by name; OBJLIB 5: the hook a value of the
+ * module) */
 static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, const char *list, const char *type) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ship = Mode_V(&t), *o1 = Mode_V(&t), *name = Mode_V(&t);
 	if (!Mode_Import("VehiclesNPC") || !Traffic_SetPathN() || !Traffic_RandomShip(ships, ship) ||
-		!Native_CallMod("VehiclesNPC", "MakeAI", o1, "vsii", ship, list, 0L, 0L) || !LvN_SetS(o1, "EntityList", list) ||
+		!PORT_CALL(VehiclesNPC, MakeAI, o1, "vsii", ship, list, 0L, 0L) || !LvN_SetS(o1, "EntityList", list) ||
 		!LvN_SetS(o1, "Traf_Type", type) || !Mode_VGet(o1, "Name", name) ||
 		!Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 4L, name)) {
 		return Mode_Done(&t, 0);
@@ -341,8 +341,8 @@ static byte OutPolice_G(const char *name, nativeVal_t *out) {
 /* MakePoli(TypeShip): a police ship into OutCop, the hook OnPoliceCreatedCallback */
 static byte OutPolice_MakePoliN(const nativeVal_t *type) {
 	nativeVal_t ship = { 0 }, list;
-	/* OBJLIB 3: VehiclesNPC.MakeAI by name; the ship it gives is a Python value (OBJLIB 7) */
-	if (!Mode_Import("VehiclesNPC") || !Native_CallMod("VehiclesNPC", "MakeAI", &ship, "vsi", type, "Police", 1L)) {
+	/* the ship VehiclesNPC.MakeAI gives is a Python value (OBJLIB 7) */
+	if (!Mode_Import("VehiclesNPC") || !PORT_CALL(VehiclesNPC, MakeAI, &ship, "vsi", type, "Police", 1L)) {
 		return 0;
 	}
 	Native_SetStr(&list, "OutCop");
@@ -423,8 +423,8 @@ static byte OutPolice_InitWavesN(void) {
 	return OutPolice_SetWave(&zero);
 }
 
-/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] (OBJLIB 3, 7: the
- * profile objects of VehiclesNPC by name) */
+/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] (OBJLIB 4: the
+ * class VehiclesNPC.cShipAI by name; the profile objects are Python values, OBJLIB 7) */
 static byte OutPolice_InitAIProfilesN(void) {
 	static const char *const types[] = { "Rookie", "Pilot", "Veteran", "Elite", "Ace", "MegaAce" };
 	if (!Mode_Import("VehiclesNPC")) {
@@ -439,7 +439,7 @@ static byte OutPolice_InitAIProfilesN(void) {
 			Native_SetStr(&name, ship);
 			Native_SetStr(&k, key);
 			byte ok = Native_CallMod("VehiclesNPC", "cShipAI", &sp, "") && Mode_VSet(&sp, "Ship", &name) &&
-				Native_CallMod("VehiclesNPC", "SetAIProfile", NULL, "vs", &sp, types[t]) &&
+				PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vs", &sp, types[t]) &&
 				Mode_ModDictPut("VehiclesNPC", "AIProf", &k, &sp);
 			Native_Free(&sp);
 			if (!ok) {
@@ -499,13 +499,12 @@ static byte OutPolice_NextWaveN(const nativeVal_t *doprice) {
 	if (go > 0) {
 		Native_Free(i);
 		Mode_SaveVar("BadReputation", sv);
-		/* OBJLIB 3: RaceMaker.ShowSystemMessage by name */
 		go = Mode_Import("RaceMaker") && OutPolice_G("WavePrice", wp) && OutPolice_G("iPoliceWave", i) &&
 			Native_Arith('*', wp, i, a) && OutPolice_G("ReputationPrice", rp) && Native_ToInt(sv, bad) &&
 			Native_Arith('*', rp, bad, b) && Native_Arith('+', a, b, price) &&
 			(Native_SetInt(money, Mode_GetMoney()), Native_Arith('+', money, price, sum)) && Mode_SetMoney(sum) &&
 			(Mode_Lang("OnPoliceWave", msg), Native_Arith('%', msg, price, text)) &&
-			Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", text) ? 1 : -1;
+			PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", text) ? 1 : -1;
 	}
 	return Mode_Done(&t, go >= 0);
 }
