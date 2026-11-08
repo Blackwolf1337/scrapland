@@ -11,12 +11,13 @@
  * SetMapLabelText and Close take any arguments, as before). The flags and tables of the module are read as its globals
  * where the script reads them (OBJLIB 5); Path is written at once and MapLibs changed in place (the map libraries are
  * module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
- * script calls as its globals stay so, the other ports, the map modules and the super deal module by name (OBJLIB 3),
- * as do Scrap.PreloadLibrary, PreloadAnm, CreateElements, CreateSaveVar, GetLevelPath, GetNewLevelPath, SAI.IniAI,
- * string.find, string.replace with its count, dir and __import__ (OBJLIB 6, 7). Scrap.Set, OpenPack, ClosePack,
- * Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and SetLabelText go through their
- * seams (OBJLIB 7). The evals of the save texts stay Script_EvalIn (Mode_EvalIn, OBJLIB 6), and the C hooks of the
- * module code keep working on the module's dict (OBJLIB 6).
+ * script calls as its globals and the other ports go through their refs (PORT_OWN, PORT_CALL: the seam, OBJLIB 5).
+ * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time (OBJLIB 4);
+ * string.find and replace are the native twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements,
+ * CreateSaveVar, GetLevelPath, GetNewLevelPath, SAI.IniAI, dir and __import__ stay by name (OBJLIB 6, 7). Scrap.Set,
+ * OpenPack, ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and
+ * SetLabelText go through their seams (OBJLIB 7). The evals of the save texts stay Script_EvalIn (Mode_EvalIn,
+ * OBJLIB 6), and the C hooks of the module code keep working on the module's dict (OBJLIB 6).
  */
 #include <string.h>
 
@@ -32,10 +33,9 @@ static int In_Flag(const char *name) {
 	return LvN_GTrue(IN, name);
 }
 
-/* import module; module.func() (arg NULL) or module.func(arg) */
-static byte In_Call(const char *module, const char *func, const nativeVal_t *arg) {
-	return Mode_Import(module) && (arg ? Native_CallMod(module, func, NULL, "v", arg) : Native_CallMod(module, func, NULL, ""));
-}
+/* import module; module.func() or module.func(arg), through the ref (each use its own site) */
+#define IN_CALL(module, func) (Mode_Import(#module) && PORT_CALL(module, func, NULL, ""))
+#define IN_CALLV(module, func, arg) (Mode_Import(#module) && PORT_CALL(module, func, NULL, "v", arg))
 
 /* o.func(arg) of a module object */
 static byte In_Method(const nativeVal_t *o, const char *func, const nativeVal_t *arg) {
@@ -130,7 +130,7 @@ static byte In_PreloadMlibsN(void) {
 			Native_Free(&mod);
 			ok = Mode_Item(&libs, i, &name) && Native_Arith('+', &name, &pyc, &f) &&
 				Native_CallMod("Scrap", "PreloadLibrary", NULL, "vv", &name, &f) &&
-				Native_CallMod("__builtin__", "__import__", &mod, "v", &name) && Native_CallGlobal(IN, "AddMLib", NULL, "v", &mod);
+				Native_CallMod("__builtin__", "__import__", &mod, "v", &name) && PORT_OWN(Init, AddMLib, NULL, "v", &mod);
 		}
 	}
 	Py_XDECREF(map);
@@ -195,7 +195,7 @@ static byte In_BossShip(void) {
  * save game values */
 static byte In_Game(const nativeVal_t *path) {
 	int outdoor = In_Flag("Outdoor");
-	if (outdoor < 0 || (!outdoor && !In_Call("Bureaucracy", "Init", NULL))) {
+	if (outdoor < 0 || (!outdoor && !IN_CALL(Bureaucracy, Init))) {
 		return 0;
 	}
 	nativeVal_t upper = { 0 }, deals = { 0 };
@@ -211,23 +211,23 @@ static byte In_Game(const nativeVal_t *path) {
 		return 0;
 	}
 	if (!edit && !multi2) {
-		int junk = In_Call("Chars", "Init", NULL) ? In_Flag("isJunkYard") : -1;
+		int junk = IN_CALL(Chars, Init) ? In_Flag("isJunkYard") : -1;
 		int out = junk == 0 ? In_Flag("Outdoor") : 0;
-		if (junk < 0 || out < 0 || (out && (!In_Call("PhoneCab", "CreatePhoneCabClass", NULL) ||
-			!Native_CallMod("PhoneCab", "CreateAudioComClass", NULL, "")))) {
+		if (junk < 0 || out < 0 || (out && (!IN_CALL(PhoneCab, CreatePhoneCabClass) ||
+			!PORT_CALL(PhoneCab, CreateAudioComClass, NULL, "")))) {
 			return 0;
 		}
 	}
 	int out = In_Flag("Outdoor"), junk = out == 0 ? In_Flag("isJunkYard") : 0;
-	if (out < 0 || junk < 0 || ((out || junk) && (!In_Call("Vehicles", "Init", NULL) || !In_Call("Weapons", "Init", NULL)))) {
+	if (out < 0 || junk < 0 || ((out || junk) && (!IN_CALL(Vehicles, Init) || !IN_CALL(Weapons, Init)))) {
 		return 0;
 	}
-	if (!In_Call("Fx", "Init", NULL)) {
+	if (!IN_CALL(Fx, Init)) {
 		return 0;
 	}
 	edit = In_Flag("isShipEdit");
-	if (edit < 0 || (!edit && (!In_Call("Alarm", "Init", NULL) || !In_Call("MisItems", "Init", NULL))) ||
-		!In_Call("Doors", "Init", NULL)) {
+	if (edit < 0 || (!edit && (!IN_CALL(Alarm, Init) || !IN_CALL(MisItems, Init))) ||
+		!IN_CALL(Doors, Init)) {
 		return 0;
 	}
 	edit = In_Flag("isShipEdit");
@@ -236,11 +236,11 @@ static byte In_Game(const nativeVal_t *path) {
 	}
 	if (!edit) {
 		out = In_Flag("Outdoor");
-		if (out < 0 || !(out ? In_Call("OutMap", "Init", path) : In_Call("InMap", "Init", path))) {
+		if (out < 0 || !(out ? IN_CALLV(OutMap, Init, path) : IN_CALLV(InMap, Init, path))) {
 			return 0;
 		}
 		multi = In_Flag("MultiPlayer");
-		if (multi < 0 || (!multi && (!In_Call("SaveGame", "InitVars", NULL) || !In_Call("MissionsFuncs", "Init", NULL)))) {
+		if (multi < 0 || (!multi && (!IN_CALL(SaveGame, InitVars) || !IN_CALL(MissionsFuncs, Init)))) {
 			return 0;
 		}
 	}
@@ -289,7 +289,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir) ||
 		!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "Map", "Map.pyc") ||
 		!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "MapSnd", "MapSnd.pyc") ||
-		!Native_CallGlobal(IN, "PreloadMlibs", NULL, "v", path) || !Mode_Pack(NULL) || !Native_GVarGet("IsXbox", x)) {
+		!PORT_OWN(Init, PreloadMlibs, NULL, "v", path) || !Mode_Pack(NULL) || !Native_GVarGet("IsXbox", x)) {
 		return Mode_Done(&t, 0);
 	}
 	int xb = Native_True(x);
@@ -300,23 +300,24 @@ static byte In_InitN(const nativeVal_t *path) {
 		xb = Native_True(c) ? 0 : Mode_G(IN, "UpperMap", upper) ? Native_IsStr(upper, "SHIPEDIT") || Native_IsStr(upper, "MENU") : -1;
 		if (xb > 0 && (!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "XboxMenu", "Scripts/Scorer/XboxMenu.pyc") ||
 			!Native_CallMod("__builtin__", "__import__", menuMod, "s", "XboxMenu") ||
-			!Native_CallGlobal(IN, "AddMLib", NULL, "v", menuMod))) {
+			!PORT_OWN(Init, AddMLib, NULL, "v", menuMod))) {
 			return Mode_Done(&t, 0);
 		}
 	}
+	/* OBJLIB 4: Map is the module of the current level (by name until the registry of stage 4) */
 	if (xb < 0 || !Mode_Import("Map") || !Mode_Import("MapSnd") || !Native_CallMod("Map", "InitStatus", NULL, "v", path) ||
-		!Native_CallGlobal(IN, "MLibInitStatus", NULL, "v", path) || !In_BossShip() || !Mode_G(IN, "SuperDealModule", deal) ||
+		!PORT_OWN(Init, MLibInitStatus, NULL, "v", path) || !In_BossShip() || !Mode_G(IN, "SuperDealModule", deal) ||
 		(Native_True(deal) && !In_Method(deal, "InitStatus", path))) {
 		return Mode_Done(&t, 0);
 	}
 	/* the size of the mission arrows, the AI */
 	int menu = In_Flag("inMainMenu"), edit = menu == 0 ? In_Flag("isShipEdit") : 0;
-	if (menu < 0 || edit < 0 || (!menu && !edit && !Native_CallGlobal(IN, "SetArrowSize", NULL, "")) ||
+	if (menu < 0 || edit < 0 || (!menu && !edit && !PORT_OWN(Init, SetArrowSize, NULL, "")) ||
 		!Mode_G(IN, "Outdoor", out) || !Native_CallMod("SAI", "IniAI", NULL, "vv", path, out)) {
 		return Mode_Done(&t, 0);
 	}
 	/* the menus, the mission info, the chat, the sound, the decoration */
-	if (!Mode_GVarSetS("EscapeEvent", "Menu.Init") || !In_Call("Menu", "Initialize", NULL)) {
+	if (!Mode_GVarSetS("EscapeEvent", "Menu.Init") || !IN_CALL(Menu, Initialize)) {
 		return Mode_Done(&t, 0);
 	}
 	int single = Native_NetOff();
@@ -324,7 +325,7 @@ static byte In_InitN(const nativeVal_t *path) {
 		return Mode_Done(&t, 0);
 	}
 	int offline = In_Flag("OffLineGame");
-	if (offline < 0 || (!offline && !In_Call("Chat", "SetChatProc", NULL)) || !In_Call("Sound", "Init", NULL) ||
+	if (offline < 0 || (!offline && !IN_CALL(Chat, SetChatProc)) || !IN_CALL(Sound, Init) ||
 		!Native_CallMod("Scrap", "CreateElements", NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
@@ -344,7 +345,7 @@ static byte In_InitN(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 		if (Native_IsStr(bertos, "1") && !Native_IsStr(upper, "GDB") && !has && (!Mode_Import("MissionsFuncs") ||
-			!Mode_Import("Parking") || !Native_CallMod("MissionsFuncs", "CreateBertos", NULL, "") ||
+			!Mode_Import("Parking") || !PORT_CALL(MissionsFuncs, CreateBertos, NULL, "") ||
 			!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget") ||
 			!Mode_ModSetGlobal("Parking", "SwitchCharMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget"))) {
 			return Mode_Done(&t, 0);
@@ -354,9 +355,9 @@ static byte In_InitN(const nativeVal_t *path) {
 		!Mode_GVarSetS("OnCrazyDealTarget", "MissionsFuncs.OnCrazyDealTarget")) {
 		return Mode_Done(&t, 0);
 	}
-	/* the map */
+	/* the map (OBJLIB 4: Map and MapSnd are the modules of the current level, by name until the registry of stage 4) */
 	if (!Native_CallMod("Map", "Init", NULL, "v", path) || !Native_CallMod("MapSnd", "Init", NULL, "v", path) ||
-		!Native_CallGlobal(IN, "MLibInit", NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
+		!PORT_OWN(Init, MLibInit, NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
 		(Native_True(deal) && !In_Method(deal, "Init", path)) || !Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL)) {
 		return Mode_Done(&t, 0);
 	}
@@ -455,11 +456,7 @@ static byte In_IsMissionOut(nativeVal_t *out) {
 
 MODE_FNANY(Init, isMission, In_IsMissionOut(out))
 
-static PyObject *Init_SetArrowSize(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(In_SetArrowSizeN());
-}
+MODE_FNANY(Init, SetArrowSize, In_SetArrowSizeN())
 
 static PyObject *Init_SetMapLabelText(PyObject *self, PyObject *args) {
 	(void)self;

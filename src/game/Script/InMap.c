@@ -69,31 +69,47 @@ static byte InMap_Init(const char *path) {
 
 /* ---- the adapter of the module table (OBJLIB 7: the argument and the errors of the Python calls) ---- */
 
-static PyObject *InMap_InitPy(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
+/* Init(LevelPath) of the path object */
+static byte InMap_InitObj(PyObject *path) {
 	/* OBJLIB 6: the imports of the function stay with the module objects until then */
 	PyObject *chars = PyImport_ImportModule("Chars");
 	PyObject *string = chars ? PyImport_ImportModule("string") : NULL;
 	Py_XDECREF(chars);
 	if (!string) {
-		return NULL;
+		return 0;
 	}
 	Py_DECREF(string);
 	if (PyString_Check(path) && PyString_Size(path) < 0x100 && strlen(PyString_AsString(path)) == (size_t)PyString_Size(path)) {
-		return InMap_Init(PyString_AsString(path)) ? Py_ReturnNone() : NULL;
+		return InMap_Init(PyString_AsString(path));
 	}
 	/* any other LevelPath goes the script's way: the error of + (or a value Scrap.Set takes or refuses) */
 	PyObject *map = Script_PlusS(Script_Ref(path), "/2D/Map%i.tga");
 	byte ok = map && Script_Try("Scrap", "Set", "(sO)", "FileNameMap2D", map);
 	Py_XDECREF(map);
-	return ok && InMap_Start() ? Py_ReturnNone() : NULL;
+	return ok && InMap_Start();
+}
+
+/* the entry (stage 3, the call of InitLevel through its ref): the path as the object its call through Python passes */
+static byte InMap_InitPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	if (n != 1) {
+		return Port_Arity(n, 1);
+	}
+	PyObject *path = Native_ToPy(&a[0]);
+	byte ok = path && InMap_InitObj(path);
+	Py_XDECREF(path);
+	return ok;
+}
+
+static PyObject *InMap_InitPy(PyObject *self, PyObject *args) {
+	PyObject *path;
+	(void)self;
+	return PyArg_ParseTuple(args, "O", &path) && InMap_InitObj(path) ? Py_ReturnNone() : NULL;
 }
 
 PyMethodDef g_InMapMethods[] = {
 	{ "Init", InMap_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(InMap)

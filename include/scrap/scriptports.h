@@ -30,6 +30,11 @@ PORT_DECL(NewsPanel, SwitchAlarm) /* 1 */
 	PORT_DEF(NewsPanel, EndOfNews, NewsPanel_EndOfNews) \
 	PORT_DEF(NewsPanel, SwitchAlarm, NewsPanel_SwitchAlarm)
 
+/* Bureaucracy.c */
+PORT_DECL(Bureaucracy, Init) /* ? */
+#define PORTS_Bureaucracy \
+	PORT_DEF(Bureaucracy, Init, Bureaucracy_InitPy)
+
 /* Challenge.c */
 PORT_DECL(Challenge, ComputeReward) /* 3 */
 PORT_DECL(Challenge, Init) /* ? */
@@ -145,6 +150,7 @@ PORT_DECL(Chars, AddNewCharRes) /* ? */
 PORT_DECL(Chars, LocalLoadRes) /* 1 */
 PORT_DECL(Chars, MainCharDeath) /* 2 */
 PORT_DECL(Chars, CreatePlayersList) /* 0 */
+PORT_DECL(Chars, Init) /* ? */
 PORT_DECL(Chars, CreateStartupPlayer) /* 0 */
 #define PORTS_Chars \
 	PORT_DEF(Chars, CanDrive, Chars_CanDrive) \
@@ -159,6 +165,7 @@ PORT_DECL(Chars, CreateStartupPlayer) /* 0 */
 	PORT_DEF(Chars, LocalLoadRes, Chars_LocalLoadRes) \
 	PORT_DEF(Chars, MainCharDeath, Chars_MainCharDeath) \
 	PORT_DEF(Chars, CreatePlayersList, Chars_CreatePlayersList) \
+	PORT_DEF(Chars, Init, Chars_Init) \
 	PORT_DEF(Chars, CreateStartupPlayer, Chars_CreateStartupPlayer)
 
 /* CharsNPC.c */
@@ -203,6 +210,11 @@ PORT_DECL(CharsNPC, GenericNPCSpeech) /* 4 */
 	PORT_DEF(CharsNPC, ClassifyOptions, CharsNPC_ClassifyOptions) \
 	PORT_DEF(CharsNPC, PlayOption, CharsNPC_PlayOption) \
 	PORT_DEF(CharsNPC, GenericNPCSpeech, CharsNPC_GenericNPCSpeech)
+
+/* Chat.c */
+PORT_DECL(Chat, SetChatProc) /* 0 */
+#define PORTS_Chat \
+	PORT_DEF(Chat, SetChatProc, Chat_SetChatProc)
 
 /* CreditsText.c */
 PORT_DECL(CreditsText, Init) /* 0 */
@@ -439,10 +451,12 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, FfaScorer, Ffa_FfaScorer)
 
 /* Fx.c */
+PORT_DECL(Fx, Init) /* ? */
 PORT_DECL(Fx, GetMotorClass) /* 1 */
 PORT_DECL(Fx, SetUpShipMotors) /* 1 */
 PORT_DECL(Fx, MoneyTransfer) /* 3 */
 #define PORTS_Fx \
+	PORT_DEF(Fx, Init, Fx_InitPy) \
 	PORT_DEF(Fx, GetMotorClass, Fx_GetMotorClass) \
 	PORT_DEF(Fx, SetUpShipMotors, Fx_SetUpShipMotors) \
 	PORT_DEF(Fx, MoneyTransfer, Fx_MoneyTransferPy)
@@ -607,6 +621,11 @@ PORT_DECL(HullTab, HideHullPanel) /* 1 */
 	PORT_DEF(HullTab, ShowHullPanel, HT_ShowHullPanel) \
 	PORT_DEF(HullTab, HideHullPanel, HT_HideHullPanel)
 
+/* InMap.c */
+PORT_DECL(InMap, Init) /* 1 */
+#define PORTS_InMap \
+	PORT_DEF(InMap, Init, InMap_InitPy)
+
 /* InitLevel.c */
 PORT_DECL(Init, LoadCharLib) /* 1 */
 PORT_DECL(Init, AddMLib) /* 1 */
@@ -614,6 +633,7 @@ PORT_DECL(Init, MLibInitStatus) /* 1 */
 PORT_DECL(Init, MLibInit) /* 1 */
 PORT_DECL(Init, isMission) /* ? */
 PORT_DECL(Init, PreloadMlibs) /* 1 */
+PORT_DECL(Init, SetArrowSize) /* ? */
 PORT_DECL(Init, Init) /* 1 */
 #define PORTS_InitLevel \
 	PORT_DEF(Init, LoadCharLib, Init_LoadCharLib) \
@@ -622,6 +642,7 @@ PORT_DECL(Init, Init) /* 1 */
 	PORT_DEF(Init, MLibInit, Init_MLibInit) \
 	PORT_DEF(Init, isMission, Init_isMission) \
 	PORT_DEF(Init, PreloadMlibs, Init_PreloadMlibs) \
+	PORT_DEF(Init, SetArrowSize, Init_SetArrowSize) \
 	PORT_DEF(Init, Init, Init_Init)
 
 /* Items.c */
@@ -744,6 +765,7 @@ PORT_DECL(Menu, BackToGame) /* ? */
 PORT_DECL(Menu, DrawScorer) /* ? */
 PORT_DECL(Menu, InitMenuSys) /* ? */
 PORT_DECL(Menu, MovieScorer) /* ? */
+PORT_DECL(Menu, Initialize) /* ? */
 PORT_DECL(Menu, GameOver) /* ? */
 #define PORTS_MenuMain \
 	PORT_DEF(Menu, MainMenu, Menu_MainMenu) \
@@ -751,6 +773,7 @@ PORT_DECL(Menu, GameOver) /* ? */
 	PORT_DEF(Menu, DrawScorer, Menu_DrawScorer) \
 	PORT_DEF(Menu, InitMenuSys, Menu_InitMenuSys) \
 	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
+	PORT_DEF(Menu, Initialize, Menu_Initialize) \
 	PORT_DEF(Menu, GameOver, Menu_GameOver)
 
 /* MenuMission.c */
@@ -1922,6 +1945,7 @@ PORT_DECL(VehiclesNPC, Init) /* 0 */
 	PORT_DEF(VehiclesNPC, Init, VehiclesNPC_Init)
 
 /* Weapons.c */
+PORT_DECL(Weapons, Init) /* ? */
 PORT_DECL(Vulcan, Init) /* 2 */
 PORT_DECL(Devastator, Init) /* 2 */
 PORT_DECL(Tesla, Init) /* 2 */
@@ -1956,6 +1980,7 @@ PORT_DECL(Sonic, CreateSonic) /* 7 */
 PORT_DECL(Sonic, SetUpSonic) /* 1 */
 PORT_DECL(Sonic, Init) /* 1 */
 #define PORTS_Weapons \
+	PORT_DEF(Weapons, Init, Weapons_InitPy) \
 	PORT_DEF(Vulcan, Init, Vulcan_Init) \
 	PORT_DEF(Devastator, Init, Devastator_Init) \
 	PORT_DEF(Tesla, Init, Tesla_Init) \

@@ -1181,6 +1181,15 @@ static PyObject *Menu_ComposeSaveGameName(PyObject *self, PyObject *args) {
 	return PyString_FromString(out);
 }
 
+/* Initialize takes any arguments (stage 3: its entry for the call of InitLevel through its ref) */
+static byte Menu_Initialize_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
+	Main_Initialize();
+	return 1;
+}
+
 static PyObject *Menu_Initialize(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;

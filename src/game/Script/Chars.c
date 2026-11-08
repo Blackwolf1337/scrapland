@@ -613,11 +613,7 @@ MODE_FN(Chars, CreateMainChar, 4, Ch_CreateMainChar(a, out))
 MODE_FN(Chars, CreateStartupPlayer, 0, Ch_CreateStartupPlayer(out))
 
 /* Init takes any arguments (the port did not parse them) */
-static PyObject *Chars_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(Ch_Init());
-}
+MODE_FNANY(Chars, Init, Ch_Init())
 
 PyMethodDef g_CharsMethods[] = {
 	{ "CanDrive", Chars_CanDrive, 1, NULL },

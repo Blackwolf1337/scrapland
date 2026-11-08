@@ -296,6 +296,14 @@ WEAP_NOARGS(Weapons_InitAmmoPy, Weap_Run("Ammo", NULL, NULL, NULL))
 WEAP_NOARGS(Weapons_InitWeaponsPy, Weap_Run("Weapons", NULL, NULL, NULL))
 WEAP_NOARGS(Weapons_InitPy, Weapons_Init())
 
+/* the entry of Init (stage 3, the call of InitLevel through its ref): any arguments, as its adapter */
+static byte Weapons_InitPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
+	return Weapons_Init();
+}
+
 PyMethodDef g_WeaponsMethods[] = {
 	{ "InitAmmo", Weapons_InitAmmoPy, 1, NULL },
 	{ "InitWeapons", Weapons_InitWeaponsPy, 1, NULL },
