@@ -2915,6 +2915,8 @@ PORT_DECLL(gamblinden, Map, Init) /* 1 */
 PORT_DECLL(gamblinden, Map, LonelyMercSpeech) /* 4 */
 PORT_DECLL(gamblinden, Map, CharUsrAct) /* 2 */
 PORT_DECLL(gamblinden, Map, CharUsrDance) /* 2 */
+PORT_DECLL(gamblinden, Map, MercDrink) /* ? */
+PORT_DECLL(gamblinden, Map, ChatNPCs) /* ? */
 PORT_DECLL(gamblinden, Map, CharDance) /* 1 */
 PORT_DECLL(gamblinden, Map, MercenarySpeech) /* 4 */
 PORT_DECLL(gamblinden, Map, StartContract) /* 1 */
@@ -2922,6 +2924,7 @@ PORT_DECLL(gamblinden, Mission_BeforeFinalFight, InitStatus) /* 1 */
 PORT_DECLL(gamblinden, Mission_BeforeFinalFight, Init) /* 1 */
 PORT_DECLL(gamblinden, Mission_BeforeFinalFight, CrazyGamblerSpeech) /* 4 */
 PORT_DECLL(gamblinden, Mission_BeforeFinalFight, MercenariesSpeech) /* 4 */
+PORT_DECLL(gamblinden, Mission_BeforeFinalFight, SetNextMission) /* ? */
 PORT_DECLL(gamblinden, Mission_BeforeFinalFight, LoadScene) /* 0 */
 PORT_DECLL(gamblinden, Mission_AfterFinalFight, InitStatus) /* 1 */
 PORT_DECLL(gamblinden, Mission_AfterFinalFight, Init) /* 1 */
@@ -2970,6 +2973,7 @@ PORT_DECLL(gamblinden, Mission_GoToGamblinDen, HumanSpeech) /* 4 */
 PORT_DECLL(gamblinden, Mission_GoToGamblinDen, CrazyGamblerSpeech) /* 4 */
 PORT_DECLL(gamblinden, Mission_GoToGamblinDen, Init) /* 1 */
 PORT_DECLL(gamblinden, Mission_GoToGamblinDen, LoadScene) /* 0 */
+PORT_DECLL(gamblinden, Mission_GoToGamblinDen, SetNextMission) /* ? */
 PORT_DECLL(gamblinden, Mission_TalkToTraitoriusAfterCTF, InitStatus) /* 1 */
 PORT_DECLL(gamblinden, Mission_TalkToTraitoriusAfterCTF, Init) /* 1 */
 PORT_DECLL(gamblinden, Mission_TalkToTraitoriusAfterCTF, CreateTraitoriusInit) /* 1 */
@@ -2984,8 +2988,10 @@ PORT_DECLL(gamblinden, Mission_BackFromMortalRace, DeepThroatSpeech) /* 4 */
 PORT_DECLL(gamblinden, Mission_BackFromMortalRace, SetNextMission) /* 0 */
 PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, InitStatus) /* 1 */
 PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, Init) /* 1 */
+PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, OnEndOfScene) /* ? */
 PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerFirstSpeech) /* 4 */
 PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerSecondSpeech) /* 4 */
+PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, EndOfTalk) /* ? */
 PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, SetNextMission) /* 0 */
 PORT_DECLL(gamblinden, Mission_CrazyGamblerFirstContact, LoadScene) /* 0 */
 PORT_DECLL(gamblinden, Mission_ArrangeMortalRace, InitStatus) /* 1 */
@@ -3011,6 +3017,8 @@ PORT_DECLL(gamblinden, Mission_ThreeStooges, SetNextMission) /* 1 */
 	PORT_DEFL(gamblinden, Map, LonelyMercSpeech, Den_LonelyMercSpeech) \
 	PORT_DEFL(gamblinden, Map, CharUsrAct, Den_CharUsrAct) \
 	PORT_DEFL(gamblinden, Map, CharUsrDance, Den_CharUsrDance) \
+	PORT_DEFLK(gamblinden, Map, MercDrink, Den_MercDrink) \
+	PORT_DEFLK(gamblinden, Map, ChatNPCs, Den_ChatNPCs) \
 	PORT_DEFL(gamblinden, Map, CharDance, Den_CharDance) \
 	PORT_DEFL(gamblinden, Map, MercenarySpeech, Den_MercenarySpeech) \
 	PORT_DEFL(gamblinden, Map, StartContract, Den_StartContract) \
@@ -3018,6 +3026,7 @@ PORT_DECLL(gamblinden, Mission_ThreeStooges, SetNextMission) /* 1 */
 	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, Init, Before_Init) \
 	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, CrazyGamblerSpeech, Before_CrazyGamblerSpeech) \
 	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, MercenariesSpeech, Before_MercenariesSpeech) \
+	PORT_DEFLK(gamblinden, Mission_BeforeFinalFight, SetNextMission, Before_SetNextMission) \
 	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, LoadScene, Before_LoadScene) \
 	PORT_DEFL(gamblinden, Mission_AfterFinalFight, InitStatus, After_InitStatus) \
 	PORT_DEFL(gamblinden, Mission_AfterFinalFight, Init, After_Init) \
@@ -3066,6 +3075,7 @@ PORT_DECLL(gamblinden, Mission_ThreeStooges, SetNextMission) /* 1 */
 	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, CrazyGamblerSpeech, Go_CrazyGamblerSpeech) \
 	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, Init, Go_Init) \
 	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, LoadScene, Go_LoadScene) \
+	PORT_DEFLK(gamblinden, Mission_GoToGamblinDen, SetNextMission, Go_SetNextMission) \
 	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, InitStatus, Traitor_InitStatus) \
 	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, Init, Traitor_Init) \
 	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, CreateTraitoriusInit, Traitor_CreateTraitoriusInit) \
@@ -3080,8 +3090,10 @@ PORT_DECLL(gamblinden, Mission_ThreeStooges, SetNextMission) /* 1 */
 	PORT_DEFL(gamblinden, Mission_BackFromMortalRace, SetNextMission, Back_SetNextMission) \
 	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, InitStatus, Meet_InitStatus) \
 	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, Init, Meet_Init) \
+	PORT_DEFLK(gamblinden, Mission_CrazyGamblerFirstContact, OnEndOfScene, Meet_OnEndOfScene) \
 	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerFirstSpeech, Meet_CrazyGamblerFirstSpeech) \
 	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerSecondSpeech, Meet_CrazyGamblerSecondSpeech) \
+	PORT_DEFLK(gamblinden, Mission_CrazyGamblerFirstContact, EndOfTalk, Meet_EndOfTalk) \
 	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, SetNextMission, Meet_SetNextMission) \
 	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, LoadScene, Meet_LoadScene) \
 	PORT_DEFL(gamblinden, Mission_ArrangeMortalRace, InitStatus, Mortal_InitStatus) \

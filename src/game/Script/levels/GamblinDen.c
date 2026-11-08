@@ -81,36 +81,11 @@ static byte Gd_ResDel(const char *name) {
 	return ok;
 }
 
-/* the arguments of a keyword function (PyArg_ParseTupleAndKeywords of fmt, "O|O" or "|O", with the Python names): the
- * objects as values into a, a missing one None with given 0 */
-static byte Gd_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, nativeVal_t *a, byte *given) {
-	PyObject *o[2] = { NULL, NULL };
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1])) {
-		return 0;
-	}
-	for (int i = 0; i < 2 && names[i]; i++) {
-		given[i] = o[i] != NULL;
-		if (o[i]) {
-			Native_Arg(o[i], &a[i]);
-		} else {
-			Native_SetNone(&a[i]);
-		}
-	}
-	return 1;
-}
-
-/* a keyword function with the one optional argument kwname that the core does not read (usr=None, char=None) */
+/* a keyword function with the one optional argument kwname that the core does not read (usr=None, char=None): its
+ * adapter and entry (MODE_KW) */
 #define GD_KW1(pre, name, kwname, call) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
-		static char *names[] = { kwname, NULL }; \
-		nativeVal_t a[2] = { 0 }; \
-		byte given[2]; \
-		(void)self; \
-		if (!Gd_Kw(args, kw, "|O", names, a, given)) { \
-			return NULL; \
-		} \
-		Native_Free(&a[0]); \
-		return Mode_Result(call); \
+	MODE_KW(pre, name, "|O", kwname) { \
+		return call; \
 	}
 
 /* ---- the lines the missions share ---- */
@@ -858,21 +833,10 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 	return Mode_Done(&t, Mode_LaterV(delay, "Map", "MercDrink", args, 2, NULL));
 }
 
-static PyObject *Den_MercDrink(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "merc", "ctr", NULL };
-	nativeVal_t a[2] = { 0 };
-	byte given[2];
-	(void)self;
-	if (!Gd_Kw(args, kw, "O|O", names, a, given)) {
-		return NULL;
-	}
-	if (!given[1]) {
-		Native_SetInt(&a[1], 0);
-	}
-	byte ok = Den_MercDrinkC(&a[0], &a[1]);
-	Native_Free(&a[0]);
-	Native_Free(&a[1]);
-	return Mode_Result(ok);
+/* the keyword adapter and entry of MercDrink(merc, ctr=0) */
+MODE_KW(Den, MercDrink, "O|O", "merc", "ctr") {
+	Mode_KwDefI(v, given, 1, 0);
+	return Den_MercDrinkC(&v[0], &v[1]);
 }
 
 /* ChatNPCs(Name, Vals=("PoliceBoss_Default", "CrazyGambler_Default")): two characters talk in turn every 2.5 s */
@@ -915,23 +879,17 @@ static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
 	return Mode_Done(&t, Mode_Later(2.5, "Map", "ChatNPCs", args, 2, NULL));
 }
 
-static PyObject *Den_ChatNPCs(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Name", "Vals", NULL };
-	nativeVal_t a[2] = { 0 };
-	byte given[2];
-	(void)self;
-	if (!Gd_Kw(args, kw, "O|O", names, a, given)) {
-		return NULL;
-	}
+/* the keyword adapter and entry of ChatNPCs(Name, Vals=("PoliceBoss_Default", "CrazyGambler_Default")) */
+MODE_KW(Den, ChatNPCs, "O|O", "Name", "Vals") {
+	nativeVal_t vals = { 0 };
 	if (!given[1]) {
-		Native_SetEmpty(&a[1], NV_TUPLE);
-		LvN_Str(Native_Append(&a[1]), "PoliceBoss_Default");
-		LvN_Str(Native_Append(&a[1]), "CrazyGambler_Default");
+		Native_SetEmpty(&vals, NV_TUPLE);
+		LvN_Str(Native_Append(&vals), "PoliceBoss_Default");
+		LvN_Str(Native_Append(&vals), "CrazyGambler_Default");
 	}
-	byte ok = Den_ChatNPCsC(&a[0], &a[1]);
-	Native_Free(&a[0]);
-	Native_Free(&a[1]);
-	return Mode_Result(ok);
+	byte ok = Den_ChatNPCsC(&v[0], given[1] ? &v[1] : &vals);
+	Native_Free(&vals);
+	return ok;
 }
 
 /* CharDance(Name): a dancer between its two dances, every 5 to 10 s */
