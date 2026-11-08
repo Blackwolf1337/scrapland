@@ -3856,6 +3856,9 @@ PORT_DECLL(press, Mission_MeetBoss, BertoSpeech2) /* 4 */
 PORT_DECLL(press, Mission_MeetBoss, DeactivateEmero) /* 0 */
 PORT_DECLL(press, Mission_MeetBoss, ActivateEmero) /* 0 */
 PORT_DECLL(press, Mission_MeetBoss, Init) /* 1 */
+PORT_DECLL(press, Mission_MeetBoss, PlayProlog0) /* ? */
+PORT_DECLL(press, Mission_MeetBoss, PlayProlog1) /* ? */
+PORT_DECLL(press, Mission_MeetBoss, PlayProlog2) /* ? */
 PORT_DECLL(press, Mission_MeetBoss, CreateBattery) /* 0 */
 PORT_DECLL(press, Mission_MeetBoss, AssingOnTakeBattery) /* 1 */
 PORT_DECLL(press, Mission_MeetBoss, OnTakeBattery) /* 2 */
@@ -3881,6 +3884,7 @@ PORT_DECLL(press, Mission_TalkToBoss, Init) /* 1 */
 PORT_DECLL(press, Mission_TalkToBoss, HideHumanIntoBureau) /* 0 */
 PORT_DECLL(press, Mission_TalkToBoss, CreateSceneLaunchers) /* 0 */
 PORT_DECLL(press, Mission_TalkToBoss, LaunchScene) /* 2 */
+PORT_DECLL(press, Mission_TalkToBoss, EndOfScene) /* ? */
 PORT_DECLL(press, Mission_TalkToBoss, OnPossession) /* 2 */
 PORT_DECLL(press, Mission_TalkToBoss, OnExitConversor) /* 0 */
 PORT_DECLL(press, Mission_TalkToBoss, CheckMaxDist) /* 0 */
@@ -3967,6 +3971,9 @@ PORT_DECLL(press, Mission_WhoIsTheBaddie, LoadScene) /* 0 */
 	PORT_DEFL(press, Mission_MeetBoss, DeactivateEmero, MeetBoss_DeactivateEmeroA) \
 	PORT_DEFL(press, Mission_MeetBoss, ActivateEmero, MeetBoss_ActivateEmeroA) \
 	PORT_DEFL(press, Mission_MeetBoss, Init, MeetBoss_InitA) \
+	PORT_DEFL(press, Mission_MeetBoss, PlayProlog0, MeetBoss_PlayProlog0) \
+	PORT_DEFL(press, Mission_MeetBoss, PlayProlog1, MeetBoss_PlayProlog1) \
+	PORT_DEFL(press, Mission_MeetBoss, PlayProlog2, MeetBoss_PlayProlog2) \
 	PORT_DEFL(press, Mission_MeetBoss, CreateBattery, MeetBoss_CreateBatteryA) \
 	PORT_DEFL(press, Mission_MeetBoss, AssingOnTakeBattery, MeetBoss_AssingOnTakeBatteryA) \
 	PORT_DEFL(press, Mission_MeetBoss, OnTakeBattery, MeetBoss_OnTakeBatteryA) \
@@ -3992,6 +3999,7 @@ PORT_DECLL(press, Mission_WhoIsTheBaddie, LoadScene) /* 0 */
 	PORT_DEFL(press, Mission_TalkToBoss, HideHumanIntoBureau, TalkToBoss_HideHumanIntoBureauA) \
 	PORT_DEFL(press, Mission_TalkToBoss, CreateSceneLaunchers, TalkToBoss_CreateSceneLaunchersA) \
 	PORT_DEFL(press, Mission_TalkToBoss, LaunchScene, TalkToBoss_LaunchSceneA) \
+	PORT_DEFL(press, Mission_TalkToBoss, EndOfScene, TalkToBoss_EndOfScene) \
 	PORT_DEFL(press, Mission_TalkToBoss, OnPossession, TalkToBoss_OnPossessionA) \
 	PORT_DEFL(press, Mission_TalkToBoss, OnExitConversor, TalkToBoss_OnExitConversorA) \
 	PORT_DEFL(press, Mission_TalkToBoss, CheckMaxDist, TalkToBoss_CheckMaxDistA) \

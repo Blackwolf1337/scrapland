@@ -2143,7 +2143,7 @@ static byte MeetBoss_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	return Mode_Import("CharsNPC") && Mode_Import("Chars") && LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", MB, "AfterBrowseNPC") &&
-		LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Betty") && LvN_MissionChar("Berto_MeetBos", MB, "CreateBertoInit") &&
+		PORT_CALL(Chars, AddNewCharRes, NULL, "s", "Betty") && LV_MISSIONCHAR("Berto_MeetBos", Mission_MeetBoss, CreateBertoInit) &&
 		Mode_GVarSetI("DefActionRadius", 1000);
 }
 
@@ -2169,7 +2169,7 @@ static int Pr_Demo(void) {
 static byte MeetBoss_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Init") || !LvN_Callback("Humphrey_Default", MB, "CreateHumphreyInit")) {
+	if (!Mode_Import("Init") || !LV_CALLBACK("Humphrey_Default", Mission_MeetBoss, CreateHumphreyInit)) {
 		return 0;
 	}
 	int demo = Pr_Demo();
@@ -2190,7 +2190,7 @@ static byte MeetBoss_CreateBertoInit(const nativeVal_t *a, nativeVal_t *out) {
 
 /* Speech.AutoSpeech(UsrName, CharName, optId, FullOption) */
 static byte Pr_AutoSpeech(const nativeVal_t *a) {
-	return LV_CALL("Speech", "AutoSpeech", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	return PORT_CALL(Speech, AutoSpeech, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 }
 
 /* BertoSpeech(UsrName, CharName, optId, FullOption): the first talk starts the prolog (Berto goes, the camera of
@@ -2202,7 +2202,7 @@ static byte MeetBoss_BertoSpeech(const nativeVal_t *a, nativeVal_t *out) {
 		return LvN_PutI(MB, "FirstBertoSpeech", 0) && Mode_Target(NULL) &&
 			Mode_EntSetS("DM_Door_Metro_Press", "UseFunc", "Mission_MeetBoss.OnTryingToExit2") &&
 			Mode_EntSetS("DM_Door_Elevator_Press", "OnObjSlot", "!CloseDoorSlot") && Pr_DelIfS("Berto_MeetBos") &&
-			Mode_GSetI(MB, "sebastian", "Active", 1) && LV_OWN(MB, "PlayProlog0", NULL, "");
+			Mode_GSetI(MB, "sebastian", "Active", 1) && PORT_LOWN(Mission_MeetBoss, PlayProlog0, NULL, "");
 	}
 	return first == 0 && Pr_AutoSpeech(a);
 }
@@ -2216,7 +2216,7 @@ static byte MeetBoss_BertoSpeech2(const nativeVal_t *a, nativeVal_t *out) {
 	if (LvN_SaveIs("Stats.PossessBerto", "1")) {
 		return Pr_AutoSpeech(a);
 	}
-	return LV_CALL("Speech", "RestoreState", NULL, "v", &a[1]) &&
+	return PORT_CALL(Speech, RestoreState, NULL, "v", &a[1]) &&
 		Mode_Spch("Mission_FirstCrazyBet_Humphrey_InitMsg2", "Mission_FirstCrazyBet_Humphrey_InitAns2", NULL);
 }
 
@@ -2254,7 +2254,7 @@ static byte Pr_Exits(const char *use) {
 static byte Pr_CreateChar(const char *name) {
 	nativeVal_t ch;
 	Native_SetNone(&ch);
-	byte ok = LV_CALL("CharsNPC", "CreateMissionChar", &ch, "s", name) && LV_CALL("CharsNPC", "CreateChar", NULL, "v", &ch);
+	byte ok = PORT_CALL(CharsNPC, CreateMissionChar, &ch, "s", name) && PORT_CALL(CharsNPC, CreateChar, NULL, "v", &ch);
 	Native_Free(&ch);
 	return ok;
 }
@@ -2297,7 +2297,7 @@ static byte MeetBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Mode_SaveVar("MissionState", &state);
 	LvN_Str(&meet, "MeetBoss");
-	int other = LV_OWN(MB, "DeactivateEmero", NULL, "") ? Mode_Cmp(&state, "!=", &meet) : -1;
+	int other = PORT_LOWN(Mission_MeetBoss, DeactivateEmero, NULL, "") ? Mode_Cmp(&state, "!=", &meet) : -1;
 	Native_Free(&meet);
 	if (other < 0 || (other && (!Pr_DelIfS("Berto_MeetBos") || !Pr_CreateChar("Berto_Default"))) || !LvN_Entity("Sebastian_Camera", &seb)) {
 		Native_Free(&state);
@@ -2325,18 +2325,25 @@ static byte MeetBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 			SaveVar_Set("PlayerHasBeenKilled", "0");
 			ok = Pr_Remote("Mission_DestroyPolice_RemoteMessage5", "Bishop", NULL, NULL, 0);
 		}
-		ok = ok && LV_OWN(MB, "CreateBattery", NULL, "") && Mode_GVarSetI("GenCharAttackActive", 0);
+		ok = ok && PORT_LOWN(Mission_MeetBoss, CreateBattery, NULL, "") && Mode_GVarSetI("GenCharAttackActive", 0);
 	} else if (LvN_EqS(&state, "ConvertIntoDtritus")) {
-		ok = Pr_Exits("Mission_MeetBoss.OnTryingToExit3") && Pr_Remote("Mission_FirstCrazyBet_RemoteMessage1", "CrazyGambler", MB, "UseConversor", 1);
+		ok = Pr_Exits("Mission_MeetBoss.OnTryingToExit3") &&
+			LV_COM("Mission_FirstCrazyBet_RemoteMessage1", "CrazyGambler", Mission_MeetBoss, UseConversor, LvN_NoArgs());
 	} else if (LvN_EqS(&state, "ChallengeHumphrey")) {
-		ok = Pr_Exits("Mission_MeetBoss.OnTryingToExit3") && LV_OWN(MB, "ChallengeHumphrey", NULL, "");
+		ok = Pr_Exits("Mission_MeetBoss.OnTryingToExit3") && PORT_LOWN(Mission_MeetBoss, ChallengeHumphrey, NULL, "");
 	}
 	Native_Free(&state);
 	return ok;
 }
 
-/* the optional usr of the prolog functions: the adapter of a core without arguments */
+/* the optional usr of the prolog functions: the entry and the adapter of a core without arguments (the adapter keeps
+ * the keyword usr and the errors of PyArg_ParseTupleAndKeywords) */
 #define PR_USRFN(fn, core) \
+	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		const nativeVal_t *usr = NULL; \
+		(void)out; \
+		return Mode_Parse(a, n, "|O", &usr) && core(); \
+	} \
 	static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
 		static char *names[] = { "usr", NULL }; \
 		PyObject *usr = NULL; \
@@ -2353,7 +2360,7 @@ static byte Mb_PlayProlog0(void) {
 	Native_SetNone(&gc);
 	Native_SetNone(&ch);
 	byte ok = Mode_UsrHandle(&ch) && LvN_SetInts3(&ch, "Pos", -1114, -312, 7562) && LvN_SetInts3(&ch, "Ang", 0, 0, 0) &&
-		LV_CALL("Scene", "Play", NULL, "s", "Prolog0") && PR_HOOK("Scene", "EndOfSceneCallback", MB, "PlayProlog1") && Mode_Target("");
+		PORT_CALL(Scene, Play, NULL, "s", "Prolog0") && PR_HOOK("Scene", "EndOfSceneCallback", MB, "PlayProlog1") && Mode_Target("");
 	Native_Free(&ch);
 	if (!ok || !LvN_Entity("GateKeeper_DTritusBossRoom", &gc)) {
 		return 0;
@@ -2366,13 +2373,13 @@ static byte Mb_PlayProlog0(void) {
 /* PlayProlog1(usr=None), PlayProlog2(usr=None) */
 static byte Mb_PlayProlog1(void) {
 	return Mode_EntSetS("DM_Door_PressSlidingDoor_01", "OnObjSlot", "!AutoDoorUsrSlot") && Mode_EntSetS("DM_Door_PressSlidingDoor_00", "OnObjSlot", "") &&
-		Mode_Fade(0, lv_black, lv_clear, 1.0) && LV_CALL("Scene", "Play", NULL, "s", "Prolog1") &&
+		Mode_Fade(0, lv_black, lv_clear, 1.0) && PORT_CALL(Scene, Play, NULL, "s", "Prolog1") &&
 		PR_HOOK("Scene", "EndOfSceneCallback", MB, "PlayProlog2");
 }
 
 static byte Mb_PlayProlog2(void) {
 	return LvN_SetMusic("Music/Track1.ogg", 1.0) && Mode_EntSetS("DM_Door_PressSlidingDoor_00", "OnObjSlot", "!AutoDoorUsrSlot") &&
-		Mode_Fade(0, lv_black, lv_clear, 1.0) && LV_CALL("Scene", "Play", NULL, "s", "Prolog2") &&
+		Mode_Fade(0, lv_black, lv_clear, 1.0) && PORT_CALL(Scene, Play, NULL, "s", "Prolog2") &&
 		PR_HOOK("Scene", "EndOfSceneCallback", MB, "AssignFirstMission");
 }
 
@@ -2408,7 +2415,7 @@ static byte MeetBoss_CreateBattery(const nativeVal_t *a, nativeVal_t *out) {
 	Mode_Ints3(at, 2619, 106, 3165);
 	Mode_Ints3(cam, 0, 100, 0);
 	byte ok = Mode_Import("MisItems") && Mode_Import("MissionsFuncs") && LvN_GObj(MB, "AssingOnTakeBattery", fn) &&
-		LV_CALL("MisItems", "CreateBattery", b, "vv", at, fn) && Mode_VGet(b, "Pos", pos) && Mode_VGet(b, "Name", bn) &&
+		PORT_CALL(MisItems, CreateBattery, b, "vv", at, fn) && Mode_VGet(b, "Pos", pos) && Mode_VGet(b, "Name", bn) &&
 		Native_Arith('+', bn, Mode_S(&t, "CheckArrow"), name) && LvN_CreateAt(name, pos, "WithLife", b2) && Mode_VSet(b2, "CamTgt", cam) &&
 		Mode_DelSchedS("DeleteCoin") && LvN_TargetName(b2) && Pr_DtritusKeys("", "") && Pr_EnergyBar(0);
 	return Mode_Done(&t, ok);
@@ -2433,7 +2440,7 @@ static byte MeetBoss_OnTakeBattery(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&it);
 	Native_SetNone(&usr);
 	ok = ok && Mode_Target(NULL) && Mode_UsrHandle(&usr) && LvN_SetI(&usr, "Energy", 0) && Pr_DtritusKeys("Mission_MeetBoss.OnActionPressed", "") &&
-		Pr_EnergyBar(1) && LV_CALL("Scorer", "Blink", NULL, "is", 5L, "SpecialAction");
+		Pr_EnergyBar(1) && PORT_CALL(Scorer, Blink, NULL, "is", 5L, "SpecialAction");
 	Native_Free(&usr);
 	if (!ok) {
 		return 0;
@@ -2460,7 +2467,7 @@ static byte MeetBoss_PreBertoPossession(const nativeVal_t *a, nativeVal_t *out) 
 	}
 	byte ok = !Native_True(&e) || LvN_SetS(&e, "UseFunc", "Mission_MeetBoss.BertoSpeech2");
 	Native_Free(&e);
-	return ok && LV_OWN(MB, "BertoPossession", NULL, "");
+	return ok && PORT_LOWN(Mission_MeetBoss, BertoPossession, NULL, "");
 }
 
 /* the system message of the text of key with the key of action (Lv_MsgText of Lv_KeyText) */
@@ -2477,10 +2484,10 @@ static byte MeetBoss_BertoPossession(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	SaveVar_Set("JackInTheBox.Active", "1");
-	return LV_CALL("MissionsFuncs", "NewCrazyDeal", NULL, "isi", 1L, "Stats.PossessBerto", 1L) &&
-		LV_CALL("MissionsFuncs", "NewCrazyDeal", NULL, "isi", 2L, "Stats.ConvertIntoDtritus", 1L) &&
-		LV_CALL("MissionsFuncs", "NewCrazyDeal", NULL, "isi", 3L, "Stats.WinHumphreyRace", 1L) &&
-		LV_CALL("MissionsFuncs", "SetNextSuperDeal", NULL, "sss", "CA", "SuperDeal_First", "Versus") &&
+	return PORT_CALL(MissionsFuncs, NewCrazyDeal, NULL, "isi", 1L, "Stats.PossessBerto", 1L) &&
+		PORT_CALL(MissionsFuncs, NewCrazyDeal, NULL, "isi", 2L, "Stats.ConvertIntoDtritus", 1L) &&
+		PORT_CALL(MissionsFuncs, NewCrazyDeal, NULL, "isi", 3L, "Stats.WinHumphreyRace", 1L) &&
+		PORT_CALL(MissionsFuncs, SetNextSuperDeal, NULL, "sss", "CA", "SuperDeal_First", "Versus") &&
 		Pr_DtritusKeys("", "Mission_MeetBoss.OnPossession") && Pr_KeyMsg("Mission_FirstCrazyBet_SystemMessage2", "Possession") &&
 		Mode_Later(20, MB, "OnWarning", NULL, 0, "Warnings") && Mode_Target("Berto_Default");
 }
@@ -2566,8 +2573,9 @@ static byte MeetBoss_OnPossession(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&fall);
 	if (!ok || !Mode_SetAlarm(&one) || !Mode_GVarSetI("AlarmFallDelta", 0) || !Mode_Target(NULL) ||
 		!Pr_DtritusKeys("!DtritusActionPress", "CharConversor.Possession") || !Mode_SAct("GetClass", "Berto") ||
-		!Mode_SActSet(1, "ActionPress", "", 0) || !LV_CALL("CharConversor", "Possession", NULL, "vv", &a[0], &a[1]) ||
-		!Pr_Remote("Mission_FirstCrazyBet_RemoteMessage3", "CrazyGambler", MB, "ShowMessage", 1) || !Mode_DelSchedS("Warnings") ||
+		!Mode_SActSet(1, "ActionPress", "", 0) || !PORT_CALL(CharConversor, Possession, NULL, "vv", &a[0], &a[1]) ||
+		!LV_COM("Mission_FirstCrazyBet_RemoteMessage3", "CrazyGambler", Mission_MeetBoss, ShowMessage, LvN_NoArgs()) ||
+		!Mode_DelSchedS("Warnings") ||
 		!Mb_UnqueueCom("Mission_FirstCrazyBet_RemoteMessage2") || !LvN_ModAppendG("Alarm", "SetAlarmCallback", MB, "OnAlarmEnd")) {
 		return 0;
 	}
@@ -2658,7 +2666,7 @@ static byte MeetBoss_OnConversorUsed(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&e);
 	Native_Free(&r);
 	if (target > 0) {
-		return LV_CALL("CharConversor", "EnterCharConversor", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+		return PORT_CALL(CharConversor, EnterCharConversor, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 	}
 	return target == 0 && Pr_Remote("Mission_FirstCrazyBet_RemoteMessage1", "CrazyGambler", NULL, NULL, 0);
 }
@@ -2714,9 +2722,10 @@ static byte MeetBoss_HumphreySpeech(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&e);
 	Native_Free(&act);
 	if (drives > 0) {
-		return LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(MB, "SetNextMission", NULL) && LV_CALL("Speech", "NISpeech", NULL, "s", "Humphrey") &&
-			LV_CALL("Speech", "AddNI", NULL, "ss", "Mission_FirstCrazyBet_Humphrey_InitMsg1", "Mission_FirstCrazyBet_Humphrey_InitAns1") &&
-			LV_CALL("Speech", "RunNI", NULL, "");
+		return LvN_Speakers(&a[0], &a[1]) && LV_ONEND(Mission_MeetBoss, SetNextMission, NULL) &&
+			PORT_CALL(Speech, NISpeech, NULL, "s", "Humphrey") &&
+			PORT_CALL(Speech, AddNI, NULL, "ss", "Mission_FirstCrazyBet_Humphrey_InitMsg1", "Mission_FirstCrazyBet_Humphrey_InitAns1") &&
+			PORT_CALL(Speech, RunNI, NULL, "");
 	}
 	return drives == 0 && Pr_Remote("Mission_FirstCrazyBet_RemoteMessage10", "CrazyGambler", NULL, NULL, 0);
 }
@@ -2728,7 +2737,7 @@ static byte MeetBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&path);
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Init") || !LV_OWN(MB, "ActivateEmero", NULL, "")) {
+	if (!Mode_Import("Init") || !PORT_LOWN(Mission_MeetBoss, ActivateEmero, NULL, "")) {
 		return 0;
 	}
 	SaveVar_Set("CrazyWing.Status", "1");
@@ -2738,14 +2747,14 @@ static byte MeetBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	int demo = Pr_Demo();
 	byte ok;
 	if (demo > 0) {
-		ok = LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_Demo_HumphreyRace", "Outskirts") &&
-			LV_CALL("SaveGame", "MarkWayPoint", NULL, "ss", "Levels/Outskirts", "DM_Player_Spawn_GamblinDen");
+		ok = PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_Demo_HumphreyRace", "Outskirts") &&
+			PORT_CALL(SaveGame, MarkWayPoint, NULL, "ss", "Levels/Outskirts", "DM_Player_Spawn_GamblinDen");
 	} else if (demo == 0) {
 		Native_SetNone(&tail);
 		Native_SetNone(&spawn);
-		ok = LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_HumphreyRace", "DownTown") && LvN_ModGet("Init", "Path", &path) &&
+		ok = PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_HumphreyRace", "DownTown") && LvN_ModGet("Init", "Path", &path) &&
 			Native_Slice(&path, 7, 0x7fffffff, &tail) && LvN_Cat("DM_Player_Spawn_", &tail, &spawn) &&
-			LV_CALL("SaveGame", "MarkWayPoint", NULL, "sv", "Levels/DownTown", &spawn);
+			PORT_CALL(SaveGame, MarkWayPoint, NULL, "sv", "Levels/DownTown", &spawn);
 		Native_Free(&path);
 		Native_Free(&tail);
 		Native_Free(&spawn);
@@ -2764,7 +2773,7 @@ static byte MeetBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	if (!drives) {
 		SaveVar_Set("Char", "Dtritus");
 	}
-	return LV_CALL("SaveGame", "StartGame", NULL, "");
+	return PORT_CALL(SaveGame, StartGame, NULL, "");
 }
 
 LV_FN(MeetBoss, InitStatusA, 1, MeetBoss_InitStatus)
