@@ -46,9 +46,4 @@ extern int (*g_PyImportGate)(const char *path);
 /* a line in the log of the gate (SCRAP_PY_GATE): the level, what, the module name, a detail; nothing when it is off */
 void Py_GateNote(const char *what, const char *name, const char *detail);
 
-/* ScrapC only, SCRAP_PY_PROFILE=<file>: the code objects that run, with counts (src/game/PyInterface/PyProfile.c);
- * Start after Py_Initialize, End after Py_Finalize. Nothing happens without the variable. */
-void PyProfile_Start(void);
-void PyProfile_End(void);
-
 #endif

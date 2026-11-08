@@ -34,9 +34,8 @@
  *   recorder <target> <list> [<literal> | raise <exception> <text>]   puts a recorder function at target (a module
  *                            variable, e.g. __main__.f or CharAct.onNPCDeath): each call appends its argument tuple
  *                            to the list __main__.<list> and returns the literal (None), or raises
- *   py <code>                (STAGE 7) Python: an expression gives its repr, statements the repr of the global
- *                            "result" or ok; "py" alone on the first line takes the rest of the file as the code
- *   native [str|check] <literal>, native py   native values without Python objects (TestNative.c)
+ *   py <code>                answers an error: there is no Python interpreter (also "py" alone on the first line)
+ *   native [str|check] <literal>   native values without Python objects (TestNative.c)
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
  * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code).
  */
@@ -60,15 +59,7 @@
 #include "scrap/world.h"
 #include "testchannel.h"
 
-#include <eval.h>
-
-/* STAGE 7 of the removal of the interpreter: TC_PYTHON is 0 in the build without it (SCRAP_NO_PYTHON); the "py"
- * command answers an error there */
-#ifdef SCRAP_NO_PYTHON
-#define TC_PYTHON 0
-#else
-#define TC_PYTHON 1
-#endif
+/* the answer of the "py" command: there is no interpreter */
 #define TC_NOPYTHON "error: SystemError: py: no Python interpreter in this build\n"
 
 #define TC_CMD "test_cmd.txt"
@@ -812,59 +803,6 @@ static void TC_Con(tcBuf *b, const char *arg) {
 	}
 }
 
-/* ---- Python (STAGE 7) ---- */
-
-#if TC_PYTHON
-/* the code as the game side of the MCP server ran it (tools/mcp/mcpgame.py): an expression gives its repr,
- * statements the repr of the global "result" (or ok), in the globals of __main__ */
-static void TC_Python(tcBuf *b, const char *code) {
-	PyObject *g = TcX_Main();
-	PyObject *v = NULL;
-
-	for (const char *const *m = (const char *const[]){ "string", "sys", NULL }; *m; m++) {
-		if (!PyDict_GetItemString(g, (char *)*m)) {
-			PyObject *mod = PyImport_ImportModule((char *)*m);
-			if (mod) {
-				PyDict_SetItemString(g, (char *)*m, mod);
-			}
-			Py_XDECREF(mod);
-			PyErr_Clear();
-		}
-	}
-	PyObject *co = Py_CompileString((char *)code, "mcp", Py_eval_input);
-	if (co) {
-		v = PyEval_EvalCode((PyCodeObject *)co, g, g);
-		Py_DECREF(co);
-	} else if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
-		PyErr_Clear();
-		if (PyDict_GetItemString(g, "result")) {
-			PyDict_DelItemString(g, "result");
-		}
-		co = Py_CompileString((char *)code, "mcp", Py_file_input);
-		PyObject *r = co ? PyEval_EvalCode((PyCodeObject *)co, g, g) : NULL;
-		Py_XDECREF(co);
-		if (r) {
-			Py_DECREF(r);
-			v = PyDict_GetItemString(g, "result");
-			if (v) {
-				Py_INCREF(v);
-			} else {
-				TC_Add(b, "ok\n", 3);
-				return;
-			}
-		}
-	}
-	if (v) {
-		TC_AddObj(b, v, 1);
-		Py_DECREF(v);
-	} else {
-		TC_Add(b, "error: ", -1);
-		TC_AddError(b);
-	}
-	TC_Add(b, "\n", 1);
-}
-#endif
-
 /* ---- the commands ---- */
 
 /* native ...: the native values of the script ports (TestNative.c) */
@@ -967,11 +905,7 @@ static void TC_Line(tcBuf *b, const char *line) {
 			TC_Add(b, "\n", 1);
 		}
 	} else if (TC_Verb(line, "py", &arg)) {
-#if TC_PYTHON
-		TC_Python(b, arg);
-#else
 		TC_Add(b, TC_NOPYTHON, -1);
-#endif
 	} else if (TC_Verb(line, "in", &arg)) {
 		TC_In(b, arg);
 	} else {
@@ -985,16 +919,7 @@ static void TC_Line(tcBuf *b, const char *line) {
 /* runs the body of a command file (CR dropped) */
 static void TC_Run(tcBuf *b, char *body) {
 	if (!strncmp(body, "py\n", 3)) {
-#if TC_PYTHON
-		if (g_PythonReady) {
-			TC_Python(b, body + 3);
-			PyErr_Clear();
-		} else {
-			TC_Add(b, "error: the script modules are not ready\n", -1);
-		}
-#else
 		TC_Add(b, TC_NOPYTHON, -1);
-#endif
 		return;
 	}
 	for (char *line = body; line && *line;) {

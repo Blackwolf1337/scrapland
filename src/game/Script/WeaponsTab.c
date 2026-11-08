@@ -232,7 +232,7 @@ static byte WT_Last(const nativeVal_t *control, nativeVal_t *out) {
 /*
  * exec(code) in a function of the module that imported HangarTab: the lines "HangarTab.prevShip.<name> = <literal>"
  * and "HangarTab.prevShip.<name> = 1 - HangarTab.prevShip.<name>" made directly; a text in another form (made of
- * table values a test changed) goes to the exec line reader with its errors (OBJLIB 6, STAGE 7)
+ * table values a test changed) goes to the exec line reader with its errors (OBJLIB 6)
  */
 static byte WT_Exec(const nativeVal_t *code) {
 	static const char ship[] = "HangarTab.prevShip.";

@@ -215,7 +215,6 @@ void Python_Init(void) {
 		*const viewer[] = { "Viewer", NULL };
 
 	Py_Initialize();
-	PyProfile_Start();
 	g_PythonReady = 1;
 	Py_LineEnd(Py_LineConsoleClass("ConsoleOutput", py_consoleOut));
 	Py_LineEnd(Py_LineConsoleClass("ConsoleErrorOutput", py_consoleError));
@@ -239,7 +238,6 @@ void Python_Init(void) {
 	}
 	/* STAGE 7: the engine variable PythonExecute (the command line, the MCP harness) is Python; it goes with the
 	 * interpreter (a C command channel takes the harness): the build without it says so when it is set */
-#ifdef SCRAP_NO_PYTHON
 	if (g_PythonExecute && *g_PythonExecute && (!GVar_PythonExecute.def.s ||
 		strcmp(g_PythonExecute, GVar_PythonExecute.def.s))) {
 		Con_Errorf("PythonExecute ignored, no Python interpreter in this build: %s\n", g_PythonExecute);
@@ -252,9 +250,6 @@ void Python_Init(void) {
 		Con_Errorf("%s: no script module loads, the scripts of the packs need the Python interpreter (not in this "
 			"build)\n", pack && *pack == '1' ? "SCRAP_PACK_SCRIPTS=1" : "SCRAP_CMOD=0");
 	}
-#else
-	PyRun_ScrapString(g_PythonExecute);
-#endif
 	/* the marshal buffer of Pack_PreloadLibrary is not needed after the start */
 	cStaticBuffer *buf = g_PyStaticBuffer;
 	CHECK(!buf->lock);
@@ -270,7 +265,6 @@ void Python_Close(void) {
 	cPy_Function_ClearAll();
 	CharsNPC_Close();
 	Py_Finalize();
-	PyProfile_End();
 	g_PythonReady = 0;
 }
 
@@ -296,7 +290,6 @@ static int py_gate = -1;
 static byte py_refuse;
 static FILE *py_gateFile;
 
-#ifdef SCRAP_NO_PYTHON
 #define PY_IGNORED_MAX 512
 
 /* the console line of a module the build without the interpreter does not load, once for each name */
@@ -314,7 +307,6 @@ static void Py_IgnoredOnce(const char *name, const char *file) {
 	}
 	Con_Printf("%s (%s) not loaded: it is Python code, this build has no interpreter\n", name, file);
 }
-#endif
 
 static byte Py_GateOn(void) {
 	if (py_gate < 0) {
@@ -344,13 +336,7 @@ void Py_GateNote(const char *what, const char *name, const char *file) {
 
 /* 1 when the module code may run; else the refusal is logged and ImportError set */
 static byte Py_GateAllow(const char *name, const char *file) {
-#ifdef SCRAP_NO_PYTHON
 	Py_IgnoredOnce(name, file);
-#else
-	if (!Py_GateOn() || !py_refuse) {
-		return 1;
-	}
-#endif
 	Py_GateNote("refused", name, file);
 	PyErr_Format(PyExc_ImportError, "pack module %.100s (%.100s) refused: no C definition", name, file);
 	return 0;
@@ -382,13 +368,7 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 
 	cFilePack_ctor(&f);
 	CHECK(Py_IsReady());
-#ifdef SCRAP_NO_PYTHON
 	g_PyImportGate = Py_GateImport;
-#else
-	if (Py_GateOn()) {
-		g_PyImportGate = Py_GateImport;
-	}
-#endif
 	if (PackLog_Closed()) {
 		if (PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name)) {
 			Py_GateNote("loaded", name, file);
@@ -401,26 +381,6 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 				}
 				CHECK(m != NULL);
 			} else if (Py_GateAllow(name, file)) {
-#ifndef SCRAP_NO_PYTHON /* never there: Py_GateAllow refuses */
-				Py_GateNote("pyc", name, file);
-				CHECK(cFilePack_Open(&f.file.base, file, FILE_MODE_READ));
-				int size = cFilePack_Size(&f.file.base);
-				char *data = cStaticBuffer_Get(g_PyStaticBuffer, size);
-				cFilePack_Read(&f.file.base, data, size);
-				CHECK(cFilePack_Close(&f.file.base));
-				/* .pyc: magic and time, then the marshaled code object */
-				PyObject *co = PyMarshal_ReadObjectFromString(data + 8, size - 8);
-				CHECK(g_PyStaticBuffer->lock);
-				g_PyStaticBuffer->lock = 0;
-				CHECK(co != NULL);
-				CHECK(co->ob_type == &PyCode_Type);
-				char path[0x100];
-				Str_Printf(path, sizeof(path), "PACK: %s", file);
-				m = PyImport_ExecCodeModuleEx((char *)name, co, path);
-				Py_DECREF(co);
-				CHECK(m != NULL);
-				Script_ModuleLoaded(name, m);
-#endif
 			} else {
 				PyErr_Clear();
 			}
