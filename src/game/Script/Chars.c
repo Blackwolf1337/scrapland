@@ -12,8 +12,8 @@
  * CreateEntity, GetNetFlags, the dummy search, the scheduler, SAct.GetClass/SetCls/DelClass, SInput.SetActionSet,
  * SLogic.SetOnFloor); the other ports (CharsNPC, CharScorer, MissionsFuncs) and the functions of the module the
  * script calls through its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5), the
- * function given to the scheduler by name (OBJLIB 4). The exec of a character's Init and the eval of the saved
- * batteries keep the readers of the game's texts (OBJLIB 6).
+ * function given to the scheduler by name (OBJLIB 4). The exec of a character's Init keeps the reader of the game's
+ * texts (OBJLIB 6); the eval of the saved batteries reads its literal natively (Mode_EvalIn).
  */
 #include <string.h>
 
