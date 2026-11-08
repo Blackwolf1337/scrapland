@@ -21,10 +21,12 @@
  * Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity, GetEntity, CreateEntity, Preload3DObject, the dummy search,
  * the scheduler, SInput.Bind, SScorer.Set and SetMsgText, SSound.Play and LoadSound and SAI.GetStateVehicle go through
  * their seams, and the racers, checkpoints and cameras are handle values (OBJLIB 7). The other ports (Challenge,
- * Speech, Menu, SaveGame, VehiclesNPC, OutMap, RacerScorer, string), SAI.SetStateVehicle, InitVehicleRace and
- * AddVehicleRace, Scrap.SetCam, the call function of Scrap, SVec.GetAngle and CProd and SInput.GetActionSet stay by
- * name (OBJLIB 3, 7); the hooks, the races of MapRace and the module's own functions are called as the values the
- * script calls; the scorer file takes its $names as a dict (OBJLIB 6).
+ * Speech, Menu, SaveGame, VehiclesNPC, OutMap, RacerScorer) and the module's own functions (through its globals, as
+ * the script calls them) go through their refs (PORT_CALL, PORT_OWN, stage 3), string.find and replace through the
+ * native twins. SAI.SetStateVehicle, InitVehicleRace and AddVehicleRace, Scrap.SetCam, the call function of Scrap,
+ * SVec.GetAngle and CProd and SInput.GetActionSet stay by name (OBJLIB 7), the class VehiclesNPC.cShipAI too (OBJLIB
+ * 4); the hooks, GetDealType and the races of MapRace are called as the values the script calls (OBJLIB 4, 5); the
+ * scorer file takes its $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
 
@@ -46,9 +48,6 @@ static byte Rm_G(const char *name, nativeVal_t *out) {
 	return Mode_G(RM, name, out);
 }
 
-/* a function of the module as its functions call it (OBJLIB 3: through its global) */
-#define Rm_Call(func, out, ...) Native_CallGlobal(RM, func, out, __VA_ARGS__)
-
 /* x == one of the texts (the == of the script): 1, 0, -1 */
 static int Rm_InS(const nativeVal_t *x, const char *const *texts) {
 	for (; *texts; texts++) {
@@ -69,22 +68,21 @@ static byte Rm_NoTutorial(void) {
 	return r;
 }
 
-/* ShowSystemMessage(string.replace(Scrap.GetLangStr(key), "<n>", Scrap.GetSaveVar("Challenge.Money"))) (OBJLIB 3:
- * string.replace by name, ShowSystemMessage through the global) */
+/* ShowSystemMessage(string.replace(Scrap.GetLangStr(key), "<n>", Scrap.GetSaveVar("Challenge.Money"))) (the global
+ * looked up after the arguments: the same result, as the arguments cannot fail) */
 static byte Rm_MoneyMsg(const char *key) {
 	nativeVal_t lang, money, text = { 0 };
-	PyObject *fn = Mode_GlobalPy(RM, "ShowSystemMessage");
 	Mode_Lang(key, &lang);
 	Mode_SaveVar("Challenge.Money", &money);
-	byte ok = fn && PORT_CALL(string, replace, &text, "vsv", &lang, "<n>", &money) && Native_Call(fn, NULL, "v", &text);
-	Py_XDECREF(fn);
+	byte ok = PORT_CALL(string, replace, &text, "vsv", &lang, "<n>", &money) &&
+		PORT_OWN(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	Native_Free(&lang);
 	Native_Free(&money);
 	Native_Free(&text);
 	return ok;
 }
 
-/* Speech.AddRemoteCom(prefix + "Mercs" or prefix + ChallengeFoeType, ChallengeFoeType) (OBJLIB 3) */
+/* Speech.AddRemoteCom(prefix + "Mercs" or prefix + ChallengeFoeType, ChallengeFoeType) */
 static byte Rm_FoeCom(const char *prefix) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *foe = Mode_V(&t), *key = Mode_V(&t), *who = Mode_V(&t);
@@ -93,7 +91,7 @@ static byte Rm_FoeCom(const char *prefix) {
 	}
 	int merc = Rm_InS(foe, rm_mercs);
 	return Mode_Done(&t, merc >= 0 && Mode_Cat(&t, key, 2, Mode_S(&t, prefix), merc ? Mode_S(&t, "Mercs") : foe) &&
-		Rm_G("ChallengeFoeType", who) && Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", key, who));
+		Rm_G("ChallengeFoeType", who) && PORT_CALL(Speech, AddRemoteCom, NULL, "vv", key, who));
 }
 
 /* the revenge of a race: Revenge.Type Race, the foe, the last winner, the number of enemies */
@@ -125,10 +123,10 @@ static byte Rm_Double(nativeVal_t *out) {
 	return ok;
 }
 
-/* Menu.DrawScorer(0, SInput.GetActionSet()) (OBJLIB 3, 7: by name) */
+/* Menu.DrawScorer(0, SInput.GetActionSet()) (OBJLIB 7: SInput by name) */
 static byte Rm_Draw(void) {
 	nativeVal_t set = { 0 };
-	byte ok = Native_CallMod("SInput", "GetActionSet", &set, "") && Native_CallMod("Menu", "DrawScorer", NULL, "iv", 0L, &set);
+	byte ok = Native_CallMod("SInput", "GetActionSet", &set, "") && PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set);
 	Native_Free(&set);
 	return ok;
 }
@@ -153,7 +151,7 @@ static byte Rm_WinLives(void) {
 static byte Rm_AddMoney(const nativeVal_t *money) {
 	nativeVal_t m, sum = { 0 };
 	Native_SetInt(&m, Mode_GetMoney());
-	byte ok = Mode_Arith('+', &m, money, &sum) && Mode_SetMoneySeam(&sum) && Native_CallMod("SaveGame", "SaveMoney", NULL, "");
+	byte ok = Mode_Arith('+', &m, money, &sum) && Mode_SetMoneySeam(&sum) && PORT_CALL(SaveGame, SaveMoney, NULL, "");
 	Native_Free(&sum);
 	return ok;
 }
@@ -181,8 +179,7 @@ static byte Rm_ShowSystemMessage(const nativeVal_t *cad) {
 }
 
 /* NPCCombatKilled(LooserName, WinnerName): the OnDeath of the enemies of a combat; when the last one dies the player
- * wins lives (the mercenaries) or twice the bet, the revenge is set and the challenge ends (OBJLIB 3: Challenge by
- * name) */
+ * wins lives (the mercenaries) or twice the bet, the revenge is set and the challenge ends */
 static byte Rm_NPCCombatKilled(const nativeVal_t *looser) {
 	static const char *const mods[] = { "string", "Menu", "SaveGame", "Challenge" };
 	modeVals_t t = { .n = 0 };
@@ -211,8 +208,8 @@ static byte Rm_NPCCombatKilled(const nativeVal_t *looser) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Challenge.NumEnemies", num);
-	return Mode_Done(&t, Mode_SetSaveVar("Revenge.NumEnemies", num) && Native_CallMod("Challenge", "CleanChallenge", NULL, "") &&
-		Native_CallMod("Challenge", "SetRevenge", NULL, "i", 0L));
+	return Mode_Done(&t, Mode_SetSaveVar("Revenge.NumEnemies", num) && PORT_CALL(Challenge, CleanChallenge, NULL, "") &&
+		PORT_CALL(Challenge, SetRevenge, NULL, "i", 0L));
 }
 
 /* the entity named by the engine variable CurrentWaypointName (plus suffix) without its OnTake, deleted */
@@ -231,8 +228,7 @@ static byte Rm_DeleteCurrentWaypoint(void) {
 	return Rm_DelWaypoint(NULL) && Rm_DelWaypoint("_Trigg");
 }
 
-/* the vehicle name back into the traffic (police ships the cops); OBJLIB 3, 7: string.find and SAI.SetStateVehicle by
- * name */
+/* the vehicle name back into the traffic (police ships the cops); OBJLIB 7: SAI.SetStateVehicle by name */
 static byte Rm_ToTraffic(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *veh = Mode_V(&t), *zero = Mode_V(&t), *model = Mode_V(&t), *at = Mode_V(&t), *vname = Mode_V(&t);
@@ -305,13 +301,13 @@ static byte Rm_GroupMsg(const nativeVal_t *group, const char *mercs, const char 
 	return LvN_EqS(group, "Mercs") ? Rm_MoneyMsg(mercs) : !Rm_NoTutorial() || Rm_MoneyMsg(race);
 }
 
-/* the race of the player won (OBJLIB 3: Challenge by name) */
+/* the race of the player won */
 static byte Rm_RaceWon(nativeVal_t *group) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *money = Mode_V(&t);
 	if (!Rm_Double(money) || !Rm_Each("challenged_NPCs_Names", Rm_PayShip, money) ||
 		!(LvN_EqS(group, "Mercs") ? Rm_WinLives() : Rm_AddMoney(money) && (!Rm_NoTutorial() || Rm_MoneyMsg("RaceSystemWin"))) ||
-		(Rm_NoTutorial() && (!Rm_Revenge("Player") || !Native_CallMod("Challenge", "SetRevenge", NULL, "i", 0L)))) {
+		(Rm_NoTutorial() && (!Rm_Revenge("Player") || !PORT_CALL(Challenge, SetRevenge, NULL, "i", 0L)))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(group);
@@ -332,8 +328,8 @@ static byte Rm_RaceLost(const nativeVal_t *group) {
 	}
 	return Mode_Done(&t, (!before || Rm_GroupMsg(group, "MercsSystemLoose", "RaceSystemLoose")) && Rm_G("ChallengeFoeType", foe) &&
 		Mode_Cat(&t, key, 2, Mode_S(&t, "RaceLoose"), foe) && Rm_G("ChallengeFoeType", who) &&
-		Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", key, who) && Rm_Revenge("Foe") &&
-		Native_CallMod("Challenge", "SetRevenge", NULL, "") && Rm_Hook("OnPlayerLoosesRace"));
+		PORT_CALL(Speech, AddRemoteCom, NULL, "vv", key, who) && Rm_Revenge("Foe") &&
+		PORT_CALL(Challenge, SetRevenge, NULL, "") && Rm_Hook("OnPlayerLoosesRace"));
 }
 
 /* the result of a race (veh the winner or a reason) */
@@ -348,12 +344,12 @@ static byte Rm_Result(const nativeVal_t *veh) {
 	int left = cancel == 0 ? LvN_EqS(veh, "Left") : 0;
 	if (cancel) {
 		return Mode_Done(&t, Rm_GroupMsg(group, "MercsSystemCancel1", "RaceSystemCancel1") && Rm_FoeCom("RaceInterrupted") &&
-			Rm_Revenge("Foe") && Native_CallMod("Challenge", "SetRevenge", NULL, "") && Rm_Hook("OnPlayerLoosesRace"));
+			Rm_Revenge("Foe") && PORT_CALL(Challenge, SetRevenge, NULL, "") && Rm_Hook("OnPlayerLoosesRace"));
 	}
 	if (left) {
 		Mode_Lang("RaceSystemCancel2", lang);
-		return Mode_Done(&t, (!Rm_NoTutorial() || Rm_Call("ShowSystemMessage", NULL, "v", lang)) && Rm_FoeCom("RaceLeft") &&
-			Rm_Revenge("Foe") && Native_CallMod("Challenge", "SetRevenge", NULL, "") &&
+		return Mode_Done(&t, (!Rm_NoTutorial() || PORT_OWN(RaceMaker, ShowSystemMessage, NULL, "v", lang)) && Rm_FoeCom("RaceLeft") &&
+			Rm_Revenge("Foe") && PORT_CALL(Challenge, SetRevenge, NULL, "") &&
 			Mode_SaveInt("Challenge.Money", money) && Rm_AddMoney(money) && Rm_Each("challenged_NPCs_Names", Rm_LeftShip, NULL) &&
 			Rm_Hook("OnPlayerLoosesRace"));
 	}
@@ -364,8 +360,8 @@ static byte Rm_Result(const nativeVal_t *veh) {
 }
 
 /* EndOfRace(ItemName, VehicleName): the end of a race; VehicleName is the winner, or "Alarm", "Killed",
- * "CounterMeasure", "Left" (or None for no result). EndOfRaceCallback replaces the result (OBJLIB 3: the other ports
- * by name, OBJLIB 5: the callbacks of Menu, Parking and Alarm set to None in their modules) */
+ * "CounterMeasure", "Left" (or None for no result). EndOfRaceCallback replaces the result (OBJLIB 5: the callbacks
+ * of Menu, Parking and Alarm set to None in their modules) */
 static byte Rm_EndOfRace(const nativeVal_t *item, const nativeVal_t *veh) {
 	static const char *const mods[] = { "Speech", "Parking", "Alarm", "Menu", "SaveGame", "Challenge", "string" };
 	modeVals_t t = { .n = 0 };
@@ -391,10 +387,10 @@ static byte Rm_EndOfRace(const nativeVal_t *item, const nativeVal_t *veh) {
 	}
 	Native_SetEmpty(list, NV_LIST);
 	return Mode_Done(&t, ok && LvN_ModNone("Menu", "MissionScorerCall") && Rm_Draw() &&
-		Rm_Call("DeleteCurrentWaypoint", NULL, "") && Rm_Call("MovePlayersToTraffic", NULL, "") &&
+		PORT_OWN(RaceMaker, DeleteCurrentWaypoint, NULL, "") && PORT_OWN(RaceMaker, MovePlayersToTraffic, NULL, "") &&
 		Mode_Put(RM, "challenged_NPCs_Names", NULL, list) && LvN_ModNone("Parking", "SwitchCharMissionCallback") &&
 		LvN_ModNone("Parking", "SwitchVehicleMissionCallback") && LvN_ModNone("Alarm", "AbortMissionCallback") &&
-		Mode_Import("Challenge") && Native_CallMod("Challenge", "CleanChallenge", NULL, ""));
+		Mode_Import("Challenge") && PORT_CALL(Challenge, CleanChallenge, NULL, ""));
 }
 
 /* the rival name joins the race of the AI and becomes a target */
@@ -448,7 +444,7 @@ static byte Rm_OnCounterMeasure(void) {
 		Native_SetFloat(now, Mode_Time());
 		return Mode_Done(&t, Mode_Put(RM, "LastCmTime", NULL, now) &&
 			Mode_Cat(&t, key, 3, Mode_S(&t, "Generics_"), cft, Mode_S(&t, "Race_1")) &&
-			Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", key, cft));
+			PORT_CALL(Speech, AddRemoteCom, NULL, "vv", key, cft));
 	}
 	Native_Free(last);
 	Native_SetFloat(five, 5.0);
@@ -457,15 +453,15 @@ static byte Rm_OnCounterMeasure(void) {
 		return Mode_Done(&t, c == 0);
 	}
 	return Mode_Done(&t, Mode_Cat(&t, key, 3, Mode_S(&t, "Generics_"), cft, Mode_S(&t, "Race_2")) &&
-		Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", key, cft) && Rm_Call("AbortCameraTravelling", NULL, "") &&
-		Rm_Call("EndOfRace", NULL, "ss", "CheckPoint", "CounterMeasure"));
+		PORT_CALL(Speech, AddRemoteCom, NULL, "vv", key, cft) && PORT_OWN(RaceMaker, AbortCameraTravelling, NULL, "") &&
+		PORT_OWN(RaceMaker, EndOfRace, NULL, "ss", "CheckPoint", "CounterMeasure"));
 }
 
 /* the travelling ends, then EndOfRace("CheckPoint", why) (alarm: and Scrap.SetAlarm(1)) */
 static byte Rm_Stop(const char *why, byte alarm) {
 	nativeVal_t one;
 	Native_SetInt(&one, 1);
-	return Rm_Call("AbortCameraTravelling", NULL, "") && Rm_Call("EndOfRace", NULL, "ss", "CheckPoint", why) &&
+	return PORT_OWN(RaceMaker, AbortCameraTravelling, NULL, "") && PORT_OWN(RaceMaker, EndOfRace, NULL, "ss", "CheckPoint", why) &&
 		(!alarm || Mode_SetAlarm(&one));
 }
 
@@ -473,15 +469,15 @@ static byte Rm_Stop(const char *why, byte alarm) {
 static byte Rm_RacerDamaged(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *wp = Mode_V(&t), *first = Mode_V(&t);
-	PyObject *fn = Rm_Call("AbortCameraTravelling", NULL, "") ? Mode_GlobalPy(RM, "OnCheckPoint") : NULL;
-	byte ok = fn && Native_GVarGet("CurrentWaypointName", wp) && Mode_ListGet("Race", "First", first) &&
-		Native_Call(fn, NULL, "vv", wp, first) && Mode_ListSet("Race", "OnDamage", "");
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	/* the global OnCheckPoint is looked up after its arguments (the script: before them); the result is the same
+	 * unless both the lookup and the read of the list Race fail */
+	return Mode_Done(&t, PORT_OWN(RaceMaker, AbortCameraTravelling, NULL, "") && Native_GVarGet("CurrentWaypointName", wp) &&
+		Mode_ListGet("Race", "First", first) && PORT_OWN(RaceMaker, OnCheckPoint, NULL, "vv", wp, first) &&
+		Mode_ListSet("Race", "OnDamage", ""));
 }
 
 /* AbortCameraTravelling(): the end of the travelling of StartCameraTravelling: the player's ship, the camera and the
- * HUD back (OBJLIB 3, 7: RacerScorer and Scrap.SetCam by name) */
+ * HUD back (OBJLIB 7: Scrap.SetCam by name) */
 static byte Rm_AbortCameraTravelling(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *prev = Mode_V(&t), *vn = Mode_V(&t), *usr = Mode_V(&t), *zero = Mode_V(&t), *in = Mode_V(&t);
@@ -500,7 +496,7 @@ static byte Rm_AbortCameraTravelling(void) {
 		LvN_SetI(usr, "UsrControl", 0) && Rm_G("cameraItemName", in) && Mode_EntitySeam(in, l) && LvN_SetI(l, "rTime", 0) &&
 		Mode_GVarSetS("EscapeEvent", "Menu.Init") && Mode_EntitySeam(cam, ce) && Mode_VDel(ce) && Rm_G("prevCamera", prev) &&
 		Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, prev) && (Native_Free(prev), Rm_G("prevCamera", prev)) &&
-		(!Native_True(prev) || Native_CallMod("RacerScorer", "Create", NULL, "i", 0L)) &&
+		(!Native_True(prev) || PORT_CALL(RacerScorer, Create, NULL, "i", 0L)) &&
 		Mode_Put(RM, "cameraItemName", NULL, none) && Mode_Put(RM, "cameraVehicleName", NULL, none) &&
 		Mode_Put(RM, "prevCamera", NULL, none);
 	return Mode_Done(&t, ok);
@@ -546,7 +542,7 @@ static byte Rm_At(const nativeVal_t *time, const char *name, const nativeVal_t *
 
 /* StartCameraTravelling(ItemName, VehicleName, isRace=1, speed="Normal"): the player's ship flies to the item and a
  * camera path shows the checkpoint (isRace) or the item; it ends by itself; the time of the travelling (None when
- * the vehicle is not the player's); OBJLIB 3, 7: Menu and Scrap.SetCam by name */
+ * the vehicle is not the player's); OBJLIB 7: Scrap.SetCam by name */
 static byte Rm_StartCameraTravelling(const nativeVal_t *item, const nativeVal_t *veh, const nativeVal_t *race,
 	const nativeVal_t *speed, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
@@ -571,7 +567,7 @@ static byte Rm_StartCameraTravelling(const nativeVal_t *item, const nativeVal_t 
 	Native_SetFloat(one, 1.0);
 	Mode_CamName(0, cam0);
 	if (!Mode_EntitySeam(item, l) || !LvN_SetI(l, "rTime", 3600) || !LvN_SetS(l, "OnTake", "") ||
-		!Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) || !LvN_SetI(usr, "UsrControl", -1) ||
+		!PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) || !LvN_SetI(usr, "UsrControl", -1) ||
 		!Mode_VSet(usr, "Vel", zero3) || !Mode_VObj(l, "Pos", v) || !Mode_VSet(usr, "MovePos", v) ||
 		(Native_Free(v), !Mode_VObj(l, "Ang", v)) || !Mode_VSet(usr, "MoveAng", v) || !Mode_VSet(usr, "MoveTime", one) ||
 		!LvN_SetI(usr, "MoveFade", 2) || !LvN_SetI(usr, "AvoidCrash", 1) || !Mode_GVarSetS("EscapeEvent", "") ||
@@ -663,8 +659,9 @@ static byte Rm_OnRaceStart(const nativeVal_t *item, const nativeVal_t *veh) {
 	}
 	Native_Copy(args, item);
 	Native_Copy(args + 1, veh);
-	if (!Rm_Call("StartCameraTravelling", tr, "vv", item, veh) || (Native_SetFloat(now, Mode_Time()), !Mode_Arith('+', now, tr, at)) ||
-		!Rm_At(at, "RaceGo", args, 2) || !Rm_G("NPC_START_ITEM", npc)) {
+	if (!PORT_OWN(RaceMaker, StartCameraTravelling, tr, "vv", item, veh) ||
+		(Native_SetFloat(now, Mode_Time()), !Mode_Arith('+', now, tr, at)) || !Rm_At(at, "RaceGo", args, 2) ||
+		!Rm_G("NPC_START_ITEM", npc)) {
 		return Mode_Done(&t, 0);
 	}
 	int some = Mode_Cmp(npc, "!=", Mode_V(&t));
@@ -677,7 +674,7 @@ static byte Rm_OnRaceStart(const nativeVal_t *item, const nativeVal_t *veh) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, Rm_Call("CreateRaceCountDown", NULL, "") && Mode_GVarSetI("isActionMusic", 1));
+	return Mode_Done(&t, PORT_OWN(RaceMaker, CreateRaceCountDown, NULL, "") && Mode_GVarSetI("isActionMusic", 1));
 }
 
 /* RaceGo(ItemName, VehicleName): the end of the count down: OnRaceGoCallback, the race starts at the checkpoint */
@@ -694,8 +691,8 @@ static byte Rm_RaceGo(const nativeVal_t *item, const nativeVal_t *veh) {
 		(Native_True(cb) && (!Mode_CallArgs(cb, NULL, NULL, 0) || !LvN_ModNone(RM, "OnRaceGoCallback")))) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Rm_Call("AbortCameraTravelling", NULL, "") && Rm_Call("OnCheckPoint", NULL, "vv", item, veh) &&
-		Rm_Call("DestroyRaceCountDown", NULL, ""));
+	return Mode_Done(&t, PORT_OWN(RaceMaker, AbortCameraTravelling, NULL, "") &&
+		PORT_OWN(RaceMaker, OnCheckPoint, NULL, "vv", item, veh) && PORT_OWN(RaceMaker, DestroyRaceCountDown, NULL, ""));
 }
 
 /* StartPos[0][1] + add (add 0: the value itself) */
@@ -850,16 +847,15 @@ static byte Rm_Counter(const nativeVal_t *num, nativeVal_t *const *rgb) {
 	return Mode_Done(&t, Mode_ScorerSet(Mode_I(&t, 0), item, "Text", num));
 }
 
-/* a new AI profile of the save variable Race.Profile (OBJLIB 3: VehiclesNPC.cShipAI, SetAIProfile by name) */
+/* a new AI profile of the save variable Race.Profile (OBJLIB 4: the class VehiclesNPC.cShipAI by name; the attribute
+ * SetAIProfile looked up after the save variable, which cannot fail) */
 static byte Rm_Profile(nativeVal_t *pd) {
 	nativeVal_t prof;
 	if (!Native_CallMod("VehiclesNPC", "cShipAI", pd, "")) {
 		return 0;
 	}
-	PyObject *fn = Script_Attr("VehiclesNPC", "SetAIProfile");
 	Mode_SaveVar("Race.Profile", &prof);
-	byte ok = fn && Native_Call(fn, NULL, "vv", pd, &prof);
-	Py_XDECREF(fn);
+	byte ok = PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", pd, &prof);
 	Native_Free(&prof);
 	return ok;
 }
@@ -939,11 +935,11 @@ static int Rm_Score(const nativeVal_t *item, const nativeVal_t *veh) {
 			return Mode_Done(&t, 0) - 1;
 		}
 		if (LvN_EqI(s, 0)) {
-			r = Rm_Call("RaceStart", NULL, "vv", item, veh) ? 1 : -1;
+			r = PORT_OWN(RaceMaker, RaceStart, NULL, "vv", item, veh) ? 1 : -1;
 		} else {
 			Native_Free(s);
 			int c = Rm_G("YourScore", s) && Rm_G("WayPointlimit", lim) ? Mode_Cmp(s, ">=", lim) : -1;
-			r = c < 0 ? -1 : !c ? 1 : Rm_Call("EndOfRace", NULL, "vv", item, veh) ? 0 : -1;
+			r = c < 0 ? -1 : !c ? 1 : PORT_OWN(RaceMaker, EndOfRace, NULL, "vv", item, veh) ? 0 : -1;
 		}
 		return Mode_Done(&t, 1), r;
 	}
@@ -951,7 +947,7 @@ static int Rm_Score(const nativeVal_t *item, const nativeVal_t *veh) {
 		return Mode_Done(&t, 0) - 1;
 	}
 	if (LvN_EqI(s, -1)) {
-		r = Rm_Call("RaceStart", NULL, "vv", item, veh) ? 1 : -1;
+		r = PORT_OWN(RaceMaker, RaceStart, NULL, "vv", item, veh) ? 1 : -1;
 		return Mode_Done(&t, 1), r;
 	}
 	int rival = Mode_HasKey(RM, "BayScorer", 1, veh);
@@ -962,13 +958,13 @@ static int Rm_Score(const nativeVal_t *item, const nativeVal_t *veh) {
 	int c = LvN_GAdd(RM, "FoesScorer", 1, NULL) && LvN_ModGet("Sound", "EneWaySound", snd) &&
 		LvN_ModGet("Sound", "EneWayVolume", vol) && Mode_Play(snd, vol) && Rm_G("FoesScorer", s) && Rm_G("WayPointlimit", lim) ?
 		Mode_Cmp(s, ">=", lim) : -1;
-	r = c < 0 ? -1 : !c ? 1 : Rm_Call("EndOfRace", NULL, "vv", item, veh) ? 0 : -1;
+	r = c < 0 ? -1 : !c ? 1 : PORT_OWN(RaceMaker, EndOfRace, NULL, "vv", item, veh) ? 0 : -1;
 	return Mode_Done(&t, 1), r;
 }
 
 /* OnCheckPoint(ItemName, VehicleName): the OnTake of the checkpoint: a point for the player or the rivals (the
- * start, or the end at WayPointlimit); the checkpoint moves on and the rivals head for it (OBJLIB 3, 7: Menu, Sound,
- * VehiclesNPC and SAI.SetStateVehicle by name) */
+ * start, or the end at WayPointlimit); the checkpoint moves on and the rivals head for it (OBJLIB 7:
+ * SAI.SetStateVehicle by name) */
 static byte Rm_OnCheckPoint(const nativeVal_t *item, const nativeVal_t *veh) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *l = Mode_V(&t), *timy = Mode_V(&t), *players = Mode_V(&t), *i = Mode_V(&t);
@@ -1005,7 +1001,7 @@ static byte Rm_OnCheckPoint(const nativeVal_t *item, const nativeVal_t *veh) {
 		}
 	}
 	return Mode_Done(&t, n >= 0 && Rm_G("iStartPos", i) && Mode_Put(RM, "nextStartPos", NULL, i) &&
-		Rm_Call("SetScorerValues", NULL, "i", 0L) && Rm_Hook("OnCheckPointCallback"));
+		PORT_OWN(RaceMaker, SetScorerValues, NULL, "i", 0L) && Rm_Hook("OnCheckPointCallback"));
 }
 
 /* OnNearCheckPoint(ItemName, VehicleName): a racer near the checkpoint (its big trigger): the rivals that may head
@@ -1049,7 +1045,7 @@ static byte Rm_OnNearCheckPoint(const nativeVal_t *item, const nativeVal_t *veh)
 	if (first > 0) {
 		first = Rm_G("NumOponNotGoNextItem", num) ? LvN_EqI(num, 0) : -1;
 	}
-	if (first < 0 || (first ? !Rm_Call("NameOponGoItem", opon, "v", item) : (Native_SetStr(opon, ""), 0))) {
+	if (first < 0 || (first ? !PORT_OWN(RaceMaker, NameOponGoItem, opon, "v", item) : (Native_SetStr(opon, ""), 0))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(timy, Mode_Time());
@@ -1116,10 +1112,11 @@ static byte Rm_NameOponGoItem(const nativeVal_t *item, nativeVal_t *out) {
 	return Mode_Done(&t, 1);
 }
 
-/* GetDealType() == "Race": 1, 0, -1 */
+/* GetDealType() == "Race": 1, 0, -1 (OBJLIB 5: GetDealType is a variable of the module, LocalGetDealType by its .mod
+ * line or what a mission puts there, called by name) */
 static int Rm_IsRace(void) {
 	nativeVal_t r = { 0 };
-	int is = Rm_Call("GetDealType", &r, "") ? LvN_EqS(&r, "Race") : -1;
+	int is = Native_CallGlobal(RM, "GetDealType", &r, "") ? LvN_EqS(&r, "Race") : -1;
 	Native_Free(&r);
 	return is;
 }
@@ -1135,17 +1132,17 @@ static byte Rm_StopTimer(void) {
 static byte Rm_StartTimer(void) {
 	return Mode_Import("Menu") && Mode_Import("Speech") && Mode_GVarSetI("TimeToCancelCurrentMission", 21) &&
 		LvN_ModSetGlobal("Menu", "MissionScorerCall", RM, "MissionScorer") && Rm_FoeCom("RaceComeBack") &&
-		Rm_Call("MissionScorer", NULL, "i", 0L);
+		PORT_OWN(RaceMaker, MissionScorer, NULL, "i", 0L);
 }
 
-/* the warning text s the first time (the save variable var "1"); OBJLIB 3: Menu by name */
+/* the warning text s the first time (the save variable var "1") */
 static byte Rm_FirstTime(const nativeVal_t *s, const char *var) {
 	nativeVal_t sv, zero;
 	Mode_SaveVar(var, &sv);
 	byte first = LvN_EqS(&sv, "1");
 	Native_Free(&sv);
 	Native_SetStr(&zero, "0");
-	return !first || (Mode_Import("Menu") && Native_CallMod("Menu", "ShowWarning", NULL, "iv", 0L, s) && Mode_SetSaveVar(var, &zero));
+	return !first || (Mode_Import("Menu") && PORT_CALL(Menu, ShowWarning, NULL, "iv", 0L, s) && Mode_SetSaveVar(var, &zero));
 }
 
 /* PointObjectTo(object, point): the object turns towards the point (around the vertical axis); OBJLIB 7: SVec.GetAngle
@@ -1218,18 +1215,18 @@ static byte Rm_NearestDummy(nativeVal_t *out) {
 	}
 }
 
-/* the AI of a challenger ship v of the kind foe: its profiles, a random one of them, static (OBJLIB 3, 7: VehiclesNPC
- * and SAI.SetStateVehicle by name) */
+/* the AI of a challenger ship v of the kind foe: its profiles, a random one of them, static (OBJLIB 7:
+ * SAI.SetStateVehicle by name) */
 static byte Rm_ShipAI(const nativeVal_t *v, const nativeVal_t *foe, const char *profile) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *p1 = Mode_V(&t), *p2 = Mode_V(&t), *ship = Mode_V(&t), *name = Mode_V(&t);
 	Mode_SaveVar(profile, p1);
-	if (!Rm_Call("InitShipIAProfile", NULL, "vv", foe, p1)) {
+	if (!PORT_OWN(RaceMaker, InitShipIAProfile, NULL, "vv", foe, p1)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar(profile, p2);
-	return Mode_Done(&t, Rm_Call("GetRandomShipIAProfile", ship, "vv", foe, p2) &&
-		Native_CallMod("VehiclesNPC", "SetIAProf", NULL, "vv", v, ship) && Mode_VObj(v, "Name", name) &&
+	return Mode_Done(&t, PORT_OWN(RaceMaker, GetRandomShipIAProfile, ship, "vv", foe, p2) &&
+		PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", v, ship) && Mode_VObj(v, "Name", name) &&
 		Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 0L, name));
 }
 
@@ -1297,7 +1294,7 @@ static byte Rm_Racer(long i, const nativeVal_t *numply, int iscrazy, int partner
 		ok = ok && Rm_G("ChallengeFoeType", foe) && Rm_ShipAI(v, foe, "Race.Profile") && LvN_SetS(v, "TgType", "None") &&
 			LvN_SetS(v, "EntityList", "Race");
 		if (ok && !iscrazy) {
-			ok = Mode_UsrHandle(usr) && Mode_VObj(usr, "Pos", up) && Rm_Call("PointObjectTo", NULL, "vv", v, up);
+			ok = Mode_UsrHandle(usr) && Mode_VObj(usr, "Pos", up) && PORT_OWN(RaceMaker, PointObjectTo, NULL, "vv", v, up);
 		}
 	} else {
 		Native_SetFloat(tm, 0.001);
@@ -1343,15 +1340,15 @@ static byte Rm_RaceTaunt(const nativeVal_t *foe, int taunt, int msg) {
 	nativeVal_t *np = Mode_V(&t), *r = Mode_V(&t), *four = Mode_V(&t), *rad = Mode_V(&t), *cad = Mode_V(&t);
 	nativeVal_t *name = Mode_V(&t);
 	if (taunt && (!Mode_Cat(&t, key, 2, Mode_S(&t, "RaceHurryUp"), foe) || !LvN_GObj(RM, "OnInitialTaunt", hook) ||
-		!Rm_G("ChallengeFoeType", who) || (Native_True(hook) ? !Native_CallMod("Speech", "AddRemoteCom", NULL, "vvv", key, who, hook) ||
-		!LvN_ModNone(RM, "OnInitialTaunt") : !Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", key, who)))) {
+		!Rm_G("ChallengeFoeType", who) || (Native_True(hook) ? !PORT_CALL(Speech, AddRemoteCom, NULL, "vvv", key, who, hook) ||
+		!LvN_ModNone(RM, "OnInitialTaunt") : !PORT_CALL(Speech, AddRemoteCom, NULL, "vv", key, who)))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(now, Mode_Time());
 	Native_Free(key);
 	if (taunt) {
 		if (!Mode_Cat(&t, key, 2, Mode_S(&t, "RaceHurryUp"), foe) || !Mode_LangV(key, lang) ||
-			!Native_CallMod("Speech", "CalculateSpeechTime", st, "v", lang) || !Mode_Arith('+', now, st, when)) {
+			!PORT_CALL(Speech, CalculateSpeechTime, st, "v", lang) || !Mode_Arith('+', now, st, when)) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
@@ -1387,8 +1384,8 @@ static byte Rm_RaceTaunt(const nativeVal_t *foe, int taunt, int msg) {
 
 /* InitRace(foeType, numply=2, waypointlimit=20, shower=2, isRevenge=0, isCrazyDeal=0, userOnShip=0): a race against
  * the challenger foeType and its partners (3 racers against the mercenaries and the press) on a race of the map's
- * MapRace.Races (by the save variable Race.Num); OBJLIB 3: the other ports by name, the races of MapRace called as
- * the values they are */
+ * MapRace.Races (by the save variable Race.Num); OBJLIB 4: the races of MapRace called as the values they are, the
+ * functions of the module scheduled as their values */
 static byte Rm_InitRace(const nativeVal_t *foe, nativeVal_t *const *opt) {
 	static const char *const press[] = { "Betty", "Berto", "Humphrey", NULL };
 	static const char *const mods[] = { "Alarm", "Menu", "Speech", "Parking", "RacerScorer", "MapRace", "math", "VehiclesNPC" };
@@ -1462,7 +1459,7 @@ static byte Rm_InitRace(const nativeVal_t *foe, nativeVal_t *const *opt) {
 	}
 	Native_Free(i0);
 	if (!LvN_PutI(RM, "iStartPos", 0) || !Rm_G("iStartPos", i0) || !Mode_Put(RM, "nextStartPos", NULL, i0) ||
-		!Rm_CheckPoints(shower) || !Rm_Call("PreloadCnDnResources", NULL, "") ||
+		!Rm_CheckPoints(shower) || !PORT_OWN(RaceMaker, PreloadCnDnResources, NULL, "") ||
 		!LvN_ModSetGlobal("Menu", "MissionScorerCall", RM, "MissionScorer") || !Rm_Draw()) {
 		return Mode_Done(&t, 0);
 	}
@@ -1481,8 +1478,8 @@ static byte Rm_InitRace(const nativeVal_t *foe, nativeVal_t *const *opt) {
 }
 
 /* InitCombat(foeType, isRevenge=0, isCrazyDeal=0, numFoes=1): Challenge.NumEnemies ships of the challenger (and its
- * partners) at the DM_Challenger_* dummy nearest to the player, as enemies; the timer to get into a ship (OBJLIB 3:
- * the other ports by name) */
+ * partners) at the DM_Challenger_* dummy nearest to the player, as enemies; the timer to get into a ship (OBJLIB 4:
+ * the functions of the module scheduled as their values) */
 static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeArg) {
 	static const char *const mods[] = { "Menu", "Speech", "Parking", "OutPolice", "OutMap", "VehiclesNPC" };
 	modeVals_t t = { .n = 0 };
@@ -1514,7 +1511,7 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 	for (long i = 0; i < count; i++) {
 		nativeVal_t e = { 0 }, en = { 0 }, np = { 0 }, l = { 0 }, nf = { 0 };
 		ok = LvN_CreateAt(bb, prev, "Car", &e) && Mode_VGet(&e, "Name", &en) && Mode_Append(RM, "challenged_NPCs_Names", &en) &&
-			Native_CallMod("OutMap", "GetNearestFreeSpawnPosReal", &np, "v", prev) && Rm_ShipAI(&e, foe, "Combat.Profile") &&
+			PORT_CALL(OutMap, GetNearestFreeSpawnPosReal, &np, "v", prev) && Rm_ShipAI(&e, foe, "Combat.Profile") &&
 			Rm_Partners(&l) && LvN_Item(&l, partners == 1 ? 0 : i - 1, &nf) && LvN_SetS(&e, "EntityList", "Enemies");
 		if (ok) {
 			Native_Free(prev);
@@ -1534,18 +1531,18 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 		}
 	}
 	if (!Rm_G("challenged_NPCs_Names", npcs) || !LvN_Item(npcs, 0, n0) || !Mode_EntitySeam(n0, v) || !Mode_UsrHandle(usr) ||
-		!Mode_VObj(usr, "Pos", up) || !Rm_Call("PointObjectTo", NULL, "vv", v, up) ||
+		!Mode_VObj(usr, "Pos", up) || !PORT_OWN(RaceMaker, PointObjectTo, NULL, "vv", v, up) ||
 		!LvN_ModSetGlobal("Menu", "MissionScorerCall", RM, "MissionScorer") || !Rm_Draw() ||
 		!Mode_GVarSetI("TimeToCancelCurrentMission", 60)) {
 		return Mode_Done(&t, 0);
 	}
 	int taunt = !(revengeArg && Native_True(revengeArg));
 	if (taunt && (!Rm_G("ChallengeFoeType", who) || !Mode_Cat(&t, key, 2, Mode_S(&t, "CombatHurryUp"), who) ||
-		(Native_Free(who), !Rm_G("ChallengeFoeType", who)) || !Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", key, who))) {
+		(Native_Free(who), !Rm_G("ChallengeFoeType", who)) || !PORT_CALL(Speech, AddRemoteCom, NULL, "vv", key, who))) {
 		return Mode_Done(&t, 0);
 	}
 	if (!LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", RM, "StopTimer") ||
-		!Native_CallMod("OutMap", "GetNearestFreeSpawnPos", pos, "")) {
+		!PORT_CALL(OutMap, GetNearestFreeSpawnPos, pos, "")) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(now, Mode_Time());
@@ -1554,7 +1551,7 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 	if (taunt) {
 		Native_Free(lang);
 		if (!Rm_G("ChallengeFoeType", who) || !Mode_Cat(&t, key, 2, Mode_S(&t, "CombatHurryUp"), who) || !Mode_LangV(key, lang) ||
-			!Native_CallMod("Speech", "CalculateSpeechTime", st, "v", lang) || !Mode_Arith('+', now, st, when)) {
+			!PORT_CALL(Speech, CalculateSpeechTime, st, "v", lang) || !Mode_Arith('+', now, st, when)) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
@@ -1615,8 +1612,7 @@ static byte Rm_You(const nativeVal_t *id, const char *var, long i) {
 	return Mode_ScorerSet(id, &it, var, &v);
 }
 
-/* SetScorerValues(id): the scores of the race on the scorer (the leader on top), the race scorer when none is set
- * (OBJLIB 3: Menu by name) */
+/* SetScorerValues(id): the scores of the race on the scorer (the leader on top), the race scorer when none is set */
 static byte Rm_SetScorerValues(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *call = Mode_V(&t), *best = Mode_V(&t), *lim = Mode_V(&t), *you = Mode_V(&t), *you2 = Mode_V(&t);
@@ -1652,7 +1648,7 @@ static byte Rm_MissionScorer2(const nativeVal_t *id) {
 		Script_RunFile(pid, "menus/race.def", "scores", race_def, NULL, vars);
 		Py_DECREF(vars);
 	}
-	return Mode_Done(&t, go == 0 || (vars && Rm_Call("SetScorerValues", NULL, "v", id)));
+	return Mode_Done(&t, go == 0 || (vars && PORT_OWN(RaceMaker, SetScorerValues, NULL, "v", id)));
 }
 
 /* MissionScorer(id): the timer to get into a ship (data/menus/race.def, section timer), the scores in a race
@@ -1690,11 +1686,11 @@ static byte Rm_MissionScorer(const nativeVal_t *id) {
 	Script_RunFile(pid, "menus/race.def", "timer", race_def, NULL, vars);
 	Py_DECREF(vars);
 	int race = Rm_IsRace();
-	return Mode_Done(&t, race >= 0 && (!race || Rm_Call("MissionScorer2", NULL, "v", id)));
+	return Mode_Done(&t, race >= 0 && (!race || PORT_OWN(RaceMaker, MissionScorer2, NULL, "v", id)));
 }
 
 /* InitShipIAProfile(ChallengeFoeType, profileType): an AI profile in VehiclesNPC.AIProf for each ship of the kind in
- * AISHIPS ("S<kind><n>_<profile>"); OBJLIB 3: the profile objects of VehiclesNPC by name */
+ * AISHIPS ("S<kind><n>_<profile>"); OBJLIB 4: the profile objects of the class VehiclesNPC.cShipAI by name */
 static byte Rm_InitShipIAProfile(const nativeVal_t *foe, const nativeVal_t *profile) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cntr = Mode_V(&t), *ais = Mode_V(&t), *ships = Mode_V(&t);
@@ -1708,7 +1704,7 @@ static byte Rm_InitShipIAProfile(const nativeVal_t *foe, const nativeVal_t *prof
 			Native_Copy(cntr, &c);
 			Mode_Repr(cntr, &rep);
 			ok = Native_CallMod("VehiclesNPC", "cShipAI", &sp, "") && Mode_VSet(&sp, "Ship", &type) &&
-				Native_CallMod("VehiclesNPC", "SetAIProfile", NULL, "vv", &sp, profile) &&
+				PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", &sp, profile) &&
 				Mode_Cat(&t, &key, 5, Mode_S(&t, "S"), foe, &rep, Mode_S(&t, "_"), profile) &&
 				Mode_ModDictPut("VehiclesNPC", "AIProf", &key, &sp);
 		}
