@@ -875,6 +875,13 @@ PORT_DECL(PCMenu, AskPassword) /* ? */
 	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin) \
 	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword)
 
+/* MenuVideoVars.c */
+PORT_DECL(PCMenu, GammaFormula) /* ? */
+PORT_DECL(PCMenu, MouseSensitivityFormula) /* ? */
+#define PORTS_MenuVideoVars \
+	PORT_DEFK(PCMenu, GammaFormula, PCMenu_GammaFormula) \
+	PORT_DEFK(PCMenu, MouseSensitivityFormula, PCMenu_MouseSensitivityFormula)
+
 /* Metro.c */
 PORT_DECL(Metro, SetUsrParams) /* ? */
 PORT_DECL(Metro, SetAsMetro) /* 1 */

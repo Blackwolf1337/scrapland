@@ -9,7 +9,7 @@
  * module variables are read as globals where the script reads them and written at once (OBJLIB 5). The scorer and
  * engine calls the script made by name go through their seams (SScorer.Get, SScorer.Set, SScorer.Add, Scrap.Get,
  * Scrap.Set; OBJLIB 7); the video modes, the language texts and string.find are C. GammaFormula is called with its
- * keyword as a Python function (OBJLIB 3).
+ * keyword through its ref (PORT_OWN, stage 3).
  */
 #include <string.h>
 
@@ -383,31 +383,17 @@ static byte Vv_Sensitivity(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* the adapters of the formulas: two keyword values, -1 when not given */
-static PyObject *Vv_Formula(PyObject *args, PyObject *kw, char **names, byte (*fn)(const nativeVal_t *, nativeVal_t *)) {
-	nativeVal_t a[2], out = { 0 };
-	byte given[2];
-	if (!Mode_Kw(args, kw, "|OO", names, 2, a, given)) {
-		return NULL;
-	}
-	for (int i = 0; i < 2; i++) {
-		if (!given[i]) {
-			Native_SetInt(&a[i], -1);
-		}
-	}
-	return Mode_KwOut(a, 2, fn(a, &out), &out);
+/* the formulas as keyword functions: two keyword values, -1 when not given */
+MODE_KW(PCMenu, GammaFormula, "|OO", "value", "gamma") {
+	Mode_KwDefI(v, given, 0, -1);
+	Mode_KwDefI(v, given, 1, -1);
+	return Vv_Gamma(v, out);
 }
 
-static PyObject *PCMenu_GammaFormula(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "value", "gamma", NULL };
-	(void)self;
-	return Vv_Formula(args, kw, kwlist, Vv_Gamma);
-}
-
-static PyObject *PCMenu_MouseSensitivityFormula(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "value", "sens", NULL };
-	(void)self;
-	return Vv_Formula(args, kw, kwlist, Vv_Sensitivity);
+MODE_KW(PCMenu, MouseSensitivityFormula, "|OO", "value", "sens") {
+	Mode_KwDefI(v, given, 0, -1);
+	Mode_KwDefI(v, given, 1, -1);
+	return Vv_Sensitivity(v, out);
 }
 
 /* the colour var of item times 0.75 */
@@ -425,23 +411,14 @@ static byte Vv_SceneYes(int id, const char *item, int scene, const char *var) {
 	return Vv_SetYes(id, item, scene ? Vv_GetIs(var, 1) : 0);
 }
 
-/* the Value of the Gamma slider: GammaFormula(gamma = Scrap.Get("VideoGammaRGB")), the module's function called with
- * its keyword (OBJLIB 3) */
+/* the Value of the Gamma slider: GammaFormula(gamma = Scrap.Get("VideoGammaRGB")), the module's function through its
+ * ref with its keyword; the lookup of GammaFormula comes after Scrap.Get now (it differs only when GammaFormula is
+ * missing: Scrap.Get runs before its NameError then) */
 static byte Vv_GammaValue(int id) {
 	nativeVal_t g = { 0 }, name, r = { 0 };
 	Native_SetStr(&name, "VideoGammaRGB");
-	PyObject *fn = Mode_GlobalPy(PM, "GammaFormula");
-	byte ok = fn && Mode_GVarGetV(&name, &g);
-	PyObject *pg = ok ? Native_ToPy(&g) : NULL;
-	PyObject *kw = pg ? Py_BuildValue("{s:O}", "gamma", pg) : NULL;
-	PyObject *a = kw ? PyTuple_New(0) : NULL;
-	PyObject *o = a ? Script_CallObject(fn, a, kw) : NULL;
-	ok = o && Native_Arg(o, &r) && Mode_ScorerPut(id, "Gamma", "Value", &r);
-	Py_XDECREF(o);
-	Py_XDECREF(a);
-	Py_XDECREF(kw);
-	Py_XDECREF(pg);
-	Py_XDECREF(fn);
+	byte ok = Mode_GVarGetV(&name, &g) && PORT_OWN(PCMenu, GammaFormula, &r, ";gamma=v", &g) &&
+		Mode_ScorerPut(id, "Gamma", "Value", &r);
 	Native_Free(&g);
 	Native_Free(&r);
 	return ok;
@@ -614,3 +591,5 @@ PyMethodDef g_MenuVideoVarsMethods[] = {
 	{ "VideoGetLast", PCMenu_VideoGetLast, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuVideoVars)
