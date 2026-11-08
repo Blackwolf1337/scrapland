@@ -100,7 +100,7 @@ static byte Pr_UsrBack(long x, long y, long z, long ang, double fade) {
 static byte Pr_BossDoor(const char *foe, const char *use, nativeVal_t *out) {
 	nativeVal_t elv;
 	Native_SetNone(&elv);
-	if (!LV_CALL("GateKeeper", "SetDoor", NULL, "ss", "GateKeeper_DTritusBossRoom", "DM_Door_Teleporter_08") ||
+	if (!PORT_CALL(GateKeeper, SetDoor, NULL, "ss", "GateKeeper_DTritusBossRoom", "DM_Door_Teleporter_08") ||
 		!Mode_DoorFoe("GateKeeper_DTritusBossRoom", foe) || !LvN_Entity("DM_Door_Teleporter_08", &elv)) {
 		return 0;
 	}
@@ -113,8 +113,9 @@ static byte Pr_BossDoor(const char *foe, const char *use, nativeVal_t *out) {
 	return ok;
 }
 
-/* a scene table of call lines (Mode_Calls); "!time|Func" is Scene.AddGeneric(time, 'import '+libname+';'+libname+'.Func()')
- * with libname the global of module */
+/* a scene table of call lines (Mode_Calls: by name, OBJLIB 4 until the stage 4 registry resolves them); "!time|Func"
+ * is Scene.AddGeneric(time, 'import '+libname+';'+libname+'.Func()') with libname the global of module (the code text
+ * the scene runs, OBJLIB 6) */
 static byte Pr_Scene(const char *module, const char *const *lines) {
 	for (; *lines; lines++) {
 		if (**lines != '!') {
@@ -129,7 +130,7 @@ static byte Pr_Scene(const char *module, const char *const *lines) {
 		const char *bar = strchr(*lines, '|');
 		byte ok = Mode_G(module, "libname", lib) &&
 			Mode_Cat(&t, code, 7, Mode_S(&t, "import "), lib, Mode_S(&t, ";"), lib, Mode_S(&t, "."), Mode_S(&t, bar + 1), Mode_S(&t, "()")) &&
-			LV_CALL("Scene", "AddGeneric", NULL, "iv", (long)atoi(*lines + 1), code);
+			PORT_CALL(Scene, AddGeneric, NULL, "iv", (long)atoi(*lines + 1), code);
 		if (!Mode_Done(&t, ok)) {
 			return 0;
 		}
@@ -174,7 +175,7 @@ static byte PressMap_RemoteMsg(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	int alarm = Mode_AlarmOn();
 	if (alarm) {
-		return Mode_Done(&t, alarm > 0 && LV_OWN(MAP, "StartAlarmator", NULL, ""));
+		return Mode_Done(&t, alarm > 0 && PORT_LOWN(Map, StartAlarmator, NULL, ""));
 	}
 	Native_Copy(i, &a[0]);
 	if (!Native_Arith('+', i, Mode_I(&t, 1), i1)) {
@@ -182,7 +183,7 @@ static byte PressMap_RemoteMsg(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Mode_Repr(i1, rep);
 	if (!Native_Arith('+', Mode_S(&t, "Generics_Police_RemoteAlert"), rep, msg) ||
-		!LV_CALL("Speech", "RemoteComunication", r, "vs", msg, "Police")) {
+		!PORT_CALL(Speech, RemoteComunication, r, "vs", msg, "Police")) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(r)) {
@@ -191,7 +192,7 @@ static byte PressMap_RemoteMsg(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	int last = Mode_CmpI(i, ">=", 3);
 	if (last) {
-		return Mode_Done(&t, last > 0 && LV_OWN(MAP, "StartAlarmator", NULL, ""));
+		return Mode_Done(&t, last > 0 && PORT_LOWN(Map, StartAlarmator, NULL, ""));
 	}
 	Native_SetFloat(timy, 3.0);
 	/* RemainTalkTime < 2.8 */
@@ -229,7 +230,7 @@ static byte PressMap_StartAlarmator(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t one, usr;
 	(void)a;
 	(void)out;
-	if (!LV_OWN(MAP, "ForbiddenMsg", NULL, "")) {
+	if (!PORT_LOWN(Map, ForbiddenMsg, NULL, "")) {
 		return 0;
 	}
 	Native_SetInt(&one, 1);
@@ -302,15 +303,15 @@ static byte PressMap_ActivateAlarm(const nativeVal_t *a, nativeVal_t *out) {
 	int zero = Mode_Time() < 2.0;
 	byte ok;
 	if (LvN_SaveIs("MapPress_HiAlarm", "1")) {
-		ok = zero ? LV_OWN(MAP, "StartAlarmator", NULL, "") : LV_OWN(MAP, "RemoteMsg", NULL, "i", 0L);
+		ok = zero ? PORT_LOWN(Map, StartAlarmator, NULL, "") : PORT_LOWN(Map, RemoteMsg, NULL, "i", 0L);
 	} else {
 		Native_SetNone(&usr);
 		int gear = zero ? zero : Mode_EntityH(&a[1], &usr) ? LvN_CtrlIs(&usr, "Gear") : -1;
 		Native_Free(&usr);
-		ok = gear > 0 ? Mode_GVarSetS("GuaranteedChars", ",Gear,") && LV_OWN(MAP, "ForbiddenMsg", NULL, "") :
-			gear == 0 && LV_OWN(MAP, "RemoteMsg", NULL, "i", 0L);
+		ok = gear > 0 ? Mode_GVarSetS("GuaranteedChars", ",Gear,") && PORT_LOWN(Map, ForbiddenMsg, NULL, "") :
+			gear == 0 && PORT_LOWN(Map, RemoteMsg, NULL, "i", 0L);
 	}
-	return ok && LV_OWN(MAP, "CreateDeactivators", NULL, "");
+	return ok && PORT_LOWN(Map, CreateDeactivators, NULL, "");
 }
 
 /* global list = []; an item named name for every (x, y, z, radius) of the global pos, taken by the player only */
@@ -371,7 +372,7 @@ static byte PressMap_DeactivateAlarm(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&v);
 	ok = ok && Mode_G(MAP, "PREVGUARANTEEDCHARS", &v) && Mode_GVarSet("GuaranteedChars", &v);
 	Native_Free(&v);
-	return ok && LV_OWN(MAP, "CreateActivators", NULL, "");
+	return ok && PORT_LOWN(Map, CreateActivators, NULL, "");
 }
 
 /* BrowseAlarmLaunchers(): the dummies of the alarm area (their radius in the name), then the activators */
@@ -420,7 +421,7 @@ static byte PressMap_BrowseAlarmLaunchers(const nativeVal_t *a, nativeVal_t *out
 			}
 		}
 	}
-	return LV_OWN(MAP, "CreateActivators", NULL, "");
+	return PORT_LOWN(Map, CreateActivators, NULL, "");
 }
 
 /* CharConversor.AvailableChars.remove(v) of the list of CharConversor in place (OBJLIB 5) */
@@ -485,7 +486,7 @@ static byte PressMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 		}
 	}
 	for (int i = 0; i < 3; i++) {
-		if (!LV_CALL("Elevator", "SetDef", NULL, "ss", defs[i][0], defs[i][1])) {
+		if (!PORT_CALL(Elevator, SetDef, NULL, "ss", defs[i][0], defs[i][1])) {
 			return 0;
 		}
 	}
@@ -518,14 +519,14 @@ static byte PressMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Mode_Texts(&l1, tel, 2);
 	Native_SetEmpty(&l2, NV_LIST);
-	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &l1, &l2);
+	byte ok = PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &l1, &l2);
 	Native_Free(&l1);
 	Native_Free(&l2);
-	if (!ok || !LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Press") ||
+	if (!ok || !PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_Metro_Press") ||
 		(LvN_SaveIs("Press.MentalControllerStatus", "1") && !Pr_BossDoor("NoOneGroupGateKeeper", "GateKeeper.UseDoor", NULL)) ||
 		!Mode_Import("InTraffic") || !LvN_InTraffic("N_TrafficList", light, -1, "N_NumTraffic", 30) || !LvN_InTraffic("M_TrafficList", none, -1, "M_NumTraffic", 0) ||
-		!LvN_InTraffic("H_TrafficList", none, -1, "H_NumTraffic", 0) || !LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") ||
-		!LV_CALL("InTraffic", "FakeTraffic", NULL, "") || !LV_OWN(MAP, "BrowseAlarmLaunchers", NULL, "")) {
+		!LvN_InTraffic("H_TrafficList", none, -1, "H_NumTraffic", 0) || !PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "") ||
+		!PORT_CALL(InTraffic, FakeTraffic, NULL, "") || !PORT_LOWN(Map, BrowseAlarmLaunchers, NULL, "")) {
 		return 0;
 	}
 	Mode_SaveVar("MapPress_BureauExists", &b);
@@ -533,7 +534,7 @@ static byte PressMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	int hide = Mode_Cmp(&b, "!=", &one);
 	Native_Free(&b);
 	Native_Free(&one);
-	return hide >= 0 && (!hide || LV_OWN(MAP, "HideBureau", NULL, ""));
+	return hide >= 0 && (!hide || PORT_LOWN(Map, HideBureau, NULL, ""));
 }
 
 /* HideBureau(): the bureau hidden; its position */
@@ -624,14 +625,14 @@ static byte DemoClose_OnMetroUsed(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&ctrl);
 	Native_Free(&list);
 	if (drives > 0) {
-		return LV_CALL("Elevator", "UseElevator", NULL, "vvsv", &a[0], &a[1], "MoveLevel Outskirts", &a[3]) &&
-			LV_CALL("Metro", "SetUsrParams", NULL, "v", &a[0]);
+		return PORT_CALL(Elevator, UseElevator, NULL, "vvsv", &a[0], &a[1], "MoveLevel Outskirts", &a[3]) &&
+			PORT_CALL(Metro, SetUsrParams, NULL, "v", &a[0]);
 	}
 	if (drives < 0) {
 		return 0;
 	}
 	Mode_Lang("Station_CantGo", &text);
-	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	byte ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	Native_Free(&text);
 	return ok;
 }
@@ -803,21 +804,19 @@ static const prSnd_t press_snd_broken[] = {
 	{ NULL },
 };
 
+/* the keyword calls of Sound.SetPSInterval and SetPSLoop (their entries take no keyword slots, so they go the slow
+ * way with the keyword dict) */
 static byte Pr_Sounds(const prSnd_t *t, int xbox) {
 	for (; t->name; t++) {
 		nativeVal_t args[3];
-		PyObject *kw;
 		LvN_Str(&args[0], t->name);
 		Native_SetVec(&args[1], t->pos[0], t->pos[1], t->pos[2]);
 		LvN_Str(&args[2], t->comp && xbox ? "Computer1" : t->snd);
-		if (t->interval) {
-			kw = Py_BuildValue("{s:d,s:d,s:d,s:d,s:d,s:d,s:d}", "MinInterval", t->min, "MaxInterval", t->max, "Volume", t->vol, "Pitch", t->pitch,
-				"AttenIni", t->ini, "AttenEnd", t->end, "Doppler", 0.0);
-		} else {
-			kw = Py_BuildValue("{s:d,s:d,s:d,s:d,s:d}", "Volume", t->vol, "Pitch", t->pitch, "AttenIni", t->ini, "AttenEnd", t->end, "Doppler", 0.0);
-		}
-		/* OBJLIB 3: the keyword calls of Sound */
-		byte ok = Mode_CallKw("Sound", t->interval ? "SetPSInterval" : "SetPSLoop", NULL, args, 3, kw);
+		byte ok = t->interval ? PORT_CALL(Sound, SetPSInterval, NULL,
+			"vvv;MinInterval=d,MaxInterval=d,Volume=d,Pitch=d,AttenIni=d,AttenEnd=d,Doppler=d", &args[0], &args[1], &args[2], t->min,
+			t->max, t->vol, t->pitch, t->ini, t->end, 0.0) :
+			PORT_CALL(Sound, SetPSLoop, NULL, "vvv;Volume=d,Pitch=d,AttenIni=d,AttenEnd=d,Doppler=d", &args[0], &args[1], &args[2],
+			t->vol, t->pitch, t->ini, t->end, 0.0);
 		Native_Free(&args[0]);
 		Native_Free(&args[2]);
 		if (!ok) {
@@ -867,6 +866,7 @@ static byte PressSnd_SetSounds(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
+/* the call lines of News1 (Mode_Calls: by name, OBJLIB 4) */
 static const char *const news1_sounds[] = {
 	"Scene.AddStream|0|musica-betty2|0.6",
 	"Scene.AddSound|233|sweep-encendido|0.3|0|0",
