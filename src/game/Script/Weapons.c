@@ -7,10 +7,12 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
  * entries are adapters. The variables of the modules are read where the script reads them as its globals and IDWeap,
- * IDAmmo and SwarmPos written where it writes them (OBJLIB 5). The net hooks (Script_Hook on Net's functions), the
- * module's own functions a mission may replace (LoadResources, OnHit, OnServerHit, the creation functions the hooks
- * call) and the function that was in Net before stay by name (OBJLIB 3); the missiles are entity handles where they
- * leave the module (results, scheduled calls; OBJLIB 7).
+ * IDAmmo and SwarmPos written where it writes them (OBJLIB 5). The module's own functions a mission may replace are
+ * called through their refs (directly while the module holds the port's function, else by name): Weapons.InitAmmo
+ * and InitWeapons, LoadResources through the module (PORT_CALL), OnHit, OnServerHit and the creation functions the
+ * hooks call through the module's globals (PORT_OWN). The net hooks (Script_Hook on Net's functions) and the function
+ * that was in Net before stay variables (OBJLIB 5); the missiles are entity handles where they leave the module
+ * (results, scheduled calls; OBJLIB 7).
  */
 #include <string.h>
 
@@ -64,7 +66,7 @@ static byte Weap_SetId(const char *mod, const char *name, const nativeVal_t *id)
 
 /* import Net; LastClientCreate = Net.ClientCreate; Net.ClientCreate = ClientCreate; the same for ClientAfterCreate */
 static byte Weap_Hook(const char *mod) {
-	/* OBJLIB 3: the chains of Net's functions stay Python functions until they are C hook pointers */
+	/* OBJLIB 5: the chains of Net's functions stay Python functions until they are C hook pointers */
 	return Mode_Import("Net") && Script_Hook(mod, "Net", "ClientCreate", "LastClientCreate") &&
 		Script_Hook(mod, "Net", "ClientAfterCreate", "LastClientAfterCreate");
 }
@@ -76,16 +78,10 @@ static byte Weap_LoadResources(const char *mod) {
 	return Mode_Import("Fx") && Weap_Run(section, NULL, NULL, NULL);
 }
 
-/* LoadResources() as Init calls it, through the module (OBJLIB 3: a mission may replace it) */
-static byte Weap_CallLoad(const char *mod) {
-	return Native_CallMod(mod, "LoadResources", NULL, "");
-}
-
 /* Init(idWeap, idAmmo) of a weapon; net: the hooks first and $server (GetNetFlags()[0]) for the fire functions
- * (Swarm, Inferno) */
-static byte Weap_Init(const char *mod, const nativeVal_t *a, byte net) {
-	if ((net && !Weap_Hook(mod)) || !Weap_SetId(mod, "IDWeap", &a[0]) || !Weap_SetId(mod, "IDAmmo", &a[1]) ||
-		!Weap_CallLoad(mod)) {
+ * (Swarm, Inferno); load: LoadResources() as Init calls it (mod_CallLoad of WEAP_LOAD) */
+static byte Weap_Init(const char *mod, const nativeVal_t *a, byte net, byte (*load)(void)) {
+	if ((net && !Weap_Hook(mod)) || !Weap_SetId(mod, "IDWeap", &a[0]) || !Weap_SetId(mod, "IDAmmo", &a[1]) || !load()) {
 		return 0;
 	}
 	nativeVal_t flags = { 0 }, server = { 0 }, zero;
@@ -101,8 +97,8 @@ static byte Weap_Init(const char *mod, const nativeVal_t *a, byte net) {
 }
 
 /* Init(IdAmmo) of a countermeasure (Cloud, EMI, Sonic); EMI also keeps IDAmmo */
-static byte Weap_InitCounter(const char *mod, const nativeVal_t *idAmmo, byte keepId) {
-	if ((keepId && (!Mode_Import("Net") || !Weap_SetId(mod, "IDAmmo", idAmmo))) || !Weap_Hook(mod) || !Weap_CallLoad(mod)) {
+static byte Weap_InitCounter(const char *mod, const nativeVal_t *idAmmo, byte keepId, byte (*load)(void)) {
+	if ((keepId && (!Mode_Import("Net") || !Weap_SetId(mod, "IDAmmo", idAmmo))) || !Weap_Hook(mod) || !load()) {
 		return 0;
 	}
 	return Weap_Run(mod, NULL, idAmmo, NULL);
@@ -120,10 +116,10 @@ static byte Weap_NetExec(const char *cmd, const nativeVal_t *name) {
 
 /*
  * ClientCreate / ClientAfterCreate(EntityName, ResourceName) of a net weapon: its own resource by SWeap.NetExec(exec,
- * EntityName) (Swarm, Inferno) or by the module function fn (Cloud, EMI, Sonic; create: the name and six zeros), the
+ * EntityName) (Swarm, Inferno) or by the call own of the module function (Cloud, EMI, Sonic, made by COUNTER), the
  * others to the function it replaced in Net (last)
  */
-static byte Weap_Client(const char *mod, const nativeVal_t *a, const char *exec, const char *fn, byte create,
+static byte Weap_Client(const char *mod, const nativeVal_t *a, const char *exec, byte (*own)(const nativeVal_t *name),
 	const char *last) {
 	nativeVal_t mine;
 	if (!Mode_G(mod, "NetResName", &mine)) {
@@ -135,13 +131,12 @@ static byte Weap_Client(const char *mod, const nativeVal_t *a, const char *exec,
 		/* OBJLIB 7: the compare of an object that raised */
 		return 0;
 	}
-	if (eq && exec) {
-		return Weap_NetExec(exec, &a[0]);
+	if (eq) {
+		return exec ? Weap_NetExec(exec, &a[0]) : own(&a[0]);
 	}
-	/* OBJLIB 3: the module's function or the one that was in Net, as values of the module */
-	PyObject *f = Mode_GlobalPy(mod, eq ? fn : last);
-	byte ok = f && (!eq ? Native_Call(f, NULL, "vv", &a[0], &a[1]) :
-		create ? Native_Call(f, NULL, "viiiiii", &a[0], 0L, 0L, 0L, 0L, 0L, 0L) : Native_Call(f, NULL, "v", &a[0]));
+	/* OBJLIB 5: the function that was in Net, a variable of the module */
+	PyObject *f = Mode_GlobalPy(mod, last);
+	byte ok = f && Native_Call(f, NULL, "vv", &a[0], &a[1]);
 	Py_XDECREF(f);
 	return ok;
 }
@@ -279,35 +274,36 @@ static byte Weap_PerMissile(cEntity *e, const char *ref, const char *var, const 
 
 /* ---- Weapons ---- */
 
-/* Init(): through the module (OBJLIB 3) */
-static byte Weapons_Init(void) {
-	return Native_CallMod("Weapons", "InitAmmo", NULL, "") && Native_CallMod("Weapons", "InitWeapons", NULL, "");
+/* Init(): InitAmmo and InitWeapons through the module */
+static byte Weapons_InitBoth(void) {
+	return PORT_CALL(Weapons, InitAmmo, NULL, "") && PORT_CALL(Weapons, InitWeapons, NULL, "");
 }
 
-/* the adapters of the functions without arguments: the scripts ignore what they are given (no arity check) */
-#define WEAP_NOARGS(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
-WEAP_NOARGS(Weapons_InitAmmoPy, Weap_Run("Ammo", NULL, NULL, NULL))
-WEAP_NOARGS(Weapons_InitWeaponsPy, Weap_Run("Weapons", NULL, NULL, NULL))
-WEAP_NOARGS(Weapons_InitPy, Weapons_Init())
+/* the functions without arguments: the scripts ignore what they are given (no arity check, MODE_FNANY) */
+MODE_FNANY(Weapons, InitAmmo, Weap_Run("Ammo", NULL, NULL, NULL))
+MODE_FNANY(Weapons, InitWeapons, Weap_Run("Weapons", NULL, NULL, NULL))
+MODE_FNANY(Weapons, Init, Weapons_InitBoth())
 
 PyMethodDef g_WeaponsMethods[] = {
-	{ "InitAmmo", Weapons_InitAmmoPy, 1, NULL },
-	{ "InitWeapons", Weapons_InitWeaponsPy, 1, NULL },
-	{ "Init", Weapons_InitPy, 1, NULL },
+	{ "InitAmmo", Weapons_InitAmmo, 1, NULL },
+	{ "InitWeapons", Weapons_InitWeapons, 1, NULL },
+	{ "Init", Weapons_Init, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+/* LoadResources() of a module (no arity check), and mod_CallLoad, the call of Init through the module (a mission may
+ * replace it) */
+#define WEAP_LOAD(mod) \
+	MODE_FNANY(mod, LoadResources, Weap_LoadResources(#mod)) \
+	static byte mod##_CallLoad(void) { \
+		return PORT_CALL(mod, LoadResources, NULL, ""); \
+	}
 
 /* ---- the weapons: LoadResources and Init(idWeap, idAmmo) ---- */
 
 #define WEAPON(mod, net) \
-	WEAP_NOARGS(mod##_LoadResources, Weap_LoadResources(#mod)) \
-	MODE_FN(mod, Init, 2, Weap_Init(#mod, a, net))
+	WEAP_LOAD(mod) \
+	MODE_FN(mod, Init, 2, Weap_Init(#mod, a, net, mod##_CallLoad))
 
 WEAPON(Vulcan, 0)
 WEAPON(Devastator, 0)
@@ -330,8 +326,8 @@ PyMethodDef g_LaserMethods[] = {
 
 /* the missiles of Swarm and Inferno are made by the engine (SWeap.NetExec) */
 #define NET_EXEC(mod) \
-	MODE_FN(mod, ClientCreate, 2, Weap_Client(#mod, a, "Create" #mod, NULL, 0, "LastClientCreate")) \
-	MODE_FN(mod, ClientAfterCreate, 2, Weap_Client(#mod, a, "SetUp" #mod, NULL, 0, "LastClientAfterCreate")) \
+	MODE_FN(mod, ClientCreate, 2, Weap_Client(#mod, a, "Create" #mod, NULL, "LastClientCreate")) \
+	MODE_FN(mod, ClientAfterCreate, 2, Weap_Client(#mod, a, "SetUp" #mod, NULL, "LastClientAfterCreate")) \
 	PyMethodDef g_##mod##Methods[] = { { "ClientCreate", mod##_ClientCreate, 1, NULL }, \
 		{ "ClientAfterCreate", mod##_ClientAfterCreate, 1, NULL }, { "LoadResources", mod##_LoadResources, 1, NULL }, \
 		{ "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
@@ -341,11 +337,19 @@ NET_EXEC(Inferno)
 
 /* ---- the countermeasures: their missiles are made here (Create<mod>, SetUp<mod>) ---- */
 
+/* the hooks call Create<mod>(EntityName, 0, 0, 0, 0, 0, 0) and SetUp<mod>(EntityName) through the module's globals (a
+ * mission may replace them) */
 #define COUNTER(mod, keepId) \
-	MODE_FN(mod, ClientCreate, 2, Weap_Client(#mod, a, NULL, "Create" #mod, 1, "LastClientCreate")) \
-	MODE_FN(mod, ClientAfterCreate, 2, Weap_Client(#mod, a, NULL, "SetUp" #mod, 0, "LastClientAfterCreate")) \
-	WEAP_NOARGS(mod##_LoadResources, Weap_LoadResources(#mod)) \
-	MODE_FN(mod, Init, 1, Weap_InitCounter(#mod, a, keepId))
+	static byte mod##_OwnCreate(const nativeVal_t *name) { \
+		return PORT_OWN(mod, Create##mod, NULL, "viiiiii", name, 0L, 0L, 0L, 0L, 0L, 0L); \
+	} \
+	static byte mod##_OwnSetUp(const nativeVal_t *name) { \
+		return PORT_OWN(mod, SetUp##mod, NULL, "v", name); \
+	} \
+	MODE_FN(mod, ClientCreate, 2, Weap_Client(#mod, a, NULL, mod##_OwnCreate, "LastClientCreate")) \
+	MODE_FN(mod, ClientAfterCreate, 2, Weap_Client(#mod, a, NULL, mod##_OwnSetUp, "LastClientAfterCreate")) \
+	WEAP_LOAD(mod) \
+	MODE_FN(mod, Init, 1, Weap_InitCounter(#mod, a, keepId, mod##_CallLoad))
 
 COUNTER(Cloud, 0)
 COUNTER(EMI, 1)
@@ -533,11 +537,8 @@ static byte Sonic_OnServerHitAt(const nativeVal_t *a) {
 	if (!ok) {
 		return 0;
 	}
-	/* OBJLIB 3: OnHit through the module's global (a mission may replace it) */
-	PyObject *f = Mode_GlobalPy("Sonic", "OnHit");
-	ok = f && Native_Call(f, NULL, "vvv", &a[0], &a[1], &a[2]);
-	Py_XDECREF(f);
-	return ok;
+	/* OnHit through the module's global (a mission may replace it) */
+	return PORT_OWN(Sonic, OnHit, NULL, "vvv", &a[0], &a[1], &a[2]);
 }
 
 MODE_FN(Sonic, OnServerHit, 3, Sonic_OnServerHitAt(a))
@@ -557,11 +558,8 @@ static byte Sonic_OnDeathOf(const nativeVal_t *a) {
 	if (!Mode_SetI(e, Native_Text(&a[0]), "Active", 0)) {
 		return 0;
 	}
-	/* OBJLIB 3: OnServerHit through the module's global */
-	PyObject *f = Mode_GlobalPy("Sonic", "OnServerHit");
-	byte ok = f && Native_Call(f, NULL, "vvs", &a[0], &a[1], "");
-	Py_XDECREF(f);
-	return ok;
+	/* OnServerHit through the module's global */
+	return PORT_OWN(Sonic, OnServerHit, NULL, "vvs", &a[0], &a[1], "");
 }
 
 MODE_FN(Sonic, OnDeath, 2, Sonic_OnDeathOf(a))

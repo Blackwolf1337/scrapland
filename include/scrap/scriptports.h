@@ -1933,28 +1933,40 @@ PORT_DECL(VehiclesNPC, Init) /* 0 */
 	PORT_DEF(VehiclesNPC, Init, VehiclesNPC_Init)
 
 /* Weapons.c */
+PORT_DECL(Weapons, InitAmmo) /* ? */
+PORT_DECL(Weapons, InitWeapons) /* ? */
+PORT_DECL(Weapons, Init) /* ? */
+PORT_DECL(Vulcan, LoadResources) /* ? */
 PORT_DECL(Vulcan, Init) /* 2 */
+PORT_DECL(Devastator, LoadResources) /* ? */
 PORT_DECL(Devastator, Init) /* 2 */
+PORT_DECL(Tesla, LoadResources) /* ? */
 PORT_DECL(Tesla, Init) /* 2 */
+PORT_DECL(ATPC, LoadResources) /* ? */
 PORT_DECL(ATPC, Init) /* 2 */
+PORT_DECL(Laser, LoadResources) /* ? */
 PORT_DECL(Laser, Init) /* 2 */
 PORT_DECL(Swarm, ClientCreate) /* 2 */
 PORT_DECL(Swarm, ClientAfterCreate) /* 2 */
+PORT_DECL(Swarm, LoadResources) /* ? */
 PORT_DECL(Swarm, Init) /* 2 */
 PORT_DECL(Inferno, ClientCreate) /* 2 */
 PORT_DECL(Inferno, ClientAfterCreate) /* 2 */
+PORT_DECL(Inferno, LoadResources) /* ? */
 PORT_DECL(Inferno, Init) /* 2 */
 PORT_DECL(Cloud, ClientCreate) /* 2 */
 PORT_DECL(Cloud, ClientAfterCreate) /* 2 */
 PORT_DECL(Cloud, ActivateHitType) /* 2 */
 PORT_DECL(Cloud, CreateCloud) /* 7 */
 PORT_DECL(Cloud, SetUpCloud) /* 1 */
+PORT_DECL(Cloud, LoadResources) /* ? */
 PORT_DECL(Cloud, Init) /* 1 */
 PORT_DECL(EMI, ClientCreate) /* 2 */
 PORT_DECL(EMI, ClientAfterCreate) /* 2 */
 PORT_DECL(EMI, ActivateHitType) /* 2 */
 PORT_DECL(EMI, CreateEMI) /* 7 */
 PORT_DECL(EMI, SetUpEMI) /* 1 */
+PORT_DECL(EMI, LoadResources) /* ? */
 PORT_DECL(EMI, Init) /* 1 */
 PORT_DECL(Sonic, ClientCreate) /* 2 */
 PORT_DECL(Sonic, ClientAfterCreate) /* 2 */
@@ -1965,30 +1977,43 @@ PORT_DECL(Sonic, OnDeath) /* 2 */
 PORT_DECL(Sonic, SetUpToDetonate) /* 1 */
 PORT_DECL(Sonic, CreateSonic) /* 7 */
 PORT_DECL(Sonic, SetUpSonic) /* 1 */
+PORT_DECL(Sonic, LoadResources) /* ? */
 PORT_DECL(Sonic, Init) /* 1 */
 #define PORTS_Weapons \
+	PORT_DEF(Weapons, InitAmmo, Weapons_InitAmmo) \
+	PORT_DEF(Weapons, InitWeapons, Weapons_InitWeapons) \
+	PORT_DEF(Weapons, Init, Weapons_Init) \
+	PORT_DEF(Vulcan, LoadResources, Vulcan_LoadResources) \
 	PORT_DEF(Vulcan, Init, Vulcan_Init) \
+	PORT_DEF(Devastator, LoadResources, Devastator_LoadResources) \
 	PORT_DEF(Devastator, Init, Devastator_Init) \
+	PORT_DEF(Tesla, LoadResources, Tesla_LoadResources) \
 	PORT_DEF(Tesla, Init, Tesla_Init) \
+	PORT_DEF(ATPC, LoadResources, ATPC_LoadResources) \
 	PORT_DEF(ATPC, Init, ATPC_Init) \
+	PORT_DEF(Laser, LoadResources, Laser_LoadResources) \
 	PORT_DEF(Laser, Init, Laser_Init) \
 	PORT_DEF(Swarm, ClientCreate, Swarm_ClientCreate) \
 	PORT_DEF(Swarm, ClientAfterCreate, Swarm_ClientAfterCreate) \
+	PORT_DEF(Swarm, LoadResources, Swarm_LoadResources) \
 	PORT_DEF(Swarm, Init, Swarm_Init) \
 	PORT_DEF(Inferno, ClientCreate, Inferno_ClientCreate) \
 	PORT_DEF(Inferno, ClientAfterCreate, Inferno_ClientAfterCreate) \
+	PORT_DEF(Inferno, LoadResources, Inferno_LoadResources) \
 	PORT_DEF(Inferno, Init, Inferno_Init) \
 	PORT_DEF(Cloud, ClientCreate, Cloud_ClientCreate) \
 	PORT_DEF(Cloud, ClientAfterCreate, Cloud_ClientAfterCreate) \
 	PORT_DEF(Cloud, ActivateHitType, Weap_ActivateHitType) \
 	PORT_DEF(Cloud, CreateCloud, Cloud_CreateCloud) \
 	PORT_DEF(Cloud, SetUpCloud, Cloud_SetUpCloud) \
+	PORT_DEF(Cloud, LoadResources, Cloud_LoadResources) \
 	PORT_DEF(Cloud, Init, Cloud_Init) \
 	PORT_DEF(EMI, ClientCreate, EMI_ClientCreate) \
 	PORT_DEF(EMI, ClientAfterCreate, EMI_ClientAfterCreate) \
 	PORT_DEF(EMI, ActivateHitType, Weap_ActivateHitType) \
 	PORT_DEF(EMI, CreateEMI, EMI_CreateEMI) \
 	PORT_DEF(EMI, SetUpEMI, EMI_SetUpEMI) \
+	PORT_DEF(EMI, LoadResources, EMI_LoadResources) \
 	PORT_DEF(EMI, Init, EMI_Init) \
 	PORT_DEF(Sonic, ClientCreate, Sonic_ClientCreate) \
 	PORT_DEF(Sonic, ClientAfterCreate, Sonic_ClientAfterCreate) \
@@ -1999,6 +2024,7 @@ PORT_DECL(Sonic, Init) /* 1 */
 	PORT_DEF(Sonic, SetUpToDetonate, Sonic_SetUpToDetonate) \
 	PORT_DEF(Sonic, CreateSonic, Sonic_CreateSonic) \
 	PORT_DEF(Sonic, SetUpSonic, Sonic_SetUpSonic) \
+	PORT_DEF(Sonic, LoadResources, Sonic_LoadResources) \
 	PORT_DEF(Sonic, Init, Sonic_Init)
 
 /* WeaponsTab.c */
