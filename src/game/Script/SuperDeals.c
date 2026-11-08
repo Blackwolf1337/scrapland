@@ -21,10 +21,10 @@
  *
  * Direct calls (stage 3): the functions call the other functions of their module through PORT_OWN (its global, a
  * mission may replace one) and the other ports through PORT_CALL (scrap/scriptnative.h: the port seam). The
- * functions handed on as values stay by name (OBJLIB 4): the ones given to the scheduler and to Speech as
- * AfterRemoteComFunc, MissionsFuncs.OnSuperDealFinish read as the script read it, apply() on them, and the class
- * VehiclesNPC.cShipAI; the hooks of the missions (KeepPlaying) and the callbacks set in other modules are variables
- * (OBJLIB 5).
+ * functions given to the scheduler stay values (OBJLIB 4); the ones handed to Speech as AfterRemoteComFunc are values
+ * Speech keeps (OBJLIB 5) and calls through their entries, apply() on MissionsFuncs.OnSuperDealFinish as the script
+ * read it takes its entry (MODE_CBAPPLY); the class VehiclesNPC.cShipAI is a variable the .mod defines (OBJLIB 5), the
+ * hooks of the missions (KeepPlaying) and the callbacks set in other modules are variables (OBJLIB 5).
  */
 #include <string.h>
 
@@ -45,7 +45,8 @@
 #define MR "MortalRace"
 #define CG "CrazyGambler"
 
-/* an engine function by name (OBJLIB 7), the class VehiclesNPC.cShipAI (OBJLIB 4) */
+/* an engine function by name (OBJLIB 7), the class VehiclesNPC.cShipAI (OBJLIB 5: a class the .mod defines, no port
+ * function; its instances are Python objects, OBJLIB 7) */
 #define CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 
 /* ---- shared lines ---- */
@@ -220,15 +221,13 @@ static byte Sd_Remote(const char *how, const nativeVal_t *cad, const nativeVal_t
 }
 
 /* if (cad and cad != ""): Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params) else:
- * apply(func, params) (func a value, OBJLIB 4) */
+ * apply(func, params) (func a value: its entry while it is a port's own function, MODE_CBAPPLY) */
 static byte Sd_End(const char *how, const nativeVal_t *cad, const nativeVal_t *who, PyObject *func,
 	const nativeVal_t *params) {
 	if (Sd_Text(cad)) {
 		return Sd_Remote(how, cad, who, func, params);
 	}
-	PyObject *p = Native_ToPy(params), *r = p ? Script_Invoke(func, p) : NULL;
-	Py_XDECREF(r);
-	return r != NULL;
+	return MODE_CBAPPLY(func, params, NULL);
 }
 
 /* the same with the crazy gambler speaking and func (MissionsFuncs.OnSuperDealFinish as the script read it) called
@@ -540,7 +539,8 @@ static byte Dm_CreateEnemiesC(void) {
 
 MODE_FN(Dm, CreateEnemies, 0, Dm_CreateEnemiesC())
 
-/* Speech.AddRemoteCom(Scrap.GetSaveVar(cadVar), "CrazyGambler", mod.func) (mod.func a value, OBJLIB 4) */
+/* Speech.AddRemoteCom(Scrap.GetSaveVar(cadVar), "CrazyGambler", mod.func) (mod.func a value Speech keeps, OBJLIB 5;
+ * its call there takes the entry, Mode_Apply) */
 static byte Sd_GamblerSays(const char *cadVar, const char *mod, const char *func) {
 	nativeVal_t cad;
 	PyObject *fn = Mode_GlobalPy(mod, func);
@@ -2393,7 +2393,8 @@ MODE_KW(Dom, CreateBaton, "|O", "pos") {
 	return Dom_CreateBatonC(&v[0]);
 }
 
-/* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) (mod.func a value, OBJLIB 4) */
+/* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) (mod.func a value Speech keeps, OBJLIB 5; its call there
+ * takes the entry, Mode_Apply) */
 static byte Sd_GamblerKey(const char *key, const char *mod, const char *func) {
 	nativeVal_t none;
 	PyObject *fn = Mode_GlobalPy(mod, func);

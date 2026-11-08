@@ -12,8 +12,9 @@
  * changed in place on the dict object of the module (Mode_DictPut, OBJLIB 5), Hints stays a Python object (its items
  * hold the functions of the missions, OBJLIB 5 and 7). The module's own functions that the script calls as its
  * globals (CreateBox, InitResources, BrowseItemPos, SetInteractiveObjOnFloor) go through their refs (PORT_OWN);
- * LastClientCreate and the hook into Net are variables (OBJLIB 5), the functions of the hints values (OBJLIB 4); the
- * boxes are entity handles where they leave the module (OBJLIB 7).
+ * LastClientCreate and the hook into Net are variables (OBJLIB 5), called through the entries of port functions as
+ * the functions of the hints values (Mode_CallArgs, MODE_CBGLOBAL); the boxes are entity handles where they leave the
+ * module (OBJLIB 7).
  */
 #include <string.h>
 
@@ -398,7 +399,7 @@ static byte It_ClientCreate(const nativeVal_t *name, const nativeVal_t *res) {
 	Native_Free(&head);
 	if (!box) {
 		/* OBJLIB 5: the creation that was in Net before, a variable of the module called as the value it holds */
-		return Native_CallGlobal("Items", "LastClientCreate", NULL, "vv", name, res);
+		return MODE_CBGLOBAL("Items", "LastClientCreate", NULL, "vv", name, res);
 	}
 	Native_SetInt(&zero, 0);
 	/* the module's CreateBox (the script calls its global) */
@@ -592,10 +593,8 @@ static byte It_ShowHint(const nativeVal_t *item) {
 	}
 	ok = ok && It_HintItem(hints, item, 3, extra);
 	if (ok && Native_True(extra)) {
-		/* OBJLIB 4: the function of the mission (any value the Python way) */
-		PyObject *f = Native_ToPy(extra);
-		ok = f && Native_Call(f, NULL, "v", item);
-		Py_XDECREF(f);
+		/* the function of the mission (any value: through its entry while it is a port's own function) */
+		ok = Mode_CallArgs(extra, NULL, item, 1);
 	}
 	ok = ok && It_HintItem(hints, item, 2, once);
 	if (ok && Native_True(once)) {

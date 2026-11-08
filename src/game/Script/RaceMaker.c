@@ -25,8 +25,9 @@
  * the script calls them) go through their refs (PORT_CALL, PORT_OWN, stage 3), string.find and replace through the
  * native twins. SAI.SetStateVehicle, InitVehicleRace and AddVehicleRace, Scrap.SetCam, the call function of Scrap,
  * SVec.GetAngle and CProd and SInput.GetActionSet stay by name (OBJLIB 7), the class VehiclesNPC.cShipAI too (OBJLIB
- * 4); the hooks, GetDealType and the races of MapRace are called as the values the script calls (OBJLIB 4, 5); the
- * scorer file takes its $names as a dict (OBJLIB 6).
+ * 5: a class the .mod defines); the hooks, GetDealType and the races of MapRace are called as the values the script
+ * calls, through the entries of port functions (Mode_CallArgs, MODE_CBGLOBAL; OBJLIB 5: the variables); the scorer
+ * file takes its $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
 
@@ -847,7 +848,7 @@ static byte Rm_Counter(const nativeVal_t *num, nativeVal_t *const *rgb) {
 	return Mode_Done(&t, Mode_ScorerSet(Mode_I(&t, 0), item, "Text", num));
 }
 
-/* a new AI profile of the save variable Race.Profile (OBJLIB 4: the class VehiclesNPC.cShipAI by name; the attribute
+/* a new AI profile of the save variable Race.Profile (OBJLIB 5: the class VehiclesNPC.cShipAI by name; the attribute
  * SetAIProfile looked up after the save variable, which cannot fail) */
 static byte Rm_Profile(nativeVal_t *pd) {
 	nativeVal_t prof;
@@ -1113,10 +1114,10 @@ static byte Rm_NameOponGoItem(const nativeVal_t *item, nativeVal_t *out) {
 }
 
 /* GetDealType() == "Race": 1, 0, -1 (OBJLIB 5: GetDealType is a variable of the module, LocalGetDealType by its .mod
- * line or what a mission puts there, called by name) */
+ * line or what a mission puts there, called through its entry) */
 static int Rm_IsRace(void) {
 	nativeVal_t r = { 0 };
-	int is = Native_CallGlobal(RM, "GetDealType", &r, "") ? LvN_EqS(&r, "Race") : -1;
+	int is = MODE_CBGLOBAL(RM, "GetDealType", &r, "") ? LvN_EqS(&r, "Race") : -1;
 	Native_Free(&r);
 	return is;
 }
@@ -1384,8 +1385,8 @@ static byte Rm_RaceTaunt(const nativeVal_t *foe, int taunt, int msg) {
 
 /* InitRace(foeType, numply=2, waypointlimit=20, shower=2, isRevenge=0, isCrazyDeal=0, userOnShip=0): a race against
  * the challenger foeType and its partners (3 racers against the mercenaries and the press) on a race of the map's
- * MapRace.Races (by the save variable Race.Num); OBJLIB 4: the races of MapRace called as the values they are, the
- * functions of the module scheduled as their values */
+ * MapRace.Races (by the save variable Race.Num); the races of MapRace called as the values they are (Mode_CallArgs);
+ * OBJLIB 4: the functions of the module scheduled as their values */
 static byte Rm_InitRace(const nativeVal_t *foe, nativeVal_t *const *opt) {
 	static const char *const press[] = { "Betty", "Berto", "Humphrey", NULL };
 	static const char *const mods[] = { "Alarm", "Menu", "Speech", "Parking", "RacerScorer", "MapRace", "math", "VehiclesNPC" };
@@ -1690,7 +1691,7 @@ static byte Rm_MissionScorer(const nativeVal_t *id) {
 }
 
 /* InitShipIAProfile(ChallengeFoeType, profileType): an AI profile in VehiclesNPC.AIProf for each ship of the kind in
- * AISHIPS ("S<kind><n>_<profile>"); OBJLIB 4: the profile objects of the class VehiclesNPC.cShipAI by name */
+ * AISHIPS ("S<kind><n>_<profile>"); OBJLIB 5: the profile objects of the class VehiclesNPC.cShipAI by name */
 static byte Rm_InitShipIAProfile(const nativeVal_t *foe, const nativeVal_t *profile) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cntr = Mode_V(&t), *ais = Mode_V(&t), *ships = Mode_V(&t);

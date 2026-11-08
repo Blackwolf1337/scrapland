@@ -21,10 +21,11 @@
  * Entities are handle values and the characters of CharsNPC.CharRes and their option lists the objects they are
  * (OBJLIB 7, 5). The other ports (SaveGame, Speech, Menu, Challenge, PhoneCab, Items, VehiclesNPC, Vehicles,
  * RacerScorer, Scorer) and the functions of the module the script calls through its globals are called through their
- * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback, the
- * builders of the super deal types (a table of names), the functions given to the scheduler and the function values
- * of the revenge and the auto save stay by name or value (OBJLIB 4). The code strings OnAbort and OnVictory still run
- * in the namespaces exec gives them (OBJLIB 6).
+ * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback (values
+ * a mission puts into the module, OBJLIB 5) and the builders of the super deal types (a table of names) are called
+ * through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler and the
+ * function values of the revenge and the auto save stay by name or value (OBJLIB 4). The code strings OnAbort and
+ * OnVictory still run in the namespaces exec gives them (OBJLIB 6).
  */
 #include <ctype.h>
 #include <limits.h>
@@ -654,9 +655,9 @@ static byte Mf_CreateBertos(void) {
 	if (!Mode_Import("Parking") || !LvN_PutI(MF, "launchNewWave", 1)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4: the hook is a value a mission puts into the module, called by name */
+	/* the hook is a value a mission puts into the module (OBJLIB 5), called through its entry */
 	int hook = LvN_GTrue(MF, "OnNewWaveCallback");
-	if (hook < 0 || (hook && !Native_CallGlobal(MF, "OnNewWaveCallback", NULL, "")) || !Mode_ModNone("Parking", "SwitchVehicleMissionCallback") ||
+	if (hook < 0 || (hook && !MODE_CBGLOBAL(MF, "OnNewWaveCallback", NULL, "")) || !Mode_ModNone("Parking", "SwitchVehicleMissionCallback") ||
 		!Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
@@ -714,13 +715,13 @@ static byte Mf_OnBertoDeath(const nativeVal_t *looser, const nativeVal_t *winner
 			}
 		}
 	}
-	/* OBJLIB 4: the hook is a value a mission puts into the module, called by name */
+	/* the hook is a value a mission puts into the module (OBJLIB 5), called through its entry */
 	int hook = LvN_GTrue(MF, "OnBertoDeathCallback");
 	if (hook <= 0) {
 		return Mode_Done(&t, hook == 0);
 	}
 	return Mode_Done(&t, Mode_EntitySeam(looser, e) && Mode_VObj(e, "Pos", pos) &&
-		Native_CallGlobal(MF, "OnBertoDeathCallback", NULL, "vvv", looser, winner, pos));
+		MODE_CBGLOBAL(MF, "OnBertoDeathCallback", NULL, "vvv", looser, winner, pos));
 }
 
 /* ---- the crazy deals and the super deals ---- */
@@ -1171,8 +1172,8 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
 	}
 	for (int i = 0; !got && i < 4; i++) {
 		if (Mf_Is(type, builders[i][0])) {
-			/* OBJLIB 4: the builder by the name of the table */
-			ok = Native_CallGlobal(MF, builders[i][1], data, "v", victory);
+			/* the builder by the name of the table, through its entry */
+			ok = MODE_CBGLOBAL(MF, builders[i][1], data, "v", victory);
 			got = 1;
 		}
 	}
