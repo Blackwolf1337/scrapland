@@ -1054,6 +1054,7 @@ PORT_DECL(ShipMaker, AddShipTon) /* 4 */
 PORT_DECL(ShipMaker, GetShipTon) /* 1 */
 PORT_DECL(ShipMaker, AddShipBalance) /* 2 */
 PORT_DECL(ShipMaker, GetShipBalance) /* 1 */
+PORT_DECL(ShipMaker, AddShip) /* ? */
 PORT_DECL(ShipMaker, GetShip) /* 1 */
 PORT_DECL(ShipMaker, AddMotor) /* 5 */
 PORT_DECL(ShipMaker, GetMotor) /* 1 */
@@ -1068,6 +1069,7 @@ PORT_DECL(ShipMaker, SetShipParams) /* 1 */
 PORT_DECL(ShipMaker, CreateStdShips) /* 0 */
 PORT_DECL(ShipMaker, Init) /* 0 */
 PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
+PORT_DECL(ShipMaker, InitAnmShip) /* 2 */
 #define PORTS_ShipMaker \
 	PORT_DEF(ShipMaker, SetShipPrice, ShipMaker_SetShipPrice) \
 	PORT_DEF(ShipMaker, GetShipPrice, ShipMaker_GetShipPrice) \
@@ -1077,6 +1079,7 @@ PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
 	PORT_DEF(ShipMaker, GetShipTon, ShipMaker_GetShipTon) \
 	PORT_DEF(ShipMaker, AddShipBalance, ShipMaker_AddShipBalance) \
 	PORT_DEF(ShipMaker, GetShipBalance, ShipMaker_GetShipBalance) \
+	PORT_DEF(ShipMaker, AddShip, ShipMaker_AddShip) \
 	PORT_DEF(ShipMaker, GetShip, ShipMaker_GetShip) \
 	PORT_DEF(ShipMaker, AddMotor, ShipMaker_AddMotor) \
 	PORT_DEF(ShipMaker, GetMotor, ShipMaker_GetMotor) \
@@ -1090,7 +1093,8 @@ PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
 	PORT_DEF(ShipMaker, SetShipParams, ShipMaker_SetShipParams) \
 	PORT_DEF(ShipMaker, CreateStdShips, ShipMaker_CreateStdShips) \
 	PORT_DEF(ShipMaker, Init, ShipMaker_Init) \
-	PORT_DEF(ShipMaker, SetAnmShip, ShipMaker_SetAnmShip)
+	PORT_DEF(ShipMaker, SetAnmShip, ShipMaker_SetAnmShip) \
+	PORT_DEF(ShipMaker, InitAnmShip, ShipMaker_InitAnmShip)
 
 /* Speech.c */
 PORT_DECL(Speech, ScheduledVoiceCallback) /* 2 */

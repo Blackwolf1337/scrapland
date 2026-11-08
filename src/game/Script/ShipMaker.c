@@ -92,28 +92,25 @@ static byte Sm_AddShipTonN(const nativeVal_t *a) {
 }
 
 /* AddShip(name, Mass, Style, Engine, BoostTime=10, TopBoostTime=10) */
+/* AddShip(name, Mass, Style, Engine, BoostTime=10, TopBoostTime=10): ShipValues[name] */
+static byte Sm_AddShipK(const nativeVal_t *const *a, nativeVal_t *out) {
+	nativeVal_t ten, v;
+	(void)out;
+	Native_SetInt(&ten, 10);
+	Sm_Tuple(&v, (const nativeVal_t *const[]){ a[1], a[2], a[3], a[4] ? a[4] : &ten, a[5] ? a[5] : &ten }, 5);
+	byte ok = Sm_Put("ShipValues", a[0], &v);
+	Native_Free(&v);
+	return ok;
+}
+
+static byte ShipMaker_AddShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "OOOO|OO", Sm_AddShipK, out);
+}
+
 static PyObject *ShipMaker_AddShip(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "name", "Mass", "Style", "Engine", "BoostTime", "TopBoostTime", NULL };
-	PyObject *o[6] = { NULL };
-	nativeVal_t a[6], v;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOO|OO", names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5])) {
-		return NULL;
-	}
-	for (int i = 0; i < 6; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &a[i]);
-		} else {
-			Native_SetInt(&a[i], 10);
-		}
-	}
-	Sm_Tuple(&v, (const nativeVal_t *const[]){ &a[1], &a[2], &a[3], &a[4], &a[5] }, 5);
-	byte ok = Sm_Put("ShipValues", &a[0], &v);
-	Native_Free(&v);
-	for (int i = 0; i < 6; i++) {
-		Native_Free(&a[i]);
-	}
-	return Mode_Result(ok);
+	return Mode_KwCall(args, kw, "OOOO|OO", names, Sm_AddShipK);
 }
 
 /* (anm & bits) of the script with bits the global flag (ints in C; OBJLIB 9: other numbers the Python way): 1 when it
@@ -733,22 +730,22 @@ static byte Sm_InitAnmShipN(const nativeVal_t *model, const nativeVal_t *ch) {
 	return Mode_Done(&t, LvN_SetCls("DefAction", &ch[0]) && Sm_Verbose(&t, "Animated Vehicle: '", model, "'  Loaded.\n"));
 }
 
+/* the channels ch0 to ch3 are None when not given; only ch0 counts */
+static byte Sm_InitAnmShipK(const nativeVal_t *const *a, nativeVal_t *out) {
+	nativeVal_t none;
+	(void)out;
+	Native_SetNone(&none);
+	return Sm_InitAnmShipN(a[0], a[1] ? a[1] : &none);
+}
+
+static byte ShipMaker_InitAnmShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "O|OOOO", Sm_InitAnmShipK, out);
+}
+
 static PyObject *ShipMaker_InitAnmShip(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "model", "ch0", "ch1", "ch2", "ch3", NULL };
-	PyObject *o[5] = { NULL, Py_None, Py_None, Py_None, Py_None };
-	nativeVal_t a[5];
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|OOOO", names, &o[0], &o[1], &o[2], &o[3], &o[4])) {
-		return NULL;
-	}
-	for (int i = 0; i < 5; i++) {
-		Native_Arg(o[i], &a[i]);
-	}
-	byte ok = Sm_InitAnmShipN(&a[0], &a[1]);
-	for (int i = 0; i < 5; i++) {
-		Native_Free(&a[i]);
-	}
-	return Mode_Result(ok);
+	return Mode_KwCall(args, kw, "O|OOOO", names, Sm_InitAnmShipK);
 }
 
 MODE_FN(ShipMaker, SetShipPrice, 2, Sm_SetShipPriceN(&a[0], &a[1]))
