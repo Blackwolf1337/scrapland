@@ -10,8 +10,9 @@
  * (HangarTab.prevShip, the ship being edited, as a handle value: OBJLIB 5 and 7; ShipMaker.ShipTon and the costs,
  * ShipEdit.armorPieceWeight). HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly
  * while the attribute holds the port's function, else by name), the module's own functions through its globals as
- * the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu stay by name (OBJLIB 4: a
- * from import, and they have no entry); the .def runner takes Python values (OBJLIB 6).
+ * the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu come from a from import
+ * (OBJLIB 6) and are called through their entries while they are Menu's own (Mode_LinkCall); the .def runner takes
+ * Python values (OBJLIB 6).
  */
 #include <limits.h>
 

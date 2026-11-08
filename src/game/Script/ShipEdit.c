@@ -17,9 +17,9 @@
  * once (OBJLIB 5); the ships, the camera and the platform are handle values (OBJLIB 7), editedShips and tabPixelX are
  * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, Ffa and the
  * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam,
- * OBJLIB 5); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time
- * (OBJLIB 4); the engine calls stay by name (OBJLIB 7); the .def runner takes Python values (OBJLIB 6). The texts of
- * the ships in the save and engine variables are made as before.
+ * OBJLIB 5); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time and
+ * called through the entries of the functions there (MODE_CBATTR); the engine calls stay by name (OBJLIB 7); the .def
+ * runner takes Python values (OBJLIB 6). The texts of the ships in the save and engine variables are made as before.
  */
 #include <stdarg.h>
 #include <string.h>
@@ -169,13 +169,13 @@ byte Sn_SetUseC(int id, const char *item, const char *var, const char *key, cons
 	return Sn_SetUse(id, &i, var, key, module);
 }
 
-/* OBJLIB 4: the function named at run time (LinkLR, LinkUD, UnLinkLR, UnLinkUD), by name */
+/* the function named at run time (LinkLR, LinkUD, UnLinkLR, UnLinkUD) as Menu holds it, through its entry */
 byte Sn_Link(const char *fn, int id, const char *a, const char *b) {
-	return Native_CallMod("Menu", fn, NULL, "iss", (long)id, a, b);
+	return MODE_CBATTR("Menu", fn, NULL, "iss", (long)id, a, b);
 }
 
 byte Sn_LinkV(const char *fn, int id, const nativeVal_t *a, const nativeVal_t *b) {
-	return Native_CallMod("Menu", fn, NULL, "ivv", (long)id, a, b);
+	return MODE_CBATTR("Menu", fn, NULL, "ivv", (long)id, a, b);
 }
 
 byte Sn_From(const char *name) {
@@ -1860,8 +1860,8 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 	} else if (c == 0) {
 		c = LvN_GTrue(SE, "isXbox");
 		const char *menu = c > 0 ? "XboxMenu" : "PCMenu";
-		/* OBJLIB 4: the module named at run time, by name */
-		ok = c >= 0 && Mode_Import(menu) && Native_CallMod(menu, "MultiPlayerMenu", NULL, "iv", (long)id, control);
+		/* the module named at run time, the function there through its entry */
+		ok = c >= 0 && Mode_Import(menu) && MODE_CBATTR(menu, "MultiPlayerMenu", NULL, "iv", (long)id, control);
 	} else {
 		ok = 0;
 	}

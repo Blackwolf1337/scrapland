@@ -33,7 +33,8 @@ byte Sn_SetC(int id, const char *item, const char *var, const nativeVal_t *v);
 /* the same with Scrap.GetLangStr(key) % UseTxt of module (its global) */
 byte Sn_SetUse(int id, const nativeVal_t *item, const char *var, const char *key, const char *module);
 byte Sn_SetUseC(int id, const char *item, const char *var, const char *key, const char *module);
-/* Menu.<fn>(id, a, b) by name (OBJLIB 4) of two C texts or two values; `from Menu import name` (OBJLIB 6) */
+/* Menu.<fn>(id, a, b), fn named at run time, through the entry of the function Menu holds (MODE_CBATTR), of two C
+ * texts or two values; `from Menu import name` (OBJLIB 6) */
 byte Sn_Link(const char *fn, int id, const char *a, const char *b);
 byte Sn_LinkV(const char *fn, int id, const nativeVal_t *a, const nativeVal_t *b);
 byte Sn_From(const char *name);
