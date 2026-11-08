@@ -909,4 +909,42 @@ byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nat
 		return Mode_PyEntryKw(fn, a, n, out); \
 	}
 
+/* ---- native entries of hand and keyword adapters (stage 3, batch A2a) ---- */
+
+/* the number of v as "i" of PyArg reads it: Native_ArgInt, and an NV_OBJ through PyInt_AsLong as getargs.c has it
+ * (an instance's __int__): 1 with *out, else 0 with the error */
+byte Mode_ArgInt(const nativeVal_t *v, int *out);
+/*
+ * PyArg_ParseTuple on the n native arguments of an entry, with its arity and conversion errors: "i" into an int *
+ * (Mode_ArgInt), "s" into a const char ** (the text of an NV_STR without 0 bytes), "O" into a const nativeVal_t **
+ * (the argument itself), "|" before the optional ones (their outputs keep what they hold), "(...)" a sequence of
+ * that many items ("i" items only). 1, or 0 with the error
+ */
+byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
+/* the adapter of a function whose entry checks its own arguments (Mode_Parse, Port_Arity): the arguments as native
+ * values (Native_Arg), the entry, the result as Python (None for None, NULL for 0) */
+PyObject *Mode_Entry(PyObject *args, portEntry_t entry);
+/* the core of a keyword function: its arguments by slot, NULL for one not given (the core applies the default) */
+typedef byte (*modeKwCore_t)(const nativeVal_t *const *a, nativeVal_t *out);
+/* the adapter of a keyword function of "O" arguments (fmt and names of PyArg_ParseTupleAndKeywords, up to PORT_ARGS)
+ * through its core, the result as Mode_Entry gives it */
+PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core);
+/* the entry of such a function: the n arguments given in order (the arity error of fmt), the others not given */
+byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t core, nativeVal_t *out);
+/* the adapter of a keyword function of an int id and "O" arguments, one of them optional at most ("iO|O"): the
+ * keywords and the errors of fmt, then its entry on the arguments given (the id as an int) */
+PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
+/* a function with its adapter named fn whose first argument is an int id ("i"), nargs arguments in all (the others
+ * native values in a): fn_E, its entry, and fn, its adapter */
+#define MODE_IFN(fn, nargs, call) \
+	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		int id; \
+		(void)out; \
+		return n != (nargs) ? Port_Arity(n, nargs) : Mode_ArgInt(&a[0], &id) && (call); \
+	} \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return Mode_Entry(args, fn##_E); \
+	}
+
 #endif

@@ -32,7 +32,7 @@ PORT_DECL(NewsPanel, SwitchAlarm) /* 1 */
 
 /* Challenge.c */
 PORT_DECL(Challenge, ComputeReward) /* 3 */
-PORT_DECL(Challenge, Init) /* 2 */
+PORT_DECL(Challenge, Init) /* ? */
 PORT_DECL(Challenge, SetChallengerSkills) /* 2 */
 PORT_DECL(Challenge, OnChallengeOpt) /* ? */
 PORT_DECL(Challenge, SetRevengeParams) /* 3 */
@@ -40,7 +40,7 @@ PORT_DECL(Challenge, SetRevenge) /* ? */
 PORT_DECL(Challenge, LaunchRevenge) /* ? */
 PORT_DECL(Challenge, LaunchChallenge) /* ? */
 PORT_DECL(Challenge, CleanChallenge) /* ? */
-PORT_DECL(Challenge, CleanRevenge) /* 1 */
+PORT_DECL(Challenge, CleanRevenge) /* ? */
 PORT_DECL(Challenge, CancelChallenge) /* 1 */
 PORT_DECL(Challenge, SetChallengeOptions) /* 1 */
 PORT_DECL(Challenge, AddChallenge) /* 3 */
@@ -167,16 +167,16 @@ PORT_DECL(CharsNPC, CreateMissionChar) /* 1 */
 PORT_DECL(CharsNPC, DeleteMissionChar) /* 1 */
 PORT_DECL(CharsNPC, SetReposChars) /* 2 */
 PORT_DECL(CharsNPC, CreateReposChars) /* ? */
-PORT_DECL(CharsNPC, BrowseNPC) /* 1 */
+PORT_DECL(CharsNPC, BrowseNPC) /* ? */
 PORT_DECL(CharsNPC, AssignAttrib) /* 1 */
 PORT_DECL(CharsNPC, CallCreateChar) /* 4 */
 PORT_DECL(CharsNPC, CreateChar) /* ? */
 PORT_DECL(CharsNPC, CharNPCInclude) /* 1 */
 PORT_DECL(CharsNPC, Respawn) /* 1 */
 PORT_DECL(CharsNPC, ActiveSpawned) /* 1 */
-PORT_DECL(CharsNPC, Init) /* 1 */
+PORT_DECL(CharsNPC, Init) /* ? */
 PORT_DECL(CharsNPC, CheckActualEntity) /* 1 */
-PORT_DECL(CharsNPC, MercsHired) /* 1 */
+PORT_DECL(CharsNPC, MercsHired) /* ? */
 PORT_DECL(CharsNPC, IncludeSubOptions) /* 1 */
 PORT_DECL(CharsNPC, Classify) /* 2 */
 PORT_DECL(CharsNPC, ClassifyOptions) /* 1 */
@@ -274,6 +274,45 @@ PORT_DECL(Teleport, FXAction) /* 3 */
 	PORT_DEF(Teleport, Link, Teleport_Link) \
 	PORT_DEF(Teleport, FXAction, Teleport_FXAction)
 
+/* EnginesTab.c */
+PORT_DECL(EnginesTab, ShowEngineDesc) /* 3 */
+PORT_DECL(EnginesTab, HideEngineDesc) /* 3 */
+PORT_DECL(EnginesTab, ChangeRecycleButtonState) /* 1 */
+PORT_DECL(EnginesTab, UpdateEnginesList) /* 1 */
+PORT_DECL(EnginesTab, PutEngine) /* 2 */
+PORT_DECL(EnginesTab, RecycleEngine) /* 2 */
+PORT_DECL(EnginesTab, ShowMoneySellingEngine) /* 3 */
+PORT_DECL(EnginesTab, SelectEngineGroup) /* ? */
+PORT_DECL(EnginesTab, SetEnginesPanel) /* 1 */
+PORT_DECL(EnginesTab, ShowEnginesPanel) /* 1 */
+PORT_DECL(EnginesTab, CreateLayouts) /* 1 */
+PORT_DECL(EnginesTab, UpdateLayouts) /* 1 */
+PORT_DECL(EnginesTab, UpdateLayoutsGlow) /* 2 */
+PORT_DECL(EnginesTab, LayoutsGainFocus) /* 3 */
+PORT_DECL(EnginesTab, LayoutsLostFocus) /* 3 */
+PORT_DECL(EnginesTab, HideEnginesPanel) /* 1 */
+PORT_DECL(EnginesTab, ScrollEngineListUp) /* 2 */
+PORT_DECL(EnginesTab, ScrollEngineListDown) /* 2 */
+#define PORTS_EnginesTab \
+	PORT_DEF(EnginesTab, ShowEngineDesc, ET_ShowEngineDescPy) \
+	PORT_DEF(EnginesTab, HideEngineDesc, ET_HideEngineDesc) \
+	PORT_DEF(EnginesTab, ChangeRecycleButtonState, ET_ChangeRecycleButtonState) \
+	PORT_DEF(EnginesTab, UpdateEnginesList, ET_UpdateEnginesList) \
+	PORT_DEF(EnginesTab, PutEngine, ET_PutEnginePy) \
+	PORT_DEF(EnginesTab, RecycleEngine, ET_RecycleEnginePy) \
+	PORT_DEF(EnginesTab, ShowMoneySellingEngine, ET_ShowMoneySellingEnginePy) \
+	PORT_DEF(EnginesTab, SelectEngineGroup, ET_SelectEngineGroupPy) \
+	PORT_DEF(EnginesTab, SetEnginesPanel, ET_SetEnginesPanelPy) \
+	PORT_DEF(EnginesTab, ShowEnginesPanel, ET_ShowEnginesPanelPy) \
+	PORT_DEF(EnginesTab, CreateLayouts, ET_CreateLayoutsPy) \
+	PORT_DEF(EnginesTab, UpdateLayouts, ET_UpdateLayoutsPy) \
+	PORT_DEF(EnginesTab, UpdateLayoutsGlow, ET_UpdateLayoutsGlowPy) \
+	PORT_DEF(EnginesTab, LayoutsGainFocus, ET_LayoutsGainFocus) \
+	PORT_DEF(EnginesTab, LayoutsLostFocus, ET_LayoutsLostFocus) \
+	PORT_DEF(EnginesTab, HideEnginesPanel, ET_HideEnginesPanelPy) \
+	PORT_DEF(EnginesTab, ScrollEngineListUp, ET_ScrollEngineListUp) \
+	PORT_DEF(EnginesTab, ScrollEngineListDown, ET_ScrollEngineListDown)
+
 /* Ffa.c */
 PORT_DECL(Ffa, InitFfa) /* 0 */
 PORT_DECL(Ffa, SetupUserShip) /* 1 */
@@ -328,6 +367,7 @@ PORT_DECL(Ffa, OnPositionChange) /* 6 */
 PORT_DECL(Ffa, isTied) /* 1 */
 PORT_DECL(Ffa, CheckGameStart) /* 0 */
 PORT_DECL(Ffa, UsrPos) /* 1 */
+PORT_DECL(Ffa, ActualizeGameScorer) /* ? */
 PORT_DECL(Ffa, ShowScorer) /* 2 */
 PORT_DECL(Ffa, BackMenuFunc) /* 1 */
 PORT_DECL(Ffa, ShowHelp) /* 1 */
@@ -389,6 +429,7 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, isTied, Ffa_isTied) \
 	PORT_DEF(Ffa, CheckGameStart, Ffa_CheckGameStart) \
 	PORT_DEF(Ffa, UsrPos, Ffa_UsrPos) \
+	PORT_DEF(Ffa, ActualizeGameScorer, Ffa_ActualizeGameScorer) \
 	PORT_DEF(Ffa, ShowScorer, Ffa_ShowScorer) \
 	PORT_DEF(Ffa, BackMenuFunc, Ffa_BackMenuFunc) \
 	PORT_DEF(Ffa, ShowHelp, Ffa_ShowHelp) \
@@ -418,6 +459,8 @@ PORT_DECL(Sound, CharConversionSounds) /* 0 */
 PORT_DECL(Sound, LoadShipEditInterfaceSounds) /* 0 */
 PORT_DECL(Sound, Init) /* 0 */
 PORT_DECL(Sound, SetOutMusic) /* 0 */
+PORT_DECL(Sound, SetPSLoop) /* ? */
+PORT_DECL(Sound, SetPSInterval) /* ? */
 PORT_DECL(OutSound, SetVehicleSounds) /* 1 */
 PORT_DECL(OutSound, LoadEngines) /* 0 */
 PORT_DECL(OutSound, LoadWeapons) /* 0 */
@@ -441,6 +484,8 @@ PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 	PORT_DEF(Sound, LoadShipEditInterfaceSounds, Sound_LoadShipEditInterfaceSounds) \
 	PORT_DEF(Sound, Init, Sound_Init) \
 	PORT_DEF(Sound, SetOutMusic, Sound_SetOutMusic) \
+	PORT_DEF(Sound, SetPSLoop, Sound_SetPSLoop) \
+	PORT_DEF(Sound, SetPSInterval, Sound_SetPSInterval) \
 	PORT_DEF(OutSound, SetVehicleSounds, OutSound_SetVehicleSounds) \
 	PORT_DEF(OutSound, LoadEngines, OutSound_LoadEngines) \
 	PORT_DEF(OutSound, LoadWeapons, OutSound_LoadWeapons) \
@@ -455,10 +500,110 @@ PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 
 /* GateKeeper.c */
 PORT_DECL(GateKeeper, UseDoor) /* ? */
+PORT_DECL(GateKeeper, SetDoor) /* ? */
 PORT_DECL(GateKeeper, DoorFoe) /* ? */
 #define PORTS_GateKeeper \
 	PORT_DEF(GateKeeper, UseDoor, GateKeeper_UseDoor) \
+	PORT_DEF(GateKeeper, SetDoor, GateKeeper_SetDoor) \
 	PORT_DEF(GateKeeper, DoorFoe, GateKeeper_DoorFoe)
+
+/* HangarTab.c */
+PORT_DECL(HangarTab, ShowBoostPrediction) /* 2 */
+PORT_DECL(HangarTab, DisableChangePlatformButtons) /* 1 */
+PORT_DECL(HangarTab, EnableChangePlatformButtons) /* 1 */
+PORT_DECL(HangarTab, PrevPilot) /* 2 */
+PORT_DECL(HangarTab, NextPilot) /* 2 */
+PORT_DECL(HangarTab, SetSellVisible) /* 2 */
+PORT_DECL(HangarTab, SetSellActive) /* 2 */
+PORT_DECL(HangarTab, SetExitVisible) /* 2 */
+PORT_DECL(HangarTab, SetShipTypeVisible) /* 2 */
+PORT_DECL(HangarTab, SetPilotVisible) /* 2 */
+PORT_DECL(HangarTab, HideHangarPanel) /* 1 */
+PORT_DECL(HangarTab, UpdateHangars) /* 1 */
+PORT_DECL(HangarTab, ShowHangarPanel) /* 1 */
+PORT_DECL(HangarTab, IsShipValid) /* 1 */
+PORT_DECL(HangarTab, ShowRebuildShipMoney) /* 3 */
+PORT_DECL(HangarTab, HideRebuildShipMoney) /* 3 */
+PORT_DECL(HangarTab, ShowMoneyBuyingShip) /* 3 */
+PORT_DECL(HangarTab, ShowMoneySellingShip) /* 3 */
+PORT_DECL(HangarTab, HideMoney) /* 3 */
+PORT_DECL(HangarTab, GetSpeedRampOffsets) /* 1 */
+PORT_DECL(HangarTab, GetMaxSpeedTime) /* 1 */
+PORT_DECL(HangarTab, SetHangarPanel) /* 1 */
+PORT_DECL(HangarTab, CmSec2Value) /* 1 */
+PORT_DECL(HangarTab, ShowShipInfo) /* ? */
+PORT_DECL(HangarTab, HideShipInfo) /* 1 */
+PORT_DECL(HangarTab, PrevShipToEdit) /* 2 */
+PORT_DECL(HangarTab, NextShipToEdit) /* 2 */
+PORT_DECL(HangarTab, SetShipTypeButtonsState) /* 2 */
+PORT_DECL(HangarTab, SelectShipToEdit) /* 1 */
+PORT_DECL(HangarTab, SelectItem) /* 2 */
+PORT_DECL(HangarTab, BuyShip) /* 2 */
+PORT_DECL(HangarTab, SellShip) /* 2 */
+PORT_DECL(HangarTab, AddReferenceShipControls) /* 1 */
+PORT_DECL(HangarTab, ShowShipMiniInfo) /* 3 */
+PORT_DECL(HangarTab, HideShipMiniInfo) /* 3 */
+#define PORTS_HangarTab \
+	PORT_DEF(HangarTab, ShowBoostPrediction, HT_ShowBoostPrediction) \
+	PORT_DEF(HangarTab, DisableChangePlatformButtons, HT_DisableChangePlatformButtons) \
+	PORT_DEF(HangarTab, EnableChangePlatformButtons, HT_EnableChangePlatformButtons) \
+	PORT_DEF(HangarTab, PrevPilot, HT_PrevPilot) \
+	PORT_DEF(HangarTab, NextPilot, HT_NextPilot) \
+	PORT_DEF(HangarTab, SetSellVisible, HT_SetSellVisible) \
+	PORT_DEF(HangarTab, SetSellActive, HT_SetSellActive) \
+	PORT_DEF(HangarTab, SetExitVisible, HT_SetExitVisible) \
+	PORT_DEF(HangarTab, SetShipTypeVisible, HT_SetShipTypeVisible) \
+	PORT_DEF(HangarTab, SetPilotVisible, HT_SetPilotVisible) \
+	PORT_DEF(HangarTab, HideHangarPanel, HT_HideHangarPanel) \
+	PORT_DEF(HangarTab, UpdateHangars, HT_UpdateHangars) \
+	PORT_DEF(HangarTab, ShowHangarPanel, HT_ShowHangarPanel) \
+	PORT_DEF(HangarTab, IsShipValid, HT_IsShipValid) \
+	PORT_DEF(HangarTab, ShowRebuildShipMoney, HT_ShowRebuildShipMoney) \
+	PORT_DEF(HangarTab, HideRebuildShipMoney, HT_HideRebuildShipMoney) \
+	PORT_DEF(HangarTab, ShowMoneyBuyingShip, HT_ShowMoneyBuyingShip) \
+	PORT_DEF(HangarTab, ShowMoneySellingShip, HT_ShowMoneySellingShip) \
+	PORT_DEF(HangarTab, HideMoney, HT_HideMoney) \
+	PORT_DEF(HangarTab, GetSpeedRampOffsets, HT_GetSpeedRampOffsets) \
+	PORT_DEF(HangarTab, GetMaxSpeedTime, HT_GetMaxSpeedTime) \
+	PORT_DEF(HangarTab, SetHangarPanel, HT_SetHangarPanel) \
+	PORT_DEF(HangarTab, CmSec2Value, HT_CmSec2Value) \
+	PORT_DEF(HangarTab, ShowShipInfo, HT_ShowShipInfo) \
+	PORT_DEF(HangarTab, HideShipInfo, HT_HideShipInfo) \
+	PORT_DEF(HangarTab, PrevShipToEdit, HT_PrevShipToEdit) \
+	PORT_DEF(HangarTab, NextShipToEdit, HT_NextShipToEdit) \
+	PORT_DEF(HangarTab, SetShipTypeButtonsState, HT_SetShipTypeButtonsState) \
+	PORT_DEF(HangarTab, SelectShipToEdit, HT_SelectShipToEdit) \
+	PORT_DEF(HangarTab, SelectItem, HT_SelectItem) \
+	PORT_DEF(HangarTab, BuyShip, HT_BuyShip) \
+	PORT_DEF(HangarTab, SellShip, HT_SellShip) \
+	PORT_DEF(HangarTab, AddReferenceShipControls, HT_AddReferenceShipControls) \
+	PORT_DEF(HangarTab, ShowShipMiniInfo, HT_ShowShipMiniInfo) \
+	PORT_DEF(HangarTab, HideShipMiniInfo, HT_HideShipMiniInfo)
+
+/* HullTab.c */
+PORT_DECL(HullTab, ShowHullPredictionUp) /* 3 */
+PORT_DECL(HullTab, HideHullPredictionUp) /* 3 */
+PORT_DECL(HullTab, ShowHullPredictionDown) /* 3 */
+PORT_DECL(HullTab, HideHullPredictionDown) /* 3 */
+PORT_DECL(HullTab, IncrementHull) /* 2 */
+PORT_DECL(HullTab, DecrementHull) /* 2 */
+PORT_DECL(HullTab, SetHullState) /* 1 */
+PORT_DECL(HullTab, HullSliderChange) /* 2 */
+PORT_DECL(HullTab, SetHullPanel) /* 1 */
+PORT_DECL(HullTab, ShowHullPanel) /* 1 */
+PORT_DECL(HullTab, HideHullPanel) /* 1 */
+#define PORTS_HullTab \
+	PORT_DEF(HullTab, ShowHullPredictionUp, HT_ShowHullPredictionUp) \
+	PORT_DEF(HullTab, HideHullPredictionUp, HT_HideHullPredictionUp) \
+	PORT_DEF(HullTab, ShowHullPredictionDown, HT_ShowHullPredictionDown) \
+	PORT_DEF(HullTab, HideHullPredictionDown, HT_HideHullPredictionDown) \
+	PORT_DEF(HullTab, IncrementHull, HT_IncrementHull) \
+	PORT_DEF(HullTab, DecrementHull, HT_DecrementHull) \
+	PORT_DEF(HullTab, SetHullState, HT_SetHullStatePy) \
+	PORT_DEF(HullTab, HullSliderChange, HT_HullSliderChange) \
+	PORT_DEF(HullTab, SetHullPanel, HT_SetHullPanel) \
+	PORT_DEF(HullTab, ShowHullPanel, HT_ShowHullPanel) \
+	PORT_DEF(HullTab, HideHullPanel, HT_HideHullPanel)
 
 /* InitLevel.c */
 PORT_DECL(Init, LoadCharLib) /* 1 */
@@ -527,11 +672,46 @@ PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 	PORT_DEF(Items, SetInteractiveObjOnFloor, Items_SetInteractiveObjOnFloor)
 
 /* MakeChar.c */
+PORT_DECL(MakeChar, CreateRelaxAction) /* ? */
 PORT_DECL(MakeChar, AddDefMorphActions) /* ? */
 PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 #define PORTS_MakeChar \
+	PORT_DEF(MakeChar, CreateRelaxAction, MakeChar_CreateRelaxAction) \
 	PORT_DEF(MakeChar, AddDefMorphActions, MakeChar_AddDefMorphActions) \
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
+
+/* MenuHud.c */
+PORT_DECL(Scorer, ShowMissionScorer) /* ? */
+PORT_DECL(Scorer, Blink) /* ? */
+PORT_DECL(Scorer, MissionScorerBar_SetDefaults) /* ? */
+PORT_DECL(CharScorer, Create) /* 1 */
+PORT_DECL(RacerScorer, CreateWeaponScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateCannonScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateTargetScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateWaypointScorer) /* 1 */
+PORT_DECL(RacerScorer, CreateRadarScorer) /* 1 */
+PORT_DECL(RacerScorer, Create) /* 1 */
+PORT_DECL(RacerScorer, ShowScorer) /* ? */
+PORT_DECL(RacerScorer, InitMissionScorer) /* ? */
+PORT_DECL(RacerScorer, MissionScorer) /* 1 */
+PORT_DECL(RacerScorer, MissionScorerTeam) /* 1 */
+PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
+#define PORTS_MenuHud \
+	PORT_DEF(Scorer, ShowMissionScorer, Scorer_ShowMissionScorer) \
+	PORT_DEF(Scorer, Blink, Scorer_Blink) \
+	PORT_DEF(Scorer, MissionScorerBar_SetDefaults, Scorer_MissionScorerBar_SetDefaults) \
+	PORT_DEF(CharScorer, Create, CharScorer_Create) \
+	PORT_DEF(RacerScorer, CreateWeaponScorer, Racer_CreateWeaponScorer) \
+	PORT_DEF(RacerScorer, CreateCannonScorer, Racer_CreateCannonScorer) \
+	PORT_DEF(RacerScorer, CreateTargetScorer, Racer_CreateTargetScorer) \
+	PORT_DEF(RacerScorer, CreateWaypointScorer, Racer_CreateWaypointScorer) \
+	PORT_DEF(RacerScorer, CreateRadarScorer, Racer_CreateRadarScorer) \
+	PORT_DEF(RacerScorer, Create, Racer_Create) \
+	PORT_DEF(RacerScorer, ShowScorer, Racer_ShowScorer) \
+	PORT_DEF(RacerScorer, InitMissionScorer, Racer_InitMissionScorer) \
+	PORT_DEF(RacerScorer, MissionScorer, Racer_MissionScorer) \
+	PORT_DEF(RacerScorer, MissionScorerTeam, Racer_MissionScorerTeam) \
+	PORT_DEF(RacerScorer, UpdateMissionScorer, Racer_UpdateMissionScorer)
 
 /* MenuNet.c */
 PORT_DECL(PCMenu, TryJoin) /* ? */
@@ -667,22 +847,49 @@ PORT_DECL(Net, PurgeServerMapList) /* ? */
 	PORT_DEF(Net, PurgeServerMapList, Net_PurgeServerMapList)
 
 /* OutMap.c */
+PORT_DECL(OutMap, BrowseSpawnPos) /* 0 */
+PORT_DECL(OutMap, GetSpawnPos) /* 0 */
+PORT_DECL(OutMap, GetFreeSpawnPos) /* 0 */
+PORT_DECL(OutMap, GetFreeSpawnPosReal) /* 0 */
 PORT_DECL(OutMap, GetNearestFreeSpawnPosReal) /* 1 */
+PORT_DECL(OutMap, GetFreeSpawn) /* 0 */
+PORT_DECL(OutMap, GetNearestFreeSpawnPos) /* ? */
+PORT_DECL(OutMap, GetFarthestFreeSpawnPos) /* ? */
+PORT_DECL(OutMap, CreatePlayers) /* 0 */
+PORT_DECL(OutMap, InitOutMap) /* 0 */
+PORT_DECL(OutMap, BrowseAtmospherePos) /* 0 */
 PORT_DECL(OutMap, Init) /* 1 */
 PORT_DECL(InTraffic, GetNam) /* 1 */
+PORT_DECL(InTraffic, FakeWeap) /* 0 */
+PORT_DECL(InTraffic, LoadFakeTraffic) /* 0 */
 PORT_DECL(InTraffic, CreateList) /* 3 */
+PORT_DECL(InTraffic, FakeTraffic) /* 0 */
 PORT_DECL(InTraffic, SetSound) /* 1 */
 #define PORTS_OutMap \
+	PORT_DEF(OutMap, BrowseSpawnPos, OutMap_BrowseSpawnPos) \
+	PORT_DEF(OutMap, GetSpawnPos, OutMap_GetSpawnPos) \
+	PORT_DEF(OutMap, GetFreeSpawnPos, OutMap_GetFreeSpawnPos) \
+	PORT_DEF(OutMap, GetFreeSpawnPosReal, OutMap_GetFreeSpawnPosReal) \
 	PORT_DEF(OutMap, GetNearestFreeSpawnPosReal, OutMap_GetNearestFreeSpawnPosReal) \
+	PORT_DEF(OutMap, GetFreeSpawn, OutMap_GetFreeSpawn) \
+	PORT_DEF(OutMap, GetNearestFreeSpawnPos, OutMap_GetNearestFreeSpawnPos) \
+	PORT_DEF(OutMap, GetFarthestFreeSpawnPos, OutMap_GetFarthestFreeSpawnPos) \
+	PORT_DEF(OutMap, CreatePlayers, OutMap_CreatePlayers) \
+	PORT_DEF(OutMap, InitOutMap, OutMap_InitOutMap) \
+	PORT_DEF(OutMap, BrowseAtmospherePos, OutMap_BrowseAtmospherePos) \
 	PORT_DEF(OutMap, Init, OutMap_Init) \
 	PORT_DEF(InTraffic, GetNam, It_GetNamPy) \
+	PORT_DEF(InTraffic, FakeWeap, InTraffic_FakeWeap) \
+	PORT_DEF(InTraffic, LoadFakeTraffic, InTraffic_LoadFakeTraffic) \
 	PORT_DEF(InTraffic, CreateList, It_CreateListPy) \
+	PORT_DEF(InTraffic, FakeTraffic, InTraffic_FakeTraffic) \
 	PORT_DEF(InTraffic, SetSound, It_SetSoundPy)
 
 /* Parking.c */
 PORT_DECL(Parking, RestoreDeathPlayerShip) /* 0 */
 PORT_DECL(Parking, SetInvunerable) /* 1 */
 PORT_DECL(Parking, CharOnShip) /* 1 */
+PORT_DECL(Parking, UseShip) /* ? */
 PORT_DECL(Parking, PlayVoiceChannel) /* 1 */
 PORT_DECL(Parking, ExecSwitchVehicleMissionCallback) /* 0 */
 PORT_DECL(Parking, EndPathCam) /* 1 */
@@ -703,6 +910,7 @@ PORT_DECL(Parking, SetShipAsParked) /* 1 */
 PORT_DECL(Parking, ParkedDeat) /* 2 */
 PORT_DECL(Parking, BrowseItemPos) /* 0 */
 PORT_DECL(Parking, CreateLonelyMercParkings) /* 0 */
+PORT_DECL(Parking, CreateParkedShip) /* ? */
 PORT_DECL(Parking, CheckWeapons) /* 1 */
 PORT_DECL(Parking, BrowseParkedPos) /* 0 */
 PORT_DECL(Parking, ChangeLevel) /* 2 */
@@ -716,6 +924,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, RestoreDeathPlayerShip, Parking_RestoreDeathPlayerShip) \
 	PORT_DEF(Parking, SetInvunerable, Parking_SetInvunerable) \
 	PORT_DEF(Parking, CharOnShip, Parking_CharOnShip) \
+	PORT_DEF(Parking, UseShip, Parking_UseShip) \
 	PORT_DEF(Parking, PlayVoiceChannel, Parking_PlayVoiceChannel) \
 	PORT_DEF(Parking, ExecSwitchVehicleMissionCallback, Parking_ExecSwitchVehicleMissionCallback) \
 	PORT_DEF(Parking, EndPathCam, Parking_EndPathCam) \
@@ -736,6 +945,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, ParkedDeat, Parking_ParkedDeat) \
 	PORT_DEF(Parking, BrowseItemPos, Parking_BrowseItemPos) \
 	PORT_DEF(Parking, CreateLonelyMercParkings, Parking_CreateLonelyMercParkings) \
+	PORT_DEF(Parking, CreateParkedShip, Parking_CreateParkedShip) \
 	PORT_DEF(Parking, CheckWeapons, Parking_CheckWeapons) \
 	PORT_DEF(Parking, BrowseParkedPos, Parking_BrowseParkedPos) \
 	PORT_DEF(Parking, ChangeLevel, Parking_ChangeLevel) \
@@ -908,6 +1118,71 @@ PORT_DECL(Scene, EndOutDoorScene) /* 0 */
 	PORT_DEF(Scene, Play, Scene_Play) \
 	PORT_DEF(Scene, EndOutDoorScene, Scene_EndOutDoorScene)
 
+/* ShipEdit.c */
+PORT_DECL(ShipEdit, IsEditingMultiplayer) /* 0 */
+PORT_DECL(ShipEdit, RustyOnPlatform) /* 1 */
+PORT_DECL(ShipEdit, PointObjectTo) /* 2 */
+PORT_DECL(ShipEdit, LaunchPlatformAnim) /* 0 */
+PORT_DECL(ShipEdit, ChangeShip) /* 3 */
+PORT_DECL(ShipEdit, VerifyChangeShip) /* 3 */
+PORT_DECL(ShipEdit, DoorInitializator) /* 1 */
+PORT_DECL(ShipEdit, ObjInitializator) /* 2 */
+PORT_DECL(ShipEdit, EndMoveEngine) /* 1 */
+PORT_DECL(ShipEdit, RotateShip) /* 1 */
+PORT_DECL(ShipEdit, LoopRotateShip) /* 1 */
+PORT_DECL(ShipEdit, StartRotateLoop) /* 0 */
+PORT_DECL(ShipEdit, StopRotateLoop) /* 0 */
+PORT_DECL(ShipEdit, AddShipEditTabs) /* 2 */
+PORT_DECL(ShipEdit, AddDefaultPanelContent) /* 2 */
+PORT_DECL(ShipEdit, ChangeTabLeft) /* 2 */
+PORT_DECL(ShipEdit, ChangeTabRight) /* 2 */
+PORT_DECL(ShipEdit, ChangeTab) /* ? */
+PORT_DECL(ShipEdit, CleanEditedShips) /* 0 */
+PORT_DECL(ShipEdit, CreatePlayerShip) /* 0 */
+PORT_DECL(ShipEdit, SetupForEdit) /* 1 */
+PORT_DECL(ShipEdit, SaveShipInfoInSaveVar) /* 2 */
+PORT_DECL(ShipEdit, SaveShipInfoInGVar) /* 2 */
+PORT_DECL(ShipEdit, CreateShipFromSaveVar) /* ? */
+PORT_DECL(ShipEdit, AssignShip) /* 2 */
+PORT_DECL(ShipEdit, SetupEdit) /* 1 */
+PORT_DECL(ShipEdit, FreeEdit) /* 0 */
+PORT_DECL(ShipEdit, EnterEditShipMenu) /* 2 */
+PORT_DECL(ShipEdit, ExitEditShipMenu) /* 2 */
+PORT_DECL(ShipEdit, SaveShip) /* 1 */
+PORT_DECL(ShipEdit, ShowSpecialHint) /* 0 */
+#define PORTS_ShipEdit \
+	PORT_DEF(ShipEdit, IsEditingMultiplayer, SE_IsEditingMultiplayer) \
+	PORT_DEF(ShipEdit, RustyOnPlatform, SE_RustyOnPlatform) \
+	PORT_DEF(ShipEdit, PointObjectTo, SE_PointObjectTo) \
+	PORT_DEF(ShipEdit, LaunchPlatformAnim, SE_LaunchPlatformAnim) \
+	PORT_DEF(ShipEdit, ChangeShip, SE_ChangeShip) \
+	PORT_DEF(ShipEdit, VerifyChangeShip, SE_VerifyChangeShip) \
+	PORT_DEF(ShipEdit, DoorInitializator, SE_DoorInitializator) \
+	PORT_DEF(ShipEdit, ObjInitializator, SE_ObjInitializator) \
+	PORT_DEF(ShipEdit, EndMoveEngine, SE_EndMoveEngine) \
+	PORT_DEF(ShipEdit, RotateShip, SE_RotateShip) \
+	PORT_DEF(ShipEdit, LoopRotateShip, SE_LoopRotateShip) \
+	PORT_DEF(ShipEdit, StartRotateLoop, SE_StartRotateLoop) \
+	PORT_DEF(ShipEdit, StopRotateLoop, SE_StopRotateLoop) \
+	PORT_DEF(ShipEdit, AddShipEditTabs, SE_AddShipEditTabs) \
+	PORT_DEF(ShipEdit, AddDefaultPanelContent, SE_AddDefaultPanelContent) \
+	PORT_DEF(ShipEdit, ChangeTabLeft, SE_ChangeTabLeft) \
+	PORT_DEF(ShipEdit, ChangeTabRight, SE_ChangeTabRight) \
+	PORT_DEF(ShipEdit, ChangeTab, SE_ChangeTab) \
+	PORT_DEF(ShipEdit, CleanEditedShips, SE_CleanEditedShips) \
+	PORT_DEF(ShipEdit, CreatePlayerShip, SE_CreatePlayerShip) \
+	PORT_DEF(ShipEdit, SetupForEdit, SE_SetupForEdit) \
+	PORT_DEF(ShipEdit, SaveShipInfoInSaveVar, SE_SaveShipInfoInSaveVar) \
+	PORT_DEF(ShipEdit, SaveShipInfoInGVar, SE_SaveShipInfoInGVar) \
+	PORT_DEF(ShipEdit, CreateShipFromSaveVar, SE_CreateShipFromSaveVar) \
+	PORT_DEF(ShipEdit, AssignShip, SE_AssignShip) \
+	PORT_DEF(ShipEdit, SetupEdit, SE_SetupEdit) \
+	PORT_DEF(ShipEdit, FreeEdit, SE_FreeEdit) \
+	PORT_DEF(ShipEdit, EnterEditShipMenu, SE_EnterEditShipMenu) \
+	PORT_DEF(ShipEdit, ExitEditShipMenu, SE_ExitEditShipMenu) \
+	PORT_DEF(ShipEdit, SaveShip, SE_SaveShip) \
+	PORT_DEF(ShipEdit, ShowSpecialHint, SE_ShowSpecialHint)
+
 /* ShipMaker.c */
 PORT_DECL(ShipMaker, SetShipPrice) /* 2 */
 PORT_DECL(ShipMaker, GetShipPrice) /* 1 */
@@ -917,6 +1192,7 @@ PORT_DECL(ShipMaker, AddShipTon) /* 4 */
 PORT_DECL(ShipMaker, GetShipTon) /* 1 */
 PORT_DECL(ShipMaker, AddShipBalance) /* 2 */
 PORT_DECL(ShipMaker, GetShipBalance) /* 1 */
+PORT_DECL(ShipMaker, AddShip) /* ? */
 PORT_DECL(ShipMaker, GetShip) /* 1 */
 PORT_DECL(ShipMaker, AddMotor) /* 5 */
 PORT_DECL(ShipMaker, GetMotor) /* 1 */
@@ -931,6 +1207,7 @@ PORT_DECL(ShipMaker, SetShipParams) /* 1 */
 PORT_DECL(ShipMaker, CreateStdShips) /* 0 */
 PORT_DECL(ShipMaker, Init) /* 0 */
 PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
+PORT_DECL(ShipMaker, InitAnmShip) /* ? */
 #define PORTS_ShipMaker \
 	PORT_DEF(ShipMaker, SetShipPrice, ShipMaker_SetShipPrice) \
 	PORT_DEF(ShipMaker, GetShipPrice, ShipMaker_GetShipPrice) \
@@ -940,6 +1217,7 @@ PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
 	PORT_DEF(ShipMaker, GetShipTon, ShipMaker_GetShipTon) \
 	PORT_DEF(ShipMaker, AddShipBalance, ShipMaker_AddShipBalance) \
 	PORT_DEF(ShipMaker, GetShipBalance, ShipMaker_GetShipBalance) \
+	PORT_DEF(ShipMaker, AddShip, ShipMaker_AddShip) \
 	PORT_DEF(ShipMaker, GetShip, ShipMaker_GetShip) \
 	PORT_DEF(ShipMaker, AddMotor, ShipMaker_AddMotor) \
 	PORT_DEF(ShipMaker, GetMotor, ShipMaker_GetMotor) \
@@ -953,7 +1231,8 @@ PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
 	PORT_DEF(ShipMaker, SetShipParams, ShipMaker_SetShipParams) \
 	PORT_DEF(ShipMaker, CreateStdShips, ShipMaker_CreateStdShips) \
 	PORT_DEF(ShipMaker, Init, ShipMaker_Init) \
-	PORT_DEF(ShipMaker, SetAnmShip, ShipMaker_SetAnmShip)
+	PORT_DEF(ShipMaker, SetAnmShip, ShipMaker_SetAnmShip) \
+	PORT_DEF(ShipMaker, InitAnmShip, ShipMaker_InitAnmShip)
 
 /* Speech.c */
 PORT_DECL(Speech, ScheduledVoiceCallback) /* 2 */
@@ -1052,8 +1331,10 @@ PORT_DECL(SRace, GetReSpawnPos) /* 1 */
 	PORT_DEF(SRace, GetReSpawnPos, SRace_GetReSpawnPos)
 
 /* Sputnik.c */
+PORT_DECL(Sputnik, Assign) /* ? */
 PORT_DECL(Sputnik, SetSptAt) /* ? */
 #define PORTS_Sputnik \
+	PORT_DEF(Sputnik, Assign, Sputnik_Assign) \
 	PORT_DEF(Sputnik, SetSptAt, Sputnik_SetSptAt)
 
 /* SputnikInterface.c */
@@ -1335,21 +1616,55 @@ PORT_DECL(MortalRace, PreOnVictory) /* 0 */
 	PORT_DEF(MortalRace, PreOnVictory, Mr_PreOnVictory)
 
 /* Traffic.c */
+PORT_DECL(Traffic, SetPath) /* ? */
+PORT_DECL(Traffic, ResetPath) /* ? */
+PORT_DECL(Traffic, InitAIProfiles) /* ? */
 PORT_DECL(Traffic, EmptyFunc) /* 1 */
+PORT_DECL(Traffic, MakeTrafic) /* ? */
+PORT_DECL(Traffic, InitTraffic) /* ? */
 PORT_DECL(Traffic, OnNeedMoreTraffic) /* 1 */
 PORT_DECL(Traffic, OnNeedMoreChasingTraffic) /* 1 */
+PORT_DECL(Traffic, OnPlayerHelpedPolice) /* ? */
 PORT_DECL(Traffic, RailTrafficDeath) /* 2 */
 PORT_DECL(Traffic, HeavyTrafficDeath) /* 2 */
 PORT_DECL(Traffic, NormalTrafficDeath) /* 2 */
 PORT_DECL(Traffic, MediumTrafficDeath) /* 2 */
+PORT_DECL(Traffic, InitCivilTraffic) /* ? */
+PORT_DECL(Traffic, Init) /* ? */
+PORT_DECL(OutPolice, MakePoli) /* 1 */
+PORT_DECL(OutPolice, Init) /* ? */
+PORT_DECL(OutPolice, NextWave) /* ? */
+PORT_DECL(OutPolice, InitShips) /* ? */
+PORT_DECL(OutPolice, InitWaves) /* ? */
+PORT_DECL(OutPolice, InitAIProfiles) /* ? */
+PORT_DECL(InPolice, Include) /* 1 */
+PORT_DECL(InPolice, SetGVars) /* ? */
+PORT_DECL(InPolice, Init) /* ? */
 #define PORTS_Traffic \
+	PORT_DEF(Traffic, SetPath, Traffic_SetPath) \
+	PORT_DEF(Traffic, ResetPath, Traffic_ResetPath) \
+	PORT_DEF(Traffic, InitAIProfiles, Traffic_InitAIProfiles) \
 	PORT_DEF(Traffic, EmptyFunc, Traffic_EmptyFunc) \
+	PORT_DEF(Traffic, MakeTrafic, Traffic_MakeTrafic) \
+	PORT_DEF(Traffic, InitTraffic, Traffic_InitTraffic) \
 	PORT_DEF(Traffic, OnNeedMoreTraffic, Traffic_OnNeedMoreTraffic) \
 	PORT_DEF(Traffic, OnNeedMoreChasingTraffic, Traffic_OnNeedMoreChasingTraffic) \
+	PORT_DEF(Traffic, OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPolice) \
 	PORT_DEF(Traffic, RailTrafficDeath, Traffic_RailTrafficDeath) \
 	PORT_DEF(Traffic, HeavyTrafficDeath, Traffic_HeavyTrafficDeath) \
 	PORT_DEF(Traffic, NormalTrafficDeath, Traffic_NormalTrafficDeath) \
-	PORT_DEF(Traffic, MediumTrafficDeath, Traffic_MediumTrafficDeath)
+	PORT_DEF(Traffic, MediumTrafficDeath, Traffic_MediumTrafficDeath) \
+	PORT_DEF(Traffic, InitCivilTraffic, Traffic_InitCivilTraffic) \
+	PORT_DEF(Traffic, Init, Traffic_Init) \
+	PORT_DEF(OutPolice, MakePoli, OutPolice_MakePoli) \
+	PORT_DEF(OutPolice, Init, OutPolice_Init) \
+	PORT_DEF(OutPolice, NextWave, OutPolice_NextWave) \
+	PORT_DEF(OutPolice, InitShips, OutPolice_InitShips) \
+	PORT_DEF(OutPolice, InitWaves, OutPolice_InitWaves) \
+	PORT_DEF(OutPolice, InitAIProfiles, OutPolice_InitAIProfiles) \
+	PORT_DEF(InPolice, Include, InPolice_Include) \
+	PORT_DEF(InPolice, SetGVars, InPolice_SetGVars) \
+	PORT_DEF(InPolice, Init, InPolice_Init)
 
 /* Vehicles.c */
 PORT_DECL(Vehicles, ClientCreate) /* 2 */
@@ -1366,6 +1681,7 @@ PORT_DECL(Vehicles, OnDeath) /* 2 */
 PORT_DECL(Vehicles, SwitchView) /* 2 */
 PORT_DECL(Vehicles, SetActiveCam) /* 3 */
 PORT_DECL(Vehicles, ReSpawnShip) /* 1 */
+PORT_DECL(Vehicles, SetProperties) /* ? */
 PORT_DECL(Vehicles, SetStdProperties) /* 3 */
 PORT_DECL(Vehicles, Init) /* 0 */
 #define PORTS_Vehicles \
@@ -1383,12 +1699,16 @@ PORT_DECL(Vehicles, Init) /* 0 */
 	PORT_DEF(Vehicles, SwitchView, Vehicles_SwitchView) \
 	PORT_DEF(Vehicles, SetActiveCam, Vehicles_SetActiveCam) \
 	PORT_DEF(Vehicles, ReSpawnShip, Vehicles_ReSpawnShip) \
+	PORT_DEF(Vehicles, SetProperties, Vehicles_SetProperties) \
 	PORT_DEF(Vehicles, SetStdProperties, Vehicles_SetStdProperties) \
 	PORT_DEF(Vehicles, Init, Vehicles_Init)
 
 /* VehiclesNPC.c */
 PORT_DECL(VehiclesNPC, InitStdShips) /* 0 */
+PORT_DECL(VehiclesNPC, MakeAI) /* ? */
 PORT_DECL(VehiclesNPC, GetIAProf) /* 1 */
+PORT_DECL(VehiclesNPC, ModAIProff) /* ? */
+PORT_DECL(VehiclesNPC, SetIAProf) /* ? */
 PORT_DECL(VehiclesNPC, SetAIProfile) /* 2 */
 PORT_DECL(VehiclesNPC, SetStdProperties) /* 2 */
 PORT_DECL(VehiclesNPC, MercOnDeath) /* 2 */
@@ -1396,7 +1716,10 @@ PORT_DECL(VehiclesNPC, InitMercs) /* 0 */
 PORT_DECL(VehiclesNPC, Init) /* 0 */
 #define PORTS_VehiclesNPC \
 	PORT_DEF(VehiclesNPC, InitStdShips, VehiclesNPC_InitStdShips) \
+	PORT_DEF(VehiclesNPC, MakeAI, VehiclesNPC_MakeAI) \
 	PORT_DEF(VehiclesNPC, GetIAProf, VehiclesNPC_GetIAProf) \
+	PORT_DEF(VehiclesNPC, ModAIProff, VehiclesNPC_ModAIProff) \
+	PORT_DEF(VehiclesNPC, SetIAProf, VehiclesNPC_SetIAProf) \
 	PORT_DEF(VehiclesNPC, SetAIProfile, VehiclesNPC_SetAIProfile) \
 	PORT_DEF(VehiclesNPC, SetStdProperties, VehiclesNPC_SetStdProperties) \
 	PORT_DEF(VehiclesNPC, MercOnDeath, VehiclesNPC_MercOnDeath) \
@@ -1471,6 +1794,39 @@ PORT_DECL(Sonic, Init) /* 1 */
 	PORT_DEF(Sonic, CreateSonic, Sonic_CreateSonic) \
 	PORT_DEF(Sonic, SetUpSonic, Sonic_SetUpSonic) \
 	PORT_DEF(Sonic, Init, Sonic_Init)
+
+/* WeaponsTab.c */
+PORT_DECL(WeaponsTab, ShowWeightPrediction) /* 3 */
+PORT_DECL(WeaponsTab, HideWeightPrediction) /* 3 */
+PORT_DECL(WeaponsTab, ShowWeaponDesc) /* 3 */
+PORT_DECL(WeaponsTab, ShowWeaponUpgradeDesc) /* 3 */
+PORT_DECL(WeaponsTab, ShowSlotMarker) /* 3 */
+PORT_DECL(WeaponsTab, HideSlotMarker) /* 3 */
+PORT_DECL(WeaponsTab, LoadWeapon) /* 2 */
+PORT_DECL(WeaponsTab, HideSlots) /* 2 */
+PORT_DECL(WeaponsTab, FillSlots) /* 2 */
+PORT_DECL(WeaponsTab, UpdateUpgrades) /* 2 */
+PORT_DECL(WeaponsTab, SelectWeapon) /* 2 */
+PORT_DECL(WeaponsTab, SelectUpgrade) /* 2 */
+PORT_DECL(WeaponsTab, SetWeaponsPanel) /* 1 */
+PORT_DECL(WeaponsTab, ShowWeaponsPanel) /* 1 */
+PORT_DECL(WeaponsTab, HideWeaponsPanel) /* 1 */
+#define PORTS_WeaponsTab \
+	PORT_DEF(WeaponsTab, ShowWeightPrediction, WT_ShowWeightPrediction) \
+	PORT_DEF(WeaponsTab, HideWeightPrediction, WT_HideWeightPrediction) \
+	PORT_DEF(WeaponsTab, ShowWeaponDesc, WT_ShowWeaponDescPy) \
+	PORT_DEF(WeaponsTab, ShowWeaponUpgradeDesc, WT_ShowWeaponUpgradeDescPy) \
+	PORT_DEF(WeaponsTab, ShowSlotMarker, WT_ShowSlotMarkerPy) \
+	PORT_DEF(WeaponsTab, HideSlotMarker, WT_HideSlotMarkerPy) \
+	PORT_DEF(WeaponsTab, LoadWeapon, WT_LoadWeaponPy) \
+	PORT_DEF(WeaponsTab, HideSlots, WT_HideSlotsPy) \
+	PORT_DEF(WeaponsTab, FillSlots, WT_FillSlotsPy) \
+	PORT_DEF(WeaponsTab, UpdateUpgrades, WT_UpdateUpgradesPy) \
+	PORT_DEF(WeaponsTab, SelectWeapon, WT_SelectWeaponPy) \
+	PORT_DEF(WeaponsTab, SelectUpgrade, WT_SelectUpgradePy) \
+	PORT_DEF(WeaponsTab, SetWeaponsPanel, WT_SetWeaponsPanelPy) \
+	PORT_DEF(WeaponsTab, ShowWeaponsPanel, WT_ShowWeaponsPanelPy) \
+	PORT_DEF(WeaponsTab, HideWeaponsPanel, WT_HideWeaponsPanelPy)
 
 /* levels/AB.c */
 PORT_DECLL(ab, MapFinalFight, GetBossProfile) /* 0 */

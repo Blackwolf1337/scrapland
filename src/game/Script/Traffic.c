@@ -234,22 +234,15 @@ static byte Traffic_InitN(void) {
 		Mode_GVarSetS("OnPlayerHelpedPolice", "Traffic.OnPlayerHelpedPolice");
 }
 
-/* the adapters (no arguments: the arity of the script's functions is not checked, as the port did) */
-#define TRAFFIC_FN(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
-TRAFFIC_FN(Traffic_SetPath, Traffic_SetPathN())
-TRAFFIC_FN(Traffic_ResetPath, Traffic_ResetPathN())
-TRAFFIC_FN(Traffic_InitAIProfiles, Traffic_InitAIProfilesN())
-TRAFFIC_FN(Traffic_MakeTrafic, Traffic_Make("Traffic"))
-TRAFFIC_FN(Traffic_InitTraffic, Traffic_InitTrafficN())
-TRAFFIC_FN(Traffic_OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPoliceN())
-TRAFFIC_FN(Traffic_InitCivilTraffic, Traffic_InitCivilTrafficN())
-TRAFFIC_FN(Traffic_Init, Traffic_InitN())
+/* the adapters and their entries (no arguments: the arity of the script's functions is not checked, as the port did) */
+MODE_FNANY(Traffic, SetPath, Traffic_SetPathN())
+MODE_FNANY(Traffic, ResetPath, Traffic_ResetPathN())
+MODE_FNANY(Traffic, InitAIProfiles, Traffic_InitAIProfilesN())
+MODE_FNANY(Traffic, MakeTrafic, Traffic_Make("Traffic"))
+MODE_FNANY(Traffic, InitTraffic, Traffic_InitTrafficN())
+MODE_FNANY(Traffic, OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPoliceN())
+MODE_FNANY(Traffic, InitCivilTraffic, Traffic_InitCivilTrafficN())
+MODE_FNANY(Traffic, Init, Traffic_InitN())
 MODE_FN(Traffic, EmptyFunc, 1, 1)
 MODE_FN(Traffic, OnNeedMoreTraffic, 1, Traffic_MakeN(&a[0], "Traffic"))
 MODE_FN(Traffic, OnNeedMoreChasingTraffic, 1, Mode_Import("VehiclesNPC") && Traffic_MakeN(&a[0], "ChasingTraffic"))
@@ -517,47 +510,24 @@ static byte OutPolice_NextWaveN(const nativeVal_t *doprice) {
 	return Mode_Done(&t, go >= 0);
 }
 
-/* the adapters (no arguments: the arity of the script's functions is not checked, as the port did) */
-static PyObject *OutPolice_MakePoli(PyObject *self, PyObject *args) {
-	PyObject *o;
-	nativeVal_t type;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &o)) {
-		return NULL;
-	}
-	Native_Arg(o, &type);
-	byte ok = OutPolice_MakePoliN(&type);
-	Native_Free(&type);
-	return Mode_Result(ok);
+/* the adapters and their entries (MakePoli and NextWave check their arguments, the others take any, as the port did) */
+MODE_FN(OutPolice, MakePoli, 1, OutPolice_MakePoliN(&a[0]))
+
+MODE_FNANY(OutPolice, InitShips, OutPolice_InitShipsN())
+MODE_FNANY(OutPolice, InitWaves, OutPolice_InitWavesN())
+MODE_FNANY(OutPolice, InitAIProfiles, OutPolice_InitAIProfilesN())
+MODE_FNANY(OutPolice, Init, OutPolice_InitN())
+
+/* NextWave(doprice), doprice optional */
+static byte OutPolice_NextWave_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *doprice = NULL;
+	(void)out;
+	return Mode_Parse(a, n, "|O", &doprice) && OutPolice_NextWaveN(doprice);
 }
 
-#define OUTPOLICE_FN(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
-OUTPOLICE_FN(OutPolice_InitShips, OutPolice_InitShipsN())
-OUTPOLICE_FN(OutPolice_InitWaves, OutPolice_InitWavesN())
-OUTPOLICE_FN(OutPolice_InitAIProfiles, OutPolice_InitAIProfilesN())
-OUTPOLICE_FN(OutPolice_Init, OutPolice_InitN())
-
 static PyObject *OutPolice_NextWave(PyObject *self, PyObject *args) {
-	PyObject *o = NULL;
-	nativeVal_t doprice;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "|O", &o)) {
-		return NULL;
-	}
-	if (o) {
-		Native_Arg(o, &doprice);
-	}
-	byte ok = OutPolice_NextWaveN(o ? &doprice : NULL);
-	if (o) {
-		Native_Free(&doprice);
-	}
-	return Mode_Result(ok);
+	return Mode_Entry(args, OutPolice_NextWave_E);
 }
 
 PyMethodDef g_OutPoliceMethods[] = {
@@ -617,21 +587,10 @@ static byte InPolice_InitN(void) {
 		Mode_GVarSetS("CreatePolice", "CharsNPC.CallCreateChar") && Police_BossRobots();
 }
 
-static PyObject *InPolice_Include(PyObject *self, PyObject *args) {
-	PyObject *o;
-	nativeVal_t name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &o)) {
-		return NULL;
-	}
-	Native_Arg(o, &name);
-	byte ok = InPolice_IncludeN(&name);
-	Native_Free(&name);
-	return Mode_Result(ok);
-}
+MODE_FN(InPolice, Include, 1, InPolice_IncludeN(&a[0]))
 
-OUTPOLICE_FN(InPolice_SetGVars, InPolice_SetGVarsN())
-OUTPOLICE_FN(InPolice_Init, InPolice_InitN())
+MODE_FNANY(InPolice, SetGVars, InPolice_SetGVarsN())
+MODE_FNANY(InPolice, Init, InPolice_InitN())
 
 PyMethodDef g_InPoliceMethods[] = {
 	{ "Include", InPolice_Include, 1, NULL },

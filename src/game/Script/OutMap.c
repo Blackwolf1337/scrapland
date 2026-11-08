@@ -467,52 +467,45 @@ static byte Om_Init(const nativeVal_t *path) {
 		Mode_PrintV(Mode_S(&t, "Map initialized as Outdor")));
 }
 
-/* the adapters (the arity errors of the script's functions) */
-#define OM_FN0(name, call) \
-	static PyObject *OutMap_##name(PyObject *self, PyObject *args) { \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *out = Mode_V(&t); \
-		(void)self; \
-		(void)out; \
-		if (!PyArg_ParseTuple(args, "")) { \
-			return Mode_Done(&t, 0), NULL; \
-		} \
-		return Mode_Out(&t, call, out); \
-	}
-
-OM_FN0(BrowseSpawnPos, Om_BrowseSpawnPos())
-OM_FN0(GetSpawnPos, Om_GetSpawnPos(out))
-OM_FN0(GetFreeSpawnPos, Om_GetFreeSpawnPos(out))
-OM_FN0(GetFreeSpawnPosReal, Om_GetFreeSpawnPosReal(out))
+/* the adapters (the arity errors of the script's functions) and their entries */
+MODE_FN(OutMap, BrowseSpawnPos, 0, Om_BrowseSpawnPos())
+MODE_FN(OutMap, GetSpawnPos, 0, Om_GetSpawnPos(out))
+MODE_FN(OutMap, GetFreeSpawnPos, 0, Om_GetFreeSpawnPos(out))
+MODE_FN(OutMap, GetFreeSpawnPosReal, 0, Om_GetFreeSpawnPosReal(out))
 MODE_FN(OutMap, GetNearestFreeSpawnPosReal, 1, Om_GetNearestFreeSpawnPosReal(&a[0], out))
-OM_FN0(GetFreeSpawn, Om_GetFreeSpawn(out))
-OM_FN0(CreatePlayers, Om_CreatePlayers())
-OM_FN0(InitOutMap, Om_InitOutMap())
-OM_FN0(BrowseAtmospherePos, Om_BrowseAtmospherePos())
+MODE_FN(OutMap, GetFreeSpawn, 0, Om_GetFreeSpawn(out))
+MODE_FN(OutMap, CreatePlayers, 0, Om_CreatePlayers())
+MODE_FN(OutMap, InitOutMap, 0, Om_InitOutMap())
+MODE_FN(OutMap, BrowseAtmospherePos, 0, Om_BrowseAtmospherePos())
 MODE_FN(OutMap, Init, 1, Om_Init(&a[0]))
 
-static PyObject *OutMap_SpawnPosBy(PyObject *args, PyObject *kw, byte nearest) {
-	static char *names[] = { "initialPos", NULL };
-	PyObject *o = NULL;
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *initial = Mode_V(&t), *out = Mode_V(&t);
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
-		return Mode_Done(&t, 0), NULL;
-	}
-	if (o) {
-		Native_Arg(o, initial);
-	}
-	return Mode_Out(&t, Om_SpawnPosBy(o ? initial : NULL, nearest, out), out);
+/* GetNearestFreeSpawnPos(initialPos) and GetFarthestFreeSpawnPos(initialPos), initialPos optional */
+static byte OutMap_NearestK(const nativeVal_t *const *a, nativeVal_t *out) {
+	return Om_SpawnPosBy(a[0], 1, out);
+}
+
+static byte OutMap_FarthestK(const nativeVal_t *const *a, nativeVal_t *out) {
+	return Om_SpawnPosBy(a[0], 0, out);
+}
+
+static char *om_spawnNames[] = { "initialPos", NULL };
+
+static byte OutMap_GetNearestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "|O", OutMap_NearestK, out);
 }
 
 static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
-	return OutMap_SpawnPosBy(args, kw, 1);
+	return Mode_KwCall(args, kw, "|O", om_spawnNames, OutMap_NearestK);
+}
+
+static byte OutMap_GetFarthestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "|O", OutMap_FarthestK, out);
 }
 
 static PyObject *OutMap_GetFarthestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
-	return OutMap_SpawnPosBy(args, kw, 0);
+	return Mode_KwCall(args, kw, "|O", om_spawnNames, OutMap_FarthestK);
 }
 
 PyMethodDef g_OutMapMethods[] = {
@@ -730,18 +723,12 @@ static byte It_SetSound(const nativeVal_t *v) {
 	return Mode_VSet(v, "snd00_vol", &x);
 }
 
-/* the adapters */
-#define IT_FN0(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return PyArg_ParseTuple(args, "") ? Mode_Result(call) : NULL; \
-	}
-
+/* the adapters and their entries */
 MODE_FN(It, GetNamPy, 1, It_GetNam(&a[0], out))
-IT_FN0(InTraffic_FakeWeap, It_FakeWeap())
-IT_FN0(InTraffic_LoadFakeTraffic, It_LoadFakeTraffic())
+MODE_FN(InTraffic, FakeWeap, 0, It_FakeWeap())
+MODE_FN(InTraffic, LoadFakeTraffic, 0, It_LoadFakeTraffic())
 MODE_FN(It, CreateListPy, 3, It_CreateList(&a[0], &a[1], &a[2]))
-IT_FN0(InTraffic_FakeTraffic, It_FakeTraffic())
+MODE_FN(InTraffic, FakeTraffic, 0, It_FakeTraffic())
 MODE_FN(It, SetSoundPy, 1, It_SetSound(&a[0]))
 
 PyMethodDef g_InTrafficMethods[] = {

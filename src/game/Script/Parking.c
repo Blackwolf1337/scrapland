@@ -249,18 +249,22 @@ static byte Pk_CharOnShipN(const nativeVal_t *path) {
 
 /* UseShip(UsrName, CharName, optId, FullOption, BoxName="Parking"): the character boards the parked ship CharName:
  * the camera path to the ship, the pilot, the ship rises, a parking box where it stood (none for BoxName None) */
-static byte Pk_UseShipN(const nativeVal_t *a) {
+static byte Pk_UseShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	static const char *const imports[] = { "ShipMaker", "Menu", "Sputnik", "Init" };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *w = Mode_V(&t), *v = Mode_V(&t), *x = Mode_V(&t), *lastCam = Mode_V(&t), *cp = Mode_V(&t);
 	nativeVal_t *lcam = Mode_V(&t), *vPos = Mode_V(&t), *y = Mode_V(&t), *box = Mode_V(&t), *now = Mode_V(&t);
-	const nativeVal_t *boxName = &a[4];
+	nativeVal_t parking;
+	(void)out;
+	/* BoxName="Parking" */
+	Native_SetStr(&parking, "Parking");
+	const nativeVal_t *boxName = a[4] ? a[4] : &parking;
 	for (int i = 0; i < 4; i++) {
 		if (!Mode_Import(imports[i])) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Pk_Ent(&a[0], w) || !Pk_Ent(&a[1], v) || !Mode_VObjRead(w, "UsrControl", x)) {
+	if (!Pk_Ent(a[0], w) || !Pk_Ent(a[1], v) || !Mode_VObjRead(w, "UsrControl", x)) {
 		return Mode_Done(&t, 0);
 	}
 	int c = Mode_CmpI(x, "!=", 0);
@@ -1059,7 +1063,7 @@ static byte Pk_AllShips(void) {
 
 /* CreateParkedShip(Pos, Angle, Type=None): a parked standard ship of the group Type names (ShipTypes), else any but
  * the mercenaries' (the script makes AllShips upper case and removes them from it) */
-static byte Pk_CreateParkedShipN(const nativeVal_t *a, nativeVal_t *out) {
+static byte Pk_CreateParkedShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	static const char *const imports[] = { "Vehicles", "ShipMaker", "string" };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *xyz = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *ang = Mode_V(&t), *nam = Mode_V(&t), *types = Mode_V(&t);
@@ -1069,18 +1073,19 @@ static byte Pk_CreateParkedShipN(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Pk_Item(&a[0], 0, xyz) || !Pk_Item(&a[0], 1, y) || !Pk_Item(&a[0], 2, z) ||
+	if (!Pk_Item(a[0], 0, xyz) || !Pk_Item(a[0], 1, y) || !Pk_Item(a[0], 2, z) ||
 		!LvN_Create(Mode_S(&t, "Parked"), xyz, y, z, "Car", out) || !LvN_SetS(out, "Descriptor", "MegaShip")) {
 		return Mode_Done(&t, 0);
 	}
-	Pk_Tuple3(ang, Mode_I(&t, 0), &a[1], Mode_I(&t, 0));
+	Pk_Tuple3(ang, Mode_I(&t, 0), a[1], Mode_I(&t, 0));
 	if (!Mode_VSet(out, "Ang", ang)) {
 		return Mode_Done(&t, 0);
 	}
 	byte skip = 1;
-	if (Native_True(&a[2])) {
+	/* Type=None */
+	if (a[2] && Native_True(a[2])) {
 		int has;
-		if (!Pk_Split(&a[2], "_", nam) || !Pk_G("ShipTypes", types) || !Pk_Item(nam, 0, key) || (has = Pk_HasKey(types, key)) < 0) {
+		if (!Pk_Split(a[2], "_", nam) || !Pk_G("ShipTypes", types) || !Pk_Item(nam, 0, key) || (has = Pk_HasKey(types, key)) < 0) {
 			return Mode_Done(&t, 0);
 		}
 		if (has) {
@@ -1469,18 +1474,14 @@ MODE_FN(Parking, ShowNextMap, 3, Pk_ShowNextMapN(&a[0]))
 MODE_FN(Parking, DoorInitializator, 1, Pk_DoorInitializatorN())
 MODE_FN(Parking, Init, 0, Pk_InitN())
 
+static byte Parking_UseShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "OOOO|O", Pk_UseShipN, out);
+}
+
 static PyObject *Parking_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "UsrName", "CharName", "optId", "FullOption", "BoxName", NULL };
-	nativeVal_t a[5];
-	byte given[5];
 	(void)self;
-	if (!Mode_Kw(args, kw, "OOOO|O", names, 5, a, given)) {
-		return Mode_KwOut(a, 5, 0, NULL);
-	}
-	if (!given[4]) {
-		LvN_Str(&a[4], "Parking");
-	}
-	return Mode_KwOut(a, 5, Pk_UseShipN(a), NULL);
+	return Mode_KwCall(args, kw, "OOOO|O", names, Pk_UseShipN);
 }
 
 static PyObject *Parking_SetCameraStart(PyObject *self, PyObject *args, PyObject *kw) {
@@ -1500,14 +1501,14 @@ static PyObject *Parking_SetCameraStart(PyObject *self, PyObject *args, PyObject
 	return Mode_KwOut(a, 5, Pk_SetCameraStartN(a), NULL);
 }
 
+static byte Parking_CreateParkedShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "OO|O", Pk_CreateParkedShipN, out);
+}
+
 static PyObject *Parking_CreateParkedShip(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "Pos", "Angle", "Type", NULL };
-	nativeVal_t a[3], out = { 0 };
 	(void)self;
-	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, NULL)) {
-		return Mode_KwOut(a, 3, 0, NULL);
-	}
-	return Mode_KwOut(a, 3, Pk_CreateParkedShipN(a, &out), &out);
+	return Mode_KwCall(args, kw, "OO|O", names, Pk_CreateParkedShipN);
 }
 
 PyMethodDef g_ParkingMethods[] = {

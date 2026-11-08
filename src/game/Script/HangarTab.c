@@ -2118,80 +2118,40 @@ static byte Ht_SellShip(int id) {
 
 /* ---- adapters: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
 
-/* f(id) */
-#define HT_I(name, call) \
-	static PyObject *HT_##name(PyObject *self, PyObject *args) { \
-		int id; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "i", &id)) { \
-			return NULL; \
-		} \
-		return Mode_Result(call); \
-	}
-/* f(id, a) and f(id, control, lostFocus) with a and control as native values */
-#define HT_IO(name, fmt, call) \
-	static PyObject *HT_##name(PyObject *self, PyObject *args) { \
-		PyObject *o, *o2 = NULL; \
-		nativeVal_t a = { 0 }; \
-		int id; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, fmt, &id, &o, &o2)) { \
-			return NULL; \
-		} \
-		Native_Arg(o, &a); \
-		byte ok = call; \
-		Native_Free(&a); \
-		return Mode_Result(ok); \
-	}
-/* f(v) with a result */
-#define HT_V(name, call) \
-	static PyObject *HT_##name(PyObject *self, PyObject *args) { \
-		PyObject *o; \
-		nativeVal_t a = { 0 }, out = { 0 }; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "O", &o)) { \
-			return NULL; \
-		} \
-		Native_Arg(o, &a); \
-		byte ok = call; \
-		Native_Free(&a); \
-		return Mode_Return(ok, &out); \
-	}
-
-HT_IO(ShowBoostPrediction, "iO", Ht_BoostPrediction(id, &a))
-HT_I(DisableChangePlatformButtons, Ht_Platform(id, 0))
-HT_I(EnableChangePlatformButtons, Ht_Platform(id, 1))
-HT_IO(PrevPilot, "iO", Ht_Pilot(id, -1))
-HT_IO(NextPilot, "iO", Ht_Pilot(id, 1))
-HT_IO(SetSellVisible, "iO", Ht_Visible(id, &a, ht_sell, SE))
-HT_IO(SetExitVisible, "iO", Ht_Visible(id, &a, ht_exit, NULL))
-HT_IO(SetShipTypeVisible, "iO", Ht_Visible(id, &a, ht_shipType, NULL))
-HT_IO(SetPilotVisible, "iO", Ht_Visible(id, &a, ht_pilot, NULL))
-HT_IO(SetSellActive, "iO", (Ht_SellActive(id, Native_True(&a)), 1))
-HT_IO(HideShipMiniInfo, "iOO", Ht_HideMini(id))
-HT_I(HideHangarPanel, Ht_HideHangarPanel(id))
-HT_I(UpdateHangars, Ht_UpdateHangars(id))
-HT_I(ShowHangarPanel, Ht_ShowHangarPanel(id))
-HT_V(IsShipValid, Ht_IsShipValid(&a, &out))
-HT_IO(ShowShipMiniInfo, "iOO", Ht_ShowMini(id, &a))
-HT_IO(ShowRebuildShipMoney, "iOO", Ht_ShowRebuildShipMoney(id, &a))
-HT_IO(HideRebuildShipMoney, "iOO", Ht_HideRebuildShipMoney(id))
-HT_IO(ShowMoneyBuyingShip, "iOO", Ht_AuxShowMoney(id, "-"))
-HT_IO(ShowMoneySellingShip, "iOO", Ht_AuxShowMoney(id, "+"))
-HT_IO(HideMoney, "iOO", (Script_SetNum(id, "MoneyPredict", "Visible", 0), 1))
-HT_V(GetSpeedRampOffsets, Ht_SpeedRampOffsets(&a, &out))
-HT_V(GetMaxSpeedTime, Ht_MaxSpeedTime(&a, &out))
-HT_I(SetHangarPanel, Ht_SetHangarPanel(id))
-HT_V(CmSec2Value, Ht_CmSec2Value(&a, &out))
-HT_I(HideShipInfo, (Ht_HideInfo(id), 1))
-HT_IO(PrevShipToEdit, "iO", Ht_ShipToEdit(id, -1))
-HT_IO(NextShipToEdit, "iO", Ht_ShipToEdit(id, 1))
-HT_IO(SetShipTypeButtonsState, "iO", LvN_EqS(&a, "Build") ? Ht_TypeState(id, 0) : LvN_EqS(&a, "Rebuild") ? Ht_TypeState(id, 1) : 1)
-HT_I(SelectShipToEdit, Ht_SelectShipToEdit(id))
-HT_IO(SelectItem, "iO", Ht_SelectItem(id, &a))
-HT_IO(BuyShip, "iO", Ht_BuyShip(id))
-HT_IO(SellShip, "iO", Ht_SellShip(id))
-HT_I(AddReferenceShipControls, Ht_Reference(id))
+MODE_IFN(HT_ShowBoostPrediction, 2, Ht_BoostPrediction(id, &a[1]))
+MODE_IFN(HT_DisableChangePlatformButtons, 1, Ht_Platform(id, 0))
+MODE_IFN(HT_EnableChangePlatformButtons, 1, Ht_Platform(id, 1))
+MODE_IFN(HT_PrevPilot, 2, Ht_Pilot(id, -1))
+MODE_IFN(HT_NextPilot, 2, Ht_Pilot(id, 1))
+MODE_IFN(HT_SetSellVisible, 2, Ht_Visible(id, &a[1], ht_sell, SE))
+MODE_IFN(HT_SetExitVisible, 2, Ht_Visible(id, &a[1], ht_exit, NULL))
+MODE_IFN(HT_SetShipTypeVisible, 2, Ht_Visible(id, &a[1], ht_shipType, NULL))
+MODE_IFN(HT_SetPilotVisible, 2, Ht_Visible(id, &a[1], ht_pilot, NULL))
+MODE_IFN(HT_SetSellActive, 2, (Ht_SellActive(id, Native_True(&a[1])), 1))
+MODE_IFN(HT_HideShipMiniInfo, 3, Ht_HideMini(id))
+MODE_IFN(HT_HideHangarPanel, 1, Ht_HideHangarPanel(id))
+MODE_IFN(HT_UpdateHangars, 1, Ht_UpdateHangars(id))
+MODE_IFN(HT_ShowHangarPanel, 1, Ht_ShowHangarPanel(id))
+MODE_FN(HT, IsShipValid, 1, Ht_IsShipValid(&a[0], out))
+MODE_IFN(HT_ShowShipMiniInfo, 3, Ht_ShowMini(id, &a[1]))
+MODE_IFN(HT_ShowRebuildShipMoney, 3, Ht_ShowRebuildShipMoney(id, &a[1]))
+MODE_IFN(HT_HideRebuildShipMoney, 3, Ht_HideRebuildShipMoney(id))
+MODE_IFN(HT_ShowMoneyBuyingShip, 3, Ht_AuxShowMoney(id, "-"))
+MODE_IFN(HT_ShowMoneySellingShip, 3, Ht_AuxShowMoney(id, "+"))
+MODE_IFN(HT_HideMoney, 3, (Script_SetNum(id, "MoneyPredict", "Visible", 0), 1))
+MODE_FN(HT, GetSpeedRampOffsets, 1, Ht_SpeedRampOffsets(&a[0], out))
+MODE_FN(HT, GetMaxSpeedTime, 1, Ht_MaxSpeedTime(&a[0], out))
+MODE_IFN(HT_SetHangarPanel, 1, Ht_SetHangarPanel(id))
+MODE_FN(HT, CmSec2Value, 1, Ht_CmSec2Value(&a[0], out))
+MODE_IFN(HT_HideShipInfo, 1, (Ht_HideInfo(id), 1))
+MODE_IFN(HT_PrevShipToEdit, 2, Ht_ShipToEdit(id, -1))
+MODE_IFN(HT_NextShipToEdit, 2, Ht_ShipToEdit(id, 1))
+MODE_IFN(HT_SetShipTypeButtonsState, 2, LvN_EqS(&a[1], "Build") ? Ht_TypeState(id, 0) : LvN_EqS(&a[1], "Rebuild") ? Ht_TypeState(id, 1) : 1)
+MODE_IFN(HT_SelectShipToEdit, 1, Ht_SelectShipToEdit(id))
+MODE_IFN(HT_SelectItem, 2, Ht_SelectItem(id, &a[1]))
+MODE_IFN(HT_BuyShip, 2, Ht_BuyShip(id))
+MODE_IFN(HT_SellShip, 2, Ht_SellShip(id))
+MODE_IFN(HT_AddReferenceShipControls, 1, Ht_Reference(id))
 
 static PyObject *HT_CreateEmptyShip(PyObject *self, PyObject *args) {
 	PyObject *o;
@@ -2255,21 +2215,18 @@ static PyObject *HT_ScaleSpeedRamp(PyObject *self, PyObject *args, PyObject *kw)
 	return Mode_Result(ok);
 }
 
+/* ShowShipInfo(id, showAmmoInfo=1) */
+static byte HT_ShowShipInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *ammo = NULL;
+	int id;
+	(void)out;
+	return Mode_Parse(a, n, "i|O", &id, &ammo) && Ht_ShowInfo(id, ammo ? Native_True(ammo) : 1);
+}
+
 static PyObject *HT_ShowShipInfo(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "showAmmoInfo", NULL };
-	PyObject *ammo = NULL;
-	nativeVal_t a = { 0 };
-	int id;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|O", names, &id, &ammo)) {
-		return NULL;
-	}
-	if (ammo) {
-		Native_Arg(ammo, &a);
-	}
-	byte ok = Ht_ShowInfo(id, ammo ? Native_True(&a) : 1);
-	Native_Free(&a);
-	return Mode_Result(ok);
+	return Mode_KwIdEntry(args, kw, "i|O", names, HT_ShowShipInfo_E);
 }
 
 static PyObject *HT_SelectHangar(PyObject *self, PyObject *args, PyObject *kw) {
@@ -2339,3 +2296,5 @@ PyMethodDef g_HangarTabMethods[] = {
 	{ "HideShipMiniInfo", HT_HideShipMiniInfo, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(HangarTab)

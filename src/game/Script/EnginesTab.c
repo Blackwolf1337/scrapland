@@ -485,46 +485,6 @@ static PyObject *ET_HighlightCurrentMountedEngine(PyObject *self, PyObject *args
 	return Mode_Result(ok);
 }
 
-/* the adapters of the functions (id, control, lostfocus), (id, control) and (id) */
-#define ET_ICO(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		PyObject *co, *lo; \
-		nativeVal_t control, lost; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "iOO", &id, &co, &lo)) { \
-			return NULL; \
-		} \
-		Native_Arg(co, &control); \
-		Native_Arg(lo, &lost); \
-		byte ok = (call); \
-		Native_Free(&control); \
-		Native_Free(&lost); \
-		return Mode_Result(ok); \
-	}
-
-#define ET_IC(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		PyObject *co; \
-		nativeVal_t control; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "iO", &id, &co)) { \
-			return NULL; \
-		} \
-		Native_Arg(co, &control); \
-		byte ok = (call); \
-		Native_Free(&control); \
-		return Mode_Result(ok); \
-	}
-
-#define ET_I(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		(void)self; \
-		return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(call) : NULL; \
-	}
-
 /* the description of engine eng of the list (the tile Engine<n>) */
 static byte ET_Desc(int id, const nativeVal_t *n, const nativeVal_t *eng) {
 	static const char *const labels[6] = { "ShipEdit_Engine", "ShipEdit_Power", "ShipEdit_PowerUnits", "ShipEdit_Weight",
@@ -752,8 +712,8 @@ static byte ET_ShowEngineDesc(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ET_Predict(id, eng));
 }
 
-ET_ICO(ET_ShowEngineDescPy, ((void)lost, ET_ShowEngineDesc(id, &control)))
-ET_ICO(ET_HideEngineDesc, ((void)control, (void)lost, ET_Run(id, "hidedesc", NULL)))
+MODE_IFN(ET_ShowEngineDescPy, 3, ET_ShowEngineDesc(id, &a[1]))
+MODE_IFN(ET_HideEngineDesc, 3, ET_Run(id, "hidedesc", NULL))
 
 /* ChangeRecycleButtonState(id): the recycle button works only for a bay with engines; the links follow */
 static byte ET_RecycleState(int id) {
@@ -807,7 +767,7 @@ static byte ET_RecycleState(int id) {
 	return ok;
 }
 
-ET_I(ET_ChangeRecycleButtonState, ET_RecycleState(id))
+MODE_IFN(ET_ChangeRecycleButtonState, 1, ET_RecycleState(id))
 
 /* UpdateEnginesList(id): which engines of the list fit the bay */
 static byte ET_UpdateList(int id) {
@@ -823,7 +783,7 @@ static byte ET_UpdateList(int id) {
 	return ok;
 }
 
-ET_I(ET_UpdateEnginesList, ET_UpdateList(id))
+MODE_IFN(ET_UpdateEnginesList, 1, ET_UpdateList(id))
 
 /* the speed texts of the info panel */
 static void ET_SpeedText(int id, int v) {
@@ -984,7 +944,7 @@ static byte ET_PutEngine(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ok);
 }
 
-ET_IC(ET_PutEnginePy, ET_PutEngine(id, &control))
+MODE_IFN(ET_PutEnginePy, 2, ET_PutEngine(id, &a[1]))
 
 /* RecycleEngine(id, control): the engines of the bay sold */
 static byte ET_RecycleEngine(int id) {
@@ -1058,7 +1018,7 @@ static byte ET_RecycleEngine(int id) {
 	return Mode_Done(&t, ok);
 }
 
-ET_IC(ET_RecycleEnginePy, ((void)control, ET_RecycleEngine(id)))
+MODE_IFN(ET_RecycleEnginePy, 2, ET_RecycleEngine(id))
 
 /* ShowMoneySellingEngine(id, control, lostfocus): the money the recycle button would give */
 static byte ET_ShowMoneySellingEngine(int id) {
@@ -1084,7 +1044,7 @@ static byte ET_ShowMoneySellingEngine(int id) {
 	return Mode_Done(&t, 1);
 }
 
-ET_ICO(ET_ShowMoneySellingEnginePy, ((void)control, (void)lost, ET_ShowMoneySellingEngine(id)))
+MODE_IFN(ET_ShowMoneySellingEnginePy, 3, ET_ShowMoneySellingEngine(id))
 
 /* UpdateLayoutsState(id, string.atoi(currentEngineGroup[-1]) - 1, state) (OBJLIB 3: string.atoi and the module's
  * function by name) */
@@ -1144,25 +1104,19 @@ static byte ET_SelectEngineGroup(int id, const nativeVal_t *control, const nativ
 	return ok;
 }
 
+static byte ET_SelectEngineGroupPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *control, *def = NULL;
+	nativeVal_t one;
+	int id;
+	(void)out;
+	Native_SetInt(&one, 1);
+	return Mode_Parse(a, n, "iO|O", &id, &control, &def) && ET_SelectEngineGroup(id, control, def ? def : &one);
+}
+
 static PyObject *ET_SelectEngineGroupPy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "setDefault", NULL };
-	int id;
-	PyObject *co, *o = NULL;
-	nativeVal_t control, def;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "iO|O", names, &id, &co, &o)) {
-		return NULL;
-	}
-	Native_Arg(co, &control);
-	if (o) {
-		Native_Arg(o, &def);
-	} else {
-		Native_SetInt(&def, 1);
-	}
-	byte ok = ET_SelectEngineGroup(id, &control, &def);
-	Native_Free(&control);
-	Native_Free(&def);
-	return Mode_Result(ok);
+	return Mode_KwIdEntry(args, kw, "iO|O", names, ET_SelectEngineGroupPy_E);
 }
 
 /* the method of a list variable of the module called in place (OBJLIB 5: sort and append of the script's lists) */
@@ -1288,7 +1242,7 @@ static byte ET_SetEnginesPanel(int id) {
 	return Mode_Done(&t, ok);
 }
 
-ET_I(ET_SetEnginesPanelPy, ET_SetEnginesPanel(id))
+MODE_IFN(ET_SetEnginesPanelPy, 1, ET_SetEnginesPanel(id))
 
 /* the value of a Visible flag the file cannot set raises the TypeError of SScorer.Set */
 static PyObject *ET_SetVisible(PyObject *args, const char *first, const char *section) {
@@ -1434,7 +1388,7 @@ static byte ET_ShowEnginesPanel(int id) {
 	return Mode_Done(&t, ok);
 }
 
-ET_I(ET_ShowEnginesPanelPy, ET_ShowEnginesPanel(id))
+MODE_IFN(ET_ShowEnginesPanelPy, 1, ET_ShowEnginesPanel(id))
 
 /* the eight bay icons 0A .. 3B */
 static const char *ET_IconName(char *out, int size, int i, int j) {
@@ -1457,7 +1411,7 @@ static byte ET_CreateLayouts(int id) {
 	return ok;
 }
 
-ET_I(ET_CreateLayoutsPy, ET_CreateLayouts(id))
+MODE_IFN(ET_CreateLayoutsPy, 1, ET_CreateLayouts(id))
 
 /* Rotate of a bay icon: 0 for a bay of one slot, else pointing out from the middle of the screen */
 static int ET_Rotate(int j, const nativeVal_t *slots, double u) {
@@ -1616,7 +1570,7 @@ static byte ET_UpdateLayouts(int id) {
 	return 1;
 }
 
-ET_I(ET_UpdateLayoutsPy, ET_UpdateLayouts(id))
+MODE_IFN(ET_UpdateLayoutsPy, 1, ET_UpdateLayouts(id))
 
 static const char *const et_iconParts[5] = { "IconEngine", "IconEngineGlow", "IconEngineLineL", "IconEngineLineC",
 	"IconEngineLineR" };
@@ -1731,11 +1685,11 @@ static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 	return ok;
 }
 
-ET_IC(ET_UpdateLayoutsGlowPy, ET_UpdateLayoutsGlow(id, &control))
+MODE_IFN(ET_UpdateLayoutsGlowPy, 2, ET_UpdateLayoutsGlow(id, &a[1]))
 
 /* LayoutsGainFocus(id, control, lostfocus) and LayoutsLostFocus(id, control, gainfocus) (OBJLIB 3) */
-ET_ICO(ET_LayoutsGainFocus, ((void)lost, Native_CallGlobal(MOD, "UpdateLayoutsGlow", NULL, "iv", (long)id, &control)))
-ET_ICO(ET_LayoutsLostFocus, ((void)control, Native_CallGlobal(MOD, "UpdateLayoutsGlow", NULL, "iv", (long)id, &lost)))
+MODE_IFN(ET_LayoutsGainFocus, 3, Native_CallGlobal(MOD, "UpdateLayoutsGlow", NULL, "iv", (long)id, &a[1]))
+MODE_IFN(ET_LayoutsLostFocus, 3, Native_CallGlobal(MOD, "UpdateLayoutsGlow", NULL, "iv", (long)id, &a[2]))
 
 /* HideEnginesPanel(id) */
 static byte ET_HideEnginesPanel(int id) {
@@ -1785,7 +1739,7 @@ static byte ET_HideEnginesPanel(int id) {
 	return ok;
 }
 
-ET_I(ET_HideEnginesPanelPy, ET_HideEnginesPanel(id))
+MODE_IFN(ET_HideEnginesPanelPy, 1, ET_HideEnginesPanel(id))
 
 /* the four engines shown from first on: their places and colours against the load */
 static byte ET_ShowFrom(int id, long first, const etLoad_t *l) {
@@ -1899,7 +1853,7 @@ static byte ET_ScrollUp(int id, const nativeVal_t *control) {
 	return Native_CallGlobal(MOD, "HighlightCurrentMountedEngine", NULL, "ii", (long)id, 0L);
 }
 
-ET_IC(ET_ScrollEngineListUp, ET_ScrollUp(id, &control))
+MODE_IFN(ET_ScrollEngineListUp, 2, ET_ScrollUp(id, &a[1]))
 
 /* ScrollEngineListDown(id, control): the list one engine down */
 static byte ET_ScrollDown(int id, const nativeVal_t *control) {
@@ -1959,7 +1913,7 @@ static byte ET_ScrollDown(int id, const nativeVal_t *control) {
 	return down >= 0;
 }
 
-ET_IC(ET_ScrollEngineListDown, ET_ScrollDown(id, &control))
+MODE_IFN(ET_ScrollEngineListDown, 2, ET_ScrollDown(id, &a[1]))
 
 PyMethodDef g_EnginesTabMethods[] = {
 	{ "HighlightCurrentMountedEngine", (PyCFunction)(void (*)(void))ET_HighlightCurrentMountedEngine, 3, NULL },
@@ -1987,3 +1941,5 @@ PyMethodDef g_EnginesTabMethods[] = {
 	{ "ScrollEngineListDown", ET_ScrollEngineListDown, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(EnginesTab)

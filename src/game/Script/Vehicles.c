@@ -822,10 +822,12 @@ static byte Veh_ReSpawnShipN(const nativeVal_t *name) {
 }
 
 /* SetProperties(EntityName, Model, MaxLife, Pilot, Motor0..3, WeapList, PlayerName, localedit=0): the ship's model
- * and parts (not on a net client), then the parameters of ShipMaker; the handle, None for a bad configuration */
-static byte Veh_SetPropertiesN(const nativeVal_t *a, const nativeVal_t *local, nativeVal_t *out) {
+ * and parts (not on a net client), then the parameters of ShipMaker; the handle, None for a bad configuration. The
+ * arguments by slot (a[10] NULL when localedit is not given) */
+static byte Veh_SetPropertiesN(const nativeVal_t *const *a, nativeVal_t *out) {
 	static const char *const parts[] = { "MEng0", "MEng1", "MEng2", "MEng3" };
-	const nativeVal_t *name = &a[0], *model = &a[1], *life = &a[2], *pilot = &a[3], *weap = &a[8], *player = &a[9];
+	const nativeVal_t *name = a[0], *model = a[1], *life = a[2], *pilot = a[3], *weap = a[8], *player = a[9];
+	const nativeVal_t *local = a[10];
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *flags = Mode_V(&t), *f0 = Mode_V(&t), *cbs = Mode_V(&t), *entry = Mode_V(&t);
 	nativeVal_t *fn = Mode_V(&t), *valid = Mode_V(&t), *msg = Mode_V(&t);
@@ -860,7 +862,7 @@ static byte Veh_SetPropertiesN(const nativeVal_t *a, const nativeVal_t *local, n
 			return Mode_Done(&t, 0);
 		}
 		for (int i = 0; i < 4; i++) {
-			if (!Mode_VSet(v, parts[i], &a[4 + i])) {
+			if (!Mode_VSet(v, parts[i], a[4 + i])) {
 				return Mode_Done(&t, 0);
 			}
 		}
@@ -915,31 +917,15 @@ static byte Veh_InitN(void) {
 }
 
 /* SetProperties takes localedit as a keyword */
+static byte Vehicles_SetProperties_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "OOOOOOOOOO|O", Veh_SetPropertiesN, out);
+}
+
 static PyObject *Vehicles_SetProperties(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "EntityName", "Model", "MaxLife", "Pilot", "Motor0", "Motor1", "Motor2", "Motor3", "WeapList",
 		"PlayerName", "localedit", NULL };
-	PyObject *o[11] = { NULL };
-	nativeVal_t a[11], out;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOOOOOOOO|O", names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7], &o[8],
-		&o[9], &o[10])) {
-		return NULL;
-	}
-	for (int i = 0; i < 11; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &a[i]);
-		} else {
-			Native_SetNone(&a[i]);
-		}
-	}
-	Native_SetNone(&out);
-	byte ok = Veh_SetPropertiesN(a, o[10] ? &a[10] : NULL, &out);
-	PyObject *r = ok ? (out.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&out)) : NULL;
-	Native_Free(&out);
-	for (int i = 0; i < 11; i++) {
-		Native_Free(&a[i]);
-	}
-	return r;
+	return Mode_KwCall(args, kw, "OOOOOOOOOO|O", names, Veh_SetPropertiesN);
 }
 
 MODE_FN(Vehicles, ClientCreate, 2, Veh_ClientCreateN(&a[0], &a[1]))

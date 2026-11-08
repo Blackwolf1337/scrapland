@@ -477,65 +477,52 @@ static byte Npc_InitN(void) {
 	return Mode_Done(&t, ok);
 }
 
-/* the adapters of the functions with keyword arguments: the arguments as native values (NULL for one not given) */
-static PyObject *Npc_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, int n,
-	byte (*core)(nativeVal_t *const *a, nativeVal_t *out)) {
-	PyObject *o[4] = { NULL };
-	nativeVal_t v[4], out;
-	nativeVal_t *a[4] = { NULL };
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3])) {
-		return NULL;
-	}
-	for (int i = 0; i < n; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &v[i]);
-			a[i] = &v[i];
-		}
-	}
-	Native_SetNone(&out);
-	byte ok = core(a, &out);
-	PyObject *r = ok ? (out.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&out)) : NULL;
-	Native_Free(&out);
-	for (int i = 0; i < n; i++) {
-		if (a[i]) {
-			Native_Free(a[i]);
-		}
-	}
-	return r;
-}
-
-static byte Npc_MakeAIK(nativeVal_t *const *a, nativeVal_t *out) {
+/* the functions with keyword arguments: one core each on the arguments by slot (NULL for one not given), the adapter
+ * (Mode_KwCall) and the entry (Mode_KwEntry) */
+static byte Npc_MakeAIK(const nativeVal_t *const *a, nativeVal_t *out) {
 	nativeVal_t name, init;
 	Native_SetStr(&name, "Traffic");
 	Native_SetInt(&init, 1);
 	return Npc_MakeAIN(a[0], a[1] ? a[1] : &name, a[2], a[3] ? a[3] : &init, out);
 }
 
-static byte Npc_ModAIProffK(nativeVal_t *const *a, nativeVal_t *out) {
+static byte Npc_ModAIProffK(const nativeVal_t *const *a, nativeVal_t *out) {
 	(void)out;
 	return Npc_ModAIProffN(a[0], a[1], a[2]);
 }
 
-static byte Npc_SetIAProfK(nativeVal_t *const *a, nativeVal_t *out) {
+static byte Npc_SetIAProfK(const nativeVal_t *const *a, nativeVal_t *out) {
 	return Npc_SetIAProfN(a[0], a[1], a[2], out);
+}
+
+static byte VehiclesNPC_MakeAI_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "O|OOO", Npc_MakeAIK, out);
 }
 
 static PyObject *VehiclesNPC_MakeAI(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "TypeShip", "Name", "FarPos", "InitState", NULL };
 	(void)self;
-	return Npc_Kw(args, kw, "O|OOO", names, 4, Npc_MakeAIK);
+	return Mode_KwCall(args, kw, "O|OOO", names, Npc_MakeAIK);
+}
+
+static byte VehiclesNPC_ModAIProff_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "OO|O", Npc_ModAIProffK, out);
 }
 
 static PyObject *VehiclesNPC_ModAIProff(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "o1", "pd", "useLife", NULL };
 	(void)self;
-	return Npc_Kw(args, kw, "OO|O", names, 3, Npc_ModAIProffK);
+	return Mode_KwCall(args, kw, "OO|O", names, Npc_ModAIProffK);
+}
+
+static byte VehiclesNPC_SetIAProf_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "OO|O", Npc_SetIAProfK, out);
 }
 
 static PyObject *VehiclesNPC_SetIAProf(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "o1", "TypeShip", "InitState", NULL };
 	(void)self;
-	return Npc_Kw(args, kw, "OO|O", names, 3, Npc_SetIAProfK);
+	return Mode_KwCall(args, kw, "OO|O", names, Npc_SetIAProfK);
 }
 
 MODE_FN(VehiclesNPC, InitStdShips, 0, Npc_InitStdShipsN())
