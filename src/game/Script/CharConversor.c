@@ -17,10 +17,12 @@
  * variables, the camera name, the floor, the loading screen and the language texts are C; Scrap.Set, UsrEntity,
  * GetEntity, CreateEntity, IncSaveVar, ConsoleError, SetTimeSpeed, the dummy search, SLogic.SetOnFloor,
  * SScorer.Set, SetMsgText, Fade, SAct.GetClass, SInput.SetActionSet and the scheduler go through their seams, and the
- * characters and machines are handle values (OBJLIB 7). The other ports (Chars, CharAct, Menu, Speech, SaveGame,
- * CharScorer, DoorSound, string.replace), the SFX, SLogic.Flash, SendSentinelToWatch, SAct.GetCls,
- * SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 3, 7); the module's own functions
- * are called through its globals as the script calls them; the .def files take their $names as a dict (OBJLIB 6).
+ * characters and machines are handle values (OBJLIB 7). The other ports (Chars, CharAct, Menu, SaveGame, CharScorer,
+ * DoorSound) are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
+ * by name) and string.replace through its native twin; the module's own functions through its globals as the script
+ * calls them (PORT_OWN, the same seam on the global). The SFX, SLogic.Flash, SendSentinelToWatch, SAct.GetCls,
+ * SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 7), Menu.LinkLR and LinkUD too
+ * (OBJLIB 4: a from import, and they have no entry); the .def files take their $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
 
@@ -44,9 +46,6 @@ static const char charconv_def[] = {
 static byte Cc_G(const char *name, nativeVal_t *out) {
 	return Mode_G(CC, name, out);
 }
-
-/* a function of the module as its functions call it (OBJLIB 3: through its global) */
-#define Cc_Call(func, out, ...) Native_CallGlobal(CC, func, out, __VA_ARGS__)
 
 /* GetNearestConversionPoint(Pos): the conversor nearest to the place (a floor between counts 20000); the second
  * nearest is PrevConv */
@@ -85,15 +84,15 @@ static byte Cc_GetNearestConversionPoint(const nativeVal_t *pos, nativeVal_t *ou
 	return Mode_Done(&t, 1);
 }
 
-/* CreateConversorClass(): the class of the machine and its sounds (OBJLIB 3: DoorSound by name) */
+/* CreateConversorClass(): the class of the machine and its sounds */
 static byte Cc_CreateConversorClass(void) {
 	Script_RunFile(0, "missions/conversor.def", "Class", conversor_def, NULL, NULL);
-	return Mode_Import("DoorSound") && Native_CallMod("DoorSound", "ConversorSetSounds", NULL, "s", "Conversor");
+	return Mode_Import("DoorSound") && PORT_CALL(DoorSound, ConversorSetSounds, NULL, "s", "Conversor");
 }
 
 /* Init(): a conversor at every DM_Conversion_Point dummy, into ConversionPoints */
 static byte Cc_Init(void) {
-	if (!Cc_Call("CreateConversorClass", NULL, "") || !Mode_DummyStartSeam("DM_Conversion_Point*", 1)) {
+	if (!PORT_OWN(CharConversor, CreateConversorClass, NULL, "") || !Mode_DummyStartSeam("DM_Conversion_Point*", 1)) {
 		return 0;
 	}
 	for (;;) {
@@ -130,7 +129,7 @@ static byte Cc_Init(void) {
 }
 
 /* ConvertChar(UsrName, CharName, optId, FullOption): the player becomes a new character of the class of the save
- * variable Char at the conversor, with the energy of the old one (OBJLIB 3: Chars by name) */
+ * variable Char at the conversor, with the energy of the old one */
 static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *u0 = Mode_V(&t), *prev = Mode_V(&t), *usr = Mode_V(&t), *act = Mode_V(&t), *energy = Mode_V(&t);
@@ -140,18 +139,18 @@ static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
 	if (!Mode_Import("Chars") || !Mode_Import("string") || !Mode_EntitySeam(uname, u0) || !Mode_VObj(u0, "ActCtrl", prev) ||
 		!Mode_Put(CC, "prevChar", NULL, prev) || !Mode_EntitySeam(uname, usr) || !Mode_VObj(usr, "ActCtrl", act) ||
 		!Mode_VObj(usr, "Energy", energy) || !LvN_SetI(usr, "UsrControl", -1) || !LvN_SetI(usr, "Active", 0) ||
-		!LvN_SetS(usr, "ActCtrl", "") || !Mode_VDel(usr) || !Native_CallMod("Chars", "DiscardRes", NULL, "v", act)) {
+		!LvN_SetS(usr, "ActCtrl", "") || !Mode_VDel(usr) || !PORT_CALL(Chars, DiscardRes, NULL, "v", act)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Char", sv);
-	if (!Native_CallMod("Chars", "LoadRes", NULL, "v", sv) || !Mode_EntitySeam(cname, kb)) {
+	if (!PORT_CALL(Chars, LoadRes, NULL, "v", sv) || !Mode_EntitySeam(cname, kb)) {
 		return Mode_Done(&t, 0);
 	}
 	const char *pl = LvN_EqS(uname, "PlayerZ") ? "Player0" : "PlayerZ";
 	Mode_SaveVar("Char", ch);
 	Native_SetFloat(t001, 0.001);
-	byte ok = Cc_Call("CPPos", p, "v", kb) && Cc_Call("CPAng", a, "v", kb) &&
-		Native_CallMod("Chars", "CreateMainChar", c, "svvv", pl, ch, p, a) && Mode_VGet(c, "Name", name) &&
+	byte ok = PORT_OWN(CharConversor, CPPos, p, "v", kb) && PORT_OWN(CharConversor, CPAng, a, "v", kb) &&
+		PORT_CALL(Chars, CreateMainChar, c, "svvv", pl, ch, p, a) && Mode_VGet(c, "Name", name) &&
 		LvN_SetOnFloor(name) && Mode_VObj(c, "Pos", v) && Mode_VSet(c, "MovePos", v) && (Native_Free(v), 1) &&
 		Mode_VObj(c, "Ang", v) && Mode_VSet(c, "MoveAng", v) && Mode_VSet(c, "MoveTime", t001) &&
 		LvN_SetI(c, "AutoSelect", 0) && Mode_VSet(c, "Energy", energy) && (Native_Free(v), 1) &&
@@ -270,14 +269,15 @@ static byte Cc_Heads(int pid, int total, int *count) {
 }
 
 /* AddInterfaceContent(id): the interface of the characters (data/menus/charconv.def); the game time stops; the
- * description of the player's character, the keyboard links of the buttons, Escape leaves (OBJLIB 3: Menu by name) */
+ * description of the player's character, the keyboard links of the buttons, Escape leaves (OBJLIB 4: from Menu
+ * import LinkLR, LinkUD) */
 static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *chars = Mode_V(&t), *avl = Mode_V(&t), *sv = Mode_V(&t), *control = Mode_V(&t), *none = Mode_V(&t);
 	nativeVal_t *name = Mode_V(&t);
 	int pid = 0, total = -1, count = 0;
-	if (!Mode_Import("Menu") || !Native_CallMod("Menu", "InitMenuSys", NULL, "i", 0L) ||
-		!Native_CallMod("Menu", "StartNewMenu", NULL, "v", id) || !Native_ArgInt(id, &pid) ||
+	if (!Mode_Import("Menu") || !PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) ||
+		!PORT_CALL(Menu, StartNewMenu, NULL, "v", id) || !Native_ArgInt(id, &pid) ||
 		!Cc_G("ConversionChars", chars) || (total = Mode_Len(chars)) < 0 || !Cc_G("AvailableChars", avl) ||
 		Mode_Len(avl) < 0 || !Cc_Heads(pid, total, &count)) {
 		return Mode_Done(&t, 0);
@@ -289,7 +289,8 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	Script_RunFile(pid, "menus/charconv.def", "rest", charconv_def, NULL, rest);
 	Py_DECREF(rest);
 	Mode_SaveVar("Char", sv);
-	if (!Mode_Cat(&t, control, 2, Mode_S(&t, "Char_"), sv) || !Cc_Call("ShowCharDesc", NULL, "vvv", id, control, none)) {
+	if (!Mode_Cat(&t, control, 2, Mode_S(&t, "Char_"), sv) ||
+		!PORT_OWN(CharConversor, ShowCharDesc, NULL, "vvv", id, control, none)) {
 		return Mode_Done(&t, 0);
 	}
 	PyObject *lr = Mode_From("Menu", "LinkLR"), *ud = lr ? Mode_From("Menu", "LinkUD") : NULL;
@@ -320,13 +321,14 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	return Mode_Done(&t, ok && Native_CallMod("SScorer", "SetOnCancel", NULL, "vs", id, "CharConversor.ExitCharConversor"));
 }
 
-/* SpawnChar(c, ChrConv): a character appears out of a conversor (OBJLIB 3, 7: SFX by name) */
+/* SpawnChar(c, ChrConv): a character appears out of a conversor (OBJLIB 7: SFX by name) */
 static byte Cc_SpawnChar(const nativeVal_t *c, const nativeVal_t *conv) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *p = Mode_V(&t), *a = Mode_V(&t), *y = Mode_V(&t), *y2 = Mode_V(&t), *ang = Mode_V(&t);
 	nativeVal_t *name = Mode_V(&t), *name2 = Mode_V(&t), *cn = Mode_V(&t);
-	if (!Mode_Import("Chars") || !Cc_Call("CPPos", p, "v", conv) || !Mode_VSet(c, "Pos", p) || !Cc_Call("CPAng", a, "v", conv) ||
-		!LvN_Item(a, 1, y) || !Mode_Arith('+', y, Mode_I(&t, 180), y2)) {
+	if (!Mode_Import("Chars") || !PORT_OWN(CharConversor, CPPos, p, "v", conv) || !Mode_VSet(c, "Pos", p) ||
+		!PORT_OWN(CharConversor, CPAng, a, "v", conv) || !LvN_Item(a, 1, y) ||
+		!Mode_Arith('+', y, Mode_I(&t, 180), y2)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Ints3(ang, 0, 0, 0);
@@ -337,7 +339,7 @@ static byte Cc_SpawnChar(const nativeVal_t *c, const nativeVal_t *conv) {
 		Native_CallMod("SFX", "CharacterConversor", NULL, "vvi", name2, cn, 2L));
 }
 
-/* MarkSpawnWaypoint(ChrConvName): a way point at the conversor (OBJLIB 3: SaveGame by name) */
+/* MarkSpawnWaypoint(ChrConvName): a way point at the conversor */
 static byte Cc_MarkSpawnWaypoint(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *path = Mode_V(&t), *spawn = Mode_V(&t);
@@ -345,7 +347,7 @@ static byte Cc_MarkSpawnWaypoint(const nativeVal_t *name) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Spawn", spawn);
-	return Mode_Done(&t, Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvv", path, spawn, name));
+	return Mode_Done(&t, PORT_CALL(SaveGame, MarkWayPoint, NULL, "vvv", path, spawn, name));
 }
 
 /* the energy of the player at a conversor: at least 2 batteries, at most the save variable Batteries */
@@ -403,14 +405,15 @@ static byte Cc_EnterCharConversor(const nativeVal_t *uname, const nativeVal_t *c
 	Native_SetFloat(t001, 0.001);
 	byte ok = Mode_EntitySeam(cname, obj) && LvN_SetS(obj, "Action", "Action") && Mode_EntitySeam(uname, usr) &&
 		LvN_SetS(usr, "ForceAction", "Relax") && LvN_SetI(usr, "AutoSelect", 0) && LvN_SetI(usr, "UsrControl", -1) &&
-		LvN_SetI(usr, "UsrControl", 0) && Cc_Call("CPPos", p, "v", obj) && Mode_VSet(usr, "Pos", p) &&
-		Cc_Call("CPAng", a, "v", obj) && Mode_VSet(usr, "Ang", a) && Mode_VObj(usr, "Name", name) && LvN_SetOnFloor(name) &&
-		Mode_VObj(usr, "Pos", v) && Mode_VSet(usr, "MovePos", v) && (Native_Free(v), 1) && Mode_VObj(usr, "Ang", v) &&
-		Mode_VSet(usr, "MoveAng", v) && Mode_VSet(usr, "MoveTime", t001) && Native_GVarGet("StdMaxLife", life) &&
-		Mode_VSet(usr, "Life", life) && Cc_Energy(usr) && Cc_Call("MarkSpawnWaypoint", NULL, "v", cname) &&
+		LvN_SetI(usr, "UsrControl", 0) && PORT_OWN(CharConversor, CPPos, p, "v", obj) && Mode_VSet(usr, "Pos", p) &&
+		PORT_OWN(CharConversor, CPAng, a, "v", obj) && Mode_VSet(usr, "Ang", a) && Mode_VObj(usr, "Name", name) &&
+		LvN_SetOnFloor(name) && Mode_VObj(usr, "Pos", v) && Mode_VSet(usr, "MovePos", v) && (Native_Free(v), 1) &&
+		Mode_VObj(usr, "Ang", v) && Mode_VSet(usr, "MoveAng", v) && Mode_VSet(usr, "MoveTime", t001) &&
+		Native_GVarGet("StdMaxLife", life) && Mode_VSet(usr, "Life", life) && Cc_Energy(usr) &&
+		PORT_OWN(CharConversor, MarkSpawnWaypoint, NULL, "v", cname) &&
 		(Mode_CamName(0, cam), Mode_EntitySeam(cam, ce)) && Mode_VSet(ce, "EntityLink", cname) &&
 		Mode_Put(CC, "_usrName", NULL, uname) && Mode_Put(CC, "_charName", NULL, cname) && Mode_Put(CC, "_optId", NULL, opt) &&
-		Mode_Put(CC, "_fullOption", NULL, full) && Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) &&
+		Mode_Put(CC, "_fullOption", NULL, full) && PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) &&
 		Mode_ActionSet("Inactive");
 	return Mode_Done(&t, ok);
 }
@@ -425,7 +428,7 @@ static byte Cc_Fx(long step) {
 }
 
 /* EndOfScene(EntityName, EventName, Time): the end of the machine's action: the camera and the control back to the
- * player, afterExitConversor or the first conversion warning, the sentinels look (OBJLIB 3, 7: Menu, CharScorer and
+ * player, afterExitConversor or the first conversion warning, the sentinels look (OBJLIB 7:
  * SLogic.SendSentinelToWatch by name) */
 static byte Cc_EndOfScene(const nativeVal_t *ename) {
 	modeVals_t t = { .n = 0 };
@@ -433,7 +436,7 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 	nativeVal_t *msg = Mode_V(&t), *pos = Mode_V(&t);
 	if (!Mode_Import("Menu") || !Mode_Import("CharScorer") || !Mode_CamLink(Mode_S(&t, "")) || !Mode_UsrHandle(usr) ||
 		!LvN_SetI(usr, "AutoSelect", 1) || !LvN_SetI(usr, "MoveTime", 0) || !Mode_EntitySeam(ename, e) ||
-		!Mode_ActionSet("Walk") || !Native_CallMod("CharScorer", "Create", NULL, "i", 0L) ||
+		!Mode_ActionSet("Walk") || !PORT_CALL(CharScorer, Create, NULL, "i", 0L) ||
 		!LvN_GObj(CC, "afterExitConversor", after)) {
 		return Mode_Done(&t, 0);
 	}
@@ -453,7 +456,7 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 		if (first) {
 			Mode_Lang("FirstConversionWarning", msg);
 			if (!Mode_SetSaveVar("Conversor.FirstConversion", Mode_S(&t, "0")) ||
-				!Native_CallMod("Menu", "ShowWarning", NULL, "iv", 0L, msg)) {
+				!PORT_CALL(Menu, ShowWarning, NULL, "iv", 0L, msg)) {
 				return Mode_Done(&t, 0);
 			}
 		}
@@ -461,10 +464,10 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 	return Mode_Done(&t, Mode_VObj(usr, "Pos", pos) && Native_CallMod("SLogic", "SendSentinelToWatch", NULL, "v", pos));
 }
 
-/* ExitCharConversor(id, control): the player appears again, the interface closes (OBJLIB 3: Menu by name) */
+/* ExitCharConversor(id, control): the player appears again, the interface closes */
 static byte Cc_ExitCharConversor(const nativeVal_t *id) {
 	return Mode_Import("Menu") && Cc_Fx(2) && Mode_GVarSetDef("AbortSelectDistance") &&
-		Native_CallMod("Menu", "BackToGame", NULL, "v", id);
+		PORT_CALL(Menu, BackToGame, NULL, "v", id);
 }
 
 /* SScorer.Set(id, "CharHead_" + control[5:], "HeadAnimIndex", anim) */
@@ -514,8 +517,8 @@ static byte Cc_Convert(const nativeVal_t *control) {
 	return Mode_Put(CC, "KONTROL", NULL, control) && Mode_GVarSetS("AfterDrawCallback", "CharConversor.ConvertExecute");
 }
 
-/* ConvertExecute(): an available character becomes the player's, the interface closes (OBJLIB 3: string.replace by
- * name) */
+/* ConvertExecute(): an available character becomes the player's, the interface closes (string.replace through its
+ * native twin) */
 static byte Cc_ConvertExecute(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *k = Mode_V(&t), *ch = Mode_V(&t), *avl = Mode_V(&t), *u = Mode_V(&t), *c = Mode_V(&t), *o = Mode_V(&t);
@@ -528,14 +531,11 @@ static byte Cc_ConvertExecute(void) {
 	if (!Mode_SetSaveVar("Char", ch)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *fn = Mode_GlobalPy(CC, "ConvertChar");
-	byte ok = fn && Cc_G("_usrName", u) && Cc_G("_charName", c) && Cc_G("_optId", o) && Cc_G("_fullOption", full) &&
-		Native_Call(fn, NULL, "vvvv", u, c, o, full);
-	Py_XDECREF(fn);
-	fn = ok ? Mode_GlobalPy(CC, "ExitCharConversor") : NULL;
-	ok = fn && Cc_G("KONTROL", k2) && Native_Call(fn, NULL, "iv", 0L, k2);
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	/* ConvertChar(_usrName, _charName, _optId, _fullOption); ExitCharConversor(0, KONTROL): the globals are read before
+	 * the function now (the script looked the function up first; another error only when both are missing) */
+	return Mode_Done(&t, Cc_G("_usrName", u) && Cc_G("_charName", c) && Cc_G("_optId", o) && Cc_G("_fullOption", full) &&
+		PORT_OWN(CharConversor, ConvertChar, NULL, "vvvv", u, c, o, full) && Cc_G("KONTROL", k2) &&
+		PORT_OWN(CharConversor, ExitCharConversor, NULL, "iv", 0L, k2));
 }
 
 /* the message of a possession that is not allowed */
@@ -552,8 +552,7 @@ static byte Cc_GSet(const char *g, const char *var, const nativeVal_t *v) {
 	return ok;
 }
 
-/* the end of Possession: the camera of the possessed class, the slow motion (OBJLIB 3, 7: SAct.GetCls and Menu by
- * name) */
+/* the end of Possession: the camera of the possessed class, the slow motion (OBJLIB 7: SAct.GetCls by name) */
 static byte Cc_PossessionCam(const nativeVal_t *ent) {
 	static const char *const cams[][2] = { { "Fov", "FOV" }, { "CamDist", "CamDist" }, { "CamAng", "CamAng" },
 		{ "CamRot", "CamRot" } };
@@ -573,12 +572,12 @@ static byte Cc_PossessionCam(const nativeVal_t *ent) {
 	}
 	return Mode_Done(&t, Cc_G("AuxInterp", aux) && Mode_VObj(aux, "Name", name) && Cc_GSet("Cam", "MainTarget", name) &&
 		Cc_GSet("Cam", "Target", name) && Mode_GVarSetN("S_PitchScale", 0.2) && Mode_TimeSpeed(0.2) &&
-		Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) && Mode_ActionSet("Inactive"));
+		PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) && Mode_ActionSet("Inactive"));
 }
 
 /* Possession(UserName, PossessedName): the player takes the character it flashed (one of ConversionChars, alive,
  * not invulnerable): the character dies without effects, a new player of its class stands there, the camera flies
- * over in slow motion and NewPlayer finishes (OBJLIB 3, 7: Chars, CharAct, SLogic.Flash and SFX by name) */
+ * over in slow motion and NewPlayer finishes (OBJLIB 7: SLogic.Flash and SFX by name) */
 static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	static const int white[4] = { 255, 255, 255, 255 }, clear[4] = { 255, 255, 255, 0 };
 	modeVals_t t = { .n = 0 };
@@ -630,7 +629,7 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 		!LvN_Item(pos, 1, y) || (Native_Free(pos), !Mode_VObj(me, "Pos", pos)) || !LvN_Item(pos, 2, z) ||
 		!LvN_Create(Mode_S(&t, "AuxInterp"), x, y, z, "Obj", aux) || !Mode_Put(CC, "AuxInterp", NULL, aux) ||
 		!Mode_VObj(me, "ViewAng", v) || !Cc_GSet("AuxInterp", "Ang", v) || !LvN_SetI(ent, "Money", 0) ||
-		!Native_CallMod("CharAct", "NoFXDeath", NULL, "vvi", ent, uname, 0L) || !Mode_VDel(ent) ||
+		!PORT_CALL(CharAct, NoFXDeath, NULL, "vvi", ent, uname, 0L) || !Mode_VDel(ent) ||
 		!LvN_SetI(me, "UsrControl", -1) || (Native_Free(name), !Mode_VObj(me, "Name", name))) {
 		return Mode_Done(&t, 0);
 	}
@@ -642,7 +641,7 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	Mode_SaveVar("Char", ch);
 	Native_Free(v);
 	if (!Mode_VObj(ent, "Pos", epos) || !Mode_VObj(ent, "Ang", eang) ||
-		!Native_CallMod("Chars", "CreateMainChar", newme, "svvv", pl, ch, epos, eang) || !LvN_SetI(newme, "UsrControl", -1) ||
+		!PORT_CALL(Chars, CreateMainChar, newme, "svvv", pl, ch, epos, eang) || !LvN_SetI(newme, "UsrControl", -1) ||
 		!LvN_SetS(newme, "ForceAction", "Flashed") || !Mode_VObj(me, "Name", mn) || !Mode_VObj(newme, "Name", nn) ||
 		!Cc_G("PossessionTime", pt) || !Native_CallMod("SFX", "CharacterConversion", NULL, "vvv", mn, nn, pt) ||
 		!Mode_VObj(newme, "CamTgt", v) || !Cc_GSet("AuxInterp", "CamTgt", v) || (Native_Free(v), !Mode_VObj(newme, "Pos", v)) ||
@@ -670,8 +669,8 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 }
 
 /* NewPlayer(newme, me): the end of a possession: the new character takes the camera, the energy (one battery less)
- * and the control, the old one goes, the time runs again and the alarm starts (OBJLIB 3: Chars, CharScorer and Menu
- * by name; OBJLIB 4: the scheduler keeps Scrap.SetAlarm) */
+ * and the control, the old one goes, the time runs again and the alarm starts (OBJLIB 4: the scheduler keeps
+ * Scrap.SetAlarm) */
 static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
 	static const char *const mods[] = { "CharAct", "Chars", "CharScorer", "Menu" };
 	modeVals_t t = { .n = 0 };
@@ -687,9 +686,9 @@ static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
 		!Cc_GSet("Cam", "Target", name) || !Mode_VObj(me, "Energy", e) || !Mode_Arith('-', e, one, e1) ||
 		!Mode_VSet(newme, "Energy", e1) || !LvN_SetI(newme, "Life", 100) || !LvN_SetI(newme, "UsrControl", 0) ||
 		!Mode_VObj(me, "ActCtrl", act) || !LvN_SetI(me, "Active", 0) || !LvN_SetS(me, "ActCtrl", "") || !Mode_VDel(me) ||
-		!Native_CallMod("Chars", "DiscardRes", NULL, "v", act) || !Cc_G("AuxInterp", aux) || !Mode_VDel(aux) ||
+		!PORT_CALL(Chars, DiscardRes, NULL, "v", act) || !Cc_G("AuxInterp", aux) || !Mode_VDel(aux) ||
 		!Mode_DelGlobal(CC, "Cam") || !Mode_DelGlobal(CC, "AuxInterp") || !Mode_GVarSetI("S_PitchScale", 1) ||
-		!Mode_TimeSpeed(1.0) || !Native_CallMod("CharScorer", "Create", NULL, "i", 0L)) {
+		!Mode_TimeSpeed(1.0) || !PORT_CALL(CharScorer, Create, NULL, "i", 0L)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(when, Mode_Time() + 0.1);
@@ -705,7 +704,7 @@ static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
 	}
 	Mode_Lang("FirstPossessionWarning", msg);
 	return Mode_Done(&t, Mode_SetSaveVar("Conversor.FirstPossession", Mode_S(&t, "0")) &&
-		Native_CallMod("Menu", "ShowWarning", NULL, "iv", 0L, msg));
+		PORT_CALL(Menu, ShowWarning, NULL, "iv", 0L, msg));
 }
 
 /* the adapters (the arity errors of the script's functions) */
@@ -721,7 +720,7 @@ MODE_FN(CharConversor, MarkSpawnWaypoint, 1, Cc_MarkSpawnWaypoint(&a[0]))
 MODE_FN(CharConversor, EnterCharConversor, 4, Cc_EnterCharConversor(&a[0], &a[1], &a[2], &a[3]))
 MODE_FN(CharConversor, InitOfScene, 3, Cc_Fx(1))
 MODE_FN(CharConversor, EndOfScene, 3, Cc_EndOfScene(&a[0]))
-MODE_FN(CharConversor, InitInterfaceEvent, 3, Cc_Call("AddInterfaceContent", NULL, "i", 0L))
+MODE_FN(CharConversor, InitInterfaceEvent, 3, PORT_OWN(CharConversor, AddInterfaceContent, NULL, "i", 0L))
 MODE_FN(CharConversor, ExitCharConversor, 2, Cc_ExitCharConversor(&a[0]))
 MODE_FN(CharConversor, ShowCharDesc, 3, Cc_ShowCharDesc(&a[0], &a[1], &a[2]))
 MODE_FN(CharConversor, HideCharDesc, 3, Cc_HideCharDesc(&a[0], &a[1]))

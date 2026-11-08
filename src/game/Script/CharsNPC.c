@@ -17,9 +17,10 @@
  * each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
  * SLogic.SetOnFloor, SScorer.SetMsgText and the scheduler go through their seams (OBJLIB 7); the save variables,
  * the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice, DTritusDesktop,
- * CharConversor, MissionsFuncs, Speech, Challenge), SAI.EnableAIChar and GetReposCharPos, Scrap.GetLangEntries,
- * string.find and the range of a value that is no int stay by name (OBJLIB 3, 7). The module's own functions call
- * each other in C as the port did.
+ * CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly while the
+ * attribute holds the port's function, else by name) and string.find through its native twin; SAI.EnableAIChar and
+ * GetReposCharPos and Scrap.GetLangEntries stay by name (OBJLIB 7), the range of a value that is no int too
+ * (OBJLIB 9). The module's own functions call each other in C as the port did.
  */
 #include <limits.h>
 #include <string.h>
@@ -209,7 +210,7 @@ static byte Npc_SpawnPos(nativeVal_t *out) {
 	return 1;
 }
 
-/* string.find(s, sub) != -1 (OBJLIB 3: string.find by name): 1, 0, -1 with the error set */
+/* string.find(s, sub) != -1 (the native twin of strop's find): 1, 0, -1 with the error set */
 static int Npc_Find(const nativeVal_t *s, const nativeVal_t *sub) {
 	nativeVal_t r = { 0 };
 	int c = PORT_CALL(string, find, &r, "vv", s, sub) ? Mode_CmpI(&r, "!=", -1) : -1;
@@ -217,7 +218,7 @@ static int Npc_Find(const nativeVal_t *s, const nativeVal_t *sub) {
 	return c;
 }
 
-/* the count of range(n): an int as it is, any other value through range by name (its errors) */
+/* the count of range(n): an int as it is, any other value through range by name (its errors; OBJLIB 9) */
 static byte Npc_Range(const nativeVal_t *n, long *count) {
 	if (n->type == NV_INT) {
 		*count = n->i;
@@ -250,7 +251,7 @@ static byte Npc_AddNPCPos(const nativeVal_t *dummy, const nativeVal_t *mission, 
 	byte m = Native_True(flag);
 	long starts = m ? 11 : 13, typeid = m ? 2 : 3;
 	byte ok = Mode_Item(dummy, 0, d0) && Native_Split(d0, "_", nam) && Mode_Item(nam, typeid, act) &&
-		Native_CallMod("Chars", "AddNewCharRes", NULL, "vv", act, flag) && Npc_SpawnPos(csp) && Mode_Item(dummy, 1, d1) &&
+		PORT_CALL(Chars, AddNewCharRes, NULL, "vv", act, flag) && Npc_SpawnPos(csp) && Mode_Item(dummy, 1, d1) &&
 		Mode_VSet(csp, "Pos", d1) && Native_Slice(d0, starts, INT_MAX, name) && Mode_VSet(csp, "Name", name) &&
 		Mode_Item(dummy, 2, d2) && Mode_Item(d2, 1, y) && Mode_Arith('+', y, Mode_I(&t, 180), yt);
 	if (ok) {
@@ -346,7 +347,7 @@ static byte Npc_CreateReposChars(void) {
 static byte Npc_BrowseNPC(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *after = Mode_V(&t);
-	if (!Mode_Import("DTritusDesktop") || !Native_CallMod("DTritusDesktop", "InitNPCS", NULL, "") || !Npc_CreateReposChars() ||
+	if (!Mode_Import("DTritusDesktop") || !PORT_CALL(DTritusDesktop, InitNPCS, NULL, "") || !Npc_CreateReposChars() ||
 		!Mode_DummyStartSeam("DM_NPC_Spawn_*", 1)) {
 		return Mode_Done(&t, 0);
 	}
@@ -462,7 +463,7 @@ static byte Npc_CreateChar(const nativeVal_t *csp, const nativeVal_t *fixed, nat
 	} else if (fix == 0) {
 		ok = Mode_VObj(c, "Name", n) && LvN_SetOnFloor(n);
 	}
-	ok = ok && Npc_AssignAttrib(c) && Mode_VObjRead(c, "Name", n) && Native_CallMod("InPolice", "Include", NULL, "v", n) &&
+	ok = ok && Npc_AssignAttrib(c) && Mode_VObjRead(c, "Name", n) && PORT_CALL(InPolice, Include, NULL, "v", n) &&
 		Mode_VObjRead(c, "Name", n) && Npc_CharNPCInclude(n) && Mode_VObj(csp, "repos", repos);
 	ok = ok && (!Native_True(repos) || (Npc_G("Repos", rv) && Mode_VSet(c, "AI_Repos", rv))) &&
 		Mode_VObj(csp, "CallbackFunc", funcs);
@@ -523,7 +524,7 @@ static byte Npc_Init(void) {
 /* `Scrap.TestSphere(CPPos[0], CPPos[1], CPPos[2], 200, "rv")` of CharPos = CharConversor.CPPos(conv): 1, 0, -1 */
 static int Npc_TestConv(const nativeVal_t *conv) {
 	nativeVal_t pos = { 0 }, hit = { 0 };
-	int c = Native_CallMod("CharConversor", "CPPos", &pos, "v", conv) && Mode_TestSpherePos(&pos, 200, "rv", &hit) ?
+	int c = PORT_CALL(CharConversor, CPPos, &pos, "v", conv) && Mode_TestSpherePos(&pos, 200, "rv", &hit) ?
 		Native_True(&hit) : -1;
 	Native_Free(&pos);
 	Native_Free(&hit);
@@ -574,7 +575,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 		}
 	}
 	int hit = dorepos >= 0 && Mode_VObj(csp, "Pos", cpos) &&
-		Native_CallMod("CharConversor", "GetNearestConversionPoint", conv, "v", cpos) ? Npc_TestConv(conv) : -1;
+		PORT_CALL(CharConversor, GetNearestConversionPoint, conv, "v", cpos) ? Npc_TestConv(conv) : -1;
 	if (hit > 0 && Native_True(usr)) {
 		if (!Mode_ModGet("CharConversor", "PrevConv", prev)) {
 			hit = -1;
@@ -585,7 +586,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 			Native_Free(conv);
 			Native_Free(upos);
 			if (!Mode_UsrHandle(v) || !Mode_VObj(v, "Pos", upos) ||
-				!Native_CallMod("CharConversor", "GetNearestConversionPoint", conv, "v", upos)) {
+				!PORT_CALL(CharConversor, GetNearestConversionPoint, conv, "v", upos)) {
 				hit = -1;
 			}
 		}
@@ -601,7 +602,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 	}
 	Native_Free(name);
 	Native_Free(n);
-	byte ok = Npc_CreateChar(csp, NULL, c) && Native_CallMod("CharConversor", "SpawnChar", NULL, "vv", c, conv) &&
+	byte ok = Npc_CreateChar(csp, NULL, c) && PORT_CALL(CharConversor, SpawnChar, NULL, "vv", c, conv) &&
 		LvN_SetI(c, "LLogicIdle", 1) && LvN_SetI(c, "Invulnerable", 1) && Mode_VObj(c, "Name", name) &&
 		Mode_LaterIn(1.5, NPC, "ActiveSpawned", name, 1, NULL);
 	if (ok && dorepos) {
@@ -609,10 +610,10 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 			Native_CallMod("SAI", "GetReposCharPos", NULL, "vvv", p, a, n);
 	}
 	Native_Free(v);
-	int target = ok && Mode_VObjRead(c, "Name", n) && Native_CallMod("MissionsFuncs", "IsCharMissionObjective", v, "v", n) ?
+	int target = ok && Mode_VObjRead(c, "Name", n) && PORT_CALL(MissionsFuncs, IsCharMissionObjective, v, "v", n) ?
 		Native_True(v) : -1;
 	if (target > 0) {
-		if (Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", c, 1L)) {
+		if (PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", c, 1L)) {
 			Mode_Lang("MainMissionCharReborn", msg);
 			target = Mode_MsgText(msg, Mode_Time() + 5) ? 0 : -1;
 		} else {
@@ -646,7 +647,7 @@ static byte Npc_CheckActualEntity(const nativeVal_t *ename) {
 		if (i > 0) {
 			i = Mode_VObj(ent, "LLogicIdle", idle) ? Native_True(idle) : -1;
 		}
-		diff = i < 0 ? -1 : !i || Native_CallMod("Speech", "RestoreState", NULL, "v", cur) ? 0 : -1;
+		diff = i < 0 ? -1 : !i || PORT_CALL(Speech, RestoreState, NULL, "v", cur) ? 0 : -1;
 	}
 	return Mode_Done(&t, diff >= 0 && Mode_Put(NPC, "ActualEntityName", NULL, ename));
 }
@@ -705,7 +706,7 @@ static byte Npc_Generics(modeVals_t *t, const nativeVal_t *act, const nativeVal_
 	return Mode_Cat(t, out, 4, Mode_S(t, "Generics_"), act, type, Mode_S(t, "_"));
 }
 
-/* Scrap.GetLangEntries(key) (OBJLIB 3: by name) != []: 1, 0, -1 */
+/* Scrap.GetLangEntries(key) (OBJLIB 7: by name) != []: 1, 0, -1 */
 static int Npc_Entries(const nativeVal_t *key, nativeVal_t *out) {
 	nativeVal_t empty;
 	Native_SetEmpty(&empty, NV_LIST);
@@ -824,7 +825,7 @@ static byte Npc_ClassifyOptions(const nativeVal_t *type, nativeVal_t *out) {
 /* Speech.StdAnsLst(optionsList); len(optionsList), -1 with the error set */
 static int Npc_ShowOptions(void) {
 	nativeVal_t opts = { 0 };
-	int n = Npc_G("optionsList", &opts) && Native_CallMod("Speech", "StdAnsLst", NULL, "v", &opts) &&
+	int n = Npc_G("optionsList", &opts) && PORT_CALL(Speech, StdAnsLst, NULL, "v", &opts) &&
 		Mode_Read(NPC, "optionsList", &opts) ? Mode_Len(&opts) : -1;
 	Native_Free(&opts);
 	return n;
@@ -832,7 +833,7 @@ static int Npc_ShowOptions(void) {
 
 /* Challenge.AddChallenge(ch, UsrName, numOpts) */
 static byte Npc_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, long n) {
-	return Native_CallMod("Challenge", "AddChallenge", NULL, "vvi", ch, usr, n);
+	return PORT_CALL(Challenge, AddChallenge, NULL, "vvi", ch, usr, n);
 }
 
 /* PlayOption(optId, msg, ans, UsrName, ch): the talk of an option, its sub options join the list, the arrow on the
@@ -841,7 +842,7 @@ static byte Npc_PlayOption(const nativeVal_t *opt, const nativeVal_t *msg, const
 	const nativeVal_t *ch) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *said = Mode_V(&t), *opts = Mode_V(&t), *at = Mode_V(&t), *index = Mode_V(&t);
-	if (!Mode_Import("Speech") || !Mode_Import("Challenge") || !Native_CallMod("Speech", "OnSpch", said, "vv", msg, ans)) {
+	if (!Mode_Import("Speech") || !Mode_Import("Challenge") || !PORT_CALL(Speech, OnSpch, said, "vv", msg, ans)) {
 		return Mode_Done(&t, 0);
 	}
 	int n = -1;
@@ -869,7 +870,7 @@ static int Npc_ChallengeSpch(const char *msg, const nativeVal_t *type, const cha
 	nativeVal_t *m = Mode_V(&t), *a = Mode_V(&t), *r = Mode_V(&t);
 	byte ok = msgEnd ? Mode_Cat(&t, m, 3, Mode_S(&t, msg), type, Mode_S(&t, msgEnd)) : (Native_SetStr(m, msg), 1);
 	int said = ok && Mode_Cat(&t, a, 3, Mode_S(&t, ans), type, Mode_S(&t, ansEnd)) &&
-		Native_CallMod("Speech", "OnSpch", r, "vv", m, a) ? Native_True(r) : -1;
+		PORT_CALL(Speech, OnSpch, r, "vv", m, a) ? Native_True(r) : -1;
 	Mode_Done(&t, 1);
 	return said;
 }
@@ -880,7 +881,7 @@ static byte Npc_StartChallenge(const char *kind, const nativeVal_t *foe, const n
 	Native_SetStr(&k, kind);
 	LvN_SetVar("Challenge", "challengeType", &k);
 	LvN_SetVar("Challenge", "foeType", foe);
-	return Native_CallMod("Challenge", "SetChallengeOptions", NULL, "v", ch);
+	return PORT_CALL(Challenge, SetChallengeOptions, NULL, "v", ch);
 }
 
 /* GenericNPCSpeech(UsrName, CharName, optId, FullOption): the talk with an NPC. Talk: the greeting (one of three
@@ -927,7 +928,7 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 		Str_Printf(num, sizeof(num), "%d", (int)Scrap_RandRange(1.0, 3.9));
 		int said = Mode_Cat(&t, m, 3, Mode_S(&t, "Generics_"), type, Mode_S(&t, "_InitMsg1")) &&
 			Mode_Cat(&t, a, 4, Mode_S(&t, "Generics_"), type, Mode_S(&t, "_InitAns"), Mode_S(&t, num)) &&
-			Native_CallMod("Speech", "OnSpch", r, "vv", m, a) ? Native_True(r) : -1;
+			PORT_CALL(Speech, OnSpch, r, "vv", m, a) ? Native_True(r) : -1;
 		if (said <= 0) {
 			return Mode_Done(&t, said == 0);
 		}
@@ -970,7 +971,7 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 	}
 	if (Native_IsStr(opt, "ChallengeRaceStdOpt1") || Native_IsStr(opt, "ChallengeRaceStdOpt2") ||
 		Native_IsStr(opt, "ChallengeRaceStdOpt3")) {
-		return Mode_Done(&t, Native_CallMod("Challenge", "OnChallengeOpt", NULL, "iv", (long)(Native_Text(opt)[19] - '0'), ch));
+		return Mode_Done(&t, PORT_CALL(Challenge, OnChallengeOpt, NULL, "iv", (long)(Native_Text(opt)[19] - '0'), ch));
 	}
 	if (Native_IsStr(opt, "ChallengeRaceStdOpt4")) {
 		int said = Npc_ChallengeSpch("ChallengeRaceStdOpt2", type, NULL, "ChallengeRace", "Msg3");

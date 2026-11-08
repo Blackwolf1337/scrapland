@@ -9,9 +9,10 @@
  * variables in C. The module variables are read where the port read them (Script_GetInt, Script_GetFloat and
  * Script_GetString forms, errors dropped) and written through at once with the port's dropped errors (OBJLIB 5).
  * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity
- * (OBJLIB 5). The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called by name
- * (OBJLIB 3); the engine functions the port called by name go through their seams (OBJLIB 7: SetMsgText,
- * CreateEntity, Scrap.Set, SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
+ * (OBJLIB 5). The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through
+ * their refs (PORT_CALL, PORT_ASK: directly while the attribute holds the port's function, else by name); the engine
+ * functions the port called by name go through their seams (OBJLIB 7: SetMsgText, CreateEntity, Scrap.Set,
+ * SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
  * The adapters parse the arguments as before.
  */
 #include <string.h>
@@ -87,19 +88,19 @@ static void Char_EndParamsS(const char *name) {
 
 /* Speech.OnSpch(msg, ans) as a line of a script, and `if Speech.OnSpch(msg, ans):` (1 or 0, -1 with the error) */
 static byte Char_OnSpch(const char *msg, const char *ans) {
-	return Native_CallMod("Speech", "OnSpch", NULL, "ss", msg, ans);
+	return PORT_CALL(Speech, OnSpch, NULL, "ss", msg, ans);
 }
 
 static int Char_Spch(const char *msg, const char *ans) {
 	nativeVal_t r = { 0 };
-	int ok = Native_CallMod("Speech", "OnSpch", &r, "ss", msg, ans) ? Native_True(&r) : -1;
+	int ok = PORT_CALL(Speech, OnSpch, &r, "ss", msg, ans) ? Native_True(&r) : -1;
 	Native_Free(&r);
 	return ok;
 }
 
 /* CharsNPC.GenericNPCSpeech(usr, ch, opt, full) */
 static byte Char_Generic(const char *usr, const char *ch, const char *opt, const nativeVal_t *full) {
-	return Native_CallMod("CharsNPC", "GenericNPCSpeech", NULL, "sssv", usr, ch, opt, full);
+	return PORT_CALL(CharsNPC, GenericNPCSpeech, NULL, "sssv", usr, ch, opt, full);
 }
 
 /* Scrap.GetEntity(name) of a C name: the handle value, None when there is no such entity */
@@ -405,7 +406,7 @@ static byte Char_SetOptionLists(PyObject *lists) {
 /* Speech.StdAnsLst(CharsNPC.optionsList): 0 with the error set */
 static byte Char_StdOptions(void) {
 	nativeVal_t list = { 0 };
-	byte ok = Char_Options(&list) && Native_CallMod("Speech", "StdAnsLst", NULL, "v", &list);
+	byte ok = Char_Options(&list) && PORT_CALL(Speech, StdAnsLst, NULL, "v", &list);
 	Native_Free(&list);
 	return ok;
 }
@@ -417,7 +418,7 @@ static byte Char_Challenge(const char *ch, const char *usr, int n, byte always) 
 	if (always || (lives && !strcmp(lives, "0"))) {
 		nativeVal_t e;
 		Char_Handle(ch, &e);
-		ok = Native_CallMod("Challenge", "AddChallenge", NULL, "vsi", &e, usr, (long)n);
+		ok = PORT_CALL(Challenge, AddChallenge, NULL, "vsi", &e, usr, (long)n);
 		Native_Free(&e);
 	}
 	return ok;
@@ -432,7 +433,7 @@ static int CrazyGambler_Status(void) {
 	for (int i = 1; i <= 3; i++) {
 		nativeVal_t cd = { 0 }, ta, tb;
 		const nativeVal_t *have = NULL, *need = NULL;
-		if (Native_CallMod("MissionsFuncs", "CrazyDealStatus", &cd, "i", (long)i)) {
+		if (PORT_CALL(MissionsFuncs, CrazyDealStatus, &cd, "i", (long)i)) {
 			Mode_Elems(&cd);
 			have = Native_GetItem(&cd, 1, 0, &ta);
 			need = Native_GetItem(&cd, 2, 0, &tb);
@@ -471,7 +472,7 @@ static byte CrazyGambler_MegaOptions(const char *usr, const char *ch) {
 		!Char_Options(&list)) {
 		return 0;
 	}
-	byte ok = Native_CallMod("Speech", "StdAnsLst", NULL, "v", &list);
+	byte ok = PORT_CALL(Speech, StdAnsLst, NULL, "v", &list);
 	if (ok) {
 		int n = 0;
 		Mode_Elems(&list);
@@ -513,12 +514,12 @@ static byte CrazyGambler_Speech(const char *usr, const char *ch, const char *opt
 			return 0;
 		}
 		Mode_Texts(&list, opts, 2);
-		byte ok = Native_CallMod("Speech", "StdAnsLst", NULL, "v", &list);
+		byte ok = PORT_CALL(Speech, StdAnsLst, NULL, "v", &list);
 		Native_Free(&list);
 		return ok;
 	}
 	if (!strcmp(opt, "Generics_CrazyGambler_MegaDeal_Start_")) {
-		if (!Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L)) {
+		if (!PORT_CALL(Menu, MovieScorer, NULL, "i", 0L)) {
 			return 0;
 		}
 		Input_SelectActionSetNamed("Inactive");
@@ -546,7 +547,7 @@ static byte CrazyGambler_Speech(const char *usr, const char *ch, const char *opt
 static PyObject *CrazyGambler_StartSuperDeal(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	return Mode_Result(Native_CallMod("MissionsFuncs", "StartActualSuperDeal", NULL, ""));
+	return Mode_Result(PORT_CALL(MissionsFuncs, StartActualSuperDeal, NULL, ""));
 }
 
 static PyObject *CrazyGambler_CalculateStatus(PyObject *self, PyObject *args) {
@@ -608,7 +609,7 @@ static int Police_Options(byte wereIs) {
 		/* the port called StdAnsLst also after a length that failed (its error left set) */
 		if (ok) {
 			byte len = Native_Len(&all, &n);
-			if (!Native_CallMod("Speech", "StdAnsLst", NULL, "v", &all) || !len) {
+			if (!PORT_CALL(Speech, StdAnsLst, NULL, "v", &all) || !len) {
 				n = -1;
 			}
 		}
@@ -640,7 +641,7 @@ static byte Police_StartChallenge(const char *type, const char *ch) {
 	Mode_ModPutS("Challenge", "challengeType", type);
 	Mode_ModPutS("Challenge", "foeType", "Police");
 	Char_Handle(ch, &e);
-	byte ok = Native_CallMod("Challenge", "SetChallengeOptions", NULL, "v", &e);
+	byte ok = PORT_CALL(Challenge, SetChallengeOptions, NULL, "v", &e);
 	Native_Free(&e);
 	return ok;
 }
@@ -676,7 +677,7 @@ static byte Police_Talk(const char *usr, const char *ch) {
 	char ans[0x80];
 	nativeVal_t e, state = { 0 };
 	int r;
-	if (!Native_CallMod("CharsNPC", "CheckActualEntity", NULL, "s", ch)) {
+	if (!PORT_CALL(CharsNPC, CheckActualEntity, NULL, "s", ch)) {
 		return 0;
 	}
 	/* ch.LLogicState of the script: an AttributeError when there is no such character */
@@ -697,9 +698,7 @@ static byte Police_Talk(const char *usr, const char *ch) {
 	if ((r = Char_Spch("Generics_Police_InitMsg1", ans)) <= 0) {
 		return r == 0;
 	}
-	PyObject *f = Script_Attr("CharsNPC", "ClassifyOptions");
-	PyObject *lists = f ? Native_CallObj(f, "s", "Police") : NULL;
-	Py_XDECREF(f);
+	PyObject *lists = PORT_ASK(CharsNPC, ClassifyOptions, "s", "Police");
 	byte ok = lists && Char_SetOptionLists(lists);
 	Py_XDECREF(lists);
 	if (!ok) {
@@ -757,7 +756,7 @@ static byte Police_GiveNo(const char *ch) {
 		Char_Handle(player, &me);
 		Char_Handle(npc, &e);
 		byte ok = LvN_ModGet("Police", "OnEndOfSpeech", &end) &&
-			Native_CallMod("Speech", "PlayerAns", &res, "vvsv", &me, &e, "Generics_PoliceBribeGiveNoAns", &end);
+			PORT_CALL(Speech, PlayerAns, &res, "vvsv", &me, &e, "Generics_PoliceBribeGiveNoAns", &end);
 		if (ok && Native_True(&res)) {
 			Mode_ModPutI("Police", "ResState", -1);
 			Mode_ModPut("Speech", "OnEndOfSpeech", &end);
@@ -786,7 +785,7 @@ static byte Police_Speech(const char *usr, const char *ch, const char *opt, cons
 		if ((r = Char_Spch(msg, ans)) <= 0) {
 			return r == 0;
 		}
-		if (!Native_CallMod("CharsNPC", "IncludeSubOptions", NULL, "s", opt)) {
+		if (!PORT_CALL(CharsNPC, IncludeSubOptions, NULL, "s", opt)) {
 			return 0;
 		}
 		int n = Police_Options(1);
@@ -810,7 +809,7 @@ static byte Police_Speech(const char *usr, const char *ch, const char *opt, cons
 		Char_ModAttr("Speech", "OnEndOfSpeech", "Police", "GoToMission");
 		Char_EndParamsS(Script_EntStr(ch, "Name", ch));
 		return Char_OnSpch("Generics_PoliceWereIsMsg", "Generics_PoliceWereIsYes") &&
-			Native_CallMod("Speech", "RestoreState", NULL, "s", ch);
+			PORT_CALL(Speech, RestoreState, NULL, "s", ch);
 	}
 	if (!strcmp(opt, "ChallengeRaceStdOpt0") || !strcmp(opt, "ChallengeCombatStdOpt0")) {
 		const char *type = opt[9] == 'R' ? "Race" : "Combat";
@@ -821,7 +820,7 @@ static byte Police_Speech(const char *usr, const char *ch, const char *opt, cons
 	if (!strncmp(opt, "ChallengeRaceStdOpt", 19) && opt[19] >= '1' && opt[19] <= '3' && !opt[20]) {
 		nativeVal_t e;
 		Char_Handle(ch, &e);
-		byte ok = Native_CallMod("Challenge", "OnChallengeOpt", NULL, "iv", (long)(opt[19] - '0'), &e);
+		byte ok = PORT_CALL(Challenge, OnChallengeOpt, NULL, "iv", (long)(opt[19] - '0'), &e);
 		Native_Free(&e);
 		return ok;
 	}
@@ -930,7 +929,7 @@ static byte Bishop_AddLifes(void) {
 	LvN_SaveRepr("Player.NumLives", Native_Compare(n, max) > 0 ? max : n);
 	Native_SetInt(money, Mode_GetMoney());
 	return Mode_Done(&t, Native_GVarGet("BishopLivePrice", price) && Mode_Arith('-', money, price, rest) &&
-		Mode_SetMoneySeam(rest) && Native_CallMod("SaveGame", "QWayPoint", NULL, ""));
+		Mode_SetMoneySeam(rest) && PORT_CALL(SaveGame, QWayPoint, NULL, ""));
 }
 
 /* the answer of the option of the lives: none left to buy, no money, or the sale after the speech */
@@ -1003,7 +1002,7 @@ static byte Bishop_Speech(const char *usr, const char *ch, const char *opt, cons
 		ok = Bishop_Option(ch, &ans);
 		if (ok) {
 			Str_Printf(msg, sizeof(msg), "%sMsg", opt);
-			ok = Native_CallMod("CharsNPC", "PlayOption", NULL, "ssssv", opt, msg, ans, usr, &e);
+			ok = PORT_CALL(CharsNPC, PlayOption, NULL, "ssssv", opt, msg, ans, usr, &e);
 		}
 	} else {
 		ok = Char_Generic(usr, ch, opt, full);
