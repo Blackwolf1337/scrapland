@@ -1,7 +1,8 @@
 #!/bin/bash
-# The golden test of the 64-bit Linux build: about 10000 checks of the script functions of the game and of the
-# interpreter run in the main menu, hidden and muted, and the output is compared with the stored one,
-# tools/test/golden/sdtest.out. The game folder is <build>/golden (made by mkgame.sh --native).
+# The golden test of the 64-bit Linux build: the checks of the script functions of the game (1481) and, in the
+# reference build with the interpreter, of the interpreter (8480 more) run in the main menu, hidden and muted, and the
+# output is compared with the stored one, tools/test/golden/sdtest.out. The game folder is <build>/golden (made by
+# mkgame.sh --native).
 #
 # GOLDEN_MODE=channel (the default): the game runs with the test channel (src/game/Global/TestChannel.c) and no
 #   -PythonExecute; golden/run.py sends the API checks of golden/sdtest.cmd as channel commands, then the interpreter
@@ -9,9 +10,10 @@
 # GOLDEN_MODE=python: the old way, golden/sdtest.py through -PythonExecute (the API checks and sdpy.py in Python).
 # GOLDEN_MODE=record: sdtest.py with the recorder golden/sdrec.py through -PythonExecute, then golden/mkcmd.py makes
 #   golden/sdtest.cmd again from it (review the difference before committing it).
-# A build without the interpreter (cmake -DSCRAP_NO_PYTHON=ON) runs only the channel mode and only the API checks:
-#   the interpreter checks of sdpy.py are skipped (they test what that build does not have) and the output is
-#   compared with the API part of the stored one.
+# The default build has no interpreter (SCRAP_NO_PYTHON, read from <build>/CMakeCache.txt): it runs only the channel
+#   mode and only the API checks; the interpreter checks of sdpy.py are skipped (they test what that build does not
+#   have) and the output is compared with the API part of the stored one. GOLDEN_UPDATE and the python and record
+#   modes need the reference build with the interpreter (cmake -DSCRAP_NO_PYTHON=OFF, e.g. SCRAP_BUILD=build-py64).
 #
 # usage: tools/test/golden.sh            (builds nothing: run cmake first)
 #        GOLDEN_UPDATE=1                 stores the output as the new expected one (after reviewing the difference)
@@ -26,7 +28,8 @@ timeout=${GOLDEN_TIMEOUT:-240}
 nopy=0
 grep -qx 'SCRAP_NO_PYTHON:BOOL=ON' "$build/CMakeCache.txt" 2> /dev/null && nopy=1
 if [ $nopy = 1 ] && [ "$mode" != channel ]; then
-	echo "golden: $build has no Python interpreter, only GOLDEN_MODE=channel runs there" >&2
+	echo "golden: $build has no Python interpreter, only GOLDEN_MODE=channel runs there (the python and record modes" \
+		"need a build with -DSCRAP_NO_PYTHON=OFF)" >&2
 	exit 1
 fi
 [ -d "$game/Bin" ] || "$root/tools/test/mkgame.sh" --native "$game" || exit 1
@@ -92,7 +95,7 @@ if [ "$mode" = record ]; then
 	exit 0
 fi
 if [ "${GOLDEN_UPDATE:-0}" = 1 ]; then
-	[ $nopy = 1 ] && { echo "golden: GOLDEN_UPDATE needs a build with the interpreter" >&2; exit 1; }
+	[ $nopy = 1 ] && { echo "golden: GOLDEN_UPDATE needs a build with the interpreter (-DSCRAP_NO_PYTHON=OFF)" >&2; exit 1; }
 	cp "$out" "$dir/sdtest.out"
 	echo "golden: $(grep -c ' = ' "$dir/sdtest.out") checks stored"
 	exit 0

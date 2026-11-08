@@ -191,7 +191,7 @@ Each batch compared a build of its base commit against the build after it. The c
 - Mission starts (`rd/msw-run.py`) for the missions and super deals of the batch, base against new, exact lines equal apart from live entities and random values.
 - Saves both ways: a save of each build loads in the other, and the states match.
 - The online pair test (`rd/r8g.py`) where a module runs online (Fx, Net, Ffa, Split, NetModes, Chat, the net weapons).
-- Golden (9961 checks), sweep (29 of 29), ASan runs of the cases and edge files (0 reports), and 0 warnings in build-linux64, build-linux64-asan, build-win64 and build-nopy64.
+- Golden (9961 checks), sweep (29 of 29), ASan runs of the cases and edge files (0 reports), and 0 warnings in build-linux64, build-linux64-asan, build-win64 and build-py64.
 
 Things the checks could not cover are listed in the batch hand-backs: levels that do not start in either build (Nano, TucZone), `Mission_Demo_HumphreyRace` (no .pyc in the pack), and engine fatal checks that end the game in both builds. These were checked by compile and review only.
 
@@ -244,13 +244,13 @@ After this stage `src/python` and `third_party/python-1.5.2` are out of `CMakeLi
 ## Checks per stage
 
 - regress (`rd/regress`, later `tools/test/regress`): run the cases of the touched modules after each module, and the full run per group of modules. Where the pack baselines are loose (masks, wildcards), compare the raw C replies before and after on the same slot. The pilot's replies were identical line by line.
-- golden: 9961 now, with 1481 API checks and the interpreter checks. After stage 7 of the interpreter removal it is the API part only.
+- golden: 9961 in the reference build (`build-py64`), with 1481 API checks and the interpreter checks. In the default build it is 1481 now. After step B of the interpreter removal it is the API part only.
 - sweep 29 of 29 (action tables after each level start) and `levels.sh` 29 of 29 under ASan.
 - Mission starts: the mission start sweep of round 8 (`missionmaker.py` starts) for stages 2 and 3 on mission modules.
 - Saves both ways for every stage that touches a save writer or reader (stage 2 on SaveGame and the missions, and stage 6).
 - The online pair test (`rd/r8g.py`, real server and client) for Ffa, NetModes, Net, Chat, Split and the net weapons.
 - Edge cases per module: a case file with the paths the stored cases miss (bad arguments, negative indices, odd values the cases can put into module variables), run on the build before and after (`rd/fc-ol0-chat.txt` for Chat).
-- 0 new warnings in build-linux64, build-linux64-asan, build-win64 and build-nopy64.
+- 0 new warnings in build-linux64, build-linux64-asan, build-win64 and build-py64.
 
 ## What the test channel needs
 

@@ -1,6 +1,6 @@
 # scrap-mcp
 
-An MCP server (version 0.3.0) that runs the game of this checkout, or the frozen reference build `build-ref-noexact/ScrapC.exe`, without a window, so an AI coding assistant can test the Scrapland C recreation. The game runs in gamescope (headless backend), muted, on the AMD 610M by default (`SCRAP_VK_DEVICE=1002:164e`). The default is `native64`, the Linux build in `build-linux64`. The Windows build and the reference build run under Wine.
+An MCP server (version 0.3.1) that runs the game of this checkout, or the frozen reference build `build-ref-noexact/ScrapC.exe`, without a window, so an AI coding assistant can test the Scrapland C recreation. The game runs in gamescope (headless backend), muted, on the AMD 610M by default (`SCRAP_VK_DEVICE=1002:164e`). The default is `native64`, the Linux build in `build-linux64`. The Windows build and the reference build run under Wine.
 
 The server talks MCP over stdio and uses only the Python standard library. Pillow is optional and does crop, zoom and compare.
 
@@ -9,7 +9,8 @@ The server talks MCP over stdio and uses only the Python standard library. Pillo
 - Linux
 - Python 3.8 or newer
 - gamescope with `gamescopectl`
-- a built `build-linux64/ScrapC` (the default exe `native64`)
+- a built `build-linux64/ScrapC` (the default exe `native64`, a build without the Python interpreter)
+- for `harness=python` on a C build: a reference build with the interpreter (`-DSCRAP_NO_PYTHON=OFF`, e.g. `build-py64`, set with `configure`)
 - Wine with the project prefix (`tools/test/prefix.sh`), only for `c64` and `ref`
 - a built `build-win64/ScrapC.exe` with its DLLs, only for `c64`
 - libX11 and libXtst, for `key` and `mouse`
@@ -31,8 +32,8 @@ Every named game gets a slot under `build/mcp/slot-<name>`. `tools/test/mkgame.s
 
 The tools talk to the game in one of two ways, chosen with `harness` at `launch`:
 
-- `channel` (the default for `native64`, `native64asan` and `c64`): the test channel of the game (`src/game/Global/TestChannel.c`, switched on with `SCRAP_TEST_CHANNEL=1`). No Python of the tool runs in the game. Once a frame the game reads `test_cmd.txt` in the game folder and answers in `test_reply.txt`, also while the world clock stands (a menu that stopped the game time, `/stop`), but not during a level load or a video. `tools/test/channel.py` is the tool side. `menu_dump`, `click`, `open_menu`, `wait` and `cmd` use channel commands, `python` uses its `py` command (Python, goes with the interpreter at stage 7 of the removal of Python).
-- `python` (the only one of `ref`): `-PythonExecute` runs `mcpgame.py`, Python 1.5.2 inside the game. It polls `mcp_cmd.txt` every 0.1 s of game time through `Scrap.AddScheduledFunc`, runs the code and answers in `mcp_reply.txt`. The poller only runs while the world timer runs. During a video or with the game paused it does not answer. Goes with the interpreter at stage 7.
+- `channel` (the default for `native64`, `native64asan` and `c64`; a C build without the test channel, an old build, is refused, there is no fallback to python): the test channel of the game (`src/game/Global/TestChannel.c`, switched on with `SCRAP_TEST_CHANNEL=1`). No Python of the tool runs in the game. Once a frame the game reads `test_cmd.txt` in the game folder and answers in `test_reply.txt`, also while the world clock stands (a menu that stopped the game time, `/stop`), but not during a level load or a video. `tools/test/channel.py` is the tool side. `menu_dump`, `click`, `open_menu`, `wait` and `cmd` use channel commands, `python` uses its `py` command (Python, goes with the interpreter at step B of the removal of Python).
+- `python` (the default and the only one of `ref`): for a C build it is allowed only when its build folder has the interpreter (a reference build set with `configure`), otherwise it is refused. `-PythonExecute` runs `mcpgame.py`, Python 1.5.2 inside the game. It polls `mcp_cmd.txt` every 0.1 s of game time through `Scrap.AddScheduledFunc`, runs the code and answers in `mcp_reply.txt`. The poller only runs while the world timer runs. During a video or with the game paused it does not answer. Goes with the interpreter at step B.
 
 `wait kind=ready` returns once the menu or a level runs.
 
@@ -42,12 +43,12 @@ All tools take an optional `name` (default `main`), so several games can run at 
 
 | Tool | What it does | Main arguments |
 |------|--------------|----------------|
-| `launch` | Starts a game in its slot and returns at once. | `exe` (`native64` default, `native64asan`, `c64` or `ref`), `harness` (`channel` default, `python`), `map`, `args`, `env`, `validation`, `trace`, `size` (default 1280x720), `timeout` (default 3600 s) |
+| `launch` | Starts a game in its slot and returns at once. | `exe` (`native64` default, `native64asan`, `c64` or `ref`), `harness` (`channel` default for the C builds, `python` default for `ref`), `map`, `args`, `env`, `validation`, `trace`, `size` (default 1280x720), `timeout` (default 3600 s) |
 | `quit` | Ends a game. | `name=all` ends every game |
 | `status` | Lists the games and whether they run. | |
 | `wait` | Waits until the game answers, a log line matches, or for some seconds. | `kind` (`ready`, `log`, `time`), `pattern`, `which`, `seconds`, `timeout` (default 120), `screenshot` |
 | `cmd` | Test channel commands, one a line (see below). | `lines`, `timeout` (default 10), `screenshot` |
-| `python` | Runs Python 1.5.2 in the game (modules `Scrap`, `SVec`, ...). An expression gives its repr, statements give the repr of the global `result`, or `ok`. Goes with the interpreter (stage 7); use `cmd` where it covers the check. | `code`, `timeout` (default 10), `screenshot` |
+| `python` | Runs Python 1.5.2 in the game (modules `Scrap`, `SVec`, ...). An expression gives its repr, statements give the repr of the global `result`, or `ok`. Goes with the interpreter (step B). It refuses on a game of a build without the interpreter ("use cmd"); use `cmd` where it covers the check. | `code`, `timeout` (default 10), `screenshot` |
 | `screenshot` | The window of the game. | `crop` (x, y, w, h), `zoom` |
 | `compare` | Screenshots of several games side by side, for example `c` and `ref` on the same level. | `names`, `crop` |
 | `log` | The end of `log.html` (`which=game`) or `scrapdecomp.log` (`which=engine`). | `which`, `lines` (default 40), `pattern` |
@@ -79,7 +80,7 @@ The commands of `cmd` (the comment at the top of `TestChannel.c` has the details
 | `print <expr>` | what the print statement writes for the value |
 | `recorder <Module.attr> <list> [<literal> \| raise <Exc> <text>]` | puts a C function at the attribute that appends its argument tuples to `__main__.<list>` and returns the literal or raises |
 | `check <name><tab><expr>` | the golden form: `<name> = <value>` |
-| `py <code>` | Python (stage 7: goes with the interpreter) |
+| `py <code>` | Python (reference build only, answers an error in the default build; goes with the interpreter at step B) |
 
 An error answers `error: <type>: <value>`.
 

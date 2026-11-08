@@ -8,6 +8,9 @@
 # float repr), and the native repr, str and check() texts are those of repr, backquotes, str and fmt of sdlib.py of
 # that value. The repr of every taken value is checked as a text too.
 # reprs(): every repr case copied into a native value and back gives the same value and the same four texts.
+# record() before the runs and save(name) after them: every text of the runs once, with what 1.5.2 makes of it (the
+# store of litfuzz.sh, LITFUZZ_UPDATE=1): a line "<repr of the text>\t<repr of (repr, str, check() text)>" for a text
+# Script_Literal takes, "<repr of the text>\tNone" for one it does not take.
 import string
 
 OUT = 'litfuzz-sdlib.out'
@@ -170,6 +173,29 @@ def _texts(t, e, nat):
 		bad.append(('check', t, nat[3], fmt(e)))
 	return bad
 
+_rec = None
+_seen = {}
+
+def record():
+	global _rec, _seen
+	_rec = []
+	_seen = {}
+
+def save(name):
+	f = open(name, 'w')
+	f.write(string.join(_rec, '\n') + '\n')
+	f.close()
+	return 'stored %d texts' % len(_rec)
+
+def _record(t, took, e):
+	if _seen.has_key(t):
+		return
+	_seen[t] = 1
+	if took:
+		_rec.append(repr(t) + '\t' + repr((repr(e), str(e), fmt(e))))
+	else:
+		_rec.append(repr(t) + '\tNone')
+
 def _one(t, g, bad, again):
 	"""one text: 1 when the native reader took it"""
 	r = _native_lit(t, g)
@@ -177,7 +203,10 @@ def _one(t, g, bad, again):
 		e = eval(t, g)
 		ok = 1
 	except:
+		e = None
 		ok = 0
+	if _rec is not None:
+		_record(t, r[1] and ok, e)
 	if r[0] != r[1]:
 		bad.append(('taken native %d Script_Literal %d' % (r[0], r[1]), t))
 	if not r[0]:

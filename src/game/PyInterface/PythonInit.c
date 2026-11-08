@@ -244,6 +244,14 @@ void Python_Init(void) {
 		strcmp(g_PythonExecute, GVar_PythonExecute.def.s))) {
 		Con_Errorf("PythonExecute ignored, no Python interpreter in this build: %s\n", g_PythonExecute);
 	}
+	/* the switches that run the .pyc of the packs instead of the C modules (Script.c, ScriptModule.c) */
+	static byte told;
+	const char *pack = getenv("SCRAP_PACK_SCRIPTS"), *cmod = getenv("SCRAP_CMOD");
+	if (!told && ((pack && *pack == '1') || (cmod && *cmod == '0'))) {
+		told = 1;
+		Con_Errorf("%s: no script module loads, the scripts of the packs need the Python interpreter (not in this "
+			"build)\n", pack && *pack == '1' ? "SCRAP_PACK_SCRIPTS=1" : "SCRAP_CMOD=0");
+	}
 #else
 	PyRun_ScrapString(g_PythonExecute);
 #endif
