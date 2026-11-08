@@ -2517,3 +2517,5 @@ PyMethodDef g_ScrapyardStupidMercAgainMethods[] = {
 	{ "SetNextMission", Again_SetNextMission, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Scrapyard)

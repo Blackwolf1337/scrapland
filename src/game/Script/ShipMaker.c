@@ -801,3 +801,5 @@ PyMethodDef g_ShipMakerMethods[] = {
 	{ "InitAnmShip", (PyCFunction)(void (*)(void))ShipMaker_InitAnmShip, 3, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(ShipMaker)

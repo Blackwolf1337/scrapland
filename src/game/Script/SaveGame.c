@@ -854,3 +854,5 @@ PyMethodDef g_SaveGameMethods[] = {
 	{ "InitVars", SaveGame_InitVars, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(SaveGame)

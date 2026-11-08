@@ -1738,3 +1738,5 @@ PyMethodDef g_SpeechMethods[] = {
 	{ "EndObjectAnswer", Speech_EndObjectAnswer, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Speech)

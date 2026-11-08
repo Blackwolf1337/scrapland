@@ -2247,7 +2247,7 @@ static PyObject *Native_Args(const char *fmt, va_list va) {
 }
 
 /* callable(args) (a reference taken over), the result into *out (NULL: dropped) */
-static byte Native_CallV(PyObject *callable, nativeVal_t *out, const char *fmt, va_list va) {
+byte Native_CallVa(PyObject *callable, nativeVal_t *out, const char *fmt, va_list va) {
 	PyObject *args = callable ? Native_Args(fmt, va) : NULL;
 	PyObject *r = args ? Script_Invoke(callable, args) : NULL;
 	Py_XDECREF(callable);
@@ -2274,7 +2274,7 @@ byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
 	Py_XINCREF(callable);
-	byte ok = Native_CallV(callable, out, fmt, va);
+	byte ok = Native_CallVa(callable, out, fmt, va);
 	va_end(va);
 	return ok;
 }
@@ -2282,7 +2282,7 @@ byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {
 byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
-	byte ok = Native_CallV(hook, out, fmt, va);
+	byte ok = Native_CallVa(hook, out, fmt, va);
 	va_end(va);
 	return ok;
 }
@@ -2290,7 +2290,7 @@ byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...) {
 byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
-	byte ok = Native_CallV(Script_Attr(module, name), out, fmt, va);
+	byte ok = Native_CallVa(Script_Attr(module, name), out, fmt, va);
 	va_end(va);
 	return ok;
 }
@@ -2298,7 +2298,7 @@ byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, cons
 byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
-	byte ok = Native_CallV(Script_Global(module, name), out, fmt, va);
+	byte ok = Native_CallVa(Script_Global(module, name), out, fmt, va);
 	va_end(va);
 	return ok;
 }
@@ -2742,6 +2742,93 @@ byte Native_Arg(PyObject *o, nativeVal_t *v) {
 		Py_INCREF(o);
 		v->obj = o;
 	}
+	return 1;
+}
+
+/* the value goes the Python way in Native_Pass: it holds an NV_OBJ, a long int that Python writes otherwise ("-0",
+ * leading zeros), or a container at a depth Native_FromPyIn refuses */
+static byte Native_PassPy(const nativeVal_t *v, int depth) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	switch (v->type) {
+	case NV_OBJ:
+		return 1;
+	case NV_LONG: {
+		const char *d = Native_Text(v) + (Native_Text(v)[0] == '-');
+		return !*d || strspn(d, "0123456789") != strlen(d) || (d[0] == '0' && (d[1] || d != Native_Text(v)));
+	}
+	case NV_VEC:
+		return depth >= NLIT_DEPTH;
+	case NV_LIST:
+	case NV_TUPLE:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		for (int i = 0; i < v->n; i++) {
+			if (Native_PassPy(&v->items[i], depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	case NV_DICT:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Native_PassPy(k, depth + 1) || Native_PassPy(x, depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+	return 0;
+}
+
+/* Native_Pass of a value Native_PassPy leaves to C */
+static void Native_PassIn(const nativeVal_t *v, nativeVal_t *out) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	switch (v->type) {
+	case NV_VEC:
+		Native_SetEmpty(out, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetFloat(Native_Append(out), v->v[i]);
+		}
+		break;
+	case NV_LIST:
+	case NV_TUPLE:
+		Native_SetEmpty(out, v->type);
+		for (int i = 0; i < v->n; i++) {
+			Native_PassIn(&v->items[i], Native_Append(out));
+		}
+		break;
+	case NV_DICT:
+		/* Native_ToPy inserts the keys into a new dict in the slot order */
+		Native_SetEmpty(out, NV_DICT);
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			nativeVal_t nk, nx;
+			Native_PassIn(k, &nk);
+			Native_PassIn(x, &nx);
+			Native_DictSet(out, &nk, &nx);
+		}
+		break;
+	default:
+		Native_Copy(out, v);
+	}
+}
+
+byte Native_Pass(const nativeVal_t *v, nativeVal_t *out) {
+	if (!Native_PassPy(v, 0)) {
+		Native_PassIn(v, out);
+		return 1;
+	}
+	PyObject *o = Native_ToPy(v);
+	Native_SetNone(out);
+	if (!o) {
+		return 0;
+	}
+	Native_Arg(o, out);
+	Py_DECREF(o);
 	return 1;
 }
 

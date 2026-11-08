@@ -2842,3 +2842,5 @@ PyMethodDef g_PolicePoliceBossCheatsMethods[] = {
 	{ "SetNextMission", PoliceBossCheats_SetNextMissionA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Police)

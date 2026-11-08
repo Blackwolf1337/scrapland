@@ -4184,3 +4184,5 @@ PyMethodDef g_MortalRaceMethods[] = {
 	{ "PreOnVictory", Mr_PreOnVictory, 1, NULL },
 	{ NULL, NULL, 0, NULL }
 };
+
+PORTS(SuperDeals)

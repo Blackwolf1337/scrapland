@@ -1327,3 +1327,5 @@ PyMethodDef g_SRaceMethods[] = {
 	{ "OnDeathFunc", Mode_PyNone2, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Split)

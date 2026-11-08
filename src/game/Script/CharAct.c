@@ -224,3 +224,5 @@ PyMethodDef g_CharActMethods[] = {
 	{ "OnCreate", CharAct_OnCreate, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(CharAct)

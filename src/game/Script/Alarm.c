@@ -383,3 +383,5 @@ PyMethodDef g_NewsPanelMethods[] = {
 	{ "SwitchAlarm", NewsPanel_SwitchAlarm, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Alarm)

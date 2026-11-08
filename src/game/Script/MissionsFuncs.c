@@ -1580,3 +1580,5 @@ PyMethodDef g_MissionsFuncsMethods[] = {
 	{ "SuperDealOnVictory", MissionsFuncs_SuperDealOnVictory, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MissionsFuncs)

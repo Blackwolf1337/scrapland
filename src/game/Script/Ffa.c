@@ -2038,3 +2038,5 @@ PyMethodDef g_FfaMethods[] = {
 	{ "FfaScorer", Ffa_FfaScorer, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Ffa)

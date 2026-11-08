@@ -1261,3 +1261,5 @@ PyMethodDef g_GDBReinsertOwnMatrix2Methods[] = {
 	{ "PreSetNextMission", Re2_PreSetNextMissionPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_GDB)

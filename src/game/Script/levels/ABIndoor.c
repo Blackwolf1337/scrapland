@@ -289,3 +289,5 @@ PyMethodDef g_ABIndoorMapMethods[] = {
 	{ "FadeEndTitle", Abi_FadeEndTitlePy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_ABIndoor)

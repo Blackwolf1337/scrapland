@@ -1744,3 +1744,5 @@ PyMethodDef g_TownhallTalkToMayorMethods[] = {
 	{ "MissionScorer", TalkToMayor_MissionScorer, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Townhall)

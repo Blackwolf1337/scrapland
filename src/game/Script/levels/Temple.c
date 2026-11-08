@@ -1105,3 +1105,5 @@ PyMethodDef g_TempleMeetArchbishopMethods[] = {
 	{ "Init", Ma_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Temple)

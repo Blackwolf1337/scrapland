@@ -777,3 +777,5 @@ PyMethodDef g_ChallengeMethods[] = {
 	{ "AddChallenge", Challenge_AddChallenge, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Challenge)

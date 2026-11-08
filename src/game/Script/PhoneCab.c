@@ -872,3 +872,5 @@ PyMethodDef g_DTritusDesktopMethods[] = {
 	{ "InitNPCS", DTritus_InitNPCS, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(PhoneCab)

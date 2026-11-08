@@ -821,3 +821,5 @@ PyMethodDef g_CrazyWingMethods[] = {
 	{ "CrazyPhoto", CrazyWing_CrazyPhoto, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MisItems)

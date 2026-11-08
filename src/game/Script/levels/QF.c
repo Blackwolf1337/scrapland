@@ -194,3 +194,5 @@ PyMethodDef g_QfBankersCombatMethods[] = {
 	{ "SetNextMission", Bc_SetNextMissionPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_QF)

@@ -129,3 +129,5 @@ PyMethodDef g_OmTenthMethods[] = {
 	{ "SetVars", Om_TenthSetVarsPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_OM)

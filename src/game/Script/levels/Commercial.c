@@ -3415,3 +3415,5 @@ PyMethodDef g_CommercialDestroyPorkinsTransportsMethods[] = {
 	{ "MissionScorer", Porkins_MissionScorerA, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Commercial)

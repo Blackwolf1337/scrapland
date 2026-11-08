@@ -3075,3 +3075,5 @@ PyMethodDef g_DownTownStealMayorShipMethods[] = {
 	{ "ParkMayorShip", Steal_ParkMayorShipPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_DownTown)

@@ -106,16 +106,27 @@ static uintptr_t Script_StackFloor(void) {
 	return floor;
 }
 
-PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw) {
+byte Script_Enter(uintptr_t frame) {
 	PyThreadState *ts = PyThreadState_Get();
-	/* the frame address, not a local's: ASan may keep locals on its fake stack */
-	if (ts->recursion_depth >= SCRIPT_MAX_DEPTH || (uintptr_t)__builtin_frame_address(0) < Script_StackFloor()) {
+	if (ts->recursion_depth >= SCRIPT_MAX_DEPTH || frame < Script_StackFloor()) {
 		PyErr_SetString(PyExc_RuntimeError, "Maximum recursion depth exceeded");
-		return NULL;
+		return 0;
 	}
 	ts->recursion_depth++;
+	return 1;
+}
+
+void Script_Leave(void) {
+	PyThreadState_Get()->recursion_depth--;
+}
+
+PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw) {
+	/* the frame address, not a local's: ASan may keep locals on its fake stack */
+	if (!Script_Enter((uintptr_t)__builtin_frame_address(0))) {
+		return NULL;
+	}
 	PyObject *r = PyEval_CallObjectWithKeywords(callable, args, kw);
-	ts->recursion_depth--;
+	Script_Leave();
 	return r;
 }
 

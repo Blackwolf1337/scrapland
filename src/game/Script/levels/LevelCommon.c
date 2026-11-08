@@ -1555,3 +1555,5 @@ byte LvN_SetOnFloorOf(const nativeVal_t *v) {
 	Native_Free(&name);
 	return ok;
 }
+
+PORTS(levels_LevelCommon)

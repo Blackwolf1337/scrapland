@@ -12,6 +12,8 @@
 #ifndef SCRAP_SCRIPTNATIVE_H
 #define SCRAP_SCRIPTNATIVE_H
 
+#include <stdarg.h>
+
 #include "scrap/entity.h"
 #include "scrap/python.h"
 
@@ -275,6 +277,8 @@ byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
 PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...);
 /* the same with a new reference (a hook of Native_Seam) that the call takes over */
 byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...);
+/* Native_HookCall on a va_list (the slow path of Port_Invoke) */
+byte Native_CallVa(PyObject *hook, nativeVal_t *out, const char *fmt, va_list va);
 /* module.name(...) through the module attribute (an AttributeError when it is not there) */
 byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
 /* name(...) as a function of the module calls a global of its own (the NameError of the script when it is gone) */
@@ -339,6 +343,94 @@ byte Native_FromPy(PyObject *o, unsigned types, nativeVal_t *v);
  * in the slots Python has it in) into *v: 1 (Native_Free it), else 0 without an error and *v None */
 byte Native_FromPyAny(PyObject *o, nativeVal_t *v);
 
+/*
+ * OBJLIB 9: *out the value an adapter's Native_Arg gets when a caller passes v through Python (Native_ToPy and back),
+ * made without Python: a copy with vectors as tuples of floats and dicts laid out anew in their slot order. A value
+ * that holds an NV_OBJ, a long int not in its plain digits, or containers nested deeper than Native_FromPyAny reads
+ * goes the Python way. 1 (Native_Free *out), else 0 with the error of Native_ToPy and *out None. The packer of the
+ * direct calls between ports and the form their results take
+ */
+byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
+
+/* ---- direct calls between ports (stage 3 of docs/objlib-plan.md) ---- */
+
+/*
+ * A port function that another port calls by its module and name is called directly when the module attribute still
+ * holds the port's own C function (the seam, OBJLIB 5: until the variable registry owns the writes of module
+ * attributes), else the old way through Python with the same arguments (the slow path, OBJLIB 7): a recorder of the
+ * test cases, an alias, a mission's or a mod's function there gets the call, and a deleted or non-callable attribute
+ * raises the error it raised.
+ *
+ *   PORT_CALL(Module, Func, out, fmt, ...)   Module.Func(...) through the module attribute (Native_CallMod)
+ *   PORT_OWN(Module, Func, out, fmt, ...)    Func(...) through the module's global, as a function of the module calls
+ *                                            its own (Native_CallGlobal: the NameError of a deleted global)
+ *   PORT_LCALL, PORT_LOWN                    the same for a module of a level (Map, Mission_X): its ref is named by
+ *                                            the file's PORT_LEVEL (the level of its Levels.c entry, e.g. temple)
+ *
+ * fmt and the arguments are those of Native_Call (v, i, d, s, O); out and the result as there. The ref of Module.Func
+ * comes from include/scrap/scriptports.h (tools/script/ports.py makes it from the PyMethodDef tables).
+ */
+
+/* the most arguments of a port function (Mode_Args) */
+#define PORT_ARGS 11
+
+/* the native entry of a port function: its n arguments in a, the result into *out (None when called, left None for
+ * a function that returns None): 1, or 0 with the error raised. MODE_FN and LV_FN make it as <adapter>_E, a hand
+ * adapter has one of the same name and form; the adapter is the arguments as native values plus the entry */
+typedef byte (*portEntry_t)(const nativeVal_t *a, int n, nativeVal_t *out);
+
+/* a function of a port table: module.name, the adapter its table entry holds and its entry */
+typedef struct {
+	const char *module;
+	const char *name;
+	PyCFunction adapter;		/* OBJLIB 5: what the attribute holds while it is the port's own function */
+	portEntry_t entry;
+} portRef_t;
+
+/* a call site of PORT_CALL or PORT_OWN (one static per site) and the counts of the paths it took (OBJLIB 7) */
+typedef struct portSite_s {
+	const portRef_t *ref;
+	byte global;			/* PORT_OWN */
+	byte listed;			/* in the list of Port_Sites */
+	const char *file;
+	int line;
+	unsigned long fast, slow, errors;
+	struct portSite_s *next;
+} portSite_t;
+
+/* module.name (global 0) or the global name of module (global 1) is still the port's own function of ref: 0, or 1
+ * with *hook a new reference to what is there (always 1 under SCRAP_PORT_SLOW=1, OBJLIB 7), -1 with the error of
+ * the lookup (the import, AttributeError, NameError "global name") */
+int Port_Seam(const portRef_t *ref, byte global, PyObject **hook);
+/* the call of a site: the seam, then the entry on the arguments packed with Native_Pass and the depth check of
+ * Script_CallObject, or the call through Python of Native_HookCall */
+byte Port_Invoke(portSite_t *site, nativeVal_t *out, const char *fmt, ...);
+/* the TypeError of PyArg_ParseTuple for n arguments to a function of nargs: 0 */
+byte Port_Arity(int n, int nargs);
+/* the sites that ran since the start, the last one first (OBJLIB 7: the counters of the test channel) */
+portSite_t *Port_Sites(void);
+
+#define PORT_REF(module, name) port_##module##_##name
+#define PORT_LREF(module, name) PORT_LREF1(PORT_LEVEL, module, name)
+#define PORT_LREF1(level, module, name) PORT_LREF2(level, module, name)
+#define PORT_LREF2(level, module, name) port_##level##_##module##_##name
+#define PORT_SITE(ref, own) (&(static portSite_t){ .ref = &(ref), .global = (own), .file = __FILE__, .line = __LINE__ })
+#define PORT_CALL(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_REF(module, name), 0), out, __VA_ARGS__)
+#define PORT_OWN(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_REF(module, name), 1), out, __VA_ARGS__)
+#define PORT_LCALL(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_LREF(module, name), 0), out, __VA_ARGS__)
+#define PORT_LOWN(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_LREF(module, name), 1), out, __VA_ARGS__)
+
+/* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
+ * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL
+ * for the modules of a level */
+#define PORT_DECL(module, name) extern portRef_t port_##module##_##name;
+#define PORT_DECLL(level, module, name) extern portRef_t port_##level##_##module##_##name;
+#define PORT_DEF(module, name, adapter) \
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)adapter, adapter##_E };
+#define PORT_DEFL(level, module, name, adapter) \
+	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)adapter, adapter##_E };
+#define PORTS(file) PORTS_##file
+
 /* ---- the test channel ---- */
 
 /* the answer of the channel's command "native <arg>" (src/game/Global/TestNative.c) added to out */
@@ -348,5 +440,7 @@ void TestNative_Command(nativeBuf_t *out, const char *arg);
 
 /* Scrap.Def(name): the default value of the engine variable, as Native_GVarGet gives the value */
 byte Native_GVarDef(const char *name, nativeVal_t *out);
+
+#include "scrap/scriptports.h"
 
 #endif

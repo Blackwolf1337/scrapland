@@ -3808,3 +3808,5 @@ PyMethodDef g_OutskirtsFunctionaryHuntingMethods[] = {
 	{ "AbortCameraTravelling", Hunt_AbortCameraTravellingPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_Outskirts)

@@ -1060,3 +1060,5 @@ PyMethodDef g_CharsNPCMethods[] = {
 	{ "GenericNPCSpeech", CharsNPC_GenericNPCSpeech, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(CharsNPC)

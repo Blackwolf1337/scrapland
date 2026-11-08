@@ -2471,3 +2471,5 @@ PyMethodDef g_GamblinDenThreeStoogesMethods[] = {
 	{ "SetNextMission", Stooges_SetNextMission, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(levels_GamblinDen)
