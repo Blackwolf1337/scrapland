@@ -11,8 +11,15 @@
  * ModLib, OnDeathFunc and the spawn functions FuncGetSpawnPos/FuncGetReSpawnPos (the race replaces them) of Split;
  * ZoneList, AcFlag, BattonOwner, FlagInitPos, race and the model and sound names of the modes. The C works on them in
  * the struct split; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles
- * and stay Python objects until entities are native values (OBJLIB 7). The functions call each other and the other
- * ports by name (OBJLIB 3); the .def sections take their $names as a dict (OBJLIB 6).
+ * and stay Python objects until entities are native values (OBJLIB 7). The .def sections take their $names as a dict
+ * (OBJLIB 6).
+ *
+ * Direct calls (stage 3): the functions of Split call each other through PORT_OWN (the global, a mission may replace
+ * one), the modes call their own functions and Split, and all call the other ports through PORT_CALL
+ * (scrap/scriptnative.h: the port seam). What stays by name: the mode's InitStatus and Init through ModLib (a module
+ * in a variable, OBJLIB 4), the calls given to the scheduler (ReSpawnShip, ReloadNext, BattonRepos, the race count
+ * down; OBJLIB 4), and the functions held in variables (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc) and set as
+ * values into Split and Vehicles (OBJLIB 5).
  */
 #include <limits.h>
 #include <stdarg.h>
@@ -43,10 +50,6 @@ static struct {
 	nativeVal_t race;		/* SRace.race: the checkpoints, (pos, angle) each */
 	nativeVal_t raceBuild;		/* the checkpoints srace.def gives while it runs */
 } split;
-
-/* the functions of a module through its global or attribute, other ports by name (OBJLIB 3) */
-#define OWN(name, out, ...) Native_CallGlobal("Split", name, out, __VA_ARGS__)
-#define CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 
 /* a section of split.def for player id with the $names of the n pairs (OBJLIB 6: a dict until the .def runner takes
  * C values): 0 with the error set when a line raised */
@@ -138,11 +141,11 @@ static byte Split_Texts(const nativeVal_t *id, nativeVal_t *const *texts, int n)
 	modeVals_t t = { .n = 0 };
 	for (int i = 0; i < n; i++) {
 		nativeVal_t *obj = Mode_V(&t);
-		if (!Split_Name(&t, "textorl", Mode_I(&t, i), obj) || !OWN("LittleText", NULL, "vvvi", id, obj, texts[i], (long)(70 + i * 22))) {
+		if (!Split_Name(&t, "textorl", Mode_I(&t, i), obj) || !PORT_OWN(Split, LittleText, NULL, "vvvi", id, obj, texts[i], (long)(70 + i * 22))) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, OWN("BlackBack", NULL, "v", id));
+	return Mode_Done(&t, PORT_OWN(Split, BlackBack, NULL, "v", id));
 }
 
 /* ---- Split ---- */
@@ -167,7 +170,7 @@ static byte Split_CreateUserShipC(const nativeVal_t *id) {
 	/* the name the handle of the ship keeps */
 	char n[0x80];
 	Str_Copy(n, v ? v->name : Native_Text(name), sizeof(n));
-	if (!Split_Ang(&t, sp, ang) || !Mode_Set(v, n, "Ang", ang) || !OWN("NextShip", NULL, "v", id) || !Split_Name(&t, "Cam", id, cname)) {
+	if (!Split_Ang(&t, sp, ang) || !Mode_Set(v, n, "Ang", ang) || !PORT_OWN(Split, NextShip, NULL, "v", id) || !Split_Name(&t, "Cam", id, cname)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(zero, 0.0);
@@ -177,7 +180,7 @@ static byte Split_CreateUserShipC(const nativeVal_t *id) {
 	}
 	/* v.Name after NextShip: the handle finds its entity again */
 	return Mode_Done(&t, Mode_NameGet(n, "Name", vn) && Native_EntVar(cam, Native_Text(cname), "Name", cn) &&
-		CALL("Vehicles", "SetActiveCam", NULL, "vvv", vn, cn, id));
+		PORT_CALL(Vehicles, SetActiveCam, NULL, "vvv", vn, cn, id));
 }
 
 /* Init(): the mode's state, both players with ships, the deaths through OnDeathCallback, the ship choice */
@@ -187,16 +190,16 @@ static byte Split_InitC(void) {
 	Py_XDECREF(mod);
 	Py_XDECREF(v);
 	if (!v || !Mode_GVarSetS("MainMissionEvent", "") || !Mode_Import("Menu") || !Mode_Import("Vehicles") ||
-		!OWN("CreateUserShip", NULL, "i", 0L) || !OWN("CreateUserShip", NULL, "i", 1L)) {
+		!PORT_OWN(Split, CreateUserShip, NULL, "i", 0L) || !PORT_OWN(Split, CreateUserShip, NULL, "i", 1L)) {
 		return 0;
 	}
-	/* Vehicles.OnDeathCallback = OnDeathCallback (OBJLIB 3: the function as a value; a failed set is no error) */
+	/* Vehicles.OnDeathCallback = OnDeathCallback (OBJLIB 5: the function as a value; a failed set is no error) */
 	PyObject *cb = Mode_GlobalPy("Split", "OnDeathCallback");
 	if (!cb) {
 		return 0;
 	}
 	Script_SetVar("Vehicles", "OnDeathCallback", cb);
-	return OWN("ChooseShips", NULL, "");
+	return PORT_OWN(Split, ChooseShips, NULL, "");
 }
 
 /* ReSpawnShip(LooserName): back at a spawn point (the race: where it died) without upgrades */
@@ -225,7 +228,7 @@ static byte Split_ReSpawnShipC(const nativeVal_t *name) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, CALL("Vehicles", "ReSpawnShip", NULL, "v", name));
+	return Mode_Done(&t, PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", name));
 }
 
 /* OnDeathCallback(LooserName, WinnerName): the respawn RespawnTime later, then the mode's OnDeathFunc */
@@ -247,7 +250,7 @@ static byte Split_OnDeathCallbackC(const nativeVal_t *looser, const nativeVal_t 
 
 static byte Split_ChooseShipsC(void) {
 	Mode_SetActionSet("Inactive");
-	return Mode_GVarSetS("EscapeEvent", "") && OWN("InitChooseScorer", NULL, "i", 0L) && OWN("InitChooseScorer", NULL, "i", 1L);
+	return Mode_GVarSetS("EscapeEvent", "") && PORT_OWN(Split, InitChooseScorer, NULL, "i", 0L) && PORT_OWN(Split, InitChooseScorer, NULL, "i", 1L);
 }
 
 /* ShipMaker.PilotsList[int(Scrap.Rand(0, len(ShipMaker.PilotsList)))] (the engine's Rand in C, as before) */
@@ -303,7 +306,7 @@ static int Split_TryProfile(const nativeVal_t *name, const nativeVal_t *profile)
 		}
 	}
 	if (!Native_ToInt(it[6], life) || !Split_RandomPilot(&t, pilot) ||
-		!CALL("Vehicles", "SetProperties", NULL, "vvvvvvvvvvi", name, it[0], life, pilot, it[1], it[2], it[3], it[4], it[5], name, 1L) ||
+		!PORT_CALL(Vehicles, SetProperties, NULL, "vvvvvvvvvvi", name, it[0], life, pilot, it[1], it[2], it[3], it[4], it[5], name, 1L) ||
 		(v && !Native_EntSet(World_FindEntity(n), n, "Active", Mode_I(&t, 1)))) {
 		return Mode_Done(&t, 0), -1;
 	}
@@ -339,7 +342,7 @@ static byte Split_ChangeShipC(const nativeVal_t *id, const nativeVal_t *up) {
 			return Mode_Done(&t, got > 0);
 		}
 	}
-	return Mode_Done(&t, Split_RandomPilot(&t, pilot) && CALL("Vehicles", "SetStdProperties", NULL, "vsv", name, "SMerc1", pilot));
+	return Mode_Done(&t, Split_RandomPilot(&t, pilot) && PORT_CALL(Vehicles, SetStdProperties, NULL, "vsv", name, "SMerc1", pilot));
 }
 
 /* StartGame(id=0): the round starts (the mode's Init the first time), the scores and separators */
@@ -351,7 +354,7 @@ static byte Split_StartGameC(void) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SetActionSet("Racer");
-	if (!CALL("Menu", "DrawScorer", NULL, "is", 0L, "Racer") || !Mode_G("Split", "FirstTime", first)) {
+	if (!PORT_CALL(Menu, DrawScorer, NULL, "is", 0L, "Racer") || !Mode_G("Split", "FirstTime", first)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(first)) {
@@ -366,7 +369,7 @@ static byte Split_StartGameC(void) {
 	}
 	Mode_SetTimeSpeed(1.0);
 	for (int i = 0; i < 2; i++) {
-		if (!OWN("MissionScorer", NULL, "i", (long)i) || !OWN("DefaultSplitScorer", NULL, "i", (long)i)) {
+		if (!PORT_OWN(Split, MissionScorer, NULL, "i", (long)i) || !PORT_OWN(Split, DefaultSplitScorer, NULL, "i", (long)i)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -393,7 +396,8 @@ static byte Split_EndOfGameC(const nativeVal_t *id) {
 	for (int i = 0; i < 2; i++) {
 		nativeVal_t *obj = Mode_V(&t), *text = Mode_V(&t);
 		if (!Split_Name(&t, "Pl", Mode_I(&t, i), obj) || !Mode_ScorerClear(Mode_I(&t, i)) || !Split_Lang(results[i], NULL, text) ||
-			!OWN("LittleText", NULL, "ivvi", (long)i, obj, text, 100L) || !OWN("BlackBack", NULL, "i", (long)i) || !Split_KeysOff(i)) {
+			!PORT_OWN(Split, LittleText, NULL, "ivvi", (long)i, obj, text, 100L) || !PORT_OWN(Split, BlackBack, NULL, "i", (long)i) ||
+			!Split_KeysOff(i)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -405,8 +409,8 @@ static byte Split_ReloadNextC(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *text = Mode_V(&t), *maps = Mode_V(&t), *path = Mode_V(&t), *here = Mode_V(&t), *at = Mode_V(&t), *nx = Mode_V(&t);
 	nativeVal_t *k = Mode_V(&t), *map = Mode_V(&t), *next = Mode_V(&t), *len = Mode_V(&t);
-	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !OWN("PurgeServerMapList", NULL, "") || !Native_GVarGet("ServerMapList", text) ||
-		!Native_EvalText("Split", text, maps)) {
+	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !PORT_OWN(Split, PurgeServerMapList, NULL, "") ||
+		!Native_GVarGet("ServerMapList", text) || !Native_EvalText("Split", text, maps)) {
 		return Mode_Done(&t, 0);
 	}
 	int any = Native_True(maps), n = any ? Native_Size(maps) : 0;
@@ -432,7 +436,7 @@ static byte Split_ReloadNextC(void) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, CALL("SaveGame", "QLoad", NULL, "v", next));
+	return Mode_Done(&t, PORT_CALL(SaveGame, QLoad, NULL, "v", next));
 }
 
 /* ActualizeScorer(): a player at FragLimit wins, else the scores are shown */
@@ -445,7 +449,7 @@ static byte Split_ActualizeScorerC(void) {
 			return Mode_Done(&t, 0);
 		}
 		if (Native_Compare(v, limit) >= 0) {
-			return Mode_Done(&t, OWN("EndOfGame", NULL, "i", (long)i));
+			return Mode_Done(&t, PORT_OWN(Split, EndOfGame, NULL, "i", (long)i));
 		}
 	}
 	for (int i = 0; i < 2; i++) {
@@ -477,7 +481,7 @@ static byte Split_MissionScorerC(int id) {
 	Native_Repr(&b, limit, NR_REPR);
 	Native_SetText(rep, b.p, b.len);
 	Native_BufFree(&b);
-	return Mode_Done(&t, Split_Run(id, "mission", 2, "y", Mode_I(&t, 190 + 240 * id), "limit", rep) && OWN("ActualizeScorer", NULL, ""));
+	return Mode_Done(&t, Split_Run(id, "mission", 2, "y", Mode_I(&t, 190 + 240 * id), "limit", rep) && PORT_OWN(Split, ActualizeScorer, NULL, ""));
 }
 
 /* SeleShip(id): player id is ready; the round starts when both are */
@@ -495,7 +499,7 @@ static byte Split_SeleShipC(const nativeVal_t *id) {
 		}
 		both = !Native_Compare(v, Mode_I(&t, 1));
 	}
-	return Mode_Done(&t, both ? OWN("StartGame", NULL, "") : OWN("ReadyToStartScorer", NULL, "v", id));
+	return Mode_Done(&t, both ? PORT_OWN(Split, StartGame, NULL, "") : PORT_OWN(Split, ReadyToStartScorer, NULL, "v", id));
 }
 
 /* InitChooseScorer(id): the ship choice of player id */
@@ -513,8 +517,8 @@ static byte Split_ReadyToStartScorerC(int id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *wait = Mode_V(&t), *back = Mode_V(&t);
 	return Mode_Done(&t, Mode_ScorerClear(Mode_I(&t, id)) && Split_Lang("XBox_Split_Waiting", NULL, wait) &&
-		OWN("LittleText", NULL, "isvi", (long)id, "ReadyControl", wait, 74L) && Split_Lang("XBox_Split_Back", "\x17", back) &&
-		OWN("LittleText", NULL, "isvi", (long)id, "PresToAbort", back, 124L) && OWN("BlackBack", NULL, "i", (long)id) &&
+		PORT_OWN(Split, LittleText, NULL, "isvi", (long)id, "ReadyControl", wait, 74L) && Split_Lang("XBox_Split_Back", "\x17", back) &&
+		PORT_OWN(Split, LittleText, NULL, "isvi", (long)id, "PresToAbort", back, 124L) && PORT_OWN(Split, BlackBack, NULL, "i", (long)id) &&
 		Split_Run(id, "keys_ready", 0));
 }
 
@@ -542,14 +546,14 @@ static byte Split_AbortC(void) {
 	nativeVal_t *aspect = Mode_V(&t);
 	Native_SetFloat(aspect, 1.3333);
 	return Mode_Done(&t, Mode_Import("SaveGame") && Mode_GVarSet("r_SplitScreen", Mode_I(&t, 0)) && Mode_GVarSet("SplitScreen", Mode_I(&t, 0)) &&
-		Mode_GVarSet("CameraDefViewAspect", aspect) && CALL("SaveGame", "QLoad", NULL, "s", "Levels/Menu"));
+		Mode_GVarSet("CameraDefViewAspect", aspect) && PORT_CALL(SaveGame, QLoad, NULL, "s", "Levels/Menu"));
 }
 
 /* Restart(id): the same map again */
 static byte Split_RestartC(void) {
 	nativeVal_t path;
 	Native_SetNone(&path);
-	byte ok = Mode_Import("SaveGame") && Mode_Import("Init") && Mode_ModVar("Init", "Path", &path) && CALL("SaveGame", "QLoad", NULL, "v", &path);
+	byte ok = Mode_Import("SaveGame") && Mode_Import("Init") && Mode_ModVar("Init", "Path", &path) && PORT_CALL(SaveGame, QLoad, NULL, "v", &path);
 	Native_Free(&path);
 	return ok;
 }
@@ -558,7 +562,7 @@ static byte Split_RestartC(void) {
 static byte Split_PauseGameC(void) {
 	Mode_SetTimeSpeed(0.0);
 	Mode_SetActionSet("Inactive");
-	return Mode_GVarSetS("EscapeEvent", "") && OWN("PauseGameMenu", NULL, "i", 0L) && OWN("PauseGameMenu", NULL, "i", 1L);
+	return Mode_GVarSetS("EscapeEvent", "") && PORT_OWN(Split, PauseGameMenu, NULL, "i", 0L) && PORT_OWN(Split, PauseGameMenu, NULL, "i", 1L);
 }
 
 /* PauseGameMenu(id): restart, abort or back to the round */
@@ -604,26 +608,23 @@ static byte Split_BlackBackC(const nativeVal_t *id) {
 /* the adapters of the module table (OBJLIB 7: arguments, results and the errors of the Python calls) */
 #define SP_FN(name, nargs, call) MODE_FN(Split, name, nargs, call)
 
-static PyObject *Split_PurgeServerMapList(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(Mode_PurgeServerMapList("Split"));
-}
+/* the functions without arguments that ignore whatever they get */
+MODE_FNANY(Split, PurgeServerMapList, Mode_PurgeServerMapList("Split"))
 
 /* GetSpawnPos(id) and GetReSpawnPos(v): a spawn point of OutMap */
-SP_FN(GetSpawnPos, 1, Mode_Import("OutMap") && CALL("OutMap", "GetSpawnPos", out, ""))
+SP_FN(GetSpawnPos, 1, Mode_Import("OutMap") && PORT_CALL(OutMap, GetSpawnPos, out, ""))
 SP_FN(CreateUserShip, 1, Split_CreateUserShipC(&a[0]))
 SP_FN(ReSpawnShip, 1, Split_ReSpawnShipC(&a[0]))
 SP_FN(OnDeathCallback, 2, Split_OnDeathCallbackC(&a[0], &a[1]))
-SP_FN(NextShip, 1, OWN("ChangeShip", NULL, "vi", &a[0], 1L))
-SP_FN(PrevShip, 1, OWN("ChangeShip", NULL, "vi", &a[0], 0L))
+SP_FN(NextShip, 1, PORT_OWN(Split, ChangeShip, NULL, "vi", &a[0], 1L))
+SP_FN(PrevShip, 1, PORT_OWN(Split, ChangeShip, NULL, "vi", &a[0], 0L))
 SP_FN(EndOfGame, 1, Split_EndOfGameC(&a[0]))
 SP_FN(SeleShip, 1, Split_SeleShipC(&a[0]))
 SP_FN(InitChooseScorer, 1, Split_InitChooseScorerC(&a[0]))
-SP_FN(ConfirmAbortMain, 1, OWN("ConfirmAbort", NULL, "vs", &a[0], "Split.InitChooseScorer"))
-SP_FN(ConfirmAbortPause, 1, OWN("ConfirmAbort", NULL, "vs", &a[0], "Split.PauseGameMenu"))
+SP_FN(ConfirmAbortMain, 1, PORT_OWN(Split, ConfirmAbort, NULL, "vs", &a[0], "Split.InitChooseScorer"))
+SP_FN(ConfirmAbortPause, 1, PORT_OWN(Split, ConfirmAbort, NULL, "vs", &a[0], "Split.PauseGameMenu"))
 SP_FN(ConfirmRestartPause, 1, Split_Lang("XBox_Split_RestartMatch", NULL, out) &&
-	OWN("ConfirmAbort", NULL, "vssv", &a[0], "Split.PauseGameMenu", "Split.Restart", out) && (Native_Free(out), 1))
+	PORT_OWN(Split, ConfirmAbort, NULL, "vssv", &a[0], "Split.PauseGameMenu", "Split.Restart", out) && (Native_Free(out), 1))
 SP_FN(Abort, 1, Split_AbortC())
 SP_FN(Restart, 1, Split_RestartC())
 SP_FN(PauseGame, 1, Split_PauseGameC())
@@ -631,72 +632,27 @@ SP_FN(PauseGameMenu, 1, Split_PauseGameMenuC(&a[0]))
 SP_FN(LittleText, 4, Split_LittleTextC(a))
 SP_FN(BlackBack, 1, Split_BlackBackC(&a[0]))
 
-/* the functions without arguments that ignore whatever they get */
-#define SP_NOARGS(name, call) \
-	static PyObject *Split_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
 MODE_FNANY(Split, Init, Split_InitC())
-SP_NOARGS(ChooseShips, Split_ChooseShipsC())
-SP_NOARGS(ReloadNext, Split_ReloadNextC())
-SP_NOARGS(ActualizeScorer, Split_ActualizeScorerC())
+MODE_FNANY(Split, ChooseShips, Split_ChooseShipsC())
+MODE_FNANY(Split, ReloadNext, Split_ReloadNextC())
+MODE_FNANY(Split, ActualizeScorer, Split_ActualizeScorerC())
 
 /* the functions of an "i" argument */
-#define SP_INT(name, call) \
-	static PyObject *Split_##name(PyObject *self, PyObject *args) { \
-		int id; \
-		(void)self; \
-		return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(call) : NULL; \
-	}
+MODE_IFN(Split_DefaultSplitScorer, 1, Split_DefaultSplitScorerC(id))
+MODE_IFN(Split_MissionScorer, 1, Split_MissionScorerC(id))
+MODE_IFN(Split_ReadyToStartScorer, 1, Split_ReadyToStartScorerC(id))
 
-SP_INT(DefaultSplitScorer, Split_DefaultSplitScorerC(id))
-SP_INT(MissionScorer, Split_MissionScorerC(id))
-SP_INT(ReadyToStartScorer, Split_ReadyToStartScorerC(id))
-
-static PyObject *Split_ChangeShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "Up", NULL };
-	PyObject *id, *up = NULL;
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *a = Mode_V(&t), *u = Mode_V(&t), *out = Mode_V(&t);
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &id, &up)) {
-		return Mode_Done(&t, 0), NULL;
-	}
-	Native_Arg(id, a);
-	if (up) {
-		Native_Arg(up, u);
-	}
-	return Mode_Out(&t, Split_ChangeShipC(a, up ? u : NULL), out);
+/* ChangeShip(id, Up=1), StartGame(id=0), ConfirmAbort(id, event, Execute="Split.Abort", TXT=None) */
+MODE_KW(Split, ChangeShip, "O|O", "id", "Up") {
+	return Split_ChangeShipC(&v[0], given[1] ? &v[1] : NULL);
 }
 
-static PyObject *Split_StartGame(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", NULL };
-	PyObject *id = NULL;
-	(void)self;
-	return PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id) ? Mode_Result(Split_StartGameC()) : NULL;
+MODE_KW(Split, StartGame, "|O", "id") {
+	return Split_StartGameC();
 }
 
-static PyObject *Split_ConfirmAbort(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "event", "Execute", "TXT", NULL };
-	PyObject *id, *event, *exec = NULL, *txt = NULL;
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *a = Mode_V(&t), *e = Mode_V(&t), *x = Mode_V(&t), *tx = Mode_V(&t), *out = Mode_V(&t);
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OO", names, &id, &event, &exec, &txt)) {
-		return Mode_Done(&t, 0), NULL;
-	}
-	Native_Arg(id, a);
-	Native_Arg(event, e);
-	if (exec) {
-		Native_Arg(exec, x);
-	}
-	if (txt) {
-		Native_Arg(txt, tx);
-	}
-	return Mode_Out(&t, Split_ConfirmAbortC(a, e, exec ? x : NULL, txt ? tx : NULL), out);
+MODE_KW(Split, ConfirmAbort, "OO|OO", "id", "event", "Execute", "TXT") {
+	return Split_ConfirmAbortC(&v[0], &v[1], given[2] ? &v[2] : NULL, given[3] ? &v[3] : NULL);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3
@@ -876,15 +832,8 @@ static byte Sm_NewFlag(const char *mod, const char *model, long radius) {
 
 /* Split.ActualizeScorer() */
 static byte Sm_Actualize(void) {
-	return CALL("Split", "ActualizeScorer", NULL, "");
+	return PORT_CALL(Split, ActualizeScorer, NULL, "");
 }
-
-#define SM_NOARGS(pre, name, call) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
 
 /* ---- SDeathMatch ---- */
 
@@ -903,7 +852,7 @@ static byte SDeathMatch_OnDeathFuncC(const nativeVal_t *looser, const nativeVal_
 	return (self ? Sm_Score(looser, -1) : Sm_Score(winner, 1)) >= 0 && Sm_Actualize();
 }
 
-SM_NOARGS(SDeathMatch, Init, SDeathMatch_InitC())
+MODE_FNANY(SDeathMatch, Init, SDeathMatch_InitC())
 MODE_FN(SDeathMatch, OnDeathFunc, 2, SDeathMatch_OnDeathFuncC(&a[0], &a[1]))
 
 PyMethodDef g_SDeathMatchMethods[] = {
@@ -921,23 +870,23 @@ static byte SFlagHunt_TakeFlagC(const nativeVal_t *vehicle) {
 		return 0;
 	}
 	int doit = Sm_Score(vehicle, 1);
-	return doit == 0 || (doit > 0 && Mode_Sound("WaySound", "WayVolume") && CALL("SFlagHunt", "GetRndFlag", NULL, "") &&
+	return doit == 0 || (doit > 0 && Mode_Sound("WaySound", "WayVolume") && PORT_CALL(SFlagHunt, GetRndFlag, NULL, "") &&
 		Sm_FlagToZone("SFlagHunt") && Sm_Actualize());
 }
 
 static byte SFlagHunt_CreateFlagC(void) {
 	modeVals_t t = { .n = 0 };
-	return Mode_Done(&t, Sm_NewFlag("SFlagHunt", "FlagModel", 2000) && CALL("SFlagHunt", "GetRndFlag", NULL, "") &&
+	return Mode_Done(&t, Sm_NewFlag("SFlagHunt", "FlagModel", 2000) && PORT_CALL(SFlagHunt, GetRndFlag, NULL, "") &&
 		Mode_FlagSet("SFlagHunt", "OnTake", Mode_S(&t, "SFlagHunt.TakeFlag")) && Sm_FlagToZone("SFlagHunt") &&
 		Sm_WayToFlag("SFlagHunt", "CurrentWaypointName"));
 }
 
-SM_NOARGS(SFlagHunt, BrowseAreas, Sm_Browse("SFlagHunt", "DM_Multiplayer_Flag_*"))
-SM_NOARGS(SFlagHunt, GetRndFlag, Sm_RndFlag("SFlagHunt"))
+MODE_FNANY(SFlagHunt, BrowseAreas, Sm_Browse("SFlagHunt", "DM_Multiplayer_Flag_*"))
+MODE_FNANY(SFlagHunt, GetRndFlag, Sm_RndFlag("SFlagHunt"))
 MODE_FN(SFlagHunt, TakeFlag, 2, SFlagHunt_TakeFlagC(&a[1]))
-SM_NOARGS(SFlagHunt, CreateFlag, SFlagHunt_CreateFlagC())
-SM_NOARGS(SFlagHunt, InitStatus, CALL("SFlagHunt", "BrowseAreas", NULL, "") && CALL("SFlagHunt", "CreateFlag", NULL, ""))
-SM_NOARGS(SFlagHunt, Init, Sm_Players("SFlagHunt", "Killer") && Sm_OnDeath("SFlagHunt"))
+MODE_FNANY(SFlagHunt, CreateFlag, SFlagHunt_CreateFlagC())
+MODE_FNANY(SFlagHunt, InitStatus, PORT_CALL(SFlagHunt, BrowseAreas, NULL, "") && PORT_CALL(SFlagHunt, CreateFlag, NULL, ""))
+MODE_FNANY(SFlagHunt, Init, Sm_Players("SFlagHunt", "Killer") && Sm_OnDeath("SFlagHunt"))
 /* OnDeathFunc(LooserName, WinnerName): a death costs a point */
 MODE_FN(SFlagHunt, OnDeathFunc, 2, Mode_Import("Split") && Sm_Score(&a[0], -1) >= 0 && Sm_Actualize())
 
@@ -991,7 +940,7 @@ static byte SPostman_TakeAreaC(const nativeVal_t *vehicle) {
 		return Mode_Done(&t, carrier == 0);
 	}
 	return Mode_Done(&t, Mode_Put("SPostman", "BattonOwner", NULL, vehicle) && Mode_Sound("WaySound", "WayVolume") &&
-		CALL("SPostman", "GetRndFlag", NULL, "") && Sm_FlagToZone("SPostman") && Native_Slice(vehicle, 6, INT_MAX, tail) &&
+		PORT_CALL(SPostman, GetRndFlag, NULL, "") && Sm_FlagToZone("SPostman") && Native_Slice(vehicle, 6, INT_MAX, tail) &&
 		Native_ToInt(tail, idx) && Split_Add("Scorer", &split.scorer, idx, 1) && Sm_Actualize());
 }
 
@@ -1006,7 +955,7 @@ static byte SPostman_TakeFlagC(const nativeVal_t *vehicle) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_DelSchedS("BattonRepos") || !Mode_Put("SPostman", "BattonOwner", NULL, vehicle) || !Mode_Sound("WaySound", "WayVolume") ||
-		!CALL("SPostman", "GetRndFlag", NULL, "") || !Sm_FlagToZone("SPostman") || !Mode_G("SPostman", "FlagModel", model) ||
+		!PORT_CALL(SPostman, GetRndFlag, NULL, "") || !Sm_FlagToZone("SPostman") || !Mode_G("SPostman", "FlagModel", model) ||
 		!Sm_FlagModel("SPostman", model) || !Mode_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeArea"))) {
 		return Mode_Done(&t, 0);
 	}
@@ -1018,14 +967,14 @@ static byte SPostman_TakeFlagC(const nativeVal_t *vehicle) {
 
 static byte SPostman_CreateFlagC(void) {
 	modeVals_t t = { .n = 0 };
-	return Mode_Done(&t, Sm_NewFlag("SPostman", "BattModel", 2000) && CALL("SPostman", "GetRndFlag", NULL, "") &&
+	return Mode_Done(&t, Sm_NewFlag("SPostman", "BattModel", 2000) && PORT_CALL(SPostman, GetRndFlag, NULL, "") &&
 		Mode_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeFlag")) && Sm_FlagToGlobal("SPostman", "FlagInitPos") &&
 		Sm_WayToFlag("SPostman", "CurrentWaypointName"));
 }
 
 static byte SPostman_InitStatusC(void) {
 	nativeVal_t f;
-	if (!CALL("SPostman", "BrowseAreas", NULL, "") || !CALL("SPostman", "CreateFlag", NULL, "") || !Mode_G("SPostman", "FlagModel", &f)) {
+	if (!PORT_CALL(SPostman, BrowseAreas, NULL, "") || !PORT_CALL(SPostman, CreateFlag, NULL, "") || !Mode_G("SPostman", "FlagModel", &f)) {
 		return 0;
 	}
 	byte ok = Mode_Preload(&f);
@@ -1060,16 +1009,16 @@ static byte SPostman_InitC(void) {
 		Sm_SetPl("SPostman", 1, "RadarShow", Mode_I(&t, 3)) && Sm_OnDeath("SPostman"));
 }
 
-SM_NOARGS(SPostman, BrowseAreas, SPostman_BrowseAreasC())
-SM_NOARGS(SPostman, GetRndFlag, Sm_RndFlag("SPostman"))
+MODE_FNANY(SPostman, BrowseAreas, SPostman_BrowseAreasC())
+MODE_FNANY(SPostman, GetRndFlag, Sm_RndFlag("SPostman"))
 MODE_FN(SPostman, TakeArea, 2, SPostman_TakeAreaC(&a[1]))
 MODE_FN(SPostman, TakeFlag, 2, SPostman_TakeFlagC(&a[1]))
-SM_NOARGS(SPostman, CreateFlag, SPostman_CreateFlagC())
-SM_NOARGS(SPostman, InitStatus, SPostman_InitStatusC())
-SM_NOARGS(SPostman, Init, SPostman_InitC())
+MODE_FNANY(SPostman, CreateFlag, SPostman_CreateFlagC())
+MODE_FNANY(SPostman, InitStatus, SPostman_InitStatusC())
+MODE_FNANY(SPostman, Init, SPostman_InitC())
 MODE_FN(SPostman, OnDeathFunc, 2, SPostman_OnDeathFuncC(&a[0]))
 /* BattonRepos(): the data pack back at its start (the script sets it twice) */
-SM_NOARGS(SPostman, BattonRepos, Sm_FlagToGlobal("SPostman", "FlagInitPos") && Sm_FlagToGlobal("SPostman", "FlagInitPos"))
+MODE_FNANY(SPostman, BattonRepos, Sm_FlagToGlobal("SPostman", "FlagInitPos") && Sm_FlagToGlobal("SPostman", "FlagInitPos"))
 
 PyMethodDef g_SPostmanMethods[] = {
 	{ "BrowseAreas", SPostman_BrowseAreas, 1, NULL },
@@ -1168,13 +1117,13 @@ static byte SRace_TakeFlagC(const nativeVal_t *vehicle) {
 		return 0;
 	}
 	int doit = Sm_Score(vehicle, 1);
-	return doit == 0 || (doit > 0 && Mode_Sound("WaySound", "WayVolume") && CALL("SRace", "GetRndFlag", NULL, "") && SRace_PlaceFlag() &&
+	return doit == 0 || (doit > 0 && Mode_Sound("WaySound", "WayVolume") && PORT_CALL(SRace, GetRndFlag, NULL, "") && SRace_PlaceFlag() &&
 		Sm_Actualize());
 }
 
 static byte SRace_CreateFlagC(void) {
 	modeVals_t t = { .n = 0 };
-	return Mode_Done(&t, Sm_NewFlag("SRace", "FlagModel", 4000) && CALL("SRace", "GetRndFlag", NULL, "") &&
+	return Mode_Done(&t, Sm_NewFlag("SRace", "FlagModel", 4000) && PORT_CALL(SRace, GetRndFlag, NULL, "") &&
 		Mode_FlagSet("SRace", "OnTake", Mode_S(&t, "SRace.TakeFlag")) && SRace_PlaceFlag() && Sm_WayToFlag("SRace", "CurrentWaypointName"));
 }
 
@@ -1245,15 +1194,15 @@ static byte SRace_InitStatusC(void) {
 	if (!f1) {
 		return 0;
 	}
-	/* OBJLIB 3: the functions as values of Split */
+	/* OBJLIB 5: the functions as values of Split */
 	Script_SetVar("Split", "FuncGetSpawnPos", f1);
 	PyObject *f2 = Mode_GlobalPy("SRace", "GetReSpawnPos");
 	if (!f2) {
 		return 0;
 	}
 	Script_SetVar("Split", "FuncGetReSpawnPos", f2);
-	return SRace_LoadSound("RaceCountDownSound1") && SRace_LoadSound("RaceCountDownSound2") && CALL("SRace", "BrowseAreas", NULL, "") &&
-		CALL("SRace", "CreateFlag", NULL, "");
+	return SRace_LoadSound("RaceCountDownSound1") && SRace_LoadSound("RaceCountDownSound2") && PORT_CALL(SRace, BrowseAreas, NULL, "") &&
+		PORT_CALL(SRace, CreateFlag, NULL, "");
 }
 
 /* Init(): both players wait for the count down 3, 2, 1, GO! (ControlToRacers then) */
@@ -1303,15 +1252,15 @@ static byte SRace_InitC(void) {
 	return Mode_Done(&t, ok);
 }
 
-SM_NOARGS(SRace, BrowseAreas, SRace_BrowseAreasC())
-SM_NOARGS(SRace, GetRndFlag, SRace_GetRndFlagC())
+MODE_FNANY(SRace, BrowseAreas, SRace_BrowseAreasC())
+MODE_FNANY(SRace, GetRndFlag, SRace_GetRndFlagC())
 MODE_FN(SRace, TakeFlag, 2, SRace_TakeFlagC(&a[1]))
-SM_NOARGS(SRace, CreateFlag, SRace_CreateFlagC())
+MODE_FNANY(SRace, CreateFlag, SRace_CreateFlagC())
 MODE_FN(SRace, InitRacePos, 1, SRace_InitRacePosC(&a[0], out))
 MODE_FN(SRace, GetReSpawnPos, 1, SRace_GetReSpawnPosC(&a[0], out))
-SM_NOARGS(SRace, InitStatus, SRace_InitStatusC())
-SM_NOARGS(SRace, Init, SRace_InitC())
-SM_NOARGS(SRace, ControlToRacers, Sm_SetPl("SRace", 0, "UsrControl", &(nativeVal_t){ .type = NV_INT, .i = 0 }) &&
+MODE_FNANY(SRace, InitStatus, SRace_InitStatusC())
+MODE_FNANY(SRace, Init, SRace_InitC())
+MODE_FNANY(SRace, ControlToRacers, Sm_SetPl("SRace", 0, "UsrControl", &(nativeVal_t){ .type = NV_INT, .i = 0 }) &&
 	Sm_SetPl("SRace", 1, "UsrControl", &(nativeVal_t){ .type = NV_INT, .i = 1 }))
 
 PyMethodDef g_SRaceMethods[] = {

@@ -1017,6 +1017,177 @@ PORT_DECL(Net, PurgeServerMapList) /* ? */
 #define PORTS_Net \
 	PORT_DEF(Net, PurgeServerMapList, Net_PurgeServerMapList)
 
+/* NetModes.c */
+PORT_DECL(NDeathMatch, DeathFunc) /* 3 */
+PORT_DECL(NDeathMatch, CheckEndOfGame) /* 0 */
+PORT_DECL(NDeathMatch, GetGameDescriptor) /* 0 */
+PORT_DECL(NDeathMatch, ShowHelp) /* 1 */
+PORT_DECL(NDeathMatchBots, DeathFunc) /* 3 */
+PORT_DECL(NDeathMatchBots, Reborn) /* 2 */
+PORT_DECL(NDeathMatchBots, CheckEndOfGame) /* 0 */
+PORT_DECL(NDeathMatchBots, GetGameDescriptor) /* 0 */
+PORT_DECL(NDeathMatchBots, TryGarage) /* 2 */
+PORT_DECL(NDeathMatchBots, SetBotState) /* 1 */
+PORT_DECL(NDeathMatchBots, CheckBotState) /* 1 */
+PORT_DECL(NDeathMatchBots, InitServerMod) /* 0 */
+PORT_DECL(NDeathMatchBots, ShowHelp) /* 1 */
+PORT_DECL(NTeamDM, DeathFunc) /* 3 */
+PORT_DECL(NTeamDM, CheckEndOfGame) /* 0 */
+PORT_DECL(NTeamDM, GetGameDescriptor) /* 0 */
+PORT_DECL(NTeamDM, ShowHelp) /* 1 */
+PORT_DECL(NTeamFlag, DeathFunc) /* 3 */
+PORT_DECL(NTeamFlag, InitServerMod) /* 0 */
+PORT_DECL(NTeamFlag, InitClientMod) /* 0 */
+PORT_DECL(NTeamFlag, ShowHelp) /* 1 */
+PORT_DECL(NTeamFlag, GetRndFlag) /* 0 */
+PORT_DECL(NTeamFlag, BrowseAreas) /* 0 */
+PORT_DECL(NTeamFlag, CreateFlag) /* 1 */
+PORT_DECL(NTeamFlag, TakeFlag) /* 1 */
+PORT_DECL(NTeamFlag, OnUsrClient) /* 2 */
+PORT_DECL(NTeamFlag, ClientJoin) /* 11 */
+PORT_DECL(NTeamFlag, ServerTakeFlag) /* 2 */
+PORT_DECL(NTeamFlag, CheckEndOfGame) /* 0 */
+PORT_DECL(NTeamFlag, GetGameDescriptor) /* 0 */
+PORT_DECL(NFlagHunt, DeathFunc) /* 3 */
+PORT_DECL(NFlagHunt, InitServerMod) /* 0 */
+PORT_DECL(NFlagHunt, InitClientMod) /* 0 */
+PORT_DECL(NFlagHunt, ShowHelp) /* 1 */
+PORT_DECL(NFlagHunt, GetRndFlag) /* 0 */
+PORT_DECL(NFlagHunt, BrowseAreas) /* 0 */
+PORT_DECL(NFlagHunt, CreateFlag) /* 1 */
+PORT_DECL(NFlagHunt, TakeFlag) /* 1 */
+PORT_DECL(NFlagHunt, OnUsrClient) /* 2 */
+PORT_DECL(NFlagHunt, ClientJoin) /* 11 */
+PORT_DECL(NFlagHunt, ServerTakeFlag) /* 2 */
+PORT_DECL(NFlagHunt, CheckEndOfGame) /* 0 */
+PORT_DECL(NFlagHunt, GetGameDescriptor) /* 0 */
+PORT_DECL(NPostman, InitServerMod) /* 0 */
+PORT_DECL(NPostman, InitClientMod) /* 0 */
+PORT_DECL(NPostman, ShowHelp) /* 1 */
+PORT_DECL(NPostman, ServerHidePlayer) /* 1 */
+PORT_DECL(NPostman, GetRndZone) /* 0 */
+PORT_DECL(NPostman, BrowseAreas) /* 0 */
+PORT_DECL(NPostman, CreateFlag) /* 1 */
+PORT_DECL(NPostman, LinkFlagTo) /* 2 */
+PORT_DECL(NPostman, TryLinkFlagTo) /* 2 */
+PORT_DECL(NPostman, TakeFlag) /* 1 */
+PORT_DECL(NPostman, DropFlag) /* 1 */
+PORT_DECL(NPostman, AbortZoneKeys) /* 0 */
+PORT_DECL(NPostman, OnUsrClient) /* 2 */
+PORT_DECL(NPostman, ClientJoin) /* 11 */
+PORT_DECL(NPostman, ServerTakeBase) /* 2 */
+PORT_DECL(NPostman, ServerDropFlag) /* 0 */
+PORT_DECL(NPostman, ServerTakeFlag) /* 2 */
+PORT_DECL(NPostman, RespawnFlag) /* 0 */
+PORT_DECL(NPostman, CheckEndOfGame) /* 0 */
+PORT_DECL(NPostman, GetGameDescriptor) /* 0 */
+PORT_DECL(NTeamPost, DeathFunc) /* 3 */
+PORT_DECL(NTeamPost, InitServerMod) /* 0 */
+PORT_DECL(NTeamPost, InitClientMod) /* 0 */
+PORT_DECL(NTeamPost, ShowHelp) /* 1 */
+PORT_DECL(NTeamPost, ServerHidePlayer) /* 1 */
+PORT_DECL(NTeamPost, GetRndZone) /* 0 */
+PORT_DECL(NTeamPost, BrowseAreas) /* 0 */
+PORT_DECL(NTeamPost, CreateFlag) /* 1 */
+PORT_DECL(NTeamPost, LinkFlagTo) /* 2 */
+PORT_DECL(NTeamPost, TryLinkFlagTo) /* 2 */
+PORT_DECL(NTeamPost, TakeFlag) /* 1 */
+PORT_DECL(NTeamPost, DropFlag) /* 1 */
+PORT_DECL(NTeamPost, AbortZoneKeys) /* 0 */
+PORT_DECL(NTeamPost, OnUsrClient) /* 2 */
+PORT_DECL(NTeamPost, ClientJoin) /* 11 */
+PORT_DECL(NTeamPost, ServerTakeBase) /* 2 */
+PORT_DECL(NTeamPost, ServerDropFlag) /* 0 */
+PORT_DECL(NTeamPost, ServerTakeFlag) /* 2 */
+PORT_DECL(NTeamPost, RespawnFlag) /* 0 */
+PORT_DECL(NTeamPost, CheckEndOfGame) /* 0 */
+PORT_DECL(NTeamPost, GetGameDescriptor) /* 0 */
+#define PORTS_NetModes \
+	PORT_DEF(NDeathMatch, DeathFunc, NDeathMatch_DeathFunc) \
+	PORT_DEF(NDeathMatch, CheckEndOfGame, NDeathMatch_CheckEndOfGame) \
+	PORT_DEF(NDeathMatch, GetGameDescriptor, NDeathMatch_GetGameDescriptor) \
+	PORT_DEF(NDeathMatch, ShowHelp, NDeathMatch_ShowHelp) \
+	PORT_DEF(NDeathMatchBots, DeathFunc, NDeathMatchBots_DeathFunc) \
+	PORT_DEF(NDeathMatchBots, Reborn, NDeathMatchBots_Reborn) \
+	PORT_DEF(NDeathMatchBots, CheckEndOfGame, NDeathMatchBots_CheckEndOfGame) \
+	PORT_DEF(NDeathMatchBots, GetGameDescriptor, NDeathMatchBots_GetGameDescriptor) \
+	PORT_DEF(NDeathMatchBots, TryGarage, NDeathMatchBots_TryGarage) \
+	PORT_DEF(NDeathMatchBots, SetBotState, NDeathMatchBots_SetBotState) \
+	PORT_DEF(NDeathMatchBots, CheckBotState, NDeathMatchBots_CheckBotState) \
+	PORT_DEF(NDeathMatchBots, InitServerMod, NDeathMatchBots_InitServerMod) \
+	PORT_DEF(NDeathMatchBots, ShowHelp, NDeathMatchBots_ShowHelp) \
+	PORT_DEF(NTeamDM, DeathFunc, NTeamDM_DeathFunc) \
+	PORT_DEF(NTeamDM, CheckEndOfGame, NTeamDM_CheckEndOfTeamGame) \
+	PORT_DEF(NTeamDM, GetGameDescriptor, NTeamDM_TeamDescriptor) \
+	PORT_DEF(NTeamDM, ShowHelp, NTeamDM_ShowHelp) \
+	PORT_DEF(NTeamFlag, DeathFunc, NTeamFlag_DeathFunc) \
+	PORT_DEF(NTeamFlag, InitServerMod, NTeamFlag_InitServerMod) \
+	PORT_DEF(NTeamFlag, InitClientMod, NTeamFlag_InitClientMod) \
+	PORT_DEF(NTeamFlag, ShowHelp, NTeamFlag_ShowHelp) \
+	PORT_DEF(NTeamFlag, GetRndFlag, NTeamFlag_GetRndFlag) \
+	PORT_DEF(NTeamFlag, BrowseAreas, NTeamFlag_BrowseAreas) \
+	PORT_DEF(NTeamFlag, CreateFlag, NTeamFlag_CreateFlag) \
+	PORT_DEF(NTeamFlag, TakeFlag, NTeamFlag_TakeFlag) \
+	PORT_DEF(NTeamFlag, OnUsrClient, NTeamFlag_OnUsrClient) \
+	PORT_DEF(NTeamFlag, ClientJoin, NTeamFlag_ClientJoin) \
+	PORT_DEF(NTeamFlag, ServerTakeFlag, NTeamFlag_ServerTakeFlag) \
+	PORT_DEF(NTeamFlag, CheckEndOfGame, NTeamFlag_CheckEndOfTeamGame) \
+	PORT_DEF(NTeamFlag, GetGameDescriptor, NTeamFlag_TeamDescriptor) \
+	PORT_DEF(NFlagHunt, DeathFunc, NFlagHunt_DeathFunc) \
+	PORT_DEF(NFlagHunt, InitServerMod, NFlagHunt_InitServerMod) \
+	PORT_DEF(NFlagHunt, InitClientMod, NFlagHunt_InitClientMod) \
+	PORT_DEF(NFlagHunt, ShowHelp, NFlagHunt_ShowHelp) \
+	PORT_DEF(NFlagHunt, GetRndFlag, NFlagHunt_GetRndFlag) \
+	PORT_DEF(NFlagHunt, BrowseAreas, NFlagHunt_BrowseAreas) \
+	PORT_DEF(NFlagHunt, CreateFlag, NFlagHunt_CreateFlag) \
+	PORT_DEF(NFlagHunt, TakeFlag, NFlagHunt_TakeFlag) \
+	PORT_DEF(NFlagHunt, OnUsrClient, NFlagHunt_OnUsrClient) \
+	PORT_DEF(NFlagHunt, ClientJoin, NFlagHunt_ClientJoin) \
+	PORT_DEF(NFlagHunt, ServerTakeFlag, NFlagHunt_ServerTakeFlag) \
+	PORT_DEF(NFlagHunt, CheckEndOfGame, NFlagHunt_CheckEndOfGame) \
+	PORT_DEF(NFlagHunt, GetGameDescriptor, NFlagHunt_GetGameDescriptor) \
+	PORT_DEF(NPostman, InitServerMod, NPostman_InitServerMod) \
+	PORT_DEF(NPostman, InitClientMod, NPostman_InitClientMod) \
+	PORT_DEF(NPostman, ShowHelp, NPostman_ShowHelp) \
+	PORT_DEF(NPostman, ServerHidePlayer, NPostman_ServerHidePlayer) \
+	PORT_DEF(NPostman, GetRndZone, NPostman_GetRndZone) \
+	PORT_DEF(NPostman, BrowseAreas, NPostman_BrowseAreas) \
+	PORT_DEF(NPostman, CreateFlag, NPostman_CreateFlag) \
+	PORT_DEF(NPostman, LinkFlagTo, NPostman_LinkFlagTo) \
+	PORT_DEF(NPostman, TryLinkFlagTo, NPostman_TryLinkFlagTo) \
+	PORT_DEF(NPostman, TakeFlag, NPostman_TakeFlag) \
+	PORT_DEF(NPostman, DropFlag, NPostman_DropFlag) \
+	PORT_DEF(NPostman, AbortZoneKeys, NPostman_AbortZoneKeys) \
+	PORT_DEF(NPostman, OnUsrClient, NPostman_OnUsrClient) \
+	PORT_DEF(NPostman, ClientJoin, NPostman_ClientJoin) \
+	PORT_DEF(NPostman, ServerTakeBase, NPostman_ServerTakeBase) \
+	PORT_DEF(NPostman, ServerDropFlag, NPostman_ServerDropFlag) \
+	PORT_DEF(NPostman, ServerTakeFlag, NPostman_ServerTakeFlag) \
+	PORT_DEF(NPostman, RespawnFlag, NPostman_RespawnFlag) \
+	PORT_DEF(NPostman, CheckEndOfGame, NPostman_CheckEndOfGame) \
+	PORT_DEF(NPostman, GetGameDescriptor, NPostman_GetGameDescriptor) \
+	PORT_DEF(NTeamPost, DeathFunc, NTeamPost_DeathFunc) \
+	PORT_DEF(NTeamPost, InitServerMod, NTeamPost_InitServerMod) \
+	PORT_DEF(NTeamPost, InitClientMod, NTeamPost_InitClientMod) \
+	PORT_DEF(NTeamPost, ShowHelp, NTeamPost_ShowHelp) \
+	PORT_DEF(NTeamPost, ServerHidePlayer, NTeamPost_ServerHidePlayer) \
+	PORT_DEF(NTeamPost, GetRndZone, NTeamPost_GetRndZone) \
+	PORT_DEF(NTeamPost, BrowseAreas, NTeamPost_BrowseAreas) \
+	PORT_DEF(NTeamPost, CreateFlag, NTeamPost_CreateFlag) \
+	PORT_DEF(NTeamPost, LinkFlagTo, NTeamPost_LinkFlagTo) \
+	PORT_DEF(NTeamPost, TryLinkFlagTo, NTeamPost_TryLinkFlagTo) \
+	PORT_DEF(NTeamPost, TakeFlag, NTeamPost_TakeFlag) \
+	PORT_DEF(NTeamPost, DropFlag, NTeamPost_DropFlag) \
+	PORT_DEF(NTeamPost, AbortZoneKeys, NTeamPost_AbortZoneKeys) \
+	PORT_DEF(NTeamPost, OnUsrClient, NTeamPost_OnUsrClient) \
+	PORT_DEF(NTeamPost, ClientJoin, NTeamPost_ClientJoin) \
+	PORT_DEF(NTeamPost, ServerTakeBase, NTeamPost_ServerTakeBase) \
+	PORT_DEF(NTeamPost, ServerDropFlag, NTeamPost_ServerDropFlag) \
+	PORT_DEF(NTeamPost, ServerTakeFlag, NTeamPost_ServerTakeFlag) \
+	PORT_DEF(NTeamPost, RespawnFlag, NTeamPost_RespawnFlag) \
+	PORT_DEF(NTeamPost, CheckEndOfGame, NTeamPost_CheckEndOfTeamGame) \
+	PORT_DEF(NTeamPost, GetGameDescriptor, NTeamPost_TeamDescriptor)
+
 /* OutMap.c */
 PORT_DECL(OutMap, BrowseSpawnPos) /* 0 */
 PORT_DECL(OutMap, GetSpawnPos) /* 0 */
@@ -1583,65 +1754,121 @@ PORT_DECL(Speech, EndObjectAnswer) /* 0 */
 	PORT_DEF(Speech, EndObjectAnswer, Speech_EndObjectAnswer)
 
 /* Split.c */
+PORT_DECL(Split, PurgeServerMapList) /* ? */
 PORT_DECL(Split, GetSpawnPos) /* 1 */
 PORT_DECL(Split, CreateUserShip) /* 1 */
 PORT_DECL(Split, Init) /* ? */
 PORT_DECL(Split, GetReSpawnPos) /* 1 */
 PORT_DECL(Split, ReSpawnShip) /* 1 */
 PORT_DECL(Split, OnDeathCallback) /* 2 */
+PORT_DECL(Split, ChooseShips) /* ? */
+PORT_DECL(Split, ChangeShip) /* ? */
 PORT_DECL(Split, NextShip) /* 1 */
 PORT_DECL(Split, PrevShip) /* 1 */
+PORT_DECL(Split, StartGame) /* ? */
+PORT_DECL(Split, DefaultSplitScorer) /* 1 */
 PORT_DECL(Split, EndOfGame) /* 1 */
+PORT_DECL(Split, ReloadNext) /* ? */
+PORT_DECL(Split, ActualizeScorer) /* ? */
+PORT_DECL(Split, MissionScorer) /* 1 */
 PORT_DECL(Split, SeleShip) /* 1 */
 PORT_DECL(Split, InitChooseScorer) /* 1 */
+PORT_DECL(Split, ReadyToStartScorer) /* 1 */
 PORT_DECL(Split, ConfirmAbortMain) /* 1 */
 PORT_DECL(Split, ConfirmAbortPause) /* 1 */
 PORT_DECL(Split, ConfirmRestartPause) /* 1 */
+PORT_DECL(Split, ConfirmAbort) /* ? */
 PORT_DECL(Split, Abort) /* 1 */
 PORT_DECL(Split, Restart) /* 1 */
 PORT_DECL(Split, PauseGame) /* 1 */
 PORT_DECL(Split, PauseGameMenu) /* 1 */
 PORT_DECL(Split, LittleText) /* 4 */
 PORT_DECL(Split, BlackBack) /* 1 */
+PORT_DECL(SDeathMatch, Init) /* ? */
 PORT_DECL(SDeathMatch, OnDeathFunc) /* 2 */
+PORT_DECL(SFlagHunt, BrowseAreas) /* ? */
+PORT_DECL(SFlagHunt, GetRndFlag) /* ? */
 PORT_DECL(SFlagHunt, TakeFlag) /* 2 */
+PORT_DECL(SFlagHunt, CreateFlag) /* ? */
+PORT_DECL(SFlagHunt, InitStatus) /* ? */
+PORT_DECL(SFlagHunt, Init) /* ? */
 PORT_DECL(SFlagHunt, OnDeathFunc) /* 2 */
+PORT_DECL(SPostman, BrowseAreas) /* ? */
+PORT_DECL(SPostman, GetRndFlag) /* ? */
 PORT_DECL(SPostman, TakeArea) /* 2 */
 PORT_DECL(SPostman, TakeFlag) /* 2 */
+PORT_DECL(SPostman, CreateFlag) /* ? */
+PORT_DECL(SPostman, InitStatus) /* ? */
+PORT_DECL(SPostman, Init) /* ? */
 PORT_DECL(SPostman, OnDeathFunc) /* 2 */
+PORT_DECL(SPostman, BattonRepos) /* ? */
+PORT_DECL(SRace, BrowseAreas) /* ? */
+PORT_DECL(SRace, GetRndFlag) /* ? */
 PORT_DECL(SRace, TakeFlag) /* 2 */
+PORT_DECL(SRace, CreateFlag) /* ? */
 PORT_DECL(SRace, InitRacePos) /* 1 */
 PORT_DECL(SRace, GetReSpawnPos) /* 1 */
+PORT_DECL(SRace, InitStatus) /* ? */
+PORT_DECL(SRace, Init) /* ? */
+PORT_DECL(SRace, ControlToRacers) /* ? */
 #define PORTS_Split \
+	PORT_DEF(Split, PurgeServerMapList, Split_PurgeServerMapList) \
 	PORT_DEF(Split, GetSpawnPos, Split_GetSpawnPos) \
 	PORT_DEF(Split, CreateUserShip, Split_CreateUserShip) \
 	PORT_DEF(Split, Init, Split_Init) \
 	PORT_DEF(Split, GetReSpawnPos, Split_GetSpawnPos) \
 	PORT_DEF(Split, ReSpawnShip, Split_ReSpawnShip) \
 	PORT_DEF(Split, OnDeathCallback, Split_OnDeathCallback) \
+	PORT_DEF(Split, ChooseShips, Split_ChooseShips) \
+	PORT_DEFK(Split, ChangeShip, Split_ChangeShip) \
 	PORT_DEF(Split, NextShip, Split_NextShip) \
 	PORT_DEF(Split, PrevShip, Split_PrevShip) \
+	PORT_DEFK(Split, StartGame, Split_StartGame) \
+	PORT_DEF(Split, DefaultSplitScorer, Split_DefaultSplitScorer) \
 	PORT_DEF(Split, EndOfGame, Split_EndOfGame) \
+	PORT_DEF(Split, ReloadNext, Split_ReloadNext) \
+	PORT_DEF(Split, ActualizeScorer, Split_ActualizeScorer) \
+	PORT_DEF(Split, MissionScorer, Split_MissionScorer) \
 	PORT_DEF(Split, SeleShip, Split_SeleShip) \
 	PORT_DEF(Split, InitChooseScorer, Split_InitChooseScorer) \
+	PORT_DEF(Split, ReadyToStartScorer, Split_ReadyToStartScorer) \
 	PORT_DEF(Split, ConfirmAbortMain, Split_ConfirmAbortMain) \
 	PORT_DEF(Split, ConfirmAbortPause, Split_ConfirmAbortPause) \
 	PORT_DEF(Split, ConfirmRestartPause, Split_ConfirmRestartPause) \
+	PORT_DEFK(Split, ConfirmAbort, Split_ConfirmAbort) \
 	PORT_DEF(Split, Abort, Split_Abort) \
 	PORT_DEF(Split, Restart, Split_Restart) \
 	PORT_DEF(Split, PauseGame, Split_PauseGame) \
 	PORT_DEF(Split, PauseGameMenu, Split_PauseGameMenu) \
 	PORT_DEF(Split, LittleText, Split_LittleText) \
 	PORT_DEF(Split, BlackBack, Split_BlackBack) \
+	PORT_DEF(SDeathMatch, Init, SDeathMatch_Init) \
 	PORT_DEF(SDeathMatch, OnDeathFunc, SDeathMatch_OnDeathFunc) \
+	PORT_DEF(SFlagHunt, BrowseAreas, SFlagHunt_BrowseAreas) \
+	PORT_DEF(SFlagHunt, GetRndFlag, SFlagHunt_GetRndFlag) \
 	PORT_DEF(SFlagHunt, TakeFlag, SFlagHunt_TakeFlag) \
+	PORT_DEF(SFlagHunt, CreateFlag, SFlagHunt_CreateFlag) \
+	PORT_DEF(SFlagHunt, InitStatus, SFlagHunt_InitStatus) \
+	PORT_DEF(SFlagHunt, Init, SFlagHunt_Init) \
 	PORT_DEF(SFlagHunt, OnDeathFunc, SFlagHunt_OnDeathFunc) \
+	PORT_DEF(SPostman, BrowseAreas, SPostman_BrowseAreas) \
+	PORT_DEF(SPostman, GetRndFlag, SPostman_GetRndFlag) \
 	PORT_DEF(SPostman, TakeArea, SPostman_TakeArea) \
 	PORT_DEF(SPostman, TakeFlag, SPostman_TakeFlag) \
+	PORT_DEF(SPostman, CreateFlag, SPostman_CreateFlag) \
+	PORT_DEF(SPostman, InitStatus, SPostman_InitStatus) \
+	PORT_DEF(SPostman, Init, SPostman_Init) \
 	PORT_DEF(SPostman, OnDeathFunc, SPostman_OnDeathFunc) \
+	PORT_DEF(SPostman, BattonRepos, SPostman_BattonRepos) \
+	PORT_DEF(SRace, BrowseAreas, SRace_BrowseAreas) \
+	PORT_DEF(SRace, GetRndFlag, SRace_GetRndFlag) \
 	PORT_DEF(SRace, TakeFlag, SRace_TakeFlag) \
+	PORT_DEF(SRace, CreateFlag, SRace_CreateFlag) \
 	PORT_DEF(SRace, InitRacePos, SRace_InitRacePos) \
-	PORT_DEF(SRace, GetReSpawnPos, SRace_GetReSpawnPos)
+	PORT_DEF(SRace, GetReSpawnPos, SRace_GetReSpawnPos) \
+	PORT_DEF(SRace, InitStatus, SRace_InitStatus) \
+	PORT_DEF(SRace, Init, SRace_Init) \
+	PORT_DEF(SRace, ControlToRacers, SRace_ControlToRacers)
 
 /* Sputnik.c */
 PORT_DECL(Sputnik, Assign) /* ? */
