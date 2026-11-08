@@ -13,10 +13,20 @@
  * the scorer heads, the ammunition table, the parkings. The engine functions the cases record or swap go through
  * their seams (AddScheduledFunc, CreateEntity, UsrEntity, Set, ConsoleError, Preload3DObject, GetAlarm,
  * SAI.GetStateVehicle, DeleteScheduledFuncs, SScorer.Add and Set; OBJLIB 7). The entities the script holds are handle
- * values (OBJLIB 7). The calls of other ports, the profiles of VehiclesNPC, SAI.SetStateVehicle and
- * SAI.GetNearestItemLife (a case swaps it), __builtin__.apply and the keyword calls stay by name (OBJLIB 3, 7), the
- * module's own functions through its globals (a mission may replace one), the scheduler keeps Python callables
- * (OBJLIB 4).
+ * values (OBJLIB 7). SAI.SetStateVehicle, SAI.GetNearestItemLife (a case swaps it) and Scrap.GetNearestParked of a
+ * position that is no vector stay by name (OBJLIB 7); the profile objects of VehiclesNPC are the objects they are
+ * (OBJLIB 5).
+ *
+ * Direct calls (stage 3): the functions of the other ports (Elevator, Metro, Parking, VehiclesNPC, Traffic,
+ * MissionsFuncs, Speech, PhoneCab, Items, OutMap, RaceMaker, Vehicles), the keyword calls of Speech.ForceRemoteCom and
+ * VehiclesNPC.MakeAI and the own functions of the modules (their globals, the profile functions included) go through
+ * their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_SCORERG, LvN_OnEndRef; the seam takes the call by name when a mission or
+ * a case has put something else there, OBJLIB 5). By name: the sections of the .def files (LaunchAmbush and
+ * PreLaunchAmbush of Mission_Ambush, PreSetNextMission of Mission_DefeatCrazyGambler2, BadGuyAppears,
+ * CreateMissionPlans and SetNextMission of Mission_FindDtritusMatrix, InitEvasion of Mission_StupidMercAgain; OBJLIB 6)
+ * and the class VehiclesNPC.cShipAI (OBJLIB 4); the functions given to the scheduler, to Parking and CharAct as
+ * callbacks and to the entities (Mode_Later, Mode_AtG, the trigger schedules, LvN_ModSetGlobal, the OnDeath and
+ * UseFunc texts) stay values (OBJLIB 4, 5).
  */
 #include <string.h>
 
@@ -1832,7 +1842,8 @@ static byte Sy_Hint(const char *module) {
 /*
  * GotoNext() of the two: every 2 s: the mercenary goes on to his next waypoint when the player is near (again: the
  * smart mercenaries come at the third, a waypoint of 3000 with state 1; else 3000, 0, 0.25 and the schedule named
- * "GoToNext"); after the last one his plans appear; the first time the player falls behind he gets a hint
+ * "GoToNext"); after the last one his plans appear; the first time the player falls behind he gets a hint. module is
+ * Mission_StupidMercAgain when again, else Mission_StupidMerc: the own calls name their refs
  */
 static byte Sy_GotoNextN(const char *module, byte again) {
 	modeVals_t t = { .n = 0 };
@@ -1840,7 +1851,7 @@ static byte Sy_GotoNextN(const char *module, byte again) {
 	nativeVal_t *len = Mode_V(&t), *oname = Mode_V(&t), *params = Mode_V(&t);
 	int t1 = Mode_G(module, "MercName", name) && Mode_EntityH(name, o1) ? Native_True(o1) : -1;
 	if (t1 == 0) {
-		return Mode_Done(&t, again ? LV_OWN(module, "CreateMerc", NULL, "") : Mode_DelSchedS("GoToNext"));
+		return Mode_Done(&t, again ? PORT_LOWN(Mission_StupidMercAgain, CreateMerc, NULL, "") : Mode_DelSchedS("GoToNext"));
 	}
 	if (t1 < 0 || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
@@ -1862,14 +1873,15 @@ static byte Sy_GotoNextN(const char *module, byte again) {
 			if (end > 0) {
 				byte ok;
 				if (again) {
-					ok = LvN_Com("Mission_FollowStupidMerc_RemoteMessage6", "MercenaryB", module, "CreateMercPlans", LvN_NoArgs());
+					ok = LV_COM("Mission_FollowStupidMerc_RemoteMessage6", "MercenaryB", Mission_StupidMercAgain, CreateMercPlans,
+						LvN_NoArgs());
 				} else {
 					Native_SetEmpty(params, NV_TUPLE);
 					ok = Mode_VGet(o1, "Name", oname);
 					if (ok) {
 						*Native_Append(params) = *oname;
 						Native_SetNone(oname);
-						ok = LvN_Com("Mission_FollowStupidMerc_RemoteMessage6", "MercenaryB", module, "CreateATPCPlans", params);
+						ok = LV_COM("Mission_FollowStupidMerc_RemoteMessage6", "MercenaryB", Mission_StupidMerc, CreateATPCPlans, params);
 					}
 				}
 				ok = ok && LvN_SetS(o1, "TgType", "None") && LvN_SetS(o1, "EntityList", "Traffic") && LvN_SetS(o1, "OnDeath", "Vehicles.OnDeath");
@@ -1881,7 +1893,7 @@ static byte Sy_GotoNextN(const char *module, byte again) {
 			int third = again ? LvN_GEqI(module, "iWaypoint", 3) : 0;
 			byte ok = third >= 0;
 			if (third > 0) {
-				ok = LV_OWN(module, "CreateMercs", NULL, "");
+				ok = PORT_LOWN(Mission_StupidMercAgain, CreateMercs, NULL, "");
 			} else if (third == 0) {
 				int hint = Mode_GCmpI(module, "iWaypoint", ">", 1);
 				ok = hint >= 0 && (!hint || Sy_Hint(module));
@@ -1898,7 +1910,7 @@ static byte Sy_GotoNextN(const char *module, byte again) {
 				hint = Sy_MercIdle(module);
 			}
 			if (hint > 0 && (!LvN_PutI(module, "FirstHint", 0) ||
-				!LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_FollowStupidMerc_RemoteMessage2", "MercenaryB"))) {
+				!PORT_CALL(Speech, RemoteComunication, NULL, "ss", "Mission_FollowStupidMerc_RemoteMessage2", "MercenaryB"))) {
 				return Mode_Done(&t, 0);
 			}
 			if (hint < 0) {
@@ -1929,7 +1941,7 @@ static byte Sy_PlanPhoto(const char *module, const char *dummyName, const char *
 	Native_SetNone(&pos);
 	Native_SetNone(&ang);
 	byte ok = Mode_Target(NULL) && Mode_GVarSetS("CurrentWaypointName", "") && LvN_DummyPosAng(&dummy, &pos, &ang) &&
-		LV_CALL("MissionsFuncs", "CreatePhotoObject", prf, "svv", model, &pos, &ang) && LvN_ModSetGlobal("CharAct", "TakenPhoto", module, taken);
+		PORT_CALL(MissionsFuncs, CreatePhotoObject, prf, "svv", model, &pos, &ang) && LvN_ModSetGlobal("CharAct", "TakenPhoto", module, taken);
 	Native_Free(&dummy);
 	Native_Free(&pos);
 	Native_Free(&ang);
@@ -1968,20 +1980,9 @@ static byte Merc_InitN(void) {
 	return ok;
 }
 
-/* VehiclesNPC.MakeAI("SMerc1", "Traffic", InitState = 0) (OBJLIB 3: a call with keywords) */
+/* VehiclesNPC.MakeAI("SMerc1", "Traffic", InitState = 0) */
 static byte Sm_MakeAI(nativeVal_t *out) {
-	PyObject *fn = Script_Attr("VehiclesNPC", "MakeAI");
-	PyObject *args = fn ? Py_BuildValue("(ss)", "SMerc1", "Traffic") : NULL;
-	PyObject *kw = args ? Py_BuildValue("{si}", "InitState", 0) : NULL;
-	PyObject *r = kw ? Script_CallObject(fn, args, kw) : NULL;
-	if (r) {
-		Native_Arg(r, out);
-	}
-	Py_XDECREF(r);
-	Py_XDECREF(kw);
-	Py_XDECREF(args);
-	Py_XDECREF(fn);
-	return r != NULL;
+	return PORT_CALL(VehiclesNPC, MakeAI, out, "ss;InitState=i", "SMerc1", "Traffic", 0L);
 }
 
 /* MapTriggers.<var> = [MercName] of the global of module */
@@ -2025,7 +2026,7 @@ static byte Merc_CreateMercN(const nativeVal_t *killed, const nativeVal_t *first
 	} else {
 		ok = 0;
 	}
-	ok = ok && LvN_PutI(SM, "iWaypoint", 0) && LV_OWN(SM, "GotoNext", NULL, "");
+	ok = ok && LvN_PutI(SM, "iWaypoint", 0) && PORT_LOWN(Mission_StupidMerc, GotoNext, NULL, "");
 	return Mode_Done(&t, ok);
 }
 
@@ -2214,8 +2215,8 @@ static byte Merc_AddATPCPlansN(const nativeVal_t *name, nativeVal_t *out) {
 	Native_SetNone(&text);
 	byte ok = Mode_Blueprint(SM, "Hangar.availableWeaponsList", "ATPC", NULL, 0) && Mode_G(SM, "ATPCPlansName", &pn) &&
 		Mode_EntityH(&pn, &e) && LvN_SetI(&e, "CanPhoto", 0) && LvN_ModNone("CharAct", "TakenPhoto") && Mode_Target(NULL) &&
-		(Mode_Lang("Mission_FollowStupidMerc_SystemMessage1", &text), LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text)) &&
-		LvN_Com("Mission_FollowStupidMerc_RemoteMessage7", "DeepThroat", SM, "SetNextMission", LvN_NoArgs());
+		(Mode_Lang("Mission_FollowStupidMerc_SystemMessage1", &text), PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text)) &&
+		LV_COM("Mission_FollowStupidMerc_RemoteMessage7", "DeepThroat", Mission_StupidMerc, SetNextMission, LvN_NoArgs());
 	Native_Free(&pn);
 	Native_Free(&e);
 	Native_Free(&text);
@@ -2262,7 +2263,7 @@ static const char *const sa_mercs_profile[] = { "StupidPathFinding=0", "ControlS
 	"FactorDamageItemLife=0.2", "FactorItemAmmo=0.1", "ControlStrafeEvasion=1", "UsePercHookGetAway=2", "TimeMaxStrafe=4",
 	"VelMaxStrafe=0.5", NULL };
 
-/* GetMercsEnemiesProfile(TypeShip): the smart mercenaries */
+/* GetMercsEnemiesProfile(TypeShip): the smart mercenaries (OBJLIB 4: the class VehiclesNPC.cShipAI by name) */
 static byte Again_GetMercsEnemiesProfileN(const nativeVal_t *type, nativeVal_t *out) {
 	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_VSet(out, "Ship", type) &&
 		Mode_SetAttrs(out, sa_mercs_profile);
@@ -2270,7 +2271,7 @@ static byte Again_GetMercsEnemiesProfileN(const nativeVal_t *type, nativeVal_t *
 
 /* Init(LevelPath): the part of the mission of the save variable: follow, evade or call the bishop */
 static byte Again_InitN(void) {
-	static const char *const parts[][2] = { { "Follow", "InitFollow" }, { "Evasion", "InitEvasion" }, { "TalkBishop", "InitTalkBishop" } };
+	static const char *const parts[] = { "Follow", "Evasion", "TalkBishop" };
 	nativeVal_t sv = { 0 }, aiprof = { 0 };
 	Native_SetNone(&aiprof);
 	if (!Mode_ListSet("Enemies", "OnDeath", "Mission_StupidMercAgain.SmartMerDeath")) {
@@ -2279,8 +2280,10 @@ static byte Again_InitN(void) {
 	Mode_SaveVar("Mission_StupidMercAgain", &sv);
 	byte ok = 1;
 	for (int i = 0; i < 3; i++) {
-		if (LvN_EqS(&sv, parts[i][0])) {
-			ok = LV_OWN(SA, parts[i][1], NULL, "");
+		if (LvN_EqS(&sv, parts[i])) {
+			/* OBJLIB 6: InitEvasion is a section of mission_stupidmercagain.def */
+			ok = i == 0 ? PORT_LOWN(Mission_StupidMercAgain, InitFollow, NULL, "") : i == 1 ? LV_OWN(SA, "InitEvasion", NULL, "") :
+				PORT_LOWN(Mission_StupidMercAgain, InitTalkBishop, NULL, "");
 			break;
 		}
 	}
@@ -2297,7 +2300,7 @@ static byte Again_CreateMercN(nativeVal_t *out) {
 	Native_SetNone(&name);
 	Native_SetNone(&wps);
 	Native_SetNone(&pos);
-	byte ok = LV_CALL("VehiclesNPC", "MakeAI", out, "ss", "SMerc1", "Traffic") && LvN_SetI(out, "Money", -1) &&
+	byte ok = PORT_CALL(VehiclesNPC, MakeAI, out, "ss", "SMerc1", "Traffic") && LvN_SetI(out, "Money", -1) &&
 		LvN_SetS(out, "TgType", "green") && Mode_VGet(out, "Name", &name) && Mode_Put(SA, "MercName", NULL, &name) && Sy_MercTarget(SA, out);
 	int first = ok ? LvN_GTrue(SA, "FirstAppereance") : -1;
 	if (first > 0) {
@@ -2309,7 +2312,7 @@ static byte Again_CreateMercN(nativeVal_t *out) {
 	Native_Free(&name);
 	Native_Free(&wps);
 	Native_Free(&pos);
-	return ok && LvN_PutI(SA, "iWaypoint", 0) && LV_OWN(SA, "GotoNext", NULL, "");
+	return ok && LvN_PutI(SA, "iWaypoint", 0) && PORT_LOWN(Mission_StupidMercAgain, GotoNext, NULL, "");
 }
 
 /* one of the two smart mercenaries when its global name has no entity */
@@ -2321,7 +2324,7 @@ static byte Sa_Merc(const char *var, const char *name, const char *ship) {
 		return Mode_Done(&t, none == 0);
 	}
 	Native_Free(o);
-	byte ok = Mode_SpawnCar(name, 0, o, NULL) && LV_OWN(SA, "GetMercsEnemiesProfile", pd, "s", ship) && LvN_StdAI(o, pd) &&
+	byte ok = Mode_SpawnCar(name, 0, o, NULL) && PORT_LOWN(Mission_StupidMercAgain, GetMercsEnemiesProfile, pd, "s", ship) && LvN_StdAI(o, pd) &&
 		LvN_SetS(o, "EntityList", "Enemies") && LvN_Life(o, SA, "MERCS_LIFE") && Mode_VGet(o, "Name", on) && Mode_Put(SA, var, NULL, on);
 	return Mode_Done(&t, ok);
 }
@@ -2365,7 +2368,7 @@ static byte Again_CreateMercPlansN(void) {
 		ok = Sy_PlanPhoto(SA, plans[i][0], plans[i][1], "AddMercPlans", &prf) && (prf.type == NV_NONE || Mode_VGet(&prf, "Name", Native_Append(&names)));
 		Native_Free(&prf);
 	}
-	ok = ok && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &names);
+	ok = ok && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", &names);
 	Native_Free(&names);
 	return ok;
 }
@@ -2375,7 +2378,7 @@ static byte Again_AddMercPlansN(const nativeVal_t *name, nativeVal_t *out) {
 	nativeVal_t r = { 0 }, e = { 0 };
 	Native_SetNone(&r);
 	Native_SetNone(&e);
-	int obj = LV_CALL("MissionsFuncs", "IsCharMissionObjective", &r, "v", name) ? Native_True(&r) : -1;
+	int obj = PORT_CALL(MissionsFuncs, IsCharMissionObjective, &r, "v", name) ? Native_True(&r) : -1;
 	Native_Free(&r);
 	if (obj == 0) {
 		Native_SetInt(out, 0);
@@ -2383,10 +2386,11 @@ static byte Again_AddMercPlansN(const nativeVal_t *name, nativeVal_t *out) {
 	if (obj <= 0) {
 		return obj == 0;
 	}
-	int del = Mode_EntityH(name, &e) && LvN_SetI(&e, "CanPhoto", 0) && LV_CALL("MissionsFuncs", "DelMissionTarget", &r, "v", name) ?
+	int del = Mode_EntityH(name, &e) && LvN_SetI(&e, "CanPhoto", 0) && PORT_CALL(MissionsFuncs, DelMissionTarget, &r, "v", name) ?
 		Native_True(&r) : -1;
 	Native_Free(&r);
 	Native_Free(&e);
+	/* OBJLIB 6: InitEvasion is a section of mission_stupidmercagain.def */
 	byte ok = del == 0 || (del > 0 && Mode_Blueprint(SA, "Hangar.shipsToEditList", "SMerc2", "Mission_FollowStupidMerc_SystemMessage1", 0) &&
 		Mode_Blueprint(SA, "Hangar.availableEnginesList", "MMERC2", "Mission_FollowStupidMerc_SystemMessage2", 0) &&
 		LvN_ModNone("CharAct", "TakenPhoto") && LvN_Com("Mission_GetMercShipPlans_RemoteMessage3", "MercenaryC", SA, "InitEvasion", LvN_NoArgs()));
@@ -2402,13 +2406,13 @@ static byte Again_AddMercPlansN(const nativeVal_t *name, nativeVal_t *out) {
 /* StartEvasion(): the smart mercenaries after the player (only the second name is set when none was there) */
 static byte Again_StartEvasionN(void) {
 	int none = Sa_NoMercs();
-	if (none < 0 || (none && !LvN_PutS(SA, "MedMercName", "MercAbsurd")) || !LV_OWN(SA, "CreateMercs", NULL, "") ||
+	if (none < 0 || (none && !LvN_PutS(SA, "MedMercName", "MercAbsurd")) || !PORT_LOWN(Mission_StupidMercAgain, CreateMercs, NULL, "") ||
 		!Mode_MMDesc("Mission_TalkToIgor2_MissionText1", 1L)) {
 		return 0;
 	}
 	SaveVar_Set("BadReputation", "2");
 	SaveVar_Set("StdShipAIProfile", "Veteran");
-	return LV_OWN(SA, "CheckEvasion", NULL, "");
+	return PORT_LOWN(Mission_StupidMercAgain, CheckEvasion, NULL, "");
 }
 
 /* a smart mercenary within EVASION_DISTANCE of the player: 1, 0, -1 */
@@ -2454,7 +2458,7 @@ static byte Again_CheckEvasionN(void) {
 		dead = Sy_CmpNone(usr, "!=");
 	}
 	if (dead > 0) {
-		return Mode_Done(&t, Mode_DelSchedS("DelayedCreateMercs") && LV_OWN(SA, "InitTalkBishop", NULL, ""));
+		return Mode_Done(&t, Mode_DelSchedS("DelayedCreateMercs") && PORT_LOWN(Mission_StupidMercAgain, InitTalkBishop, NULL, ""));
 	}
 	int evade = dead < 0 ? -1 : Sy_CmpNone(usr, "==");
 	if (evade >= 0) {
@@ -2488,7 +2492,7 @@ static byte Again_CheckEvasionN(void) {
 	}
 	byte ok = wait == 0 && Sa_GiveUp(o1) && Sa_GiveUp(o2) && Mode_DelSchedS("DelayedCreateMercs") &&
 		LvN_Com("Mission_TalkToIgor2_RemoteMessage1", "MercenaryC", NULL, NULL, NULL) &&
-		LvN_Com("Mission_TalkToIgor2_RemoteMessage2", "MercenaryC", SA, "InitTalkBishop", LvN_NoArgs());
+		LV_COM("Mission_TalkToIgor2_RemoteMessage2", "MercenaryC", Mission_StupidMercAgain, InitTalkBishop, LvN_NoArgs());
 	return Mode_Done(&t, ok);
 }
 
