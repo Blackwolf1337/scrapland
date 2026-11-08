@@ -581,21 +581,22 @@ BASE_LINK(Menu_UnLinkLR, "Right", "Left", 1)
 BASE_LINK(Menu_UnLinkUD, "Down", "Up", 1)
 
 /* DrawBackMainMenu(id) and the others: the logo, then the circuit */
-#define BASE_BACK(func, section) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
+#define BASE_BACK(name, section) \
+	static byte Menu_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		int id; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "i", &id)) { \
-			return NULL; \
+		(void)out; \
+		if (!Mode_Parse(a, n, "i", &id)) { \
+			return 0; \
 		} \
 		Base_Run(id, section, NULL); \
 		Base_Circuit(id, 1); \
-		return Py_ReturnNone(); \
-	}
+		return 1; \
+	} \
+	MODE_ADAPTER(Menu, name)
 
-BASE_BACK(Menu_DrawBackMainMenu, "backmain")
-BASE_BACK(Menu_DrawBackSubMenu, "backsub")
-BASE_BACK(Menu_DrawBackOptionMenu, "backoption")
+BASE_BACK(DrawBackMainMenu, "backmain")
+BASE_BACK(DrawBackSubMenu, "backsub")
+BASE_BACK(DrawBackOptionMenu, "backoption")
 
 static PyObject *Menu_DrawCircuitMenu(PyObject *self, PyObject *args) {
 	int id, drawBack = 1;
@@ -608,34 +609,31 @@ static PyObject *Menu_DrawCircuitMenu(PyObject *self, PyObject *args) {
 }
 
 /* DrawMenuTitleBar(id[, Y[, text[, font]]]) */
-static PyObject *Menu_DrawMenuTitleBar(PyObject *self, PyObject *args) {
+static byte Menu_DrawMenuTitleBar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	PyObject *y = NULL;
-	char *text = "", *font = "ScrapBig";
-	nativeVal_t v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i|Oss", &id, &y, &text, &font)) {
-		return NULL;
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	const nativeVal_t *y = &zero;
+	const char *text = "", *font = "ScrapBig";
+	(void)out;
+	if (!Mode_Parse(a, n, "i|Oss", &id, &y, &text, &font)) {
+		return 0;
 	}
-	if (y) {
-		Native_Arg(y, &v);
-	} else {
-		Native_SetInt(&v, 0);
-	}
-	Base_TitleBar(id, &v, text, font);
-	Native_Free(&v);
-	return Py_ReturnNone();
+	Base_TitleBar(id, y, text, font);
+	return 1;
 }
+MODE_ADAPTER(Menu, DrawMenuTitleBar)
 
-static PyObject *Menu_StartNewMenu(PyObject *self, PyObject *args) {
+static byte Menu_StartNewMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Base_NewMenu(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, StartNewMenu)
 
 static PyObject *Menu_AddTabs(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "menu", "actual", "ParamTabSize", "Hint", "CenterTextInTabs", NULL };
@@ -684,42 +682,40 @@ static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 /* YesNoMenu(id, title, yes, no): a question with Yes and No */
-static PyObject *Menu_YesNoMenu(PyObject *self, PyObject *args) {
+static byte Menu_YesNoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	PyObject *title;
-	char *yes, *no;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOss", &id, &title, &yes, &no)) {
-		return NULL;
+	const nativeVal_t *title;
+	const char *yes, *no;
+	(void)out;
+	if (!Mode_Parse(a, n, "iOss", &id, &title, &yes, &no)) {
+		return 0;
 	}
-	nativeVal_t t;
-	Native_Arg(title, &t);
 	Base_NewMenu(id);
 	int y = Mode_ModGetI("Menu", "QuestionMenuYStart", 230);
-	PyObject *pt = Native_ToPy(&t);
+	PyObject *pt = Native_ToPy(title);
 	PyObject *vars = pt ? Py_BuildValue("{s:O,s:s,s:s,s:i,s:i,s:i}", "title", pt, "yes", yes, "no", no, "y", y,
 		"bary", y + (int)Mode_ModGetI("Menu", "TitleBarYOff", -2), "exit", !strcmp(yes, "Menu.ExitGame")) : NULL;
 	Py_XDECREF(pt);
-	Native_Free(&t);
 	Base_Run(id, "yesno", vars);
 	Py_XDECREF(vars);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, YesNoMenu)
 
 /* DisableMenuItem(id, n, count): entry n of a vertical menu grey, skipped by the keys (not the first or last) */
-static PyObject *Menu_DisableMenuItem(PyObject *self, PyObject *args) {
-	int id, n, count;
+static byte Menu_DisableMenuItem_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	int id, item, count;
 	char name[0x20], prev[0x20], next[0x20];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iii", &id, &n, &count)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "iii", &id, &item, &count)) {
+		return 0;
 	}
-	if (n < 2 || n > count - 1) {
-		return Py_ReturnNone();
+	if (item < 2 || item > count - 1) {
+		return 1;
 	}
-	Str_Printf(name, sizeof(name), "Item%d", n);
-	Str_Printf(prev, sizeof(prev), "Item%d", n - 1);
-	Str_Printf(next, sizeof(next), "Item%d", n + 1);
+	Str_Printf(name, sizeof(name), "Item%d", item);
+	Str_Printf(prev, sizeof(prev), "Item%d", item - 1);
+	Str_Printf(next, sizeof(next), "Item%d", item + 1);
 	Script_SetNum(id, name, "Red", 128);
 	Script_SetNum(id, name, "Green", 128);
 	Script_SetNum(id, name, "Blue", 128);
@@ -728,59 +724,56 @@ static PyObject *Menu_DisableMenuItem(PyObject *self, PyObject *args) {
 	Script_SetStr(id, name, "OnAccept", "");
 	Script_SetStr(id, prev, "Down", next);
 	Script_SetStr(id, next, "Up", prev);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DisableMenuItem)
 
-static PyObject *Menu_ShowTextBox(PyObject *self, PyObject *args) {
+static byte Menu_ShowTextBox_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	PyObject *desc, *button = NULL;
-	char *accept, *back;
-	nativeVal_t d, b;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOss|O", &id, &desc, &accept, &back, &button)) {
-		return NULL;
-	}
-	Native_Arg(desc, &d);
-	if (button) {
-		Native_Arg(button, &b);
-	}
-	byte ok = Base_TextBox(id, &d, accept, back, button ? &b : NULL);
-	Native_Free(&d);
-	if (button) {
-		Native_Free(&b);
-	}
-	return Mode_Result(ok);
+	const nativeVal_t *desc, *button = NULL;
+	const char *accept, *back;
+	(void)out;
+	return Mode_Parse(a, n, "iOss|O", &id, &desc, &accept, &back, &button) && Base_TextBox(id, desc, accept, back, button);
 }
+MODE_ADAPTER(Menu, ShowTextBox)
 
-static PyObject *Menu_ShowWarning(PyObject *self, PyObject *args) {
+static byte Menu_ShowWarning_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	PyObject *desc;
-	nativeVal_t d;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &desc)) {
-		return NULL;
+	const nativeVal_t *desc;
+	(void)out;
+	if (!Mode_Parse(a, n, "iO", &id, &desc)) {
+		return 0;
 	}
-	Native_Arg(desc, &d);
-	int r = Base_ShowWarning(id, &d);
-	Native_Free(&d);
+	int r = Base_ShowWarning(id, desc);
 	if (r != 2) {
-		return Mode_Result(r);
+		return (byte)r;
 	}
-	/* OBJLIB 4: the scheduler keeps the function of the module and the arguments as Python objects */
-	Mode_SchedPy(Timer_GetTime(&g_pWorld->timer) + 0.25f, "Menu", "ShowWarning", args, "ShowWarning");
-	return Py_ReturnNone();
+	/* OBJLIB 4: the scheduler keeps the function of the module and the arguments (id, desc) as Python objects */
+	nativeVal_t t;
+	Native_SetEmpty(&t, NV_TUPLE);
+	Native_Copy(Native_Append(&t), &a[0]);
+	Native_Copy(Native_Append(&t), &a[1]);
+	PyObject *args = Native_ToPy(&t);
+	Native_Free(&t);
+	if (args) {
+		Mode_SchedPy(Timer_GetTime(&g_pWorld->timer) + 0.25f, "Menu", "ShowWarning", args, "ShowWarning");
+		Py_DECREF(args);
+	}
+	return 1;
 }
+MODE_ADAPTER(Menu, ShowWarning)
 
-static PyObject *Menu_SetTabDefaults(PyObject *self, PyObject *args) {
+static byte Menu_SetTabDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	char *control;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &id, &control)) {
-		return NULL;
+	const char *control;
+	(void)out;
+	if (!Mode_Parse(a, n, "is", &id, &control)) {
+		return 0;
 	}
 	Base_TabDefaults(id, control);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, SetTabDefaults)
 
 /* SliderMenu(id, name, x, y) */
 static PyObject *Menu_SliderMenu(PyObject *self, PyObject *args) {
@@ -853,3 +846,5 @@ PyMethodDef g_MenuBaseMethods[] = {
 	{ "PreviousNextMenuSimple", Menu_PreviousNextMenuSimple, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuBase)

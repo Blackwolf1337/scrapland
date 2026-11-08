@@ -945,12 +945,27 @@ static PyObject *Menu_AudioVolumeChange(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-static PyObject *Menu_MainMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
-	Main_MainMenu(id, control);
-	return Py_ReturnNone();
+/* the arguments (id[, control]) of an entry as Script_Args reads them: control "" when it is no text */
+static byte Main_EntryArgs(const nativeVal_t *a, int n, int *id, const char **control) {
+	const nativeVal_t *c = NULL;
+	if (!Mode_Parse(a, n, "i|O", id, &c)) {
+		return 0;
+	}
+	*control = c && c->type == NV_STR ? Native_Text(c) : "";
+	return 1;
 }
+
+static byte Menu_MainMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	int id;
+	const char *control;
+	(void)out;
+	if (!Main_EntryArgs(a, n, &id, &control)) {
+		return 0;
+	}
+	Main_MainMenu(id, control);
+	return 1;
+}
+MODE_ADAPTER(Menu, MainMenu)
 
 /* CreateMainMenu(id, control, backfunc) */
 static PyObject *Menu_CreateMainMenu(PyObject *self, PyObject *args) {
@@ -965,44 +980,51 @@ static PyObject *Menu_CreateMainMenu(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-static PyObject *Menu_BackToGame(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
-	(void)control;
-	Main_BackToGame(id);
-	return Py_ReturnNone();
-}
-
-static PyObject *Menu_DrawScorer(PyObject *self, PyObject *args) {
+static byte Menu_BackToGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	char *mode;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &id, &mode)) {
-		return NULL;
+	const char *control;
+	(void)out;
+	if (!Main_EntryArgs(a, n, &id, &control)) {
+		return 0;
+	}
+	Main_BackToGame(id);
+	return 1;
+}
+MODE_ADAPTER(Menu, BackToGame)
+
+static byte Menu_DrawScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	int id;
+	const char *mode;
+	(void)out;
+	if (!Mode_Parse(a, n, "is", &id, &mode)) {
+		return 0;
 	}
 	Main_DrawScorer(id, mode);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DrawScorer)
 
-static PyObject *Menu_InitMenuSys(PyObject *self, PyObject *args) {
+static byte Menu_InitMenuSys_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	double speed;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "d", &speed)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "d", &speed)) {
+		return 0;
 	}
 	Main_InitMenuSys(speed);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, InitMenuSys)
 
-static PyObject *Menu_MovieScorer(PyObject *self, PyObject *args) {
+static byte Menu_MovieScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Main_MovieScorer(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, MovieScorer)
 
 static PyObject *Menu_Init(PyObject *self, PyObject *args) {
 	int id;
@@ -1176,17 +1198,18 @@ static PyObject *Menu_CreditsMenu(PyObject *self, PyObject *args) {
 }
 
 /* GameOver(id): the death of the player in a single player game, the television switches off */
-static PyObject *Menu_GameOver(PyObject *self, PyObject *args) {
+static byte Menu_GameOver_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Mode_Printed(Native_CallMod("MissionsFuncs", "SinglePlayerDeath", NULL, ""), "MissionsFuncs", "SinglePlayerDeath");
 	Mode_Printed(Native_CallMod("Menu", "TVOff", NULL, ""), "Menu", "TVOff");
 	Main_Cinema(0, 0);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, GameOver)
 
 static PyObject *Menu_DebugMenu(PyObject *self, PyObject *args) {
 	(void)self;
@@ -1375,3 +1398,5 @@ PyMethodDef g_MenuMainMethods[] = {
 	{ "BlackTV", Menu_BlackTV, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuMain)

@@ -452,6 +452,49 @@ PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 #define PORTS_MakeChar \
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
 
+/* MenuBase.c */
+PORT_DECL(Menu, DrawBackMainMenu) /* ? */
+PORT_DECL(Menu, DrawBackSubMenu) /* ? */
+PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
+PORT_DECL(Menu, DrawMenuTitleBar) /* ? */
+PORT_DECL(Menu, StartNewMenu) /* ? */
+PORT_DECL(Menu, YesNoMenu) /* ? */
+PORT_DECL(Menu, DisableMenuItem) /* ? */
+PORT_DECL(Menu, ShowTextBox) /* ? */
+PORT_DECL(Menu, ShowWarning) /* ? */
+PORT_DECL(Menu, SetTabDefaults) /* ? */
+#define PORTS_MenuBase \
+	PORT_DEF(Menu, DrawBackMainMenu, Menu_DrawBackMainMenu) \
+	PORT_DEF(Menu, DrawBackSubMenu, Menu_DrawBackSubMenu) \
+	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
+	PORT_DEF(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
+	PORT_DEF(Menu, StartNewMenu, Menu_StartNewMenu) \
+	PORT_DEF(Menu, YesNoMenu, Menu_YesNoMenu) \
+	PORT_DEF(Menu, DisableMenuItem, Menu_DisableMenuItem) \
+	PORT_DEF(Menu, ShowTextBox, Menu_ShowTextBox) \
+	PORT_DEF(Menu, ShowWarning, Menu_ShowWarning) \
+	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults)
+
+/* MenuMain.c */
+PORT_DECL(Menu, MainMenu) /* ? */
+PORT_DECL(Menu, BackToGame) /* ? */
+PORT_DECL(Menu, DrawScorer) /* ? */
+PORT_DECL(Menu, InitMenuSys) /* ? */
+PORT_DECL(Menu, MovieScorer) /* ? */
+PORT_DECL(Menu, GameOver) /* ? */
+#define PORTS_MenuMain \
+	PORT_DEF(Menu, MainMenu, Menu_MainMenu) \
+	PORT_DEF(Menu, BackToGame, Menu_BackToGame) \
+	PORT_DEF(Menu, DrawScorer, Menu_DrawScorer) \
+	PORT_DEF(Menu, InitMenuSys, Menu_InitMenuSys) \
+	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
+	PORT_DEF(Menu, GameOver, Menu_GameOver)
+
+/* MenuMission.c */
+PORT_DECL(Menu, EnterMissionInfo) /* ? */
+#define PORTS_MenuMission \
+	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo)
+
 /* MisItems.c */
 PORT_DECL(MisItems, OnVehicleDeat) /* 1 */
 PORT_DECL(MisItems, GetTargetReward) /* 1 */
