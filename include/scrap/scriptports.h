@@ -2341,14 +2341,14 @@ PORT_DECLL(commercial, Map, InitStatus) /* 1 */
 PORT_DECLL(commercial, Map, Init) /* 1 */
 PORT_DECLL(commercial, MapRace, InitStatus) /* 1 */
 PORT_DECLL(commercial, MapRace, Init) /* 1 */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial1) /* ? */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial2) /* ? */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial3) /* ? */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial4) /* ? */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial5) /* ? */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial6) /* ? */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial7) /* ? */
-PORT_DECLL(commercial, MapRace, EasyRaceCommercial8) /* ? */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial1) /* 0 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial2) /* 0 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial3) /* 0 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial4) /* 0 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial5) /* 0 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial6) /* 0 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial7) /* 0 */
+PORT_DECLL(commercial, MapRace, EasyRaceCommercial8) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyMickus, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyMickus, CreateTransports) /* 1 */
@@ -2475,14 +2475,14 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Map, Init, CmMap_InitA) \
 	PORT_DEFL(commercial, MapRace, InitStatus, MapRace_PassA) \
 	PORT_DEFL(commercial, MapRace, Init, MapRace_PassA) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial1, MapRace_Race1) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial2, MapRace_Race2) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial3, MapRace_Race3) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial4, MapRace_Race4) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial5, MapRace_Race5) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial6, MapRace_Race6) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial7, MapRace_Race7) \
-	PORT_DEFLP(commercial, MapRace, EasyRaceCommercial8, MapRace_Race8) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial1, MapRace_Race1) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial2, MapRace_Race2) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial3, MapRace_Race3) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial4, MapRace_Race4) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial5, MapRace_Race5) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial6, MapRace_Race6) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial7, MapRace_Race7) \
+	PORT_DEFL(commercial, MapRace, EasyRaceCommercial8, MapRace_Race8) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile, Mickus_GetFuncEnemiesProfileA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, Init, Mickus_InitA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, CreateTransports, Mickus_CreateTransportsA) \
@@ -2608,6 +2608,22 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 /* levels/DownTown.c */
 PORT_DECLL(downtown, Map, InitStatus) /* 1 */
 PORT_DECLL(downtown, Map, Init) /* 1 */
+PORT_DECLL(downtown, MapRace, EasyRaceDownTown1) /* 0 */
+PORT_DECLL(downtown, MapRace, EasyRaceDownTown2) /* 0 */
+PORT_DECLL(downtown, MapRace, EasyRaceDownTown3) /* 0 */
+PORT_DECLL(downtown, MapRace, EasyRaceDownTown4) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown1) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown2) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown3) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown4) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown5) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown6) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown7) /* 0 */
+PORT_DECLL(downtown, MapRace, MediumRaceDownTown8) /* 0 */
+PORT_DECLL(downtown, MapRace, HardRaceDownTown1) /* 0 */
+PORT_DECLL(downtown, MapRace, HardRaceDownTown2) /* 0 */
+PORT_DECLL(downtown, MapRace, HardRaceDownTown3) /* 0 */
+PORT_DECLL(downtown, MapRace, HardRaceDownTown4) /* 0 */
 PORT_DECLL(downtown, Mission_FirstContactPress, Init) /* 1 */
 PORT_DECLL(downtown, Mission_BertoMassacre, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_BertoMassacre, StartMission) /* 0 */
@@ -2746,6 +2762,22 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 #define PORTS_levels_DownTown \
 	PORT_DEFL(downtown, Map, InitStatus, DownTown_InitStatusPy) \
 	PORT_DEFL(downtown, Map, Init, DownTown_InitPy) \
+	PORT_DEFL(downtown, MapRace, EasyRaceDownTown1, MapRace_Race1) \
+	PORT_DEFL(downtown, MapRace, EasyRaceDownTown2, MapRace_Race2) \
+	PORT_DEFL(downtown, MapRace, EasyRaceDownTown3, MapRace_Race3) \
+	PORT_DEFL(downtown, MapRace, EasyRaceDownTown4, MapRace_Race4) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown1, MapRace_Race5) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown2, MapRace_Race6) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown3, MapRace_Race7) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown4, MapRace_Race8) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown5, MapRace_Race9) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown6, MapRace_Race10) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown7, MapRace_Race11) \
+	PORT_DEFL(downtown, MapRace, MediumRaceDownTown8, MapRace_Race12) \
+	PORT_DEFL(downtown, MapRace, HardRaceDownTown1, MapRace_Race13) \
+	PORT_DEFL(downtown, MapRace, HardRaceDownTown2, MapRace_Race14) \
+	PORT_DEFL(downtown, MapRace, HardRaceDownTown3, MapRace_Race15) \
+	PORT_DEFL(downtown, MapRace, HardRaceDownTown4, MapRace_Race16) \
 	PORT_DEFL(downtown, Mission_FirstContactPress, Init, Press_InitPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, InitStatus, Berto_InitStatusPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, StartMission, Berto_StartMissionPy) \
@@ -3405,6 +3437,17 @@ PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneC) /* 0 */
 /* levels/Outskirts.c */
 PORT_DECLL(outskirts, Map, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Map, Init) /* 1 */
+PORT_DECLL(outskirts, MapRace, EasyRaceOurskirts1) /* 0 */
+PORT_DECLL(outskirts, MapRace, EasyRaceOurskirts2) /* 0 */
+PORT_DECLL(outskirts, MapRace, EasyRaceOurskirts3) /* 0 */
+PORT_DECLL(outskirts, MapRace, EasyRaceOurskirts4) /* 0 */
+PORT_DECLL(outskirts, MapRace, EasyRaceOurskirts5) /* 0 */
+PORT_DECLL(outskirts, MapRace, MediumRaceOurskirts1) /* 0 */
+PORT_DECLL(outskirts, MapRace, MediumRaceOurskirts2) /* 0 */
+PORT_DECLL(outskirts, MapRace, MediumRaceOurskirts3) /* 0 */
+PORT_DECLL(outskirts, MapRace, MediumRaceOurskirts4) /* 0 */
+PORT_DECLL(outskirts, MapRace, MediumRaceOurskirts5) /* 0 */
+PORT_DECLL(outskirts, MapRace, Mission_Win2ndRace_Race) /* 0 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, GetTraitoriusProfile) /* 0 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, ReassignTarget) /* 0 */
@@ -3553,6 +3596,17 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 #define PORTS_levels_Outskirts \
 	PORT_DEFL(outskirts, Map, InitStatus, OsMap_InitStatusPy) \
 	PORT_DEFL(outskirts, Map, Init, OsMap_InitPy) \
+	PORT_DEFL(outskirts, MapRace, EasyRaceOurskirts1, MapRace_Easy1) \
+	PORT_DEFL(outskirts, MapRace, EasyRaceOurskirts2, MapRace_Easy2) \
+	PORT_DEFL(outskirts, MapRace, EasyRaceOurskirts3, MapRace_Easy3) \
+	PORT_DEFL(outskirts, MapRace, EasyRaceOurskirts4, MapRace_Easy4) \
+	PORT_DEFL(outskirts, MapRace, EasyRaceOurskirts5, MapRace_Easy5) \
+	PORT_DEFL(outskirts, MapRace, MediumRaceOurskirts1, MapRace_Medium1) \
+	PORT_DEFL(outskirts, MapRace, MediumRaceOurskirts2, MapRace_Medium2) \
+	PORT_DEFL(outskirts, MapRace, MediumRaceOurskirts3, MapRace_Medium3) \
+	PORT_DEFL(outskirts, MapRace, MediumRaceOurskirts4, MapRace_Medium4) \
+	PORT_DEFL(outskirts, MapRace, MediumRaceOurskirts5, MapRace_Medium5) \
+	PORT_DEFL(outskirts, MapRace, Mission_Win2ndRace_Race, MapRace_Win2nd) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, GetTraitoriusProfile, Traitorius_GetTraitoriusProfile) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, Init, Traitorius_InitPy) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, ReassignTarget, Traitorius_ReassignTargetPy) \

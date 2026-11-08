@@ -62,11 +62,10 @@ extern PyMethodDef g_GDBReinsertOwnMatrix2Methods[];
 extern const int lv_black[4], lv_clear[4];
 /* InitStatus(LevelPath) of a mission with only the lines of LvN_AcShips */
 PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships);
-/* the profile function itself (no arguments, returns the LvN_Profile of vars) */
-PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *vars);
 /* a race of MapRace (no arguments): import RaceMaker; RaceMaker.StartPos = [] and the n points appended as
- * ((x, y, z), angle) */
+ * ((x, y, z), angle); LvN_StartPos is its native core (the entries of the races, MODE_FN) */
 PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n);
+byte LvN_StartPos(const double (*pos)[4], int n);
 /* Mission_DestroyCommSats1, 2 and 3: one script in three levels */
 extern PyMethodDef g_OutskirtsDestroyCommSats1Methods[];
 extern PyMethodDef g_CommercialDestroyCommSats2Methods[];

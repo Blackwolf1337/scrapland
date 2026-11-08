@@ -301,12 +301,7 @@ PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships
 	LV_WHOLE(1, LvN_AcShips(module, ships));
 }
 
-PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *vars) {
-	(void)module;
-	LV_WHOLE(0, LvN_Profile(vars, out));
-}
-
-static byte Lv_StartPosCore(const double (*pos)[4], int n) {
+byte LvN_StartPos(const double (*pos)[4], int n) {
 	nativeVal_t empty;
 	Native_SetEmpty(&empty, NV_LIST);
 	if (!Mode_Import("RaceMaker") || !Mode_SetModVar("RaceMaker", "StartPos", &empty)) {
@@ -327,7 +322,7 @@ static byte Lv_StartPosCore(const double (*pos)[4], int n) {
 }
 
 PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n) {
-	LV_WHOLE(0, Lv_StartPosCore(pos, n));
+	LV_WHOLE(0, LvN_StartPos(pos, n));
 }
 
 /* ---- Mission_DestroyCommSats1, 2 and 3 (Outskirts, Commercial, DownTown): one script with the level's details ---- */
