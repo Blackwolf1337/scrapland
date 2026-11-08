@@ -98,8 +98,8 @@ static byte Lv_SndCore(const nativeVal_t *a, const lvSndElement_t *table) {
 		}
 		if (ok) {
 			LvN_Str(&loop, el->loop);
-			ok = el->hasPitch ? LV_CALL("Sound", "SetPSLoop", NULL, "vvvdi", &id, &pos, &loop, el->vol, (long)el->pitch) :
-				LV_CALL("Sound", "SetPSLoop", NULL, "vvvd", &id, &pos, &loop, el->vol);
+			ok = el->hasPitch ? PORT_CALL(Sound, SetPSLoop, NULL, "vvvdi", &id, &pos, &loop, el->vol, (long)el->pitch) :
+				PORT_CALL(Sound, SetPSLoop, NULL, "vvvd", &id, &pos, &loop, el->vol);
 			Native_Free(&loop);
 		}
 	}
@@ -117,7 +117,7 @@ static byte Lv_SndCore(const nativeVal_t *a, const lvSndElement_t *table) {
 			Native_Copy(Native_Append(&pos), &a[i]);
 		}
 		ok = ok && Lv_SndId(name, el->beepI, &id) &&
-			LV_CALL("Sound", "SetPSInterval", NULL, "vvsiidi", &id, &pos, beep, (long)el->imin, (long)el->imax, el->ivol, 0L);
+			PORT_CALL(Sound, SetPSInterval, NULL, "vvsiidi", &id, &pos, beep, (long)el->imin, (long)el->imax, el->ivol, 0L);
 	}
 	Native_Free(&id);
 	Native_Free(&pos);
@@ -165,8 +165,8 @@ static byte Lv_PlanesCore(const char *module) {
 				ok = LvN_Item(&a2, 0, Native_Append(&ang)) && LvN_Item(&a2, 1, Native_Append(&ang));
 				Native_SetInt(Native_Append(&ang), 0);
 			}
-			ok = ok && LvN_Item(&dummy, 1, &pos) && LV_CALL("MissionsFuncs", "CreatePhotoObject", &pln, "vvv", &name, &pos, &ang) &&
-				LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pln, 0L);
+			ok = ok && LvN_Item(&dummy, 1, &pos) && PORT_CALL(MissionsFuncs, CreatePhotoObject, &pln, "vvv", &name, &pos, &ang) &&
+				PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &pln, 0L);
 		} else {
 			ok = in == 0;
 		}
@@ -216,7 +216,7 @@ static byte Lv_PhotoTo(const char *module, const char *var, const char *saveVar,
 		Mode_Lang(msg, &text);
 		Mode_Lang(k, &name);
 		Mode_Replace(&text, "<n1>", &name, &r);
-		ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &r);
+		ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &r);
 		Native_Free(&text);
 		Native_Free(&name);
 	}
@@ -275,7 +275,7 @@ static byte Lv_PhotoCore(const nativeVal_t *name, const char *module, const char
 		Native_Free(&h);
 		if (ok) {
 			SaveVar_Inc("NewBluePrintAvaliable", 1);
-			ok = LV_CALL("SaveGame", "CheckAllBlueprints", NULL, "");
+			ok = PORT_CALL(SaveGame, CheckAllBlueprints, NULL, "");
 		}
 	}
 	Native_SetInt(out, res);
@@ -424,8 +424,8 @@ static byte Probes_Make(const lvProbes_t *p, const char *onDeath, const nativeVa
 	nativeVal_t e, ang, life;
 	Native_SetNone(&e);
 	Native_SetNone(&life);
-	byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", &e, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
-		LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_SetS(&e, "OnDeath", onDeath) && Mode_VSet(&e, "MovePos", pos) &&
+	byte ok = PORT_CALL(Traffic, SetPath, NULL, "") && PORT_CALL(VehiclesNPC, MakeAI, &e, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
+		PORT_CALL(Traffic, ResetPath, NULL, "") && LvN_SetS(&e, "OnDeath", onDeath) && Mode_VSet(&e, "MovePos", pos) &&
 		Mode_VSet(&e, "Pos", pos);
 	if (ok) {
 		Native_SetEmpty(&ang, NV_TUPLE);
@@ -434,7 +434,7 @@ static byte Probes_Make(const lvProbes_t *p, const char *onDeath, const nativeVa
 		}
 		ok = Mode_VSet(&e, "MoveAng", &ang) && Mode_VSet(&e, "Ang", &ang) && LvN_SetF(&e, "MoveTime", 0.1) &&
 			Mode_G(p->module, "PROBE_LIFE", &life) && Mode_VSet(&e, "Life", &life) && Mode_VSet(&e, "MaxLife", &life) &&
-			Mode_VSet(&e, "MinLife", &life) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, 1L);
+			Mode_VSet(&e, "MinLife", &life) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &e, 1L);
 		Native_Free(&ang);
 	}
 	Native_Free(&e);
@@ -496,7 +496,7 @@ static byte Probes_OnProbeDeath(const nativeVal_t *a, const lvProbes_t *p, nativ
 	char msg[64];
 	nativeVal_t s, num, one, n, args[4], t;
 	(void)out;
-	if (!Mode_Import("Vehicles") || !LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1])) {
+	if (!Mode_Import("Vehicles") || !PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1])) {
 		return 0;
 	}
 	Mode_SaveVar("NumProbes", &s);
@@ -527,7 +527,7 @@ static byte Probes_OnProbeDeath(const nativeVal_t *a, const lvProbes_t *p, nativ
 		}
 	} else if (ok) {
 		LvN_SaveRepr("NumProbes", &n);
-		ok = LV_CALL("SaveGame", "QWayPoint", NULL, "");
+		ok = PORT_CALL(SaveGame, QWayPoint, NULL, "");
 	}
 	Native_Free(&n);
 	return ok && LvN_Draw();
@@ -595,7 +595,7 @@ static byte Probes_SetNextMission(const nativeVal_t *a, const lvProbes_t *p, nat
 	if (ok && p->saves) {
 		Mode_Saves(p->saves);
 	}
-	return ok && LvN_Next(p->nextLib, p->nextMap, p->nextDesc) && LV_CALL("SaveGame", "QWayPoint", NULL, "");
+	return ok && LvN_Next(p->nextLib, p->nextMap, p->nextDesc) && PORT_CALL(SaveGame, QWayPoint, NULL, "");
 }
 
 /* MissionScorer(id): the probes left */
@@ -855,21 +855,14 @@ const nativeVal_t *LvN_NoArgs(void) {
 }
 
 byte LvN_Com(const char *key, const char *who, const char *module, const char *func, const nativeVal_t *params) {
-	PyObject *add = Script_Attr("Speech", "AddRemoteCom");
-	if (!add) {
-		return 0;
-	}
 	if (!func) {
-		return Native_HookCall(add, NULL, "ss", key, who);
+		return PORT_CALL(Speech, AddRemoteCom, NULL, "ss", key, who);
 	}
+	/* the function read before Speech.AddRemoteCom (the script after it: the same unless both are gone) */
 	PyObject *then = Mode_GlobalPy(module, func);
-	if (!then) {
-		Py_DECREF(add);
-		return 0;
-	}
-	byte ok = params ? Native_HookCall(add, NULL, "ssOv", key, who, then, params) :
-		Native_HookCall(add, NULL, "ssO", key, who, then);
-	Py_DECREF(then);
+	byte ok = then && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, who, then, params) :
+		PORT_CALL(Speech, AddRemoteCom, NULL, "ssO", key, who, then));
+	Py_XDECREF(then);
 	return ok;
 }
 
@@ -912,7 +905,7 @@ byte LvN_Callback(const char *name, const char *module, const char *func) {
 }
 
 byte LvN_MissionChar(const char *name, const char *module, const char *func) {
-	return LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", name) && LvN_Callback(name, module, func);
+	return PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", name) && LvN_Callback(name, module, func);
 }
 
 int LvN_PcOr(const char *module, const char *name) {
@@ -1037,8 +1030,8 @@ byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd) {
 	Native_SetNone(&name);
 	Native_SetNone(&ship);
 	byte ok = Mode_VGet(e, "Name", &name) && Mode_VGet(pd, "Ship", &ship) &&
-		LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", &name, &ship) &&
-		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", e, pd);
+		PORT_CALL(VehiclesNPC, SetStdProperties, NULL, "vv", &name, &ship) &&
+		PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, pd);
 	Native_Free(&name);
 	Native_Free(&ship);
 	return ok;
@@ -1050,12 +1043,8 @@ byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *
 
 byte LvN_Draw(void) {
 	nativeVal_t set;
-	PyObject *fn = Script_Attr("Menu", "DrawScorer");
-	if (!fn) {
-		return 0;
-	}
 	Native_SetStr(&set, TABLE_AT(g_ActionSets, Input_GetActionSet())->name);
-	return Native_HookCall(fn, NULL, "iv", 0L, &set);
+	return PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set);
 }
 
 byte LvN_ScorerOff(void) {
@@ -1071,7 +1060,7 @@ byte LvN_ScorerRef(const portRef_t *ref) {
 }
 
 byte LvN_Next(const char *lib, const char *map, const char *desc) {
-	return LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", lib, map) && LV_CALL("SaveGame", "MMDesc", NULL, "si", desc, 1L);
+	return PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", lib, map) && PORT_CALL(SaveGame, MMDesc, NULL, "si", desc, 1L);
 }
 
 byte LvN_Entity(const char *name, nativeVal_t *out) {
@@ -1312,7 +1301,7 @@ byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, c
 }
 
 byte LvN_Activate(const nativeVal_t *v, long on) {
-	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", v, on);
+	return PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", v, on);
 }
 
 byte LvN_GActivate(const char *module, const char *var, long on) {
@@ -1416,7 +1405,7 @@ byte LvN_SetLang(const nativeVal_t *h, const char *var, const char *key) {
 }
 
 byte LvN_Repos(const char *name, long n) {
-	return LV_CALL("CharsNPC", "SetReposChars", NULL, "si", name, n);
+	return PORT_CALL(CharsNPC, SetReposChars, NULL, "si", name, n);
 }
 
 byte LvN_ScanBlink(int lost) {
@@ -1448,7 +1437,7 @@ byte LvN_CamTravel(const char *module, const char *text, byte again) {
 		return Mode_Done(&t, c > 0);
 	}
 	Mode_Ints3(v, 0, 0, 0);
-	byte ok = Mode_Import("Menu") && LV_CALL("Menu", "MovieScorer", NULL, "i", 0L) && LvN_SetI(usr, "UsrControl", -1) && Mode_VSet(usr, "Vel", v) &&
+	byte ok = Mode_Import("Menu") && PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) && LvN_SetI(usr, "UsrControl", -1) && Mode_VSet(usr, "Vel", v) &&
 		Mode_G(module, "missionStartWaypoint", wp) && Mode_VGet(wp, "Pos", wpos) && Mode_VSet(usr, "MovePos", wpos) && Mode_VGet(wp, "Ang", wang) &&
 		Mode_VSet(usr, "MoveAng", wang) && LvN_SetF(usr, "MoveTime", 1.0) && LvN_SetI(usr, "MoveFade", 2) && LvN_SetI(usr, "AvoidCrash", 1) &&
 		Mode_GVarSetS("EscapeEvent", "") && Mode_GVarSetS("MainMissionEvent", "") && LV_CALL("Scrap", "GetCam", prev, "i", 0L);
@@ -1481,7 +1470,7 @@ byte LvN_CamTravel(const char *module, const char *text, byte again) {
 		Native_SetFloat(&d, 0.2);
 		ok = Native_Arith('+', now, tt, at1) && Native_Arith('+', at1, &d, at) && Mode_VGet(usr, "Name", args) && (Native_Copy(args2, prev), 1) &&
 			Mode_AtG(at, module, "AbortCameraTravelling", args, 2) && Mode_Import("Scene") &&
-			LV_CALL("Scene", "SetText", NULL, "sv", text, tt);
+			PORT_CALL(Scene, SetText, NULL, "sv", text, tt);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -1494,7 +1483,7 @@ byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer
 		ok = Mode_EntityH(&a[0], usr) && (!Native_True(usr) || (LvN_SetF(usr, "MoveTime", 0.0) && LvN_SetI(usr, "UsrControl", 0))) &&
 			Mode_GVarSetS("EscapeEvent", "Menu.Init") && Mode_GVarSetS("MainMissionEvent", "MissionsFuncs.ShowMissionInfo") &&
 			LV_CALL("Scrap", "GetCam", cn, "i", 0L) && Mode_EntityH(cn, cam) && Mode_VDel(cam) && LV_CALL("Scrap", "SetCam", NULL, "iv", 0L, &a[1]) &&
-			(!racerScorer || (Mode_Import("RacerScorer") && LV_CALL("RacerScorer", "Create", NULL, "i", 0L)));
+			(!racerScorer || (Mode_Import("RacerScorer") && PORT_CALL(RacerScorer, Create, NULL, "i", 0L)));
 	}
 	return Mode_Done(&t, ok && LV_OWN(module, "LaunchMission", NULL, ""));
 }
@@ -1505,7 +1494,7 @@ byte LvN_SystemMessage(const char *key) {
 		return 0;
 	}
 	Mode_Lang(key, &text);
-	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	byte ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	Native_Free(&text);
 	return ok;
 }

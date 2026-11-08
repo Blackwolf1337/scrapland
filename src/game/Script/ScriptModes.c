@@ -1777,8 +1777,8 @@ byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs) {
 }
 
 byte Mode_NISpeech(const char *who, const char *key) {
-	return (who ? Native_CallMod("Speech", "NISpeech", NULL, "s", who) : Native_CallMod("Speech", "NISpeech", NULL, "")) &&
-		Native_CallMod("Speech", "AutoAddNI", NULL, "s", key) && Native_CallMod("Speech", "RunNI", NULL, "");
+	return (who ? PORT_CALL(Speech, NISpeech, NULL, "s", who) : PORT_CALL(Speech, NISpeech, NULL, "")) &&
+		PORT_CALL(Speech, AutoAddNI, NULL, "s", key) && PORT_CALL(Speech, RunNI, NULL, "");
 }
 
 byte Mode_EntSetS(const char *name, const char *var, const char *s) {
@@ -1924,23 +1924,23 @@ int Mode_UsrIs(const char *ctrl) {
 }
 
 byte Mode_Spch(const char *msg, const char *ans, const char *how) {
-	return how ? LV_CALL("Speech", "OnSpch", NULL, "sss", msg, ans, how) : LV_CALL("Speech", "OnSpch", NULL, "ss", msg, ans);
+	return how ? PORT_CALL(Speech, OnSpch, NULL, "sss", msg, ans, how) : PORT_CALL(Speech, OnSpch, NULL, "ss", msg, ans);
 }
 
 byte Mode_AnsLst(const char *const *texts, int n) {
 	nativeVal_t l;
 	Mode_Texts(&l, texts, n);
-	byte ok = LV_CALL("Speech", "StdAnsLst", NULL, "v", &l);
+	byte ok = PORT_CALL(Speech, StdAnsLst, NULL, "v", &l);
 	Native_Free(&l);
 	return ok;
 }
 
 byte Mode_MMDesc(const char *desc, long flag) {
-	return LV_CALL("SaveGame", "MMDesc", NULL, "si", desc, flag);
+	return PORT_CALL(SaveGame, MMDesc, NULL, "si", desc, flag);
 }
 
 byte Mode_WayPoint(void) {
-	return LV_CALL("SaveGame", "QWayPoint", NULL, "");
+	return PORT_CALL(SaveGame, QWayPoint, NULL, "");
 }
 
 byte Mode_Target(const char *name) {
@@ -1953,8 +1953,8 @@ byte Mode_Connect(const char *a, const char *b, byte pair) {
 	nativeVal_t l1, l2;
 	Mode_Texts(&l1, names, pair ? 2 : 1);
 	Mode_Texts(&l2, names + 1, pair ? 0 : 1);
-	byte ok = pair ? LV_CALL("Elevator", "ConnectElevators", NULL, "vvi", &l1, &l2, 0L) :
-		LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &l1, &l2);
+	byte ok = pair ? PORT_CALL(Elevator, ConnectElevators, NULL, "vvi", &l1, &l2, 0L) :
+		PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &l1, &l2);
 	Native_Free(&l1);
 	Native_Free(&l2);
 	return ok;
@@ -2053,19 +2053,12 @@ byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal
 
 byte Mode_BarDefaults(const nativeVal_t *id, const char *item, const nativeVal_t *main, const nativeVal_t *black) {
 	nativeVal_t back, m, k;
-	PyObject *fn = Script_Attr("Scorer", "MissionScorerBar_SetDefaults");
-	if (!fn) {
-		return 0;
-	}
 	Native_SetNone(&m);
 	Native_SetNone(&k);
+	/* the function is looked up after the colours (the script before them: the same unless both are gone) */
 	byte ok = LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", &back) && (main || LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", &m)) &&
-		(black || LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &k));
-	if (ok) {
-		ok = Native_HookCall(fn, NULL, "vsvvv", id, item, &back, main ? main : &m, black ? black : &k);
-	} else {
-		Py_DECREF(fn);
-	}
+		(black || LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &k)) &&
+		PORT_CALL(Scorer, MissionScorerBar_SetDefaults, NULL, "vsvvv", id, item, &back, main ? main : &m, black ? black : &k);
 	Native_Free(&back);
 	Native_Free(&m);
 	Native_Free(&k);
@@ -2076,7 +2069,7 @@ byte Mode_PhoneCab(const char *use, byte targetFirst, const char *pcModule, nati
 	nativeVal_t pc, name;
 	Native_SetNone(&pc);
 	Native_SetNone(&name);
-	byte ok = Mode_Import("PhoneCab") && Native_CallMod("PhoneCab", "GetFree", &pc, "") && (!pcModule || Mode_Put(pcModule, "pc", NULL, &pc)) &&
+	byte ok = Mode_Import("PhoneCab") && PORT_CALL(PhoneCab, GetFree, &pc, "") && (!pcModule || Mode_Put(pcModule, "pc", NULL, &pc)) &&
 		(targetFirst || LvN_SetS(&pc, "UseFunc", use)) && Mode_VGet(&pc, "Name", &name) &&
 		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name) && (!targetFirst || LvN_SetS(&pc, "UseFunc", use));
 	Native_Free(&name);
@@ -2093,7 +2086,7 @@ byte Mode_SpawnCar(const char *name, byte nearest, nativeVal_t *out, nativeVal_t
 	Native_SetNone(&s);
 	Native_SetNone(&p);
 	Native_SetNone(out);
-	if (!Native_CallMod("OutMap", nearest ? "GetNearestFreeSpawnPos" : "GetFreeSpawnPos", &s, "")) {
+	if (!(nearest ? PORT_CALL(OutMap, GetNearestFreeSpawnPos, &s, "") : PORT_CALL(OutMap, GetFreeSpawnPos, &s, ""))) {
 		return 0;
 	}
 	Native_SetText(&n, name, (int)strlen(name));
@@ -2121,7 +2114,7 @@ byte Mode_Drop(const char *module, const nativeVal_t *pos, const char *name, con
 	}
 	byte ok = Mode_VSet(l, "Radius", r) && LvN_SetI(l, "AppearsIfFree", 0) && LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", onlyUser) &&
 		LvN_SetF(l, "rTime", 0.25) && LvN_SetS(l, "OnTake", onTake) && Mode_Import("Items") &&
-		Native_CallMod("Items", "SetSound", NULL, "vs", l, sound);
+		PORT_CALL(Items, SetSound, NULL, "vs", l, sound);
 	if (ok && arrow) {
 		Native_SetText(an, arrow, (int)strlen(arrow));
 	} else if (ok) {
@@ -2254,8 +2247,8 @@ byte Mode_Blueprint(const char *module, const char *var, const char *item, const
 	}
 	if (msg) {
 		Mode_Lang(msg, &text);
-		byte ok = delay ? Native_CallMod("RaceMaker", "ShowSystemMessageDelay", NULL, "vd", &text, 0.25) :
-			Mode_Import("RaceMaker") && Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+		byte ok = delay ? PORT_CALL(RaceMaker, ShowSystemMessageDelay, NULL, "vd", &text, 0.25) :
+			Mode_Import("RaceMaker") && PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 		Native_Free(&text);
 		if (!ok) {
 			return 0;
@@ -2271,7 +2264,7 @@ byte Mode_SpeechMsg(const nativeVal_t *cad) {
 	Native_SetFloat(&now, Mode_Time());
 	Native_SetNone(&r);
 	Native_SetNone(&t);
-	byte ok = Native_CallMod("Speech", "CalculateSpeechTime", &r, "v", cad) && Native_Arith('+', &now, &r, &t) && Native_ArgDouble(&t, &d) &&
+	byte ok = PORT_CALL(Speech, CalculateSpeechTime, &r, "v", cad) && Native_Arith('+', &now, &r, &t) && Native_ArgDouble(&t, &d) &&
 		Mode_MsgText(cad, d);
 	Native_Free(&r);
 	Native_Free(&t);
@@ -2303,7 +2296,7 @@ byte Mode_DoorFoe(const char *gk, const char *group) {
 	if (!g) {
 		return 0;
 	}
-	byte ok = Native_CallMod("GateKeeper", "DoorFoe", NULL, "sO", gk, g);
+	byte ok = PORT_CALL(GateKeeper, DoorFoe, NULL, "sO", gk, g);
 	Py_DECREF(g);
 	return ok;
 }
@@ -2378,7 +2371,7 @@ byte Mode_CGCalls(const char *const *msgs, int n) {
 		return other == 0;
 	}
 	Native_SetNone(&num);
-	byte ok = Native_CallMod("MissionsFuncs", "GetNumCrazyDealCompleted", &num, "");
+	byte ok = PORT_CALL(MissionsFuncs, GetNumCrazyDealCompleted, &num, "");
 	for (int i = 0; ok && i < n; i++) {
 		int eq = Mode_CmpI(&num, "==", i);
 		if (eq) {
@@ -2802,7 +2795,7 @@ byte Mode_DelLater(const nativeVal_t *itm) {
 int Mode_PhoneUse(const char *module, const nativeVal_t *a) {
 	nativeVal_t e = { 0 };
 	int r = Mode_Import("PhoneCab") && Mode_SetModVar("Speech", "NPCName", &a[1]) && Mode_SetModVar("Speech", "PlayerName", &a[0]) &&
-		LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) && Mode_Put(module, "pc", NULL, &e) ?
+		PORT_CALL(PhoneCab, UseAudioCom, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) && Mode_Put(module, "pc", NULL, &e) ?
 		Mode_AlarmOn() : -1;
 	Native_Free(&e);
 	return r;
