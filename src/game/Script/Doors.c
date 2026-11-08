@@ -15,10 +15,12 @@
  * of the classes (the scene cases record them), Scrap.Set, UsrEntity, GetEntity, CreateEntity, GetNetFlags,
  * DeleteScheduledFuncs, the dummy search, the scheduler, SLogic.SetOnFloor, SScorer.SetMsgText and Fade and
  * SInput.SetActionSet go through their seams, and the doors, elevators and riders are handle values (OBJLIB 7). The
- * other ports (Menu, CharScorer, Chars, SaveGame, DoorSound, Metro, Teleport, CharConversor, PhoneCab, DTritusDesktop)
- * and Scrap.SetCallFunc, AddParams, AddParami and Execute stay by name (OBJLIB 3, 7); the functions of DoorInfo, the
- * hooks and the module's own functions are called as the values the script calls (a mission may replace them). An
- * option of ConnectElevators whose text does not paste between quotes runs the exec line of the script (OBJLIB 6).
+ * other ports (Menu, CharScorer, Chars, SaveGame, DoorSound, Elevator, Teleport, CharConversor, PhoneCab,
+ * DTritusDesktop) and the module's own functions through its globals go through their refs (PORT_CALL, PORT_OWN: a
+ * mission may replace them); Scrap.SetCallFunc, AddParams, AddParami and Execute stay by name (OBJLIB 7), the functions
+ * of DoorInfo and DefDoorInfo and the hooks are called as the values of the variables (OBJLIB 5), and the functions
+ * given to the scheduler (Metro.SetUsrParams, TryToElevatorLaunchFirst) are values (OBJLIB 4). An option of
+ * ConnectElevators whose text does not paste between quotes runs the exec line of the script (OBJLIB 6).
  */
 #include <limits.h>
 #include <string.h>
@@ -163,7 +165,7 @@ static const doorInfo_t door_datatmaker = { "DataTMaker", 500, "Messenger", "Doo
 static const doorInfo_t door_editship = { "EditShip", 1400, "ShipEdit", "DoorInitializator", "ShipEdit", "ObjInitializator", 0, 1 };
 
 /* a function of the table as a value: a global of Doors as its functions read it, else an attribute of the imported
- * module (OBJLIB 3: the function objects) */
+ * module (OBJLIB 4: the function objects as values) */
 static byte Dr_Func(const char *module, const char *name, nativeVal_t *out) {
 	return strcmp(module, "Doors") ? LvN_ModGet(module, name, out) : LvN_GObj("Doors", name, out);
 }
@@ -258,10 +260,10 @@ static byte Dr_Door(const nativeVal_t *dummy, byte only) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	/* OBJLIB 3: the module's CreateDoorClass through its global, DoorSound by name */
-	if (!Native_CallGlobal("Doors", "CreateDoorClass", made, "v", n2) ||
+	/* the module's CreateDoorClass through its global, then DoorSound */
+	if (!PORT_OWN(Doors, CreateDoorClass, made, "v", n2) ||
 		(Native_True(made) && (!Mode_Import("DoorSound") || !Mode_Cat(&t, cls, 2, Mode_S(&t, "Door"), n2) ||
-		!Native_CallMod("DoorSound", "SetSlide", NULL, "v", cls)))) {
+		!PORT_CALL(DoorSound, SetSlide, NULL, "v", cls)))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(cls);
@@ -302,7 +304,7 @@ static byte Dr_Door(const nativeVal_t *dummy, byte only) {
  * those without their open state), then Elevator.Init() */
 static byte Dr_Init(const nativeVal_t *onlyArg) {
 	byte only = onlyArg && Native_True(onlyArg);
-	if (!Native_CallGlobal("Doors", "InitDoorInfo", NULL, "") || !Mode_Import("string") ||
+	if (!PORT_OWN(Doors, InitDoorInfo, NULL, "") || !Mode_Import("string") ||
 		!Mode_DummyStartSeam("DM_Door_*", 1)) {
 		return 0;
 	}
@@ -322,7 +324,7 @@ static byte Dr_Init(const nativeVal_t *onlyArg) {
 			return 0;
 		}
 	}
-	return Mode_Import("Elevator") && Native_CallMod("Elevator", "Init", NULL, "");
+	return Mode_Import("Elevator") && PORT_CALL(Elevator, Init, NULL, "");
 }
 
 /* the adapters (the arity errors of the script's functions) */
@@ -361,16 +363,16 @@ static byte Elv_isOutMap(const nativeVal_t *map, nativeVal_t *out) {
 	return 1;
 }
 
-/* ElevatorCamera(ElevatorName): the camera rides with the elevator, the HUD of a movie (OBJLIB 3: Menu by name) */
+/* ElevatorCamera(ElevatorName): the camera rides with the elevator, the HUD of a movie */
 static byte Elv_ElevatorCamera(const nativeVal_t *name) {
-	return Mode_CamLink(name) && Mode_Import("Menu") && Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L);
+	return Mode_CamLink(name) && Mode_Import("Menu") && PORT_CALL(Menu, MovieScorer, NULL, "i", 0L);
 }
 
-/* ElevatorBackCamera(): the camera back on the player, the HUD on foot (OBJLIB 3: CharScorer by name) */
+/* ElevatorBackCamera(): the camera back on the player, the HUD on foot */
 static byte Elv_ElevatorBackCamera(void) {
 	nativeVal_t empty;
 	Native_SetStr(&empty, "");
-	return Mode_CamLink(&empty) && Mode_Import("CharScorer") && Native_CallMod("CharScorer", "Create", NULL, "i", 0L) &&
+	return Mode_CamLink(&empty) && Mode_Import("CharScorer") && PORT_CALL(CharScorer, Create, NULL, "i", 0L) &&
 		Mode_GVarSetI("DrawNextFrame", 0);
 }
 
@@ -520,7 +522,7 @@ static byte Elv_ObjInitializator(const nativeVal_t *elv) {
 
 /* ObjInitializatorNang(elv, ExtraInfo): the same, selected by the absolute angle */
 static byte Elv_ObjInitializatorNang(const nativeVal_t *elv, const nativeVal_t *extra) {
-	return Native_CallGlobal(ELV, "ObjInitializator", NULL, "vv", elv, extra) && LvN_SetI(elv, "UseAngSel", 0) &&
+	return PORT_OWN(Elevator, ObjInitializator, NULL, "vv", elv, extra) && LvN_SetI(elv, "UseAngSel", 0) &&
 		LvN_SetI(elv, "UseAbsAngSel", 1);
 }
 
@@ -558,22 +560,17 @@ static byte Elv_Rest(const nativeVal_t *opt, const char *var, nativeVal_t *out) 
 /* the module's LinkToElevator(usr, elv, (idcall, tgt)[, 1]) through its global */
 static byte Elv_Link(const nativeVal_t *usr, const nativeVal_t *elv, const nativeVal_t *idcall, const nativeVal_t *tgt,
 	byte instant) {
-	nativeVal_t opt, args[4];
+	nativeVal_t opt;
 	Native_SetEmpty(&opt, NV_TUPLE);
 	Native_Copy(Native_Append(&opt), idcall);
 	Native_Copy(Native_Append(&opt), tgt);
-	args[0] = *usr;
-	args[1] = *elv;
-	args[2] = opt;
-	Native_SetInt(&args[3], 1);
-	PyObject *fn = Mode_GlobalPy(ELV, "LinkToElevator");
-	byte ok = fn && Native_Call(fn, NULL, instant ? "vvvv" : "vvv", &args[0], &args[1], &args[2], &args[3]);
-	Py_XDECREF(fn);
+	byte ok = instant ? PORT_OWN(Elevator, LinkToElevator, NULL, "vvvi", usr, elv, &opt, 1L) :
+		PORT_OWN(Elevator, LinkToElevator, NULL, "vvv", usr, elv, &opt);
 	Native_Free(&opt);
 	return ok;
 }
 
-/* the level option of UseElevator: fade out, the doors close and it goes up (OBJLIB 3: Chars by name) */
+/* the level option of UseElevator: fade out, the doors close and it goes up */
 static byte Elv_UseLevel(const nativeVal_t *usrName, const nativeVal_t *elvName, const nativeVal_t *opt) {
 	static const int clear[4] = { 0, 0, 0, 0 }, black[4] = { 0, 0, 0, 255 };
 	modeVals_t t = { .n = 0 };
@@ -581,12 +578,12 @@ static byte Elv_UseLevel(const nativeVal_t *usrName, const nativeVal_t *elvName,
 	nativeVal_t *msg = Mode_V(&t), *el = Mode_V(&t), *act = Mode_V(&t), *r = Mode_V(&t), *t1 = Mode_V(&t);
 	nativeVal_t *t2 = Mode_V(&t), *timmy = Mode_V(&t);
 	if (!Dr_G(ELV, "ELEVATOR_NEXTLEVEL", idcall) || !Elv_Rest(opt, "MOVE_LEVEL", tgt) || !Mode_EntitySeam(usrName, usr) ||
-		!Native_CallGlobal(ELV, "isOutMap", out, "v", tgt)) {
+		!PORT_OWN(Elevator, isOutMap, out, "v", tgt)) {
 		return Mode_Done(&t, 0);
 	}
 	int no = Native_True(out);
 	if (no) {
-		no = Native_CallMod("Chars", "CanDrive", can, "v", usr) ? !Native_True(can) : -1;
+		no = PORT_CALL(Chars, CanDrive, can, "v", usr) ? !Native_True(can) : -1;
 	}
 	if (no) {
 		Mode_Lang("CantDrive", msg);
@@ -596,7 +593,7 @@ static byte Elv_UseLevel(const nativeVal_t *usrName, const nativeVal_t *elvName,
 	return Mode_Done(&t, Mode_EntitySeam(elvName, el) && Mode_VObj(el, "ActCtrl", act) && Native_ArgStr(act, 1, &a) &&
 		LvN_GetClass(a, r) && LvN_GetAction("Close", r) && LvN_GetAct("AnmTotalTime", t1) && LvN_GetAction("Up", r) &&
 		LvN_GetAct("AnmTotalTime", t2) && Mode_Arith('+', t1, t2, timmy) && Mode_FadeV(0, clear, black, timmy) &&
-		Native_CallGlobal(ELV, "ElevatorCloseToGo", NULL, "v", elvName) && Elv_Link(usrName, elvName, idcall, tgt, 1) &&
+		PORT_OWN(Elevator, ElevatorCloseToGo, NULL, "v", elvName) && Elv_Link(usrName, elvName, idcall, tgt, 1) &&
 		LvN_SetI(usr, "Invulnerable", 1));
 }
 
@@ -629,7 +626,7 @@ static byte Elv_UseElevator(const nativeVal_t *usrName, const nativeVal_t *elvNa
 		return Mode_Done(&t, Mode_Print(items, 9));
 	}
 	if (is < 0 || !Mode_EntitySeam(tgt, e) || !LvN_SetS(e, "OnObjSlot", "") ||
-		!Native_CallGlobal(ELV, "ElevatorCloseToGo", NULL, "v", elvName) || !Dr_G(ELV, "TELEPORTER_UP", up) ||
+		!PORT_OWN(Elevator, ElevatorCloseToGo, NULL, "v", elvName) || !Dr_G(ELV, "TELEPORTER_UP", up) ||
 		!Dr_G(ELV, "ELEVATOR_DOWN", down)) {
 		return Mode_Done(&t, 0);
 	}
@@ -637,7 +634,7 @@ static byte Elv_UseElevator(const nativeVal_t *usrName, const nativeVal_t *elvNa
 	Native_Copy(Native_Append(pair), up);
 	Native_Copy(Native_Append(pair), down);
 	int in = Native_Contains(pair, idcall);
-	return Mode_Done(&t, in >= 0 && (!in || Native_CallGlobal(ELV, "ElevatorActiveToGet", NULL, "v", tgt)) &&
+	return Mode_Done(&t, in >= 0 && (!in || PORT_OWN(Elevator, ElevatorActiveToGet, NULL, "v", tgt)) &&
 		Elv_Link(usrName, elvName, idcall, tgt, 1));
 }
 
@@ -673,15 +670,14 @@ static int Elv_OptIs(const nativeVal_t *lel, const char *var) {
 static byte Elv_Pass(const nativeVal_t *name, const nativeVal_t *lel, const char *reach, const char *action, const char *loop) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *o1 = Mode_V(&t), *elv = Mode_V(&t), *rider = Mode_V(&t), *tgt = Mode_V(&t), *opt = Mode_V(&t);
-	if (!Native_CallGlobal(ELV, "UnlinkFromElevator", NULL, "v", name) || !Elv_Opt(lel, 1, o1) || !Mode_EntitySeam(o1, elv)) {
+	if (!PORT_OWN(Elevator, UnlinkFromElevator, NULL, "v", name) || !Elv_Opt(lel, 1, o1) || !Mode_EntitySeam(o1, elv)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *link = Mode_GlobalPy(ELV, "LinkToElevator");
+	/* the global LinkToElevator is looked up after its arguments (the script looked it up first) */
 	Native_SetEmpty(opt, NV_TUPLE);
-	byte ok = link && LvN_Item(lel, 0, rider) && Elv_Opt(lel, 1, tgt) && Dr_G(ELV, reach, Native_Append(opt)) &&
-		(Native_SetNone(Native_Append(opt)), Native_Call(link, NULL, "vvv", rider, tgt, opt)) && Elv_Act(elv, action, loop);
-	Py_XDECREF(link);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, LvN_Item(lel, 0, rider) && Elv_Opt(lel, 1, tgt) && Dr_G(ELV, reach, Native_Append(opt)) &&
+		(Native_SetNone(Native_Append(opt)), PORT_OWN(Elevator, LinkToElevator, NULL, "vvv", rider, tgt, opt)) &&
+		Elv_Act(elv, action, loop));
 }
 
 /* ElevatorHaveClose(EntityName, EventName, Time): the doors are closed; going down the rider passes to the target,
@@ -709,7 +705,8 @@ static byte Elv_ElevatorHaveClose(const nativeVal_t *name, const nativeVal_t *ev
 	return ok;
 }
 
-/* the hook var of the module, called with arg (the entity of that name with entity) when it is set */
+/* the hook var of the module, called with arg (the entity of that name with entity) when it is set (OBJLIB 5: the
+ * value of the variable) */
 static byte Elv_Hook(const char *var, const nativeVal_t *arg, byte entity) {
 	nativeVal_t hook = { 0 }, e = { 0 };
 	byte ok = LvN_GObj(ELV, var, &hook) && (!Native_True(&hook) ||
@@ -719,17 +716,17 @@ static byte Elv_Hook(const char *var, const nativeVal_t *arg, byte entity) {
 	return ok;
 }
 
-/* up to the next level: the way point and the start (OBJLIB 3: SaveGame by name with its keyword) */
+/* up to the next level: the way point and the start (SaveGame.StartGame with its keyword) */
 static byte Elv_NextLevel(const nativeVal_t *name, const nativeVal_t *el, const nativeVal_t *lel) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *map = Mode_V(&t), *level = Mode_V(&t), *path = Mode_V(&t), *tail = Mode_V(&t), *spawn = Mode_V(&t);
 	nativeVal_t *act = Mode_V(&t);
-	return Mode_Done(&t, Native_CallGlobal(ELV, "UnlinkFromElevator", NULL, "v", name) && Mode_Import("SaveGame") &&
+	return Mode_Done(&t, PORT_OWN(Elevator, UnlinkFromElevator, NULL, "v", name) && Mode_Import("SaveGame") &&
 		Mode_Import("Init") && Elv_Opt(lel, 1, map) && Mode_Cat(&t, level, 2, Mode_S(&t, "Levels/"), map) &&
 		LvN_ModGet("Init", "Path", path) && Native_Slice(path, 7, INT_MAX, tail) &&
 		Mode_Cat(&t, spawn, 2, Mode_S(&t, "DM_Player_Spawn_"), tail) && Mode_VObj(el, "ActCtrl", act) &&
-		Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvv", level, spawn, act) &&
-		Mode_CallKw("SaveGame", "StartGame", NULL, NULL, 0, Py_BuildValue("{s:i}", "CleanRevenge", 1)));
+		PORT_CALL(SaveGame, MarkWayPoint, NULL, "vvv", level, spawn, act) &&
+		PORT_CALL(SaveGame, StartGame, NULL, ";CleanRevenge=i", 1L));
 }
 
 /* ElevatorReachUp(EntityName, EventName, Time): up: to the next level (way point and start), the rider passes to
@@ -795,7 +792,7 @@ static byte Elv_ElevatorHaveOpen(const nativeVal_t *name, const nativeVal_t *eve
 		return Mode_Done(&t, 0);
 	}
 	int has = Elv_Linked(name, lel);
-	return Mode_Done(&t, has >= 0 && (!has || Native_CallGlobal(ELV, "UnlinkFromElevator", NULL, "v", name)) &&
+	return Mode_Done(&t, has >= 0 && (!has || PORT_OWN(Elevator, UnlinkFromElevator, NULL, "v", name)) &&
 		Elv_Hook("OnElevatorReachDown", el, 0));
 }
 
@@ -808,7 +805,7 @@ static void Elv_Mid(const nativeVal_t *v, nativeVal_t *out) {
 
 /* LinkToElevator(UsrName, ElevatorName, optId, Instant=0): the character rides on the platform of the elevator
  * (LinkedElevator keeps the rider, the option and its UsrControl); the player gets the elevator camera, the
- * teleporter effect and no controls (OBJLIB 3: Chars and Teleport by name) */
+ * teleporter effect and no controls */
 static byte Elv_LinkToElevator(const nativeVal_t *usrName, const nativeVal_t *elvName, const nativeVal_t *opt,
 	const nativeVal_t *instantArg) {
 	modeVals_t t = { .n = 0 };
@@ -862,10 +859,10 @@ static byte Elv_LinkToElevator(const nativeVal_t *usrName, const nativeVal_t *el
 			return Mode_Done(&t, 0);
 		}
 		if (LvN_EqS(act2, "DoorTeleporter") && (!Mode_Import("Teleport") ||
-			!Native_CallMod("Teleport", "FXAction", NULL, "vvi", usrName, elvName, LvN_EqI(instant, 1) ? 1L : 2L))) {
+			!PORT_CALL(Teleport, FXAction, NULL, "vvi", usrName, elvName, LvN_EqI(instant, 1) ? 1L : 2L))) {
 			return Mode_Done(&t, 0);
 		}
-		if (!Native_CallGlobal(ELV, "ElevatorCamera", NULL, "v", elvName)) {
+		if (!PORT_OWN(Elevator, ElevatorCamera, NULL, "v", elvName)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(instant);
@@ -903,7 +900,7 @@ static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
 		!Mode_VObj(ch, "UsrControl", ctrl)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, !LvN_EqI(ctrl, 0) || Native_CallGlobal(ELV, "ElevatorBackCamera", NULL, ""));
+	return Mode_Done(&t, !LvN_EqI(ctrl, 0) || PORT_OWN(Elevator, ElevatorBackCamera, NULL, ""));
 }
 
 /* Init(): the heights and cameras of the elevator classes */
@@ -979,13 +976,10 @@ static byte Elv_FromDoor(const nativeVal_t *from) {
 		!Mode_VObj(usr, "Name", un) || !Dr_G(ELV, "ELEVATOR_DOWN_REACH", reach) || !Mode_VObj(tgt, "Name", tname)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *link = Mode_GlobalPy(ELV, "LinkToElevator");
 	Native_SetEmpty(opt, NV_TUPLE);
 	Native_Copy(Native_Append(opt), reach);
 	Native_SetNone(Native_Append(opt));
-	byte ok = link && Native_Call(link, NULL, "vvv", un, tname, opt);
-	Py_XDECREF(link);
-	if (!ok || !Mode_VObj(tgt, "ActCtrl", ac)) {
+	if (!PORT_OWN(Elevator, LinkToElevator, NULL, "vvv", un, tname, opt) || !Mode_VObj(tgt, "ActCtrl", ac)) {
 		return Mode_Done(&t, 0);
 	}
 	int metro = LvN_EqS(ac, "DoorMetro"), ext = 0;
@@ -998,33 +992,30 @@ static byte Elv_FromDoor(const nativeVal_t *from) {
 	if (!metro && !ext) {
 		return Mode_Done(&t, 1);
 	}
-	/* OBJLIB 3, 4: Metro.SetUsrParams by name, scheduled */
+	/* OBJLIB 4: Metro.SetUsrParams by name, scheduled */
 	nativeVal_t args[2];
 	args[0] = *un;
 	Native_SetInt(&args[1], metro ? 0 : 180);
 	PyObject *fn = Mode_Import("Metro") ? Script_Attr("Metro", "SetUsrParams") : NULL;
-	ok = Elv_Later0(fn, args, 2, "MetroSetUsrParams");
+	byte ok = Elv_Later0(fn, args, 2, "MetroSetUsrParams");
 	Py_XDECREF(fn);
 	return Mode_Done(&t, ok);
 }
 
-/* port.SpawnChar(Scrap.UsrEntity(0)[, e]) of the port that places the player (OBJLIB 3) */
-static byte Elv_Spawn(const char *port, const nativeVal_t *e) {
-	nativeVal_t usr = { 0 };
-	byte ok = Mode_Import(port) && Mode_UsrHandle(&usr) &&
-		(e ? Native_CallMod(port, "SpawnChar", NULL, "vv", &usr, e) : Native_CallMod(port, "SpawnChar", NULL, "v", &usr));
-	Native_Free(&usr);
-	return ok;
+/* the import of the port that places the player, then Scrap.UsrEntity(0) for its SpawnChar */
+static byte Elv_SpawnUsr(const char *port, nativeVal_t *usr) {
+	return Mode_Import(port) && Mode_UsrHandle(usr);
 }
 
 /* PlayerCreatedElevator(): the player arrives where the save variable ComeFrom says: down in the elevator of that
  * door type (with the metro parameters), at a conversion point, a phone cabin or Dtritus' desktop */
 static byte Elv_PlayerCreatedElevator(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *from = Mode_V(&t), *key = Mode_V(&t), *e = Mode_V(&t);
+	nativeVal_t *from = Mode_V(&t), *key = Mode_V(&t), *e = Mode_V(&t), *usr = Mode_V(&t);
 	if (!Mode_Import("Init")) {
 		return Mode_Done(&t, 0);
 	}
+	/* OBJLIB 4: the scheduler keeps the global TryToElevatorLaunchFirst */
 	PyObject *fn = Mode_GlobalPy(ELV, "TryToElevatorLaunchFirst");
 	byte ok = Elv_Later0(fn, NULL, 0, "TELF");
 	Py_XDECREF(fn);
@@ -1048,7 +1039,8 @@ static byte Elv_PlayerCreatedElevator(void) {
 	}
 	int conv = Elv_Head(from, 0, 19, "DM_Conversion_Point");
 	if (conv) {
-		return Mode_Done(&t, conv > 0 && Mode_EntitySeam(from, e) && (!Native_True(e) || Elv_Spawn("CharConversor", e)));
+		return Mode_Done(&t, conv > 0 && Mode_EntitySeam(from, e) && (!Native_True(e) ||
+			(Elv_SpawnUsr("CharConversor", usr) && PORT_CALL(CharConversor, SpawnChar, NULL, "vv", usr, e))));
 	}
 	int phone = Elv_Head(from, 0, 9, "DM_Phone_");
 	if (phone > 0) {
@@ -1057,14 +1049,15 @@ static byte Elv_PlayerCreatedElevator(void) {
 	}
 	if (phone) {
 		return Mode_Done(&t, phone > 0 && Mode_Import("PhoneCab") && Mode_EntitySeam(from, e) &&
-			(!Native_True(e) || Elv_Spawn("PhoneCab", e)));
+			(!Native_True(e) || (Elv_SpawnUsr("PhoneCab", usr) && PORT_CALL(PhoneCab, SpawnChar, NULL, "vv", usr, e))));
 	}
 	int desk = Elv_Head(from, 0, 17, "DM_DTritusDesktop");
 	if (desk > 0) {
 		int out = Mode_ModTrue("Init", "Outdoor");
 		desk = out < 0 ? -1 : !out;
 	}
-	return Mode_Done(&t, desk >= 0 && (!desk || Elv_Spawn("DTritusDesktop", NULL)));
+	return Mode_Done(&t, desk >= 0 && (!desk ||
+		(Elv_SpawnUsr("DTritusDesktop", usr) && PORT_CALL(DTritusDesktop, SpawnChar, NULL, "v", usr))));
 }
 
 MODE_FN(Elevator, isOutMap, 1, Elv_isOutMap(&a[0], out))
@@ -1114,17 +1107,16 @@ PyMethodDef g_ElevatorMethods[] = {
 
 /* ---- Teleport ---- */
 
-/* DoorInitializator(DoorClass): an elevator class whose closing opens for the player only (OBJLIB 3: Elevator by
- * name) */
+/* DoorInitializator(DoorClass): an elevator class whose closing opens for the player only */
 static byte Tp_DoorInitializator(const nativeVal_t *cls) {
-	return Mode_Import(ELV) && Native_CallMod(ELV, "DoorInitializator", NULL, "vi", cls, 0L);
+	return Mode_Import(ELV) && PORT_CALL(Elevator, DoorInitializator, NULL, "vi", cls, 0L);
 }
 
 /* ObjInitializator(elv, ExtraInfo): an elevator that opens for everyone, the camera above it */
 static byte Tp_ObjInitializator(const nativeVal_t *elv, const nativeVal_t *extra) {
 	nativeVal_t tgt;
 	Mode_Ints3(&tgt, 0, 150, 0);
-	byte ok = Mode_Import(ELV) && Native_CallMod(ELV, "ObjInitializator", NULL, "vv", elv, extra) &&
+	byte ok = Mode_Import(ELV) && PORT_CALL(Elevator, ObjInitializator, NULL, "vv", elv, extra) &&
 		LvN_SetI(elv, "UseAngSel", 0) && LvN_SetS(elv, "OnObjSlot", "!AutoDoorSlot") && Mode_VSet(elv, "CamTgt", &tgt);
 	Native_Free(&tgt);
 	return ok;
@@ -1137,7 +1129,7 @@ static byte Tp_Link(const nativeVal_t *a, const nativeVal_t *b) {
 	Native_Copy(Native_Append(&pair), a);
 	Native_Copy(Native_Append(&pair), b);
 	Native_SetEmpty(&none, NV_LIST);
-	byte ok = Mode_Import(ELV) && Native_CallMod(ELV, "ConnectElevators", NULL, "vvi", &pair, &none, 0L);
+	byte ok = Mode_Import(ELV) && PORT_CALL(Elevator, ConnectElevators, NULL, "vvi", &pair, &none, 0L);
 	Native_Free(&pair);
 	Native_Free(&none);
 	return ok;
