@@ -155,16 +155,16 @@
     {
      "item": "Python interpreter removed",
      "weight": 3,
-     "percent": 88,
-     "status": "in progress",
-     "note": "every pack module made in C; the build without it passes every test and becomes the default"
+     "percent": 100,
+     "status": "done",
+     "note": "interpreter code, build option and reference build removed (tag interp-final keeps the last state)"
     },
     {
      "item": "Python object library removed",
      "weight": 3,
-     "percent": 40,
+     "percent": 52,
      "status": "in progress",
-     "note": "every module native C inside (stage 2 done); stages 3 to 9 left"
+     "note": "native modules (stage 2) and direct calls between them (stage 3) done; stages 4 to 9 left"
     }
    ]
   },
