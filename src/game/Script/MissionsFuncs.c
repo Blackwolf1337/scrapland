@@ -19,9 +19,12 @@
  * SetActionSet and SScorer.SetMsgText go through their seams, and so does the Scrap.SetSaveVar of SuperDealOnVictory
  * (OBJLIB 7: the cases record or swap them); Scrap.SetCam and SAI.SetStateVehicle are called by name as before.
  * Entities are handle values and the characters of CharsNPC.CharRes and their option lists the objects they are
- * (OBJLIB 7, 5). The other ports (SaveGame, Speech, Menu, Challenge, CharsNPC, PhoneCab, Items, VehiclesNPC, OutMap,
- * Vehicles, RacerScorer, Scorer) and the functions of the module the script calls through its globals stay by name
- * (OBJLIB 3). The code strings OnAbort and OnVictory still run in the namespaces exec gives them (OBJLIB 6).
+ * (OBJLIB 7, 5). The other ports (SaveGame, Speech, Menu, Challenge, PhoneCab, Items, VehiclesNPC, Vehicles,
+ * RacerScorer, Scorer) and the functions of the module the script calls through its globals are called through their
+ * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback, the
+ * builders of the super deal types (a table of names), the functions given to the scheduler and the function values
+ * of the revenge and the auto save stay by name or value (OBJLIB 4). The code strings OnAbort and OnVictory still run
+ * in the namespaces exec gives them (OBJLIB 6).
  */
 #include <ctype.h>
 #include <limits.h>
@@ -117,7 +120,7 @@ static byte Mf_ForceReload(const nativeVal_t *a, const nativeVal_t *b) {
 /* ActivateTarget(GetEntity(name), status) when the entity is there */
 static byte Mf_Target(const nativeVal_t *name, long status) {
 	nativeVal_t e = { 0 };
-	byte ok = Mode_EntitySeam(name, &e) && (!Native_True(&e) || Native_CallGlobal(MF, "ActivateTarget", NULL, "vi", &e, status));
+	byte ok = Mode_EntitySeam(name, &e) && (!Native_True(&e) || PORT_OWN(MissionsFuncs, ActivateTarget, NULL, "vi", &e, status));
 	Native_Free(&e);
 	return ok;
 }
@@ -147,14 +150,15 @@ static byte Mf_Init(void) {
 		return Mode_Done(&t, 0);
 	}
 	int c = Mode_CmpI(outdoor, "==", 1);
-	if (c < 0 || (c && (!Mode_Import("Challenge") || !Native_CallMod("Challenge", "Init", NULL, "")))) {
+	if (c < 0 || (c && (!Mode_Import("Challenge") || !PORT_CALL(Challenge, Init, NULL, "")))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Native_CallGlobal(MF, "SetOutMissionArrow", NULL, "")) {
+	if (!PORT_OWN(MissionsFuncs, SetOutMissionArrow, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	if (Mf_SaveIs("AutoSaveGameOnLoad", "1")) {
-		/* Scrap.AddScheduledFunc(0, SaveGame.SaveGame, (0,)): the time the int 0 */
+		/* Scrap.AddScheduledFunc(0, SaveGame.SaveGame, (0,)): the time the int 0 (OBJLIB 4: the scheduler keeps the
+		 * function of the module) */
 		PyObject *fn = Script_Attr("SaveGame", "SaveGame");
 		Native_SetInt(time, 0);
 		byte ok = fn && Mode_Schedule(time, fn, Mode_I(&t, 0), 1, NULL);
@@ -164,7 +168,7 @@ static byte Mf_Init(void) {
 		}
 	}
 	Mode_SaveVar("InitialMessage", msg);
-	if (Native_True(msg) && (!Native_CallGlobal(MF, "TryMsg", NULL, "v", msg) || !Mode_DelSaveVars("InitialMessage"))) {
+	if (Native_True(msg) && (!PORT_OWN(MissionsFuncs, TryMsg, NULL, "v", msg) || !Mode_DelSaveVars("InitialMessage"))) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, 1);
@@ -199,18 +203,19 @@ static byte Mf_TryMsg(const nativeVal_t *msg) {
 		return Mode_Done(&t, 0);
 	}
 	if (!go) {
+		/* OBJLIB 4: the scheduler takes the global TryMsg by name */
 		return Mode_Done(&t, Mode_Later(1.0, MF, "TryMsg", msg, 1, NULL));
 	}
 	Native_SetFloat(now, Mode_Time());
-	return Mode_Done(&t, Mode_Import("Speech") && Native_CallMod("Speech", "CalculateSpeechTime", len, "v", msg) &&
+	return Mode_Done(&t, Mode_Import("Speech") && PORT_CALL(Speech, CalculateSpeechTime, len, "v", msg) &&
 		Mode_Arith('+', now, len, when) && Mode_MsgTextV(msg, when));
 }
 
 /* SetNextMission(MissionName, AtMap): the next mission, its arrow, the way point and an auto save at the load */
 static byte Mf_SetNextMission(const nativeVal_t *mission, const nativeVal_t *map) {
 	if (!Mode_SetSaveVar("Mission.Map", map) || !Mode_SetSaveVar("Mission.Library", mission) ||
-		!Native_CallGlobal(MF, "SetOutMissionArrow", NULL, "") || !Mode_Import("SaveGame") ||
-		!Native_CallMod("SaveGame", "QWayPoint", NULL, "")) {
+		!PORT_OWN(MissionsFuncs, SetOutMissionArrow, NULL, "") || !Mode_Import("SaveGame") ||
+		!PORT_CALL(SaveGame, QWayPoint, NULL, "")) {
 		return 0;
 	}
 	SaveVar_Set("AutoSaveGameOnLoad", "1");
@@ -221,7 +226,7 @@ static byte Mf_SetNextMission(const nativeVal_t *mission, const nativeVal_t *map
 static byte Mf_SetFirstDemoMission(void) {
 	SaveVar_Set("Mission.Map", "GamblinDen");
 	SaveVar_Set("Mission.Library", "Mission_CrazyGamblerFirstContact");
-	if (!Native_CallGlobal(MF, "SetOutMissionArrow", NULL, "")) {
+	if (!PORT_OWN(MissionsFuncs, SetOutMissionArrow, NULL, "")) {
 		return 0;
 	}
 	SaveVar_Set("AutoSaveGameOnLoad", "1");
@@ -261,7 +266,7 @@ static byte Mf_SetOutMissionArrow(void) {
 			return Mode_Done(&t, 0);
 		}
 		long out = Mode_Cmp(actual, "!=", Mode_S(&t, "JUNKYARD"));
-		return Mode_Done(&t, Native_CallGlobal(MF, "ActivateTarget", NULL, "vii", e, 1L, out));
+		return Mode_Done(&t, PORT_OWN(MissionsFuncs, ActivateTarget, NULL, "vii", e, 1L, out));
 	}
 	return Mode_Done(&t, go >= 0);
 }
@@ -303,13 +308,13 @@ static byte Mf_SetSecondary(const nativeVal_t *val) {
 /* FinishGame(id): the end of the game */
 static byte Mf_FinishGame(const nativeVal_t *id) {
 	return Mode_Import("Menu") && Mode_Import("Init") && Mode_Import("SaveGame") && Mode_Import("Init") &&
-		Native_CallMod("Menu", "MovieScorer", NULL, "v", id) && Native_CallMod("Menu", "GameOver", NULL, "v", id) &&
+		PORT_CALL(Menu, MovieScorer, NULL, "v", id) && PORT_CALL(Menu, GameOver, NULL, "v", id) &&
 		Mode_ActionSet("Inactive");
 }
 
 /* ShowMissionInfo(id): the mission info pages (the engine's MainMissionEvent) */
 static byte Mf_ShowMissionInfo(void) {
-	return Mode_Import("Menu") && Native_CallMod("Menu", "EnterMissionInfo", NULL, "i", 0L);
+	return Mode_Import("Menu") && PORT_CALL(Menu, EnterMissionInfo, NULL, "i", 0L);
 }
 
 /* ---- the mission targets ---- */
@@ -317,10 +322,10 @@ static byte Mf_ShowMissionInfo(void) {
 /* SetMissionTarget(newTarget): the one target of the mission */
 static byte Mf_SetMissionTarget(const nativeVal_t *tgt) {
 	nativeVal_t e = { 0 };
-	if (!Native_CallGlobal(MF, "CleanAllTargets", NULL, "") || !Mode_Put(MF, "currentTarget", NULL, tgt)) {
+	if (!PORT_OWN(MissionsFuncs, CleanAllTargets, NULL, "") || !Mode_Put(MF, "currentTarget", NULL, tgt)) {
 		return 0;
 	}
-	byte ok = !Native_True(tgt) || (Mode_EntitySeam(tgt, &e) && Native_CallGlobal(MF, "ActivateTarget", NULL, "vi", &e, 1L));
+	byte ok = !Native_True(tgt) || (Mode_EntitySeam(tgt, &e) && PORT_OWN(MissionsFuncs, ActivateTarget, NULL, "vi", &e, 1L));
 	Native_Free(&e);
 	return ok;
 }
@@ -328,7 +333,7 @@ static byte Mf_SetMissionTarget(const nativeVal_t *tgt) {
 /* SetMultipleMissionTargets(tgtList): several targets; the list becomes targetsList itself (OBJLIB 5: the mission
  * keeps it and sees DelMissionTarget take its names out) */
 static byte Mf_SetMultipleMissionTargets(PyObject *list) {
-	if (!Native_CallGlobal(MF, "CleanAllTargets", NULL, "")) {
+	if (!PORT_OWN(MissionsFuncs, CleanAllTargets, NULL, "")) {
 		return 0;
 	}
 	Py_INCREF(list);
@@ -408,13 +413,13 @@ static byte Mf_CharMissionDialog(const nativeVal_t *usr, const nativeVal_t *name
 	byte ok = 1;
 	if (Mf_Is(opt, "Talk")) {
 		PyObject *msg = Mf_Attr(cls, "initMsg"), *ans = msg ? Mf_Attr(cls, "initAns") : NULL;
-		ok = ans && Native_CallMod("Speech", "OnSpch", NULL, "OOs", msg, ans, "TalkNPC");
+		ok = ans && PORT_CALL(Speech, OnSpch, NULL, "OOs", msg, ans, "TalkNPC");
 		Py_XDECREF(msg);
 		Py_XDECREF(ans);
 		int has = ok ? Mf_AttrTrue(cls, "speechOptionsList") : -1;
 		if (has > 0) {
 			PyObject *l = Mf_Attr(cls, "speechOptionsList");
-			ok = l && Native_CallMod("Speech", "StdAnsLst", NULL, "O", l);
+			ok = l && PORT_CALL(Speech, StdAnsLst, NULL, "O", l);
 			Py_XDECREF(l);
 		}
 		has = ok && has >= 0 ? Mf_AttrTrue(cls, "afterInitSpeechFunc") : -1;
@@ -426,7 +431,7 @@ static byte Mf_CharMissionDialog(const nativeVal_t *usr, const nativeVal_t *name
 		ok = ok && has >= 0;
 	} else {
 		int has = Mf_AttrTrue(cls, "speechOptionsList");
-		ok = has >= 0 && (!has || Native_CallMod("Speech", "StdOnSpch", NULL, "v", opt));
+		ok = has >= 0 && (!has || PORT_CALL(Speech, StdOnSpch, NULL, "v", opt));
 	}
 	Py_DECREF(cls);
 	return ok;
@@ -436,14 +441,14 @@ static byte Mf_CharMissionDialog(const nativeVal_t *usr, const nativeVal_t *name
 static byte Mf_CancelSecondaryMission(const nativeVal_t *id) {
 	nativeVal_t type = { 0 };
 	if (!Mode_Import("Challenge") || !Mode_Import("Menu") || !Mode_Import("SaveGame") ||
-		!Native_CallMod("Menu", "BackToGame", NULL, "v", id)) {
+		!PORT_CALL(Menu, BackToGame, NULL, "v", id)) {
 		return 0;
 	}
 	Mode_SaveVar("Challenge.Type", &type);
 	byte ok = (!Native_IsStr(&type, "Race") && !Native_IsStr(&type, "Combat")) ||
-		Native_CallMod("Challenge", "CancelChallenge", NULL, "v", &type);
+		PORT_CALL(Challenge, CancelChallenge, NULL, "v", &type);
 	Native_Free(&type);
-	return ok && Native_CallMod("SaveGame", "SMDesc", NULL, "si", "", 1L);
+	return ok && PORT_CALL(SaveGame, SMDesc, NULL, "si", "", 1L);
 }
 
 /* the revenge of a ship challenge after the death: Challenge.SetRevengeParams and its arguments for the restart */
@@ -455,6 +460,7 @@ static byte Mf_Revenge(PyObject **restart, nativeVal_t *params) {
 	byte revenge = Mode_Cmp(&ctype, "!=", &empty) && Mode_Cmp(&foe, "!=", &empty);
 	byte ok = 1;
 	if (revenge) {
+		/* OBJLIB 4: the function the scheduler gets is the one of the module */
 		PyObject *fn = Script_Attr("Challenge", "SetRevengeParams");
 		ok = fn != NULL;
 		if (ok) {
@@ -486,6 +492,7 @@ static byte Mf_SinglePlayerDeath(void) {
 	if (!Mode_Import("SaveGame") || !Mode_Import("Challenge") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
+	/* OBJLIB 4: the function the scheduler gets is the one of the module */
 	PyObject *restart = Script_Attr("SaveGame", "StartGame");
 	if (!restart) {
 		return Mode_Done(&t, 0);
@@ -541,7 +548,7 @@ static byte Mf_SinglePlayerDeath(void) {
 	if (alive > 0) {
 		int left = Mode_CmpI(lifes, ">=", 0);
 		if (left > 0) {
-			ok = Native_CallMod("SaveGame", "QWayPoint", NULL, "");
+			ok = PORT_CALL(SaveGame, QWayPoint, NULL, "");
 			int car = ok ? Native_True(usr) : -1;
 			if (car > 0) {
 				car = Mode_VObj(usr, "Type", utype) ? Mode_Cmp(utype, "==", Mode_S(&t, "Car")) : -1;
@@ -549,11 +556,11 @@ static byte Mf_SinglePlayerDeath(void) {
 			ok = car >= 0 && (!car || Mf_Revenge(&restart, params));
 			if (ok && Mf_SaveIs("Spawn", "DM_Player_Spawn_Junkyard")) {
 				ok = Mode_Import("PhoneCab") && Mode_Import("Init") && Mode_Import("SaveGame") &&
-					Native_CallMod("PhoneCab", "GetFree", pcb, "") && Mode_VObj(pcb, "Name", pname) &&
+					PORT_CALL(PhoneCab, GetFree, pcb, "") && Mode_VObj(pcb, "Name", pname) &&
 					Mode_SetSaveVar("Spawn", pname) && Mode_VRead(pcb, "Name", pname) && Mode_SetSaveVar("ComeFrom", pname);
 			}
 		} else if (left == 0) {
-			ok = Native_CallMod("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Police", "DM_Player_Spawn_Jail", "");
+			ok = PORT_CALL(SaveGame, MarkWayPoint, NULL, "sss", "Levels/Police", "DM_Player_Spawn_Jail", "");
 		} else {
 			ok = 0;
 		}
@@ -576,8 +583,8 @@ static byte Mf_CreatePhotoObject(const nativeVal_t *model, const nativeVal_t *po
 		!Mode_VSetI(e, "CanPhoto", 1) ||
 		!Mode_Cat(&t, file, 3, Mode_S(&t, "Models/Misc/Blueprint/"), model, Mode_S(&t, ".M3D")) || !Mode_VModel(e, file) ||
 		!Mode_VSet(e, "ViewFunc", view) || !Mode_VSetI(e, "VRadius", 30) || !Mode_Import("Items") ||
-		!Native_CallMod("Items", "SetInteractiveObjOnFloor", NULL, "v", e) ||
-		!Native_CallGlobal(MF, "ActivateTarget", NULL, "vi", e, 1L)) {
+		!PORT_CALL(Items, SetInteractiveObjOnFloor, NULL, "v", e) ||
+		!PORT_OWN(MissionsFuncs, ActivateTarget, NULL, "vi", e, 1L)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_VObj(e, "Pos", v) && Mode_VSet(e, "MovePos", v) && Mode_VRead(e, "Ang", v) &&
@@ -620,13 +627,13 @@ static byte Mf_CreateBerto(void) {
 	nativeVal_t *p = Mode_V(&t), *pd = Mode_V(&t), *prof = Mode_V(&t), *name = Mode_V(&t), *ship = Mode_V(&t);
 	nativeVal_t *text = Mode_V(&t), *life = Mode_V(&t), *ang = Mode_V(&t);
 	if (!Mode_Import("VehiclesNPC") || !Mode_Import("OutMap") || !Mode_SpawnCar("Berto", 1, p, NULL) ||
-		!Native_CallMod("VehiclesNPC", "GetIAProf", pd, "s", "SBERTO1")) {
+		!PORT_CALL(VehiclesNPC, GetIAProf, pd, "s", "SBERTO1")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("BertosProfile", prof);
-	if (!Native_CallMod("VehiclesNPC", "SetAIProfile", NULL, "vv", pd, prof) || !Mode_VObj(p, "Name", name) ||
-		!Mode_VObj(pd, "Ship", ship) || !Native_CallMod("VehiclesNPC", "SetStdProperties", NULL, "vv", name, ship) ||
-		!Native_CallMod("VehiclesNPC", "ModAIProff", NULL, "vv", p, pd)) {
+	if (!PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", pd, prof) || !Mode_VObj(p, "Name", name) ||
+		!Mode_VObj(pd, "Ship", ship) || !PORT_CALL(VehiclesNPC, SetStdProperties, NULL, "vv", name, ship) ||
+		!PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", p, pd)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Ints3(ang, 0, 0, 0);
@@ -647,6 +654,7 @@ static byte Mf_CreateBertos(void) {
 	if (!Mode_Import("Parking") || !LvN_PutI(MF, "launchNewWave", 1)) {
 		return Mode_Done(&t, 0);
 	}
+	/* OBJLIB 4: the hook is a value a mission puts into the module, called by name */
 	int hook = LvN_GTrue(MF, "OnNewWaveCallback");
 	if (hook < 0 || (hook && !Native_CallGlobal(MF, "OnNewWaveCallback", NULL, "")) || !Mode_ModNone("Parking", "SwitchVehicleMissionCallback") ||
 		!Mode_UsrHandle(usr)) {
@@ -672,6 +680,7 @@ static byte Mf_CreateBertos(void) {
 	for (long k = 0; k < n; k++) {
 		nativeVal_t time;
 		Native_SetFloat(&time, now + 1.0 * (double)(k + 1));
+		/* OBJLIB 4: the scheduler takes the global CreateBerto by name */
 		if (!Mode_AtG(&time, MF, "CreateBerto", usrName, 1)) {
 			return Mode_Done(&t, 0);
 		}
@@ -684,7 +693,7 @@ static byte Mf_CreateBertos(void) {
 static byte Mf_OnBertoDeath(const nativeVal_t *looser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *now = Mode_V(&t), *wait = Mode_V(&t), *time = Mode_V(&t), *e = Mode_V(&t), *pos = Mode_V(&t);
-	if (!Mode_Import("Vehicles") || !Native_CallMod("Vehicles", "OnDeath", NULL, "vv", looser, winner)) {
+	if (!Mode_Import("Vehicles") || !PORT_CALL(Vehicles, OnDeath, NULL, "vv", looser, winner)) {
 		return Mode_Done(&t, 0);
 	}
 	int in = Mf_InG(looser, "currentBertos");
@@ -698,12 +707,14 @@ static byte Mf_OnBertoDeath(const nativeVal_t *looser, const nativeVal_t *winner
 		}
 		if (wave) {
 			Native_SetFloat(now, Mode_Time());
+			/* OBJLIB 4: the scheduler takes the global CreateBertos by name */
 			if (!LvN_PutI(MF, "launchNewWave", 0) || !Mode_G(MF, "timeBetweenWaves", wait) || !Mode_Arith('+', now, wait, time) ||
 				!Mode_AtG(time, MF, "CreateBertos", NULL, 0)) {
 				return Mode_Done(&t, 0);
 			}
 		}
 	}
+	/* OBJLIB 4: the hook is a value a mission puts into the module, called by name */
 	int hook = LvN_GTrue(MF, "OnBertoDeathCallback");
 	if (hook <= 0) {
 		return Mode_Done(&t, hook == 0);
@@ -740,7 +751,7 @@ static int Mf_DealsDone(void) {
 	int done = 0;
 	for (long i = 1; i <= 3; i++) {
 		nativeVal_t cd = { 0 }, a = { 0 }, b = { 0 };
-		int c = Native_CallGlobal(MF, "CrazyDealStatus", &cd, "i", i) && Mode_Item(&cd, 1, &a) && Mode_Item(&cd, 2, &b) ?
+		int c = PORT_OWN(MissionsFuncs, CrazyDealStatus, &cd, "i", i) && Mode_Item(&cd, 1, &a) && Mode_Item(&cd, 2, &b) ?
 			Mode_Cmp(&a, ">=", &b) : -1;
 		Native_Free(&cd);
 		Native_Free(&a);
@@ -770,7 +781,7 @@ static byte Mf_OnCrazyDealFinishedMessage(void) {
 		return 0;
 	}
 	return Mf_SaveIs("SuperDeal.Library", "SuperDeal_First") ||
-		Native_CallMod("Speech", "AddRemoteCom", NULL, "ss", "SuperDeal_PayAtenttion_RemoteMessage1", "CrazyGambler");
+		PORT_CALL(Speech, AddRemoteCom, NULL, "ss", "SuperDeal_PayAtenttion_RemoteMessage1", "CrazyGambler");
 }
 
 /* OnCrazyDealTarget(): the mission scorer (the engine's OnCrazyDealTarget); in the demo only before all three */
@@ -783,10 +794,10 @@ static byte Mf_OnCrazyDealTarget(void) {
 	int show = !Native_True(&demo);
 	Native_Free(&demo);
 	if (!show) {
-		show = Native_CallGlobal(MF, "GetNumCrazyDealCompleted", &n, "") ? Mode_CmpI(&n, "<", 3) : -1;
+		show = PORT_OWN(MissionsFuncs, GetNumCrazyDealCompleted, &n, "") ? Mode_CmpI(&n, "<", 3) : -1;
 		Native_Free(&n);
 	}
-	return show >= 0 && (!show || Native_CallMod("Scorer", "ShowMissionScorer", NULL, "ii", 0L, 1L));
+	return show >= 0 && (!show || PORT_CALL(Scorer, ShowMissionScorer, NULL, "ii", 0L, 1L));
 }
 
 /* NewCrazyDeal(number, varname, maxval): a new crazy deal on the save variable varname */
@@ -818,17 +829,12 @@ static byte Mf_StartActualSuperDeal(void) {
 	if (!Mode_SaveCopy("SuperDeal.Mission.Map", "Mission.Map") || !Mode_SaveCopy("SuperDeal.Mission.Library", "Mission.Library")) {
 		return Mode_Done(&t, 0);
 	}
-	/* the global StartSuperDeal read before its arguments, as the script */
-	PyObject *fn = Script_Global(MF, "StartSuperDeal");
-	if (!fn) {
-		return Mode_Done(&t, 0);
-	}
+	/* the global StartSuperDeal is looked up after its arguments (the script before them: the same, the save variables
+	 * are read in C) */
 	Mode_SaveVar("SuperDeal.Map", map);
 	Mode_SaveVar("SuperDeal.Library", lib);
 	Mode_SaveVar("SuperDeal.Type", type);
-	byte ok = Native_Call(fn, NULL, "vvv", map, lib, type);
-	Py_DECREF(fn);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, PORT_OWN(MissionsFuncs, StartSuperDeal, NULL, "vvv", map, lib, type));
 }
 
 /* EndOfSuperDeal(DealerMessage): the mission back, to the crazy gambler's meeting room with his message */
@@ -847,7 +853,7 @@ static byte Mf_EndOfSuperDeal(const nativeVal_t *msg) {
 	SaveVar_Set("AutoSaveGameOnLoad", "1");
 	SaveVar_Set("Spawn", "DM_Player_Spawn_Meeting_Room");
 	SaveVar_Set("ComeFrom", "");
-	return Native_CallMod("SaveGame", "QWayPoint", NULL, "") && Native_CallMod("SaveGame", "QLoad", NULL, "s", "Levels/GamblinDen");
+	return PORT_CALL(SaveGame, QWayPoint, NULL, "") && PORT_CALL(SaveGame, QLoad, NULL, "s", "Levels/GamblinDen");
 }
 
 /* StartSuperDeal(MapName, MissionName, superDealType): Dtritus at the beginning of the super deal's level */
@@ -860,9 +866,9 @@ static byte Mf_StartSuperDeal(const nativeVal_t *map, const nativeVal_t *mission
 	SaveVar_Set("Spawn", "DM_Player_Spawn_Beginning");
 	SaveVar_Set("Char", "Dtritus");
 	SaveVar_Set("ComeFrom", "");
-	return Mode_Done(&t, Mode_SetSaveVar("SuperDealType", type) && Native_CallMod("SaveGame", "QWayPoint", NULL, "") &&
-		Native_CallGlobal(MF, "SetNextMission", NULL, "vv", mission, map) && Mode_Cat(&t, level, 2, Mode_S(&t, "Levels/"), map) &&
-		Native_CallMod("SaveGame", "QLoad", NULL, "v", level));
+	return Mode_Done(&t, Mode_SetSaveVar("SuperDealType", type) && PORT_CALL(SaveGame, QWayPoint, NULL, "") &&
+		PORT_OWN(MissionsFuncs, SetNextMission, NULL, "vv", mission, map) && Mode_Cat(&t, level, 2, Mode_S(&t, "Levels/"), map) &&
+		PORT_CALL(SaveGame, QLoad, NULL, "v", level));
 }
 
 /* RelaxShipsInList(listName): the ships of the list leave it and relax */
@@ -1155,16 +1161,17 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
 	}
 	byte got = 0, ok = 1;
 	if (Mf_Is(type, "DeathMatch") || Mf_Is(type, "MortalRace")) {
-		/* the global builder read before the table of the mode, as the script */
+		/* the global builder is looked up after the table of the mode (the script before it: the same unless both are
+		 * gone) */
 		byte dm = Mf_Is(type, "DeathMatch");
-		PyObject *fn = Mode_Import(dm ? "DeathMatch" : "MortalRace") ? Script_Global(MF, "BuildMultipleEnemiesData") : NULL;
-		ok = fn && Mode_ModGet(dm ? "DeathMatch" : "MortalRace", dm ? "enemiesFrags" : "BayScorer", table) &&
-			Native_Call(fn, data, "vv", victory, table);
-		Py_XDECREF(fn);
+		ok = Mode_Import(dm ? "DeathMatch" : "MortalRace") &&
+			Mode_ModGet(dm ? "DeathMatch" : "MortalRace", dm ? "enemiesFrags" : "BayScorer", table) &&
+			PORT_OWN(MissionsFuncs, BuildMultipleEnemiesData, data, "vv", victory, table);
 		got = 1;
 	}
 	for (int i = 0; !got && i < 4; i++) {
 		if (Mf_Is(type, builders[i][0])) {
+			/* OBJLIB 4: the builder by the name of the table */
 			ok = Native_CallGlobal(MF, builders[i][1], data, "v", victory);
 			got = 1;
 		}
@@ -1178,12 +1185,11 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
 	}
 	switch (k) {
 	case 0:
-		return Mode_Done(&t, Native_CallMod("RacerScorer", "ShowScorer", NULL, "ivivs", 0L, data, 1L, retry,
-			"MissionsFuncs.SuperDealOnDefeat"));
+		return Mode_Done(&t, PORT_CALL(RacerScorer, ShowScorer, NULL, "ivivs", 0L, data, 1L, retry, "MissionsFuncs.SuperDealOnDefeat"));
 	case 1:
-		return Mode_Done(&t, Native_CallMod("RacerScorer", "ShowScorer", NULL, "ivis", 0L, data, 2L, "MissionsFuncs.SuperDealOnVictory"));
+		return Mode_Done(&t, PORT_CALL(RacerScorer, ShowScorer, NULL, "ivis", 0L, data, 2L, "MissionsFuncs.SuperDealOnVictory"));
 	case 2:
-		return Mode_Done(&t, Native_CallMod("RacerScorer", "ShowScorer", NULL, "iviv", 0L, data, 2L, retry));
+		return Mode_Done(&t, PORT_CALL(RacerScorer, ShowScorer, NULL, "iviv", 0L, data, 2L, retry));
 	}
 	return Mode_Done(&t, 1);
 }

@@ -12,9 +12,10 @@
  * Both modules are native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the globals where
  * the script reads them and write them back at once (OBJLIB 5: the missions, the levels and the cases read and set
  * them). The hooks and callbacks are called as the values they hold, the panels are handle values and Scrap.Set,
- * CreateEntity and the dummy search go through their seams (OBJLIB 7). Speech.RemoteComunication, the imports and the
- * functions of the module through their globals stay by name (OBJLIB 3, 6); a news line that is not the form GetNews
- * makes runs through the exec reader (OBJLIB 6).
+ * CreateEntity and the dummy search go through their seams (OBJLIB 7). Speech.RemoteComunication and the functions
+ * of the modules through their globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5);
+ * the imports stay (OBJLIB 6), and a news line that is not the form GetNews makes runs through the exec reader
+ * (OBJLIB 6).
  */
 #include <string.h>
 
@@ -47,10 +48,10 @@ static byte Al_SetAlarm(const nativeVal_t *status) {
 	nativeVal_t prev = { 0 }, empty, func = { 0 };
 	byte ok;
 	if (Native_True(status)) {
-		ok = Mode_PrintS("Sound the alarm !") && Native_CallGlobal("Alarm", "ActivateAlarm", NULL, "") &&
+		ok = Mode_PrintS("Sound the alarm !") && PORT_OWN(Alarm, ActivateAlarm, NULL, "") &&
 			Al_Hook("TempAbortMissionCallback", "AbortMissionCallback");
 	} else {
-		ok = Mode_PrintS("Free way!") && Native_CallGlobal("Alarm", "DeactivateAlarm", NULL, "") &&
+		ok = Mode_PrintS("Free way!") && PORT_OWN(Alarm, DeactivateAlarm, NULL, "") &&
 			Al_Hook("TempRestoreMissionCallback", "RestoreMissionCallback");
 	}
 	Native_SetEmpty(&empty, NV_LIST);
@@ -215,7 +216,7 @@ static byte Np_Init(void) {
 			}
 		}
 	}
-	if (!Mode_Read("NewsPanel", "NewsOnMem", v) || (Native_True(v) && !Native_CallGlobal("NewsPanel", "GetNews", NULL, ""))) {
+	if (!Mode_Read("NewsPanel", "NewsOnMem", v) || (Native_True(v) && !PORT_OWN(NewsPanel, GetNews, NULL, ""))) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_DummyStartSeam("DM_NewsPanel_*", 1)) {
@@ -258,7 +259,7 @@ static byte Np_Init(void) {
 			return Mode_Done(&t, 0);
 		}
 		if (!Mode_Read("NewsPanel", "NewsOnMem", onmem) || (Native_True(onmem) &&
-			(!Native_CallGlobal("NewsPanel", "FillNews", NULL, "v", kb) || !LvN_SetS(kb, "UseFunc", "NewsPanel.UseNewsPanel"))) ||
+			(!PORT_OWN(NewsPanel, FillNews, NULL, "v", kb) || !LvN_SetS(kb, "UseFunc", "NewsPanel.UseNewsPanel"))) ||
 			!Mode_Append("NewsPanel", "Panels", kb) || !Mode_GVarSetI("NewsPanelActive", 1)) {
 			return Mode_Done(&t, 0);
 		}
@@ -292,7 +293,7 @@ static byte Np_UseNewsPanel(const nativeVal_t *charName, const nativeVal_t *opt)
 	Mode_SaveVar("GameAct", act);
 	if (!Mode_Cat(&t, msg, 4, Mode_S(&t, "News_"), act, Mode_S(&t, "_RemoteMessage"), opt) ||
 		!Mode_G("NewsPanel", "EndOfNews", end) ||
-		!Native_CallMod("Speech", "RemoteComunication", r, "vsiv", msg, "Betty", 1L, end)) {
+		!PORT_CALL(Speech, RemoteComunication, r, "vsiv", msg, "Betty", 1L, end)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(r)) {

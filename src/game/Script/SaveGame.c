@@ -11,9 +11,11 @@
  * ConsoleError, AddScheduledFunc, SNet.IsServer, IsClient, SInput.GetActionSet, SetActionSet, SSound.StopVoice,
  * StopAllSounds and SScorer.SetMsgText go through their seams (OBJLIB 7: the cases record or swap them); Scrap.MusicPlayer,
  * LoadLevel, Achievement, SNet.CloseServer and CloseClient are called by name as before (the cases record them). The other ports (Scorer, Challenge,
- * Speech, MissionsFuncs, Menu), string.zfill's twin and the functions of the module the script calls through its
- * globals stay by name (OBJLIB 3). The registers keep their Python objects: SaveReg reads the attributes of any object
- * and GetReg makes a class whose attributes are read with the Python literal reader (OBJLIB 6).
+ * Speech, MissionsFuncs) and the functions of the module the script calls through its globals are called through
+ * their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5); string.zfill has a twin in the file. The function given to
+ * the scheduler by name and the Menu object a script may put into the module stay by name (OBJLIB 4). The registers
+ * keep their Python objects: SaveReg reads the attributes of any object and GetReg makes a class whose attributes are
+ * read with the Python literal reader (OBJLIB 6).
  */
 #include <limits.h>
 #include <string.h>
@@ -120,7 +122,7 @@ static byte SG_MMDesc(const nativeVal_t *desc, const nativeVal_t *persist) {
 		return 0;
 	}
 	long on = desc->type != NV_NONE ? Native_True(desc) : 0;
-	if (!Native_CallMod("Scorer", "ShowMissionScorer", NULL, "iii", 0L, 0L, on)) {
+	if (!PORT_CALL(Scorer, ShowMissionScorer, NULL, "iii", 0L, 0L, on)) {
 		return 0;
 	}
 	return !Native_True(persist) || Mode_SetSaveVar("PrimaryMissionDesc", desc);
@@ -220,7 +222,7 @@ static byte SG_LoadMoney(void) {
 
 /* InitVars(): the alarm and the money at the start of a single player level (through the globals of the module) */
 static byte SG_InitVars(void) {
-	return Native_CallGlobal(SG, "LoadAlarm", NULL, "") && Native_CallGlobal(SG, "LoadMoney", NULL, "");
+	return PORT_OWN(SaveGame, LoadAlarm, NULL, "") && PORT_OWN(SaveGame, LoadMoney, NULL, "");
 }
 
 /* ---- way points ---- */
@@ -254,7 +256,7 @@ static byte SG_MarkWayPoint(const nativeVal_t *map, const nativeVal_t *spawn, co
 			}
 		}
 	}
-	return Mode_Done(&t, Native_CallGlobal(SG, "SaveAlarm", NULL, "") && Native_CallGlobal(SG, "SaveMoney", NULL, ""));
+	return Mode_Done(&t, PORT_OWN(SaveGame, SaveAlarm, NULL, "") && PORT_OWN(SaveGame, SaveMoney, NULL, ""));
 }
 
 /* QWayPoint(): a way point at the current map, spawn point and arrival */
@@ -266,7 +268,7 @@ static byte SG_QWayPoint(void) {
 	}
 	Mode_SaveVar("Spawn", spawn);
 	Mode_SaveVar("ComeFrom", from);
-	return Mode_Done(&t, Native_CallGlobal(SG, "MarkWayPoint", NULL, "vvv", path, spawn, from));
+	return Mode_Done(&t, PORT_OWN(SaveGame, MarkWayPoint, NULL, "vvv", path, spawn, from));
 }
 
 /* ---- the level change ---- */
@@ -331,7 +333,7 @@ static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 	if (client) {
 		return Mode_Done(&t, client > 0 && Native_CallMod("SNet", "CloseClient", NULL, "v", map));
 	}
-	return Mode_Done(&t, Mode_Import("Speech") && Native_CallMod("Speech", "CallEndOfSpeech", NULL, "") &&
+	return Mode_Done(&t, Mode_Import("Speech") && PORT_CALL(Speech, CallEndOfSpeech, NULL, "") &&
 		Native_CallMod("Scrap", "LoadLevel", NULL, "v", map));
 }
 
@@ -343,20 +345,20 @@ static byte SG_StartGame(const nativeVal_t *cleanChallenge, const nativeVal_t *c
 	if (!Mode_Import("Init") || !Mode_Import("Challenge") || !Mode_G("Init", "Path", path) || !Mode_SetSaveVar("PrevMap", path)) {
 		return Mode_Done(&t, 0);
 	}
-	if ((!cleanChallenge || Native_True(cleanChallenge)) && !Native_CallMod("Challenge", "CleanChallenge", NULL, "")) {
+	if ((!cleanChallenge || Native_True(cleanChallenge)) && !PORT_CALL(Challenge, CleanChallenge, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
-	if (cleanRevenge && Native_True(cleanRevenge) && !Native_CallMod("Challenge", "CleanRevenge", NULL, "")) {
+	if (cleanRevenge && Native_True(cleanRevenge) && !PORT_CALL(Challenge, CleanRevenge, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Map", map);
-	return Mode_Done(&t, Native_CallGlobal(SG, "QLoad", NULL, "v", map));
+	return Mode_Done(&t, PORT_OWN(SaveGame, QLoad, NULL, "v", map));
 }
 
 /* Restart(): the current level again */
 static byte SG_Restart(void) {
 	nativeVal_t path = { 0 };
-	byte ok = Mode_Import("Init") && Mode_G("Init", "Path", &path) && Native_CallGlobal(SG, "QLoad", NULL, "v", &path);
+	byte ok = Mode_Import("Init") && Mode_G("Init", "Path", &path) && PORT_OWN(SaveGame, QLoad, NULL, "v", &path);
 	Native_Free(&path);
 	return ok;
 }
@@ -395,7 +397,7 @@ static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show)
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveS("AutoSaveGameOnLoad", "0");
-	if (!Native_CallGlobal(SG, "QWayPoint", NULL, "")) {
+	if (!PORT_OWN(SaveGame, QWayPoint, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("GameplayTime", saved);
@@ -444,7 +446,7 @@ static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show)
 	if (msg) {
 		/* the confirmation or the failure of the save */
 		Mode_Lang(ok ? "SaveGameConfirmation" : "SaveGameFailure", cad);
-		if (!Native_CallMod("Speech", "CalculateSpeechTime", len, "v", cad)) {
+		if (!PORT_CALL(Speech, CalculateSpeechTime, len, "v", cad)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_SetFloat(now, Mode_Time());
@@ -453,7 +455,7 @@ static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show)
 		}
 	}
 	int notAuto = Mode_CmpI(slot, "!=", 0);
-	if (notAuto < 0 || (notAuto && !Native_CallGlobal(SG, "InstantSaveGame", NULL, "iv", 0L, success))) {
+	if (notAuto < 0 || (notAuto && !PORT_OWN(SaveGame, InstantSaveGame, NULL, "iv", 0L, success))) {
 		return Mode_Done(&t, 0);
 	}
 	SaveVar_Create("DebugSave", "0");
@@ -469,7 +471,7 @@ static byte SG_SaveGame(const nativeVal_t *slot) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(xbox)) {
-		return Mode_Done(&t, Native_CallGlobal(SG, "InstantSaveGame", NULL, "v", slot));
+		return Mode_Done(&t, PORT_OWN(SaveGame, InstantSaveGame, NULL, "v", slot));
 	}
 	if (!Native_GVarGet("XboxSavePath", path) || !Native_GVarGet("XboxProfileName", prof) ||
 		!Mode_G("Init", "XboxSavingMsgTime", msgTime) || !Native_GVarSet("XboxSavingMsg", msgTime)) {
@@ -478,6 +480,7 @@ static byte SG_SaveGame(const nativeVal_t *slot) {
 	if (Native_IsStr(path, "") || Native_IsStr(prof, "")) {
 		return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Without_Msg_"));
 	}
+	/* OBJLIB 4: the scheduler takes the global InstantSaveGame by name */
 	return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Saving_Msg_") &&
 		Mode_LaterIn(0.0, SG, "InstantSaveGame", slot, 1, NULL));
 }
@@ -507,10 +510,10 @@ static byte SG_LoadGame(const nativeVal_t *slot) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_SaveVar("Map", map);
-		return Mode_Done(&t, Native_CallGlobal(SG, "QLoad", NULL, "vi", map, 0L));
+		return Mode_Done(&t, PORT_OWN(SaveGame, QLoad, NULL, "vi", map, 0L));
 	}
-	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 3:
-	 * the method of the Menu object by name) */
+	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 4:
+	 * the method of the Menu object by name, OBJLIB 5: the global) */
 	PyObject *menu = Mode_GlobalPy(SG, "Menu");
 	if (!menu) {
 		return Mode_Done(&t, 0);
@@ -603,8 +606,8 @@ static byte SG_NewGame(void) {
 	}
 	byte demo = Native_True(isDemo);
 	if (demo) {
-		if (!Mode_Import("MissionsFuncs") || !Native_CallMod("MissionsFuncs", "SetFirstDemoMission", NULL, "") ||
-			!Native_CallGlobal(SG, "MMDesc", NULL, "si", "Mission_FirstMeetCrazyGambler_MissionText1", 1L)) {
+		if (!Mode_Import("MissionsFuncs") || !PORT_CALL(MissionsFuncs, SetFirstDemoMission, NULL, "") ||
+			!PORT_OWN(SaveGame, MMDesc, NULL, "si", "Mission_FirstMeetCrazyGambler_MissionText1", 1L)) {
 			return Mode_Done(&t, 0);
 		}
 		SaveVar_Create("Map", "Levels/GamblinDen");
@@ -623,7 +626,7 @@ static byte SG_NewGame(void) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Map", map);
-	return Mode_Done(&t, Native_CallGlobal(SG, "QLoad", NULL, "vi", map, 0L));
+	return Mode_Done(&t, PORT_OWN(SaveGame, QLoad, NULL, "vi", map, 0L));
 }
 
 /* CheckAllBlueprints(): the achievement for all 38 plans of ships and engines */
@@ -651,7 +654,7 @@ static byte SG_CheckAllBlueprints(void) {
 static byte SG_SaveReg(const nativeVal_t *name, const nativeVal_t *reg) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *names = Mode_V(&t), *attrs = Mode_V(&t), *list = Mode_V(&t);
-	if (Native_IsStr(name, "MissionStatus") && !Native_CallGlobal(SG, "QWayPoint", NULL, "")) {
+	if (Native_IsStr(name, "MissionStatus") && !PORT_OWN(SaveGame, QWayPoint, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	if (!SG_DelSaveVarsV(name)) {
@@ -695,7 +698,7 @@ static byte SG_SaveReg(const nativeVal_t *name, const nativeVal_t *reg) {
 
 /* QSaveReg(mreg): the register of the mission status */
 static byte SG_QSaveReg(const nativeVal_t *reg) {
-	return Native_CallGlobal(SG, "SaveReg", NULL, "sv", "MissionStatus", reg);
+	return PORT_OWN(SaveGame, SaveReg, NULL, "sv", "MissionStatus", reg);
 }
 
 /* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>", the
