@@ -728,6 +728,31 @@ PORT_DECL(Menu, SetTabDefaults) /* ? */
 	PORT_DEF(Menu, ShowWarning, Menu_ShowWarning) \
 	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults)
 
+/* MenuControls.c */
+PORT_DECL(PCMenu, OptionsMenu) /* ? */
+PORT_DECL(PCMenu, ControlsMenu) /* ? */
+PORT_DECL(PCMenu, MouseControlsMenu) /* ? */
+PORT_DECL(PCMenu, RacerMoveControlsMenu) /* ? */
+PORT_DECL(PCMenu, RacerAttackControlsMenu) /* ? */
+PORT_DECL(PCMenu, WalkCharControlsMenu) /* ? */
+PORT_DECL(PCMenu, UseCharControlsMenu) /* ? */
+PORT_DECL(PCMenu, FillControllerMenu) /* ? */
+PORT_DECL(PCMenu, PlaceMenuOption) /* ? */
+PORT_DECL(PCMenu, SetOptionValue) /* ? */
+PORT_DECL(PCMenu, ShowPadConfig) /* ? */
+#define PORTS_MenuControls \
+	PORT_DEF(PCMenu, OptionsMenu, PCMenu_OptionsMenu) \
+	PORT_DEF(PCMenu, ControlsMenu, PCMenu_ControlsMenu) \
+	PORT_DEF(PCMenu, MouseControlsMenu, PCMenu_MouseControlsMenu) \
+	PORT_DEF(PCMenu, RacerMoveControlsMenu, PCMenu_RacerMoveControlsMenu) \
+	PORT_DEF(PCMenu, RacerAttackControlsMenu, PCMenu_RacerAttackControlsMenu) \
+	PORT_DEF(PCMenu, WalkCharControlsMenu, PCMenu_WalkCharControlsMenu) \
+	PORT_DEF(PCMenu, UseCharControlsMenu, PCMenu_UseCharControlsMenu) \
+	PORT_DEF(PCMenu, FillControllerMenu, PCMenu_FillControllerMenu) \
+	PORT_DEF(PCMenu, PlaceMenuOption, PCMenu_PlaceMenuOption) \
+	PORT_DEF(PCMenu, SetOptionValue, PCMenu_SetOptionValue) \
+	PORT_DEF(PCMenu, ShowPadConfig, PCMenu_ShowPadConfig)
+
 /* MenuHud.c */
 PORT_DECL(Scorer, ShowMissionScorer) /* ? */
 PORT_DECL(Scorer, Blink) /* ? */

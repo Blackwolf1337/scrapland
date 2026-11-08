@@ -6,9 +6,11 @@
  * engine in C and work on C values; the PyMethodDef entries are adapters. The pad menu keeps its state in the module
  * variables options and currentActionSet as the script (OBJLIB 5: read where the C read them, written at once, the
  * option rows of optionsChar and optionsShip put into options as the objects they are). The helpers of the pad menu
- * the script calls through its globals stay so (PlaceMenuOption, SetOptionValue, ShowPadConfig, FillControllerMenu);
- * the scorer and engine calls the C made by name go through their seams (SScorer.Get, Set and Add, Scrap.Get and Set,
- * SInput.ResetToDefault; OBJLIB 7), Menu by name (OBJLIB 3); the .def runner takes Python values (OBJLIB 6).
+ * the script calls through its globals are called so through their refs (PORT_OWN: directly while the global holds
+ * the port's function, else by name; PlaceMenuOption, SetOptionValue, ShowPadConfig, FillControllerMenu), and
+ * Menu.YesNoMenu through the module (PORT_CALL, a failure printed); the scorer and engine calls the C made by name go
+ * through their seams (SScorer.Get, Set and Add, Scrap.Get and Set, SInput.ResetToDefault; OBJLIB 7); the .def runner
+ * takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -204,9 +206,9 @@ static void Step_PadOptions(int id, PyObject *args) {
 	for (int i = 0; i < keys.n; i++) {
 		nativeVal_t name = { 0 };
 		byte ok = Pad_OptionName(&keys.items[i], &name) &&
-			Native_CallGlobal(PM, "PlaceMenuOption", NULL, "iiv", (long)id, (long)(i + 1), &name);
+			PORT_OWN(PCMenu, PlaceMenuOption, NULL, "iiv", (long)id, (long)(i + 1), &name);
 		Native_Free(&name);
-		ok = ok && Pad_OptionName(&keys.items[i], &name) && Native_CallGlobal(PM, "SetOptionValue", NULL, "iv", (long)id, &name);
+		ok = ok && Pad_OptionName(&keys.items[i], &name) && PORT_OWN(PCMenu, SetOptionValue, NULL, "iv", (long)id, &name);
 		Native_Free(&name);
 		if (!ok) {
 			break;
@@ -398,14 +400,7 @@ static byte Pad_Fill(int id, const char *tab) {
 	}
 
 /* a function (id, control) that runs a section */
-#define CONTROLS_MENU(func, section) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
-		(void)self; \
-		CONTROLS_ARGS(args); \
-		(void)control; \
-		Controls_RunMenu(id, section, NULL); \
-		return Py_ReturnNone(); \
-	}
+#define CONTROLS_MENU(func, section) MODE_IDFN(func, (Controls_RunMenu(id, section, NULL), 1))
 
 CONTROLS_MENU(PCMenu_OptionsMenu, "Options")
 CONTROLS_MENU(PCMenu_ControlsMenu, "Controls")
@@ -546,10 +541,8 @@ static PyObject *PCMenu_ResetToDefault(PyObject *self, PyObject *args) {
 	(void)self;
 	CONTROLS_ARGS(args);
 	(void)control;
-	/* OBJLIB 3: Menu by name, a failure printed */
-	Mode_Printed(Native_CallMod("Menu", "YesNoMenu", NULL, "isss", (long)id,
-		Script_Lang("Menu_Controls_ResetToDefaultQuestion"), "PCMenu.ResetEverything", "PCMenu.ControlsMenu"), "Menu",
-		"YesNoMenu");
+	MODE_PRINTED(Menu, YesNoMenu, "isss", (long)id, Script_Lang("Menu_Controls_ResetToDefaultQuestion"),
+		"PCMenu.ResetEverything", "PCMenu.ControlsMenu");
 	return Py_ReturnNone();
 }
 
@@ -643,7 +636,7 @@ static byte Pad_Open(int id, const nativeVal_t *control, const char *set, byte s
 		}
 	}
 	return LvN_ModSetGlobal(PM, "options", PM, ship ? "optionsShip" : "optionsChar") &&
-		Native_CallGlobal(PM, "FillControllerMenu", NULL, "ivs", (long)id, control, ship ? "Ship" : "Char");
+		PORT_OWN(PCMenu, FillControllerMenu, NULL, "ivs", (long)id, control, ship ? "Ship" : "Char");
 }
 
 /* ControllerConfig: the pad menu of the mode the player was in (Menu.LastMode Walk: on foot, else in a ship) */
@@ -681,16 +674,14 @@ PAD_FN(PCMenu_ControllerConfigShipMenu, Pad_Open(id, &c, "Racer", 1))
 
 /* FillControllerMenu(id, control, actualTab): the pad menu of the tab with the option rows of the module variable
  * options, which the callers set to match the tab */
-static PyObject *PCMenu_FillControllerMenu(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *control;
+static byte PCMenu_FillControllerMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *control;
 	const char *tab;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOs", &id, &control, &tab)) {
-		return NULL;
-	}
-	return Pad_Fill(id, tab) ? Py_ReturnNone() : NULL;
+	int id;
+	(void)out;
+	return Mode_Parse(a, n, "iOs", &id, &control, &tab) && Pad_Fill(id, tab);
 }
+MODE_ADAPTER(PCMenu, FillControllerMenu)
 
 /*
  * The helpers of the pad menu in pcmenu.py, called through the module as the script calls them (the step padoptions:
@@ -714,26 +705,16 @@ static byte Pad_PlaceOption(int id, const nativeVal_t *n, const nativeVal_t *nam
 	return Mode_Done(&t, ok);
 }
 
-static PyObject *PCMenu_PlaceMenuOption(PyObject *self, PyObject *args) {
+static byte PCMenu_PlaceMenuOption_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *num, *name;
 	int id;
-	PyObject *n, *name;
-	nativeVal_t vn, vname;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &n, &name)) {
-		return NULL;
-	}
-	Native_Arg(n, &vn);
-	Native_Arg(name, &vname);
-	byte ok = Pad_PlaceOption(id, &vn, &vname);
-	Native_Free(&vn);
-	Native_Free(&vname);
-	return Mode_Result(ok);
+	(void)out;
+	return Mode_Parse(a, n, "iOO", &id, &num, &name) && Pad_PlaceOption(id, num, name);
 }
+MODE_ADAPTER(PCMenu, PlaceMenuOption)
 
 /* SetOptionValue(id, control): the text of the value of a pad option (an unknown control does nothing) */
-static PyObject *PCMenu_SetOptionValue(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static void Pad_SetValue(int id, const char *control) {
 	for (int i = 0; i < 8; i++) {
 		const padOption_t *o = i < 4 ? &pad_char[i] : &pad_ship[i - 4];
 		if (!strcmp(o->item, control)) {
@@ -744,8 +725,9 @@ static PyObject *PCMenu_SetOptionValue(PyObject *self, PyObject *args) {
 			break;
 		}
 	}
-	return Py_ReturnNone();
 }
+
+MODE_IDFN(PCMenu_SetOptionValue, (Pad_SetValue(id, control), 1))
 
 /* UpdatePadText(id, ActionSet): the texts of the buttons and sticks of the pad picture */
 static PyObject *PCMenu_UpdatePadText(PyObject *self, PyObject *args) {
@@ -782,20 +764,30 @@ static byte Pad_ShowConfig(int id, const nativeVal_t *set, double yoff) {
 	return Pad_TextOf(id, set);
 }
 
+static byte PCMenu_ShowPadConfig_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *set;
+	double yoff = 0;
+	int id;
+	(void)out;
+	return Mode_Parse(a, n, "iO|d", &id, &set, &yoff) && Pad_ShowConfig(id, set, yoff);
+}
+
+/* the keywords and the errors of PyArg_ParseTupleAndKeywords as before, then the entry by position */
 static PyObject *PCMenu_ShowPadConfig(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *kwlist[] = { "id", "ActionSet", "YOffset", NULL };
 	int id;
 	PyObject *set;
 	double yoff = 0;
-	nativeVal_t v;
+	nativeVal_t a[3], out;
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "iO|d", kwlist, &id, &set, &yoff)) {
 		return NULL;
 	}
-	Native_Arg(set, &v);
-	byte ok = Pad_ShowConfig(id, &v, yoff);
-	Native_Free(&v);
-	return Mode_Result(ok);
+	Native_SetInt(&a[0], id);
+	Native_Arg(set, &a[1]);
+	Native_SetFloat(&a[2], yoff);
+	Native_SetNone(&out);
+	return Mode_KwOut(a, 3, PCMenu_ShowPadConfig_E(a, 3, &out), &out);
 }
 
 /*
@@ -820,8 +812,8 @@ static byte Pad_SwitchOption(int id, const nativeVal_t *control) {
 			(name = Native_Text(&opt[0]), Mode_GVarSetI(name, off == 1)) :
 			Native_CallMod("Scrap", "Set", NULL, "vi", &opt[0], (long)(off == 1));
 	}
-	ok = ok && Mode_ResetKeys() && Native_CallGlobal(PM, "SetOptionValue", NULL, "iv", (long)id, &opt[1]) &&
-		Mode_G(PM, "currentActionSet", cur) && Native_CallGlobal(PM, "ShowPadConfig", NULL, "iv", (long)id, cur);
+	ok = ok && Mode_ResetKeys() && PORT_OWN(PCMenu, SetOptionValue, NULL, "iv", (long)id, &opt[1]) &&
+		Mode_G(PM, "currentActionSet", cur) && PORT_OWN(PCMenu, ShowPadConfig, NULL, "iv", (long)id, cur);
 	Native_Free(&opt[0]);
 	Native_Free(&opt[1]);
 	return Mode_Done(&t, ok);
@@ -862,3 +854,5 @@ PyMethodDef g_MenuControlsMethods[] = {
 	{ "SwitchOption", PCMenu_SwitchOption, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuControls)
