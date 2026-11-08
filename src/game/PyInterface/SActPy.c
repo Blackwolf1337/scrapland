@@ -209,12 +209,14 @@ static const char str_PyMethod_SAct_GetClass[];
 static const char str_PyMethod_SAct_GetCls[];
 static const char str_PyMethod_SAct_SetAct[];
 static const char str_PyMethod_SAct_SetCls[];
-/* the name of the function of an event: !native, the Python function name, or "" */
+/* the name of the function of an event: !native, the Python function name (of a port entry too), or "" */
 static void Event_FuncName(const cPy_Function *f, char *out, int size) {
 	out[0] = 0;
 	if ((f->flags & PYF_NATIVE) && f->func) {
 		const char *n = cPy_NativeFunc_Name((nativefunc_t)f->func);
 		Str_Printf(out, size, "!%s", n ? n : "?");
+	} else if (f->flags & PYF_ENTRY) {
+		Str_Copy(out, cPy_Function_Name((cPy_Function *)f), size);
 	} else if ((f->flags & PYF_PYTHON) && f->func) {
 		PyObject *name = PyObject_GetAttrString((PyObject *)f->func, "__name__");
 		Str_Copy(out, name && PyString_Check(name) ? PyString_AsString(name) : "?", size);

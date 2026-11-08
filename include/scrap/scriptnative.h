@@ -458,6 +458,33 @@ byte Port_Arity(int n, int nargs);
 /* the sites that ran since the start, the last one first (OBJLIB 7: the counters of the test channel) */
 portSite_t *Port_Sites(void);
 
+/*
+ * The registry of the port functions by module and name (stage 4 of docs/objlib-plan.md): g_PortTable holds every ref
+ * sorted by module and name (strcmp), made by tools/script/ports.py with the refs (src/game/Script/PortTable.c). A
+ * name served by the modules of several levels (Map, Mission_X) has a ref per level, after each other.
+ */
+extern const portRef_t *const g_PortTable[];
+/* the first ref of module.name (binary search), NULL when there is none */
+const portRef_t *Port_Find(const char *module, const char *name);
+/* the port's own function of ref: f is the C function of its table entry (the adapter: Mission_X.Init and
+ * Mission_Y.Init share the name), without self (a recorder of the test channel has one); never under
+ * SCRAP_PORT_SLOW=1 (OBJLIB 7). The test of the seam (Port_Seam) and of the callbacks (Port_Callback). */
+byte Port_IsOwn(const portRef_t *ref, PyObject *f);
+/* a callback bound by name (cPy_Function PYF_ENTRY): the ref of module.name whose own function f is (Port_IsOwn, not
+ * a ref on Python objects, and the function's own name that one: cPy_Function_Name gives it), as the site that
+ * counts its calls (fast: the calls, errors: the failed ones; listed in Port_Callbacks once bound, file "callback");
+ * NULL when f is none of them */
+portSite_t *Port_Callback(const char *module, const char *name, PyObject *f);
+/* the callbacks bound since the start, the last one first (OBJLIB 7: the counters of the test channel) */
+portSite_t *Port_Callbacks(void);
+/* OBJLIB 7: the C function object (borrowed) the site of Port_Callback was first bound to: the same adapter, for the
+ * Python call of a callback given more parameters than an entry takes (PORT_ARGS) */
+PyObject *Port_CallbackFunc(const portSite_t *site);
+/* the entry of ref on n native arguments a, with the depth check of Script_CallObject (Script_Enter), the result into
+ * *r (None when it fails; Native_Free it either way): 1, or 0 with the error set (an entry that fails without one
+ * gives the SystemError of call_object) */
+byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r);
+
 /* the ref names: the module and the function pasted at once, in the macro the site writes, so that a module whose
  * name is also a macro of the file (#define CTF "CTF") is not replaced first */
 #define PORT_REF(module, name) port_##module##_##name

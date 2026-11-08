@@ -9,7 +9,10 @@
  *                            reads lines; litfuzz.sh sends the stored texts that have a line end this way)
  *   native ports             (OBJLIB 7) the counts of the direct calls between ports (PORT_CALL, PORT_OWN) per
  *                            call site that ran: "<file>:<line> <Module>.<Func> attr|own fast <n> slow <n> errors
- *                            <n>", sorted by file and line
+ *                            <n>", sorted by file and line ("no sites" when none ran); then the callbacks by name
+ *                            bound to a port's entry (cPy_Function PYF_ENTRY, stage 4) since the start: "callback
+ *                            <Module>.<Func> calls <n> errors <n>", sorted by name, and the calls of cPy_Function by
+ *                            kind: "callbacks python <n> native <n> entry <n>"
  *   native ports reset       the counts back to 0
  */
 #include <stdlib.h>
@@ -37,6 +40,41 @@ static int TN_SiteOrder(const void *x, const void *y) {
 	return c ? c : a->line - b->line;
 }
 
+/* the callbacks by module, then by name */
+static int TN_CallbackOrder(const void *x, const void *y) {
+	const portSite_t *a = *(const portSite_t *const *)x, *b = *(const portSite_t *const *)y;
+	int c = strcmp(a->ref->module, b->ref->module);
+	return c ? c : strcmp(a->ref->name, b->ref->name);
+}
+
+/* the counts of the callbacks bound to port entries and of cPy_Function's calls by kind */
+static void TN_Callbacks(nativeBuf_t *out, byte reset) {
+	static const portSite_t *cbs[PORT_COUNT];
+	unsigned long python, native, entry;
+	int n = 0;
+	for (portSite_t *s = Port_Callbacks(); s; s = s->next) {
+		if (reset) {
+			s->fast = s->slow = s->errors = 0;
+		} else if (n < PORT_COUNT) {
+			cbs[n++] = s;
+		}
+	}
+	cPy_Function_Counts(&python, &native, &entry, reset);
+	if (reset) {
+		return;
+	}
+	qsort(cbs, n, sizeof(cbs[0]), TN_CallbackOrder);
+	for (int i = 0; i < n; i++) {
+		char line[256];
+		snprintf(line, sizeof(line), "callback %s.%s calls %lu errors %lu\n", cbs[i]->ref->module, cbs[i]->ref->name,
+			cbs[i]->fast, cbs[i]->errors);
+		Native_BufAdd(out, line, -1);
+	}
+	char line[128];
+	snprintf(line, sizeof(line), "callbacks python %lu native %lu entry %lu\n", python, native, entry);
+	Native_BufAdd(out, line, -1);
+}
+
 /* native ports [reset] */
 static void TN_Ports(nativeBuf_t *out, byte reset) {
 	static const portSite_t *sites[4096];
@@ -49,6 +87,7 @@ static void TN_Ports(nativeBuf_t *out, byte reset) {
 		}
 	}
 	if (reset) {
+		TN_Callbacks(out, 1);
 		Native_BufAdd(out, "ok\n", -1);
 		return;
 	}
@@ -64,6 +103,7 @@ static void TN_Ports(nativeBuf_t *out, byte reset) {
 	if (!n) {
 		Native_BufAdd(out, "no sites\n", -1);
 	}
+	TN_Callbacks(out, 0);
 }
 
 void TestNative_Command(nativeBuf_t *out, const char *arg) {

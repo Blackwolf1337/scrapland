@@ -4883,4 +4883,7 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, SetNextMission, TalkToMayor_SetNextMission) \
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
+/* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
+#define PORT_COUNT 2327
+
 #endif
