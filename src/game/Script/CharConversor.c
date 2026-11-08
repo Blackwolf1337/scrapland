@@ -709,21 +709,9 @@ static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
 }
 
 /* the adapters (the arity errors of the script's functions) */
-#define CC_FN0(name, call) \
-	static PyObject *CharConversor_##name(PyObject *self, PyObject *args) { \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *out = Mode_V(&t); \
-		(void)self; \
-		(void)out; \
-		if (!PyArg_ParseTuple(args, "")) { \
-			return Mode_Done(&t, 0), NULL; \
-		} \
-		return Mode_Out(&t, call, out); \
-	}
-
 MODE_FN(CharConversor, GetNearestConversionPoint, 1, Cc_GetNearestConversionPoint(&a[0], out))
-CC_FN0(CreateConversorClass, Cc_CreateConversorClass())
-CC_FN0(Init, Cc_Init())
+MODE_FN(CharConversor, CreateConversorClass, 0, Cc_CreateConversorClass())
+MODE_FN(CharConversor, Init, 0, Cc_Init())
 MODE_FN(CharConversor, ConvertChar, 4, Cc_ConvertChar(&a[0], &a[1]))
 MODE_FN(CharConversor, CPPos, 1, Cc_CPPos(&a[0], out))
 MODE_FN(CharConversor, CPAng, 1, Cc_CPAng(&a[0], out))
@@ -738,7 +726,7 @@ MODE_FN(CharConversor, ExitCharConversor, 2, Cc_ExitCharConversor(&a[0]))
 MODE_FN(CharConversor, ShowCharDesc, 3, Cc_ShowCharDesc(&a[0], &a[1], &a[2]))
 MODE_FN(CharConversor, HideCharDesc, 3, Cc_HideCharDesc(&a[0], &a[1]))
 MODE_FN(CharConversor, Convert, 2, Cc_Convert(&a[1]))
-CC_FN0(ConvertExecute, Cc_ConvertExecute())
+MODE_FN(CharConversor, ConvertExecute, 0, Cc_ConvertExecute())
 MODE_FN(CharConversor, Possession, 2, Cc_Possession(&a[0], &a[1]))
 MODE_FN(CharConversor, NewPlayer, 2, Cc_NewPlayer(&a[0], &a[1]))
 

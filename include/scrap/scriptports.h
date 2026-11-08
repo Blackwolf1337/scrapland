@@ -32,15 +32,29 @@ PORT_DECL(NewsPanel, SwitchAlarm) /* 1 */
 
 /* Challenge.c */
 PORT_DECL(Challenge, ComputeReward) /* 3 */
+PORT_DECL(Challenge, Init) /* 2 */
 PORT_DECL(Challenge, SetChallengerSkills) /* 2 */
+PORT_DECL(Challenge, OnChallengeOpt) /* ? */
 PORT_DECL(Challenge, SetRevengeParams) /* 3 */
+PORT_DECL(Challenge, SetRevenge) /* ? */
+PORT_DECL(Challenge, LaunchRevenge) /* ? */
+PORT_DECL(Challenge, LaunchChallenge) /* ? */
+PORT_DECL(Challenge, CleanChallenge) /* ? */
+PORT_DECL(Challenge, CleanRevenge) /* 1 */
 PORT_DECL(Challenge, CancelChallenge) /* 1 */
 PORT_DECL(Challenge, SetChallengeOptions) /* 1 */
 PORT_DECL(Challenge, AddChallenge) /* 3 */
 #define PORTS_Challenge \
 	PORT_DEF(Challenge, ComputeReward, Challenge_ComputeReward) \
+	PORT_DEF(Challenge, Init, Challenge_Init) \
 	PORT_DEF(Challenge, SetChallengerSkills, Challenge_SetChallengerSkills) \
+	PORT_DEF(Challenge, OnChallengeOpt, Challenge_OnChallengeOpt) \
 	PORT_DEF(Challenge, SetRevengeParams, Challenge_SetRevengeParams) \
+	PORT_DEF(Challenge, SetRevenge, Challenge_SetRevenge) \
+	PORT_DEF(Challenge, LaunchRevenge, Challenge_LaunchRevenge) \
+	PORT_DEF(Challenge, LaunchChallenge, Challenge_LaunchChallenge) \
+	PORT_DEF(Challenge, CleanChallenge, Challenge_CleanChallenge) \
+	PORT_DEF(Challenge, CleanRevenge, Challenge_CleanRevenge) \
 	PORT_DEF(Challenge, CancelChallenge, Challenge_CancelChallenge) \
 	PORT_DEF(Challenge, SetChallengeOptions, Challenge_SetChallengeOptions) \
 	PORT_DEF(Challenge, AddChallenge, Challenge_AddChallenge)
@@ -62,6 +76,8 @@ PORT_DECL(CharAct, OnCreate) /* 1 */
 
 /* CharConversor.c */
 PORT_DECL(CharConversor, GetNearestConversionPoint) /* 1 */
+PORT_DECL(CharConversor, CreateConversorClass) /* 0 */
+PORT_DECL(CharConversor, Init) /* 0 */
 PORT_DECL(CharConversor, ConvertChar) /* 4 */
 PORT_DECL(CharConversor, CPPos) /* 1 */
 PORT_DECL(CharConversor, CPAng) /* 1 */
@@ -76,10 +92,13 @@ PORT_DECL(CharConversor, ExitCharConversor) /* 2 */
 PORT_DECL(CharConversor, ShowCharDesc) /* 3 */
 PORT_DECL(CharConversor, HideCharDesc) /* 3 */
 PORT_DECL(CharConversor, Convert) /* 2 */
+PORT_DECL(CharConversor, ConvertExecute) /* 0 */
 PORT_DECL(CharConversor, Possession) /* 2 */
 PORT_DECL(CharConversor, NewPlayer) /* 2 */
 #define PORTS_CharConversor \
 	PORT_DEF(CharConversor, GetNearestConversionPoint, CharConversor_GetNearestConversionPoint) \
+	PORT_DEF(CharConversor, CreateConversorClass, CharConversor_CreateConversorClass) \
+	PORT_DEF(CharConversor, Init, CharConversor_Init) \
 	PORT_DEF(CharConversor, ConvertChar, CharConversor_ConvertChar) \
 	PORT_DEF(CharConversor, CPPos, CharConversor_CPPos) \
 	PORT_DEF(CharConversor, CPAng, CharConversor_CPAng) \
@@ -94,6 +113,7 @@ PORT_DECL(CharConversor, NewPlayer) /* 2 */
 	PORT_DEF(CharConversor, ShowCharDesc, CharConversor_ShowCharDesc) \
 	PORT_DEF(CharConversor, HideCharDesc, CharConversor_HideCharDesc) \
 	PORT_DEF(CharConversor, Convert, CharConversor_Convert) \
+	PORT_DEF(CharConversor, ConvertExecute, CharConversor_ConvertExecute) \
 	PORT_DEF(CharConversor, Possession, CharConversor_Possession) \
 	PORT_DEF(CharConversor, NewPlayer, CharConversor_NewPlayer)
 
@@ -138,30 +158,42 @@ PORT_DECL(Chars, CreateStartupPlayer) /* 0 */
 	PORT_DEF(Chars, CreateStartupPlayer, Chars_CreateStartupPlayer)
 
 /* CharsNPC.c */
+PORT_DECL(CharsNPC, AddNPCPos) /* ? */
 PORT_DECL(CharsNPC, CreateMissionChar) /* 1 */
 PORT_DECL(CharsNPC, DeleteMissionChar) /* 1 */
 PORT_DECL(CharsNPC, SetReposChars) /* 2 */
+PORT_DECL(CharsNPC, CreateReposChars) /* ? */
+PORT_DECL(CharsNPC, BrowseNPC) /* 1 */
 PORT_DECL(CharsNPC, AssignAttrib) /* 1 */
 PORT_DECL(CharsNPC, CallCreateChar) /* 4 */
+PORT_DECL(CharsNPC, CreateChar) /* ? */
 PORT_DECL(CharsNPC, CharNPCInclude) /* 1 */
 PORT_DECL(CharsNPC, Respawn) /* 1 */
 PORT_DECL(CharsNPC, ActiveSpawned) /* 1 */
+PORT_DECL(CharsNPC, Init) /* 1 */
 PORT_DECL(CharsNPC, CheckActualEntity) /* 1 */
+PORT_DECL(CharsNPC, MercsHired) /* 1 */
 PORT_DECL(CharsNPC, IncludeSubOptions) /* 1 */
 PORT_DECL(CharsNPC, Classify) /* 2 */
 PORT_DECL(CharsNPC, ClassifyOptions) /* 1 */
 PORT_DECL(CharsNPC, PlayOption) /* 5 */
 PORT_DECL(CharsNPC, GenericNPCSpeech) /* 4 */
 #define PORTS_CharsNPC \
+	PORT_DEF(CharsNPC, AddNPCPos, CharsNPC_AddNPCPos) \
 	PORT_DEF(CharsNPC, CreateMissionChar, CharsNPC_CreateMissionChar) \
 	PORT_DEF(CharsNPC, DeleteMissionChar, CharsNPC_DeleteMissionChar) \
 	PORT_DEF(CharsNPC, SetReposChars, CharsNPC_SetReposChars) \
+	PORT_DEF(CharsNPC, CreateReposChars, CharsNPC_CreateReposChars) \
+	PORT_DEF(CharsNPC, BrowseNPC, CharsNPC_BrowseNPC) \
 	PORT_DEF(CharsNPC, AssignAttrib, CharsNPC_AssignAttrib) \
 	PORT_DEF(CharsNPC, CallCreateChar, CharsNPC_CallCreateChar) \
+	PORT_DEF(CharsNPC, CreateChar, CharsNPC_CreateChar) \
 	PORT_DEF(CharsNPC, CharNPCInclude, CharsNPC_CharNPCInclude) \
 	PORT_DEF(CharsNPC, Respawn, CharsNPC_Respawn) \
 	PORT_DEF(CharsNPC, ActiveSpawned, CharsNPC_ActiveSpawned) \
+	PORT_DEF(CharsNPC, Init, CharsNPC_Init) \
 	PORT_DEF(CharsNPC, CheckActualEntity, CharsNPC_CheckActualEntity) \
+	PORT_DEF(CharsNPC, MercsHired, CharsNPC_MercsHired) \
 	PORT_DEF(CharsNPC, IncludeSubOptions, CharsNPC_IncludeSubOptions) \
 	PORT_DEF(CharsNPC, Classify, CharsNPC_Classify) \
 	PORT_DEF(CharsNPC, ClassifyOptions, CharsNPC_ClassifyOptions) \
@@ -173,8 +205,13 @@ PORT_DECL(Doors, StdInitializator) /* 1 */
 PORT_DECL(Doors, StdObjInitializator) /* 2 */
 PORT_DECL(Doors, UsrObjInitializator) /* 2 */
 PORT_DECL(Doors, CreateDoorClass) /* 1 */
+PORT_DECL(Doors, InitDoorInfo) /* 0 */
+PORT_DECL(Doors, Init) /* ? */
 PORT_DECL(Elevator, isOutMap) /* 1 */
 PORT_DECL(Elevator, ElevatorCamera) /* 1 */
+PORT_DECL(Elevator, ElevatorBackCamera) /* 0 */
+PORT_DECL(Elevator, ConnectElevators) /* ? */
+PORT_DECL(Elevator, DoorInitializator) /* ? */
 PORT_DECL(Elevator, ObjInitializator) /* 2 */
 PORT_DECL(Elevator, ObjInitializatorNang) /* 2 */
 PORT_DECL(Elevator, UseElevator) /* 4 */
@@ -184,8 +221,12 @@ PORT_DECL(Elevator, ElevatorHaveClose) /* 3 */
 PORT_DECL(Elevator, ElevatorReachUp) /* 3 */
 PORT_DECL(Elevator, ElevatorReachDown) /* 3 */
 PORT_DECL(Elevator, ElevatorHaveOpen) /* 3 */
+PORT_DECL(Elevator, LinkToElevator) /* ? */
 PORT_DECL(Elevator, UnlinkFromElevator) /* 1 */
+PORT_DECL(Elevator, Init) /* 0 */
 PORT_DECL(Elevator, SetDef) /* 2 */
+PORT_DECL(Elevator, TryToElevatorLaunchFirst) /* 0 */
+PORT_DECL(Elevator, PlayerCreatedElevator) /* 0 */
 PORT_DECL(Teleport, DoorInitializator) /* 1 */
 PORT_DECL(Teleport, ObjInitializator) /* 2 */
 PORT_DECL(Teleport, Link) /* 2 */
@@ -195,8 +236,13 @@ PORT_DECL(Teleport, FXAction) /* 3 */
 	PORT_DEF(Doors, StdObjInitializator, Doors_StdObjInitializator) \
 	PORT_DEF(Doors, UsrObjInitializator, Doors_UsrObjInitializator) \
 	PORT_DEF(Doors, CreateDoorClass, Doors_CreateDoorClass) \
+	PORT_DEF(Doors, InitDoorInfo, Doors_InitDoorInfo) \
+	PORT_DEF(Doors, Init, Doors_Init) \
 	PORT_DEF(Elevator, isOutMap, Elevator_isOutMap) \
 	PORT_DEF(Elevator, ElevatorCamera, Elevator_ElevatorCamera) \
+	PORT_DEF(Elevator, ElevatorBackCamera, Elevator_ElevatorBackCamera) \
+	PORT_DEF(Elevator, ConnectElevators, Elevator_ConnectElevators) \
+	PORT_DEF(Elevator, DoorInitializator, Elevator_DoorInitializator) \
 	PORT_DEF(Elevator, ObjInitializator, Elevator_ObjInitializator) \
 	PORT_DEF(Elevator, ObjInitializatorNang, Elevator_ObjInitializatorNang) \
 	PORT_DEF(Elevator, UseElevator, Elevator_UseElevator) \
@@ -206,8 +252,12 @@ PORT_DECL(Teleport, FXAction) /* 3 */
 	PORT_DEF(Elevator, ElevatorReachUp, Elevator_ElevatorReachUp) \
 	PORT_DEF(Elevator, ElevatorReachDown, Elevator_ElevatorReachDown) \
 	PORT_DEF(Elevator, ElevatorHaveOpen, Elevator_ElevatorHaveOpen) \
+	PORT_DEF(Elevator, LinkToElevator, Elevator_LinkToElevator) \
 	PORT_DEF(Elevator, UnlinkFromElevator, Elevator_UnlinkFromElevator) \
+	PORT_DEF(Elevator, Init, Elevator_Init) \
 	PORT_DEF(Elevator, SetDef, Elevator_SetDef) \
+	PORT_DEF(Elevator, TryToElevatorLaunchFirst, Elevator_TryToElevatorLaunchFirst) \
+	PORT_DEF(Elevator, PlayerCreatedElevator, Elevator_PlayerCreatedElevator) \
 	PORT_DEF(Teleport, DoorInitializator, Teleport_DoorInitializator) \
 	PORT_DEF(Teleport, ObjInitializator, Teleport_ObjInitializator) \
 	PORT_DEF(Teleport, Link, Teleport_Link) \
@@ -637,6 +687,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Accelerator, Init, Accelerator_Init)
 
 /* PhoneCab.c */
+PORT_DECL(PhoneCab, ForceResetPhoneCab) /* ? */
 PORT_DECL(PhoneCab, RevengeSpeech) /* 4 */
 PORT_DECL(PhoneCab, SetRevengeOptions) /* 1 */
 PORT_DECL(PhoneCab, GetNearestPhoneCab) /* 1 */
@@ -645,13 +696,22 @@ PORT_DECL(PhoneCab, CreateAudioCom) /* 3 */
 PORT_DECL(PhoneCab, DefUseAudioCom) /* 4 */
 PORT_DECL(PhoneCab, UseAudioCom) /* 4 */
 PORT_DECL(PhoneCab, SpawnChar) /* 2 */
+PORT_DECL(PhoneCab, CreatePhoneCabClass) /* ? */
+PORT_DECL(PhoneCab, CreateAudioComClass) /* ? */
+PORT_DECL(PhoneCab, Init) /* ? */
+PORT_DECL(PhoneCab, GetFree) /* ? */
+PORT_DECL(DTritusDesktop, ForceResetDTritusDesktop) /* ? */
 PORT_DECL(DTritusDesktop, SpawnChar) /* 1 */
+PORT_DECL(DTritusDesktop, CreateDTritusDesktopClass) /* ? */
 PORT_DECL(DTritusDesktop, CreateDTritusDesktop) /* 3 */
 PORT_DECL(DTritusDesktop, DefUseDTritusDesktop) /* 4 */
 PORT_DECL(DTritusDesktop, UseDTritusDesktop) /* 4 */
 PORT_DECL(DTritusDesktop, CreatePressDesktopClass) /* 1 */
 PORT_DECL(DTritusDesktop, CreatePressDesktop) /* 1 */
+PORT_DECL(DTritusDesktop, Init) /* ? */
+PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 #define PORTS_PhoneCab \
+	PORT_DEF(PhoneCab, ForceResetPhoneCab, PhoneCab_ForceResetPhoneCab) \
 	PORT_DEF(PhoneCab, RevengeSpeech, PhoneCab_RevengeSpeech) \
 	PORT_DEF(PhoneCab, SetRevengeOptions, PhoneCab_SetRevengeOptions) \
 	PORT_DEF(PhoneCab, GetNearestPhoneCab, PhoneCab_GetNearestPhoneCab) \
@@ -660,12 +720,20 @@ PORT_DECL(DTritusDesktop, CreatePressDesktop) /* 1 */
 	PORT_DEF(PhoneCab, DefUseAudioCom, PhoneCab_DefUseAudioCom) \
 	PORT_DEF(PhoneCab, UseAudioCom, PhoneCab_UseAudioCom) \
 	PORT_DEF(PhoneCab, SpawnChar, PhoneCab_SpawnChar) \
+	PORT_DEF(PhoneCab, CreatePhoneCabClass, PhoneCab_CreatePhoneCabClass) \
+	PORT_DEF(PhoneCab, CreateAudioComClass, PhoneCab_CreateAudioComClass) \
+	PORT_DEF(PhoneCab, Init, PhoneCab_Init) \
+	PORT_DEF(PhoneCab, GetFree, PhoneCab_GetFree) \
+	PORT_DEF(DTritusDesktop, ForceResetDTritusDesktop, DTritus_ForceResetDTritusDesktop) \
 	PORT_DEF(DTritusDesktop, SpawnChar, DTritus_SpawnChar) \
+	PORT_DEF(DTritusDesktop, CreateDTritusDesktopClass, DTritus_CreateDTritusDesktopClass) \
 	PORT_DEF(DTritusDesktop, CreateDTritusDesktop, DTritus_CreateDTritusDesktop) \
 	PORT_DEF(DTritusDesktop, DefUseDTritusDesktop, DTritus_DefUseDTritusDesktop) \
 	PORT_DEF(DTritusDesktop, UseDTritusDesktop, DTritus_UseDTritusDesktop) \
 	PORT_DEF(DTritusDesktop, CreatePressDesktopClass, DTritus_CreatePressDesktopClass) \
-	PORT_DEF(DTritusDesktop, CreatePressDesktop, DTritus_CreatePressDesktop)
+	PORT_DEF(DTritusDesktop, CreatePressDesktop, DTritus_CreatePressDesktop) \
+	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
+	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
 
 /* RaceMaker.c */
 PORT_DECL(RaceMaker, ShowSystemMessage) /* 1 */
