@@ -6,7 +6,7 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the steps and the missile events of Gear read and set the current action
  * in C on C values. The $names of the files (OBJLIB 6), Init.Path and the table of Speech the speech step fills
- * (OBJLIB 3, 5) stay Python.
+ * (OBJLIB 4, 5) stay Python.
  */
 #include <string.h>
 
@@ -169,7 +169,7 @@ static void Step_Speech(int id, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "sss", &name, &module, &func)) {
 		return;
 	}
-	/* OBJLIB 3, 5: a function of a module by name into the table of Speech */
+	/* OBJLIB 4, 5: a function of a module by name into the table of Speech */
 	PyObject *speech = PyImport_ImportModule("Speech");
 	PyObject *routines = speech ? PyObject_GetAttrString(speech, "SpeechRoutines") : NULL;
 	PyObject *m = routines ? PyImport_ImportModule(module) : NULL;

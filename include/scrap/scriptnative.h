@@ -270,7 +270,7 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
  */
 int Native_Seam(const char *module, const char *name, PyObject **hook);
 /*
- * OBJLIB 3, 4 and 7: calls of Python callables with native arguments, for the calls between ports by name, the
+ * OBJLIB 4 and 7: calls of Python callables with native arguments, for the calls of names known at run time, the
  * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text
  * (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg
  * makes it. 0 with the error of the call.

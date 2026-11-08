@@ -112,7 +112,7 @@ static byte Credits_Init(void) {
 	if (!Mode_Import("Menu")) {
 		return 0;
 	}
-	/* OBJLIB 3, 5: the module's own function goes into a variable of Menu by name */
+	/* OBJLIB 4, 5: the module's own function goes into a variable of Menu by name */
 	PyObject *f = Script_Attr("CreditsText", "CreditsScorer");
 	if (!f) {
 		return 0;
