@@ -49,7 +49,7 @@ static PyObject *GateKeeper_UseDoor(PyObject *self, PyObject *args) {
 			return Sf_Return(&f, Sf_Int(&f, 0));
 		}
 	}
-	Sf_Ask(&f, "Elevator", "UseElevator", "(OOOO)", usr, elev, opt, full);
+	SF_CALL(&f, Elevator, UseElevator, "OOOO", usr, elev, opt, full);
 	return Sf_Return(&f, Sf_Int(&f, 1));
 }
 
@@ -125,7 +125,7 @@ static PyObject *GateKeeper_RestoreState(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Sf_Import(&f, "Speech");
-	Sf_Ask(&f, "Speech", "RestoreState", "(O)", usr);
+	SF_CALL(&f, Speech, RestoreState, "O", usr);
 	PyObject *gc = Sf_GetItem(&f, G("GateKeepers"), usr);
 	PyObject *door = Sf_Entity(&f, Sf_Attr(&f, gc, "Door"));
 	Sf_Call(&f, Sf_Attr(&f, gc, "ClosedFunc"), "(OO)", door, usr);
@@ -155,7 +155,7 @@ static PyObject *GateKeeper_EndOfSpeech(PyObject *self, PyObject *args) {
 /* the talk that opens the door: the answer, EndOfSpeech at its end with the door callback, the abort restores the
  * door */
 static void Gk_Open(scriptFrame_t *f, PyObject *ch, PyObject *gc, PyObject *door, PyObject *chName, const char *ans) {
-	Sf_Ask(f, "Speech", "OnSpch", "(sss)", "Generics_GateKeeper_InitMsg1", ans, "TalkNPC");
+	SF_CALL(f, Speech, OnSpch, "sss", "Generics_GateKeeper_InitMsg1", ans, "TalkNPC");
 	Sf_SetMod(f, "Speech", "OnEndOfSpeech", Sf_Global(f, GK, "EndOfSpeech"));
 	Sf_SetGlobal(f, GK, "LocalCallFunc", Sf_Attr(f, gc, "CanPassFunc"));
 	Sf_SetGlobal(f, GK, "LocalParams", Sf_Build(f, "(OO)", door, chName));
@@ -211,7 +211,7 @@ static PyObject *GateKeeper_GateKeeperSpeech(PyObject *self, PyObject *args) {
 		if (known > 0) {
 			PyObject *ans = Sf_Cat(&f, "sO", "Generics_GateKeeper_InitAns", Sf_GetItem(&f, G("HashGroup"),
 				Sf_Attr(&f, gc, "FoeType")));
-			Sf_Ask(&f, "Speech", "OnSpch", "(sOs)", "Generics_GateKeeper_InitMsg1", ans, "TalkNoNPC");
+			SF_CALL(&f, Speech, OnSpch, "sOs", "Generics_GateKeeper_InitMsg1", ans, "TalkNoNPC");
 			Sf_SetMod(&f, "Speech", "OnEndOfSpeech", G("EndOfSpeech"));
 			Gk_After(&f);
 		} else if (known == 0) {
