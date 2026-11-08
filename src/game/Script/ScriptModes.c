@@ -3021,7 +3021,7 @@ byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *ar
 	for (int i = 0; i < n; i++) {
 		Native_Copy(Native_Append(&t), &args[i]);
 	}
-	/* OBJLIB 3, 4: the value called the Python way (a function, a bound method, or the TypeError of a value that is no
+	/* OBJLIB 4: the value called the Python way (a function, a bound method, or the TypeError of a value that is no
 	 * callable) */
 	PyObject *fn = Native_ToPy(f), *a = fn ? Native_ToPy(&t) : NULL;
 	Native_Free(&t);
@@ -3381,7 +3381,7 @@ byte Mode_PreloadTexture(const nativeVal_t *name) {
 }
 
 byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out) {
-	/* OBJLIB 3, 4: apply(f, args) of the objects (the TypeError of an args that is no tuple, of a value that is no
+	/* OBJLIB 4: apply(f, args) of the objects (the TypeError of an args that is no tuple, of a value that is no
 	 * callable) */
 	PyObject *fn = Native_ToPy(f), *a = fn ? Native_ToPy(args) : NULL;
 	PyObject *r = a ? Script_CallObject(fn, a, NULL) : NULL;
@@ -3643,7 +3643,7 @@ void Mode_CallVarIf(const char *module, const char *var, long id) {
 	nativeVal_t f, a;
 	if (Mode_ModGet(module, var, &f) && Native_True(&f)) {
 		Native_SetInt(&a, id);
-		/* OBJLIB 3: the callback called the Python way */
+		/* OBJLIB 4: the callback called the Python way */
 		if (!Mode_CallArgs(&f, NULL, &a, 1)) {
 			PyErr_Print();
 		}
