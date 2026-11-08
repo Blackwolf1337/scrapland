@@ -18,13 +18,21 @@
  * modules are read where the script reads them and written through at once; the lists shent, DealCoins, Coins and
  * activatedDesktops are changed in place on the objects of the module, the coins and desks of the chains and missions
  * are handle values, a list of handles (shent, DealCoins) is read as a native list of handle values (OBJLIB 5, 7).
- * CharsNPC, Elevator, Metro, GateKeeper, Messenger, Chars, CharConversor, DTritusDesktop, MissionsFuncs, SaveGame,
- * Speech, Scene, Menu, Scorer and the functions of the module go by name (OBJLIB 3); the character objects of
- * CharsNPC.CharRes and their CallbackFunc lists stay Python objects (OBJLIB 5). Through their seams (OBJLIB 7):
+ * The character objects of CharsNPC.CharRes and their CallbackFunc lists stay Python objects (OBJLIB 5). Through their
+ * seams (OBJLIB 7):
  * Scrap.AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, Preload3DObject, Set, ConsoleError, UsrEntity and
  * DelSaveVars, SSound.Play, SScorer.Set and Fade, the SAct functions (fc-r6-ib records SetCls) and SInput.GetActionSet
  * in TestEndOfElevator (fc-r6-ib swaps it). MapTreasure_ModCoins, the module code, stays on the Python objects
  * (OBJLIB 6).
+ *
+ * Direct calls (stage 3): the functions of the other ports (CharsNPC, Elevator, Metro, GateKeeper, Chars,
+ * MissionsFuncs, SaveGame, Speech, Scene, Scorer) and the own functions of the modules (their globals) go through
+ * their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_SCORERG, LV_MISSIONCHAR; the seam takes the call by name when
+ * a mission or a case has put something else there, OBJLIB 5). The GateKeeper refs take Python objects and always go
+ * by name. By name: the sections of the .def files (Mission_GetDataPart2.SetNextMission,
+ * Mission_InfiltrateBank.LoadScene; OBJLIB 6); the functions given to the scheduler, to the character objects, to
+ * GateKeeper, CharConversor and Scene as callbacks and to the entities (Mode_Later, Mode_Schedule, the UseFunc and
+ * OnTake texts) stay values (OBJLIB 4, 5).
  */
 #include <limits.h>
 #include <string.h>
@@ -120,9 +128,9 @@ static byte BankMap_InitStatus(void) {
 	} else {
 		ok = 0;
 	}
-	if (!ok || !LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator", "DM_Door_Elevator_Outskirts") ||
-		!LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_Metro_Outskirts") ||
-		!LV_CALL("Elevator", "SetDef", NULL, "ss", "MetroExt", "DM_Door_Metro_Outskirts")) {
+	if (!ok || !PORT_CALL(Elevator, SetDef, NULL, "ss", "Elevator", "DM_Door_Elevator_Outskirts") ||
+		!PORT_CALL(Elevator, SetDef, NULL, "ss", "Metro", "DM_Door_Metro_Outskirts") ||
+		!PORT_CALL(Elevator, SetDef, NULL, "ss", "MetroExt", "DM_Door_Metro_Outskirts")) {
 		return 0;
 	}
 	if (!LvN_SaveIs("Mission.Library", "Mission_GetDataPart2")) {
@@ -131,7 +139,7 @@ static byte BankMap_InitStatus(void) {
 			return 0;
 		}
 	}
-	return !LvN_SaveIs("BankMasterAtBank", "1") || LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "BankMaster_Default");
+	return !LvN_SaveIs("BankMasterAtBank", "1") || PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", "BankMaster_Default");
 }
 
 /* Init(LevelPath): the elevators, the metro and the teleporter the gatekeeper of the bank master's room guards */
@@ -142,20 +150,20 @@ static byte BankMap_Init(void) {
 	}
 	Ba_List(&a, "DM_Door_Elevator_Outskirts", NULL);
 	Ba_List(&b, "Outskirts", NULL);
-	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &a, &b);
+	byte ok = PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &a, &b);
 	Native_Free(&a);
 	Native_Free(&b);
 	Ba_List(&a, "DM_Door_Teleporter_01", "DM_Door_Teleporter_02");
 	Ba_List(&b, NULL, NULL);
-	ok = ok && LV_CALL("Elevator", "ConnectElevators", NULL, "vvi", &a, &b, 0L);
+	ok = ok && PORT_CALL(Elevator, ConnectElevators, NULL, "vvi", &a, &b, 0L);
 	Native_Free(&a);
 	Native_Free(&b);
-	ok = ok && LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Outskirts") &&
-		LV_CALL("GateKeeper", "SetDoor", NULL, "ss", "GateKeeper_BankMasterRoom", "DM_Door_Teleporter_02");
+	ok = ok && PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_Metro_Outskirts") &&
+		PORT_CALL(GateKeeper, SetDoor, NULL, "ss", "GateKeeper_BankMasterRoom", "DM_Door_Teleporter_02");
 	Native_SetNone(&foe);
 	Native_SetNone(&elv);
 	ok = ok && LvN_ModGet("GateKeeper", "BankMasterGroupGateKeeper", &foe) &&
-		LV_CALL("GateKeeper", "DoorFoe", NULL, "sv", "GateKeeper_BankMasterRoom", &foe);
+		PORT_CALL(GateKeeper, DoorFoe, NULL, "sv", "GateKeeper_BankMasterRoom", &foe);
 	LvN_Str(&name, "DM_Door_Teleporter_02");
 	ok = ok && Mode_EntityH(&name, &elv) && LvN_SetS(&elv, "UseFunc", "GateKeeper.UseDoor");
 	Native_Free(&foe);
@@ -220,7 +228,7 @@ static byte Mt_Chain(long i, nativeVal_t *out) {
 }
 
 /* Scrap.AddScheduledFunc(at, fn, args, "DeleteShent") with args a value of the script (the tuples of MapSnd): its
- * items; another value goes to the engine function by name as it is (its error) */
+ * items; another value goes to the engine function by name as it is (its error, OBJLIB 7) */
 static byte Mt_Sched(const nativeVal_t *at, PyObject *fn, const nativeVal_t *args) {
 	nativeVal_t name = { 0 }, items[4] = { 0 };
 	LvN_Str(&name, "DeleteShent");
@@ -306,7 +314,7 @@ static byte MapTreasure_InitDeal(const nativeVal_t *item) {
 		if (ok) {
 			Mode_Repr(&ctr, &rep);
 			ok = Ba_Cat("DealCoin", &rep, &name) && Mode_G(MT, "CopperModel", &model) &&
-				LV_OWN(MT, "MakeCoin", &l, "vvv", &name, &model, &pos);
+				PORT_LOWN(MapTreasure, MakeCoin, &l, "vvv", &name, &model, &pos);
 		}
 		/* l.rTime = 0.1 * counter + 0.1 */
 		Native_Free(&ctr);
@@ -354,7 +362,7 @@ static byte Mt_Prize(const nativeVal_t *time) {
 	Native_SetNone(&at);
 	LvN_Str(&name, "BigPrize");
 	byte ok = Mt_Chain(-1, &coin) && Mode_G(MT, "PrizeModels", &models) && LvN_Item(&coin, 1, &k) &&
-		Native_Subscript(&models, &k, &model) && Mt_Chain(3, &pos) && LV_OWN(MT, "MakeCoin", &l, "vvv", &name, &model, &pos) &&
+		Native_Subscript(&models, &k, &model) && Mt_Chain(3, &pos) && PORT_LOWN(MapTreasure, MakeCoin, &l, "vvv", &name, &model, &pos) &&
 		LvN_SetI(&l, "rTime", 1) && LvN_SetS(&l, "OnTake", "MapTreasure.BigPrize") && Mt_SchedG(time, 50, "BlinkBigPrize", &l);
 	if (ok) {
 		PyObject *del = Mode_VBound(&l, "Del");
@@ -568,7 +576,7 @@ static byte MapTreasure_BigPrize(const nativeVal_t *item) {
 		nativeVal_t key = { 0 };
 		LvN_Str(&key, "MoneyItem");
 		ok = Native_Subscript(&take, &key, &a) && Mode_VGet(&l, "Pos", &pos) && LvN_Item(&a, 0, &a0) && LvN_Item(&a, 1, &a1) &&
-			Mode_PlaySound(&pos, &a0, &a1) && Mode_DelSchedS("DeleteShent") && LV_OWN(MT, "DeleteShent", NULL, "");
+			Mode_PlaySound(&pos, &a0, &a1) && Mode_DelSchedS("DeleteShent") && PORT_LOWN(MapTreasure, DeleteShent, NULL, "");
 		Native_Free(&key);
 	}
 	for (unsigned i = 0; i < sizeof(vals) / sizeof(*vals); i++) {
@@ -676,7 +684,7 @@ static byte MapTreasure_CreateCoins(void) {
 			Native_SetInt(&idx, i);
 			Mode_Repr(&idx, &rep);
 			ok = Ba_Cat("Treasure", &rep, &name) && Mode_G(MT, "InitModel", &model) && LvN_Item(&cn, 2, &pos) &&
-				LV_OWN(MT, "MakeCoin", &l, "vvv", &name, &model, &pos) && LvN_SetS(&l, "OnTake", "MapTreasure.InitDeal") &&
+				PORT_LOWN(MapTreasure, MakeCoin, &l, "vvv", &name, &model, &pos) && LvN_SetS(&l, "OnTake", "MapTreasure.InitDeal") &&
 				Mode_Append(MT, "DealCoins", &l);
 			Native_Free(&rep);
 			Native_Free(&cn);
@@ -788,7 +796,7 @@ PyMethodDef g_BankMapTreasureMethods[] = {
 
 /* InitStatus(LevelPath): Rudolph, the functionary to catch */
 static byte CatchRudolph_InitStatus(void) {
-	return LvN_MissionChar("Functionary_Rudolph", CR, "CreateRudolph");
+	return LV_MISSIONCHAR("Functionary_Rudolph", Mission_CatchRudolph, CreateRudolph);
 }
 
 /* CreateRudolph(r): Rudolph talks while he walks and runs away from the player */
@@ -811,7 +819,7 @@ static byte CatchRudolph_OnCatchRudolph(const nativeVal_t *a) {
 	byte ok = Mode_EntityH(&a[1], &e) && LvN_SetI(&e, "LLogicEscapeWithinRadius", 0) && LvN_Speakers(&a[0], &a[1]);
 	Native_Free(&e);
 	if (ok && LvN_EqS(&a[2], "Talk")) {
-		ok = LvN_OnEnd(CR, "SetNextMission", NULL) && Mode_NISpeech("Functionary", "Mission_GetRudolph_Rudolph_NI_1Msg");
+		ok = LV_ONEND(Mission_CatchRudolph, SetNextMission, NULL) && Mode_NISpeech("Functionary", "Mission_GetRudolph_Rudolph_NI_1Msg");
 	}
 	return ok;
 }
@@ -819,9 +827,9 @@ static byte CatchRudolph_OnCatchRudolph(const nativeVal_t *a) {
 /* SetNextMission(): Mission_KillRudolph in Outskirts, a character that can drive, the level changes */
 static byte CatchRudolph_SetNextMission(void) {
 	nativeVal_t ch = { 0 }, list = { 0 };
-	if (!PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
-		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_KillRudolph", "Outskirts") ||
-		!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_KillRudolph_MissionText1", 1L) || !Mode_Import("Chars")) {
+	if (!PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "") || !PORT_CALL(SaveGame, QWayPoint, NULL, "") ||
+		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_KillRudolph", "Outskirts") ||
+		!PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_KillRudolph_MissionText1", 1L) || !Mode_Import("Chars")) {
 		return 0;
 	}
 	Mode_SaveVar("Char", &ch);
@@ -837,7 +845,7 @@ static byte CatchRudolph_SetNextMission(void) {
 	SaveVar_Set("PrevMap", "Levels/Bank");
 	SaveVar_Set("ComeFrom", "DoorElevator");
 	SaveVar_Set("Spawn", "DM_Player_Spawn_Bank");
-	return LV_CALL("SaveGame", "QLoad", NULL, "s", "Levels/Outskirts");
+	return PORT_CALL(SaveGame, QLoad, NULL, "s", "Levels/Outskirts");
 }
 
 LV_CORE0(CatchRudolph_InitStatus)
@@ -912,7 +920,7 @@ static byte Gd_SetI(long id, const char *item, const char *var, long n) {
 static byte Gd_Bar(long autoUpdate) {
 	nativeVal_t v = { 0 };
 	Native_SetNone(&v);
-	byte ok = Gd_SetI(0, "DataStatus", "IsAutoUpdatable", autoUpdate) && LV_OWN(GD, "ComputeAutoUpdateStopValue", &v, "") &&
+	byte ok = Gd_SetI(0, "DataStatus", "IsAutoUpdatable", autoUpdate) && PORT_LOWN(Mission_GetDataPart2, ComputeAutoUpdateStopValue, &v, "") &&
 		Gd_Set(0, "DataStatus", "AutoUpdateStopValue", &v);
 	Native_Free(&v);
 	return ok;
@@ -926,8 +934,9 @@ static byte GetDataPart2_InitStatus(void) {
 	if (!Mode_Import("Messenger") || !Mode_SetModVar("Messenger", "MakeMDP", &v) || !Mode_GVarSetI("MessengerDataPackMissionArrow", 0) ||
 		!Mode_GVarSetS("OnFunctionaryStartsWorking", "Mission_GetDataPart2.OnFuncStartsWorking") ||
 		!Mode_GVarSetS("OnFinishAutoUpdate", "Mission_GetDataPart2.OnDownloadComplete") ||
-		!LvN_MissionChar("Functionary_00", GD, "CreateFuncInit") || !LvN_MissionChar("Functionary_01", GD, "CreateFuncInit") ||
-		!LvN_MissionChar("Functionary_02", GD, "CreateFuncInit")) {
+		!LV_MISSIONCHAR("Functionary_00", Mission_GetDataPart2, CreateFuncInit) ||
+		!LV_MISSIONCHAR("Functionary_01", Mission_GetDataPart2, CreateFuncInit) ||
+		!LV_MISSIONCHAR("Functionary_02", Mission_GetDataPart2, CreateFuncInit)) {
 		return 0;
 	}
 	LvN_Str(&v, "Functionary");
@@ -938,7 +947,8 @@ static byte GetDataPart2_InitStatus(void) {
 
 /* Init(LevelPath): first the talk with the boss, then the downloads */
 static byte GetDataPart2_Init(void) {
-	return LV_OWN(GD, LvN_SaveIs("MissionState", "TalkToBoss") ? "TalkToBoss" : "InitMission", NULL, "");
+	return LvN_SaveIs("MissionState", "TalkToBoss") ? PORT_LOWN(Mission_GetDataPart2, TalkToBoss, NULL, "") :
+		PORT_LOWN(Mission_GetDataPart2, InitMission, NULL, "");
 }
 
 /* TalkToBoss(): Dtritus' desktop is the target, the boss talks through it */
@@ -947,7 +957,7 @@ static byte GetDataPart2_TalkToBoss(void) {
 	Native_SetNone(&dd);
 	byte ok = Mode_Import("DTritusDesktop") && LvN_Entity("DM_DTritusDesktop", &dd) && Mode_Put(GD, "dd", NULL, &dd);
 	Native_Free(&dd);
-	ok = ok && Mode_G(GD, "dd", &dd) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &dd, 1L) &&
+	ok = ok && Mode_G(GD, "dd", &dd) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &dd, 1L) &&
 		LvN_ModSetGlobal("DTritusDesktop", "DialogController", GD, "BossSpeech");
 	Native_Free(&dd);
 	return ok;
@@ -956,28 +966,29 @@ static byte GetDataPart2_TalkToBoss(void) {
 /* BossSpeech(UsrName, CharName, optId, FullOption): the boss explains the mission, PreInitMission at the end */
 static byte GetDataPart2_BossSpeech(const nativeVal_t *a) {
 	nativeVal_t dd = { 0 };
-	byte ok = Mode_G(GD, "dd", &dd) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &dd, 0L) &&
-		LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(GD, "PreInitMission", NULL) && Mode_NISpeech("Boss", "Mission_TalkToBoss2__ComBoss_NI_1Msg");
+	byte ok = Mode_G(GD, "dd", &dd) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &dd, 0L) &&
+		LvN_Speakers(&a[0], &a[1]) && LV_ONEND(Mission_GetDataPart2, PreInitMission, NULL) &&
+		Mode_NISpeech("Boss", "Mission_TalkToBoss2__ComBoss_NI_1Msg");
 	Native_Free(&dd);
 	return ok;
 }
 
 /* PreInitMission(): saved, the mission text, the desktop talks no more, the downloads start */
 static byte GetDataPart2_PreInitMission(void) {
-	if (!Mode_Import("DTritusDesktop") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
-		!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_GetDataPart2_MissionText1", 1L)) {
+	if (!Mode_Import("DTritusDesktop") || !PORT_CALL(SaveGame, QWayPoint, NULL, "") ||
+		!PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_GetDataPart2_MissionText1", 1L)) {
 		return 0;
 	}
 	SaveVar_Set("MissionState", "Funcs");
-	return LvN_ModNone("DTritusDesktop", "DialogController") && LV_OWN(GD, "InitMission", NULL, "");
+	return LvN_ModNone("DTritusDesktop", "DialogController") && PORT_LOWN(Mission_GetDataPart2, InitMission, NULL, "");
 }
 
 /* InitMission(): the data bar, the three desks, the callback of a functionary back at his desk */
 static byte GetDataPart2_InitMission(void) {
-	return LvN_ScorerCallG(GD, "MissionScorer") && LvN_Draw() &&
-		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_00", 1L) &&
-		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_01", 1L) &&
-		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_02", 1L) &&
+	return LV_SCORERG(Mission_GetDataPart2, MissionScorer) && LvN_Draw() &&
+		PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "si", "DM_DesktopFunctionary_00", 1L) &&
+		PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "si", "DM_DesktopFunctionary_01", 1L) &&
+		PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "si", "DM_DesktopFunctionary_02", 1L) &&
 		Mode_GVarSetS("OnDefStateCallback", "Mission_GetDataPart2.OnFuncDefState");
 }
 
@@ -1026,7 +1037,9 @@ static byte GetDataPart2_CreateFuncInit(const nativeVal_t *e) {
 		Mode_G(GD, "activatedDesktops", &act);
 	int in = ok ? Native_Contains(&act, &desk) : -1;
 	Native_Free(&name);
-	ok = in >= 0 && Mode_VGet(e, "Name", &name) && LV_OWN(GD, in ? "AbortDownload" : "SetNormalState", NULL, "v", &name);
+	ok = in >= 0 && Mode_VGet(e, "Name", &name) &&
+		(in ? PORT_LOWN(Mission_GetDataPart2, AbortDownload, NULL, "v", &name) :
+			PORT_LOWN(Mission_GetDataPart2, SetNormalState, NULL, "v", &name));
 	Native_Free(&name);
 	Native_Free(&desk);
 	Native_Free(&act);
@@ -1049,8 +1062,8 @@ static byte GetDataPart2_OnFunctionarySpeech(const nativeVal_t *a) {
 		ok = Mode_VGet(&e, "LLogicKeepWorking", &w);
 		if (ok) {
 			ok = LvN_EqI(&w, 0) ?
-				LV_CALL("Speech", "OnSpch", NULL, "ss", "Mission_GetDataPart2_Functionary_InitMsg1", "Mission_GetDataPart2_Functionary_InitAns1") :
-				LV_CALL("Speech", "OnSpch", NULL, "ss", "Mission_GetDataPart2_Functionary_InitMsg2", "Mission_GetDataPart2_Functionary_InitAns2");
+				PORT_CALL(Speech, OnSpch, NULL, "ss", "Mission_GetDataPart2_Functionary_InitMsg1", "Mission_GetDataPart2_Functionary_InitAns1") :
+				PORT_CALL(Speech, OnSpch, NULL, "ss", "Mission_GetDataPart2_Functionary_InitMsg2", "Mission_GetDataPart2_Functionary_InitAns2");
 		}
 	}
 	Native_Free(&e);
@@ -1073,10 +1086,10 @@ static byte GetDataPart2_OnFuncDefState(const nativeVal_t *name) {
 		Native_SetInt(&zero, 0);
 		ok = Mode_G(GD, "dataDownloaded", &v);
 		if (ok && Native_Compare(&v, &zero) > 0) {
-			ok = LV_OWN(GD, "AbortDownload", NULL, "v", name);
+			ok = PORT_LOWN(Mission_GetDataPart2, AbortDownload, NULL, "v", name);
 		} else if (ok) {
 			Native_Free(&v);
-			ok = Mode_VGet(&e, "Name", &v) && LV_OWN(GD, "SetNormalState", NULL, "v", &v);
+			ok = Mode_VGet(&e, "Name", &v) && PORT_LOWN(Mission_GetDataPart2, SetNormalState, NULL, "v", &v);
 		}
 	}
 	Native_Free(&e);
@@ -1147,7 +1160,7 @@ static byte GetDataPart2_AbortDownload(const nativeVal_t *name) {
 		ok = c == 0 && Gd_Print("No Local logic at ", name);
 	} else {
 		c = Gd_Is(&e, "LLogicIgnoreAlarm");
-		ok = c >= 0 && (c > 0 || LV_OWN(GD, "SetStopDownloadingState", NULL, "v", name));
+		ok = c >= 0 && (c > 0 || PORT_LOWN(Mission_GetDataPart2, SetStopDownloadingState, NULL, "v", name));
 	}
 	Native_Free(&e);
 	return ok;
@@ -1187,8 +1200,8 @@ static byte GetDataPart2_OnDownloadAborted(const nativeVal_t *name) {
 	byte ok = Ba_Cat("DM_Desktop", name, &desk) && Mode_G(GD, "activatedDesktops", &act);
 	int in = ok ? Native_Contains(&act, &desk) : -1;
 	ok = in >= 0 && (in == 0 || Mode_Remove(GD, "activatedDesktops", &desk)) &&
-		LV_OWN(GD, "SetDesktopState", NULL, "vi", &desk, 1L) && Mode_VGet(&e, "Name", &v) &&
-		LV_OWN(GD, "SetNormalState", NULL, "v", &v) && Gd_Count();
+		PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "vi", &desk, 1L) && Mode_VGet(&e, "Name", &v) &&
+		PORT_LOWN(Mission_GetDataPart2, SetNormalState, NULL, "v", &v) && Gd_Count();
 	Native_Free(&v);
 	ok = ok && Mode_G(GD, "dataDownloaded", &v) && (Native_Compare(&v, &zero) < 0 || Gd_Bar(2));
 	Native_Free(&v);
@@ -1204,7 +1217,7 @@ static byte GetDataPart2_OnDownloadAborted(const nativeVal_t *name) {
 			ok = Native_SeqItem(&names, i, &fn);
 			if (ok && Native_Compare(&fn, name) != 0) {
 				c = Ba_EntTrue(&fn, &other);
-				ok = c >= 0 && (c == 0 || (Mode_VGet(&other, "Name", &n) && LV_OWN(GD, "SetNormalState", NULL, "v", &n)));
+				ok = c >= 0 && (c == 0 || (Mode_VGet(&other, "Name", &n) && PORT_LOWN(Mission_GetDataPart2, SetNormalState, NULL, "v", &n)));
 			}
 			Native_Free(&fn);
 			Native_Free(&other);
@@ -1227,7 +1240,7 @@ static byte GetDataPart2_OnBeginDownloadData(const nativeVal_t *a) {
 	Native_SetNone(&s);
 	Native_SetNone(&e);
 	Native_SetNone(&n);
-	byte ok = Mode_Append(GD, "activatedDesktops", desk) && LV_OWN(GD, "SetDesktopState", NULL, "vi", desk, 0L) && Gd_Count() &&
+	byte ok = Mode_Append(GD, "activatedDesktops", desk) && PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "vi", desk, 0L) && Gd_Count() &&
 		Gd_Bar(1) && Mode_G(GD, "dataDownloaded", &v);
 	if (ok && LvN_EqI(&v, 1)) {
 		ok = LvN_Com("Mission_GetDataPart2_RemoteMessage1", "Functionary", NULL, NULL, NULL);
@@ -1238,7 +1251,7 @@ static byte GetDataPart2_OnBeginDownloadData(const nativeVal_t *a) {
 		c = Mode_VGet(&e, "LLogicKeepWorking", &v) ? LvN_EqI(&v, 0) : -1;
 		Native_Free(&v);
 	}
-	ok = c >= 0 && (c == 0 || (Mode_VGet(&e, "Name", &n) && LV_OWN(GD, "AbortDownload", NULL, "v", &n)));
+	ok = c >= 0 && (c == 0 || (Mode_VGet(&e, "Name", &n) && PORT_LOWN(Mission_GetDataPart2, AbortDownload, NULL, "v", &n)));
 	Native_Free(&s);
 	Native_Free(&e);
 	Native_Free(&n);
@@ -1284,9 +1297,9 @@ static byte GetDataPart2_OnDownloadComplete(void) {
 	}
 	Native_SetNone(&names);
 	Native_SetEmpty(&v, NV_LIST);
-	byte ok = LvN_ScorerOff() && LvN_Draw() && LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_00", 0L) &&
-		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_01", 0L) &&
-		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_02", 0L) && Mode_DelGlobal(GD, "activatedDesktops") &&
+	byte ok = LvN_ScorerOff() && LvN_Draw() && PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "si", "DM_DesktopFunctionary_00", 0L) &&
+		PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "si", "DM_DesktopFunctionary_01", 0L) &&
+		PORT_LOWN(Mission_GetDataPart2, SetDesktopState, NULL, "si", "DM_DesktopFunctionary_02", 0L) && Mode_DelGlobal(GD, "activatedDesktops") &&
 		Mode_Put(GD, "activatedDesktops", NULL, &v) && Mode_G(GD, "funcNames", &names);
 	int count = ok ? Native_ForCount(&names) : -1;
 	ok = count >= 0;
@@ -1295,10 +1308,11 @@ static byte GetDataPart2_OnDownloadComplete(void) {
 		Native_SetNone(&e);
 		ok = Native_SeqItem(&names, i, &fn);
 		int c = ok ? Ba_EntTrue(&fn, &e) : -1;
-		ok = c >= 0 && (c == 0 || LV_OWN(GD, "SetNormalState", NULL, "v", &fn));
+		ok = c >= 0 && (c == 0 || PORT_LOWN(Mission_GetDataPart2, SetNormalState, NULL, "v", &fn));
 		Native_Free(&fn);
 		Native_Free(&e);
 	}
+	/* SetNextMission is a section of mission_getdatapart2.def (OBJLIB 6) */
 	ok = ok && LvN_Com("Mission_GetDataPart2_RemoteMessage2", "Boss", GD, "SetNextMission", LvN_NoArgs());
 	Native_Free(&names);
 	return ok;
@@ -1360,7 +1374,7 @@ static byte GetDataPart2_MissionScorer(const nativeVal_t *id) {
 		Mode_G(GD, "maxDataDownloaded", &max) && Mode_G(GD, "speedFactor", &sf) && Mode_Arith('*', &max, &sf, &v) &&
 		Mode_ScorerAdd(id, &it, "Bar") && LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", &back) &&
 		LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", &main) && LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &black) &&
-		LV_CALL("Scorer", "MissionScorerBar_SetDefaults", NULL, "vsvvv", id, "DataStatus", &back, &main, &black) &&
+		PORT_CALL(Scorer, MissionScorerBar_SetDefaults, NULL, "vsvvv", id, "DataStatus", &back, &main, &black) &&
 		LvN_ScorerSet(id, "DataStatus", "MaxValue", &v);
 	int first = ok ? LvN_GEqI(GD, "firstTime", 1) : -1;
 	if (first > 0) {
@@ -1474,7 +1488,7 @@ static byte Ib_ActionSet(nativeVal_t *out) {
 
 /* InitStatus(LevelPath): Dtritus' resources; the player is not the bank master */
 static byte InfiltrateBank_InitStatus(void) {
-	if (!LV_CALL("Chars", "AddNewCharRes", NULL, "si", "Dtritus", 0L)) {
+	if (!PORT_CALL(Chars, AddNewCharRes, NULL, "si", "Dtritus", 0L)) {
 		return 0;
 	}
 	if (LvN_SaveIs("Char", "BankMaster")) {
@@ -1508,7 +1522,7 @@ static byte InfiltrateBank_Init(void) {
 		LvN_ModSetGlobal("CharConversor", "OnPossession", IB, "OnPossession") &&
 		LvN_ModSetGlobal("CharConversor", "afterExitConversor", IB, "ShowDeepThroatMessage") &&
 		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "GateKeeper_BankMasterRoom") && LvN_GetClass("BankMaster", &r) &&
-		LvN_SetCls("CanBePossessed", &one) && LV_OWN(IB, "LoadScene", NULL, "");
+		LvN_SetCls("CanBePossessed", &one) && LV_OWN(IB, "LoadScene", NULL, ""); /* a section of the .def (OBJLIB 6) */
 	Native_Free(&elv);
 	Native_Free(&list);
 	Native_Free(&bm);
@@ -1520,9 +1534,9 @@ static byte InfiltrateBank_Init(void) {
 static byte InfiltrateBank_UseDoor(const nativeVal_t *a) {
 	nativeVal_t r = { 0 };
 	Native_SetNone(&r);
-	byte ok = LV_CALL("GateKeeper", "UseDoor", &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	byte ok = PORT_CALL(GateKeeper, UseDoor, &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 	if (ok && Native_True(&r)) {
-		ok = LV_OWN(IB, "TestEndOfElevator", NULL, "") && Mode_Fade(0, lv_clear, lv_black, 2.5);
+		ok = PORT_LOWN(Mission_InfiltrateBank, TestEndOfElevator, NULL, "") && Mode_Fade(0, lv_clear, lv_black, 2.5);
 	}
 	Native_Free(&r);
 	return ok;
@@ -1539,7 +1553,7 @@ static byte InfiltrateBank_TestEndOfElevator(void) {
 	if (!walk) {
 		return Mode_Later(0.1, IB, "TestEndOfElevator", NULL, 0, NULL);
 	}
-	byte ok = Mode_UsrHandle(&usr) && LV_OWN(IB, "LaunchScene", NULL, "v", &usr);
+	byte ok = Mode_UsrHandle(&usr) && PORT_LOWN(Mission_InfiltrateBank, LaunchScene, NULL, "v", &usr);
 	Native_Free(&usr);
 	return ok;
 }
@@ -1593,9 +1607,9 @@ static byte InfiltrateBank_SetArrowToBankMaster(void) {
 	}
 	byte ok = c >= 0;
 	if (c > 0) {
-		ok = LV_CALL("Speech", "RemoteComunication", &said, "ss", "Mission_InfiltrateBank_RemoteMessage2", "DeepThroat");
+		ok = PORT_CALL(Speech, RemoteComunication, &said, "ss", "Mission_InfiltrateBank_RemoteMessage2", "DeepThroat");
 		if (ok) {
-			ok = Native_True(&said) ? LV_OWN(IB, "ReAssignTarget", NULL, "") :
+			ok = Native_True(&said) ? PORT_LOWN(Mission_InfiltrateBank, ReAssignTarget, NULL, "") :
 				Mode_Later(1.0, IB, "SetArrowToBankMaster", NULL, 0, "SetArrowToBankMaster");
 		}
 	}
@@ -1618,7 +1632,7 @@ static byte InfiltrateBank_CreateBankMaster(const nativeVal_t *e) {
 static byte InfiltrateBank_LaunchScene(const nativeVal_t *usr) {
 	return Mode_Import("Elevator") && Mode_Import("GateKeeper") && LvN_ModNone("GateKeeper", "AfterGateKeeperSpeech") &&
 		LvN_ModNone("Elevator", "OnElevatorReachUp") && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "s", "") &&
-		LV_CALL("Scene", "Play", NULL, "s", "DirectorDiscovered") && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", IB, "LaunchScene2") &&
+		PORT_CALL(Scene, Play, NULL, "s", "DirectorDiscovered") && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", IB, "LaunchScene2") &&
 		LvN_SetS(usr, "ActCtrl", "Dtritus");
 }
 
@@ -1669,9 +1683,9 @@ static byte InfiltrateBank_LaunchScene2(void) {
 	ok = c >= 0;
 	if (c > 0) {
 		ok = Mode_VSet(&e, "Pos", &pos) && Mode_VGet(&e, "Name", &n) && Mode_SetOnFloor(&n) && Mode_VSet(&e, "LLogicOrigin", &pos) &&
-			LV_OWN(IB, "CreateBankMaster", NULL, "v", &e);
+			PORT_LOWN(Mission_InfiltrateBank, CreateBankMaster, NULL, "v", &e);
 	}
-	ok = ok && LvN_Com("Mission_InfiltrateBank_RemoteMessage4", "Berto", IB, "SetNextMission", LvN_NoArgs());
+	ok = ok && LV_COM("Mission_InfiltrateBank_RemoteMessage4", "Berto", Mission_InfiltrateBank, SetNextMission, LvN_NoArgs());
 	Native_Free(&dummy);
 	Native_Free(&pos);
 	Native_Free(&name);
@@ -1683,7 +1697,7 @@ static byte InfiltrateBank_LaunchScene2(void) {
 /* BankMasterSpeech(UsrName, CharName, optId, FullOption): what the bank master says */
 static byte InfiltrateBank_BankMasterSpeech(const nativeVal_t *a) {
 	return LvN_Speakers(&a[0], &a[1]) && (!LvN_EqS(&a[2], "Talk") ||
-		LV_CALL("Speech", "OnSpch", NULL, "ss", "Mission_MeetBerto_BankBoss_InitMsg1", "Mission_MeetBerto_BankBoss_InitAns1"));
+		PORT_CALL(Speech, OnSpch, NULL, "ss", "Mission_MeetBerto_BankBoss_InitMsg1", "Mission_MeetBerto_BankBoss_InitAns1"));
 }
 
 /* SetNextMission(): the bank master can be possessed again, the hooks off, Mission_MeetBerto in Scrapyard */
@@ -1695,8 +1709,8 @@ static byte InfiltrateBank_SetNextMission(void) {
 	LvN_Str(&bm, "BankMaster");
 	byte ok = LvN_ModAppend("CharConversor", "AvailableChars", &bm) && LvN_ModNone("CharConversor", "OnPossession") &&
 		LvN_ModNone("CharConversor", "afterExitConversor") &&
-		LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_MeetBerto", "Scrapyard") &&
-		LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_MeetBerto_MissionText1", 1L) && LV_CALL("SaveGame", "QWayPoint", NULL, "");
+		PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_MeetBerto", "Scrapyard") &&
+		PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_MeetBerto_MissionText1", 1L) && PORT_CALL(SaveGame, QWayPoint, NULL, "");
 	Native_Free(&bm);
 	return ok;
 }

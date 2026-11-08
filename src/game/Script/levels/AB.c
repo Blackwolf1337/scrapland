@@ -14,9 +14,14 @@
  * Scrap.SetLockAlarm, Scrap.Rand, Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs, Scrap.AddScheduledFunc,
  * Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams (OBJLIB 7: cases record them).
  * The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute: no C entry with text and int
- * parameters) and SAI.SetStateVehicle (its state handlers take Python arguments) stay by name (OBJLIB 7); Speech,
- * Vehicles, VehiclesNPC, ShipMaker, Traffic, Elevator, Scorer, Menu, SaveGame and the functions of the modules go by
- * name (OBJLIB 3).
+ * parameters) and SAI.SetStateVehicle (its state handlers take Python arguments) stay by name (OBJLIB 7).
+ *
+ * Direct calls (stage 3): the functions of the other ports (Speech, Vehicles, VehiclesNPC, ShipMaker, Traffic,
+ * Elevator, Scorer, Menu, SaveGame) and the own functions of both modules (their globals) go through their refs
+ * (PORT_CALL, PORT_LOWN, LV_SCORERG; the seam takes the call by name when a mission or a case has put something else
+ * there, OBJLIB 5). By name: PrevCreateStdShips (a variable holding ShipMaker's own function; OBJLIB 5) and the
+ * functions given to the scheduler, to ShipMaker, Chars, Parking and Traffic and to the entities (Mode_Later,
+ * Mode_Schedule, the OnDeath texts) stay values (OBJLIB 4, 5).
  */
 #include <string.h>
 
@@ -108,6 +113,7 @@ static byte Ff_FakeShips(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t ship, key;
 	(void)a;
 	(void)out;
+	/* OBJLIB 5: PrevCreateStdShips is a variable that holds ShipMaker's function (InitStatus), called by name */
 	if (!Mode_Import("ShipMaker") || !LV_OWN(FF, "PrevCreateStdShips", NULL, "")) {
 		return 0;
 	}
@@ -168,7 +174,7 @@ static byte Ff_Init(const nativeVal_t *a, nativeVal_t *out) {
 static byte Ff_Profile(const nativeVal_t *e) {
 	nativeVal_t pd;
 	Native_SetNone(&pd);
-	byte ok = LvN_StdProfile(FF, "GetBossProfile", e, &pd);
+	byte ok = PORT_LOWN(MapFinalFight, GetBossProfile, &pd, "") && LvN_StdAI(e, &pd);
 	Native_Free(&pd);
 	return ok;
 }
@@ -195,7 +201,7 @@ static byte Ff_Boss(nativeVal_t *e) {
 	nativeVal_t *dummy = Mode_V(&t), *pos = Mode_V(&t), *name = Mode_V(&t);
 	LvN_Dummy("DM_Boss_Spawn", 1, dummy);
 	byte ok = LvN_Item(dummy, 1, pos) && Mode_Put(FF, "pos", NULL, pos) &&
-		LV_CALL("VehiclesNPC", "MakeAI", e, "ssii", "SBoss1", "Boss", 0L, 0L) && LvN_SetG(e, "Pos", FF, "pos") &&
+		PORT_CALL(VehiclesNPC, MakeAI, e, "ssii", "SBoss1", "Boss", 0L, 0L) && LvN_SetG(e, "Pos", FF, "pos") &&
 		Ff_Profile(e) && LvN_SetS(e, "WeapList", "0,15,0,0,0,0") && LvN_SetI(e, "Money", -1) && LvN_SetS(e, "TgType", "red") &&
 		LvN_SetI(e, "LaunchTaunts", 0) && LvN_Life(e, FF, "BOSS_LIFE") &&
 		LvN_SetS(e, "OnDeath", "MapFinalFight.OnBossDestroyed") && Mode_VGet(e, "Name", name) &&
@@ -203,7 +209,7 @@ static byte Ff_Boss(nativeVal_t *e) {
 		Ab_SetG("LifeToLaunchCallback", "BOSS_LIFE_BULLET") &&
 		Mode_GVarSetS("LifeReachedCallback", "MapFinalFight.OnBossRecoversZero") &&
 		Ab_RegenG("bossName", "BOSS_RegenInit", "BOSS_RegenEnd") && LvN_Com("Mission_FinalFight_RemoteMessage2", "Boss", NULL, NULL, NULL) &&
-		Mode_Later(30, FF, "LaunchTaunt", NULL, 0, "LaunchTaunt") && LvN_ScorerCallG(FF, "MissionScorer") && LvN_Draw();
+		Mode_Later(30, FF, "LaunchTaunt", NULL, 0, "LaunchTaunt") && LV_SCORERG(MapFinalFight, MissionScorer) && LvN_Draw();
 	return Mode_Done(&t, ok);
 }
 
@@ -230,13 +236,13 @@ static byte Ff_CreateBoss(const nativeVal_t *a, nativeVal_t *out) {
 		if (Native_True(shield)) {
 			byte ok = LvN_SetI(shield, "Active", 1) && LvN_SetS(shield, "LinkModel", ",") && Mode_VGet(e, "Name", name) &&
 				Mode_Cat(&t, link, 3, name, Mode_S(&t, ","), Mode_S(&t, "DC_Player_01")) &&
-				Mode_VSet(shield, "LinkModel", link) && LV_OWN(FF, "SetShieldPhase", NULL, "");
+				Mode_VSet(shield, "LinkModel", link) && PORT_LOWN(MapFinalFight, SetShieldPhase, NULL, "");
 			if (!ok) {
 				return Mode_Done(&t, 0);
 			}
 		}
 	}
-	return Mode_Done(&t, LV_OWN(FF, "BossAttacks", NULL, ""));
+	return Mode_Done(&t, PORT_LOWN(MapFinalFight, BossAttacks, NULL, ""));
 }
 
 /* SetShieldPhase(): the shield effect of the phase (FASE) */
@@ -257,7 +263,7 @@ static byte Ff_SetShieldPhase(const nativeVal_t *a, nativeVal_t *out) {
 /* MissionScorer(id): the text of the phase and the regeneration bar of the boss */
 static byte Ff_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *one = Mode_V(&t), *fone = Mode_V(&t), *back = Mode_V(&t), *main = Mode_V(&t), *black = Mode_V(&t);
+	nativeVal_t *one = Mode_V(&t), *fone = Mode_V(&t);
 	const nativeVal_t *id = &a[0];
 	(void)out;
 	Native_SetInt(one, 1);
@@ -266,18 +272,12 @@ static byte Ff_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 		!LvN_ScorerSet(id, "BossText", "Visible", one) || !Mode_ScorerAdd(id, Mode_S(&t, "RegenerationBar"), "Bar")) {
 		return Mode_Done(&t, 0);
 	}
-	/* Scorer.MissionScorerBar_SetDefaults(id, "RegenerationBar", back, main, black): the function read first */
-	PyObject *fn = Script_Attr("Scorer", "MissionScorerBar_SetDefaults");
-	byte ok = fn && LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", back) &&
-		LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", main) && LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", black);
-	if (ok) {
-		ok = Native_HookCall(fn, NULL, "vsvvv", id, "RegenerationBar", back, main, black);
-	} else {
-		Py_XDECREF(fn);
-	}
-	ok = ok && LvN_ScorerSet(id, "RegenerationBar", "MaxValue", fone) && LvN_ScorerSet(id, "RegenerationBar", "Value", fone) &&
+	/* Scorer.MissionScorerBar_SetDefaults(id, "RegenerationBar", back, main, black) with the three colours of Scorer:
+	 * the function is looked up after the colours (the script before them: the same unless both are gone) */
+	byte ok = Mode_BarDefaults(id, "RegenerationBar", NULL, NULL) && LvN_ScorerSet(id, "RegenerationBar", "MaxValue", fone) &&
+		LvN_ScorerSet(id, "RegenerationBar", "Value", fone) &&
 		LvN_ScorerSet(id, "RegenerationBar", "Visible", one) && Mode_GVarSetS("RegenerationItem", "RegenerationBar") &&
-		LV_OWN(FF, "SetFase", NULL, "");
+		PORT_LOWN(MapFinalFight, SetFase, NULL, "");
 	return Mode_Done(&t, ok);
 }
 
@@ -312,7 +312,7 @@ static byte Ff_SetFase(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetInt(c, colors[p][i]);
 		ok = LvN_ScorerSet(id, "RegenerationBar", vars[i], c);
 	}
-	return Mode_Done(&t, ok && LV_OWN(FF, "SetShieldPhase", NULL, ""));
+	return Mode_Done(&t, ok && PORT_LOWN(MapFinalFight, SetShieldPhase, NULL, ""));
 }
 
 /* BossAttacks(): the boss attacks the player */
@@ -360,7 +360,7 @@ static byte Ff_OnPlayerDeath(const nativeVal_t *a, nativeVal_t *out) {
 	if (Native_Compare(name, looser)) {
 		return Mode_Done(&t, 1);
 	}
-	if (!LV_OWN(FF, "BossRelax", NULL, "")) {
+	if (!PORT_LOWN(MapFinalFight, BossRelax, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("FinalBossHintsTime", sv);
@@ -390,7 +390,7 @@ static byte Ff_OnPlayerDeath(const nativeVal_t *a, nativeVal_t *out) {
 static byte Ff_Hint(int n) {
 	char key[0x40];
 	Str_Printf(key, sizeof(key), "Mission_FinalFight_RemoteMessage%d", n);
-	return LV_CALL("Speech", "CancelRemoteCom", NULL, "") && LvN_Com(key, "CrazyGambler", NULL, NULL, NULL);
+	return PORT_CALL(Speech, CancelRemoteCom, NULL, "") && LvN_Com(key, "CrazyGambler", NULL, NULL, NULL);
 }
 
 /* RespawnPlayer(Usrname, respawnPos, ang): the player's ship again; every fifth time from the fourth a hint of the
@@ -400,7 +400,7 @@ static byte Ff_RespawnPlayer(const nativeVal_t *a, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *count = Mode_V(&t), *five = Mode_V(&t), *m = Mode_V(&t);
 	(void)out;
-	if (!Mode_Import("Vehicles") || !Mode_Import("Speech") || !LV_CALL("Vehicles", "ReSpawnShip", NULL, "v", &a[0]) ||
+	if (!Mode_Import("Vehicles") || !Mode_Import("Speech") || !PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", &a[0]) ||
 		!Mode_EntityH(&a[0], usr) || !Mode_VSet(usr, "Pos", &a[1]) || !Mode_VSet(usr, "Ang", &a[2]) ||
 		!LvN_GAdd(FF, "HINT_COUNTER", 1, NULL) || !Mode_G(FF, "HINT_COUNTER", count)) {
 		return Mode_Done(&t, 0);
@@ -423,7 +423,7 @@ static byte Ff_RespawnPlayer(const nativeVal_t *a, nativeVal_t *out) {
 			}
 		}
 	}
-	return Mode_Done(&t, LV_OWN(FF, "BossAttacks", NULL, ""));
+	return Mode_Done(&t, PORT_LOWN(MapFinalFight, BossAttacks, NULL, ""));
 }
 
 /* Speech.AddRemoteCom("Mission_FinalFight_RemoteMessage" + `base + mul*(numTaunt % mod)`, "Boss") */
@@ -435,7 +435,7 @@ static byte Ff_Taunt(long base, long mul, long mod) {
 	if (ok) {
 		Mode_Repr(k, rep);
 		ok = Mode_Cat(&t, key, 2, Mode_S(&t, "Mission_FinalFight_RemoteMessage"), rep) &&
-			LV_CALL("Speech", "AddRemoteCom", NULL, "vs", key, "Boss");
+			PORT_CALL(Speech, AddRemoteCom, NULL, "vs", key, "Boss");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -516,7 +516,7 @@ static byte Ff_NextPhase(const nativeVal_t *a, int phase) {
 		ok = Mode_GVarSetI("LifeToLaunchCallback", 0) && Mode_GVarSetS("LifeReachedCallback", "") &&
 			Ab_Regen(Mode_S(&t, "Boss"), speed, speed);
 	}
-	ok = ok && LV_OWN(FF, "SetFase", NULL, "") &&
+	ok = ok && PORT_LOWN(MapFinalFight, SetFase, NULL, "") &&
 		Mode_ScorerSet(Mode_I(&t, 0), Mode_S(&t, "RegenerationBar"), "Blink", Mode_I(&t, 1));
 	if (ok) {
 		Native_SetEmpty(blink, NV_TUPLE);
@@ -545,7 +545,7 @@ static byte Ff_OnBossRecoversEnd(const nativeVal_t *a, nativeVal_t *out) {
 static byte Ff_OnBossDestroyed(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	if (!Mode_Import("Vehicles") || !Mode_Import("SaveGame") || !LvN_ModSetI("Vehicles", "ForceDeathTaunt", 1) ||
-		!LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) || !Mode_DelSchedS("LaunchTaunt")) {
+		!PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) || !Mode_DelSchedS("LaunchTaunt")) {
 		return 0;
 	}
 	SaveVars_Delete("FinalBossHintsTime");
@@ -553,7 +553,7 @@ static byte Ff_OnBossDestroyed(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_GVarSetN("AlarmFallDelta", -0.05)) {
 		return 0;
 	}
-	return Ab_AlarmOff() && LV_CALL("SaveGame", "QWayPoint", NULL, "") && Mode_Later(4, FF, "PreLoadFinal", NULL, 0, NULL);
+	return Ab_AlarmOff() && PORT_CALL(SaveGame, QWayPoint, NULL, "") && Mode_Later(4, FF, "PreLoadFinal", NULL, 0, NULL);
 }
 
 /* PreLoadFinal(): no input, no scorer, fade to black, LoadFinal in 4 s */
@@ -564,7 +564,7 @@ static byte Ff_PreLoadFinal(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	Mode_SetActionSet("Inactive");
-	if (!LV_CALL("Menu", "DrawScorer", NULL, "is", 0L, "Inactive") || !Mode_GVarSetS("EscapeEvent", "") ||
+	if (!PORT_CALL(Menu, DrawScorer, NULL, "is", 0L, "Inactive") || !Mode_GVarSetS("EscapeEvent", "") ||
 		!Mode_GVarSetS("MainMissionEvent", "")) {
 		return 0;
 	}
@@ -672,10 +672,10 @@ static byte AbMap_Type(const nativeVal_t *name) {
 	for (int i = 0; i < 4; i++) {
 		Native_SetInt(Native_Append(bal), 0);
 	}
-	byte ok = LV_CALL("ShipMaker", "AddShip", NULL, "viii", name, 20000L, 1000L, 10000L) &&
-		LV_CALL("ShipMaker", "AddShipTon", NULL, "viii", name, 20L, 20L, 30000L) &&
-		LV_CALL("ShipMaker", "AddShipBalance", NULL, "vv", name, bal) &&
-		LV_CALL("ShipMaker", "InitAnmShip", NULL, "vvvvv", name, none, none, none, none);
+	byte ok = PORT_CALL(ShipMaker, AddShip, NULL, "viii", name, 20000L, 1000L, 10000L) &&
+		PORT_CALL(ShipMaker, AddShipTon, NULL, "viii", name, 20L, 20L, 30000L) &&
+		PORT_CALL(ShipMaker, AddShipBalance, NULL, "vv", name, bal) &&
+		PORT_CALL(ShipMaker, InitAnmShip, NULL, "vvvvv", name, none, none, none, none);
 	if (ok) {
 		Native_SetEmpty(ship, NV_TUPLE);
 		Native_Copy(Native_Append(ship), name);
@@ -713,7 +713,7 @@ static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetEmpty(to, NV_LIST);
 	LvN_Str(Native_Append(to), "GamblinDen");
 	if (!Mode_GVarSetI("FreeSpaceMagnetHiRadius", 95000) || !Mode_GVarSetI("FreeSpaceMagnetAccel", 56000) ||
-		!LV_CALL("Elevator", "ConnectElevators", NULL, "vv", from, to) || !LV_CALL("Traffic", "SetPath", NULL, "") ||
+		!PORT_CALL(Elevator, ConnectElevators, NULL, "vv", from, to) || !PORT_CALL(Traffic, SetPath, NULL, "") ||
 		!LvN_GElems(MAP, "asttype", types)) {
 		return Mode_Done(&t, 0);
 	}
@@ -724,13 +724,13 @@ static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (n < 0 || !LV_CALL("Traffic", "ResetPath", NULL, "") || !LvN_GElems(MAP, "SpawnPositions", spawns)) {
+	if (n < 0 || !PORT_CALL(Traffic, ResetPath, NULL, "") || !LvN_GElems(MAP, "SpawnPositions", spawns)) {
 		return Mode_Done(&t, 0);
 	}
 	n = Native_ForCount(spawns);
 	for (int i = 0; i < n; i++) {
 		Native_Free(item);
-		if (!Native_SeqItem(spawns, i, item) || !LV_OWN(MAP, "CreateAsteroid", NULL, "sv", "Asteroid", item)) {
+		if (!Native_SeqItem(spawns, i, item) || !PORT_LOWN(Map, CreateAsteroid, NULL, "sv", "Asteroid", item)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -744,10 +744,10 @@ static byte AbMap_CreateAsteroid(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *types = Mode_V(&t), *id = Mode_V(&t), *k = Mode_V(&t), *type = Mode_V(&t), *name = Mode_V(&t);
 	nativeVal_t *r = Mode_V(&t), *ang = Mode_V(&t), *now = Mode_V(&t), *at = Mode_V(&t);
 	int len;
-	if (!LV_CALL("Traffic", "SetPath", NULL, "") || !LvN_CreateAt(&a[0], &a[1], "Car", out) || !Mode_G(MAP, "asttype", types) ||
+	if (!PORT_CALL(Traffic, SetPath, NULL, "") || !LvN_CreateAt(&a[0], &a[1], "Car", out) || !Mode_G(MAP, "asttype", types) ||
 		!Mode_G(MAP, "idctr", id) || (len = Native_Size(types)) < 0 || !Mode_Arith('%', id, Mode_I(&t, len), k) ||
 		!Native_Subscript(types, k, type) || !Mode_VGet(out, "Name", name) ||
-		!LV_CALL("Vehicles", "SetStdProperties", NULL, "vvs", name, type, "")) {
+		!PORT_CALL(Vehicles, SetStdProperties, NULL, "vvs", name, type, "")) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = LvN_SetI(out, "FixedModel", 1) && LvN_SetI(out, "Money", -1) && LvN_SetS(out, "OnDeath", "Map.OnDeath") &&
@@ -760,7 +760,7 @@ static byte AbMap_CreateAsteroid(const nativeVal_t *a, nativeVal_t *out) {
 		Native_Copy(Native_Append(ang), r);
 		Native_SetInt(Native_Append(ang), 0);
 		Native_Free(r);
-		ok = Mode_VSet(out, "Ang", ang) && LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_GAdd(MAP, "idctr", 1, NULL);
+		ok = Mode_VSet(out, "Ang", ang) && PORT_CALL(Traffic, ResetPath, NULL, "") && LvN_GAdd(MAP, "idctr", 1, NULL);
 	}
 	if (ok) {
 		/* Scrap.AddScheduledFunc(Scrap.GetTime() + Scrap.Rand(0.5, 2), detraffic, (p.Name,)) */
@@ -810,7 +810,7 @@ static byte AbMap_OnDeath(const nativeVal_t *a, nativeVal_t *out) {
 		ok = LvN_LaterG(MAP, "ctrTimer", "RealOnDeath", a, 2) && Mode_G(MAP, "ctrTimer", timer) &&
 			Mode_Arith('+', timer, &step, sum) && Mode_Put(MAP, "ctrTimer", NULL, sum);
 	} else {
-		ok = Mode_Put(MAP, "LastTime", NULL, now) && LV_OWN(MAP, "RealOnDeath", NULL, "vv", &a[0], &a[1]) &&
+		ok = Mode_Put(MAP, "LastTime", NULL, now) && PORT_LOWN(Map, RealOnDeath, NULL, "vv", &a[0], &a[1]) &&
 			Mode_Put(MAP, "ctrTimer", NULL, &step);
 	}
 	return Mode_Done(&t, ok);
@@ -825,7 +825,7 @@ static byte AbMap_Split(const nativeVal_t *pos, const nativeVal_t *vel) {
 	for (int i = 0; i < 3; i++) {
 		Native_SetInt(Native_Append(&zero), 0);
 	}
-	byte ok = LV_OWN(MAP, "CreateAsteroid", &ast, "sv", "Asteroids", pos) && Mode_VecSub(&zero, vel, &back) &&
+	byte ok = PORT_LOWN(Map, CreateAsteroid, &ast, "sv", "Asteroids", pos) && Mode_VecSub(&zero, vel, &back) &&
 		Mode_VSet(&ast, "Vel", &back);
 	Native_Free(&ast);
 	Native_Free(&zero);
@@ -841,7 +841,7 @@ static byte AbMap_RealOnDeath(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *v = Mode_V(&t), *vel = Mode_V(&t);
 	(void)out;
 	if (!LvN_ModSetI("Vehicles", "ShipExplosionForceInplace", 1) || !Mode_RandD(0.55, 0.65, scale) ||
-		!Mode_SetModVar("Vehicles", "ShipExplosionScaleFactor", scale) || !LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) ||
+		!Mode_SetModVar("Vehicles", "ShipExplosionScaleFactor", scale) || !PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) ||
 		!LvN_ModSetI("Vehicles", "ShipExplosionForceInplace", 0) || !Ab_ModF("Vehicles", "ShipExplosionScaleFactor", 1.0)) {
 		return Mode_Done(&t, 0);
 	}
@@ -852,7 +852,7 @@ static byte AbMap_RealOnDeath(const nativeVal_t *a, nativeVal_t *out) {
 	if (dup) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_EntityH(&a[0], e) || !Mode_VGet(e, "Pos", pos) || !LV_OWN(MAP, "CreateAsteroid", ast, "sv", "Asteroids", pos)) {
+	if (!Mode_EntityH(&a[0], e) || !Mode_VGet(e, "Pos", pos) || !PORT_LOWN(Map, CreateAsteroid, ast, "sv", "Asteroids", pos)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetEmpty(r, NV_TUPLE);
