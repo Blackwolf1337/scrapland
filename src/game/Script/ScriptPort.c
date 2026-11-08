@@ -3,8 +3,9 @@
  * that tells whether a module attribute is still the port's own C function (OBJLIB 5), the call of its native entry
  * with the arguments packed as the adapter would get them, and the old call through Python when something else is
  * there (OBJLIB 7, with SCRAP_PORT_SLOW=1 forcing it and the counters of each call site for the test channel).
- * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable) and the callbacks bound
- * to port functions (Port_Callback, cPy_Function PYF_ENTRY).
+ * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable), the callbacks bound
+ * to port functions (Port_Callback, cPy_Function PYF_ENTRY), and the calls of values that hold port functions (Port_Own
+ * by the adapter, Port_Value and Port_Values).
  */
 #include <stdint.h>
 #include <stdlib.h>
@@ -401,27 +402,37 @@ static portSite_t port_callbacks[PORT_COUNT];
 static portSite_t *port_callbackList;
 static PyObject *port_callbackFuncs[PORT_COUNT];
 
+/* the site of the callbacks of ref i, listed at its first binding (f the function bound) */
+static portSite_t *Port_CallbackSite(int i, PyObject *f) {
+	portSite_t *s = &port_callbacks[i];
+	if (!s->listed) {
+		s->ref = g_PortTable[i];
+		s->file = "callback";
+		s->listed = 1;
+		s->next = port_callbackList;
+		port_callbackList = s;
+		Py_INCREF(f);
+		port_callbackFuncs[i] = f;
+	}
+	return s;
+}
+
+static int Port_OwnIndex(PyObject *f);
+
 portSite_t *Port_Callback(const char *module, const char *name, PyObject *f) {
 	for (int i = Port_Index(module, name); i < PORT_COUNT && !Port_Order(g_PortTable[i], module, name); i++) {
 		const portRef_t *ref = g_PortTable[i];
-		/* a function of the same adapter under another name stays Python: the name of the binding is the
-		 * function's own (__name__) */
+		/* a function of the same adapter under another name is found below by its own name: the name of the
+		 * binding is the function's own (__name__) */
 		if (ref->py || !Port_IsOwn(ref, f) || strcmp(((PyCFunctionObject *)f)->m_ml->ml_name, ref->name)) {
 			continue;
 		}
-		portSite_t *s = &port_callbacks[i];
-		if (!s->listed) {
-			s->ref = ref;
-			s->file = "callback";
-			s->listed = 1;
-			s->next = port_callbackList;
-			port_callbackList = s;
-			Py_INCREF(f);
-			port_callbackFuncs[i] = f;
-		}
-		return s;
+		return Port_CallbackSite(i, f);
 	}
-	return NULL;
+	/* a variable that holds a port function of another module or name (Net.ClientCreate = Ffa.ClientCreate, an alias
+	 * Alarm.ActivateAlarm = Alarm.Init): the ref of the function itself, as the Python call would run its adapter */
+	int i = Port_OwnIndex(f);
+	return i >= 0 ? Port_CallbackSite(i, f) : NULL;
 }
 
 portSite_t *Port_Callbacks(void) {
@@ -444,4 +455,163 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
 		}
 	}
 	return ok;
+}
+
+/* ---- values that hold port functions (stage 4) ---- */
+
+const portRef_t port_value = { "value", "?", NULL, NULL, NULL, 0 };
+
+/* the indices of the refs with an adapter (not the twins) in the order of their adapters (the address), then of
+ * g_PortTable; sorted at the first use */
+static int port_byAdapter[PORT_COUNT];
+static int port_adapters = -1;
+
+static uintptr_t Port_Addr(int i) {
+	return (uintptr_t)g_PortTable[i]->adapter;
+}
+
+static int Port_AdapterOrder(const void *x, const void *y) {
+	int a = *(const int *)x, b = *(const int *)y;
+	uintptr_t p = Port_Addr(a), q = Port_Addr(b);
+	return p < q ? -1 : p > q ? 1 : a - b;
+}
+
+/* the index in g_PortTable of the ref whose own function f is (Port_Own), -1 when there is none */
+static int Port_OwnIndex(PyObject *f) {
+	if (Port_Slow() || !f || !PyCFunction_Check(f) || PyCFunction_GET_SELF(f)) {
+		return -1;
+	}
+	if (port_adapters < 0) {
+		port_adapters = 0;
+		for (int i = 0; i < PORT_COUNT; i++) {
+			if (g_PortTable[i]->adapter) {
+				port_byAdapter[port_adapters++] = i;
+			}
+		}
+		qsort(port_byAdapter, port_adapters, sizeof(port_byAdapter[0]), Port_AdapterOrder);
+	}
+	const PyMethodDef *ml = ((PyCFunctionObject *)f)->m_ml;
+	uintptr_t m = (uintptr_t)ml->ml_meth;
+	int lo = 0, hi = port_adapters;
+	while (lo < hi) {
+		int mid = lo + (hi - lo) / 2;
+		if (Port_Addr(port_byAdapter[mid]) < m) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	/* one adapter under several names (an alias in the table): the ref of the function's own name */
+	for (; lo < port_adapters && Port_Addr(port_byAdapter[lo]) == m; lo++) {
+		const portRef_t *ref = g_PortTable[port_byAdapter[lo]];
+		if (!ref->py && !strcmp(ref->name, ml->ml_name)) {
+			return port_byAdapter[lo];
+		}
+	}
+	return -1;
+}
+
+const portRef_t *Port_Own(PyObject *f) {
+	int i = Port_OwnIndex(f);
+	return i >= 0 ? g_PortTable[i] : NULL;
+}
+
+/* the tuple of the n values (NULL with the error of a conversion) */
+static PyObject *Port_PyValues(const nativeVal_t *a, int n) {
+	PyObject *t = PyTuple_New(n);
+	for (int i = 0; t && i < n; i++) {
+		PyObject *v = Native_ToPy(&a[i]);
+		if (!v) {
+			Py_DECREF(t);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(t, i, v);
+	}
+	return t;
+}
+
+/* the call of the value f on n arguments, as letters (x) or as native values (a): the entry of the port function f is
+ * (Port_OwnIndex, the arguments packed as its adapter would get them), else the call through Python of Native_Call;
+ * the result into *out as Native_Arg takes it, or as the Python object into *pyout */
+static byte Port_ValueRun(portSite_t *site, PyObject *f, const nativeArg_t *x, const nativeVal_t *a, int n,
+	nativeVal_t *out, PyObject **pyout) {
+	if (!f) {
+		return 0;
+	}
+	if (!site->listed) {
+		site->listed = 1;
+		site->next = port_sites;
+		port_sites = site;
+	}
+	int i = n <= PORT_ARGS ? Port_OwnIndex(f) : -1;
+	byte ok;
+	if (i >= 0) {
+		nativeVal_t b[PORT_ARGS], r, res;
+		/* the site names the port function it called last */
+		site->ref = g_PortTable[i];
+		site->fast++;
+		for (int k = 0; k < n; k++) {
+			Native_SetNone(&b[k]);
+		}
+		ok = 1;
+		for (int k = 0; ok && k < n; k++) {
+			ok = x ? Port_Pack(&x[k], &b[k]) : Native_Pass(&a[k], &b[k]);
+		}
+		if (ok) {
+			ok = Port_Entry(site->ref, b, n, &r);
+		} else {
+			Native_SetNone(&r);
+		}
+		if (pyout) {
+			/* what the adapter returns (Mode_Out) */
+			*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
+			ok = *pyout != NULL;
+		} else if (ok && (ok = Native_Pass(&r, &res)) != 0) {
+			/* the result goes through the conversions also when it is dropped (they can fail) */
+			if (out) {
+				*out = res;
+			} else {
+				Native_Free(&res);
+			}
+		}
+		Native_Free(&r);
+		for (int k = 0; k < n; k++) {
+			Native_Free(&b[k]);
+		}
+	} else {
+		site->slow++;
+		PyObject *r = Script_Invoke(f, x ? Native_PyArgs(x, n) : Port_PyValues(a, n));
+		ok = r != NULL;
+		if (pyout) {
+			*pyout = r;
+		} else {
+			/* any other object is an NV_OBJ (OBJLIB 7) */
+			if (r && out) {
+				Native_Arg(r, out);
+			}
+			Py_XDECREF(r);
+		}
+	}
+	if (!ok) {
+		site->errors++;
+	}
+	return ok;
+}
+
+byte Port_ValueVa(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, va_list va) {
+	nativeArg_t x[NATIVE_ARGS];
+	int n = Native_ReadArgs(fmt, va, x);
+	return Port_ValueRun(site, f, x, NULL, n, out, NULL);
+}
+
+byte Port_Value(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	byte ok = Port_ValueVa(site, f, out, fmt, va);
+	va_end(va);
+	return ok;
+}
+
+byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout) {
+	return Port_ValueRun(site, f, NULL, a, n, out, pyout);
 }

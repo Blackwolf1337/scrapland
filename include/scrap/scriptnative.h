@@ -435,7 +435,7 @@ typedef struct {
 /* a call site of PORT_CALL or PORT_OWN (one static per site) and the counts of the paths it took (OBJLIB 7) */
 typedef struct portSite_s {
 	const portRef_t *ref;
-	byte global;			/* PORT_OWN */
+	byte global;			/* PORT_OWN (1), a call of a value (2: PORT_VSITE) */
 	byte listed;			/* in the list of Port_Sites */
 	const char *file;
 	int line;
@@ -484,6 +484,32 @@ PyObject *Port_CallbackFunc(const portSite_t *site);
  * *r (None when it fails; Native_Free it either way): 1, or 0 with the error set (an entry that fails without one
  * gives the SystemError of call_object) */
 byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r);
+
+/*
+ * Values that hold port functions (stage 4): a function a module variable, a table, a from import or a parameter
+ * holds, called as the value it is. Port_Own finds the ref of the function itself in any module, by its adapter and
+ * its own name (__name__: an alias in a table under another name is the ref of that name), so a variable that holds
+ * another module's function (Net.ClientCreate = Ffa.ClientCreate) is the entry of that function, as the Python call
+ * would run its adapter. NULL for any other value (a recorder, a lambda, a bound method, a class, an engine function),
+ * a ref on Python objects (MODE_PYENTRY) and under SCRAP_PORT_SLOW=1 (OBJLIB 7).
+ */
+const portRef_t *Port_Own(PyObject *f);
+/*
+ * The call of a value f: the entry of the port function f is (Port_Own; the arguments packed as its adapter gets them,
+ * the depth check of Port_Entry), else the call through Python of Native_Call (OBJLIB 7: the same object). f NULL
+ * fails with the error its lookup set. Port_Value takes the letters of Native_Call (no keywords), Port_Values n native
+ * values (more than PORT_ARGS go through Python) with the result as Native_Arg takes it into *out (NULL: dropped) or,
+ * with pyout, as the Python object (a new reference, NULL with the error). The site (PORT_VSITE, one per call site)
+ * counts the calls: fast through the entry, slow through Python, and names the port function it called last
+ * ("value.?" before; listed by the channel's "native ports" as "value").
+ */
+byte Port_Value(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, ...);
+byte Port_ValueVa(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, va_list va);
+byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout);
+/* the ref a value site names before its first call through an entry */
+extern const portRef_t port_value;
+#define PORT_VSITE() (&(static portSite_t){ .ref = &port_value, .global = 2, .file = __FILE__, .line = __LINE__ })
+#define PORT_VALUE(f, out, ...) Port_Value(PORT_VSITE(), f, out, __VA_ARGS__)
 
 /* the ref names: the module and the function pasted at once, in the macro the site writes, so that a module whose
  * name is also a macro of the file (#define CTF "CTF") is not replaced first */

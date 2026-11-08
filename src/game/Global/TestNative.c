@@ -9,7 +9,9 @@
  *                            reads lines; litfuzz.sh sends the stored texts that have a line end this way)
  *   native ports             (OBJLIB 7) the counts of the direct calls between ports (PORT_CALL, PORT_OWN) per
  *                            call site that ran: "<file>:<line> <Module>.<Func> attr|own fast <n> slow <n> errors
- *                            <n>", sorted by file and line ("no sites" when none ran); then the callbacks by name
+ *                            <n>", and the calls of values (Port_Value, stage 4) as "<file>:<line> <Module>.<Func>
+ *                            value ..." with the port function the site called last through its entry ("value.?"
+ *                            when none), sorted by file and line ("no sites" when none ran); then the callbacks by name
  *                            bound to a port's entry (cPy_Function PYF_ENTRY, stage 4) since the start: "callback
  *                            <Module>.<Func> calls <n> errors <n>", sorted by name, and the calls of cPy_Function by
  *                            kind: "callbacks python <n> native <n> entry <n>"
@@ -96,7 +98,7 @@ static void TN_Ports(nativeBuf_t *out, byte reset) {
 		const char *f = strstr(sites[i]->file, "src/game/Script/");
 		char line[512];
 		snprintf(line, sizeof(line), "%s:%d %s.%s %s fast %lu slow %lu errors %lu\n", f ? f + 16 : sites[i]->file,
-			sites[i]->line, sites[i]->ref->module, sites[i]->ref->name, sites[i]->global ? "own" : "attr",
+			sites[i]->line, sites[i]->ref->module, sites[i]->ref->name, sites[i]->global == 2 ? "value" : sites[i]->global ? "own" : "attr",
 			sites[i]->fast, sites[i]->slow, sites[i]->errors);
 		Native_BufAdd(out, line, -1);
 	}
