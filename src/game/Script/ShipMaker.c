@@ -730,12 +730,22 @@ static byte Sm_InitAnmShipN(const nativeVal_t *model, const nativeVal_t *ch) {
 	return Mode_Done(&t, LvN_SetCls("DefAction", &ch[0]) && Sm_Verbose(&t, "Animated Vehicle: '", model, "'  Loaded.\n"));
 }
 
-/* the channels ch0 to ch3 are None when not given; only ch0 counts */
+/* the channels ch0 to ch3 (None when not given) as the array the core takes */
 static byte Sm_InitAnmShipK(const nativeVal_t *const *a, nativeVal_t *out) {
-	nativeVal_t none;
+	nativeVal_t ch[4];
 	(void)out;
-	Native_SetNone(&none);
-	return Sm_InitAnmShipN(a[0], a[1] ? a[1] : &none);
+	for (int i = 0; i < 4; i++) {
+		if (a[1 + i]) {
+			Native_Copy(&ch[i], a[1 + i]);
+		} else {
+			Native_SetNone(&ch[i]);
+		}
+	}
+	byte ok = Sm_InitAnmShipN(a[0], ch);
+	for (int i = 0; i < 4; i++) {
+		Native_Free(&ch[i]);
+	}
+	return ok;
 }
 
 static byte ShipMaker_InitAnmShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
