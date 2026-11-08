@@ -1446,16 +1446,16 @@ static byte Sp_EndObjectAnswer(void) {
 /* ---- adapters ---- */
 
 /* the functions the port called without parsing their arguments (any arguments are taken) */
-MODE_ANY(Speech, CallEndOfSpeech, Sp_CallEndOfSpeech())
-MODE_ANY(Speech, NormalAbortSpeech, Sp_NormalAbortSpeech())
-MODE_ANY(Speech, StopMenuEvents, Sp_StopMenuEvents())
-MODE_ANY(Speech, RestartMenuEvents, Sp_RestartMenuEvents())
-MODE_ANY(Speech, AutoAnswer, Sp_AutoAnswer())
-MODE_ANY(Speech, ObjNIEnd, Sp_ObjNIEnd())
-MODE_ANY(Speech, RestoreSpeech, Sp_RestoreSpeech())
-MODE_ANY(Speech, CancelRemoteCom, Mode_CancelSpeech())
-MODE_ANY(Speech, ObjectAutoAnswer, Sp_ObjectAutoAnswer())
-MODE_ANY(Speech, ObjectAutoAnswer2, Sp_ObjectAutoAnswer2())
+MODE_FNANY(Speech, CallEndOfSpeech, Sp_CallEndOfSpeech())
+MODE_FNANY(Speech, NormalAbortSpeech, Sp_NormalAbortSpeech())
+MODE_FNANY(Speech, StopMenuEvents, Sp_StopMenuEvents())
+MODE_FNANY(Speech, RestartMenuEvents, Sp_RestartMenuEvents())
+MODE_FNANY(Speech, AutoAnswer, Sp_AutoAnswer())
+MODE_FNANY(Speech, ObjNIEnd, Sp_ObjNIEnd())
+MODE_FNANY(Speech, RestoreSpeech, Sp_RestoreSpeech())
+MODE_FNANY(Speech, CancelRemoteCom, Mode_CancelSpeech())
+MODE_FNANY(Speech, ObjectAutoAnswer, Sp_ObjectAutoAnswer())
+MODE_FNANY(Speech, ObjectAutoAnswer2, Sp_ObjectAutoAnswer2())
 
 static PyObject *Speech_DoRemote(PyObject *self, PyObject *args) {
 	(void)self;

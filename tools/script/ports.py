@@ -104,10 +104,12 @@ def entries(lines):
 	"""adapter -> nargs (None when the entry checks no count) of the entries in preprocessed lines"""
 	text = '\n'.join(t for _, t in lines)
 	out = {}
-	ms = list(ENTRY.finditer(text))
-	for k, m in enumerate(ms):
-		# the count of this entry, not of the next one (an entry of MODE_ANY checks none)
-		end = min(m.end() + 600, ms[k + 1].start() if k + 1 < len(ms) else len(text))
+	for m in ENTRY.finditer(text):
+		# the count in the entry's own body (an entry of MODE_FNANY or with optional arguments checks none)
+		depth, end = 1, m.end()
+		while depth and end < len(text):
+			depth += {'{': 1, '}': -1}.get(text[end], 0)
+			end += 1
 		a = ARITY.search(text, m.end(), end)
 		out[m.group(1)] = int(a.group(1)) if a else None
 	return out

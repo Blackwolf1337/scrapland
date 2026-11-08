@@ -938,22 +938,6 @@ void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f);
 /* a keyword adapter on its entry: the arguments by name (Mode_Kw with fmt and names), the ones not given as
  * Mode_KwSkip, the entry, the result as Mode_KwOut gives it */
 PyObject *Mode_KwEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
-/* a function that takes any arguments and ignores them, with the call (out stays None): pre_name_E, its entry, and
- * pre_name, its adapter */
-#define MODE_ANY(pre, name, call) \
-	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
-		(void)a; \
-		(void)n; \
-		(void)out; \
-		return (call); \
-	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		nativeVal_t out; \
-		(void)self; \
-		(void)args; \
-		Native_SetNone(&out); \
-		return Mode_Result(pre##_##name##_E(NULL, 0, &out)); \
-	}
 /* a keyword function of a module (prefix pre): the format (letters O, | before the optional ones, up to 8) and the
  * names of its arguments, then the body of pre_name_K(v, given, out) on the slots of Mode_KwSlots (the defaults of the
  * script with Mode_KwDef*): pre_name_E, its entry, and pre_name, its adapter (Mode_KwEntry) */
