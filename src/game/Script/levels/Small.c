@@ -5,8 +5,10 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the dummy search, the entities (Scrap.CreateEntity through its seam, the
  * handles as values, OBJLIB 7), the camera and the engine variables (Scrap.Set through its seam) in C; Init.Outdoor
- * and CharsNPC.AfterBrowseNPC are variables of other modules, set and changed in place (OBJLIB 5); Elevator and
- * ShipEdit by name (OBJLIB 3).
+ * and CharsNPC.AfterBrowseNPC are variables of other modules, set and changed in place (OBJLIB 5).
+ *
+ * Direct calls (stage 3): Elevator.ConnectElevators and ShipEdit.EnterEditShipMenu go through their refs (PORT_CALL).
+ * The NetModes bots put their own function into ShipEdit.EnterEditShipMenu; the call then takes the slow path to it.
  */
 #include "scrap/scrap.h"
 #include "scrap/world.h"
@@ -98,7 +100,7 @@ static byte Nano_Init(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_Str(Native_Append(&doors), "DM_Door_Elevator_00");
 	LvN_Str(Native_Append(&doors), "DM_Door_Elevator_03");
 	Native_SetEmpty(&none, NV_LIST);
-	byte ok = Mode_Import("Elevator") && LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &doors, &none);
+	byte ok = Mode_Import("Elevator") && PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &doors, &none);
 	Native_Free(&doors);
 	Native_Free(&none);
 	return ok;
@@ -138,7 +140,7 @@ static byte Se_Init(const nativeVal_t *a, nativeVal_t *out) {
 		ok = 0;
 	}
 	ok = ok && LvN_SetInts3(&cam, "camPos", -6, -1243, 1451) && LvN_SetInts3(&cam, "camAng", 15, -180, 0) &&
-		LvN_SetI(&cam, "Fov", 70) && Mode_GVarSetI("CameraCloudAlpha", 0) && LV_CALL("ShipEdit", "EnterEditShipMenu", NULL, "is", 0L, "");
+		LvN_SetI(&cam, "Fov", 70) && Mode_GVarSetI("CameraCloudAlpha", 0) && PORT_CALL(ShipEdit, EnterEditShipMenu, NULL, "is", 0L, "");
 	if (ok) {
 		Mode_SetTimeSpeed(1);
 		ok = Mode_GVarSetI("IsMapOutDoor", 0);
