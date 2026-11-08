@@ -1218,9 +1218,9 @@ static byte FicusDead_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (LvN_SaveIs("MissionState", "TalkToDeepThroat")) {
-		return LV_OWN(FD, "AfterDeepThroatMessageShown", NULL, "");
+		return PORT_LOWN(Mission_FicusDead, AfterDeepThroatMessageShown, NULL, "");
 	}
-	return LV_OWN(FD, "InitFicusDead", NULL, "") && LvN_TargetG(FD, "ficus");
+	return PORT_LOWN(Mission_FicusDead, InitFicusDead, NULL, "") && LvN_TargetG(FD, "ficus");
 }
 
 /* OnTalkToFicus(UsrName, CharName, optId, FullOption): Ficus is dead; Dtritus says so */
@@ -1235,6 +1235,7 @@ static byte FicusDead_OnTalkToFicus(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	byte ok = LvN_SetS(&ficus, "Action", "FicusDead") && LvN_SetS(&ficus, "DefLoop", "FicusDead") && LvN_SetI(&ficus, "ArrowCanUse", 0);
 	Native_Free(&ficus);
+	/* OBJLIB 6: AfterDtritusSpeechShown is a section of mission_ficusdead.def */
 	return ok && LvN_Com("Mission_TalkToFicus3_Dtritus_InitMsg1", "", FD, "AfterDtritusSpeechShown", LvN_NoArgs()) && Mode_Target("");
 }
 
@@ -1268,7 +1269,7 @@ static byte Po_DesktopLookup(void) {
 /* DeepThroatSpeech(UsrName, CharName, optId, FullOption): Deep Throat's talk, SetNextMission at the end */
 static byte FicusDead_DeepThroatSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return Po_DesktopLookup() && Mode_Target("") && LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(FD, "SetNextMission", NULL) &&
+	return Po_DesktopLookup() && Mode_Target("") && LvN_Speakers(&a[0], &a[1]) && LV_ONEND(Mission_FicusDead, SetNextMission, NULL) &&
 		Mode_NISpeech("DeepThroat", "Mission_CallDeepThroat_ComDeepthroat_NI_1Msg");
 }
 
@@ -1277,7 +1278,7 @@ static byte FicusDead_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	return Mode_Import("DTritusDesktop") && LvN_ModNone("DTritusDesktop", "DialogController") && Mode_DelSaveVars("MissionState") &&
-		LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_FunctionaryHunting", "Outskirts") &&
+		PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_FunctionaryHunting", "Outskirts") &&
 		Mode_MMDesc("Mission_FunctionaryHunting_MissionText1", 1);
 }
 
@@ -1304,7 +1305,7 @@ PyMethodDef g_PoliceFicusDeadMethods[] = {
 static byte GetAuthorization_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return LvN_MissionChar("Human_Default", GA, "CreateHuman");
+	return LV_MISSIONCHAR("Human_Default", Mission_GetAuthorization, CreateHuman);
 }
 
 /* CreateHuman(e): the human (the module variable human), no talk */
@@ -1326,18 +1327,19 @@ static byte GetAuthorization_Init(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok;
 	(void)a;
 	(void)out;
+	/* OBJLIB 6: LoadScene and GetAuthorization2 are sections of mission_getauthorization.def */
 	if (!LV_OWN(GA, "LoadScene", NULL, "")) {
 		return 0;
 	}
 	Mode_SaveVar("MissionState", &state);
 	if (LvN_EqS(&state, "DeepThroatSpeech")) {
-		ok = LvN_Com("Mission_GoToPolice_RemoteMessage1", "DeepThroat", GA, "AfterDeepThroatMessage", LvN_NoArgs());
+		ok = LV_COM("Mission_GoToPolice_RemoteMessage1", "DeepThroat", Mission_GetAuthorization, AfterDeepThroatMessage, LvN_NoArgs());
 	} else if (LvN_EqS(&state, "GetAuthorization")) {
-		ok = LV_OWN(GA, "GetAuthorization", NULL, "");
+		ok = PORT_LOWN(Mission_GetAuthorization, GetAuthorization, NULL, "");
 	} else if (LvN_EqS(&state, "GetAuthorization2")) {
 		ok = LV_OWN(GA, "GetAuthorization2", NULL, "");
 	} else if (LvN_EqS(&state, "FreeHuman") || LvN_EqS(&state, "FreeHuman2")) {
-		ok = LV_OWN(GA, "FreeHuman", NULL, "");
+		ok = PORT_LOWN(Mission_GetAuthorization, FreeHuman, NULL, "");
 	} else {
 		ok = 1;
 	}
@@ -1362,7 +1364,7 @@ static byte GetAuthorization_AfterDeepThroatMessage(const nativeVal_t *a, native
 /* DeepThroatSpeech(UsrName, CharName, optId, FullOption): Deep Throat's talk, PreGetAuthorization at the end */
 static byte GetAuthorization_DeepThroatSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(GA, "PreGetAuthorization", NULL) && Po_TargetNone() &&
+	return LvN_Speakers(&a[0], &a[1]) && LV_ONEND(Mission_GetAuthorization, PreGetAuthorization, NULL) && Po_TargetNone() &&
 		Mode_NISpeech("DeepThroat", "Mission_TalkToDeepThroat7__ComDeepThroat_NI_1Msg");
 }
 
@@ -1381,16 +1383,18 @@ static byte GetAuthorization_PreGetAuthorization(const nativeVal_t *a, nativeVal
 	Native_Free(&usr);
 	if (m > 0) {
 		SaveVar_Set("MissionState", "GetAuthorization2");
+		/* OBJLIB 6: GetAuthorization2 is a section of mission_getauthorization.def */
 		return LV_OWN(GA, "GetAuthorization2", NULL, "");
 	}
-	return m == 0 && LV_OWN(GA, "GetAuthorization", NULL, "");
+	return m == 0 && PORT_LOWN(Mission_GetAuthorization, GetAuthorization, NULL, "");
 }
 
 /* GetAuthorization(): the nearest conversion point is the target until the player is a messenger */
 static byte GetAuthorization_GetAuthorization(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return PO_HOOK("CharConversor", "afterExitConversor", GA, "ShowAfterConversionMessage") && LV_OWN(GA, "ShowNearestConversor", NULL, "");
+	return PO_HOOK("CharConversor", "afterExitConversor", GA, "ShowAfterConversionMessage") &&
+		PORT_LOWN(Mission_GetAuthorization, ShowNearestConversor, NULL, "");
 }
 
 /* ShowNearestConversor(): every 3 s the conversion point nearest to the player is the target */
@@ -1404,7 +1408,7 @@ static byte GetAuthorization_ShowNearestConversor(const nativeVal_t *a, nativeVa
 	int u = LvN_Usr(&usr);
 	byte ok = u >= 0;
 	if (u > 0) {
-		ok = Mode_VGet(&usr, "Pos", &pos) && LV_CALL("CharConversor", "GetNearestConversionPoint", &conv, "v", &pos) &&
+		ok = Mode_VGet(&usr, "Pos", &pos) && PORT_CALL(CharConversor, GetNearestConversionPoint, &conv, "v", &pos) &&
 			Mode_Put(GA, "conv", NULL, &conv);
 		int c = ok ? LvN_GTrue(GA, "conv") : -1;
 		ok = c >= 0 && (!c || (LvN_TargetG(GA, "conv") && Mode_Later(3, GA, "ShowNearestConversor", NULL, 0, "ShowConversor")));
@@ -1436,6 +1440,7 @@ static byte GetAuthorization_ShowAfterConversionMessage(const nativeVal_t *a, na
 		return 0;
 	}
 	SaveVar_Set("MissionState", "GetAuthorization2");
+	/* OBJLIB 6: GetAuthorization2 is a section of mission_getauthorization.def */
 	return LvN_PutNone(GA, "conv") && LV_OWN(GA, "GetAuthorization2", NULL, "");
 }
 
@@ -1479,6 +1484,7 @@ static byte GetAuthorization_OnDataDropped(const nativeVal_t *a, nativeVal_t *ou
 		}
 		if (full > 0) {
 			int self = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&a[0], "==", &un) : -1;
+			/* OBJLIB 6: PreFreeHuman is a section of mission_getauthorization.def */
 			ok = self > 0 ? LvN_Com("Mission_GetPassword_RemoteMessage5", "DeepThroat", GA, "PreFreeHuman", LvN_NoArgs()) :
 				self == 0 && LvN_Com("Mission_GetPassword_RemoteMessage4", "DeepThroat", NULL, NULL, NULL);
 		} else if (full == 0 && LvN_EqI(&a[1], 0)) {
@@ -1502,7 +1508,7 @@ static byte GetAuthorization_FreeHuman(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_DoorFoe("GateKeeper_08", "DtritusGroupGateKeeper") || !(start = Mode_GlobalPy(GA, "StartScene"))) {
 		return 0;
 	}
-	byte ok = LV_CALL("GateKeeper", "SetDoor", NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", start);
+	byte ok = PORT_CALL(GateKeeper, SetDoor, NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", start);
 	Py_DECREF(start);
 	if (!ok || !PO_ENTS("GateKeeper_08", "UseFunc", "Mission_GetAuthorization.TalkPepe") || !Mode_Target("GateKeeper_08")) {
 		return 0;
@@ -1532,7 +1538,7 @@ static byte GetAuthorization_TalkPepe(const nativeVal_t *a, nativeVal_t *out) {
 	int dt = Po_UsrCtrl(&usr, "Dtritus");
 	Native_Free(&usr);
 	return dt >= 0 && (!dt || PO_ENTI("DM_Conversion_Point_08", "ArrowCanUse", 0)) &&
-		LV_CALL("Speech", "AutoSpeech", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+		PORT_CALL(Speech, AutoSpeech, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 }
 
 /* StartScene(Door, CharName): through the security door: the scene MeetHuman the first time (GoToPress at its
@@ -1544,7 +1550,7 @@ static byte GetAuthorization_StartScene(const nativeVal_t *a, nativeVal_t *out) 
 	(void)out;
 	if (!PO_ENTI("DM_Conversion_Point_08", "ArrowCanUse", 1) || !PO_ENTS("GateKeeper_08", "UseFunc", "Speech.AutoSpeech") || !Po_TargetNone() ||
 		!Mode_DoorFoe("GateKeeper_08", "NoOneGroupGateKeeper") ||
-		!LV_CALL("GateKeeper", "SetDoor", NULL, "ss", "GateKeeper_08", "DM_Door_PoliceSegurity_00")) {
+		!PORT_CALL(GateKeeper, SetDoor, NULL, "ss", "GateKeeper_08", "DM_Door_PoliceSegurity_00")) {
 		return 0;
 	}
 	if (LvN_SaveIs("MissionState", "FreeHuman")) {
@@ -1557,7 +1563,7 @@ static byte GetAuthorization_StartScene(const nativeVal_t *a, nativeVal_t *out) 
 			return 0;
 		}
 		SaveVar_Set("MissionState", "FreeHuman2");
-		return LV_CALL("Scene", "Play", NULL, "s", "MeetHuman") && PO_HOOK("Scene", "EndOfSceneCallback", GA, "GoToPress") &&
+		return PORT_CALL(Scene, Play, NULL, "s", "MeetHuman") && PO_HOOK("Scene", "EndOfSceneCallback", GA, "GoToPress") &&
 			Mode_GVarSetS("EscapeEvent", "Scene.AbortScene");
 	}
 	Native_SetNone(&usr);
@@ -1613,8 +1619,8 @@ static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 		return 1;
 	}
 	int played = LvN_GEqI(GA, "scenePlayed", 0);
-	if (played < 0 || !LvN_Com(played ? "Mission_FirstMeetHuman_RemoteMessage1" : "Mission_FirstMeetHuman_RemoteMessage2", "DeepThroat", GA,
-		"GoToPress2", LvN_NoArgs()) || !LvN_SetI(&a[0], "Invulnerable", 0) || !LvN_SetInts3(&a[0], "Pos", 4227, -1771, 28400) ||
+	if (played < 0 || !LV_COM(played ? "Mission_FirstMeetHuman_RemoteMessage1" : "Mission_FirstMeetHuman_RemoteMessage2", "DeepThroat",
+		Mission_GetAuthorization, GoToPress2, LvN_NoArgs()) || !LvN_SetI(&a[0], "Invulnerable", 0) || !LvN_SetInts3(&a[0], "Pos", 4227, -1771, 28400) ||
 		!LvN_SetInts3(&a[0], "Ang", 0, 160, 0) || !Po_OnFloor(&a[0]) || !Mode_Import("MissionsFuncs") || !Mode_G(GA, "human", &h)) {
 		return 0;
 	}
@@ -1627,7 +1633,7 @@ static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&h);
 	return ok && LvN_HumanFollow(GA, &a[0]) && PO_HOOK("Chars", "OnMainCharDeath", GA, "OnMainCharDeath") &&
 		PO_HOOK("CharConversor", "OnPossession", GA, "OnPossession") && PO_HOOK("CharConversor", "afterExitConversor", GA, "OnExitConversor") &&
-		LV_OWN(GA, "CheckMaxDist", NULL, "");
+		PORT_LOWN(Mission_GetAuthorization, CheckMaxDist, NULL, "");
 }
 
 /* GoToPress2(): the metro to Press is the target */
@@ -1694,7 +1700,7 @@ static byte GetAuthorization_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out
 	int u = LvN_Usr(&usr);
 	byte ok = u >= 0;
 	if (u > 0) {
-		int near = LV_OWN(GA, "CheckHumanDist", &r, "") ? Native_True(&r) : -1;
+		int near = PORT_LOWN(Mission_GetAuthorization, CheckHumanDist, &r, "") ? Native_True(&r) : -1;
 		if (near == 0) {
 			int moving = LvN_GAttr(GA, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, "!=", 0) : -1;
 			ok = moving >= 0 && (!moving || Ga_HumanStops());
@@ -1753,11 +1759,11 @@ static byte GetAuthorization_OnMetroUsed(const nativeVal_t *a, nativeVal_t *out)
 	}
 	Native_Free(&usr);
 	if (near > 0) {
-		if (!Mode_DelSchedS("CheckMaxDist") || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_TalkToBoss", "Press")) {
+		if (!Mode_DelSchedS("CheckMaxDist") || !PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_TalkToBoss", "Press")) {
 			return 0;
 		}
 		Mode_Saves(saves);
-		return Mode_WayPoint() && LV_CALL("Elevator", "UseElevator", NULL, "vvsv", &a[0], &a[1], "MoveLevel Press", &a[3]);
+		return Mode_WayPoint() && PORT_CALL(Elevator, UseElevator, NULL, "vvsv", &a[0], &a[1], "MoveLevel Press", &a[3]);
 	}
 	return near == 0 && LvN_Com("Mission_SetHumanFree_RemoteMessage2", "Human", NULL, NULL, NULL);
 }
