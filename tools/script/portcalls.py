@@ -36,6 +36,8 @@
 #                                                              the dict of pairs "s" + i, s, d or O with literal keys
 #   LvN_OnEnd(m, f, params), LvN_ScorerCallG(m, f)             LV_ONEND(M, F, params), LV_SCORERG(M, F) (a level
 #                                                              module), LvN_OnEndRef / LvN_ScorerRef(&PORT_REF(M, F))
+#   LvN_Com(key, who, m, f, params), LvN_Callback(name, m, f), LvN_MissionChar(name, m, f)
+#                                                              LV_COM, LV_CALLBACK, LV_MISSIONCHAR (the same way)
 #
 # fmt' is the Py_BuildValue format turned into the letters of Native_Call: i, b, h, l as i (the argument cast to long,
 # the va_arg of Port_Invoke), s and z as s (a NULL text is None for both), d and f as d, O and S as O; other letters
@@ -62,7 +64,7 @@ FRAME = re.compile(r'\b(Sf_Ask|Sf_Run|Sf_Own)\(\s*&?\w+,\s*"(\w+)",\s*"(\w+)"')
 SITEREF = r'\(&\(static portSite_t\)\{ \.ref = &\((port_\w+)\), \.global = \((\d)\)[^}]*\}\)'
 SITE = re.compile(r'\b(?:Port_Invoke\(\s*' + SITEREF + r'\s*,' + ARG + r'|Port_Ask\(\s*' + SITEREF +
 	r'|Sf_Port(?:Run)?\(\s*' + ARG + r',\s*' + SITEREF + r')\s*,\s*"([a-zA-Z;=,]*)"')
-VREF = re.compile(r'\b(LvN_OnEndRef|LvN_ScorerRef)\(\s*&\((port_\w+)\)')
+VREF = re.compile(r'\b(LvN_OnEndRef|LvN_ScorerRef|LvN_ComRef|LvN_CallbackRef|LvN_MissionCharRef)\((?:' + ARG + r',\s*)*&\((port_\w+)\)')
 
 
 def refsyms():
@@ -464,18 +466,21 @@ class File:
 			self.edit(s, e, '%s(%s, %s, %s)' % (self.macro(r, 'PORT_CALL'), r.module, r.name, ', '.join(args)))
 
 	def values(self):
-		for form, macro, ref in (('LvN_OnEnd', 'LV_ONEND', 'LvN_OnEndRef'), ('LvN_ScorerCallG', 'LV_SCORERG', 'LvN_ScorerRef')):
+		# form, its macro, its ref function, the index of the module among the arguments
+		for form, macro, ref, k in (('LvN_OnEnd', 'LV_ONEND', 'LvN_OnEndRef', 0), ('LvN_ScorerCallG', 'LV_SCORERG', 'LvN_ScorerRef', 0),
+			('LvN_Com', 'LV_COM', 'LvN_ComRef', 2), ('LvN_Callback', 'LV_CALLBACK', 'LvN_CallbackRef', 1),
+			('LvN_MissionChar', 'LV_MISSIONCHAR', 'LvN_MissionCharRef', 1)):
 			for s, e, t, spans in self.calls(form):
-				if len(t) < 2:
+				if len(t) < k + 2 or t[k + 1] == 'NULL':
 					continue
-				r = self.target(t[0], t[1], s, form)
+				r = self.target(t[k], t[k + 1], s, form)
 				if not r:
 					continue
-				rest = ''.join(', ' + x for x in t[2:])
+				pre, rest = ''.join(x + ', ' for x in t[:k]), ''.join(', ' + x for x in t[k + 2:])
 				if r.level:
-					self.edit(s, e, '%s(%s, %s%s)' % (macro, r.module, r.name, rest))
+					self.edit(s, e, '%s(%s%s, %s%s)' % (macro, pre, r.module, r.name, rest))
 				else:
-					self.edit(s, e, '%s(&PORT_REF(%s, %s)%s)' % (ref, r.module, r.name, rest))
+					self.edit(s, e, '%s(%s&PORT_REF(%s, %s)%s)' % (ref, pre, r.module, r.name, rest))
 
 	def run(self):
 		self.printed()

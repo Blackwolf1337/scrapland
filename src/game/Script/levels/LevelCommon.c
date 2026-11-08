@@ -866,6 +866,10 @@ byte LvN_Com(const char *key, const char *who, const char *module, const char *f
 	return ok;
 }
 
+byte LvN_ComRef(const char *key, const char *who, const portRef_t *ref, const nativeVal_t *params) {
+	return LvN_Com(key, who, ref->module, ref->name, params);
+}
+
 byte LvN_Speakers(const nativeVal_t *usr, const nativeVal_t *ch) {
 	return Mode_SetModVar("Speech", "PlayerName", usr) && Mode_SetModVar("Speech", "NPCName", ch);
 }
@@ -906,6 +910,14 @@ byte LvN_Callback(const char *name, const char *module, const char *func) {
 
 byte LvN_MissionChar(const char *name, const char *module, const char *func) {
 	return PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", name) && LvN_Callback(name, module, func);
+}
+
+byte LvN_CallbackRef(const char *name, const portRef_t *ref) {
+	return LvN_Callback(name, ref->module, ref->name);
+}
+
+byte LvN_MissionCharRef(const char *name, const portRef_t *ref) {
+	return LvN_MissionChar(name, ref->module, ref->name);
 }
 
 int LvN_PcOr(const char *module, const char *name) {
