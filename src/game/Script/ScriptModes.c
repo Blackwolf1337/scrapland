@@ -3980,3 +3980,228 @@ byte Mode_SaveCopy(const char *name, const char *from) {
 	Native_Free(&v);
 	return ok;
 }
+
+/* ---- native entries of hand and keyword adapters (stage 3, batch A2a) ---- */
+
+byte Mode_ArgInt(const nativeVal_t *v, int *out) {
+	if (v->type != NV_OBJ) {
+		return Native_ArgInt(v, out);
+	}
+	/* "i" of getargs.c: PyInt_AsLong through the number methods of the object */
+	long l = PyInt_AsLong(v->obj);
+	if (l == -1 && PyErr_Occurred()) {
+		return 0;
+	}
+	*out = (int)l;
+	return 1;
+}
+
+byte Mode_Arity(int n, int min, int max) {
+	int k = n < min ? min : max;
+	return Native_Raise(NE_TYPE, "function requires %s %d argument%s; %d given", min == max ? "exactly" : n < min ?
+		"at least" : "at most", k, k == 1 ? "" : "s", n);
+}
+
+static byte Mode_FmtLetter(char c) {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+/* the counts of a format as vgetargs1 of getargs.c takes them: letters and groups at the top level, min those before
+ * the '|' */
+static void Mode_FmtCount(const char *fmt, int *min, int *max) {
+	int level = 0;
+	*min = -1;
+	*max = 0;
+	for (; *fmt && *fmt != ':' && *fmt != ';'; fmt++) {
+		if (*fmt == '(') {
+			*max += !level;
+			level++;
+		} else if (*fmt == ')') {
+			level--;
+		} else if (!level && Mode_FmtLetter(*fmt)) {
+			(*max)++;
+		} else if (!level && *fmt == '|') {
+			*min = *max;
+		}
+	}
+	if (*min < 0) {
+		*min = *max;
+	}
+}
+
+static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list *va, int *levels, char *buf, int size,
+	byte top);
+
+/* converttuple of getargs.c (not at the top level) on v, *f after the '(' */
+static const char *Mode_ParseGroup(const nativeVal_t *v, const char **f, va_list *va, int *levels, char *buf, int size) {
+	int n = 0, level = 0, len = 0;
+	for (const char *s = *f; *s && *s != ':' && *s != ';'; s++) {
+		if (*s == '(') {
+			n += !level;
+			level++;
+		} else if (*s == ')') {
+			if (!level) {
+				break;
+			}
+			level--;
+		} else if (!level && Mode_FmtLetter(*s)) {
+			n++;
+		}
+	}
+	/* OBJLIB 7: an NV_OBJ (a list that holds a handle) the Python way */
+	PyObject *obj = v->type == NV_OBJ ? v->obj : NULL;
+	if (obj ? !PySequence_Check(obj) : v->type != NV_LIST && v->type != NV_TUPLE && v->type != NV_STR && v->type != NV_VEC) {
+		levels[0] = 0;
+		snprintf(buf, size, "%d-sequence, %s", n, Native_TypeName(v));
+		return buf;
+	}
+	if (obj) {
+		len = PySequence_Length(obj);
+	} else {
+		Native_Len(v, &len);
+	}
+	if (len != n) {
+		levels[0] = 0;
+		snprintf(buf, size, "%d-sequence, %d-sequence", n, len);
+		return buf;
+	}
+	for (int i = 0; i < n; i++) {
+		nativeVal_t tmp;
+		const nativeVal_t *item = &tmp;
+		Native_SetNone(&tmp);
+		if (obj) {
+			/* a NULL item goes on as None: PyInt_AsLong(NULL) gives the TypeError of None */
+			PyObject *o = PySequence_GetItem(obj, i);
+			if (o) {
+				Native_Arg(o, &tmp);
+				Py_DECREF(o);
+			}
+		} else {
+			item = Native_GetItem(v, i, 0, &tmp);
+		}
+		const char *msg = Mode_ParseItem(item, f, va, levels + 1, buf, size, 0);
+		Native_Free(&tmp);
+		if (msg) {
+			levels[0] = i + 1;
+			return msg;
+		}
+	}
+	(*f)++;
+	return NULL;
+}
+
+/* convertitem of getargs.c on v for the format at *f: NULL, or the text for "expected %s found" (seterror leaves an
+ * error raised already) */
+static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list *va, int *levels, char *buf, int size,
+	byte top) {
+	const char *msg = NULL;
+	char c = *(*f)++;
+	if (c == '(') {
+		return Mode_ParseGroup(v, f, va, levels, buf, size);
+	}
+	/* "s" and "O" give pointers into v: top level only (an item of a group is a copy) */
+	CHECK(top || c == 'i');
+	if (c == 'i') {
+		msg = Mode_ArgInt(v, va_arg(*va, int *)) ? NULL : "integer<i>";
+	} else if (c == 's') {
+		const char **p = va_arg(*va, const char **);
+		if (v->type != NV_STR) {
+			msg = "string";
+		} else if (strlen(Native_Text(v)) != (size_t)v->n) {
+			msg = "string without null bytes";
+		} else {
+			*p = Native_Text(v);
+		}
+	} else {
+		CHECK(c == 'O');
+		*va_arg(*va, const nativeVal_t **) = v;
+	}
+	if (msg) {
+		levels[0] = 0;
+	}
+	return msg;
+}
+
+byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
+	int min, max, levels[32];
+	char buf[256];
+	const char *f = fmt, *msg = NULL;
+	va_list va;
+	Mode_FmtCount(fmt, &min, &max);
+	if (n < min || n > max) {
+		return Mode_Arity(n, min, max);
+	}
+	va_start(va, fmt);
+	int i;
+	for (i = 0; i < n && !msg; i++) {
+		if (*f == '|') {
+			f++;
+		}
+		msg = Mode_ParseItem(&a[i], &f, &va, levels, buf, sizeof(buf), 1);
+	}
+	va_end(va);
+	if (!msg) {
+		return 1;
+	}
+	if (PyErr_Occurred()) {
+		return 0;
+	}
+	/* seterror: "argument <i>[, item <j>...]: expected <msg> found" */
+	char where[128];
+	int k = snprintf(where, sizeof(where), "argument %d", i);
+	for (int l = 0; levels[l] > 0 && k < (int)sizeof(where); l++) {
+		k += snprintf(where + k, sizeof(where) - k, ", item %d", levels[l] - 1);
+	}
+	return Native_Raise(NE_TYPE, "%s: expected %s found", where, msg);
+}
+
+PyObject *Mode_Entry(PyObject *args, portEntry_t entry) {
+	nativeVal_t a[PORT_ARGS], out;
+	/* more than PORT_ARGS arguments: no entry takes them, its arity error comes before it reads one */
+	int n = (int)PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
+	for (int i = 0; i < m; i++) {
+		Native_Arg(PyTuple_GET_ITEM(args, i), &a[i]);
+	}
+	Native_SetNone(&out);
+	return Mode_KwOut(a, m, entry(a, n, &out), &out);
+}
+
+PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core) {
+	PyObject *o[PORT_ARGS] = { NULL };
+	nativeVal_t v[PORT_ARGS], out;
+	const nativeVal_t *a[PORT_ARGS] = { NULL };
+	int min, max;
+	Mode_FmtCount(fmt, &min, &max);
+	CHECK(max <= PORT_ARGS);
+	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7],
+		&o[8], &o[9], &o[10])) {
+		return NULL;
+	}
+	for (int i = 0; i < max; i++) {
+		if (o[i]) {
+			Native_Arg(o[i], &v[i]);
+			a[i] = &v[i];
+		}
+	}
+	Native_SetNone(&out);
+	byte ok = core(a, &out);
+	for (int i = 0; i < max; i++) {
+		if (a[i]) {
+			Native_Free(&v[i]);
+		}
+	}
+	return Mode_KwOut(NULL, 0, ok, &out);
+}
+
+byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t core, nativeVal_t *out) {
+	const nativeVal_t *p[PORT_ARGS] = { NULL };
+	int min, max;
+	Mode_FmtCount(fmt, &min, &max);
+	if (n < min || n > max) {
+		return Mode_Arity(n, min, max);
+	}
+	for (int i = 0; i < n; i++) {
+		p[i] = &a[i];
+	}
+	return core(p, out);
+}
