@@ -18,11 +18,10 @@
  * the default form of Scrap.Def stay by name.
  *
  * Direct calls (stage 3): the other ports (Elevator, OutMap, ShipEdit, HangarTab, Menu, Chars, SaveGame, MissionsFuncs,
- * Scene, CreditsText) and the C functions of the three modules go through their refs (PORT_CALL, PORT_LCALL,
- * PORT_LOWN). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6), SputnikSound.InitLoops (no
- * native entry yet, OBJLIB 3), the scene tables, apply and the scheduled calls (Mode_Calls, EndOfMission's apply,
- * Mode_AtG, Mode_Schedule of the tutorial steps; OBJLIB 4) and the functions set as callbacks (Elevator, Scene,
- * ShipEdit, the speech routines; OBJLIB 5).
+ * Scene, CreditsText, SputnikSound) and the C functions of the three modules go through their refs (PORT_CALL,
+ * PORT_LCALL, PORT_LOWN). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6), the scene
+ * tables, apply and the scheduled calls (Mode_Calls, EndOfMission's apply, Mode_AtG, Mode_Schedule of the tutorial
+ * steps; OBJLIB 4) and the functions set as callbacks (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5).
  */
 #include <string.h>
 
@@ -592,8 +591,7 @@ static byte Rusty_StartInitialScene(void) {
 	}
 	Native_Free(&usr);
 	return ok && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "BertoGoHome") && PORT_CALL(Scene, Play, NULL, "s", "Mecanic") &&
-		/* OBJLIB 3: SputnikSound.InitLoops has no native entry yet (Sounds.c) */
-		Mode_Import("SputnikSound") && LV_CALL("SputnikSound", "InitLoops", NULL, "s", "MecanicSputnik") &&
+		Mode_Import("SputnikSound") && PORT_CALL(SputnikSound, InitLoops, NULL, "s", "MecanicSputnik") &&
 		PORT_LOWN(Mission_RustyFirstContact, ShowExtras, NULL, "") && Mode_EntSetI("FakeBertoShip", "Active", 1);
 }
 
@@ -834,8 +832,7 @@ static byte Rusty_UseElevatorFirstTime(const nativeVal_t *a) {
 	byte ok = Mode_Put(RF, "Params", NULL, &params) && PORT_LCALL(MapShipEdit, CanUseElevator, &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 	if (ok && Native_True(&r)) {
 		ok = LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "EndOfMission") && PORT_CALL(Scene, Play, NULL, "s", "MecanicFinal") &&
-			/* OBJLIB 3: SputnikSound.InitLoops has no native entry yet (Sounds.c) */
-			Mode_Import("SputnikSound") && LV_CALL("SputnikSound", "InitLoops", NULL, "s", "MecanicFinalSputnik") &&
+			Mode_Import("SputnikSound") && PORT_CALL(SputnikSound, InitLoops, NULL, "s", "MecanicFinalSputnik") &&
 			PORT_LOWN(Mission_RustyFirstContact, ShowExtras, NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship) && LvN_SetI(&ship, "Active", 1);
 	}
 	Native_Free(&params);
