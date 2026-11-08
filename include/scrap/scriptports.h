@@ -306,6 +306,7 @@ PORT_DECL(Ffa, OnPositionChange) /* 6 */
 PORT_DECL(Ffa, isTied) /* 1 */
 PORT_DECL(Ffa, CheckGameStart) /* 0 */
 PORT_DECL(Ffa, UsrPos) /* 1 */
+PORT_DECL(Ffa, ActualizeGameScorer) /* ? */
 PORT_DECL(Ffa, ShowScorer) /* 2 */
 PORT_DECL(Ffa, BackMenuFunc) /* 1 */
 PORT_DECL(Ffa, ShowHelp) /* 1 */
@@ -367,6 +368,7 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, isTied, Ffa_isTied) \
 	PORT_DEF(Ffa, CheckGameStart, Ffa_CheckGameStart) \
 	PORT_DEF(Ffa, UsrPos, Ffa_UsrPos) \
+	PORT_DEF(Ffa, ActualizeGameScorer, Ffa_ActualizeGameScorer) \
 	PORT_DEF(Ffa, ShowScorer, Ffa_ShowScorer) \
 	PORT_DEF(Ffa, BackMenuFunc, Ffa_BackMenuFunc) \
 	PORT_DEF(Ffa, ShowHelp, Ffa_ShowHelp) \

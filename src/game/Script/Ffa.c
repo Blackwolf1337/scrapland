@@ -1955,19 +1955,20 @@ static PyObject *Ffa_GetScorerInfo(PyObject *self, PyObject *args, PyObject *kw)
 	return Mode_Out(&t, Ffa_GetScorerInfoC(a, out), out);
 }
 
+/* ActualizeGameScorer(NowShowScorer), NowShowScorer optional */
+static byte Ffa_ActualizeGameScorerK(const nativeVal_t *const *a, nativeVal_t *out) {
+	(void)out;
+	return Ffa_ActualizeGameScorerC(a[0]);
+}
+
+static byte Ffa_ActualizeGameScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "|O", Ffa_ActualizeGameScorerK, out);
+}
+
 static PyObject *Ffa_ActualizeGameScorer(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "NowShowScorer", NULL };
-	PyObject *now = NULL;
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *a = Mode_V(&t), *out = Mode_V(&t);
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &now)) {
-		return Mode_Done(&t, 0), NULL;
-	}
-	if (now) {
-		Native_Arg(now, a);
-	}
-	return Mode_Out(&t, Ffa_ActualizeGameScorerC(now ? a : NULL), out);
+	return Mode_KwCall(args, kw, "|O", names, Ffa_ActualizeGameScorerK);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3
