@@ -1711,7 +1711,6 @@ byte Mode_GVarSetI(const char *name, long i) {
 /* ---- the native level files of batch G ---- */
 
 byte Mode_Calls(const char *module, const char *const *lines) {
-	static const char fmts[] = "vvvvvvvv";
 	for (; *lines; lines++) {
 		const char *p = *lines, *bar = strchr(p, '|');
 		char name[0x80];
@@ -1743,11 +1742,11 @@ byte Mode_Calls(const char *module, const char *const *lines) {
 			ok = LvN_Value(p + 1, next ? (int)(next - p - 1) : -1, &v[n]);
 			p = next;
 		}
+		/* the entry while fn is a port's own function (Port_Values) */
 		if (ok) {
-			ok = Native_HookCall(fn, NULL, fmts + 8 - n, &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7]);
-		} else {
-			Py_DECREF(fn);
+			ok = Port_Values(PORT_VSITE(), fn, v, n, NULL, NULL);
 		}
+		Py_DECREF(fn);
 		while (n-- > 0) {
 			Native_Free(&v[n]);
 		}
@@ -2674,9 +2673,7 @@ byte Mode_CallIf(const char *module, const char *name, byte *called) {
 	}
 	byte ok = 1;
 	if (Native_True(&fn)) {
-		PyObject *o = Native_ToPy(&fn);
-		ok = o && Native_Call(o, NULL, "");
-		Py_XDECREF(o);
+		ok = Mode_CallArgs(&fn, NULL, NULL, 0);
 		*called = 1;
 	}
 	Native_Free(&fn);
@@ -2687,7 +2684,10 @@ byte Mode_CallIf(const char *module, const char *name, byte *called) {
 byte Mode_ApplyNext(const char *module) {
 	nativeVal_t data = { 0 };
 	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
-	byte ok = fn && Mode_G(module, "NextMissionData", &data) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data);
+	/* a tuple through the entry while fn is the port's own function (Port_Values), any other value through the
+	 * builtin apply for its TypeError */
+	byte ok = fn && Mode_G(module, "NextMissionData", &data) && (data.type == NV_TUPLE ?
+		Port_Values(PORT_VSITE(), fn, data.items, data.n, NULL, NULL) : LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data));
 	Py_XDECREF(fn);
 	if (fn) {
 		Native_Free(&data);
@@ -3604,7 +3604,7 @@ void Mode_CallVarIf(const char *module, const char *var, long id) {
 	nativeVal_t f, a;
 	if (Mode_ModGet(module, var, &f) && Native_True(&f)) {
 		Native_SetInt(&a, id);
-		/* OBJLIB 4: the callback called the Python way */
+		/* the callback through its entry while it is a port's own function (Port_Value) */
 		if (!Mode_CallArgs(&f, NULL, &a, 1)) {
 			PyErr_Print();
 		}
