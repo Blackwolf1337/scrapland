@@ -11,7 +11,8 @@
  * (OBJLIB 7). The engine functions the port called by name go through their seams (OBJLIB 7: GetEntity,
  * CreateEntity, GetNetFlags, the dummy search, the scheduler, SAct.GetClass/SetCls/DelClass, SInput.SetActionSet,
  * SLogic.SetOnFloor); the other ports (CharsNPC, CharScorer, MissionsFuncs) and the functions of the module the
- * script calls through its globals stay by name (OBJLIB 3). The exec of a character's Init and the eval of the saved
+ * script calls through its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5), the
+ * function given to the scheduler by name (OBJLIB 4). The exec of a character's Init and the eval of the saved
  * batteries keep the readers of the game's texts (OBJLIB 6).
  */
 #include <string.h>
@@ -328,7 +329,7 @@ static byte Ch_LoadRes(const nativeVal_t *cls) {
 		return a == 0;
 	}
 	Ch_Pair(&pair, cls, &one);
-	byte ok = Native_CallGlobal(CH, "LocalLoadRes", NULL, "v", &pair);
+	byte ok = PORT_OWN(Chars, LocalLoadRes, NULL, "v", &pair);
 	Native_Free(&pair);
 	return ok;
 }
@@ -344,6 +345,7 @@ static byte Ch_DiscardRes(const nativeVal_t *cr, nativeVal_t *out) {
 		Native_SetFloat(&time, Mode_Time());
 		Native_SetInt(&one, 1);
 		Ch_Pair(&pair, cr, &one);
+		/* OBJLIB 4: the scheduler takes the global TryToDiscardThis by name */
 		byte ok = Mode_AtG(&time, CH, "TryToDiscardThis", &pair, 1);
 		Native_Free(&pair);
 		if (!ok) {
@@ -391,7 +393,7 @@ static byte Ch_MainCharDeath(const nativeVal_t *a) {
 	byte ok = Mode_G(CH, "OnMainCharDeath", &hook);
 	if (ok) {
 		ok = Native_True(&hook) ? Mode_CallArgs(&hook, NULL, a, 2) :
-			Mode_Import("MissionsFuncs") && Native_CallMod("MissionsFuncs", "FinishGame", NULL, "i", 0L);
+			Mode_Import("MissionsFuncs") && PORT_CALL(MissionsFuncs, FinishGame, NULL, "i", 0L);
 	}
 	Native_Free(&hook);
 	return ok;
@@ -419,10 +421,10 @@ static byte Ch_ResLasting(PyObject *cr) {
  * so far (from now on lasting), then the class of the player */
 static byte Ch_Init(void) {
 	/* an error stops it and goes to the caller, as in the script (GDB: the save game's character is not loaded) */
-	if (!Native_CallGlobal(CH, "CreatePlayersList", NULL, "")) {
+	if (!PORT_OWN(Chars, CreatePlayersList, NULL, "")) {
 		return 0;
 	}
-	if (!Mode_ModGetI("Init", "OutMapSkip", 0) && !Native_CallMod("CharsNPC", "BrowseNPC", NULL, "")) {
+	if (!Mode_ModGetI("Init", "OutMapSkip", 0) && !PORT_CALL(CharsNPC, BrowseNPC, NULL, "")) {
 		return 0;
 	}
 	if ((Mode_ModGetI("Init", "Outdoor", 0) || Mode_ModGetI("Init", "isJunkYard", 0)) && Ch_AddResS("Sputnik", 0) < 0) {
@@ -439,7 +441,7 @@ static byte Ch_Init(void) {
 		if (item) {
 			Native_Arg(item, &cr);
 		}
-		byte ok = item && Native_CallGlobal(CH, "LocalLoadRes", NULL, "v", &cr) && Ch_ResLasting(item);
+		byte ok = item && PORT_OWN(Chars, LocalLoadRes, NULL, "v", &cr) && Ch_ResLasting(item);
 		Native_Free(&cr);
 		Py_XDECREF(item);
 		if (!ok) {
@@ -449,7 +451,7 @@ static byte Ch_Init(void) {
 	}
 	Py_DECREF(list);
 	const char *ch = SaveVar_Get("Char");
-	return Native_CallGlobal(CH, "LoadRes", NULL, "s", ch ? ch : "") && Mode_PrintS("Character system initialized.");
+	return PORT_OWN(Chars, LoadRes, NULL, "s", ch ? ch : "") && Mode_PrintS("Character system initialized.");
 }
 
 /* CreateMainChar(CharName, CharType, Pos, Ang): the character of the player (made when it is not there), the camera
@@ -492,7 +494,7 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 	Mode_CamName(0, cname);
 	if (!Mode_EntitySeam(cname, cam) || !Mode_VObj(c, "Name", v) || !Mode_VSet(cam, "MainTarget", v) ||
 		!Mode_VSet(cam, "Target", v) || !LvN_SetI(cam, "FreeCam", 0) || !Mode_ActionSet("Walk") ||
-		!Native_CallMod("CharScorer", "Create", NULL, "i", 0L)) {
+		!PORT_CALL(CharScorer, Create, NULL, "i", 0L)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Copy(out, c);
