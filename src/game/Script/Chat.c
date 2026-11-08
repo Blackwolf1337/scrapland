@@ -237,8 +237,8 @@ static byte Chat_End(int id) {
 	if (sc) {
 		cPy_Function_SetFunc(&sc->onCancel, "");
 	}
-	/* OBJLIB 3: the call of another port goes through its module until the ports call each other in C */
-	return Script_Try("Menu", "BackToGame", "(is)", id, "");
+	/* through the module (directly while it holds the port's function) */
+	return PORT_CALL(Menu, BackToGame, NULL, "is", (long)id, "");
 }
 
 /* SendChatString(id, ChatStr, console=0): "<player> text" to the receiver of the player; the server shows it at
