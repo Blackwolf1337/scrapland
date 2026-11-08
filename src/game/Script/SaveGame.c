@@ -13,7 +13,8 @@
  * LoadLevel, Achievement, SNet.CloseServer and CloseClient are called by name as before (the cases record them). The other ports (Scorer, Challenge,
  * Speech, MissionsFuncs) and the functions of the module the script calls through its globals are called through
  * their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5); string.zfill has a twin in the file. The function given to
- * the scheduler by name and the Menu object a script may put into the module stay by name (OBJLIB 4). The registers
+ * the scheduler by name stays by name (OBJLIB 4); the Menu object a script may put into the module is a global
+ * (OBJLIB 5) whose ShowTextBox is called through its entry (PORT_VALUE). The registers
  * keep their Python objects: SaveReg reads the attributes of any object and GetReg makes a class whose attributes are
  * read with the Python literal reader (OBJLIB 6).
  */
@@ -512,19 +513,18 @@ static byte SG_LoadGame(const nativeVal_t *slot) {
 		Mode_SaveVar("Map", map);
 		return Mode_Done(&t, PORT_OWN(SaveGame, QLoad, NULL, "vi", map, 0L));
 	}
-	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 4:
-	 * the method of the Menu object by name, OBJLIB 5: the global) */
+	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 5:
+	 * the global; the function of the object through its entry) */
 	PyObject *menu = Mode_GlobalPy(SG, "Menu");
 	if (!menu) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Lang("XBox_ErrorLoad_Msg", msg);
-	PyObject *m = Native_ToPy(msg);
-	PyObject *box = m ? Script_Method(menu, "ShowTextBox", "(iOss)", 0, m, "Menu.MainMenu", "Menu.MainMenu") : NULL;
+	PyObject *box = Script_GetAttr(menu, "ShowTextBox");
+	byte ok = box && PORT_VALUE(box, NULL, "ivss", 0L, msg, "Menu.MainMenu", "Menu.MainMenu");
 	Py_XDECREF(box);
-	Py_XDECREF(m);
 	Py_DECREF(menu);
-	return Mode_Done(&t, box != NULL);
+	return Mode_Done(&t, ok);
 }
 
 /* the save variables of a new game: name, value (the demo has its own where both are given) */

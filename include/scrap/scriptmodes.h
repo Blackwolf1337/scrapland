@@ -627,8 +627,9 @@ byte Mode_Floor(const nativeVal_t *y, nativeVal_t *out);
 /* abs(v) of the script (PyNumber_Absolute: ints, long ints, floats; the errors of 1.5.2) */
 byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out);
 /* f(args...) of the script on a value f (a function or method held as NV_OBJ, or the TypeError of a value that is no
- * callable) with the n values of args: the result into out (NULL: dropped) */
-byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
+ * callable) with the n values of args: the result into out (NULL: dropped); the entry of a port's own function
+ * (Mode_CbArgs, a site per call) */
+#define Mode_CallArgs(f, out, args, n) Mode_CbArgs(PORT_VSITE(), f, out, args, n)
 /* -v of the script (PyNumber_Negative: ints, long ints, floats; the errors of 1.5.2) */
 byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out);
 
@@ -689,9 +690,9 @@ PyObject *Mode_KwOut(nativeVal_t *a, int n, byte ok, nativeVal_t *out);
 /* SScorer.PreloadTexture(name) through its seam */
 byte Mode_PreloadTexture(const nativeVal_t *name);
 
-/* apply(f, args) of the script on values (OBJLIB 4: the objects called the Python way): the result into out (NULL:
- * dropped) */
-byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
+/* apply(f, args) of the script on values: the result into out (NULL: dropped); the entry of a port's own function on
+ * a tuple (Mode_CbApply, a site per call) */
+#define Mode_Apply(f, args, out) Mode_CbApply(PORT_VSITE(), f, args, out)
 /* the list of a global of the module changed in place as the C ports change it: v appended (first: inserted at 0), and
  * item i deleted (OBJLIB 5: other modules and the cases hold the list) */
 byte Mode_ListAddG(const char *module, const char *var, const nativeVal_t *v, byte first);
@@ -813,7 +814,8 @@ int Mode_SeqLen(const nativeVal_t *seq);
 byte Mode_LangUse(const char *module, const char *key, nativeVal_t *out);
 void Mode_ItemColor(int id, const char *item, const int *c);
 void Mode_ItemVisible(int id, const char *item, int v);
-byte Mode_LinkCall(PyObject *fn, int id, const char *a, const char *b);
+/* fn(id, a, b) of a link function of Menu (a from import): its entry while it is Menu's own (Mode_CbLink) */
+#define Mode_LinkCall(fn, id, a, b) Mode_CbLink(PORT_VSITE(), fn, id, a, b)
 byte Mode_SoundOf(const char *name);
 /* the int value i in v (v returned); (a, b, c) of copies of three values; Scrap.Rand(a, b) as the C ports draw it
  * (the C directly); an adapter of a script function that does nothing (any arguments, None) */
@@ -1026,5 +1028,28 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
 		(void)self; \
 		return Mode_Entry(args, fn##_E); \
 	}
+
+/*
+ * Calls of values (stage 4 of docs/objlib-plan.md, batch 4d; the Mode_Cb prefix): a function a variable, a table, a
+ * from import or a parameter holds, called through the entry of the port function it is (Port_Value: by its adapter,
+ * in any module), else through Python with the same arguments and errors (OBJLIB 7). site is the counter of the call
+ * site (PORT_VSITE); the macros give each call site its own.
+ *   Mode_CbArgs     f(args...) of a native value f with n values (Mode_CallArgs)
+ *   Mode_CbApply    apply(f, args) of native values; Mode_CbApplyPy of a function object (MODE_CBAPPLY): a tuple
+ *                   through the entry, any other args through Python (Script_CallObject: its TypeError)
+ *   Mode_CbLink     fn(id, a, b) of a link function (Mode_LinkCall)
+ *   Mode_CbGlobal   name(...) of the global of module (Native_CallGlobal: the NameError of the script; MODE_CBGLOBAL)
+ *   Mode_CbAttr     module.name(...) by a name known at run time (Native_CallMod; MODE_CBATTR)
+ * fmt and the arguments as Native_Call takes them (no keywords).
+ */
+byte Mode_CbArgs(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
+byte Mode_CbApply(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
+byte Mode_CbApplyPy(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out);
+byte Mode_CbLink(portSite_t *site, PyObject *fn, int id, const char *a, const char *b);
+byte Mode_CbGlobal(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
+byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
+#define MODE_CBAPPLY(fn, args, out) Mode_CbApplyPy(PORT_VSITE(), fn, args, out)
+#define MODE_CBGLOBAL(module, name, out, ...) Mode_CbGlobal(PORT_VSITE(), module, name, out, __VA_ARGS__)
+#define MODE_CBATTR(module, name, out, ...) Mode_CbAttr(PORT_VSITE(), module, name, out, __VA_ARGS__)
 
 #endif

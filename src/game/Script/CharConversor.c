@@ -21,8 +21,9 @@
  * DoorSound) are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
  * by name) and string.replace through its native twin; the module's own functions through its globals as the script
  * calls them (PORT_OWN, the same seam on the global). The SFX, SLogic.Flash, SendSentinelToWatch, SAct.GetCls,
- * SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 7), Menu.LinkLR and LinkUD too
- * (OBJLIB 4: a from import, and they have no entry); the .def files take their $names as a dict (OBJLIB 6).
+ * SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 7); Menu.LinkLR and LinkUD come
+ * from a from import (OBJLIB 6) and are called through their entries while they are Menu's own (PORT_VALUE); the .def
+ * files take their $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
 
@@ -232,7 +233,7 @@ static byte Cc_CharItem(long i, nativeVal_t *out) {
 static byte Cc_Link(PyObject *f, const nativeVal_t *id, long a, long b) {
 	nativeVal_t x = { 0 }, y = { 0 };
 	byte ok = Cc_CharItem(a, &x) && (b < 0 ? (Native_SetStr(&y, "CharExit"), 1) : Cc_CharItem(b, &y)) &&
-		Native_Call(f, NULL, "vvv", id, &x, &y);
+		PORT_VALUE(f, NULL, "vvv", id, &x, &y);
 	Native_Free(&x);
 	Native_Free(&y);
 	return ok;
@@ -269,8 +270,8 @@ static byte Cc_Heads(int pid, int total, int *count) {
 }
 
 /* AddInterfaceContent(id): the interface of the characters (data/menus/charconv.def); the game time stops; the
- * description of the player's character, the keyboard links of the buttons, Escape leaves (OBJLIB 4: from Menu
- * import LinkLR, LinkUD) */
+ * description of the player's character, the keyboard links of the buttons, Escape leaves (from Menu import
+ * LinkLR, LinkUD: OBJLIB 6, the calls through PORT_VALUE) */
 static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *chars = Mode_V(&t), *avl = Mode_V(&t), *sv = Mode_V(&t), *control = Mode_V(&t), *none = Mode_V(&t);
@@ -305,7 +306,7 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 		for (int i = 0; ok && i < 2; i++) {
 			nativeVal_t a = { 0 }, b = { 0 };
 			ok = Cc_CharItem(i * 5 + j, &a) && Cc_CharItem(i * 5 + j + 5, &b) &&
-				(i * 5 + j >= 10 || Native_Call(ud, NULL, "vvv", id, &a, &b));
+				(i * 5 + j >= 10 || PORT_VALUE(ud, NULL, "vvv", id, &a, &b));
 			Native_Free(&a);
 			Native_Free(&b);
 		}

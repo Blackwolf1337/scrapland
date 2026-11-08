@@ -13,8 +13,9 @@
  * being edited is HangarTab.prevShip as a handle value (OBJLIB 5 and 7), the tables of ShipMaker and the lists of
  * ShipEdit are read as their attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL:
  * directly while the attribute holds the port's function, else by name), the module's own functions through its
- * globals as the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu stay by name
- * (OBJLIB 4: a from import, and they have no entry); the .def runner takes Python values (OBJLIB 6).
+ * globals as the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu come from a
+ * from import (OBJLIB 6) and are called through their entries while they are Menu's own (Mode_LinkCall, PORT_VALUE);
+ * the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -837,7 +838,7 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 		ok = WT_Slot(name, control, i) && WT_Slot(other, control, i + 1) && Mode_LinkCall(linkLR, id, name, other);
 	}
 	for (long i = 0; ok && i < slots; i++) {
-		ok = WT_Slot(name, control, i) && Native_Call(linkUD, NULL, "ivs", (long)id, control, name) &&
+		ok = WT_Slot(name, control, i) && PORT_VALUE(linkUD, NULL, "ivs", (long)id, control, name) &&
 			Mode_LinkCall(linkUD, id, name, "Exit");
 	}
 	/* list.remove(control) of the six weapons: the others */
@@ -853,7 +854,7 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 	for (int i = 0; ok && i < 6; i++) {
 		ok = i == skip || Mode_LinkCall(linkUD, id, wt_linked[i], other);
 	}
-	ok = ok && Native_Call(linkUD, NULL, "ivs", (long)id, control, other) && Mode_LinkCall(linkUD, id, other, "Exit") &&
+	ok = ok && PORT_VALUE(linkUD, NULL, "ivs", (long)id, control, other) && Mode_LinkCall(linkUD, id, other, "Exit") &&
 		WT_SlotSprites(id, control, slots);
 	multi = ok ? WT_IsMulti() : -1;
 	if (multi == 0) {
@@ -1358,7 +1359,7 @@ static byte WT_LinkItem(long i, nativeVal_t *out) {
 static byte WT_LinkItems(PyObject *fn, int id, long i, long j) {
 	nativeVal_t a = { 0 }, b = { 0 };
 	byte ok = WT_LinkItem(i, &a) && (j < 0 ? (Native_SetStr(&b, "Exit"), 1) : WT_LinkItem(j, &b)) &&
-		Native_Call(fn, NULL, "ivv", (long)id, &a, &b);
+		PORT_VALUE(fn, NULL, "ivv", (long)id, &a, &b);
 	Native_Free(&a);
 	Native_Free(&b);
 	return ok;

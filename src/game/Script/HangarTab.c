@@ -14,11 +14,11 @@
  * the argument formats of the C port. The variables of the module are read where the script reads them and written at
  * once (OBJLIB 5); prevShip, miniShip and the ships of ShipEdit.editedShips are handle values (OBJLIB 7), the lists of
  * ShipEdit are changed in place on their objects. ShipEdit, ShipMaker and Vehicles are called through their refs
- * (PORT_CALL: directly while the attribute holds the port's function, else by name), the module's own functions
- * through its globals as the script calls them (PORT_OWN, the same seam on the global). Menu's link functions stay by
- * name (OBJLIB 4: a from import, and they have no entry), and so do the SScorer and SSound calls (OBJLIB 7); the
- * helpers of ShipEdit.h (Sn_Multi, Sn_Link) are those of ShipEdit.c. ComputeShipTotalCost evaluates its text through
- * the name chain of the module (OBJLIB 6), the .def runner takes Python values (OBJLIB 6).
+ * (PORT_CALL: directly while the attribute holds the port's function, else by name), the module's own functions through
+ * its globals as the script calls them (PORT_OWN, the same seam on the global). Menu's link functions are named at run
+ * time and called through their entries while they are Menu's own (Sn_Link), the SScorer and SSound calls stay by name
+ * (OBJLIB 7); the helpers of ShipEdit.h (Sn_Multi, Sn_Link) are those of ShipEdit.c. ComputeShipTotalCost evaluates its
+ * text through the name chain of the module (OBJLIB 6), the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 

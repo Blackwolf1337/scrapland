@@ -14,8 +14,8 @@
  * attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly while the attribute
  * holds the port's function, else by name), string.atoi and string.find through their native twins, and the module's
  * own functions through its globals as the script calls them (PORT_OWN, the same seam on the global). The link
- * functions of Menu stay by name (OBJLIB 4: a from import, and they have no entry); the .def runner takes Python
- * values (OBJLIB 6).
+ * functions of Menu come from a from import (OBJLIB 6) and are called through their entries while they are Menu's own
+ * (Mode_LinkCall); the .def runner takes Python values (OBJLIB 6).
  */
 #include <limits.h>
 #include <math.h>
@@ -712,8 +712,8 @@ static byte ET_ShowEngineDesc(int id, const nativeVal_t *control) {
 MODE_IFN(ET_ShowEngineDescPy, 3, ET_ShowEngineDesc(id, &a[1]))
 MODE_IFN(ET_HideEngineDesc, 3, ET_Run(id, "hidedesc", NULL))
 
-/* ChangeRecycleButtonState(id): the recycle button works only for a bay with engines; the links follow (OBJLIB 4:
- * from Menu import LinkLR) */
+/* ChangeRecycleButtonState(id): the recycle button works only for a bay with engines; the links follow (from
+ * Menu import LinkLR: OBJLIB 6, the calls through Mode_LinkCall) */
 static byte ET_RecycleState(int id) {
 	static const char *const mods[] = { "HangarTab", "ShipEdit", NULL };
 	nativeVal_t bay = { 0 }, ne = { 0 }, layout = { 0 };
@@ -1260,8 +1260,8 @@ static byte ET_SetRecycleVisible_E(const nativeVal_t *a, int n, nativeVal_t *out
 MODE_ADAPTER(ET, SetPrevNextEngineVisible)
 MODE_ADAPTER(ET, SetRecycleVisible)
 
-/* the links of ShowEnginesPanel between the list, the bays, the recycle button and the exit (OBJLIB 4: from Menu
- * import LinkLR, LinkUD, UnLinkUD) */
+/* the links of ShowEnginesPanel between the list, the bays, the recycle button and the exit (from Menu import
+ * LinkLR, LinkUD, UnLinkUD: OBJLIB 6, the calls through Mode_LinkCall) */
 static byte ET_ShowLinks(int id, int groups) {
 	static const char *const left[] = { "NextEngine", "PrevEngine", "Engine2", "Engine3", "Engine4" };
 	char name[ET_ITEM], other[ET_ITEM];
@@ -1286,8 +1286,8 @@ static byte ET_ShowLinks(int id, int groups) {
 	return ok;
 }
 
-/* ShowEnginesPanel(id): the tab with the list from its start and the bays of the ship (OBJLIB 4: from Menu import
- * LinkUD) */
+/* ShowEnginesPanel(id): the tab with the list from its start and the bays of the ship (from Menu import LinkUD:
+ * OBJLIB 6, the calls through Mode_LinkCall) */
 static byte ET_ShowEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	static const char *const mods2[] = { "ShipMaker", "string", NULL };
@@ -1680,7 +1680,7 @@ MODE_IFN(ET_UpdateLayoutsGlowPy, 2, ET_UpdateLayoutsGlow(id, &a[1]))
 MODE_IFN(ET_LayoutsGainFocus, 3, PORT_OWN(EnginesTab, UpdateLayoutsGlow, NULL, "iv", (long)id, &a[1]))
 MODE_IFN(ET_LayoutsLostFocus, 3, PORT_OWN(EnginesTab, UpdateLayoutsGlow, NULL, "iv", (long)id, &a[2]))
 
-/* HideEnginesPanel(id) (OBJLIB 4: from Menu import UnLinkLR) */
+/* HideEnginesPanel(id) (from Menu import UnLinkLR: OBJLIB 6, the call through Mode_LinkCall) */
 static byte ET_HideEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	nativeVal_t ship = { 0 }, none, layout = { 0 };

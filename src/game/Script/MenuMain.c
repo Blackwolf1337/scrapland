@@ -7,15 +7,16 @@
  * parse the arguments as before (the same TypeErrors). The variables of other modules are read where the C read them
  * (Init.inMainMenu, isShipEdit, isDemo, Outdoor, isJunkYard, MultiPlayer, Menu.LastMode, LastTimeSpeed,
  * currentSoundPitch, saveGamesList, saveGamesSlots, slotToLoad, slotToOverwrite, fromSinglePlayer, isXbox, HeadBoss,
- * OutHeadMessenger, MovieScorerCall, Scorer.MarginH and MarginV, the sounds of Sound), the variables of Menu are written
- * at once (OBJLIB 5). The menus, SaveGame, Speech and MissionsFuncs are called through their refs (PORT_CALL:
+ * OutHeadMessenger, MovieScorerCall, Scorer.MarginH and MarginV, the sounds of Sound), the variables of Menu are
+ * written at once (OBJLIB 5). The menus, SaveGame, Speech and MissionsFuncs are called through their refs (PORT_CALL:
  * directly while the attribute holds the port's function, else by name, as a mod, a mission or a case may replace
  * them); the aliases and callbacks of Menu and the scorers (Menu.onCreateMainMenu, MovieScorerCall,
- * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5), the Init of the scorer
- * of the mode by its module chosen at run time (OBJLIB 4); SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit,
- * GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams (OBJLIB 7); the death camera
- * schedules functions of Menu and Scrap.SetCam as Python functions (OBJLIB 4); the list of saved games comes from the
- * engine as a Python list and the .def runner takes Python values (OBJLIB 6).
+ * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5), the Init of the scorer of
+ * the mode by its module chosen at run time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref);
+ * SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit, GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go
+ * through their seams (OBJLIB 7); the death camera schedules functions of Menu and Scrap.SetCam as Python functions
+ * (OBJLIB 4); the list of saved games comes from the engine as a Python list and the .def runner takes Python values
+ * (OBJLIB 6).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -622,9 +623,9 @@ static void Main_Initialize(void) {
 		"dtritus", !outdoor || edit, "lonelymerc", !strcmp(Main_SaveVarOr("LonelyMercDataActive"), "1"), "bertos",
 		!strcmp(Main_SaveVarOr("CreateBertos"), "1"), "messenger", Mode_ModGetI("Menu", "OutHeadMessenger", 0) != 0));
 	if (!main) {
-		/* OBJLIB 4: the module chosen at run time (both Init are Mode_PyNone, no entry) */
+		/* the module chosen at run time (OBJLIB 7: both Init are Mode_PyNone, no ref: the call through Python) */
 		const char *scorer = outdoor && !shipEdit ? "RacerScorer" : "CharScorer";
-		Mode_Printed(Native_CallMod(scorer, "Init", NULL, ""), scorer, "Init");
+		Mode_Printed(MODE_CBATTR(scorer, "Init", NULL, ""), scorer, "Init");
 	}
 }
 

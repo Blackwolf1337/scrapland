@@ -511,7 +511,8 @@ static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
 }
 
 /* run initsound <args>: SetInitDoorSound(args) through the module's globals, as SetSlide calls it (an error is left
- * set, it stops the file; OBJLIB 4: the function as a value, applied to the arguments of the line) */
+ * set, it stops the file): the function as a value, applied to the arguments of the line (Mode_Apply: the entry of
+ * a port function; SetInitDoorSound, a keyword adapter of its own, has no entry and no ref, OBJLIB 7) */
 static void DoorSound_StepInitSound(int id, PyObject *args) {
 	nativeVal_t f = { 0 }, a;
 	(void)id;

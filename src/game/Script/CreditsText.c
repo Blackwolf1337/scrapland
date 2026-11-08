@@ -112,7 +112,7 @@ static byte Credits_Init(void) {
 	if (!Mode_Import("Menu")) {
 		return 0;
 	}
-	/* OBJLIB 4, 5: the module's own function goes into a variable of Menu by name */
+	/* OBJLIB 5: the module's own function goes into a variable of Menu (Menu calls it through its entry) */
 	PyObject *f = Script_Attr("CreditsText", "CreditsScorer");
 	if (!f) {
 		return 0;
@@ -257,10 +257,13 @@ static byte Credits_ShowDown(const nativeVal_t *val, PyObject **res) {
 	if (Credits_Cmp(val, 0.5, 1) < 0) {
 		return Credits_Step("ShowDown", val, 0.05);
 	}
-	/* OBJLIB 4: EndOfCredits is a function the level puts into the module (ShowDown gives what it gives) */
+	/* EndOfCredits is a function the level puts into the module (OBJLIB 5), called through its entry (ShowDown gives
+	 * what it gives) */
 	PyObject *end = Script_Attr("CreditsText", "EndOfCredits");
 	int t = end ? PyObject_IsTrue(end) : -1;
-	*res = t > 0 ? Script_Invoke(end, PyTuple_New(0)) : NULL;
+	if (t > 0) {
+		Port_Values(PORT_VSITE(), end, NULL, 0, NULL, res);
+	}
 	Py_XDECREF(end);
 	return t == 0 || *res != NULL;
 }

@@ -18,9 +18,10 @@
  * other ports (Menu, CharScorer, Chars, SaveGame, DoorSound, Elevator, Teleport, CharConversor, PhoneCab,
  * DTritusDesktop) and the module's own functions through its globals go through their refs (PORT_CALL, PORT_OWN: a
  * mission may replace them); Scrap.SetCallFunc, AddParams, AddParami and Execute stay by name (OBJLIB 7), the functions
- * of DoorInfo and DefDoorInfo and the hooks are called as the values of the variables (OBJLIB 5), and the functions
- * given to the scheduler (Metro.SetUsrParams, TryToElevatorLaunchFirst) are values (OBJLIB 4). An option of
- * ConnectElevators whose text does not paste between quotes runs the exec line of the script (OBJLIB 6).
+ * of DoorInfo and DefDoorInfo and the hooks are called as the values of the variables (OBJLIB 5) through the entries of
+ * port functions (Mode_CallArgs), and the functions given to the scheduler (Metro.SetUsrParams,
+ * TryToElevatorLaunchFirst) are values (OBJLIB 4). An option of ConnectElevators whose text does not paste between
+ * quotes runs the exec line of the script (OBJLIB 6).
  */
 #include <limits.h>
 #include <string.h>
@@ -165,7 +166,7 @@ static const doorInfo_t door_datatmaker = { "DataTMaker", 500, "Messenger", "Doo
 static const doorInfo_t door_editship = { "EditShip", 1400, "ShipEdit", "DoorInitializator", "ShipEdit", "ObjInitializator", 0, 1 };
 
 /* a function of the table as a value: a global of Doors as its functions read it, else an attribute of the imported
- * module (OBJLIB 4: the function objects as values) */
+ * module (OBJLIB 5: the function objects go into DoorInfo; their calls take the entries, Mode_CallArgs) */
 static byte Dr_Func(const char *module, const char *name, nativeVal_t *out) {
 	return strcmp(module, "Doors") ? LvN_ModGet(module, name, out) : LvN_GObj("Doors", name, out);
 }
