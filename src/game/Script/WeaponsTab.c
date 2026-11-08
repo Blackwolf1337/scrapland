@@ -11,9 +11,10 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
  * PyMethodDef entries are adapters. The module's variables are read where the script reads them (OBJLIB 5), the ship
  * being edited is HangarTab.prevShip as a handle value (OBJLIB 5 and 7), the tables of ShipMaker and the lists of
- * ShipEdit are read as their attributes. The calls of HangarTab, ShipEdit and ShipMaker, the link functions of Menu
- * and the module's own functions the script calls as its globals stay by name (OBJLIB 3); the .def runner takes
- * Python values (OBJLIB 6).
+ * ShipEdit are read as their attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL:
+ * directly while the attribute holds the port's function, else by name), the module's own functions through its
+ * globals as the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu stay by name
+ * (OBJLIB 4: a from import, and they have no entry); the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -280,8 +281,7 @@ static byte WT_ExecCat(const char *prefix, const nativeVal_t *a, const char *mid
 
 /* ShipEdit.IsEditingMultiplayer() into *out */
 static byte WT_Multi(nativeVal_t *out) {
-	/* OBJLIB 3 */
-	return Native_CallMod("ShipEdit", "IsEditingMultiplayer", out, "");
+	return PORT_CALL(ShipEdit, IsEditingMultiplayer, out, "");
 }
 
 /* ShipEdit.IsEditingMultiplayer() != 1 (the single player money): 1 or 0, -1 with the error */
@@ -315,10 +315,9 @@ static byte WT_WeightPrediction(int id, const nativeVal_t *control, nativeVal_t 
 	Mode_ItemVisible(id, "WeightBack", 1);
 	Mode_ItemVisible(id, on ? "BoostDown" : "BoostUp", 1);
 	Mode_ItemVisible(id, "BoostBack", 1);
-	/* OBJLIB 3 */
-	if (!Native_CallMod("ShipMaker", "GetWeapon", w, "v", weapon) || !Mode_ShipGet("AcMass", am) || !Native_ToInt(am, mass) ||
+	if (!PORT_CALL(ShipMaker, GetWeapon, w, "v", weapon) || !Mode_ShipGet("AcMass", am) || !Native_ToInt(am, mass) ||
 		!Native_Arith(Native_True(loaded) ? '-' : '+', mass, w, weight) ||
-		!Native_CallMod("HangarTab", "ShowBoostPrediction", NULL, "iv", (long)id, weight)) {
+		!PORT_CALL(HangarTab, ShowBoostPrediction, NULL, "iv", (long)id, weight)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Copy(out, loaded);
@@ -473,9 +472,8 @@ static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVa
 	}
 	*u = pair[0];
 	*v = pair[1];
-	/* OBJLIB 3: the module's ShowWeightPrediction as its global */
 	if (!Mode_ScorerPut(id, "SlotMarker", "X", u) || !Mode_ScorerPut(id, "SlotMarker", "Y", v) ||
-		!Native_CallGlobal(MOD, "ShowWeightPrediction", loaded, "ivv", (long)id, control, lost) ||
+		!PORT_OWN(WeaponsTab, ShowWeightPrediction, loaded, "ivv", (long)id, control, lost) ||
 		!WT_Head(control, 5, head) || !Native_Upper(head, up) || !Mode_ModVar("ShipMaker", "WeaponCosts", costs) ||
 		!Native_Subscript(costs, up, c)) {
 		return Mode_Done(&t, 0);
@@ -511,8 +509,7 @@ MODE_IFN(WT_ShowSlotMarkerPy, 3, WT_ShowSlotMarker(id, &a[1], &a[2]))
 static byte WT_HideSlotMarker(int id, const nativeVal_t *control, const nativeVal_t *gain) {
 	Mode_ItemVisible(id, "SlotMarker", 0);
 	Mode_ItemVisible(id, "MoneyPredict", 0);
-	/* OBJLIB 3 */
-	return Native_CallGlobal(MOD, "HideWeightPrediction", NULL, "ivv", (long)id, control, gain);
+	return PORT_OWN(WeaponsTab, HideWeightPrediction, NULL, "ivv", (long)id, control, gain);
 }
 
 MODE_IFN(WT_HideSlotMarkerPy, 3, WT_HideSlotMarker(id, &a[1], &a[2]))
@@ -617,8 +614,8 @@ static byte WT_LoadWeapon(int id, const nativeVal_t *control) {
 		}
 	}
 	if (!WT_ExecCat("HangarTab.prevShip.Weap", nameId, " = 1 - HangarTab.prevShip.Weap", nameId) ||
-		!Mode_ShipGet("Name", name) || !Native_CallMod("ShipMaker", "SetShipParams", NULL, "v", name) ||
-		!Native_CallMod("HangarTab", "ShowShipInfo", NULL, "i", (long)id) || !WT_ShipS("Weap", nameId, isLoaded) ||
+		!Mode_ShipGet("Name", name) || !PORT_CALL(ShipMaker, SetShipParams, NULL, "v", name) ||
+		!PORT_CALL(HangarTab, ShowShipInfo, NULL, "i", (long)id) || !WT_ShipS("Weap", nameId, isLoaded) ||
 		!Mode_ItemText(control, &item)) {
 		return Mode_Done(&t, 0);
 	}
@@ -860,8 +857,7 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 		WT_SlotSprites(id, control, slots);
 	multi = ok ? WT_IsMulti() : -1;
 	if (multi == 0) {
-		/* OBJLIB 3 */
-		ok = Native_CallGlobal(MOD, "UpdateUpgrades", NULL, "iv", (long)id, control) &&
+		ok = PORT_OWN(WeaponsTab, UpdateUpgrades, NULL, "iv", (long)id, control) &&
 			WT_UpgradeLinks(id, control, slots, linkLR, linkUD, unlinkLR);
 	} else if (multi > 0) {
 		ok = WT_Slot(name, control, slots - 1) && Mode_LinkCall(linkLR, id, name, other);
@@ -1104,9 +1100,8 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 		}
 		Script_SetNum(id, p, "Alpha", 255);
 		Mode_ItemColor(id, p, wt_normal);
-		/* OBJLIB 3 */
 		if (!WT_PutWeaponHint(id, p, "HINT_Weapons1", 1, prev) || !WT_WeaponColors(id, prev, 0) ||
-			!Native_CallGlobal(MOD, "HideSlots", NULL, "iv", (long)id, prev)) {
+			!PORT_OWN(WeaponsTab, HideSlots, NULL, "iv", (long)id, prev)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -1128,7 +1123,7 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 	if (ok) {
 		Script_SetStr(id, "ShipEditTabWeapons", "Down", c);
 		Script_SetStr(id, c, "Up", "ShipEditTabWeapons");
-		ok = Native_CallGlobal(MOD, "FillSlots", NULL, "iv", (long)id, control);
+		ok = PORT_OWN(WeaponsTab, FillSlots, NULL, "iv", (long)id, control);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -1248,8 +1243,7 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 		}
 	}
 	Native_Free(prev);
-	/* OBJLIB 3 */
-	byte ok = WT_G("prevWeapon", prev) && Native_CallGlobal(MOD, "UpdateUpgrades", NULL, "iv", (long)id, prev);
+	byte ok = WT_G("prevWeapon", prev) && PORT_OWN(WeaponsTab, UpdateUpgrades, NULL, "iv", (long)id, prev);
 	return Mode_Done(&t, ok);
 }
 
@@ -1422,8 +1416,7 @@ static byte WT_HideWeaponsPanel(int id) {
 	Mode_ItemVisible(id, "UpgradesBox", 0);
 	Mode_ItemVisible(id, "SlotsAndUpgradesBox", 0);
 	for (int i = 0; ok && i < 6; i++) {
-		/* OBJLIB 3 */
-		ok = Native_CallGlobal(MOD, "HideSlots", NULL, "is", (long)id, wt_linked[i]);
+		ok = PORT_OWN(WeaponsTab, HideSlots, NULL, "is", (long)id, wt_linked[i]);
 	}
 	PyObject *unlinkUD = ok ? Mode_From("Menu", "UnLinkUD") : NULL, *unlinkLR = unlinkUD ? Mode_From("Menu", "UnLinkLR") : NULL;
 	ok = unlinkLR != NULL;
