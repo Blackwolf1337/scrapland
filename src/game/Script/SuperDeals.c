@@ -1177,8 +1177,8 @@ MODE_FN(Tdm, InitStatus, 1, Sd_StatusC(TDM, NULL))
 static byte Tdm_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Fourth", "SuperDeal_Eleventh", "Mission_BankersCombat", NULL };
 	return Mode_Import("Parking") && Mode_Import("Menu") && Sd_CameraFor(libs, "QF") && Mode_Import("Chars") &&
-		Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath") && OWN(TDM, "CreateFriends", NULL, "") &&
-		OWN(TDM, "CreateEnemies", NULL, "") && Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", TDM, "CrazyGamblerStartCombat");
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath") && PORT_OWN(TeamDeathMatch, CreateFriends, NULL, "") &&
+		PORT_OWN(TeamDeathMatch, CreateEnemies, NULL, "") && Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", TDM, "CrazyGamblerStartCombat");
 }
 
 MODE_FN(Tdm, Init, 1, Tdm_InitC())
@@ -1189,6 +1189,12 @@ MODE_FN(Tdm, SetFriendProfile, 1, Sd_Profile(&a[0], "CombatFriendType", "CombatF
 /* the list of a team (enemies or friends) and its slot */
 static nativeVal_t *Tdm_List(byte enemy) {
 	return enemy ? &tdm.enemies : &tdm.friends;
+}
+
+/* SetEnemyProfile(e) or SetFriendProfile(e) of a team through its global */
+static byte Tdm_SetProfile(byte enemy, const nativeVal_t *e) {
+	return enemy ? PORT_OWN(TeamDeathMatch, SetEnemyProfile, NULL, "v", e) :
+		PORT_OWN(TeamDeathMatch, SetFriendProfile, NULL, "v", e);
 }
 
 /* CreateFriends() and CreateEnemies(): <prefix>1 to <prefix>N of a team at spawn points, invulnerable until the
@@ -1207,7 +1213,7 @@ static byte Tdm_CreateTeam(byte enemy) {
 		int mark = t.n;
 		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t);
 		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
-		ok = Sd_SpawnCarAng(name, e) && OWN(TDM, enemy ? "SetEnemyProfile" : "SetFriendProfile", NULL, "v", e) &&
+		ok = Sd_SpawnCarAng(name, e) && Tdm_SetProfile(enemy, e) &&
 			Mode_AppendName(TDM, enemy ? "enemies" : "friends", e) && Mode_VSetI(e, "Invulnerable", 1);
 		Mode_Release(&t, mark);
 	}
@@ -1231,7 +1237,8 @@ static byte Tdm_CrazyGamblerStartCombatC(void) {
 		}
 		first = Mode_EqI(&tdm.friendsFrags, 0);
 	}
-	return first ? Sd_GamblerSays("CombatStartTextCad", TDM, "StartCombat") : OWN(TDM, "StartCombat", NULL, "");
+	return first ? Sd_GamblerSays("CombatStartTextCad", TDM, "StartCombat") :
+		PORT_OWN(TeamDeathMatch, StartCombat, NULL, "");
 }
 
 MODE_FN(Tdm, CrazyGamblerStartCombat, 0, Tdm_CrazyGamblerStartCombatC())
@@ -1269,7 +1276,7 @@ static byte Tdm_StartCombatC(void) {
 MODE_FN(Tdm, StartCombat, 0, Tdm_StartCombatC())
 
 /* the end with the hook of a mission: Speech.<how>(cad, ...) then mod.KeepPlaying(args), or KeepPlaying(args) at
- * once without a message */
+ * once without a message (the hook a variable, OBJLIB 5) */
 static byte Sd_EndHook(const char *mod, const char *how, const nativeVal_t *cad, const nativeVal_t *params) {
 	nativeVal_t who;
 	PyObject *hook = Mode_GlobalPy(mod, "KeepPlaying");
@@ -1293,8 +1300,8 @@ static byte Tdm_End(byte win) {
 	Mode_SaveVar(win ? "CombatFinishPlayerWinsTextCad" : "CombatFinishPlayerLoosesTextCad", &cad);
 	Native_SetEmpty(&none, NV_TUPLE);
 	byte ok = (func = Script_Attr("MissionsFuncs", "OnSuperDealFinish")) != NULL && Sd_ScorerOff() &&
-		CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "Enemies") &&
-		CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "Friends") &&
+		PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "Enemies") &&
+		PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "Friends") &&
 		Mode_ListSet("Enemies", "OnDeath", "TeamDeathMatch.OnEnemyDeath2") &&
 		Mode_ListSet("Friends", "OnDeath", "TeamDeathMatch.OnFriendDeath2") &&
 		Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") && Mode_ModNone("Parking", "SwitchCharMissionCallback") &&
@@ -1399,7 +1406,7 @@ static byte Tdm_Respawn(byte enemy, const nativeVal_t *name) {
 		return Mode_Done(&t, 1);
 	}
 	return Mode_Done(&t, Sd_SpawnCarAng(name, e) && Mode_VSetS(e, "EntityList", entityList) &&
-		OWN(TDM, enemy ? "SetEnemyProfile" : "SetFriendProfile", NULL, "v", e) && Mode_AppendName(TDM, enemy ? "enemies" : "friends", e));
+		Tdm_SetProfile(enemy, e) && Mode_AppendName(TDM, enemy ? "enemies" : "friends", e));
 }
 
 MODE_FN(Tdm, RespawnEnemy, 1, Tdm_Respawn(1, &a[0]))
@@ -1454,7 +1461,7 @@ MODE_FN(Tdm, OnPlayerDeath2, 2, Mode_Later(5.0, TDM, "RespawnPlayer", &a[0], 1, 
 /* RestartCombat(id, control): the frags at 0 and the level again */
 static byte Tdm_RestartCombatC(void) {
 	return Sd_PutI(TDM, "enemiesFrags", &tdm.enemiesFrags, 0) && Sd_PutI(TDM, "friendsFrags", &tdm.friendsFrags, 0) &&
-		CALL("SaveGame", "Restart", NULL, "");
+		PORT_CALL(SaveGame, Restart, NULL, "");
 }
 
 MODE_FN(Tdm, RestartCombat, 2, Tdm_RestartCombatC())
