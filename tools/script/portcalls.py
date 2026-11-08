@@ -66,10 +66,13 @@ VREF = re.compile(r'\b(LvN_OnEndRef|LvN_ScorerRef)\(\s*&\((port_\w+)\)')
 
 
 def refsyms():
-	"""port symbol -> (level, module, name, nargs) of the header"""
+	"""port symbol -> (level, module, name, nargs) of the header, and the native twins of string and math (declared in
+	scriptmodes.h, no seam)"""
 	out = {}
 	for (level, module, name), n in ports.read_header().items():
 		out['port_%s%s_%s' % (level + '_' if level else '', module, name)] = (level, module, name, n)
+	for module, name in re.findall(r'^PORT_DECL\((\w+), (\w+)\)', open(os.path.join(ports.ROOT, 'include/scrap/scriptmodes.h')).read(), re.M):
+		out['port_%s_%s' % (module, name)] = (None, module, name, None)
 	return out
 
 
@@ -524,7 +527,9 @@ def rewrite(idx, func, files, dry):
 
 
 def wrap(pp, files):
-	funcs = sorted({'%s.%s' % (m, n) for f, _, form, m, n, _, _ in scan(pp) if form == 'PORT' and (not files or f in files)})
+	"""the seamed functions of the PORT sites (not the twins of string and math: nothing replaces them)"""
+	funcs = sorted({'%s.%s' % (m, n) for f, _, form, m, n, _, _ in scan(pp) if form == 'PORT' and (not files or f in files)
+		and m not in LIB})
 	print(repr(tuple(funcs)))
 
 
