@@ -74,7 +74,11 @@ def _pp1(cmd, path):
 			no, cur = int(m.group(1)), m.group(2)
 			continue
 		if cur == path and t.strip():
-			lines.append((no, t))
+			# the pieces of one source line (a macro expansion) as one line
+			if lines and lines[-1][0] == no:
+				lines[-1] = (no, lines[-1][1] + ' ' + t.strip())
+			else:
+				lines.append((no, t))
 		no += 1
 	return lines
 
@@ -105,9 +109,10 @@ def entries(lines):
 	return out
 
 
-def refs(build):
-	"""file -> [Ref] of the table functions with an entry (in table order), and the problems found"""
-	pp = preprocess(sources(), build)
+def refs(build, pp=None):
+	"""file -> [Ref] of the table functions with an entry (in table order), and the problems found (pp: the
+	preprocessed sources when the caller has them)"""
+	pp = pp or preprocess(sources(), build)
 	tabs, problems = tables(pp), []
 	ents = {f: entries(lines) for f, lines in pp.items()}
 	seen, dup = {}, set()
