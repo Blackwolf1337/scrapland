@@ -97,7 +97,7 @@ static byte Tp_Gate(const char *keeper, const char *door, const char *group, con
 	/* OBJLIB 5: the group is the object of GateKeeper, as the script passes it */
 	PyObject *g = Mode_Import("GateKeeper") ? Script_Attr("GateKeeper", group) : NULL;
 	byte ok = g && (!door || PORT_CALL(GateKeeper, SetDoor, NULL, "ss", keeper, door)) &&
-		PORT_CALL(GateKeeper, DoorFoe, NULL, "sO", keeper, g) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
+		PORT_CALL(GateKeeper, DoorFoe, NULL, "sP", keeper, g) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
 	Py_XDECREF(g);
 	return ok;
 }

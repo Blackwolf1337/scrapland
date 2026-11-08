@@ -393,8 +393,7 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
  *   PORT_XOWN(level, Module, Func, ...)
  *   PORT_ASK(Module, Func, fmt, ...)         Script_Ask: the result as the Python object the call gives (a new
  *   PORT_LASK, PORT_OWNASK, PORT_LOWNASK     reference, NULL with the error), the fast path the entry's result as
- *                                            its adapter returns it; the Sf_ forms SF_CALL, SF_RUN, SF_OWN are on it
- *                                            (include/scrap/script.h)
+ *                                            its adapter returns it
  *
  * fmt and the arguments are those of Native_Call (v, i, d, s, O; a NULL s is None); out and the result as there. The
  * ref of Module.Func comes from include/scrap/scriptports.h (tools/script/ports.py makes it from the PyMethodDef

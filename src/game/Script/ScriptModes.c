@@ -2298,7 +2298,7 @@ byte Mode_DoorFoe(const char *gk, const char *group) {
 	if (!g) {
 		return 0;
 	}
-	byte ok = PORT_CALL(GateKeeper, DoorFoe, NULL, "sO", gk, g);
+	byte ok = PORT_CALL(GateKeeper, DoorFoe, NULL, "sP", gk, g);
 	Py_DECREF(g);
 	return ok;
 }
