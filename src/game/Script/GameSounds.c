@@ -13,9 +13,10 @@
  * The modules are native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the variables of
  * Init and of their module where the scripts read them (OBJLIB 5: ItemTake changed in place, the door lists sorted as
  * the objects they are). Scrap.GetEntity, Set, OpenPack, ClosePack, ConsoleError, SSound.LoadSound and the SAct
- * functions go through their seams (OBJLIB 7); string.upper is C. SSound.CreatePS and SetPS, SAct.GetAction of a
- * value that is no text, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound stay by name
- * (OBJLIB 3, 7). The .def runner takes its $names as a dict and gives its steps Python arguments (OBJLIB 6).
+ * functions go through their seams (OBJLIB 7); string.upper is C. The calls of the module functions through the
+ * globals, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound go through their refs (PORT_OWN,
+ * PORT_CALL: the seam, OBJLIB 5). SSound.CreatePS and SetPS and SAct.GetAction of a value that is no text stay by name
+ * (OBJLIB 7). The .def runner takes its $names as a dict and gives its steps Python arguments (OBJLIB 6).
  */
 #include <string.h>
 
@@ -108,7 +109,7 @@ static byte Gs_SetStdDamageSounds(const nativeVal_t *name) {
 	}
 	/* the first set through the handle: the error of the script for a handle of no entity (None) */
 	byte ok = Mode_EntitySeam(name, &v) && Mode_VIsType(&v, "WithLife") >= 0 && LvN_SetI(&v, "sdd_n", 9) &&
-		Gs_RunSound("SetStdDamageSounds", Mode_DefVars(1, "name", name)) && Native_CallGlobal(SND, "SetStdDamageSoundLoops", NULL, "v", &v);
+		Gs_RunSound("SetStdDamageSounds", Mode_DefVars(1, "name", name)) && PORT_OWN(Sound, SetStdDamageSoundLoops, NULL, "v", &v);
 	Native_Free(&v);
 	return ok;
 }
@@ -170,17 +171,17 @@ static byte Gs_SoundInit(void) {
 		return 0;
 	}
 	Native_SetStr(&pack, "Sounds/Generic");
-	if (!Mode_Pack(&pack) || !Native_CallGlobal(SND, "LoadMenuSounds", NULL, "")) {
+	if (!Mode_Pack(&pack) || !PORT_OWN(Sound, LoadMenuSounds, NULL, "")) {
 		return 0;
 	}
 	/* not Init.inMainMenu or Init.isShipEdit */
 	int t = Gs_Init("inMainMenu");
 	t = t == 0 ? 1 : t > 0 ? Gs_Init("isShipEdit") : -1;
 	if (t > 0) {
-		int skip = Native_CallGlobal(SND, "LoadDamageSounds", NULL, "") && Native_CallMod("DoorSound", "LoadSounds", NULL, "") &&
-			Native_CallGlobal(SND, "WayPoints", NULL, "") && Native_CallGlobal(SND, "PhotoSounds", NULL, "") &&
-			Native_CallGlobal(SND, "ScorerSounds", NULL, "") ? Gs_Init("InMapSkip") : -1;
-		t = skip > 0 ? (Native_CallGlobal(SND, "CharConversionSounds", NULL, "") ? 0 : -1) : skip;
+		int skip = PORT_OWN(Sound, LoadDamageSounds, NULL, "") && PORT_CALL(DoorSound, LoadSounds, NULL, "") &&
+			PORT_OWN(Sound, WayPoints, NULL, "") && PORT_OWN(Sound, PhotoSounds, NULL, "") &&
+			PORT_OWN(Sound, ScorerSounds, NULL, "") ? Gs_Init("InMapSkip") : -1;
+		t = skip > 0 ? (PORT_OWN(Sound, CharConversionSounds, NULL, "") ? 0 : -1) : skip;
 	}
 	if (t < 0) {
 		return 0;
@@ -197,10 +198,10 @@ static byte Gs_SoundInit(void) {
 			t = t < 0 ? -1 : !t;
 		}
 		if (t > 0) {
-			t = Native_CallGlobal(SND, "LoadShipEditInterfaceSounds", NULL, "") ? 0 : -1;
+			t = PORT_OWN(Sound, LoadShipEditInterfaceSounds, NULL, "") ? 0 : -1;
 		}
 	}
-	return t >= 0 && Mode_Pack(NULL) && Native_CallGlobal(SND, "SetOutMusic", NULL, "");
+	return t >= 0 && Mode_Pack(NULL) && PORT_OWN(Sound, SetOutMusic, NULL, "");
 }
 
 /*
@@ -368,7 +369,7 @@ static byte Gs_SetVehicleSounds(const nativeVal_t *name) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Gs_RunOut("SetVehicleSounds", Mode_DefVars(4, "name", name, "model", model, "pc", Mode_IntVal(pcv, pc), "armed",
-		Mode_IntVal(armedv, armed))) && Mode_Import(SND) && Native_CallMod(SND, "SetStdDamageSounds", NULL, "v", name));
+		Mode_IntVal(armedv, armed))) && Mode_Import(SND) && PORT_CALL(Sound, SetStdDamageSounds, NULL, "v", name));
 }
 
 /* the load sections, LoadEngines and LoadWeapons with $pc */
@@ -383,7 +384,6 @@ static byte Gs_OutSection(const char *section, byte pcTest) {
 
 /* LoadVehicles(): the vehicle sounds of an outdoor level, from the pack Sounds/Vehicles */
 static byte Gs_LoadVehicles(void) {
-	static const char *const loads[] = { "LoadEngines", "LoadWeapons", "LoadScorer", "LoadMisc", "LoadCrash", NULL };
 	nativeVal_t pack;
 	int no = Mode_Import("Init") ? Gs_NotOutdoor() : -1;
 	if (no) {
@@ -393,17 +393,14 @@ static byte Gs_LoadVehicles(void) {
 	if (!Mode_PrintS("Loading vehicle sounds...") || !Mode_Pack(&pack)) {
 		return 0;
 	}
-	for (int i = 0; loads[i]; i++) {
-		if (!Native_CallGlobal(OUT, loads[i], NULL, "")) {
-			return 0;
-		}
-	}
-	return Mode_Pack(NULL);
+	return PORT_OWN(OutSound, LoadEngines, NULL, "") && PORT_OWN(OutSound, LoadWeapons, NULL, "") &&
+		PORT_OWN(OutSound, LoadScorer, NULL, "") && PORT_OWN(OutSound, LoadMisc, NULL, "") &&
+		PORT_OWN(OutSound, LoadCrash, NULL, "") && Mode_Pack(NULL);
 }
 
 /* Init(): the sound engine settings of the outdoor levels, then the vehicle sounds */
 static byte Gs_OutInit(void) {
-	return Mode_PrintS("Loading outdor sounds...") && Gs_RunOut("Init", NULL) && Native_CallGlobal(OUT, "LoadVehicles", NULL, "");
+	return Mode_PrintS("Loading outdor sounds...") && Gs_RunOut("Init", NULL) && PORT_OWN(OutSound, LoadVehicles, NULL, "");
 }
 
 MODE_FN(OutSound, SetVehicleSounds, 1, Gs_SetVehicleSounds(&a[0]))
@@ -434,7 +431,7 @@ PyMethodDef g_OutSoundMethods[] = {
 /* LoadSndList(list) of the module's global with a list as the object it is (OBJLIB 5: the lists of the module are
  * sorted in place) */
 static byte Gs_LoadSndListOf(PyObject *list) {
-	byte ok = list && Native_CallGlobal(DOOR, "LoadSndList", NULL, "O", list);
+	byte ok = list && PORT_OWN(DoorSound, LoadSndList, NULL, "P", list);
 	Py_XDECREF(list);
 	return ok;
 }
@@ -476,27 +473,45 @@ static byte Gs_LoadSndList(nativeVal_t *list) {
 	return n >= 0;
 }
 
-/* the adapter of LoadSndList: the list sorted in place as the object it is (OBJLIB 5), then the loads */
-static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
-	PyObject *list;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &list)) {
-		return NULL;
-	}
+/* LoadSndList of the list object: sorted in place as the object it is (OBJLIB 5), then the loads */
+static byte Gs_LoadSndListPy(PyObject *list) {
 	PyObject *r = Script_Method(list, "sort", "()");
 	if (!r) {
-		return NULL;
+		return 0;
 	}
 	Py_DECREF(r);
 	nativeVal_t v;
 	Native_Arg(list, &v);
 	byte ok = Gs_LoadSndList(&v);
 	Native_Free(&v);
-	return Mode_Result(ok);
+	return ok;
+}
+
+/* LoadSndList(SndList) of a native caller: an NV_OBJ list is the object itself, a native list becomes a new list
+ * object (as its call through Python makes it) */
+static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	if (n != 1) {
+		return Port_Arity(n, 1);
+	}
+	PyObject *list = a[0].type == NV_OBJ ? a[0].obj : Native_ToPy(&a[0]);
+	if (a[0].type == NV_OBJ) {
+		Py_INCREF(list);
+	}
+	byte ok = list && Gs_LoadSndListPy(list);
+	Py_XDECREF(list);
+	return ok;
+}
+
+/* the adapter of LoadSndList: the list as the object it is */
+static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
+	PyObject *list;
+	(void)self;
+	return PyArg_ParseTuple(args, "O", &list) ? Mode_Result(Gs_LoadSndListPy(list)) : NULL;
 }
 
 /* run initsound <args>: SetInitDoorSound(args) through the module's globals, as SetSlide calls it (an error is left
- * set, it stops the file) */
+ * set, it stops the file; OBJLIB 4: the function as a value, applied to the arguments of the line) */
 static void DoorSound_StepInitSound(int id, PyObject *args) {
 	nativeVal_t f = { 0 }, a;
 	(void)id;

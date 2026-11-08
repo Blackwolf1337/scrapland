@@ -470,6 +470,7 @@ PORT_DECL(OutSound, LoadCrash) /* 0 */
 PORT_DECL(OutSound, LoadVehicles) /* 0 */
 PORT_DECL(OutSound, Init) /* 0 */
 PORT_DECL(DoorSound, LoadSounds) /* 0 */
+PORT_DECL(DoorSound, LoadSndList) /* 1 */
 PORT_DECL(DoorSound, SetSlide) /* 1 */
 PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 #define PORTS_GameSounds \
@@ -495,6 +496,7 @@ PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 	PORT_DEF(OutSound, LoadVehicles, OutSound_LoadVehicles) \
 	PORT_DEF(OutSound, Init, OutSound_Init) \
 	PORT_DEF(DoorSound, LoadSounds, DoorSound_LoadSounds) \
+	PORT_DEF(DoorSound, LoadSndList, DoorSound_LoadSndList) \
 	PORT_DEF(DoorSound, SetSlide, DoorSound_SetSlide) \
 	PORT_DEF(DoorSound, ConversorSetSounds, DoorSound_ConversorSetSounds)
 
