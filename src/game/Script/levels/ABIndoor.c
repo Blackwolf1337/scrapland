@@ -8,8 +8,13 @@
  * variables, the scorer items, the action set, the camera and the music are C; Scrap.Set, SScorer.Set, SScorer.Fade,
  * SSound.SetMusic, Scrap.MusicPlayer, Scrap.CreateEntity, Scrap.AddScheduledFunc and the dummy search (fc-abi swaps
  * Scrap.StartDummySearch and NextDummySearch) go through their seams (OBJLIB 7); the ship and the camera are handle
- * values (OBJLIB 7); Init.Outdoor and Scene.EndOfSceneCallback are variables of other modules (OBJLIB 5); SaveGame,
- * Elevator, Chars, CharsNPC, Menu, MissionsFuncs, Scene and the functions of the map go by name (OBJLIB 3).
+ * values (OBJLIB 7); Init.Outdoor and Scene.EndOfSceneCallback are variables of other modules (OBJLIB 5).
+ *
+ * Direct calls (stage 3): the functions of SaveGame, Elevator, Chars, Menu, MissionsFuncs and Scene and the map's own
+ * Goodbye go through their refs (PORT_CALL, PORT_LOWN; the seam takes the call by name when a case has put something
+ * else there, OBJLIB 5). By name: the sections of map.def (LoadSceneA, LoadSceneB and the Create functions of the
+ * mission characters; OBJLIB 6); PlaySceneA and Credits given to the scheduler and to Scene, and SaveGame.SaveGame given
+ * to the scheduler, stay values (OBJLIB 4, 5).
  */
 #include <string.h>
 
@@ -56,19 +61,20 @@ static byte Abi_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	Native_SetInt(&zero, 0);
 	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !Mode_SetModVar("Init", "Outdoor", &zero) ||
-		!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TheEnd_MissionText1", 1L) ||
-		!LV_CALL("Elevator", "SetDef", NULL, "ss", "Teleporter", "DM_Door_Teleporter_GamblinDen")) {
+		!PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_TheEnd_MissionText1", 1L) ||
+		!PORT_CALL(Elevator, SetDef, NULL, "ss", "Teleporter", "DM_Door_Teleporter_GamblinDen")) {
 		return 0;
 	}
 	SaveVar_Set("ComeFrom", "");
 	SaveVar_Set("Spawn", "DM_Player_Spawn");
 	SaveVar_Set("Char", "Dtritus");
 	for (int i = 0; i < 4; i++) {
-		if (!LV_CALL("Chars", "AddNewCharRes", NULL, "s", res[i])) {
+		if (!PORT_CALL(Chars, AddNewCharRes, NULL, "s", res[i])) {
 			return 0;
 		}
 	}
 	for (int i = 0; i < 4; i++) {
+		/* OBJLIB 6: the Create functions are sections of map.def */
 		if (!LvN_MissionChar(chars[i][0], MAP, chars[i][1])) {
 			return 0;
 		}
@@ -88,15 +94,16 @@ static byte Abi_Init(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	byte ok;
+	/* OBJLIB 6: LoadSceneA and LoadSceneB are sections of map.def */
 	if (LvN_SaveIs("ABIndoor.Scene", "0")) {
 		ok = LV_OWN(MAP, "LoadSceneA", NULL, "") && LV_OWN(MAP, "LoadSceneB", NULL, "");
 		if (ok) {
 			Mode_SetActionSet("Inactive");
-			ok = LV_CALL("Menu", "DrawScorer", NULL, "is", 0L, "Inactive") && Mode_Later(1.0, MAP, "PlaySceneA", NULL, 0, NULL) &&
+			ok = PORT_CALL(Menu, DrawScorer, NULL, "is", 0L, "Inactive") && Mode_Later(1.0, MAP, "PlaySceneA", NULL, 0, NULL) &&
 				Mode_Fade(0, lv_black, lv_black, 4.0);
 		}
 	} else {
-		ok = LV_OWN(MAP, "LoadSceneB", NULL, "") && LV_OWN(MAP, "Goodbye", NULL, "");
+		ok = LV_OWN(MAP, "LoadSceneB", NULL, "") && PORT_LOWN(Map, Goodbye, NULL, "");
 	}
 	if (!ok) {
 		return 0;
@@ -106,7 +113,7 @@ static byte Abi_Init(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_Str(Native_Append(&doors), "DM_Door_Teleporter_GamblinDen");
 	Native_SetEmpty(&maps, NV_LIST);
 	LvN_Str(Native_Append(&maps), "GamblinDen");
-	ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &doors, &maps);
+	ok = PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &doors, &maps);
 	Native_Free(&doors);
 	Native_Free(&maps);
 	return ok;
@@ -203,14 +210,8 @@ static byte Abi_Goodbye(void) {
 	return ok;
 }
 
-static PyObject *Abi_GoodbyePy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = Py_None;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
-	}
-	return Mode_Result(Abi_Goodbye());
+MODE_KW(Abi, GoodbyePy, "|O", "usr") {
+	return Abi_Goodbye();
 }
 
 /* LaunchCinematic(UsrName, CharName, optId, FullOption): the use of the ship: the last scene, then the credits */
@@ -223,7 +224,7 @@ static byte Abi_LaunchCinematic(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	LvN_Str(&name, "CheckArrow");
 	Native_SetInt(&zero, 0);
-	byte ok = Mode_EntSet(&name, "Active", &zero) && LV_CALL("Scene", "Play", NULL, "s", "TheEndB") &&
+	byte ok = Mode_EntSet(&name, "Active", &zero) && PORT_CALL(Scene, Play, NULL, "s", "TheEndB") &&
 		LvN_ModSetGlobal("Scene", "EndOfSceneCallback", MAP, "Credits");
 	Native_Free(&name);
 	return ok;
