@@ -66,7 +66,7 @@ static byte Sy_Get(const nativeVal_t *h, const char *var, nativeVal_t *out) {
 
 /* Vehicles.OnDeath(LooserName, WinnerName) after import Vehicles */
 static byte Sy_OnDeath(const nativeVal_t *looser, const nativeVal_t *winner) {
-	return Mode_Import("Vehicles") && LV_CALL("Vehicles", "OnDeath", NULL, "vv", looser, winner);
+	return Mode_Import("Vehicles") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", looser, winner);
 }
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, ()) of a callable (a bound method; OBJLIB 4); fn is taken over */
@@ -178,7 +178,7 @@ static int Sy_UsrIs(const nativeVal_t *usr, const nativeVal_t *name) {
 }
 
 /* Scrap.GetNearestParked(1, pos): (name, (x, y, z)), ("", (0, 0, 0)) when none; a pos that is no three numbers goes to
- * the engine function by name for its TypeError */
+ * the engine function by name for its TypeError (OBJLIB 7) */
 static byte Sy_NearestParked(const nativeVal_t *pos, nativeVal_t *out) {
 	double x[3];
 	if (!Mode_VecOf(pos, x)) {
@@ -248,10 +248,13 @@ static byte Sy_RaiseValue(const char *module, const nativeVal_t *v) {
 /*
  * UsePhoneCab(UsrName, CharName, optId, FullOption) of a mission: the audio com of the phone cab (the cab is the
  * global pc), the police warning of objWho while the alarm is on, else the NI talk of niWho with the end function of
- * module; activate: the cab stops being the target first; resetUse: the cab gets its default use after the talk starts
+ * module (end: its ref, LvN_OnEndRef); activate: the cab stops being the target first; resetUse: the cab gets its default
+ * use after the talk starts
  */
 typedef struct {
-	const char *police, *objWho, *end, *niWho, *ni;
+	const char *police, *objWho;
+	const portRef_t *end;
+	const char *niWho, *ni;
 	byte activate, resetUse;
 } syPhone_t;
 
@@ -260,14 +263,14 @@ static byte Sy_UsePhone(const nativeVal_t *a, const char *module, const syPhone_
 	Native_SetNone(&pc);
 	Native_SetNone(&e);
 	byte ok = Mode_Import("PhoneCab") && LvN_Speakers(&a[0], &a[1]) &&
-		LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) &&
+		PORT_CALL(PhoneCab, UseAudioCom, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) &&
 		Mode_Put(module, "pc", NULL, &e);
 	int alarm = ok ? Mode_AlarmOn() : -1;
 	if (alarm > 0) {
-		ok = Mode_G(module, "pc", &pc) && LV_CALL("Speech", "StartObjSpch", NULL, "vss", &pc, p->police, p->objWho);
+		ok = Mode_G(module, "pc", &pc) && PORT_CALL(Speech, StartObjSpch, NULL, "vss", &pc, p->police, p->objWho);
 	} else if (alarm == 0) {
-		ok = (!p->activate || (Mode_G(module, "pc", &pc) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pc, 0L))) &&
-			LvN_OnEnd(module, p->end, NULL) && Mode_NISpeech(p->niWho, p->ni);
+		ok = (!p->activate || (Mode_G(module, "pc", &pc) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &pc, 0L))) &&
+			LvN_OnEndRef(p->end, NULL) && Mode_NISpeech(p->niWho, p->ni);
 		if (ok && p->resetUse) {
 			Native_Free(&e);
 			ok = Mode_EntityH(&a[1], &e) && LvN_SetS(&e, "UseFunc", "PhoneCab.DefUseAudioCom");
@@ -306,9 +309,9 @@ static byte Map_InitStatusN(void) {
 		!LvN_ModTexts("Traffic", "AcHeavyShips", heavy) || !LvN_ModSetI("Traffic", "NumHeavy", 10)) {
 		return 0;
 	}
-	return LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_MetroExt_ScrapYard") &&
-		LV_CALL("Elevator", "SetDef", NULL, "ss", "MetroExt", "DM_Door_MetroExt_ScrapYard") &&
-		LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator", "DM_Door_Elevator_GamblinDen");
+	return PORT_CALL(Elevator, SetDef, NULL, "ss", "Metro", "DM_Door_MetroExt_ScrapYard") &&
+		PORT_CALL(Elevator, SetDef, NULL, "ss", "MetroExt", "DM_Door_MetroExt_ScrapYard") &&
+		PORT_CALL(Elevator, SetDef, NULL, "ss", "Elevator", "DM_Door_Elevator_GamblinDen");
 }
 
 /* Init(LevelPath): the elevator to the gamblin den, the metro, the parkings of the lonely mercenary, the clouds */
@@ -317,8 +320,8 @@ static byte Map_InitN(void) {
 		return 0;
 	}
 	return Mode_Connect("DM_Door_Elevator_GamblinDen", "GamblinDen", 0) &&
-		LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_MetroExt_ScrapYard") &&
-		(!LvN_SaveIs("LonelyMercLairActive", "1") || LV_CALL("Parking", "CreateLonelyMercParkings", NULL, "")) &&
+		PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_MetroExt_ScrapYard") &&
+		(!LvN_SaveIs("LonelyMercLairActive", "1") || PORT_CALL(Parking, CreateLonelyMercParkings, NULL, "")) &&
 		Mode_GVarSetI("CameraCloudRed", 77) && Mode_GVarSetI("CameraCloudGreen", 80) && Mode_GVarSetI("CameraCloudBlue", 60);
 }
 
@@ -346,10 +349,10 @@ static const char *const mt_mosquito_profile[] = { "Ship=SMOSQUITO", "ControlBra
 static const char *const mt_mosquito_reprogram[] = { "FactorDamageGetAway=1.0", "CadenceShoot=75", "ControlAim=1", "TimeMaxStrafe=2",
 	"VelMaxStrafe=0.25", NULL };
 
-/* aiprof = VehiclesNPC.GetIAProf("SMosquito") (the profile object, OBJLIB 3) */
+/* aiprof = VehiclesNPC.GetIAProf("SMosquito") (the profile object, OBJLIB 5) */
 static byte Sy_MosquitoProf(nativeVal_t *aiprof) {
 	Native_SetNone(aiprof);
-	return LV_CALL("VehiclesNPC", "GetIAProf", aiprof, "s", "SMosquito");
+	return PORT_CALL(VehiclesNPC, GetIAProf, aiprof, "s", "SMosquito");
 }
 
 /* Init(LevelPath): the mosquitos reprogrammed, the kills counted from now, the triggers of the inhabitants */
@@ -362,7 +365,8 @@ static byte MT_InitN(void) {
 	Native_Free(&aiprof);
 	Native_Free(&n);
 	int t = ok ? LvN_GTrue(MT, "WithScrapyardInhabitants") : -1;
-	return t == 0 || (t > 0 && LV_OWN(MT, "CreateMosquitosTriggers", NULL, "") && LV_OWN(MT, "CreateMadHuntersTriggers", NULL, ""));
+	return t == 0 || (t > 0 && PORT_LOWN(MapTriggers, CreateMosquitosTriggers, NULL, "") &&
+		PORT_LOWN(MapTriggers, CreateMadHuntersTriggers, NULL, ""));
 }
 
 /* CheckMosquitoCadenceShoot(): the mosquitos shoot faster after 20 kills (the branch of 40 is never reached) */
@@ -512,14 +516,16 @@ static const mtTaken_t mt_mosquito_taken = { "shipsAllowedToLaunchMosquitos", "M
 static const mtTaken_t mt_madhunter_taken = { "shipsAllowedToLaunchMadHunters", "MadHuntersTriggeredShipName", "MaxMadHunters",
 	"MadHunters", "CreateMadHunter", "madHuntersLairs", 0.5 };
 
-/* a ship of a lair: at a free spawn point with its profile, then moved to the lair */
-static byte MT_CreateShipN(const nativeVal_t *lair, const char *name, const char *profile, const char *list, long money, byte cadence) {
+/* a ship of a lair: at a free spawn point with its profile (GetMosquitoProfile or GetMadHunterProfile and LvN_StdAI,
+ * the two lines of LvN_StdProfile), then moved to the lair; a mosquito checks the cadence of the mosquitos */
+static byte MT_CreateShipN(const nativeVal_t *lair, const char *name, const char *list, long money, byte mosquito) {
 	nativeVal_t o = { 0 }, pd = { 0 };
 	Native_SetNone(&pd);
-	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar(name, 0, &o, NULL) && LvN_StdProfile(MT, profile, &o, &pd) &&
-		LvN_SetS(&o, "EntityList", list) && LvN_SetS(&o, "TgType", "red") && Mode_VSet(&o, "Pos", lair) &&
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar(name, 0, &o, NULL) &&
+		(mosquito ? PORT_LOWN(MapTriggers, GetMosquitoProfile, &pd, "") : PORT_LOWN(MapTriggers, GetMadHunterProfile, &pd, "")) &&
+		LvN_StdAI(&o, &pd) && LvN_SetS(&o, "EntityList", list) && LvN_SetS(&o, "TgType", "red") && Mode_VSet(&o, "Pos", lair) &&
 		Mode_VSet(&o, "LLogicLairPos", lair) && LvN_SetI(&o, "Money", money) &&
-		(!cadence || LV_OWN(MT, "CheckMosquitoCadenceShoot", NULL, ""));
+		(!mosquito || PORT_LOWN(MapTriggers, CheckMosquitoCadenceShoot, NULL, ""));
 	Native_Free(&o);
 	Native_Free(&pd);
 	return ok;
@@ -533,8 +539,8 @@ MODE_FN(MT, CreateMosquitosTriggers, 0, MT_CreateTriggersN(&mt_mosquitos))
 MODE_FN(MT, CreateMadHuntersTriggers, 0, MT_CreateTriggersN(&mt_madhunters))
 MODE_FN(MT, OnMosquitoTriggerTaken, 2, MT_TriggerTakenN(a, &mt_mosquito_taken))
 MODE_FN(MT, OnMadHunterTriggerTaken, 2, MT_TriggerTakenN(a, &mt_madhunter_taken))
-MODE_FN(MT, CreateMosquito, 1, MT_CreateShipN(&a[0], "Mosquito", "GetMosquitoProfile", "Mosquitos", 25, 1))
-MODE_FN(MT, CreateMadHunter, 1, MT_CreateShipN(&a[0], "MadHunter", "GetMadHunterProfile", "MadHunters", 100, 0))
+MODE_FN(MT, CreateMosquito, 1, MT_CreateShipN(&a[0], "Mosquito", "Mosquitos", 25, 1))
+MODE_FN(MT, CreateMadHunter, 1, MT_CreateShipN(&a[0], "MadHunter", "MadHunters", 100, 0))
 
 PyMethodDef g_ScrapyardMapTriggersMethods[] = {
 	{ "GetMadHunterProfile", MT_GetMadHunterProfile, 1, NULL },
@@ -573,21 +579,23 @@ static byte Ambush_InitN(void) {
 	Native_Free(&n);
 	int c = ok ? LvN_GEqI(AM, "numProbes", -1) : -1;
 	if (c > 0) {
-		return LV_OWN(AM, "CallTraitorius", NULL, "");
+		return PORT_LOWN(Mission_Ambush, CallTraitorius, NULL, "");
 	}
 	c = c == 0 ? LvN_GEqI(AM, "numProbes", -2) : -1;
 	if (c > 0) {
-		return LV_OWN(AM, "CallDeepThroat", NULL, "");
+		return PORT_LOWN(Mission_Ambush, CallDeepThroat, NULL, "");
 	}
+	/* OBJLIB 6: LaunchAmbush is a section of mission_ambush.def */
 	return c == 0 && LV_OWN(AM, "LaunchAmbush", NULL, "");
 }
 
-static const syPhone_t am_phone1 = { "Generics_StillPolice1_Functionary", "Traitorius", "DeepThroatCom", "Functionary",
+static const syPhone_t am_phone1 = { "Generics_StillPolice1_Functionary", "Traitorius", &PORT_LREF(Mission_Ambush, DeepThroatCom), "Functionary",
 	"Mission_Ambush1_Traitorius_NI_1Msg", 1, 0 };
-static const syPhone_t am_phone2 = { "Generics_StillPolice1_DeepThroat", "DeepThroat", "SetNextMission", "DeepThroat",
+static const syPhone_t am_phone2 = { "Generics_StillPolice1_DeepThroat", "DeepThroat", &PORT_LREF(Mission_Ambush, SetNextMission), "DeepThroat",
 	"Mission_TalkToDeepThroat2_ComDeepThroat_NI_1Msg", 0, 1 };
 
-/* DeepThroatCom(): after Traitorius: Deep Throat's message, then the ambush */
+/* DeepThroatCom(): after Traitorius: Deep Throat's message, then the ambush (OBJLIB 6: PreLaunchAmbush is a section of
+ * mission_ambush.def) */
 static byte Ambush_DeepThroatComN(void) {
 	return LvN_PcDefault(AM) && LvN_ModNone("Speech", "OnOutOfRange") &&
 		LvN_Com("Mission_Ambush1_RemoteMessage1", "DeepThroat", AM, "PreLaunchAmbush", LvN_NoArgs());
@@ -623,7 +631,7 @@ static byte Ambush_CreateProbeN(void) {
 		nativeVal_t up = { 0 }, r = { 0 };
 		Native_SetNone(&up);
 		Native_SetNone(&r);
-		int ok = Mode_VGet(usr, "Pos", &up) && LV_OWN(AM, "IsValidPos", &r, "vv", &up, pos) ? Native_True(&r) : -1;
+		int ok = Mode_VGet(usr, "Pos", &up) && PORT_LOWN(Mission_Ambush, IsValidPos, &r, "vv", &up, pos) ? Native_True(&r) : -1;
 		Native_Free(&up);
 		Native_Free(&r);
 		if (ok < 0) {
@@ -635,11 +643,11 @@ static byte Ambush_CreateProbeN(void) {
 		Native_Free(pos);
 		Mode_RandomVisPoint(pos);
 	}
-	byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", p, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
-		LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_SetS(p, "OnDeath", "Mission_Ambush.OnProbeDeath") &&
+	byte ok = PORT_CALL(Traffic, SetPath, NULL, "") && PORT_CALL(VehiclesNPC, MakeAI, p, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
+		PORT_CALL(Traffic, ResetPath, NULL, "") && LvN_SetS(p, "OnDeath", "Mission_Ambush.OnProbeDeath") &&
 		Mode_VSet(p, "MovePos", pos) && Mode_VSet(p, "Pos", pos) && LvN_SetInts3(p, "MoveAng", 0, 0, 0) && LvN_SetInts3(p, "Ang", 0, 0, 0) &&
 		LvN_SetF(p, "MoveTime", 0.1) && Mode_G(AM, "PROBE_LIFE", life) && Mode_VSet(p, "Life", life) && Mode_VSet(p, "MaxLife", life) &&
-		Mode_VSet(p, "MinLife", life) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", p, 1L) && Mode_VGet(p, "Name", name) &&
+		Mode_VSet(p, "MinLife", life) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", p, 1L) && Mode_VGet(p, "Name", name) &&
 		Mode_PrintV(name);
 	return Mode_Done(&t, ok);
 }
@@ -649,7 +657,8 @@ static byte Ambush_CreateMadHunterN(void) {
 	nativeVal_t m = { 0 }, pd = { 0 };
 	Native_SetNone(&pd);
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("Traffic", 0, &m, NULL) &&
-		LvN_StdProfile(AM, "GetMadHuntersProfile", &m, &pd) && LvN_SetS(&m, "EntityList", "Enemies") && LvN_Life(&m, AM, "MADHUNTER_LIFE");
+		PORT_LOWN(Mission_Ambush, GetMadHuntersProfile, &pd, "") && LvN_StdAI(&m, &pd) && LvN_SetS(&m, "EntityList", "Enemies") &&
+		LvN_Life(&m, AM, "MADHUNTER_LIFE");
 	Native_Free(&m);
 	Native_Free(&pd);
 	return ok;
@@ -666,7 +675,7 @@ static byte Ambush_CreateMadHuntersN(void) {
 	Native_Free(&n);
 	Native_Free(&r);
 	for (long k = 0; ok && k < count; k++) {
-		ok = LV_OWN(AM, "CreateMadHunter", NULL, "");
+		ok = PORT_LOWN(Mission_Ambush, CreateMadHunter, NULL, "");
 	}
 	return ok;
 }
@@ -692,7 +701,7 @@ static byte Ambush_OnProbeDeathN(const nativeVal_t *a) {
 	}
 	int done = LvN_GEqI(AM, "numProbes", 0);
 	if (done > 0) {
-		return Mode_Done(&t, LvN_Com("Mission_Ambush2_RemoteMessage4", "DeepThroat", AM, "PreCallDeepThroat", LvN_NoArgs()));
+		return Mode_Done(&t, LV_COM("Mission_Ambush2_RemoteMessage4", "DeepThroat", Mission_Ambush, PreCallDeepThroat, LvN_NoArgs()));
 	}
 	if (done < 0 || !Mode_G(AM, "numProbes", n)) {
 		return Mode_Done(&t, 0);
@@ -701,10 +710,10 @@ static byte Ambush_OnProbeDeathN(const nativeVal_t *a) {
 	Native_Free(n);
 	Native_SetInt(four, 4);
 	LvN_Str(pre, "Mission_Ambush2_RemoteMessage");
-	byte ok = Mode_WayPoint() && LV_OWN(AM, "CreateProbe", NULL, "") && Mode_G(AM, "numProbes", n) && Native_Arith('-', four, n, d);
+	byte ok = Mode_WayPoint() && PORT_LOWN(Mission_Ambush, CreateProbe, NULL, "") && Mode_G(AM, "numProbes", n) && Native_Arith('-', four, n, d);
 	if (ok) {
 		Mode_Repr(d, r);
-		ok = Native_Arith('+', pre, r, key) && LV_CALL("Speech", "AddRemoteCom", NULL, "vs", key, "DeepThroat");
+		ok = Native_Arith('+', pre, r, key) && PORT_CALL(Speech, AddRemoteCom, NULL, "vs", key, "DeepThroat");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -715,7 +724,7 @@ static byte Ambush_PreCallDeepThroatN(void) {
 		return 0;
 	}
 	SaveVar_Set("NumProbes", "-2");
-	return Mode_MMDesc("Mission_TalkToDeepThroat2_MissionText1", 1L) && Mode_WayPoint() && LV_OWN(AM, "CallDeepThroat", NULL, "");
+	return Mode_MMDesc("Mission_TalkToDeepThroat2_MissionText1", 1L) && Mode_WayPoint() && PORT_LOWN(Mission_Ambush, CallDeepThroat, NULL, "");
 }
 
 static byte Ambush_SetNextMissionN(void) {
@@ -793,6 +802,7 @@ static byte Gambler_InitN(void) {
 	int done = Mode_SaveInt("NumCrazyGamblerLifes", &lifes) ? Cg_LastLife(&lifes) : -1;
 	Native_Free(&lifes);
 	if (done > 0) {
+		/* OBJLIB 6: PreSetNextMission is a section of mission_defeatcrazygambler2.def */
 		return LV_OWN(CG, "PreSetNextMission", NULL, "");
 	}
 	if (done < 0) {
@@ -800,9 +810,9 @@ static byte Gambler_InitN(void) {
 	}
 	Sy_AddHead("EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", 20.0f, 0.0f);
 	return Mode_ListSet("Enemies", "OnDeath", "Mission_DefeatCrazyGambler2.OnCrazyGamblerDeath") &&
-		LvN_Com("Mission_DefeatCrazyGambler2_RemoteMessage1", "DeepThroat", CG, "CreateMosquitos", LvN_NoArgs()) &&
-		LV_OWN(CG, "CreateCrazyGambler", NULL, "") && Mode_Later(3.0, CG, "LaunchTaunts", NULL, 0, NULL) &&
-		LvN_ScorerCallG(CG, "MissionScorer") && LvN_Draw();
+		LV_COM("Mission_DefeatCrazyGambler2_RemoteMessage1", "DeepThroat", Mission_DefeatCrazyGambler2, CreateMosquitos, LvN_NoArgs()) &&
+		PORT_LOWN(Mission_DefeatCrazyGambler2, CreateCrazyGambler, NULL, "") && Mode_Later(3.0, CG, "LaunchTaunts", NULL, 0, NULL) &&
+		LV_SCORERG(Mission_DefeatCrazyGambler2, MissionScorer) && LvN_Draw();
 }
 
 /* LaunchTaunts(): every 12 s one of the five taunts while the crazy gambler lives */
@@ -819,7 +829,7 @@ static byte Gambler_LaunchTauntsN(void) {
 		if (ok) {
 			Mode_Repr(s, r);
 			Native_Free(n);
-			ok = Native_Arith('+', pre, r, key) && LV_CALL("Speech", "RemoteComunication", NULL, "vs", key, "EvilGambler") &&
+			ok = Native_Arith('+', pre, r, key) && PORT_CALL(Speech, RemoteComunication, NULL, "vs", key, "EvilGambler") &&
 				Mode_G(CG, "numTaunt", n) && Native_Arith('+', n, Mode_I(&t, 1), n1) && Mode_Arith('%', n1, Mode_I(&t, 5), m) &&
 				Mode_Put(CG, "numTaunt", NULL, m);
 		}
@@ -835,7 +845,7 @@ static byte Gambler_CreateMosquitoN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *o1 = Mode_V(&t), *pd = Mode_V(&t), *ammo = Mode_V(&t), *g = Mode_V(&t), *r = Mode_V(&t), *name = Mode_V(&t);
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("Traffic", 1, o1, NULL) &&
-		LvN_StdProfile(CG, "GetMosquitoProfile", o1, pd) && LvN_SetS(o1, "EntityList", "Enemies");
+		PORT_LOWN(Mission_DefeatCrazyGambler2, GetMosquitoProfile, pd, "") && LvN_StdAI(o1, pd) && LvN_SetS(o1, "EntityList", "Enemies");
 	if (ok) {
 		Sy_AmmoMax(ammo);
 		ok = Mode_VSet(o1, "Ammo00", ammo) && LvN_Life(o1, CG, "MOSQUITO_LIFE") && Mode_G(CG, "givesSomething", g) &&
@@ -879,7 +889,8 @@ static byte Gambler_CreateCrazyGamblerN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *h = Mode_V(&t), *pd = Mode_V(&t), *pilot = Mode_V(&t), *name = Mode_V(&t), *g = Mode_V(&t);
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("CrazyGambler", 1, h, NULL) &&
-		LvN_StdProfile(CG, "GetCrazyGamblerProfile", h, pd) && LvN_SetI(h, "LaunchTaunts", 0) && Mode_G(CG, "pilotName", pilot) &&
+		PORT_LOWN(Mission_DefeatCrazyGambler2, GetCrazyGamblerProfile, pd, "") &&
+		LvN_StdAI(h, pd) && LvN_SetI(h, "LaunchTaunts", 0) && Mode_G(CG, "pilotName", pilot) &&
 		Mode_VSet(h, "MPil0", pilot) && LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") &&
 		LvN_Life(h, CG, "CRAZY_GAMBLER_LIFE") && Mode_VGet(h, "Name", name) && Mode_Put(CG, "crazyGamblerName", NULL, name) &&
 		Mode_G(CG, "crazyGamblerName", g) && LvN_Target(g);
@@ -1465,7 +1476,7 @@ static byte Sy_PhoneInitN(const char *module, const char *use, byte berto) {
 	return ok;
 }
 
-static const syPhone_t mb_phone = { "Generics_StillPolice1_Berto", "Berto", "SetNextMission", "DeepThroat",
+static const syPhone_t mb_phone = { "Generics_StillPolice1_Berto", "Berto", &PORT_LREF(Mission_MeetBerto, SetNextMission), "DeepThroat",
 	"Mission_MeetBerto_ComDeepThroat_NI_1Msg", 1, 0 };
 
 /* module.var = MissionsFuncs.ReassignBertosPlayerTarget (the function object, OBJLIB 5) */
@@ -1506,8 +1517,8 @@ static byte Berto_SetNextMissionN(void) {
 	return Mode_Done(&t, ok);
 }
 
-static const syPhone_t td_phone = { "Generics_StillPolice1_DeepThroat", "DeepThroat", "SetNextMission", "DeepThroat",
-	"Mission_TalkToDeepThroat10_ComDeepThroat_NI_1Msg", 1, 0 };
+static const syPhone_t td_phone = { "Generics_StillPolice1_DeepThroat", "DeepThroat", &PORT_LREF(Mission_TalkToDeepThroat, SetNextMission),
+	"DeepThroat", "Mission_TalkToDeepThroat10_ComDeepThroat_NI_1Msg", 1, 0 };
 
 static byte Throat_SetNextMissionN(void) {
 	return LvN_PcDefault(TD) && LvN_Next("Mission_DestroyBadDebtors", "Outskirts", "Mission_MeetBankMaster_MissionText1") && Mode_WayPoint();
