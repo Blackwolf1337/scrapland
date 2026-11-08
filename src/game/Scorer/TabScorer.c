@@ -24,6 +24,18 @@ cTabScorer *cTabScorer_ctor(cTabScorer *self) {
 	img->color = 0xffffffff;
 	self->base.x = 320.0f;
 	self->base.y = 240.0f;
+	/* differs from the original: the size, the cells, the first frame and TabMax stayed what the heap held until a
+	 * SizeX, SizeY or Tab* set. A tab drawn before its SizeX (fc-r8e-init) took a stale pointer for cellsX and drew
+	 * up to 2^31 cells a frame */
+	self->sizeW = 0.0f;
+	self->sizeH = 0.0f;
+	self->sizeX = 0.0f;
+	self->sizeY = 0.0f;
+	self->cellsX = 0;
+	self->cellsY = 0;
+	self->cell = 0;
+	self->tabSpriteIndex = 0;
+	self->tabMax = 0;
 	self->tabInit = 0;
 	self->tabEnd = 0;
 	self->sizeTabQuad = 1;
