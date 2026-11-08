@@ -503,9 +503,9 @@ PORT_DECL(GateKeeper, UseDoor) /* ? */
 PORT_DECL(GateKeeper, SetDoor) /* ? */
 PORT_DECL(GateKeeper, DoorFoe) /* ? */
 #define PORTS_GateKeeper \
-	PORT_DEF(GateKeeper, UseDoor, GateKeeper_UseDoor) \
-	PORT_DEF(GateKeeper, SetDoor, GateKeeper_SetDoor) \
-	PORT_DEF(GateKeeper, DoorFoe, GateKeeper_DoorFoe)
+	PORT_DEFP(GateKeeper, UseDoor, GateKeeper_UseDoor) \
+	PORT_DEFP(GateKeeper, SetDoor, GateKeeper_SetDoor) \
+	PORT_DEFP(GateKeeper, DoorFoe, GateKeeper_DoorFoe)
 
 /* HangarTab.c */
 PORT_DECL(HangarTab, ShowBoostPrediction) /* 2 */
@@ -676,8 +676,8 @@ PORT_DECL(MakeChar, CreateRelaxAction) /* ? */
 PORT_DECL(MakeChar, AddDefMorphActions) /* ? */
 PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 #define PORTS_MakeChar \
-	PORT_DEF(MakeChar, CreateRelaxAction, MakeChar_CreateRelaxAction) \
-	PORT_DEF(MakeChar, AddDefMorphActions, MakeChar_AddDefMorphActions) \
+	PORT_DEFP(MakeChar, CreateRelaxAction, MakeChar_CreateRelaxAction) \
+	PORT_DEFP(MakeChar, AddDefMorphActions, MakeChar_AddDefMorphActions) \
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
 
 /* MenuBase.c */
@@ -759,7 +759,7 @@ PORT_DECL(Menu, EnterMissionInfo) /* ? */
 /* MenuNet.c */
 PORT_DECL(PCMenu, TryJoin) /* ? */
 #define PORTS_MenuNet \
-	PORT_DEF(PCMenu, TryJoin, PCMenu_TryJoin)
+	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin)
 
 /* Metro.c */
 PORT_DECL(Metro, SetUsrParams) /* ? */
@@ -1523,8 +1523,8 @@ PORT_DECL(SRace, GetReSpawnPos) /* 1 */
 PORT_DECL(Sputnik, Assign) /* ? */
 PORT_DECL(Sputnik, SetSptAt) /* ? */
 #define PORTS_Sputnik \
-	PORT_DEF(Sputnik, Assign, Sputnik_Assign) \
-	PORT_DEF(Sputnik, SetSptAt, Sputnik_SetSptAt)
+	PORT_DEFP(Sputnik, Assign, Sputnik_Assign) \
+	PORT_DEFP(Sputnik, SetSptAt, Sputnik_SetSptAt)
 
 /* SputnikInterface.c */
 PORT_DECL(SputnikInterface, AddDefaultPanelContent) /* 1 */

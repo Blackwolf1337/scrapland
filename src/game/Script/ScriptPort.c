@@ -125,6 +125,16 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 	case 'O':
 		/* a NULL object fails the call as Native_Args does */
 		return x->o && Native_Arg(x->o, v);
+	case 'P':
+		/* the object itself */
+		if (!x->o) {
+			return 0;
+		}
+		Native_SetNone(v);
+		v->type = NV_OBJ;
+		v->obj = x->o;
+		Py_INCREF(x->o);
+		return 1;
 	}
 	return 0;
 }
@@ -180,7 +190,7 @@ static PyObject *Port_SlowCall(PyObject *hook, const portArgs_t *p) {
 /* a call of a site: the result into *out as Native_Arg takes it (pyout NULL), or as the Python object into *pyout */
 static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const char *fmt, va_list va) {
 	portArgs_t p;
-	int slot[PORT_ARGS], m;
+	int slot[PORT_ARGS], m = 0;
 	PyObject *hook = NULL;
 	byte ok = 0;
 	if (!site->listed) {
@@ -189,7 +199,7 @@ static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const
 		port_sites = site;
 	}
 	Port_Read(fmt, va, &p);
-	byte direct = Port_Slots(site->ref, &p, slot, &m);
+	byte direct = !site->ref->py && Port_Slots(site->ref, &p, slot, &m);
 	int seam = Port_Look(site->ref, site->global, !direct, &hook);
 	if (seam > 0) {
 		site->slow++;

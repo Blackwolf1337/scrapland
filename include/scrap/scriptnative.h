@@ -269,7 +269,7 @@ int Native_Seam(const char *module, const char *name, PyObject **hook);
 /*
  * OBJLIB 3, 4 and 7: calls of Python callables with native arguments, for the calls between ports by name, the
  * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text
- * (NULL: None), O a PyObject * (borrowed). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg
+ * (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg
  * makes it. 0 with the error of the call.
  */
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
@@ -404,6 +404,11 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
  * <adapter>_N list of a keyword entry: MODE_KW, Mode_KwEntry), the slots between not given (Mode_KwSkip). A call the
  * entry cannot take that way (a ref without names, a name it does not have, a slot given twice) goes the slow way and
  * gets the error of the adapter.
+ *
+ * The letter P passes a PyObject * as the object itself: the slow path as O, the fast path as an NV_OBJ that holds it
+ * (O there gives what Native_Arg makes of it: a copy of a pure list). It is for the entries that take an NV_OBJ to keep
+ * the caller's object (MissionsFuncs.SetMultipleMissionTargets). A ref of an entry on Python objects (MODE_PYENTRY,
+ * portRef_t.py) always takes the slow path: the adapter gets the objects themselves only that way.
  */
 
 /* the most arguments of a port function (Mode_Args) */
@@ -421,6 +426,7 @@ typedef struct {
 	PyCFunction adapter;		/* OBJLIB 5: what the attribute holds while it is the port's own function */
 	portEntry_t entry;
 	char **kw;			/* the names of the entry's slots for keyword calls, NULL for none */
+	byte py;			/* OBJLIB 7: the entry calls the adapter on Python objects (MODE_PYENTRY): the slow way */
 } portRef_t;
 
 /* a call site of PORT_CALL or PORT_OWN (one static per site) and the counts of the paths it took (OBJLIB 7) */
@@ -470,19 +476,26 @@ portSite_t *Port_Sites(void);
 /* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
  * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL
  * for the modules of a level (the cast through void (*)(void) as in the tables: a keyword adapter has three
- * parameters); PORT_DEFK and PORT_DEFLK for a keyword entry with the names of its slots (adapter_N) */
+ * parameters); PORT_DEFK and PORT_DEFLK for a keyword entry with the names of its slots (adapter_N), PORT_DEFP and
+ * PORT_DEFLP for an entry on Python objects (Mode_PyEntry) */
 #define PORT_DECL(module, name) extern portRef_t port_##module##_##name;
 #define PORT_DECLL(level, module, name) extern portRef_t port_##level##_##module##_##name;
 #define PORT_DEF(module, name, adapter) \
-	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, NULL };
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, NULL, 0 };
 #define PORT_DEFL(level, module, name, adapter) \
 	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
-		NULL };
+		NULL, 0 };
 #define PORT_DEFK(module, name, adapter) \
-	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, adapter##_N };
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, adapter##_N, \
+		0 };
 #define PORT_DEFLK(level, module, name, adapter) \
 	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
-		adapter##_N };
+		adapter##_N, 0 };
+#define PORT_DEFP(module, name, adapter) \
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, NULL, 1 };
+#define PORT_DEFLP(level, module, name, adapter) \
+	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
+		NULL, 1 };
 #define PORTS(file) PORTS_##file
 
 /* ---- the test channel ---- */

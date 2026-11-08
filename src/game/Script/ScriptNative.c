@@ -2232,6 +2232,7 @@ int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
 			a[i].s = va_arg(va, const char *);
 			break;
 		case 'O':
+		case 'P':
 			a[i].o = va_arg(va, PyObject *);
 			break;
 		}
@@ -2252,6 +2253,7 @@ PyObject *Native_ArgPy(const nativeArg_t *a) {
 		/* a NULL text is None, as for Py_BuildValue */
 		return a->s ? PyString_FromString((char *)a->s) : Py_ReturnNone();
 	case 'O':
+	case 'P':
 		Py_XINCREF(a->o);
 		return a->o;
 	}
