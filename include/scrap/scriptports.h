@@ -769,6 +769,7 @@ PORT_DECL(InTraffic, SetSound) /* 1 */
 PORT_DECL(Parking, RestoreDeathPlayerShip) /* 0 */
 PORT_DECL(Parking, SetInvunerable) /* 1 */
 PORT_DECL(Parking, CharOnShip) /* 1 */
+PORT_DECL(Parking, UseShip) /* ? */
 PORT_DECL(Parking, PlayVoiceChannel) /* 1 */
 PORT_DECL(Parking, ExecSwitchVehicleMissionCallback) /* 0 */
 PORT_DECL(Parking, EndPathCam) /* 1 */
@@ -789,6 +790,7 @@ PORT_DECL(Parking, SetShipAsParked) /* 1 */
 PORT_DECL(Parking, ParkedDeat) /* 2 */
 PORT_DECL(Parking, BrowseItemPos) /* 0 */
 PORT_DECL(Parking, CreateLonelyMercParkings) /* 0 */
+PORT_DECL(Parking, CreateParkedShip) /* ? */
 PORT_DECL(Parking, CheckWeapons) /* 1 */
 PORT_DECL(Parking, BrowseParkedPos) /* 0 */
 PORT_DECL(Parking, ChangeLevel) /* 2 */
@@ -802,6 +804,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, RestoreDeathPlayerShip, Parking_RestoreDeathPlayerShip) \
 	PORT_DEF(Parking, SetInvunerable, Parking_SetInvunerable) \
 	PORT_DEF(Parking, CharOnShip, Parking_CharOnShip) \
+	PORT_DEF(Parking, UseShip, Parking_UseShip) \
 	PORT_DEF(Parking, PlayVoiceChannel, Parking_PlayVoiceChannel) \
 	PORT_DEF(Parking, ExecSwitchVehicleMissionCallback, Parking_ExecSwitchVehicleMissionCallback) \
 	PORT_DEF(Parking, EndPathCam, Parking_EndPathCam) \
@@ -822,6 +825,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, ParkedDeat, Parking_ParkedDeat) \
 	PORT_DEF(Parking, BrowseItemPos, Parking_BrowseItemPos) \
 	PORT_DEF(Parking, CreateLonelyMercParkings, Parking_CreateLonelyMercParkings) \
+	PORT_DEF(Parking, CreateParkedShip, Parking_CreateParkedShip) \
 	PORT_DEF(Parking, CheckWeapons, Parking_CheckWeapons) \
 	PORT_DEF(Parking, BrowseParkedPos, Parking_BrowseParkedPos) \
 	PORT_DEF(Parking, ChangeLevel, Parking_ChangeLevel) \
