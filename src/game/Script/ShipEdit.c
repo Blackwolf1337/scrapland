@@ -15,10 +15,12 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the PyMethodDef entries are adapters with
  * the argument formats of the C port. The variables of the module are read where the script reads them and written at
  * once (OBJLIB 5); the ships, the camera and the platform are handle values (OBJLIB 7), editedShips and tabPixelX are
- * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, the menus of
- * the multiplayer game and the module's own functions the script calls as its globals stay by name (OBJLIB 3); the
- * .def runner takes Python values (OBJLIB 6). The texts of the ships in the save and engine variables are made as
- * before.
+ * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, Ffa and the
+ * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam,
+ * OBJLIB 5). HangarTab.ComputeShipTotalCost has no entry yet and stays by name (marked at its site); the menu of the
+ * multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time (OBJLIB 4); the engine calls
+ * stay by name (OBJLIB 7); the .def runner takes Python values (OBJLIB 6). The texts of the ships in the save and
+ * engine variables are made as before.
  */
 #include <stdarg.h>
 #include <string.h>
@@ -72,6 +74,7 @@ static void Step_SputnikHint(int id, PyObject *args) {
 		Script_SetStr(id, name, "Hint", Script_Lang("HINT_Sputnik_NoShip"));
 	} else if (ok && lost) {
 		Mode_Repr(i, r);
+		/* OBJLIB 3: by name until HangarTab.ComputeShipTotalCost has an entry */
 		ok = Mode_Import("string") && Sn_Cat("ShipEdit.editedShips[", r, "]", cad) &&
 			Native_CallGlobal(HT, "ComputeShipTotalCost", cost, "v", cad);
 		Native_SetInt(money, Mode_GetMoney());
@@ -95,7 +98,7 @@ static void Step_SputnikHint(int id, PyObject *args) {
 		}
 	} else if (ok) {
 		Native_Free(e);
-		ok = Sn_At(SE, "editedShips", i, e) && Native_CallGlobal(HT, "IsShipValid", x, "v", e);
+		ok = Sn_At(SE, "editedShips", i, e) && PORT_OWN(HangarTab, IsShipValid, x, "v", e);
 		if (ok && !Native_True(x)) {
 			Script_SetStr(id, name, "Hint", Script_Lang("HINT_Sputnik_IncompleteShip"));
 		} else if (ok) {
@@ -135,8 +138,7 @@ static const scriptStep_t shipedit_steps[] = {
 
 int Sn_Multi(byte own) {
 	nativeVal_t v = { 0 };
-	byte ok = own ? Native_CallGlobal(SE, "IsEditingMultiplayer", &v, "") : Native_CallMod(SE, "IsEditingMultiplayer", &v,
-		"");
+	byte ok = own ? PORT_OWN(ShipEdit, IsEditingMultiplayer, &v, "") : PORT_CALL(ShipEdit, IsEditingMultiplayer, &v, "");
 	int r = ok ? Native_True(&v) : -1;
 	Native_Free(&v);
 	return r;
@@ -169,6 +171,7 @@ byte Sn_SetUseC(int id, const char *item, const char *var, const char *key, cons
 	return Sn_SetUse(id, &i, var, key, module);
 }
 
+/* OBJLIB 4: the function named at run time (LinkLR, LinkUD, UnLinkLR, UnLinkUD), by name */
 byte Sn_Link(const char *fn, int id, const char *a, const char *b) {
 	return Native_CallMod("Menu", fn, NULL, "iss", (long)id, a, b);
 }
@@ -673,18 +676,18 @@ static byte Se_VerifyChangeShip(const nativeVal_t *entityName) {
 	}
 	if (c > 0) {
 		Script_SetDefault(id, "ShipType");
-		ok = Se_RebuildList(ship, isDestroyed) && Native_CallMod(HT, "SelectShipToEdit", NULL, "i", (long)id);
+		ok = Se_RebuildList(ship, isDestroyed) && PORT_CALL(HangarTab, SelectShipToEdit, NULL, "i", (long)id);
 		int has = ok ? Se_HasShip() : -1;
-		ok = has == 0 || (has > 0 && Native_CallMod(HT, "ShowShipInfo", NULL, "ii", (long)id, 0L) &&
-			Native_CallGlobal(SE, "StartRotateLoop", NULL, ""));
+		ok = has == 0 || (has > 0 && PORT_CALL(HangarTab, ShowShipInfo, NULL, "ii", (long)id, 0L) &&
+			PORT_OWN(ShipEdit, StartRotateLoop, NULL, ""));
 	} else if (c == 0) {
 		int has = Se_HasShip();
-		ok = has == 0 || (has > 0 && Native_CallMod(HT, "ShowShipInfo", NULL, "ii", (long)id, 1L) &&
-			Native_CallGlobal(SE, "StartRotateLoop", NULL, ""));
+		ok = has == 0 || (has > 0 && PORT_CALL(HangarTab, ShowShipInfo, NULL, "ii", (long)id, 1L) &&
+			PORT_OWN(ShipEdit, StartRotateLoop, NULL, ""));
 	} else {
 		ok = 0;
 	}
-	return Mode_Done(&t, ok && Native_CallMod(HT, "EnableChangePlatformButtons", NULL, "i", (long)id));
+	return Mode_Done(&t, ok && PORT_CALL(HangarTab, EnableChangePlatformButtons, NULL, "i", (long)id));
 }
 
 /* DoorInitializator(DoorClass): the door class of the platform: an elevator with the Change animation and its two
@@ -693,7 +696,7 @@ static byte Se_DoorInitializator(const nativeVal_t *cls) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *path = Mode_V(&t), *total = Mode_V(&t), *half = Mode_V(&t), *two = Mode_V(&t);
 	nativeVal_t *r = Mode_V(&t);
-	if (!Mode_Import("Elevator") || !Native_CallMod("Elevator", "DoorInitializator", NULL, "v", cls) ||
+	if (!Mode_Import("Elevator") || !PORT_CALL(Elevator, DoorInitializator, NULL, "v", cls) ||
 		!LvN_SetCls("VRadius", Mode_IntVal(v, 500)) || !LvN_CreateAction("Change", r) ||
 		!Sn_Cat("Models/Doors/", cls, "/Anm/Change.M3D", path) || !LvN_SetAct("AnmFilePath", path) ||
 		!LvN_SetAct("InterpTime", Mode_IntVal(v, 0)) || !LvN_SetAct("isLoop", Mode_IntVal(v, 0))) {
@@ -718,7 +721,7 @@ static byte Se_ObjInitializator(const nativeVal_t *elv, const nativeVal_t *extra
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ang = Mode_V(&t), *a0 = Mode_V(&t), *a1 = Mode_V(&t), *ang2 = Mode_V(&t), *name = Mode_V(&t);
 	nativeVal_t *link = Mode_V(&t), *dummy = Mode_V(&t);
-	byte ok = Mode_Import("Elevator") && Native_CallMod("Elevator", "ObjInitializator", NULL, "vv", elv, extra) &&
+	byte ok = Mode_Import("Elevator") && PORT_CALL(Elevator, ObjInitializator, NULL, "vv", elv, extra) &&
 		LvN_SetI(elv, "UseAngSel", 0) && Mode_VGet(elv, "Ang", ang) && LvN_Item(ang, 0, a0);
 	Native_Free(ang);
 	ok = ok && Mode_VGet(elv, "Ang", ang) && LvN_Item(ang, 1, a1) && Mode_VGet(elv, "Name", name) &&
@@ -772,7 +775,7 @@ static byte Se_EndMoveEngine(const nativeVal_t *entityName) {
 		if (ok && i == 0) {
 			char var[0x10];
 			Str_Printf(var, sizeof(var), "nEng%d", i);
-			ok = Native_CallMod("EnginesTab", "SelectEngineGroup", NULL, "ivi", (long)id, name, 0L) && Se_ShipGet(var, slots);
+			ok = PORT_CALL(EnginesTab, SelectEngineGroup, NULL, "ivi", (long)id, name, 0L) && Se_ShipGet(var, slots);
 			int none = ok ? LvN_EqI(slots, 0) : -1;
 			if (none > 0) {
 				ok = Sn_SetUse(id, name, "Hint", "HINT_Engines6", SE);
@@ -1014,7 +1017,7 @@ static byte Se_ChangeTabSide(const nativeVal_t *id, const nativeVal_t *control, 
 	}
 	Native_Free(&plt);
 	Native_Free(&act);
-	return c > 0 || (c == 0 && Native_CallGlobal(SE, "ChangeTab", NULL, "vvs", id, control, side));
+	return c > 0 || (c == 0 && PORT_OWN(ShipEdit, ChangeTab, NULL, "vvs", id, control, side));
 }
 
 /* the tab control in front (yellow title, the tab drawn as the panel) or behind */
@@ -1113,20 +1116,20 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 	}
 	byte ok = 1;
 	if (LvN_EqS(prev, "ShipEditTabHangar")) {
-		ok = Se_TabHint(id, prev, "HINT_Tabs5", 1) && Native_CallMod(HT, "HideHangarPanel", NULL, "i", (long)id) &&
+		ok = Se_TabHint(id, prev, "HINT_Tabs5", 1) && PORT_CALL(HangarTab, HideHangarPanel, NULL, "i", (long)id) &&
 			Sn_Link("LinkUD", id, "ShipEditTabHangar", "");
 	} else if (LvN_EqS(prev, "ShipEditTabEngines")) {
 		ok = Se_TabHint(id, prev, "HINT_Tabs6", 1);
 		c = ok ? Mode_Cmp(control, "!=", prev) : -1;
-		ok = c == 0 || (c > 0 && Native_CallMod("EnginesTab", "HideEnginesPanel", NULL, "i", (long)id) && Se_RotateShip(Mode_IntVal(k, 0)));
+		ok = c == 0 || (c > 0 && PORT_CALL(EnginesTab, HideEnginesPanel, NULL, "i", (long)id) && Se_RotateShip(Mode_IntVal(k, 0)));
 		ok = ok && Sn_Link("LinkUD", id, "ShipEditTabEngines", "");
 	} else if (LvN_EqS(prev, "ShipEditTabWeapons")) {
 		ok = Se_TabHint(id, prev, "HINT_Tabs7", 1);
 		c = ok ? Mode_Cmp(control, "!=", prev) : -1;
-		ok = c == 0 || (c > 0 && Native_CallMod("WeaponsTab", "HideWeaponsPanel", NULL, "i", (long)id));
+		ok = c == 0 || (c > 0 && PORT_CALL(WeaponsTab, HideWeaponsPanel, NULL, "i", (long)id));
 		ok = ok && Sn_Link("LinkUD", id, "ShipEditTabWeapons", "");
 	} else if (LvN_EqS(prev, "ShipEditTabHull")) {
-		ok = Se_TabHint(id, prev, "HINT_Tabs8", 1) && Native_CallMod("HullTab", "HideHullPanel", NULL, "i", (long)id) &&
+		ok = Se_TabHint(id, prev, "HINT_Tabs8", 1) && PORT_CALL(HullTab, HideHullPanel, NULL, "i", (long)id) &&
 			Sn_Link("LinkUD", id, "ShipEditTabHull", "");
 	}
 	Native_Free(p);
@@ -1147,7 +1150,7 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 	if (LvN_EqS(control, "ShipEditTabHangar")) {
 		static const char *const first[] = { "Sell", "Exit", NULL };
 		static const char *const then[] = { "Hangar3", "Hangar2", "Hangar1", NULL };
-		ok = Se_LinksUD(id, "ShipEditTabHangar", first) && Native_CallMod(HT, "ShowHangarPanel", NULL, "i", (long)id) &&
+		ok = Se_LinksUD(id, "ShipEditTabHangar", first) && PORT_CALL(HangarTab, ShowHangarPanel, NULL, "i", (long)id) &&
 			Se_LinksUD(id, "ShipEditTabHangar", then) && Se_TabHint(id, control, "HINT_Tabs1", 0) &&
 			Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) && Se_StartRotate();
 	} else if (LvN_EqS(control, "ShipEditTabEngines")) {
@@ -1161,18 +1164,18 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 		}
 		Native_SetStr(tab, "ShipEditTabEngines");
 		c = ok && Se_G("prevTab", p) ? Mode_Cmp(p, "!=", tab) : -1;
-		ok = c == 0 || (c > 0 && Native_CallMod("EnginesTab", "ShowEnginesPanel", NULL, "i", (long)id) &&
+		ok = c == 0 || (c > 0 && PORT_CALL(EnginesTab, ShowEnginesPanel, NULL, "i", (long)id) &&
 			Se_RotateShip(Mode_IntVal(k, 180)));
 		ok = ok && Se_TabHint(id, control, "HINT_Tabs2", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
 			Se_LinksUD(id, "ShipEditTabEngines", links) && Se_ShipGet("Model", model) && Sn_Cat("", model, "EngineGroup1", grp) &&
 			Sn_LinkV("LinkUD", id, tab, grp) && Sn_Link("LinkUD", id, "ShipEditTabEngines", "Engine1");
 	} else if (LvN_EqS(control, "ShipEditTabWeapons")) {
 		static const char *const weapons[] = { "Devastator", "Tesla", "ATPC", "Inferno", "Swarm", "Vulcan", NULL };
-		ok = Se_Swept(180.0, hasAng ? shipAng : NULL, swept) && Native_CallMod("WeaponsTab", "ShowWeaponsPanel", NULL, "i", (long)id) &&
+		ok = Se_Swept(180.0, hasAng ? shipAng : NULL, swept) && PORT_CALL(WeaponsTab, ShowWeaponsPanel, NULL, "i", (long)id) &&
 			Se_TabHint(id, control, "HINT_Tabs3", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
 			Se_LinksUD(id, "ShipEditTabWeapons", weapons) && Se_RotateShip(Mode_IntVal(k, 0));
 	} else if (LvN_EqS(control, "ShipEditTabHull")) {
-		ok = Se_Swept(90.0, hasAng ? shipAng : NULL, swept) && Native_CallMod("HullTab", "ShowHullPanel", NULL, "i", (long)id) &&
+		ok = Se_Swept(90.0, hasAng ? shipAng : NULL, swept) && PORT_CALL(HullTab, ShowHullPanel, NULL, "i", (long)id) &&
 			Se_TabHint(id, control, "HINT_Tabs4", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
 			Se_RotateShip(Mode_IntVal(k, 270));
 	}
@@ -1268,7 +1271,7 @@ static byte Se_CreatePlayerShip(void) {
 	if (c > 0) {
 		Native_Free(d);
 		Native_Free(cur);
-		byte ok = LvN_ModGet(HT, "currentHangar", cur) && Native_CallGlobal(SE, "AssignShip", NULL, "vv", cad, cur) &&
+		byte ok = LvN_ModGet(HT, "currentHangar", cur) && PORT_OWN(ShipEdit, AssignShip, NULL, "vv", cad, cur) &&
 			Se_G("editShipPosDummy", d) && Sn_FrontAng(d, NULL, ang) && Se_AtCur("editedShips", e) && Mode_VSet(e, "Ang", ang);
 		Native_Free(e);
 		ok = ok && Se_AtCur("editedShips", e) && LvN_SetI(e, "Active", 1);
@@ -1297,7 +1300,7 @@ static byte Se_SetupForEdit(const nativeVal_t *ships) {
 			if (ok) {
 				Mode_Ints3(&v, 0, 0, 0);
 				ok = Mode_VSet(&o, "OffModPos", &v) && LvN_SetF(&o, "DeltaOffMul", 0.0) && LvN_SetF(&o, "OffMul", 1.0) &&
-					LvN_SetI(&o, "ArrowCanUse", 0) && Native_CallMod("Parking", "SetShipRadius", NULL, "vi", &o, 1L);
+					LvN_SetI(&o, "ArrowCanUse", 0) && PORT_CALL(Parking, SetShipRadius, NULL, "vi", &o, 1L);
 			}
 		}
 		Native_Free(&o);
@@ -1424,7 +1427,7 @@ static byte Se_CreateShipFromSaveVar(const nativeVal_t *cad, const nativeVal_t *
 		ok = LvN_Item(a, i, p[i + 2]);
 	}
 	ok = ok && LvN_Item(a, 0, s) && Native_Upper(s, u) && Sn_Cat("SHIP_", u, NULL, key) && Mode_LangV(key, p[8]) &&
-		Native_CallMod("Vehicles", "SetProperties", NULL, "vvvsvvvvvvi", p[0], p[1], p[2], "P_None", p[3], p[4], p[5], p[6], p[7],
+		PORT_CALL(Vehicles, SetProperties, NULL, "vvvsvvvvvvi", p[0], p[1], p[2], "P_None", p[3], p[4], p[5], p[6], p[7],
 			p[8], 1L) && LvN_SetI(out, "Active", 0);
 	int mp = ok ? Sn_Multi(1) : -1;
 	if (mp == 0) {
@@ -1455,7 +1458,7 @@ static byte Se_CreateShipFromSaveVar(const nativeVal_t *cad, const nativeVal_t *
 static byte Se_AssignShip(const nativeVal_t *cad, const nativeVal_t *i) {
 	nativeVal_t d = { 0 }, pos = { 0 }, ship = { 0 }, l = { 0 }, e = { 0 }, ang = { 0 };
 	byte ok = Mode_Import("Vehicles") && Mode_Import(HT) && Mode_Import("string") && Se_G("editShipPosDummy", &d) &&
-		LvN_Item(&d, 1, &pos) && Native_CallGlobal(SE, "CreateShipFromSaveVar", &ship, "vv", cad, &pos) &&
+		LvN_Item(&d, 1, &pos) && PORT_OWN(ShipEdit, CreateShipFromSaveVar, &ship, "vv", cad, &pos) &&
 		Se_SetAt("editedShips", i, &ship);
 	Native_Free(&d);
 	ok = ok && Se_G("editShipPosDummy", &d) && Sn_FrontAng(&d, NULL, &ang) && Se_G("editedShips", &l) && Mode_Sub(&l, i, &e) &&
@@ -1511,7 +1514,7 @@ static byte Se_MakeDefault(const nativeVal_t *p, const nativeVal_t *pilot) {
 			ok = Native_GVarDef("PilotModel", v[i]);
 		}
 	}
-	ok = ok && Native_CallMod("Vehicles", "SetProperties", NULL, "vvvvvvvvvsi", ename, v[0], v[1], v[2], v[3], v[4], v[5], v[6],
+	ok = ok && PORT_CALL(Vehicles, SetProperties, NULL, "vvvvvvvvvsi", ename, v[0], v[1], v[2], v[3], v[4], v[5], v[6],
 		v[7], "", 1L);
 	Native_Free(d);
 	Native_Free(l);
@@ -1610,7 +1613,7 @@ static byte Se_SetupEdit(void) {
 			Native_Free(cad);
 			ok = Se_HangarName("HangarShip", i, name) && Native_GVarGet(Native_Text(name), cad);
 			c = ok ? Mode_Cmp(cad, "!=", empty) : -1;
-			ok = c == 0 || (c > 0 && Native_CallGlobal(SE, "AssignShip", NULL, "vi", cad, (long)i));
+			ok = c == 0 || (c > 0 && PORT_OWN(ShipEdit, AssignShip, NULL, "vi", cad, (long)i));
 		}
 		int def = ok && LvN_ModGet(HT, "currentHangar", cur) ? LvN_EqI(cur, -1) : -1;
 		if (def > 0) {
@@ -1653,7 +1656,7 @@ static byte Se_SetupEdit(void) {
 				if (ok) {
 					Mode_SaveVar(Native_Text(name), cad);
 					c = Mode_Cmp(cad, "!=", empty);
-					ok = c == 0 || (c > 0 && Native_CallGlobal(SE, "AssignShip", NULL, "vi", cad, (long)i));
+					ok = c == 0 || (c > 0 && PORT_OWN(ShipEdit, AssignShip, NULL, "vi", cad, (long)i));
 				}
 			}
 			ok = ok && c >= 0;
@@ -1662,11 +1665,11 @@ static byte Se_SetupEdit(void) {
 			Native_Free(cad);
 			Mode_SaveVar("Hangar.HangarShipAux", cad);
 			int c = Mode_Cmp(cad, "!=", empty);
-			ok = c == 0 || (c > 0 && Native_CallGlobal(SE, "AssignShip", NULL, "vi", cad, 9L));
+			ok = c == 0 || (c > 0 && PORT_OWN(ShipEdit, AssignShip, NULL, "vi", cad, 9L));
 		}
 	}
 	Native_Free(l);
-	return Mode_Done(&t, ok && Se_G("editedShips", l) && Native_CallGlobal(SE, "SetupForEdit", NULL, "v", l));
+	return Mode_Done(&t, ok && Se_G("editedShips", l) && PORT_OWN(ShipEdit, SetupForEdit, NULL, "v", l));
 }
 
 /* FreeEdit(): the camera of the editor goes, the old one comes back */
@@ -1712,7 +1715,7 @@ static byte Se_EnterEditShipMenu(int id) {
 	c = Mode_ModTrue("Init", "inMainMenu");
 	if (c != 0) {
 		return Mode_Done(&t, c > 0 && Mode_Import("SaveGame") &&
-			Native_CallMod("SaveGame", "QLoad", NULL, "s", "Levels/ShipEdit"));
+			PORT_CALL(SaveGame, QLoad, NULL, "s", "Levels/ShipEdit"));
 	}
 	c = Se_G("tabs", tabs) ? Mode_Cmp(tabs, "==", &se_none) : -1;
 	if (c > 0) {
@@ -1727,20 +1730,20 @@ static byte Se_EnterEditShipMenu(int id) {
 	if (c < 0 || (c > 0 && !Se_ShipSetI("ActiveCMask", 0))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Native_CallGlobal(SE, "SetupEdit", NULL, "i", (long)id)) {
+	if (!PORT_OWN(ShipEdit, SetupEdit, NULL, "i", (long)id)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Hangar.DestroyedShips", text);
 	Native_Free(tabs);
 	byte ok = Native_EvalText(SE, text, lost) && Mode_Put(SE, "destroyedShips", NULL, lost) &&
-		Se_SetAt("destroyedShips", Mode_IntVal(k, 9), Mode_IntVal(z, 0)) && Native_CallMod("Menu", "StartNewMenu", NULL, "i", (long)id) &&
-		Se_G("tabs", tabs) && Native_CallGlobal(SE, "AddShipEditTabs", NULL, "iv", (long)id, tabs) &&
-		Native_CallGlobal(SE, "AddDefaultPanelContent", NULL, "ii", (long)id, 4L) &&
-		Native_CallMod(HT, "SetHangarPanel", NULL, "i", (long)id) && Native_CallMod("EnginesTab", "SetEnginesPanel", NULL, "i", (long)id) &&
-		Native_CallMod("WeaponsTab", "SetWeaponsPanel", NULL, "i", (long)id) && Native_CallMod("HullTab", "SetHullPanel", NULL, "i", (long)id) &&
+		Se_SetAt("destroyedShips", Mode_IntVal(k, 9), Mode_IntVal(z, 0)) && PORT_CALL(Menu, StartNewMenu, NULL, "i", (long)id) &&
+		Se_G("tabs", tabs) && PORT_OWN(ShipEdit, AddShipEditTabs, NULL, "iv", (long)id, tabs) &&
+		PORT_OWN(ShipEdit, AddDefaultPanelContent, NULL, "ii", (long)id, 4L) &&
+		PORT_CALL(HangarTab, SetHangarPanel, NULL, "i", (long)id) && PORT_CALL(EnginesTab, SetEnginesPanel, NULL, "i", (long)id) &&
+		PORT_CALL(WeaponsTab, SetWeaponsPanel, NULL, "i", (long)id) && PORT_CALL(HullTab, SetHullPanel, NULL, "i", (long)id) &&
 		Native_CallMod("SScorer", "SetOnSpecialHint", NULL, "iss", (long)id, "ShipEdit.ShowSpecialHint", Script_Lang("HINT_NoMoney")) &&
-		Se_LinksUD(id, "ShipEditTabHangar", links) && Native_CallMod(HT, "SetSellVisible", NULL, "ii", (long)id, 1L) &&
-		Native_CallMod(HT, "SetSellActive", NULL, "ii", (long)id, 0L);
+		Se_LinksUD(id, "ShipEditTabHangar", links) && PORT_CALL(HangarTab, SetSellVisible, NULL, "ii", (long)id, 1L) &&
+		PORT_CALL(HangarTab, SetSellActive, NULL, "ii", (long)id, 0L);
 	Native_SetStr(hangar, "");
 	c = ok && LvN_ModGet(HT, "currentHangar", cur) ? Mode_CmpI(cur, ">=", 0) : -1;
 	if (c > 0) {
@@ -1755,7 +1758,7 @@ static byte Se_EnterEditShipMenu(int id) {
 	int aux = ok && c >= 0 && LvN_ModGet(HT, "currentHangar", cur) ? LvN_EqI(cur, 9) : -1;
 	if (aux > 0) {
 		Native_Free(tabs);
-		ok = Native_CallMod(HT, "ShowShipInfo", NULL, "i", (long)id) && Se_NextPrev(id, 0) &&
+		ok = PORT_CALL(HangarTab, ShowShipInfo, NULL, "i", (long)id) && Se_NextPrev(id, 0) &&
 			Native_CallMod("SScorer", "SetDefault", NULL, "is", (long)id, "HangarAux") && Mode_Import(SE) &&
 			LvN_ModGet(SE, "tabs", tabs) && Sn_TabsOn(id, tabs, 0);
 	} else if (aux == 0) {
@@ -1771,7 +1774,7 @@ static byte Se_EnterEditShipMenu(int id) {
 			Native_Free(tabs);
 			ok = ok && Se_G("tabs", tabs) && Sn_TabsOn(id, tabs, 1) && Se_NextPrev(id, 1);
 			Native_Free(tabs);
-			ok = ok && Se_G("tabs", tabs) && Sn_TabRing(id, tabs, "LinkLR") && Native_CallMod(HT, "ShowShipInfo", NULL, "i", (long)id) &&
+			ok = ok && Se_G("tabs", tabs) && Sn_TabRing(id, tabs, "LinkLR") && PORT_CALL(HangarTab, ShowShipInfo, NULL, "i", (long)id) &&
 				Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, hangar);
 		} else {
 			ok = c == 0 && Native_CallMod("SScorer", "SetDefault", NULL, "is", (long)id, "Hangar1");
@@ -1779,7 +1782,7 @@ static byte Se_EnterEditShipMenu(int id) {
 	} else {
 		ok = 0;
 	}
-	ok = ok && Native_CallMod(HT, "ShowHangarPanel", NULL, "i", (long)id) &&
+	ok = ok && PORT_CALL(HangarTab, ShowHangarPanel, NULL, "i", (long)id) &&
 		Native_CallMod("SScorer", "SetOnCancel", NULL, "is", (long)id, "ShipEdit.ExitEditShipMenu");
 	c = ok ? Se_HasShip() : -1;
 	return Mode_Done(&t, c == 0 || (c > 0 && Se_StartRotate()));
@@ -1828,7 +1831,7 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	byte ok = Native_CallMod("SaveGame", "MarkWayPoint", NULL, "ss", "Levels/Junkyard", "DM_Player_Spawn_") &&
+	byte ok = PORT_CALL(SaveGame, MarkWayPoint, NULL, "ss", "Levels/Junkyard", "DM_Player_Spawn_") &&
 		Se_G("destroyedShips", lost);
 	if (ok) {
 		Mode_Repr(lost, rep);
@@ -1840,11 +1843,11 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 		c = Se_StopRotate() && Se_G("editShipPosDummy", d) && Sn_FrontAng(d, NULL, ang) && Se_ShipSet("Ang", ang) &&
 			Se_ShipSetI("ActiveCMask", 1) ? 1 : -1;
 	}
-	ok = c >= 0 && Native_CallMod(HT, "HideHangarPanel", NULL, "i", (long)id) &&
-		Native_CallMod("EnginesTab", "HideEnginesPanel", NULL, "i", (long)id) &&
-		Native_CallMod("WeaponsTab", "HideWeaponsPanel", NULL, "i", (long)id) &&
-		Native_CallMod("HullTab", "HideHullPanel", NULL, "i", (long)id) && Native_CallGlobal(SE, "SaveShip", NULL, "i", (long)id) &&
-		Native_CallGlobal(SE, "FreeEdit", NULL, "") && Mode_GVarSetI("VehicleEditingMode", 0) && Se_G("editPlatform", e) &&
+	ok = c >= 0 && PORT_CALL(HangarTab, HideHangarPanel, NULL, "i", (long)id) &&
+		PORT_CALL(EnginesTab, HideEnginesPanel, NULL, "i", (long)id) &&
+		PORT_CALL(WeaponsTab, HideWeaponsPanel, NULL, "i", (long)id) &&
+		PORT_CALL(HullTab, HideHullPanel, NULL, "i", (long)id) && PORT_OWN(ShipEdit, SaveShip, NULL, "i", (long)id) &&
+		PORT_OWN(ShipEdit, FreeEdit, NULL, "") && Mode_GVarSetI("VehicleEditingMode", 0) && Se_G("editPlatform", e) &&
 		LvN_SetS(e, "OnObjSlot", "!Usr0AutoDoorSlot");
 	if (!ok) {
 		return Mode_Done(&t, 0);
@@ -1859,12 +1862,13 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 	} else if (c == 0) {
 		c = LvN_GTrue(SE, "isXbox");
 		const char *menu = c > 0 ? "XboxMenu" : "PCMenu";
+		/* OBJLIB 4: the module named at run time, by name */
 		ok = c >= 0 && Mode_Import(menu) && Native_CallMod(menu, "MultiPlayerMenu", NULL, "iv", (long)id, control);
 	} else {
 		ok = 0;
 	}
 	int off = ok ? Native_NetOff() : -1;
-	return Mode_Done(&t, off > 0 || (off == 0 && Mode_Import("Ffa") && Native_CallMod("Ffa", "ModiTry", NULL, "")));
+	return Mode_Done(&t, off > 0 || (off == 0 && Mode_Import("Ffa") && PORT_CALL(Ffa, ModiTry, NULL, "")));
 }
 
 /* (s.MEng0 != "") or ... or (s.MEng3 != ""): the ship has an engine (1, 0, -1) */

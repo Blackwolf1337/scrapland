@@ -7,9 +7,10 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters.
  * rebuildCost and EndSputnikCallBack are read where the script reads them and the callback cleared at once (OBJLIB 5).
  * The variables of ShipEdit and HangarTab (editedShips with the ship handles, destroyedShips, currentHangar,
- * fromSputnik) are read and set as their attributes, destroyedShips changed in place (OBJLIB 5 and 7). The calls of
- * Menu, ShipEdit, HangarTab, SaveGame, the scorer calls and the module's own functions stay by name (OBJLIB 3);
- * SetMoney goes through its seam (fc-r7b-jy records it, OBJLIB 7).
+ * fromSputnik) are read and set as their attributes, destroyedShips changed in place (OBJLIB 5 and 7). Menu,
+ * ShipEdit, HangarTab, SaveGame and the module's own functions (through its attributes, as the script called them) go
+ * through their refs (PORT_CALL, the seam OBJLIB 5); the scorer calls stay by name (OBJLIB 7), EndSputnikCallBack is
+ * called as a value (OBJLIB 5); SetMoney goes through its seam (fc-r7b-jy records it, OBJLIB 7).
  */
 #include "scrap/app.h"
 #include "scrap/script.h"
@@ -28,8 +29,8 @@ static byte SI_AddDefaultPanelContentN(const nativeVal_t *id) {
 	nativeVal_t tabs;
 	Native_SetEmpty(&tabs, NV_LIST);
 	Native_SetStr(Native_Append(&tabs), "Hangar");
-	byte ok = Native_CallMod("ShipEdit", "AddShipEditTabs", NULL, "vv", id, &tabs) &&
-		Native_CallMod("ShipEdit", "AddDefaultPanelContent", NULL, "vi", id, 1L);
+	byte ok = PORT_CALL(ShipEdit, AddShipEditTabs, NULL, "vv", id, &tabs) &&
+		PORT_CALL(ShipEdit, AddDefaultPanelContent, NULL, "vi", id, 1L);
 	Native_Free(&tabs);
 	return ok;
 }
@@ -64,7 +65,7 @@ static byte SI_StopPrev(void) {
 
 /* Exit through the module, as the C port calls it */
 static byte SI_Exit(const nativeVal_t *id, const nativeVal_t *control) {
-	return Native_CallMod(MOD, "ExitSputnikInterface", NULL, "vv", id, control);
+	return PORT_CALL(SputnikInterface, ExitSputnikInterface, NULL, "vv", id, control);
 }
 
 /* the save game flies hangar (its repr as the save variable) */
@@ -118,13 +119,13 @@ static byte SI_EnterSputnikInterfaceN(const nativeVal_t *id) {
 	nativeVal_t *hint = Mode_V(&t), *cad = Mode_V(&t), *text = Mode_V(&t), *lost = Mode_V(&t), *cur = Mode_V(&t);
 	Loading_Init();
 	if (!Mode_Import("Menu") || !Mode_Import("ShipEdit") || !Mode_Import("HangarTab") ||
-		!Native_CallMod("Menu", "InitMenuSys", NULL, "i", 0L) || !Native_CallMod("Menu", "StartNewMenu", NULL, "v", id) ||
-		!Native_CallMod(MOD, "AddDefaultPanelContent", NULL, "v", id)) {
+		!PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) || !PORT_CALL(Menu, StartNewMenu, NULL, "v", id) ||
+		!PORT_CALL(SputnikInterface, AddDefaultPanelContent, NULL, "v", id)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Lang("HINT_NoMoney", hint);
 	if (!Native_CallMod("SScorer", "SetOnSpecialHint", NULL, "vsv", id, "ShipEdit.ShowSpecialHint", hint) ||
-		!Native_CallMod("ShipEdit", "CleanEditedShips", NULL, "")) {
+		!PORT_CALL(ShipEdit, CleanEditedShips, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	for (long i = 0; i < 9; i++) {
@@ -132,13 +133,13 @@ static byte SI_EnterSputnikInterfaceN(const nativeVal_t *id) {
 		Str_Printf(var, sizeof(var), "Hangar.HangarShip%ld", i + 1);
 		Native_Free(cad);
 		Mode_SaveVar(var, cad);
-		if (!Native_IsStr(cad, "") && !Native_CallMod("ShipEdit", "AssignShip", NULL, "vi", cad, i)) {
+		if (!Native_IsStr(cad, "") && !PORT_CALL(ShipEdit, AssignShip, NULL, "vi", cad, i)) {
 			return Mode_Done(&t, 0);
 		}
 	}
 	Native_Free(cad);
 	Mode_SaveVar("Hangar.HangarShipAux", cad);
-	if (!Native_CallMod("ShipEdit", "AssignShip", NULL, "vi", cad, 9L)) {
+	if (!PORT_CALL(ShipEdit, AssignShip, NULL, "vi", cad, 9L)) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_ModSetI("ShipEdit", "fromSputnik", 1);
@@ -153,10 +154,10 @@ static byte SI_EnterSputnikInterfaceN(const nativeVal_t *id) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SetModVar("HangarTab", "currentHangar", cur);
-	if (!Native_CallMod("HangarTab", "SetHangarPanel", NULL, "v", id) ||
-		!Native_CallMod("HangarTab", "SetSellVisible", NULL, "vi", id, 0L) || !SI_Default(id, &t) || !SI_Current(cur) ||
-		!SI_Stop(cur) || !Native_CallMod("HangarTab", "ShowHangarPanel", NULL, "v", id) ||
-		!Native_CallMod("HangarTab", "ShowShipInfo", NULL, "v", id) ||
+	if (!PORT_CALL(HangarTab, SetHangarPanel, NULL, "v", id) ||
+		!PORT_CALL(HangarTab, SetSellVisible, NULL, "vi", id, 0L) || !SI_Default(id, &t) || !SI_Current(cur) ||
+		!SI_Stop(cur) || !PORT_CALL(HangarTab, ShowHangarPanel, NULL, "v", id) ||
+		!PORT_CALL(HangarTab, ShowShipInfo, NULL, "v", id) ||
 		!Native_CallMod("SScorer", "SetOnCancel", NULL, "vs", id, "SputnikInterface.ExitSputnikInterface")) {
 		return Mode_Done(&t, 0);
 	}
@@ -169,11 +170,11 @@ static byte SI_ExitSputnikInterfaceN(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *lost = Mode_V(&t), *text = Mode_V(&t), *cb = Mode_V(&t), *none = Mode_V(&t);
 	if (!Mode_Import("HangarTab") || !Mode_Import("Menu") || !Mode_Import("SaveGame") || !Mode_Import("ShipEdit") ||
-		!Native_CallMod("SaveGame", "SaveMoney", NULL, "") || !LvN_ModGet("ShipEdit", "destroyedShips", lost)) {
+		!PORT_CALL(SaveGame, SaveMoney, NULL, "") || !LvN_ModGet("ShipEdit", "destroyedShips", lost)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(lost, text);
-	if (!Mode_SetSaveVar("Hangar.DestroyedShips", text) || !Native_CallMod("Menu", "BackToGame", NULL, "v", id) ||
+	if (!Mode_SetSaveVar("Hangar.DestroyedShips", text) || !PORT_CALL(Menu, BackToGame, NULL, "v", id) ||
 		!Mode_G(MOD, "EndSputnikCallBack", cb)) {
 		return Mode_Done(&t, 0);
 	}
@@ -220,7 +221,7 @@ static byte SI_SelectShipN(const nativeVal_t *id, const nativeVal_t *control) {
 	}
 	int valid = 0;
 	if (!Native_Compare(d, Mode_I(&t, 0))) {
-		if (!SI_Edited(hangar, 1, e) || !Native_CallMod("HangarTab", "IsShipValid", v, "v", e)) {
+		if (!SI_Edited(hangar, 1, e) || !PORT_CALL(HangarTab, IsShipValid, v, "v", e)) {
 			return Mode_Done(&t, 0);
 		}
 		valid = Native_True(v);
