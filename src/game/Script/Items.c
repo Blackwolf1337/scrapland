@@ -7,12 +7,13 @@
  * exec; here they are attribute reads and writes for weapon numbers, which raise the same errors (BaseOnTakeUpgrade
  * runs the script's text for any other iWeap).
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The variables are read where the script reads them as its globals; Upgrades is changed in
- * place on the dict object of the module (Mode_DictPut, OBJLIB 5), Hints stays a Python object (its items hold the
- * functions of the missions, OBJLIB 5 and 7). The module's own functions that the script calls as its globals
- * (CreateBox, InitResources, BrowseItemPos, SetInteractiveObjOnFloor, LastClientCreate) and the hook into Net stay by
- * name (OBJLIB 3); the boxes are entity handles where they leave the module (OBJLIB 7).
+ * Native C (docs/objlib-plan.md, stages 2 and 3): the functions call the engine in C and work on C values; the
+ * PyMethodDef entries are adapters. The variables are read where the script reads them as its globals; Upgrades is
+ * changed in place on the dict object of the module (Mode_DictPut, OBJLIB 5), Hints stays a Python object (its items
+ * hold the functions of the missions, OBJLIB 5 and 7). The module's own functions that the script calls as its
+ * globals (CreateBox, InitResources, BrowseItemPos, SetInteractiveObjOnFloor) go through their refs (PORT_OWN);
+ * LastClientCreate and the hook into Net are variables (OBJLIB 5), the functions of the hints values (OBJLIB 4); the
+ * boxes are entity handles where they leave the module (OBJLIB 7).
  */
 #include <string.h>
 
@@ -424,13 +425,13 @@ static byte It_ClientCreate(const nativeVal_t *name, const nativeVal_t *res) {
 	byte box = head.type == NV_STR && !strcmp(Native_Text(&head), "Box:");
 	Native_Free(&head);
 	if (!box) {
-		/* OBJLIB 3: the creation that was in Net before, a value of the module */
+		/* OBJLIB 5: the creation that was in Net before, a variable of the module called as the value it holds */
 		return Native_CallGlobal("Items", "LastClientCreate", NULL, "vv", name, res);
 	}
 	Native_SetInt(&zero, 0);
-	/* OBJLIB 3: the module's CreateBox (the script calls its global) */
+	/* the module's CreateBox (the script calls its global) */
 	byte ok = Native_Slice(res, 4, Native_Size(res), &kind) &&
-		Native_CallGlobal("Items", "CreateBox", &l, "vvvvv", name, &zero, &zero, &zero, &kind) && It_SetSound(&l, &kind);
+		PORT_OWN(Items, CreateBox, &l, "vvvvv", name, &zero, &zero, &zero, &kind) && It_SetSound(&l, &kind);
 	Native_Free(&kind);
 	Native_Free(&l);
 	return ok;
@@ -456,8 +457,8 @@ static byte It_DummyBox(modeVals_t *t, const nativeVal_t *pos, const nativeVal_t
 	/* SNet.GetObjName() */
 	Net_GetObjName(buf);
 	Native_SetStr(nm, buf);
-	/* OBJLIB 3: the module's CreateBox */
-	if (!Native_CallGlobal("Items", "CreateBox", l, "vvvvv", nm, c[0], c[1], c[2], typo) || !It_SetSound(l, typo) ||
+	/* the module's CreateBox (its global) */
+	if (!PORT_OWN(Items, CreateBox, l, "vvvvv", nm, c[0], c[1], c[2], typo) || !It_SetSound(l, typo) ||
 		!Mode_VGet(l, "Name", lname)) {
 		return 0;
 	}
@@ -560,8 +561,8 @@ static byte It_Init(void) {
 	if (!Mode_Import("Net")) {
 		return 0;
 	}
-	/* OBJLIB 3: the module's functions as its globals, Net's ClientCreate as a value of both modules */
-	if (!Native_CallGlobal("Items", "InitResources", NULL, "")) {
+	/* the module's functions as its globals; OBJLIB 5: Net's ClientCreate as a value of both modules */
+	if (!PORT_OWN(Items, InitResources, NULL, "")) {
 		return 0;
 	}
 	PyObject *last = Mode_GlobalPy("Net", "ClientCreate");
@@ -577,20 +578,13 @@ static byte It_Init(void) {
 	if (!ok || PyErr_Occurred()) {
 		return 0;
 	}
-	return client || Native_CallGlobal("Items", "BrowseItemPos", NULL, "");
+	return client || PORT_OWN(Items, BrowseItemPos, NULL, "");
 }
 
-/* the adapters of the functions without arguments: the script ignores what it is given (no arity check) */
-#define IT_NOARGS(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
-IT_NOARGS(Items_BrowseItemPos, It_BrowseItemPos())
-IT_NOARGS(Items_InitResources, It_InitResources())
-IT_NOARGS(Items_Init, It_Init())
+/* the functions without arguments: the script ignores what it is given (no arity check) */
+MODE_FNANY(Items, BrowseItemPos, It_BrowseItemPos())
+MODE_FNANY(Items, InitResources, It_InitResources())
+MODE_FNANY(Items, Init, It_Init())
 
 /* ---- hints and interactive objects ---- */
 
@@ -626,7 +620,7 @@ static byte It_ShowHint(const nativeVal_t *item) {
 	}
 	ok = ok && It_HintItem(hints, item, 3, extra);
 	if (ok && Native_True(extra)) {
-		/* OBJLIB 3: the function of the mission (any value the Python way) */
+		/* OBJLIB 4: the function of the mission (any value the Python way) */
 		PyObject *f = Native_ToPy(extra);
 		ok = f && Native_Call(f, NULL, "v", item);
 		Py_XDECREF(f);
@@ -757,7 +751,7 @@ static byte It_CreateObj(const nativeVal_t *dname, const nativeVal_t *radius, na
 	ok = ok && Mode_Create(n, c[0], c[1], c[2], "WithLife", &e);
 	e = e ? World_FindEntity(e->name) : NULL;
 	ok = ok && Mode_Set(e, e ? e->name : "", "VRadius", radius) && Mode_EntHandle(e, out) &&
-		Native_CallGlobal("Items", "SetInteractiveObjOnFloor", NULL, "v", out);
+		PORT_OWN(Items, SetInteractiveObjOnFloor, NULL, "v", out);
 	return Mode_Done(&t, ok);
 }
 

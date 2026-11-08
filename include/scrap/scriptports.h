@@ -643,6 +643,9 @@ PORT_DECL(Items, OnTakevSpd) /* 2 */
 PORT_DECL(Items, SetSound) /* 2 */
 PORT_DECL(Items, ClientCreate) /* 2 */
 PORT_DECL(Items, CreateBox) /* 5 */
+PORT_DECL(Items, BrowseItemPos) /* ? */
+PORT_DECL(Items, InitResources) /* ? */
+PORT_DECL(Items, Init) /* ? */
 PORT_DECL(Items, ShowHint) /* 2 */
 PORT_DECL(Items, CreateInteractiveObj) /* 2 */
 PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
@@ -667,6 +670,9 @@ PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 	PORT_DEF(Items, SetSound, Items_SetSound) \
 	PORT_DEF(Items, ClientCreate, Items_ClientCreate) \
 	PORT_DEF(Items, CreateBox, Items_CreateBox) \
+	PORT_DEF(Items, BrowseItemPos, Items_BrowseItemPos) \
+	PORT_DEF(Items, InitResources, Items_InitResources) \
+	PORT_DEF(Items, Init, Items_Init) \
 	PORT_DEF(Items, ShowHint, Items_ShowHint) \
 	PORT_DEF(Items, CreateInteractiveObj, Items_CreateInteractiveObj) \
 	PORT_DEF(Items, SetInteractiveObjOnFloor, Items_SetInteractiveObjOnFloor)
