@@ -829,9 +829,11 @@ PORT_DECL(Menu, EnterMissionInfo) /* ? */
 /* MenuNet.c */
 PORT_DECL(PCMenu, MultiPlayerMenu) /* ? */
 PORT_DECL(PCMenu, TryJoin) /* ? */
+PORT_DECL(PCMenu, AskPassword) /* ? */
 #define PORTS_MenuNet \
 	PORT_DEF(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
-	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin)
+	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin) \
+	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword)
 
 /* Metro.c */
 PORT_DECL(Metro, SetUsrParams) /* ? */
