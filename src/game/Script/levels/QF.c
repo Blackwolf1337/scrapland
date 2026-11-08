@@ -6,8 +6,12 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of the
  * mission are read where the script reads them and written through at once, plansNames is changed in place on the
- * object of the module (OBJLIB 5); the photo objects are handle values (OBJLIB 7); MissionsFuncs, Speech, RaceMaker,
- * TeamDeathMatch, string.find and the functions of the mission go by name (OBJLIB 3).
+ * object of the module (OBJLIB 5); the photo objects are handle values (OBJLIB 7).
+ *
+ * Direct calls (stage 3): MissionsFuncs, Speech, RaceMaker, TeamDeathMatch and the C functions of the mission go through
+ * their refs (PORT_CALL, LV_COM), string.find through its native twin. The remote message whose end is the data function
+ * AllBankersAgainstPlayer keeps the name (OBJLIB 6); the scheduled calls (Mode_Later, Mode_LaterIn) and the function set
+ * as CharAct.TakenPhoto are names and values (OBJLIB 4, 5).
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -36,7 +40,7 @@ static byte Bc_CreatePlans(void) {
 		LvN_Dummy(name, 1, &dummy);
 		LvN_Str(&plan, plans[i - 1]);
 		if (Native_True(&dummy)) {
-			ok = LvN_DummyPosAng(&dummy, &pos, &ang) && LV_CALL("MissionsFuncs", "CreatePhotoObject", &pln, "vvv", &plan, &pos, &ang) &&
+			ok = LvN_DummyPosAng(&dummy, &pos, &ang) && PORT_CALL(MissionsFuncs, CreatePhotoObject, &pln, "vvv", &plan, &pos, &ang) &&
 				Mode_VGet(&pln, "Name", &n) && Mode_Append(BC, "plansNames", &n);
 		} else {
 			ok = LvN_RaiseText("Uno de los dummies de los planos de la nave de los banqueros no existe");
@@ -68,7 +72,7 @@ static byte Bc_Blueprint(byte engines) {
 	}
 	if (ok) {
 		Mode_Lang(engines ? "Mission_GetBankerShipPlans_SystemMessage2" : "Mission_GetBankerShipPlans_SystemMessage1", &text);
-		ok = LV_CALL("RaceMaker", "ShowSystemMessageDelay", NULL, "vd", &text, 0.25);
+		ok = PORT_CALL(RaceMaker, ShowSystemMessageDelay, NULL, "vd", &text, 0.25);
 	}
 	Native_Free(&lst);
 	Native_Free(&item);
@@ -81,7 +85,7 @@ static byte Bc_Invulnerable(void) {
 	nativeVal_t usr;
 	byte ok = Mode_Import("TeamDeathMatch") && Mode_UsrHandle(&usr);
 	if (ok) {
-		ok = LV_CALL("TeamDeathMatch", "SetInvulnerableStatus", NULL, "v", &usr);
+		ok = PORT_CALL(TeamDeathMatch, SetInvulnerableStatus, NULL, "v", &usr);
 		Native_Free(&usr);
 	}
 	return ok;
@@ -102,7 +106,7 @@ static byte Bc_TakePlanPhoto(const nativeVal_t *plan, nativeVal_t *out) {
 		Native_SetInt(out, 0);
 		return in == 0;
 	}
-	byte ok = Mode_EntityH(plan, &h) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", &h) &&
+	byte ok = Mode_EntityH(plan, &h) && PORT_CALL(MissionsFuncs, UnsetPhotoObject, NULL, "v", &h) &&
 		PORT_CALL(string, find, &pos, "vs", plan, "M");
 	Native_SetInt(&minus, -1);
 	ok = ok && Bc_Blueprint(Native_Compare(&pos, &minus) != 0) && LvN_GAdd(BC, "numPlansWithPhoto", 1, NULL);
@@ -112,12 +116,13 @@ static byte Bc_TakePlanPhoto(const nativeVal_t *plan, nativeVal_t *out) {
 	if (both > 0) {
 		int over = LvN_ModNone("CharAct", "TakenPhoto") ? LvN_GTrue(BC, "SuperCrazyDealHasFinished") : -1;
 		if (over > 0) {
-			ok = Bc_Invulnerable() && LvN_Com("Mission_GetBankerShipPlans_RemoteMessage5", "PoliceBoss", BC, "SetNextMission", LvN_NoArgs());
+			ok = Bc_Invulnerable() &&
+				LV_COM("Mission_GetBankerShipPlans_RemoteMessage5", "PoliceBoss", Mission_BankersCombat, SetNextMission, LvN_NoArgs());
 		} else {
-			ok = over == 0 && LV_CALL("Speech", "ForceRemoteCom", NULL, "ss", "Mission_GetBankerShipPlans_RemoteMessage6", "PoliceBoss");
+			ok = over == 0 && PORT_CALL(Speech, ForceRemoteCom, NULL, "ss", "Mission_GetBankerShipPlans_RemoteMessage6", "PoliceBoss");
 		}
 	} else {
-		ok = both == 0 && LV_CALL("Speech", "ForceRemoteCom", NULL, "ss", "Mission_GetBankerShipPlans_RemoteMessage3", "PoliceBoss");
+		ok = both == 0 && PORT_CALL(Speech, ForceRemoteCom, NULL, "ss", "Mission_GetBankerShipPlans_RemoteMessage3", "PoliceBoss");
 	}
 	Native_SetInt(out, 1);
 	return ok;
@@ -141,9 +146,9 @@ static byte Bc_OnEndOfSuperCrazyDeal(void) {
 		return ok;
 	}
 	return both == 0 && Mode_Import("MissionsFuncs") &&
-		LV_CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "si", "Enemies", 0L) &&
-		LV_CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "si", "Friends", 0L) &&
-		LvN_Com("Mission_GetBankerShipPlans_RemoteMessage2", "PoliceBoss", BC, "CreatePlans", NULL);
+		PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "si", "Enemies", 0L) &&
+		PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "si", "Friends", 0L) &&
+		LV_COM("Mission_GetBankerShipPlans_RemoteMessage2", "PoliceBoss", Mission_BankersCombat, CreatePlans, NULL);
 }
 
 /* BankersAttackPlayer(): the first banker ignores its friends (attacks the player); again in 3 s while there is none */
