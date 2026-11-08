@@ -1673,6 +1673,7 @@ PORT_DECL(TeamDeathMatch, RestartCombat) /* 2 */
 PORT_DECL(Versus, GetMenuDescription) /* 0 */
 PORT_DECL(Versus, InitStatus) /* 1 */
 PORT_DECL(Versus, Init) /* 1 */
+PORT_DECL(Versus, CreateEnemy) /* ? */
 PORT_DECL(Versus, AbortRemoteMessages) /* 0 */
 PORT_DECL(Versus, CrazyGamblerStartCombat) /* 0 */
 PORT_DECL(Versus, StartCombat) /* 0 */
@@ -1697,7 +1698,9 @@ PORT_DECL(CTF, OnVehicleDeathCallback) /* 2 */
 PORT_DECL(CTF, OnPlayerDeath) /* 2 */
 PORT_DECL(CTF, RemoveFlag) /* 1 */
 PORT_DECL(CTF, EndOfCTF) /* 0 */
+PORT_DECL(CTF, RespawnEnemy) /* ? */
 PORT_DECL(CTF, RespawnFriend) /* 0 */
+PORT_DECL(CTF, CreateFlag) /* ? */
 PORT_DECL(CTF, ResetFlag) /* 1 */
 PORT_DECL(CTF, TakeFlag) /* 2 */
 PORT_DECL(CTF, SpawnFlags) /* 2 */
@@ -1715,6 +1718,7 @@ PORT_DECL(Domination, AbortRemoteMessages) /* 0 */
 PORT_DECL(Domination, SetProfile) /* 2 */
 PORT_DECL(Domination, CreateEnemies) /* 0 */
 PORT_DECL(Domination, CreateFriends) /* 0 */
+PORT_DECL(Domination, CreateBaton) /* ? */
 PORT_DECL(Domination, CrazyGamblerStartDomination) /* 0 */
 PORT_DECL(Domination, OnVehicle) /* 0 */
 PORT_DECL(Domination, StartDomination) /* 0 */
@@ -1745,6 +1749,7 @@ PORT_DECL(MortalRace, CrazyGamblerStartMortalRace) /* 0 */
 PORT_DECL(MortalRace, SetVulnerable) /* 0 */
 PORT_DECL(MortalRace, CreateBaton) /* 1 */
 PORT_DECL(MortalRace, TakeBaton) /* 2 */
+PORT_DECL(MortalRace, InitRace) /* ? */
 PORT_DECL(MortalRace, CreateFirstWaypoint) /* 0 */
 PORT_DECL(MortalRace, OnRaceStart) /* 2 */
 PORT_DECL(MortalRace, RaceGo) /* 2 */
@@ -1806,6 +1811,7 @@ PORT_DECL(MortalRace, PreOnVictory) /* 0 */
 	PORT_DEF(Versus, GetMenuDescription, Vs_GetMenuDescription) \
 	PORT_DEF(Versus, InitStatus, Vs_InitStatus) \
 	PORT_DEF(Versus, Init, Vs_Init) \
+	PORT_DEFK(Versus, CreateEnemy, Vs_CreateEnemy) \
 	PORT_DEF(Versus, AbortRemoteMessages, Sd_AbortRemoteMessages) \
 	PORT_DEF(Versus, CrazyGamblerStartCombat, Vs_CrazyGamblerStartCombat) \
 	PORT_DEF(Versus, StartCombat, Vs_StartCombat) \
@@ -1830,7 +1836,9 @@ PORT_DECL(MortalRace, PreOnVictory) /* 0 */
 	PORT_DEF(CTF, OnPlayerDeath, Ctf_OnPlayerDeath) \
 	PORT_DEF(CTF, RemoveFlag, Ctf_RemoveFlag) \
 	PORT_DEF(CTF, EndOfCTF, Ctf_EndOfCTF) \
+	PORT_DEFK(CTF, RespawnEnemy, Ctf_RespawnEnemy) \
 	PORT_DEF(CTF, RespawnFriend, Ctf_RespawnFriend) \
+	PORT_DEFK(CTF, CreateFlag, Ctf_CreateFlag) \
 	PORT_DEF(CTF, ResetFlag, Ctf_ResetFlag) \
 	PORT_DEF(CTF, TakeFlag, Ctf_TakeFlag) \
 	PORT_DEF(CTF, SpawnFlags, Ctf_SpawnFlags) \
@@ -1848,6 +1856,7 @@ PORT_DECL(MortalRace, PreOnVictory) /* 0 */
 	PORT_DEF(Domination, SetProfile, Dom_SetProfile) \
 	PORT_DEF(Domination, CreateEnemies, Dom_CreateEnemies) \
 	PORT_DEF(Domination, CreateFriends, Dom_CreateFriends) \
+	PORT_DEFK(Domination, CreateBaton, Dom_CreateBaton) \
 	PORT_DEF(Domination, CrazyGamblerStartDomination, Dom_CrazyGamblerStartDomination) \
 	PORT_DEF(Domination, OnVehicle, Dom_OnVehicle) \
 	PORT_DEF(Domination, StartDomination, Dom_StartDomination) \
@@ -1878,6 +1887,7 @@ PORT_DECL(MortalRace, PreOnVictory) /* 0 */
 	PORT_DEF(MortalRace, SetVulnerable, Sd_SetVulnerable) \
 	PORT_DEF(MortalRace, CreateBaton, Mr_CreateBaton) \
 	PORT_DEF(MortalRace, TakeBaton, Mr_TakeBaton) \
+	PORT_DEFK(MortalRace, InitRace, Mr_InitRace) \
 	PORT_DEF(MortalRace, CreateFirstWaypoint, Mr_CreateFirstWaypoint) \
 	PORT_DEF(MortalRace, OnRaceStart, Mr_OnRaceStart) \
 	PORT_DEF(MortalRace, RaceGo, Mr_RaceGo) \
