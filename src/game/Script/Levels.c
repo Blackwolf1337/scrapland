@@ -289,6 +289,33 @@ static void Level_StepSaveInt(int id, PyObject *args) {
 	}
 }
 
+/* Scrap.SetSaveVar(var, text) of a step, its error printed by the runner */
+static void Level_SetSave(PyObject *var, PyObject *text) {
+	if (text) {
+		Script_Try("Scrap", "SetSaveVar", "(OO)", var, text);
+		Py_DECREF(text);
+	}
+}
+
+/* the repr of a native value as a Python text (a new reference) */
+static PyObject *Level_Repr(const nativeVal_t *v) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	PyObject *text = PyString_FromStringAndSize(b.p, b.len);
+	Native_BufFree(&b);
+	return text;
+}
+
+/* `v` of a step (a new reference, NULL with the error): Native_Repr when v is a native value (the same text), any
+ * other value the Python way */
+static PyObject *Level_ReprPy(PyObject *v) {
+	nativeVal_t nv;
+	PyObject *r = Native_FromPyAny(v, &nv) ? Level_Repr(&nv) : PyObject_Repr(v);
+	Native_Free(&nv);
+	return r;
+}
+
 /*
  * run savelistadd <savevar> <item>: the four lines of the missions that add a blueprint to a hangar list
  *   lst = eval(Scrap.GetSaveVar(savevar))
@@ -310,12 +337,9 @@ static void Level_StepSaveListAdd(int id, PyObject *args) {
 	}
 	int in = PySequence_Contains(lst, item);
 	if (in == 0) {
-		PyObject *r = Script_Method(lst, "append", "(O)", item), *text = r ? PyObject_Repr(lst) : NULL;
+		PyObject *r = Script_Method(lst, "append", "(O)", item);
+		Level_SetSave(var, r ? Level_ReprPy(lst) : NULL);
 		Py_XDECREF(r);
-		if (text) {
-			Script_Try("Scrap", "SetSaveVar", "(OO)", var, text);
-			Py_DECREF(text);
-		}
 	}
 	Py_DECREF(lst);
 }
@@ -348,7 +372,7 @@ static void Level_StepRepr(int id, PyObject *args) {
 	PyObject *v;
 	(void)id;
 	if (PyArg_ParseTuple(args, "sO", &name, &v)) {
-		PyObject *r = PyObject_Repr(v);
+		PyObject *r = Level_ReprPy(v);
 		if (r) {
 			Script_SetValue(name, r);
 		}
