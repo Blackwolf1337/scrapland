@@ -1016,10 +1016,11 @@ static byte Dtritus_InitN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *model = Mode_V(&t), *lp = Mode_V(&t), *usr = Mode_V(&t), *ps = Mode_V(&t), *m = Mode_V(&t), *up = Mode_V(&t);
 	nativeVal_t *n = Mode_V(&t), *psn = Mode_V(&t);
+	/* OBJLIB 6: CreateMissionPlans is a section of mission_finddtritusmatrix.def */
 	byte ok = Mode_Import("Parking") && Mode_G(FD, "MatrixModel", model) && Mode_Preload(model) &&
 		LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FD, "TestForLonelyMercShip") &&
 		LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", FD, "OutOfLonelyMercShip") && LV_OWN(FD, "CreateMissionPlans", NULL, "") &&
-		LV_OWN(FD, "CreateDtritusMatrix", NULL, "") && LV_CALL("Parking", "CreateLonelyMercParkings", lp, "") &&
+		PORT_LOWN(Mission_FindDtritusMatrix, CreateDtritusMatrix, NULL, "") && PORT_CALL(Parking, CreateLonelyMercParkings, lp, "") &&
 		Mode_Put(FD, "lonelyMercParkings", NULL, lp) && Fd_Active("lonelyMercParkings", 0) && Mode_UsrHandle(usr);
 	int own = ok ? Native_True(usr) : -1;
 	if (own > 0) {
@@ -1038,13 +1039,15 @@ static byte Dtritus_InitN(void) {
 		}
 		if (merc > 0) {
 			Native_Free(n);
-			ok = Mode_VGet(usr, "Name", n) && Mode_Put(FD, "lonelyMercShipName", NULL, n) && LV_OWN(FD, "CreateBadGuy", NULL, "") &&
-				LV_OWN(FD, "CheckLonelyMercShipExist", NULL, "");
+			ok = Mode_VGet(usr, "Name", n) && Mode_Put(FD, "lonelyMercShipName", NULL, n) &&
+				PORT_LOWN(Mission_FindDtritusMatrix, CreateBadGuy, NULL, "") &&
+				PORT_LOWN(Mission_FindDtritusMatrix, CheckLonelyMercShipExist, NULL, "");
 			return Mode_Done(&t, ok);
 		}
 		own = merc;
 	}
-	ok = own >= 0 && LV_OWN(FD, "CheckCreateBadGuy", NULL, "") && LV_OWN(FD, "CreateLonelyMercShip", NULL, "");
+	ok = own >= 0 && PORT_LOWN(Mission_FindDtritusMatrix, CheckCreateBadGuy, NULL, "") &&
+		PORT_LOWN(Mission_FindDtritusMatrix, CreateLonelyMercShip, NULL, "");
 	return Mode_Done(&t, ok);
 }
 
@@ -1064,13 +1067,13 @@ static byte Dtritus_CreateLonelyMercShipN(void) {
 	byte ok = c >= 0 && (c == 0 || Fd_Com("Mission_FindDtritusMatrix1_RemoteMessage4")) &&
 		LvN_Entity("DM_Door_Elevator_GamblinDen", door) && Mode_VGet(door, "Pos", pos) && Sy_NearestParked(pos, np) &&
 		Mode_Unpack(np, 2, ent) && Mode_EntityH(ent, e) && (!Native_True(e) || Mode_VDel(e)) &&
-		LV_CALL("Parking", "CreateParkedShip", ship, "vis", ppos, 0L, "LonelyMerc") &&
+		PORT_CALL(Parking, CreateParkedShip, ship, "vis", ppos, 0L, "LonelyMerc") &&
 		LvN_SetS(ship, "OnDeath", "Mission_FindDtritusMatrix.OnLonelyMercShipDeath") && LvN_SetI(ship, "Invulnerable", 1) &&
 		Mode_VGet(ship, "Name", name) && Mode_Put(FD, "lonelyMercShipName", NULL, name) && Mode_VGet(ship, "CamTgt", cam) &&
 		Mode_Put(FD, "prevLonelyMercShipCameraPos", NULL, cam) && LvN_SetInts3(ship, "CamTgt", 0, 400, 0);
 	if (ok) {
 		Native_Free(name);
-		ok = Mode_G(FD, "lonelyMercShipName", name) && LvN_Target(name) && LV_OWN(FD, "CheckLonelyMercShipExist", NULL, "");
+		ok = Mode_G(FD, "lonelyMercShipName", name) && LvN_Target(name) && PORT_LOWN(Mission_FindDtritusMatrix, CheckLonelyMercShipExist, NULL, "");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -1099,9 +1102,9 @@ static byte Dtritus_CheckLonelyMercShipExistN(void) {
 	int kept = t == 0 ? LvN_GEqI(FD, "lonelyMercShipDestroyed", 0) : -1;
 	if (kept > 0) {
 		return !LvN_SaveIs("LonelyMercActive", "0") || (LvN_Com("Mission_FindDtritusMatrix1_RemoteMessage3", "DeepThroat", NULL, NULL, NULL) &&
-			LV_OWN(FD, "CreateLonelyMercShip", NULL, ""));
+			PORT_LOWN(Mission_FindDtritusMatrix, CreateLonelyMercShip, NULL, ""));
 	}
-	return kept == 0 && LvN_PutI(FD, "lonelyMercShipDestroyed", 0) && LV_OWN(FD, "CreateLonelyMercShip", NULL, "");
+	return kept == 0 && LvN_PutI(FD, "lonelyMercShipDestroyed", 0) && PORT_LOWN(Mission_FindDtritusMatrix, CreateLonelyMercShip, NULL, "");
 }
 
 /* TestForLonelyMercShip(): on boarding: the lonely mercenary's ship opens the lair (the parkings, the plans and the
@@ -1127,8 +1130,8 @@ static byte Dtritus_TestForLonelyMercShipN(void) {
 	if (mine) {
 		Native_SetEmpty(targets, NV_LIST);
 		int n = Mode_G(FD, "prevLonelyMercShipCameraPos", prev) && Mode_VSet(ship, "CamTgt", prev) && LvN_SetI(ship, "Invulnerable", 0) &&
-			LV_OWN(FD, "ActivateMissionObjects", NULL, "i", 1L) && Fd_Active("lonelyMercParkings", 1) && Mode_G(FD, "plans", plans) ?
-			Native_ForCount(plans) : -1;
+			PORT_LOWN(Mission_FindDtritusMatrix, ActivateMissionObjects, NULL, "i", 1L) && Fd_Active("lonelyMercParkings", 1) &&
+			Mode_G(FD, "plans", plans) ? Native_ForCount(plans) : -1;
 		for (int k = 0; k < n; k++) {
 			Native_SeqItem(plans, k, Native_Append(targets));
 		}
@@ -1146,7 +1149,7 @@ static byte Dtritus_TestForLonelyMercShipN(void) {
 				Native_SetNone(x);
 			}
 		}
-		return Mode_Done(&t, both >= 0 && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", targets));
+		return Mode_Done(&t, both >= 0 && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", targets));
 	}
 	return Mode_Done(&t, !LvN_SaveIs("LonelyMercLairActive", "0") || Fd_Active("lonelyMercParkings", 0));
 }
@@ -1162,6 +1165,7 @@ static byte Dtritus_CheckCreateBadGuyN(void) {
 	Native_Free(&usr);
 	Native_Free(&d);
 	if (near > 0) {
+		/* OBJLIB 6: BadGuyAppears is a section of mission_finddtritusmatrix.def */
 		return LV_OWN(FD, "BadGuyAppears", NULL, "") && Mode_Later(7.0, FD, "CreateBadGuy", NULL, 0, NULL);
 	}
 	return near == 0 && Mode_Later(1.0, FD, "CheckCreateBadGuy", NULL, 0, "CheckCreateBadGuy");
@@ -1196,7 +1200,7 @@ static byte Dtritus_OutOfLonelyMercShipN(void) {
 	if (far > 0) {
 		/* a local of the script (no global statement): the camera of the ship is read and dropped */
 		Native_Free(sn);
-		byte ok = LV_OWN(FD, "ActivateMissionObjects", NULL, "i", 0L) && Mode_VGet(ship, "CamTgt", cam) &&
+		byte ok = PORT_LOWN(Mission_FindDtritusMatrix, ActivateMissionObjects, NULL, "i", 0L) && Mode_VGet(ship, "CamTgt", cam) &&
 			LvN_SetInts3(ship, "CamTgt", 0, 400, 0) && Mode_G(FD, "lonelyMercShipName", sn) && LvN_Target(sn);
 		return Mode_Done(&t, ok);
 	}
@@ -1241,8 +1245,9 @@ static byte Dtritus_CreateBadGuyN(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *bad = Mode_V(&t), *pd = Mode_V(&t), *ship = Mode_V(&t), *pos = Mode_V(&t);
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("TheBadGuy", 0, bad, NULL) &&
-		LV_OWN(FD, "SetLonelyMercProfile", pd, "") && Mode_VGet(pd, "Ship", ship) && LV_CALL("VehiclesNPC", "SetIAProf", NULL, "vv", bad, ship) &&
-		LV_CALL("OutMap", "GetNearestFreeSpawnPos", pos, "") && (!Native_True(pos) || Mode_VSet(bad, "Pos", pos)) &&
+		PORT_LOWN(Mission_FindDtritusMatrix, SetLonelyMercProfile, pd, "") && Mode_VGet(pd, "Ship", ship) &&
+		PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", bad, ship) &&
+		PORT_CALL(OutMap, GetNearestFreeSpawnPos, pos, "") && (!Native_True(pos) || Mode_VSet(bad, "Pos", pos)) &&
 		LvN_SetS(bad, "EntityList", "Enemies") && LvN_Life(bad, FD, "LONELY_MERC_LIFE");
 	return Mode_Done(&t, ok);
 }
@@ -1279,8 +1284,8 @@ static byte Dtritus_CreatePlanN(const nativeVal_t *a) {
 	if (!photo) {
 		return Mode_Done(&t, Native_Raise(NE_NAME, "photoObjectName"));
 	}
-	byte ok = LV_CALL("MissionsFuncs", "CreatePhotoObject", pln, "svv", photo, pos, ang) &&
-		LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", pln, 0L) && Mode_VGet(pln, "Name", name) && Mode_Append(FD, "plans", name);
+	byte ok = PORT_CALL(MissionsFuncs, CreatePhotoObject, pln, "svv", photo, pos, ang) &&
+		PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", pln, 0L) && Mode_VGet(pln, "Name", name) && Mode_Append(FD, "plans", name);
 	if (ok) {
 		Native_Free(name);
 		ok = Mode_VGet(pln, "Name", name) && Mode_DictPut(FD, "plansDictHelper", NULL, name, dummyName) && LvN_SetI(pln, "Active", 0);
@@ -1298,24 +1303,19 @@ static byte Fd_EndCallbacks(void) {
 static int Fd_End(void) {
 	nativeVal_t r = { 0 };
 	Native_SetNone(&r);
-	int t = LV_OWN(FD, "CheckEndOfMission", &r, "") ? Native_True(&r) : -1;
+	int t = PORT_LOWN(Mission_FindDtritusMatrix, CheckEndOfMission, &r, "") ? Native_True(&r) : -1;
 	Native_Free(&r);
 	return t;
 }
 
-/* Speech.ForceRemoteCom(key, "DeepThroat", AfterRemoteComFunc = SetNextMission) (OBJLIB 3: a call with keywords) */
+/* Speech.ForceRemoteCom(key, "DeepThroat", AfterRemoteComFunc = SetNextMission): the global SetNextMission (a section of
+ * mission_finddtritusmatrix.def, OBJLIB 6) is the function object of the keyword. Its lookup comes before the one of
+ * Speech.ForceRemoteCom (the script looked that up first; the error differs only when both fail) */
 static byte Fd_ForceCom(const char *key) {
-	PyObject *fn = Script_Attr("Speech", "ForceRemoteCom");
-	PyObject *then = fn ? Mode_GlobalPy(FD, "SetNextMission") : NULL;
-	PyObject *args = then ? Py_BuildValue("(ss)", key, "DeepThroat") : NULL;
-	PyObject *kw = args ? Py_BuildValue("{sO}", "AfterRemoteComFunc", then) : NULL;
-	PyObject *r = kw ? Script_CallObject(fn, args, kw) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(kw);
-	Py_XDECREF(args);
+	PyObject *then = Mode_GlobalPy(FD, "SetNextMission");
+	byte ok = then && PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O", key, "DeepThroat", then);
 	Py_XDECREF(then);
-	Py_XDECREF(fn);
-	return r != NULL;
+	return ok;
 }
 
 /* TakePlanPhoto(plName): a photo of a plan: its blueprint into the hangar lists; the last thing taken ends the mission */
@@ -1333,7 +1333,7 @@ static byte Dtritus_TakePlanPhotoN(const nativeVal_t *name, nativeVal_t *out) {
 	if (in <= 0) {
 		return Mode_Done(&t, in == 0);
 	}
-	byte ok = Mode_EntityH(name, e) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", e) && Mode_Remove(FD, "plans", name) &&
+	byte ok = Mode_EntityH(name, e) && PORT_CALL(MissionsFuncs, UnsetPhotoObject, NULL, "v", e) && Mode_Remove(FD, "plans", name) &&
 		Mode_G(FD, "plansDictHelper", helper) && Native_Subscript(helper, name, dummyName);
 	for (int i = 0; ok && i < 3; i++) {
 		int eq = Sy_CmpS(dummyName, "==", bp[i][0]);
@@ -1395,7 +1395,9 @@ static byte Dtritus_TakeMatrixN(const nativeVal_t *a) {
 			LvN_PutNone(FD, "dtritusMatrixArrow");
 	}
 	int end = ok ? Fd_End() : -1;
-	ok = end == 0 || (end > 0 && Fd_EndCallbacks() && LvN_Com("Mission_FindDtritusMatrix1_RemoteMessage5", "DeepThroat", FD, "SetNextMission", NULL));
+	/* OBJLIB 6: SetNextMission is a section of mission_finddtritusmatrix.def */
+	ok = end == 0 || (end > 0 && Fd_EndCallbacks() &&
+		LvN_Com("Mission_FindDtritusMatrix1_RemoteMessage5", "DeepThroat", FD, "SetNextMission", NULL));
 	return Mode_Done(&t, ok);
 }
 
@@ -1470,7 +1472,7 @@ static byte Sy_PhoneInitN(const char *module, const char *use, byte berto) {
 	if (berto) {
 		Sy_AddHead("EvilBerto", "Models/Heads/HeadEvilBerto/HeadEvilBerto", 25.0f, 10.0f);
 	}
-	byte ok = LV_CALL("PhoneCab", "GetFree", &pc, "") && Mode_Put(module, "pc", NULL, &pc) && LvN_TargetG(module, "pc") &&
+	byte ok = PORT_CALL(PhoneCab, GetFree, &pc, "") && Mode_Put(module, "pc", NULL, &pc) && LvN_TargetG(module, "pc") &&
 		Mode_GSetS(module, "pc", "UseFunc", use);
 	Native_Free(&pc);
 	return ok;
@@ -1506,7 +1508,7 @@ static byte Berto_SetNextMissionN(void) {
 	Mode_Repr(life, r);
 	SaveVar_Create("BertosLife", Native_Text(r));
 	LvN_Str(dt, "Dtritus");
-	byte ok = LV_CALL("MissionsFuncs", "CreateBertos", NULL, "") && Mb_Reassign("SwitchVehicleMissionCallback") &&
+	byte ok = PORT_CALL(MissionsFuncs, CreateBertos, NULL, "") && Mb_Reassign("SwitchVehicleMissionCallback") &&
 		Mb_Reassign("SwitchCharMissionCallback") && LvN_Next("Mission_DestroyStupidus", "Commercial", "Mission_DestroyStupidus_MissionText1") &&
 		Mode_WayPoint() && LvN_SaveList("Conversor.AvailableChars", MB, chars);
 	int in = ok ? Native_Contains(chars, dt) : -1;
@@ -1576,7 +1578,7 @@ static byte Clue_InitN(void) {
 	byte swarm = LvN_EqS(&svv, "Swarm"), chat = !swarm && LvN_EqS(&svv, "PoliChat");
 	Native_Free(&svv);
 	if (chat) {
-		return LV_OWN(MC, "InitPoliChat", NULL, "");
+		return PORT_LOWN(Mission_MosquitoClue, InitPoliChat, NULL, "");
 	}
 	if (!swarm) {
 		return 1;
@@ -1595,9 +1597,9 @@ static byte Clue_InitN(void) {
 		return 0;
 	}
 	if (LvN_SaveIs("Mission_MosquitoClue.NumLairsExplored", "0")) {
-		return LvN_Com("Mission_Get1stClue_RemoteMessage1", "PoliceBoss", MC, "InitSwarm", LvN_NoArgs());
+		return LV_COM("Mission_Get1stClue_RemoteMessage1", "PoliceBoss", Mission_MosquitoClue, InitSwarm, LvN_NoArgs());
 	}
-	return LV_OWN(MC, "InitSwarm", NULL, "");
+	return PORT_LOWN(Mission_MosquitoClue, InitSwarm, NULL, "");
 }
 
 /* the item of a lair: Scrap.CreateEntity(name, pos[0], pos[1], pos[2], cls) through its seam */
@@ -1669,8 +1671,8 @@ static byte Clue_InitMosquitoN(const nativeVal_t *a) {
 static byte Clue_CreateMosquitoN(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *o1 = Mode_V(&t), *pd = Mode_V(&t), *ammo = Mode_V(&t), *w = Mode_V(&t), *r = Mode_V(&t);
-	byte ok = Mode_Import("OutMap") && Mode_SpawnCar("Traffic", 0, o1, NULL) && LvN_StdProfile(MC, "GetMosquitoProfile", o1, pd) &&
-		Mode_VSet(o1, "Pos", &a[0]) && LvN_SetS(o1, "EntityList", "Enemies");
+	byte ok = Mode_Import("OutMap") && Mode_SpawnCar("Traffic", 0, o1, NULL) && PORT_LOWN(Mission_MosquitoClue, GetMosquitoProfile, pd, "") &&
+		LvN_StdAI(o1, pd) && Mode_VSet(o1, "Pos", &a[0]) && LvN_SetS(o1, "EntityList", "Enemies");
 	if (ok) {
 		Sy_AmmoMax(ammo);
 		ok = Mode_VSet(o1, "Ammo00", ammo) && LvN_Life(o1, MC, "MOSQUITO_LIFE");
@@ -1710,7 +1712,7 @@ static byte Clue_MosquitoDeathN(const nativeVal_t *a) {
 			Mode_G(MC, "Model_Datapack", model) && Mode_VModel(l, model) && LvN_SetI(l, "Radius", 3500) && LvN_SetI(l, "AppearsIfFree", 0) &&
 			LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", 1) && LvN_SetF(l, "rTime", 0.25) &&
 			LvN_SetS(l, "OnTake", "Mission_MosquitoClue.TakeDataPack") && Mode_Import("Items") &&
-			LV_CALL("Items", "SetSound", NULL, "vs", l, "TakeBDataPack") && Mc_Create("MissionCheckArrow", pos, "WithLife", l2) &&
+			PORT_CALL(Items, SetSound, NULL, "vs", l, "TakeBDataPack") && Mc_Create("MissionCheckArrow", pos, "WithLife", l2) &&
 			LvN_SetInts3(l2, "CamTgt", 0, 1000, 0) && LvN_TargetName(l2) && LvN_Com("Mission_Get1stClue_RemoteMessage4", "PoliceBoss", NULL, NULL, NULL);
 		return Mode_Done(&t, ok);
 	}
@@ -1718,7 +1720,8 @@ static byte Clue_MosquitoDeathN(const nativeVal_t *a) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_SaveRepr("Mission_MosquitoClue.NumLairsExplored", n);
-	return Mode_Done(&t, LvN_Com("Mission_Get1stClue_RemoteMessage6", "PoliceBoss", NULL, NULL, NULL) && LV_OWN(MC, "InitSwarm", NULL, ""));
+	return Mode_Done(&t, LvN_Com("Mission_Get1stClue_RemoteMessage6", "PoliceBoss", NULL, NULL, NULL) &&
+		PORT_LOWN(Mission_MosquitoClue, InitSwarm, NULL, ""));
 }
 
 /* TakeDataPack(ItemName, UsrName): the clue: the police boss' message, then the call */
@@ -1727,7 +1730,7 @@ static byte Clue_TakeDataPackN(void) {
 	Native_SetNone(&arrow);
 	byte ok = LvN_Entity("MissionDataPack", &it) && LvN_SetI(&it, "rTime", 20) && Sy_LaterPy(5.0, Mode_VBound(&it, "Del")) &&
 		LvN_Entity("MissionCheckArrow", &arrow) && Mode_VDel(&arrow) && Mode_GVarSetI("RemainTalkTime", 0) &&
-		LvN_Com("Mission_Get1stClue_RemoteMessage5", "PoliceBoss", MC, "InitPoliChat", NULL);
+		LV_COM("Mission_Get1stClue_RemoteMessage5", "PoliceBoss", Mission_MosquitoClue, InitPoliChat, NULL);
 	Native_Free(&it);
 	Native_Free(&arrow);
 	return ok;
@@ -1739,7 +1742,7 @@ static byte Sy_CallFrom(const char *module, const char *state, const char *value
 	nativeVal_t pc = { 0 };
 	Native_SetNone(&pc);
 	SaveVar_Set(state, value);
-	byte ok = (!desc || Mode_MMDesc(desc, 1L)) && LV_CALL("PhoneCab", "GetFree", &pc, "") && Mode_Put(module, "pc", NULL, &pc) &&
+	byte ok = (!desc || Mode_MMDesc(desc, 1L)) && PORT_CALL(PhoneCab, GetFree, &pc, "") && Mode_Put(module, "pc", NULL, &pc) &&
 		Mode_GSetS(module, "pc", "UseFunc", use) && LvN_TargetG(module, "pc");
 	Native_Free(&pc);
 	return ok;
