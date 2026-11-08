@@ -825,7 +825,7 @@ static byte Vs_InitC(void) {
 	byte ok = Mode_Import("Parking") && Mode_Import("Menu") && Mode_Import("Vehicles") && Sd_Camera("CA") &&
 		Mode_SetModVar("Vehicles", "DelPlayerShipOnDeath", &zero) && Mode_SaveInt("CombatDeaths", &deaths) &&
 		Mode_Put(VS, "combatDeaths", &vs.combatDeaths, &deaths) && Mode_Import("Chars") &&
-		Mode_ModSetGlobal("Chars", "OnMainCharDeath", VS, "OnPlayerDeath") && OWN(VS, "CreateEnemy", NULL, "") &&
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", VS, "OnPlayerDeath") && PORT_OWN(Versus, CreateEnemy, NULL, "") &&
 		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", VS, "CrazyGamblerStartCombat");
 	Native_Free(&deaths);
 	return ok;
@@ -841,7 +841,7 @@ static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
 	Mode_V(&t);
 	nativeVal_t *e = Mode_V(&t), *v = Mode_V(&t), *ship = Mode_V(&t);
 	if (!Mode_Import("RaceMaker") || !Mode_Import("VehiclesNPC") || !Mode_Import("MissionsFuncs") || !Mode_Import("OutMap") ||
-		!CALL("OutMap", "GetSpawnPos", sp, "") || !Mode_Unpack(sp, 2, pos) ||
+		!PORT_CALL(OutMap, GetSpawnPos, sp, "") || !Mode_Unpack(sp, 2, pos) ||
 		!Sd_Create(Mode_S(&t, "Enemy"), &pos[0], "Car", e) || !Mode_SetAng(e, &pos[1]) || !Mode_VGet(e, "Name", v) ||
 		!Mode_Put(VS, "enemyName", &vs.enemyName, v)) {
 		return Mode_Done(&t, 0);
@@ -855,15 +855,15 @@ static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
 	Mode_SaveVar("CombatEnemyProfile", v);
 	if (!Mode_Put(VS, "combatEnemyProfile", &vs.combatEnemyProfile, v) || !Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) ||
 		!Mode_Read(VS, "combatEnemyProfile", &vs.combatEnemyProfile) ||
-		!CALL("RaceMaker", "InitShipIAProfile", NULL, "vv", &vs.combatEnemyType, &vs.combatEnemyProfile) ||
+		!PORT_CALL(RaceMaker, InitShipIAProfile, NULL, "vv", &vs.combatEnemyType, &vs.combatEnemyProfile) ||
 		!Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) || !Mode_Read(VS, "combatEnemyProfile", &vs.combatEnemyProfile) ||
 		!Mode_Cat(&t, ship, 4, Mode_S(&t, "S"), &vs.combatEnemyType, Mode_S(&t, "1_"), &vs.combatEnemyProfile) ||
-		!CALL("VehiclesNPC", "SetIAProf", NULL, "vv", e, ship)) {
+		!PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", e, ship)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Mode_EqI(mark, 1)) {
 		return Mode_Done(&t, Mode_VSetS(e, "TgType", "red") && Mode_VSetS(e, "EntityList", "Enemies") &&
-			CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L));
+			PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 1L));
 	}
 	return Mode_Done(&t, Mode_VSetI(e, "Invulnerable", 1));
 }
@@ -931,7 +931,7 @@ static byte Vs_StartCombatC(void) {
 	}
 	Mode_Repr(&vs.combatDeaths, limit);
 	if (!Sd_ScorerOn(a, b, limit) || !Mode_VSetS(e, "TgType", "red") || !Mode_VSetS(e, "EntityList", "Enemies") ||
-		!Mode_VSetI(e, "Invulnerable", 0) || !CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L)) {
+		!Mode_VSetI(e, "Invulnerable", 0) || !PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 1L)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("CombatEnemyType", type);
@@ -1050,7 +1050,7 @@ MODE_FN(Vs, OnEnemyDeath, 2, Vs_OnEnemyDeathC(&a[0]))
 
 /* RespawnEnemy(): the enemy again, as the target, and the next round */
 static byte Vs_RespawnEnemyC(void) {
-	return OWN(VS, "CreateEnemy", NULL, "i", 1L) && OWN(VS, "StartCombat", NULL, "");
+	return PORT_OWN(Versus, CreateEnemy, NULL, "i", 1L) && PORT_OWN(Versus, StartCombat, NULL, "");
 }
 
 MODE_FN(Vs, RespawnEnemy, 0, Vs_RespawnEnemyC())
@@ -1107,7 +1107,7 @@ static byte Vs_EnemyWinsC(const nativeVal_t *cad) {
 		return 0;
 	}
 	Sd_Params(0, "Versus", "Versus.RestartCombat", &params);
-	byte ok = CALL("Speech", "AddRemoteCom", NULL, "vvOv", cad, &head, fn, &params);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vvOv", cad, &head, fn, &params);
 	Native_Free(&params);
 	Native_Free(&head);
 	Py_DECREF(fn);
@@ -1121,8 +1121,9 @@ static byte Vs_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, c
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *enemy = Mode_V(&t);
 	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_EntityH(name, usr) || !Mode_VGet(usr, "Name", un) ||
-		!CALL("Vehicles", "ReSpawnShip", NULL, "v", un) || !Mode_VSet(usr, "Pos", pos) || !Mode_VSet(usr, "Ang", ang) ||
-		!Mode_Read(VS, "enemyName", &vs.enemyName) || !Mode_EntityH(&vs.enemyName, enemy)) {
+		!PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", un) || !Mode_VSet(usr, "Pos", pos) ||
+		!Mode_VSet(usr, "Ang", ang) || !Mode_Read(VS, "enemyName", &vs.enemyName) ||
+		!Mode_EntityH(&vs.enemyName, enemy)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(enemy)) {
@@ -1140,7 +1141,7 @@ MODE_FN(Vs, RespawnPlayer, 3, Vs_RespawnPlayerC(&a[0], &a[1], &a[2]))
 static byte Vs_RestartCombatC(void) {
 	Mode_SaveS("NumEnemyDeaths", "0");
 	Mode_SaveS("NumPlayerDeaths", "0");
-	return CALL("SaveGame", "Restart", NULL, "");
+	return PORT_CALL(SaveGame, Restart, NULL, "");
 }
 
 MODE_FN(Vs, RestartCombat, 2, Vs_RestartCombatC())
