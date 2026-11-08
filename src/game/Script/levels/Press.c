@@ -61,7 +61,9 @@
 
 /* ---- native helpers of this file ---- */
 
-/* Speech.AddRemoteCom(msg, who[, func, params]) with func a global of module (NULL: none; params: a fourth ()) */
+/* Speech.AddRemoteCom(msg, who[, func, params]) with func a global of module (NULL: none; params: a fourth ()); a
+ * function of the module named by its ref goes through LV_COM, the functions of the .def files are data and go by
+ * their names (OBJLIB 6) */
 static byte Pr_Remote(const char *msg, const char *who, const char *module, const char *func, int params) {
 	return LvN_Com(msg, who, module, func, params ? LvN_NoArgs() : NULL);
 }
@@ -905,7 +907,8 @@ PyMethodDef g_PressMapSndMethods[] = {
 static byte FicusBanker_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return LvN_MissionChar("Police_Ficus", FB, "CreatePoliceFicusInit") && LvN_MissionChar("BankDirector_Scrapus", FB, "CreateBankDirectorScrapusInit");
+	return LV_MISSIONCHAR("Police_Ficus", Mission_FicusBanker, CreatePoliceFicusInit) &&
+		LV_MISSIONCHAR("BankDirector_Scrapus", Mission_FicusBanker, CreateBankDirectorScrapusInit);
 }
 
 /* Init(LevelPath): the check's model; the mission goes on where it was saved */
@@ -927,13 +930,12 @@ static byte FicusBanker_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (LvN_EqS(&svv, "TalkFicus")) {
 		ok = Mode_Target("Police_Ficus");
 	} else if (LvN_EqS(&svv, "KillScrapus")) {
-		ok = LV_OWN(FB, "InitKillScrapus", NULL, "");
+		ok = PORT_LOWN(Mission_FicusBanker, InitKillScrapus, NULL, "");
 	} else if (LvN_EqS(&svv, "TakeCheck")) {
-		/* SpawnCheck("BankDirector_Scrapus", eval(Scrap.GetSaveVar("CheckPos"))) */
-		PyObject *fn = Mode_GlobalPy(FB, "SpawnCheck");
+		/* SpawnCheck("BankDirector_Scrapus", eval(Scrap.GetSaveVar("CheckPos"))); the global is looked up after the
+		 * eval (the script looks it up first: the same unless both fail) */
 		Native_SetNone(&pos);
-		ok = fn && LvN_SaveList("CheckPos", FB, &pos) && Native_Call(fn, NULL, "sv", "BankDirector_Scrapus", &pos);
-		Py_XDECREF(fn);
+		ok = LvN_SaveList("CheckPos", FB, &pos) && PORT_LOWN(Mission_FicusBanker, SpawnCheck, NULL, "sv", "BankDirector_Scrapus", &pos);
 		Native_Free(&pos);
 	} else if (LvN_EqS(&svv, "TalkFicus2")) {
 		ok = LV_OWN(FB, "InitTalkFicus2", NULL, "");
@@ -972,7 +974,8 @@ static byte FicusBanker_FicusMissionSpeech(const nativeVal_t *a, nativeVal_t *ou
 		} else if (LvN_EqI(&first, 0)) {
 			ok = Mode_NISpeech(NULL, "Mission_TalkToFicus_Ficus_NI_1Msg") && Mode_AnsLst(ans, 1) && LvN_PutI(FB, "Firstone", 1);
 		} else if (LvN_EqI(&first, 1)) {
-			ok = LvN_OnEnd(FB, "InitKillScrapus", NULL) && Mode_Spch("Mission_TalkToFicus_Ficus_1Msg", "Mission_TalkToFicus_Ficus_1Ans", NULL);
+			ok = LV_ONEND(Mission_FicusBanker, InitKillScrapus, NULL) &&
+				Mode_Spch("Mission_TalkToFicus_Ficus_1Msg", "Mission_TalkToFicus_Ficus_1Ans", NULL);
 		} else {
 			ok = LvN_RoutineCall("Police", a);
 		}
@@ -981,7 +984,8 @@ static byte FicusBanker_FicusMissionSpeech(const nativeVal_t *a, nativeVal_t *ou
 		ok = talk || LvN_EqS(&a[2], "Mission_TalkToFicus_Ficus_1") ?
 			Mode_Spch("Mission_KillScrapus_Ficus_InitMsg1", "Mission_KillScrapus_Ficus_InitAns1", NULL) : LvN_RoutineCall("Police", a);
 	} else if (LvN_EqS(&svv, "TalkFicus2")) {
-		ok = talk ? LvN_OnEnd(FB, "SetNextMission", NULL) && Mode_Spch("Mission_TalkToFicus2_Ficus_InitMsg1", "Mission_TalkToFicus2_Ficus_InitAns1", NULL) :
+		ok = talk ? LV_ONEND(Mission_FicusBanker, SetNextMission, NULL) &&
+			Mode_Spch("Mission_TalkToFicus2_Ficus_InitMsg1", "Mission_TalkToFicus2_Ficus_InitAns1", NULL) :
 			LvN_RoutineCall("Police", a);
 	} else {
 		ok = talk ? Mode_Spch("Mission_TalkToFicus2_Ficus_InitMsg2", "Mission_TalkToFicus2_Ficus_InitAns2", NULL) : LvN_RoutineCall("Police", a);
@@ -1152,20 +1156,20 @@ static byte CrazyData_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	Native_SetNone(&bp);
-	if (!Mode_Import("Map") || !LV_CALL("Map", "HideBureau", &bp, "") || !Mode_Put(GC, "bureauPos", NULL, &bp)) {
+	if (!Mode_Import("Map") || !PORT_LCALL(Map, HideBureau, &bp, "") || !Mode_Put(GC, "bureauPos", NULL, &bp)) {
 		Native_Free(&bp);
 		return 0;
 	}
 	Native_Free(&bp);
 	Mode_SaveVar("MissionState", &state);
 	if (LvN_EqS(&state, "GetCrazyData")) {
-		ok = LV_OWN(GC, "GetCrazyData", NULL, "");
+		ok = PORT_LOWN(Mission_GetCrazyData, GetCrazyData, NULL, "");
 	} else if (LvN_EqS(&state, "GoToPressRoom")) {
-		ok = Pr_DelIfS("Humphrey_Default") && LV_OWN(GC, "GoToPressRoom", NULL, "");
+		ok = Pr_DelIfS("Humphrey_Default") && PORT_LOWN(Mission_GetCrazyData, GoToPressRoom, NULL, "");
 	} else if (LvN_EqS(&state, "FindHumphrey")) {
-		ok = LV_OWN(GC, "FindHumphrey", NULL, "");
+		ok = PORT_LOWN(Mission_GetCrazyData, FindHumphrey, NULL, "");
 	} else if (LvN_EqS(&state, "FindTrurl")) {
-		ok = LV_OWN(GC, "FindTrurl", NULL, "");
+		ok = PORT_LOWN(Mission_GetCrazyData, FindTrurl, NULL, "");
 	}
 	Native_Free(&state);
 	return ok;
@@ -1240,10 +1244,10 @@ static byte CrazyData_GetCrazyData(const nativeVal_t *a, nativeVal_t *out) {
 		Native_Free(&dummy);
 		Native_Free(&e);
 	}
-	ok = ok && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &switches);
+	ok = ok && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", &switches);
 	Native_Free(&switches);
 	return ok && PR_HOOK("Alarm", "TempAbortMissionCallback", GC, "OnAlarmActivated") && Pr_Remote("Mission_GetCrazyData_RemoteMessage1", "DeepThroat",
-		NULL, NULL, 0) && LvN_ScorerCallG(GC, "MissionScorer") && LV_OWN(GC, "MissionScorer", NULL, "i", 0L);
+		NULL, NULL, 0) && LV_SCORERG(Mission_GetCrazyData, MissionScorer) && PORT_LOWN(Mission_GetCrazyData, MissionScorer, NULL, "i", 0L);
 }
 
 /* for sw in switches: e = Scrap.GetEntity(sw); if e: the switch off (and usable again with use, else not) */
@@ -1277,10 +1281,11 @@ static byte CrazyData_OnAlarmActivated(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Gc_SwitchesOff(1) || !Mode_G(GC, "switches", &switches)) {
 		return 0;
 	}
-	byte ok = LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &switches);
+	byte ok = PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", &switches);
 	Native_Free(&switches);
 	return ok && LvN_PutI(GC, "TimerCanBeSeen", 0) && LvN_PutI(GC, "switchesRemaining", 4) && LvN_Set0I("MissionTimer", "Visible", 0) &&
-		LV_OWN(GC, "MissionScorer", NULL, "i", 0L) && Pr_Remote("Mission_GetCrazyData_RemoteMessage6", "DeepThroat", NULL, NULL, 0);
+		PORT_LOWN(Mission_GetCrazyData, MissionScorer, NULL, "i", 0L) &&
+		Pr_Remote("Mission_GetCrazyData_RemoteMessage6", "DeepThroat", NULL, NULL, 0);
 }
 
 /* OnSwitchPressed(UsrName, CharName, optId, FullOption): a switch on (not during the alarm); a sentinel comes to
@@ -1302,11 +1307,12 @@ static byte CrazyData_OnSwitchPressed(const nativeVal_t *a, nativeVal_t *out) {
 	/* SLogic.SendSentinelToWatch by name: fc-r7b-gc records it (OBJLIB 7) */
 	if (!LvN_SetS(e, "DefLoop", "StayON") || !LvN_SetS(e, "Action", "ON") || !LvN_SetS(e, "UseFunc", "") || !LvN_SetI(e, "ArrowCanUse", 0) ||
 		!LvN_Activate(e, 0) || !Mode_VGet(e, "Pos", pos) || !LV_CALL("SLogic", "SendSentinelToWatch", NULL, "v", pos) ||
-		!Mode_GOpI(GC, "switchesRemaining", '-', 1) || !LV_OWN(GC, "MissionScorer", NULL, "i", 0L) || !Mode_G(GC, "switchesRemaining", left)) {
+		!Mode_GOpI(GC, "switchesRemaining", '-', 1) || !PORT_LOWN(Mission_GetCrazyData, MissionScorer, NULL, "i", 0L) ||
+		!Mode_G(GC, "switchesRemaining", left)) {
 		return Mode_Done(&t, 0);
 	}
 	if (LvN_EqI(left, 0)) {
-		return Mode_Done(&t, Pr_Remote("Mission_GetCrazyData_RemoteMessage5", "DeepThroat", GC, "StartTimer", 1));
+		return Mode_Done(&t, LV_COM("Mission_GetCrazyData_RemoteMessage5", "DeepThroat", Mission_GetCrazyData, StartTimer, LvN_NoArgs()));
 	}
 	Native_Free(left);
 	if (!Mode_G(GC, "switchesRemaining", left) || !Native_Arith('-', Mode_I(&t, 5), left, d)) {
@@ -1314,7 +1320,7 @@ static byte CrazyData_OnSwitchPressed(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Mode_Repr(d, rep);
 	return Mode_Done(&t, Native_Arith('+', Mode_S(&t, "Mission_GetCrazyData_RemoteMessage"), rep, msg) &&
-		LV_CALL("Speech", "AddRemoteCom", NULL, "vs", msg, "DeepThroat"));
+		PORT_CALL(Speech, AddRemoteCom, NULL, "vs", msg, "DeepThroat"));
 }
 
 /* StartTimer(): the countdown of the data is visible */
@@ -1328,7 +1334,8 @@ static byte CrazyData_StartTimer(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	byte ok = Mode_GVarSet("TimeSpecialUseTimer", &mt);
 	Native_Free(&mt);
-	return ok && LvN_Set0I("MissionTimer", "Visible", 1) && Pr_DelIfS("Humphrey_Default") && LV_OWN(GC, "MissionScorer", NULL, "i", 0L);
+	return ok && LvN_Set0I("MissionTimer", "Visible", 1) && Pr_DelIfS("Humphrey_Default") &&
+		PORT_LOWN(Mission_GetCrazyData, MissionScorer, NULL, "i", 0L);
 }
 
 /* TimeExpired(): the switches go off for good; on to the press room */
@@ -1385,14 +1392,14 @@ static byte CrazyData_OnFakeBureauTaken(const nativeVal_t *a, nativeVal_t *out) 
 static byte Pr_MissionTarget(const char *name, const char *use, const long *pos) {
 	nativeVal_t k, e;
 	Native_SetNone(&e);
-	if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", name)) {
+	if (!PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", name)) {
 		return 0;
 	}
 	/* CharsNPC.CreateChar(CharsNPC.CharRes[name]) (OBJLIB 5: the character object of CharsNPC) */
 	LvN_Str(&k, name);
 	PyObject *ch = Mode_CharRes(&k);
 	Native_Free(&k);
-	byte ok = ch && LV_CALL("CharsNPC", "CreateChar", NULL, "O", ch);
+	byte ok = ch && PORT_CALL(CharsNPC, CreateChar, NULL, "O", ch);
 	Py_XDECREF(ch);
 	if (!ok || !LvN_Entity(name, &e)) {
 		return 0;
