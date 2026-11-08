@@ -694,16 +694,42 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 	PORT_DEF(MissionsFuncs, BuildCTFData, MissionsFuncs_BuildCTFData)
 
 /* OutMap.c */
+PORT_DECL(OutMap, BrowseSpawnPos) /* 0 */
+PORT_DECL(OutMap, GetSpawnPos) /* 0 */
+PORT_DECL(OutMap, GetFreeSpawnPos) /* 0 */
+PORT_DECL(OutMap, GetFreeSpawnPosReal) /* 0 */
 PORT_DECL(OutMap, GetNearestFreeSpawnPosReal) /* 1 */
+PORT_DECL(OutMap, GetFreeSpawn) /* 0 */
+PORT_DECL(OutMap, GetNearestFreeSpawnPos) /* ? */
+PORT_DECL(OutMap, GetFarthestFreeSpawnPos) /* ? */
+PORT_DECL(OutMap, CreatePlayers) /* 0 */
+PORT_DECL(OutMap, InitOutMap) /* 0 */
+PORT_DECL(OutMap, BrowseAtmospherePos) /* 0 */
 PORT_DECL(OutMap, Init) /* 1 */
 PORT_DECL(InTraffic, GetNam) /* 1 */
+PORT_DECL(InTraffic, FakeWeap) /* 0 */
+PORT_DECL(InTraffic, LoadFakeTraffic) /* 0 */
 PORT_DECL(InTraffic, CreateList) /* 3 */
+PORT_DECL(InTraffic, FakeTraffic) /* 0 */
 PORT_DECL(InTraffic, SetSound) /* 1 */
 #define PORTS_OutMap \
+	PORT_DEF(OutMap, BrowseSpawnPos, OutMap_BrowseSpawnPos) \
+	PORT_DEF(OutMap, GetSpawnPos, OutMap_GetSpawnPos) \
+	PORT_DEF(OutMap, GetFreeSpawnPos, OutMap_GetFreeSpawnPos) \
+	PORT_DEF(OutMap, GetFreeSpawnPosReal, OutMap_GetFreeSpawnPosReal) \
 	PORT_DEF(OutMap, GetNearestFreeSpawnPosReal, OutMap_GetNearestFreeSpawnPosReal) \
+	PORT_DEF(OutMap, GetFreeSpawn, OutMap_GetFreeSpawn) \
+	PORT_DEF(OutMap, GetNearestFreeSpawnPos, OutMap_GetNearestFreeSpawnPos) \
+	PORT_DEF(OutMap, GetFarthestFreeSpawnPos, OutMap_GetFarthestFreeSpawnPos) \
+	PORT_DEF(OutMap, CreatePlayers, OutMap_CreatePlayers) \
+	PORT_DEF(OutMap, InitOutMap, OutMap_InitOutMap) \
+	PORT_DEF(OutMap, BrowseAtmospherePos, OutMap_BrowseAtmospherePos) \
 	PORT_DEF(OutMap, Init, OutMap_Init) \
 	PORT_DEF(InTraffic, GetNam, It_GetNamPy) \
+	PORT_DEF(InTraffic, FakeWeap, InTraffic_FakeWeap) \
+	PORT_DEF(InTraffic, LoadFakeTraffic, InTraffic_LoadFakeTraffic) \
 	PORT_DEF(InTraffic, CreateList, It_CreateListPy) \
+	PORT_DEF(InTraffic, FakeTraffic, InTraffic_FakeTraffic) \
 	PORT_DEF(InTraffic, SetSound, It_SetSoundPy)
 
 /* Parking.c */
