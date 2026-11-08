@@ -698,6 +698,10 @@ PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
 
 /* MenuBase.c */
+PORT_DECL(Menu, LinkLR) /* ? */
+PORT_DECL(Menu, LinkUD) /* ? */
+PORT_DECL(Menu, UnLinkLR) /* ? */
+PORT_DECL(Menu, UnLinkUD) /* ? */
 PORT_DECL(Menu, DrawBackMainMenu) /* ? */
 PORT_DECL(Menu, DrawBackSubMenu) /* ? */
 PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
@@ -709,6 +713,10 @@ PORT_DECL(Menu, ShowTextBox) /* ? */
 PORT_DECL(Menu, ShowWarning) /* ? */
 PORT_DECL(Menu, SetTabDefaults) /* ? */
 #define PORTS_MenuBase \
+	PORT_DEF(Menu, LinkLR, Menu_LinkLR) \
+	PORT_DEF(Menu, LinkUD, Menu_LinkUD) \
+	PORT_DEF(Menu, UnLinkLR, Menu_UnLinkLR) \
+	PORT_DEF(Menu, UnLinkUD, Menu_UnLinkUD) \
 	PORT_DEF(Menu, DrawBackMainMenu, Menu_DrawBackMainMenu) \
 	PORT_DEF(Menu, DrawBackSubMenu, Menu_DrawBackSubMenu) \
 	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \

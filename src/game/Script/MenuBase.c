@@ -9,8 +9,9 @@
  * A menu that holds handles or other objects is made native item by item (Mode_ElemsIn), the objects stay NV_OBJ. The
  * variables of other modules are read where the C read them (Init.inMainMenu, isShipEdit, isDemo, Menu.isXbox,
  * TitleBarYOff, BackButtonYStart, QuestionMenuYStart, backFunc, Scorer.MarginH and MarginV), Menu.currentSoundPitch
- * and VerticalMenuLastControl are written at once (OBJLIB 5). Menu.InitMenuSys is called by name and ShowWarning
- * schedules itself as a Python function (OBJLIB 3, 4); the .def runner takes Python values (OBJLIB 6).
+ * and VerticalMenuLastControl are written at once (OBJLIB 5). Menu.InitMenuSys is called through its ref (PORT_CALL:
+ * directly while the attribute holds the port's function, else by name); ShowWarning schedules itself as a Python
+ * function (OBJLIB 4); the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -530,8 +531,7 @@ static int Base_ShowWarning(int id, const nativeVal_t *desc) {
 	}
 	char back[0x80];
 	nativeVal_t bf;
-	/* OBJLIB 3: Menu by name */
-	if (!Native_CallMod("Menu", "InitMenuSys", NULL, "i", 0L) || !Mode_G("Menu", "backFunc", &bf)) {
+	if (!PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) || !Mode_G("Menu", "backFunc", &bf)) {
 		return 0;
 	}
 	back[0] = 0;
@@ -558,27 +558,28 @@ static void Base_Place(int id, const char *section, const char *name, const nati
 
 /* ---- the functions of Menu (adapters) ---- */
 
-#define BASE_LINK(func, va, vb, clear) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
+#define BASE_LINK(name, va, vb, clear) \
+	static byte Menu_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		int id; \
-		char *a, *b; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "iss", &id, &a, &b)) { \
-			return NULL; \
+		const char *x, *y; \
+		(void)out; \
+		if (!Mode_Parse(a, n, "iss", &id, &x, &y)) { \
+			return 0; \
 		} \
 		if (clear) { \
-			Script_SetStr(id, a, va, ""); \
-			Script_SetStr(id, b, vb, ""); \
+			Script_SetStr(id, x, va, ""); \
+			Script_SetStr(id, y, vb, ""); \
 		} else { \
-			Base_Link(id, a, va, b, vb); \
+			Base_Link(id, x, va, y, vb); \
 		} \
-		return Py_ReturnNone(); \
-	}
+		return 1; \
+	} \
+	MODE_ADAPTER(Menu, name)
 
-BASE_LINK(Menu_LinkLR, "Right", "Left", 0)
-BASE_LINK(Menu_LinkUD, "Down", "Up", 0)
-BASE_LINK(Menu_UnLinkLR, "Right", "Left", 1)
-BASE_LINK(Menu_UnLinkUD, "Down", "Up", 1)
+BASE_LINK(LinkLR, "Right", "Left", 0)
+BASE_LINK(LinkUD, "Down", "Up", 0)
+BASE_LINK(UnLinkLR, "Right", "Left", 1)
+BASE_LINK(UnLinkUD, "Down", "Up", 1)
 
 /* DrawBackMainMenu(id) and the others: the logo, then the circuit */
 #define BASE_BACK(name, section) \
