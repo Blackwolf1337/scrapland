@@ -339,7 +339,8 @@ class File:
 		if r is None:
 			cands = self.idx.get((module, name), ())
 			if cands and not level_at(self.f, offset=pos):
-				self.leave(pos, form, '%s.%s: a level module, add "#define PORT_LEVEL %s"' % (module, name, cands[0].level))
+				self.leave(pos, form, ('%s.%s: a level module, add "#define PORT_LEVEL %s"' % (module, name, cands[0].level))
+					if self.f.startswith('levels/') else '%s.%s: the module of the current level (stage 4)' % (module, name))
 			return None
 		return r
 
