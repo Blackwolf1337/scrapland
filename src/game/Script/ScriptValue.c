@@ -154,19 +154,6 @@ PyObject *Script_Mod(PyObject *a, PyObject *b) {
 	return PyString_Check(a) ? PyString_Format(a, b) : PyNumber_Remainder(a, b);
 }
 
-byte Script_Is(PyObject *o, const char *text) {
-	return o && PyString_Check(o) && !strcmp(PyString_AsString(o), text);
-}
-
-byte Script_In(PyObject *o, const char *const *texts) {
-	for (; *texts; texts++) {
-		if (Script_Is(o, *texts)) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 int Script_True(PyObject *o) {
 	return o ? PyObject_IsTrue(o) : -1;
 }
@@ -179,20 +166,8 @@ int Script_Eq(PyObject *a, PyObject *b) {
 	return PyErr_Occurred() ? -1 : c == 0;
 }
 
-PyObject *Script_Int(PyObject *o) {
-	return o ? PyNumber_Int(o) : NULL;
-}
-
 PyObject *Script_Repr(PyObject *o) {
 	return o ? PyObject_Repr(o) : NULL;
-}
-
-byte Script_Range(PyObject *n, long *count) {
-	if (!n) {
-		return 0;
-	}
-	/* the conversion of range's argument parser, with its errors */
-	return PyArg_Parse(n, "l", count) != 0;
 }
 
 int Script_Next(PyObject *seq, int i, PyObject **item) {
@@ -238,38 +213,6 @@ byte Script_Print(PyObject *const *items, int n) {
 	}
 	PyFile_SoftSpace(w, 0);
 	return 1;
-}
-
-byte Script_Unpack(PyObject *v, int n, PyObject **out) {
-	if (!PySequence_Check(v)) {
-		PyErr_SetString(PyExc_TypeError, "unpack non-sequence");
-		return 0;
-	}
-	if (PySequence_Length(v) != n) {
-		PyErr_SetString(PyExc_ValueError, PyTuple_Check(v) ? "unpack tuple of wrong size" :
-			PyList_Check(v) ? "unpack list of wrong size" : "unpack sequence of wrong size");
-		return 0;
-	}
-	for (int i = 0; i < n; i++) {
-		out[i] = PySequence_GetItem(v, i);
-		if (!out[i]) {
-			while (i-- > 0) {
-				Py_DECREF(out[i]);
-			}
-			return 0;
-		}
-	}
-	return 1;
-}
-
-PyObject *Script_LangOf(PyObject *key) {
-	PyObject *s = key ? Script_Ask("Scrap", "GetLangStr", "(O)", key) : NULL;
-	Py_XDECREF(key);
-	return s;
-}
-
-PyObject *Script_SaveVar(const char *name) {
-	return Script_Ask("Scrap", "GetSaveVar", "(s)", name);
 }
 
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last) {
