@@ -1430,21 +1430,55 @@ PORT_DECL(MortalRace, PreOnVictory) /* 0 */
 	PORT_DEF(MortalRace, PreOnVictory, Mr_PreOnVictory)
 
 /* Traffic.c */
+PORT_DECL(Traffic, SetPath) /* ? */
+PORT_DECL(Traffic, ResetPath) /* ? */
+PORT_DECL(Traffic, InitAIProfiles) /* ? */
 PORT_DECL(Traffic, EmptyFunc) /* 1 */
+PORT_DECL(Traffic, MakeTrafic) /* ? */
+PORT_DECL(Traffic, InitTraffic) /* ? */
 PORT_DECL(Traffic, OnNeedMoreTraffic) /* 1 */
 PORT_DECL(Traffic, OnNeedMoreChasingTraffic) /* 1 */
+PORT_DECL(Traffic, OnPlayerHelpedPolice) /* ? */
 PORT_DECL(Traffic, RailTrafficDeath) /* 2 */
 PORT_DECL(Traffic, HeavyTrafficDeath) /* 2 */
 PORT_DECL(Traffic, NormalTrafficDeath) /* 2 */
 PORT_DECL(Traffic, MediumTrafficDeath) /* 2 */
+PORT_DECL(Traffic, InitCivilTraffic) /* ? */
+PORT_DECL(Traffic, Init) /* 1 */
+PORT_DECL(OutPolice, MakePoli) /* 1 */
+PORT_DECL(OutPolice, Init) /* ? */
+PORT_DECL(OutPolice, NextWave) /* ? */
+PORT_DECL(OutPolice, InitShips) /* ? */
+PORT_DECL(OutPolice, InitWaves) /* ? */
+PORT_DECL(OutPolice, InitAIProfiles) /* ? */
+PORT_DECL(InPolice, Include) /* 1 */
+PORT_DECL(InPolice, SetGVars) /* ? */
+PORT_DECL(InPolice, Init) /* ? */
 #define PORTS_Traffic \
+	PORT_DEF(Traffic, SetPath, Traffic_SetPath) \
+	PORT_DEF(Traffic, ResetPath, Traffic_ResetPath) \
+	PORT_DEF(Traffic, InitAIProfiles, Traffic_InitAIProfiles) \
 	PORT_DEF(Traffic, EmptyFunc, Traffic_EmptyFunc) \
+	PORT_DEF(Traffic, MakeTrafic, Traffic_MakeTrafic) \
+	PORT_DEF(Traffic, InitTraffic, Traffic_InitTraffic) \
 	PORT_DEF(Traffic, OnNeedMoreTraffic, Traffic_OnNeedMoreTraffic) \
 	PORT_DEF(Traffic, OnNeedMoreChasingTraffic, Traffic_OnNeedMoreChasingTraffic) \
+	PORT_DEF(Traffic, OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPolice) \
 	PORT_DEF(Traffic, RailTrafficDeath, Traffic_RailTrafficDeath) \
 	PORT_DEF(Traffic, HeavyTrafficDeath, Traffic_HeavyTrafficDeath) \
 	PORT_DEF(Traffic, NormalTrafficDeath, Traffic_NormalTrafficDeath) \
-	PORT_DEF(Traffic, MediumTrafficDeath, Traffic_MediumTrafficDeath)
+	PORT_DEF(Traffic, MediumTrafficDeath, Traffic_MediumTrafficDeath) \
+	PORT_DEF(Traffic, InitCivilTraffic, Traffic_InitCivilTraffic) \
+	PORT_DEF(Traffic, Init, Traffic_Init) \
+	PORT_DEF(OutPolice, MakePoli, OutPolice_MakePoli) \
+	PORT_DEF(OutPolice, Init, OutPolice_Init) \
+	PORT_DEF(OutPolice, NextWave, OutPolice_NextWave) \
+	PORT_DEF(OutPolice, InitShips, OutPolice_InitShips) \
+	PORT_DEF(OutPolice, InitWaves, OutPolice_InitWaves) \
+	PORT_DEF(OutPolice, InitAIProfiles, OutPolice_InitAIProfiles) \
+	PORT_DEF(InPolice, Include, InPolice_Include) \
+	PORT_DEF(InPolice, SetGVars, InPolice_SetGVars) \
+	PORT_DEF(InPolice, Init, InPolice_Init)
 
 /* Vehicles.c */
 PORT_DECL(Vehicles, ClientCreate) /* 2 */
