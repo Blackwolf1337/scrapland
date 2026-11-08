@@ -2,8 +2,8 @@
  * The native layer of the script ports (removal of the Python 1.5.2 object library, stage 1 of docs/objlib-plan.md).
  * A port moved to native C keeps its state in C, calls the engine's C functions and works on C values; its
  * PyMethodDef entries stay as adapters (arguments in, the C call, the result and the error out) while Python is
- * linked. The values have the repr, str, hash, dict order and literal reader of 1.5.2 (checked against the linked
- * interpreter by tools/test/litfuzz.sh).
+ * linked. The values have the repr, str, hash, dict order and literal reader of 1.5.2 (checked by tools/test/litfuzz.sh
+ * against the texts the interpreter gave, stored before it was removed).
  *
  * Transitional parts are marked OBJLIB <stage> where they are used (the stage of the plan that removes them): the
  * mirror of module state in the module dict (OBJLIB 5), the seams of engine functions a test replaces (OBJLIB 7),
