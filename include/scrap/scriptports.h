@@ -681,19 +681,35 @@ PORT_DECL(DTritusDesktop, CreatePressDesktop) /* 1 */
 PORT_DECL(RaceMaker, ShowSystemMessage) /* 1 */
 PORT_DECL(RaceMaker, ShowSystemMessageDelay) /* 2 */
 PORT_DECL(RaceMaker, NPCCombatKilled) /* 2 */
+PORT_DECL(RaceMaker, DeleteCurrentWaypoint) /* 0 */
+PORT_DECL(RaceMaker, MovePlayersToTraffic) /* 0 */
 PORT_DECL(RaceMaker, EndOfRace) /* 2 */
 PORT_DECL(RaceMaker, RaceStart) /* 2 */
+PORT_DECL(RaceMaker, OnCounterMeasure) /* ? */
 PORT_DECL(RaceMaker, RacerKilled) /* 2 */
+PORT_DECL(RaceMaker, RacerInterruptedByAlarm) /* 0 */
 PORT_DECL(RaceMaker, RacerDamaged) /* 3 */
+PORT_DECL(RaceMaker, RacerLeft) /* 0 */
+PORT_DECL(RaceMaker, AbortCameraTravelling) /* 0 */
+PORT_DECL(RaceMaker, StartCameraTravelling) /* ? */
 PORT_DECL(RaceMaker, OnRaceStart) /* 2 */
 PORT_DECL(RaceMaker, RaceGo) /* 2 */
+PORT_DECL(RaceMaker, CreateRaceCountDown) /* 0 */
+PORT_DECL(RaceMaker, DestroyRaceCountDown) /* 0 */
 PORT_DECL(RaceMaker, DestroyRaceCountDownEnd) /* 1 */
+PORT_DECL(RaceMaker, Counter) /* ? */
 PORT_DECL(RaceMaker, OnCheckPoint) /* 2 */
 PORT_DECL(RaceMaker, OnNearCheckPoint) /* 2 */
 PORT_DECL(RaceMaker, NameOponGoItem) /* 1 */
+PORT_DECL(RaceMaker, LocalGetDealType) /* 0 */
+PORT_DECL(RaceMaker, StopTimer) /* 0 */
+PORT_DECL(RaceMaker, StartTimer) /* 0 */
 PORT_DECL(RaceMaker, FirstTimeRace) /* 1 */
 PORT_DECL(RaceMaker, FirstTimeCombat) /* 1 */
 PORT_DECL(RaceMaker, PointObjectTo) /* 2 */
+PORT_DECL(RaceMaker, PreloadCnDnResources) /* 0 */
+PORT_DECL(RaceMaker, InitRace) /* ? */
+PORT_DECL(RaceMaker, InitCombat) /* ? */
 PORT_DECL(RaceMaker, MoveCombatNPCsToPos) /* 1 */
 PORT_DECL(RaceMaker, PlaceNPCAtRacePos) /* 2 */
 PORT_DECL(RaceMaker, SetScorerValues) /* 1 */
@@ -705,19 +721,35 @@ PORT_DECL(RaceMaker, GetRandomShipIAProfile) /* 2 */
 	PORT_DEF(RaceMaker, ShowSystemMessage, RaceMaker_ShowSystemMessage) \
 	PORT_DEF(RaceMaker, ShowSystemMessageDelay, RaceMaker_ShowSystemMessageDelay) \
 	PORT_DEF(RaceMaker, NPCCombatKilled, RaceMaker_NPCCombatKilled) \
+	PORT_DEF(RaceMaker, DeleteCurrentWaypoint, RaceMaker_DeleteCurrentWaypoint) \
+	PORT_DEF(RaceMaker, MovePlayersToTraffic, RaceMaker_MovePlayersToTraffic) \
 	PORT_DEF(RaceMaker, EndOfRace, RaceMaker_EndOfRace) \
 	PORT_DEF(RaceMaker, RaceStart, RaceMaker_RaceStart) \
+	PORT_DEF(RaceMaker, OnCounterMeasure, RaceMaker_OnCounterMeasure) \
 	PORT_DEF(RaceMaker, RacerKilled, RaceMaker_RacerKilled) \
+	PORT_DEF(RaceMaker, RacerInterruptedByAlarm, RaceMaker_RacerInterruptedByAlarm) \
 	PORT_DEF(RaceMaker, RacerDamaged, RaceMaker_RacerDamaged) \
+	PORT_DEF(RaceMaker, RacerLeft, RaceMaker_RacerLeft) \
+	PORT_DEF(RaceMaker, AbortCameraTravelling, RaceMaker_AbortCameraTravelling) \
+	PORT_DEF(RaceMaker, StartCameraTravelling, RaceMaker_StartCameraTravelling) \
 	PORT_DEF(RaceMaker, OnRaceStart, RaceMaker_OnRaceStart) \
 	PORT_DEF(RaceMaker, RaceGo, RaceMaker_RaceGo) \
+	PORT_DEF(RaceMaker, CreateRaceCountDown, RaceMaker_CreateRaceCountDown) \
+	PORT_DEF(RaceMaker, DestroyRaceCountDown, RaceMaker_DestroyRaceCountDown) \
 	PORT_DEF(RaceMaker, DestroyRaceCountDownEnd, RaceMaker_DestroyRaceCountDownEnd) \
+	PORT_DEF(RaceMaker, Counter, RaceMaker_Counter) \
 	PORT_DEF(RaceMaker, OnCheckPoint, RaceMaker_OnCheckPoint) \
 	PORT_DEF(RaceMaker, OnNearCheckPoint, RaceMaker_OnNearCheckPoint) \
 	PORT_DEF(RaceMaker, NameOponGoItem, RaceMaker_NameOponGoItem) \
+	PORT_DEF(RaceMaker, LocalGetDealType, RaceMaker_LocalGetDealType) \
+	PORT_DEF(RaceMaker, StopTimer, RaceMaker_StopTimer) \
+	PORT_DEF(RaceMaker, StartTimer, RaceMaker_StartTimer) \
 	PORT_DEF(RaceMaker, FirstTimeRace, RaceMaker_FirstTimeRace) \
 	PORT_DEF(RaceMaker, FirstTimeCombat, RaceMaker_FirstTimeCombat) \
 	PORT_DEF(RaceMaker, PointObjectTo, RaceMaker_PointObjectTo) \
+	PORT_DEF(RaceMaker, PreloadCnDnResources, RaceMaker_PreloadCnDnResources) \
+	PORT_DEF(RaceMaker, InitRace, RaceMaker_InitRace) \
+	PORT_DEF(RaceMaker, InitCombat, RaceMaker_InitCombat) \
 	PORT_DEF(RaceMaker, MoveCombatNPCsToPos, RaceMaker_MoveCombatNPCsToPos) \
 	PORT_DEF(RaceMaker, PlaceNPCAtRacePos, RaceMaker_PlaceNPCAtRacePos) \
 	PORT_DEF(RaceMaker, SetScorerValues, RaceMaker_SetScorerValues) \
