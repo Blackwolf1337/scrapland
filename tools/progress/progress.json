@@ -1,6 +1,6 @@
 {
  "title": "ScrapC progress",
- "date": "2026-11-07",
+ "date": "2026-11-08",
  "steps": [
   {
    "step": 1,
@@ -155,16 +155,16 @@
     {
      "item": "Python interpreter removed",
      "weight": 3,
-     "percent": 85,
+     "percent": 88,
      "status": "in progress",
-     "note": "every pack module made in C; the build without it starts all levels and missions"
+     "note": "every pack module made in C; the build without it passes every test and becomes the default"
     },
     {
      "item": "Python object library removed",
      "weight": 3,
-     "percent": 25,
+     "percent": 40,
      "status": "in progress",
-     "note": "native value layer done; most modules and levels on native C, the hub modules running"
+     "note": "every module native C inside (stage 2 done); stages 3 to 9 left"
     }
    ]
   },
