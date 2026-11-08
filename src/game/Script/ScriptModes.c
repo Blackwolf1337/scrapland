@@ -4033,7 +4033,8 @@ static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list 
 	byte top);
 
 /* converttuple of getargs.c (not at the top level) on v, *f after the '(' */
-static const char *Mode_ParseGroup(const nativeVal_t *v, const char **f, va_list *va, int *levels, char *buf, int size) {
+static const char *Mode_ParseGroup(const nativeVal_t *v, const char **f, va_list *va, int *levels, char *buf,
+	int size) {
 	int n = 0, level = 0, len = 0;
 	for (const char *s = *f; *s && *s != ':' && *s != ';'; s++) {
 		if (*s == '(') {
@@ -4050,7 +4051,8 @@ static const char *Mode_ParseGroup(const nativeVal_t *v, const char **f, va_list
 	}
 	/* OBJLIB 7: an NV_OBJ (a list that holds a handle) the Python way */
 	PyObject *obj = v->type == NV_OBJ ? v->obj : NULL;
-	if (obj ? !PySequence_Check(obj) : v->type != NV_LIST && v->type != NV_TUPLE && v->type != NV_STR && v->type != NV_VEC) {
+	byte seq = v->type == NV_LIST || v->type == NV_TUPLE || v->type == NV_STR || v->type == NV_VEC;
+	if (obj ? !PySequence_Check(obj) : !seq) {
 		levels[0] = 0;
 		snprintf(buf, size, "%d-sequence, %s", n, Native_TypeName(v));
 		return buf;
@@ -4173,8 +4175,8 @@ PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **name
 	int min, max;
 	Mode_FmtCount(fmt, &min, &max);
 	CHECK(max <= PORT_ARGS);
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7],
-		&o[8], &o[9], &o[10])) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6],
+		&o[7], &o[8], &o[9], &o[10])) {
 		return NULL;
 	}
 	for (int i = 0; i < max; i++) {

@@ -856,7 +856,8 @@ byte Mode_SaveCopy(const char *name, const char *from);
 /* the number of v as "i" of PyArg reads it: Native_ArgInt, and an NV_OBJ through PyInt_AsLong as getargs.c has it
  * (an instance's __int__): 1 with *out, else 0 with the error */
 byte Mode_ArgInt(const nativeVal_t *v, int *out);
-/* the TypeError of PyArg_ParseTuple for n arguments to a function of min to max ("exactly", "at least", "at most"): 0 */
+/* the TypeError of PyArg_ParseTuple for n arguments to a function of min to max arguments ("exactly", "at least",
+ * "at most"): 0 */
 byte Mode_Arity(int n, int min, int max);
 /*
  * PyArg_ParseTuple on the n native arguments of an entry, with its arity and conversion errors: "i" into an int *
