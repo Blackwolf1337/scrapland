@@ -1050,7 +1050,7 @@ MODE_IFN(ET_ShowMoneySellingEnginePy, 3, ET_ShowMoneySellingEngine(id))
  * function by name) */
 static byte ET_LayoutState(int id, int state) {
 	nativeVal_t g = { 0 }, c = { 0 }, n = { 0 }, index = { 0 };
-	byte ok = ET_G("currentEngineGroup", &g) && ET_Item(&g, -1, &c) && Native_CallMod("string", "atoi", &n, "v", &c) &&
+	byte ok = ET_G("currentEngineGroup", &g) && ET_Item(&g, -1, &c) && PORT_CALL(string, atoi, &n, "v", &c) &&
 		ET_OpI(&n, '-', 1, &index) && Native_CallGlobal(MOD, "UpdateLayoutsState", NULL, "ivi", (long)id, &index, (long)state);
 	Native_Free(&g);
 	Native_Free(&c);
@@ -1645,9 +1645,9 @@ static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 	int some = ET_CmpS(control, "", '!');
 	byte ok = some >= 0;
 	if (some > 0) {
-		int found = Native_CallMod("string", "find", &at, "vs", control, "EngineGroup") ? Mode_CmpOpI(&at, -1, '!') : -1;
+		int found = PORT_CALL(string, find, &at, "vs", control, "EngineGroup") ? Mode_CmpOpI(&at, -1, '!') : -1;
 		if (found > 0) {
-			ok = ET_Item(control, -1, &c) && Native_CallMod("string", "atoi", &n, "v", &c) && (Native_Free(&tv), 1) &&
+			ok = ET_Item(control, -1, &c) && PORT_CALL(string, atoi, &n, "v", &c) && (Native_Free(&tv), 1) &&
 				ET_OpI(&n, '-', 1, &tv);
 		}
 		ok = ok && found >= 0;

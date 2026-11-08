@@ -1057,12 +1057,18 @@ byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
 	if (s->type != NV_STR) {
 		return Native_Raise(NE_TYPE, "argument 1: expected read-only character buffer, %s found", Native_TypeName(s));
 	}
-	const char *t = Native_Text(s);
-	int len = s->n, i = 0, j = 0;
+	return Native_SplitText(Native_Text(s), s->n, sep, sep ? (int)strlen(sep) : 0, 0, out);
+}
+
+byte Native_SplitText(const char *t, int len, const char *sep, int n, int maxsplit, nativeVal_t *out) {
+	/* split_whitespace and strop_splitfields of stropmodule.c */
+	int i = 0, j = 0, count = 0;
 	nativeVal_t list;
+	if (sep && !n) {
+		return Native_Raise(NE_VALUE, "empty separator");
+	}
 	Native_SetEmpty(&list, NV_LIST);
 	if (!sep) {
-		/* split_whitespace */
 		while (i < len) {
 			while (i < len && isspace((unsigned char)t[i])) {
 				i++;
@@ -1073,19 +1079,26 @@ byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
 			}
 			if (j < i) {
 				Native_SetText(Native_Append(&list), t + j, i - j);
+				count++;
+				while (i < len && isspace((unsigned char)t[i])) {
+					i++;
+				}
+				if (maxsplit && count >= maxsplit && i < len) {
+					Native_SetText(Native_Append(&list), t + i, len - i);
+					i = len;
+				}
 			}
 		}
 		*out = list;
 		return 1;
 	}
-	int n = (int)strlen(sep);
-	if (!n) {
-		return Native_Raise(NE_VALUE, "empty separator");
-	}
 	while (i + n <= len) {
 		if (t[i] == sep[0] && (n == 1 || !memcmp(t + i, sep, (size_t)n))) {
 			Native_SetText(Native_Append(&list), t + j, i - j);
 			i = j = i + n;
+			if (maxsplit && ++count >= maxsplit) {
+				break;
+			}
 		} else {
 			i++;
 		}

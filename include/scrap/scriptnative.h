@@ -213,6 +213,9 @@ byte Native_Upper(const nativeVal_t *in, nativeVal_t *out);
 /* string.split(s, sep) (strop.split: sep NULL splits at blanks): 1 with the list in *out (Native_Free it), else 0 with
  * the TypeError of a value that is no text or the ValueError of an empty sep */
 byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out);
+/* the same on the len bytes of t with a separator of n bytes (NULL: blanks) and at most maxsplit splits (0: all): the
+ * list in *out, or 0 with the ValueError of an empty separator */
+byte Native_SplitText(const char *t, int len, const char *sep, int n, int maxsplit, nativeVal_t *out);
 /* the number of argument v of an engine function as its "d" or "f" reads it: 1 with *out, else 0 with the TypeError
  * of PyFloat_AsDouble ("illegal argument type for built-in operation") */
 byte Native_ArgDouble(const nativeVal_t *v, double *out);

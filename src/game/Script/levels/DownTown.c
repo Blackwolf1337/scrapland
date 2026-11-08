@@ -725,7 +725,7 @@ static byte Massacre_OnVehicleCallback(const nativeVal_t *a) {
 		points = LvN_EqS(typo, "Heavy") ? 3 : LvN_EqS(typo, "Medium") ? 2 : 1;
 	} else if (ok) {
 		/* `elif string.find(Model, "POLI")`: 5 either way */
-		ok = LV_CALL("string", "find", found, "vs", model, "POLI");
+		ok = PORT_CALL(string, find, found, "vs", model, "POLI");
 	}
 	if (ok) {
 		Mode_SaveVar("Mission_Massacre.Points", sv);

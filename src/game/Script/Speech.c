@@ -509,7 +509,7 @@ static byte Sp_SpeechTime(const nativeVal_t *text, nativeVal_t *out) {
 	int words = 0;
 	if (text->type != NV_STR) {
 		nativeVal_t l = { 0 };
-		byte ok = Native_CallMod("string", "split", &l, "v", text);
+		byte ok = PORT_CALL(string, split, &l, "v", text);
 		words = ok ? Mode_Len(&l) : -1;
 		Native_Free(&l);
 		if (words < 0) {
@@ -1117,7 +1117,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 	if (typeV->type != NV_STR) {
 		/* string.find(charType, "Mercenary") raises for a value that is no string (one it takes fails at the
 		 * "Generics_" + charType after it); OBJLIB 3: the string port by name */
-		byte ok = Native_CallMod("string", "find", r, "vs", typeV, "Mercenary") && Sp_CatS("Generics_", typeV, less);
+		byte ok = PORT_CALL(string, find, r, "vs", typeV, "Mercenary") && Sp_CatS("Generics_", typeV, less);
 		return Mode_Done(&t, ok ? Native_Raise(NE_SYSTEM, "error return without exception set") : 0);
 	}
 	const char *type = Native_Text(typeV);

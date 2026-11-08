@@ -583,7 +583,7 @@ static byte Veh_Taunt(const nativeVal_t *v, const nativeVal_t *winner) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
-		if (!Native_CallMod("string", "find", at, "vs", pilot, "Merc")) {
+		if (!PORT_CALL(string, find, at, "vs", pilot, "Merc")) {
 			return Mode_Done(&t, 0);
 		}
 		int merc = Mode_CmpI(at, "!=", -1);

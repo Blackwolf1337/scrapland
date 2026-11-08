@@ -103,7 +103,7 @@ static byte Bc_TakePlanPhoto(const nativeVal_t *plan, nativeVal_t *out) {
 		return in == 0;
 	}
 	byte ok = Mode_EntityH(plan, &h) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", &h) &&
-		LV_CALL("string", "find", &pos, "vs", plan, "M");
+		PORT_CALL(string, find, &pos, "vs", plan, "M");
 	Native_SetInt(&minus, -1);
 	ok = ok && Bc_Blueprint(Native_Compare(&pos, &minus) != 0) && LvN_GAdd(BC, "numPlansWithPhoto", 1, NULL);
 	Native_Free(&h);

@@ -332,7 +332,7 @@ static byte Sc_PlayStream(const nativeVal_t *event) {
 	Native_SetFloat(time, Mode_Time() + 0.5);
 	PyObject *fn = Mode_GlobalPy(SC, "PlayVoiceVol");
 	Native_SetInt(&args[0], 2);
-	byte ok = fn && LvN_Item(cads, 1, c1) && Native_CallMod("string", "atof", &args[1], "v", c1) &&
+	byte ok = fn && LvN_Item(cads, 1, c1) && PORT_CALL(string, atof, &args[1], "v", c1) &&
 		Mode_Schedule(time, fn, args, 2, NULL);
 	Py_XDECREF(fn);
 	return Mode_Done(&t, ok);
@@ -344,7 +344,7 @@ static byte Sc_PlayText(const nativeVal_t *event) {
 	nativeVal_t *cads = Mode_V(&t), *fn = Mode_V(&t), *c0 = Mode_V(&t), *args = Mode_V(&t);
 	Mode_V(&t);
 	return Mode_Done(&t, Mode_Import("string") && Native_Split(event, "\001", cads) && Sc_G("SetText", fn) &&
-		LvN_Item(cads, 1, &args[0]) && LvN_Item(cads, 0, c0) && Native_CallMod("string", "atoi", &args[1], "v", c0) &&
+		LvN_Item(cads, 1, &args[0]) && LvN_Item(cads, 0, c0) && PORT_CALL(string, atoi, &args[1], "v", c0) &&
 		Mode_CallArgs(fn, NULL, args, 2));
 }
 

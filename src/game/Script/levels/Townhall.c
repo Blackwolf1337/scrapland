@@ -741,7 +741,7 @@ static byte ThCt_SetCallbackFuncs(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&target);
 		Native_SetNone(&r);
 		/* OBJLIB 3: string.find by name */
-		int c = Native_SeqItem(&a[0], i, &target) && LV_CALL("string", "find", &r, "vs", &target, "Blueprint") ?
+		int c = Native_SeqItem(&a[0], i, &target) && PORT_CALL(string, find, &r, "vs", &target, "Blueprint") ?
 			Mode_CmpI(&r, "==", -1) : -1;
 		Native_Free(&target);
 		Native_Free(&r);
@@ -1360,7 +1360,7 @@ static byte ThTm_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Mode_SaveVar("MissionState", &state);
 	Native_SetNone(&r);
 	/* OBJLIB 3: string.find by name */
-	int talk = LV_CALL("string", "find", &r, "vs", &state, "TalkToMayor") ? Mode_CmpI(&r, "!=", -1) : -1;
+	int talk = PORT_CALL(string, find, &r, "vs", &state, "TalkToMayor") ? Mode_CmpI(&r, "!=", -1) : -1;
 	Native_Free(&r);
 	byte ok = talk >= 0;
 	if (talk > 0) {

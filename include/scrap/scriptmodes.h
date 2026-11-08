@@ -975,6 +975,18 @@ void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f);
 /* a keyword adapter on its entry: the arguments by name (Mode_Kw with fmt and names), the ones not given as
  * Mode_KwSkip, the entry, the result as Mode_KwOut gives it */
 PyObject *Mode_KwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
+/* the native twins of the functions of string (strop) and math that the ports call, through PORT_CALL(string, find,
+ * ...): the same results and errors as Python 1.5.2's; no seam (OBJLIB 9: nothing replaces them), an argument that
+ * holds an NV_OBJ and SCRAP_PORT_SLOW=1 call the module's function by name */
+PORT_DECL(string, find)
+PORT_DECL(string, replace)
+PORT_DECL(string, atoi)
+PORT_DECL(string, atof)
+PORT_DECL(string, split)
+PORT_DECL(string, splitfields)
+PORT_DECL(math, sqrt)
+PORT_DECL(math, fabs)
+PORT_DECL(math, fmod)
 /* a keyword function of a module (prefix pre): the format (letters O, | before the optional ones, up to 8) and the
  * names of its arguments, then the body of pre_name_K(v, given, out) on the slots of Mode_KwSlots (the defaults of the
  * script with Mode_KwDef*): pre_name_E, its entry, pre_name, its adapter (Mode_KwAdapter), and pre_name_N, the names

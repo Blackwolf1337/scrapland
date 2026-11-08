@@ -53,6 +53,28 @@ portSite_t *Port_Sites(void) {
 	return port_sites;
 }
 
+/* an argument that holds an NV_OBJ */
+static byte Port_HoldsObj(const nativeVal_t *v) {
+	if (v->type == NV_OBJ) {
+		return 1;
+	}
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			if (Port_HoldsObj(&v->items[i])) {
+				return 1;
+			}
+		}
+	} else if (v->type == NV_DICT) {
+		/* key and value pairs; a free or deleted slot has a key type beyond NV_OBJ */
+		for (int i = 0; i < v->max; i++) {
+			if (v->items[2 * i].type <= NV_OBJ && (Port_HoldsObj(&v->items[2 * i]) || Port_HoldsObj(&v->items[2 * i + 1]))) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 /* the arguments of a call: the positional ones (npos), then the keywords with their names */
 typedef struct {
 	nativeArg_t a[PORT_ARGS];
@@ -187,6 +209,22 @@ static PyObject *Port_SlowCall(PyObject *hook, const portArgs_t *p) {
 	return r;
 }
 
+/* the way of a native twin of a library function (a ref without an adapter, OBJLIB 9): its entry (0) after the import
+ * of its module, as the lookup by name imported it, or the function by name (1, with *hook) for an argument that
+ * holds an object, keywords and under SCRAP_PORT_SLOW=1; -1 with the error of the import or the lookup */
+static int Port_Twin(const portRef_t *ref, const portArgs_t *p, byte direct, PyObject **hook) {
+	byte slow = !direct || p->n > p->npos || Port_Slow();
+	for (int i = 0; !slow && i < p->n; i++) {
+		slow = p->a[i].type == 'O' || p->a[i].type == 'P' || (p->a[i].type == 'v' && Port_HoldsObj(p->a[i].v));
+	}
+	if (slow) {
+		return Port_Look(ref, 0, 1, hook);
+	}
+	PyObject *m = PyImport_ImportModule((char *)ref->module);
+	Py_XDECREF(m);
+	return m ? 0 : -1;
+}
+
 /* a call of a site: the result into *out as Native_Arg takes it (pyout NULL), or as the Python object into *pyout */
 static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const char *fmt, va_list va) {
 	portArgs_t p;
@@ -200,7 +238,7 @@ static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const
 	}
 	Port_Read(fmt, va, &p);
 	byte direct = !site->ref->py && Port_Slots(site->ref, &p, slot, &m);
-	int seam = Port_Look(site->ref, site->global, !direct, &hook);
+	int seam = site->ref->adapter ? Port_Look(site->ref, site->global, !direct, &hook) : Port_Twin(site->ref, &p, direct, &hook);
 	if (seam > 0) {
 		site->slow++;
 		PyObject *r = Port_SlowCall(hook, &p);

@@ -520,7 +520,7 @@ static byte Cc_ConvertExecute(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *k = Mode_V(&t), *ch = Mode_V(&t), *avl = Mode_V(&t), *u = Mode_V(&t), *c = Mode_V(&t), *o = Mode_V(&t);
 	nativeVal_t *full = Mode_V(&t), *k2 = Mode_V(&t);
-	int in = Mode_Import("string") && Cc_G("KONTROL", k) && Native_CallMod("string", "replace", ch, "vss", k, "Char_", "") &&
+	int in = Mode_Import("string") && Cc_G("KONTROL", k) && PORT_CALL(string, replace, ch, "vss", k, "Char_", "") &&
 		Cc_G("AvailableChars", avl) ? Native_Contains(avl, ch) : -1;
 	if (in <= 0) {
 		return Mode_Done(&t, in == 0);

@@ -430,7 +430,7 @@ static byte Sd_MenuDescriptionC(const char *key, const char *var, nativeVal_t *o
 	}
 	Mode_Lang(key, &text);
 	Mode_SaveVar(var, &n);
-	byte ok = CALL("string", "replace", out, "vsv", &text, "<n1>", &n);
+	byte ok = PORT_CALL(string, replace, out, "vsv", &text, "<n1>", &n);
 	Native_Free(&text);
 	Native_Free(&n);
 	return ok;
@@ -2191,7 +2191,7 @@ static byte Dom_GetMenuDescriptionC(nativeVal_t *out) {
 		char s[0x20];
 		Str_Printf(s, sizeof(s), "%d", len);
 		Native_SetStr(&n, s);
-		ok = CALL("string", "replace", out, "vsv", &text, "<n1>", &n);
+		ok = PORT_CALL(string, replace, out, "vsv", &text, "<n1>", &n);
 	}
 	Native_Free(&text);
 	Native_Free(&n);

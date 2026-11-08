@@ -1022,7 +1022,7 @@ static byte Pk_CreateLonelyMercParkingsN(nativeVal_t *out) {
 /* string.split(s, sep) (strop's split in C for a text, other values by name for their error; OBJLIB 7) */
 static byte Pk_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
 	Native_Free(out);
-	return s->type == NV_STR ? Native_Split(s, sep, out) : Native_CallMod("string", "split", out, "vs", s, sep);
+	return s->type == NV_STR ? Native_Split(s, sep, out) : PORT_CALL(string, split, out, "vs", s, sep);
 }
 
 /* d.has_key(key) of a value of the script (the method of whatever value it is; OBJLIB 7): 1, 0, -1 with the error */
