@@ -2,7 +2,7 @@
  * The command table of the console (the console window, the full screen console of Scorer.c and the remote console
  * of the server): engine variables by name (":name" shows, ":name value" sets, "?prefix" lists), "help", and the
  * "/command args" commands of the dev console (the ones of QuickConsole.py that are engine calls, in C). No Python:
- * a line the table does not know goes to Console_PythonFallback, the one place left that runs Python.
+ * a line the table does not know prints the Unknown command error (Con_Unknown).
  */
 #include <errno.h>
 #include <stdlib.h>
@@ -19,17 +19,6 @@
 #include "scrap/scrap.h"
 #include "scrap/timer.h"
 #include "scrap/world.h"
-
-/*
- * STAGE 7 of the removal of the interpreter: CONSOLE_PYTHON is 0 in the build without it (SCRAP_NO_PYTHON). Until then
- * a line the table does not know runs as Python (a "/command" as QuickConsole.command(args), any other line as a
- * Python statement), as before the table.
- */
-#ifdef SCRAP_NO_PYTHON
-#define CONSOLE_PYTHON 0
-#else
-#define CONSOLE_PYTHON 1
-#endif
 
 #define CON_COLOR_OUT 0xff0000		/* the color of Python's print (Scrap.ConsoleOut) */
 #define CON_MAXARGS 9
@@ -844,29 +833,10 @@ static void Con_Help(void) {
 
 /* ---- the fallback and the parser ---- */
 
-/* the one place where a console line still runs as Python (see CONSOLE_PYTHON) */
-static void Console_PythonFallback(const char *line) {
-#if CONSOLE_PYTHON
-	char code[0x400], name[0x400];
-
-	if (line[0] != '/') {
-		PyRun_ScrapString(line);
-		return;
-	}
-	Str_Copy(name, line + 1, sizeof(name));
-	char *val = strchr(name, ' ');
-	if (val) {
-		*val++ = 0;
-		Str_TrimBlanks(val);
-		Str_TrimBlanks(name);
-		Str_PrintfQuiet(code, sizeof(code), "import QuickConsole;QuickConsole.%s(%s)", name, val);
-	} else {
-		Str_PrintfQuiet(code, sizeof(code), "import QuickConsole;QuickConsole.%s()", name);
-	}
-	PyRun_ScrapString(code);
-#else
+/* a line the table does not know (before the table it ran as Python: a "/command" as QuickConsole.command(args), any
+ * other line as a statement) */
+static void Con_Unknown(const char *line) {
 	Con_Errorf("Unknown command or line: %s (type help for the list)\n", line);
-#endif
 }
 
 /* "/name args": a command of the table, else the fallback */
@@ -885,7 +855,7 @@ static void Console_Command(const char *line) {
 	name[n] = 0;
 	const conCmd *c = Con_FindCmd(n ? name : "help");
 	if (!c) {
-		Console_PythonFallback(line);
+		Con_Unknown(line);
 		return;
 	}
 	memset(args, 0, sizeof(args));
@@ -926,7 +896,7 @@ void Console_Execute(const char *cmd) {
 			Con_Help();
 			return;
 		}
-		Console_PythonFallback(cmd);
+		Con_Unknown(cmd);
 		return;
 	}
 }

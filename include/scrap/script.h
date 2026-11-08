@@ -416,7 +416,7 @@ byte Sf_Schedule(scriptFrame_t *f, PyObject *time, PyObject *func, PyObject *arg
 byte Sf_Later(scriptFrame_t *f, PyObject *delay, PyObject *func, PyObject *args, const char *name);
 /* print with fmt items ('s' a C string, 'O' an object), a, b = v, exec code in a function of module (locals a dict
  * of its variables: a line in the forms the game execs runs in C, "import M", calls of names and attributes with
- * literal arguments, an attribute set to a literal, split by ';'; STAGE 7: any other line still runs in Python) */
+ * literal arguments, an attribute set to a literal, split by ';'; any other line is Script_NotRead's error) */
 byte Sf_Print(scriptFrame_t *f, const char *fmt, ...);
 byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out);
 byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals);

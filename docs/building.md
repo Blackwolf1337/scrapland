@@ -32,11 +32,7 @@ cmake -B build-linux64 -DCMAKE_TOOLCHAIN_FILE=cmake/linux-x86_64.cmake && cmake 
 
 The binary is `build-linux64/ScrapC`. Put the FFmpeg `.so` files from `build-linux64/ffmpeg/install/lib` next to it.
 
-The builds have no Python interpreter by default (`SCRAP_NO_PYTHON` is ON since 2026-11-08). For one round a reference build with the interpreter can be configured, only for the test tools that need it (see [testing.md](testing.md)):
-
-```
-cmake -B build-py64 -DCMAKE_TOOLCHAIN_FILE=cmake/linux-x86_64.cmake -DSCRAP_NO_PYTHON=OFF && cmake --build build-py64
-```
+The builds have no Python interpreter, only the object library of Python 1.5.2. The interpreter build went at step B (2026-11-08); the tag `interp-final` has the last state with it.
 
 ## Run
 

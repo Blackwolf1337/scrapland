@@ -8,9 +8,6 @@ results made on the same engine (SCRAP_PACK_SCRIPTS=1). One command, pass or fai
     ./regress.py check --build <build> fc-r6b-cm3.txt r7c      # some cases (name or substring)
     ./regress.py show <repo>/build-regress/<stamp> fc-r6b-cm3.txt   # every differing line of a case
     ./regress.py compare <repo>/build-regress/<stamp>          # judge stored C results again
-    ./regress.py baseline --build <build> [cases]          # pack runs 1 and 2 into baselines/ (lanes pa pa2 pa3; default build: <repo>/build-py64, the reference build with the interpreter)
-    ./regress.py baseline --index 2 --lanes ca,ca2,ca3 ... # a run of its own number on other lanes (in parallel)
-    ./regress.py baseline --add [cases]                    # one more pack run (p3, ...) for cases that vary rarely
     ./regress.py accept <repo>/build-regress/<stamp> <case> ...   # accept a C run's looked-at differences for the cases
 
 The last line of a check is the summary: `regress: N/M pass, K fail, T min (failing cases)`. Results and
@@ -21,8 +18,8 @@ The last line of a check is the summary: `regress: N/M pass, K fail, T min (fail
 
 - cases/: all case files. cases.txt lists 294 cases. fc-r6-pyc is left out: it compares extracted pack .py sources
   with the shipped .pyc and needs game data.
-- helpers/: the Python helpers (fst.py, fsd.py, ...) that the python harness copies into the game folder. Case lines
-  load them by name, e.g. execfile('fsd.py').
+- helpers/: the Python helpers of the pack runs (fst.py, fsd.py, ...), kept because the baselines were made with them
+  and their hash is part of the case hash. The channel runs load the twins in channel/.
 - channel/: the channel twins <helper>.tc: the same helper functions written as test channel statements (lambdas over
   the tc_ functions of src/game/Global/TestExpr.c). One statement per line, indented lines continue the line before,
   `include <name>` pulls another twin in.
@@ -66,11 +63,8 @@ checkout (tools/mcp); REGRESS_MCP_DIR takes the tools/mcp of another checkout.
 
 ## Harness
 
-With REGRESS_HARNESS unset, the runner takes the channel harness for a build without the interpreter (the default
-build) and the python harness for a build with it. REGRESS_HARNESS=python runs the old game side, mcpgame.py, with
--PythonExecute. On a build without the interpreter it is refused with a message. REGRESS_HARNESS=channel runs
-the game with the test channel and no Python code at all. tochannel.py turns each case line into the channel commands
-of one command file (run in one frame, as the Python line was):
+The game runs with the test channel and no Python code at all. tochannel.py turns each case line into the channel
+commands of one command file (run in one frame, as the Python line was):
 
 - the channel twins of the helpers the line loads (execfile, or exec open ... in module),
 - channel twins of the exec strings and of two def lines of the cases (tables EXEC and LINES in tochannel.py),
@@ -87,19 +81,9 @@ cWorld_Update right after the scheduled functions of the frame (where the old ha
 scheduled function). It answers at the start of the frame only when the clock stands (menus) or before the first world
 update.
 
-Timing-sensitive lines (NPC actions, AI states, door and meteor timers, the menu cursor) can still differ between a
-channel run and a python run. Both harnesses show a few such flaky cases per full run, more under heavy machine load.
+Timing-sensitive lines (NPC actions, AI states, door and meteor timers, the menu cursor) can still differ between two
+runs. A full run shows a few such flaky cases, more under heavy machine load.
 Rerun failing cases before treating them as port differences.
-
-Other variables:
-
-- REGRESS_PY_PROFILE=1: the games run with the Python profile (SCRAP_PY_PROFILE). Each result JSON keeps a
-  "pyprofile" text of the Python code objects that ran in that game.
-- REGRESS_PACK_SRC=<root of the extracted packs>: for pack runs only, the python harness copies
-  Data.packed/scripts/net/ndeathmatchbots.py from that folder into the game folder, and the helper _nbots of
-  fc-nm-bots compiles it (the packs have no .pyc of NDeathMatchBots). C runs make the module from
-  data/modules/ndeathmatchbots.mod (written by hand from that source), so fc-nm-bots runs on both harnesses without
-  it.
 
 ## Comparison (compare.py, normalise.py)
 
@@ -132,29 +116,21 @@ Other variables:
   Scrap_RandRange directly), NPC and AI timing, and accepted differences named in the round reports.
 - Triage helpers: diffsum.py RESULTDIR (each differing line cut around its difference), classify.py RESULTDIR ...
   (per failing line: C varies between C runs, pack varies, or STABLE DIFF = a candidate port difference),
-  probe.py <slot> <Level> <case> <pack 0/1> (one run, replies printed).
+  probe.py <slot> <Level> <case> [build] (one run, replies printed).
 - A baseline is stale when the case file, a helper it execfiles or fst.py changed after the pack runs (shown in the
-  report): run `baseline` again for that case.
+  report): the baselines cannot be remade any more, so a stale note means the case or a helper changed after the pack
+  runs. Revert the change, or check the C run and accept it (`regress.py accept`).
 
 ## Baselines
 
 baselines/<case>.xz holds the three pack runs of a case as one xz-compressed JSON list (game log dropped, about 1 MB
-for all cases). Accepted C runs are baselines/<case>.accepted.xz. The baseline command writes loose
-baselines/<case>.p<k>.json during its run and folds them into the .xz at its end (file lock, so a parallel
-`baseline --index 2` is fine).
+for all cases). Accepted C runs are baselines/<case>.accepted.xz.
 
-The runs are pack runs (SCRAP_PACK_SCRIPTS=1, Python) on the build named in the file, so they can only be remade with
-the reference build (build-py64, configured with -DSCRAP_NO_PYTHON=OFF). `baseline` is refused on a build without the
-interpreter. After step B of the Python removal they are fixed reference data. Remake them after an
-engine change that the pack side sees too (they are pack results on the C engine): `baseline` and
-`baseline --index 2 --lanes ca,ca2,ca3` at the same time, then `baseline --index 3` (three runs catch most of the
-pack's own variation; masks/ covers the rest). Old baselines are kept in git history only. Set REGRESS_PACK_SRC for
-baseline runs (fc-nm-bots needs the source on the pack side).
-
-The baselines were remade on 2026-11-07 on the RTX 4000 at script-loader 50259f8a, three pack runs per case (fc-r6-am
-has three runs too now). With the world clock at real time the three runs agree on more lines than the 610M runs did,
-so lines that vary with game time or chance (NPC turns, AI states, respawns, random draws) fail in C more often and
-need a mask in masks/.
+There is no baseline command. The baselines (three pack runs per case, made on 2026-11-07 on the RTX 4000 at
+script-loader 50259f8a) are frozen reference data since step B of the Python removal. The tag `interp-final` has the
+runner that made them. pack_runs still reads a loose baselines/<case>.p<k>.json if one is there. With the world clock
+at real time the three runs agree on more lines than the 610M runs did, so lines that vary with game time or chance
+(NPC turns, AI states, respawns, random draws) fail in C more often and need a mask in masks/.
 
 To check whether a difference between old and new pack runs is an engine change, run the old build (its commit built
 in a scratch folder) with the current runner on a slot and compare. If it gives the old values the engine changed. If
@@ -181,5 +157,4 @@ random).
   of fc-r8j-snd-DownTown passed. Rerun a case that ends this way before treating it as a port difference.
 - Ctrl-C or SIGTERM to regress.py also ends the lane games. A game left over (a killed runner) is found with
   `pgrep -x ScrapC` and readlink /proc/<pid>/exe (the slot path); kill it by pid.
-- Slots: C lanes ca ca2 ca3 (default for check), pack lanes pa pa2 pa3 (default for baseline), ASan cax
-  (`check --asan --lanes cax`).
+- Slots: C lanes ca ca2 ca3 (default for check), ASan cax (`check --asan --lanes cax`).

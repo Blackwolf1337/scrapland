@@ -9,7 +9,6 @@
 #include "scrap/script.h"
 #include "scrap/staticinit.h"
 
-#include <marshal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,15 +22,14 @@ cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
 
 #define g_PyStaticBuffer (&cStaticBuffer_PyStaticBuffer[0])
 
-/* PyRun_SimpleString of the exe, changed by the engine: CR dropped, the code is called "Scrap input" */
-int PyRun_ScrapString(const char *code);
 /* frees the free lists of the object types after Py_Finalize */
 void Py_FiniObjects(void);
 
 byte g_PythonReady;
 
 /*
- * The start and end lines of the exe, each a PyRun_ScrapString in __main__ (single_input), made in C: a line that
+ * The start and end lines of the exe, each a PyRun_SimpleString of the engine in __main__ (single_input; "Scrap
+ * input", CR dropped), made in C: a line that
  * fails prints its error and the next line runs; a value an expression statement gives is printed when it is not None
  * (PRINT_EXPR of the interactive mode); Py_FlushLine ends every line. Names are looked up in __main__ as LOAD_NAME
  * does, imports stored there.
@@ -215,7 +213,6 @@ void Python_Init(void) {
 		*const viewer[] = { "Viewer", NULL };
 
 	Py_Initialize();
-	PyProfile_Start();
 	g_PythonReady = 1;
 	Py_LineEnd(Py_LineConsoleClass("ConsoleOutput", py_consoleOut));
 	Py_LineEnd(Py_LineConsoleClass("ConsoleErrorOutput", py_consoleError));
@@ -237,14 +234,13 @@ void Python_Init(void) {
 		Py_LineEnd(Py_LineImport(init));
 		Py_LineEnd(Py_LineCallText("Init.Init", g_pApp->levelPath));
 	}
-	/* STAGE 7: the engine variable PythonExecute (the command line, the MCP harness) is Python; it goes with the
-	 * interpreter (a C command channel takes the harness): the build without it says so when it is set */
-#ifdef SCRAP_NO_PYTHON
+	/* the engine variable PythonExecute (the command line) was a line of Python run here: there is no interpreter, an
+	 * error says so when it is set */
 	if (g_PythonExecute && *g_PythonExecute && (!GVar_PythonExecute.def.s ||
 		strcmp(g_PythonExecute, GVar_PythonExecute.def.s))) {
 		Con_Errorf("PythonExecute ignored, no Python interpreter in this build: %s\n", g_PythonExecute);
 	}
-	/* the switches that run the .pyc of the packs instead of the C modules (Script.c, ScriptModule.c) */
+	/* the switches that ran the .pyc of the packs instead of the C modules (Script.c, ScriptModule.c) */
 	static byte told;
 	const char *pack = getenv("SCRAP_PACK_SCRIPTS"), *cmod = getenv("SCRAP_CMOD");
 	if (!told && ((pack && *pack == '1') || (cmod && *cmod == '0'))) {
@@ -252,10 +248,8 @@ void Python_Init(void) {
 		Con_Errorf("%s: no script module loads, the scripts of the packs need the Python interpreter (not in this "
 			"build)\n", pack && *pack == '1' ? "SCRAP_PACK_SCRIPTS=1" : "SCRAP_CMOD=0");
 	}
-#else
-	PyRun_ScrapString(g_PythonExecute);
-#endif
-	/* the marshal buffer of Pack_PreloadLibrary is not needed after the start */
+	/* the buffer the exe's Pack_PreloadLibrary read the .pyc into is not needed after the start (the net code gets it
+	 * again when it needs it) */
 	cStaticBuffer *buf = g_PyStaticBuffer;
 	CHECK(!buf->lock);
 	Mem_Free(buf->data);
@@ -270,7 +264,6 @@ void Python_Close(void) {
 	cPy_Function_ClearAll();
 	CharsNPC_Close();
 	Py_Finalize();
-	PyProfile_End();
 	g_PythonReady = 0;
 }
 
@@ -280,26 +273,20 @@ void Python_Shutdown(void) {
 }
 
 /*
- * The gate of the pack modules (the way to a build without Python). SCRAP_PY_GATE=<file> appends a line per pack
- * module the engine would load: the level, what happened, the module name and the file. What happened: "pyc" (the
- * module code of the .pyc runs), "cmod" (the module is made from its C definition, Script_ModuleMake), "loaded" (it
- * is loaded already, PreloadLibrary does nothing), "import" (a file the import of Python reads, not preloaded),
- * "packlog" (the import while the engine records the files of the packs) and "refused". With SCRAP_PY_REFUSE=1 as
- * well no module code runs: a module without a C definition stays out of sys.modules (an import of it raises
- * ImportError). Without the variables nothing changes.
- *
- * The build without the interpreter (SCRAP_NO_PYTHON) always refuses: a module without a C definition is not
- * loaded (a .pyc of the packs or of a mod, a .py or .pyc the import would read), a console line says so the first
- * time for each name; the gate log lines need SCRAP_PY_GATE as before.
+ * The gate of the pack modules. There is no interpreter, so a module without a C definition is not loaded (a .pyc of
+ * the packs or of a mod, a .py or .pyc the import would read): it stays out of sys.modules (an import of it raises
+ * ImportError) and a console line says so the first time for each name. SCRAP_PY_GATE=<file> appends a line per pack
+ * module the engine would load: the level, what happened, the module name and the file. What happened: "cmod" (the
+ * module is made from its C definition, Script_ModuleMake), "loaded" (it is loaded already, PreloadLibrary does
+ * nothing), "import" (a file the import of Python would read, not preloaded), "refused" and "notread" (a text
+ * Script_NotRead does not run).
  */
 static int py_gate = -1;
-static byte py_refuse;
 static FILE *py_gateFile;
 
-#ifdef SCRAP_NO_PYTHON
 #define PY_IGNORED_MAX 512
 
-/* the console line of a module the build without the interpreter does not load, once for each name */
+/* the console line of a module that is not loaded, once for each name */
 static void Py_IgnoredOnce(const char *name, const char *file) {
 	static char seen[PY_IGNORED_MAX][0x40];
 	static int n;
@@ -314,7 +301,6 @@ static void Py_IgnoredOnce(const char *name, const char *file) {
 	}
 	Con_Printf("%s (%s) not loaded: it is Python code, this build has no interpreter\n", name, file);
 }
-#endif
 
 static byte Py_GateOn(void) {
 	if (py_gate < 0) {
@@ -322,8 +308,6 @@ static byte Py_GateOn(void) {
 		py_gate = e && *e && strcmp(e, "0");
 		if (py_gate) {
 			py_gateFile = strcmp(e, "1") ? fopen(e, "a") : NULL;
-			e = getenv("SCRAP_PY_REFUSE");
-			py_refuse = e && *e == '1';
 		}
 	}
 	return py_gate > 0;
@@ -342,28 +326,21 @@ void Py_GateNote(const char *what, const char *name, const char *file) {
 	}
 }
 
-/* 1 when the module code may run; else the refusal is logged and ImportError set */
-static byte Py_GateAllow(const char *name, const char *file) {
-#ifdef SCRAP_NO_PYTHON
+/* a module without a C definition: the refusal is logged and ImportError set */
+static void Py_GateRefuse(const char *name, const char *file) {
 	Py_IgnoredOnce(name, file);
-#else
-	if (!Py_GateOn() || !py_refuse) {
-		return 1;
-	}
-#endif
 	Py_GateNote("refused", name, file);
 	PyErr_Format(PyExc_ImportError, "pack module %.100s (%.100s) refused: no C definition", name, file);
-	return 0;
 }
 
-/* the import of Python reads a .py or .pyc that was not preloaded (src/python/import.c) */
-static int Py_GateImport(const char *path) {
+/* the import of Python would read a .py or .pyc that was not preloaded (src/python/import.c) */
+static void Py_GateImport(const char *path) {
 	const char *base = strrchr(path, '/');
 	Py_GateNote("import", base ? base + 1 : path, path);
-	return Py_GateAllow(base ? base + 1 : path, path);
+	Py_GateRefuse(base ? base + 1 : path, path);
 }
 
-/* a module made from its C definition (1), none (0, the .pyc runs) or a failed one (-1, error set); logged */
+/* a module made from its C definition (1), none (0, it is refused) or a failed one (-1, error set); logged */
 static int Py_ModuleMake(const char *name, const char *file, PyObject **m) {
 	int made = Script_ModuleMake(name, file, m);
 	if (made) {
@@ -373,22 +350,14 @@ static int Py_ModuleMake(const char *name, const char *file, PyObject **m) {
 }
 
 /*
- * PreloadLibrary(name, file): imports the compiled module file of the open pack as name. While the engine
- * records the files read from packs it imports through the normal path instead and logs the file. A module that has
- * a C definition (Script_ModuleMake) is made from it and its .pyc is not read.
+ * PreloadLibrary(name, file): the module name of the compiled module file of the open pack (the exe imported the
+ * .pyc; while it recorded the files read from packs, through the normal path). A module that has a C definition
+ * (Script_ModuleMake) is made from it, one without is refused; no .pyc is read. While the engine records the files
+ * read from packs it logs the file.
  */
 void Pack_PreloadLibrary(const char *name, const char *file) {
-	cFilePack f;
-
-	cFilePack_ctor(&f);
 	CHECK(Py_IsReady());
-#ifdef SCRAP_NO_PYTHON
 	g_PyImportGate = Py_GateImport;
-#else
-	if (Py_GateOn()) {
-		g_PyImportGate = Py_GateImport;
-	}
-#endif
 	if (PackLog_Closed()) {
 		if (PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name)) {
 			Py_GateNote("loaded", name, file);
@@ -400,28 +369,8 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 					PyErr_Print();
 				}
 				CHECK(m != NULL);
-			} else if (Py_GateAllow(name, file)) {
-#ifndef SCRAP_NO_PYTHON /* never there: Py_GateAllow refuses */
-				Py_GateNote("pyc", name, file);
-				CHECK(cFilePack_Open(&f.file.base, file, FILE_MODE_READ));
-				int size = cFilePack_Size(&f.file.base);
-				char *data = cStaticBuffer_Get(g_PyStaticBuffer, size);
-				cFilePack_Read(&f.file.base, data, size);
-				CHECK(cFilePack_Close(&f.file.base));
-				/* .pyc: magic and time, then the marshaled code object */
-				PyObject *co = PyMarshal_ReadObjectFromString(data + 8, size - 8);
-				CHECK(g_PyStaticBuffer->lock);
-				g_PyStaticBuffer->lock = 0;
-				CHECK(co != NULL);
-				CHECK(co->ob_type == &PyCode_Type);
-				char path[0x100];
-				Str_Printf(path, sizeof(path), "PACK: %s", file);
-				m = PyImport_ExecCodeModuleEx((char *)name, co, path);
-				Py_DECREF(co);
-				CHECK(m != NULL);
-				Script_ModuleLoaded(name, m);
-#endif
 			} else {
+				Py_GateRefuse(name, file);
 				PyErr_Clear();
 			}
 			Py_XDECREF(m);
@@ -431,14 +380,8 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 		PackLog_Add(file);
 		PyObject *m = NULL;
 		int made = PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name) ? 0 : Py_ModuleMake(name, file, &m);
-		if (!made && Py_GateAllow(name, file)) {
-			Py_GateNote("packlog", name, file);
-			g_PyPackImport = 0;
-			m = PyImport_ImportModule((char *)name);
-			g_PyPackImport = 1;
-			if (m) {
-				Script_ModuleLoaded(name, m);
-			}
+		if (!made) {
+			Py_GateRefuse(name, file);
 		}
 		if (m) {
 			Py_DECREF(m);
@@ -453,7 +396,6 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 			}
 		}
 	}
-	cFilePack_dtor(&f);
 }
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -86,7 +86,6 @@ void Python_Init(void);
 void Python_Close(void);
 void Python_Shutdown(void);
 int Str_WrapText(char *text, char **lines, float maxWidth, int maxLines, const char *fontName);
-int PyRun_ScrapString(const char *code);
 
 /* other modules of the exe (src/imports.inc) */
 void InputMaps_Done(void);

@@ -1400,8 +1400,7 @@ static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, by
 	if (code) {
 		Mf_RunCode(&f, code, g, locals);
 	} else {
-		/* STAGE 7: an unknown text goes to the reader of Sf_Exec, which raises Script_NotRead's error for it in the build
-		 * without the interpreter */
+		/* an unknown text goes to the reader of Sf_Exec, which raises Script_NotRead's error for it */
 		Sf_Exec(&f, text, MF, locals);
 	}
 	PyObject *r = Sf_None(&f);

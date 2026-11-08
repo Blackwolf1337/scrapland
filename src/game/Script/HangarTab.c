@@ -695,23 +695,10 @@ static byte Ht_Eval(const nativeVal_t *text, PyObject *locals, nativeVal_t *out)
 			return 1;
 		}
 	}
-	/* STAGE 7: another expression (only a caller of ComputeShipTotalCost from the console) is Script_NotRead's error in
-	 * the build without the interpreter */
-#ifdef SCRAP_NO_PYTHON
+	/* another expression (only a caller of ComputeShipTotalCost from the console) is Script_NotRead's error */
 	Py_DECREF(g);
-	PyObject *r = Script_NotRead("ComputeShipTotalCost", Native_Text(text));
-#else
-	PyObject *t = Native_ToPy(text);
-	PyObject *r = t ? Script_Ask("__builtin__", "eval", "(OOO)", t, g, locals) : NULL;
-	Py_XDECREF(t);
-	Py_DECREF(g);
-#endif
-	if (!r) {
-		return 0;
-	}
-	Native_Arg(r, out);
-	Py_DECREF(r);
-	return 1;
+	Script_NotRead("ComputeShipTotalCost", Native_Text(text));
+	return 0;
 }
 
 /* eval(cad + attr) */

@@ -1235,18 +1235,13 @@ static PyObject *Menu_DebugSet_AI(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* the Python code of XboxPyDebug runs (STAGE 7: a debug line typed by the user, goes with the interpreter; the build
- * without it says so) */
+/* the Python code of XboxPyDebug ran here (a debug line typed by the user): there is no interpreter, an error says so */
 static PyObject *Menu_DebugSet_XboxPyDebug(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	const char *code = GVar_GetStr("XboxPyDebug");
 	Con_Printf("XboxPyDebug: %s\n", code);
-#ifdef SCRAP_NO_PYTHON
 	Con_Errorf("XboxPyDebug: no Python interpreter in this build\n");
-#else
-	PyRun_SimpleString((char *)code);
-#endif
 	return Py_ReturnNone();
 }
 

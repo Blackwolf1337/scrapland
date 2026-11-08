@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""The golden test through the test channel (tools/test/golden.sh, GOLDEN_MODE=channel): the game runs with
-SCRAP_TEST_CHANNEL=1 and no Python of the test.
-  run.py prepare <game folder>             before the start: sdtest.cmd (the API checks) as the command file, so the
-                                           game runs it in its first frame (the world clock at 0, as -PythonExecute ran
-                                           sdtest.py while the menu loaded)
+"""The golden test through the test channel (tools/test/golden.sh): the game runs with SCRAP_TEST_CHANNEL=1.
+  run.py prepare <game folder>             before the start: sdtest.cmd (the checks) as the command file, so the
+                                           game runs it in its first frame (the world clock at 0, as the old
+                                           -PythonExecute ran sdtest.py while the menu loaded)
   run.py collect <game folder> <timeout>   the answers into <game folder>/sdtest.out (the transforms of a third field
-                                           done here), then the interpreter checks (sdpy.py) through the channel's py
-                                           command (STAGE 7: they go with the interpreter), their lines, then done.
-                                           With GOLDEN_NOPY=1 (a build without the interpreter, SCRAP_NO_PYTHON) the
-                                           interpreter checks are skipped: done follows the API checks, and
-                                           <game folder>/sdtest.expected gets the API part of the stored output.
+                                           done here), then done
 """
 import os
 import sys
@@ -21,7 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def transform(kind, value):
-    """the comparisons of sdlib.py's helpers on an answer (an exception stays as it is)"""
+    """the comparisons of the helpers of the old sdlib.py on an answer (an exception stays as it is)"""
     if value.startswith('exception '):
         return value
     if kind == 'ge0':
@@ -55,14 +50,11 @@ def commands():
 
 
 def prepare(game):
-    for n in ('test_cmd.txt', 'test_reply.txt', 'sdpy.out'):
+    for n in ('test_cmd.txt', 'test_reply.txt'):
         try:
             os.remove(os.path.join(game, n))
         except OSError:
             pass
-    for n in ('sdlib.py', 'sdpy.py'):
-        with open(os.path.join(HERE, n), 'rb') as src, open(os.path.join(game, n), 'wb') as dst:
-            dst.write(src.read())
     channel.write(game, '\n'.join(commands()[0]), SEQ)
 
 
@@ -84,26 +76,8 @@ def collect(game, timeout):
             a = '%s = %s' % (name, transform(kind, value))
         out.append(a)
     out += answers[i:]
-    if os.environ.get('GOLDEN_NOPY') == '1':
-        with open(os.path.join(HERE, 'sdtest.out')) as f:
-            stored = f.read().split('\n')
-        for name, lines in (('sdtest.out', out), ('sdtest.expected', stored[:len(out)])):
-            with open(os.path.join(game, name), 'w') as f:
-                f.write('\n'.join(lines + ['done']) + '\n')
-        return
     with open(os.path.join(game, 'sdtest.out'), 'w') as f:
-        f.write('\n'.join(out) + '\n')
-    r = channel.send(game, "py\nOUT = 'sdpy.out'\nexecfile('sdlib.py')\nexecfile('sdpy.py')\nfinish()\nresult = 'ok'",
-                     timeout=timeout)
-    if r != "'ok'":
-        print('golden: the interpreter checks: %s' % r, file=sys.stderr)
-    try:
-        with open(os.path.join(game, 'sdpy.out')) as f:
-            tail = f.read()
-    except OSError:
-        tail = ''
-    with open(os.path.join(game, 'sdtest.out'), 'a') as f:
-        f.write(tail)
+        f.write('\n'.join(out + ['done']) + '\n')
 
 
 if sys.argv[1] == 'prepare':

@@ -252,20 +252,18 @@ static byte It_DropAll(const nativeVal_t *veh) {
 }
 
 /*
- * eval("obj." + prefix + `iWeap`) (exec of it + rest when rest is given) of BaseOnTakeUpgrade with its locals
- * (ItemName, VehicleName, iWeap, iupgrd and obj; Upgrades is a global of the module): for a
- * weapon number >= 0 the attribute of the ship (value set for exec), for any other value the text the script makes,
- * run in the module's globals (its SyntaxError and the like). The value of eval in *out
+ * eval("obj." + prefix + `iWeap`) (exec of it + rest when rest is given) of BaseOnTakeUpgrade: for a weapon number
+ * >= 0 the attribute of the ship (value set for exec), the value of eval in *out. For any other value the script ran
+ * the text it makes in the module's globals; that is Script_NotRead's error (a call from the console, the item
+ * scripts pass 0 to 5)
  */
-static byte It_WeapVar(cEntity *obj, const char *oref, const char *prefix, const nativeVal_t *weap, const nativeVal_t *loc,
-	const char *rest, const nativeVal_t *value, nativeVal_t *out) {
+static byte It_WeapVar(cEntity *obj, const char *oref, const char *prefix, const nativeVal_t *weap, const char *rest,
+	const nativeVal_t *value, nativeVal_t *out) {
 	if (weap->type == NV_INT && weap->i >= 0) {
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "%s%ld", prefix, weap->i);
 		return rest ? Mode_Set(obj, oref, name, value) : Mode_Get(obj, oref, name, out);
 	}
-	/* STAGE 7: only a weapon number that is no int >= 0 (a call from the console; the item scripts pass 0 to 5) runs
-	 * the text through the interpreter; it is Script_NotRead's error in the build without it */
 	nativeBuf_t b;
 	Native_BufInit(&b);
 	Native_BufAdd(&b, "obj.", 4);
@@ -274,25 +272,9 @@ static byte It_WeapVar(cEntity *obj, const char *oref, const char *prefix, const
 	if (rest) {
 		Native_BufAdd(&b, rest, -1);
 	}
-	PyObject *m = PyImport_ImportModule("Items"), *l = m ? Native_ToPy(loc) : NULL, *h = l ? PyEntity_New(oref) : NULL;
-	if (l && !h) {
-		h = Py_ReturnNone();
-	}
-	PyObject *v = NULL;
-	if (h && PyDict_SetItemString(l, "obj", h) == 0) {
-#ifdef SCRAP_NO_PYTHON
-		v = Script_NotRead("Items.BaseOnTakeUpgrade", b.p);
-#else
-		v = PyRun_String(b.p, rest ? Py_file_input : Py_eval_input, PyModule_GetDict(m), l);
-#endif
-	}
+	Script_NotRead("Items.BaseOnTakeUpgrade", b.p);
 	Native_BufFree(&b);
-	byte ok = v && (rest || Native_Arg(v, out));
-	Py_XDECREF(v);
-	Py_XDECREF(h);
-	Py_XDECREF(l);
-	Py_XDECREF(m);
-	return ok;
+	return 0;
 }
 
 /* BaseOnTakeUpgrade(ItemName, VehicleName, iWeap, iupgrd): a ship with the weapon takes its upgrade (and drops the one
@@ -304,19 +286,9 @@ static byte It_BaseOnTake(const nativeVal_t *item, const nativeVal_t *veh, const
 		return 0;
 	}
 	const char *oref = Native_Text(veh), *iref = Native_Text(item);
-	/* the locals of the script's eval and exec texts */
-	nativeVal_t *loc = Mode_V(&t), *has = Mode_V(&t), *old = Mode_V(&t), *ammo = Mode_V(&t), *d = Mode_V(&t);
+	nativeVal_t *has = Mode_V(&t), *old = Mode_V(&t), *ammo = Mode_V(&t), *d = Mode_V(&t);
 	nativeVal_t *ups = Mode_V(&t), *left = Mode_V(&t), *tenth = Mode_V(&t);
-	static const char *const names[] = { "ItemName", "VehicleName", "iWeap", "iupgrd" };
-	const nativeVal_t *vals[] = { item, veh, weap, upgrd };
-	Native_SetEmpty(loc, NV_DICT);
-	for (int i = 0; i < 4; i++) {
-		nativeVal_t k, v;
-		Native_SetStr(&k, names[i]);
-		Native_Copy(&v, vals[i]);
-		Native_DictSet(loc, &k, &v);
-	}
-	if (!It_WeapVar(obj, oref, "isWpn0", weap, loc, NULL, NULL, has)) {
+	if (!It_WeapVar(obj, oref, "isWpn0", weap, NULL, NULL, has)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(has)) {
@@ -324,7 +296,7 @@ static byte It_BaseOnTake(const nativeVal_t *item, const nativeVal_t *veh, const
 	}
 	Native_SetFloat(tenth, 0.1);
 	if (!Mode_Ent(item, &itm) || !Mode_Set(itm, iref, "rTime", tenth) || !Mode_Set(itm, iref, "Owner", veh) ||
-		!It_WeapVar(obj, oref, "Upgrd0", weap, loc, NULL, NULL, old) || !It_WeapVar(obj, oref, "UAmmo0", weap, loc, NULL, NULL, ammo) ||
+		!It_WeapVar(obj, oref, "Upgrd0", weap, NULL, NULL, old) || !It_WeapVar(obj, oref, "UAmmo0", weap, NULL, NULL, ammo) ||
 		!It_DropUpgrade(veh, old, ammo, d)) {
 		return Mode_Done(&t, 0);
 	}
@@ -335,12 +307,12 @@ static byte It_BaseOnTake(const nativeVal_t *item, const nativeVal_t *veh, const
 	if (!known && !It_SetUp(ups, upgrd, item, Mode_I(&t, 200))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!It_WeapVar(obj, oref, "Upgrd0", weap, loc, " = iupgrd", upgrd, NULL)) {
+	if (!It_WeapVar(obj, oref, "Upgrd0", weap, " = iupgrd", upgrd, NULL)) {
 		return Mode_Done(&t, 0);
 	}
-	/* the value first, as the assignment evaluates it (exec of the text for another iWeap evaluates it itself) */
+	/* the value first, as the assignment evaluates it */
 	byte num = weap->type == NV_INT && weap->i >= 0;
-	if ((num && !It_UpItem(ups, upgrd, 1, left)) || !It_WeapVar(obj, oref, "UAmmo0", weap, loc, " = Upgrades[iupgrd][1]", left, NULL)) {
+	if ((num && !It_UpItem(ups, upgrd, 1, left)) || !It_WeapVar(obj, oref, "UAmmo0", weap, " = Upgrades[iupgrd][1]", left, NULL)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(left);

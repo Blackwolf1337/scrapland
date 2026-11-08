@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""The stored form of tools/test/litfuzz.sh: the texts of one full run of litfuzz.py in the reference build with the
-interpreter, each with what Python 1.5.2 made of it, checked against the native literal reader through the test
-channel's native command (src/game/Global/TestNative.c) in a build without the interpreter.
+"""The check of tools/test/litfuzz.sh: the stored texts of one full run of the old litfuzz.py in the reference build
+with the interpreter (tag interp-final), each with what Python 1.5.2 made of it, checked against the native literal
+reader through the test channel's native command (src/game/Global/TestNative.c). The store is the final reference:
+nothing writes it any more.
 
-  litstore.py save <game file> <store> <header>   the record of litfuzz.py's save() (in the game folder) as the store
   litstore.py check <game folder> <store>         every stored text through the channel: native, native str and
                                                   native check must answer the stored repr, str and check() texts, a
                                                   text 1.5.2 did not take must be refused; prints a summary line and
                                                   the first differences, exit code 1 when there are any
 
 The store (tools/test/litfuzz.expected.xz) has a header line "# ..." and then a line per text: the repr of the text
-in 1.5.2 form, a tab, and the repr of (repr, str, check() text) or None, as litfuzz.py writes them. The texts are
+in 1.5.2 form, a tab, and the repr of (repr, str, check() text) or None, as litfuzz.py wrote them. The texts are
 bytes of the game (latin-1 here)."""
 import ast
 import lzma
@@ -36,16 +36,6 @@ def entries(lines):
             raise SystemExit('litstore: line %d has no tab' % (n + 1))
         out.append((ast.literal_eval(t), ast.literal_eval(v)))
     return out
-
-
-def save(src, store, header):
-    with open(src, encoding='latin-1') as f:
-        lines = f.read().split('\n')
-    n = len(entries(lines))
-    with lzma.open(store, 'wt', encoding='latin-1', newline='\n') as f:
-        f.write('# %s, %d texts\n' % (header, n))
-        f.write('\n'.join(line for line in lines if line) + '\n')
-    print('litfuzz: %d texts stored in %s' % (n, store))
 
 
 def command(text):
@@ -91,7 +81,7 @@ def check(game, store):
                 if want is not None and 'None:' in want[0] and order_only(exp, g):
                     # the hash of None is the address of Py_None (OBJLIB 9), which differs between the reference
                     # build that wrote the store and this one: a dict with a None key may hold its keys in another
-                    # order; the live run in the reference build compares these in one binary
+                    # order
                     order += 1
                 else:
                     bad.append((text, exp, g))
@@ -103,9 +93,7 @@ def check(game, store):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 5 and sys.argv[1] == 'save':
-        save(sys.argv[2], sys.argv[3], sys.argv[4])
-    elif len(sys.argv) == 4 and sys.argv[1] == 'check':
+    if len(sys.argv) == 4 and sys.argv[1] == 'check':
         sys.exit(check(sys.argv[2], sys.argv[3]))
     else:
         sys.exit(__doc__)

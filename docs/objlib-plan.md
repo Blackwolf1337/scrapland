@@ -276,17 +276,17 @@ After this stage `src/python` and `third_party/python-1.5.2` are out of `CMakeLi
 ## Checks per stage
 
 - regress (`rd/regress`, later `tools/test/regress`): run the cases of the touched modules after each module, and the full run per group of modules. Where the pack baselines are loose (masks, wildcards), compare the raw C replies before and after on the same slot. The pilot's replies were identical line by line.
-- golden: 9961 in the reference build (`build-py64`), with 1481 API checks and the interpreter checks. In the default build it is 1481 now. After step B of the interpreter removal it is the API part only.
+- golden: 1481 API checks. The reference build and the interpreter checks are gone (step B).
 - sweep 29 of 29 (action tables after each level start) and `levels.sh` 29 of 29 under ASan.
 - Mission starts: the mission start sweep of round 8 (`missionmaker.py` starts) for stages 2 and 3 on mission modules.
 - Saves both ways for every stage that touches a save writer or reader (stage 2 on SaveGame and the missions, and stage 6).
 - The online pair test (`rd/r8g.py`, real server and client) for Ffa, NetModes, Net, Chat, Split and the net weapons.
 - Edge cases per module: a case file with the paths the stored cases miss (bad arguments, negative indices, odd values the cases can put into module variables), run on the build before and after (`rd/fc-ol0-chat.txt` for Chat).
-- 0 new warnings in build-linux64, build-linux64-asan, build-win64 and build-py64.
+- 0 new warnings in build-linux64, build-linux64-asan and build-win64.
 
 ## What the test channel needs
 
-For stages 1 to 6 it needs nothing new. The channel's `py` command and the Python harness see the mirrored module variables and the seams.
+For stages 1 to 6 it needs nothing new. Both are gone; the channel's dump and get see the mirrored module variables.
 
 For stage 5 it needs dump, get and set of module variables through the variable registry, and a native form of the case helpers that read module variables (`Init._mod`, `_sdmod`).
 
@@ -319,5 +319,5 @@ The checks of the pilot:
 
 - fc-chat (the stored pack baselines) passes, and the raw replies are identical to the build before.
 - fc-r8t-chat and the edge file `rd/fc-ol0-chat.txt` are identical line by line between the build before and after. The edge file has 55 lines: Car Descriptor, negative ids, `int()` forms, non-text arguments, and flags and client ship swapped. The same runs under ASan give 0 reports.
-- Sweep gives 29 of 29, golden gives 9961, and there are 0 warnings.
+- Sweep gives 29 of 29, golden gives 1481, and there are 0 warnings.
 - The online pair test (`rd/r8g.py`, DeathMatch, a real server and client) reaches the native paths that the cases record. The chat steps (to all from each side, a private line) give the same results and the same chat lines in both game logs before and after. The other differing lines of that run are in the join and spectate steps, the timing races that round 8g reported.

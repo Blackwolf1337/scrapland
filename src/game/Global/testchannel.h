@@ -31,9 +31,9 @@ PyObject *TcX_Eval(const char *line);
  * that fail without an error raise as the getattr and setattr builtins do (golden's check lines) */
 PyObject *TcX_Statement(const char *line);
 /* the statements of a line ("a = f(); b(); result = (a, b)") in the globals of a module dict, answered as the game
- * side of the MCP server (tools/mcp/mcpgame.py) answered a line: a single expression its repr, statements the repr of
- * the global "result" or ok, an error "error: <type>: <value>" (the statements after it are not run); quiet: only an
- * error answers */
+ * side of the MCP server (the old tools/mcp/mcpgame.py) answered a line: a single expression its repr, statements the
+ * repr of the global "result" or ok, an error "error: <type>: <value>" (the statements after it are not run); quiet:
+ * only an error answers */
 void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet);
 
 #endif

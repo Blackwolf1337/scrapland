@@ -40,15 +40,10 @@ static inline PyObject *Py_ReturnNone(void) {
 
 /* the engine's flag in its import.c (src/python/import.c) */
 extern int g_PyPackImport;
-/* told of every .py or .pyc the import of Python reads (not the preloaded modules), 0 refuses it with ImportError set
- * (the gate of PythonInit.c, SCRAP_PY_GATE) */
-extern int (*g_PyImportGate)(const char *path);
+/* told of every .py or .pyc the import of Python would read (not the preloaded modules): it refuses each one with
+ * ImportError set (the gate of PythonInit.c, SCRAP_PY_GATE) */
+extern void (*g_PyImportGate)(const char *path);
 /* a line in the log of the gate (SCRAP_PY_GATE): the level, what, the module name, a detail; nothing when it is off */
 void Py_GateNote(const char *what, const char *name, const char *detail);
-
-/* ScrapC only, SCRAP_PY_PROFILE=<file>: the code objects that run, with counts (src/game/PyInterface/PyProfile.c);
- * Start after Py_Initialize, End after Py_Finalize. Nothing happens without the variable. */
-void PyProfile_Start(void);
-void PyProfile_End(void);
 
 #endif
