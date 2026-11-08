@@ -851,4 +851,62 @@ byte Mode_SaveVarV(const nativeVal_t *name, nativeVal_t *out);
 byte Mode_SetSaveV(const nativeVal_t *name, const nativeVal_t *v);
 byte Mode_SaveCopy(const char *name, const char *from);
 
+/* ---- the native entries of stage 3, batch A2b ---- */
+
+/* 1 when min <= n <= max, else 0 with the TypeError of PyArg_ParseTuple for n arguments ("function requires at least
+ * 2 arguments; 1 given") */
+byte Mode_Arity(int n, int min, int max);
+/* the arguments of an adapter with min required and up to max in all ("O..|O.." of PyArg_ParseTuple, max up to 11) as
+ * native values of t, one after the other from *a (those not given None): the count given, -1 with the error */
+int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **a);
+/* MODE_FN for a function with optional arguments: the entry checks min <= n <= max, the adapter takes them with
+ * Mode_OptArgs; call sees n, the count given, and MODE_OPT(i) is argument i or NULL when it is not given */
+#define MODE_OPT(i) (n > (i) ? &a[i] : NULL)
+#define MODE_FNOPT(pre, name, min, max, call) \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)a; \
+		(void)out; \
+		return Mode_Arity(n, min, max) ? (call) : 0; \
+	} \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		modeVals_t t = { .n = 0 }; \
+		nativeVal_t *a, *out = Mode_V(&t); \
+		(void)self; \
+		int n = Mode_OptArgs(args, min, max, &t, &a); \
+		if (n < 0) { \
+			return Mode_Done(&t, 0), NULL; \
+		} \
+		return Mode_Out(&t, pre##_##name##_E(a, n, out), out); \
+	}
+/* MODE_FN for a function that does not look at its arguments (any count, none parsed) */
+#define MODE_FNANY(pre, name, call) \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)a; \
+		(void)n; \
+		(void)out; \
+		return (call); \
+	} \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		modeVals_t t = { .n = 0 }; \
+		nativeVal_t *out = Mode_V(&t); \
+		(void)self; \
+		(void)args; \
+		return Mode_Out(&t, pre##_##name##_E(NULL, 0, out), out); \
+	}
+/* OBJLIB 7: the entry of an adapter that works on Python objects (the Sf_ frame functions, the type conversions of
+ * PyArg formats): the adapter called on the arguments as Python values (Native_ToPy, as the call by name passes them;
+ * an NV_OBJ is its object), its result into out (Native_Arg). MODE_PYENTRY(adapter) and MODE_PYENTRYKW(adapter) emit
+ * adapter_E after the adapter; a keyword entry takes the arguments by position (maybe unused: tools/script/ports.py
+ * gives a keyword adapter, cast through void (*)(void) in its table, no ref yet) */
+byte Mode_PyEntry(PyCFunction fn, const nativeVal_t *a, int n, nativeVal_t *out);
+byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nativeVal_t *out);
+#define MODE_PYENTRY(fn) \
+	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		return Mode_PyEntry(fn, a, n, out); \
+	}
+#define MODE_PYENTRYKW(fn) \
+	[[maybe_unused]] static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		return Mode_PyEntryKw(fn, a, n, out); \
+	}
+
 #endif

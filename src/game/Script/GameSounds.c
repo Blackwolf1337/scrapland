@@ -229,12 +229,34 @@ static byte Gs_SetPS(const nativeVal_t *a, byte interval) {
 		Native_CallMod("SSound", "SetPS", NULL, "vsv", name, "MinInterval", &a[3])));
 }
 
+/* Gs_SetPS on the slots of SetPSInterval's arguments (v[i] NULL when it is not given: the default put in, the
+ * minimum and maximum None) */
+static byte Gs_SetPSSlots(const nativeVal_t *const *v, byte interval) {
+	nativeVal_t a[10];
+	for (int i = 0; i < 10; i++) {
+		if (v[i]) {
+			/* a view: Gs_SetPS only reads it */
+			a[i] = *v[i];
+		} else if (i == 5) {
+			Native_SetInt(&a[i], 1);
+		} else if (i > 5 && i < 9) {
+			Native_SetInt(&a[i], 0);
+		} else if (i == 9) {
+			Native_SetFloat(&a[i], 1.0);
+		} else {
+			Native_SetNone(&a[i]);
+		}
+	}
+	return Gs_SetPS(a, interval);
+}
+
 static PyObject *Sound_SetPSArgs(PyObject *args, PyObject *kw, byte interval) {
 	static char *loopNames[] = { "Name", "Pos", "Snd", "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler", NULL };
 	static char *intNames[] = { "Name", "Pos", "Snd", "MinInterval", "MaxInterval", "Volume", "Pitch", "AttenIni",
 		"AttenEnd", "Doppler", NULL };
 	PyObject *o[10] = { NULL };
 	nativeVal_t a[10];
+	const nativeVal_t *v[10];
 	if (interval ? !PyArg_ParseTupleAndKeywords(args, kw, "OOOOO|OOOOO", intNames, &o[0], &o[1], &o[2], &o[3], &o[4],
 			&o[5], &o[6], &o[7], &o[8], &o[9]) :
 		!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OOOOO", loopNames, &o[0], &o[1], &o[2], &o[5], &o[6], &o[7], &o[8],
@@ -243,22 +265,9 @@ static PyObject *Sound_SetPSArgs(PyObject *args, PyObject *kw, byte interval) {
 	}
 	for (int i = 0; i < 10; i++) {
 		Native_SetNone(&a[i]);
-		if (o[i]) {
-			Native_Arg(o[i], &a[i]);
-		}
+		v[i] = o[i] && Native_Arg(o[i], &a[i]) ? &a[i] : NULL;
 	}
-	if (!o[5]) {
-		Native_SetInt(&a[5], 1);
-	}
-	for (int i = 6; i < 9; i++) {
-		if (!o[i]) {
-			Native_SetInt(&a[i], 0);
-		}
-	}
-	if (!o[9]) {
-		Native_SetFloat(&a[9], 1.0);
-	}
-	byte ok = Gs_SetPS(a, interval);
+	byte ok = Gs_SetPSSlots(v, interval);
 	for (int i = 0; i < 10; i++) {
 		Native_Free(&a[i]);
 	}
@@ -273,6 +282,32 @@ static PyObject *Sound_SetPSLoop(PyObject *self, PyObject *args, PyObject *kw) {
 static PyObject *Sound_SetPSInterval(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Sound_SetPSArgs(args, kw, 1);
+}
+
+/* the entries (the arguments by position; maybe unused: tools/script/ports.py gives a keyword adapter no ref yet):
+ * SetPSLoop's fourth argument on is Volume, slot 5 */
+[[maybe_unused]] static byte Sound_SetPSLoop_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *v[10] = { NULL };
+	(void)out;
+	if (!Mode_Arity(n, 3, 8)) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		v[i < 3 ? i : i + 2] = &a[i];
+	}
+	return Gs_SetPSSlots(v, 0);
+}
+
+[[maybe_unused]] static byte Sound_SetPSInterval_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *v[10] = { NULL };
+	(void)out;
+	if (!Mode_Arity(n, 5, 10)) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		v[i] = &a[i];
+	}
+	return Gs_SetPSSlots(v, 1);
 }
 
 /* the sections without tests: LoadMenuSounds, ScorerSounds, PhotoSounds, CharConversionSounds,

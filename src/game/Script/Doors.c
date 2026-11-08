@@ -326,40 +326,12 @@ static byte Dr_Init(const nativeVal_t *onlyArg) {
 }
 
 /* the adapters (the arity errors of the script's functions) */
-#define DR_FN0(pre, name, call) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return PyArg_ParseTuple(args, "") ? Mode_Result(call) : NULL; \
-	}
-
-/* name(a[, b]) with the optional argument b NULL when it is not given */
-#define DR_FNOPT(pre, name, fmt, n, call) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		PyObject *o[5] = { NULL, NULL, NULL, NULL, NULL }; \
-		nativeVal_t a[5]; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, fmt, &o[0], &o[1], &o[2], &o[3], &o[4])) { \
-			return NULL; \
-		} \
-		for (int i = 0; i < n; i++) { \
-			Native_SetNone(&a[i]); \
-			if (o[i]) { \
-				Native_Arg(o[i], &a[i]); \
-			} \
-		} \
-		byte ok = call; \
-		for (int i = 0; i < n; i++) { \
-			Native_Free(&a[i]); \
-		} \
-		return Mode_Result(ok); \
-	}
-
 MODE_FN(Doors, StdInitializator, 1, 1)
 MODE_FN(Doors, StdObjInitializator, 2, 1)
 MODE_FN(Doors, UsrObjInitializator, 2, Dr_UsrObjInitializator(&a[0]))
 MODE_FN(Doors, CreateDoorClass, 1, Dr_CreateDoorClass(&a[0], out))
-DR_FN0(Doors, InitDoorInfo, Dr_InitDoorInfo())
-DR_FNOPT(Doors, Init, "|O", 1, Dr_Init(o[0] ? &a[0] : NULL))
+MODE_FN(Doors, InitDoorInfo, 0, Dr_InitDoorInfo())
+MODE_FNOPT(Doors, Init, 0, 1, Dr_Init(MODE_OPT(0)))
 
 PyMethodDef g_DoorsMethods[] = {
 	{ "StdInitializator", Doors_StdInitializator, 1, NULL },
@@ -1097,9 +1069,9 @@ static byte Elv_PlayerCreatedElevator(void) {
 
 MODE_FN(Elevator, isOutMap, 1, Elv_isOutMap(&a[0], out))
 MODE_FN(Elevator, ElevatorCamera, 1, Elv_ElevatorCamera(&a[0]))
-DR_FN0(Elevator, ElevatorBackCamera, Elv_ElevatorBackCamera())
-DR_FNOPT(Elevator, ConnectElevators, "O|OO", 3, Elv_ConnectElevators(&a[0], o[1] ? &a[1] : NULL, o[2] ? &a[2] : NULL))
-DR_FNOPT(Elevator, DoorInitializator, "O|O", 2, Elv_DoorInitializator(&a[0], o[1] ? &a[1] : NULL))
+MODE_FN(Elevator, ElevatorBackCamera, 0, Elv_ElevatorBackCamera())
+MODE_FNOPT(Elevator, ConnectElevators, 1, 3, Elv_ConnectElevators(&a[0], MODE_OPT(1), MODE_OPT(2)))
+MODE_FNOPT(Elevator, DoorInitializator, 1, 2, Elv_DoorInitializator(&a[0], MODE_OPT(1)))
 MODE_FN(Elevator, ObjInitializator, 2, Elv_ObjInitializator(&a[0]))
 MODE_FN(Elevator, ObjInitializatorNang, 2, Elv_ObjInitializatorNang(&a[0], &a[1]))
 MODE_FN(Elevator, UseElevator, 4, Elv_UseElevator(&a[0], &a[1], &a[2], &a[3]))
@@ -1109,12 +1081,12 @@ MODE_FN(Elevator, ElevatorHaveClose, 3, Elv_ElevatorHaveClose(&a[0], &a[1]))
 MODE_FN(Elevator, ElevatorReachUp, 3, Elv_ElevatorReachUp(&a[0]))
 MODE_FN(Elevator, ElevatorReachDown, 3, Elv_ElevatorReachDown(&a[0]))
 MODE_FN(Elevator, ElevatorHaveOpen, 3, Elv_ElevatorHaveOpen(&a[0], &a[1]))
-DR_FNOPT(Elevator, LinkToElevator, "OOO|O", 4, Elv_LinkToElevator(&a[0], &a[1], &a[2], o[3] ? &a[3] : NULL))
+MODE_FNOPT(Elevator, LinkToElevator, 3, 4, Elv_LinkToElevator(&a[0], &a[1], &a[2], MODE_OPT(3)))
 MODE_FN(Elevator, UnlinkFromElevator, 1, Elv_UnlinkFromElevator(&a[0]))
-DR_FN0(Elevator, Init, Elv_Init())
+MODE_FN(Elevator, Init, 0, Elv_Init())
 MODE_FN(Elevator, SetDef, 2, Elv_SetDef(&a[0], &a[1]))
-DR_FN0(Elevator, TryToElevatorLaunchFirst, Elv_TryFirst())
-DR_FN0(Elevator, PlayerCreatedElevator, Elv_PlayerCreatedElevator())
+MODE_FN(Elevator, TryToElevatorLaunchFirst, 0, Elv_TryFirst())
+MODE_FN(Elevator, PlayerCreatedElevator, 0, Elv_PlayerCreatedElevator())
 
 PyMethodDef g_ElevatorMethods[] = {
 	{ "isOutMap", Elevator_isOutMap, 1, NULL },

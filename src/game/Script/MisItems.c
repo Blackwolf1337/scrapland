@@ -436,22 +436,13 @@ static byte Mi_CreateBattery(const nativeVal_t *pos, const nativeVal_t *act, nat
 	return ok;
 }
 
-static PyObject *MisItems_CreateBattery(PyObject *self, PyObject *args) {
-	PyObject *pos, *act = NULL;
-	nativeVal_t p, a = { 0 }, out = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &pos, &act)) {
-		return NULL;
-	}
-	Native_Arg(pos, &p);
-	if (act) {
-		Native_Arg(act, &a);
-	}
-	byte ok = Mi_CreateBattery(&p, &a, &out);
-	Native_Free(&p);
-	Native_Free(&a);
-	return Mode_Return(ok, &out);
+static byte Mi_CreateBatteryArgs(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t none;
+	Native_SetNone(&none);
+	return Mi_CreateBattery(&a[0], n > 1 ? &a[1] : &none, out);
 }
+
+MODE_FNOPT(MisItems, CreateBattery, 1, 2, Mi_CreateBatteryArgs(a, n, out))
 
 /* TakeBattery(ItemName, CharName): one energy more, up to the batteries of the save game */
 static byte Mi_TakeBattery(const nativeVal_t *item, const nativeVal_t *charName) {
@@ -533,14 +524,7 @@ static byte Mi_DazedCoin(const nativeVal_t *name) {
 
 MODE_FN(MisItems, DazedCoin, 3, Mi_DazedCoin(&a[0]))
 
-/* the adapters of the functions that take no arguments (the arity error of PyArg_ParseTuple "") */
-#define MI_NOARGS(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return PyArg_ParseTuple(args, "") ? Mode_Result(call) : NULL; \
-	}
-
-MI_NOARGS(MisItems_Init, Mi_InitModels())
+MODE_FN(MisItems, Init, 0, Mi_InitModels())
 
 PyMethodDef g_MisItemsMethods[] = {
 	{ "Init", MisItems_Init, 1, NULL },
@@ -800,10 +784,10 @@ static byte Cw_Photo(const nativeVal_t *e, nativeVal_t *out) {
 
 MODE_FN(CrazyWing, CrazyPhoto, 1, Cw_Photo(&a[0], out))
 
-MI_NOARGS(CrazyWing_InitCrazyWing, Cw_Init())
-MI_NOARGS(CrazyWing_CrazyWing, Cw_Blow())
-MI_NOARGS(CrazyWing_SetCrazy, Cw_SetCrazy())
-MI_NOARGS(CrazyWing_RestoreSpeech, Cw_RestoreSpeech())
+MODE_FN(CrazyWing, InitCrazyWing, 0, Cw_Init())
+MODE_FN(CrazyWing, CrazyWing, 0, Cw_Blow())
+MODE_FN(CrazyWing, SetCrazy, 0, Cw_SetCrazy())
+MODE_FN(CrazyWing, RestoreSpeech, 0, Cw_RestoreSpeech())
 
 static PyObject *CrazyWing_AllInList(PyObject *self, PyObject *args) {
 	nativeVal_t out = { 0 };

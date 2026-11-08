@@ -983,54 +983,27 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 
 /* ---- the functions of the module ---- */
 
-/* the functions with an optional second argument (the formats of the port: no keywords) */
-#define NPC_FN2(name, call) \
-	static PyObject *CharsNPC_##name(PyObject *self, PyObject *args) { \
-		PyObject *o, *o2 = NULL; \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *a = Mode_V(&t), *a2 = Mode_V(&t), *out = Mode_V(&t); \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "O|O", &o, &o2)) { \
-			return Mode_Done(&t, 0), NULL; \
-		} \
-		Native_Arg(o, a); \
-		if (o2) { \
-			Native_Arg(o2, a2); \
-		} \
-		return Mode_Out(&t, call(a, o2 ? a2 : NULL, out), out); \
-	}
-
-/* the functions the port ran without parsing their arguments (any arguments) */
-#define NPC_ANY(name, call) \
-	static PyObject *CharsNPC_##name(PyObject *self, PyObject *args) { \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *out = Mode_V(&t); \
-		(void)self; \
-		(void)args; \
-		return Mode_Out(&t, call, out); \
-	}
-
 /* an int result into out */
 static byte Npc_IntOut(long i, nativeVal_t *out) {
 	Native_SetInt(out, i);
 	return 1;
 }
 
-NPC_FN2(AddNPCPos, Npc_AddNPCPos)
-NPC_FN2(CreateChar, Npc_CreateChar)
+MODE_FNOPT(CharsNPC, AddNPCPos, 1, 2, Npc_AddNPCPos(&a[0], MODE_OPT(1), out))
+MODE_FNOPT(CharsNPC, CreateChar, 1, 2, Npc_CreateChar(&a[0], MODE_OPT(1), out))
 MODE_FN(CharsNPC, CreateMissionChar, 1, Npc_CreateMissionChar(&a[0], out))
 MODE_FN(CharsNPC, DeleteMissionChar, 1, Npc_DeleteMissionChar(&a[0]))
 MODE_FN(CharsNPC, SetReposChars, 2, Npc_SetReposChars(&a[0], &a[1]))
-NPC_ANY(CreateReposChars, Npc_CreateReposChars())
-NPC_ANY(BrowseNPC, Npc_BrowseNPC())
+MODE_FNANY(CharsNPC, CreateReposChars, Npc_CreateReposChars())
+MODE_FNANY(CharsNPC, BrowseNPC, Npc_BrowseNPC())
 MODE_FN(CharsNPC, AssignAttrib, 1, Npc_AssignAttrib(&a[0]))
 MODE_FN(CharsNPC, CallCreateChar, 4, Npc_CallCreateChar(&a[0], &a[1], &a[2], &a[3]))
 MODE_FN(CharsNPC, CharNPCInclude, 1, Npc_CharNPCInclude(&a[0]))
 MODE_FN(CharsNPC, Respawn, 1, Npc_Respawn(&a[0]))
 MODE_FN(CharsNPC, ActiveSpawned, 1, Npc_ActiveSpawned(&a[0]))
-NPC_ANY(Init, Npc_Init())
+MODE_FNANY(CharsNPC, Init, Npc_Init())
 MODE_FN(CharsNPC, CheckActualEntity, 1, Npc_CheckActualEntity(&a[0]))
-NPC_ANY(MercsHired, Npc_IntOut(Npc_MercsHired(), out))
+MODE_FNANY(CharsNPC, MercsHired, Npc_IntOut(Npc_MercsHired(), out))
 MODE_FN(CharsNPC, IncludeSubOptions, 1, Npc_IncludeSubOptions(&a[0]))
 MODE_FN(CharsNPC, Classify, 2, Npc_Classify(&a[0], &a[1], out))
 MODE_FN(CharsNPC, ClassifyOptions, 1, Npc_ClassifyOptions(&a[0], out))

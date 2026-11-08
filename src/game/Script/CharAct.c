@@ -195,24 +195,14 @@ MODE_FN(CharAct, PlayerDeathCall, 1, CA_PlayerDeathCall(&a[0]))
 MODE_FN(CharAct, NPCDeathCall, 1, CA_NPCDeathCall(&a[0]))
 MODE_FN(CharAct, OnCreate, 1, CA_OnCreate(&a[0]))
 
-static PyObject *CharAct_NoFXDeath(PyObject *self, PyObject *args) {
-	PyObject *e, *winner, *time = NULL;
-	nativeVal_t ev, tv;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|O", &e, &winner, &time)) {
-		return NULL;
-	}
-	Native_Arg(e, &ev);
-	if (time) {
-		Native_Arg(time, &tv);
-	} else {
-		Native_SetFloat(&tv, 2.0);
-	}
-	byte ok = CA_NoFXDeath(&ev, &tv);
-	Native_Free(&ev);
-	Native_Free(&tv);
-	return Mode_Result(ok);
+/* NoFXDeath(EntityName, WinnerName, time=2.0) */
+static byte CA_NoFXDeathArgs(const nativeVal_t *a, int n) {
+	nativeVal_t two;
+	Native_SetFloat(&two, 2.0);
+	return CA_NoFXDeath(&a[0], n > 2 ? &a[2] : &two);
 }
+
+MODE_FNOPT(CharAct, NoFXDeath, 2, 3, CA_NoFXDeathArgs(a, n))
 
 PyMethodDef g_CharActMethods[] = {
 	{ "ActionPhoto", CharAct_ActionPhoto, 1, NULL },

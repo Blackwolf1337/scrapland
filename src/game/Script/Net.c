@@ -70,11 +70,7 @@ static byte Net_LoadSinglePlayerC(const nativeVal_t *path) {
 
 /* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
 
-static PyObject *Net_PurgeServerMapList(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(Mode_PurgeServerMapList("Net"));
-}
+MODE_FNANY(Net, PurgeServerMapList, Mode_PurgeServerMapList("Net"))
 
 static PyObject *Net_Spectate(PyObject *self, PyObject *args) {
 	PyObject *id, *value;
@@ -120,3 +116,5 @@ PyMethodDef g_NetMethods[] = {
 	{ "LoadSinglePlayer", Net_LoadSinglePlayer, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Net)

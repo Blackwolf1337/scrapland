@@ -230,17 +230,9 @@ static void Phone_SetVar(const char *module, const char *var, const nativeVal_t 
 	Script_SetVar(module, var, Native_ToPy(value));
 }
 
-/* the adapters of the functions that do not look at their arguments */
-#define PHONE_NOARGS(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
 /* ---- PhoneCab ---- */
 
-PHONE_NOARGS(PhoneCab_ForceResetPhoneCab, Phone_Reset("PhoneCab", "audioComEntity", "PhoneCab"))
+MODE_FNANY(PhoneCab, ForceResetPhoneCab, Phone_Reset("PhoneCab", "audioComEntity", "PhoneCab"))
 
 /* the options of the revenge on ch (save variables Revenge.Type and Revenge.Foe) */
 static byte PhoneCab_RevengeOptions(const nativeVal_t *ch) {
@@ -521,8 +513,8 @@ static byte PhoneCab_Spawn(const nativeVal_t *c, const nativeVal_t *phone) {
 
 MODE_FN(PhoneCab, SpawnChar, 2, PhoneCab_Spawn(&a[0], &a[1]))
 
-PHONE_NOARGS(PhoneCab_CreatePhoneCabClass, Phone_Class("PhoneCab", NULL))
-PHONE_NOARGS(PhoneCab_CreateAudioComClass, Phone_Class("AudioCom", NULL))
+MODE_FNANY(PhoneCab, CreatePhoneCabClass, Phone_Class("PhoneCab", NULL))
+MODE_FNANY(PhoneCab, CreateAudioComClass, Phone_Class("AudioCom", NULL))
 
 /* Init(): a cab and its communicator (in PhoneCabs) at each DM_Phone_* dummy that is on */
 static byte PhoneCab_InitCabs(void) {
@@ -582,7 +574,7 @@ static byte PhoneCab_InitCabs(void) {
 	}
 }
 
-PHONE_NOARGS(PhoneCab_Init, PhoneCab_InitCabs())
+MODE_FNANY(PhoneCab, Init, PhoneCab_InitCabs())
 
 /* res.RadarShow == 0 (a free cab): 1 or 0, -1 with the error */
 static int PhoneCab_IsFree(const nativeVal_t *res) {
@@ -673,12 +665,7 @@ static byte PhoneCab_Free(nativeVal_t *out) {
 	return Mode_Done(&t, 0);
 }
 
-static PyObject *PhoneCab_GetFree(PyObject *self, PyObject *args) {
-	nativeVal_t out = { 0 };
-	(void)self;
-	(void)args;
-	return Mode_Return(PhoneCab_Free(&out), &out);
-}
+MODE_FNANY(PhoneCab, GetFree, PhoneCab_Free(out))
 
 PyMethodDef g_PhoneCabMethods[] = {
 	{ "ForceResetPhoneCab", PhoneCab_ForceResetPhoneCab, 1, NULL },
@@ -699,7 +686,7 @@ PyMethodDef g_PhoneCabMethods[] = {
 
 /* ---- DTritusDesktop ---- */
 
-PHONE_NOARGS(DTritus_ForceResetDTritusDesktop, Phone_Reset("DTritusDesktop", "DTritusDesktop", "DtritusDesktop"))
+MODE_FNANY(DTritus, ForceResetDTritusDesktop, Phone_Reset("DTritusDesktop", "DTritusDesktop", "DtritusDesktop"))
 
 /* SpawnChar(c): the character in front of the desktop (DM_DTritusDesktop) */
 static byte DTritus_Spawn(const nativeVal_t *c) {
@@ -716,7 +703,7 @@ static byte DTritus_Spawn(const nativeVal_t *c) {
 
 MODE_FN(DTritus, SpawnChar, 1, DTritus_Spawn(&a[0]))
 
-PHONE_NOARGS(DTritus_CreateDTritusDesktopClass, Phone_Class("DTritusDesktop", NULL))
+MODE_FNANY(DTritus, CreateDTritusDesktopClass, Phone_Class("DTritusDesktop", NULL))
 
 /* CreateDTritusDesktop(name, pos, yAng): the desktop the player talks to */
 static byte DTritus_Desktop(const nativeVal_t *a, nativeVal_t *out) {
@@ -830,7 +817,7 @@ static byte DTritus_InitDesks(void) {
 	return Mode_Done(&t, ok);
 }
 
-PHONE_NOARGS(DTritus_Init, DTritus_InitDesks())
+MODE_FNANY(DTritus, Init, DTritus_InitDesks())
 
 /* InitNPCS(): the journalists whose default map (save variable Journalist.<name>_Defaut) is this one */
 static byte DTritus_NPCs(void) {
@@ -857,7 +844,7 @@ static byte DTritus_NPCs(void) {
 	return 1;
 }
 
-PHONE_NOARGS(DTritus_InitNPCS, DTritus_NPCs())
+MODE_FNANY(DTritus, InitNPCS, DTritus_NPCs())
 
 PyMethodDef g_DTritusDesktopMethods[] = {
 	{ "ForceResetDTritusDesktop", DTritus_ForceResetDTritusDesktop, 1, NULL },
