@@ -7,7 +7,8 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the module has no state and calls no engine function itself; the sections
  * call the engine through the .def runner, which takes its $names (and the entity handle $e of InitLoops) as a dict
- * until it takes C values (OBJLIB 6).
+ * until it takes C values (OBJLIB 6). InitLoops has a native entry for the direct calls of other ports (stage 3,
+ * PORT_CALL); it hands its argument on as the Python value.
  */
 #include <string.h>
 
@@ -151,18 +152,23 @@ static PyObject *Sound_Init(const char *file, const char *builtin, PyObject *arg
 }
 
 /* InitLoops(EntityName): e = Scrap.GetEntity(EntityName), then the attribute sets of the section on $e */
-static PyObject *Sound_Loops(const char *file, const char *builtin, PyObject *args) {
-	PyObject *name;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
+static byte Sound_Loops(const char *file, const char *builtin, PyObject *name) {
 	/* OBJLIB 6: Scrap.GetEntity(EntityName) by name, the handle goes to the .def runner as $e */
 	PyObject *e = Script_Entity(name);
 	PyObject *vars = e ? Py_BuildValue("{s:O,s:O}", "name", name, "e", e) : NULL;
 	byte ok = vars && Script_RunFileTry(0, file, "InitLoops", builtin, sound_steps, vars);
 	Py_XDECREF(vars);
 	Py_XDECREF(e);
-	return ok ? Py_ReturnNone() : NULL;
+	return ok;
+}
+
+/* the native entry of InitLoops on its one argument (the direct calls of other ports, stage 3): EntityName as the
+ * Python value the call by name passes (OBJLIB 6: the .def runner and the lookup take Python values) */
+static byte Sound_LoopsE(const char *file, const char *builtin, const nativeVal_t *a) {
+	PyObject *name = Native_ToPy(a);
+	byte ok = name && Sound_Loops(file, builtin, name);
+	Py_XDECREF(name);
+	return ok;
 }
 
 /*
@@ -189,10 +195,19 @@ static PyObject *Sound_Section(const char *file, const char *builtin, const char
 		return Sound_Init("sound/" #file ".def", file##_def, args); \
 	}
 
+/* InitLoops: its entry, and its adapter on the object it is given ("O") */
 #define SOUND_LOOPS(mod, file) \
+	static byte mod##_InitLoops_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)out; \
+		return n != 1 ? Port_Arity(n, 1) : Sound_LoopsE("sound/" #file ".def", file##_def, &a[0]); \
+	} \
 	static PyObject *mod##_InitLoops(PyObject *self, PyObject *args) { \
+		PyObject *name; \
 		(void)self; \
-		return Sound_Loops("sound/" #file ".def", file##_def, args); \
+		if (!PyArg_ParseTuple(args, "O", &name)) { \
+			return NULL; \
+		} \
+		return Sound_Loops("sound/" #file ".def", file##_def, name) ? Py_ReturnNone() : NULL; \
 	}
 
 /* a section with CharName (talk 0) or CharName, ActName (talk 1) */
@@ -566,3 +581,5 @@ PyMethodDef g_MercenarySoundMethods[] = {
 	SOUND_KW(MercenarySound, LoadSounds), SOUND_KW(MercenarySound, SetSounds), SOUND_FN(MercenarySound, Init),
 	{ NULL, NULL, 0, NULL }
 };
+
+PORTS(Sounds)
