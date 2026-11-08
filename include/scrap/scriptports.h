@@ -787,6 +787,7 @@ PORT_DECL(CrazyWing, CrazyWing) /* 0 */
 PORT_DECL(CrazyWing, SetCrazy) /* 0 */
 PORT_DECL(CrazyWing, DeCrazy) /* 2 */
 PORT_DECL(CrazyWing, RestoreSpeech) /* 0 */
+PORT_DECL(CrazyWing, AllInList) /* 0 */
 PORT_DECL(CrazyWing, CrazyPhoto) /* 1 */
 #define PORTS_MisItems \
 	PORT_DEF(MisItems, Init, MisItems_Init) \
@@ -807,6 +808,7 @@ PORT_DECL(CrazyWing, CrazyPhoto) /* 1 */
 	PORT_DEF(CrazyWing, SetCrazy, CrazyWing_SetCrazy) \
 	PORT_DEF(CrazyWing, DeCrazy, CrazyWing_DeCrazy) \
 	PORT_DEF(CrazyWing, RestoreSpeech, CrazyWing_RestoreSpeech) \
+	PORT_DEF(CrazyWing, AllInList, CrazyWing_AllInList) \
 	PORT_DEF(CrazyWing, CrazyPhoto, CrazyWing_CrazyPhoto)
 
 /* MissionsFuncs.c */

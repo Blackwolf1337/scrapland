@@ -8,13 +8,14 @@
  * times and prizes, CrazyWingList) with the module code (the save variables of the crazy wind); the functions read
  * them as their globals.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The variables are read where the script reads them (its globals, Init.Outdoor and
- * Init.SuperDealModule as attributes, OBJLIB 5); CrazyWingList is appended to in place. The module's own functions
- * the script calls as its globals (GetMoneyModel, GetObjModel, CreateItem, CreateCoin, GetTargetReward, the Activate
- * functions, InitCrazyWing, SetCrazy, DeCrazy, AllInList), Items, SaveGame.SaveMoney and the functions the scheduler
- * keeps stay by name (OBJLIB 3, 4). Entities are handle values (OBJLIB 7): the engine gives them to the callbacks and
- * the scripts pass them on.
+ * Native C (docs/objlib-plan.md, stages 2 and 3): the functions call the engine in C and work on C values; the
+ * PyMethodDef entries are adapters. The variables are read where the script reads them (its globals, Init.Outdoor
+ * and Init.SuperDealModule as attributes, OBJLIB 5); CrazyWingList is appended to in place. The module's own
+ * functions the script calls as its globals (GetMoneyModel, GetObjModel, CreateItem, CreateCoin, GetTargetReward,
+ * InitCrazyWing, SetCrazy, AllInList) go through their refs as globals (PORT_OWN), Items and SaveGame.SaveMoney
+ * through theirs (PORT_CALL). The Activate functions given to CreateItem and the functions the scheduler keeps
+ * (DeCrazy, CrazyWing) are values (OBJLIB 4). Entities are handle values (OBJLIB 7): the engine gives them to the
+ * callbacks and the scripts pass them on.
  */
 #include <string.h>
 
@@ -74,13 +75,13 @@ static byte Mi_InitModels(void) {
 		} else {
 			ok = Mode_Read("MisItems", "MoneyQuantos", q) && Native_Subscript(q, Mode_I(&t, i - 1), money);
 		}
-		ok = ok && Native_CallGlobal("MisItems", "GetMoneyModel", model, "v", money) && Mode_PreloadOnes(model);
+		ok = ok && PORT_OWN(MisItems, GetMoneyModel, model, "v", money) && Mode_PreloadOnes(model);
 		Mode_Release(&t, mark);
 	}
 	if (ok && Mi_Init("Outdoor", out) && !Native_True(out)) {
 		nativeVal_t *model = Mode_V(&t), *model2 = Mode_V(&t);
-		ok = Native_CallGlobal("MisItems", "GetObjModel", model, "s", "ExtraLife") && Mode_PreloadOnes(model) &&
-			Native_CallGlobal("MisItems", "GetObjModel", model2, "s", "Battery") && Mode_PreloadOnes(model2);
+		ok = PORT_OWN(MisItems, GetObjModel, model, "s", "ExtraLife") && Mode_PreloadOnes(model) &&
+			PORT_OWN(MisItems, GetObjModel, model2, "s", "Battery") && Mode_PreloadOnes(model2);
 	}
 	return Mode_Done(&t, ok && !PyErr_Occurred());
 }
@@ -119,7 +120,7 @@ static byte Mi_BoxKind(modeVals_t *t, nativeVal_t *typo) {
 	return Mode_VGet(usr, "iWeaponNeed", need) && Native_Subscript(kinds, need, typo);
 }
 
-/* the box a dead ship v leaves (OBJLIB 3: Items by name) */
+/* the box a dead ship v leaves */
 static byte Mi_DropBox(modeVals_t *t, const nativeVal_t *v) {
 	nativeVal_t *typo = Mode_V(t), *pos = Mode_V(t), *name = Mode_V(t), *vn = Mode_V(t), *l = Mode_V(t);
 	nativeVal_t *take = Mode_V(t), *rt = Mode_V(t), *when = Mode_V(t), *tag = Mode_V(t);
@@ -129,8 +130,8 @@ static byte Mi_DropBox(modeVals_t *t, const nativeVal_t *v) {
 	Mode_V(t);
 	if (!Mi_BoxKind(t, typo) || !Mode_VGet(v, "Pos", pos) || !Mode_Unpack(pos, 3, xyz) || !Mode_VGet(v, "Name", vn) ||
 		!Native_Arith('+', Mode_S(t, "Item"), vn, name) ||
-		!Native_CallMod("Items", "CreateBox", l, "vvvvv", name, &xyz[0], &xyz[1], &xyz[2], typo) ||
-		!Native_CallMod("Items", "SetSound", NULL, "vv", l, typo) || !Native_Arith('+', Mode_S(t, "!Take"), typo, take) ||
+		!PORT_CALL(Items, CreateBox, l, "vvvvv", name, &xyz[0], &xyz[1], &xyz[2], typo) ||
+		!PORT_CALL(Items, SetSound, NULL, "vv", l, typo) || !Native_Arith('+', Mode_S(t, "!Take"), typo, take) ||
 		!Mode_VSet(l, "OnTake", take)) {
 		return 0;
 	}
@@ -187,11 +188,9 @@ static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 		}
 		byte ok;
 		if (coin) {
-			/* create = CreateCoin first, as the script reads it before the arguments */
-			PyObject *create = Mode_GlobalPy("MisItems", "CreateCoin");
-			ok = create && Mode_VGet(v, "Pos", cpos) && Native_CallGlobal("MisItems", "GetTargetReward", reward, "v", v) &&
-				Native_Call(create, NULL, "vv", cpos, reward);
-			Py_XDECREF(create);
+			/* the global CreateCoin is looked up after its arguments (the script looked it up first) */
+			ok = Mode_VGet(v, "Pos", cpos) && PORT_OWN(MisItems, GetTargetReward, reward, "v", v) &&
+				PORT_OWN(MisItems, CreateCoin, NULL, "vv", cpos, reward);
 		} else {
 			ok = Mi_DropBox(&t, v);
 		}
@@ -271,7 +270,7 @@ static byte Mi_GiveMoney(const nativeVal_t *item, const nativeVal_t *vehicle) {
 		Native_SetInt(money, Mode_GetMoney());
 		ok = Mi_CoinAmount(names, amount) && Native_Arith('+', money, amount, sum) && Mode_SetMoney(sum);
 	} else {
-		ok = Native_CallGlobal("MisItems", "GetTargetReward", reward, "v", e) && Mi_CoinAmount(names, amount) &&
+		ok = PORT_OWN(MisItems, GetTargetReward, reward, "v", e) && Mi_CoinAmount(names, amount) &&
 			Native_Arith('+', reward, amount, sum) && Mode_VSet(e, "Money", sum);
 	}
 	ok = ok && Mode_EntityH(item, itm) && Mode_G("MisItems", "MONEY_TIME", mt) && Native_Arith('*', mt, Mode_I(&t, 2), rt) &&
@@ -322,7 +321,7 @@ static byte Mi_MoneyModel(const nativeVal_t *quanto, nativeVal_t *out) {
 			break;
 		}
 	}
-	byte ok = Native_Arith('+', Mode_S(&t, "Coin"), res, name) && Native_CallGlobal("MisItems", "GetObjModel", out, "v", name);
+	byte ok = Native_Arith('+', Mode_S(&t, "Coin"), res, name) && PORT_OWN(MisItems, GetObjModel, out, "v", name);
 	return Mode_Done(&t, ok);
 }
 
@@ -382,11 +381,8 @@ MODE_FN(MisItems, CreateItem, 4, Mi_CreateItem(&a[0], &a[1], &a[2], &a[3], out))
 static byte Mi_CreateCoin(const nativeVal_t *pos, const nativeVal_t *money, nativeVal_t *out) {
 	nativeBuf_t b;
 	nativeVal_t name, model = { 0 };
-	/* OBJLIB 3: the functions of the module as its globals, in the order the script reads them */
-	PyObject *create = Mode_GlobalPy("MisItems", "CreateItem");
-	if (!create) {
-		return 0;
-	}
+	/* the global CreateItem is looked up after its arguments (the script looked it up first); OBJLIB 4: ActivateCoin
+	 * goes to it as the value of the global */
 	Native_BufInit(&b);
 	Native_BufAdd(&b, "Usr_Coin_", -1);
 	Native_Repr(&b, money, NR_REPR);
@@ -394,10 +390,10 @@ static byte Mi_CreateCoin(const nativeVal_t *pos, const nativeVal_t *money, nati
 	Native_SetText(&name, b.p, b.len);
 	Native_BufFree(&b);
 	PyObject *act = NULL;
-	byte ok = Native_CallGlobal("MisItems", "GetMoneyModel", &model, "v", money) &&
-		(act = Mode_GlobalPy("MisItems", "ActivateCoin")) != NULL && Native_Call(create, out, "vvvO", pos, &name, &model, act);
+	byte ok = PORT_OWN(MisItems, GetMoneyModel, &model, "v", money) &&
+		(act = Mode_GlobalPy("MisItems", "ActivateCoin")) != NULL &&
+		PORT_OWN(MisItems, CreateItem, out, "vvvO", pos, &name, &model, act);
 	Py_XDECREF(act);
-	Py_DECREF(create);
 	Native_Free(&name);
 	Native_Free(&model);
 	return ok;
@@ -427,10 +423,10 @@ static byte Mi_CreateBattery(const nativeVal_t *pos, const nativeVal_t *act, nat
 	} else if (PyErr_Occurred() || !(a = Native_ToPy(act))) {
 		return 0;
 	}
-	PyObject *create = Mode_GlobalPy("MisItems", "CreateItem");
-	byte ok = create && Native_CallGlobal("MisItems", "GetObjModel", &model, "s", "Battery") &&
-		Native_Call(create, out, "vsvO", pos, "Battery", &model, a) && Mode_VSet(out, "OnlyUser", (Native_SetInt(&none, 1), &none));
-	Py_XDECREF(create);
+	/* the global CreateItem is looked up after GetObjModel (the script looked it up first) */
+	byte ok = PORT_OWN(MisItems, GetObjModel, &model, "s", "Battery") &&
+		PORT_OWN(MisItems, CreateItem, out, "vsvO", pos, "Battery", &model, a) &&
+		Mode_VSet(out, "OnlyUser", (Native_SetInt(&none, 1), &none));
 	Py_DECREF(a);
 	Native_Free(&model);
 	return ok;
@@ -514,7 +510,7 @@ static byte Mi_DazedCoin(const nativeVal_t *name) {
 		}
 		ok = ok && Mode_TestSphere(c[0], c[1], c[2], Mode_I(&t, 100), Mode_S(&t, "rv"), NULL, hit);
 		if (ok && hit->type == NV_NONE) {
-			ok = Native_CallGlobal("MisItems", "CreateCoin", NULL, "vv", posix, reward) && Mode_VGet(e, "Money", m) &&
+			ok = PORT_OWN(MisItems, CreateCoin, NULL, "vv", posix, reward) && Mode_VGet(e, "Money", m) &&
 				Native_Arith('-', m, reward, m2) && Mode_VSet(e, "Money", m2);
 		}
 		Mode_Release(&t, mark);
@@ -567,12 +563,12 @@ static byte Cw_Init(void) {
 
 /* CrazyWing(): the wind blows: the next one, and a character goes crazy unless the alarm is on */
 static byte Cw_Blow(void) {
-	if (!Native_CallGlobal("CrazyWing", "InitCrazyWing", NULL, "")) {
+	if (!PORT_OWN(CrazyWing, InitCrazyWing, NULL, "")) {
 		return 0;
 	}
 	/* Scrap.GetAlarm()[0] == 0 */
 	int alarm = Mode_AlarmOn();
-	return alarm > 0 || (!alarm && Native_CallGlobal("CrazyWing", "SetCrazy", NULL, ""));
+	return alarm > 0 || (!alarm && PORT_OWN(CrazyWing, SetCrazy, NULL, ""));
 }
 
 /* SetCrazy(): the character next to the player (relaxing or dancing, one of CrazyChars, not a mission target and not
@@ -754,7 +750,7 @@ static byte Cw_Photo(const nativeVal_t *e, nativeVal_t *out) {
 		Py_XDECREF(r);
 		Py_XDECREF(c);
 		Py_XDECREF(l);
-		ok = ok && Native_CallGlobal("CrazyWing", "AllInList", all, "");
+		ok = ok && PORT_OWN(CrazyWing, AllInList, all, "");
 		if (ok && Native_True(all)) {
 			/* then Scrap.Achievement(12), which does nothing on the PC */
 			ok = Cw_Prize("BigPrize", "CrazyWindAll", NULL);
@@ -768,7 +764,7 @@ static byte Cw_Photo(const nativeVal_t *e, nativeVal_t *out) {
 			}
 		}
 	}
-	if (!ok || !Mode_VSet(e, "CanPhoto", Mode_I(&t, 0)) || !Native_CallMod("SaveGame", "SaveMoney", NULL, "") ||
+	if (!ok || !Mode_VSet(e, "CanPhoto", Mode_I(&t, 0)) || !PORT_CALL(SaveGame, SaveMoney, NULL, "") ||
 		!Mode_Read("CrazyWing", "CrazyWingList", list)) {
 		return Mode_Done(&t, 0);
 	}
@@ -789,11 +785,7 @@ MODE_FN(CrazyWing, CrazyWing, 0, Cw_Blow())
 MODE_FN(CrazyWing, SetCrazy, 0, Cw_SetCrazy())
 MODE_FN(CrazyWing, RestoreSpeech, 0, Cw_RestoreSpeech())
 
-static PyObject *CrazyWing_AllInList(PyObject *self, PyObject *args) {
-	nativeVal_t out = { 0 };
-	(void)self;
-	return PyArg_ParseTuple(args, "") ? Mode_Return(Cw_AllInList(&out), &out) : NULL;
-}
+MODE_FN(CrazyWing, AllInList, 0, Cw_AllInList(out))
 
 PyMethodDef g_CrazyWingMethods[] = {
 	{ "InitCrazyWing", CrazyWing_InitCrazyWing, 1, NULL },
