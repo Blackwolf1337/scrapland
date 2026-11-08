@@ -19,9 +19,8 @@
  * Vehicles, OutMap, RacerScorer, Menu) through their refs (PORT_OWN, PORT_CALL; the seam takes the call by name when
  * a mode, a mission or a case has put something else there, OBJLIB 5). By name: ModLib, the module of the mode, read
  * at each call (its variables and functions, OBJLIB 4); the functions Net holds in its variables ClientJoin,
- * ClientCreate and ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5); Menu.VerticalMenu with its keyword
- * (OBJLIB 3: a hand adapter of MenuBase.c without an entry yet); the functions given to the scheduler and to other
- * modules as values (OBJLIB 4, 5).
+ * ClientCreate and ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5); the functions given to the scheduler
+ * and to other modules as values (OBJLIB 4, 5).
  */
 #include <limits.h>
 #include <stdlib.h>
@@ -1199,27 +1198,12 @@ static byte Ffa_TeamMenuC(const nativeVal_t *id) {
 		Mode_Lang("Net_Menu_Spectate", Native_Append(row));
 		Native_SetStr(Native_Append(row), "Ffa.Spectate");
 	}
-	/* Menu.VerticalMenu(id, title, opts, "PCMenu.MultiPlayerMenu", YStart = Menu.OptionMenuYStart) by name (OBJLIB 3:
-	 * its keyword adapter in MenuBase.c has no entry yet) */
-	PyObject *fn = Script_Attr("Menu", "VerticalMenu");
-	if (!fn) {
-		return Mode_Done(&t, 0);
-	}
+	/* Menu.VerticalMenu(id, title, opts, "PCMenu.MultiPlayerMenu", YStart = Menu.OptionMenuYStart) through its ref; the
+	 * lookup of VerticalMenu now comes after the title and the YStart read, which differs only when both fail */
 	Mode_Lang("Net_Menu_Game", title);
-	PyObject *pid = Native_ToPy(id), *pt = Native_ToPy(title), *po = Native_ToPy(opts);
-	PyObject *a = pid && pt && po ? Py_BuildValue("(OOOs)", pid, pt, po, "PCMenu.MultiPlayerMenu") : NULL;
-	byte ok = a && Mode_ModVar("Menu", "OptionMenuYStart", ys);
-	PyObject *py = ok ? Native_ToPy(ys) : NULL, *kw = py ? Py_BuildValue("{sO}", "YStart", py) : NULL;
-	PyObject *r = kw ? Script_CallObject(fn, a, kw) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(kw);
-	Py_XDECREF(py);
-	Py_XDECREF(a);
-	Py_XDECREF(po);
-	Py_XDECREF(pt);
-	Py_XDECREF(pid);
-	Py_DECREF(fn);
-	return Mode_Done(&t, r && PORT_CALL(Menu, DrawBackOptionMenu, NULL, "v", id));
+	byte ok = Mode_ModVar("Menu", "OptionMenuYStart", ys) &&
+		PORT_CALL(Menu, VerticalMenu, NULL, "vvvs;YStart=v", id, title, opts, "PCMenu.MultiPlayerMenu", ys);
+	return Mode_Done(&t, ok && PORT_CALL(Menu, DrawBackOptionMenu, NULL, "v", id));
 }
 
 /* GetGameTeamDescriptor(): the title of a team game: tied, red or green ahead */
