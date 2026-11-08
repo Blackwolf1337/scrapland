@@ -133,7 +133,7 @@ static byte Po_FadeLater(double delay, const int *from, const int *to, double ti
 /* Speech.AddNI(msg, ans) of the pairs (they end with NULL) */
 static byte Po_AddNI(const char *const *pairs) {
 	for (; *pairs; pairs += 2) {
-		if (!LV_CALL("Speech", "AddNI", NULL, "ss", pairs[0], pairs[1])) {
+		if (!PORT_CALL(Speech, AddNI, NULL, "ss", pairs[0], pairs[1])) {
 			return 0;
 		}
 	}
@@ -142,12 +142,12 @@ static byte Po_AddNI(const char *const *pairs) {
 
 /* Speech.NISpeech(who); the AddNI pairs; Speech.RunNI() */
 static byte Po_NI(const char *who, const char *const *pairs) {
-	return LV_CALL("Speech", "NISpeech", NULL, "s", who) && Po_AddNI(pairs) && LV_CALL("Speech", "RunNI", NULL, "");
+	return PORT_CALL(Speech, NISpeech, NULL, "s", who) && Po_AddNI(pairs) && PORT_CALL(Speech, RunNI, NULL, "");
 }
 
 /* CharsNPC.GenericNPCSpeech(UsrName, CharName, optId, FullOption) */
 static byte Po_Generic(const nativeVal_t *a) {
-	return LV_CALL("CharsNPC", "GenericNPCSpeech", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	return PORT_CALL(CharsNPC, GenericNPCSpeech, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 }
 
 /* the scheduled call of a global function of module after delay s without arguments, and with one */
@@ -226,26 +226,26 @@ static byte PoMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	if (LvN_SaveIs("PoliceBossAtPolice", "1")) {
 		Native_SetNone(&r);
-		int m = LV_CALL("Init", "isMission", &r, "") ? Native_True(&r) : -1;
+		int m = PORT_CALL(Init, isMission, &r, "") ? Native_True(&r) : -1;
 		Native_Free(&r);
-		if (m < 0 || (!m && !LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "PoliceBoss_Default"))) {
+		if (m < 0 || (!m && !PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", "PoliceBoss_Default"))) {
 			return 0;
 		}
 	}
 	for (int i = 0; i < 3; i++) {
-		if (!LV_CALL("Elevator", "SetDef", NULL, "ss", defs[i][0], defs[i][1])) {
+		if (!PORT_CALL(Elevator, SetDef, NULL, "ss", defs[i][0], defs[i][1])) {
 			return 0;
 		}
 	}
 	for (int i = 0; i < 7; i++) {
 		int go = repos[i].var ? LvN_PcOr(MAP, repos[i].var) : 1;
-		if (go < 0 || (go && !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", repos[i].name, repos[i].n))) {
+		if (go < 0 || (go && !PORT_CALL(CharsNPC, SetReposChars, NULL, "si", repos[i].name, repos[i].n))) {
 			return 0;
 		}
 	}
 	int m = LvN_PcOr(MAP, "_Messenger");
 	if (m > 0) {
-		return LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Messenger", 2L);
+		return PORT_CALL(CharsNPC, SetReposChars, NULL, "si", "Messenger", 2L);
 	}
 	Native_SetInt(&v, 0);
 	return m == 0 && Mode_Import("Messenger") && Mode_SetModVar("Messenger", "MakeMDP", &v);
@@ -259,7 +259,7 @@ static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t e, v;
 	(void)a;
 	(void)out;
-	if (!LV_OWN(MAP, "CreateFicusDeadClass", NULL, "") || !LV_OWN(MAP, "CreateFicus", NULL, "")) {
+	if (!PORT_LOWN(Map, CreateFicusDeadClass, NULL, "") || !PORT_LOWN(Map, CreateFicus, NULL, "")) {
 		return 0;
 	}
 	for (int i = 0; i < 4; i++) {
@@ -267,10 +267,10 @@ static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 	}
-	if (!LV_CALL("Teleport", "Link", NULL, "ss", "DM_Door_Teleporter_01", "DM_Door_Teleporter_05") ||
-		!LV_CALL("Teleport", "Link", NULL, "ss", "DM_Door_Teleporter_06", "DM_Door_Teleporter_07") ||
-		!Mode_Connect("DM_Door_Elevator_Outskirts", "Outskirts", 0) || !LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Press") ||
-		!Mode_Import("GateKeeper") || !LV_CALL("GateKeeper", "SetDoor", NULL, "ss", "GateKeeper_07", "DM_Door_Teleporter_07") ||
+	if (!PORT_CALL(Teleport, Link, NULL, "ss", "DM_Door_Teleporter_01", "DM_Door_Teleporter_05") ||
+		!PORT_CALL(Teleport, Link, NULL, "ss", "DM_Door_Teleporter_06", "DM_Door_Teleporter_07") ||
+		!Mode_Connect("DM_Door_Elevator_Outskirts", "Outskirts", 0) || !PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_Metro_Press") ||
+		!Mode_Import("GateKeeper") || !PORT_CALL(GateKeeper, SetDoor, NULL, "ss", "GateKeeper_07", "DM_Door_Teleporter_07") ||
 		!Mode_DoorFoe("GateKeeper_07", LvN_SaveIs("Police.FicusDeath", "1") ? "PoliceGroupGateKeeper" : "NoOneGroupGateKeeper") ||
 		!PO_ENTS("DM_Door_Teleporter_07", "UseFunc", "GateKeeper.UseDoor")) {
 		return 0;
@@ -286,8 +286,8 @@ static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	ok = Mode_SetModVar("InTraffic", "N_TrafficList", &v);
 	Native_Free(&v);
 	Native_SetInt(&v, 25);
-	if (!ok || !Mode_SetModVar("InTraffic", "N_NumTraffic", &v) || !LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") ||
-		!LV_CALL("InTraffic", "FakeTraffic", NULL, "")) {
+	if (!ok || !Mode_SetModVar("InTraffic", "N_NumTraffic", &v) || !PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "") ||
+		!PORT_CALL(InTraffic, FakeTraffic, NULL, "")) {
 		return 0;
 	}
 	if (LvN_SaveIs("CostumeAtPolice", "1")) {
