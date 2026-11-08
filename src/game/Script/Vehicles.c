@@ -9,9 +9,11 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
  * variables of the module are read where the script reads them as its globals (OBJLIB 5: the missions and the cases set
  * OnDeathCallback, ForceDeathTaunt and the factors). The ships, missiles and cameras are handle values (OBJLIB 7). The
- * module's own functions the script calls as its globals stay so (a mission, a net weapon or a case may replace one),
- * the net chain stays Script_Hook on Net's functions and the hooks LastClientCreate, LastClientAfterCreate and
- * OnDeathCallback are called as values (OBJLIB 3). Other ports and SFX, SAI, SWeap, SNet, SLogic, string.find,
+ * other ports are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
+ * by name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
+ * global: a mission, a net weapon or a case may replace one). The net chain stays Script_Hook on Net's functions, the
+ * hooks LastClientCreate and LastClientAfterCreate are called through the module's globals by name and OnDeathCallback
+ * and the ShipCallback functions of ShipMaker as values (OBJLIB 5: variables). SFX, SAI, SWeap, SNet, SLogic,
  * Scrap.SetCam and SSound.PlaySound (its six arguments) stay by name; Scrap.GetEntity, CreateEntity, UsrEntity,
  * GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The texts of
  * the net resources of the lost engines ("DmM:<model>") stay as they were.
@@ -24,9 +26,6 @@
 #include "game/Script/levels/Levels.h"
 
 #define VEH "Vehicles"
-
-/* a function of the module through its global (a mission, a net weapon or a case may replace it) */
-#define VEH_OWN(name, out, ...) Native_CallGlobal(VEH, name, out, __VA_ARGS__)
 
 /* if SVec.Mod(Vel) > 1000: Vel = SVec.Prod(SVec.Norm(Vel), 1000) */
 static byte Veh_Limit(const nativeVal_t *vel, nativeVal_t *out) {
@@ -154,10 +153,11 @@ static byte Veh_ClientCreateN(const nativeVal_t *name, const nativeVal_t *res) {
 	byte ok = mine >= 0;
 	if (mine > 0) {
 		Mode_Ints3(&z, 0, 0, 0);
-		ok = VEH_OWN("CreateDumbMotor", &l, "vvvv", name, &z, &z, &model) && LvN_SetS(&l, "OnHit", "Vehicles.MotorHit");
+		ok = PORT_OWN(Vehicles, CreateDumbMotor, &l, "vvvv", name, &z, &z, &model) && LvN_SetS(&l, "OnHit", "Vehicles.MotorHit");
 		Native_Free(&z);
 	} else if (ok) {
-		ok = VEH_OWN("LastClientCreate", NULL, "vv", name, res);
+		/* OBJLIB 5: the hook of the net chain, a variable of the module */
+		ok = Native_CallGlobal(VEH, "LastClientCreate", NULL, "vv", name, res);
 	}
 	Native_Free(&model);
 	Native_Free(&l);
@@ -168,14 +168,16 @@ static byte Veh_ClientAfterCreateN(const nativeVal_t *name, const nativeVal_t *r
 	nativeVal_t model;
 	Native_SetNone(&model);
 	int mine = Veh_IsMotor(res, &model);
-	byte ok = mine >= 0 && (mine ? VEH_OWN("SetUpDumbMotor", NULL, "vv", name, &model) : VEH_OWN("LastClientAfterCreate", NULL, "vv", name, res));
+	/* OBJLIB 5: LastClientAfterCreate, the hook of the net chain, is a variable of the module */
+	byte ok = mine >= 0 && (mine ? PORT_OWN(Vehicles, SetUpDumbMotor, NULL, "vv", name, &model) :
+		Native_CallGlobal(VEH, "LastClientAfterCreate", NULL, "vv", name, res));
 	Native_Free(&model);
 	return ok;
 }
 
 /* ServerMotorHit(Missile, winner, looser): MotorHit, the one hit loses 80 (hit by itself when nobody shot) */
 static byte Veh_ServerMotorHitN(const nativeVal_t *msl, const nativeVal_t *winner, const nativeVal_t *looser) {
-	if (!VEH_OWN("MotorHit", NULL, "vvv", msl, winner, looser)) {
+	if (!PORT_OWN(Vehicles, MotorHit, NULL, "vvv", msl, winner, looser)) {
 		return 0;
 	}
 	if (Native_IsStr(looser, "")) {
@@ -452,7 +454,7 @@ static byte Veh_LosePlayerShip(void) {
 	Mode_SetModVar("Parking", "PlayerShip", none);
 	Native_Free(ship);
 	return Mode_Done(&t, LvN_ModGet("Sputnik", "spt", spt) && Mode_VObj(spt, "Pos", at) &&
-		Native_CallMod("Parking", "CreatePlayerShip", NULL, "v", at) && LvN_ModGet("Parking", "PlayerShip", ship) &&
+		PORT_CALL(Parking, CreatePlayerShip, NULL, "v", at) && LvN_ModGet("Parking", "PlayerShip", ship) &&
 		LvN_SetI(ship, "Active", 0) && LvN_ModGet("Parking", "DtritusPlate", plate) && LvN_SetI(plate, "Active", 0));
 }
 
@@ -591,7 +593,7 @@ static byte Veh_Taunt(const nativeVal_t *v, const nativeVal_t *winner) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, Native_CallMod("Speech", "RemoteComunication", NULL, "vvi", text, head, -3L) &&
+	return Mode_Done(&t, PORT_CALL(Speech, RemoteComunication, NULL, "vvi", text, head, -3L) &&
 		Native_CallMod("SLogic", "UpdateTauntEndTime", NULL, ""));
 }
 
@@ -604,19 +606,19 @@ static byte Veh_DeathSingle(const nativeVal_t *v, const nativeVal_t *looser, con
 		return Mode_Done(&t, 0);
 	}
 	int same = Mode_Cmp(looser, "==", taunt);
-	if (same < 0 || (same && (!Mode_GVarSetI("RemainTalkTime", 0) || !Native_CallMod("Speech", "AbortSpeech", NULL, "")))) {
+	if (same < 0 || (same && (!Mode_GVarSetI("RemainTalkTime", 0) || !PORT_CALL(Speech, AbortSpeech, NULL, "")))) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_VObj(v, "EntityList", list)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_IsStr(list, "Players")) {
-		if (!Mode_PrintV(Mode_S(&t, "GAME OVER")) || !Native_CallMod("Parking", "SetDtritusPlate", NULL, "vi", v, 0L)) {
+		if (!Mode_PrintV(Mode_S(&t, "GAME OVER")) || !PORT_CALL(Parking, SetDtritusPlate, NULL, "vi", v, 0L)) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Native_CallMod("Parking", "ParkedDeat", parked, "vv", v, winner) ||
-		(!Native_True(parked) && (!Mode_Import("MisItems") || !Native_CallMod("MisItems", "OnVehicleDeat", NULL, "v", v)))) {
+	if (!PORT_CALL(Parking, ParkedDeat, parked, "vv", v, winner) ||
+		(!Native_True(parked) && (!Mode_Import("MisItems") || !PORT_CALL(MisItems, OnVehicleDeat, NULL, "v", v)))) {
 		return Mode_Done(&t, 0);
 	}
 	if (!LvN_ModGet("Parking", "PlayerShip", ship) || !Mode_VObj(ship, "Name", sname) || !Mode_VObj(v, "Name", vname)) {
@@ -666,7 +668,7 @@ static byte Veh_Motors(const nativeVal_t *v) {
 			}
 			Str_Printf(var, sizeof(var), "AEng%d%c", k, (int)('A' + i));
 			if (!Mode_VObj(v, var, ang) || !Native_CallMod("SNet", "GetObjName", oname, "") ||
-				!VEH_OWN("CreateDumbMotor", l, "vvvv", oname, pos, ang, model) || !LvN_SetS(l, "OnHit", "Vehicles.ServerMotorHit") ||
+				!PORT_OWN(Vehicles, CreateDumbMotor, l, "vvvv", oname, pos, ang, model) || !LvN_SetS(l, "OnHit", "Vehicles.ServerMotorHit") ||
 				!LvN_SetS(l, "HitType", "None") || !LvN_ModGet("Init", "OffLineGame", off)) {
 				return Mode_Done(&t, 0);
 			}
@@ -679,7 +681,7 @@ static byte Veh_Motors(const nativeVal_t *v) {
 			Native_Copy(Native_Append(args), l);
 			Native_SetStr(Native_Append(args), "Hit");
 			if (!Mode_VSet(l, "LifeTime", life) || !Mode_LaterIn(0.3, VEH, "ActivateHitType", args->items, 2, NULL) ||
-				!Mode_VObj(l, "Name", lname) || !VEH_OWN("SetUpDumbMotor", NULL, "vv", lname, model)) {
+				!Mode_VObj(l, "Name", lname) || !PORT_OWN(Vehicles, SetUpDumbMotor, NULL, "vv", lname, model)) {
 				return Mode_Done(&t, 0);
 			}
 			Mode_Release(&t, mark);
@@ -695,7 +697,7 @@ static byte Veh_OnDeathN(const nativeVal_t *looser, const nativeVal_t *winner) {
 	nativeVal_t *v = Mode_V(&t), *x = Mode_V(&t), *split = Mode_V(&t), *cb = Mode_V(&t);
 	if (!Mode_Import("string") || !Mode_Import("Init") || !Mode_Import("Parking") || !Mode_Import("Speech") || !Mode_EntitySeam(looser, v) ||
 		!Mode_VObjRead(v, "Pos", x) || !Mode_VObjRead(v, "Ang", x) || !Mode_VObjRead(v, "Vel", x) || !Mode_VObjRead(v, "Model", x) ||
-		!VEH_OWN("OnClientDeath", NULL, "vv", looser, winner)) {
+		!PORT_OWN(Vehicles, OnClientDeath, NULL, "vv", looser, winner)) {
 		return Mode_Done(&t, 0);
 	}
 	int single = Native_NetOff();
@@ -703,7 +705,7 @@ static byte Veh_OnDeathN(const nativeVal_t *looser, const nativeVal_t *winner) {
 		single = Native_GVarGet("SplitScreen", split) ? LvN_EqI(split, 0) : -1;
 	}
 	if (single < 0 || (single && !Veh_DeathSingle(v, looser, winner)) || !Mode_Import("Items") ||
-		!Native_CallMod("Items", "DropAll", NULL, "v", looser) || !Veh_Motors(v) || !Mode_G(VEH, "OnDeathCallback", cb)) {
+		!PORT_CALL(Items, DropAll, NULL, "v", looser) || !Veh_Motors(v) || !Mode_G(VEH, "OnDeathCallback", cb)) {
 		return Mode_Done(&t, 0);
 	}
 	const nativeVal_t params[2] = { *looser, *winner };
@@ -721,7 +723,7 @@ static byte Veh_SwitchViewN(const nativeVal_t *camName, const nativeVal_t *id) {
 		return Mode_Done(&t, on == 0);
 	}
 	if ((Mode_ActionSetIs("Racer") || Mode_ActionSetIs("Walk")) &&
-		(!Mode_Import("RacerScorer") || !Native_CallMod("RacerScorer", "Create", NULL, "v", id))) {
+		(!Mode_Import("RacerScorer") || !PORT_CALL(RacerScorer, Create, NULL, "v", id))) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_EntitySeam(camName, cam) || !Mode_VObj(cam, "MainTarget", main) || !Mode_EntitySeam(main, ply) || !Mode_VObj(cam, "Target", tg) ||
@@ -810,7 +812,7 @@ static byte Veh_ReSpawnShipN(const nativeVal_t *name) {
 		}
 	} else if (!LvN_SetS(v, "OnDeath", "Vehicles.OnDeath") || !LvN_SetI(v, "Active", 1) || !Mode_VObj(v, "MaxLife", life) ||
 		!Mode_VSet(v, "Life", life) || !LvN_SetInts3(v, "Vel", 0, 0, 0) || !LvN_SetI(v, "ForceAll", 1) || !Veh_Restock(v) ||
-		!Native_CallMod("Parking", "SetDtritusPlate", NULL, "vi", v, 1L)) {
+		!PORT_CALL(Parking, SetDtritusPlate, NULL, "vi", v, 1L)) {
 		return Mode_Done(&t, 0);
 	}
 	for (size_t i = 0; i < sizeof(reset) / sizeof(reset[0]); i++) {
@@ -870,11 +872,11 @@ static byte Veh_SetPropertiesN(const nativeVal_t *const *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Native_CallMod("ShipMaker", "SetShipParams", valid, "v", name)) {
+	if (!PORT_CALL(ShipMaker, SetShipParams, valid, "v", name)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(valid)) {
-		if (!VEH_OWN("ReSpawnShip", NULL, "v", name) || !Native_CallMod("OutSound", "SetVehicleSounds", NULL, "v", name)) {
+		if (!PORT_OWN(Vehicles, ReSpawnShip, NULL, "v", name) || !PORT_CALL(OutSound, SetVehicleSounds, NULL, "v", name)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Copy(out, v);
@@ -902,15 +904,15 @@ static byte Veh_SetStdPropertiesN(const nativeVal_t *name, const nativeVal_t *mo
 	}
 	Native_Free(up);
 	return Mode_Done(&t, Native_Upper(model, up) && Mode_Cat(&t, key, 2, Mode_S(&t, "SHIP_"), up) && Mode_LangV(key, title) &&
-		VEH_OWN("SetProperties", NULL, "vvvvvvvvvv", name, &it[0], &it[6], pilot, &it[1], &it[2], &it[3], &it[4], &it[5], title));
+		PORT_OWN(Vehicles, SetProperties, NULL, "vvvvvvvvvv", name, &it[0], &it[6], pilot, &it[1], &it[2], &it[3], &it[4], &it[5], title));
 }
 
 /* Init(): the net chain, then ShipMaker and OutSound */
 static byte Veh_InitN(void) {
-	/* OBJLIB 3: the chains of Net's functions stay Python functions until they are C hook pointers */
+	/* OBJLIB 5: the chains of Net's functions stay Python functions until they are C hook pointers */
 	if (!Mode_Import("Net") || !Script_Hook(VEH, "Net", "ClientAfterCreate", "LastClientAfterCreate") ||
 		!Script_Hook(VEH, "Net", "ClientCreate", "LastClientCreate") || !Mode_Import("ShipMaker") ||
-		!Native_CallMod("ShipMaker", "Init", NULL, "") || !Mode_Import("OutSound") || !Native_CallMod("OutSound", "Init", NULL, "")) {
+		!PORT_CALL(ShipMaker, Init, NULL, "") || !Mode_Import("OutSound") || !PORT_CALL(OutSound, Init, NULL, "")) {
 		return 0;
 	}
 	return Mode_PrintS("Vehicle.Init() executed.");
