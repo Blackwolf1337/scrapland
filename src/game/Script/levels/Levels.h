@@ -183,7 +183,7 @@ byte LvN_Speakers(const nativeVal_t *usr, const nativeVal_t *ch);
  * the form with names for a function only known at run time */
 byte LvN_OnEnd(const char *module, const char *func, const nativeVal_t *params);
 byte LvN_OnEndRef(const portRef_t *ref, const nativeVal_t *params);
-#define LV_ONEND(module, name, params) LvN_OnEndRef(&PORT_LREF(module, name), params)
+#define LV_ONEND(module, name, params) LvN_OnEndRef(&PORT_LREF_(PORT_LEVEL, module##_##name), params)
 /* the lines of Lv_Stay on a handle value */
 byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target);
 /* CharsNPC.CharRes[name].CallbackFunc.append(func) with func the global of module, and the same after
@@ -224,7 +224,7 @@ byte LvN_Draw(void);
 byte LvN_ScorerOff(void);
 byte LvN_ScorerCallG(const char *module, const char *func);
 byte LvN_ScorerRef(const portRef_t *ref);
-#define LV_SCORERG(module, name) LvN_ScorerRef(&PORT_LREF(module, name))
+#define LV_SCORERG(module, name) LvN_ScorerRef(&PORT_LREF_(PORT_LEVEL, module##_##name))
 /* MissionsFuncs.SetNextMission(lib, map); SaveGame.MMDesc(desc, 1) */
 byte LvN_Next(const char *lib, const char *map, const char *desc);
 /* Scrap.GetEntity(name) of a C name as the handle value */

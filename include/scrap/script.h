@@ -453,12 +453,12 @@ byte Sf_Run(scriptFrame_t *f, const char *module, const char *func, const char *
 struct portSite_s;
 PyObject *Sf_Port(scriptFrame_t *f, struct portSite_s *site, const char *fmt, ...);
 byte Sf_PortRun(scriptFrame_t *f, struct portSite_s *site, const char *fmt, ...);
-#define SF_CALL(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_REF(module, name), 0), __VA_ARGS__)
-#define SF_OWN(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_REF(module, name), 1), __VA_ARGS__)
-#define SF_RUN(f, module, name, ...) Sf_PortRun(f, PORT_SITE(PORT_REF(module, name), 0), __VA_ARGS__)
-#define SF_LCALL(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_LREF(module, name), 0), __VA_ARGS__)
-#define SF_LOWN(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_LREF(module, name), 1), __VA_ARGS__)
-#define SF_LRUN(f, module, name, ...) Sf_PortRun(f, PORT_SITE(PORT_LREF(module, name), 0), __VA_ARGS__)
+#define SF_CALL(f, module, name, ...) Sf_Port(f, PORT_SITE(port_##module##_##name, 0), __VA_ARGS__)
+#define SF_OWN(f, module, name, ...) Sf_Port(f, PORT_SITE(port_##module##_##name, 1), __VA_ARGS__)
+#define SF_RUN(f, module, name, ...) Sf_PortRun(f, PORT_SITE(port_##module##_##name, 0), __VA_ARGS__)
+#define SF_LCALL(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 0), __VA_ARGS__)
+#define SF_LOWN(f, module, name, ...) Sf_Port(f, PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 1), __VA_ARGS__)
+#define SF_LRUN(f, module, name, ...) Sf_PortRun(f, PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 0), __VA_ARGS__)
 /*
  * the tables of the level scripts (scenes, ship profiles): a value as text (len -1 for the whole text) is an int
  * ("205"), a float ("0.7"), "%Module.name" (an attribute of a module), "^Module.Func:text" (Module.Func("text")),

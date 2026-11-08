@@ -458,23 +458,29 @@ byte Port_Arity(int n, int nargs);
 /* the sites that ran since the start, the last one first (OBJLIB 7: the counters of the test channel) */
 portSite_t *Port_Sites(void);
 
+/* the ref names: the module and the function pasted at once, in the macro the site writes, so that a module whose
+ * name is also a macro of the file (#define CTF "CTF") is not replaced first */
 #define PORT_REF(module, name) port_##module##_##name
-#define PORT_LREF(module, name) PORT_LREF1(PORT_LEVEL, module, name)
-#define PORT_XREF(level, module, name) PORT_LREF1(level, module, name)
-#define PORT_LREF1(level, module, name) PORT_LREF2(level, module, name)
-#define PORT_LREF2(level, module, name) port_##level##_##module##_##name
+#define PORT_LREF(module, name) PORT_LREF_(PORT_LEVEL, module##_##name)
+#define PORT_XREF(level, module, name) PORT_LREF_(level, module##_##name)
+#define PORT_LREF_(level, func) PORT_LREF__(level, func)
+#define PORT_LREF__(level, func) port_##level##_##func
 #define PORT_SITE(pref, own) \
 	(&(static portSite_t){ .ref = &(pref), .global = (own), .file = __FILE__, .line = __LINE__ })
-#define PORT_CALL(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_REF(module, name), 0), out, __VA_ARGS__)
-#define PORT_OWN(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_REF(module, name), 1), out, __VA_ARGS__)
-#define PORT_LCALL(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_LREF(module, name), 0), out, __VA_ARGS__)
-#define PORT_LOWN(module, name, out, ...) Port_Invoke(PORT_SITE(PORT_LREF(module, name), 1), out, __VA_ARGS__)
-#define PORT_XCALL(level, module, name, out, ...) Port_Invoke(PORT_SITE(PORT_XREF(level, module, name), 0), out, __VA_ARGS__)
-#define PORT_XOWN(level, module, name, out, ...) Port_Invoke(PORT_SITE(PORT_XREF(level, module, name), 1), out, __VA_ARGS__)
-#define PORT_ASK(module, name, ...) Port_Ask(PORT_SITE(PORT_REF(module, name), 0), __VA_ARGS__)
-#define PORT_OWNASK(module, name, ...) Port_Ask(PORT_SITE(PORT_REF(module, name), 1), __VA_ARGS__)
-#define PORT_LASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF(module, name), 0), __VA_ARGS__)
-#define PORT_LOWNASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF(module, name), 1), __VA_ARGS__)
+#define PORT_CALL(module, name, out, ...) Port_Invoke(PORT_SITE(port_##module##_##name, 0), out, __VA_ARGS__)
+#define PORT_OWN(module, name, out, ...) Port_Invoke(PORT_SITE(port_##module##_##name, 1), out, __VA_ARGS__)
+#define PORT_LCALL(module, name, out, ...) \
+	Port_Invoke(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 0), out, __VA_ARGS__)
+#define PORT_LOWN(module, name, out, ...) \
+	Port_Invoke(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 1), out, __VA_ARGS__)
+#define PORT_XCALL(level, module, name, out, ...) \
+	Port_Invoke(PORT_SITE(PORT_LREF_(level, module##_##name), 0), out, __VA_ARGS__)
+#define PORT_XOWN(level, module, name, out, ...) \
+	Port_Invoke(PORT_SITE(PORT_LREF_(level, module##_##name), 1), out, __VA_ARGS__)
+#define PORT_ASK(module, name, ...) Port_Ask(PORT_SITE(port_##module##_##name, 0), __VA_ARGS__)
+#define PORT_OWNASK(module, name, ...) Port_Ask(PORT_SITE(port_##module##_##name, 1), __VA_ARGS__)
+#define PORT_LASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 0), __VA_ARGS__)
+#define PORT_LOWNASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 1), __VA_ARGS__)
 
 /* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
  * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL

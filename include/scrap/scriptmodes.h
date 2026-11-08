@@ -713,7 +713,8 @@ byte Mode_Set0I(const char *item, const char *var, long i);
  * error; OBJLIB 3 and 7): ok passed on */
 byte Mode_Printed(byte ok, const char *module, const char *func);
 /* PORT_CALL(Module, Func, NULL, fmt, ...) with its failure printed so (Script_Call, Mode_PrintedCall of a known name) */
-#define MODE_PRINTED(module, name, ...) Mode_Printed(PORT_CALL(module, name, NULL, __VA_ARGS__), #module, #name)
+#define MODE_PRINTED(module, name, ...) \
+	Mode_Printed(Port_Invoke(PORT_SITE(port_##module##_##name, 0), NULL, __VA_ARGS__), #module, #name)
 
 /* Scrap.Get(name) through its seam: the value as Native_GVarGet gives it (the TypeError of "s" for a name that is no
  * text) */
