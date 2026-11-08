@@ -20,7 +20,8 @@ SCRIPT = os.path.join(ROOT, 'src/game/Script')
 HEADER = os.path.join(ROOT, 'include/scrap/scriptports.h')
 
 TABLE = re.compile(r'\bPyMethodDef\s+(g_\w+)\s*\[\s*\]\s*=\s*\{')
-ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(\w+)')
+# a keyword adapter is cast through void (*)(void): KW(fn) and the like
+ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(?:\(\s*void\s*\(\s*\*\s*\)\s*\(\s*void\s*\)\s*\)\s*)?(\w+)')
 ENTRY = re.compile(r'\bbyte\s+(\w+)_E\s*\(\s*const\s+nativeVal_t\s*\*\s*\w+\s*,\s*int\s+\w+\s*,\s*nativeVal_t\s*\*\s*\w+\s*\)\s*\{')
 ARITY = re.compile(r'Port_Arity\(\s*\w+\s*,\s*\(?(\d+)\)?\s*\)')
 Ref = collections.namedtuple('Ref', 'file level module name adapter nargs')
@@ -103,8 +104,11 @@ def entries(lines):
 	"""adapter -> nargs (None when the entry checks no count) of the entries in preprocessed lines"""
 	text = '\n'.join(t for _, t in lines)
 	out = {}
-	for m in ENTRY.finditer(text):
-		a = ARITY.search(text, m.end(), m.end() + 600)
+	ms = list(ENTRY.finditer(text))
+	for k, m in enumerate(ms):
+		# the count of this entry, not of the next one (an entry of MODE_ANY checks none)
+		end = min(m.end() + 600, ms[k + 1].start() if k + 1 < len(ms) else len(text))
+		a = ARITY.search(text, m.end(), end)
 		out[m.group(1)] = int(a.group(1)) if a else None
 	return out
 

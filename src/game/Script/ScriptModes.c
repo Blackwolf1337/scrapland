@@ -3980,3 +3980,149 @@ byte Mode_SaveCopy(const char *name, const char *from) {
 	Native_Free(&v);
 	return ok;
 }
+
+/* ---- the native entries of stage 3 batch A1 (hand, keyword and PyArg adapters on their entries) ---- */
+
+byte Mode_Arity(int n, int min, int max) {
+	if (n >= min && n <= max) {
+		return 1;
+	}
+	if (min == max) {
+		return Port_Arity(n, max);
+	}
+	/* getargs.c: "at least" the min, "at most" the max */
+	int m = n < min ? min : max;
+	return Native_Raise(NE_TYPE, "function requires %s %d argument%s; %d given", n < min ? "at least" : "at most", m,
+		m == 1 ? "" : "s", n);
+}
+
+/* the counts of a format of Mode_Parse or Mode_KwSlots (its letters, the ones before |) */
+static void Mode_FmtCounts(const char *fmt, int *min, int *max) {
+	*min = -1;
+	*max = 0;
+	for (; *fmt; fmt++) {
+		if (*fmt == '|') {
+			*min = *max;
+		} else {
+			(*max)++;
+		}
+	}
+	if (*min < 0) {
+		*min = *max;
+	}
+}
+
+byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
+	int min, max;
+	va_list va;
+	byte ok = 1;
+	Mode_FmtCounts(fmt, &min, &max);
+	if (!Mode_Arity(n, min, max)) {
+		return 0;
+	}
+	va_start(va, fmt);
+	for (int i = 0; ok && *fmt; fmt++) {
+		if (*fmt == '|') {
+			continue;
+		}
+		switch (*fmt) {
+		case 'i': {
+			int *p = va_arg(va, int *);
+			ok = i >= n || Native_ArgInt(&a[i], p);
+			break;
+		}
+		case 'd': {
+			double *p = va_arg(va, double *);
+			ok = i >= n || Native_ArgDouble(&a[i], p);
+			break;
+		}
+		case 's': {
+			const char **p = va_arg(va, const char **);
+			ok = i >= n || Native_ArgStr(&a[i], i + 1, p);
+			break;
+		}
+		default: {
+			const nativeVal_t **p = va_arg(va, const nativeVal_t **);
+			if (i < n) {
+				*p = &a[i];
+			}
+			break;
+		}
+		}
+		i++;
+	}
+	va_end(va);
+	return ok;
+}
+
+PyObject *Mode_Entry(PyObject *args, portEntry_t entry) {
+	nativeVal_t a[PORT_ARGS], out;
+	int n = PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
+	/* more than PORT_ARGS arguments: the entry raises its arity error before it reads them */
+	for (int i = 0; i < m; i++) {
+		Native_Arg(PyTuple_GET_ITEM(args, i), &a[i]);
+	}
+	Native_SetNone(&out);
+	return Mode_KwOut(a, m, entry(a, n, &out), &out);
+}
+
+void Mode_KwSkip(nativeVal_t *v) {
+	Native_SetNone(v);
+	v->type = NV_OBJ;
+}
+
+byte Mode_KwSlots(const nativeVal_t *a, int n, const char *fmt, nativeVal_t *v, byte *given) {
+	int min, max, req = 0;
+	Mode_FmtCounts(fmt, &min, &max);
+	for (int i = 0; i < max; i++) {
+		given[i] = i < n && !(a[i].type == NV_OBJ && !a[i].obj);
+		if (given[i]) {
+			v[i] = a[i];
+		} else {
+			Native_SetNone(&v[i]);
+		}
+		req += i < min && given[i];
+	}
+	/* PyArg_ParseTupleAndKeywords: the count, then the required ones given by position or name */
+	if (n > max) {
+		return Mode_Arity(n, min, max);
+	}
+	return Mode_Arity(req, min, max);
+}
+
+void Mode_KwDefS(nativeVal_t *v, const byte *given, int i, const char *s) {
+	if (!given[i]) {
+		Native_SetStr(&v[i], s);
+	}
+}
+
+void Mode_KwDefI(nativeVal_t *v, const byte *given, int i, long l) {
+	if (!given[i]) {
+		Native_SetInt(&v[i], l);
+	}
+}
+
+void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f) {
+	if (!given[i]) {
+		Native_SetFloat(&v[i], f);
+	}
+}
+
+PyObject *Mode_KwEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
+	nativeVal_t a[8], out;
+	byte given[8];
+	int n = 0;
+	while (names[n]) {
+		n++;
+	}
+	if (!Mode_Kw(args, kw, fmt, names, n, a, given)) {
+		return NULL;
+	}
+	for (int i = 0; i < n; i++) {
+		if (!given[i]) {
+			Mode_KwSkip(&a[i]);
+		}
+	}
+	Native_SetNone(&out);
+	return Mode_KwOut(a, n, entry(a, n, &out), &out);
+}

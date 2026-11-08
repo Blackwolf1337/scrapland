@@ -423,13 +423,14 @@ portSite_t *Port_Sites(void);
 
 /* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
  * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL
- * for the modules of a level */
+ * for the modules of a level. The adapter is cast through void (*)(void) as a table casts a keyword adapter (three
+ * parameters) */
 #define PORT_DECL(module, name) extern portRef_t port_##module##_##name;
 #define PORT_DECLL(level, module, name) extern portRef_t port_##level##_##module##_##name;
 #define PORT_DEF(module, name, adapter) \
-	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)adapter, adapter##_E };
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E };
 #define PORT_DEFL(level, module, name, adapter) \
-	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)adapter, adapter##_E };
+	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E };
 #define PORTS(file) PORTS_##file
 
 /* ---- the test channel ---- */
