@@ -375,6 +375,7 @@ PORT_DECL(Ffa, OnUsrTest) /* 2 */
 PORT_DECL(Ffa, SvrShowMsg) /* 1 */
 PORT_DECL(Ffa, OnUsrClient) /* 2 */
 PORT_DECL(Ffa, OnUsrServer) /* 2 */
+PORT_DECL(Ffa, Spectate) /* ? */
 PORT_DECL(Ffa, JoinRed) /* 2 */
 PORT_DECL(Ffa, JoinGreen) /* 2 */
 PORT_DECL(Ffa, ReJoinGame) /* 2 */
@@ -387,6 +388,7 @@ PORT_DECL(Ffa, AbortSpectateMode) /* 0 */
 PORT_DECL(Ffa, ServerSpectate) /* 1 */
 PORT_DECL(Ffa, InitClient) /* 0 */
 PORT_DECL(Ffa, StdInitFfa) /* 0 */
+PORT_DECL(Ffa, GetScorerInfo) /* ? */
 PORT_DECL(Ffa, OnPositionChange) /* 6 */
 PORT_DECL(Ffa, isTied) /* 1 */
 PORT_DECL(Ffa, CheckGameStart) /* 0 */
@@ -437,6 +439,7 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, SvrShowMsg, Ffa_SvrShowMsg) \
 	PORT_DEF(Ffa, OnUsrClient, Ffa_OnUsrClient) \
 	PORT_DEF(Ffa, OnUsrServer, Ffa_OnUsrServer) \
+	PORT_DEFK(Ffa, Spectate, Ffa_Spectate) \
 	PORT_DEF(Ffa, JoinRed, Ffa_JoinRed) \
 	PORT_DEF(Ffa, JoinGreen, Ffa_JoinGreen) \
 	PORT_DEF(Ffa, ReJoinGame, Ffa_ReJoinGame) \
@@ -449,6 +452,7 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, ServerSpectate, Ffa_ServerSpectate) \
 	PORT_DEF(Ffa, InitClient, Ffa_InitClient) \
 	PORT_DEF(Ffa, StdInitFfa, Ffa_StdInitFfa) \
+	PORT_DEFK(Ffa, GetScorerInfo, Ffa_GetScorerInfo) \
 	PORT_DEF(Ffa, OnPositionChange, Ffa_OnPositionChange) \
 	PORT_DEF(Ffa, isTied, Ffa_isTied) \
 	PORT_DEF(Ffa, CheckGameStart, Ffa_CheckGameStart) \
