@@ -15,12 +15,12 @@
  * characters handle values (OBJLIB 5, 7): their attributes are read and set the Python way, and the lists of
  * functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read again on
  * each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
- * SLogic.SetOnFloor, SScorer.SetMsgText and the scheduler go through their seams (OBJLIB 7); the save variables,
- * the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice, DTritusDesktop,
- * CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly while the
- * attribute holds the port's function, else by name) and string.find through its native twin; SAI.EnableAIChar and
- * GetReposCharPos and Scrap.GetLangEntries stay by name (OBJLIB 7), the range of a value that is no int too
- * (OBJLIB 9). The module's own functions call each other in C as the port did.
+ * SLogic.SetOnFloor, SScorer.SetMsgText, Scrap.GetLangEntries and the scheduler go through their seams (OBJLIB 7); the
+ * save variables, the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice,
+ * DTritusDesktop, CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly
+ * while the attribute holds the port's function, else by name) and string.find through its native twin;
+ * SAI.EnableAIChar and GetReposCharPos stay by name (OBJLIB 7), the range of a value that is no int too (OBJLIB 9).
+ * The module's own functions call each other in C as the port did.
  */
 #include <limits.h>
 #include <string.h>
@@ -706,12 +706,12 @@ static byte Npc_Generics(modeVals_t *t, const nativeVal_t *act, const nativeVal_
 	return Mode_Cat(t, out, 4, Mode_S(t, "Generics_"), act, type, Mode_S(t, "_"));
 }
 
-/* Scrap.GetLangEntries(key) (OBJLIB 7: by name) != []: 1, 0, -1 */
+/* Scrap.GetLangEntries(key) != []: 1, 0, -1 */
 static int Npc_Entries(const nativeVal_t *key, nativeVal_t *out) {
 	nativeVal_t empty;
 	Native_SetEmpty(&empty, NV_LIST);
 	Native_Free(out);
-	return Native_CallMod("Scrap", "GetLangEntries", out, "v", key) ? Mode_Cmp(out, "!=", &empty) : -1;
+	return Native_LangEntries(key, -1, out) ? Mode_Cmp(out, "!=", &empty) : -1;
 }
 
 /* ClassifyOptions(charType): the options of a type in the language file (Generics_<GameAct><type>_<n>..., earlier
@@ -936,7 +936,7 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 		if (LvN_SaveIs("GameAct", "Epilogue")) {
 			if (Native_IsStr(type, "Bishop") || Native_IsStr(type, "Mercs")) {
 				n = Mode_Cat(&t, key, 4, Mode_S(&t, "Generics_Special"), type, Mode_S(&t, "_"), Mode_S(&t, "1Opt")) &&
-					Native_CallMod("Scrap", "GetLangEntries", special, "v", key) && Mode_Item(special, 0, first) ? 0 : -1;
+					Native_LangEntries(key, -1, special) && Mode_Item(special, 0, first) ? 0 : -1;
 				if (!n) {
 					Native_SetEmpty(list, NV_LIST);
 					Native_Copy(Native_Append(list), first);

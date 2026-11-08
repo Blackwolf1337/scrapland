@@ -98,19 +98,17 @@ static void Main_PutInt(const char *var, long i) {
 	Mode_ModPut("Menu", var, &v);
 }
 
-/* the list of saved games of the engine into *out (OBJLIB 6: a Python list until SaveGames_GetList gives C arrays):
- * 0 when there is none (the error dropped) */
-static byte Main_SaveList(nativeVal_t *out) {
-	PyObject *list = SaveGames_GetList("Save/");
-	Native_SetNone(out);
-	if (!list) {
-		PyErr_Clear();
-		return 0;
+/* the list of saved games of the engine into *out: [(desc, slot), ...] as Scrap.GetSaveGamesList gives it */
+static void Main_SaveList(nativeVal_t *out) {
+	cSaveGameInfo saves[SAVE_SLOTS];
+	int n = SaveGames_GetList("Save/", saves);
+	Native_SetEmpty(out, NV_LIST);
+	for (int i = 0; i < n; i++) {
+		nativeVal_t *e = Native_Append(out);
+		Native_SetEmpty(e, NV_TUPLE);
+		Native_SetText(Native_Append(e), saves[i].desc, (int)strlen(saves[i].desc));
+		Native_SetInt(Native_Append(e), saves[i].slot);
 	}
-	Native_Arg(list, out);
-	Mode_ElemsIn(out);
-	Py_DECREF(list);
-	return 1;
 }
 
 /* len(seq) as PySequence_Length takes it: -1 for a value without length (the error dropped, the -1 kept as the C kept
@@ -137,9 +135,7 @@ static byte Main_SavesVar(nativeVal_t *out) {
 /* the number of saved games; the list goes to Menu.saveGamesList when keep */
 static int Main_SaveGames(byte keep) {
 	nativeVal_t list;
-	if (!Main_SaveList(&list)) {
-		return 0;
-	}
+	Main_SaveList(&list);
 	int n = Main_Len(&list);
 	if (keep) {
 		Mode_ModPut("Menu", "saveGamesList", &list);
@@ -440,9 +436,7 @@ static void Main_AddEntry(nativeVal_t *list, const char *text, const char *func)
 /* the menu of the saved games: load (all) or save (without the automatic one, a new slot first while there is room) */
 static void Main_GamesMenu(int id, byte save) {
 	nativeVal_t list, name0 = { 0 }, entries;
-	if (!Main_SaveList(&list)) {
-		Native_SetEmpty(&list, NV_LIST);
-	}
+	Main_SaveList(&list);
 	int n = Main_Len(&list);
 	char first[0x100] = "";
 	if (n > 0 && Main_Entry(&list, 0, 0, &name0) && name0.type == NV_STR) {

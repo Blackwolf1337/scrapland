@@ -139,13 +139,12 @@ const char *Lang_GetLanguage(void) {
 
 /*
  * GetLangEntries(id, n): the ids from id on in file order while they keep the prefix of id without its last 4
- * characters; of every group of n lines the first id goes into the list, cut to its length - 3 (the group
- * number). At most 10.
+ * characters; of every group of n lines the first id goes into out, cut to its length - 3 (the group number). At
+ * most LANG_ENTRIES (the original checked it after storing the tenth, so a tenth one fails the check).
  */
-PyObject *Lang_GetEntries(const char *name, int n) {
-	char prefix[0x100];
-	char key[0x100];
-	PyObject *items[10];
+int Lang_GetEntries(const char *name, int n, char out[LANG_ENTRIES][LANG_ID]) {
+	char prefix[LANG_ID];
+	char key[LANG_ID];
 	int len = (int)strlen(name);
 	int count = 0, j = 0;
 
@@ -168,8 +167,8 @@ PyObject *Lang_GetEntries(const char *name, int n) {
 				crt_report_rangecheckfailure();
 			}
 			key[len - 3] = 0;
-			items[j++] = PyString_FromString(key);
-			CHECK(j < 10);
+			Str_Copy(out[j++], key, LANG_ID);
+			CHECK(j < LANG_ENTRIES);
 		} else if (count == n) {
 			count = 0;
 			len = (int)strlen(next);
@@ -179,12 +178,7 @@ PyObject *Lang_GetEntries(const char *name, int n) {
 		}
 		Str_Copy(key, next, sizeof(key));
 	}
-	PyObject *list = PyList_New(j);
-	CHECK(list);
-	for (int i = 0; i < j; i++) {
-		PyList_SetItem(list, i, items[i]);
-	}
-	return list;
+	return j;
 }
 
 /* parses the file into the table; a line goes up to CR, or to LF when nothing follows the CR */
