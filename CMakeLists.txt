@@ -1,8 +1,4 @@
 cmake_minimum_required(VERSION 3.25)
-# a build folder configured before (its cache has the variables of project()); for SCRAP_NO_PYTHON below
-if(DEFINED CACHE{scrapdecomp_BINARY_DIR})
-	set(SCRAP_OLD_CACHE ON)
-endif()
 project(scrapdecomp C)
 
 set(CMAKE_C_STANDARD 23)
@@ -116,25 +112,10 @@ target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include
 # Python 1.5.2 for ScrapC.exe from third_party/python-1.5.2 (unchanged), configured like the one in Scrap.exe: our
 # config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
 # src/python that add the engine's changes around the vendored ones (docs/standalone.md)
-# SCRAP_NO_PYTHON (stage 7 of the removal of Python, docs/scripts.md): the library without the interpreter. No
-# parser, tokenizer, grammar, compiler or bytecode loop, no import of .py/.pyc files, no PyRun_*; eval, execfile,
-# compile and input of the builtins and code objects of marshal and new raise. The object library stays. The files
-# of src/python/nopy wrap the vendored ones that keep a part, with the references to what is gone made refusals;
-# --gc-sections drops the rest of them (the bytecode loop, the runners, the compiler, the frame functions).
-# The default since 2026-11-08. -DSCRAP_NO_PYTHON=OFF builds the interpreter as before: the reference build of one round
-# (the update and python modes of golden.sh, litfuzz.sh against the linked Python, the python harness and the pack
-# baselines of tools/test/regress); it goes with the interpreter files. A build folder configured while OFF was the
-# default has OFF in its cache: it is switched to ON once (SCRAP_NO_PYTHON_ON marks a cache that has seen the switch).
-if(SCRAP_OLD_CACHE AND NOT DEFINED CACHE{SCRAP_NO_PYTHON_ON} AND DEFINED CACHE{SCRAP_NO_PYTHON} AND NOT SCRAP_NO_PYTHON)
-	message(NOTICE "SCRAP_NO_PYTHON is ON now, the default since 2026-11-08 (this build folder had the old default OFF); "
-		"configure again with -DSCRAP_NO_PYTHON=OFF for the reference build with the interpreter")
-	set_property(CACHE SCRAP_NO_PYTHON PROPERTY VALUE ON)
-endif()
-set(SCRAP_NO_PYTHON_ON ON CACHE INTERNAL "the build folder has seen the default ON of SCRAP_NO_PYTHON")
-option(SCRAP_NO_PYTHON "build without the Python interpreter (only the object library of Python 1.5.2)" ON)
-if(NOT SCRAP_NO_PYTHON)
-	message(STATUS "SCRAP_NO_PYTHON is OFF: the reference build with the Python interpreter")
-endif()
+# There is no interpreter (stage 7 of the removal of Python, docs/scripts.md): no parser, tokenizer, grammar,
+# compiler or bytecode loop, no import of .py/.pyc files, no PyRun_*; eval, execfile, compile and input of the builtins
+# and code objects of marshal and new raise. The object library stays. The files of src/python/nopy wrap the vendored
+# ones that keep a part; the functions of the interpreter in them are not built (NOPY_DROP, src/python/pyengine.h).
 set(PY152 third_party/python-1.5.2)
 add_library(python152 STATIC
 	src/python/classobject.c
@@ -144,6 +125,12 @@ add_library(python152 STATIC
 	src/python/import.c
 	src/python/intobject.c
 	src/python/listobject.c
+	src/python/nopy/bltinmodule.c
+	src/python/nopy/ceval.c
+	src/python/nopy/compile.c
+	src/python/nopy/marshal.c
+	src/python/nopy/newmodule.c
+	src/python/nopy/nopy.c
 	src/python/pythonrun.c
 	src/python/stringobject.c
 	${PY152}/Modules/errnomodule.c
@@ -188,35 +175,9 @@ add_library(python152 STATIC
 	${PY152}/Python/sysmodule.c
 	${PY152}/Python/traceback.c
 )
-if(SCRAP_NO_PYTHON)
-	target_sources(python152 PRIVATE
-		src/python/nopy/bltinmodule.c
-		src/python/nopy/ceval.c
-		src/python/nopy/compile.c
-		src/python/nopy/marshal.c
-		src/python/nopy/newmodule.c
-		src/python/nopy/nopy.c
-	)
-	target_compile_definitions(python152 PRIVATE SCRAP_NO_PYTHON=1)
-	target_compile_options(python152 PRIVATE -ffunction-sections -fdata-sections)
-else()
-	target_sources(python152 PRIVATE
-		${PY152}/Modules/newmodule.c
-		${PY152}/Parser/acceler.c
-		${PY152}/Parser/bitset.c
-		${PY152}/Parser/grammar1.c
-		${PY152}/Parser/listnode.c
-		${PY152}/Parser/node.c
-		${PY152}/Parser/parser.c
-		${PY152}/Parser/parsetok.c
-		${PY152}/Parser/tokenizer.c
-		${PY152}/Python/bltinmodule.c
-		${PY152}/Python/ceval.c
-		${PY152}/Python/compile.c
-		${PY152}/Python/graminit.c
-		${PY152}/Python/marshal.c
-	)
-endif()
+# --gc-sections (ScrapC below) drops what nothing calls of the object library: 16 KB of code on linux64, 19 KB on
+# win64 (2026-11-08)
+target_compile_options(python152 PRIVATE -ffunction-sections -fdata-sections)
 if(WIN32)
 	# the registry lookup of modules and the DLL handle of the Windows build
 	target_sources(python152 PRIVATE ${PY152}/PC/dl_nt.c ${PY152}/PC/import_nt.c)
@@ -255,7 +216,5 @@ else()
 	# the FFmpeg libraries next to the game
 	set_target_properties(ScrapC PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
 endif()
-if(SCRAP_NO_PYTHON)
-	target_compile_definitions(scrapcode PUBLIC SCRAP_NO_PYTHON=1)
-	target_link_options(ScrapC PRIVATE -Wl,--gc-sections)
-endif()
+# the unused functions of python152 (above)
+target_link_options(ScrapC PRIVATE -Wl,--gc-sections)
