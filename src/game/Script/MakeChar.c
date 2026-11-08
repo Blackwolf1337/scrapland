@@ -833,6 +833,10 @@ static PyObject *MakeChar_AddTurretTalkAct(PyObject *self, PyObject *args, PyObj
 
 #define MC_KW(f) (PyCFunction)(void (*)(void))f, 3
 
+/* the entries of the functions other ports call (OBJLIB 7: on Python values, the conversions of their formats) */
+MODE_PYENTRYKW(MakeChar_CreateRelaxAction)
+MODE_PYENTRY(MakeChar_AddDefMorphActions)
+
 PyMethodDef g_MakeCharMethods[] = {
 	{ "CreateRelaxAction", MC_KW(MakeChar_CreateRelaxAction), NULL },
 	{ "AddRelaxActions", MC_KW(MakeChar_AddRelaxActions), NULL },

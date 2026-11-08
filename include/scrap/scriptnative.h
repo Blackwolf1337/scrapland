@@ -423,7 +423,7 @@ portSite_t *Port_Sites(void);
 
 /* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
  * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL
- * for the modules of a level. The adapter is cast through void (*)(void) as a table casts a keyword adapter (three
+ * for the modules of a level (the cast through void (*)(void) as in the tables: a keyword adapter has three
  * parameters) */
 #define PORT_DECL(module, name) extern portRef_t port_##module##_##name;
 #define PORT_DECLL(level, module, name) extern portRef_t port_##level##_##module##_##name;

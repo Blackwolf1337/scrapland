@@ -269,17 +269,16 @@ static int Ch_AddRes(const nativeVal_t *cls, const nativeVal_t *disc) {
 	return add;
 }
 
-static PyObject *Chars_AddNewCharRes(PyObject *self, PyObject *args) {
-	nativeVal_t a[2], out;
-	(void)self;
-	int n = Ch_Args(args, "O|O", a, 2);
-	if (n == 1) {
-		Native_SetInt(&a[1], 1);
-	}
-	int r = n < 0 ? -1 : Ch_AddRes(&a[0], &a[1]);
-	Native_SetInt(&out, r);
-	return Mode_KwOut(a, 2, r >= 0, &out);
+/* AddNewCharRes(cls, disc=1): the result of Ch_AddRes */
+static byte Ch_AddResArgs(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t one;
+	Native_SetInt(&one, 1);
+	int r = Ch_AddRes(&a[0], n > 1 ? &a[1] : &one);
+	Native_SetInt(out, r);
+	return r >= 0;
 }
+
+MODE_FNOPT(Chars, AddNewCharRes, 1, 2, Ch_AddResArgs(a, n, out))
 
 /* the AddNewCharRes of a C text */
 static int Ch_AddResS(const char *cls, long disc) {

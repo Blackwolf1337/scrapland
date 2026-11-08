@@ -111,19 +111,10 @@ static byte HT_ShowPrediction(int id, byte up) {
 	return Mode_Done(&t, 1);
 }
 
-/* the adapters of the functions (id, control, lostfocus) */
-#define HT_ICO(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		PyObject *control, *lost; \
-		(void)self; \
-		return PyArg_ParseTuple(args, "iOO", &id, &control, &lost) ? Mode_Result(call) : NULL; \
-	}
-
-HT_ICO(HT_ShowHullPredictionUp, HT_ShowPrediction(id, 1))
-HT_ICO(HT_HideHullPredictionUp, (HT_HidePrediction(id, "WeightUp"), 1))
-HT_ICO(HT_ShowHullPredictionDown, HT_ShowPrediction(id, 0))
-HT_ICO(HT_HideHullPredictionDown, (HT_HidePrediction(id, "WeightDown"), 1))
+MODE_IFN(HT_ShowHullPredictionUp, 3, HT_ShowPrediction(id, 1))
+MODE_IFN(HT_HideHullPredictionUp, 3, (HT_HidePrediction(id, "WeightUp"), 1))
+MODE_IFN(HT_ShowHullPredictionDown, 3, HT_ShowPrediction(id, 0))
+MODE_IFN(HT_HideHullPredictionDown, 3, (HT_HidePrediction(id, "WeightDown"), 1))
 
 /* prevShip.MaxLife == prevShip.MinLife (other 1), or prevShip.MaxLife == ShipTon[...][1] (other 0): 1 or 0, -1 with
  * the error */
@@ -231,16 +222,8 @@ static byte HT_StepHull(int id, int step) {
 	return Mode_Done(&t, ok);
 }
 
-#define HT_IC(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		PyObject *control; \
-		(void)self; \
-		return PyArg_ParseTuple(args, "iO", &id, &control) ? Mode_Result(call) : NULL; \
-	}
-
-HT_IC(HT_IncrementHull, HT_StepHull(id, 1))
-HT_IC(HT_DecrementHull, HT_StepHull(id, -1))
+MODE_IFN(HT_IncrementHull, 2, HT_StepHull(id, 1))
+MODE_IFN(HT_DecrementHull, 2, HT_StepHull(id, -1))
 
 /* ShipEdit.IsEditingMultiplayer() != 1: 1 or 0, -1 with the error */
 static int HT_Single(void) {
@@ -481,15 +464,7 @@ static byte HT_SetHullState(int id) {
 	return Mode_Done(&t, ok);
 }
 
-/* the adapters of the functions (id) */
-#define HT_I(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		(void)self; \
-		return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(call) : NULL; \
-	}
-
-HT_I(HT_SetHullStatePy, HT_SetHullState(id))
+MODE_IFN(HT_SetHullStatePy, 1, HT_SetHullState(id))
 
 /* HullSliderChange(id, control): the plates the slider asks for; it stops where none more could be put on */
 static byte HT_SliderChange(int id) {
@@ -524,7 +499,7 @@ static byte HT_SliderChange(int id) {
 		(Mode_ShipGet("MaxLife", forced) && Mode_ScorerPut(id, "HullSlider", "MaxValueForced", forced)));
 }
 
-HT_IC(HT_HullSliderChange, HT_SliderChange(id))
+MODE_IFN(HT_HullSliderChange, 2, HT_SliderChange(id))
 
 /* SetHullPanel(id): the items of the tab, hidden */
 static byte HT_SetPanel(int id) {
@@ -537,7 +512,7 @@ static byte HT_SetPanel(int id) {
 	return ok;
 }
 
-HT_I(HT_SetHullPanel, HT_SetPanel(id))
+MODE_IFN(HT_SetHullPanel, 1, HT_SetPanel(id))
 
 /* ShowHullPanel(id): the tab with the hull of the ship being edited */
 static byte HT_ShowPanel(int id) {
@@ -563,7 +538,7 @@ static byte HT_ShowPanel(int id) {
 	return Mode_Done(&t, ok);
 }
 
-HT_I(HT_ShowHullPanel, HT_ShowPanel(id))
+MODE_IFN(HT_ShowHullPanel, 1, HT_ShowPanel(id))
 
 /* SetHullVisible(id, bVisible) */
 static byte HT_SetVisible(int id, const nativeVal_t *v) {
@@ -602,7 +577,7 @@ static byte HT_HidePanel(int id) {
 	return ok;
 }
 
-HT_I(HT_HideHullPanel, HT_HidePanel(id))
+MODE_IFN(HT_HideHullPanel, 1, HT_HidePanel(id))
 
 PyMethodDef g_HullTabMethods[] = {
 	{ "ShowHullPredictionUp", HT_ShowHullPredictionUp, 1, NULL },
@@ -621,3 +596,5 @@ PyMethodDef g_HullTabMethods[] = {
 	{ "HideHullPanel", HT_HideHullPanel, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(HullTab)

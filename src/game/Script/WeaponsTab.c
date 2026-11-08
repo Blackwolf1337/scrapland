@@ -325,48 +325,8 @@ static byte WT_WeightPrediction(int id, const nativeVal_t *control, nativeVal_t 
 	return Mode_Done(&t, 1);
 }
 
-/* the adapters of the functions (id, control, lostfocus) and (id, control) */
-#define WT_ICO(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		PyObject *co, *lo; \
-		nativeVal_t control, lost, out = { 0 }; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "iOO", &id, &co, &lo)) { \
-			return NULL; \
-		} \
-		Native_Arg(co, &control); \
-		Native_Arg(lo, &lost); \
-		byte ok = (call); \
-		Native_Free(&control); \
-		Native_Free(&lost); \
-		return Mode_Return(ok, &out); \
-	}
-
-#define WT_IC(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		PyObject *co; \
-		nativeVal_t control; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "iO", &id, &co)) { \
-			return NULL; \
-		} \
-		Native_Arg(co, &control); \
-		byte ok = (call); \
-		Native_Free(&control); \
-		return Mode_Result(ok); \
-	}
-
-#define WT_I(fn, call) \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
-		int id; \
-		(void)self; \
-		return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(call) : NULL; \
-	}
-
-WT_ICO(WT_ShowWeightPrediction, ((void)lost, WT_WeightPrediction(id, &control, &out)))
-WT_ICO(WT_HideWeightPrediction, ((void)control, (void)lost, WT_Run(id, "hideweight", NULL)))
+MODE_IFN(WT_ShowWeightPrediction, 3, WT_WeightPrediction(id, &a[1], out))
+MODE_IFN(WT_HideWeightPrediction, 3, WT_Run(id, "hideweight", NULL))
 
 /* the tab behind a description as wide as its text */
 static void WT_FitTab(int id, const char *text, const char *tab, int margin) {
@@ -434,7 +394,7 @@ static byte WT_ShowWeaponDesc(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, 1);
 }
 
-WT_ICO(WT_ShowWeaponDescPy, ((void)lost, WT_ShowWeaponDesc(id, &control)))
+MODE_IFN(WT_ShowWeaponDescPy, 3, WT_ShowWeaponDesc(id, &a[1]))
 
 /* HideWeaponDesc(id, control, gainfocus) and HideWeaponUpgradeDesc(id, control, gainfocus) */
 static PyObject *WT_HideTwo(PyObject *args, const char *a, const char *b) {
@@ -481,7 +441,7 @@ static byte WT_ShowWeaponUpgradeDesc(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, 1);
 }
 
-WT_ICO(WT_ShowWeaponUpgradeDescPy, ((void)lost, WT_ShowWeaponUpgradeDesc(id, &control)))
+MODE_IFN(WT_ShowWeaponUpgradeDescPy, 3, WT_ShowWeaponUpgradeDesc(id, &a[1]))
 
 /* ShowSlotMarker(id, control, gainfocus): the marker on the slot of the ship, the mass and cost predictions */
 static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVal_t *lost) {
@@ -545,7 +505,7 @@ static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVa
 	return Mode_Done(&t, 1);
 }
 
-WT_ICO(WT_ShowSlotMarkerPy, WT_ShowSlotMarker(id, &control, &lost))
+MODE_IFN(WT_ShowSlotMarkerPy, 3, WT_ShowSlotMarker(id, &a[1], &a[2]))
 
 /* HideSlotMarker(id, control, gainfocus) */
 static byte WT_HideSlotMarker(int id, const nativeVal_t *control, const nativeVal_t *gain) {
@@ -555,7 +515,7 @@ static byte WT_HideSlotMarker(int id, const nativeVal_t *control, const nativeVa
 	return Native_CallGlobal(MOD, "HideWeightPrediction", NULL, "ivv", (long)id, control, gain);
 }
 
-WT_ICO(WT_HideSlotMarkerPy, WT_HideSlotMarker(id, &control, &lost))
+MODE_IFN(WT_HideSlotMarkerPy, 3, WT_HideSlotMarker(id, &a[1], &a[2]))
 
 /* a free slot of the weapon: blocked (DoNothing) when the weapon would make the ship too heavy, else loadable */
 static byte WT_FreeSlot(int id, const char *name, const nativeVal_t *weapon, int heavy, const char *highlight) {
@@ -696,7 +656,7 @@ static byte WT_LoadWeapon(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ok);
 }
 
-WT_IC(WT_LoadWeaponPy, WT_LoadWeapon(id, &control))
+MODE_IFN(WT_LoadWeaponPy, 2, WT_LoadWeapon(id, &a[1]))
 
 /* HideSlots(id, control): the slots and upgrades of the weapon hidden */
 static byte WT_HideSlots(int id, const nativeVal_t *control) {
@@ -735,7 +695,7 @@ static byte WT_HideSlots(int id, const nativeVal_t *control) {
 	return 1;
 }
 
-WT_IC(WT_HideSlotsPy, WT_HideSlots(id, &control))
+MODE_IFN(WT_HideSlotsPy, 2, WT_HideSlots(id, &a[1]))
 
 /* SScorer.Get(id, item, "HighLight") == 1: 1 or 0, -1 with the error */
 static int WT_Lit(int id, const char *item) {
@@ -916,7 +876,7 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ok);
 }
 
-WT_IC(WT_FillSlotsPy, WT_FillSlots(id, &control))
+MODE_IFN(WT_FillSlotsPy, 2, WT_FillSlots(id, &a[1]))
 
 /* the names of upgradeId whose values are a and b (the first by value, "" when none), in its key order: *na and *nb
  * copies (freed first) */
@@ -1104,7 +1064,7 @@ static byte WT_UpdateUpgrades(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ok);
 }
 
-WT_IC(WT_UpdateUpgradesPy, WT_UpdateUpgrades(id, &control))
+MODE_IFN(WT_UpdateUpgradesPy, 2, WT_UpdateUpgrades(id, &a[1]))
 
 /* the button, tile, icon and frame of a weapon in the colours of the state (selected 1) */
 static byte WT_WeaponColors(int id, const nativeVal_t *w, byte selected) {
@@ -1173,7 +1133,7 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ok);
 }
 
-WT_IC(WT_SelectWeaponPy, WT_SelectWeapon(id, &control))
+MODE_IFN(WT_SelectWeaponPy, 2, WT_SelectWeapon(id, &a[1]))
 
 /* HangarTab.prevShip.Upgrd<weapId[prevWeapon]> = <upgradeId[auxUpgradeId2[prevWeapon + "Upgrade" + k]]> and its
  * UAmmo = 200, as the exec lines of the script */
@@ -1293,7 +1253,7 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ok);
 }
 
-WT_IC(WT_SelectUpgradePy, WT_SelectUpgrade(id, &control))
+MODE_IFN(WT_SelectUpgradePy, 2, WT_SelectUpgrade(id, &a[1]))
 
 /* SetWeaponsPanel(id): the items of the tab, hidden */
 static byte WT_SetWeaponsPanel(int id) {
@@ -1337,7 +1297,7 @@ static byte WT_SetWeaponsPanel(int id) {
 	return ok;
 }
 
-WT_I(WT_SetWeaponsPanelPy, WT_SetWeaponsPanel(id))
+MODE_IFN(WT_SetWeaponsPanelPy, 1, WT_SetWeaponsPanel(id))
 
 /* the six weapon buttons as ShowWeaponsPanel shows them; the ones the player has are appended to controlsToLinkList */
 static byte WT_ShowWeapon(int id, const char *w) {
@@ -1432,7 +1392,7 @@ static byte WT_ShowWeaponsPanel(int id) {
 	return ok;
 }
 
-WT_I(WT_ShowWeaponsPanelPy, WT_ShowWeaponsPanel(id))
+MODE_IFN(WT_ShowWeaponsPanelPy, 1, WT_ShowWeaponsPanel(id))
 
 /* HideWeaponsPanel(id) */
 static byte WT_HideWeaponsPanel(int id) {
@@ -1478,7 +1438,7 @@ static byte WT_HideWeaponsPanel(int id) {
 	return ok;
 }
 
-WT_I(WT_HideWeaponsPanelPy, WT_HideWeaponsPanel(id))
+MODE_IFN(WT_HideWeaponsPanelPy, 1, WT_HideWeaponsPanel(id))
 
 PyMethodDef g_WeaponsTabMethods[] = {
 	{ "DoNothing", Mode_PyNone2, 1, NULL },
@@ -1501,3 +1461,5 @@ PyMethodDef g_WeaponsTabMethods[] = {
 	{ "HideWeaponsPanel", WT_HideWeaponsPanelPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(WeaponsTab)

@@ -369,10 +369,7 @@ static PyObject *CreditsText_CreditsScorer(PyObject *self, PyObject *args) {
 	return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(Credits_Scorer(id)) : NULL;
 }
 
-static PyObject *CreditsText_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	return PyArg_ParseTuple(args, "") ? Mode_Result(Credits_Init()) : NULL;
-}
+MODE_FN(CreditsText, Init, 0, Credits_Init())
 
 static PyObject *CreditsText_PrintData(PyObject *self, PyObject *args) {
 	PyObject *vis;
@@ -427,23 +424,20 @@ static PyObject *CreditsText_ShowDown(PyObject *self, PyObject *args) {
 	return !ok ? NULL : res ? res : Py_ReturnNone();
 }
 
-static PyObject *CreditsText_ShowCredit(PyObject *self, PyObject *args) {
-	PyObject *num;
-	nativeVal_t n;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &num) || !Mode_Import("Scorer")) {
-		return NULL;
+/* ShowCredit(num): the page of `num` */
+static byte Credits_ShowNum(const nativeVal_t *num) {
+	if (!Mode_Import("Scorer")) {
+		return 0;
 	}
-	/* `num` */
 	nativeBuf_t rep;
 	Native_BufInit(&rep);
-	Native_Arg(num, &n);
-	Native_Repr(&rep, &n, NR_REPR);
-	Native_Free(&n);
+	Native_Repr(&rep, num, NR_REPR);
 	byte ok = Credits_Show(rep.p);
 	Native_BufFree(&rep);
-	return Mode_Result(ok);
+	return ok;
 }
+
+MODE_FN(CreditsText, ShowCredit, 1, Credits_ShowNum(&a[0]))
 
 PyMethodDef g_CreditsTextMethods[] = {
 	{ "Init", CreditsText_Init, 1, NULL },
@@ -456,3 +450,5 @@ PyMethodDef g_CreditsTextMethods[] = {
 	{ "ShowCredit", CreditsText_ShowCredit, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(CreditsText)

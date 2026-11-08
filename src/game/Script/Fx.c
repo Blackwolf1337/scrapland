@@ -171,61 +171,49 @@ static PyObject *Fx_InitPy(PyObject *self, PyObject *args) {
 	return Mode_Import("Init") && Fx_Init() ? Py_ReturnNone() : NULL;
 }
 
-static PyObject *Fx_GetMotorClass(PyObject *self, PyObject *args) {
-	PyObject *name;
-	nativeVal_t n, r;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name) || !Mode_Import("string")) {
-		return NULL;
+/* GetMotorClass(name): string.upper of a value without a native form raises its TypeError */
+static byte Fx_MotorClassArg(const nativeVal_t *name, nativeVal_t *out) {
+	if (!Mode_Import("string")) {
+		return 0;
 	}
-	if (!Native_FromPyAny(name, &n)) {
-		/* the error of string.upper on a value that has no native form */
-		return Native_Raise(NE_TYPE, "read-only character buffer, %.50s", name->ob_type->tp_name), NULL;
+	if (name->type == NV_OBJ) {
+		return Native_Raise(NE_TYPE, "read-only character buffer, %.50s", Native_TypeName(name));
 	}
-	byte ok = Fx_MotorClass(&n, &r);
-	Native_Free(&n);
-	return ok ? Native_ToPy(&r) : NULL;
+	return Fx_MotorClass(name, out);
 }
 
-static PyObject *Fx_SetUpShipMotors(PyObject *self, PyObject *args) {
-	PyObject *e;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e) || !Mode_Import("string")) {
-		return NULL;
+/* SetUpShipMotors(e) of an entity handle; e.Model of another value: its error (an object that has a Model is no
+ * ship) */
+static byte Fx_MotorsArg(const nativeVal_t *e) {
+	if (!Mode_Import("string")) {
+		return 0;
 	}
-	if (!PyEntity_Check(e)) {
-		/* e.Model of another value: its error (an object that has a Model is no ship) */
-		PyObject *m = Script_GetAttr(e, "Model");
-		if (m) {
-			Py_DECREF(m);
-			Native_Raise(NE_TYPE, "Fx.SetUpShipMotors: not an entity");
-		}
-		return NULL;
+	if (e->type == NV_OBJ && PyEntity_Check(e->obj)) {
+		return Fx_Motors(((cPyEntity *)e->obj)->ref);
 	}
-	return Fx_Motors(((cPyEntity *)e)->ref) ? Py_ReturnNone() : NULL;
+	PyObject *o = Native_ToPy(e), *m = o ? Script_GetAttr(o, "Model") : NULL;
+	Py_XDECREF(o);
+	if (m) {
+		Py_DECREF(m);
+		Native_Raise(NE_TYPE, "Fx.SetUpShipMotors: not an entity");
+	}
+	return 0;
 }
 
-static PyObject *Fx_MoneyTransferPy(PyObject *self, PyObject *args) {
-	PyObject *o[3];
-	nativeVal_t v[3] = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &o[0], &o[1], &o[2])) {
-		return NULL;
-	}
-	byte ok = 1;
-	for (int i = 0; ok && i < 3; i++) {
-		if (!Native_FromPyAny(o[i], &v[i])) {
-			/* a value without a native form: the error of SFX.MoneyTransfer for it */
-			ok = i < 2 ? Native_Raise(NE_TYPE, "argument %d: expected string, %.50s found", i + 1, o[i]->ob_type->tp_name) :
+/* MoneyTransfer(from, to, amount): a value without a native form raises the error of SFX.MoneyTransfer for it */
+static byte Fx_MoneyTransferArgs(const nativeVal_t *v) {
+	for (int i = 0; i < 3; i++) {
+		if (v[i].type == NV_OBJ) {
+			return i < 2 ? Native_Raise(NE_TYPE, "argument %d: expected string, %.50s found", i + 1, Native_TypeName(&v[i])) :
 				Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 		}
 	}
-	ok = ok && Fx_MoneyTransfer(&v[0], &v[1], &v[2]);
-	for (int i = 0; i < 3; i++) {
-		Native_Free(&v[i]);
-	}
-	return ok ? Py_ReturnNone() : NULL;
+	return Fx_MoneyTransfer(&v[0], &v[1], &v[2]);
 }
+
+MODE_FN(Fx, GetMotorClass, 1, Fx_MotorClassArg(&a[0], out))
+MODE_FN(Fx, SetUpShipMotors, 1, Fx_MotorsArg(&a[0]))
+MODE_FN(Fx, MoneyTransferPy, 3, Fx_MoneyTransferArgs(a))
 
 PyMethodDef g_FxMethods[] = {
 	{ "Init", Fx_InitPy, 1, NULL },
@@ -234,3 +222,5 @@ PyMethodDef g_FxMethods[] = {
 	{ "MoneyTransfer", Fx_MoneyTransferPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Fx)

@@ -20,7 +20,7 @@ SCRIPT = os.path.join(ROOT, 'src/game/Script')
 HEADER = os.path.join(ROOT, 'include/scrap/scriptports.h')
 
 TABLE = re.compile(r'\bPyMethodDef\s+(g_\w+)\s*\[\s*\]\s*=\s*\{')
-# a keyword adapter is cast through void (*)(void): KW(fn) and the like
+# a row: { "Name", adapter, ... }, the adapter maybe cast as (PyCFunction) or (PyCFunction)(void (*)(void)) (keywords)
 ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(?:\(\s*void\s*\(\s*\*\s*\)\s*\(\s*void\s*\)\s*\)\s*)?(\w+)')
 ENTRY = re.compile(r'\bbyte\s+(\w+)_E\s*\(\s*const\s+nativeVal_t\s*\*\s*\w+\s*,\s*int\s+\w+\s*,\s*nativeVal_t\s*\*\s*\w+\s*\)\s*\{')
 ARITY = re.compile(r'Port_Arity\(\s*\w+\s*,\s*\(?(\d+)\)?\s*\)')
@@ -105,12 +105,12 @@ def entries(lines):
 	text = '\n'.join(t for _, t in lines)
 	out = {}
 	for m in ENTRY.finditer(text):
-		# the count in the entry's own body (an entry of MODE_FNANY or with optional arguments checks none)
-		depth, end = 1, m.end()
-		while depth and end < len(text):
-			depth += {'{': 1, '}': -1}.get(text[end], 0)
-			end += 1
-		a = ARITY.search(text, m.end(), end)
+		# the count in the entry's own body (an entry without one is followed by other functions)
+		depth, i = 1, m.end()
+		while depth and i < len(text):
+			depth += {'{': 1, '}': -1}.get(text[i], 0)
+			i += 1
+		a = ARITY.search(text, m.end(), i)
 		out[m.group(1)] = int(a.group(1)) if a else None
 	return out
 

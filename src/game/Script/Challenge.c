@@ -718,45 +718,16 @@ static byte Chal_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, con
 }
 
 /* the adapters (the arity errors of the script's functions) */
-#define CHAL_FN0(name, call) \
-	static PyObject *Challenge_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Mode_Result(call); \
-	}
-
-/* name(a[, b]) with the optional argument b NULL when it is not given */
-#define CHAL_FNOPT(name, fmt, n, call) \
-	static PyObject *Challenge_##name(PyObject *self, PyObject *args) { \
-		PyObject *o[3] = { NULL, NULL, NULL }; \
-		nativeVal_t a[3]; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, fmt, &o[0], &o[1], &o[2])) { \
-			return NULL; \
-		} \
-		for (int i = 0; i < n; i++) { \
-			Native_SetNone(&a[i]); \
-			if (o[i]) { \
-				Native_Arg(o[i], &a[i]); \
-			} \
-		} \
-		byte ok = call; \
-		for (int i = 0; i < n; i++) { \
-			Native_Free(&a[i]); \
-		} \
-		return Mode_Result(ok); \
-	}
-
 MODE_FN(Challenge, ComputeReward, 3, Chal_Reward(&a[0], &a[1], &a[2], out))
-CHAL_FNOPT(Init, "|O", 1, Chal_Init(o[0] ? &a[0] : NULL))
+MODE_FNOPT(Challenge, Init, 0, 1, Chal_Init(MODE_OPT(0)))
 MODE_FN(Challenge, SetChallengerSkills, 2, Chal_Skills(&a[0], &a[1]))
-CHAL_FNOPT(OnChallengeOpt, "OO|O", 3, Chal_OnChallengeOpt(&a[0], &a[1], o[2] ? &a[2] : NULL))
+MODE_FNOPT(Challenge, OnChallengeOpt, 2, 3, Chal_OnChallengeOpt(&a[0], &a[1], MODE_OPT(2)))
 MODE_FN(Challenge, SetRevengeParams, 3, Chal_SetRevengeParams(&a[0], &a[1], &a[2]))
-CHAL_FNOPT(SetRevenge, "|O", 1, Chal_SetRevenge(o[0] ? &a[0] : NULL))
-CHAL_FN0(LaunchRevenge, Chal_LaunchRevenge())
-CHAL_FN0(LaunchChallenge, Chal_LaunchChallenge())
-CHAL_FN0(CleanChallenge, Chal_Clean("Challenge", 0))
-CHAL_FN0(CleanRevenge, Chal_Clean("Revenge", 1))
+MODE_FNOPT(Challenge, SetRevenge, 0, 1, Chal_SetRevenge(MODE_OPT(0)))
+MODE_FNANY(Challenge, LaunchRevenge, Chal_LaunchRevenge())
+MODE_FNANY(Challenge, LaunchChallenge, Chal_LaunchChallenge())
+MODE_FNANY(Challenge, CleanChallenge, Chal_Clean("Challenge", 0))
+MODE_FNANY(Challenge, CleanRevenge, Chal_Clean("Revenge", 1))
 MODE_FN(Challenge, CancelChallenge, 1, Chal_CancelChallenge(&a[0]))
 MODE_FN(Challenge, SetChallengeOptions, 1, Chal_SetChallengeOptions(&a[0]))
 MODE_FN(Challenge, AddChallenge, 3, Chal_AddChallenge(&a[0], &a[1], &a[2]))

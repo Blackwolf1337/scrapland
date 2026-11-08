@@ -259,22 +259,21 @@ static PyObject *Scorer_CreateMissionScorer(PyObject *self, PyObject *args, PyOb
 	return Py_ReturnNone();
 }
 
-static PyObject *Scorer_ShowMissionScorer(PyObject *self, PyObject *args) {
+/* ShowMissionScorer(id, status=0, value) */
+static byte Scorer_ShowMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *value = NULL;
 	int id, status = 0;
-	PyObject *value = NULL;
-	nativeVal_t v;
+	(void)out;
+	if (!Mode_Parse(a, n, "i|iO", &id, &status, &value)) {
+		return 0;
+	}
+	Hud_ShowMission(id, status, value);
+	return 1;
+}
+
+static PyObject *Scorer_ShowMissionScorer(PyObject *self, PyObject *args) {
 	(void)self;
-	if (!PyArg_ParseTuple(args, "i|iO", &id, &status, &value)) {
-		return NULL;
-	}
-	if (value) {
-		Native_Arg(value, &v);
-	}
-	Hud_ShowMission(id, status, value ? &v : NULL);
-	if (value) {
-		Native_Free(&v);
-	}
-	return Py_ReturnNone();
+	return Mode_Entry(args, Scorer_ShowMissionScorer_E);
 }
 
 static PyObject *Scorer_CreateRadarScorer(PyObject *self, PyObject *args) {
@@ -287,27 +286,39 @@ static PyObject *Scorer_CreateRadarScorer(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-static PyObject *Scorer_Blink(PyObject *self, PyObject *args) {
-	int n;
-	char *item = "Radar";
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i|s", &n, &item)) {
-		return NULL;
+/* Blink(n, item="Radar") */
+static byte Scorer_Blink_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *item = "Radar";
+	int k;
+	(void)out;
+	if (!Mode_Parse(a, n, "i|s", &k, &item)) {
+		return 0;
 	}
-	Hud_Blink(n, item);
-	return Py_ReturnNone();
+	Hud_Blink(k, item);
+	return 1;
+}
+
+static PyObject *Scorer_Blink(PyObject *self, PyObject *args) {
+	(void)self;
+	return Mode_Entry(args, Scorer_Blink_E);
+}
+
+/* MissionScorerBar_SetDefaults(id, name, (back rgba), (main rgba), (black rgba)) */
+static byte Scorer_MissionScorerBar_SetDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *name;
+	int id, c[12];
+	(void)out;
+	if (!Mode_Parse(a, n, "is(iiii)(iiii)(iiii)", &id, &name, &c[0], &c[1], &c[2], &c[3], &c[4], &c[5], &c[6], &c[7],
+		&c[8], &c[9], &c[10], &c[11])) {
+		return 0;
+	}
+	Hud_BarDefaults(id, name, c);
+	return 1;
 }
 
 static PyObject *Scorer_MissionScorerBar_SetDefaults(PyObject *self, PyObject *args) {
-	int id, c[12];
-	char *name;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "is(iiii)(iiii)(iiii)", &id, &name, &c[0], &c[1], &c[2], &c[3], &c[4], &c[5], &c[6],
-		&c[7], &c[8], &c[9], &c[10], &c[11])) {
-		return NULL;
-	}
-	Hud_BarDefaults(id, name, c);
-	return Py_ReturnNone();
+	return Mode_Entry(args, Scorer_MissionScorerBar_SetDefaults_E);
 }
 
 PyMethodDef g_ScorerMethods[] = {
@@ -439,15 +450,7 @@ static PyObject *CharScorer_CreateSpecialActionScorer(PyObject *self, PyObject *
 	return Mode_Result(Hud_SpecialAction(id));
 }
 
-static PyObject *CharScorer_Create(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Hud_CharCreate(id);
-	return Py_ReturnNone();
-}
+MODE_IFN(CharScorer_Create, 1, (Hud_CharCreate(id), 1))
 
 PyMethodDef g_CharScorerMethods[] = {
 	{ "Init", Mode_PyNone, 1, NULL },
@@ -679,16 +682,7 @@ static void Racer_MissionScorerCore(int id) {
 
 /* ---- the functions of RacerScorer (adapters) ---- */
 
-#define RACER_SECTION(func, section) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
-		int id; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "i", &id)) { \
-			return NULL; \
-		} \
-		Racer_Run(id, section, NULL); \
-		return Py_ReturnNone(); \
-	}
+#define RACER_SECTION(func, section) MODE_IFN(func, 1, (Racer_Run(id, section, NULL), 1))
 
 RACER_SECTION(Racer_CreateWeaponScorer, "weapon")
 RACER_SECTION(Racer_CreateCannonScorer, "cannon")
@@ -707,36 +701,38 @@ static PyObject *Racer_CreateRacer(PyObject *self, PyObject *args) {
 }
 
 /* Create(id): both players in split screen */
-static PyObject *Racer_Create(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
+static void Racer_CreateCore(int id) {
 	if (Mode_ModGetI("Scorer", "SplitScreen", 0)) {
 		Mode_PrintedCall("RacerScorer", "CreateRacer", 0);
 		Mode_PrintedCall("RacerScorer", "CreateRacer", 1);
 	} else {
 		Mode_PrintedCall("RacerScorer", "CreateRacer", id);
 	}
-	return Py_ReturnNone();
 }
 
-static PyObject *Racer_ShowScorer(PyObject *self, PyObject *args) {
+MODE_IFN(Racer_Create, 1, (Racer_CreateCore(id), 1))
+
+/* ShowScorer(id, data, deal=0, yes="", no="") */
+static byte Racer_ShowScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *data;
+	const char *yes = "", *no = "";
 	int id, deal = 0;
-	PyObject *data;
-	char *yes = "", *no = "";
 	nativeVal_t d;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO|iss", &id, &data, &deal, &yes, &no)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "iO|iss", &id, &data, &deal, &yes, &no)) {
+		return 0;
 	}
 	/* the list, its rows and their colours native where they are held as one NV_OBJ (a row holds a handle) */
-	Native_Arg(data, &d);
+	Native_Copy(&d, data);
 	Hud_Deep(&d, 3);
 	Racer_ShowScorerCore(id, &d, deal, yes, no);
 	Native_Free(&d);
-	return Py_ReturnNone();
+	return 1;
+}
+
+static PyObject *Racer_ShowScorer(PyObject *self, PyObject *args) {
+	(void)self;
+	return Mode_Entry(args, Racer_ShowScorer_E);
 }
 
 static PyObject *Racer_MultiplayerUpdatePing(PyObject *self, PyObject *args) {
@@ -747,53 +743,33 @@ static PyObject *Racer_MultiplayerUpdatePing(PyObject *self, PyObject *args) {
 }
 
 /* InitMissionScorer([you[, bad[, limit]]]) */
-static PyObject *Racer_InitMissionScorer(PyObject *self, PyObject *args) {
-	PyObject *o[3] = { NULL, NULL, NULL };
+static byte Racer_InitMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *o[3] = { NULL, NULL, NULL };
 	static const char *const vars[3] = { "missionYou", "missionBad", "missionLimit" };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "|OOO", &o[0], &o[1], &o[2])) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "|OOO", &o[0], &o[1], &o[2])) {
+		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
-		nativeVal_t v;
-		if (o[i]) {
-			Native_Arg(o[i], &v);
-		} else if (i < 2) {
-			Native_SetInt(&v, 0);
+		nativeVal_t def;
+		if (i < 2) {
+			Native_SetInt(&def, 0);
 		} else {
-			Native_SetText(&v, "", 0);
+			Native_SetText(&def, "", 0);
 		}
-		Mode_ModPut("RacerScorer", vars[i], &v);
-		Native_Free(&v);
+		Mode_ModPut("RacerScorer", vars[i], o[i] ? o[i] : &def);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *Racer_UpdateMissionScorer(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *you, *bad;
-	nativeVal_t y, b;
+static PyObject *Racer_InitMissionScorer(PyObject *self, PyObject *args) {
 	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &you, &bad)) {
-		return NULL;
-	}
-	Native_Arg(you, &y);
-	Native_Arg(bad, &b);
-	Racer_UpdateMission(id, &y, &b);
-	Native_Free(&y);
-	Native_Free(&b);
-	return Py_ReturnNone();
+	return Mode_Entry(args, Racer_InitMissionScorer_E);
 }
 
-static PyObject *Racer_MissionScorer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Racer_MissionScorerCore(id);
-	return Py_ReturnNone();
-}
+MODE_IFN(Racer_UpdateMissionScorer, 3, (Racer_UpdateMission(id, &a[1], &a[2]), 1))
+
+MODE_IFN(Racer_MissionScorer, 1, (Racer_MissionScorerCore(id), 1))
 
 RACER_SECTION(Racer_MissionScorerTeam, "missionteam")
 
@@ -814,3 +790,5 @@ PyMethodDef g_RacerScorerMethods[] = {
 	{ "UpdateMissionScorer", Racer_UpdateMissionScorer, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuHud)
