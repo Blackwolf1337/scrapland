@@ -59,34 +59,6 @@ static byte Th_Stay6(const nativeVal_t *e) {
 	return LvN_Stay(e, 6, &empty);
 }
 
-/* the optional keyword argument name of a function (def: its default text) into out */
-static byte Th_KwArg(PyObject *args, PyObject *kw, char *name, const char *def, nativeVal_t *out) {
-	char *names[] = { name, NULL };
-	PyObject *o = NULL;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
-		return 0;
-	}
-	if (o) {
-		Native_Arg(o, out);
-	} else {
-		LvN_Str(out, def);
-	}
-	return 1;
-}
-
-/* the adapter of a function with one keyword argument (core on the value) */
-#define TH_KWFN(fn, name, def, core) \
-	static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
-		nativeVal_t v = { 0 }; \
-		(void)self; \
-		if (!Th_KwArg(args, kw, name, def, &v)) { \
-			return NULL; \
-		} \
-		byte ok = core(&v); \
-		Native_Free(&v); \
-		return Mode_Result(ok); \
-	}
-
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): an indoor map; the elevators, the NPCs that come back, the mayor, the police boss */
@@ -456,7 +428,11 @@ static byte ThAm_ChooseStaplerN(const nativeVal_t *not) {
 	return Mode_Done(&t, ok);
 }
 
-TH_KWFN(ApologizeMayor_ChooseStapler, "NotName", "", ThAm_ChooseStaplerN)
+/* the keyword adapter and entry of ChooseStapler(NotName="") */
+MODE_KW(ApologizeMayor, ChooseStapler, "|O", "NotName") {
+	Mode_KwDefS(v, given, 0, "");
+	return ThAm_ChooseStaplerN(&v[0]);
+}
 
 /* InitStaplerMission(): the staplers to kill: the counter, the scorer, the NPC death hook, the first stapler */
 static byte ThAm_InitStaplerMission(const nativeVal_t *a, nativeVal_t *out) {
@@ -1148,7 +1124,11 @@ static byte ThSm_BlabliblaN(const nativeVal_t *name) {
 	return Mode_Done(&t, Mode_Later(2.0, SM, "Blablibla", next, 1, NULL));
 }
 
-TH_KWFN(SheriffMayor_Blablibla, "EntityName", "Mayor_SheriffMayor", ThSm_BlabliblaN)
+/* the keyword adapter and entry of Blablibla(EntityName="Mayor_SheriffMayor") */
+MODE_KW(SheriffMayor, Blablibla, "|O", "EntityName") {
+	Mode_KwDefS(v, given, 0, "Mayor_SheriffMayor");
+	return ThSm_BlabliblaN(&v[0]);
+}
 
 /* PoliceBossMissionSpeech(UsrName, CharName, optId, FullOption): the police boss tells his clues to the mayor, or
  * sells them to Dtritus (OnPay); after that his usual talk */
