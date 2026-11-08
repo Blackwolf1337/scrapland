@@ -17,10 +17,10 @@
  * the argument formats of the C port. The variables of the module are read where the script reads them as its globals
  * and written at once (OBJLIB 5: the missions, Doors, the levels and the cases read and set them); AllShips is changed
  * in place. The ships, cameras, boxes and the plate are handle values (OBJLIB 7). The module's own functions the script
- * calls as its globals stay so (a mission or a case may replace one), the other ports (ShipMaker, Sputnik, Menu,
- * RacerScorer, CharScorer, Chars, ShipEdit, Vehicles, SaveGame, Speech, RaceMaker) by name (OBJLIB 3), as do
- * Scrap.SetCam, SwitchMissionArrows, AddParkingZone, CreateEntityList, EntityListGet and string.split of other values
- * than texts (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
+ * calls as its globals (Parking's and Accelerator's) and the other ports (ShipMaker, Sputnik, Menu, RacerScorer,
+ * CharScorer, Chars, ShipEdit, Vehicles, SaveGame, Speech, RaceMaker) go through their refs (PORT_OWN, PORT_CALL: the
+ * seam, OBJLIB 5; a mission or a case may replace one). Scrap.SetCam, SwitchMissionArrows, AddParkingZone,
+ * CreateEntityList, EntityListGet and string.split of other values than texts stay by name (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
  * NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc,
  * SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor, SAct.GetAction
  * and SetAct go through their seams (OBJLIB 7: the cases record or swap them). The evals of the save texts stay
@@ -34,9 +34,6 @@
 #include "game/Script/levels/Levels.h"
 
 #define PK "Parking"
-
-/* a function of the module through its global (a mission or a case may replace it) */
-#define PK_OWN(name, out, ...) Native_CallGlobal(PK, name, out, __VA_ARGS__)
 
 /* the slot freed, then x[i] into it */
 static byte Pk_Item(const nativeVal_t *x, long i, nativeVal_t *slot) {
@@ -142,7 +139,7 @@ static byte Pk_Zone(long flag, const nativeVal_t *pos, const nativeVal_t *name) 
 static byte Pk_BoxAt(const nativeVal_t *name, const nativeVal_t *pos, nativeVal_t *out) {
 	nativeVal_t xyz[3] = { { 0 }, { 0 }, { 0 } };
 	Native_Free(out);
-	byte ok = Pk_XYZ(pos, xyz) && PK_OWN("CreateBox", out, "vvvv", name, &xyz[0], &xyz[1], &xyz[2]);
+	byte ok = Pk_XYZ(pos, xyz) && PORT_OWN(Parking, CreateBox, out, "vvvv", name, &xyz[0], &xyz[1], &xyz[2]);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&xyz[i]);
 	}
@@ -179,9 +176,9 @@ static byte Pk_Voice(const char *sound) {
 	return ok;
 }
 
-/* SaveGame.StartGame(CleanRevenge = 1) (OBJLIB 3: the keyword call by name) */
+/* SaveGame.StartGame(CleanRevenge = 1) */
 static byte Pk_StartGame(void) {
-	return Mode_CallKw("SaveGame", "StartGame", NULL, NULL, 0, Py_BuildValue("{s:i}", "CleanRevenge", 1));
+	return PORT_CALL(SaveGame, StartGame, NULL, ";CleanRevenge=i", 1L);
 }
 
 /* RestoreDeathPlayerShip(): the ships of the player can die again; LocalShip is deleted */
@@ -220,7 +217,7 @@ static byte Pk_CharOnShipN(const nativeVal_t *path) {
 	Mode_CamName(0, x);
 	if (!Pk_Ent(x, cam) || !Mode_VObjRead(cam, "Target", x) || !Pk_Ent(x, v) || !LvN_SetI(v, "UsrControl", 0) ||
 		!LvN_SetI(v, "MoveTime", 0) || !LvN_SetInts3(v, "Vel", 0, 0, 0) || !Mode_ActionSet("Racer") ||
-		!Native_CallMod("RacerScorer", "Create", NULL, "i", 0L)) {
+		!PORT_CALL(RacerScorer, Create, NULL, "i", 0L)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_ScorerGet(0, "Mission", "SolidTime", solid);
@@ -234,7 +231,7 @@ static byte Pk_CharOnShipN(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!LvN_PutNone(PK, "LastCamera") || !PK_OWN("RestoreDeathPlayerShip", NULL, "")) {
+	if (!LvN_PutNone(PK, "LastCamera") || !PORT_OWN(Parking, RestoreDeathPlayerShip, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	int set = LvN_GTrue(PK, "SetWeaponOnShip");
@@ -277,7 +274,7 @@ static byte Pk_UseShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	if (c) {
 		return Mode_Done(&t, 1);
 	}
-	if (!PK_OWN("SetShipRadius", NULL, "vi", v, 0L) || !Pk_NoBlur()) {
+	if (!PORT_OWN(Parking, SetShipRadius, NULL, "vi", v, 0L) || !Pk_NoBlur()) {
 		return Mode_Done(&t, 0);
 	}
 	/* the camera from the character to the ship */
@@ -285,14 +282,14 @@ static byte Pk_UseShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	int boxed = Mode_Cmp(boxName, "!=", Mode_V(&t));
 	if (!LvN_Create(Mode_S(&t, "CamPath"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "CamPath", cp) ||
 		!LvN_SetI(cp, "nWayPoint", 2) || !Mode_VSet(cp, "TgtCam01", lastCam) || !Mode_VObjRead(v, "Pos", x) || boxed < 0 ||
-		!PK_OWN("SetCameraStart", NULL, "vvvii", cp, v, x, 1L, (long)boxed) || !LvN_SetS(cp, "OnEnd", "Parking.CharOnShip") ||
+		!PORT_OWN(Parking, SetCameraStart, NULL, "vvvii", cp, v, x, 1L, (long)boxed) || !LvN_SetS(cp, "OnEnd", "Parking.CharOnShip") ||
 		!Pk_Ent(lastCam, lcam) || !LvN_SetF(cp, "Time00", 1.0) || !LvN_SetI(cp, "FadeIn00", 1) || !LvN_SetI(cp, "FadeOut00", 0) ||
 		!Mode_VObjRead(cp, "Name", x) || !Pk_SetCam(x)) {
 		return Mode_Done(&t, 0);
 	}
 	/* the exchange */
 	if (!Mode_VObjRead(v, "MovePos", vPos) || !Mode_VObjRead(w, "ActCtrl", x) || !LvN_Cat("P_", x, y) || !Mode_VSet(v, "MPil0", y) ||
-		!Mode_VObjRead(v, "Name", x) || !Native_CallMod("ShipMaker", "SetUpChars", NULL, "v", x) || !LvN_SetI(v, "ArrowCanUse", 0) ||
+		!Mode_VObjRead(v, "Name", x) || !PORT_CALL(ShipMaker, SetUpChars, NULL, "v", x) || !LvN_SetI(v, "ArrowCanUse", 0) ||
 		!LvN_SetS(v, "UseFunc", "")) {
 		return Mode_Done(&t, 0);
 	}
@@ -304,7 +301,7 @@ static byte Pk_UseShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	Pk_Tuple3(off, Mode_I(&t, 0), depth, Mode_I(&t, 0));
 	if (!Mode_VecAdd(pos, off, x) || !Mode_VSet(v, "MovePos", x) || !Mode_VObjRead(v, "Ang", x) || !Mode_VSet(v, "MoveAng", x) ||
 		!LvN_SetF(v, "MoveTime", 0.9) || !Mode_VObjRead(w, "TgType", x) || !Mode_VSet(v, "TgType", x) ||
-		!LvN_SetS(v, "EntityList", "Players") || !LvN_SetI(v, "UsrControl", 0) || !PK_OWN("SetInvunerable", NULL, "v", v)) {
+		!LvN_SetS(v, "EntityList", "Players") || !LvN_SetI(v, "UsrControl", 0) || !PORT_OWN(Parking, SetInvunerable, NULL, "v", v)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Release(&t, mark);
@@ -316,7 +313,7 @@ static byte Pk_UseShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	}
 	if (!Mode_VObjRead(v, "Name", x) || !Mode_VSet(lcam, "MainTarget", x) || !Mode_VSet(lcam, "Target", x) ||
 		!Native_GVarGet("VehicleCamDist", y) || !Mode_VSet(lcam, "CamDist", y) || !Mode_ActionSet("Inactive") ||
-		!Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) || !LvN_SetI(w, "AutoSelect", 0) || !Mode_VDel(w)) {
+		!PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) || !LvN_SetI(w, "AutoSelect", 0) || !Mode_VDel(w)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(now, Mode_Time());
@@ -325,7 +322,7 @@ static byte Pk_UseShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	}
 	/* Sputnik says goodbye */
 	return Mode_Done(&t, Mode_VObjRead(v, "MovePos", x) && Mode_VObjRead(v, "Ang", y) &&
-		Native_CallMod("Sputnik", "SetSptAt", NULL, "vvs", x, y, "Bye") && Pk_Arrows(3, 4) && Pk_Voice("OnTakeOffSound"));
+		PORT_CALL(Sputnik, SetSptAt, NULL, "vvs", x, y, "Bye") && Pk_Arrows(3, 4) && Pk_Voice("OnTakeOffSound"));
 }
 
 /* PlayVoiceChannel(channel): plays the voice and stops it when it ends */
@@ -364,8 +361,8 @@ static byte Pk_EndPathCamN(const nativeVal_t *path) {
 	Mode_CamName(0, x);
 	return Mode_Done(&t, Pk_Ent(x, lcam) && Mode_VObjRead(lcam, "Target", x) && Pk_Ent(x, v) && LvN_SetI(v, "UsrControl", 0) &&
 		Pk_Callback("SwitchCharMissionCallback") && Pk_Callback("SwitchCharMissionCallbackAux") && Mode_ActionSet("Walk") &&
-		Native_CallMod("CharScorer", "Create", NULL, "i", 0L) && LvN_PutNone(PK, "LastCamera") &&
-		PK_OWN("RestoreDeathPlayerShip", NULL, ""));
+		PORT_CALL(CharScorer, Create, NULL, "i", 0L) && LvN_PutNone(PK, "LastCamera") &&
+		PORT_OWN(Parking, RestoreDeathPlayerShip, NULL, ""));
 }
 
 /* SetCameraStart(cp, v, iPos, split=0, testline=1): the camera point beside the ship at the height of the ground
@@ -453,7 +450,7 @@ static byte Pk_isValidToParkN(const nativeVal_t *v, nativeVal_t *out) {
 /* isValidToPark(v) through the global: 1, 0, -1 with the error */
 static int Pk_Valid(const nativeVal_t *v) {
 	nativeVal_t r = { 0 };
-	int ok = PK_OWN("isValidToPark", &r, "v", v) ? Native_True(&r) : -1;
+	int ok = PORT_OWN(Parking, isValidToPark, &r, "v", v) ? Native_True(&r) : -1;
 	Native_Free(&r);
 	return ok;
 }
@@ -509,14 +506,14 @@ static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, 
 	}
 	Pk_Tuple3(p3, x0, rot, x2);
 	if (!Mode_VSet(v, "MovePos", p3) || !Mode_VSet(v, "MoveAng", vAng) || !LvN_SetF(v, "MoveTime", 2.5) || !Pk_UseArrow(v) ||
-		!PK_OWN("SetInvunerable", NULL, "v", v) || !Pk_NoBlur()) {
+		!PORT_OWN(Parking, SetInvunerable, NULL, "v", v) || !Pk_NoBlur()) {
 		return Mode_Done(&t, 0);
 	}
 	/* the camera of the change */
 	Mode_CamName(0, lastCam);
 	if (!LvN_Create(Mode_S(&t, "CamPath"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "CamPath", cp) ||
 		!Mode_Put(PK, "LastCamera", NULL, cp) || !LvN_SetI(cp, "nWayPoint", 4) || !LvN_SetS(cp, "OnEnd", "Parking.EndPathCam") ||
-		!Mode_VSet(cp, "TgtCam00", lastCam) || !LvN_SetS(cp, "TgtCam00", "") || !PK_OWN("SetCameraStart", NULL, "vvv", cp, v, iPos)) {
+		!Mode_VSet(cp, "TgtCam00", lastCam) || !LvN_SetS(cp, "TgtCam00", "") || !PORT_OWN(Parking, SetCameraStart, NULL, "vvv", cp, v, iPos)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Pk_Item(vAng, 1, x) || !Native_Arith('+', x, Mode_I(&t, 90), a90) || !Pk_G("ParkingDist", dist) || !Mode_Neg(dist, neg)) {
@@ -539,7 +536,7 @@ static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, 
 	*vAng = *y;
 	Native_SetNone(y);
 	if (!Native_Slice(pilot, 2, 0x7fffffff, x) || !Mode_VObjRead(v, "Pos", y) || !Mode_VObjRead(v, "Ang", ang) ||
-		!Pk_Yaw(ang, '-', Mode_I(&t, 90), rv) || !Native_CallMod("Chars", "CreateMainChar", c, "svvv", "Player0", x, y, rv)) {
+		!Pk_Yaw(ang, '-', Mode_I(&t, 90), rv) || !PORT_CALL(Chars, CreateMainChar, c, "svvv", "Player0", x, y, rv)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Pk_G("ParkingDist", dist) || !Mode_Neg(dist, neg)) {
@@ -561,7 +558,7 @@ static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, 
 		!LvN_SetI(c, "UsrControl", -1) || !Mode_VObjRead(v, "TgType", x) || !Mode_VSet(c, "TgType", x) ||
 		!LvN_SetS(v, "EntityList", "") || !LvN_SetS(v, "TgType", "None") || !Pk_Ent(lastCam, x) || !Mode_VObjRead(cp, "Name", x) ||
 		!Pk_SetCam(x) || !Mode_ActionSet("Inactive") || !Mode_Import("Menu") ||
-		!Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L)) {
+		!PORT_CALL(Menu, MovieScorer, NULL, "i", 0L)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_VObjRead(c, "Name", x) || !Mode_VObjRead(v, "Name", y)) {
@@ -570,9 +567,9 @@ static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, 
 	Native_SetEmpty(args, NV_TUPLE);
 	Native_Copy(Native_Append(args), x);
 	Native_Copy(Native_Append(args), y);
-	if (!Mode_Later(2.5, PK, "ShowChar", args->items, 2, NULL) || !PK_OWN("SetShipRadius", NULL, "vi", v, 1L) ||
+	if (!Mode_Later(2.5, PK, "ShowChar", args->items, 2, NULL) || !PORT_OWN(Parking, SetShipRadius, NULL, "vi", v, 1L) ||
 		!Mode_Import("Sputnik") || !Mode_VObjRead(v, "Pos", x) || !Mode_VObjRead(v, "Ang", y) ||
-		!Native_CallMod("Sputnik", "SetSptAt", NULL, "vvs", x, y, "Hello") || !Pk_Voice("OnLandSound")) {
+		!PORT_CALL(Sputnik, SetSptAt, NULL, "vvs", x, y, "Hello") || !Pk_Voice("OnLandSound")) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(out, 1);
@@ -645,7 +642,7 @@ static byte Pk_CreatePlayerShipN(const nativeVal_t *pos) {
 		}
 		Mode_SaveVar(Native_Text(x), var);
 	}
-	if (!Native_CallMod("ShipEdit", "CreateShipFromSaveVar", ship, "vvs", var, pos, "PlayerShip") ||
+	if (!PORT_CALL(ShipEdit, CreateShipFromSaveVar, ship, "vvs", var, pos, "PlayerShip") ||
 		!Mode_Put(PK, "PlayerShip", NULL, ship) || !Pk_G("PlayerShip", ship) || !LvN_SetI(ship, "Active", 1) ||
 		!LvN_SetI(ship, "ActiveCMask", 1) || !Pk_G("DtritusPlate", plate) || !LvN_SetI(plate, "Active", 1) ||
 		!LvN_SetS(plate, "LinkModel", ",") || !Pk_G("PlayerShip", ship) || !Mode_VObjRead(ship, "Name", x) ||
@@ -677,7 +674,7 @@ static byte Pk_ShowCharN(const nativeVal_t *charName, const nativeVal_t *shipNam
 	}
 	int own = Mode_Cmp(a, "==", b);
 	if (own) {
-		return Mode_Done(&t, own > 0 && Native_CallMod("Sputnik", "Assign", NULL, "v", v));
+		return Mode_Done(&t, own > 0 && PORT_CALL(Sputnik, Assign, NULL, "v", v));
 	}
 	if (!Pk_G("PR_Lst", x) || !Mode_VObjRead(v, "Name", a) || !LvN_Cat("Near", a, b) ||
 		!Native_CallMod("Scrap", "EntityListGet", near, "vv", x, b) || !Pk_Ent(near, nearest)) {
@@ -685,17 +682,17 @@ static byte Pk_ShowCharN(const nativeVal_t *charName, const nativeVal_t *shipNam
 	}
 	return Mode_Done(&t, !Native_True(nearest) || (Pk_G("PlayerShip", ship) && Mode_VObjRead(nearest, "Pos", x) &&
 		Mode_VSet(ship, "Pos", x) && Pk_G("PlayerShip", ship) && LvN_SetInts3(ship, "Ang", 0, 0, 0) &&
-		Native_CallMod("Sputnik", "Assign", NULL, "v", nearest) && Mode_VDel(nearest)));
+		PORT_CALL(Sputnik, Assign, NULL, "v", nearest) && Mode_VDel(nearest)));
 }
 
 /* EndJunkerPathCam(PathCam): parked in the junkyard: the level of Rusty's junkyard starts */
 static byte Pk_EndJunkerPathCamN(const nativeVal_t *path) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *p = Mode_V(&t), *x = Mode_V(&t), *spawn = Mode_V(&t), *usr = Mode_V(&t);
-	return Mode_Done(&t, PK_OWN("EndPathCam", NULL, "v", path) && Mode_Import("SaveGame") && Mode_Import("Init") &&
+	return Mode_Done(&t, PORT_OWN(Parking, EndPathCam, NULL, "v", path) && Mode_Import("SaveGame") && Mode_Import("Init") &&
 		Mode_ModGet("Init", "Path", p) && Native_Slice(p, 7, 0x7fffffff, x) && LvN_Cat("DM_Player_Spawn_", x, spawn) &&
 		Mode_UsrHandle(usr) && Mode_VObjRead(usr, "ActCtrl", x) &&
-		Native_CallMod("SaveGame", "MarkWayPoint", NULL, "svv", "Levels/Junkyard", spawn, x) &&
+		PORT_CALL(SaveGame, MarkWayPoint, NULL, "svv", "Levels/Junkyard", spawn, x) &&
 		Mode_SaveS("ComeFrom", "DoorEditShip") && Pk_StartGame());
 }
 
@@ -724,14 +721,14 @@ static byte Pk_JunkerParkN(const nativeVal_t *itemName, const nativeVal_t *vehNa
 		return Mode_Done(&t, 0);
 	}
 	if (stolen) {
-		if (!Mode_VObjRead(v, "Model", a) || !Native_CallMod("ShipMaker", "GetShipPrice", x, "v", a) || !Native_ToInt(x, b) ||
+		if (!Mode_VObjRead(v, "Model", a) || !PORT_CALL(ShipMaker, GetShipPrice, x, "v", a) || !Native_ToInt(x, b) ||
 			!Mode_Arith('/', b, Mode_I(&t, 4), price)) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
 		Native_SetInt(price, 0);
 	}
-	if (!PK_OWN("OnPark", res, "vv", itemName, vehName)) {
+	if (!PORT_OWN(Parking, OnPark, res, "vv", itemName, vehName)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(res) && Native_True(price)) {
@@ -781,7 +778,7 @@ static byte Pk_OnParkingOccupiedN(const nativeVal_t *a) {
 	if (own < 0 || (own ? !LvN_SetI(e, "Active", 0) : !Mode_VDel(e))) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, PK_OWN("CreateBox", l, "svvv", "Parking", &a[1], &a[2], &a[3]) && LvN_SetF(l, "rTime", 0.1) &&
+	return Mode_Done(&t, PORT_OWN(Parking, CreateBox, l, "svvv", "Parking", &a[1], &a[2], &a[3]) && LvN_SetF(l, "rTime", 0.1) &&
 		Pk_Line("Parking Occupied by", &a[0], " replaced by ", l));
 }
 
@@ -807,7 +804,7 @@ static byte Pk_OnParkedOutN(const nativeVal_t *a) {
 		}
 	}
 	Native_SetFloat(angle, Scrap_RandRange(0, 360));
-	return Mode_Done(&t, PK_OWN("CreateParkedShip", l, "vvv", pos, angle, &a[4]) &&
+	return Mode_Done(&t, PORT_OWN(Parking, CreateParkedShip, l, "vvv", pos, angle, &a[4]) &&
 		Pk_Line("Parking free by ", &a[0], " filled by ", l));
 }
 
@@ -852,7 +849,7 @@ static byte Pk_SetShipAsParkedN(const nativeVal_t *name) {
 	byte ok = Pk_Ent(name, &v) && LvN_SetG(&v, "MPil0", PK, "P_None") && Pk_UseArrow(&v) && LvN_SetI(&v, "UsrControl", -1) &&
 		LvN_SetS(&v, "TgType", "None") && LvN_SetOnFloorOf(&v) && Mode_VObjRead(&v, "Pos", &x) && Mode_VSet(&v, "MovePos", &x) &&
 		Mode_VObjRead(&v, "Ang", &x) && Mode_VSet(&v, "MoveAng", &x) && LvN_SetF(&v, "MoveTime", 0.001) &&
-		PK_OWN("SetShipRadius", NULL, "vi", &v, 1L);
+		PORT_OWN(Parking, SetShipRadius, NULL, "vi", &v, 1L);
 	Native_Free(&v);
 	Native_Free(&x);
 	return ok;
@@ -894,7 +891,7 @@ static byte Pk_ParkedDeatN(const nativeVal_t *v, const nativeVal_t *attacker, na
 				by = Mode_CmpG(rnd, "<", PK, "AlarmProbOnParkedShipDeath");
 			}
 			if (by > 0) {
-				by = Mode_Import("Speech") && Native_CallMod("Speech", "AddRemoteCom", NULL, "ss", "Generics_PoliceTaunt_16",
+				by = Mode_Import("Speech") && PORT_CALL(Speech, AddRemoteCom, NULL, "ss", "Generics_PoliceTaunt_16",
 					"Police") && Mode_SetAlarm(Mode_I(&t, 1)) ? 1 : -1;
 			}
 		}
@@ -986,14 +983,14 @@ static byte Pk_BrowseItemPosN(void) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_Import("ShipEdit") || !Mode_SetModVar("ShipEdit", "editShipPosDummy", nearest) || !Pk_Item(nearest, 1, x) ||
-		!PK_OWN("CreatePlayerShip", NULL, "v", x) || !Pk_G("PlayerShip", ship) || !Pk_Item(nearest, 2, x) ||
+		!PORT_OWN(Parking, CreatePlayerShip, NULL, "v", x) || !Pk_G("PlayerShip", ship) || !Pk_Item(nearest, 2, x) ||
 		!Pk_Yaw(x, '+', NULL, ang) || !Mode_VSet(ship, "Ang", ang) || !Mode_VObjRead(ship, "Name", x) ||
-		!PK_OWN("SetShipAsParked", NULL, "v", x) || !Mode_VObjRead(ship, "Pos", dpos) || !Pk_Item(nearest, 0, dname) ||
+		!PORT_OWN(Parking, SetShipAsParked, NULL, "v", x) || !Mode_VObjRead(ship, "Pos", dpos) || !Pk_Item(nearest, 0, dname) ||
 		!Native_Slice(dname, 10, 0x7fffffff, (Native_Free(zone), zone)) || !Pk_Zone(0, dpos, zone) || !Mode_Import("Sputnik") ||
 		!Pk_G("PlayerShip", ship)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Native_CallMod("Sputnik", "Assign", NULL, "v", ship));
+	return Mode_Done(&t, PORT_CALL(Sputnik, Assign, NULL, "v", ship));
 }
 
 /* CreateLonelyMercParkings(): the parking boxes of the lonely mercenary mission, their names */
@@ -1104,8 +1101,8 @@ static byte Pk_CreateParkedShipN(const nativeVal_t *const *a, nativeVal_t *out) 
 	}
 	Native_SetFloat(x, Scrap_RandRange(0, n - 0.1));
 	return Mode_Done(&t, Native_ToInt(x, pick) && Mode_VObjRead(out, "Name", name) && Mode_Sub(keys, pick, x) &&
-		Native_CallMod("Vehicles", "SetStdProperties", NULL, "vvs", name, x, "P_None") &&
-		PK_OWN("SetShipAsParked", NULL, "v", name) && PK_OWN("CheckWeapons", NULL, "v", out));
+		PORT_CALL(Vehicles, SetStdProperties, NULL, "vvs", name, x, "P_None") &&
+		PORT_OWN(Parking, SetShipAsParked, NULL, "v", name) && PORT_OWN(Parking, CheckWeapons, NULL, "v", out));
 }
 
 /* CheckWeapons(v): the parked ship carries only the weapons the player may have */
@@ -1164,7 +1161,7 @@ static byte Pk_BrowseParkedPosN(void) {
 			}
 			create = !Native_True(res);
 		}
-		if (create && (!Pk_Item(dummy, 2, x) || !Pk_Item(x, 1, res) || !PK_OWN("CreateParkedShip", NULL, "vvv", dpos, res, name))) {
+		if (create && (!Pk_Item(dummy, 2, x) || !Pk_Item(x, 1, res) || !PORT_OWN(Parking, CreateParkedShip, NULL, "vvv", dpos, res, name))) {
 			return Mode_Done(&t, 0);
 		}
 		if (!Pk_Zone(1, dpos, name)) {
@@ -1187,7 +1184,7 @@ static byte Pk_ChangeLevelN(const nativeVal_t *itemName) {
 		!LvN_Cat("Levels/", x, level) || !Pk_G("PR_Spawn", x) || !Mode_ModGet("Init", "Path", y) ||
 		!Native_Slice(y, 7, 0x7fffffff, r) || !Native_Arith('+', x, r, spawn) || !Mode_VObjRead(usr, "MPil0", x) ||
 		!Native_Slice(x, 2, 0x7fffffff, (Native_Free(y), y)) ||
-		!Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvv", level, spawn, y)) {
+		!PORT_CALL(SaveGame, MarkWayPoint, NULL, "vvv", level, spawn, y)) {
 		return Mode_Done(&t, 0);
 	}
 	int own = LvN_GTrue(PK, "PlayerShip");
@@ -1294,7 +1291,7 @@ static byte Pk_ShowNextMapN(const nativeVal_t *ent) {
 	}
 	if (ok) {
 		Mode_Replace(&msg, "<n1>", &station, &text);
-		ok = Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+		ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	}
 	Native_Free(&msg);
 	Native_Free(&s);
@@ -1368,11 +1365,11 @@ static byte Pk_Arrive(const nativeVal_t *comeFrom, const nativeVal_t *spawn) {
 				return Mode_Done(&t, 0);
 			}
 		}
-		if (!Native_CallMod("Vehicles", "SetProperties", NULL, "vvvvvvvvvv", &items->items[0], &items->items[1], &items->items[2],
+		if (!PORT_CALL(Vehicles, SetProperties, NULL, "vvvvvvvvvv", &items->items[0], &items->items[1], &items->items[2],
 			&items->items[3], &items->items[4], &items->items[5], &items->items[6], &items->items[7], &items->items[8],
 			&items->items[9]) || !Pk_G("PlayerShip", ship) || !Mode_VObjRead(ship, "Pos", pos) || !Pk_Item(pos, 0, xyz) ||
-			!Pk_Item(pos, 1, y) || !Pk_Item(pos, 2, z) || !PK_OWN("OnParkingOccupied", NULL, "svvvs", "PlayerShip", xyz, y, z,
-			"_05") || !Pk_G("DtritusPlate", ship) || !LvN_SetI(ship, "Active", 0)) {
+			!Pk_Item(pos, 1, y) || !Pk_Item(pos, 2, z) || !PORT_OWN(Parking, OnParkingOccupied, NULL, "svvvs", "PlayerShip", xyz,
+			y, z, "_05") || !Pk_G("DtritusPlate", ship) || !LvN_SetI(ship, "Active", 0)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -1390,7 +1387,7 @@ static byte Pk_Arrive(const nativeVal_t *comeFrom, const nativeVal_t *spawn) {
 		}
 	}
 	return Mode_Done(&t, LvN_PutI(PK, "SetWeaponOnShip", 1) && Mode_VObjRead(usrPlay, "Name", x) && Mode_VObjRead(usrShip, "Name", y) &&
-		PK_OWN("UseShip", NULL, "vvssv", x, y, "", "", Mode_V(&t)));
+		PORT_OWN(Parking, UseShip, NULL, "vvssv", x, y, "", "", Mode_V(&t)));
 }
 
 /* Init(): offline: the plate, the parking boxes and the player's ship, the parked ships (unless the save game says
@@ -1407,16 +1404,16 @@ static byte Pk_InitN(void) {
 	if (off <= 0) {
 		return Mode_Done(&t, off == 0);
 	}
-	if (!PK_OWN("CreateDtritusPlate", NULL, "") || !Pk_G("PR_Lst", x) ||
-		!Native_CallMod("Scrap", "CreateEntityList", NULL, "v", x) || !PK_OWN("BrowseItemPos", NULL, "")) {
+	if (!PORT_OWN(Parking, CreateDtritusPlate, NULL, "") || !Pk_G("PR_Lst", x) ||
+		!Native_CallMod("Scrap", "CreateEntityList", NULL, "v", x) || !PORT_OWN(Parking, BrowseItemPos, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("ComeFrom", comeFrom);
 	Mode_SaveVar("Spawn", spawn);
 	Native_Free(x);
 	Mode_SaveVar("Parking.Desolate", x);
-	if (!Native_ToInt(x, n) || (!Native_True(n) && !PK_OWN("BrowseParkedPos", NULL, "")) ||
-		!PK_OWN("BrowseSwitchLevel", NULL, "") || !PK_OWN("BrowseParkingAreas", NULL, "")) {
+	if (!Native_ToInt(x, n) || (!Native_True(n) && !PORT_OWN(Parking, BrowseParkedPos, NULL, "")) ||
+		!PORT_OWN(Parking, BrowseSwitchLevel, NULL, "") || !PORT_OWN(Parking, BrowseParkingAreas, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	int junk = Mode_CmpG(spawn, "==", PK, "PL_Junk");
@@ -1425,7 +1422,7 @@ static byte Pk_InitN(void) {
 	}
 	if (junk) {
 		return Mode_Done(&t, Mode_UsrHandle(usr) && Mode_VObjRead(usr, "Name", x) && Pk_G("PlayerShip", ship) &&
-			Mode_VObjRead(ship, "Name", y) && PK_OWN("UseShip", NULL, "vvsss", x, y, "", "", "ParkParking_Junkyard") &&
+			Mode_VObjRead(ship, "Name", y) && PORT_OWN(Parking, UseShip, NULL, "vvsss", x, y, "", "", "ParkParking_Junkyard") &&
 			Pk_G("LastPark", ship) && LvN_SetS(ship, "OnTake", "Parking.JunkerPark"));
 	}
 	Native_Free(x);
@@ -1485,21 +1482,10 @@ static PyObject *Parking_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
 	return Mode_KwCall(args, kw, "OOOO|O", Parking_UseShip_N, Pk_UseShipN);
 }
 
-static PyObject *Parking_SetCameraStart(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "cp", "v", "iPos", "split", "testline", NULL };
-	nativeVal_t a[5];
-	byte given[5];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OOO|OO", names, 5, a, given)) {
-		return Mode_KwOut(a, 5, 0, NULL);
-	}
-	if (!given[3]) {
-		Native_SetInt(&a[3], 0);
-	}
-	if (!given[4]) {
-		Native_SetInt(&a[4], 1);
-	}
-	return Mode_KwOut(a, 5, Pk_SetCameraStartN(a), NULL);
+MODE_KW(Parking, SetCameraStart, "OOO|OO", "cp", "v", "iPos", "split", "testline") {
+	Mode_KwDefI(v, given, 3, 0);
+	Mode_KwDefI(v, given, 4, 1);
+	return Pk_SetCameraStartN(v);
 }
 
 static byte Parking_CreateParkedShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1603,25 +1589,16 @@ static byte Acc_InitN(void) {
 		Native_Free(radius);
 		if (n < 0 || !(n > 1 ? Pk_Item(s, 1, x) && Native_ToInt(x, radius) : Mode_G(ACC, "ACCELERATOR_RADIUS", radius)) ||
 			!Pk_Item(dummy, 2, ang) || !Pk_Item(dummy, 1, pos) || !Pk_Item(ang, 0, ax) || !Pk_Item(ang, 1, ay) ||
-			!Native_CallGlobal(ACC, "CreateAccelerator", NULL, "vvvv", pos, ax, ay, radius)) {
+			!PORT_OWN(Accelerator, CreateAccelerator, NULL, "vvvv", pos, ax, ay, radius)) {
 			return Mode_Done(&t, 0);
 		}
 	}
 }
 
-static PyObject *Accelerator_CreateAccelerator(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Pos", "Angx", "Angy", "Radius", NULL };
-	nativeVal_t a[4], out = { 0 };
-	byte given[4];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OOO|O", names, 4, a, given)) {
-		return Mode_KwOut(a, 4, 0, NULL);
-	}
+MODE_KW(Accelerator, CreateAccelerator, "OOO|O", "Pos", "Angx", "Angy", "Radius") {
 	/* the default of the def line, bound when the script loaded */
-	if (!given[3]) {
-		Native_SetInt(&a[3], 3500);
-	}
-	return Mode_KwOut(a, 4, Acc_CreateAcceleratorN(a, &out), &out);
+	Mode_KwDefI(v, given, 3, 3500);
+	return Acc_CreateAcceleratorN(v, out);
 }
 
 MODE_FN(Accelerator, Init, 0, Acc_InitN())

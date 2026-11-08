@@ -946,6 +946,7 @@ PORT_DECL(Parking, UseShip) /* ? */
 PORT_DECL(Parking, PlayVoiceChannel) /* 1 */
 PORT_DECL(Parking, ExecSwitchVehicleMissionCallback) /* 0 */
 PORT_DECL(Parking, EndPathCam) /* 1 */
+PORT_DECL(Parking, SetCameraStart) /* ? */
 PORT_DECL(Parking, isValidToPark) /* 1 */
 PORT_DECL(Parking, OnPark) /* 2 */
 PORT_DECL(Parking, SetDtritusPlate) /* 2 */
@@ -972,6 +973,7 @@ PORT_DECL(Parking, BrowseSwitchLevel) /* 0 */
 PORT_DECL(Parking, ShowNextMap) /* 3 */
 PORT_DECL(Parking, DoorInitializator) /* 1 */
 PORT_DECL(Parking, Init) /* 0 */
+PORT_DECL(Accelerator, CreateAccelerator) /* ? */
 PORT_DECL(Accelerator, Init) /* 0 */
 #define PORTS_Parking \
 	PORT_DEF(Parking, RestoreDeathPlayerShip, Parking_RestoreDeathPlayerShip) \
@@ -981,6 +983,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, PlayVoiceChannel, Parking_PlayVoiceChannel) \
 	PORT_DEF(Parking, ExecSwitchVehicleMissionCallback, Parking_ExecSwitchVehicleMissionCallback) \
 	PORT_DEF(Parking, EndPathCam, Parking_EndPathCam) \
+	PORT_DEFK(Parking, SetCameraStart, Parking_SetCameraStart) \
 	PORT_DEF(Parking, isValidToPark, Parking_isValidToPark) \
 	PORT_DEF(Parking, OnPark, Parking_OnPark) \
 	PORT_DEF(Parking, SetDtritusPlate, Parking_SetDtritusPlate) \
@@ -1007,6 +1010,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, ShowNextMap, Parking_ShowNextMap) \
 	PORT_DEF(Parking, DoorInitializator, Parking_DoorInitializator) \
 	PORT_DEF(Parking, Init, Parking_Init) \
+	PORT_DEFK(Accelerator, CreateAccelerator, Accelerator_CreateAccelerator) \
 	PORT_DEF(Accelerator, Init, Accelerator_Init)
 
 /* PhoneCab.c */
