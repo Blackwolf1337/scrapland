@@ -453,6 +453,13 @@ PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 	PORT_DEF(DoorSound, SetSlide, DoorSound_SetSlide) \
 	PORT_DEF(DoorSound, ConversorSetSounds, DoorSound_ConversorSetSounds)
 
+/* GateKeeper.c */
+PORT_DECL(GateKeeper, UseDoor) /* ? */
+PORT_DECL(GateKeeper, DoorFoe) /* ? */
+#define PORTS_GateKeeper \
+	PORT_DEF(GateKeeper, UseDoor, GateKeeper_UseDoor) \
+	PORT_DEF(GateKeeper, DoorFoe, GateKeeper_DoorFoe)
+
 /* InitLevel.c */
 PORT_DECL(Init, LoadCharLib) /* 1 */
 PORT_DECL(Init, AddMLib) /* 1 */
@@ -520,9 +527,16 @@ PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 	PORT_DEF(Items, SetInteractiveObjOnFloor, Items_SetInteractiveObjOnFloor)
 
 /* MakeChar.c */
+PORT_DECL(MakeChar, AddDefMorphActions) /* ? */
 PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 #define PORTS_MakeChar \
+	PORT_DEF(MakeChar, AddDefMorphActions, MakeChar_AddDefMorphActions) \
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
+
+/* MenuNet.c */
+PORT_DECL(PCMenu, TryJoin) /* ? */
+#define PORTS_MenuNet \
+	PORT_DEF(PCMenu, TryJoin, PCMenu_TryJoin)
 
 /* Metro.c */
 PORT_DECL(Metro, SetUsrParams) /* ? */
@@ -1036,6 +1050,11 @@ PORT_DECL(SRace, GetReSpawnPos) /* 1 */
 	PORT_DEF(SRace, TakeFlag, SRace_TakeFlag) \
 	PORT_DEF(SRace, InitRacePos, SRace_InitRacePos) \
 	PORT_DEF(SRace, GetReSpawnPos, SRace_GetReSpawnPos)
+
+/* Sputnik.c */
+PORT_DECL(Sputnik, SetSptAt) /* ? */
+#define PORTS_Sputnik \
+	PORT_DEF(Sputnik, SetSptAt, Sputnik_SetSptAt)
 
 /* SputnikInterface.c */
 PORT_DECL(SputnikInterface, AddDefaultPanelContent) /* 1 */

@@ -224,6 +224,11 @@ static PyObject *GateKeeper_GateKeeperSpeech(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
+/* the entries of the functions other ports call (OBJLIB 7: on Python values) */
+MODE_PYENTRY(GateKeeper_UseDoor)
+MODE_PYENTRYKW(GateKeeper_SetDoor)
+MODE_PYENTRY(GateKeeper_DoorFoe)
+
 PyMethodDef g_GateKeeperFuncs[] = {
 	{ "UseDoor", GateKeeper_UseDoor, 1, NULL },
 	{ "OnCreate", GateKeeper_OnCreate, 1, NULL },
@@ -236,3 +241,5 @@ PyMethodDef g_GateKeeperFuncs[] = {
 	{ "GateKeeperSpeech", GateKeeper_GateKeeperSpeech, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(GateKeeper)

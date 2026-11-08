@@ -824,6 +824,9 @@ static PyObject *PCMenu_TryJoin(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+/* OBJLIB 7: the entry on Python values (the "i|O" of Script_Args) */
+MODE_PYENTRY(PCMenu_TryJoin)
+
 static PyObject *PCMenu_JoinPassword(PyObject *self, PyObject *args) {
 	(void)self;
 	NET_ARGS(args);
@@ -1739,3 +1742,5 @@ PyMethodDef g_MenuNetMethods[] = {
 	{ "FragLimitOnRender", PCMenu_FragLimitOnRender, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuNet)

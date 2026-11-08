@@ -10,6 +10,7 @@
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 #define SP "Sputnik"
 
@@ -363,6 +364,10 @@ static PyObject *Sputnik_InitInterface(PyObject *self, PyObject *args) {
 	return Spt_FX(args, 0, "CharacterSputnikInterface");
 }
 
+/* the entries of the functions other ports call (OBJLIB 7: on Python values) */
+MODE_PYENTRYKW(Sputnik_Assign)
+MODE_PYENTRY(Sputnik_SetSptAt)
+
 PyMethodDef g_SputnikFuncs[] = {
 	{ "Assign", (PyCFunction)(void (*)(void))Sputnik_Assign, 3, NULL },
 	{ "ChangeRelax", Sputnik_ChangeRelax, 1, NULL },
@@ -383,3 +388,5 @@ PyMethodDef g_SputnikFuncs[] = {
 	{ "InitInterface", Sputnik_InitInterface, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Sputnik)
