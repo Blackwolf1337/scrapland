@@ -771,49 +771,67 @@ PORT_DECL(SaveGame, InitVars) /* ? */
 PORT_DECL(Scene, BaseAddActor) /* 3 */
 PORT_DECL(Scene, AddCharActor) /* 2 */
 PORT_DECL(Scene, AddLocalActor) /* 2 */
+PORT_DECL(Scene, ActorAction) /* ? */
 PORT_DECL(Scene, ActorActEvent) /* 3 */
 PORT_DECL(Scene, ActorBreakChannel) /* 3 */
 PORT_DECL(Scene, ActorActBreakChanne) /* 3 */
+PORT_DECL(Scene, ObjAction) /* ? */
 PORT_DECL(Scene, ObjActEvent) /* 3 */
 PORT_DECL(Scene, SetDefSounds) /* 2 */
+PORT_DECL(Scene, CreateLocalAction) /* ? */
 PORT_DECL(Scene, ExecGeneric) /* 3 */
+PORT_DECL(Scene, AddGeneric) /* ? */
+PORT_DECL(Scene, AddStream) /* ? */
 PORT_DECL(Scene, PlayStream) /* 3 */
 PORT_DECL(Scene, PlayVoiceVol) /* 2 */
 PORT_DECL(Scene, PlayText) /* 3 */
 PORT_DECL(Scene, SetText) /* 2 */
+PORT_DECL(Scene, StopSpeech) /* ? */
+PORT_DECL(Scene, AddText) /* ? */
 PORT_DECL(Scene, AbortScene) /* 1 */
 PORT_DECL(Scene, EndOfScene) /* 3 */
 PORT_DECL(Scene, DelClass) /* 1 */
+PORT_DECL(Scene, AddSound) /* ? */
 PORT_DECL(Scene, Load) /* 1 */
 PORT_DECL(Scene, UnhideChars) /* 0 */
 PORT_DECL(Scene, HideThis) /* 1 */
 PORT_DECL(Scene, HideChars) /* 0 */
 PORT_DECL(Scene, HideVehiclesToo) /* 0 */
 PORT_DECL(Scene, Play) /* 1 */
+PORT_DECL(Scene, InitOutDoorScene) /* ? */
 PORT_DECL(Scene, EndOutDoorScene) /* 0 */
 #define PORTS_Scene \
 	PORT_DEF(Scene, BaseAddActor, Scene_BaseAddActor) \
 	PORT_DEF(Scene, AddCharActor, Scene_AddCharActor) \
 	PORT_DEF(Scene, AddLocalActor, Scene_AddLocalActor) \
+	PORT_DEF(Scene, ActorAction, Scene_ActorAction) \
 	PORT_DEF(Scene, ActorActEvent, Scene_ActorActEvent) \
 	PORT_DEF(Scene, ActorBreakChannel, Scene_ActorBreakChannel) \
 	PORT_DEF(Scene, ActorActBreakChanne, Scene_ActorActBreakChanne) \
+	PORT_DEF(Scene, ObjAction, Scene_ObjAction) \
 	PORT_DEF(Scene, ObjActEvent, Scene_ObjActEvent) \
 	PORT_DEF(Scene, SetDefSounds, Scene_SetDefSounds) \
+	PORT_DEF(Scene, CreateLocalAction, Scene_CreateLocalAction) \
 	PORT_DEF(Scene, ExecGeneric, Scene_ExecGeneric) \
+	PORT_DEF(Scene, AddGeneric, Scene_AddGeneric) \
+	PORT_DEF(Scene, AddStream, Scene_AddStream) \
 	PORT_DEF(Scene, PlayStream, Scene_PlayStream) \
 	PORT_DEF(Scene, PlayVoiceVol, Scene_PlayVoiceVol) \
 	PORT_DEF(Scene, PlayText, Scene_PlayText) \
 	PORT_DEF(Scene, SetText, Scene_SetText) \
+	PORT_DEF(Scene, StopSpeech, Scene_StopSpeech) \
+	PORT_DEF(Scene, AddText, Scene_AddText) \
 	PORT_DEF(Scene, AbortScene, Scene_AbortScene) \
 	PORT_DEF(Scene, EndOfScene, Scene_EndOfScene) \
 	PORT_DEF(Scene, DelClass, Scene_DelClass) \
+	PORT_DEF(Scene, AddSound, Scene_AddSound) \
 	PORT_DEF(Scene, Load, Scene_Load) \
 	PORT_DEF(Scene, UnhideChars, Scene_UnhideChars) \
 	PORT_DEF(Scene, HideThis, Scene_HideThis) \
 	PORT_DEF(Scene, HideChars, Scene_HideChars) \
 	PORT_DEF(Scene, HideVehiclesToo, Scene_HideVehiclesToo) \
 	PORT_DEF(Scene, Play, Scene_Play) \
+	PORT_DEF(Scene, InitOutDoorScene, Scene_InitOutDoorScene) \
 	PORT_DEF(Scene, EndOutDoorScene, Scene_EndOutDoorScene)
 
 /* ShipMaker.c */
