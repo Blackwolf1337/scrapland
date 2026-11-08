@@ -1,0 +1,14 @@
+# helpers/fol3.py as channel statements (OBJLIB 7, stage 3): the pass-through recorder of the port functions that
+# PORT_CALL and PORT_OWN sites call; _pton(names) after the level loads, _ptlog(), _ptoff()
+import sys, string
+include fsd
+_ptr = []
+_ptorig = []
+_PtRec = lambda n, f: tc_obj(__name__ + '._PtRec', {'n': n, 'f': f},
+	lambda *a: (lambda box: (tc_finally(lambda: (tc_set(box, 0, apply(f, a)), tc_set(box, 1, 1)), (),
+		lambda: _ptr.append((n, _sdn(a), _sdn(box[0]) if box[1] else 'error'))), box[0])[1])([None, 0]))
+_pton = lambda names: (map(lambda n: (lambda mf: sys.modules.has_key(mf[0]) and (_ptorig.append((sys.modules[mf[0]], mf[1],
+	getattr(sys.modules[mf[0]], mf[1]))), setattr(sys.modules[mf[0]], mf[1], _PtRec(n, getattr(sys.modules[mf[0]], mf[1])))))(
+	string.split(n, '.')), names), 1)[1]
+_ptlog = lambda: (lambda r: (tc_set(__globals__, '_ptr', []), r)[1])(_ptr)
+_ptoff = lambda: (map(lambda x: setattr(x[0], x[1], x[2]), (lambda l: (l.reverse(), l)[1])(_ptorig[:])), tc_clear(_ptorig), 1)[2]

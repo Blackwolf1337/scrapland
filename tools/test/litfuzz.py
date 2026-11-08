@@ -8,6 +8,9 @@
 # float repr), and the native repr, str and check() texts are those of repr, backquotes, str and fmt of sdlib.py of
 # that value. The repr of every taken value is checked as a text too.
 # reprs(): every repr case copied into a native value and back gives the same value and the same four texts.
+# Both also check the packer of the direct calls between ports (Native_Pass, _native_pack): every taken value and
+# every repr case, as it is and with its tuples of three floats as vectors, plus values that hold objects or nest
+# deeper than the native reader, packs to what the round trip through Python gives.
 import string
 
 OUT = 'litfuzz-sdlib.out'
@@ -170,6 +173,27 @@ def _texts(t, e, nat):
 		bad.append(('check', t, nat[3], fmt(e)))
 	return bad
 
+_packs = [0]
+def _pack(t, e, bad):
+	"""the packer against the round trip for value e, as it is and with vectors"""
+	for vec in (0, 1):
+		_packs[0] = _packs[0] + 1
+		r = _native_pack(e, vec)
+		if r is not None:
+			bad.append(('pack', vec, t, r[0], r[1]))
+
+def _packvalues():
+	"""values without a native form: objects in them, nesting deeper than the reader, vectors as keys and items"""
+	deep = 1
+	for i in range(40):
+		deep = [deep]
+	edge = [1]
+	for i in range(30):
+		edge = (edge,)
+	return [[1, len], (len, 2.5), {'a': (len,)}, {1: [2, {3: len}]}, deep, edge, [edge], (edge, 1), {(1.0, 2.0, 3.0): 'k'},
+		[(1.0, 2.0, 3.0), [(0.5, -0.0, 1e300)]], {'p': (1.0, 2.0, 3.0)}, (1.0, 2.0, 3.0), (1, 2.0, 3.0), (1.0, 2.0),
+		[sys], (None, sys, 'x')]
+
 def _one(t, g, bad, again):
 	"""one text: 1 when the native reader took it"""
 	r = _native_lit(t, g)
@@ -188,6 +212,7 @@ def _one(t, g, bad, again):
 		bad.append(('value', t, r[2][0], e))
 	else:
 		bad[len(bad):] = _texts(t, e, r[2])
+		_pack(t, e, bad)
 		if again is not None:
 			again.append(repr(e))
 	return 1
@@ -205,13 +230,14 @@ def run(n, seed, wide=0):
 	took = 0
 	bad = []
 	again = []
+	_packs[0] = 0
 	for t in tests:
 		took = took + _one(t, g, bad, again)
 	retook = 0
 	for t in again:
 		retook = retook + _one(t, g, bad, None)
-	o = ['seed %d%s: texts %d taken %d, their reprs %d taken %d, bad %d' % (seed, wide and ' wide' or '', len(tests), took, len(again), retook,
-		len(bad))]
+	o = ['seed %d%s: texts %d taken %d, their reprs %d taken %d, packs %d, bad %d' % (seed, wide and ' wide' or '', len(tests), took,
+		len(again), retook, _packs[0], len(bad))]
 	for b in bad[:20]:
 		o.append(repr(b))
 	return string.join(o, '\n')
@@ -219,6 +245,7 @@ def run(n, seed, wide=0):
 def reprs():
 	bad = []
 	vals = _values()
+	_packs[0] = 0
 	for v in vals:
 		r = _native_repr(v)
 		if r is None:
@@ -227,7 +254,10 @@ def reprs():
 			bad.append(('value', r[0], v))
 		else:
 			bad[len(bad):] = _texts(repr(v), v, r)
-	o = ['repr cases %d, bad %d' % (len(vals), len(bad))]
+		_pack(repr(v), v, bad)
+	for v in _packvalues():
+		_pack(repr(v), v, bad)
+	o = ['repr cases %d, packs %d, bad %d' % (len(vals), _packs[0], len(bad))]
 	for b in bad[:20]:
 		o.append(repr(b))
 	return string.join(o, '\n')
