@@ -522,11 +522,13 @@ PORT_DECL(HangarTab, HideHangarPanel) /* 1 */
 PORT_DECL(HangarTab, UpdateHangars) /* 1 */
 PORT_DECL(HangarTab, ShowHangarPanel) /* 1 */
 PORT_DECL(HangarTab, IsShipValid) /* 1 */
+PORT_DECL(HangarTab, ComputeShipTotalCost) /* ? */
 PORT_DECL(HangarTab, ShowRebuildShipMoney) /* 3 */
 PORT_DECL(HangarTab, HideRebuildShipMoney) /* 3 */
 PORT_DECL(HangarTab, ShowMoneyBuyingShip) /* 3 */
 PORT_DECL(HangarTab, ShowMoneySellingShip) /* 3 */
 PORT_DECL(HangarTab, HideMoney) /* 3 */
+PORT_DECL(HangarTab, ScaleSpeedRamp) /* ? */
 PORT_DECL(HangarTab, GetSpeedRampOffsets) /* 1 */
 PORT_DECL(HangarTab, GetMaxSpeedTime) /* 1 */
 PORT_DECL(HangarTab, SetHangarPanel) /* 1 */
@@ -538,6 +540,7 @@ PORT_DECL(HangarTab, NextShipToEdit) /* 2 */
 PORT_DECL(HangarTab, SetShipTypeButtonsState) /* 2 */
 PORT_DECL(HangarTab, SelectShipToEdit) /* 1 */
 PORT_DECL(HangarTab, SelectItem) /* 2 */
+PORT_DECL(HangarTab, CreateEmptyShip) /* 1 */
 PORT_DECL(HangarTab, BuyShip) /* 2 */
 PORT_DECL(HangarTab, SellShip) /* 2 */
 PORT_DECL(HangarTab, AddReferenceShipControls) /* 1 */
@@ -558,11 +561,13 @@ PORT_DECL(HangarTab, HideShipMiniInfo) /* 3 */
 	PORT_DEF(HangarTab, UpdateHangars, HT_UpdateHangars) \
 	PORT_DEF(HangarTab, ShowHangarPanel, HT_ShowHangarPanel) \
 	PORT_DEF(HangarTab, IsShipValid, HT_IsShipValid) \
+	PORT_DEFK(HangarTab, ComputeShipTotalCost, HT_ComputeShipTotalCost) \
 	PORT_DEF(HangarTab, ShowRebuildShipMoney, HT_ShowRebuildShipMoney) \
 	PORT_DEF(HangarTab, HideRebuildShipMoney, HT_HideRebuildShipMoney) \
 	PORT_DEF(HangarTab, ShowMoneyBuyingShip, HT_ShowMoneyBuyingShip) \
 	PORT_DEF(HangarTab, ShowMoneySellingShip, HT_ShowMoneySellingShip) \
 	PORT_DEF(HangarTab, HideMoney, HT_HideMoney) \
+	PORT_DEF(HangarTab, ScaleSpeedRamp, HT_ScaleSpeedRamp) \
 	PORT_DEF(HangarTab, GetSpeedRampOffsets, HT_GetSpeedRampOffsets) \
 	PORT_DEF(HangarTab, GetMaxSpeedTime, HT_GetMaxSpeedTime) \
 	PORT_DEF(HangarTab, SetHangarPanel, HT_SetHangarPanel) \
@@ -574,6 +579,7 @@ PORT_DECL(HangarTab, HideShipMiniInfo) /* 3 */
 	PORT_DEF(HangarTab, SetShipTypeButtonsState, HT_SetShipTypeButtonsState) \
 	PORT_DEF(HangarTab, SelectShipToEdit, HT_SelectShipToEdit) \
 	PORT_DEF(HangarTab, SelectItem, HT_SelectItem) \
+	PORT_DEF(HangarTab, CreateEmptyShip, HT_CreateEmptyShip) \
 	PORT_DEF(HangarTab, BuyShip, HT_BuyShip) \
 	PORT_DEF(HangarTab, SellShip, HT_SellShip) \
 	PORT_DEF(HangarTab, AddReferenceShipControls, HT_AddReferenceShipControls) \
