@@ -15,9 +15,14 @@
  * The C keeps the values it works on in the struct of each mode (nm_state) and reads them from the dict where the
  * script reads the global (OBJLIB 5). Flag and the zones of the postman modes are entity handles: they stay Python
  * objects until entities are native values (OBJLIB 7). The modes read and write the variables of Ffa (Scorer, the
- * team totals, ScorerFraglimit, MasterFlag) and call Ffa, Menu, VehiclesNPC and their own functions by name
- * (OBJLIB 3 and 5). The module code of NPostman and NTeamPost creates their flag entity when the module loads; it
- * stays in the .mod files.
+ * team totals, ScorerFraglimit, MasterFlag; OBJLIB 5). The module code of NPostman and NTeamPost creates their flag
+ * entity when the module loads; it stays in the .mod files.
+ *
+ * Direct calls (stage 3): the modes call their own functions through PORT_OWN (the global, a mission may replace
+ * one; the shared code picks the site of its module, FL_OWN, PO_OWN, FP_OWN) and Ffa, Menu and VehiclesNPC through
+ * PORT_CALL (scrap/scriptnative.h: the port seam). What stays by name: the functions given to the scheduler (Reborn,
+ * CheckBotState, TryLinkFlagTo, RespawnFlag; OBJLIB 4), TryGarage set into ShipEdit as a value (OBJLIB 5) and
+ * SAI.SetStateVehicle (OBJLIB 7).
  */
 #include <limits.h>
 #include <string.h>
@@ -154,8 +159,18 @@ static byte Nm_WayToFlag(const char *m) {
 	return ok;
 }
 
-/* name(args) of the module through its global (a mission may replace it; OBJLIB 3) */
-#define NM_OWN(m, name, out, ...) Native_CallGlobal(m, name, out, __VA_ARGS__)
+/* m is one of the postman modes (NPostman, NTeamPost) */
+static byte Nm_Postman(const char *m) {
+	return !strcmp(m, "NPostman") || !strcmp(m, "NTeamPost");
+}
+
+/* name(args) of the module m through its global (a mission may replace it: the port seam), one site per module: m a
+ * flag mode (FL_OWN), a postman mode (PO_OWN) or one of the four (FP_OWN) */
+#define FL_OWN(m, name, out, ...) \
+	(!strcmp(m, "NTeamFlag") ? PORT_OWN(NTeamFlag, name, out, __VA_ARGS__) : PORT_OWN(NFlagHunt, name, out, __VA_ARGS__))
+#define PO_OWN(m, name, out, ...) \
+	(!strcmp(m, "NTeamPost") ? PORT_OWN(NTeamPost, name, out, __VA_ARGS__) : PORT_OWN(NPostman, name, out, __VA_ARGS__))
+#define FP_OWN(m, name, out, ...) (Nm_Postman(m) ? PO_OWN(m, name, out, __VA_ARGS__) : FL_OWN(m, name, out, __VA_ARGS__))
 
 /* ---- the functions every mode has ---- */
 
@@ -176,7 +191,7 @@ static byte Nm_CheckEndOfGameC(nativeVal_t *out) {
 		}
 		if (Native_Compare(score, lim) >= 0) {
 			Native_SetInt(out, 1);
-			return Mode_Done(&t, Native_CallMod("Ffa", "ServerEndOfGame", NULL, ""));
+			return Mode_Done(&t, PORT_CALL(Ffa, ServerEndOfGame, NULL, ""));
 		}
 		Mode_Release(&t, mark);
 	}
@@ -200,7 +215,7 @@ static byte Nm_CheckEndOfTeamGameC(nativeVal_t *out) {
 		end = Native_Compare(green, lim) >= 0;
 	}
 	Native_SetInt(out, end);
-	return Mode_Done(&t, !end || Native_CallMod("Ffa", "ServerEndOfGame", NULL, ""));
+	return Mode_Done(&t, !end || PORT_CALL(Ffa, ServerEndOfGame, NULL, ""));
 }
 
 /* DeathFunc(WinnerName, LooserName, inc) of NDeathMatch and NTeamPost: the winner scores */
@@ -210,7 +225,7 @@ static byte Nm_DeathFuncC(const nativeVal_t *a) {
 
 /* GetGameDescriptor() of the team modes: the score of the teams */
 static byte Nm_TeamDescriptorC(nativeVal_t *out) {
-	return Mode_Import("Ffa") && Native_CallMod("Ffa", "GetGameTeamDescriptor", out, "");
+	return Mode_Import("Ffa") && PORT_CALL(Ffa, GetGameTeamDescriptor, out, "");
 }
 
 /* GetGameDescriptor(): the title of the mode */
@@ -226,7 +241,7 @@ static byte Nm_ShowHelpC(const char *m, const nativeVal_t *id) {
 		return 0;
 	}
 	Mode_Lang(Nm_Text(m, 1), &text);
-	byte ok = Native_CallMod("Menu", "ShowWarning", NULL, "vv", id, &text);
+	byte ok = PORT_CALL(Menu, ShowWarning, NULL, "vv", id, &text);
 	Native_Free(&text);
 	return ok;
 }
@@ -291,9 +306,9 @@ static byte Bots_DeathFuncC(const char *m, const nativeVal_t *a) {
 }
 
 /* Reborn(LooserName, Life): the bot at a spawn point with its life, hunting again */
-static byte Bots_RebornC(const char *m, const nativeVal_t *a) {
-	return Mode_Import("Ffa") && Native_CallMod("Ffa", "SetSpawnPos", NULL, "v", &a[0]) && Mode_EntSet(&a[0], "Life", &a[1]) &&
-		NM_OWN(m, "SetBotState", NULL, "v", &a[0]);
+static byte Bots_RebornC(const nativeVal_t *a) {
+	return Mode_Import("Ffa") && PORT_CALL(Ffa, SetSpawnPos, NULL, "v", &a[0]) && Mode_EntSet(&a[0], "Life", &a[1]) &&
+		PORT_OWN(NDeathMatchBots, SetBotState, NULL, "v", &a[0]);
 }
 
 /* TryGarage(id, control): the garage is closed on a server with bots */
@@ -351,7 +366,7 @@ static byte Bots_CheckBotStateC(const char *m, const nativeVal_t *name) {
 		return Mode_Done(&t, 0);
 	}
 	if ((!Native_Compare(state, Mode_I(&t, 0)) || !Native_Compare(state, Mode_I(&t, 3))) &&
-		!NM_OWN(m, "SetBotState", NULL, "v", name)) {
+		!PORT_OWN(NDeathMatchBots, SetBotState, NULL, "v", name)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(delay, 1.5);
@@ -367,7 +382,8 @@ static byte Bots_InitServerModC(const char *m) {
 			return 0;
 		}
 	}
-	/* ShipEdit.EnterEditShipMenu = TryGarage (OBJLIB 3: a function of the module as a value) */
+	/* ShipEdit.EnterEditShipMenu = TryGarage (OBJLIB 5: a function of the module as a value; the calls of
+	 * EnterEditShipMenu through its ref take the slow path to it) */
 	PyObject *fn = Mode_GlobalPy(m, "TryGarage"), *se = fn ? PyImport_ImportModule("ShipEdit") : NULL;
 	int bad = !se || PyObject_SetAttrString(se, "EnterEditShipMenu", fn) < 0;
 	Py_XDECREF(se);
@@ -397,13 +413,11 @@ static byte Bots_InitServerModC(const char *m) {
 			Native_Subscript(ships, key, ship) && Mode_ModVar("ShipMaker", "PilotsList", pilots);
 		int npilots = ok ? Native_Size(pilots) : -1;
 		ok = npilots >= 0;
-		/* pd = VehiclesNPC.GetIAProf(bot[1]): the profile object of VehiclesNPC (OBJLIB 3: a value of another port) */
+		/* pd = VehiclesNPC.GetIAProf(bot[1]): the profile object of VehiclesNPC, changed in place below (the object
+		 * itself on both paths) */
 		if (ok) {
-			PyObject *gf = Script_Attr("VehiclesNPC", "GetIAProf"), *a1 = gf ? Native_ToPy(b1) : NULL;
-			prof = a1 ? Script_Invoke(gf, Py_BuildValue("(O)", a1)) : NULL;
-			Py_XDECREF(a1);
-			Py_XDECREF(gf);
-			ok = prof && Native_Subscript(bot, Mode_I(&t, 2), b2) && Native_CallMod("VehiclesNPC", "SetAIProfile", NULL, "Ov", prof, b2);
+			prof = PORT_ASK(VehiclesNPC, GetIAProf, "v", b1);
+			ok = prof && Native_Subscript(bot, Mode_I(&t, 2), b2) && PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "Ov", prof, b2);
 		}
 		if (ok) {
 			PyObject *cad = PyInt_FromLong(0), *ang = PyFloat_FromDouble(3.14);
@@ -440,19 +454,18 @@ static byte Bots_InitServerModC(const char *m) {
 				ok = Native_Subscript(ship, Mode_I(&t, j), s[j] = Mode_V(&t));
 			}
 			/* Ffa.ClientJoin(ply.Name, bot[1], ship[6], bot[0], PilotsList[...], ship[1] .. ship[5], "red") */
-			ok = ok && Native_CallMod("Ffa", "ClientJoin", NULL, "vvvvvvvvvvv", name, b1, s[0], b0, pilot, s[1], s[2], s[3],
-				s[4], s[5], red);
+			ok = ok && PORT_CALL(Ffa, ClientJoin, NULL, "vvvvvvvvvvv", name, b1, s[0], b0, pilot, s[1], s[2], s[3], s[4], s[5], red);
 		}
 		/* after the calls of other ports the handle of the bot finds its entity again (gone: the handle's error) */
 		ok = ok && Mode_NameSet(pn, "Active", zero);
 		if (ok) {
 			/* the handle of the bot goes to VehiclesNPC (OBJLIB 7) */
 			handle = Mode_Handle(World_FindEntity(pn));
-			ok = Native_CallMod("VehiclesNPC", "SetIAProf", NULL, "Ov", handle, b2);
+			ok = PORT_CALL(VehiclesNPC, SetIAProf, NULL, "Ov", handle, b2);
 			Py_DECREF(handle);
 		}
 		Native_Free(name);
-		ok = ok && Mode_NameGet(pn, "Name", name) && Native_CallMod("Ffa", "SetSpawnPos", NULL, "v", name) &&
+		ok = ok && Mode_NameGet(pn, "Name", name) && PORT_CALL(Ffa, SetSpawnPos, NULL, "v", name) &&
 			Mode_NameSet(pn, "Descriptor", b0) && Mode_NameSet(pn, "Life", life) && Mode_NameSet(pn, "MinLife", life) &&
 			Mode_NameSet(pn, "MaxLife", life);
 		/* ply.WeapList = ply.WeapList[0:len(ply.WeapList) - 1] + "1" */
@@ -465,7 +478,7 @@ static byte Bots_InitServerModC(const char *m) {
 			/* SetBotState(ply.Name); AddScheduledFunc(Scrap.GetTime() + 2, CheckBotState, (ply.Name,)) */
 			const nativeVal_t *delay = Mode_I(&t, 2);
 			Native_Free(name);
-			ok = Mode_NameGet(pn, "Name", name) && NM_OWN(m, "SetBotState", NULL, "v", name);
+			ok = Mode_NameGet(pn, "Name", name) && PORT_OWN(NDeathMatchBots, SetBotState, NULL, "v", name);
 			Native_Free(name);
 			ok = ok && Mode_NameGet(pn, "Name", name) && Nm_Later(m, delay, "CheckBotState", name, 1, NULL);
 		}
@@ -574,7 +587,7 @@ static byte Fl_FlagSetup(const char *m, int server, byte postman) {
 	}
 	if (server) {
 		nmState_t *st = &nm_state[Nm_Index(m)];
-		byte ok = postman || NM_OWN(m, "GetRndFlag", NULL, "");
+		byte ok = postman || FL_OWN(m, GetRndFlag, NULL, "");
 		ok = ok && Mode_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag"));
 		if (postman) {
 			ok = ok && Mode_Read(m, "FlagSpawnPos", &st->flagSpawnPos) && Mode_FlagSet(m, "Pos", &st->flagSpawnPos);
@@ -644,7 +657,7 @@ static byte Fl_UsrClientC(const char *m, const char *ac, int drop, const nativeV
 		if (!Native_Slice(&a[1], 1, INT_MAX, rest) || !Native_EvalText(m, rest, val) || !Mode_Unpack(val, 2, two)) {
 			return Mode_Done(&t, 0);
 		}
-		return Mode_Done(&t, Mode_Put(m, ac, &nm_state[Nm_Index(m)].ac, &two[0]) && NM_OWN(m, "TakeFlag", NULL, "v", &two[1]));
+		return Mode_Done(&t, Mode_Put(m, ac, &nm_state[Nm_Index(m)].ac, &two[0]) && FP_OWN(m, TakeFlag, NULL, "v", &two[1]));
 	}
 	if (drop) {
 		Native_Free(c0);
@@ -652,22 +665,21 @@ static byte Fl_UsrClientC(const char *m, const char *ac, int drop, const nativeV
 			return Mode_Done(&t, 0);
 		}
 		if (!Native_Compare(c0, Mode_S(&t, "D"))) {
-			/* DropFlag(eval(s[1:])) through the global */
-			PyObject *fn = Mode_GlobalPy(m, "DropFlag");
-			byte ok = fn && Native_Slice(&a[1], 1, INT_MAX, rest) && Native_EvalText(m, rest, v) && Native_Call(fn, NULL, "v", v);
-			Py_XDECREF(fn);
-			return Mode_Done(&t, ok);
+			/* DropFlag(eval(s[1:])) through the global; the global is looked up after the argument, as at the other
+			 * PORT_OWN sites (the script looked it up first: the same unless both fail) */
+			return Mode_Done(&t, Native_Slice(&a[1], 1, INT_MAX, rest) && Native_EvalText(m, rest, v) &&
+				PO_OWN(m, DropFlag, NULL, "v", v));
 		}
 	}
-	return Mode_Done(&t, Native_CallMod("Ffa", "OnUsrClient", NULL, "vv", &a[0], &a[1]));
+	return Mode_Done(&t, PORT_CALL(Ffa, OnUsrClient, NULL, "vv", &a[0], &a[1]));
 }
 
 /* Ffa.ClientJoin with the 11 arguments, then the client id of the entity name ("net5") into *id */
 static byte Nm_Join(modeVals_t *t, const nativeVal_t *a, nativeVal_t *id) {
 	nativeVal_t *num = Mode_V(t);
 	return Mode_Import("Ffa") &&
-		Native_CallMod("Ffa", "ClientJoin", NULL, "vvvvvvvvvvv", &a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7], &a[8],
-			&a[9], &a[10]) && Native_Slice(&a[0], 3, INT_MAX, num) && Native_ToInt(num, id);
+		PORT_CALL(Ffa, ClientJoin, NULL, "vvvvvvvvvvv", &a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7], &a[8], &a[9],
+			&a[10]) && Native_Slice(&a[0], 3, INT_MAX, num) && Native_ToInt(num, id);
 }
 
 /* ClientJoin(entityname, ModelName, MaxLife, UsrName, PilotName, Motor0..3, WeaponBay, TgType): the join of Ffa,
@@ -692,17 +704,17 @@ static byte Fl_ServerTakeFlagC(const char *m, int v, const nativeVal_t *a) {
 	if (!has) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Native_CallMod("Ffa", "CheckGameStart", started, "")) {
+	if (!PORT_CALL(Ffa, CheckGameStart, started, "")) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(started)) {
 		return Mode_Done(&t, Mode_Label(0, "Net_Label_Waiting_Challenge", 1));
 	}
-	if (!Nm_ScorerAdd(veh, Mode_I(&t, 1)) || (v && !Nm_TotalAdd(&t, veh, 1)) || !NM_OWN(m, "GetRndFlag", NULL, "") ||
+	if (!Nm_ScorerAdd(veh, Mode_I(&t, 1)) || (v && !Nm_TotalAdd(&t, veh, 1)) || !FL_OWN(m, GetRndFlag, NULL, "") ||
 		!Mode_Read(m, "AcFlag", ac) || !Mode_Cat(&t, s, 5, Mode_S(&t, "F'"), ac, Mode_S(&t, "','"), veh, Mode_S(&t, "'")) ||
-		!Mode_Send(Mode_I(&t, -1), s) || !NM_OWN(m, "TakeFlag", NULL, "v", veh) ||
-		!Native_CallMod("Ffa", "ActualizeGameScorer", NULL, "") || !Native_CallMod("Ffa", "ServerSendPlayerStatus", NULL, "v", veh) ||
-		!NM_OWN(m, "CheckEndOfGame", end, "")) {
+		!Mode_Send(Mode_I(&t, -1), s) || !FL_OWN(m, TakeFlag, NULL, "v", veh) ||
+		!PORT_CALL(Ffa, ActualizeGameScorer, NULL, "") || !PORT_CALL(Ffa, ServerSendPlayerStatus, NULL, "v", veh) ||
+		!FL_OWN(m, CheckEndOfGame, end, "")) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, !Native_True(end) || Mode_FlagSet(m, "OnTake", Mode_S(&t, "")));
@@ -710,7 +722,7 @@ static byte Fl_ServerTakeFlagC(const char *m, int v, const nativeVal_t *a) {
 
 /* InitServerMod(), InitClientMod() of the flag and postman modes (server; Ffa imported in the postman server, imp) */
 static byte Fl_InitC(const char *m, int server, int imp) {
-	return (!imp || Mode_Import("Ffa")) && NM_OWN(m, "BrowseAreas", NULL, "") && NM_OWN(m, "CreateFlag", NULL, "i", (long)server);
+	return (!imp || Mode_Import("Ffa")) && FP_OWN(m, BrowseAreas, NULL, "") && FP_OWN(m, CreateFlag, NULL, "i", (long)server);
 }
 
 /* ---- NPostman and NTeamPost (v 1): one flag at DM_Domination_Flag, its taker carries it to a random zone ---- */
@@ -724,7 +736,7 @@ static byte Po_ServerHidePlayerC(const char *m, const nativeVal_t *veh) {
 	}
 	byte carried = !Native_Compare(&mf, veh);
 	Native_Free(&mf);
-	return !carried || NM_OWN(m, "ServerDropFlag", NULL, "");
+	return !carried || PO_OWN(m, ServerDropFlag, NULL, "");
 }
 
 /* BrowseAreas(): FlagSpawnPos from DM_Domination_Flag; ZoneList, an item of radius 3000 at each DM_Domination_Zone_
@@ -788,7 +800,7 @@ static byte Po_CreateFlagC(const char *m, const nativeVal_t *server) {
 
 /* LinkFlagTo(TakerName, Node): the flag onto the node of the taker (no older try left) */
 static byte Po_LinkFlagToC(const char *m, const nativeVal_t *a) {
-	return Mode_DelSchedS("TryLinkFlagTo") && NM_OWN(m, "TryLinkFlagTo", NULL, "vv", &a[0], &a[1]);
+	return Mode_DelSchedS("TryLinkFlagTo") && PO_OWN(m, TryLinkFlagTo, NULL, "vv", &a[0], &a[1]);
 }
 
 /* TryLinkFlagTo(TakerName, Node): links the flag once the taker has a model, else tries again in 0.5 s */
@@ -840,7 +852,7 @@ static byte Po_TakeFlagC(const char *m, int v, const nativeVal_t *name) {
 		return Mode_Done(&t, 1);
 	}
 	const char *tn = Native_Text(name);
-	if (!Mode_Import("Sound") || !Mode_Import("Ffa") || !NM_OWN(m, "AbortZoneKeys", NULL, "") || !Po_ZoneSet(m, "RadarShow", Mode_I(&t, 2)) ||
+	if (!Mode_Import("Sound") || !Mode_Import("Ffa") || !PO_OWN(m, AbortZoneKeys, NULL, "") || !Po_ZoneSet(m, "RadarShow", Mode_I(&t, 2)) ||
 		!Nm_Ffa("MasterFlag", mf)) {
 		return Mode_Done(&t, 0);
 	}
@@ -854,7 +866,7 @@ static byte Po_TakeFlagC(const char *m, int v, const nativeVal_t *name) {
 		/* the handle of the taker, held since the start of the function */
 		if (!Mode_SetModVar("Ffa", "MasterFlag", name) || !Mode_NameGet(tn, "UsrControl", uc) ||
 			!Nm_FlagModel(m, !Native_Compare(uc, Mode_I(&t, 0)) ? "FlagNoUsrModel" : "FlagPilotModel") ||
-			!NM_OWN(m, "LinkFlagTo", NULL, "vs", name, "DC_Flag_Player") || !Mode_FlagSet(m, "OffModPos", zero) ||
+			!PO_OWN(m, LinkFlagTo, NULL, "vs", name, "DC_Flag_Player") || !Mode_FlagSet(m, "OffModPos", zero) ||
 			!Mode_FlagSet(m, "DeltaOffMul", Mode_I(&t, 4)) || !Mode_FlagSet(m, "OffMul", Mode_I(&t, 0)) ||
 			!Mode_FlagSet(m, "UseLinkAng", Mode_I(&t, 1))) {
 			return Mode_Done(&t, 0);
@@ -880,7 +892,7 @@ static byte Po_TakeFlagC(const char *m, int v, const nativeVal_t *name) {
 			ok = Mode_Sound("EneWaySound", "EneWayVolume") && (!v || !take || Mode_Label(1, "Net_Msg_Enemy_TeamFlag", 5));
 		}
 	}
-	return Mode_Done(&t, ok && Native_CallMod("Ffa", "ActualizeGameScorer", NULL, ""));
+	return Mode_Done(&t, ok && PORT_CALL(Ffa, ActualizeGameScorer, NULL, ""));
 }
 
 /* DropFlag(Pos): the flag alone at Pos with nobody carrying it, the zones off */
@@ -891,8 +903,8 @@ static byte Po_DropFlagC(const char *m, int v, const nativeVal_t *pos) {
 	return Mode_Done(&t, Mode_Import("Sound") && Mode_Import("Ffa") && Mode_FlagSet(m, "LinkModel", Mode_S(&t, ",")) &&
 		(!v || Nm_FlagModel(m, "FlagModel")) && Mode_FlagSet(m, "Pos", pos) && Mode_FlagSet(m, "rTime", rt) &&
 		Mode_SetModVar("Ffa", "MasterFlag", none) && (v || Nm_FlagModel(m, "FlagModel")) && Nm_WayToFlag(m) &&
-		Mode_Sound("EneWaySound", "EneWayVolume") && NM_OWN(m, "AbortZoneKeys", NULL, "") &&
-		Native_CallMod("Ffa", "ActualizeGameScorer", NULL, ""));
+		Mode_Sound("EneWaySound", "EneWayVolume") && PO_OWN(m, AbortZoneKeys, NULL, "") &&
+		PORT_CALL(Ffa, ActualizeGameScorer, NULL, ""));
 }
 
 /* AbortZoneKeys(): no zone on the radar or taking */
@@ -948,13 +960,11 @@ static byte Po_ServerTakeBaseC(const char *m, int v, const nativeVal_t *a) {
 	if (Native_Compare(mf, &a[1])) {
 		return Mode_Done(&t, 1);
 	}
-	PyObject *fn = NULL;
-	byte ok = Nm_ScorerAdd(&a[1], Mode_I(&t, v ? 10 : 1)) && (!v || Nm_TotalAdd(&t, &a[1], 1)) &&
-		Native_CallMod("Ffa", "ActualizeGameScorer", NULL, "") && Native_CallMod("Ffa", "ServerSendPlayerStatus", NULL, "v", &a[1]) &&
-		(fn = Mode_GlobalPy(m, "ServerTakeFlag")) && Nm_FlagGet(m, "Name", fname) && Native_Call(fn, NULL, "vv", fname, &a[1]) &&
-		NM_OWN(m, "CheckEndOfGame", NULL, "");
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	/* ServerTakeFlag(Flag.Name, VehicleName): the global is looked up after Flag.Name, as at the other PORT_OWN sites
+	 * (the script looked it up first: the same unless both fail) */
+	return Mode_Done(&t, Nm_ScorerAdd(&a[1], Mode_I(&t, v ? 10 : 1)) && (!v || Nm_TotalAdd(&t, &a[1], 1)) &&
+		PORT_CALL(Ffa, ActualizeGameScorer, NULL, "") && PORT_CALL(Ffa, ServerSendPlayerStatus, NULL, "v", &a[1]) &&
+		Nm_FlagGet(m, "Name", fname) && PO_OWN(m, ServerTakeFlag, NULL, "vv", fname, &a[1]) && PO_OWN(m, CheckEndOfGame, NULL, ""));
 }
 
 /* ServerDropFlag(): the flag drops where its carrier is (back to the start in AUTO_RESPAWN_FLAG_TIME) or at
@@ -978,7 +988,7 @@ static byte Po_ServerDropFlagC(const char *m) {
 		Native_Copy(pos, &st->flagSpawnPos);
 	}
 	return Mode_Done(&t, Po_SendDrop(&t, pos) && Mode_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag")) &&
-		NM_OWN(m, "DropFlag", NULL, "v", pos));
+		PO_OWN(m, DropFlag, NULL, "v", pos));
 }
 
 /* ServerTakeFlag(ItemName, VehicleName): a player took the flag after the start: a new zone takes it, for all
@@ -993,15 +1003,15 @@ static byte Po_ServerTakeFlagC(const char *m, const nativeVal_t *a) {
 	if (!has) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Native_CallMod("Ffa", "CheckGameStart", started, "")) {
+	if (!PORT_CALL(Ffa, CheckGameStart, started, "")) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(started)) {
 		return Mode_Done(&t, Mode_Label(0, "Net_Label_Waiting_Challenge", 1));
 	}
-	return Mode_Done(&t, Mode_DelSchedS("RespawnMainFlag") && NM_OWN(m, "GetRndZone", NULL, "") && Mode_Read(m, "AcZone", ac) &&
+	return Mode_Done(&t, Mode_DelSchedS("RespawnMainFlag") && PO_OWN(m, GetRndZone, NULL, "") && Mode_Read(m, "AcZone", ac) &&
 		Mode_Cat(&t, s, 5, Mode_S(&t, "F'"), ac, Mode_S(&t, "','"), veh, Mode_S(&t, "'")) && Mode_Send(Mode_I(&t, -1), s) &&
-		NM_OWN(m, "TakeFlag", NULL, "v", veh) && Po_ZoneSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeBase")) &&
+		PO_OWN(m, TakeFlag, NULL, "v", veh) && Po_ZoneSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeBase")) &&
 		Mode_FlagSet(m, "OnTake", Mode_S(&t, "")));
 }
 
@@ -1009,7 +1019,7 @@ static byte Po_ServerTakeFlagC(const char *m, const nativeVal_t *a) {
 static byte Po_RespawnFlagC(const char *m) {
 	nativeVal_t none;
 	Native_SetNone(&none);
-	return Mode_Import("Ffa") && Mode_SetModVar("Ffa", "MasterFlag", &none) && NM_OWN(m, "ServerDropFlag", NULL, "");
+	return Mode_Import("Ffa") && Mode_SetModVar("Ffa", "MasterFlag", &none) && PO_OWN(m, ServerDropFlag, NULL, "");
 }
 
 /* ---- the adapters of the module tables (OBJLIB 7: arguments, results and the errors of the Python calls) ---- */
@@ -1023,37 +1033,22 @@ static byte Po_RespawnFlagC(const char *m) {
 		return PyArg_ParseTuple(args, (char *)fmts[nargs], &o[0], &o[1], &o[2]) ? Py_ReturnNone() : NULL; \
 	}
 
-/* the entry of module mod for the function name: n arguments, the core call with m, v and a (out for the result) */
-#define NM_FN(mod, name, nargs, v, call) \
-	static PyObject *mod##_##name(PyObject *self, PyObject *args) { \
-		static const char *const m = #mod; \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *a, *out = Mode_V(&t); \
-		(void)self; \
-		(void)m; \
-		(void)out; \
-		if (!Mode_Args(args, nargs, &t, &a)) { \
-			return Mode_Done(&t, 0), NULL; \
-		} \
-		(void)a; \
-		return Mode_Out(&t, call, out); \
-	}
 #define NM_ENTRY(mod, name) { #name, mod##_##name, 1, NULL },
 
 /* the functions every mode has, those of the free for all and of the team modes, the ones that do nothing */
-#define NM_COMMON(mod) NM_FN(mod, ShowHelp, 1, 0, Nm_ShowHelpC(m, &a[0]))
+#define NM_COMMON(mod) MODE_FN(mod, ShowHelp, 1, Nm_ShowHelpC(#mod, &a[0]))
 #define NM_FFAEND(mod) \
-	NM_FN(mod, GetGameDescriptor, 0, 0, Nm_GetGameDescriptorC(m, out)) \
-	NM_FN(mod, CheckEndOfGame, 0, 0, Nm_CheckEndOfGameC(out))
+	MODE_FN(mod, GetGameDescriptor, 0, Nm_GetGameDescriptorC(#mod, out)) \
+	MODE_FN(mod, CheckEndOfGame, 0, Nm_CheckEndOfGameC(out))
 #define NM_TEAMEND(mod) \
-	NM_FN(mod, CheckEndOfTeamGame, 0, 0, Nm_CheckEndOfTeamGameC(out)) \
-	NM_FN(mod, TeamDescriptor, 0, 0, Nm_TeamDescriptorC(out))
+	MODE_FN(mod, CheckEndOfTeamGame, 0, Nm_CheckEndOfTeamGameC(out)) \
+	MODE_FN(mod, TeamDescriptor, 0, Nm_TeamDescriptorC(out))
 
 NM_COMMON(NDeathMatch)
 NM_FFAEND(NDeathMatch)
 NM_PASS(NDeathMatch, InitClientModPass, 0)
 NM_PASS(NDeathMatch, ServerHidePlayerPass, 1)
-NM_FN(NDeathMatch, DeathFunc, 3, 0, Nm_DeathFuncC(a))
+MODE_FN(NDeathMatch, DeathFunc, 3, Nm_DeathFuncC(a))
 
 PyMethodDef g_NDeathMatchMethods[] = {
 	NM_ENTRY(NDeathMatch, DeathFunc)
@@ -1070,12 +1065,12 @@ NM_COMMON(NDeathMatchBots)
 NM_FFAEND(NDeathMatchBots)
 NM_PASS(NDeathMatchBots, InitClientModPass, 0)
 NM_PASS(NDeathMatchBots, ServerHidePlayerPass, 1)
-NM_FN(NDeathMatchBots, DeathFunc, 3, 0, Bots_DeathFuncC(m, a))
-NM_FN(NDeathMatchBots, Reborn, 2, 0, Bots_RebornC(m, a))
-NM_FN(NDeathMatchBots, TryGarage, 2, 0, Bots_TryGarageC(a))
-NM_FN(NDeathMatchBots, SetBotState, 1, 0, Bots_SetBotStateC(&a[0]))
-NM_FN(NDeathMatchBots, CheckBotState, 1, 0, Bots_CheckBotStateC(m, &a[0]))
-NM_FN(NDeathMatchBots, InitServerMod, 0, 0, Bots_InitServerModC(m))
+MODE_FN(NDeathMatchBots, DeathFunc, 3, Bots_DeathFuncC("NDeathMatchBots", a))
+MODE_FN(NDeathMatchBots, Reborn, 2, Bots_RebornC(a))
+MODE_FN(NDeathMatchBots, TryGarage, 2, Bots_TryGarageC(a))
+MODE_FN(NDeathMatchBots, SetBotState, 1, Bots_SetBotStateC(&a[0]))
+MODE_FN(NDeathMatchBots, CheckBotState, 1, Bots_CheckBotStateC("NDeathMatchBots", &a[0]))
+MODE_FN(NDeathMatchBots, InitServerMod, 0, Bots_InitServerModC("NDeathMatchBots"))
 
 PyMethodDef g_NDeathMatchBotsMethods[] = {
 	NM_ENTRY(NDeathMatchBots, DeathFunc)
@@ -1096,7 +1091,7 @@ NM_COMMON(NTeamDM)
 NM_TEAMEND(NTeamDM)
 NM_PASS(NTeamDM, InitClientModPass, 0)
 NM_PASS(NTeamDM, ServerHidePlayerPass, 1)
-NM_FN(NTeamDM, DeathFunc, 3, 1, NTeamDM_DeathFuncC(a))
+MODE_FN(NTeamDM, DeathFunc, 3, NTeamDM_DeathFuncC(a))
 
 PyMethodDef g_NTeamDMMethods[] = {
 	NM_ENTRY(NTeamDM, DeathFunc)
@@ -1113,16 +1108,16 @@ PyMethodDef g_NTeamDMMethods[] = {
 #define FL_MODE(mod, v) \
 	NM_COMMON(mod) \
 	NM_PASS(mod, ServerHidePlayerPass, 1) \
-	NM_FN(mod, DeathFunc, 3, v, Fl_DeathFuncC(v, a)) \
-	NM_FN(mod, InitServerMod, 0, v, Fl_InitC(m, 1, 0)) \
-	NM_FN(mod, InitClientMod, 0, v, Fl_InitC(m, 0, 0)) \
-	NM_FN(mod, GetRndFlag, 0, v, Fl_RndKey(m, "AcFlag")) \
-	NM_FN(mod, BrowseAreas, 0, v, Fl_BrowseAreasC(m, v)) \
-	NM_FN(mod, CreateFlag, 1, v, Fl_CreateFlagC(m, &a[0])) \
-	NM_FN(mod, TakeFlag, 1, v, Fl_TakeFlagC(m, v, &a[0])) \
-	NM_FN(mod, OnUsrClient, 2, v, Fl_UsrClientC(m, "AcFlag", 0, a)) \
-	NM_FN(mod, ClientJoin, 11, v, Fl_ClientJoinC(m, a)) \
-	NM_FN(mod, ServerTakeFlag, 2, v, Fl_ServerTakeFlagC(m, v, a))
+	MODE_FN(mod, DeathFunc, 3, Fl_DeathFuncC(v, a)) \
+	MODE_FN(mod, InitServerMod, 0, Fl_InitC(#mod, 1, 0)) \
+	MODE_FN(mod, InitClientMod, 0, Fl_InitC(#mod, 0, 0)) \
+	MODE_FN(mod, GetRndFlag, 0, Fl_RndKey(#mod, "AcFlag")) \
+	MODE_FN(mod, BrowseAreas, 0, Fl_BrowseAreasC(#mod, v)) \
+	MODE_FN(mod, CreateFlag, 1, Fl_CreateFlagC(#mod, &a[0])) \
+	MODE_FN(mod, TakeFlag, 1, Fl_TakeFlagC(#mod, v, &a[0])) \
+	MODE_FN(mod, OnUsrClient, 2, Fl_UsrClientC(#mod, "AcFlag", 0, a)) \
+	MODE_FN(mod, ClientJoin, 11, Fl_ClientJoinC(#mod, a)) \
+	MODE_FN(mod, ServerTakeFlag, 2, Fl_ServerTakeFlagC(#mod, v, a))
 #define FL_ENTRIES(mod) \
 	NM_ENTRY(mod, DeathFunc) \
 	NM_ENTRY(mod, InitServerMod) \
@@ -1159,29 +1154,29 @@ PyMethodDef g_NTeamFlagMethods[] = {
 
 /* DeathFunc of NPostman does nothing, NTeamPost scores the winner */
 #define PO_DEATH_0(mod) NM_PASS(mod, DeathFunc, 3)
-#define PO_DEATH_1(mod) NM_FN(mod, DeathFunc, 3, 1, Nm_DeathFuncC(a))
+#define PO_DEATH_1(mod) MODE_FN(mod, DeathFunc, 3, Nm_DeathFuncC(a))
 
 /* the functions of a postman mode (v 1 the team version) */
 #define PO_MODE(mod, v) \
 	NM_COMMON(mod) \
 	PO_DEATH_##v(mod) \
-	NM_FN(mod, InitServerMod, 0, v, Fl_InitC(m, 1, 1)) \
-	NM_FN(mod, InitClientMod, 0, v, Fl_InitC(m, 0, 0)) \
-	NM_FN(mod, ServerHidePlayer, 1, v, Po_ServerHidePlayerC(m, &a[0])) \
-	NM_FN(mod, GetRndZone, 0, v, Fl_RndKey(m, "AcZone")) \
-	NM_FN(mod, BrowseAreas, 0, v, Po_BrowseAreasC(m)) \
-	NM_FN(mod, CreateFlag, 1, v, Po_CreateFlagC(m, &a[0])) \
-	NM_FN(mod, LinkFlagTo, 2, v, Po_LinkFlagToC(m, a)) \
-	NM_FN(mod, TryLinkFlagTo, 2, v, Po_TryLinkFlagToC(m, a)) \
-	NM_FN(mod, TakeFlag, 1, v, Po_TakeFlagC(m, v, &a[0])) \
-	NM_FN(mod, DropFlag, 1, v, Po_DropFlagC(m, v, &a[0])) \
-	NM_FN(mod, AbortZoneKeys, 0, v, Po_AbortZoneKeysC(m)) \
-	NM_FN(mod, OnUsrClient, 2, v, Fl_UsrClientC(m, "AcZone", 1, a)) \
-	NM_FN(mod, ClientJoin, 11, v, Po_ClientJoinC(m, a)) \
-	NM_FN(mod, ServerTakeBase, 2, v, Po_ServerTakeBaseC(m, v, a)) \
-	NM_FN(mod, ServerDropFlag, 0, v, Po_ServerDropFlagC(m)) \
-	NM_FN(mod, ServerTakeFlag, 2, v, Po_ServerTakeFlagC(m, a)) \
-	NM_FN(mod, RespawnFlag, 0, v, Po_RespawnFlagC(m))
+	MODE_FN(mod, InitServerMod, 0, Fl_InitC(#mod, 1, 1)) \
+	MODE_FN(mod, InitClientMod, 0, Fl_InitC(#mod, 0, 0)) \
+	MODE_FN(mod, ServerHidePlayer, 1, Po_ServerHidePlayerC(#mod, &a[0])) \
+	MODE_FN(mod, GetRndZone, 0, Fl_RndKey(#mod, "AcZone")) \
+	MODE_FN(mod, BrowseAreas, 0, Po_BrowseAreasC(#mod)) \
+	MODE_FN(mod, CreateFlag, 1, Po_CreateFlagC(#mod, &a[0])) \
+	MODE_FN(mod, LinkFlagTo, 2, Po_LinkFlagToC(#mod, a)) \
+	MODE_FN(mod, TryLinkFlagTo, 2, Po_TryLinkFlagToC(#mod, a)) \
+	MODE_FN(mod, TakeFlag, 1, Po_TakeFlagC(#mod, v, &a[0])) \
+	MODE_FN(mod, DropFlag, 1, Po_DropFlagC(#mod, v, &a[0])) \
+	MODE_FN(mod, AbortZoneKeys, 0, Po_AbortZoneKeysC(#mod)) \
+	MODE_FN(mod, OnUsrClient, 2, Fl_UsrClientC(#mod, "AcZone", 1, a)) \
+	MODE_FN(mod, ClientJoin, 11, Po_ClientJoinC(#mod, a)) \
+	MODE_FN(mod, ServerTakeBase, 2, Po_ServerTakeBaseC(#mod, v, a)) \
+	MODE_FN(mod, ServerDropFlag, 0, Po_ServerDropFlagC(#mod)) \
+	MODE_FN(mod, ServerTakeFlag, 2, Po_ServerTakeFlagC(#mod, a)) \
+	MODE_FN(mod, RespawnFlag, 0, Po_RespawnFlagC(#mod))
 #define PO_ENTRIES(mod) \
 	NM_ENTRY(mod, DeathFunc) \
 	NM_ENTRY(mod, InitServerMod) \
@@ -1222,3 +1217,5 @@ PyMethodDef g_NTeamPostMethods[] = {
 	{ "GetGameDescriptor", NTeamPost_TeamDescriptor, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(NetModes)
