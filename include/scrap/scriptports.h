@@ -487,17 +487,20 @@ PORT_DECL(MissionsFuncs, TryMsg) /* 1 */
 PORT_DECL(MissionsFuncs, SetNextMission) /* 2 */
 PORT_DECL(MissionsFuncs, SetFirstDemoMission) /* 0 */
 PORT_DECL(MissionsFuncs, SetOutMissionArrow) /* 0 */
+PORT_DECL(MissionsFuncs, ActivateTarget) /* ? */
 PORT_DECL(MissionsFuncs, GetSecondary) /* 1 */
 PORT_DECL(MissionsFuncs, SetSecondary) /* 1 */
 PORT_DECL(MissionsFuncs, FinishGame) /* 1 */
 PORT_DECL(MissionsFuncs, ShowMissionInfo) /* 1 */
 PORT_DECL(MissionsFuncs, SetMissionTarget) /* 1 */
+PORT_DECL(MissionsFuncs, SetMultipleMissionTargets) /* 1 */
 PORT_DECL(MissionsFuncs, CleanAllTargets) /* 0 */
 PORT_DECL(MissionsFuncs, DelMissionTarget) /* 1 */
 PORT_DECL(MissionsFuncs, IsCharMissionObjective) /* 1 */
 PORT_DECL(MissionsFuncs, CharMissionDialog) /* 4 */
 PORT_DECL(MissionsFuncs, CancelSecondaryMission) /* 2 */
 PORT_DECL(MissionsFuncs, SinglePlayerDeath) /* 0 */
+PORT_DECL(MissionsFuncs, CreatePhotoObject) /* ? */
 PORT_DECL(MissionsFuncs, UnsetPhotoObject) /* 1 */
 PORT_DECL(MissionsFuncs, ReassignBertosPlayerTarget) /* 0 */
 PORT_DECL(MissionsFuncs, CreateBerto) /* 1 */
@@ -513,6 +516,8 @@ PORT_DECL(MissionsFuncs, StartActualSuperDeal) /* 0 */
 PORT_DECL(MissionsFuncs, EndOfSuperDeal) /* 1 */
 PORT_DECL(MissionsFuncs, StartSuperDeal) /* 3 */
 PORT_DECL(MissionsFuncs, RelaxShipsInList) /* 1 */
+PORT_DECL(MissionsFuncs, SetInvulnerableShipsInList) /* ? */
+PORT_DECL(MissionsFuncs, OnSuperDealFinish) /* ? */
 PORT_DECL(MissionsFuncs, BuildMultipleEnemiesData) /* 2 */
 PORT_DECL(MissionsFuncs, BuildTeamDeathMatchData) /* 1 */
 PORT_DECL(MissionsFuncs, BuildVersusData) /* 1 */
@@ -524,17 +529,20 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 	PORT_DEF(MissionsFuncs, SetNextMission, MissionsFuncs_SetNextMission) \
 	PORT_DEF(MissionsFuncs, SetFirstDemoMission, MissionsFuncs_SetFirstDemoMission) \
 	PORT_DEF(MissionsFuncs, SetOutMissionArrow, MissionsFuncs_SetOutMissionArrow) \
+	PORT_DEF(MissionsFuncs, ActivateTarget, MissionsFuncs_ActivateTarget) \
 	PORT_DEF(MissionsFuncs, GetSecondary, MissionsFuncs_GetSecondary) \
 	PORT_DEF(MissionsFuncs, SetSecondary, MissionsFuncs_SetSecondary) \
 	PORT_DEF(MissionsFuncs, FinishGame, MissionsFuncs_FinishGame) \
 	PORT_DEF(MissionsFuncs, ShowMissionInfo, MissionsFuncs_ShowMissionInfo) \
 	PORT_DEF(MissionsFuncs, SetMissionTarget, MissionsFuncs_SetMissionTarget) \
+	PORT_DEF(MissionsFuncs, SetMultipleMissionTargets, MissionsFuncs_SetMultipleMissionTargets) \
 	PORT_DEF(MissionsFuncs, CleanAllTargets, MissionsFuncs_CleanAllTargets) \
 	PORT_DEF(MissionsFuncs, DelMissionTarget, MissionsFuncs_DelMissionTarget) \
 	PORT_DEF(MissionsFuncs, IsCharMissionObjective, MissionsFuncs_IsCharMissionObjective) \
 	PORT_DEF(MissionsFuncs, CharMissionDialog, MissionsFuncs_CharMissionDialog) \
 	PORT_DEF(MissionsFuncs, CancelSecondaryMission, MissionsFuncs_CancelSecondaryMission) \
 	PORT_DEF(MissionsFuncs, SinglePlayerDeath, MissionsFuncs_SinglePlayerDeath) \
+	PORT_DEF(MissionsFuncs, CreatePhotoObject, MissionsFuncs_CreatePhotoObject) \
 	PORT_DEF(MissionsFuncs, UnsetPhotoObject, MissionsFuncs_UnsetPhotoObject) \
 	PORT_DEF(MissionsFuncs, ReassignBertosPlayerTarget, MissionsFuncs_ReassignBertosPlayerTarget) \
 	PORT_DEF(MissionsFuncs, CreateBerto, MissionsFuncs_CreateBerto) \
@@ -550,6 +558,8 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 	PORT_DEF(MissionsFuncs, EndOfSuperDeal, MissionsFuncs_EndOfSuperDeal) \
 	PORT_DEF(MissionsFuncs, StartSuperDeal, MissionsFuncs_StartSuperDeal) \
 	PORT_DEF(MissionsFuncs, RelaxShipsInList, MissionsFuncs_RelaxShipsInList) \
+	PORT_DEF(MissionsFuncs, SetInvulnerableShipsInList, MissionsFuncs_SetInvulnerableShipsInList) \
+	PORT_DEF(MissionsFuncs, OnSuperDealFinish, MissionsFuncs_OnSuperDealFinish) \
 	PORT_DEF(MissionsFuncs, BuildMultipleEnemiesData, MissionsFuncs_BuildMultipleEnemiesData) \
 	PORT_DEF(MissionsFuncs, BuildTeamDeathMatchData, MissionsFuncs_BuildTeamDeathMatchData) \
 	PORT_DEF(MissionsFuncs, BuildVersusData, MissionsFuncs_BuildVersusData) \
