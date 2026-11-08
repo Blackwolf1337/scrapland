@@ -21,11 +21,16 @@
  * action set. The engine functions the cases record or swap go through their seams (AddScheduledFunc,
  * DeleteScheduledFuncs, CreateEntity, UsrEntity, Set, SetAlarm, GetAlarm, Rand, DelSaveVars, SScorer.SetLabelText,
  * SetMsgText and Fade, SSound.PlaySound and LoadSound, the SAct functions; OBJLIB 7). The entities the script holds are
- * handle values (OBJLIB 7). The calls of other ports, SAI.SetStateChar and GetStateChar, SLogic.SetOnFloor and
- * SendSentinelToWatch, Scrap.CallElements, SScorer.AddModel, the Scene functions and the keyword calls stay by name
- * (OBJLIB 3, 7); CharsNPC.CharRes and the GateKeeper groups are the objects they are (OBJLIB 5); the module's own
- * functions go through its globals (a mission may replace one), the scheduler keeps Python callables (OBJLIB 4).
- * MapPlanes is LevelCommon's.
+ * handle values (OBJLIB 7). The calls of other ports (the keyword calls of Sound among them) go through their refs
+ * (PORT_CALL: directly while the attribute holds the port's function, else by name) and the module's own functions
+ * through their globals (PORT_LOWN, the same seam on the global: a mission may replace one). The callbacks of Speech
+ * and of the CharsNPC characters are named by their refs (LV_ONEND, LV_COM, LV_CALLBACK, LV_MISSIONCHAR); they and the
+ * hooks of PR_HOOK are the values of the variables (OBJLIB 5). SAI.SetStateChar and GetStateChar,
+ * SLogic.SendSentinelToWatch, Scrap.CallElements, SScorer.AddModel and SSound.UsePS stay by name (OBJLIB 7); the plain
+ * functions of the .def files are data, called and given as callbacks by name (OBJLIB 6); the call lines of the scene
+ * tables and of News1 are data in C that the stage 4 registry resolves (OBJLIB 4); CharsNPC.CharRes and the GateKeeper
+ * groups are the objects they are (OBJLIB 5); the scheduler keeps Python callables (OBJLIB 4). MapPlanes is
+ * LevelCommon's.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -2843,7 +2848,7 @@ static byte TalkToBoss_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (LvN_SaveIs("MissionState", "FreeHuman2")) {
-		if (!LvN_MissionChar("Human_Default", TB, "CreateHuman")) {
+		if (!LV_MISSIONCHAR("Human_Default", Mission_TalkToBoss, CreateHuman)) {
 			return 0;
 		}
 		Mode_Saves(saves);
@@ -2863,7 +2868,7 @@ static byte TalkToBoss_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 static byte TalkToBoss_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("CharsNPC") && LvN_Callback("Boss_00", TB, "SetBossSpeech");
+	return Mode_Import("CharsNPC") && LV_CALLBACK("Boss_00", Mission_TalkToBoss, SetBossSpeech);
 }
 
 /* SetBossSpeech(e) */
@@ -2887,10 +2892,10 @@ static byte TalkToBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	if (LvN_SaveIs("MissionState", "FreeHuman2")) {
-		return Mode_Import("MissionsFuncs") && LV_OWN(TB, "LoadScene", NULL, "") && LV_OWN(TB, "HideHumanIntoBureau", NULL, "") &&
+		return Mode_Import("MissionsFuncs") && LV_OWN(TB, "LoadScene", NULL, "") && PORT_LOWN(Mission_TalkToBoss, HideHumanIntoBureau, NULL, "") &&
 			LvN_GActivate(TB, "human", 2);
 	}
-	return LV_OWN(TB, "GoTalkToBoss", NULL, "");
+	return PORT_LOWN(Mission_TalkToBoss, GoTalkToBoss, NULL, "");
 }
 
 /* HideHumanIntoBureau(): the bureau is the target and closed; the human follows Dtritus, the alarm does not fall */
@@ -2909,8 +2914,9 @@ static byte TalkToBoss_HideHumanIntoBureau(const nativeVal_t *a, nativeVal_t *ou
 	int u = ok ? LvN_Usr(&usr) : -1;
 	if (u > 0) {
 		ok = LvN_HumanFollow(TB, &usr) && PR_HOOK("CharConversor", "OnPossession", TB, "OnPossession") &&
-			PR_HOOK("CharConversor", "afterExitConversor", TB, "OnExitConversor") && LV_OWN(TB, "CreateSceneLaunchers", NULL, "") &&
-			LV_OWN(TB, "CheckMaxDist", NULL, "") && Native_GVarGet("AlarmFallDelta", &fall) && Mode_Put(TB, "alarmFallDelta", NULL, &fall) &&
+			PR_HOOK("CharConversor", "afterExitConversor", TB, "OnExitConversor") && PORT_LOWN(Mission_TalkToBoss, CreateSceneLaunchers, NULL, "") &&
+			PORT_LOWN(Mission_TalkToBoss, CheckMaxDist, NULL, "") && Native_GVarGet("AlarmFallDelta", &fall) &&
+			Mode_Put(TB, "alarmFallDelta", NULL, &fall) &&
 			Mode_GVarSetI("AlarmFallDelta", 0);
 		Native_Free(&fall);
 	}
@@ -2999,7 +3005,7 @@ static byte TalkToBoss_LaunchScene(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	ok = Mode_VDel(&h);
 	Native_Free(&h);
-	return ok && LvN_PutNone(TB, "human") && Tb_BossTalk() && LV_CALL("Scene", "Play", NULL, "s", "HideHuman") &&
+	return ok && LvN_PutNone(TB, "human") && Tb_BossTalk() && PORT_CALL(Scene, Play, NULL, "s", "HideHuman") &&
 		PR_HOOK("Scene", "EndOfSceneCallback", TB, "EndOfScene");
 }
 
@@ -3044,7 +3050,7 @@ static byte TalkToBoss_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	int u = LvN_Usr(&usr);
 	byte ok = u >= 0;
 	if (u > 0) {
-		int near = LV_OWN(TB, "CheckHumanDist", &r, "") ? Native_True(&r) : -1;
+		int near = PORT_LOWN(Mission_TalkToBoss, CheckHumanDist, &r, "") ? Native_True(&r) : -1;
 		if (near == 0) {
 			int moving = Pr_HumanState(TB, "!=", 0);
 			ok = moving >= 0 && (!moving || (LvN_GAttr(TB, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn) &&
@@ -3120,7 +3126,7 @@ static byte TalkToBoss_BossSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Native_SetEmpty(&params, NV_TUPLE);
 	Native_Copy(Native_Append(&params), &a[1]);
-	byte ok = LvN_OnEnd(TB, "SetNextMission", &params);
+	byte ok = LV_ONEND(Mission_TalkToBoss, SetNextMission, &params);
 	Native_Free(&params);
 	return ok;
 }
@@ -3140,8 +3146,9 @@ static byte Pr_SaveListAdd(const char *module, const char *var, const char *item
 static byte TalkToBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t args[4];
 	(void)out;
-	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame") || !LV_CALL("Speech", "RestoreState", NULL, "v", &a[0]) || !Mode_Target(NULL) ||
-		!Mode_DelSaveVars("MissionState") || !Mode_WayPoint() || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_GetDataPart1", "DownTown") ||
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame") || !PORT_CALL(Speech, RestoreState, NULL, "v", &a[0]) || !Mode_Target(NULL) ||
+		!Mode_DelSaveVars("MissionState") || !Mode_WayPoint() ||
+		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_GetDataPart1", "DownTown") ||
 		!Mode_MMDesc("Mission_GetDataPart1_MissionText1", 1) || !Pr_SaveListAdd(TB, "PoliceBlueprints.Ships", "SPoliBoss1") ||
 		!Pr_SaveListAdd(TB, "PoliceBlueprints.Engines", "MPoliBoss1") || !Mode_Import("Scorer") ||
 		!LvN_ModGet("Scorer", "ShowMissionScorer", &args[2])) {
@@ -3215,7 +3222,7 @@ static byte DeepThroat_UseTeleporter(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t r;
 	(void)out;
 	Native_SetNone(&r);
-	int used = LV_CALL("GateKeeper", "UseDoor", &r, "vvvv", &a[0], &a[1], &a[2], &a[3]) ? Native_True(&r) : -1;
+	int used = PORT_CALL(GateKeeper, UseDoor, &r, "vvvv", &a[0], &a[1], &a[2], &a[3]) ? Native_True(&r) : -1;
 	Native_Free(&r);
 	return used >= 0 && (!used || (PR_HOOK("Elevator", "OnElevatorReachDown", WD, "LaunchScene") && Mode_Target("")));
 }
@@ -3239,7 +3246,7 @@ static PyObject *DeepThroat_LaunchScene(PyObject *self, PyObject *args, PyObject
 static byte DeepThroat_PlayScene(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return LV_CALL("Scene", "Play", NULL, "s", "DiscoverDeep") && Mode_EntSetS("DM_Door_PressSlidingDoor_00", "OnObjSlot", "") &&
+	return PORT_CALL(Scene, Play, NULL, "s", "DiscoverDeep") && Mode_EntSetS("DM_Door_PressSlidingDoor_00", "OnObjSlot", "") &&
 		PR_HOOK("Scene", "EndOfSceneCallback", WD, "SetNextMission");
 }
 
@@ -3299,9 +3306,9 @@ static byte Baddie_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&elv);
 	byte ok = Pr_BossDoor("NoOneGroupGateKeeper", "GateKeeper.UseDoor", &elv);
 	if (ok && LvN_SaveIs("MissionState", "TalkToBoss")) {
-		ok = LvN_TargetName(&elv) && LV_OWN(WB, "InitScene", NULL, "v", &a[0]) && LV_OWN(WB, "PlayScene", NULL, "");
+		ok = LvN_TargetName(&elv) && LV_OWN(WB, "InitScene", NULL, "v", &a[0]) && PORT_LOWN(Mission_WhoIsTheBaddie, PlayScene, NULL, "");
 	} else if (ok) {
-		ok = LV_OWN(WB, "GoForHuman", NULL, "");
+		ok = PORT_LOWN(Mission_WhoIsTheBaddie, GoForHuman, NULL, "");
 	}
 	Native_Free(&elv);
 	return ok;
@@ -3349,8 +3356,8 @@ static byte Baddie_PlayScene(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	Native_SetInt(&zero, 0);
-	return Mode_SetLockAlarm(&zero) && Mode_SetAlarm(&zero) && LV_OWN(WB, "CreateFakeSpeech", NULL, "") &&
-		LV_CALL("Scene", "Play", NULL, "s", "BossDiscovered") && Mode_EntSetS("DM_Door_PressSlidingDoor_00", "OnObjSlot", "") &&
+	return Mode_SetLockAlarm(&zero) && Mode_SetAlarm(&zero) && PORT_LOWN(Mission_WhoIsTheBaddie, CreateFakeSpeech, NULL, "") &&
+		PORT_CALL(Scene, Play, NULL, "s", "BossDiscovered") && Mode_EntSetS("DM_Door_PressSlidingDoor_00", "OnObjSlot", "") &&
 		PR_HOOK("Scene", "EndOfSceneCallback", WB, "EndOfScene") && Mode_GVarSetI("useDynamicMusic", 0) && LvN_SetMusic("Music/HumanCD1.ogg", 1.0);
 }
 
