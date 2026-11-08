@@ -1942,10 +1942,40 @@ PORT_DECL(SRace, ControlToRacers) /* ? */
 
 /* Sputnik.c */
 PORT_DECL(Sputnik, Assign) /* ? */
-PORT_DECL(Sputnik, SetSptAt) /* ? */
+PORT_DECL(Sputnik, ChangeRelax) /* 3 */
+PORT_DECL(Sputnik, ByeBye) /* 3 */
+PORT_DECL(Sputnik, BackCamera) /* 3 */
+PORT_DECL(Sputnik, UseShip) /* ? */
+PORT_DECL(Sputnik, ChangeShip) /* 4 */
+PORT_DECL(Sputnik, CreateShip) /* 3 */
+PORT_DECL(Sputnik, ShowInterface) /* 3 */
+PORT_DECL(Sputnik, EnterInterface) /* 3 */
+PORT_DECL(Sputnik, EndOfSelection) /* 0 */
+PORT_DECL(Sputnik, BackControl) /* 3 */
+PORT_DECL(Sputnik, SetSptAt) /* 3 */
+PORT_DECL(Sputnik, InitSuck) /* 3 */
+PORT_DECL(Sputnik, InitMake) /* 3 */
+PORT_DECL(Sputnik, InitHello) /* 3 */
+PORT_DECL(Sputnik, InitBye) /* 3 */
+PORT_DECL(Sputnik, InitInterface) /* 3 */
 #define PORTS_Sputnik \
-	PORT_DEFP(Sputnik, Assign, Sputnik_Assign) \
-	PORT_DEFP(Sputnik, SetSptAt, Sputnik_SetSptAt)
+	PORT_DEFK(Sputnik, Assign, Sputnik_Assign) \
+	PORT_DEF(Sputnik, ChangeRelax, Sputnik_ChangeRelax) \
+	PORT_DEF(Sputnik, ByeBye, Sputnik_ByeBye) \
+	PORT_DEF(Sputnik, BackCamera, Sputnik_BackCamera) \
+	PORT_DEFK(Sputnik, UseShip, Sputnik_UseShip) \
+	PORT_DEF(Sputnik, ChangeShip, Sputnik_ChangeShip) \
+	PORT_DEF(Sputnik, CreateShip, Sputnik_CreateShip) \
+	PORT_DEF(Sputnik, ShowInterface, Sputnik_ShowInterface) \
+	PORT_DEF(Sputnik, EnterInterface, Sputnik_EnterInterface) \
+	PORT_DEF(Sputnik, EndOfSelection, Sputnik_EndOfSelection) \
+	PORT_DEF(Sputnik, BackControl, Sputnik_BackControl) \
+	PORT_DEF(Sputnik, SetSptAt, Sputnik_SetSptAt) \
+	PORT_DEF(Sputnik, InitSuck, Sputnik_InitSuck) \
+	PORT_DEF(Sputnik, InitMake, Sputnik_InitMake) \
+	PORT_DEF(Sputnik, InitHello, Sputnik_InitHello) \
+	PORT_DEF(Sputnik, InitBye, Sputnik_InitBye) \
+	PORT_DEF(Sputnik, InitInterface, Sputnik_InitInterface)
 
 /* SputnikInterface.c */
 PORT_DECL(SputnikInterface, AddDefaultPanelContent) /* 1 */
