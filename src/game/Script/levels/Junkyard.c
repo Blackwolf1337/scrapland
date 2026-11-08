@@ -11,13 +11,18 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of the
  * modules are read where the script reads them and written through at once (OBJLIB 5); the keypad, Rusty, the player
- * and HangarTab.prevShip are handle values (OBJLIB 7). Init, Elevator, OutMap, Traffic, ShipEdit, HangarTab, Menu,
- * MapShipEdit, Chars, SaveGame, MissionsFuncs, Scene, MakeChar, SputnikSound, CreditsText, CharsNPC and the functions
- * of the module go by name (OBJLIB 3), the scene tables too (Mode_Calls: each "Module.Func" by name). fc-r7b-jy
- * records many engine functions, so these go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, CreateEntity,
- * CreateEntityList, Set, SetMoney, SetTimeSpeed, UsrEntity, ConsoleError, SScorer.Add, Set, SetDefault and
- * SetMsgText, SInput.SetActionSet, SSound.SetMusic and the SAct functions of the scene; Scrap.OpenPack,
- * PreloadLibrary and ClosePack (Mission_RustyFirstContact.InitStatus) and the default form of Scrap.Def stay by name.
+ * and HangarTab.prevShip are handle values (OBJLIB 7). fc-r7b-jy records many engine functions, so these go through
+ * their seams (OBJLIB 7): Scrap.AddScheduledFunc, CreateEntity, CreateEntityList, Set, SetMoney, SetTimeSpeed,
+ * UsrEntity, ConsoleError, SScorer.Add, Set, SetDefault and SetMsgText, SInput.SetActionSet, SSound.SetMusic and the
+ * SAct functions of the scene; Scrap.OpenPack, PreloadLibrary and ClosePack (Mission_RustyFirstContact.InitStatus) and
+ * the default form of Scrap.Def stay by name.
+ *
+ * Direct calls (stage 3): the other ports (Elevator, OutMap, ShipEdit, HangarTab, Menu, Chars, SaveGame, MissionsFuncs,
+ * Scene, CreditsText) and the C functions of the three modules go through their refs (PORT_CALL, PORT_LCALL,
+ * PORT_LOWN). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6), SputnikSound.InitLoops (no
+ * native entry yet, OBJLIB 3), the scene tables, apply and the scheduled calls (Mode_Calls, EndOfMission's apply,
+ * Mode_AtG, Mode_Schedule of the tutorial steps; OBJLIB 4) and the functions set as callbacks (Elevator, Scene,
+ * ShipEdit, the speech routines; OBJLIB 5).
  */
 #include <string.h>
 
@@ -159,8 +164,8 @@ static byte JunkyardMap_InitStatus(void) {
 	}
 	Native_SetInt(&v, 1);
 	if (!Mode_SetModVar("Init", "isJunkYard", &v) || !Mode_Import("Elevator") ||
-		!LV_CALL("Elevator", "SetDef", NULL, "ss", "EditShip", "DM_Door_EditShip_00") || !Mode_Import("OutMap") ||
-		!LV_CALL("OutMap", "BrowseAtmospherePos", NULL, "") || !Mode_Import("Traffic")) {
+		!PORT_CALL(Elevator, SetDef, NULL, "ss", "EditShip", "DM_Door_EditShip_00") || !Mode_Import("OutMap") ||
+		!PORT_CALL(OutMap, BrowseAtmospherePos, NULL, "") || !Mode_Import("Traffic")) {
 		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
@@ -228,7 +233,7 @@ static byte JunkyardMap_Init(void) {
 		LvN_Str(Native_Append(&a), "DM_Door_EditShip_00");
 		Native_SetEmpty(&b, NV_LIST);
 		Native_Copy(Native_Append(&b), &prev);
-		ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &a, &b);
+		ok = PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &a, &b);
 		Native_Free(&a);
 		Native_Free(&b);
 	}
@@ -253,8 +258,8 @@ PyMethodDef g_JunkyardMapMethods[] = {
 /* EnterEditShip(UsrName, CharName, optId, FullOption): the ship editor opens; the keypad off, the player frozen */
 static byte MapShipEdit_EnterEditShip(void) {
 	nativeVal_t kb = { 0 }, v = { 0 }, last = { 0 };
-	if (!Mode_Import("ShipEdit") || !Mode_Import("Menu") || !LV_CALL("Menu", "InitMenuSys", NULL, "i", 0L) || !Jy_TimeSpeed(1) ||
-		!LV_CALL("ShipEdit", "EnterEditShipMenu", NULL, "is", 0L, "") || !LvN_Set0I("Cursor", "Visible", 0)) {
+	if (!Mode_Import("ShipEdit") || !Mode_Import("Menu") || !PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) || !Jy_TimeSpeed(1) ||
+		!PORT_CALL(ShipEdit, EnterEditShipMenu, NULL, "is", 0L, "") || !LvN_Set0I("Cursor", "Visible", 0)) {
 		return 0;
 	}
 	Native_SetNone(&v);
@@ -276,7 +281,7 @@ static byte MapShipEdit_SetInteract(const nativeVal_t *a) {
 /* OnEndOfShipEdit(id, control): back to the game; the keypad usable again after 0.25 s, its mission arrow back */
 static byte MapShipEdit_OnEndOfShipEdit(const nativeVal_t *a) {
 	nativeVal_t now = { 0 }, when = { 0 }, kb = { 0 }, state = { 0 };
-	if (!Mode_Import("HangarTab") || !Mode_Import("Parking") || !Mode_Import("Menu") || !LV_CALL("Menu", "BackToGame", NULL, "v", &a[0])) {
+	if (!Mode_Import("HangarTab") || !Mode_Import("Parking") || !Mode_Import("Menu") || !PORT_CALL(Menu, BackToGame, NULL, "v", &a[0])) {
 		return 0;
 	}
 	Native_SetFloat(&now, Mode_Time());
@@ -307,7 +312,7 @@ static byte MapShipEdit_CanUseElevator(nativeVal_t *out) {
 		why = "JUNKYARD_Exit1";
 	} else {
 		Native_Free(&ship);
-		ok = LvN_ModGet("HangarTab", "prevShip", &ship) && LV_CALL("HangarTab", "IsShipValid", &valid, "v", &ship);
+		ok = LvN_ModGet("HangarTab", "prevShip", &ship) && PORT_CALL(HangarTab, IsShipValid, &valid, "v", &ship);
 		if (ok && !Native_True(&valid)) {
 			why = "JUNKYARD_Exit2";
 		}
@@ -328,14 +333,14 @@ static byte MapShipEdit_UseElevator(const nativeVal_t *a) {
 	static const char *const chars[] = { "Rusty_0", "Maintenance_00", "SputnikJunkyard_0", "SputnikJunkyard_1", "SputnikJunkyard_2" };
 	nativeVal_t r = { 0 };
 	Native_SetNone(&r);
-	byte ok = Mode_Import("Elevator") && LV_OWN(MSE, "CanUseElevator", &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	byte ok = Mode_Import("Elevator") && PORT_LOWN(MapShipEdit, CanUseElevator, &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 	if (ok && Native_True(&r)) {
 		for (int i = 0; i < 5 && ok; i++) {
 			nativeVal_t e = { 0 };
 			ok = LvN_Entity(chars[i], &e) && (!Native_True(&e) || Mode_VDel(&e));
 			Native_Free(&e);
 		}
-		ok = ok && LV_CALL("Elevator", "UseElevator", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+		ok = ok && PORT_CALL(Elevator, UseElevator, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 	}
 	Native_Free(&r);
 	return ok;
@@ -388,7 +393,7 @@ static byte MapShipEdit_Init(void) {
 		LvN_Str(&v, "No existe el dummy 'DM_Door_EditShip_*'\n");
 		ok = Mode_ConsoleError(&v);
 	} else if (ok) {
-		ok = LV_CALL("ShipEdit", "CreatePlayerShip", NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship);
+		ok = PORT_CALL(ShipEdit, CreatePlayerShip, NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship);
 		if (ok && ship.type != NV_NONE) {
 			nativeVal_t pos = { 0 }, l = { 0 };
 			Native_SetNone(&pos);
@@ -402,7 +407,7 @@ static byte MapShipEdit_Init(void) {
 			if (ok && LvN_ModGet("HangarTab", "prevShip", &ship)) {
 				Native_SetEmpty(&l, NV_LIST);
 				Native_Copy(Native_Append(&l), &ship);
-				ok = LV_CALL("ShipEdit", "SetupForEdit", NULL, "v", &l);
+				ok = PORT_CALL(ShipEdit, SetupForEdit, NULL, "v", &l);
 				Native_Free(&l);
 			} else {
 				ok = 0;
@@ -460,7 +465,7 @@ PyMethodDef g_JunkyardMapShipEditMethods[] = {
 
 /* InitStatus(LevelPath): Berto's resources; coming from the orbit counts as from Outskirts; the credits library */
 static byte Rusty_InitStatus(void) {
-	if (!Mode_Import("Chars") || !LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Berto")) {
+	if (!Mode_Import("Chars") || !PORT_CALL(Chars, AddNewCharRes, NULL, "s", "Berto")) {
 		return 0;
 	}
 	if (LvN_SaveIs("PrevMap", "Levels/Orbit")) {
@@ -486,16 +491,19 @@ static byte Rusty_Init(void) {
 		return 0;
 	}
 	if (!LvN_SaveIs("ComeFrom", "")) {
-		ok = Jy_SetMoney(1100) && LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TalkToRusty_MissionText1", 1L) &&
+		ok = Jy_SetMoney(1100) && PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_TalkToRusty_MissionText1", 1L) &&
 			Mode_GSetI(RF, "kb", "ArrowCanUse", 0) && Mode_GSetS(RF, "kb", "UseFunc", "") && LvN_GActivate(RF, "rusty", 1) &&
 			LvN_GActivate(RF, "kb", 0) && LvN_GObj(RF, "RustyFirstSpeech", &fn) && LvN_Routine("Rusty", &fn) &&
-			LV_OWN(RF, "CreateFakeBertoShip", NULL, "") && LV_OWN(RF, "LoadMecanicScene", NULL, "");
+			PORT_LOWN(Mission_RustyFirstContact, CreateFakeBertoShip, NULL, "") &&
+			/* OBJLIB 6: LoadMecanicScene is data (data/levels/junkyard/mission_rustyfirstcontact.def) */
+			LV_OWN(RF, "LoadMecanicScene", NULL, "");
 	} else {
-		ok = LV_OWN(RF, "InitBuildShip", NULL, "") && LvN_GActivate(RF, "kb", 0) &&
-			LV_OWN(RF, "OnEndOfShipEditFirstTime", NULL, "is", -1L, "");
+		ok = PORT_LOWN(Mission_RustyFirstContact, InitBuildShip, NULL, "") && LvN_GActivate(RF, "kb", 0) &&
+			PORT_LOWN(Mission_RustyFirstContact, OnEndOfShipEditFirstTime, NULL, "is", -1L, "");
 	}
 	Native_Free(&fn);
-	return ok && LV_OWN(RF, "LoadMecanicFinalScene", NULL, "") && Mode_Import("CreditsText") && LV_CALL("CreditsText", "Init", NULL, "");
+	return ok && PORT_LOWN(Mission_RustyFirstContact, LoadMecanicFinalScene, NULL, "") && Mode_Import("CreditsText") &&
+		PORT_CALL(CreditsText, Init, NULL, "");
 }
 
 /* CreateFakeBertoShip(): Berto's ship and Berto on the editor platform; the platform's arrival starts the scene */
@@ -583,9 +591,10 @@ static byte Rusty_StartInitialScene(void) {
 		Native_Free(&p);
 	}
 	Native_Free(&usr);
-	return ok && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "BertoGoHome") && LV_CALL("Scene", "Play", NULL, "s", "Mecanic") &&
+	return ok && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "BertoGoHome") && PORT_CALL(Scene, Play, NULL, "s", "Mecanic") &&
+		/* OBJLIB 3: SputnikSound.InitLoops has no native entry yet (Sounds.c) */
 		Mode_Import("SputnikSound") && LV_CALL("SputnikSound", "InitLoops", NULL, "s", "MecanicSputnik") &&
-		LV_OWN(RF, "ShowExtras", NULL, "") && Mode_EntSetI("FakeBertoShip", "Active", 1);
+		PORT_LOWN(Mission_RustyFirstContact, ShowExtras, NULL, "") && Mode_EntSetI("FakeBertoShip", "Active", 1);
 }
 
 static const char *const mecanic_final_actions[] = {
@@ -698,9 +707,9 @@ static byte Rusty_BertoGoHome(void) {
 	nativeVal_t reach = { 0 }, v = { 0 }, k = { 0 }, set = { 0 };
 	Native_SetNone(&reach);
 	LvN_Str(&set, "Inactive");
-	byte ok = LV_CALL("Elevator", "ElevatorActiveToGet", NULL, "s", "DM_Door_EditShip_00") &&
+	byte ok = PORT_CALL(Elevator, ElevatorActiveToGet, NULL, "s", "DM_Door_EditShip_00") &&
 		LvN_ModSetGlobal("Elevator", "OnElevatorReachUp", RF, "BackDownBerto") && Mode_ActionSet("Inactive") &&
-		LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("DM_Door_EditShip_00") &&
+		PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set) && Jy_CamLink("DM_Door_EditShip_00") &&
 		LvN_ModGet("Elevator", "TELEPORTER_UP_REACH", &reach);
 	Native_Free(&set);
 	if (ok) {
@@ -731,7 +740,7 @@ static byte Rusty_BackDownBerto(const nativeVal_t *a) {
 static byte Rusty_EndOfBertoBye(void) {
 	nativeVal_t set = { 0 };
 	LvN_Str(&set, "Walk");
-	byte ok = Mode_ActionSet("Walk") && LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("") &&
+	byte ok = Mode_ActionSet("Walk") && PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set) && Jy_CamLink("") &&
 		LvN_ModNone("Elevator", "OnElevatorReachDown");
 	Native_Free(&set);
 	return ok;
@@ -744,12 +753,13 @@ static byte Rusty_StartInitBuildShip(void) {
 	Native_SetNone(&gen);
 	Native_SetNone(&path);
 	SaveVar_Set("Hangar.iHangarShip", "-1");
-	byte ok = LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_BuildFirstShip_MissionText2", 1L) && Mode_GSetI(RF, "kb", "ArrowCanUse", 1) &&
+	byte ok = PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_BuildFirstShip_MissionText2", 1L) && Mode_GSetI(RF, "kb", "ArrowCanUse", 1) &&
 		Mode_GSetI(RF, "kb", "ArrnOpt", 0) && Mode_G(RF, "kb", &kb) &&
 		LvN_SetLangOpt(&kb, "ArrOpt0", "EditShip:", "HINT_Junkyard_ShipEdit") && LvN_GActivate(RF, "rusty", 0) &&
 		LvN_ModGet("CharsNPC", "GenericNPCSpeech", &gen) && LvN_Routine("Rusty", &gen) && Mode_Import("Init") &&
 		LvN_ModGet("Init", "Path", &path) &&
-		LV_CALL("SaveGame", "MarkWayPoint", NULL, "vss", &path, "DM_Player_Spawn_", "") && LV_OWN(RF, "InitBuildShip", NULL, "");
+		PORT_CALL(SaveGame, MarkWayPoint, NULL, "vss", &path, "DM_Player_Spawn_", "") &&
+		PORT_LOWN(Mission_RustyFirstContact, InitBuildShip, NULL, "");
 	Native_Free(&kb);
 	Native_Free(&gen);
 	Native_Free(&path);
@@ -765,16 +775,12 @@ static byte Rusty_InitBuildShip(void) {
 /* EnterEditShipFirstTime(UsrName, CharName, optId, FullOption): the question whether to see the tutorial */
 static byte Rusty_EnterEditShipFirstTime(void) {
 	nativeVal_t q = { 0 }, zero = { 0 };
-	if (!Mode_Import("Menu") || !LvN_GActivate(RF, "kb", 0) || !LV_CALL("Menu", "InitMenuSys", NULL, "i", 0L)) {
-		return 0;
-	}
-	PyObject *fn = Script_Attr("Menu", "YesNoMenu");
-	if (!fn) {
+	if (!Mode_Import("Menu") || !LvN_GActivate(RF, "kb", 0) || !PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L)) {
 		return 0;
 	}
 	Mode_Lang("Mission_BuildFirstShip_Tut_Question", &q);
 	Native_SetInt(&zero, 0);
-	byte ok = Native_HookCall(fn, NULL, "ivss", 0L, &q, "Mission_RustyFirstContact.EnterEditShipTutorial",
+	byte ok = PORT_CALL(Menu, YesNoMenu, NULL, "ivss", 0L, &q, "Mission_RustyFirstContact.EnterEditShipTutorial",
 		"Mission_RustyFirstContact.NoTutorialEnterEditShip") && LvN_Set0I("Cursor", "Visible", 0) && Jy_SetDefault(&zero, "Yes");
 	Native_Free(&q);
 	return ok;
@@ -783,18 +789,14 @@ static byte Rusty_EnterEditShipFirstTime(void) {
 /* NoTutorialEnterEditShip(id, control) */
 static byte Rusty_NoTutorialEnterEditShip(const nativeVal_t *a) {
 	nativeVal_t name = { 0 };
-	if (!Mode_Import("Menu") || !LV_CALL("Menu", "BackToGame", NULL, "vs", &a[0], "")) {
+	if (!Mode_Import("Menu") || !PORT_CALL(Menu, BackToGame, NULL, "vs", &a[0], "")) {
 		return 0;
 	}
-	PyObject *fn = Script_Attr("MapShipEdit", "EnterEditShip");
-	if (!fn) {
-		return 0;
-	}
+	/* the lookup of MapShipEdit.EnterEditShip comes after the player's name now (it differs only when both fail) */
 	if (!Jy_UsrName(&name)) {
-		Py_DECREF(fn);
 		return 0;
 	}
-	byte ok = Native_HookCall(fn, NULL, "vsss", &name, "", "", "");
+	byte ok = PORT_LCALL(MapShipEdit, EnterEditShip, NULL, "vsss", &name, "", "", "");
 	Native_Free(&name);
 	return ok;
 }
@@ -807,13 +809,13 @@ static byte Rusty_OnEndOfShipEditFirstTime(const nativeVal_t *a) {
 	byte ok = LvN_Entity("DM_Door_EditShip_00", &el) && LvN_ModGet("HangarTab", "prevShip", &ship);
 	if (ok && Native_True(&ship)) {
 		Native_Free(&ship);
-		ok = LvN_ModGet("HangarTab", "prevShip", &ship) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &ship, 1L) &&
+		ok = LvN_ModGet("HangarTab", "prevShip", &ship) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &ship, 1L) &&
 			LvN_SetS(&el, "UseFunc", "Mission_RustyFirstContact.UseElevatorFirstTime");
 	} else if (ok) {
 		ok = LvN_GActivate(RF, "kb", 1) && LvN_SetS(&el, "UseFunc", "MapShipEdit.UseElevator");
 	}
 	Native_SetInt(&minus, -1);
-	ok = ok && (!Native_Compare(&a[0], &minus) || LV_CALL("MapShipEdit", "OnEndOfShipEdit", NULL, "vv", &a[0], &a[1]));
+	ok = ok && (!Native_Compare(&a[0], &minus) || PORT_LCALL(MapShipEdit, OnEndOfShipEdit, NULL, "vv", &a[0], &a[1]));
 	Native_Free(&el);
 	Native_Free(&ship);
 	return ok;
@@ -829,11 +831,12 @@ static byte Rusty_UseElevatorFirstTime(const nativeVal_t *a) {
 		return 0;
 	}
 	Jy_Tuple(&params, a, 4);
-	byte ok = Mode_Put(RF, "Params", NULL, &params) && LV_CALL("MapShipEdit", "CanUseElevator", &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	byte ok = Mode_Put(RF, "Params", NULL, &params) && PORT_LCALL(MapShipEdit, CanUseElevator, &r, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 	if (ok && Native_True(&r)) {
-		ok = LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "EndOfMission") && LV_CALL("Scene", "Play", NULL, "s", "MecanicFinal") &&
+		ok = LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "EndOfMission") && PORT_CALL(Scene, Play, NULL, "s", "MecanicFinal") &&
+			/* OBJLIB 3: SputnikSound.InitLoops has no native entry yet (Sounds.c) */
 			Mode_Import("SputnikSound") && LV_CALL("SputnikSound", "InitLoops", NULL, "s", "MecanicFinalSputnik") &&
-			LV_OWN(RF, "ShowExtras", NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship) && LvN_SetI(&ship, "Active", 1);
+			PORT_LOWN(Mission_RustyFirstContact, ShowExtras, NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship) && LvN_SetI(&ship, "Active", 1);
 	}
 	Native_Free(&params);
 	Native_Free(&r);
@@ -844,10 +847,11 @@ static byte Rusty_UseElevatorFirstTime(const nativeVal_t *a) {
 /* EndOfMission(usr): saved, the next mission in Outskirts, out by the elevator */
 static byte Rusty_EndOfMission(void) {
 	nativeVal_t params = { 0 };
-	if (!Mode_Import("MapShipEdit") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
-		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_GoToOutskirts", "Outskirts")) {
+	if (!Mode_Import("MapShipEdit") || !PORT_CALL(SaveGame, QWayPoint, NULL, "") ||
+		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_GoToOutskirts", "Outskirts")) {
 		return 0;
 	}
+	/* OBJLIB 4: apply(MapShipEdit.UseElevator, Params), the function as the object of the module */
 	PyObject *fn = Script_Attr("MapShipEdit", "UseElevator");
 	if (!fn) {
 		return 0;
@@ -869,11 +873,11 @@ static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 		}
 	}
 	Native_SetNone(&at);
-	byte ok = LV_CALL("Menu", "BackToGame", NULL, "vs", &a[0], "") && Jy_UsrName(&name);
+	byte ok = PORT_CALL(Menu, BackToGame, NULL, "vs", &a[0], "") && Jy_UsrName(&name);
 	if (!ok) {
 		return 0;
 	}
-	ok = LV_CALL("MapShipEdit", "EnterEditShip", NULL, "vsss", &name, "", "", "") &&
+	ok = PORT_LCALL(MapShipEdit, EnterEditShip, NULL, "vsss", &name, "", "", "") &&
 		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditTutorial") && Mode_ActionSet("Inactive");
 	Native_Free(&name);
 	if (ok) {
@@ -882,12 +886,12 @@ static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 		ok = Mode_GVarSet("EscapeEvent", &e) && Mode_GVarSet("MainMissionEvent", &e);
 		Native_Free(&e);
 	}
-	ok = ok && LV_OWN(RF, "TutorialMsgInit", NULL, "vv", &a[0], &a[1]);
+	ok = ok && PORT_LOWN(Mission_RustyFirstContact, TutorialMsgInit, NULL, "vv", &a[0], &a[1]);
 	if (!ok) {
 		return 0;
 	}
 	Native_SetFloat(&time, Mode_Time());
-	ok = Jy_SetDefault(&a[0], "ShipEditTabHangar") && LV_CALL("ShipEdit", "ChangeTab", NULL, "vs", &a[0], "ShipEditTabHangar");
+	ok = Jy_SetDefault(&a[0], "ShipEditTabHangar") && PORT_CALL(ShipEdit, ChangeTab, NULL, "vs", &a[0], "ShipEditTabHangar");
 	int sell = 0;
 	for (int i = 0; i < 9 && ok; i++) {
 		nativeVal_t ships = { 0 }, s = { 0 };
@@ -934,7 +938,7 @@ static byte Rusty_TutorialMsgInit(const nativeVal_t *a) {
 	const nativeVal_t *id = &a[0];
 	nativeVal_t empty = { 0 }, t = { 0 }, use = { 0 }, text = { 0 };
 	if (!Mode_Import("Menu") || !Mode_Import("ShipEdit") || !Mode_Import("Scorer") || !Jy_ScorerAdd(id, "TutorialMsgBack", "Tab", 1) ||
-		!LV_CALL("Menu", "SetTabDefaults", NULL, "vs", id, "TutorialMsgBack")) {
+		!PORT_CALL(Menu, SetTabDefaults, NULL, "vs", id, "TutorialMsgBack")) {
 		return 0;
 	}
 	for (int i = 0; i < 11; i++) {
@@ -1050,6 +1054,7 @@ static const jyStep_t step_exit[] = {
 static byte Jy_Msg(const nativeVal_t *a, const char *key) {
 	nativeVal_t t = { 0 };
 	Mode_Lang(key, &t);
+	/* OBJLIB 6: TutorialMsg is data */
 	byte ok = LV_OWN(RF, "TutorialMsg", NULL, "vvv", &a[0], &a[1], &t);
 	Native_Free(&t);
 	return ok;

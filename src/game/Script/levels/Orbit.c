@@ -11,7 +11,14 @@
  * through their seams or by name (Scrap.CreateEntity, Set, SetAlarm, SetLockAlarm, UsrEntity, AddScheduledFunc,
  * SScorer.SetMsgText, SAct.GetAct and SetAct, SSound.SetMusic through seams; Scrap.OpenPack, PreloadLibrary,
  * ClosePack, SetCallFunc, AddParams, Execute, Achievement and SetDebrisSys by name, OBJLIB 7). Entities are handle
- * values (OBJLIB 7); the other ports, the scene tables and the functions of the module are called by name (OBJLIB 3).
+ * values (OBJLIB 7).
+ *
+ * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene, GateKeeper,
+ * MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN; the callbacks
+ * of AfterBrowseNPC by the names of their refs). By name stay Items.Hint (no native entry yet, OBJLIB 3), the scene
+ * tables, the scheduled calls and gc.CanPassFunc (Mode_Calls, Mode_Later, Mode_LaterIn, Mode_Schedule, a function
+ * value; OBJLIB 4) and the functions set as callbacks or given as values (EndOfSceneCallback, AfterBrowseNPC,
+ * Speech.OnEndOfSpeech, GateKeeper.LocalCallFunc, the door functions of SetDoor; OBJLIB 5).
  */
 #include <string.h>
 
@@ -115,7 +122,7 @@ static byte Ob_PlaceUsr(const nativeVal_t *usr, long x, long y, long z, long ang
 /* Items.Hint((x, y, z), Mode_KeyText(key, "Use"), 5, mission): the function read before the text, as the script */
 static byte Ob_KeyHint(long x, long y, long z, const char *key, long mission) {
 	nativeVal_t pos = { 0 }, text = { 0 };
-	/* OBJLIB 3 */
+	/* OBJLIB 3: Items.Hint has no native entry yet (Items.c) */
 	PyObject *fn = Script_Attr("Items", "Hint");
 	if (!fn) {
 		return 0;
@@ -132,14 +139,14 @@ static byte Ob_KeyHint(long x, long y, long z, const char *key, long mission) {
 	return ok;
 }
 
-/* Scene.EndOfSceneCallback = the global func of module; Scene.Play(scene) (OBJLIB 3, 5) */
+/* Scene.EndOfSceneCallback = the global func of module (OBJLIB 5); Scene.Play(scene) */
 static byte Ob_Play(const char *module, const char *func, const char *scene) {
-	return LvN_ModSetGlobal("Scene", "EndOfSceneCallback", module, func) && LV_CALL("Scene", "Play", NULL, "s", scene);
+	return LvN_ModSetGlobal("Scene", "EndOfSceneCallback", module, func) && PORT_CALL(Scene, Play, NULL, "s", scene);
 }
 
 /* Scene.Play(scene); Scene.EndOfSceneCallback = the global func of module */
 static byte Ob_PlayThen(const char *scene, const char *module, const char *func) {
-	return LV_CALL("Scene", "Play", NULL, "s", scene) && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", module, func);
+	return PORT_CALL(Scene, Play, NULL, "s", scene) && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", module, func);
 }
 
 /* ---- Map ---- */
@@ -154,7 +161,7 @@ static byte Orbit_InitStatusN(void) {
 /* Init(LevelPath): the teleporters linked, the back doors of the entrance, the music */
 static byte Orbit_InitN(void) {
 	return Mode_Import("Teleport") &&
-		LV_CALL("Teleport", "Link", NULL, "ss", "DM_Door_Teleporter_00", "DM_Door_Teleporter_01") &&
+		PORT_CALL(Teleport, Link, NULL, "ss", "DM_Door_Teleporter_00", "DM_Door_Teleporter_01") &&
 		Mode_EntSetS("DM_Door_OrbitDoorA_04", "OnObjSlot", "!BackDoorSlot") &&
 		Mode_EntSetS("DM_Door_OrbitDoorA_03", "OnObjSlot", "!BackDoorSlot") && Mode_Import("SSound") &&
 		LvN_SetMusic("Music/Track1.ogg", 1.0);
@@ -182,7 +189,7 @@ static byte Decont_InitStatusN(void) {
 	byte ok = LvN_ModAppend("CharsNPC", "AfterBrowseNPC", &fn);
 	Native_Free(&fn);
 	for (int i = 0; chars[i] && ok; i++) {
-		ok = LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", chars[i]);
+		ok = PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", chars[i]);
 	}
 	/* OBJLIB 7: the pack calls by name (fc-r6b-or1 records them) */
 	return ok && Mode_GVarSetN("FunctionaryMinTimeToSitDown", 0.0) && Mode_GVarSetN("FunctionaryMaxTimeToSitDown", 1.0) &&
@@ -195,7 +202,7 @@ static byte Decont_InitStatusN(void) {
 static byte Decont_DecontaminationN(void) {
 	nativeVal_t kb = { 0 };
 	byte ok = LvN_Entity("Decontamination_keyboard", &kb) && LvN_SetI(&kb, "MapCollision", 0) && Mode_VDel(&kb) &&
-		Mode_Import("Scene") && Ob_Play(MD, "EndOfScene", "Decontamination") && LV_OWN(MD, "DecontaminatedWaypoint", NULL, "");
+		Mode_Import("Scene") && Ob_Play(MD, "EndOfScene", "Decontamination") && PORT_LOWN(MapDecont, DecontaminatedWaypoint, NULL, "");
 	Native_Free(&kb);
 	return ok;
 }
@@ -204,14 +211,14 @@ static byte Decont_DecontaminationN(void) {
 static byte Decont_EndOfSceneN(const nativeVal_t *usr) {
 	nativeVal_t text = { 0 };
 	if (!Mode_Import("Chars") || !Mode_Import("Speech") || !Ob_PlaceUsr(usr, -20334, 1056, -27485, -90) ||
-		!LV_CALL("Speech", "OffVoice", NULL, "s", "Mission_Checkin_RemoteMessage2")) {
+		!PORT_CALL(Speech, OffVoice, NULL, "s", "Mission_Checkin_RemoteMessage2")) {
 		return 0;
 	}
 	Mode_Lang("Mission_Checkin_RemoteMessage2", &text);
 	/* "siiii": the text up to its first 0 byte */
 	Scorer_SetSpeechText(Native_Text(&text), 3.0f, 220, 235, 255);
 	Native_Free(&text);
-	return LV_OWN(MD, "SetWaypoint", NULL, "i", 1L) && Mode_EntSetS("DM_Door_OrbitDoorA_02", "OnObjSlot", "!FrontDoorSlot");
+	return PORT_LOWN(MapDecont, SetWaypoint, NULL, "i", 1L) && Mode_EntSetS("DM_Door_OrbitDoorA_02", "OnObjSlot", "!FrontDoorSlot");
 }
 
 /* DecontaminatedWaypoint(): marked as decontaminated, a way point behind the decontamination */
@@ -220,7 +227,7 @@ static byte Decont_DecontaminatedWaypointN(void) {
 		return 0;
 	}
 	SaveVar_Set("Orbit.Decontaminated", "yes");
-	return LV_CALL("SaveGame", "MarkWayPoint", NULL, "ss", "Levels/Orbit", "DM_Player_Spawn_Decontamination");
+	return PORT_CALL(SaveGame, MarkWayPoint, NULL, "ss", "Levels/Orbit", "DM_Player_Spawn_Decontamination");
 }
 
 /* SetWaypoint(Decontaminated): the functionary as the target of the check in, or not yet */
@@ -314,7 +321,7 @@ static byte Ob_Keypad(const char *pattern, const char *name, nativeVal_t *kb) {
 static byte Decont_InitN(void) {
 	nativeVal_t sv = { 0 }, dec = { 0 }, kb = { 0 }, path = { 0 }, file = { 0 }, fn1 = { 0 }, fn2 = { 0 }, pos = { 0 };
 	nativeVal_t text = { 0 }, e = { 0 };
-	if (!Mode_Import("Init") || !Mode_Import("CreditsText") || !LV_CALL("CreditsText", "Init", NULL, "") ||
+	if (!Mode_Import("Init") || !Mode_Import("CreditsText") || !PORT_CALL(CreditsText, Init, NULL, "") ||
 		!Mode_EntSetS("DM_Door_ElevatorOrbitC_TownHall", "OnObjSlot", "")) {
 		return 0;
 	}
@@ -331,9 +338,9 @@ static byte Decont_InitN(void) {
 			return 0;
 		}
 	}
-	if (!LV_OWN(MD, "LoadBishopsScene", NULL, "") || !LV_OWN(MD, "LoadFunctionaryScene", NULL, "") ||
-		!LV_OWN(MD, "LoadFallingScene", NULL, "") || !LV_OWN(MD, "CreateBishopsLauncher", NULL, "") ||
-		!LV_OWN(MD, "SetWaypoint", NULL, "v", &dec)) {
+	if (!PORT_LOWN(MapDecont, LoadBishopsScene, NULL, "") || !PORT_LOWN(MapDecont, LoadFunctionaryScene, NULL, "") ||
+		!PORT_LOWN(MapDecont, LoadFallingScene, NULL, "") || !PORT_LOWN(MapDecont, CreateBishopsLauncher, NULL, "") ||
+		!PORT_LOWN(MapDecont, SetWaypoint, NULL, "v", &dec)) {
 		return 0;
 	}
 	if (d) {
@@ -351,7 +358,7 @@ static byte Decont_InitN(void) {
 			LvN_SetI(&kb, "ArrowCanUse", 1) && LvN_SetI(&kb, "Life", 0) && LvN_SetI(&kb, "ArrnOpt", 0) &&
 			LvN_SetLangOpt(&kb, "ArrOpt0", "Decontamination:", "Mission_Decontamination_Hint1") &&
 			LvN_SetS(&kb, "UseFunc", "MapDecont.Decontamination") && LvN_SetI(&kb, "MapCollision", 1) &&
-			LV_OWN(MD, "LoadDecontamination", NULL, "") && Mode_EntSetS("DM_Door_OrbitDoorA_01", "OnObjSlot", "!FrontDoorSlot") &&
+			PORT_LOWN(MapDecont, LoadDecontamination, NULL, "") && Mode_EntSetS("DM_Door_OrbitDoorA_01", "OnObjSlot", "!FrontDoorSlot") &&
 			Mode_EntSetS("DM_Door_OrbitDoorA_02", "OnObjSlot", "!CloseDoorSlot") &&
 			Mode_Later(5.0, MD, "MsgOffVoice", NULL, 0, NULL);
 		Native_Free(&kb);
@@ -365,28 +372,19 @@ static byte Decont_InitN(void) {
 	if (!Mode_Import("GateKeeper")) {
 		return 0;
 	}
-	/* OBJLIB 3: GateKeeper.SetDoor with the door functions of the module (read after the function, as the script) */
-	PyObject *fn = Script_Attr("GateKeeper", "SetDoor");
-	if (!fn) {
-		return 0;
-	}
-	if (!LvN_GObj(MD, "OpenGateKeeperDoor", &fn1)) {
-		Py_DECREF(fn);
-		return 0;
-	}
-	byte ok = LvN_GObj(MD, "CloseGateKeeperDoor", &fn2);
-	if (ok) {
-		ok = Native_HookCall(fn, NULL, "ssvv", "GateKeeper_Portalis", "DM_Door_OrbitDoorA_00", &fn1, &fn2);
-	} else {
-		Py_DECREF(fn);
-	}
+	/* GateKeeper.SetDoor with the door functions of the module (OBJLIB 5: the functions as values); the lookup of
+	 * SetDoor comes after the two functions now (it differs only when both fail) */
+	byte ok = LvN_GObj(MD, "OpenGateKeeperDoor", &fn1) && LvN_GObj(MD, "CloseGateKeeperDoor", &fn2) &&
+		PORT_CALL(GateKeeper, SetDoor, NULL, "ssvv", "GateKeeper_Portalis", "DM_Door_OrbitDoorA_00", &fn1, &fn2);
 	Native_Free(&fn1);
 	Native_Free(&fn2);
 	if (!ok || !Mode_EntSetI("DM_Door_Teleporter_01", "ArrnOpt", 0) ||
 		!Mode_EntSetS("DM_Door_Teleporter_01", "UseFunc", "MapDecont.CantUseElevator") || !Mode_Import("Items")) {
 		return 0;
 	}
-	if (!(fn = Script_Attr("Items", "Hint"))) {
+	/* OBJLIB 3: Items.Hint has no native entry yet (Items.c) */
+	PyObject *fn = Script_Attr("Items", "Hint");
+	if (!fn) {
 		return 0;
 	}
 	Native_SetNone(&pos);
@@ -419,7 +417,7 @@ static byte Decont_MsgOffVoiceN(void) {
 	Mode_SaveVar("Orbit.Decontaminated", &sv);
 	byte no = Native_IsStr(&sv, "no");
 	Native_Free(&sv);
-	return !no || (LV_CALL("Speech", "OffVoice", NULL, "s", "Mission_Decontamination_RemoteMessage1") &&
+	return !no || (PORT_CALL(Speech, OffVoice, NULL, "s", "Mission_Decontamination_RemoteMessage1") &&
 		Mode_Later(20.0, MD, "MsgOffVoice", NULL, 0, NULL));
 }
 
@@ -463,15 +461,20 @@ static byte Decont_OpenGateKeeperDoorN(const nativeVal_t *door) {
 	return ok;
 }
 
-/* AfterBrowseNPC(): the callbacks of the special characters */
+/* AfterBrowseNPC(): the callbacks of the special characters (OBJLIB 5: the functions as values, by the names of
+ * their refs) */
 static byte Decont_AfterBrowseNPCN(void) {
-	static const char *const pairs[][2] = { { "GateKeeper_Portalis", "CreateGateKeeperInit" }, { "Sentinel_Corridor", "CreateSentinelInit" },
-		{ "Bishop_01", "CreateBishopInit" }, { "Bishop_00", "CreateBishopInit" }, { "Functionary_00", "CreateFunctionaryInit" } };
+	static const struct {
+		const char *name;
+		const portRef_t *ref;
+	} pairs[] = { { "GateKeeper_Portalis", &PORT_LREF(MapDecont, CreateGateKeeperInit) },
+		{ "Sentinel_Corridor", &PORT_LREF(MapDecont, CreateSentinelInit) }, { "Bishop_01", &PORT_LREF(MapDecont, CreateBishopInit) },
+		{ "Bishop_00", &PORT_LREF(MapDecont, CreateBishopInit) }, { "Functionary_00", &PORT_LREF(MapDecont, CreateFunctionaryInit) } };
 	if (!Mode_Import("CharsNPC")) {
 		return 0;
 	}
 	for (int i = 0; i < 5; i++) {
-		if (!LvN_Callback(pairs[i][0], MD, pairs[i][1])) {
+		if (!LvN_CallbackRef(pairs[i].name, pairs[i].ref)) {
 			return 0;
 		}
 	}
@@ -486,10 +489,8 @@ static const char *const functionary_vars[] = { "ArrowCanUse=1", "UseFunc=MapDec
 static const char *const fixed_vars[] = { "LLogicDefaultState=6", "LLogicDefaultTarget='", "LLogicState=6", "LLogicTarget='",
 	"LLogicIdle=1", "LLogicIdle=0", NULL };
 
-MODE_FN(Ob, FixedInit, 1, Mode_SetAttrs(&a[0], fixed_vars))
-
-PyObject *Level_FixedInit(PyObject *self, PyObject *args) {
-	return Ob_FixedInit(self, args);
+byte Level_FixedInitN(const nativeVal_t *e) {
+	return Mode_SetAttrs(e, fixed_vars);
 }
 
 /* ShowSkipConvsMsg(): how to skip the talks */
@@ -539,7 +540,7 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 	if (LvN_EqS(opt, "Talk")) {
 		Mode_Lang("Mission_Decontamination_GateKeeper_InitMsg1", cad);
 		Native_SetFloat(now, Mode_Time());
-		ok = LV_CALL("Speech", "CalculateSpeechTime", st, "v", cad) && Native_Arith('+', now, st, when) &&
+		ok = PORT_CALL(Speech, CalculateSpeechTime, st, "v", cad) && Native_Arith('+', now, st, when) &&
 			LvN_GObj(MD, "ShowSkipConvsMsg", fn);
 		if (ok) {
 			PyObject *f = Native_ToPy(fn);
@@ -548,7 +549,7 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 		}
 		ok = ok &&
 			Mode_Spch("Mission_Decontamination_GateKeeper_InitMsg1", "Mission_Decontamination_GateKeeper_InitAns1", "TalkNPC") &&
-			Mode_AnsLst(answers, 4) && LV_OWN(MD, "CheckShowNextHowto", NULL, "");
+			Mode_AnsLst(answers, 4) && PORT_LOWN(MapDecont, CheckShowNextHowto, NULL, "");
 	} else if (LvN_EqS(opt, "Mission_Decontamination_GateKeeper_3")) {
 		ok = Mode_Spch("Mission_Decontamination_GateKeeper_3Msg", "Mission_Decontamination_GateKeeper_3Ans", "TalkNoNPC") &&
 			LvN_SetI(ch, "ArriOpt", 3);
@@ -566,14 +567,14 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 		ok = Mode_Spch("Mission_Decontamination_GateKeeper_4Msg", "Generics_GateKeeper_InitAns1", "TalkNPC") &&
 			Ob_GateKeeperEnd() && Mode_VObj(gc, "CanPassFunc", fn);
 		if (ok) {
-			/* gc.CanPassFunc(door, CharName): a function value of the gatekeeper (OBJLIB 3) */
+			/* gc.CanPassFunc(door, CharName): a function value of the gatekeeper (OBJLIB 4) */
 			PyObject *f = Native_ToPy(fn);
 			ok = f && Native_Call(f, NULL, "vv", door, charName);
 			Py_XDECREF(f);
 		}
 		ok = ok && LvN_SetS(ch, "AbortSelectFunc", "GateKeeper.RestoreState");
 	} else {
-		ok = LV_CALL("Speech", "StdOnSpch", NULL, "v", opt);
+		ok = PORT_CALL(Speech, StdOnSpch, NULL, "v", opt);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -589,9 +590,9 @@ static byte Decont_SentinelSpeechN(const nativeVal_t *usrName, const nativeVal_t
 		return Mode_Spch("Mission_Checkin_Sentinel_InitMsg1", "Mission_Checkin_Sentinel_InitAns1", NULL) && Mode_AnsLst(answers, 2);
 	}
 	if (LvN_EqS(opt, "Mission_Checkin_Sentinel_2")) {
-		return LV_CALL("Speech", "StdOnSpch", NULL, "v", opt) && Mode_Later(8.0, MD, "GaugeBlink", NULL, 0, NULL);
+		return PORT_CALL(Speech, StdOnSpch, NULL, "v", opt) && Mode_Later(8.0, MD, "GaugeBlink", NULL, 0, NULL);
 	}
-	return LV_CALL("Speech", "StdOnSpch", NULL, "v", opt);
+	return PORT_CALL(Speech, StdOnSpch, NULL, "v", opt);
 }
 
 /* GaugeBlink(): while the sentinel still talks, the alarm rises and the cop meter blinks */
@@ -605,7 +606,7 @@ static byte Decont_GaugeBlinkN(void) {
 	byte ok = LvN_Entity("Sentinel_Corridor", &e) && Mode_VGet(&e, "Action", &act) && Native_Slice(&act, 0, 7, &head);
 	if (ok && LvN_EqS(&head, "TalkNPC")) {
 		Native_SetFloat(&level, 0.9);
-		ok = Mode_SetAlarm(&level) && LV_CALL("Scorer", "Blink", NULL, "is", 30L, "CopMeter");
+		ok = Mode_SetAlarm(&level) && PORT_CALL(Scorer, Blink, NULL, "is", 30L, "CopMeter");
 	}
 	Native_Free(&e);
 	Native_Free(&act);
@@ -1089,7 +1090,7 @@ static byte Decont_EndOfSceneFunctionaryN(void) {
 	Native_SetInt(&one, 1);
 	byte ok = Mode_SetModVar("Functionary", "skipChallengeOptions", &one) && LvN_SetS(&c, "UseFunc", "Speech.AutoSpeech") &&
 		LvN_SetI(&c, "ArrowCanMission", 0) && LvN_SetI(&c, "RadarShow", 0) && Mode_GVarSetDef("FunctionaryMinTimeToSitDown") &&
-		Mode_GVarSetDef("FunctionaryMaxTimeToSitDown") && LV_OWN(MD, "CreateDownKeyPad", NULL, "") &&
+		Mode_GVarSetDef("FunctionaryMaxTimeToSitDown") && PORT_LOWN(MapDecont, CreateDownKeyPad, NULL, "") &&
 		Mode_MMDesc("Mission_Fake_MissionText1", 0L);
 	Native_Free(&c);
 	return ok;
@@ -1135,8 +1136,8 @@ static byte Decont_JumpNextMissionN(void) {
 		}
 	}
 	SaveVar_Set("Challenge", "1");
-	return LV_CALL("SaveGame", "MarkWayPoint", NULL, "ss", "Levels/Fake", "DM_Player_Spawn_Orbit") &&
-		LV_CALL("SaveGame", "StartGame", NULL, "");
+	return PORT_CALL(SaveGame, MarkWayPoint, NULL, "ss", "Levels/Fake", "DM_Player_Spawn_Orbit") &&
+		PORT_CALL(SaveGame, StartGame, NULL, "");
 }
 
 /* PlayFunctionary(UsrName, CharName, optId, FullOption): the scene of the check in */
@@ -1181,6 +1182,7 @@ MODE_FN(Decont, CloseGateKeeperDoor, 2, Decont_CloseGateKeeperDoorN(&a[0]))
 MODE_FN(Decont, OpenGateKeeperDoor, 2, Decont_OpenGateKeeperDoorN(&a[0]))
 MODE_FN(Decont, AfterBrowseNPC, 0, Decont_AfterBrowseNPCN())
 MODE_FN(Decont, CreateFunctionaryInit, 1, Mode_SetAttrs(&a[0], functionary_vars))
+MODE_FN(Decont, CreateBishopInit, 1, Level_FixedInitN(&a[0]))
 MODE_FN(Decont, CreateGateKeeperInit, 1, LvN_SetS(&a[0], "UseFunc", "MapDecont.GateKeeperSpeech"))
 MODE_FN(Decont, CreateSentinelInit, 1, LvN_SetS(&a[0], "UseFunc", "MapDecont.SentinelSpeech"))
 MODE_FN(Decont, ShowSkipConvsMsg, 0, Decont_ShowSkipConvsMsgN())
@@ -1216,7 +1218,7 @@ PyMethodDef g_OrbitMapDecontMethods[] = {
 	{ "OpenGateKeeperDoor", Decont_OpenGateKeeperDoor, 1, NULL },
 	{ "AfterBrowseNPC", Decont_AfterBrowseNPC, 1, NULL },
 	{ "CreateFunctionaryInit", Decont_CreateFunctionaryInit, 1, NULL },
-	{ "CreateBishopInit", Level_FixedInit, 1, NULL },
+	{ "CreateBishopInit", Decont_CreateBishopInit, 1, NULL },
 	{ "CreateGateKeeperInit", Decont_CreateGateKeeperInit, 1, NULL },
 	{ "CreateSentinelInit", Decont_CreateSentinelInit, 1, NULL },
 	{ "ShowSkipConvsMsg", Decont_ShowSkipConvsMsg, 1, NULL },
@@ -1245,7 +1247,7 @@ PyMethodDef g_OrbitMapDecontMethods[] = {
 
 /* InitStatus(LevelPath): the resources of the Gears and of Bill */
 static byte Intro_InitStatusN(void) {
-	return LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Gear") && LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Human");
+	return PORT_CALL(Chars, AddNewCharRes, NULL, "s", "Gear") && PORT_CALL(Chars, AddNewCharRes, NULL, "s", "Human");
 }
 
 /* the gatekeeper goes on (its time runs, active) */
@@ -1270,8 +1272,8 @@ static byte Intro_InitN(void) {
 		}
 	}
 	Native_SetInt(&one, 1);
-	return Mode_SetAlarm(&one) && Mode_SetLockAlarm(&one) && LV_OWN(IH, "LoadSceneA", NULL, "") &&
-		LV_OWN(IH, "LoadSceneB", NULL, "") && LV_OWN(IH, "LoadSceneC", NULL, "") &&
+	return Mode_SetAlarm(&one) && Mode_SetLockAlarm(&one) && PORT_LOWN(Mission_IntroHuman, LoadSceneA, NULL, "") &&
+		PORT_LOWN(Mission_IntroHuman, LoadSceneB, NULL, "") && PORT_LOWN(Mission_IntroHuman, LoadSceneC, NULL, "") &&
 		Ob_PlayThen("BillArrives_A", IH, "BillArrives_B") && Ih_GateKeeper();
 }
 
@@ -1284,11 +1286,11 @@ static byte Intro_SetNextMissionN(void) {
 	/* OBJLIB 7: Achievement by name (the cases record it) */
 	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame") || !LV_CALL("Scrap", "Achievement", NULL, "i", 5L) ||
 		!Mode_SetLockAlarm(&zero) || !Mode_SetAlarm(&zero) ||
-		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_IntroHuman2", "Press")) {
+		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_IntroHuman2", "Press")) {
 		return 0;
 	}
 	SaveVar_Set("Char", "Dtritus");
-	if (!LV_CALL("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Press", "DM_Player_Spawn_Press", "")) {
+	if (!PORT_CALL(SaveGame, MarkWayPoint, NULL, "sss", "Levels/Press", "DM_Player_Spawn_Press", "")) {
 		return 0;
 	}
 	for (int i = 0; i < 4; i++) {
@@ -1296,7 +1298,7 @@ static byte Intro_SetNextMissionN(void) {
 	}
 	LvN_Str(&item, "SHUMP1");
 	byte ok = LvN_SaveList("Parked.Press", IH, &l) && LvN_SaveAppend("Parked.Press", &l, &item) &&
-		LV_CALL("SaveGame", "StartGame", NULL, "");
+		PORT_CALL(SaveGame, StartGame, NULL, "");
 	Native_Free(&l);
 	Native_Free(&item);
 	return ok;
