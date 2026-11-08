@@ -2227,12 +2227,14 @@ PORT_DECLL(ab, Map, RealOnDeath) /* 2 */
 /* levels/ABIndoor.c */
 PORT_DECLL(abindoor, Map, InitStatus) /* 1 */
 PORT_DECLL(abindoor, Map, Init) /* 1 */
+PORT_DECLL(abindoor, Map, Goodbye) /* ? */
 PORT_DECLL(abindoor, Map, LaunchCinematic) /* 4 */
 PORT_DECLL(abindoor, Map, ShowEndTitle) /* 1 */
 PORT_DECLL(abindoor, Map, FadeEndTitle) /* 1 */
 #define PORTS_levels_ABIndoor \
 	PORT_DEFL(abindoor, Map, InitStatus, Abi_InitStatusPy) \
 	PORT_DEFL(abindoor, Map, Init, Abi_InitPy) \
+	PORT_DEFLK(abindoor, Map, Goodbye, Abi_GoodbyePy) \
 	PORT_DEFL(abindoor, Map, LaunchCinematic, Abi_LaunchCinematicPy) \
 	PORT_DEFL(abindoor, Map, ShowEndTitle, Abi_ShowEndTitlePy) \
 	PORT_DEFL(abindoor, Map, FadeEndTitle, Abi_FadeEndTitlePy)
