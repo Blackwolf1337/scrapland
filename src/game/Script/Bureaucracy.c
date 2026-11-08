@@ -6,7 +6,8 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
  * entries are adapters. BureaucracyTableFile is mirrored from the module dict where Init reads it (OBJLIB 5).
- * CreateBureaucracyClass is called by name for each desk, as a mission may replace it (OBJLIB 3).
+ * CreateBureaucracyClass is called through its ref for each desk (PORT_CALL: directly while the attribute holds the
+ * port's function, else by name, as a mission may replace it).
  */
 #include <string.h>
 
@@ -15,6 +16,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
 static const char bureaucracy_def[] = {
@@ -85,11 +87,8 @@ static byte Bureaucracy_Desk(const char *name, const double *pos, const double *
 		Native_Free(&kind);
 		return 0;
 	}
-	/* OBJLIB 3: the module's function by name (a mission may put another there) */
-	PyObject *k = Native_ToPy(&kind), *f = k ? Native_ToPy(&bureaucracy.tableFile) : NULL;
-	byte ok = f && Script_Try("Bureaucracy", "CreateBureaucracyClass", "(OO)", k, f);
-	Py_XDECREF(k);
-	Py_XDECREF(f);
+	/* through the module (a mission may put another function there) */
+	byte ok = PORT_CALL(Bureaucracy, CreateBureaucracyClass, NULL, "vv", &kind, &bureaucracy.tableFile);
 	if (!ok) {
 		Native_Free(&kind);
 		return 0;
@@ -158,27 +157,21 @@ static byte Bureaucracy_Init(int fromViewer) {
 
 /* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
 
-/* an argument as a native value; one without a native form becomes None, which the functions refuse with the same
- * error (only a class instance with __radd__ could do otherwise) */
-static void Bureaucracy_Arg(PyObject *o, nativeVal_t *v) {
-	if (!Native_FromPyAny(o, v)) {
-		Native_SetNone(v);
+/* CreateBureaucracyClass(cls, file): an argument without a native form (an NV_OBJ of Native_Arg) is None, which the
+ * function refuses with the same error (only a class instance with __radd__ could do otherwise) */
+static byte Bureaucracy_CreateBureaucracyClass_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t none;
+	(void)out;
+	if (n != 2) {
+		return Port_Arity(n, 2);
 	}
+	Native_SetNone(&none);
+	return Bureaucracy_Class(a[0].type == NV_OBJ ? &none : &a[0], a[1].type == NV_OBJ ? &none : &a[1]);
 }
 
 static PyObject *Bureaucracy_CreateBureaucracyClass(PyObject *self, PyObject *args) {
-	PyObject *cls, *file;
-	nativeVal_t c, f;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &cls, &file)) {
-		return NULL;
-	}
-	Bureaucracy_Arg(cls, &c);
-	Bureaucracy_Arg(file, &f);
-	byte ok = Bureaucracy_Class(&c, &f);
-	Native_Free(&c);
-	Native_Free(&f);
-	return ok ? Py_ReturnNone() : NULL;
+	return Mode_Entry(args, Bureaucracy_CreateBureaucracyClass_E);
 }
 
 static PyObject *Bureaucracy_InitPy(PyObject *self, PyObject *args, PyObject *kw) {
@@ -206,3 +199,5 @@ PyMethodDef g_BureaucracyMethods[] = {
 	{ "Init", (PyCFunction)(void (*)(void))Bureaucracy_InitPy, 3, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Bureaucracy)

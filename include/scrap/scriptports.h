@@ -30,6 +30,11 @@ PORT_DECL(NewsPanel, SwitchAlarm) /* 1 */
 	PORT_DEF(NewsPanel, EndOfNews, NewsPanel_EndOfNews) \
 	PORT_DEF(NewsPanel, SwitchAlarm, NewsPanel_SwitchAlarm)
 
+/* Bureaucracy.c */
+PORT_DECL(Bureaucracy, CreateBureaucracyClass) /* 2 */
+#define PORTS_Bureaucracy \
+	PORT_DEF(Bureaucracy, CreateBureaucracyClass, Bureaucracy_CreateBureaucracyClass)
+
 /* Challenge.c */
 PORT_DECL(Challenge, ComputeReward) /* 3 */
 PORT_DECL(Challenge, Init) /* ? */
