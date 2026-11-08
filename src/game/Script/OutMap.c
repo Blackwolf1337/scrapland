@@ -488,24 +488,26 @@ static byte OutMap_FarthestK(const nativeVal_t *const *a, nativeVal_t *out) {
 	return Om_SpawnPosBy(a[0], 0, out);
 }
 
-static char *om_spawnNames[] = { "initialPos", NULL };
-
 static byte OutMap_GetNearestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "|O", OutMap_NearestK, out);
 }
 
+static char *OutMap_GetNearestFreeSpawnPos_N[] = { "initialPos", NULL };
+
 static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
-	return Mode_KwCall(args, kw, "|O", om_spawnNames, OutMap_NearestK);
+	return Mode_KwCall(args, kw, "|O", OutMap_GetNearestFreeSpawnPos_N, OutMap_NearestK);
 }
 
 static byte OutMap_GetFarthestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "|O", OutMap_FarthestK, out);
 }
 
+static char *OutMap_GetFarthestFreeSpawnPos_N[] = { "initialPos", NULL };
+
 static PyObject *OutMap_GetFarthestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
-	return Mode_KwCall(args, kw, "|O", om_spawnNames, OutMap_FarthestK);
+	return Mode_KwCall(args, kw, "|O", OutMap_GetFarthestFreeSpawnPos_N, OutMap_FarthestK);
 }
 
 PyMethodDef g_OutMapMethods[] = {

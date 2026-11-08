@@ -1057,12 +1057,18 @@ byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
 	if (s->type != NV_STR) {
 		return Native_Raise(NE_TYPE, "argument 1: expected read-only character buffer, %s found", Native_TypeName(s));
 	}
-	const char *t = Native_Text(s);
-	int len = s->n, i = 0, j = 0;
+	return Native_SplitText(Native_Text(s), s->n, sep, sep ? (int)strlen(sep) : 0, 0, out);
+}
+
+byte Native_SplitText(const char *t, int len, const char *sep, int n, int maxsplit, nativeVal_t *out) {
+	/* split_whitespace and strop_splitfields of stropmodule.c */
+	int i = 0, j = 0, count = 0;
 	nativeVal_t list;
+	if (sep && !n) {
+		return Native_Raise(NE_VALUE, "empty separator");
+	}
 	Native_SetEmpty(&list, NV_LIST);
 	if (!sep) {
-		/* split_whitespace */
 		while (i < len) {
 			while (i < len && isspace((unsigned char)t[i])) {
 				i++;
@@ -1073,19 +1079,26 @@ byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
 			}
 			if (j < i) {
 				Native_SetText(Native_Append(&list), t + j, i - j);
+				count++;
+				while (i < len && isspace((unsigned char)t[i])) {
+					i++;
+				}
+				if (maxsplit && count >= maxsplit && i < len) {
+					Native_SetText(Native_Append(&list), t + i, len - i);
+					i = len;
+				}
 			}
 		}
 		*out = list;
 		return 1;
 	}
-	int n = (int)strlen(sep);
-	if (!n) {
-		return Native_Raise(NE_VALUE, "empty separator");
-	}
 	while (i + n <= len) {
 		if (t[i] == sep[0] && (n == 1 || !memcmp(t + i, sep, (size_t)n))) {
 			Native_SetText(Native_Append(&list), t + j, i - j);
 			i = j = i + n;
+			if (maxsplit && ++count >= maxsplit) {
+				break;
+			}
 		} else {
 			i++;
 		}
@@ -2213,30 +2226,57 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
 	return Native_Raise(NE_SYSTEM, "error return without exception set");
 }
 
-/* the argument tuple of the mini format of Native_Call (NULL with the error set) */
-static PyObject *Native_Args(const char *fmt, va_list va) {
+int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
 	int n = (int)strlen(fmt);
-	PyObject *t = PyTuple_New(n);
-	for (int i = 0; t && i < n; i++) {
-		PyObject *o = NULL;
+	CHECK(n <= NATIVE_ARGS);
+	for (int i = 0; i < n; i++) {
+		a[i].type = fmt[i];
 		switch (fmt[i]) {
 		case 'v':
-			o = Native_ToPy(va_arg(va, const nativeVal_t *));
+			a[i].v = va_arg(va, const nativeVal_t *);
 			break;
 		case 'i':
-			o = PyInt_FromLong(va_arg(va, long));
+			a[i].i = va_arg(va, long);
 			break;
 		case 'd':
-			o = PyFloat_FromDouble(va_arg(va, double));
+			a[i].d = va_arg(va, double);
 			break;
 		case 's':
-			o = PyString_FromString((char *)va_arg(va, const char *));
+			a[i].s = va_arg(va, const char *);
 			break;
 		case 'O':
-			o = va_arg(va, PyObject *);
-			Py_XINCREF(o);
+		case 'P':
+			a[i].o = va_arg(va, PyObject *);
 			break;
 		}
+	}
+	return n;
+}
+
+PyObject *Native_ArgPy(const nativeArg_t *a) {
+	/* another letter fails the call without an error, as it always did */
+	switch (a->type) {
+	case 'v':
+		return Native_ToPy(a->v);
+	case 'i':
+		return PyInt_FromLong(a->i);
+	case 'd':
+		return PyFloat_FromDouble(a->d);
+	case 's':
+		/* a NULL text is None, as for Py_BuildValue */
+		return a->s ? PyString_FromString((char *)a->s) : Py_ReturnNone();
+	case 'O':
+	case 'P':
+		Py_XINCREF(a->o);
+		return a->o;
+	}
+	return NULL;
+}
+
+PyObject *Native_PyArgs(const nativeArg_t *a, int n) {
+	PyObject *t = PyTuple_New(n);
+	for (int i = 0; t && i < n; i++) {
+		PyObject *o = Native_ArgPy(&a[i]);
 		if (!o) {
 			Py_DECREF(t);
 			return NULL;
@@ -2244,6 +2284,13 @@ static PyObject *Native_Args(const char *fmt, va_list va) {
 		PyTuple_SET_ITEM(t, i, o);
 	}
 	return t;
+}
+
+/* the argument tuple of the mini format of Native_Call (NULL with the error set) */
+static PyObject *Native_Args(const char *fmt, va_list va) {
+	nativeArg_t a[NATIVE_ARGS];
+	int n = Native_ReadArgs(fmt, va, a);
+	return Native_PyArgs(a, n);
 }
 
 /* callable(args) (a reference taken over), the result into *out (NULL: dropped) */

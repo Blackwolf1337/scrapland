@@ -17,6 +17,9 @@
 #include "scrap/world.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL abindoor
+
 #define MAP "Map"
 
 /* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */

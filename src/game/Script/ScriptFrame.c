@@ -13,6 +13,7 @@
 
 #include "scrap/global.h"
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
 
 /* ---- the frame ---- */
 
@@ -887,6 +888,29 @@ byte Sf_Run(scriptFrame_t *f, const char *module, const char *func, const char *
 	return !f->failed;
 }
 
+PyObject *Sf_Port(scriptFrame_t *f, portSite_t *site, const char *fmt, ...) {
+	if (f->failed) {
+		return NULL;
+	}
+	va_list va;
+	va_start(va, fmt);
+	PyObject *r = Port_AskVa(site, fmt, va);
+	va_end(va);
+	return Sf_Keep(f, r);
+}
+
+byte Sf_PortRun(scriptFrame_t *f, portSite_t *site, const char *fmt, ...) {
+	int mark = f->n;
+	if (!f->failed) {
+		va_list va;
+		va_start(va, fmt);
+		Sf_Keep(f, Port_AskVa(site, fmt, va));
+		va_end(va);
+	}
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
 PyObject *Sf_Value(scriptFrame_t *f, const char *module, const char *text, int len) {
 	char buf[0x100], *end;
 	if (f->failed) {
@@ -1006,8 +1030,8 @@ byte Sf_SpeechEnd(scriptFrame_t *f, PyObject *fn, PyObject *params) {
 }
 
 byte Sf_NISpeech(scriptFrame_t *f, const char *who, const char *key) {
-	return (who ? Sf_Run(f, "Speech", "NISpeech", "(s)", who) : Sf_Run(f, "Speech", "NISpeech", "()")) &&
-		Sf_Run(f, "Speech", "AutoAddNI", "(s)", key) && Sf_Run(f, "Speech", "RunNI", "()");
+	return (who ? SF_RUN(f, Speech, NISpeech, "s", who) : SF_RUN(f, Speech, NISpeech, "")) && SF_RUN(f, Speech, AutoAddNI, "s", key) &&
+		SF_RUN(f, Speech, RunNI, "");
 }
 
 byte Sf_DrawScorer(scriptFrame_t *f) {

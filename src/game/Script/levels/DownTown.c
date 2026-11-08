@@ -28,6 +28,9 @@
 
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL downtown
+
 #define FC "Mission_FirstContactPress"
 #define BM "Mission_BertoMassacre"
 #define CG "Mission_DefeatCrazyGambler1"
@@ -722,7 +725,7 @@ static byte Massacre_OnVehicleCallback(const nativeVal_t *a) {
 		points = LvN_EqS(typo, "Heavy") ? 3 : LvN_EqS(typo, "Medium") ? 2 : 1;
 	} else if (ok) {
 		/* `elif string.find(Model, "POLI")`: 5 either way */
-		ok = LV_CALL("string", "find", found, "vs", model, "POLI");
+		ok = PORT_CALL(string, find, found, "vs", model, "POLI");
 	}
 	if (ok) {
 		Mode_SaveVar("Mission_Massacre.Points", sv);

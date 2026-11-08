@@ -12,6 +12,9 @@
 #include "scrap/scrap.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL qf
+
 #define BC "Mission_BankersCombat"
 
 /* CreatePlans(): the bankers attack the player, the two blueprints to photograph at their dummies */
@@ -100,7 +103,7 @@ static byte Bc_TakePlanPhoto(const nativeVal_t *plan, nativeVal_t *out) {
 		return in == 0;
 	}
 	byte ok = Mode_EntityH(plan, &h) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", &h) &&
-		LV_CALL("string", "find", &pos, "vs", plan, "M");
+		PORT_CALL(string, find, &pos, "vs", plan, "M");
 	Native_SetInt(&minus, -1);
 	ok = ok && Bc_Blueprint(Native_Compare(&pos, &minus) != 0) && LvN_GAdd(BC, "numPlansWithPhoto", 1, NULL);
 	Native_Free(&h);

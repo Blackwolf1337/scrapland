@@ -19,6 +19,9 @@
 #include "scrap/world.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL fake
+
 #define MAP "Map"
 
 /* the scene of the flight; the events of frames 950 to 1540 set the thrust of Berto's ship (ActivateBertoEngines) */

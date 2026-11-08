@@ -35,6 +35,9 @@
 #include "scrap/scrap.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL police
+
 #define MAP "Map"
 #define MP "MapPlanes"
 #define BP "Mission_BeatPickus"

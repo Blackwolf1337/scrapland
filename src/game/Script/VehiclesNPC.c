@@ -499,30 +499,33 @@ static byte VehiclesNPC_MakeAI_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	return Mode_KwEntry(a, n, "O|OOO", Npc_MakeAIK, out);
 }
 
+static char *VehiclesNPC_MakeAI_N[] = { "TypeShip", "Name", "FarPos", "InitState", NULL };
+
 static PyObject *VehiclesNPC_MakeAI(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "TypeShip", "Name", "FarPos", "InitState", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "O|OOO", names, Npc_MakeAIK);
+	return Mode_KwCall(args, kw, "O|OOO", VehiclesNPC_MakeAI_N, Npc_MakeAIK);
 }
 
 static byte VehiclesNPC_ModAIProff_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "OO|O", Npc_ModAIProffK, out);
 }
 
+static char *VehiclesNPC_ModAIProff_N[] = { "o1", "pd", "useLife", NULL };
+
 static PyObject *VehiclesNPC_ModAIProff(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "o1", "pd", "useLife", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", names, Npc_ModAIProffK);
+	return Mode_KwCall(args, kw, "OO|O", VehiclesNPC_ModAIProff_N, Npc_ModAIProffK);
 }
 
 static byte VehiclesNPC_SetIAProf_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "OO|O", Npc_SetIAProfK, out);
 }
 
+static char *VehiclesNPC_SetIAProf_N[] = { "o1", "TypeShip", "InitState", NULL };
+
 static PyObject *VehiclesNPC_SetIAProf(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "o1", "TypeShip", "InitState", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", names, Npc_SetIAProfK);
+	return Mode_KwCall(args, kw, "OO|O", VehiclesNPC_SetIAProf_N, Npc_SetIAProfK);
 }
 
 MODE_FN(VehiclesNPC, InitStdShips, 0, Npc_InitStdShipsN())

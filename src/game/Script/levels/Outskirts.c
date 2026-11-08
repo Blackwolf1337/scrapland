@@ -28,6 +28,9 @@
 
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL outskirts
+
 #define AT "Mission_AttackTraitorius"
 #define DH "Mission_Demo_HumphreyRace"
 #define BD "Mission_DestroyBadDebtors"

@@ -176,10 +176,10 @@ static byte In_BossShip(void) {
 			has = Native_True(&cad);
 		}
 		if (has > 0) {
-			has = Native_CallMod("string", "find", &at, "vs", &cad, "SPoliBoss1") ? !Mode_EqI(&at, -1) : -1;
+			has = PORT_CALL(string, find, &at, "vs", &cad, "SPoliBoss1") ? !Mode_EqI(&at, -1) : -1;
 		}
 		ok = has >= 0 && (!has || (Mode_Import("Traffic") &&
-			Native_CallMod("string", "replace", &rep, "vssi", &cad, "SPoliBoss1", "SPoli6", 1L) &&
+			PORT_CALL(string, replace, &rep, "vssi", &cad, "SPoliBoss1", "SPoli6", 1L) &&
 			Mode_SetSaveVar("Traffic.AcShips", &rep) && Mode_Import(IN) && Mode_EvalIn(IN, &rep, &ships) &&
 			Mode_SetModVar("Traffic", "AcShips", &ships)));
 	}

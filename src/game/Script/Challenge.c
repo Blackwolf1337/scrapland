@@ -211,7 +211,7 @@ static int Chal_Outdoor(void) {
 
 /* string.replace(cad, "<n>", n, 1) (OBJLIB 3: the string port by name, the count of the script) */
 static byte Chal_Replace1(const nativeVal_t *cad, const nativeVal_t *n, nativeVal_t *out) {
-	return Native_CallMod("string", "replace", out, "vsvi", cad, "<n>", n, 1L);
+	return PORT_CALL(string, replace, out, "vsvi", cad, "<n>", n, 1L);
 }
 
 /* "DM_Player_Spawn_" + Init.Path[7:] */
@@ -517,7 +517,7 @@ static byte Chal_Release(nativeVal_t *seq) {
 		Native_SetFloat(zero, 0.0);
 		int c = Native_SeqItem(seq, i, name) && Mode_EntitySeam(name, veh) && Mode_VSet(veh, "MoveTime", zero) &&
 			LvN_SetS(veh, "TgType", "None") && Mode_VObj(veh, "Model", model) &&
-			Native_CallMod("string", "find", at, "vs", model, "SPoli") ? Mode_CmpI(at, ">=", 0) : -1;
+			PORT_CALL(string, find, at, "vs", model, "SPoli") ? Mode_CmpI(at, ">=", 0) : -1;
 		byte ok = c >= 0 && LvN_SetS(veh, "EntityList", c ? "OutCop" : "Traffic") && Mode_VObj(veh, "Name", vname) &&
 			Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, vname);
 		if (!Mode_Done(&t, ok)) {
@@ -546,7 +546,7 @@ static byte Chal_CancelChallenge(const nativeVal_t *type) {
 	}
 	Mode_Lang("RaceSystemCancel1", lang);
 	Mode_SaveVar("Challenge.Money", money);
-	if (!Native_CallMod("string", "replace", text, "vsv", lang, "<n>", money) ||
+	if (!PORT_CALL(string, replace, text, "vsv", lang, "<n>", money) ||
 		!Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", text)) {
 		return Mode_Done(&t, 0);
 	}

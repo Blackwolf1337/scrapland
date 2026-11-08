@@ -1255,7 +1255,7 @@ static byte Ht_MaxSpeedTime(const nativeVal_t *v, nativeVal_t *out) {
 	Native_Free(b);
 	Native_Free(fric);
 	ok = ok && Mode_VGet(v, "MaxSpeed", max) && Mode_Arith('*', k, max, b) && Mode_Arith('+', sq, b, in) &&
-		Native_CallMod("math", "sqrt", root, "v", in) && Mode_Arith('+', neg, root, num);
+		PORT_CALL(math, sqrt, root, "v", in) && Mode_Arith('+', neg, root, num);
 	Native_Free(a);
 	Native_Free(b);
 	ok = ok && Mode_VGet(v, "FrwTrust", a) && Mode_Arith('*', Mode_IntVal(c, 2), a, b) && Mode_VGet(v, "Fric", fric) &&

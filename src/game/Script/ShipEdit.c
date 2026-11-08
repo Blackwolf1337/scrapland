@@ -581,7 +581,7 @@ static byte Se_RebuildList(const nativeVal_t *ship, const nativeVal_t *isDestroy
 			Native_Free(name);
 			Native_Free(pos);
 			ok = Mode_VGet(ship, "Name", name) && LvN_ModGet(SE, "shipsToEditList", l) && LvN_Item(l, i, x) &&
-				Native_CallMod("string", "find", pos, "vv", name, x);
+				PORT_CALL(string, find, pos, "vv", name, x);
 			int f = ok ? Mode_CmpI(pos, "!=", -1) : -1;
 			if (f > 0) {
 				ok = Mode_SetModVar(HT, "currentShipToEdit", Mode_IntVal(k, i));
@@ -1050,7 +1050,7 @@ static byte Se_Swept(double a, const nativeVal_t *shipAng, nativeVal_t *out) {
 	nativeVal_t x, d = { 0 };
 	Native_SetFloat(&x, a);
 	Native_Free(out);
-	byte ok = Mode_Arith('-', &x, shipAng, &d) && Native_CallMod("math", "fabs", out, "v", &d);
+	byte ok = Mode_Arith('-', &x, shipAng, &d) && PORT_CALL(math, fabs, out, "v", &d);
 	Native_Free(&d);
 	return ok;
 }
@@ -1137,8 +1137,8 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 	Native_SetInt(swept, -1);
 	int has = ok ? Mode_ModTrue(HT, "prevShip") : -1;
 	if (has > 0) {
-		ok = Se_ShipGet("Ang", ang) && LvN_Item(ang, 1, a) && Native_CallMod("math", "fmod", m, "vi", a, 360L) &&
-			Native_CallMod("math", "fabs", shipAng, "v", m);
+		ok = Se_ShipGet("Ang", ang) && LvN_Item(ang, 1, a) && PORT_CALL(math, fmod, m, "vi", a, 360L) &&
+			PORT_CALL(math, fabs, shipAng, "v", m);
 		hasAng = ok;
 	}
 	if (!ok || has < 0) {
@@ -2095,10 +2095,11 @@ static byte SE_CreateShipFromSaveVar_E(const nativeVal_t *a, int n, nativeVal_t 
 	return Mode_KwEntry(a, n, "OO|O", SE_CreateShipFromSaveVarK, out);
 }
 
+static char *SE_CreateShipFromSaveVar_N[] = { "cad", "pos", "name", NULL };
+
 static PyObject *SE_CreateShipFromSaveVar(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "cad", "pos", "name", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", names, SE_CreateShipFromSaveVarK);
+	return Mode_KwCall(args, kw, "OO|O", SE_CreateShipFromSaveVar_N, SE_CreateShipFromSaveVarK);
 }
 
 PyMethodDef g_ShipEditMethods[] = {

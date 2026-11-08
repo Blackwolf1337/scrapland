@@ -1965,10 +1965,11 @@ static byte Ffa_ActualizeGameScorer_E(const nativeVal_t *a, int n, nativeVal_t *
 	return Mode_KwEntry(a, n, "|O", Ffa_ActualizeGameScorerK, out);
 }
 
+static char *Ffa_ActualizeGameScorer_N[] = { "NowShowScorer", NULL };
+
 static PyObject *Ffa_ActualizeGameScorer(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "NowShowScorer", NULL };
 	(void)self;
-	return Mode_KwCall(args, kw, "|O", names, Ffa_ActualizeGameScorerK);
+	return Mode_KwCall(args, kw, "|O", Ffa_ActualizeGameScorer_N, Ffa_ActualizeGameScorerK);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3

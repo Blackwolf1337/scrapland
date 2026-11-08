@@ -212,7 +212,7 @@ static byte Npc_SpawnPos(nativeVal_t *out) {
 /* string.find(s, sub) != -1 (OBJLIB 3: string.find by name): 1, 0, -1 with the error set */
 static int Npc_Find(const nativeVal_t *s, const nativeVal_t *sub) {
 	nativeVal_t r = { 0 };
-	int c = Native_CallMod("string", "find", &r, "vv", s, sub) ? Mode_CmpI(&r, "!=", -1) : -1;
+	int c = PORT_CALL(string, find, &r, "vv", s, sub) ? Mode_CmpI(&r, "!=", -1) : -1;
 	Native_Free(&r);
 	return c;
 }

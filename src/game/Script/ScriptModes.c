@@ -3,6 +3,8 @@
  * split screen modes and the super deals on native values, the seams of the engine functions their case files record
  * or swap (OBJLIB 7), the module state they read and write in other modules (OBJLIB 5) and their adapters.
  */
+#include <ctype.h>
+#include <errno.h>
 #include <math.h>
 #include <stdarg.h>
 #include <string.h>
@@ -1777,8 +1779,8 @@ byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs) {
 }
 
 byte Mode_NISpeech(const char *who, const char *key) {
-	return (who ? Native_CallMod("Speech", "NISpeech", NULL, "s", who) : Native_CallMod("Speech", "NISpeech", NULL, "")) &&
-		Native_CallMod("Speech", "AutoAddNI", NULL, "s", key) && Native_CallMod("Speech", "RunNI", NULL, "");
+	return (who ? PORT_CALL(Speech, NISpeech, NULL, "s", who) : PORT_CALL(Speech, NISpeech, NULL, "")) &&
+		PORT_CALL(Speech, AutoAddNI, NULL, "s", key) && PORT_CALL(Speech, RunNI, NULL, "");
 }
 
 byte Mode_EntSetS(const char *name, const char *var, const char *s) {
@@ -1924,23 +1926,23 @@ int Mode_UsrIs(const char *ctrl) {
 }
 
 byte Mode_Spch(const char *msg, const char *ans, const char *how) {
-	return how ? LV_CALL("Speech", "OnSpch", NULL, "sss", msg, ans, how) : LV_CALL("Speech", "OnSpch", NULL, "ss", msg, ans);
+	return how ? PORT_CALL(Speech, OnSpch, NULL, "sss", msg, ans, how) : PORT_CALL(Speech, OnSpch, NULL, "ss", msg, ans);
 }
 
 byte Mode_AnsLst(const char *const *texts, int n) {
 	nativeVal_t l;
 	Mode_Texts(&l, texts, n);
-	byte ok = LV_CALL("Speech", "StdAnsLst", NULL, "v", &l);
+	byte ok = PORT_CALL(Speech, StdAnsLst, NULL, "v", &l);
 	Native_Free(&l);
 	return ok;
 }
 
 byte Mode_MMDesc(const char *desc, long flag) {
-	return LV_CALL("SaveGame", "MMDesc", NULL, "si", desc, flag);
+	return PORT_CALL(SaveGame, MMDesc, NULL, "si", desc, flag);
 }
 
 byte Mode_WayPoint(void) {
-	return LV_CALL("SaveGame", "QWayPoint", NULL, "");
+	return PORT_CALL(SaveGame, QWayPoint, NULL, "");
 }
 
 byte Mode_Target(const char *name) {
@@ -1953,8 +1955,8 @@ byte Mode_Connect(const char *a, const char *b, byte pair) {
 	nativeVal_t l1, l2;
 	Mode_Texts(&l1, names, pair ? 2 : 1);
 	Mode_Texts(&l2, names + 1, pair ? 0 : 1);
-	byte ok = pair ? LV_CALL("Elevator", "ConnectElevators", NULL, "vvi", &l1, &l2, 0L) :
-		LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &l1, &l2);
+	byte ok = pair ? PORT_CALL(Elevator, ConnectElevators, NULL, "vvi", &l1, &l2, 0L) :
+		PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &l1, &l2);
 	Native_Free(&l1);
 	Native_Free(&l2);
 	return ok;
@@ -2053,19 +2055,12 @@ byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal
 
 byte Mode_BarDefaults(const nativeVal_t *id, const char *item, const nativeVal_t *main, const nativeVal_t *black) {
 	nativeVal_t back, m, k;
-	PyObject *fn = Script_Attr("Scorer", "MissionScorerBar_SetDefaults");
-	if (!fn) {
-		return 0;
-	}
 	Native_SetNone(&m);
 	Native_SetNone(&k);
+	/* the function is looked up after the colours (the script before them: the same unless both are gone) */
 	byte ok = LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", &back) && (main || LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", &m)) &&
-		(black || LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &k));
-	if (ok) {
-		ok = Native_HookCall(fn, NULL, "vsvvv", id, item, &back, main ? main : &m, black ? black : &k);
-	} else {
-		Py_DECREF(fn);
-	}
+		(black || LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &k)) &&
+		PORT_CALL(Scorer, MissionScorerBar_SetDefaults, NULL, "vsvvv", id, item, &back, main ? main : &m, black ? black : &k);
 	Native_Free(&back);
 	Native_Free(&m);
 	Native_Free(&k);
@@ -2076,7 +2071,7 @@ byte Mode_PhoneCab(const char *use, byte targetFirst, const char *pcModule, nati
 	nativeVal_t pc, name;
 	Native_SetNone(&pc);
 	Native_SetNone(&name);
-	byte ok = Mode_Import("PhoneCab") && Native_CallMod("PhoneCab", "GetFree", &pc, "") && (!pcModule || Mode_Put(pcModule, "pc", NULL, &pc)) &&
+	byte ok = Mode_Import("PhoneCab") && PORT_CALL(PhoneCab, GetFree, &pc, "") && (!pcModule || Mode_Put(pcModule, "pc", NULL, &pc)) &&
 		(targetFirst || LvN_SetS(&pc, "UseFunc", use)) && Mode_VGet(&pc, "Name", &name) &&
 		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &name) && (!targetFirst || LvN_SetS(&pc, "UseFunc", use));
 	Native_Free(&name);
@@ -2093,7 +2088,7 @@ byte Mode_SpawnCar(const char *name, byte nearest, nativeVal_t *out, nativeVal_t
 	Native_SetNone(&s);
 	Native_SetNone(&p);
 	Native_SetNone(out);
-	if (!Native_CallMod("OutMap", nearest ? "GetNearestFreeSpawnPos" : "GetFreeSpawnPos", &s, "")) {
+	if (!(nearest ? PORT_CALL(OutMap, GetNearestFreeSpawnPos, &s, "") : PORT_CALL(OutMap, GetFreeSpawnPos, &s, ""))) {
 		return 0;
 	}
 	Native_SetText(&n, name, (int)strlen(name));
@@ -2121,7 +2116,7 @@ byte Mode_Drop(const char *module, const nativeVal_t *pos, const char *name, con
 	}
 	byte ok = Mode_VSet(l, "Radius", r) && LvN_SetI(l, "AppearsIfFree", 0) && LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", onlyUser) &&
 		LvN_SetF(l, "rTime", 0.25) && LvN_SetS(l, "OnTake", onTake) && Mode_Import("Items") &&
-		Native_CallMod("Items", "SetSound", NULL, "vs", l, sound);
+		PORT_CALL(Items, SetSound, NULL, "vs", l, sound);
 	if (ok && arrow) {
 		Native_SetText(an, arrow, (int)strlen(arrow));
 	} else if (ok) {
@@ -2254,8 +2249,8 @@ byte Mode_Blueprint(const char *module, const char *var, const char *item, const
 	}
 	if (msg) {
 		Mode_Lang(msg, &text);
-		byte ok = delay ? Native_CallMod("RaceMaker", "ShowSystemMessageDelay", NULL, "vd", &text, 0.25) :
-			Mode_Import("RaceMaker") && Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+		byte ok = delay ? PORT_CALL(RaceMaker, ShowSystemMessageDelay, NULL, "vd", &text, 0.25) :
+			Mode_Import("RaceMaker") && PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 		Native_Free(&text);
 		if (!ok) {
 			return 0;
@@ -2271,7 +2266,7 @@ byte Mode_SpeechMsg(const nativeVal_t *cad) {
 	Native_SetFloat(&now, Mode_Time());
 	Native_SetNone(&r);
 	Native_SetNone(&t);
-	byte ok = Native_CallMod("Speech", "CalculateSpeechTime", &r, "v", cad) && Native_Arith('+', &now, &r, &t) && Native_ArgDouble(&t, &d) &&
+	byte ok = PORT_CALL(Speech, CalculateSpeechTime, &r, "v", cad) && Native_Arith('+', &now, &r, &t) && Native_ArgDouble(&t, &d) &&
 		Mode_MsgText(cad, d);
 	Native_Free(&r);
 	Native_Free(&t);
@@ -2303,7 +2298,7 @@ byte Mode_DoorFoe(const char *gk, const char *group) {
 	if (!g) {
 		return 0;
 	}
-	byte ok = Native_CallMod("GateKeeper", "DoorFoe", NULL, "sO", gk, g);
+	byte ok = PORT_CALL(GateKeeper, DoorFoe, NULL, "sO", gk, g);
 	Py_DECREF(g);
 	return ok;
 }
@@ -2378,7 +2373,7 @@ byte Mode_CGCalls(const char *const *msgs, int n) {
 		return other == 0;
 	}
 	Native_SetNone(&num);
-	byte ok = Native_CallMod("MissionsFuncs", "GetNumCrazyDealCompleted", &num, "");
+	byte ok = PORT_CALL(MissionsFuncs, GetNumCrazyDealCompleted, &num, "");
 	for (int i = 0; ok && i < n; i++) {
 		int eq = Mode_CmpI(&num, "==", i);
 		if (eq) {
@@ -2802,7 +2797,7 @@ byte Mode_DelLater(const nativeVal_t *itm) {
 int Mode_PhoneUse(const char *module, const nativeVal_t *a) {
 	nativeVal_t e = { 0 };
 	int r = Mode_Import("PhoneCab") && Mode_SetModVar("Speech", "NPCName", &a[1]) && Mode_SetModVar("Speech", "PlayerName", &a[0]) &&
-		LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) && Mode_Put(module, "pc", NULL, &e) ?
+		PORT_CALL(PhoneCab, UseAudioCom, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) && Mode_Put(module, "pc", NULL, &e) ?
 		Mode_AlarmOn() : -1;
 	Native_Free(&e);
 	return r;
@@ -2820,7 +2815,7 @@ byte Mode_ForceMap(const char *map) {
 
 int Mode_ModelHas(const nativeVal_t *v, const char *text) {
 	nativeVal_t m = { 0 }, up = { 0 }, at = { 0 };
-	int r = Mode_VGet(v, "Model", &m) && Native_Upper(&m, &up) && LV_CALL("string", "find", &at, "vs", &up, text) ? !LvN_EqI(&at, -1) : -1;
+	int r = Mode_VGet(v, "Model", &m) && Native_Upper(&m, &up) && PORT_CALL(string, find, &at, "vs", &up, text) ? !LvN_EqI(&at, -1) : -1;
 	Native_Free(&m);
 	Native_Free(&up);
 	Native_Free(&at);
@@ -4365,3 +4360,309 @@ PyObject *Mode_KwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **n
 	Native_SetNone(&out);
 	return Mode_KwOut(a, n, entry(a, n, &out), &out);
 }
+
+/* ---- string and math of the ports (stage 3, batch B1): native twins of the functions of strop and math that the
+ * ports call (PORT_CALL(string, find, ...) on the refs below: no seam, OBJLIB 9; an NV_OBJ argument and
+ * SCRAP_PORT_SLOW=1 call the module's function by name, include/scrap/scriptnative.h) ---- */
+
+#ifndef _WIN32
+/* src/standalone/crtposix.c: the libm of the Windows runtime, as the math module of Python sees it (pyshim.h) */
+double crt_ms_fmod(double x, double y);
+double crt_ms_sqrt(double x);
+#define LIB_FMOD crt_ms_fmod
+#define LIB_SQRT crt_ms_sqrt
+#else
+#define LIB_FMOD fmod
+#define LIB_SQRT sqrt
+#endif
+
+/* "t#" of getargs.c: the bytes of a text, 0 bytes too */
+static byte Lib_Text(const nativeVal_t *v, int arg, const char **s, int *len) {
+	if (v->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument %d: expected read-only character buffer, %s found", arg, Native_TypeName(v));
+	}
+	*s = Native_Text(v);
+	*len = v->n;
+	return 1;
+}
+
+/* mymemfind of stropmodule.c: the first place of pat in the len bytes of mem, -1 when it is not there */
+static int Lib_MemFind(const char *mem, int len, const char *pat, int plen) {
+	len -= plen;
+	for (int i = 0; i <= len; i++) {
+		if (mem[i] == pat[0] && (plen == 1 || !memcmp(&mem[i + 1], &pat[1], (size_t)(plen - 1)))) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/* find(s, sub[, start[, end]]): the first index of sub in s[start:end], -1 when it is not there */
+static byte Lib_Find(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *s = NULL, *sub = NULL;
+	int len = 0, m = 0, i = 0, last = INT_MAX;
+	if (!Mode_Arity(n, 2, 4) || !Lib_Text(&a[0], 1, &s, &len) || !Lib_Text(&a[1], 2, &sub, &m) ||
+		(n > 2 && !Native_ArgInt(&a[2], &i)) || (n > 3 && !Native_ArgInt(&a[3], &last))) {
+		return 0;
+	}
+	if (last > len) {
+		last = len;
+	}
+	if (last < 0) {
+		last += len;
+	}
+	if (last < 0) {
+		last = 0;
+	}
+	if (i < 0) {
+		i += len;
+	}
+	if (i < 0) {
+		i = 0;
+	}
+	if (m == 0 && i <= last) {
+		Native_SetInt(out, i);
+		return 1;
+	}
+	last -= m;
+	for (; i <= last; i++) {
+		if (s[i] == sub[0] && (m == 1 || !memcmp(&s[i + 1], &sub[1], (size_t)(m - 1)))) {
+			Native_SetInt(out, i);
+			return 1;
+		}
+	}
+	Native_SetInt(out, -1);
+	return 1;
+}
+
+/* replace(str, old, new[, maxsplit]): mymemreplace of stropmodule.c (maxsplit 0 or below: all) */
+static byte Lib_Replace(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *str = NULL, *pat = NULL, *sub = NULL;
+	int len = 0, plen = 0, slen = 0, count = 0;
+	if (!Mode_Arity(n, 3, 4) || !Lib_Text(&a[0], 1, &str, &len) || !Lib_Text(&a[1], 2, &pat, &plen) ||
+		!Lib_Text(&a[2], 3, &sub, &slen) || (n > 3 && !Native_ArgInt(&a[3], &count))) {
+		return 0;
+	}
+	if (plen <= 0) {
+		return Native_Raise(NE_VALUE, "empty pattern string");
+	}
+	/* mymemcnt: the number of places (none for an empty text or a longer pattern) */
+	int found = 0;
+	if (len && plen <= len) {
+		for (int rest = len, at = 0, off; rest >= 0 && (off = Lib_MemFind(str + at, rest, pat, plen)) != -1; found++) {
+			at += off + plen;
+			rest -= off + plen;
+		}
+	}
+	if (count > 0 && found > count) {
+		found = count;
+	}
+	if (!found) {
+		Native_SetText(out, str, len);
+		return 1;
+	}
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	while (len > 0) {
+		int off = Lib_MemFind(str, len, pat, plen);
+		if (off == -1) {
+			break;
+		}
+		Native_BufAdd(&b, str, off);
+		Native_BufAdd(&b, sub, slen);
+		str += off + plen;
+		len -= off + plen;
+		if (--count == 0) {
+			break;
+		}
+	}
+	if (len > 0) {
+		Native_BufAdd(&b, str, len);
+	}
+	Native_SetText(out, b.p ? b.p : "", b.len);
+	Native_BufFree(&b);
+	return 1;
+}
+
+/* atoi(s[, base]): PyOS_strtol of Python (PyOS_strtoul for base 0 and a leading 0) on the text after its blanks */
+static byte Lib_Atoi(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *s;
+	char *end;
+	int base = 10;
+	if (!Mode_Arity(n, 1, 2) || !Native_ArgStr(&a[0], 1, &s) || (n > 1 && !Native_ArgInt(&a[1], &base))) {
+		return 0;
+	}
+	if ((base != 0 && base < 2) || base > 36) {
+		return Native_Raise(NE_VALUE, "invalid base for atoi()");
+	}
+	while (*s && isspace((unsigned char)*s)) {
+		s++;
+	}
+	errno = 0;
+	long x = base == 0 && s[0] == '0' ? (long)PyOS_strtoul((char *)s, &end, base) : PyOS_strtol((char *)s, &end, base);
+	byte bad = end == s || !isalnum((unsigned char)end[-1]);
+	while (!bad && *end && isspace((unsigned char)*end)) {
+		end++;
+	}
+	if (bad || *end) {
+		return Native_Raise(NE_VALUE, "invalid literal for atoi(): %.200s", s);
+	}
+	if (errno) {
+		return Native_Raise(NE_VALUE, "atoi() literal too large: %.200s", s);
+	}
+	Native_SetInt(out, x);
+	return 1;
+}
+
+/* atof(s): strtod of the Windows runtime (crt_strtod) on the text after its blanks */
+static byte Lib_Atof(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *s;
+	char *end;
+	if (!Mode_Arity(n, 1, 1) || !Native_ArgStr(&a[0], 1, &s)) {
+		return 0;
+	}
+	while (*s && isspace((unsigned char)*s)) {
+		s++;
+	}
+	if (!*s) {
+		return Native_Raise(NE_VALUE, "empty string for atof()");
+	}
+	errno = 0;
+	double x = crt_strtod(s, &end);
+	while (*end && isspace((unsigned char)*end)) {
+		end++;
+	}
+	if (*end) {
+		return Native_Raise(NE_VALUE, "invalid literal for atof(): %.200s", s);
+	}
+	if (errno) {
+		return Native_Raise(NE_VALUE, "atof() literal too large: %.200s", s);
+	}
+	Native_SetFloat(out, x);
+	return 1;
+}
+
+/* split(s[, sep[, maxsplit]]) and splitfields, the same function of strop ("t#|z#i") */
+static byte Lib_Split(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *s = NULL, *sep = NULL;
+	int len = 0, m = 0, maxsplit = 0;
+	if (!Mode_Arity(n, 1, 3) || !Lib_Text(&a[0], 1, &s, &len)) {
+		return 0;
+	}
+	if (n > 1 && a[1].type != NV_NONE) {
+		if (a[1].type != NV_STR) {
+			return Native_Raise(NE_TYPE, "argument 2: expected read-only buffer, %s found", Native_TypeName(&a[1]));
+		}
+		sep = Native_Text(&a[1]);
+		m = a[1].n;
+	}
+	if (n > 2 && !Native_ArgInt(&a[2], &maxsplit)) {
+		return 0;
+	}
+	return Native_SplitText(s, len, sep, m, maxsplit, out);
+}
+
+/* the result of a function of math: CHECK and math_error of mathmodule.c (a NaN is a range error) */
+static byte Lib_MathOut(double x, nativeVal_t *out) {
+	if (errno == 0 && !(-HUGE_VAL <= x && x <= HUGE_VAL)) {
+		errno = ERANGE;
+	}
+	if (errno == EDOM) {
+		return Native_Raise(NE_VALUE, "math domain error");
+	}
+	if (errno == ERANGE) {
+		return Native_Raise(NE_OVERFLOW, "math range error");
+	}
+	if (errno) {
+		/* OBJLIB 9: the (errno, text) value of PyErr_SetFromErrno */
+		PyErr_SetFromErrno(PyExc_ValueError);
+		return 0;
+	}
+	Native_SetFloat(out, x);
+	return 1;
+}
+
+/* math_1 of mathmodule.c: PyArg_Parse(args, "d") of a function of old arguments (none: NULL; one: that value; more:
+ * the tuple, which PyFloat_AsDouble refuses) */
+static byte Lib_Math1(const nativeVal_t *a, int n, nativeVal_t *out, double (*fn)(double)) {
+	nativeVal_t t;
+	double x;
+	if (!n) {
+		return Native_Raise(NE_TYPE, "function requires at least one argument");
+	}
+	Native_SetEmpty(&t, NV_TUPLE);
+	byte ok = Native_ArgDouble(n == 1 ? &a[0] : &t, &x);
+	Native_Free(&t);
+	if (!ok) {
+		return 0;
+	}
+	errno = 0;
+	return Lib_MathOut(fn(x), out);
+}
+
+/* math_2: PyArg_Parse(args, "(dd)"), the arguments (or the one value) as a sequence of two numbers */
+static byte Lib_Math2(const nativeVal_t *a, int n, nativeVal_t *out, double (*fn)(double, double)) {
+	nativeVal_t t, tmp;
+	double x[2];
+	if (!n) {
+		return Native_Raise(NE_TYPE, "function requires at least one argument");
+	}
+	/* the arguments as the tuple of old arguments (a view of them, not freed) */
+	Native_SetNone(&t);
+	t.type = NV_TUPLE;
+	t.items = (nativeVal_t *)a;
+	t.n = n;
+	const nativeVal_t *seq = n == 1 ? &a[0] : &t;
+	int len = seq->type == NV_STR || seq->type == NV_LIST || seq->type == NV_TUPLE ? seq->n : seq->type == NV_VEC ? 3 : -1;
+	byte ok = 1;
+	if (len < 0) {
+		ok = Native_Raise(NE_TYPE, "2-sequence, %s", Native_TypeName(seq));
+	} else if (len != 2) {
+		ok = Native_Raise(NE_TYPE, "2-sequence, %d-sequence", len);
+	}
+	for (int i = 0; ok && i < 2; i++) {
+		Native_SetNone(&tmp);
+		const nativeVal_t *item = Native_GetItem(seq, i, 0, &tmp);
+		ok = item && Native_ArgDouble(item, &x[i]);
+		Native_Free(&tmp);
+	}
+	if (!ok) {
+		return 0;
+	}
+	errno = 0;
+	return Lib_MathOut(fn(x[0], x[1]), out);
+}
+
+static double Lib_Fabs(double x) {
+	return fabs(x);
+}
+
+static double Lib_Sqrt(double x) {
+	return LIB_SQRT(x);
+}
+
+static double Lib_Fmod(double x, double y) {
+	return LIB_FMOD(x, y);
+}
+
+static byte Lib_MathSqrt(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Lib_Math1(a, n, out, Lib_Sqrt);
+}
+
+static byte Lib_MathFabs(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Lib_Math1(a, n, out, Lib_Fabs);
+}
+
+static byte Lib_MathFmod(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Lib_Math2(a, n, out, Lib_Fmod);
+}
+
+portRef_t port_string_find = { "string", "find", NULL, Lib_Find, NULL, 0 };
+portRef_t port_string_replace = { "string", "replace", NULL, Lib_Replace, NULL, 0 };
+portRef_t port_string_atoi = { "string", "atoi", NULL, Lib_Atoi, NULL, 0 };
+portRef_t port_string_atof = { "string", "atof", NULL, Lib_Atof, NULL, 0 };
+portRef_t port_string_split = { "string", "split", NULL, Lib_Split, NULL, 0 };
+portRef_t port_string_splitfields = { "string", "splitfields", NULL, Lib_Split, NULL, 0 };
+portRef_t port_math_sqrt = { "math", "sqrt", NULL, Lib_MathSqrt, NULL, 0 };
+portRef_t port_math_fabs = { "math", "fabs", NULL, Lib_MathFabs, NULL, 0 };
+portRef_t port_math_fmod = { "math", "fmod", NULL, Lib_MathFmod, NULL, 0 };

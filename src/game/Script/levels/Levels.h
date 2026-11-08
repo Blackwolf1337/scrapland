@@ -172,20 +172,32 @@ void LvN_SaveRepr(const char *var, const nativeVal_t *v);
 /* Scrap.GetSaveVar(name) == text */
 byte LvN_SaveIs(const char *name, const char *text);
 /* Speech.AddRemoteCom(key, who[, then[, params]]) with then the global func of module (func NULL: two arguments,
- * params NULL: three; the function Speech.AddRemoteCom read before then, as the script reads them) */
+ * params NULL: three; then read before Speech.AddRemoteCom, which the script reads first: the same unless both are
+ * gone); LV_COM(key, who, Module, Func, params) with the function of a level module named by its ref */
 byte LvN_Com(const char *key, const char *who, const char *module, const char *func, const nativeVal_t *params);
+byte LvN_ComRef(const char *key, const char *who, const portRef_t *ref, const nativeVal_t *params);
+#define LV_COM(key, who, module, name, params) LvN_ComRef(key, who, &PORT_LREF_(PORT_LEVEL, module##_##name), params)
 /* the empty tuple () as the parameters of a callback */
 const nativeVal_t *LvN_NoArgs(void);
 /* Speech.PlayerName = usr; Speech.NPCName = ch */
 byte LvN_Speakers(const nativeVal_t *usr, const nativeVal_t *ch);
-/* Speech.OnEndOfSpeech = func (the global of module); Speech.OnEndOfSpeechParams = params (NULL for ()) */
+/* Speech.OnEndOfSpeech = func (the global of module); Speech.OnEndOfSpeechParams = params (NULL for ()); LvN_OnEndRef
+ * with the function of a ref (its module and name), LV_ONEND(Module, Func, params) of a level module (PORT_LEVEL);
+ * the form with names for a function only known at run time */
 byte LvN_OnEnd(const char *module, const char *func, const nativeVal_t *params);
+byte LvN_OnEndRef(const portRef_t *ref, const nativeVal_t *params);
+#define LV_ONEND(module, name, params) LvN_OnEndRef(&PORT_LREF_(PORT_LEVEL, module##_##name), params)
 /* the lines of Lv_Stay on a handle value */
 byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target);
 /* CharsNPC.CharRes[name].CallbackFunc.append(func) with func the global of module, and the same after
- * CharsNPC.CreateMissionChar(name) */
+ * CharsNPC.CreateMissionChar(name); LV_CALLBACK(name, Module, Func) and LV_MISSIONCHAR(name, Module, Func) with the
+ * function of a level module named by its ref */
 byte LvN_Callback(const char *name, const char *module, const char *func);
 byte LvN_MissionChar(const char *name, const char *module, const char *func);
+byte LvN_CallbackRef(const char *name, const portRef_t *ref);
+byte LvN_MissionCharRef(const char *name, const portRef_t *ref);
+#define LV_CALLBACK(name, module, func) LvN_CallbackRef(name, &PORT_LREF_(PORT_LEVEL, module##_##func))
+#define LV_MISSIONCHAR(name, module, func) LvN_MissionCharRef(name, &PORT_LREF_(PORT_LEVEL, module##_##func))
 /* `not Scrap.Get("IsXbox") or name` with name a global of module */
 int LvN_PcOr(const char *module, const char *name);
 /* the text item of a mission scorer in two parts around the line of its Text: Add, X (Scorer.MissionScorerText_X), Y
@@ -215,9 +227,12 @@ byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *
 #define LvN_UsrNameIs Mode_UsrNameIs
 /* Menu.DrawScorer(0, SInput.GetActionSet()) */
 byte LvN_Draw(void);
-/* Menu.MissionScorerCall = None, = the global func of module */
+/* Menu.MissionScorerCall = None, = the global func of module (LvN_ScorerRef: of a ref; LV_SCORERG(Module, Func) of a
+ * level module, PORT_LEVEL) */
 byte LvN_ScorerOff(void);
 byte LvN_ScorerCallG(const char *module, const char *func);
+byte LvN_ScorerRef(const portRef_t *ref);
+#define LV_SCORERG(module, name) LvN_ScorerRef(&PORT_LREF_(PORT_LEVEL, module##_##name))
 /* MissionsFuncs.SetNextMission(lib, map); SaveGame.MMDesc(desc, 1) */
 byte LvN_Next(const char *lib, const char *map, const char *desc);
 /* Scrap.GetEntity(name) of a C name as the handle value */

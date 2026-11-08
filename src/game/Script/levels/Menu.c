@@ -21,6 +21,9 @@
 #include "scrap/world.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL menu
+
 #define MAP "Map"
 
 /* ---- the engine calls of the scene, through their seams (OBJLIB 7: fc-lvl-menu swaps the debris and the music

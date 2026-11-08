@@ -12,7 +12,10 @@
 #   --build <dir>                         the build folder for the preprocessor (default build-linux64)
 #
 # One ref per table function with an entry: port_<Module>_<Func>, or port_<level>_<Module>_<Func> for the modules
-# of a level (Map, Mission_X: Levels.c entries). portcalls.py imports this file.
+# of a level (Map, Mission_X: Levels.c entries). A keyword entry whose file defines the names of its slots as
+# char *<adapter>_N[] (MODE_KW, the Mode_KwCall adapters) gets PORT_DEFK or PORT_DEFLK: its ref takes keyword calls.
+# An entry on Python objects (Mode_PyEntry) gets PORT_DEFP or PORT_DEFLP: its calls take the slow path.
+# portcalls.py imports this file.
 import argparse, collections, concurrent.futures, json, os, re, shlex, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,8 +26,10 @@ TABLE = re.compile(r'\bPyMethodDef\s+(g_\w+)\s*\[\s*\]\s*=\s*\{')
 # a row: { "Name", adapter, ... }, the adapter maybe cast as (PyCFunction) or (PyCFunction)(void (*)(void)) (keywords)
 ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(?:\(\s*void\s*\(\s*\*\s*\)\s*\(\s*void\s*\)\s*\)\s*)?(\w+)')
 ENTRY = re.compile(r'\bbyte\s+(\w+)_E\s*\(\s*const\s+nativeVal_t\s*\*\s*\w+\s*,\s*int\s+\w+\s*,\s*nativeVal_t\s*\*\s*\w+\s*\)\s*\{')
+PYENTRY = re.compile(r'\bMode_PyEntry(?:Kw)?\(')
+NAMES = re.compile(r'\bchar\s*\*\s*(\w+)_N\s*\[\s*\]\s*=')
 ARITY = re.compile(r'Port_Arity\(\s*\w+\s*,\s*\(?(\d+)\)?\s*\)')
-Ref = collections.namedtuple('Ref', 'file level module name adapter nargs')
+Ref = collections.namedtuple('Ref', 'file level module name adapter nargs kw')
 
 
 def sources():
@@ -101,9 +106,10 @@ def preprocess(files, build):
 
 
 def entries(lines):
-	"""adapter -> nargs (None when the entry checks no count) of the entries in preprocessed lines"""
+	"""adapter -> nargs (None when the entry checks no count) of the entries in preprocessed lines, and the adapters
+	with the names of their keyword slots (<adapter>_N)"""
 	text = '\n'.join(t for _, t in lines)
-	out = {}
+	out, kw, py = {}, set(NAMES.findall(text)), set()
 	for m in ENTRY.finditer(text):
 		# the count in the entry's own body (an entry without one is followed by other functions)
 		depth, i = 1, m.end()
@@ -112,7 +118,9 @@ def entries(lines):
 			i += 1
 		a = ARITY.search(text, m.end(), i)
 		out[m.group(1)] = int(a.group(1)) if a else None
-	return out
+		if PYENTRY.search(text, m.end(), i):
+			py.add(m.group(1))
+	return out, kw, py
 
 
 def refs(build, pp=None):
@@ -120,7 +128,9 @@ def refs(build, pp=None):
 	preprocessed sources when the caller has them)"""
 	pp = pp or preprocess(sources(), build)
 	tabs, problems = tables(pp), []
-	ents = {f: entries(lines) for f, lines in pp.items()}
+	ents, kws, pys = {}, {}, {}
+	for f, lines in pp.items():
+		ents[f], kws[f], pys[f] = entries(lines)
 	seen, dup = {}, set()
 	for level, module, g in registrations():
 		if g not in tabs:
@@ -133,7 +143,8 @@ def refs(build, pp=None):
 					' of ' + level if level else '', seen[key].file if seen[key] else '?', f))
 				dup.add(key)
 			elif adapter in ents[f]:
-				seen[key] = Ref(f, level, module, name, adapter, ents[f][adapter])
+				seen[key] = Ref(f, level, module, name, adapter, ents[f][adapter], 'K' if adapter in kws[f] else
+					'P' if adapter in pys[f] else '')
 			else:
 				seen[key] = None
 	out = collections.defaultdict(list)
@@ -165,10 +176,11 @@ def header(byfile):
 			o.append('%s /* %s */' % (d, '?' if r.nargs is None else r.nargs))
 		o.append('#define %s \\' % listname(f))
 		for r in rs:
+			k = r.kw
 			if r.level:
-				o.append('\tPORT_DEFL(%s, %s, %s, %s) \\' % (r.level, r.module, r.name, r.adapter))
+				o.append('\tPORT_DEFL%s(%s, %s, %s, %s) \\' % (k, r.level, r.module, r.name, r.adapter))
 			else:
-				o.append('\tPORT_DEF(%s, %s, %s) \\' % (r.module, r.name, r.adapter))
+				o.append('\tPORT_DEF%s(%s, %s, %s) \\' % (k, r.module, r.name, r.adapter))
 		o[-1] = o[-1][:-2]
 		o.append('')
 	o.append('#endif')

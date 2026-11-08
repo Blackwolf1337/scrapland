@@ -26,6 +26,9 @@
 #include "scrap/scrap.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL temple
+
 #define GM "Map"
 #define XL "MapExtraLifes"
 #define AD "Mission_ArchbishopDead"
@@ -529,7 +532,7 @@ static byte Xl_GetMoney(const nativeVal_t *name, nativeVal_t *out) {
 	Native_SetNone(&parts);
 	Native_SetNone(&p);
 	/* string.splitfields(name, "_") of the string port: a text in C, any other value by name (its error) */
-	byte ok = name->type == NV_STR ? Native_Split(name, "_", &parts) : LV_CALL("string", "splitfields", &parts, "vs", name, "_");
+	byte ok = name->type == NV_STR ? Native_Split(name, "_", &parts) : PORT_CALL(string, splitfields, &parts, "vs", name, "_");
 	ok = ok && LvN_Item(&parts, 2, &p) && Native_ToFloat(&p, out);
 	Native_Free(&parts);
 	Native_Free(&p);

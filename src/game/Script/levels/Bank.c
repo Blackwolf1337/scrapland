@@ -33,6 +33,9 @@
 #include "scrap/scrap.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL bank
+
 #define MAP "Map"
 #define MT "MapTreasure"
 #define CR "Mission_CatchRudolph"

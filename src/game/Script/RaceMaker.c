@@ -76,7 +76,7 @@ static byte Rm_MoneyMsg(const char *key) {
 	PyObject *fn = Mode_GlobalPy(RM, "ShowSystemMessage");
 	Mode_Lang(key, &lang);
 	Mode_SaveVar("Challenge.Money", &money);
-	byte ok = fn && Native_CallMod("string", "replace", &text, "vsv", &lang, "<n>", &money) && Native_Call(fn, NULL, "v", &text);
+	byte ok = fn && PORT_CALL(string, replace, &text, "vsv", &lang, "<n>", &money) && Native_Call(fn, NULL, "v", &text);
 	Py_XDECREF(fn);
 	Native_Free(&lang);
 	Native_Free(&money);
@@ -244,7 +244,7 @@ static byte Rm_ToTraffic(const nativeVal_t *name) {
 	}
 	Native_SetFloat(zero, 0.0);
 	int cop = Mode_VSet(veh, "MoveTime", zero) && LvN_SetS(veh, "TgType", "None") && Mode_VObj(veh, "Model", model) &&
-		Native_CallMod("string", "find", at, "vs", model, "SPoli") ? Mode_CmpI(at, ">=", 0) : -1;
+		PORT_CALL(string, find, at, "vs", model, "SPoli") ? Mode_CmpI(at, ">=", 0) : -1;
 	return Mode_Done(&t, cop >= 0 && LvN_SetS(veh, "EntityList", cop ? "OutCop" : "Traffic") && Mode_VObj(veh, "Name", vname) &&
 		Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, vname));
 }
