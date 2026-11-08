@@ -446,14 +446,14 @@ MODE_FN(Init, MLibInit, 1, In_ForLibs(&a[0], "Init"))
 MODE_FN(Init, PreloadMlibs, 1, In_PreloadMlibsN())
 MODE_FN(Init, Init, 1, In_InitN(&a[0]))
 
-static PyObject *Init_isMission(PyObject *self, PyObject *args) {
-	nativeVal_t v;
-	(void)self;
-	(void)args;
+/* isMission() as an int */
+static byte In_IsMissionOut(nativeVal_t *out) {
 	int m = In_IsMission();
-	Native_SetInt(&v, m);
-	return Mode_Return(m >= 0, &v);
+	Native_SetInt(out, m);
+	return m >= 0;
 }
+
+MODE_FNANY(Init, isMission, In_IsMissionOut(out))
 
 static PyObject *Init_SetArrowSize(PyObject *self, PyObject *args) {
 	(void)self;

@@ -550,24 +550,14 @@ static PyObject *Metro_OutDoorInitializator(PyObject *self, PyObject *args) {
 	return Mode_Result(ok);
 }
 
-static PyObject *Metro_SetUsrParamsPy(PyObject *self, PyObject *args) {
-	PyObject *name, *ang = NULL;
-	nativeVal_t n, a;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &name, &ang) || !Native_Arg(name, &n)) {
-		return NULL;
-	}
-	if (!ang) {
-		Native_SetInt(&a, 0);
-	} else if (!Native_Arg(ang, &a)) {
-		Native_Free(&n);
-		return NULL;
-	}
-	byte ok = Metro_SetUsrParams(&n, &a);
-	Native_Free(&n);
-	Native_Free(&a);
-	return Mode_Result(ok);
+/* SetUsrParams(name, ang=0) */
+static byte Metro_SetUsrParamsArgs(const nativeVal_t *a, int n) {
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	return Metro_SetUsrParams(&a[0], n > 1 ? &a[1] : &zero);
 }
+
+MODE_FNOPT(Metro, SetUsrParamsPy, 1, 2, Metro_SetUsrParamsArgs(a, n))
 
 static PyObject *Metro_UseMetroPy(PyObject *self, PyObject *args) {
 	PyObject *id, *control;
@@ -660,6 +650,18 @@ static PyObject *Metro_SetAsMetroPy(PyObject *self, PyObject *args) {
 	return PyArg_ParseTuple(args, "O", &name) ? Mode_Result(Metro_SetAsMetro(name)) : NULL;
 }
 
+/* the entry: the name as the call by name passes it (Native_ToPy) */
+static byte Metro_SetAsMetroPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	if (n != 1) {
+		return Port_Arity(n, 1);
+	}
+	PyObject *name = Native_ToPy(&a[0]);
+	byte ok = name && Metro_SetAsMetro(name);
+	Py_XDECREF(name);
+	return ok;
+}
+
 /* DoorInitializator(DoorClass): the station door, its sound heard farther */
 static PyObject *Metro_DoorInitializator(PyObject *self, PyObject *args) {
 	PyObject *door;
@@ -711,3 +713,5 @@ PyMethodDef g_MetroMethods[] = {
 	{ "ObjInitializator", Metro_ObjInitializator, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Metro)

@@ -63,6 +63,7 @@ PORT_DECL(Challenge, AddChallenge) /* 3 */
 PORT_DECL(CharAct, ActionPhoto) /* 1 */
 PORT_DECL(CharAct, Photograph) /* 1 */
 PORT_DECL(CharAct, OnDeath) /* 2 */
+PORT_DECL(CharAct, NoFXDeath) /* ? */
 PORT_DECL(CharAct, PlayerDeathCall) /* 1 */
 PORT_DECL(CharAct, NPCDeathCall) /* 1 */
 PORT_DECL(CharAct, OnCreate) /* 1 */
@@ -70,6 +71,7 @@ PORT_DECL(CharAct, OnCreate) /* 1 */
 	PORT_DEF(CharAct, ActionPhoto, CharAct_ActionPhoto) \
 	PORT_DEF(CharAct, Photograph, CharAct_Photograph) \
 	PORT_DEF(CharAct, OnDeath, CharAct_OnDeath) \
+	PORT_DEF(CharAct, NoFXDeath, CharAct_NoFXDeath) \
 	PORT_DEF(CharAct, PlayerDeathCall, CharAct_PlayerDeathCall) \
 	PORT_DEF(CharAct, NPCDeathCall, CharAct_NPCDeathCall) \
 	PORT_DEF(CharAct, OnCreate, CharAct_OnCreate)
@@ -139,6 +141,7 @@ PORT_DECL(Chars, StrSoundStop) /* 3 */
 PORT_DECL(Chars, DiscardRes) /* 1 */
 PORT_DECL(Chars, TryToDiscardThis) /* 1 */
 PORT_DECL(Chars, LoadRes) /* 1 */
+PORT_DECL(Chars, AddNewCharRes) /* ? */
 PORT_DECL(Chars, LocalLoadRes) /* 1 */
 PORT_DECL(Chars, MainCharDeath) /* 2 */
 PORT_DECL(Chars, CreatePlayersList) /* 0 */
@@ -152,6 +155,7 @@ PORT_DECL(Chars, CreateStartupPlayer) /* 0 */
 	PORT_DEF(Chars, DiscardRes, Chars_DiscardRes) \
 	PORT_DEF(Chars, TryToDiscardThis, Chars_TryToDiscardThis) \
 	PORT_DEF(Chars, LoadRes, Chars_LoadRes) \
+	PORT_DEF(Chars, AddNewCharRes, Chars_AddNewCharRes) \
 	PORT_DEF(Chars, LocalLoadRes, Chars_LocalLoadRes) \
 	PORT_DEF(Chars, MainCharDeath, Chars_MainCharDeath) \
 	PORT_DEF(Chars, CreatePlayersList, Chars_CreatePlayersList) \
@@ -199,6 +203,13 @@ PORT_DECL(CharsNPC, GenericNPCSpeech) /* 4 */
 	PORT_DEF(CharsNPC, ClassifyOptions, CharsNPC_ClassifyOptions) \
 	PORT_DEF(CharsNPC, PlayOption, CharsNPC_PlayOption) \
 	PORT_DEF(CharsNPC, GenericNPCSpeech, CharsNPC_GenericNPCSpeech)
+
+/* CreditsText.c */
+PORT_DECL(CreditsText, Init) /* 0 */
+PORT_DECL(CreditsText, ShowCredit) /* 1 */
+#define PORTS_CreditsText \
+	PORT_DEF(CreditsText, Init, CreditsText_Init) \
+	PORT_DEF(CreditsText, ShowCredit, CreditsText_ShowCredit)
 
 /* Doors.c */
 PORT_DECL(Doors, StdInitializator) /* 1 */
@@ -386,6 +397,15 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, SetScorerValues, Ffa_SetScorerValues) \
 	PORT_DEF(Ffa, FfaScorer, Ffa_FfaScorer)
 
+/* Fx.c */
+PORT_DECL(Fx, GetMotorClass) /* 1 */
+PORT_DECL(Fx, SetUpShipMotors) /* 1 */
+PORT_DECL(Fx, MoneyTransfer) /* 3 */
+#define PORTS_Fx \
+	PORT_DEF(Fx, GetMotorClass, Fx_GetMotorClass) \
+	PORT_DEF(Fx, SetUpShipMotors, Fx_SetUpShipMotors) \
+	PORT_DEF(Fx, MoneyTransfer, Fx_MoneyTransferPy)
+
 /* GameSounds.c */
 PORT_DECL(Sound, SetStdDamageSounds) /* 1 */
 PORT_DECL(Sound, SetStdDamageSoundLoops) /* 1 */
@@ -438,6 +458,7 @@ PORT_DECL(Init, LoadCharLib) /* 1 */
 PORT_DECL(Init, AddMLib) /* 1 */
 PORT_DECL(Init, MLibInitStatus) /* 1 */
 PORT_DECL(Init, MLibInit) /* 1 */
+PORT_DECL(Init, isMission) /* ? */
 PORT_DECL(Init, PreloadMlibs) /* 1 */
 PORT_DECL(Init, Init) /* 1 */
 #define PORTS_InitLevel \
@@ -445,6 +466,7 @@ PORT_DECL(Init, Init) /* 1 */
 	PORT_DEF(Init, AddMLib, Init_AddMLib) \
 	PORT_DEF(Init, MLibInitStatus, Init_MLibInitStatus) \
 	PORT_DEF(Init, MLibInit, Init_MLibInit) \
+	PORT_DEF(Init, isMission, Init_isMission) \
 	PORT_DEF(Init, PreloadMlibs, Init_PreloadMlibs) \
 	PORT_DEF(Init, Init, Init_Init)
 
@@ -502,7 +524,15 @@ PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 #define PORTS_MakeChar \
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
 
+/* Metro.c */
+PORT_DECL(Metro, SetUsrParams) /* ? */
+PORT_DECL(Metro, SetAsMetro) /* 1 */
+#define PORTS_Metro \
+	PORT_DEF(Metro, SetUsrParams, Metro_SetUsrParamsPy) \
+	PORT_DEF(Metro, SetAsMetro, Metro_SetAsMetroPy)
+
 /* MisItems.c */
+PORT_DECL(MisItems, Init) /* 0 */
 PORT_DECL(MisItems, OnVehicleDeat) /* 1 */
 PORT_DECL(MisItems, GetTargetReward) /* 1 */
 PORT_DECL(MisItems, GiveMoney) /* 2 */
@@ -511,12 +541,18 @@ PORT_DECL(MisItems, GetObjModel) /* 1 */
 PORT_DECL(MisItems, CreateItem) /* 4 */
 PORT_DECL(MisItems, CreateCoin) /* 2 */
 PORT_DECL(MisItems, ActivateCoin) /* 1 */
+PORT_DECL(MisItems, CreateBattery) /* ? */
 PORT_DECL(MisItems, ActivateBattery) /* 1 */
 PORT_DECL(MisItems, TakeBattery) /* 2 */
 PORT_DECL(MisItems, DazedCoin) /* 3 */
+PORT_DECL(CrazyWing, InitCrazyWing) /* 0 */
+PORT_DECL(CrazyWing, CrazyWing) /* 0 */
+PORT_DECL(CrazyWing, SetCrazy) /* 0 */
 PORT_DECL(CrazyWing, DeCrazy) /* 2 */
+PORT_DECL(CrazyWing, RestoreSpeech) /* 0 */
 PORT_DECL(CrazyWing, CrazyPhoto) /* 1 */
 #define PORTS_MisItems \
+	PORT_DEF(MisItems, Init, MisItems_Init) \
 	PORT_DEF(MisItems, OnVehicleDeat, MisItems_OnVehicleDeat) \
 	PORT_DEF(MisItems, GetTargetReward, MisItems_GetTargetReward) \
 	PORT_DEF(MisItems, GiveMoney, MisItems_GiveMoney) \
@@ -525,10 +561,15 @@ PORT_DECL(CrazyWing, CrazyPhoto) /* 1 */
 	PORT_DEF(MisItems, CreateItem, MisItems_CreateItem) \
 	PORT_DEF(MisItems, CreateCoin, MisItems_CreateCoin) \
 	PORT_DEF(MisItems, ActivateCoin, MisItems_ActivateCoin) \
+	PORT_DEF(MisItems, CreateBattery, MisItems_CreateBattery) \
 	PORT_DEF(MisItems, ActivateBattery, MisItems_ActivateBattery) \
 	PORT_DEF(MisItems, TakeBattery, MisItems_TakeBattery) \
 	PORT_DEF(MisItems, DazedCoin, MisItems_DazedCoin) \
+	PORT_DEF(CrazyWing, InitCrazyWing, CrazyWing_InitCrazyWing) \
+	PORT_DEF(CrazyWing, CrazyWing, CrazyWing_CrazyWing) \
+	PORT_DEF(CrazyWing, SetCrazy, CrazyWing_SetCrazy) \
 	PORT_DEF(CrazyWing, DeCrazy, CrazyWing_DeCrazy) \
+	PORT_DEF(CrazyWing, RestoreSpeech, CrazyWing_RestoreSpeech) \
 	PORT_DEF(CrazyWing, CrazyPhoto, CrazyWing_CrazyPhoto)
 
 /* MissionsFuncs.c */
@@ -605,6 +646,11 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 	PORT_DEF(MissionsFuncs, BuildVersusData, MissionsFuncs_BuildVersusData) \
 	PORT_DEF(MissionsFuncs, BuildDominationData, MissionsFuncs_BuildDominationData) \
 	PORT_DEF(MissionsFuncs, BuildCTFData, MissionsFuncs_BuildCTFData)
+
+/* Net.c */
+PORT_DECL(Net, PurgeServerMapList) /* ? */
+#define PORTS_Net \
+	PORT_DEF(Net, PurgeServerMapList, Net_PurgeServerMapList)
 
 /* OutMap.c */
 PORT_DECL(OutMap, GetNearestFreeSpawnPosReal) /* 1 */
