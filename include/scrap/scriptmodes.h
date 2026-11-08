@@ -916,7 +916,7 @@ byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nat
 byte Mode_ArgInt(const nativeVal_t *v, int *out);
 /*
  * PyArg_ParseTuple on the n native arguments of an entry, with its arity and conversion errors: "i" into an int *
- * (Mode_ArgInt), "s" into a const char ** (the text of an NV_STR without 0 bytes), "O" into a const nativeVal_t **
+ * (Mode_ArgInt), "d" into a double * (Native_ArgDouble), "s" into a const char ** (the text of an NV_STR without 0 bytes), "O" into a const nativeVal_t **
  * (the argument itself), "|" before the optional ones (their outputs keep what they hold), "(...)" a sequence of
  * that many items ("i" items only). 1, or 0 with the error
  */
@@ -929,8 +929,11 @@ typedef byte (*modeKwCore_t)(const nativeVal_t *const *a, nativeVal_t *out);
 /* the adapter of a keyword function of "O" arguments (fmt and names of PyArg_ParseTupleAndKeywords, up to PORT_ARGS)
  * through its core, the result as Mode_Entry gives it */
 PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core);
-/* the entry of such a function: the n arguments given in order (the arity error of fmt), the others not given */
+/* the entry of such a function: the n arguments given in order (the arity error of fmt), the others not given, and
+ * an argument skipped with Mode_KwSkip not given (a required one: the arity error of the keywords) */
 byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t core, nativeVal_t *out);
+/* argument i of the n of a keyword entry is given: i < n and not skipped (Mode_KwSkip) */
+byte Mode_KwGiven(const nativeVal_t *a, int n, int i);
 /* the adapter of a keyword function of an int id and "O" arguments, one of them optional at most ("iO|O"): the
  * keywords and the errors of fmt, then its entry on the arguments given (the id as an int) */
 PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
@@ -946,5 +949,46 @@ PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **n
 		(void)self; \
 		return Mode_Entry(args, fn##_E); \
 	}
+
+/* ---- the native entries of stage 3 batch A1 (hand, keyword and PyArg adapters on their entries) ---- */
+
+/* pre_name, the PyArg adapter of the entry pre_name_E (Mode_Entry) */
+#define MODE_ADAPTER(pre, name) \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return Mode_Entry(args, pre##_##name##_E); \
+	}
+/* an argument of a keyword entry that is not given (a keyword call skips it): NV_OBJ without an object, a value no
+ * conversion makes; Mode_KwEntry and Mode_KwSlots take it as not given */
+void Mode_KwSkip(nativeVal_t *v);
+/* the n arguments of a keyword entry in the slots of fmt (one letter O per slot, | before the optional ones): v[i] the
+ * value a[i] (a view, not freed) with given[i] 1, or None with given[i] 0 for one not given (i >= n or Mode_KwSkip);
+ * the arity error of PyArg_ParseTupleAndKeywords for a count beyond the slots or a required one not given */
+byte Mode_KwSlots(const nativeVal_t *a, int n, const char *fmt, nativeVal_t *v, byte *given);
+/* slot i of Mode_KwSlots a default when it is not given: a text (shorter than NATIVE_TEXT), an int, a float */
+void Mode_KwDefS(nativeVal_t *v, const byte *given, int i, const char *s);
+void Mode_KwDefI(nativeVal_t *v, const byte *given, int i, long l);
+void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f);
+/* a keyword adapter on its entry: the arguments by name (Mode_Kw with fmt and names), the ones not given as
+ * Mode_KwSkip, the entry, the result as Mode_KwOut gives it */
+PyObject *Mode_KwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
+/* a keyword function of a module (prefix pre): the format (letters O, | before the optional ones, up to 8) and the
+ * names of its arguments, then the body of pre_name_K(v, given, out) on the slots of Mode_KwSlots (the defaults of the
+ * script with Mode_KwDef*): pre_name_E, its entry, and pre_name, its adapter (Mode_KwAdapter) */
+#define MODE_KW(pre, name, fmt, ...) \
+	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out); \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		nativeVal_t v[8]; \
+		byte given[8]; \
+		return Mode_KwSlots(a, n, fmt, v, given) && pre##_##name##_K(v, given, out); \
+	} \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
+		static char *names[] = { __VA_ARGS__, NULL }; \
+		(void)self; \
+		return Mode_KwAdapter(args, kw, fmt, names, pre##_##name##_E); \
+	} \
+	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out)
 
 #endif

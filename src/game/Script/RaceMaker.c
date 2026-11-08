@@ -1762,45 +1762,33 @@ static byte Rm_GetRandomShipIAProfile(const nativeVal_t *foe, const nativeVal_t 
 }
 
 /* the adapters (the arity errors of the script's functions) */
-#define RM_FN0(name, call) \
-	static PyObject *RaceMaker_##name(PyObject *self, PyObject *args) { \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *out = Mode_V(&t); \
-		(void)self; \
-		(void)out; \
-		if (!PyArg_ParseTuple(args, "")) { \
-			return Mode_Done(&t, 0), NULL; \
-		} \
-		return Mode_Out(&t, call, out); \
-	}
-
 MODE_FN(RaceMaker, ShowSystemMessage, 1, Rm_ShowSystemMessage(&a[0]))
 MODE_FN(RaceMaker, ShowSystemMessageDelay, 2, Mode_LaterV(&a[1], RM, "ShowSystemMessage", &a[0], 1, NULL))
 MODE_FN(RaceMaker, NPCCombatKilled, 2, Rm_NPCCombatKilled(&a[0]))
-RM_FN0(DeleteCurrentWaypoint, Rm_DeleteCurrentWaypoint())
-RM_FN0(MovePlayersToTraffic, Rm_MovePlayersToTraffic())
+MODE_FN(RaceMaker, DeleteCurrentWaypoint, 0, Rm_DeleteCurrentWaypoint())
+MODE_FN(RaceMaker, MovePlayersToTraffic, 0, Rm_MovePlayersToTraffic())
 MODE_FN(RaceMaker, EndOfRace, 2, Rm_EndOfRace(&a[0], &a[1]))
 MODE_FN(RaceMaker, RaceStart, 2, Rm_RaceStart(&a[0]))
 MODE_FN(RaceMaker, RacerKilled, 2, Rm_Stop("Killed", 1))
-RM_FN0(RacerInterruptedByAlarm, Rm_Stop("Alarm", 0))
+MODE_FN(RaceMaker, RacerInterruptedByAlarm, 0, Rm_Stop("Alarm", 0))
 MODE_FN(RaceMaker, RacerDamaged, 3, Rm_RacerDamaged())
-RM_FN0(RacerLeft, Rm_Stop("Left", 0))
-RM_FN0(AbortCameraTravelling, Rm_AbortCameraTravelling())
+MODE_FN(RaceMaker, RacerLeft, 0, Rm_Stop("Left", 0))
+MODE_FN(RaceMaker, AbortCameraTravelling, 0, Rm_AbortCameraTravelling())
 MODE_FN(RaceMaker, OnRaceStart, 2, Rm_OnRaceStart(&a[0], &a[1]))
 MODE_FN(RaceMaker, RaceGo, 2, Rm_RaceGo(&a[0], &a[1]))
-RM_FN0(CreateRaceCountDown, Rm_CreateRaceCountDown())
-RM_FN0(DestroyRaceCountDown, Rm_DestroyRaceCountDown())
+MODE_FN(RaceMaker, CreateRaceCountDown, 0, Rm_CreateRaceCountDown())
+MODE_FN(RaceMaker, DestroyRaceCountDown, 0, Rm_DestroyRaceCountDown())
 MODE_FN(RaceMaker, DestroyRaceCountDownEnd, 1, Rm_DestroyRaceCountDownEnd(&a[0]))
 MODE_FN(RaceMaker, OnCheckPoint, 2, Rm_OnCheckPoint(&a[0], &a[1]))
 MODE_FN(RaceMaker, OnNearCheckPoint, 2, Rm_OnNearCheckPoint(&a[0], &a[1]))
 MODE_FN(RaceMaker, NameOponGoItem, 1, Rm_NameOponGoItem(&a[0], out))
-RM_FN0(LocalGetDealType, (Mode_SaveVar("Challenge.Type", out), 1))
-RM_FN0(StopTimer, Rm_StopTimer())
-RM_FN0(StartTimer, Rm_StartTimer())
+MODE_FN(RaceMaker, LocalGetDealType, 0, (Mode_SaveVar("Challenge.Type", out), 1))
+MODE_FN(RaceMaker, StopTimer, 0, Rm_StopTimer())
+MODE_FN(RaceMaker, StartTimer, 0, Rm_StartTimer())
 MODE_FN(RaceMaker, FirstTimeRace, 1, Rm_FirstTime(&a[0], "Race.FirstTime"))
 MODE_FN(RaceMaker, FirstTimeCombat, 1, Rm_FirstTime(&a[0], "Combat.FirstTime"))
 MODE_FN(RaceMaker, PointObjectTo, 2, Rm_PointObjectTo(&a[0], &a[1]))
-RM_FN0(PreloadCnDnResources, Rm_PreloadCnDnResources())
+MODE_FN(RaceMaker, PreloadCnDnResources, 0, Rm_PreloadCnDnResources())
 MODE_FN(RaceMaker, MoveCombatNPCsToPos, 1, Rm_Each("challenged_NPCs_Names", Rm_MoveNPC, &a[0]))
 MODE_FN(RaceMaker, PlaceNPCAtRacePos, 2, Rm_PlaceNPCAtRacePos(&a[0], &a[1]))
 MODE_FN(RaceMaker, SetScorerValues, 1, Rm_SetScorerValues(&a[0]))
@@ -1809,68 +1797,33 @@ MODE_FN(RaceMaker, MissionScorer, 1, Rm_MissionScorer(&a[0]))
 MODE_FN(RaceMaker, InitShipIAProfile, 2, Rm_InitShipIAProfile(&a[0], &a[1]))
 MODE_FN(RaceMaker, GetRandomShipIAProfile, 2, Rm_GetRandomShipIAProfile(&a[0], &a[1], out))
 
-static PyObject *RaceMaker_OnCounterMeasure(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", NULL };
-	nativeVal_t a[1];
-	(void)self;
-	if (!Mode_Kw(args, kw, "|O", names, 1, a, NULL)) {
-		return NULL;
-	}
-	return Mode_KwOut(a, 1, Rm_OnCounterMeasure(), NULL);
+/* the keyword functions (MODE_KW) */
+MODE_KW(RaceMaker, OnCounterMeasure, "|O", "id") {
+	return Rm_OnCounterMeasure();
 }
 
-static PyObject *RaceMaker_StartCameraTravelling(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "ItemName", "VehicleName", "isRace", "speed", NULL };
-	byte given[4];
-	nativeVal_t a[4], race, speed, out;
-	(void)self;
-	if (!Mode_Kw(args, kw, "OO|OO", names, 4, a, given)) {
-		return NULL;
-	}
-	Native_SetInt(&race, 1);
-	Native_SetStr(&speed, "Normal");
-	Native_SetNone(&out);
-	return Mode_KwOut(a, 4, Rm_StartCameraTravelling(&a[0], &a[1], given[2] ? &a[2] : &race, given[3] ? &a[3] : &speed,
-		&out), &out);
+MODE_KW(RaceMaker, StartCameraTravelling, "OO|OO", "ItemName", "VehicleName", "isRace", "speed") {
+	Mode_KwDefI(v, given, 2, 1);
+	Mode_KwDefS(v, given, 3, "Normal");
+	return Rm_StartCameraTravelling(&v[0], &v[1], &v[2], &v[3], out);
 }
 
-static PyObject *RaceMaker_Counter(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "num", "r", "g", "b", NULL };
-	byte given[4];
-	nativeVal_t a[4];
-	(void)self;
-	if (!Mode_Kw(args, kw, "O|OOO", names, 4, a, given)) {
-		return NULL;
-	}
-	nativeVal_t *rgb[3] = { given[1] ? &a[1] : NULL, given[2] ? &a[2] : NULL, given[3] ? &a[3] : NULL };
-	return Mode_KwOut(a, 4, Rm_Counter(&a[0], rgb), NULL);
+MODE_KW(RaceMaker, Counter, "O|OOO", "num", "r", "g", "b") {
+	nativeVal_t *rgb[3] = { given[1] ? &v[1] : NULL, given[2] ? &v[2] : NULL, given[3] ? &v[3] : NULL };
+	return Rm_Counter(&v[0], rgb);
 }
 
-static PyObject *RaceMaker_InitRace(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "foeType", "numply", "waypointlimit", "shower", "isRevenge", "isCrazyDeal", "userOnShip",
-		NULL };
-	byte given[7];
-	nativeVal_t a[7];
-	(void)self;
-	if (!Mode_Kw(args, kw, "O|OOOOOO", names, 7, a, given)) {
-		return NULL;
-	}
+MODE_KW(RaceMaker, InitRace, "O|OOOOOO", "foeType", "numply", "waypointlimit", "shower", "isRevenge", "isCrazyDeal",
+	"userOnShip") {
 	nativeVal_t *opt[6];
 	for (int i = 0; i < 6; i++) {
-		opt[i] = given[i + 1] ? &a[i + 1] : NULL;
+		opt[i] = given[i + 1] ? &v[i + 1] : NULL;
 	}
-	return Mode_KwOut(a, 7, Rm_InitRace(&a[0], opt), NULL);
+	return Rm_InitRace(&v[0], opt);
 }
 
-static PyObject *RaceMaker_InitCombat(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "foeType", "isRevenge", "isCrazyDeal", "numFoes", NULL };
-	byte given[4];
-	nativeVal_t a[4];
-	(void)self;
-	if (!Mode_Kw(args, kw, "O|OOO", names, 4, a, given)) {
-		return NULL;
-	}
-	return Mode_KwOut(a, 4, Rm_InitCombat(&a[0], given[1] ? &a[1] : NULL), NULL);
+MODE_KW(RaceMaker, InitCombat, "O|OOO", "foeType", "isRevenge", "isCrazyDeal", "numFoes") {
+	return Rm_InitCombat(&v[0], given[1] ? &v[1] : NULL);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3

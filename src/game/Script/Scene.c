@@ -822,136 +822,52 @@ MODE_FN(Scene, HideVehiclesToo, 0, Sc_HideType("Car"))
 MODE_FN(Scene, Play, 1, Sc_Play(&a[0]))
 MODE_FN(Scene, EndOutDoorScene, 0, Sc_EndOutDoorScene())
 
-/* the keyword functions: the arguments by PyArg_ParseTupleAndKeywords, the defaults of the script */
-static PyObject *Scene_ActorAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "Actor", "Action", "DefAction", NULL };
-	nativeVal_t a[4];
-	byte given[4];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OOO|O", names, 4, a, given)) {
-		return NULL;
-	}
-	if (!given[3]) {
-		Native_SetStr(&a[3], "Relax");
-	}
-	return Mode_KwOut(a, 4, Sc_Action(&a[0], &a[1], &a[2], &a[3], "Scene.ActorActEvent"), NULL);
+/* the keyword functions: the arguments by PyArg_ParseTupleAndKeywords, the defaults of the script (MODE_KW) */
+MODE_KW(Scene, ActorAction, "OOO|O", "frame", "Actor", "Action", "DefAction") {
+	Mode_KwDefS(v, given, 3, "Relax");
+	return Sc_Action(&v[0], &v[1], &v[2], &v[3], "Scene.ActorActEvent");
 }
 
-static PyObject *Scene_ObjAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "Actor", "Action", "DefAction", NULL };
-	nativeVal_t a[4];
-	byte given[4];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OOO|O", names, 4, a, given)) {
-		return NULL;
-	}
-	if (!given[3]) {
-		Native_SetStr(&a[3], "Relax");
-	}
-	return Mode_KwOut(a, 4, Sc_Action(&a[0], &a[1], &a[2], &a[3], "Scene.ObjActEvent"), NULL);
+MODE_KW(Scene, ObjAction, "OOO|O", "frame", "Actor", "Action", "DefAction") {
+	Mode_KwDefS(v, given, 3, "Relax");
+	return Sc_Action(&v[0], &v[1], &v[2], &v[3], "Scene.ObjActEvent");
 }
 
-static PyObject *Scene_CreateLocalAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "turnspeed", "Name", "Anm", "Loop", NULL };
-	nativeVal_t a[5];
-	byte given[5];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OO|OOO", names, 5, a, given)) {
-		return NULL;
-	}
-	if (!given[2]) {
-		Native_SetStr(&a[2], "Relax");
-	}
-	if (!given[3]) {
-		Native_SetStr(&a[3], "Relax");
-	}
-	if (!given[4]) {
-		Native_SetInt(&a[4], 0);
-	}
-	return Mode_KwOut(a, 5, Sc_CreateLocalAction(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
+MODE_KW(Scene, CreateLocalAction, "OO|OOO", "CharName", "turnspeed", "Name", "Anm", "Loop") {
+	Mode_KwDefS(v, given, 2, "Relax");
+	Mode_KwDefS(v, given, 3, "Relax");
+	Mode_KwDefI(v, given, 4, 0);
+	return Sc_CreateLocalAction(&v[0], &v[1], &v[2], &v[3], &v[4]);
 }
 
-static PyObject *Scene_AddGeneric(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Frame", "Event", "Discardable", NULL };
-	nativeVal_t a[3];
-	byte given[3];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
-		return NULL;
-	}
-	if (!given[2]) {
-		Native_SetInt(&a[2], 1);
-	}
-	return Mode_KwOut(a, 3, Sc_AddGeneric(&a[0], &a[1], &a[2]), NULL);
+MODE_KW(Scene, AddGeneric, "OO|O", "Frame", "Event", "Discardable") {
+	Mode_KwDefI(v, given, 2, 1);
+	return Sc_AddGeneric(&v[0], &v[1], &v[2]);
 }
 
-static PyObject *Scene_AddStream(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "filename", "vol", NULL };
-	nativeVal_t a[3];
-	byte given[3];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
-		return NULL;
-	}
-	if (!given[2]) {
-		Native_SetFloat(&a[2], 1.0);
-	}
-	return Mode_KwOut(a, 3, Sc_AddStream(&a[0], &a[1], &a[2]), NULL);
+MODE_KW(Scene, AddStream, "OO|O", "frame", "filename", "vol") {
+	Mode_KwDefF(v, given, 2, 1.0);
+	return Sc_AddStream(&v[0], &v[1], &v[2]);
 }
 
-static PyObject *Scene_StopSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", NULL };
-	nativeVal_t a[1];
-	(void)self;
-	if (!Mode_Kw(args, kw, "|O", names, 1, a, NULL)) {
-		return NULL;
-	}
-	return Mode_KwOut(a, 1, Sc_StopSpeech(), NULL);
+MODE_KW(Scene, StopSpeech, "|O", "id") {
+	return Sc_StopSpeech();
 }
 
-static PyObject *Scene_AddText(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "lngtext", "time", NULL };
-	nativeVal_t a[3];
-	byte given[3];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
-		return NULL;
-	}
-	if (!given[2]) {
-		Native_SetInt(&a[2], 86400);
-	}
-	return Mode_KwOut(a, 3, Sc_AddText(&a[0], &a[1], &a[2]), NULL);
+MODE_KW(Scene, AddText, "OO|O", "frame", "lngtext", "time") {
+	Mode_KwDefI(v, given, 2, 86400);
+	return Sc_AddText(&v[0], &v[1], &v[2]);
 }
 
-static PyObject *Scene_AddSound(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Frame", "SoundName", "Vol", "Pitch", "Pan", NULL };
-	nativeVal_t a[5];
-	byte given[5];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OOO|OO", names, 5, a, given)) {
-		return NULL;
-	}
-	if (!given[3]) {
-		Native_SetInt(&a[3], 0);
-	}
-	if (!given[4]) {
-		Native_SetInt(&a[4], 0);
-	}
-	return Mode_KwOut(a, 5, Sc_AddSound(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
+MODE_KW(Scene, AddSound, "OOO|OO", "Frame", "SoundName", "Vol", "Pitch", "Pan") {
+	Mode_KwDefI(v, given, 3, 0);
+	Mode_KwDefI(v, given, 4, 0);
+	return Sc_AddSound(&v[0], &v[1], &v[2], &v[3], &v[4]);
 }
 
-static PyObject *Scene_InitOutDoorScene(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "HideChars", NULL };
-	nativeVal_t a[1];
-	byte given[1];
-	(void)self;
-	if (!Mode_Kw(args, kw, "|O", names, 1, a, given)) {
-		return NULL;
-	}
-	if (!given[0]) {
-		Native_SetInt(&a[0], 1);
-	}
-	return Mode_KwOut(a, 1, Sc_InitOutDoorScene(&a[0]), NULL);
+MODE_KW(Scene, InitOutDoorScene, "|O", "HideChars") {
+	Mode_KwDefI(v, given, 0, 1);
+	return Sc_InitOutDoorScene(&v[0]);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3

@@ -427,17 +427,17 @@ MISSION_GO(Menu_GoCrazyDeal, "CrazyDeal")
 MISSION_GO(Menu_GoNotes, "Notes")
 
 /* EnterMissionInfo(id): the menu opens on the page the mission scorer shows (the deal while a super deal runs) */
-static PyObject *Menu_EnterMissionInfo(PyObject *self, PyObject *args) {
+static byte Menu_EnterMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Mode_PrintedCall("Menu", "InitMenuSys", 0);
 	const char *map = SaveVar_Get("SuperDeal.Mission.Map");
 	if (map && *map) {
 		Mission_Menu(id, "CrazyDeal");
-		return Py_ReturnNone();
+		return 1;
 	}
 	if (Script_HasItem(id, "Mission")) {
 		int last = (int)Script_GetNum(id, "Mission", "LastStatus");
@@ -445,8 +445,9 @@ static PyObject *Menu_EnterMissionInfo(PyObject *self, PyObject *args) {
 			Mission_Menu(id, mission_pages[last].page);
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, EnterMissionInfo)
 
 static PyObject *Menu_ExitMissionInfo(PyObject *self, PyObject *args) {
 	(void)self;
@@ -512,3 +513,5 @@ PyMethodDef g_MenuMissionMethods[] = {
 	{ "MissionNotesText", Menu_MissionNotesText, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuMission)

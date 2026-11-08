@@ -680,6 +680,29 @@ PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
 	PORT_DEF(MakeChar, AddDefMorphActions, MakeChar_AddDefMorphActions) \
 	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
 
+/* MenuBase.c */
+PORT_DECL(Menu, DrawBackMainMenu) /* ? */
+PORT_DECL(Menu, DrawBackSubMenu) /* ? */
+PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
+PORT_DECL(Menu, DrawMenuTitleBar) /* ? */
+PORT_DECL(Menu, StartNewMenu) /* ? */
+PORT_DECL(Menu, YesNoMenu) /* ? */
+PORT_DECL(Menu, DisableMenuItem) /* ? */
+PORT_DECL(Menu, ShowTextBox) /* ? */
+PORT_DECL(Menu, ShowWarning) /* ? */
+PORT_DECL(Menu, SetTabDefaults) /* ? */
+#define PORTS_MenuBase \
+	PORT_DEF(Menu, DrawBackMainMenu, Menu_DrawBackMainMenu) \
+	PORT_DEF(Menu, DrawBackSubMenu, Menu_DrawBackSubMenu) \
+	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
+	PORT_DEF(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
+	PORT_DEF(Menu, StartNewMenu, Menu_StartNewMenu) \
+	PORT_DEF(Menu, YesNoMenu, Menu_YesNoMenu) \
+	PORT_DEF(Menu, DisableMenuItem, Menu_DisableMenuItem) \
+	PORT_DEF(Menu, ShowTextBox, Menu_ShowTextBox) \
+	PORT_DEF(Menu, ShowWarning, Menu_ShowWarning) \
+	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults)
+
 /* MenuHud.c */
 PORT_DECL(Scorer, ShowMissionScorer) /* ? */
 PORT_DECL(Scorer, Blink) /* ? */
@@ -712,6 +735,26 @@ PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
 	PORT_DEF(RacerScorer, MissionScorer, Racer_MissionScorer) \
 	PORT_DEF(RacerScorer, MissionScorerTeam, Racer_MissionScorerTeam) \
 	PORT_DEF(RacerScorer, UpdateMissionScorer, Racer_UpdateMissionScorer)
+
+/* MenuMain.c */
+PORT_DECL(Menu, MainMenu) /* ? */
+PORT_DECL(Menu, BackToGame) /* ? */
+PORT_DECL(Menu, DrawScorer) /* ? */
+PORT_DECL(Menu, InitMenuSys) /* ? */
+PORT_DECL(Menu, MovieScorer) /* ? */
+PORT_DECL(Menu, GameOver) /* ? */
+#define PORTS_MenuMain \
+	PORT_DEF(Menu, MainMenu, Menu_MainMenu) \
+	PORT_DEF(Menu, BackToGame, Menu_BackToGame) \
+	PORT_DEF(Menu, DrawScorer, Menu_DrawScorer) \
+	PORT_DEF(Menu, InitMenuSys, Menu_InitMenuSys) \
+	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
+	PORT_DEF(Menu, GameOver, Menu_GameOver)
+
+/* MenuMission.c */
+PORT_DECL(Menu, EnterMissionInfo) /* ? */
+#define PORTS_MenuMission \
+	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo)
 
 /* MenuNet.c */
 PORT_DECL(PCMenu, TryJoin) /* ? */
@@ -772,17 +815,20 @@ PORT_DECL(MissionsFuncs, TryMsg) /* 1 */
 PORT_DECL(MissionsFuncs, SetNextMission) /* 2 */
 PORT_DECL(MissionsFuncs, SetFirstDemoMission) /* 0 */
 PORT_DECL(MissionsFuncs, SetOutMissionArrow) /* 0 */
+PORT_DECL(MissionsFuncs, ActivateTarget) /* ? */
 PORT_DECL(MissionsFuncs, GetSecondary) /* 1 */
 PORT_DECL(MissionsFuncs, SetSecondary) /* 1 */
 PORT_DECL(MissionsFuncs, FinishGame) /* 1 */
 PORT_DECL(MissionsFuncs, ShowMissionInfo) /* 1 */
 PORT_DECL(MissionsFuncs, SetMissionTarget) /* 1 */
+PORT_DECL(MissionsFuncs, SetMultipleMissionTargets) /* 1 */
 PORT_DECL(MissionsFuncs, CleanAllTargets) /* 0 */
 PORT_DECL(MissionsFuncs, DelMissionTarget) /* 1 */
 PORT_DECL(MissionsFuncs, IsCharMissionObjective) /* 1 */
 PORT_DECL(MissionsFuncs, CharMissionDialog) /* 4 */
 PORT_DECL(MissionsFuncs, CancelSecondaryMission) /* 2 */
 PORT_DECL(MissionsFuncs, SinglePlayerDeath) /* 0 */
+PORT_DECL(MissionsFuncs, CreatePhotoObject) /* ? */
 PORT_DECL(MissionsFuncs, UnsetPhotoObject) /* 1 */
 PORT_DECL(MissionsFuncs, ReassignBertosPlayerTarget) /* 0 */
 PORT_DECL(MissionsFuncs, CreateBerto) /* 1 */
@@ -798,6 +844,8 @@ PORT_DECL(MissionsFuncs, StartActualSuperDeal) /* 0 */
 PORT_DECL(MissionsFuncs, EndOfSuperDeal) /* 1 */
 PORT_DECL(MissionsFuncs, StartSuperDeal) /* 3 */
 PORT_DECL(MissionsFuncs, RelaxShipsInList) /* 1 */
+PORT_DECL(MissionsFuncs, SetInvulnerableShipsInList) /* ? */
+PORT_DECL(MissionsFuncs, OnSuperDealFinish) /* ? */
 PORT_DECL(MissionsFuncs, BuildMultipleEnemiesData) /* 2 */
 PORT_DECL(MissionsFuncs, BuildTeamDeathMatchData) /* 1 */
 PORT_DECL(MissionsFuncs, BuildVersusData) /* 1 */
@@ -809,17 +857,20 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 	PORT_DEF(MissionsFuncs, SetNextMission, MissionsFuncs_SetNextMission) \
 	PORT_DEF(MissionsFuncs, SetFirstDemoMission, MissionsFuncs_SetFirstDemoMission) \
 	PORT_DEF(MissionsFuncs, SetOutMissionArrow, MissionsFuncs_SetOutMissionArrow) \
+	PORT_DEF(MissionsFuncs, ActivateTarget, MissionsFuncs_ActivateTarget) \
 	PORT_DEF(MissionsFuncs, GetSecondary, MissionsFuncs_GetSecondary) \
 	PORT_DEF(MissionsFuncs, SetSecondary, MissionsFuncs_SetSecondary) \
 	PORT_DEF(MissionsFuncs, FinishGame, MissionsFuncs_FinishGame) \
 	PORT_DEF(MissionsFuncs, ShowMissionInfo, MissionsFuncs_ShowMissionInfo) \
 	PORT_DEF(MissionsFuncs, SetMissionTarget, MissionsFuncs_SetMissionTarget) \
+	PORT_DEF(MissionsFuncs, SetMultipleMissionTargets, MissionsFuncs_SetMultipleMissionTargets) \
 	PORT_DEF(MissionsFuncs, CleanAllTargets, MissionsFuncs_CleanAllTargets) \
 	PORT_DEF(MissionsFuncs, DelMissionTarget, MissionsFuncs_DelMissionTarget) \
 	PORT_DEF(MissionsFuncs, IsCharMissionObjective, MissionsFuncs_IsCharMissionObjective) \
 	PORT_DEF(MissionsFuncs, CharMissionDialog, MissionsFuncs_CharMissionDialog) \
 	PORT_DEF(MissionsFuncs, CancelSecondaryMission, MissionsFuncs_CancelSecondaryMission) \
 	PORT_DEF(MissionsFuncs, SinglePlayerDeath, MissionsFuncs_SinglePlayerDeath) \
+	PORT_DEF(MissionsFuncs, CreatePhotoObject, MissionsFuncs_CreatePhotoObject) \
 	PORT_DEF(MissionsFuncs, UnsetPhotoObject, MissionsFuncs_UnsetPhotoObject) \
 	PORT_DEF(MissionsFuncs, ReassignBertosPlayerTarget, MissionsFuncs_ReassignBertosPlayerTarget) \
 	PORT_DEF(MissionsFuncs, CreateBerto, MissionsFuncs_CreateBerto) \
@@ -835,6 +886,8 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 	PORT_DEF(MissionsFuncs, EndOfSuperDeal, MissionsFuncs_EndOfSuperDeal) \
 	PORT_DEF(MissionsFuncs, StartSuperDeal, MissionsFuncs_StartSuperDeal) \
 	PORT_DEF(MissionsFuncs, RelaxShipsInList, MissionsFuncs_RelaxShipsInList) \
+	PORT_DEF(MissionsFuncs, SetInvulnerableShipsInList, MissionsFuncs_SetInvulnerableShipsInList) \
+	PORT_DEF(MissionsFuncs, OnSuperDealFinish, MissionsFuncs_OnSuperDealFinish) \
 	PORT_DEF(MissionsFuncs, BuildMultipleEnemiesData, MissionsFuncs_BuildMultipleEnemiesData) \
 	PORT_DEF(MissionsFuncs, BuildTeamDeathMatchData, MissionsFuncs_BuildTeamDeathMatchData) \
 	PORT_DEF(MissionsFuncs, BuildVersusData, MissionsFuncs_BuildVersusData) \
@@ -1009,19 +1062,35 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 PORT_DECL(RaceMaker, ShowSystemMessage) /* 1 */
 PORT_DECL(RaceMaker, ShowSystemMessageDelay) /* 2 */
 PORT_DECL(RaceMaker, NPCCombatKilled) /* 2 */
+PORT_DECL(RaceMaker, DeleteCurrentWaypoint) /* 0 */
+PORT_DECL(RaceMaker, MovePlayersToTraffic) /* 0 */
 PORT_DECL(RaceMaker, EndOfRace) /* 2 */
 PORT_DECL(RaceMaker, RaceStart) /* 2 */
+PORT_DECL(RaceMaker, OnCounterMeasure) /* ? */
 PORT_DECL(RaceMaker, RacerKilled) /* 2 */
+PORT_DECL(RaceMaker, RacerInterruptedByAlarm) /* 0 */
 PORT_DECL(RaceMaker, RacerDamaged) /* 3 */
+PORT_DECL(RaceMaker, RacerLeft) /* 0 */
+PORT_DECL(RaceMaker, AbortCameraTravelling) /* 0 */
+PORT_DECL(RaceMaker, StartCameraTravelling) /* ? */
 PORT_DECL(RaceMaker, OnRaceStart) /* 2 */
 PORT_DECL(RaceMaker, RaceGo) /* 2 */
+PORT_DECL(RaceMaker, CreateRaceCountDown) /* 0 */
+PORT_DECL(RaceMaker, DestroyRaceCountDown) /* 0 */
 PORT_DECL(RaceMaker, DestroyRaceCountDownEnd) /* 1 */
+PORT_DECL(RaceMaker, Counter) /* ? */
 PORT_DECL(RaceMaker, OnCheckPoint) /* 2 */
 PORT_DECL(RaceMaker, OnNearCheckPoint) /* 2 */
 PORT_DECL(RaceMaker, NameOponGoItem) /* 1 */
+PORT_DECL(RaceMaker, LocalGetDealType) /* 0 */
+PORT_DECL(RaceMaker, StopTimer) /* 0 */
+PORT_DECL(RaceMaker, StartTimer) /* 0 */
 PORT_DECL(RaceMaker, FirstTimeRace) /* 1 */
 PORT_DECL(RaceMaker, FirstTimeCombat) /* 1 */
 PORT_DECL(RaceMaker, PointObjectTo) /* 2 */
+PORT_DECL(RaceMaker, PreloadCnDnResources) /* 0 */
+PORT_DECL(RaceMaker, InitRace) /* ? */
+PORT_DECL(RaceMaker, InitCombat) /* ? */
 PORT_DECL(RaceMaker, MoveCombatNPCsToPos) /* 1 */
 PORT_DECL(RaceMaker, PlaceNPCAtRacePos) /* 2 */
 PORT_DECL(RaceMaker, SetScorerValues) /* 1 */
@@ -1033,19 +1102,35 @@ PORT_DECL(RaceMaker, GetRandomShipIAProfile) /* 2 */
 	PORT_DEF(RaceMaker, ShowSystemMessage, RaceMaker_ShowSystemMessage) \
 	PORT_DEF(RaceMaker, ShowSystemMessageDelay, RaceMaker_ShowSystemMessageDelay) \
 	PORT_DEF(RaceMaker, NPCCombatKilled, RaceMaker_NPCCombatKilled) \
+	PORT_DEF(RaceMaker, DeleteCurrentWaypoint, RaceMaker_DeleteCurrentWaypoint) \
+	PORT_DEF(RaceMaker, MovePlayersToTraffic, RaceMaker_MovePlayersToTraffic) \
 	PORT_DEF(RaceMaker, EndOfRace, RaceMaker_EndOfRace) \
 	PORT_DEF(RaceMaker, RaceStart, RaceMaker_RaceStart) \
+	PORT_DEF(RaceMaker, OnCounterMeasure, RaceMaker_OnCounterMeasure) \
 	PORT_DEF(RaceMaker, RacerKilled, RaceMaker_RacerKilled) \
+	PORT_DEF(RaceMaker, RacerInterruptedByAlarm, RaceMaker_RacerInterruptedByAlarm) \
 	PORT_DEF(RaceMaker, RacerDamaged, RaceMaker_RacerDamaged) \
+	PORT_DEF(RaceMaker, RacerLeft, RaceMaker_RacerLeft) \
+	PORT_DEF(RaceMaker, AbortCameraTravelling, RaceMaker_AbortCameraTravelling) \
+	PORT_DEF(RaceMaker, StartCameraTravelling, RaceMaker_StartCameraTravelling) \
 	PORT_DEF(RaceMaker, OnRaceStart, RaceMaker_OnRaceStart) \
 	PORT_DEF(RaceMaker, RaceGo, RaceMaker_RaceGo) \
+	PORT_DEF(RaceMaker, CreateRaceCountDown, RaceMaker_CreateRaceCountDown) \
+	PORT_DEF(RaceMaker, DestroyRaceCountDown, RaceMaker_DestroyRaceCountDown) \
 	PORT_DEF(RaceMaker, DestroyRaceCountDownEnd, RaceMaker_DestroyRaceCountDownEnd) \
+	PORT_DEF(RaceMaker, Counter, RaceMaker_Counter) \
 	PORT_DEF(RaceMaker, OnCheckPoint, RaceMaker_OnCheckPoint) \
 	PORT_DEF(RaceMaker, OnNearCheckPoint, RaceMaker_OnNearCheckPoint) \
 	PORT_DEF(RaceMaker, NameOponGoItem, RaceMaker_NameOponGoItem) \
+	PORT_DEF(RaceMaker, LocalGetDealType, RaceMaker_LocalGetDealType) \
+	PORT_DEF(RaceMaker, StopTimer, RaceMaker_StopTimer) \
+	PORT_DEF(RaceMaker, StartTimer, RaceMaker_StartTimer) \
 	PORT_DEF(RaceMaker, FirstTimeRace, RaceMaker_FirstTimeRace) \
 	PORT_DEF(RaceMaker, FirstTimeCombat, RaceMaker_FirstTimeCombat) \
 	PORT_DEF(RaceMaker, PointObjectTo, RaceMaker_PointObjectTo) \
+	PORT_DEF(RaceMaker, PreloadCnDnResources, RaceMaker_PreloadCnDnResources) \
+	PORT_DEF(RaceMaker, InitRace, RaceMaker_InitRace) \
+	PORT_DEF(RaceMaker, InitCombat, RaceMaker_InitCombat) \
 	PORT_DEF(RaceMaker, MoveCombatNPCsToPos, RaceMaker_MoveCombatNPCsToPos) \
 	PORT_DEF(RaceMaker, PlaceNPCAtRacePos, RaceMaker_PlaceNPCAtRacePos) \
 	PORT_DEF(RaceMaker, SetScorerValues, RaceMaker_SetScorerValues) \
@@ -1058,64 +1143,108 @@ PORT_DECL(RaceMaker, GetRandomShipIAProfile) /* 2 */
 PORT_DECL(SaveGame, MMDesc) /* 2 */
 PORT_DECL(SaveGame, SMDesc) /* 2 */
 PORT_DECL(SaveGame, SaveGame) /* 1 */
+PORT_DECL(SaveGame, InstantSaveGame) /* ? */
 PORT_DECL(SaveGame, LoadGame) /* 1 */
+PORT_DECL(SaveGame, NewGame) /* ? */
+PORT_DECL(SaveGame, CheckAllBlueprints) /* ? */
+PORT_DECL(SaveGame, MarkWayPoint) /* ? */
+PORT_DECL(SaveGame, QWayPoint) /* ? */
+PORT_DECL(SaveGame, SaveAlarm) /* ? */
+PORT_DECL(SaveGame, LoadAlarm) /* ? */
+PORT_DECL(SaveGame, SaveMoney) /* ? */
+PORT_DECL(SaveGame, LoadMoney) /* ? */
+PORT_DECL(SaveGame, QLoad) /* ? */
+PORT_DECL(SaveGame, StartGame) /* ? */
+PORT_DECL(SaveGame, Restart) /* ? */
 PORT_DECL(SaveGame, QSaveReg) /* 1 */
 PORT_DECL(SaveGame, SaveReg) /* 2 */
+PORT_DECL(SaveGame, InitVars) /* ? */
 #define PORTS_SaveGame \
 	PORT_DEF(SaveGame, MMDesc, SaveGame_MMDesc) \
 	PORT_DEF(SaveGame, SMDesc, SaveGame_SMDesc) \
 	PORT_DEF(SaveGame, SaveGame, SaveGame_SaveGame) \
+	PORT_DEF(SaveGame, InstantSaveGame, SaveGame_InstantSaveGame) \
 	PORT_DEF(SaveGame, LoadGame, SaveGame_LoadGame) \
+	PORT_DEF(SaveGame, NewGame, SaveGame_NewGame) \
+	PORT_DEF(SaveGame, CheckAllBlueprints, SaveGame_CheckAllBlueprints) \
+	PORT_DEF(SaveGame, MarkWayPoint, SaveGame_MarkWayPoint) \
+	PORT_DEF(SaveGame, QWayPoint, SaveGame_QWayPoint) \
+	PORT_DEF(SaveGame, SaveAlarm, SaveGame_SaveAlarm) \
+	PORT_DEF(SaveGame, LoadAlarm, SaveGame_LoadAlarm) \
+	PORT_DEF(SaveGame, SaveMoney, SaveGame_SaveMoney) \
+	PORT_DEF(SaveGame, LoadMoney, SaveGame_LoadMoney) \
+	PORT_DEF(SaveGame, QLoad, SaveGame_QLoad) \
+	PORT_DEF(SaveGame, StartGame, SaveGame_StartGame) \
+	PORT_DEF(SaveGame, Restart, SaveGame_Restart) \
 	PORT_DEF(SaveGame, QSaveReg, SaveGame_QSaveReg) \
-	PORT_DEF(SaveGame, SaveReg, SaveGame_SaveReg)
+	PORT_DEF(SaveGame, SaveReg, SaveGame_SaveReg) \
+	PORT_DEF(SaveGame, InitVars, SaveGame_InitVars)
 
 /* Scene.c */
 PORT_DECL(Scene, BaseAddActor) /* 3 */
 PORT_DECL(Scene, AddCharActor) /* 2 */
 PORT_DECL(Scene, AddLocalActor) /* 2 */
+PORT_DECL(Scene, ActorAction) /* ? */
 PORT_DECL(Scene, ActorActEvent) /* 3 */
 PORT_DECL(Scene, ActorBreakChannel) /* 3 */
 PORT_DECL(Scene, ActorActBreakChanne) /* 3 */
+PORT_DECL(Scene, ObjAction) /* ? */
 PORT_DECL(Scene, ObjActEvent) /* 3 */
 PORT_DECL(Scene, SetDefSounds) /* 2 */
+PORT_DECL(Scene, CreateLocalAction) /* ? */
 PORT_DECL(Scene, ExecGeneric) /* 3 */
+PORT_DECL(Scene, AddGeneric) /* ? */
+PORT_DECL(Scene, AddStream) /* ? */
 PORT_DECL(Scene, PlayStream) /* 3 */
 PORT_DECL(Scene, PlayVoiceVol) /* 2 */
 PORT_DECL(Scene, PlayText) /* 3 */
 PORT_DECL(Scene, SetText) /* 2 */
+PORT_DECL(Scene, StopSpeech) /* ? */
+PORT_DECL(Scene, AddText) /* ? */
 PORT_DECL(Scene, AbortScene) /* 1 */
 PORT_DECL(Scene, EndOfScene) /* 3 */
 PORT_DECL(Scene, DelClass) /* 1 */
+PORT_DECL(Scene, AddSound) /* ? */
 PORT_DECL(Scene, Load) /* 1 */
 PORT_DECL(Scene, UnhideChars) /* 0 */
 PORT_DECL(Scene, HideThis) /* 1 */
 PORT_DECL(Scene, HideChars) /* 0 */
 PORT_DECL(Scene, HideVehiclesToo) /* 0 */
 PORT_DECL(Scene, Play) /* 1 */
+PORT_DECL(Scene, InitOutDoorScene) /* ? */
 PORT_DECL(Scene, EndOutDoorScene) /* 0 */
 #define PORTS_Scene \
 	PORT_DEF(Scene, BaseAddActor, Scene_BaseAddActor) \
 	PORT_DEF(Scene, AddCharActor, Scene_AddCharActor) \
 	PORT_DEF(Scene, AddLocalActor, Scene_AddLocalActor) \
+	PORT_DEF(Scene, ActorAction, Scene_ActorAction) \
 	PORT_DEF(Scene, ActorActEvent, Scene_ActorActEvent) \
 	PORT_DEF(Scene, ActorBreakChannel, Scene_ActorBreakChannel) \
 	PORT_DEF(Scene, ActorActBreakChanne, Scene_ActorActBreakChanne) \
+	PORT_DEF(Scene, ObjAction, Scene_ObjAction) \
 	PORT_DEF(Scene, ObjActEvent, Scene_ObjActEvent) \
 	PORT_DEF(Scene, SetDefSounds, Scene_SetDefSounds) \
+	PORT_DEF(Scene, CreateLocalAction, Scene_CreateLocalAction) \
 	PORT_DEF(Scene, ExecGeneric, Scene_ExecGeneric) \
+	PORT_DEF(Scene, AddGeneric, Scene_AddGeneric) \
+	PORT_DEF(Scene, AddStream, Scene_AddStream) \
 	PORT_DEF(Scene, PlayStream, Scene_PlayStream) \
 	PORT_DEF(Scene, PlayVoiceVol, Scene_PlayVoiceVol) \
 	PORT_DEF(Scene, PlayText, Scene_PlayText) \
 	PORT_DEF(Scene, SetText, Scene_SetText) \
+	PORT_DEF(Scene, StopSpeech, Scene_StopSpeech) \
+	PORT_DEF(Scene, AddText, Scene_AddText) \
 	PORT_DEF(Scene, AbortScene, Scene_AbortScene) \
 	PORT_DEF(Scene, EndOfScene, Scene_EndOfScene) \
 	PORT_DEF(Scene, DelClass, Scene_DelClass) \
+	PORT_DEF(Scene, AddSound, Scene_AddSound) \
 	PORT_DEF(Scene, Load, Scene_Load) \
 	PORT_DEF(Scene, UnhideChars, Scene_UnhideChars) \
 	PORT_DEF(Scene, HideThis, Scene_HideThis) \
 	PORT_DEF(Scene, HideChars, Scene_HideChars) \
 	PORT_DEF(Scene, HideVehiclesToo, Scene_HideVehiclesToo) \
 	PORT_DEF(Scene, Play, Scene_Play) \
+	PORT_DEF(Scene, InitOutDoorScene, Scene_InitOutDoorScene) \
 	PORT_DEF(Scene, EndOutDoorScene, Scene_EndOutDoorScene)
 
 /* ShipEdit.c */
@@ -1237,38 +1366,98 @@ PORT_DECL(ShipMaker, InitAnmShip) /* ? */
 /* Speech.c */
 PORT_DECL(Speech, ScheduledVoiceCallback) /* 2 */
 PORT_DECL(Speech, PlayVoiceScheduled) /* 3 */
+PORT_DECL(Speech, PerformAnswer) /* ? */
+PORT_DECL(Speech, NormalAbortSpeech) /* ? */
+PORT_DECL(Speech, CallEndOfSpeech) /* ? */
+PORT_DECL(Speech, AbortSpeech) /* ? */
 PORT_DECL(Speech, RestoreState) /* 1 */
+PORT_DECL(Speech, AutoAnswer) /* ? */
+PORT_DECL(Speech, StopMenuEvents) /* ? */
+PORT_DECL(Speech, RestartMenuEvents) /* ? */
 PORT_DECL(Speech, RestoreMoveTime) /* 1 */
 PORT_DECL(Speech, StdAnsLst) /* 1 */
+PORT_DECL(Speech, StdOnSpch) /* ? */
 PORT_DECL(Speech, CalculateSpeechTime) /* 1 */
+PORT_DECL(Speech, OnSpch) /* ? */
+PORT_DECL(Speech, OnChallengeSpch) /* ? */
+PORT_DECL(Speech, OnSpeech) /* ? */
 PORT_DECL(Speech, PlayerAnsEnd) /* 0 */
 PORT_DECL(Speech, PlayerAns) /* 4 */
 PORT_DECL(Speech, SetPlayerToTalk) /* 2 */
 PORT_DECL(Speech, InspectChar) /* 4 */
 PORT_DECL(Speech, AutoSpeech) /* 4 */
+PORT_DECL(Speech, NISpeech) /* ? */
+PORT_DECL(Speech, AutoAddNI) /* ? */
+PORT_DECL(Speech, AddNI) /* ? */
+PORT_DECL(Speech, RunNI) /* ? */
+PORT_DECL(Speech, ObjNIEnd) /* ? */
 PORT_DECL(Speech, LaunchTaunt) /* 3 */
+PORT_DECL(Speech, RestoreSpeech) /* ? */
 PORT_DECL(Speech, OffVoice) /* 1 */
+PORT_DECL(Speech, RemoteComunication) /* ? */
+PORT_DECL(Speech, ForceRemoteComInternal) /* ? */
+PORT_DECL(Speech, ForceRemoteCom) /* ? */
+PORT_DECL(Speech, ForceRemoteComunication) /* ? */
+PORT_DECL(Speech, AddRemoteCom) /* ? */
 PORT_DECL(Speech, ProcessRemoteCom) /* 1 */
+PORT_DECL(Speech, CancelRemoteCom) /* ? */
 PORT_DECL(Speech, TestInRange) /* 0 */
+PORT_DECL(Speech, StartObjSpch) /* ? */
 PORT_DECL(Speech, StartObjectSpeech) /* 6 */
+PORT_DECL(Speech, StdObjSpch) /* ? */
+PORT_DECL(Speech, OnObjSpch) /* ? */
+PORT_DECL(Speech, OnChallengeObjSpch) /* ? */
+PORT_DECL(Speech, OnObjectSpeech) /* ? */
+PORT_DECL(Speech, ObjectAutoAnswer) /* ? */
+PORT_DECL(Speech, ObjectAutoAnswer2) /* ? */
 PORT_DECL(Speech, EndObjectAnswer) /* 0 */
 #define PORTS_Speech \
 	PORT_DEF(Speech, ScheduledVoiceCallback, Speech_ScheduledVoiceCallback) \
 	PORT_DEF(Speech, PlayVoiceScheduled, Speech_PlayVoiceScheduled) \
+	PORT_DEF(Speech, PerformAnswer, Speech_PerformAnswer) \
+	PORT_DEF(Speech, NormalAbortSpeech, Speech_NormalAbortSpeech) \
+	PORT_DEF(Speech, CallEndOfSpeech, Speech_CallEndOfSpeech) \
+	PORT_DEF(Speech, AbortSpeech, Speech_AbortSpeech) \
 	PORT_DEF(Speech, RestoreState, Speech_RestoreState) \
+	PORT_DEF(Speech, AutoAnswer, Speech_AutoAnswer) \
+	PORT_DEF(Speech, StopMenuEvents, Speech_StopMenuEvents) \
+	PORT_DEF(Speech, RestartMenuEvents, Speech_RestartMenuEvents) \
 	PORT_DEF(Speech, RestoreMoveTime, Speech_RestoreMoveTime) \
 	PORT_DEF(Speech, StdAnsLst, Speech_StdAnsLst) \
+	PORT_DEF(Speech, StdOnSpch, Speech_StdOnSpch) \
 	PORT_DEF(Speech, CalculateSpeechTime, Speech_CalculateSpeechTime) \
+	PORT_DEF(Speech, OnSpch, Speech_OnSpch) \
+	PORT_DEF(Speech, OnChallengeSpch, Speech_OnChallengeSpch) \
+	PORT_DEF(Speech, OnSpeech, Speech_OnSpeech) \
 	PORT_DEF(Speech, PlayerAnsEnd, Speech_PlayerAnsEnd) \
 	PORT_DEF(Speech, PlayerAns, Speech_PlayerAns) \
 	PORT_DEF(Speech, SetPlayerToTalk, Speech_SetPlayerToTalk) \
 	PORT_DEF(Speech, InspectChar, Speech_InspectChar) \
 	PORT_DEF(Speech, AutoSpeech, Speech_AutoSpeech) \
+	PORT_DEF(Speech, NISpeech, Speech_NISpeech) \
+	PORT_DEF(Speech, AutoAddNI, Speech_AutoAddNI) \
+	PORT_DEF(Speech, AddNI, Speech_AddNI) \
+	PORT_DEF(Speech, RunNI, Speech_RunNI) \
+	PORT_DEF(Speech, ObjNIEnd, Speech_ObjNIEnd) \
 	PORT_DEF(Speech, LaunchTaunt, Speech_LaunchTaunt) \
+	PORT_DEF(Speech, RestoreSpeech, Speech_RestoreSpeech) \
 	PORT_DEF(Speech, OffVoice, Speech_OffVoice) \
+	PORT_DEF(Speech, RemoteComunication, Speech_RemoteComunication) \
+	PORT_DEF(Speech, ForceRemoteComInternal, Speech_ForceRemoteComInternal) \
+	PORT_DEF(Speech, ForceRemoteCom, Speech_ForceRemoteCom) \
+	PORT_DEF(Speech, ForceRemoteComunication, Speech_ForceRemoteComunication) \
+	PORT_DEF(Speech, AddRemoteCom, Speech_AddRemoteCom) \
 	PORT_DEF(Speech, ProcessRemoteCom, Speech_ProcessRemoteCom) \
+	PORT_DEF(Speech, CancelRemoteCom, Speech_CancelRemoteCom) \
 	PORT_DEF(Speech, TestInRange, Speech_TestInRange) \
+	PORT_DEF(Speech, StartObjSpch, Speech_StartObjSpch) \
 	PORT_DEF(Speech, StartObjectSpeech, Speech_StartObjectSpeech) \
+	PORT_DEF(Speech, StdObjSpch, Speech_StdObjSpch) \
+	PORT_DEF(Speech, OnObjSpch, Speech_OnObjSpch) \
+	PORT_DEF(Speech, OnChallengeObjSpch, Speech_OnChallengeObjSpch) \
+	PORT_DEF(Speech, OnObjectSpeech, Speech_OnObjectSpeech) \
+	PORT_DEF(Speech, ObjectAutoAnswer, Speech_ObjectAutoAnswer) \
+	PORT_DEF(Speech, ObjectAutoAnswer2, Speech_ObjectAutoAnswer2) \
 	PORT_DEF(Speech, EndObjectAnswer, Speech_EndObjectAnswer)
 
 /* Split.c */

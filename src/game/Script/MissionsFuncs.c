@@ -1457,74 +1457,55 @@ MODE_FN(MissionsFuncs, BuildDominationData, 1, Mf_BuildDominationData(&a[0], out
 MODE_FN(MissionsFuncs, BuildCTFData, 1, Mf_BuildCTFData(&a[0], out))
 
 /* the functions with optional arguments: "OO|O" and the like (the arity errors of PyArg_ParseTuple), an argument not
- * given NULL */
-static byte Mf_Opt(PyObject *args, const char *fmt, int n, nativeVal_t *a, byte *given) {
-	PyObject *o[4] = { NULL };
-	for (int i = 0; i < n; i++) {
-		Native_SetNone(&a[i]);
-		given[i] = 0;
-	}
-	if (!PyArg_ParseTuple(args, (char *)fmt, &o[0], &o[1], &o[2], &o[3])) {
-		return 0;
-	}
-	for (int i = 0; i < n; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &a[i]);
-			given[i] = 1;
-		}
-	}
-	return 1;
+ * given NULL or the default of the script */
+static byte MissionsFuncs_ActivateTarget_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *e, *status, *arrow = NULL;
+	(void)out;
+	return Mode_Parse(a, n, "OO|O", &e, &status, &arrow) && Mf_ActivateTarget(e, status, arrow);
 }
 
-static PyObject *MissionsFuncs_ActivateTarget(PyObject *self, PyObject *args) {
-	nativeVal_t a[3];
-	byte given[3];
-	(void)self;
-	byte ok = Mf_Opt(args, "OO|O", 3, a, given) && Mf_ActivateTarget(&a[0], &a[1], given[2] ? &a[2] : NULL);
-	return Mode_KwOut(a, 3, ok, NULL);
+static byte MissionsFuncs_CreatePhotoObject_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t empty;
+	Native_SetStr(&empty, "");
+	const nativeVal_t *model, *pos, *ang, *view = &empty;
+	return Mode_Parse(a, n, "OOO|O", &model, &pos, &ang, &view) && Mf_CreatePhotoObject(model, pos, ang, view, out);
 }
 
-static PyObject *MissionsFuncs_CreatePhotoObject(PyObject *self, PyObject *args) {
-	nativeVal_t a[4], e;
-	byte given[4];
-	(void)self;
-	Native_SetNone(&e);
-	if (!Mf_Opt(args, "OOO|O", 4, a, given)) {
-		return Mode_KwOut(a, 4, 0, NULL);
-	}
-	if (!given[3]) {
-		Native_SetStr(&a[3], "");
-	}
-	byte ok = Mf_CreatePhotoObject(&a[0], &a[1], &a[2], &a[3], &e);
-	return Mode_KwOut(a, 4, ok, &e);
+static byte MissionsFuncs_SetInvulnerableShipsInList_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t one;
+	Native_SetInt(&one, 1);
+	const nativeVal_t *list, *state = &one;
+	(void)out;
+	return Mode_Parse(a, n, "O|O", &list, &state) && Mf_SetInvulnerableShipsInList(list, state);
 }
 
-static PyObject *MissionsFuncs_SetInvulnerableShipsInList(PyObject *self, PyObject *args) {
-	nativeVal_t a[2];
-	byte given[2];
-	(void)self;
-	if (!Mf_Opt(args, "O|O", 2, a, given)) {
-		return Mode_KwOut(a, 2, 0, NULL);
-	}
-	if (!given[1]) {
-		Native_SetInt(&a[1], 1);
-	}
-	return Mode_KwOut(a, 2, Mf_SetInvulnerableShipsInList(&a[0], &a[1]), NULL);
+static byte MissionsFuncs_OnSuperDealFinish_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t empty;
+	Native_SetStr(&empty, "");
+	const nativeVal_t *victory, *type = &empty, *retry = &empty;
+	(void)out;
+	return Mode_Parse(a, n, "O|OO", &victory, &type, &retry) && Mf_OnSuperDealFinish(victory, type, retry);
 }
 
-static PyObject *MissionsFuncs_OnSuperDealFinish(PyObject *self, PyObject *args) {
-	nativeVal_t a[3];
-	byte given[3];
-	(void)self;
-	if (!Mf_Opt(args, "O|OO", 3, a, given)) {
-		return Mode_KwOut(a, 3, 0, NULL);
+MODE_ADAPTER(MissionsFuncs, ActivateTarget)
+MODE_ADAPTER(MissionsFuncs, CreatePhotoObject)
+MODE_ADAPTER(MissionsFuncs, SetInvulnerableShipsInList)
+MODE_ADAPTER(MissionsFuncs, OnSuperDealFinish)
+
+/* SetMultipleMissionTargets(tgtList) of a native caller: an NV_OBJ list is the object itself, a native list becomes a
+ * new list object (as its call through Python makes it) */
+static byte MissionsFuncs_SetMultipleMissionTargets_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	if (n != 1) {
+		return Port_Arity(n, 1);
 	}
-	for (int i = 1; i < 3; i++) {
-		if (!given[i]) {
-			Native_SetStr(&a[i], "");
-		}
+	PyObject *list = a[0].type == NV_OBJ ? a[0].obj : Native_ToPy(&a[0]);
+	if (a[0].type == NV_OBJ) {
+		Py_INCREF(list);
 	}
-	return Mode_KwOut(a, 3, Mf_OnSuperDealFinish(&a[0], &a[1], &a[2]), NULL);
+	byte ok = list && Mf_SetMultipleMissionTargets(list);
+	Py_XDECREF(list);
+	return ok;
 }
 
 /* SetMultipleMissionTargets(tgtList): the list object itself into targetsList (OBJLIB 5) */
