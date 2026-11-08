@@ -532,8 +532,8 @@ PyMethodDef g_OutMapMethods[] = {
  * InTraffic is native C (docs/objlib-plan.md, stage 2): its functions work on C values and read the variables of the
  * module where the script reads them (OBJLIB 5). The engine calls fc-snd-th records (SWeap.InitAmmo, InitWeap,
  * SetFWeap, SSound.LoadSound, Scrap.Preload3DObject) and Scrap.CreateEntity and Scrap.Set go through their seams
- * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7), their SetModel is called as a bound method (OBJLIB 4,
- * 7). Fx.SetUpShipMotors goes through its ref (PORT_CALL), the module's own functions through its globals (PORT_OWN);
+ * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7), their SetModel is called as a bound method (OBJLIB 7).
+ * Fx.SetUpShipMotors goes through its ref (PORT_CALL), the module's own functions through its globals (PORT_OWN);
  * SAI.EnableAIVehicle and SAI.SetStateVehicle stay by name (OBJLIB 7).
  */
 
@@ -644,7 +644,7 @@ static byte It_Ship(long i, const nativeVal_t *list, const nativeVal_t *typo) {
 	if (!Native_Arith('+', Mode_S(&t, "FakeTraffic"), rep, name) || !It_Create(name, v)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4, 7: fn = v.SetModel, taken before the model is picked as the script does */
+	/* OBJLIB 7: fn = v.SetModel (a bound method of the entity), taken before the model is picked as the script does */
 	PyObject *fn = Mode_VBound(v, "SetModel");
 	int n = fn ? Native_Size(list) : -1;
 	if (n >= 0) {

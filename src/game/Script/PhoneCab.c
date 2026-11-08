@@ -14,8 +14,9 @@
  * above, Init.Path, the Challenge and Speech variables (set as Script_SetVar does, an error is dropped). The calls of
  * SaveGame, Speech, Challenge and CharsNPC go through their refs (PORT_CALL), Challenge's options through its C
  * function; the mission's DialogController is called as the value of the variable (OBJLIB 5), and the module's
- * functions put into Speech.OnOutOfRange are values (OBJLIB 4). The cabs, communicators and desktops are entity
- * handle values (OBJLIB 7): the module variables keep them and the scripts pass them in.
+ * functions put into Speech.OnOutOfRange are values Speech keeps (OBJLIB 5) and calls through their entries. The cabs,
+ * communicators and desktops are entity handle values (OBJLIB 7): the module variables keep them and the scripts pass
+ * them in.
  */
 #include <string.h>
 
@@ -328,7 +329,7 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 	} else if (!PhoneCab_PrintError(a)) {
 		return Mode_Done(&t, 0);
 	}
-	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 4: the function of the module as a value) */
+	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 5: the function of the module as the value of the variable) */
 	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
 	wins = PhoneCab_Wins();
 	if (wins < 0) {

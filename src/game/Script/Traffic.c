@@ -15,10 +15,11 @@
  * ShipMaker, Vehicles and the cases read and set them), and set the engine variables, the money and the save variables
  * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams, OBJLIB 7). The calls of
  * VehiclesNPC, SaveGame and RaceMaker go through their refs (PORT_CALL: the seam, OBJLIB 5). The class
- * VehiclesNPC.cShipAI is called by name (OBJLIB 4); SAI.SetStateVehicle and SAI.EnableAIChar, the ships and profiles
- * the calls give (handle values), the hooks onTrackCreate and OnPoliceCreatedCallback and CharsNPC.CharRes stay Python
- * values called or read by name (OBJLIB 5, 7); the steps of police.def take the arguments of their lines as a tuple
- * (OBJLIB 6). The functions of Traffic call each other in C as the port did (the engine callbacks name them
+ * VehiclesNPC.cShipAI is called by name (OBJLIB 5: a class the .mod defines); SAI.SetStateVehicle and SAI.EnableAIChar,
+ * the ships and profiles the calls give (handle values) and CharsNPC.CharRes stay Python values called or read by name
+ * (OBJLIB 5, 7), the hooks onTrackCreate and OnPoliceCreatedCallback are values of the variables (OBJLIB 5) called
+ * through the entries of port functions (PORT_VALUE); the steps of police.def take the arguments of their lines as a
+ * tuple (OBJLIB 6). The functions of Traffic call each other in C as the port did (the engine callbacks name them
  * "Traffic.<name>").
  */
 #include <string.h>
@@ -58,7 +59,7 @@ static byte Traffic_ResetPathN(void) {
 	return ok;
 }
 
-/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf (OBJLIB 4: the class by name; the profile
+/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf (OBJLIB 5: the class by name; the profile
  * objects are Python values, OBJLIB 7): profile the name of the profile, or NULL for the save variable
  * StdShipAIProfile; hook 0 sets FactorHookMap to 0 */
 static byte Traffic_Profile(const nativeVal_t *ship, const char *profile, byte hook) {
@@ -186,7 +187,7 @@ static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, con
 		return Mode_Done(&t, 0);
 	}
 	PyObject *hook = Mode_GlobalPy("Traffic", "onTrackCreate");
-	byte ok = hook && Native_Call(hook, NULL, "v", o1) && Traffic_RailDeath(killer) && Traffic_ResetPathN();
+	byte ok = hook && PORT_VALUE(hook, NULL, "v", o1) && Traffic_RailDeath(killer) && Traffic_ResetPathN();
 	Py_XDECREF(hook);
 	return Mode_Done(&t, ok);
 }
@@ -349,7 +350,7 @@ static byte OutPolice_MakePoliN(const nativeVal_t *type) {
 	/* OBJLIB 5: the hook is a function value of the module */
 	PyObject *hook = Mode_VSet(&ship, "EntityList", &list) ? Mode_GlobalPy("OutPolice", "OnPoliceCreatedCallback") : NULL;
 	int t = hook ? PyObject_IsTrue(hook) : -1;
-	byte ok = t >= 0 && (!t || Native_Call(hook, NULL, "v", &ship));
+	byte ok = t >= 0 && (!t || PORT_VALUE(hook, NULL, "v", &ship));
 	Py_XDECREF(hook);
 	Native_Free(&ship);
 	return ok;
@@ -423,7 +424,7 @@ static byte OutPolice_InitWavesN(void) {
 	return OutPolice_SetWave(&zero);
 }
 
-/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] (OBJLIB 4: the
+/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] (OBJLIB 5: the
  * class VehiclesNPC.cShipAI by name; the profile objects are Python values, OBJLIB 7) */
 static byte OutPolice_InitAIProfilesN(void) {
 	static const char *const types[] = { "Rookie", "Pilot", "Veteran", "Elite", "Ace", "MegaAce" };

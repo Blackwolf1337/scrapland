@@ -12,7 +12,8 @@
  * where the script reads them (OBJLIB 5); Path is written at once and MapLibs changed in place (the map libraries are
  * module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
  * script calls as its globals and the other ports go through their refs (PORT_OWN, PORT_CALL: the seam, OBJLIB 5).
- * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time (OBJLIB 4);
+ * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time, their functions
+ * called through the entries of the level's ports (MODE_CBATTR, PORT_VALUE);
  * string.find and replace are the native twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements,
  * CreateSaveVar, GetLevelPath, GetNewLevelPath, SAI.IniAI, dir and __import__ stay by name (OBJLIB 6, 7). Scrap.Set,
  * OpenPack, ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and
@@ -37,10 +38,10 @@ static int In_Flag(const char *name) {
 #define IN_CALL(module, func) (Mode_Import(#module) && PORT_CALL(module, func, NULL, ""))
 #define IN_CALLV(module, func, arg) (Mode_Import(#module) && PORT_CALL(module, func, NULL, "v", arg))
 
-/* o.func(arg) of a module object */
+/* o.func(arg) of a module object, through the entry of the function there */
 static byte In_Method(const nativeVal_t *o, const char *func, const nativeVal_t *arg) {
 	PyObject *m = Mode_VBound(o, func);
-	byte ok = m && Native_Call(m, NULL, "v", arg);
+	byte ok = m && PORT_VALUE(m, NULL, "v", arg);
 	Py_XDECREF(m);
 	return ok;
 }
@@ -304,8 +305,8 @@ static byte In_InitN(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	/* OBJLIB 4: Map is the module of the current level (by name until the registry of stage 4) */
-	if (xb < 0 || !Mode_Import("Map") || !Mode_Import("MapSnd") || !Native_CallMod("Map", "InitStatus", NULL, "v", path) ||
+	/* Map is the module of the current level: the function it holds through its entry */
+	if (xb < 0 || !Mode_Import("Map") || !Mode_Import("MapSnd") || !MODE_CBATTR("Map", "InitStatus", NULL, "v", path) ||
 		!PORT_OWN(Init, MLibInitStatus, NULL, "v", path) || !In_BossShip() || !Mode_G(IN, "SuperDealModule", deal) ||
 		(Native_True(deal) && !In_Method(deal, "InitStatus", path))) {
 		return Mode_Done(&t, 0);
@@ -355,8 +356,8 @@ static byte In_InitN(const nativeVal_t *path) {
 		!Mode_GVarSetS("OnCrazyDealTarget", "MissionsFuncs.OnCrazyDealTarget")) {
 		return Mode_Done(&t, 0);
 	}
-	/* the map (OBJLIB 4: Map and MapSnd are the modules of the current level, by name until the registry of stage 4) */
-	if (!Native_CallMod("Map", "Init", NULL, "v", path) || !Native_CallMod("MapSnd", "Init", NULL, "v", path) ||
+	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries) */
+	if (!MODE_CBATTR("Map", "Init", NULL, "v", path) || !MODE_CBATTR("MapSnd", "Init", NULL, "v", path) ||
 		!PORT_OWN(Init, MLibInit, NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
 		(Native_True(deal) && !In_Method(deal, "Init", path)) || !Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL)) {
 		return Mode_Done(&t, 0);
