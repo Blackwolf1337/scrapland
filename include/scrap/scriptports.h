@@ -2616,11 +2616,13 @@ PORT_DECLL(downtown, Mission_BertoMassacre, DropMatrix) /* 1 */
 PORT_DECLL(downtown, Mission_BertoMassacre, TakeMatrix) /* 2 */
 PORT_DECLL(downtown, Mission_BertoMassacre, GetBerto) /* 0 */
 PORT_DECLL(downtown, Mission_BertoMassacre, MissionScorer) /* 1 */
+PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, GetCrazyGamblerProfile) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, Init) /* 1 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, LaunchTaunts) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, CreateCrazyGambler) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, OnCrazyGamblerDeath) /* 2 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, MissionScorer) /* 1 */
+PORT_DECLL(downtown, Mission_FaceTheMayor, GetMayorProfile) /* 0 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, Init) /* 1 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, PreLaunchTaunt) /* 0 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, LaunchMayorInitialTaunt) /* 0 */
@@ -2634,6 +2636,7 @@ PORT_DECLL(downtown, Mission_Massacre, OnVehicleCallback) /* 2 */
 PORT_DECLL(downtown, Mission_Massacre, MissionScorer) /* 1 */
 PORT_DECLL(downtown, Mission_Massacre, TimeExpired) /* 0 */
 PORT_DECLL(downtown, Mission_Massacre, SetNextMission) /* 0 */
+PORT_DECLL(downtown, Mission_DistractHumphrey, GetHumphreyProfile) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, Init) /* 1 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, CallHumphrey) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, UsePhoneCab) /* 4 */
@@ -2653,6 +2656,7 @@ PORT_DECLL(downtown, Mission_DistractHumphrey, StopMission) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, CallDeepThroat) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, UsePhoneCab2) /* 4 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, MissionScorer) /* 1 */
+PORT_DECLL(downtown, Mission_GetDataPart1, GetFuncEnemiesProfile) /* 0 */
 PORT_DECLL(downtown, Mission_GetDataPart1, Init) /* 1 */
 PORT_DECLL(downtown, Mission_GetDataPart1, InitMission) /* 0 */
 PORT_DECLL(downtown, Mission_GetDataPart1, CreateTransport) /* 0 */
@@ -2679,6 +2683,7 @@ PORT_DECLL(downtown, Mission_HumphreyRace, UsePhoneCab) /* 4 */
 PORT_DECLL(downtown, Mission_HumphreyRace, PreGivePlans2) /* 0 */
 PORT_DECLL(downtown, Mission_HumphreyRace, GivePlans) /* 0 */
 PORT_DECLL(downtown, Mission_HumphreyRace, SetNextMission) /* 0 */
+PORT_DECLL(downtown, Mission_MultiplusRace, GetFunctionaryProfile) /* 0 */
 PORT_DECLL(downtown, Mission_MultiplusRace, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_MultiplusRace, Init) /* 1 */
 PORT_DECLL(downtown, Mission_MultiplusRace, EndOfRace) /* 2 */
@@ -2717,6 +2722,8 @@ PORT_DECLL(downtown, Mission_ProtectMayorTransport, OnTravelComplete) /* 2 */
 PORT_DECLL(downtown, Mission_ProtectMayorTransport, ActualizeScorer) /* 3 */
 PORT_DECLL(downtown, Mission_ProtectMayorTransport, MissionScorer) /* 1 */
 PORT_DECLL(downtown, Mission_ProtectMayorTransport, KillThem) /* 0 */
+PORT_DECLL(downtown, Mission_ProtectMayorTransport, InitKillThemMission) /* ? */
+PORT_DECLL(downtown, Mission_ProtectMayorTransport, InitKillBadGuys) /* ? */
 PORT_DECLL(downtown, Mission_ProtectMayorTransport, RestoreTransport) /* 1 */
 PORT_DECLL(downtown, Mission_StealMayorShip, Init) /* 1 */
 PORT_DECLL(downtown, Mission_StealMayorShip, CreateMissionShip) /* 0 */
@@ -2747,11 +2754,13 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_BertoMassacre, TakeMatrix, Berto_TakeMatrixPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, GetBerto, Berto_GetBertoPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, MissionScorer, Berto_MissionScorerPy) \
+	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, GetCrazyGamblerProfile, Gambler_GetCrazyGamblerProfile) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, Init, Gambler_InitPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, LaunchTaunts, Gambler_LaunchTauntsPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, CreateCrazyGambler, Gambler_CreateCrazyGamblerPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, OnCrazyGamblerDeath, Gambler_OnCrazyGamblerDeathPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, MissionScorer, Gambler_MissionScorerPy) \
+	PORT_DEFL(downtown, Mission_FaceTheMayor, GetMayorProfile, Mayor_GetMayorProfile) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, Init, Mayor_InitPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, PreLaunchTaunt, Mayor_PreLaunchTauntPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, LaunchMayorInitialTaunt, Mayor_LaunchMayorInitialTauntPy) \
@@ -2765,6 +2774,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_Massacre, MissionScorer, Massacre_MissionScorerPy) \
 	PORT_DEFL(downtown, Mission_Massacre, TimeExpired, Massacre_TimeExpiredPy) \
 	PORT_DEFL(downtown, Mission_Massacre, SetNextMission, Massacre_SetNextMissionPy) \
+	PORT_DEFL(downtown, Mission_DistractHumphrey, GetHumphreyProfile, Hump_GetHumphreyProfile) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, Init, Hump_InitPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, CallHumphrey, Hump_CallHumphreyPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, UsePhoneCab, Hump_UsePhoneCabPy) \
@@ -2784,6 +2794,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_DistractHumphrey, CallDeepThroat, Hump_CallDeepThroatPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, UsePhoneCab2, Hump_UsePhoneCab2Py) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, MissionScorer, Hump_MissionScorerPy) \
+	PORT_DEFL(downtown, Mission_GetDataPart1, GetFuncEnemiesProfile, Data_GetFuncEnemiesProfile) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, Init, Data_InitPy) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, InitMission, Data_InitMissionPy) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, CreateTransport, Data_CreateTransportPy) \
@@ -2810,6 +2821,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_HumphreyRace, PreGivePlans2, Bet_PreGivePlans2Py) \
 	PORT_DEFL(downtown, Mission_HumphreyRace, GivePlans, Bet_GivePlansPy) \
 	PORT_DEFL(downtown, Mission_HumphreyRace, SetNextMission, Bet_SetNextMissionPy) \
+	PORT_DEFL(downtown, Mission_MultiplusRace, GetFunctionaryProfile, Plus_GetFunctionaryProfile) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, InitStatus, Plus_InitStatusPy) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, Init, Plus_InitPy) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, EndOfRace, Plus_EndOfRacePy) \
@@ -2848,6 +2860,8 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_ProtectMayorTransport, ActualizeScorer, Escort_ActualizeScorerPy) \
 	PORT_DEFL(downtown, Mission_ProtectMayorTransport, MissionScorer, Escort_MissionScorerPy) \
 	PORT_DEFL(downtown, Mission_ProtectMayorTransport, KillThem, Escort_KillThemPy) \
+	PORT_DEFLK(downtown, Mission_ProtectMayorTransport, InitKillThemMission, Escort_InitKillThemMissionPy) \
+	PORT_DEFLK(downtown, Mission_ProtectMayorTransport, InitKillBadGuys, Escort_InitKillBadGuysPy) \
 	PORT_DEFL(downtown, Mission_ProtectMayorTransport, RestoreTransport, Escort_RestoreTransportPy) \
 	PORT_DEFL(downtown, Mission_StealMayorShip, Init, Steal_InitPy) \
 	PORT_DEFL(downtown, Mission_StealMayorShip, CreateMissionShip, Steal_CreateMissionShipPy) \
