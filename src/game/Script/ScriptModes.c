@@ -3996,12 +3996,6 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out) {
 	return 1;
 }
 
-byte Mode_Arity(int n, int min, int max) {
-	int k = n < min ? min : max;
-	return Native_Raise(NE_TYPE, "function requires %s %d argument%s; %d given", min == max ? "exactly" : n < min ?
-		"at least" : "at most", k, k == 1 ? "" : "s", n);
-}
-
 static byte Mode_FmtLetter(char c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
@@ -4133,8 +4127,8 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 	const char *f = fmt, *msg = NULL;
 	va_list va;
 	Mode_FmtCount(fmt, &min, &max);
-	if (n < min || n > max) {
-		return Mode_Arity(n, min, max);
+	if (!Mode_Arity(n, min, max)) {
+		return 0;
 	}
 	va_start(va, fmt);
 	int i;
@@ -4202,8 +4196,8 @@ byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t cor
 	const nativeVal_t *p[PORT_ARGS] = { NULL };
 	int min, max;
 	Mode_FmtCount(fmt, &min, &max);
-	if (n < min || n > max) {
-		return Mode_Arity(n, min, max);
+	if (!Mode_Arity(n, min, max)) {
+		return 0;
 	}
 	for (int i = 0; i < n; i++) {
 		p[i] = &a[i];
@@ -4228,4 +4222,74 @@ PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **n
 	}
 	Native_SetNone(&out);
 	return Mode_KwOut(a, n, entry(a, n, &out), &out);
+}
+
+/* ---- the native entries of stage 3, batch A2b (optional arguments, adapters on Python objects) ---- */
+
+byte Mode_Arity(int n, int min, int max) {
+	if (n >= min && n <= max) {
+		return 1;
+	}
+	if (min == max) {
+		return Port_Arity(n, min);
+	}
+	/* the TypeError of PyArg_ParseTuple (and of PyArg_ParseTupleAndKeywords without keywords) */
+	int m = n < min ? min : max;
+	return Native_Raise(NE_TYPE, "function requires %s %d argument%s; %d given", n < min ? "at least" : "at most", m,
+		m == 1 ? "" : "s", n);
+}
+
+int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **a) {
+	PyObject *o[11] = { NULL };
+	char fmt[16];
+	int k = 0, n = 0;
+	CHECK(min >= 0 && min <= max && max <= 11);
+	for (int i = 0; i < max; i++) {
+		if (i == min) {
+			fmt[k++] = '|';
+		}
+		fmt[k++] = 'O';
+	}
+	fmt[k] = 0;
+	if (!PyArg_ParseTuple(args, fmt, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7], &o[8], &o[9], &o[10])) {
+		return -1;
+	}
+	/* max values one after the other, those not given None */
+	*a = max ? Mode_V(t) : NULL;
+	for (int i = 1; i < max; i++) {
+		Mode_V(t);
+	}
+	for (; n < max && o[n]; n++) {
+		Native_Arg(o[n], &(*a)[n]);
+	}
+	return n;
+}
+
+/* the adapter fn or kwfn on the arguments as Python values, its result into out */
+static byte Mode_PyCall(PyCFunction fn, PyCFunctionWithKeywords kwfn, const nativeVal_t *a, int n, nativeVal_t *out) {
+	PyObject *args = PyTuple_New(n);
+	for (int i = 0; args && i < n; i++) {
+		PyObject *o = Native_ToPy(&a[i]);
+		if (!o) {
+			Py_DECREF(args);
+			return 0;
+		}
+		PyTuple_SET_ITEM(args, i, o);
+	}
+	PyObject *r = !args ? NULL : fn ? fn(NULL, args) : kwfn(NULL, args, NULL);
+	Py_XDECREF(args);
+	if (!r) {
+		return 0;
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_PyEntry(PyCFunction fn, const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_PyCall(fn, NULL, a, n, out);
+}
+
+byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_PyCall(NULL, fn, a, n, out);
 }

@@ -235,14 +235,14 @@ static byte Traffic_InitN(void) {
 }
 
 /* the adapters and their entries (no arguments: the arity of the script's functions is not checked, as the port did) */
-MODE_EFN(Traffic_SetPath, Traffic_SetPathN())
-MODE_EFN(Traffic_ResetPath, Traffic_ResetPathN())
-MODE_EFN(Traffic_InitAIProfiles, Traffic_InitAIProfilesN())
-MODE_EFN(Traffic_MakeTrafic, Traffic_Make("Traffic"))
-MODE_EFN(Traffic_InitTraffic, Traffic_InitTrafficN())
-MODE_EFN(Traffic_OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPoliceN())
-MODE_EFN(Traffic_InitCivilTraffic, Traffic_InitCivilTrafficN())
-MODE_EFN(Traffic_Init, Traffic_InitN())
+MODE_FNANY(Traffic, SetPath, Traffic_SetPathN())
+MODE_FNANY(Traffic, ResetPath, Traffic_ResetPathN())
+MODE_FNANY(Traffic, InitAIProfiles, Traffic_InitAIProfilesN())
+MODE_FNANY(Traffic, MakeTrafic, Traffic_Make("Traffic"))
+MODE_FNANY(Traffic, InitTraffic, Traffic_InitTrafficN())
+MODE_FNANY(Traffic, OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPoliceN())
+MODE_FNANY(Traffic, InitCivilTraffic, Traffic_InitCivilTrafficN())
+MODE_FNANY(Traffic, Init, Traffic_InitN())
 MODE_FN(Traffic, EmptyFunc, 1, 1)
 MODE_FN(Traffic, OnNeedMoreTraffic, 1, Traffic_MakeN(&a[0], "Traffic"))
 MODE_FN(Traffic, OnNeedMoreChasingTraffic, 1, Mode_Import("VehiclesNPC") && Traffic_MakeN(&a[0], "ChasingTraffic"))
@@ -513,10 +513,10 @@ static byte OutPolice_NextWaveN(const nativeVal_t *doprice) {
 /* the adapters and their entries (MakePoli and NextWave check their arguments, the others take any, as the port did) */
 MODE_FN(OutPolice, MakePoli, 1, OutPolice_MakePoliN(&a[0]))
 
-MODE_EFN(OutPolice_InitShips, OutPolice_InitShipsN())
-MODE_EFN(OutPolice_InitWaves, OutPolice_InitWavesN())
-MODE_EFN(OutPolice_InitAIProfiles, OutPolice_InitAIProfilesN())
-MODE_EFN(OutPolice_Init, OutPolice_InitN())
+MODE_FNANY(OutPolice, InitShips, OutPolice_InitShipsN())
+MODE_FNANY(OutPolice, InitWaves, OutPolice_InitWavesN())
+MODE_FNANY(OutPolice, InitAIProfiles, OutPolice_InitAIProfilesN())
+MODE_FNANY(OutPolice, Init, OutPolice_InitN())
 
 /* NextWave(doprice), doprice optional */
 static byte OutPolice_NextWave_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -589,8 +589,8 @@ static byte InPolice_InitN(void) {
 
 MODE_FN(InPolice, Include, 1, InPolice_IncludeN(&a[0]))
 
-MODE_EFN(InPolice_SetGVars, InPolice_SetGVarsN())
-MODE_EFN(InPolice_Init, InPolice_InitN())
+MODE_FNANY(InPolice, SetGVars, InPolice_SetGVarsN())
+MODE_FNANY(InPolice, Init, InPolice_InitN())
 
 PyMethodDef g_InPoliceMethods[] = {
 	{ "Include", InPolice_Include, 1, NULL },
