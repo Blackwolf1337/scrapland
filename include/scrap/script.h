@@ -636,7 +636,8 @@ extern PyMethodDef g_MetroMethods[];
 extern PyMethodDef g_ChallengeMethods[];
 /* the options of a challenge against foe of the kind type ("Race", "Combat") on the entity ch, with the rewards or
  * the lives they cost (Challenge.SetChallengeOptions, PhoneCab.SetRevengeOptions): 0 with the error set */
-byte Challenge_SetOptions(PyObject *ch, PyObject *type, PyObject *foe);
+struct nativeVal_s;
+byte Challenge_SetOptions(const struct nativeVal_s *ch, const struct nativeVal_s *type, const struct nativeVal_s *foe);
 /* the missions (issue #2 step 8a): the alarm and the news panels (src/game/Script/Alarm.c), the doors, elevators and
  * teleporters (src/game/Script/Doors.c), the items and the crazy wind (src/game/Script/MisItems.c), the mission flow
  * (src/game/Script/MissionsFuncs.c) */
