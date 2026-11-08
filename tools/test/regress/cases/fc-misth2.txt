@@ -102,6 +102,9 @@ __import__('MissionsFuncs').SinglePlayerDeath()
 Scrap.GetSaveVar('Char')
 !sleep 6
 __import__('Init')._r
+# accepted C run (baselines/fc-misth2.txt.accepted.xz), next two lines: eval('(') in SinglePlayerDeath gives the 1.5.2
+# parser's SyntaxError ('unexpected EOF while parsing', (None, 1, 1, '(')) in the pack and the plain 'invalid syntax'
+# of Script_EvalValue in C. The game never writes such a text, and the parser goes at stage 7: not ported.
 Scrap.SetSaveVar('Conversor.AvailableChars', "(")
 __import__('MissionsFuncs').SinglePlayerDeath()
 # CharMissionDialog

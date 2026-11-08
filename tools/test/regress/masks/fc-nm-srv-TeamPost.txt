@@ -1,0 +1,4 @@
+# line 18: ServerTakeFlag draws the next zone with Scrap.Rand (GetRndZone; the C calls Scrap_RandRange through the
+# seam, the line records nothing): the pack runs show zones 1 to 4 too (2026-11-06: 2, 1, 2; 610M: 2, 4, 4; RTX: 3, 3, 3)
+sub "F'\d+','(net#)'" => "F'ZONE','\1'"
+sub \('AcZone', '\d+'\) => ('AcZone', ZONE)

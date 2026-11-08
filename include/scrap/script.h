@@ -269,6 +269,11 @@ byte Script_Hook(const char *module, const char *target, const char *name, const
  * of a script module. A new reference, NULL with the error set */
 PyObject *Script_EvalValue(PyObject *globals, PyObject *text);
 PyObject *Script_EvalIn(const char *module, PyObject *text);
+/* the rest of Script_EvalValue for a text s (leading blanks skipped) that the literal reader did not take: a name
+ * chain as eval runs it (its value or NameError), else Script_NotRead's SyntaxError, for two names or numbers with
+ * blanks between them with the 1.5.2 parser's message and position. Also used by Native_EvalText. NULL with the error
+ * set, or a new reference */
+PyObject *Script_EvalOther(PyObject *globals, const char *s);
 /* the error for a text of Python that no C reader takes and nothing runs: SyntaxError "invalid syntax" (the last
  * line of the traceback eval or exec print for it), noted in the gate log (SCRAP_PY_GATE, event "notread", where
  * names the reader); NULL */
