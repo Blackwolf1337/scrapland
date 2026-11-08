@@ -13,7 +13,10 @@
  *                  and, or, "a if c else b" and lambda (parameters with defaults, *args, **kw).
  * Names are found in the locals of the lambdas around them (nested lambdas see the parameters of the outer ones),
  * then in the globals the line runs in (__globals__ is that dict itself), the builtins, the channel's own functions (tc_..., below), the loaded
- * modules, else the module is imported (a name nothing gives raises NameError as Python does).
+ * modules, else the module is imported (a name nothing gives raises NameError as Python does). The variables of a pack
+ * module (its attributes, and its globals in the lines "in <module>" runs) are read, set and deleted through the
+ * registry of the module variables (include/scrap/modvars.h), with the errors of the module object of 1.5.2; the
+ * builtins getattr, setattr, hasattr and delattr are twins that do the same.
  * The operators and comparisons do what the byte code of Python 1.5.2 does (the abstract object calls of ceval.c).
  *
  * The channel's own functions, for the helpers of the regression cases (tools/test/regress/channel/<name>.tc):
@@ -39,6 +42,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/modvars.h"
 #include "scrap/pyfunction.h"
 #include "scrap/script.h"
 #include "testchannel.h"
@@ -105,6 +109,8 @@ typedef struct tcScope {
 	PyObject *locals;	/* the parameters of the lambda that runs, NULL at the top level */
 	PyObject *chain;	/* the locals of the lambdas around it: (dict, chain) tuples, NULL at the end */
 	PyObject *globals;
+	byte inMod;		/* the globals are those of a pack module: its variables through the registry (mv) */
+	modVarRef_t mv;
 } tcScope;
 
 static int tx_depth;
@@ -1119,12 +1125,18 @@ PyObject *TcX_Main(void) {
 }
 
 static PyObject *TP_Function(const char *name);
+static PyObject *TX_AttrTwin(const char *name, PyObject *builtin);
 
-/* a name the scopes of the line do not give: the builtins, the channel's functions, the modules (new reference) */
+/* a name the scopes of the line do not give: the builtins (getattr, setattr, hasattr and delattr as the twins that
+ * reach the pack modules through the registry), the channel's functions, the modules (new reference) */
 static PyObject *TX_Global(const char *name) {
 	PyObject *b = PyImport_AddModule("__builtin__");
 	PyObject *v = b ? PyDict_GetItemString(PyModule_GetDict(b), (char *)name) : NULL;
+	PyObject *twin = v ? TX_AttrTwin(name, v) : NULL;
 
+	if (twin) {
+		return twin;
+	}
 	if (!v) {
 		if (!strncmp(name, "tc_", 3) && (v = TP_Function(name)) != NULL) {
 			return v;
@@ -1166,13 +1178,29 @@ static PyObject *X_Name(PyObject *name, tcScope *s) {
 		v = PyDict_GetItem(PyTuple_GetItem(c, 0), name);
 	}
 	if (!v) {
-		v = PyDict_GetItem(s->globals, name);
+		v = s->inMod ? ModVar_Get(&s->mv, PyString_AsString(name)) : PyDict_GetItem(s->globals, name);
 	}
 	if (v) {
 		Py_INCREF(v);
 		return v;
 	}
 	return TX_Global(PyString_AsString(name));
+}
+
+/* name = v in the scope: the locals of a lambda, else the globals (a variable of a pack module through the registry) */
+static byte X_SetName(tcScope *s, PyObject *name, PyObject *v) {
+	if (!s->locals && s->inMod) {
+		return ModVar_Set(&s->mv, PyString_AsString(name), v) == 0;
+	}
+	return PyDict_SetItem(s->locals ? s->locals : s->globals, name, v) == 0;
+}
+
+/* the scope of the top level of a line or of a lambda that runs in globals */
+static void X_Scope(tcScope *s, PyObject *locals, PyObject *chain, PyObject *globals) {
+	s->locals = locals;
+	s->chain = chain;
+	s->globals = globals;
+	s->inMod = ModVar_OfDict(globals, &s->mv);
 }
 
 /* ---- running ---- */
@@ -1192,8 +1220,28 @@ static void X_NoError(void) {
 	}
 }
 
+/* o.name: the variable of a pack module through the registry, else the attribute of the object */
+static PyObject *TX_GetAttr(PyObject *o, PyObject *name) {
+	modVarRef_t mv;
+
+	if (ModVar_Of(o, &mv)) {
+		return ModVar_Attr(&mv, PyString_AsString(name));
+	}
+	return PyObject_GetAttr(o, name);
+}
+
+/* o.name = v (v NULL: del o.name), the variable of a pack module through the registry: 0, -1 with the error set */
+static int TX_SetAttr(PyObject *o, PyObject *name, PyObject *v) {
+	modVarRef_t mv;
+
+	if (ModVar_Of(o, &mv)) {
+		return ModVar_SetAttr(&mv, PyString_AsString(name), v);
+	}
+	return PyObject_SetAttr(o, name, v);
+}
+
 static PyObject *X_GetAttr(PyObject *o, PyObject *name) {
-	PyObject *v = PyObject_GetAttr(o, name);
+	PyObject *v = TX_GetAttr(o, name);
 
 	if (!v) {
 		X_NoError();
@@ -1213,6 +1261,85 @@ static byte X_Index(PyObject *v, int none, int *out) {
 	}
 	*out = (int)PyInt_AsLong(v);
 	return 1;
+}
+
+/* getattr, hasattr, setattr and delattr of __builtin__ (bltinmodule.c of 1.5.2: the same argument formats, errors and
+ * results), the variables of the pack modules through the registry */
+static PyObject *TB_GetAttr(PyObject *self, PyObject *args) {
+	PyObject *o, *name, *dflt = NULL;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OS|O:getattr", &o, &name, &dflt)) {
+		return NULL;
+	}
+	PyObject *v = TX_GetAttr(o, name);
+	if (!v && dflt) {
+		PyErr_Clear();
+		Py_INCREF(dflt);
+		v = dflt;
+	}
+	return v;
+}
+
+static PyObject *TB_HasAttr(PyObject *self, PyObject *args) {
+	PyObject *o, *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OS:hasattr", &o, &name)) {
+		return NULL;
+	}
+	PyObject *v = TX_GetAttr(o, name);
+	if (!v) {
+		PyErr_Clear();
+		Py_INCREF(Py_False);
+		return Py_False;
+	}
+	Py_DECREF(v);
+	Py_INCREF(Py_True);
+	return Py_True;
+}
+
+static PyObject *TB_SetAttr(PyObject *self, PyObject *args) {
+	PyObject *o, *name, *value;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OSO:setattr", &o, &name, &value) || TX_SetAttr(o, name, value) != 0) {
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject *TB_DelAttr(PyObject *self, PyObject *args) {
+	PyObject *o, *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OS:delattr", &o, &name) || TX_SetAttr(o, name, NULL) != 0) {
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyMethodDef tx_attrTwins[] = {
+	{ "getattr", TB_GetAttr, METH_VARARGS, NULL },
+	{ "hasattr", TB_HasAttr, METH_VARARGS, NULL },
+	{ "setattr", TB_SetAttr, METH_VARARGS, NULL },
+	{ "delattr", TB_DelAttr, METH_VARARGS, NULL },
+};
+
+/* the twin of the builtin function of that name (with its doc), NULL for every other name */
+static PyObject *TX_AttrTwin(const char *name, PyObject *builtin) {
+	if (!PyCFunction_Check(builtin)) {
+		return NULL;
+	}
+	for (size_t i = 0; i < sizeof(tx_attrTwins) / sizeof(tx_attrTwins[0]); i++) {
+		if (!strcmp(name, tx_attrTwins[i].ml_name)) {
+			tx_attrTwins[i].ml_doc = ((PyCFunctionObject *)builtin)->m_ml->ml_doc;
+			return PyCFunction_New(&tx_attrTwins[i], NULL);
+		}
+	}
+	return NULL;
 }
 
 /* the bounds of a slice node: 0 with the error set */
@@ -1570,7 +1697,8 @@ static PyObject *TX_LambdaCall(PyObject *self, PyObject *args, PyObject *kw) {
 		}
 		PyDict_SetItem(locals, name, PyTuple_GetItem(defaults, d));
 	}
-	tcScope s = { locals, chain == Py_None ? NULL : chain, PyTuple_GetItem(self, 2) };
+	tcScope s;
+	X_Scope(&s, locals, chain == Py_None ? NULL : chain, PyTuple_GetItem(self, 2));
 	tcTree *was = tx_tree;
 	tx_tree = f->t;
 	v = X_Eval(x->a, &s);
@@ -1619,11 +1747,11 @@ static byte X_Store(tcNode *t, PyObject *v, tcScope *s) {
 
 	switch (t->kind) {
 	case X_NAME:
-		return PyDict_SetItem(s->locals ? s->locals : s->globals, t->obj, v) == 0;
+		return X_SetName(s, t->obj, v);
 	case X_ATTR:
 		o = X_Eval(t->a, s);
 		if (o) {
-			r = PyObject_SetAttr(o, t->obj, v);
+			r = TX_SetAttr(o, t->obj, v);
 			if (r != 0) {
 				X_NoError();
 			}
@@ -1672,7 +1800,8 @@ static byte X_Delete(tcNode *t, tcScope *s) {
 
 	switch (t->kind) {
 	case X_NAME:
-		if (PyDict_DelItem(s->locals ? s->locals : s->globals, t->obj) != 0) {
+		if ((!s->locals && s->inMod ? ModVar_Del(&s->mv, PyString_AsString(t->obj)) :
+			PyDict_DelItem(s->locals ? s->locals : s->globals, t->obj)) != 0) {
 			PyErr_Clear();
 			PyErr_SetObject(PyExc_NameError, t->obj);
 			return 0;
@@ -1680,7 +1809,7 @@ static byte X_Delete(tcNode *t, tcScope *s) {
 		return 1;
 	case X_ATTR:
 		o = X_Eval(t->a, s);
-		r = o ? PyObject_SetAttr(o, t->obj, NULL) : -1;
+		r = o ? TX_SetAttr(o, t->obj, NULL) : -1;
 		Py_XDECREF(o);
 		return r == 0;
 	case X_INDEX:
@@ -1736,9 +1865,9 @@ static byte X_Exec(tcNode *st, tcScope *s, PyObject **value) {
 		for (int i = 0; i < PyTuple_Size(st->obj); i++) {
 			PyObject *name = PyTuple_GetItem(st->obj, i);
 			PyObject *m = PyImport_ImportModule(PyString_AsString(name));
-			int r = m ? PyDict_SetItem(s->locals ? s->locals : s->globals, name, m) : -1;
+			byte ok = m && X_SetName(s, name, m);
 			Py_XDECREF(m);
-			if (r != 0) {
+			if (!ok) {
 				return 0;
 			}
 		}
@@ -1765,8 +1894,10 @@ static tcNode *TX_Read(const char *line, tcTree **tree) {
 /* runs prog of tree in globals: 0 with the error set; *last the value of a last expression statement or NULL */
 static byte TX_RunTree(tcTree *tree, tcNode *prog, PyObject *globals, PyObject **last) {
 	tcTree *was = tx_tree;
-	tcScope s = { NULL, NULL, globals };
+	tcScope s;
 	byte ok = 1;
+
+	X_Scope(&s, NULL, NULL, globals);
 
 	tx_tree = tree;
 	if (last) {
@@ -1813,6 +1944,23 @@ PyObject *TcX_Statement(const char *line) {
 	return v;
 }
 
+/* the global "result" of globals (a variable of a pack module through the registry), borrowed; del: removed */
+static PyObject *TX_Result(PyObject *globals, byte del) {
+	modVarRef_t mv;
+	byte inMod = ModVar_OfDict(globals, &mv);
+	PyObject *v = inMod ? ModVar_Get(&mv, "result") : PyDict_GetItemString(globals, "result");
+
+	if (v && del) {
+		if (inMod) {
+			ModVar_Del(&mv, "result");
+		} else {
+			PyDict_DelItemString(globals, "result");
+		}
+		v = NULL;
+	}
+	return v;
+}
+
 void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet) {
 	tcTree *tree;
 	tcNode *prog = TX_Read(line, &tree);
@@ -1820,13 +1968,13 @@ void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet) {
 	byte ok = 0;
 
 	if (prog) {
-		if (!(prog->flags & 1) && PyDict_GetItemString(globals, "result")) {
-			PyDict_DelItemString(globals, "result");
+		if (!(prog->flags & 1)) {
+			TX_Result(globals, 1);
 		}
 		ok = TX_RunTree(tree, prog, globals, &v);
 		if (ok && !(prog->flags & 1)) {
 			Py_XDECREF(v);
-			v = PyDict_GetItemString(globals, "result");
+			v = TX_Result(globals, 0);
 			Py_XINCREF(v);
 		}
 	}
@@ -2043,8 +2191,8 @@ static PyObject *TP_Swap(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "OSOO", &o, &name, &value, &f)) {
 		return NULL;
 	}
-	PyObject *old = PyObject_GetAttr(o, name);
-	if (!old || PyObject_SetAttr(o, name, value) != 0) {
+	PyObject *old = TX_GetAttr(o, name);
+	if (!old || TX_SetAttr(o, name, value) != 0) {
 		Py_XDECREF(old);
 		return NULL;
 	}
@@ -2055,7 +2203,7 @@ static PyObject *TP_Swap(PyObject *self, PyObject *args) {
 	}
 	PyObject *t, *val, *tb;
 	PyErr_Fetch(&t, &val, &tb);
-	if (PyObject_SetAttr(o, name, old) != 0) {
+	if (TX_SetAttr(o, name, old) != 0) {
 		PyErr_Clear();
 	}
 	PyErr_Restore(t, val, tb);
