@@ -301,11 +301,6 @@ PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships
 	LV_WHOLE(1, LvN_AcShips(module, ships));
 }
 
-PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *vars) {
-	(void)module;
-	LV_WHOLE(0, LvN_Profile(vars, out));
-}
-
 byte LvN_StartPos(const double (*pos)[4], int n) {
 	nativeVal_t empty;
 	Native_SetEmpty(&empty, NV_LIST);
