@@ -780,6 +780,71 @@ PORT_DECL(Scene, EndOutDoorScene) /* 0 */
 	PORT_DEF(Scene, Play, Scene_Play) \
 	PORT_DEF(Scene, EndOutDoorScene, Scene_EndOutDoorScene)
 
+/* ShipEdit.c */
+PORT_DECL(ShipEdit, IsEditingMultiplayer) /* 0 */
+PORT_DECL(ShipEdit, RustyOnPlatform) /* 1 */
+PORT_DECL(ShipEdit, PointObjectTo) /* 2 */
+PORT_DECL(ShipEdit, LaunchPlatformAnim) /* 0 */
+PORT_DECL(ShipEdit, ChangeShip) /* 3 */
+PORT_DECL(ShipEdit, VerifyChangeShip) /* 3 */
+PORT_DECL(ShipEdit, DoorInitializator) /* 1 */
+PORT_DECL(ShipEdit, ObjInitializator) /* 2 */
+PORT_DECL(ShipEdit, EndMoveEngine) /* 1 */
+PORT_DECL(ShipEdit, RotateShip) /* 1 */
+PORT_DECL(ShipEdit, LoopRotateShip) /* 1 */
+PORT_DECL(ShipEdit, StartRotateLoop) /* 0 */
+PORT_DECL(ShipEdit, StopRotateLoop) /* 0 */
+PORT_DECL(ShipEdit, AddShipEditTabs) /* 2 */
+PORT_DECL(ShipEdit, AddDefaultPanelContent) /* 2 */
+PORT_DECL(ShipEdit, ChangeTabLeft) /* 2 */
+PORT_DECL(ShipEdit, ChangeTabRight) /* 2 */
+PORT_DECL(ShipEdit, ChangeTab) /* ? */
+PORT_DECL(ShipEdit, CleanEditedShips) /* 0 */
+PORT_DECL(ShipEdit, CreatePlayerShip) /* 0 */
+PORT_DECL(ShipEdit, SetupForEdit) /* 1 */
+PORT_DECL(ShipEdit, SaveShipInfoInSaveVar) /* 2 */
+PORT_DECL(ShipEdit, SaveShipInfoInGVar) /* 2 */
+PORT_DECL(ShipEdit, CreateShipFromSaveVar) /* ? */
+PORT_DECL(ShipEdit, AssignShip) /* 2 */
+PORT_DECL(ShipEdit, SetupEdit) /* 1 */
+PORT_DECL(ShipEdit, FreeEdit) /* 0 */
+PORT_DECL(ShipEdit, EnterEditShipMenu) /* 2 */
+PORT_DECL(ShipEdit, ExitEditShipMenu) /* 2 */
+PORT_DECL(ShipEdit, SaveShip) /* 1 */
+PORT_DECL(ShipEdit, ShowSpecialHint) /* 0 */
+#define PORTS_ShipEdit \
+	PORT_DEF(ShipEdit, IsEditingMultiplayer, SE_IsEditingMultiplayer) \
+	PORT_DEF(ShipEdit, RustyOnPlatform, SE_RustyOnPlatform) \
+	PORT_DEF(ShipEdit, PointObjectTo, SE_PointObjectTo) \
+	PORT_DEF(ShipEdit, LaunchPlatformAnim, SE_LaunchPlatformAnim) \
+	PORT_DEF(ShipEdit, ChangeShip, SE_ChangeShip) \
+	PORT_DEF(ShipEdit, VerifyChangeShip, SE_VerifyChangeShip) \
+	PORT_DEF(ShipEdit, DoorInitializator, SE_DoorInitializator) \
+	PORT_DEF(ShipEdit, ObjInitializator, SE_ObjInitializator) \
+	PORT_DEF(ShipEdit, EndMoveEngine, SE_EndMoveEngine) \
+	PORT_DEF(ShipEdit, RotateShip, SE_RotateShip) \
+	PORT_DEF(ShipEdit, LoopRotateShip, SE_LoopRotateShip) \
+	PORT_DEF(ShipEdit, StartRotateLoop, SE_StartRotateLoop) \
+	PORT_DEF(ShipEdit, StopRotateLoop, SE_StopRotateLoop) \
+	PORT_DEF(ShipEdit, AddShipEditTabs, SE_AddShipEditTabs) \
+	PORT_DEF(ShipEdit, AddDefaultPanelContent, SE_AddDefaultPanelContent) \
+	PORT_DEF(ShipEdit, ChangeTabLeft, SE_ChangeTabLeft) \
+	PORT_DEF(ShipEdit, ChangeTabRight, SE_ChangeTabRight) \
+	PORT_DEF(ShipEdit, ChangeTab, SE_ChangeTab) \
+	PORT_DEF(ShipEdit, CleanEditedShips, SE_CleanEditedShips) \
+	PORT_DEF(ShipEdit, CreatePlayerShip, SE_CreatePlayerShip) \
+	PORT_DEF(ShipEdit, SetupForEdit, SE_SetupForEdit) \
+	PORT_DEF(ShipEdit, SaveShipInfoInSaveVar, SE_SaveShipInfoInSaveVar) \
+	PORT_DEF(ShipEdit, SaveShipInfoInGVar, SE_SaveShipInfoInGVar) \
+	PORT_DEF(ShipEdit, CreateShipFromSaveVar, SE_CreateShipFromSaveVar) \
+	PORT_DEF(ShipEdit, AssignShip, SE_AssignShip) \
+	PORT_DEF(ShipEdit, SetupEdit, SE_SetupEdit) \
+	PORT_DEF(ShipEdit, FreeEdit, SE_FreeEdit) \
+	PORT_DEF(ShipEdit, EnterEditShipMenu, SE_EnterEditShipMenu) \
+	PORT_DEF(ShipEdit, ExitEditShipMenu, SE_ExitEditShipMenu) \
+	PORT_DEF(ShipEdit, SaveShip, SE_SaveShip) \
+	PORT_DEF(ShipEdit, ShowSpecialHint, SE_ShowSpecialHint)
+
 /* ShipMaker.c */
 PORT_DECL(ShipMaker, SetShipPrice) /* 2 */
 PORT_DECL(ShipMaker, GetShipPrice) /* 1 */

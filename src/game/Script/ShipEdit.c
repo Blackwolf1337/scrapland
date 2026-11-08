@@ -2038,124 +2038,79 @@ static byte Se_ShowSpecialHint(nativeVal_t *out) {
 
 /* ---- adapters: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
 
-/* f() with a result or None */
-#define SE_0(name, call) \
-	static PyObject *SE_##name(PyObject *self, PyObject *args) { \
-		nativeVal_t out = { 0 }; \
-		(void)self; \
-		(void)out; \
-		if (!PyArg_ParseTuple(args, "")) { \
-			return NULL; \
-		} \
-		return Mode_Return(call, &out); \
-	}
-/* f(a, b, c) of objects (fmt "O", "OO" or "OOO"), the result in out */
-#define SE_O(name, fmt, call) \
-	static PyObject *SE_##name(PyObject *self, PyObject *args) { \
-		PyObject *o[3] = { NULL, NULL, NULL }; \
-		nativeVal_t a[3] = { { 0 }, { 0 }, { 0 } }, out = { 0 }; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, fmt, &o[0], &o[1], &o[2])) { \
-			return NULL; \
-		} \
-		for (int i = 0; i < 3; i++) { \
-			if (o[i]) { \
-				Native_Arg(o[i], &a[i]); \
-			} \
-		} \
-		byte ok = call; \
-		for (int i = 0; i < 3; i++) { \
-			Native_Free(&a[i]); \
-		} \
-		return Mode_Return(ok, &out); \
-	}
-/* f(id, a) with id an int and a an object ("iO"), or f(id) ("i") */
-#define SE_I(name, fmt, call) \
-	static PyObject *SE_##name(PyObject *self, PyObject *args) { \
-		PyObject *o = NULL; \
-		nativeVal_t a = { 0 }; \
-		int id; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, fmt, &id, &o)) { \
-			return NULL; \
-		} \
-		if (o) { \
-			Native_Arg(o, &a); \
-		} \
-		byte ok = call; \
-		Native_Free(&a); \
-		return Mode_Result(ok); \
-	}
+MODE_FN(SE, IsEditingMultiplayer, 0, Se_IsEditingMultiplayer(out))
+MODE_FN(SE, RustyOnPlatform, 1, Se_RustyOnPlatform(&a[0], out))
+MODE_FN(SE, PointObjectTo, 2, Se_PointTo(&a[0], &a[1]))
+MODE_FN(SE, LaunchPlatformAnim, 0, Se_LaunchPlatformAnim())
+MODE_FN(SE, ChangeShip, 3, Se_ChangeShip(&a[0]))
+MODE_FN(SE, VerifyChangeShip, 3, Se_VerifyChangeShip(&a[0]))
+MODE_FN(SE, DoorInitializator, 1, Se_DoorInitializator(&a[0]))
+MODE_FN(SE, ObjInitializator, 2, Se_ObjInitializator(&a[0], &a[1]))
+MODE_FN(SE, EndMoveEngine, 1, Se_EndMoveEngine(&a[0]))
+MODE_FN(SE, RotateShip, 1, Se_RotateShip(&a[0]))
+MODE_FN(SE, LoopRotateShip, 1, Se_LoopRotate(&a[0]))
+MODE_FN(SE, StartRotateLoop, 0, Se_StartRotate())
+MODE_FN(SE, StopRotateLoop, 0, Se_StopRotate())
+MODE_IFN(SE_AddShipEditTabs, 2, Se_AddShipEditTabs(id, &a[1]))
+MODE_IFN(SE_AddDefaultPanelContent, 2, Se_AddDefaultPanelContent(id, &a[1]))
+MODE_FN(SE, ChangeTabLeft, 2, Se_ChangeTabSide(&a[0], &a[1], "Left"))
+MODE_FN(SE, ChangeTabRight, 2, Se_ChangeTabSide(&a[0], &a[1], "Right"))
+MODE_FN(SE, CleanEditedShips, 0, Se_Clean())
+MODE_FN(SE, CreatePlayerShip, 0, Se_CreatePlayerShip())
+MODE_FN(SE, SetupForEdit, 1, Se_SetupForEdit(&a[0]))
+MODE_FN(SE, SaveShipInfoInSaveVar, 2, Se_SaveShip(&a[0], &a[1], 1))
+MODE_FN(SE, SaveShipInfoInGVar, 2, Se_SaveShip(&a[0], &a[1], 0))
+MODE_FN(SE, AssignShip, 2, Se_AssignShip(&a[0], &a[1]))
+MODE_FN(SE, SetupEdit, 1, Se_SetupEdit())
+MODE_FN(SE, FreeEdit, 0, Se_FreeEdit())
+MODE_IFN(SE_EnterEditShipMenu, 2, Se_EnterEditShipMenu(id))
+MODE_IFN(SE_ExitEditShipMenu, 2, Se_ExitEditShipMenu(id, &a[1]))
+MODE_IFN(SE_SaveShip, 1, Se_SaveShipAll(id))
+MODE_FN(SE, ShowSpecialHint, 0, Se_ShowSpecialHint(out))
 
-SE_0(IsEditingMultiplayer, Se_IsEditingMultiplayer(&out))
-SE_O(RustyOnPlatform, "O", Se_RustyOnPlatform(&a[0], &out))
-SE_O(PointObjectTo, "OO", (Native_SetNone(&out), Se_PointTo(&a[0], &a[1])))
-SE_0(LaunchPlatformAnim, (Native_SetNone(&out), Se_LaunchPlatformAnim()))
-SE_O(ChangeShip, "OOO", (Native_SetNone(&out), Se_ChangeShip(&a[0])))
-SE_O(VerifyChangeShip, "OOO", (Native_SetNone(&out), Se_VerifyChangeShip(&a[0])))
-SE_O(DoorInitializator, "O", (Native_SetNone(&out), Se_DoorInitializator(&a[0])))
-SE_O(ObjInitializator, "OO", (Native_SetNone(&out), Se_ObjInitializator(&a[0], &a[1])))
-SE_O(EndMoveEngine, "O", (Native_SetNone(&out), Se_EndMoveEngine(&a[0])))
-SE_O(RotateShip, "O", (Native_SetNone(&out), Se_RotateShip(&a[0])))
-SE_O(LoopRotateShip, "O", (Native_SetNone(&out), Se_LoopRotate(&a[0])))
-SE_0(StartRotateLoop, (Native_SetNone(&out), Se_StartRotate()))
-SE_0(StopRotateLoop, (Native_SetNone(&out), Se_StopRotate()))
-SE_I(AddShipEditTabs, "iO", Se_AddShipEditTabs(id, &a))
-SE_I(AddDefaultPanelContent, "iO", Se_AddDefaultPanelContent(id, &a))
-SE_O(ChangeTabLeft, "OO", (Native_SetNone(&out), Se_ChangeTabSide(&a[0], &a[1], "Left")))
-SE_O(ChangeTabRight, "OO", (Native_SetNone(&out), Se_ChangeTabSide(&a[0], &a[1], "Right")))
-SE_0(CleanEditedShips, (Native_SetNone(&out), Se_Clean()))
-SE_0(CreatePlayerShip, (Native_SetNone(&out), Se_CreatePlayerShip()))
-SE_O(SetupForEdit, "O", (Native_SetNone(&out), Se_SetupForEdit(&a[0])))
-SE_O(SaveShipInfoInSaveVar, "OO", (Native_SetNone(&out), Se_SaveShip(&a[0], &a[1], 1)))
-SE_O(SaveShipInfoInGVar, "OO", (Native_SetNone(&out), Se_SaveShip(&a[0], &a[1], 0)))
-SE_O(AssignShip, "OO", (Native_SetNone(&out), Se_AssignShip(&a[0], &a[1])))
-SE_O(SetupEdit, "O", (Native_SetNone(&out), Se_SetupEdit()))
-SE_0(FreeEdit, (Native_SetNone(&out), Se_FreeEdit()))
-SE_I(EnterEditShipMenu, "iO", Se_EnterEditShipMenu(id))
-SE_I(ExitEditShipMenu, "iO", Se_ExitEditShipMenu(id, &a))
-SE_I(SaveShip, "i", Se_SaveShipAll(id))
-SE_0(ShowSpecialHint, Se_ShowSpecialHint(&out))
+/* ChangeTab(id, control, direction=None) */
+static byte SE_ChangeTab_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *control, *direction = NULL;
+	nativeVal_t none = { 0 };
+	int id;
+	(void)out;
+	return Mode_Parse(a, n, "iO|O", &id, &control, &direction) && Se_ChangeTab(id, control, direction ? direction : &none);
+}
 
+/* the adapter: the keywords and the errors of "iO|O", then the entry */
 static PyObject *SE_ChangeTab(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "direction", NULL };
 	PyObject *control, *direction = NULL;
-	nativeVal_t c = { 0 }, d = { 0 };
+	nativeVal_t a[3], out;
 	int id;
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "iO|O", names, &id, &control, &direction)) {
 		return NULL;
 	}
-	Native_Arg(control, &c);
+	Native_SetInt(&a[0], id);
+	Native_Arg(control, &a[1]);
 	if (direction) {
-		Native_Arg(direction, &d);
+		Native_Arg(direction, &a[2]);
 	}
-	byte ok = Se_ChangeTab(id, &c, &d);
-	Native_Free(&c);
-	Native_Free(&d);
-	return Mode_Result(ok);
+	Native_SetNone(&out);
+	return Mode_KwOut(a, direction ? 3 : 2, SE_ChangeTab_E(a, direction ? 3 : 2, &out), &out);
+}
+
+/* CreateShipFromSaveVar(cad, pos, name="") */
+static byte SE_CreateShipFromSaveVarK(const nativeVal_t *const *a, nativeVal_t *out) {
+	nativeVal_t empty;
+	Native_SetStr(&empty, "");
+	return Se_CreateShipFromSaveVar(a[0], a[1], a[2] ? a[2] : &empty, out);
+}
+
+static byte SE_CreateShipFromSaveVar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, "OO|O", SE_CreateShipFromSaveVarK, out);
 }
 
 static PyObject *SE_CreateShipFromSaveVar(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "cad", "pos", "name", NULL };
-	PyObject *cad, *pos, *name = NULL;
-	nativeVal_t a = { 0 }, b = { 0 }, c = { 0 }, out = { 0 };
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &cad, &pos, &name)) {
-		return NULL;
-	}
-	Native_Arg(cad, &a);
-	Native_Arg(pos, &b);
-	if (name) {
-		Native_Arg(name, &c);
-	} else {
-		Native_SetStr(&c, "");
-	}
-	byte ok = Se_CreateShipFromSaveVar(&a, &b, &c, &out);
-	Native_Free(&a);
-	Native_Free(&b);
-	Native_Free(&c);
-	return Mode_Return(ok, &out);
+	return Mode_KwCall(args, kw, "OO|O", names, SE_CreateShipFromSaveVarK);
 }
 
 PyMethodDef g_ShipEditMethods[] = {
@@ -2193,3 +2148,5 @@ PyMethodDef g_ShipEditMethods[] = {
 	{ "ShowSpecialHint", SE_ShowSpecialHint, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(ShipEdit)
