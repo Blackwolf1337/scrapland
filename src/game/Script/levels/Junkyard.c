@@ -19,9 +19,10 @@
  *
  * Direct calls (stage 3): the other ports (Elevator, OutMap, ShipEdit, HangarTab, Menu, Chars, SaveGame, MissionsFuncs,
  * Scene, CreditsText, SputnikSound) and the C functions of the three modules go through their refs (PORT_CALL,
- * PORT_LCALL, PORT_LOWN). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6), the scene
- * tables, apply and the scheduled calls (Mode_Calls, EndOfMission's apply, Mode_AtG, Mode_Schedule of the tutorial
- * steps; OBJLIB 4) and the functions set as callbacks (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5).
+ * PORT_LCALL, PORT_LOWN). The scene tables and EndOfMission's apply call a port's function through its entry
+ * (Mode_Calls, MODE_CBAPPLYSEQ). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6), the
+ * scheduled calls (Mode_AtG, Mode_Schedule of the tutorial steps; OBJLIB 4) and the functions set as callbacks
+ * (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5).
  */
 #include <string.h>
 
@@ -848,12 +849,12 @@ static byte Rusty_EndOfMission(void) {
 		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_GoToOutskirts", "Outskirts")) {
 		return 0;
 	}
-	/* OBJLIB 4: apply(MapShipEdit.UseElevator, Params), the function as the object of the module */
+	/* apply(MapShipEdit.UseElevator, Params): the function of the module (its entry while it is the port's) */
 	PyObject *fn = Script_Attr("MapShipEdit", "UseElevator");
 	if (!fn) {
 		return 0;
 	}
-	byte ok = Mode_G(RF, "Params", &params) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &params);
+	byte ok = Mode_G(RF, "Params", &params) && MODE_CBAPPLYSEQ(fn, &params, NULL);
 	Native_Free(&params);
 	Py_DECREF(fn);
 	return ok;

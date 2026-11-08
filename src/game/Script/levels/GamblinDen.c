@@ -17,9 +17,10 @@
  * Direct calls (stage 3): the other ports (Speech, CharsNPC, Chars, Elevator, MissionsFuncs, Scene, RaceMaker, Menu) and
  * the C functions of the module go through their refs (PORT_CALL, PORT_LOWN, LV_ONEND, LV_COM; the arrange and
  * mercenary talks take the ref of their end function; Map.CreateFixedInit has its entry on Orbit.c's
- * Level_FixedInitN). By name stay the call tables of the scenes and apply (OBJLIB 4), the scheduled calls
- * (Mode_Later, Mode_LaterV, the remote message of LaunchDeepThroatMessage, OBJLIB 4) and the functions set as
- * callbacks (CallbackFunc, AfterBrowseNPC, EndOfSceneCallback, DialogController, SpeechRoutines; OBJLIB 5).
+ * Level_FixedInitN). The call tables of the scenes and apply call a port's function through its entry (Mode_Calls,
+ * Mode_ApplyNext). By name stay the scheduled calls (Mode_Later, Mode_LaterV, the remote message of
+ * LaunchDeepThroatMessage, OBJLIB 4) and the functions set as callbacks (CallbackFunc, AfterBrowseNPC,
+ * EndOfSceneCallback, DialogController, SpeechRoutines; OBJLIB 5).
  */
 #include <string.h>
 
@@ -2409,7 +2410,6 @@ static const gdMerc_t stooges_mercB = { "Mission_ThreeStooges", "Mission_FirstCo
 /* SetNextMission(CharName): convinced; the mercenaries no targets, the next mission of NextMissionData */
 static byte Stooges_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mercs[] = { "MercenaryA_Smartie", "MercenaryB_Dumber", "MercenaryC_Brutus" };
-	nativeVal_t fn = { 0 }, data = { 0 };
 	(void)out;
 	if (!Mode_Import("Speech") || !LvN_PutI(TS, "alreadyConvinced", 1) || !PORT_CALL(Speech, RestoreState, NULL, "v", &a[0])) {
 		return 0;
@@ -2419,14 +2419,7 @@ static byte Stooges_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 	}
-	/* apply(MissionsFuncs.SetNextMission, NextMissionData) through __builtin__.apply (OBJLIB 4: the arguments are a list
-	 * of the mission's data) */
-	Native_SetNone(&data);
-	byte ok = LvN_ModGet("MissionsFuncs", "SetNextMission", &fn) && Mode_G(TS, "NextMissionData", &data) &&
-		LV_CALL("__builtin__", "apply", NULL, "vv", &fn, &data);
-	Native_Free(&fn);
-	Native_Free(&data);
-	return ok && Mode_MMDesc("Mission_FollowStupidMerc_MissionText1", 1);
+	return Mode_ApplyNext(TS) && Mode_MMDesc("Mission_FollowStupidMerc_MissionText1", 1);
 }
 
 /* CreateMercenary?Init(e): the talk of the mercenary in this mission */

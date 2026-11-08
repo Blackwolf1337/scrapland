@@ -25,10 +25,10 @@
  * InTraffic, Items, RaceMaker, Fx, Scorer) and the own functions of the modules (their globals, the keyword functions
  * ChooseStapler and Blablibla included) go through their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_CALLBACK,
  * LV_MISSIONCHAR, LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there,
- * OBJLIB 5); string.find is the native twin. By name: the section PreStealFunctionary of the .def file (OBJLIB 6),
- * __builtin__.apply on MissionsFuncs.SetNextMission (OBJLIB 4) and SVec.GetAngle (OBJLIB 7); the functions given to
- * the scheduler, to Speech, CharAct and CharConversor as callbacks and to the entities (Mode_Later, Mode_Schedule,
- * the UseFunc texts) stay values (OBJLIB 4, 5).
+ * OBJLIB 5); string.find is the native twin, apply on MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext).
+ * By name: the section PreStealFunctionary of the .def file (OBJLIB 6) and SVec.GetAngle (OBJLIB 7); the functions
+ * given to the scheduler, to Speech, CharAct and CharConversor as callbacks and to the entities (Mode_Later,
+ * Mode_Schedule, the UseFunc texts) stay values (OBJLIB 4, 5).
  */
 #include "scrap/scrap.h"
 #include "scrap/scorer.h"
@@ -1213,7 +1213,6 @@ static byte ThSm_OnPay(const nativeVal_t *a, nativeVal_t *out) {
 
 /* SetNextMission(): the police boss goes, the mayor comes back, the mission of NextMissionData */
 static byte ThSm_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
-	nativeVal_t data = { 0 };
 	(void)a;
 	(void)out;
 	if (!LvN_PutI(SM, "alreadyTalked", 1) || !Mode_SetLockAlarmI(0)) {
@@ -1221,17 +1220,7 @@ static byte ThSm_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	SaveVar_Set("PoliceBossAtPolice", "0");
 	SaveVar_Set("MayorAtTownHall", "1");
-	if (!Mode_Target(NULL)) {
-		return 0;
-	}
-	/* apply(MissionsFuncs.SetNextMission, NextMissionData) through __builtin__.apply (OBJLIB 4) */
-	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
-	byte ok = fn && Mode_G(SM, "NextMissionData", &data) && Native_CallMod("__builtin__", "apply", NULL, "Ov", fn, &data);
-	Py_XDECREF(fn);
-	if (fn) {
-		Native_Free(&data);
-	}
-	return ok && Mode_MMDesc("Mission_Get1stClue_MissionText1", 1L);
+	return Mode_Target(NULL) && Mode_ApplyNext(SM) && Mode_MMDesc("Mission_Get1stClue_MissionText1", 1L);
 }
 
 LV_FN(SheriffMayor, InitStatus, 1, ThSm_InitStatus)
