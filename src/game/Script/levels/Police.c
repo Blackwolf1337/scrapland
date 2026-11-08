@@ -24,13 +24,20 @@
  * variables, the dummy search, the language texts, the time speed and the action set. The engine functions the cases
  * record or swap go through their seams (AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, UsrEntity, Set,
  * SetAlarm, GetAlarm, ConsoleError, DelSaveVars, SScorer.Fade, the SAct functions; OBJLIB 7). The entities the script
- * holds are handle values (OBJLIB 7). The calls of other ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Chars,
- * CharConversor, Elevator, Teleport, Metro, InTraffic, GateKeeper, Scene, RaceMaker, Menu, MapSnd), SAI.SetStateChar
- * and GetStateChar, SLogic.SetOnFloor, the call of the map elements (Scrap.SetCallFunc and its parameters),
- * SAct.GetCls, SScorer.SetSpeechText, __builtin__.apply and the keyword call of Speech.OnObjSpch stay by name
- * (OBJLIB 3, 7); CharsNPC.CharRes and the GateKeeper groups are the objects they are (OBJLIB 5); the module's own
- * functions go through its globals (a mission may replace one), the scheduler keeps Python callables (OBJLIB 4).
- * MapSnd.SndElements and MapPlanes are LevelCommon's.
+ * holds are handle values (OBJLIB 7). SAI.SetStateChar and GetStateChar, SLogic.SetOnFloor, the call of the map
+ * elements (Scrap.SetCallFunc and its parameters), SAct.GetCls and SScorer.SetSpeechText stay by name (OBJLIB 7);
+ * CharsNPC.CharRes and the GateKeeper groups are the objects they are (OBJLIB 5).
+ *
+ * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Chars,
+ * CharConversor, Elevator, Teleport, Metro, InTraffic, GateKeeper, Scene, RaceMaker, Menu, Init), the keyword call of
+ * Speech.OnObjSpch and the own functions of the modules (their globals) go through their refs (PORT_CALL, PORT_LOWN,
+ * LV_COM, LV_ONEND, LV_CALLBACK, LV_MISSIONCHAR; the seam takes the call by name when a mission or a case has put
+ * something else there, OBJLIB 5). The GateKeeper refs take Python objects and always go by name. By name: the
+ * sections of the .def files (LoadScene, GetAuthorization2, LoadPoliFightScene, InitBossCheats, the Pre and
+ * SetNextMission sections of Mission_BeatPickus, MapSnd.PoliceCheats and PoliceBossCheats; OBJLIB 6) and
+ * __builtin__.apply on MissionsFuncs.SetNextMission (OBJLIB 4); the functions given to the scheduler, to Scene, Alarm
+ * and CharConversor as callbacks and to the entities (Mode_Later, PO_HOOK, the UseFunc texts) stay values (OBJLIB 4,
+ * 5). MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -1824,7 +1831,8 @@ static byte InitEpilogue_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const saves[] = { "Spawn", "DM_Mission_Dtritus_Jail", "ComeFrom", "", "CostumeAtPolice", "1", NULL };
 	(void)a;
 	(void)out;
-	if (!LvN_MissionChar("Betty_Jail", IE, "CreateBettyJail") || !LvN_MissionChar("Berto_Jail", IE, "CreateBertoJail")) {
+	if (!LV_MISSIONCHAR("Betty_Jail", Mission_InitEpilogue, CreateBettyJail) ||
+		!LV_MISSIONCHAR("Berto_Jail", Mission_InitEpilogue, CreateBertoJail)) {
 		return 0;
 	}
 	Mode_Saves(saves);
@@ -1884,9 +1892,9 @@ static byte InitEpilogue_SetNextMission(const nativeVal_t *a, nativeVal_t *out) 
 	}
 	SaveVar_Inc("NewBluePrintAvaliable", 2);
 	Mode_Lang("Mission_DestroyHumphrey_SystemMessage1", &text);
-	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	byte ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
 	Native_Free(&text);
-	if (!ok || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_DestroyHumphrey", "Outskirts") ||
+	if (!ok || !PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_DestroyHumphrey", "Outskirts") ||
 		!Mode_MMDesc("Mission_DestroyHumphrey_MissionText1", 1)) {
 		return 0;
 	}
@@ -1958,7 +1966,8 @@ static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 		Native_Free(&act);
 	}
 	Native_Free(&keys);
-	if (!ok || !LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "Desktop_JailBreak") || !LvN_Callback("Desktop_JailBreak", JB, "CreatePuff")) {
+	if (!ok || !PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", "Desktop_JailBreak") ||
+		!LV_CALLBACK("Desktop_JailBreak", Mission_JailBreak, CreatePuff)) {
 		return 0;
 	}
 	Mode_Ints3(&v, 6059, -1846, 26780);
@@ -1968,7 +1977,7 @@ static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 	ok = ok && Jb_ResSet("Desktop_JailBreak", "Ang", &v);
 	Native_Free(&v);
 	for (int i = 0; ok && i < 3; i++) {
-		ok = LV_OWN(JB, "CreateMCList", NULL, "s", lists[i]);
+		ok = PORT_LOWN(Mission_JailBreak, CreateMCList, NULL, "s", lists[i]);
 	}
 	if (!ok) {
 		return 0;
@@ -2019,8 +2028,8 @@ static byte JailBreak_CreateMCList(const nativeVal_t *a, nativeVal_t *out) {
 		if (dummy->type == NV_NONE) {
 			return Mode_Done(&t, 1);
 		}
-		byte ok = LV_CALL("CharsNPC", "CreateMissionChar", NULL, "v", jbn) && (!LvN_EqS(&a[0], "Gear") ||
-			LvN_Callback(Native_Text(jbn), JB, "CreateGearStay"));
+		byte ok = PORT_CALL(CharsNPC, CreateMissionChar, NULL, "v", jbn) && (!LvN_EqS(&a[0], "Gear") ||
+			LV_CALLBACK(Native_Text(jbn), Mission_JailBreak, CreateGearStay));
 		if (!Mode_Done(&t, ok)) {
 			return 0;
 		}
@@ -2145,7 +2154,7 @@ static byte JailBreak_FirstTimeJail(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	Mode_Lang("Mission_JailBreak_Warning", &text);
-	byte ok = LV_CALL("Menu", "ShowWarning", NULL, "iv", 0L, &text);
+	byte ok = PORT_CALL(Menu, ShowWarning, NULL, "iv", 0L, &text);
 	Native_Free(&text);
 	return ok;
 }
@@ -2193,7 +2202,7 @@ static byte JailBreak_NextMission(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	Mode_SetActionSet("Inactive");
-	if (!LV_CALL("Menu", "DrawScorer", NULL, "is", 0L, "Inactive") || !Native_GVarGet("IsXbox", &x)) {
+	if (!PORT_CALL(Menu, DrawScorer, NULL, "is", 0L, "Inactive") || !Native_GVarGet("IsXbox", &x)) {
 		return 0;
 	}
 	byte pc = !Native_True(&x);
@@ -2218,13 +2227,13 @@ static byte JailBreak_NextMission(const nativeVal_t *a, nativeVal_t *out) {
 static byte JailBreak_LoadPolice(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	if (!LV_CALL("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Police", "DM_Mission_JailBreak_End", "") ||
+	if (!PORT_CALL(SaveGame, MarkWayPoint, NULL, "sss", "Levels/Police", "DM_Mission_JailBreak_End", "") ||
 		!Mode_SaveCopy("Mission.Map", "Mission_JailBreak.Map") || !Mode_SaveCopy("Mission.Library", "Mission_JailBreak.Library")) {
 		return 0;
 	}
 	SaveVar_Set("AlarmActive", "0");
 	SaveVar_Set("AlarmStatus", "0.0");
-	return Mode_DelSaveVars("Mission_JailBreak") && LV_CALL("SaveGame", "StartGame", NULL, "");
+	return Mode_DelSaveVars("Mission_JailBreak") && PORT_CALL(SaveGame, StartGame, NULL, "");
 }
 
 LV_FN(JailBreak, InitStatusA, 1, JailBreak_InitStatus)
@@ -2264,7 +2273,8 @@ PyMethodDef g_PoliceJailBreakMethods[] = {
 static byte PoliceBossCheats_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return LvN_MissionChar("Police_FicusPal", PC, "CreatePoliceFicusPal") && LV_CALL("Chars", "AddNewCharRes", NULL, "si", "PoliceBoss", 1L);
+	return LV_MISSIONCHAR("Police_FicusPal", Mission_PoliceBossCheats, CreatePoliceFicusPal) &&
+		PORT_CALL(Chars, AddNewCharRes, NULL, "si", "PoliceBoss", 1L);
 }
 
 /* Init(LevelPath): the poker game, the scene PoliFight, the state of the mission */
@@ -2273,16 +2283,17 @@ static byte PoliceBossCheats_Init(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = 1;
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Elevator") || !LV_OWN(PC, "CheatingLoop", NULL, "") || !Mode_DelSchedS("CrazyWind")) {
+	if (!Mode_Import("Elevator") || !PORT_LOWN(Mission_PoliceBossCheats, CheatingLoop, NULL, "") || !Mode_DelSchedS("CrazyWind")) {
 		return 0;
 	}
 	Mode_SaveVar("Mission_PoliceBossCheats", &svv);
+	/* OBJLIB 6: LoadPoliFightScene and InitBossCheats are sections of mission_policebosscheats.def */
 	if (LvN_EqS(&svv, "TalkFicusPal")) {
 		ok = LV_OWN(PC, "LoadPoliFightScene", NULL, "") && Mode_Target("Police_FicusPal");
 	} else if (LvN_EqS(&svv, "BossCheats")) {
 		ok = LV_OWN(PC, "LoadPoliFightScene", NULL, "") && LV_OWN(PC, "InitBossCheats", NULL, "");
 	} else if (LvN_EqS(&svv, "AskCrazyGambler")) {
-		ok = LV_OWN(PC, "InitAskCrazyGambler", NULL, "");
+		ok = PORT_LOWN(Mission_PoliceBossCheats, InitAskCrazyGambler, NULL, "");
 	}
 	Native_Free(&svv);
 	return ok;
@@ -2311,6 +2322,7 @@ static byte PoliceBossCheats_FicusPalMissionSpeech(const nativeVal_t *a, nativeV
 	Mode_SaveVar("Mission_PoliceBossCheats", &svv);
 	byte talk = LvN_EqS(&a[2], "Talk"), ok;
 	if (LvN_EqS(&svv, "TalkFicusPal")) {
+		/* OBJLIB 6: InitBossCheats is a section of mission_policebosscheats.def */
 		ok = talk ? LvN_OnEnd(PC, "InitBossCheats", NULL) && Mode_NISpeech(NULL, "Mission_TalkToFicusFriend_Police_NI_1Msg") : LvN_RoutineCall("Police", a);
 	} else if (LvN_EqS(&svv, "BossCheats") && talk) {
 		ok = Mode_Spch("Mission_PhotoPoliceBoss_Police_InitMsg1", "Mission_PhotoPoliceBoss_Police_InitAns1", NULL);
@@ -2403,7 +2415,7 @@ static byte Pc_PokerActions(const char *cls, byte brup) {
 	} acts[] = { { "StayPoker", "RelaxPoker", 1 }, { "Stay0Poker", "Relax0Poker", 0 }, { "PlayPoker", "PlayPoker", 0 },
 		{ "BrupPoker", "BrupPoker", 0 }, { "CheatPoker", "CheatPoker", 0 } };
 	for (int i = 0; i < (brup ? 4 : 5); i++) {
-		if (!LV_CALL("Scene", "CreateLocalAction", NULL, "sissi", cls, 0L, acts[i].name, acts[i].anm, acts[i].loop)) {
+		if (!PORT_CALL(Scene, CreateLocalAction, NULL, "sissi", cls, 0L, acts[i].name, acts[i].anm, acts[i].loop)) {
 			return 0;
 		}
 	}
@@ -2429,7 +2441,8 @@ static byte Pc_EventFrame(const char *frame, const char *name, const char *func)
 	return ok;
 }
 
-/* try: exec("import MapSnd;MapSnd.<func>()") except: Scrap.ConsoleError(msg) */
+/* try: exec("import MapSnd;MapSnd.<func>()") except: Scrap.ConsoleError(msg) (OBJLIB 6: PoliceCheats and
+ * PoliceBossCheats are sections of mapsnd.def) */
 static byte Pc_TrySound(const char *func, const char *msg) {
 	nativeVal_t m;
 	if (Mode_Import("MapSnd") && LV_CALL("MapSnd", func, NULL, "")) {
@@ -2472,14 +2485,14 @@ static byte PoliceBossCheats_CheatingLoop(const nativeVal_t *a, nativeVal_t *out
 			return 0;
 		}
 	}
-	if (!LV_CALL("Scene", "CreateLocalAction", NULL, "sissi", "PoliceBoss", 0L, "CheatPoker", "CheatPoker", 0L) ||
+	if (!PORT_CALL(Scene, CreateLocalAction, NULL, "sissi", "PoliceBoss", 0L, "CheatPoker", "CheatPoker", 0L) ||
 		!Pc_EventFrame("TimeOfFrame50", "DeactivatePhoto", "Mission_PoliceBossCheats.PhotoOn") ||
 		!Pc_EventFrame("TimeOfFrame140", "DeactivatePhoto", "Mission_PoliceBossCheats.PhotoOff") || !Mode_SAct("GetClass", "Police") ||
 		!Pc_PokerActions("Police", 0)) {
 		return 0;
 	}
 	for (int i = 0; i < 2; i++) {
-		if (!LV_CALL("Scene", "AddLocalActor", NULL, "ss", cards[i], cards[i]) || !Pc_PokerActions(cards[i], 0) ||
+		if (!PORT_CALL(Scene, AddLocalActor, NULL, "ss", cards[i], cards[i]) || !Pc_PokerActions(cards[i], 0) ||
 			!Mode_SActSet(1, "DefAction", "StayPoker", 0) || !Mode_GVarSetDef("DefInterpTime")) {
 			return 0;
 		}
@@ -2493,7 +2506,7 @@ static byte PoliceBossCheats_CheatingLoop(const nativeVal_t *a, nativeVal_t *out
 		Native_SetNone(&r);
 		Native_SetNone(&pair[0]);
 		Native_SetNone(&pair[1]);
-		ok = LV_OWN(PC, "CreateFakeChar", &r, "sss", players[i].dummy, players[i].type, players[i].card);
+		ok = PORT_LOWN(Mission_PoliceBossCheats, CreateFakeChar, &r, "sss", players[i].dummy, players[i].type, players[i].card);
 		if (ok) {
 			/* (e, cards): a tuple of handles */
 			Mode_Elems(&r);
@@ -2521,7 +2534,7 @@ static byte Pc_Play(const char *player, const char *action) {
 	nativeVal_t p, c;
 	Str_Printf(cards, sizeof(cards), "%sc", player);
 	Native_SetNone(&c);
-	byte ok = Mode_G(PC, player, &p) && Mode_G(PC, cards, &c) && LV_OWN(PC, "PlayAnm", NULL, "vvs", &p, &c, action);
+	byte ok = Mode_G(PC, player, &p) && Mode_G(PC, cards, &c) && PORT_LOWN(Mission_PoliceBossCheats, PlayAnm, NULL, "vvs", &p, &c, action);
 	Native_Free(&p);
 	Native_Free(&c);
 	return ok;
@@ -2583,7 +2596,7 @@ static byte Pc_Turn(const char *p1, const char *a1, const char *p2, const char *
 	if (!Pc_Play(p1, a1) || !Pc_Play(p2, a2) || !Mode_G(PC, next, &n)) {
 		return 0;
 	}
-	byte ok = LV_OWN(PC, "WatchEvents", NULL, "v", &n);
+	byte ok = PORT_LOWN(Mission_PoliceBossCheats, WatchEvents, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
 }
@@ -2613,7 +2626,7 @@ static byte Pc_Watch(const char *next) {
 	if (!Mode_G(PC, next, &n)) {
 		return 0;
 	}
-	byte ok = LV_OWN(PC, "WatchEvents", NULL, "v", &n);
+	byte ok = PORT_LOWN(Mission_PoliceBossCheats, WatchEvents, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
 }
@@ -2679,7 +2692,7 @@ static byte PoliceBossCheats_EndOfPhoto(const nativeVal_t *a, nativeVal_t *out) 
 	(void)out;
 	Mode_SetActionSet("Walk");
 	Mode_SetTimeSpeed(1.0);
-	return Po_Fade(lv_black, lv_clear, 1.0) && LV_CALL("Scene", "Play", NULL, "s", "PoliFight") &&
+	return Po_Fade(lv_black, lv_clear, 1.0) && PORT_CALL(Scene, Play, NULL, "s", "PoliFight") &&
 		PO_HOOK("Scene", "EndOfSceneCallback", PC, "InitAfterPhoto") && Pc_CardsActive(0);
 }
 
@@ -2703,7 +2716,7 @@ static byte PoliceBossCheats_InitAfterPhoto2(const nativeVal_t *a, nativeVal_t *
 	Native_SetNone(&un);
 	Native_SetNone(&sp);
 	byte ok = Mode_VGet(&a[0], "Name", &un) && Mode_G(PC, "SpawnConversionPoint", &sp) &&
-		LV_CALL("CharConversor", "ConvertChar", NULL, "vvii", &un, &sp, 0L, 0L);
+		PORT_CALL(CharConversor, ConvertChar, NULL, "vvii", &un, &sp, 0L, 0L);
 	Native_Free(&un);
 	Native_Free(&sp);
 	return ok && Po_FadeLater(1.0, lv_black, to, 2.0) && PO_LATER1(3.0, PC, "InitAfterPhoto3", &a[0]);
@@ -2732,12 +2745,12 @@ static byte PoliceBossCheats_InitAfterPhoto3(const nativeVal_t *a, nativeVal_t *
 	}
 	Mode_SaveVar("Spawn", &spawn);
 	Native_SetNone(&sp);
-	ok = Mode_G(PC, "SpawnConversionPoint", &sp) && LV_CALL("SaveGame", "MarkWayPoint", NULL, "vvv", &path, &spawn, &sp);
+	ok = Mode_G(PC, "SpawnConversionPoint", &sp) && PORT_CALL(SaveGame, MarkWayPoint, NULL, "vvv", &path, &spawn, &sp);
 	Native_Free(&path);
 	Native_Free(&spawn);
 	Native_Free(&sp);
-	return ok && LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_PhotoPoliceBoss_Dtritus_InitMsg1", "") &&
-		LV_OWN(PC, "InitAskCrazyGambler", NULL, "") && Pc_CardsActive(1);
+	return ok && PORT_CALL(Speech, RemoteComunication, NULL, "ss", "Mission_PhotoPoliceBoss_Dtritus_InitMsg1", "") &&
+		PORT_LOWN(Mission_PoliceBossCheats, InitAskCrazyGambler, NULL, "") && Pc_CardsActive(1);
 }
 
 /* InitAskCrazyGambler(): Dtritus' desktop is the target, the crazy gambler talks through it */
@@ -2753,7 +2766,7 @@ static byte PoliceBossCheats_InitAskCrazyGambler(const nativeVal_t *a, nativeVal
 static byte PoliceBossCheats_CrazyGamblerSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	return Mode_Import("DTritusDesktop") && Mode_Target("") && LvN_ModNone("DTritusDesktop", "DialogController") && Po_DesktopLookup() &&
-		LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(PC, "SetNextMission", NULL) &&
+		LvN_Speakers(&a[0], &a[1]) && LV_ONEND(Mission_PoliceBossCheats, SetNextMission, NULL) &&
 		Mode_NISpeech("CrazyGambler", "Mission_TalkToCrazyGambler_ComCrazyGambler_NI_1Msg");
 }
 
@@ -2768,7 +2781,8 @@ static byte PoliceBossCheats_SetNextMission(const nativeVal_t *a, nativeVal_t *o
 	if (!Po_TargetNone()) {
 		return 0;
 	}
-	/* apply(MissionsFuncs.SetNextMission, NextMissionData) (OBJLIB 3: __builtin__.apply by name, its TypeError) */
+	/* apply(MissionsFuncs.SetNextMission, NextMissionData) (OBJLIB 4: __builtin__.apply by name on the function value,
+	 * its TypeError) */
 	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
 	if (!fn) {
 		return 0;
