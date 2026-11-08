@@ -2684,10 +2684,8 @@ byte Mode_CallIf(const char *module, const char *name, byte *called) {
 byte Mode_ApplyNext(const char *module) {
 	nativeVal_t data = { 0 };
 	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
-	/* a tuple through the entry while fn is the port's own function (Port_Values), any other value through the
-	 * builtin apply for its TypeError */
-	byte ok = fn && Mode_G(module, "NextMissionData", &data) && (data.type == NV_TUPLE ?
-		Port_Values(PORT_VSITE(), fn, data.items, data.n, NULL, NULL) : LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data));
+	/* the entry while fn is the port's own function */
+	byte ok = fn && Mode_G(module, "NextMissionData", &data) && MODE_CBAPPLYSEQ(fn, &data, NULL);
 	Py_XDECREF(fn);
 	if (fn) {
 		Native_Free(&data);
@@ -4662,6 +4660,14 @@ byte Mode_CbApplyPy(portSite_t *site, PyObject *fn, const nativeVal_t *args, nat
 	}
 	Py_DECREF(r);
 	return 1;
+}
+
+byte Mode_CbApplySeq(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out) {
+	/* the builtin makes a tuple of a list: the same call */
+	if (args->type == NV_TUPLE || args->type == NV_LIST) {
+		return Port_Values(site, fn, args->items, args->n, out, NULL);
+	}
+	return Native_CallMod("__builtin__", "apply", out, "Ov", fn, args);
 }
 
 byte Mode_CbApply(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out) {
