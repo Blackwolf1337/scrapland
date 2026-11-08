@@ -26,8 +26,10 @@
  *   ent <entity> <var> ...   entity variables: [('var', value), ...], '?' for a variable the entity does not have
  *   ents <list> [x y z r]    the sorted names of the entities of an entity list (Scrap.SphereCall lists: 'r', 'i',
  *                            'v', ...) in the sphere, by default the whole map
- *   dump [module ...]        the module dicts (all pack modules without names): "== module", then "key\t<type value>"
- *                            per key in the form of the module dump of the stage checks (scratchpad nopy0/mdump.py)
+ *   dump [module ...]        the module variables (all pack modules without names): "== module", then
+ *                            "key\t<type value>" per name in the form of the module dump of the stage checks (scratchpad
+ *                            nopy0/mdump.py); a pack module's through the registry of the module variables
+ *                            (include/scrap/modvars.h), another module's from its dict
  *   menu [player]            the scorer items: (cursor, [[name, Text, X, Y, W, H, Visible, Alpha, Red, Green, Blue,
  *                            OnAccept, Up, Down, Left, Right], ...]) as SScorer.Get gives each value
  *   click <item> [player]    runs the OnAccept of the item: "called <func>" or "the item has no OnAccept"
@@ -50,6 +52,7 @@
 #include "scrap/entity.h"
 #include "scrap/global.h"
 #include "scrap/gvar.h"
+#include "scrap/modvars.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
 #include "scrap/script.h"
@@ -492,10 +495,28 @@ static void TC_MdVal(tcBuf *b, PyObject *v, const char *path, PyObject *seen, in
 	}
 }
 
-/* dump [module ...]: without names every module whose __file__ starts with "PACK:" */
+/* one line of the dump: "key\t<type value>" (not __builtins__) */
+static void TC_DumpVar(tcBuf *b, const char *module, const char *key, PyObject *v, PyObject *seen) {
+	char path[0x400];
+
+	if (!strcmp(key, "__builtins__")) {
+		return;
+	}
+	TC_Addf(b, "%s\t", key);
+	snprintf(path, sizeof(path), "%s.%s", module, key);
+	TC_MdVal(b, v, path, seen, 0);
+	TC_Add(b, "\n", 1);
+}
+
+/*
+ * dump [module ...]: without names every pack module (made from a .mod file, its __file__ starts with "PACK:"). The
+ * variables of a pack module come from the registry of the module variables (sorted names, the value of each); a
+ * module without a .mod file (dump Scrap) shows its dict
+ */
 static void TC_Dump(tcBuf *b, const char *arg) {
 	PyObject *names = PyList_New(0), *modules = PyImport_GetModuleDict(), *seen = PyDict_New();
 	const char *p = arg;
+	modVarRef_t ref;
 
 	TC_Blanks(&p);
 	while (*p && names) {
@@ -513,13 +534,14 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 		Py_XDECREF(s);
 	}
 	if (names && !PyList_Size(names)) {
-		int pos = 0;
-		PyObject *k, *m;
-		while (PyDict_Next(modules, &pos, &k, &m)) {
-			PyObject *f = PyModule_Check(m) ? PyDict_GetItemString(PyModule_GetDict(m), "__file__") : NULL;
-			if (f && PyString_Check(f) && !strncmp(PyString_AsString(f), "PACK:", 5)) {
-				PyList_Append(names, k);
+		for (int i = 0; i < g_ModVarModuleCount; i++) {
+			const char *module = g_ModVarModules[i].module;
+			if ((i && !strcmp(module, g_ModVarModules[i - 1].module)) || !ModVar_Named(module, &ref)) {
+				continue;
 			}
+			PyObject *s = PyString_FromString((char *)module);
+			PyList_Append(names, s);
+			Py_XDECREF(s);
 		}
 	}
 	if (names && seen) {
@@ -532,6 +554,15 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 				continue;
 			}
 			TC_Addf(b, "== %s\n", name);
+			if (ModVar_Of(m, &ref)) {
+				const char **vars;
+				int n = ModVar_Names(&ref, &vars);
+				for (int j = 0; j < n; j++) {
+					TC_DumpVar(b, name, vars[j], ModVar_Get(&ref, vars[j]), seen);
+				}
+				Mem_Free(vars);
+				continue;
+			}
 			PyObject *d = PyModule_GetDict(m), *keys = PyDict_Keys(d);
 			if (!keys) {
 				continue;
@@ -539,14 +570,9 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 			PyList_Sort(keys);
 			for (int j = 0; j < PyList_Size(keys); j++) {
 				PyObject *k = PyList_GetItem(keys, j);
-				char path[0x400];
-				if (!PyString_Check(k) || !strcmp(PyString_AsString(k), "__builtins__")) {
-					continue;
+				if (PyString_Check(k)) {
+					TC_DumpVar(b, name, PyString_AsString(k), PyDict_GetItem(d, k), seen);
 				}
-				TC_Addf(b, "%s\t", PyString_AsString(k));
-				snprintf(path, sizeof(path), "%s.%s", name, PyString_AsString(k));
-				TC_MdVal(b, PyDict_GetItem(d, k), path, seen, 0);
-				TC_Add(b, "\n", 1);
 			}
 			Py_DECREF(keys);
 		}
