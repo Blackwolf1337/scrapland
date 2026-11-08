@@ -882,6 +882,10 @@ byte LvN_OnEnd(const char *module, const char *func, const nativeVal_t *params) 
 		Mode_SetModVar("Speech", "OnEndOfSpeechParams", params ? params : LvN_NoArgs());
 }
 
+byte LvN_OnEndRef(const portRef_t *ref, const nativeVal_t *params) {
+	return LvN_OnEnd(ref->module, ref->name, params);
+}
+
 byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target) {
 	return LvN_SetI(e, "LLogicDefaultState", state) && Mode_VSet(e, "LLogicDefaultTarget", target) &&
 		LvN_SetI(e, "LLogicState", state) && Mode_VSet(e, "LLogicTarget", target) && LvN_SetI(e, "LLogicIdle", 1) &&
@@ -1060,6 +1064,10 @@ byte LvN_ScorerOff(void) {
 
 byte LvN_ScorerCallG(const char *module, const char *func) {
 	return LvN_ModSetGlobal("Menu", "MissionScorerCall", module, func);
+}
+
+byte LvN_ScorerRef(const portRef_t *ref) {
+	return LvN_ScorerCallG(ref->module, ref->name);
 }
 
 byte LvN_Next(const char *lib, const char *map, const char *desc) {

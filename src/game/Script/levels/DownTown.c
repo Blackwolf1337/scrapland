@@ -28,6 +28,9 @@
 
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL downtown
+
 #define FC "Mission_FirstContactPress"
 #define BM "Mission_BertoMassacre"
 #define CG "Mission_DefeatCrazyGambler1"

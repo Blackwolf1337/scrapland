@@ -26,6 +26,9 @@
 #include "scrap/scrap.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL temple
+
 #define GM "Map"
 #define XL "MapExtraLifes"
 #define AD "Mission_ArchbishopDead"

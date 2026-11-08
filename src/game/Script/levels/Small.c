@@ -16,6 +16,9 @@
 
 /* ---- TucZone ---- */
 
+/* the level of the refs of this part (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL tuczone
+
 /* Init(LevelPath): the keypad at its dummy that takes the player to Nano */
 static byte Tuc_Init(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t dummy, p, name, x, y, z, kb, ang, ay, off, sum;
@@ -68,6 +71,9 @@ PyMethodDef g_TucZoneMapMethods[] = {
 
 /* ---- Nano ---- */
 
+#undef PORT_LEVEL
+#define PORT_LEVEL nano
+
 /* InitStatus(LevelPath): an indoor map; AfterBrowseNPC after the NPCs are browsed, the work place of the boss */
 static byte Nano_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t zero, fn;
@@ -108,6 +114,9 @@ PyMethodDef g_NanoMapMethods[] = {
 };
 
 /* ---- ShipEdit ---- */
+
+#undef PORT_LEVEL
+#define PORT_LEVEL shipedit
 
 /* Init(LevelPath): the camera of the editor, the ship editor menu */
 static byte Se_Init(const nativeVal_t *a, nativeVal_t *out) {

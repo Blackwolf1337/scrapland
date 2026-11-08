@@ -12,6 +12,9 @@
 #include "scrap/scrap.h"
 #include "Levels.h"
 
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL qf
+
 #define BC "Mission_BankersCombat"
 
 /* CreatePlans(): the bankers attack the player, the two blueprints to photograph at their dummies */
