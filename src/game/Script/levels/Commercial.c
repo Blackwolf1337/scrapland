@@ -1870,7 +1870,8 @@ static byte Deep_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	return Mode_Import("Parking") && CM_HOOK("Parking", "SwitchVehicleMissionCallback", FM, "RestoreDeepThroatMessages") &&
 		CM_HOOK("Parking", "SwitchCharMissionCallback", FM, "CancelDeepThroatMessages") &&
-		Fm_Call("Mission_FirstMeetDeepThroat_RemoteMessage3", "AfterDeepThroatMessageShown") && LV_OWN(FM, "SetPhoneCab", NULL, "");
+		Fm_Call("Mission_FirstMeetDeepThroat_RemoteMessage3", "AfterDeepThroatMessageShown") &&
+		PORT_LOWN(Mission_FirstMeetDeepThroat, SetPhoneCab, NULL, "");
 }
 
 static byte Deep_AfterDeepThroatMessageShown(const nativeVal_t *a, nativeVal_t *out) {
@@ -1933,7 +1934,7 @@ static byte Deep_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (!LvN_ModNone("Speech", "OnOutOfRange") || !LvN_PutI(FM, "talked", 1) || !Mode_Target("") || !Mode_WayPoint() ||
-		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_FicusBanker", "Press")) {
+		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_FicusBanker", "Press")) {
 		return 0;
 	}
 	Mode_Saves(places);
@@ -1999,16 +2000,17 @@ static byte Data_Init(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Mode_SaveVar("MissionState", state);
 	if (LvN_EqS(state, "CallBoss")) {
-		return Mode_Done(&t, LV_OWN(GD, "CallBoss", NULL, ""));
+		return Mode_Done(&t, PORT_LOWN(Mission_GetDataPart3, CallBoss, NULL, ""));
 	}
 	if (LvN_EqS(state, "CallDeepThroat")) {
-		return Mode_Done(&t, LV_OWN(GD, "CallDeepThroat", NULL, ""));
+		return Mode_Done(&t, PORT_LOWN(Mission_GetDataPart3, CallDeepThroat, NULL, ""));
 	}
 	if (!LvN_EqS(state, "GetData")) {
 		return Mode_Done(&t, 1);
 	}
 	int car = Mode_UsrHandle(usr) ? Cm_UsrCar(usr) : -1;
-	if (car < 0 || (car && !LV_OWN(GD, "InitMission", NULL, "")) || !Mode_SaveInt("NumData", n) || !Mode_G(GD, "MAX_DATA_UNITS", max)) {
+	if (car < 0 || (car && !PORT_LOWN(Mission_GetDataPart3, InitMission, NULL, "")) || !Mode_SaveInt("NumData", n) ||
+		!Mode_G(GD, "MAX_DATA_UNITS", max)) {
 		return Mode_Done(&t, 0);
 	}
 	int over = Mode_Cmp(n, ">=", max);
@@ -2023,7 +2025,7 @@ static byte Data_Init(const nativeVal_t *a, nativeVal_t *out) {
 		LvN_SaveRepr("NumData", m1);
 	}
 	return Mode_Done(&t, CM_HOOK("Parking", "SwitchVehicleMissionCallback", GD, "InitMission") &&
-		CM_HOOK("Parking", "SwitchCharMissionCallback", GD, "StopMission") && LV_OWN(GD, "GetData", NULL, ""));
+		CM_HOOK("Parking", "SwitchCharMissionCallback", GD, "StopMission") && PORT_LOWN(Mission_GetDataPart3, GetData, NULL, ""));
 }
 
 /* usr.Target = funcWithDataName when the functionary with the data is there and the player has a ship */
@@ -2065,7 +2067,7 @@ static byte Data_InitMission(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t fn, e, usr;
 	(void)a;
 	(void)out;
-	if (!LvN_ScorerCallG(GD, "MissionScorer") || !LvN_Draw()) {
+	if (!LV_SCORERG(Mission_GetDataPart3, MissionScorer) || !LvN_Draw()) {
 		return 0;
 	}
 	Native_SetNone(&e);
@@ -2120,7 +2122,8 @@ static byte Data_CreateWave(const nativeVal_t *a, nativeVal_t *out) {
 		nativeVal_t fn, name;
 		Native_SetNone(&fn);
 		Native_SetNone(&name);
-		byte ok = LV_OWN(GD, "CreateFunctionary", &fn, "") && LvN_SetS(&fn, "EntityList", "Funcs") && Mode_AppendName(GD, "funcsInWave", &fn);
+		byte ok = PORT_LOWN(Mission_GetDataPart3, CreateFunctionary, &fn, "") && LvN_SetS(&fn, "EntityList", "Funcs") &&
+			Mode_AppendName(GD, "funcsInWave", &fn);
 		if (ok && i == 0) {
 			Native_Free(dataPos);
 			ok = Mode_VGet(&fn, "Pos", dataPos) && Mode_VGet(&fn, "Name", &name) && Mode_Put(GD, "funcWithDataName", NULL, &name);
@@ -2148,7 +2151,7 @@ static byte Data_CreateFunctionary(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&pd);
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_Import("Traffic") && Mode_SpawnCar("FuncFighter", 0, out, &spw) &&
 		LvN_SetI(out, "Money", -1) && LvN_SetS(out, "TgType", "red") && Cm_SpawnAng(out, &spw) &&
-		LvN_StdProfile(GD, "GetFunctionariesEnemiesProfile", out, &pd) && LvN_Life(out, GD, "FUNC_LIFE");
+		PORT_LOWN(Mission_GetDataPart3, GetFunctionariesEnemiesProfile, &pd, "") && LvN_StdAI(out, &pd) && LvN_Life(out, GD, "FUNC_LIFE");
 	Native_Free(&spw);
 	Native_Free(&pd);
 	return ok;
@@ -2209,7 +2212,8 @@ static byte Data_ReinsertFunctionaryInWave(const nativeVal_t *a, nativeVal_t *ou
 		Native_Free(&e);
 		Native_Free(&s);
 	}
-	if (!ok || !LV_OWN(GD, "CreateFunctionary", fn, "") || !LvN_SetS(fn, "EntityList", "Enemies") || !Mode_AppendName(GD, "funcsInWave", fn)) {
+	if (!ok || !PORT_LOWN(Mission_GetDataPart3, CreateFunctionary, fn, "") || !LvN_SetS(fn, "EntityList", "Enemies") ||
+		!Mode_AppendName(GD, "funcsInWave", fn)) {
 		return Mode_Done(&t, 0);
 	}
 	if (withData) {
@@ -2271,7 +2275,8 @@ static byte Data_OnFunctionaryDeath(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(pos);
-		return Mode_Done(&t, Mode_G(GD, "droppedDataPos", pos) && LV_OWN(GD, "DropData", NULL, "v", pos) && (len <= 0 || Gd_Fetch()));
+		return Mode_Done(&t, Mode_G(GD, "droppedDataPos", pos) && PORT_LOWN(Mission_GetDataPart3, DropData, NULL, "v", pos) &&
+			(len <= 0 || Gd_Fetch()));
 	}
 	if (data < 0 || !Mode_G(GD, "timeToReinsertEnemy", delay) ||
 		!Mode_LaterV(delay, GD, "ReinsertFunctionaryInWave", NULL, 0, "ReinsertFunctionaryInWave")) {
@@ -2446,11 +2451,12 @@ static byte Data_TakeData(const nativeVal_t *a, nativeVal_t *out) {
 		if (all > 0) {
 			return Mode_Done(&t, LvN_ModNone("Parking", "SwitchVehicleMissionCallback") && LvN_ModNone("Parking", "SwitchCharMissionCallback") &&
 				LvN_ScorerOff() && LvN_Draw() && Mode_GVarSetS("OnItemTakenAI", "") &&
-				LvN_Com("Mission_GetDataPart3_RemoteMessage1", "Boss", GD, "PreCallDeepThroat", LvN_NoArgs()) && Gd_EndWave("Traffic", 3, usr));
+				LV_COM("Mission_GetDataPart3_RemoteMessage1", "Boss", Mission_GetDataPart3, PreCallDeepThroat, LvN_NoArgs()) &&
+				Gd_EndWave("Traffic", 3, usr));
 		}
 		return Mode_Done(&t, all == 0 && LvN_Com("Mission_GetDataPart3_RemoteMessage3", "Boss", NULL, NULL, NULL) &&
 			LvN_Set0("DataStatus", "Value", n) && LvN_Draw() && Gd_EndWave("Enemies", 2, usr) && Native_Arith('+', n, Mode_I(&t, 1), n1) &&
-			LV_OWN(GD, "CreateWave", NULL, "v", n1));
+			PORT_LOWN(Mission_GetDataPart3, CreateWave, NULL, "v", n1));
 	}
 	if (player < 0) {
 		return Mode_Done(&t, 0);
@@ -2499,7 +2505,8 @@ static byte Data_PreGetData(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	SaveVar_Set("MissionState", "GetData");
-	return Cm_Desc("Mission_GetDataPart3_MissionText1") && LV_OWN(GD, "GetData", NULL, "") && LV_OWN(GD, "InitMission", NULL, "");
+	return Cm_Desc("Mission_GetDataPart3_MissionText1") && PORT_LOWN(Mission_GetDataPart3, GetData, NULL, "") &&
+		PORT_LOWN(Mission_GetDataPart3, InitMission, NULL, "");
 }
 
 /* GetData(): the lists of the functionaries with their callbacks, the wave of the data count */
@@ -2517,7 +2524,7 @@ static byte Data_GetData(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Native_SetInt(&one, 1);
 	Native_SetNone(&n1);
-	byte ok = Mode_SaveInt("NumData", &n) && Native_Arith('+', &n, &one, &n1) && LV_OWN(GD, "CreateWave", NULL, "v", &n1);
+	byte ok = Mode_SaveInt("NumData", &n) && Native_Arith('+', &n, &one, &n1) && PORT_LOWN(Mission_GetDataPart3, CreateWave, NULL, "v", &n1);
 	Native_Free(&n);
 	Native_Free(&n1);
 	return ok;
@@ -2526,14 +2533,14 @@ static byte Data_GetData(const nativeVal_t *a, nativeVal_t *out) {
 static byte Data_PreCallDeepThroat(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return LvN_Com("Mission_GetDataPart3_RemoteMessage2", "DeepThroat", GD, "PreCallDeepThroat2", LvN_NoArgs());
+	return LV_COM("Mission_GetDataPart3_RemoteMessage2", "DeepThroat", Mission_GetDataPart3, PreCallDeepThroat2, LvN_NoArgs());
 }
 
 static byte Data_PreCallDeepThroat2(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	SaveVar_Set("MissionState", "CallDeepThroat");
-	return Cm_Desc("Mission_TalkToDeepThroat8_MissionText1") && LV_OWN(GD, "CallDeepThroat", NULL, "");
+	return Cm_Desc("Mission_TalkToDeepThroat8_MissionText1") && PORT_LOWN(Mission_GetDataPart3, CallDeepThroat, NULL, "");
 }
 
 static byte Data_CallDeepThroat(const nativeVal_t *a, nativeVal_t *out) {
