@@ -13,10 +13,10 @@
  * script reads them and write them back at once (OBJLIB 5). The save variables, the money and the language texts are
  * C; Scrap.SetMoney, UsrEntity, GetEntity, DeleteScheduledFuncs and SInput.SetActionSet go through their seams and the
  * characters and vehicles are handle values (OBJLIB 7). The other ports (RaceMaker, Speech, Menu, SaveGame,
- * MissionsFuncs, PhoneCab, Chars), string.replace with its count and string.find, SInput.GetActionSet and
- * SAI.SetStateVehicle stay by name, the keyword calls with Python keyword dicts (OBJLIB 3); the variables of other
- * modules that a test or the game may set to any object (Init.Outdoor, Speech.ObjEntity, PhoneCab.audioComEntity,
- * RaceMaker.Players) are read as values of any type.
+ * MissionsFuncs, PhoneCab, Chars) are called through their refs, the keyword calls too (PORT_CALL, stage 3), and
+ * string.replace with its count and string.find through the native twins; SInput.GetActionSet and SAI.SetStateVehicle
+ * stay by name (OBJLIB 7); the variables of other modules that a test or the game may set to any object (Init.Outdoor,
+ * Speech.ObjEntity, PhoneCab.audioComEntity, RaceMaker.Players) are read as values of any type.
  */
 #include <limits.h>
 #include <string.h>
@@ -100,8 +100,8 @@ static byte Chal_Reward(const nativeVal_t *type, const nativeVal_t *foe, const n
 
 static byte Chal_SetRevenge(const nativeVal_t *looses);
 
-/* Init(Revenge = 0): the race or the combat of the save variables Challenge.*, else the revenge pending (OBJLIB 3:
- * RaceMaker by name with its keywords) */
+/* Init(Revenge = 0): the race or the combat of the save variables Challenge.*, else the revenge pending (RaceMaker
+ * with its keywords, in the order of the script's keyword dicts) */
 static byte Chal_Init(const nativeVal_t *revengeArg) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *revenge = Mode_V(&t), *type = Mode_V(&t), *foe = Mode_V(&t), *money = Mode_V(&t), *num = Mode_V(&t);
@@ -124,23 +124,14 @@ static byte Chal_Init(const nativeVal_t *revengeArg) {
 		if (one < 0 || three < 0) {
 			return Mode_Done(&t, 0);
 		}
-		PyObject *f = Native_ToPy(foe), *r = f ? Native_ToPy(revenge) : NULL;
-		PyObject *kw = r ? Py_BuildValue("{s:i,s:i,s:O,s:O}", "waypointlimit", 15, "numply", one ? 2 : three ? 3 : 4,
-			"foeType", f, "isRevenge", r) : NULL;
-		Py_XDECREF(f);
-		Py_XDECREF(r);
-		return Mode_Done(&t, kw && Mode_CallKw("RaceMaker", "InitRace", NULL, NULL, 0, kw));
+		return Mode_Done(&t, PORT_CALL(RaceMaker, InitRace, NULL, ";waypointlimit=i,numply=i,foeType=v,isRevenge=v", 15L,
+			one ? 2L : three ? 3L : 4L, foe, revenge));
 	}
 	if (Native_IsStr(type, "Combat")) {
 		if (!Mode_SaveInt("Challenge.NumEnemies", num)) {
 			return Mode_Done(&t, 0);
 		}
-		PyObject *n = Native_ToPy(num), *kw = n ? Py_BuildValue("{s:O}", "numFoes", n) : NULL;
-		Py_XDECREF(n);
-		nativeVal_t *args = Mode_V(&t);
-		Native_Copy(args, foe);
-		Native_Copy(Mode_V(&t), revenge);
-		return Mode_Done(&t, kw && Mode_CallKw("RaceMaker", "InitCombat", NULL, args, 2, kw));
+		return Mode_Done(&t, PORT_CALL(RaceMaker, InitCombat, NULL, "vv;numFoes=v", foe, revenge, num));
 	}
 	Mode_SaveVar("Revenge.Type", money);
 	Mode_SaveVar("Revenge.Foe", num);
@@ -163,7 +154,7 @@ static byte Chal_Skills(const nativeVal_t *type, const nativeVal_t *group) {
 
 /* the talk of the bet: Speech.OnChallengeSpch(cad, ans) indoors, Speech.OnChallengeObjSpch(Speech.ObjEntity, foe,
  * cad, ans) at a phone cab (obj), isMerc=1 for the mercenaries. ans is prefix + name + suffix (name NULL: prefix
- * only); OBJLIB 3: Speech by name */
+ * only) */
 static byte Chal_Spch(byte obj, const nativeVal_t *foe, const nativeVal_t *cad, const char *prefix, const nativeVal_t *name,
 	const char *suffix, byte merc) {
 	modeVals_t t = { .n = 0 };
@@ -185,12 +176,12 @@ static byte Chal_Spch(byte obj, const nativeVal_t *foe, const nativeVal_t *cad, 
 	} else {
 		Native_Copy(a, cad);
 	}
-	const char *fn = obj ? "OnChallengeObjSpch" : "OnChallengeSpch";
-	if (!merc) {
-		return Mode_Done(&t, obj ? Native_CallMod("Speech", fn, NULL, "vvvv", a, b, c, d) :
-			Native_CallMod("Speech", fn, NULL, "vv", a, b));
+	if (obj) {
+		return Mode_Done(&t, merc ? PORT_CALL(Speech, OnChallengeObjSpch, NULL, "vvvv;isMerc=i", a, b, c, d, 1L) :
+			PORT_CALL(Speech, OnChallengeObjSpch, NULL, "vvvv", a, b, c, d));
 	}
-	return Mode_Done(&t, Mode_CallKw("Speech", fn, NULL, a, obj ? 4 : 2, Py_BuildValue("{s:i}", "isMerc", 1)));
+	return Mode_Done(&t, merc ? PORT_CALL(Speech, OnChallengeSpch, NULL, "vv;isMerc=i", a, b, 1L) :
+		PORT_CALL(Speech, OnChallengeSpch, NULL, "vv", a, b));
 }
 
 /* Speech.OnEndOfSpeech = the function name of the module (OBJLIB 5: the function object itself) */
@@ -209,7 +200,7 @@ static int Chal_Outdoor(void) {
 	return c;
 }
 
-/* string.replace(cad, "<n>", n, 1) (OBJLIB 3: the string port by name, the count of the script) */
+/* string.replace(cad, "<n>", n, 1) (the native twin, with the count of the script) */
 static byte Chal_Replace1(const nativeVal_t *cad, const nativeVal_t *n, nativeVal_t *out) {
 	return PORT_CALL(string, replace, out, "vsvi", cad, "<n>", n, 1L);
 }
@@ -224,9 +215,9 @@ static byte Chal_Spawn(nativeVal_t *out) {
 	return ok;
 }
 
-/* Menu.MovieScorer(0); SInput.SetActionSet("Inactive") (OBJLIB 3: Menu by name) */
+/* Menu.MovieScorer(0); SInput.SetActionSet("Inactive") */
 static byte Chal_Movie(void) {
-	return Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) && Mode_ActionSet("Inactive");
+	return PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) && Mode_ActionSet("Inactive");
 }
 
 /* the bet taken by a foe that is no mercenary (num 1, 3 or 5 foes) */
@@ -371,15 +362,15 @@ static byte Chal_OnChallengeOpt(const nativeVal_t *opt, const nativeVal_t *ch, c
 }
 
 /* SetRevengeParams(RevengeType, RevengeFoe, NumEnemies): the revenge into the save variables, the game restarts
- * (OBJLIB 3: SaveGame by name with its keyword) */
+ * (SaveGame.StartGame with its keyword) */
 static byte Chal_SetRevengeParams(const nativeVal_t *type, const nativeVal_t *foe, const nativeVal_t *num) {
 	return Mode_Import("Init") && Mode_Import("SaveGame") && Mode_Import("string") && Mode_SetSaveVar("Revenge.Type", type) &&
 		Mode_SetSaveVar("Revenge.Foe", foe) && Mode_SetSaveVar("Revenge.NumEnemies", num) &&
-		Mode_CallKw("SaveGame", "StartGame", NULL, NULL, 0, Py_BuildValue("{s:i}", "CleanChallenge", 1));
+		PORT_CALL(SaveGame, StartGame, NULL, ";CleanChallenge=i", 1L);
 }
 
 /* SetRevenge(playerLooses = 1): the nearest phone cab is marked and the foe calls (lost: unless in Humphrey's race
- * tutorial); OBJLIB 3: PhoneCab, MissionsFuncs and Speech by name */
+ * tutorial) */
 static byte Chal_SetRevenge(const nativeVal_t *looses) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *player = Mode_V(&t), *pos = Mode_V(&t), *cab = Mode_V(&t), *tut = Mode_V(&t), *foe = Mode_V(&t);
@@ -394,12 +385,12 @@ static byte Chal_SetRevenge(const nativeVal_t *looses) {
 	if (!Native_True(player)) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_VObj(player, "Pos", pos) || !Native_CallMod("PhoneCab", "GetNearestPhoneCab", cab, "v", pos)) {
+	if (!Mode_VObj(player, "Pos", pos) || !PORT_CALL(PhoneCab, GetNearestPhoneCab, cab, "v", pos)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("HumphreyRaceTutorial", tut);
-	if (!Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", cab, Native_IsStr(tut, "1") ? 1L : 2L) ||
-		!Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 1L)) {
+	if (!PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", cab, Native_IsStr(tut, "1") ? 1L : 2L) ||
+		!PORT_CALL(MissionsFuncs, SetSecondary, NULL, "i", 1L)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Revenge.Foe", foe);
@@ -421,7 +412,7 @@ static byte Chal_SetRevenge(const nativeVal_t *looses) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Revenge.Foe", who);
-	return Mode_Done(&t, Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", text, who));
+	return Mode_Done(&t, PORT_CALL(Speech, AddRemoteCom, NULL, "vv", text, who));
 }
 
 /* LaunchRevenge(): the end of the revenge talk: the revenge becomes the challenge and starts here */
@@ -438,8 +429,8 @@ static byte Chal_LaunchRevenge(void) {
 	Mode_SaveVar("Revenge.Foe", foe);
 	return Mode_Done(&t, Mode_SetSaveVar("Challenge.Foe", foe) && Chal_G("numChallengeEnemies", num) &&
 		Chal_SetSaveRepr("Challenge.NumEnemies", num) && Mode_SetSaveVar("Revenge.Type", Mode_S(&t, "")) &&
-		Mode_SetSaveVar("Revenge.Foe", Mode_S(&t, "")) && Native_CallMod("PhoneCab", "ForceResetPhoneCab", NULL, "") &&
-		LvN_ModGet("PhoneCab", "audioComEntity", ac) && Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", ac, 0L) &&
+		Mode_SetSaveVar("Revenge.Foe", Mode_S(&t, "")) && PORT_CALL(PhoneCab, ForceResetPhoneCab, NULL, "") &&
+		LvN_ModGet("PhoneCab", "audioComEntity", ac) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", ac, 0L) &&
 		Chal_Init(Mode_I(&t, 1)));
 }
 
@@ -453,8 +444,8 @@ static byte Chal_LaunchChallenge(void) {
 		!Chal_G("numChallengeEnemies", num) || !Chal_SetSaveRepr("Challenge.NumEnemies", num) ||
 		!Chal_G("challengeType", type) || !Mode_SetSaveVar("Challenge.Type", type) || !Chal_G("foeType", foe) ||
 		!Mode_SetSaveVar("Challenge.Foe", foe) || !LvN_ModGet("Init", "Outdoor", out) ||
-		(Native_True(out) && (!Mode_Import("PhoneCab") || !Native_CallMod("PhoneCab", "ForceResetPhoneCab", NULL, ""))) ||
-		!Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 1L) || !LvN_ModGet("Init", "OutArea", area)) {
+		(Native_True(out) && (!Mode_Import("PhoneCab") || !PORT_CALL(PhoneCab, ForceResetPhoneCab, NULL, ""))) ||
+		!PORT_CALL(MissionsFuncs, SetSecondary, NULL, "i", 1L) || !LvN_ModGet("Init", "OutArea", area)) {
 		return Mode_Done(&t, 0);
 	}
 	int empty = Mode_Cmp(area, "==", Mode_S(&t, ""));
@@ -482,8 +473,8 @@ static byte Chal_LaunchChallenge(void) {
 		}
 	}
 	return Mode_Done(&t, Mode_Cat(&t, level, 2, Mode_S(&t, "Levels/"), mm) && Chal_Spawn(spawn) &&
-		Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvs", level, spawn, "") &&
-		Mode_CallKw("SaveGame", "StartGame", NULL, NULL, 0, Py_BuildValue("{s:i}", "CleanChallenge", 0)));
+		PORT_CALL(SaveGame, MarkWayPoint, NULL, "vvs", level, spawn, "") &&
+		PORT_CALL(SaveGame, StartGame, NULL, ";CleanChallenge=i", 0L));
 }
 
 /* the end of a challenge or revenge (prefix "Challenge" or "Revenge"): no secondary mission, and its save variables
@@ -495,8 +486,8 @@ static byte Chal_Clean(const char *prefix, byte revenge) {
 	Str_Printf(name, sizeof(name), "%s.Type", prefix);
 	Mode_SaveVar(name, &type);
 	byte ok = Native_IsStr(&type, "") || (Mode_Import("MissionsFuncs") &&
-		Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 0L) && Mode_Import("SaveGame") &&
-		Native_CallMod("SaveGame", "SMDesc", NULL, "si", "", 1L));
+		PORT_CALL(MissionsFuncs, SetSecondary, NULL, "i", 0L) && Mode_Import("SaveGame") &&
+		PORT_CALL(SaveGame, SMDesc, NULL, "si", "", 1L));
 	Native_Free(&type);
 	Native_SetStr(&empty, "");
 	for (int i = 0; ok && i < (revenge ? 4 : 3); i++) {
@@ -506,8 +497,8 @@ static byte Chal_Clean(const char *prefix, byte revenge) {
 	return ok;
 }
 
-/* the vehicles of a cancelled challenge (the names in seq) go back to the police or the traffic (OBJLIB 3:
- * string.find and SAI.SetStateVehicle by name) */
+/* the vehicles of a cancelled challenge (the names in seq) go back to the police or the traffic (OBJLIB 7:
+ * SAI.SetStateVehicle by name) */
 static byte Chal_Release(nativeVal_t *seq) {
 	int n = Mode_Loop(seq);
 	for (int i = 0; i < n; i++) {
@@ -528,8 +519,8 @@ static byte Chal_Release(nativeVal_t *seq) {
 }
 
 /* CancelChallenge(challType): the player left the race or the combat: the bet is lost, the foes go back to their
- * lists and a revenge is pending (OBJLIB 3: Speech, RaceMaker, Menu, string.replace and SInput.GetActionSet by name;
- * OBJLIB 5: the callbacks of Parking and Alarm set to None in their modules) */
+ * lists and a revenge is pending (OBJLIB 7: SInput.GetActionSet by name; OBJLIB 5: the callbacks of Parking and Alarm
+ * set to None in their modules) */
 static byte Chal_CancelChallenge(const nativeVal_t *type) {
 	static const char *const mods[] = { "Speech", "Menu", "Parking", "Alarm", "RaceMaker", "string" };
 	modeVals_t t = { .n = 0 };
@@ -541,13 +532,13 @@ static byte Chal_CancelChallenge(const nativeVal_t *type) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Native_CallMod("Speech", "CancelRemoteCom", NULL, "") || !Mode_DelSchedS("SF_Secondary")) {
+	if (!PORT_CALL(Speech, CancelRemoteCom, NULL, "") || !Mode_DelSchedS("SF_Secondary")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Lang("RaceSystemCancel1", lang);
 	Mode_SaveVar("Challenge.Money", money);
 	if (!PORT_CALL(string, replace, text, "vsv", lang, "<n>", money) ||
-		!Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", text)) {
+		!PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", text)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Challenge.Foe", foe);
@@ -555,9 +546,9 @@ static byte Chal_CancelChallenge(const nativeVal_t *type) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Challenge.Foe", who);
-	if (!Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", left, who) ||
+	if (!PORT_CALL(Speech, AddRemoteCom, NULL, "vv", left, who) ||
 		!Native_CallMod("SInput", "GetActionSet", set, "") || !LvN_ModNone("Menu", "MissionScorerCall") ||
-		!Native_CallMod("Menu", "DrawScorer", NULL, "iv", 0L, set)) {
+		!PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, set)) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
@@ -670,7 +661,7 @@ static byte Chal_SetChallengeOptions(const nativeVal_t *ch) {
 }
 
 /* AddChallenge(ch, UsrName, iopt): the race and combat options at iopt and iopt + 1, when challenges are on and the
- * player and the character can drive (Humphrey always); OBJLIB 3: Chars by name */
+ * player and the character can drive (Humphrey always) */
 static byte Chal_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, const nativeVal_t *iopt) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *on = Mode_V(&t), *u = Mode_V(&t), *can = Mode_V(&t), *act = Mode_V(&t);
@@ -679,11 +670,11 @@ static byte Chal_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, con
 	}
 	int ok = Native_True(on);
 	if (ok) {
-		ok = Mode_EntitySeam(usr, u) && Native_CallMod("Chars", "CanDrive", can, "v", u) ? Native_True(can) : -1;
+		ok = Mode_EntitySeam(usr, u) && PORT_CALL(Chars, CanDrive, can, "v", u) ? Native_True(can) : -1;
 	}
 	if (ok > 0) {
 		Native_Free(can);
-		ok = Native_CallMod("Chars", "CanDrive", can, "v", ch) ? Native_True(can) : -1;
+		ok = PORT_CALL(Chars, CanDrive, can, "v", ch) ? Native_True(can) : -1;
 		if (ok == 0) {
 			ok = Mode_VObj(ch, "ActCtrl", act) ? Native_IsStr(act, "Humphrey") : -1;
 		}
