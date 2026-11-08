@@ -2770,8 +2770,9 @@ static byte Gambler_CreateCrazyGamblers(const nativeVal_t *a, nativeVal_t *out) 
 		Mode_LaterV(d, CG, "RefreshScorer", Mode_I(&t, 0), 1, NULL));
 }
 
-/* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = ()) with func the global of module (a
- * function handed on as a value, OBJLIB 4) */
+/* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = ()) with func the global of module (OBJLIB 5:
+ * a function handed on as a value; Speech keeps it in its variable OnEndOfSpeech and calls it with Mode_Apply, the
+ * entry of a port's own function) */
 static byte Cm_ForceCom(const char *key, const char *who, const char *module, const char *func) {
 	nativeVal_t args[2];
 	PyObject *fn = Mode_GlobalPy(module, func);

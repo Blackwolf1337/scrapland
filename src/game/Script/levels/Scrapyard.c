@@ -24,7 +24,7 @@
  * a case has put something else there, OBJLIB 5). By name: the sections of the .def files (LaunchAmbush and
  * PreLaunchAmbush of Mission_Ambush, PreSetNextMission of Mission_DefeatCrazyGambler2, BadGuyAppears,
  * CreateMissionPlans and SetNextMission of Mission_FindDtritusMatrix, InitEvasion of Mission_StupidMercAgain; OBJLIB 6)
- * and the class VehiclesNPC.cShipAI (OBJLIB 4); the functions given to the scheduler, to Parking and CharAct as
+ * and the class VehiclesNPC.cShipAI (OBJLIB 5); the functions given to the scheduler, to Parking and CharAct as
  * callbacks and to the entities (Mode_Later, Mode_AtG, the trigger schedules, LvN_ModSetGlobal, the OnDeath and
  * UseFunc texts) stay values (OBJLIB 4, 5).
  */
@@ -2263,7 +2263,8 @@ static const char *const sa_mercs_profile[] = { "StupidPathFinding=0", "ControlS
 	"FactorDamageItemLife=0.2", "FactorItemAmmo=0.1", "ControlStrafeEvasion=1", "UsePercHookGetAway=2", "TimeMaxStrafe=4",
 	"VelMaxStrafe=0.5", NULL };
 
-/* GetMercsEnemiesProfile(TypeShip): the smart mercenaries (OBJLIB 4: the class VehiclesNPC.cShipAI by name) */
+/* GetMercsEnemiesProfile(TypeShip): the smart mercenaries (OBJLIB 5: the class VehiclesNPC.cShipAI by name, a variable of
+ * VehiclesNPC made by its .mod code, until the variable registry holds it) */
 static byte Again_GetMercsEnemiesProfileN(const nativeVal_t *type, nativeVal_t *out) {
 	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_VSet(out, "Ship", type) &&
 		Mode_SetAttrs(out, sa_mercs_profile);

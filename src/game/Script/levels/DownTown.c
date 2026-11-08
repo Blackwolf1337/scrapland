@@ -28,7 +28,7 @@
  * replace one; the profile functions and the keyword functions InitKillThemMission and InitKillBadGuys have entries
  * for this) go through their refs, the callbacks handed to Speech and Menu by the refs of their functions (LV_COM,
  * LV_ONEND, LV_SCORERG). By name stay: the sections of the .def files, called and given as callbacks (OBJLIB 6); the
- * class VehiclesNPC.cShipAI (OBJLIB 4); the functions handed on as values: to the scheduler (Mode_Later, the Rusty
+ * class VehiclesNPC.cShipAI (OBJLIB 5); the functions handed on as values: to the scheduler (Mode_Later, the Rusty
  * message with Scorer.ShowMissionScorer), as the callbacks of Parking, Vehicles, RaceMaker, MissionsFuncs and Chars,
  * and the Speech.OnOutOfRange kept in outOfRange (OBJLIB 4, 5).
  */
@@ -2279,7 +2279,8 @@ static const char *const merc_profile[] = {
 
 /* GetMercEnemiesProfile(TypeShip) */
 static byte Escort_GetMercEnemiesProfile_C(const nativeVal_t *a, nativeVal_t *out) {
-	/* OBJLIB 4: the class cShipAI, a variable of VehiclesNPC */
+	/* OBJLIB 5: the class cShipAI, a variable of VehiclesNPC made by its .mod code (a mod may replace it), called by name
+	 * until the variable registry holds it; its instances are Python objects (OBJLIB 7) */
 	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_VSet(out, "Ship", &a[0]) &&
 		Mode_SetAttrs(out, merc_profile);
 }
