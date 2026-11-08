@@ -165,10 +165,18 @@ static byte Fx_MoneyTransfer(const nativeVal_t *from, const nativeVal_t *to, con
 
 /* ---- the adapters of the module table (OBJLIB 7: arguments, the mirror and the errors of the Python calls) ---- */
 
+/* Init takes any arguments; its entry for the call of InitLevel through its ref (stage 3) */
+static byte Fx_InitPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
+	return Mode_Import("Init") && Fx_Init();
+}
+
 static PyObject *Fx_InitPy(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	return Mode_Import("Init") && Fx_Init() ? Py_ReturnNone() : NULL;
+	return Fx_InitPy_E(NULL, 0, NULL) ? Py_ReturnNone() : NULL;
 }
 
 /* GetMotorClass(name): string.upper of a value without a native form raises its TypeError */

@@ -174,6 +174,33 @@ static PyObject *Bureaucracy_CreateBureaucracyClass(PyObject *self, PyObject *ar
 	return Mode_Entry(args, Bureaucracy_CreateBureaucracyClass_E);
 }
 
+/* Init(fromViewer = 0) of the argument object (NULL: not given) */
+static byte Bureaucracy_InitObj(PyObject *viewer) {
+	/* OBJLIB 6: the import of the function stays with the module objects until then */
+	PyObject *string = PyImport_ImportModule("string");
+	if (!string) {
+		return 0;
+	}
+	Py_DECREF(string);
+	int fromViewer = viewer ? PyObject_IsTrue(viewer) : 0;
+	return fromViewer >= 0 && Bureaucracy_Init(fromViewer);
+}
+
+/* the entry (stage 3, the call of InitLevel through its ref): fromViewer as the object its call through Python
+ * passes */
+static byte Bureaucracy_InitPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t v[1];
+	byte given[1];
+	(void)out;
+	if (!Mode_KwSlots(a, n, "|O", v, given)) {
+		return 0;
+	}
+	PyObject *viewer = given[0] ? Native_ToPy(&v[0]) : NULL;
+	byte ok = (!given[0] || viewer) && Bureaucracy_InitObj(viewer);
+	Py_XDECREF(viewer);
+	return ok;
+}
+
 static PyObject *Bureaucracy_InitPy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "fromViewer", NULL };
 	PyObject *viewer = NULL;
@@ -181,17 +208,7 @@ static PyObject *Bureaucracy_InitPy(PyObject *self, PyObject *args, PyObject *kw
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &viewer)) {
 		return NULL;
 	}
-	/* OBJLIB 6: the import of the function stays with the module objects until then */
-	PyObject *string = PyImport_ImportModule("string");
-	if (!string) {
-		return NULL;
-	}
-	Py_DECREF(string);
-	int fromViewer = viewer ? PyObject_IsTrue(viewer) : 0;
-	if (fromViewer < 0) {
-		return NULL;
-	}
-	return Bureaucracy_Init(fromViewer) ? Py_ReturnNone() : NULL;
+	return Bureaucracy_InitObj(viewer) ? Py_ReturnNone() : NULL;
 }
 
 PyMethodDef g_BureaucracyMethods[] = {

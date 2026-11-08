@@ -451,11 +451,7 @@ CHAT_QUICK(5)
 CHAT_QUICK(6)
 
 /* SetChatProc(): the callbacks of the engine */
-static PyObject *Chat_SetChatProc(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
+static void Chat_SetProcs(void) {
 	GVar_SetStr("ChatEvent", "Chat.InitChat");
 	GVar_SetStr("OnChatString", "Chat.PrintChatString");
 	GVar_SetStr("FullScreenConsoleCallback", "Chat.ConsoleChatString");
@@ -465,6 +461,25 @@ static PyObject *Chat_SetChatProc(PyObject *self, PyObject *args) {
 	GVar_SetStr("QChatEvent4", "Chat.qchat4");
 	GVar_SetStr("QChatEvent5", "Chat.qchat5");
 	GVar_SetStr("QChatEvent6", "Chat.qchat6");
+}
+
+/* its entry (stage 3, the call of InitLevel through its ref) and its adapter */
+static byte Chat_SetChatProc_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (n != 0) {
+		return Port_Arity(n, 0);
+	}
+	Chat_SetProcs();
+	return 1;
+}
+
+static PyObject *Chat_SetChatProc(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	Chat_SetProcs();
 	return Py_ReturnNone();
 }
 
@@ -490,3 +505,5 @@ PyMethodDef g_ChatMethods[] = {
 	{ "SetChatProc", Chat_SetChatProc, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(Chat)

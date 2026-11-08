@@ -32,8 +32,10 @@ PORT_DECL(NewsPanel, SwitchAlarm) /* 1 */
 
 /* Bureaucracy.c */
 PORT_DECL(Bureaucracy, CreateBureaucracyClass) /* 2 */
+PORT_DECL(Bureaucracy, Init) /* ? */
 #define PORTS_Bureaucracy \
-	PORT_DEF(Bureaucracy, CreateBureaucracyClass, Bureaucracy_CreateBureaucracyClass)
+	PORT_DEF(Bureaucracy, CreateBureaucracyClass, Bureaucracy_CreateBureaucracyClass) \
+	PORT_DEF(Bureaucracy, Init, Bureaucracy_InitPy)
 
 /* Challenge.c */
 PORT_DECL(Challenge, ComputeReward) /* 3 */
@@ -150,6 +152,7 @@ PORT_DECL(Chars, AddNewCharRes) /* ? */
 PORT_DECL(Chars, LocalLoadRes) /* 1 */
 PORT_DECL(Chars, MainCharDeath) /* 2 */
 PORT_DECL(Chars, CreatePlayersList) /* 0 */
+PORT_DECL(Chars, Init) /* ? */
 PORT_DECL(Chars, CreateStartupPlayer) /* 0 */
 #define PORTS_Chars \
 	PORT_DEF(Chars, CanDrive, Chars_CanDrive) \
@@ -164,6 +167,7 @@ PORT_DECL(Chars, CreateStartupPlayer) /* 0 */
 	PORT_DEF(Chars, LocalLoadRes, Chars_LocalLoadRes) \
 	PORT_DEF(Chars, MainCharDeath, Chars_MainCharDeath) \
 	PORT_DEF(Chars, CreatePlayersList, Chars_CreatePlayersList) \
+	PORT_DEF(Chars, Init, Chars_Init) \
 	PORT_DEF(Chars, CreateStartupPlayer, Chars_CreateStartupPlayer)
 
 /* CharsNPC.c */
@@ -208,6 +212,11 @@ PORT_DECL(CharsNPC, GenericNPCSpeech) /* 4 */
 	PORT_DEF(CharsNPC, ClassifyOptions, CharsNPC_ClassifyOptions) \
 	PORT_DEF(CharsNPC, PlayOption, CharsNPC_PlayOption) \
 	PORT_DEF(CharsNPC, GenericNPCSpeech, CharsNPC_GenericNPCSpeech)
+
+/* Chat.c */
+PORT_DECL(Chat, SetChatProc) /* 0 */
+#define PORTS_Chat \
+	PORT_DEF(Chat, SetChatProc, Chat_SetChatProc)
 
 /* CreditsText.c */
 PORT_DECL(CreditsText, Init) /* 0 */
@@ -454,10 +463,12 @@ PORT_DECL(Ffa, FfaScorer) /* 1 */
 	PORT_DEF(Ffa, FfaScorer, Ffa_FfaScorer)
 
 /* Fx.c */
+PORT_DECL(Fx, Init) /* ? */
 PORT_DECL(Fx, GetMotorClass) /* 1 */
 PORT_DECL(Fx, SetUpShipMotors) /* 1 */
 PORT_DECL(Fx, MoneyTransfer) /* 3 */
 #define PORTS_Fx \
+	PORT_DEF(Fx, Init, Fx_InitPy) \
 	PORT_DEF(Fx, GetMotorClass, Fx_GetMotorClass) \
 	PORT_DEF(Fx, SetUpShipMotors, Fx_SetUpShipMotors) \
 	PORT_DEF(Fx, MoneyTransfer, Fx_MoneyTransferPy)
@@ -485,6 +496,7 @@ PORT_DECL(OutSound, LoadCrash) /* 0 */
 PORT_DECL(OutSound, LoadVehicles) /* 0 */
 PORT_DECL(OutSound, Init) /* 0 */
 PORT_DECL(DoorSound, LoadSounds) /* 0 */
+PORT_DECL(DoorSound, LoadSndList) /* 1 */
 PORT_DECL(DoorSound, SetSlide) /* 1 */
 PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 #define PORTS_GameSounds \
@@ -510,6 +522,7 @@ PORT_DECL(DoorSound, ConversorSetSounds) /* 1 */
 	PORT_DEF(OutSound, LoadVehicles, OutSound_LoadVehicles) \
 	PORT_DEF(OutSound, Init, OutSound_Init) \
 	PORT_DEF(DoorSound, LoadSounds, DoorSound_LoadSounds) \
+	PORT_DEF(DoorSound, LoadSndList, DoorSound_LoadSndList) \
 	PORT_DEF(DoorSound, SetSlide, DoorSound_SetSlide) \
 	PORT_DEF(DoorSound, ConversorSetSounds, DoorSound_ConversorSetSounds)
 
@@ -632,6 +645,11 @@ PORT_DECL(HullTab, HideHullPanel) /* 1 */
 	PORT_DEF(HullTab, SetHullVisible, HT_SetHullVisible) \
 	PORT_DEF(HullTab, HideHullPanel, HT_HideHullPanel)
 
+/* InMap.c */
+PORT_DECL(InMap, Init) /* 1 */
+#define PORTS_InMap \
+	PORT_DEF(InMap, Init, InMap_InitPy)
+
 /* InitLevel.c */
 PORT_DECL(Init, LoadCharLib) /* 1 */
 PORT_DECL(Init, AddMLib) /* 1 */
@@ -639,6 +657,7 @@ PORT_DECL(Init, MLibInitStatus) /* 1 */
 PORT_DECL(Init, MLibInit) /* 1 */
 PORT_DECL(Init, isMission) /* ? */
 PORT_DECL(Init, PreloadMlibs) /* 1 */
+PORT_DECL(Init, SetArrowSize) /* ? */
 PORT_DECL(Init, Init) /* 1 */
 #define PORTS_InitLevel \
 	PORT_DEF(Init, LoadCharLib, Init_LoadCharLib) \
@@ -647,6 +666,7 @@ PORT_DECL(Init, Init) /* 1 */
 	PORT_DEF(Init, MLibInit, Init_MLibInit) \
 	PORT_DEF(Init, isMission, Init_isMission) \
 	PORT_DEF(Init, PreloadMlibs, Init_PreloadMlibs) \
+	PORT_DEF(Init, SetArrowSize, Init_SetArrowSize) \
 	PORT_DEF(Init, Init, Init_Init)
 
 /* Items.c */
@@ -824,6 +844,7 @@ PORT_DECL(Menu, InitMenuSys) /* ? */
 PORT_DECL(Menu, MovieScorer) /* ? */
 PORT_DECL(Menu, DeathInfo) /* 1 */
 PORT_DECL(Menu, AuxLoadGame) /* ? */
+PORT_DECL(Menu, Initialize) /* ? */
 PORT_DECL(Menu, GameOver) /* ? */
 PORT_DECL(Menu, TVOff) /* ? */
 #define PORTS_MenuMain \
@@ -834,6 +855,7 @@ PORT_DECL(Menu, TVOff) /* ? */
 	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
 	PORT_DEF(Menu, DeathInfo, Menu_DeathInfo) \
 	PORT_DEF(Menu, AuxLoadGame, Menu_AuxLoadGame) \
+	PORT_DEF(Menu, Initialize, Menu_Initialize) \
 	PORT_DEF(Menu, GameOver, Menu_GameOver) \
 	PORT_DEF(Menu, TVOff, Menu_TVOff)
 
@@ -1038,6 +1060,7 @@ PORT_DECL(Parking, UseShip) /* ? */
 PORT_DECL(Parking, PlayVoiceChannel) /* 1 */
 PORT_DECL(Parking, ExecSwitchVehicleMissionCallback) /* 0 */
 PORT_DECL(Parking, EndPathCam) /* 1 */
+PORT_DECL(Parking, SetCameraStart) /* ? */
 PORT_DECL(Parking, isValidToPark) /* 1 */
 PORT_DECL(Parking, OnPark) /* 2 */
 PORT_DECL(Parking, SetDtritusPlate) /* 2 */
@@ -1064,6 +1087,7 @@ PORT_DECL(Parking, BrowseSwitchLevel) /* 0 */
 PORT_DECL(Parking, ShowNextMap) /* 3 */
 PORT_DECL(Parking, DoorInitializator) /* 1 */
 PORT_DECL(Parking, Init) /* 0 */
+PORT_DECL(Accelerator, CreateAccelerator) /* ? */
 PORT_DECL(Accelerator, Init) /* 0 */
 #define PORTS_Parking \
 	PORT_DEF(Parking, RestoreDeathPlayerShip, Parking_RestoreDeathPlayerShip) \
@@ -1073,6 +1097,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, PlayVoiceChannel, Parking_PlayVoiceChannel) \
 	PORT_DEF(Parking, ExecSwitchVehicleMissionCallback, Parking_ExecSwitchVehicleMissionCallback) \
 	PORT_DEF(Parking, EndPathCam, Parking_EndPathCam) \
+	PORT_DEFK(Parking, SetCameraStart, Parking_SetCameraStart) \
 	PORT_DEF(Parking, isValidToPark, Parking_isValidToPark) \
 	PORT_DEF(Parking, OnPark, Parking_OnPark) \
 	PORT_DEF(Parking, SetDtritusPlate, Parking_SetDtritusPlate) \
@@ -1099,6 +1124,7 @@ PORT_DECL(Accelerator, Init) /* 0 */
 	PORT_DEF(Parking, ShowNextMap, Parking_ShowNextMap) \
 	PORT_DEF(Parking, DoorInitializator, Parking_DoorInitializator) \
 	PORT_DEF(Parking, Init, Parking_Init) \
+	PORT_DEFK(Accelerator, CreateAccelerator, Accelerator_CreateAccelerator) \
 	PORT_DEF(Accelerator, Init, Accelerator_Init)
 
 /* PhoneCab.c */
