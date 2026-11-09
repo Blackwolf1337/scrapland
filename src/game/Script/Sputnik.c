@@ -16,8 +16,8 @@
  *
  * Direct calls (stage 3): Parking, Menu, CharScorer, SputnikInterface and the module's own Assign (through its
  * global, as the script called it) through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). apply of
- * Parking.UseShip on the kept UseParams stays the builtin by name (OBJLIB 4), EndOfSelection is put into
- * SputnikInterface as the object it is (OBJLIB 5).
+ * Parking.UseShip on the kept UseParams takes the entry while the attribute is the port's own function (stage 4:
+ * MODE_CBAPPLYSEQ), EndOfSelection is put into SputnikInterface as the object it is (OBJLIB 5).
  */
 #include <string.h>
 
@@ -237,17 +237,18 @@ static byte Spt_ChangeRelax(const nativeVal_t *name) {
 /* BackCamera(EntityName, EventName, Time): the old ship is sucked in: the walk HUD, then Parking.UseShip with the
  * arguments UseShip kept */
 static byte Spt_BackCamera(void) {
-	nativeVal_t fn = { 0 }, params = { 0 };
+	nativeVal_t params = { 0 };
 	if (!Mode_Import("Menu") || !Mode_Import("CharScorer") || !Mode_Import("Parking") || !Mode_CamLink(LvN_Empty()) ||
 		!Mode_ActionSet("Walk") || !PORT_CALL(CharScorer, Create, NULL, "i", 0L) ||
 		!Spt_PkSetI("PlayerShip", "ActiveCMask", 1) || !Spt_PkSetI("PlayerShip", "Active", 0) ||
 		!Spt_PkSetI("DtritusPlate", "Active", 0) || !Spt_ShipRadius() || !Mode_Import("Parking")) {
 		return 0;
 	}
-	/* apply(Parking.UseShip, UseParams): the function as a value, the builtin by name (OBJLIB 4) */
-	byte ok = Mode_ModGet("Parking", "UseShip", &fn) && Mode_G(SP, "UseParams", &params) &&
-		Native_CallMod("__builtin__", "apply", NULL, "vv", &fn, &params);
-	Native_Free(&fn);
+	/* apply(Parking.UseShip, UseParams): the function of the module (its entry while it is the port's), the
+	 * arguments as the builtin takes them (MODE_CBAPPLYSEQ) */
+	PyObject *fn = Script_Attr("Parking", "UseShip");
+	byte ok = fn && Mode_G(SP, "UseParams", &params) && MODE_CBAPPLYSEQ(fn, &params, NULL);
+	Py_XDECREF(fn);
 	Native_Free(&params);
 	return ok;
 }

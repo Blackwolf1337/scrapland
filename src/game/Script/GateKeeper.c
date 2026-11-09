@@ -16,7 +16,9 @@
  * ConsoleError and SScorer.SetMsgText go through their seams (OBJLIB 7: fc-gk-po records or swaps them).
  *
  * Direct calls (stage 3): Elevator and Speech through their refs (PORT_CALL: the port seam, OBJLIB 5). apply of
- * LocalCallFunc stays the builtin by name (OBJLIB 4), EndOfSpeech is put into Speech as the object it is (OBJLIB 5).
+ * LocalCallFunc and the door functions take the entry when the value is a port's own function (stage 4:
+ * MODE_CBAPPLYSEQ, Mode_CallArgs), else they are called the Python way; EndOfSpeech is put into Speech as the object
+ * it is (OBJLIB 5).
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -146,10 +148,14 @@ static byte Gk_EndOfSpeech(void) {
 	if (!Native_True(fn)) {
 		return Mode_Done(&t, 1);
 	}
-	/* apply(LocalCallFunc, LocalParams): the builtin by name on the objects (OBJLIB 4) */
-	return Mode_Done(&t, Mode_Read(GK, "LocalCallFunc", fn) && Mode_G(GK, "LocalParams", params) &&
-		Native_CallMod("__builtin__", "apply", NULL, "vv", fn, params) && Mode_Put(GK, "LocalCallFunc", NULL, none) &&
-		Mode_Put(GK, "LocalParams", NULL, none));
+	/* apply(LocalCallFunc, LocalParams): the entry while the function is a port's own, the arguments as the builtin
+	 * takes them (MODE_CBAPPLYSEQ) */
+	PyObject *f = NULL;
+	byte ok = Mode_Read(GK, "LocalCallFunc", fn) && Mode_G(GK, "LocalParams", params) &&
+		(f = Native_ToPy(fn)) != NULL && MODE_CBAPPLYSEQ(f, params, NULL) &&
+		Mode_Put(GK, "LocalCallFunc", NULL, none) && Mode_Put(GK, "LocalParams", NULL, none);
+	Py_XDECREF(f);
+	return Mode_Done(&t, ok);
 }
 
 /* the talk that opens the door: the answer, EndOfSpeech at its end with the door callback, the abort restores the
