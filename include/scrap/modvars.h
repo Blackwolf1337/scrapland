@@ -13,7 +13,10 @@
  * registry is taken into the overflow list when a lookup, a write or a walk of the names meets it. The test channel
  * (src/game/Global/TestChannel.c, TestExpr.c) and, since batch 5b, the helpers of the ports by module name
  * (Script_Global, Script_SetGlobal, Script_Attr, Script_SetVar, Native_Import, Native_Put, the Mode_ helpers of
- * scrap/scriptmodes.h and the LvN_ wrappers on them) read and write module variables only through here.
+ * scrap/scriptmodes.h and the LvN_ wrappers on them) and, since batch 5c, the module code of the .mod files (its
+ * stores, loads and deletes, from the start of the module code on: ModVar_Making), the C hooks of module code, the .def
+ * runner (its "%Module.name", setvar and object lines), Script_NameChain and Script_GetAttr read and write module
+ * variables only through here.
  *
  * The 107 variables with a C place (the place text of the table) keep their value in the dict slot too, and the C
  * place follows it: the port refreshes it where it reads the variable (Mode_Read, Native_Import at its entry points)
@@ -74,16 +77,24 @@ typedef struct modVarModule_s {
 extern const modVarModule_t g_ModVarModules[];
 extern const int g_ModVarModuleCount;
 
-/* a module of the registry as it is loaded now: valid while the module lives, keep it only for the call */
+/* a module of the registry as it is loaded now: valid while the module lives, keep it only for the call (or, made by
+ * ModVar_Making, while its module code runs) */
 typedef struct modVarRef_s {
-	int file;			/* the index of its table in g_ModVarModules (-1 inside ModVars.c: a module the registry
-					 * does not have, its dict alone) */
+	int file;			/* the index of its table in g_ModVarModules (-1: a module the registry does not have,
+					 * its dict alone; only ModVar_RefOfDict and ModVar_Making make such a ref, ModVar_Get,
+					 * Set and Del take it, ModVar_Find gives NULL for it) */
 	PyObject *dict;			/* the module dict (borrowed) */
 } modVarRef_t;
 
 /* Script_ModuleMake: the module name was made from the .mod file of level (NULL: of every level) into dict; the names
  * of the dict the table does not have go to the overflow list */
 void ModVar_Made(const char *module, const char *level, PyObject *dict);
+/* Script_ModuleMake before the module code: the same, so the module code's own stores (the let lines of the .mod text,
+ * built in or of a mod pack) and loads go through the registry; *ref the module as the evaluator keeps it (ModVar_
+ * RefOfDict), *was the binding it replaced, for ModVar_Unmade when the module code fails */
+void ModVar_Making(const char *module, const char *level, PyObject *dict, modVarRef_t *ref, modVarRef_t *was);
+/* the module code failed: the binding of the module's files as before ModVar_Making */
+void ModVar_Unmade(const char *module, const modVarRef_t *was);
 /* the registry module of a module object (the pack module of that name in sys.modules, made from a .mod file): 1
  * with *ref, else 0 (no error set) */
 byte ModVar_Of(PyObject *module, modVarRef_t *ref);
@@ -91,6 +102,8 @@ byte ModVar_Of(PyObject *module, modVarRef_t *ref);
 byte ModVar_OfDict(PyObject *dict, modVarRef_t *ref);
 /* the same for a module name (only when it is loaded) */
 byte ModVar_Named(const char *module, modVarRef_t *ref);
+/* the ref of a namespace dict: its registry module (ModVar_OfDict), else the dict alone (file -1) */
+void ModVar_RefOfDict(PyObject *dict, modVarRef_t *ref);
 /* the entry of a name: of the table, or of the overflow list (the name of the dict taken in); NULL when the module
  * has no such name now */
 const modVar_t *ModVar_Find(const modVarRef_t *ref, const char *name);
@@ -129,5 +142,16 @@ int ModVar_SetModAttr(const char *module, const char *name, PyObject *v);
 /* getattr and setattr of any object (v NULL: delattr), a pack module through the registry */
 PyObject *ModVar_ObjAttr(PyObject *o, const char *name);
 int ModVar_SetObjAttr(PyObject *o, const char *name, PyObject *v);
+
+/* ---- by namespace dict (batch 5c): the globals and locals of the .mod evaluator, of Script_NameChain (the .def
+ * runner's code strings, the save code strings, the names of Script_Literal) and of the C hooks of module code; a pack
+ * module's dict through the registry, another dict (a class body, __main__, the $names of a .def file) as it is ---- */
+
+/* the name of the dict (LOAD_NAME's look into one dict): borrowed, NULL without an error when it has none */
+PyObject *ModVar_DictGet(PyObject *dict, const char *name);
+/* name = v in the dict (STORE_NAME, v not stolen): 0, -1 with the error set */
+int ModVar_DictSet(PyObject *dict, const char *name, PyObject *v);
+/* del name in the dict (DELETE_NAME): 0, -1 with KeyError set when it has no value (the caller raises NameError) */
+int ModVar_DictDel(PyObject *dict, const char *name);
 
 #endif

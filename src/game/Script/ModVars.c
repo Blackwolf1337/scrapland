@@ -1,14 +1,15 @@
 /*
  * The registry of the module variables (include/scrap/modvars.h, stage 5 of docs/objlib-plan.md): the lookup by
  * module and name on the generated tables (ModVarTable.c), the overflow list of each module file, the values in the
- * slots of the module dict (OBJLIB 5, until batch 5h) and the access by module name that the helpers of the ports use
- * (batch 5b).
+ * slots of the module dict (OBJLIB 5, until batch 5h), the access by module name that the helpers of the ports use
+ * (batch 5b) and the access by namespace dict of the module code, its C hooks and the name chains (batch 5c).
  *
  * How the registry and the dict stay in step while the dict holds the values: every read and write here goes to the
  * dict, so the registry never keeps a value of its own. What it keeps are names: the table's, and the overflow list of
  * each module file. A name the table does not have is taken into the overflow list when ModVar_Find meets it in the
- * dict (a lookup, a write here, the walk of ModVar_Names) and when the module is made (ModVar_Made walks the dict
- * after the module code: the names of a mod's .mod text, of the C hooks and of the load time calls). An overflow name
+ * dict (a lookup, a write here, the walk of ModVar_Names) and when the module is made (ModVar_Making binds the dict
+ * before the module code, so the let lines of a mod's .mod text enter at their store; ModVar_Made walks the dict after
+ * the module code: the names the load time calls, a from-import and the loader put in). An overflow name
  * stays when its value goes (a del, the module of the level gone): the list has the names ever seen, the dict the
  * values that are there now.
  */
@@ -130,6 +131,30 @@ void ModVar_Made(const char *module, const char *level, PyObject *dict) {
 	}
 }
 
+void ModVar_Making(const char *module, const char *level, PyObject *dict, modVarRef_t *ref, modVarRef_t *was) {
+	int first = MV_FirstFile(module);
+	was->file = -1;
+	was->dict = NULL;
+	for (int i = first; first >= 0 && i < g_ModVarModuleCount && !strcmp(g_ModVarModules[i].module, module); i++) {
+		if (MV_File(i)->dict) {
+			was->file = i;
+			was->dict = MV_File(i)->dict;
+		}
+	}
+	ModVar_Made(module, level, dict);
+	ModVar_RefOfDict(dict, ref);
+}
+
+void ModVar_Unmade(const char *module, const modVarRef_t *was) {
+	int first = MV_FirstFile(module);
+	for (int i = first; first >= 0 && i < g_ModVarModuleCount && !strcmp(g_ModVarModules[i].module, module); i++) {
+		MV_File(i)->dict = NULL;
+	}
+	if (was->file >= 0) {
+		MV_File(was->file)->dict = was->dict;
+	}
+}
+
 byte ModVar_OfDict(PyObject *dict, modVarRef_t *ref) {
 	if (!dict || !PyDict_Check(dict)) {
 		return 0;
@@ -158,6 +183,13 @@ byte ModVar_Of(PyObject *module, modVarRef_t *ref) {
 
 byte ModVar_Named(const char *module, modVarRef_t *ref) {
 	return ModVar_Of(PyDict_GetItemString(PyImport_GetModuleDict(), (char *)module), ref);
+}
+
+void ModVar_RefOfDict(PyObject *dict, modVarRef_t *ref) {
+	if (!ModVar_OfDict(dict, ref)) {
+		ref->file = -1;
+		ref->dict = dict;
+	}
 }
 
 const char *ModVar_ModuleName(const modVarRef_t *ref) {
@@ -318,4 +350,24 @@ int ModVar_SetModAttr(const char *module, const char *name, PyObject *v) {
 	int r = m ? ModVar_SetObjAttr(m, name, v) : -1;
 	Py_XDECREF(m);
 	return r;
+}
+
+/* ---- by namespace dict: the .mod evaluator, Script_NameChain, the C hooks of module code (batch 5c) ---- */
+
+PyObject *ModVar_DictGet(PyObject *dict, const char *name) {
+	modVarRef_t ref;
+	ModVar_RefOfDict(dict, &ref);
+	return ModVar_Get(&ref, name);
+}
+
+int ModVar_DictSet(PyObject *dict, const char *name, PyObject *v) {
+	modVarRef_t ref;
+	ModVar_RefOfDict(dict, &ref);
+	return ModVar_Set(&ref, name, v);
+}
+
+int ModVar_DictDel(PyObject *dict, const char *name) {
+	modVarRef_t ref;
+	ModVar_RefOfDict(dict, &ref);
+	return ModVar_Del(&ref, name);
 }
