@@ -322,15 +322,6 @@ PyObject *Script_Usr(void) {
 	return Script_Ask("Scrap", "UsrEntity", "(i)", 0);
 }
 
-PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyObject *kw) {
-	PyObject *f = args ? Script_Attr(module, func) : NULL;
-	PyObject *r = f ? Script_CallObject(f, args, kw) : NULL;
-	Py_XDECREF(f);
-	Py_XDECREF(args);
-	Py_XDECREF(kw);
-	return r;
-}
-
 /*
  * Plain literals as eval makes them (Python 1.5.2: Parser/tokenizer.c, Python/compile.c parsenumber, parsestr,
  * com_addconst and the interning of PyCode_New; UNARY_NEGATIVE, BUILD_LIST, BUILD_TUPLE, BUILD_MAP and STORE_SUBSCR

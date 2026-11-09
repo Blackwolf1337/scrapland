@@ -141,6 +141,13 @@ byte Script_RunFile(int id, const char *name, const char *section, const char *b
 byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars);
 
+/* OBJLIB 7: the calls of the call lines of .def files since the start (or the last reset) by path, for the test
+ * channel's "native ports": through the registry (the port's or the engine's entry while the module attribute is its
+ * own function), by name to a function of the registry that something else replaced, by name to any other function,
+ * and the ones that failed; reset: back to 0 (the registry count is the site's, reset with the sites) */
+void Script_DefCounts(unsigned long *registry, unsigned long *byName, unsigned long *other, unsigned long *errors,
+	byte reset);
+
 /* the step "print <text>" of .def files: a line on the console, as a script's print */
 void Script_StepPrint(int id, PyObject *args);
 
@@ -167,8 +174,6 @@ void Script_SetCursor(int id, const char *item);
 /* a text of the language ("" when it is not there) */
 const char *Script_Lang(const char *key);
 
-/* module.func(args) of a script, args as Py_BuildValue (a tuple, "(is)"); 0 when it failed (the error printed) */
-byte Script_Call(const char *module, const char *func, const char *fmt, ...);
 /* module.func(args) as a line of a script: 0 with the error left set for the caller (not printed), which then
  * stops and returns NULL as the script would */
 byte Script_Try(const char *module, const char *func, const char *fmt, ...);
@@ -177,8 +182,6 @@ byte Script_Try(const char *module, const char *func, const char *fmt, ...);
  * NULL with the error set */
 PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...);
 PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...);
-/* the same with a tuple of arguments and a dict of keywords (NULL for none), both given away */
-byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw);
 /* callable(args), args given away: the result (a new reference, NULL with the error set) */
 PyObject *Script_Invoke(PyObject *callable, PyObject *args);
 /* an integer variable of a script module (def when it is not there) */
@@ -274,9 +277,6 @@ byte Script_Print(PyObject *const *items, int n);
 /* Scrap.GetEntity(name), Scrap.UsrEntity(0): new references, NULL with the error set */
 PyObject *Script_Entity(PyObject *name);
 PyObject *Script_Usr(void);
-/* module.func(*args, **kw) as a script calls it (args and kw given away, kw may be NULL): the result, a new
- * reference, NULL with the error set (not printed) */
-PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyObject *kw);
 /* `global last; last = target.name; target.name = name` in a function of the script module (name its global, the
  * chain of callbacks the net weapons and Vehicles put in front of Net's): 0 with the error set */
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last);

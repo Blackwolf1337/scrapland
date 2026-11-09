@@ -21,7 +21,9 @@
  *                            Script_ModuleCounts): "modules pack <n> none <n> absent <n> other <n> added <n> made <n>
  *                            loaded <n>" (pack modules found in sys.modules, whose entry is None, not loaded; other
  *                            names; pack modules made empty by Script_ModuleAdd, made from their .mod file, found
- *                            loaded by PreloadLibrary)
+ *                            loaded by PreloadLibrary); then the call lines of the .def files (Script_DefCounts) by
+ *                            path: "def calls registry <n> byname <n> other <n> errors <n>" (the
+ *                            registry ones also on the line of their site in Script.c)
  *   native ports reset       the counts back to 0
  */
 #include <stdlib.h>
@@ -104,6 +106,13 @@ static void TN_Callbacks(nativeBuf_t *out, byte reset) {
 		snprintf(line, sizeof(line), "modules pack %lu none %lu absent %lu other %lu added %lu made %lu loaded %lu\n",
 			mods[SMC_PACK], mods[SMC_NONE], mods[SMC_ABSENT], mods[SMC_OTHER], mods[SMC_ADDED], mods[SMC_MADE],
 			mods[SMC_LOADED]);
+		Native_BufAdd(out, line, -1);
+	}
+	unsigned long other, errors;
+	Script_DefCounts(&entry, &python, &other, &errors, reset);
+	if (!reset) {
+		snprintf(line, sizeof(line), "def calls registry %lu byname %lu other %lu errors %lu\n", entry, python, other,
+			errors);
 		Native_BufAdd(out, line, -1);
 	}
 }
