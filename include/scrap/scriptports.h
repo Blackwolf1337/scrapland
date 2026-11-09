@@ -1373,6 +1373,107 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
 	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
 
+/* PyInterface/ScrapPy.c */
+PORT_DECL(Scrap, ConsoleOut) /* 1 */
+PORT_DECL(Scrap, ConsoleError) /* 1 */
+PORT_DECL(Scrap, DebugInput) /* 1 */
+PORT_DECL(Scrap, ExtractPack) /* 1 */
+PORT_DECL(Scrap, ClosePack) /* 0 */
+PORT_DECL(Scrap, Des) /* 1 */
+PORT_DECL(Scrap, GetTime) /* 0 */
+PORT_DECL(Scrap, GetTimeSpeed) /* 0 */
+PORT_DECL(Scrap, AddScheduledFunc) /* ? */
+PORT_DECL(Scrap, DeleteScheduledFuncs) /* 1 */
+PORT_DECL(Scrap, GetCam) /* 1 */
+PORT_DECL(Scrap, GetFirst) /* 0 */
+PORT_DECL(Scrap, CreateEntityList) /* 1 */
+PORT_DECL(Scrap, GetLevelPath) /* 0 */
+PORT_DECL(Scrap, GetNewLevelPath) /* 0 */
+PORT_DECL(Scrap, GetFloor) /* 1 */
+PORT_DECL(Scrap, CreateElements) /* 0 */
+PORT_DECL(Scrap, CallElements) /* 1 */
+PORT_DECL(Scrap, GetNetFlags) /* 0 */
+PORT_DECL(Scrap, ListModels) /* 0 */
+PORT_DECL(Scrap, BuildFont) /* 2 */
+PORT_DECL(Scrap, GetVideoCurrentMode) /* ? */
+PORT_DECL(Scrap, AddParamf) /* 1 */
+PORT_DECL(Scrap, AddParami) /* 1 */
+PORT_DECL(Scrap, AddParams) /* 1 */
+PORT_DECL(Scrap, Execute) /* 0 */
+PORT_DECL(Scrap, DelSaveVars) /* 1 */
+PORT_DECL(Scrap, CreateSaveVar) /* 2 */
+PORT_DECL(Scrap, GetSaveVar) /* 1 */
+PORT_DECL(Scrap, IncSaveVar) /* ? */
+PORT_DECL(Scrap, CreateSaveProfile) /* 1 */
+PORT_DECL(Scrap, DeleteProfile) /* 1 */
+PORT_DECL(Scrap, GetFreeBlocks) /* 0 */
+PORT_DECL(Scrap, LaunchDashboard) /* 1 */
+PORT_DECL(Scrap, DeselectProfile) /* 0 */
+PORT_DECL(Scrap, GetLanguage) /* 0 */
+PORT_DECL(Scrap, GetLangStr) /* 1 */
+PORT_DECL(Scrap, GetAlarm) /* 0 */
+PORT_DECL(Scrap, GetAlarmChars) /* 0 */
+PORT_DECL(Scrap, GetLockAlarm) /* 0 */
+PORT_DECL(Scrap, GetMoney) /* 0 */
+PORT_DECL(Scrap, InitLoading) /* 0 */
+PORT_DECL(Scrap, EndLoading) /* 0 */
+PORT_DECL(Scrap, Exit) /* 0 */
+PORT_DECL(Scrap, Achievement) /* 1 */
+PORT_DECL(Scrap, GetSteamID) /* 0 */
+PORT_DECL(Scrap, GetSteamTicket) /* 0 */
+PORT_DECL(Scrap, IsSteam) /* 0 */
+PORT_DECL(Scrap, GetGogID) /* 0 */
+#define PORTS_PyInterface_ScrapPy \
+	PORT_DEF(Scrap, ConsoleOut, Scrap_ConsoleOut) \
+	PORT_DEF(Scrap, ConsoleError, Scrap_ConsoleError) \
+	PORT_DEF(Scrap, DebugInput, Scrap_DebugInput) \
+	PORT_DEF(Scrap, ExtractPack, Scrap_ExtractPack) \
+	PORT_DEF(Scrap, ClosePack, Scrap_ClosePack) \
+	PORT_DEF(Scrap, Des, Scrap_Des) \
+	PORT_DEF(Scrap, GetTime, Scrap_GetTime) \
+	PORT_DEF(Scrap, GetTimeSpeed, Scrap_GetTimeSpeed) \
+	PORT_DEFP(Scrap, AddScheduledFunc, Scrap_AddScheduledFunc) \
+	PORT_DEF(Scrap, DeleteScheduledFuncs, Scrap_DeleteScheduledFuncs) \
+	PORT_DEF(Scrap, GetCam, Scrap_GetCam) \
+	PORT_DEF(Scrap, GetFirst, Scrap_GetFirst) \
+	PORT_DEF(Scrap, CreateEntityList, Scrap_CreateEntityList) \
+	PORT_DEF(Scrap, GetLevelPath, Scrap_GetLevelPath) \
+	PORT_DEF(Scrap, GetNewLevelPath, Scrap_GetNewLevelPath) \
+	PORT_DEF(Scrap, GetFloor, Scrap_GetFloor) \
+	PORT_DEF(Scrap, CreateElements, Scrap_CreateElements) \
+	PORT_DEF(Scrap, CallElements, Scrap_CallElements) \
+	PORT_DEF(Scrap, GetNetFlags, Scrap_GetNetFlags) \
+	PORT_DEF(Scrap, ListModels, Scrap_ListModels) \
+	PORT_DEF(Scrap, BuildFont, Scrap_BuildFont) \
+	PORT_DEF(Scrap, GetVideoCurrentMode, Scrap_GetVideoCurrentMode) \
+	PORT_DEF(Scrap, AddParamf, Scrap_AddParamf) \
+	PORT_DEF(Scrap, AddParami, Scrap_AddParami) \
+	PORT_DEF(Scrap, AddParams, Scrap_AddParams) \
+	PORT_DEF(Scrap, Execute, Scrap_Execute) \
+	PORT_DEF(Scrap, DelSaveVars, Scrap_DelSaveVars) \
+	PORT_DEF(Scrap, CreateSaveVar, Scrap_CreateSaveVar) \
+	PORT_DEF(Scrap, GetSaveVar, Scrap_GetSaveVar) \
+	PORT_DEF(Scrap, IncSaveVar, Scrap_IncSaveVar) \
+	PORT_DEF(Scrap, CreateSaveProfile, Scrap_CreateSaveProfile) \
+	PORT_DEF(Scrap, DeleteProfile, Scrap_DeleteProfile) \
+	PORT_DEF(Scrap, GetFreeBlocks, Scrap_GetFreeBlocks) \
+	PORT_DEF(Scrap, LaunchDashboard, Scrap_LaunchDashboard) \
+	PORT_DEF(Scrap, DeselectProfile, Scrap_DeselectProfile) \
+	PORT_DEF(Scrap, GetLanguage, Scrap_GetLanguage) \
+	PORT_DEF(Scrap, GetLangStr, Scrap_GetLangStr) \
+	PORT_DEF(Scrap, GetAlarm, Scrap_GetAlarm) \
+	PORT_DEF(Scrap, GetAlarmChars, Scrap_GetAlarmChars) \
+	PORT_DEF(Scrap, GetLockAlarm, Scrap_GetLockAlarm) \
+	PORT_DEF(Scrap, GetMoney, Scrap_GetMoney) \
+	PORT_DEF(Scrap, InitLoading, Scrap_InitLoading) \
+	PORT_DEF(Scrap, EndLoading, Scrap_EndLoading) \
+	PORT_DEF(Scrap, Exit, Scrap_Exit) \
+	PORT_DEF(Scrap, Achievement, Scrap_Achievement) \
+	PORT_DEF(Scrap, GetSteamID, Scrap_GetSteamID) \
+	PORT_DEF(Scrap, GetSteamTicket, Scrap_GetSteamTicket) \
+	PORT_DEF(Scrap, IsSteam, Scrap_IsSteam) \
+	PORT_DEF(Scrap, GetGogID, Scrap_GetGogID)
+
 /* RaceMaker.c */
 PORT_DECL(RaceMaker, ShowSystemMessage) /* 1 */
 PORT_DECL(RaceMaker, ShowSystemMessageDelay) /* 2 */
@@ -4925,6 +5026,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2347
+#define PORT_COUNT 2396
 
 #endif
