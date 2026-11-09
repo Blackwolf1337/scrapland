@@ -318,6 +318,10 @@ byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out);
  * TypeError of its arguments for other values ("illegal argument type for built-in operation") or Native_NullResult
  * when the variable is not there or of the other type. OBJLIB 7: through the seam (fc-om-dt records Scrap.Set) */
 byte Native_GVarSet(const char *name, const nativeVal_t *v);
+/* the core of Scrap.Set without the seam (its own entry): the result of GVar_SetStr or GVar_SetNum (1 set, 0 read
+ * only, -1 no such variable or one of the other type, with the console line), -2 with the TypeError of a value that is
+ * neither a text without 0 bytes nor a number */
+int Native_GVarStore(const char *name, const nativeVal_t *v);
 /* SScorer.Set(id, item, var, v) with a text or a number (nothing when the item is not there); 0 with the TypeError
  * of its arguments for other values. OBJLIB 7: through the seam (fc-credits2 records SScorer.Set) */
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v);

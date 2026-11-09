@@ -12,6 +12,10 @@
 #   tools/script/ports.py --lines         add the missing PORTS(<file>) lines (at the end of the file)
 #   --build <dir>                         the build folder for the preprocessor (default build-linux64)
 #
+# The engine modules (stage 7: Scrap, SScorer, ... of src/game/PyInterface, the files with SD_PY_MODULE(<Module>, rva)
+# and its designated-initializer table <Module>_methods) get refs the same way, one per function with an entry, listed
+# under the file's path from src/game (PORTS(PyInterface_ScrapPy) at the end of src/game/PyInterface/ScrapPy.c).
+#
 # One ref per table function with an entry: port_<Module>_<Func>, or port_<level>_<Module>_<Func> for the modules
 # of a level (Map, Mission_X: Levels.c entries). A keyword entry whose file defines the names of its slots as
 # char *<adapter>_N[] (MODE_KW, the Mode_KwCall adapters) gets PORT_DEFK or PORT_DEFLK: its ref takes keyword calls.
@@ -21,17 +25,44 @@ import argparse, collections, concurrent.futures, json, os, re, shlex, subproces
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCRIPT = os.path.join(ROOT, 'src/game/Script')
+# the engine modules: their files are named by the path from src/game (PyInterface/ScrapPy.c)
+GAME = os.path.join(ROOT, 'src/game')
+ENGINE_DIR = 'PyInterface'
 HEADER = os.path.join(ROOT, 'include/scrap/scriptports.h')
 TABLEFILE = os.path.join(SCRIPT, 'PortTable.c')
 
 TABLE = re.compile(r'\bPyMethodDef\s+(g_\w+)\s*\[\s*\]\s*=\s*\{')
 # a row: { "Name", adapter, ... }, the adapter maybe cast as (PyCFunction) or (PyCFunction)(void (*)(void)) (keywords)
 ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(?:\(\s*void\s*\(\s*\*\s*\)\s*\(\s*void\s*\)\s*\)\s*)?(\w+)')
-ENTRY = re.compile(r'\bbyte\s+(\w+)_E\s*\(\s*const\s+nativeVal_t\s*\*\s*\w+\s*,\s*int\s+\w+\s*,\s*nativeVal_t\s*\*\s*\w+\s*\)\s*\{')
+# the parameters maybe [[maybe_unused]] (API_FN of include/scrap/scriptapi.h)
+UNUSED = r'(?:\[\[maybe_unused\]\]\s*)?'
+ENTRY = re.compile(r'\bbyte\s+(\w+)_E\s*\(\s*' + UNUSED + r'const\s+nativeVal_t\s*\*\s*\w+\s*,\s*' + UNUSED +
+	r'int\s+\w+\s*,\s*' + UNUSED + r'nativeVal_t\s*\*\s*\w+\s*\)\s*\{')
 PYENTRY = re.compile(r'\bMode_PyEntry(?:Kw)?\(')
 NAMES = re.compile(r'\bchar\s*\*\s*(\w+)_N\s*\[\s*\]\s*=')
 ARITY = re.compile(r'Port_Arity\(\s*\w+\s*,\s*\(?(\d+)\)?\s*\)')
+# the arguments of an engine entry: Mode_Parse(a, n, "<PyArg format>") (a fixed count gives the entry's count)
+PARSE = re.compile(r'\bMode_Parse\(\s*a\s*,\s*n\s*,\s*"([^"]*)"')
+# an engine module: SD_PY_MODULE(<Module>, rva) in the source, its table <Module>_methods with designated initializers
+ENGINE_MODULE = re.compile(r'^SD_PY_MODULE\((\w+),', re.M)
+ENGINE_TABLE = re.compile(r'\bPyMethodDef\s+(\w+)_methods\s*\[\s*\d*\s*\]\s*=\s*\{')
+ENGINE_ROW = re.compile(r'\.ml_name\s*=\s*(?:\(\s*void\s*\*\s*\)\s*)?(?:(str_PyMethod_\w+)|"(\w+)")\s*,\s*'
+	r'\.ml_meth\s*=\s*(?:\(\s*void\s*\*\s*\)\s*)?(?:\(PyCFunction\)\s*)?(\w+)')
+ENGINE_NAME = re.compile(r'\b(str_PyMethod_\w+)\s*\[\s*\d*\s*\]\s*=\s*"(\w+)"')
 Ref = collections.namedtuple('Ref', 'file level module name adapter nargs kw')
+
+
+def path_of(f):
+	"""the path of a source as this tool names it: from src/game for the engine modules (PyInterface/ScrapPy.c), else
+	from src/game/Script"""
+	return os.path.join(GAME, f) if f.startswith(ENGINE_DIR + '/') else os.path.join(SCRIPT, f)
+
+
+def engine_sources():
+	"""the C files of the engine modules (SD_PY_MODULE), relative to src/game"""
+	d = os.path.join(GAME, ENGINE_DIR)
+	return sorted(ENGINE_DIR + '/' + f for f in os.listdir(d) if f.endswith('.c') and
+		ENGINE_MODULE.search(open(os.path.join(d, f), errors='replace').read()))
 
 
 def sources():
@@ -64,6 +95,27 @@ def registrations():
 	regs += [(m.group(1), m.group(2), m.group(3)) for m in
 		re.finditer(r'\{ "(\w+)", "(\w+)", (g_\w+) \}', open(os.path.join(SCRIPT, 'Levels.c')).read())]
 	return regs
+
+
+def engine_tables(pp):
+	"""[(module, file, [(Python name, adapter)])] of the engine modules in the preprocessed engine files (pp), the names
+	of the rows from the str_PyMethod_ texts of all of them (one file can use another's: SScorer_Get)"""
+	names, out = {}, []
+	text = {f: '\n'.join(x for _, x in lines) for f, lines in pp.items()}
+	for t in text.values():
+		names.update(ENGINE_NAME.findall(t))
+	for f in sorted(pp):
+		modules = set(ENGINE_MODULE.findall(open(path_of(f), errors='replace').read()))
+		for m in ENGINE_TABLE.finditer(text[f]):
+			if m.group(1) not in modules:
+				continue
+			depth, i = 1, m.end()
+			while depth and i < len(text[f]):
+				depth += {'{': 1, '}': -1}.get(text[f][i], 0)
+				i += 1
+			out.append((m.group(1), f, [(names[sym] if sym else lit, adapter) for sym, lit, adapter in
+				ENGINE_ROW.findall(text[f][m.end():i])]))
+	return out
 
 
 def _pp1(cmd, path):
@@ -101,16 +153,17 @@ def preprocess(files, build):
 	jobs = {}
 	with concurrent.futures.ThreadPoolExecutor(os.cpu_count() or 4) as ex:
 		for f in files:
-			path = os.path.join(SCRIPT, f)
+			path = path_of(f)
 			if path not in cmds:
 				sys.exit('ports: %s is not in %s (configure the build folder again)' % (path, db))
 			jobs[f] = ex.submit(_pp1, cmds[path], path)
 	return {f: j.result() for f, j in jobs.items()}
 
 
-def entries(lines):
+def entries(lines, engine=False):
 	"""adapter -> nargs (None when the entry checks no count) of the entries in preprocessed lines, and the adapters
-	with the names of their keyword slots (<adapter>_N)"""
+	with the names of their keyword slots (<adapter>_N); engine: an engine file, whose entries check their arguments
+	with Mode_Parse(a, n, "<format>") first (a port entry can parse its keyword slots that way)"""
 	text = '\n'.join(t for _, t in lines)
 	out, kw, py = {}, set(NAMES.findall(text)), set()
 	for m in ENTRY.finditer(text):
@@ -120,10 +173,32 @@ def entries(lines):
 			depth += {'{': 1, '}': -1}.get(text[i], 0)
 			i += 1
 		a = ARITY.search(text, m.end(), i)
-		out[m.group(1)] = int(a.group(1)) if a else None
+		p = None if a or not engine else PARSE.search(text, m.end(), i)
+		if p:
+			lo, hi = parse_counts(p.group(1))
+			out[m.group(1)] = hi if lo == hi else None
+		else:
+			out[m.group(1)] = int(a.group(1)) if a else None
 		if PYENTRY.search(text, m.end(), i):
 			py.add(m.group(1))
 	return out, kw, py
+
+
+def parse_counts(fmt):
+	"""the least and the most arguments of a PyArg format (Mode_FmtCount of ScriptModes.c: letters and groups at the
+	top level, the least those before the '|')"""
+	level, lo, hi = 0, None, 0
+	for c in fmt.split(':')[0].split(';')[0]:
+		if c == '(':
+			hi += not level
+			level += 1
+		elif c == ')':
+			level -= 1
+		elif not level and c.isalpha():
+			hi += 1
+		elif not level and c == '|':
+			lo = hi
+	return (hi if lo is None else lo), hi
 
 
 def refs(build, pp=None):
@@ -150,6 +225,23 @@ def refs(build, pp=None):
 					'P' if adapter in pys[f] else '')
 			else:
 				seen[key] = None
+	# the engine modules, in table order (their names are not those of a port module)
+	epp = {f: pp[f] for f in engine_sources() if f in pp} or preprocess(engine_sources(), build)
+	for f, lines in epp.items():
+		ents[f], kws[f], pys[f] = entries(lines, True)
+	for module, f, rows in engine_tables(epp):
+		# a row given twice (Scrap.GetFreeBlocks): one function
+		for name, adapter in dict.fromkeys(rows):
+			key = (None, module, name)
+			if key in seen:
+				problems.append('%s.%s is in two tables (%s, %s): no ref' % (module, name,
+					seen[key].file if seen[key] else '?', f))
+				dup.add(key)
+			elif adapter in ents[f]:
+				seen[key] = Ref(f, None, module, name, adapter, ents[f][adapter], 'K' if adapter in kws[f] else
+					'P' if adapter in pys[f] else '')
+			else:
+				seen[key] = None
 	out = collections.defaultdict(list)
 	for key, r in seen.items():
 		if r and key not in dup:
@@ -165,8 +257,9 @@ def header(byfile):
 	o = ['/*',
 		' * The refs of the port functions that have a native entry (PORT_CALL and PORT_OWN, include/scrap/scriptnative.h),',
 		' * one per table function: made by tools/script/ports.py from the PyMethodDef tables of src/game/Script, their',
-		' * registrations in Script.c and Levels.c and the entries. Do not edit: run the tool after a table or an entry',
-		' * changes, and to resolve a merge. The number after each ref is the count of arguments its entry takes.',
+		' * registrations in Script.c and Levels.c, the tables of the engine modules (src/game/PyInterface) and the',
+		' * entries. Do not edit: run the tool after a table or an entry changes, and to resolve a merge. The number after',
+		' * each ref is the count of arguments its entry takes.',
 		' */',
 		'#ifndef SCRAP_SCRIPTPORTS_H',
 		'#define SCRAP_SCRIPTPORTS_H',
@@ -202,10 +295,11 @@ def table(byfile):
 	the refs of one name in several levels after each other in the order of the header"""
 	rs = sorted((r for f in sorted(byfile) for r in byfile[f]), key=lambda r: (r.module.encode(), r.name.encode()))
 	o = ['/*',
-		' * The registry of the port functions (stage 4 of docs/objlib-plan.md): every ref of include/scrap/scriptports.h',
-		' * sorted by module and name (strcmp), for Port_Find (src/game/Script/ScriptPort.c). A name served by the modules',
-		' * of several levels (Map, Mission_X) has one ref per level, after each other. Made by tools/script/ports.py with',
-		' * the header. Do not edit: run the tool after a table or an entry changes, and to resolve a merge.',
+		' * The registry of the port and engine functions (stages 4 and 7 of docs/objlib-plan.md): every ref of',
+		' * include/scrap/scriptports.h sorted by module and name (strcmp), for Port_Find (src/game/Script/ScriptPort.c). A',
+		' * name served by the modules of several levels (Map, Mission_X) has one ref per level, after each other. Made by',
+		' * tools/script/ports.py with the header. Do not edit: run the tool after a table or an entry changes, and to',
+		' * resolve a merge.',
 		' */',
 		'#include "scrap/scriptnative.h"',
 		'',
@@ -228,12 +322,12 @@ def read_header():
 
 def missing_lines(byfile):
 	return [f for f in sorted(byfile) if not re.search(r'^PORTS\(%s\)$' % listname(f)[6:],
-		open(os.path.join(SCRIPT, f)).read(), re.M)]
+		open(path_of(f)).read(), re.M)]
 
 
 def add_line(f):
 	"""the PORTS line at the end of the file (after its adapters, entries and tables)"""
-	path = os.path.join(SCRIPT, f)
+	path = path_of(f)
 	t = open(path).read().rstrip('\n')
 	open(path, 'w').write(t + '\n\nPORTS(%s)\n' % listname(f)[6:])
 

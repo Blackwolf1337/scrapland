@@ -1,8 +1,9 @@
 /*
  * The refs of the port functions that have a native entry (PORT_CALL and PORT_OWN, include/scrap/scriptnative.h),
  * one per table function: made by tools/script/ports.py from the PyMethodDef tables of src/game/Script, their
- * registrations in Script.c and Levels.c and the entries. Do not edit: run the tool after a table or an entry
- * changes, and to resolve a merge. The number after each ref is the count of arguments its entry takes.
+ * registrations in Script.c and Levels.c, the tables of the engine modules (src/game/PyInterface) and the
+ * entries. Do not edit: run the tool after a table or an entry changes, and to resolve a merge. The number after
+ * each ref is the count of arguments its entry takes.
  */
 #ifndef SCRAP_SCRIPTPORTS_H
 #define SCRAP_SCRIPTPORTS_H
@@ -1371,6 +1372,231 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 	PORT_DEF(DTritusDesktop, CreatePressDesktop, DTritus_CreatePressDesktop) \
 	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
 	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
+
+/* PyInterface/ScrapPy.c */
+PORT_DECL(Scrap, Print) /* 1 */
+PORT_DECL(Scrap, ConsoleOut) /* 1 */
+PORT_DECL(Scrap, ConsoleError) /* 1 */
+PORT_DECL(Scrap, DebugInput) /* 1 */
+PORT_DECL(Scrap, Verbose) /* 1 */
+PORT_DECL(Scrap, Ver) /* 0 */
+PORT_DECL(Scrap, ExtractPack) /* 1 */
+PORT_DECL(Scrap, OpenPack) /* 1 */
+PORT_DECL(Scrap, ClosePack) /* 0 */
+PORT_DECL(Scrap, PreloadLibrary) /* 2 */
+PORT_DECL(Scrap, Preload3DObject) /* ? */
+PORT_DECL(Scrap, PreloadAnm) /* 2 */
+PORT_DECL(Scrap, PythonCompileAll) /* 0 */
+PORT_DECL(Scrap, Get) /* 1 */
+PORT_DECL(Scrap, Def) /* 1 */
+PORT_DECL(Scrap, Des) /* 1 */
+PORT_DECL(Scrap, Set) /* 2 */
+PORT_DECL(Scrap, ShowGVars) /* ? */
+PORT_DECL(Scrap, SwitchMissionArrows) /* 2 */
+PORT_DECL(Scrap, GetTime) /* 0 */
+PORT_DECL(Scrap, GetTimeSpeed) /* 0 */
+PORT_DECL(Scrap, SetTime) /* 1 */
+PORT_DECL(Scrap, SetTimeSpeed) /* 1 */
+PORT_DECL(Scrap, AddScheduledFunc) /* ? */
+PORT_DECL(Scrap, DeleteScheduledFuncs) /* 1 */
+PORT_DECL(Scrap, SetCam) /* 2 */
+PORT_DECL(Scrap, GetCam) /* 1 */
+PORT_DECL(Scrap, GetMinCamDist) /* 3 */
+PORT_DECL(Scrap, GetEntity) /* 1 */
+PORT_DECL(Scrap, GetFirst) /* 0 */
+PORT_DECL(Scrap, CreateEntity) /* 5 */
+PORT_DECL(Scrap, UsrEntity) /* 1 */
+PORT_DECL(Scrap, EntityListGet) /* 2 */
+PORT_DECL(Scrap, EntityListSet) /* 3 */
+PORT_DECL(Scrap, CreateEntityList) /* 1 */
+PORT_DECL(Scrap, LoadLevel) /* 1 */
+PORT_DECL(Scrap, GetLevelPath) /* 0 */
+PORT_DECL(Scrap, GetNewLevelPath) /* 0 */
+PORT_DECL(Scrap, SetGrid) /* 3 */
+PORT_DECL(Scrap, GetFloor) /* 1 */
+PORT_DECL(Scrap, CreateElements) /* 0 */
+PORT_DECL(Scrap, CallElements) /* 1 */
+PORT_DECL(Scrap, GetNetFlags) /* 0 */
+PORT_DECL(Scrap, StartDummySearch) /* ? */
+PORT_DECL(Scrap, NextDummySearch) /* 0 */
+PORT_DECL(Scrap, Rand) /* 2 */
+PORT_DECL(Scrap, Round) /* 1 */
+PORT_DECL(Scrap, SetDebrisSys) /* ? */
+PORT_DECL(Scrap, DropDebris) /* 2 */
+PORT_DECL(Scrap, SetDebrisValue) /* 4 */
+PORT_DECL(Scrap, ModelInfo) /* ? */
+PORT_DECL(Scrap, ListModels) /* 0 */
+PORT_DECL(Scrap, BuildFont) /* 2 */
+PORT_DECL(Scrap, ScreenShot) /* 1 */
+PORT_DECL(Scrap, ProcessDVF) /* 2 */
+PORT_DECL(Scrap, VideoPlayer) /* ? */
+PORT_DECL(Scrap, MusicPlayer) /* ? */
+PORT_DECL(Scrap, GetVideoCurrentMode) /* ? */
+PORT_DECL(Scrap, SetVideoCurrentMode) /* 1 */
+PORT_DECL(Scrap, GetVideoModes) /* 1 */
+PORT_DECL(Scrap, TestLine) /* 3 */
+PORT_DECL(Scrap, TestSphere) /* ? */
+PORT_DECL(Scrap, SphereCall) /* ? */
+PORT_DECL(Scrap, SetCallFunc) /* 1 */
+PORT_DECL(Scrap, AddParamf) /* 1 */
+PORT_DECL(Scrap, AddParami) /* 1 */
+PORT_DECL(Scrap, AddParams) /* 1 */
+PORT_DECL(Scrap, Execute) /* 0 */
+PORT_DECL(Scrap, DelSaveVars) /* 1 */
+PORT_DECL(Scrap, CreateSaveVar) /* 2 */
+PORT_DECL(Scrap, GetSaveVar) /* 1 */
+PORT_DECL(Scrap, SetSaveVar) /* 2 */
+PORT_DECL(Scrap, IncSaveVar) /* ? */
+PORT_DECL(Scrap, LoadGameVars) /* 1 */
+PORT_DECL(Scrap, CreateSaveProfile) /* 1 */
+PORT_DECL(Scrap, DeleteProfile) /* 1 */
+PORT_DECL(Scrap, SetSaveProfile) /* 2 */
+PORT_DECL(Scrap, GetFreeBlocks) /* 0 */
+PORT_DECL(Scrap, LaunchDashboard) /* 1 */
+PORT_DECL(Scrap, DeselectProfile) /* 0 */
+PORT_DECL(Scrap, SaveGameVars) /* ? */
+PORT_DECL(Scrap, SaveConfig) /* 0 */
+PORT_DECL(Scrap, SetLanguage) /* ? */
+PORT_DECL(Scrap, GetLanguage) /* 0 */
+PORT_DECL(Scrap, GetLangStr) /* 1 */
+PORT_DECL(Scrap, GetAlarm) /* 0 */
+PORT_DECL(Scrap, SetAlarm) /* 1 */
+PORT_DECL(Scrap, SetAlarmGrow) /* 1 */
+PORT_DECL(Scrap, GetAlarmChars) /* 0 */
+PORT_DECL(Scrap, SetAlarmChar) /* 1 */
+PORT_DECL(Scrap, GetLockAlarm) /* 0 */
+PORT_DECL(Scrap, SetLockAlarm) /* 1 */
+PORT_DECL(Scrap, GetMoney) /* 0 */
+PORT_DECL(Scrap, SetMoney) /* 1 */
+PORT_DECL(Scrap, AddParkingZone) /* 3 */
+PORT_DECL(Scrap, GetFarestParked) /* ? */
+PORT_DECL(Scrap, GetNearestParked) /* ? */
+PORT_DECL(Scrap, AddItem) /* 3 */
+PORT_DECL(Scrap, InitLoading) /* 0 */
+PORT_DECL(Scrap, EndLoading) /* 0 */
+PORT_DECL(Scrap, Exit) /* 0 */
+PORT_DECL(Scrap, FileExist) /* 1 */
+PORT_DECL(Scrap, RunApp) /* 2 */
+PORT_DECL(Scrap, Achievement) /* 1 */
+PORT_DECL(Scrap, OpenStore) /* 1 */
+PORT_DECL(Scrap, IsApp) /* 1 */
+PORT_DECL(Scrap, GetSteamID) /* 0 */
+PORT_DECL(Scrap, GetSteamTicket) /* 0 */
+PORT_DECL(Scrap, IsSteam) /* 0 */
+PORT_DECL(Scrap, GetGogID) /* 0 */
+PORT_DECL(Scrap, ConsoleExec) /* 1 */
+#define PORTS_PyInterface_ScrapPy \
+	PORT_DEF(Scrap, Print, Scrap_Print) \
+	PORT_DEF(Scrap, ConsoleOut, Scrap_ConsoleOut) \
+	PORT_DEF(Scrap, ConsoleError, Scrap_ConsoleError) \
+	PORT_DEF(Scrap, DebugInput, Scrap_DebugInput) \
+	PORT_DEF(Scrap, Verbose, Scrap_Verbose) \
+	PORT_DEF(Scrap, Ver, Scrap_Ver) \
+	PORT_DEF(Scrap, ExtractPack, Scrap_ExtractPack) \
+	PORT_DEF(Scrap, OpenPack, Scrap_OpenPack) \
+	PORT_DEF(Scrap, ClosePack, Scrap_ClosePack) \
+	PORT_DEF(Scrap, PreloadLibrary, Scrap_PreloadLibrary) \
+	PORT_DEF(Scrap, Preload3DObject, Scrap_Preload3DObject) \
+	PORT_DEF(Scrap, PreloadAnm, Scrap_PreloadAnm) \
+	PORT_DEF(Scrap, PythonCompileAll, Scrap_PythonCompileAll) \
+	PORT_DEF(Scrap, Get, Scrap_Get) \
+	PORT_DEF(Scrap, Def, Scrap_Def) \
+	PORT_DEF(Scrap, Des, Scrap_Des) \
+	PORT_DEF(Scrap, Set, Scrap_Set) \
+	PORT_DEF(Scrap, ShowGVars, Scrap_ShowGVars) \
+	PORT_DEF(Scrap, SwitchMissionArrows, Scrap_SwitchMissionArrows) \
+	PORT_DEF(Scrap, GetTime, Scrap_GetTime) \
+	PORT_DEF(Scrap, GetTimeSpeed, Scrap_GetTimeSpeed) \
+	PORT_DEF(Scrap, SetTime, Scrap_SetTime) \
+	PORT_DEF(Scrap, SetTimeSpeed, Scrap_SetTimeSpeed) \
+	PORT_DEFP(Scrap, AddScheduledFunc, Scrap_AddScheduledFunc) \
+	PORT_DEF(Scrap, DeleteScheduledFuncs, Scrap_DeleteScheduledFuncs) \
+	PORT_DEF(Scrap, SetCam, Scrap_SetCam) \
+	PORT_DEF(Scrap, GetCam, Scrap_GetCam) \
+	PORT_DEF(Scrap, GetMinCamDist, Scrap_GetMinCamDist) \
+	PORT_DEF(Scrap, GetEntity, Scrap_GetEntity) \
+	PORT_DEF(Scrap, GetFirst, Scrap_GetFirst) \
+	PORT_DEF(Scrap, CreateEntity, Scrap_CreateEntity) \
+	PORT_DEF(Scrap, UsrEntity, Scrap_UsrEntity) \
+	PORT_DEF(Scrap, EntityListGet, Scrap_EntityListGet) \
+	PORT_DEF(Scrap, EntityListSet, Scrap_EntityListSet) \
+	PORT_DEF(Scrap, CreateEntityList, Scrap_CreateEntityList) \
+	PORT_DEF(Scrap, LoadLevel, Scrap_LoadLevel) \
+	PORT_DEF(Scrap, GetLevelPath, Scrap_GetLevelPath) \
+	PORT_DEF(Scrap, GetNewLevelPath, Scrap_GetNewLevelPath) \
+	PORT_DEF(Scrap, SetGrid, Scrap_SetGrid) \
+	PORT_DEF(Scrap, GetFloor, Scrap_GetFloor) \
+	PORT_DEF(Scrap, CreateElements, Scrap_CreateElements) \
+	PORT_DEF(Scrap, CallElements, Scrap_CallElements) \
+	PORT_DEF(Scrap, GetNetFlags, Scrap_GetNetFlags) \
+	PORT_DEF(Scrap, StartDummySearch, Scrap_StartDummySearch) \
+	PORT_DEF(Scrap, NextDummySearch, Scrap_NextDummySearch) \
+	PORT_DEF(Scrap, Rand, Scrap_Rand) \
+	PORT_DEF(Scrap, Round, Scrap_Round) \
+	PORT_DEF(Scrap, SetDebrisSys, Scrap_SetDebrisSys) \
+	PORT_DEF(Scrap, DropDebris, Scrap_DropDebris) \
+	PORT_DEF(Scrap, SetDebrisValue, Scrap_SetDebrisValue) \
+	PORT_DEF(Scrap, ModelInfo, Scrap_ModelInfo) \
+	PORT_DEF(Scrap, ListModels, Scrap_ListModels) \
+	PORT_DEF(Scrap, BuildFont, Scrap_BuildFont) \
+	PORT_DEF(Scrap, ScreenShot, Scrap_ScreenShot) \
+	PORT_DEF(Scrap, ProcessDVF, Scrap_ProcessDVF) \
+	PORT_DEFP(Scrap, VideoPlayer, Scrap_VideoPlayer) \
+	PORT_DEF(Scrap, MusicPlayer, Scrap_MusicPlayer) \
+	PORT_DEF(Scrap, GetVideoCurrentMode, Scrap_GetVideoCurrentMode) \
+	PORT_DEF(Scrap, SetVideoCurrentMode, Scrap_SetVideoCurrentMode) \
+	PORT_DEF(Scrap, GetVideoModes, Scrap_GetVideoModes) \
+	PORT_DEF(Scrap, TestLine, Scrap_TestLine) \
+	PORT_DEF(Scrap, TestSphere, Scrap_TestSphere) \
+	PORT_DEF(Scrap, SphereCall, Scrap_SphereCall) \
+	PORT_DEF(Scrap, SetCallFunc, Scrap_SetCallFunc) \
+	PORT_DEF(Scrap, AddParamf, Scrap_AddParamf) \
+	PORT_DEF(Scrap, AddParami, Scrap_AddParami) \
+	PORT_DEF(Scrap, AddParams, Scrap_AddParams) \
+	PORT_DEF(Scrap, Execute, Scrap_Execute) \
+	PORT_DEF(Scrap, DelSaveVars, Scrap_DelSaveVars) \
+	PORT_DEF(Scrap, CreateSaveVar, Scrap_CreateSaveVar) \
+	PORT_DEF(Scrap, GetSaveVar, Scrap_GetSaveVar) \
+	PORT_DEF(Scrap, SetSaveVar, Scrap_SetSaveVar) \
+	PORT_DEF(Scrap, IncSaveVar, Scrap_IncSaveVar) \
+	PORT_DEF(Scrap, LoadGameVars, Scrap_LoadGameVars) \
+	PORT_DEF(Scrap, CreateSaveProfile, Scrap_CreateSaveProfile) \
+	PORT_DEF(Scrap, DeleteProfile, Scrap_DeleteProfile) \
+	PORT_DEF(Scrap, SetSaveProfile, Scrap_SetSaveProfile) \
+	PORT_DEF(Scrap, GetFreeBlocks, Scrap_GetFreeBlocks) \
+	PORT_DEF(Scrap, LaunchDashboard, Scrap_LaunchDashboard) \
+	PORT_DEF(Scrap, DeselectProfile, Scrap_DeselectProfile) \
+	PORT_DEF(Scrap, SaveGameVars, Scrap_SaveGameVars) \
+	PORT_DEF(Scrap, SaveConfig, Scrap_SaveConfig) \
+	PORT_DEF(Scrap, SetLanguage, Scrap_SetLanguage) \
+	PORT_DEF(Scrap, GetLanguage, Scrap_GetLanguage) \
+	PORT_DEF(Scrap, GetLangStr, Scrap_GetLangStr) \
+	PORT_DEF(Scrap, GetAlarm, Scrap_GetAlarm) \
+	PORT_DEF(Scrap, SetAlarm, Scrap_SetAlarm) \
+	PORT_DEF(Scrap, SetAlarmGrow, Scrap_SetAlarmGrow) \
+	PORT_DEF(Scrap, GetAlarmChars, Scrap_GetAlarmChars) \
+	PORT_DEF(Scrap, SetAlarmChar, Scrap_SetAlarmChar) \
+	PORT_DEF(Scrap, GetLockAlarm, Scrap_GetLockAlarm) \
+	PORT_DEF(Scrap, SetLockAlarm, Scrap_SetLockAlarm) \
+	PORT_DEF(Scrap, GetMoney, Scrap_GetMoney) \
+	PORT_DEF(Scrap, SetMoney, Scrap_SetMoney) \
+	PORT_DEF(Scrap, AddParkingZone, Scrap_AddParkingZone) \
+	PORT_DEF(Scrap, GetFarestParked, Scrap_GetFarestParked) \
+	PORT_DEF(Scrap, GetNearestParked, Scrap_GetNearestParked) \
+	PORT_DEF(Scrap, AddItem, Scrap_AddItem) \
+	PORT_DEF(Scrap, InitLoading, Scrap_InitLoading) \
+	PORT_DEF(Scrap, EndLoading, Scrap_EndLoading) \
+	PORT_DEF(Scrap, Exit, Scrap_Exit) \
+	PORT_DEF(Scrap, FileExist, Scrap_FileExist) \
+	PORT_DEF(Scrap, RunApp, Scrap_RunApp) \
+	PORT_DEF(Scrap, Achievement, Scrap_Achievement) \
+	PORT_DEF(Scrap, OpenStore, Scrap_OpenStore) \
+	PORT_DEF(Scrap, IsApp, Scrap_IsApp) \
+	PORT_DEF(Scrap, GetSteamID, Scrap_GetSteamID) \
+	PORT_DEF(Scrap, GetSteamTicket, Scrap_GetSteamTicket) \
+	PORT_DEF(Scrap, IsSteam, Scrap_IsSteam) \
+	PORT_DEF(Scrap, GetGogID, Scrap_GetGogID) \
+	PORT_DEF(Scrap, ConsoleExec, Scrap_ConsoleExec)
 
 /* RaceMaker.c */
 PORT_DECL(RaceMaker, ShowSystemMessage) /* 1 */
@@ -4924,6 +5150,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2347
+#define PORT_COUNT 2458
 
 #endif
