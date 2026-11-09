@@ -93,7 +93,8 @@ static byte Fx_MotorClass(const nativeVal_t *name, nativeVal_t *out) {
 	if (!Native_ImportGlobals("Fx", vars)) {
 		return 0;
 	}
-	*out = fx.motor[k];
+	/* a copy: the caller frees the result, the slot keeps its value (a list there was freed twice) */
+	Native_Copy(out, &fx.motor[k]);
 	return 1;
 }
 
