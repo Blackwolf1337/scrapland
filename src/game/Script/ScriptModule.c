@@ -1228,6 +1228,8 @@ static int Mod_Block(modParse_t *m, char *stop, int size) {
 /* the lookups and makes by path (Script_ModuleCounts) */
 static unsigned long mod_counts[SMC_COUNT];
 
+static PyObject *Mod_Add(const char *name, byte *made);
+
 static byte Mod_On(void) {
 	const char *e = getenv("SCRAP_PACK_SCRIPTS");
 	if (e && *e == '1') {
@@ -1279,7 +1281,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 			Con_Verbosef("Script: %s from the packs\n", path);
 		}
 	}
-	PyObject *m = Script_ModuleAdd(name);
+	byte fresh;
+	PyObject *m = Mod_Add(name, &fresh);
 	PyObject *d = m ? PyModule_GetDict(m) : NULL;
 	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = m, .globals = d, .locals = d,
 		.consts = PyList_New(0), .defs = PyDict_New() };
@@ -1370,17 +1373,14 @@ PyObject *Script_ModuleIn(const char *name, PyObject *globals) {
 	return Script_Module(name);
 }
 
-PyObject *Script_ModuleAdd(const char *name) {
-	if (!ModVar_HasModule(name)) {
-		mod_counts[SMC_OTHER]++;
-		return PyImport_AddModule((char *)name);
-	}
+/* PyImport_AddModule of a pack module: the module in sys.modules, a new empty one when there is none or the entry is
+ * no module (borrowed); *made 1 for a new one */
+static PyObject *Mod_Add(const char *name, byte *made) {
 	PyObject *m = Script_ModuleLoaded(name);
-	if (m && PyModule_Check(m)) {
-		mod_counts[SMC_PACK]++;
+	*made = !m || !PyModule_Check(m);
+	if (!*made) {
 		return m;
 	}
-	mod_counts[SMC_ADDED]++;
 	m = PyModule_New((char *)name);
 	if (m && PyDict_SetItemString(Mod_Modules(), (char *)name, m) != 0) {
 		Py_DECREF(m);
@@ -1388,6 +1388,17 @@ PyObject *Script_ModuleAdd(const char *name) {
 	}
 	/* the reference of sys.modules keeps it */
 	Py_XDECREF(m);
+	return m;
+}
+
+PyObject *Script_ModuleAdd(const char *name) {
+	if (!ModVar_HasModule(name)) {
+		mod_counts[SMC_OTHER]++;
+		return PyImport_AddModule((char *)name);
+	}
+	byte made;
+	PyObject *m = Mod_Add(name, &made);
+	mod_counts[made ? SMC_ADDED : SMC_PACK]++;
 	return m;
 }
 
