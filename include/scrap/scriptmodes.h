@@ -239,7 +239,8 @@ byte Mode_VRead(const nativeVal_t *h, const char *var, nativeVal_t *slot);
 
 /* the PyObject of a module variable as its functions read it (a new reference; the NameError of a missing global) */
 PyObject *Mode_GlobalPy(const char *module, const char *name);
-/* module.var = v of another module (OBJLIB 5: its variables are still in its dict) */
+/* module.var = v of another module, through the variable registry (scrap/modvars.h; OBJLIB 5: the value in the slot
+ * of its dict until batch 5h) */
 byte Mode_SetModVar(const char *module, const char *var, const nativeVal_t *v);
 /* module.var of another module into *out (any native value; a TypeError for other objects) */
 byte Mode_ModVar(const char *module, const char *var, nativeVal_t *out);

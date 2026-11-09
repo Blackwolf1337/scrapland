@@ -332,7 +332,8 @@ int Native_NetFlag(int i);
  * A variable of a module kept in C. While other code (the module code of the .mod file, the scripts' readers of
  * other modules, the test cases) still reads and writes the module dict, the dict keeps the value between calls:
  * Native_Import at the start of every entry point of the module takes the dict values into C, Native_Put writes a
- * C change through to the dict at once (a list is changed in place, so references to it see the change).
+ * C change through to the dict at once (a list is changed in place, so references to it see the change). Both go
+ * through the variable registry (scrap/modvars.h, batch 5b); the dict slot keeps the value until batch 5h.
  */
 typedef struct nativeVar_s {
 	const char *name;		/* the variable of the module */

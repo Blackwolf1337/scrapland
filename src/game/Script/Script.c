@@ -50,6 +50,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/filepak.h"
+#include "scrap/modvars.h"
 #include "scrap/pyentity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
@@ -788,13 +789,7 @@ const char *Script_Lang(const char *key) {
 /* ---- the scripts ---- */
 
 PyObject *Script_Attr(const char *module, const char *func) {
-	PyObject *m = PyImport_ImportModule((char *)module);
-	if (!m) {
-		return NULL;
-	}
-	PyObject *f = PyObject_GetAttrString(m, (char *)func);
-	Py_DECREF(m);
-	return f;
+	return ModVar_ModAttr(module, func);
 }
 
 double Script_GetFloat(const char *module, const char *var, double def) {
@@ -1019,12 +1014,10 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 }
 
 void Script_SetVar(const char *module, const char *var, PyObject *value) {
-	PyObject *m = PyImport_ImportModule((char *)module);
-	if (!m || !value || PyObject_SetAttrString(m, (char *)var, value) < 0) {
+	if (!value || ModVar_SetModAttr(module, var, value) < 0) {
 		PyErr_Clear();
 	}
 	Py_XDECREF(value);
-	Py_XDECREF(m);
 }
 
 void Script_SetInt(const char *module, const char *var, int value) {

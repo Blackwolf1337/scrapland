@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/modvars.h"
 #include "scrap/platform.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -37,20 +38,16 @@ PyObject *Script_Ref(PyObject *o) {
 }
 
 PyObject *Script_Global(const char *module, const char *name) {
-	PyObject *m = PyImport_ImportModule((char *)module);
-	PyObject *v = m ? PyDict_GetItemString(PyModule_GetDict(m), (char *)name) : NULL;
-	if (m && !v) {
+	byte imported;
+	PyObject *v = ModVar_Lookup(module, name, &imported);
+	if (imported && !v) {
 		PyErr_SetString(PyExc_NameError, (char *)name);
 	}
-	Py_XINCREF(v);
-	Py_XDECREF(m);
 	return v;
 }
 
 byte Script_SetGlobal(const char *module, const char *name, PyObject *v) {
-	PyObject *m = v ? PyImport_ImportModule((char *)module) : NULL;
-	byte ok = m && PyDict_SetItemString(PyModule_GetDict(m), (char *)name, v) == 0;
-	Py_XDECREF(m);
+	byte ok = v && ModVar_SetGlobal(module, name, v) == 0;
 	Py_XDECREF(v);
 	return ok;
 }
@@ -220,9 +217,8 @@ byte Script_Hook(const char *module, const char *target, const char *name, const
 	if (!prev || !Script_SetGlobal(module, last, prev)) {
 		return 0;
 	}
-	PyObject *mine = Script_Global(module, name), *t = mine ? PyImport_ImportModule((char *)target) : NULL;
-	int bad = !t || PyObject_SetAttrString(t, (char *)name, mine) < 0;
-	Py_XDECREF(t);
+	PyObject *mine = Script_Global(module, name);
+	int bad = !mine || ModVar_SetModAttr(target, name, mine) < 0;
 	Py_XDECREF(mine);
 	return !bad;
 }
