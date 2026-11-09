@@ -108,11 +108,11 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
  * The lines the level scripts repeat, on native values (scrap/scriptmodes.h). Each returns 1, or 0
  * with the error of the script raised; conditions are 1, 0, or -1 with the error. Entities the script holds are
  * handle values (NV_OBJ, OBJLIB 7). Calls of other ports go through PORT_CALL (the port seam, OBJLIB 5); the .def
- * sections, builtins and engine functions stay by name (OBJLIB 4, 6, 7), the functions of the level module through its globals (a mission may replace one), the
+ * sections, builtins and engine functions stay by name (OBJLIB 6, 9, 7), the functions of the level module through its globals (a mission may replace one), the
  * variables of the level module are read where the script reads them and written through at once (OBJLIB 5).
  */
 
-/* by name: a .def section of the module through its global, a builtin or an engine function (OBJLIB 4, 6, 7) */
+/* by name: a .def section of the module through its global, a builtin or an engine function (OBJLIB 6, 9, 7) */
 #define LV_OWN(mod, name, out, ...) Native_CallGlobal(mod, name, out, __VA_ARGS__)
 #define LV_CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 

@@ -28,8 +28,8 @@
  * hooks of PR_HOOK are the values of the variables (OBJLIB 5). SAI.SetStateChar and GetStateChar,
  * SLogic.SendSentinelToWatch, Scrap.CallElements, SScorer.AddModel and SSound.UsePS stay by name (OBJLIB 7); the plain
  * functions of the .def files are data, called and given as callbacks by name (OBJLIB 6); the call lines of the scene
- * tables and of News1 are data in C that the stage 4 registry resolves (OBJLIB 4); CharsNPC.CharRes and the GateKeeper
- * groups are the objects they are (OBJLIB 5); the scheduler keeps Python callables (OBJLIB 4). MapPlanes is
+ * tables and of News1 are data in C (Mode_Calls: a port's function through its entry); CharsNPC.CharRes and the
+ * GateKeeper groups are the objects they are (OBJLIB 5); the scheduler keeps Python callables (OBJLIB 4). MapPlanes is
  * LevelCommon's.
  */
 #include <stdlib.h>
@@ -120,7 +120,7 @@ static byte Pr_BossDoor(const char *foe, const char *use, nativeVal_t *out) {
 	return ok;
 }
 
-/* a scene table of call lines (Mode_Calls: by name, OBJLIB 4 until the stage 4 registry resolves them); "!time|Func"
+/* a scene table of call lines (Mode_Calls: the function of each name, a port's through its entry); "!time|Func"
  * is Scene.AddGeneric(time, 'import '+libname+';'+libname+'.Func()') with libname the global of module (the code text
  * the scene runs, OBJLIB 6) */
 static byte Pr_Scene(const char *module, const char *const *lines) {
@@ -873,7 +873,7 @@ static byte PressSnd_SetSounds(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* the call lines of News1 (Mode_Calls: by name, OBJLIB 4) */
+/* the call lines of News1 (Mode_Calls) */
 static const char *const news1_sounds[] = {
 	"Scene.AddStream|0|musica-betty2|0.6",
 	"Scene.AddSound|233|sweep-encendido|0.3|0|0",

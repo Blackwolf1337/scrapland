@@ -34,8 +34,8 @@
  * LV_COM, LV_ONEND, LV_CALLBACK, LV_MISSIONCHAR; the seam takes the call by name when a mission or a case has put
  * something else there, OBJLIB 5). The GateKeeper refs take Python objects and always go by name. By name: the
  * sections of the .def files (LoadScene, GetAuthorization2, LoadPoliFightScene, InitBossCheats, the Pre and
- * SetNextMission sections of Mission_BeatPickus, MapSnd.PoliceCheats and PoliceBossCheats; OBJLIB 6) and
- * __builtin__.apply on MissionsFuncs.SetNextMission (OBJLIB 4); the functions given to the scheduler, to Scene, Alarm
+ * SetNextMission sections of Mission_BeatPickus, MapSnd.PoliceCheats and PoliceBossCheats; OBJLIB 6); apply on
+ * MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext); the functions given to the scheduler, to Scene, Alarm
  * and CharConversor as callbacks and to the entities (Mode_Later, PO_HOOK, the UseFunc texts) stay values (OBJLIB 4,
  * 5). MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
@@ -2774,23 +2774,10 @@ static byte PoliceBossCheats_CrazyGamblerSpeech(const nativeVal_t *a, nativeVal_
 static byte PoliceBossCheats_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const saves[] = { "MayorAtTownHall", "0", "PoliceBossAtPolice", "0", "BankMasterAtBank", "1", "Journalist.Humphrey_Defaut",
 		"Press", "Journalist.Betty_Defaut", "TownHall", "Journalist.Berto_Defaut", "TownHall", NULL };
-	nativeVal_t data;
 	(void)a;
 	(void)out;
 	Mode_Saves(saves);
-	if (!Po_TargetNone()) {
-		return 0;
-	}
-	/* apply(MissionsFuncs.SetNextMission, NextMissionData) (OBJLIB 4: __builtin__.apply by name on the function value,
-	 * its TypeError) */
-	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_G(PC, "NextMissionData", &data) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data);
-	Native_Free(&data);
-	Py_DECREF(fn);
-	return ok && Mode_MMDesc("Mission_GetInfoClues_MissionText1", 1) && Mode_DelSaveVars("Mission_PoliceBossCheats");
+	return Po_TargetNone() && Mode_ApplyNext(PC) && Mode_MMDesc("Mission_GetInfoClues_MissionText1", 1) && Mode_DelSaveVars("Mission_PoliceBossCheats");
 }
 
 LV_FN(PoliceBossCheats, InitStatusA, 1, PoliceBossCheats_InitStatus)

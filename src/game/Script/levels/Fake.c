@@ -15,8 +15,8 @@
  * and the own functions of Map (CreateFakeBertoShip, LoadFake2Scene) go through their refs (PORT_CALL, PORT_LOWN; the
  * seam takes the call by name when a case has put something else there, OBJLIB 5). By name: the sections of map.def
  * (LoadFake0Scene, LoadFake1Scene, PlayFake0; OBJLIB 6) and the call table of the flight scene, whose "Module.Func"
- * names the scene recorders of the cases see (OBJLIB 4); Scene.EndOfSceneCallback and the event functions of the scene
- * are values (OBJLIB 5).
+ * names the scene recorders of the cases see (Mode_Calls: the function there, a port's through its entry);
+ * Scene.EndOfSceneCallback and the event functions of the scene are values (OBJLIB 5).
  */
 #include <string.h>
 

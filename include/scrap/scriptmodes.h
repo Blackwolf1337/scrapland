@@ -365,9 +365,9 @@ byte Mode_GVarSetI(const char *name, long i);
 /* ---- the native level files of batch G (Orbit, Townhall, GamblinDen, Scrapyard) ---- */
 
 /* the lines of a call table of the level scripts (Sf_Calls on native values): "Mod.Func|arg|..." calls the attribute
- * Func of the module Mod (OBJLIB 4 and 7: other ports and the engine by name, a case may record either), "@Func|..." the
- * global Func of module (a mission may replace it), with the values of LvN_Value (up to 8); 0 with the error of the
- * first line that fails */
+ * Func of the module Mod, "@Func|..." the global Func of module (a mission may replace it), with the values of LvN_Value
+ * (up to 8): the function there through Port_Values (a port's function through its entry; an engine function by name,
+ * OBJLIB 7, and a recorder of a case through Python); 0 with the error of the first line that fails */
 byte Mode_Calls(const char *module, const char *const *lines);
 /* o.name = value for each "name=value" of pairs (Sf_SetAttrs on a value: the values of LvN_Value) */
 byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs);
@@ -559,7 +559,8 @@ byte Mode_ModList1(const char *module, const char *var, const char *src, const c
 byte Mode_ModListG(const char *module, const char *var, const char *src, const char *name);
 /* `if fn: fn()` of the global function fn of module (*called: it was set) */
 byte Mode_CallIf(const char *module, const char *name, byte *called);
-/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module */
+/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module (Mode_CbApplySeq: the entry while the attribute
+ * holds the port's function) */
 byte Mode_ApplyNext(const char *module);
 /* a op the global name of the module: 1, 0, -1 */
 int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const char *name);
@@ -1037,6 +1038,9 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
  *   Mode_CbArgs     f(args...) of a native value f with n values (Mode_CallArgs)
  *   Mode_CbApply    apply(f, args) of native values; Mode_CbApplyPy of a function object (MODE_CBAPPLY): a tuple
  *                   through the entry, any other args through Python (Script_CallObject: its TypeError)
+ *   Mode_CbApplySeq apply(fn, args) as the builtin apply takes args (MODE_CBAPPLYSEQ): a tuple or a list through the
+ *                   entry (more than PORT_ARGS items through Python), any other value through __builtin__.apply by
+ *                   name (a text or another sequence, the TypeError of a value that is none)
  *   Mode_CbLink     fn(id, a, b) of a link function (Mode_LinkCall)
  *   Mode_CbGlobal   name(...) of the global of module (Native_CallGlobal: the NameError of the script; MODE_CBGLOBAL)
  *   Mode_CbAttr     module.name(...) by a name known at run time (Native_CallMod; MODE_CBATTR)
@@ -1045,10 +1049,12 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
 byte Mode_CbArgs(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
 byte Mode_CbApply(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
 byte Mode_CbApplyPy(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out);
+byte Mode_CbApplySeq(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out);
 byte Mode_CbLink(portSite_t *site, PyObject *fn, int id, const char *a, const char *b);
 byte Mode_CbGlobal(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
 byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
 #define MODE_CBAPPLY(fn, args, out) Mode_CbApplyPy(PORT_VSITE(), fn, args, out)
+#define MODE_CBAPPLYSEQ(fn, args, out) Mode_CbApplySeq(PORT_VSITE(), fn, args, out)
 #define MODE_CBGLOBAL(module, name, out, ...) Mode_CbGlobal(PORT_VSITE(), module, name, out, __VA_ARGS__)
 #define MODE_CBATTR(module, name, out, ...) Mode_CbAttr(PORT_VSITE(), module, name, out, __VA_ARGS__)
 

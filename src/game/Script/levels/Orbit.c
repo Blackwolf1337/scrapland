@@ -15,10 +15,11 @@
  *
  * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene, GateKeeper,
  * MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN; the callbacks
- * of AfterBrowseNPC by the names of their refs), Items.Hint too. By name stay the scene tables, the scheduled calls and
- * gc.CanPassFunc (Mode_Calls, Mode_Later, Mode_LaterIn, Mode_Schedule, a function value; OBJLIB 4) and the functions
- * set as callbacks or given as values (EndOfSceneCallback, AfterBrowseNPC, Speech.OnEndOfSpeech,
- * GateKeeper.LocalCallFunc, the door functions of SetDoor, the hint function of Items.Hint; OBJLIB 5).
+ * of AfterBrowseNPC by the names of their refs), Items.Hint too; the scene tables and the function value gc.CanPassFunc
+ * call a port's function through its entry (Mode_Calls, PORT_VALUE). By name stay the scheduled calls (Mode_Later,
+ * Mode_LaterIn, Mode_Schedule; OBJLIB 4) and the functions set as callbacks or given as values (EndOfSceneCallback,
+ * AfterBrowseNPC, Speech.OnEndOfSpeech, GateKeeper.LocalCallFunc, the door functions of SetDoor, the hint function of
+ * Items.Hint; OBJLIB 5).
  */
 #include <string.h>
 
@@ -550,9 +551,10 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 		ok = Mode_Spch("Mission_Decontamination_GateKeeper_4Msg", "Generics_GateKeeper_InitAns1", "TalkNPC") &&
 			Ob_GateKeeperEnd() && Mode_VObj(gc, "CanPassFunc", fn);
 		if (ok) {
-			/* gc.CanPassFunc(door, CharName): a function value of the gatekeeper (OBJLIB 4) */
+			/* gc.CanPassFunc(door, CharName): the function value of the gatekeeper (MapDecont.OpenGateKeeperDoor
+			 * through its entry while it is the port's) */
 			PyObject *f = Native_ToPy(fn);
-			ok = f && Native_Call(f, NULL, "vv", door, charName);
+			ok = f && PORT_VALUE(f, NULL, "vv", door, charName);
 			Py_XDECREF(f);
 		}
 		ok = ok && LvN_SetS(ch, "AbortSelectFunc", "GateKeeper.RestoreState");
