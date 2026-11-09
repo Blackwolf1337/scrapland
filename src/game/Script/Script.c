@@ -8,7 +8,7 @@
  *	<Attr> <value>			SScorer.Set of the last item (or of the style being defined)
  *	use <style>			the attributes of a style onto the last item, at this point
  *	set <item> <Attr> <value>	SScorer.Set of another item
- *	lr <a> <b>, ud <a> <b>		Menu.LinkLR, Menu.LinkUD
+ *	lr <a> <b>, ud <a> <b>		Menu.LinkLR, Menu.LinkUD (through their refs)
  *	default <item>			SScorer.SetDefault
  *	list <name>			the lines that follow are the entries of a list, until the next command
  *	call <Module.Func> [arg ...]	a function of a script, Name=value for a keyword argument
@@ -920,24 +920,6 @@ PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
 	return r;
 }
 
-byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw) {
-	PyObject *f = Script_Attr(module, func);
-	PyObject *r = NULL;
-	if (f && args) {
-		r = Script_CallObject(f, args, kw);
-	}
-	Py_XDECREF(f);
-	Py_XDECREF(args);
-	Py_XDECREF(kw);
-	if (!r) {
-		Con_Warnf("Script: %s.%s failed\n", module, func);
-		PyErr_Print();
-		return 0;
-	}
-	Py_DECREF(r);
-	return 1;
-}
-
 PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
@@ -979,14 +961,6 @@ byte Script_Try(const char *module, const char *func, const char *fmt, ...) {
 	Py_XDECREF(f);
 	Py_XDECREF(r);
 	return r != NULL;
-}
-
-byte Script_Call(const char *module, const char *func, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	return Script_CallKw(module, func, args, NULL);
 }
 
 int Script_GetInt(const char *module, const char *var, int def) {
@@ -2074,8 +2048,15 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 	} else if (!strcmp(cmd, "set") && l->n == 4) {
 		Def_Set(m, Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), l->tok[2], l->tok[3], l->quoted[3]);
 	} else if ((!strcmp(cmd, "lr") || !strcmp(cmd, "ud")) && l->n == 3) {
-		Script_Call("Menu", cmd[0] == 'l' ? "LinkLR" : "LinkUD", "(iss)", m->id,
-			Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), Def_Word(m, l->tok[2], l->quoted[2], b, sizeof(b)));
+		/* Menu.LinkLR(id, a, b), Menu.LinkUD: the second word first, as the call by name took them (the order of
+		 * their warnings) */
+		Def_Word(m, l->tok[2], l->quoted[2], b, sizeof(b));
+		Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
+		if (!(cmd[0] == 'l' ? PORT_CALL(Menu, LinkLR, NULL, "iss", (long)m->id, a, b) :
+			PORT_CALL(Menu, LinkUD, NULL, "iss", (long)m->id, a, b))) {
+			Con_Warnf("Script: Menu.%s failed\n", cmd[0] == 'l' ? "LinkLR" : "LinkUD");
+			PyErr_Print();
+		}
 	} else if (!strcmp(cmd, "default") && l->n == 2) {
 		Script_SetDefault(m->id, Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));
 	} else if (!strcmp(cmd, "call") && l->n >= 2) {
