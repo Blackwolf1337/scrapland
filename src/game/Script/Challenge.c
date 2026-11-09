@@ -10,13 +10,14 @@
  * code reads them as globals like the script (a missing one is a NameError).
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
- * script reads them and write them back at once (OBJLIB 5). The save variables, the money and the language texts are
- * C; Scrap.SetMoney, UsrEntity, GetEntity, DeleteScheduledFuncs and SInput.SetActionSet go through their seams and the
+ * script reads them and write them back at once (OBJLIB 5). The save variables, the money and the language texts are C;
+ * Scrap.SetMoney, UsrEntity, GetEntity, DeleteScheduledFuncs and SInput.SetActionSet go through their seams and the
  * characters and vehicles are handle values (OBJLIB 7). The other ports (RaceMaker, Speech, Menu, SaveGame,
  * MissionsFuncs, PhoneCab, Chars) are called through their refs, the keyword calls too (PORT_CALL, stage 3), and
- * string.replace with its count and string.find through the native twins; SInput.GetActionSet and SAI.SetStateVehicle
- * stay by name (OBJLIB 7); the variables of other modules that a test or the game may set to any object (Init.Outdoor,
- * Speech.ObjEntity, PhoneCab.audioComEntity, RaceMaker.Players) are read as values of any type.
+ * string.replace with its count and string.find through the native twins; SAI.SetStateVehicle goes through its ref
+ * (stage 7), SInput.GetActionSet stays by name (OBJLIB 7: no native entry yet); the variables of other modules that a
+ * test or the game may set to any object (Init.Outdoor, Speech.ObjEntity, PhoneCab.audioComEntity, RaceMaker.Players)
+ * are read as values of any type.
  */
 #include <limits.h>
 #include <string.h>
@@ -497,8 +498,7 @@ static byte Chal_Clean(const char *prefix, byte revenge) {
 	return ok;
 }
 
-/* the vehicles of a cancelled challenge (the names in seq) go back to the police or the traffic (OBJLIB 7:
- * SAI.SetStateVehicle by name) */
+/* the vehicles of a cancelled challenge (the names in seq) go back to the police or the traffic */
 static byte Chal_Release(nativeVal_t *seq) {
 	int n = Mode_Loop(seq);
 	for (int i = 0; i < n; i++) {
@@ -510,7 +510,7 @@ static byte Chal_Release(nativeVal_t *seq) {
 			LvN_SetS(veh, "TgType", "None") && Mode_VObj(veh, "Model", model) &&
 			PORT_CALL(string, find, at, "vs", model, "SPoli") ? Mode_CmpI(at, ">=", 0) : -1;
 		byte ok = c >= 0 && LvN_SetS(veh, "EntityList", c ? "OutCop" : "Traffic") && Mode_VObj(veh, "Name", vname) &&
-			Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, vname);
+			PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 3L, vname);
 		if (!Mode_Done(&t, ok)) {
 			return 0;
 		}

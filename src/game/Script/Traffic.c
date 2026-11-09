@@ -15,12 +15,12 @@
  * ShipMaker, Vehicles and the cases read and set them), and set the engine variables, the money and the save variables
  * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams, OBJLIB 7). The calls of
  * VehiclesNPC, SaveGame and RaceMaker go through their refs (PORT_CALL: the seam, OBJLIB 5). The class
- * VehiclesNPC.cShipAI is called by name (OBJLIB 5: a class the .mod defines); SAI.SetStateVehicle and SAI.EnableAIChar,
- * the ships and profiles the calls give (handle values) and CharsNPC.CharRes stay Python values called or read by name
- * (OBJLIB 5, 7), the hooks onTrackCreate and OnPoliceCreatedCallback are values of the variables (OBJLIB 5) called
- * through the entries of port functions (PORT_VALUE); the steps of police.def take the arguments of their lines as a
- * tuple (OBJLIB 6). The functions of Traffic call each other in C as the port did (the engine callbacks name them
- * "Traffic.<name>").
+ * VehiclesNPC.cShipAI is called by name (OBJLIB 5: a class the .mod defines); SAI.SetStateVehicle and SAI.EnableAIChar
+ * go through their refs (stage 7); the ships and profiles the calls give (handle values) and CharsNPC.CharRes stay
+ * Python values read by name (OBJLIB 5, 7), the hooks onTrackCreate and OnPoliceCreatedCallback are values of the
+ * variables (OBJLIB 5) called through the entries of port functions (PORT_VALUE); the steps of police.def take the
+ * arguments of their lines as a tuple (OBJLIB 6). The functions of Traffic call each other in C as the port did (the
+ * engine callbacks name them "Traffic.<name>").
  */
 #include <string.h>
 
@@ -175,15 +175,14 @@ static byte Traffic_RailDeath(const nativeVal_t *killer) {
 }
 
 /* the death of a rail ship of list (HeavyTraffic...) from ships (AcHeavyShips...): a new one of type, the hook
- * onTrackCreate, the death, the path back (OBJLIB 7: SAI.SetStateVehicle by name; OBJLIB 5: the hook a value of the
- * module) */
+ * onTrackCreate, the death, the path back (OBJLIB 5: the hook a value of the module) */
 static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, const char *list, const char *type) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ship = Mode_V(&t), *o1 = Mode_V(&t), *name = Mode_V(&t);
 	if (!Mode_Import("VehiclesNPC") || !Traffic_SetPathN() || !Traffic_RandomShip(ships, ship) ||
 		!PORT_CALL(VehiclesNPC, MakeAI, o1, "vsii", ship, list, 0L, 0L) || !LvN_SetS(o1, "EntityList", list) ||
 		!LvN_SetS(o1, "Traf_Type", type) || !Mode_VGet(o1, "Name", name) ||
-		!Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 4L, name)) {
+		!PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 4L, name)) {
 		return Mode_Done(&t, 0);
 	}
 	PyObject *hook = Mode_GlobalPy("Traffic", "onTrackCreate");
@@ -295,9 +294,9 @@ static void Step_DefScale(int id, PyObject *args) {
 		PyErr_Print();
 		return;
 	}
-	PyObject *def = Script_Ask("Scrap", "Def", "(O)", var);
+	PyObject *def = PORT_ASK(Scrap, Def, "O", var);
 	PyObject *v = def ? PyNumber_Multiply(def, factor) : NULL;
-	if (!v || !Script_Try("Scrap", "Set", "(OO)", var, v)) {
+	if (!v || !PORT_CALL(Scrap, Set, NULL, "OO", var, v)) {
 		PyErr_Print();
 	}
 	Py_XDECREF(v);
@@ -562,8 +561,8 @@ static byte InPolice_IncludeN(const nativeVal_t *name) {
 	byte police = s && !strcmp(s, "Police");
 	if (s && (!strcmp(s, "Sentinel") || !strcmp(s, "Gear") || police)) {
 		Native_SetStr(&el, police ? "PoliceSmall" : s);
-		/* OBJLIB 7: SAI.EnableAIChar by name (its NULL result for a name the AI table does not have) */
-		ok = Mode_EntityH(name, &ch) && Native_CallMod("SAI", "EnableAIChar", NULL, "vii", name, 1L, 0L) &&
+		/* SAI.EnableAIChar (its NULL result for a name the AI table does not have: the SystemError of the call) */
+		ok = Mode_EntityH(name, &ch) && PORT_CALL(SAI, EnableAIChar, NULL, "vii", name, 1L, 0L) &&
 			Mode_VSet(&ch, "EntityList", &el);
 	}
 	Native_Free(&act);

@@ -17,7 +17,7 @@
  * the save texts are made with the 1.5.2 repr and read with the literal reader of the native layer. Scrap.UsrEntity,
  * GetEntity, CreateEntity, Set, SetAlarm, DelSaveVars, ConsoleError, AddScheduledFunc, SInput.GetActionSet,
  * SetActionSet and SScorer.SetMsgText go through their seams, and so does the Scrap.SetSaveVar of SuperDealOnVictory
- * (OBJLIB 7: the cases record or swap them); Scrap.SetCam and SAI.SetStateVehicle are called by name as before.
+ * (OBJLIB 7: the cases record or swap them); Scrap.SetCam and SAI.SetStateVehicle go through their refs (stage 7).
  * Entities are handle values and the characters of CharsNPC.CharRes and their option lists the objects they are
  * (OBJLIB 7, 5). The other ports (SaveGame, Speech, Menu, Challenge, PhoneCab, Items, VehiclesNPC, Vehicles,
  * RacerScorer, Scorer) and the functions of the module the script calls through its globals are called through their
@@ -615,9 +615,9 @@ static byte Mf_ReassignBertosPlayerTarget(void) {
 	for (int i = 0; ok && i < n; i++) {
 		int mark = t.n;
 		nativeVal_t *b = Mode_V(&t), *name = Mode_V(&t);
-		/* SAI.SetStateVehicle(2, berto, usr.Name) (OBJLIB 7: by name) */
+		/* SAI.SetStateVehicle(2, berto, usr.Name) */
 		ok = Native_SeqItem(bertos, i, b) && Mode_VObj(usr, "Name", name) &&
-			Native_CallMod("SAI", "SetStateVehicle", NULL, "ivv", 2L, b, name);
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, b, name);
 		Mode_Release(&t, mark);
 	}
 	return Mode_Done(&t, ok);
@@ -879,8 +879,8 @@ static byte Mf_RelaxShipsInList(const nativeVal_t *list) {
 	byte ok = Mf_First(list, &e);
 	while (ok && Native_True(&e)) {
 		int on = Mode_VSetS(&e, "EntityList", "") && Mode_VRead(&e, "Active", &active) ? Native_True(&active) : -1;
-		/* SAI.SetStateVehicle(3, e.Name, 1) (OBJLIB 7: by name) */
-		ok = on >= 0 && (!on || (Mode_VRead(&e, "Name", &name) && Native_CallMod("SAI", "SetStateVehicle", NULL, "ivi", 3L, &name, 1L)));
+		/* SAI.SetStateVehicle(3, e.Name, 1) */
+		ok = on >= 0 && (!on || (Mode_VRead(&e, "Name", &name) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, &name, 1L)));
 		Native_Free(&e);
 		ok = ok && Mf_First(list, &e);
 	}
@@ -1136,7 +1136,7 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
 		if (!LvN_Create(Mode_S(&t, "Camara"), zero, zero, zero, "Cam", c) || !Mode_G(MF, "cameraData", cam) ||
 			!Mode_Item(cam, 0, v) || !Mode_VSet(c, "camPos", v) || !Mode_G(MF, "cameraData", cam) || !Mode_Item(cam, 1, v) ||
 			!Mode_VSet(c, "camAng", v) || !Mode_VObj(c, "Name", name) ||
-			!Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, name) || !LvN_PutNone(MF, "cameraData")) {
+			!PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, name) || !LvN_PutNone(MF, "cameraData")) {
 			return Mode_Done(&t, 0);
 		}
 	}

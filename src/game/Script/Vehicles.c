@@ -13,8 +13,9 @@
  * by name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
  * global: a mission, a net weapon or a case may replace one). The net chain stays Script_Hook on Net's functions, the
  * hooks LastClientCreate and LastClientAfterCreate are called through the module's globals by name and OnDeathCallback
- * and the ShipCallback functions of ShipMaker as values (OBJLIB 5: variables). SFX, SAI, SWeap, SNet, SLogic,
- * Scrap.SetCam and SSound.PlaySound (its six arguments) stay by name; Scrap.GetEntity, CreateEntity, UsrEntity,
+ * and the ShipCallback functions of ShipMaker as values (OBJLIB 5: variables). SAI, SWeap, SLogic and Scrap.SetCam go
+ * through their refs (stage 7); SFX, SNet and SSound.PlaySound (its six arguments) stay by name (OBJLIB 7: no native
+ * entry yet); Scrap.GetEntity, CreateEntity, UsrEntity,
  * GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The texts of
  * the net resources of the lost engines ("DmM:<model>") stay as they were.
  */
@@ -404,10 +405,10 @@ static byte Veh_GetCoinN(const nativeVal_t *name, const nativeVal_t *coin) {
 	}
 	if (!Mode_Import("MisItems") || !LvN_Item(coin, 0, x) || !LvN_Item(coin, 1, y) || !LvN_Item(coin, 2, z) ||
 		!LvN_ModGet("MisItems", "COIN_RADIUS_OUTDOOR", rad) ||
-		!Native_CallMod("SAI", "SetStateVehicle", st, "ivvvvviddd", 1L, name, x, y, z, rad, 0L, 1.0, 20.0, 20.0)) {
+		!PORT_CALL(SAI, SetStateVehicle, st, "ivvvvviddd", 1L, name, x, y, z, rad, 0L, 1.0, 20.0, 20.0)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, !LvN_EqI(st, 9) || Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, name));
+	return Mode_Done(&t, !LvN_EqI(st, 9) || PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 3L, name));
 }
 
 static PyObject *Vehicles_GetRandomMercenaryHead(PyObject *self, PyObject *args) {
@@ -532,7 +533,7 @@ static byte Veh_FreeHunters(const nativeVal_t *looser, const nativeVal_t *winner
 			other = Mode_VObjRead(e, "AI_Target", target) ? Mode_Cmp(target, "==", looser) : -1;
 		}
 		if (other < 0 || (other && (!LvN_SetS(e, "EntityList", "Traffic") || !Mode_VObjRead(e, "Name", ename) ||
-			!Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, ename)))) {
+			!PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 3L, ename)))) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(e);
@@ -594,7 +595,7 @@ static byte Veh_Taunt(const nativeVal_t *v, const nativeVal_t *winner) {
 		}
 	}
 	return Mode_Done(&t, PORT_CALL(Speech, RemoteComunication, NULL, "vvi", text, head, -3L) &&
-		Native_CallMod("SLogic", "UpdateTauntEndTime", NULL, ""));
+		PORT_CALL(SLogic, UpdateTauntEndTime, NULL, ""));
 }
 
 /* the single player part of OnDeath */
@@ -738,7 +739,7 @@ static byte Veh_SetActiveCamN(const nativeVal_t *plyName, const nativeVal_t *cam
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cam = Mode_V(&t), *ply = Mode_V(&t), *cname = Mode_V(&t), *pname = Mode_V(&t);
 	return Mode_Done(&t, Mode_EntitySeam(camName, cam) && Mode_EntitySeam(plyName, ply) && Mode_VObj(cam, "Name", cname) &&
-		Native_CallMod("Scrap", "SetCam", NULL, "vv", id, cname) && LvN_SetS(cam, "OnSwitch", "Vehicles.SwitchView") &&
+		PORT_CALL(Scrap, SetCam, NULL, "vv", id, cname) && LvN_SetS(cam, "OnSwitch", "Vehicles.SwitchView") &&
 		Mode_VObj(ply, "Name", pname) && Mode_VSet(cam, "MainTarget", pname) && Mode_VObjRead(ply, "Name", pname) &&
 		Mode_VSet(cam, "Target", pname) && LvN_SetI(cam, "FreeCam", 0));
 }
@@ -757,14 +758,14 @@ static byte Veh_Restock(const nativeVal_t *v) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *na = Mode_V(&t), *max = Mode_V(&t), *part = Mode_V(&t), *i = Mode_V(&t), *off = Mode_V(&t), *nw = Mode_V(&t);
 	long n;
-	if (!Native_CallMod("SWeap", "GetNAmmo", na, "") || !Mode_Range(na, &n)) {
+	if (!PORT_CALL(SWeap, GetNAmmo, na, "") || !Mode_Range(na, &n)) {
 		return Mode_Done(&t, 0);
 	}
 	for (long d = 0; d < n; d++) {
 		Native_Free(max);
 		Native_Free(part);
 		Native_Free(i);
-		if (!Native_CallMod("SWeap", "GetFAmmo", max, "is", d, "Max") || !Mode_Arith('/', max, Mode_I(&t, 8), part) ||
+		if (!PORT_CALL(SWeap, GetFAmmo, max, "is", d, "Max") || !Mode_Arith('/', max, Mode_I(&t, 8), part) ||
 			!Native_ToInt(part, i) || !Veh_SetEach(v, "Ammo", d, i)) {
 			return Mode_Done(&t, 0);
 		}
@@ -773,7 +774,7 @@ static byte Veh_Restock(const nativeVal_t *v) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(off)) {
-		if (!Native_CallMod("SWeap", "GetNWeap", nw, "") || !Mode_Range(nw, &n)) {
+		if (!PORT_CALL(SWeap, GetNWeap, nw, "") || !Mode_Range(nw, &n)) {
 			return Mode_Done(&t, 0);
 		}
 		for (long d = 0; d < n; d++) {

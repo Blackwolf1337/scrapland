@@ -9,12 +9,13 @@
  * variables are read where the script reads them as its globals and StdShips and AIProf changed in place (OBJLIB 5:
  * Traffic, the level files, the police and the cases read them and put profiles into AIProf). The profile objects (a
  * cShipAI instance), the ships (handle values) and the hooks stay Python values (OBJLIB 7). Vehicles, OutMap, Parking
- * and Traffic are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
- * by name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
+ * and Traffic are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else by
+ * name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
  * global: a mission or a case may replace one). The class cShipAI is called as the module's variable (OBJLIB 5: a class
  * the .mod defines, no port function), the scheduler takes the entry of the global InitMercs (Port_Scheduled), SAI and
- * SWeap stay by name and Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams
- * (OBJLIB 7). The .def runner takes its $names as a dict (OBJLIB 6).
+ * SWeap go through their refs (stage 7) except SAI.EnableAIVehicle (by name, OBJLIB 7: see below), Scrap.GetEntity,
+ * CreateEntity, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The .def runner takes its $names
+ * as a dict (OBJLIB 6).
  */
 #include <string.h>
 
@@ -186,7 +187,7 @@ static byte Npc_MakeAIN(const nativeVal_t *type, const nativeVal_t *name, const 
 			Native_Free(&xyz[k]);
 		}
 		Native_Free(d);
-		if (!Npc_SpwXYZ(sp, xyz) || !Native_CallMod("Scrap", "GetMinCamDist", d, "vvv", &xyz[0], &xyz[1], &xyz[2])) {
+		if (!Npc_SpwXYZ(sp, xyz) || !PORT_CALL(Scrap, GetMinCamDist, d, "vvv", &xyz[0], &xyz[1], &xyz[2])) {
 			return Mode_Done(&t, 0);
 		}
 		int c = Mode_CmpI(d, ">", 30000);
@@ -254,7 +255,8 @@ static byte Npc_ModAIProffN(const nativeVal_t *o1, const nativeVal_t *pd, const 
 	for (int i = 0; ok && i < NVARS; i++) {
 		ok = Mode_VObj(pd, vars[i], &a[i + 2]);
 	}
-	/* SAI.EnableAIVehicle by name with the 26 values (OBJLIB 7) */
+	/* SAI.EnableAIVehicle by name with the 26 values (OBJLIB 7: more values than a native entry takes, its entry
+	 * works on Python objects, MODE_PYENTRY) */
 	ok = ok && LvN_ModGet("SAI", "EnableAIVehicle", &f) && Mode_CallArgs(&f, NULL, a, NVARS + 2);
 	if (ok && use && Native_True(use)) {
 		ok = Mode_VObj(o1, "Life", &l) && Mode_VObj(pd, "LifeMult", &m) && Mode_Arith('*', &l, &m, &life) && Mode_VSet(o1, "Life", &life);
@@ -291,7 +293,7 @@ static byte Npc_SetIAProfN(const nativeVal_t *o1, const nativeVal_t *type, const
 		!PORT_OWN(VehiclesNPC, ModAIProff, NULL, "vv", o1, pd)) {
 		return Mode_Done(&t, 0);
 	}
-	if ((!init || Native_True(init)) && (!Mode_VObj(o1, "Name", n2) || !Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, n2))) {
+	if ((!init || Native_True(init)) && (!Mode_VObj(o1, "Name", n2) || !PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 3L, n2))) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Npc_LifeMult(o1, pd)) {
@@ -360,7 +362,7 @@ static byte Npc_SetStdPropertiesN(const nativeVal_t *name, const nativeVal_t *mo
 		nativeVal_t max, half;
 		Native_SetNone(&max);
 		Native_SetNone(&half);
-		byte ok = Native_CallMod("SWeap", "GetFAmmo", &max, "is", i, "Max") && Mode_Arith('/', &max, Mode_I(&t, 2), &half) &&
+		byte ok = PORT_CALL(SWeap, GetFAmmo, &max, "is", i, "Max") && Mode_Arith('/', &max, Mode_I(&t, 2), &half) &&
 			Mode_VSet(o1, ammo[i], &half);
 		Native_Free(&max);
 		Native_Free(&half);
