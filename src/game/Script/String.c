@@ -15,7 +15,7 @@
 
 /* a global of string as its functions load it (the module, then the builtins): a new reference */
 static PyObject *Str_Global(const char *name) {
-	PyObject *m = PyImport_ImportModule("string"), *v = NULL;
+	PyObject *m = Script_Module("string"), *v = NULL;
 	int found = m ? Script_NameChain(NULL, PyModule_GetDict(m), name, &v) : -1;
 	if (found == 0) {
 		PyErr_Format(PyExc_SystemError, "string: cannot load %.100s", name);

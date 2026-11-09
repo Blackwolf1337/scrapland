@@ -593,7 +593,7 @@ static const char *Main_SaveVarOr(const char *var) {
 /* Initialize: the textures and talking heads of the level, then the scorer of the mode */
 static void Main_Initialize(void) {
 	/* OBJLIB 6: PCMenu.Menu is the module object of Menu */
-	PyObject *menu = PyImport_ImportModule("Menu");
+	PyObject *menu = Script_Module("Menu");
 	if (menu && !Mode_SetModPy("PCMenu", "Menu", menu)) {
 		PyErr_Clear();
 	}

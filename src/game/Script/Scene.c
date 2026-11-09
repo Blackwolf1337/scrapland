@@ -479,7 +479,7 @@ static byte Sc_AddSound(const nativeVal_t *frame, const nativeVal_t *sound, cons
 static byte Sc_LoadSounds(const nativeVal_t *clsArg, const nativeVal_t *pathArg) {
 	scriptFrame_t f = { 0 };
 	PyObject *cls = Native_ToPy(clsArg), *path = cls ? Native_ToPy(pathArg) : NULL;
-	PyObject *init = path ? PyImport_ImportModule("Init") : NULL;
+	PyObject *init = path ? Script_Module("Init") : NULL;
 	Sf_Keep(&f, cls);
 	Sf_Keep(&f, path);
 	Sf_Keep(&f, init);

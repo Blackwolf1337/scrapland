@@ -70,9 +70,9 @@ static byte InMap_Init(const char *path) {
 
 /* Init(LevelPath) of the path object */
 static byte InMap_InitObj(PyObject *path) {
-	/* OBJLIB 6: the imports of the function stay with the module objects until then */
-	PyObject *chars = PyImport_ImportModule("Chars");
-	PyObject *string = chars ? PyImport_ImportModule("string") : NULL;
+	/* OBJLIB 7: the imports of the function are module objects (found in C since batch 6b) */
+	PyObject *chars = Script_Module("Chars");
+	PyObject *string = chars ? Script_Module("string") : NULL;
 	Py_XDECREF(chars);
 	if (!string) {
 		return 0;

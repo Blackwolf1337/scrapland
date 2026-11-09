@@ -1141,13 +1141,13 @@ static PyObject *TX_Global(const char *name) {
 		if (!strncmp(name, "tc_", 3) && (v = TP_Function(name)) != NULL) {
 			return v;
 		}
-		v = PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name);
+		v = Script_ModuleLoaded(name);
 	}
 	if (v) {
 		Py_INCREF(v);
 		return v;
 	}
-	v = PyImport_ImportModule((char *)name);
+	v = Script_Module(name);
 	if (!v && PyErr_ExceptionMatches(PyExc_ImportError)) {
 		/* what LOAD_NAME raises */
 		PyErr_Clear();
@@ -1864,7 +1864,7 @@ static byte X_Exec(tcNode *st, tcScope *s, PyObject **value) {
 	case S_IMPORT:
 		for (int i = 0; i < PyTuple_Size(st->obj); i++) {
 			PyObject *name = PyTuple_GetItem(st->obj, i);
-			PyObject *m = PyImport_ImportModule(PyString_AsString(name));
+			PyObject *m = Script_Module(PyString_AsString(name));
 			byte ok = m && X_SetName(s, name, m);
 			Py_XDECREF(m);
 			if (!ok) {

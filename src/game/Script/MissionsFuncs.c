@@ -1446,7 +1446,7 @@ static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, by
 		return 0;
 	}
 	scriptFrame_t f = { 0 };
-	PyObject *m = Sf_Keep(&f, PyImport_ImportModule(MF));
+	PyObject *m = Sf_Keep(&f, Script_Module(MF));
 	PyObject *g = m ? PyModule_GetDict(m) : NULL;
 	const mfCode_t *code = g && Script_HasBuiltins(g) ? Mf_FindCode(&cad) : NULL;
 	if (code) {

@@ -1127,7 +1127,7 @@ byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *o
 	}
 	/* OBJLIB 6: a name chain in the module's globals, else the error of a text no reader takes (and its note in the
 	 * gate log), as Script_EvalValue gives them */
-	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *m = Script_Module(module);
 	PyObject *v = m ? Script_EvalOther(PyModule_GetDict(m), s) : NULL;
 	Py_XDECREF(m);
 	byte ok = v && Native_Arg(v, out);

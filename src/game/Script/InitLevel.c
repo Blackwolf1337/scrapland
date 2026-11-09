@@ -108,7 +108,7 @@ static byte In_PreloadMlibsN(void) {
 		return 0;
 	}
 	/* OBJLIB 6: the module object itself for dir() */
-	PyObject *map = PyImport_ImportModule("Map");
+	PyObject *map = Script_Module("Map");
 	int m = map ? In_IsMission() : -1;
 	byte ok = m >= 0;
 	if (ok && m) {
