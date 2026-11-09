@@ -1373,6 +1373,60 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
 	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
 
+/* PyInterface/SLogic.c */
+PORT_DECL(SLogic, SendSentinelToWatch) /* 1 */
+PORT_DECL(SLogic, GearAttack) /* 1 */
+PORT_DECL(SLogic, SetCharState) /* 3 */
+PORT_DECL(SLogic, IsEnemyActive) /* 0 */
+PORT_DECL(SLogic, GetNearestShip) /* ? */
+PORT_DECL(SLogic, SetOnFloor) /* 1 */
+PORT_DECL(SLogic, Flash) /* 2 */
+PORT_DECL(SLogic, SetShipToRegenerate) /* 3 */
+PORT_DECL(SLogic, SetDominationZones) /* 1 */
+PORT_DECL(SLogic, ChangeZoneState) /* 2 */
+PORT_DECL(SLogic, ChangeBatonState) /* 2 */
+PORT_DECL(SLogic, UpdateTauntEndTime) /* ? */
+#define PORTS_PyInterface_SLogic \
+	PORT_DEF(SLogic, SendSentinelToWatch, SLogic_SendSentinelToWatch) \
+	PORT_DEF(SLogic, GearAttack, SLogic_GearAttack) \
+	PORT_DEF(SLogic, SetCharState, SLogic_SetCharState) \
+	PORT_DEF(SLogic, IsEnemyActive, SLogic_IsEnemyActive) \
+	PORT_DEF(SLogic, GetNearestShip, SLogic_GetNearestShip) \
+	PORT_DEF(SLogic, SetOnFloor, SLogic_SetOnFloor) \
+	PORT_DEF(SLogic, Flash, SLogic_Flash) \
+	PORT_DEF(SLogic, SetShipToRegenerate, SLogic_SetShipToRegenerate) \
+	PORT_DEF(SLogic, SetDominationZones, SLogic_SetDominationZones) \
+	PORT_DEF(SLogic, ChangeZoneState, SLogic_ChangeZoneState) \
+	PORT_DEF(SLogic, ChangeBatonState, SLogic_ChangeBatonState) \
+	PORT_DEF(SLogic, UpdateTauntEndTime, SLogic_UpdateTauntEndTime)
+
+/* PyInterface/SVecPy.c */
+PORT_DECL(SVec, Add) /* 2 */
+PORT_DECL(SVec, Sub) /* 2 */
+PORT_DECL(SVec, Mod) /* 1 */
+PORT_DECL(SVec, ModSqr) /* 1 */
+PORT_DECL(SVec, Norm) /* 1 */
+PORT_DECL(SVec, Prod) /* 2 */
+PORT_DECL(SVec, DProd) /* 2 */
+PORT_DECL(SVec, CProd) /* 2 */
+PORT_DECL(SVec, Rotate3D) /* 2 */
+PORT_DECL(SVec, GetAngle) /* 2 */
+PORT_DECL(SVec, GetRotAng) /* ? */
+PORT_DECL(SVec, NormAng) /* 1 */
+#define PORTS_PyInterface_SVecPy \
+	PORT_DEF(SVec, Add, SVec_Add) \
+	PORT_DEF(SVec, Sub, SVec_Sub) \
+	PORT_DEF(SVec, Mod, SVec_Mod) \
+	PORT_DEF(SVec, ModSqr, SVec_ModSqr) \
+	PORT_DEF(SVec, Norm, SVec_Norm) \
+	PORT_DEF(SVec, Prod, SVec_Prod) \
+	PORT_DEF(SVec, DProd, SVec_DProd) \
+	PORT_DEF(SVec, CProd, SVec_CProd) \
+	PORT_DEF(SVec, Rotate3D, SVec_Rotate3D) \
+	PORT_DEF(SVec, GetAngle, SVec_GetAngle) \
+	PORT_DEF(SVec, GetRotAng, SVec_GetRotAng) \
+	PORT_DEF(SVec, NormAng, SVec_NormAng)
+
 /* PyInterface/ScrapPy.c */
 PORT_DECL(Scrap, Print) /* 1 */
 PORT_DECL(Scrap, ConsoleOut) /* 1 */
@@ -1471,7 +1525,7 @@ PORT_DECL(Scrap, SetMoney) /* 1 */
 PORT_DECL(Scrap, AddParkingZone) /* 3 */
 PORT_DECL(Scrap, GetFarestParked) /* ? */
 PORT_DECL(Scrap, GetNearestParked) /* ? */
-PORT_DECL(Scrap, AddItem) /* 3 */
+PORT_DECL(Scrap, AddItem) /* ? */
 PORT_DECL(Scrap, InitLoading) /* 0 */
 PORT_DECL(Scrap, EndLoading) /* 0 */
 PORT_DECL(Scrap, Exit) /* 0 */
@@ -5150,6 +5204,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2458
+#define PORT_COUNT 2482
 
 #endif
