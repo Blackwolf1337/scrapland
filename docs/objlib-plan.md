@@ -88,7 +88,7 @@ Nothing calls the pure callers from other files. They are the level files, NetMo
 ### What must stay
 
 - Save files. The text of every save variable the ports write stays byte for byte, and old saves of the original game keep loading (the literal reader and the 22 code strings stay).
-- `Scrap.cfg`. It holds engine variables, including script function names `"Module.Func"`.
+- `Scrap.cfg`. It holds engine variables, but no script function names (`Config_Load` has no case for function variables and `Config_Save` writes none). The names `"Module.Func"` live in data, saves and engine texts.
 - Network. The message texts of the online modes and of the chat stay byte for byte, so ScrapC talks to the original exe. The multiplayer rework may change that later, on its own plan.
 - Mods. The .def and .mod files in mods/ (scrapc/...) keep their formats and names. Module and function names used in data (`Module.Func`) stay as the script names.
 - Test data. The regress baselines, golden's stored output and the sweep tables compare text. The C must print values the way Python 1.5.2 repr does as long as these stores are the reference.
@@ -264,17 +264,50 @@ Things the batches found:
 
 ### Stage 4: callbacks by name through a C registry
 
-After this stage there is one C table of named functions: module and name to a C adapter on native arguments, for the engine modules and the ports. `cPy_Function` binds `"Module.Func"` to its entry, with the `"!name"` registry of the engine as the model. The scheduler keeps an entry and native arguments. Menu and input callbacks, `SetOnCancel`, scorer item callbacks, entity and action class callbacks, the 51 engine function variables and the 9 input events all go through the table. The names stay `"Module.Func"`, because saves, `Scrap.cfg`, data and mods use them.
+Stage 4 is done (2026-11-09, see the state below). After this stage there is one C table of named functions: module and name to a C adapter on native arguments, for the engine modules and the ports. `cPy_Function` binds `"Module.Func"` to its entry, with the `"!name"` registry of the engine as the model. The scheduler keeps an entry and native arguments. Menu and input callbacks, `SetOnCancel`, scorer item callbacks, entity and action class callbacks, the 51 engine function variables and the 9 input events all go through the table. The names stay `"Module.Func"`, because saves, data, mods and the engine texts use them.
 
-- `Script_ReplaceRefs` and `cPy_Function_Rebind` become unnecessary, because the registry knows the C function from the start.
+- `Script_ReplaceRefs` and `cPy_Function_Rebind` become unnecessary, because the registry knows the C function from the start (they are gone, see the state below).
 - The size is medium. The scheduler and `cPy_Function` are small. The work is the argument conventions of each callback.
+
+#### State of stage 4 (2026-11-09)
+
+Stage 4 is done. Batches 4a (the mechanism), 4b (the scheduler), 4c (levels), 4d (the rest) and 4g (the end) are merged into script-loader. No OBJLIB 4 mark is left in `src/game` and `include`.
+
+- `tools/script/ports.py` also writes `PortTable.c`, every ref sorted by module and name, and `Port_Find` looks a name up by binary search. `Port_Own` finds the ref whose own function a value is, by its adapter and its own name.
+- `cPy_Function` has a third kind, `PYF_ENTRY`. When the module holds the port's own function at bind time, the callback keeps the ref and native parameters (pooled blocks, no malloc per call). Anything else (a recorder, a lambda, a bound method) binds the Python object as before. A function under another name than its own (`Alarm.ActivateAlarm = Alarm.Init`) matches by adapter and takes the entry of the function itself.
+- The scheduler keeps a port site and native arguments. In the regress run about 4240 scheduled calls took the entry and about 1290 stayed Python (bound methods, lambdas, engine functions without entries yet).
+- Values, `apply`, the call tables and the Menu link functions call the entry through `Port_Value` and the `Mode_Cb` helpers. `Port_BoundCall` is the one call path of all of them. `Mode_CbApplySeq` holds the rule of the builtin `apply` in one place.
+- `Script_ModuleLoaded`, `Script_Install`, `Script_Rebind`, `cPy_Function_Rebind` and the replacing part of `Script_ReplaceRefs` are removed. Nothing called them since every module is made in C. `Script_ReplayRefs` stays, with `Level_ReplaySections`, because their dict writes still decide the key order of the module dicts (marked OBJLIB 5).
+- What stays Python is marked with the stage that ends it: bound methods and the engine functions without entries (OBJLIB 7), data functions (6), the variables that hold callbacks (5).
+
+`SCRAP_PORT_SLOW=1` keeps every callback, schedule and value on the Python path for the checks, and `native ports` lists the entry and Python calls per site. Found on the way: `Port_ValueRun` kept 2832 bytes of frame on the Python path and now keeps 96 (linux64).
+
+#### How the stage 4 batches were checked
+
+- The raw replies of all 294 regress cases, base against new, with reruns until every difference showed as live state. The counters per site, and edge files for apply, scheduling, entity callbacks, reload and the 12th parameter.
+- The same runs with `SCRAP_PORT_SLOW=1`.
+- Mission starts, and saves both ways.
+- Golden (1481 and 9961 checks), litfuzz, the ASan levels (29 of 29) and the builds with 0 warnings.
 
 ### Stage 5: module variables without dicts
 
-After this stage a C registry of module variables (module, name, type, place) replaces the dict mirrors. Everything that reads variables by name uses it: the .mod `let` lines fill the C variables (mods keep working), the .def `$` and `"%Module.name"`, `Script_NameChain`, the save code strings, and the channel (dump, get, set, and the case lines that read and write module variables). `Native_Import` and `Native_Put` go.
+Steps 5a to 5c are done (2026-11-09, see the state below). The rest waits for stages 6 and 7: the values cannot leave the dicts before the data paths are native and no Python objects are left, so 5h moves behind stage 7 and 5d to 5g shrink to re-marking the OBJLIB 5 lines. After this stage a C registry of module variables (module, name, type, place) replaces the dict mirrors. Everything that reads variables by name uses it: the .mod `let` lines fill the C variables (mods keep working), the .def `$` and `"%Module.name"`, `Script_NameChain`, the save code strings, and the channel (dump, get, set, and the case lines that read and write module variables). `Native_Import` and `Native_Put` go.
 
 - The channel needs to be on the registry first, because the cases read the variables there.
 - The size is medium. The hubs with shared state (Init, Parking, Speech, Menu, Scorer, Traffic, CharsNPC) are the work.
+
+#### State of stage 5 so far (2026-11-09)
+
+Batches 5a to 5c are merged into script-loader. The values still live in the dict slots.
+
+- 5a: `tools/script/modvars.py` writes `ModVarTable.c`, the registry of the module variables: 250 modules in 312 files, 9664 names, of which 1547 are variables and 107 have C state (the `nativeVar_t` tables, the `Mode_Read` and `Mode_Put` slots, the state structs of Ffa, Split and SuperDeals). `--check` covers it like `ports.py`. `ModVars.c` looks up by module and name, keeps an overflow list for names a mod adds, and gives the attribute rules of a 1.5.2 module (the AttributeError texts, "read-only special attribute"). The test channel (dump, get, set, the case lines) runs on it, and its dumps are the same byte for byte.
+- 5b: every variable helper goes through the registry: `Script_Global`, `Script_Attr`, `Script_SetVar`, `Native_Import`, `Native_Put` and the `Mode_` and `LvN_` helpers, with no change at their call sites. The errors keep their texts.
+- 5c: the .mod store (`Mod_Store`, `Mod_Load`, `Mod_From`, `Mod_Del`), `Script_NameChain`, `Script_GetAttr` and the .def object lines go through it. This covers the save code strings, which read names with `Script_NameChain`.
+- The values stay in the dict slots, also for the 107 variables with a C place. Lists and dicts are changed in place by several holders (the 49 in-place marks), ports and cases eval texts in a module dict, a case or a mod can put a value of any type there, and the cases reach `__dict__` and `__globals__`. With the dict as the store every reader sees every write. These readers go with stages 6 and 7, so 5h (values into registry storage, the dicts go) runs after stage 7 with stage 9. 5d to 5g shrink to re-marking the OBJLIB 5 lines with the stage that ends each, and folding the `nativeVar_t` tables into the registry places, after 6a and 7a are merged.
+
+Bugs found on the way. `Fx.GetMotorClass` handed out the stored value itself and the caller freed it, so a value that owns memory was freed twice (a copy is returned now). The regress case fc-r8j-snd-DownTown recorded `Scrap.Set` without passing it on, so when a rail ship of Traffic died `ShipPathFmt` went to the recorder, the new ship took the default model path (`TLight1.m3d`, in no pack) and `Read_Open` ended the game, in about 1 of 6 runs on builds from stage 3 on. The case passes `Scrap.Set` on now.
+
+Checks as in stage 4, plus the first dump of all 29 levels equal byte for byte and the edge files (helpers, store, mod pack) equal base against new, also under ASan.
 
 ### Stage 6: data paths native
 

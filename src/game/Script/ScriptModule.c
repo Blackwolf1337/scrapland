@@ -2,7 +2,7 @@
  * Pack modules made in C (the way to a build without Python, stage 0). When the engine would load a pack module
  * (Pack_PreloadLibrary) and the module has a definition, the module is made here and its .pyc is not read: the module
  * object, its variables with the values and types of the script, its functions (the C tables and the level data,
- * as Script_ModuleLoaded would put them in), its classes and its load time calls, in the order of the script. Every
+ * in the order the old loader put them in), its classes and its load time calls, in the order of the script. Every
  * other module, the C ports and the engine then see the same module.
  *
  * A definition is a .mod file: data/modules/<module>.mod, or data/levels/<level>/<module>.mod for a module of a level
