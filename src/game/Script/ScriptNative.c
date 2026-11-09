@@ -16,6 +16,7 @@
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
+#include "scrap/modvars.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
@@ -2899,9 +2900,7 @@ byte Native_Put(const char *module, const nativeVar_t *var, int index) {
 		r = list ? PySequence_SetItem(list, index, o) : -1;
 		Py_XDECREF(list);
 	} else {
-		PyObject *m = PyImport_ImportModule((char *)module);
-		r = m ? PyObject_SetAttrString(m, (char *)var->name, o) : -1;
-		Py_XDECREF(m);
+		r = ModVar_SetModAttr(module, var->name, o);
 	}
 	Py_DECREF(o);
 	return r == 0;

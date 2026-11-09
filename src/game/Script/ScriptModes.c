@@ -13,6 +13,7 @@
 #include "scrap/input.h"
 #include "scrap/logic.h"
 #include "scrap/mathlib.h"
+#include "scrap/modvars.h"
 #include "scrap/net.h"
 #include "scrap/pyentity.h"
 #include "scrap/ai.h"
@@ -261,10 +262,7 @@ byte Mode_Print(const nativeVal_t *const *items, int n) {
 }
 
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v) {
-	PyObject *m = v ? PyImport_ImportModule((char *)module) : NULL;
-	int r = m ? PyObject_SetAttrString(m, (char *)var, v) : -1;
-	Py_XDECREF(m);
-	return r == 0;
+	return v && ModVar_SetModAttr(module, var, v) == 0;
 }
 
 byte Mode_NextInSlot(cEntity **e) {
@@ -293,7 +291,7 @@ byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out) {
 	if (PyEntity_Check(o)) {
 		return Native_EntVar(PyEntity_Get(o), ((cPyEntity *)o)->ref->name, var, out);
 	}
-	PyObject *r = PyObject_GetAttrString(o, (char *)var);
+	PyObject *r = ModVar_ObjAttr(o, var);
 	if (!r) {
 		return Mode_AttrFail();
 	}
@@ -307,7 +305,7 @@ byte Mode_HSet(PyObject *o, const char *var, const nativeVal_t *v) {
 		return Native_EntSet(PyEntity_Get(o), ((cPyEntity *)o)->ref->name, var, v);
 	}
 	PyObject *x = Native_ToPy(v);
-	int r = x ? PyObject_SetAttrString(o, (char *)var, x) : -1;
+	int r = x ? ModVar_SetObjAttr(o, var, x) : -1;
 	Py_XDECREF(x);
 	return r == 0;
 }
@@ -1276,11 +1274,9 @@ PyObject *Mode_GlobalPy(const char *module, const char *name) {
 
 byte Mode_SetModVar(const char *module, const char *var, const nativeVal_t *v) {
 	PyObject *o = Native_ToPy(v);
-	PyObject *m = o ? PyImport_ImportModule((char *)module) : NULL;
-	int r = m ? PyObject_SetAttrString(m, (char *)var, o) : -1;
-	Py_XDECREF(m);
+	byte ok = Mode_SetModPy(module, var, o);
 	Py_XDECREF(o);
-	return r == 0;
+	return ok;
 }
 
 byte Mode_ModVar(const char *module, const char *var, nativeVal_t *out) {
@@ -1556,13 +1552,11 @@ byte Mode_ItemText(const nativeVal_t *v, const char **out) {
 }
 
 PyObject *Mode_From(const char *module, const char *name) {
-	PyObject *m = PyImport_ImportModule((char *)module);
-	PyObject *v = m ? PyDict_GetItemString(PyModule_GetDict(m), (char *)name) : NULL;
-	if (m && !v) {
+	byte imported;
+	PyObject *v = ModVar_Lookup(module, name, &imported);
+	if (imported && !v) {
 		PyErr_Format(PyExc_ImportError, "cannot import name %.230s", name);
 	}
-	Py_XINCREF(v);
-	Py_XDECREF(m);
 	return v;
 }
 
@@ -2177,19 +2171,7 @@ byte Mode_DelSaveVars(const char *prefix) {
 }
 
 byte Mode_DelGlobal(const char *module, const char *name) {
-	/* OBJLIB 5: the globals are the module dict */
-	PyObject *m = PyImport_ImportModule((char *)module);
-	if (!m) {
-		return 0;
-	}
-	int r = PyDict_DelItemString(PyModule_GetDict(m), (char *)name);
-	Py_DECREF(m);
-	if (r != 0) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_NameError, (char *)name);
-		return 0;
-	}
-	return 1;
+	return ModVar_DelGlobal(module, name) == 0;
 }
 
 byte Mode_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {

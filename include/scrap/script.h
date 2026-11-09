@@ -170,7 +170,8 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 /* sets a variable of a script module (value given away) and an integer one */
 void Script_SetVar(const char *module, const char *var, PyObject *value);
 void Script_SetInt(const char *module, const char *var, int value);
-/* an attribute of a script module (a new reference, NULL with the error set) */
+/* an attribute of a script module (a new reference, NULL with the error set); a pack module through the variable
+ * registry (scrap/modvars.h), as Script_Global, Script_SetGlobal and Script_SetVar */
 PyObject *Script_Attr(const char *module, const char *name);
 /* a number variable of a script module (def when it is not there or no number) */
 double Script_GetFloat(const char *module, const char *var, double def);

@@ -1,7 +1,8 @@
 /*
  * The registry of the module variables (include/scrap/modvars.h, stage 5 of docs/objlib-plan.md): the lookup by
- * module and name on the generated tables (ModVarTable.c), the overflow list of each module file and, in batch 5a,
- * the values in the slots of the module dict (OBJLIB 5).
+ * module and name on the generated tables (ModVarTable.c), the overflow list of each module file, the values in the
+ * slots of the module dict (OBJLIB 5, until batch 5h) and the access by module name that the helpers of the ports use
+ * (batch 5b).
  *
  * How the registry and the dict stay in step while the dict holds the values: every read and write here goes to the
  * dict, so the registry never keeps a value of its own. What it keeps are names: the table's, and the overflow list of
@@ -164,6 +165,9 @@ const char *ModVar_ModuleName(const modVarRef_t *ref) {
 }
 
 const modVar_t *ModVar_Find(const modVarRef_t *ref, const char *name) {
+	if (ref->file < 0) {
+		return NULL;
+	}
 	const modVar_t *e = MV_Known(ref->file, name);
 	if (!e && PyDict_GetItemString(ref->dict, (char *)name)) {
 		e = MV_AddExtra(ref->file, name);
@@ -173,7 +177,7 @@ const modVar_t *ModVar_Find(const modVarRef_t *ref, const char *name) {
 
 PyObject *ModVar_Get(const modVarRef_t *ref, const char *name) {
 	/* OBJLIB 5: the slot of the dict */
-	return ModVar_Find(ref, name) ? PyDict_GetItemString(ref->dict, (char *)name) : NULL;
+	return ref->file < 0 || ModVar_Find(ref, name) ? PyDict_GetItemString(ref->dict, (char *)name) : NULL;
 }
 
 int ModVar_Set(const modVarRef_t *ref, const char *name, PyObject *v) {
@@ -237,4 +241,81 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names) {
 		*names = Mem_Free(*names);
 	}
 	return n;
+}
+
+/* ---- by module name: the one path of the helpers of the ports (Script_Global, Script_Attr, the Mode_ helpers) ---- */
+
+/* the ref of a module object: its registry module, else (Scrap, __main__, a module of the C, a pack module while its
+ * code runs, before ModVar_Made) its dict alone (file -1); 0 for an object in sys.modules that is no module */
+static byte MV_Ref(PyObject *m, modVarRef_t *ref) {
+	if (ModVar_Of(m, ref)) {
+		return 1;
+	}
+	if (!PyModule_Check(m)) {
+		return 0;
+	}
+	ref->file = -1;
+	ref->dict = PyModule_GetDict(m);
+	return 1;
+}
+
+PyObject *ModVar_Lookup(const char *module, const char *name, byte *imported) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	modVarRef_t ref;
+	PyObject *v = m && MV_Ref(m, &ref) ? ModVar_Get(&ref, name) : NULL;
+	*imported = m != NULL;
+	Py_XINCREF(v);
+	Py_XDECREF(m);
+	return v;
+}
+
+int ModVar_SetGlobal(const char *module, const char *name, PyObject *v) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	modVarRef_t ref;
+	int r = -1;
+	if (m && MV_Ref(m, &ref)) {
+		r = ModVar_Set(&ref, name, v);
+	} else if (m) {
+		/* PyModule_GetDict's SystemError */
+		PyErr_BadInternalCall();
+	}
+	Py_XDECREF(m);
+	return r;
+}
+
+int ModVar_DelGlobal(const char *module, const char *name) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	modVarRef_t ref;
+	int r = m ? 0 : -1;
+	if (m && (!MV_Ref(m, &ref) || ModVar_Del(&ref, name) != 0)) {
+		PyErr_Clear();
+		PyErr_SetString(PyExc_NameError, (char *)name);
+		r = -1;
+	}
+	Py_XDECREF(m);
+	return r;
+}
+
+PyObject *ModVar_ObjAttr(PyObject *o, const char *name) {
+	modVarRef_t ref;
+	return ModVar_Of(o, &ref) ? ModVar_Attr(&ref, name) : PyObject_GetAttrString(o, (char *)name);
+}
+
+int ModVar_SetObjAttr(PyObject *o, const char *name, PyObject *v) {
+	modVarRef_t ref;
+	return ModVar_Of(o, &ref) ? ModVar_SetAttr(&ref, name, v) : PyObject_SetAttrString(o, (char *)name, v);
+}
+
+PyObject *ModVar_ModAttr(const char *module, const char *name) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *v = m ? ModVar_ObjAttr(m, name) : NULL;
+	Py_XDECREF(m);
+	return v;
+}
+
+int ModVar_SetModAttr(const char *module, const char *name, PyObject *v) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	int r = m ? ModVar_SetObjAttr(m, name, v) : -1;
+	Py_XDECREF(m);
+	return r;
 }
