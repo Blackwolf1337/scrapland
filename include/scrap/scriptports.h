@@ -1388,6 +1388,49 @@ PORT_DECL(SFX, EmbeddedSet) /* 2 */
 	PORT_DEF(SFX, MoneyTransfer, SFX_MoneyTransfer) \
 	PORT_DEF(SFX, EmbeddedSet, SFX_EmbeddedSet)
 
+/* PyInterface/SInputPy.c */
+PORT_DECL(SInput, SetActionSet) /* 1 */
+PORT_DECL(SInput, GetActionSet) /* 0 */
+PORT_DECL(SInput, AssingEntry) /* 5 */
+PORT_DECL(SInput, GetEntry) /* 3 */
+PORT_DECL(SInput, ListenToDefine) /* 4 */
+PORT_DECL(SInput, AbortListenToDefine) /* 0 */
+PORT_DECL(SInput, GetDefinedList) /* ? */
+PORT_DECL(SInput, GetDefinedEntry) /* ? */
+PORT_DECL(SInput, ClearDefinedList) /* ? */
+PORT_DECL(SInput, ResetToDefault) /* 0 */
+PORT_DECL(SInput, SetString) /* 2 */
+PORT_DECL(SInput, GetString) /* 1 */
+PORT_DECL(SInput, GetCursorChar) /* 1 */
+PORT_DECL(SInput, GetVirtualKeyboard) /* 0 */
+PORT_DECL(SInput, SetVirtualKeyboard) /* 1 */
+PORT_DECL(SInput, SetInputFunc) /* 2 */
+PORT_DECL(SInput, Bind) /* 4 */
+PORT_DECL(SInput, Rumble) /* 4 */
+PORT_DECL(SInput, ResetToSplit) /* 0 */
+PORT_DECL(SInput, CheckPadButton) /* 2 */
+#define PORTS_PyInterface_SInputPy \
+	PORT_DEF(SInput, SetActionSet, SInput_SetActionSet) \
+	PORT_DEF(SInput, GetActionSet, SInput_GetActionSet) \
+	PORT_DEF(SInput, AssingEntry, SInput_AssingEntry) \
+	PORT_DEF(SInput, GetEntry, SInput_GetEntry) \
+	PORT_DEF(SInput, ListenToDefine, SInput_ListenToDefine) \
+	PORT_DEF(SInput, AbortListenToDefine, SInput_AbortListenToDefine) \
+	PORT_DEF(SInput, GetDefinedList, SInput_GetDefinedList) \
+	PORT_DEF(SInput, GetDefinedEntry, SInput_GetDefinedEntry) \
+	PORT_DEF(SInput, ClearDefinedList, SInput_ClearDefinedList) \
+	PORT_DEF(SInput, ResetToDefault, SInput_ResetToDefault) \
+	PORT_DEF(SInput, SetString, SInput_SetString) \
+	PORT_DEF(SInput, GetString, SInput_GetString) \
+	PORT_DEF(SInput, GetCursorChar, SInput_GetCursorChar) \
+	PORT_DEF(SInput, GetVirtualKeyboard, SInput_GetVirtualKeyboard) \
+	PORT_DEF(SInput, SetVirtualKeyboard, SInput_SetVirtualKeyboard) \
+	PORT_DEF(SInput, SetInputFunc, SInput_SetInputFunc) \
+	PORT_DEF(SInput, Bind, SInput_Bind) \
+	PORT_DEF(SInput, Rumble, SInput_Rumble) \
+	PORT_DEF(SInput, ResetToSplit, SInput_ResetToSplit) \
+	PORT_DEF(SInput, CheckPadButton, SInput_CheckPadButton)
+
 /* PyInterface/SSoundPy.c */
 PORT_DECL(SSound, LoadSound) /* 1 */
 PORT_DECL(SSound, PlaySound) /* ? */
@@ -5202,6 +5245,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2481
+#define PORT_COUNT 2501
 
 #endif
