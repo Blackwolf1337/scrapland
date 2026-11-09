@@ -15,7 +15,7 @@
  * their seams (OBJLIB 7): Scrap.AddScheduledFunc, CreateEntity, CreateEntityList, Set, SetMoney, SetTimeSpeed,
  * UsrEntity, ConsoleError, SScorer.Add, Set, SetDefault and SetMsgText, SInput.SetActionSet, SSound.SetMusic and the
  * SAct functions of the scene; Scrap.OpenPack, PreloadLibrary and ClosePack (Mission_RustyFirstContact.InitStatus) and
- * the default form of Scrap.Def stay by name.
+ * the default form of Scrap.Def go through their refs (stage 7).
  *
  * Direct calls (stage 3): the other ports (Elevator, OutMap, ShipEdit, HangarTab, Menu, Chars, SaveGame, MissionsFuncs,
  * Scene, CreditsText, SputnikSound) and the C functions of the three modules go through their refs (PORT_CALL,
@@ -472,9 +472,9 @@ static byte Rusty_InitStatus(void) {
 		SaveVar_Set("ComeFrom", "DoorEditShip");
 		SaveVar_Set("PrevMap", "Levels/Outskirts");
 	}
-	/* OBJLIB 7: the pack functions by name (fc-r7b-jy records them) */
-	return LV_CALL("Scrap", "OpenPack", NULL, "s", "Scripts/Scorer") &&
-		LV_CALL("Scrap", "PreloadLibrary", NULL, "ss", "CreditsText", "CreditsText.pyc") && LV_CALL("Scrap", "ClosePack", NULL, "");
+	/* the pack functions through their refs (fc-r7b-jy records them) */
+	return PORT_CALL(Scrap, OpenPack, NULL, "s", "Scripts/Scorer") &&
+		PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "CreditsText", "CreditsText.pyc") && PORT_CALL(Scrap, ClosePack, NULL, "");
 }
 
 /* Init(LevelPath): arriving with Berto (Rusty is the target, the editor waits) or straight to the editor; the final
@@ -678,7 +678,7 @@ static byte Rusty_LoadMecanicFinalScene(void) {
 	return ok;
 }
 
-/* Scrap.Def(name) (OBJLIB 7: the default of a float variable in C, any other form by name) */
+/* Scrap.Def(name) (the default of a float variable in C, any other form through the ref) */
 static byte Jy_Def(const char *name, nativeVal_t *out) {
 	cGVar *v = GVar_Find(name);
 	Native_SetNone(out);
@@ -686,7 +686,7 @@ static byte Jy_Def(const char *name, nativeVal_t *out) {
 		Native_SetFloat(out, (double)v->def.f);
 		return 1;
 	}
-	return LV_CALL("Scrap", "Def", out, "s", name);
+	return PORT_CALL(Scrap, Def, out, "s", name);
 }
 
 /* FXMecanicFinalSputnik(EntityName, EventName, Time): Sputnik's effect in the scene; the default interpolation time */

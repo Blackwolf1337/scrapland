@@ -14,8 +14,8 @@
  * their seams (AddScheduledFunc, CreateEntity, UsrEntity, Set, ConsoleError, Preload3DObject, GetAlarm,
  * SAI.GetStateVehicle, DeleteScheduledFuncs, SScorer.Add and Set; OBJLIB 7). The entities the script holds are handle
  * values (OBJLIB 7). SAI.SetStateVehicle, SAI.GetNearestItemLife (a case swaps it) and Scrap.GetNearestParked of a
- * position that is no vector stay by name (OBJLIB 7); the profile objects of VehiclesNPC are the objects they are
- * (OBJLIB 5).
+ * position that is no vector go through their refs (stage 7); the profile objects of VehiclesNPC are the objects they
+ * are (OBJLIB 5).
  *
  * Direct calls (stage 3): the functions of the other ports (Elevator, Metro, Parking, VehiclesNPC, Traffic,
  * MissionsFuncs, Speech, PhoneCab, Items, OutMap, RaceMaker, Vehicles), the keyword calls of Speech.ForceRemoteCom and
@@ -126,10 +126,10 @@ static byte Sy_DistDenSqr(const nativeVal_t *usr, nativeVal_t *out) {
 	return ok;
 }
 
-/* SAI.SetStateVehicle(state, name) and SAI.SetStateVehicle(1, name, pos[0], pos[1], pos[2], ...) (OBJLIB 7: by name, its
- * state handlers take Python arguments); tail "radius" passes radius, else 3000 and the again flag (1) or 0, 0.25 */
+/* SAI.SetStateVehicle(state, name) and SAI.SetStateVehicle(1, name, pos[0], pos[1], pos[2], ...); tail "radius" passes
+ * radius, else 3000 and the again flag (1) or 0, 0.25 */
 static byte Sy_State(long state, const nativeVal_t *name) {
-	return LV_CALL("SAI", "SetStateVehicle", NULL, "iv", state, name);
+	return PORT_CALL(SAI, SetStateVehicle, NULL, "iv", state, name);
 }
 
 static byte Sy_StateTo(const nativeVal_t *name, const nativeVal_t *pos, const nativeVal_t *radius, byte again) {
@@ -140,9 +140,9 @@ static byte Sy_StateTo(const nativeVal_t *name, const nativeVal_t *pos, const na
 		ok = LvN_Item(pos, n, &c[n]);
 	}
 	if (ok) {
-		ok = radius ? LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvvv", 1L, name, &c[0], &c[1], &c[2], radius) :
-			again ? LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvvii", 1L, name, &c[0], &c[1], &c[2], 3000L, 1L) :
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvviid", 1L, name, &c[0], &c[1], &c[2], 3000L, 0L, 0.25);
+		ok = radius ? PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvvv", 1L, name, &c[0], &c[1], &c[2], radius) :
+			again ? PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvvii", 1L, name, &c[0], &c[1], &c[2], 3000L, 1L) :
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvviid", 1L, name, &c[0], &c[1], &c[2], 3000L, 0L, 0.25);
 	}
 	while (n-- > 0) {
 		Native_Free(&c[n]);
@@ -190,11 +190,11 @@ static int Sy_UsrIs(const nativeVal_t *usr, const nativeVal_t *name) {
 }
 
 /* Scrap.GetNearestParked(1, pos): (name, (x, y, z)), ("", (0, 0, 0)) when none; a pos that is no three numbers goes to
- * the engine function by name for its TypeError (OBJLIB 7) */
+ * the engine function through its ref for its TypeError */
 static byte Sy_NearestParked(const nativeVal_t *pos, nativeVal_t *out) {
 	double x[3];
 	if (!Mode_VecOf(pos, x)) {
-		return LV_CALL("Scrap", "GetNearestParked", out, "iv", 1L, pos);
+		return PORT_CALL(Scrap, GetNearestParked, out, "iv", 1L, pos);
 	}
 	/* "|i(fff)" */
 	vec3_t p = { (float)x[0], (float)x[1], (float)x[2] }, o = p;
@@ -2079,13 +2079,13 @@ static byte Merc_OnStupidMercDeathN(const nativeVal_t *a) {
 	return ok;
 }
 
-/* the nearest life item of the mercenary (SAI.GetNearestItemLife by name, a case swaps it; OBJLIB 7): the mercenary
+/* the nearest life item of the mercenary (SAI.GetNearestItemLife through its ref, a case swaps it): the mercenary
  * name goes there; 1 when there is one, 0, -1 */
 static int Sm_GoForLife(const nativeVal_t *name, const nativeVal_t *looser, nativeVal_t *item) {
 	nativeVal_t in = { 0 }, pos = { 0 }, radius = { 0 };
 	Native_SetNone(&in);
 	Native_SetNone(item);
-	int t = LV_CALL("SAI", "GetNearestItemLife", &in, "v", looser) && Mode_EntityH(&in, item) ? Native_True(item) : -1;
+	int t = PORT_CALL(SAI, GetNearestItemLife, &in, "v", looser) && Mode_EntityH(&in, item) ? Native_True(item) : -1;
 	Native_Free(&in);
 	if (t > 0 && name) {
 		Native_SetNone(&pos);

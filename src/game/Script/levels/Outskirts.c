@@ -16,10 +16,10 @@
  * profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine functions the cases record or swap go through their
  * seams (OBJLIB 7): Scrap.AddScheduledFunc, DeleteScheduledFuncs, DelSaveVars, CreateEntity, Set, SetAlarm, SetLockAlarm,
  * UsrEntity, Rand, GetAlarm, TestLine and Preload3DObject, SAI.GetStateVehicle, SLogic.SetOnFloor, SScorer.Set and
- * SetMsgText and SAct. By name on purpose (OBJLIB 7): SAI.SetStateVehicle (its state handlers take Python arguments), the calls the
- * cases record with _bon (SScorer.CancelSpeech, AddModel, Scrap.IncSaveVar), the camera (Scrap.GetCam, SetCam),
- * SAct.GetClass of an entity's ActCtrl, SLogic.IsEnemyActive, Scrap.CreateEntityList, SInput.Bind and
- * SInput.GetDefinedEntry.
+ * SetMsgText and SAct. Through their refs (stage 7: the native entries; a function a case put there, as _bon records
+ * them, by name): SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAct.GetClass of an
+ * entity's ActCtrl, SLogic.IsEnemyActive and Scrap.CreateEntityList. By name (OBJLIB 7: no native entry yet): the
+ * calls the cases record with _bon (SScorer.CancelSpeech, AddModel), SInput.Bind and SInput.GetDefinedEntry.
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, SaveGame, RaceMaker, RacerScorer,
  * VehiclesNPC, Vehicles, Elevator, Metro, Traffic, Items, Scene, OutMap), the keyword calls among them
@@ -294,7 +294,7 @@ static byte Win2nd_InitRace(void) {
 				(Native_Free(rname), LvN_Item(rl, i, rname)) && Mode_Read(WR, "RACE_PROFILE", prof) &&
 				PORT_CALL(RaceMaker, GetRandomShipIAProfile, ship, "vv", rname, prof) && Mode_VRead(v, "Name", vn) &&
 				Mode_DictPut(WR, "racersDict", NULL, vn, ship) && PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", v, ship) &&
-				LV_CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) && LvN_SetS(v, "TgType", "None") && LvN_SetS(v, "EntityList", "Race") &&
+				PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, vn) && LvN_SetS(v, "TgType", "None") && LvN_SetS(v, "EntityList", "Race") &&
 				Wr_StartAng(zero3) && Mode_VSet(v, "Ang", zero3) && Mode_VGet(v, "Pos", vp) && Mode_VSet(v, "MovePos", vp) &&
 				Mode_VRead(v, "Ang", vp) && Mode_VSet(v, "MoveAng", vp) && LvN_SetF(v, "MoveTime", 0.001) &&
 				Mode_Append(WR, "racers", vn) && Mode_DictPut(WR, "BayScorer", NULL, vn, Mode_I(&t, 0)) &&
@@ -560,7 +560,7 @@ static byte Win2nd_OnCheckPoint(const nativeVal_t *a) {
 		ok = LvN_SetF(e, "MoveTime", 0.0) && Wr_Racer(pn, ship) && PORT_CALL(VehiclesNPC, GetIAProf, pd, "v", ship) &&
 			Wr_StateArgs(pn, l, pd, args);
 		if (ok && !Native_Compare(pn, &a[1])) {
-			ok = LV_CALL("SAI", "SetStateVehicle", NULL, "vvvvvvv", &args[0], &args[1], &args[2], &args[3], &args[4], &args[5], &args[6]);
+			ok = PORT_CALL(SAI, SetStateVehicle, NULL, "vvvvvvv", &args[0], &args[1], &args[2], &args[3], &args[4], &args[5], &args[6]);
 		} else if (ok) {
 			Native_SetFloat(now, Mode_Time());
 			ok = Mode_Rand(Mode_I(&t, 0), Mode_I(&t, 0), r) && Native_Arith('+', now, r, at) && Wr_SchedState(at, args, 7);
@@ -701,7 +701,7 @@ static byte Win2nd_CancelMission(void) {
 		Native_Free(e);
 		Native_Free(nm);
 		ok = Mode_EntityH(&players->items[k], e) && (!Native_True(e) || (LvN_SetF(e, "MoveTime", 0.0) && LvN_SetS(e, "TgType", "None") &&
-			LvN_SetS(e, "EntityList", "Traffic") && Mode_VGet(e, "Name", nm) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, nm, 1L)));
+			LvN_SetS(e, "EntityList", "Traffic") && Mode_VGet(e, "Name", nm) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, nm, 1L)));
 	}
 	Native_SetEmpty(empty, NV_DICT);
 	ok = ok && Mode_Put(WR, "BayScorer", NULL, empty) && LvN_PutI(WR, "YourScore", -1) && LvN_PutS(WR, "waypointName", "") &&
@@ -868,7 +868,7 @@ static byte Demo_OnMetroUsed(const nativeVal_t *a) {
 	nativeVal_t m = { 0 }, act = { 0 }, x = { 0 }, ev = { 0 };
 	LvN_Str(&ev, "Mission_Demo_HumphreyRace.OnEndOfDemo");
 	byte ok = Mode_Import("Elevator") && Mode_Import("Metro") && Mode_EntityH(&a[1], &m) && Mode_VGet(&m, "ActCtrl", &act) &&
-		LV_CALL("SAct", "GetClass", NULL, "v", &act) && LvN_GetAction("Up", &x) && LvN_SetAct("EventFunc", &ev) &&
+		PORT_CALL(SAct, GetClass, NULL, "v", &act) && LvN_GetAction("Up", &x) && LvN_SetAct("EventFunc", &ev) &&
 		PORT_CALL(Elevator, UseElevator, NULL, "vvsv", &a[0], &a[1], "MoveLevel Press", &a[3]) && PORT_CALL(Metro, SetUsrParams, NULL, "v", &a[0]);
 	Native_Free(&m);
 	Native_Free(&act);
@@ -1085,7 +1085,7 @@ static byte Police_BertoAppears(void) {
 	if (ok) {
 		Mode_Lang("Mission_DestroyPolice_SystemMessage1", &text);
 		ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text) && LvN_SaveList("Hangar.availableWeaponsList", KP, &l) &&
-			LvN_SaveAppend("Hangar.availableWeaponsList", &l, &swarm) && LV_CALL("Scrap", "IncSaveVar", NULL, "s", "NewBluePrintAvaliable") &&
+			LvN_SaveAppend("Hangar.availableWeaponsList", &l, &swarm) && PORT_CALL(Scrap, IncSaveVar, NULL, "s", "NewBluePrintAvaliable") &&
 			LvN_Com("Mission_DestroyPolice_RemoteMessage7", "Rusty", NULL, NULL, NULL) && Mode_SaveS("MissionState", "ListenToBerto") &&
 			/* OBJLIB 6: BertoAppears2 is a section of mission_killpolice.def */
 			Mode_WayPoint() && LV_OWN(KP, "BertoAppears2", NULL, "");
@@ -1165,7 +1165,7 @@ static byte Transport_InitTransport(void) {
 		LvN_SetI(tr, "Money", -1) && LvN_Life(tr, TK, "TRANSPORT_LIFE") && LvN_SetI(tr, "Traf_Active", 1) && Mode_VGet(tr, "Pos", pos) &&
 		Mode_VSet(tr, "Traf_Begin", pos) && Mode_VRead(tr, "Pos", pos) && Mode_VSet(tr, "Traf_End", pos) &&
 		LvN_SetI(tr, "Traf_Speed", 100 * 28 + 2000) && Mode_VGet(tr, "Name", name) && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) &&
-		LV_CALL("SAI", "SetStateVehicle", NULL, "ividd", 3L, name, 0L, 2.0, 0.025) && LvN_SetS(tr, "OnDamage", "Mission_TransportKiller.TryToDamage") &&
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ividd", 3L, name, 0L, 2.0, 0.025) && LvN_SetS(tr, "OnDamage", "Mission_TransportKiller.TryToDamage") &&
 		LvN_SetS(tr, "OnDeath", "Mission_TransportKiller.TryToDeath") && Mode_G(TK, "Model_Datapack", model) && Mode_PreloadOnes(model);
 	return Mode_Done(&t, ok);
 }
@@ -1351,7 +1351,7 @@ static byte Humphrey_CreateHumphrey(void) {
 		Mode_VGet(h, "Name", name) && Mode_Put(HU, "humphreyName", NULL, name);
 	int first = ok ? LvN_GEqI(HU, "numTaunt", -1) : -1;
 	if (first > 0) {
-		ok = LvN_PutI(HU, "numTaunt", 0) && Mode_Read(HU, "humphreyName", name) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L);
+		ok = LvN_PutI(HU, "numTaunt", 0) && Mode_Read(HU, "humphreyName", name) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, name, 0L);
 	} else if (first == 0) {
 		ok = Hu_Enemy(h);
 	}
@@ -1513,7 +1513,7 @@ static byte Merc_Init(void) {
 /* the camera of the player behind or in front of target: CamDist, CamRot, CamAng, no turn */
 static byte Im_Camera(long dist, long rot, const nativeVal_t *target) {
 	nativeVal_t cn = { 0 }, cam = { 0 };
-	byte ok = LV_CALL("Scrap", "GetCam", &cn, "i", 0L) && Mode_EntityH(&cn, &cam) && LvN_SetI(&cam, "CamDist", dist) && LvN_SetI(&cam, "CamRot", rot) &&
+	byte ok = PORT_CALL(Scrap, GetCam, &cn, "i", 0L) && Mode_EntityH(&cn, &cam) && LvN_SetI(&cam, "CamDist", dist) && LvN_SetI(&cam, "CamRot", rot) &&
 		LvN_SetI(&cam, "CamAng", -rot) && LvN_SetI(&cam, "AddTurn", 0) && Mode_VSet(&cam, "Target", target);
 	Native_Free(&cn);
 	Native_Free(&cam);
@@ -1538,7 +1538,7 @@ static byte Merc_InitIdentifyMerc(void) {
 	if (ok) {
 		Native_SetVec(v, -252843.578125, 67933.2734375, -187826.109375);
 		ok = Mode_VSet(tr, "Pos", v) && LvN_SetI(tr, "MaxLife", 1) && LvN_SetI(tr, "Life", 1) && LvN_SetI(tr, "Money", -1) &&
-			Mode_VRead(tr, "Name", name) && LV_CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, name) && Mode_UsrHandle(u2) &&
+			Mode_VRead(tr, "Name", name) && PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, name) && Mode_UsrHandle(u2) &&
 			Mode_VGet(u2, "Pos", up) && PORT_CALL(RaceMaker, PointObjectTo, NULL, "vv", tr, up) && Im_Camera(1000, 20, name) &&
 			PORT_CALL(Scene, SetText, NULL, "si", "Mission_MeetingWithMrX_RemoteMessage1", 0L) &&
 			Mode_Later(3.0, IM, "CreateLonelyMercInScene", NULL, 0, NULL);
@@ -1555,7 +1555,7 @@ static byte Merc_CreateLonelyMercInScene(void) {
 	if (ok) {
 		Native_SetVec(v, -232476.484375, 68936.765625, -144671.078125);
 		ok = Mode_VSet(m, "Pos", v) && Mode_VGet(m, "Name", name) && Mode_G(IM, "traitorius", tr) && Mode_VGet(tr, "Name", tn) &&
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, tn) && Mode_Read(IM, "traitorius", tr) && Mode_VGet(tr, "Pos", tp) &&
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, name, tn) && Mode_Read(IM, "traitorius", tr) && Mode_VGet(tr, "Pos", tp) &&
 			PORT_CALL(RaceMaker, PointObjectTo, NULL, "vv", m, tp) && Im_Camera(1500, 10, name) &&
 			Mode_Later(3.0, IM, "CheckTraitoriusDeath", NULL, 0, NULL) && Mode_Later(2, IM, "EndOfScene", NULL, 0, NULL);
 	}
@@ -1638,7 +1638,7 @@ static byte Im_MercTarget(void) {
 static byte Merc_InitMission(void) {
 	nativeVal_t m = { 0 }, name = { 0 };
 	byte ok = Mode_G(IM, "lonelyMerc", &m) && (Native_True(&m) || (Im_NewNormalMerc() && Mode_Read(IM, "lonelyMerc", &m) &&
-		Mode_VGet(&m, "Name", &name) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &name, 0L))) && Im_MercTarget() &&
+		Mode_VGet(&m, "Name", &name) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, &name, 0L))) && Im_MercTarget() &&
 		LV_SCORERG(Mission_IdentifyMerc, MissionScorer) && LvN_Draw() && Mode_GVarSetS("OnFinishAutoUpdate", "Mission_IdentifyMerc.OnFinishScan") &&
 		Mode_Later(1.0, IM, "ScanShip", NULL, 0, "ScanShip");
 	Native_Free(&m);
@@ -1650,8 +1650,8 @@ static byte Merc_InitMission(void) {
 static byte Im_MercState(long state, const nativeVal_t *target, long dist) {
 	nativeVal_t m = { 0 }, name = { 0 };
 	byte ok = Mode_G(IM, "lonelyMerc", &m) && Mode_VGet(&m, "Name", &name) &&
-		(target ? LV_CALL("SAI", "SetStateVehicle", NULL, "ivvi", state, &name, target, dist) :
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", state, &name, dist));
+		(target ? PORT_CALL(SAI, SetStateVehicle, NULL, "ivvi", state, &name, target, dist) :
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", state, &name, dist));
 	Native_Free(&m);
 	Native_Free(&name);
 	return ok;
@@ -1740,7 +1740,7 @@ static byte Merc_OnLonelyMercDamage(const nativeVal_t *a) {
 	if (hit > 0) {
 		hit = Mode_AIState(&a[0], st) ? !LvN_EqI(st, 2) : -1;
 	}
-	byte ok = hit >= 0 && (!hit || (LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &a[0], &a[1]) && Mode_EntityH(&a[0], e) &&
+	byte ok = hit >= 0 && (!hit || (PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, &a[0], &a[1]) && Mode_EntityH(&a[0], e) &&
 		LvN_SetS(e, "TgType", "red")));
 	return Mode_Done(&t, ok);
 }
@@ -2017,7 +2017,7 @@ static byte Rudolph_EndOfRace(const nativeVal_t *a) {
 static byte Rudolph_SetRudolphAsNone(void) {
 	nativeVal_t n = { 0 }, v = { 0 };
 	byte ok = Mode_G(KR, "rudolphEntityName", &n) && Mode_EntityH(&n, &v) && (!Native_True(&v) || (LvN_SetS(&v, "OnDamage", "Mission_KillRudolph.OnDamage") &&
-		LvN_SetS(&v, "EntityList", "") && Mode_Read(KR, "rudolphEntityName", &n) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &n, 0L)));
+		LvN_SetS(&v, "EntityList", "") && Mode_Read(KR, "rudolphEntityName", &n) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, &n, 0L)));
 	Native_Free(&n);
 	Native_Free(&v);
 	return ok;
@@ -2219,7 +2219,7 @@ static int Os_NotUsr(const nativeVal_t *usr, const nativeVal_t *veh) {
 /* `SLogic.IsEnemyActive() or the alarm`: 1, 0, -1 */
 static int Os_Busy(void) {
 	nativeVal_t busy = { 0 };
-	int b = LV_CALL("SLogic", "IsEnemyActive", &busy, "") ? Native_True(&busy) : -1;
+	int b = PORT_CALL(SLogic, IsEnemyActive, &busy, "") ? Native_True(&busy) : -1;
 	Native_Free(&busy);
 	return b == 0 ? Mode_AlarmOn() : b;
 }
@@ -2269,7 +2269,7 @@ static int Bd_Elems(const char *var, nativeVal_t *lst) {
 /* SAI.SetStateVehicle(state, name, the global target of the module) */
 static byte Bd_StateG(long state, const nativeVal_t *name, const char *target) {
 	nativeVal_t tg = { 0 };
-	byte ok = Mode_G(BD, target, &tg) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", state, name, &tg);
+	byte ok = Mode_G(BD, target, &tg) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", state, name, &tg);
 	Native_Free(&tg);
 	return ok;
 }
@@ -2281,7 +2281,7 @@ static byte Bd_BankersFollow(const nativeVal_t *target, const char *targetG) {
 	byte ok = cnt >= 0;
 	for (int k = 0; ok && k < cnt; k++) {
 		nativeVal_t name = { 0 };
-		ok = Native_SeqItem(&lst, k, &name) && (target ? LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 7L, &name, target) : Bd_StateG(7, &name, targetG));
+		ok = Native_SeqItem(&lst, k, &name) && (target ? PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 7L, &name, target) : Bd_StateG(7, &name, targetG));
 		Native_Free(&name);
 	}
 	Native_Free(&lst);
@@ -2360,7 +2360,7 @@ static byte Debtors_SelectNewMissionTarget(void) {
 		LvN_SetI(o1, "MaxLife", 100) && LvN_SetS(o1, "OnDeath", "Mission_DestroyBadDebtors.OnMissionTargetDeath") &&
 		LvN_SetS(o1, "OnDamage", "Mission_DestroyBadDebtors.OnMissionTargetDamage") &&
 		PORT_CALL(OutMap, GetFreeSpawnPos, spw, "") && LvN_Item(spw, 0, p) && Mode_VSet(o1, "Pos", p) && Mode_VGet(o1, "Name", name) &&
-		LV_CALL("SAI", "SetStateVehicle", NULL, "ividd", 3L, name, 0L, 2.0, 0.025) && PORT_CALL(Traffic, ResetPath, NULL, "") &&
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ividd", 3L, name, 0L, 2.0, 0.025) && PORT_CALL(Traffic, ResetPath, NULL, "") &&
 		Mode_VRead(o1, "Name", name) && Mode_Put(BD, "currentMissionTarget", NULL, name);
 	return Mode_Done(&t, ok);
 }
@@ -2473,7 +2473,7 @@ static byte Debtors_SendShipToGetTreasure(const nativeVal_t *a) {
 	}
 	Native_Free(e);
 	ok = ok && Mode_EntityH(cur, e) && (!Native_True(e) || (LvN_Item(pos, 0, x) && LvN_Item(pos, 1, y) && LvN_Item(pos, 2, z) &&
-		Mode_G(BD, "TreasureRadius", r) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvvvi", 1L, cur, x, y, z, r, 1L)));
+		Mode_G(BD, "TreasureRadius", r) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvvvi", 1L, cur, x, y, z, r, 1L)));
 	return Mode_Done(&t, ok);
 }
 
@@ -2512,7 +2512,7 @@ static byte Bd_Attack(const nativeVal_t *name, const nativeVal_t *targets, const
 	nativeVal_t zero = { 0 }, r = { 0 }, i = { 0 }, tg = { 0 };
 	Native_SetFloat(&zero, 0.0);
 	byte ok = Mode_Rand(&zero, maxRange, &r) && Native_ToInt(&r, &i) && Native_Subscript(targets, &i, &tg) &&
-		LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, &tg);
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, name, &tg);
 	Native_Free(&r);
 	Native_Free(&i);
 	Native_Free(&tg);
@@ -2533,7 +2533,7 @@ static byte Bd_MercAttack(const nativeVal_t *name, const nativeVal_t *usr) {
 	nativeVal_t targets = { 0 }, un = { 0 }, max = { 0 };
 	byte ok = PORT_LOWN(Mission_DestroyBadDebtors, GetPossibleMercTargets, &targets, "");
 	if (ok && Bd_NoTargets(&targets)) {
-		ok = Mode_VGet(usr, "Name", &un) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, &un);
+		ok = Mode_VGet(usr, "Name", &un) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, name, &un);
 	} else if (ok) {
 		ok = Bd_MaxRange(&targets, &max) && Bd_Attack(name, &targets, &max);
 	}
@@ -2603,7 +2603,7 @@ static byte Bd_CreateBankMaster(const nativeVal_t *pos) {
 	byte ok = PORT_LOWN(Mission_DestroyBadDebtors, CreateShip, o1, "ss", "SBANKMASTER1", "BankMaster") && LvN_SetS(o1, "TgType", "green") &&
 		LvN_SetS(o1, "OnDeath", "Mission_DestroyBadDebtors.OnBankMasterDeath") && LvN_SetS(o1, "OnDamage", "Mission_DestroyBadDebtors.OnBankMasterDamage") &&
 		Bd_NearPos(o1, pos) && Mode_VGet(o1, "Name", name) && Mode_Put(BD, "bankMasterName", NULL, name) && Mode_Read(BD, "bankMasterName", name) &&
-		LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L) && Mode_Read(BD, "bankMasterName", name) && Bd_NoMoney(name);
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, name, 0L) && Mode_Read(BD, "bankMasterName", name) && Bd_NoMoney(name);
 	return Mode_Done(&t, ok);
 }
 
@@ -2656,7 +2656,7 @@ static byte Bd_CreateBanker(const nativeVal_t *follow, const nativeVal_t *pos) {
 		ok = ok && (!treasure || (Mode_VGet(e, "Pos", ep) && PORT_CALL(OutMap, GetNearestFreeSpawnPos, spw, "v", ep) && Mode_VSet(o1, "Pos", spw)));
 	}
 	if (ok && !treasure) {
-		ok = Mode_VGet(o1, "Name", name) && (Native_True(follow) ? Mode_VGet(usr, "Name", un) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 7L, name, un) :
+		ok = Mode_VGet(o1, "Name", name) && (Native_True(follow) ? Mode_VGet(usr, "Name", un) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 7L, name, un) :
 			Bd_StateG(7, name, "bankMasterName"));
 	} else if (ok) {
 		Native_SetEmpty(one, NV_LIST);
@@ -2768,7 +2768,7 @@ static byte Debtors_OnTreasureReached(const nativeVal_t *a) {
 	if (ok && merc && !LvN_EqI(state, 2)) {
 		ok = Bd_MercAttack(&a[0], usr);
 	} else if (ok && !merc && !LvN_EqI(state, 7)) {
-		ok = Mode_VGet(usr, "Name", un) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 7L, &a[0], un);
+		ok = Mode_VGet(usr, "Name", un) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 7L, &a[0], un);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -2821,7 +2821,7 @@ static byte Bd_Recovered(void) {
 		nativeVal_t e = { 0 };
 		ok = Mode_EntityH(name, &e);
 		if (ok && Native_True(&e)) {
-			ok = LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 1L) && LvN_SetS(&e, "TgType", "none") &&
+			ok = PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, name, 1L) && LvN_SetS(&e, "TgType", "none") &&
 				LvN_SetS(&e, "OnDeath", "Vehicles.OnDeath") && LvN_SetS(&e, "OnDamage", "") && Mode_Read(BD, "currentMissionTarget", mt) &&
 				(Native_Compare(name, mt) || PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &e, 0L));
 		}
@@ -2884,7 +2884,7 @@ static byte Debtors_OnCoinTaken(const nativeVal_t *a) {
 			appear = Mode_Read(BD, "moneyRecovered", mr) ? Mode_CmpG(mr, ">=", BD, "MONEY_MERCS_APPEAR") : -1;
 		}
 		ok = appear >= 0 && (!appear || (LvN_PutI(BD, "mercsHaveAppeared", 1) && Mode_Later(5, BD, "MercsAppear", NULL, 0, NULL))) &&
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 7L, veh, un) && LV_SCORERG(Mission_DestroyBadDebtors, MissionScorer);
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 7L, veh, un) && LV_SCORERG(Mission_DestroyBadDebtors, MissionScorer);
 	}
 	return Mode_Done(&t, ok && LvN_Draw());
 }
@@ -2908,7 +2908,7 @@ static byte Debtors_ShowDeepThroatMessage(void) {
 	Native_SetEmpty(none, NV_TUPLE);
 	Native_SetInt(d, 5);
 	byte ok = Mode_SaveAdd(BD, "Hangar.shipsToEditList", "SBankMaster1") && Mode_SaveAdd(BD, "Hangar.availableEnginesList", "MBANKMASTER1") &&
-		Mode_SpeechMsg(cad) && LV_CALL("Scrap", "IncSaveVar", NULL, "si", "NewBluePrintAvaliable", 2L) && LvN_GObj(BD, "SetNextMission", fn) &&
+		Mode_SpeechMsg(cad) && PORT_CALL(Scrap, IncSaveVar, NULL, "si", "NewBluePrintAvaliable", 2L) && LvN_GObj(BD, "SetNextMission", fn) &&
 		Mode_LaterSpeech("AddRemoteCom", d, args, 4, NULL);
 	return Mode_Done(&t, ok);
 }
@@ -3067,7 +3067,7 @@ static byte Traitorius_Init(void) {
 		Mode_SaveInt("TraitoriusFrightened", &n);
 	if (ok && LvN_EqI(&n, 0)) {
 		ok = Mode_GVarSetS("OnLifeItemTaken", "Mission_AttackTraitorius.TraitoriusTakesLife") &&
-			LV_CALL("Scrap", "CreateEntityList", NULL, "s", "Traitorius") && PORT_LOWN(Mission_AttackTraitorius, CreateTraitorius, NULL, "");
+			PORT_CALL(Scrap, CreateEntityList, NULL, "s", "Traitorius") && PORT_LOWN(Mission_AttackTraitorius, CreateTraitorius, NULL, "");
 	} else if (ok) {
 		ok = PORT_LOWN(Mission_AttackTraitorius, CallTraitorius, NULL, "");
 	}
@@ -3080,8 +3080,8 @@ static byte Traitorius_Init(void) {
 static byte At_State(long state, const nativeVal_t *target, long dist) {
 	nativeVal_t tr = { 0 }, name = { 0 };
 	byte ok = Mode_G(AT, "traitorius", &tr) && Mode_VGet(&tr, "Name", &name) &&
-		(target ? LV_CALL("SAI", "SetStateVehicle", NULL, "ivvi", state, &name, target, dist) :
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", state, &name, dist));
+		(target ? PORT_CALL(SAI, SetStateVehicle, NULL, "ivvi", state, &name, target, dist) :
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", state, &name, dist));
 	Native_Free(&tr);
 	Native_Free(&name);
 	return ok;
@@ -3126,7 +3126,7 @@ static byte Traitorius_CreateTraitorius(void) {
 		Mode_VGet(tr, "Style", st) && Mode_G(AT, "styleOffset", off) && Native_Arith('-', st, off, st2) && Mode_VSet(tr, "Style", st2) &&
 		LvN_SetS(tr, "Descriptor", "Traitorius") && Mode_Read(AT, "pd", pd) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", tr, pd) &&
 		LvN_Life(tr, AT, "TRAITORIUS_LIFE") && LvN_SetS(tr, "WeapList", "1,1,1,0,0,0") && Mode_VRead(tr, "Name", name) &&
-		LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L) &&
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, name, 0L) &&
 		Mode_ListSet("Traitorius", "OnDamage", "Mission_AttackTraitorius.OnTraitoriusDamage") &&
 		Mode_ListSet("Traitorius", "OnDeath", "Mission_AttackTraitorius.OnTraitoriusDeath") && Mode_VRead(tr, "Name", name) &&
 		PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", name) && LV_SCORERG(Mission_AttackTraitorius, MissionScorer) && LvN_Draw();
@@ -3573,7 +3573,7 @@ static byte Hunt_CreateFriendsShips(const nativeVal_t *a) {
 		const nativeVal_t *p = &final->items[i];
 		ok = PORT_LOWN(Mission_FunctionaryHunting, CreateNewPoliShip, &name, "ivv", (long)i, &initial->items[i], &a[0]) &&
 			Mode_Append(FH, "initialFriendsList", &name) &&
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvviiddd", 1L, &name, &p->items[0], &p->items[1], &p->items[2], 450L, 0L, 0.1, 20.0, 20.0);
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvviiddd", 1L, &name, &p->items[0], &p->items[1], &p->items[2], 450L, 0L, 0.1, 20.0, 20.0);
 		Native_Free(&name);
 	}
 	return Mode_Done(&t, ok);

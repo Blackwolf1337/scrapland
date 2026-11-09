@@ -17,9 +17,10 @@
  * Direct calls (stage 3): the calls of other ports (Speech, MissionsFuncs, SaveGame, RaceMaker, VehiclesNPC, Vehicles,
  * Traffic, PhoneCab, Menu, Elevator, Metro, MapRace) and of the module's own functions through its globals
  * (PORT_LOWN: a mission may replace one) go through their refs (PORT_CALL, the keyword calls among them), the
- * callbacks handed to Speech and Menu by the refs of their functions (LV_COM, LV_ONEND, LV_SCORERG). By name stay:
- * SAI.SetStateVehicle and SetInertia, SScorer.AddModel and CancelSpeech, Scrap.Achievement and Scrap.SetMoney of a long
- * (OBJLIB 7); the functions handed on as values: to the scheduler (the entry of a port's own function, stage 4:
+ * callbacks handed to Speech and Menu by the refs of their functions (LV_COM, LV_ONEND, LV_SCORERG), and so do the
+ * engine functions with native entries (stage 7: SAI.SetStateVehicle and SetInertia, Scrap.Achievement and
+ * Scrap.SetMoney of a long). By name stay: SScorer.AddModel and CancelSpeech (OBJLIB 7: no native entry yet); the
+ * functions handed on as values: to the scheduler (the entry of a port's own function, stage 4:
  * Port_Scheduled), as the callbacks of Parking and Alarm, the AfterRemoteComFunc of Speech.ForceRemoteCom (values of
  * their variables, OBJLIB 5). The InitStatus functions that only set the traffic ships,
  * the start positions of the races (LvN_StartPos) and Mission_DestroyCommSats2 are LevelCommon's.
@@ -43,8 +44,8 @@
 
 static const char *const ac_ships_bertos = "[\"SMerc1\",\"SMerc2\",\"SBishop1\",\"SBerto1\",\"SArchbishop1\"]";
 
-/* SAI.SetStateVehicle(...) by name (OBJLIB 7: its state handlers take Python arguments) */
-#define STATE(...) LV_CALL("SAI", "SetStateVehicle", NULL, __VA_ARGS__)
+/* SAI.SetStateVehicle(...) through its ref (the seam sees what a case put there) */
+#define STATE(...) PORT_CALL(SAI, SetStateVehicle, NULL, __VA_ARGS__)
 
 /* ---- native helpers of this file ---- */
 
@@ -444,7 +445,7 @@ static byte Mickus_CreateTransports(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&tn);
 		Native_SetInt(&id, 0);
 		byte ok = PORT_CALL(Traffic, SetPath, NULL, "") && PORT_CALL(VehiclesNPC, MakeAI, &trans, "sv", "TLight2", &name) &&
-			Mode_VGet(&trans, "Name", &tn) && LV_CALL("SAI", "SetInertia", NULL, "vi", &tn, 0L) && PORT_CALL(Traffic, ResetPath, NULL, "");
+			Mode_VGet(&trans, "Name", &tn) && PORT_CALL(SAI, SetInertia, NULL, "vi", &tn, 0L) && PORT_CALL(Traffic, ResetPath, NULL, "");
 		Native_Free(&tn);
 		ok = ok && Mode_VGet(&trans, "Name", &tn) && STATE("ividd", 3L, &tn, 0L, 2.0, 1.0) && LvN_SetS(&trans, "EntityList", "Transports");
 		Native_Free(&tn);
@@ -3267,9 +3268,9 @@ static byte Porkins_GetMayorReward(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(money, Mode_GetMoney());
-	/* Scrap.SetMoney(money): a long int (or another value) by name for the error of its "i" (OBJLIB 7) */
+	/* Scrap.SetMoney(money): a long int (or another value) through the entry for the error of its "i" */
 	if (!Mode_G(PT, "mayorReward", reward) || !Native_Arith('+', money, reward, sum) ||
-		!(sum->type == NV_INT || sum->type == NV_FLOAT ? Mode_SetMoney(sum) : LV_CALL("Scrap", "SetMoney", NULL, "v", sum))) {
+		!(sum->type == NV_INT || sum->type == NV_FLOAT ? Mode_SetMoney(sum) : PORT_CALL(Scrap, SetMoney, NULL, "v", sum))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(time, Mode_Time() + 2);
@@ -3326,8 +3327,8 @@ static byte Porkins_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	SaveVar_Set("Map", "Levels/Orbit");
-	/* Scrap.Achievement by name: the cases record it (OBJLIB 7) */
-	return Mode_GVarSetS("PlayVideo", "Video/Mayor.avi") && LV_CALL("Scrap", "Achievement", NULL, "i", 4L) &&
+	/* Scrap.Achievement through its ref: the cases record it */
+	return Mode_GVarSetS("PlayVideo", "Video/Mayor.avi") && PORT_CALL(Scrap, Achievement, NULL, "i", 4L) &&
 		PORT_CALL(SaveGame, QLoad, NULL, "s", "Levels/Orbit");
 }
 

@@ -8,9 +8,9 @@
  * read where the script reads them and written through at once, CreditsText.EndOfCredits gets the function object of
  * Map (OBJLIB 5). The cameras are handle values (OBJLIB 7). The engine variables, the dummy search, the camera, the
  * action set, the vector math and the random numbers are C; Scrap.Set, Scrap.CreateEntity, the SAct class and action
- * functions, SSound.SetMusic, Scrap.AddScheduledFunc and Scrap.SetDebrisSys, Scrap.SetDebrisValue, Scrap.DropDebris and
- * Scrap.MusicPlayer (fc-lvl-menu swaps the last three) go through their seams (OBJLIB 7). The loading of CreditsText
- * (Scrap.OpenPack, PreloadLibrary, ClosePack) stays by name (OBJLIB 6).
+ * functions, SSound.SetMusic and Scrap.AddScheduledFunc go through their seams (OBJLIB 7). Scrap.SetDebrisSys,
+ * SetDebrisValue, DropDebris and MusicPlayer (fc-lvl-menu swaps the last three) and the loading of CreditsText
+ * (Scrap.OpenPack, PreloadLibrary, ClosePack) go through their refs (stage 7).
  *
  * Direct calls (stage 3): CreditsText, Menu, PCMenu, SaveGame and the C functions of Map go through their refs
  * (PORT_CALL, PORT_LOWN; EndCredits and cremeteoro are keyword entries, MODE_KW), the scheduled functions through
@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include "scrap/input.h"
-#include "scrap/mathlib.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 #include "Levels.h"
@@ -29,92 +28,33 @@
 
 #define MAP "Map"
 
-/* ---- the engine calls of the scene, through their seams (OBJLIB 7: fc-lvl-menu swaps the debris and the music
- * player, _BSCEN of fr6b.py records SetDebrisSys) ---- */
+/* ---- the engine calls of the scene, through their refs (fc-lvl-menu swaps the debris and the music player, _BSCEN
+ * of fr6b.py records SetDebrisSys: the seam of PORT_CALL calls what they put there) ---- */
 
 /* Scrap.SetDebrisValue(n, x, y, z): 0 position, 1 angles (degrees), 2 velocity, 3 angle speed (degrees) */
 static byte Mn_DebrisValue(long n, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "SetDebrisValue", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "ivvv", n, x, y, z);
-	}
-	double d[3];
-	if (!Native_ArgDouble(x, &d[0]) || !Native_ArgDouble(y, &d[1]) || !Native_ArgDouble(z, &d[2])) {
-		return 0;
-	}
-	if (n == 1 || n == 3) {
-		for (int i = 0; i < 3; i++) {
-			d[i] = d[i] * M_PI_D / DEG_PER_PI;
-		}
-	}
-	g_DebrisDrop[n] = (vec3_t){ (float)d[0], (float)d[1], (float)d[2] };
-	return 1;
+	return PORT_CALL(Scrap, SetDebrisValue, NULL, "ivvv", n, x, y, z);
 }
 
 /* the same with three numbers */
 static byte Mn_DebrisValueD(long n, double x, double y, double z) {
-	nativeVal_t v[3];
-	Native_SetFloat(&v[0], x);
-	Native_SetFloat(&v[1], y);
-	Native_SetFloat(&v[2], z);
-	return Mn_DebrisValue(n, &v[0], &v[1], &v[2]);
+	return PORT_CALL(Scrap, SetDebrisValue, NULL, "iddd", n, x, y, z);
 }
 
 /* Scrap.DropDebris(name, speed): a debris element with the values of SetDebrisValue */
 static byte Mn_DropDebris(const nativeVal_t *name, const nativeVal_t *speed) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "DropDebris", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "vv", name, speed);
-	}
-	const char *n;
-	double s;
-	if (!Native_ArgStr(name, 1, &n) || !Native_ArgDouble(speed, &s)) {
-		return 0;
-	}
-	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, n);
-	cDebris *deb = cDebrisSys_NewElement(sys);
-	for (int i = 0; i < 4; i++) {
-		deb->drop[i] = g_DebrisDrop[i];
-	}
-	deb->life = (float)s;
-	cDebrisSys_Drop(sys, deb);
-	return 1;
+	return PORT_CALL(Scrap, DropDebris, NULL, "vv", name, speed);
 }
 
 /* Scrap.MusicPlayer(name, cmd[, volume]) (volume < 0: not given) */
 static byte Mn_MusicPlayer(const char *name, const char *cmd, double volume) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "MusicPlayer", &hook);
-	if (seam) {
-		return seam > 0 && (volume < 0 ? Native_HookCall(hook, NULL, "ss", name, cmd) :
-			Native_HookCall(hook, NULL, "ssd", name, cmd, volume));
-	}
-	Music_Play(name, cmd, volume < 0 ? 0.0f : (float)volume);
-	return 1;
+	return volume < 0 ? PORT_CALL(Scrap, MusicPlayer, NULL, "ss", name, cmd) :
+		PORT_CALL(Scrap, MusicPlayer, NULL, "ssd", name, cmd, volume);
 }
 
 /* Scrap.SetDebrisSys(name, 30, 1000000, 0, 0.02, 0, 0): the debris system of an asteroid model */
 static byte Mn_DebrisSys(const nativeVal_t *name) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "SetDebrisSys", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "viiidii", name, 30L, 1000000L, 0L, 0.02, 0L, 0L);
-	}
-	const char *n;
-	if (!Native_ArgStr(name, 1, &n)) {
-		return 0;
-	}
-	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, n);
-	sys->b = 0.0f;
-	sys->d = 0.0f;
-	float rf = 1000000.0f;
-	sys->radiusSq = rf * rf;
-	sys->c = 0.02f;
-	sys->flag = 0;
-	cDebrisSys_Init(sys, 30, 0);
-	return 1;
+	return PORT_CALL(Scrap, SetDebrisSys, NULL, "viiidii", name, 30L, 1000000L, 0L, 0.02, 0L, 0L);
 }
 
 /* ---- shared lines ---- */
@@ -144,8 +84,8 @@ static byte Menu_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_SetVar("Init", "inMainMenu", &one);
 	int s = Mn_GetTrue("ShowCredits");
 	/* OBJLIB 6: the loading of a module stays with the module objects */
-	return s == 0 || (s > 0 && LV_CALL("Scrap", "OpenPack", NULL, "s", "Scripts/Scorer") &&
-		LV_CALL("Scrap", "PreloadLibrary", NULL, "ss", "CreditsText", "CreditsText.pyc") && LV_CALL("Scrap", "ClosePack", NULL, "") &&
+	return s == 0 || (s > 0 && PORT_CALL(Scrap, OpenPack, NULL, "s", "Scripts/Scorer") &&
+		PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "CreditsText", "CreditsText.pyc") && PORT_CALL(Scrap, ClosePack, NULL, "") &&
 		LvN_PutI(MAP, "InitMenu", 0));
 }
 

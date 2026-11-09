@@ -8,10 +8,10 @@
  *
  * The functions are native C (docs/objlib-plan.md, stage 2): they work on C values, read the variables of the level
  * modules where the script reads them (OBJLIB 5) and call the engine in C. The engine functions the cases record go
- * through their seams or by name (Scrap.CreateEntity, Set, SetAlarm, SetLockAlarm, UsrEntity, AddScheduledFunc,
- * SScorer.SetMsgText, SAct.GetAct and SetAct, SSound.SetMusic through seams; Scrap.OpenPack, PreloadLibrary,
- * ClosePack, SetCallFunc, AddParams, Execute, Achievement and SetDebrisSys by name, OBJLIB 7). Entities are handle
- * values (OBJLIB 7).
+ * through their seams or their refs (Scrap.CreateEntity, Set, SetAlarm, SetLockAlarm, UsrEntity, AddScheduledFunc,
+ * SScorer.SetMsgText, SAct.GetAct and SetAct, SSound.SetMusic through seams, OBJLIB 7; Scrap.OpenPack, PreloadLibrary,
+ * ClosePack, SetCallFunc, AddParams, Execute, Achievement and SetDebrisSys through their refs, stage 7). Entities are
+ * handle values (OBJLIB 7).
  *
  * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene, GateKeeper,
  * MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN; the callbacks
@@ -91,17 +91,9 @@ static byte Ob_SceneFx(const char *module, const char *global, const char *fx) {
 		return 0;
 	}
 	Native_Free(&file);
-	/* OBJLIB 7: SetDebrisSys by name (the scene cases record it) */
-	PyObject *fn = Script_Attr("Scrap", "SetDebrisSys");
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_G(module, global, &file) && LvN_ModGet("Fx", fx, &c);
-	if (ok) {
-		ok = Native_HookCall(fn, NULL, "viiiiiiv", &file, 1L, 0L, 0L, 1L, 0L, 0L, &c);
-	} else {
-		Py_DECREF(fn);
-	}
+	/* through the ref of SetDebrisSys (the scene cases record it; the function looked up after the arguments) */
+	byte ok = Mode_G(module, global, &file) && LvN_ModGet("Fx", fx, &c) &&
+		PORT_CALL(Scrap, SetDebrisSys, NULL, "viiiiiiv", &file, 1L, 0L, 0L, 1L, 0L, 0L, &c);
 	Native_Free(&file);
 	Native_Free(&c);
 	return ok;
@@ -184,11 +176,11 @@ static byte Decont_InitStatusN(void) {
 	for (int i = 0; chars[i] && ok; i++) {
 		ok = PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", chars[i]);
 	}
-	/* OBJLIB 7: the pack calls by name (fc-r6b-or1 records them) */
+	/* the pack calls through their refs (fc-r6b-or1 records them) */
 	return ok && Mode_GVarSetN("FunctionaryMinTimeToSitDown", 0.0) && Mode_GVarSetN("FunctionaryMaxTimeToSitDown", 1.0) &&
-		LV_CALL("Scrap", "OpenPack", NULL, "s", "Scripts/Scorer") &&
-		LV_CALL("Scrap", "PreloadLibrary", NULL, "ss", "CreditsText", "CreditsText.pyc") &&
-		LV_CALL("Scrap", "ClosePack", NULL, "");
+		PORT_CALL(Scrap, OpenPack, NULL, "s", "Scripts/Scorer") &&
+		PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "CreditsText", "CreditsText.pyc") &&
+		PORT_CALL(Scrap, ClosePack, NULL, "");
 }
 
 /* Decontamination(UsrName, CharName, optId, FullOption): the keypad goes, the scene plays, the way point */
@@ -805,16 +797,16 @@ static byte Decont_LoadBishopsSceneN(void) {
 		Ob_SceneFx(MD, "FXSceneBishopsFile", "FXSCENEBISHOPS");
 }
 
-/* FXBishopsPray(EntityName, EventName, Time): the effect of a bishop selling a life to Dtritus (OBJLIB 7: the engine
- * call by name, fc-r6b-or1 records SetCallFunc, AddParams and Execute) */
+/* FXBishopsPray(EntityName, EventName, Time): the effect of a bishop selling a life to Dtritus (the engine call
+ * through the refs, fc-r6b-or1 records SetCallFunc, AddParams and Execute) */
 static byte Decont_FXBishopsPrayN(const nativeVal_t *ev) {
 	nativeVal_t pre = { 0 }, last = { 0 }, p = { 0 };
 	Native_SetNone(&last);
 	Native_SetNone(&p);
 	LvN_Str(&pre, "BishopsBishop");
-	byte ok = LV_CALL("Scrap", "SetCallFunc", NULL, "s", "!FXBishopSellLife") && LvN_Item(ev, -1, &last) &&
-		Native_Arith('+', &pre, &last, &p) && LV_CALL("Scrap", "AddParams", NULL, "v", &p) &&
-		LV_CALL("Scrap", "AddParams", NULL, "s", "BishopsDtritus") && LV_CALL("Scrap", "Execute", NULL, "");
+	byte ok = PORT_CALL(Scrap, SetCallFunc, NULL, "s", "!FXBishopSellLife") && LvN_Item(ev, -1, &last) &&
+		Native_Arith('+', &pre, &last, &p) && PORT_CALL(Scrap, AddParams, NULL, "v", &p) &&
+		PORT_CALL(Scrap, AddParams, NULL, "s", "BishopsDtritus") && PORT_CALL(Scrap, Execute, NULL, "");
 	Native_Free(&pre);
 	Native_Free(&last);
 	Native_Free(&p);
@@ -1269,8 +1261,8 @@ static byte Intro_SetNextMissionN(void) {
 		{ "Journalist.Betty_Defaut", "Press" }, { "Journalist.Berto_Defaut", "Press" } };
 	nativeVal_t zero = { 0 }, l = { 0 }, item = { 0 };
 	Native_SetInt(&zero, 0);
-	/* OBJLIB 7: Achievement by name (the cases record it) */
-	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame") || !LV_CALL("Scrap", "Achievement", NULL, "i", 5L) ||
+	/* Achievement through its ref (the cases record it) */
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame") || !PORT_CALL(Scrap, Achievement, NULL, "i", 5L) ||
 		!Mode_SetLockAlarm(&zero) || !Mode_SetAlarm(&zero) ||
 		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_IntroHuman2", "Press")) {
 		return 0;

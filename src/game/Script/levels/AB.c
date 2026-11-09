@@ -13,8 +13,8 @@
  * the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set, Scrap.SetAlarm,
  * Scrap.SetLockAlarm, Scrap.Rand, Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs, Scrap.AddScheduledFunc,
  * Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams (OBJLIB 7: cases record them).
- * The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute: no C entry with text and int
- * parameters) and SAI.SetStateVehicle (its state handlers take Python arguments) stay by name (OBJLIB 7).
+ * The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute) and SAI.SetStateVehicle go through
+ * their refs (stage 7: the native entries, a function a case put there by name).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, Vehicles, VehiclesNPC, ShipMaker, Traffic,
  * Elevator, Scorer, Menu, SaveGame) and the own functions of both modules (their globals) go through their refs
@@ -251,12 +251,12 @@ static byte Ff_SetShieldPhase(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t phase;
 	(void)a;
 	(void)out;
-	/* OBJLIB 7: the engine call function by name (no C entry with text and int parameters) */
-	if (!LV_CALL("Scrap", "SetCallFunc", NULL, "s", "!FXBossShieldSet") || !LV_CALL("Scrap", "AddParams", NULL, "s", "BossShield") ||
+	/* the engine call function */
+	if (!PORT_CALL(Scrap, SetCallFunc, NULL, "s", "!FXBossShieldSet") || !PORT_CALL(Scrap, AddParams, NULL, "s", "BossShield") ||
 		!Mode_G(FF, "FASE", &phase)) {
 		return 0;
 	}
-	byte ok = LV_CALL("Scrap", "AddParami", NULL, "v", &phase) && LV_CALL("Scrap", "Execute", NULL, "");
+	byte ok = PORT_CALL(Scrap, AddParami, NULL, "v", &phase) && PORT_CALL(Scrap, Execute, NULL, "");
 	Native_Free(&phase);
 	return ok;
 }
@@ -324,9 +324,8 @@ static byte Ff_BossAttacks(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	byte ok = Mode_UsrHandle(usr);
 	if (ok && Native_True(usr)) {
-		/* OBJLIB 7: SAI.SetStateVehicle by name */
 		ok = Mode_G(FF, "bossName", boss) && Mode_VGet(usr, "Name", name) &&
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, boss, name);
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, boss, name);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -341,7 +340,7 @@ static byte Ff_BossRelax(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Mode_G(FF, "bossName", boss) && Mode_EntityH(boss, e);
 	if (ok && Native_True(e)) {
 		ok = Mode_VGet(e, "Name", name) && Mode_G(FF, "pos", pos) && LvN_Item(pos, 0, x) && LvN_Item(pos, 1, y) &&
-			LvN_Item(pos, 2, z) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvvi", 1L, name, x, y, z, 1000L);
+			LvN_Item(pos, 2, z) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvvi", 1L, name, x, y, z, 1000L);
 	}
 	return Mode_Done(&t, ok);
 }
