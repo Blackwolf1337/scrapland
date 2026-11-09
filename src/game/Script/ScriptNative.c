@@ -17,6 +17,7 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/modvars.h"
+#include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
@@ -2539,21 +2540,34 @@ byte Native_GVarSet(const char *name, const nativeVal_t *v) {
 }
 
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v) {
-	/* SScorer.Set: "isss", else "issd" */
-	double d;
 	PyObject *hook;
 	int seam = Native_Seam("SScorer", "Set", &hook);
 	if (seam) {
 		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
 		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(issN)", id, item, var, o) : NULL);
 	}
+	int r;
+	return Native_ScorerStore(id, item, var, v, &r) >= 0;
+}
+
+int Native_ScorerStore(int id, const char *item, const char *var, const nativeVal_t *v, int *r) {
+	/* SScorer.Set: "isss", else "issd" (the int the double cut) */
+	double d = 0.0;
+	int i = 0;
+	char *s = NULL;
 	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
-		Script_SetStr(id, item, var, Native_Text(v));
+		s = (char *)Native_Text(v);
 	} else if (Native_ArgDouble(v, &d)) {
-		Script_SetNum(id, item, var, d);
+		i = (int)d;
 	} else {
+		return -1;
+	}
+	cScorer *sc = Scorer_Get(id);
+	cScorerItem *it = sc ? cScorer_FindItem(sc, item) : NULL;
+	if (!it) {
 		return 0;
 	}
+	*r = s ? ScorerItem_Var(it, var, 1, &s, NULL, NULL) : ScorerItem_Var(it, var, 1, NULL, &d, &i);
 	return 1;
 }
 

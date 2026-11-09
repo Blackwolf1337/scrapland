@@ -47,4 +47,10 @@ byte Api_Build(nativeVal_t *out, const char *fmt, ...);
  * there is no such entity (the adapter's NULL: the SystemError of the call) */
 byte Api_Handle(const char *name, nativeVal_t *out);
 
+/* ---- batch 7a2 ---- */
+
+/* the Python object o (a new reference, released here: a scorer item of SScorer.GetItem) as an NV_OBJ in *out
+ * (OBJLIB 7): 1, or 0 for NULL (the error as it is) */
+byte Api_Object(PyObject *o, nativeVal_t *out);
+
 #endif

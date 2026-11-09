@@ -107,3 +107,14 @@ byte Api_Handle(const char *name, nativeVal_t *out) {
 	Py_DECREF(h);
 	return 1;
 }
+
+/* ---- batch 7a2 ---- */
+
+byte Api_Object(PyObject *o, nativeVal_t *out) {
+	if (!o) {
+		return 0;
+	}
+	Native_Arg(o, out);
+	Py_DECREF(o);
+	return 1;
+}

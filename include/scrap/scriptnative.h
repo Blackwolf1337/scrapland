@@ -325,6 +325,10 @@ int Native_GVarStore(const char *name, const nativeVal_t *v);
 /* SScorer.Set(id, item, var, v) with a text or a number (nothing when the item is not there); 0 with the TypeError
  * of its arguments for other values. OBJLIB 7: through the seam (fc-credits2 records SScorer.Set) */
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v);
+/* the core of SScorer.Set without the seam (its own entry): 1 with *r the result of the item's Var, 0 when the player
+ * has no scorer or the item is not there, -1 with the TypeError of a value that is neither a text without 0 bytes nor
+ * a number */
+int Native_ScorerStore(int id, const char *item, const char *var, const nativeVal_t *v, int *r);
 /* Scrap.GetNetFlags() == (0, 0, 0), one call through the seam: 1 or 0, -1 with the error set */
 int Native_NetOff(void);
 /* Scrap.GetNetFlags()[i] (0 client, 1 server, 2 dedicated): 1 or 0, -1 with the error set (through the seam) */

@@ -1484,6 +1484,79 @@ PORT_DECL(SNet, GetPing) /* 1 */
 	PORT_DEF(SNet, PingInetSvrs, SNet_PingInetSvrs) \
 	PORT_DEF(SNet, GetPing, SNet_GetPing)
 
+/* PyInterface/SScorerPy.c */
+PORT_DECL(SScorer, Add) /* ? */
+PORT_DECL(SScorer, Clear) /* 1 */
+PORT_DECL(SScorer, Set) /* 4 */
+PORT_DECL(SScorer, Get) /* 3 */
+PORT_DECL(SScorer, Show) /* 1 */
+PORT_DECL(SScorer, Hide) /* 1 */
+PORT_DECL(SScorer, SetCursor) /* 2 */
+PORT_DECL(SScorer, SetDefault) /* 2 */
+PORT_DECL(SScorer, GetDefault) /* 1 */
+PORT_DECL(SScorer, GetActual) /* 1 */
+PORT_DECL(SScorer, SetOnCancel) /* 2 */
+PORT_DECL(SScorer, SetOnNext) /* 2 */
+PORT_DECL(SScorer, SetOnPrev) /* 2 */
+PORT_DECL(SScorer, SetOnSpecialHint) /* 3 */
+PORT_DECL(SScorer, AddModel) /* ? */
+PORT_DECL(SScorer, SetMPFunc) /* 2 */
+PORT_DECL(SScorer, PreloadTexture) /* ? */
+PORT_DECL(SScorer, AddChatMsg) /* 4 */
+PORT_DECL(SScorer, SetConsole) /* 1 */
+PORT_DECL(SScorer, SetSpeechText) /* 5 */
+PORT_DECL(SScorer, SetSpeechCallback) /* ? */
+PORT_DECL(SScorer, CancelSpeech) /* 0 */
+PORT_DECL(SScorer, SetHeadMonitor) /* 3 */
+PORT_DECL(SScorer, Fade) /* 4 */
+PORT_DECL(SScorer, SetCinema) /* 3 */
+PORT_DECL(SScorer, SetMsgText) /* 2 */
+PORT_DECL(SScorer, SetLabelText) /* 2 */
+PORT_DECL(SScorer, Get2DPos) /* 1 */
+PORT_DECL(SScorer, GetTextArea) /* 2 */
+PORT_DECL(SScorer, GetMenuAccept) /* 1 */
+PORT_DECL(SScorer, SetMarkerSprite) /* 2 */
+PORT_DECL(SScorer, GetItem) /* 2 */
+PORT_DECL(SScorer, New) /* ? */
+PORT_DECL(SScorer, Items) /* 1 */
+PORT_DECL(SScorer, Accept) /* 2 */
+#define PORTS_PyInterface_SScorerPy \
+	PORT_DEF(SScorer, Add, SScorer_Add) \
+	PORT_DEF(SScorer, Clear, SScorer_Clear) \
+	PORT_DEF(SScorer, Set, SScorer_Set) \
+	PORT_DEF(SScorer, Get, SScorer_Get) \
+	PORT_DEF(SScorer, Show, SScorer_Show) \
+	PORT_DEF(SScorer, Hide, SScorer_Hide) \
+	PORT_DEF(SScorer, SetCursor, SScorer_SetCursor) \
+	PORT_DEF(SScorer, SetDefault, SScorer_SetDefault) \
+	PORT_DEF(SScorer, GetDefault, SScorer_GetDefault) \
+	PORT_DEF(SScorer, GetActual, SScorer_GetCurrent) \
+	PORT_DEF(SScorer, SetOnCancel, SScorer_SetOnCancel) \
+	PORT_DEF(SScorer, SetOnNext, SScorer_SetOnNext) \
+	PORT_DEF(SScorer, SetOnPrev, SScorer_SetOnPrev) \
+	PORT_DEF(SScorer, SetOnSpecialHint, SScorer_SetOnSpecialHint) \
+	PORT_DEF(SScorer, AddModel, SScorer_AddModel) \
+	PORT_DEF(SScorer, SetMPFunc, SScorer_SetMPFunc) \
+	PORT_DEF(SScorer, PreloadTexture, SScorer_PreloadTexture) \
+	PORT_DEF(SScorer, AddChatMsg, SScorer_AddChatMsg) \
+	PORT_DEF(SScorer, SetConsole, SScorer_SetConsole) \
+	PORT_DEF(SScorer, SetSpeechText, SScorer_SetSpeechText) \
+	PORT_DEFP(SScorer, SetSpeechCallback, SScorer_SetSpeechCallback) \
+	PORT_DEF(SScorer, CancelSpeech, SScorer_CancelSpeech) \
+	PORT_DEF(SScorer, SetHeadMonitor, SScorer_SetHeadMonitor) \
+	PORT_DEF(SScorer, Fade, SScorer_Fade) \
+	PORT_DEF(SScorer, SetCinema, SScorer_SetCinema) \
+	PORT_DEF(SScorer, SetMsgText, SScorer_SetMsgText) \
+	PORT_DEF(SScorer, SetLabelText, SScorer_SetLabelText) \
+	PORT_DEF(SScorer, Get2DPos, SScorer_Get2DPos) \
+	PORT_DEF(SScorer, GetTextArea, SScorer_GetTextArea) \
+	PORT_DEF(SScorer, GetMenuAccept, SScorer_GetMenuAccept) \
+	PORT_DEF(SScorer, SetMarkerSprite, SScorer_SetMarkerSprite) \
+	PORT_DEF(SScorer, GetItem, SScorer_GetItem) \
+	PORT_DEF(SScorer, New, SScorer_New) \
+	PORT_DEF(SScorer, Items, SScorer_Items) \
+	PORT_DEF(SScorer, Accept, SScorer_Accept)
+
 /* PyInterface/SSoundPy.c */
 PORT_DECL(SSound, LoadSound) /* 1 */
 PORT_DECL(SSound, PlaySound) /* ? */
@@ -5298,6 +5371,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2526
+#define PORT_COUNT 2561
 
 #endif
