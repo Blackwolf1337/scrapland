@@ -71,17 +71,15 @@ static cScheduledFunc *cScheduledFunc_New(float time, const char *name) {
  * the adapter would get them; 1, or 0 with the error */
 static byte cScheduledFunc_CallEntry(const cScheduledFunc *self) {
 	nativeArg_t a[PORT_ARGS];
-	int n = self->params ? PyTuple_Size(self->params) : self->args.n;
-	for (int i = 0; i < n; i++) {
-		if (self->params) {
-			a[i].type = 'O';
-			a[i].o = PyTuple_GetItem(self->params, i);
-		} else {
-			a[i].type = 'v';
-			a[i].v = &self->args.items[i];
-		}
+	if (!self->params) {
+		return Port_BoundCall(self->site, NULL, self->args.items, self->args.n, NULL, NULL);
 	}
-	return Port_BoundCall(self->site, a, n, NULL);
+	int n = PyTuple_Size(self->params);
+	for (int i = 0; i < n; i++) {
+		a[i].type = 'O';
+		a[i].o = PyTuple_GetItem(self->params, i);
+	}
+	return Port_BoundCall(self->site, a, NULL, n, NULL, NULL);
 }
 
 /* the call with the function marked as running */

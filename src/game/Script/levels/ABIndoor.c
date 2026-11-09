@@ -13,8 +13,8 @@
  * Direct calls (stage 3): the functions of SaveGame, Elevator, Chars, Menu, MissionsFuncs and Scene and the map's own
  * Goodbye go through their refs (PORT_CALL, PORT_LOWN; the seam takes the call by name when a case has put something
  * else there, OBJLIB 5). By name: the sections of map.def (LoadSceneA, LoadSceneB and the Create functions of the
- * mission characters; OBJLIB 6); PlaySceneA and Credits given to the scheduler and to Scene, and SaveGame.SaveGame given
- * to the scheduler, stay values (OBJLIB 4, 5).
+ * mission characters; OBJLIB 6); PlaySceneA, Credits and SaveGame.SaveGame given to the scheduler take their entries
+ * (stage 4: Port_Scheduled), PlaySceneA and Credits given to Scene are values of its variables (OBJLIB 5).
  */
 #include <string.h>
 

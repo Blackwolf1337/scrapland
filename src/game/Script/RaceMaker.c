@@ -533,7 +533,7 @@ static byte Rm_CamPoint(const nativeVal_t *wayp, const nativeVal_t *ang, const n
 	return ok;
 }
 
-/* Scrap.AddScheduledFunc(time, func, args) with func the global name of the module (OBJLIB 4) */
+/* Scrap.AddScheduledFunc(time, func, args) with func the global name of the module (its entry, Port_Scheduled) */
 static byte Rm_At(const nativeVal_t *time, const char *name, const nativeVal_t *args, int n) {
 	PyObject *fn = Mode_GlobalPy(RM, name);
 	byte ok = fn && Mode_Schedule(time, fn, args, n, NULL);
@@ -759,7 +759,8 @@ static byte Rm_CountDownLight(int side) {
 }
 
 /* CreateRaceCountDown(): the two traffic lights beside the start with their light effect, and the red, yellow and
- * green flashes and beeps (OBJLIB 4: SScorer.Fade and SSound.Play scheduled as the functions of the modules) */
+ * green flashes and beeps (OBJLIB 7: SScorer.Fade and SSound.Play scheduled as the functions of the modules, through
+ * their entries once those modules have them) */
 static byte Rm_CreateRaceCountDown(void) {
 	static const long fades[3][4] = { { 255, 0, 0, 64 }, { 255, 255, 0, 64 }, { 0, 255, 0, 64 } };
 	static const double fadetimes[3] = { 1.5, 1.0, 1.5 };
@@ -877,7 +878,8 @@ static byte Rm_HeadArgs(const nativeVal_t *name, const nativeVal_t *pos, const n
 	return ok;
 }
 
-/* SAI.SetStateVehicle scheduled at timy with the tuple of arguments (OBJLIB 4: the function of SAI); timy + 0.05 */
+/* SAI.SetStateVehicle scheduled at timy with the tuple of arguments (OBJLIB 7: the function of SAI, through its entry
+ * once SAI has entries); timy + 0.05 */
 static byte Rm_HeadLater(nativeVal_t *timy, const nativeVal_t *a) {
 	nativeVal_t step, next = { 0 };
 	Native_SetFloat(&step, 0.05);
@@ -1386,7 +1388,7 @@ static byte Rm_RaceTaunt(const nativeVal_t *foe, int taunt, int msg) {
 /* InitRace(foeType, numply=2, waypointlimit=20, shower=2, isRevenge=0, isCrazyDeal=0, userOnShip=0): a race against
  * the challenger foeType and its partners (3 racers against the mercenaries and the press) on a race of the map's
  * MapRace.Races (by the save variable Race.Num); the races of MapRace called as the values they are (Mode_CallArgs);
- * OBJLIB 4: the functions of the module scheduled as their values */
+ * the functions of the module scheduled as their values (their entries, Port_Scheduled) */
 static byte Rm_InitRace(const nativeVal_t *foe, nativeVal_t *const *opt) {
 	static const char *const press[] = { "Betty", "Berto", "Humphrey", NULL };
 	static const char *const mods[] = { "Alarm", "Menu", "Speech", "Parking", "RacerScorer", "MapRace", "math", "VehiclesNPC" };
@@ -1479,8 +1481,8 @@ static byte Rm_InitRace(const nativeVal_t *foe, nativeVal_t *const *opt) {
 }
 
 /* InitCombat(foeType, isRevenge=0, isCrazyDeal=0, numFoes=1): Challenge.NumEnemies ships of the challenger (and its
- * partners) at the DM_Challenger_* dummy nearest to the player, as enemies; the timer to get into a ship (OBJLIB 4:
- * the functions of the module scheduled as their values) */
+ * partners) at the DM_Challenger_* dummy nearest to the player, as enemies; the timer to get into a ship (the
+ * functions of the module scheduled as their values, their entries) */
 static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeArg) {
 	static const char *const mods[] = { "Menu", "Speech", "Parking", "OutPolice", "OutMap", "VehiclesNPC" };
 	modeVals_t t = { .n = 0 };

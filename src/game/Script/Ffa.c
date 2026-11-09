@@ -20,8 +20,9 @@
  * a mode, a mission or a case has put something else there, OBJLIB 5). ModLib, the module of the mode, is read at each
  * call (its variables, OBJLIB 5; its functions through their entries, PORT_VALUE); the functions Net holds in its
  * variables ClientJoin, ClientCreate and ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5) are bound by the
- * engine to the entries of the functions they hold (Port_Callback); the functions given to the scheduler stay values
- * (OBJLIB 4), the ones set into other modules are values of their variables (OBJLIB 5).
+ * engine to the entries of the functions they hold (Port_Callback); the functions given to the scheduler take their
+ * entries (Port_Scheduled; SInput and SNet stay Python until they have entries, OBJLIB 7), the ones set into other
+ * modules are values of their variables (OBJLIB 5).
  */
 #include <limits.h>
 #include <stdlib.h>
@@ -299,7 +300,7 @@ static byte Ffa_ShowPresFireMessageC(const nativeVal_t *id, const nativeVal_t *m
 	}
 	double timy = Mode_Time();
 	/* AddScheduledFunc(timy + 1.0, SInput.Bind, (id, "Racer", "Fire", "Ffa.RestartOnPress")): the function as the
-	 * module holds it (OBJLIB 4, as the function object of DelayedRestartOnTime below) */
+	 * module holds it (OBJLIB 7: the scheduler takes its entry once SInput has entries) */
 	PyObject *bind = Script_Attr("SInput", "Bind");
 	Native_SetFloat(tm, timy + 1.0);
 	Native_SetEmpty(args, NV_LIST);
@@ -436,7 +437,8 @@ static byte Ffa_ServerEndOfGameC(void) {
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
-	/* AddScheduledFunc(Scrap.GetTime() + 10.0, SNet.ServerChangeLevel, (next,)) (OBJLIB 4) */
+	/* AddScheduledFunc(Scrap.GetTime() + 10.0, SNet.ServerChangeLevel, (next,)) (OBJLIB 7: the scheduler takes its
+	 * entry once SNet has entries) */
 	PyObject *fn = Script_Attr("SNet", "ServerChangeLevel");
 	Native_SetFloat(tm, Mode_Time() + 10.0);
 	ok = fn && Mode_Schedule(tm, fn, next, 1, NULL);
@@ -671,8 +673,8 @@ static byte Ffa_TryToModifyC(const nativeVal_t *a) {
 	if (c) {
 		return Mode_Done(&t, PORT_OWN(Ffa, ModifyOnReyoin, NULL, FFA_A11, FFA_ARGS(a)) && Ffa_ClientId(&t, &a[0], cid) && Mode_ModifyUsrData(cid));
 	}
-	/* AddScheduledFunc(Scrap.GetTime() + 0.75, TryToModify, args, entityname + "Modify") (OBJLIB 4: the scheduler keeps
-	 * the function object) */
+	/* AddScheduledFunc(Scrap.GetTime() + 0.75, TryToModify, args, entityname + "Modify"): the scheduler takes the entry
+	 * of the global while it is the port's own function */
 	PyObject *fn = Script_Global("Ffa", "TryToModify");
 	Native_SetFloat(tm, Mode_Time() + 0.75);
 	byte ok = fn && Mode_Cat(&t, name, 2, &a[0], Mode_S(&t, "Modify")) && Mode_Schedule(tm, fn, a, 11, name);

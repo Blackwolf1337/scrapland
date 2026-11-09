@@ -21,10 +21,11 @@
  *
  * Direct calls (stage 3): the functions call the other functions of their module through PORT_OWN (its global, a
  * mission may replace one) and the other ports through PORT_CALL (scrap/scriptnative.h: the port seam). The
- * functions given to the scheduler stay values (OBJLIB 4); the ones handed to Speech as AfterRemoteComFunc are values
- * Speech keeps (OBJLIB 5) and calls through their entries, apply() on MissionsFuncs.OnSuperDealFinish as the script
- * read it takes its entry (MODE_CBAPPLY); the class VehiclesNPC.cShipAI is a variable the .mod defines (OBJLIB 5), the
- * hooks of the missions (KeepPlaying) and the callbacks set in other modules are variables (OBJLIB 5).
+ * functions given to the scheduler take their entries (stage 4: Port_Scheduled); the ones handed to Speech as
+ * AfterRemoteComFunc are values Speech keeps (OBJLIB 5) and calls through their entries, apply() on
+ * MissionsFuncs.OnSuperDealFinish as the script read it takes its entry (MODE_CBAPPLY); the class VehiclesNPC.cShipAI
+ * is a variable the .mod defines (OBJLIB 5), the hooks of the missions (KeepPlaying) and the callbacks set in other
+ * modules are variables (OBJLIB 5).
  */
 #include <string.h>
 
@@ -90,7 +91,7 @@ static byte Sd_PutI(const char *mod, const char *name, nativeVal_t *slot, long i
 }
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) (Mode_Later for a number) with delay a
- * value of the script (a global of the module, the result of a function); func as a value (OBJLIB 4) */
+ * value of the script (a global of the module, the result of a function); func as a value (its entry) */
 static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *func, const nativeVal_t *args, int n) {
 	nativeVal_t now, t;
 	PyObject *fn = Mode_GlobalPy(mod, func);
@@ -106,7 +107,7 @@ static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *fun
 }
 
 /* the same with func an object (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish) at Scrap.GetTime() + delay
- * (OBJLIB 4) */
+ * (the entry of a port's own function) */
 static byte Sd_LaterObj(double delay, PyObject *fn, const nativeVal_t *args, int n) {
 	nativeVal_t t;
 	Native_SetFloat(&t, Mode_Time() + delay);

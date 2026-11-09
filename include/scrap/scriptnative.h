@@ -270,10 +270,10 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
  */
 int Native_Seam(const char *module, const char *name, PyObject **hook);
 /*
- * OBJLIB 4 and 7: calls of Python callables with native arguments, for the calls of names known at run time, the
- * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text
- * (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg
- * makes it. 0 with the error of the call.
+ * OBJLIB 7: calls of Python callables with native arguments, for the calls of names known at run time and the seams
+ * (a value that may hold a port function goes through Port_Value instead). fmt has one letter per argument: v a const
+ * nativeVal_t *, i a long, d a double, s a text (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL). The
+ * result goes into *out (Native_Free it; NULL drops it) as Native_Arg makes it. 0 with the error of the call.
  */
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
 /* the same with the result as it is (a new reference, NULL with the error): an entity handle or another object */
@@ -500,12 +500,15 @@ portSite_t *Port_Scheduled(PyObject *f);
 /* the functions scheduled as entries since the start, the last one first (OBJLIB 7: the counters of the test
  * channel) */
 portSite_t *Port_ScheduledSites(void);
-/* the call of a bound site (a callback, a scheduled call) as the Python call of its adapter on n arguments: each one
- * as the adapter gets it ('v' a native value through Native_Pass, 'O' an object through Native_Arg, as Port_Invoke
- * packs them), the entry (Port_Entry), the result through the conversions of the adapter (Native_Pass) into *res
- * (Native_Free it either way; NULL: dropped). Counts the call (fast) and a failure (errors). 1, or 0 with the error
+/* the call of a bound site (a callback, a scheduled call, a value that holds a port function: Port_Value) as the
+ * Python call of its adapter on n arguments: the letters x, each one as the adapter gets it ('v' a native value
+ * through Native_Pass, 'O' an object through Native_Arg, as Port_Invoke packs them), or with x NULL the native values
+ * v through Native_Pass; the entry (Port_Entry), the result through the conversions of the adapter (Native_Pass) into
+ * *res (Native_Free it either way; NULL: dropped), or with pyout what the adapter returns as the Python object (a new
+ * reference, NULL with the error; res unused). Counts the call (fast) and a failure (errors). 1, or 0 with the error
  * set */
-byte Port_BoundCall(portSite_t *site, const nativeArg_t *a, int n, nativeVal_t *res);
+byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v, int n, nativeVal_t *res,
+	PyObject **pyout);
 
 /*
  * Values that hold port functions (stage 4): a function a module variable, a table, a from import or a parameter

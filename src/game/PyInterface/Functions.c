@@ -433,18 +433,14 @@ void cPy_Function_AddParamS(cPy_Function *self, const char *v) {
 /*
  * The call of a port entry as PyEval_CallObject called its adapter (Mode_Args, the entry, Mode_Out), with the depth
  * check of the direct calls (Port_BoundCall): the int result, else 0; a failure printed as the Python call printed it.
- * The result goes through the conversions of the adapter and the int check (Native_Pass: they can fail).
+ * The result goes through the conversions of the adapter and the int check (Native_Pass: they can fail). Not inlined:
+ * the result value stays off the frame of cPy_Function_Execute, which is on the stack during a Python call.
  */
-static int cPy_Function_CallEntry(portSite_t *site, const cPy_EntryParams *p) {
-	nativeArg_t a[PORT_ARGS];
+static __attribute__((noinline)) int cPy_Function_CallEntry(portSite_t *site, const cPy_EntryParams *p) {
 	nativeVal_t res;
-	int n = p ? p->n : 0, result = 0;
+	int result = 0;
 
-	for (int i = 0; i < n; i++) {
-		a[i].type = 'v';
-		a[i].v = &p->a[i];
-	}
-	if (!Port_BoundCall(site, a, n, &res)) {
+	if (!Port_BoundCall(site, NULL, p ? p->a : NULL, p ? p->n : 0, &res, NULL)) {
 		PyErr_Print();
 	} else if (res.type == NV_INT) {
 		result = (int)res.i;
@@ -551,28 +547,6 @@ void cPy_Function_Counts(unsigned long *python, unsigned long *native, unsigned 
 	if (reset) {
 		memset(g_PyFunctionCalls, 0, sizeof(g_PyFunctionCalls));
 	}
-}
-
-int cPy_Function_Rebind(PyObject *const *old, PyObject *const *f, int n) {
-	int changed = 0;
-	cPy_Function *p = g_PyFunctions;
-
-	if (!p || n <= 0) {
-		return 0;
-	}
-	do {
-		if ((p->flags & PYF_PYTHON) && p->func) {
-			for (int i = 0; i < n; i++) {
-				if (p->func == old[i]) {
-					p->func = f[i];
-					changed++;
-					break;
-				}
-			}
-		}
-		p = p->next;
-	} while (p && p != g_PyFunctions);
-	return changed;
 }
 
 /* registry of C functions: inserted into the tree on construction (static objects) */

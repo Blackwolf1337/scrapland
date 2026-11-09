@@ -16,8 +16,9 @@
  * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene, GateKeeper,
  * MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN; the callbacks
  * of AfterBrowseNPC by the names of their refs), Items.Hint too; the scene tables and the function value gc.CanPassFunc
- * call a port's function through its entry (Mode_Calls, PORT_VALUE). By name stay the scheduled calls (Mode_Later,
- * Mode_LaterIn, Mode_Schedule; OBJLIB 4) and the functions set as callbacks or given as values (EndOfSceneCallback,
+ * call a port's function through its entry (Mode_Calls, PORT_VALUE), and so do the scheduled calls (Mode_Later,
+ * Mode_LaterIn, Mode_Schedule; Port_Scheduled; SScorer.SetMsgText stays Python, OBJLIB 7). By name stay the functions
+ * set as callbacks or given as values (EndOfSceneCallback,
  * AfterBrowseNPC, Speech.OnEndOfSpeech, GateKeeper.LocalCallFunc, the door functions of SetDoor, the hint function of
  * Items.Hint; OBJLIB 5).
  */
@@ -432,7 +433,7 @@ static byte Decont_OpenGateKeeperDoorN(const nativeVal_t *door) {
 		return 0;
 	}
 	Native_SetFloat(&when, Mode_Time() + 4.0);
-	/* OBJLIB 4: the scheduler keeps SScorer.SetMsgText as the object of the module */
+	/* OBJLIB 7: SScorer.SetMsgText as the object of the module (its entry once SScorer has entries) */
 	PyObject *fn = Script_Attr("SScorer", "SetMsgText");
 	if (!fn) {
 		return 0;
@@ -850,7 +851,7 @@ static byte Decont_PlayBishopsN(const nativeVal_t *item, const nativeVal_t *ch) 
 		return 0;
 	}
 	Native_SetFloat(&when, Mode_Time());
-	/* OBJLIB 4: Scene.Play as the object of the module */
+	/* Scene.Play as the object of the module: the scheduler takes its entry */
 	PyObject *fn = Script_Attr("Scene", "Play");
 	if (!fn) {
 		return 0;

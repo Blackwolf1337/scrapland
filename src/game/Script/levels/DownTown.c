@@ -29,8 +29,9 @@
  * for this) go through their refs, the callbacks handed to Speech and Menu by the refs of their functions (LV_COM,
  * LV_ONEND, LV_SCORERG). By name stay: the sections of the .def files, called and given as callbacks (OBJLIB 6); the
  * class VehiclesNPC.cShipAI (OBJLIB 5); the functions handed on as values: to the scheduler (Mode_Later, the Rusty
- * message with Scorer.ShowMissionScorer), as the callbacks of Parking, Vehicles, RaceMaker, MissionsFuncs and Chars,
- * and the Speech.OnOutOfRange kept in outOfRange (OBJLIB 4, 5).
+ * message with Scorer.ShowMissionScorer: the entry of a port's own function, stage 4: Port_Scheduled), as the callbacks
+ * of Parking, Vehicles, RaceMaker, MissionsFuncs and Chars, and the Speech.OnOutOfRange kept in outOfRange (values of
+ * their variables, OBJLIB 5).
  */
 #include <limits.h>
 

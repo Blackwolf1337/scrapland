@@ -11,12 +11,12 @@
  * written at once (OBJLIB 5). The menus, SaveGame, Speech and MissionsFuncs are called through their refs (PORT_CALL:
  * directly while the attribute holds the port's function, else by name, as a mod, a mission or a case may replace
  * them); the aliases and callbacks of Menu and the scorers (Menu.onCreateMainMenu, MovieScorerCall,
- * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5), the Init of the scorer of
- * the mode by its module chosen at run time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref);
- * SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit, GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go
- * through their seams (OBJLIB 7); the death camera schedules functions of Menu and Scrap.SetCam as Python functions
- * (OBJLIB 4); the list of saved games comes from the engine as a Python list and the .def runner takes Python values
- * (OBJLIB 6).
+ * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5; BackMenuFunc through the
+ * entry of the function it holds, MODE_PRINTEDCALL), the Init of the scorer of the mode by its module chosen at run
+ * time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit,
+ * GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams (OBJLIB 7); the death camera
+ * schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list of saved
+ * games comes from the engine as a Python list and the .def runner takes Python values (OBJLIB 6).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -267,11 +267,12 @@ static void Main_BackToGame(int id) {
 
 /* DrawScorer(id, mode): the scorer of a ship, of the character, or of a movie */
 static void Main_DrawScorer(int id, const char *mode) {
-	/* OBJLIB 5: the aliases BackMenuFunc (= Create of racerscorer.mod and charscorer.mod) by name */
+	/* OBJLIB 5: the aliases BackMenuFunc (= Create of racerscorer.mod and charscorer.mod) by name, called through the
+	 * entry of the function they hold */
 	if (!strcmp(mode, "Racer")) {
-		Mode_PrintedCall("RacerScorer", "BackMenuFunc", id);
+		MODE_PRINTEDCALL("RacerScorer", "BackMenuFunc", id);
 	} else if (!strcmp(mode, "Walk")) {
-		Mode_PrintedCall("CharScorer", "BackMenuFunc", id);
+		MODE_PRINTEDCALL("CharScorer", "BackMenuFunc", id);
 	} else if (!strcmp(mode, "Inactive")) {
 		Main_MovieScorer(id);
 	}

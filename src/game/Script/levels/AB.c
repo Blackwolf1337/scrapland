@@ -19,9 +19,10 @@
  * Direct calls (stage 3): the functions of the other ports (Speech, Vehicles, VehiclesNPC, ShipMaker, Traffic,
  * Elevator, Scorer, Menu, SaveGame) and the own functions of both modules (their globals) go through their refs
  * (PORT_CALL, PORT_LOWN, LV_SCORERG; the seam takes the call by name when a mission or a case has put something else
- * there, OBJLIB 5). By name: PrevCreateStdShips (a variable holding ShipMaker's own function; OBJLIB 5) and the
- * functions given to the scheduler, to ShipMaker, Chars, Parking and Traffic and to the entities (Mode_Later,
- * Mode_Schedule, the OnDeath texts) stay values (OBJLIB 4, 5).
+ * there, OBJLIB 5). By name: PrevCreateStdShips (a variable holding ShipMaker's own function; OBJLIB 5). The functions
+ * given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the OnDeath texts) take the entry of a port's
+ * own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to ShipMaker, Chars, Parking and Traffic are
+ * values of their variables (OBJLIB 5).
  */
 #include <string.h>
 

@@ -11,8 +11,8 @@
  * (OBJLIB 5). The scorer functions and Menu are called through their refs (PORT_CALL: directly while the attribute
  * holds the port's function, else by name, a failure printed); the callback Menu.MissionScorerCall is called as the
  * value it holds (OBJLIB 5); SScorer.SetCinema, Scrap.GetCam, GetEntity and UsrEntity go through their seams
- * (OBJLIB 7); Blink and the ping update schedule themselves as Python functions (OBJLIB 4); the .def runner takes
- * Python values (OBJLIB 6).
+ * (OBJLIB 7); Blink and the ping update schedule themselves (Mode_SchedAt: the scheduler takes their entries); the
+ * .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 

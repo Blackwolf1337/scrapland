@@ -13,7 +13,7 @@
  * LoadLevel, Achievement, SNet.CloseServer and CloseClient are called by name as before (the cases record them). The other ports (Scorer, Challenge,
  * Speech, MissionsFuncs) and the functions of the module the script calls through its globals are called through
  * their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5); string.zfill has a twin in the file. The function given to
- * the scheduler by name stays by name (OBJLIB 4); the Menu object a script may put into the module is a global
+ * the scheduler by name takes its entry (Port_Scheduled); the Menu object a script may put into the module is a global
  * (OBJLIB 5) whose ShowTextBox is called through its entry (PORT_VALUE). The registers
  * keep their Python objects: SaveReg reads the attributes of any object and GetReg makes a class whose attributes are
  * read with the Python literal reader (OBJLIB 6).
@@ -481,7 +481,7 @@ static byte SG_SaveGame(const nativeVal_t *slot) {
 	if (Native_IsStr(path, "") || Native_IsStr(prof, "")) {
 		return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Without_Msg_"));
 	}
-	/* OBJLIB 4: the scheduler takes the global InstantSaveGame by name */
+	/* the global InstantSaveGame by name: the scheduler takes its entry */
 	return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Saving_Msg_") &&
 		Mode_LaterIn(0.0, SG, "InstantSaveGame", slot, 1, NULL));
 }

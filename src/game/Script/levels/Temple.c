@@ -22,8 +22,9 @@
  * OBJLIB 5). The GateKeeper refs take Python objects and always go by name. By name: the sections of the .def files
  * (ShowDeepThroatMessage, DeepThroatCalls, LoadYakuzziScene: Tp_Do, OBJLIB 6); string.splitfields of a value that is no
  * text is the native twin. The functions given to the scheduler (Speech.AddRemoteCom of Tp_ComAt, Mode_Schedule,
- * Ma_Soon), to Elevator, CharAct, Alarm, CharsNPC, DTritusDesktop, Scene and Speech as callbacks and to the entities
- * (the UseFunc and OnTake texts) stay values (OBJLIB 4, 5).
+ * Ma_Soon) and to the entities (the UseFunc and OnTake texts) take the entry of a port's own function (stage 4:
+ * Port_Scheduled, PYF_ENTRY); the ones given to Elevator, CharAct, Alarm, CharsNPC, DTritusDesktop, Scene and Speech
+ * as callbacks are values of their variables (OBJLIB 5).
  */
 #include <limits.h>
 #include <string.h>

@@ -24,9 +24,10 @@
  * a case has put something else there, OBJLIB 5). By name: the sections of the .def files (LaunchAmbush and
  * PreLaunchAmbush of Mission_Ambush, PreSetNextMission of Mission_DefeatCrazyGambler2, BadGuyAppears,
  * CreateMissionPlans and SetNextMission of Mission_FindDtritusMatrix, InitEvasion of Mission_StupidMercAgain; OBJLIB 6)
- * and the class VehiclesNPC.cShipAI (OBJLIB 5); the functions given to the scheduler, to Parking and CharAct as
- * callbacks and to the entities (Mode_Later, Mode_AtG, the trigger schedules, LvN_ModSetGlobal, the OnDeath and
- * UseFunc texts) stay values (OBJLIB 4, 5).
+ * and the class VehiclesNPC.cShipAI (OBJLIB 5); the functions given to the scheduler and to the entities (Mode_Later,
+ * Mode_AtG, the trigger schedules, the OnDeath and UseFunc texts) take the entry of a port's own function (stage 4:
+ * Port_Scheduled, PYF_ENTRY; bound methods stay Python, OBJLIB 7), the ones given to Parking and CharAct as callbacks
+ * (LvN_ModSetGlobal) are values of their variables (OBJLIB 5).
  */
 #include <string.h>
 
@@ -79,7 +80,8 @@ static byte Sy_OnDeath(const nativeVal_t *looser, const nativeVal_t *winner) {
 	return Mode_Import("Vehicles") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", looser, winner);
 }
 
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, ()) of a callable (a bound method; OBJLIB 4); fn is taken over */
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, ()) of a callable (a bound method; OBJLIB 7: Python until the
+ * entities are C); fn is taken over */
 static byte Sy_LaterPy(double delay, PyObject *fn) {
 	byte ok = fn && Mode_LaterPy(delay, fn, NULL, 0, NULL);
 	Py_XDECREF(fn);

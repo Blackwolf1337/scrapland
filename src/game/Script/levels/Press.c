@@ -29,8 +29,8 @@
  * SLogic.SendSentinelToWatch, Scrap.CallElements, SScorer.AddModel and SSound.UsePS stay by name (OBJLIB 7); the plain
  * functions of the .def files are data, called and given as callbacks by name (OBJLIB 6); the call lines of the scene
  * tables and of News1 are data in C (Mode_Calls: a port's function through its entry); CharsNPC.CharRes and the
- * GateKeeper groups are the objects they are (OBJLIB 5); the scheduler keeps Python callables (OBJLIB 4). MapPlanes is
- * LevelCommon's.
+ * GateKeeper groups are the objects they are (OBJLIB 5); the scheduler takes the entry of a port's own function
+ * (stage 4: Port_Scheduled), SScorer.Fade and the bound methods stay Python (OBJLIB 7). MapPlanes is LevelCommon's.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -1077,7 +1077,7 @@ static byte Pr_TakenDel(const nativeVal_t *it) {
 		return 0;
 	}
 	Native_SetFloat(&time, Mode_Time() + 5);
-	/* OBJLIB 4: the scheduler keeps the bound method */
+	/* OBJLIB 7: the scheduler keeps the bound method (Python until the entities are C) */
 	PyObject *del = Mode_VBound(it, "Del");
 	byte ok = del && Mode_Schedule(&time, del, NULL, 0, NULL);
 	Py_XDECREF(del);
@@ -2264,8 +2264,8 @@ static byte Pr_CreateChar(const char *name) {
 	return ok;
 }
 
-/* Scrap.AddScheduledFunc(time, SScorer.Fade, (0, from, to, secs)) at the time value time (OBJLIB 4: the function of
- * SScorer the scheduler keeps) */
+/* Scrap.AddScheduledFunc(time, SScorer.Fade, (0, from, to, secs)) at the time value time (OBJLIB 7: the function of
+ * SScorer, which the scheduler takes as its entry once SScorer has entries) */
 static byte Pr_FadeAt(const nativeVal_t *time, const int *from, const int *to, double secs) {
 	nativeVal_t args[4];
 	PyObject *fn = Script_Attr("SScorer", "Fade");

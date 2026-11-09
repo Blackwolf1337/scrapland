@@ -13,8 +13,8 @@
  * (Scrap.OpenPack, PreloadLibrary, ClosePack) stays by name (OBJLIB 6).
  *
  * Direct calls (stage 3): CreditsText, Menu, PCMenu, SaveGame and the C functions of Map go through their refs
- * (PORT_CALL, PORT_LOWN; EndCredits and cremeteoro are keyword entries, MODE_KW). By name stay StartMenu (data, OBJLIB
- * 6) and the scheduled functions (Mode_LaterIn, OBJLIB 4).
+ * (PORT_CALL, PORT_LOWN; EndCredits and cremeteoro are keyword entries, MODE_KW), the scheduled functions through
+ * their entries (Mode_LaterIn, Port_Scheduled). By name stays StartMenu (data, OBJLIB 6).
  */
 #include <string.h>
 

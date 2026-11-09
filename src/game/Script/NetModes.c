@@ -20,9 +20,9 @@
  *
  * Direct calls (stage 3): the modes call their own functions through PORT_OWN (the global, a mission may replace
  * one; the shared code picks the site of its module, FL_OWN, PO_OWN, FP_OWN) and Ffa, Menu and VehiclesNPC through
- * PORT_CALL (scrap/scriptnative.h: the port seam). What stays by name: the functions given to the scheduler (Reborn,
- * CheckBotState, TryLinkFlagTo, RespawnFlag; OBJLIB 4), TryGarage set into ShipEdit as a value (OBJLIB 5) and
- * SAI.SetStateVehicle (OBJLIB 7).
+ * PORT_CALL (scrap/scriptnative.h: the port seam). The functions given to the scheduler by name (Reborn,
+ * CheckBotState, TryLinkFlagTo, RespawnFlag) take their entries (stage 4: Port_Scheduled). What stays by name:
+ * TryGarage set into ShipEdit as a value (OBJLIB 5) and SAI.SetStateVehicle (OBJLIB 7).
  */
 #include <limits.h>
 #include <string.h>

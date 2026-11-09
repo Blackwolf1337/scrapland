@@ -12,9 +12,9 @@
  * and Traffic are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
  * by name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
  * global: a mission or a case may replace one). The class cShipAI is called as the module's variable (OBJLIB 5: a class
- * the .mod defines, no port function), the scheduler gets InitMercs as a function object (OBJLIB 4), SAI and SWeap stay
- * by name and Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The
- * .def runner takes its $names as a dict (OBJLIB 6).
+ * the .mod defines, no port function), the scheduler takes the entry of the global InitMercs (Port_Scheduled), SAI and
+ * SWeap stay by name and Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams
+ * (OBJLIB 7). The .def runner takes its $names as a dict (OBJLIB 6).
  */
 #include <string.h>
 
@@ -470,7 +470,7 @@ static byte Npc_InitN(void) {
 	if (in || Native_IsStr(map, "JUNKYARD")) {
 		return Mode_Done(&t, 1);
 	}
-	/* OBJLIB 4: the scheduler keeps the function object */
+	/* the global (a mission may replace it): the scheduler takes the entry while it is the port's own function */
 	PyObject *f = Mode_GlobalPy(NPC, "InitMercs");
 	Native_SetInt(time, 0);
 	Native_SetStr(name, "InitMercs");

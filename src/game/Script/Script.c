@@ -231,67 +231,14 @@ static const scriptModule_t script_modules[] = {
 	{ "HullTab", g_HullTabMethods },
 };
 
-/*
- * the Python functions the C ones replaced stay alive: an engine callback the module code set by name held a
- * borrowed pointer to the function it found then (alarm.py: Scrap.Set("AlarmCallback", "Alarm.SetAlarm")), and it
- * pointed to freed memory once the C function took the name. Such callbacks now follow the C function (Script_Rebind),
- * but other holders the loader does not reach (a container nested deeper, a scheduled call) may still use the Python
- * function. They are kept by module name until the module loads again (its code then sets such callbacks anew).
- */
-static PyObject *script_replaced;
-
-/* the list of the replaced functions of a module, new at its first table (index i of script_modules) */
-static PyObject *Script_Replaced(const char *name, size_t i) {
-	if (!script_replaced && !(script_replaced = PyDict_New())) {
-		return NULL;
-	}
-	PyObject *kept = PyDict_GetItemString(script_replaced, (char *)name);
-	for (size_t j = 0; j < i; j++) {
-		if (!strcmp(script_modules[j].name, name)) {
-			return kept;
+/* whether an item of the tuple t is v */
+static byte Script_TupleHas(PyObject *t, PyObject *v) {
+	for (int i = 0; i < PyTuple_GET_SIZE(t); i++) {
+		if (PyTuple_GET_ITEM(t, i) == v) {
+			return 1;
 		}
 	}
-	kept = PyList_New(0);
-	if (kept) {
-		PyDict_SetItemString(script_replaced, (char *)name, kept);
-		Py_DECREF(kept);
-	}
-	return kept;
-}
-
-/*
- * the replaced functions whose engine bindings (cPy_Function) still have to follow them: the module code may have
- * bound a callback by name before the C took the name (alarm.py: Scrap.Set("AlarmCallback", "Alarm.SetAlarm"),
- * parking.py: OnParkingOccupied and OnParkedOut). Script_ModuleLoaded rebinds them once at its end.
- */
-#define SCRIPT_REBIND 256
-static PyObject *script_rebindOld[SCRIPT_REBIND], *script_rebindNew[SCRIPT_REBIND];
-static int script_rebinds;
-
-static void Script_Rebind(void) {
-	int n = cPy_Function_Rebind(script_rebindOld, script_rebindNew, script_rebinds);
-	if (n) {
-		Con_Verbosef("Script: %d engine callbacks follow the C functions\n", n);
-	}
-	script_rebinds = 0;
-}
-
-/* a tuple like t with f for each item that is old, NULL when no item is old (a tuple cannot change in place) */
-static PyObject *Script_TupleWith(PyObject *t, PyObject *old, PyObject *f) {
-	int n = PyTuple_GET_SIZE(t), i;
-	for (i = 0; i < n && PyTuple_GET_ITEM(t, i) != old; i++) {
-	}
-	if (i == n) {
-		return NULL;
-	}
-	PyObject *r = PyTuple_New(n);
-	for (i = 0; r && i < n; i++) {
-		PyObject *v = PyTuple_GET_ITEM(t, i);
-		v = v == old ? f : v;
-		Py_INCREF(v);
-		PyTuple_SET_ITEM(r, i, v);
-	}
-	return r;
+	return 0;
 }
 
 /* (k, v) for a set after the walk of a dict: a set may resize the dict under PyDict_Next (later made at the first) */
@@ -311,55 +258,33 @@ static void Script_SetDeferred(PyObject *d, PyObject *later) {
 	Py_XDECREF(later);
 }
 
-void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *f) {
-	/*
-	 * other names, the list items, the tuple items (Doors.DefDoorInfo = 800, StdInitializator, StdObjInitializator,
-	 * 0, 0: a new tuple under the same name) and the dict values of the module that hold the replaced function
-	 * (MapRace.Races = [EasyRace1, ...]); only items that are old itself, one level deep (not __builtins__). f == old
-	 * replays the dict writes on a module made in C, whose values are in place (a tuple stays the same object).
-	 */
+/*
+ * The writes the loader made after the .pyc for the function cur under key, with the values in place: the other
+ * names of the module dict that hold cur, the tuples that hold it (set again under their names: Doors.DefDoorInfo =
+ * 800, StdInitializator, StdObjInitializator, 0, 0) and the dict values that hold it, one level deep (not
+ * __builtins__). The sets come after the walk of the dict. When the .pyc ran, the loader put the C function in the
+ * place of the Python one there (and rebound the engine callbacks to it); no Python code loads now, so nothing is
+ * replaced and only the writes stay. OBJLIB 5: they decide the key order of the module dict (PyDict_SetItem doubles a
+ * dict that is 2/3 full before a write, also for a key that is in it); they go when the variables leave the dicts.
+ */
+static void Script_ReplayRefs(PyObject *dict, PyObject *key, PyObject *cur) {
 	PyObject *k, *v, *later = NULL;
 	int pos = 0;
-	if (!old) {
-		return;
-	}
-	if (f != old) {
-		/* a name replaced twice before the rebind (a second table): the bindings go to the last function */
-		for (int i = 0; i < script_rebinds; i++) {
-			if (script_rebindNew[i] == old) {
-				script_rebindNew[i] = f;
-			}
-		}
-		if (script_rebinds == SCRIPT_REBIND) {
-			Script_Rebind();
-		}
-		script_rebindOld[script_rebinds] = old;
-		script_rebindNew[script_rebinds++] = f;
-	}
 	while (PyDict_Next(dict, &pos, &k, &v)) {
-		if (v == old) {
+		if (v == cur) {
 			if (PyObject_Compare(k, key) != 0) {
-				Script_Defer(&later, k, f);
-			}
-		} else if (PyList_Check(v)) {
-			for (int i = 0; f != old && i < PyList_GET_SIZE(v); i++) {
-				if (PyList_GET_ITEM(v, i) == old) {
-					Py_INCREF(f);
-					PyList_SetItem(v, i, f);
-				}
+				Script_Defer(&later, k, cur);
 			}
 		} else if (PyTuple_Check(v)) {
-			PyObject *t = Script_TupleWith(v, old, f);
-			if (t) {
-				Script_Defer(&later, k, f != old ? t : v);
-				Py_DECREF(t);
+			if (Script_TupleHas(v, cur)) {
+				Script_Defer(&later, k, v);
 			}
 		} else if (PyDict_Check(v) && v != dict && !(PyString_Check(k) && !strcmp(PyString_AS_STRING(k), "__builtins__"))) {
 			PyObject *inner = NULL, *ik, *iv;
 			int ipos = 0;
 			while (PyDict_Next(v, &ipos, &ik, &iv)) {
-				if (iv == old) {
-					Script_Defer(&inner, ik, f);
+				if (iv == cur) {
+					Script_Defer(&inner, ik, cur);
 				}
 			}
 			Script_SetDeferred(v, inner);
@@ -570,40 +495,7 @@ void Script_CheckEngine(void) {
 	}
 }
 
-void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
-	PyObject *dict = PyModule_GetDict(module);
-	for (PyMethodDef *m = methods; m->ml_name; m++) {
-		PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
-		if (!f) {
-			continue;
-		}
-		/* names the module bound to the Python function when it loaded (onCreateMainMenu = CreateMainMenu), set
-		 * after the walk */
-		PyObject *key, *value, *later = NULL;
-		int pos = 0;
-		while (PyDict_Next(dict, &pos, &key, &value)) {
-			if (PyFunction_Check(value) && PyString_Check(((PyFunctionObject *)value)->func_name) &&
-				!strcmp(PyString_AsString(((PyFunctionObject *)value)->func_name), m->ml_name) &&
-				strcmp(PyString_AsString(key), m->ml_name)) {
-				Script_Defer(&later, key, f);
-			}
-		}
-		Script_SetDeferred(dict, later);
-		PyObject *old = PyDict_GetItemString(dict, m->ml_name);
-		if (old && kept && PyFunction_Check(old)) {
-			PyList_Append(kept, old);
-		}
-		PyObject *name = PyString_FromString(m->ml_name);
-		if (name) {
-			Script_ReplaceRefs(dict, name, old, f);
-			Py_DECREF(name);
-		}
-		PyDict_SetItemString(dict, m->ml_name, f);
-		Py_DECREF(f);
-	}
-}
-
-/* the last table of module that has name (as Script_Install puts them in), NULL if none */
+/* the last table of module that has name (as the loader put them in), NULL if none */
 static PyMethodDef *Script_TableDef(const char *module, const char *name) {
 	PyMethodDef *found = NULL;
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
@@ -628,11 +520,11 @@ byte Script_TableHas(const char *module, const char *name) {
 }
 
 /*
- * The dict writes of Script_Install on a module made in C, with the values in place: per function of the table the
- * other names, list and tuple items and dict values that hold it (Script_ReplaceRefs with f == old) and the name
- * itself, which a function the script lacks gets here as Script_Install gives it. PyDict_SetItem doubles a dict that
- * is 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
- * as they do after the .pyc (Sound modules of 21 keys).
+ * The dict writes the loader made after the .pyc for a table, on a module made in C with the values in place: per
+ * function of the table the other names, tuple items and dict values that hold it (Script_ReplayRefs) and the name
+ * itself, which a function the script lacks gets here as the loader gave it. PyDict_SetItem doubles a dict that is
+ * 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
+ * as they did after the .pyc (Sound modules of 21 keys).
  */
 void Script_TableReplay(PyObject *module, PyMethodDef *methods) {
 	PyObject *dict = PyModule_GetDict(module);
@@ -654,7 +546,7 @@ void Script_ReplaySet(PyObject *dict, const char *name, PyObject *cur) {
 	PyObject *key = PyString_FromString(name);
 	Py_INCREF(cur);
 	if (key) {
-		Script_ReplaceRefs(dict, key, cur, cur);
+		Script_ReplayRefs(dict, key, cur);
 		Py_DECREF(key);
 	}
 	PyDict_SetItemString(dict, (char *)name, cur);
@@ -668,32 +560,6 @@ void Script_ModuleExtras(const char *name, PyObject *module, PyObject *defs) {
 		}
 	}
 	Script_LevelModuleExtras(name, module, defs);
-}
-
-void Script_ModuleLoaded(const char *name, PyObject *module) {
-	/* SCRAP_PACK_SCRIPTS=1: the scripts of the packs only (to compare a port with the original) */
-	const char *only = getenv("SCRAP_PACK_SCRIPTS");
-	if (only && *only == '1') {
-		return;
-	}
-	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
-		const scriptModule_t *sm = &script_modules[i];
-		if (strcmp(sm->name, name)) {
-			continue;
-		}
-		Script_Install(module, sm->methods, Script_Replaced(name, i));
-		Con_Verbosef("Script: the C functions of %s are in place\n", name);
-	}
-	/* the functions of a level module that are data in this level; the replaced ones live until it loads again */
-	char key[0x80];
-	Str_Printf(key, sizeof(key), "level %s", name);
-	PyObject *kept = (script_replaced || (script_replaced = PyDict_New())) ? PyList_New(0) : NULL;
-	if (kept) {
-		PyDict_SetItemString(script_replaced, key, kept);
-		Py_DECREF(kept);
-	}
-	Script_LevelModuleLoaded(name, module, kept);
-	Script_Rebind();
 }
 
 /* ---- the scorer of a player ---- */

@@ -334,7 +334,7 @@ static byte Pk_PlayVoiceChannelN(const nativeVal_t *channel) {
 		return 0;
 	}
 	Native_SetFloat(&now, Mode_Time());
-	/* OBJLIB 4: the scheduler keeps SSound.StopVoice itself */
+	/* SSound.StopVoice as the module holds it (OBJLIB 7: the scheduler takes its entry once SSound has entries) */
 	PyObject *stop = NULL;
 	byte ok = Native_Arith('+', &now, &timy, &sum) && Native_Arith('+', &sum, &def, &at) &&
 		(stop = Script_Attr("SSound", "StopVoice")) != NULL && Mode_Schedule(&at, stop, channel, 1, NULL);

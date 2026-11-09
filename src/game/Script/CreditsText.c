@@ -217,7 +217,7 @@ static byte Credits_Step(const char *func, const nativeVal_t *val, double d) {
 	if (!Native_Arith('+', val, &dv, &next)) {
 		return 0;
 	}
-	/* OBJLIB 4: the scheduler takes the function by name until it takes C entries */
+	/* the function by name: the scheduler takes its entry (Script_LaterIn, Port_Scheduled) */
 	PyObject *n = Native_ToPy(&next);
 	Native_Free(&next);
 	return n && Script_LaterIn(0.05, "CreditsText", func, Py_BuildValue("(N)", n), NULL);

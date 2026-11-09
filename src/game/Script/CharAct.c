@@ -10,8 +10,8 @@
  * the module attributes they are and called as the values they hold. Scrap.GetEntity, the scheduler, SSound.Play and
  * SScorer.Fade and SetMsgText go through their seams (OBJLIB 7: the cases record or swap them); CrazyWing.CrazyPhoto
  * is called through its ref (PORT_CALL: directly while the attribute holds the port's function, else by name). The
- * calls the scheduler keeps by name (CharsNPC.Respawn, MisItems.CreateBattery and CreateCoin; OBJLIB 4), the variable
- * CharsNPC.CharRes (OBJLIB 5) and the imports (OBJLIB 6) stay.
+ * calls the scheduler keeps by name (CharsNPC.Respawn, MisItems.CreateBattery and CreateCoin) take their entries
+ * (stage 4: Port_Scheduled); the variable CharsNPC.CharRes (OBJLIB 5) and the imports (OBJLIB 6) stay.
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"
