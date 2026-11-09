@@ -5,99 +5,74 @@
 #include <string.h>
 
 #include "scrap/python.h"
+#include "scrap/scriptapi.h"
 #include "scrap/weaps.h"
 #include "scrap/world.h"
 
 /* GetNWeap() : Obtiene el numero de armas en el juego */
-static PyObject *SWeap_GetNWeap(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", g_pWorld->weapons.count);
+API_FN(SWeap, GetNWeap) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", g_pWorld->weapons.count);
 }
 
 /* GetNAmmo() : Obtiene el numero de municiones en el juego */
-static PyObject *SWeap_GetNAmmo(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", g_pWorld->ammo.count);
+API_FN(SWeap, GetNAmmo) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", g_pWorld->ammo.count);
 }
 
 /* InitWeap(num) : Inicializa las armas num es el numero de armas. None for num <= 0. */
-static PyObject *SWeap_InitWeap(PyObject *self, PyObject *args) {
+API_FN(SWeap, InitWeap) {
 	int num;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &num)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &num)) {
+		return 0;
 	}
 	if (num <= 0) {
-		return Py_ReturnNone();
+		return 1;
 	}
 	WeapTable_Init(&g_pWorld->weapons, num);
-	return Py_BuildValue("i", 1);
+	return Api_Build(out, "i", 1);
 }
 
 /* InitAmmo(num) : Inicializa las municiones del juego. No check of num here, the table checks it. */
-static PyObject *SWeap_InitAmmo(PyObject *self, PyObject *args) {
+API_FN(SWeap, InitAmmo) {
 	int num;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &num)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &num)) {
+		return 0;
 	}
 	AmmoTable_Init(&g_pWorld->ammo, num);
-	return Py_BuildValue("i", 1);
+	return Api_Build(out, "i", 1);
 }
 
 /* GetFAmmo(numammo,svar) : Obtiene un valor numerico de las municiones */
-static PyObject *SWeap_GetFAmmo(PyObject *self, PyObject *args) {
-	int n;
-	char *var;
+API_FN(SWeap, GetFAmmo) {
+	int i;
+	const char *var;
 	float value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &n, &var)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "is", &i, &var)) {
+		return 0;
 	}
-	if (!cAmmoInfo_GetF(TABLE_AT(g_pWorld->ammo, n), var, &value)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("d", (double)value);
+	return !cAmmoInfo_GetF(TABLE_AT(g_pWorld->ammo, i), var, &value) || Api_Build(out, "d", (double)value);
 }
 
 /* GetSAmmo(numammo,svar) : Obtiene un valor cadena de las municiones */
-static PyObject *SWeap_GetSAmmo(PyObject *self, PyObject *args) {
-	int n;
-	char *var, *value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &n, &var)) {
-		return NULL;
+API_FN(SWeap, GetSAmmo) {
+	int i;
+	const char *var;
+	char *value;
+	if (!Mode_Parse(a, n, "is", &i, &var)) {
+		return 0;
 	}
-	if (!cAmmoInfo_GetS(TABLE_AT(g_pWorld->ammo, n), var, &value)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("s", value);
+	return !cAmmoInfo_GetS(TABLE_AT(g_pWorld->ammo, i), var, &value) || Api_Build(out, "s", value);
 }
 
 /* SetFAmmo(numammo,svar,fvalue) : Pone un valor numerico de las municiones */
-static PyObject *SWeap_SetFAmmo(PyObject *self, PyObject *args) {
-	int n;
-	char *var;
+API_FN(SWeap, SetFAmmo) {
+	int i;
+	const char *var;
 	double value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "isd", &n, &var, &value)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "isd", &i, &var, &value)) {
+		return 0;
 	}
-	if (!cAmmoInfo_SetF(TABLE_AT(g_pWorld->ammo, n), var, (float)value)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("i", 1);
+	return !cAmmoInfo_SetF(TABLE_AT(g_pWorld->ammo, i), var, (float)value) || Api_Build(out, "i", 1);
 }
 
 /*
@@ -106,102 +81,68 @@ static PyObject *SWeap_SetFAmmo(PyObject *self, PyObject *args) {
  * reports SystemError "NULL result without error in call_object". Kept as the original does it: tools/test/golden
  * records both.
  */
-static PyObject *SWeap_SetSAmmo(PyObject *self, PyObject *args) {
-	int n;
-	char *var, *value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iss", &n, &var, &value)) {
-		return NULL;
-	}
-	if (n >= g_pWorld->ammo.count) {
-		return NULL;
-	}
-	if (!cAmmoInfo_SetS(TABLE_AT(g_pWorld->ammo, n), var, value)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", 1);
+API_FN(SWeap, SetSAmmo) {
+	int i;
+	const char *var, *value;
+	return Mode_Parse(a, n, "iss", &i, &var, &value) && i < g_pWorld->ammo.count &&
+		cAmmoInfo_SetS(TABLE_AT(g_pWorld->ammo, i), var, value) && Api_Build(out, "i", 1);
 }
 
 /* GetFWeap(numWeap,svar) : Obtiene un valor numerico de las armas */
-static PyObject *SWeap_GetFWeap(PyObject *self, PyObject *args) {
-	int n;
-	char *var;
+API_FN(SWeap, GetFWeap) {
+	int i;
+	const char *var;
 	float value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &n, &var)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "is", &i, &var)) {
+		return 0;
 	}
-	if (!cWeapInfo_GetF(TABLE_AT(g_pWorld->weapons, n), var, &value)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("d", (double)value);
+	return !cWeapInfo_GetF(TABLE_AT(g_pWorld->weapons, i), var, &value) || Api_Build(out, "d", (double)value);
 }
 
 /* GetSWeap(numWeap,svar) : Obtiene un valor cadena de las armas */
-static PyObject *SWeap_GetSWeap(PyObject *self, PyObject *args) {
-	int n;
-	char *var, *value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &n, &var)) {
-		return NULL;
+API_FN(SWeap, GetSWeap) {
+	int i;
+	const char *var;
+	char *value;
+	if (!Mode_Parse(a, n, "is", &i, &var)) {
+		return 0;
 	}
-	if (!cWeapInfo_GetS(TABLE_AT(g_pWorld->weapons, n), var, &value)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("s", value);
+	return !cWeapInfo_GetS(TABLE_AT(g_pWorld->weapons, i), var, &value) || Api_Build(out, "s", value);
 }
 
 /* SetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las armas */
-static PyObject *SWeap_SetFWeap(PyObject *self, PyObject *args) {
-	int n;
-	char *var;
+API_FN(SWeap, SetFWeap) {
+	int i;
+	const char *var;
 	double value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "isd", &n, &var, &value)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "isd", &i, &var, &value)) {
+		return 0;
 	}
-	if (!cWeapInfo_SetF(TABLE_AT(g_pWorld->weapons, n), var, (float)value)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("i", 1);
+	return !cWeapInfo_SetF(TABLE_AT(g_pWorld->weapons, i), var, (float)value) || Api_Build(out, "i", 1);
 }
 
 /* SetSWeap(numWeap,svar,svalue) : Pone un valor cadena de las armas */
-static PyObject *SWeap_SetSWeap(PyObject *self, PyObject *args) {
-	int n;
-	char *var, *value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iss", &n, &var, &value)) {
-		return NULL;
+API_FN(SWeap, SetSWeap) {
+	int i;
+	const char *var, *value;
+	if (!Mode_Parse(a, n, "iss", &i, &var, &value)) {
+		return 0;
 	}
-	if (!cWeapInfo_SetS(TABLE_AT(g_pWorld->weapons, n), var, value)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("i", 1);
+	return !cWeapInfo_SetS(TABLE_AT(g_pWorld->weapons, i), var, value) || Api_Build(out, "i", 1);
 }
 
 /* FillPriority() : Inizializa las prioridades de las armas */
-static PyObject *SWeap_FillPriority(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SWeap, FillPriority) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	cWorld_FillWeapPriority(g_pWorld);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* GetFirstiWeap() : Obtiene el arma primera y por defecto */
-static PyObject *SWeap_GetFirstiWeap(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", g_pWorld->firstWeapon);
+API_FN(SWeap, GetFirstiWeap) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", g_pWorld->firstWeapon);
 }
 
 /*
@@ -224,15 +165,13 @@ void Missile_NetExec(const char *cmd, const char *name) {
 	}
 }
 
-static PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
-	char *cmd, *name = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|s", &cmd, &name)) {
-		return NULL;
+API_FN(SWeap, NetExec) {
+	const char *cmd, *name = NULL;
+	if (!Mode_Parse(a, n, "s|s", &cmd, &name)) {
+		return 0;
 	}
 	Missile_NetExec(cmd, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 static const char str_PyMethod_SWeap_GetNWeap[] = "GetNWeap";
@@ -398,3 +337,4 @@ static char str_PyDoc_SWeap_GetFirstiWeap[] = "GetFirstiWeap() : Obtiene el arma
 
 static char str_PyDoc_SWeap_NetExec[] = "NetExec() : Rutinas de red de los misiles";
 
+PORTS(PyInterface_SWeapPy)

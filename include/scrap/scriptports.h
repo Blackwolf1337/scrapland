@@ -1373,6 +1373,29 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
 	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
 
+/* PyInterface/SActPy.c */
+PORT_DECL(SAct, CreateClass) /* 1 */
+PORT_DECL(SAct, DelClass) /* 1 */
+PORT_DECL(SAct, GetClass) /* 1 */
+PORT_DECL(SAct, SetCls) /* ? */
+PORT_DECL(SAct, GetCls) /* ? */
+PORT_DECL(SAct, CreateAction) /* 1 */
+PORT_DECL(SAct, GetAction) /* 1 */
+PORT_DECL(SAct, SetAct) /* ? */
+PORT_DECL(SAct, GetAct) /* ? */
+PORT_DECL(SAct, DumpEvents) /* 1 */
+#define PORTS_PyInterface_SActPy \
+	PORT_DEF(SAct, CreateClass, SAct_CreateClass) \
+	PORT_DEF(SAct, DelClass, SAct_DelClass) \
+	PORT_DEF(SAct, GetClass, SAct_GetClass) \
+	PORT_DEF(SAct, SetCls, SAct_SetCls) \
+	PORT_DEF(SAct, GetCls, SAct_GetCls) \
+	PORT_DEF(SAct, CreateAction, SAct_CreateAction) \
+	PORT_DEF(SAct, GetAction, SAct_GetAction) \
+	PORT_DEF(SAct, SetAct, SAct_SetAct) \
+	PORT_DEF(SAct, GetAct, SAct_GetAct) \
+	PORT_DEF(SAct, DumpEvents, SAct_DumpEvents)
+
 /* PyInterface/SLogic.c */
 PORT_DECL(SLogic, SendSentinelToWatch) /* 1 */
 PORT_DECL(SLogic, GearAttack) /* 1 */
@@ -1426,6 +1449,39 @@ PORT_DECL(SVec, NormAng) /* 1 */
 	PORT_DEF(SVec, GetAngle, SVec_GetAngle) \
 	PORT_DEF(SVec, GetRotAng, SVec_GetRotAng) \
 	PORT_DEF(SVec, NormAng, SVec_NormAng)
+
+/* PyInterface/SWeapPy.c */
+PORT_DECL(SWeap, GetNWeap) /* 0 */
+PORT_DECL(SWeap, GetNAmmo) /* 0 */
+PORT_DECL(SWeap, InitWeap) /* 1 */
+PORT_DECL(SWeap, InitAmmo) /* 1 */
+PORT_DECL(SWeap, GetFAmmo) /* 2 */
+PORT_DECL(SWeap, GetSAmmo) /* 2 */
+PORT_DECL(SWeap, SetFAmmo) /* 3 */
+PORT_DECL(SWeap, SetSAmmo) /* 3 */
+PORT_DECL(SWeap, GetFWeap) /* 2 */
+PORT_DECL(SWeap, GetSWeap) /* 2 */
+PORT_DECL(SWeap, SetFWeap) /* 3 */
+PORT_DECL(SWeap, SetSWeap) /* 3 */
+PORT_DECL(SWeap, FillPriority) /* 0 */
+PORT_DECL(SWeap, GetFirstiWeap) /* 0 */
+PORT_DECL(SWeap, NetExec) /* ? */
+#define PORTS_PyInterface_SWeapPy \
+	PORT_DEF(SWeap, GetNWeap, SWeap_GetNWeap) \
+	PORT_DEF(SWeap, GetNAmmo, SWeap_GetNAmmo) \
+	PORT_DEF(SWeap, InitWeap, SWeap_InitWeap) \
+	PORT_DEF(SWeap, InitAmmo, SWeap_InitAmmo) \
+	PORT_DEF(SWeap, GetFAmmo, SWeap_GetFAmmo) \
+	PORT_DEF(SWeap, GetSAmmo, SWeap_GetSAmmo) \
+	PORT_DEF(SWeap, SetFAmmo, SWeap_SetFAmmo) \
+	PORT_DEF(SWeap, SetSAmmo, SWeap_SetSAmmo) \
+	PORT_DEF(SWeap, GetFWeap, SWeap_GetFWeap) \
+	PORT_DEF(SWeap, GetSWeap, SWeap_GetSWeap) \
+	PORT_DEF(SWeap, SetFWeap, SWeap_SetFWeap) \
+	PORT_DEF(SWeap, SetSWeap, SWeap_SetSWeap) \
+	PORT_DEF(SWeap, FillPriority, SWeap_FillPriority) \
+	PORT_DEF(SWeap, GetFirstiWeap, SWeap_GetFirstiWeap) \
+	PORT_DEF(SWeap, NetExec, SWeap_NetExec)
 
 /* PyInterface/ScrapPy.c */
 PORT_DECL(Scrap, Print) /* 1 */
@@ -5204,6 +5260,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2482
+#define PORT_COUNT 2507
 
 #endif
