@@ -17,7 +17,11 @@
  *                            kind: "callbacks python <n> native <n> entry <n>"; then the functions given to the
  *                            scheduler as a port's entry (cScheduledFunc, stage 4) since the start: "scheduled
  *                            <Module>.<Func> calls <n> errors <n>", sorted by name, and the calls of the scheduler
- *                            by kind: "scheduled python <n> entry <n>"
+ *                            by kind: "scheduled python <n> entry <n>"; then the modules by name (batch 6b,
+ *                            Script_ModuleCounts): "modules pack <n> none <n> absent <n> other <n> added <n> made <n>
+ *                            loaded <n>" (pack modules found in sys.modules, whose entry is None, not loaded; other
+ *                            names; pack modules made empty by Script_ModuleAdd, made from their .mod file, found
+ *                            loaded by PreloadLibrary)
  *   native ports reset       the counts back to 0
  */
 #include <stdlib.h>
@@ -92,6 +96,14 @@ static void TN_Callbacks(nativeBuf_t *out, byte reset) {
 	Scheduler_Counts(&python, &entry, reset);
 	if (!reset) {
 		snprintf(line, sizeof(line), "scheduled python %lu entry %lu\n", python, entry);
+		Native_BufAdd(out, line, -1);
+	}
+	unsigned long mods[SMC_COUNT];
+	Script_ModuleCounts(mods, reset);
+	if (!reset) {
+		snprintf(line, sizeof(line), "modules pack %lu none %lu absent %lu other %lu added %lu made %lu loaded %lu\n",
+			mods[SMC_PACK], mods[SMC_NONE], mods[SMC_ABSENT], mods[SMC_OTHER], mods[SMC_ADDED], mods[SMC_MADE],
+			mods[SMC_LOADED]);
 		Native_BufAdd(out, line, -1);
 	}
 }

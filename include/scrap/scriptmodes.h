@@ -232,7 +232,8 @@ byte Mode_SetSaveVar(const char *name, const nativeVal_t *value);
 
 /* ---- module state ---- */
 
-/* `import name` in a function of a script (OBJLIB 6: module loading stays with the module objects) */
+/* `import name` in a function of a script (Script_Import: a pack module from sys.modules in C since batch 6b; OBJLIB 7:
+ * the module objects) */
 byte Mode_Import(const char *name);
 /* the global name of the module into slot (freed first), as the functions read it */
 byte Mode_Read(const char *module, const char *name, nativeVal_t *slot);

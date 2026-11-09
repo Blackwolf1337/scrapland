@@ -54,7 +54,7 @@ byte Script_SetGlobal(const char *module, const char *name, PyObject *v) {
 
 byte Script_Import(const char *const *names) {
 	for (; *names; names++) {
-		PyObject *m = PyImport_ImportModule((char *)*names);
+		PyObject *m = Script_Module(*names);
 		if (!m) {
 			return 0;
 		}
@@ -224,7 +224,7 @@ byte Script_Hook(const char *module, const char *target, const char *name, const
 }
 
 PyObject *Script_EvalIn(const char *module, PyObject *text) {
-	PyObject *mod = PyImport_ImportModule((char *)module);
+	PyObject *mod = Script_Module(module);
 	PyObject *v = mod ? Script_EvalValue(PyModule_GetDict(mod), text) : NULL;
 	Py_XDECREF(mod);
 	return v;

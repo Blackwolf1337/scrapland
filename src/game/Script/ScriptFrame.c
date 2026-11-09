@@ -115,7 +115,7 @@ PyObject *Sf_Build(scriptFrame_t *f, const char *fmt, ...) {
 
 /* the module object (a new reference) for the dict of its globals */
 static PyObject *Sf_Module(scriptFrame_t *f, const char *name) {
-	return f->failed ? NULL : Sf_Keep(f, PyImport_ImportModule((char *)name));
+	return f->failed ? NULL : Sf_Keep(f, Script_Module(name));
 }
 
 PyObject *Sf_Global(scriptFrame_t *f, const char *module, const char *name) {
@@ -481,7 +481,7 @@ byte Sf_ImportTo(scriptFrame_t *f, const char *module, PyObject *locals, PyObjec
 		return Sf_Exec(f, Sf_Cat(f, "sO", "import ", name), module, locals);
 	}
 	/* the exec'd line imports in the module's globals, where a name without a dot is a top level module */
-	PyObject *m = Sf_Module(f, module) ? Sf_Keep(f, PyImport_ImportModule(PyString_AsString(name))) : NULL;
+	PyObject *m = Sf_Module(f, module) ? Sf_Keep(f, Script_Module(PyString_AsString(name))) : NULL;
 	return Sf_Check(f, m && PyDict_SetItem(locals, name, m) == 0);
 }
 

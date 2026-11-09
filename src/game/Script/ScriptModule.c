@@ -913,7 +913,7 @@ static PyObject *Mod_Function(modParse_t *m, const char *name) {
 static byte Mod_Import(modParse_t *m) {
 	char name[MOD_NAME];
 	while (Mod_Word(m, name, sizeof(name))) {
-		PyObject *v = m->skip ? Mod_Skipped() : PyImport_ImportModuleEx(name, m->globals, m->locals, NULL);
+		PyObject *v = m->skip ? Mod_Skipped() : Script_ModuleIn(name, m->globals);
 		if (!Mod_Store(m, name, v)) {
 			return 0;
 		}
@@ -927,7 +927,7 @@ static byte Mod_From(modParse_t *m) {
 	if (!Mod_Word(m, name, sizeof(name)) || !Mod_Keyword(m, "import")) {
 		return Mod_Syntax(m, "from <module> import <names>"), 0;
 	}
-	PyObject *mod = m->skip ? NULL : PyImport_ImportModuleEx(name, m->globals, m->locals, NULL);
+	PyObject *mod = m->skip ? NULL : Script_ModuleIn(name, m->globals);
 	if (!mod && !m->skip) {
 		return 0;
 	}
@@ -1225,6 +1225,9 @@ static int Mod_Block(modParse_t *m, char *stop, int size) {
 
 /* ---- the loader ---- */
 
+/* the lookups and makes by path (Script_ModuleCounts) */
+static unsigned long mod_counts[SMC_COUNT];
+
 static byte Mod_On(void) {
 	const char *e = getenv("SCRAP_PACK_SCRIPTS");
 	if (e && *e == '1') {
@@ -1276,7 +1279,7 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 			Con_Verbosef("Script: %s from the packs\n", path);
 		}
 	}
-	PyObject *m = PyImport_AddModule((char *)name);
+	PyObject *m = Script_ModuleAdd(name);
 	PyObject *d = m ? PyModule_GetDict(m) : NULL;
 	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = m, .globals = d, .locals = d,
 		.consts = PyList_New(0), .defs = PyDict_New() };
@@ -1321,8 +1324,82 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	if (!ok) {
 		return -1;
 	}
+	mod_counts[SMC_MADE]++;
 	Py_INCREF(m);
 	*module = m;
 	Con_Verbosef("Script: %s made in C from %s\n", name, mf->name);
 	return 1;
+}
+
+/* ---- the modules by name (batch 6b) ---- */
+
+/* sys.modules: the store of the module objects until stage 7 */
+static PyObject *Mod_Modules(void) {
+	return PyImport_GetModuleDict();
+}
+
+PyObject *Script_ModuleLoaded(const char *name) {
+	return PyDict_GetItemString(Mod_Modules(), (char *)name);
+}
+
+PyObject *Script_Module(const char *name) {
+	byte pack = ModVar_HasModule(name);
+	PyObject *m = pack ? Script_ModuleLoaded(name) : NULL;
+	if (!m) {
+		mod_counts[pack ? SMC_ABSENT : SMC_OTHER]++;
+		return PyImport_ImportModule((char *)name);
+	}
+	if (m == Py_None) {
+		/* what load_next of the import raises for an entry None */
+		mod_counts[SMC_NONE]++;
+		PyErr_Format(PyExc_ImportError, "No module named %.200s", name);
+		return NULL;
+	}
+	mod_counts[SMC_PACK]++;
+	Py_INCREF(m);
+	return m;
+}
+
+PyObject *Script_ModuleIn(const char *name, PyObject *globals) {
+	PyObject *n = globals && PyDict_Check(globals) ? PyDict_GetItemString(globals, "__name__") : NULL;
+	/* get_parent of the import: a package (__path__) or a dotted module name looks for name in the package first */
+	if (n && PyString_Check(n) && (PyDict_GetItemString(globals, "__path__") || strchr(PyString_AsString(n), '.'))) {
+		mod_counts[SMC_OTHER]++;
+		return PyImport_ImportModuleEx((char *)name, globals, NULL, NULL);
+	}
+	return Script_Module(name);
+}
+
+PyObject *Script_ModuleAdd(const char *name) {
+	if (!ModVar_HasModule(name)) {
+		mod_counts[SMC_OTHER]++;
+		return PyImport_AddModule((char *)name);
+	}
+	PyObject *m = Script_ModuleLoaded(name);
+	if (m && PyModule_Check(m)) {
+		mod_counts[SMC_PACK]++;
+		return m;
+	}
+	mod_counts[SMC_ADDED]++;
+	m = PyModule_New((char *)name);
+	if (m && PyDict_SetItemString(Mod_Modules(), (char *)name, m) != 0) {
+		Py_DECREF(m);
+		return NULL;
+	}
+	/* the reference of sys.modules keeps it */
+	Py_XDECREF(m);
+	return m;
+}
+
+void Script_ModuleCountLoaded(void) {
+	mod_counts[SMC_LOADED]++;
+}
+
+void Script_ModuleCounts(unsigned long counts[SMC_COUNT], byte reset) {
+	for (int i = 0; i < SMC_COUNT; i++) {
+		counts[i] = mod_counts[i];
+		if (reset) {
+			mod_counts[i] = 0;
+		}
+	}
 }
