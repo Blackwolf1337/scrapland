@@ -18,9 +18,11 @@
 #   --build <dir>                                   the build folder for the preprocessor (default build-linux64)
 #
 # Kinds: port (a function of another module with a ref), own (of a module of the file, through its attribute),
-# global (through the module's global), noentry (a C table function without an entry yet), engine, lib, other (data
-# functions of the .def files, variables, unknown names). Arity: the count of the positional letters at a site against
-# the count the entry takes (the number in include/scrap/scriptports.h).
+# global (through the module's global), noentry (a C table function without an entry yet), engine (a function of an
+# engine module with a native entry and its ref: convertible), engslow (an engine function without a native entry
+# yet, or whose entry works on Python objects, MODE_PYENTRY: its ref would take the slow path; stays by name), lib,
+# other (data functions of the .def files, variables, unknown names). Arity: the count of the positional letters at a
+# site against the count the entry takes (the number in include/scrap/scriptports.h).
 #
 # What rewrite converts (the module a literal "Mod" or a constant of the file, #define X "Mod"; the function a literal):
 #
@@ -40,6 +42,10 @@
 #                                                              module), LvN_OnEndRef / LvN_ScorerRef(&PORT_REF(M, F))
 #   LvN_Com(key, who, m, f, params), LvN_Callback(name, m, f), LvN_MissionChar(name, m, f)
 #                                                              LV_COM, LV_CALLBACK, LV_MISSIONCHAR (the same way)
+#
+# The functions of the engine modules (Scrap, SAI, ...) are converted the same way when they have a native entry (a ref
+# of include/scrap/scriptports.h that is not PORT_DEFP): PORT_CALL(Scrap, SetCam, ...), whose seam sees a function a
+# case put there instead and calls it by name. The others are listed (no entry yet, or an entry on Python objects).
 #
 # fmt' is the Py_BuildValue format turned into the letters of Native_Call: i, b, h, l as i (the argument cast to long,
 # the va_arg of Port_Invoke), s and z as s (a NULL text is None for both), d and f as d, O and S as O; other letters
@@ -155,11 +161,17 @@ def nargs_of(f, module, name, idx, line=None):
 	return r
 
 
+def engine_ref(idx, module, name):
+	"""the ref of an engine function with a native entry (its calls can take the fast path), else None"""
+	r = ref_for(idx, module, name, None)
+	return r if r and r.kw != 'P' else None
+
+
 def kind(f, no, form, module, name, glob, idx, own, cfunc):
 	if form == 'PORT':
 		return 'PORT'
 	if module in ENGINE:
-		return 'engine'
+		return 'engine' if engine_ref(idx, module, name) else 'engslow'
 	if module in LIB:
 		return 'lib'
 	if nargs_of(f, module, name, idx, no):
@@ -185,7 +197,7 @@ def marked():
 
 def survey(pp, idx, files):
 	own, cfunc = owners(pp)
-	kinds = ['port', 'own', 'global', 'noentry', 'engine', 'lib', 'other', 'PORT']
+	kinds = ['port', 'own', 'global', 'noentry', 'engine', 'engslow', 'lib', 'other', 'PORT']
 	rows, total, bad = {}, collections.Counter(), []
 	for f, no, form, module, name, fmt, glob in scan(pp):
 		if files and f not in files:
@@ -352,7 +364,14 @@ class File:
 			return None
 		if not self.want(module, name):
 			return None
-		if module in ENGINE or module in LIB:
+		if module in LIB:
+			return None
+		if module in ENGINE:
+			r = self.ref(module, name, pos)
+			if r and r.kw != 'P':
+				return r
+			self.leave(pos, form, '%s.%s: %s' % (module, name, 'an entry on Python objects (MODE_PYENTRY)' if r else
+				'no native entry yet'))
 			return None
 		r = self.ref(module, name, pos)
 		if r is None:
