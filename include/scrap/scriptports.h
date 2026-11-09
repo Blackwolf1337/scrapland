@@ -1373,6 +1373,58 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
 	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
 
+/* PyInterface/SFXPy.c */
+PORT_DECL(SFX, ShipExplosion) /* 6 */
+PORT_DECL(SFX, CharacterConversor) /* 3 */
+PORT_DECL(SFX, CharacterConversion) /* 3 */
+PORT_DECL(SFX, BishopSellLife) /* 2 */
+PORT_DECL(SFX, MoneyTransfer) /* 3 */
+PORT_DECL(SFX, EmbeddedSet) /* 2 */
+#define PORTS_PyInterface_SFXPy \
+	PORT_DEF(SFX, ShipExplosion, SFX_ShipExplosion) \
+	PORT_DEF(SFX, CharacterConversor, SFX_CharacterConversor) \
+	PORT_DEF(SFX, CharacterConversion, SFX_CharacterConversion) \
+	PORT_DEF(SFX, BishopSellLife, SFX_BishopSellLife) \
+	PORT_DEF(SFX, MoneyTransfer, SFX_MoneyTransfer) \
+	PORT_DEF(SFX, EmbeddedSet, SFX_EmbeddedSet)
+
+/* PyInterface/SSoundPy.c */
+PORT_DECL(SSound, LoadSound) /* 1 */
+PORT_DECL(SSound, PlaySound) /* ? */
+PORT_DECL(SSound, Play) /* ? */
+PORT_DECL(SSound, StopAllSounds) /* 0 */
+PORT_DECL(SSound, SetPS) /* 3 */
+PORT_DECL(SSound, GetPS) /* 2 */
+PORT_DECL(SSound, UsePS) /* 1 */
+PORT_DECL(SSound, CreatePS) /* 1 */
+PORT_DECL(SSound, SetMusic) /* ? */
+PORT_DECL(SSound, SetMusicVolume) /* 1 */
+PORT_DECL(SSound, OpenVoice) /* ? */
+PORT_DECL(SSound, PlayVoice) /* ? */
+PORT_DECL(SSound, StopVoice) /* 1 */
+PORT_DECL(SSound, VoiceRemain) /* 2 */
+PORT_DECL(SSound, SetVoiceVolume) /* 2 */
+PORT_DECL(SSound, SetVoiceString) /* 2 */
+PORT_DECL(SSound, DeleteAllSounds) /* 0 */
+#define PORTS_PyInterface_SSoundPy \
+	PORT_DEF(SSound, LoadSound, SSound_LoadSound) \
+	PORT_DEF(SSound, PlaySound, SSound_PlaySound) \
+	PORT_DEF(SSound, Play, SSound_Play) \
+	PORT_DEF(SSound, StopAllSounds, SSound_StopAllSounds) \
+	PORT_DEF(SSound, SetPS, SSound_SetPS) \
+	PORT_DEF(SSound, GetPS, SSound_GetPS) \
+	PORT_DEF(SSound, UsePS, SSound_UsePS) \
+	PORT_DEF(SSound, CreatePS, SSound_CreatePS) \
+	PORT_DEF(SSound, SetMusic, SSound_SetMusic) \
+	PORT_DEF(SSound, SetMusicVolume, SSound_SetMusicVolume) \
+	PORT_DEF(SSound, OpenVoice, SSound_OpenVoice) \
+	PORT_DEF(SSound, PlayVoice, SSound_PlayVoice) \
+	PORT_DEF(SSound, StopVoice, SSound_StopVoice) \
+	PORT_DEF(SSound, VoiceRemain, SSound_VoiceRemain) \
+	PORT_DEF(SSound, SetVoiceVolume, SSound_SetVoiceVolume) \
+	PORT_DEF(SSound, SetVoiceString, SSound_SetVoiceString) \
+	PORT_DEF(SSound, DeleteAllSounds, SSound_DeleteAllSounds)
+
 /* PyInterface/ScrapPy.c */
 PORT_DECL(Scrap, Print) /* 1 */
 PORT_DECL(Scrap, ConsoleOut) /* 1 */
@@ -5150,6 +5202,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2458
+#define PORT_COUNT 2481
 
 #endif
