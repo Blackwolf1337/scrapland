@@ -2495,24 +2495,25 @@ static byte Native_CallHook(PyObject *hook, PyObject *args) {
 	return r != NULL;
 }
 
-byte Native_GVarSet(const char *name, const nativeVal_t *v) {
-	/* Scrap.Set: "ss", else "sd"; a variable of another type or no variable gives NULL without an exception */
+int Native_GVarStore(const char *name, const nativeVal_t *v) {
+	/* Scrap.Set: "ss", else "sd" */
 	double d;
-	int r;
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		return GVar_SetStr(name, Native_Text(v));
+	}
+	return Native_ArgDouble(v, &d) ? GVar_SetNum(name, d) : -2;
+}
+
+byte Native_GVarSet(const char *name, const nativeVal_t *v) {
+	/* a variable of another type or no variable gives NULL without an exception */
 	PyObject *hook;
 	int seam = Native_Seam("Scrap", "Set", &hook);
 	if (seam) {
 		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
 		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(sN)", name, o) : NULL);
 	}
-	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
-		r = GVar_SetStr(name, Native_Text(v));
-	} else if (Native_ArgDouble(v, &d)) {
-		r = GVar_SetNum(name, d);
-	} else {
-		return 0;
-	}
-	return r < 0 ? Native_NullResult() : 1;
+	int r = Native_GVarStore(name, v);
+	return r == -2 ? 0 : r < 0 ? Native_NullResult() : 1;
 }
 
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v) {
