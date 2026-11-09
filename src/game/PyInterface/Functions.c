@@ -432,31 +432,24 @@ void cPy_Function_AddParamS(cPy_Function *self, const char *v) {
 
 /*
  * The call of a port entry as PyEval_CallObject called its adapter (Mode_Args, the entry, Mode_Out), with the depth
- * check of the direct calls (Port_Entry): the int result, else 0; a failure printed as the Python call printed it.
+ * check of the direct calls (Port_BoundCall): the int result, else 0; a failure printed as the Python call printed it.
  * The result goes through the conversions of the adapter and the int check (Native_Pass: they can fail).
  */
-static int cPy_Function_CallEntry(portSite_t *site, cPy_EntryParams *p) {
-	static const nativeVal_t none[PORT_ARGS];
-	nativeVal_t r, res;
+static int cPy_Function_CallEntry(portSite_t *site, const cPy_EntryParams *p) {
+	nativeArg_t a[PORT_ARGS];
+	nativeVal_t res;
 	int n = p ? p->n : 0, result = 0;
 
-	site->fast++;
-	/* the places past the parameters None, as Mode_OptArgs leaves them */
-	for (int i = n; p && i < PORT_ARGS; i++) {
-		Native_SetNone(&p->a[i]);
+	for (int i = 0; i < n; i++) {
+		a[i].type = 'v';
+		a[i].v = &p->a[i];
 	}
-	byte ok = Port_Entry(site->ref, p ? p->a : none, n, &r);
-	if (ok && (ok = Native_Pass(&r, &res)) != 0) {
-		if (res.type == NV_INT) {
-			result = (int)res.i;
-		}
-		Native_Free(&res);
-	}
-	Native_Free(&r);
-	if (!ok) {
-		site->errors++;
+	if (!Port_BoundCall(site, a, n, &res)) {
 		PyErr_Print();
+	} else if (res.type == NV_INT) {
+		result = (int)res.i;
 	}
+	Native_Free(&res);
 	return result;
 }
 

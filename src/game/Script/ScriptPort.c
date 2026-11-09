@@ -4,8 +4,9 @@
  * with the arguments packed as the adapter would get them, and the old call through Python when something else is
  * there (OBJLIB 7, with SCRAP_PORT_SLOW=1 forcing it and the counters of each call site for the test channel).
  * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable), the callbacks bound
- * to port functions (Port_Callback, cPy_Function PYF_ENTRY), and the calls of values that hold port functions (Port_Own
- * by the adapter, Port_Value and Port_Values).
+ * to port functions (Port_Callback, cPy_Function PYF_ENTRY), the functions given to the scheduler (Port_Scheduled,
+ * cScheduledFunc), the call of such a bound site (Port_BoundCall), and the calls of values that hold port functions
+ * (Port_Own by the adapter, Port_Value and Port_Values).
  */
 #include <stdint.h>
 #include <stdlib.h>
@@ -194,27 +195,23 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 	return 0;
 }
 
-/* the entry of ref on the arguments in their slots (the ones between not given), the result into *r (freed by the
- * caller also on a failure) */
-static byte Port_Fast(const portRef_t *ref, const portArgs_t *p, const signed char *slot, int m, nativeVal_t *r) {
+/* the entry of ref (Port_Entry) on the n arguments x in their slots (the ones between not given), the result into *r
+ * (freed by the caller also on a failure). Inlined: the packed values share the frame of Port_FastVa as before stage 4
+ * (3296 bytes with them, gcc -O2 x86_64 Linux; mingw-w64 3200), not a frame of their own below it */
+static inline __attribute__((always_inline)) byte Port_Fast(const portRef_t *ref, const nativeArg_t *x, int n,
+	const signed char *slot, int m, nativeVal_t *r) {
 	nativeVal_t a[PORT_ARGS];
 	byte ok = 1;
 	for (int i = 0; i < m; i++) {
 		Mode_KwSkip(&a[i]);
 	}
-	for (int i = 0; ok && i < p->n; i++) {
-		ok = Port_Pack(&p->a[i], &a[slot[i]]);
+	for (int i = 0; ok && i < n; i++) {
+		ok = Port_Pack(&x[i], &a[slot[i]]);
 	}
-	Native_SetNone(r);
-	/* the frame address, as Script_CallObject takes it */
-	if (ok && Script_Enter((uintptr_t)__builtin_frame_address(0))) {
-		ok = ref->entry(a, m, r);
-		Script_Leave();
-		if (!ok && !PyErr_Occurred()) {
-			PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
-		}
+	if (ok) {
+		ok = Port_Entry(ref, a, m, r);
 	} else {
-		ok = 0;
+		Native_SetNone(r);
 	}
 	for (int i = 0; i < m; i++) {
 		Native_Free(&a[i]);
@@ -236,7 +233,7 @@ static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, const po
 	portArgs_t p;
 	nativeVal_t r, res;
 	Port_Read(fmt, va, &p);
-	byte ok = Port_Fast(ref, &p, ps->slot, ps->m, &r);
+	byte ok = Port_Fast(ref, p.a, p.n, ps->slot, ps->m, &r);
 	if (pyout) {
 		/* what the adapter returns (Mode_Out) */
 		*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
@@ -396,25 +393,35 @@ const portRef_t *Port_Find(const char *module, const char *name) {
 	return i < PORT_COUNT ? g_PortTable[i] : NULL;
 }
 
-/* OBJLIB 7: the counters of the callbacks, one site per ref of the table, and the C function object a callback of
- * the ref was first bound to (a reference kept for the Python call of Port_CallbackFunc) */
-static portSite_t port_callbacks[PORT_COUNT];
-static portSite_t *port_callbackList;
+/* OBJLIB 7: the counters of the port functions bound for a later call, one site per ref of the table and kind, and
+ * the C function object a callback of the ref was first bound to (a reference kept for the Python call of
+ * Port_CallbackFunc) */
+enum { PORT_CALLBACK, PORT_SCHEDULED, PORT_BOUNDKINDS };
+static portSite_t port_bound[PORT_BOUNDKINDS][PORT_COUNT];
+static portSite_t *port_boundList[PORT_BOUNDKINDS];
 static PyObject *port_callbackFuncs[PORT_COUNT];
 
-/* the site of the callbacks of ref i, listed at its first binding (f the function bound) */
-static portSite_t *Port_CallbackSite(int i, PyObject *f) {
-	portSite_t *s = &port_callbacks[i];
+/* the site of ref i of the table for kind, listed at its first use */
+static portSite_t *Port_Bound(int kind, int i) {
+	static const char *const files[PORT_BOUNDKINDS] = { "callback", "scheduled" };
+	portSite_t *s = &port_bound[kind][i];
 	if (!s->listed) {
 		s->ref = g_PortTable[i];
-		s->file = "callback";
+		s->file = files[kind];
 		s->listed = 1;
-		s->next = port_callbackList;
-		port_callbackList = s;
+		s->next = port_boundList[kind];
+		port_boundList[kind] = s;
+	}
+	return s;
+}
+
+/* the site of the callbacks of ref i, f the function bound (the first one kept) */
+static portSite_t *Port_CallbackSite(int i, PyObject *f) {
+	if (!port_callbackFuncs[i]) {
 		Py_INCREF(f);
 		port_callbackFuncs[i] = f;
 	}
-	return s;
+	return Port_Bound(PORT_CALLBACK, i);
 }
 
 static int Port_OwnIndex(PyObject *f);
@@ -436,11 +443,43 @@ portSite_t *Port_Callback(const char *module, const char *name, PyObject *f) {
 }
 
 portSite_t *Port_Callbacks(void) {
-	return port_callbackList;
+	return port_boundList[PORT_CALLBACK];
 }
 
 PyObject *Port_CallbackFunc(const portSite_t *site) {
-	return port_callbackFuncs[site - port_callbacks];
+	return port_callbackFuncs[site - port_bound[PORT_CALLBACK]];
+}
+
+portSite_t *Port_Scheduled(PyObject *f) {
+	int i = Port_OwnIndex(f);
+	return i < 0 ? NULL : Port_Bound(PORT_SCHEDULED, i);
+}
+
+portSite_t *Port_ScheduledSites(void) {
+	return port_boundList[PORT_SCHEDULED];
+}
+
+byte Port_BoundCall(portSite_t *site, const nativeArg_t *a, int n, nativeVal_t *res) {
+	static_assert(PORT_ARGS == 11, "one slot per argument");
+	static const signed char slot[PORT_ARGS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	nativeVal_t r, drop, *out = res ? res : &drop;
+	CHECK(n >= 0 && n <= PORT_ARGS);
+	site->fast++;
+	byte ok = Port_Fast(site->ref, a, n, slot, n, &r);
+	/* the result goes through the conversions of the adapter also when it is dropped (they can fail) */
+	if (ok) {
+		ok = Native_Pass(&r, out);
+	} else {
+		Native_SetNone(out);
+	}
+	Native_Free(&r);
+	if (!res) {
+		Native_Free(&drop);
+	}
+	if (!ok) {
+		site->errors++;
+	}
+	return ok;
 }
 
 byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r) {
