@@ -537,12 +537,11 @@ static PyObject *Level_SectionFunction(int i, levelPool_t *pool, int n, char *to
 }
 
 /*
- * the sections of file i into functions of the module (only those the script has, under their names); with defs (a
- * module made in C, Script_ModuleExtras) the same dict writes with the values in place, for the sections whose name
- * the module code defined and no table of script_modules took before (after the .pyc that name is still the Python
- * function here)
+ * the dict writes the loader made after the .pyc for the sections of file i, on a module made in C with the values in
+ * place (Script_ReplaySet): the sections whose name the module code defined (defs holds those functions by name) and
+ * no table of script_modules took before
  */
-static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *kept, PyObject *defs) {
+static void Level_ReplaySections(int i, PyObject *module, PyObject *defs) {
 	const char *p = level_files[i].text;
 	PyObject *dict = PyModule_GetDict(module);
 	int n = 0;
@@ -553,27 +552,9 @@ static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *
 			char line[0x200], *tok[24];
 			int nt = Level_SectionWords(p + 8, len - 8, line, tok);
 			PyObject *old = nt ? PyDict_GetItemString(dict, tok[0]) : NULL;
-			if (defs) {
-				if (old && PyDict_GetItemString(defs, tok[0]) == old &&
-					!Script_TableHas(level_files[i].module, tok[0])) {
-					Script_ReplaySet(dict, tok[0], old);
-					n++;
-				}
-			} else if (old && PyFunction_Check(old)) {
-				PyObject *f = Level_SectionFunction(i, pool, n, tok, nt);
-				if (f) {
-					if (kept) {
-						PyList_Append(kept, old);
-					}
-					PyObject *name = PyString_FromString(tok[0]);
-					if (name) {
-						Script_ReplaceRefs(dict, name, old, f);
-						Py_DECREF(name);
-					}
-					PyDict_SetItemString(dict, tok[0], f);
-					Py_DECREF(f);
-					n++;
-				}
+			if (old && PyDict_GetItemString(defs, tok[0]) == old && !Script_TableHas(level_files[i].module, tok[0])) {
+				Script_ReplaySet(dict, tok[0], old);
+				n++;
 			}
 		}
 		p += len + (eol != NULL);
@@ -612,7 +593,7 @@ PyObject *Script_LevelTableFunction(const char *module, const char *name) {
 	if (!Level_Current(level, sizeof(level))) {
 		return NULL;
 	}
-	/* the last row that has the name wins (as Script_Install puts them in) */
+	/* the last row that has the name wins (as the loader put them in) */
 	PyMethodDef *found = NULL;
 	for (const levelModule_t *lm = level_modules; lm->level; lm++) {
 		if (!strcmp(lm->level, level) && !strcmp(lm->module, module)) {
@@ -659,27 +640,6 @@ PyObject *Script_LevelDataFunction(const char *module, const char *name) {
 	return nt ? Level_SectionFunction(i, pool, pool->used++, tok, nt) : NULL;
 }
 
-void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept) {
-	char level[LEVEL_NAME];
-	if (!Level_Current(level, sizeof(level))) {
-		return;
-	}
-	for (size_t i = 0; i < sizeof(level_files) / sizeof(level_files[0]); i++) {
-		if (!strcmp(level_files[i].level, level) && !strcmp(level_files[i].module, name)) {
-			levelPool_t *pool = Level_Pool(name);
-			if (pool) {
-				Level_Install((int)i, module, pool, kept, NULL);
-			}
-			break;
-		}
-	}
-	for (const levelModule_t *lm = level_modules; lm->level; lm++) {
-		if (!strcmp(lm->level, level) && !strcmp(lm->module, name)) {
-			Script_Install(module, lm->methods, kept);
-		}
-	}
-}
-
 void Script_LevelModuleExtras(const char *name, PyObject *module, PyObject *defs) {
 	char level[LEVEL_NAME];
 	if (!Level_Current(level, sizeof(level))) {
@@ -687,7 +647,7 @@ void Script_LevelModuleExtras(const char *name, PyObject *module, PyObject *defs
 	}
 	int i = Level_File(name);
 	if (i >= 0) {
-		Level_Install(i, module, NULL, NULL, defs);
+		Level_ReplaySections(i, module, defs);
 	}
 	for (const levelModule_t *lm = level_modules; lm->level; lm++) {
 		if (!strcmp(lm->level, level) && !strcmp(lm->module, name)) {

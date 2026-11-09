@@ -2,11 +2,11 @@
  * ScrapC's own versions of the scripts of the game packs (issue #2). The game runs its menus, HUD, characters and
  * missions from Python 1.5.2 scripts in the packs; they move to C one by one while the rest keeps running in Python.
  *
- * The loader: when the engine loads a pack module (Pack_PreloadLibrary), Script_ModuleLoaded puts the C functions
- * ScrapC has for that module into it under their script names. The pack's own code, the callbacks named in strings
- * ("PCMenu.ChangeVideoMode") and other modules then reach the C versions. What a port can say as data (the layout
- * of a menu, the action class of a character) is a .def file (Script_RunFile): built into ScrapC, a pack in mods/
- * can replace it (scrapc/<name>, e.g. scrapc/menus/video.def, scrapc/chars/betty.def).
+ * The loader: when the engine loads a pack module (Pack_PreloadLibrary), the module is made in C from its definition
+ * (Script_ModuleMake, src/game/Script/ScriptModule.c) with the C functions ScrapC has for it under their script names.
+ * The callbacks named in strings ("PCMenu.ChangeVideoMode") and other modules then reach the C versions. What a port
+ * can say as data (the layout of a menu, the action class of a character) is a .def file (Script_RunFile): built into
+ * ScrapC, a pack in mods/ can replace it (scrapc/<name>, e.g. scrapc/menus/video.def, scrapc/chars/betty.def).
  */
 #ifndef SCRAP_SCRIPT_H
 #define SCRAP_SCRIPT_H
@@ -21,15 +21,6 @@ typedef struct scriptModule_s {
 	PyMethodDef *methods;		/* put into the module under their names, the table ends with a NULL name */
 } scriptModule_t;
 
-/* a module of the packs is loaded: its C functions go into it */
-void Script_ModuleLoaded(const char *name, PyObject *module);
-/* the other names, list and tuple items and dict values of a module dict that hold old get f (old is the function
- * under key; a tuple is replaced by a new one), and so do the engine callbacks bound to old (at the end of
- * Script_ModuleLoaded) */
-void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *f);
-/* the C functions of a table into the module under their names (and the other names the module bound the Python
- * function to); kept (a list or NULL) keeps the replaced Python functions */
-void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept);
 /* the function object of a C function of the script tables (PyCFunction_New(def, self)); with SCRAP_NULL_CHECK set
  * a wrapper that reports a NULL return without an error (module names it in the report) */
 PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *module);
@@ -38,9 +29,6 @@ PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *mod
 void Script_CheckSilent(const char *kind);
 /* with SCRAP_NULL_CHECK and SCRAP_NULL_CHECK_ENGINE=1: the functions of the engine modules into the same wrapper */
 void Script_CheckEngine(void);
-/* a module of the level that loads: the functions its data file has go into it (src/game/Script/Levels.c); kept
- * holds the replaced functions until the module loads again */
-void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept);
 
 /*
  * a pack module made in C instead of running its .pyc (src/game/Script/ScriptModule.c): when the module has a C
@@ -74,14 +62,15 @@ void CharsNPC_Close(void);
 PyObject *Script_TableFunction(const char *module, const char *name);
 /* whether a table of script_modules has the function name of module */
 byte Script_TableHas(const char *module, const char *name);
-/* the dict writes of Script_Install of a table on a module made in C, with the values in place (the functions the
- * script lacks are added) */
+/* the dict writes the loader made after the .pyc for a table, on a module made in C with the values in place (the
+ * functions the script lacks are added) */
 void Script_TableReplay(PyObject *module, PyMethodDef *methods);
-/* the dict writes of a replaced function on a module made in C: the other names, tuples and dict values that hold
- * cur (Script_ReplaceRefs) and name itself, with the values in place */
+/* the dict writes the loader made after the .pyc for the function cur under name, on a module made in C with the
+ * values in place: the other names, tuples and dict values that hold cur and name itself (OBJLIB 5: they decide the
+ * key order of the module dict until the variables leave the dicts) */
 void Script_ReplaySet(PyObject *dict, const char *name, PyObject *cur);
 /*
- * after a module made in C: the dict writes Script_ModuleLoaded makes after the .pyc, with the values in place, for
+ * after a module made in C: the dict writes the loader made after the .pyc, with the values in place, for
  * every table of script_modules, the level data and the level tables (the functions the script lacks, and the sets
  * that resize a 1.5.2 dict, which decide its key order); defs holds the functions the module code defined, by name
  */

@@ -549,28 +549,6 @@ void cPy_Function_Counts(unsigned long *python, unsigned long *native, unsigned 
 	}
 }
 
-int cPy_Function_Rebind(PyObject *const *old, PyObject *const *f, int n) {
-	int changed = 0;
-	cPy_Function *p = g_PyFunctions;
-
-	if (!p || n <= 0) {
-		return 0;
-	}
-	do {
-		if ((p->flags & PYF_PYTHON) && p->func) {
-			for (int i = 0; i < n; i++) {
-				if (p->func == old[i]) {
-					p->func = f[i];
-					changed++;
-					break;
-				}
-			}
-		}
-		p = p->next;
-	} while (p && p != g_PyFunctions);
-	return changed;
-}
-
 /* registry of C functions: inserted into the tree on construction (static objects) */
 static void cPy_NativeFunc_Insert(cPy_NativeFunc *root, cPy_NativeFunc *node) {
 	cPy_NativeFunc **link = &root;
