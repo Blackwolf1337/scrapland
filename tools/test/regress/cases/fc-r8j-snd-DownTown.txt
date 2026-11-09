@@ -1,8 +1,8 @@
-# r8j (DownTown): the SetSounds and Talk functions of the character sound modules the level preloaded, called directly, with Chars.ActSound, ActSoundLoop, StrSound, StrSoundStop and Scrap.Set recorded (no effect), isPC 0 and 1, error cases
+# r8j (DownTown): the SetSounds and Talk functions of the character sound modules the level preloaded, called directly, with Chars.ActSound, ActSoundLoop, StrSound, StrSoundStop recorded (no effect) and Scrap.Set recorded and passed on (the rail traffic of the level sets ShipPathFmt through it while the case runs), isPC 0 and 1, error cases
 exec(open('fsnd.py').read()) in __import__('Init').__dict__
 I = __import__('Init'); I._hm = lambda m: __import__('sys').modules.has_key(m); result = filter(I._hm, ['BankDirectorSound', 'BankMasterSound', 'BertoSound', 'BettySound', 'BishopSound', 'BossSound', 'CrazyGamblerSound', 'DesktopSound', 'DtritusSound', 'FunctionarySound', 'GateKeeperSound', 'GearSound', 'HumanSound', 'HumphreySound', 'MaintenanceSound', 'MayorSound', 'MessengerSound', 'NurseSound', 'PoliceBossSound', 'PoliceSound', 'RustySound', 'SebastianSound', 'SentinelSound', 'SputnikJunkyardSound', 'SputnikSound', 'TestCSound', 'MercenarySound'])
 result = map(lambda m: (m, __import__(m).isPC), filter(I._hm, ['BankDirectorSound', 'BankMasterSound', 'BertoSound', 'BishopSound', 'BossSound', 'CrazyGamblerSound', 'FunctionarySound', 'GateKeeperSound', 'GearSound', 'HumanSound', 'HumphreySound', 'MayorSound', 'MessengerSound', 'PoliceBossSound', 'PoliceSound', 'SebastianSound', 'SputnikSound']))
-map(lambda n: I._rec2(n[0], n[1]), (('Chars','ActSound'),('Chars','ActSoundLoop'),('Chars','StrSound'),('Chars','StrSoundStop'),('Scrap','Set'))); result = I._takecalls()
+map(lambda n: I._rec2(n[0], n[1]), (('Chars','ActSound'),('Chars','ActSoundLoop'),('Chars','StrSound'),('Chars','StrSoundStop'))); I._keep('Scrap', 'Set'); result = I._takecalls()
 result = I._hm('BankDirectorSound') and (setattr(__import__('BankDirectorSound'), 'isPC', 0), I._takecalls(), __import__('BankDirectorSound').SetSounds('R8JBankDirector'), I._takecalls())[2:]
 result = I._hm('BankDirectorSound') and (setattr(__import__('BankDirectorSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('BankDirectorSound'): (t, getattr(M, t)('R8JBankDirector', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
 result = I._hm('BankDirectorSound') and (setattr(__import__('BankDirectorSound'), 'isPC', 1), I._takecalls(), __import__('BankDirectorSound').SetSounds('R8JBankDirector'), I._takecalls())[2:]
@@ -107,4 +107,4 @@ result = I._hm('SputnikSound') and setattr(__import__('SputnikSound'), 'isPC', 0
 result = I._hm('TestCSound') and (I._takecalls(), __import__('TestCSound').SetSounds('R8JTestC'), I._takecalls())[1:]
 result = I._hm('TestCSound') and (I._takecalls(), map(lambda t, M=__import__('TestCSound'): (t, getattr(M, t)('R8JTestC', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[1:]
 result = I._hm('MercenarySound') and (I._takecalls(), map(lambda c: (c, __import__('MercenarySound').SetSounds(c), I._takecalls()), ('MercenaryA', 'MercenaryB', 'MercenaryC', 'MercenaryD')))[1:]
-I._restore(); result = I._takecalls()
+I._restore(); I._unkeep('Scrap', 'Set'); result = I._takecalls()
