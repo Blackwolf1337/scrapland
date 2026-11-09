@@ -71,7 +71,7 @@ PyObject *Script_Index(PyObject *o, int i) {
 }
 
 PyObject *Script_GetAttr(PyObject *o, const char *name) {
-	PyObject *v = o ? PyObject_GetAttrString(o, (char *)name) : NULL;
+	PyObject *v = o ? ModVar_ObjAttr(o, name) : NULL;
 	return v || !o ? v : Script_Fail();
 }
 
@@ -632,8 +632,9 @@ static PyObject *Lit_Item(scriptLit_t *l) {
 		return Lit_String(l);
 	}
 	if (!strncmp(l->p, "None", 4) && Lit_End(l->p[4])) {
-		/* LOAD_NAME None: the globals (the locals of eval), the builtins; a NameError is left to eval */
-		PyObject *v = PyDict_GetItemString(l->globals, "None");
+		/* LOAD_NAME None: the globals (the locals of eval, a module's through the registry), the builtins; a NameError
+		 * is left to eval */
+		PyObject *v = ModVar_DictGet(l->globals, "None");
 		v = v ? v : PyDict_GetItemString(Lit_BuiltinsDict(l->globals), "None");
 		l->p += 4;
 		return Script_Ref(v);
@@ -785,14 +786,17 @@ int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyOb
 		memcpy(name, p, len);
 		name[len] = '\0';
 		if (!v) {
-			/* LOAD_NAME: the locals, the globals, the builtins */
-			PyObject *w = PyString_InternFromString(name);
-			PyObject *x = !w ? NULL : locals && PyDict_GetItem(locals, w) ? PyDict_GetItem(locals, w) :
-				PyDict_GetItem(globals, w) ? PyDict_GetItem(globals, w) : PyDict_GetItem(b, w);
-			if (w && !x) {
-				PyErr_SetObject(PyExc_NameError, w);
+			/* LOAD_NAME: the locals, the globals (a module's through the registry), the builtins */
+			PyObject *x = locals ? ModVar_DictGet(locals, name) : NULL;
+			x = x || locals == globals ? x : ModVar_DictGet(globals, name);
+			x = x ? x : PyDict_GetItemString(b, name);
+			if (!x) {
+				PyObject *w = PyString_InternFromString(name);
+				if (w) {
+					PyErr_SetObject(PyExc_NameError, w);
+				}
+				Py_XDECREF(w);
 			}
-			Py_XDECREF(w);
 			v = Script_Ref(x);
 		} else {
 			PyObject *x = Script_GetAttr(v, name);

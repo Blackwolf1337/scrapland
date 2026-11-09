@@ -1580,9 +1580,10 @@ static const char *const def_commands[] = { "style", "item", "use", "set", "lr",
  * text or a number; or a variable of the entity (TARGET_ENTITY) */
 static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char *value, byte quoted) {
 	if (target == TARGET_OBJECT) {
-		/* an attribute of a Python object, as `obj.var = value` of a script */
+		/* an attribute of a Python object, as `obj.var = value` of a script (a pack module's variable through the
+		 * registry) */
 		PyObject *v = Def_Value(m, value, quoted);
-		if (v && m->object && PyObject_SetAttrString(m->object, (char *)var, v) < 0) {
+		if (v && m->object && ModVar_SetObjAttr(m->object, var, v) < 0) {
 			if (m->stop) {
 				/* an entity handle the engine refuses without an exception: ceval's SystemError */
 				if (!PyErr_Occurred()) {
