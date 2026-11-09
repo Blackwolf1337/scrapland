@@ -173,10 +173,10 @@ def entries(lines, engine=False):
 			depth += {'{': 1, '}': -1}.get(text[i], 0)
 			i += 1
 		a = ARITY.search(text, m.end(), i)
-		p = None if a or not engine else PARSE.search(text, m.end(), i)
+		# formats tried in turn (Mode_Parse(...) || (PyErr_Clear(), Mode_Parse(...))): a count only when all agree
+		p = [] if a or not engine else [parse_counts(f) for f in PARSE.findall(text, m.end(), i)]
 		if p:
-			lo, hi = parse_counts(p.group(1))
-			out[m.group(1)] = hi if lo == hi else None
+			out[m.group(1)] = p[0][1] if all(c == (p[0][1], p[0][1]) for c in p) else None
 		else:
 			out[m.group(1)] = int(a.group(1)) if a else None
 		if PYENTRY.search(text, m.end(), i):

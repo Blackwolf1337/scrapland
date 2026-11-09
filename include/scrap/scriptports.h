@@ -1373,6 +1373,163 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
 	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
 
+/* PyInterface/SAIPy.c */
+PORT_DECL(SAI, AnalizeMap) /* 1 */
+PORT_DECL(SAI, AnalizeGraph) /* ? */
+PORT_DECL(SAI, AnalizeGraph2D) /* ? */
+PORT_DECL(SAI, AnalizeTraffic) /* 0 */
+PORT_DECL(SAI, BuildGraph) /* 4 */
+PORT_DECL(SAI, BuildGraph2D) /* 4 */
+PORT_DECL(SAI, SetStateVehicle) /* ? */
+PORT_DECL(SAI, SetStateChar) /* ? */
+PORT_DECL(SAI, GetStateVehicle) /* 1 */
+PORT_DECL(SAI, GetStateChar) /* 1 */
+PORT_DECL(SAI, EnableAIVehicle) /* ? */
+PORT_DECL(SAI, EnableAIChar) /* 3 */
+PORT_DECL(SAI, IniAI) /* 2 */
+PORT_DECL(SAI, GetNextRacePoint) /* 3 */
+PORT_DECL(SAI, GetNearestItemLife) /* 1 */
+PORT_DECL(SAI, GetRandomVisibilityPoint) /* ? */
+PORT_DECL(SAI, GetReposCharPos) /* ? */
+PORT_DECL(SAI, InitVehicleRace) /* ? */
+PORT_DECL(SAI, AddVehicleRace) /* 1 */
+PORT_DECL(SAI, SetRotStaticObj) /* 3 */
+PORT_DECL(SAI, SetInertia) /* 2 */
+PORT_DECL(SAI, GetOD) /* ? */
+#define PORTS_PyInterface_SAIPy \
+	PORT_DEF(SAI, AnalizeMap, SAI_AnalyzeMap) \
+	PORT_DEF(SAI, AnalizeGraph, SAI_AnalyzeGraph) \
+	PORT_DEF(SAI, AnalizeGraph2D, SAI_AnalyzeGraph2D) \
+	PORT_DEF(SAI, AnalizeTraffic, SAI_AnalyzeTraffic) \
+	PORT_DEF(SAI, BuildGraph, SAI_BuildGraph) \
+	PORT_DEF(SAI, BuildGraph2D, SAI_BuildGraph2D) \
+	PORT_DEF(SAI, SetStateVehicle, SAI_SetStateVehicle) \
+	PORT_DEF(SAI, SetStateChar, SAI_SetStateChar) \
+	PORT_DEF(SAI, GetStateVehicle, SAI_GetStateVehicle) \
+	PORT_DEF(SAI, GetStateChar, SAI_GetStateChar) \
+	PORT_DEFP(SAI, EnableAIVehicle, SAI_EnableAIVehicle) \
+	PORT_DEF(SAI, EnableAIChar, SAI_EnableAIChar) \
+	PORT_DEF(SAI, IniAI, SAI_IniAI) \
+	PORT_DEF(SAI, GetNextRacePoint, SAI_GetNextRacePoint) \
+	PORT_DEF(SAI, GetNearestItemLife, SAI_GetNearestItemLife) \
+	PORT_DEF(SAI, GetRandomVisibilityPoint, SAI_GetRandomVisibilityPoint) \
+	PORT_DEF(SAI, GetReposCharPos, SAI_GetReposCharPos) \
+	PORT_DEF(SAI, InitVehicleRace, SAI_InitVehicleRace) \
+	PORT_DEF(SAI, AddVehicleRace, SAI_AddVehicleRace) \
+	PORT_DEF(SAI, SetRotStaticObj, SAI_SetRotStaticObj) \
+	PORT_DEF(SAI, SetInertia, SAI_SetInertia) \
+	PORT_DEF(SAI, GetOD, SAI_GetOD)
+
+/* PyInterface/SActPy.c */
+PORT_DECL(SAct, CreateClass) /* 1 */
+PORT_DECL(SAct, DelClass) /* 1 */
+PORT_DECL(SAct, GetClass) /* 1 */
+PORT_DECL(SAct, SetCls) /* ? */
+PORT_DECL(SAct, GetCls) /* ? */
+PORT_DECL(SAct, CreateAction) /* 1 */
+PORT_DECL(SAct, GetAction) /* 1 */
+PORT_DECL(SAct, SetAct) /* ? */
+PORT_DECL(SAct, GetAct) /* ? */
+PORT_DECL(SAct, DumpEvents) /* 1 */
+#define PORTS_PyInterface_SActPy \
+	PORT_DEF(SAct, CreateClass, SAct_CreateClass) \
+	PORT_DEF(SAct, DelClass, SAct_DelClass) \
+	PORT_DEF(SAct, GetClass, SAct_GetClass) \
+	PORT_DEF(SAct, SetCls, SAct_SetCls) \
+	PORT_DEF(SAct, GetCls, SAct_GetCls) \
+	PORT_DEF(SAct, CreateAction, SAct_CreateAction) \
+	PORT_DEF(SAct, GetAction, SAct_GetAction) \
+	PORT_DEF(SAct, SetAct, SAct_SetAct) \
+	PORT_DEF(SAct, GetAct, SAct_GetAct) \
+	PORT_DEF(SAct, DumpEvents, SAct_DumpEvents)
+
+/* PyInterface/SLogic.c */
+PORT_DECL(SLogic, SendSentinelToWatch) /* 1 */
+PORT_DECL(SLogic, GearAttack) /* 1 */
+PORT_DECL(SLogic, SetCharState) /* 3 */
+PORT_DECL(SLogic, IsEnemyActive) /* 0 */
+PORT_DECL(SLogic, GetNearestShip) /* ? */
+PORT_DECL(SLogic, SetOnFloor) /* 1 */
+PORT_DECL(SLogic, Flash) /* 2 */
+PORT_DECL(SLogic, SetShipToRegenerate) /* 3 */
+PORT_DECL(SLogic, SetDominationZones) /* 1 */
+PORT_DECL(SLogic, ChangeZoneState) /* 2 */
+PORT_DECL(SLogic, ChangeBatonState) /* 2 */
+PORT_DECL(SLogic, UpdateTauntEndTime) /* ? */
+#define PORTS_PyInterface_SLogic \
+	PORT_DEF(SLogic, SendSentinelToWatch, SLogic_SendSentinelToWatch) \
+	PORT_DEF(SLogic, GearAttack, SLogic_GearAttack) \
+	PORT_DEF(SLogic, SetCharState, SLogic_SetCharState) \
+	PORT_DEF(SLogic, IsEnemyActive, SLogic_IsEnemyActive) \
+	PORT_DEF(SLogic, GetNearestShip, SLogic_GetNearestShip) \
+	PORT_DEF(SLogic, SetOnFloor, SLogic_SetOnFloor) \
+	PORT_DEF(SLogic, Flash, SLogic_Flash) \
+	PORT_DEF(SLogic, SetShipToRegenerate, SLogic_SetShipToRegenerate) \
+	PORT_DEF(SLogic, SetDominationZones, SLogic_SetDominationZones) \
+	PORT_DEF(SLogic, ChangeZoneState, SLogic_ChangeZoneState) \
+	PORT_DEF(SLogic, ChangeBatonState, SLogic_ChangeBatonState) \
+	PORT_DEF(SLogic, UpdateTauntEndTime, SLogic_UpdateTauntEndTime)
+
+/* PyInterface/SVecPy.c */
+PORT_DECL(SVec, Add) /* 2 */
+PORT_DECL(SVec, Sub) /* 2 */
+PORT_DECL(SVec, Mod) /* 1 */
+PORT_DECL(SVec, ModSqr) /* 1 */
+PORT_DECL(SVec, Norm) /* 1 */
+PORT_DECL(SVec, Prod) /* 2 */
+PORT_DECL(SVec, DProd) /* 2 */
+PORT_DECL(SVec, CProd) /* 2 */
+PORT_DECL(SVec, Rotate3D) /* 2 */
+PORT_DECL(SVec, GetAngle) /* 2 */
+PORT_DECL(SVec, GetRotAng) /* ? */
+PORT_DECL(SVec, NormAng) /* 1 */
+#define PORTS_PyInterface_SVecPy \
+	PORT_DEF(SVec, Add, SVec_Add) \
+	PORT_DEF(SVec, Sub, SVec_Sub) \
+	PORT_DEF(SVec, Mod, SVec_Mod) \
+	PORT_DEF(SVec, ModSqr, SVec_ModSqr) \
+	PORT_DEF(SVec, Norm, SVec_Norm) \
+	PORT_DEF(SVec, Prod, SVec_Prod) \
+	PORT_DEF(SVec, DProd, SVec_DProd) \
+	PORT_DEF(SVec, CProd, SVec_CProd) \
+	PORT_DEF(SVec, Rotate3D, SVec_Rotate3D) \
+	PORT_DEF(SVec, GetAngle, SVec_GetAngle) \
+	PORT_DEF(SVec, GetRotAng, SVec_GetRotAng) \
+	PORT_DEF(SVec, NormAng, SVec_NormAng)
+
+/* PyInterface/SWeapPy.c */
+PORT_DECL(SWeap, GetNWeap) /* 0 */
+PORT_DECL(SWeap, GetNAmmo) /* 0 */
+PORT_DECL(SWeap, InitWeap) /* 1 */
+PORT_DECL(SWeap, InitAmmo) /* 1 */
+PORT_DECL(SWeap, GetFAmmo) /* 2 */
+PORT_DECL(SWeap, GetSAmmo) /* 2 */
+PORT_DECL(SWeap, SetFAmmo) /* 3 */
+PORT_DECL(SWeap, SetSAmmo) /* 3 */
+PORT_DECL(SWeap, GetFWeap) /* 2 */
+PORT_DECL(SWeap, GetSWeap) /* 2 */
+PORT_DECL(SWeap, SetFWeap) /* 3 */
+PORT_DECL(SWeap, SetSWeap) /* 3 */
+PORT_DECL(SWeap, FillPriority) /* 0 */
+PORT_DECL(SWeap, GetFirstiWeap) /* 0 */
+PORT_DECL(SWeap, NetExec) /* ? */
+#define PORTS_PyInterface_SWeapPy \
+	PORT_DEF(SWeap, GetNWeap, SWeap_GetNWeap) \
+	PORT_DEF(SWeap, GetNAmmo, SWeap_GetNAmmo) \
+	PORT_DEF(SWeap, InitWeap, SWeap_InitWeap) \
+	PORT_DEF(SWeap, InitAmmo, SWeap_InitAmmo) \
+	PORT_DEF(SWeap, GetFAmmo, SWeap_GetFAmmo) \
+	PORT_DEF(SWeap, GetSAmmo, SWeap_GetSAmmo) \
+	PORT_DEF(SWeap, SetFAmmo, SWeap_SetFAmmo) \
+	PORT_DEF(SWeap, SetSAmmo, SWeap_SetSAmmo) \
+	PORT_DEF(SWeap, GetFWeap, SWeap_GetFWeap) \
+	PORT_DEF(SWeap, GetSWeap, SWeap_GetSWeap) \
+	PORT_DEF(SWeap, SetFWeap, SWeap_SetFWeap) \
+	PORT_DEF(SWeap, SetSWeap, SWeap_SetSWeap) \
+	PORT_DEF(SWeap, FillPriority, SWeap_FillPriority) \
+	PORT_DEF(SWeap, GetFirstiWeap, SWeap_GetFirstiWeap) \
+	PORT_DEF(SWeap, NetExec, SWeap_NetExec)
+
 /* PyInterface/ScrapPy.c */
 PORT_DECL(Scrap, Print) /* 1 */
 PORT_DECL(Scrap, ConsoleOut) /* 1 */
@@ -1471,7 +1628,7 @@ PORT_DECL(Scrap, SetMoney) /* 1 */
 PORT_DECL(Scrap, AddParkingZone) /* 3 */
 PORT_DECL(Scrap, GetFarestParked) /* ? */
 PORT_DECL(Scrap, GetNearestParked) /* ? */
-PORT_DECL(Scrap, AddItem) /* 3 */
+PORT_DECL(Scrap, AddItem) /* ? */
 PORT_DECL(Scrap, InitLoading) /* 0 */
 PORT_DECL(Scrap, EndLoading) /* 0 */
 PORT_DECL(Scrap, Exit) /* 0 */
@@ -5150,6 +5307,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2458
+#define PORT_COUNT 2529
 
 #endif

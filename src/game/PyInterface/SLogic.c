@@ -7,6 +7,7 @@
 #include "scrap/global.h"
 #include "scrap/logic.h"
 #include "scrap/python.h"
+#include "scrap/scriptapi.h"
 #include "scrap/vehicleentity.h"
 
 /* the four traffic lists GetNearestShip searches (pointer table) */
@@ -18,72 +19,57 @@ static const char *const shipLists[] = { "Traffic", "EnemiesTraffic", "FightingT
  * missing entity still does so: tools/test/golden records it. differs from the original: an entity that is no
  * WalkChar raises a TypeError, a WalkChar without a BaseLogic a ValueError.
  */
-static PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
-	char *name, *targetName;
+API_FN(SLogic, SetCharState) {
+	const char *name, *targetName;
 	int state;
-	char msg[0x100];
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sis", &name, &state, &targetName)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "sis", &name, &state, &targetName)) {
+		return 0;
 	}
 	cEntity *e = World_FindEntity(name);
 	if (!e) {
-		return NULL;
+		return 0;
 	}
 	if (!Entity_IsType(e, TYEN_WALKCHAR)) {
-		Str_Printf(msg, sizeof(msg), "SLogic.SetCharState: '%.128s' is no WalkChar", name);
-		PyErr_SetString(PyExc_TypeError, msg);
-		return NULL;
+		return Native_Raise(NE_TYPE, "SLogic.SetCharState: '%.128s' is no WalkChar", name);
 	}
 	cEntity *target = World_FindEntity(targetName);
 	void *actCtrl = WithLife_GetActCtrl(e);
 	CHECK(actCtrl);
 	cLocalLogic *logic = Logic_GetLocalLogic(e);
 	if (!logic) {
-		Str_Printf(msg, sizeof(msg), "SLogic.SetCharState: '%.128s' has no BaseLogic", name);
-		PyErr_SetString(PyExc_ValueError, msg);
-		return NULL;
+		return Native_Raise(NE_VALUE, "SLogic.SetCharState: '%.128s' has no BaseLogic", name);
 	}
 	Logic_SetState(logic, state, target);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* void SendSentinelToWatch(Pos) : Envia a un centinela a inspeccionar una posicion */
-static PyObject *SLogic_SendSentinelToWatch(PyObject *self, PyObject *args) {
+API_FN(SLogic, SendSentinelToWatch) {
 	vec3_t pos;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)", &pos.x, &pos.y, &pos.z)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "(fff)", &pos.x, &pos.y, &pos.z)) {
+		return 0;
 	}
 	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, &pos);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* void GearAttack(Entity) : Envia a un Gear a atacar a una entidad (NULL if there is none of that name) */
-static PyObject *SLogic_GearAttack(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(SLogic, GearAttack) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, World_FindEntity(name), 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* int IsEnemyActive() : Indica si hay un enemigo activo, mirando la list de enemigos y el tráfico. */
-static PyObject *SLogic_IsEnemyActive(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SLogic, IsEnemyActive) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
-	if (cEntityList_GetFirst(cWorld_GetList(g_pWorld, "EnemiesTraffic")) ||
-		cEntityList_GetFirst(cWorld_GetList(g_pWorld, "Enemies"))) {
-		return Py_BuildValue("i", 1);
-	}
-	return Py_BuildValue("i", 0);
+	return Api_Build(out, "i", cEntityList_GetFirst(cWorld_GetList(g_pWorld, "EnemiesTraffic")) ||
+		cEntityList_GetFirst(cWorld_GetList(g_pWorld, "Enemies")));
 }
 
 /*
@@ -91,13 +77,11 @@ static PyObject *SLogic_IsEnemyActive(PyObject *self, PyObject *args) {
  * As compiled: the first car of a list counts as result before any distance check, and a list entry that is
  * not a Car is used through a NULL pointer (crash in the original as here).
  */
-static PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
+API_FN(SLogic, GetNearestShip) {
 	vec3_t pos;
-	char *exclude = "";
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)|s", &pos.x, &pos.y, &pos.z, &exclude)) {
-		return NULL;
+	const char *exclude = "";
+	if (!Mode_Parse(a, n, "(fff)|s", &pos.x, &pos.y, &pos.z, &exclude)) {
+		return 0;
 	}
 	const char *nearest = "";
 	float best = 3.4028234663852886e+38f; /* FLT_MAX */
@@ -127,105 +111,84 @@ static PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
 			}
 		}
 	}
-	return Py_BuildValue("s", nearest);
+	return Api_Build(out, "s", nearest);
 }
 
 /* void SetOnFloor(Entity) : Pone una entidad en el suelo; 1 if it worked */
-static PyObject *SLogic_SetOnFloor(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Logic_SetOnFloor(World_FindEntity(name)) != 0);
+API_FN(SLogic, SetOnFloor) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && Api_Build(out, "i", Logic_SetOnFloor(World_FindEntity(name)) != 0);
 }
 
 /* void Flash((x,y,z),radius) : flash at a position */
-static PyObject *SLogic_Flash(PyObject *self, PyObject *args) {
-	float x, y, z, radius;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)f", &x, &y, &z, &radius)) {
-		return NULL;
-	}
-	vec3_t pos = { x, y, z };
-	return Py_BuildValue("i", Logic_Flash(&pos, radius, -1));
+API_FN(SLogic, Flash) {
+	vec3_t pos;
+	float radius;
+	return Mode_Parse(a, n, "(fff)f", &pos.x, &pos.y, &pos.z, &radius) &&
+		Api_Build(out, "i", Logic_Flash(&pos, radius, -1));
 }
 
 /* void SetShipToRegenerate(shipName, regSpeed, regEndSpeed): Pone una nave a regenerarse. Not a Car: NULL ship. */
-static PyObject *SLogic_SetShipToRegenerate(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(SLogic, SetShipToRegenerate) {
+	const char *name;
 	float speed, endSpeed;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sff", &name, &speed, &endSpeed)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "sff", &name, &speed, &endSpeed)) {
+		return 0;
 	}
 	cEntity *e = World_FindEntity(name);
 	if (e) {
 		ShipRegen_Set(&g_pWorld->logic.shipRegen, Entity_IsType(e, TYEN_CAR) ? e : NULL, speed, endSpeed);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-/* void SetDominationZones(zonesList): Establece la list de las zones de dominación (WithLife entities by name) */
-static PyObject *SLogic_SetDominationZones(PyObject *self, PyObject *args) {
-	PyObject *zonesList;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &zonesList)) {
-		return NULL;
+/*
+ * void SetDominationZones(zonesList): Establece la list de las zones de dominación (WithLife entities by name). A list
+ * that holds a value of no native kind (an NV_OBJ list) has an item that is no text: its CHECK fails before any zone
+ * is added (the original added the zones before that item first)
+ */
+API_FN(SLogic, SetDominationZones) {
+	const nativeVal_t *zones;
+	if (!Mode_Parse(a, n, "O", &zones)) {
+		return 0;
 	}
-	CHECK(PyList_Check(zonesList) && "El argumento pasado no es una lista");
-	int size = PyList_Size(zonesList);
-	CHECK(size > 0 && "El tamaño de la lista es inválido");
-	for (int i = 0; i < size; i++) {
-		PyObject *elem = PyList_GetItem(zonesList, i);
-		if (!elem) {
-			continue;
-		}
-		CHECK(PyString_Check(elem) && "El elemento no es un string");
-		char *name = PyString_AsString(elem);
-		CHECK(name && "String invalido");
-		cEntity *e = World_FindEntity(name);
+	CHECK(zones->type == NV_LIST && "El argumento pasado no es una lista");
+	CHECK(zones->n > 0 && "El tamaño de la lista es inválido");
+	for (int i = 0; i < zones->n; i++) {
+		const nativeVal_t *elem = &zones->items[i];
+		CHECK(elem->type == NV_STR && "El elemento no es un string");
+		cEntity *e = World_FindEntity(Native_Text(elem));
 		CHECK(e && Entity_IsType(e, TYEN_WITH_LIFE) && "La entidad no es un 'WithLifeEntity'");
 		Domination_AddZone(e);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* void ChangeZoneState(zoneId, state): Pone el estado de una zona de dominación */
-static PyObject *SLogic_ChangeZoneState(PyObject *self, PyObject *args) {
+API_FN(SLogic, ChangeZoneState) {
 	int zone, state;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ii", &zone, &state)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ii", &zone, &state)) {
+		return 0;
 	}
 	Domination_SetZoneState(zone, state);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* void ChangeBatonState(pos, state): Actualiza el estado del testigo en el modo dominación */
-static PyObject *SLogic_ChangeBatonState(PyObject *self, PyObject *args) {
+API_FN(SLogic, ChangeBatonState) {
 	vec3_t pos;
 	int state;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)i", &pos.x, &pos.y, &pos.z, &state)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "(fff)i", &pos.x, &pos.y, &pos.z, &state)) {
+		return 0;
 	}
 	Domination_SetBatonState(&pos, state);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* void UpdateTauntEndTime(time): Tiempo final del taunt. The original parses no arguments at all. */
-static PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+API_FN(SLogic, UpdateTauntEndTime) {
 	Taunts_UpdateEndTime(&g_pWorld->logic);
-	return Py_ReturnNone();
+	return 1;
 }
 
 static char str_PyDoc_SLogic_ChangeBatonState[];
@@ -379,3 +342,4 @@ static char str_PyDoc_SLogic_ChangeBatonState[] =
 
 static char str_PyDoc_SLogic_UpdateTauntEndTime[60] = "void UpdateTauntEndTime(time): Tiempo final del taunt";
 
+PORTS(PyInterface_SLogic)

@@ -4149,10 +4149,12 @@ static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list 
 		const char **p = va_arg(*va, const char **);
 		if (v->type != NV_STR) {
 			msg = "string";
-		} else if (strlen(Native_Text(v)) != (size_t)v->n) {
-			msg = "string without null bytes";
 		} else {
+			/* convertsimple1 stores the text before it checks for null bytes (SAI's state report prints it) */
 			*p = Native_Text(v);
+			if (strlen(*p) != (size_t)v->n) {
+				msg = "string without null bytes";
+			}
 		}
 	} else {
 		CHECK(c == 'O');
