@@ -5,295 +5,207 @@
  */
 #include "scrap/net.h"
 #include "scrap/python.h"
+#include "scrap/scriptapi.h"
 
 /* ModifyUsrData(arg) : modifica desde el servidor los datos locales; NULL without a server (golden records it) */
-static PyObject *SNet_ModifyUsrData(PyObject *self, PyObject *args) {
+API_FN(SNet, ModifyUsrData) {
 	int arg;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &arg) || !Net_IsServer()) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &arg) || !Net_IsServer()) {
+		return 0;
 	}
-	return Py_BuildValue("i", Net_ModifyUsrData(arg) != 0);
+	return Api_Build(out, "i", Net_ModifyUsrData(arg) != 0);
 }
 
 /* ServerChangeLevel(level) */
-static PyObject *SNet_ServerChangeLevel(PyObject *self, PyObject *args) {
-	char *level;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &level)) {
-		return NULL;
+API_FN(SNet, ServerChangeLevel) {
+	const char *level;
+	if (!Mode_Parse(a, n, "s", &level)) {
+		return 0;
 	}
 	if (!Net_IsServer()) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return Py_BuildValue("i", Net_ServerChangeLevel(level) != 0);
+	return Api_Build(out, "i", Net_ServerChangeLevel(level) != 0);
 }
 
 /* AddResource(name) */
-static PyObject *SNet_AddResource(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(SNet, AddResource) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	if (!Net_IsServer()) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return Py_BuildValue("i", Net_AddResource(name));
+	return Api_Build(out, "i", Net_AddResource(name));
 }
 
 /* InitServer(name, a, b) */
-static PyObject *SNet_InitServer(PyObject *self, PyObject *args) {
-	char *name;
-	int a, b;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sii", &name, &a, &b)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_InitServer(name, a, b, 0) != 0);
+API_FN(SNet, InitServer) {
+	const char *name;
+	int ia, ib;
+	return Mode_Parse(a, n, "sii", &name, &ia, &ib) && Api_Build(out, "i", Net_InitServer(name, ia, ib, 0) != 0);
 }
 
 /* CloseServer(msg) */
-static PyObject *SNet_CloseServer(PyObject *self, PyObject *args) {
-	char *msg;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &msg)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_CloseServer(msg) != 0);
+API_FN(SNet, CloseServer) {
+	const char *msg;
+	return Mode_Parse(a, n, "s", &msg) && Api_Build(out, "i", Net_CloseServer(msg) != 0);
 }
 
 /* IsServer() : NOTA: es para depuracion, mejor use Scrap.GetNetFlags() */
-static PyObject *SNet_IsServer(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_IsServer() != 0);
+API_FN(SNet, IsServer) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", Net_IsServer() != 0);
 }
 
 /* IsDedicated() : bit 2 of the application flags */
-static PyObject *SNet_IsDedicated(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", (int)((g_pApp->flags >> 2) & 1));
+API_FN(SNet, IsDedicated) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", (int)((g_pApp->flags >> 2) & 1));
 }
 
 /* GetServerData() : (name, map, port), ("", "", 0) without a server */
-static PyObject *SNet_GetServerData(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SNet, GetServerData) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	if (!Net_IsServer()) {
-		return Py_BuildValue("ssi", "", "", 0);
+		return Api_Build(out, "ssi", "", "", 0);
 	}
 	/* called in this order by the original */
 	int port = Net_GetServerPort();
 	const char *map = Net_GetServerMap();
 	const char *name = Net_GetServerName();
-	return Py_BuildValue("ssi", name, map, port);
+	return Api_Build(out, "ssi", name, map, port);
 }
 
 /* GetBotName() */
-static PyObject *SNet_GetBotName(PyObject *self, PyObject *args) {
+API_FN(SNet, GetBotName) {
 	char buf[128];
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Net_GetBotName(buf);
-	return Py_BuildValue("s", buf);
+	return Api_Build(out, "s", buf);
 }
 
 /* GetObjName() */
-static PyObject *SNet_GetObjName(PyObject *self, PyObject *args) {
+API_FN(SNet, GetObjName) {
 	char buf[128];
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Net_GetObjName(buf);
-	return Py_BuildValue("s", buf);
+	return Api_Build(out, "s", buf);
 }
 
 /* Kick(player) */
-static PyObject *SNet_Kick(PyObject *self, PyObject *args) {
-	char *player;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &player)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_Kick(player) != 0);
+API_FN(SNet, Kick) {
+	const char *player;
+	return Mode_Parse(a, n, "s", &player) && Api_Build(out, "i", Net_Kick(player) != 0);
 }
 
 /* InitBrowser([a[, address]]) : address default "255.255.255.255" */
-static PyObject *SNet_InitBrowser(PyObject *self, PyObject *args) {
-	int a = 0;
-	char *address = "255.255.255.255";
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "|is", &a, &address)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_InitBrowser(a, address));
+API_FN(SNet, InitBrowser) {
+	int ia = 0;
+	const char *address = "255.255.255.255";
+	return Mode_Parse(a, n, "|is", &ia, &address) && Api_Build(out, "i", Net_InitBrowser(ia, address));
 }
 
 /* DoneBrowser() */
-static PyObject *SNet_DoneBrowser(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_DoneBrowser());
+API_FN(SNet, DoneBrowser) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", Net_DoneBrowser());
 }
 
 /* GetMyClientShip() : name of the own ship on a client, else 0 */
-static PyObject *SNet_GetMyClientShip(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SNet, GetMyClientShip) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	if (Net_IsClient()) {
 		cNetClient *client = Net_GetClient();
 		if (client && client->ship) {
-			return Py_BuildValue("s", client->ship->name);
+			return Api_Build(out, "s", client->ship->name);
 		}
 	}
-	return Py_BuildValue("i", 0);
+	return Api_Build(out, "i", 0);
 }
 
 /* InitClient(address, port) */
-static PyObject *SNet_InitClient(PyObject *self, PyObject *args) {
-	char *address;
+API_FN(SNet, InitClient) {
+	const char *address;
 	int port;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "si", &address, &port)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_InitClient(address, port) != 0);
+	return Mode_Parse(a, n, "si", &address, &port) && Api_Build(out, "i", Net_InitClient(address, port) != 0);
 }
 
 /* CloseClient([msg]) */
-static PyObject *SNet_CloseClient(PyObject *self, PyObject *args) {
-	char *msg = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "|s", &msg)) {
-		return NULL;
+API_FN(SNet, CloseClient) {
+	const char *msg = NULL;
+	if (!Mode_Parse(a, n, "|s", &msg)) {
+		return 0;
 	}
 	if (msg) {
-		return Py_BuildValue("i", Net_CloseClientMsg(msg) != 0);
+		return Api_Build(out, "i", Net_CloseClientMsg(msg) != 0);
 	}
-	return Py_BuildValue("i", Net_CloseClient() != 0);
+	return Api_Build(out, "i", Net_CloseClient() != 0);
 }
 
 /* IsClient() */
-static PyObject *SNet_IsClient(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_IsClient() != 0);
+API_FN(SNet, IsClient) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", Net_IsClient() != 0);
 }
 
 /* GetClientData() : (name, port), ("", 0) without a client */
-static PyObject *SNet_GetClientData(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SNet, GetClientData) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	if (!Net_IsClient()) {
-		return Py_BuildValue("si", "", 0);
+		return Api_Build(out, "si", "", 0);
 	}
 	int port = Net_GetClientPort();
-	return Py_BuildValue("si", Net_GetClientName(), port);
+	return Api_Build(out, "si", Net_GetClientName(), port);
 }
 
 /* SendUsrString(arg, text) */
-static PyObject *SNet_SendUsrString(PyObject *self, PyObject *args) {
+API_FN(SNet, SendUsrString) {
 	int arg;
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &arg, &text)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_SendUsrString(text, arg) != 0);
+	const char *text;
+	return Mode_Parse(a, n, "is", &arg, &text) && Api_Build(out, "i", Net_SendUsrString(text, arg) != 0);
 }
 
 /* SendChatString(arg, text) */
-static PyObject *SNet_SendChatString(PyObject *self, PyObject *args) {
+API_FN(SNet, SendChatString) {
 	int arg;
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &arg, &text)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_SendChatString(text, arg) != 0);
+	const char *text;
+	return Mode_Parse(a, n, "is", &arg, &text) && Api_Build(out, "i", Net_SendChatString(text, arg) != 0);
 }
 
 /* SendCtrlString(text) */
-static PyObject *SNet_SendCtrlString(PyObject *self, PyObject *args) {
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_SendCtrlString(text) != 0);
+API_FN(SNet, SendCtrlString) {
+	const char *text;
+	return Mode_Parse(a, n, "s", &text) && Api_Build(out, "i", Net_SendCtrlString(text) != 0);
 }
 
 /* SendMasterString(text) */
-static PyObject *SNet_SendMasterString(PyObject *self, PyObject *args) {
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_SendMasterString(text));
+API_FN(SNet, SendMasterString) {
+	const char *text;
+	return Mode_Parse(a, n, "s", &text) && Api_Build(out, "i", Net_SendMasterString(text));
 }
 
 /* IsMaster() : 1 si esta activado el sistema cliente */
-static PyObject *SNet_IsMaster(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_IsMaster());
+API_FN(SNet, IsMaster) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", Net_IsMaster());
 }
 
 /* PingInetSvrs() */
-static PyObject *SNet_PingInetSvrs(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_PingInetSvrs());
+API_FN(SNet, PingInetSvrs) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", Net_PingInetSvrs());
 }
 
 /* GetPing(player) */
-static PyObject *SNet_GetPing(PyObject *self, PyObject *args) {
-	char *player;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &player)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Net_GetPing(player));
+API_FN(SNet, GetPing) {
+	const char *player;
+	return Mode_Parse(a, n, "s", &player) && Api_Build(out, "i", Net_GetPing(player));
 }
 
 static char str_PyDoc_SNet_AddResource[];
@@ -598,3 +510,4 @@ static char str_PyDoc_SNet_PingInetSvrs[] =
 
 static char str_PyDoc_SNet_GetPing[60] = "GetPing(EntityName) : Devuelve el ping de un cliente.";
 
+PORTS(PyInterface_SNetPy)

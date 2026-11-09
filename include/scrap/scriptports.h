@@ -1431,6 +1431,59 @@ PORT_DECL(SInput, CheckPadButton) /* 2 */
 	PORT_DEF(SInput, ResetToSplit, SInput_ResetToSplit) \
 	PORT_DEF(SInput, CheckPadButton, SInput_CheckPadButton)
 
+/* PyInterface/SNetPy.c */
+PORT_DECL(SNet, InitServer) /* 3 */
+PORT_DECL(SNet, CloseServer) /* 1 */
+PORT_DECL(SNet, ServerChangeLevel) /* 1 */
+PORT_DECL(SNet, IsServer) /* 0 */
+PORT_DECL(SNet, IsDedicated) /* 0 */
+PORT_DECL(SNet, GetServerData) /* 0 */
+PORT_DECL(SNet, AddResource) /* 1 */
+PORT_DECL(SNet, ModifyUsrData) /* 1 */
+PORT_DECL(SNet, GetBotName) /* 0 */
+PORT_DECL(SNet, GetObjName) /* 0 */
+PORT_DECL(SNet, Kick) /* 1 */
+PORT_DECL(SNet, InitClient) /* 2 */
+PORT_DECL(SNet, CloseClient) /* ? */
+PORT_DECL(SNet, IsClient) /* 0 */
+PORT_DECL(SNet, GetClientData) /* 0 */
+PORT_DECL(SNet, GetMyClientShip) /* 0 */
+PORT_DECL(SNet, InitBrowser) /* ? */
+PORT_DECL(SNet, DoneBrowser) /* 0 */
+PORT_DECL(SNet, SendUsrString) /* 2 */
+PORT_DECL(SNet, SendChatString) /* 2 */
+PORT_DECL(SNet, SendCtrlString) /* 1 */
+PORT_DECL(SNet, SendMasterString) /* 1 */
+PORT_DECL(SNet, IsMaster) /* 0 */
+PORT_DECL(SNet, PingInetSvrs) /* 0 */
+PORT_DECL(SNet, GetPing) /* 1 */
+#define PORTS_PyInterface_SNetPy \
+	PORT_DEF(SNet, InitServer, SNet_InitServer) \
+	PORT_DEF(SNet, CloseServer, SNet_CloseServer) \
+	PORT_DEF(SNet, ServerChangeLevel, SNet_ServerChangeLevel) \
+	PORT_DEF(SNet, IsServer, SNet_IsServer) \
+	PORT_DEF(SNet, IsDedicated, SNet_IsDedicated) \
+	PORT_DEF(SNet, GetServerData, SNet_GetServerData) \
+	PORT_DEF(SNet, AddResource, SNet_AddResource) \
+	PORT_DEF(SNet, ModifyUsrData, SNet_ModifyUsrData) \
+	PORT_DEF(SNet, GetBotName, SNet_GetBotName) \
+	PORT_DEF(SNet, GetObjName, SNet_GetObjName) \
+	PORT_DEF(SNet, Kick, SNet_Kick) \
+	PORT_DEF(SNet, InitClient, SNet_InitClient) \
+	PORT_DEF(SNet, CloseClient, SNet_CloseClient) \
+	PORT_DEF(SNet, IsClient, SNet_IsClient) \
+	PORT_DEF(SNet, GetClientData, SNet_GetClientData) \
+	PORT_DEF(SNet, GetMyClientShip, SNet_GetMyClientShip) \
+	PORT_DEF(SNet, InitBrowser, SNet_InitBrowser) \
+	PORT_DEF(SNet, DoneBrowser, SNet_DoneBrowser) \
+	PORT_DEF(SNet, SendUsrString, SNet_SendUsrString) \
+	PORT_DEF(SNet, SendChatString, SNet_SendChatString) \
+	PORT_DEF(SNet, SendCtrlString, SNet_SendCtrlString) \
+	PORT_DEF(SNet, SendMasterString, SNet_SendMasterString) \
+	PORT_DEF(SNet, IsMaster, SNet_IsMaster) \
+	PORT_DEF(SNet, PingInetSvrs, SNet_PingInetSvrs) \
+	PORT_DEF(SNet, GetPing, SNet_GetPing)
+
 /* PyInterface/SSoundPy.c */
 PORT_DECL(SSound, LoadSound) /* 1 */
 PORT_DECL(SSound, PlaySound) /* ? */
@@ -5245,6 +5298,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2501
+#define PORT_COUNT 2526
 
 #endif
