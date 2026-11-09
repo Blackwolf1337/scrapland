@@ -488,7 +488,8 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
  * "scheduled"); NULL when Port_Own finds none (a recorder, a lambda, a bound method, an engine function, a ref on
  * Python objects, everything under SCRAP_PORT_SLOW=1) */
 portSite_t *Port_Scheduled(PyObject *f);
-/* the functions scheduled as entries since the start, the last one first (OBJLIB 7: the counters of the test channel) */
+/* the functions scheduled as entries since the start, the last one first (OBJLIB 7: the counters of the test
+ * channel) */
 portSite_t *Port_ScheduledSites(void);
 /* the call of a bound site (a callback, a scheduled call) as the Python call of its adapter on n arguments: each one
  * as the adapter gets it ('v' a native value through Native_Pass, 'O' an object through Native_Arg, as Port_Invoke
