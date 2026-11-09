@@ -468,8 +468,8 @@ static byte Sonic_Explode(const nativeVal_t *pos) {
 		CallFunc_ExecuteF("!SonicXplde", p, 3);
 		return 1;
 	}
-	/* OBJLIB 7: another value the engine functions take by name, with their errors */
-	if (!Native_CallMod("Scrap", "SetCallFunc", NULL, "s", "!SonicXplde")) {
+	/* another value the engine functions take through their refs, with their errors */
+	if (!PORT_CALL(Scrap, SetCallFunc, NULL, "s", "!SonicXplde")) {
 		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
@@ -478,13 +478,13 @@ static byte Sonic_Explode(const nativeVal_t *pos) {
 		if (!Native_Subscript(pos, &k, &c)) {
 			return 0;
 		}
-		byte ok = Native_CallMod("Scrap", "AddParamf", NULL, "v", &c);
+		byte ok = PORT_CALL(Scrap, AddParamf, NULL, "v", &c);
 		Native_Free(&c);
 		if (!ok) {
 			return 0;
 		}
 	}
-	return Native_CallMod("Scrap", "Execute", NULL, "");
+	return PORT_CALL(Scrap, Execute, NULL, "");
 }
 
 /* OnHit(swarm, winner, looser): the boom at the mine and the explosion effect there */

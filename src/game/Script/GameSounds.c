@@ -15,8 +15,9 @@
  * the objects they are). Scrap.GetEntity, Set, OpenPack, ClosePack, ConsoleError, SSound.LoadSound and the SAct
  * functions go through their seams (OBJLIB 7); string.upper is C. The calls of the module functions through the
  * globals, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound go through their refs (PORT_OWN,
- * PORT_CALL: the seam, OBJLIB 5). SSound.CreatePS and SetPS and SAct.GetAction of a value that is no text stay by name
- * (OBJLIB 7). The .def runner takes its $names as a dict and gives its steps Python arguments (OBJLIB 6).
+ * PORT_CALL: the seam, OBJLIB 5), and so does SAct.GetAction of a value that is no text (stage 7). SSound.CreatePS and
+ * SetPS stay by name (OBJLIB 7: no native entry yet). The .def runner takes its $names as a dict and gives its steps
+ * Python arguments (OBJLIB 6).
  */
 #include <string.h>
 
@@ -537,9 +538,9 @@ static byte Gs_SetInitDoorSound(const nativeVal_t *a) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(r);
-	/* SAct.GetAction through its seam with a text, by name for any other value (its TypeError) */
+	/* SAct.GetAction through its seam with a text, through its ref for any other value (its TypeError) */
 	byte ok = a[1].type == NV_STR && !memchr(Native_Text(&a[1]), 0, (size_t)a[1].n) ? LvN_GetAction(Native_Text(&a[1]), r) :
-		Native_CallMod("SAct", "GetAction", NULL, "v", &a[1]);
+		PORT_CALL(SAct, GetAction, NULL, "v", &a[1]);
 	Mode_Repr(&a[3], rv);
 	Mode_Repr(&a[4], rp);
 	return Mode_Done(&t, ok && LvN_SetAct("AddEventAtTime", Mode_I(&t, 0)) &&

@@ -832,8 +832,8 @@ static byte Mode_Vec3(const nativeVal_t *v, double *x) {
 byte Mode_VecAdd(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 	double x[3], y[3];
 	if (!Mode_Vec3(a, x) || !Mode_Vec3(b, y)) {
-		/* OBJLIB 7: the errors of "(ddd)(ddd)" from the engine function */
-		return Native_CallMod("SVec", "Add", out, "vv", a, b);
+		/* the errors of "(ddd)(ddd)" from the engine function */
+		return PORT_CALL(SVec, Add, out, "vv", a, b);
 	}
 	Native_SetVec(out, x[0] + y[0], x[1] + y[1], x[2] + y[2]);
 	return 1;
@@ -842,7 +842,7 @@ byte Mode_VecAdd(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 byte Mode_Rotate(const nativeVal_t *v, const nativeVal_t *rot, nativeVal_t *out) {
 	double x[3], r[3];
 	if (!Mode_Vec3(v, x) || !Mode_Vec3(rot, r)) {
-		return Native_CallMod("SVec", "Rotate3D", out, "vv", v, rot);
+		return PORT_CALL(SVec, Rotate3D, out, "vv", v, rot);
 	}
 	/* SVec.Rotate3D: degrees, the vector math of the engine in floats */
 	vec3_t rr = { (float)(r[0] * M_PI_D / DEG_PER_PI), (float)(r[1] * M_PI_D / DEG_PER_PI), (float)(r[2] * M_PI_D / DEG_PER_PI) };
@@ -920,7 +920,7 @@ static byte Mode_Str(const nativeVal_t *v, const char **s) {
 byte Mode_VecSub(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 	double x[3], y[3];
 	if (!Mode_Vec3(a, x) || !Mode_Vec3(b, y)) {
-		return Native_CallMod("SVec", "Sub", out, "vv", a, b);
+		return PORT_CALL(SVec, Sub, out, "vv", a, b);
 	}
 	Native_SetVec(out, x[0] - y[0], x[1] - y[1], x[2] - y[2]);
 	return 1;
@@ -929,7 +929,7 @@ byte Mode_VecSub(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 byte Mode_VecMod(const nativeVal_t *a, nativeVal_t *out) {
 	double x[3];
 	if (!Mode_Vec3(a, x)) {
-		return Native_CallMod("SVec", "Mod", out, "v", a);
+		return PORT_CALL(SVec, Mod, out, "v", a);
 	}
 	Native_SetFloat(out, sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]));
 	return 1;
@@ -938,7 +938,7 @@ byte Mode_VecMod(const nativeVal_t *a, nativeVal_t *out) {
 byte Mode_VecNorm(const nativeVal_t *a, nativeVal_t *out) {
 	double x[3];
 	if (!Mode_Vec3(a, x)) {
-		return Native_CallMod("SVec", "Norm", out, "v", a);
+		return PORT_CALL(SVec, Norm, out, "v", a);
 	}
 	double len = sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
 	/* SVec.Norm: the float 1e-6 widened to double */
@@ -953,7 +953,7 @@ byte Mode_VecNorm(const nativeVal_t *a, nativeVal_t *out) {
 byte Mode_VecModSqr(const nativeVal_t *a, nativeVal_t *out) {
 	double x[3];
 	if (!Mode_Vec3(a, x)) {
-		return Native_CallMod("SVec", "ModSqr", out, "v", a);
+		return PORT_CALL(SVec, ModSqr, out, "v", a);
 	}
 	Native_SetFloat(out, x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
 	return 1;
@@ -962,7 +962,7 @@ byte Mode_VecModSqr(const nativeVal_t *a, nativeVal_t *out) {
 byte Mode_VecProd(const nativeVal_t *a, const nativeVal_t *f, nativeVal_t *out) {
 	double x[3], d;
 	if (!Mode_Vec3(a, x) || !Mode_Num(f, &d)) {
-		return Native_CallMod("SVec", "Prod", out, "vv", a, f);
+		return PORT_CALL(SVec, Prod, out, "vv", a, f);
 	}
 	Native_SetVec(out, x[0] * d, x[1] * d, x[2] * d);
 	return 1;
@@ -985,8 +985,8 @@ byte Mode_TestSphere(const nativeVal_t *x, const nativeVal_t *y, const nativeVal
 	const char *l, *ex = "";
 	if (!Mode_Num(x, &c[0]) || !Mode_Num(y, &c[1]) || !Mode_Num(z, &c[2]) || !Mode_Num(r, &rad) || !Mode_Str(list, &l) ||
 		(exclude && !Mode_Str(exclude, &ex))) {
-		return exclude ? Native_CallMod("Scrap", "TestSphere", out, "vvvvvv", x, y, z, r, list, exclude) :
-			Native_CallMod("Scrap", "TestSphere", out, "vvvvv", x, y, z, r, list);
+		return exclude ? PORT_CALL(Scrap, TestSphere, out, "vvvvvv", x, y, z, r, list, exclude) :
+			PORT_CALL(Scrap, TestSphere, out, "vvvvv", x, y, z, r, list);
 	}
 	vec3_t at = { (float)c[0], (float)c[1], (float)c[2] };
 	byte level;
@@ -1005,7 +1005,7 @@ byte Mode_TestLine(const nativeVal_t *from, const nativeVal_t *to, const nativeV
 	double a[3], b[3];
 	const char *l;
 	if (!Mode_Vec3(from, a) || !Mode_Vec3(to, b) || !Mode_Str(list, &l)) {
-		return Native_CallMod("Scrap", "TestLine", out, "vvv", from, to, list);
+		return PORT_CALL(Scrap, TestLine, out, "vvv", from, to, list);
 	}
 	vec3_t p = { (float)a[0], (float)a[1], (float)a[2] }, q = { (float)b[0], (float)b[1], (float)b[2] }, hit;
 	cEntity *e;
@@ -1026,7 +1026,7 @@ byte Mode_SphereCall(const nativeVal_t *x, const nativeVal_t *y, const nativeVal
 	const char *l, *f;
 	if (!Mode_Num(x, &c[0]) || !Mode_Num(y, &c[1]) || !Mode_Num(z, &c[2]) || !Mode_Num(r, &rad) || !Mode_Str(list, &l) ||
 		!Mode_Str(func, &f)) {
-		return Native_CallMod("Scrap", "SphereCall", NULL, "vvvvvv", x, y, z, r, list, func);
+		return PORT_CALL(Scrap, SphereCall, NULL, "vvvvvv", x, y, z, r, list, func);
 	}
 	vec3_t at = { (float)c[0], (float)c[1], (float)c[2] };
 	cWorld_SphereCall(g_pWorld, EntityLists_Get(l), &at, (float)rad, f, 1);
@@ -2843,7 +2843,7 @@ byte Mode_RacePoint(const nativeVal_t *pos, long minDist, long maxDist, nativeVa
 		return Native_HookCall(hook, out, "vii", pos, minDist, maxDist);
 	}
 	if (!Mode_VecOf(pos, x)) {
-		return Native_CallMod("SAI", "GetNextRacePoint", out, "vii", pos, minDist, maxDist);
+		return PORT_CALL(SAI, GetNextRacePoint, out, "vii", pos, minDist, maxDist);
 	}
 	vec3_t at = { (float)x[0], (float)x[1], (float)x[2] }, p;
 	if (!AI_NextRacePoint(&at, (float)minDist, (float)maxDist, &p)) {

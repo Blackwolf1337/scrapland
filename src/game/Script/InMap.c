@@ -83,7 +83,7 @@ static byte InMap_InitObj(PyObject *path) {
 	}
 	/* any other LevelPath goes the script's way: the error of + (or a value Scrap.Set takes or refuses) */
 	PyObject *map = Script_PlusS(Script_Ref(path), "/2D/Map%i.tga");
-	byte ok = map && Script_Try("Scrap", "Set", "(sO)", "FileNameMap2D", map);
+	byte ok = map && PORT_CALL(Scrap, Set, NULL, "sO", "FileNameMap2D", map);
 	Py_XDECREF(map);
 	return ok && InMap_Start();
 }

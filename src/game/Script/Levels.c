@@ -251,7 +251,7 @@ static void Level_StepVecRot(int id, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "SOOO", &name, &pos, &off, &ang)) {
 		return;
 	}
-	PyObject *rot = Script_Ask("SVec", "Rotate3D", "(OO)", off, ang), *v = rot ? Script_Ask("SVec", "Add", "(OO)", pos, rot) : NULL;
+	PyObject *rot = PORT_ASK(SVec, Rotate3D, "OO", off, ang), *v = rot ? PORT_ASK(SVec, Add, "OO", pos, rot) : NULL;
 	Py_XDECREF(rot);
 	if (v) {
 		Script_SetValue(PyString_AsString(name), v);
@@ -267,9 +267,9 @@ static void Level_StepSetDef(int id, PyObject *args) {
 		PyErr_SetString(PyExc_TypeError, "setdef takes one variable name");
 		return;
 	}
-	PyObject *def = Script_Ask("Scrap", "Def", "(O)", var);
+	PyObject *def = PORT_ASK(Scrap, Def, "O", var);
 	if (def) {
-		Script_Try("Scrap", "Set", "(OO)", var, def);
+		PORT_CALL(Scrap, Set, NULL, "OO", var, def);
 		Py_DECREF(def);
 	}
 }
@@ -282,7 +282,7 @@ static void Level_StepSaveInt(int id, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "sO", &name, &var)) {
 		return;
 	}
-	PyObject *s = Script_Ask("Scrap", "GetSaveVar", "(O)", var), *v = s ? PyNumber_Int(s) : NULL;
+	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "O", var), *v = s ? PyNumber_Int(s) : NULL;
 	Py_XDECREF(s);
 	if (v) {
 		Script_SetValue(name, v);
@@ -292,7 +292,7 @@ static void Level_StepSaveInt(int id, PyObject *args) {
 /* Scrap.SetSaveVar(var, text) of a step, its error printed by the runner */
 static void Level_SetSave(PyObject *var, PyObject *text) {
 	if (text) {
-		Script_Try("Scrap", "SetSaveVar", "(OO)", var, text);
+		PORT_CALL(Scrap, SetSaveVar, NULL, "OO", var, text);
 		Py_DECREF(text);
 	}
 }
@@ -348,7 +348,7 @@ static void Level_StepSaveListAdd(int id, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "OO", &var, &item)) {
 		return;
 	}
-	PyObject *s = Script_Ask("Scrap", "GetSaveVar", "(O)", var);
+	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "O", var);
 	if (s && Level_SaveListAddNative(var, s, item)) {
 		Py_DECREF(s);
 		return;

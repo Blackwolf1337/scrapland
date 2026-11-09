@@ -15,7 +15,8 @@
  * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time, their functions
  * called through the entries of the level's ports (MODE_CBATTR, PORT_VALUE);
  * string.find and replace are the native twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements,
- * CreateSaveVar, GetLevelPath, GetNewLevelPath, SAI.IniAI, dir and __import__ stay by name (OBJLIB 6, 7). Scrap.Set,
+ * CreateSaveVar, GetLevelPath, GetNewLevelPath and SAI.IniAI go through their refs (stage 7), dir and __import__ stay
+ * by name (OBJLIB 6, 7). Scrap.Set,
  * OpenPack, ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and
  * SetLabelText go through their seams (OBJLIB 7). The evals of the save texts read literals with the native reader
  * (Mode_EvalIn; a bare name is looked up in the module, OBJLIB 6), and the C hooks of the module code keep working on the module's dict (OBJLIB 6).
@@ -46,11 +47,12 @@ static byte In_Method(const nativeVal_t *o, const char *func, const nativeVal_t 
 	return ok;
 }
 
-/* Scrap.<getter>()[7:] (GetLevelPath, GetNewLevelPath: the name of the level) */
-static byte In_LevelName(const char *getter, nativeVal_t *out) {
+/* Scrap.GetNewLevelPath()[7:] (fresh 1) or Scrap.GetLevelPath()[7:]: the name of the level */
+static byte In_LevelName(byte fresh, nativeVal_t *out) {
 	nativeVal_t p = { 0 };
 	Native_Free(out);
-	byte ok = Native_CallMod("Scrap", getter, &p, "") && Native_Slice(&p, 7, 0x7fffffff, out);
+	byte ok = (fresh ? PORT_CALL(Scrap, GetNewLevelPath, &p, "") : PORT_CALL(Scrap, GetLevelPath, &p, "")) &&
+		Native_Slice(&p, 7, 0x7fffffff, out);
 	Native_Free(&p);
 	return ok;
 }
@@ -61,9 +63,9 @@ static byte In_LoadCharLibN(const nativeVal_t *name) {
 	LvN_Str(&pyc, ".pyc");
 	LvN_Str(&sound, "Sound");
 	byte ok = LvN_Cat("Chars/", name, &a) && Native_Arith('+', &a, &pyc, &f) &&
-		Native_CallMod("Scrap", "PreloadLibrary", NULL, "vv", name, &f) && Native_Arith('+', name, &sound, &snd) &&
+		PORT_CALL(Scrap, PreloadLibrary, NULL, "vv", name, &f) && Native_Arith('+', name, &sound, &snd) &&
 		LvN_Cat("Sound/", &snd, &b) && Native_Arith('+', &b, &pyc, &sf) &&
-		Native_CallMod("Scrap", "PreloadLibrary", NULL, "vv", &snd, &sf);
+		PORT_CALL(Scrap, PreloadLibrary, NULL, "vv", &snd, &sf);
 	Native_Free(&a);
 	Native_Free(&f);
 	Native_Free(&snd);
@@ -93,7 +95,7 @@ static int In_IsMission(void) {
 		return -1;
 	}
 	Mode_SaveVar("Mission.Map", &mm);
-	int eq = Native_Upper(&mm, &a) && In_LevelName("GetLevelPath", &lv) && Native_Upper(&lv, &b) ? Mode_Cmp(&a, "==", &b) : -1;
+	int eq = Native_Upper(&mm, &a) && In_LevelName(0, &lv) && Native_Upper(&lv, &b) ? Mode_Cmp(&a, "==", &b) : -1;
 	Native_Free(&mm);
 	Native_Free(&a);
 	Native_Free(&lv);
@@ -130,7 +132,7 @@ static byte In_PreloadMlibsN(void) {
 			Native_Free(&f);
 			Native_Free(&mod);
 			ok = Mode_Item(&libs, i, &name) && Native_Arith('+', &name, &pyc, &f) &&
-				Native_CallMod("Scrap", "PreloadLibrary", NULL, "vv", &name, &f) &&
+				PORT_CALL(Scrap, PreloadLibrary, NULL, "vv", &name, &f) &&
 				Native_CallMod("__builtin__", "__import__", &mod, "v", &name) && PORT_OWN(Init, AddMLib, NULL, "v", &mod);
 		}
 	}
@@ -156,7 +158,7 @@ static byte In_SetArrowSizeN(void) {
 		Native_Free(&m3d);
 		Native_Free(&anm);
 		ok = Mode_Item(&arrows, i, &nam) && Native_Arith('+', &nam, &s1, &m3d) && Native_Arith('+', &nam, &s2, &anm) &&
-			Mode_PreloadOnes(&m3d) && Native_CallMod("Scrap", "PreloadAnm", NULL, "vv", &m3d, &anm);
+			Mode_PreloadOnes(&m3d) && PORT_CALL(Scrap, PreloadAnm, NULL, "vv", &m3d, &anm);
 	}
 	Native_Free(&arrows);
 	Native_Free(&nam);
@@ -288,8 +290,8 @@ static byte In_InitN(const nativeVal_t *path) {
 	}
 	/* the map scripts of the level and its libraries */
 	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir) ||
-		!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "Map", "Map.pyc") ||
-		!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "MapSnd", "MapSnd.pyc") ||
+		!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "Map", "Map.pyc") ||
+		!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "MapSnd", "MapSnd.pyc") ||
 		!PORT_OWN(Init, PreloadMlibs, NULL, "v", path) || !Mode_Pack(NULL) || !Native_GVarGet("IsXbox", x)) {
 		return Mode_Done(&t, 0);
 	}
@@ -299,7 +301,7 @@ static byte In_InitN(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 		xb = Native_True(c) ? 0 : Mode_G(IN, "UpperMap", upper) ? Native_IsStr(upper, "SHIPEDIT") || Native_IsStr(upper, "MENU") : -1;
-		if (xb > 0 && (!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "XboxMenu", "Scripts/Scorer/XboxMenu.pyc") ||
+		if (xb > 0 && (!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "XboxMenu", "Scripts/Scorer/XboxMenu.pyc") ||
 			!Native_CallMod("__builtin__", "__import__", menuMod, "s", "XboxMenu") ||
 			!PORT_OWN(Init, AddMLib, NULL, "v", menuMod))) {
 			return Mode_Done(&t, 0);
@@ -314,7 +316,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	/* the size of the mission arrows, the AI */
 	int menu = In_Flag("inMainMenu"), edit = menu == 0 ? In_Flag("isShipEdit") : 0;
 	if (menu < 0 || edit < 0 || (!menu && !edit && !PORT_OWN(Init, SetArrowSize, NULL, "")) ||
-		!Mode_G(IN, "Outdoor", out) || !Native_CallMod("SAI", "IniAI", NULL, "vv", path, out)) {
+		!Mode_G(IN, "Outdoor", out) || !PORT_CALL(SAI, IniAI, NULL, "vv", path, out)) {
 		return Mode_Done(&t, 0);
 	}
 	/* the menus, the mission info, the chat, the sound, the decoration */
@@ -327,7 +329,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	}
 	int offline = In_Flag("OffLineGame");
 	if (offline < 0 || (!offline && !IN_CALL(Chat, SetChatProc)) || !IN_CALL(Sound, Init) ||
-		!Native_CallMod("Scrap", "CreateElements", NULL, "")) {
+		!PORT_CALL(Scrap, CreateElements, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	menu = In_Flag("inMainMenu");
@@ -383,7 +385,7 @@ static byte In_InitN(const nativeVal_t *path) {
 		return Mode_Done(&t, 0);
 	}
 	if (offline && !menu && !edit) {
-		if (!Native_CallMod("Scrap", "CreateSaveVar", NULL, "ss", "GameSkill", "1")) {
+		if (!PORT_CALL(Scrap, CreateSaveVar, NULL, "ss", "GameSkill", "1")) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_SaveVar("GameSkill", skill);
@@ -414,9 +416,9 @@ static byte In_SetMapLabelTextN(void) {
 	int show = !Mode_EqI(status, 1);
 	if (!show) {
 		Mode_SaveVar("Mission.Map", mm);
-		show = In_LevelName("GetLevelPath", lv) ? Mode_Cmp(mm, "==", lv) : -1;
+		show = In_LevelName(0, lv) ? Mode_Cmp(mm, "==", lv) : -1;
 	}
-	return Mode_Done(&t, show >= 0 && (!show || (In_LevelName("GetLevelPath", lv) && LvN_Cat("Station_", lv, key) &&
+	return Mode_Done(&t, show >= 0 && (!show || (In_LevelName(0, lv) && LvN_Cat("Station_", lv, key) &&
 		Mode_LangV(key, text) && Mode_LabelText(text, Mode_Time() + 10))));
 }
 
@@ -426,7 +428,7 @@ static byte In_CloseN(void) {
 	nativeVal_t *lv = Mode_V(&t), *upper = Mode_V(&t), *line = Mode_V(&t), *xbox = Mode_V(&t), *bars = Mode_V(&t);
 	nativeVal_t *n = Mode_V(&t), *msg = Mode_V(&t);
 	const nativeVal_t *items[1] = { line };
-	if (!In_LevelName("GetNewLevelPath", lv) || !Native_Upper(lv, upper) || !Native_Arith('%', Mode_S(&t, "Next level: %s"), upper,
+	if (!In_LevelName(1, lv) || !Native_Upper(lv, upper) || !Native_Arith('%', Mode_S(&t, "Next level: %s"), upper,
 		line) || !Mode_Print(items, 1) || !Native_GVarGet("IsXbox", xbox) ||
 		!Mode_G(IN, Mode_EqI(xbox, 1) ? "PROGRESSBAR_XBOX" : "PROGRESSBAR_PC", bars)) {
 		return Mode_Done(&t, 0);
