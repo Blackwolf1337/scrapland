@@ -123,6 +123,13 @@ byte Script_RunFile(int id, const char *name, const char *section, const char *b
 byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars);
 
+/* OBJLIB 7: the calls of the call lines of .def files since the start (or the last reset) by path, for the test
+ * channel's "native ports": through the registry (the port's or the engine's entry while the module attribute is its
+ * own function), by name to a function of the registry that something else replaced, by name to any other function,
+ * and the ones that failed; reset: back to 0 (the registry count is the site's, reset with the sites) */
+void Script_DefCounts(unsigned long *registry, unsigned long *byName, unsigned long *other, unsigned long *errors,
+	byte reset);
+
 /* the step "print <text>" of .def files: a line on the console, as a script's print */
 void Script_StepPrint(int id, PyObject *args);
 

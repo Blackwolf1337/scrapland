@@ -17,7 +17,9 @@
  *                            kind: "callbacks python <n> native <n> entry <n>"; then the functions given to the
  *                            scheduler as a port's entry (cScheduledFunc, stage 4) since the start: "scheduled
  *                            <Module>.<Func> calls <n> errors <n>", sorted by name, and the calls of the scheduler
- *                            by kind: "scheduled python <n> entry <n>"
+ *                            by kind: "scheduled python <n> entry <n>"; then the call lines of the .def files
+ *                            (Script_DefCounts) by path: "def calls registry <n> byname <n> other <n> errors <n>" (the
+ *                            registry ones also on the line of their site in Script.c)
  *   native ports reset       the counts back to 0
  */
 #include <stdlib.h>
@@ -92,6 +94,13 @@ static void TN_Callbacks(nativeBuf_t *out, byte reset) {
 	Scheduler_Counts(&python, &entry, reset);
 	if (!reset) {
 		snprintf(line, sizeof(line), "scheduled python %lu entry %lu\n", python, entry);
+		Native_BufAdd(out, line, -1);
+	}
+	unsigned long other, errors;
+	Script_DefCounts(&entry, &python, &other, &errors, reset);
+	if (!reset) {
+		snprintf(line, sizeof(line), "def calls registry %lu byname %lu other %lu errors %lu\n", entry, python, other,
+			errors);
 		Native_BufAdd(out, line, -1);
 	}
 }

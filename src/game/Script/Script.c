@@ -36,7 +36,9 @@
  * &AnmTotalTime). @, %, $ and & values may end in operations with numbers, done left to right with Python's numbers:
  * $x+10, &AnmTotalTime/4*2.
  * $(name) inside a word or text is the value name as text.
- * The values are native values (nativeVal_t, see the comment above Def_Shared).
+ * The values are native values (nativeVal_t, see the comment above Def_Shared). A call line calls the entry of a port or
+ * engine function through the registry of stage 4 (Port_Invoke) while the module attribute is that function itself,
+ * else by name through Python as a script did (Def_Call).
  */
 #define _GNU_SOURCE
 #include <stdarg.h>
@@ -1614,15 +1616,83 @@ static PyObject *Def_PyKw(const defArgs_t *a) {
 	return kw;
 }
 
-/* module.func(args) of a call line by name through Python (OBJLIB 7): 1, or 0 with the error set */
+/* OBJLIB 7: the calls of the call lines by path, for the test channel: through the registry (def_site: fast through
+ * the entry, slow through Python when the entry cannot take the keywords; the site names the function it called
+ * last), by name to a function of the registry that something else replaced, by name to any other function */
+static portSite_t def_site = { .ref = &port_value, .file = __FILE__, .line = __LINE__ };
+static unsigned long def_byName, def_other, def_errors;
+
+void Script_DefCounts(unsigned long *registry, unsigned long *byName, unsigned long *other, unsigned long *errors,
+	byte reset) {
+	*registry = def_site.fast + def_site.slow;
+	*byName = def_byName;
+	*other = def_other;
+	*errors = def_errors;
+	if (reset) {
+		def_byName = def_other = def_errors = 0;
+	}
+}
+
+/* the longest keyword name of a call through the registry (PORT_NAME of src/game/Script/ScriptPort.c) */
+#define DEF_KWNAME 0x40
+
+/* the letters of Port_Invoke for the arguments ("vv;Name=v,Other=v") into fmt: 0 when the registry cannot take them
+ * that way (more than PORT_ARGS, a keyword name that is empty, too long, or holds a ',' or ';') */
+static byte Def_Letters(const defArgs_t *a, char *fmt, int size) {
+	int k = 0;
+	if (a->n > PORT_ARGS) {
+		return 0;
+	}
+	for (int i = 0; i < a->n; i++) {
+		if (i >= a->npos) {
+			const char *s = a->names[i];
+			int len = a->lens[i];
+			if (!len || len >= DEF_KWNAME || memchr(s, ',', len) || memchr(s, ';', len) || k + len + 3 >= size) {
+				return 0;
+			}
+			fmt[k++] = i == a->npos ? ';' : ',';
+			memcpy(fmt + k, s, len);
+			k += len;
+			fmt[k++] = '=';
+		}
+		fmt[k++] = 'v';
+	}
+	fmt[k] = 0;
+	return 1;
+}
+
+/* module.func(args) of a call line: 1, or 0 with the error set. Through the registry (Port_Invoke: the entry, the
+ * arguments packed as the adapter gets them) while the module attribute is the port's or the engine's own function of
+ * module.func (the seam, OBJLIB 7: Port_Own of what is there, SCRAP_PORT_SLOW=1 never), else the call by name through
+ * Python as before: a recorder, a replaced or deleted function, a function of another name or module there, a function
+ * that is no port, the keywords of a call the registry cannot take */
 static byte Def_Call(const char *module, const char *func, const defArgs_t *a) {
+	static_assert(PORT_ARGS == 11, "one pointer per argument");
+	char fmt[PORT_ARGS * (DEF_KWNAME + 3) + 2];
 	PyObject *f = Script_Attr(module, func);
 	if (!f) {
 		return 0;
 	}
+	byte known = Port_Find(module, func) != NULL;
+	const portRef_t *ref = known ? Port_Own(f) : NULL;
+	byte ok;
+	if (ref && !strcmp(ref->module, module) && !strcmp(ref->name, func) && Def_Letters(a, fmt, sizeof(fmt))) {
+		const nativeVal_t *p[PORT_ARGS] = { NULL };
+		for (int i = 0; i < a->n; i++) {
+			p[i] = &a->v[i];
+		}
+		Py_DECREF(f);
+		def_site.ref = ref;
+		return Port_Invoke(&def_site, NULL, fmt, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
+	}
+	if (known) {
+		def_byName++;
+	} else {
+		def_other++;
+	}
 	PyObject *t = Def_PyArgs(a), *kw = t ? Def_PyKw(a) : NULL;
 	PyObject *r = t ? Script_CallObject(f, t, kw) : NULL;
-	byte ok = r != NULL;
+	ok = r != NULL;
 	Py_XDECREF(r);
 	Py_XDECREF(kw);
 	Py_XDECREF(t);
@@ -1641,6 +1711,7 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	Def_Args(m, l, 2, &a);
 	if (!m->failed) {
 		byte ok = Def_Call(module, func, &a);
+		def_errors += !ok;
 		if (m->stop) {
 			m->failed = !ok;
 		} else if (!ok) {
