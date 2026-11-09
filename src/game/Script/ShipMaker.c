@@ -17,7 +17,7 @@
  * VehiclesNPC through their refs (PORT_CALL); the ships (handle values) and the functions ShipCallback holds stay
  * Python values (OBJLIB 7). Scrap.GetEntity, Preload3DObject and the SAct calls go through their seams (fc-om-dt,
  * fc-r7b-fb and the scene cases swap or record them, OBJLIB 7); Scrap.PreloadAnm, Verbose, SWeap.GetNWeap and GetSWeap
- * stay by name (OBJLIB 7). The .def runner takes its $names as a dict and its step stdship the values of its line
+ * go through their refs (stage 7). The .def runner takes its $names as a dict and its step stdship the values of its line
  * (OBJLIB 6).
  */
 #include <string.h>
@@ -143,16 +143,16 @@ static int Sm_HasAnm(const nativeVal_t *anm, const char *flag) {
 	return r;
 }
 
-/* Scrap.PreloadAnm(file, path + name + rest) (name NULL: none) and Scrap.Verbose(text) by name */
+/* Scrap.PreloadAnm(file, path + name + rest) (name NULL: none) and Scrap.Verbose(text) */
 static byte Sm_PreloadAnm(modeVals_t *t, const nativeVal_t *file, const nativeVal_t *path, const nativeVal_t *name, const char *rest) {
 	nativeVal_t *anm = Mode_V(t);
 	byte ok = name ? Mode_Cat(t, anm, 3, path, name, Mode_S(t, rest)) : Mode_Cat(t, anm, 2, path, Mode_S(t, rest));
-	return ok && Native_CallMod("Scrap", "PreloadAnm", NULL, "vv", file, anm);
+	return ok && PORT_CALL(Scrap, PreloadAnm, NULL, "vv", file, anm);
 }
 
 static byte Sm_Verbose(modeVals_t *t, const char *head, const nativeVal_t *name, const char *tail) {
 	nativeVal_t *text = Mode_V(t);
-	return Mode_Cat(t, text, 3, Mode_S(t, head), name, Mode_S(t, tail)) && Native_CallMod("Scrap", "Verbose", NULL, "v", text);
+	return Mode_Cat(t, text, 3, Mode_S(t, head), name, Mode_S(t, tail)) && PORT_CALL(Scrap, Verbose, NULL, "v", text);
 }
 
 /* path = dir + name + "/"; file = path + name + ".M3D", preloaded */
@@ -432,14 +432,14 @@ static byte Sm_SetShipParamsN(const nativeVal_t *name, nativeVal_t *out) {
 		Native_SetNone(&mse[2]);
 		Mode_Release(&t, mark);
 	}
-	if (!PORT_CALL(Fx, SetUpShipMotors, NULL, "v", e) || !Native_CallMod("SWeap", "GetNWeap", nweap, "") ||
+	if (!PORT_CALL(Fx, SetUpShipMotors, NULL, "v", e) || !PORT_CALL(SWeap, GetNWeap, nweap, "") ||
 		!Mode_Range(nweap, &count)) {
 		return Mode_Done(&t, 0);
 	}
 	for (long iw = 0; iw < count; iw++) {
 		int mark = t.n;
 		nativeVal_t *wn = Mode_V(&t), *wMass = Mode_V(&t);
-		if (!Native_CallMod("SWeap", "GetSWeap", wn, "is", iw, "Name") ||
+		if (!PORT_CALL(SWeap, GetSWeap, wn, "is", iw, "Name") ||
 			!PORT_OWN(ShipMaker, GetWeapon, wMass, "v", wn)) {
 			return Mode_Done(&t, 0);
 		}
@@ -679,13 +679,14 @@ static byte Sm_SetAnmShipN(const nativeVal_t *v, const nativeVal_t *model) {
 	return ok;
 }
 
-/* SAct.CreateClass(name) or SAct.CreateAction(name) through the seam for a text, by name for another value (its
- * error) */
+/* SAct.CreateClass(name) or SAct.CreateAction(name) (fn) through the seam for a text, through the ref for another value
+ * (its error) */
 static byte Sm_SActName(const char *fn, const nativeVal_t *name) {
 	if (name->type == NV_STR && (int)strlen(Native_Text(name)) == name->n) {
 		return Mode_SAct(fn, Native_Text(name));
 	}
-	return Native_CallMod("SAct", fn, NULL, "v", name);
+	return !strcmp(fn, "CreateClass") ? PORT_CALL(SAct, CreateClass, NULL, "v", name) :
+		PORT_CALL(SAct, CreateAction, NULL, "v", name);
 }
 
 /* InitAnmShip(model, ch0=None, ch1=None, ch2=None, ch3=None): a static ship model preloaded, or with actions on the

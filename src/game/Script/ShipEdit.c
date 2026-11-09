@@ -18,8 +18,9 @@
  * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, Ffa and the
  * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam,
  * OBJLIB 5); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time and
- * called through the entries of the functions there (MODE_CBATTR); the engine calls stay by name (OBJLIB 7); the .def
- * runner takes Python values (OBJLIB 6). The texts of the ships in the save and engine variables are made as before.
+ * called through the entries of the functions there (MODE_CBATTR); the engine calls go through their refs (stage 7),
+ * those of SScorer and SSound stay by name (OBJLIB 7: no native entry yet); the .def runner takes Python values
+ * (OBJLIB 6). The texts of the ships in the save and engine variables are made as before.
  */
 #include <stdarg.h>
 #include <string.h>
@@ -461,7 +462,7 @@ static byte Se_PointTo(const nativeVal_t *obj, const nativeVal_t *point) {
 	nativeVal_t *d = Mode_V(&t), *y = Mode_V(&t), *neg = Mode_V(&t), *a = Mode_V(&t), *z = Mode_V(&t);
 	Mode_Ints3(start, 0, 0, -1);
 	byte ok = Se_Flat(point, p) && Mode_VGet(obj, "Pos", pos) && Se_Flat(pos, q) && Mode_VecSub(p, q, pq) &&
-		Native_CallMod("SVec", "GetAngle", ang, "vv", start, pq) && Native_CallMod("SVec", "CProd", d, "vv", start, pq) &&
+		PORT_CALL(SVec, GetAngle, ang, "vv", start, pq) && PORT_CALL(SVec, CProd, d, "vv", start, pq) &&
 		LvN_Item(d, 1, y);
 	int c = ok ? Mode_CmpI(y, "<", 0) : -1;
 	if (c > 0) {
@@ -1547,7 +1548,7 @@ static byte Se_Camera(void) {
 	Mode_CamName(0, last);
 	byte ok = Mode_Put(SE, "lastCam", NULL, last) && LvN_Create(name, x, y, z, "CamPath", cam) && Mode_Put(SE, "camera", NULL, cam);
 	Native_Free(cam);
-	ok = ok && Se_G("camera", cam) && Mode_VGet(cam, "Name", c) && Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, c);
+	ok = ok && Se_G("camera", cam) && Mode_VGet(cam, "Name", c) && PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, c);
 	Native_Free(cam);
 	ok = ok && Se_G("camera", cam) && LvN_SetI(cam, "nWayPoint", 2);
 	Native_Free(last);
@@ -1675,7 +1676,7 @@ static byte Se_FreeEdit(void) {
 	nativeVal_t cam = { 0 }, last = { 0 };
 	int c = LvN_GTrue(SE, "camera");
 	byte ok = c == 0 || (c > 0 && Se_G("camera", &cam) && Mode_VDel(&cam) && Mode_Put(SE, "camera", NULL, &se_none) &&
-		Se_G("lastCam", &last) && Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, &last));
+		Se_G("lastCam", &last) && PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, &last));
 	Native_Free(&cam);
 	Native_Free(&last);
 	return ok;
@@ -1970,7 +1971,7 @@ static byte Se_SaveShipAll(int id) {
 		}
 		Native_Free(cur);
 		ok = ok && LvN_ModGet(HT, "currentHangar", cur) && Mode_GVarSet("iHangarShip", cur) &&
-			Native_CallMod("Scrap", "SaveConfig", NULL, "");
+			PORT_CALL(Scrap, SaveConfig, NULL, "");
 	} else if (mp == 0) {
 		int n = Se_G("editedShips", l) ? Mode_Len(l) : -1;
 		ok = n >= 0;

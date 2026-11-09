@@ -7,10 +7,10 @@
  * sort, the message of the day), the functions call the engine in C; the PyMethodDef entries are adapters (the
  * argument formats as before). The variables of other modules are read where the C read them (Init.inMainMenu,
  * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps; OBJLIB 5),
- * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through
- * their refs (PORT_CALL: directly while the attribute holds the port's function, else by name), Scrap.SaveConfig and
- * Scrap.Exit by name (OBJLIB 7), their failures printed as before; the connection status schedules itself (the
- * scheduler takes its entry, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
+ * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through their
+ * refs (PORT_CALL: directly while the attribute holds the port's function, else by name), and so are Scrap.SaveConfig
+ * and Scrap.Exit (stage 7), their failures printed as before; the connection status schedules itself (the scheduler
+ * takes its entry, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -1355,11 +1355,10 @@ static PyObject *PCMenu_RunDedicatedServer(PyObject *self, PyObject *args) {
 		Net_SetServerMaps(&maps);
 	}
 	GVar_SetStr("ServerPassword", Script_GetStr(id, "Item2", "Text"));
-	/* OBJLIB 7: the engine functions by name as the C called them */
-	Mode_Printed(Native_CallMod("Scrap", "SaveConfig", NULL, ""), "Scrap", "SaveConfig");
+	MODE_PRINTED(Scrap, SaveConfig, "");
 	Str_Printf(params, sizeof(params), "-console -dedicated -imap:\"Levels/%s\"", maps.num ? maps.names[0] : "");
 	GVar_SetStr("ReRunAtExitParams", params);
-	Mode_Printed(Native_CallMod("Scrap", "Exit", NULL, ""), "Scrap", "Exit");
+	MODE_PRINTED(Scrap, Exit, "");
 	return Py_ReturnNone();
 }
 
