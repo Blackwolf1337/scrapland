@@ -176,8 +176,8 @@ static PyObject *Bureaucracy_CreateBureaucracyClass(PyObject *self, PyObject *ar
 
 /* Init(fromViewer = 0) of the argument object (NULL: not given) */
 static byte Bureaucracy_InitObj(PyObject *viewer) {
-	/* OBJLIB 6: the import of the function stays with the module objects until then */
-	PyObject *string = PyImport_ImportModule("string");
+	/* OBJLIB 7: the import of the function is a module object (found in C since batch 6b) */
+	PyObject *string = Script_Module("string");
 	if (!string) {
 		return 0;
 	}

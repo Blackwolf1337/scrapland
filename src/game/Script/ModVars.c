@@ -17,6 +17,7 @@
 
 #include "scrap/global.h"
 #include "scrap/modvars.h"
+#include "scrap/script.h"
 
 /* the overflow list of a module file: sorted by name, the names Mem_Alloc'd */
 typedef struct {
@@ -182,7 +183,7 @@ byte ModVar_Of(PyObject *module, modVarRef_t *ref) {
 }
 
 byte ModVar_Named(const char *module, modVarRef_t *ref) {
-	return ModVar_Of(PyDict_GetItemString(PyImport_GetModuleDict(), (char *)module), ref);
+	return ModVar_Of(Script_ModuleLoaded(module), ref);
 }
 
 void ModVar_RefOfDict(PyObject *dict, modVarRef_t *ref) {
@@ -194,6 +195,10 @@ void ModVar_RefOfDict(PyObject *dict, modVarRef_t *ref) {
 
 const char *ModVar_ModuleName(const modVarRef_t *ref) {
 	return g_ModVarModules[ref->file].module;
+}
+
+byte ModVar_HasModule(const char *module) {
+	return MV_FirstFile(module) >= 0;
 }
 
 const modVar_t *ModVar_Find(const modVarRef_t *ref, const char *name) {
@@ -292,7 +297,7 @@ static byte MV_Ref(PyObject *m, modVarRef_t *ref) {
 }
 
 PyObject *ModVar_Lookup(const char *module, const char *name, byte *imported) {
-	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *m = Script_Module(module);
 	modVarRef_t ref;
 	PyObject *v = m && MV_Ref(m, &ref) ? ModVar_Get(&ref, name) : NULL;
 	*imported = m != NULL;
@@ -302,7 +307,7 @@ PyObject *ModVar_Lookup(const char *module, const char *name, byte *imported) {
 }
 
 int ModVar_SetGlobal(const char *module, const char *name, PyObject *v) {
-	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *m = Script_Module(module);
 	modVarRef_t ref;
 	int r = -1;
 	if (m && MV_Ref(m, &ref)) {
@@ -316,7 +321,7 @@ int ModVar_SetGlobal(const char *module, const char *name, PyObject *v) {
 }
 
 int ModVar_DelGlobal(const char *module, const char *name) {
-	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *m = Script_Module(module);
 	modVarRef_t ref;
 	int r = m ? 0 : -1;
 	if (m && (!MV_Ref(m, &ref) || ModVar_Del(&ref, name) != 0)) {
@@ -339,14 +344,14 @@ int ModVar_SetObjAttr(PyObject *o, const char *name, PyObject *v) {
 }
 
 PyObject *ModVar_ModAttr(const char *module, const char *name) {
-	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *m = Script_Module(module);
 	PyObject *v = m ? ModVar_ObjAttr(m, name) : NULL;
 	Py_XDECREF(m);
 	return v;
 }
 
 int ModVar_SetModAttr(const char *module, const char *name, PyObject *v) {
-	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *m = Script_Module(module);
 	int r = m ? ModVar_SetObjAttr(m, name, v) : -1;
 	Py_XDECREF(m);
 	return r;

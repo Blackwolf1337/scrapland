@@ -741,7 +741,7 @@ static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 	byte ok = c && PyDict_SetItemString(loc, "cad", c) == 0;
 	Py_XDECREF(c);
 	for (int i = 0; ok && i < 3; i++) {
-		PyObject *m = PyImport_ImportModule((char *)mods[i]);
+		PyObject *m = Script_Module(mods[i]);
 		ok = m && PyDict_SetItemString(loc, (char *)mods[i], m) == 0;
 		Py_XDECREF(m);
 	}

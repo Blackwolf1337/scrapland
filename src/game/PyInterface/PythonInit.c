@@ -88,7 +88,7 @@ static byte Py_LineStore(const char *name, PyObject *v) {
 /* import a, b, ... in __main__ (NULL ends the names; the line stops at the first error) */
 static byte Py_LineImport(const char *const *names) {
 	for (; *names; names++) {
-		if (!Py_LineStore(*names, PyImport_ImportModule((char *)*names))) {
+		if (!Py_LineStore(*names, Script_Module(*names))) {
 			return 0;
 		}
 	}
@@ -359,7 +359,8 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 	CHECK(Py_IsReady());
 	g_PyImportGate = Py_GateImport;
 	if (PackLog_Closed()) {
-		if (PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name)) {
+		if (Script_ModuleLoaded(name)) {
+			Script_ModuleCountLoaded();
 			Py_GateNote("loaded", name, file);
 		} else {
 			PyObject *m = NULL;
@@ -379,7 +380,7 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 		Con_Verbosef("Trying to open 'PACK: %s', using import %s\n", file, name);
 		PackLog_Add(file);
 		PyObject *m = NULL;
-		int made = PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name) ? 0 : Py_ModuleMake(name, file, &m);
+		int made = Script_ModuleLoaded(name) ? 0 : Py_ModuleMake(name, file, &m);
 		if (!made) {
 			Py_GateRefuse(name, file);
 		}

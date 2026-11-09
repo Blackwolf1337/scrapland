@@ -12,6 +12,7 @@
 #include "scrap/crt.h"
 #include "scrap/global.h"
 #include "scrap/pyfunction.h"
+#include "scrap/script.h"
 #include "scrap/scriptnative.h"
 
 byte Py_IsReady(void) {
@@ -234,7 +235,7 @@ static byte cPy_Function_SetPython(cPy_Function *self, const char *module, const
 	if (!module || !func) {
 		return 0;
 	}
-	PyObject *m = PyImport_AddModule((char *)module);
+	PyObject *m = Script_ModuleAdd(module);
 	if (!m) {
 		Con_Warnf("cPy_Function::SetFunc: Module does not exist.\n '%s'.'%s'\n", module, func);
 	} else {

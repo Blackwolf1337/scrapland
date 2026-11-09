@@ -170,9 +170,9 @@ static void Step_Speech(int id, PyObject *args) {
 		return;
 	}
 	/* OBJLIB 5, 6: a function of a module named at run time (the import) into the table of Speech, a dict variable */
-	PyObject *speech = PyImport_ImportModule("Speech");
+	PyObject *speech = Script_Module("Speech");
 	PyObject *routines = speech ? PyObject_GetAttrString(speech, "SpeechRoutines") : NULL;
-	PyObject *m = routines ? PyImport_ImportModule(module) : NULL;
+	PyObject *m = routines ? Script_Module(module) : NULL;
 	PyObject *f = m ? PyObject_GetAttrString(m, func) : NULL;
 	PyObject *key = f ? PyString_FromString(name) : NULL;
 	if (key) {

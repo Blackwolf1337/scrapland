@@ -265,7 +265,7 @@ static byte WT_Exec(const nativeVal_t *code) {
 		}
 	}
 	scriptFrame_t f = { .n = 0 };
-	PyObject *hangar = Sf_Keep(&f, PyImport_ImportModule("HangarTab"));
+	PyObject *hangar = Sf_Keep(&f, Script_Module("HangarTab"));
 	PyObject *text = Sf_Keep(&f, hangar ? PyString_FromStringAndSize(s, code->n) : NULL);
 	Sf_Exec(&f, text, MOD, Sf_Build(&f, "{s:O}", "HangarTab", hangar));
 	return Sf_Done(&f, NULL), !f.failed;

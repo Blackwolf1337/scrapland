@@ -817,7 +817,7 @@ static byte BeatPickus_CreateLauncher(const nativeVal_t *a, nativeVal_t *out) {
  * one) */
 static byte Bp_NoComs(void) {
 	nativeVal_t l;
-	PyObject *speech = PyImport_ImportModule("Speech");
+	PyObject *speech = Script_Module("Speech");
 	byte ok = speech && PyObject_SetAttrString(speech, "RemoteCom", NULL) == 0;
 	Py_XDECREF(speech);
 	if (!ok) {

@@ -384,7 +384,7 @@ static byte Bots_InitServerModC(const char *m) {
 	}
 	/* ShipEdit.EnterEditShipMenu = TryGarage (OBJLIB 5: a function of the module as a value; the calls of
 	 * EnterEditShipMenu through its ref take the slow path to it) */
-	PyObject *fn = Mode_GlobalPy(m, "TryGarage"), *se = fn ? PyImport_ImportModule("ShipEdit") : NULL;
+	PyObject *fn = Mode_GlobalPy(m, "TryGarage"), *se = fn ? Script_Module("ShipEdit") : NULL;
 	int bad = !se || PyObject_SetAttrString(se, "EnterEditShipMenu", fn) < 0;
 	Py_XDECREF(se);
 	Py_XDECREF(fn);

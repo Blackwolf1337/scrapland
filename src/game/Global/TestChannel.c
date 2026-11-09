@@ -514,7 +514,7 @@ static void TC_DumpVar(tcBuf *b, const char *module, const char *key, PyObject *
  * module without a .mod file (dump Scrap) shows its dict
  */
 static void TC_Dump(tcBuf *b, const char *arg) {
-	PyObject *names = PyList_New(0), *modules = PyImport_GetModuleDict(), *seen = PyDict_New();
+	PyObject *names = PyList_New(0), *seen = PyDict_New();
 	const char *p = arg;
 	modVarRef_t ref;
 
@@ -548,7 +548,7 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 		PyList_Sort(names);
 		for (int i = 0; i < PyList_Size(names); i++) {
 			const char *name = PyString_AsString(PyList_GetItem(names, i));
-			PyObject *m = PyDict_GetItemString(modules, (char *)name);
+			PyObject *m = Script_ModuleLoaded(name);
 			if (!m || !PyModule_Check(m)) {
 				TC_Addf(b, "== %s missing\n", name);
 				continue;
@@ -848,7 +848,7 @@ static void TC_In(tcBuf *b, const char *arg) {
 		name[n++] = *arg++;
 	}
 	name[n] = 0;
-	PyObject *m = n ? PyImport_ImportModule(name) : NULL;
+	PyObject *m = n ? Script_Module(name) : NULL;
 	if (!m || !PyModule_Check(m)) {
 		if (!PyErr_Occurred()) {
 			TC_Syntax(arg);

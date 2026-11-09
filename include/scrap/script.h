@@ -37,6 +37,35 @@ void Script_CheckEngine(void);
  * *module NULL)
  */
 int Script_ModuleMake(const char *name, const char *file, PyObject **module);
+/*
+ * The modules by name (batch 6b of docs/objlib-plan.md). The module objects stay in sys.modules until stage 7 (the
+ * dicts hold the values, the test channel and the cases' `import X` read sys.modules), but a pack module (one the
+ * registry of the module variables has a .mod file of, ModVar_HasModule) is looked up there in C, without the import
+ * of Python. Only Pack_PreloadLibrary makes a pack module (Script_ModuleMake); an import never did (there is no .pyc
+ * reader), so the order of the first loads is the engine's. Every other name (sys, math, strop, __builtin__, the
+ * engine modules Scrap, SScorer, ...) and a pack module that is not in sys.modules (deleted from it, not preloaded
+ * yet: the import looks for a file, the gate refuses one, the ImportError says which) go through the import of Python
+ * as before.
+ */
+/* `import name`: the module, a new reference; NULL with the ImportError of the import ("No module named <name>" for
+ * a pack module whose sys.modules entry is None) */
+PyObject *Script_Module(const char *name);
+/* `import name` in the module code whose globals are given (IMPORT_NAME: a package's globals look in the package
+ * first, which no pack module is; such globals go through the import of Python) */
+PyObject *Script_ModuleIn(const char *name, PyObject *globals);
+/* the object loaded under name (sys.modules[name], also None or a non-module a case put there): borrowed, NULL
+ * without an error when there is none */
+PyObject *Script_ModuleLoaded(const char *name);
+/* the module object name, made empty into sys.modules when there is none or the entry is no module
+ * (PyImport_AddModule): borrowed, NULL with the error set */
+PyObject *Script_ModuleAdd(const char *name);
+/* the lookups by path since the start (reset: back to 0): pack modules found in sys.modules, pack modules whose entry
+ * is None, pack modules not loaded (the import's file search), other names (the import of Python), modules made from
+ * a .mod file (Script_ModuleMake), PreloadLibrary of a loaded module */
+enum { SMC_PACK, SMC_NONE, SMC_ABSENT, SMC_OTHER, SMC_ADDED, SMC_MADE, SMC_LOADED, SMC_COUNT };
+void Script_ModuleCounts(unsigned long counts[SMC_COUNT], byte reset);
+/* Pack_PreloadLibrary found the module loaded */
+void Script_ModuleCountLoaded(void);
 /* text (NAME or NAME.NAME...) as module code loads it (LOAD_NAME in locals, which are the globals too, then the
  * builtins; LOAD_ATTR): a new reference, NULL with the error set */
 PyObject *Script_ModuleName(PyObject *locals, const char *text);

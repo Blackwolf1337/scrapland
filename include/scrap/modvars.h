@@ -124,9 +124,11 @@ int ModVar_SetAttr(const modVarRef_t *ref, const char *name, PyObject *v);
 int ModVar_Names(const modVarRef_t *ref, const char ***names);
 /* the name of the module of a ref */
 const char *ModVar_ModuleName(const modVarRef_t *ref);
+/* whether the registry has a .mod file (of any level) of the module name: a pack module (Script_Module) */
+byte ModVar_HasModule(const char *module);
 
-/* ---- by module name: the module imported as the scripts import it (PyImport_ImportModule, its error), a pack module
- * through the registry, another module (Scrap, __main__, a pack module while its code runs) by its dict ---- */
+/* ---- by module name: the module imported as the scripts import it (Script_Module, its error), a pack module through
+ * the registry, another module (Scrap, __main__, a pack module while its code runs) by its dict ---- */
 
 /* the variable name of module as its code reads a global: a new reference, NULL when it has none (no error set, the
  * caller raises NameError or ImportError) or when the import failed (*imported 0, its error set) */
