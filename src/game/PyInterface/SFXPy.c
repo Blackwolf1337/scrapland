@@ -5,30 +5,27 @@
 #include "scrap/fx.h"
 #include "scrap/global.h"
 #include "scrap/python.h"
+#include "scrap/scriptapi.h"
 
 /* ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión de la nave */
-static PyObject *SFX_ShipExplosion(PyObject *self, PyObject *args) {
+API_FN(SFX, ShipExplosion) {
 	vec3_t pos, vel;
 	float scale = 1.0f, time = 1.0f;
 	int numFlames = 0, collision = 0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)(fff)ffii", &pos.x, &pos.y, &pos.z, &vel.x, &vel.y, &vel.z, &scale, &time,
-			&numFlames, &collision)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "(fff)(fff)ffii", &pos.x, &pos.y, &pos.z, &vel.x, &vel.y, &vel.z, &scale, &time, &numFlames,
+			&collision)) {
+		return 0;
 	}
 	FX_ShipExplosion(pos, vel, scale, time, numFlames, collision);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXCharacterConversor(CharacterName, ConversorName, phase) : Conversor de Personajes */
-static PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
-	char *characterName, *conversorName;
+API_FN(SFX, CharacterConversor) {
+	const char *characterName, *conversorName;
 	int phase = 1;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssi", &characterName, &conversorName, &phase)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ssi", &characterName, &conversorName, &phase)) {
+		return 0;
 	}
 	cEntity *vCharacter = World_FindEntity(characterName);
 	CHECK(vCharacter);
@@ -37,17 +34,15 @@ static PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
 	CHECK(vConversor);
 	CHECK(Entity_IsType(vConversor, TYEN_WITH_LIFE));
 	FX_CharacterConversor(vCharacter, vConversor, phase, 1.7f, 0.2f);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXCharacterConversion(AttackerName, AttackedName, time) : Conversión de Personajes */
-static PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
-	char *attackerName, *attackedName;
+API_FN(SFX, CharacterConversion) {
+	const char *attackerName, *attackedName;
 	float time = 1.0f;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssf", &attackerName, &attackedName, &time)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ssf", &attackerName, &attackedName, &time)) {
+		return 0;
 	}
 	cEntity *vAttacker = World_FindEntity(attackerName);
 	CHECK(vAttacker);
@@ -56,16 +51,14 @@ static PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
 	CHECK(vAttacked);
 	CHECK(Entity_IsType(vAttacked, TYEN_WITH_LIFE));
 	FX_CharacterConversion(vAttacker, vAttacked, time);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXBishopSellLife(AttackerName, AttackedName) : Efecto de dar vida (de Attacker [Bishop ó NULL] a Attacked) */
-static PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
-	char *attackerName, *attackedName;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &attackerName, &attackedName)) {
-		return NULL;
+API_FN(SFX, BishopSellLife) {
+	const char *attackerName, *attackedName;
+	if (!Mode_Parse(a, n, "ss", &attackerName, &attackedName)) {
+		return 0;
 	}
 	cEntity *vAttacker = World_FindEntity(attackerName);
 	if (vAttacker) {
@@ -75,17 +68,15 @@ static PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
 	CHECK(vAttacked);
 	CHECK(Entity_IsType(vAttacked, TYEN_WITH_LIFE));
 	FX_BishopSellLife(vAttacker, vAttacked);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXMoneyTransfer(EntityFrom, EntityTo, Time) : Transferencia de dinero */
-static PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
-	char *fromName, *toName;
+API_FN(SFX, MoneyTransfer) {
+	const char *fromName, *toName;
 	float time;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssf", &fromName, &toName, &time)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ssf", &fromName, &toName, &time)) {
+		return 0;
 	}
 	cEntity *vFrom = World_FindEntity(fromName);
 	CHECK(vFrom);
@@ -94,21 +85,19 @@ static PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
 	CHECK(vTo);
 	CHECK(Entity_IsType(vTo, TYEN_WITH_LIFE));
 	FX_MoneyTransfer(vFrom, vTo, time);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de effects embedidos */
-static PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
-	char *entityName, *fxType;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &entityName, &fxType)) {
-		return NULL;
+API_FN(SFX, EmbeddedSet) {
+	const char *entityName, *fxType;
+	if (!Mode_Parse(a, n, "ss", &entityName, &fxType)) {
+		return 0;
 	}
 	cEntity *vEntity = World_FindEntity(entityName);
 	CHECK(vEntity);
 	Entity_SetEmbeddedFX(vEntity, fxType);
-	return Py_ReturnNone();
+	return 1;
 }
 
 static char str_PyDoc_SFX_BishopSellLife[];
@@ -191,3 +180,4 @@ static char str_PyDoc_SFX_MoneyTransfer[] =
 static char str_PyDoc_SFX_EmbeddedSet[] =
 	"FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos.";
 
+PORTS(PyInterface_SFXPy)

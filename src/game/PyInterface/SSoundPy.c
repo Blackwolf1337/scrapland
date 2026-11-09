@@ -3,54 +3,48 @@
  * sets. The original source file is not known (no CHECK in it); the other modules are PyInterface/S*Py.cpp.
  */
 #include "scrap/python.h"
+#include "scrap/scriptapi.h"
 #include "scrap/sound.h"
 
 /* SetVoiceVolume(voice, volume) */
-static PyObject *SSound_SetVoiceVolume(PyObject *self, PyObject *args) {
+API_FN(SSound, SetVoiceVolume) {
 	int voice;
 	double volume;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "id", &voice, &volume)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "id", &voice, &volume)) {
+		return 0;
 	}
 	SoundSys_SetVoiceVolume(g_pSound, voice, (float)volume);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetVoiceString(voice, text) */
-static PyObject *SSound_SetVoiceString(PyObject *self, PyObject *args) {
+API_FN(SSound, SetVoiceString) {
 	int voice;
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &voice, &text)) {
-		return NULL;
+	const char *text;
+	if (!Mode_Parse(a, n, "is", &voice, &text)) {
+		return 0;
 	}
 	SoundSys_SetVoiceString(g_pSound, voice, text);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* DeleteAllSounds() */
-static PyObject *SSound_DeleteAllSounds(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SSound, DeleteAllSounds) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	SoundSys_DeleteAllSounds(g_pSound);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* LoadSound(name) */
-static PyObject *SSound_LoadSound(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(SSound, LoadSound) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	SoundSys_LoadSound(g_pSound, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* PlaySound((x,y,z), name, volume[, p1, p2, p3]) : sound at a position; p1, p2 default 0, p3 default 1 */
@@ -65,41 +59,36 @@ void Sound_PlayAt(const vec3_t *pos, const char *name, double volume, double p1,
 	SoundSys_PlaySound(g_pSound, name, &desc, 0);
 }
 
-static PyObject *SSound_PlaySound(PyObject *self, PyObject *args) {
+API_FN(SSound, PlaySound) {
 	double x, y, z, volume, p1 = 0.0, p2 = 0.0, p3 = 1.0;
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(ddd)sd|ddd", &x, &y, &z, &name, &volume, &p1, &p2, &p3)) {
-		return NULL;
+	const char *name;
+	if (!Mode_Parse(a, n, "(ddd)sd|ddd", &x, &y, &z, &name, &volume, &p1, &p2, &p3)) {
+		return 0;
 	}
 	vec3_t pos = { (float)x, (float)y, (float)z };
 	Sound_PlayAt(&pos, name, volume, p1, p2, p3);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* Play(name[, volume[, pan]]) : 2D sound; volume default 1, pan default 0 (-1..1, sent as pan * 10000) */
-static PyObject *SSound_Play(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(SSound, Play) {
+	const char *name;
 	double volume = 1.0, pan = 0.0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|dd", &name, &volume, &pan)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s|dd", &name, &volume, &pan)) {
+		return 0;
 	}
 	int ipan = (int)(pan * 10000.0);
 	SoundSys_Play(g_pSound, name, Snd_Volume((float)volume), ipan);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* StopAllSounds() */
-static PyObject *SSound_StopAllSounds(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SSound, StopAllSounds) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	SoundSys_StopAllSounds(g_pSound);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /*
@@ -107,154 +96,129 @@ static PyObject *SSound_StopAllSounds(PyObject *self, PyObject *args) {
  * As compiled: when the string form parses but the set does not exist, the number form is tried and fails with
  * a TypeError; an unknown set with a number returns None.
  */
-static PyObject *SSound_SetPS(PyObject *self, PyObject *args) {
-	char *psName, *var, *s;
+API_FN(SSound, SetPS) {
+	const char *psName, *var, *s;
 	double d;
-	int i;
 	cSoundPS *ps;
-
-	(void)self;
-	if (PyArg_ParseTuple(args, "sss", &psName, &var, &s) && (ps = SndPS_Get(psName))) {
-		return Py_BuildValue("i", cSoundPS_Var(ps, var, 1, &s, NULL, NULL));
+	if (Mode_Parse(a, n, "sss", &psName, &var, &s) && (ps = SndPS_Get(psName))) {
+		char *v = (char *)s;
+		return Api_Build(out, "i", cSoundPS_Var(ps, var, 1, &v, NULL, NULL));
 	}
 	PyErr_Clear();
-	if (!PyArg_ParseTuple(args, "ssd", &psName, &var, &d)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ssd", &psName, &var, &d)) {
+		return 0;
 	}
 	ps = SndPS_Get(psName);
-	i = (int)d;
+	int i = (int)d;
 	if (!ps) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return Py_BuildValue("i", cSoundPS_Var(ps, var, 1, NULL, &d, &i));
+	return Api_Build(out, "i", cSoundPS_Var(ps, var, 1, NULL, &d, &i));
 }
 
 /* GetPS(psname, var) : value in its type; None for an unknown set or variable */
-static PyObject *SSound_GetPS(PyObject *self, PyObject *args) {
+API_FN(SSound, GetPS) {
 	/* differs from the original: the values start at 0, as in SScorer.Get */
-	char *psName, *var, *s = NULL;
+	const char *psName, *var;
+	char *s = NULL;
 	double d = 0.0;
 	int i = 0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &psName, &var)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ss", &psName, &var)) {
+		return 0;
 	}
 	cSoundPS *ps = SndPS_Get(psName);
 	if (ps) {
 		switch (cSoundPS_Var(ps, var, 0, &s, &d, &i)) {
 		case 1:
-			return Py_BuildValue("s", s);
+			return Api_Build(out, "s", s);
 		case 2:
-			return Py_BuildValue("d", d);
+			return Api_Build(out, "d", d);
 		case 3:
-			return Py_BuildValue("i", i);
+			return Api_Build(out, "i", i);
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* CreatePS(psname) : 1 if the set was made */
-static PyObject *SSound_CreatePS(PyObject *self, PyObject *args) {
-	char *psName;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &psName)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", SndPS_Create(psName) != NULL);
+API_FN(SSound, CreatePS) {
+	const char *psName;
+	return Mode_Parse(a, n, "s", &psName) && Api_Build(out, "i", SndPS_Create(psName) != NULL);
 }
 
 /* UsePS(on) */
-static PyObject *SSound_UsePS(PyObject *self, PyObject *args) {
+API_FN(SSound, UsePS) {
 	int on;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &on)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", SndPS_Use(on != 0) != 0);
+	return Mode_Parse(a, n, "i", &on) && Api_Build(out, "i", SndPS_Use(on != 0) != 0);
 }
 
 /* SetMusic(name[, volume]) : volume default 1, set before the music */
-static PyObject *SSound_SetMusic(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(SSound, SetMusic) {
+	const char *name;
 	double volume = 1.0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|d", &name, &volume)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s|d", &name, &volume)) {
+		return 0;
 	}
 	SoundSys_SetMusicVolume(g_pSound, (float)volume);
 	SoundSys_SetMusic(g_pSound, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetMusicVolume(volume) */
-static PyObject *SSound_SetMusicVolume(PyObject *self, PyObject *args) {
+API_FN(SSound, SetMusicVolume) {
 	double volume = 1.0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "d", &volume)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "d", &volume)) {
+		return 0;
 	}
 	SoundSys_SetMusicVolume(g_pSound, (float)volume);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* OpenVoice(name, voice[, arg]) : arg default 1 */
-static PyObject *SSound_OpenVoice(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(SSound, OpenVoice) {
+	const char *name;
 	int voice, arg = 1;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "si|i", &name, &voice, &arg)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "si|i", &name, &voice, &arg)) {
+		return 0;
 	}
 	SoundSys_OpenVoice(g_pSound, name, voice, arg);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* PlayVoice(voice[, text]) : plays and sets the subtitle text (default "") */
-static PyObject *SSound_PlayVoice(PyObject *self, PyObject *args) {
+API_FN(SSound, PlayVoice) {
 	int voice;
-	char *text = "";
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i|s", &voice, &text)) {
-		return NULL;
+	const char *text = "";
+	if (!Mode_Parse(a, n, "i|s", &voice, &text)) {
+		return 0;
 	}
 	SoundSys_PlayVoice(g_pSound, voice);
 	SoundSys_SetVoiceString(g_pSound, voice, text);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* StopVoice(voice) */
-static PyObject *SSound_StopVoice(PyObject *self, PyObject *args) {
+API_FN(SSound, StopVoice) {
 	int voice;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &voice)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &voice)) {
+		return 0;
 	}
 	SoundSys_StopVoice(g_pSound, voice);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* VoiceRemain(voice, default) : remaining time of the voice, the default when the voice reports none */
-static PyObject *SSound_VoiceRemain(PyObject *self, PyObject *args) {
+API_FN(SSound, VoiceRemain) {
 	int voice;
 	double result;
 	float remain;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "id", &voice, &result)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "id", &voice, &result)) {
+		return 0;
 	}
 	if (SoundSys_VoiceRemain(g_pSound, voice, &remain)) {
 		result = (double)remain;
 	}
-	return Py_BuildValue("d", result);
+	return Api_Build(out, "d", result);
 }
 
 static char str_PyDoc_SSound_CreatePS[];
@@ -461,3 +425,4 @@ static char str_PyDoc_SSound_StopVoice[] = "StopVoice(channel) : stop a voice on
 static char str_PyDoc_SSound_VoiceRemain[72] =
 	"VoiceRemain(channel,time) : return the remaining time of a voice.";
 
+PORTS(PyInterface_SSoundPy)

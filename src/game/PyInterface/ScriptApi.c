@@ -98,12 +98,15 @@ byte Api_Build(nativeVal_t *out, const char *fmt, ...) {
 	return 1;
 }
 
-byte Api_Handle(const char *name, nativeVal_t *out) {
-	PyObject *h = PyEntity_New(name);
-	if (!h) {
+byte Api_Object(PyObject *o, nativeVal_t *out) {
+	if (!o) {
 		return 0;
 	}
-	Native_Arg(h, out);
-	Py_DECREF(h);
+	Native_Arg(o, out);
+	Py_DECREF(o);
 	return 1;
+}
+
+byte Api_Handle(const char *name, nativeVal_t *out) {
+	return Api_Object(PyEntity_New(name), out);
 }

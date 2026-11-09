@@ -1443,6 +1443,64 @@ PORT_DECL(SAct, DumpEvents) /* 1 */
 	PORT_DEF(SAct, GetAct, SAct_GetAct) \
 	PORT_DEF(SAct, DumpEvents, SAct_DumpEvents)
 
+/* PyInterface/SFXPy.c */
+PORT_DECL(SFX, ShipExplosion) /* 6 */
+PORT_DECL(SFX, CharacterConversor) /* 3 */
+PORT_DECL(SFX, CharacterConversion) /* 3 */
+PORT_DECL(SFX, BishopSellLife) /* 2 */
+PORT_DECL(SFX, MoneyTransfer) /* 3 */
+PORT_DECL(SFX, EmbeddedSet) /* 2 */
+#define PORTS_PyInterface_SFXPy \
+	PORT_DEF(SFX, ShipExplosion, SFX_ShipExplosion) \
+	PORT_DEF(SFX, CharacterConversor, SFX_CharacterConversor) \
+	PORT_DEF(SFX, CharacterConversion, SFX_CharacterConversion) \
+	PORT_DEF(SFX, BishopSellLife, SFX_BishopSellLife) \
+	PORT_DEF(SFX, MoneyTransfer, SFX_MoneyTransfer) \
+	PORT_DEF(SFX, EmbeddedSet, SFX_EmbeddedSet)
+
+/* PyInterface/SInputPy.c */
+PORT_DECL(SInput, SetActionSet) /* 1 */
+PORT_DECL(SInput, GetActionSet) /* 0 */
+PORT_DECL(SInput, AssingEntry) /* 5 */
+PORT_DECL(SInput, GetEntry) /* 3 */
+PORT_DECL(SInput, ListenToDefine) /* 4 */
+PORT_DECL(SInput, AbortListenToDefine) /* 0 */
+PORT_DECL(SInput, GetDefinedList) /* ? */
+PORT_DECL(SInput, GetDefinedEntry) /* ? */
+PORT_DECL(SInput, ClearDefinedList) /* ? */
+PORT_DECL(SInput, ResetToDefault) /* 0 */
+PORT_DECL(SInput, SetString) /* 2 */
+PORT_DECL(SInput, GetString) /* 1 */
+PORT_DECL(SInput, GetCursorChar) /* 1 */
+PORT_DECL(SInput, GetVirtualKeyboard) /* 0 */
+PORT_DECL(SInput, SetVirtualKeyboard) /* 1 */
+PORT_DECL(SInput, SetInputFunc) /* 2 */
+PORT_DECL(SInput, Bind) /* 4 */
+PORT_DECL(SInput, Rumble) /* 4 */
+PORT_DECL(SInput, ResetToSplit) /* 0 */
+PORT_DECL(SInput, CheckPadButton) /* 2 */
+#define PORTS_PyInterface_SInputPy \
+	PORT_DEF(SInput, SetActionSet, SInput_SetActionSet) \
+	PORT_DEF(SInput, GetActionSet, SInput_GetActionSet) \
+	PORT_DEF(SInput, AssingEntry, SInput_AssingEntry) \
+	PORT_DEF(SInput, GetEntry, SInput_GetEntry) \
+	PORT_DEF(SInput, ListenToDefine, SInput_ListenToDefine) \
+	PORT_DEF(SInput, AbortListenToDefine, SInput_AbortListenToDefine) \
+	PORT_DEF(SInput, GetDefinedList, SInput_GetDefinedList) \
+	PORT_DEF(SInput, GetDefinedEntry, SInput_GetDefinedEntry) \
+	PORT_DEF(SInput, ClearDefinedList, SInput_ClearDefinedList) \
+	PORT_DEF(SInput, ResetToDefault, SInput_ResetToDefault) \
+	PORT_DEF(SInput, SetString, SInput_SetString) \
+	PORT_DEF(SInput, GetString, SInput_GetString) \
+	PORT_DEF(SInput, GetCursorChar, SInput_GetCursorChar) \
+	PORT_DEF(SInput, GetVirtualKeyboard, SInput_GetVirtualKeyboard) \
+	PORT_DEF(SInput, SetVirtualKeyboard, SInput_SetVirtualKeyboard) \
+	PORT_DEF(SInput, SetInputFunc, SInput_SetInputFunc) \
+	PORT_DEF(SInput, Bind, SInput_Bind) \
+	PORT_DEF(SInput, Rumble, SInput_Rumble) \
+	PORT_DEF(SInput, ResetToSplit, SInput_ResetToSplit) \
+	PORT_DEF(SInput, CheckPadButton, SInput_CheckPadButton)
+
 /* PyInterface/SLogic.c */
 PORT_DECL(SLogic, SendSentinelToWatch) /* 1 */
 PORT_DECL(SLogic, GearAttack) /* 1 */
@@ -1469,6 +1527,169 @@ PORT_DECL(SLogic, UpdateTauntEndTime) /* ? */
 	PORT_DEF(SLogic, ChangeZoneState, SLogic_ChangeZoneState) \
 	PORT_DEF(SLogic, ChangeBatonState, SLogic_ChangeBatonState) \
 	PORT_DEF(SLogic, UpdateTauntEndTime, SLogic_UpdateTauntEndTime)
+
+/* PyInterface/SNetPy.c */
+PORT_DECL(SNet, InitServer) /* 3 */
+PORT_DECL(SNet, CloseServer) /* 1 */
+PORT_DECL(SNet, ServerChangeLevel) /* 1 */
+PORT_DECL(SNet, IsServer) /* 0 */
+PORT_DECL(SNet, IsDedicated) /* 0 */
+PORT_DECL(SNet, GetServerData) /* 0 */
+PORT_DECL(SNet, AddResource) /* 1 */
+PORT_DECL(SNet, ModifyUsrData) /* 1 */
+PORT_DECL(SNet, GetBotName) /* 0 */
+PORT_DECL(SNet, GetObjName) /* 0 */
+PORT_DECL(SNet, Kick) /* 1 */
+PORT_DECL(SNet, InitClient) /* 2 */
+PORT_DECL(SNet, CloseClient) /* ? */
+PORT_DECL(SNet, IsClient) /* 0 */
+PORT_DECL(SNet, GetClientData) /* 0 */
+PORT_DECL(SNet, GetMyClientShip) /* 0 */
+PORT_DECL(SNet, InitBrowser) /* ? */
+PORT_DECL(SNet, DoneBrowser) /* 0 */
+PORT_DECL(SNet, SendUsrString) /* 2 */
+PORT_DECL(SNet, SendChatString) /* 2 */
+PORT_DECL(SNet, SendCtrlString) /* 1 */
+PORT_DECL(SNet, SendMasterString) /* 1 */
+PORT_DECL(SNet, IsMaster) /* 0 */
+PORT_DECL(SNet, PingInetSvrs) /* 0 */
+PORT_DECL(SNet, GetPing) /* 1 */
+#define PORTS_PyInterface_SNetPy \
+	PORT_DEF(SNet, InitServer, SNet_InitServer) \
+	PORT_DEF(SNet, CloseServer, SNet_CloseServer) \
+	PORT_DEF(SNet, ServerChangeLevel, SNet_ServerChangeLevel) \
+	PORT_DEF(SNet, IsServer, SNet_IsServer) \
+	PORT_DEF(SNet, IsDedicated, SNet_IsDedicated) \
+	PORT_DEF(SNet, GetServerData, SNet_GetServerData) \
+	PORT_DEF(SNet, AddResource, SNet_AddResource) \
+	PORT_DEF(SNet, ModifyUsrData, SNet_ModifyUsrData) \
+	PORT_DEF(SNet, GetBotName, SNet_GetBotName) \
+	PORT_DEF(SNet, GetObjName, SNet_GetObjName) \
+	PORT_DEF(SNet, Kick, SNet_Kick) \
+	PORT_DEF(SNet, InitClient, SNet_InitClient) \
+	PORT_DEF(SNet, CloseClient, SNet_CloseClient) \
+	PORT_DEF(SNet, IsClient, SNet_IsClient) \
+	PORT_DEF(SNet, GetClientData, SNet_GetClientData) \
+	PORT_DEF(SNet, GetMyClientShip, SNet_GetMyClientShip) \
+	PORT_DEF(SNet, InitBrowser, SNet_InitBrowser) \
+	PORT_DEF(SNet, DoneBrowser, SNet_DoneBrowser) \
+	PORT_DEF(SNet, SendUsrString, SNet_SendUsrString) \
+	PORT_DEF(SNet, SendChatString, SNet_SendChatString) \
+	PORT_DEF(SNet, SendCtrlString, SNet_SendCtrlString) \
+	PORT_DEF(SNet, SendMasterString, SNet_SendMasterString) \
+	PORT_DEF(SNet, IsMaster, SNet_IsMaster) \
+	PORT_DEF(SNet, PingInetSvrs, SNet_PingInetSvrs) \
+	PORT_DEF(SNet, GetPing, SNet_GetPing)
+
+/* PyInterface/SScorerPy.c */
+PORT_DECL(SScorer, Add) /* ? */
+PORT_DECL(SScorer, Clear) /* 1 */
+PORT_DECL(SScorer, Set) /* 4 */
+PORT_DECL(SScorer, Get) /* 3 */
+PORT_DECL(SScorer, Show) /* 1 */
+PORT_DECL(SScorer, Hide) /* 1 */
+PORT_DECL(SScorer, SetCursor) /* 2 */
+PORT_DECL(SScorer, SetDefault) /* 2 */
+PORT_DECL(SScorer, GetDefault) /* 1 */
+PORT_DECL(SScorer, GetActual) /* 1 */
+PORT_DECL(SScorer, SetOnCancel) /* 2 */
+PORT_DECL(SScorer, SetOnNext) /* 2 */
+PORT_DECL(SScorer, SetOnPrev) /* 2 */
+PORT_DECL(SScorer, SetOnSpecialHint) /* 3 */
+PORT_DECL(SScorer, AddModel) /* ? */
+PORT_DECL(SScorer, SetMPFunc) /* 2 */
+PORT_DECL(SScorer, PreloadTexture) /* ? */
+PORT_DECL(SScorer, AddChatMsg) /* 4 */
+PORT_DECL(SScorer, SetConsole) /* 1 */
+PORT_DECL(SScorer, SetSpeechText) /* 5 */
+PORT_DECL(SScorer, SetSpeechCallback) /* ? */
+PORT_DECL(SScorer, CancelSpeech) /* 0 */
+PORT_DECL(SScorer, SetHeadMonitor) /* 3 */
+PORT_DECL(SScorer, Fade) /* 4 */
+PORT_DECL(SScorer, SetCinema) /* 3 */
+PORT_DECL(SScorer, SetMsgText) /* 2 */
+PORT_DECL(SScorer, SetLabelText) /* 2 */
+PORT_DECL(SScorer, Get2DPos) /* 1 */
+PORT_DECL(SScorer, GetTextArea) /* 2 */
+PORT_DECL(SScorer, GetMenuAccept) /* 1 */
+PORT_DECL(SScorer, SetMarkerSprite) /* 2 */
+PORT_DECL(SScorer, GetItem) /* 2 */
+PORT_DECL(SScorer, New) /* ? */
+PORT_DECL(SScorer, Items) /* 1 */
+PORT_DECL(SScorer, Accept) /* 2 */
+#define PORTS_PyInterface_SScorerPy \
+	PORT_DEF(SScorer, Add, SScorer_Add) \
+	PORT_DEF(SScorer, Clear, SScorer_Clear) \
+	PORT_DEF(SScorer, Set, SScorer_Set) \
+	PORT_DEF(SScorer, Get, SScorer_Get) \
+	PORT_DEF(SScorer, Show, SScorer_Show) \
+	PORT_DEF(SScorer, Hide, SScorer_Hide) \
+	PORT_DEF(SScorer, SetCursor, SScorer_SetCursor) \
+	PORT_DEF(SScorer, SetDefault, SScorer_SetDefault) \
+	PORT_DEF(SScorer, GetDefault, SScorer_GetDefault) \
+	PORT_DEF(SScorer, GetActual, SScorer_GetCurrent) \
+	PORT_DEF(SScorer, SetOnCancel, SScorer_SetOnCancel) \
+	PORT_DEF(SScorer, SetOnNext, SScorer_SetOnNext) \
+	PORT_DEF(SScorer, SetOnPrev, SScorer_SetOnPrev) \
+	PORT_DEF(SScorer, SetOnSpecialHint, SScorer_SetOnSpecialHint) \
+	PORT_DEF(SScorer, AddModel, SScorer_AddModel) \
+	PORT_DEF(SScorer, SetMPFunc, SScorer_SetMPFunc) \
+	PORT_DEF(SScorer, PreloadTexture, SScorer_PreloadTexture) \
+	PORT_DEF(SScorer, AddChatMsg, SScorer_AddChatMsg) \
+	PORT_DEF(SScorer, SetConsole, SScorer_SetConsole) \
+	PORT_DEF(SScorer, SetSpeechText, SScorer_SetSpeechText) \
+	PORT_DEFP(SScorer, SetSpeechCallback, SScorer_SetSpeechCallback) \
+	PORT_DEF(SScorer, CancelSpeech, SScorer_CancelSpeech) \
+	PORT_DEF(SScorer, SetHeadMonitor, SScorer_SetHeadMonitor) \
+	PORT_DEF(SScorer, Fade, SScorer_Fade) \
+	PORT_DEF(SScorer, SetCinema, SScorer_SetCinema) \
+	PORT_DEF(SScorer, SetMsgText, SScorer_SetMsgText) \
+	PORT_DEF(SScorer, SetLabelText, SScorer_SetLabelText) \
+	PORT_DEF(SScorer, Get2DPos, SScorer_Get2DPos) \
+	PORT_DEF(SScorer, GetTextArea, SScorer_GetTextArea) \
+	PORT_DEF(SScorer, GetMenuAccept, SScorer_GetMenuAccept) \
+	PORT_DEF(SScorer, SetMarkerSprite, SScorer_SetMarkerSprite) \
+	PORT_DEF(SScorer, GetItem, SScorer_GetItem) \
+	PORT_DEF(SScorer, New, SScorer_New) \
+	PORT_DEF(SScorer, Items, SScorer_Items) \
+	PORT_DEF(SScorer, Accept, SScorer_Accept)
+
+/* PyInterface/SSoundPy.c */
+PORT_DECL(SSound, LoadSound) /* 1 */
+PORT_DECL(SSound, PlaySound) /* ? */
+PORT_DECL(SSound, Play) /* ? */
+PORT_DECL(SSound, StopAllSounds) /* 0 */
+PORT_DECL(SSound, SetPS) /* 3 */
+PORT_DECL(SSound, GetPS) /* 2 */
+PORT_DECL(SSound, UsePS) /* 1 */
+PORT_DECL(SSound, CreatePS) /* 1 */
+PORT_DECL(SSound, SetMusic) /* ? */
+PORT_DECL(SSound, SetMusicVolume) /* 1 */
+PORT_DECL(SSound, OpenVoice) /* ? */
+PORT_DECL(SSound, PlayVoice) /* ? */
+PORT_DECL(SSound, StopVoice) /* 1 */
+PORT_DECL(SSound, VoiceRemain) /* 2 */
+PORT_DECL(SSound, SetVoiceVolume) /* 2 */
+PORT_DECL(SSound, SetVoiceString) /* 2 */
+PORT_DECL(SSound, DeleteAllSounds) /* 0 */
+#define PORTS_PyInterface_SSoundPy \
+	PORT_DEF(SSound, LoadSound, SSound_LoadSound) \
+	PORT_DEF(SSound, PlaySound, SSound_PlaySound) \
+	PORT_DEF(SSound, Play, SSound_Play) \
+	PORT_DEF(SSound, StopAllSounds, SSound_StopAllSounds) \
+	PORT_DEF(SSound, SetPS, SSound_SetPS) \
+	PORT_DEF(SSound, GetPS, SSound_GetPS) \
+	PORT_DEF(SSound, UsePS, SSound_UsePS) \
+	PORT_DEF(SSound, CreatePS, SSound_CreatePS) \
+	PORT_DEF(SSound, SetMusic, SSound_SetMusic) \
+	PORT_DEF(SSound, SetMusicVolume, SSound_SetMusicVolume) \
+	PORT_DEF(SSound, OpenVoice, SSound_OpenVoice) \
+	PORT_DEF(SSound, PlayVoice, SSound_PlayVoice) \
+	PORT_DEF(SSound, StopVoice, SSound_StopVoice) \
+	PORT_DEF(SSound, VoiceRemain, SSound_VoiceRemain) \
+	PORT_DEF(SSound, SetVoiceVolume, SSound_SetVoiceVolume) \
+	PORT_DEF(SSound, SetVoiceString, SSound_SetVoiceString) \
+	PORT_DEF(SSound, DeleteAllSounds, SSound_DeleteAllSounds)
 
 /* PyInterface/SVecPy.c */
 PORT_DECL(SVec, Add) /* 2 */
@@ -5307,6 +5528,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2529
+#define PORT_COUNT 2632
 
 #endif
