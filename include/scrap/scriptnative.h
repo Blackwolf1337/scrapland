@@ -310,6 +310,10 @@ byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
 /* Scrap.Get(name): the engine variable as the script gets it (a text, an int, a float, "<function>" or "<Script
  * function>"); 0 for an unknown name (the console line of Scrap.Get and Native_NullResult) */
 byte Native_GVarGet(const char *name, nativeVal_t *out);
+/* Scrap.GetLangEntries(name, n) (n < 0: not given, 3) as a list of texts; 0 with the TypeError of its argument for a
+ * value that is no text. OBJLIB 7: through the seam (fc-ol2p-charsnpc swaps it), the hook called with the arguments
+ * the caller gave */
+byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out);
 /* Scrap.Set(name, v): a text (without 0 bytes) to a text variable, a number to a number variable; 0 with the
  * TypeError of its arguments for other values ("illegal argument type for built-in operation") or Native_NullResult
  * when the variable is not there or of the other type. OBJLIB 7: through the seam (fc-om-dt records Scrap.Set) */

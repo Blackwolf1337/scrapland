@@ -17,8 +17,8 @@
  * string.find and replace are the native twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements,
  * CreateSaveVar, GetLevelPath, GetNewLevelPath, SAI.IniAI, dir and __import__ stay by name (OBJLIB 6, 7). Scrap.Set,
  * OpenPack, ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and
- * SetLabelText go through their seams (OBJLIB 7). The evals of the save texts stay Script_EvalIn (Mode_EvalIn,
- * OBJLIB 6), and the C hooks of the module code keep working on the module's dict (OBJLIB 6).
+ * SetLabelText go through their seams (OBJLIB 7). The evals of the save texts read literals with the native reader
+ * (Mode_EvalIn; a bare name is looked up in the module, OBJLIB 6), and the C hooks of the module code keep working on the module's dict (OBJLIB 6).
  */
 #include <string.h>
 

@@ -2486,6 +2486,27 @@ byte Native_GVarGet(const char *name, nativeVal_t *out) {
 	return Native_GVarValue(name, 0, out);
 }
 
+byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out) {
+	/* "s|i", n 3 when not given */
+	char ids[LANG_ENTRIES][LANG_ID];
+	const char *s;
+	PyObject *hook;
+	Native_SetNone(out);
+	int seam = Native_Seam("Scrap", "GetLangEntries", &hook);
+	if (seam) {
+		return seam > 0 && (n < 0 ? Native_HookCall(hook, out, "v", name) : Native_HookCall(hook, out, "vi", name, (long)n));
+	}
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	int count = Lang_GetEntries(s, n < 0 ? 3 : n, ids);
+	Native_SetEmpty(out, NV_LIST);
+	for (int i = 0; i < count; i++) {
+		Native_SetText(Native_Append(out), ids[i], (int)strlen(ids[i]));
+	}
+	return 1;
+}
+
 /* OBJLIB 7: module.name(args) with what a test put there instead of the engine function (hook from Native_Seam,
  * released; args a new tuple or NULL): 0 with the error set */
 static byte Native_CallHook(PyObject *hook, PyObject *args) {

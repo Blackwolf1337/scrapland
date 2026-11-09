@@ -16,9 +16,9 @@
  * port did; the scheduled ones, the hooks (OnEndOfSpeech, PlayerAnsCallback, OnOutOfRange, the SpeechRoutines) and
  * the functions RunNI calls (OnSpch, OnObjSpch) are the values of the module. The entities are handle values; the
  * voices, SScorer.SetSpeechText, SetSpeechCallback, SetHeadMonitor, CancelSpeech, SetMsgText and Set, Scrap.Set,
- * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, DeleteScheduledFuncs and the scheduler go through their seams
- * (OBJLIB 7: the cases record most of them); SVec.GetRotAng, NormAng and Scrap.GetLangEntries stay by name (OBJLIB
- * 7), string.split and find are the native twins (PORT_CALL; by name for an argument that holds an object, OBJLIB 9).
+ * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, GetLangEntries, DeleteScheduledFuncs and the scheduler go through
+ * their seams (OBJLIB 7: the cases record most of them); SVec.GetRotAng and NormAng stay by name (OBJLIB 7),
+ * string.split and find are the native twins (PORT_CALL; by name for an argument that holds an object, OBJLIB 9).
  */
 #include <string.h>
 
@@ -827,7 +827,7 @@ static byte Sp_AddNI(const nativeVal_t *text, const nativeVal_t *ans, const nati
 static byte Sp_AutoAddNI(const nativeVal_t *base, const nativeVal_t *anima, const nativeVal_t *head) {
 	nativeVal_t keys = { 0 }, txt = { 0 }, msg = { 0 }, ans = { 0 }, none;
 	Native_SetNone(&none);
-	int n = Native_CallMod("Scrap", "GetLangEntries", &keys, "vi", base, 2L) ? Mode_Len(&keys) : -1;
+	int n = Native_LangEntries(base, 2, &keys) ? Mode_Len(&keys) : -1;
 	byte ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
 		ok = Sp_Item(&keys, i, &txt) && Sp_Cat(&txt, "Msg", &msg) && Sp_Cat(&txt, "Ans", &ans) &&

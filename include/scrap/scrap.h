@@ -75,9 +75,22 @@ byte SaveVar_Create(const char *name, const char *value);
 void SaveVars_Delete(const char *prefix);
 const char *SaveVar_Get(const char *name);
 int SaveVar_Inc(const char *name, int n);
-PyObject *SaveGames_GetList(const char *path);
+/* the save files Save0.sav (the autosave) to Save6.sav */
+#define SAVE_SLOTS 7
+/* an entry of the save list of SaveGames_GetList: desc is not terminated when it has 64 characters (the original
+ * copied it with strncpy; Scrap.GetSaveGamesList read on into time, as PyString_FromString does) */
+typedef struct cSaveGameInfo {
+	char desc[0x40];
+	int32_t time;			/* modification time of the file */
+	int slot;
+} cSaveGameInfo;
+int SaveGames_GetList(const char *path, cSaveGameInfo saves[SAVE_SLOTS]);
 
-PyObject *Lang_GetEntries(const char *name, int n);
+/* the most entries and the size of an id of Lang_GetEntries */
+#define LANG_ENTRIES 10
+#define LANG_ID 0x100
+/* the ids of Scrap.GetLangEntries(name, n) into out: their count */
+int Lang_GetEntries(const char *name, int n, char out[LANG_ENTRIES][LANG_ID]);
 const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
 

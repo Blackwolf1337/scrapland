@@ -24,8 +24,9 @@
  * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback (values
  * a mission puts into the module, OBJLIB 5) and the builders of the super deal types (a table of names) are called
  * through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler and the
- * function values of the revenge and the auto save stay by name or value (OBJLIB 4). The code strings OnAbort and
- * OnVictory still run in the namespaces exec gives them (OBJLIB 6).
+ * function values of the revenge and the auto save stay by name or value (OBJLIB 4). The known code strings of OnAbort
+ * and OnVictory run on native values with the calls through the refs; any other text runs in the namespaces exec
+ * gives it (OBJLIB 6).
  */
 #include <ctype.h>
 #include <limits.h>
@@ -1202,7 +1203,7 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
  * or "Name.Func" and its constant arguments after '|' ('text or an int). They run as exec runs them in
  * SuperDealOnDefeat and SuperDealOnVictory: the imports stored in the locals of the function, a name looked up in the
  * locals, the globals of MissionsFuncs and the builtins (mission_bankerscombat never imports SaveGame: NameError, as
- * in the original), the string constants shared and interned as the compiler makes them.
+ * in the original).
  */
 #define MF_CODE_STEPS 8
 
@@ -1319,62 +1320,115 @@ static const mfCode_t *Mf_FindCode(const nativeVal_t *cad) {
 	return NULL;
 }
 
-/* a constant of the code: 'text (shared with an equal one before it, as com_addconst does) or an int */
-static PyObject *Mf_CodeConst(scriptFrame_t *f, const char *s, int len, PyObject **consts, int *count) {
+#define MF_CODES ((int)(sizeof(mf_codes) / sizeof(mf_codes[0])))
+
+/* the sites of the steps that call a port function (the ref of each found at its first run; OBJLIB 7: the counters of
+ * the test channel) */
+static portSite_t mf_codeSites[MF_CODES][MF_CODE_STEPS];
+
+/* a constant of the code: 'text or an int */
+static void Mf_CodeConst(const char *s, int len, nativeVal_t *out) {
 	if (*s != '\'') {
 		char buf[0x20];
 		Str_Copy(buf, s, len + 1 < (int)sizeof(buf) ? len + 1 : (int)sizeof(buf));
-		return Sf_Int(f, strtol(buf, NULL, 10));
+		Native_SetInt(out, strtol(buf, NULL, 10));
+		return;
 	}
-	PyObject *v = Sf_Keep(f, Script_StrConst(s + 1, len - 1));
-	for (int i = 0; v && i < *count; i++) {
-		if (PyObject_Compare(v, consts[i]) == 0) {
-			return consts[i];
-		}
-	}
-	if (v && *count < MF_CODE_STEPS * 2) {
-		consts[(*count)++] = v;
-	}
-	return v;
+	Native_SetText(out, s + 1, len - 1);
 }
 
-/* the statements of a known text, in the frame of SuperDealOnDefeat or SuperDealOnVictory (OBJLIB 6: the namespaces of
- * exec, a frame of Python objects, until the code strings go through the C registry of stage 5) */
-static void Mf_RunCode(scriptFrame_t *f, const mfCode_t *code, PyObject *globals, PyObject *locals) {
-	PyObject *consts[MF_CODE_STEPS * 2];
-	int count = 0;
-	for (int i = 0; i < MF_CODE_STEPS && code->steps[i] && !f->failed; i++) {
+/*
+ * module.func(a...) of a statement, module the name the text imported (or the module a global of MissionsFuncs
+ * holds): a port function through its ref (the seam: the entry while the attribute is the port's own function, else
+ * what is there, by name); Scrap.SetSaveVar through its seam; any other function by name (SuperDeal_X.Victory is a
+ * .def section: OBJLIB 6, until the sections have entries)
+ */
+static byte Mf_CodeCall(portSite_t *site, const char *module, const char *func, const char *fmt, const nativeVal_t *a,
+	int n) {
+	const portRef_t *ref = Port_Find(module, func);
+	if (ref) {
+		if (!site->ref) {
+			site->ref = ref;
+			site->file = __FILE__;
+			site->line = __LINE__;
+		}
+		return Port_Invoke(site, NULL, fmt, &a[0], &a[1], &a[2], &a[3]);
+	}
+	if (!strcmp(module, "Scrap") && !strcmp(func, "SetSaveVar") && n == 2 && a[0].type == NV_STR && a[1].type == NV_STR) {
+		return Mf_SetSaveSeam(Native_Text(&a[0]), Native_Text(&a[1]));
+	}
+	return Native_CallMod(module, func, NULL, fmt, &a[0], &a[1], &a[2], &a[3]);
+}
+
+/*
+ * The statements of a known text as SuperDealOnDefeat and SuperDealOnVictory exec them, on native values: "import M"
+ * imports M and binds the name in the locals of exec (here the list of names imported); a name the text did not import
+ * is LOAD_NAME in the globals of MissionsFuncs and the builtins (OBJLIB 5: the module's variables by name; Scrap is
+ * one, SaveGame is not: the NameError of mission_bankerscombat). A statement whose name holds no module calls the
+ * attribute of what is there as a value.
+ */
+static byte Mf_RunCode(const mfCode_t *code, PyObject *globals) {
+	const char *imported[MF_CODE_STEPS];
+	int ni = 0;
+	portSite_t *sites = mf_codeSites[code - mf_codes];
+	for (int i = 0; i < MF_CODE_STEPS && code->steps[i]; i++) {
 		const char *step = code->steps[i];
 		if (!strncmp(step, "import ", 7)) {
-			Sf_ImportTo(f, MF, locals, Sf_Keep(f, PyString_InternFromString((char *)step + 7)));
+			if (!Mode_Import(step + 7)) {
+				return 0;
+			}
+			imported[ni++] = step + 7;
 			continue;
 		}
-		char name[0x40];
+		char name[0x40], module[0x40];
 		const char *bar = strchr(step, '|');
 		int len = bar ? (int)(bar - step) : (int)strlen(step);
 		Str_Copy(name, step, len + 1 < (int)sizeof(name) ? len + 1 : (int)sizeof(name));
-		PyObject *fn = NULL;
-		/* LOAD_NAME, LOAD_ATTR: the callable before its constant arguments */
-		if (Script_NameChain(locals, globals, name, &fn) < 0) {
-			Sf_Check(f, 0);
-			break;
+		char *func = strchr(name, '.');
+		CHECK(func);
+		*func++ = 0;
+		PyObject *o = NULL, *fn = NULL;
+		byte local = 0;
+		for (int k = 0; k < ni && !local; k++) {
+			local = !strcmp(imported[k], name);
 		}
-		Sf_Keep(f, fn);
-		PyObject *vals[4];
+		if (local) {
+			Str_Copy(module, name, sizeof(module));
+		} else if (Script_NameChain(NULL, globals, name, &o) <= 0) {
+			return 0;
+		} else if (PyModule_Check(o)) {
+			Str_Copy(module, PyModule_GetName(o), sizeof(module));
+			Py_DECREF(o);
+			o = NULL;
+		}
+		/* LOAD_NAME, LOAD_ATTR before the constants */
+		if (o) {
+			fn = Script_GetAttr(o, func);
+			Py_DECREF(o);
+			if (!fn) {
+				return 0;
+			}
+		}
+		nativeVal_t a[4];
 		int n = 0;
-		while (bar && n < 4 && !f->failed) {
+		while (bar && n < 4) {
 			const char *next = strchr(bar + 1, '|');
-			vals[n++] = Mf_CodeConst(f, bar + 1, next ? (int)(next - bar - 1) : (int)strlen(bar + 1), consts, &count);
+			Mf_CodeConst(bar + 1, next ? (int)(next - bar - 1) : (int)strlen(bar + 1), &a[n++]);
 			bar = next;
 		}
-		PyObject *args = f->failed ? NULL : PyTuple_New(n);
-		for (int k = 0; args && k < n; k++) {
-			Py_INCREF(vals[k]);
-			PyTuple_SET_ITEM(args, k, vals[k]);
+		/* the result is dropped (POP_TOP) */
+		const char *fmt = &"vvvv"[4 - n];
+		byte ok = fn ? PORT_VALUE(fn, NULL, fmt, &a[0], &a[1], &a[2], &a[3]) :
+			Mf_CodeCall(&sites[i], module, func, fmt, a, n);
+		Py_XDECREF(fn);
+		for (int k = 0; k < n; k++) {
+			Native_Free(&a[k]);
 		}
-		/* the result is dropped (POP_TOP); the constants stay for the next statements */
-		Sf_CallArgs(f, fn, Sf_Check(f, f->failed || args != NULL) ? args : NULL);
+		if (!ok) {
+			return 0;
+		}
 	}
+	return 1;
 }
 
 /* exec(Scrap.GetSaveVar(var)) when it holds code; on victory the super deal type is cleared first. A known text runs
@@ -1392,17 +1446,21 @@ static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, by
 		return 0;
 	}
 	scriptFrame_t f = { 0 };
-	PyObject *text = Sf_Keep(&f, Native_ToPy(&cad));
-	PyObject *locals = text ? Sf_Build(&f, "{sOsOsO}", "id", id, "control", control, "cad", text) : NULL;
-	PyObject *m = locals ? Sf_Keep(&f, PyImport_ImportModule(MF)) : NULL;
+	PyObject *m = Sf_Keep(&f, PyImport_ImportModule(MF));
 	PyObject *g = m ? PyModule_GetDict(m) : NULL;
 	const mfCode_t *code = g && Script_HasBuiltins(g) ? Mf_FindCode(&cad) : NULL;
-	Native_Free(&cad);
 	if (code) {
-		Mf_RunCode(&f, code, g, locals);
-	} else {
-		/* an unknown text goes to the reader of Sf_Exec, which raises Script_NotRead's error for it */
+		Native_Free(&cad);
+		Sf_Check(&f, Mf_RunCode(code, g));
+	} else if (m) {
+		/* an unknown text goes to the reader of Sf_Exec in the locals of exec (OBJLIB 6), which raises
+		 * Script_NotRead's error for it */
+		PyObject *text = Sf_Keep(&f, Native_ToPy(&cad));
+		PyObject *locals = text ? Sf_Build(&f, "{sOsOsO}", "id", id, "control", control, "cad", text) : NULL;
+		Native_Free(&cad);
 		Sf_Exec(&f, text, MF, locals);
+	} else {
+		Native_Free(&cad);
 	}
 	PyObject *r = Sf_None(&f);
 	Py_XDECREF(r);

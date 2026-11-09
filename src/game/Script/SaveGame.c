@@ -701,13 +701,13 @@ static byte SG_QSaveReg(const nativeVal_t *reg) {
 	return PORT_OWN(SaveGame, SaveReg, NULL, "sv", "MissionStatus", reg);
 }
 
-/* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>", the
- * saved literals read with the Python reader: OBJLIB 6, the class keeps Python objects) */
+/* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>"). The
+ * names and the saved literals are read with the native reader (Mode_EvalSave, Mode_EvalPy); the class and its
+ * attributes stay Python objects until stage 7 (OBJLIB 7: the missions read them as attributes of the class) */
 static PyObject *SG_GetReg(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *lst = Mode_V(&t), *regs = Mode_V(&t);
-	PyObject *mod = PyImport_ImportModule(SG), *g = mod ? PyModule_GetDict(mod) : NULL;
-	PyObject *cdict = g ? Py_BuildValue("{s:s,s:O}", "__module__", SG, "__doc__", Py_None) : NULL;
+	PyObject *cdict = Py_BuildValue("{s:s,s:O}", "__module__", SG, "__doc__", Py_None);
 	PyObject *bases = cdict ? PyTuple_New(0) : NULL, *cname = bases ? PyString_FromString("res") : NULL;
 	PyObject *res = cname ? PyClass_New(bases, cdict, cname) : NULL;
 	Py_XDECREF(cname);
@@ -730,7 +730,7 @@ static PyObject *SG_GetReg(const nativeVal_t *name) {
 			PyObject *lit = NULL;
 			if (a->type == NV_STR && Script_IsName(Native_Text(a), a->n) && val->type == NV_STR) {
 				PyObject *v = Native_ToPy(val);
-				lit = v ? Script_EvalValue(g, v) : NULL;
+				lit = v ? Mode_EvalPy(SG, v) : NULL;
 				Py_XDECREF(v);
 			} else {
 				Script_NotRead("SaveGame.GetReg", Native_Text(code));
@@ -740,7 +740,6 @@ static PyObject *SG_GetReg(const nativeVal_t *name) {
 		}
 		Mode_Release(&t, mark);
 	}
-	Py_XDECREF(mod);
 	Mode_Done(&t, 0);
 	if (!ok) {
 		Py_XDECREF(res);

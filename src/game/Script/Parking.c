@@ -23,8 +23,8 @@
  * CreateEntityList, EntityListGet and string.split of other values than texts stay by name (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
  * NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc,
  * SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor, SAct.GetAction
- * and SetAct go through their seams (OBJLIB 7: the cases record or swap them). The evals of the save texts stay
- * Script_EvalIn (Mode_EvalIn, OBJLIB 6: a bare name is looked up in the module).
+ * and SetAct go through their seams (OBJLIB 7: the cases record or swap them). The evals of the save texts read
+ * literals with the native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB 6).
  */
 #include <string.h>
 

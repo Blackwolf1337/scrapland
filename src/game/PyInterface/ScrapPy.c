@@ -415,7 +415,14 @@ static PyObject *Scrap_GetLangEntries(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s|i", &name, &n)) {
 		return NULL;
 	}
-	return Lang_GetEntries(name, n);
+	char ids[LANG_ENTRIES][LANG_ID];
+	int count = Lang_GetEntries(name, n, ids);
+	PyObject *list = PyList_New(count);
+	CHECK(list);
+	for (int i = 0; i < count; i++) {
+		PyList_SetItem(list, i, PyString_FromString(ids[i]));
+	}
+	return list;
 }
 
 /* GetLangStr(name) : "" and a warning when the string is missing */
@@ -493,7 +500,18 @@ static PyObject *Scrap_GetSaveGamesList(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &path)) {
 		return NULL;
 	}
-	return SaveGames_GetList(path);
+	cSaveGameInfo saves[SAVE_SLOTS];
+	int n = SaveGames_GetList(path, saves);
+	PyObject *list = PyList_New(n);
+	CHECK(list);
+	for (int i = 0; i < n; i++) {
+		PyObject *t = PyTuple_New(2);
+		CHECK(t);
+		CHECK(PyTuple_SetItem(t, 0, PyString_FromString(saves[i].desc)) == 0);
+		CHECK(PyTuple_SetItem(t, 1, PyInt_FromLong(saves[i].slot)) == 0);
+		CHECK(PyList_SetItem(list, i, t) == 0);
+	}
+	return list;
 }
 
 /* GetSaveVar(name) */

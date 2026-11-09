@@ -781,7 +781,7 @@ const char *Mode_ModGetS(const char *module, const char *var, char *out, int siz
 /* ---- the hubs of batch S (Parking, Accelerator, InitLevel) ---- */
 
 /* eval(text) in the globals of module as the ports read the game's texts (a literal, or a bare name looked up in the
- * module; OBJLIB 6: Script_EvalIn): the value into out (any object as Native_Arg makes it) */
+ * module): Mode_EvalSave */
 byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out);
 
 /* Scrap.EntityListSet(list, var, value) on texts through its seam, else Mode_ListSet */
@@ -795,6 +795,14 @@ byte Mode_ActionSetGet(nativeVal_t *out);
  * any other text (a name, a name chain) and the errors through Script_EvalIn (OBJLIB 6), its result as Native_Arg makes
  * it */
 byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out);
+/* the literal of a Python text as eval reads it (a string without 0 bytes, after its leading blanks) with the native
+ * reader: 1 with *out (Native_Free it), else 0 without an error and *out None */
+byte Mode_LiteralPy(PyObject *text, nativeVal_t *out);
+/* eval(text) of a game text in the globals of module as a Python object (a new reference, NULL with the error), for
+ * the readers whose result stays a Python object: a literal of the native reader made the Python value; any other text
+ * (a name, a name chain, the errors) and a value that holds a dict through Script_EvalIn (OBJLIB 6: Native_ToPy lays
+ * a dict out in its slot order, where Python's table can order two colliding keys otherwise) */
+PyObject *Mode_EvalPy(const char *module, PyObject *text);
 
 /* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
 

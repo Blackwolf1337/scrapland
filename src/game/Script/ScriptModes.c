@@ -3647,16 +3647,7 @@ const char *Mode_ModGetS(const char *module, const char *var, char *out, int siz
 /* ---- the hubs of batch S (Parking, Accelerator, InitLevel) ---- */
 
 byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out) {
-	/* OBJLIB 6: Script_EvalIn, as the ports read the game's texts */
-	PyObject *s = Native_ToPy(text), *v = s ? Script_EvalIn(module, s) : NULL;
-	Py_XDECREF(s);
-	Native_SetNone(out);
-	if (!v) {
-		return 0;
-	}
-	Native_Arg(v, out);
-	Py_DECREF(v);
-	return 1;
+	return Mode_EvalSave(module, text, out);
 }
 
 byte Mode_ListSetSeam(const char *list, const char *var, const char *value) {
@@ -3678,17 +3669,58 @@ byte Mode_ActionSetGet(nativeVal_t *out) {
 	return 1;
 }
 
-byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out) {
+/* the literal of an eval text of n bytes (no 0 byte among them, read after its leading blanks, as Script_EvalValue
+ * reads it) with the native reader: 1 with *out, else 0 without an error and *out None */
+static byte Mode_EvalLiteral(const char *s, int n, nativeVal_t *out) {
 	Native_SetNone(out);
-	if (text->type == NV_STR && (int)strlen(Native_Text(text)) == text->n) {
-		const char *s = Native_Text(text);
-		while (*s == ' ' || *s == '\t') {
-			s++;
-		}
-		if (Native_Literal(s, out)) {
-			return 1;
+	if ((int)strlen(s) != n) {
+		return 0;
+	}
+	while (*s == ' ' || *s == '\t') {
+		s++;
+	}
+	return Native_Literal(s, out);
+}
+
+/* a dict in v, at any depth */
+static byte Mode_HasDict(const nativeVal_t *v) {
+	if (v->type == NV_DICT) {
+		return 1;
+	}
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			if (Mode_HasDict(&v->items[i])) {
+				return 1;
+			}
 		}
 	}
+	return 0;
+}
+
+byte Mode_LiteralPy(PyObject *text, nativeVal_t *out) {
+	if (!PyString_Check(text)) {
+		Native_SetNone(out);
+		return 0;
+	}
+	return Mode_EvalLiteral(PyString_AsString(text), PyString_Size(text), out);
+}
+
+PyObject *Mode_EvalPy(const char *module, PyObject *text) {
+	nativeVal_t v;
+	if (Mode_LiteralPy(text, &v) && !Mode_HasDict(&v)) {
+		PyObject *o = Native_ToPy(&v);
+		Native_Free(&v);
+		return o;
+	}
+	Native_Free(&v);
+	return Script_EvalIn(module, text);
+}
+
+byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out) {
+	if (text->type == NV_STR && Mode_EvalLiteral(Native_Text(text), text->n, out)) {
+		return 1;
+	}
+	Native_SetNone(out);
 	/* OBJLIB 6: the bare names, name chains and errors of the reader of Script_EvalIn */
 	PyObject *t = Native_ToPy(text), *v = t ? Script_EvalIn(module, t) : NULL;
 	Py_XDECREF(t);

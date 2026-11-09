@@ -289,12 +289,58 @@ static void Level_StepSaveInt(int id, PyObject *args) {
 	}
 }
 
+/* Scrap.SetSaveVar(var, text) of a step, its error printed by the runner */
+static void Level_SetSave(PyObject *var, PyObject *text) {
+	if (text) {
+		Script_Try("Scrap", "SetSaveVar", "(OO)", var, text);
+		Py_DECREF(text);
+	}
+}
+
+/* the repr of a native value as a Python text (a new reference) */
+static PyObject *Level_Repr(const nativeVal_t *v) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	PyObject *text = PyString_FromStringAndSize(b.p, b.len);
+	Native_BufFree(&b);
+	return text;
+}
+
+/* `v` of a step (a new reference, NULL with the error): Native_Repr when v is a native value (the same text), any
+ * other value the Python way */
+static PyObject *Level_ReprPy(PyObject *v) {
+	nativeVal_t nv;
+	PyObject *r = Native_FromPyAny(v, &nv) ? Level_Repr(&nv) : PyObject_Repr(v);
+	Native_Free(&nv);
+	return r;
+}
+
+/* savelistadd on native values when the save text is a list literal and the item a native value: 1 when it was done
+ * that way (the result as the Python lines give it, the same repr), else 0 and nothing done */
+static byte Level_SaveListAddNative(PyObject *var, PyObject *s, PyObject *item) {
+	nativeVal_t lst, x;
+	if (!Mode_LiteralPy(s, &lst) || lst.type != NV_LIST || !Native_FromPyAny(item, &x)) {
+		Native_Free(&lst);
+		return 0;
+	}
+	/* in on a list only compares (Native_Compare as PyObject_Compare): no error */
+	if (Native_Contains(&lst, &x) == 0) {
+		Native_Copy(Native_Append(&lst), &x);
+		Level_SetSave(var, Level_Repr(&lst));
+	}
+	Native_Free(&x);
+	Native_Free(&lst);
+	return 1;
+}
+
 /*
  * run savelistadd <savevar> <item>: the four lines of the missions that add a blueprint to a hangar list
  *   lst = eval(Scrap.GetSaveVar(savevar))
  *   if not item in lst:
  *       lst.append(item)
  *       Scrap.SetSaveVar(savevar, `lst`)
+ * A list literal and a native item on native values; any other text (a name, the errors) or item the Python way.
  */
 static void Level_StepSaveListAdd(int id, PyObject *args) {
 	PyObject *var, *item;
@@ -303,6 +349,10 @@ static void Level_StepSaveListAdd(int id, PyObject *args) {
 		return;
 	}
 	PyObject *s = Script_Ask("Scrap", "GetSaveVar", "(O)", var);
+	if (s && Level_SaveListAddNative(var, s, item)) {
+		Py_DECREF(s);
+		return;
+	}
 	PyObject *lst = s ? Script_EvalIn("__main__", s) : NULL;
 	Py_XDECREF(s);
 	if (!lst) {
@@ -310,12 +360,9 @@ static void Level_StepSaveListAdd(int id, PyObject *args) {
 	}
 	int in = PySequence_Contains(lst, item);
 	if (in == 0) {
-		PyObject *r = Script_Method(lst, "append", "(O)", item), *text = r ? PyObject_Repr(lst) : NULL;
+		PyObject *r = Script_Method(lst, "append", "(O)", item);
+		Level_SetSave(var, r ? Level_ReprPy(lst) : NULL);
 		Py_XDECREF(r);
-		if (text) {
-			Script_Try("Scrap", "SetSaveVar", "(OO)", var, text);
-			Py_DECREF(text);
-		}
 	}
 	Py_DECREF(lst);
 }
@@ -330,14 +377,15 @@ static void Level_StepNewList(int id, PyObject *args) {
 }
 
 /* run evalappend <list> <text>: list.append(<text>) of a literal (the waypoints of the races, list.append(a, b) of
- * Python 1.5.2 appends the tuple (a, b)) */
+ * Python 1.5.2 appends the tuple (a, b)), read with the native reader (Mode_EvalPy; the list is a $name, a Python
+ * object until the runner takes native $names: OBJLIB 6) */
 static void Level_StepEvalAppend(int id, PyObject *args) {
 	PyObject *lst, *text;
 	(void)id;
 	if (!PyArg_ParseTuple(args, "OS", &lst, &text)) {
 		return;
 	}
-	PyObject *v = Script_EvalIn("__main__", text), *r = v ? Script_Method(lst, "append", "(O)", v) : NULL;
+	PyObject *v = Mode_EvalPy("__main__", text), *r = v ? Script_Method(lst, "append", "(O)", v) : NULL;
 	Py_XDECREF(v);
 	Py_XDECREF(r);
 }
@@ -348,7 +396,7 @@ static void Level_StepRepr(int id, PyObject *args) {
 	PyObject *v;
 	(void)id;
 	if (PyArg_ParseTuple(args, "sO", &name, &v)) {
-		PyObject *r = PyObject_Repr(v);
+		PyObject *r = Level_ReprPy(v);
 		if (r) {
 			Script_SetValue(name, r);
 		}
