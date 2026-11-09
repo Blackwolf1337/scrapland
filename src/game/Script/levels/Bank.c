@@ -30,9 +30,10 @@
  * their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_SCORERG, LV_MISSIONCHAR; the seam takes the call by name when
  * a mission or a case has put something else there, OBJLIB 5). The GateKeeper refs take Python objects and always go
  * by name. By name: the sections of the .def files (Mission_GetDataPart2.SetNextMission,
- * Mission_InfiltrateBank.LoadScene; OBJLIB 6); the functions given to the scheduler, to the character objects, to
- * GateKeeper, CharConversor and Scene as callbacks and to the entities (Mode_Later, Mode_Schedule, the UseFunc and
- * OnTake texts) stay values (OBJLIB 4, 5).
+ * Mission_InfiltrateBank.LoadScene; OBJLIB 6); the functions given to the scheduler and to the entities (Mode_Later,
+ * Mode_Schedule, the UseFunc and OnTake texts) take the entry of a port's own function (stage 4: Port_Scheduled,
+ * PYF_ENTRY), the ones given to the character objects, to GateKeeper, CharConversor and Scene as callbacks are values
+ * of their variables (OBJLIB 5).
  */
 #include <limits.h>
 #include <string.h>

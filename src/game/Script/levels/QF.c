@@ -10,8 +10,8 @@
  *
  * Direct calls (stage 3): MissionsFuncs, Speech, RaceMaker, TeamDeathMatch and the C functions of the mission go through
  * their refs (PORT_CALL, LV_COM), string.find through its native twin. The remote message whose end is the data function
- * AllBankersAgainstPlayer keeps the name (OBJLIB 6); the scheduled calls (Mode_Later, Mode_LaterIn) and the function set
- * as CharAct.TakenPhoto are names and values (OBJLIB 4, 5).
+ * AllBankersAgainstPlayer keeps the name (OBJLIB 6); the scheduled calls (Mode_Later, Mode_LaterIn) take the entry of
+ * a port's own function (stage 4: Port_Scheduled), the function set as CharAct.TakenPhoto is a value (OBJLIB 5).
  */
 #include "scrap/scrap.h"
 #include "Levels.h"

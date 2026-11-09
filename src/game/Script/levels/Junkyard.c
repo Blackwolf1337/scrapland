@@ -20,9 +20,9 @@
  * Direct calls (stage 3): the other ports (Elevator, OutMap, ShipEdit, HangarTab, Menu, Chars, SaveGame, MissionsFuncs,
  * Scene, CreditsText, SputnikSound) and the C functions of the three modules go through their refs (PORT_CALL,
  * PORT_LCALL, PORT_LOWN). The scene tables and EndOfMission's apply call a port's function through its entry
- * (Mode_Calls, MODE_CBAPPLYSEQ). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6), the
- * scheduled calls (Mode_AtG, Mode_Schedule of the tutorial steps; OBJLIB 4) and the functions set as callbacks
- * (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5).
+ * (Mode_Calls, MODE_CBAPPLYSEQ), and so does the scheduler (Mode_AtG, Mode_Schedule of the tutorial steps;
+ * Port_Scheduled). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6) and the functions set
+ * as callbacks (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5).
  */
 #include <string.h>
 

@@ -26,9 +26,10 @@
  * ChooseStapler and Blablibla included) go through their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_CALLBACK,
  * LV_MISSIONCHAR, LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there,
  * OBJLIB 5); string.find is the native twin, apply on MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext).
- * By name: the section PreStealFunctionary of the .def file (OBJLIB 6) and SVec.GetAngle (OBJLIB 7); the functions
- * given to the scheduler, to Speech, CharAct and CharConversor as callbacks and to the entities (Mode_Later,
- * Mode_Schedule, the UseFunc texts) stay values (OBJLIB 4, 5).
+ * By name: the section PreStealFunctionary of the .def file (OBJLIB 6) and SVec.GetAngle (OBJLIB 7). The functions
+ * given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the UseFunc texts) take the entry of a port's
+ * own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to Speech, CharAct and CharConversor as callbacks
+ * are values of their variables (OBJLIB 5).
  */
 #include "scrap/scrap.h"
 #include "scrap/scorer.h"
@@ -295,7 +296,7 @@ static byte ThAm_ForbiddenMsg(const nativeVal_t *a, nativeVal_t *out) {
 	Mode_Lang("Generics_ForbiddenArea_Label", &lang);
 	byte ok = Mode_LabelText(&lang, now + 0.5);
 	Native_Free(&lang);
-	/* OBJLIB 4: the function of the module (a mission may replace it) */
+	/* the function of the module (a mission may replace it): the scheduler takes its entry */
 	PyObject *fn = ok ? Mode_GlobalPy(AM, "ForbiddenMsg") : NULL;
 	if (!fn) {
 		return 0;
@@ -1499,7 +1500,7 @@ static byte Tm_Refill(const nativeVal_t *e, const nativeVal_t *p) {
 	if (!Native_Arith('+', now, anm, s) || !Native_Arith('-', s, dt, at)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4: the function of the module (a mission may replace it) */
+	/* the function of the module (a mission may replace it): the scheduler takes its entry */
 	PyObject *f = Mode_GlobalPy(TM, "RestoreTamayoState");
 	byte ok = f && Mode_Schedule(at, f, NULL, 0, NULL);
 	Py_XDECREF(f);

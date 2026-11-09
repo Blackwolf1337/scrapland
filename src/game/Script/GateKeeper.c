@@ -35,7 +35,7 @@ static byte Gk_At(const nativeVal_t *name, nativeVal_t *gc) {
 	return ok;
 }
 
-/* fn(door, name) of a door function (the value called the Python way, OBJLIB 4) */
+/* fn(door, name) of a door function (the entry of a port's own function, else the value called the Python way) */
 static byte Gk_DoorCall(const nativeVal_t *fn, const nativeVal_t *door, const nativeVal_t *name) {
 	nativeVal_t args[2];
 	Native_Copy(&args[0], door);

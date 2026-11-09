@@ -270,10 +270,10 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
  */
 int Native_Seam(const char *module, const char *name, PyObject **hook);
 /*
- * OBJLIB 4 and 7: calls of Python callables with native arguments, for the calls of names known at run time, the
- * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text
- * (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg
- * makes it. 0 with the error of the call.
+ * OBJLIB 7: calls of Python callables with native arguments, for the calls of names known at run time and the seams
+ * (a value that may hold a port function goes through Port_Value instead). fmt has one letter per argument: v a const
+ * nativeVal_t *, i a long, d a double, s a text (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL). The
+ * result goes into *out (Native_Free it; NULL drops it) as Native_Arg makes it. 0 with the error of the call.
  */
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
 /* the same with the result as it is (a new reference, NULL with the error): an entity handle or another object */

@@ -19,8 +19,9 @@
  * (PORT_LOWN: a mission may replace one) go through their refs (PORT_CALL, the keyword calls among them), the
  * callbacks handed to Speech and Menu by the refs of their functions (LV_COM, LV_ONEND, LV_SCORERG). By name stay:
  * SAI.SetStateVehicle and SetInertia, SScorer.AddModel and CancelSpeech, Scrap.Achievement and Scrap.SetMoney of a long
- * (OBJLIB 7); the functions handed on as values: to the scheduler, as the callbacks of Parking and Alarm, the
- * AfterRemoteComFunc of Speech.ForceRemoteCom (OBJLIB 4, 5). The InitStatus functions that only set the traffic ships,
+ * (OBJLIB 7); the functions handed on as values: to the scheduler (the entry of a port's own function, stage 4:
+ * Port_Scheduled), as the callbacks of Parking and Alarm, the AfterRemoteComFunc of Speech.ForceRemoteCom (values of
+ * their variables, OBJLIB 5). The InitStatus functions that only set the traffic ships,
  * the start positions of the races (LvN_StartPos) and Mission_DestroyCommSats2 are LevelCommon's.
  */
 #include "scrap/game.h"
@@ -1840,7 +1841,7 @@ static PyObject *Deep_InitStatus(PyObject *self, PyObject *args) {
 static byte Fm_Call(const char *key, const char *then) {
 	nativeVal_t time, args[4], name;
 	Native_SetFloat(&time, Mode_Time() + 60.0);
-	/* OBJLIB 4: the scheduler keeps the function of Speech */
+	/* the function of Speech: the scheduler takes its entry (Port_Scheduled) */
 	PyObject *fn = Script_Attr("Speech", "RemoteComunication");
 	if (!fn) {
 		return 0;
@@ -3272,7 +3273,7 @@ static byte Porkins_GetMayorReward(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(time, Mode_Time() + 2);
-	/* OBJLIB 4: the scheduler keeps the function of Speech */
+	/* the function of Speech: the scheduler takes its entry (Port_Scheduled) */
 	PyObject *fn = Script_Attr("Speech", "AddRemoteCom");
 	if (!fn) {
 		return Mode_Done(&t, 0);

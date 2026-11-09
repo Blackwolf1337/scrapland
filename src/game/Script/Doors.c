@@ -20,8 +20,8 @@
  * mission may replace them); Scrap.SetCallFunc, AddParams, AddParami and Execute stay by name (OBJLIB 7), the functions
  * of DoorInfo and DefDoorInfo and the hooks are called as the values of the variables (OBJLIB 5) through the entries of
  * port functions (Mode_CallArgs), and the functions given to the scheduler (Metro.SetUsrParams,
- * TryToElevatorLaunchFirst) are values (OBJLIB 4). An option of ConnectElevators whose text does not paste between
- * quotes runs the exec line of the script (OBJLIB 6).
+ * TryToElevatorLaunchFirst) take their entries (stage 4: Port_Scheduled). An option of ConnectElevators whose text does
+ * not paste between quotes runs the exec line of the script (OBJLIB 6).
  */
 #include <limits.h>
 #include <string.h>
@@ -948,7 +948,7 @@ static byte Elv_TryFirst(void) {
 	return Elv_Hook("OnElevatorReachDown", &none, 0);
 }
 
-/* Scrap.AddScheduledFunc(0, func, args, name) with func an object (OBJLIB 4) */
+/* Scrap.AddScheduledFunc(0, func, args, name) with func an object (the entry of a port's own function) */
 static byte Elv_Later0(PyObject *func, const nativeVal_t *args, int n, const char *name) {
 	nativeVal_t zero, nm;
 	Native_SetInt(&zero, 0);
@@ -991,7 +991,7 @@ static byte Elv_FromDoor(const nativeVal_t *from) {
 	if (!metro && !ext) {
 		return Mode_Done(&t, 1);
 	}
-	/* OBJLIB 4: Metro.SetUsrParams by name, scheduled */
+	/* Metro.SetUsrParams by name, scheduled (its entry) */
 	nativeVal_t args[2];
 	args[0] = *un;
 	Native_SetInt(&args[1], metro ? 0 : 180);
@@ -1014,7 +1014,7 @@ static byte Elv_PlayerCreatedElevator(void) {
 	if (!Mode_Import("Init")) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4: the scheduler keeps the global TryToElevatorLaunchFirst */
+	/* the global TryToElevatorLaunchFirst: the scheduler takes its entry */
 	PyObject *fn = Mode_GlobalPy(ELV, "TryToElevatorLaunchFirst");
 	byte ok = Elv_Later0(fn, NULL, 0, "TELF");
 	Py_XDECREF(fn);

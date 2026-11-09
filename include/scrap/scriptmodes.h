@@ -206,7 +206,8 @@ byte Mode_EntityH(const nativeVal_t *name, nativeVal_t *out);
 int Mode_VIsType(const nativeVal_t *h, const char *type);
 byte Mode_VDel(const nativeVal_t *h);
 byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file);
-/* h.method as a bound method (OBJLIB 4: what the scheduler keeps, e.g. l.Del): a new reference, NULL with the error */
+/* h.method as a bound method (OBJLIB 7: what the scheduler keeps, e.g. l.Del, the Python way until entities are C): a
+ * new reference, NULL with the error */
 PyObject *Mode_VBound(const nativeVal_t *h, const char *method);
 /* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (OBJLIB 7: through the seam with those arguments) */
 byte Mode_PreloadOnes(const nativeVal_t *name);
@@ -327,8 +328,8 @@ void Mode_Repr(const nativeVal_t *v, nativeVal_t *out);
 /* the item name of a scorer call of the ports (Sf_Text): the C text of a text value (up to its first 0 byte), the
  * TypeError "argument 2: expected string found" for any other value */
 byte Mode_ItemText(const nativeVal_t *v, const char **out);
-/* `from module import name` in a function of a script (OBJLIB 4, 6: the link functions of Menu by name): a new
- * reference, NULL with the ImportError */
+/* `from module import name` in a function of a script (OBJLIB 6: the import; the link functions of Menu it gives are
+ * called through their entries, Mode_LinkCall): a new reference, NULL with the ImportError */
 PyObject *Mode_From(const char *module, const char *name);
 /* the value of HangarTab.prevShip (the handle as NV_OBJ, None, or what a test put there; Native_Free it): 0 with the
  * AttributeError of the module attribute */
@@ -419,7 +420,8 @@ byte Mode_Connect(const char *a, const char *b, byte pair);
 /* var.attr = "text", = i of the global var of module (a handle) */
 byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
 byte Mode_GSetI(const char *module, const char *var, const char *attr, long i);
-/* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; OBJLIB 4) */
+/* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; the entry
+ * of a port's own function, Port_Scheduled) */
 byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n);
 /* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a case can put a long int into a
  * variable; OBJLIB 9: those go through the Python number functions) */
@@ -457,7 +459,7 @@ byte Mode_DelSaveVars(const char *prefix);
 /* del name of a global of the module (the NameError of the script when it is not there) */
 byte Mode_DelGlobal(const char *module, const char *name);
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args[, name]) with delay a value of the script and func the
- * global of module (its NameError; OBJLIB 4) */
+ * global of module (its NameError; the entry of a port's own function, Port_Scheduled) */
 byte Mode_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
 /* Scrap.TestLine(from, to, list) through its seam (fc-r6b-cm1 records it), else Mode_TestLine */
 byte Mode_TestLineSeam(const nativeVal_t *from, const nativeVal_t *to, const nativeVal_t *list, nativeVal_t *out);
@@ -472,10 +474,6 @@ byte Mode_SpeechMsg(const nativeVal_t *cad);
 /* the colour Scorer.MissionScorerText_Color of a scorer item: SScorer.Set(id, item, "Red", colour[0]) and Green, Blue,
  * Alpha */
 byte Mode_TextColour(const nativeVal_t *id, const char *item);
-/* module.name(args..., **kw) with keyword arguments by name (OBJLIB 4: PORT_CALL takes keywords for a known name):
- * the n native arguments and kw a new reference to the dict that the call takes over (NULL: its error is set); the
- * result into out (NULL: dropped) */
-byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const nativeVal_t *args, int n, PyObject *kw);
 /* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5: the group lists of GateKeeper keep
  * their identity) */
 byte Mode_DoorFoe(const char *gk, const char *group);
@@ -811,12 +809,14 @@ PyObject *Mode_EvalPy(const char *module, PyObject *text);
 /* print v, print text: Mode_Print of one value (the text of any length) */
 byte Mode_PrintV(const nativeVal_t *v);
 byte Mode_PrintS(const char *text);
-/* module.func(args) at the time on the scheduler as Mode_SchedAt, with the argument tuple a Python object (borrowed;
- * OBJLIB 4: Menu.ShowWarning schedules itself again with the tuple it got) */
+/* module.func(args) at the time on the scheduler as Mode_SchedAt, with the argument tuple a Python object (borrowed:
+ * Menu.ShowWarning schedules itself again with the tuple it got; the entry of a port's own function) */
 byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name);
-/* module.func(id) by name (OBJLIB 4: a name known at run time; MODE_PRINTED for a known one), the failure printed as
- * Mode_Printed prints it */
-void Mode_PrintedCall(const char *module, const char *func, long id);
+/* module.func(id) by a name known at run time (MODE_PRINTEDCALL: the attribute through the entry of the port function
+ * it holds, else the Python way, as Mode_CbAttr; MODE_PRINTED for a known name), the failure printed as Mode_Printed
+ * prints it */
+void Mode_PrintedCall(portSite_t *site, const char *module, const char *func, long id);
+#define MODE_PRINTEDCALL(module, func, id) Mode_PrintedCall(PORT_VSITE(), module, func, id)
 /* len(seq) as PySequence_Length takes it: -1 with its TypeError */
 int Mode_SeqLen(const nativeVal_t *seq);
 /* the tab editors (EnginesTab, WeaponsTab, HullTab, ShipEdit): Scrap.GetLangStr(key) % module.UseTxt; the Red, Green

@@ -2279,26 +2279,6 @@ byte Mode_SpeechMsg(const nativeVal_t *cad) {
 	return ok;
 }
 
-byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const nativeVal_t *args, int n, PyObject *kw) {
-	nativeVal_t t;
-	PyObject *fn = kw ? Script_Attr(module, name) : NULL;
-	Native_SetEmpty(&t, NV_TUPLE);
-	for (int i = 0; i < n; i++) {
-		Native_Copy(Native_Append(&t), &args[i]);
-	}
-	PyObject *a = fn ? Native_ToPy(&t) : NULL;
-	Native_Free(&t);
-	PyObject *r = a ? Script_CallObject(fn, a, kw) : NULL;
-	if (r && out) {
-		Native_Arg(r, out);
-	}
-	Py_XDECREF(r);
-	Py_XDECREF(a);
-	Py_XDECREF(fn);
-	Py_XDECREF(kw);
-	return r != NULL;
-}
-
 byte Mode_DoorFoe(const char *gk, const char *group) {
 	PyObject *g = Script_Attr("GateKeeper", group);
 	if (!g) {
@@ -3759,8 +3739,8 @@ byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *a
 	return f != NULL;
 }
 
-void Mode_PrintedCall(const char *module, const char *func, long id) {
-	Mode_Printed(Native_CallMod(module, func, NULL, "i", id), module, func);
+void Mode_PrintedCall(portSite_t *site, const char *module, const char *func, long id) {
+	Mode_Printed(Mode_CbAttr(site, module, func, NULL, "i", id), module, func);
 }
 
 int Mode_SeqLen(const nativeVal_t *seq) {

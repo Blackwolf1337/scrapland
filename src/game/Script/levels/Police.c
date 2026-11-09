@@ -35,9 +35,10 @@
  * something else there, OBJLIB 5). The GateKeeper refs take Python objects and always go by name. By name: the
  * sections of the .def files (LoadScene, GetAuthorization2, LoadPoliFightScene, InitBossCheats, the Pre and
  * SetNextMission sections of Mission_BeatPickus, MapSnd.PoliceCheats and PoliceBossCheats; OBJLIB 6); apply on
- * MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext); the functions given to the scheduler, to Scene, Alarm
- * and CharConversor as callbacks and to the entities (Mode_Later, PO_HOOK, the UseFunc texts) stay values (OBJLIB 4,
- * 5). MapSnd.SndElements and MapPlanes are LevelCommon's.
+ * MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext); the functions given to the scheduler and to the
+ * entities (Mode_Later, the UseFunc texts) take the entry of a port's own function (stage 4: Port_Scheduled,
+ * PYF_ENTRY; SScorer.Fade stays Python, OBJLIB 7), the ones given to Scene, Alarm and CharConversor as callbacks
+ * (PO_HOOK) are values of their variables (OBJLIB 5). MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -119,8 +120,8 @@ static byte Po_Fade(const int *from, const int *to, double time) {
 	return Mode_Fade(0, from, to, time);
 }
 
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, SScorer.Fade, (0, from, to, time)) (OBJLIB 4: the function of
- * SScorer the scheduler keeps) */
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, SScorer.Fade, (0, from, to, time)) (OBJLIB 7: the function of
+ * SScorer, which the scheduler takes as its entry once SScorer has entries) */
 static byte Po_FadeLater(double delay, const int *from, const int *to, double time) {
 	nativeVal_t args[4];
 	Native_SetInt(&args[0], 0);

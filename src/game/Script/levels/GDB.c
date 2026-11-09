@@ -22,8 +22,9 @@
  * LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there, OBJLIB 5). By
  * name: the sections of the .def files (PreSetNextMission of Mission_IntoTheGDB, SetNextMission of
  * Mission_ReinsertOwnMatrix, MapMatrix.RestoreMatrix; OBJLIB 6) and __builtin__.range of a count that is no int
- * (OBJLIB 9); the functions given to the scheduler, to Speech, Parking and Elevator as callbacks and to the entities
- * stay values (OBJLIB 4, 5).
+ * (OBJLIB 9); the functions given to the scheduler and to the entities take the entry of a port's own function (stage
+ * 4: Port_Scheduled, PYF_ENTRY; the bound method e.Del stays Python, OBJLIB 7), the ones given to Speech, Parking and
+ * Elevator as callbacks are values of their variables (OBJLIB 5).
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -917,7 +918,7 @@ static byte Into_TakeMatrix(const nativeVal_t *ch) {
 	byte ok = LvN_Entity("GusMatrix", &e);
 	if (ok && Native_True(&e)) {
 		ok = LvN_Activate(&e, 0) && LvN_SetI(&e, "rTime", 20);
-		/* OBJLIB 4: the scheduler keeps the bound method e.Del */
+		/* OBJLIB 7: the scheduler keeps the bound method e.Del (Python until the entities are C) */
 		PyObject *del = ok ? Mode_VBound(&e, "Del") : NULL;
 		Native_SetFloat(&t, Mode_Time() + 5);
 		ok = del && Mode_Schedule(&t, del, NULL, 0, NULL);

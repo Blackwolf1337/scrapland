@@ -18,8 +18,8 @@
  * the C functions of the module go through their refs (PORT_CALL, PORT_LOWN, LV_ONEND, LV_COM; the arrange and
  * mercenary talks take the ref of their end function; Map.CreateFixedInit has its entry on Orbit.c's
  * Level_FixedInitN). The call tables of the scenes and apply call a port's function through its entry (Mode_Calls,
- * Mode_ApplyNext). By name stay the scheduled calls (Mode_Later, Mode_LaterV, the remote message of
- * LaunchDeepThroatMessage, OBJLIB 4) and the functions set as callbacks (CallbackFunc, AfterBrowseNPC,
+ * Mode_ApplyNext), and so do the scheduled calls (Mode_Later, Mode_LaterV, the remote message of
+ * LaunchDeepThroatMessage; Port_Scheduled). By name stay the functions set as callbacks (CallbackFunc, AfterBrowseNPC,
  * EndOfSceneCallback, DialogController, SpeechRoutines; OBJLIB 5).
  */
 #include <string.h>

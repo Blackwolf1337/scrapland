@@ -14,8 +14,8 @@
  * functions the script calls as its globals (GetMoneyModel, GetObjModel, CreateItem, CreateCoin, GetTargetReward,
  * InitCrazyWing, SetCrazy, AllInList) go through their refs as globals (PORT_OWN), Items and SaveGame.SaveMoney
  * through theirs (PORT_CALL). The Activate functions given to CreateItem and the functions the scheduler keeps
- * (DeCrazy, CrazyWing) are values (OBJLIB 4). Entities are handle values (OBJLIB 7): the engine gives them to the
- * callbacks and the scripts pass them on.
+ * (DeCrazy, CrazyWing) are values the scheduler takes as entries (stage 4: Port_Scheduled). Entities are handle values
+ * (OBJLIB 7): the engine gives them to the callbacks and the scripts pass them on.
  */
 #include <string.h>
 
@@ -368,7 +368,7 @@ static byte Mi_CreateItem(const nativeVal_t *pos, const nativeVal_t *name, const
 		!Mi_DelLater(out, when, "DeleteCoin") || !Mode_G("MisItems", "MONEY_APPEARS_TIME", at) || !Mi_TimePlus(at, when2)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4: the function the scheduler keeps (any value the Python way) */
+	/* the function the scheduler keeps: the entry of a port's own function, any other value the Python way */
 	PyObject *f = Native_ToPy(func);
 	byte ok = f && Mode_Schedule(when2, f, out, 1, NULL);
 	Py_XDECREF(f);
@@ -381,8 +381,8 @@ MODE_FN(MisItems, CreateItem, 4, Mi_CreateItem(&a[0], &a[1], &a[2], &a[3], out))
 static byte Mi_CreateCoin(const nativeVal_t *pos, const nativeVal_t *money, nativeVal_t *out) {
 	nativeBuf_t b;
 	nativeVal_t name, model = { 0 };
-	/* the global CreateItem is looked up after its arguments (the script looked it up first); OBJLIB 4: ActivateCoin
-	 * goes to it as the value of the global */
+	/* the global CreateItem is looked up after its arguments (the script looked it up first); ActivateCoin goes to it
+	 * as the value of the global, which CreateItem schedules (its entry, Port_Scheduled) */
 	Native_BufInit(&b);
 	Native_BufAdd(&b, "Usr_Coin_", -1);
 	Native_Repr(&b, money, NR_REPR);
@@ -554,7 +554,7 @@ static byte Cw_Init(void) {
 		!Native_Arith('+', now, r, when)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4: the module's CrazyWing as the scheduler keeps it */
+	/* the module's CrazyWing: the scheduler takes its entry */
 	PyObject *f = Mode_GlobalPy("CrazyWing", "CrazyWing");
 	byte ok = f && Mode_Schedule(when, f, NULL, 0, Mode_S(&t, "CrazyWind"));
 	Py_XDECREF(f);
@@ -629,7 +629,7 @@ static byte Cw_SetCrazy(void) {
 		return Mode_Done(&t, 1);
 	}
 	Native_Free(v);
-	/* OBJLIB 4: DeCrazy(guy, ch.CanPhoto) in CrazyWingTime */
+	/* DeCrazy(guy, ch.CanPhoto) in CrazyWingTime (the scheduler takes its entry) */
 	PyObject *f = NULL;
 	ok = Mode_G("CrazyWing", "CrazyWingTime", ct) && Mi_TimePlus(ct, when) && (f = Mode_GlobalPy("CrazyWing", "DeCrazy")) &&
 		Mode_VGet(ch, "CanPhoto", v);

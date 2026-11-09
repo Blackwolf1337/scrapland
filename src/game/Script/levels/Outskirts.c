@@ -27,8 +27,9 @@
  * the modules (their globals) go through their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_SCORERG; the seam
  * takes the call by name when a mission or a case has put something else there, OBJLIB 5). By name: the sections of
  * the .def files and XBMenu (OBJLIB 6), the class VehiclesNPC.cShipAI (OBJLIB 5); the functions given to the
- * scheduler, to the speech callbacks and to the entities (Mode_Later, Mode_AtG, the OnTake and OnDeath texts, the
- * callback globals) stay values (OBJLIB 4, 5).
+ * scheduler and to the entities (Mode_Later, Mode_AtG, the OnTake and OnDeath texts) take the entry of a port's own
+ * function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to the speech callbacks (the callback globals) are
+ * values of their variables (OBJLIB 5).
  */
 #include <limits.h>
 

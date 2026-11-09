@@ -9,8 +9,8 @@
  * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps; OBJLIB 5),
  * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through
  * their refs (PORT_CALL: directly while the attribute holds the port's function, else by name), Scrap.SaveConfig and
- * Scrap.Exit by name (OBJLIB 7), their failures printed as before; the connection status schedules itself as a Python
- * function (OBJLIB 4); the .def runner takes Python values (OBJLIB 6).
+ * Scrap.Exit by name (OBJLIB 7), their failures printed as before; the connection status schedules itself (the
+ * scheduler takes its entry, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -313,8 +313,8 @@ static void Net_ConnectionStatus(void) {
 	if (strcmp(last, title)) {
 		MODE_PRINTED(Menu, DrawMenuTitleBar, "ids", 0L, bar, title);
 	}
-	/* a full server ends the polling (the script deleted its own next call); OBJLIB 4: the scheduler keeps the
-	 * Python function and an empty argument tuple */
+	/* a full server ends the polling (the script deleted its own next call); the function of the module with an empty
+	 * argument tuple: the scheduler takes the entry while it is the port's own function (Port_Scheduled) */
 	if (!full) {
 		PyObject *f = Net_StatusFunc();
 		PyObject *params = PyTuple_New(0);

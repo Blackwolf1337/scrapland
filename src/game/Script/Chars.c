@@ -12,8 +12,8 @@
  * CreateEntity, GetNetFlags, the dummy search, the scheduler, SAct.GetClass/SetCls/DelClass, SInput.SetActionSet,
  * SLogic.SetOnFloor); the other ports (CharsNPC, CharScorer, MissionsFuncs) and the functions of the module the
  * script calls through its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5), the
- * function given to the scheduler by name (OBJLIB 4). The exec of a character's Init keeps the reader of the game's
- * texts (OBJLIB 6); the eval of the saved batteries reads its literal natively (Mode_EvalIn).
+ * function given to the scheduler by name through its entry (Port_Scheduled). The exec of a character's Init keeps the
+ * reader of the game's texts (OBJLIB 6); the eval of the saved batteries reads its literal natively (Mode_EvalIn).
  */
 #include <string.h>
 
@@ -345,7 +345,7 @@ static byte Ch_DiscardRes(const nativeVal_t *cr, nativeVal_t *out) {
 		Native_SetFloat(&time, Mode_Time());
 		Native_SetInt(&one, 1);
 		Ch_Pair(&pair, cr, &one);
-		/* OBJLIB 4: the scheduler takes the global TryToDiscardThis by name */
+		/* the global TryToDiscardThis by name: the scheduler takes its entry (Port_Scheduled) */
 		byte ok = Mode_AtG(&time, CH, "TryToDiscardThis", &pair, 1);
 		Native_Free(&pair);
 		if (!ok) {

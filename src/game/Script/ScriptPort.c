@@ -251,8 +251,8 @@ static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, const po
 	return ok;
 }
 
-/* the arguments of the call through Python: the positional ones as Native_Call passes them (*t), the keywords as the
- * dict of Mode_CallKw, in their order (*kw, NULL without keywords); 0 with the error (*t and *kw to be released) */
+/* the arguments of the call through Python: the positional ones as Native_Call passes them (*t), the keywords as a
+ * dict in their order (*kw, NULL without keywords); 0 with the error (*t and *kw to be released) */
 static __attribute__((noinline)) byte Port_SlowArgs(const char *fmt, va_list va, PyObject **t, PyObject **kw) {
 	portArgs_t p;
 	char name[PORT_NAME];

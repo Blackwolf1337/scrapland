@@ -674,7 +674,7 @@ static byte Sc_Play(const nativeVal_t *cls) {
 	Native_SetFloat(time, Mode_Time());
 	Native_SetStr(&args[0], "DisableSkipSlot");
 	Native_SetInt(&args[1], 1);
-	/* OBJLIB 4: the scheduler keeps Scrap.Set itself */
+	/* Scrap.Set as the module holds it: the scheduler takes its entry (Port_Scheduled) */
 	PyObject *set = Script_Attr("Scrap", "Set");
 	byte ok = set && Mode_Schedule(time, set, args, 2, NULL);
 	Py_XDECREF(set);

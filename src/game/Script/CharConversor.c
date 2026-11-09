@@ -658,7 +658,7 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	if (!Cc_G("PossessionTime", pt) || !Mode_Arith('+', now, pt, t1) || !Mode_Arith('+', t1, &tenth, t2)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4: the scheduler keeps the global NewPlayer */
+	/* the global NewPlayer: the scheduler takes its entry */
 	PyObject *fn = Mode_GlobalPy(CC, "NewPlayer");
 	Native_Copy(&pa[0], newme);
 	Native_Copy(&pa[1], me);
@@ -670,7 +670,7 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 }
 
 /* NewPlayer(newme, me): the end of a possession: the new character takes the camera, the energy (one battery less)
- * and the control, the old one goes, the time runs again and the alarm starts (OBJLIB 4: the scheduler keeps
+ * and the control, the old one goes, the time runs again and the alarm starts (the scheduler takes the entry of
  * Scrap.SetAlarm) */
 static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
 	static const char *const mods[] = { "CharAct", "Chars", "CharScorer", "Menu" };

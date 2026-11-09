@@ -23,10 +23,10 @@
  * RacerScorer, Scorer) and the functions of the module the script calls through its globals are called through their
  * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback (values
  * a mission puts into the module, OBJLIB 5) and the builders of the super deal types (a table of names) are called
- * through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler and the
- * function values of the revenge and the auto save stay by name or value (OBJLIB 4). The known code strings of OnAbort
- * and OnVictory run on native values with the calls through the refs; any other text runs in the namespaces exec
- * gives it (OBJLIB 6).
+ * through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler by name or
+ * value, the revenge and the auto save among them, take their entries (stage 4: Port_Scheduled). The known code strings
+ * of OnAbort and OnVictory run on native values with the calls through the refs; any other text runs in the namespaces
+ * exec gives it (OBJLIB 6).
  */
 #include <ctype.h>
 #include <limits.h>
@@ -159,7 +159,7 @@ static byte Mf_Init(void) {
 		return Mode_Done(&t, 0);
 	}
 	if (Mf_SaveIs("AutoSaveGameOnLoad", "1")) {
-		/* Scrap.AddScheduledFunc(0, SaveGame.SaveGame, (0,)): the time the int 0 (OBJLIB 4: the scheduler keeps the
+		/* Scrap.AddScheduledFunc(0, SaveGame.SaveGame, (0,)): the time the int 0 (the scheduler takes the entry of the
 		 * function of the module) */
 		PyObject *fn = Script_Attr("SaveGame", "SaveGame");
 		Native_SetInt(time, 0);
@@ -205,7 +205,7 @@ static byte Mf_TryMsg(const nativeVal_t *msg) {
 		return Mode_Done(&t, 0);
 	}
 	if (!go) {
-		/* OBJLIB 4: the scheduler takes the global TryMsg by name */
+		/* the global TryMsg by name: the scheduler takes its entry */
 		return Mode_Done(&t, Mode_Later(1.0, MF, "TryMsg", msg, 1, NULL));
 	}
 	Native_SetFloat(now, Mode_Time());
@@ -462,7 +462,7 @@ static byte Mf_Revenge(PyObject **restart, nativeVal_t *params) {
 	byte revenge = Mode_Cmp(&ctype, "!=", &empty) && Mode_Cmp(&foe, "!=", &empty);
 	byte ok = 1;
 	if (revenge) {
-		/* OBJLIB 4: the function the scheduler gets is the one of the module */
+		/* the function the scheduler gets is the one of the module (its entry) */
 		PyObject *fn = Script_Attr("Challenge", "SetRevengeParams");
 		ok = fn != NULL;
 		if (ok) {
@@ -494,7 +494,7 @@ static byte Mf_SinglePlayerDeath(void) {
 	if (!Mode_Import("SaveGame") || !Mode_Import("Challenge") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 4: the function the scheduler gets is the one of the module */
+	/* the function the scheduler gets is the one of the module (its entry) */
 	PyObject *restart = Script_Attr("SaveGame", "StartGame");
 	if (!restart) {
 		return Mode_Done(&t, 0);
@@ -682,7 +682,7 @@ static byte Mf_CreateBertos(void) {
 	for (long k = 0; k < n; k++) {
 		nativeVal_t time;
 		Native_SetFloat(&time, now + 1.0 * (double)(k + 1));
-		/* OBJLIB 4: the scheduler takes the global CreateBerto by name */
+		/* the global CreateBerto by name: the scheduler takes its entry */
 		if (!Mode_AtG(&time, MF, "CreateBerto", usrName, 1)) {
 			return Mode_Done(&t, 0);
 		}
@@ -709,7 +709,7 @@ static byte Mf_OnBertoDeath(const nativeVal_t *looser, const nativeVal_t *winner
 		}
 		if (wave) {
 			Native_SetFloat(now, Mode_Time());
-			/* OBJLIB 4: the scheduler takes the global CreateBertos by name */
+			/* the global CreateBertos by name: the scheduler takes its entry */
 			if (!LvN_PutI(MF, "launchNewWave", 0) || !Mode_G(MF, "timeBetweenWaves", wait) || !Mode_Arith('+', now, wait, time) ||
 				!Mode_AtG(time, MF, "CreateBertos", NULL, 0)) {
 				return Mode_Done(&t, 0);

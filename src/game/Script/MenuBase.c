@@ -10,8 +10,8 @@
  * variables of other modules are read where the C read them (Init.inMainMenu, isShipEdit, isDemo, Menu.isXbox,
  * TitleBarYOff, BackButtonYStart, QuestionMenuYStart, backFunc, Scorer.MarginH and MarginV), Menu.currentSoundPitch
  * and VerticalMenuLastControl are written at once (OBJLIB 5). Menu.InitMenuSys is called through its ref (PORT_CALL:
- * directly while the attribute holds the port's function, else by name); ShowWarning schedules itself as a Python
- * function (OBJLIB 4); the .def runner takes Python values (OBJLIB 6).
+ * directly while the attribute holds the port's function, else by name); ShowWarning schedules itself, the scheduler
+ * takes its entry (stage 4: Mode_SchedPy, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -779,7 +779,8 @@ static byte Menu_ShowWarning_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	if (r != 2) {
 		return (byte)r;
 	}
-	/* OBJLIB 4: the scheduler keeps the function of the module and the arguments (id, desc) as Python objects */
+	/* the function of the module with the arguments (id, desc) as a tuple: the scheduler takes the entry while it is
+	 * the port's own function (Port_Scheduled) */
 	nativeVal_t t;
 	Native_SetEmpty(&t, NV_TUPLE);
 	Native_Copy(Native_Append(&t), &a[0]);
