@@ -1119,12 +1119,10 @@ byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *o
 	if (strlen(s) != (size_t)text->n) {
 		return Native_Raise(NE_VALUE, "embedded '\\0' in string arg");
 	}
-	while (*s == ' ' || *s == '\t') {
-		s++;
-	}
-	if (Native_Literal(s, out)) {
+	if (Native_LiteralText(text, out)) {
 		return 1;
 	}
+	s += strspn(s, " \t");
 	/* OBJLIB 6: a name chain in the module's globals, else the error of a text no reader takes (and its note in the
 	 * gate log), as Script_EvalValue gives them */
 	PyObject *m = Script_Module(module);
@@ -2946,4 +2944,109 @@ byte Native_Put(const char *module, const nativeVar_t *var, int index) {
 
 byte Native_GVarDef(const char *name, nativeVal_t *out) {
 	return Native_GVarValue(name, 1, out);
+}
+
+/* ---- the values of the .mod evaluator (stage 6) ---- */
+
+void Native_SetObj(nativeVal_t *v, PyObject *o) {
+	Native_Clear(v, NV_OBJ);
+	Py_INCREF(o);
+	v->obj = o;
+}
+
+byte Native_Holds(const nativeVal_t *v, unsigned types) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	if (types & 1u << v->type) {
+		return 1;
+	}
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			if (Native_Holds(&v->items[i], types)) {
+				return 1;
+			}
+		}
+	} else if (v->type == NV_DICT) {
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Native_Holds(k, types) || Native_Holds(x, types)) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+byte Native_LiteralText(const nativeVal_t *text, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (text->type != NV_STR || strlen(Native_Text(text)) != (size_t)text->n) {
+		return 0;
+	}
+	return Native_Literal(Native_Text(text) + strspn(Native_Text(text), " \t"), out);
+}
+
+/* the dict made again in slot order (Native_ToPy) from the Python dict laid: a key there that Python's lookdict does not
+ * find in its slot */
+static PyObject *Native_Relay(PyObject *laid) {
+	const nativePyDict_t *pd = (const nativePyDict_t *)laid;
+	PyObject *o = PyDict_New();
+	for (int i = 0; o && i < pd->ma_size; i++) {
+		if (pd->ma_table[i].me_value && PyDict_SetItem(o, pd->ma_table[i].me_key, pd->ma_table[i].me_value) != 0) {
+			Py_DECREF(o);
+			o = NULL;
+		}
+	}
+	Py_DECREF(laid);
+	return o;
+}
+
+PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx) {
+	PyObject *o = PyDict_New();
+	if (!o || !d->max) {
+		return o;
+	}
+	/* the table of the vendored dictobject.c (OBJLIB 9) when no slot was deleted (the dummy key is private there) */
+	nativePyDict_t *pd = (nativePyDict_t *)o;
+	nativePyEntry_t *t = NULL;
+	if (d->i == d->n) {
+		t = PyPool_Malloc(sizeof(*t) * (size_t)d->max);
+		if (!t) {
+			Py_DECREF(o);
+			return PyErr_NoMemory();
+		}
+		memset(t, 0, sizeof(*t) * (size_t)d->max);
+		pd->ma_table = t;
+		pd->ma_size = d->max;
+		pd->ma_poly = (int)Native_Poly(d->max);
+	}
+	for (int i = 0; i < d->max; i++) {
+		const nativeVal_t *k = &d->items[2 * i];
+		if (k->type == NV_FREE || k->type == NV_DUMMY) {
+			continue;
+		}
+		PyObject *pk = conv(k, ctx), *px = pk ? conv(k + 1, ctx) : NULL;
+		long h = px ? PyObject_Hash(pk) : -1;
+		if (h == -1 || (!t && PyDict_SetItem(o, pk, px) != 0)) {
+			Py_XDECREF(pk);
+			Py_XDECREF(px);
+			Py_DECREF(o);
+			return NULL;
+		}
+		if (!t) {
+			Py_DECREF(pk);
+			Py_DECREF(px);
+			continue;
+		}
+		/* the references go to the table */
+		t[i].me_hash = h;
+		t[i].me_key = pk;
+		t[i].me_value = px;
+		pd->ma_fill++;
+		pd->ma_used++;
+	}
+	for (int i = 0; t && i < pd->ma_size; i++) {
+		if (t[i].me_value && PyDict_GetItem(o, t[i].me_key) != t[i].me_value) {
+			return Native_Relay(o);
+		}
+	}
+	return o;
 }
