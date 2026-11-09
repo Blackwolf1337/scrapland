@@ -492,6 +492,20 @@ PyObject *Port_CallbackFunc(const portSite_t *site);
  * *r (None when it fails; Native_Free it either way): 1, or 0 with the error set (an entry that fails without one
  * gives the SystemError of call_object) */
 byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r);
+/* a function given to the scheduler (cScheduledFunc, stage 4): the ref of Port_Own (by the adapter and the function's
+ * own name), as the site that counts its scheduled calls (listed in Port_ScheduledSites once scheduled, file
+ * "scheduled"); NULL when Port_Own finds none (a recorder, a lambda, a bound method, an engine function, a ref on
+ * Python objects, everything under SCRAP_PORT_SLOW=1) */
+portSite_t *Port_Scheduled(PyObject *f);
+/* the functions scheduled as entries since the start, the last one first (OBJLIB 7: the counters of the test
+ * channel) */
+portSite_t *Port_ScheduledSites(void);
+/* the call of a bound site (a callback, a scheduled call) as the Python call of its adapter on n arguments: each one
+ * as the adapter gets it ('v' a native value through Native_Pass, 'O' an object through Native_Arg, as Port_Invoke
+ * packs them), the entry (Port_Entry), the result through the conversions of the adapter (Native_Pass) into *res
+ * (Native_Free it either way; NULL: dropped). Counts the call (fast) and a failure (errors). 1, or 0 with the error
+ * set */
+byte Port_BoundCall(portSite_t *site, const nativeArg_t *a, int n, nativeVal_t *res);
 
 /*
  * Values that hold port functions (stage 4): a function a module variable, a table, a from import or a parameter

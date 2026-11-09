@@ -124,8 +124,9 @@ byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const
 /* Scrap.DeleteScheduledFuncs(name) */
 byte Mode_DelSched(const nativeVal_t *name);
 byte Mode_DelSchedS(const char *name);
-/* Scrap.AddScheduledFunc(time, func, args[, name]): func a Python callable (OBJLIB 4: the scheduler keeps Python
- * objects), args the tuple of the native values (n of them), name NULL for none */
+/* Scrap.AddScheduledFunc(time, func, args[, name]): func a Python callable, args the n native values, name NULL for
+ * none. The scheduler keeps the port's own function as its entry on the values (Scheduler_AddEntry), anything else as
+ * the callable and the tuple of the values; a recorder of the seam gets the callable and the tuple */
 byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *args, int n, const nativeVal_t *name);
 /* the same at Scrap.GetTime() + delay (func not taken over, name NULL for none) */
 byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, const char *name);
@@ -762,8 +763,8 @@ byte Mode_SetCinema(long id, long on, double time);
 byte Mode_CamSeam(long i, nativeVal_t *out);
 byte Mode_UsrSeam(long id, nativeVal_t *out);
 /* module.func(args...) at the time (as a float) on the scheduler itself, not through Scrap.AddScheduledFunc (the menus
- * schedule this way: a recorder of the cases does not see it); name NULL for none; a missing function dropped. OBJLIB 4:
- * the scheduler keeps the Python function and the tuple of the n values */
+ * schedule this way: a recorder of the cases does not see it); name NULL for none; a missing function dropped. The
+ * scheduler keeps the function as Mode_Schedule does */
 byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
 /* `if module.var: module.var(id)` of a callback variable (Menu.MissionScorerCall): the error of the call printed, every
  * error dropped */
