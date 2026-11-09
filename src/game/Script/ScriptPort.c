@@ -195,18 +195,19 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 	return 0;
 }
 
-/* the entry of ref (Port_Entry) on the n arguments x in their slots (the ones between not given), the result into *r
- * (freed by the caller also on a failure). Inlined: the packed values share the frame of Port_FastVa as before stage 4
- * (3296 bytes with them, gcc -O2 x86_64 Linux; mingw-w64 3200), not a frame of their own below it */
-static inline __attribute__((always_inline)) byte Port_Fast(const portRef_t *ref, const nativeArg_t *x, int n,
-	const signed char *slot, int m, nativeVal_t *r) {
+/* the entry of ref (Port_Entry) on the n arguments in their slots (the ones between not given): the letters x, or the
+ * native values v (x NULL) as Native_Pass makes them; the result into *r (freed by the caller also on a failure).
+ * Inlined: the packed values share the frame of Port_FastVa as before stage 4 (3296 bytes with them, gcc -O2 x86_64
+ * Linux; mingw-w64 3200), not a frame of their own below it */
+static inline __attribute__((always_inline)) byte Port_Fast(const portRef_t *ref, const nativeArg_t *x,
+	const nativeVal_t *v, int n, const signed char *slot, int m, nativeVal_t *r) {
 	nativeVal_t a[PORT_ARGS];
 	byte ok = 1;
 	for (int i = 0; i < m; i++) {
 		Mode_KwSkip(&a[i]);
 	}
 	for (int i = 0; ok && i < n; i++) {
-		ok = Port_Pack(&x[i], &a[slot[i]]);
+		ok = x ? Port_Pack(&x[i], &a[slot[i]]) : Native_Pass(&v[i], &a[slot[i]]);
 	}
 	if (ok) {
 		ok = Port_Entry(ref, a, m, r);
@@ -233,7 +234,7 @@ static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, const po
 	portArgs_t p;
 	nativeVal_t r, res;
 	Port_Read(fmt, va, &p);
-	byte ok = Port_Fast(ref, p.a, p.n, ps->slot, ps->m, &r);
+	byte ok = Port_Fast(ref, p.a, NULL, p.n, ps->slot, ps->m, &r);
 	if (pyout) {
 		/* what the adapter returns (Mode_Out) */
 		*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
@@ -459,21 +460,26 @@ portSite_t *Port_ScheduledSites(void) {
 	return port_boundList[PORT_SCHEDULED];
 }
 
-byte Port_BoundCall(portSite_t *site, const nativeArg_t *a, int n, nativeVal_t *res) {
+byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v, int n, nativeVal_t *res,
+	PyObject **pyout) {
 	static_assert(PORT_ARGS == 11, "one slot per argument");
 	static const signed char slot[PORT_ARGS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 	nativeVal_t r, drop, *out = res ? res : &drop;
 	CHECK(n >= 0 && n <= PORT_ARGS);
 	site->fast++;
-	byte ok = Port_Fast(site->ref, a, n, slot, n, &r);
-	/* the result goes through the conversions of the adapter also when it is dropped (they can fail) */
-	if (ok) {
+	byte ok = Port_Fast(site->ref, x, v, n, slot, n, &r);
+	if (pyout) {
+		/* what the adapter returns (Mode_Out) */
+		*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
+		ok = *pyout != NULL;
+	} else if (ok) {
+		/* the result goes through the conversions of the adapter also when it is dropped (they can fail) */
 		ok = Native_Pass(&r, out);
 	} else {
 		Native_SetNone(out);
 	}
 	Native_Free(&r);
-	if (!res) {
+	if (!res && !pyout) {
 		Native_Free(&drop);
 	}
 	if (!ok) {
@@ -570,8 +576,9 @@ static PyObject *Port_PyValues(const nativeVal_t *a, int n) {
 }
 
 /* the call of the value f on n arguments, as letters (x) or as native values (a): the entry of the port function f is
- * (Port_OwnIndex, the arguments packed as its adapter would get them), else the call through Python of Native_Call;
- * the result into *out as Native_Arg takes it, or as the Python object into *pyout */
+ * (Port_OwnIndex, through Port_BoundCall as a bound site), else the call through Python of Native_Call; the result
+ * into *out as Native_Arg takes it, or as the Python object into *pyout. The packed values are in the frame of
+ * Port_BoundCall only: a call through Python keeps a small frame on the stack */
 static byte Port_ValueRun(portSite_t *site, PyObject *f, const nativeArg_t *x, const nativeVal_t *a, int n,
 	nativeVal_t *out, PyObject **pyout) {
 	if (!f) {
@@ -583,53 +590,22 @@ static byte Port_ValueRun(portSite_t *site, PyObject *f, const nativeArg_t *x, c
 		port_sites = site;
 	}
 	int i = n <= PORT_ARGS ? Port_OwnIndex(f) : -1;
-	byte ok;
 	if (i >= 0) {
-		nativeVal_t b[PORT_ARGS], r, res;
-		/* the site names the port function it called last */
+		/* the site names the port function it called last; Port_BoundCall counts the call and a failure */
 		site->ref = g_PortTable[i];
-		site->fast++;
-		for (int k = 0; k < n; k++) {
-			Native_SetNone(&b[k]);
-		}
-		ok = 1;
-		for (int k = 0; ok && k < n; k++) {
-			ok = x ? Port_Pack(&x[k], &b[k]) : Native_Pass(&a[k], &b[k]);
-		}
-		if (ok) {
-			ok = Port_Entry(site->ref, b, n, &r);
-		} else {
-			Native_SetNone(&r);
-		}
-		if (pyout) {
-			/* what the adapter returns (Mode_Out) */
-			*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
-			ok = *pyout != NULL;
-		} else if (ok && (ok = Native_Pass(&r, &res)) != 0) {
-			/* the result goes through the conversions also when it is dropped (they can fail) */
-			if (out) {
-				*out = res;
-			} else {
-				Native_Free(&res);
-			}
-		}
-		Native_Free(&r);
-		for (int k = 0; k < n; k++) {
-			Native_Free(&b[k]);
-		}
+		return Port_BoundCall(site, x, a, n, out, pyout);
+	}
+	site->slow++;
+	PyObject *r = Script_Invoke(f, x ? Native_PyArgs(x, n) : Port_PyValues(a, n));
+	byte ok = r != NULL;
+	if (pyout) {
+		*pyout = r;
 	} else {
-		site->slow++;
-		PyObject *r = Script_Invoke(f, x ? Native_PyArgs(x, n) : Port_PyValues(a, n));
-		ok = r != NULL;
-		if (pyout) {
-			*pyout = r;
-		} else {
-			/* any other object is an NV_OBJ (OBJLIB 7) */
-			if (r && out) {
-				Native_Arg(r, out);
-			}
-			Py_XDECREF(r);
+		/* any other object is an NV_OBJ (OBJLIB 7) */
+		if (r && out) {
+			Native_Arg(r, out);
 		}
+		Py_XDECREF(r);
 	}
 	if (!ok) {
 		site->errors++;
