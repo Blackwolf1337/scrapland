@@ -1373,6 +1373,53 @@ PORT_DECL(DTritusDesktop, InitNPCS) /* ? */
 	PORT_DEF(DTritusDesktop, Init, DTritus_Init) \
 	PORT_DEF(DTritusDesktop, InitNPCS, DTritus_InitNPCS)
 
+/* PyInterface/SAIPy.c */
+PORT_DECL(SAI, AnalizeMap) /* 1 */
+PORT_DECL(SAI, AnalizeGraph) /* ? */
+PORT_DECL(SAI, AnalizeGraph2D) /* ? */
+PORT_DECL(SAI, AnalizeTraffic) /* 0 */
+PORT_DECL(SAI, BuildGraph) /* 4 */
+PORT_DECL(SAI, BuildGraph2D) /* 4 */
+PORT_DECL(SAI, SetStateVehicle) /* ? */
+PORT_DECL(SAI, SetStateChar) /* ? */
+PORT_DECL(SAI, GetStateVehicle) /* 1 */
+PORT_DECL(SAI, GetStateChar) /* 1 */
+PORT_DECL(SAI, EnableAIVehicle) /* ? */
+PORT_DECL(SAI, EnableAIChar) /* 3 */
+PORT_DECL(SAI, IniAI) /* 2 */
+PORT_DECL(SAI, GetNextRacePoint) /* 3 */
+PORT_DECL(SAI, GetNearestItemLife) /* 1 */
+PORT_DECL(SAI, GetRandomVisibilityPoint) /* ? */
+PORT_DECL(SAI, GetReposCharPos) /* ? */
+PORT_DECL(SAI, InitVehicleRace) /* ? */
+PORT_DECL(SAI, AddVehicleRace) /* 1 */
+PORT_DECL(SAI, SetRotStaticObj) /* 3 */
+PORT_DECL(SAI, SetInertia) /* 2 */
+PORT_DECL(SAI, GetOD) /* ? */
+#define PORTS_PyInterface_SAIPy \
+	PORT_DEF(SAI, AnalizeMap, SAI_AnalyzeMap) \
+	PORT_DEF(SAI, AnalizeGraph, SAI_AnalyzeGraph) \
+	PORT_DEF(SAI, AnalizeGraph2D, SAI_AnalyzeGraph2D) \
+	PORT_DEF(SAI, AnalizeTraffic, SAI_AnalyzeTraffic) \
+	PORT_DEF(SAI, BuildGraph, SAI_BuildGraph) \
+	PORT_DEF(SAI, BuildGraph2D, SAI_BuildGraph2D) \
+	PORT_DEF(SAI, SetStateVehicle, SAI_SetStateVehicle) \
+	PORT_DEF(SAI, SetStateChar, SAI_SetStateChar) \
+	PORT_DEF(SAI, GetStateVehicle, SAI_GetStateVehicle) \
+	PORT_DEF(SAI, GetStateChar, SAI_GetStateChar) \
+	PORT_DEFP(SAI, EnableAIVehicle, SAI_EnableAIVehicle) \
+	PORT_DEF(SAI, EnableAIChar, SAI_EnableAIChar) \
+	PORT_DEF(SAI, IniAI, SAI_IniAI) \
+	PORT_DEF(SAI, GetNextRacePoint, SAI_GetNextRacePoint) \
+	PORT_DEF(SAI, GetNearestItemLife, SAI_GetNearestItemLife) \
+	PORT_DEF(SAI, GetRandomVisibilityPoint, SAI_GetRandomVisibilityPoint) \
+	PORT_DEF(SAI, GetReposCharPos, SAI_GetReposCharPos) \
+	PORT_DEF(SAI, InitVehicleRace, SAI_InitVehicleRace) \
+	PORT_DEF(SAI, AddVehicleRace, SAI_AddVehicleRace) \
+	PORT_DEF(SAI, SetRotStaticObj, SAI_SetRotStaticObj) \
+	PORT_DEF(SAI, SetInertia, SAI_SetInertia) \
+	PORT_DEF(SAI, GetOD, SAI_GetOD)
+
 /* PyInterface/SActPy.c */
 PORT_DECL(SAct, CreateClass) /* 1 */
 PORT_DECL(SAct, DelClass) /* 1 */
@@ -5260,6 +5307,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2507
+#define PORT_COUNT 2529
 
 #endif

@@ -12,6 +12,7 @@
 #include "scrap/global.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/nodesworld2d.h"
+#include "scrap/scriptapi.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 
@@ -31,12 +32,10 @@ CNodesTraffic *g_NodesTraffic;
 CNodesWorld *g_NodesWorld;
 
 /* IniAI(levelname, IsMapOutDoor) : creates the navigation graphs, traffic, A* and AI groups of the level */
-static PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "si", &name, &g_IsMapOutDoor)) {
-		return NULL;
+API_FN(SAI, IniAI) {
+	const char *name;
+	if (!Mode_Parse(a, n, "si", &name, &g_IsMapOutDoor)) {
+		return 0;
 	}
 	g_NodesWorld = NEW_OBJ(CNodesWorld, CNodesWorld_ctor);
 	CHECK(g_NodesWorld);
@@ -71,30 +70,26 @@ static PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
 		g_CharGroup = NEW_OBJ(cAICharGroup, cAICharGroup_ctor);
 		CHECK(g_CharGroup);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* BuildGraph(arg, x, y, z) */
-static PyObject *SAI_BuildGraph(PyObject *self, PyObject *args) {
+API_FN(SAI, BuildGraph) {
 	int arg;
 	float x, y, z;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ifff", &arg, &x, &y, &z)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ifff", &arg, &x, &y, &z)) {
+		return 0;
 	}
 	vec3_t pos = { x, y, z };
 	CNodesWorld_Load(g_NodesWorld, arg, "", &pos);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* AnalizeMap(size) : analyses the level with a cube of that size; makes the graph if there is none */
-static PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
+API_FN(SAI, AnalyzeMap) {
 	float size;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "f", &size)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "f", &size)) {
+		return 0;
 	}
 	vec3_t cube = { size, size, size };
 	if (!g_NodesWorld) {
@@ -102,50 +97,43 @@ static PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
 		CHECK(g_NodesWorld);
 	}
 	CNodesWorld_Analyze(g_NodesWorld, &cube);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* AnalizeGraph() : Analiza características grafo. No argument check. */
-static PyObject *SAI_AnalyzeGraph(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+API_FN(SAI, AnalyzeGraph) {
 	CNodesWorld_AnalyzeGraph(g_NodesWorld);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* AnalizeGraph2D() : No argument check. */
-static PyObject *SAI_AnalyzeGraph2D(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+API_FN(SAI, AnalyzeGraph2D) {
 	CNodesWorld2D_AnalyzeGraph(g_NodesWorld2D);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* AnalizeTraffic() : traffic graph of the level (indoor or outdoor) */
-static PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(SAI, AnalyzeTraffic) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	CNodesTraffic *traffic = g_IsMapOutDoor ? g_NodesTraffic : g_NodesTrafficInDoor;
 	Traffic_Analyze(traffic);
 	g_TrafficState = 3;
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* BuildGraph2D(arg, x, y, z) : indoor levels only */
-static PyObject *SAI_BuildGraph2D(PyObject *self, PyObject *args) {
+API_FN(SAI, BuildGraph2D) {
 	int arg;
 	float x, y, z;
-
-	(void)self;
 	CHECK(!g_IsMapOutDoor);
-	if (!PyArg_ParseTuple(args, "ifff", &arg, &x, &y, &z)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ifff", &arg, &x, &y, &z)) {
+		return 0;
 	}
 	vec3_t pos = { x, y, z };
 	CNodesWorld2D_Load(g_NodesWorld2D, arg, "", &pos);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /*
@@ -165,11 +153,11 @@ enum {
 };
 
 /*
- * the report in the console (Spanish texts of the original), returns None. differs from the original: after a failed
- * argument parse (the only step of a handler that sets a Python error) it raises the parse's TypeError; the original
- * returns None with the error left set, which surfaced at a later line.
+ * the report in the console (Spanish texts of the original): 1 (None), or 0 when an error is set. differs from the
+ * original: after a failed argument parse (the only step of a handler that sets an error) it raises the parse's
+ * TypeError; the original returns None with the error left set, which surfaced at a later line.
  */
-static PyObject *SetState_Error(const char *entity, const char *state, int err, const char *target) {
+static byte SetState_Error(const char *entity, const char *state, int err, const char *target) {
 	static const char *const texts[] = {
 		[1] = "PARAMETROS INCORRECTOS\n",
 		[2] = "CAMBIO DE ESTADO EN TODAS LAS ENTIDADES\n",
@@ -190,10 +178,7 @@ static PyObject *SetState_Error(const char *entity, const char *state, int err, 
 	}
 	Con_Bluef("\n**************************************************************************************************"
 		"\n\n");
-	if (PyErr_Occurred()) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+	return !PyErr_Occurred();
 }
 
 static int CheckAIEntity(cEntity *e, const char *type) {
@@ -236,393 +221,369 @@ static void *StateAI(const char *name, int (*check)(cEntity *), int *err) {
 	return ai;
 }
 
-static PyObject *StateResult(byte ok, const char *name, const char *state) {
+static byte StateResult(byte ok, const char *name, const char *state, nativeVal_t *out) {
 	if (ok) {
-		return Py_BuildValue("i", 1);
+		return Api_Build(out, "i", 1);
 	}
 	return SetState_Error(name, state, SSERR_STATE, NULL);
 }
 
 /* state(int), entity: vehicle states without arguments */
-static PyObject *VehicleStateSimple(PyObject *args, const char *state) {
+static byte VehicleStateSimple(const nativeVal_t *a, int n, nativeVal_t *out, const char *state) {
 	int st, err = SSERR_PARAMS;
-	char *name = NULL;
+	const char *name = NULL;
 
-	if (PyArg_ParseTuple(args, "is", &st, &name)) {
+	if (Mode_Parse(a, n, "is", &st, &name)) {
 		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
 		if (ai) {
-			return StateResult(cAIVehicle_SetState(ai, st), name, state);
+			return StateResult(cAIVehicle_SetState(ai, st), name, state, out);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
 }
 
-/* state(int), entity, target: the target is checked first */
-static cEntity *StateTarget(const char *name, const char *target, const char *state, PyObject **error) {
+/* state(int), entity, target: the target is checked first; NULL with the result of the report in *res */
+static cEntity *StateTarget(const char *name, const char *target, const char *state, byte *res) {
 	cEntity *t = World_FindEntity(target);
 	int err = SetState_CheckTarget(t);
 	if (err) {
-		*error = SetState_Error(name, state, err, target);
+		*res = SetState_Error(name, state, err, target);
 		return NULL;
 	}
 	return t;
 }
 
 /* SAI_VEHICLE_FREEZE: (state, vehicle) */
-static PyObject *SetStateVehicle0(PyObject *self, PyObject *args) {
-	(void)self;
-	return VehicleStateSimple(args, "FREEZE");
+static byte SetStateVehicle0(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return VehicleStateSimple(a, n, out, "FREEZE");
 }
 
 /* SAI_VEHICLE_GO_TO: (state, vehicle, x, y, z, f[, flag, f, f, f, flag]); flags count as on only when 1 */
-static PyObject *SetStateVehicle1(PyObject *self, PyObject *args) {
+static byte SetStateVehicle1(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS, i5 = 0, i9 = 0;
-	char *name = NULL;
+	const char *name = NULL;
 	vec3_t pos;
 	float f4, f6 = 1.0f, f7 = 20.0f, f8 = 20.0f;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "isffff|ifffi", &st, &name, &pos.x, &pos.y, &pos.z, &f4, &i5, &f6, &f7, &f8, &i9)) {
+	if (Mode_Parse(a, n, "isffff|ifffi", &st, &name, &pos.x, &pos.y, &pos.z, &f4, &i5, &f6, &f7, &f8, &i9)) {
 		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
 		if (ai) {
 			return StateResult(cAIVehicle_SetState(ai, st, pos, (double)f4, i5 == 1, (double)f6, (double)f7,
-				(double)f8, i9 == 1), name, "GO_TO");
+				(double)f8, i9 == 1), name, "GO_TO", out);
 		}
 	}
 	return SetState_Error(name, "GO_TO", err, NULL);
 }
 
 /* (state, vehicle, target) */
-static PyObject *VehicleStateTarget(PyObject *args, const char *state) {
+static byte VehicleStateTarget(const nativeVal_t *a, int n, nativeVal_t *out, const char *state) {
 	int st, err = SSERR_PARAMS;
-	char *name = NULL, *target;
+	const char *name = NULL, *target;
 
-	if (PyArg_ParseTuple(args, "iss", &st, &name, &target)) {
-		PyObject *error;
-		cEntity *t = StateTarget(name, target, state, &error);
+	if (Mode_Parse(a, n, "iss", &st, &name, &target)) {
+		byte res;
+		cEntity *t = StateTarget(name, target, state, &res);
 		if (!t) {
-			return error;
+			return res;
 		}
 		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
 		if (ai) {
-			return StateResult(cAIVehicle_SetState(ai, st, t), name, state);
+			return StateResult(cAIVehicle_SetState(ai, st, t), name, state, out);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
 }
 
 /* SAI_VEHICLE_FIGHTING: (state, vehicle, target) */
-static PyObject *SetStateVehicle2(PyObject *self, PyObject *args) {
-	(void)self;
-	return VehicleStateTarget(args, "FIGHTING");
+static byte SetStateVehicle2(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return VehicleStateTarget(a, n, out, "FIGHTING");
 }
 
 /* SAI_VEHICLE_IN_ROUTE: (state, vehicle[, flag, f, f]) */
-static PyObject *SetStateVehicle3(PyObject *self, PyObject *args) {
+static byte SetStateVehicle3(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS, flag = 1;
-	char *name = NULL;
-	float a = 5.0f, b = 2.0f;
+	const char *name = NULL;
+	float f1 = 5.0f, f2 = 2.0f;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "is|iff", &st, &name, &flag, &a, &b)) {
+	if (Mode_Parse(a, n, "is|iff", &st, &name, &flag, &f1, &f2)) {
 		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
 		if (ai) {
-			return StateResult(cAIVehicle_SetState(ai, st, flag == 1, (double)a, (double)b), name, "IN_ROUTE");
+			return StateResult(cAIVehicle_SetState(ai, st, flag == 1, (double)f1, (double)f2), name, "IN_ROUTE",
+				out);
 		}
 	}
 	return SetState_Error(name, "IN_ROUTE", err, NULL);
 }
 
 /* SAI_VEHICLE_TRAFFIC: (state, vehicle) */
-static PyObject *SetStateVehicle4(PyObject *self, PyObject *args) {
-	(void)self;
-	return VehicleStateSimple(args, "TRAFFIC");
+static byte SetStateVehicle4(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return VehicleStateSimple(a, n, out, "TRAFFIC");
 }
 
 /* SAI_VEHICLE_GET_AWAY_STOP: (state, vehicle, target, f); every error but the target one reports PARAMETROS */
-static PyObject *SetStateVehicle5(PyObject *self, PyObject *args) {
+static byte SetStateVehicle5(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err;
-	char *name = NULL, *target;
+	const char *name = NULL, *target;
 	float f;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "issf", &st, &name, &target, &f)) {
-		PyObject *error;
-		cEntity *t = StateTarget(name, target, "GET_AWAY_STOP", &error);
+	if (Mode_Parse(a, n, "issf", &st, &name, &target, &f)) {
+		byte res;
+		cEntity *t = StateTarget(name, target, "GET_AWAY_STOP", &res);
 		if (!t) {
-			return error;
+			return res;
 		}
 		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
 		if (ai && cAIVehicle_SetState(ai, st, t, (double)f)) {
-			return Py_BuildValue("i", 1);
+			return Api_Build(out, "i", 1);
 		}
 	}
 	return SetState_Error(name, "GET_AWAY_STOP", SSERR_PARAMS, NULL);
 }
 
 /* SAI_VEHICLE_RACE: (state, vehicle, x, y, z, f[, flag, flag]) */
-static PyObject *SetStateVehicle6(PyObject *self, PyObject *args) {
+static byte SetStateVehicle6(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS, i1 = 1, i2 = 0;
-	char *name = NULL;
+	const char *name = NULL;
 	vec3_t pos;
 	float f;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "isffff|ii", &st, &name, &pos.x, &pos.y, &pos.z, &f, &i1, &i2)) {
+	if (Mode_Parse(a, n, "isffff|ii", &st, &name, &pos.x, &pos.y, &pos.z, &f, &i1, &i2)) {
 		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
 		if (ai) {
-			return StateResult(cAIVehicle_SetState(ai, st, pos, (double)f, i1 == 1, i2 == 1), name, "RACE");
+			return StateResult(cAIVehicle_SetState(ai, st, pos, (double)f, i1 == 1, i2 == 1), name, "RACE", out);
 		}
 	}
 	return SetState_Error(name, "RACE", err, NULL);
 }
 
 /* SAI_VEHICLE_CHASE: (state, vehicle, target[, f, f]), defaults from the engine */
-static PyObject *SetStateVehicle7(PyObject *self, PyObject *args) {
+static byte SetStateVehicle7(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS;
-	char *name = NULL, *target;
-	float a = g_AIChaseDefault1, b = g_AIChaseDefault2;
+	const char *name = NULL, *target;
+	float f1 = g_AIChaseDefault1, f2 = g_AIChaseDefault2;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "iss|ff", &st, &name, &target, &a, &b)) {
-		PyObject *error;
-		cEntity *t = StateTarget(name, target, "CHASE", &error);
+	if (Mode_Parse(a, n, "iss|ff", &st, &name, &target, &f1, &f2)) {
+		byte res;
+		cEntity *t = StateTarget(name, target, "CHASE", &res);
 		if (!t) {
-			return error;
+			return res;
 		}
 		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
 		if (ai) {
-			return StateResult(cAIVehicle_SetState(ai, st, t, (double)a, (double)b), name, "CHASE");
+			return StateResult(cAIVehicle_SetState(ai, st, t, (double)f1, (double)f2), name, "CHASE", out);
 		}
 	}
 	return SetState_Error(name, "CHASE", err, NULL);
 }
 
 /* SAI_VEHICLE_FIGHTING_FREEZE: (state, vehicle, target) */
-static PyObject *SetStateVehicle8(PyObject *self, PyObject *args) {
-	(void)self;
-	return VehicleStateTarget(args, "FIGHTING_FREEZE");
+static byte SetStateVehicle8(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return VehicleStateTarget(a, n, out, "FIGHTING_FREEZE");
 }
 
 /* SAI_VEHICLE_TRAFFIC_INDOOR: (state, vehicle) */
-static PyObject *SetStateVehicle9(PyObject *self, PyObject *args) {
-	(void)self;
-	return VehicleStateSimple(args, "TRAFFIC_INDOOR");
+static byte SetStateVehicle9(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return VehicleStateSimple(a, n, out, "TRAFFIC_INDOOR");
 }
 
 /* SAI_CHAR_STATIC: (state, char) */
-static PyObject *SetStateChar0(PyObject *self, PyObject *args) {
+static byte SetStateChar0(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS;
-	char *name = NULL;
+	const char *name = NULL;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "is", &st, &name)) {
+	if (Mode_Parse(a, n, "is", &st, &name)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(AIChar_SetState(ai, st), name, "STATIC_CHAR");
+			return StateResult(AIChar_SetState(ai, st), name, "STATIC_CHAR", out);
 		}
 	}
 	return SetState_Error(name, "STATIC_CHAR", err, NULL);
 }
 
 /* SAI_CHAR_IN_ROUTE: (state, char, f[, flag]) */
-static PyObject *SetStateChar1(PyObject *self, PyObject *args) {
+static byte SetStateChar1(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS, flag = 1;
-	char *name = NULL;
+	const char *name = NULL;
 	float f;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "isf|i", &st, &name, &f, &flag)) {
+	if (Mode_Parse(a, n, "isf|i", &st, &name, &f, &flag)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(AIChar_SetState(ai, st, (double)f, flag == 1), name, "IN_ROUTE_CHAR");
+			return StateResult(AIChar_SetState(ai, st, (double)f, flag == 1), name, "IN_ROUTE_CHAR", out);
 		}
 	}
 	return SetState_Error(name, "IN_ROUTE_CHAR", err, NULL);
 }
 
 /* (state, char, target, f) */
-static PyObject *CharStateTargetF(PyObject *args, const char *state) {
+static byte CharStateTargetF(const nativeVal_t *a, int n, nativeVal_t *out, const char *state) {
 	int st, err = SSERR_PARAMS;
-	char *name = NULL, *target;
+	const char *name = NULL, *target;
 	float f;
 
-	if (PyArg_ParseTuple(args, "issf", &st, &name, &target, &f)) {
-		PyObject *error;
-		cEntity *t = StateTarget(name, target, state, &error);
+	if (Mode_Parse(a, n, "issf", &st, &name, &target, &f)) {
+		byte res;
+		cEntity *t = StateTarget(name, target, state, &res);
 		if (!t) {
-			return error;
+			return res;
 		}
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(AIChar_SetState(ai, st, t, (double)f), name, state);
+			return StateResult(AIChar_SetState(ai, st, t, (double)f), name, state, out);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
 }
 
 /* (state, char, target, flag) */
-static PyObject *CharStateTargetI(PyObject *args, const char *state) {
+static byte CharStateTargetI(const nativeVal_t *a, int n, nativeVal_t *out, const char *state) {
 	int st, err = SSERR_PARAMS, flag;
-	char *name = NULL, *target;
+	const char *name = NULL, *target;
 
-	if (PyArg_ParseTuple(args, "issi", &st, &name, &target, &flag)) {
-		PyObject *error;
-		cEntity *t = StateTarget(name, target, state, &error);
+	if (Mode_Parse(a, n, "issi", &st, &name, &target, &flag)) {
+		byte res;
+		cEntity *t = StateTarget(name, target, state, &res);
 		if (!t) {
-			return error;
+			return res;
 		}
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(AIChar_SetState(ai, st, t, flag == 1), name, state);
+			return StateResult(AIChar_SetState(ai, st, t, flag == 1), name, state, out);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
 }
 
 /* SAI_CHAR_CHASE_WITH_ACTION: (state, char, target, f) */
-static PyObject *SetStateChar2(PyObject *self, PyObject *args) {
-	(void)self;
-	return CharStateTargetF(args, "CHASE_WITH_ACTION_CHAR");
+static byte SetStateChar2(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return CharStateTargetF(a, n, out, "CHASE_WITH_ACTION_CHAR");
 }
 
 /* SAI_CHAR_CHASE_WITHOUT_ACTION: (state, char, target, f) */
-static PyObject *SetStateChar3(PyObject *self, PyObject *args) {
-	(void)self;
-	return CharStateTargetF(args, "CHASE_WITHOUT_ACTION_CHAR");
+static byte SetStateChar3(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return CharStateTargetF(a, n, out, "CHASE_WITHOUT_ACTION_CHAR");
 }
 
 /* SAI_CHAR_GO_TO: (state, char, x, y, z, x, y, z, f, f) */
-static PyObject *SetStateChar4(PyObject *self, PyObject *args) {
+static byte SetStateChar4(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS;
-	char *name = NULL;
-	vec3_t a, b;
+	const char *name = NULL;
+	vec3_t p1, p2;
 	float f1, f2;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "isffffffff", &st, &name, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &f1, &f2)) {
+	if (Mode_Parse(a, n, "isffffffff", &st, &name, &p1.x, &p1.y, &p1.z, &p2.x, &p2.y, &p2.z, &f1, &f2)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(AIChar_SetState(ai, st, a, b, (double)f1, (double)f2), name, "GO_TO_CHAR");
+			return StateResult(AIChar_SetState(ai, st, p1, p2, (double)f1, (double)f2), name, "GO_TO_CHAR", out);
 		}
 	}
 	return SetState_Error(name, "GO_TO_CHAR", err, NULL);
 }
 
 /* SAI_CHAR_GET_AWAY: (state, char, target, f) */
-static PyObject *SetStateChar5(PyObject *self, PyObject *args) {
-	(void)self;
-	return CharStateTargetF(args, "GET_AWAY_CHAR");
+static byte SetStateChar5(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return CharStateTargetF(a, n, out, "GET_AWAY_CHAR");
 }
 
 /* SAI_CHAR_PATROL_ZONE: (state, char, x, y, z, f, f[, flag]) */
-static PyObject *SetStateChar6(PyObject *self, PyObject *args) {
+static byte SetStateChar6(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int st, err = SSERR_PARAMS, flag = 1;
-	char *name = NULL;
+	const char *name = NULL;
 	vec3_t pos;
 	float f1, f2;
 
-	(void)self;
-	if (PyArg_ParseTuple(args, "isfffff|i", &st, &name, &pos.x, &pos.y, &pos.z, &f1, &f2, &flag)) {
+	if (Mode_Parse(a, n, "isfffff|i", &st, &name, &pos.x, &pos.y, &pos.z, &f1, &f2, &flag)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
 			return StateResult(AIChar_SetState(ai, st, pos, (double)f1, (double)f2, flag == 1), name,
-				"PATROL_ZONE_CHAR");
+				"PATROL_ZONE_CHAR", out);
 		}
 	}
 	return SetState_Error(name, "PATROL_ZONE_CHAR", err, NULL);
 }
 
 /* SAI_CHAR_CHASE_WITH_ACTION_BACK: (state, char, target, f) */
-static PyObject *SetStateChar7(PyObject *self, PyObject *args) {
-	(void)self;
-	return CharStateTargetF(args, "CHASE_WITH_ACTION_BACK_CHAR");
+static byte SetStateChar7(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return CharStateTargetF(a, n, out, "CHASE_WITH_ACTION_BACK_CHAR");
 }
 
 /* SAI_CHAR_ORIENT_DINAMIC_OBJECTIVE: (state, char, target, flag) */
-static PyObject *SetStateChar8(PyObject *self, PyObject *args) {
-	(void)self;
-	return CharStateTargetI(args, "ORIENT_DINAMIC_OBJECTIVE_CHAR");
+static byte SetStateChar8(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return CharStateTargetI(a, n, out, "ORIENT_DINAMIC_OBJECTIVE_CHAR");
 }
 
 /* SAI_CHAR_ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION: (state, char, target, flag) */
-static PyObject *SetStateChar9(PyObject *self, PyObject *args) {
-	(void)self;
-	return CharStateTargetI(args, "ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION_CHAR");
+static byte SetStateChar9(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return CharStateTargetI(a, n, out, "ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION_CHAR");
 }
 
 /*
- * SetStateVehicle(state, ...) / SetStateChar(state, ...) : the handler for the state number. args[0] is read
- * without checks. differs from the original: an empty tuple or a state that is no number raises the error of the read;
- * the original returns None with the error left set.
+ * SetStateVehicle(state, ...) / SetStateChar(state, ...) : the handler for the state number. The first argument is
+ * read the way PyInt_AsLong(PyTuple_GetItem(args, 0)) read it: none gives the TypeError of a NULL item (that of
+ * None), and only the low 32 bits of the number count. differs from the original: an empty tuple or a state that is no number
+ * raises the error of the read; the original returns None with the error left set.
  */
-static PyObject *(*const vehicleStates[10])(PyObject *, PyObject *) = {
+static const portEntry_t vehicleStates[10] = {
 	SetStateVehicle0, SetStateVehicle1, SetStateVehicle2, SetStateVehicle3, SetStateVehicle4,
 	SetStateVehicle5, SetStateVehicle6, SetStateVehicle7, SetStateVehicle8, SetStateVehicle9,
 };
-static PyObject *(*const charStates[10])(PyObject *, PyObject *) = {
+static const portEntry_t charStates[10] = {
 	SetStateChar0, SetStateChar1, SetStateChar2, SetStateChar3, SetStateChar4,
 	SetStateChar5, SetStateChar6, SetStateChar7, SetStateChar8, SetStateChar9,
 };
 
-static PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
-	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
-	if (state > 9) {
-		return PyErr_Occurred() ? NULL : Py_ReturnNone();
+static byte SetState(const nativeVal_t *a, int n, nativeVal_t *out, const portEntry_t *handlers) {
+	nativeVal_t none;
+	int st;
+	Native_SetNone(&none);
+	if (!Mode_ArgInt(n ? &a[0] : &none, &st)) {
+		return 0;
 	}
-	return vehicleStates[state](self, args);
+	uint32_t state = (uint32_t)st;
+	return state > 9 || handlers[state](a, n, out);
 }
 
-static PyObject *SAI_SetStateChar(PyObject *self, PyObject *args) {
-	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
-	if (state > 9) {
-		return PyErr_Occurred() ? NULL : Py_ReturnNone();
-	}
-	return charStates[state](self, args);
+API_FN(SAI, SetStateVehicle) {
+	return SetState(a, n, out, vehicleStates);
+}
+
+API_FN(SAI, SetStateChar) {
+	return SetState(a, n, out, charStates);
 }
 
 /*
  * GetStateVehicle(name) : state number of the vehicle AI, None without AI. differs from the original: a parse error
  * raises its TypeError (the original returns None with the error left set, which surfaced at a later line).
  */
-static PyObject *SAI_GetStateVehicle(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(SAI, GetStateVehicle) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	cEntity *e = World_FindEntity(name);
 	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
-	if (ai) {
-		return Py_BuildValue("i", cAIVehicle_GetState(ai));
-	}
-	return Py_ReturnNone();
+	return !ai || Api_Build(out, "i", cAIVehicle_GetState(ai));
 }
 
 /*
  * GetStateChar(name) : state number of the character AI, None without AI. differs from the original: a parse error
  * raises its TypeError (the original returns None with the error left set, which surfaced at a later line).
  */
-static PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(SAI, GetStateChar) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	cEntity *e = World_FindEntity(name);
 	cAIChar *ai = e ? Entity_GetAI(e) : NULL;
-	if (ai) {
-		return Py_BuildValue("i", AIChar_GetState(ai));
-	}
-	return Py_ReturnNone();
+	return !ai || Api_Build(out, "i", AIChar_GetState(ai));
 }
 
 /*
  * EnableAIVehicle(name, enable, ...) : 25 more values in three parameter blocks. As compiled the format has 27
  * conversions for 26 pointers, so a 27th argument writes through an undefined pointer; the same here. Failure
- * returns NULL without a Python exception.
+ * returns NULL without a Python exception. OBJLIB 7: up to 27 arguments, more than an entry takes (PORT_ARGS), so the
+ * entry is the adapter on Python objects (MODE_PYENTRY: its ref takes the slow path)
  */
 static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 	char *name;
@@ -658,22 +619,21 @@ static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 	}
 	return Py_BuildValue("i", 1);
 }
+MODE_PYENTRY(SAI_EnableAIVehicle)
 
 /* EnableAIChar(name, enable, arg) : the name must match the entity exactly (the table lookup ignores case) */
-static PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(SAI, EnableAIChar) {
+	const char *name;
 	int enable, arg;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sii", &name, &enable, &arg)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "sii", &name, &enable, &arg)) {
+		return 0;
 	}
 	cEntity *e = FindAIEntity(name, TYEN_WALKCHAR);
 	if (!e || cWalkCharEntity_GetOwnerSlot(e) >= 0 || strcmp(name, e->name)) {
-		return NULL;
+		return 0;
 	}
 	cWalkCharEntity_EnableAI(e, enable != 0, &arg);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /*
@@ -696,18 +656,14 @@ byte AI_NextRacePoint(const vec3_t *initial, float minDist, float maxDist, vec3_
 	return !outdoor || found;
 }
 
-static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
-	vec3_t initial, out;
+API_FN(SAI, GetNextRacePoint) {
+	vec3_t initial, p;
 	float minDist, maxDist;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)ff", &initial.x, &initial.y, &initial.z, &minDist, &maxDist)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "(fff)ff", &initial.x, &initial.y, &initial.z, &minDist, &maxDist)) {
+		return 0;
 	}
-	if (!AI_NextRacePoint(&initial, minDist, maxDist, &out)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("fff", (double)out.x, (double)out.y, (double)out.z);
+	return !AI_NextRacePoint(&initial, minDist, maxDist, &p) ||
+		Api_Build(out, "fff", (double)p.x, (double)p.y, (double)p.z);
 }
 
 /*
@@ -715,33 +671,26 @@ static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
  * original: a parse error raises its TypeError; the original returns None with the error left set, and its caller
  * (Mission_StupidMerc) hands the None to Scrap.GetEntity, whose parse raised that error on the next line.
  */
-static PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(SAI, GetNearestItemLife) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	cEntity *e = World_FindEntity(name);
 	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
 	cEntity *item = ai ? cAIVehicle_GetNearestItemLife(ai) : NULL;
-	if (item) {
-		return Py_BuildValue("s", item->name);
-	}
-	return Py_ReturnNone();
+	return !item || Api_Build(out, "s", item->name);
 }
 
 /* GetRandomVisibilityPoint() : a random point of the visibility graph (CRT rand), None if there is none */
-static PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	int n = NodesWorld_NumVisPoints(g_NodesWorld);
-	if (n <= 0) {
-		return Py_ReturnNone();
+API_FN(SAI, GetRandomVisibilityPoint) {
+	int count = NodesWorld_NumVisPoints(g_NodesWorld);
+	if (count <= 0) {
+		return 1;
 	}
 	vec3_t p;
-	memcpy(&p, NodesWorld_GetVisPoint(g_NodesWorld, crt_rand() % n), sizeof(p));
-	return Py_BuildValue("(fff)", (double)p.x, (double)p.y, (double)p.z);
+	memcpy(&p, NodesWorld_GetVisPoint(g_NodesWorld, crt_rand() % count), sizeof(p));
+	return Api_Build(out, "(fff)", (double)p.x, (double)p.y, (double)p.z);
 }
 
 /*
@@ -749,13 +698,11 @@ static PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
  * original: a parse error raises its TypeError (the original returns None with the error left set, which surfaced at
  * a later line).
  */
-static PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
-	vec3_t pos, out;
-	char *name, *targetName = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)s|s", &pos.x, &pos.y, &pos.z, &name, &targetName)) {
-		return NULL;
+API_FN(SAI, GetReposCharPos) {
+	vec3_t pos, p;
+	const char *name, *targetName = NULL;
+	if (!Mode_Parse(a, n, "(fff)s|s", &pos.x, &pos.y, &pos.z, &name, &targetName)) {
+		return 0;
 	}
 	cEntity *target = NULL;
 	if (targetName && *targetName) {
@@ -764,85 +711,80 @@ static PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 			target = NULL;
 		}
 	}
-	if (!cAICharGroup_GetReposPos(g_CharGroup, &pos, name, &out, target)) {
-		return Py_ReturnNone();
-	}
-	return Py_BuildValue("fff", (double)out.x, (double)out.y, (double)out.z);
+	return !cAICharGroup_GetReposPos(g_CharGroup, &pos, name, &p, target) ||
+		Api_Build(out, "fff", (double)p.x, (double)p.y, (double)p.z);
 }
 
 /* InitVehicleRace() : No argument check. */
-static PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+API_FN(SAI, InitVehicleRace) {
 	AIGroup_Clear(g_VehicleGroup);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /*
  * AddVehicleRace(name) : adds a vehicle to the race group. differs from the original: a parse error raises its
  * TypeError (the original returns None with the error left set, which surfaced at a later line).
  */
-static PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(SAI, AddVehicleRace) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	cEntity *e = FindAIEntity(name, TYEN_CAR);
 	if (e) {
 		AIGroup_Add(g_VehicleGroup, e);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /*
  * SetRotStaticObj(name, a, b). differs from the original: a parse error raises its TypeError (the original returns
  * None with the error left set, which surfaced at a later line).
  */
-static PyObject *SAI_SetRotStaticObj(PyObject *self, PyObject *args) {
-	char *name;
-	float a, b;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sff", &name, &a, &b)) {
-		return NULL;
+API_FN(SAI, SetRotStaticObj) {
+	const char *name;
+	float f1, f2;
+	if (!Mode_Parse(a, n, "sff", &name, &f1, &f2)) {
+		return 0;
 	}
 	cEntity *e = FindAIEntity(name, TYEN_CAR);
 	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
 	if (ai) {
-		cAIVehicle_SetRotStatic(ai, a, b);
+		cAIVehicle_SetRotStatic(ai, f1, f2);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /*
  * SetInertia(name, on) : on only for the value 1. differs from the original: a parse error raises its TypeError (the
  * original returns None with the error left set, which surfaced at a later line).
  */
-static PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(SAI, SetInertia) {
+	const char *name;
 	int on;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "si", &name, &on)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "si", &name, &on)) {
+		return 0;
 	}
 	cEntity *e = FindAIEntity(name, TYEN_CAR);
 	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
 	if (ai) {
 		cAIVehicle_SetInertia(ai, on == 1);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 void *g_AppPyOne;
 
-/* GetOD() : returns the object without a new reference (a folded stub in the original) */
-static PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return (PyObject *)g_AppPyOne;
+/*
+ * GetOD() : the object (the 1 of the level, a folded stub in the original). differs from the original: the result is
+ * a new value; the original returned the object without a new reference, so each call took one from it.
+ */
+API_FN(SAI, GetOD) {
+	if (!g_AppPyOne) {
+		return 0;
+	}
+	Native_Arg((PyObject *)g_AppPyOne, out);
+	return 1;
 }
 
 static char str_PyDoc_SAI_AddVehicleRace[];
@@ -1148,3 +1090,4 @@ static char str_PyDoc_SAI_SetRotStaticObj[] =
 
 static char str_PyDoc_SAI_SetInertia[72] = "void SetInertia(bool inertia) : Indica si la nave tiene inercia.";
 
+PORTS(PyInterface_SAIPy)
