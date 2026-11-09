@@ -4116,12 +4116,21 @@ static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list 
 		return Mode_ParseGroup(v, f, va, levels, buf, size);
 	}
 	/* "s" and "O" give pointers into v: top level only (an item of a group is a copy) */
-	CHECK(top || c == 'i' || c == 'd');
+	CHECK(top || c == 'i' || c == 'd' || c == 'f');
 	if (c == 'i') {
 		msg = Mode_ArgInt(v, va_arg(*va, int *)) ? NULL : "integer<i>";
 	} else if (c == 'd') {
 		/* PyFloat_AsDouble raised already: seterror keeps its error */
 		msg = Native_ArgDouble(v, va_arg(*va, double *)) ? NULL : "float<d>";
+	} else if (c == 'f') {
+		/* the double cut to a float, as getargs.c stores it */
+		double d;
+		float *p = va_arg(*va, float *);
+		if (Native_ArgDouble(v, &d)) {
+			*p = (float)d;
+		} else {
+			msg = "float<f>";
+		}
 	} else if (c == 's') {
 		const char **p = va_arg(*va, const char **);
 		if (v->type != NV_STR) {

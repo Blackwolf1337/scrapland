@@ -1,8 +1,9 @@
 /*
- * The registry of the port functions (stage 4 of docs/objlib-plan.md): every ref of include/scrap/scriptports.h
- * sorted by module and name (strcmp), for Port_Find (src/game/Script/ScriptPort.c). A name served by the modules
- * of several levels (Map, Mission_X) has one ref per level, after each other. Made by tools/script/ports.py with
- * the header. Do not edit: run the tool after a table or an entry changes, and to resolve a merge.
+ * The registry of the port and engine functions (stages 4 and 7 of docs/objlib-plan.md): every ref of
+ * include/scrap/scriptports.h sorted by module and name (strcmp), for Port_Find (src/game/Script/ScriptPort.c). A
+ * name served by the modules of several levels (Map, Mission_X) has one ref per level, after each other. Made by
+ * tools/script/ports.py with the header. Do not edit: run the tool after a table or an entry changes, and to
+ * resolve a merge.
  */
 #include "scrap/scriptnative.h"
 

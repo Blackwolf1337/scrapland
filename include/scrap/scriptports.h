@@ -1,8 +1,9 @@
 /*
  * The refs of the port functions that have a native entry (PORT_CALL and PORT_OWN, include/scrap/scriptnative.h),
  * one per table function: made by tools/script/ports.py from the PyMethodDef tables of src/game/Script, their
- * registrations in Script.c and Levels.c and the entries. Do not edit: run the tool after a table or an entry
- * changes, and to resolve a merge. The number after each ref is the count of arguments its entry takes.
+ * registrations in Script.c and Levels.c, the tables of the engine modules (src/game/PyInterface) and the
+ * entries. Do not edit: run the tool after a table or an entry changes, and to resolve a merge. The number after
+ * each ref is the count of arguments its entry takes.
  */
 #ifndef SCRAP_SCRIPTPORTS_H
 #define SCRAP_SCRIPTPORTS_H
