@@ -1,6 +1,6 @@
 {
  "title": "ScrapC progress",
- "date": "2026-11-08",
+ "date": "2026-11-09",
  "steps": [
   {
    "step": 1,
@@ -162,9 +162,9 @@
     {
      "item": "Python object library removed",
      "weight": 3,
-     "percent": 52,
+     "percent": 66,
      "status": "in progress",
-     "note": "native modules (stage 2) and direct calls between them (stage 3) done; stages 4 to 9 left"
+     "note": "stages 1 to 4 done (native modules, direct calls, callbacks and scheduler on C entries); variables, data paths and engine API under way"
     }
    ]
   },

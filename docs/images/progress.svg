@@ -2,11 +2,11 @@
 <title>ScrapC progress</title>
 <rect width="920" height="1178" rx="14" fill="#1b1814"/>
 <circle cx="130" cy="125" r="78" fill="none" stroke="#3a342b" stroke-width="16"/>
-<path d="M130.0,47.0 A78,78 0 1 1 56.8,98.1" fill="none" stroke="#e7b85a" stroke-width="16" stroke-linecap="round"/>
+<path d="M130.0,47.0 A78,78 0 1 1 58.0,94.9" fill="none" stroke="#e7b85a" stroke-width="16" stroke-linecap="round"/>
 <text x="130" y="137" text-anchor="middle" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="44" fill="#f1e9d8">81%</text>
 <text x="130" y="161" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#a89c86">of the whole project</text>
 <text x="260" y="44" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#f1e9d8">Progress</text>
-<text x="260" y="64" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#a89c86">State of 2026-11-08. Percentages are estimates, steps weighted by their share of the work.</text>
+<text x="260" y="64" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#a89c86">State of 2026-11-09. Percentages are estimates, steps weighted by their share of the work.</text>
 <text x="260" y="100" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">1. Recreation in C<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">The engine and game code of Scrap.exe as C, weight 30</tspan></text>
 <text x="880" y="100" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">100%</text>
 <rect x="260" y="109" width="620" height="10" rx="5" fill="#3a342b"/>
@@ -24,9 +24,9 @@
 <rect x="260" y="247" width="620" height="10" rx="5" fill="#3a342b"/>
 <rect x="260" y="247" width="620.0" height="10" rx="5" fill="#e7b85a"/>
 <text x="260" y="284" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">5. Python scripts in C (issue #2)<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">The game's Python 1.5.2 scripts as C and data files, weight 25</tspan></text>
-<text x="880" y="284" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">89%</text>
+<text x="880" y="284" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">92%</text>
 <rect x="260" y="293" width="620" height="10" rx="5" fill="#3a342b"/>
-<rect x="260" y="293" width="552.2" height="10" rx="5" fill="#d9603f"/>
+<rect x="260" y="293" width="569.6" height="10" rx="5" fill="#d9603f"/>
 <text x="260" y="330" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">6. Free-roam multiplayer (issue #1)<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">Players meet on the open map, weight 15</tspan></text>
 <text x="880" y="330" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">0%</text>
 <rect x="260" y="339" width="620" height="10" rx="5" fill="#3a342b"/>
@@ -161,9 +161,9 @@
 <rect x="290" y="1051" width="84" height="18" rx="9" fill="none" stroke="#e7b85a"/>
 <text x="332" y="1064" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#e7b85a">in progress</text>
 <rect x="385" y="1056" width="90" height="6" rx="3" fill="#3a342b"/>
-<rect x="385" y="1056" width="46.8" height="6" rx="3" fill="#d9603f"/>
-<text x="511" y="1064" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">52%</text>
-<text x="520" y="1064" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">native modules (stage 2) and direct calls between them (stage 3) done; stages 4 to 9 left</text>
+<rect x="385" y="1056" width="59.4" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="1064" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">66%</text>
+<text x="520" y="1064" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">stages 1 to 4 done (native modules, direct calls, callbacks and scheduler on C entries); variables, data paths and engine API under way</text>
 <text x="30" y="1094" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" fill="#8fb3c9">6. FREE-ROAM MULTIPLAYER (ISSUE #1)</text>
 <text x="30" y="1124" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Design</text>
 <rect x="290" y="1111" width="84" height="18" rx="9" fill="none" stroke="#8a7f6c"/>
