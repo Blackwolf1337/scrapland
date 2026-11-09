@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "scrap/input.h"
+#include "scrap/modvars.h"
 #include "scrap/scrap.h"
 #include "Levels.h"
 
@@ -703,11 +704,9 @@ static byte MapTreasure_CreateCoins(void) {
  * Scrap.CreateSaveVar(varname, "0"); Coins.append(Circuit[f][int(Scrap.GetSaveVar(varname))]) */
 static byte Mt_CoinsBody(PyObject *locals, PyObject *f, void *ctx) {
 	(void)ctx;
-	PyObject *key = PyString_InternFromString("varname");
-	PyObject *repr = key ? Script_Repr(f) : NULL;
+	PyObject *repr = Script_Repr(f);
 	PyObject *name = repr ? Script_SPlus("Bank.Circuit.", repr) : NULL;
-	byte ok = name && PyDict_SetItem(locals, key, name) == 0;
-	Py_XDECREF(key);
+	byte ok = name && ModVar_DictSet(locals, "varname", name) == 0;
 	Py_XDECREF(repr);
 	Py_XDECREF(name);
 	PyObject *create = ok ? Script_ModuleName(locals, "Scrap.CreateSaveVar") : NULL;

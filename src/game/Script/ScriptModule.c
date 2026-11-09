@@ -79,8 +79,7 @@ PyObject *Script_ModuleName(PyObject *locals, const char *text) {
 }
 
 byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptForBody_t body, void *ctx) {
-	PyObject *key = PyString_InternFromString((char *)var);
-	byte ok = key != NULL;
+	byte ok = 1;
 	for (int i = 0; ok; i++) {
 		PyObject *item;
 		int n = Script_Next(seq, i, &item);
@@ -88,10 +87,9 @@ byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptFo
 			ok = n == 0;
 			break;
 		}
-		ok = PyDict_SetItem(locals, key, item) == 0 && body(locals, item, ctx);
+		ok = ModVar_DictSet(locals, var, item) == 0 && body(locals, item, ctx);
 		Py_DECREF(item);
 	}
-	Py_XDECREF(key);
 	return ok;
 }
 
@@ -114,6 +112,7 @@ typedef struct {
 	int nest;			/* expressions inside each other */
 	byte syntax;			/* the error is one of the text, not of a value */
 	PyObject *defs;			/* the functions the module code defined, by name (Script_ModuleExtras) */
+	modVarRef_t ref;		/* the module in the registry of the module variables (ModVar_Making): its globals */
 } modParse_t;
 
 /* ---- errors ---- */
@@ -368,14 +367,14 @@ static PyObject *Mod_String(modParse_t *m) {
 
 static PyObject *Mod_Expr(modParse_t *m);
 
-/* LOAD_NAME: the locals, the module, the builtins; NameError with the name */
+/* LOAD_NAME: the locals (a class body's), the module (through the registry), the builtins; NameError with the name */
 static PyObject *Mod_Load(modParse_t *m, const char *name) {
-	PyObject *v = PyDict_GetItemString(m->locals, (char *)name);
+	PyObject *v = m->locals != m->globals ? PyDict_GetItemString(m->locals, (char *)name) : NULL;
 	if (!v) {
-		v = PyDict_GetItemString(m->globals, (char *)name);
+		v = ModVar_Get(&m->ref, name);
 	}
 	if (!v) {
-		PyObject *b = PyDict_GetItemString(m->globals, "__builtins__");
+		PyObject *b = ModVar_Get(&m->ref, "__builtins__");
 		b = b && PyModule_Check(b) ? PyModule_GetDict(b) : b;
 		v = b && PyDict_Check(b) ? PyDict_GetItemString(b, (char *)name) : NULL;
 	}
@@ -844,7 +843,7 @@ static PyObject *Mod_Eval(modParse_t *outer, PyObject *text) {
 		return Script_EvalValue(outer->globals, text);	/* the ValueError of builtin eval */
 	}
 	modParse_t m = { .p = s, .text = s, .file = "eval", .module = outer->module, .mod = outer->mod,
-		.globals = outer->globals, .locals = outer->locals, .consts = PyList_New(0) };
+		.globals = outer->globals, .locals = outer->locals, .consts = PyList_New(0), .ref = outer->ref };
 	if (!m.consts) {
 		return NULL;
 	}
@@ -878,17 +877,19 @@ static byte Mod_EndLine(modParse_t *m) {
 	return 1;
 }
 
-/* name = v into the locals (STORE_NAME); v is given away */
+/* name = v into the locals (STORE_NAME): the module's through the registry, a class body's dict (an interned key
+ * either way, as the compiler's names); v is not stolen */
+static byte Mod_Put(modParse_t *m, const char *name, PyObject *v) {
+	return (m->locals == m->globals ? ModVar_Set(&m->ref, name, v) :
+		PyDict_SetItemString(m->locals, (char *)name, v)) == 0;
+}
+
+/* the same when not skipped; v is given away */
 static byte Mod_Store(modParse_t *m, const char *name, PyObject *v) {
 	if (!v) {
 		return 0;
 	}
-	byte ok = 1;
-	if (!m->skip) {
-		PyObject *key = PyString_InternFromString(name);
-		ok = key && PyDict_SetItem(m->locals, key, v) == 0;
-		Py_XDECREF(key);
-	}
+	byte ok = m->skip || Mod_Put(m, name, v);
 	Py_DECREF(v);
 	return ok;
 }
@@ -935,9 +936,10 @@ static byte Mod_From(modParse_t *m) {
 	if (Mod_Op(m, "*")) {
 		PyObject *k, *v;
 		int pos = 0;
+		/* OBJLIB 5: the walk of the module's dict, in its order (the order of the stores) */
 		while (ok && d && PyDict_Next(d, &pos, &k, &v)) {
 			if (PyString_Check(k) && PyString_AsString(k)[0] != '_') {
-				ok = PyDict_SetItem(m->locals, k, v) == 0;
+				ok = Mod_Put(m, PyString_AsString(k), v);
 			}
 		}
 	} else {
@@ -945,7 +947,7 @@ static byte Mod_From(modParse_t *m) {
 			if (!d) {
 				continue;
 			}
-			PyObject *v = PyDict_GetItemString(d, name);
+			PyObject *v = ModVar_DictGet(d, name);
 			if (!v) {
 				PyErr_Format(PyExc_ImportError, "cannot import name %.200s", name);
 				ok = 0;
@@ -966,7 +968,7 @@ static byte Mod_Def(modParse_t *m) {
 			return 0;
 		}
 		if (!m->skip && m->locals == m->globals &&
-			PyDict_SetItemString(m->defs, name, PyDict_GetItemString(m->locals, name)) != 0) {
+			PyDict_SetItemString(m->defs, name, ModVar_Get(&m->ref, name)) != 0) {
 			return 0;
 		}
 	}
@@ -1030,7 +1032,7 @@ static byte Mod_Set(modParse_t *m) {
 		char name[MOD_NAME];
 		m->p++;
 		Mod_Word(m, name, sizeof(name));
-		ok = m->skip || PyObject_SetAttrString(o, name, v) == 0;
+		ok = m->skip || ModVar_SetObjAttr(o, name, v) == 0;
 	} else if (o) {
 		m->p++;
 		m->depth++;
@@ -1056,7 +1058,8 @@ static byte Mod_Del(modParse_t *m) {
 	if (!Mod_Word(m, name, sizeof(name))) {
 		return Mod_Syntax(m, "del <name>"), 0;
 	}
-	if (!m->skip && PyDict_DelItemString(m->locals, name) != 0) {
+	if (!m->skip &&
+		(m->locals == m->globals ? ModVar_Del(&m->ref, name) : PyDict_DelItemString(m->locals, name)) != 0) {
 		PyErr_Clear();
 		PyObject *n = PyString_FromString(name);
 		PyErr_SetObject(PyExc_NameError, n);
@@ -1150,7 +1153,7 @@ static byte Mod_Class(modParse_t *m) {
 			}
 		}
 		/* PyClass_New takes __module__ from the globals of the frame that runs, which is not this module's here */
-		PyObject *modname = PyDict_GetItemString(m->globals, "__name__");
+		PyObject *modname = ModVar_Get(&m->ref, "__name__");
 		if (!PyErr_Occurred() && !PyDict_GetItemString(body.locals, "__doc__")) {
 			PyDict_SetItemString(body.locals, "__doc__", Py_None);
 		}
@@ -1277,7 +1280,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	PyObject *d = m ? PyModule_GetDict(m) : NULL;
 	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = m, .globals = d, .locals = d,
 		.consts = PyList_New(0), .defs = PyDict_New() };
-	int ok = d && mp.consts && mp.defs;
+	modVarRef_t was;
+	int ok = d && mp.consts && mp.defs, bound = 0;
 	/* as PyImport_ExecCodeModuleEx: the builtins and __file__ before the module code */
 	if (ok && !PyDict_GetItemString(d, "__builtins__")) {
 		ok = PyDict_SetItemString(d, "__builtins__", PyEval_GetBuiltins()) == 0;
@@ -1291,6 +1295,9 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 			Py_DECREF(v);
 		}
 		PyErr_Clear();
+		/* the module code stores and loads its names through the registry */
+		ModVar_Making(name, mf->level, d, &mp.ref, &was);
+		bound = 1;
 		Script_LevelModuleStart(name);
 		char stop[16];
 		ok = Mod_Block(&mp, stop, sizeof(stop));
@@ -1307,6 +1314,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 		Script_ModuleExtras(name, m, mp.defs);
 		/* the names of the module for the registry of the module variables (a mod's own, the hooks' too) */
 		ModVar_Made(name, mf->level, d);
+	} else if (bound) {
+		ModVar_Unmade(name, &was);
 	}
 	Py_XDECREF(mp.defs);
 	if (!ok) {
