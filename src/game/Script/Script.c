@@ -36,6 +36,7 @@
  * &AnmTotalTime). @, %, $ and & values may end in operations with numbers, done left to right with Python's numbers:
  * $x+10, &AnmTotalTime/4*2.
  * $(name) inside a word or text is the value name as text.
+ * The values are native values (nativeVal_t, see the comment above Def_Shared).
  */
 #define _GNU_SOURCE
 #include <stdarg.h>
@@ -57,6 +58,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapfont.h"
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
 #include "scrap/timer.h"
 #include "compile.h"
 #include "frameobject.h"
@@ -1121,6 +1123,61 @@ static const char *Def_Tokens(const char *p, char *buf, int size, scriptLine_t *
 	return *p ? p + 1 : p;
 }
 
+/*
+ * The values of a file are native values (nativeVal_t). The $names stay the dict the C function gives (or the file's
+ * own), holding Python values (OBJLIB 6: the callers make the dict, a caller may run several sections on one dict, and
+ * the steps take Python arguments and give $names as Python values): a value read from there, or from a module
+ * variable (%Module.var), is the native value Native_Arg makes of it, but a list or dict, or a tuple holding one,
+ * stays the object itself as an NV_OBJ, so that it keeps its identity (a step appends to the list of a $name in place,
+ * a call or a setvar may keep it).
+ */
+
+/* the object keeps its identity in the runner: a list or dict, or a tuple that holds one */
+static byte Def_Shared(PyObject *o) {
+	if (PyList_Check(o) || PyDict_Check(o)) {
+		return 1;
+	}
+	for (int i = 0; PyTuple_Check(o) && i < PyTuple_Size(o); i++) {
+		if (Def_Shared(PyTuple_GetItem(o, i))) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* a Python value of the $names or of a module as the native value of the runner (Native_Free it) */
+static void Def_FromPy(PyObject *o, nativeVal_t *v) {
+	if (!Def_Shared(o)) {
+		Native_Arg(o, v);
+		return;
+	}
+	Native_SetNone(v);
+	v->type = NV_OBJ;
+	v->obj = o;
+	Py_INCREF(o);
+}
+
+/* the $name of the file (a borrowed reference), NULL when it has none */
+static PyObject *Def_Lookup(scriptDef_t *m, const char *name) {
+	return m && m->vars ? PyDict_GetItemString(m->vars, (char *)name) : NULL;
+}
+
+/* str() of the value added to b: 1, or 0 with the error of str. None, numbers and texts as Native_Repr writes them
+ * (the texts of str of 1.5.2), any other value through its Python object (OBJLIB 7: str of an object) */
+static byte Def_Str(const nativeVal_t *v, nativeBuf_t *b) {
+	if (v->type == NV_NONE || v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG) {
+		Native_Repr(b, v, NR_STR);
+		return 1;
+	}
+	PyObject *o = Native_ToPy(v), *s = o ? PyObject_Str(o) : NULL;
+	if (s) {
+		Native_BufAdd(b, PyString_AsString(s), PyString_Size(s));
+	}
+	Py_XDECREF(s);
+	Py_XDECREF(o);
+	return s != NULL;
+}
+
 /* the text s with {Key} replaced by the language texts and $(name) by the value name of the file */
 static const char *Def_Text(scriptDef_t *m, const char *s, char *out, int size) {
 	int n = 0;
@@ -1129,24 +1186,30 @@ static const char *Def_Text(scriptDef_t *m, const char *s, char *out, int size) 
 		if (close && close - s < 0x40) {
 			char key[0x40];
 			const char *t = "";
-			PyObject *str = NULL;
+			nativeBuf_t str;
+			Native_BufInit(&str);
 			if (*s == '{') {
 				Str_Copy(key, s + 1, (int)(close - s));
 				t = Script_Lang(key);
 			} else {
 				Str_Copy(key, s + 2, (int)(close - s) - 1);
-				PyObject *v = m && m->vars ? PyDict_GetItemString(m->vars, key) : NULL;
-				str = v ? PyObject_Str(v) : NULL;
-				if (str) {
-					t = PyString_AsString(str);
+				PyObject *o = Def_Lookup(m, key);
+				nativeVal_t v;
+				Native_SetNone(&v);
+				if (o) {
+					Def_FromPy(o, &v);
+				}
+				if (o && Def_Str(&v, &str)) {
+					t = str.p;
 				} else {
 					Con_Warnf("%s:%d: no value %s\n", m ? m->name : "", m ? m->line : 0, key);
 				}
+				Native_Free(&v);
 			}
 			for (; *t && n < size - 1; t++) {
 				out[n++] = *t;
 			}
-			Py_XDECREF(str);
+			Native_BufFree(&str);
 			s = close + 1;
 		} else {
 			out[n++] = *s++;
@@ -1166,11 +1229,21 @@ static byte Def_Number(const char *s, double *d) {
 	return *e == 0;
 }
 
-static PyObject *Def_Number2Py(double d) {
-	return d == (long)d ? PyInt_FromLong((long)d) : PyFloat_FromDouble(d);
+/* the text s (up to its 0) as the value */
+static void Def_SetText(nativeVal_t *v, const char *s) {
+	Native_SetText(v, s, (int)strlen(s));
 }
 
-static PyObject *Def_List(scriptDef_t *m, const char *name);
+/* d as an int when it is integral, else as a float */
+static void Def_SetNumber(nativeVal_t *v, double d) {
+	if (d == (long)d) {
+		Native_SetInt(v, (long)d);
+	} else {
+		Native_SetFloat(v, d);
+	}
+}
+
+static byte Def_List(scriptDef_t *m, const char *name, nativeVal_t *out);
 
 /* "A.B" into a (size bytes) and the part after the dot; NULL without a dot */
 static const char *Def_Split(const char *s, char *a, int size) {
@@ -1188,21 +1261,21 @@ static const char *Def_Ops(const char *s) {
 	return op ? op : s + strlen(s);
 }
 
-/* v with the operations of ops applied left to right ("+35", "/4*2"): the numbers of Python, an integer stays one
- * with integer operands and divides down; v given away, NULL when it is no number but ops has operations */
-static PyObject *Def_Arith(scriptDef_t *m, PyObject *v, const char *ops) {
-	if (!v || !*ops) {
-		return v;
+/* *v with the operations of ops applied left to right ("+35", "/4*2"): the numbers of Python, an integer stays one
+ * with integer operands and divides down; 0 (and *v None) when it is no number but ops has operations */
+static byte Def_Arith(scriptDef_t *m, nativeVal_t *v, const char *ops) {
+	if (!*ops) {
+		return 1;
 	}
-	if (!PyInt_Check(v) && !PyFloat_Check(v)) {
+	if (v->type != NV_INT && v->type != NV_FLOAT) {
 		Con_Warnf("%s:%d: no number for %s\n", m->name, m->line, ops);
-		Py_DECREF(v);
-		return NULL;
+		Native_Free(v);
+		return 0;
 	}
-	byte isInt = PyInt_Check(v);
-	long iv = isInt ? PyInt_AsLong(v) : 0;
-	double dv = isInt ? (double)iv : PyFloat_AsDouble(v);
-	Py_DECREF(v);
+	byte isInt = v->type == NV_INT;
+	long iv = isInt ? v->i : 0;
+	double dv = isInt ? (double)iv : v->f;
+	Native_SetNone(v);
 	for (const char *p = ops; *p;) {
 		char op = *p++, num[0x40];
 		const char *next = strpbrk(p, "+-*/");
@@ -1215,14 +1288,14 @@ static PyObject *Def_Arith(scriptDef_t *m, PyObject *v, const char *ops) {
 		double x;
 		if (!Def_Number(num, &x)) {
 			Con_Warnf("%s:%d: bad number %s in %s\n", m->name, m->line, num, ops);
-			return NULL;
+			return 0;
 		}
 		byte xInt = !strchr(num, '.') && x == (long)x;
 		if (isInt && xInt) {
 			long y = (long)x;
 			if (op == '/' && y == 0) {
 				Con_Warnf("%s:%d: division by zero in %s\n", m->name, m->line, ops);
-				return NULL;
+				return 0;
 			}
 			/* Python 1.5 divides integers down */
 			iv = op == '+' ? iv + y : op == '-' ? iv - y : op == '*' ? iv * y :
@@ -1237,39 +1310,47 @@ static PyObject *Def_Arith(scriptDef_t *m, PyObject *v, const char *ops) {
 		}
 		p = next ? next : p + len;
 	}
-	return isInt ? PyInt_FromLong(iv) : PyFloat_FromDouble(dv);
+	if (isInt) {
+		Native_SetInt(v, iv);
+	} else {
+		Native_SetFloat(v, dv);
+	}
+	return 1;
 }
 
-/* a value token as a Python object (a new reference, NULL with the warning printed) */
-static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
+/* a value token into *out (Native_Free it): 1, or 0 with the warning printed and *out None */
+static byte Def_Value(scriptDef_t *m, const char *t, byte quoted, nativeVal_t *out) {
 	char text[SCRIPT_MAX_TEXT], a[0x80];
 	const char *b;
 	double d;
 
+	Native_SetNone(out);
 	if (quoted || strstr(t, "$(")) {
-		return PyString_FromString((char *)Def_Text(m, t, text, sizeof(text)));
+		Def_SetText(out, Def_Text(m, t, text, sizeof(text)));
+		return 1;
 	}
 	if (!strcmp(t, "$id")) {
-		return PyInt_FromLong(m->id);
+		Native_SetInt(out, m->id);
+		return 1;
 	}
 	if (!strcmp(t, "$section")) {
-		return PyString_FromString((char *)(m->section ? m->section : ""));
+		Def_SetText(out, m->section ? m->section : "");
+		return 1;
 	}
 	if (t[0] == '$') {
 		char name[0x40];
 		const char *ops = Def_Ops(t + 1);
 		Str_Copy(name, t + 1, ops - t < (int)sizeof(name) ? (int)(ops - t) : (int)sizeof(name));
-		PyObject *v = m->vars ? PyDict_GetItemString(m->vars, name) : NULL;
+		PyObject *v = Def_Lookup(m, name);
 		if (!v) {
 			Con_Warnf("%s:%d: no value %s\n", m->name, m->line, t);
-			return NULL;
+			return 0;
 		}
-		Py_INCREF(v);
-		return Def_Arith(m, v, ops);
+		Def_FromPy(v, out);
+		return Def_Arith(m, out, ops);
 	}
 	if (!strcmp(t, "None")) {
-		Py_INCREF(Py_None);
-		return Py_None;
+		return 1;
 	}
 	if (t[0] == '(' && t[strlen(t) - 1] == ')') {
 		/* (a,b,c): a tuple of values */
@@ -1281,9 +1362,9 @@ static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
 			n += *p == ',';
 		}
 		n += inner[0] && inner[strlen(inner) - 1] != ',';
-		PyObject *tuple = PyTuple_New(n);
+		Native_SetEmpty(out, NV_TUPLE);
 		int k = 0;
-		for (char *p = inner; tuple && *p && k < n;) {
+		for (char *p = inner; *p && k < n; k++) {
 			char *comma = strchr(p, ',');
 			if (comma) {
 				*comma = 0;
@@ -1294,20 +1375,16 @@ static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
 			if (q) {
 				p[len - 1] = 0;
 			}
-			PyObject *v = Def_Value(m, p + q, q);
-			if (!v) {
-				Py_INCREF(Py_None);
-				v = Py_None;
-			}
-			PyTuple_SetItem(tuple, k++, v);
+			/* a value that fails is None */
+			Def_Value(m, p + q, q, Native_Append(out));
 			p = comma ? comma + 1 : p + strlen(p);
 		}
-		return tuple;
+		return 1;
 	}
 	if (t[0] == '[' && t[strlen(t) - 1] == ']') {
 		Str_Copy(a, t + 1, sizeof(a));
 		a[strlen(a) - 1] = 0;
-		return Def_List(m, a);
+		return Def_List(m, a, out);
 	}
 	if (t[0] == '&') {
 		/* a variable of SAct's current action */
@@ -1318,75 +1395,86 @@ static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
 		Str_Copy(var, t + 1, ops - t < (int)sizeof(var) ? (int)(ops - t) : (int)sizeof(var));
 		switch (g_pAuxAction ? cAction_Var(g_pAuxAction, var, 0, &s, &dv, &iv) : ACTVAR_NONE) {
 		case ACTVAR_STRING:
-			return PyString_FromString(s ? s : "");
+			Def_SetText(out, s ? s : "");
+			return 1;
 		case ACTVAR_DOUBLE:
-			return Def_Arith(m, PyFloat_FromDouble(dv), ops);
+			Native_SetFloat(out, dv);
+			return Def_Arith(m, out, ops);
 		case ACTVAR_INT:
-			return Def_Arith(m, PyInt_FromLong(iv), ops);
+			Native_SetInt(out, iv);
+			return Def_Arith(m, out, ops);
 		}
 		Con_Warnf("%s:%d: no action variable %s\n", m->name, m->line, var);
-		return NULL;
+		return 0;
 	}
 	if ((t[0] == '%' || t[0] == '@') && (b = Def_Split(t + 1, a, sizeof(a)))) {
 		char var[0x80];
 		const char *ops = Def_Ops(b);
 		Str_Copy(var, b, ops - b < (int)sizeof(var) ? (int)(ops - b) + 1 : (int)sizeof(var));
 		if (t[0] == '@') {
-			return Def_Arith(m, Def_Number2Py(Script_GetNum(m->id, a, var)), ops);
+			Def_SetNumber(out, Script_GetNum(m->id, a, var));
+			return Def_Arith(m, out, ops);
 		}
 		/* a global of the level module whose function runs ($__module__) raises NameError like the script's read */
-		PyObject *own = m->vars ? PyDict_GetItemString(m->vars, "__module__") : NULL;
+		PyObject *own = Def_Lookup(m, "__module__");
 		PyObject *v = own && PyString_Check(own) && !strcmp(PyString_AsString(own), a) ? Script_Global(a, var) : Script_Attr(a, var);
 		if (!v) {
 			if (m->stop) {
 				m->failed = 1;
-				return NULL;
+				return 0;
 			}
 			PyErr_Clear();
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);
-			return NULL;
+			return 0;
 		}
-		return Def_Arith(m, v, ops);
+		Def_FromPy(v, out);
+		Py_DECREF(v);
+		return Def_Arith(m, out, ops);
 	}
 	if (Def_Number(t, &d)) {
-		return strchr(t, '.') ? PyFloat_FromDouble(d) : PyInt_FromLong((long)d);
+		if (strchr(t, '.')) {
+			Native_SetFloat(out, d);
+		} else {
+			Native_SetInt(out, (long)d);
+		}
+		return 1;
 	}
-	return PyString_FromString((char *)Def_Text(m, t, text, sizeof(text)));
+	Def_SetText(out, Def_Text(m, t, text, sizeof(text)));
+	return 1;
 }
 
 /* a value token as a string into out (an item name, a link, a compared value) */
 static const char *Def_Word(scriptDef_t *m, const char *t, byte quoted, char *out, int size) {
 	out[0] = 0;
 	if (!quoted && (t[0] == '$' || t[0] == '%' || t[0] == '@') && !strstr(t, "$(")) {
-		PyObject *v = Def_Value(m, t, 0);
-		PyObject *str = v ? PyObject_Str(v) : NULL;
-		if (str) {
-			Str_Copy(out, PyString_AsString(str), size);
+		nativeVal_t v;
+		nativeBuf_t str;
+		Native_BufInit(&str);
+		if (Def_Value(m, t, 0, &v) && Def_Str(&v, &str)) {
+			Str_Copy(out, str.p, size);
 		}
-		Py_XDECREF(str);
-		Py_XDECREF(v);
+		Native_BufFree(&str);
+		Native_Free(&v);
 		return out;
 	}
 	return Def_Text(m, t, out, size);
 }
 
-/* the list name as a tuple of lists, one per entry line */
-static PyObject *Def_List(scriptDef_t *m, const char *name) {
+/* the value is a list or a tuple (a $name's list is its object) */
+static byte Def_IsSequence(const nativeVal_t *v) {
+	return v->type == NV_LIST || v->type == NV_TUPLE || (v->type == NV_OBJ && (PyList_Check(v->obj) || PyTuple_Check(v->obj)));
+}
+
+/* the list name as a tuple of lists, one per entry line, into *out (as Def_Value) */
+static byte Def_List(scriptDef_t *m, const char *name, nativeVal_t *out) {
+	Native_SetNone(out);
 	for (int i = m->numBlocks - 1; i >= 0; i--) {
 		scriptBlock_t *bl = &m->blocks[i];
 		if (!bl->list || strcmp(bl->name, name)) {
 			continue;
 		}
-		int n = 0;
+		Native_SetEmpty(out, NV_TUPLE);
 		for (const char *p = bl->start; p < bl->end;) {
-			char buf[SCRIPT_MAX_TEXT];
-			scriptLine_t l;
-			p = Def_Tokens(p, buf, sizeof(buf), &l);
-			n += l.n > 0;
-		}
-		PyObject *r = PyTuple_New(n);
-		n = 0;
-		for (const char *p = bl->start; r && p < bl->end;) {
 			char buf[SCRIPT_MAX_TEXT];
 			scriptLine_t l;
 			p = Def_Tokens(p, buf, sizeof(buf), &l);
@@ -1395,44 +1483,43 @@ static PyObject *Def_List(scriptDef_t *m, const char *name) {
 			}
 			if (l.n == 1 && !l.quoted[0]) {
 				/* a single value that is a list or tuple is the entry itself */
-				PyObject *v = Def_Value(m, l.tok[0], 0);
-				if (v && (PyList_Check(v) || PyTuple_Check(v))) {
-					PyTuple_SetItem(r, n++, v);
+				nativeVal_t v;
+				if (Def_Value(m, l.tok[0], 0, &v) && Def_IsSequence(&v)) {
+					*Native_Append(out) = v;
 					continue;
 				}
-				Py_XDECREF(v);
+				Native_Free(&v);
 			}
-			PyObject *e = PyList_New(l.n);
-			for (int j = 0; e && j < l.n; j++) {
-				PyObject *v = Def_Value(m, l.tok[j], l.quoted[j]);
-				if (!v) {
-					Py_INCREF(Py_None);
-					v = Py_None;
-				}
-				PyList_SetItem(e, j, v);
+			nativeVal_t *e = Native_Append(out);
+			Native_SetEmpty(e, NV_LIST);
+			for (int j = 0; j < l.n; j++) {
+				/* a value that fails is None */
+				Def_Value(m, l.tok[j], l.quoted[j], Native_Append(e));
 			}
-			PyTuple_SetItem(r, n++, e);
 		}
-		return r;
+		return 1;
 	}
 	Con_Warnf("%s:%d: no list %s\n", m->name, m->line, name);
-	return NULL;
+	return 0;
 }
 
 static void Def_Set(scriptDef_t *m, const char *item, const char *var, const char *value, byte quoted) {
 	if (!quoted && (value[0] == '@' || value[0] == '%' || value[0] == '$') && !strstr(value, "$(")) {
-		PyObject *v = Def_Value(m, value, 0);
-		if (v && (PyInt_Check(v) || PyFloat_Check(v))) {
-			Script_SetNum(m->id, item, var, PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v));
-		} else if (v && PyString_Check(v)) {
-			Script_SetStr(m->id, item, var, PyString_AsString(v));
-		} else if (v && m->stop) {
-			/* another value goes to SScorer.Set as in the script, with its TypeError */
-			PyObject *r = Script_Ask("SScorer", "Set", "(issO)", m->id, item, var, v);
+		nativeVal_t v;
+		byte ok = Def_Value(m, value, 0, &v);
+		if (ok && (v.type == NV_INT || v.type == NV_FLOAT)) {
+			Script_SetNum(m->id, item, var, v.type == NV_INT ? (double)v.i : v.f);
+		} else if (ok && v.type == NV_STR) {
+			Script_SetStr(m->id, item, var, Native_Text(&v));
+		} else if (ok && m->stop) {
+			/* another value goes to SScorer.Set as in the script, with its TypeError (OBJLIB 7: by name) */
+			PyObject *o = Native_ToPy(&v);
+			PyObject *r = o ? Script_Ask("SScorer", "Set", "(issO)", m->id, item, var, o) : NULL;
 			m->failed = r == NULL;
 			Py_XDECREF(r);
+			Py_XDECREF(o);
 		}
-		Py_XDECREF(v);
+		Native_Free(&v);
 		return;
 	}
 	double d;
@@ -1464,37 +1551,83 @@ static void Def_ApplyStyle(scriptDef_t *m, const char *name) {
 	Con_Warnf("%s:%d: no style %s\n", m->name, m->line, name);
 }
 
-/* the arguments from token first on: a tuple, and the Name=value ones in *kw (NULL when there are none) */
-static PyObject *Def_Args(scriptDef_t *m, scriptLine_t *l, int first, PyObject **kw) {
-	int n = 0;
-	*kw = NULL;
+/* the arguments of a call or run line: the positional values (v[0] to v[npos - 1]), then the Name=value ones (their
+ * names[i], lens[i] bytes up to the '=') */
+typedef struct {
+	nativeVal_t v[SCRIPT_MAX_TOKENS];
+	const char *names[SCRIPT_MAX_TOKENS];
+	int lens[SCRIPT_MAX_TOKENS];
+	int npos, n;
+} defArgs_t;
+
+/* the arguments from token first on, in the order of the line (a value that fails is None; Def_ArgsFree them) */
+static void Def_Args(scriptDef_t *m, scriptLine_t *l, int first, defArgs_t *a) {
+	int pos = 0;
+	a->npos = 0;
 	for (int i = first; i < l->n; i++) {
-		n += l->quoted[i] || !strchr(l->tok[i], '=');
+		a->npos += l->quoted[i] || !strchr(l->tok[i], '=');
 	}
-	PyObject *args = PyTuple_New(n);
-	n = 0;
-	for (int i = first; args && i < l->n; i++) {
-		char *eq = l->quoted[i] ? NULL : strchr(l->tok[i], '=');
-		PyObject *v = Def_Value(m, eq ? eq + 1 : l->tok[i], eq ? eq[1] == '"' : l->quoted[i]);
-		if (!v) {
-			Py_INCREF(Py_None);
-			v = Py_None;
+	a->n = a->npos;
+	for (int i = first; i < l->n; i++) {
+		const char *eq = l->quoted[i] ? NULL : strchr(l->tok[i], '=');
+		int k = eq ? a->n++ : pos++;
+		if (eq) {
+			a->names[k] = l->tok[i];
+			a->lens[k] = (int)(eq - l->tok[i]);
 		}
-		if (!eq) {
-			PyTuple_SetItem(args, n++, v);
-			continue;
-		}
-		if (!*kw) {
-			*kw = PyDict_New();
-		}
-		*eq = 0;
-		if (*kw) {
-			PyDict_SetItemString(*kw, l->tok[i], v);
-		}
-		*eq = '=';
-		Py_DECREF(v);
+		Def_Value(m, eq ? eq + 1 : l->tok[i], eq ? eq[1] == '"' : l->quoted[i], &a->v[k]);
 	}
-	return args;
+}
+
+static void Def_ArgsFree(defArgs_t *a) {
+	for (int i = 0; i < a->n; i++) {
+		Native_Free(&a->v[i]);
+	}
+}
+
+/* the positional arguments as the tuple a step or a call through Python takes (NULL with the error) */
+static PyObject *Def_PyArgs(const defArgs_t *a) {
+	PyObject *t = PyTuple_New(a->npos);
+	for (int i = 0; t && i < a->npos; i++) {
+		PyObject *o = Native_ToPy(&a->v[i]);
+		if (!o) {
+			Py_DECREF(t);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(t, i, o);
+	}
+	return t;
+}
+
+/* the keyword arguments as the dict of a call through Python, in the order of the line (NULL when there are none) */
+static PyObject *Def_PyKw(const defArgs_t *a) {
+	char name[SCRIPT_MAX_TEXT];
+	PyObject *kw = a->n > a->npos ? PyDict_New() : NULL;
+	for (int i = a->npos; kw && i < a->n; i++) {
+		PyObject *o = Native_ToPy(&a->v[i]);
+		Str_Copy(name, a->names[i], a->lens[i] + 1);
+		if (o) {
+			PyDict_SetItemString(kw, name, o);
+		}
+		Py_XDECREF(o);
+	}
+	return kw;
+}
+
+/* module.func(args) of a call line by name through Python (OBJLIB 7): 1, or 0 with the error set */
+static byte Def_Call(const char *module, const char *func, const defArgs_t *a) {
+	PyObject *f = Script_Attr(module, func);
+	if (!f) {
+		return 0;
+	}
+	PyObject *t = Def_PyArgs(a), *kw = t ? Def_PyKw(a) : NULL;
+	PyObject *r = t ? Script_CallObject(f, t, kw) : NULL;
+	byte ok = r != NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(kw);
+	Py_XDECREF(t);
+	Py_DECREF(f);
+	return ok;
 }
 
 static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
@@ -1504,23 +1637,18 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 		Con_Warnf("%s:%d: call needs Module.Function\n", m->name, m->line);
 		return;
 	}
-	PyObject *kw;
-	PyObject *args = Def_Args(m, l, 2, &kw);
-	if (m->failed) {
-		Py_XDECREF(args);
-		Py_XDECREF(kw);
-		return;
-	}
-	if (m->stop) {
-		PyObject *r = args ? Script_AskKw(module, func, args, kw) : NULL;
-		if (!args) {
-			Py_XDECREF(kw);
+	defArgs_t a;
+	Def_Args(m, l, 2, &a);
+	if (!m->failed) {
+		byte ok = Def_Call(module, func, &a);
+		if (m->stop) {
+			m->failed = !ok;
+		} else if (!ok) {
+			Con_Warnf("Script: %s.%s failed\n", module, func);
+			PyErr_Print();
 		}
-		m->failed = r == NULL;
-		Py_XDECREF(r);
-		return;
 	}
-	Script_CallKw(module, func, args, kw);
+	Def_ArgsFree(&a);
 }
 
 static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
@@ -1528,9 +1656,11 @@ static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
 		if (strcmp(s->name, l->tok[1])) {
 			continue;
 		}
-		PyObject *kw;
-		PyObject *args = Def_Args(m, l, 2, &kw);
-		Py_XDECREF(kw);
+		/* OBJLIB 6: the steps take the positional values of the line as a tuple of Python values */
+		defArgs_t a;
+		Def_Args(m, l, 2, &a);
+		PyObject *args = Def_PyArgs(&a);
+		Def_ArgsFree(&a);
 		if (args) {
 			s->fn(m->id, args);
 			Py_DECREF(args);
@@ -1581,8 +1711,10 @@ static const char *const def_commands[] = { "style", "item", "use", "set", "lr",
 static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char *value, byte quoted) {
 	if (target == TARGET_OBJECT) {
 		/* an attribute of a Python object, as `obj.var = value` of a script (a pack module's variable through the
-		 * registry) */
-		PyObject *v = Def_Value(m, value, quoted);
+		 * registry; OBJLIB 7: the value as its Python object) */
+		nativeVal_t nv;
+		PyObject *v = Def_Value(m, value, quoted, &nv) ? Native_ToPy(&nv) : NULL;
+		Native_Free(&nv);
 		if (v && m->object && ModVar_SetObjAttr(m->object, var, v) < 0) {
 			if (m->stop) {
 				/* an entity handle the engine refuses without an exception: ceval's SystemError */
@@ -1600,8 +1732,11 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		return;
 	}
 	if (target == TARGET_ENTITY) {
-		/* a script variable of the entity, as `entity.var = value` of a script */
-		PyObject *v = Def_Value(m, value, quoted);
+		/* a script variable of the entity, as `entity.var = value` of a script (OBJLIB 7: the value as its Python
+		 * object to the handle's set) */
+		nativeVal_t nv;
+		PyObject *v = Def_Value(m, value, quoted, &nv) ? Native_ToPy(&nv) : NULL;
+		Native_Free(&nv);
 		if (v) {
 			if (PyEntity_SetVar(World_FindEntity(m->entity), m->entity, var, v) < 0 && m->stop) {
 				/* the attribute set of the handle fails without an exception: ceval's SystemError */
@@ -1620,18 +1755,19 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		Con_Warnf("%s:%d: no current %s for %s\n", m->name, m->line, target == TARGET_CLASS ? "class" : "action", var);
 		return;
 	}
-	PyObject *v = Def_Value(m, value, quoted);
+	nativeVal_t v;
+	byte ok = Def_Value(m, value, quoted, &v);
 	char *s = NULL;
 	double d = 0.0;
 	int i = 0;
-	if (v && PyString_Check(v)) {
-		s = PyString_AsString(v);
-	} else if (v && (PyInt_Check(v) || PyFloat_Check(v))) {
-		d = PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v);
+	if (ok && v.type == NV_STR) {
+		s = (char *)Native_Text(&v);
+	} else if (ok && (v.type == NV_INT || v.type == NV_FLOAT)) {
+		d = v.type == NV_INT ? (double)v.i : v.f;
 		i = (int)d;
 	} else {
 		Con_Warnf("%s:%d: %s needs a text or a number\n", m->name, m->line, var);
-		Py_XDECREF(v);
+		Native_Free(&v);
 		return;
 	}
 	if (target == TARGET_CLASS) {
@@ -1639,11 +1775,11 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 	} else {
 		cAction_Var(g_pAuxAction, var, 1, s ? &s : NULL, s ? NULL : &d, s ? NULL : &i);
 	}
-	Py_DECREF(v);
+	Native_Free(&v);
 }
 
-/* a $name of the file: into its own dict when the C function gave none */
-static void Def_SetVar(scriptDef_t *m, const char *name, PyObject *v) {
+/* a $name of the file as a Python value (given away): into its own dict when the C function gave none */
+static void Def_Store(scriptDef_t *m, const char *name, PyObject *v) {
 	if (!m->vars) {
 		m->vars = m->ownVars = PyDict_New();
 	}
@@ -1653,31 +1789,43 @@ static void Def_SetVar(scriptDef_t *m, const char *name, PyObject *v) {
 	Py_XDECREF(v);
 }
 
+/* a $name of the file (OBJLIB 6: the dict keeps the value as its Python object) */
+static void Def_SetVar(scriptDef_t *m, const char *name, const nativeVal_t *v) {
+	Def_Store(m, name, Native_ToPy(v));
+}
+
 /* let <name> <value> [value ...]: the sum of the values, or the value when there is one that is no number */
 static void Def_Let(scriptDef_t *m, scriptLine_t *l) {
 	double sum = 0.0;
 	byte isInt = 1;
+	nativeVal_t v;
 	if (l->n == 3) {
-		PyObject *v = Def_Value(m, l->tok[2], l->quoted[2]);
-		if (v && !PyInt_Check(v) && !PyFloat_Check(v)) {
-			Def_SetVar(m, l->tok[1], v);
+		byte ok = Def_Value(m, l->tok[2], l->quoted[2], &v);
+		if (ok && v.type != NV_INT && v.type != NV_FLOAT) {
+			Def_SetVar(m, l->tok[1], &v);
+			Native_Free(&v);
 			return;
 		}
-		Py_XDECREF(v);
+		Native_Free(&v);
 	}
 	for (int i = 2; i < l->n; i++) {
-		PyObject *v = Def_Value(m, l->tok[i], l->quoted[i]);
-		if (v && PyInt_Check(v)) {
-			sum += PyInt_AsLong(v);
-		} else if (v && PyFloat_Check(v)) {
-			sum += PyFloat_AsDouble(v);
+		byte ok = Def_Value(m, l->tok[i], l->quoted[i], &v);
+		if (ok && v.type == NV_INT) {
+			sum += v.i;
+		} else if (ok && v.type == NV_FLOAT) {
+			sum += v.f;
 			isInt = 0;
 		} else {
 			Con_Warnf("%s:%d: let adds numbers\n", m->name, m->line);
 		}
-		Py_XDECREF(v);
+		Native_Free(&v);
 	}
-	Def_SetVar(m, l->tok[1], isInt && sum == (long)sum ? PyInt_FromLong((long)sum) : PyFloat_FromDouble(sum));
+	if (isInt && sum == (long)sum) {
+		Native_SetInt(&v, (long)sum);
+	} else {
+		Native_SetFloat(&v, sum);
+	}
+	Def_SetVar(m, l->tok[1], &v);
 }
 
 /* measure <name> <font> <text>: the width of the text in the font (SScorer.GetTextArea) */
@@ -1690,7 +1838,9 @@ static void Def_Measure(scriptDef_t *m, scriptLine_t *l) {
 	} else {
 		Font_TextSize(f, pos, size, 0.0f, 0.0f, "%s", Def_Word(m, l->tok[3], l->quoted[3], text, sizeof(text)));
 	}
-	Def_SetVar(m, l->tok[1], PyFloat_FromDouble(size[0]));
+	nativeVal_t v;
+	Native_SetFloat(&v, size[0]);
+	Def_SetVar(m, l->tok[1], &v);
 }
 
 static byte Def_IsCommand(scriptLine_t *l) {
@@ -1748,7 +1898,7 @@ const char *Script_CurrentItem(void) {
 
 void Script_SetValue(const char *name, PyObject *value) {
 	if (def_running) {
-		Def_SetVar(def_running, name, value);
+		Def_Store(def_running, name, value);
 	} else {
 		Py_XDECREF(value);
 	}
@@ -1817,8 +1967,10 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 		Def_Word(m, l->tok[1], l->quoted[1], m->entity, sizeof(m->entity));
 		m->target = TARGET_ENTITY;
 	} else if (!strcmp(cmd, "object") && l->n == 2) {
+		nativeVal_t v;
 		Py_XDECREF(m->object);
-		m->object = Def_Value(m, l->tok[1], l->quoted[1]);
+		m->object = Def_Value(m, l->tok[1], l->quoted[1], &v) ? Native_ToPy(&v) : NULL;
+		Native_Free(&v);
 		m->target = TARGET_OBJECT;
 		/* a stopping file stops at an object it cannot get, as the script's obj.var = ... raises (a missing $value
 		 * is an unbound name there) */
@@ -1834,7 +1986,9 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 			Con_Warnf("%s:%d: setvar needs Module.var\n", m->name, m->line);
 			return;
 		}
-		Script_SetVar(a, var, Def_Value(m, l->tok[2], l->quoted[2]));
+		nativeVal_t v;
+		Script_SetVar(a, var, Def_Value(m, l->tok[2], l->quoted[2], &v) ? Native_ToPy(&v) : NULL);
+		Native_Free(&v);
 	} else if (!strcmp(cmd, "item") && l->n >= 3) {
 		m->target = TARGET_ITEM;
 		Def_Word(m, l->tok[1], l->quoted[1], m->item, sizeof(m->item));
