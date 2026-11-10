@@ -19,8 +19,9 @@
  * their refs (stage 7: the native entries; a function a case put there, as _bon records them, by name):
  * SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAI.GetOD, SetInertia and SetRotStaticObj,
  * SLogic.IsEnemyActive and GetNearestShip, Scrap.GetFarestParked, CreateEntityList and the call function of the inferno
- * fire (Scrap.SetCallFunc, AddParams, Execute). By name (OBJLIB 7: no native entry yet): the calls the cases record
- * with _bon (SScorer.CancelSpeech, SetSpeechCallback, AddModel, SSound.StopVoice) and SInput.GetDefinedEntry.
+ * fire (Scrap.SetCallFunc, AddParams, Execute), the calls the cases record with _bon (SScorer.CancelSpeech, AddModel,
+ * SSound.StopVoice) and SInput.GetDefinedEntry. SScorer.SetSpeechCallback (an entry on Python objects, MODE_PYENTRY)
+ * goes through its seam (Mode_SpeechCallback).
  *
  * Direct calls (stage 3): the calls of other ports (Speech, MissionsFuncs, RaceMaker, RacerScorer, VehiclesNPC,
  * Vehicles, PhoneCab, Parking, Elevator, Metro, Traffic, Items, Scene; the keyword calls RaceMaker.InitRace and
@@ -404,7 +405,7 @@ static byte Gambler_Init(void) {
 		return LV_OWN(CG, "PreSetNextMission", NULL, "");
 	}
 	return done == 0 &&
-		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 20L) &&
+		PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 20L) &&
 		Mode_ListSet("Enemies", "OnDeath", "Mission_DefeatCrazyGambler1.OnCrazyGamblerDeath") &&
 		PORT_LOWN(Mission_DefeatCrazyGambler1, CreateCrazyGambler, NULL, "") &&
 		Mode_Later(3, CG, "LaunchTaunts", NULL, 0, NULL) && LV_SCORERG(Mission_DefeatCrazyGambler1, MissionScorer) && LvN_Draw();
@@ -444,7 +445,7 @@ static byte Gambler_CreateCrazyGambler(void) {
 static byte Gambler_OnCrazyGamblerDeath(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *lifes = TV(), *left = TV(), *rep = TV();
-	byte ok = Mode_Import("Vehicles") && LV_CALL("SScorer", "CancelSpeech", NULL, "") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) &&
+	byte ok = Mode_Import("Vehicles") && PORT_CALL(SScorer, CancelSpeech, NULL, "") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) &&
 		Gambler_Lifes(lifes) && Native_Arith('-', lifes, Mode_I(&t, 1), left);
 	if (ok) {
 		Mode_Repr(left, rep);
@@ -683,7 +684,7 @@ static byte Ms_Timer(long add) {
 static byte Massacre_Init(void) {
 	return LvN_ModSetGlobal("Vehicles", "OnDeathCallback", MS, "OnVehicleCallback") && Mode_GVarSetI("CounterType", 2) && Ms_Timer(0) &&
 		LV_SCORERG(Mission_Massacre, MissionScorer) && LvN_Draw() && LvN_Com("Mission_Massacre_RemoteMessage4", "Igor", NULL, NULL, NULL) &&
-		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L);
+		PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L);
 }
 
 /* `prev <= lo and now > lo` of the percentages */
@@ -1328,7 +1329,7 @@ static byte Bet_ShowSystemMessage(void) {
 static byte Bet_Init(void) {
 	nativeVal_t prev = { 0 };
 	byte ok = Mode_Import("RaceMaker") && Mode_Import("Parking") &&
-		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) &&
+		PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) &&
 		Mode_EntSetS("DM_Door_CityDoorA_00", "OnObjSlot", "!CloseDoorSlot") && Mode_EntSetI("DM_Door_MetroExt_Downtown", "ArrowCanUse", 0) &&
 		Mode_EntSetS("DM_Door_Outmap_Commercial", "OnObjSlot", "!CloseDoorSlot") &&
 		Mode_EntSetS("DM_Door_Outmap_Scrapyard", "OnObjSlot", "!CloseDoorSlot") &&
@@ -2295,7 +2296,7 @@ static byte Escort_InitStatus(void) {
 /* Init(LevelPath): the taunts of the mercenaries, Rusty; the escort or the hunt by the step of the mission */
 static byte Escort_Init(void) {
 	if (!PORT_LOWN(Mission_ProtectMayorTransport, MercTauntMessager, NULL, "") ||
-		!LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L)) {
+		!PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L)) {
 		return 0;
 	}
 	if (LvN_SaveIs("CrazyMayor", "Transport")) {
@@ -2368,9 +2369,9 @@ static byte Pt_Shot(long dist, long rot, long ang, int noAng, long turn, const c
 		(noAng || LvN_SetI(cam, "CamAng", ang)) && LvN_SetI(cam, "AddTurn", turn) && Mode_G(PM, target, tg) && Mode_VGet(tg, "Name", name) &&
 		Mode_VSet(cam, "Target", name);
 	for (long i = 0; ok && i < 3; i++) {
-		ok = LV_CALL("SSound", "StopVoice", NULL, "i", i);
+		ok = PORT_CALL(SSound, StopVoice, NULL, "i", i);
 	}
-	ok = ok && PORT_CALL(Scene, SetText, NULL, "si", text, secs) && LV_CALL("SScorer", "SetSpeechCallback", NULL, "s", next);
+	ok = ok && PORT_CALL(Scene, SetText, NULL, "si", text, secs) && Mode_SpeechCallback(next);
 	return Mode_Done(&t, ok);
 }
 
@@ -2472,7 +2473,7 @@ static byte Escort_BackToPlayer(void) {
 	nativeVal_t *rt = TV(), *l = TV(), *tr = TV();
 	byte ok = Mode_Import("Scene");
 	for (long i = 0; ok && i < 3; i++) {
-		ok = LV_CALL("SSound", "StopVoice", NULL, "i", i);
+		ok = PORT_CALL(SSound, StopVoice, NULL, "i", i);
 	}
 	ok = ok && LV_SCORERG(Mission_ProtectMayorTransport, MissionScorer) && PORT_CALL(Scene, EndOutDoorScene, NULL, "") &&
 		Mode_GVarSetS("EscapeEvent", "Menu.Init") &&
