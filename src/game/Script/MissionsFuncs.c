@@ -24,9 +24,9 @@
  * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback (values
  * a mission puts into the module, OBJLIB 5) and the builders of the super deal types (a table of names) are called
  * through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler by name or
- * value, the revenge and the auto save among them, take their entries (stage 4: Port_Scheduled). The known code strings
- * of OnAbort and OnVictory run on native values with the calls through the refs; any other text runs in the namespaces
- * exec gives it (OBJLIB 6).
+ * value, the revenge and the auto save among them, take their entries (stage 4: Port_Scheduled). The code strings of
+ * OnAbort and OnVictory run through the reader of the lines the game execs (ScriptExec.c), on native values with the
+ * calls through the entries.
  */
 #include <limits.h>
 #include <stdlib.h>
@@ -1212,7 +1212,8 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
  * passed (variables of the function, with cad).
  */
 static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, byte victory) {
-	nativeVal_t cad = { 0 }, vid, vcontrol;
+	/* OBJLIB 7: the objects themselves (a list the text changes is the caller's), borrowed */
+	nativeVal_t cad = { 0 }, vid = { .type = NV_OBJ, .obj = id }, vcontrol = { .type = NV_OBJ, .obj = control };
 	Mode_SaveVar(var, &cad);
 	if (!Native_True(&cad) || Mf_Is(&cad, "")) {
 		Native_Free(&cad);
@@ -1223,14 +1224,10 @@ static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, by
 		return 0;
 	}
 	execScope_t x = { .module = MF };
-	Native_Arg(id, &vid);
-	Native_Arg(control, &vcontrol);
 	Exec_Var(&x, "id", &vid);
 	Exec_Var(&x, "control", &vcontrol);
 	Exec_Var(&x, "cad", &cad);
 	byte ok = Exec_Text(&x, &cad);
-	Native_Free(&vcontrol);
-	Native_Free(&vid);
 	Native_Free(&cad);
 	return ok;
 }

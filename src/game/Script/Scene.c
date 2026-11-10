@@ -18,7 +18,7 @@
  * SScorer.SetLabelText, SetMsgText, SetSpeechText and SetSpeechCallback and SInput.SetActionSet go through their seams
  * (OBJLIB 7: the cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof go through refs.
  * The lines the game execs (the generic lines of a scene, the sound lines of SetDefSounds and Load) go through the
- * exec reader (OBJLIB 6).
+ * exec reader on native values (ScriptExec.c).
  */
 #include <limits.h>
 #include <string.h>
@@ -210,7 +210,7 @@ static byte Sc_SetSounds(execScope_t *x, const nativeVal_t *type, const nativeVa
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *mod = Mode_V(&t), *arg = Mode_V(&t), *code = Mode_V(&t);
 	if (type->type == NV_STR && scene->type == NV_STR && name->type == NV_STR) {
-		if (!Mode_Cat(&t, mod, 2, type, Mode_S(&t, "Sound")) || !Mode_Cat(&t, arg, 2, scene, name)) {
+		if (!Exec_Cat(mod, 2, type, Mode_S(&t, "Sound")) || !Exec_Cat(arg, 2, scene, name)) {
 			return Mode_Done(&t, 0);
 		}
 		if (Script_IsName(Native_Text(mod), mod->n) && Script_IsQuotableText(Native_Text(arg), arg->n) &&
@@ -218,7 +218,7 @@ static byte Sc_SetSounds(execScope_t *x, const nativeVal_t *type, const nativeVa
 			return Mode_Done(&t, Exec_Call(x, Native_Text(mod), "SetSounds", arg, 1));
 		}
 	}
-	return Mode_Done(&t, Mode_Cat(&t, code, 5, type, Mode_S(&t, "Sound.SetSounds('"), scene, name, Mode_S(&t, "')")) &&
+	return Mode_Done(&t, Exec_Cat(code, 5, type, Mode_S(&t, "Sound.SetSounds('"), scene, name, Mode_S(&t, "')")) &&
 		Exec_Text(x, code));
 }
 
@@ -228,9 +228,9 @@ static byte Sc_MapSnd(execScope_t *x, const nativeVal_t *a, const nativeVal_t *b
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *func = Mode_V(&t), *code = Mode_V(&t), *head = Mode_S(&t, "import MapSnd;MapSnd."), *tail = Mode_S(&t, "()");
 	if (a->type == NV_STR && (!b || b->type == NV_STR)) {
-		return Mode_Done(&t, (!b || Mode_Cat(&t, func, 2, a, b)) && Exec_ImportCall(x, "MapSnd", b ? func : a));
+		return Mode_Done(&t, (!b || Exec_Cat(func, 2, a, b)) && Exec_ImportCall(x, "MapSnd", b ? func : a));
 	}
-	return Mode_Done(&t, (b ? Mode_Cat(&t, code, 4, head, a, b, tail) : Mode_Cat(&t, code, 3, head, a, tail)) &&
+	return Mode_Done(&t, (b ? Exec_Cat(code, 4, head, a, b, tail) : Exec_Cat(code, 3, head, a, tail)) &&
 		Exec_Text(x, code));
 }
 
@@ -238,7 +238,7 @@ static byte Sc_MapSnd(execScope_t *x, const nativeVal_t *a, const nativeVal_t *b
 static byte Sc_MapSndWarning(const nativeVal_t *a, const nativeVal_t *b) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *text = Mode_V(&t), *head = Mode_S(&t, "Sound warning: MapSnd."), *tail = Mode_S(&t, "() not found\n");
-	return Mode_Done(&t, (b ? Mode_Cat(&t, text, 4, head, a, b, tail) : Mode_Cat(&t, text, 3, head, a, tail)) &&
+	return Mode_Done(&t, (b ? Exec_Cat(text, 4, head, a, b, tail) : Exec_Cat(text, 3, head, a, tail)) &&
 		Mode_PrintV(text));
 }
 
@@ -253,10 +253,10 @@ static byte Sc_SetDefSounds(const nativeVal_t *name, const nativeVal_t *type) {
 	Exec_Var(&x, "ActorName", name);
 	Exec_Var(&x, "ActorType", type);
 	if (type->type == NV_STR) {
-		if (!Mode_Cat(&t, mod, 2, type, Mode_S(&t, "Sound")) || !Exec_ImportText(&x, mod)) {
+		if (!Exec_Cat(mod, 2, type, Mode_S(&t, "Sound")) || !Exec_ImportText(&x, mod)) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!Mode_Cat(&t, mod, 3, Mode_S(&t, "import "), type, Mode_S(&t, "Sound")) || !Exec_Text(&x, mod)) {
+	} else if (!Exec_Cat(mod, 3, Mode_S(&t, "import "), type, Mode_S(&t, "Sound")) || !Exec_Text(&x, mod)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Sc_G("SceneName", scene) || !Sc_SetSounds(&x, type, scene, name)) {

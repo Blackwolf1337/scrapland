@@ -15,6 +15,7 @@
  * the middle of a chain is the object itself (a module, an entity handle, an instance).
  */
 #include <ctype.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include "scrap/global.h"
@@ -383,6 +384,37 @@ byte Exec_Text(execScope_t *x, const nativeVal_t *code) {
 	return ok;
 }
 
+byte Exec_Cat(nativeVal_t *out, int n, ...) {
+	va_list va;
+	nativeVal_t acc, r;
+	byte ok = 1;
+	va_start(va, n);
+	Native_Copy(&acc, va_arg(va, const nativeVal_t *));
+	for (int i = 1; ok && i < n; i++) {
+		const nativeVal_t *b = va_arg(va, const nativeVal_t *);
+		Native_SetNone(&r);
+		if (acc.type != NV_OBJ && b->type != NV_OBJ) {
+			ok = Native_Arith('+', &acc, b, &r);
+		} else {
+			/* OBJLIB 7: an instance adds with its __add__ or __radd__ */
+			PyObject *x = Native_ToPy(&acc), *y = x ? Native_ToPy(b) : NULL, *sum = y ? PyNumber_Add(x, y) : NULL;
+			ok = sum != NULL && Native_Arg(sum, &r);
+			Py_XDECREF(sum);
+			Py_XDECREF(y);
+			Py_XDECREF(x);
+		}
+		Native_Free(&acc);
+		acc = r;
+	}
+	va_end(va);
+	if (ok) {
+		*out = acc;
+	} else {
+		Native_SetNone(out);
+	}
+	return ok;
+}
+
 byte Exec_Call(execScope_t *x, const char *name, const char *func, const nativeVal_t *a, int n) {
 	PyObject *o = Exec_Local(x, name), *f = o ? Script_GetAttr(o, func) : NULL;
 	Py_XDECREF(o);
@@ -393,17 +425,23 @@ byte Exec_ImportText(execScope_t *x, const nativeVal_t *name) {
 	if (name->type == NV_STR && Script_IsName(Native_Text(name), name->n)) {
 		return Exec_Import(x, Native_Text(name));
 	}
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *code = Mode_V(&t);
-	return Mode_Done(&t, Mode_Cat(&t, code, 2, Mode_S(&t, "import "), name) && Exec_Text(x, code));
+	nativeVal_t head, code;
+	Native_SetStr(&head, "import ");
+	byte ok = Exec_Cat(&code, 2, &head, name) && Exec_Text(x, &code);
+	Native_Free(&code);
+	return ok;
 }
 
 byte Exec_ImportCall(execScope_t *x, const char *target, const nativeVal_t *func) {
 	if (func->type == NV_STR && Script_IsName(Native_Text(func), func->n)) {
 		return Exec_Import(x, target) && Exec_Call(x, target, Native_Text(func), NULL, 0);
 	}
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *code = Mode_V(&t);
-	return Mode_Done(&t, Mode_Cat(&t, code, 7, Mode_S(&t, "import "), Mode_S(&t, target), Mode_S(&t, ";"),
-		Mode_S(&t, target), Mode_S(&t, "."), func, Mode_S(&t, "()")) && Exec_Text(x, code));
+	char text[2 * EXEC_NAME + 0x10];
+	nativeVal_t head, tail, code;
+	Str_Printf(text, sizeof(text), "import %s;%s.", target, target);
+	Native_SetStr(&head, text);
+	Native_SetStr(&tail, "()");
+	byte ok = Exec_Cat(&code, 3, &head, func, &tail) && Exec_Text(x, &code);
+	Native_Free(&code);
+	return ok;
 }

@@ -627,6 +627,9 @@ byte Exec_Import(execScope_t *x, const char *name);
 byte Exec_ImportText(execScope_t *x, const nativeVal_t *name);
 /* exec("import " + target + ";" + target + "." + func + "()"): directly when func is a name, else through Exec_Text */
 byte Exec_ImportCall(execScope_t *x, const char *target, const nativeVal_t *func);
+/* a + b + ... (n values, const nativeVal_t *) as such a function builds the text of its line: the + of the script,
+ * also for an object (OBJLIB 7: an instance with __add__ or __radd__). 1 with *out (Native_Free it either way) */
+byte Exec_Cat(nativeVal_t *out, int n, ...);
 /* the statement name.func(a[0], ..., a[n - 1]) with name a variable of the function */
 byte Exec_Call(execScope_t *x, const char *name, const char *func, const nativeVal_t *a, int n);
 

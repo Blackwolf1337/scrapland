@@ -263,8 +263,6 @@ void Script_Leave(void);
 PyObject *Script_Plus(PyObject *a, PyObject *b);
 PyObject *Script_PlusS(PyObject *a, const char *text);
 PyObject *Script_SPlus(const char *text, PyObject *b);
-/* a % b of a script (the string format for a string) */
-PyObject *Script_Mod(PyObject *a, PyObject *b);
 /* `if o:`, a == b: 1, 0, or -1 with the error set (also for NULL) */
 int Script_True(PyObject *o);
 int Script_Eq(PyObject *a, PyObject *b);

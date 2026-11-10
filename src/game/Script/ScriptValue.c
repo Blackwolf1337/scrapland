@@ -144,13 +144,6 @@ PyObject *Script_SPlus(const char *text, PyObject *b) {
 	return Script_Plus(PyString_FromString(text), b);
 }
 
-PyObject *Script_Mod(PyObject *a, PyObject *b) {
-	if (!a || !b) {
-		return NULL;
-	}
-	return PyString_Check(a) ? PyString_Format(a, b) : PyNumber_Remainder(a, b);
-}
-
 int Script_True(PyObject *o) {
 	return o ? PyObject_IsTrue(o) : -1;
 }
