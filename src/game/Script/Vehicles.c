@@ -14,8 +14,8 @@
  * global: a mission, a net weapon or a case may replace one). The net chain stays Script_Hook on Net's functions, the
  * hooks LastClientCreate and LastClientAfterCreate are called through the module's globals by name and OnDeathCallback
  * and the ShipCallback functions of ShipMaker as values (OBJLIB 5: variables). SAI, SWeap, SLogic and Scrap.SetCam go
- * through their refs (stage 7); SFX, SNet and SSound.PlaySound (its six arguments) stay by name (OBJLIB 7: no native
- * entry yet); Scrap.GetEntity, CreateEntity, UsrEntity,
+ * through their refs (stage 7), SFX, SNet.GetObjName and SSound.PlaySound (its six arguments) too; Scrap.GetEntity,
+ * CreateEntity, UsrEntity,
  * GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The texts of
  * the net resources of the lost engines ("DmM:<model>") stay as they were.
  */
@@ -86,7 +86,7 @@ static byte Veh_Boom(const nativeVal_t *pos, const nativeVal_t *vel, const nativ
 	} else {
 		Native_SetInt(n, 0);
 	}
-	if (!Native_CallMod("SFX", "ShipExplosion", NULL, "vvvvvi", pos, vel, size, tm, n, 0L)) {
+	if (!PORT_CALL(SFX, ShipExplosion, NULL, "vvvvvi", pos, vel, size, tm, n, 0L)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!soundPos) {
@@ -98,7 +98,7 @@ static byte Veh_Boom(const nativeVal_t *pos, const nativeVal_t *vel, const nativ
 	return Mode_Done(&t, Mode_G(VEH, "ShipExplosionSoundVol", vol) && Mode_VObjRead(e, var, radius) &&
 		Veh_Att(radius, "ShipExplosionSoundAttIni", "ShipExplosionSoundAttIniRadiusFactor", ini) && Mode_VObjRead(e, var, radius) &&
 		Veh_Att(radius, "ShipExplosionSoundAttEnd", "ShipExplosionSoundAttEndRadiusFactor", end) &&
-		Native_CallMod("SSound", "PlaySound", NULL, "vsvvvi", soundPos, sound, vol, ini, end, 0L));
+		PORT_CALL(SSound, PlaySound, NULL, "vsvvvi", soundPos, sound, vol, ini, end, 0L));
 }
 
 /* the motor loop of the lost engines and hulls */
@@ -233,10 +233,10 @@ static byte Veh_MotorHitN(const nativeVal_t *missile, const nativeVal_t *looser,
 	}
 	Mode_RandF(0.8, 1.0, tm);
 	Mode_Ints3(z, 0, 0, 0);
-	if (!Native_CallMod("SFX", "ShipExplosion", NULL, "vvvvii", at, z, size, tm, 0L, 0L) || !Mode_VObj(msl, "Pos", pos) ||
+	if (!PORT_CALL(SFX, ShipExplosion, NULL, "vvvvii", at, z, size, tm, 0L, 0L) || !Mode_VObj(msl, "Pos", pos) ||
 		!Mode_G(VEH, "MotorExplosionSoundVol", vol) || !Mode_G(VEH, "MotorExplosionSoundAttIni", ini) ||
 		!Mode_G(VEH, "MotorExplosionSoundAttEnd", end) ||
-		!Native_CallMod("SSound", "PlaySound", NULL, "vsvvvi", pos, "SoloMotorBoom", vol, ini, end, 0L)) {
+		!PORT_CALL(SSound, PlaySound, NULL, "vsvvvi", pos, "SoloMotorBoom", vol, ini, end, 0L)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Copy(out, msl);
@@ -668,7 +668,7 @@ static byte Veh_Motors(const nativeVal_t *v) {
 				return Mode_Done(&t, 0);
 			}
 			Str_Printf(var, sizeof(var), "AEng%d%c", k, (int)('A' + i));
-			if (!Mode_VObj(v, var, ang) || !Native_CallMod("SNet", "GetObjName", oname, "") ||
+			if (!Mode_VObj(v, var, ang) || !PORT_CALL(SNet, GetObjName, oname, "") ||
 				!PORT_OWN(Vehicles, CreateDumbMotor, l, "vvvv", oname, pos, ang, model) || !LvN_SetS(l, "OnHit", "Vehicles.ServerMotorHit") ||
 				!LvN_SetS(l, "HitType", "None") || !LvN_ModGet("Init", "OffLineGame", off)) {
 				return Mode_Done(&t, 0);
