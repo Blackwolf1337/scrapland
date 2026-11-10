@@ -11,7 +11,7 @@
  * ConsoleError, AddScheduledFunc, SNet.IsServer, IsClient, SInput.GetActionSet, SetActionSet, SSound.StopVoice,
  * StopAllSounds and SScorer.SetMsgText go through their seams (OBJLIB 7: the cases record or swap them);
  * Scrap.MusicPlayer, LoadLevel and Achievement go through their refs (stage 7: the cases record them, the seam calls
- * what they put there), SNet.CloseServer and CloseClient are called by name as before (OBJLIB 7: no native entry yet).
+ * what they put there), and so do SNet.CloseServer and CloseClient (the online games run through them).
  * The other ports (Scorer, Challenge, Speech, MissionsFuncs) and the functions of the module the script calls through
  * its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5); string.zfill has a twin in
  * the file. The function given to the scheduler by name takes its entry (Port_Scheduled); the Menu object a script may
@@ -326,14 +326,14 @@ static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 	if (!Mode_GVarSetI("R_CreditsRTarget", withCredits)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 7: SNet.CloseServer and CloseClient by name as before (the online tests run through here) */
+	/* SNet.CloseServer and CloseClient through their refs (the online tests run through here) */
 	int server = Mode_IsServer();
 	if (server) {
-		return Mode_Done(&t, server > 0 && Native_CallMod("SNet", "CloseServer", NULL, "v", map));
+		return Mode_Done(&t, server > 0 && PORT_CALL(SNet, CloseServer, NULL, "v", map));
 	}
 	int client = Mode_IsClient();
 	if (client) {
-		return Mode_Done(&t, client > 0 && Native_CallMod("SNet", "CloseClient", NULL, "v", map));
+		return Mode_Done(&t, client > 0 && PORT_CALL(SNet, CloseClient, NULL, "v", map));
 	}
 	return Mode_Done(&t, Mode_Import("Speech") && PORT_CALL(Speech, CallEndOfSpeech, NULL, "") &&
 		PORT_CALL(Scrap, LoadLevel, NULL, "v", map));

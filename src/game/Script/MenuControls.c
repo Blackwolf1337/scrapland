@@ -305,13 +305,13 @@ static void Pad_Text(int id, const char *set) {
 }
 
 /* UpdatePadText(id, set) for any set: the texts of a text, else the TypeError where the script stops (the first
- * SInput.GetEntry("Pad1", button, set), by name for its error: OBJLIB 7); 0 with the error set */
+ * SInput.GetEntry("Pad1", button, set), through its ref for its error); 0 with the error set */
 static byte Pad_TextOf(int id, const nativeVal_t *set) {
 	if (set->type == NV_STR) {
 		Pad_Text(id, Native_Text(set));
 		return 1;
 	}
-	if (Native_CallMod("SInput", "GetEntry", NULL, "ssv", "Pad1", "BACK", set)) {
+	if (PORT_CALL(SInput, GetEntry, NULL, "ssv", "Pad1", "BACK", set)) {
 		return Native_Raise(NE_TYPE, "UpdatePadText: the action set is not a text");
 	}
 	return 0;

@@ -9,7 +9,7 @@
  * The variables of ShipEdit and HangarTab (editedShips with the ship handles, destroyedShips, currentHangar,
  * fromSputnik) are read and set as their attributes, destroyedShips changed in place (OBJLIB 5 and 7). Menu,
  * ShipEdit, HangarTab, SaveGame and the module's own functions (through its attributes, as the script called them) go
- * through their refs (PORT_CALL, the seam OBJLIB 5); the scorer calls stay by name (OBJLIB 7), EndSputnikCallBack is
+ * through their refs (PORT_CALL, the seam OBJLIB 5); the scorer calls too (stage 7), EndSputnikCallBack is
  * called as a value (OBJLIB 5); SetMoney goes through its seam (fc-r7b-jy records it, OBJLIB 7).
  */
 #include "scrap/app.h"
@@ -94,7 +94,7 @@ static byte SI_Default(const nativeVal_t *id, modeVals_t *t) {
 		return 0;
 	}
 	if (aux) {
-		return Native_CallMod("SScorer", "SetDefault", NULL, "vs", id, "HangarAux");
+		return PORT_CALL(SScorer, SetDefault, NULL, "vs", id, "HangarAux");
 	}
 	int pos = SI_Current(cur) ? Mode_CmpI(cur, ">=", 0) : -1;
 	if (pos < 0) {
@@ -108,9 +108,9 @@ static byte SI_Default(const nativeVal_t *id, modeVals_t *t) {
 		if (!Mode_Cat(t, hangar, 2, Mode_S(t, "Hangar"), rep)) {
 			return 0;
 		}
-		return Native_CallMod("SScorer", "SetDefault", NULL, "vv", id, hangar);
+		return PORT_CALL(SScorer, SetDefault, NULL, "vv", id, hangar);
 	}
-	return Native_CallMod("SScorer", "SetDefault", NULL, "vs", id, "Hangar1");
+	return PORT_CALL(SScorer, SetDefault, NULL, "vs", id, "Hangar1");
 }
 
 /* EnterSputnikInterface(id): the hangars of the save game, the one being flown selected */
@@ -124,7 +124,7 @@ static byte SI_EnterSputnikInterfaceN(const nativeVal_t *id) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Lang("HINT_NoMoney", hint);
-	if (!Native_CallMod("SScorer", "SetOnSpecialHint", NULL, "vsv", id, "ShipEdit.ShowSpecialHint", hint) ||
+	if (!PORT_CALL(SScorer, SetOnSpecialHint, NULL, "vsv", id, "ShipEdit.ShowSpecialHint", hint) ||
 		!PORT_CALL(ShipEdit, CleanEditedShips, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
@@ -158,7 +158,7 @@ static byte SI_EnterSputnikInterfaceN(const nativeVal_t *id) {
 		!PORT_CALL(HangarTab, SetSellVisible, NULL, "vi", id, 0L) || !SI_Default(id, &t) || !SI_Current(cur) ||
 		!SI_Stop(cur) || !PORT_CALL(HangarTab, ShowHangarPanel, NULL, "v", id) ||
 		!PORT_CALL(HangarTab, ShowShipInfo, NULL, "v", id) ||
-		!Native_CallMod("SScorer", "SetOnCancel", NULL, "vs", id, "SputnikInterface.ExitSputnikInterface")) {
+		!PORT_CALL(SScorer, SetOnCancel, NULL, "vs", id, "SputnikInterface.ExitSputnikInterface")) {
 		return Mode_Done(&t, 0);
 	}
 	Loading_End();
