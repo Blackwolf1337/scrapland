@@ -62,7 +62,9 @@ typedef struct nativeVal_s {
 	int max;			/* NV_LIST, NV_TUPLE: the room for items; NV_DICT: the slots */
 	char *text;			/* NV_STR, NV_LONG: a text of NATIVE_TEXT or more bytes (owned), else NULL */
 	struct nativeVal_s *items;	/* NV_LIST, NV_TUPLE, NV_DICT (owned), else NULL */
-	PyObject *obj;			/* NV_OBJ: the value (a reference owned), else NULL */
+	PyObject *obj;			/* NV_OBJ: the value (a reference owned). A number or text may keep the Python object it
+					 * came from here (the .mod evaluator, OBJLIB 5; a reference owned, copied and freed with
+					 * the value, read by nobody else), else NULL */
 } nativeVal_t;
 
 void Native_SetNone(nativeVal_t *v);
