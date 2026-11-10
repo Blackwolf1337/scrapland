@@ -142,7 +142,7 @@ static byte Np_GetNews(void) {
 }
 
 /* exec(xqt[0]) of FillNews: a line as GetNews makes it ("kb.<name> = '<text>'+keydata") is kb.<name> = '<text>' +
- * keydata made directly, any other line runs through the exec reader with the locals kb, xqt and keydata (OBJLIB 6) */
+ * keydata made directly, any other line runs through the exec reader with the variables kb, xqt and keydata */
 static byte Np_Exec(const nativeVal_t *code, const nativeVal_t *kb, const nativeVal_t *xqt, const nativeVal_t *keydata) {
 	static const char tail[] = "'+keydata";
 	const char *s = code->type == NV_STR ? Native_Text(code) : NULL;
@@ -166,18 +166,11 @@ static byte Np_Exec(const nativeVal_t *code, const nativeVal_t *kb, const native
 			return ok;
 		}
 	}
-	scriptFrame_t f = { 0 };
-	PyObject *c = Native_ToPy(code), *k = c ? Native_ToPy(kb) : NULL, *x = k ? Native_ToPy(xqt) : NULL;
-	PyObject *d = x ? Native_ToPy(keydata) : NULL;
-	PyObject *locals = d ? Py_BuildValue("{sOsOsO}", "kb", k, "xqt", x, "keydata", d) : NULL;
-	byte ok = locals && Sf_Exec(&f, c, "NewsPanel", locals);
-	Sf_Release(&f, 0);
-	Py_XDECREF(locals);
-	Py_XDECREF(d);
-	Py_XDECREF(x);
-	Py_XDECREF(k);
-	Py_XDECREF(c);
-	return ok;
+	execScope_t x = { .module = "NewsPanel" };
+	Exec_Var(&x, "kb", kb);
+	Exec_Var(&x, "xqt", xqt);
+	Exec_Var(&x, "keydata", keydata);
+	return Exec_Text(&x, code);
 }
 
 /* FillNews(kb): the lines of NewsList run on the panel kb */

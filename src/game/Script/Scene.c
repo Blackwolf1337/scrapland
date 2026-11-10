@@ -205,57 +205,68 @@ static byte Sc_ActorActBreakChanne(const nativeVal_t *ename, const nativeVal_t *
 }
 
 /* exec(ActorType + "Sound.SetSounds('" + SceneName + ActorName + "')") of SetDefSounds: the call made directly when
- * the line is that call (the sound module imported into locals before) */
-static void Sc_SetSounds(scriptFrame_t *f, PyObject *locals, PyObject *type, PyObject *scene, PyObject *name) {
-	if (!f->failed && type && scene && name && PyString_Check(type) && PyString_Check(scene) && PyString_Check(name)) {
-		PyObject *mod = Sf_Cat(f, "Os", type, "Sound"), *arg = Sf_Op(f, scene, '+', name);
-		PyObject *snd = arg && Script_IsName(PyString_AsString(mod), PyString_Size(mod)) && Script_IsQuotable(arg) ?
-			PyDict_GetItem(locals, mod) : NULL;
-		if (snd) {
-			PyObject *text = Sf_Keep(f, Script_StrConst(PyString_AsString(arg), PyString_Size(arg)));
-			Sf_Line(f, Sf_Attr(f, snd, "SetSounds"), "(O)", text);
-			return;
+ * the line is that call (the sound module imported into the variables before) */
+static byte Sc_SetSounds(execScope_t *x, const nativeVal_t *type, const nativeVal_t *scene, const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *mod = Mode_V(&t), *arg = Mode_V(&t), *code = Mode_V(&t);
+	if (type->type == NV_STR && scene->type == NV_STR && name->type == NV_STR) {
+		if (!Mode_Cat(&t, mod, 2, type, Mode_S(&t, "Sound")) || !Mode_Cat(&t, arg, 2, scene, name)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Script_IsName(Native_Text(mod), mod->n) && Script_IsQuotableText(Native_Text(arg), arg->n) &&
+			Exec_Bound(x, Native_Text(mod))) {
+			return Mode_Done(&t, Exec_Call(x, Native_Text(mod), "SetSounds", arg, 1));
 		}
 	}
-	Sf_Exec(f, Sf_Cat(f, "OsOOs", type, "Sound.SetSounds('", scene, name, "')"), SC, locals);
+	return Mode_Done(&t, Mode_Cat(&t, code, 5, type, Mode_S(&t, "Sound.SetSounds('"), scene, name, Mode_S(&t, "')")) &&
+		Exec_Text(x, code));
+}
+
+/* the try of SetDefSounds and Load: exec("import MapSnd;MapSnd." + a + b + "()") (b NULL: a alone), the call made
+ * directly when the function name is a text */
+static byte Sc_MapSnd(execScope_t *x, const nativeVal_t *a, const nativeVal_t *b) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *func = Mode_V(&t), *code = Mode_V(&t), *head = Mode_S(&t, "import MapSnd;MapSnd."), *tail = Mode_S(&t, "()");
+	if (a->type == NV_STR && (!b || b->type == NV_STR)) {
+		return Mode_Done(&t, (!b || Mode_Cat(&t, func, 2, a, b)) && Exec_ImportCall(x, "MapSnd", b ? func : a));
+	}
+	return Mode_Done(&t, (b ? Mode_Cat(&t, code, 4, head, a, b, tail) : Mode_Cat(&t, code, 3, head, a, tail)) &&
+		Exec_Text(x, code));
+}
+
+/* in the bare except of that try: print "Sound warning: MapSnd." + a + b + "() not found\n" (b NULL: a alone) */
+static byte Sc_MapSndWarning(const nativeVal_t *a, const nativeVal_t *b) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *text = Mode_V(&t), *head = Mode_S(&t, "Sound warning: MapSnd."), *tail = Mode_S(&t, "() not found\n");
+	return Mode_Done(&t, (b ? Mode_Cat(&t, text, 4, head, a, b, tail) : Mode_Cat(&t, text, 3, head, a, tail)) &&
+		Mode_PrintV(text));
 }
 
 /* SetDefSounds(ActorName, ActorType): the sounds of the character's sound script on the actor's class, then the
- * MapSnd function of the actor when the level has one. OBJLIB 6: the function is its exec lines (an import, a call
- * of the sound module, the MapSnd call in a try), read by the exec reader in the dict of its variables */
-static byte Sc_SetDefSounds(const nativeVal_t *nameArg, const nativeVal_t *typeArg) {
-	scriptFrame_t f = { 0 };
-	PyObject *name = Native_ToPy(nameArg), *type = name ? Native_ToPy(typeArg) : NULL;
-	if (!type) {
-		Py_XDECREF(name);
-		return 0;
-	}
-	Sf_Keep(&f, name);
-	Sf_Keep(&f, type);
-	/* the function has exec, so its variables are a dict the exec'd lines share */
-	PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O}", "ActorName", name, "ActorType", type));
-	if (PyString_Check(type)) {
-		Sf_ImportTo(&f, SC, locals, Sf_Cat(&f, "Os", type, "Sound"));
-	} else {
-		Sf_Exec(&f, Sf_Cat(&f, "sOs", "import ", type, "Sound"), SC, locals);
-	}
-	PyObject *scene = Sf_Global(&f, SC, "SceneName");
-	Sc_SetSounds(&f, locals, type, scene, name);
-	if (!f.failed) {
-		scene = Sf_Global(&f, SC, "SceneName");
-		if (scene && PyString_Check(scene) && PyString_Check(name)) {
-			Sf_ImportCall(&f, SC, locals, "MapSnd", Sf_Op(&f, scene, '+', name));
-		} else {
-			Sf_Exec(&f, Sf_Cat(&f, "sOOs", "import MapSnd;MapSnd.", scene, name, "()"), SC, locals);
+ * MapSnd function of the actor when the level has one. The function is its exec lines (an import, a call of the
+ * sound module, the MapSnd call in a try), run by the exec reader with the variables of the function */
+static byte Sc_SetDefSounds(const nativeVal_t *name, const nativeVal_t *type) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *mod = Mode_V(&t), *scene = Mode_V(&t);
+	/* the function has exec, so its variables are what the exec'd lines share */
+	execScope_t x = { .module = SC };
+	Exec_Var(&x, "ActorName", name);
+	Exec_Var(&x, "ActorType", type);
+	if (type->type == NV_STR) {
+		if (!Mode_Cat(&t, mod, 2, type, Mode_S(&t, "Sound")) || !Exec_ImportText(&x, mod)) {
+			return Mode_Done(&t, 0);
 		}
-		if (Sf_Except(&f)) {
-			scene = Sf_Global(&f, SC, "SceneName");
-			Sf_Print(&f, "O", Sf_Cat(&f, "sOOs", "Sound warning: MapSnd.", scene, name, "() not found\n"));
-		}
+	} else if (!Mode_Cat(&t, mod, 3, Mode_S(&t, "import "), type, Mode_S(&t, "Sound")) || !Exec_Text(&x, mod)) {
+		return Mode_Done(&t, 0);
 	}
-	byte ok = !f.failed;
-	Sf_Release(&f, 0);
-	return ok;
+	if (!Sc_G("SceneName", scene) || !Sc_SetSounds(&x, type, scene, name)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Mode_Read(SC, "SceneName", scene) && Sc_MapSnd(&x, scene, name)) {
+		return Mode_Done(&t, 1);
+	}
+	PyErr_Clear();
+	return Mode_Done(&t, Mode_Read(SC, "SceneName", scene) && Sc_MapSndWarning(scene, name));
 }
 
 /* CreateLocalAction(CharName, turnspeed, Name="Relax", Anm="Relax", Loop=0): an action of an actor with an
@@ -273,19 +284,14 @@ static byte Sc_CreateLocalAction(const nativeVal_t *ch, const nativeVal_t *speed
 		Sc_ActI("AngRotLimit", 90) && Sc_ActI("UseDisp", 0) && Sc_ActI("NodeModifier", -1) && Sc_ActF("AngleModifierSpeed", 5.0));
 }
 
-/* ExecGeneric(EntityName, EventName, Time): the event is a line of Python (OBJLIB 6: the forms of the scene lines run
- * in C, Sf_Exec, with the arguments as the locals of the line) */
+/* ExecGeneric(EntityName, EventName, Time): the event is a line of Python (the forms of the scene lines run in C,
+ * Exec_Text, with the arguments as the variables of the line) */
 static byte Sc_ExecGeneric(const nativeVal_t *ename, const nativeVal_t *event, const nativeVal_t *time) {
-	scriptFrame_t f = { 0 };
-	PyObject *a = Native_ToPy(ename), *b = a ? Native_ToPy(event) : NULL, *c = b ? Native_ToPy(time) : NULL;
-	PyObject *locals = c ? Py_BuildValue("{s:O,s:O,s:O}", "EntityName", a, "EventName", b, "Time", c) : NULL;
-	byte ok = locals && Sf_Exec(&f, b, SC, locals);
-	Sf_Release(&f, 0);
-	Py_XDECREF(locals);
-	Py_XDECREF(c);
-	Py_XDECREF(b);
-	Py_XDECREF(a);
-	return ok;
+	execScope_t x = { .module = SC };
+	Exec_Var(&x, "EntityName", ename);
+	Exec_Var(&x, "EventName", event);
+	Exec_Var(&x, "Time", time);
+	return Exec_Text(&x, event);
 }
 
 /* AddGeneric(Frame, Event, Discardable=1): a line of Python at the frame */
@@ -475,29 +481,21 @@ static byte Sc_AddSound(const nativeVal_t *frame, const nativeVal_t *sound, cons
 }
 
 /* the try of Load: exec("import MapSnd;MapSnd." + SceneClass + "()") with the warning of a scene without sounds
- * (OBJLIB 6: the exec reader in the dict of the variables of Load) */
-static byte Sc_LoadSounds(const nativeVal_t *clsArg, const nativeVal_t *pathArg) {
-	scriptFrame_t f = { 0 };
-	PyObject *cls = Native_ToPy(clsArg), *path = cls ? Native_ToPy(pathArg) : NULL;
-	PyObject *init = path ? Script_Module("Init") : NULL;
-	Sf_Keep(&f, cls);
-	Sf_Keep(&f, path);
-	Sf_Keep(&f, init);
-	if (!f.failed) {
-		/* the function has exec, so its variables (the import of Init too) are a dict the exec'd line shares */
-		PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O,s:O}", "SceneClass", cls, "Init", init, "path", path));
-		if (PyString_Check(cls)) {
-			Sf_ImportCall(&f, SC, locals, "MapSnd", cls);
-		} else {
-			Sf_Exec(&f, Sf_Cat(&f, "sOs", "import MapSnd;MapSnd.", cls, "()"), SC, locals);
-		}
-		if (Sf_Except(&f)) {
-			Sf_Print(&f, "O", Sf_Cat(&f, "sOs", "Sound warning: MapSnd.", cls, "() not found\n"));
-		}
+ * (the exec reader with the variables of Load) */
+static byte Sc_LoadSounds(const nativeVal_t *cls, const nativeVal_t *path) {
+	if (!Mode_Import("Init")) {
+		return 0;
 	}
-	byte ok = !f.failed;
-	Sf_Release(&f, 0);
-	return ok;
+	/* the function has exec, so its variables (the import of Init too) are what the exec'd line shares */
+	execScope_t x = { .module = SC };
+	Exec_Var(&x, "SceneClass", cls);
+	Exec_Var(&x, "Init", NULL);
+	Exec_Var(&x, "path", path);
+	if (Sc_MapSnd(&x, cls, NULL)) {
+		return 1;
+	}
+	PyErr_Clear();
+	return Sc_MapSndWarning(cls, NULL);
 }
 
 /* Load(SceneClass): the class of the scene from the level's Map/<scene> folder, its Play action ending in

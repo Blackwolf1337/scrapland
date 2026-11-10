@@ -721,18 +721,17 @@ byte Script_IsName(const char *s, int len) {
 	return 1;
 }
 
-byte Script_IsQuotable(PyObject *o) {
-	if (!o || !PyString_Check(o)) {
-		return 0;
-	}
-	const char *s = PyString_AsString(o);
-	int n = PyString_Size(o);
+byte Script_IsQuotableText(const char *s, int n) {
 	for (int i = 0; i < n; i++) {
 		if (!Lit_Plain((unsigned char)s[i]) || s[i] == '\'') {
 			return 0;
 		}
 	}
 	return 1;
+}
+
+byte Script_IsQuotable(PyObject *o) {
+	return o && PyString_Check(o) && Script_IsQuotableText(PyString_AsString(o), PyString_Size(o));
 }
 
 /* "[n]" at p (n a decimal int as repr writes it: 0 or no leading zero, no sign): its length and n, else 0 */

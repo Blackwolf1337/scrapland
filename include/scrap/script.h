@@ -308,69 +308,14 @@ PyObject *Script_EvalMain(const char *text);
 PyObject *Script_StrConst(const char *s, int len);
 /* s[0:len] is a Python 1.5.2 name (ASCII letters, digits and _, not a keyword) */
 byte Script_IsName(const char *s, int len);
-/* o is a string that between single quotes in a line of Python is itself again */
+/* o is a string that between single quotes in a line of Python is itself again; the same for the n bytes of s */
 byte Script_IsQuotable(PyObject *o);
+byte Script_IsQuotableText(const char *s, int n);
 /* a NAME(.NAME)* text evaluated with the locals, the globals and their builtins (no blanks; each name may be followed
  * by subscripts [n] of a decimal int as repr writes it, "ShipEdit.editedShips[3].Model"): 1 with a new reference in
  * *out, -1 with the error of the lookup set (NameError, AttributeError, IndexError), 0 when text is not such a
  * chain */
 int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyObject **out);
-
-/*
- * A ported script function line by line (src/game/Script/ScriptFrame.c). The frame keeps the temporary references
- * and the error state: every Sf_ helper returns a reference the frame keeps (borrowed by the caller) and takes its
- * arguments borrowed. After the first error each helper does nothing and returns NULL, -1 or 0, as the script stops
- * at the line that raised; Sf_Done releases the references and gives NULL with the error left set. Conditions are 1,
- * 0, or -1 after an error.
- */
-#define SCRIPT_FRAME_REFS 160
-typedef struct scriptFrame_s {
-	PyObject *refs[SCRIPT_FRAME_REFS];
-	int n;
-	byte failed;
-} scriptFrame_t;
-
-/* o (a new reference or NULL with the error set) into the frame */
-PyObject *Sf_Keep(scriptFrame_t *f, PyObject *o);
-/* ok, else the frame fails (the error set); the frame is still good */
-byte Sf_Check(scriptFrame_t *f, int ok);
-/* the references kept after mark (f->n before a loop turn) */
-void Sf_Release(scriptFrame_t *f, int mark);
-/* a bare `except:` after the lines of a `try:` block: 1 when one of them raised (the error is cleared and the frame
- * goes on), else 0 */
-byte Sf_Except(scriptFrame_t *f);
-/* the end of the function: result (a new reference) or NULL when the frame failed; Sf_None for None */
-PyObject *Sf_Done(scriptFrame_t *f, PyObject *result);
-PyObject *Sf_None(scriptFrame_t *f);
-/* raise exc(msg): 0 */
-byte Sf_Raise(scriptFrame_t *f, PyObject *exc, const char *msg);
-/* values: an int, a string, Py_BuildValue */
-PyObject *Sf_Int(scriptFrame_t *f, long i);
-PyObject *Sf_Str(scriptFrame_t *f, const char *s);
-PyObject *Sf_Build(scriptFrame_t *f, const char *fmt, ...);
-/* a global of a module as its functions read it (NameError when missing) */
-PyObject *Sf_Global(scriptFrame_t *f, const char *module, const char *name);
-/* o.name, o.name = v */
-PyObject *Sf_Attr(scriptFrame_t *f, PyObject *o, const char *name);
-byte Sf_SetAttr(scriptFrame_t *f, PyObject *o, const char *name, PyObject *v);
-/* a op b with op one of + - * / %; a + b + ... of fmt items ('s' a C string, 'O' an object) */
-PyObject *Sf_Op(scriptFrame_t *f, PyObject *a, char op, PyObject *b);
-PyObject *Sf_Cat(scriptFrame_t *f, const char *fmt, ...);
-/* callable(args) (args given away) */
-PyObject *Sf_CallArgs(scriptFrame_t *f, PyObject *callable, PyObject *args);
-/* print with fmt items ('s' a C string, 'O' an object), exec code in a function of module (locals a dict of its
- * variables: a line in the forms the game execs runs in C, "import M", calls of names and attributes with literal
- * arguments, an attribute set to a literal, split by ';'; any other line is Script_NotRead's error) */
-byte Sf_Print(scriptFrame_t *f, const char *fmt, ...);
-byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals);
-/* exec("import " + name) in a function of module (locals: the dict of its variables, the import is stored there);
- * a name that is not a plain module name goes to Sf_Exec */
-byte Sf_ImportTo(scriptFrame_t *f, const char *module, PyObject *locals, PyObject *name);
-/* exec("import " + target + ";" + target + "." + func + "()") in a function of module (locals as for Sf_ImportTo),
- * func a string; one that is not a name goes to Sf_Exec (its SyntaxError) */
-byte Sf_ImportCall(scriptFrame_t *f, const char *module, PyObject *locals, const char *target, PyObject *func);
-/* callable(Py_BuildValue args) as a statement of a script: the result is dropped at once (no reference kept) */
-byte Sf_Line(scriptFrame_t *f, PyObject *callable, const char *fmt, ...);
 
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern PyMethodDef g_MenuVideoMethods[];
