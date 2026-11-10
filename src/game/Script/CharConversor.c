@@ -20,8 +20,9 @@
  * characters and machines are handle values (OBJLIB 7). The other ports (Chars, CharAct, Menu, SaveGame, CharScorer,
  * DoorSound) are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
  * by name) and string.replace through its native twin; the module's own functions through its globals as the script
- * calls them (PORT_OWN, the same seam on the global). The SFX, SLogic.Flash, SendSentinelToWatch, SAct.GetCls,
- * SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 7); Menu.LinkLR and LinkUD come
+ * calls them (PORT_OWN, the same seam on the global), and so do SLogic.Flash, SendSentinelToWatch and SAct.GetCls
+ * (stage 7). The SFX, SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 7: no native
+ * entry yet); Menu.LinkLR and LinkUD come
  * from a from import (OBJLIB 6) and are called through their entries while they are Menu's own (PORT_VALUE); the .def
  * files take their $names as a dict (OBJLIB 6).
  */
@@ -429,8 +430,7 @@ static byte Cc_Fx(long step) {
 }
 
 /* EndOfScene(EntityName, EventName, Time): the end of the machine's action: the camera and the control back to the
- * player, afterExitConversor or the first conversion warning, the sentinels look (OBJLIB 7:
- * SLogic.SendSentinelToWatch by name) */
+ * player, afterExitConversor or the first conversion warning, the sentinels look */
 static byte Cc_EndOfScene(const nativeVal_t *ename) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *after = Mode_V(&t), *sv = Mode_V(&t), *act = Mode_V(&t);
@@ -462,7 +462,7 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 			}
 		}
 	}
-	return Mode_Done(&t, Mode_VObj(usr, "Pos", pos) && Native_CallMod("SLogic", "SendSentinelToWatch", NULL, "v", pos));
+	return Mode_Done(&t, Mode_VObj(usr, "Pos", pos) && PORT_CALL(SLogic, SendSentinelToWatch, NULL, "v", pos));
 }
 
 /* ExitCharConversor(id, control): the player appears again, the interface closes */
@@ -553,7 +553,7 @@ static byte Cc_GSet(const char *g, const char *var, const nativeVal_t *v) {
 	return ok;
 }
 
-/* the end of Possession: the camera of the possessed class, the slow motion (OBJLIB 7: SAct.GetCls by name) */
+/* the end of Possession: the camera of the possessed class, the slow motion */
 static byte Cc_PossessionCam(const nativeVal_t *ent) {
 	static const char *const cams[][2] = { { "Fov", "FOV" }, { "CamDist", "CamDist" }, { "CamAng", "CamAng" },
 		{ "CamRot", "CamRot" } };
@@ -565,7 +565,7 @@ static byte Cc_PossessionCam(const nativeVal_t *ent) {
 	}
 	for (int i = 0; i < 4; i++) {
 		nativeVal_t v = { 0 };
-		byte ok = Native_CallMod("SAct", "GetCls", &v, "s", cams[i][1]) && Cc_GSet("Cam", cams[i][0], &v);
+		byte ok = PORT_CALL(SAct, GetCls, &v, "s", cams[i][1]) && Cc_GSet("Cam", cams[i][0], &v);
 		Native_Free(&v);
 		if (!ok) {
 			return Mode_Done(&t, 0);
@@ -578,7 +578,7 @@ static byte Cc_PossessionCam(const nativeVal_t *ent) {
 
 /* Possession(UserName, PossessedName): the player takes the character it flashed (one of ConversionChars, alive,
  * not invulnerable): the character dies without effects, a new player of its class stands there, the camera flies
- * over in slow motion and NewPlayer finishes (OBJLIB 7: SLogic.Flash and SFX by name) */
+ * over in slow motion and NewPlayer finishes (OBJLIB 7: SFX by name) */
 static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	static const int white[4] = { 255, 255, 255, 255 }, clear[4] = { 255, 255, 255, 0 };
 	modeVals_t t = { .n = 0 };
@@ -621,7 +621,7 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	Native_Free(pos);
 	Mode_CamName(0, cam);
 	if (!Mode_IncSaveVar("Stats.Possession") || !Mode_VObj(me, "Pos", pos) ||
-		!Native_CallMod("SLogic", "Flash", NULL, "vi", pos, 1500L) || !Mode_FadeV(0, white, clear, Mode_I(&t, 2)) ||
+		!PORT_CALL(SLogic, Flash, NULL, "vi", pos, 1500L) || !Mode_FadeV(0, white, clear, Mode_I(&t, 2)) ||
 		!Mode_EntitySeam(cam, ce) || !Mode_Put(CC, "Cam", NULL, ce)) {
 		return Mode_Done(&t, 0);
 	}

@@ -756,7 +756,7 @@ static byte DTritus_PressClass(const nativeVal_t *name) {
 		/* the script's SAct.CreateClass raises its TypeError (and the model name its own after it) */
 		nativeVal_t head, v = { 0 };
 		Native_SetStr(&head, "Models/Misc/DesktopPress/");
-		byte ok = Native_CallMod("SAct", "CreateClass", NULL, "v", name) && Native_Arith('+', &head, name, &v);
+		byte ok = PORT_CALL(SAct, CreateClass, NULL, "v", name) && Native_Arith('+', &head, name, &v);
 		Native_Free(&v);
 		/* a value both take gives no result and no error, as the script's C did */
 		return ok && 0;

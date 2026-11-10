@@ -17,7 +17,7 @@
  * the functions RunNI calls (OnSpch, OnObjSpch) are the values of the module. The entities are handle values; the
  * voices, SScorer.SetSpeechText, SetSpeechCallback, SetHeadMonitor, CancelSpeech, SetMsgText and Set, Scrap.Set,
  * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, GetLangEntries, DeleteScheduledFuncs and the scheduler go through
- * their seams (OBJLIB 7: the cases record most of them); SVec.GetRotAng and NormAng stay by name (OBJLIB 7),
+ * their seams (OBJLIB 7: the cases record most of them); SVec.GetRotAng and NormAng go through their refs (stage 7),
  * string.split and find are the native twins (PORT_CALL; by name for an argument that holds an object, OBJLIB 9).
  */
 #include <string.h>
@@ -162,12 +162,12 @@ static byte Sp_SpeechText(const nativeVal_t *text, const nativeVal_t *time, cons
 	return ok;
 }
 
-/* SVec.GetRotAng(SVec.Sub(me.Pos, ch.Pos)): the angles from ch to me (OBJLIB 7: GetRotAng by name) */
+/* SVec.GetRotAng(SVec.Sub(me.Pos, ch.Pos)): the angles from ch to me */
 static byte Sp_RotAng(const nativeVal_t *me, const nativeVal_t *ch, nativeVal_t *out) {
 	nativeVal_t a = { 0 }, b = { 0 }, d = { 0 };
 	Native_SetNone(out);
 	byte ok = Mode_VObj(me, "Pos", &a) && Mode_VObj(ch, "Pos", &b) && Mode_VecSub(&a, &b, &d) &&
-		Native_CallMod("SVec", "GetRotAng", out, "v", &d);
+		PORT_CALL(SVec, GetRotAng, out, "v", &d);
 	Native_Free(&a);
 	Native_Free(&b);
 	Native_Free(&d);
@@ -610,7 +610,7 @@ static int Sp_OnSpeech(const nativeVal_t *text, const nativeVal_t *ans, const na
 	double dc, dm, d;
 	if (!Mode_VObj(me, "Name", name) || !Mode_VObj(ch, "Ang", ca) || !Mode_VObj(me, "Ang", ma) || !Sp_Item(ca, 1, cy) ||
 		!Sp_Item(ma, 1, my) || !Native_ArgDouble(cy, &dc) || !Native_ArgDouble(my, &dm) ||
-		!Native_CallMod("SVec", "NormAng", norm, "d", dc - dm - 180) || !Sp_HSetS(ch, "AbortSelectFunc", "Speech.RestoreState") ||
+		!PORT_CALL(SVec, NormAng, norm, "d", dc - dm - 180) || !Sp_HSetS(ch, "AbortSelectFunc", "Speech.RestoreState") ||
 		!Sp_HSetI(ch, "LLogicIdle", 1) || !Mode_VSet(ch, "SelectedEntity", name) || !Native_ArgDouble(norm, &d)) {
 		return Mode_Done(&t, 0), -1;
 	}

@@ -807,10 +807,10 @@ static byte Pad_SwitchOption(int id, const nativeVal_t *control) {
 	int off = -1;
 	byte ok = Mode_Unpack(row, 2, opt) && Mode_GVarGetV(&opt[0], val) && (off = Mode_CmpI(val, "==", 0)) >= 0;
 	if (ok) {
-		/* Scrap.Set(name, off == 1); a name a swapped Scrap.Get let through goes by name for its error (OBJLIB 7) */
+		/* Scrap.Set(name, off == 1); a name a swapped Scrap.Get let through goes through the ref for its error */
 		ok = opt[0].type == NV_STR && strlen(Native_Text(&opt[0])) == (size_t)opt[0].n ?
 			(name = Native_Text(&opt[0]), Mode_GVarSetI(name, off == 1)) :
-			Native_CallMod("Scrap", "Set", NULL, "vi", &opt[0], (long)(off == 1));
+			PORT_CALL(Scrap, Set, NULL, "vi", &opt[0], (long)(off == 1));
 	}
 	ok = ok && Mode_ResetKeys() && PORT_OWN(PCMenu, SetOptionValue, NULL, "iv", (long)id, &opt[1]) &&
 		Mode_G(PM, "currentActionSet", cur) && PORT_OWN(PCMenu, ShowPadConfig, NULL, "iv", (long)id, cur);

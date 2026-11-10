@@ -181,10 +181,10 @@ static byte SI_ExitSputnikInterfaceN(const nativeVal_t *id) {
 	return Mode_Done(&t, !Native_True(cb) || (Mode_CallArgs(cb, NULL, NULL, 0) && Mode_Put(MOD, "EndSputnikCallBack", NULL, none)));
 }
 
-/* Scrap.SetMoney(money) through its seam; a long int by name (OBJLIB 9: its conversion of the engine's "i" with the
+/* Scrap.SetMoney(money) through its seam; a long int through the ref (its conversion of the engine's "i" with the
  * OverflowError of a long that does not fit) */
 static byte SI_SetMoney(const nativeVal_t *money) {
-	return money->type == NV_LONG ? Native_CallMod("Scrap", "SetMoney", NULL, "v", money) : Mode_SetMoneySeam(money);
+	return money->type == NV_LONG ? PORT_CALL(Scrap, SetMoney, NULL, "v", money) : Mode_SetMoneySeam(money);
 }
 
 /* ShipEdit.destroyedShips[hangar] into d (freed first) */

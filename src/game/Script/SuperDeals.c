@@ -16,8 +16,8 @@
  * holds are handle values (NV_OBJ, OBJLIB 7): a handle whose entity is gone gives the errors of the script. The engine
  * functions the cases record or swap go through their seams (OBJLIB 7, scrap/scriptmodes.h: Scrap.AddScheduledFunc,
  * Scrap.UsrEntity, Scrap.Set, SSound.Play, SScorer.SetMsgText, SScorer.Set, Scrap.Preload3DObject,
- * SAI.GetStateVehicle); SAI.SetStateVehicle takes Python arguments in its state handlers and is called by name, as
- * are SLogic.ChangeBatonState and SetDominationZones (OBJLIB 7).
+ * SAI.GetStateVehicle); SAI.SetStateVehicle, SLogic.ChangeBatonState and SetDominationZones go through their refs
+ * (stage 7).
  *
  * Direct calls (stage 3): the functions call the other functions of their module through PORT_OWN (its global, a
  * mission may replace one) and the other ports through PORT_CALL (scrap/scriptnative.h: the port seam). The
@@ -46,8 +46,8 @@
 #define MR "MortalRace"
 #define CG "CrazyGambler"
 
-/* an engine function by name (OBJLIB 7), the class VehiclesNPC.cShipAI (OBJLIB 5: a class the .mod defines, no port
- * function; its instances are Python objects, OBJLIB 7) */
+/* the class VehiclesNPC.cShipAI by name (OBJLIB 5: a class the .mod defines, no port function; its instances are Python
+ * objects, OBJLIB 7) */
 #define CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 
 /* ---- shared lines ---- */
@@ -1072,7 +1072,7 @@ static byte Vs_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winne
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(enemy) && (!Mode_VSetS(enemy, "EntityList", "") || !Mode_VGet(enemy, "Name", name) ||
-		!CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L))) {
+		!PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, name, 0L))) {
 		return Mode_Done(&t, 0);
 	}
 	int end = Vs_Count("NumPlayerDeaths") ? Vs_Reached("NumPlayerDeaths") : -1;
@@ -1138,7 +1138,7 @@ static byte Vs_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, c
 	Native_Free(un);
 	return Mode_Done(&t, Mode_VSetS(enemy, "TgType", "red") && Mode_VSetS(enemy, "EntityList", "Enemies") &&
 		Mode_Read(VS, "enemyName", &vs.enemyName) && Mode_VGet(usr, "Name", un) &&
-		CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &vs.enemyName, un));
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, &vs.enemyName, un));
 }
 
 MODE_FN(Vs, RespawnPlayer, 3, Vs_RespawnPlayerC(&a[0], &a[1], &a[2]))
@@ -2310,7 +2310,7 @@ static byte Dom_CreateTeam(byte enemy) {
 			Sd_Create(name, pos, "Car", e) && Mode_VSetS(e, "WeapList", "15,15,15,15,15,0") &&
 			(!enemy || Mode_VSetI(e, "LaunchTaunts", 0)) && Mode_SetAng(e, ang) && (!enemy || i || Mode_VSetI(e, "Money", -1)) &&
 			PORT_OWN(Domination, SetProfile, NULL, "vi", e, (long)enemy) && Mode_AppendName(DOM, enemy ? "enemies" : "friends", e) &&
-			Mode_VGet(e, "Name", en) && CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, en);
+			Mode_VGet(e, "Name", en) && PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, en);
 		Mode_Release(&t, mark);
 	}
 	return Mode_Done(&t, ok);
@@ -2319,11 +2319,11 @@ static byte Dom_CreateTeam(byte enemy) {
 MODE_FN(Dom, CreateEnemies, 0, Dom_CreateTeam(1))
 MODE_FN(Dom, CreateFriends, 0, Dom_CreateTeam(0))
 
-/* SLogic.ChangeBatonState(pos, state) (other values by name for the errors of "(fff)i") */
+/* SLogic.ChangeBatonState(pos, state) (other values through the ref for the errors of "(fff)i") */
 static byte Sd_BatonState(const nativeVal_t *pos, long state) {
 	double x[3];
 	if (!Mode_VecOf(pos, x)) {
-		return CALL("SLogic", "ChangeBatonState", NULL, "vi", pos, state);
+		return PORT_CALL(SLogic, ChangeBatonState, NULL, "vi", pos, state);
 	}
 	vec3_t p = { (float)x[0], (float)x[1], (float)x[2] };
 	Domination_SetBatonState(&p, (int)state);
@@ -2499,7 +2499,7 @@ static byte Dom_StartDominationC(void) {
 	}
 	if (dom.zones.type == NV_LIST) {
 		Dom_SetZones(&dom.zones);
-	} else if (!CALL("SLogic", "SetDominationZones", NULL, "v", &dom.zones)) {
+	} else if (!PORT_CALL(SLogic, SetDominationZones, NULL, "v", &dom.zones)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, PORT_OWN(Domination, CreateBaton, NULL, ""));
@@ -2585,7 +2585,7 @@ static byte Dom_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 	if (!Mode_Ent(leader, &e)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, !e || CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, leader));
+	return Mode_Done(&t, !e || PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, leader));
 }
 
 MODE_FN(Dom, TakeBaton, 2, Dom_TakeBatonC(&a[0], &a[1]))
@@ -3168,7 +3168,7 @@ static byte Mr_GoTo(const nativeVal_t *name, const nativeVal_t *pos, const nativ
 	Mode_SaveVar("MortalRaceRacersProfile", prof);
 	return Mode_Done(&t, PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", sp, prof) && Mode_Item(pos, 0, x) && Mode_Item(pos, 1, y) &&
 		Mode_Item(pos, 2, z) && Mode_VGet(sp, "ControlBoostRace", boost) &&
-		CALL("SAI", "SetStateVehicle", NULL, "ivvvvvv", 6L, name, x, y, z, radius, boost));
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvvvv", 6L, name, x, y, z, radius, boost));
 }
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, MoveRacersToPos, (pos, BatonRadius)) */
@@ -3397,7 +3397,7 @@ static byte Mr_InitRaceC(const nativeVal_t *first) {
 		Native_Free(vn);
 		Native_Free(ang);
 		ok = ok && PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", v, ship) && Mode_VGet(v, "Name", vn) &&
-			CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) && Mode_VSetS(v, "TgType", "none") && Mode_VSetS(v, "EntityList", "Race") &&
+			PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, vn) && Mode_VSetS(v, "TgType", "none") && Mode_VSetS(v, "EntityList", "Race") &&
 			Mr_AtStart(1, ang) && Mode_SetAng(v, ang) && Mode_VSetI(v, "Money", -1) && Mr_Copy(v, "Pos", "MovePos") &&
 			Mr_Copy(v, "Ang", "MoveAng") && Mode_VSetF(v, "MoveTime", 0.001) && Mode_VSetI(v, "LaunchTaunts", 0) && Mr_FullAmmo(v);
 		Native_Free(vn);
@@ -3561,7 +3561,7 @@ static byte Mr_CheckShipsStateC(void) {
 					Native_SetInt(cnt, count);
 					ok = Native_Arith('%', at2, cnt, ip) && Mr_StartPos(ip, 0, pos) && Mode_Item(pos, 0, x) && Mode_Item(pos, 1, y) &&
 						Mode_Item(pos, 2, z) && Mode_Read(MR, "WaypRadius", rad) &&
-						CALL("SAI", "SetStateVehicle", NULL, "ivvvvv", 1L, &h.attack.items[i], x, y, z, rad);
+						PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvvv", 1L, &h.attack.items[i], x, y, z, rad);
 				}
 				Mode_Release(&t, mark);
 			}
@@ -3575,7 +3575,7 @@ static byte Mr_CheckShipsStateC(void) {
 					Mode_VSet(&mr.prof, "CadenceShoot", v) && Mode_Read(MR, "prevControlAim", v) && Mode_Read(MR, "prof", &mr.prof) &&
 					Mode_VSet(&mr.prof, "ControlAim", v) && Mode_Read(MR, "prof", &mr.prof) &&
 					PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &mr.prof) && Mode_VGet(ship, "Name", sn) &&
-					CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &h.freeze.items[i], sn);
+					PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, &h.freeze.items[i], sn);
 			}
 			Mode_Release(&t, mark);
 		}
@@ -3616,7 +3616,7 @@ static byte Mr_OnPositionReachedC(const nativeVal_t *who) {
 	}
 	return Mode_Done(&t, Mode_Import("VehiclesNPC") && Mr_Prof("FightingFreezeCadenceShoot", "FightingFreezeControlAim", NULL) &&
 		Mode_EntityH(who, e) && Mode_Read(MR, "prof", &mr.prof) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &mr.prof) &&
-		Mode_VGet(ship, "Name", sn) && CALL("SAI", "SetStateVehicle", NULL, "ivv", 8L, who, sn));
+		Mode_VGet(ship, "Name", sn) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 8L, who, sn));
 }
 
 MODE_FN(Mr, OnPositionReached, 1, Mr_OnPositionReachedC(&a[0]))
@@ -3815,7 +3815,7 @@ static byte Mr_MoveRacersToTrafficC(void) {
 		ok = Mode_EntityH(&players.items[i], &e);
 		if (ok && Native_True(&e)) {
 			ok = Mode_VSetS(&e, "TgType", "none") && Mode_VSetF(&e, "MoveTime", 0.0) && Mode_VSetS(&e, "EntityList", "Traffic") &&
-				Mode_VSetI(&e, "Invulnerable", 1) && Mode_VGet(&e, "Name", &n) && CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &n, 1L);
+				Mode_VSetI(&e, "Invulnerable", 1) && Mode_VGet(&e, "Name", &n) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, &n, 1L);
 		}
 		Native_Free(&e);
 		Native_Free(&n);
@@ -3865,7 +3865,7 @@ static int Mr_Attack(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 		return 1;
 	}
 	return Mode_Read(MR, "prof", &mr.prof) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &mr.prof) &&
-		CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, a->ship) ? 1 : -1;
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, name, a->ship) ? 1 : -1;
 }
 
 static byte Mr_RacersAttackShipC(const nativeVal_t *ship) {
@@ -3991,7 +3991,7 @@ static int Mr_RedFirst(const nativeVal_t *e, const nativeVal_t *name, void *arg)
 	Native_SetNone(&vn);
 	int red = Mode_VGet(e, "TgType", &tg) ? Native_IsStr(&tg, "red") : -1;
 	if (red > 0) {
-		red = Mode_VGet(r->v, "Name", &vn) && CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &vn, name) ? 1 : -1;
+		red = Mode_VGet(r->v, "Name", &vn) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, &vn, name) ? 1 : -1;
 		r->found = 1;
 	}
 	Native_Free(&tg);
@@ -4014,7 +4014,7 @@ static byte Mr_RespawnRacerC(const nativeVal_t *name, const nativeVal_t *foe) {
 	if (!Mr_PrevPos(prev) || !Mr_StartPos(prev, 0, pos) || !Sd_Create(name, pos, "Car", v) || !Mode_VGet(v, "Name", vn) ||
 		!Mode_DictPut(MR, "nameProfileDict", &mr.nameProfileDict, vn, foe) || !Mr_RacerProfile(foe, ship) ||
 		!PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", v, ship) ||
-		!CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) ||
+		!PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, vn) ||
 		!Mode_VSetS(v, "TgType", "green") || !Mode_VSetS(v, "EntityList", "Race") || !Mode_VSetI(v, "Money", -1) ||
 		!Mode_VSetI(v, "LaunchTaunts", 0) || !Mr_FullAmmo(v) || !Mode_AppendName(MR, "racers", v) ||
 		!Sd_EachInList("Race", Mr_RedFirst, &red)) {
@@ -4037,9 +4037,9 @@ static byte Mr_RespawnRacerC(const nativeVal_t *name, const nativeVal_t *foe) {
 	if (Native_True(usr)) {
 		Native_Free(usr);
 		return Mode_Done(&t, Mode_VGet(v, "Name", vn) && Mode_UsrHandle(usr) && Mode_VGet(usr, "Name", un) &&
-			CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, vn, un));
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, vn, un));
 	}
-	return Mode_Done(&t, Mode_VGet(v, "Name", vn) && CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, vn, 0L));
+	return Mode_Done(&t, Mode_VGet(v, "Name", vn) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, vn, 0L));
 }
 
 MODE_FN(Mr, RespawnRacer, 2, Mr_RespawnRacerC(&a[0], &a[1]))

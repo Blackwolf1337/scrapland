@@ -9,12 +9,13 @@
  * save texts are made with the 1.5.2 repr of the native layer and read with its literal reader, so
  * every text the game writes stays byte for byte. Scrap.UsrEntity, GetAlarm, SetAlarm, SetMoney, Set, DelSaveVars,
  * ConsoleError, AddScheduledFunc, SNet.IsServer, IsClient, SInput.GetActionSet, SetActionSet, SSound.StopVoice,
- * StopAllSounds and SScorer.SetMsgText go through their seams (OBJLIB 7: the cases record or swap them); Scrap.MusicPlayer,
- * LoadLevel, Achievement, SNet.CloseServer and CloseClient are called by name as before (the cases record them). The other ports (Scorer, Challenge,
- * Speech, MissionsFuncs) and the functions of the module the script calls through its globals are called through
- * their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5); string.zfill has a twin in the file. The function given to
- * the scheduler by name takes its entry (Port_Scheduled); the Menu object a script may put into the module is a global
- * (OBJLIB 5) whose ShowTextBox is called through its entry (PORT_VALUE). The registers
+ * StopAllSounds and SScorer.SetMsgText go through their seams (OBJLIB 7: the cases record or swap them);
+ * Scrap.MusicPlayer, LoadLevel and Achievement go through their refs (stage 7: the cases record them, the seam calls
+ * what they put there), SNet.CloseServer and CloseClient are called by name as before (OBJLIB 7: no native entry yet).
+ * The other ports (Scorer, Challenge, Speech, MissionsFuncs) and the functions of the module the script calls through
+ * its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5); string.zfill has a twin in
+ * the file. The function given to the scheduler by name takes its entry (Port_Scheduled); the Menu object a script may
+ * put into the module is a global (OBJLIB 5) whose ShowTextBox is called through its entry (PORT_VALUE). The registers
  * keep their Python objects: SaveReg reads the attributes of any object and GetReg makes a class whose attributes are
  * read with the Python literal reader (OBJLIB 6).
  */
@@ -294,7 +295,7 @@ static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 	if (!found) {
 		return Mode_Done(&t, Native_Arith('%', Mode_S(&t, "Map not found: %s\n"), map, msg) && Mode_ConsoleError(msg));
 	}
-	if (!Native_CallMod("Scrap", "MusicPlayer", NULL, "ss", "", "stop")) {
+	if (!PORT_CALL(Scrap, MusicPlayer, NULL, "ss", "", "stop")) {
 		return Mode_Done(&t, 0);
 	}
 	for (long i = 0; i < 4; i++) {
@@ -335,7 +336,7 @@ static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 		return Mode_Done(&t, client > 0 && Native_CallMod("SNet", "CloseClient", NULL, "v", map));
 	}
 	return Mode_Done(&t, Mode_Import("Speech") && PORT_CALL(Speech, CallEndOfSpeech, NULL, "") &&
-		Native_CallMod("Scrap", "LoadLevel", NULL, "v", map));
+		PORT_CALL(Scrap, LoadLevel, NULL, "v", map));
 }
 
 /* StartGame(CleanChallenge=1, CleanRevenge=0): the map of the save game, the current one becomes the previous one,
@@ -622,7 +623,7 @@ static byte SG_NewGame(void) {
 		SG_CreateVars(sg_gamePlans, SG_COUNT(sg_gamePlans), demo);
 	}
 	SG_CreateVars(sg_newVars2, SG_COUNT(sg_newVars2), demo);
-	if (!demo && (!Mode_GVarSetS("PlayVideo", "Video/Intro.avi") || !Native_CallMod("Scrap", "Achievement", NULL, "i", 1L))) {
+	if (!demo && (!Mode_GVarSetS("PlayVideo", "Video/Intro.avi") || !PORT_CALL(Scrap, Achievement, NULL, "i", 1L))) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Map", map);
@@ -645,7 +646,7 @@ static byte SG_CheckAllBlueprints(void) {
 	if (nb < 0) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, na + nb != 38 || Native_CallMod("Scrap", "Achievement", NULL, "i", 13L));
+	return Mode_Done(&t, na + nb != 38 || PORT_CALL(Scrap, Achievement, NULL, "i", 13L));
 }
 
 /* ---- the save registers of the missions ---- */

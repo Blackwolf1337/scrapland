@@ -25,8 +25,9 @@
  * record or swap go through their seams (AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, UsrEntity, Set,
  * SetAlarm, GetAlarm, ConsoleError, DelSaveVars, SScorer.Fade, the SAct functions; OBJLIB 7). The entities the script
  * holds are handle values (OBJLIB 7). SAI.SetStateChar and GetStateChar, SLogic.SetOnFloor, the call of the map
- * elements (Scrap.SetCallFunc and its parameters), SAct.GetCls and SScorer.SetSpeechText stay by name (OBJLIB 7);
- * CharsNPC.CharRes and the GateKeeper groups are the objects they are (OBJLIB 5).
+ * elements (Scrap.SetCallFunc and its parameters) and SAct.GetCls go through their refs (stage 7),
+ * SScorer.SetSpeechText stays by name (OBJLIB 7: no native entry yet); CharsNPC.CharRes and the GateKeeper groups are
+ * the objects they are (OBJLIB 5).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Chars,
  * CharConversor, Elevator, Teleport, Metro, InTraffic, GateKeeper, Scene, RaceMaker, Menu, Init), the keyword call of
@@ -55,8 +56,8 @@
 #define JB "Mission_JailBreak"
 #define PC "Mission_PoliceBossCheats"
 
-/* SAI.SetStateChar(...) by name (OBJLIB 7: the cases record it) */
-#define CHAR_STATE(...) LV_CALL("SAI", "SetStateChar", NULL, __VA_ARGS__)
+/* SAI.SetStateChar(...) through its ref (the seam sees the recorder of a case) */
+#define CHAR_STATE(...) PORT_CALL(SAI, SetStateChar, NULL, __VA_ARGS__)
 
 /* ---- native helpers of this file ---- */
 
@@ -1119,19 +1120,19 @@ static byte BeatPickus_TraitoriusAgainSpeech(const nativeVal_t *a, nativeVal_t *
 	return dt == 0 && Po_Generic(a);
 }
 
-/* LightingActivate(activate=0): the electric effect of the police (PoliceFXLighting01) on or off (OBJLIB 7: the call
- * of the map elements by name) */
+/* LightingActivate(activate=0): the electric effect of the police (PoliceFXLighting01) on or off (the call of the map
+ * elements) */
 static byte Bp_LightingActivate(const nativeVal_t *activate) {
 	static const long params[] = { 5120, -1940, 29000, 1000 };
-	if (!LV_CALL("Scrap", "SetCallFunc", NULL, "s", "!MapElementsActivate") || !LV_CALL("Scrap", "AddParams", NULL, "s", "PoliceFXLighting01")) {
+	if (!PORT_CALL(Scrap, SetCallFunc, NULL, "s", "!MapElementsActivate") || !PORT_CALL(Scrap, AddParams, NULL, "s", "PoliceFXLighting01")) {
 		return 0;
 	}
 	for (int i = 0; i < 4; i++) {
-		if (!LV_CALL("Scrap", "AddParamf", NULL, "i", params[i])) {
+		if (!PORT_CALL(Scrap, AddParamf, NULL, "i", params[i])) {
 			return 0;
 		}
 	}
-	return LV_CALL("Scrap", "AddParami", NULL, "v", activate) && LV_CALL("Scrap", "Execute", NULL, "");
+	return PORT_CALL(Scrap, AddParami, NULL, "v", activate) && PORT_CALL(Scrap, Execute, NULL, "");
 }
 
 MODE_KW(BeatPickus, LightingActivate, "|O", "activate") {
@@ -1601,11 +1602,11 @@ static byte GetAuthorization_OnTriggerActivated(const nativeVal_t *a, nativeVal_
 	return ok;
 }
 
-/* SLogic.SetOnFloor(h.Name) by name (OBJLIB 7) */
+/* SLogic.SetOnFloor(h.Name) */
 static byte Po_OnFloor(const nativeVal_t *h) {
 	nativeVal_t n;
 	Native_SetNone(&n);
-	byte ok = Mode_VGet(h, "Name", &n) && LV_CALL("SLogic", "SetOnFloor", NULL, "v", &n);
+	byte ok = Mode_VGet(h, "Name", &n) && PORT_CALL(SLogic, SetOnFloor, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
 }
@@ -1710,7 +1711,7 @@ static byte GetAuthorization_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out
 	if (u > 0) {
 		int near = PORT_LOWN(Mission_GetAuthorization, CheckHumanDist, &r, "") ? Native_True(&r) : -1;
 		if (near == 0) {
-			int moving = LvN_GAttr(GA, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, "!=", 0) : -1;
+			int moving = LvN_GAttr(GA, "human", "Name", &hn) && PORT_CALL(SAI, GetStateChar, &st, "v", &hn) ? Mode_CmpI(&st, "!=", 0) : -1;
 			ok = moving >= 0 && (!moving || Ga_HumanStops());
 		} else if (near > 0) {
 			int dt = LvN_CtrlIs(&usr, "Dtritus");
@@ -2380,13 +2381,13 @@ static byte PoliceBossCheats_CreateFakeChar(const nativeVal_t *a, nativeVal_t *o
 		!LvN_GetClass(type, cls)) {
 		return Mode_Done(&t, 0);
 	}
-	/* (dummy[1][0], dummy[1][1] + SAct.GetCls("YModelDisp"), dummy[1][2]) (OBJLIB 7: SAct.GetCls by name) */
+	/* (dummy[1][0], dummy[1][1] + SAct.GetCls("YModelDisp"), dummy[1][2]) */
 	Native_SetEmpty(p2, NV_TUPLE);
 	if (!LvN_Item(dummy, 1, pos) || !LvN_Item(pos, 0, x)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(pos);
-	if (!LvN_Item(dummy, 1, pos) || !LvN_Item(pos, 1, y1) || !LV_CALL("SAct", "GetCls", disp, "s", "YModelDisp") ||
+	if (!LvN_Item(dummy, 1, pos) || !LvN_Item(pos, 1, y1) || !PORT_CALL(SAct, GetCls, disp, "s", "YModelDisp") ||
 		!Native_Arith('+', y1, disp, y)) {
 		return Mode_Done(&t, 0);
 	}

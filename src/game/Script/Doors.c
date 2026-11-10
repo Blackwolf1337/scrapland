@@ -17,7 +17,7 @@
  * SInput.SetActionSet go through their seams, and the doors, elevators and riders are handle values (OBJLIB 7). The
  * other ports (Menu, CharScorer, Chars, SaveGame, DoorSound, Elevator, Teleport, CharConversor, PhoneCab,
  * DTritusDesktop) and the module's own functions through its globals go through their refs (PORT_CALL, PORT_OWN: a
- * mission may replace them); Scrap.SetCallFunc, AddParams, AddParami and Execute stay by name (OBJLIB 7), the functions
+ * mission may replace them), and so do Scrap.SetCallFunc, AddParams, AddParami and Execute (stage 7); the functions
  * of DoorInfo and DefDoorInfo and the hooks are called as the values of the variables (OBJLIB 5) through the entries of
  * port functions (Mode_CallArgs), and the functions given to the scheduler (Metro.SetUsrParams,
  * TryToElevatorLaunchFirst) take their entries (stage 4: Port_Scheduled). An option of ConnectElevators whose text does
@@ -1134,12 +1134,12 @@ static byte Tp_Link(const nativeVal_t *a, const nativeVal_t *b) {
 	return ok;
 }
 
-/* FXAction(CharName, ElevatorName, Phase): the teleport effect of the engine (phase 1 in, 2 out); OBJLIB 7: the call
- * function of Scrap by name (the cases record SetCallFunc, AddParams and Execute) */
+/* FXAction(CharName, ElevatorName, Phase): the teleport effect of the engine (phase 1 in, 2 out): the call function
+ * of Scrap (the cases record SetCallFunc, AddParams and Execute) */
 static byte Tp_FXAction(const nativeVal_t *ch, const nativeVal_t *elv, const nativeVal_t *phase) {
-	return Native_CallMod("Scrap", "SetCallFunc", NULL, "s", "!FXCharacterTeleport") &&
-		Native_CallMod("Scrap", "AddParams", NULL, "v", ch) && Native_CallMod("Scrap", "AddParams", NULL, "v", elv) &&
-		Native_CallMod("Scrap", "AddParami", NULL, "v", phase) && Native_CallMod("Scrap", "Execute", NULL, "");
+	return PORT_CALL(Scrap, SetCallFunc, NULL, "s", "!FXCharacterTeleport") &&
+		PORT_CALL(Scrap, AddParams, NULL, "v", ch) && PORT_CALL(Scrap, AddParams, NULL, "v", elv) &&
+		PORT_CALL(Scrap, AddParami, NULL, "v", phase) && PORT_CALL(Scrap, Execute, NULL, "");
 }
 
 MODE_FN(Teleport, DoorInitializator, 1, Tp_DoorInitializator(&a[0]))

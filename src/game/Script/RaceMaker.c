@@ -15,19 +15,19 @@
  * OnRaceGoCallback, OnCheckPointCallback, OnInitRace, OnPreInitRace, OnInitialTaunt and GetDealType), with the module
  * code (the save variables and the entity list it creates). The scorer is data/menus/race.def.
  *
- * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the state and the
- * tables where the script reads them and write them back at once, the lists and dicts changed in place (OBJLIB 5).
- * The save and engine variables, the money, the language texts, the camera name and the entity lists are C;
- * Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity, GetEntity, CreateEntity, Preload3DObject, the dummy search,
- * the scheduler, SInput.Bind, SScorer.Set and SetMsgText, SSound.Play and LoadSound and SAI.GetStateVehicle go through
- * their seams, and the racers, checkpoints and cameras are handle values (OBJLIB 7). The other ports (Challenge,
- * Speech, Menu, SaveGame, VehiclesNPC, OutMap, RacerScorer) and the module's own functions (through its globals, as
- * the script calls them) go through their refs (PORT_CALL, PORT_OWN, stage 3), string.find and replace through the
- * native twins. SAI.SetStateVehicle, InitVehicleRace and AddVehicleRace, Scrap.SetCam, the call function of Scrap,
- * SVec.GetAngle and CProd and SInput.GetActionSet stay by name (OBJLIB 7), the class VehiclesNPC.cShipAI too (OBJLIB
- * 5: a class the .mod defines); the hooks, GetDealType and the races of MapRace are called as the values the script
- * calls, through the entries of port functions (Mode_CallArgs, MODE_CBGLOBAL; OBJLIB 5: the variables); the scorer
- * file takes its $names as a dict (OBJLIB 6).
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the state and the tables
+ * where the script reads them and write them back at once, the lists and dicts changed in place (OBJLIB 5). The save
+ * and engine variables, the money, the language texts, the camera name and the entity lists are C; Scrap.Set, SetMoney,
+ * SetAlarm, IncSaveVar, UsrEntity, GetEntity, CreateEntity, Preload3DObject, the dummy search, the scheduler,
+ * SInput.Bind, SScorer.Set and SetMsgText, SSound.Play and LoadSound and SAI.GetStateVehicle go through their seams,
+ * and the racers, checkpoints and cameras are handle values (OBJLIB 7). The other ports (Challenge, Speech, Menu,
+ * SaveGame, VehiclesNPC, OutMap, RacerScorer) and the module's own functions (through its globals, as the script calls
+ * them) go through their refs (PORT_CALL, PORT_OWN, stage 3), string.find and replace through the native twins, and so
+ * do SAI.SetStateVehicle, InitVehicleRace and AddVehicleRace, Scrap.SetCam, the call function of Scrap, SVec.GetAngle
+ * and CProd (stage 7). SInput.GetActionSet stays by name (OBJLIB 7: no native entry yet), the class VehiclesNPC.cShipAI
+ * too (OBJLIB 5: a class the .mod defines); the hooks, GetDealType and the races of MapRace are called as the values
+ * the script calls, through the entries of port functions (Mode_CallArgs, MODE_CBGLOBAL; OBJLIB 5: the variables); the
+ * scorer file takes its $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
 
@@ -229,7 +229,7 @@ static byte Rm_DeleteCurrentWaypoint(void) {
 	return Rm_DelWaypoint(NULL) && Rm_DelWaypoint("_Trigg");
 }
 
-/* the vehicle name back into the traffic (police ships the cops); OBJLIB 7: SAI.SetStateVehicle by name */
+/* the vehicle name back into the traffic (police ships the cops) */
 static byte Rm_ToTraffic(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *veh = Mode_V(&t), *zero = Mode_V(&t), *model = Mode_V(&t), *at = Mode_V(&t), *vname = Mode_V(&t);
@@ -243,7 +243,7 @@ static byte Rm_ToTraffic(const nativeVal_t *name) {
 	int cop = Mode_VSet(veh, "MoveTime", zero) && LvN_SetS(veh, "TgType", "None") && Mode_VObj(veh, "Model", model) &&
 		PORT_CALL(string, find, at, "vs", model, "SPoli") ? Mode_CmpI(at, ">=", 0) : -1;
 	return Mode_Done(&t, cop >= 0 && LvN_SetS(veh, "EntityList", cop ? "OutCop" : "Traffic") && Mode_VObj(veh, "Name", vname) &&
-		Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, vname));
+		PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 3L, vname));
 }
 
 /* fn(name) for each name of the list global var of the module */
@@ -399,21 +399,21 @@ static byte Rm_RaceShip(const nativeVal_t *name, const void *arg) {
 	nativeVal_t v = { 0 }, zero;
 	(void)arg;
 	Native_SetFloat(&zero, 0.0);
-	byte ok = Native_CallMod("SAI", "AddVehicleRace", NULL, "v", name) && Mode_EntitySeam(name, &v) &&
+	byte ok = PORT_CALL(SAI, AddVehicleRace, NULL, "v", name) && Mode_EntitySeam(name, &v) &&
 		LvN_SetS(&v, "TgType", "Green") && Mode_VSet(&v, "MoveTime", &zero);
 	Native_Free(&v);
 	return ok;
 }
 
 /* RaceStart(ItemName, VehicleName): the race starts at the first checkpoint: the checkpoint counts from now on, the
- * race of the AI, the rivals become targets, the counter measures are watched (OBJLIB 7: SAI by name) */
+ * race of the AI, the rivals become targets, the counter measures are watched */
 static byte Rm_RaceStart(const nativeVal_t *item) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *e = Mode_V(&t), *tn = Mode_V(&t), *e2 = Mode_V(&t), *usr = Mode_V(&t), *un = Mode_V(&t);
 	return Mode_Done(&t, Mode_Import("Speech") && Mode_EntitySeam(item, e) && LvN_SetS(e, "OnTake", "RaceMaker.OnCheckPoint") &&
 		Mode_Cat(&t, tn, 2, item, Mode_S(&t, "_Trigg")) && Mode_EntitySeam(tn, e2) &&
-		LvN_SetS(e2, "OnTake", "RaceMaker.OnNearCheckPoint") && Native_CallMod("SAI", "InitVehicleRace", NULL, "") &&
-		Mode_UsrHandle(usr) && Mode_VObj(usr, "Name", un) && Native_CallMod("SAI", "AddVehicleRace", NULL, "v", un) &&
+		LvN_SetS(e2, "OnTake", "RaceMaker.OnNearCheckPoint") && PORT_CALL(SAI, InitVehicleRace, NULL, "") &&
+		Mode_UsrHandle(usr) && Mode_VObj(usr, "Name", un) && PORT_CALL(SAI, AddVehicleRace, NULL, "v", un) &&
 		LvN_PutI(RM, "YourScore", 0) && Rm_FoeCom("RaceStart") && Rm_Each("Players", Rm_RaceShip, NULL) &&
 		Mode_Import("Menu") && LvN_ModNone("Menu", "MissionScorerCall") &&
 		Mode_Bind(Mode_I(&t, 0), "Racer", "CM", "RaceMaker.OnCounterMeasure") && LvN_PutI(RM, "LastCmTime", -1));
@@ -478,7 +478,7 @@ static byte Rm_RacerDamaged(void) {
 }
 
 /* AbortCameraTravelling(): the end of the travelling of StartCameraTravelling: the player's ship, the camera and the
- * HUD back (OBJLIB 7: Scrap.SetCam by name) */
+ * HUD back */
 static byte Rm_AbortCameraTravelling(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *prev = Mode_V(&t), *vn = Mode_V(&t), *usr = Mode_V(&t), *zero = Mode_V(&t), *in = Mode_V(&t);
@@ -496,7 +496,7 @@ static byte Rm_AbortCameraTravelling(void) {
 		Rm_G("cameraVehicleName", vn) && Mode_EntitySeam(vn, usr) && Mode_VSet(usr, "MoveTime", zero) &&
 		LvN_SetI(usr, "UsrControl", 0) && Rm_G("cameraItemName", in) && Mode_EntitySeam(in, l) && LvN_SetI(l, "rTime", 0) &&
 		Mode_GVarSetS("EscapeEvent", "Menu.Init") && Mode_EntitySeam(cam, ce) && Mode_VDel(ce) && Rm_G("prevCamera", prev) &&
-		Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, prev) && (Native_Free(prev), Rm_G("prevCamera", prev)) &&
+		PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, prev) && (Native_Free(prev), Rm_G("prevCamera", prev)) &&
 		(!Native_True(prev) || PORT_CALL(RacerScorer, Create, NULL, "i", 0L)) &&
 		Mode_Put(RM, "cameraItemName", NULL, none) && Mode_Put(RM, "cameraVehicleName", NULL, none) &&
 		Mode_Put(RM, "prevCamera", NULL, none);
@@ -543,7 +543,7 @@ static byte Rm_At(const nativeVal_t *time, const char *name, const nativeVal_t *
 
 /* StartCameraTravelling(ItemName, VehicleName, isRace=1, speed="Normal"): the player's ship flies to the item and a
  * camera path shows the checkpoint (isRace) or the item; it ends by itself; the time of the travelling (None when
- * the vehicle is not the player's); OBJLIB 7: Scrap.SetCam by name */
+ * the vehicle is not the player's) */
 static byte Rm_StartCameraTravelling(const nativeVal_t *item, const nativeVal_t *veh, const nativeVal_t *race,
 	const nativeVal_t *speed, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
@@ -630,7 +630,7 @@ static byte Rm_StartCameraTravelling(const nativeVal_t *item, const nativeVal_t 
 	Native_Free(q);
 	Native_SetFloat(fifth, 0.2);
 	if (!Rm_Quarter(ang, q) || !Rm_Set(cam, "Ang02", q) || !Rm_Set(cam, "Pos02", &p[2]) || !LvN_SetI(cam, "Time", 0) ||
-		!Mode_VGet(cam, "Name", cn) || !Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, cn) ||
+		!Mode_VGet(cam, "Name", cn) || !PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, cn) ||
 		!Mode_VObj(cam, "Time00", t0) || !Mode_VObj(cam, "Time01", t1) || !Mode_Arith('+', t0, t1, time) ||
 		!Mode_GVarSetS("MainMissionEvent", "") || !Mode_GVarSetS("EscapeEvent", "") ||
 		(Native_SetFloat(now, Mode_Time()), !Mode_Arith('+', now, time, s1)) || !Mode_Arith('+', s1, fifth, s2) ||
@@ -743,8 +743,7 @@ static byte Rm_Method(const nativeVal_t *e, const char *method, const char *s) {
 	return ok;
 }
 
-/* one traffic light of the count down (side 0 right, 1 left) with its light effect (OBJLIB 7: the call function of
- * Scrap by name) */
+/* one traffic light of the count down (side 0 right, 1 left) with its light effect (the call function of Scrap) */
 static byte Rm_CountDownLight(int side) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *vec = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *l = Mode_V(&t), *ang = Mode_V(&t);
@@ -753,9 +752,9 @@ static byte Rm_CountDownLight(int side) {
 		LvN_Item(vec, 1, y) && LvN_Item(vec, 2, z) && LvN_Create(Mode_S(&t, name), x, y, z, "Obj", l) &&
 		Rm_Method(l, "SetModel", "models/misc/MeetingPoint-Race/MeetingPoint-Race.m3d") &&
 		Rm_Method(l, "SetFX", "MeetingPoint-Race.m3d") && Rm_StartAng3(side == 0 ? 0 : 180, ang) && Mode_VSet(l, "Ang", ang) &&
-		Native_CallMod("Scrap", "SetCallFunc", NULL, "s", "!FXMeetingPointCountDown") &&
-		Native_CallMod("Scrap", "AddParams", NULL, "s", name) && Native_CallMod("Scrap", "AddParamf", NULL, "d", 1.9) &&
-		Native_CallMod("Scrap", "AddParami", NULL, "i", side == 0 ? 1L : -1L) && Native_CallMod("Scrap", "Execute", NULL, ""));
+		PORT_CALL(Scrap, SetCallFunc, NULL, "s", "!FXMeetingPointCountDown") &&
+		PORT_CALL(Scrap, AddParams, NULL, "s", name) && PORT_CALL(Scrap, AddParamf, NULL, "d", 1.9) &&
+		PORT_CALL(Scrap, AddParami, NULL, "i", side == 0 ? 1L : -1L) && PORT_CALL(Scrap, Execute, NULL, ""));
 }
 
 /* CreateRaceCountDown(): the two traffic lights beside the start with their light effect, and the red, yellow and
@@ -878,8 +877,8 @@ static byte Rm_HeadArgs(const nativeVal_t *name, const nativeVal_t *pos, const n
 	return ok;
 }
 
-/* SAI.SetStateVehicle scheduled at timy with the tuple of arguments (OBJLIB 7: the function of SAI, through its entry
- * once SAI has entries); timy + 0.05 */
+/* SAI.SetStateVehicle scheduled at timy with the tuple of arguments (the function of SAI, the scheduler takes its
+ * entry: Port_Scheduled); timy + 0.05 */
 static byte Rm_HeadLater(nativeVal_t *timy, const nativeVal_t *a) {
 	nativeVal_t step, next = { 0 };
 	Native_SetFloat(&step, 0.05);
@@ -966,8 +965,7 @@ static int Rm_Score(const nativeVal_t *item, const nativeVal_t *veh) {
 }
 
 /* OnCheckPoint(ItemName, VehicleName): the OnTake of the checkpoint: a point for the player or the rivals (the
- * start, or the end at WayPointlimit); the checkpoint moves on and the rivals head for it (OBJLIB 7:
- * SAI.SetStateVehicle by name) */
+ * start, or the end at WayPointlimit); the checkpoint moves on and the rivals head for it */
 static byte Rm_OnCheckPoint(const nativeVal_t *item, const nativeVal_t *veh) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *l = Mode_V(&t), *timy = Mode_V(&t), *players = Mode_V(&t), *i = Mode_V(&t);
@@ -989,7 +987,7 @@ static byte Rm_OnCheckPoint(const nativeVal_t *item, const nativeVal_t *veh) {
 		byte ok = same >= 0;
 		if (same > 0) {
 			ok = Mode_EntitySeam(&name, &e) && (!Native_True(&e) || (Mode_VObj(l, "Pos", &pos) &&
-				Rm_HeadArgs(&name, &pos, l, &pd, 0, &a) && Native_CallMod("SAI", "SetStateVehicle", NULL, "vvvvvvv", &a.items[0],
+				Rm_HeadArgs(&name, &pos, l, &pd, 0, &a) && PORT_CALL(SAI, SetStateVehicle, NULL, "vvvvvvv", &a.items[0],
 				&a.items[1], &a.items[2], &a.items[3], &a.items[4], &a.items[5], &a.items[6])));
 		} else if (same == 0) {
 			ok = Mode_VObj(l, "Pos", &pos) && Rm_HeadArgs(&name, &pos, l, &pd, 0, &a) && Rm_HeadLater(timy, &a);
@@ -1148,8 +1146,7 @@ static byte Rm_FirstTime(const nativeVal_t *s, const char *var) {
 	return !first || (Mode_Import("Menu") && PORT_CALL(Menu, ShowWarning, NULL, "iv", 0L, s) && Mode_SetSaveVar(var, &zero));
 }
 
-/* PointObjectTo(object, point): the object turns towards the point (around the vertical axis); OBJLIB 7: SVec.GetAngle
- * and CProd by name */
+/* PointObjectTo(object, point): the object turns towards the point (around the vertical axis) */
 static byte Rm_PointObjectTo(const nativeVal_t *obj, const nativeVal_t *point) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *start = Mode_V(&t), *p = Mode_V(&t), *op = Mode_V(&t), *q = Mode_V(&t), *op2 = Mode_V(&t), *pq = Mode_V(&t);
@@ -1160,7 +1157,7 @@ static byte Rm_PointObjectTo(const nativeVal_t *obj, const nativeVal_t *point) {
 	if (!LvN_Item(point, 0, Native_Append(p)) || (Native_SetInt(Native_Append(p), 0), !LvN_Item(point, 2, Native_Append(p))) ||
 		!Mode_VObj(obj, "Pos", op) || !LvN_Item(op, 0, Native_Append(q)) || (Native_SetInt(Native_Append(q), 0), 0) ||
 		!Mode_VObj(obj, "Pos", op2) || !LvN_Item(op2, 2, Native_Append(q)) || !Mode_VecSub(p, q, pq) ||
-		!Native_CallMod("SVec", "GetAngle", ang, "vv", start, pq) || !Native_CallMod("SVec", "CProd", d, "vv", start, pq) ||
+		!PORT_CALL(SVec, GetAngle, ang, "vv", start, pq) || !PORT_CALL(SVec, CProd, d, "vv", start, pq) ||
 		!LvN_Item(d, 1, d1)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1218,8 +1215,7 @@ static byte Rm_NearestDummy(nativeVal_t *out) {
 	}
 }
 
-/* the AI of a challenger ship v of the kind foe: its profiles, a random one of them, static (OBJLIB 7:
- * SAI.SetStateVehicle by name) */
+/* the AI of a challenger ship v of the kind foe: its profiles, a random one of them, static */
 static byte Rm_ShipAI(const nativeVal_t *v, const nativeVal_t *foe, const char *profile) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *p1 = Mode_V(&t), *p2 = Mode_V(&t), *ship = Mode_V(&t), *name = Mode_V(&t);
@@ -1230,7 +1226,7 @@ static byte Rm_ShipAI(const nativeVal_t *v, const nativeVal_t *foe, const char *
 	Mode_SaveVar(profile, p2);
 	return Mode_Done(&t, PORT_OWN(RaceMaker, GetRandomShipIAProfile, ship, "vv", foe, p2) &&
 		PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", v, ship) && Mode_VObj(v, "Name", name) &&
-		Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 0L, name));
+		PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, name));
 }
 
 /* challengePartners[ChallengeFoeType] */
@@ -1568,14 +1564,13 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 	return Mode_Done(&t, ok);
 }
 
-/* MoveCombatNPCsToPos(pos): the challenged ships that do not fight yet fly to the place (OBJLIB 7: SAI.SetStateVehicle
- * by name) */
+/* MoveCombatNPCsToPos(pos): the challenged ships that do not fight yet fly to the place */
 static byte Rm_MoveNPC(const nativeVal_t *name, const void *arg) {
 	const nativeVal_t *pos = arg;
 	nativeVal_t st = { 0 }, p[3] = { { 0 }, { 0 }, { 0 } };
 	int go = Mode_AIState(name, &st) ? Mode_CmpI(&st, "!=", 2) : -1;
 	byte ok = go >= 0 && (!go || (LvN_Item(pos, 0, &p[0]) && LvN_Item(pos, 1, &p[1]) && LvN_Item(pos, 2, &p[2]) &&
-		Native_CallMod("SAI", "SetStateVehicle", NULL, "ivvvviidd", 1L, name, &p[0], &p[1], &p[2], 1800L, 0L, 0.85, 20.0, 20.0)));
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivvvviidd", 1L, name, &p[0], &p[1], &p[2], 1800L, 0L, 0.85, 20.0, 20.0)));
 	Native_Free(&st);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&p[i]);
@@ -1593,7 +1588,7 @@ static byte Rm_PlaceNPCAtRacePos(const nativeVal_t *item, const nativeVal_t *veh
 	}
 	return Mode_Done(&t, Mode_EntitySeam(item, i) && Mode_EntitySeam(veh, v) && Mode_VObj(i, "Pos", p) && Mode_VSet(v, "MovePos", p) &&
 		Mode_VObj(i, "Ang", a) && Mode_VSet(v, "MoveAng", a) && LvN_SetI(v, "MoveTime", 1) && LvN_SetI(v, "MoveFade", 2) &&
-		Mode_VObj(v, "Name", vn) && Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) && Mode_VDel(i) &&
+		Mode_VObj(v, "Name", vn) && PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, vn) && Mode_VDel(i) &&
 		LvN_ModNone(RM, "NPC_START_ITEM"));
 }
 

@@ -19,7 +19,8 @@
  * save variables, the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice,
  * DTritusDesktop, CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly
  * while the attribute holds the port's function, else by name) and string.find through its native twin;
- * SAI.EnableAIChar and GetReposCharPos stay by name (OBJLIB 7), the range of a value that is no int too (OBJLIB 9).
+ * SAI.EnableAIChar and GetReposCharPos go through their refs (stage 7), the range of a value that is no int stays by
+ * name (OBJLIB 9).
  * The module's own functions call each other in C as the port did.
  */
 #include <limits.h>
@@ -423,7 +424,7 @@ static byte Npc_CharNPCInclude(const nativeVal_t *name) {
 	} else {
 		return Mode_Done(&t, 1);
 	}
-	return Mode_Done(&t, Mode_EntitySeam(name, ch) && (!ai || Native_CallMod("SAI", "EnableAIChar", NULL, "vii", name, 1L, 0L)) &&
+	return Mode_Done(&t, Mode_EntitySeam(name, ch) && (!ai || PORT_CALL(SAI, EnableAIChar, NULL, "vii", name, 1L, 0L)) &&
 		Mode_VSet(ch, "EntityList", list));
 }
 
@@ -569,7 +570,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 	}
 	if (dorepos > 0) {
 		dorepos = Mode_VObj(usr, "Pos", upos) && Mode_VObjRead(csp, "ActCtrl", act) &&
-			Native_CallMod("SAI", "GetReposCharPos", rpos, "vv", upos, act) ? Native_True(rpos) : -1;
+			PORT_CALL(SAI, GetReposCharPos, rpos, "vv", upos, act) ? Native_True(rpos) : -1;
 		if (dorepos > 0 && !Mode_VSet(csp, "Pos", rpos)) {
 			dorepos = -1;
 		}
@@ -607,7 +608,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 		Mode_LaterIn(1.5, NPC, "ActiveSpawned", name, 1, NULL);
 	if (ok && dorepos) {
 		ok = Mode_VObj(c, "Pos", p) && Mode_VObj(c, "ActCtrl", a) && Mode_VObj(c, "Name", n) &&
-			Native_CallMod("SAI", "GetReposCharPos", NULL, "vvv", p, a, n);
+			PORT_CALL(SAI, GetReposCharPos, NULL, "vvv", p, a, n);
 	}
 	Native_Free(v);
 	int target = ok && Mode_VObjRead(c, "Name", n) && PORT_CALL(MissionsFuncs, IsCharMissionObjective, v, "v", n) ?

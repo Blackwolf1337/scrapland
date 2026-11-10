@@ -26,7 +26,8 @@
  * through their globals (PORT_LOWN, the same seam on the global: a mission may replace one). The callbacks of Speech
  * and of the CharsNPC characters are named by their refs (LV_ONEND, LV_COM, LV_CALLBACK, LV_MISSIONCHAR); they and the
  * hooks of PR_HOOK are the values of the variables (OBJLIB 5). SAI.SetStateChar and GetStateChar,
- * SLogic.SendSentinelToWatch, Scrap.CallElements, SScorer.AddModel and SSound.UsePS stay by name (OBJLIB 7); the plain
+ * SLogic.SendSentinelToWatch and Scrap.CallElements go through their refs (stage 7), SScorer.AddModel and SSound.UsePS
+ * stay by name (OBJLIB 7: no native entry yet); the plain
  * functions of the .def files are data, called and given as callbacks by name (OBJLIB 6); the call lines of the scene
  * tables and of News1 are data in C (Mode_Calls: a port's function through its entry); CharsNPC.CharRes and the
  * GateKeeper groups are the objects they are (OBJLIB 5); the scheduler takes the entry of a port's own function
@@ -56,8 +57,8 @@
 #define WD "Mission_WhoIsDeepThroat"
 #define WB "Mission_WhoIsTheBaddie"
 
-/* SAI.SetStateChar(...) by name (OBJLIB 7: the cases record it) */
-#define CHAR_STATE(...) LV_CALL("SAI", "SetStateChar", NULL, __VA_ARGS__)
+/* SAI.SetStateChar(...) through its ref (the seam sees the recorder of a case) */
+#define CHAR_STATE(...) PORT_CALL(SAI, SetStateChar, NULL, __VA_ARGS__)
 /* module.var = the global name of src (a function) (OBJLIB 5) */
 #define PR_HOOK(module, var, src, name) LvN_ModSetGlobal(module, var, src, name)
 /* the scheduled call of a global function of module after delay s without arguments, and with one */
@@ -851,8 +852,8 @@ static byte PressSnd_SetSounds(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t act, mcs;
 	(void)a;
 	(void)out;
-	/* Scrap.CallElements by name: fc-r7b-pr1 records it (OBJLIB 7) */
-	if (!Mode_Import("Sound") || !LV_CALL("Scrap", "CallElements", NULL, "s", "MapSnd.SndElements")) {
+	/* Scrap.CallElements through its ref: fc-r7b-pr1 records it */
+	if (!Mode_Import("Sound") || !PORT_CALL(Scrap, CallElements, NULL, "s", "MapSnd.SndElements")) {
 		return 0;
 	}
 	int xbox = Pr_Xbox();
@@ -1309,9 +1310,9 @@ static byte CrazyData_OnSwitchPressed(const nativeVal_t *a, nativeVal_t *out) {
 	if (alarm) {
 		return Mode_Done(&t, alarm > 0 && Pr_Remote("Mission_GetCrazyData_RemoteMessage6", "DeepThroat", NULL, NULL, 0));
 	}
-	/* SLogic.SendSentinelToWatch by name: fc-r7b-gc records it (OBJLIB 7) */
+	/* SLogic.SendSentinelToWatch through its ref: fc-r7b-gc records it */
 	if (!LvN_SetS(e, "DefLoop", "StayON") || !LvN_SetS(e, "Action", "ON") || !LvN_SetS(e, "UseFunc", "") || !LvN_SetI(e, "ArrowCanUse", 0) ||
-		!LvN_Activate(e, 0) || !Mode_VGet(e, "Pos", pos) || !LV_CALL("SLogic", "SendSentinelToWatch", NULL, "v", pos) ||
+		!LvN_Activate(e, 0) || !Mode_VGet(e, "Pos", pos) || !PORT_CALL(SLogic, SendSentinelToWatch, NULL, "v", pos) ||
 		!Mode_GOpI(GC, "switchesRemaining", '-', 1) || !PORT_LOWN(Mission_GetCrazyData, MissionScorer, NULL, "i", 0L) ||
 		!Mode_G(GC, "switchesRemaining", left)) {
 		return Mode_Done(&t, 0);
@@ -1730,11 +1731,11 @@ static byte GoWithHuman_OnExitConversor(const nativeVal_t *a, nativeVal_t *out) 
 	return Pr_HumanOnExitConversor(GW, "Mission_GoWithHuman_RemoteMessage1");
 }
 
-/* SAI.GetStateChar(human.Name) op i: 1, 0, -1 (OBJLIB 7: by name, the cases record it) */
+/* SAI.GetStateChar(human.Name) op i: 1, 0, -1 (through its ref, the cases record it) */
 static int Pr_HumanState(const char *module, const char *op, long i) {
 	nativeVal_t hn, st;
 	Native_SetNone(&st);
-	int r = LvN_GAttr(module, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, op, i) : -1;
+	int r = LvN_GAttr(module, "human", "Name", &hn) && PORT_CALL(SAI, GetStateChar, &st, "v", &hn) ? Mode_CmpI(&st, op, i) : -1;
 	Native_Free(&hn);
 	Native_Free(&st);
 	return r;
@@ -1755,7 +1756,7 @@ static byte GoWithHuman_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	int near = LvN_GAttr(GW, "human", "Name", hn) && PORT_LOWN(Mission_GoWithHuman, CheckHumanDist, r, "") ? Native_True(r) : -1;
 	if (near == 0) {
-		int moving = LV_CALL("SAI", "GetStateChar", st, "v", hn) ? Mode_CmpI(st, "!=", 0) : -1;
+		int moving = PORT_CALL(SAI, GetStateChar, st, "v", hn) ? Mode_CmpI(st, "!=", 0) : -1;
 		return Mode_Done(&t, moving >= 0 && (!moving || (CHAR_STATE("iv", 0L, hn) && Pr_Remote("Mission_GoWithHuman_RemoteMessage1", "Human", NULL,
 			NULL, 0))));
 	}

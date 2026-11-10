@@ -19,12 +19,13 @@
  * in place. The ships, cameras, boxes and the plate are handle values (OBJLIB 7). The module's own functions the script
  * calls as its globals (Parking's and Accelerator's) and the other ports (ShipMaker, Sputnik, Menu, RacerScorer,
  * CharScorer, Chars, ShipEdit, Vehicles, SaveGame, Speech, RaceMaker) go through their refs (PORT_OWN, PORT_CALL: the
- * seam, OBJLIB 5; a mission or a case may replace one). Scrap.SetCam, SwitchMissionArrows, AddParkingZone,
- * CreateEntityList, EntityListGet and string.split of other values than texts stay by name (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
- * NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc,
- * SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor, SAct.GetAction
- * and SetAct go through their seams (OBJLIB 7: the cases record or swap them). The evals of the save texts read
- * literals with the native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB 6).
+ * seam, OBJLIB 5; a mission or a case may replace one), and so do Scrap.SetCam, SwitchMissionArrows, AddParkingZone,
+ * CreateEntityList and EntityListGet (stage 7); string.split of other values than texts stays by name (OBJLIB 7).
+ * Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch, NextDummySearch, GetAlarm,
+ * SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc, SInput.SetActionSet,
+ * SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor, SAct.GetAction and SetAct go
+ * through their seams (OBJLIB 7: the cases record or swap them). The evals of the save texts read literals with the
+ * native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB 6).
  */
 #include <string.h>
 
@@ -114,16 +115,16 @@ static byte Pk_Ground(const nativeVal_t *p, nativeVal_t *out) {
 	return ok;
 }
 
-/* Scrap.SetCam(0, name) (OBJLIB 7: by name, as the C port called it) */
+/* Scrap.SetCam(0, name) */
 static byte Pk_SetCam(const nativeVal_t *name) {
-	return Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, name);
+	return PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, name);
 }
 
 /* Scrap.SwitchMissionArrows(Init.Arrows[a], Init.Arrows[b]) */
 static byte Pk_Arrows(long a, long b) {
 	nativeVal_t arrows = { 0 }, x = { 0 }, y = { 0 };
 	byte ok = Mode_ModGet("Init", "Arrows", &arrows) && Mode_Item(&arrows, a, &x) && Mode_Item(&arrows, b, &y) &&
-		Native_CallMod("Scrap", "SwitchMissionArrows", NULL, "vv", &x, &y);
+		PORT_CALL(Scrap, SwitchMissionArrows, NULL, "vv", &x, &y);
 	Native_Free(&arrows);
 	Native_Free(&x);
 	Native_Free(&y);
@@ -132,7 +133,7 @@ static byte Pk_Arrows(long a, long b) {
 
 /* Scrap.AddParkingZone(flag, pos, name) */
 static byte Pk_Zone(long flag, const nativeVal_t *pos, const nativeVal_t *name) {
-	return Native_CallMod("Scrap", "AddParkingZone", NULL, "ivv", flag, pos, name);
+	return PORT_CALL(Scrap, AddParkingZone, NULL, "ivv", flag, pos, name);
 }
 
 /* CreateBox(name, pos[0], pos[1], pos[2]) through the global */
@@ -677,7 +678,7 @@ static byte Pk_ShowCharN(const nativeVal_t *charName, const nativeVal_t *shipNam
 		return Mode_Done(&t, own > 0 && PORT_CALL(Sputnik, Assign, NULL, "v", v));
 	}
 	if (!Pk_G("PR_Lst", x) || !Mode_VObjRead(v, "Name", a) || !LvN_Cat("Near", a, b) ||
-		!Native_CallMod("Scrap", "EntityListGet", near, "vv", x, b) || !Pk_Ent(near, nearest)) {
+		!PORT_CALL(Scrap, EntityListGet, near, "vv", x, b) || !Pk_Ent(near, nearest)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, !Native_True(nearest) || (Pk_G("PlayerShip", ship) && Mode_VObjRead(nearest, "Pos", x) &&
@@ -1405,7 +1406,7 @@ static byte Pk_InitN(void) {
 		return Mode_Done(&t, off == 0);
 	}
 	if (!PORT_OWN(Parking, CreateDtritusPlate, NULL, "") || !Pk_G("PR_Lst", x) ||
-		!Native_CallMod("Scrap", "CreateEntityList", NULL, "v", x) || !PORT_OWN(Parking, BrowseItemPos, NULL, "")) {
+		!PORT_CALL(Scrap, CreateEntityList, NULL, "v", x) || !PORT_OWN(Parking, BrowseItemPos, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("ComeFrom", comeFrom);

@@ -315,11 +315,11 @@ PyObject *Script_EvalOther(PyObject *globals, const char *s) {
 }
 
 PyObject *Script_Entity(PyObject *name) {
-	return name ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
+	return name ? PORT_ASK(Scrap, GetEntity, "O", name) : NULL;
 }
 
 PyObject *Script_Usr(void) {
-	return Script_Ask("Scrap", "UsrEntity", "(i)", 0);
+	return PORT_ASK(Scrap, UsrEntity, "i", 0L);
 }
 
 /*

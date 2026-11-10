@@ -1447,7 +1447,7 @@ byte LvN_CamTravel(const char *module, const char *text, byte again) {
 	byte ok = Mode_Import("Menu") && PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) && LvN_SetI(usr, "UsrControl", -1) && Mode_VSet(usr, "Vel", v) &&
 		Mode_G(module, "missionStartWaypoint", wp) && Mode_VGet(wp, "Pos", wpos) && Mode_VSet(usr, "MovePos", wpos) && Mode_VGet(wp, "Ang", wang) &&
 		Mode_VSet(usr, "MoveAng", wang) && LvN_SetF(usr, "MoveTime", 1.0) && LvN_SetI(usr, "MoveFade", 2) && LvN_SetI(usr, "AvoidCrash", 1) &&
-		Mode_GVarSetS("EscapeEvent", "") && Mode_GVarSetS("MainMissionEvent", "") && LV_CALL("Scrap", "GetCam", prev, "i", 0L);
+		Mode_GVarSetS("EscapeEvent", "") && Mode_GVarSetS("MainMissionEvent", "") && PORT_CALL(Scrap, GetCam, prev, "i", 0L);
 	if (ok) {
 		Mode_Ints3(add, 15, 0, 0);
 		Mode_Ints3(rot, 0, 0, -8000);
@@ -1469,7 +1469,7 @@ byte LvN_CamTravel(const char *module, const char *text, byte again) {
 		Native_SetEmpty(ang1, NV_TUPLE);
 		ok = Native_Arith('/', v, &four, Native_Append(ang1)) && LvN_Item(ang, 1, Native_Append(ang1)) && LvN_Item(ang, 2, Native_Append(ang1)) &&
 			Mode_VSet(cam, "Ang01", ang1) && LvN_SetI(cam, "FadeIn01", 0) && LvN_SetI(cam, "FadeOut01", 1) && LvN_SetI(cam, "Time", 0) &&
-			Mode_VGet(cam, "Name", name) && LV_CALL("Scrap", "SetCam", NULL, "iv", 0L, name) && Mode_VGet(cam, "Time00", tt);
+			Mode_VGet(cam, "Name", name) && PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, name) && Mode_VGet(cam, "Time00", tt);
 	}
 	if (ok) {
 		nativeVal_t d = { 0 };
@@ -1489,7 +1489,7 @@ byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer
 	if (Native_True(&a[1])) {
 		ok = Mode_EntityH(&a[0], usr) && (!Native_True(usr) || (LvN_SetF(usr, "MoveTime", 0.0) && LvN_SetI(usr, "UsrControl", 0))) &&
 			Mode_GVarSetS("EscapeEvent", "Menu.Init") && Mode_GVarSetS("MainMissionEvent", "MissionsFuncs.ShowMissionInfo") &&
-			LV_CALL("Scrap", "GetCam", cn, "i", 0L) && Mode_EntityH(cn, cam) && Mode_VDel(cam) && LV_CALL("Scrap", "SetCam", NULL, "iv", 0L, &a[1]) &&
+			PORT_CALL(Scrap, GetCam, cn, "i", 0L) && Mode_EntityH(cn, cam) && Mode_VDel(cam) && PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, &a[1]) &&
 			(!racerScorer || (Mode_Import("RacerScorer") && PORT_CALL(RacerScorer, Create, NULL, "i", 0L)));
 	}
 	return Mode_Done(&t, ok && LV_OWN(module, "LaunchMission", NULL, ""));
@@ -1541,7 +1541,7 @@ byte LvN_HumanFollow(const char *module, const nativeVal_t *usr) {
 	nativeVal_t hn, un;
 	Native_SetNone(&un);
 	byte ok = LvN_GAttr(module, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) &&
-		LV_CALL("SAI", "SetStateChar", NULL, "ivvd", 3L, &hn, &un, 1.0);
+		PORT_CALL(SAI, SetStateChar, NULL, "ivvd", 3L, &hn, &un, 1.0);
 	Native_Free(&hn);
 	Native_Free(&un);
 	return ok;

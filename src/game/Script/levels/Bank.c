@@ -230,7 +230,8 @@ static byte Mt_Chain(long i, nativeVal_t *out) {
 }
 
 /* Scrap.AddScheduledFunc(at, fn, args, "DeleteShent") with args a value of the script (the tuples of MapSnd): its
- * items; another value goes to the engine function by name as it is (its error, OBJLIB 7) */
+ * items; another value goes to the engine function by name as it is (its error; OBJLIB 7: AddScheduledFunc keeps the
+ * objects it is given, its entry works on Python objects, MODE_PYENTRY) */
 static byte Mt_Sched(const nativeVal_t *at, PyObject *fn, const nativeVal_t *args) {
 	nativeVal_t name = { 0 }, items[4] = { 0 };
 	LvN_Str(&name, "DeleteShent");

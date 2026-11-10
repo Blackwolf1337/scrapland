@@ -13,8 +13,8 @@
  * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
  * Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.SetAlarm, Scrap.UsrEntity, Scrap.Rand (fc-r7d-gd2), Scrap.CreateEntity
  * (fr6.py), Scrap.Set, SScorer.Set, SScorer.Fade, Scrap.Preload3DObject, Scrap.GetAlarm and SLogic.SetOnFloor;
- * SAI.SetStateVehicle takes Python arguments in its state handlers and is called by name (OBJLIB 7); the profiles of
- * the bishops are VehiclesNPC.cShipAI instances (OBJLIB 7).
+ * SAI.SetStateVehicle goes through its ref (stage 7); the profiles of the bishops are VehiclesNPC.cShipAI instances
+ * (OBJLIB 7).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, RaceMaker, VehiclesNPC, OutPolice,
  * Elevator, Items, Scorer through Mode_BarDefaults), the keyword call of Speech.ForceRemoteCom and the own functions of
@@ -519,7 +519,7 @@ static byte Into_CreateBishop(const nativeVal_t *ident, nativeVal_t *out) {
 	byte ok = Gd_MakeBishop(0, out) && LvN_Life(out, IG, "BISHOP_LIFE");
 	if (ok && !Native_True(ident)) {
 		ok = LvN_SetS(out, "EntityList", "Bishops") && LvN_Activate(out, 1) && Mode_VGet(out, "Name", &name) &&
-			LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &name, 0L);
+			PORT_CALL(SAI, SetStateVehicle, NULL, "ivi", 3L, &name, 0L);
 	} else if (ok) {
 		ok = LvN_SetS(out, "EntityList", "Enemies");
 	}
@@ -1135,7 +1135,7 @@ static byte Re_BishopsAttackPlayer(const char *module, byte second) {
 		ok = Native_SeqItem(&list, k, &s) && Mode_EntityH(&s, &b);
 		if (ok && Native_True(&b)) {
 			ok = Mode_VGet(&b, "Name", &bn) && Mode_VGet(&usr, "Name", &un) &&
-				LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &bn, &un);
+				PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, &bn, &un);
 		}
 		Native_Free(&s);
 		Native_Free(&b);

@@ -26,10 +26,10 @@
  * ChooseStapler and Blablibla included) go through their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_CALLBACK,
  * LV_MISSIONCHAR, LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there,
  * OBJLIB 5); string.find is the native twin, apply on MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext).
- * By name: the section PreStealFunctionary of the .def file (OBJLIB 6) and SVec.GetAngle (OBJLIB 7). The functions
- * given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the UseFunc texts) take the entry of a port's
- * own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to Speech, CharAct and CharConversor as callbacks
- * are values of their variables (OBJLIB 5).
+ * SVec.GetAngle goes through its ref (stage 7). By name: the section PreStealFunctionary of the .def file (OBJLIB 6).
+ * The functions given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the UseFunc texts) take the
+ * entry of a port's own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to Speech, CharAct and
+ * CharConversor as callbacks are values of their variables (OBJLIB 5).
  */
 #include "scrap/scrap.h"
 #include "scrap/scorer.h"
@@ -1447,9 +1447,8 @@ static byte Tm_Refill(const nativeVal_t *e, const nativeVal_t *p) {
 	Native_SetVec(mz, 0.0, 0.0, -1.0);
 	ep = Mode_V(&t);
 	pp = Mode_V(&t);
-	/* OBJLIB 7: SVec.GetAngle by name */
 	if (!Mode_VGet(p, "Ang", pa) || !Mode_Rotate(mz, pa, bdir) || !Mode_VGet(e, "Pos", ep) || !Mode_VGet(p, "Pos", pp) ||
-		!Mode_VecSub(ep, pp, tof) || !Native_CallMod("SVec", "GetAngle", ang, "vv", bdir, tof)) {
+		!Mode_VecSub(ep, pp, tof) || !PORT_CALL(SVec, GetAngle, ang, "vv", bdir, tof)) {
 		return Mode_Done(&t, 0);
 	}
 	int facing = Mode_CmpI(ang, "<=", 30);

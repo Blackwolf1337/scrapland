@@ -22,7 +22,7 @@
  * one; the shared code picks the site of its module, FL_OWN, PO_OWN, FP_OWN) and Ffa, Menu and VehiclesNPC through
  * PORT_CALL (scrap/scriptnative.h: the port seam). The functions given to the scheduler by name (Reborn,
  * CheckBotState, TryLinkFlagTo, RespawnFlag) take their entries (stage 4: Port_Scheduled). What stays by name:
- * TryGarage set into ShipEdit as a value (OBJLIB 5) and SAI.SetStateVehicle (OBJLIB 7).
+ * TryGarage set into ShipEdit as a value (OBJLIB 5). SAI.SetStateVehicle goes through its ref (stage 7).
  */
 #include <limits.h>
 #include <string.h>
@@ -352,8 +352,7 @@ static byte Bots_SetBotStateC(const nativeVal_t *name) {
 		if (!Mode_RandD(0.0, (double)l->n - 0.05, r) || !Native_ToInt(r, idx) || !Native_Subscript(l, idx, target)) {
 			return Mode_Done(&t, 0);
 		}
-		/* OBJLIB 7: the state handlers of SAI take Python arguments */
-		return Mode_Done(&t, Native_CallMod("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, target));
+		return Mode_Done(&t, PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, name, target));
 	}
 	return Mode_Done(&t, 1);
 }

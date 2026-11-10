@@ -534,7 +534,8 @@ PyMethodDef g_OutMapMethods[] = {
  * SetFWeap, SSound.LoadSound, Scrap.Preload3DObject) and Scrap.CreateEntity and Scrap.Set go through their seams
  * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7), their SetModel is called as a bound method (OBJLIB 7).
  * Fx.SetUpShipMotors goes through its ref (PORT_CALL), the module's own functions through its globals (PORT_OWN);
- * SAI.EnableAIVehicle and SAI.SetStateVehicle stay by name (OBJLIB 7).
+ * SAI.SetStateVehicle goes through its ref (stage 7), SAI.EnableAIVehicle stays by name (OBJLIB 7: its entry works on
+ * Python objects, MODE_PYENTRY).
  */
 
 /* a global of the module as its functions read it (out None before) */
@@ -650,13 +651,13 @@ static byte It_Ship(long i, const nativeVal_t *list, const nativeVal_t *typo) {
 	if (n >= 0) {
 		Native_SetFloat(r, Scrap_RandRange(0.0, (double)n - 0.1));
 	}
-	/* SAI by name (OBJLIB 7) */
+	/* SAI.EnableAIVehicle by name (OBJLIB 7: its entry works on Python objects, MODE_PYENTRY) */
 	byte ok = n >= 0 && Native_ToInt(r, k) && Native_Subscript(list, k, model) && Native_Call(fn, NULL, "v", model) &&
 		Mode_VSet(v, "Traf_Type", typo) && PORT_CALL(Fx, SetUpShipMotors, NULL, "v", v) &&
 		Mode_VGet(v, "Name", vname) &&
 		Native_CallMod("SAI", "EnableAIVehicle", NULL, "vidiiiiidiidd", vname, 1L, 0.1, 2L, 0L, 1L, 0L, 4L, 0.5, 3L, 4L,
 			0.785, 0.25) &&
-		Mode_VGet(v, "Name", vname2) && Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 4L, vname2) &&
+		Mode_VGet(v, "Name", vname2) && PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 4L, vname2) &&
 		Mode_VSet(v, "Traf_Active", Mode_I(&t, 1)) && PORT_OWN(InTraffic, SetSound, NULL, "v", v);
 	Py_XDECREF(fn);
 	return Mode_Done(&t, ok);
