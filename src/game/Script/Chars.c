@@ -291,15 +291,12 @@ static int Ch_AddResS(const char *cls, long disc) {
 	return r;
 }
 
-/* OBJLIB 6: exec(code) in the module with the locals {"cr": cr}, as the script's exec of a character's Init (the
- * reader of the lines the game execs) */
+/* exec(code) in the module with the variable cr, as the script's exec of a character's Init (the reader of the lines
+ * the game execs) */
 static byte Ch_Exec(const nativeVal_t *code, const nativeVal_t *cr) {
-	scriptFrame_t f = { 0 };
-	PyObject *c = Sf_Keep(&f, Native_ToPy(code)), *r = c ? Sf_Keep(&f, Native_ToPy(cr)) : NULL;
-	Sf_Exec(&f, c, CH, Sf_Build(&f, "{s:O}", "cr", r));
-	byte failed = f.failed;
-	Sf_Done(&f, NULL);
-	return !failed;
+	execScope_t x = { .module = CH };
+	Exec_Var(&x, "cr", cr);
+	return Exec_Text(&x, code);
 }
 
 /* LocalLoadRes(cr): exec("import "+cr[0]+";"+cr[0]+".Init()"), then the class gets Discardable cr[1] (SAct.SetCls

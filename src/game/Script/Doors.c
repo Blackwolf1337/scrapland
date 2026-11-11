@@ -378,7 +378,7 @@ static byte Elv_ElevatorBackCamera(void) {
 }
 
 /* exec("elv.ArrOpt" + `i` + "    = '" + idcad + ":'+fullcad") in ConnectElevators: elv.ArrOpt<i> = idcad + ":" +
- * fullcad made directly when idcad pasted between the quotes is itself again, else the exec line (OBJLIB 6) */
+ * fullcad made directly when idcad pasted between the quotes is itself again, else the exec line */
 static byte Elv_ExecOpt(const nativeVal_t *elv, const nativeVal_t *name, long i, const nativeVal_t *idcad,
 	const nativeVal_t *fullcad) {
 	modeVals_t t = { .n = 0 };
@@ -397,19 +397,12 @@ static byte Elv_ExecOpt(const nativeVal_t *elv, const nativeVal_t *name, long i,
 	if (!Mode_Cat(&t, code, 5, Mode_S(&t, "elv.ArrOpt"), rep, Mode_S(&t, "    = '"), idcad, Mode_S(&t, ":'+fullcad"))) {
 		return Mode_Done(&t, 0);
 	}
-	scriptFrame_t f = { 0 };
-	PyObject *e = Native_ToPy(elv), *nm = e ? Native_ToPy(name) : NULL, *ic = nm ? Native_ToPy(idcad) : NULL;
-	PyObject *fc = ic ? Native_ToPy(fullcad) : NULL, *c = fc ? Native_ToPy(code) : NULL;
-	PyObject *locals = c ? Py_BuildValue("{sOsOsOsO}", "elv", e, "ElevName", nm, "idcad", ic, "fullcad", fc) : NULL;
-	byte ok = locals && Sf_Exec(&f, c, ELV, locals);
-	Sf_Done(&f, NULL);
-	Py_XDECREF(locals);
-	Py_XDECREF(c);
-	Py_XDECREF(fc);
-	Py_XDECREF(ic);
-	Py_XDECREF(nm);
-	Py_XDECREF(e);
-	return Mode_Done(&t, ok);
+	execScope_t x = { .module = ELV };
+	Exec_Var(&x, "elv", elv);
+	Exec_Var(&x, "ElevName", name);
+	Exec_Var(&x, "idcad", idcad);
+	Exec_Var(&x, "fullcad", fullcad);
+	return Mode_Done(&t, Exec_Text(&x, code));
 }
 
 /* the language text of key, else the one of "Teleport" */

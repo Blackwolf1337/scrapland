@@ -304,7 +304,7 @@ static void Script_ReplayRefs(PyObject *dict, PyObject *key, PyObject *cur) {
  * A C function must return NULL only with a Python error set, else ceval raises "SystemError: error return without
  * exception set" where the script raised something else or nothing. SCRAP_NULL_CHECK=<file> (or 1 for the console)
  * puts every C function of the script tables into a wrapper that reports a NULL without an error and a result with an
- * error left pending, and the Sf_ frame reports the helper that failed without one. A report names the kind, the
+ * error left pending. A report names the kind, the
  * innermost C function that runs, the line of the Python code that called it and (glibc) the return addresses as
  * ScrapC+offset for addr2line -f -i -e ScrapC. Off, nothing changes: the functions are the plain PyCFunctions.
  * SCRAP_NULL_CHECK_ENGINE=1 as well wraps the functions of the engine modules (Scrap, SAI, SAct, ...) when Python

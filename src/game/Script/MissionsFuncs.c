@@ -24,11 +24,10 @@
  * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback (values
  * a mission puts into the module, OBJLIB 5) and the builders of the super deal types (a table of names) are called
  * through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler by name or
- * value, the revenge and the auto save among them, take their entries (stage 4: Port_Scheduled). The known code strings
- * of OnAbort and OnVictory run on native values with the calls through the refs; any other text runs in the namespaces
- * exec gives it (OBJLIB 6).
+ * value, the revenge and the auto save among them, take their entries (stage 4: Port_Scheduled). The code strings of
+ * OnAbort and OnVictory run through the reader of the lines the game execs (ScriptExec.c), on native values with the
+ * calls through the entries.
  */
-#include <ctype.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1199,243 +1198,22 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
 /*
  * The code the super deals and the crazy gambler missions leave in the save variables OnAbort and OnVictory
  * (superdeal_*.py, mission_igorcombat, mission_bankerscombat, mission_bankersctf, mission_mortalrace and OM.c write
- * them; a save of the original game holds the same texts). Each known text has its statements in order: "import Mod",
- * or "Name.Func" and its constant arguments after '|' ('text or an int). They run as exec runs them in
- * SuperDealOnDefeat and SuperDealOnVictory: the imports stored in the locals of the function, a name looked up in the
- * locals, the globals of MissionsFuncs and the builtins (mission_bankerscombat never imports SaveGame: NameError, as
- * in the original).
+ * them; a save of the original game holds the same texts): 22 texts of "import Mod" and "Name.Func(constants)"
+ * statements, e.g. "import SuperDeal_First;SuperDeal_First.Victory()" or "import SaveGame; SaveGame.QWayPoint();
+ * import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_BackFromMortalRace", "GamblinDen");Scrap.SetSaveVar(
+ * "Map", "Levels/GamblinDen");import SaveGame; SaveGame.QLoad("Levels/GamblinDen")". They run as exec runs them in
+ * SuperDealOnDefeat and SuperDealOnVictory, through the reader of the lines the game execs (Exec_Text): the imports
+ * stored in the variables of the function, a name looked up there, in the globals of MissionsFuncs and the builtins
+ * (mission_bankerscombat never imports SaveGame: NameError, as in the original), a port or engine function through
+ * its entry while the attribute holds it.
+ *
+ * exec(Scrap.GetSaveVar(var)) when it holds code; on victory the super deal type is cleared first. A text in another
+ * form (a mod, a save edited by hand) gets the SyntaxError of the reader. id and control are the values the scorer
+ * passed (variables of the function, with cad).
  */
-#define MF_CODE_STEPS 8
-
-typedef struct {
-	const char *text;
-	const char *steps[MF_CODE_STEPS];
-} mfCode_t;
-
-#define MF_DEAL(n) { "import SuperDeal_" n ";SuperDeal_" n ".Victory()", { "import SuperDeal_" n, "SuperDeal_" n ".Victory" } }
-#define MF_END_DEAL "MissionsFuncs.EndOfSuperDeal|'SuperDeal_Faliure_SystemMessage1"
-#define MF_SETMAP(level) "Scrap.SetSaveVar|'Map|'Levels/" level
-#define MF_QLOAD(level) "SaveGame.QLoad|'Levels/" level
-
-static const mfCode_t mf_codes[] = {
-	{ "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')",
-		{ "import MissionsFuncs", MF_END_DEAL } },
-	/* superdeal_third.py */
-	{ "import MissionsFuncs; import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')",
-		{ "import MissionsFuncs", "import MissionsFuncs", MF_END_DEAL } },
-	MF_DEAL("First"), MF_DEAL("Second"), MF_DEAL("Third"), MF_DEAL("Fourth"), MF_DEAL("Fifth"), MF_DEAL("Sixth"),
-	MF_DEAL("Seventh"), MF_DEAL("Eighth"), MF_DEAL("Ninth"), MF_DEAL("Tenth"), MF_DEAL("Eleventh"), MF_DEAL("Twelfth"),
-	/* ca/mission_igorcombat.py */
-	{ "import SaveGame; SaveGame.MMDesc(\"Mission_ArrangeIgorCombat_MissionText1\",1);import MissionsFuncs; "
-		"MissionsFuncs.SetNextMission(\"Mission_ArrangeIgorCombat\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", "
-		"\"Levels/GamblinDen\");import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
-		{ "import SaveGame", "SaveGame.MMDesc|'Mission_ArrangeIgorCombat_MissionText1|1", "import MissionsFuncs",
-			"MissionsFuncs.SetNextMission|'Mission_ArrangeIgorCombat|'GamblinDen", MF_SETMAP("GamblinDen"),
-			"import SaveGame", MF_QLOAD("GamblinDen") } },
-	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
-		"\"Mission_ArrangeBankersCombat\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
-		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
-		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
-			"MissionsFuncs.SetNextMission|'Mission_ArrangeBankersCombat|'GamblinDen", MF_SETMAP("GamblinDen"),
-			"import SaveGame", MF_QLOAD("GamblinDen") } },
-	/* qf/mission_bankerscombat.py */
-	{ "import MissionsFuncs; MissionsFuncs.SetNextMission(\"Mission_ArrangeBankersCombat\", \"GamblinDen\");"
-		"Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");SaveGame.QLoad(\"Levels/GamblinDen\")",
-		{ "import MissionsFuncs", "MissionsFuncs.SetNextMission|'Mission_ArrangeBankersCombat|'GamblinDen",
-			MF_SETMAP("GamblinDen"), MF_QLOAD("GamblinDen") } },
-	{ "Scrap.SetSaveVar(\"GameAct\", \"2ndMurder\");SaveGame.QWayPoint();import MissionsFuncs; "
-		"MissionsFuncs.SetNextMission(\"Mission_PressMeeting\", \"Press\");Scrap.SetSaveVar(\"Map\", "
-		"\"Levels/Press\");SaveGame.QLoad(\"Levels/Press\")",
-		{ "Scrap.SetSaveVar|'GameAct|'2ndMurder", "SaveGame.QWayPoint", "import MissionsFuncs",
-			"MissionsFuncs.SetNextMission|'Mission_PressMeeting|'Press", MF_SETMAP("Press"), MF_QLOAD("Press") } },
-	/* om/mission_bankersctf.py */
-	{ "import MissionsFuncs; MissionsFuncs.SetNextMission(\"Mission_ArrangeBankersCTF\", \"GamblinDen\");"
-		"Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
-		{ "import MissionsFuncs", "MissionsFuncs.SetNextMission|'Mission_ArrangeBankersCTF|'GamblinDen",
-			MF_SETMAP("GamblinDen"), "import SaveGame", MF_QLOAD("GamblinDen") } },
-	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
-		"\"Mission_TalkToTraitoriusAfterCTF\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
-		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
-		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
-			"MissionsFuncs.SetNextMission|'Mission_TalkToTraitoriusAfterCTF|'GamblinDen", MF_SETMAP("GamblinDen"),
-			"import SaveGame", MF_QLOAD("GamblinDen") } },
-	/* fz/mission_mortalrace.py */
-	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
-		"\"Mission_BackFromMortalRace\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
-		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\");Scrap.SetSaveVar('MapPress_BureauExists','1')",
-		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
-			"MissionsFuncs.SetNextMission|'Mission_BackFromMortalRace|'GamblinDen", MF_SETMAP("GamblinDen"),
-			"import SaveGame", MF_QLOAD("GamblinDen"), "Scrap.SetSaveVar|'MapPress_BureauExists|'1" } },
-	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
-		"\"Mission_ArrangeMortalRace\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
-		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\");",
-		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
-			"MissionsFuncs.SetNextMission|'Mission_ArrangeMortalRace|'GamblinDen", MF_SETMAP("GamblinDen"),
-			"import SaveGame", MF_QLOAD("GamblinDen") } },
-};
-
-/* the text with the blanks between tokens taken out (one kept between two name characters), texts in quotes as they
- * are; 0 when it does not fit or starts with a blank (exec's SyntaxError stays with exec) */
-static byte Mf_CodeKey(const char *s, char *out, int size) {
-	int n = 0;
-	char quote = 0;
-	if (*s == ' ' || *s == '\t') {
-		return 0;
-	}
-	for (; *s; s++) {
-		char c = *s;
-		if (!quote && (c == ' ' || c == '\t')) {
-			while (s[1] == ' ' || s[1] == '\t') {
-				s++;
-			}
-			byte name = n > 0 && (isalnum((unsigned char)out[n - 1]) || out[n - 1] == '_') &&
-				(isalnum((unsigned char)s[1]) || s[1] == '_');
-			if (!name) {
-				continue;
-			}
-		} else if (c == '\\' || c == '\n' || c == '\r') {
-			return 0;
-		} else if (quote ? c == quote : c == '\'' || c == '"') {
-			quote = quote ? 0 : c;
-		}
-		if (n + 1 >= size) {
-			return 0;
-		}
-		out[n++] = c;
-	}
-	out[n] = 0;
-	return !quote;
-}
-
-static const mfCode_t *Mf_FindCode(const nativeVal_t *cad) {
-	char key[0x200], known[0x200];
-	if (cad->type != NV_STR || (int)strlen(Native_Text(cad)) != cad->n || !Mf_CodeKey(Native_Text(cad), key, sizeof(key))) {
-		return NULL;
-	}
-	for (int i = 0; i < (int)(sizeof(mf_codes) / sizeof(mf_codes[0])); i++) {
-		if (Mf_CodeKey(mf_codes[i].text, known, sizeof(known)) && !strcmp(key, known)) {
-			return &mf_codes[i];
-		}
-	}
-	return NULL;
-}
-
-#define MF_CODES ((int)(sizeof(mf_codes) / sizeof(mf_codes[0])))
-
-/* the sites of the steps that call a port function (the ref of each found at its first run; OBJLIB 7: the counters of
- * the test channel) */
-static portSite_t mf_codeSites[MF_CODES][MF_CODE_STEPS];
-
-/* a constant of the code: 'text or an int */
-static void Mf_CodeConst(const char *s, int len, nativeVal_t *out) {
-	if (*s != '\'') {
-		char buf[0x20];
-		Str_Copy(buf, s, len + 1 < (int)sizeof(buf) ? len + 1 : (int)sizeof(buf));
-		Native_SetInt(out, strtol(buf, NULL, 10));
-		return;
-	}
-	Native_SetText(out, s + 1, len - 1);
-}
-
-/*
- * module.func(a...) of a statement, module the name the text imported (or the module a global of MissionsFuncs
- * holds): a port function through its ref (the seam: the entry while the attribute is the port's own function, else
- * what is there, by name); Scrap.SetSaveVar through its seam; any other function by name (SuperDeal_X.Victory is a
- * .def section: OBJLIB 6, until the sections have entries)
- */
-static byte Mf_CodeCall(portSite_t *site, const char *module, const char *func, const char *fmt, const nativeVal_t *a,
-	int n) {
-	const portRef_t *ref = Port_Find(module, func);
-	if (ref) {
-		if (!site->ref) {
-			site->ref = ref;
-			site->file = __FILE__;
-			site->line = __LINE__;
-		}
-		return Port_Invoke(site, NULL, fmt, &a[0], &a[1], &a[2], &a[3]);
-	}
-	if (!strcmp(module, "Scrap") && !strcmp(func, "SetSaveVar") && n == 2 && a[0].type == NV_STR && a[1].type == NV_STR) {
-		return Mf_SetSaveSeam(Native_Text(&a[0]), Native_Text(&a[1]));
-	}
-	return Native_CallMod(module, func, NULL, fmt, &a[0], &a[1], &a[2], &a[3]);
-}
-
-/*
- * The statements of a known text as SuperDealOnDefeat and SuperDealOnVictory exec them, on native values: "import M"
- * imports M and binds the name in the locals of exec (here the list of names imported); a name the text did not import
- * is LOAD_NAME in the globals of MissionsFuncs and the builtins (OBJLIB 5: the module's variables by name; Scrap is
- * one, SaveGame is not: the NameError of mission_bankerscombat). A statement whose name holds no module calls the
- * attribute of what is there as a value.
- */
-static byte Mf_RunCode(const mfCode_t *code, PyObject *globals) {
-	const char *imported[MF_CODE_STEPS];
-	int ni = 0;
-	portSite_t *sites = mf_codeSites[code - mf_codes];
-	for (int i = 0; i < MF_CODE_STEPS && code->steps[i]; i++) {
-		const char *step = code->steps[i];
-		if (!strncmp(step, "import ", 7)) {
-			if (!Mode_Import(step + 7)) {
-				return 0;
-			}
-			imported[ni++] = step + 7;
-			continue;
-		}
-		char name[0x40], module[0x40];
-		const char *bar = strchr(step, '|');
-		int len = bar ? (int)(bar - step) : (int)strlen(step);
-		Str_Copy(name, step, len + 1 < (int)sizeof(name) ? len + 1 : (int)sizeof(name));
-		char *func = strchr(name, '.');
-		CHECK(func);
-		*func++ = 0;
-		PyObject *o = NULL, *fn = NULL;
-		byte local = 0;
-		for (int k = 0; k < ni && !local; k++) {
-			local = !strcmp(imported[k], name);
-		}
-		if (local) {
-			Str_Copy(module, name, sizeof(module));
-		} else if (Script_NameChain(NULL, globals, name, &o) <= 0) {
-			return 0;
-		} else if (PyModule_Check(o)) {
-			Str_Copy(module, PyModule_GetName(o), sizeof(module));
-			Py_DECREF(o);
-			o = NULL;
-		}
-		/* LOAD_NAME, LOAD_ATTR before the constants */
-		if (o) {
-			fn = Script_GetAttr(o, func);
-			Py_DECREF(o);
-			if (!fn) {
-				return 0;
-			}
-		}
-		nativeVal_t a[4];
-		int n = 0;
-		while (bar && n < 4) {
-			const char *next = strchr(bar + 1, '|');
-			Mf_CodeConst(bar + 1, next ? (int)(next - bar - 1) : (int)strlen(bar + 1), &a[n++]);
-			bar = next;
-		}
-		/* the result is dropped (POP_TOP) */
-		const char *fmt = &"vvvv"[4 - n];
-		byte ok = fn ? PORT_VALUE(fn, NULL, fmt, &a[0], &a[1], &a[2], &a[3]) :
-			Mf_CodeCall(&sites[i], module, func, fmt, a, n);
-		Py_XDECREF(fn);
-		for (int k = 0; k < n; k++) {
-			Native_Free(&a[k]);
-		}
-		if (!ok) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
-/* exec(Scrap.GetSaveVar(var)) when it holds code; on victory the super deal type is cleared first. A known text runs
- * in C; any other text (a mod, a save edited by hand) goes to the reader of Sf_Exec. id and control are the objects
- * the scorer passed (the locals of exec hold them) */
 static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, byte victory) {
-	nativeVal_t cad = { 0 };
+	/* OBJLIB 7: the objects themselves (a list the text changes is the caller's), borrowed */
+	nativeVal_t cad = { 0 }, vid = { .type = NV_OBJ, .obj = id }, vcontrol = { .type = NV_OBJ, .obj = control };
 	Mode_SaveVar(var, &cad);
 	if (!Native_True(&cad) || Mf_Is(&cad, "")) {
 		Native_Free(&cad);
@@ -1445,26 +1223,13 @@ static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, by
 		Native_Free(&cad);
 		return 0;
 	}
-	scriptFrame_t f = { 0 };
-	PyObject *m = Sf_Keep(&f, Script_Module(MF));
-	PyObject *g = m ? PyModule_GetDict(m) : NULL;
-	const mfCode_t *code = g && Script_HasBuiltins(g) ? Mf_FindCode(&cad) : NULL;
-	if (code) {
-		Native_Free(&cad);
-		Sf_Check(&f, Mf_RunCode(code, g));
-	} else if (m) {
-		/* an unknown text goes to the reader of Sf_Exec in the locals of exec (OBJLIB 6), which raises
-		 * Script_NotRead's error for it */
-		PyObject *text = Sf_Keep(&f, Native_ToPy(&cad));
-		PyObject *locals = text ? Sf_Build(&f, "{sOsOsO}", "id", id, "control", control, "cad", text) : NULL;
-		Native_Free(&cad);
-		Sf_Exec(&f, text, MF, locals);
-	} else {
-		Native_Free(&cad);
-	}
-	PyObject *r = Sf_None(&f);
-	Py_XDECREF(r);
-	return r != NULL;
+	execScope_t x = { .module = MF };
+	Exec_Var(&x, "id", &vid);
+	Exec_Var(&x, "control", &vcontrol);
+	Exec_Var(&x, "cad", &cad);
+	byte ok = Exec_Text(&x, &cad);
+	Native_Free(&cad);
+	return ok;
 }
 
 /* SuperDealOnDefeat(id, control), SuperDealOnVictory(id, control): the code the super deal left in OnAbort or

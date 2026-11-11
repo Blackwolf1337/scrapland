@@ -591,6 +591,50 @@ extern const portRef_t port_value;
 		NULL, 1 };
 #define PORTS(file) PORTS_##file
 
+/* ---- the lines the game execs (src/game/Script/ScriptExec.c) ---- */
+
+/*
+ * exec(text) in a function of a module, for the texts the game makes or keeps in data (the scene generic lines, the
+ * sound lines, the save code strings, the lines of the hangar, the characters, the elevators and the news panels):
+ * statements split by ';', "import NAME", call chains NAME(.NAME | (args))* with literal arguments, an attribute set
+ * to a literal or to two literals joined by * or /. Any other text raises Script_NotRead's SyntaxError and nothing of
+ * it runs. The scope holds the module and the variables of the function the text can name (the locals of exec): the
+ * native values the caller gives (borrowed, they outlive the scope) and the names an import bound.
+ */
+#define EXEC_NAME 0x40
+#define EXEC_VARS 32
+
+typedef struct {
+	char name[EXEC_NAME];
+	const nativeVal_t *v;		/* NULL: the module of that name (an import) */
+} execVar_t;
+
+typedef struct {
+	const char *module;		/* the module whose function execs: its globals */
+	execVar_t vars[EXEC_VARS];
+	int n;
+} execScope_t;
+
+/* the variable name of the function is v (v NULL: the module name, as an import of the function left it) */
+void Exec_Var(execScope_t *x, const char *name, const nativeVal_t *v);
+/* the function has a variable name */
+byte Exec_Bound(execScope_t *x, const char *name);
+/* exec(code): 1, or 0 with the error set (the TypeError of a code that is no text, the ValueError of a 0 byte, the
+ * SyntaxError of a text the reader does not take, the error of the statement that failed) */
+byte Exec_Text(execScope_t *x, const nativeVal_t *code);
+/* `import name` of a plain module name, bound in the variables */
+byte Exec_Import(execScope_t *x, const char *name);
+/* exec("import " + name): a module name directly, any other value through Exec_Text (the TypeError of the +, the
+ * SyntaxError) */
+byte Exec_ImportText(execScope_t *x, const nativeVal_t *name);
+/* exec("import " + target + ";" + target + "." + func + "()"): directly when func is a name, else through Exec_Text */
+byte Exec_ImportCall(execScope_t *x, const char *target, const nativeVal_t *func);
+/* a + b + ... (n values, const nativeVal_t *) as such a function builds the text of its line: the + of the script,
+ * also for an object (OBJLIB 7: an instance with __add__ or __radd__). 1 with *out (Native_Free it either way) */
+byte Exec_Cat(nativeVal_t *out, int n, ...);
+/* the statement name.func(a[0], ..., a[n - 1]) with name a variable of the function */
+byte Exec_Call(execScope_t *x, const char *name, const char *func, const nativeVal_t *a, int n);
+
 /* ---- the test channel ---- */
 
 /* the answer of the channel's command "native <arg>" (src/game/Global/TestNative.c) added to out */

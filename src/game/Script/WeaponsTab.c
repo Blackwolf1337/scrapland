@@ -233,7 +233,7 @@ static byte WT_Last(const nativeVal_t *control, nativeVal_t *out) {
 /*
  * exec(code) in a function of the module that imported HangarTab: the lines "HangarTab.prevShip.<name> = <literal>"
  * and "HangarTab.prevShip.<name> = 1 - HangarTab.prevShip.<name>" made directly; a text in another form (made of
- * table values a test changed) goes to the exec line reader with its errors (OBJLIB 6)
+ * table values a test changed) goes to the exec line reader with its errors
  */
 static byte WT_Exec(const nativeVal_t *code) {
 	static const char ship[] = "HangarTab.prevShip.";
@@ -264,11 +264,9 @@ static byte WT_Exec(const nativeVal_t *code) {
 			return ok;
 		}
 	}
-	scriptFrame_t f = { .n = 0 };
-	PyObject *hangar = Sf_Keep(&f, Script_Module("HangarTab"));
-	PyObject *text = Sf_Keep(&f, hangar ? PyString_FromStringAndSize(s, code->n) : NULL);
-	Sf_Exec(&f, text, MOD, Sf_Build(&f, "{s:O}", "HangarTab", hangar));
-	return Sf_Done(&f, NULL), !f.failed;
+	execScope_t x = { .module = MOD };
+	Exec_Var(&x, "HangarTab", NULL);
+	return Mode_Import("HangarTab") && Exec_Text(&x, code);
 }
 
 /* the exec text prefix + a + middle + b of the script (a and b texts or other values, as + takes them) */
