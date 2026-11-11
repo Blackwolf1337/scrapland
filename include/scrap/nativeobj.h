@@ -67,6 +67,9 @@ byte NObj_Is(const nativeVal_t *a, const nativeVal_t *b);
 /* the objects made and freed since the start, the entries of the identity table now (the objects that have a Python
  * object: the views) and the objects of native data that crossed to Python since the start */
 void NObj_Counts(unsigned long *made, unsigned long *freed, unsigned long *views, unsigned long *crossed);
+/* the objects of the identity table now (at most max), one line "view <type> holders <n> <repr>" each added to b: who
+ * still holds a view (the test channel) */
+void NObj_ListViews(nativeBuf_t *b, int max);
 
 /* ---- making objects (each *out an NV_REF held once: Native_Free it) ---- */
 

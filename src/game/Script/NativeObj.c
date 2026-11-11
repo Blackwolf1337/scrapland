@@ -219,6 +219,23 @@ void NObj_Counts(unsigned long *made, unsigned long *freed, unsigned long *views
 	*crossed = obj_crossed;
 }
 
+void NObj_ListViews(nativeBuf_t *b, int max) {
+	for (unsigned i = 0; i < obj_tableSize && max > 0; i++) {
+		for (const nativeObj_t *o = obj_table[i]; o && max > 0; o = o->next, max--) {
+			char head[0x80];
+			PyObject *r = PyObject_Repr(o->py);
+			snprintf(head, sizeof(head), "view %s holders %d ", o->py->ob_type->tp_name, o->refs);
+			Native_BufAdd(b, head, -1);
+			if (r) {
+				Native_BufAdd(b, PyString_AsString(r), PyString_Size(r) > 200 ? 200 : PyString_Size(r));
+				Py_DECREF(r);
+			}
+			PyErr_Clear();
+			Native_BufAdd(b, "\n", 1);
+		}
+	}
+}
+
 byte NObj_RefMode(void) {
 	static int mode = -1;
 	if (mode < 0) {

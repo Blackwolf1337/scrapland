@@ -26,7 +26,8 @@
  *                            registry ones also on the line of their site in Script.c)
  *                            and last the native objects (scrap/nativeobj.h, batch 9a, NObj_Counts): "objects made
  *                            <n> freed <n> live <n> views <n> crossed <n>" (made and freed since the start, never
- *                            reset; views: the entries of the identity table now)
+ *                            reset; views: the entries of the identity table now), then up to 16 of those views as
+ *                            "view <type> holders <n> <repr>"
  *   native ports reset       the counts back to 0
  *   native objtest           the self-test of the native objects: the checks of ot_script on objects made natively,
  *                            one line "<name>: <repr of the tuple of results>" per check (an error as (type, value),
@@ -131,6 +132,7 @@ static void TN_Callbacks(nativeBuf_t *out, byte reset) {
 		snprintf(line, sizeof(line), "objects made %lu freed %lu live %lu views %lu crossed %lu\n", made, freed,
 			made - freed, views, crossed);
 		Native_BufAdd(out, line, -1);
+		NObj_ListViews(out, 16);
 	}
 }
 
