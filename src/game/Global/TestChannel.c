@@ -370,7 +370,8 @@ static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr) {
 		TC_Add(b, tmp, -1);
 		return 1;
 	case NV_OBJ:
-		return TC_PrintPy(b, v->obj, raw);
+		/* a Python value of a type without a native kind, unlike a view (NV_REF below), which prints natively */
+		return TC_PrintPy(b, Native_PyOf(v), raw);
 	case NV_TUPLE:
 	case NV_VEC:
 		return TC_PrintSeq(b, v, "(", ")", pr);
@@ -1209,7 +1210,7 @@ static void TC_In(tcBuf *b, const char *arg) {
 		arg += 3;
 	}
 	/* OBJLIB 9b: the module's dict as the globals of the statements */
-	TcX_Run(b, arg, PyModule_GetDict(NObj_Py(&m)), quiet);
+	TcX_Run(b, arg, PyModule_GetDict(Native_PyOf(&m)), quiet);
 	Native_Free(&m);
 }
 
