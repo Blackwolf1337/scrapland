@@ -20,7 +20,7 @@
  * Direct calls (stage 3): the other ports (Elevator, OutMap, ShipEdit, HangarTab, Menu, Chars, SaveGame, MissionsFuncs,
  * Scene, CreditsText, SputnikSound) and the C functions of the three modules go through their refs (PORT_CALL,
  * PORT_LCALL, PORT_LOWN). The scene tables and EndOfMission's apply call a port's function through its entry
- * (Mode_Calls, MODE_CBAPPLYSEQ), and so does the scheduler (Mode_AtG, Mode_Schedule of the tutorial steps;
+ * (Mode_Calls, MODE_CBAPPLYSEQV), and so does the scheduler (Mode_AtG, Mode_ScheduleV of the tutorial steps;
  * Port_Scheduled). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6) and the functions set
  * as callbacks (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5).
  */
@@ -850,13 +850,13 @@ static byte Rusty_EndOfMission(void) {
 		return 0;
 	}
 	/* apply(MapShipEdit.UseElevator, Params): the function of the module (its entry while it is the port's) */
-	PyObject *fn = Script_Attr("MapShipEdit", "UseElevator");
-	if (!fn) {
+	nativeVal_t fn;
+	if (!Mode_ModGet("MapShipEdit", "UseElevator", &fn)) {
 		return 0;
 	}
-	byte ok = Mode_G(RF, "Params", &params) && MODE_CBAPPLYSEQ(fn, &params, NULL);
+	byte ok = Mode_G(RF, "Params", &params) && MODE_CBAPPLYSEQV(&fn, &params, NULL);
 	Native_Free(&params);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -975,9 +975,9 @@ static byte Jy_SchedItem(const nativeVal_t *time, double k, const char *module, 
 	Native_Copy(&args[1], item);
 	byte ok = Jy_At(time, k, &at);
 	if (ok) {
-		PyObject *fn = Script_Attr(module, func);
-		ok = fn && Mode_Schedule(&at, fn, args, 2, NULL);
-		Py_XDECREF(fn);
+		nativeVal_t fn;
+		ok = Mode_ModGet(module, func, &fn) && Mode_ScheduleV(&at, &fn, args, 2, NULL);
+		Native_Free(&fn);
 	}
 	Native_Free(&at);
 	Native_Free(&args[0]);

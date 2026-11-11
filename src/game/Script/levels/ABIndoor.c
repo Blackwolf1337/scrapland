@@ -182,15 +182,15 @@ static byte Abi_Goodbye(void) {
 	Native_Free(&e);
 	if (ok && LvN_SaveIs("ABIndoor.Scene", "0")) {
 		/* Scrap.AddScheduledFunc(0, SaveGame.SaveGame, (0,)) */
-		PyObject *fn;
+		nativeVal_t fn;
 		ok = Mode_Fade(0, lv_black, lv_clear, 1.0);
 		if (ok) {
 			SaveVar_Set("ABIndoor.Scene", "1");
-			fn = Script_Attr("SaveGame", "SaveGame");
+			ok = Mode_ModGet("SaveGame", "SaveGame", &fn);
 			Native_SetInt(&t, 0);
 			Native_SetInt(&zero, 0);
-			ok = fn && Mode_Schedule(&t, fn, &zero, 1, NULL);
-			Py_XDECREF(fn);
+			ok = ok && Mode_ScheduleV(&t, &fn, &zero, 1, NULL);
+			Native_Free(&fn);
 		}
 	}
 	if (!ok) {

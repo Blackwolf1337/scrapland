@@ -4693,11 +4693,15 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 
 /* levels/Fake.c */
 PORT_DECLL(fake, Map, Init) /* 1 */
+PORT_DECLL(fake, Map, PlayFake2) /* ? */
+PORT_DECLL(fake, Map, NextLevel) /* ? */
 PORT_DECLL(fake, Map, CreateFakeBertoShip) /* 0 */
 PORT_DECLL(fake, Map, ActivateBertoEngines) /* 3 */
 PORT_DECLL(fake, Map, LoadFake2Scene) /* 0 */
 #define PORTS_levels_Fake \
 	PORT_DEFL(fake, Map, Init, Fk_InitPy) \
+	PORT_DEFLK(fake, Map, PlayFake2, Fk_PlayFake2Py) \
+	PORT_DEFLK(fake, Map, NextLevel, Fk_NextLevelPy) \
 	PORT_DEFL(fake, Map, CreateFakeBertoShip, Fk_CreateFakeBertoShipPy) \
 	PORT_DEFL(fake, Map, ActivateBertoEngines, Fk_ActivateBertoEnginesPy) \
 	PORT_DEFL(fake, Map, LoadFake2Scene, Fk_LoadFake2ScenePy)
@@ -6370,6 +6374,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 3050
+#define PORT_COUNT 3052
 
 #endif

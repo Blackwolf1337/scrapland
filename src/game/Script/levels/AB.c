@@ -133,10 +133,8 @@ static byte Ff_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("ShipMaker")) {
 		return 0;
 	}
-	/* OBJLIB 5: the function object of ShipMaker */
-	PyObject *prev = Script_Attr("ShipMaker", "CreateStdShips");
-	/* Script_SetGlobal takes the reference over */
-	return prev && Script_SetGlobal(FF, "PrevCreateStdShips", prev) &&
+	/* OBJLIB 5: the function object of ShipMaker, kept as the object it is */
+	return Mode_PutFromMod(FF, "PrevCreateStdShips", "ShipMaker", "CreateStdShips") &&
 		LvN_ModSetGlobal("ShipMaker", "CreateStdShips", FF, "FakeShips");
 }
 
@@ -376,12 +374,13 @@ static byte Ff_OnPlayerDeath(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_EntityH(looser, e) || !Mode_G(FF, "respawnTime", rt) || !Mode_Arith('+', now, rt, at)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *fn = Mode_GlobalPy(FF, "RespawnPlayer");
+	/* the global (a mission may replace it; OBJLIB 7: a function held as NV_OBJ), read before the arguments */
+	nativeVal_t *fn = Mode_V(&t);
+	byte ok = Mode_G(FF, "RespawnPlayer", fn);
 	Native_SetEmpty(args, NV_TUPLE);
 	Native_Copy(Native_Append(args), looser);
-	byte ok = fn && Mode_VGet(e, "Pos", Native_Append(args)) && Mode_VGet(e, "Ang", Native_Append(args)) &&
-		Mode_Schedule(at, fn, args->items, args->n, NULL);
-	Py_XDECREF(fn);
+	ok = ok && Mode_VGet(e, "Pos", Native_Append(args)) && Mode_VGet(e, "Ang", Native_Append(args)) &&
+		Mode_ScheduleV(at, fn, args->items, args->n, NULL);
 	ok = ok && LvN_Entity("Boss", boss) && Mode_VGet(boss, "MaxLife", life) && Mode_VSet(boss, "Life", life);
 	return Mode_Done(&t, ok);
 }
@@ -768,12 +767,13 @@ static byte AbMap_CreateAsteroid(const nativeVal_t *a, nativeVal_t *out) {
 		nativeVal_t half;
 		Native_SetFloat(&half, 0.5);
 		ok = Mode_Rand(&half, Mode_I(&t, 2), r) && Mode_Arith('+', now, r, at);
-		PyObject *fn = ok ? Mode_GlobalPy(MAP, "detraffic") : NULL;
+		nativeVal_t fn = { 0 };
+		ok = ok && Mode_G(MAP, "detraffic", &fn);
 		/* p.Name read again where the script reads it */
 		Native_Free(name);
-		ok = fn && Mode_VGet(out, "Name", name);
-		ok = ok && Mode_Schedule(at, fn, name, 1, NULL);
-		Py_XDECREF(fn);
+		ok = ok && Mode_VGet(out, "Name", name);
+		ok = ok && Mode_ScheduleV(at, &fn, name, 1, NULL);
+		Native_Free(&fn);
 	}
 	if (!ok) {
 		Native_Free(out);

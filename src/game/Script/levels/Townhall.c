@@ -57,7 +57,7 @@ static void Th_TalkAnim(nativeVal_t *out) {
 /* cmp(a, b) of the script: -1, 0 or 1, 2 with the error (only values of other types compared by Python can fail) */
 static int Th_Cmp(const nativeVal_t *a, const nativeVal_t *b) {
 	int c = Native_Compare(a, b);
-	return PyErr_Occurred() ? 2 : c;
+	return Mode_Failed() ? 2 : c;
 }
 
 /* the character stays where it is (Lv_Stay with state 6 and no target) */
@@ -219,7 +219,8 @@ static const lvSndElement_t townhall_snd[] = {
 	{ .name = NULL },
 };
 
-/* SndElements(Name, x, y, z, angx, angy) */
+/* SndElements(Name, x, y, z, angx, angy). OBJLIB 7: the adapter of the shared Lv_SndElements of LevelCommon.c, which
+ * takes the argument tuple (the Police level uses it too) */
 static PyObject *TownhallMapSnd_SndElements(PyObject *self, PyObject *args) {
 	(void)self;
 	return Lv_SndElements(args, townhall_snd);
@@ -297,15 +298,15 @@ static byte ThAm_ForbiddenMsg(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Mode_LabelText(&lang, now + 0.5);
 	Native_Free(&lang);
 	/* the function of the module (a mission may replace it): the scheduler takes its entry */
-	PyObject *fn = ok ? Mode_GlobalPy(AM, "ForbiddenMsg") : NULL;
-	if (!fn) {
+	nativeVal_t fn;
+	if (!ok || !Mode_G(AM, "ForbiddenMsg", &fn)) {
 		return 0;
 	}
 	Native_SetFloat(&t, now + 1.0);
 	LvN_Str(&name, "ForbiddenMsg");
-	ok = Mode_Schedule(&t, fn, NULL, 0, &name);
+	ok = Mode_ScheduleV(&t, &fn, NULL, 0, &name);
 	Native_Free(&name);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -395,9 +396,10 @@ static byte ThAm_ChooseStaplerN(const nativeVal_t *not) {
 		Native_SetNone(&ky);
 		Native_SetNone(&act);
 		int c = Native_SeqItem(keys, i, &ky) ? 1 : -1;
-		PyObject *ch = c > 0 ? Mode_CharRes(&ky) : NULL;
-		c = ch && Mode_HGet(ch, "ActCtrl", &act) ? LvN_EqS(&act, "Desktop") : -1;
-		Py_XDECREF(ch);
+		nativeVal_t ch = { 0 };
+		c = c > 0 && Mode_ModAt("CharsNPC", "CharRes", &ky, &ch) && Mode_VGet(&ch, "ActCtrl", &act) ?
+			LvN_EqS(&act, "Desktop") : -1;
+		Native_Free(&ch);
 		Native_Free(&act);
 		if (c > 0) {
 			c = Th_Cmp(&ky, not);
@@ -1265,12 +1267,13 @@ static byte ThTm_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	/* CharsNPC.CharRes["Gear_Mayor"].ExtraInfo = "STAY" (OBJLIB 5) */
 	LvN_Str(&key, "Gear_Mayor");
-	PyObject *gear = Mode_CharRes(&key);
+	nativeVal_t gear;
+	byte ok = Mode_ModAt("CharsNPC", "CharRes", &key, &gear);
 	Native_Free(&key);
 	LvN_Str(&stay, "STAY");
-	byte ok = gear && Mode_HSet(gear, "ExtraInfo", &stay);
+	ok = ok && Mode_VSet(&gear, "ExtraInfo", &stay);
 	Native_Free(&stay);
-	Py_XDECREF(gear);
+	Native_Free(&gear);
 	return ok;
 }
 
@@ -1500,10 +1503,8 @@ static byte Tm_Refill(const nativeVal_t *e, const nativeVal_t *p) {
 		return Mode_Done(&t, 0);
 	}
 	/* the function of the module (a mission may replace it): the scheduler takes its entry */
-	PyObject *f = Mode_GlobalPy(TM, "RestoreTamayoState");
-	byte ok = f && Mode_Schedule(at, f, NULL, 0, NULL);
-	Py_XDECREF(f);
-	return Mode_Done(&t, ok);
+	nativeVal_t *f = Mode_V(&t);
+	return Mode_Done(&t, Mode_G(TM, "RestoreTamayoState", f) && Mode_ScheduleV(at, f, NULL, 0, NULL));
 }
 
 /* CheckTamayoMoney(): every second: Corruptus' money on the bar; low on money he goes to Porkins for more */

@@ -229,14 +229,7 @@ static byte Fk_Traffic(const nativeVal_t *nam, const nativeVal_t *ctr) {
 		return Mode_Done(&t, 0);
 	}
 	/* TrafficList.append(nam, v): the append of 1.5.2 with two arguments appends the pair, in place (OBJLIB 5) */
-	PyObject *list = Mode_GlobalPy(MAP, "TrafficList");
-	PyObject *n = list ? Native_ToPy(nam) : NULL, *h = n ? Native_ToPy(v) : NULL;
-	PyObject *r = h ? Script_Method(list, "append", "(OO)", n, h) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(h);
-	Py_XDECREF(n);
-	Py_XDECREF(list);
-	return Mode_Done(&t, r != NULL);
+	return Mode_Done(&t, Mode_VarCall2(MAP, "TrafficList", 1, "append", nam, v));
 }
 
 /* CreateFakeBertoShip(): Berto's ship with three engines, and a hidden traffic ship per dummy name of TrafficDummyList
@@ -318,24 +311,13 @@ LV_FN(Fk, CreateFakeBertoShipPy, 0, Fk_CreateFakeBertoShip_C)
 LV_FN(Fk, ActivateBertoEnginesPy, 3, Fk_ActivateBertoEngines)
 LV_FN(Fk, LoadFake2ScenePy, 0, Fk_LoadFake2Scene)
 
-/* PlayFake2(usr=None), NextLevel(usr=None): the argument is not used */
-static PyObject *Fk_UsrKw(PyObject *args, PyObject *kw, byte (*fn)(void)) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
-	}
-	return Mode_Result(fn());
+/* PlayFake2(usr=None), NextLevel(usr=None): keyword functions, the argument is not used */
+MODE_KW(Fk, PlayFake2Py, "|O", "usr") {
+	return Fk_PlayFake2();
 }
 
-static PyObject *Fk_PlayFake2Py(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Fk_UsrKw(args, kw, Fk_PlayFake2);
-}
-
-static PyObject *Fk_NextLevelPy(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Fk_UsrKw(args, kw, Fk_NextLevel);
+MODE_KW(Fk, NextLevelPy, "|O", "usr") {
+	return Fk_NextLevel();
 }
 
 PyMethodDef g_FakeMapMethods[] = {
