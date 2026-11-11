@@ -1991,7 +1991,7 @@ static byte TX_LambdaRun(tcFunc *f, nativeVal_t *a, int na, const nativeVal_t *p
 	return ok;
 }
 
-/* OBJLIB 9: the C function of the Python object of a lambda; self: (the record,) */
+/* OBJLIB 9: the C function of the Python object of a lambda; self: (the record, None, globals, None) */
 static PyObject *TX_LambdaPy(PyObject *self, PyObject *args, PyObject *kw) {
 	tcFunc *f = PyCObject_AsVoidPtr(PyTuple_GetItem(self, 0));
 	int n = args ? PyTuple_Size(args) : 0;
@@ -2054,7 +2054,9 @@ static byte X_Lambda(tcNode *x, tcScope *s, nativeVal_t *out) {
 		TX_FuncFree(f);
 		return 0;
 	}
-	PyObject *self = Py_BuildValue("(O)", cf);
+	/* the self of the C function: (record, None, globals, None), the form the module dump of the channel shows as
+	 * "self=?" (the 4-tuple of a lambda before batch 8a) */
+	PyObject *self = Py_BuildValue("(OOOO)", cf, Py_None, f->globals, Py_None);
 	PyObject *fn = self ? PyCFunction_New(&tx_lambdaDef, self) : NULL;
 	Py_XDECREF(self);
 	Py_DECREF(cf);
