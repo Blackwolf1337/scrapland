@@ -49,13 +49,13 @@ static double Hud_Num(const nativeVal_t *v) {
 		/* OBJLIB 9: long_int (an OverflowError for a long that does not fit) */
 		double d = Native_ToInt(v, &i) && i.type == NV_INT ? (double)i.i : -1.0;
 		Native_Free(&i);
-		PyErr_Clear();
+		Mode_DropError();
 		return d;
 	}
 	case NV_OBJ: {
 		/* OBJLIB 7: an object with its own int */
-		long l = PyInt_AsLong(v->obj);
-		PyErr_Clear();
+		long l = Mode_AsLong(v);
+		Mode_DropError();
 		return (double)l;
 	}
 	}
@@ -84,7 +84,7 @@ static byte Hud_Item(const nativeVal_t *seq, int i, nativeVal_t *out) {
 	}
 	Native_Free(&tmp);
 	/* OBJLIB 7: the IndexError or TypeError of an odd entry dropped */
-	PyErr_Clear();
+	Mode_DropError();
 	return e != NULL;
 }
 
@@ -122,27 +122,45 @@ static const scriptStep_t hud_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of a file with the margins of the screen and more values (OBJLIB 6: the $names as a dict given away, or
- * NULL) */
-static void Hud_RunFile(int id, const char *file, const char *builtin, const char *section, PyObject *more) {
+#define HUD_MARGINS 4
+
+/* a section of a file with the margins of the screen and more $names: n pairs of a name and a const nativeVal_t *
+ * (up to MODE_DEFVARS - HUD_MARGINS; Mode_DefRunV, OBJLIB 6: the runner takes them as a dict). The margins are read
+ * after the values of the pairs were made, as before */
+static void Hud_RunFile(int id, const char *file, const char *builtin, const char *section, int n, ...) {
+	static const char *const margins[HUD_MARGINS] = { "mh", "mv", "right", "bottom" };
+	const char *names[MODE_DEFVARS];
+	const nativeVal_t *vals[MODE_DEFVARS];
+	nativeVal_t m[HUD_MARGINS];
+	va_list va;
 	int mh = Mode_ModGetI("Scorer", "MarginH", 0), mv = Mode_ModGetI("Scorer", "MarginV", 0);
-	PyObject *vars = Py_BuildValue("{s:i,s:i,s:i,s:i}", "mh", mh, "mv", mv, "right", 640 - mh, "bottom", 480 - mv);
-	PyObject *k, *v;
-	int pos = 0;
-	while (vars && more && PyDict_Next(more, &pos, &k, &v)) {
-		PyDict_SetItem(vars, k, v);
+	CHECK(n <= MODE_DEFVARS - HUD_MARGINS);
+	Native_SetInt(&m[0], mh);
+	Native_SetInt(&m[1], mv);
+	Native_SetInt(&m[2], 640 - mh);
+	Native_SetInt(&m[3], 480 - mv);
+	for (int i = 0; i < HUD_MARGINS; i++) {
+		names[i] = margins[i];
+		vals[i] = &m[i];
 	}
-	Py_XDECREF(more);
-	Script_RunFile(id, file, section, builtin, hud_steps, vars);
-	Py_XDECREF(vars);
+	va_start(va, n);
+	for (int i = 0; i < n; i++) {
+		names[HUD_MARGINS + i] = va_arg(va, const char *);
+		vals[HUD_MARGINS + i] = va_arg(va, const nativeVal_t *);
+	}
+	va_end(va);
+	Mode_DefRunV(id, file, section, builtin, hud_steps, 0, names, vals, HUD_MARGINS + n);
 }
 
-static void Hud_Run(int id, const char *section, PyObject *more) {
-	Hud_RunFile(id, "menus/hud.def", hud_def, section, more);
-}
+#define Hud_Run(id, section, n, ...) Hud_RunFile(id, "menus/hud.def", hud_def, section, n __VA_OPT__(, ) __VA_ARGS__)
+#define Racer_Run(id, section, n, ...) \
+	Hud_RunFile(id, "menus/racer.def", racer_def, section, n __VA_OPT__(, ) __VA_ARGS__)
 
-static void Racer_Run(int id, const char *section, PyObject *more) {
-	Hud_RunFile(id, "menus/racer.def", racer_def, section, more);
+/* Hud_Run with one $name, an int */
+static void Hud_RunI(int id, const char *section, const char *name, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	Hud_Run(id, section, 1, name, &v);
 }
 
 /* a garage or a network game */
@@ -192,20 +210,24 @@ static void Hud_Blink(int n, const char *item) {
 static void Hud_BarDefaults(int id, const char *name, const int *c) {
 	nativeVal_t x, y;
 	if (!Mode_ModGet("Scorer", "MissionScorerBar_X", &x)) {
-		PyErr_Clear();
+		Mode_DropError();
 	}
 	if (!Mode_ModGet("Scorer", "MissionScorerBar_Y", &y)) {
-		PyErr_Clear();
+		Mode_DropError();
 	}
-	PyObject *px = Native_ToPy(&x), *py = px ? Native_ToPy(&y) : NULL;
+	nativeVal_t nm, v[12];
+	Native_SetText(&nm, name, (int)strlen(name));
+	for (int i = 0; i < 12; i++) {
+		Native_SetInt(&v[i], c[i]);
+	}
+	Hud_Run(id, "missionbar", 15, "name", &nm, "x", &x, "y", &y, "backr", &v[0], "backg", &v[1], "backb", &v[2],
+		"backa",
+		&v[3], "mainr", &v[4], "maing", &v[5], "mainb", &v[6], "maina", &v[7], "blackr", &v[8], "blackg", &v[9],
+			"blackb",
+		&v[10], "blacka", &v[11]);
+	Native_Free(&nm);
 	Native_Free(&x);
 	Native_Free(&y);
-	Hud_Run(id, "missionbar", py ? Py_BuildValue("{s:s,s:O,s:O,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
-		"name", name, "x", px, "y", py, "backr", c[0], "backg", c[1], "backb", c[2], "backa", c[3], "mainr", c[4],
-		"maing", c[5], "mainb", c[6], "maina", c[7], "blackr", c[8], "blackg", c[9], "blackb", c[10], "blacka", c[11]) :
-		NULL);
-	Py_XDECREF(px);
-	Py_XDECREF(py);
 }
 
 /* ---- the functions of Scorer (adapters) ---- */
@@ -217,13 +239,16 @@ static byte Scorer_CreateStatusScorer_E(const nativeVal_t *a, int n, nativeVal_t
 	if (!Mode_Parse(a, n, "i|i", &id, &ch)) {
 		return 0;
 	}
-	Hud_Run(id, "status", Py_BuildValue("{s:i,s:i,s:i}", "char", ch != 0, "multi", Hud_Multi(), "split",
-		Mode_ModGetI("Scorer", "SplitScreen", 0) != 0));
+	nativeVal_t v[3];
+	Native_SetInt(&v[0], ch != 0);
+	Native_SetInt(&v[1], Hud_Multi());
+	Native_SetInt(&v[2], Mode_ModGetI("Scorer", "SplitScreen", 0) != 0);
+	Hud_Run(id, "status", 3, "char", &v[0], "multi", &v[1], "split", &v[2]);
 	return 1;
 }
 MODE_ADAPTER(Scorer, CreateStatusScorer)
 
-MODE_IFN(Scorer_CreateCopMeterScorer, 1, (Hud_Run(id, "copmeter", NULL), 1))
+MODE_IFN(Scorer_CreateCopMeterScorer, 1, (Hud_Run(id, "copmeter", 0), 1))
 
 /* CreateMonitorScorer(id, char=0) */
 static byte Scorer_CreateMonitorScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -232,14 +257,22 @@ static byte Scorer_CreateMonitorScorer_E(const nativeVal_t *a, int n, nativeVal_
 	if (!Mode_Parse(a, n, "i|i", &id, &ch)) {
 		return 0;
 	}
-	Hud_Run(id, "monitor", Py_BuildValue("{s:i}", "char", ch != 0));
+	Hud_RunI(id, "monitor", "char", ch != 0);
 	return 1;
 }
 MODE_ADAPTER(Scorer, CreateMonitorScorer)
 
-MODE_IFN(Scorer_CreateMsgScorer, 1, (Hud_Run(id, "msg", Py_BuildValue("{s:i,s:i}", "splitnow",
-	(int)GVar_GetNum("SplitScreen", 0), "enabled", 1)), 1))
+/* CreateMsgScorer(id) */
+static void Hud_Msg(int id) {
+	nativeVal_t v[2];
+	Native_SetInt(&v[0], (int)GVar_GetNum("SplitScreen", 0));
+	Native_SetInt(&v[1], 1);
+	Hud_Run(id, "msg", 2, "splitnow", &v[0], "enabled", &v[1]);
+}
 
+MODE_IFN(Scorer_CreateMsgScorer, 1, (Hud_Msg(id), 1))
+
+/* OBJLIB 7: a keyword adapter (the keywords and the errors of PyArg_ParseTupleAndKeywords for "i|i") */
 static PyObject *Scorer_CreateMissionScorer(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "enabled", NULL };
 	int id, enabled = 1;
@@ -247,8 +280,8 @@ static PyObject *Scorer_CreateMissionScorer(PyObject *self, PyObject *args, PyOb
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|i", names, &id, &enabled)) {
 		return NULL;
 	}
-	Hud_Run(id, "mission", Py_BuildValue("{s:i}", "enabled", enabled != 0));
-	return Py_ReturnNone();
+	Hud_RunI(id, "mission", "enabled", enabled != 0);
+	return Mode_Result(1);
 }
 
 /* ShowMissionScorer(id, status=0, value) */
@@ -263,20 +296,18 @@ static byte Scorer_ShowMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t 
 	return 1;
 }
 
-static PyObject *Scorer_ShowMissionScorer(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, Scorer_ShowMissionScorer_E);
-}
+MODE_ADAPTER(Scorer, ShowMissionScorer)
 
-static PyObject *Scorer_CreateRadarScorer(PyObject *self, PyObject *args) {
+static byte Scorer_CreateRadarScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
-	Hud_Run(id, "radar", NULL);
-	return Py_ReturnNone();
+	Hud_Run(id, "radar", 0);
+	return 1;
 }
+MODE_ADAPTER(Scorer, CreateRadarScorer)
 
 /* Blink(n, item="Radar") */
 static byte Scorer_Blink_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -290,10 +321,7 @@ static byte Scorer_Blink_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-static PyObject *Scorer_Blink(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, Scorer_Blink_E);
-}
+MODE_ADAPTER(Scorer, Blink)
 
 /* MissionScorerBar_SetDefaults(id, name, (back rgba), (main rgba), (black rgba)) */
 static byte Scorer_MissionScorerBar_SetDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -308,10 +336,7 @@ static byte Scorer_MissionScorerBar_SetDefaults_E(const nativeVal_t *a, int n, n
 	return 1;
 }
 
-static PyObject *Scorer_MissionScorerBar_SetDefaults(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, Scorer_MissionScorerBar_SetDefaults_E);
-}
+MODE_ADAPTER(Scorer, MissionScorerBar_SetDefaults)
 
 PyMethodDef g_ScorerMethods[] = {
 	{ "CreateStatusScorer", Scorer_CreateStatusScorer, 1, NULL },
@@ -337,10 +362,10 @@ static int Hud_Controlled(int id, nativeVal_t *out) {
 	nativeVal_t u = { 0 }, x = { 0 }, none = { 0 };
 	int r = -1, c;
 	/* from Scorer import MarginH, MarginV */
-	PyObject *mh = Mode_From("Scorer", "MarginH"), *mv = mh ? Mode_From("Scorer", "MarginV") : NULL;
-	byte ok = mv != NULL;
-	Py_XDECREF(mh);
-	Py_XDECREF(mv);
+	nativeVal_t mh, mv = { 0 };
+	byte ok = Mode_FromV("Scorer", "MarginH", &mh) && Mode_FromV("Scorer", "MarginV", &mv);
+	Native_Free(&mh);
+	Native_Free(&mv);
 	Native_SetNone(out);
 	if (!ok || !Mode_UsrSeam(id, &u) || (c = Mode_Cmp(&u, "==", &none)) < 0) {
 		goto done;
@@ -393,9 +418,13 @@ static byte Hud_SpecialAction(int id) {
 		return c == 0;
 	}
 	if (!Mode_VObj(&u, "ActCtrl", &act)) {
-		PyErr_Clear();
+		Mode_DropError();
 	}
-	Hud_Run(id, "specialaction", Py_BuildValue("{s:s}", "act", act.type == NV_STR ? Native_Text(&act) : ""));
+	nativeVal_t name;
+	/* the C text of the control, "" for a value that is no text */
+	Native_SetStr(&name, act.type == NV_STR ? Native_Text(&act) : "");
+	Hud_Run(id, "specialaction", 1, "act", &name);
+	Native_Free(&name);
 	Native_Free(&act);
 	Native_Free(&u);
 	return 1;
@@ -422,8 +451,8 @@ static void Hud_CharCreate(int id) {
 
 /* ---- the functions of CharScorer (adapters) ---- */
 
-MODE_IFN(CharScorer_CreateRadarScorer, 1, (Hud_Run(id, "charradar", Py_BuildValue("{s:i}", "outdoor",
-	Mode_ModGetI("Init", "Outdoor", 0) != 0)), 1))
+MODE_IFN(CharScorer_CreateRadarScorer, 1,
+	(Hud_RunI(id, "charradar", "outdoor", Mode_ModGetI("Init", "Outdoor", 0) != 0), 1))
 MODE_IFN(CharScorer_CreateSpecialActionScorer, 1, Hud_SpecialAction(id))
 
 MODE_IFN(CharScorer_Create, 1, (Hud_CharCreate(id), 1))
@@ -442,7 +471,7 @@ PyMethodDef g_CharScorerMethods[] = {
 static byte Hud_True(const nativeVal_t *v, const char *attr) {
 	nativeVal_t a = { 0 };
 	byte t = Mode_VObj(v, attr, &a) && Native_True(&a);
-	PyErr_Clear();
+	Mode_DropError();
 	Native_Free(&a);
 	return t;
 }
@@ -459,11 +488,11 @@ static void Racer_CreateRacerCore(int id) {
 	/* the errors of Scrap.GetCam and Scrap.GetEntity printed, as the C asked them */
 	byte haveName = Mode_CamSeam(id, &camName);
 	if (!haveName) {
-		PyErr_Print();
+		Mode_PrintError();
 	}
 	byte haveCam = haveName && Mode_EntitySeam(&camName, &cam);
 	if (haveName && !haveCam) {
-		PyErr_Print();
+		Mode_PrintError();
 	}
 	byte camera = haveCam && Native_True(&cam);
 	byte spectator = 0;
@@ -472,14 +501,17 @@ static void Racer_CreateRacerCore(int id) {
 		byte ht = Mode_VObj(&cam, "Target", &t);
 		byte hmt = Mode_VObj(&cam, "MainTarget", &mt);
 		spectator = ht && hmt && Native_Compare(&t, &mt) != 0;
-		PyErr_Clear();
+		Mode_DropError();
 		Native_Free(&t);
 		Native_Free(&mt);
 	}
-	Racer_Run(id, "racer", Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:s}", "net", net, "camera", camera, "spectator",
-		spectator, "target", camera && Hud_True(&cam, "Target"), "showlocal", !spectator || !net, "split",
-		Mode_ModGetI("Scorer", "SplitScreen", 0) != 0, "online", Net_IsClient() || Net_IsServer(), "descriptor",
-		"\nDescriptor"));
+	modeVals_t t = { .n = 0 };
+	Racer_Run(id, "racer", 8, "net", Mode_I(&t, net), "camera", Mode_I(&t, camera), "spectator", Mode_I(&t, spectator),
+		"target", Mode_I(&t, camera && Hud_True(&cam, "Target")), "showlocal", Mode_I(&t, !spectator || !net), "split",
+		Mode_I(&t, Mode_ModGetI("Scorer", "SplitScreen", 0) != 0), "online", Mode_I(&t, Net_IsClient() ||
+			Net_IsServer()),
+		"descriptor", Mode_S(&t, "\nDescriptor"));
+	Mode_Done(&t, 1);
 	Native_Free(&cam);
 	Native_Free(&camName);
 	/* OBJLIB 5: the callback variable of Menu */
@@ -497,7 +529,7 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 	int rows = 0;
 	if (data && !Native_Len(data, &rows)) {
 		/* the TypeError of a value that is no sequence dropped: no rows */
-		PyErr_Clear();
+		Mode_DropError();
 		rows = 0;
 	}
 	byte small = rows > 12;
@@ -506,7 +538,7 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 	byte showPing = !Mode_ModGetI("Init", "OffLineGame", 0);
 	nativeVal_t spect;
 	byte haveSpect = Mode_ModGet("RacerScorer", "SPECTATOR_POINTS", &spect);
-	PyErr_Clear();
+	Mode_DropError();
 	for (int i = 0; i < rows && i < 24; i++) {
 		nativeVal_t info, f[5], c[7];
 		char nm[0x20] = "", sc[0x40] = "", ping[0x40] = "", pl[0x80] = "";
@@ -526,7 +558,7 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 		} else if (have[0]) {
 			Hud_Repr(&f[0], sc, sizeof(sc));
 		}
-		PyErr_Clear();
+		Mode_DropError();
 		if (have[4] && f[4].type == NV_STR) {
 			Str_Copy(pl, Native_Text(&f[4]), sizeof(pl));
 		}
@@ -540,18 +572,14 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 				Native_SetInt(&c[k], 0);
 			}
 		}
-		PyObject *pc[7];
-		byte ok = 1;
+		modeVals_t t = { .n = 0 };
+		Racer_Run(id, "row", 16, "n", Mode_I(&t, i), "y", Mode_I(&t, y), "liney", Mode_I(&t, y + step - 2), "font",
+			Mode_S(&t, small ? "Terminal8" : "HoratioSmall"), "step", Mode_I(&t, step), "name", Mode_S(&t, nm), "score",
+			Mode_S(&t, sc), "ping", Mode_S(&t, ping), "player", Mode_S(&t, pl), "r", &c[0], "g", &c[1], "b", &c[2],
+				"br",
+			&c[3], "bg", &c[4], "bb", &c[5], "ba", &c[6]);
+		Mode_Done(&t, 1);
 		for (int k = 0; k < 7; k++) {
-			pc[k] = ok ? Native_ToPy(&c[k]) : NULL;
-			ok = pc[k] != NULL;
-		}
-		Racer_Run(id, "row", ok ? Py_BuildValue("{s:i,s:i,s:i,s:s,s:i,s:s,s:s,s:s,s:s,s:O,s:O,s:O,s:O,s:O,s:O,s:O}",
-			"n", i, "y", y, "liney", y + step - 2, "font", small ? "Terminal8" : "HoratioSmall", "step", step, "name",
-			nm, "score", sc, "ping", ping, "player", pl, "r", pc[0], "g", pc[1], "b", pc[2], "br", pc[3], "bg", pc[4],
-			"bb", pc[5], "ba", pc[6]) : NULL);
-		for (int k = 0; k < 7; k++) {
-			Py_XDECREF(pc[k]);
 			Native_Free(&c[k]);
 		}
 		for (int k = 0; k < 5; k++) {
@@ -583,8 +611,10 @@ static void Racer_ShowScorerCore(int id, const nativeVal_t *data, int deal, cons
 	Mode_ModGetS("RacerScorer", "ScorerTopMessage", top, sizeof(top));
 	const nativeVal_t *outer = racer_scores;
 	racer_scores = data;
-	Racer_Run(id, "scores", Py_BuildValue("{s:s,s:s,s:i,s:s,s:s}", "bottom", bottom, "top", top, "deal", deal, "yes",
-		yes, "no", no));
+	modeVals_t t = { .n = 0 };
+	Racer_Run(id, "scores", 5, "bottom", Mode_S(&t, bottom), "top", Mode_S(&t, top), "deal", Mode_I(&t, deal), "yes",
+		Mode_S(&t, yes), "no", Mode_S(&t, no));
+	Mode_Done(&t, 1);
 	racer_scores = outer;
 	Racer_SchedulePing();
 }
@@ -597,7 +627,7 @@ static void Racer_UpdatePing(void) {
 	if (Mode_ModGet("RacerScorer", "MultiplayerUpdatePing_LastTime", &last)) {
 		l = last.type == NV_FLOAT ? last.f : last.type == NV_INT ? (double)last.i : 0;
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	Native_Free(&last);
 	if (now - l < 1) {
 		return;
@@ -627,7 +657,7 @@ static void Racer_UpdateMission(int id, const nativeVal_t *you, const nativeVal_
 	Mode_ModPut("RacerScorer", "missionYou", you);
 	Mode_ModPut("RacerScorer", "missionBad", bad);
 	byte ahead = Native_Compare(you, bad) >= 0;
-	PyErr_Clear();
+	Mode_DropError();
 	Script_SetStr(id, "MissionBest", "Text", Hud_Repr(ahead ? you : bad, a, sizeof(a)));
 	Script_SetStr(id, "MissionBad", "Text", Hud_Repr(ahead ? bad : you, b, sizeof(b)));
 	Script_SetNum(id, "MissionYou", "Y", ahead ? 180 : 200);
@@ -641,13 +671,11 @@ static void Racer_MissionScorerCore(int id) {
 	byte haveLimit = Mode_ModGet("RacerScorer", "missionLimit", &limit);
 	byte haveYou = Mode_ModGet("RacerScorer", "missionYou", &you);
 	byte haveBad = Mode_ModGet("RacerScorer", "missionBad", &bad);
-	PyErr_Clear();
+	Mode_DropError();
 	if (!haveLimit) {
 		Native_SetNone(&limit);
 	}
-	PyObject *pl = Native_ToPy(&limit);
-	Racer_Run(id, "mission", pl ? Py_BuildValue("{s:O}", "limit", pl) : NULL);
-	Py_XDECREF(pl);
+	Racer_Run(id, "mission", 1, "limit", &limit);
 	if (haveYou && haveBad) {
 		/* through the module: a mod or a case may replace it */
 		MODE_PRINTED(RacerScorer, UpdateMissionScorer, "ivv", (long)id, &you, &bad);
@@ -659,7 +687,7 @@ static void Racer_MissionScorerCore(int id) {
 
 /* ---- the functions of RacerScorer (adapters) ---- */
 
-#define RACER_SECTION(func, section) MODE_IFN(func, 1, (Racer_Run(id, section, NULL), 1))
+#define RACER_SECTION(func, section) MODE_IFN(func, 1, (Racer_Run(id, section, 0), 1))
 
 RACER_SECTION(Racer_CreateWeaponScorer, "weapon")
 RACER_SECTION(Racer_CreateCannonScorer, "cannon")
@@ -699,17 +727,16 @@ static byte Racer_ShowScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-static PyObject *Racer_ShowScorer(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, Racer_ShowScorer_E);
-}
+MODE_ADAPTER(Racer, ShowScorer)
 
-static PyObject *Racer_MultiplayerUpdatePing(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Racer_MultiplayerUpdatePing_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Racer_UpdatePing();
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Racer, MultiplayerUpdatePing)
 
 /* InitMissionScorer([you[, bad[, limit]]]) */
 static byte Racer_InitMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -731,10 +758,7 @@ static byte Racer_InitMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t *
 	return 1;
 }
 
-static PyObject *Racer_InitMissionScorer(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, Racer_InitMissionScorer_E);
-}
+MODE_ADAPTER(Racer, InitMissionScorer)
 
 MODE_IFN(Racer_UpdateMissionScorer, 3, (Racer_UpdateMission(id, &a[1], &a[2]), 1))
 

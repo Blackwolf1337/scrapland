@@ -758,6 +758,7 @@ PORT_DECL(Menu, UnLinkUD) /* ? */
 PORT_DECL(Menu, DrawBackMainMenu) /* ? */
 PORT_DECL(Menu, DrawBackSubMenu) /* ? */
 PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
+PORT_DECL(Menu, DrawCircuitMenu) /* ? */
 PORT_DECL(Menu, DrawMenuTitleBar) /* ? */
 PORT_DECL(Menu, StartNewMenu) /* ? */
 PORT_DECL(Menu, VerticalMenu) /* ? */
@@ -766,6 +767,9 @@ PORT_DECL(Menu, DisableMenuItem) /* ? */
 PORT_DECL(Menu, ShowTextBox) /* ? */
 PORT_DECL(Menu, ShowWarning) /* ? */
 PORT_DECL(Menu, SetTabDefaults) /* ? */
+PORT_DECL(Menu, SliderMenu) /* ? */
+PORT_DECL(Menu, PreviousNextMenu) /* ? */
+PORT_DECL(Menu, PreviousNextMenuSimple) /* ? */
 #define PORTS_MenuBase \
 	PORT_DEF(Menu, LinkLR, Menu_LinkLR) \
 	PORT_DEF(Menu, LinkUD, Menu_LinkUD) \
@@ -774,6 +778,7 @@ PORT_DECL(Menu, SetTabDefaults) /* ? */
 	PORT_DEF(Menu, DrawBackMainMenu, Menu_DrawBackMainMenu) \
 	PORT_DEF(Menu, DrawBackSubMenu, Menu_DrawBackSubMenu) \
 	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
+	PORT_DEF(Menu, DrawCircuitMenu, Menu_DrawCircuitMenu) \
 	PORT_DEF(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
 	PORT_DEF(Menu, StartNewMenu, Menu_StartNewMenu) \
 	PORT_DEFK(Menu, VerticalMenu, Menu_VerticalMenu) \
@@ -781,7 +786,10 @@ PORT_DECL(Menu, SetTabDefaults) /* ? */
 	PORT_DEF(Menu, DisableMenuItem, Menu_DisableMenuItem) \
 	PORT_DEF(Menu, ShowTextBox, Menu_ShowTextBox) \
 	PORT_DEF(Menu, ShowWarning, Menu_ShowWarning) \
-	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults)
+	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults) \
+	PORT_DEF(Menu, SliderMenu, Menu_SliderMenu) \
+	PORT_DEF(Menu, PreviousNextMenu, Menu_PreviousNextMenu) \
+	PORT_DEF(Menu, PreviousNextMenuSimple, Menu_PreviousNextMenuSimple)
 
 /* MenuControls.c */
 PORT_DECL(PCMenu, OptionsMenu) /* ? */
@@ -791,10 +799,29 @@ PORT_DECL(PCMenu, RacerMoveControlsMenu) /* ? */
 PORT_DECL(PCMenu, RacerAttackControlsMenu) /* ? */
 PORT_DECL(PCMenu, WalkCharControlsMenu) /* ? */
 PORT_DECL(PCMenu, UseCharControlsMenu) /* ? */
+PORT_DECL(PCMenu, CreateControlMenu) /* ? */
+PORT_DECL(PCMenu, RefreshControlMenu) /* ? */
+PORT_DECL(PCMenu, ClearKeyEntry) /* ? */
+PORT_DECL(PCMenu, WaitForKeyPress) /* ? */
+PORT_DECL(PCMenu, AbortWaitRedefine) /* ? */
+PORT_DECL(PCMenu, KetRedefineFunc) /* ? */
+PORT_DECL(PCMenu, ResetEverything) /* ? */
+PORT_DECL(PCMenu, ResetToDefault) /* ? */
+PORT_DECL(PCMenu, OptionYesNo) /* ? */
+PORT_DECL(PCMenu, InvertMouse) /* ? */
+PORT_DECL(PCMenu, AlwaysRun) /* ? */
+PORT_DECL(PCMenu, MouseSensitivityChange) /* ? */
+PORT_DECL(PCMenu, MouseSensitivitySliderFocus_Sub) /* ? */
+PORT_DECL(PCMenu, MouseSensitivitySliderFocus_Add) /* ? */
+PORT_DECL(PCMenu, ControllerConfig) /* ? */
+PORT_DECL(PCMenu, ControllerConfigCharMenu) /* ? */
+PORT_DECL(PCMenu, ControllerConfigShipMenu) /* ? */
 PORT_DECL(PCMenu, FillControllerMenu) /* ? */
 PORT_DECL(PCMenu, PlaceMenuOption) /* ? */
 PORT_DECL(PCMenu, SetOptionValue) /* ? */
 PORT_DECL(PCMenu, ShowPadConfig) /* ? */
+PORT_DECL(PCMenu, UpdatePadText) /* ? */
+PORT_DECL(PCMenu, SwitchOption) /* ? */
 #define PORTS_MenuControls \
 	PORT_DEF(PCMenu, OptionsMenu, PCMenu_OptionsMenu) \
 	PORT_DEF(PCMenu, ControlsMenu, PCMenu_ControlsMenu) \
@@ -803,10 +830,29 @@ PORT_DECL(PCMenu, ShowPadConfig) /* ? */
 	PORT_DEF(PCMenu, RacerAttackControlsMenu, PCMenu_RacerAttackControlsMenu) \
 	PORT_DEF(PCMenu, WalkCharControlsMenu, PCMenu_WalkCharControlsMenu) \
 	PORT_DEF(PCMenu, UseCharControlsMenu, PCMenu_UseCharControlsMenu) \
+	PORT_DEF(PCMenu, CreateControlMenu, PCMenu_CreateControlMenu) \
+	PORT_DEF(PCMenu, RefreshControlMenu, PCMenu_RefreshControlMenu) \
+	PORT_DEF(PCMenu, ClearKeyEntry, PCMenu_ClearKeyEntry) \
+	PORT_DEF(PCMenu, WaitForKeyPress, PCMenu_WaitForKeyPress) \
+	PORT_DEF(PCMenu, AbortWaitRedefine, PCMenu_AbortWaitRedefine) \
+	PORT_DEF(PCMenu, KetRedefineFunc, PCMenu_AbortWaitRedefine) \
+	PORT_DEF(PCMenu, ResetEverything, PCMenu_ResetEverything) \
+	PORT_DEF(PCMenu, ResetToDefault, PCMenu_ResetToDefault) \
+	PORT_DEF(PCMenu, OptionYesNo, PCMenu_OptionYesNo) \
+	PORT_DEF(PCMenu, InvertMouse, PCMenu_InvertMouse) \
+	PORT_DEF(PCMenu, AlwaysRun, PCMenu_AlwaysRun) \
+	PORT_DEF(PCMenu, MouseSensitivityChange, PCMenu_MouseSensitivityChange) \
+	PORT_DEF(PCMenu, MouseSensitivitySliderFocus_Sub, PCMenu_MouseSensitivitySliderFocus_Sub) \
+	PORT_DEF(PCMenu, MouseSensitivitySliderFocus_Add, PCMenu_MouseSensitivitySliderFocus_Add) \
+	PORT_DEF(PCMenu, ControllerConfig, PCMenu_ControllerConfig) \
+	PORT_DEF(PCMenu, ControllerConfigCharMenu, PCMenu_ControllerConfigCharMenu) \
+	PORT_DEF(PCMenu, ControllerConfigShipMenu, PCMenu_ControllerConfigShipMenu) \
 	PORT_DEF(PCMenu, FillControllerMenu, PCMenu_FillControllerMenu) \
 	PORT_DEF(PCMenu, PlaceMenuOption, PCMenu_PlaceMenuOption) \
 	PORT_DEF(PCMenu, SetOptionValue, PCMenu_SetOptionValue) \
-	PORT_DEF(PCMenu, ShowPadConfig, PCMenu_ShowPadConfig)
+	PORT_DEF(PCMenu, ShowPadConfig, PCMenu_ShowPadConfig) \
+	PORT_DEF(PCMenu, UpdatePadText, PCMenu_UpdatePadText) \
+	PORT_DEF(PCMenu, SwitchOption, PCMenu_SwitchOption)
 
 /* MenuHud.c */
 PORT_DECL(Scorer, CreateStatusScorer) /* ? */
@@ -814,6 +860,7 @@ PORT_DECL(Scorer, CreateCopMeterScorer) /* 1 */
 PORT_DECL(Scorer, CreateMonitorScorer) /* ? */
 PORT_DECL(Scorer, CreateMsgScorer) /* 1 */
 PORT_DECL(Scorer, ShowMissionScorer) /* ? */
+PORT_DECL(Scorer, CreateRadarScorer) /* ? */
 PORT_DECL(Scorer, Blink) /* ? */
 PORT_DECL(Scorer, MissionScorerBar_SetDefaults) /* ? */
 PORT_DECL(CharScorer, CreateRadarScorer) /* 1 */
@@ -827,6 +874,7 @@ PORT_DECL(RacerScorer, CreateRadarScorer) /* 1 */
 PORT_DECL(RacerScorer, Create) /* 1 */
 PORT_DECL(RacerScorer, CreateRacer) /* 1 */
 PORT_DECL(RacerScorer, ShowScorer) /* ? */
+PORT_DECL(RacerScorer, MultiplayerUpdatePing) /* ? */
 PORT_DECL(RacerScorer, InitMissionScorer) /* ? */
 PORT_DECL(RacerScorer, MissionScorer) /* 1 */
 PORT_DECL(RacerScorer, MissionScorerTeam) /* 1 */
@@ -837,6 +885,7 @@ PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
 	PORT_DEF(Scorer, CreateMonitorScorer, Scorer_CreateMonitorScorer) \
 	PORT_DEF(Scorer, CreateMsgScorer, Scorer_CreateMsgScorer) \
 	PORT_DEF(Scorer, ShowMissionScorer, Scorer_ShowMissionScorer) \
+	PORT_DEF(Scorer, CreateRadarScorer, Scorer_CreateRadarScorer) \
 	PORT_DEF(Scorer, Blink, Scorer_Blink) \
 	PORT_DEF(Scorer, MissionScorerBar_SetDefaults, Scorer_MissionScorerBar_SetDefaults) \
 	PORT_DEF(CharScorer, CreateRadarScorer, CharScorer_CreateRadarScorer) \
@@ -850,38 +899,143 @@ PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
 	PORT_DEF(RacerScorer, Create, Racer_Create) \
 	PORT_DEF(RacerScorer, CreateRacer, Racer_CreateRacer) \
 	PORT_DEF(RacerScorer, ShowScorer, Racer_ShowScorer) \
+	PORT_DEF(RacerScorer, MultiplayerUpdatePing, Racer_MultiplayerUpdatePing) \
 	PORT_DEF(RacerScorer, InitMissionScorer, Racer_InitMissionScorer) \
 	PORT_DEF(RacerScorer, MissionScorer, Racer_MissionScorer) \
 	PORT_DEF(RacerScorer, MissionScorerTeam, Racer_MissionScorerTeam) \
 	PORT_DEF(RacerScorer, UpdateMissionScorer, Racer_UpdateMissionScorer)
 
 /* MenuMain.c */
+PORT_DECL(Menu, SinglePlayerMenu) /* ? */
+PORT_DECL(Menu, AudioMenu) /* ? */
+PORT_DECL(Menu, AudioVolumeSliderFocus_Sub) /* ? */
+PORT_DECL(Menu, AudioVolumeSliderFocus_Add) /* ? */
+PORT_DECL(Menu, AudioVolumeChange) /* ? */
 PORT_DECL(Menu, MainMenu) /* ? */
+PORT_DECL(Menu, CreateMainMenu) /* ? */
 PORT_DECL(Menu, BackToGame) /* ? */
 PORT_DECL(Menu, DrawScorer) /* ? */
 PORT_DECL(Menu, InitMenuSys) /* ? */
 PORT_DECL(Menu, MovieScorer) /* ? */
+PORT_DECL(Menu, Init) /* ? */
 PORT_DECL(Menu, DeathInfo) /* 1 */
+PORT_DECL(Menu, ExitGame) /* ? */
+PORT_DECL(Menu, ByeMenu) /* ? */
+PORT_DECL(Menu, SetSkillMenu) /* ? */
+PORT_DECL(Menu, SetSkill) /* ? */
+PORT_DECL(Menu, StartNewGame) /* ? */
+PORT_DECL(Menu, NewGame) /* ? */
+PORT_DECL(Menu, AuxAbortGame) /* ? */
+PORT_DECL(Menu, AbortGame) /* ? */
 PORT_DECL(Menu, AuxLoadGame) /* ? */
+PORT_DECL(Menu, LoadGame) /* ? */
+PORT_DECL(Menu, LoadLastSavedGame) /* ? */
+PORT_DECL(Menu, AuxSaveGame) /* ? */
+PORT_DECL(Menu, SaveGame) /* ? */
+PORT_DECL(Menu, LoadGameMenu) /* ? */
+PORT_DECL(Menu, SaveGameMenu) /* ? */
+PORT_DECL(Menu, isAutoSave) /* ? */
+PORT_DECL(Menu, ComposeSaveGameName) /* ? */
 PORT_DECL(Menu, Initialize) /* ? */
+PORT_DECL(Menu, CreditsMenu) /* ? */
 PORT_DECL(Menu, GameOver) /* ? */
+PORT_DECL(Menu, DebugMenu) /* ? */
+PORT_DECL(Menu, DebugSet_Level) /* ? */
+PORT_DECL(Menu, DebugSet_Console) /* ? */
+PORT_DECL(Menu, DebugSet_RenderInfo) /* ? */
+PORT_DECL(Menu, DebugSet_SoundInfo) /* ? */
+PORT_DECL(Menu, DebugSet_WorldInfo) /* ? */
+PORT_DECL(Menu, DebugSet_ObjectPool) /* ? */
+PORT_DECL(Menu, DebugSet_SceneRenderTarget) /* ? */
+PORT_DECL(Menu, DebugSet_StencilShadows) /* ? */
+PORT_DECL(Menu, DebugSet_AI) /* ? */
+PORT_DECL(Menu, DebugSet_MapCollision) /* ? */
+PORT_DECL(Menu, DebugSet_XboxPyDebug) /* ? */
+PORT_DECL(Menu, DebugSet_CycleVar) /* ? */
+PORT_DECL(Menu, DebugSet_ChangeMapMenu) /* ? */
+PORT_DECL(Menu, DebugSet_ChangeMapExec) /* ? */
 PORT_DECL(Menu, TVOff) /* ? */
+PORT_DECL(Menu, SetCam) /* 2 */
+PORT_DECL(Menu, TVOffEnd) /* ? */
+PORT_DECL(Menu, BlackTV) /* ? */
 #define PORTS_MenuMain \
+	PORT_DEF(Menu, SinglePlayerMenu, Menu_SinglePlayerMenu) \
+	PORT_DEF(Menu, AudioMenu, Menu_AudioMenu) \
+	PORT_DEF(Menu, AudioVolumeSliderFocus_Sub, Menu_AudioVolumeSliderFocus_Sub) \
+	PORT_DEF(Menu, AudioVolumeSliderFocus_Add, Menu_AudioVolumeSliderFocus_Add) \
+	PORT_DEF(Menu, AudioVolumeChange, Menu_AudioVolumeChange) \
 	PORT_DEF(Menu, MainMenu, Menu_MainMenu) \
+	PORT_DEF(Menu, CreateMainMenu, Menu_CreateMainMenu) \
 	PORT_DEF(Menu, BackToGame, Menu_BackToGame) \
 	PORT_DEF(Menu, DrawScorer, Menu_DrawScorer) \
 	PORT_DEF(Menu, InitMenuSys, Menu_InitMenuSys) \
 	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
+	PORT_DEF(Menu, Init, Menu_Init) \
 	PORT_DEF(Menu, DeathInfo, Menu_DeathInfo) \
+	PORT_DEF(Menu, ExitGame, Menu_ExitGame) \
+	PORT_DEF(Menu, ByeMenu, Menu_ByeMenu) \
+	PORT_DEF(Menu, SetSkillMenu, Menu_SetSkillMenu) \
+	PORT_DEF(Menu, SetSkill, Menu_SetSkill) \
+	PORT_DEF(Menu, StartNewGame, Menu_StartNewGame) \
+	PORT_DEF(Menu, NewGame, Menu_NewGame) \
+	PORT_DEF(Menu, AuxAbortGame, Menu_AuxAbortGame) \
+	PORT_DEF(Menu, AbortGame, Menu_AbortGame) \
 	PORT_DEF(Menu, AuxLoadGame, Menu_AuxLoadGame) \
+	PORT_DEF(Menu, LoadGame, Menu_LoadGame) \
+	PORT_DEF(Menu, LoadLastSavedGame, Menu_LoadLastSavedGame) \
+	PORT_DEF(Menu, AuxSaveGame, Menu_AuxSaveGame) \
+	PORT_DEF(Menu, SaveGame, Menu_SaveGame) \
+	PORT_DEF(Menu, LoadGameMenu, Menu_LoadGameMenu) \
+	PORT_DEF(Menu, SaveGameMenu, Menu_SaveGameMenu) \
+	PORT_DEF(Menu, isAutoSave, Menu_isAutoSave) \
+	PORT_DEF(Menu, ComposeSaveGameName, Menu_ComposeSaveGameName) \
 	PORT_DEF(Menu, Initialize, Menu_Initialize) \
+	PORT_DEF(Menu, CreditsMenu, Menu_CreditsMenu) \
 	PORT_DEF(Menu, GameOver, Menu_GameOver) \
-	PORT_DEF(Menu, TVOff, Menu_TVOff)
+	PORT_DEF(Menu, DebugMenu, Menu_DebugMenu) \
+	PORT_DEF(Menu, DebugSet_Level, Menu_DebugSet_Level) \
+	PORT_DEF(Menu, DebugSet_Console, Menu_DebugSet_Console) \
+	PORT_DEF(Menu, DebugSet_RenderInfo, Menu_DebugSet_RenderInfo) \
+	PORT_DEF(Menu, DebugSet_SoundInfo, Menu_DebugSet_SoundInfo) \
+	PORT_DEF(Menu, DebugSet_WorldInfo, Menu_DebugSet_WorldInfo) \
+	PORT_DEF(Menu, DebugSet_ObjectPool, Menu_DebugSet_ObjectPool) \
+	PORT_DEF(Menu, DebugSet_SceneRenderTarget, Menu_DebugSet_SceneRenderTarget) \
+	PORT_DEF(Menu, DebugSet_StencilShadows, Menu_DebugSet_StencilShadows) \
+	PORT_DEF(Menu, DebugSet_AI, Menu_DebugSet_AI) \
+	PORT_DEF(Menu, DebugSet_MapCollision, Menu_DebugSet_MapCollision) \
+	PORT_DEF(Menu, DebugSet_XboxPyDebug, Menu_DebugSet_XboxPyDebug) \
+	PORT_DEF(Menu, DebugSet_CycleVar, Menu_DebugSet_CycleVar) \
+	PORT_DEF(Menu, DebugSet_ChangeMapMenu, Menu_DebugSet_ChangeMapMenu) \
+	PORT_DEF(Menu, DebugSet_ChangeMapExec, Menu_DebugSet_ChangeMapExec) \
+	PORT_DEF(Menu, TVOff, Menu_TVOff) \
+	PORT_DEF(Menu, SetCam, Menu_SetCam) \
+	PORT_DEF(Menu, TVOffEnd, Menu_TVOffEnd) \
+	PORT_DEF(Menu, BlackTV, Menu_BlackTV)
 
 /* MenuMission.c */
+PORT_DECL(Menu, MenuMissionInfo) /* ? */
+PORT_DECL(Menu, MenuMissionInfo_Left) /* ? */
+PORT_DECL(Menu, MenuMissionInfo_Right) /* ? */
+PORT_DECL(Menu, GoPrimaryMission) /* ? */
+PORT_DECL(Menu, GoCrazyDeal) /* ? */
+PORT_DECL(Menu, GoNotes) /* ? */
 PORT_DECL(Menu, EnterMissionInfo) /* ? */
+PORT_DECL(Menu, ExitMissionInfo) /* ? */
+PORT_DECL(Menu, MenuObjetive) /* ? */
+PORT_DECL(Menu, CrazyDealObjetive) /* ? */
+PORT_DECL(Menu, MissionNotesText) /* ? */
 #define PORTS_MenuMission \
-	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo)
+	PORT_DEF(Menu, MenuMissionInfo, Menu_MenuMissionInfo) \
+	PORT_DEF(Menu, MenuMissionInfo_Left, Menu_MenuMissionInfo_Left) \
+	PORT_DEF(Menu, MenuMissionInfo_Right, Menu_MenuMissionInfo_Right) \
+	PORT_DEF(Menu, GoPrimaryMission, Menu_GoPrimaryMission) \
+	PORT_DEF(Menu, GoCrazyDeal, Menu_GoCrazyDeal) \
+	PORT_DEF(Menu, GoNotes, Menu_GoNotes) \
+	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo) \
+	PORT_DEF(Menu, ExitMissionInfo, Menu_ExitMissionInfo) \
+	PORT_DEF(Menu, MenuObjetive, Menu_MenuObjetive) \
+	PORT_DEF(Menu, CrazyDealObjetive, Menu_CrazyDealObjetive) \
+	PORT_DEF(Menu, MissionNotesText, Menu_MissionNotesText)
 
 /* MenuNet.c */
 PORT_DECL(PCMenu, MultiPlayerMenu) /* ? */
@@ -893,6 +1047,49 @@ PORT_DECL(PCMenu, ShowConectionStatus) /* ? */
 	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin) \
 	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword) \
 	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus)
+
+/* MenuVideo.c */
+PORT_DECL(PCMenu, VideoMenu) /* ? */
+PORT_DECL(PCMenu, VideoMenuBack) /* ? */
+PORT_DECL(PCMenu, VideoDefaults) /* ? */
+PORT_DECL(PCMenu, ApplyChanges) /* ? */
+PORT_DECL(PCMenu, ChangeVideoMode) /* ? */
+PORT_DECL(PCMenu, PrevVideoMode) /* ? */
+PORT_DECL(PCMenu, NextVideoMode) /* ? */
+PORT_DECL(PCMenu, ChangeTextureFilter) /* ? */
+PORT_DECL(PCMenu, ChangeTextureDetail) /* ? */
+PORT_DECL(PCMenu, ChangeShadowsDetail) /* ? */
+PORT_DECL(PCMenu, ChangeVSync) /* ? */
+PORT_DECL(PCMenu, ChangeLock) /* ? */
+PORT_DECL(PCMenu, ChangeFog) /* ? */
+PORT_DECL(PCMenu, ChangeBloom) /* ? */
+PORT_DECL(PCMenu, ChangeMotionBlur) /* ? */
+PORT_DECL(PCMenu, ChangeDuDv) /* ? */
+PORT_DECL(PCMenu, ChangeGamma) /* ? */
+PORT_DECL(PCMenu, GammaSliderFocus_Sub) /* ? */
+PORT_DECL(PCMenu, GammaSliderFocus_Add) /* ? */
+PORT_DECL(PCMenu, ChangeDisplay) /* ? */
+#define PORTS_MenuVideo \
+	PORT_DEF(PCMenu, VideoMenu, PCMenu_VideoMenu) \
+	PORT_DEF(PCMenu, VideoMenuBack, PCMenu_VideoMenuBack) \
+	PORT_DEF(PCMenu, VideoDefaults, PCMenu_VideoDefaults) \
+	PORT_DEF(PCMenu, ApplyChanges, PCMenu_ApplyChanges) \
+	PORT_DEF(PCMenu, ChangeVideoMode, PCMenu_ChangeVideoMode) \
+	PORT_DEF(PCMenu, PrevVideoMode, PCMenu_PrevVideoMode) \
+	PORT_DEF(PCMenu, NextVideoMode, PCMenu_NextVideoMode) \
+	PORT_DEF(PCMenu, ChangeTextureFilter, PCMenu_ChangeTextureFilter) \
+	PORT_DEF(PCMenu, ChangeTextureDetail, PCMenu_ChangeTextureDetail) \
+	PORT_DEF(PCMenu, ChangeShadowsDetail, PCMenu_ChangeShadowsDetail) \
+	PORT_DEF(PCMenu, ChangeVSync, PCMenu_ChangeVSync) \
+	PORT_DEF(PCMenu, ChangeLock, PCMenu_ChangeLock) \
+	PORT_DEF(PCMenu, ChangeFog, PCMenu_ChangeFog) \
+	PORT_DEF(PCMenu, ChangeBloom, PCMenu_ChangeBloom) \
+	PORT_DEF(PCMenu, ChangeMotionBlur, PCMenu_ChangeMotionBlur) \
+	PORT_DEF(PCMenu, ChangeDuDv, PCMenu_ChangeDuDv) \
+	PORT_DEF(PCMenu, ChangeGamma, PCMenu_ChangeGamma) \
+	PORT_DEF(PCMenu, GammaSliderFocus_Sub, PCMenu_GammaSliderFocus_Sub) \
+	PORT_DEF(PCMenu, GammaSliderFocus_Add, PCMenu_GammaSliderFocus_Add) \
+	PORT_DEF(PCMenu, ChangeDisplay, PCMenu_ChangeDisplay)
 
 /* MenuVideoVars.c */
 PORT_DECL(PCMenu, GammaFormula) /* ? */
@@ -5558,6 +5755,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2647
+#define PORT_COUNT 2744
 
 #endif

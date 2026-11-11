@@ -37,7 +37,6 @@ static struct {
 	char keys[0x800];		/* the keys of the last action read, kept when a read fails (as the script) */
 } controls;
 
-static void Controls_RunMenu(int id, const char *section, PyObject *vars);
 
 /* "Set.Action" into set and the action; 0 without a dot */
 static byte Controls_Split(const char *control, char *set, int size, const char **action) {
@@ -348,7 +347,7 @@ static void Mouse_Apply(int id) {
 static void Step_Invert(int id, const nativeVal_t *args, int n) {
 	const char *item;
 	if (!Mode_Parse(args, n, "s", &item)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	byte yes = GVar_GetNum(item, 0) == 1;
@@ -359,7 +358,7 @@ static void Step_Invert(int id, const nativeVal_t *args, int n) {
 static void Step_Sensitivity(int id, const nativeVal_t *args, int n) {
 	const char *item, *var;
 	if (!Mode_Parse(args, n, "ss", &item, &var)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	Script_SetNum(id, item, "Value", Mouse_SensToValue(GVar_GetNum(var, 0)));
@@ -376,9 +375,10 @@ static const scriptStep_t controls_steps[] = {
 	{ NULL, NULL },
 };
 
-static void Controls_RunMenu(int id, const char *section, PyObject *vars) {
-	Script_RunFile(id, OPTIONS_FILE, section, options_def, controls_steps, vars);
-}
+/* a section of options.def with its $names: n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner takes
+ * them as a dict) */
+#define Controls_RunMenu(id, section, n, ...) \
+	Mode_DefRun(id, OPTIONS_FILE, section, options_def, controls_steps, 0, n __VA_OPT__(, ) __VA_ARGS__)
 
 /*
  * FillControllerMenu(id, control, tab) of the script, the section pad: the rows of the module variable options, the
@@ -387,22 +387,21 @@ static void Controls_RunMenu(int id, const char *section, PyObject *vars) {
  */
 static byte Pad_Fill(int id, const char *tab) {
 	byte chr = !strcmp(tab, "Char");
-	PyObject *vars = Py_BuildValue("{s:s,s:s,s:s}", "tab", tab, "link", chr ? "Char" : "Ship", "set",
-		chr ? "Walk" : "Racer");
-	byte ok = vars && Script_RunFileTry(id, OPTIONS_FILE, "pad", options_def, controls_steps, vars);
-	Py_XDECREF(vars);
-	return ok;
+	modeVals_t t = { .n = 0 };
+	byte ok = Mode_DefRun(id, OPTIONS_FILE, "pad", options_def, controls_steps, 1, 3, "tab", Mode_S(&t, tab), "link",
+		Mode_S(&t, chr ? "Char" : "Ship"), "set", Mode_S(&t, chr ? "Walk" : "Racer"));
+	return Mode_Done(&t, ok);
 }
 
-#define CONTROLS_ARGS(args) \
+#define CONTROLS_ARGS(a, n) \
 	int id; \
 	const char *control; \
-	if (!Script_Args(args, &id, &control)) { \
-		return NULL; \
+	if (!Mode_IdControl(a, n, &id, &control)) { \
+		return 0; \
 	}
 
 /* a function (id, control) that runs a section */
-#define CONTROLS_MENU(func, section) MODE_IDFN(func, (Controls_RunMenu(id, section, NULL), 1))
+#define CONTROLS_MENU(func, section) MODE_IDFN(func, (Controls_RunMenu(id, section, 0), 1))
 
 CONTROLS_MENU(PCMenu_OptionsMenu, "Options")
 CONTROLS_MENU(PCMenu_ControlsMenu, "Controls")
@@ -437,68 +436,64 @@ static byte Controls_CreateMenu(int id, const nativeVal_t *title, const nativeVa
 			}
 		}
 		/* OBJLIB 7: the error of an entry without an action dropped */
-		PyErr_Clear();
+		Mode_DropError();
 		Native_Free(&at);
 		Native_Free(&et);
 	}
 	if (!found) {
 		return Native_Raise(NE_VALUE, "CreateControlMenu: the entries need an action");
 	}
-	/* OBJLIB 6: the $names of the section as a dict */
-	PyObject *t = Native_ToPy(title), *m = t ? Native_ToPy(menu) : NULL, *f = m ? Native_ToPy(&first) : NULL;
-	PyObject *vars = f ? Py_BuildValue("{s:O,s:O,s:s,s:s,s:O}", "title", t, "menu", m, "back", back, "tab", tab,
-		"first", f) : NULL;
-	Py_XDECREF(f);
-	Py_XDECREF(m);
-	Py_XDECREF(t);
+	modeVals_t t = { .n = 0 };
+	Controls_RunMenu(id, "keys", 5, "title", title, "menu", menu, "back", Mode_S(&t, back), "tab", Mode_S(&t, tab),
+		"first", &first);
 	Native_Free(&first);
-	Controls_RunMenu(id, "keys", vars);
-	Py_XDECREF(vars);
+	return Mode_Done(&t, 1);
+}
+
+static byte PCMenu_CreateControlMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	int id;
+	const nativeVal_t *title, *menu;
+	const char *back, *tab;
+	nativeVal_t m;
+	(void)out;
+	if (!Mode_Parse(a, n, "iOOss", &id, &title, &menu, &back, &tab)) {
+		return 0;
+	}
+	/* the menu list is read item by item (Mode_ElemsIn): a copy */
+	Native_Copy(&m, menu);
+	Mode_ElemsIn(&m);
+	byte ok = Controls_CreateMenu(id, title, &m, back, tab);
+	Native_Free(&m);
+	return ok;
+}
+MODE_ADAPTER(PCMenu, CreateControlMenu)
+
+static byte PCMenu_RefreshControlMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
+	Controls_Refresh();
 	return 1;
 }
+MODE_ADAPTER(PCMenu, RefreshControlMenu)
 
-static PyObject *PCMenu_CreateControlMenu(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *title, *menu;
-	char *back, *tab;
-	nativeVal_t t, m;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOOss", &id, &title, &menu, &back, &tab)) {
-		return NULL;
-	}
-	Native_Arg(title, &t);
-	Native_Arg(menu, &m);
-	Mode_ElemsIn(&m);
-	byte ok = Controls_CreateMenu(id, &t, &m, back, tab);
-	Native_Free(&t);
-	Native_Free(&m);
-	return Mode_Result(ok);
-}
-
-static PyObject *PCMenu_RefreshControlMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	Controls_Refresh();
-	return Py_ReturnNone();
-}
-
-static PyObject *PCMenu_ClearKeyEntry(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static byte PCMenu_ClearKeyEntry_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	char set[0x40];
 	const char *action;
 	if (Controls_Split(control, set, sizeof(set), &action)) {
 		Input_ClearDefinedList(id, set, action, 1);
 	}
 	Controls_Refresh();
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ClearKeyEntry)
 
 /* the next key pressed is added to the action; Escape aborts */
-static PyObject *PCMenu_WaitForKeyPress(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static byte PCMenu_WaitForKeyPress_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	char set[0x40], item[0x48];
 	const char *action;
 	Str_Printf(item, sizeof(item), "1%s", control);
@@ -511,22 +506,25 @@ static PyObject *PCMenu_WaitForKeyPress(PyObject *self, PyObject *args) {
 	}
 	GVar_SetStr("EscapeEvent", "PCMenu.AbortWaitRedefine");
 	Input_SelectActionSetNamed("Inactive");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, WaitForKeyPress)
 
 /* AbortWaitRedefine(id) and KetRedefineFunc() (sic): the key is defined or Escape was pressed */
-static PyObject *PCMenu_AbortWaitRedefine(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte PCMenu_AbortWaitRedefine_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Controls_AbortWait();
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, AbortWaitRedefine)
 
-static PyObject *PCMenu_ResetEverything(PyObject *self, PyObject *args) {
+static byte PCMenu_ResetEverything_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	static const char *const pad_vars[] = { "XBInvertCharYPad", "XBCDigitalAsAnalog", "XBCameraAutoPad",
 		"XBInvertLRChar", "XBInvertVehicleYPad", "XBVDigitalAsAnalog", "XBVehicleAsFPS", "XBInvertLRVehicle" };
-	(void)self;
-	CONTROLS_ARGS(args);
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	(void)control;
 	Input_ResetToDefault();
 	GVar_SetNum("InvertMouse", 0);
@@ -535,18 +533,20 @@ static PyObject *PCMenu_ResetEverything(PyObject *self, PyObject *args) {
 	for (size_t i = 0; i < sizeof(pad_vars) / sizeof(pad_vars[0]); i++) {
 		GVar_SetNum(pad_vars[i], GVar_GetNum(pad_vars[i], 1));
 	}
-	Controls_RunMenu(id, "Controls", NULL);
-	return Py_ReturnNone();
+	Controls_RunMenu(id, "Controls", 0);
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ResetEverything)
 
-static PyObject *PCMenu_ResetToDefault(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static byte PCMenu_ResetToDefault_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	(void)control;
 	MODE_PRINTED(Menu, YesNoMenu, "isss", (long)id, Script_Lang("Menu_Controls_ResetToDefaultQuestion"),
 		"PCMenu.ResetEverything", "PCMenu.ControlsMenu");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ResetToDefault)
 
 /* OptionYesNo(id, control): switches the engine variable named control between 0 and 1 */
 static void Controls_YesNo(int id, const char *control) {
@@ -555,40 +555,44 @@ static void Controls_YesNo(int id, const char *control) {
 	Script_SetStr(id, control, "Text", Script_Lang(yes ? "Menu_Question_Yes" : "Menu_Question_No"));
 }
 
-static PyObject *PCMenu_OptionYesNo(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static byte PCMenu_OptionYesNo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	Controls_YesNo(id, control);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, OptionYesNo)
 
-static PyObject *PCMenu_InvertMouse(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static byte PCMenu_InvertMouse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	(void)control;
 	Controls_YesNo(id, "InvertMouse");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, InvertMouse)
 
 /* AlwaysRun(id, control): not in a menu of the game */
-static PyObject *PCMenu_AlwaysRun(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static byte PCMenu_AlwaysRun_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	char text[0x80];
 	byte yes = GVar_GetNum("AlwaysRun", 0) == 0;
 	GVar_SetNum("AlwaysRun", yes);
 	Str_Printf(text, sizeof(text), "Always Run  %s", Script_Lang(yes ? "Menu_Question_Yes" : "Menu_Question_No"));
 	Script_SetStr(id, control, "Text", text);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, AlwaysRun)
 
-static PyObject *PCMenu_MouseSensitivityChange(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
+static byte PCMenu_MouseSensitivityChange_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	CONTROLS_ARGS(a, n);
 	(void)control;
 	Mouse_Apply(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MouseSensitivityChange)
 
 /* the dummies left and right of a sensitivity title step its slider and give the focus back; 0 with the error */
 static byte Mouse_StepSlider(int id, const char *prev, double sign) {
@@ -604,24 +608,26 @@ static byte Mouse_StepSlider(int id, const char *prev, double sign) {
 	return 1;
 }
 
-static PyObject *Mouse_Step(PyObject *args, double sign) {
+static byte Mouse_Step(const nativeVal_t *a, int n, double sign) {
 	int id;
-	char *control, *prev;
-	if (!PyArg_ParseTuple(args, "iss", &id, &control, &prev)) {
-		return NULL;
+	const char *control, *prev;
+	if (!Mode_Parse(a, n, "iss", &id, &control, &prev)) {
+		return 0;
 	}
-	return Mode_Result(Mouse_StepSlider(id, prev, sign));
+	return Mouse_StepSlider(id, prev, sign);
 }
 
-static PyObject *PCMenu_MouseSensitivitySliderFocus_Sub(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mouse_Step(args, -1.0);
+static byte PCMenu_MouseSensitivitySliderFocus_Sub_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Mouse_Step(a, n, -1.0);
 }
+MODE_ADAPTER(PCMenu, MouseSensitivitySliderFocus_Sub)
 
-static PyObject *PCMenu_MouseSensitivitySliderFocus_Add(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mouse_Step(args, 1.0);
+static byte PCMenu_MouseSensitivitySliderFocus_Add_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Mouse_Step(a, n, 1.0);
 }
+MODE_ADAPTER(PCMenu, MouseSensitivitySliderFocus_Add)
 
 /*
  * The pad menus as the script opens them: `global options, currentActionSet`, the action set (NULL: already set) and
@@ -655,24 +661,18 @@ static byte Pad_Config(int id, const nativeVal_t *control) {
 }
 
 /* the adapters of the functions (id, control) with control any value */
-#define PAD_FN(func, call) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
+#define PAD_FN(name, call) \
+	static byte PCMenu_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		int id; \
-		PyObject *control; \
-		nativeVal_t c; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "iO", &id, &control)) { \
-			return NULL; \
-		} \
-		Native_Arg(control, &c); \
-		byte ok = call; \
-		Native_Free(&c); \
-		return Mode_Result(ok); \
-	}
+		const nativeVal_t *c; \
+		(void)out; \
+		return Mode_Parse(a, n, "iO", &id, &c) && (call); \
+	} \
+	MODE_ADAPTER(PCMenu, name)
 
-PAD_FN(PCMenu_ControllerConfig, Pad_Config(id, &c))
-PAD_FN(PCMenu_ControllerConfigCharMenu, Pad_Open(id, &c, "Walk", 0))
-PAD_FN(PCMenu_ControllerConfigShipMenu, Pad_Open(id, &c, "Racer", 1))
+PAD_FN(ControllerConfig, Pad_Config(id, c))
+PAD_FN(ControllerConfigCharMenu, Pad_Open(id, c, "Walk", 0))
+PAD_FN(ControllerConfigShipMenu, Pad_Open(id, c, "Racer", 1))
 
 /* FillControllerMenu(id, control, actualTab): the pad menu of the tab with the option rows of the module variable
  * options, which the callers set to match the tab */
@@ -732,19 +732,7 @@ static void Pad_SetValue(int id, const char *control) {
 MODE_IDFN(PCMenu_SetOptionValue, (Pad_SetValue(id, control), 1))
 
 /* UpdatePadText(id, ActionSet): the texts of the buttons and sticks of the pad picture */
-static PyObject *PCMenu_UpdatePadText(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *set;
-	nativeVal_t v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &set)) {
-		return NULL;
-	}
-	Native_Arg(set, &v);
-	byte ok = Pad_TextOf(id, &v);
-	Native_Free(&v);
-	return Mode_Result(ok);
-}
+PAD_FN(UpdatePadText, Pad_TextOf(id, c))
 
 /*
  * ShowPadConfig(id, ActionSet, YOffset=0): the pad picture (the section padpicture, the items moved down by YOffset)
@@ -758,7 +746,7 @@ static byte Pad_ShowConfig(int id, const nativeVal_t *set, double yoff) {
 		"TextDCrossUD", "RStickLine", "LStickLine", "LTrigger", "RTrigger", "DCrossLine", "DCrossLine1", "DCrossLine2",
 		"Pad", "DCrossLR", "DCrossUD", "LeftThumbstickLR", "LeftThumbstickUD", "RightThumbstickLR",
 		"RightThumbstickUD" };
-	Controls_RunMenu(id, "padpicture", NULL);
+	Controls_RunMenu(id, "padpicture", 0);
 	for (size_t i = 0; yoff != 0 && i < sizeof(items) / sizeof(items[0]); i++) {
 		Script_SetNum(id, items[i], "Y", Script_GetNum(id, items[i], "Y") + yoff);
 	}
@@ -774,7 +762,8 @@ static byte PCMenu_ShowPadConfig_E(const nativeVal_t *a, int n, nativeVal_t *out
 	return Mode_Parse(a, n, "iO|d", &id, &set, &yoff) && Pad_ShowConfig(id, set, yoff);
 }
 
-/* the keywords and the errors of PyArg_ParseTupleAndKeywords as before, then the entry by position */
+/* OBJLIB 7: the keyword adapter (the keywords and the errors of PyArg_ParseTupleAndKeywords as before), then the
+ * entry by position */
 static PyObject *PCMenu_ShowPadConfig(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *kwlist[] = { "id", "ActionSet", "YOffset", NULL };
 	int id;
@@ -821,7 +810,7 @@ static byte Pad_SwitchOption(int id, const nativeVal_t *control) {
 	return Mode_Done(&t, ok);
 }
 
-PAD_FN(PCMenu_SwitchOption, Pad_SwitchOption(id, &c))
+PAD_FN(SwitchOption, Pad_SwitchOption(id, c))
 
 PyMethodDef g_MenuControlsMethods[] = {
 	{ "OptionsMenu", PCMenu_OptionsMenu, 1, NULL },

@@ -11,7 +11,7 @@
  * TitleBarYOff, BackButtonYStart, QuestionMenuYStart, backFunc, Scorer.MarginH and MarginV), Menu.currentSoundPitch
  * and VerticalMenuLastControl are written at once (OBJLIB 5). Menu.InitMenuSys is called through its ref (PORT_CALL:
  * directly while the attribute holds the port's function, else by name); ShowWarning schedules itself, the scheduler
- * takes its entry (stage 4: Mode_SchedPy, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
+ * takes its entry (stage 4: Mode_SchedAt, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -55,7 +55,7 @@ static const char *Base_Str(const nativeVal_t *seq, int i, char *out, int size) 
 	}
 	Native_Free(&tmp);
 	/* OBJLIB 7: the IndexError or TypeError of an odd entry dropped */
-	PyErr_Clear();
+	Mode_DropError();
 	return out;
 }
 
@@ -79,7 +79,7 @@ static const char *Base_EntryName(const nativeVal_t *menu, int i, int k, const c
 		Str_Printf(out, size, "%s%d", prefix, i + 1);
 	}
 	Native_Free(&tmp);
-	PyErr_Clear();
+	Mode_DropError();
 	return out;
 }
 
@@ -99,18 +99,10 @@ static void Base_SetObj(int id, const char *item, const char *var, const nativeV
 	}
 }
 
-/* str(v) of the script into b (Native_BufFree it); an object's str the Python way (OBJLIB 7), "" when it fails */
+/* str(v) of the script into b (Native_BufFree it; Mode_StrBuf), "" when it fails */
 static const char *Base_Text(const nativeVal_t *v, nativeBuf_t *b) {
 	Native_BufInit(b);
-	if (v->type != NV_OBJ) {
-		Native_Repr(b, v, NR_STR);
-		return b->p;
-	}
-	PyObject *t = PyObject_Str(v->obj);
-	if (t) {
-		Native_BufAdd(b, PyString_AsString(t), PyString_Size(t));
-		Py_DECREF(t);
-	}
+	Mode_StrBuf(v, b);
 	return b->p;
 }
 
@@ -122,7 +114,7 @@ static void Step_TitleBar(int id, const nativeVal_t *args, int n) {
 	const char *text, *font;
 	nativeVal_t v;
 	if (!Mode_Parse(args, n, "Oss", &y, &text, &font) || !Native_Pass(y, &v)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	Base_TitleBar(id, &v, text, font);
@@ -141,14 +133,13 @@ static const scriptStep_t base_steps[] = {
 	{ NULL, NULL },
 };
 
-static void Base_Run(int id, const char *section, PyObject *vars) {
-	Script_RunFile(id, BASE_FILE, section, base_def, base_steps, vars);
-}
-
+/* a section of base.def with its $names: n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner takes them
+ * as a dict) */
+#define Base_Run(id, section, n, ...) \
+	Mode_DefRun(id, BASE_FILE, section, base_def, base_steps, 0, n __VA_OPT__(, ) __VA_ARGS__)
 /* a section that stops where the script stops: 0 with the error set */
-static byte Base_RunTry(int id, const char *section, PyObject *vars) {
-	return Script_RunFileTry(id, BASE_FILE, section, base_def, base_steps, vars);
-}
+#define Base_RunTry(id, section, n, ...) \
+	Mode_DefRun(id, BASE_FILE, section, base_def, base_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
 /* ---- the pieces ---- */
 
@@ -160,13 +151,10 @@ static void Base_TitleBar(int id, const nativeVal_t *y, const char *text, const 
 		Font_TextSize(f, pos, size, 0.0f, 0.0f, "%s", text);
 	}
 	int width = (int)(size[0] / 18) * 18 + 36;
-	/* OBJLIB 6: the $names of the section as a dict */
-	PyObject *py = Native_ToPy(y);
-	PyObject *vars = py ? Py_BuildValue("{s:O,s:i,s:i,s:i,s:i}", "y", py, "lx", 320 - width / 2 - 9, "mx",
-		320 - width / 2, "rx", 320 + width / 2, "scale", width / 18 * 2) : NULL;
-	Py_XDECREF(py);
-	Base_Run(id, "titlebar", vars);
-	Py_XDECREF(vars);
+	modeVals_t t = { .n = 0 };
+	Base_Run(id, "titlebar", 5, "y", y, "lx", Mode_I(&t, 320 - width / 2 - 9), "mx", Mode_I(&t, 320 - width / 2), "rx",
+		Mode_I(&t, 320 + width / 2), "scale", Mode_I(&t, width / 18 * 2));
+	Mode_Done(&t, 1);
 }
 
 /* the circuit; in the main menu the version, in a game the dark background */
@@ -184,12 +172,12 @@ static void Base_Circuit(int id, byte drawBack) {
 	if (back) {
 		GVar_SetNum("R_SceneBlurValue", 1);
 	}
-	PyObject *vars = Py_BuildValue("{s:i,s:i,s:s,s:s,s:i,s:i,s:i,s:i,s:i}", "mainmenu", mainMenu, "demo",
-		Mode_ModGetI("Init", "isDemo", 0) != 0, "version", version, "copyright",
-		"2004 \xa9 Mercury Steam Entertainment SL.", "back", back, "left", marginH + 5, "right", 640 - marginH - 5,
-		"bottom", 480 - marginV - 20, "bottom2", 480 - marginV - 40);
-	Base_Run(id, "circuit", vars);
-	Py_XDECREF(vars);
+	modeVals_t t = { .n = 0 };
+	Base_Run(id, "circuit", 9, "mainmenu", Mode_I(&t, mainMenu), "demo",
+		Mode_I(&t, Mode_ModGetI("Init", "isDemo", 0) != 0), "version", Mode_S(&t, version), "copyright", Mode_S(&t, "2004 \xa9 Mercury Steam Entertainment SL."), "back",
+		Mode_I(&t, back), "left", Mode_I(&t, marginH + 5), "right", Mode_I(&t, 640 - marginH - 5), "bottom",
+		Mode_I(&t, 480 - marginV - 20), "bottom2", Mode_I(&t, 480 - marginV - 40));
+	Mode_Done(&t, 1);
 }
 
 /* a new, empty menu with the cursor where it was; the effects of a game are off */
@@ -203,7 +191,7 @@ static void Base_NewMenu(int id) {
 	if (sc) {
 		cScorer_Clear(sc);
 	}
-	Base_Run(id, "cursor", NULL);
+	Base_Run(id, "cursor", 0);
 	Script_SetCursor(id, "Cursor");
 	if (had) {
 		Script_SetNum(id, "Cursor", "X", x);
@@ -222,9 +210,10 @@ static void Base_NewMenu(int id) {
 }
 
 static void Base_TabDefaults(int id, const char *control) {
-	PyObject *vars = Py_BuildValue("{s:s}", "control", control);
-	Base_Run(id, "tabdefaults", vars);
-	Py_XDECREF(vars);
+	nativeVal_t c;
+	Native_SetText(&c, control, (int)strlen(control));
+	Base_Run(id, "tabdefaults", 1, "control", &c);
+	Native_Free(&c);
 }
 
 /*
@@ -458,7 +447,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 		if (text && text->type == NV_STR) {
 			Str_Copy(lastText, Native_Text(text), sizeof(lastText));
 		}
-		PyErr_Clear();
+		Mode_DropError();
 		Native_Free(&ttmp);
 		Native_Free(&etmp);
 	}
@@ -508,15 +497,10 @@ static byte Base_TextBox(int id, const nativeVal_t *desc, const char *accept, co
 		}
 		button = NULL;
 	}
-	PyObject *d = Native_ToPy(desc);
-	PyObject *b = button ? Native_ToPy(button) : PyString_FromString(text);
-	PyObject *vars = d && b ? Py_BuildValue("{s:O,s:s,s:s,s:O,s:i}", "desc", d, "accept", accept, "back", back,
-		"button", b, "xbox", xbox) : NULL;
-	byte ok = vars && Base_RunTry(id, "textbox", vars);
-	Py_XDECREF(vars);
-	Py_XDECREF(b);
-	Py_XDECREF(d);
-	return ok;
+	modeVals_t t = { .n = 0 };
+	byte ok = Base_RunTry(id, "textbox", 5, "desc", desc, "accept", Mode_S(&t, accept), "back", Mode_S(&t, back),
+		"button", button ? button : Mode_S(&t, text), "xbox", Mode_I(&t, xbox));
+	return Mode_Done(&t, ok);
 }
 
 /*
@@ -545,14 +529,11 @@ static int Base_ShowWarning(int id, const nativeVal_t *desc) {
 /* the section of the arrows or the slider with the $names name, x, y (and size: NULL for none) */
 static void Base_Place(int id, const char *section, const char *name, const nativeVal_t *x, const nativeVal_t *y,
 	const nativeVal_t *size) {
-	PyObject *px = Native_ToPy(x), *py = px ? Native_ToPy(y) : NULL, *ps = py && size ? Native_ToPy(size) : NULL;
-	PyObject *vars = !py || (size && !ps) ? NULL : size ? Py_BuildValue("{s:s,s:O,s:O,s:O}", "name", name, "x", px,
-		"y", py, "size", ps) : Py_BuildValue("{s:s,s:O,s:O}", "name", name, "x", px, "y", py);
-	Base_Run(id, section, vars);
-	Py_XDECREF(vars);
-	Py_XDECREF(ps);
-	Py_XDECREF(py);
-	Py_XDECREF(px);
+	nativeVal_t nm;
+	Native_SetText(&nm, name, (int)strlen(name));
+	/* without a size the name "size" is not given at all (the last pair is not counted) */
+	Base_Run(id, section, size ? 4 : 3, "name", &nm, "x", x, "y", y, "size", size);
+	Native_Free(&nm);
 }
 
 /* ---- the functions of Menu (adapters) ---- */
@@ -588,7 +569,7 @@ BASE_LINK(UnLinkUD, "Down", "Up", 1)
 		if (!Mode_Parse(a, n, "i", &id)) { \
 			return 0; \
 		} \
-		Base_Run(id, section, NULL); \
+		Base_Run(id, section, 0); \
 		Base_Circuit(id, 1); \
 		return 1; \
 	} \
@@ -598,15 +579,16 @@ BASE_BACK(DrawBackMainMenu, "backmain")
 BASE_BACK(DrawBackSubMenu, "backsub")
 BASE_BACK(DrawBackOptionMenu, "backoption")
 
-static PyObject *Menu_DrawCircuitMenu(PyObject *self, PyObject *args) {
+static byte Menu_DrawCircuitMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, drawBack = 1;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i|i", &id, &drawBack)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i|i", &id, &drawBack)) {
+		return 0;
 	}
 	Base_Circuit(id, drawBack != 0);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DrawCircuitMenu)
 
 /* DrawMenuTitleBar(id[, Y[, text[, font]]]) */
 static byte Menu_DrawMenuTitleBar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -722,13 +704,11 @@ static byte Menu_YesNoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	}
 	Base_NewMenu(id);
 	int y = Mode_ModGetI("Menu", "QuestionMenuYStart", 230);
-	PyObject *pt = Native_ToPy(title);
-	PyObject *vars = pt ? Py_BuildValue("{s:O,s:s,s:s,s:i,s:i,s:i}", "title", pt, "yes", yes, "no", no, "y", y,
-		"bary", y + (int)Mode_ModGetI("Menu", "TitleBarYOff", -2), "exit", !strcmp(yes, "Menu.ExitGame")) : NULL;
-	Py_XDECREF(pt);
-	Base_Run(id, "yesno", vars);
-	Py_XDECREF(vars);
-	return 1;
+	modeVals_t t = { .n = 0 };
+	Base_Run(id, "yesno", 6, "title", title, "yes", Mode_S(&t, yes), "no", Mode_S(&t, no), "y", Mode_I(&t, y), "bary",
+		Mode_I(&t, y + (int)Mode_ModGetI("Menu", "TitleBarYOff", -2)), "exit",
+		Mode_I(&t, !strcmp(yes, "Menu.ExitGame")));
+	return Mode_Done(&t, 1);
 }
 MODE_ADAPTER(Menu, YesNoMenu)
 
@@ -778,18 +758,9 @@ static byte Menu_ShowWarning_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	if (r != 2) {
 		return (byte)r;
 	}
-	/* the function of the module with the arguments (id, desc) as a tuple: the scheduler takes the entry while it is
+	/* the function of the module with the arguments (id, desc) as given: the scheduler takes the entry while it is
 	 * the port's own function (Port_Scheduled) */
-	nativeVal_t t;
-	Native_SetEmpty(&t, NV_TUPLE);
-	Native_Copy(Native_Append(&t), &a[0]);
-	Native_Copy(Native_Append(&t), &a[1]);
-	PyObject *args = Native_ToPy(&t);
-	Native_Free(&t);
-	if (args) {
-		Mode_SchedPy(Timer_GetTime(&g_pWorld->timer) + 0.25f, "Menu", "ShowWarning", args, "ShowWarning");
-		Py_DECREF(args);
-	}
+	Mode_SchedAt(Timer_GetTime(&g_pWorld->timer) + 0.25f, "Menu", "ShowWarning", a, 2, "ShowWarning");
 	return 1;
 }
 MODE_ADAPTER(Menu, ShowWarning)
@@ -807,51 +778,42 @@ static byte Menu_SetTabDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out)
 MODE_ADAPTER(Menu, SetTabDefaults)
 
 /* SliderMenu(id, name, x, y) */
-static PyObject *Menu_SliderMenu(PyObject *self, PyObject *args) {
+static byte Menu_SliderMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	char *name;
-	PyObject *x, *y;
-	nativeVal_t vx, vy;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "isOO", &id, &name, &x, &y)) {
-		return NULL;
+	const char *name;
+	const nativeVal_t *x, *y;
+	(void)out;
+	if (!Mode_Parse(a, n, "isOO", &id, &name, &x, &y)) {
+		return 0;
 	}
-	Native_Arg(x, &vx);
-	Native_Arg(y, &vy);
-	Base_Place(id, "slider", name, &vx, &vy, NULL);
-	Native_Free(&vx);
-	Native_Free(&vy);
-	return Py_ReturnNone();
+	Base_Place(id, "slider", name, x, y, NULL);
+	return 1;
 }
+MODE_ADAPTER(Menu, SliderMenu)
 
 /* PreviousNextMenu(id, name, x, y, size) and PreviousNextMenuSimple: arrows left and right of a value */
-static PyObject *Base_Arrows(PyObject *args, const char *section) {
+static byte Base_Arrows(const nativeVal_t *a, int n, const char *section) {
 	int id;
-	char *name;
-	PyObject *o[3];
-	nativeVal_t v[3];
-	if (!PyArg_ParseTuple(args, "isOOO", &id, &name, &o[0], &o[1], &o[2])) {
-		return NULL;
+	const char *name;
+	const nativeVal_t *o[3];
+	if (!Mode_Parse(a, n, "isOOO", &id, &name, &o[0], &o[1], &o[2])) {
+		return 0;
 	}
-	for (int i = 0; i < 3; i++) {
-		Native_Arg(o[i], &v[i]);
-	}
-	Base_Place(id, section, name, &v[0], &v[1], &v[2]);
-	for (int i = 0; i < 3; i++) {
-		Native_Free(&v[i]);
-	}
-	return Py_ReturnNone();
+	Base_Place(id, section, name, o[0], o[1], o[2]);
+	return 1;
 }
 
-static PyObject *Menu_PreviousNextMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	return Base_Arrows(args, "prevnext");
+static byte Menu_PreviousNextMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Base_Arrows(a, n, "prevnext");
 }
+MODE_ADAPTER(Menu, PreviousNextMenu)
 
-static PyObject *Menu_PreviousNextMenuSimple(PyObject *self, PyObject *args) {
-	(void)self;
-	return Base_Arrows(args, "prevnextsimple");
+static byte Menu_PreviousNextMenuSimple_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Base_Arrows(a, n, "prevnextsimple");
 }
+MODE_ADAPTER(Menu, PreviousNextMenuSimple)
 
 PyMethodDef g_MenuBaseMethods[] = {
 	{ "LinkLR", Menu_LinkLR, 1, NULL },

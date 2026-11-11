@@ -51,7 +51,7 @@ static const missionPage_t *Mission_Page(const char *name) {
 /* the page that runs, for its content step */
 static const missionPage_t *mission_page;
 
-static void Mission_Run(int id, const char *section, PyObject *vars);
+static void Mission_Run(int id, const char *section, const char *const *names, const nativeVal_t *const *vals, int n);
 
 /* module.var as an int: an int as it is, a float cut, anything else (or no such variable) def (Script_GetInt) */
 static int Mission_ModInt(const char *module, const char *var, int def) {
@@ -59,7 +59,7 @@ static int Mission_ModInt(const char *module, const char *var, int def) {
 	int r = def;
 	if (!Mode_ModGet(module, var, &v)) {
 		/* OBJLIB 7 */
-		PyErr_Clear();
+		Mode_DropError();
 	} else if (v.type == NV_INT) {
 		r = (int)v.i;
 	} else if (v.type == NV_FLOAT) {
@@ -88,13 +88,13 @@ static void Mission_Replace(const char *text, const char *tag, const char *arg, 
 /* one line of objectives or notes in the colours of the page (red..blue the frame, t* the texts) */
 static void Mission_Objective(int id, int num, const nativeVal_t *text1, const nativeVal_t *text2, const int *frame,
 	const int *text) {
+	static const char *const names[10] = { "num", "y", "text1", "text2", "red", "green", "blue", "tred", "tgreen",
+		"tblue" };
 	nativeVal_t v[8];
-	PyObject *vars = Mode_DefVars(10, "num", Mode_IntVal(&v[0], num), "y", Mode_IntVal(&v[1], 150 + num * 50), "text1", text1,
-		"text2", text2, "red", Mode_IntVal(&v[2], frame[0]), "green", Mode_IntVal(&v[3], frame[1]), "blue",
-		Mode_IntVal(&v[4], frame[2]), "tred", Mode_IntVal(&v[5], text[0]), "tgreen", Mode_IntVal(&v[6], text[1]), "tblue",
-		Mode_IntVal(&v[7], text[2]));
-	Mission_Run(id, "objective", vars);
-	Py_XDECREF(vars);
+	const nativeVal_t *vals[10] = { Mode_IntVal(&v[0], num), Mode_IntVal(&v[1], 150 + num * 50), text1, text2,
+		Mode_IntVal(&v[2], frame[0]), Mode_IntVal(&v[3], frame[1]), Mode_IntVal(&v[4], frame[2]),
+		Mode_IntVal(&v[5], text[0]), Mode_IntVal(&v[6], text[1]), Mode_IntVal(&v[7], text[2]) };
+	Mission_Run(id, "objective", names, vals, 10);
 }
 
 static void Mission_ObjectiveText(int id, int num, const char *text1, const char *text2, const int *frame,
@@ -113,7 +113,7 @@ static byte Mission_DealStatus(int num, nativeVal_t *out) {
 		return 1;
 	}
 	/* OBJLIB 7 */
-	PyErr_Print();
+	Mode_PrintError();
 	return 0;
 }
 
@@ -129,7 +129,7 @@ static byte Mission_Ready(const nativeVal_t *res) {
 	const nativeVal_t *a = Mission_Item(res, 1, &ta), *b = Mission_Item(res, 2, &tb);
 	byte ready = a && b && Native_Compare(a, b) >= 0;
 	/* OBJLIB 7 */
-	PyErr_Clear();
+	Mode_DropError();
 	Native_Free(&ta);
 	Native_Free(&tb);
 	return ready;
@@ -165,7 +165,7 @@ static byte Mission_DealObjective(int id, int num) {
 		Str_Printf(count, sizeof(count), "%s / %s", ra, rb);
 		Mission_ObjectiveText(id, num, Script_Lang(key), count, frame, text);
 		/* OBJLIB 7 */
-		PyErr_Clear();
+		Mode_DropError();
 		Native_Free(&tn);
 		Native_Free(&ta);
 		Native_Free(&tb);
@@ -184,7 +184,7 @@ static int Mission_ListCount(const char *var) {
 		if (!Native_Len(&v, &n)) {
 			n = -1;
 			/* OBJLIB 7 */
-			PyErr_Clear();
+			Mode_DropError();
 		}
 		Native_Free(&v);
 	}
@@ -234,7 +234,7 @@ static void Mission_DealDesc(int id, char *desc, int size) {
 			}
 		} else {
 			/* OBJLIB 7 */
-			PyErr_Print();
+			Mode_PrintError();
 		}
 		Native_Free(&r);
 		Native_Free(&f);
@@ -285,12 +285,11 @@ static void Mission_DealDesc(int id, char *desc, int size) {
 	}
 }
 
-/* a $name of the file that runs as a text (OBJLIB 6: the runner keeps Python values) */
+/* a $name of the file that runs as a text (Mode_SetValue) */
 static void Mission_SetValue(const char *name, const char *text) {
 	nativeVal_t v;
-	PyObject *o = Native_ToPy(Mission_Text(&v, text));
+	Mode_SetValue(name, Mission_Text(&v, text));
 	Native_Free(&v);
-	Script_SetValue(name, o);
 }
 
 /* Menu.UseTxt as a C text ("" for any other value or none) */
@@ -299,7 +298,7 @@ static void Mission_UseTxt(char *out, int size) {
 	out[0] = 0;
 	if (!Mode_ModGet("Menu", "UseTxt", &v)) {
 		/* OBJLIB 7 */
-		PyErr_Clear();
+		Mode_DropError();
 	} else if (v.type == NV_STR) {
 		Str_Copy(out, Native_Text(&v), size);
 	}
@@ -351,8 +350,10 @@ static const scriptStep_t mission_steps[] = {
 	{ NULL, NULL },
 };
 
-static void Mission_Run(int id, const char *section, PyObject *vars) {
-	Script_RunFile(id, MISSION_FILE, section, mission_def, mission_steps, vars);
+/* a section of mission.def with its $names as n names and values (Mode_DefRunV; OBJLIB 6: the runner takes them as a
+ * dict) */
+static void Mission_Run(int id, const char *section, const char *const *names, const nativeVal_t *const *vals, int n) {
+	Mode_DefRunV(id, MISSION_FILE, section, mission_def, mission_steps, 0, names, vals, n);
 }
 
 static void Mission_Menu(int id, const char *name) {
@@ -365,65 +366,63 @@ static void Mission_Menu(int id, const char *name) {
 	const missionPage_t *outer = mission_page;
 	mission_page = p;
 	Str_Printf(back, sizeof(back), "\x15 %s", Script_Lang("XBox_Menu_Back"));
+	static const char *const names[12] = { "page", "ltitle", "rtitle", "red", "green", "blue", "tred", "tgreen",
+		"tblue",
+		"xbox", "outdoor", "xboxback" };
 	nativeVal_t v[12];
-	PyObject *vars = Mode_DefVars(12, "page", Mission_Text(&v[0], p->page), "ltitle", Mission_Text(&v[1], p->left), "rtitle",
-		Mission_Text(&v[2], p->right), "red", Mode_IntVal(&v[3], p->red), "green", Mode_IntVal(&v[4], p->green), "blue",
-		Mode_IntVal(&v[5], p->blue), "tred", Mode_IntVal(&v[6], p->tred), "tgreen", Mode_IntVal(&v[7], p->tgreen), "tblue",
-		Mode_IntVal(&v[8], p->tblue), "xbox", Mode_IntVal(&v[9], GVar_GetNum("IsXbox", 0) != 0), "outdoor",
-		Mode_IntVal(&v[10], Mission_ModInt("Init", "Outdoor", 0) != 0), "xboxback", Mission_Text(&v[11], back));
+	const nativeVal_t *vals[12] = { Mission_Text(&v[0], p->page), Mission_Text(&v[1], p->left),
+		Mission_Text(&v[2], p->right), Mode_IntVal(&v[3], p->red), Mode_IntVal(&v[4], p->green),
+		Mode_IntVal(&v[5], p->blue), Mode_IntVal(&v[6], p->tred), Mode_IntVal(&v[7], p->tgreen),
+		Mode_IntVal(&v[8], p->tblue), Mode_IntVal(&v[9], GVar_GetNum("IsXbox", 0) != 0),
+		Mode_IntVal(&v[10], Mission_ModInt("Init", "Outdoor", 0) != 0), Mission_Text(&v[11], back) };
+	Mission_Run(id, "page", names, vals, 12);
 	for (int i = 0; i < 12; i++) {
 		Native_Free(&v[i]);
 	}
-	Mission_Run(id, "page", vars);
-	Py_XDECREF(vars);
 	mission_page = outer;
 }
 
 /* ---- the functions of Menu ---- */
 
-#define MISSION_ARGS(args) \
+#define MISSION_ARGS(a, n) \
 	int id; \
 	const char *control; \
-	if (!Script_Args(args, &id, &control)) { \
-		return NULL; \
+	if (!Mode_IdControl(a, n, &id, &control)) { \
+		return 0; \
 	}
 
-static PyObject *Menu_MenuMissionInfo(PyObject *self, PyObject *args) {
-	(void)self;
-	MISSION_ARGS(args);
+static byte Menu_MenuMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MISSION_ARGS(a, n);
 	Mission_Menu(id, control);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, MenuMissionInfo)
 
 /* the arrows: the page of the arrow (its name), the cursor on the arrow that leads further the same way */
-static PyObject *Mission_Arrow(PyObject *args, byte left) {
-	MISSION_ARGS(args);
+static byte Mission_Arrow(const nativeVal_t *a, int n, byte left) {
+	MISSION_ARGS(a, n);
 	Mission_Menu(id, control);
 	const missionPage_t *p = Mission_Page(control);
 	if (p) {
 		Script_SetDefault(id, left ? p->left : p->right);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *Menu_MenuMissionInfo_Left(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mission_Arrow(args, 1);
+static byte Menu_MenuMissionInfo_Left_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Mission_Arrow(a, n, 1);
 }
+MODE_ADAPTER(Menu, MenuMissionInfo_Left)
 
-static PyObject *Menu_MenuMissionInfo_Right(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mission_Arrow(args, 0);
+static byte Menu_MenuMissionInfo_Right_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Mission_Arrow(a, n, 0);
 }
+MODE_ADAPTER(Menu, MenuMissionInfo_Right)
 
-#define MISSION_GO(func, page) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
-		(void)self; \
-		MISSION_ARGS(args); \
-		(void)control; \
-		Mission_Menu(id, page); \
-		return Py_ReturnNone(); \
-	}
+#define MISSION_GO(func, page) MODE_IDFN(func, (Mission_Menu(id, page), 1))
 
 MISSION_GO(Menu_GoPrimaryMission, "PrimaryMission")
 MISSION_GO(Menu_GoCrazyDeal, "CrazyDeal")
@@ -452,9 +451,9 @@ static byte Menu_EnterMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *ou
 }
 MODE_ADAPTER(Menu, EnterMissionInfo)
 
-static PyObject *Menu_ExitMissionInfo(PyObject *self, PyObject *args) {
-	(void)self;
-	MISSION_ARGS(args);
+static byte Menu_ExitMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MISSION_ARGS(a, n);
 	(void)control;
 	cScorer *sc = Scorer_Get(id);
 	if (sc) {
@@ -462,45 +461,44 @@ static PyObject *Menu_ExitMissionInfo(PyObject *self, PyObject *args) {
 		cPy_Function_SetFunc(&sc->onPrev, "");
 	}
 	MODE_PRINTED(Menu, BackToGame, "i", (long)id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, ExitMissionInfo)
 
 /* MenuObjetive(id, num, text1, text2, (red, green, blue), (textred, textgreen, textblue)) */
-static PyObject *Menu_MenuObjetive(PyObject *self, PyObject *args) {
+static byte Menu_MenuObjetive_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, num, frame[3], text[3];
-	PyObject *t1, *t2;
-	nativeVal_t a, b;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iiOO(iii)(iii)", &id, &num, &t1, &t2, &frame[0], &frame[1], &frame[2], &text[0],
-		&text[1], &text[2])) {
-		return NULL;
+	const nativeVal_t *t1, *t2;
+	(void)out;
+	if (!Mode_Parse(a, n, "iiOO(iii)(iii)", &id, &num, &t1, &t2, &frame[0], &frame[1], &frame[2], &text[0], &text[1],
+		&text[2])) {
+		return 0;
 	}
-	Native_Arg(t1, &a);
-	Native_Arg(t2, &b);
-	Mission_Objective(id, num, &a, &b, frame, text);
-	Native_Free(&a);
-	Native_Free(&b);
-	return Py_ReturnNone();
+	Mission_Objective(id, num, t1, t2, frame, text);
+	return 1;
 }
+MODE_ADAPTER(Menu, MenuObjetive)
 
-static PyObject *Menu_CrazyDealObjetive(PyObject *self, PyObject *args) {
+static byte Menu_CrazyDealObjetive_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, num;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ii", &id, &num)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ii", &id, &num)) {
+		return 0;
 	}
-	return PyInt_FromLong(Mission_DealObjective(id, num));
+	Native_SetInt(out, Mission_DealObjective(id, num));
+	return 1;
 }
+MODE_ADAPTER(Menu, CrazyDealObjetive)
 
-static PyObject *Menu_MissionNotesText(PyObject *self, PyObject *args) {
+static byte Menu_MissionNotesText_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Mission_Notes(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, MissionNotesText)
 
 PyMethodDef g_MenuMissionMethods[] = {
 	{ "MenuMissionInfo", Menu_MenuMissionInfo, 1, NULL },
