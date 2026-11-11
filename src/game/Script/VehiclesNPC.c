@@ -47,17 +47,7 @@ static const scriptStep_t npc_steps[] = {
 
 /* a section of vehiclesnpc.def with the n values $names[i] = vals[i]: 0 with the error set */
 static byte Npc_Run(const char *section, const char *const *names, const nativeVal_t *const *vals, int n) {
-	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
-	PyObject *vars = PyDict_New();
-	byte ok = vars != NULL;
-	for (int i = 0; ok && i < n; i++) {
-		PyObject *o = Native_ToPy(vals[i]);
-		ok = o && PyDict_SetItemString(vars, (char *)names[i], o) == 0;
-		Py_XDECREF(o);
-	}
-	ok = ok && Script_RunFileTry(0, "vehicles/vehiclesnpc.def", section, npc_def, npc_steps, vars);
-	Py_XDECREF(vars);
-	return ok;
+	return Mode_DefRunV(0, "vehicles/vehiclesnpc.def", section, npc_def, npc_steps, 1, names, vals, n);
 }
 
 /* StdShips[key] = (the texts and ints of fmt: s a text, i a long), the dict of the module changed in place */
@@ -474,12 +464,11 @@ static byte Npc_InitN(void) {
 		return Mode_Done(&t, 1);
 	}
 	/* the global (a mission may replace it): the scheduler takes the entry while it is the port's own function */
-	PyObject *f = Mode_GlobalPy(NPC, "InitMercs");
+	nativeVal_t *f = Mode_V(&t);
+	byte ok = Mode_G(NPC, "InitMercs", f);
 	Native_SetInt(time, 0);
 	Native_SetStr(name, "InitMercs");
-	byte ok = f && Mode_Schedule(time, f, NULL, 0, name);
-	Py_XDECREF(f);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, ok && Mode_ScheduleV(time, f, NULL, 0, name));
 }
 
 /* the functions with keyword arguments: one core each on the arguments by slot (NULL for one not given), the adapter

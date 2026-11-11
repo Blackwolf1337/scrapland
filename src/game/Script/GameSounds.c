@@ -46,17 +46,14 @@ static const scriptStep_t gsound_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of one of the files with the $names of vars (Mode_DefVars, given away; NULL: none): an error in the file
- * (a call that raises, an entity that refuses a variable) stops it like the script */
-static byte Gs_Run(const char *file, const char *builtin, const char *section, PyObject *vars) {
-	byte ok = Script_RunFileTry(0, file, section, builtin, gsound_steps, vars);
-	Py_XDECREF(vars);
-	return ok;
-}
-
-#define Gs_RunSound(section, vars) Gs_Run("sound/sound.def", sound_def, section, vars)
-#define Gs_RunOut(section, vars) Gs_Run("sound/outsound.def", outsound_def, section, vars)
-#define Gs_RunDoor(section, vars) Gs_Run("sound/doorsound.def", doorsound_def, section, vars)
+/* a section of one of the files with its $names, n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner
+ * takes them as a dict): an error in the file (a call that raises, an entity that refuses a variable) stops it like
+ * the script */
+#define GS_RUN(file, builtin, section, n, ...) \
+	Mode_DefRun(0, file, section, builtin, gsound_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
+#define Gs_RunSound(section, n, ...) GS_RUN("sound/sound.def", sound_def, section, n __VA_OPT__(, ) __VA_ARGS__)
+#define Gs_RunOut(section, n, ...) GS_RUN("sound/outsound.def", outsound_def, section, n __VA_OPT__(, ) __VA_ARGS__)
+#define Gs_RunDoor(section, n, ...) GS_RUN("sound/doorsound.def", doorsound_def, section, n __VA_OPT__(, ) __VA_ARGS__)
 
 /* `if Init.<var>:`: 1, 0, -1 with the error */
 static int Gs_Init(const char *var) {
@@ -111,7 +108,7 @@ static byte Gs_SetStdDamageSounds(const nativeVal_t *name) {
 	}
 	/* the first set through the handle: the error of the script for a handle of no entity (None) */
 	byte ok = Mode_EntitySeam(name, &v) && Mode_VIsType(&v, "WithLife") >= 0 && LvN_SetI(&v, "sdd_n", 9) &&
-		Gs_RunSound("SetStdDamageSounds", Mode_DefVars(1, "name", name)) && PORT_OWN(Sound, SetStdDamageSoundLoops, NULL, "v", &v);
+		Gs_RunSound("SetStdDamageSounds", 1, "name", name) && PORT_OWN(Sound, SetStdDamageSoundLoops, NULL, "v", &v);
 	Native_Free(&v);
 	return ok;
 }
@@ -119,7 +116,8 @@ static byte Gs_SetStdDamageSounds(const nativeVal_t *name) {
 /* SetStdDamageSoundLoops(v): the damage loops of the entity of the handle v */
 static byte Gs_SetStdDamageSoundLoops(const nativeVal_t *v) {
 	nativeVal_t name = { 0 };
-	byte ok = LvN_SetI(v, "sdl_n", 5) && Mode_VObj(v, "Name", &name) && Gs_RunSound("SetStdDamageSoundLoops", Mode_DefVars(1, "name", &name));
+	byte ok = LvN_SetI(v, "sdl_n", 5) && Mode_VObj(v, "Name", &name) &&
+		Gs_RunSound("SetStdDamageSoundLoops", 1, "name", &name);
 	Native_Free(&name);
 	return ok;
 }
@@ -136,7 +134,7 @@ static byte Gs_LoadDamageSounds(void) {
 		out = Gs_Init("isShipEdit");
 		out = out < 0 ? -1 : !out;
 	}
-	return out >= 0 && Gs_RunSound("LoadDamageSounds", Mode_DefVars(1, "out", Mode_IntVal(&v, out)));
+	return out >= 0 && Gs_RunSound("LoadDamageSounds", 1, "out", Mode_IntVal(&v, out));
 }
 
 /* WayPoints(): the money, the check points and the items of the outdoor levels ($out), or the battery and the extra
@@ -144,7 +142,7 @@ static byte Gs_LoadDamageSounds(void) {
 static byte Gs_WayPoints(void) {
 	nativeVal_t v;
 	int out = Mode_Import("Init") ? Gs_Init("Outdoor") : -1;
-	return out >= 0 && Gs_RunSound("WayPoints", Mode_DefVars(1, "out", Mode_IntVal(&v, out)));
+	return out >= 0 && Gs_RunSound("WayPoints", 1, "out", Mode_IntVal(&v, out));
 }
 
 /* SetOutMusic(): the relax and action music of the level */
@@ -161,8 +159,9 @@ static byte Gs_SetOutMusic(void) {
 		Native_Free(&map);
 	}
 	int demo = out >= 0 && act >= 0 ? Gs_Init("isDemo") : -1;
-	return demo >= 0 && Gs_RunSound("SetOutMusic", Mode_DefVars(3, "out", Mode_IntVal(&a, out), "action", Mode_IntVal(&b, act), "demo",
-		Mode_IntVal(&c, demo)));
+	return demo >= 0 &&
+		Gs_RunSound("SetOutMusic", 3, "out", Mode_IntVal(&a, out), "action", Mode_IntVal(&b, act), "demo",
+		Mode_IntVal(&c, demo));
 }
 
 /* Init(): the generic sounds of every level, then the music */
@@ -252,6 +251,8 @@ static byte Gs_SetPSSlots(const nativeVal_t *const *v, byte interval) {
 	return Gs_SetPS(a, interval);
 }
 
+/* OBJLIB 7: the keyword adapters of SetPSLoop and SetPSInterval (the names and the errors of
+ * PyArg_ParseTupleAndKeywords; the slots of the two formats differ) */
 static PyObject *Sound_SetPSArgs(PyObject *args, PyObject *kw, byte interval) {
 	static char *loopNames[] = { "Name", "Pos", "Snd", "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler", NULL };
 	static char *intNames[] = { "Name", "Pos", "Snd", "MinInterval", "MaxInterval", "Volume", "Pitch", "AttenIni",
@@ -314,7 +315,7 @@ static PyObject *Sound_SetPSInterval(PyObject *self, PyObject *args, PyObject *k
 
 /* the sections without tests: LoadMenuSounds, ScorerSounds, PhotoSounds, CharConversionSounds,
  * LoadShipEditInterfaceSounds */
-#define SOUND_SECTION(fn) MODE_FN(Sound, fn, 0, Gs_RunSound(#fn, NULL))
+#define SOUND_SECTION(fn) MODE_FN(Sound, fn, 0, Gs_RunSound(#fn, 0))
 
 SOUND_SECTION(LoadMenuSounds)
 SOUND_SECTION(ScorerSounds)
@@ -369,18 +370,19 @@ static byte Gs_SetVehicleSounds(const nativeVal_t *name) {
 	if (armed < 0) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Gs_RunOut("SetVehicleSounds", Mode_DefVars(4, "name", name, "model", model, "pc", Mode_IntVal(pcv, pc), "armed",
-		Mode_IntVal(armedv, armed))) && Mode_Import(SND) && PORT_CALL(Sound, SetStdDamageSounds, NULL, "v", name));
+	return Mode_Done(&t,
+		Gs_RunOut("SetVehicleSounds", 4, "name", name, "model", model, "pc", Mode_IntVal(pcv, pc), "armed",
+		Mode_IntVal(armedv, armed)) && Mode_Import(SND) && PORT_CALL(Sound, SetStdDamageSounds, NULL, "v", name));
 }
 
 /* the load sections, LoadEngines and LoadWeapons with $pc */
 static byte Gs_OutSection(const char *section, byte pcTest) {
 	nativeVal_t v;
 	if (!pcTest) {
-		return Gs_RunOut(section, NULL);
+		return Gs_RunOut(section, 0);
 	}
 	int pc = Gs_IsPC();
-	return pc >= 0 && Gs_RunOut(section, Mode_DefVars(1, "pc", Mode_IntVal(&v, pc)));
+	return pc >= 0 && Gs_RunOut(section, 1, "pc", Mode_IntVal(&v, pc));
 }
 
 /* LoadVehicles(): the vehicle sounds of an outdoor level, from the pack Sounds/Vehicles */
@@ -401,7 +403,8 @@ static byte Gs_LoadVehicles(void) {
 
 /* Init(): the sound engine settings of the outdoor levels, then the vehicle sounds */
 static byte Gs_OutInit(void) {
-	return Mode_PrintS("Loading outdor sounds...") && Gs_RunOut("Init", NULL) && PORT_OWN(OutSound, LoadVehicles, NULL, "");
+	return Mode_PrintS("Loading outdor sounds...") && Gs_RunOut("Init", 0) &&
+		PORT_OWN(OutSound, LoadVehicles, NULL, "");
 }
 
 MODE_FN(OutSound, SetVehicleSounds, 1, Gs_SetVehicleSounds(&a[0]))
@@ -504,11 +507,10 @@ static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	return ok;
 }
 
-/* the adapter of LoadSndList: the list as the object it is */
+/* the adapter of LoadSndList: the list (argument 0) as the object it is (OBJLIB 5: sorted in place; Mode_EntryObj) */
 static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
-	PyObject *list;
 	(void)self;
-	return PyArg_ParseTuple(args, "O", &list) ? Mode_Result(Gs_LoadSndListPy(list)) : NULL;
+	return Mode_EntryObj(args, DoorSound_LoadSndList_E, 1 << 0);
 }
 
 /* run initsound <args>: SetInitDoorSound(args) through the module's globals, as SetSlide calls it (an error is left
@@ -526,7 +528,7 @@ static void DoorSound_StepInitSound(int id, const nativeVal_t *args, int n) {
 
 /* SetSlide(DoorClass): the sound events of a door class (the default open and close sounds for a class not listed) */
 static byte Gs_SetSlide(const nativeVal_t *cls) {
-	return Mode_Import("Scene") && Mode_Import("Chars") && Gs_RunDoor("SetSlide", Mode_DefVars(1, "class", cls));
+	return Mode_Import("Scene") && Mode_Import("Chars") && Gs_RunDoor("SetSlide", 1, "class", cls);
 }
 
 /* SetInitDoorSound(DoorClass, ActionName, SoundName, Vol=1, Pitch=0): a sound at the start of an action */
@@ -566,7 +568,7 @@ static PyObject *DoorSound_SetInitDoorSound(PyObject *self, PyObject *args, PyOb
 
 /* ConversorSetSounds(CharName): the sounds of the conversion point's action */
 static byte Gs_ConversorSetSounds(const nativeVal_t *name) {
-	return Mode_Import("Chars") && Gs_RunDoor("ConversorSetSounds", Mode_DefVars(1, "char", name));
+	return Mode_Import("Chars") && Gs_RunDoor("ConversorSetSounds", 1, "char", name);
 }
 
 MODE_FN(DoorSound, LoadSounds, 0, Gs_LoadSounds())

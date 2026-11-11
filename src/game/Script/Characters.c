@@ -170,20 +170,16 @@ static void Step_Speech(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "sss", &name, &module, &func)) {
 		return;
 	}
-	/* OBJLIB 5, 6: a function of a module named at run time (the import) into the table of Speech, a dict variable */
-	PyObject *speech = Script_Module("Speech");
-	PyObject *routines = speech ? PyObject_GetAttrString(speech, "SpeechRoutines") : NULL;
-	PyObject *m = routines ? Script_Module(module) : NULL;
-	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
-	PyObject *key = f ? PyString_FromString(name) : NULL;
-	if (key) {
-		PyObject_SetItem(routines, key, f);
+	/* OBJLIB 5, 7: a function of a module named at run time (held as NV_OBJ) into the table of Speech, a dict
+	 * variable changed in place; the table is looked up before the function, as the script evaluates them */
+	nativeVal_t routines, f = { 0 }, key;
+	if (Mode_ModGet("Speech", "SpeechRoutines", &routines) && Mode_ModGet(module, func, &f)) {
+		Native_SetText(&key, name, (int)strlen(name));
+		Mode_ModDictPut("Speech", "SpeechRoutines", &key, &f);
+		Native_Free(&key);
 	}
-	Py_XDECREF(key);
-	Py_XDECREF(f);
-	Py_XDECREF(m);
-	Py_XDECREF(routines);
-	Py_XDECREF(speech);
+	Native_Free(&f);
+	Native_Free(&routines);
 }
 
 /* count events between first and end as the scripts loop them: first + (end - first) * i / count */
@@ -205,7 +201,7 @@ static void Step_Spread(int id, const nativeVal_t *args, int n) {
 	const char *name, *func;
 	(void)id;
 	if (!Mode_Parse(args, n, "ddiss", &first, &end, &count, &name, &func)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	Char_Spread(first, end, count, name, func);
@@ -217,7 +213,7 @@ static void Step_TimedName(int id, const nativeVal_t *args, int n) {
 	char event[0x80];
 	(void)id;
 	if (!Mode_Parse(args, n, "ss", &name, &func)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	nativeVal_t t;
@@ -252,92 +248,103 @@ static const scriptStep_t char_steps[] = {
 	{ NULL, NULL },
 };
 
-/* the Init of a character: its file, the values it may use (more in vars when it is not NULL) */
-static void Char_InitVars(const char *name, const char *file, const char *builtin, PyObject *vars) {
+#define CHAR_OWN 2
+
+/* the Init of a character: its file with the $names xbox and level, and before them the more pairs of a name and a
+ * const nativeVal_t * (up to MODE_DEFVARS - CHAR_OWN; Mode_DefRunV, OBJLIB 6: the runner takes them as a dict) */
+static void Char_InitVars(const char *name, const char *file, const char *builtin, int more, ...) {
 	char level[0x100];
-	/* OBJLIB 5: Init.Path is a variable of Init; OBJLIB 6: the .def runner takes its $names as a dict */
+	const char *names[MODE_DEFVARS];
+	const nativeVal_t *vals[MODE_DEFVARS];
+	nativeVal_t xbox, lv;
+	va_list va;
+	/* OBJLIB 5: Init.Path is a variable of Init */
 	Script_GetString("Init", "Path", level, sizeof(level));
 	for (char *p = level; *p; p++) {
 		if (*p >= 'a' && *p <= 'z') {
 			*p -= 'a' - 'A';
 		}
 	}
-	if (vars) {
-		Py_INCREF(vars);
-	} else {
-		vars = PyDict_New();
+	CHECK(more <= MODE_DEFVARS - CHAR_OWN);
+	va_start(va, more);
+	for (int i = 0; i < more; i++) {
+		names[i] = va_arg(va, const char *);
+		vals[i] = va_arg(va, const nativeVal_t *);
 	}
-	PyObject *xbox = PyInt_FromLong(GVar_GetNum("isXbox", 0) != 0), *lv = PyString_FromString(level);
-	if (vars && xbox && lv) {
-		PyDict_SetItemString(vars, "xbox", xbox);
-		PyDict_SetItemString(vars, "level", lv);
-	}
-	Py_XDECREF(xbox);
-	Py_XDECREF(lv);
-	Script_RunFile(0, file, name, builtin, char_steps, vars);
-	Py_XDECREF(vars);
+	va_end(va);
+	Native_SetInt(&xbox, GVar_GetNum("isXbox", 0) != 0);
+	Native_SetText(&lv, level, (int)strlen(level));
+	names[more] = "xbox";
+	vals[more] = &xbox;
+	names[more + 1] = "level";
+	vals[more + 1] = &lv;
+	Mode_DefRunV(0, file, name, builtin, char_steps, 0, names, vals, more + CHAR_OWN);
+	Native_Free(&lv);
 }
 
 static void Char_Init(const char *name, const char *file, const char *builtin) {
-	Char_InitVars(name, file, builtin, NULL);
+	Char_InitVars(name, file, builtin, 0);
 }
 
-/* OnCreate(EntityName), OnFreeResources(): the section of the callback in the file of the character, $name the
- * entity */
-static PyObject *Char_Callback(const char *file, const char *builtin, const char *section, PyObject *args) {
-	char *name = "";
-	if (!PyArg_ParseTuple(args, strcmp(section, "OnCreate") ? "" : "s", &name)) {
-		return NULL;
+/* OnCreate(EntityName), OnFreeResources() and LoadSirenActs(): the section of the callback in the file of the
+ * character, $name the entity (the text "s" of OnCreate, "" for the others, which take no argument) */
+static byte Char_Callback(const char *file, const char *builtin, const char *section, const nativeVal_t *a, int n) {
+	const char *name = "";
+	nativeVal_t v;
+	if (!Mode_Parse(a, n, strcmp(section, "OnCreate") ? "" : "s", &name)) {
+		return 0;
 	}
-	PyObject *vars = Py_BuildValue("{s:s}", "name", name);
-	Script_RunFile(0, file, section, builtin, char_steps, vars);
-	Py_XDECREF(vars);
-	return Py_ReturnNone();
+	Native_SetText(&v, name, (int)strlen(name));
+	Mode_DefRun(0, file, section, builtin, char_steps, 0, 1, "name", &v);
+	Native_Free(&v);
+	return 1;
 }
 
-#define CHAR_ONCREATE(mod, file) \
-	static PyObject *mod##_OnCreate(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Char_Callback("chars/" #file ".def", file##_def, "OnCreate", args); \
-	}
+#define CHAR_CALLBACK(mod, file, fn) \
+	static byte mod##_##fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)out; \
+		return Char_Callback("chars/" #file ".def", file##_def, #fn, a, n); \
+	} \
+	MODE_ADAPTER(mod, fn)
 
-#define CHAR_ONFREE(mod, file) \
-	static PyObject *mod##_OnFreeResources(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Char_Callback("chars/" #file ".def", file##_def, "OnFreeResources", args); \
-	}
+#define CHAR_ONCREATE(mod, file) CHAR_CALLBACK(mod, file, OnCreate)
+#define CHAR_ONFREE(mod, file) CHAR_CALLBACK(mod, file, OnFreeResources)
 
 /* ---- Betty ---- */
 
-static PyObject *Betty_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Betty_Init_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Char_Init("Betty", "chars/betty.def", betty_def);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Betty, Init)
 
 CHAR_ONCREATE(Betty, betty)
 CHAR_ONFREE(Betty, betty)
 
 /* the slow motion of her attack */
-static PyObject *Char_Pitch(PyObject *args, double pitch) {
-	PyObject *a, *b, *c;
-	if (!PyArg_ParseTuple(args, "OOO", &a, &b, &c)) {
-		return NULL;
+static byte Char_Pitch(const nativeVal_t *a, int n, double pitch) {
+	if (n != 3) {
+		return Port_Arity(n, 3);
 	}
+	(void)a;
 	GVar_SetNum("S_PitchScale", pitch);
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *Betty_EnterSlowSpeed(PyObject *self, PyObject *args) {
-	(void)self;
-	return Char_Pitch(args, 0.5);
+static byte Betty_EnterSlowSpeed_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Char_Pitch(a, n, 0.5);
 }
+MODE_ADAPTER(Betty, EnterSlowSpeed)
 
-static PyObject *Betty_ExitSlowSpeed(PyObject *self, PyObject *args) {
-	(void)self;
-	return Char_Pitch(args, 1.0);
+static byte Betty_ExitSlowSpeed_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Char_Pitch(a, n, 1.0);
 }
+MODE_ADAPTER(Betty, ExitSlowSpeed)
 
 PyMethodDef g_BettyMethods[] = {
 	{ "Init", Betty_Init, 1, NULL },
@@ -351,13 +358,7 @@ PyMethodDef g_BettyMethods[] = {
 /* ---- the other characters: Init, OnCreate and OnFreeResources from the file (as far as the script has them); their
  * other functions are still in their scripts ---- */
 
-#define CHAR_INIT(mod, file) \
-	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		Char_Init(#mod, "chars/" #file ".def", file##_def); \
-		return Py_ReturnNone(); \
-	}
+#define CHAR_INIT(mod, file) MODE_FNANY(mod, Init, (Char_Init(#mod, "chars/" #file ".def", file##_def), 1))
 
 /* Init only (the OnCreate of GateKeeper, which makes an instance of the script's class per gatekeeper, is in
  * GateKeeper.c) */
@@ -407,15 +408,8 @@ CHAR_MODULE1(Human, human)
 
 /* Gear.LoadSirenActs(), Police.LoadSirenActs(): the siren actions on channel 1 of the current class, the section
  * LoadSirenActs of the file (the Init sections run it with do) */
-static PyObject *Gear_LoadSirenActs(PyObject *self, PyObject *args) {
-	(void)self;
-	return Char_Callback("chars/gear.def", gear_def, "LoadSirenActs", args);
-}
-
-static PyObject *Police_LoadSirenActs(PyObject *self, PyObject *args) {
-	(void)self;
-	return Char_Callback("chars/police.def", police_def, "LoadSirenActs", args);
-}
+CHAR_CALLBACK(Gear, gear, LoadSirenActs)
+CHAR_CALLBACK(Police, police, LoadSirenActs)
 
 /* text + frame of the script into v (Native_Free it) */
 static byte Gear_Cat(const char *text, const nativeVal_t *frame, nativeVal_t *v) {
@@ -453,25 +447,27 @@ static byte Gear_MissileEvents(const char *const what[2][2], const nativeVal_t *
 
 /* Gear.DropMissileEvent(LoadFrame, DropFrame): the events of loading and shooting the missile on the current action
  * at the two frames (texts, "TimeOfFrame" + LoadFrame like the script); gear.def writes its own two events */
-static PyObject *Gear_DropMissileEvent(PyObject *self, PyObject *args) {
+static byte Gear_DropMissileEvent_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	static const char *const what[2][2] = { { "LoadMissile", "!GearShootLoad" }, { "DropMissile", "!GearShoot" } };
-	PyObject *o[2];
 	nativeVal_t frame[2];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &o[0], &o[1])) {
-		return NULL;
+	(void)out;
+	if (n != 2) {
+		return Port_Arity(n, 2);
 	}
 	for (int i = 0; i < 2; i++) {
-		/* OBJLIB 7: a value without a native form is refused by the + below as None is */
-		if (!Native_FromPyAny(o[i], &frame[i])) {
+		/* OBJLIB 7: a value without a native form (an object, an entity handle) is refused by the + below as None is */
+		if (a[i].type == NV_OBJ || a[i].type == NV_ENT) {
 			Native_SetNone(&frame[i]);
+		} else {
+			Native_Copy(&frame[i], &a[i]);
 		}
 	}
 	byte ok = Gear_MissileEvents(what, frame);
 	Native_Free(&frame[0]);
 	Native_Free(&frame[1]);
-	return ok ? Py_ReturnNone() : NULL;
+	return ok;
 }
+MODE_ADAPTER(Gear, DropMissileEvent)
 
 PyMethodDef g_GearDefFuncs[] = {
 	{ "LoadSirenActs", Gear_LoadSirenActs, 1, NULL },
@@ -487,29 +483,27 @@ PyMethodDef g_PoliceDefFuncs[] = {
 /* ---- the mercenaries: one file, the class and the dance from Init(MercName="MercenaryA", doDance=1) ---- */
 
 static void Mercenary_Init(const char *merc, int dance) {
-	PyObject *vars = Py_BuildValue("{s:s,s:i}", "merc", merc, "dance", dance);
-	Char_InitVars("MercenaryA", "chars/mercenarya.def", mercenarya_def, vars);
-	Py_XDECREF(vars);
+	nativeVal_t m, d;
+	Native_SetText(&m, merc, (int)strlen(merc));
+	Native_SetInt(&d, dance);
+	Char_InitVars("MercenaryA", "chars/mercenarya.def", mercenarya_def, 2, "merc", &m, "dance", &d);
+	Native_Free(&m);
 }
 
-static PyObject *MercenaryA_Init(PyObject *self, PyObject *args) {
-	char *merc = "MercenaryA";
+static byte MercenaryA_Init_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *merc = "MercenaryA";
 	int dance = 1;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "|si", &merc, &dance)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "|si", &merc, &dance)) {
+		return 0;
 	}
 	Mercenary_Init(merc, dance);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(MercenaryA, Init)
 
 #define MERC_INIT(mod, dance) \
-	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		Mercenary_Init(#mod, dance); \
-		return Py_ReturnNone(); \
-	} \
+	MODE_FNANY(mod, Init, (Mercenary_Init(#mod, dance), 1)) \
 	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
 
 CHAR_ONCREATE(MercenaryA, mercenarya)
@@ -519,3 +513,5 @@ PyMethodDef g_MercenaryAMethods[] = { { "Init", MercenaryA_Init, 1, NULL }, { "O
 MERC_INIT(MercenaryB, 1)
 MERC_INIT(MercenaryC, 1)
 MERC_INIT(MercenaryL, 0)
+
+PORTS(Characters)

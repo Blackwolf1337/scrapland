@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
 static const char bankdirectorsound_def[] = {
@@ -133,89 +134,52 @@ static const scriptStep_t sound_steps[] = {
  * Scrap.OpenPack("Sounds/Chars/"+CharName), raises for a CharName that is no string before anything runs ($(char) of
  * the file would take any value as text)
  */
-static PyObject *Sound_RunInit(const char *file, const char *builtin, PyObject *vars, PyObject *name) {
-	/* "Sounds/Chars/" + CharName: string_concat refuses a value that is no text (OBJLIB 7: a class instance with
-	 * __radd__ is refused too) */
-	byte ok = vars && (PyString_Check(name) || Native_Raise(NE_TYPE, "illegal argument type for built-in operation")) &&
-		Script_RunFileTry(0, file, "Init", builtin, sound_steps, vars);
-	Py_XDECREF(vars);
-	return ok ? Py_ReturnNone() : NULL;
+static byte Sound_RunInit(const char *file, const char *builtin, const nativeVal_t *cls, const nativeVal_t *name) {
+	/* "Sounds/Chars/" + CharName: string_concat refuses a value that is no text (a class instance with __radd__ is
+	 * refused too) */
+	return (name->type == NV_STR || Native_Raise(NE_TYPE, "illegal argument type for built-in operation")) &&
+		Mode_DefRun(0, file, "Init", builtin, sound_steps, 1, cls ? 2 : 1, "char", name, "class", cls);
 }
 
-/* Init(CharName) */
-static PyObject *Sound_Init(const char *file, const char *builtin, PyObject *args) {
-	PyObject *c;
-	if (!PyArg_ParseTuple(args, "O", &c)) {
-		return NULL;
-	}
-	return Sound_RunInit(file, builtin, Py_BuildValue("{s:O}", "char", c), c);
-}
-
-/* InitLoops(EntityName): e = Scrap.GetEntity(EntityName), then the attribute sets of the section on $e */
-static byte Sound_Loops(const char *file, const char *builtin, PyObject *name) {
-	/* OBJLIB 6: Scrap.GetEntity(EntityName) by name, the handle goes to the .def runner as $e */
-	PyObject *e = Script_Entity(name);
-	PyObject *vars = e ? Py_BuildValue("{s:O,s:O}", "name", name, "e", e) : NULL;
-	byte ok = vars && Script_RunFileTry(0, file, "InitLoops", builtin, sound_steps, vars);
-	Py_XDECREF(vars);
-	Py_XDECREF(e);
-	return ok;
-}
-
-/* the native entry of InitLoops on its one argument (the direct calls of other ports, stage 3): EntityName as the
- * Python value the call by name passes (OBJLIB 6: the .def runner and the lookup take Python values) */
-static byte Sound_LoopsE(const char *file, const char *builtin, const nativeVal_t *a) {
-	PyObject *name = Native_ToPy(a);
-	byte ok = name && Sound_Loops(file, builtin, name);
-	Py_XDECREF(name);
+/* InitLoops(EntityName): e = Scrap.GetEntity(EntityName) through its ref (a case may swap it), then the attribute
+ * sets of the section on $e (the handle value) */
+static byte Sound_Loops(const char *file, const char *builtin, const nativeVal_t *name) {
+	nativeVal_t e = { 0 };
+	byte ok = PORT_CALL(Scrap, GetEntity, &e, "v", name) &&
+		Mode_DefRun(0, file, "InitLoops", builtin, sound_steps, 1, 2, "name", name, "e", &e);
+	Native_Free(&e);
 	return ok;
 }
 
 /*
  * LoadSounds(CharName), SetSounds(CharName) and the Talk sections (CharName, ActName): $char, and $talk for a Talk
- * section; they stop where the script stops (Scene.SetDefSounds execs <Type>Sound.SetSounds('<scene><name>'))
+ * section (talk NULL: none); they stop where the script stops (Scene.SetDefSounds execs
+ * <Type>Sound.SetSounds('<scene><name>'))
  */
-static PyObject *Sound_Section(const char *file, const char *builtin, const char *section, PyObject *args, PyObject *kw,
-	int talk) {
-	static char *kw1[] = { "CharName", NULL }, *kw2[] = { "CharName", "ActName", NULL };
-	PyObject *c, *a = NULL;
-	if (!(talk ? PyArg_ParseTupleAndKeywords(args, kw, "OO", kw2, &c, &a) :
-		PyArg_ParseTupleAndKeywords(args, kw, "O", kw1, &c))) {
-		return NULL;
-	}
-	PyObject *vars = talk ? Py_BuildValue("{s:O,s:O}", "char", c, "talk", a) : Py_BuildValue("{s:O}", "char", c);
-	byte ok = vars && Script_RunFileTry(0, file, section, builtin, sound_steps, vars);
-	Py_XDECREF(vars);
-	return ok ? Py_ReturnNone() : NULL;
+static byte Sound_Section(const char *file, const char *builtin, const char *section, const nativeVal_t *c,
+	const nativeVal_t *talk) {
+	return Mode_DefRun(0, file, section, builtin, sound_steps, 1, talk ? 2 : 1, "char", c, "talk", talk);
 }
 
+/* Init(CharName) */
 #define SOUND_INIT(mod, file) \
-	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Sound_Init("sound/" #file ".def", file##_def, args); \
-	}
+	MODE_FN(mod, Init, 1, Sound_RunInit("sound/" #file ".def", file##_def, NULL, &a[0]))
 
-/* InitLoops: its entry, and its adapter on the object it is given ("O") */
+/* InitLoops(EntityName) */
 #define SOUND_LOOPS(mod, file) \
-	static byte mod##_InitLoops_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
-		(void)out; \
-		return n != 1 ? Port_Arity(n, 1) : Sound_LoopsE("sound/" #file ".def", file##_def, &a[0]); \
-	} \
-	static PyObject *mod##_InitLoops(PyObject *self, PyObject *args) { \
-		PyObject *name; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "O", &name)) { \
-			return NULL; \
-		} \
-		return Sound_Loops("sound/" #file ".def", file##_def, name) ? Py_ReturnNone() : NULL; \
-	}
+	MODE_FN(mod, InitLoops, 1, Sound_Loops("sound/" #file ".def", file##_def, &a[0]))
 
-/* a section with CharName (talk 0) or CharName, ActName (talk 1) */
-#define SOUND_SECTION(mod, file, section, talk) \
-	static PyObject *mod##_##section(PyObject *self, PyObject *args, PyObject *kw) { \
-		(void)self; \
-		return Sound_Section("sound/" #file ".def", file##_def, #section, args, kw, talk); \
+/* a section with CharName (talk 0) or CharName, ActName (talk 1): keyword functions (MODE_KW: the parameter names of
+ * the script) */
+#define SOUND_SECTION0(mod, file, section) \
+	MODE_KW(mod, section, "O", "CharName") { \
+		return Sound_Section("sound/" #file ".def", file##_def, #section, &v[0], NULL); \
 	}
+#define SOUND_SECTION1(mod, file, section) \
+	MODE_KW(mod, section, "OO", "CharName", "ActName") { \
+		return Sound_Section("sound/" #file ".def", file##_def, #section, &v[0], &v[1]); \
+	}
+#define SOUND_SECTION(mod, file, section, talk) SOUND_SECTION##talk(mod, file, section)
 
 #define SOUND_FN(mod, name) { #name, mod##_##name, 1, NULL }
 /* the sections take keywords (the parameter names of the script) */
@@ -565,15 +529,7 @@ PyMethodDef g_TestCSoundMethods[] = {
 };
 
 /* MercenarySound.Init(CharClass, CharName): the sounds of one mercenary for its class */
-static PyObject *MercenarySound_Init(PyObject *self, PyObject *args) {
-	PyObject *cls, *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &cls, &name)) {
-		return NULL;
-	}
-	return Sound_RunInit("sound/mercenarysound.def", mercenarysound_def, Py_BuildValue("{s:O,s:O}", "class", cls, "char",
-		name), name);
-}
+MODE_FN(MercenarySound, Init, 2, Sound_RunInit("sound/mercenarysound.def", mercenarysound_def, &a[0], &a[1]))
 
 SOUND_SECTION(MercenarySound, mercenarysound, LoadSounds, 0)
 SOUND_SECTION(MercenarySound, mercenarysound, SetSounds, 0)
