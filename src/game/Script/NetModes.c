@@ -13,10 +13,15 @@
  * replace them: the menu entries (MultiplayerMenuOnGame, MultiplayerMenuSpectator), TeamGame, BotsList, the model
  * names, AUTO_RESPAWN_FLAG_TIME and the state of the flag modes (Flag, ZoneList, AcFlag or AcZone, FlagSpawnPos).
  * The C keeps the values it works on in the struct of each mode (nm_state) and reads them from the dict where the
- * script reads the global (OBJLIB 5). Flag and the zones of the postman modes are entity handles: they stay Python
- * objects until entities are native values (OBJLIB 7). The modes read and write the variables of Ffa (Scorer, the
- * team totals, ScorerFraglimit, MasterFlag; OBJLIB 5). The module code of NPostman and NTeamPost creates their flag
- * entity when the module loads; it stays in the .mod files.
+ * script reads the global (OBJLIB 5). The modes read and write the variables of Ffa (Scorer, the team totals,
+ * ScorerFraglimit, MasterFlag; OBJLIB 5). The module code of NPostman and NTeamPost creates their flag entity when
+ * the module loads; it stays in the .mod files.
+ *
+ * State on values (stage 6, batch 6f): no function works on Python objects. What a native value cannot say yet is
+ * held by reference (NV_OBJ) and goes through the helpers of scrap/scriptmodes.h, OBJLIB 7: Flag and the zones in
+ * ZoneList of the postman modes are entity handles (the dict object of ZoneList is filled in place, no native copy is
+ * kept of it); the AI profile of a bot is an instance of the class cShipAI of vehiclesnpc.mod; the functions given to
+ * the scheduler and TryGarage are the function objects the globals hold.
  *
  * Direct calls (stage 3): the modes call their own functions through PORT_OWN (the global, a mission may replace
  * one; the shared code picks the site of its module, FL_OWN, PO_OWN, FP_OWN) and Ffa, Menu and VehiclesNPC through
@@ -135,18 +140,11 @@ static byte Nm_PosRepr(modeVals_t *t, const nativeVal_t *pos, nativeVal_t *out) 
 	return 1;
 }
 
-static byte Nm_FlagGet(const char *m, const char *var, nativeVal_t *out) {
-	PyObject *flag = Mode_GlobalPy(m, "Flag");
-	byte ok = flag && Mode_HGet(flag, var, out);
-	Py_XDECREF(flag);
-	return ok;
-}
-
 /* Flag.SetModel(<model>) of the module */
 static byte Nm_FlagModel(const char *m, const char *model) {
-	PyObject *flag = Mode_GlobalPy(m, "Flag");
-	byte ok = flag && Mode_HSetModel(flag, m, model);
-	Py_XDECREF(flag);
+	nativeVal_t flag;
+	byte ok = Mode_G(m, "Flag", &flag) && Mode_VSetModel(&flag, m, model);
+	Native_Free(&flag);
 	return ok;
 }
 
@@ -154,7 +152,7 @@ static byte Nm_FlagModel(const char *m, const char *model) {
 static byte Nm_WayToFlag(const char *m) {
 	nativeVal_t name;
 	Native_SetNone(&name);
-	byte ok = Nm_FlagGet(m, "Name", &name) && Mode_GVarSet("CurrentWaypointName", &name);
+	byte ok = Mode_FlagGet(m, "Name", &name) && Mode_GVarSet("CurrentWaypointName", &name);
 	Native_Free(&name);
 	return ok;
 }
@@ -263,9 +261,9 @@ static byte NTeamDM_DeathFuncC(const nativeVal_t *a) {
 /* func(args) through the scheduler at Scrap.GetTime() + delay (delay a value), func the global of the module */
 static byte Nm_Later(const char *m, const nativeVal_t *delay, const char *func, const nativeVal_t *args, int n,
 	const char *name) {
-	nativeVal_t now, tm, nm;
-	PyObject *fn = Mode_GlobalPy(m, func);
-	if (!fn) {
+	nativeVal_t now, tm, nm, fn;
+	/* the function as the module holds it now (the scheduler takes the entry of a port's own function) */
+	if (!Mode_G(m, func, &fn)) {
 		return 0;
 	}
 	Native_SetFloat(&now, Mode_Time());
@@ -274,9 +272,9 @@ static byte Nm_Later(const char *m, const nativeVal_t *delay, const char *func, 
 		if (name) {
 			Native_SetStr(&nm, name);
 		}
-		ok = Mode_Schedule(&tm, fn, args, n, name ? &nm : NULL);
+		ok = Mode_ScheduleV(&tm, &fn, args, n, name ? &nm : NULL);
 	}
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -290,14 +288,13 @@ static byte Bots_DeathFuncC(const char *m, const nativeVal_t *a) {
 	}
 	if (Native_True(ai)) {
 		/* AddScheduledFunc(Scrap.GetTime() + 3, Reborn, (LooserName, e.MaxLife)) */
-		PyObject *fn = Mode_GlobalPy(m, "Reborn");
-		nativeVal_t *tm = Mode_V(&t);
+		nativeVal_t *fn = Mode_V(&t), *tm = Mode_V(&t);
+		byte ok = Mode_G(m, "Reborn", fn);
 		Native_SetFloat(tm, Mode_Time() + 3.0);
 		Native_SetEmpty(rb, NV_LIST);
 		Native_Copy(Native_Append(rb), &a[1]);
-		byte ok = fn && Mode_Get(e, Native_Text(&a[1]), "MaxLife", Native_Append(rb)) &&
-			Mode_Schedule(tm, fn, rb->items, 2, NULL) && Mode_SetI(e, Native_Text(&a[1]), "Active", 0);
-		Py_XDECREF(fn);
+		ok = ok && Mode_Get(e, Native_Text(&a[1]), "MaxLife", Native_Append(rb)) &&
+			Mode_ScheduleV(tm, fn, rb->items, 2, NULL) && Mode_SetI(e, Native_Text(&a[1]), "Active", 0);
 		if (!ok) {
 			return Mode_Done(&t, 0);
 		}
@@ -383,12 +380,8 @@ static byte Bots_InitServerModC(const char *m) {
 	}
 	/* ShipEdit.EnterEditShipMenu = TryGarage (OBJLIB 5: a function of the module as a value; the calls of
 	 * EnterEditShipMenu through its ref take the slow path to it) */
-	PyObject *fn = Mode_GlobalPy(m, "TryGarage"), *se = fn ? Script_Module("ShipEdit") : NULL;
-	int bad = !se || PyObject_SetAttrString(se, "EnterEditShipMenu", fn) < 0;
-	Py_XDECREF(se);
-	Py_XDECREF(fn);
 	nativeVal_t *bots = Mode_V(&t);
-	if (bad || !Mode_G(m, "BotsList", bots)) {
+	if (!Mode_ModSetGlobal("ShipEdit", "EnterEditShipMenu", m, "TryGarage") || !Mode_G(m, "BotsList", bots)) {
 		return Mode_Done(&t, 0);
 	}
 	/* for i in range(len(BotsList)) */
@@ -404,7 +397,7 @@ static byte Bots_InitServerModC(const char *m) {
 		nativeVal_t *s[7], *wl = Mode_V(&t), *cut = Mode_V(&t);
 		const nativeVal_t *zero = Mode_I(&t, 0), *life = Mode_I(&t, 100);
 		nativeVal_t *weap = Mode_V(&t), *red = Mode_S(&t, "red");
-		PyObject *prof = NULL, *aip = NULL, *kp = NULL, *handle;
+		nativeVal_t *prof = Mode_V(&t), *handle = Mode_V(&t);
 		cEntity *ply;
 		char nb[128];
 		byte ok = Mode_G(m, "BotsList", list) && Native_Subscript(list, Mode_I(&t, i), bot) &&
@@ -412,27 +405,14 @@ static byte Bots_InitServerModC(const char *m) {
 			Native_Subscript(ships, key, ship) && Mode_ModVar("ShipMaker", "PilotsList", pilots);
 		int npilots = ok ? Native_Size(pilots) : -1;
 		ok = npilots >= 0;
-		/* pd = VehiclesNPC.GetIAProf(bot[1]): the profile object of VehiclesNPC, changed in place below (the object
-		 * itself on both paths) */
-		if (ok) {
-			prof = PORT_ASK(VehiclesNPC, GetIAProf, "v", b1);
-			ok = prof && Native_Subscript(bot, Mode_I(&t, 2), b2) && PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "Ov", prof, b2);
-		}
-		if (ok) {
-			PyObject *cad = PyInt_FromLong(0), *ang = PyFloat_FromDouble(3.14);
-			ok = cad && ang && PyObject_SetAttrString(prof, "CadenceShootCM", cad) == 0 &&
-				PyObject_SetAttrString(prof, "AngAttack", ang) == 0;
-			Py_XDECREF(cad);
-			Py_XDECREF(ang);
-		}
-		if (ok) {
-			/* VehiclesNPC.AIProf[bot[2]] = pd */
-			aip = Script_Attr("VehiclesNPC", "AIProf");
-			kp = aip ? Native_ToPy(b2) : NULL;
-			ok = kp && PyObject_SetItem(aip, kp, prof) == 0;
-		}
-		Py_XDECREF(kp);
-		Py_XDECREF(aip);
+		/* pd = VehiclesNPC.GetIAProf(bot[1]): the profile object of VehiclesNPC, changed in place below (OBJLIB 7: an
+		 * instance of the class cShipAI of vehiclesnpc.mod, held by reference as NV_OBJ: the object itself on both
+		 * paths) */
+		ok = ok && PORT_CALL(VehiclesNPC, GetIAProf, prof, "v", b1) && Native_Subscript(bot, Mode_I(&t, 2), b2) &&
+			PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", prof, b2);
+		/* pd.CadenceShootCM = 0; pd.AngAttack = 3.14; VehiclesNPC.AIProf[bot[2]] = pd */
+		ok = ok && Mode_VSetI(prof, "CadenceShootCM", 0) && Mode_VSetF(prof, "AngAttack", 3.14) &&
+			Mode_ModDictPut("VehiclesNPC", "AIProf", b2, prof);
 		if (ok) {
 			/* ply = Scrap.CreateEntity(SNet.GetBotName(), 0.0, 0.0, 0.0, "Car") */
 			nativeVal_t *x = Mode_V(&t);
@@ -458,10 +438,8 @@ static byte Bots_InitServerModC(const char *m) {
 		/* after the calls of other ports the handle of the bot finds its entity again (gone: the handle's error) */
 		ok = ok && Mode_NameSet(pn, "Active", zero);
 		if (ok) {
-			/* the handle of the bot goes to VehiclesNPC (OBJLIB 7) */
-			handle = Mode_Handle(World_FindEntity(pn));
-			ok = PORT_CALL(VehiclesNPC, SetIAProf, NULL, "Ov", handle, b2);
-			Py_DECREF(handle);
+			/* the handle of the bot goes to VehiclesNPC (OBJLIB 7: entities are handle values) */
+			ok = Mode_EntHandle(World_FindEntity(pn), handle) && PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", handle, b2);
 		}
 		Native_Free(name);
 		ok = ok && Mode_NameGet(pn, "Name", name) && PORT_CALL(Ffa, SetSpawnPos, NULL, "v", name) &&
@@ -481,7 +459,6 @@ static byte Bots_InitServerModC(const char *m) {
 			Native_Free(name);
 			ok = ok && Mode_NameGet(pn, "Name", name) && Nm_Later(m, delay, "CheckBotState", name, 1, NULL);
 		}
-		Py_XDECREF(prof);
 		if (!ok) {
 			return Mode_Done(&t, 0);
 		}
@@ -573,7 +550,7 @@ static byte Fl_NewFlag(const char *m) {
 		return 0;
 	}
 	/* OBJLIB 7: the module keeps the handle */
-	return Script_SetGlobal(m, "Flag", Mode_Handle(e));
+	return Mode_PutHandle(m, "Flag", e);
 }
 
 /* the rest of CreateFlag(isServer) of both kinds: the radius, the radar, the server's take callback and position
@@ -749,8 +726,10 @@ static byte Po_BrowseAreasC(const char *m) {
 	if (!Native_Subscript(dummy, Mode_I(&t, 1), pos) || !Mode_Put(m, "FlagSpawnPos", &st->flagSpawnPos, pos)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *zones = PyDict_New();
-	if (!zones || !Script_SetGlobal(m, "ZoneList", zones)) {
+	/* ZoneList = {} (a new dict object in the variable; the zones go into it in place) */
+	nativeVal_t *zones = Mode_V(&t);
+	Native_SetEmpty(zones, NV_DICT);
+	if (!Mode_Put(m, "ZoneList", NULL, zones)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_DummyStart("DM_Domination_Zone_*", 1);
@@ -758,25 +737,18 @@ static byte Po_BrowseAreasC(const char *m) {
 	Mode_DummyNext(dummy);
 	while (Native_True(dummy)) {
 		int mark = t.n;
-		nativeVal_t *name = Mode_V(&t), *at = Mode_V(&t), *key = Mode_V(&t);
+		nativeVal_t *name = Mode_V(&t), *at = Mode_V(&t), *key = Mode_V(&t), *h = Mode_V(&t);
 		const nativeVal_t *zero = Mode_I(&t, 0);
 		cEntity *e;
 		if (!Native_Subscript(dummy, Mode_I(&t, 0), name) || !Mode_Create(name, zero, zero, zero, "Item", &e)) {
 			return Mode_Done(&t, 0);
 		}
 		const char *en = e ? e->name : NULL;
-		PyObject *h = NULL, *zl = NULL, *k = NULL;
 		byte ok = Native_Subscript(dummy, Mode_I(&t, 1), at) && Mode_Set(e, en, "Pos", at) && Mode_SetI(World_FindEntity(en), en, "Radius", 3000);
-		if (ok) {
-			/* ZoneList[dummy[0][19:]] = ent */
-			h = Mode_Handle(World_FindEntity(en));
-			zl = Mode_GlobalPy(m, "ZoneList");
-			ok = zl && Native_Subscript(dummy, Mode_I(&t, 0), name) && Native_Slice(name, 19, INT_MAX, key) && (k = Native_ToPy(key)) &&
-				PyObject_SetItem(zl, k, h) == 0;
-		}
-		Py_XDECREF(k);
-		Py_XDECREF(zl);
-		Py_XDECREF(h);
+		/* ZoneList[dummy[0][19:]] = ent (OBJLIB 7: the zone is the entity handle, set into the dict object in place;
+		 * no native copy of the dict is kept) */
+		ok = ok && Mode_EntHandle(World_FindEntity(en), h) && Native_Subscript(dummy, Mode_I(&t, 0), name) &&
+			Native_Slice(name, 19, INT_MAX, key) && Mode_DictPut(m, "ZoneList", NULL, key, h);
 		if (!ok) {
 			return Mode_Done(&t, 0);
 		}
@@ -945,7 +917,7 @@ static byte Po_ClientJoinC(const char *m, const nativeVal_t *a) {
 		return Mode_Done(&t, Mode_Read(m, "AcZone", ac) && Nm_Ffa("MasterFlag", mf) &&
 			Mode_Cat(&t, s, 5, Mode_S(&t, "F'"), ac, Mode_S(&t, "','"), mf, Mode_S(&t, "'")) && Mode_Send(id, s));
 	}
-	return Mode_Done(&t, Nm_FlagGet(m, "Pos", pos) && Po_SendDrop(&t, pos));
+	return Mode_Done(&t, Mode_FlagGet(m, "Pos", pos) && Po_SendDrop(&t, pos));
 }
 
 /* ServerTakeBase(ItemName, VehicleName): the carrier reached the zone: it scores (NTeamPost: 10 and a point for
@@ -963,7 +935,7 @@ static byte Po_ServerTakeBaseC(const char *m, int v, const nativeVal_t *a) {
 	 * (the script looked it up first: the same unless both fail) */
 	return Mode_Done(&t, Nm_ScorerAdd(&a[1], Mode_I(&t, v ? 10 : 1)) && (!v || Nm_TotalAdd(&t, &a[1], 1)) &&
 		PORT_CALL(Ffa, ActualizeGameScorer, NULL, "") && PORT_CALL(Ffa, ServerSendPlayerStatus, NULL, "v", &a[1]) &&
-		Nm_FlagGet(m, "Name", fname) && PO_OWN(m, ServerTakeFlag, NULL, "vv", fname, &a[1]) && PO_OWN(m, CheckEndOfGame, NULL, ""));
+		Mode_FlagGet(m, "Name", fname) && PO_OWN(m, ServerTakeFlag, NULL, "vv", fname, &a[1]) && PO_OWN(m, CheckEndOfGame, NULL, ""));
 }
 
 /* ServerDropFlag(): the flag drops where its carrier is (back to the start in AUTO_RESPAWN_FLAG_TIME) or at
@@ -1021,16 +993,11 @@ static byte Po_RespawnFlagC(const char *m) {
 	return Mode_Import("Ffa") && Mode_SetModVar("Ffa", "MasterFlag", &none) && PO_OWN(m, ServerDropFlag, NULL, "");
 }
 
-/* ---- the adapters of the module tables (OBJLIB 7: arguments, results and the errors of the Python calls) ---- */
+/* ---- the entries and adapters of the module tables (OBJLIB 7: the adapters with the arguments, results and the
+ * errors of the Python calls) ---- */
 
 /* the entry of module mod for a function that does nothing with its n arguments */
-#define NM_PASS(mod, name, nargs) \
-	static PyObject *mod##_##name(PyObject *self, PyObject *args) { \
-		static const char fmts[4][4] = { "", "O", "OO", "OOO" }; \
-		PyObject *o[3]; \
-		(void)self; \
-		return PyArg_ParseTuple(args, (char *)fmts[nargs], &o[0], &o[1], &o[2]) ? Py_ReturnNone() : NULL; \
-	}
+#define NM_PASS(mod, name, nargs) MODE_FN(mod, name, nargs, 1)
 
 #define NM_ENTRY(mod, name) { #name, mod##_##name, 1, NULL },
 

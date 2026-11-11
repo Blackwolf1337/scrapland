@@ -1049,7 +1049,10 @@ PORT_DECL(Net, LoadSinglePlayer) /* 1 */
 PORT_DECL(NDeathMatch, DeathFunc) /* 3 */
 PORT_DECL(NDeathMatch, CheckEndOfGame) /* 0 */
 PORT_DECL(NDeathMatch, GetGameDescriptor) /* 0 */
+PORT_DECL(NDeathMatch, InitServerMod) /* 0 */
+PORT_DECL(NDeathMatch, InitClientMod) /* 0 */
 PORT_DECL(NDeathMatch, ShowHelp) /* 1 */
+PORT_DECL(NDeathMatch, ServerHidePlayer) /* 1 */
 PORT_DECL(NDeathMatchBots, DeathFunc) /* 3 */
 PORT_DECL(NDeathMatchBots, Reborn) /* 2 */
 PORT_DECL(NDeathMatchBots, CheckEndOfGame) /* 0 */
@@ -1058,15 +1061,21 @@ PORT_DECL(NDeathMatchBots, TryGarage) /* 2 */
 PORT_DECL(NDeathMatchBots, SetBotState) /* 1 */
 PORT_DECL(NDeathMatchBots, CheckBotState) /* 1 */
 PORT_DECL(NDeathMatchBots, InitServerMod) /* 0 */
+PORT_DECL(NDeathMatchBots, InitClientMod) /* 0 */
 PORT_DECL(NDeathMatchBots, ShowHelp) /* 1 */
+PORT_DECL(NDeathMatchBots, ServerHidePlayer) /* 1 */
 PORT_DECL(NTeamDM, DeathFunc) /* 3 */
 PORT_DECL(NTeamDM, CheckEndOfGame) /* 0 */
 PORT_DECL(NTeamDM, GetGameDescriptor) /* 0 */
+PORT_DECL(NTeamDM, InitServerMod) /* 0 */
+PORT_DECL(NTeamDM, InitClientMod) /* 0 */
 PORT_DECL(NTeamDM, ShowHelp) /* 1 */
+PORT_DECL(NTeamDM, ServerHidePlayer) /* 1 */
 PORT_DECL(NTeamFlag, DeathFunc) /* 3 */
 PORT_DECL(NTeamFlag, InitServerMod) /* 0 */
 PORT_DECL(NTeamFlag, InitClientMod) /* 0 */
 PORT_DECL(NTeamFlag, ShowHelp) /* 1 */
+PORT_DECL(NTeamFlag, ServerHidePlayer) /* 1 */
 PORT_DECL(NTeamFlag, GetRndFlag) /* 0 */
 PORT_DECL(NTeamFlag, BrowseAreas) /* 0 */
 PORT_DECL(NTeamFlag, CreateFlag) /* 1 */
@@ -1080,6 +1089,7 @@ PORT_DECL(NFlagHunt, DeathFunc) /* 3 */
 PORT_DECL(NFlagHunt, InitServerMod) /* 0 */
 PORT_DECL(NFlagHunt, InitClientMod) /* 0 */
 PORT_DECL(NFlagHunt, ShowHelp) /* 1 */
+PORT_DECL(NFlagHunt, ServerHidePlayer) /* 1 */
 PORT_DECL(NFlagHunt, GetRndFlag) /* 0 */
 PORT_DECL(NFlagHunt, BrowseAreas) /* 0 */
 PORT_DECL(NFlagHunt, CreateFlag) /* 1 */
@@ -1089,6 +1099,7 @@ PORT_DECL(NFlagHunt, ClientJoin) /* 11 */
 PORT_DECL(NFlagHunt, ServerTakeFlag) /* 2 */
 PORT_DECL(NFlagHunt, CheckEndOfGame) /* 0 */
 PORT_DECL(NFlagHunt, GetGameDescriptor) /* 0 */
+PORT_DECL(NPostman, DeathFunc) /* 3 */
 PORT_DECL(NPostman, InitServerMod) /* 0 */
 PORT_DECL(NPostman, InitClientMod) /* 0 */
 PORT_DECL(NPostman, ShowHelp) /* 1 */
@@ -1134,7 +1145,10 @@ PORT_DECL(NTeamPost, GetGameDescriptor) /* 0 */
 	PORT_DEF(NDeathMatch, DeathFunc, NDeathMatch_DeathFunc) \
 	PORT_DEF(NDeathMatch, CheckEndOfGame, NDeathMatch_CheckEndOfGame) \
 	PORT_DEF(NDeathMatch, GetGameDescriptor, NDeathMatch_GetGameDescriptor) \
+	PORT_DEF(NDeathMatch, InitServerMod, NDeathMatch_InitClientModPass) \
+	PORT_DEF(NDeathMatch, InitClientMod, NDeathMatch_InitClientModPass) \
 	PORT_DEF(NDeathMatch, ShowHelp, NDeathMatch_ShowHelp) \
+	PORT_DEF(NDeathMatch, ServerHidePlayer, NDeathMatch_ServerHidePlayerPass) \
 	PORT_DEF(NDeathMatchBots, DeathFunc, NDeathMatchBots_DeathFunc) \
 	PORT_DEF(NDeathMatchBots, Reborn, NDeathMatchBots_Reborn) \
 	PORT_DEF(NDeathMatchBots, CheckEndOfGame, NDeathMatchBots_CheckEndOfGame) \
@@ -1143,15 +1157,21 @@ PORT_DECL(NTeamPost, GetGameDescriptor) /* 0 */
 	PORT_DEF(NDeathMatchBots, SetBotState, NDeathMatchBots_SetBotState) \
 	PORT_DEF(NDeathMatchBots, CheckBotState, NDeathMatchBots_CheckBotState) \
 	PORT_DEF(NDeathMatchBots, InitServerMod, NDeathMatchBots_InitServerMod) \
+	PORT_DEF(NDeathMatchBots, InitClientMod, NDeathMatchBots_InitClientModPass) \
 	PORT_DEF(NDeathMatchBots, ShowHelp, NDeathMatchBots_ShowHelp) \
+	PORT_DEF(NDeathMatchBots, ServerHidePlayer, NDeathMatchBots_ServerHidePlayerPass) \
 	PORT_DEF(NTeamDM, DeathFunc, NTeamDM_DeathFunc) \
 	PORT_DEF(NTeamDM, CheckEndOfGame, NTeamDM_CheckEndOfTeamGame) \
 	PORT_DEF(NTeamDM, GetGameDescriptor, NTeamDM_TeamDescriptor) \
+	PORT_DEF(NTeamDM, InitServerMod, NTeamDM_InitClientModPass) \
+	PORT_DEF(NTeamDM, InitClientMod, NTeamDM_InitClientModPass) \
 	PORT_DEF(NTeamDM, ShowHelp, NTeamDM_ShowHelp) \
+	PORT_DEF(NTeamDM, ServerHidePlayer, NTeamDM_ServerHidePlayerPass) \
 	PORT_DEF(NTeamFlag, DeathFunc, NTeamFlag_DeathFunc) \
 	PORT_DEF(NTeamFlag, InitServerMod, NTeamFlag_InitServerMod) \
 	PORT_DEF(NTeamFlag, InitClientMod, NTeamFlag_InitClientMod) \
 	PORT_DEF(NTeamFlag, ShowHelp, NTeamFlag_ShowHelp) \
+	PORT_DEF(NTeamFlag, ServerHidePlayer, NTeamFlag_ServerHidePlayerPass) \
 	PORT_DEF(NTeamFlag, GetRndFlag, NTeamFlag_GetRndFlag) \
 	PORT_DEF(NTeamFlag, BrowseAreas, NTeamFlag_BrowseAreas) \
 	PORT_DEF(NTeamFlag, CreateFlag, NTeamFlag_CreateFlag) \
@@ -1165,6 +1185,7 @@ PORT_DECL(NTeamPost, GetGameDescriptor) /* 0 */
 	PORT_DEF(NFlagHunt, InitServerMod, NFlagHunt_InitServerMod) \
 	PORT_DEF(NFlagHunt, InitClientMod, NFlagHunt_InitClientMod) \
 	PORT_DEF(NFlagHunt, ShowHelp, NFlagHunt_ShowHelp) \
+	PORT_DEF(NFlagHunt, ServerHidePlayer, NFlagHunt_ServerHidePlayerPass) \
 	PORT_DEF(NFlagHunt, GetRndFlag, NFlagHunt_GetRndFlag) \
 	PORT_DEF(NFlagHunt, BrowseAreas, NFlagHunt_BrowseAreas) \
 	PORT_DEF(NFlagHunt, CreateFlag, NFlagHunt_CreateFlag) \
@@ -1174,6 +1195,7 @@ PORT_DECL(NTeamPost, GetGameDescriptor) /* 0 */
 	PORT_DEF(NFlagHunt, ServerTakeFlag, NFlagHunt_ServerTakeFlag) \
 	PORT_DEF(NFlagHunt, CheckEndOfGame, NFlagHunt_CheckEndOfGame) \
 	PORT_DEF(NFlagHunt, GetGameDescriptor, NFlagHunt_GetGameDescriptor) \
+	PORT_DEF(NPostman, DeathFunc, NPostman_DeathFunc) \
 	PORT_DEF(NPostman, InitServerMod, NPostman_InitServerMod) \
 	PORT_DEF(NPostman, InitClientMod, NPostman_InitClientMod) \
 	PORT_DEF(NPostman, ShowHelp, NPostman_ShowHelp) \
@@ -5534,6 +5556,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2635
+#define PORT_COUNT 2646
 
 #endif
