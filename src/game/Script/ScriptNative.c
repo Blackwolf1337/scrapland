@@ -17,6 +17,7 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/pyentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -39,6 +40,7 @@ static void Native_Clear(nativeVal_t *v, byte type) {
 	v->items = NULL;
 	v->obj = NULL;
 	v->ent = NULL;
+	v->ref = NULL;
 }
 
 void Native_SetNone(nativeVal_t *v) {
@@ -126,6 +128,9 @@ void Native_Free(nativeVal_t *v) {
 	if (v->ent) {
 		EntRef_Drop(v->ent);
 	}
+	if (v->ref) {
+		NObj_Drop(v->ref);
+	}
 	Native_Clear(v, NV_NONE);
 }
 
@@ -134,6 +139,9 @@ void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
 	Py_XINCREF(v->obj);
 	if (v->ent) {
 		EntRef_Keep(v->ent);
+	}
+	if (v->ref) {
+		NObj_Keep(v->ref);
 	}
 	if (v->text) {
 		out->text = Mem_Alloc((uint32_t)v->n + 1);
@@ -230,6 +238,9 @@ static byte Native_NumEqual(const nativeVal_t *a, const nativeVal_t *b) {
 }
 
 byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b) {
+	if (a->type == NV_REF || b->type == NV_REF) {
+		return NObj_Equal(a, b);
+	}
 	if (Native_IsNum(a) && Native_IsNum(b)) {
 		return Native_NumEqual(a, b);
 	}
@@ -376,6 +387,8 @@ byte Native_Hash(const nativeVal_t *v, long *out) {
 		/* _Py_HashPointer of a type without hash */
 		x = (unsigned long)(uintptr_t)v->ent;
 		break;
+	case NV_REF:
+		return NObj_HashQuiet(v, out);
 	default:
 		return 0;
 	}
@@ -457,18 +470,8 @@ static void Native_Resize(nativeVal_t *d, int minused) {
 	Mem_Free(old);
 }
 
-byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value) {
-	long hash;
-	if (!Native_Hash(key, &hash)) {
-		Native_Free(key);
-		Native_Free(value);
-		return 0;
-	}
-	/* PyDict_SetItem: from 2/3 filled (deleted slots count) the table grows first, also when the key is there
-	 * already */
-	if (d->i * 3 >= d->max * 2) {
-		Native_Resize(d, d->n * 2);
-	}
+/* insertdict: key (its hash given) and value moved into the table, which has a free slot */
+static void Native_Insert(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value, long hash) {
 	nativeVal_t *k = &d->items[2 * Native_Look(d, key, hash)];
 	if (k->type == NV_FREE || k->type == NV_DUMMY) {
 		if (k->type == NV_FREE) {
@@ -483,7 +486,39 @@ byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value) {
 	k[1] = *value;
 	Native_SetNone(key);
 	Native_SetNone(value);
+}
+
+byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value) {
+	long hash;
+	if (!Native_Hash(key, &hash)) {
+		Native_Free(key);
+		Native_Free(value);
+		return 0;
+	}
+	/* PyDict_SetItem: from 2/3 filled (deleted slots count) the table grows first, also when the key is there
+	 * already */
+	if (d->i * 3 >= d->max * 2) {
+		Native_Resize(d, d->n * 2);
+	}
+	Native_Insert(d, key, value, hash);
 	return 1;
+}
+
+void Native_DictMerge(nativeVal_t *d, const nativeVal_t *other, byte copy) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	if (copy ? other->n > 0 : (d->i + other->n) * 3 >= d->max * 2) {
+		Native_Resize(d, (copy ? other->n : d->n + other->n) * 3 / 2);
+	}
+	while (Native_DictNext(other, &pos, &k, &x)) {
+		nativeVal_t nk, nx;
+		long hash;
+		if (Native_Hash(k, &hash)) {
+			Native_Copy(&nk, k);
+			Native_Copy(&nx, x);
+			Native_Insert(d, &nk, &nx, hash);
+		}
+	}
 }
 
 nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key) {
@@ -634,6 +669,12 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 		Native_BufAdd(b, at, -1);
 		return;
 	}
+	case NV_REF:
+		/* as for an NV_OBJ, a repr that fails adds nothing */
+		if (!NObj_Repr(b, v, mode)) {
+			PyErr_Clear();
+		}
+		return;
 	case NV_INT:
 		snprintf(t, sizeof(t), "%ld", v->i);
 		Native_BufAdd(b, t, -1);
@@ -1047,6 +1088,9 @@ const char *Native_TypeName(const nativeVal_t *v) {
 		[NV_DICT] = "dictionary",
 		[NV_ENT] = "cPyEntity",
 	};
+	if (v->type == NV_REF) {
+		return NObj_TypeName(v);
+	}
 	return v->type == NV_OBJ ? v->obj->ob_type->tp_name : names[v->type];
 }
 
@@ -1289,6 +1333,9 @@ static int Native_LongCompare(const char *a, const char *b) {
 }
 
 int Native_Compare(const nativeVal_t *a, const nativeVal_t *b) {
+	if (a->type == NV_REF || b->type == NV_REF) {
+		return NObj_Compare(a, b);
+	}
 	if (Native_IsNum(a) && Native_IsNum(b)) {
 		/* coerced: a float with any number as floats, an int with a long as longs */
 		if (a->type == NV_FLOAT || b->type == NV_FLOAT) {
@@ -2213,6 +2260,8 @@ byte Native_True(const nativeVal_t *v) {
 	}
 	case NV_ENT:
 		return 1;
+	case NV_REF:
+		return NObj_True(v);
 	}
 	return 0;
 }
@@ -2697,6 +2746,8 @@ PyObject *Native_ToPy(const nativeVal_t *v) {
 		return v->obj;
 	case NV_ENT:
 		return PyEntity_Face(v->ent);
+	case NV_REF:
+		return NObj_ToPy(v);
 	case NV_INT:
 		return PyInt_FromLong(v->i);
 	case NV_FLOAT:
@@ -2903,19 +2954,29 @@ static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte gl
 
 byte Native_Arg(PyObject *o, nativeVal_t *v) {
 	if (PyEntity_Check(o) || !Native_FromPyAny(o, v)) {
+		/* the checks of batch 9a: the view of the object in place of the NV_OBJ (1), or held next to it (2) */
+		byte mode = NObj_RefMode();
+		nativeVal_t view;
+		if (mode == 1 && Native_FromPyRef(o, v)) {
+			return 1;
+		}
 		Native_SetObj(v, o);
+		if (mode == 2 && v->type == NV_OBJ && Native_FromPyRef(o, &view)) {
+			v->ref = view.ref;
+		}
 	}
 	return 1;
 }
 
-/* the value goes the Python way in Native_Pass: it holds an NV_OBJ, an entity handle inside a container (Native_Arg
- * takes the container as one NV_OBJ), a long int that Python writes otherwise ("-0", leading zeros), or a container at
- * a depth Native_FromPyIn refuses */
+/* the value goes the Python way in Native_Pass: it holds an NV_OBJ or a native object, an entity handle inside a
+ * container (Native_Arg takes the container as one NV_OBJ), a long int that Python writes otherwise ("-0", leading
+ * zeros), or a container at a depth Native_FromPyIn refuses */
 static byte Native_PassPy(const nativeVal_t *v, int depth) {
 	const nativeVal_t *k, *x;
 	int pos = 0;
 	switch (v->type) {
 	case NV_OBJ:
+	case NV_REF:
 		return 1;
 	case NV_ENT:
 		return depth > 0;
@@ -3094,25 +3155,25 @@ byte Native_LiteralText(const nativeVal_t *text, nativeVal_t *out) {
 	return Native_Literal(Native_Text(text) + strspn(Native_Text(text), " \t"), out);
 }
 
-/* the dict made again in slot order (Native_ToPy) from the Python dict laid: a key there that Python's lookdict does not
- * find in its slot */
-static PyObject *Native_Relay(PyObject *laid) {
-	const nativePyDict_t *pd = (const nativePyDict_t *)laid;
-	PyObject *o = PyDict_New();
-	for (int i = 0; o && i < pd->ma_size; i++) {
-		if (pd->ma_table[i].me_value && PyDict_SetItem(o, pd->ma_table[i].me_key, pd->ma_table[i].me_value) != 0) {
-			Py_DECREF(o);
-			o = NULL;
-		}
+/* the keys of the Python dict o, whose table was laid out by Native_FillPyDict, set again in their slot order (as
+ * Native_ToPy sets them): for a key that Python's lookdict does not find in its slot. 0 with the error */
+static byte Native_Relay(PyObject *o) {
+	PyObject *items = PyDict_Items(o);
+	byte ok = items != NULL;
+	if (ok) {
+		PyDict_Clear(o);
 	}
-	Py_DECREF(laid);
-	return o;
+	for (int i = 0; ok && i < PyList_GET_SIZE(items); i++) {
+		PyObject *pair = PyList_GET_ITEM(items, i);
+		ok = PyDict_SetItem(o, PyTuple_GET_ITEM(pair, 0), PyTuple_GET_ITEM(pair, 1)) == 0;
+	}
+	Py_XDECREF(items);
+	return ok;
 }
 
-PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx) {
-	PyObject *o = PyDict_New();
-	if (!o || !d->max) {
-		return o;
+byte Native_FillPyDict(PyObject *o, const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx) {
+	if (!d->max) {
+		return 1;
 	}
 	/* the table of the vendored dictobject.c (OBJLIB 9) when no slot was deleted (the dummy key is private there) */
 	nativePyDict_t *pd = (nativePyDict_t *)o;
@@ -3120,8 +3181,8 @@ PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVa
 	if (d->i == d->n) {
 		t = PyPool_Malloc(sizeof(*t) * (size_t)d->max);
 		if (!t) {
-			Py_DECREF(o);
-			return PyErr_NoMemory();
+			PyErr_NoMemory();
+			return 0;
 		}
 		memset(t, 0, sizeof(*t) * (size_t)d->max);
 		pd->ma_table = t;
@@ -3138,8 +3199,7 @@ PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVa
 		if (h == -1 || (!t && PyDict_SetItem(o, pk, px) != 0)) {
 			Py_XDECREF(pk);
 			Py_XDECREF(px);
-			Py_DECREF(o);
-			return NULL;
+			return 0;
 		}
 		if (!t) {
 			Py_DECREF(pk);
@@ -3157,6 +3217,15 @@ PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVa
 		if (t[i].me_value && PyDict_GetItem(o, t[i].me_key) != t[i].me_value) {
 			return Native_Relay(o);
 		}
+	}
+	return 1;
+}
+
+PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx) {
+	PyObject *o = PyDict_New();
+	if (o && !Native_FillPyDict(o, d, conv, ctx)) {
+		Py_DECREF(o);
+		return NULL;
 	}
 	return o;
 }

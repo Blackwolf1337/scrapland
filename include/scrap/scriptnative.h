@@ -38,13 +38,15 @@ typedef enum {
 					 * it */
 	NV_ENT,				/* an entity handle of the scripts (the cPyEntity of Python): a cEntityRef, the link in
 					 * the ring of the entity and the name the handle was made with */
+	NV_REF,				/* a native object with identity (scrap/nativeobj.h: a shared list or dict, an instance, a
+					 * class, a function, a method, a module), held by reference: copies share the object */
 } nativeType_t;
 
 /* every type: a mask of nativeVar_t.types for a variable that takes any value */
 #define NV_ANY (1 << NV_NONE | 1 << NV_INT | 1 << NV_FLOAT | 1 << NV_STR | 1 << NV_VEC | 1 << NV_LONG | 1 << NV_LIST | \
-	1 << NV_TUPLE | 1 << NV_DICT | 1 << NV_OBJ | 1 << NV_ENT)
-/* the kinds held by reference, with an identity of their own: a Python value and an entity handle */
-#define NV_REFS (1u << NV_OBJ | 1u << NV_ENT)
+	1 << NV_TUPLE | 1 << NV_DICT | 1 << NV_OBJ | 1 << NV_ENT | 1 << NV_REF)
+/* the kinds held by reference, with an identity of their own: a Python value, an entity handle and a native object */
+#define NV_REFS (1u << NV_OBJ | 1u << NV_ENT | 1u << NV_REF)
 
 /*
  * A value of the scripts in C: None, an int (a C long, as the int of Python 1.5.2), a float, a text, a vector (the
@@ -62,8 +64,14 @@ typedef enum {
  * entity are different values, two keys of a dict), hashes and orders by its address, is true, and its repr is
  * "<cPyEntity object at ...>". Native_Arg makes it from a cPyEntity, Native_ToPy gives the cPyEntity of the handle back
  * (the same object while Python holds one, else a new one on the same handle).
+ *
+ * A native object (NV_REF) is a list, dict, instance, class, function, method or module with an identity
+ * (scrap/nativeobj.h): the value holds one reference of a nativeObj_t, copies share the object and the last holder
+ * frees it. The functions here copy, free, compare, hash, print and convert it (Native_ToPy gives its Python object,
+ * OBJLIB 9); its operations (attributes, items, calls, len) are the NObj_ functions of that header.
  */
 struct cEntityRef;
+struct nativeObj_s;
 
 typedef struct nativeVal_s {
 	byte type;			/* NV_ */
@@ -80,6 +88,8 @@ typedef struct nativeVal_s {
 					 * came from here (the .mod evaluator, OBJLIB 5; a reference owned, copied and freed with
 					 * the value, read by nobody else), else NULL */
 	struct cEntityRef *ent;		/* NV_ENT: the handle (held once by this value), else NULL */
+	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL (under SCRAP_NATIVE_REF=2,
+					 * the check of batch 9a, an NV_OBJ holds the view of its object here too) */
 } nativeVal_t;
 
 void Native_SetNone(nativeVal_t *v);
@@ -114,15 +124,20 @@ byte Native_IsStr(const nativeVal_t *v, const char *text);
 /* a == b as Python 1.5.2 compares them: numbers by value (int, long and float with the coercions of 1.5.2), texts by
  * their bytes, None only with None, lists and tuples item by item, dicts by their keys and values; values of other
  * types are never equal (a text never equals a number, a vector is a tuple of three floats); an entity handle only
- * equals itself (a copy of the same handle) */
+ * equals itself (a copy of the same handle); a native object as NObj_Equal compares it (a list object equals a list
+ * by value with the same items) */
 byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b);
 /* hash(v) of Python 1.5.2 (string_hash, int_hash, long_hash, float_hash, tuplehash; None by its address, OBJLIB 9; an
- * entity handle by the address of the handle):
+ * entity handle by the address of the handle, a native object by NObj_HashQuiet):
  * 1 with *out, 0 for a list or dict (unhashable, in a tuple too) and a long int of 3840 bits or more */
 byte Native_Hash(const nativeVal_t *v, long *out);
 /* d[key] = value as PyDict_SetItem does it (the table grows at the same moment, an equal key keeps the old key and
  * gets the new value): key and value are taken over (moved into the dict, or freed); 0 when the key has no hash */
 byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value);
+/* d.update(other) (copy 0) and the table of other.copy() into the empty dict d (copy 1), as dict_update and dict_copy
+ * of dictobject.c lay the keys out: one resize at the start (for 3/2 of the keys), then every key and value of other
+ * in its slot order put in without a further growth check; copies of the keys and values. other is not d */
+void Native_DictMerge(nativeVal_t *d, const nativeVal_t *other, byte copy);
 /* the value of the key in the dict, NULL when it has none */
 nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key);
 /* del d[key] as PyDict_DelItem does it (the slot stays as a deleted one, the order of the others stays): 0 when the
@@ -387,7 +402,10 @@ typedef struct nativeVar_s {
 
 /* an argument of an adapter as a native value (Native_Free it): the native types as Native_FromPyAny takes them, an
  * entity handle (cPyEntity) as NV_ENT, any other value (a function, a class instance, or a container that holds one
- * or a handle: the container keeps its identity) as NV_OBJ (OBJLIB 7); always 1 */
+ * or a handle: the container keeps its identity) as NV_OBJ (OBJLIB 7); always 1. Under SCRAP_NATIVE_REF=1 (the check
+ * of batch 9a, NObj_RefMode) such a value is the NV_REF view of the object when Native_FromPyRef takes its type (a
+ * list, dict, instance, class, function, method or module); under SCRAP_NATIVE_REF=2 it is the NV_OBJ and holds
+ * that view too */
 byte Native_Arg(PyObject *o, nativeVal_t *v);
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
  * is missing or of a form the C does not take (TypeError naming it) */
@@ -401,7 +419,8 @@ byte Native_Put(const char *module, const nativeVar_t *var, int index);
 
 /* the value as a new Python object (NULL with the error set): for adapters and mirrors only. A dict gets its keys in
  * slot order; Python's table can order them otherwise when two keys collide (OBJLIB 6: the literal reader of the
- * saves keeps Script_Literal until then) */
+ * saves keeps Script_Literal until then). A native object gives its Python object (NObj_ToPy: the same one each
+ * time) */
 PyObject *Native_ToPy(const nativeVal_t *v);
 /* a Python value into *v when its type is one of types (NV_ mask of None, int, float, a text shorter than
  * NATIVE_TEXT without 0 bytes, a 3-tuple of numbers as a vector): 1, else 0 without an error */
@@ -413,9 +432,9 @@ byte Native_FromPyAny(PyObject *o, nativeVal_t *v);
 /*
  * OBJLIB 9: *out the value an adapter's Native_Arg gets when a caller passes v through Python (Native_ToPy and back),
  * made without Python: a copy with vectors as tuples of floats and dicts laid out anew in their slot order (an entity
- * handle is the same handle). A value that holds an NV_OBJ, a container that holds an entity handle (Native_Arg gives
- * it back as one NV_OBJ), a long int not in its plain digits, or containers nested deeper than Native_FromPyAny reads
- * goes the Python way. 1 (Native_Free *out), else 0 with the error of Native_ToPy and *out None. The packer of the
+ * handle is the same handle). A value that holds an NV_OBJ or a native object, a container that holds an entity handle
+ * (Native_Arg gives it back as one NV_OBJ), a long int not in its plain digits, or containers nested deeper than
+ * Native_FromPyAny reads goes the Python way. 1 (Native_Free *out), else 0 with the error of Native_ToPy and *out None. The packer of the
  * direct calls between ports and the form their results take
  */
 byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
@@ -694,6 +713,9 @@ byte Native_LiteralText(const nativeVal_t *text, nativeVal_t *out);
  * with the error (an unhashable key)
  */
 PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx);
+/* the same into the empty Python dict o (a dict that is known before its items are made: a native dict object that
+ * holds itself): 1, or 0 with the error (o holds what was made until then) */
+byte Native_FillPyDict(PyObject *o, const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx);
 
 #include "scrap/scriptports.h"
 
