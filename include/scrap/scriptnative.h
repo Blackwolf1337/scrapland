@@ -32,25 +32,39 @@ typedef enum {
 	NV_LIST,
 	NV_TUPLE,
 	NV_DICT,
-	NV_OBJ,				/* OBJLIB 7: a Python value of another type (an entity handle, a function, a class
-					 * instance), held by reference: only adapters make it (Native_Arg), the native
-					 * functions refuse it with the error the script raised for it */
+	NV_OBJ,				/* OBJLIB 7: a Python value of another type (a function, a class instance, a
+					 * container that holds one or an entity handle), held by reference: only adapters make
+					 * it (Native_Arg), the native functions refuse it with the error the script raised for
+					 * it */
+	NV_ENT,				/* an entity handle of the scripts (the cPyEntity of Python): a cEntityRef, the link in
+					 * the ring of the entity and the name the handle was made with */
 } nativeType_t;
 
 /* every type: a mask of nativeVar_t.types for a variable that takes any value */
 #define NV_ANY (1 << NV_NONE | 1 << NV_INT | 1 << NV_FLOAT | 1 << NV_STR | 1 << NV_VEC | 1 << NV_LONG | 1 << NV_LIST | \
-	1 << NV_TUPLE | 1 << NV_DICT | 1 << NV_OBJ)
+	1 << NV_TUPLE | 1 << NV_DICT | 1 << NV_OBJ | 1 << NV_ENT)
+/* the kinds held by reference, with an identity of their own: a Python value and an entity handle */
+#define NV_REFS (1u << NV_OBJ | 1u << NV_ENT)
 
 /*
  * A value of the scripts in C: None, an int (a C long, as the int of Python 1.5.2), a float, a text, a vector (the
- * tuple of three floats an engine call gives), a long int, a list, a tuple or a dict of values.
+ * tuple of three floats an engine call gives), a long int, a list, a tuple or a dict of values, or an entity handle.
  *
  * A text holds any bytes (0 too): n of them, in s while n < NATIVE_TEXT, else in the owned text (s is then empty).
  * Lists and tuples own their n items. A dict is the hash table of 1.5.2 (dictobject.c): max slots (a power of 2 from
  * 4), in each the key and the value at items[2 * slot] and [2 * slot + 1], n of them used; the slots in order are the
  * order of keys(), items() and repr. Only the setters below make a value; a setter overwrites without freeing, so a
  * value that may own memory (a long text, a long int, a list, a tuple or a dict) goes through Native_Free first.
+ *
+ * An entity handle (NV_ENT) is the handle of the scripts without a Python object: the value holds a cEntityRef
+ * (scrap/pyentity.h), copies share it and the last holder frees it. It behaves as the cPyEntity object did: the handle
+ * of an entity that is gone stays (its entity NULL, its name kept); a handle is equal only to itself (two handles of one
+ * entity are different values, two keys of a dict), hashes and orders by its address, is true, and its repr is
+ * "<cPyEntity object at ...>". Native_Arg makes it from a cPyEntity, Native_ToPy gives the cPyEntity of the handle back
+ * (the same object while Python holds one, else a new one on the same handle).
  */
+struct cEntityRef;
+
 typedef struct nativeVal_s {
 	byte type;			/* NV_ */
 	long i;
@@ -65,6 +79,7 @@ typedef struct nativeVal_s {
 	PyObject *obj;			/* NV_OBJ: the value (a reference owned). A number or text may keep the Python object it
 					 * came from here (the .mod evaluator, OBJLIB 5; a reference owned, copied and freed with
 					 * the value, read by nobody else), else NULL */
+	struct cEntityRef *ent;		/* NV_ENT: the handle (held once by this value), else NULL */
 } nativeVal_t;
 
 void Native_SetNone(nativeVal_t *v);
@@ -77,6 +92,13 @@ void Native_SetStr(nativeVal_t *v, const char *s);
 void Native_SetText(nativeVal_t *v, const char *s, int len);
 /* the long int of a decimal text (an optional '-', digits without leading zeros); its value is not checked */
 void Native_SetLong(nativeVal_t *v, const char *digits, int len);
+/* a new handle of the entity called name (two calls give two handles): 1, or 0 without an error and *v None when
+ * there is no such entity */
+byte Native_SetEnt(nativeVal_t *v, const char *name);
+/* the entity of the handle v (NV_ENT), NULL when it is gone */
+cEntity *Native_Ent(const nativeVal_t *v);
+/* the name the handle v (NV_ENT) was made with */
+const char *Native_EntName(const nativeVal_t *v);
 /* the text of NV_STR or NV_LONG (with its 0 after n bytes), "" for other types */
 const char *Native_Text(const nativeVal_t *v);
 /* an empty list (NV_LIST), tuple (NV_TUPLE) or dict (NV_DICT) */
@@ -91,9 +113,11 @@ void Native_Free(nativeVal_t *v);
 byte Native_IsStr(const nativeVal_t *v, const char *text);
 /* a == b as Python 1.5.2 compares them: numbers by value (int, long and float with the coercions of 1.5.2), texts by
  * their bytes, None only with None, lists and tuples item by item, dicts by their keys and values; values of other
- * types are never equal (a text never equals a number, a vector is a tuple of three floats) */
+ * types are never equal (a text never equals a number, a vector is a tuple of three floats); an entity handle only
+ * equals itself (a copy of the same handle) */
 byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b);
-/* hash(v) of Python 1.5.2 (string_hash, int_hash, long_hash, float_hash, tuplehash; None by its address, OBJLIB 9):
+/* hash(v) of Python 1.5.2 (string_hash, int_hash, long_hash, float_hash, tuplehash; None by its address, OBJLIB 9; an
+ * entity handle by the address of the handle):
  * 1 with *out, 0 for a list or dict (unhashable, in a tuple too) and a long int of 3840 bits or more */
 byte Native_Hash(const nativeVal_t *v, long *out);
 /* d[key] = value as PyDict_SetItem does it (the table grows at the same moment, an equal key keeps the old key and
@@ -152,7 +176,8 @@ byte Native_Literal(const char *s, nativeVal_t *out);
  */
 
 /* cmp(a, b) of 1.5.2 as -1, 0 or 1 (PyObject_Compare: numbers coerced, other types of one kind by their values,
- * different types by the names of the types with the numbers below all others, two NV_OBJ by Python). Two different
+ * different types by the names of the types with the numbers below all others, two NV_OBJ by Python, two entity
+ * handles by their addresses). Two different
  * dicts of the same length are only told apart (1, not the order of 1.5.2) */
 int Native_Compare(const nativeVal_t *a, const nativeVal_t *b);
 /* a op b for op '+', '-', '*', '/', '%' (PyNumber_Add and the others, the concatenation and repetition of texts,
@@ -197,7 +222,7 @@ byte Native_Raise(nativeError_t kind, const char *fmt, ...);
 /* the KeyError of d[key] (the key is the value of the error): 0 */
 byte Native_RaiseKey(const nativeVal_t *key);
 /* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...;
- * the type name of an NV_OBJ, "cPyEntity") */
+ * the type name of an NV_OBJ; "cPyEntity" for an entity handle) */
 const char *Native_TypeName(const nativeVal_t *v);
 /* len(seq) as PySequence_Length takes it (a list, tuple, text or vector): 1 with *n, else 0 with its TypeError */
 byte Native_Len(const nativeVal_t *seq, int *n);
@@ -254,14 +279,20 @@ void Native_ActSet(const char *name, const nativeVal_t *v);
 /* SAct.SetCls(name, v) with a text or a number: 0 with Native_NullResult when there is no current class (and the
  * console line), with the TypeError of its arguments when v is neither */
 byte Native_ClsSet(const char *name, const nativeVal_t *v);
-/* entity.name as the script handle reads it: an int, float, vector or text variable (a text variable without a text
- * is None). 0 when the entity has no such variable: the console line of the handle and its AttributeError; e NULL is
- * the handle of an entity that is gone (its console line and ceval's SystemError) */
+/* the script variable name of entity e as its handle reads it (the core of the attribute get): an int, float, vector
+ * or text variable, tried in this order (a text of any length; a text variable without a text is None): 1 with *out
+ * (Native_Free it), 0 when the entity has no such variable (*out untouched) */
+byte Native_EntRead(cEntity *e, const char *name, nativeVal_t *out);
+/* entity.name as the script handle reads it (Native_EntRead; a text cut to the short form, NATIVE_TEXT - 1
+ * characters). 0 when the entity has no such variable: the console line of the handle and its AttributeError; e NULL
+ * is the handle of an entity that is gone (its console line and ceval's SystemError) */
 byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out);
-/* entity.name = v as the script handle sets it (PyEntity_SetVar: v as an int, float, vector and text, in this order,
- * each form it reads as goes to the variable of that type until one takes it); 0 when none takes it or e is NULL
- * (the handle of an entity that is gone): the console line of the handle and ceval's SystemError, as the line of the
- * script */
+/* the core of the attribute set of a handle: v as an int, float, vector and text, in this order, each form it reads
+ * as goes to the variable of that type until one takes it (1); 0 with the console line of the handle (ref names the
+ * entity in it) when e is NULL (the entity is gone), v has none of the forms or no variable takes it */
+byte Native_EntStore(cEntity *e, const char *ref, const char *name, const nativeVal_t *v);
+/* entity.name = v as the script handle sets it (Native_EntStore); 0 when none takes it or e is NULL (the handle of
+ * an entity that is gone): the console line of the handle and ceval's SystemError, as the line of the script */
 byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v);
 
 /*
@@ -354,9 +385,9 @@ typedef struct nativeVar_s {
 					 * forms of Native_FromPy */
 } nativeVar_t;
 
-/* an argument of an adapter as a native value (Native_Free it): the native types as Native_FromPyAny takes them, any
- * other value (an entity handle, a function, a class instance, or a container that holds one) as NV_OBJ (OBJLIB 7);
- * always 1 */
+/* an argument of an adapter as a native value (Native_Free it): the native types as Native_FromPyAny takes them, an
+ * entity handle (cPyEntity) as NV_ENT, any other value (a function, a class instance, or a container that holds one
+ * or a handle: the container keeps its identity) as NV_OBJ (OBJLIB 7); always 1 */
 byte Native_Arg(PyObject *o, nativeVal_t *v);
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
  * is missing or of a form the C does not take (TypeError naming it) */
@@ -381,8 +412,9 @@ byte Native_FromPyAny(PyObject *o, nativeVal_t *v);
 
 /*
  * OBJLIB 9: *out the value an adapter's Native_Arg gets when a caller passes v through Python (Native_ToPy and back),
- * made without Python: a copy with vectors as tuples of floats and dicts laid out anew in their slot order. A value
- * that holds an NV_OBJ, a long int not in its plain digits, or containers nested deeper than Native_FromPyAny reads
+ * made without Python: a copy with vectors as tuples of floats and dicts laid out anew in their slot order (an entity
+ * handle is the same handle). A value that holds an NV_OBJ, a container that holds an entity handle (Native_Arg gives
+ * it back as one NV_OBJ), a long int not in its plain digits, or containers nested deeper than Native_FromPyAny reads
  * goes the Python way. 1 (Native_Free *out), else 0 with the error of Native_ToPy and *out None. The packer of the
  * direct calls between ports and the form their results take
  */
@@ -647,7 +679,7 @@ byte Native_GVarDef(const char *name, nativeVal_t *out);
 
 /* ---- the values of the .mod evaluator (stage 6) ---- */
 
-/* *v an NV_OBJ that holds o (a new reference; OBJLIB 7) */
+/* *v an NV_OBJ that holds o (a new reference; OBJLIB 7); an entity handle (cPyEntity) as the NV_ENT of its handle */
 void Native_SetObj(nativeVal_t *v, PyObject *o);
 /* v or a value in it (an item, a key, a value of a dict, at any depth) has one of types (a mask of 1 << NV_) */
 byte Native_Holds(const nativeVal_t *v, unsigned types);

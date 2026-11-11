@@ -185,7 +185,7 @@ static byte Fx_MotorClassArg(const nativeVal_t *name, nativeVal_t *out) {
 	if (!Mode_Import("string")) {
 		return 0;
 	}
-	if (name->type == NV_OBJ) {
+	if (NV_REFS >> name->type & 1) {
 		return Native_Raise(NE_TYPE, "read-only character buffer, %.50s", Native_TypeName(name));
 	}
 	return Fx_MotorClass(name, out);
@@ -197,8 +197,8 @@ static byte Fx_MotorsArg(const nativeVal_t *e) {
 	if (!Mode_Import("string")) {
 		return 0;
 	}
-	if (e->type == NV_OBJ && PyEntity_Check(e->obj)) {
-		return Fx_Motors(((cPyEntity *)e->obj)->ref);
+	if (e->type == NV_ENT) {
+		return Fx_Motors(e->ent);
 	}
 	PyObject *o = Native_ToPy(e), *m = o ? Script_GetAttr(o, "Model") : NULL;
 	Py_XDECREF(o);
@@ -212,7 +212,7 @@ static byte Fx_MotorsArg(const nativeVal_t *e) {
 /* MoneyTransfer(from, to, amount): a value without a native form raises the error of SFX.MoneyTransfer for it */
 static byte Fx_MoneyTransferArgs(const nativeVal_t *v) {
 	for (int i = 0; i < 3; i++) {
-		if (v[i].type == NV_OBJ) {
+		if (NV_REFS >> v[i].type & 1) {
 			return i < 2 ? Native_Raise(NE_TYPE, "argument %d: expected string, %.50s found", i + 1, Native_TypeName(&v[i])) :
 				Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 		}

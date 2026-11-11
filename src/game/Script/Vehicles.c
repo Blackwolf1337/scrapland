@@ -109,7 +109,7 @@ static byte Veh_MotorLoop(const nativeVal_t *l) {
 /* h.SetFX(type) of a handle value (an entity in C; a handle of an entity that is gone or another value the Python way,
  * OBJLIB 7) */
 static byte Veh_SetFX(const nativeVal_t *h, const char *type) {
-	cEntity *e = h->type == NV_OBJ && PyEntity_Check(h->obj) ? PyEntity_Get(h->obj) : NULL;
+	cEntity *e = h->type == NV_ENT ? Native_Ent(h) : NULL;
 	if (e) {
 		return Mode_SetFX(e, type);
 	}

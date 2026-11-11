@@ -7,8 +7,9 @@
  * and in the registry (Port_Find("Scrap", "GetTime")), and a value or callback that holds it takes the entry.
  *
  * The entry reads its arguments with Mode_Parse in the format of PyArg_ParseTuple the function had (the same letters,
- * arity texts and TypeErrors) and gives its result with Api_Build (the letters of Py_BuildValue). OBJLIB 7: an entity
- * handle is an NV_OBJ that holds its cPyEntity (Api_Handle); a function whose arguments or result stay Python objects
+ * arity texts and TypeErrors) and gives its result with Api_Build (the letters of Py_BuildValue). An entity handle is
+ * an NV_ENT (Api_Handle: a new handle, the adapter makes its cPyEntity); OBJLIB 7: a function whose arguments or result
+ * stay Python objects
  * (a callable or arguments it keeps) has the entry of MODE_PYENTRY, and its ref takes the slow path.
  *
  * A module of the engine gets its entries this way:
@@ -46,8 +47,8 @@ byte Api_Build(nativeVal_t *out, const char *fmt, ...);
 /* the Python object o (a new reference, released here: a scorer item of SScorer.GetItem) as an NV_OBJ in *out
  * (OBJLIB 7): 1, or 0 for NULL (the error as it is) */
 byte Api_Object(PyObject *o, nativeVal_t *out);
-/* the handle of the entity called name (PyEntity_New) as an NV_OBJ in *out (OBJLIB 7): 1, or 0 without an error when
- * there is no such entity (the adapter's NULL: the SystemError of the call) */
+/* a new handle of the entity called name as an NV_ENT in *out (Native_SetEnt): 1, or 0 without an error when there is
+ * no such entity (the adapter's NULL: the SystemError of the call) */
 byte Api_Handle(const char *name, nativeVal_t *out);
 
 #endif

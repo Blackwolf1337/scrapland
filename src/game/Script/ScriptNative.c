@@ -17,6 +17,7 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/modvars.h"
+#include "scrap/pyentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -37,6 +38,7 @@ static void Native_Clear(nativeVal_t *v, byte type) {
 	v->text = NULL;
 	v->items = NULL;
 	v->obj = NULL;
+	v->ent = NULL;
 }
 
 void Native_SetNone(nativeVal_t *v) {
@@ -121,12 +123,18 @@ void Native_Free(nativeVal_t *v) {
 	Mem_Free(v->text);
 	Mem_Free(v->items);
 	Py_XDECREF(v->obj);
+	if (v->ent) {
+		EntRef_Drop(v->ent);
+	}
 	Native_Clear(v, NV_NONE);
 }
 
 void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
 	*out = *v;
 	Py_XINCREF(v->obj);
+	if (v->ent) {
+		EntRef_Keep(v->ent);
+	}
 	if (v->text) {
 		out->text = Mem_Alloc((uint32_t)v->n + 1);
 		memcpy(out->text, v->text, (size_t)v->n + 1);
@@ -248,6 +256,9 @@ byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b) {
 	case NV_OBJ:
 		/* OBJLIB 7: a type without compare is equal only to itself */
 		return a->obj == b->obj;
+	case NV_ENT:
+		/* the cPyEntity has no compare: a handle is equal only to itself */
+		return a->ent == b->ent;
 	case NV_DICT: {
 		const nativeVal_t *k, *x, *y;
 		int pos = 0;
@@ -361,6 +372,10 @@ byte Native_Hash(const nativeVal_t *v, long *out) {
 			return 0;
 		}
 		return 1;
+	case NV_ENT:
+		/* _Py_HashPointer of a type without hash */
+		x = (unsigned long)(uintptr_t)v->ent;
+		break;
 	default:
 		return 0;
 	}
@@ -608,6 +623,15 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 			Py_DECREF(r);
 		}
 		PyErr_Clear();
+		return;
+	}
+	case NV_ENT: {
+		/* PyObject_Repr of a type without repr and str; the address is the one of its Python object while it has
+		 * one (the text Python gives for it then) */
+		char at[0x40];
+		snprintf(at, sizeof(at), "<cPyEntity object at %lx>",
+			(long)(intptr_t)(v->ent->face ? (void *)v->ent->face : (void *)v->ent));
+		Native_BufAdd(b, at, -1);
 		return;
 	}
 	case NV_INT:
@@ -1021,6 +1045,7 @@ const char *Native_TypeName(const nativeVal_t *v) {
 		[NV_LIST] = "list",
 		[NV_TUPLE] = "tuple",
 		[NV_DICT] = "dictionary",
+		[NV_ENT] = "cPyEntity",
 	};
 	return v->type == NV_OBJ ? v->obj->ob_type->tp_name : names[v->type];
 }
@@ -1319,6 +1344,9 @@ int Native_Compare(const nativeVal_t *a, const nativeVal_t *b) {
 			return a->n < b->n ? -1 : 1;
 		}
 		return Native_Equal(a, b) ? 0 : 1;
+	case NV_ENT:
+		/* PyObject_Compare of two objects of a type without compare: by their addresses */
+		return a->ent == b->ent ? 0 : (uintptr_t)a->ent < (uintptr_t)b->ent ? -1 : 1;
 	}
 	/* None with None */
 	return 0;
@@ -2060,15 +2088,12 @@ byte Native_NullResult(void) {
 	return Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
 }
 
-byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out) {
-	/* PyEntity_GetAttr: the values start at 0, the types in this order */
+byte Native_EntRead(cEntity *e, const char *name, nativeVal_t *out) {
+	/* the values start at 0 (the original leaves them unset: a get of SwDthTime writes the value into the missile,
+	 * which was stack garbage), the types in this order */
 	int i = 0;
 	double d = 0.0, x = 0.0, y = 0.0, z = 0.0;
 	char *s = NULL;
-	if (!e) {
-		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
-		return Native_Raise(NE_SYSTEM, "error return without exception set");
-	}
 	if (Entity_VarI(e, name, &i, 0)) {
 		Native_SetInt(out, i);
 	} else if (Entity_VarF(e, name, &d, 0)) {
@@ -2077,14 +2102,31 @@ byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *o
 		Native_SetVec(out, x, y, z);
 	} else if (Entity_VarS(e, name, &s, 0)) {
 		if (s) {
-			Native_SetStr(out, s);
+			Native_SetText(out, s, (int)strlen(s));
 		} else {
 			Native_SetNone(out);
 		}
 	} else {
+		return 0;
+	}
+	return 1;
+}
+
+byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out) {
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
+	if (!Native_EntRead(e, name, out)) {
 		/* no variable: the handle looks for a method of that name (none is a variable name of the ports) */
 		Con_Errorf("'%s'->%s : Member invalid.\n", ref, name);
 		return Native_Raise(NE_ATTRIBUTE, "%s", name);
+	}
+	if (out->text) {
+		/* the short form the ports take */
+		nativeVal_t whole = *out;
+		Native_SetStr(out, whole.text);
+		Native_Free(&whole);
 	}
 	return 1;
 }
@@ -2169,27 +2211,52 @@ byte Native_True(const nativeVal_t *v) {
 		PyErr_Clear();
 		return t > 0;
 	}
+	case NV_ENT:
+		return 1;
 	}
 	return 0;
 }
 
-byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
-	/* PyEntity_SetVar: the value is tried as int, float, vector and text, each form that parses goes to the
-	 * variable of that type until one takes it */
+/* OBJLIB 7: the number of a Python value of no native kind as "i" (asDouble 0) or "d" of PyArg_Parse reads it (the
+ * number methods of an instance): 0 without an error when it reads none or v holds no object */
+static byte Native_ObjNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
+	if (!v->obj) {
+		/* no value (the delete of an attribute) */
+		return 0;
+	}
+	if (asDouble) {
+		*d = PyFloat_AsDouble(v->obj);
+	} else {
+		*i = (int)PyInt_AsLong(v->obj);
+	}
+	if (PyErr_Occurred()) {
+		PyErr_Clear();
+		return 0;
+	}
+	return 1;
+}
+
+/* the number of a value an entity variable is set from: Native_ArgNum, an NV_OBJ through its number methods */
+static byte Native_EntNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
+	return v->type == NV_OBJ ? Native_ObjNum(v, asDouble, d, i) : Native_ArgNum(v, asDouble, d, i);
+}
+
+byte Native_EntStore(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
+	/* PyArg_Parse of the value as "i", "d", the tuple "ddd" and "s" in the original */
 	byte parsed = 0;
 	double d, x[3];
 	int i;
 	if (!e) {
 		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
-		return Native_Raise(NE_SYSTEM, "error return without exception set");
+		return 0;
 	}
-	if (Native_ArgNum(v, 0, &d, &i)) {
+	if (Native_EntNum(v, 0, &d, &i)) {
 		parsed = 1;
 		if (Entity_VarI(e, name, &i, 1)) {
 			return 1;
 		}
 	}
-	if (Native_ArgNum(v, 1, &d, &i)) {
+	if (Native_EntNum(v, 1, &d, &i)) {
 		parsed = 1;
 		if (Entity_VarF(e, name, &d, 1)) {
 			return 1;
@@ -2203,7 +2270,16 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
 	} else if (v->type == NV_TUPLE && v->n == 3) {
 		vec = 1;
 		for (int k = 0; vec && k < 3; k++) {
-			vec = Native_ArgNum(&v->items[k], 1, &x[k], &i);
+			vec = Native_EntNum(&v->items[k], 1, &x[k], &i);
+		}
+	} else if (v->type == NV_OBJ && v->obj && PyTuple_Check(v->obj) && PyTuple_Size(v->obj) == 3) {
+		/* OBJLIB 7: a tuple held as one NV_OBJ (an item with number methods) */
+		vec = 1;
+		for (int k = 0; vec && k < 3; k++) {
+			nativeVal_t item;
+			Native_Arg(PyTuple_GET_ITEM(v->obj, k), &item);
+			vec = Native_EntNum(&item, 1, &x[k], &i);
+			Native_Free(&item);
 		}
 	}
 	if (vec) {
@@ -2220,10 +2296,15 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
 		}
 	} else if (!parsed) {
 		Con_Errorf("'%s'->%s : Invalid type.\n", ref, name);
-		return Native_Raise(NE_SYSTEM, "error return without exception set");
+		return 0;
 	}
 	Con_Errorf("'%s'->%s : Member invalid.\n", ref, name);
-	return Native_Raise(NE_SYSTEM, "error return without exception set");
+	return 0;
+}
+
+byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
+	/* the attribute set gives -1 without an exception: ceval's SystemError */
+	return Native_EntStore(e, ref, name, v) || Native_Raise(NE_SYSTEM, "error return without exception set");
 }
 
 int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
@@ -2614,6 +2695,8 @@ PyObject *Native_ToPy(const nativeVal_t *v) {
 	case NV_OBJ:
 		Py_INCREF(v->obj);
 		return v->obj;
+	case NV_ENT:
+		return PyEntity_Face(v->ent);
 	case NV_INT:
 		return PyInt_FromLong(v->i);
 	case NV_FLOAT:
@@ -2819,22 +2902,23 @@ static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte gl
 }
 
 byte Native_Arg(PyObject *o, nativeVal_t *v) {
-	if (!Native_FromPyAny(o, v)) {
-		Native_Clear(v, NV_OBJ);
-		Py_INCREF(o);
-		v->obj = o;
+	if (PyEntity_Check(o) || !Native_FromPyAny(o, v)) {
+		Native_SetObj(v, o);
 	}
 	return 1;
 }
 
-/* the value goes the Python way in Native_Pass: it holds an NV_OBJ, a long int that Python writes otherwise ("-0",
- * leading zeros), or a container at a depth Native_FromPyIn refuses */
+/* the value goes the Python way in Native_Pass: it holds an NV_OBJ, an entity handle inside a container (Native_Arg
+ * takes the container as one NV_OBJ), a long int that Python writes otherwise ("-0", leading zeros), or a container at
+ * a depth Native_FromPyIn refuses */
 static byte Native_PassPy(const nativeVal_t *v, int depth) {
 	const nativeVal_t *k, *x;
 	int pos = 0;
 	switch (v->type) {
 	case NV_OBJ:
 		return 1;
+	case NV_ENT:
+		return depth > 0;
 	case NV_LONG: {
 		const char *d = Native_Text(v) + (Native_Text(v)[0] == '-');
 		return !*d || strspn(d, "0123456789") != strlen(d) || (d[0] == '0' && (d[1] || d != Native_Text(v)));
@@ -2949,9 +3033,35 @@ byte Native_GVarDef(const char *name, nativeVal_t *out) {
 /* ---- the values of the .mod evaluator (stage 6) ---- */
 
 void Native_SetObj(nativeVal_t *v, PyObject *o) {
+	if (PyEntity_Check(o)) {
+		/* the handle of the object: no NV_OBJ holds a cPyEntity */
+		Native_Clear(v, NV_ENT);
+		v->ent = EntRef_Keep(((cPyEntity *)o)->ref);
+		return;
+	}
 	Native_Clear(v, NV_OBJ);
 	Py_INCREF(o);
 	v->obj = o;
+}
+
+/* ---- entity handles as values (stage 7, batch 7c) ---- */
+
+byte Native_SetEnt(nativeVal_t *v, const char *name) {
+	Native_Clear(v, NV_NONE);
+	v->ent = EntRef_New(name);
+	if (!v->ent) {
+		return 0;
+	}
+	v->type = NV_ENT;
+	return 1;
+}
+
+cEntity *Native_Ent(const nativeVal_t *v) {
+	return v->ent->link.target;
+}
+
+const char *Native_EntName(const nativeVal_t *v) {
+	return v->ent->name;
 }
 
 byte Native_Holds(const nativeVal_t *v, unsigned types) {

@@ -1,13 +1,12 @@
 /*
  * The helpers of the engine modules on native entries (include/scrap/scriptapi.h, stage 7 of docs/objlib-plan.md):
  * the results in the forms of Py_BuildValue (Python/modsupport.c of 1.5.2: countformat, do_mkvalue, do_mktuple) and
- * the entity handles as native values.
+ * the entity handles as native values (NV_ENT, no Python object).
  */
 #include <stdarg.h>
 #include <string.h>
 
 #include "scrap/global.h"
-#include "scrap/pyentity.h"
 #include "scrap/scriptapi.h"
 
 /* the items of a format up to end (')' or the end of the text) at its top level, as countformat counts them */
@@ -108,5 +107,5 @@ byte Api_Object(PyObject *o, nativeVal_t *out) {
 }
 
 byte Api_Handle(const char *name, nativeVal_t *out) {
-	return Api_Object(PyEntity_New(name), out);
+	return Native_SetEnt(out, name);
 }

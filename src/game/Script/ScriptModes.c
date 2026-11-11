@@ -344,6 +344,9 @@ byte Mode_HSetModel(PyObject *o, const char *module, const char *modelVar) {
 }
 
 byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out) {
+	if (o->type == NV_ENT) {
+		return Native_EntVar(Native_Ent(o), Native_EntName(o), var, out);
+	}
 	PyObject *po = Native_ToPy(o);
 	byte ok = po && Mode_HGet(po, var, out);
 	Py_XDECREF(po);
@@ -351,26 +354,34 @@ byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out) {
 }
 
 byte Mode_VSet(const nativeVal_t *o, const char *var, const nativeVal_t *v) {
+	if (o->type == NV_ENT) {
+		return Native_EntSet(Native_Ent(o), Native_EntName(o), var, v);
+	}
 	PyObject *po = Native_ToPy(o);
 	byte ok = po && Mode_HSet(po, var, v);
 	Py_XDECREF(po);
 	return ok;
 }
 
+/* h.SetModel(file) of a handle */
+static byte Mode_RefModel(const cEntityRef *ref, const nativeVal_t *file) {
+	cEntity *e = ref->link.target;
+	const char *f;
+	if (!e) {
+		nativeVal_t x;
+		return Native_EntVar(NULL, ref->name, "SetModel", &x);
+	}
+	/* "s|d" */
+	if (!Native_ArgStr(file, 1, &f)) {
+		return 0;
+	}
+	Entity_SetModel(e, f, 1.0f, 1.0f, 1.0f, 1);
+	return 1;
+}
+
 byte Mode_HModel(PyObject *o, const nativeVal_t *file) {
 	if (PyEntity_Check(o)) {
-		cEntity *e = PyEntity_Get(o);
-		const char *f;
-		if (!e) {
-			nativeVal_t x;
-			return Native_EntVar(NULL, ((cPyEntity *)o)->ref->name, "SetModel", &x);
-		}
-		/* "s|d" */
-		if (!Native_ArgStr(file, 1, &f)) {
-			return 0;
-		}
-		Entity_SetModel(e, f, 1.0f, 1.0f, 1.0f, 1);
-		return 1;
+		return Mode_RefModel(((cPyEntity *)o)->ref, file);
 	}
 	PyObject *meth = PyObject_GetAttrString(o, "SetModel");
 	if (!meth) {
@@ -1069,22 +1080,14 @@ byte Mode_UsrHandle(nativeVal_t *out) {
 	if (seam) {
 		return Native_HookCall(hook, out, "i", 0L);
 	}
-	PyObject *h = Mode_Handle(Mode_Usr());
-	if (!h) {
-		return 0;
-	}
-	Native_Arg(h, out);
-	Py_DECREF(h);
-	return 1;
+	return Mode_EntHandle(Mode_Usr(), out);
 }
 
 byte Mode_EntHandle(cEntity *e, nativeVal_t *out) {
-	PyObject *h = Mode_Handle(e);
-	if (!h) {
-		return 0;
+	/* the handle is made by the name, as Scrap.GetEntity makes it */
+	if (!e || !Native_SetEnt(out, e->name)) {
+		Native_SetNone(out);
 	}
-	Native_Arg(h, out);
-	Py_DECREF(h);
 	return 1;
 }
 
@@ -1097,10 +1100,10 @@ byte Mode_EntityH(const nativeVal_t *name, nativeVal_t *out) {
  * AttributeError, the line and SystemError of a handle whose entity is gone), -1 for another object (the caller calls
  * its method the Python way) */
 static int Mode_MethodOf(const nativeVal_t *h, const char *method, cEntity **e) {
-	if (h->type == NV_OBJ && PyEntity_Check(h->obj)) {
+	if (h->type == NV_ENT) {
 		nativeVal_t x;
-		*e = PyEntity_Get(h->obj);
-		return *e ? 1 : Native_EntVar(NULL, ((cPyEntity *)h->obj)->ref->name, method, &x);
+		*e = Native_Ent(h);
+		return *e ? 1 : Native_EntVar(NULL, Native_EntName(h), method, &x);
 	}
 	return h->type == NV_NONE ? Mode_Method(NULL, method) : -1;
 }
@@ -1136,6 +1139,9 @@ byte Mode_VDel(const nativeVal_t *h) {
 }
 
 byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file) {
+	if (h->type == NV_ENT) {
+		return Mode_RefModel(h->ent, file);
+	}
 	PyObject *o = Native_ToPy(h);
 	byte ok = o && Mode_HModel(o, file);
 	Py_XDECREF(o);
@@ -1839,14 +1845,12 @@ byte Mode_SetLockAlarmI(long lock) {
 }
 
 byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out) {
+	if (o->type == NV_ENT) {
+		return Mode_VGet(o, var, out);
+	}
 	PyObject *po = Native_ToPy(o);
 	if (!po) {
 		return 0;
-	}
-	if (PyEntity_Check(po)) {
-		byte ok = Mode_HGet(po, var, out);
-		Py_DECREF(po);
-		return ok;
 	}
 	PyObject *r = PyObject_GetAttrString(po, (char *)var);
 	Py_DECREF(po);
@@ -4202,15 +4206,22 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 	return Native_Raise(NE_TYPE, "%s: expected %s found", where, msg);
 }
 
-PyObject *Mode_Entry(PyObject *args, portEntry_t entry) {
-	nativeVal_t a[PORT_ARGS], out;
+PyObject *Mode_SelfEntry(PyObject *self, PyObject *args, portEntry_t entry) {
+	nativeVal_t a[1 + PORT_ARGS], out;
 	/* more than PORT_ARGS arguments: no entry takes them, its arity error comes before it reads one */
-	int n = (int)PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
+	int k = self != NULL, n = (int)PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
+	if (self) {
+		Native_Arg(self, &a[0]);
+	}
 	for (int i = 0; i < m; i++) {
-		Native_Arg(PyTuple_GET_ITEM(args, i), &a[i]);
+		Native_Arg(PyTuple_GET_ITEM(args, i), &a[k + i]);
 	}
 	Native_SetNone(&out);
-	return Mode_KwOut(a, m, entry(a, n, &out), &out);
+	return Mode_KwOut(a, k + m, entry(a, k + n, &out), &out);
+}
+
+PyObject *Mode_Entry(PyObject *args, portEntry_t entry) {
+	return Mode_SelfEntry(NULL, args, entry);
 }
 
 PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core) {
