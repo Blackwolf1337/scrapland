@@ -155,17 +155,10 @@ static nativeVal_t *MV_Slot(nativeVal_t *t, const char *name) {
 
 /* a value of Python as a variable holds it: a number, text, None or tuple by value with the object kept (the same
  * object goes back to Python), an entity handle as its handle, a list, dict, instance, class, function, method or
- * module as its view, anything else as NV_OBJ (SCRAP_NATIVE_REF=0: every object as NV_OBJ, as before batch 9a2) */
+ * module as its view, anything else as NV_OBJ. SCRAP_NATIVE_REF=0 too: the readers of the dict slot gave that form
+ * (the channel's TX_FromPy), an NV_OBJ here shows its repr to tc_sdn and is no tuple to `is` */
 static void MV_FromPy(PyObject *o, nativeVal_t *v) {
-	if (NObj_RefMode()) {
-		NObj_FromPy(o, v);
-	} else if (o == Py_None || PyInt_Check(o) || PyFloat_Check(o) || PyString_Check(o) || PyLong_Check(o)) {
-		if (!Native_FromPyAny(o, v)) {
-			Native_SetObj(v, o);
-		}
-	} else {
-		Native_SetObj(v, o);
-	}
+	NObj_FromPy(o, v);
 	if (v->type != NV_OBJ && v->type != NV_REF) {
 		Native_KeepPy(v, o);
 	}
