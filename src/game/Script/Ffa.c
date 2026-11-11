@@ -18,7 +18,7 @@
  * Direct calls (stage 3): the functions call each other through the module globals and the other ports (Net,
  * Vehicles, OutMap, RacerScorer, Menu) through their refs (PORT_OWN, PORT_CALL; the seam takes the call by name when
  * a mode, a mission or a case has put something else there, OBJLIB 5). ModLib, the module of the mode, is read at each
- * call (its variables, OBJLIB 5; its functions through their entries, PORT_VALUE); the functions Net holds in its
+ * call (its variables, OBJLIB 5; its functions by their entries, Mode_CallArgs); the functions Net holds in its
  * variables ClientJoin, ClientCreate and ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5) are bound by the
  * engine to the entries of the functions they hold (Port_Callback); the functions given to the scheduler take their
  * entries (Port_Scheduled; those of SInput and SNet too, stage 7), the ones set into other
