@@ -2655,4 +2655,11 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_WeaponsTab_ShowWeaponsPanel,
 	&port_WeaponsTab_ShowWeightPrediction,
 	&port_WeaponsTab_UpdateUpgrades,
+	&port_string_capwords,
+	&port_string_center,
+	&port_string_index,
+	&port_string_ljust,
+	&port_string_rindex,
+	&port_string_rjust,
+	&port_string_zfill,
 };

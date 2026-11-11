@@ -2622,6 +2622,23 @@ PORT_DECL(SputnikInterface, SelectShip) /* 2 */
 	PORT_DEF(SputnikInterface, ExitSputnikInterface, SI_ExitSputnikInterface) \
 	PORT_DEF(SputnikInterface, SelectShip, SI_SelectShip)
 
+/* String.c */
+PORT_DECL(string, index) /* ? */
+PORT_DECL(string, rindex) /* ? */
+PORT_DECL(string, ljust) /* 2 */
+PORT_DECL(string, rjust) /* 2 */
+PORT_DECL(string, center) /* 2 */
+PORT_DECL(string, zfill) /* 2 */
+PORT_DECL(string, capwords) /* ? */
+#define PORTS_String \
+	PORT_DEFK(string, index, String_index) \
+	PORT_DEFK(string, rindex, String_rindex) \
+	PORT_DEF(string, ljust, String_ljust) \
+	PORT_DEF(string, rjust, String_rjust) \
+	PORT_DEF(string, center, String_center) \
+	PORT_DEF(string, zfill, String_zfill) \
+	PORT_DEFK(string, capwords, String_capwords)
+
 /* SuperDeals.c */
 PORT_DECL(DeathMatch, GetMenuDescription) /* 0 */
 PORT_DECL(DeathMatch, InitStatus) /* 1 */
@@ -5558,6 +5575,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2647
+#define PORT_COUNT 2654
 
 #endif
