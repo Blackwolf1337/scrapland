@@ -229,7 +229,7 @@ static byte Level_Current(char *out, int size) {
 	nativeVal_t path;
 	if (!Mode_ModGet("Init", "Path", &path) || path.type != NV_STR) {
 		Native_Free(&path);
-		Mode_DropError();
+		Native_ErrClear();
 		return 0;
 	}
 	const char *p = Native_Text(&path), *slash = strrchr(p, '/');

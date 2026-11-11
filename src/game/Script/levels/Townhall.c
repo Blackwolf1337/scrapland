@@ -57,7 +57,7 @@ static void Th_TalkAnim(nativeVal_t *out) {
 /* cmp(a, b) of the script: -1, 0 or 1, 2 with the error (only values of other types compared by Python can fail) */
 static int Th_Cmp(const nativeVal_t *a, const nativeVal_t *b) {
 	int c = Native_Compare(a, b);
-	return Mode_Failed() ? 2 : c;
+	return Native_Failed() ? 2 : c;
 }
 
 /* the character stays where it is (Lv_Stay with state 6 and no target) */

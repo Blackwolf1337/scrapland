@@ -184,7 +184,7 @@ static byte WT_NumSlots(const nativeVal_t *weapon, nativeVal_t *out) {
 		if (!Native_Compare(weapon, &a) || !Native_Compare(weapon, &b)) {
 			return Mode_ShipGet(kinds[k][2], out);
 		}
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return 0;
 		}
 	}

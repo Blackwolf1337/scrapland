@@ -3479,16 +3479,11 @@ byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const n
 
 /* ---- the character hubs of batch M (MakeChar, Chars, CharFuncs) ---- */
 
-void Mode_DropError(void) {
-	/* OBJLIB 7: the Python exception until errors are a C state */
-	PyErr_Clear();
-}
-
 long Mode_ModGetI(const char *module, const char *var, long def) {
 	nativeVal_t v = { 0 };
 	long r = def;
 	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_INT) {
 		r = (int)v.i;
 	} else if (v.type == NV_FLOAT) {
@@ -3502,7 +3497,7 @@ double Mode_ModGetN(const char *module, const char *var, double def) {
 	nativeVal_t v = { 0 };
 	double r = def;
 	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_FLOAT) {
 		r = v.f;
 	} else if (v.type == NV_INT) {
@@ -3514,7 +3509,7 @@ double Mode_ModGetN(const char *module, const char *var, double def) {
 
 void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v) {
 	if (!Mode_SetModVar(module, var, v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 
@@ -3643,7 +3638,7 @@ const char *Mode_ModGetS(const char *module, const char *var, char *out, int siz
 	nativeVal_t v = { 0 };
 	out[0] = 0;
 	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_STR) {
 		Str_Copy(out, Native_Text(&v), size);
 	}
@@ -5235,15 +5230,6 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out) {
 }
 
 /* ---- the menus, the ship editor and the other ports on the native helpers (stage 6, batch 6h) ---- */
-
-void Mode_PrintError(void) {
-	/* OBJLIB 7: the traceback of the Python exception until errors are a C state */
-	PyErr_Print();
-}
-
-byte Mode_Failed(void) {
-	return PyErr_Occurred() != NULL;
-}
 
 byte Mode_DefRunV(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
 	byte stop, const char *const *names, const nativeVal_t *const *vals, int n) {

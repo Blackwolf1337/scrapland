@@ -1652,7 +1652,7 @@ static byte Merc_ScanShip(void) {
 	}
 	if (!Mode_G(IM, "lonelyMerc", m) || !Mode_VGet(m, "Pos", mpos)) {
 		/* except: the scan again a second later (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		Mode_DropError();
+		Native_ErrClear();
 		return Mode_Done(&t, Mode_Later(1.0, IM, "ScanShip", NULL, 0, "ScanShip"));
 	}
 	byte ok = Mode_VGet(usr, "Pos", up) && Mode_VecSub(mpos, up, sub) && Mode_VecModSqr(sub, d) && Mode_G(IM, "MAX_SCANNING_DIST", m1) &&

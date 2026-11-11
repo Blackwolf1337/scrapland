@@ -123,7 +123,7 @@ static byte Weap_Client(const char *mod, const nativeVal_t *a, const char *exec,
 	}
 	int eq = !Native_Compare(&a[1], &mine);
 	Native_Free(&mine);
-	if (Mode_Failed()) {
+	if (Native_Failed()) {
 		/* OBJLIB 7: the compare of an object that raised */
 		return 0;
 	}
@@ -442,7 +442,7 @@ static byte Sonic_Hit(const nativeVal_t *name) {
 			Native_Free(&v[SPEED]);
 			v[SPEED] = low;
 		}
-		ok = !Mode_Failed();
+		ok = !Native_Failed();
 	}
 	ok = ok && Mode_Get(e, ref, "Vel", &v[VEL]) && Mode_VecNorm(&v[VEC], &v[NORM]) &&
 		Mode_VecProd(&v[NORM], &v[SPEED], &v[PUSH]) && Mode_VecAdd(&v[VEL], &v[PUSH], &sum) && Mode_Set(e, ref, "Vel", &sum);

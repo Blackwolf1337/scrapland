@@ -111,7 +111,7 @@ static byte DownTown_InitStatus(void) {
 	nativeVal_t *od = TV(), *prev = TV(), *tail = TV(), *pm = TV();
 	if (!PORT_CALL(SAI, GetOD, NULL, "") || !PORT_CALL(SAI, GetOD, od, "") || !Mode_SetModVar("Init", "Outdoor", od)) {
 		/* except: pass (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	Mode_SaveVar("PrevMap", prev);
 	ok = Native_Slice(prev, 7, INT_MAX, tail) && Native_Upper(tail, pm) &&
@@ -1167,7 +1167,7 @@ static byte Data_TakeData(const nativeVal_t *a) {
 	Mode_SaveVar("NumData", sv);
 	if (!Native_ToInt(sv, ni) || !Native_Arith('+', ni, Mode_I(&t, 1), num) || !Mode_G(GD, "MAX_DATA_UNITS", max)) {
 		/* except: return (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		Mode_DropError();
+		Native_ErrClear();
 		return Mode_Done(&t, 1);
 	}
 	if (Native_Compare(num, max) > 0) {

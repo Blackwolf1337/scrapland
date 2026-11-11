@@ -1042,38 +1042,7 @@ byte Native_Literal(const char *s, nativeVal_t *out) {
 	return 1;
 }
 
-/* ---- errors ---- */
-
-byte Native_Raise(nativeError_t kind, const char *fmt, ...) {
-	/* OBJLIB 7: the Python exception of the same name */
-	static PyObject **const types[] = {
-		[NE_INDEX] = &PyExc_IndexError,
-		[NE_VALUE] = &PyExc_ValueError,
-		[NE_TYPE] = &PyExc_TypeError,
-		[NE_ATTRIBUTE] = &PyExc_AttributeError,
-		[NE_SYSTEM] = &PyExc_SystemError,
-		[NE_OVERFLOW] = &PyExc_OverflowError,
-		[NE_ZERODIV] = &PyExc_ZeroDivisionError,
-		[NE_NAME] = &PyExc_NameError,
-	};
-	char text[0x200];
-	va_list va;
-	va_start(va, fmt);
-	vsnprintf(text, sizeof(text), fmt, va);
-	va_end(va);
-	PyErr_SetString(*types[kind], text);
-	return 0;
-}
-
-byte Native_RaiseKey(const nativeVal_t *key) {
-	/* OBJLIB 7: the KeyError of a dict carries the key itself */
-	PyObject *k = Native_ToPy(key);
-	if (k) {
-		PyErr_SetObject(PyExc_KeyError, k);
-		Py_DECREF(k);
-	}
-	return 0;
-}
+/* ---- errors (the state: NativeErr.c) ---- */
 
 const char *Native_TypeName(const nativeVal_t *v) {
 	static const char *const names[] = {
@@ -2013,8 +1982,9 @@ byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal
 		case 'o':
 		case 'x':
 		case 'X': {
-			long l;
-			double d;
+			/* set only on the paths that use them; the compiler cannot tell once Native_Raise is in another file */
+			long l = 0;
+			double d = 0.0;
 			if (c == 'i') {
 				c = 'd';
 			}
@@ -2041,8 +2011,8 @@ byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal
 		case 'f':
 		case 'g':
 		case 'G': {
-			long l;
-			double d;
+			long l = 0;
+			double d = 0.0;
 			if (!Native_FmtNum(v, 0, &l, &d)) {
 				goto error;
 			}

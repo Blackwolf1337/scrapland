@@ -347,7 +347,7 @@ static void Mouse_Apply(int id) {
 static void Step_Invert(int id, const nativeVal_t *args, int n) {
 	const char *item;
 	if (!Mode_Parse(args, n, "s", &item)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	byte yes = GVar_GetNum(item, 0) == 1;
@@ -358,7 +358,7 @@ static void Step_Invert(int id, const nativeVal_t *args, int n) {
 static void Step_Sensitivity(int id, const nativeVal_t *args, int n) {
 	const char *item, *var;
 	if (!Mode_Parse(args, n, "ss", &item, &var)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	Script_SetNum(id, item, "Value", Mouse_SensToValue(GVar_GetNum(var, 0)));
@@ -436,7 +436,7 @@ static byte Controls_CreateMenu(int id, const nativeVal_t *title, const nativeVa
 			}
 		}
 		/* OBJLIB 7: the error of an entry without an action dropped */
-		Mode_DropError();
+		Native_ErrClear();
 		Native_Free(&at);
 		Native_Free(&et);
 	}

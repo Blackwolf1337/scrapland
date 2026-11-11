@@ -437,7 +437,7 @@ static byte In_CloseN(void) {
 	if (Mode_Sub(bars, upper, n)) {
 		return Mode_Done(&t, Native_GVarSet("ProgressBar", n));
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	return Mode_Done(&t, Native_Arith('%', Mode_S(&t, "ERROR: '%s' progress bar info not found \n"), upper, msg) &&
 		Mode_ConsoleError(msg) && Mode_GVarSetDef("ProgressBar"));
 }

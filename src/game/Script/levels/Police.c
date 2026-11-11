@@ -2433,7 +2433,7 @@ static byte Pc_TrySound(const char *func, const char *msg) {
 	if (Mode_Import("MapSnd") && LV_CALL("MapSnd", func, NULL, "")) {
 		return 1;
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	LvN_Str(&m, msg);
 	byte ok = Mode_ConsoleError(&m);
 	Native_Free(&m);

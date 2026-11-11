@@ -30,7 +30,7 @@
 /* ent.var = v as the port set it (Script_EntSet: the console line of the handle, no error) */
 static void Char_Set(const char *ent, const char *var, const nativeVal_t *v) {
 	if (!Native_EntSet(World_FindEntity(ent), ent, var, v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 
@@ -59,7 +59,7 @@ static void Char_ModAttr(const char *module, const char *var, const char *src, c
 	if (LvN_ModGet(src, name, &v)) {
 		Mode_ModPut(module, var, &v);
 	} else {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	Native_Free(&v);
 }
@@ -177,7 +177,7 @@ static void Functionary_Enter(const char *name) {
 	if (LvN_ModGet("Functionary", "charSpeed", &v)) {
 		Char_Set(name, "TimeSpeed", &v);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&v);
 	Timer_SetSpeed(&g_pWorld->timer, (float)Mode_ModGetN("Functionary", "worldSpeed", 1.0));
 	if (GVar_GetNum("R_SceneMotionBlurRTarget", 0) == 1) {
@@ -391,7 +391,7 @@ static byte Char_SetOptionLists(const nativeVal_t *lists) {
 	ok = Mode_RefItem(lists, 1, &b) && ok;
 	if (ok) {
 		if (!Mode_RefToMod("CharsNPC", "optionsList", &a) || !Mode_RefToMod("CharsNPC", "subOptionsList", &b)) {
-			Mode_DropError();
+			Native_ErrClear();
 		}
 	}
 	Native_Free(&a);
@@ -654,7 +654,7 @@ static int Police_OptionIndex(const char *opt) {
 			}
 		}
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&key);
 	Native_Free(&list);
 	return index;

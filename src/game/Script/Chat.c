@@ -232,7 +232,7 @@ static byte Chat_Send(int id, const char *text, int console) {
 /* MyShip into the module, as the Script_SetVar of the script port: a failed set is no error */
 static void Chat_PutShip(void) {
 	if (!Native_Put("Chat", CHAT_MYSHIP, 0)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 

@@ -100,7 +100,7 @@ static int Phone_Marked(const nativeVal_t *e) {
 		}
 		int c = Native_Compare(&radar, &n);
 		Native_Free(&radar);
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return -1;
 		}
 		if (!c) {
@@ -341,7 +341,7 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 		}
 		Phone_SetVar("Challenge", "numChallengeEnemies", num);
 		if (!Mode_ModTo("Speech", "OnEndOfSpeech", "Challenge", "LaunchRevenge")) {
-			Mode_DropError();
+			Native_ErrClear();
 		}
 		Native_SetEmpty(empty, NV_TUPLE);
 		Phone_SetVar("Speech", "OnEndOfSpeechParams", empty);
@@ -408,7 +408,7 @@ static byte PhoneCab_Nearest(const nativeVal_t *usrPos, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		int nearer = dist->type == NV_NONE || Native_Compare(nd, dist) < 0;
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		if (nearer) {
@@ -583,7 +583,7 @@ static int PhoneCab_IsFree(const nativeVal_t *res) {
 	Native_SetInt(&zero, 0);
 	int c = Native_Compare(&radar, &zero);
 	Native_Free(&radar);
-	return Mode_Failed() ? -1 : !c;
+	return Native_Failed() ? -1 : !c;
 }
 
 /* res = Scrap.GetEntity(res.NextInList) */
@@ -628,7 +628,7 @@ static byte PhoneCab_Free(nativeVal_t *out) {
 				nativeVal_t n;
 				Native_SetInt(&n, i);
 				int same = !Native_Compare(&n, index);
-				if (Mode_Failed()) {
+				if (Native_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				if (same) {

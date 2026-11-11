@@ -27,7 +27,7 @@ static byte Str_Global(const char *name, nativeVal_t *out) {
 /* len(s) as a value: 0 with the error of a value without length */
 static byte Str_Len(const nativeVal_t *s, nativeVal_t *out) {
 	int len = Mode_RefSize(s);
-	if (len < 0 && Mode_Failed()) {
+	if (len < 0 && Native_Failed()) {
 		return 0;
 	}
 	Native_SetInt(out, len);

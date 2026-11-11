@@ -41,7 +41,7 @@ static byte Sp_Has(const char *var, nativeVal_t *out) {
 	if (Sp_G(var, out)) {
 		return 1;
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	return 0;
 }
 
@@ -335,7 +335,7 @@ static byte Sp_AbortSpeech(void) {
 	if (Sp_G("DefTextColor", def)) {
 		Mode_ModPut(SP, "TextColor", def);
 	} else {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	if (!Sp_SpeechText(Mode_S(&t, ""), Mode_I(&t, 0), "TextColor") || !Mode_SpeechCallback("")) {
 		return Mode_Done(&t, 0);
@@ -1122,7 +1122,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 		const char *lib = SaveVar_Get("Mission.Library");
 		map[0] = 0;
 		if (!LvN_ModGet("Init", "UpperMap", mapV)) {
-			Mode_DropError();
+			Native_ErrClear();
 		} else if (mapV->type == NV_STR) {
 			Str_Copy(map, Native_Text(mapV), sizeof(map));
 		}
@@ -1137,7 +1137,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 	}
 	prev[0] = 0;
 	if (!LvN_ModGet(SP, "prevTaunt", prevV)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (prevV->type == NV_STR) {
 		Str_Copy(prev, Native_Text(prevV), sizeof(prev));
 	}

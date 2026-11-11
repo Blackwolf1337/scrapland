@@ -31,7 +31,7 @@
 static int It_Has(const nativeVal_t *ups, const nativeVal_t *key) {
 	nativeVal_t v;
 	if (!Native_Subscript(ups, key, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return 0;
 	}
 	Native_Free(&v);

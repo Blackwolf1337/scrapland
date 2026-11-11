@@ -223,8 +223,21 @@ int Native_ForCount(const nativeVal_t *seq);
 
 /* ---- errors ---- */
 
-/* the kinds of error a native function raises; while Python is linked each is the Python exception of that name */
+/*
+ * The error state of the scripts (src/game/Script/NativeErr.c, stage 7d of docs/objlib-plan.md): one error at a time,
+ * its kind, the exception it was raised as when that is no kind (NE_OTHER: a string exception of a test, a class) and
+ * its value (the text of Native_Raise, the key of a KeyError, any value of a raise). The kinds are the standard
+ * exceptions of 1.5.2, which are strings in the game (no exceptions.py: str of the type is its name). A function that
+ * fails raises and returns 0 (or NULL, -1); the caller passes the failure up, drops it (Native_ErrClear) or prints it
+ * where the script printed its traceback (Native_ErrPrint).
+ *
+ * OBJLIB 7: Python's error state is this one. PyErr_Restore, PyErr_Occurred and PyErr_Fetch of the object library
+ * (src/python/errors.c) come here through Py_ErrSet, Py_ErrType and Py_ErrTake, the boundary that converts the values
+ * (a Python exception that is a standard one becomes its kind, its value the native value of its object, which keeps
+ * the object for the way back).
+ */
 typedef enum {
+	NE_NONE = -1,			/* no error */
 	NE_INDEX,
 	NE_VALUE,
 	NE_TYPE,
@@ -233,13 +246,77 @@ typedef enum {
 	NE_OVERFLOW,
 	NE_ZERODIV,			/* ZeroDivisionError */
 	NE_NAME,
+	NE_KEY,
+	NE_RUNTIME,
+	NE_IMPORT,
+	NE_SYNTAX,
+	NE_MEMORY,
+	NE_IO,
+	NE_EOF,
+	NE_OS,
+	NE_FLOAT,			/* FloatingPointError */
+	NE_ASSERTION,
+	NE_INTERRUPT,			/* KeyboardInterrupt */
+	NE_NOTIMPL,			/* NotImplementedError */
+	NE_SYSTEMEXIT,
+	NE_EXCEPTION,			/* the bases of the others */
+	NE_STANDARD,
+	NE_ARITHMETIC,
+	NE_LOOKUP,
+	NE_ENVIRONMENT,
+	NE_OTHER,			/* raised as another exception: nativeErr_t.type */
+	NE_KINDS
 } nativeError_t;
 
-/* raises the error kind with the text (printf form); 0, for `return Native_Raise(...)` in a function that returns
- * 1 for success. OBJLIB 7: the Python exception now, a C error state after Python */
+/* an error taken out of the state (Native_ErrFetch) */
+typedef struct {
+	nativeError_t kind;
+	nativeVal_t type;		/* NE_OTHER: what was raised as the exception, else None */
+	nativeVal_t value;		/* the value of the exception (None for none) */
+} nativeErr_t;
+
+/* raises the error kind with the text (printf form, 511 characters at most); 0, for `return Native_Raise(...)` in a
+ * function that returns 1 for success */
 byte Native_Raise(nativeError_t kind, const char *fmt, ...);
 /* the KeyError of d[key] (the key is the value of the error): 0 */
 byte Native_RaiseKey(const nativeVal_t *key);
+/* raise type, value of the script (value NULL: None): a standard exception as its kind (the same object, OBJLIB 7:
+ * Python's string), anything else as NE_OTHER: 0 */
+byte Native_RaiseObj(const nativeVal_t *type, const nativeVal_t *value);
+/* raises the kind with value (NULL: None): 0 */
+byte Native_RaiseVal(nativeError_t kind, const nativeVal_t *value);
+/* an error is set */
+byte Native_Failed(void);
+/* the error set is of kind (PyErr_ExceptionMatches of a standard exception) */
+byte Native_ErrIs(nativeError_t kind);
+/* the error dropped */
+void Native_ErrClear(void);
+/* the error taken into *e (kind NE_NONE when there is none) and cleared; Native_ErrRestore sets it again (or clears
+ * with NE_NONE) and takes the values over, Native_ErrFree frees an error not restored */
+void Native_ErrFetch(nativeErr_t *e);
+void Native_ErrRestore(nativeErr_t *e);
+void Native_ErrFree(nativeErr_t *e);
+/* e normalized as PyErr_NormalizeException does it: a class as the exception gets an instance of it as the value
+ * (the class called with the value), or the class of an instance of a derived class as the exception */
+void Native_ErrNormalize(nativeErr_t *e);
+/* the error printed as PyErr_Print printed the traceback of a script (sys.last_type and sys.last_value set, the type,
+ * ": " and the str of the value written to the error console through Scrap.ConsoleError, the file and line of a
+ * SyntaxError with its tuple) and cleared; SystemExit ends the program as there */
+void Native_ErrPrint(void);
+/* the name of a standard kind ("TypeError"), NULL for NE_OTHER and NE_NONE */
+const char *Native_ErrName(nativeError_t kind);
+/* the exception of e as the script sees it (sys.exc_type): the object of a standard kind (OBJLIB 7: the string of
+ * Python, so `is` holds), a copy of the type of NE_OTHER (None for no error) */
+void Native_ErrType(const nativeErr_t *e, nativeVal_t *out);
+/* str() of the exception and of the value of e added to b ("TypeError", "function requires ..."): 0 with the error of
+ * a str that fails */
+byte Native_ErrTypeStr(nativeBuf_t *b, const nativeErr_t *e);
+byte Native_ErrValueStr(nativeBuf_t *b, const nativeErr_t *e);
+/* OBJLIB 7, the boundary for src/python/errors.c: PyErr_Restore (the references taken over; type NULL clears),
+ * PyErr_Occurred (borrowed, NULL for none) and PyErr_Fetch (new references, cleared) on this state */
+void Py_ErrSet(PyObject *type, PyObject *value, PyObject *tb);
+PyObject *Py_ErrType(void);
+void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb);
 /* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...;
  * the type name of an NV_OBJ; "cPyEntity" for an entity handle) */
 const char *Native_TypeName(const nativeVal_t *v);

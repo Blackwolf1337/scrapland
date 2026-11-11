@@ -739,8 +739,6 @@ byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const n
 
 /* ---- the character hubs of batch M (MakeChar, Chars, CharFuncs) ---- */
 
-/* the error a port drops (PyErr_Clear of the C ports; OBJLIB 7) */
-void Mode_DropError(void);
 /* module.var as Script_GetInt and Script_GetFloat read it: an int (a float cut) or a number, else def; no error (a
  * missing variable or module is def too) */
 long Mode_ModGetI(const char *module, const char *var, long def);
@@ -1231,11 +1229,6 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out);
 
 /* ---- the menus, the ship editor and the other ports on the native helpers (stage 6, batch 6h) ---- */
 
-/* the error that is set printed as the script printed its traceback, and dropped (PyErr_Print of the C ports;
- * OBJLIB 7: the Python exception until errors are a C state) */
-void Mode_PrintError(void);
-/* an error is set (PyErr_Occurred of the C ports, OBJLIB 7; a compare of two values can set one without failing) */
-byte Mode_Failed(void);
 /* Script_RunFile (stop: Script_RunFileTry) of a .def section with its $names given as values: the n pairs that follow,
  * each a name and a const nativeVal_t * (up to MODE_DEFVARS; OBJLIB 6: the runner takes them as a dict, Mode_DefVars;
  * an NV_OBJ goes in as the object it is). 0 as the runner gives it, and when the dict could not be made (nothing
