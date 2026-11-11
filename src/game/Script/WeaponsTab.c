@@ -47,21 +47,18 @@ static byte WT_WeaponHint(const char *key, byte use, const nativeVal_t *weapon, 
 
 /* the step weaponhint <key>: the Hint of a weapon button, string.replace(Scrap.GetLangStr(key) % UseTxt, "<n>",
  * Scrap.GetLangStr("ShipEdit_" + name + "Name")) (the error left set stops the file) */
-static void WT_StepHint(int id, PyObject *args) {
+static void WT_StepHint(int id, const nativeVal_t *args, int n) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *key = Mode_V(&t), *hint = Mode_V(&t);
+	nativeVal_t *hint = Mode_V(&t);
 	const char *item = Script_CurrentItem(), *k;
-	/* OBJLIB 6: the step takes the arguments of the line as a tuple */
-	PyObject *o = Script_Index(args, 0);
-	byte ok = o && Native_Arg(o, key) && Mode_ItemText(key, &k);
-	Py_XDECREF(o);
+	/* the first value of the line (args[0] of the script) */
+	byte ok = (n > 0 || Native_Raise(NE_INDEX, "tuple index out of range")) && Mode_ItemText(&args[0], &k);
 	ok = ok && WT_WeaponHint(k, 1, Mode_S(&t, item), hint) && Mode_ScorerPut(id, item, "Hint", hint);
 	Mode_Done(&t, ok);
 }
 
-SCRIPT_PYSTEP(WT_StepHint)
 static const scriptStep_t weaponstab_steps[] = {
-	{ "weaponhint", WT_StepHint_Py },
+	{ "weaponhint", WT_StepHint },
 	{ NULL, NULL },
 };
 

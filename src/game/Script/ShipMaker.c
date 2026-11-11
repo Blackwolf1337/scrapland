@@ -507,13 +507,12 @@ static byte Sm_SetShipParamsN(const nativeVal_t *name, nativeVal_t *out) {
 }
 
 /* the step "stdship <key> <model> <eng0> <eng1> <eng2> <eng3> <weapons> <life>": StdShips[key] = the other values */
-static void ShipMaker_StepStdShip(int id, PyObject *args) {
-	nativeVal_t a, table, v;
+static void ShipMaker_StepStdShip(int id, const nativeVal_t *args, int n) {
+	nativeVal_t a, table = { 0 }, v;
 	(void)id;
-	/* OBJLIB 6: the step takes the values of its line as a tuple */
-	Native_Arg(args, &a);
 	Native_SetNone(&v);
-	if (Mode_G(SM, "StdShips", &table)) {
+	/* the values of the line as one tuple (one that holds an object is no tuple of values: OBJLIB 7) */
+	if (Script_StepValues(args, n, NV_TUPLE, &a) && Mode_G(SM, "StdShips", &table)) {
 		if (a.type != NV_TUPLE || a.n != 8) {
 			Native_Raise(NE_TYPE, "stdship takes 8 values");
 		} else if (Native_Slice(&a, 1, 8, &v)) {
@@ -525,9 +524,8 @@ static void ShipMaker_StepStdShip(int id, PyObject *args) {
 	Native_Free(&a);
 }
 
-SCRIPT_PYSTEP(ShipMaker_StepStdShip)
 static const scriptStep_t shipmaker_steps[] = {
-	{ "stdship", ShipMaker_StepStdShip_Py },
+	{ "stdship", ShipMaker_StepStdShip },
 	{ NULL, NULL },
 };
 

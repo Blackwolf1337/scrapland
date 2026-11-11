@@ -127,6 +127,11 @@ typedef struct scriptStep_s {
 	void (*fn)(int id, const struct nativeVal_s *args, int n);
 } scriptStep_t;
 
+/* the n values of a step as one list or tuple (type NV_LIST or NV_TUPLE) in *out, as the value a call passes on
+ * (Native_Pass: copies, and the object itself where a value holds one; Native_Free it either way): 1, or 0 with the
+ * error */
+byte Script_StepValues(const struct nativeVal_s *args, int n, int type, struct nativeVal_s *out);
+
 /* a step not converted yet (fn on the tuple of the values as Python values) as fn_Py for the table */
 void Script_StepPy(int id, const struct nativeVal_s *args, int n, void (*fn)(int id, PyObject *args));
 #define SCRIPT_PYSTEP(fn) \

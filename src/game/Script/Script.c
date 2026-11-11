@@ -1563,6 +1563,17 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	Def_ArgsFree(&a);
 }
 
+byte Script_StepValues(const nativeVal_t *args, int n, int type, nativeVal_t *out) {
+	nativeVal_t seq;
+	Native_SetEmpty(&seq, type);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(&seq), &args[i]);
+	}
+	byte ok = Native_Pass(&seq, out);
+	Native_Free(&seq);
+	return ok;
+}
+
 void Script_StepPy(int id, const nativeVal_t *args, int n, void (*fn)(int id, PyObject *args)) {
 	defArgs_t a = { .npos = n, .n = n };
 	memcpy(a.v, args, n * sizeof(a.v[0]));
