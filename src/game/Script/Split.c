@@ -23,7 +23,7 @@
  * one), the modes call their own functions and Split, and all call the other ports through PORT_CALL
  * (scrap/scriptnative.h: the port seam). The mode's InitStatus and Init through ModLib (a module in a variable,
  * OBJLIB 5) and the functions held in variables (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc; OBJLIB 5) are called
- * through the entries of port functions (PORT_VALUE); the calls given to the scheduler (ReSpawnShip, ReloadNext,
+ * through the entries of port functions (Mode_CallArgs); the calls given to the scheduler (ReSpawnShip, ReloadNext,
  * BattonRepos, the race count down) take the entry of a port's own function (stage 4: Port_Scheduled), SScorer and
  * SSound there their engine entries (stage 7); the functions set as values into Split and Vehicles
  * stay the objects the globals hold (OBJLIB 5).
@@ -809,7 +809,7 @@ static byte Sm_NewFlag(const char *mod, const char *model, long radius) {
 	nativeVal_t *file = Mode_V(&t);
 	cEntity *e;
 	if (!Mode_Create(Mode_S(&t, "FlagToBeHunted"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "Item", &e) ||
-		!Script_SetGlobal(mod, "Flag", Mode_Handle(e))) {
+		!Mode_PutHandle(mod, "Flag", e)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_G(mod, model, file) && Sm_FlagModel(mod, file) && Mode_FlagSet(mod, "Radius", Mode_I(&t, radius)) &&
