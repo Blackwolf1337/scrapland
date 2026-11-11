@@ -206,6 +206,12 @@ static void cAIVehicle_React(cAIVehicle *self) {
 	switch (self->state) {
 	case AIV_FIGHTING_HOOK:
 		cAIVehicle_ReactHook(self);
+		/* the way back from the hook can end in a freeze state with the target let go (FREEZE_OBJ_NOT_ACCESS when
+		 * no path leads to the life or ammo item, FREEZE for a target the AI cannot have); the original goes on
+		 * into the FIGHTING reaction and reads the missing target */
+		if (!AIV_Target(self)) {
+			return;
+		}
 		/* fall through */
 	case AIV_FIGHTING:
 		cAIVehicle_ReactFighting(self);
