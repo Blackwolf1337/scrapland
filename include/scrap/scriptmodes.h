@@ -1094,4 +1094,143 @@ byte Mode_PutHandle(const char *module, const char *var, cEntity *e);
 /* Flag.var with Flag the global of the module (Mode_FlagSet's reader; OBJLIB 7) */
 byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out);
 
+/* ---- the ports without Python objects (stage 6, batch 6g) ---- */
+
+/* a section of a .def file without C steps, with the $names as the dict of Mode_DefVars (vars given away, NULL: 0
+ * with its error; OBJLIB 6: the runner takes the $names as a dict); stop: the file ends where a line fails, 0 with
+ * its error left set (Script_RunFileTry), else Script_RunFile with its result dropped (1). MODE_DEFRUN takes the n
+ * pairs of Mode_DefVars */
+byte Mode_DefRunVars(byte stop, int id, const char *name, const char *section, const char *builtin, PyObject *vars);
+#define MODE_DEFRUN(stop, id, name, section, builtin, n, ...) \
+	Mode_DefRunVars(stop, id, name, section, builtin, Mode_DefVars(n __VA_OPT__(, ) __VA_ARGS__))
+/* the adapter of a keyword function with a typed format (fmt and names of PyArg_ParseTupleAndKeywords; the letters
+ * s, i, d, f and O, up to PORT_ARGS): the arguments parsed with fmt for its errors in their order, then the entry on
+ * them as native values (a text, an int and a float as the parse converted them, an object as Native_Arg makes it,
+ * one not given as Mode_KwSkip), the result as Mode_KwOut gives it */
+PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
+/* MODE_KW for a function with a typed format: the body gets the slots as they were given (Mode_KwSlots) and converts
+ * them with Mode_Parse (the defaults of the script set first: Mode_KwDef*). MODE_KWBY is the form with the adapter
+ * and the function named (pasted in the macro the file writes: a module name can be a macro of the file); MODE_REFKW
+ * (below) uses it with the adapter by reference */
+#define MODE_KWBY(adapter, fn, fmt, ...) \
+	static char *fn##_N[] = { __VA_ARGS__, NULL }; \
+	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out); \
+	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		nativeVal_t v[PORT_ARGS]; \
+		byte given[PORT_ARGS]; \
+		return Mode_KwSlots(a, n, fmt, v, given) && fn##_K(v, given, out); \
+	} \
+	static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
+		(void)self; \
+		return adapter(args, kw, fmt, fn##_N, fn##_E); \
+	} \
+	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out)
+#define MODE_KWT(pre, name, fmt, ...) MODE_KWBY(Mode_KwTyped, pre##_##name, fmt, __VA_ARGS__)
+/* `from module import name` as a value (Mode_From: the ImportError of a name the module does not have; an object as
+ * NV_OBJ) */
+byte Mode_FromV(const char *module, const char *name, nativeVal_t *out);
+/* v[lo:hi] of the script: Native_Slice, an NV_OBJ (an instance, a list that holds handles) the Python way
+ * (PySequence_GetSlice, the result as Native_Arg makes it) */
+byte Mode_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out);
+/* v[a:b] is defined for the type of v (a text, a list, a tuple, an object whose type slices: the sq_slice slot) */
+byte Mode_Sliceable(const nativeVal_t *v);
+
+/*
+ * Values held by reference (OBJLIB 5 and 7): a list or dict that several holders share and change in place (a module
+ * variable other modules and the cases hold, the item of such a list), a class instance, a function. Mode_RefG and
+ * Mode_RefMod give the object itself as an NV_OBJ, also when it is a list, tuple or dict of plain values (Mode_G and
+ * Mode_ModGet give a copy of those); the Mode_Ref functions work on the object in place, with the errors of the
+ * Python operation. A value that is no NV_OBJ is taken as the Python value it makes (a new object).
+ */
+/* the object o as a reference into out (o released): 0 for NULL, with its error. MODE_REFASK: the result of a port
+ * function by reference (PORT_ASK: what a function put in its place returns keeps its identity) */
+byte Mode_RefTake(PyObject *o, nativeVal_t *out);
+#define MODE_REFASK(module, name, out, ...) Mode_RefTake(PORT_ASK(module, name, __VA_ARGS__), out)
+/* the global name of module (its NameError) and module.var of another module (its AttributeError) by reference */
+byte Mode_RefG(const char *module, const char *name, nativeVal_t *out);
+byte Mode_RefMod(const char *module, const char *var, nativeVal_t *out);
+/* the value a reference holds as the functions read values (Native_Arg: a copy of a list, tuple or dict of plain
+ * values, any other object stays the reference) */
+void Mode_RefPlain(const nativeVal_t *o, nativeVal_t *out);
+/* len(o) as PySequence_Length takes it (-1 with the error) and as PyObject_Length does (a dict too) */
+int Mode_RefLen(const nativeVal_t *o);
+int Mode_RefSize(const nativeVal_t *o);
+/* o[i] as PySequence_GetItem gives it and o[key] of the script (PyObject_GetItem), the item by reference */
+byte Mode_RefItem(const nativeVal_t *o, long i, nativeVal_t *out);
+byte Mode_RefSub(const nativeVal_t *o, const nativeVal_t *key, nativeVal_t *out);
+/* o[i] = v as PySequence_SetItem sets it, o[key] = v and del o[key] of the script, in place */
+byte Mode_RefSetItem(const nativeVal_t *o, long i, const nativeVal_t *v);
+byte Mode_RefSetSub(const nativeVal_t *o, const nativeVal_t *key, const nativeVal_t *v);
+byte Mode_RefDelSub(const nativeVal_t *o, const nativeVal_t *key);
+/* o.name by reference (PyObject_GetAttrString: no error is set where the object sets none), o.name = v */
+byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
+byte Mode_RefSetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v);
+/* o.method(args...) of n values (an NV_OBJ argument is the object itself) as the ports call a method (Script_Method:
+ * the method read as Mode_RefGetAttr reads an attribute), the result as Native_Arg makes it into out (NULL: dropped) */
+byte Mode_RefCall(const nativeVal_t *o, const char *method, const nativeVal_t *args, int n, nativeVal_t *out);
+/* PyList_Insert(o, at, v) and PyList_Append(o, v) (at < 0) as the C ports changed a list (the SystemError of a value
+ * that is no list) */
+byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v);
+/* module.var = v with a reference kept as the object it is (Mode_SetModPy) */
+byte Mode_RefToMod(const char *module, const char *var, const nativeVal_t *v);
+/* d.has_key(key) of a value of the script (the method of whatever value it is): 1, 0, -1 with the error */
+int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key);
+/* an error of the script is pending (OBJLIB 7: the Python error state; a compare of two values can set one without
+ * failing) */
+byte Mode_ErrorSet(void);
+/* h.method as the bound method by reference (Mode_VBound: what the scheduler keeps, e.g. l.Del; OBJLIB 7) */
+byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out);
+/* eval(text) of a name with attributes and subscripts (NAME(.NAME | [n])*, as the game passes them) in a function of
+ * the module of x: the variables and imports of x are the locals of the function, then the globals of the module and
+ * the builtins (Script_NameChain; OBJLIB 6: the lookup on the dicts): 1 with *out (as Native_Arg makes it), 0 with the
+ * error of the lookup, -1 without an error for a text that is no such name (*out None) */
+int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out);
+/* the module name as a value (Script_Module: its object by reference, OBJLIB 7; the ImportError when it is not
+ * there), e.g. for dir(module) */
+byte Mode_RefModule(const char *name, nativeVal_t *out);
+/* the pending error is a KeyError (the except KeyError of a script): dropped (1), any other error stays (0) */
+byte Mode_CatchKeyError(void);
+/* str() of each of the n values (up to MODE_PRINT_MAX), then all written to sys.stdout with a blank between and a
+ * newline after, without the soft space of the print statement (what the C port of Speech.AbortNPCSpeech printed;
+ * OBJLIB 7: Python's stdout); 0 with the error of a str or a write (none set when sys.stdout is gone) */
+byte Mode_WriteLine(const nativeVal_t *const *items, int n);
+/* o.name as the ports read an attribute (Script_GetAttr: the rules of a module's attributes, the SystemError of an
+ * object that fails without an error), by reference */
+byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
+/* Mode_Entry with every argument by reference (an NV_OBJ that holds the caller's object, also a number, a text or a
+ * list of plain values): the adapter of a function that keeps or changes the object it is given (OBJLIB 5 and 7).
+ * MODE_REFADAPTER(pre, name) is that adapter of the entry pre_name_E */
+PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry);
+#define MODE_REFADAPTER(pre, name) \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return Mode_RefEntry(args, pre##_##name##_E); \
+	}
+/* item i as a for loop of the script takes it from o (Script_Next): 1 with the item by reference, 0 at the IndexError
+ * that ends the loop, -1 with another error */
+int Mode_RefNext(const nativeVal_t *o, int i, nativeVal_t *out);
+/* the operators of the script on any values the Python way, the result by reference (string.py's functions work on
+ * whatever they are given): a op b for '+', '-', '*', '/', '%' (PyNumber_Add and the others); cmp(a, b) as -1, 0 or 1,
+ * -2 with the error (PyObject_Compare); repr(o); o[lo:hi] (PySequence_GetSlice); o is None */
+byte Mode_RefOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b);
+byte Mode_RefRepr(const nativeVal_t *o, nativeVal_t *out);
+byte Mode_RefSlice(const nativeVal_t *o, long lo, long hi, nativeVal_t *out);
+byte Mode_RefIsNone(const nativeVal_t *o);
+/* Mode_KwTyped with the O arguments by reference (the keyword adapter of a function that works on the objects it is
+ * given, as MODE_REFADAPTER) */
+PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
+/* MODE_KWT with that adapter */
+#define MODE_REFKW(pre, name, fmt, ...) MODE_KWBY(Mode_RefKwAdapter, pre##_##name, fmt, __VA_ARGS__)
+/* f(args...) of a value by reference with n values, always the Python call of the object (Script_CallObject on the
+ * tuple of the values: a bound method, a function of a table; Mode_CallArgs takes the entry of a port function), the
+ * result by reference into out (NULL: dropped) */
+byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeVal_t *out);
+/* del o.name of the script (PyObject_SetAttrString with no value: the AttributeError of a missing one) */
+byte Mode_RefDelAttr(const nativeVal_t *o, const char *name);
+/* long(v) of the script (OBJLIB 9: PyNumber_Long, the result as Native_Arg makes it) */
+byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out);
+
 #endif

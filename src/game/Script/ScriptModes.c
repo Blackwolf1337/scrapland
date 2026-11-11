@@ -4786,3 +4786,392 @@ byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out) {
 	Native_Free(&flag);
 	return ok;
 }
+
+/* ---- the ports without Python objects (stage 6, batch 6g) ---- */
+
+byte Mode_DefRunVars(byte stop, int id, const char *name, const char *section, const char *builtin, PyObject *vars) {
+	if (!vars) {
+		return 0;
+	}
+	byte ok = stop ? Script_RunFileTry(id, name, section, builtin, NULL, vars) :
+		(Script_RunFile(id, name, section, builtin, NULL, vars), 1);
+	Py_DECREF(vars);
+	return ok;
+}
+
+/* Mode_KwTyped; ref: an O argument by reference (Native_SetObj), else as Native_Arg makes it */
+static PyObject *Mode_KwParsed(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry, byte ref) {
+	union {
+		char *s;
+		int i;
+		double d;
+		float f;
+		PyObject *o;
+	} u[PORT_ARGS];
+	PyObject *o[PORT_ARGS] = { NULL };
+	char plain[PORT_ARGS + 2], type[PORT_ARGS];
+	nativeVal_t a[PORT_ARGS], out;
+	int n = 0, k = 0;
+	for (const char *f = fmt; *f; f++) {
+		CHECK(k < (int)sizeof(plain) - 1);
+		if (*f != '|') {
+			CHECK(n < PORT_ARGS && strchr("sidfO", *f));
+			type[n++] = *f;
+		}
+		plain[k++] = *f == '|' ? '|' : 'O';
+	}
+	plain[k] = 0;
+	/* the parse of the format, then the objects given (the same parse without conversions: it cannot fail) */
+	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6],
+		&u[7], &u[8], &u[9], &u[10]) ||
+		!PyArg_ParseTupleAndKeywords(args, kw, plain, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7],
+		&o[8], &o[9], &o[10])) {
+		return NULL;
+	}
+	for (int i = 0; i < n; i++) {
+		if (!o[i]) {
+			Mode_KwSkip(&a[i]);
+		} else if (type[i] == 's') {
+			Native_SetText(&a[i], u[i].s, (int)strlen(u[i].s));
+		} else if (type[i] == 'i') {
+			Native_SetInt(&a[i], u[i].i);
+		} else if (type[i] == 'd' || type[i] == 'f') {
+			Native_SetFloat(&a[i], type[i] == 'd' ? u[i].d : (double)u[i].f);
+		} else if (ref) {
+			Native_SetObj(&a[i], o[i]);
+		} else {
+			Native_Arg(o[i], &a[i]);
+		}
+	}
+	Native_SetNone(&out);
+	return Mode_KwOut(a, n, entry(a, n, &out), &out);
+}
+
+PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
+	return Mode_KwParsed(args, kw, fmt, names, entry, 0);
+}
+
+/* the object r as a value into out (r released): 0 for NULL, with its error */
+static byte Mode_ObjOut(PyObject *r, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (!r) {
+		return 0;
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_FromV(const char *module, const char *name, nativeVal_t *out) {
+	return Mode_ObjOut(Mode_From(module, name), out);
+}
+
+byte Mode_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {
+	if (v->type != NV_OBJ) {
+		return Native_Slice(v, lo, hi, out);
+	}
+	return Mode_ObjOut(PySequence_GetSlice(v->obj, (int)lo, (int)hi), out);
+}
+
+byte Mode_Sliceable(const nativeVal_t *v) {
+	if (v->type != NV_OBJ) {
+		return v->type == NV_STR || v->type == NV_LIST || v->type == NV_TUPLE || v->type == NV_VEC;
+	}
+	PySequenceMethods *sq = v->obj ? v->obj->ob_type->tp_as_sequence : NULL;
+	return sq && sq->sq_slice;
+}
+
+byte Mode_RefTake(PyObject *o, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (!o) {
+		return 0;
+	}
+	Native_SetObj(out, o);
+	Py_DECREF(o);
+	return 1;
+}
+
+byte Mode_RefG(const char *module, const char *name, nativeVal_t *out) {
+	return Mode_RefTake(Script_Global(module, name), out);
+}
+
+byte Mode_RefMod(const char *module, const char *var, nativeVal_t *out) {
+	return Mode_RefTake(Script_Attr(module, var), out);
+}
+
+void Mode_RefPlain(const nativeVal_t *o, nativeVal_t *out) {
+	if (o->type == NV_OBJ && o->obj) {
+		Native_Arg(o->obj, out);
+	} else {
+		Native_Copy(out, o);
+	}
+}
+
+int Mode_RefLen(const nativeVal_t *o) {
+	PyObject *p = Native_ToPy(o);
+	int n = p ? PySequence_Length(p) : -1;
+	Py_XDECREF(p);
+	return n;
+}
+
+int Mode_RefSize(const nativeVal_t *o) {
+	PyObject *p = Native_ToPy(o);
+	int n = p ? PyObject_Length(p) : -1;
+	Py_XDECREF(p);
+	return n;
+}
+
+byte Mode_RefItem(const nativeVal_t *o, long i, nativeVal_t *out) {
+	PyObject *p = Native_ToPy(o);
+	byte ok = Mode_RefTake(p ? PySequence_GetItem(p, (int)i) : NULL, out);
+	Py_XDECREF(p);
+	return ok;
+}
+
+/* op 0: o[key] into out, 1: o[key] = v, 2: del o[key] */
+static byte Mode_RefKey(const nativeVal_t *o, const nativeVal_t *key, int op, const nativeVal_t *v, nativeVal_t *out) {
+	PyObject *p = Native_ToPy(o), *k = p ? Native_ToPy(key) : NULL, *x = k && v ? Native_ToPy(v) : NULL;
+	byte ok = k && (!v || x);
+	if (ok && op == 0) {
+		ok = Mode_RefTake(PyObject_GetItem(p, k), out);
+	} else if (ok) {
+		ok = (op == 1 ? PyObject_SetItem(p, k, x) : PyObject_DelItem(p, k)) == 0;
+	} else if (out) {
+		Native_SetNone(out);
+	}
+	Py_XDECREF(x);
+	Py_XDECREF(k);
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_RefSub(const nativeVal_t *o, const nativeVal_t *key, nativeVal_t *out) {
+	return Mode_RefKey(o, key, 0, NULL, out);
+}
+
+byte Mode_RefSetItem(const nativeVal_t *o, long i, const nativeVal_t *v) {
+	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
+	byte ok = x && PySequence_SetItem(p, (int)i, x) == 0;
+	Py_XDECREF(x);
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_RefSetSub(const nativeVal_t *o, const nativeVal_t *key, const nativeVal_t *v) {
+	return Mode_RefKey(o, key, 1, v, NULL);
+}
+
+byte Mode_RefDelSub(const nativeVal_t *o, const nativeVal_t *key) {
+	return Mode_RefKey(o, key, 2, NULL, NULL);
+}
+
+byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	PyObject *p = Native_ToPy(o);
+	byte ok = Mode_RefTake(p ? PyObject_GetAttrString(p, (char *)name) : NULL, out);
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_RefSetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v) {
+	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
+	byte ok = x && PyObject_SetAttrString(p, (char *)name, x) == 0;
+	Py_XDECREF(x);
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_RefCall(const nativeVal_t *o, const char *method, const nativeVal_t *args, int n, nativeVal_t *out) {
+	/* the method as Script_Method reads it (Script_GetAttr: an object that fails without an exception, the handle of a
+	 * deleted entity, gets ceval's SystemError) */
+	PyObject *p = Native_ToPy(o), *f = p ? Script_GetAttr(p, method) : NULL;
+	PyObject *params = f ? Mode_ArgsTuple(args, n) : NULL, *r = params ? Script_CallObject(f, params, NULL) : NULL;
+	Py_XDECREF(params);
+	Py_XDECREF(f);
+	Py_XDECREF(p);
+	if (out) {
+		return Mode_ObjOut(r, out);
+	}
+	Py_XDECREF(r);
+	return r != NULL;
+}
+
+byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v) {
+	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
+	byte ok = x && (at < 0 ? PyList_Append(p, x) : PyList_Insert(p, at, x)) == 0;
+	Py_XDECREF(x);
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_RefToMod(const char *module, const char *var, const nativeVal_t *v) {
+	PyObject *x = Native_ToPy(v);
+	byte ok = Mode_SetModPy(module, var, x);
+	Py_XDECREF(x);
+	return ok;
+}
+
+int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key) {
+	nativeVal_t r;
+	int t = Mode_RefCall(d, "has_key", key, 1, &r) ? Mode_Truth(&r) : -1;
+	Native_Free(&r);
+	return t;
+}
+
+byte Mode_ErrorSet(void) {
+	return PyErr_Occurred() != NULL;
+}
+
+byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out) {
+	return Mode_RefTake(Mode_VBound(h, method), out);
+}
+
+int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out) {
+	PyObject *g = Script_Attr(x->module, "__dict__"), *loc = g ? PyDict_New() : NULL, *v = NULL;
+	byte ok = loc != NULL;
+	Native_SetNone(out);
+	for (int i = 0; ok && i < x->n; i++) {
+		PyObject *o = x->vars[i].v ? Native_ToPy(x->vars[i].v) : Script_Module(x->vars[i].name);
+		ok = o && PyDict_SetItemString(loc, (char *)x->vars[i].name, o) == 0;
+		Py_XDECREF(o);
+	}
+	int found = ok ? Script_NameChain(loc, g, text, &v) : -1;
+	Py_XDECREF(loc);
+	Py_XDECREF(g);
+	if (!ok) {
+		return 0;
+	}
+	if (found > 0) {
+		Native_Arg(v, out);
+		Py_DECREF(v);
+	}
+	return found > 0 ? 1 : found < 0 ? 0 : -1;
+}
+
+byte Mode_RefModule(const char *name, nativeVal_t *out) {
+	return Mode_RefTake(Script_Module(name), out);
+}
+
+byte Mode_CatchKeyError(void) {
+	if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+		return 0;
+	}
+	PyErr_Clear();
+	return 1;
+}
+
+byte Mode_WriteLine(const nativeVal_t *const *items, int n) {
+	PyObject *out = PySys_GetObject("stdout"), *s[MODE_PRINT_MAX] = { NULL };
+	byte ok = out != NULL;
+	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
+	/* every text is made before the first is written; a failed one does not stop the others */
+	for (int i = 0; i < n; i++) {
+		PyObject *o = Native_ToPy(items[i]);
+		s[i] = o ? PyObject_Str(o) : NULL;
+		Py_XDECREF(o);
+		ok = ok && s[i];
+	}
+	for (int i = 0; ok && i < n; i++) {
+		ok = PyFile_WriteObject(s[i], out, Py_PRINT_RAW) == 0 && PyFile_WriteString(i + 1 < n ? " " : "\n", out) == 0;
+	}
+	for (int i = 0; i < n; i++) {
+		Py_XDECREF(s[i]);
+	}
+	return ok;
+}
+
+byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	PyObject *p = Native_ToPy(o);
+	byte ok = Mode_RefTake(p ? Script_GetAttr(p, name) : NULL, out);
+	Py_XDECREF(p);
+	return ok;
+}
+
+PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry) {
+	nativeVal_t a[PORT_ARGS], out;
+	/* more than PORT_ARGS arguments: no entry takes them, its arity error comes before it reads one (Mode_Entry) */
+	int n = (int)PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
+	for (int i = 0; i < m; i++) {
+		Native_SetObj(&a[i], PyTuple_GET_ITEM(args, i));
+	}
+	Native_SetNone(&out);
+	return Mode_KwOut(a, m, entry(a, n, &out), &out);
+}
+
+int Mode_RefNext(const nativeVal_t *o, int i, nativeVal_t *out) {
+	PyObject *p = Native_ToPy(o), *item = NULL;
+	int r = p ? Script_Next(p, i, &item) : -1;
+	Py_XDECREF(p);
+	Native_SetNone(out);
+	return r > 0 ? Mode_RefTake(item, out) : r;
+}
+
+byte Mode_RefOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL, *r = NULL;
+	if (y) {
+		r = op == '+' ? PyNumber_Add(x, y) : op == '-' ? PyNumber_Subtract(x, y) : op == '*' ? PyNumber_Multiply(x, y) :
+			op == '/' ? PyNumber_Divide(x, y) : PyNumber_Remainder(x, y);
+	}
+	Py_XDECREF(y);
+	Py_XDECREF(x);
+	return Mode_RefTake(r, out);
+}
+
+int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
+	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL;
+	int c = y ? PyObject_Compare(x, y) : -2;
+	if (y) {
+		/* cmp_outcome of ceval: an error only counts with a result that is not 0 */
+		c = c && PyErr_Occurred() ? -2 : c < 0 ? -1 : c > 0;
+	}
+	Py_XDECREF(y);
+	Py_XDECREF(x);
+	return c;
+}
+
+byte Mode_RefRepr(const nativeVal_t *o, nativeVal_t *out) {
+	PyObject *p = Native_ToPy(o);
+	byte ok = Mode_RefTake(p ? PyObject_Repr(p) : NULL, out);
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_RefSlice(const nativeVal_t *o, long lo, long hi, nativeVal_t *out) {
+	PyObject *p = Native_ToPy(o);
+	byte ok = Mode_RefTake(p ? PySequence_GetSlice(p, (int)lo, (int)hi) : NULL, out);
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_RefIsNone(const nativeVal_t *o) {
+	return o->type == NV_NONE || (o->type == NV_OBJ && o->obj == Py_None);
+}
+
+PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
+	return Mode_KwParsed(args, kw, fmt, names, entry, 1);
+}
+
+byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeVal_t *out) {
+	PyObject *fn = Native_ToPy(f), *params = fn ? Mode_ArgsTuple(args, n) : NULL;
+	PyObject *r = params ? Script_CallObject(fn, params, NULL) : NULL;
+	Py_XDECREF(params);
+	Py_XDECREF(fn);
+	if (out) {
+		return Mode_RefTake(r, out);
+	}
+	Py_XDECREF(r);
+	return r != NULL;
+}
+
+byte Mode_RefDelAttr(const nativeVal_t *o, const char *name) {
+	PyObject *p = Native_ToPy(o);
+	byte ok = p && PyObject_SetAttrString(p, (char *)name, NULL) == 0;
+	Py_XDECREF(p);
+	return ok;
+}
+
+byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out) {
+	PyObject *o = Native_ToPy(v);
+	byte ok = Mode_ObjOut(o ? PyNumber_Long(o) : NULL, out);
+	Py_XDECREF(o);
+	return ok;
+}
