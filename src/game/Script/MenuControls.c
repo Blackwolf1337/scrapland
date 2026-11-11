@@ -365,12 +365,17 @@ static void Step_Sensitivity(int id, PyObject *args) {
 
 /* ---- the menus ---- */
 
+SCRIPT_PYSTEP(Step_KeyItems)
+SCRIPT_PYSTEP(Step_PadOptions)
+SCRIPT_PYSTEP(Step_PadText)
+SCRIPT_PYSTEP(Step_Invert)
+SCRIPT_PYSTEP(Step_Sensitivity)
 static const scriptStep_t controls_steps[] = {
-	{ "keyitems", Step_KeyItems },
-	{ "padoptions", Step_PadOptions },
-	{ "padtext", Step_PadText },
-	{ "invert", Step_Invert },
-	{ "sensitivity", Step_Sensitivity },
+	{ "keyitems", Step_KeyItems_Py },
+	{ "padoptions", Step_PadOptions_Py },
+	{ "padtext", Step_PadText_Py },
+	{ "invert", Step_Invert_Py },
+	{ "sensitivity", Step_Sensitivity_Py },
 	{ NULL, NULL },
 };
 

@@ -50,8 +50,9 @@ static void HT_StepHint(int id, PyObject *args) {
 	Mode_Done(&t, ok);
 }
 
+SCRIPT_PYSTEP(HT_StepHint)
 static const scriptStep_t hulltab_steps[] = {
-	{ "usehint", HT_StepHint },
+	{ "usehint", HT_StepHint_Py },
 	{ NULL, NULL },
 };
 

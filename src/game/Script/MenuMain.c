@@ -67,9 +67,11 @@ static void Step_Spacelords(int id, PyObject *args) {
 	}
 }
 
+SCRIPT_PYSTEP(Step_Volume)
+SCRIPT_PYSTEP(Step_Spacelords)
 static const scriptStep_t main_steps[] = {
-	{ "volume", Step_Volume },
-	{ "spacelords", Step_Spacelords },
+	{ "volume", Step_Volume_Py },
+	{ "spacelords", Step_Spacelords_Py },
 	{ NULL, NULL },
 };
 

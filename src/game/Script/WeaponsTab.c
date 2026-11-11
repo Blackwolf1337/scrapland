@@ -59,8 +59,9 @@ static void WT_StepHint(int id, PyObject *args) {
 	Mode_Done(&t, ok);
 }
 
+SCRIPT_PYSTEP(WT_StepHint)
 static const scriptStep_t weaponstab_steps[] = {
-	{ "weaponhint", WT_StepHint },
+	{ "weaponhint", WT_StepHint_Py },
 	{ NULL, NULL },
 };
 

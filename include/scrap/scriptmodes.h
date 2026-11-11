@@ -934,10 +934,11 @@ byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nat
 byte Mode_ArgInt(const nativeVal_t *v, int *out);
 /*
  * PyArg_ParseTuple on the n native arguments of an entry, with its arity and conversion errors: "i" into an int *
- * (Mode_ArgInt), "d" into a double * (Native_ArgDouble), "f" into a float * (the same, cut to a float), "s" into a
- * const char ** (the text of an NV_STR without 0 bytes), "O" into a const nativeVal_t ** (the argument itself), "|"
- * before the optional ones (their outputs keep what they hold), "(...)" a sequence of that many items ("i", "d" and
- * "f" items only). 1, or 0 with the error
+ * (Mode_ArgInt), "l" into a long * (the same, not cut), "d" into a double * (Native_ArgDouble, an NV_OBJ through
+ * PyFloat_AsDouble), "f" into a float * (the same, cut to a float), "s" into a const char ** (the text of an NV_STR
+ * without 0 bytes), "S" into a const nativeVal_t ** (an NV_STR of any bytes), "O" into a const nativeVal_t ** (the
+ * argument itself), "|" before the optional ones (their outputs keep what they hold), "(...)" a sequence of that many
+ * items ("i", "l", "d" and "f" items only). 1, or 0 with the error
  */
 byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
 /* the adapter of a function whose entry checks its own arguments (Mode_Parse, Port_Arity): the arguments as native

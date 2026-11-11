@@ -345,8 +345,9 @@ static void Step_Content(int id, PyObject *args) {
 	Mission_SetValue("hintr", hint);
 }
 
+SCRIPT_PYSTEP(Step_Content)
 static const scriptStep_t mission_steps[] = {
-	{ "content", Step_Content },
+	{ "content", Step_Content_Py },
 	{ NULL, NULL },
 };
 

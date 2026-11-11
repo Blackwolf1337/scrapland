@@ -290,10 +290,13 @@ static void Step_Display(int id, PyObject *args) {
 	Script_SetStr(id, "Display", "Text", video.display[Video_DisplayIndex(id)]);
 }
 
+SCRIPT_PYSTEP(Step_Prepare)
+SCRIPT_PYSTEP(Step_Values)
+SCRIPT_PYSTEP(Step_Display)
 static const scriptStep_t video_steps[] = {
-	{ "prepare", Step_Prepare },
-	{ "values", Step_Values },
-	{ "display", Step_Display },
+	{ "prepare", Step_Prepare_Py },
+	{ "values", Step_Values_Py },
+	{ "display", Step_Display_Py },
 	{ NULL, NULL },
 };
 

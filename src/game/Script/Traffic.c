@@ -303,9 +303,11 @@ static void Step_DefScale(int id, PyObject *args) {
 	Py_XDECREF(def);
 }
 
+SCRIPT_PYSTEP(Step_Wave)
+SCRIPT_PYSTEP(Step_DefScale)
 static const scriptStep_t police_steps[] = {
-	{ "wave", Step_Wave },
-	{ "defscale", Step_DefScale },
+	{ "wave", Step_Wave_Py },
+	{ "defscale", Step_DefScale_Py },
 	{ NULL, NULL },
 };
 

@@ -403,14 +403,21 @@ static void Level_StepRepr(int id, PyObject *args) {
 	}
 }
 
+SCRIPT_PYSTEP(Level_StepNewList)
+SCRIPT_PYSTEP(Level_StepEvalAppend)
+SCRIPT_PYSTEP(Level_StepRepr)
+SCRIPT_PYSTEP(Level_StepVecRot)
+SCRIPT_PYSTEP(Level_StepSetDef)
+SCRIPT_PYSTEP(Level_StepSaveInt)
+SCRIPT_PYSTEP(Level_StepSaveListAdd)
 static const scriptStep_t level_steps[] = {
-	{ "newlist", Level_StepNewList },
-	{ "evalappend", Level_StepEvalAppend },
-	{ "repr", Level_StepRepr },
-	{ "vecrot", Level_StepVecRot },
-	{ "setdef", Level_StepSetDef },
-	{ "saveint", Level_StepSaveInt },
-	{ "savelistadd", Level_StepSaveListAdd },
+	{ "newlist", Level_StepNewList_Py },
+	{ "evalappend", Level_StepEvalAppend_Py },
+	{ "repr", Level_StepRepr_Py },
+	{ "vecrot", Level_StepVecRot_Py },
+	{ "setdef", Level_StepSetDef_Py },
+	{ "saveint", Level_StepSaveInt_Py },
+	{ "savelistadd", Level_StepSaveListAdd_Py },
 	{ NULL, NULL },
 };
 

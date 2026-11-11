@@ -1055,8 +1055,9 @@ static void SRace_StepPoint(int id, PyObject *args) {
 	Native_Free(&text);
 }
 
+SCRIPT_PYSTEP(SRace_StepPoint)
 static const scriptStep_t srace_steps[] = {
-	{ "point", SRace_StepPoint },
+	{ "point", SRace_StepPoint_Py },
 	{ NULL, NULL },
 };
 

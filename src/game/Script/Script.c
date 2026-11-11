@@ -797,11 +797,12 @@ PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...)
 	return r;
 }
 
-void Script_StepPrint(int id, PyObject *args) {
-	char *text;
+void Script_StepPrint(int id, const nativeVal_t *args, int n) {
+	const char *text;
 	(void)id;
 	PyObject *out = PySys_GetObject("stdout");
-	if (!PyArg_ParseTuple(args, "s", &text) || !out || PyFile_WriteString(text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
+	if (!(n == 1 ? Native_ArgStr(&args[0], 1, &text) : Port_Arity(n, 1)) || !out ||
+		PyFile_WriteString((char *)text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
 		PyErr_Print();
 	}
 }
@@ -1562,20 +1563,26 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	Def_ArgsFree(&a);
 }
 
+void Script_StepPy(int id, const nativeVal_t *args, int n, void (*fn)(int id, PyObject *args)) {
+	defArgs_t a = { .npos = n, .n = n };
+	memcpy(a.v, args, n * sizeof(a.v[0]));
+	PyObject *t = Def_PyArgs(&a);
+	if (t) {
+		fn(id, t);
+		Py_DECREF(t);
+	}
+}
+
 static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
 	for (const scriptStep_t *s = m->steps; s && s->name; s++) {
 		if (strcmp(s->name, l->tok[1])) {
 			continue;
 		}
-		/* OBJLIB 6: the steps take the positional values of the line as a tuple of Python values */
+		/* the positional values of the line as they are (the Name=value ones are evaluated and dropped) */
 		defArgs_t a;
 		Def_Args(m, l, 2, &a);
-		PyObject *args = Def_PyArgs(&a);
+		s->fn(m->id, a.v, a.npos);
 		Def_ArgsFree(&a);
-		if (args) {
-			s->fn(m->id, args);
-			Py_DECREF(args);
-		}
 		/* a step that failed leaves its error set: it stops a file of Script_RunFileTry */
 		if (PyErr_Occurred()) {
 			if (m->stop) {

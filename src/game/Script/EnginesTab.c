@@ -56,8 +56,9 @@ static void ET_StepHint(int id, PyObject *args) {
 	Native_Free(&hint);
 }
 
+SCRIPT_PYSTEP(ET_StepHint)
 static const scriptStep_t enginestab_steps[] = {
-	{ "usehint", ET_StepHint },
+	{ "usehint", ET_StepHint_Py },
 	{ NULL, NULL },
 };
 

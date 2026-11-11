@@ -119,11 +119,20 @@ void Script_LevelModuleExtras(const char *name, PyObject *module, PyObject *defs
  * the character e stands where it is (src/game/Script/levels/Orbit.c) */
 struct nativeVal_s;
 byte Level_FixedInitN(const struct nativeVal_s *e);
-/* a step of a .def file that C does ("run <name> [arg ...]"), args the tuple of the arguments */
+/* a step of a .def file that C does ("run <name> [arg ...]"): args the n positional values of the line as the runner
+ * has them (borrowed; a list or dict of a $name is the object itself as an NV_OBJ). A step that fails leaves its
+ * error set */
 typedef struct scriptStep_s {
 	const char *name;
-	void (*fn)(int id, PyObject *args);
+	void (*fn)(int id, const struct nativeVal_s *args, int n);
 } scriptStep_t;
+
+/* a step not converted yet (fn on the tuple of the values as Python values) as fn_Py for the table */
+void Script_StepPy(int id, const struct nativeVal_s *args, int n, void (*fn)(int id, PyObject *args));
+#define SCRIPT_PYSTEP(fn) \
+	static void fn##_Py(int id, const struct nativeVal_s *args, int n) { \
+		Script_StepPy(id, args, n, fn); \
+	}
 
 /*
  * runs the .def file name (scrapc/<name> of the packs, else builtin) for the scorer of player id: the lines before
@@ -149,7 +158,7 @@ void Script_DefCounts(unsigned long *registry, unsigned long *byName, unsigned l
 	byte reset);
 
 /* the step "print <text>" of .def files: a line on the console, as a script's print */
-void Script_StepPrint(int id, PyObject *args);
+void Script_StepPrint(int id, const struct nativeVal_s *args, int n);
 
 /* the last item of the .def file that runs ("" when none runs), for its steps */
 const char *Script_CurrentItem(void);

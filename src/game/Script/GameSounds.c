@@ -40,9 +40,11 @@ static const char doorsound_def[] = {
 static void Sound_StepTake(int id, PyObject *args);
 static void DoorSound_StepInitSound(int id, PyObject *args);
 
+SCRIPT_PYSTEP(Sound_StepTake)
+SCRIPT_PYSTEP(DoorSound_StepInitSound)
 static const scriptStep_t gsound_steps[] = {
-	{ "take", Sound_StepTake },
-	{ "initsound", DoorSound_StepInitSound },
+	{ "take", Sound_StepTake_Py },
+	{ "initsound", DoorSound_StepInitSound_Py },
 	{ NULL, NULL },
 };
 

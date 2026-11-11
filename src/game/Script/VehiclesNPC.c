@@ -39,8 +39,9 @@ static void Npc_StepNotFound(int id, PyObject *args) {
 	g_NpcNotFound = 1;
 }
 
+SCRIPT_PYSTEP(Npc_StepNotFound)
 static const scriptStep_t npc_steps[] = {
-	{ "notfound", Npc_StepNotFound },
+	{ "notfound", Npc_StepNotFound_Py },
 	{ NULL, NULL },
 };
 

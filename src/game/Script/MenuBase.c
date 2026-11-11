@@ -136,9 +136,11 @@ static void Step_Circuit(int id, PyObject *args) {
 	Base_Circuit(id, 1);
 }
 
+SCRIPT_PYSTEP(Step_TitleBar)
+SCRIPT_PYSTEP(Step_Circuit)
 static const scriptStep_t base_steps[] = {
-	{ "titlebar", Step_TitleBar },
-	{ "circuit", Step_Circuit },
+	{ "titlebar", Step_TitleBar_Py },
+	{ "circuit", Step_Circuit_Py },
 	{ NULL, NULL },
 };
 

@@ -241,11 +241,15 @@ static void Step_BettyHit(int id, PyObject *args) {
 	Char_Spread(hit, end, 16, NULL, "!BettyHitEvent");
 }
 
+SCRIPT_PYSTEP(Step_Speech)
+SCRIPT_PYSTEP(Step_Spread)
+SCRIPT_PYSTEP(Step_TimedName)
+SCRIPT_PYSTEP(Step_BettyHit)
 static const scriptStep_t char_steps[] = {
-	{ "speech", Step_Speech },
-	{ "spread", Step_Spread },
-	{ "timedname", Step_TimedName },
-	{ "bettyhit", Step_BettyHit },
+	{ "speech", Step_Speech_Py },
+	{ "spread", Step_Spread_Py },
+	{ "timedname", Step_TimedName_Py },
+	{ "bettyhit", Step_BettyHit_Py },
 	{ NULL, NULL },
 };
 

@@ -115,9 +115,11 @@ static void Step_MissionVisible(int id, PyObject *args) {
 
 static void Step_Rows(int id, PyObject *args);
 
+SCRIPT_PYSTEP(Step_MissionVisible)
+SCRIPT_PYSTEP(Step_Rows)
 static const scriptStep_t hud_steps[] = {
-	{ "missionvisible", Step_MissionVisible },
-	{ "rows", Step_Rows },
+	{ "missionvisible", Step_MissionVisible_Py },
+	{ "rows", Step_Rows_Py },
 	{ NULL, NULL },
 };
 

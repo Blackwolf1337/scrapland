@@ -525,8 +525,9 @@ static void ShipMaker_StepStdShip(int id, PyObject *args) {
 	Native_Free(&a);
 }
 
+SCRIPT_PYSTEP(ShipMaker_StepStdShip)
 static const scriptStep_t shipmaker_steps[] = {
-	{ "stdship", ShipMaker_StepStdShip },
+	{ "stdship", ShipMaker_StepStdShip_Py },
 	{ NULL, NULL },
 };
 

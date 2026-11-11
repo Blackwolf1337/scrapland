@@ -728,14 +728,21 @@ static void Step_ServerType(int id, PyObject *args) {
 	Net_UpdateServerType(id);
 }
 
+SCRIPT_PYSTEP(Step_InGame)
+SCRIPT_PYSTEP(Step_TabWidth)
+SCRIPT_PYSTEP(Step_ColumnText)
+SCRIPT_PYSTEP(Step_Browse)
+SCRIPT_PYSTEP(Step_MapSlots)
+SCRIPT_PYSTEP(Step_MapPreviews)
+SCRIPT_PYSTEP(Step_ServerType)
 static const scriptStep_t net_steps[] = {
-	{ "ingame", Step_InGame },
-	{ "tabwidth", Step_TabWidth },
-	{ "columntext", Step_ColumnText },
-	{ "browse", Step_Browse },
-	{ "mapslots", Step_MapSlots },
-	{ "mappreviews", Step_MapPreviews },
-	{ "servertype", Step_ServerType },
+	{ "ingame", Step_InGame_Py },
+	{ "tabwidth", Step_TabWidth_Py },
+	{ "columntext", Step_ColumnText_Py },
+	{ "browse", Step_Browse_Py },
+	{ "mapslots", Step_MapSlots_Py },
+	{ "mappreviews", Step_MapPreviews_Py },
+	{ "servertype", Step_ServerType_Py },
 	{ NULL, NULL },
 };
 

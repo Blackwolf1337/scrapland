@@ -126,10 +126,13 @@ static void Step_Ramp(int id, PyObject *args) {
 	Native_Free(&s);
 }
 
+SCRIPT_PYSTEP(Step_Use)
+SCRIPT_PYSTEP(Step_SputnikHint)
+SCRIPT_PYSTEP(Step_Ramp)
 static const scriptStep_t shipedit_steps[] = {
-	{ "use", Step_Use },
-	{ "sputnikhint", Step_SputnikHint },
-	{ "ramp", Step_Ramp },
+	{ "use", Step_Use_Py },
+	{ "sputnikhint", Step_SputnikHint_Py },
+	{ "ramp", Step_Ramp_Py },
 	{ NULL, NULL },
 };
 
