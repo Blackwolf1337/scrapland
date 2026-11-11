@@ -200,6 +200,7 @@ static byte HT_TestArrows_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_Parse(a, n, "i|O", &id, &change) && HT_Arrows(id, change ? change : &def);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *HT_TestArrows(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "changeDefault", NULL };
 	(void)self;

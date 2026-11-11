@@ -305,6 +305,7 @@ PyObject *Sn_Vars(int n, ...) {
 	return d;
 }
 
+/* OBJLIB 6: the section on a dict of $names, for HangarTab.c (see Sn_Vars) */
 byte Sn_Def(int id, const char *section, PyObject *vars, const char *module) {
 	const char *outer = se_useModule;
 	se_useModule = module;
@@ -2091,6 +2092,7 @@ static byte SE_ChangeTab_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 		Se_ChangeTab(id, control, direction ? direction : &none);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *SE_ChangeTab(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "direction", NULL };
 	(void)self;
@@ -2110,6 +2112,7 @@ static byte SE_CreateShipFromSaveVar_E(const nativeVal_t *a, int n, nativeVal_t 
 
 static char *SE_CreateShipFromSaveVar_N[] = { "cad", "pos", "name", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *SE_CreateShipFromSaveVar(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "OO|O", SE_CreateShipFromSaveVar_N, SE_CreateShipFromSaveVarK);

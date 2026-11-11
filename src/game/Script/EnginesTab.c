@@ -470,6 +470,7 @@ static byte ET_HighlightCurrentMountedEngine_E(const nativeVal_t *a, int n, nati
 	return Mode_Parse(a, n, "i|O", &id, &def) && ET_Highlight(id, def ? def : &one);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ET_HighlightCurrentMountedEngine(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "setDefault", NULL };
 	(void)self;
@@ -1100,6 +1101,7 @@ static byte ET_SelectEngineGroupPy_E(const nativeVal_t *a, int n, nativeVal_t *o
 	return Mode_Parse(a, n, "iO|O", &id, &control, &def) && ET_SelectEngineGroup(id, control, def ? def : &one);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ET_SelectEngineGroupPy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "setDefault", NULL };
 	(void)self;

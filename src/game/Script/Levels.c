@@ -301,7 +301,7 @@ static void Level_SetSave(const nativeVal_t *var, PyObject *text) {
 	}
 }
 
-/* the repr of a native value as a Python text (a new reference) */
+/* the repr of a native value as a Python text (a new reference; OBJLIB 6, for savelistadd) */
 static PyObject *Level_Repr(const nativeVal_t *v) {
 	nativeBuf_t b;
 	Native_BufInit(&b);
@@ -312,7 +312,7 @@ static PyObject *Level_Repr(const nativeVal_t *v) {
 }
 
 /* `v` of a step (a new reference, NULL with the error): Native_Repr when v is a native value (the same text), any
- * other value the Python way */
+ * other value the Python way (OBJLIB 6, for savelistadd) */
 static PyObject *Level_ReprPy(PyObject *v) {
 	nativeVal_t nv;
 	PyObject *r = Native_FromPyAny(v, &nv) ? Level_Repr(&nv) : PyObject_Repr(v);
@@ -354,7 +354,8 @@ static byte Level_SaveListAddNative(const nativeVal_t *var, PyObject *s, const n
  *   if not item in lst:
  *       lst.append(item)
  *       Scrap.SetSaveVar(savevar, `lst`)
- * A list literal and a native item on native values; any other text (a name, the errors) or item the Python way.
+ * A list literal and a native item on native values; any other text (a name, the errors) or item the Python way
+ * (OBJLIB 6: a name evaluates to the object other holders see).
  */
 static void Level_StepSaveListAdd(int id, const nativeVal_t *args, int n) {
 	const nativeVal_t *var, *item;
@@ -445,7 +446,10 @@ static const scriptStep_t level_steps[] = {
 
 /*
  * a function of a level module: self is (file index, section, parameter names, defaults dict); the arguments bound
- * like those of a Python function (the error texts of ceval), then the section runs with them as $names
+ * like those of a Python function (the error texts of ceval), then the section runs with them as $names. OBJLIB 7:
+ * the data functions of the level modules are function objects (a C function bound to that self tuple, with keyword
+ * arguments and defaults), made by Level_SectionFunction for the module dicts; they and the functions below that
+ * make, replay and look them up stay on Python objects until the tables go
  */
 static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 	int file = (int)PyInt_AsLong(PyTuple_GetItem(self, 0));
@@ -513,7 +517,8 @@ static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 	return ok ? Py_ReturnNone() : NULL;
 }
 
-/* the value of a default parameter of a section line, as the .def parser reads a value (a new reference) */
+/* the value of a default parameter of a section line, as the .def parser reads a value (a new reference; OBJLIB 7,
+ * see Level_Call) */
 static PyObject *Level_Default(const char *text) {
 	char buf[LEVEL_NAME + 8];
 	Str_Printf(buf, sizeof(buf), "(%s,)", text);
@@ -536,7 +541,7 @@ static int Level_SectionWords(const char *text, int len, char line[0x200], char 
 }
 
 /* the function of the section tok of file i, its method definition in slot n of the pool (a new reference, NULL on
- * an error) */
+ * an error; OBJLIB 7, see Level_Call) */
 static PyObject *Level_SectionFunction(int i, levelPool_t *pool, int n, char *tok[24], int nt) {
 	PyObject *params = PyTuple_New(nt - 1), *defs = PyDict_New();
 	for (int k = 1; params && defs && k < nt; k++) {
@@ -617,6 +622,7 @@ void Script_LevelModuleStart(const char *module) {
 	}
 }
 
+/* OBJLIB 7: the table and data functions of a level module as function objects (see Level_Call) */
 PyObject *Script_LevelTableFunction(const char *module, const char *name) {
 	char level[LEVEL_NAME];
 	if (!Level_Current(level, sizeof(level))) {

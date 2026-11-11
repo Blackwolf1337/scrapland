@@ -27,7 +27,8 @@
 
 #define MAP "Map"
 
-/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */
+/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error
+ * (OBJLIB 7: the seam) */
 #define ABI_SEAM(module, name) \
 	PyObject *hook; \
 	int seam = Native_Seam(module, name, &hook); \

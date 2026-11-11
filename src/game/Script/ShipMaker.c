@@ -111,6 +111,7 @@ static byte ShipMaker_AddShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 
 static char *ShipMaker_AddShip_N[] = { "name", "Mass", "Style", "Engine", "BoostTime", "TopBoostTime", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ShipMaker_AddShip(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "OOOO|OO", ShipMaker_AddShip_N, Sm_AddShipK);
@@ -745,6 +746,7 @@ static byte ShipMaker_InitAnmShip_E(const nativeVal_t *a, int n, nativeVal_t *ou
 
 static char *ShipMaker_InitAnmShip_N[] = { "model", "ch0", "ch1", "ch2", "ch3", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ShipMaker_InitAnmShip(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "O|OOOO", ShipMaker_InitAnmShip_N, Sm_InitAnmShipK);

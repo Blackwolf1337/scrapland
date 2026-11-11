@@ -277,11 +277,13 @@ static PyObject *Sound_SetPSArgs(PyObject *args, PyObject *kw, byte interval) {
 	return Mode_Result(ok);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *Sound_SetPSLoop(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Sound_SetPSArgs(args, kw, 0);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *Sound_SetPSInterval(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Sound_SetPSArgs(args, kw, 1);
@@ -498,6 +500,7 @@ static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	if (n != 1) {
 		return Port_Arity(n, 1);
 	}
+	/* OBJLIB 5: the list object itself, sorted in place */
 	PyObject *list = a[0].type == NV_OBJ ? a[0].obj : Native_ToPy(&a[0]);
 	if (a[0].type == NV_OBJ) {
 		Py_INCREF(list);
@@ -549,6 +552,7 @@ static byte Gs_SetInitDoorSound(const nativeVal_t *a) {
 		LvN_SetAct("EventFunc", Mode_S(&t, "!AnmSoundEvent")));
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *DoorSound_SetInitDoorSound(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "DoorClass", "ActionName", "SoundName", "Vol", "Pitch", NULL };
 	nativeVal_t a[5];

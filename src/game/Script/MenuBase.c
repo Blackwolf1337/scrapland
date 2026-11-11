@@ -617,6 +617,7 @@ static byte Menu_StartNewMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 }
 MODE_ADAPTER(Menu, StartNewMenu)
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *Menu_AddTabs(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "menu", "actual", "ParamTabSize", "Hint", "CenterTextInTabs", NULL };
 	int id, tabSize = 17, hint = 1, center = 0;
@@ -665,6 +666,7 @@ static byte Menu_VerticalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 /* the adapter on the objects as PyArg_ParseTupleAndKeywords takes them (the order of its errors kept) */
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw) {
 	char **names = Menu_VerticalMenu_N;
 	int id;

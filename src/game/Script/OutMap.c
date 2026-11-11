@@ -492,6 +492,7 @@ static byte OutMap_GetNearestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeV
 
 static char *OutMap_GetNearestFreeSpawnPos_N[] = { "initialPos", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "|O", OutMap_GetNearestFreeSpawnPos_N, OutMap_NearestK);
@@ -503,6 +504,7 @@ static byte OutMap_GetFarthestFreeSpawnPos_E(const nativeVal_t *a, int n, native
 
 static char *OutMap_GetFarthestFreeSpawnPos_N[] = { "initialPos", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *OutMap_GetFarthestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "|O", OutMap_GetFarthestFreeSpawnPos_N, OutMap_FarthestK);
@@ -551,7 +553,7 @@ static byte It_GetNam(const nativeVal_t *name, nativeVal_t *out) {
 	return Mode_Done(&t, ok);
 }
 
-/* SWeap.<name>(n) (InitAmmo, InitWeap) through its seam */
+/* SWeap.<name>(n) (InitAmmo, InitWeap) through its seam (OBJLIB 7: the hook of a case, as the seams below) */
 static byte It_InitTable(const char *name, void *table, byte weap) {
 	PyObject *hook;
 	int seam = Native_Seam("SWeap", name, &hook);
