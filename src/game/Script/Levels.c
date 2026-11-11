@@ -245,44 +245,43 @@ static byte Level_Current(char *out, int size) {
 
 /* "run vecrot <name> <pos> <offset> <angles>": $name = SVec.Add(pos, SVec.Rotate3D(offset, angles)), the position of a
  * sound beside an element of the map */
-static void Level_StepVecRot(int id, PyObject *args) {
-	PyObject *name, *pos, *off, *ang;
+static void Level_StepVecRot(int id, const nativeVal_t *args, int n) {
+	const nativeVal_t *name, *pos, *off, *ang;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "SOOO", &name, &pos, &off, &ang)) {
+	if (!Mode_Parse(args, n, "SOOO", &name, &pos, &off, &ang)) {
 		return;
 	}
-	PyObject *rot = PORT_ASK(SVec, Rotate3D, "OO", off, ang), *v = rot ? PORT_ASK(SVec, Add, "OO", pos, rot) : NULL;
+	PyObject *rot = PORT_ASK(SVec, Rotate3D, "vv", off, ang), *v = rot ? PORT_ASK(SVec, Add, "vO", pos, rot) : NULL;
 	Py_XDECREF(rot);
 	if (v) {
-		Script_SetValue(PyString_AsString(name), v);
+		Script_SetValue(Native_Text(name), v);
 	}
 }
 
 /* run setdef <var>: Scrap.Set(var, Scrap.Def(var)), the engine variable back to its default (the end of the scene
  * loaders); a failed call leaves its error set and stops the section */
-static void Level_StepSetDef(int id, PyObject *args) {
+static void Level_StepSetDef(int id, const nativeVal_t *args, int n) {
 	(void)id;
-	PyObject *var = PyTuple_Size(args) == 1 ? PyTuple_GetItem(args, 0) : NULL;
-	if (!var) {
-		PyErr_SetString(PyExc_TypeError, "setdef takes one variable name");
+	if (n != 1) {
+		Native_Raise(NE_TYPE, "setdef takes one variable name");
 		return;
 	}
-	PyObject *def = PORT_ASK(Scrap, Def, "O", var);
+	PyObject *def = PORT_ASK(Scrap, Def, "v", &args[0]);
 	if (def) {
-		PORT_CALL(Scrap, Set, NULL, "OO", var, def);
+		PORT_CALL(Scrap, Set, NULL, "vO", &args[0], def);
 		Py_DECREF(def);
 	}
 }
 
 /* run saveint <name> <savevar>: $name = int(Scrap.GetSaveVar(savevar)) */
-static void Level_StepSaveInt(int id, PyObject *args) {
-	char *name;
-	PyObject *var;
+static void Level_StepSaveInt(int id, const nativeVal_t *args, int n) {
+	const char *name;
+	const nativeVal_t *var;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "sO", &name, &var)) {
+	if (!Mode_Parse(args, n, "sO", &name, &var)) {
 		return;
 	}
-	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "O", var), *v = s ? PyNumber_Int(s) : NULL;
+	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "v", var), *v = s ? PyNumber_Int(s) : NULL;
 	Py_XDECREF(s);
 	if (v) {
 		Script_SetValue(name, v);
@@ -290,9 +289,9 @@ static void Level_StepSaveInt(int id, PyObject *args) {
 }
 
 /* Scrap.SetSaveVar(var, text) of a step, its error printed by the runner */
-static void Level_SetSave(PyObject *var, PyObject *text) {
+static void Level_SetSave(const nativeVal_t *var, PyObject *text) {
 	if (text) {
-		PORT_CALL(Scrap, SetSaveVar, NULL, "OO", var, text);
+		PORT_CALL(Scrap, SetSaveVar, NULL, "vO", var, text);
 		Py_DECREF(text);
 	}
 }
@@ -316,11 +315,21 @@ static PyObject *Level_ReprPy(PyObject *v) {
 	return r;
 }
 
+/* an argument of a step as the native value a call passes on (Native_Pass: a list of a $name that holds only native
+ * values is one): 1 with *out (Native_Free it), 0 with *out None when it holds an object (OBJLIB 7) */
+static byte Level_ArgNative(const nativeVal_t *v, nativeVal_t *out) {
+	if (Native_Pass(v, out) && !Native_Holds(out, 1 << NV_OBJ)) {
+		return 1;
+	}
+	Native_Free(out);
+	return 0;
+}
+
 /* savelistadd on native values when the save text is a list literal and the item a native value: 1 when it was done
  * that way (the result as the Python lines give it, the same repr), else 0 and nothing done */
-static byte Level_SaveListAddNative(PyObject *var, PyObject *s, PyObject *item) {
+static byte Level_SaveListAddNative(const nativeVal_t *var, PyObject *s, const nativeVal_t *item) {
 	nativeVal_t lst, x;
-	if (!Mode_LiteralPy(s, &lst) || lst.type != NV_LIST || !Native_FromPyAny(item, &x)) {
+	if (!Mode_LiteralPy(s, &lst) || lst.type != NV_LIST || !Level_ArgNative(item, &x)) {
 		Native_Free(&lst);
 		return 0;
 	}
@@ -342,82 +351,87 @@ static byte Level_SaveListAddNative(PyObject *var, PyObject *s, PyObject *item) 
  *       Scrap.SetSaveVar(savevar, `lst`)
  * A list literal and a native item on native values; any other text (a name, the errors) or item the Python way.
  */
-static void Level_StepSaveListAdd(int id, PyObject *args) {
-	PyObject *var, *item;
+static void Level_StepSaveListAdd(int id, const nativeVal_t *args, int n) {
+	const nativeVal_t *var, *item;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "OO", &var, &item)) {
+	if (!Mode_Parse(args, n, "OO", &var, &item)) {
 		return;
 	}
-	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "O", var);
+	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "v", var);
 	if (s && Level_SaveListAddNative(var, s, item)) {
 		Py_DECREF(s);
 		return;
 	}
-	PyObject *lst = s ? Script_EvalIn("__main__", s) : NULL;
+	PyObject *lst = s ? Script_EvalIn("__main__", s) : NULL, *x = lst ? Native_ToPy(item) : NULL;
 	Py_XDECREF(s);
-	if (!lst) {
-		return;
-	}
-	int in = PySequence_Contains(lst, item);
-	if (in == 0) {
-		PyObject *r = Script_Method(lst, "append", "(O)", item);
+	if (x && PySequence_Contains(lst, x) == 0) {
+		PyObject *r = Script_Method(lst, "append", "(O)", x);
 		Level_SetSave(var, r ? Level_ReprPy(lst) : NULL);
 		Py_XDECREF(r);
 	}
-	Py_DECREF(lst);
+	Py_XDECREF(x);
+	Py_XDECREF(lst);
 }
 
 /* run newlist <name>: $name = [] */
-static void Level_StepNewList(int id, PyObject *args) {
-	char *name;
+static void Level_StepNewList(int id, const nativeVal_t *args, int n) {
+	const char *name;
 	(void)id;
-	if (PyArg_ParseTuple(args, "s", &name)) {
+	if (Mode_Parse(args, n, "s", &name)) {
 		Script_SetValue(name, PyList_New(0));
 	}
 }
 
 /* run evalappend <list> <text>: list.append(<text>) of a literal (the waypoints of the races, list.append(a, b) of
- * Python 1.5.2 appends the tuple (a, b)), read with the native reader (Mode_EvalPy; the list is a $name, a Python
- * object until the runner takes native $names: OBJLIB 6) */
-static void Level_StepEvalAppend(int id, PyObject *args) {
-	PyObject *lst, *text;
+ * Python 1.5.2 appends the tuple (a, b)), read with the native reader (Mode_EvalPy). The list of a $name is the
+ * object itself (an NV_OBJ of the runner: the dict of the $names holds Python values, OBJLIB 6), so the append is
+ * seen there; any other value gets the append its Python value takes or refuses */
+static void Level_StepEvalAppend(int id, const nativeVal_t *args, int n) {
+	const nativeVal_t *lst, *text;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "OS", &lst, &text)) {
+	if (!Mode_Parse(args, n, "OS", &lst, &text)) {
 		return;
 	}
-	PyObject *v = Mode_EvalPy("__main__", text), *r = v ? Script_Method(lst, "append", "(O)", v) : NULL;
-	Py_XDECREF(v);
+	PyObject *t = Native_ToPy(text), *v = t ? Mode_EvalPy("__main__", t) : NULL, *l = v ? Native_ToPy(lst) : NULL;
+	PyObject *r = l ? Script_Method(l, "append", "(O)", v) : NULL;
 	Py_XDECREF(r);
+	Py_XDECREF(l);
+	Py_XDECREF(v);
+	Py_XDECREF(t);
 }
 
-/* run repr <name> <value>: $name = `value` */
-static void Level_StepRepr(int id, PyObject *args) {
-	char *name;
-	PyObject *v;
+/* run repr <name> <value>: $name = `value`, Native_Repr of a native value (the same text), any other value the
+ * Python way */
+static void Level_StepRepr(int id, const nativeVal_t *args, int n) {
+	const char *name;
+	const nativeVal_t *v;
+	nativeVal_t x;
 	(void)id;
-	if (PyArg_ParseTuple(args, "sO", &name, &v)) {
-		PyObject *r = Level_ReprPy(v);
-		if (r) {
-			Script_SetValue(name, r);
-		}
+	if (!Mode_Parse(args, n, "sO", &name, &v)) {
+		return;
+	}
+	PyObject *o = NULL, *r;
+	if (Level_ArgNative(v, &x)) {
+		r = Level_Repr(&x);
+		Native_Free(&x);
+	} else {
+		o = Native_ToPy(v);
+		r = o ? PyObject_Repr(o) : NULL;
+	}
+	Py_XDECREF(o);
+	if (r) {
+		Script_SetValue(name, r);
 	}
 }
 
-SCRIPT_PYSTEP(Level_StepNewList)
-SCRIPT_PYSTEP(Level_StepEvalAppend)
-SCRIPT_PYSTEP(Level_StepRepr)
-SCRIPT_PYSTEP(Level_StepVecRot)
-SCRIPT_PYSTEP(Level_StepSetDef)
-SCRIPT_PYSTEP(Level_StepSaveInt)
-SCRIPT_PYSTEP(Level_StepSaveListAdd)
 static const scriptStep_t level_steps[] = {
-	{ "newlist", Level_StepNewList_Py },
-	{ "evalappend", Level_StepEvalAppend_Py },
-	{ "repr", Level_StepRepr_Py },
-	{ "vecrot", Level_StepVecRot_Py },
-	{ "setdef", Level_StepSetDef_Py },
-	{ "saveint", Level_StepSaveInt_Py },
-	{ "savelistadd", Level_StepSaveListAdd_Py },
+	{ "newlist", Level_StepNewList },
+	{ "evalappend", Level_StepEvalAppend },
+	{ "repr", Level_StepRepr },
+	{ "vecrot", Level_StepVecRot },
+	{ "setdef", Level_StepSetDef },
+	{ "saveint", Level_StepSaveInt },
+	{ "savelistadd", Level_StepSaveListAdd },
 	{ NULL, NULL },
 };
 
