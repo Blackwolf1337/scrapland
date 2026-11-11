@@ -3,6 +3,7 @@
  */
 #include "scrap/gvar.h"
 #include "scrap/console.h"
+#include "scrap/modvars.h"
 #include "scrap/pyfunction.h"
 #include "scrap/pymempool.h"
 #include "scrap/scrap.h"
@@ -263,6 +264,8 @@ void Python_Close(void) {
 	Py_LineEnd(Py_LineImport(init) && Py_LineCall("Init.Close", PyTuple_New(0)));
 	cPy_Function_ClearAll();
 	CharsNPC_Close();
+	/* the module variables live in the registry, not in the module dicts that the cleanup of Py_Finalize clears */
+	ModVar_Close();
 	Py_Finalize();
 	g_PythonReady = 0;
 }

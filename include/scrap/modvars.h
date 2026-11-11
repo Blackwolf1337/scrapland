@@ -99,6 +99,9 @@ void ModVar_Made(const char *module, const char *level, PyObject *dict);
 void ModVar_Making(const char *module, const char *level, PyObject *dict, modVarRef_t *ref, modVarRef_t *was);
 /* the module code failed: the binding of the module's files as before ModVar_Making */
 void ModVar_Unmade(const char *module, const modVarRef_t *was);
+/* before Py_Finalize: the variables of every module set to None as the module cleanup clears a module dict, then
+ * freed (the module dicts keep only what the module object needs, which the cleanup clears) */
+void ModVar_Close(void);
 /* the registry module of a module object (the pack module of that name in sys.modules, made from a .mod file): 1
  * with *ref, else 0 (no error set) */
 byte ModVar_Of(PyObject *module, modVarRef_t *ref);

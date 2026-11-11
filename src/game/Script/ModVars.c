@@ -38,8 +38,8 @@ typedef struct {
 	int n, cap;
 } mvExtra_t;
 
-/* the variables of one module dict (never freed: a module object that another module still holds after its name was
- * given to a new one keeps its values) */
+/* the variables of one module dict (kept while the interpreter runs: a module object that another module still holds
+ * after its name was given to a new one keeps its values; ModVar_Close frees them all) */
 typedef struct mvSpace_s {
 	PyObject *dict;			/* the module dict (a reference held: no other dict gets its address) */
 	nativeVal_t vars;		/* a dict object: name -> value */
@@ -400,6 +400,44 @@ void ModVar_Unmade(const char *module, const modVarRef_t *was) {
 	if (was->file >= 0) {
 		MV_File(was->file)->dict = was->dict;
 		MV_File(was->file)->space = MV_SpaceOf(was->dict);
+	}
+}
+
+/* the variables of a module set to None as _PyModule_Clear sets the values of its dict (PyImport_Cleanup of
+ * Py_Finalize): the names with a single underscore first, then every name but __builtins__ */
+static void MV_Clear(mvSpace_t *s) {
+	modVarRef_t ref = { .file = -1, .dict = s->dict, .vars = &s->vars };
+	for (int pass = 0; pass < 2; pass++) {
+		nativeVal_t k, v, none;
+		int pos = 0;
+		while (ModVar_Next(&ref, &pos, &k, &v)) {
+			/* a key with a NUL in it has no name to set it by (no module code makes one) */
+			const char *n = k.type == NV_STR && (int)strlen(Native_Text(&k)) == k.n ? Native_Text(&k) : NULL;
+			if (n && v.type != NV_NONE && (pass ? strcmp(n, "__builtins__") != 0 : n[0] == '_' && n[1] != '_')) {
+				Native_SetNone(&none);
+				ModVar_SetVal(&ref, n, &none);
+			}
+			Native_Free(&k);
+			Native_Free(&v);
+		}
+	}
+	PyErr_Clear();
+}
+
+void ModVar_Close(void) {
+	for (mvSpace_t *s = mv_spaces; s; s = s->next) {
+		MV_Clear(s);
+	}
+	while (mv_spaces) {
+		mvSpace_t *s = mv_spaces;
+		mv_spaces = s->next;
+		Native_Free(&s->vars);
+		Py_DECREF(s->dict);
+		Mem_Free(s);
+	}
+	for (int i = 0; mv_files && i < g_ModVarModuleCount; i++) {
+		mv_files[i].dict = NULL;
+		mv_files[i].space = NULL;
 	}
 }
 
