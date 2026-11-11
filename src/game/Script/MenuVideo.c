@@ -268,14 +268,16 @@ static void Video_Values(int id) {
 
 /* ---- the steps of video.def ---- */
 
-static void Step_Prepare(int id, PyObject *args) {
+static void Step_Prepare(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	(void)id;
 	Video_Fill();
 }
 
-static void Step_Values(int id, PyObject *args) {
+static void Step_Values(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	video.lastTexFilter = GVar_GetNum("R_TexFilter", 0);
 	video.lastMipFilter = GVar_GetNum("R_MipFilter", 0);
 	video.lastGamma = GVar_GetNum("VideoGammaRGB", 0);
@@ -285,18 +287,16 @@ static void Step_Values(int id, PyObject *args) {
 	Video_Values(id);
 }
 
-static void Step_Display(int id, PyObject *args) {
+static void Step_Display(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	Script_SetStr(id, "Display", "Text", video.display[Video_DisplayIndex(id)]);
 }
 
-SCRIPT_PYSTEP(Step_Prepare)
-SCRIPT_PYSTEP(Step_Values)
-SCRIPT_PYSTEP(Step_Display)
 static const scriptStep_t video_steps[] = {
-	{ "prepare", Step_Prepare_Py },
-	{ "values", Step_Values_Py },
-	{ "display", Step_Display_Py },
+	{ "prepare", Step_Prepare },
+	{ "values", Step_Values },
+	{ "display", Step_Display },
 	{ NULL, NULL },
 };
 

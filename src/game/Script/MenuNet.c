@@ -351,10 +351,11 @@ static void Net_TryJoin(int id) {
 /* ---- the steps of net.def ---- */
 
 /* the entry of the game mode (PCMenu.MultiplayerMenu, set by the mode) is disabled when it has no function */
-static void Step_InGame(int id, PyObject *args) {
+static void Step_InGame(int id, const nativeVal_t *args, int n) {
 	nativeVal_t opt, tmp = { 0 };
 	const nativeVal_t *func = NULL;
 	(void)args;
+	(void)n;
 	/* PCMenu.MultiplayerMenu[1] as PySequence_GetItem takes it (a list that holds objects item by item) */
 	if (Mode_ModGet("PCMenu", "MultiplayerMenu", &opt)) {
 		Mode_Elems(&opt);
@@ -372,20 +373,20 @@ static void Step_InGame(int id, PyObject *args) {
 }
 
 /* the tabs of the join page: the focus box over the whole button */
-static void Step_TabWidth(int id, PyObject *args) {
+static void Step_TabWidth(int id, const nativeVal_t *args, int n) {
 	const char *item = Script_CurrentItem();
 	(void)args;
+	(void)n;
 	Script_SetNum(id, item, "FocusPivotX", -(82 - Script_GetNum(id, item, "W") / 2));
 	Script_SetNum(id, item, "W", 165);
 }
 
 /* columntext key maxlen: the text of the column title, cut */
-static void Step_ColumnText(int id, PyObject *args) {
+static void Step_ColumnText(int id, const nativeVal_t *args, int n) {
 	const char *key;
 	int maxlen;
 	char text[0x200];
-	/* OBJLIB 6: the steps take the arguments of the line as a tuple */
-	if (!PyArg_ParseTuple(args, "si", &key, &maxlen)) {
+	if (!Mode_Parse(args, n, "si", &key, &maxlen)) {
 		PyErr_Print();
 		return;
 	}
@@ -393,9 +394,10 @@ static void Step_ColumnText(int id, PyObject *args) {
 	Script_SetStr(id, Script_CurrentItem(), "Text", text);
 }
 
-static void Step_Browse(int id, PyObject *args) {
+static void Step_Browse(int id, const nativeVal_t *args, int n) {
 	char column[0x10];
 	(void)args;
+	(void)n;
 	Net_Refresh(id);
 	net.sortOrder = 1;
 	Str_Copy(column, net.sort, sizeof(column));
@@ -658,8 +660,9 @@ static void Net_DataRateText(char *out, int size) {
 	}
 }
 
-static void Step_MapSlots(int id, PyObject *args) {
+static void Step_MapSlots(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	for (int i = 0; i < NET_MAP_SLOTS; i++) {
 		char item[0x20], link[0x20];
 		Str_Printf(item, sizeof(item), "MapSlotBack%d", i + 1);
@@ -694,10 +697,9 @@ static void Step_MapSlots(int id, PyObject *args) {
 }
 
 /* mappreviews x y: a hidden picture of each map of Net.NetMaps */
-static void Step_MapPreviews(int id, PyObject *args) {
+static void Step_MapPreviews(int id, const nativeVal_t *args, int n) {
 	int x, y;
-	/* OBJLIB 6: the steps take the arguments of the line as a tuple */
-	if (!PyArg_ParseTuple(args, "ii", &x, &y)) {
+	if (!Mode_Parse(args, n, "ii", &x, &y)) {
 		PyErr_Print();
 		return;
 	}
@@ -723,26 +725,20 @@ static void Step_MapPreviews(int id, PyObject *args) {
 	Native_Free(&maps);
 }
 
-static void Step_ServerType(int id, PyObject *args) {
+static void Step_ServerType(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	Net_UpdateServerType(id);
 }
 
-SCRIPT_PYSTEP(Step_InGame)
-SCRIPT_PYSTEP(Step_TabWidth)
-SCRIPT_PYSTEP(Step_ColumnText)
-SCRIPT_PYSTEP(Step_Browse)
-SCRIPT_PYSTEP(Step_MapSlots)
-SCRIPT_PYSTEP(Step_MapPreviews)
-SCRIPT_PYSTEP(Step_ServerType)
 static const scriptStep_t net_steps[] = {
-	{ "ingame", Step_InGame_Py },
-	{ "tabwidth", Step_TabWidth_Py },
-	{ "columntext", Step_ColumnText_Py },
-	{ "browse", Step_Browse_Py },
-	{ "mapslots", Step_MapSlots_Py },
-	{ "mappreviews", Step_MapPreviews_Py },
-	{ "servertype", Step_ServerType_Py },
+	{ "ingame", Step_InGame },
+	{ "tabwidth", Step_TabWidth },
+	{ "columntext", Step_ColumnText },
+	{ "browse", Step_Browse },
+	{ "mapslots", Step_MapSlots },
+	{ "mappreviews", Step_MapPreviews },
+	{ "servertype", Step_ServerType },
 	{ NULL, NULL },
 };
 
