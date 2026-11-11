@@ -184,7 +184,9 @@ static void TN_Ports(nativeBuf_t *out, byte reset) {
  *   get x k (x[k]), slice x lo hi, put x k v, del x k, setslice x lo hi v, delslice x lo hi, clear x (del x[:])
  *   attr x name, setattr x name v, delattr x name, call f args..., meth x name args...
  *   in v x, cmp a b (its sign), eq a b, is a b
- * tools/test/objcase.py reads this table and writes the same checks as lines of a channel case.
+ * tools/test/objcase.py reads this table and writes the same checks as lines of a channel case. No dict of the
+ * table has the key None: its hash is the address of Python's None (OBJLIB 9), so its place in a dict differs from
+ * build to build.
  */
 static const char *const ot_script[] = {
 	"-- list-read",
@@ -268,7 +270,7 @@ static const char *const ot_script[] = {
 	"val $L", "eq $L $T", "cmp $L []", "eq $L [1]", "attr $L __methods__", "meth $L extend [1]", "put $L 0 0",
 	"del $L 1", "val $T", "meth $L append",
 	"-- dict-read",
-	"D= lit {'a':1,'b':2,3:'c',(1,2):[4],None:0,1.5:'f'}",
+	"D= lit {'a':1,'b':2,3:'c',(1,2):[4],'n':0,1.5:'f'}",
 	"repr $D", "str $D", "type $D", "len $D", "not $D", "not {}", "get $D 'a'", "get $D 3", "get $D (1,2)",
 	"get $D None", "get $D 1.5", "get $D 'zz'", "get $D 99", "get $D [1]", "get $D {}", "get $D (1,[2])",
 	"in 'a' $D", "slice $D 0 1", "hash $D", "call $D", "val $D",
