@@ -2984,7 +2984,8 @@ byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out) {
 		Native_SetInt(out, v->i < 0 ? -v->i : v->i);
 		return 1;
 	case NV_FLOAT:
-		Native_SetFloat(out, fabs(v->f));
+		/* float_abs: -0.0 stays */
+		Native_SetFloat(out, v->f < 0 ? -v->f : v->f);
 		return 1;
 	case NV_LONG: {
 		const char *d = Native_Text(v);
