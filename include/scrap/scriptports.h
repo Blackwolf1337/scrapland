@@ -1039,14 +1039,144 @@ PORT_DECL(Menu, MissionNotesText) /* ? */
 
 /* MenuNet.c */
 PORT_DECL(PCMenu, MultiPlayerMenu) /* ? */
+PORT_DECL(PCMenu, MenuRestartServer) /* ? */
+PORT_DECL(PCMenu, MenuJoinGame) /* ? */
 PORT_DECL(PCMenu, TryJoin) /* ? */
+PORT_DECL(PCMenu, JoinPassword) /* ? */
 PORT_DECL(PCMenu, AskPassword) /* ? */
 PORT_DECL(PCMenu, ShowConectionStatus) /* ? */
+PORT_DECL(PCMenu, AbortJoin) /* ? */
+PORT_DECL(PCMenu, SpecifyIPMenu) /* ? */
+PORT_DECL(PCMenu, AbortMultiplayerGame) /* ? */
+PORT_DECL(PCMenu, NetDefaultContentMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinGameMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinInternetMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinLocalMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinIPMenu) /* ? */
+PORT_DECL(PCMenu, OnNetBrowse) /* ? */
+PORT_DECL(PCMenu, BrowserSortExecute) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenu) /* ? */
+PORT_DECL(PCMenu, MasterCommand) /* ? */
+PORT_DECL(PCMenu, BrowseINetMenu) /* ? */
+PORT_DECL(PCMenu, InetMasterBrowse) /* ? */
+PORT_DECL(PCMenu, BrowserMenuBack) /* ? */
+PORT_DECL(PCMenu, RefreshBrowseMenu) /* ? */
+PORT_DECL(PCMenu, RefreshBrowseMenuButton) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuPrevious) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuNext) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuPgUp) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuPgDown) /* ? */
+PORT_DECL(PCMenu, BrowseLocalJoin) /* ? */
+PORT_DECL(PCMenu, UnicodeParse) /* ? */
+PORT_DECL(PCMenu, CreateBrowseMenu) /* ? */
+PORT_DECL(PCMenu, BrowserColumnBack_Click) /* ? */
+PORT_DECL(PCMenu, BrowserSliderGainFocus) /* ? */
+PORT_DECL(PCMenu, BrowserSliderLooseFocus) /* ? */
+PORT_DECL(PCMenu, BrowserSliderOnRender) /* ? */
+PORT_DECL(PCMenu, UpdateBrowseSlider) /* ? */
+PORT_DECL(PCMenu, UpdateBrowseMenu) /* ? */
+PORT_DECL(PCMenu, NetCreateGameMenu) /* ? */
+PORT_DECL(PCMenu, MenuInitServer) /* ? */
+PORT_DECL(PCMenu, AdvancedServer) /* ? */
+PORT_DECL(PCMenu, BackToCreateServer) /* ? */
+PORT_DECL(PCMenu, SwitchForceVehicle) /* ? */
+PORT_DECL(PCMenu, SwitchUsePass) /* ? */
+PORT_DECL(PCMenu, RunDedicatedServer) /* ? */
+PORT_DECL(PCMenu, SetDataRate) /* ? */
+PORT_DECL(PCMenu, GetDataRateText) /* ? */
+PORT_DECL(PCMenu, ServerTypePrev) /* ? */
+PORT_DECL(PCMenu, ServerTypeNext) /* ? */
+PORT_DECL(PCMenu, UpdateServerType) /* ? */
+PORT_DECL(PCMenu, ServerTypeInfo) /* ? */
+PORT_DECL(PCMenu, MapUp) /* ? */
+PORT_DECL(PCMenu, MapDown) /* ? */
+PORT_DECL(PCMenu, MapSliderGainFocus) /* ? */
+PORT_DECL(PCMenu, MapSliderLooseFocus) /* ? */
+PORT_DECL(PCMenu, MapSliderOnRender) /* ? */
+PORT_DECL(PCMenu, UpdateMapSlider) /* ? */
+PORT_DECL(PCMenu, UpdateMapList) /* ? */
+PORT_DECL(PCMenu, MapChoose) /* ? */
+PORT_DECL(PCMenu, MapPreviewOn) /* ? */
+PORT_DECL(PCMenu, MapPreviewOff) /* ? */
+PORT_DECL(PCMenu, ServerNameGainFocus) /* ? */
+PORT_DECL(PCMenu, ServerNameLooseFocus) /* ? */
+PORT_DECL(PCMenu, ServerNameOnRender) /* ? */
+PORT_DECL(PCMenu, PlayersNumberGainFocus) /* ? */
+PORT_DECL(PCMenu, PlayersNumberLooseFocus) /* ? */
+PORT_DECL(PCMenu, PlayersNumberOnRender) /* ? */
+PORT_DECL(PCMenu, FragLimitGainFocus) /* ? */
+PORT_DECL(PCMenu, FragLimitLooseFocus) /* ? */
+PORT_DECL(PCMenu, FragLimitOnRender) /* ? */
 #define PORTS_MenuNet \
 	PORT_DEF(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
-	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin) \
+	PORT_DEF(PCMenu, MenuRestartServer, PCMenu_MenuRestartServer) \
+	PORT_DEF(PCMenu, MenuJoinGame, PCMenu_MenuJoinGame) \
+	PORT_DEF(PCMenu, TryJoin, PCMenu_TryJoin) \
+	PORT_DEF(PCMenu, JoinPassword, PCMenu_JoinPassword) \
 	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword) \
-	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus)
+	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus) \
+	PORT_DEF(PCMenu, AbortJoin, PCMenu_AbortJoin) \
+	PORT_DEF(PCMenu, SpecifyIPMenu, PCMenu_SpecifyIPMenu) \
+	PORT_DEF(PCMenu, AbortMultiplayerGame, PCMenu_AbortMultiplayerGame) \
+	PORT_DEF(PCMenu, NetDefaultContentMenu, PCMenu_NetDefaultContentMenu) \
+	PORT_DEF(PCMenu, NetJoinGameMenu, PCMenu_NetJoinGameMenu) \
+	PORT_DEF(PCMenu, NetJoinInternetMenu, PCMenu_NetJoinInternetMenu) \
+	PORT_DEF(PCMenu, NetJoinLocalMenu, PCMenu_NetJoinLocalMenu) \
+	PORT_DEF(PCMenu, NetJoinIPMenu, PCMenu_NetJoinIPMenu) \
+	PORT_DEF(PCMenu, OnNetBrowse, PCMenu_OnNetBrowse) \
+	PORT_DEF(PCMenu, BrowserSortExecute, PCMenu_BrowserSortExecute) \
+	PORT_DEF(PCMenu, BrowseLocalMenu, PCMenu_BrowseLocalMenu) \
+	PORT_DEF(PCMenu, MasterCommand, PCMenu_MasterCommand) \
+	PORT_DEF(PCMenu, BrowseINetMenu, PCMenu_BrowseINetMenu) \
+	PORT_DEF(PCMenu, InetMasterBrowse, PCMenu_InetMasterBrowse) \
+	PORT_DEF(PCMenu, BrowserMenuBack, PCMenu_BrowserMenuBack) \
+	PORT_DEF(PCMenu, RefreshBrowseMenu, PCMenu_RefreshBrowseMenu) \
+	PORT_DEF(PCMenu, RefreshBrowseMenuButton, PCMenu_RefreshBrowseMenuButton) \
+	PORT_DEF(PCMenu, BrowseLocalMenuPrevious, PCMenu_BrowseLocalMenuPrevious) \
+	PORT_DEF(PCMenu, BrowseLocalMenuNext, PCMenu_BrowseLocalMenuNext) \
+	PORT_DEF(PCMenu, BrowseLocalMenuPgUp, PCMenu_BrowseLocalMenuPgUp) \
+	PORT_DEF(PCMenu, BrowseLocalMenuPgDown, PCMenu_BrowseLocalMenuPgDown) \
+	PORT_DEF(PCMenu, BrowseLocalJoin, PCMenu_BrowseLocalJoin) \
+	PORT_DEF(PCMenu, UnicodeParse, PCMenu_UnicodeParse) \
+	PORT_DEF(PCMenu, CreateBrowseMenu, PCMenu_CreateBrowseMenu) \
+	PORT_DEF(PCMenu, BrowserColumnBack_Click, PCMenu_BrowserColumnBack_Click) \
+	PORT_DEF(PCMenu, BrowserSliderGainFocus, PCMenu_BrowserSliderGainFocus) \
+	PORT_DEF(PCMenu, BrowserSliderLooseFocus, PCMenu_BrowserSliderLooseFocus) \
+	PORT_DEF(PCMenu, BrowserSliderOnRender, PCMenu_BrowserSliderOnRender) \
+	PORT_DEF(PCMenu, UpdateBrowseSlider, PCMenu_UpdateBrowseSlider) \
+	PORT_DEF(PCMenu, UpdateBrowseMenu, PCMenu_UpdateBrowseMenu) \
+	PORT_DEF(PCMenu, NetCreateGameMenu, PCMenu_NetCreateGameMenu) \
+	PORT_DEF(PCMenu, MenuInitServer, PCMenu_MenuInitServer) \
+	PORT_DEF(PCMenu, AdvancedServer, PCMenu_AdvancedServer) \
+	PORT_DEF(PCMenu, BackToCreateServer, PCMenu_BackToCreateServer) \
+	PORT_DEF(PCMenu, SwitchForceVehicle, PCMenu_SwitchForceVehicle) \
+	PORT_DEF(PCMenu, SwitchUsePass, PCMenu_SwitchUsePass) \
+	PORT_DEF(PCMenu, RunDedicatedServer, PCMenu_RunDedicatedServer) \
+	PORT_DEF(PCMenu, SetDataRate, PCMenu_SetDataRate) \
+	PORT_DEF(PCMenu, GetDataRateText, PCMenu_GetDataRateText) \
+	PORT_DEF(PCMenu, ServerTypePrev, PCMenu_ServerTypePrev) \
+	PORT_DEF(PCMenu, ServerTypeNext, PCMenu_ServerTypeNext) \
+	PORT_DEF(PCMenu, UpdateServerType, PCMenu_UpdateServerType) \
+	PORT_DEF(PCMenu, ServerTypeInfo, PCMenu_ServerTypeInfo) \
+	PORT_DEF(PCMenu, MapUp, PCMenu_MapUp) \
+	PORT_DEF(PCMenu, MapDown, PCMenu_MapDown) \
+	PORT_DEF(PCMenu, MapSliderGainFocus, PCMenu_MapSliderGainFocus) \
+	PORT_DEF(PCMenu, MapSliderLooseFocus, PCMenu_MapSliderLooseFocus) \
+	PORT_DEF(PCMenu, MapSliderOnRender, PCMenu_MapSliderOnRender) \
+	PORT_DEF(PCMenu, UpdateMapSlider, PCMenu_UpdateMapSlider) \
+	PORT_DEF(PCMenu, UpdateMapList, PCMenu_UpdateMapList) \
+	PORT_DEF(PCMenu, MapChoose, PCMenu_MapChoose) \
+	PORT_DEF(PCMenu, MapPreviewOn, PCMenu_MapPreviewOn) \
+	PORT_DEF(PCMenu, MapPreviewOff, PCMenu_MapPreviewOff) \
+	PORT_DEF(PCMenu, ServerNameGainFocus, PCMenu_ServerNameGainFocus) \
+	PORT_DEF(PCMenu, ServerNameLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEF(PCMenu, ServerNameOnRender, PCMenu_ServerNameOnRender) \
+	PORT_DEF(PCMenu, PlayersNumberGainFocus, PCMenu_PlayersNumberGainFocus) \
+	PORT_DEF(PCMenu, PlayersNumberLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEF(PCMenu, PlayersNumberOnRender, PCMenu_PlayersNumberOnRender) \
+	PORT_DEF(PCMenu, FragLimitGainFocus, PCMenu_FragLimitGainFocus) \
+	PORT_DEF(PCMenu, FragLimitLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEF(PCMenu, FragLimitOnRender, PCMenu_FragLimitOnRender)
 
 /* MenuVideo.c */
 PORT_DECL(PCMenu, VideoMenu) /* ? */
@@ -5755,6 +5885,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2744
+#define PORT_COUNT 2809
 
 #endif
