@@ -33,15 +33,15 @@ static const char npc_def[] = {
 /* "run notfound" of the profile chain: the profile was not in the file */
 static byte g_NpcNotFound;
 
-static void Npc_StepNotFound(int id, PyObject *args) {
+static void Npc_StepNotFound(int id, const nativeVal_t *args, int n) {
 	(void)id;
 	(void)args;
+	(void)n;
 	g_NpcNotFound = 1;
 }
 
-SCRIPT_PYSTEP(Npc_StepNotFound)
 static const scriptStep_t npc_steps[] = {
-	{ "notfound", Npc_StepNotFound_Py },
+	{ "notfound", Npc_StepNotFound },
 	{ NULL, NULL },
 };
 
