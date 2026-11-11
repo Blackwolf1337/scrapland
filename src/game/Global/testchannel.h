@@ -6,6 +6,7 @@
 #define SCRAP_TESTCHANNEL_H
 
 #include "scrap/pyfunction.h"
+#include "scrap/scriptnative.h"
 
 /* the answer of a command file: a growing text (Mem_Realloc) */
 typedef struct tcBuf {
@@ -35,5 +36,10 @@ PyObject *TcX_Statement(const char *line);
  * repr of the global "result" or ok, an error "error: <type>: <value>" (the statements after it are not run); quiet:
  * only an error answers */
 void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet);
+/* what the expressions sent through Python since the start (OBJLIB 9), one line "channel <what> <count>" each added
+ * to out: "builtin <name>" a builtin function that is not native here or was called in a form the native one does not
+ * take, "operator <op>" an operator on a Python object or one the native values do not have, "keywords" a call with
+ * keyword arguments of a callable that is no lambda; reset: the counts back to 0, nothing added */
+void TcX_Counts(nativeBuf_t *out, byte reset);
 
 #endif

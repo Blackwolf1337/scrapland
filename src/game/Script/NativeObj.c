@@ -889,7 +889,7 @@ PyObject *NObj_ToPy(const nativeVal_t *v) {
 }
 
 PyObject *NObj_Py(const nativeVal_t *v) {
-	return v->type == NV_REF ? v->ref->py : NULL;
+	return v->type == NV_REF ? v->ref->py : v->type == NV_OBJ ? v->obj : NULL;
 }
 
 /* ---- classes and instances (classobject.c) ---- */

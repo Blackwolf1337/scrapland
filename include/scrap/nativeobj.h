@@ -155,7 +155,8 @@ void NObj_FromPy(PyObject *o, nativeVal_t *v);
 /* Native_ToPy of an NV_REF: its Python object (a new reference), made from the native data at the first crossing
  * (see the head comment); NULL with the error */
 PyObject *NObj_ToPy(const nativeVal_t *v);
-/* the Python object the value's object has now (borrowed), NULL when it has none (no conversion) */
+/* the Python object behind the value now (borrowed): the one of a view, of an NV_OBJ; NULL for native data that never
+ * crossed and the kinds by value (no conversion, unlike Native_PyOf) */
 PyObject *NObj_Py(const nativeVal_t *v);
 /* 1 by default: Native_SetObj and Native_Arg give the NV_REF view of an object Native_FromPyRef takes. 0 under
  * SCRAP_NATIVE_REF=0 (read once): the NV_OBJ of before batch 9a2, kept one more round for comparison */
