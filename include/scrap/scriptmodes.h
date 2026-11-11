@@ -1070,4 +1070,28 @@ byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeV
 #define MODE_CBGLOBAL(module, name, out, ...) Mode_CbGlobal(PORT_VSITE(), module, name, out, __VA_ARGS__)
 #define MODE_CBATTR(module, name, out, ...) Mode_CbAttr(PORT_VSITE(), module, name, out, __VA_ARGS__)
 
+/* ---- the state of the online and split screen modes on values (stage 6, batch 6f) ---- */
+
+/* `if v:` of the script with the error the truth of an object can raise (PyObject_IsTrue; Native_True drops it): 1 or
+ * 0, -1 with the error */
+int Mode_Truth(const nativeVal_t *v);
+/* Mode_Schedule with the function a value of the script, as a global or an attribute gave it (Mode_G, Mode_ModGet; a
+ * function held as NV_OBJ, OBJLIB 7: the scheduler takes the entry of a port's own function) */
+byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
+	const nativeVal_t *name);
+/* h.SetModel(<the global modelVar of module>) of a value of the script (Mode_HSetModel: the handle looked at before
+ * the global is read) */
+byte Mode_VSetModel(const nativeVal_t *h, const char *module, const char *modelVar);
+/* module.var = o.name as the object it is, o a value of the script (the module a variable holds; OBJLIB 5: a list of
+ * that module keeps its identity) */
+byte Mode_ModToV(const char *module, const char *var, const nativeVal_t *o, const char *name);
+/* <the global var of module>.name as any value, for the module a variable holds (ModLib; OBJLIB 5): the attribute as
+ * PyObject_GetAttrString gives it (an object that fails without an exception, the handle of a deleted entity, leaves
+ * none set: the caller's function then fails as a call without an error does; Mode_VObj sets ceval's SystemError) */
+byte Mode_GObjAttr(const char *module, const char *var, const char *name, nativeVal_t *out);
+/* the global var of module = the handle of entity e (None for NULL; OBJLIB 7: the module keeps the handle) */
+byte Mode_PutHandle(const char *module, const char *var, cEntity *e);
+/* Flag.var with Flag the global of the module (Mode_FlagSet's reader; OBJLIB 7) */
+byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out);
+
 #endif

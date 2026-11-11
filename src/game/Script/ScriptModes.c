@@ -4725,3 +4725,64 @@ byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeV
 	Py_XDECREF(f);
 	return ok;
 }
+
+/* ---- the state of the online and split screen modes on values (stage 6, batch 6f) ---- */
+
+int Mode_Truth(const nativeVal_t *v) {
+	/* OBJLIB 7: the truth of an object (an instance's __nonzero__ or __len__ may raise) */
+	return v->type == NV_OBJ ? PyObject_IsTrue(v->obj) : Native_True(v);
+}
+
+byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
+	const nativeVal_t *name) {
+	PyObject *fn = Native_ToPy(func);
+	byte ok = fn && Mode_Schedule(time, fn, args, n, name);
+	Py_XDECREF(fn);
+	return ok;
+}
+
+byte Mode_VSetModel(const nativeVal_t *h, const char *module, const char *modelVar) {
+	PyObject *o = Native_ToPy(h);
+	byte ok = o && Mode_HSetModel(o, module, modelVar);
+	Py_XDECREF(o);
+	return ok;
+}
+
+byte Mode_ModToV(const char *module, const char *var, const nativeVal_t *o, const char *name) {
+	PyObject *po = Native_ToPy(o), *x = po ? PyObject_GetAttrString(po, (char *)name) : NULL;
+	byte ok = x && Mode_SetModPy(module, var, x);
+	Py_XDECREF(x);
+	Py_XDECREF(po);
+	return ok;
+}
+
+byte Mode_GObjAttr(const char *module, const char *var, const char *name, nativeVal_t *out) {
+	nativeVal_t o;
+	Native_SetNone(out);
+	if (!Mode_G(module, var, &o)) {
+		return 0;
+	}
+	PyObject *po = Native_ToPy(&o), *r = po ? PyObject_GetAttrString(po, (char *)name) : NULL;
+	Native_Free(&o);
+	Py_XDECREF(po);
+	if (!r) {
+		return 0;
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_PutHandle(const char *module, const char *var, cEntity *e) {
+	nativeVal_t h;
+	byte ok = Mode_EntHandle(e, &h) && Mode_Put(module, var, NULL, &h);
+	Native_Free(&h);
+	return ok;
+}
+
+byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out) {
+	nativeVal_t flag;
+	byte ok = Mode_G(module, "Flag", &flag) && Mode_VGet(&flag, var, out);
+	Native_Free(&flag);
+	return ok;
+}
