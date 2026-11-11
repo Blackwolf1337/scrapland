@@ -8,8 +8,9 @@
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values and call the engine's action
  * classes in C. The module variables are read where the port read them (as numbers, Script_GetFloat, or by the
  * membership of a name, errors dropped) and written through at once (OBJLIB 5: the character scripts, Scene and
- * CharAct read and write them in the dict); DazedChars is changed in place. The adapters parse the arguments as
- * before (PyArg_ParseTuple and the keyword functions with the script's names).
+ * CharAct read and write them in the dict); DazedChars is changed in place. Every function has a native entry that
+ * parses its arguments with the formats of the port (Mode_Parse; the keyword functions MODE_KWT with the script's
+ * names).
  */
 #include <string.h>
 
@@ -138,15 +139,8 @@ static double MC_Num(const nativeVal_t *v) {
 }
 
 /* the same for an argument of an adapter (NULL: not given, def) */
-static double MC_ArgNum(PyObject *o, double def) {
-	nativeVal_t v;
-	if (!o) {
-		return def;
-	}
-	Native_Arg(o, &v);
-	double d = MC_Num(&v);
-	Native_Free(&v);
-	return d;
+static double MC_ArgNum(const nativeVal_t *v, double def) {
+	return v ? MC_Num(v) : def;
 }
 
 /* ---- the helpers ---- */
@@ -162,27 +156,28 @@ static void MC_RelaxAction(const char *ch, double turn, const char *name, const 
 	MC_SetNum("AngleModifierSpeed", 5.0);
 }
 
-static PyObject *MakeChar_CreateRelaxAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "turnspeed", "Name", "Anm", "Loop", NULL };
-	char *ch, *name = "Relax", *anm = "Relax";
-	PyObject *turn;
-	int loop = 0;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "sO|ssi", names, &ch, &turn, &name, &anm, &loop)) {
-		return NULL;
+MODE_KWT(MakeChar, CreateRelaxAction, "sO|ssi", "CharName", "turnspeed", "Name", "Anm", "Loop") {
+	const char *ch, *name, *anm;
+	const nativeVal_t *turn;
+	int loop;
+	Mode_KwDefS(v, given, 2, "Relax");
+	Mode_KwDefS(v, given, 3, "Relax");
+	Mode_KwDefI(v, given, 4, 0);
+	if (!Mode_Parse(v, 5, "sOssi", &ch, &turn, &name, &anm, &loop)) {
+		return 0;
 	}
 	MC_RelaxAction(ch, MC_ArgNum(turn, 0.0), name, anm, loop);
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *MakeChar_AddRelaxActions(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "turnspeed", "nExtraRlx", NULL };
-	char *ch, name[0x20];
-	PyObject *turnObj;
-	int extra = 2;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "sO|i", names, &ch, &turnObj, &extra)) {
-		return NULL;
+MODE_KWT(MakeChar, AddRelaxActions, "sO|i", "CharName", "turnspeed", "nExtraRlx") {
+	const char *ch;
+	char name[0x20];
+	const nativeVal_t *turnObj;
+	int extra;
+	Mode_KwDefI(v, given, 2, 2);
+	if (!Mode_Parse(v, 3, "sOi", &ch, &turnObj, &extra)) {
+		return 0;
 	}
 	double turn = MC_ArgNum(turnObj, 0.0);
 	MC_GetClass(ch);
@@ -217,15 +212,15 @@ static PyObject *MakeChar_AddRelaxActions(PyObject *self, PyObject *args, PyObje
 	if (!Mode_ModGetI("Init", "Outdoor", 0)) {
 		MC_ClsStr("PossessionPress", "CharConversor.Possession");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* DiscoverInit and Discover: the character saw the player and calls the police */
-static PyObject *MakeChar_AddDiscover(PyObject *self, PyObject *args) {
-	char *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &ch)) {
-		return NULL;
+static byte MakeChar_AddDiscover_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *ch;
+	(void)out;
+	if (!Mode_Parse(a, n, "s", &ch)) {
+		return 0;
 	}
 	for (int k = 0; k < 2; k++) {
 		MC_Create(k ? "Discover" : "DiscoverInit");
@@ -247,8 +242,10 @@ static PyObject *MakeChar_AddDiscover(PyObject *self, PyObject *args) {
 			MC_Event(0, "Acuse", -1, "!WarningPolice");
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+MODE_ADAPTER(MakeChar, AddDiscover)
 
 static void MC_Move(const char *ch, const char *action, const char *anm, double turn, double disp, int loop) {
 	MC_Create(action);
@@ -264,17 +261,19 @@ static void MC_Move(const char *ch, const char *action, const char *anm, double 
 	MC_SetNum("UseFlyFall", 0);
 }
 
-static PyObject *MakeChar_AddMove(PyObject *self, PyObject *args) {
-	char *ch, *action, *anm;
-	PyObject *turn, *disp;
+static byte MakeChar_AddMove_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *ch, *action, *anm;
+	const nativeVal_t *turn, *disp;
 	int loop;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sssOOi", &ch, &action, &anm, &turn, &disp, &loop)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "sssOOi", &ch, &action, &anm, &turn, &disp, &loop)) {
+		return 0;
 	}
 	MC_Move(ch, action, anm, MC_ArgNum(turn, 0.0), MC_ArgNum(disp, 0.0), loop);
-	return Py_ReturnNone();
+	return 1;
 }
+
+MODE_ADAPTER(MakeChar, AddMove)
 
 /* the moves of a list (AddWalkActions and its Init and End kin), list NULL for the four of def; the list's length as
  * PySequence_Length takes it (its TypeError left set, as the port went on), items that are no text "" */
@@ -310,53 +309,48 @@ static void MC_WalkList(const char *ch, double turn, int isRun, double disp, nat
 	}
 }
 
-static PyObject *MC_Walk(PyObject *args, PyObject *kw, const char *const *def, const char *run, int loop, byte end) {
-	static char *names[] = { "CharName", "turnspeed", "isRun", "UseDisp", "ActList", NULL };
-	char *ch;
-	PyObject *turnObj = NULL, *dispObj = NULL, *listObj = NULL;
-	int isRun = 1;
+/* the walk functions (CharName, turnspeed=360, isRun=1, UseDisp=1, ActList=None) on their slots */
+static byte MC_Walk(nativeVal_t *v, const byte *given, const char *const *def, const char *run, int loop, byte end) {
+	const char *ch;
+	const nativeVal_t *turn, *disp, *acts;
+	int isRun;
 	nativeVal_t list;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|OiOO", names, &ch, &turnObj, &isRun, &dispObj, &listObj)) {
-		return NULL;
+	Mode_KwDefI(v, given, 2, 1);
+	if (!Mode_Parse(v, 5, "sOiOO", &ch, &turn, &isRun, &disp, &acts)) {
+		return 0;
 	}
-	if (listObj) {
-		Native_Arg(listObj, &list);
+	/* the list is made native in place (Mode_Elems): a copy */
+	if (given[4]) {
+		Native_Copy(&list, acts);
 	}
-	MC_WalkList(ch, MC_ArgNum(turnObj, 360), isRun, MC_ArgNum(dispObj, 1), listObj ? &list : NULL, def, run, loop, end);
-	if (listObj) {
+	MC_WalkList(ch, MC_ArgNum(given[1] ? turn : NULL, 360), isRun, MC_ArgNum(given[3] ? disp : NULL, 1), given[4] ? &list : NULL, def,
+		run, loop, end);
+	if (given[4]) {
 		Native_Free(&list);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *MakeChar_AddWalkActions(PyObject *self, PyObject *args, PyObject *kw) {
-	static const char *const def[] = { "Walk", "Back", "StrLeft", "StrRight" };
-	(void)self;
-	return MC_Walk(args, kw, def, "Run", 1, 0);
-}
-
-static PyObject *MakeChar_AddInitWalkActions(PyObject *self, PyObject *args, PyObject *kw) {
-	static const char *const def[] = { "WalkInit", "BackInit", "StrLeftInit", "StrRightInit" };
-	(void)self;
-	return MC_Walk(args, kw, def, "RunInit", 0, 0);
-}
-
-static PyObject *MakeChar_AddEndWalkActions(PyObject *self, PyObject *args, PyObject *kw) {
-	static const char *const def[] = { "WalkEnd", "BackEnd", "StrLeftEnd", "StrRightEnd" };
-	(void)self;
-	return MC_Walk(args, kw, def, "RunEnd", 0, 1);
-}
+#define MC_WALKFN(name, pre, loop, end) \
+	MODE_KWT(MakeChar, name, "s|OiOO", "CharName", "turnspeed", "isRun", "UseDisp", "ActList") { \
+		static const char *const def[] = { "Walk" pre, "Back" pre, "StrLeft" pre, "StrRight" pre }; \
+		return MC_Walk(v, given, def, "Run" pre, loop, end); \
+	}
+MC_WALKFN(AddWalkActions, "", 1, 0)
+MC_WALKFN(AddInitWalkActions, "Init", 0, 0)
+MC_WALKFN(AddEndWalkActions, "End", 0, 1)
 
 /* Fall, then FallInit and FallEnd when asked; only the first loops */
-static PyObject *MakeChar_AddFallAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "turnspeed", "InitAction", "EndAction", NULL };
-	char *ch;
-	PyObject *turnObj = NULL;
-	int init = 0, end = 0;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|Oii", names, &ch, &turnObj, &init, &end)) {
-		return NULL;
+MODE_KWT(MakeChar, AddFallAction, "s|Oii", "CharName", "turnspeed", "InitAction", "EndAction") {
+	const char *ch;
+	const nativeVal_t *turnObj;
+	int init, end;
+	Mode_KwDefI(v, given, 2, 0);
+	Mode_KwDefI(v, given, 3, 0);
+	if (!Mode_Parse(v, 4, "sOii", &ch, &turnObj, &init, &end)) {
+		return 0;
 	}
+	double turn = MC_ArgNum(given[1] ? turnObj : NULL, 45);
 	const char *acts[3] = { "Fall", NULL, NULL };
 	int n = 1;
 	if (init) {
@@ -370,11 +364,11 @@ static PyObject *MakeChar_AddFallAction(PyObject *self, PyObject *args, PyObject
 		MC_Create(acts[i]);
 		MC_Anm(ch, acts[i]);
 		MC_SetNum("isLoop", i == 0);
-		MC_SetNum("RotSpeed", MC_ArgNum(turnObj, 45));
+		MC_SetNum("RotSpeed", turn);
 		MC_SetNum("NodeModifier", -1);
 		MC_SetNum("AngleModifierSpeed", 5.0);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* the morph of the lips while the character talks */
@@ -411,23 +405,18 @@ static void MC_TalkAct(const char *ch, const char *anm, double nodeMod, int loop
 	}
 }
 
-static PyObject *MakeChar_AddTalkAct(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "AnmName", "NodeModifier", "isLoop", "ExtraAction", "MorphAnm", NULL };
-	char *ch, *anm, *extra = "";
-	PyObject *nodeMod = NULL, *morph = NULL;
-	int loop = 1;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "ss|OisO", names, &ch, &anm, &nodeMod, &loop, &extra, &morph)) {
-		return NULL;
+MODE_KWT(MakeChar, AddTalkAct, "ss|OisO", "CharName", "AnmName", "NodeModifier", "isLoop", "ExtraAction", "MorphAnm") {
+	const char *ch, *anm, *extra;
+	const nativeVal_t *nodeMod, *morph;
+	int loop;
+	Mode_KwDefI(v, given, 3, 1);
+	Mode_KwDefS(v, given, 4, "");
+	if (!Mode_Parse(v, 6, "ssOisO", &ch, &anm, &nodeMod, &loop, &extra, &morph)) {
+		return 0;
 	}
-	nativeVal_t m;
-	Native_SetNone(&m);
-	if (morph) {
-		Native_Arg(morph, &m);
-	}
-	MC_TalkAct(ch, anm, MC_ArgNum(nodeMod, 0), loop, extra, m.type == NV_STR ? Native_Text(&m) : NULL);
-	Native_Free(&m);
-	return Py_ReturnNone();
+	/* a morph not given is None: no text */
+	MC_TalkAct(ch, anm, MC_ArgNum(given[2] ? nodeMod : NULL, 0), loop, extra, morph->type == NV_STR ? Native_Text(morph) : NULL);
+	return 1;
 }
 
 static void MC_TalkAction(const char *ch, double nodeMod, int extra) {
@@ -464,31 +453,24 @@ static void MC_TalkAction(const char *ch, double nodeMod, int extra) {
 	}
 }
 
-static PyObject *MakeChar_AddTalkAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "NodeModifier", "nExtraActions", NULL };
-	char *ch;
-	PyObject *nodeMod = NULL;
-	int extra = 0;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|Oi", names, &ch, &nodeMod, &extra)) {
-		return NULL;
+MODE_KWT(MakeChar, AddTalkAction, "s|Oi", "CharName", "NodeModifier", "nExtraActions") {
+	const char *ch;
+	const nativeVal_t *nodeMod;
+	int extra;
+	Mode_KwDefI(v, given, 2, 0);
+	if (!Mode_Parse(v, 3, "sOi", &ch, &nodeMod, &extra)) {
+		return 0;
 	}
-	MC_TalkAction(ch, MC_ArgNum(nodeMod, 0), extra);
-	return Py_ReturnNone();
+	MC_TalkAction(ch, MC_ArgNum(given[1] ? nodeMod : NULL, 0), extra);
+	return 1;
 }
 
-static PyObject *MakeChar_AddTalkMorph(PyObject *self, PyObject *args) {
-	PyObject *morph;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &morph)) {
-		return NULL;
-	}
-	nativeVal_t m;
-	Native_Arg(morph, &m);
-	MC_TalkMorph(Native_True(&m) && m.type == NV_STR ? Native_Text(&m) : NULL);
-	Native_Free(&m);
-	return Py_ReturnNone();
+static byte MC_AddTalkMorph(const nativeVal_t *m) {
+	MC_TalkMorph(Native_True(m) && m->type == NV_STR ? Native_Text(m) : NULL);
+	return 1;
 }
+
+MODE_FN(MakeChar, AddTalkMorph, 1, MC_AddTalkMorph(&a[0]))
 
 static void MC_Morph(const char *ch, const char *act, const char *file, int chan) {
 	char path[0x200];
@@ -499,16 +481,18 @@ static void MC_Morph(const char *ch, const char *act, const char *file, int chan
 	MC_SetNum("Chanel", chan);
 }
 
-static PyObject *MakeChar_AddMorphAction(PyObject *self, PyObject *args) {
-	char *ch, *act, *file;
+static byte MakeChar_AddMorphAction_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *ch, *act, *file;
 	int chan;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sssi", &ch, &act, &file, &chan)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "sssi", &ch, &act, &file, &chan)) {
+		return 0;
 	}
 	MC_Morph(ch, act, file, chan);
-	return Py_ReturnNone();
+	return 1;
 }
+
+MODE_ADAPTER(MakeChar, AddMorphAction)
 
 /* the morphs of the eyes and the lips of the characters of the lists */
 static void MC_DefMorphs(const char *ch) {
@@ -523,29 +507,30 @@ static void MC_DefMorphs(const char *ch) {
 	}
 }
 
-static PyObject *MakeChar_AddDefMorphActions(PyObject *self, PyObject *args) {
-	char *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &ch)) {
-		return NULL;
+static byte MakeChar_AddDefMorphActions_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *ch;
+	(void)out;
+	if (!Mode_Parse(a, n, "s", &ch)) {
+		return 0;
 	}
 	MC_DefMorphs(ch);
-	return Py_ReturnNone();
+	return 1;
 }
 
+MODE_ADAPTER(MakeChar, AddDefMorphActions)
+
 /* EventAnimCommand(time, name[, discard]): an animation command; a negative time is the end of the animation */
-static PyObject *MakeChar_EventAnimCommand(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Time", "Name", "Discard", NULL };
-	PyObject *t;
-	char *name;
-	int discard = 1;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "Os|i", names, &t, &name, &discard)) {
-		return NULL;
+MODE_KWT(MakeChar, EventAnimCommand, "Os|i", "Time", "Name", "Discard") {
+	const nativeVal_t *t;
+	const char *name;
+	int discard;
+	Mode_KwDefI(v, given, 2, 1);
+	if (!Mode_Parse(v, 3, "Osi", &t, &name, &discard)) {
+		return 0;
 	}
 	double time = MC_ArgNum(t, 0);
 	MC_Event(time < 0 ? MC_Get("AnmTotalTime") : time, name, discard, "!AnmCommand");
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* a listening action: the event function at regular times, about twice a second */
@@ -571,15 +556,14 @@ static void MC_Listen(const char *ch, const char *act, const char *func, const c
 	}
 }
 
-static PyObject *MakeChar_ListenAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "ActionName", "EventFunc", "AnmName", NULL };
-	char *ch, *act, *func, *anm = "Relax";
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "sss|s", names, &ch, &act, &func, &anm)) {
-		return NULL;
+MODE_KWT(MakeChar, ListenAction, "sss|s", "CharName", "ActionName", "EventFunc", "AnmName") {
+	const char *ch, *act, *func, *anm;
+	Mode_KwDefS(v, given, 3, "Relax");
+	if (!Mode_Parse(v, 4, "ssss", &ch, &act, &func, &anm)) {
+		return 0;
 	}
 	MC_Listen(ch, act, func, anm);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* <name>Init, <name> (loops) and <name>End */
@@ -601,25 +585,26 @@ static void MC_BreakLoop(const char *ch, const char *name, int priority) {
 	}
 }
 
-static PyObject *MakeChar_AddBreakLoopAction(PyObject *self, PyObject *args) {
-	char *ch, *name;
+static byte MakeChar_AddBreakLoopAction_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *ch, *name;
 	int priority;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssi", &ch, &name, &priority)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "ssi", &ch, &name, &priority)) {
+		return 0;
 	}
 	MC_BreakLoop(ch, name, priority);
-	return Py_ReturnNone();
+	return 1;
 }
 
+MODE_ADAPTER(MakeChar, AddBreakLoopAction)
+
 /* flashed by the camera: the end of each part leads to the next; the police listen */
-static PyObject *MakeChar_AddFlashedAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "ListenPolice", NULL };
-	char *ch;
-	int listen = 1;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|i", names, &ch, &listen)) {
-		return NULL;
+MODE_KWT(MakeChar, AddFlashedAction, "s|i", "CharName", "ListenPolice") {
+	const char *ch;
+	int listen;
+	Mode_KwDefI(v, given, 1, 1);
+	if (!Mode_Parse(v, 2, "si", &ch, &listen)) {
+		return 0;
 	}
 	MC_BreakLoop(ch, "Flashed", 201);
 	Native_ActAction("FlashedInit");
@@ -629,27 +614,28 @@ static PyObject *MakeChar_AddFlashedAction(PyObject *self, PyObject *args, PyObj
 	if (listen) {
 		MC_Listen(ch, "PoliceListen", "!ListeningPolice", "Relax");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *MakeChar_AddCrazyAction(PyObject *self, PyObject *args) {
-	char *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &ch)) {
-		return NULL;
+static byte MakeChar_AddCrazyAction_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *ch;
+	(void)out;
+	if (!Mode_Parse(a, n, "s", &ch)) {
+		return 0;
 	}
 	MC_BreakLoop(ch, "Crazy", 1);
-	return Py_ReturnNone();
+	return 1;
 }
 
+MODE_ADAPTER(MakeChar, AddCrazyAction)
+
 /* dazed by the mayor: a coin falls a quarter into the start; the character goes into DazedChars */
-static PyObject *MakeChar_AddDazeAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "ListenMayor", NULL };
-	char *ch;
-	int listen = 1;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|i", names, &ch, &listen)) {
-		return NULL;
+MODE_KWT(MakeChar, AddDazeAction, "s|i", "CharName", "ListenMayor") {
+	const char *ch;
+	int listen;
+	Mode_KwDefI(v, given, 1, 1);
+	if (!Mode_Parse(v, 2, "si", &ch, &listen)) {
+		return 0;
 	}
 	nativeVal_t s;
 	Native_SetText(&s, ch, (int)strlen(ch));
@@ -663,19 +649,19 @@ static PyObject *MakeChar_AddDazeAction(PyObject *self, PyObject *args, PyObject
 	if (listen) {
 		MC_Listen(ch, "MayorListen", "!ListeningMayor", "Relax");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* sitting at a desk: SitDown, GetUp, Work and WorkRelax */
-static PyObject *MakeChar_SetSitActions(PyObject *self, PyObject *args) {
+static byte MakeChar_SetSitActions_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	static const struct {
 		const char *name;
 		int loop, priority;
 	} acts[] = { { "SitDown", 0, 0 }, { "GetUp", 0, 1 }, { "Work", 1, 0 }, { "WorkRelax", 0, 0 } };
-	char *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &ch)) {
-		return NULL;
+	const char *ch;
+	(void)out;
+	if (!Mode_Parse(a, n, "s", &ch)) {
+		return 0;
 	}
 	for (int i = 0; i < 4; i++) {
 		MC_Create(acts[i].name);
@@ -685,15 +671,18 @@ static PyObject *MakeChar_SetSitActions(PyObject *self, PyObject *args) {
 		MC_SetNum("UseDisp", 0);
 		MC_SetNum("PriorityLevel", acts[i].priority);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
+MODE_ADAPTER(MakeChar, SetSitActions)
+
 /* InitChar(name): a new class with the defaults of a character, MaxSpeed and MinSpeed back to theirs */
-static PyObject *MakeChar_InitChar(PyObject *self, PyObject *args) {
-	char *ch, text[0x100], path[0x200];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &ch)) {
-		return NULL;
+static byte MakeChar_InitChar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *ch;
+	char text[0x100], path[0x200];
+	(void)out;
+	if (!Mode_Parse(a, n, "s", &ch)) {
+		return 0;
 	}
 	nativeVal_t v;
 	Native_SetFloat(&v, 1.5);
@@ -726,8 +715,10 @@ static PyObject *MakeChar_InitChar(PyObject *self, PyObject *args) {
 		MC_ClsNum("CanBePossessed", 1);
 	}
 	MC_DefMorphs(ch);
-	return Py_ReturnNone();
+	return 1;
 }
+
+MODE_ADAPTER(MakeChar, InitChar)
 
 /* SetNodeRotation(set, node, x, y): the angle pair of a node in hundredths */
 static void MC_NodeRotation(const nativeVal_t *set, const nativeVal_t *node, const nativeVal_t *x, const nativeVal_t *y) {
@@ -746,16 +737,16 @@ static void MC_NodeRotation(const nativeVal_t *set, const nativeVal_t *node, con
 MODE_FN(MakeChar, SetNodeRotation, 4, (MC_NodeRotation(&a[0], &a[1], &a[2], &a[3]), 1))
 
 /* the basic actions of a turret (a character that does not walk) */
-static PyObject *MakeChar_TurretBasicActions(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "RotLimit", "nExtraRlx", NULL };
-	char *ch, name[0x20];
-	PyObject *limitObj = NULL;
-	int extra = 2;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|Oi", names, &ch, &limitObj, &extra)) {
-		return NULL;
+MODE_KWT(MakeChar, TurretBasicActions, "s|Oi", "CharName", "RotLimit", "nExtraRlx") {
+	const char *ch;
+	char name[0x20];
+	const nativeVal_t *limitObj;
+	int extra;
+	Mode_KwDefI(v, given, 2, 2);
+	if (!Mode_Parse(v, 3, "sOi", &ch, &limitObj, &extra)) {
+		return 0;
 	}
-	double limit = MC_ArgNum(limitObj, 720);
+	double limit = MC_ArgNum(given[1] ? limitObj : NULL, 720);
 	MC_GetClass(ch);
 	MC_Create("Relax");
 	MC_Anm(ch, "Relax");
@@ -791,7 +782,7 @@ static PyObject *MakeChar_TurretBasicActions(PyObject *self, PyObject *args, PyO
 	MC_SetNum("AutoFaceSpeed", 10);
 	MC_SetNum("AutoFaceOffsetH", 0);
 	MC_SetNum("AutoFaceOffsetV", 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* the turret turns only its head while it talks */
@@ -801,41 +792,34 @@ static void MC_NoTurn(const char *act) {
 	MC_SetNum("AngRotLimit", 360);
 }
 
-static PyObject *MakeChar_AddTurretTalkAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "NodeModifier", NULL };
-	char *ch;
-	PyObject *nodeMod = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|O", names, &ch, &nodeMod)) {
-		return NULL;
+MODE_KWT(MakeChar, AddTurretTalkAction, "s|O", "CharName", "NodeModifier") {
+	const char *ch;
+	const nativeVal_t *nodeMod;
+	if (!Mode_Parse(v, 2, "sO", &ch, &nodeMod)) {
+		return 0;
 	}
-	MC_TalkAction(ch, MC_ArgNum(nodeMod, 0), 0);
+	MC_TalkAction(ch, MC_ArgNum(given[1] ? nodeMod : NULL, 0), 0);
 	MC_NoTurn("Talk");
 	MC_NoTurn("TalkNPC");
 	MC_NoTurn("TalkListen");
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *MakeChar_AddTurretTalkAct(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "ActName", "NodeModifier", NULL };
-	char *ch, *act, npc[0x48];
-	PyObject *nodeMod = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "ss|O", names, &ch, &act, &nodeMod)) {
-		return NULL;
+MODE_KWT(MakeChar, AddTurretTalkAct, "ss|O", "CharName", "ActName", "NodeModifier") {
+	const char *ch, *act;
+	char npc[0x48];
+	const nativeVal_t *nodeMod;
+	if (!Mode_Parse(v, 3, "ssO", &ch, &act, &nodeMod)) {
+		return 0;
 	}
-	MC_TalkAct(ch, act, MC_ArgNum(nodeMod, 0), 1, "", NULL);
+	MC_TalkAct(ch, act, MC_ArgNum(given[2] ? nodeMod : NULL, 0), 1, "", NULL);
 	MC_NoTurn(act);
 	Str_Printf(npc, sizeof(npc), "%sNPC", act);
 	MC_NoTurn(npc);
-	return Py_ReturnNone();
+	return 1;
 }
 
 #define MC_KW(f) (PyCFunction)(void (*)(void))f, 3
-
-/* the entries of the functions other ports call (OBJLIB 7: on Python values, the conversions of their formats) */
-MODE_PYENTRYKW(MakeChar_CreateRelaxAction)
-MODE_PYENTRY(MakeChar_AddDefMorphActions)
 
 PyMethodDef g_MakeCharMethods[] = {
 	{ "CreateRelaxAction", MC_KW(MakeChar_CreateRelaxAction), NULL },

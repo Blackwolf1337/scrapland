@@ -128,64 +128,26 @@ static byte Ch_Sound(const nativeVal_t *cls, const nativeVal_t *action, const na
 	return 1;
 }
 
-/* the arguments of an adapter in a PyArg_ParseTuple format of O's (up to 6, optional ones after '|') as native values
- * (None when not given): the number given, -1 with the arity error */
-static int Ch_Args(PyObject *args, const char *fmt, nativeVal_t *a, int n) {
-	PyObject *o[6] = { NULL };
-	int given = 0;
-	for (int i = 0; i < n; i++) {
-		Native_SetNone(&a[i]);
-	}
-	if (!PyArg_ParseTuple(args, (char *)fmt, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5])) {
-		return -1;
-	}
-	for (int i = 0; i < n && o[i]; i++) {
-		Native_Arg(o[i], &a[i]);
-		given++;
-	}
-	return given;
+/* ActSound(cls, action, frame, sound, vol[, pitch]): a sound of the animation; ActSoundLoop(cls, action, frame,
+ * soundId, vol[, pitch]) */
+static byte Ch_ActSound(const nativeVal_t *a, int n, byte loop) {
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	return Ch_Sound(&a[0], &a[1], &a[2], &a[3], &a[4], n > 5 ? &a[5] : &zero, loop, loop ? "!AnmSoundLoopEvent" : "!AnmSoundEvent");
 }
 
-/* the result of such an adapter: the n arguments freed, None for 1, NULL for 0 */
-static PyObject *Ch_Out(nativeVal_t *a, int n, byte ok) {
-	return Mode_KwOut(a, n, ok, NULL);
-}
-
-/* ActSound(cls, action, frame, sound, vol[, pitch]): a sound of the animation */
-static PyObject *Chars_ActSound(PyObject *self, PyObject *args) {
-	nativeVal_t a[6];
-	(void)self;
-	int n = Ch_Args(args, "OOOOO|O", a, 6);
-	if (n == 5) {
-		Native_SetInt(&a[5], 0);
-	}
-	return Ch_Out(a, 6, n >= 0 && Ch_Sound(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], 0, "!AnmSoundEvent"));
-}
-
-/* ActSoundLoop(cls, action, frame, soundId, vol[, pitch]) */
-static PyObject *Chars_ActSoundLoop(PyObject *self, PyObject *args) {
-	nativeVal_t a[6];
-	(void)self;
-	int n = Ch_Args(args, "OOOOO|O", a, 6);
-	if (n == 5) {
-		Native_SetInt(&a[5], 0);
-	}
-	return Ch_Out(a, 6, n >= 0 && Ch_Sound(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], 1, "!AnmSoundLoopEvent"));
-}
+MODE_FNOPT(Chars, ActSound, 5, 6, Ch_ActSound(a, n, 0))
+MODE_FNOPT(Chars, ActSoundLoop, 5, 6, Ch_ActSound(a, n, 1))
 
 /* StrSound(cls, action, frame, sound[, vol[, dist]]): a streamed voice */
-static PyObject *Chars_StrSound(PyObject *self, PyObject *args) {
-	nativeVal_t a[6];
-	(void)self;
-	int n = Ch_Args(args, "OOOO|OO", a, 6);
-	if (n >= 0 && n < 5) {
-		Native_SetFloat(&a[4], 1.0);
-	}
-	if (n >= 0 && n < 6) {
-		Native_SetInt(&a[5], 3000);
-	}
-	return Ch_Out(a, 6, n >= 0 && Ch_Sound(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], 0, "!StreamingVoice"));
+static byte Ch_StrSound(const nativeVal_t *a, int n) {
+	nativeVal_t vol, dist;
+	Native_SetFloat(&vol, 1.0);
+	Native_SetInt(&dist, 3000);
+	return Ch_Sound(&a[0], &a[1], &a[2], &a[3], n > 4 ? &a[4] : &vol, n > 5 ? &a[5] : &dist, 0, "!StreamingVoice");
 }
+
+MODE_FNOPT(Chars, StrSound, 4, 6, Ch_StrSound(a, n))
 
 /* StrSoundStop(cls, action, frame): the streamed voice stops, also when a new action jumps over the frame */
 static byte Ch_StrSoundStop(const nativeVal_t *cls, const nativeVal_t *action, const nativeVal_t *frame) {
@@ -400,20 +362,6 @@ static byte Ch_CreatePlayersList(void) {
 	return Mode_ListSet("Players", "OnDeath", "Chars.MainCharDeath");
 }
 
-/* OBJLIB 5: the CharRes object Init's loop walks (the character scripts it starts append to it): its length as the
- * for loop takes it each turn (-1 with the error left set, as the port went on), and cr[1] = 0 on the item object
- * itself */
-static int Ch_ResCount(PyObject *list) {
-	return PySequence_Length(list);
-}
-
-static byte Ch_ResLasting(PyObject *cr) {
-	PyObject *zero = PyInt_FromLong(0);
-	int r = zero ? PySequence_SetItem(cr, 1, zero) : -1;
-	Py_XDECREF(zero);
-	return r == 0;
-}
-
 /* Init(): the characters of the level: the NPC spawn points, Sputnik outdoors and in the junkyard, the resources
  * so far (from now on lasting), then the class of the player */
 static byte Ch_Init(void) {
@@ -427,26 +375,29 @@ static byte Ch_Init(void) {
 	if ((Mode_ModGetI("Init", "Outdoor", 0) || Mode_ModGetI("Init", "isJunkYard", 0)) && Ch_AddResS("Sputnik", 0) < 0) {
 		return 0;
 	}
-	PyObject *list = Mode_GlobalPy(CH, "CharRes");
-	if (!list) {
+	/* OBJLIB 5: the CharRes list Init's loop walks is held by reference (the character scripts it starts append to
+	 * it): its length as the for loop takes it each turn (-1 with the error left set, as the port went on), and
+	 * cr[1] = 0 on the item itself */
+	nativeVal_t list, zero;
+	if (!Mode_RefG(CH, "CharRes", &list)) {
 		return 0;
 	}
-	/* the list may grow while the scripts load: the length of each turn, as the for loop of the script */
-	for (int i = 0; i < Ch_ResCount(list); i++) {
-		PyObject *item = PySequence_GetItem(list, i);
-		nativeVal_t cr = { 0 };
-		if (item) {
-			Native_Arg(item, &cr);
+	Native_SetInt(&zero, 0);
+	for (int i = 0; i < Mode_RefLen(&list); i++) {
+		nativeVal_t item, cr = { 0 };
+		byte ok = Mode_RefItem(&list, i, &item);
+		if (ok) {
+			Mode_RefPlain(&item, &cr);
+			ok = PORT_OWN(Chars, LocalLoadRes, NULL, "v", &cr) && Mode_RefSetItem(&item, 1, &zero);
 		}
-		byte ok = item && PORT_OWN(Chars, LocalLoadRes, NULL, "v", &cr) && Ch_ResLasting(item);
 		Native_Free(&cr);
-		Py_XDECREF(item);
+		Native_Free(&item);
 		if (!ok) {
-			Py_DECREF(list);
+			Native_Free(&list);
 			return 0;
 		}
 	}
-	Py_DECREF(list);
+	Native_Free(&list);
 	const char *ch = SaveVar_Get("Char");
 	return PORT_OWN(Chars, LoadRes, NULL, "s", ch ? ch : "") && Mode_PrintS("Character system initialized.");
 }

@@ -91,6 +91,7 @@ PORT_DECL(CharConversor, Init) /* 0 */
 PORT_DECL(CharConversor, ConvertChar) /* 4 */
 PORT_DECL(CharConversor, CPPos) /* 1 */
 PORT_DECL(CharConversor, CPAng) /* 1 */
+PORT_DECL(CharConversor, DrawBackground) /* ? */
 PORT_DECL(CharConversor, AddInterfaceContent) /* 1 */
 PORT_DECL(CharConversor, SpawnChar) /* 2 */
 PORT_DECL(CharConversor, MarkSpawnWaypoint) /* 1 */
@@ -112,6 +113,7 @@ PORT_DECL(CharConversor, NewPlayer) /* 2 */
 	PORT_DEF(CharConversor, ConvertChar, CharConversor_ConvertChar) \
 	PORT_DEF(CharConversor, CPPos, CharConversor_CPPos) \
 	PORT_DEF(CharConversor, CPAng, CharConversor_CPAng) \
+	PORT_DEFK(CharConversor, DrawBackground, CharConversor_DrawBackground) \
 	PORT_DEF(CharConversor, AddInterfaceContent, CharConversor_AddInterfaceContent) \
 	PORT_DEF(CharConversor, SpawnChar, CharConversor_SpawnChar) \
 	PORT_DEF(CharConversor, MarkSpawnWaypoint, CharConversor_MarkSpawnWaypoint) \
@@ -128,16 +130,62 @@ PORT_DECL(CharConversor, NewPlayer) /* 2 */
 	PORT_DEF(CharConversor, NewPlayer, CharConversor_NewPlayer)
 
 /* CharFuncs.c */
+PORT_DECL(Boss, ActionPress) /* ? */
+PORT_DECL(Boss, BossSpeech) /* ? */
+PORT_DECL(CrazyGambler, CalculateStatus) /* ? */
+PORT_DECL(CrazyGambler, CrazyGamblerSpeech) /* ? */
+PORT_DECL(CrazyGambler, StartSuperDeal) /* ? */
 PORT_DECL(Maintenance, MaintenanceTalk) /* 4 */
+PORT_DECL(Maintenance, MaintenanceWorkFX) /* ? */
+PORT_DECL(Mayor, MayorActionPress) /* ? */
+PORT_DECL(Mayor, MayorReCheckAction) /* ? */
 PORT_DECL(SputnikJunkyard, SputnikJunkyardTalk) /* 4 */
+PORT_DECL(Bishop, AddLifes) /* ? */
+PORT_DECL(Bishop, BishopSpeech) /* ? */
 PORT_DECL(Bishop, StartSellingLife) /* 1 */
 PORT_DECL(Bishop, SellLife) /* 3 */
+PORT_DECL(Bishop, FXBishopSellLife) /* ? */
+PORT_DECL(Functionary, EnterFastEffect) /* ? */
+PORT_DECL(Functionary, ExitFastEffect) /* ? */
+PORT_DECL(Functionary, ActionPress) /* ? */
+PORT_DECL(Functionary, ActionRelease) /* ? */
+PORT_DECL(Gear, StartSirenLoop) /* ? */
+PORT_DECL(Gear, AbortSiren) /* ? */
+PORT_DECL(Police, AbortSiren) /* ? */
+PORT_DECL(Police, GoToMission) /* ? */
+PORT_DECL(Police, PoliceSpeech) /* ? */
+PORT_DECL(Police, OnEndOfSpeech) /* ? */
+PORT_DECL(Messenger, MakeDataPack) /* ? */
+PORT_DECL(Messenger, DoorInitializator) /* ? */
 PORT_DECL(Messenger, ObjInitializator) /* 2 */
 #define PORTS_CharFuncs \
+	PORT_DEF(Boss, ActionPress, Boss_ActionPress) \
+	PORT_DEF(Boss, BossSpeech, Boss_BossSpeech) \
+	PORT_DEF(CrazyGambler, CalculateStatus, CrazyGambler_CalculateStatus) \
+	PORT_DEF(CrazyGambler, CrazyGamblerSpeech, CrazyGambler_CrazyGamblerSpeech) \
+	PORT_DEF(CrazyGambler, StartSuperDeal, CrazyGambler_StartSuperDeal) \
 	PORT_DEF(Maintenance, MaintenanceTalk, Char_CantTalk) \
+	PORT_DEF(Maintenance, MaintenanceWorkFX, Maintenance_MaintenanceWorkFX) \
+	PORT_DEF(Mayor, MayorActionPress, Mayor_MayorActionPress) \
+	PORT_DEF(Mayor, MayorReCheckAction, Mayor_MayorReCheckAction) \
 	PORT_DEF(SputnikJunkyard, SputnikJunkyardTalk, Char_CantTalk) \
+	PORT_DEF(Bishop, AddLifes, Bishop_AddLifesPy) \
+	PORT_DEF(Bishop, BishopSpeech, Bishop_BishopSpeech) \
 	PORT_DEF(Bishop, StartSellingLife, Bishop_StartSellingLife) \
 	PORT_DEF(Bishop, SellLife, Bishop_SellLife) \
+	PORT_DEF(Bishop, FXBishopSellLife, Bishop_FXBishopSellLife) \
+	PORT_DEF(Functionary, EnterFastEffect, Functionary_EnterFastEffect) \
+	PORT_DEF(Functionary, ExitFastEffect, Functionary_ExitFastEffect) \
+	PORT_DEF(Functionary, ActionPress, Functionary_ActionPress) \
+	PORT_DEF(Functionary, ActionRelease, Functionary_ActionRelease) \
+	PORT_DEF(Gear, StartSirenLoop, Gear_StartSirenLoop) \
+	PORT_DEF(Gear, AbortSiren, Char_AbortSiren) \
+	PORT_DEF(Police, AbortSiren, Char_AbortSiren) \
+	PORT_DEF(Police, GoToMission, Police_GoToMission) \
+	PORT_DEF(Police, PoliceSpeech, Police_PoliceSpeech) \
+	PORT_DEF(Police, OnEndOfSpeech, Police_OnEndOfSpeech) \
+	PORT_DEF(Messenger, MakeDataPack, Messenger_MakeDataPack) \
+	PORT_DEF(Messenger, DoorInitializator, Messenger_DoorInitializator) \
 	PORT_DEF(Messenger, ObjInitializator, Messenger_ObjInitializator)
 
 /* Chars.c */
@@ -145,7 +193,10 @@ PORT_DECL(Chars, CanDrive) /* 1 */
 PORT_DECL(Chars, CreateMainChar) /* 4 */
 PORT_DECL(Chars, SetOnFloor) /* 1 */
 PORT_DECL(Chars, IntSetChar) /* 2 */
+PORT_DECL(Chars, ActSound) /* ? */
+PORT_DECL(Chars, StrSound) /* ? */
 PORT_DECL(Chars, StrSoundStop) /* 3 */
+PORT_DECL(Chars, ActSoundLoop) /* ? */
 PORT_DECL(Chars, DiscardRes) /* 1 */
 PORT_DECL(Chars, TryToDiscardThis) /* 1 */
 PORT_DECL(Chars, LoadRes) /* 1 */
@@ -160,7 +211,10 @@ PORT_DECL(Chars, CreateStartupPlayer) /* 0 */
 	PORT_DEF(Chars, CreateMainChar, Chars_CreateMainChar) \
 	PORT_DEF(Chars, SetOnFloor, Chars_SetOnFloor) \
 	PORT_DEF(Chars, IntSetChar, Chars_IntSetChar) \
+	PORT_DEF(Chars, ActSound, Chars_ActSound) \
+	PORT_DEF(Chars, StrSound, Chars_StrSound) \
 	PORT_DEF(Chars, StrSoundStop, Chars_StrSoundStop) \
+	PORT_DEF(Chars, ActSoundLoop, Chars_ActSoundLoop) \
 	PORT_DEF(Chars, DiscardRes, Chars_DiscardRes) \
 	PORT_DEF(Chars, TryToDiscardThis, Chars_TryToDiscardThis) \
 	PORT_DEF(Chars, LoadRes, Chars_LoadRes) \
@@ -743,12 +797,56 @@ PORT_DECL(Items, SetInteractiveObjOnFloor) /* 1 */
 
 /* MakeChar.c */
 PORT_DECL(MakeChar, CreateRelaxAction) /* ? */
+PORT_DECL(MakeChar, AddRelaxActions) /* ? */
+PORT_DECL(MakeChar, AddDiscover) /* ? */
+PORT_DECL(MakeChar, AddMove) /* ? */
+PORT_DECL(MakeChar, AddWalkActions) /* ? */
+PORT_DECL(MakeChar, AddInitWalkActions) /* ? */
+PORT_DECL(MakeChar, AddEndWalkActions) /* ? */
+PORT_DECL(MakeChar, AddFallAction) /* ? */
+PORT_DECL(MakeChar, AddTalkAction) /* ? */
+PORT_DECL(MakeChar, AddTalkMorph) /* 1 */
+PORT_DECL(MakeChar, AddMorphAction) /* ? */
 PORT_DECL(MakeChar, AddDefMorphActions) /* ? */
+PORT_DECL(MakeChar, EventAnimCommand) /* ? */
+PORT_DECL(MakeChar, AddTalkAct) /* ? */
+PORT_DECL(MakeChar, AddFlashedAction) /* ? */
+PORT_DECL(MakeChar, AddCrazyAction) /* ? */
+PORT_DECL(MakeChar, AddDazeAction) /* ? */
+PORT_DECL(MakeChar, ListenAction) /* ? */
+PORT_DECL(MakeChar, AddBreakLoopAction) /* ? */
+PORT_DECL(MakeChar, SetSitActions) /* ? */
+PORT_DECL(MakeChar, InitChar) /* ? */
 PORT_DECL(MakeChar, SetNodeRotation) /* 4 */
+PORT_DECL(MakeChar, TurretBasicActions) /* ? */
+PORT_DECL(MakeChar, AddTurretTalkAction) /* ? */
+PORT_DECL(MakeChar, AddTurretTalkAct) /* ? */
 #define PORTS_MakeChar \
-	PORT_DEFP(MakeChar, CreateRelaxAction, MakeChar_CreateRelaxAction) \
-	PORT_DEFP(MakeChar, AddDefMorphActions, MakeChar_AddDefMorphActions) \
-	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation)
+	PORT_DEFK(MakeChar, CreateRelaxAction, MakeChar_CreateRelaxAction) \
+	PORT_DEFK(MakeChar, AddRelaxActions, MakeChar_AddRelaxActions) \
+	PORT_DEF(MakeChar, AddDiscover, MakeChar_AddDiscover) \
+	PORT_DEF(MakeChar, AddMove, MakeChar_AddMove) \
+	PORT_DEFK(MakeChar, AddWalkActions, MakeChar_AddWalkActions) \
+	PORT_DEFK(MakeChar, AddInitWalkActions, MakeChar_AddInitWalkActions) \
+	PORT_DEFK(MakeChar, AddEndWalkActions, MakeChar_AddEndWalkActions) \
+	PORT_DEFK(MakeChar, AddFallAction, MakeChar_AddFallAction) \
+	PORT_DEFK(MakeChar, AddTalkAction, MakeChar_AddTalkAction) \
+	PORT_DEF(MakeChar, AddTalkMorph, MakeChar_AddTalkMorph) \
+	PORT_DEF(MakeChar, AddMorphAction, MakeChar_AddMorphAction) \
+	PORT_DEF(MakeChar, AddDefMorphActions, MakeChar_AddDefMorphActions) \
+	PORT_DEFK(MakeChar, EventAnimCommand, MakeChar_EventAnimCommand) \
+	PORT_DEFK(MakeChar, AddTalkAct, MakeChar_AddTalkAct) \
+	PORT_DEFK(MakeChar, AddFlashedAction, MakeChar_AddFlashedAction) \
+	PORT_DEF(MakeChar, AddCrazyAction, MakeChar_AddCrazyAction) \
+	PORT_DEFK(MakeChar, AddDazeAction, MakeChar_AddDazeAction) \
+	PORT_DEFK(MakeChar, ListenAction, MakeChar_ListenAction) \
+	PORT_DEF(MakeChar, AddBreakLoopAction, MakeChar_AddBreakLoopAction) \
+	PORT_DEF(MakeChar, SetSitActions, MakeChar_SetSitActions) \
+	PORT_DEF(MakeChar, InitChar, MakeChar_InitChar) \
+	PORT_DEF(MakeChar, SetNodeRotation, MakeChar_SetNodeRotation) \
+	PORT_DEFK(MakeChar, TurretBasicActions, MakeChar_TurretBasicActions) \
+	PORT_DEFK(MakeChar, AddTurretTalkAction, MakeChar_AddTurretTalkAction) \
+	PORT_DEFK(MakeChar, AddTurretTalkAct, MakeChar_AddTurretTalkAct)
 
 /* MenuBase.c */
 PORT_DECL(Menu, LinkLR) /* ? */
@@ -5575,6 +5673,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2654
+#define PORT_COUNT 2703
 
 #endif
