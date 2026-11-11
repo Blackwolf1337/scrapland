@@ -46,6 +46,7 @@
 #include "scrap/scheduler.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
+#include "testchannel.h"
 
 static void TN_Line(nativeBuf_t *out, const char *text, nativeRepr_t mode) {
 	nativeVal_t v;
@@ -134,6 +135,7 @@ static void TN_Callbacks(nativeBuf_t *out, byte reset) {
 		Native_BufAdd(out, line, -1);
 		NObj_ListViews(out, 16);
 	}
+	TcX_Counts(out, reset);
 }
 
 /* native ports [reset] */
