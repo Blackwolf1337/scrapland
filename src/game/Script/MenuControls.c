@@ -9,7 +9,7 @@
  * the script calls through its globals are called so through their refs (PORT_OWN: directly while the global holds
  * the port's function, else by name; PlaceMenuOption, SetOptionValue, ShowPadConfig, FillControllerMenu), and
  * Menu.YesNoMenu through the module (PORT_CALL, a failure printed); the scorer and engine calls the C made by name go
- * through their seams (SScorer.Get, Set and Add, Scrap.Get and Set, SInput.ResetToDefault; OBJLIB 7); the .def runner
+ * through their seams (SScorer.Get, Set and Add, Scrap.Get and Set, SInput.ResetToDefault); the .def runner
  * takes Python values (OBJLIB 6).
  */
 #include <string.h>

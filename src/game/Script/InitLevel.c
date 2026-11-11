@@ -18,7 +18,7 @@
  * CreateSaveVar, GetLevelPath, GetNewLevelPath and SAI.IniAI go through their refs (stage 7), dir and __import__ stay
  * by name (OBJLIB 6, 7). Scrap.Set,
  * OpenPack, ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and
- * SetLabelText go through their seams (OBJLIB 7). The evals of the save texts read literals with the native reader
+ * SetLabelText go through their seams. The evals of the save texts read literals with the native reader
  * (Mode_EvalIn; a bare name is looked up in the module, OBJLIB 6), and the C hooks of the module code keep working on the module's dict (OBJLIB 6).
  */
 #include <string.h>

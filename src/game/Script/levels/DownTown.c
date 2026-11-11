@@ -14,7 +14,7 @@
  * of the modules are read where the script reads them and written through at once; the lists of the transports, the
  * functionaries and the taunts are changed in place on the objects of the modules (OBJLIB 5). The ships, the items,
  * the phone cabs and the cameras are handle values, the profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine
- * functions the cases record or swap go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, DeleteScheduledFuncs,
+ * functions the cases record or swap go through their seams: Scrap.AddScheduledFunc, DeleteScheduledFuncs,
  * DelSaveVars, CreateEntity, Set, SetAlarm, UsrEntity, Rand and GetAlarm, SScorer.Set, SetMsgText and SAct. Through
  * their refs (stage 7: the native entries; a function a case put there, as _bon records them, by name):
  * SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAI.GetOD, SetInertia and SetRotStaticObj,

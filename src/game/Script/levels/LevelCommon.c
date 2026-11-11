@@ -1058,12 +1058,12 @@ byte LvN_LaterObj(double delay, const nativeVal_t *func, const nativeVal_t *args
 
 byte LvN_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const char *cls,
 	nativeVal_t *out) {
-	/* OBJLIB 7: the seam of Scrap.CreateEntity (the hook object; the entity handle is 7c's) */
-	PyObject *hook;
+	/* the seam of Scrap.CreateEntity */
+	nativeHook_t hook;
 	Native_SetNone(out);
 	int seam = Native_Seam("Scrap", "CreateEntity", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, out, "vvvvs", name, x, y, z, cls);
+		return seam > 0 && Native_HookCall(&hook, out, "vvvvs", name, x, y, z, cls);
 	}
 	cEntity *e;
 	return Mode_Create(name, x, y, z, cls, &e) && Mode_EntHandle(e, out);
@@ -1097,10 +1097,9 @@ void LvN_Label(const char *key, nativeVal_t *out) {
 	Native_Free(&colon);
 }
 
-/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error
- * (OBJLIB 7: the seams that call the C core of the engine keep the hook object until the seams are C hooks, 7d) */
+/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */
 #define LV_SEAM(module, name) \
-	PyObject *hook; \
+	nativeHook_t hook; \
 	int seam = Native_Seam(module, name, &hook); \
 	if (seam < 0) { \
 		return 0; \
@@ -1109,7 +1108,7 @@ void LvN_Label(const char *key, nativeVal_t *out) {
 byte LvN_GetClass(const char *name, nativeVal_t *out) {
 	LV_SEAM("SAct", "GetClass");
 	if (seam) {
-		return Native_HookCall(hook, out, "s", name);
+		return Native_HookCall(&hook, out, "s", name);
 	}
 	Native_SetInt(out, Native_ActClass(name));
 	return 1;
@@ -1118,7 +1117,7 @@ byte LvN_GetClass(const char *name, nativeVal_t *out) {
 byte LvN_CreateClass(const char *name, nativeVal_t *out) {
 	LV_SEAM("SAct", "CreateClass");
 	if (seam) {
-		return Native_HookCall(hook, out, "s", name);
+		return Native_HookCall(&hook, out, "s", name);
 	}
 	CHECK(g_pActClassList);
 	g_pAuxActClass = cActClassList_Create(g_pActClassList, name);
@@ -1129,7 +1128,7 @@ byte LvN_CreateClass(const char *name, nativeVal_t *out) {
 byte LvN_GetAction(const char *name, nativeVal_t *out) {
 	LV_SEAM("SAct", "GetAction");
 	if (seam) {
-		return Native_HookCall(hook, out, "s", name);
+		return Native_HookCall(&hook, out, "s", name);
 	}
 	Native_SetNone(out);
 	Native_ActAction(name);
@@ -1142,7 +1141,7 @@ byte LvN_GetAction(const char *name, nativeVal_t *out) {
 byte LvN_CreateAction(const char *name, nativeVal_t *out) {
 	LV_SEAM("SAct", "CreateAction");
 	if (seam) {
-		return Native_HookCall(hook, out, "s", name);
+		return Native_HookCall(&hook, out, "s", name);
 	}
 	Native_SetNone(out);
 	if (!g_pAuxActClass) {
@@ -1157,7 +1156,7 @@ byte LvN_CreateAction(const char *name, nativeVal_t *out) {
 byte LvN_GetAct(const char *name, nativeVal_t *out) {
 	LV_SEAM("SAct", "GetAct");
 	if (seam) {
-		return Native_HookCall(hook, out, "s", name);
+		return Native_HookCall(&hook, out, "s", name);
 	}
 	Native_ActVar(name, out);
 	return 1;
@@ -1166,7 +1165,7 @@ byte LvN_GetAct(const char *name, nativeVal_t *out) {
 byte LvN_SetAct(const char *name, const nativeVal_t *v) {
 	LV_SEAM("SAct", "SetAct");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "sv", name, v);
+		return Native_HookCall(&hook, NULL, "sv", name, v);
 	}
 	Native_ActSet(name, v);
 	return 1;
@@ -1175,7 +1174,7 @@ byte LvN_SetAct(const char *name, const nativeVal_t *v) {
 byte LvN_SetCls(const char *name, const nativeVal_t *v) {
 	LV_SEAM("SAct", "SetCls");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "sv", name, v);
+		return Native_HookCall(&hook, NULL, "sv", name, v);
 	}
 	return Native_ClsSet(name, v);
 }
@@ -1183,7 +1182,7 @@ byte LvN_SetCls(const char *name, const nativeVal_t *v) {
 byte LvN_SetMusic(const char *name, double volume) {
 	LV_SEAM("SSound", "SetMusic");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "sd", name, volume);
+		return Native_HookCall(&hook, NULL, "sd", name, volume);
 	}
 	SoundSys_SetMusicVolume(g_pSound, (float)volume);
 	SoundSys_SetMusic(g_pSound, name);
@@ -1236,7 +1235,7 @@ byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, 
 byte LvN_SetOnFloor(const nativeVal_t *name) {
 	LV_SEAM("SLogic", "SetOnFloor");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", name);
+		return Native_HookCall(&hook, NULL, "v", name);
 	}
 	return Mode_SetOnFloor(name);
 }

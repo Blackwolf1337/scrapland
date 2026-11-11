@@ -8,7 +8,7 @@
  * read where the script reads them and written through at once, CreditsText.EndOfCredits gets the function object of
  * Map (OBJLIB 5). The cameras are handle values (OBJLIB 7). The engine variables, the dummy search, the camera, the
  * action set, the vector math and the random numbers are C; Scrap.Set, Scrap.CreateEntity, the SAct class and action
- * functions, SSound.SetMusic and Scrap.AddScheduledFunc go through their seams (OBJLIB 7). Scrap.SetDebrisSys,
+ * functions, SSound.SetMusic and Scrap.AddScheduledFunc go through their seams. Scrap.SetDebrisSys,
  * SetDebrisValue, DropDebris and MusicPlayer (fc-lvl-menu swaps the last three) and the loading of CreditsText
  * (Scrap.OpenPack, PreloadLibrary, ClosePack) go through their refs (stage 7).
  *

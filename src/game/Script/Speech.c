@@ -17,7 +17,7 @@
  * the functions RunNI calls (OnSpch, OnObjSpch) are the values of the module. The entities are handle values; the
  * voices, SScorer.SetSpeechText, SetSpeechCallback, SetHeadMonitor, CancelSpeech, SetMsgText and Set, Scrap.Set,
  * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, GetLangEntries, DeleteScheduledFuncs and the scheduler go through
- * their seams (OBJLIB 7: the cases record most of them); SVec.GetRotAng and NormAng go through their refs (stage 7),
+ * their seams (the cases record most of them); SVec.GetRotAng and NormAng go through their refs (stage 7),
  * string.split and find are the native twins (PORT_CALL; by name for an argument that holds an object, OBJLIB 9).
  */
 #include <string.h>

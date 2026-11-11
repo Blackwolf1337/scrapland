@@ -13,7 +13,7 @@
  * The three modules are native C (docs/objlib-plan.md, stage 2): their functions work on C values, read the variables
  * of their modules where the script reads them and write them back to the module at once (OBJLIB 5: the level files,
  * ShipMaker, Vehicles and the cases read and set them), and set the engine variables, the money and the save variables
- * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams, OBJLIB 7). The calls of
+ * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams). The calls of
  * VehiclesNPC, SaveGame and RaceMaker go through their refs (PORT_CALL: the seam, OBJLIB 5). The class
  * VehiclesNPC.cShipAI is called by name (OBJLIB 5: a class the .mod defines); SAI.SetStateVehicle and SAI.EnableAIChar
  * go through their refs (stage 7); the ships and profiles the calls give (handle values) and CharsNPC.CharRes stay

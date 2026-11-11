@@ -9,7 +9,7 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
  * script reads them and write them through at once (OBJLIB 5), and call the engine in C: the save variables, the
  * language texts, the entities and their variables, the dummy search, the time. The engine functions the cases record
- * or swap go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, Scrap.Rand, Scrap.UsrEntity, Scrap.Set,
+ * or swap go through their seams: Scrap.AddScheduledFunc, Scrap.Rand, Scrap.UsrEntity, Scrap.Set,
  * SScorer.SetMsgText, SScorer.Set, SScorer.Fade, SSound.SetMusic, SSound.SetMusicVolume. Entities the script holds are
  * handle values (OBJLIB 7). CharsNPC.CharRes and the other variables of other modules that hold objects are read as
  * objects (OBJLIB 5).
@@ -48,7 +48,7 @@
 
 /* ---- native helpers of this file ---- */
 
-/* SSound.SetMusicVolume(volume) through its ref (OBJLIB 7, the seam: fr6b.py records it) */
+/* SSound.SetMusicVolume(volume) through its ref (the seam: fr6b.py records it) */
 static byte Gd_MusicVolume(double volume) {
 	return PORT_CALL(SSound, SetMusicVolume, NULL, "d", volume);
 }

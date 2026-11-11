@@ -21,7 +21,7 @@
 /*
  * OutMap is native C (docs/objlib-plan.md, stage 2): its functions work on C values and read StartPos, iStartPos and
  * SpawRes where the script reads them and write them back at once (OBJLIB 5: Ffa and the cases read and set them).
- * The engine calls the cases record or swap go through their seams (OBJLIB 7: SAI.GetNextRacePoint, Scrap.TestSphere,
+ * The engine calls the cases record or swap go through their seams (SAI.GetNextRacePoint, Scrap.TestSphere,
  * TestLine, UsrEntity, StartDummySearch, NextDummySearch, CreateEntity, GetEntity, Set, SetGrid, GetNetFlags and
  * SInput.SetActionSet); the player and the entities are handle values (OBJLIB 7). The other ports (Ffa, Split,
  * Accelerator, Chars, OutPolice, Traffic, PhoneCab, Elevator, Parking, MissionsFuncs, Vehicles, Items) are called
@@ -553,12 +553,12 @@ static byte It_GetNam(const nativeVal_t *name, nativeVal_t *out) {
 	return Mode_Done(&t, ok);
 }
 
-/* SWeap.<name>(n) (InitAmmo, InitWeap) through its seam (OBJLIB 7: the hook of a case, as the seams below) */
+/* SWeap.<name>(n) (InitAmmo, InitWeap) through its seam (the hook of a case, as the seams below) */
 static byte It_InitTable(const char *name, void *table, byte weap) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("SWeap", name, &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "i", 1L);
+		return seam > 0 && Native_HookCall(&hook, NULL, "i", 1L);
 	}
 	if (weap) {
 		WeapTable_Init(table, 1);
@@ -570,14 +570,14 @@ static byte It_InitTable(const char *name, void *table, byte weap) {
 
 /* FakeWeap(): one weapon without ammunition for the traffic */
 static byte It_FakeWeap(void) {
-	PyObject *hook;
+	nativeHook_t hook;
 	if (!It_InitTable("InitAmmo", &g_pWorld->ammo, 0) || !It_InitTable("InitWeap", &g_pWorld->weapons, 1)) {
 		return 0;
 	}
 	/* SWeap.SetFWeap(0, "iAmmo", 0) */
 	int seam = Native_Seam("SWeap", "SetFWeap", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "isi", 0L, "iAmmo", 0L);
+		return seam > 0 && Native_HookCall(&hook, NULL, "isi", 0L, "iAmmo", 0L);
 	}
 	cWeapInfo_SetF(TABLE_AT(g_pWorld->weapons, 0), "iAmmo", 0.0f);
 	return 1;
@@ -585,11 +585,11 @@ static byte It_FakeWeap(void) {
 
 /* SSound.LoadSound(file) through its seam */
 static byte It_LoadSound(const char *file) {
-	PyObject *hook;
+	nativeHook_t hook;
 	nativeVal_t v;
 	int seam = Native_Seam("SSound", "LoadSound", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "s", file);
+		return seam > 0 && Native_HookCall(&hook, NULL, "s", file);
 	}
 	Native_SetStr(&v, file);
 	return Mode_LoadSound(&v);
@@ -626,10 +626,10 @@ static byte It_LoadFakeTraffic(void) {
 
 /* Scrap.CreateEntity(name, 0, 0, 0, "Car") through its seam (fr6.py swaps it): the handle value or None */
 static byte It_Create(const nativeVal_t *name, nativeVal_t *out) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "CreateEntity", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, out, "viiis", name, 0L, 0L, 0L, "Car");
+		return seam > 0 && Native_HookCall(&hook, out, "viiis", name, 0L, 0L, 0L, "Car");
 	}
 	nativeVal_t zero;
 	cEntity *e;

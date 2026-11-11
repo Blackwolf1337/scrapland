@@ -15,7 +15,7 @@
  * characters handle values (OBJLIB 5, 7): their attributes are read and set the Python way, and the lists of
  * functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read again on
  * each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
- * SLogic.SetOnFloor, SScorer.SetMsgText, Scrap.GetLangEntries and the scheduler go through their seams (OBJLIB 7); the
+ * SLogic.SetOnFloor, SScorer.SetMsgText, Scrap.GetLangEntries and the scheduler go through their seams; the
  * save variables, the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice,
  * DTritusDesktop, CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly
  * while the attribute holds the port's function, else by name) and string.find through its native twin;

@@ -6,7 +6,7 @@
  * against the texts the interpreter gave, stored before it was removed).
  *
  * Transitional parts are marked OBJLIB <stage> where they are used (the stage of the plan that removes them): the
- * mirror of module state in the module dict (OBJLIB 5), the seams of engine functions a test replaces (OBJLIB 7),
+ * mirror of module state in the module dict (OBJLIB 5), the generic calls of the seams of engine functions a test replaces (OBJLIB 7),
  * the Python errors behind Native_Raise (OBJLIB 7), the conversions to and from Python objects (OBJLIB 9).
  */
 #ifndef SCRAP_SCRIPTNATIVE_H
@@ -395,12 +395,30 @@ byte Native_EntStore(cEntity *e, const char *ref, const char *name, const native
 byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v);
 
 /*
- * OBJLIB 7, the seam of an engine function that a test case replaces (fc-chat records SNet.SendChatString and
- * swaps Scrap.GetNetFlags): 0 when module.name is still the engine's own C function (the port calls the C directly),
- * 1 when something else is there (*hook a new reference: the port calls it as the script did), -1 with the error of
- * the lookup set
+ * The seams of the engine functions a test case replaces (fc-chat records SNet.SendChatString and swaps
+ * Scrap.GetNetFlags), as C hooks (ScriptPort.c, stage 7d). Each module.name a port asks for has an entry: the engine's
+ * own function, a hook (what the case put there, and for a function of the test channel, a recorder or a lambda, its
+ * C function and record, so the call does not go through an object of Python) or deleted. The entry is made at the
+ * first question from what the module holds then; the test channel's stores of module attributes keep it in step
+ * (Native_HookStore). Native_Seam: 0 for the engine's own function (the port calls the C directly), 1 with *hook (a
+ * copy that Native_HookCall takes over or Native_HookFree drops), -1 with the AttributeError of a deleted one (or the
+ * error of the first lookup).
  */
-int Native_Seam(const char *module, const char *name, PyObject **hook);
+typedef struct {
+	nativeVal_t f;			/* what is there */
+	byte (*call)(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out);	/* a channel function, else NULL */
+	void *ctx;
+} nativeHook_t;
+int Native_Seam(const char *module, const char *name, nativeHook_t *hook);
+/* the call of a hook (taken over) with the letters of Native_Call; the result into *out (NULL: dropped) in the form
+ * the script got it (Native_Pass). A channel function runs in C on the arguments as its adapter got them (Port_Pack,
+ * the depth check of the calls), any other callable through Python as before (OBJLIB 7). 0 with the error */
+byte Native_HookCall(nativeHook_t *hook, nativeVal_t *out, const char *fmt, ...);
+void Native_HookFree(nativeHook_t *hook);
+/* o.name = v (v NULL: del o.name) was done: when o is a module and module.name has a seam entry, it follows */
+void Native_HookStore(const nativeVal_t *o, const char *name, const nativeVal_t *v);
+/* the test channel's function that tells its own functions: 1 with the C function and record of f */
+void Native_HookFinder(byte (*find)(const nativeVal_t *f, nativeHook_t *hook));
 /*
  * OBJLIB 7: calls of Python callables with native arguments, for the calls of names known at run time and the seams
  * (a value that may hold a port function goes through Port_Value instead). fmt has one letter per argument: v a const
@@ -410,10 +428,8 @@ int Native_Seam(const char *module, const char *name, PyObject **hook);
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
 /* the same with the result as it is (a new reference, NULL with the error): an entity handle or another object */
 PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...);
-/* the same with a new reference (a hook of Native_Seam) that the call takes over */
-byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...);
-/* Native_HookCall on a va_list (the slow path of Port_Invoke) */
-byte Native_CallVa(PyObject *hook, nativeVal_t *out, const char *fmt, va_list va);
+/* Native_Call on a va_list with a reference that the call takes over (the slow path of Port_Invoke) */
+byte Native_CallVa(PyObject *callable, nativeVal_t *out, const char *fmt, va_list va);
 /* the most arguments of one mini format (Native_ReadArgs) */
 #define NATIVE_ARGS 16
 /* one argument of the mini format as read from the arguments of the call: type the letter, then its value */
@@ -443,19 +459,19 @@ byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
  * function>"); 0 for an unknown name (the console line of Scrap.Get and Native_NullResult) */
 byte Native_GVarGet(const char *name, nativeVal_t *out);
 /* Scrap.GetLangEntries(name, n) (n < 0: not given, 3) as a list of texts; 0 with the TypeError of its argument for a
- * value that is no text. OBJLIB 7: through the seam (fc-ol2p-charsnpc swaps it), the hook called with the arguments
+ * value that is no text. through the seam (fc-ol2p-charsnpc swaps it), the hook called with the arguments
  * the caller gave */
 byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out);
 /* Scrap.Set(name, v): a text (without 0 bytes) to a text variable, a number to a number variable; 0 with the
  * TypeError of its arguments for other values ("illegal argument type for built-in operation") or Native_NullResult
- * when the variable is not there or of the other type. OBJLIB 7: through the seam (fc-om-dt records Scrap.Set) */
+ * when the variable is not there or of the other type. through the seam (fc-om-dt records Scrap.Set) */
 byte Native_GVarSet(const char *name, const nativeVal_t *v);
 /* the core of Scrap.Set without the seam (its own entry): the result of GVar_SetStr or GVar_SetNum (1 set, 0 read
  * only, -1 no such variable or one of the other type, with the console line), -2 with the TypeError of a value that is
  * neither a text without 0 bytes nor a number */
 int Native_GVarStore(const char *name, const nativeVal_t *v);
 /* SScorer.Set(id, item, var, v) with a text or a number (nothing when the item is not there); 0 with the TypeError
- * of its arguments for other values. OBJLIB 7: through the seam (fc-credits2 records SScorer.Set) */
+ * of its arguments for other values. through the seam (fc-credits2 records SScorer.Set) */
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v);
 /* the core of SScorer.Set without the seam (its own entry): 1 with *r the result of the item's Var, 0 when the player
  * has no scorer or the item is not there, -1 with the TypeError of a value that is neither a text without 0 bytes nor

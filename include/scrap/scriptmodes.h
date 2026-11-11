@@ -1,7 +1,7 @@
 /*
  * Native C helpers of the game mode ports (src/game/Script/ScriptModes.c): Net, Ffa and the online modes (NetModes.c),
  * the split screen (Split.c) and the single player super deals (SuperDeals.c). They call the engine in C on native
- * values. The engine functions the case files of these modules record or swap go through a seam (OBJLIB 7, see
+ * values. The engine functions the case files of these modules record or swap go through a seam (see
  * Native_Seam): Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.Set, Scrap.Rand, Scrap.ConsoleError,
  * Scrap.Preload3DObject, SNet.SendUsrString, SNet.ModifyUsrData, SNet.IsClient, SNet.IsServer, SScorer.SetMsgText,
  * SScorer.SetLabelText, SScorer.SetMPFunc, SScorer.Set, SScorer.Fade, SInput.Bind, SSound.Play and SAI.GetStateVehicle
@@ -101,7 +101,7 @@ byte Mode_NameSet(const char *name, const char *var, const nativeVal_t *v);
 byte Mode_AtGet(const char *module, const char *dict, const nativeVal_t *key, const char *var, nativeVal_t *out);
 byte Mode_AtSet(const char *module, const char *dict, const nativeVal_t *key, const char *var, const nativeVal_t *v);
 
-/* ---- engine calls through their seams (OBJLIB 7) ---- */
+/* ---- engine calls through their seams ---- */
 
 /* SNet.IsClient(), SNet.IsServer(): 1 or 0, -1 with the error */
 int Mode_IsClient(void);
@@ -210,7 +210,7 @@ byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file);
 /* h.method as a bound method (OBJLIB 7: what the scheduler keeps, e.g. l.Del, the Python way until entities are C): a
  * new reference, NULL with the error */
 PyObject *Mode_VBound(const nativeVal_t *h, const char *method);
-/* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (OBJLIB 7: through the seam with those arguments) */
+/* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (through the seam with those arguments) */
 byte Mode_PreloadOnes(const nativeVal_t *name);
 /* Scrap.EntityListGet(list, var): a text (None for none), a float or an int; the engine's console line and NULL result
  * for a missing list, its AttributeError for a missing variable */

@@ -12,7 +12,7 @@
  * The boss, its shield and the asteroids are handle values (OBJLIB 7). The alarm, the save variables, the regeneration,
  * the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set, Scrap.SetAlarm,
  * Scrap.SetLockAlarm, Scrap.Rand, Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs, Scrap.AddScheduledFunc,
- * Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams (OBJLIB 7: cases record them).
+ * Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams (cases record them).
  * The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute) and SAI.SetStateVehicle go through
  * their refs (stage 7: the native entries, a function a case put there by name).
  *

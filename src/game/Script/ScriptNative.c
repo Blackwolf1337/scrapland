@@ -22,6 +22,7 @@
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
 /* ---- values ---- */
@@ -2428,14 +2429,6 @@ byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {
 	return ok;
 }
 
-byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	byte ok = Native_CallVa(hook, out, fmt, va);
-	va_end(va);
-	return ok;
-}
-
 byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
@@ -2535,20 +2528,6 @@ byte Native_ClsSet(const char *name, const nativeVal_t *v) {
 		name, v) || Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 }
 
-int Native_Seam(const char *module, const char *name, PyObject **hook) {
-	PyObject *f = Script_Attr(module, name);
-	if (!f) {
-		return -1;
-	}
-	/* the engine's own: a C function of the module table (no self; the recorder of the test channel has one) */
-	if (PyCFunction_Check(f) && !PyCFunction_GET_SELF(f) && !strcmp(((PyCFunctionObject *)f)->m_ml->ml_name, name)) {
-		Py_DECREF(f);
-		return 0;
-	}
-	*hook = f;
-	return 1;
-}
-
 /* GVarValue of Scrap.Get (def 0) and Scrap.Def (def 1) */
 static byte Native_GVarValue(const char *name, byte def, nativeVal_t *out) {
 	cGVar *v = GVar_Find(name);
@@ -2592,11 +2571,11 @@ byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out) {
 	/* "s|i", n 3 when not given */
 	char ids[LANG_ENTRIES][LANG_ID];
 	const char *s;
-	PyObject *hook;
+	nativeHook_t hook;
 	Native_SetNone(out);
 	int seam = Native_Seam("Scrap", "GetLangEntries", &hook);
 	if (seam) {
-		return seam > 0 && (n < 0 ? Native_HookCall(hook, out, "v", name) : Native_HookCall(hook, out, "vi", name, (long)n));
+		return seam > 0 && (n < 0 ? Native_HookCall(&hook, out, "v", name) : Native_HookCall(&hook, out, "vi", name, (long)n));
 	}
 	if (!Native_ArgStr(name, 1, &s)) {
 		return 0;
@@ -2607,15 +2586,6 @@ byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out) {
 		Native_SetText(Native_Append(out), ids[i], (int)strlen(ids[i]));
 	}
 	return 1;
-}
-
-/* OBJLIB 7: module.name(args) with what a test put there instead of the engine function (hook from Native_Seam,
- * released; args a new tuple or NULL): 0 with the error set */
-static byte Native_CallHook(PyObject *hook, PyObject *args) {
-	PyObject *r = args ? Script_Invoke(hook, args) : NULL;
-	Py_DECREF(hook);
-	Py_XDECREF(r);
-	return r != NULL;
 }
 
 int Native_GVarStore(const char *name, const nativeVal_t *v) {
@@ -2629,22 +2599,20 @@ int Native_GVarStore(const char *name, const nativeVal_t *v) {
 
 byte Native_GVarSet(const char *name, const nativeVal_t *v) {
 	/* a variable of another type or no variable gives NULL without an exception */
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "Set", &hook);
 	if (seam) {
-		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
-		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(sN)", name, o) : NULL);
+		return seam > 0 && Native_HookCall(&hook, NULL, "sv", name, v);
 	}
 	int r = Native_GVarStore(name, v);
 	return r == -2 ? 0 : r < 0 ? Native_NullResult() : 1;
 }
 
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("SScorer", "Set", &hook);
 	if (seam) {
-		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
-		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(issN)", id, item, var, o) : NULL);
+		return seam > 0 && Native_HookCall(&hook, NULL, "issv", (long)id, item, var, v);
 	}
 	int r;
 	return Native_ScorerStore(id, item, var, v, &r) >= 0;
@@ -2672,39 +2640,40 @@ int Native_ScorerStore(int id, const char *item, const char *var, const nativeVa
 }
 
 int Native_NetOff(void) {
-	PyObject *hook;
+	nativeHook_t hook;
+	nativeVal_t flags, off;
 	int s = Native_Seam("Scrap", "GetNetFlags", &hook);
 	if (s == 0) {
 		return (g_pApp->flags & 7) == 0;
 	}
-	if (s < 0) {
+	if (s < 0 || !Native_HookCall(&hook, &flags, "")) {
 		return -1;
 	}
 	/* GetNetFlags() == (0, 0, 0) with what the test put there */
-	PyObject *flags = Script_Invoke(hook, PyTuple_New(0));
-	Py_DECREF(hook);
-	PyObject *off = flags ? Py_BuildValue("(iii)", 0, 0, 0) : NULL;
-	int r = off ? Script_Eq(flags, off) : -1;
-	Py_XDECREF(off);
-	Py_XDECREF(flags);
+	Native_SetEmpty(&off, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		Native_SetInt(Native_Append(&off), 0);
+	}
+	int r = Native_Equal(&flags, &off);
+	Native_Free(&off);
+	Native_Free(&flags);
 	return r;
 }
 
 int Native_NetFlag(int i) {
-	PyObject *hook;
+	nativeHook_t hook;
+	nativeVal_t flags, k, f;
 	int s = Native_Seam("Scrap", "GetNetFlags", &hook);
 	if (s == 0) {
 		return (int)(g_pApp->flags >> i & 1);
 	}
-	if (s < 0) {
+	if (s < 0 || !Native_HookCall(&hook, &flags, "")) {
 		return -1;
 	}
-	PyObject *flags = Script_Invoke(hook, PyTuple_New(0));
-	Py_DECREF(hook);
-	PyObject *f = flags ? PySequence_GetItem(flags, i) : NULL;
-	Py_XDECREF(flags);
-	int r = f ? PyObject_IsTrue(f) : -1;
-	Py_XDECREF(f);
+	Native_SetInt(&k, i);
+	int r = NObj_GetItem(&flags, &k, &f) ? Mode_Truth(&f) : -1;
+	Native_Free(&f);
+	Native_Free(&flags);
 	return r;
 }
 

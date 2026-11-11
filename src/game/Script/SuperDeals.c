@@ -14,7 +14,7 @@
  * the C keeps the values in the struct of each mode and reads each where the script reads the global, a write goes
  * through at once, lists and dicts are changed in place on the object of the dict (OBJLIB 5). Entities the script
  * holds are handle values (NV_OBJ, OBJLIB 7): a handle whose entity is gone gives the errors of the script. The engine
- * functions the cases record or swap go through their seams (OBJLIB 7, scrap/scriptmodes.h: Scrap.AddScheduledFunc,
+ * functions the cases record or swap go through their seams (scrap/scriptmodes.h: Scrap.AddScheduledFunc,
  * Scrap.UsrEntity, Scrap.Set, SSound.Play, SScorer.SetMsgText, SScorer.Set, Scrap.Preload3DObject,
  * SAI.GetStateVehicle); SAI.SetStateVehicle, SLogic.ChangeBatonState and SetDominationZones go through their refs
  * (stage 7).

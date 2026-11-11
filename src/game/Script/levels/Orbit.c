@@ -9,7 +9,7 @@
  * The functions are native C (docs/objlib-plan.md, stage 2): they work on C values, read the variables of the level
  * modules where the script reads them (OBJLIB 5) and call the engine in C. The engine functions the cases record go
  * through their seams or their refs (Scrap.CreateEntity, Set, SetAlarm, SetLockAlarm, UsrEntity, AddScheduledFunc,
- * SScorer.SetMsgText, SAct.GetAct and SetAct, SSound.SetMusic through seams, OBJLIB 7; Scrap.OpenPack, PreloadLibrary,
+ * SScorer.SetMsgText, SAct.GetAct and SetAct, SSound.SetMusic through seams; Scrap.OpenPack, PreloadLibrary,
  * ClosePack, SetCallFunc, AddParams, Execute, Achievement and SetDebrisSys through their refs, stage 7). Entities are
  * handle values (OBJLIB 7).
  *

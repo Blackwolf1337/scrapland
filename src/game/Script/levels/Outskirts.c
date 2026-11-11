@@ -14,7 +14,7 @@
  * the police ships, the bankers, the mercenaries, the treasures and the police friends are changed in place on the
  * objects of the modules (OBJLIB 5). The ships, the items, the phone cabs and the cameras are handle values, the
  * profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine functions the cases record or swap go through their
- * seams (OBJLIB 7): Scrap.AddScheduledFunc, DeleteScheduledFuncs, DelSaveVars, CreateEntity, Set, SetAlarm, SetLockAlarm,
+ * seams: Scrap.AddScheduledFunc, DeleteScheduledFuncs, DelSaveVars, CreateEntity, Set, SetAlarm, SetLockAlarm,
  * UsrEntity, Rand, GetAlarm, TestLine and Preload3DObject, SAI.GetStateVehicle, SLogic.SetOnFloor, SScorer.Set and
  * SetMsgText and SAct. Through their refs (stage 7: the native entries; a function a case put there, as _bon records
  * them, by name): SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAct.GetClass of an

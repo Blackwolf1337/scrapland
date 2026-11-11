@@ -19,7 +19,7 @@
  * activatedDesktops are changed in place on the objects of the module, the coins and desks of the chains and missions
  * are handle values, a list of handles (shent, DealCoins) is read as a native list of handle values (OBJLIB 5, 7).
  * The character objects of CharsNPC.CharRes and their CallbackFunc lists stay Python objects (OBJLIB 5). Through their
- * seams (OBJLIB 7):
+ * seams:
  * Scrap.AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, Preload3DObject, Set, ConsoleError, UsrEntity and
  * DelSaveVars, SSound.Play, SScorer.Set and Fade, the SAct functions (fc-r6-ib records SetCls) and SInput.GetActionSet
  * in TestEndOfElevator (fc-r6-ib swaps it). MapTreasure_ModCoins, the module code, stays on the Python objects

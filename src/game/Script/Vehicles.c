@@ -16,7 +16,7 @@
  * and the ShipCallback functions of ShipMaker as values (OBJLIB 5: variables). SAI, SWeap, SLogic and Scrap.SetCam go
  * through their refs (stage 7), SFX, SNet.GetObjName and SSound.PlaySound (its six arguments) too; Scrap.GetEntity,
  * CreateEntity, UsrEntity,
- * GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The texts of
+ * GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go through their seams. The texts of
  * the net resources of the lost engines ("DmM:<model>") stay as they were.
  */
 #include <string.h>
@@ -498,12 +498,12 @@ static byte Veh_CoinForAttacker(const nativeVal_t *v, const nativeVal_t *winner)
 	return Mode_Done(&t, Mode_LaterIn(at->f, VEH, "GetCoin", params, 2, NULL));
 }
 
-/* Scrap.EntityListGet("FightingTraffic", "First") through its seam (OBJLIB 7: the C port called it by name) */
+/* Scrap.EntityListGet("FightingTraffic", "First") through its seam (the C port called it by name) */
 static byte Veh_FirstHunter(nativeVal_t *out) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "EntityListGet", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, out, "ss", "FightingTraffic", "First");
+		return seam > 0 && Native_HookCall(&hook, out, "ss", "FightingTraffic", "First");
 	}
 	return Mode_ListGet("FightingTraffic", "First", out);
 }

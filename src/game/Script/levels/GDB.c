@@ -10,7 +10,7 @@
  * (save variables, Scrap.Get, the alarm, the entity lists, the dummy search, the scorer items, the vector math). The
  * variables of the modules are read where the script reads them and written through at once; the lists of bishops are
  * changed in place on the objects of the modules (OBJLIB 5). The bishops, the restore point and the matrix are handle
- * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
+ * values (OBJLIB 7). The engine functions the cases record or swap go through their seams:
  * Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.SetAlarm, Scrap.UsrEntity, Scrap.Rand (fc-r7d-gd2), Scrap.CreateEntity
  * (fr6.py), Scrap.Set, SScorer.Set, SScorer.Fade, Scrap.Preload3DObject, Scrap.GetAlarm and SLogic.SetOnFloor;
  * SAI.SetStateVehicle goes through its ref (stage 7); the profiles of the bishops are VehiclesNPC.cShipAI instances

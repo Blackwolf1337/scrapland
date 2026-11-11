@@ -1365,6 +1365,7 @@ static void TC_WriteReply(long seq, const tcBuf *b) {
 
 void TestChannel_Enable(void) {
 	tc_on = 1;
+	TcX_Init();
 }
 
 /* a new command file runs (paced) and is answered */

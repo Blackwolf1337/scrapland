@@ -11,7 +11,7 @@
  * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity
  * (OBJLIB 5). The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through
  * their refs (PORT_CALL, PORT_ASK: directly while the attribute holds the port's function, else by name); the engine
- * functions the port called by name go through their seams (OBJLIB 7: SetMsgText, CreateEntity, Scrap.Set,
+ * functions the port called by name go through their seams (SetMsgText, CreateEntity, Scrap.Set,
  * SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
  * The adapters parse the arguments as before.
  */

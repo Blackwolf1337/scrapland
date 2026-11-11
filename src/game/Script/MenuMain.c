@@ -14,7 +14,7 @@
  * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5; BackMenuFunc through the
  * entry of the function it holds, MODE_PRINTEDCALL), the Init of the scorer of the mode by its module chosen at run
  * time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit,
- * GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams (OBJLIB 7); the death camera
+ * GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams; the death camera
  * schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list of saved
  * games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun; OBJLIB 6:
  * a dict inside the runner). Every function of the table has a native entry (stage 6, batch 6h: Mode_IdControl,
