@@ -40,7 +40,7 @@ struct nativeObj_s {
 	byte func;			/* NO_FUNCTION: NF_ */
 	byte born;			/* made as native data (0: made as the view of a Python object) */
 	byte binds;			/* NO_FUNCTION: a class binds it to its instances (a function of Python code) */
-	byte busy;			/* NO_LIST: being sorted; NO_DICT: on its way to Python (a dict that holds itself) */
+	byte busy;			/* NO_LIST: being sorted */
 	int refs;
 	PyObject *py;			/* OBJLIB 9: its Python object (a reference held), NULL for native data that never crossed */
 	nativeObj_t *next;		/* in its chain of the identity table */
@@ -192,6 +192,10 @@ int NObj_Kind(const nativeVal_t *v) {
 }
 
 byte NObj_Is(const nativeVal_t *a, const nativeVal_t *b) {
+	/* one Python object as a view and as an NV_OBJ */
+	if ((a->type == NV_REF && b->type == NV_OBJ) || (a->type == NV_OBJ && b->type == NV_REF)) {
+		return a->type == NV_REF ? a->ref->py == b->obj : b->ref->py == a->obj;
+	}
 	if (a->type != b->type) {
 		return 0;
 	}
@@ -684,7 +688,6 @@ static PyObject *Obj_FuncToPy(nativeObj_t *o) {
 			Py_INCREF(f);
 			return f;
 		}
-		PyErr_Clear();
 		return PyCFunction_New(Obj_PortDef(o->ref), NULL);
 	}
 	case NF_CALLBACK: {
@@ -765,34 +768,14 @@ static PyObject *Obj_ToPy(nativeObj_t *o) {
 		}
 		break;
 	case NO_DICT:
-		if (o->busy) {
-			/* a dict that holds itself: its Python object now, filled when the outer conversion is done */
-			py = PyDict_New();
-			if (py) {
-				Obj_Crossed(o, py);
-				Py_INCREF(py);
-			}
-			return py;
+		/* the same for a dict, with the table of the native one */
+		py = PyDict_New();
+		if (!py) {
+			return NULL;
 		}
-		o->busy = 1;
-		py = Native_ToPyDict(&o->data, Obj_Conv, NULL);
-		o->busy = 0;
-		if (o->py) {
-			/* made on the way: the items go into that one */
-			PyObject *k, *x;
-			int pos = 0;
-			byte ok = py != NULL;
-			while (ok && PyDict_Next(py, &pos, &k, &x)) {
-				ok = PyDict_SetItem(o->py, k, x) == 0;
-			}
-			Py_XDECREF(py);
-			if (!ok) {
-				return NULL;
-			}
-			py = o->py;
-		} else if (py) {
-			Obj_Crossed(o, py);
-		} else {
+		Obj_Crossed(o, py);
+		if (!Native_FillPyDict(py, &o->data, Obj_Conv, NULL)) {
+			Obj_Uncross(o);
 			return NULL;
 		}
 		break;
@@ -1256,16 +1239,16 @@ static const char *Obj_OrderName(const nativeVal_t *v) {
 int NObj_Compare(const nativeVal_t *a, const nativeVal_t *b) {
 	nativeVal_t ta, tb;
 	int c;
-	if (a->type == NV_REF && b->type == NV_REF) {
-		const nativeObj_t *x = a->ref, *y = b->ref;
-		if (x == y) {
-			return 0;
-		}
-		if (Obj_View(x) && Obj_View(y)) {
-			c = PyObject_Compare(x->py, y->py);
-			PyErr_Clear();
-			return Obj_Sign(c);
-		}
+	if (a->type == NV_REF && b->type == NV_REF && a->ref == b->ref) {
+		return 0;
+	}
+	/* two Python objects, each a view or an NV_OBJ (the same object can come as either), as Python compares them */
+	PyObject *pa = a->type == NV_REF ? Obj_View(a->ref) : a->type == NV_OBJ ? a->obj : NULL;
+	PyObject *pb = b->type == NV_REF ? Obj_View(b->ref) : b->type == NV_OBJ ? b->obj : NULL;
+	if (pa && pb) {
+		c = PyObject_Compare(pa, pb);
+		PyErr_Clear();
+		return Obj_Sign(c);
 	}
 	/* a list with a list and a dict with a dict by their items, by value or as objects */
 	for (int pass = 0; pass < 2; pass++) {

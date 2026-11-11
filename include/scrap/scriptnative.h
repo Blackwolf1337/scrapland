@@ -713,6 +713,9 @@ byte Native_LiteralText(const nativeVal_t *text, nativeVal_t *out);
  * with the error (an unhashable key)
  */
 PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx);
+/* the same into the empty Python dict o (a dict that is known before its items are made: a native dict object that
+ * holds itself): 1, or 0 with the error (o holds what was made until then) */
+byte Native_FillPyDict(PyObject *o, const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx);
 
 #include "scrap/scriptports.h"
 

@@ -3155,25 +3155,25 @@ byte Native_LiteralText(const nativeVal_t *text, nativeVal_t *out) {
 	return Native_Literal(Native_Text(text) + strspn(Native_Text(text), " \t"), out);
 }
 
-/* the dict made again in slot order (Native_ToPy) from the Python dict laid: a key there that Python's lookdict does not
- * find in its slot */
-static PyObject *Native_Relay(PyObject *laid) {
-	const nativePyDict_t *pd = (const nativePyDict_t *)laid;
-	PyObject *o = PyDict_New();
-	for (int i = 0; o && i < pd->ma_size; i++) {
-		if (pd->ma_table[i].me_value && PyDict_SetItem(o, pd->ma_table[i].me_key, pd->ma_table[i].me_value) != 0) {
-			Py_DECREF(o);
-			o = NULL;
-		}
+/* the keys of the Python dict o, whose table was laid out by Native_FillPyDict, set again in their slot order (as
+ * Native_ToPy sets them): for a key that Python's lookdict does not find in its slot. 0 with the error */
+static byte Native_Relay(PyObject *o) {
+	PyObject *items = PyDict_Items(o);
+	byte ok = items != NULL;
+	if (ok) {
+		PyDict_Clear(o);
 	}
-	Py_DECREF(laid);
-	return o;
+	for (int i = 0; ok && i < PyList_GET_SIZE(items); i++) {
+		PyObject *pair = PyList_GET_ITEM(items, i);
+		ok = PyDict_SetItem(o, PyTuple_GET_ITEM(pair, 0), PyTuple_GET_ITEM(pair, 1)) == 0;
+	}
+	Py_XDECREF(items);
+	return ok;
 }
 
-PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx) {
-	PyObject *o = PyDict_New();
-	if (!o || !d->max) {
-		return o;
+byte Native_FillPyDict(PyObject *o, const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx) {
+	if (!d->max) {
+		return 1;
 	}
 	/* the table of the vendored dictobject.c (OBJLIB 9) when no slot was deleted (the dummy key is private there) */
 	nativePyDict_t *pd = (nativePyDict_t *)o;
@@ -3181,8 +3181,8 @@ PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVa
 	if (d->i == d->n) {
 		t = PyPool_Malloc(sizeof(*t) * (size_t)d->max);
 		if (!t) {
-			Py_DECREF(o);
-			return PyErr_NoMemory();
+			PyErr_NoMemory();
+			return 0;
 		}
 		memset(t, 0, sizeof(*t) * (size_t)d->max);
 		pd->ma_table = t;
@@ -3199,8 +3199,7 @@ PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVa
 		if (h == -1 || (!t && PyDict_SetItem(o, pk, px) != 0)) {
 			Py_XDECREF(pk);
 			Py_XDECREF(px);
-			Py_DECREF(o);
-			return NULL;
+			return 0;
 		}
 		if (!t) {
 			Py_DECREF(pk);
@@ -3218,6 +3217,15 @@ PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVa
 		if (t[i].me_value && PyDict_GetItem(o, t[i].me_key) != t[i].me_value) {
 			return Native_Relay(o);
 		}
+	}
+	return 1;
+}
+
+PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx) {
+	PyObject *o = PyDict_New();
+	if (o && !Native_FillPyDict(o, d, conv, ctx)) {
+		Py_DECREF(o);
+		return NULL;
 	}
 	return o;
 }
