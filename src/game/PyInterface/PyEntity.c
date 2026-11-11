@@ -195,14 +195,9 @@ static void PyEntity_Dealloc(PyObject *self) {
 /* tp_print: the text goes to fprintf as the format, like in the original */
 static int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
 	static char buf[0x100];
-	const char *name = ((cPyEntity *)self)->ref->name;
 
 	(void)flags;
-	if (World_FindEntity(name)) {
-		Str_Printf(buf, sizeof(buf), "Entity: %s", name);
-	} else {
-		Str_Printf(buf, sizeof(buf), " : The Entity called '%s' is invalid.", name);
-	}
+	Native_EntPrint(((cPyEntity *)self)->ref->name, buf, sizeof(buf));
 	crt_fprintf(fp, buf);
 	return 0;
 }

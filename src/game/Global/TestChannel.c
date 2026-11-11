@@ -38,7 +38,10 @@
  *                            to the list __main__.<list> and returns the literal (None), or raises
  *   native [str|check] <literal>   native values without Python objects (TestNative.c)
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
- * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code).
+ * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code). The verbs work on
+ * native values (scrap/scriptnative.h, scrap/nativeobj.h); what still goes through Python is marked: the error state
+ * (OBJLIB 7), the dicts of __main__ and of the modules (OBJLIB 9b) and print of a value of a type the native values do
+ * not have (OBJLIB 7e).
  */
 #include <math.h>
 #include <stdarg.h>
@@ -104,9 +107,9 @@ void TC_Addf(tcBuf *b, const char *fmt, ...) {
 	TC_Add(b, tmp, -1);
 }
 
-/* str() or repr() of o; a failing one gives "?" and clears the error */
-void TC_AddObj(tcBuf *b, PyObject *o, byte repr) {
-	PyObject *s = o ? (repr ? PyObject_Repr(o) : PyObject_Str(o)) : NULL;
+/* OBJLIB 7: str() of a Python object of the error state; a failing one gives "?" and clears the error */
+static void TC_AddPyStr(tcBuf *b, PyObject *o) {
+	PyObject *s = PyObject_Str(o);
 
 	if (s && PyString_Check(s)) {
 		TC_Add(b, PyString_AsString(s), PyString_Size(s));
@@ -117,20 +120,61 @@ void TC_AddObj(tcBuf *b, PyObject *o, byte repr) {
 	Py_XDECREF(s);
 }
 
-/* the pending Python error as "<type>: <value>" (normalized, as sys.exc_type and sys.exc_value in an except clause
- * show it), then cleared */
 void TC_AddError(tcBuf *b) {
 	PyObject *t, *v, *tb;
 
 	PyErr_Fetch(&t, &v, &tb);
 	PyErr_NormalizeException(&t, &v, &tb);
-	TC_AddObj(b, t ? t : Py_None, 0);
+	TC_AddPyStr(b, t ? t : Py_None);
 	TC_Add(b, ": ", 2);
-	TC_AddObj(b, v ? v : Py_None, 0);
+	TC_AddPyStr(b, v ? v : Py_None);
 	Py_XDECREF(t);
 	Py_XDECREF(v);
 	Py_XDECREF(tb);
 	PyErr_Clear();
+}
+
+/* 0 (the error set) when the repr of an object inside the list, tuple or dict by value v fails: Native_Repr leaves
+ * such an item out, the repr of Python fails as a whole */
+static byte TC_ReprOk(const nativeVal_t *v) {
+	const nativeVal_t *k, *x;
+	nativeBuf_t t;
+	int pos = 0;
+	byte ok = 1;
+
+	switch (v->type) {
+	case NV_LIST:
+	case NV_TUPLE:
+		for (int i = 0; ok && i < v->n; i++) {
+			ok = TC_ReprOk(&v->items[i]);
+		}
+		break;
+	case NV_DICT:
+		while (ok && Native_DictNext(v, &pos, &k, &x)) {
+			ok = TC_ReprOk(k) && TC_ReprOk(x);
+		}
+		break;
+	case NV_REF:
+		Native_BufInit(&t);
+		ok = NObj_Repr(&t, v, NR_REPR);
+		Native_BufFree(&t);
+		break;
+	}
+	return ok;
+}
+
+/* repr(), str() or the check() form of v; a failing one gives "?" (OBJLIB 7: the error cleared) */
+static void TC_AddVal(tcBuf *b, const nativeVal_t *v, nativeRepr_t mode) {
+	nativeBuf_t t;
+
+	Native_BufInit(&t);
+	if ((v->type == NV_REF || TC_ReprOk(v)) && NObj_Repr(&t, v, mode)) {
+		TC_Add(b, t.p, t.len);
+	} else {
+		PyErr_Clear();
+		TC_Add(b, "?", 1);
+	}
+	Native_BufFree(&t);
 }
 
 static void TC_AddRepr(tcBuf *b, const char *s) {
@@ -166,27 +210,34 @@ static void TC_Syntax(const char *at) {
 
 /* ---- golden: the value as check() of the old sdlib.py wrote it ---- */
 
-static void TC_Fmt(tcBuf *b, PyObject *v) {
-	if (PyFloat_Check(v)) {
-		char tmp[0x40];
-		snprintf(tmp, sizeof(tmp), "%.17g", PyFloat_AsDouble(v));
-		TC_Add(b, strstr(tmp, "nan") ? "nan" : tmp, -1);
-	} else if (PyTuple_Check(v)) {
+/* floats with 17 digits, tuples walked (a vector is a tuple of three floats), the rest as repr ("?" when it fails) */
+static void TC_Fmt(tcBuf *b, const nativeVal_t *v) {
+	if (v->type == NV_FLOAT) {
+		TC_AddVal(b, v, NR_CHECK);
+	} else if (v->type == NV_TUPLE || v->type == NV_VEC) {
+		int n = v->type == NV_VEC ? 3 : v->n;
 		TC_Add(b, "(", 1);
-		for (int i = 0; i < PyTuple_Size(v); i++) {
+		for (int i = 0; i < n; i++) {
 			if (i) {
 				TC_Add(b, ", ", 2);
 			}
-			TC_Fmt(b, PyTuple_GetItem(v, i));
+			if (v->type == NV_VEC) {
+				nativeVal_t f;
+				Native_SetFloat(&f, v->v[i]);
+				TC_Fmt(b, &f);
+			} else {
+				TC_Fmt(b, &v->items[i]);
+			}
 		}
 		TC_Add(b, ")", 1);
 	} else {
-		TC_AddObj(b, v, 1);
+		TC_AddVal(b, v, NR_REPR);
 	}
 }
 
 static void TC_Check(tcBuf *b, const char *arg) {
 	const char *tab = strchr(arg, '\t');
+	nativeVal_t v;
 
 	if (!tab) {
 		TC_Add(b, "error: check needs <name>\\t<expr>\n", -1);
@@ -194,10 +245,9 @@ static void TC_Check(tcBuf *b, const char *arg) {
 	}
 	TC_Add(b, arg, (int)(tab - arg));
 	TC_Add(b, " = ", 3);
-	PyObject *v = TcX_Statement(tab + 1);
-	if (v) {
-		TC_Fmt(b, v);
-		Py_DECREF(v);
+	if (TcX_Statement(tab + 1, &v)) {
+		TC_Fmt(b, &v);
+		Native_Free(&v);
 	} else {
 		TC_Add(b, "exception ", -1);
 		TC_AddError(b);
@@ -205,61 +255,233 @@ static void TC_Check(tcBuf *b, const char *arg) {
 	TC_Add(b, "\n", 1);
 }
 
-/* print <expr>: the print statement (tp_print of the object, else str) through a temporary file */
-static void TC_Print(tcBuf *b, const char *arg) {
-	PyObject *v = TcX_Eval(arg);
+/* ---- print: what the print statement writes ---- */
 
-	if (!v) {
-		TC_Add(b, "error: ", -1);
-		TC_AddError(b);
-		TC_Add(b, "\n", 1);
-		return;
-	}
+#define TC_PRINT_DEPTH 64
+
+/* the lists and dicts being printed (Py_ReprEnter: one that holds itself prints as [...] or {...}) */
+typedef struct tcPrint {
+	const void *open[TC_PRINT_DEPTH];
+	int depth;
+} tcPrint;
+
+/* OBJLIB 7e: a Python value of a type the native values do not have, through its tp_print (a temporary file) */
+static byte TC_PrintPy(tcBuf *b, PyObject *o, byte raw) {
 	FILE *f = tmpfile();
-	if (f && PyObject_Print(v, f, Py_PRINT_RAW) == 0) {
+	byte ok = f && PyObject_Print(o, f, raw ? Py_PRINT_RAW : 0) == 0;
+
+	if (ok) {
 		char tmp[0x400];
 		size_t n;
 		rewind(f);
 		while ((n = fread(tmp, 1, sizeof(tmp), f)) > 0) {
 			TC_Add(b, tmp, (int)n);
 		}
+	}
+	if (f) {
+		fclose(f);
+	}
+	return ok;
+}
+
+static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr);
+
+/* the items of a sequence between open and close, each printed as an item (not raw): tuple_print and list_print */
+static byte TC_PrintSeq(tcBuf *b, const nativeVal_t *v, const char *open, const char *close, tcPrint *pr) {
+	int n = TcX_SeqLen(v);
+	byte ok = n >= 0;
+
+	TC_Add(b, open, 1);
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t x;
+		Native_SetNone(&x);
+		if (i) {
+			TC_Add(b, ", ", 2);
+		}
+		ok = TcX_SeqGet(v, i, &x) && TC_PrintVal(b, &x, 0, pr);
+		Native_Free(&x);
+	}
+	if (ok && n == 1 && *open == '(') {
+		TC_Add(b, ",", 1);
+	}
+	TC_Add(b, close, 1);
+	return ok;
+}
+
+/* the keys and values of a dict in its order: dict_print */
+static byte TC_PrintDict(tcBuf *b, const nativeVal_t *v, tcPrint *pr) {
+	nativeVal_t items;
+	byte ok = 1;
+
+	Native_SetNone(&items);
+	if (v->type == NV_DICT) {
+		const nativeVal_t *k, *x;
+		int pos = 0;
+		TC_Add(b, "{", 1);
+		for (byte first = 1; ok && Native_DictNext(v, &pos, &k, &x); first = 0) {
+			if (!first) {
+				TC_Add(b, ", ", 2);
+			}
+			ok = TC_PrintVal(b, k, 0, pr);
+			TC_Add(b, ": ", 2);
+			ok = ok && TC_PrintVal(b, x, 0, pr);
+		}
+		TC_Add(b, "}", 1);
+		return ok;
+	}
+	if (!NObj_CallMethod(v, "items", NULL, 0, &items)) {
+		return 0;
+	}
+	int n = TcX_SeqLen(&items);
+	ok = n >= 0;
+	TC_Add(b, "{", 1);
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t pair;
+		Native_SetNone(&pair);
+		if (i) {
+			TC_Add(b, ", ", 2);
+		}
+		ok = TcX_SeqGet(&items, i, &pair) && pair.type == NV_TUPLE && pair.n == 2;
+		ok = ok && TC_PrintVal(b, &pair.items[0], 0, pr);
+		TC_Add(b, ": ", 2);
+		ok = ok && TC_PrintVal(b, &pair.items[1], 0, pr);
+		Native_Free(&pair);
+	}
+	TC_Add(b, "}", 1);
+	Native_Free(&items);
+	return ok;
+}
+
+/* v as PyObject_Print writes it (raw: Py_PRINT_RAW, a text as it is): the tp_print of ints, floats, texts, tuples,
+ * lists, dicts and entity handles, else str (raw) or repr. 0 with the error set */
+static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr) {
+	char tmp[0x100];
+
+	switch (v->type) {
+	case NV_STR:
+		if (raw) {
+			TC_Add(b, Native_Text(v), v->n);
+			return 1;
+		}
+		break;
+	case NV_ENT:
+		/* the text goes out through fprintf as its format (the original's tp_print); here as it is */
+		Native_EntPrint(Native_EntName(v), tmp, sizeof(tmp));
+		TC_Add(b, tmp, -1);
+		return 1;
+	case NV_OBJ:
+		return TC_PrintPy(b, v->obj, raw);
+	case NV_TUPLE:
+	case NV_VEC:
+		return TC_PrintSeq(b, v, "(", ")", pr);
+	case NV_LIST:
+		return TC_PrintSeq(b, v, "[", "]", pr);
+	case NV_DICT:
+		return TC_PrintDict(b, v, pr);
+	case NV_REF:
+		if (NObj_Kind(v) == NO_LIST || NObj_Kind(v) == NO_DICT) {
+			byte list = NObj_Kind(v) == NO_LIST;
+			for (int i = 0; i < pr->depth && i < TC_PRINT_DEPTH; i++) {
+				if (pr->open[i] == v->ref) {
+					TC_Add(b, list ? "[...]" : "{...}", 5);
+					return 1;
+				}
+			}
+			/* deeper than the room: printed without the check */
+			if (pr->depth < TC_PRINT_DEPTH) {
+				pr->open[pr->depth] = v->ref;
+			}
+			pr->depth++;
+			byte ok = list ? TC_PrintSeq(b, v, "[", "]", pr) : TC_PrintDict(b, v, pr);
+			pr->depth--;
+			return ok;
+		}
+		break;
+	}
+	nativeBuf_t t;
+	Native_BufInit(&t);
+	byte ok = NObj_Repr(&t, v, raw ? NR_STR : NR_REPR);
+	if (ok) {
+		TC_Add(b, t.p, t.len);
+	}
+	Native_BufFree(&t);
+	return ok;
+}
+
+/* print <expr>: the print statement */
+static void TC_Print(tcBuf *b, const char *arg) {
+	nativeVal_t v;
+	tcBuf out = { 0 };
+	tcPrint pr;
+
+	pr.depth = 0;
+	if (TcX_Eval(arg, &v) && TC_PrintVal(&out, &v, 1, &pr)) {
+		TC_Add(b, out.p ? out.p : "", out.len);
 		TC_Add(b, "\n", 1);
 	} else {
 		TC_Add(b, "error: ", -1);
 		TC_AddError(b);
 		TC_Add(b, "\n", 1);
 	}
-	if (f) {
-		fclose(f);
+	Native_Free(&v);
+	if (out.p) {
+		Mem_Free(out.p);
 	}
-	Py_DECREF(v);
 }
 
 /* ---- recorders ---- */
 
-/* self: (list, value, exception, text); the arguments appended to the list, then the value or the exception */
-static PyObject *TC_RecorderCall(PyObject *self, PyObject *args) {
-	if (PyList_Append(PyTuple_GetItem(self, 0), args) != 0) {
-		return NULL;
+/* what a recorder keeps: the list its calls go to, what a call returns, or the exception it raises (exc not None) */
+typedef struct tcRecorder {
+	nativeVal_t calls, value, exc, text;
+} tcRecorder;
+
+/* the arguments appended to the list as a tuple, then the value or the exception */
+static byte TC_RecorderCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	tcRecorder *r = ctx;
+	nativeVal_t args, res;
+
+	Native_SetEmpty(&args, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(&args), &a[i]);
 	}
-	PyObject *exc = PyTuple_GetItem(self, 2);
-	if (exc != Py_None) {
-		PyErr_SetObject(exc, PyTuple_GetItem(self, 3));
-		return NULL;
+	byte ok = NObj_CallMethod(&r->calls, "append", &args, 1, &res);
+	Native_Free(&args);
+	Native_Free(&res);
+	if (!ok) {
+		return 0;
 	}
-	PyObject *v = PyTuple_GetItem(self, 1);
-	Py_INCREF(v);
-	return v;
+	if (r->exc.type != NV_NONE) {
+		/* OBJLIB 7: the error state of Python */
+		PyObject *e = Native_ToPy(&r->exc), *t = e ? Native_ToPy(&r->text) : NULL;
+		if (t) {
+			PyErr_SetObject(e, t);
+		}
+		Py_XDECREF(e);
+		Py_XDECREF(t);
+		return 0;
+	}
+	Native_Copy(out, &r->value);
+	return 1;
 }
 
-static PyMethodDef tc_recorderDef = { "recorder", TC_RecorderCall, METH_VARARGS, NULL };
+static void TC_RecorderFree(void *ctx) {
+	tcRecorder *r = ctx;
+
+	Native_Free(&r->calls);
+	Native_Free(&r->value);
+	Native_Free(&r->exc);
+	Native_Free(&r->text);
+	Mem_Free(r);
+}
 
 /* recorder <target> <list> [<literal> | raise <exception> <text>] */
 static byte TC_Recorder(const char *arg) {
 	char target[0x200], list[0x80], line[0x300];
 	const char *p = arg;
 	int n = 0;
-	PyObject *value = NULL, *exc = NULL, *text = NULL;
+	nativeVal_t value, exc, f;
+	byte ok = 0;
 
 	for (int k = 0; k < 2; k++) {
 		char *dst = k ? list : target;
@@ -277,6 +499,8 @@ static byte TC_Recorder(const char *arg) {
 		TC_Syntax(arg);
 		return 0;
 	}
+	Native_SetNone(&value);
+	Native_SetNone(&exc);
 	if (!strncmp(p, "raise ", 6)) {
 		char name[0x80];
 		p += 6;
@@ -288,301 +512,38 @@ static byte TC_Recorder(const char *arg) {
 		}
 		name[n] = 0;
 		TC_Blanks(&p);
-		exc = TcX_Name(name);
-		text = exc ? PyString_FromString(p) : NULL;
+		ok = TcX_Name(name, &exc);
 	} else {
-		value = *p ? TcX_Eval(p) : (Py_INCREF(Py_None), Py_None);
+		ok = !*p || TcX_Eval(p, &value);
 	}
-	PyObject *calls = PyList_New(0);
-	PyObject *self = (value || text) && calls ? Py_BuildValue("(OOOO)", calls, value ? value : Py_None,
-		exc ? exc : Py_None, text ? text : Py_None) : NULL;
-	PyObject *f = self ? PyCFunction_New(&tc_recorderDef, self) : NULL;
-	byte ok = 0;
-	if (f && (strcmp(list, "-") == 0 || PyDict_SetItemString(TcX_Main(), list, calls) == 0)) {
+	if (!ok) {
+		return 0;
+	}
+	tcRecorder *r = Mem_Alloc(sizeof(tcRecorder));
+	NObj_NewList(&r->calls);
+	/* one object for every call */
+	NObj_Share(&value);
+	r->value = value;
+	r->exc = exc;
+	Native_SetNone(&r->text);
+	if (exc.type != NV_NONE) {
+		Native_SetText(&r->text, p, (int)strlen(p));
+	}
+	ok = 0;
+	/* the self the dump shows: (calls, value, exception, text) before batch 8b */
+	nativeVal_t self[3];
+	self[0] = r->value;
+	self[1] = r->exc;
+	self[2] = r->text;
+	if (TcX_NewFunc(&f, "recorder", TC_RecorderCall, r, TC_RecorderFree, self)
+		&& (strcmp(list, "-") == 0 || TcX_SetMain(list, &r->calls))) {
 		/* the function goes to the target as an assignment would put it there */
-		PyObject *main = TcX_Main();
 		snprintf(line, sizeof(line), "%s = __tc_recorder", target);
-		if (PyDict_SetItemString(main, "__tc_recorder", f) == 0) {
-			PyObject *r = TcX_Statement(line);
-			ok = r != NULL;
-			Py_XDECREF(r);
-			PyDict_DelItemString(main, "__tc_recorder");
-		}
+		ok = TcX_Bind(line, "__tc_recorder", &f);
 	}
-	Py_XDECREF(f);
-	Py_XDECREF(self);
-	Py_XDECREF(calls);
-	Py_XDECREF(value);
-	Py_XDECREF(exc);
-	Py_XDECREF(text);
+	Native_Free(&f);
 	return ok;
 }
-
-/* ---- the module dump (the form of scratchpad nopy0/mdump.py) ---- */
-
-static void TC_MdVal(tcBuf *b, PyObject *v, const char *path, PyObject *seen, int depth);
-
-static int TC_StrCmp(const void *a, const void *b) {
-	return strcmp(PyString_AsString(*(PyObject *const *)a), PyString_AsString(*(PyObject *const *)b));
-}
-
-/* "key: value" pairs of a dict, sorted by the repr of the key */
-static void TC_MdDict(tcBuf *b, PyObject *d, const char *path, PyObject *seen, int depth) {
-	PyObject *keys = PyDict_Keys(d);
-	int n = keys ? PyList_Size(keys) : 0;
-	PyObject **reprs = n ? Mem_Alloc((uint32_t)(sizeof(PyObject *) * 2 * (size_t)n)) : NULL;
-
-	for (int i = 0; i < n; i++) {
-		reprs[2 * i] = PyObject_Repr(PyList_GetItem(keys, i));
-		reprs[2 * i + 1] = PyList_GetItem(keys, i);
-		if (!reprs[2 * i]) {
-			PyErr_Clear();
-			reprs[2 * i] = PyString_FromString("?");
-		}
-	}
-	qsort(reprs, (size_t)n, sizeof(PyObject *) * 2, TC_StrCmp);
-	for (int i = 0; i < n; i++) {
-		char sub[0x400];
-		const char *rk = PyString_AsString(reprs[2 * i]);
-		if (i) {
-			TC_Add(b, ", ", 2);
-		}
-		TC_Addf(b, "%s: ", rk);
-		snprintf(sub, sizeof(sub), "%s[%s]", path, rk);
-		TC_MdVal(b, PyDict_GetItem(d, reprs[2 * i + 1]), sub, seen, depth + 1);
-		Py_DECREF(reprs[2 * i]);
-	}
-	if (reprs) {
-		Mem_Free(reprs);
-	}
-	Py_XDECREF(keys);
-}
-
-/* builtin <name>[ data(..) | self=<type>]: the self of a C function (a 4-tuple: the data of a script function) */
-static void TC_MdBuiltin(tcBuf *b, PyObject *v) {
-	PyObject *o = PyCFunction_GetSelf(v);
-	tcBuf s = { 0 };
-
-	TC_Add(b, "builtin ", -1);
-	TC_Add(b, ((PyCFunctionObject *)v)->m_ml->ml_name, -1);
-	if (o && PyTuple_Check(o) && PyTuple_Size(o) == 4) {
-		PyObject *list = PyTuple_GetItem(o, 2);
-		int n = PySequence_Length(list);
-		byte bad = n < 0;
-		TC_Add(&s, " data(", -1);
-		TC_AddObj(&s, PyTuple_GetItem(o, 1), 0);
-		TC_Add(&s, ";", 1);
-		for (int i = 0; i < n && !bad; i++) {
-			PyObject *x = PySequence_GetItem(list, i);
-			if (i) {
-				TC_Add(&s, ",", 1);
-			}
-			bad = !x;
-			TC_AddObj(&s, x, 0);
-			Py_XDECREF(x);
-		}
-		TC_Add(&s, ";", 1);
-		TC_AddObj(&s, PyTuple_GetItem(o, 3), 1);
-		TC_Add(&s, ")", 1);
-		if (bad) {
-			PyErr_Clear();
-			s.len = 0;
-			TC_Add(&s, " self=?", -1);
-		}
-		TC_Add(b, s.p, s.len);
-		Mem_Free(s.p);
-	} else if (o && o != Py_None) {
-		TC_Addf(b, " self=%s", o->ob_type->tp_name);
-	}
-}
-
-static void TC_MdVal(tcBuf *b, PyObject *v, const char *path, PyObject *seen, int depth) {
-	char sub[0x400];
-
-	if (!v) {
-		TC_Add(b, "?", 1);
-	} else if (PyInt_Check(v)) {
-		TC_Addf(b, "int %ld", PyInt_AsLong(v));
-	} else if (PyLong_Check(v)) {
-		TC_Add(b, "long ", -1);
-		TC_AddObj(b, v, 1);
-	} else if (PyFloat_Check(v)) {
-		TC_Addf(b, "float %.17g", PyFloat_AsDouble(v));
-	} else if (PyString_Check(v)) {
-		TC_Add(b, "str ", -1);
-		TC_AddObj(b, v, 1);
-	} else if (v == Py_None) {
-		TC_Add(b, "None", -1);
-	} else if (PyCFunction_Check(v)) {
-		TC_MdBuiltin(b, v);
-	} else if (PyFunction_Check(v)) {
-		TC_Add(b, "function ", -1);
-		TC_AddObj(b, ((PyFunctionObject *)v)->func_name, 0);
-	} else if (PyModule_Check(v)) {
-		TC_Addf(b, "module %s", PyModule_GetName(v));
-	} else if (PyList_Check(v) || PyDict_Check(v) || PyClass_Check(v) || PyInstance_Check(v) || PyTuple_Check(v)) {
-		const char *tname = v->ob_type->tp_name;
-		if (!PyTuple_Check(v)) {
-			PyObject *id = PyLong_FromVoidPtr(v);
-			PyObject *was = id ? PyDict_GetItem(seen, id) : NULL;
-			if (was) {
-				TC_Addf(b, "alias %s", PyString_AsString(was));
-				Py_DECREF(id);
-				return;
-			}
-			PyObject *ps = PyString_FromString(path);
-			if (id && ps) {
-				PyDict_SetItem(seen, id, ps);
-			}
-			Py_XDECREF(ps);
-			Py_XDECREF(id);
-		}
-		if (depth > 6) {
-			TC_Addf(b, "%s ...", tname);
-			return;
-		}
-		if (PyTuple_Check(v) || PyList_Check(v)) {
-			int n = PySequence_Length(v);
-			TC_Addf(b, "%s [", tname);
-			for (int i = 0; i < n; i++) {
-				PyObject *x = PySequence_GetItem(v, i);
-				if (i) {
-					TC_Add(b, ", ", 2);
-				}
-				snprintf(sub, sizeof(sub), "%s[%d]", path, i);
-				TC_MdVal(b, x, sub, seen, depth + 1);
-				Py_XDECREF(x);
-			}
-			TC_Add(b, "]", 1);
-			return;
-		}
-		PyObject *d;
-		if (PyDict_Check(v)) {
-			d = v;
-			TC_Add(b, "dict", -1);
-		} else if (PyClass_Check(v)) {
-			PyClassObject *c = (PyClassObject *)v;
-			PyObject *names = PyList_New(0);
-			for (int i = 0; names && i < PyTuple_Size(c->cl_bases); i++) {
-				PyList_Append(names, ((PyClassObject *)PyTuple_GetItem(c->cl_bases, i))->cl_name);
-			}
-			d = c->cl_dict;
-			TC_Add(b, "class ", -1);
-			TC_AddObj(b, c->cl_name, 0);
-			TC_Add(b, " bases=", -1);
-			TC_AddObj(b, names, 1);
-			Py_XDECREF(names);
-		} else {
-			PyInstanceObject *in = (PyInstanceObject *)v;
-			d = in->in_dict;
-			TC_Add(b, "instance of ", -1);
-			TC_AddObj(b, in->in_class->cl_name, 0);
-		}
-		TC_Add(b, " {", 2);
-		TC_MdDict(b, d, path, seen, depth);
-		TC_Add(b, "}", 1);
-	} else {
-		PyObject *r = PyObject_Repr(v);
-		const char *s = r && PyString_Check(r) ? PyString_AsString(r) : "?";
-		const char *at = strstr(s, " at ");
-		PyErr_Clear();
-		if (at && at > s) {
-			TC_Addf(b, "%s %.*s>", v->ob_type->tp_name, (int)(at - s), s);
-		} else {
-			TC_Addf(b, "%s %s", v->ob_type->tp_name, s);
-		}
-		Py_XDECREF(r);
-	}
-}
-
-/* one line of the dump: "key\t<type value>" (not __builtins__) */
-static void TC_DumpVar(tcBuf *b, const char *module, const char *key, PyObject *v, PyObject *seen) {
-	char path[0x400];
-
-	if (!strcmp(key, "__builtins__")) {
-		return;
-	}
-	TC_Addf(b, "%s\t", key);
-	snprintf(path, sizeof(path), "%s.%s", module, key);
-	TC_MdVal(b, v, path, seen, 0);
-	TC_Add(b, "\n", 1);
-}
-
-/*
- * dump [module ...]: without names every pack module (made from a .mod file, its __file__ starts with "PACK:"). The
- * variables of a pack module come from the registry of the module variables (sorted names, the value of each); a
- * module without a .mod file (dump Scrap) shows its dict
- */
-static void TC_Dump(tcBuf *b, const char *arg) {
-	PyObject *names = PyList_New(0), *seen = PyDict_New();
-	const char *p = arg;
-	modVarRef_t ref;
-
-	TC_Blanks(&p);
-	while (*p && names) {
-		char name[0x80];
-		int n = 0;
-		for (; *p && *p != ' ' && *p != '\t'; p++) {
-			if (n < (int)sizeof(name) - 1) {
-				name[n++] = *p;
-			}
-		}
-		name[n] = 0;
-		TC_Blanks(&p);
-		PyObject *s = PyString_FromString(name);
-		PyList_Append(names, s);
-		Py_XDECREF(s);
-	}
-	if (names && !PyList_Size(names)) {
-		for (int i = 0; i < g_ModVarModuleCount; i++) {
-			const char *module = g_ModVarModules[i].module;
-			if ((i && !strcmp(module, g_ModVarModules[i - 1].module)) || !ModVar_Named(module, &ref)) {
-				continue;
-			}
-			PyObject *s = PyString_FromString((char *)module);
-			PyList_Append(names, s);
-			Py_XDECREF(s);
-		}
-	}
-	if (names && seen) {
-		PyList_Sort(names);
-		for (int i = 0; i < PyList_Size(names); i++) {
-			const char *name = PyString_AsString(PyList_GetItem(names, i));
-			PyObject *m = Script_ModuleLoaded(name);
-			if (!m || !PyModule_Check(m)) {
-				TC_Addf(b, "== %s missing\n", name);
-				continue;
-			}
-			TC_Addf(b, "== %s\n", name);
-			if (ModVar_Of(m, &ref)) {
-				const char **vars;
-				int n = ModVar_Names(&ref, &vars);
-				for (int j = 0; j < n; j++) {
-					TC_DumpVar(b, name, vars[j], ModVar_Get(&ref, vars[j]), seen);
-				}
-				Mem_Free(vars);
-				continue;
-			}
-			PyObject *d = PyModule_GetDict(m), *keys = PyDict_Keys(d);
-			if (!keys) {
-				continue;
-			}
-			PyList_Sort(keys);
-			for (int j = 0; j < PyList_Size(keys); j++) {
-				PyObject *k = PyList_GetItem(keys, j);
-				if (PyString_Check(k)) {
-					TC_DumpVar(b, name, PyString_AsString(k), PyDict_GetItem(d, k), seen);
-				}
-			}
-			Py_DECREF(keys);
-		}
-	}
-	PyErr_Clear();
-	Py_XDECREF(names);
-	Py_XDECREF(seen);
-}
-
-/* ---- engine and entity queries in plain C ---- */
 
 /* the next blank separated word of *pp into buf; 0 at the end */
 static byte TC_Word(const char **pp, char *buf, int size) {
@@ -597,6 +558,402 @@ static byte TC_Word(const char **pp, char *buf, int size) {
 	buf[n] = 0;
 	return n > 0;
 }
+
+typedef struct tcNames {
+	const char **names;
+	int n, cap;
+} tcNames;
+
+static void TC_NamePush(tcNames *l, const char *name) {
+	if (l->n == l->cap) {
+		l->cap = l->cap ? l->cap * 2 : 64;
+		l->names = Mem_Realloc(l->names, (uint32_t)(sizeof(*l->names) * (size_t)l->cap));
+	}
+	l->names[l->n++] = name;
+}
+
+static int TC_CmpName(const void *a, const void *b) {
+	return strcmp(*(const char *const *)a, *(const char *const *)b);
+}
+
+/* ---- the module dump (the form of scratchpad nopy0/mdump.py) ---- */
+
+/* the lists, dicts, classes and instances shown so far and their paths (a later one shows as "alias <path>"); the
+ * values are held, so a view stays the one object of its Python object */
+typedef struct tcSeen {
+	nativeVal_t *vals;
+	char **paths;
+	int n, cap;
+} tcSeen;
+
+static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *seen, int depth);
+
+/* a key of a dict: its repr and its place in keys() */
+typedef struct tcKey {
+	char *repr;
+	int i;
+} tcKey;
+
+static int TC_KeyCmp(const void *a, const void *b) {
+	const tcKey *x = a, *y = b;
+	int c = strcmp(x->repr, y->repr);
+
+	return c ? c : x->i - y->i;
+}
+
+/* "key: value" pairs of a dict, sorted by the repr of the key */
+static void TC_MdDict(tcBuf *b, const nativeVal_t *d, const char *path, tcSeen *seen, int depth) {
+	nativeVal_t keys;
+	Native_SetNone(&keys);
+	int n = NObj_CallMethod(d, "keys", NULL, 0, &keys) ? TcX_SeqLen(&keys) : 0;
+
+	if (n <= 0) {
+		PyErr_Clear();
+		Native_Free(&keys);
+		return;
+	}
+	tcKey *ks = Mem_Alloc((uint32_t)(sizeof(tcKey) * (size_t)n));
+	nativeVal_t *kv = Mem_Alloc((uint32_t)(sizeof(nativeVal_t) * (size_t)n));
+	for (int i = 0; i < n; i++) {
+		tcBuf r = { 0 };
+		Native_SetNone(&kv[i]);
+		if (!TcX_SeqGet(&keys, i, &kv[i])) {
+			PyErr_Clear();
+		}
+		TC_AddVal(&r, &kv[i], NR_REPR);
+		ks[i].repr = r.p;
+		ks[i].i = i;
+	}
+	qsort(ks, (size_t)n, sizeof(tcKey), TC_KeyCmp);
+	for (int i = 0; i < n; i++) {
+		char sub[0x400];
+		nativeVal_t x;
+		Native_SetNone(&x);
+		if (i) {
+			TC_Add(b, ", ", 2);
+		}
+		TC_Addf(b, "%s: ", ks[i].repr);
+		snprintf(sub, sizeof(sub), "%s[%s]", path, ks[i].repr);
+		if (NObj_GetItem(d, &kv[ks[i].i], &x)) {
+			TC_MdVal(b, &x, sub, seen, depth + 1);
+		} else {
+			PyErr_Clear();
+			TC_MdVal(b, NULL, sub, seen, depth + 1);
+		}
+		Native_Free(&x);
+	}
+	for (int i = 0; i < n; i++) {
+		Mem_Free(ks[i].repr);
+		Native_Free(&kv[i]);
+	}
+	Mem_Free(ks);
+	Mem_Free(kv);
+	Native_Free(&keys);
+}
+
+/* the text of attribute name of v ("?" when it has none) */
+static void TC_MdAttr(tcBuf *b, const nativeVal_t *v, const char *name) {
+	nativeVal_t a;
+
+	if (NObj_GetAttr(v, name, &a)) {
+		TC_AddVal(b, &a, NR_STR);
+	} else {
+		PyErr_Clear();
+		TC_Add(b, "?", 1);
+	}
+	Native_Free(&a);
+}
+
+/* builtin <name>[ data(..) | self=<type>]: the self of a C function (a 4-tuple: the data of a script function) */
+static void TC_MdBuiltin(tcBuf *b, const nativeVal_t *v) {
+	nativeVal_t self;
+	tcBuf s = { 0 };
+
+	TC_Add(b, "builtin ", -1);
+	TC_MdAttr(b, v, "__name__");
+	if (!NObj_GetAttr(v, "__self__", &self)) {
+		PyErr_Clear();
+	}
+	if (self.type == NV_TUPLE && self.n == 4) {
+		const nativeVal_t *list = &self.items[2];
+		int n = TcX_SeqOf(list) == 1 ? TcX_SeqLen(list) : -1;
+		byte bad = n < 0;
+		TC_Add(&s, " data(", -1);
+		TC_AddVal(&s, &self.items[1], NR_STR);
+		TC_Add(&s, ";", 1);
+		for (int i = 0; i < n && !bad; i++) {
+			nativeVal_t x;
+			Native_SetNone(&x);
+			if (i) {
+				TC_Add(&s, ",", 1);
+			}
+			bad = !TcX_SeqGet(list, i, &x);
+			if (bad) {
+				TC_Add(&s, "?", 1);
+			} else {
+				TC_AddVal(&s, &x, NR_STR);
+			}
+			Native_Free(&x);
+		}
+		TC_Add(&s, ";", 1);
+		TC_AddVal(&s, &self.items[3], NR_REPR);
+		TC_Add(&s, ")", 1);
+		if (bad) {
+			PyErr_Clear();
+			s.len = 0;
+			TC_Add(&s, " self=?", -1);
+		}
+		TC_Add(b, s.p, s.len);
+		Mem_Free(s.p);
+	} else if (self.type != NV_NONE) {
+		TC_Addf(b, " self=%s", Native_TypeName(&self));
+	}
+	Native_Free(&self);
+}
+
+static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *seen, int depth) {
+	char sub[0x400];
+	int kind = v ? NObj_Kind(v) : -1;
+
+	if (!v) {
+		TC_Add(b, "?", 1);
+		return;
+	}
+	switch (v->type) {
+	case NV_INT:
+		TC_Addf(b, "int %ld", v->i);
+		return;
+	case NV_LONG:
+		TC_Add(b, "long ", -1);
+		TC_AddVal(b, v, NR_REPR);
+		return;
+	case NV_FLOAT:
+		TC_Addf(b, "float %.17g", v->f);
+		return;
+	case NV_STR:
+		TC_Add(b, "str ", -1);
+		TC_AddVal(b, v, NR_REPR);
+		return;
+	case NV_NONE:
+		TC_Add(b, "None", -1);
+		return;
+	}
+	if (kind == NO_FUNCTION) {
+		if (strcmp(Native_TypeName(v), "function")) {
+			TC_MdBuiltin(b, v);
+		} else {
+			TC_Add(b, "function ", -1);
+			TC_MdAttr(b, v, "__name__");
+		}
+		return;
+	}
+	if (kind == NO_MODULE) {
+		nativeVal_t name;
+		byte ok = NObj_GetAttr(v, "__name__", &name) && name.type == NV_STR;
+		PyErr_Clear();
+		TC_Addf(b, "module %s", ok ? Native_Text(&name) : "(null)");
+		Native_Free(&name);
+		return;
+	}
+	byte tuple = v->type == NV_TUPLE || v->type == NV_VEC;
+	if (tuple || v->type == NV_LIST || v->type == NV_DICT || kind == NO_LIST || kind == NO_DICT || kind == NO_CLASS
+		|| kind == NO_INSTANCE) {
+		const char *tname = Native_TypeName(v);
+		if (v->type == NV_REF) {
+			for (int i = 0; i < seen->n; i++) {
+				if (seen->vals[i].ref == v->ref) {
+					TC_Addf(b, "alias %s", seen->paths[i]);
+					return;
+				}
+			}
+			if (seen->n == seen->cap) {
+				seen->cap = seen->cap ? seen->cap * 2 : 64;
+				seen->vals = Mem_Realloc(seen->vals, (uint32_t)(sizeof(nativeVal_t) * (size_t)seen->cap));
+				seen->paths = Mem_Realloc(seen->paths, (uint32_t)(sizeof(char *) * (size_t)seen->cap));
+			}
+			size_t len = strlen(path) + 1;
+			Native_Copy(&seen->vals[seen->n], v);
+			seen->paths[seen->n] = Mem_Alloc((uint32_t)len);
+			memcpy(seen->paths[seen->n++], path, len);
+		}
+		if (depth > 6) {
+			TC_Addf(b, "%s ...", tname);
+			return;
+		}
+		if (tuple || v->type == NV_LIST || kind == NO_LIST) {
+			int n = TcX_SeqLen(v);
+			TC_Addf(b, "%s [", tname);
+			for (int i = 0; i < n; i++) {
+				nativeVal_t x;
+				Native_SetNone(&x);
+				if (i) {
+					TC_Add(b, ", ", 2);
+				}
+				snprintf(sub, sizeof(sub), "%s[%d]", path, i);
+				if (TcX_SeqGet(v, i, &x)) {
+					TC_MdVal(b, &x, sub, seen, depth + 1);
+				} else {
+					PyErr_Clear();
+					TC_MdVal(b, NULL, sub, seen, depth + 1);
+				}
+				Native_Free(&x);
+			}
+			TC_Add(b, "]", 1);
+			return;
+		}
+		nativeVal_t d;
+		Native_SetNone(&d);
+		if (v->type == NV_DICT || kind == NO_DICT) {
+			Native_Copy(&d, v);
+			TC_Add(b, "dict", -1);
+		} else if (kind == NO_CLASS) {
+			nativeVal_t bases, names;
+			Native_SetNone(&bases);
+			Native_SetEmpty(&names, NV_LIST);
+			if (NObj_GetAttr(v, "__bases__", &bases) && bases.type == NV_TUPLE) {
+				for (int i = 0; i < bases.n; i++) {
+					if (!NObj_GetAttr(&bases.items[i], "__name__", Native_Append(&names))) {
+						PyErr_Clear();
+					}
+				}
+			}
+			PyErr_Clear();
+			Native_Free(&bases);
+			if (!NObj_GetAttr(v, "__dict__", &d)) {
+				PyErr_Clear();
+			}
+			TC_Add(b, "class ", -1);
+			TC_MdAttr(b, v, "__name__");
+			TC_Add(b, " bases=", -1);
+			TC_AddVal(b, &names, NR_REPR);
+			Native_Free(&names);
+		} else {
+			nativeVal_t cls;
+			Native_SetNone(&cls);
+			if (!NObj_GetAttr(v, "__dict__", &d) || !NObj_GetAttr(v, "__class__", &cls)) {
+				PyErr_Clear();
+			}
+			TC_Add(b, "instance of ", -1);
+			TC_MdAttr(b, &cls, "__name__");
+			Native_Free(&cls);
+		}
+		TC_Add(b, " {", 2);
+		TC_MdDict(b, &d, path, seen, depth);
+		TC_Add(b, "}", 1);
+		Native_Free(&d);
+		return;
+	}
+	/* anything else: its type and its repr up to the address */
+	tcBuf r = { 0 };
+	TC_AddVal(&r, v, NR_REPR);
+	const char *at = strstr(r.p, " at ");
+	if (at && at > r.p) {
+		TC_Addf(b, "%s %.*s>", Native_TypeName(v), (int)(at - r.p), r.p);
+	} else {
+		TC_Addf(b, "%s %s", Native_TypeName(v), r.p);
+	}
+	Mem_Free(r.p);
+}
+
+/* one line of the dump: "key\t<type value>" (not __builtins__) */
+static void TC_DumpVar(tcBuf *b, const char *module, const char *key, const nativeVal_t *v, tcSeen *seen) {
+	char path[0x400];
+
+	if (!strcmp(key, "__builtins__")) {
+		return;
+	}
+	TC_Addf(b, "%s\t", key);
+	snprintf(path, sizeof(path), "%s.%s", module, key);
+	TC_MdVal(b, v, path, seen, 0);
+	TC_Add(b, "\n", 1);
+}
+
+/* OBJLIB 9b: a value read from the dict of a module (NULL: none) as TC_DumpVar shows it */
+static void TC_DumpPy(tcBuf *b, const char *module, const char *key, PyObject *o, tcSeen *seen) {
+	nativeVal_t v;
+
+	if (!o) {
+		TC_DumpVar(b, module, key, NULL, seen);
+		return;
+	}
+	NObj_FromPy(o, &v);
+	TC_DumpVar(b, module, key, &v, seen);
+	Native_Free(&v);
+}
+
+/*
+ * dump [module ...]: without names every pack module (made from a .mod file, its __file__ starts with "PACK:"). The
+ * variables of a pack module come from the registry of the module variables (sorted names, the value of each); a
+ * module without a .mod file (dump Scrap) shows its dict
+ */
+static void TC_Dump(tcBuf *b, const char *arg) {
+	size_t len = strlen(arg) + 1;
+	char *words = Mem_Alloc((uint32_t)(len + 0x80));
+	char *w = words;
+	tcNames names = { 0 };
+	tcSeen seen = { 0 };
+	modVarRef_t ref;
+
+	/* the words cut to 127 characters each */
+	while (TC_Word(&arg, w, 0x80)) {
+		TC_NamePush(&names, w);
+		w += strlen(w) + 1;
+	}
+	if (!names.n) {
+		for (int i = 0; i < g_ModVarModuleCount; i++) {
+			const char *module = g_ModVarModules[i].module;
+			if ((i && !strcmp(module, g_ModVarModules[i - 1].module)) || !ModVar_Named(module, &ref)) {
+				continue;
+			}
+			TC_NamePush(&names, module);
+		}
+	}
+	if (names.n) {
+		qsort(names.names, (size_t)names.n, sizeof(*names.names), TC_CmpName);
+	}
+	for (int i = 0; i < names.n; i++) {
+		const char *name = names.names[i];
+		/* OBJLIB 9b: the module object and, for one without a .mod file, its dict */
+		PyObject *m = Script_ModuleLoaded(name);
+		if (!m || !PyModule_Check(m)) {
+			TC_Addf(b, "== %s missing\n", name);
+			continue;
+		}
+		TC_Addf(b, "== %s\n", name);
+		if (ModVar_Of(m, &ref)) {
+			const char **vars;
+			int n = ModVar_Names(&ref, &vars);
+			for (int j = 0; j < n; j++) {
+				TC_DumpPy(b, name, vars[j], ModVar_Get(&ref, vars[j]), &seen);
+			}
+			Mem_Free(vars);
+			continue;
+		}
+		PyObject *d = PyModule_GetDict(m), *keys = PyDict_Keys(d);
+		if (!keys) {
+			continue;
+		}
+		PyList_Sort(keys);
+		for (int j = 0; j < PyList_Size(keys); j++) {
+			PyObject *k = PyList_GetItem(keys, j);
+			if (PyString_Check(k)) {
+				TC_DumpPy(b, name, PyString_AsString(k), PyDict_GetItem(d, k), &seen);
+			}
+		}
+		Py_DECREF(keys);
+	}
+	PyErr_Clear();
+	for (int i = 0; i < seen.n; i++) {
+		Native_Free(&seen.vals[i]);
+		Mem_Free(seen.paths[i]);
+	}
+	Mem_Free(seen.vals);
+	Mem_Free(seen.paths);
+	Mem_Free(names.names);
+	Mem_Free(words);
+}
+
+/* ---- engine and entity queries in plain C ---- */
 
 /* get <var> ...: [('name', value), ...] as Scrap.Get gives the values */
 static void TC_Get(tcBuf *b, const char *arg) {
@@ -670,23 +1027,8 @@ static void TC_Ent(tcBuf *b, const char *arg) {
 	TC_Add(b, "]\n", 2);
 }
 
-typedef struct tcNames {
-	const char **names;
-	int n, cap;
-} tcNames;
-
 static void TC_CollectEnt(cEntity *e, void *ctx) {
-	tcNames *l = ctx;
-
-	if (l->n == l->cap) {
-		l->cap = l->cap ? l->cap * 2 : 64;
-		l->names = Mem_Realloc(l->names, (uint32_t)(sizeof(*l->names) * (size_t)l->cap));
-	}
-	l->names[l->n++] = e->name;
-}
-
-static int TC_CmpName(const void *a, const void *b) {
-	return strcmp(*(const char *const *)a, *(const char *const *)b);
+	TC_NamePush(ctx, e->name);
 }
 
 /* ents <list> [x y z radius] */
@@ -842,18 +1184,19 @@ static void TC_Native(tcBuf *b, const char *arg) {
 static void TC_In(tcBuf *b, const char *arg) {
 	char name[0x80];
 	int n = 0;
+	nativeVal_t m;
 
 	TC_Blanks(&arg);
 	while (TC_NameChar(*arg, 0) && n < (int)sizeof(name) - 1) {
 		name[n++] = *arg++;
 	}
 	name[n] = 0;
-	PyObject *m = n ? Script_Module(name) : NULL;
-	if (!m || !PyModule_Check(m)) {
+	Native_SetNone(&m);
+	if (!n || !NObj_Module(&m, name) || NObj_Kind(&m) != NO_MODULE) {
 		if (!PyErr_Occurred()) {
 			TC_Syntax(arg);
 		}
-		Py_XDECREF(m);
+		Native_Free(&m);
 		TC_Add(b, "error: ", -1);
 		TC_AddError(b);
 		TC_Add(b, "\n", 1);
@@ -865,8 +1208,9 @@ static void TC_In(tcBuf *b, const char *arg) {
 		quiet = 1;
 		arg += 3;
 	}
-	TcX_Run(b, arg, PyModule_GetDict(m), quiet);
-	Py_DECREF(m);
+	/* OBJLIB 9b: the module's dict as the globals of the statements */
+	TcX_Run(b, arg, PyModule_GetDict(NObj_Py(&m)), quiet);
+	Native_Free(&m);
 }
 
 /* the verb of a line ("word " or the word alone); else 0 */
@@ -931,7 +1275,7 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_In(b, arg);
 	} else {
 		byte quiet = TC_Verb(line, "do", &arg);
-		TcX_Run(b, quiet ? arg : line, TcX_Main(), quiet);
+		TcX_Run(b, quiet ? arg : line, NULL, quiet);
 	}
 	/* nothing is left pending for the game */
 	PyErr_Clear();

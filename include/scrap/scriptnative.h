@@ -109,6 +109,9 @@ byte Native_SetEnt(nativeVal_t *v, const char *name);
 cEntity *Native_Ent(const nativeVal_t *v);
 /* the name the handle v (NV_ENT) was made with */
 const char *Native_EntName(const nativeVal_t *v);
+/* what the print statement writes for a handle of the entity called name (the tp_print of cPyEntity): "Entity:
+ * <name>", or the text of a handle whose entity is gone */
+void Native_EntPrint(const char *name, char *buf, int size);
 /* the text of NV_STR or NV_LONG (with its 0 after n bytes), "" for other types */
 const char *Native_Text(const nativeVal_t *v);
 /* an empty list (NV_LIST), tuple (NV_TUPLE) or dict (NV_DICT) */

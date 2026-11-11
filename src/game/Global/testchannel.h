@@ -5,8 +5,8 @@
 #ifndef SCRAP_TESTCHANNEL_H
 #define SCRAP_TESTCHANNEL_H
 
+#include "scrap/nativeobj.h"
 #include "scrap/pyfunction.h"
-#include "scrap/scriptnative.h"
 
 /* the answer of a command file: a growing text (Mem_Realloc) */
 typedef struct tcBuf {
@@ -16,26 +16,45 @@ typedef struct tcBuf {
 
 void TC_Add(tcBuf *b, const char *s, int n);
 void TC_Addf(tcBuf *b, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
-/* str() or repr() of o; a failing one gives "?" */
-void TC_AddObj(tcBuf *b, PyObject *o, byte repr);
-/* the pending error as "<type>: <value>" (normalized, as sys.exc_type and sys.exc_value in an except clause), cleared */
+/* OBJLIB 7: the pending error as "<type>: <value>" (normalized, as sys.exc_type and sys.exc_value in an except
+ * clause), cleared */
 void TC_AddError(tcBuf *b);
 
-/* the dict of __main__ */
-PyObject *TcX_Main(void);
 /* a name as a channel expression finds it at the top level: the globals of __main__, the builtins, the channel's own
- * functions, the loaded modules, else the module imported */
-PyObject *TcX_Name(const char *name);
-/* a whole line as one expression: the value, NULL with the error set */
-PyObject *TcX_Eval(const char *line);
-/* an expression, or "target = expr" (the value None), in the globals of __main__: NULL with the error set. Attributes
- * that fail without an error raise as the getattr and setattr builtins do (golden's check lines) */
-PyObject *TcX_Statement(const char *line);
-/* the statements of a line ("a = f(); b(); result = (a, b)") in the globals of a module dict, answered as the game
- * side of the MCP server (the old tools/mcp/mcpgame.py) answered a line: a single expression its repr, statements the
- * repr of the global "result" or ok, an error "error: <type>: <value>" (the statements after it are not run); quiet:
- * only an error answers */
+ * functions, the loaded modules, else the module imported: 1 with *out (Native_Free it), 0 with the error set */
+byte TcX_Name(const char *name, nativeVal_t *out);
+/* a whole line as one expression in the globals of __main__: 1 with the value in *out (Native_Free it), 0 with the
+ * error set */
+byte TcX_Eval(const char *line, nativeVal_t *out);
+/* an expression, or "target = expr" (the value None), in the globals of __main__: 1 with *out, 0 with the error set.
+ * Attributes that fail without an error raise as the getattr and setattr builtins do (golden's check lines) */
+byte TcX_Statement(const char *line, nativeVal_t *out);
+/* the statements of line as TcX_Statement runs them, the name name giving v (as a global of __main__ would, without
+ * one): 0 with the error set */
+byte TcX_Bind(const char *line, const char *name, const nativeVal_t *v);
+/* __main__.name = v (OBJLIB 9b: into the dict of __main__): 0 with the error set */
+byte TcX_SetMain(const char *name, const nativeVal_t *v);
+/* the statements of a line ("a = f(); b(); result = (a, b)") in the globals of a module dict (NULL: __main__),
+ * answered as the game side of the MCP server (the old tools/mcp/mcpgame.py) answered a line: a single expression its
+ * repr, statements the repr of the global "result" or ok, an error "error: <type>: <value>" (the statements after it
+ * are not run); quiet: only an error answers */
 void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet);
+/* a native function of the channel's verbs (the recorder): call(ctx, a, n, out) runs it on the arguments, drop(ctx)
+ * (NULL: nothing) frees the context with the function. The evaluator calls it natively; a call with keywords raises
+ * the TypeError of a C function. OBJLIB 9: its object is a C function object of Python named name on the self
+ * (record, self[0], self[1], self[2]), the form of a lambda of the channel (repr "<built-in method name of tuple
+ * object at ...>"; the module dump shows the 4-tuple as the data of a script function, "self=?" when self[1] is no
+ * sequence), so the game calls it as any callable; OBJLIB 7: callers through Python (the seams of the engine
+ * functions, Native_Seam) reach it through an adapter. 1 with *out (Native_Free it), 0 with the error set (ctx
+ * dropped) */
+byte TcX_NewFunc(nativeVal_t *out, const char *name, nativeCall_t call, void *ctx, void (*drop)(void *ctx),
+	const nativeVal_t self[3]);
+/* how the sequence protocol takes v: 1 a sequence the channel reads natively (a text, a tuple or list by value, a
+ * list object or view), 0 a value without sequence methods, -1 one only Python reads (an instance, a Python object) */
+int TcX_SeqOf(const nativeVal_t *v);
+/* the length of a sequence of TcX_SeqOf 1, -1 with the error; item i of it into *out: 0 with the error */
+int TcX_SeqLen(const nativeVal_t *v);
+byte TcX_SeqGet(const nativeVal_t *v, int i, nativeVal_t *out);
 /* what the expressions sent through Python since the start (OBJLIB 9), one line "channel <what> <count>" each added
  * to out: "builtin <name>" a builtin function that is not native here or was called in a form the native one does not
  * take, "operator <op>" an operator on a Python object or one the native values do not have, "keywords" a call with
