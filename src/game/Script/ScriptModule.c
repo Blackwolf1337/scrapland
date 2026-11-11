@@ -25,11 +25,14 @@
  * An <expr> is a Python expression as the module code had it: numbers (parsenumber: ints through strtol or strtoul,
  * L longs, floats through atof as marshal read them), strings in quotes with the escapes of parsestr, None, tuple,
  * list and dict displays (a dict value before its key, as com_dictmaker), names (the locals, the module, the
- * builtins), attributes, calls with keywords, subscripts and slices, + - * / %, comparisons, not, and, or. Equal
- * constants of one code object (the module, a class body, an eval) are one object and a constant that looks like a
- * name is interned (com_addconst, PyCode_New). eval(s) of the definitions (the save variables) is read by the same
- * parser in the namespace of the module; what it cannot read goes to Script_EvalValue (the literals of builtin eval,
- * else its SyntaxError, logged as "notread" by the gate, SCRAP_PY_GATE). No Python runs.
+ * builtins), attributes, calls with keywords, subscripts and slices, + - * / %, comparisons, not, and, or. The values
+ * are native (scrap/scriptnative.h, see "the values" below): a call of a port or engine function runs its entry, and
+ * the value becomes a Python object where it goes into the module dict or into Python. Equal constants of one code
+ * object (the module, a class body) are one object there and a text that looks like a name is interned (com_addconst,
+ * PyCode_New). eval(s) of the definitions (the save variables) reads a plain literal with the reader of the saves,
+ * anything else with the same parser in the namespace of the module; what that cannot read goes to Script_EvalValue
+ * (the literals of builtin eval, else its SyntaxError, logged as "notread" by the gate, SCRAP_PY_GATE). No Python
+ * runs.
  *
  * Off (the .pyc runs as before) with SCRAP_PACK_SCRIPTS=1 or SCRAP_CMOD=0.
  */
@@ -42,6 +45,7 @@
 #include "scrap/filepak.h"
 #include "scrap/modvars.h"
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
 
 typedef struct {
 	const char *level;		/* the level folder in lower case, NULL for a module of every level */
@@ -203,84 +207,231 @@ static byte Mod_Op(modParse_t *m, const char *op) {
 	return 1;
 }
 
-/* the value of a branch not taken: None, nothing is evaluated */
+/* the value of a branch not taken for the statements that make Python objects (import, def): None */
 static PyObject *Mod_Skipped(void) {
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-/* v (a new constant) or the equal constant of the same type this code object made before it (com_addconst) */
-static PyObject *Mod_Const(modParse_t *m, PyObject *v) {
-	if (!v || m->skip) {
-		return v;
+/* ---- the values ---- */
+
+/*
+ * The expressions are native values (scrap/scriptnative.h): the numbers, texts, None, tuples, lists and dicts of the
+ * text are made in C, and the operators, comparisons, subscripts and slices of plain values run in C. What a name,
+ * an attribute or a call of Python gives is taken as Mod_FromPy takes it: a number or a text as a native value, any
+ * other object (a list or dict a module holds, a module, a function, a class, an entity) by reference as an NV_OBJ, so
+ * that lists and dicts stay shared and change in place. An operation on a value that holds such an object or a dict
+ * goes through Python (the same result and error). A value becomes a Python object where it goes into Python: the
+ * store into the module or a class body (Mod_StoreVal, OBJLIB 5: the dict slots are the store until batch 5h), the
+ * call of a callable that is no port or engine function, the set of another object's attribute or item, the
+ * operations through Python (Mod_ToPy). So that `is` and the objects stored stay the ones they were, a number or text
+ * that came from a Python object keeps that object next to its value (nativeVal_t.obj, Mod_Keep), through copies too;
+ * a value an operation made has none and becomes a new object.
+ */
+
+static PyObject *Mod_ToPy(modParse_t *m, const nativeVal_t *v);
+
+/* plain: no NV_OBJ and no dict at any depth, the values the native operations take as Python takes them */
+static byte Mod_Plain(const nativeVal_t *v) {
+	return !Native_Holds(v, 1u << NV_OBJ | 1u << NV_DICT);
+}
+
+/* the number or text *v is the object o from here on (Mod_ToPy gives it back) */
+static void Mod_Keep(nativeVal_t *v, PyObject *o) {
+	Py_INCREF(o);
+	v->obj = o;
+}
+
+/* o (borrowed) as the evaluator keeps it: None, an int, a float, a text or a long int as a native value (with o
+ * kept), any other object by reference */
+static void Mod_FromPy(PyObject *o, nativeVal_t *out) {
+	if (o == Py_None) {
+		Native_SetNone(out);
+	} else if ((PyInt_Check(o) || PyFloat_Check(o) || PyString_Check(o) || PyLong_Check(o)) && Native_FromPyAny(o, out)) {
+		Mod_Keep(out, o);
+	} else {
+		Native_SetObj(out, o);
+	}
+}
+
+/* the result r of an operation through Python (a new reference, NULL with the error) into *out: 1, or 0 with the
+ * error and *out None */
+static byte Mod_Took(PyObject *r, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (!r) {
+		return 0;
+	}
+	Mod_FromPy(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+/* the same constant: the same type (checked before) and value, a float by its bits (0.0 and -0.0, NaN) */
+static byte Mod_Same(PyObject *a, PyObject *b) {
+	if (PyFloat_Check(a)) {
+		double x = PyFloat_AsDouble(a), y = PyFloat_AsDouble(b);
+		return !memcmp(&x, &y, sizeof(x));
+	}
+	return PyObject_Compare(a, b) == 0;
+}
+
+/*
+ * a number or a text as a Python object: the equal one of the same type this code object (the module, a class body)
+ * made before it (com_addconst: equal constants are one object), else a new one, kept for the next; a text that looks
+ * like a name is interned (Script_StrConst, as PyCode_New interns the constants)
+ */
+static PyObject *Mod_Leaf(modParse_t *m, const nativeVal_t *v) {
+	PyObject *o = v->type == NV_INT ? PyInt_FromLong(v->i) : v->type == NV_FLOAT ? PyFloat_FromDouble(v->f) :
+		v->type == NV_STR ? Script_StrConst(Native_Text(v), v->n) : Native_ToPy(v);
+	if (!o) {
+		return NULL;
 	}
 	for (int i = PyList_Size(m->consts); --i >= 0;) {
 		PyObject *w = PyList_GetItem(m->consts, i);
-		if (v->ob_type == w->ob_type && PyObject_Compare(v, w) == 0) {
-			Py_DECREF(v);
+		if (w->ob_type == o->ob_type && Mod_Same(w, o)) {
+			Py_DECREF(o);
 			Py_INCREF(w);
 			return w;
 		}
 	}
-	if (PyErr_Occurred() || PyList_Append(m->consts, v) != 0) {
-		Py_DECREF(v);
+	if (PyList_Append(m->consts, o) != 0) {
+		Py_DECREF(o);
 		return NULL;
 	}
-	return v;
+	return o;
 }
 
+static PyObject *Mod_ToPyConv(const nativeVal_t *v, void *m) {
+	return Mod_ToPy(m, v);
+}
+
+/* the value as a Python object (a new reference, NULL with the error): the object it holds or keeps, a number or
+ * text of the text through Mod_Leaf, a dict with the table it has (its keys in the order PyDict_SetItem gave the
+ * display) */
+static PyObject *Mod_ToPy(modParse_t *m, const nativeVal_t *v) {
+	PyObject *o;
+	if (v->obj) {
+		Py_INCREF(v->obj);
+		return v->obj;
+	}
+	switch (v->type) {
+	case NV_INT:
+	case NV_FLOAT:
+	case NV_STR:
+	case NV_LONG:
+		return Mod_Leaf(m, v);
+	case NV_LIST:
+	case NV_TUPLE:
+		o = v->type == NV_LIST ? PyList_New(v->n) : PyTuple_New(v->n);
+		for (int i = 0; o && i < v->n; i++) {
+			PyObject *x = Mod_ToPy(m, &v->items[i]);
+			if (!x) {
+				Py_DECREF(o);
+				return NULL;
+			}
+			if (v->type == NV_LIST) {
+				PyList_SET_ITEM(o, i, x);
+			} else {
+				PyTuple_SET_ITEM(o, i, x);
+			}
+		}
+		return o;
+	case NV_DICT:
+		return Native_ToPyDict(v, Mod_ToPyConv, m);
+	}
+	/* None, and the vector of an engine result as its adapter makes it */
+	return Native_ToPy(v);
+}
+
+/* the numbers and texts in *v that keep no object get theirs now (Mod_Leaf): the constants of an eval, which are
+ * those of its own code; 0 with the error */
+static byte Mod_Pin(modParse_t *m, nativeVal_t *v) {
+	if (v->obj) {
+		return 1;
+	}
+	if (v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG) {
+		v->obj = Mod_Leaf(m, v);
+		return v->obj != NULL;
+	}
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			if (!Mod_Pin(m, &v->items[i])) {
+				return 0;
+			}
+		}
+	} else if (v->type == NV_DICT) {
+		const nativeVal_t *k, *x;
+		int pos = 0;
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			/* the slots of v itself */
+			if (!Mod_Pin(m, (nativeVal_t *)k) || !Mod_Pin(m, (nativeVal_t *)x)) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+/* the int 0 or 1 of a comparison or a not: Py_False or Py_True (cmp_outcome) */
+static void Mod_SetBool(nativeVal_t *out, int t) {
+	Native_SetInt(out, t != 0);
+	Mod_Keep(out, t ? Py_True : Py_False);
+}
+
+/* `if v:` (PyObject_IsTrue for an object, which can fail): 1, 0, -1 with the error */
+static int Mod_Truth(const nativeVal_t *v) {
+	return v->type == NV_OBJ ? PyObject_IsTrue(v->obj) : Native_True(v);
+}
+
+/* ---- the scanner of constants ---- */
+
 /* a number as parsenumber of compile.c reads it */
-static PyObject *Mod_Number(modParse_t *m) {
+static byte Mod_Number(modParse_t *m, nativeVal_t *out) {
 	const char *s = m->p, *e = s;
 	char buf[128];
 	byte hex = s[0] == '0' && (s[1] == 'x' || s[1] == 'X');
+	Native_SetNone(out);
 	while (Mod_IsName(*e) || *e == '.' ||
 		(!hex && (*e == '+' || *e == '-') && e > s && (e[-1] == 'e' || e[-1] == 'E'))) {
 		e++;
 	}
 	if (e - s >= (int)sizeof(buf)) {
-		return Mod_Syntax(m, "number too long");
+		Mod_Syntax(m, "number too long");
+		return 0;
 	}
 	memcpy(buf, s, e - s);
 	buf[e - s] = 0;
 	m->p = e;
-	char *last = buf + strlen(buf) - 1, *end;
-	if (*last == 'l' || *last == 'L') {
-		return Mod_Const(m, PyLong_FromString(buf, NULL, 0));
+	size_t len = strlen(buf);
+	char *end;
+	if (buf[len - 1] == 'l' || buf[len - 1] == 'L') {
+		/* a decimal long int in C; octal, hex and the ValueError of a bad one through PyLong_FromString (OBJLIB 9) */
+		if (len > 1 && (buf[0] != '0' || len == 2) && strspn(buf, "0123456789") == len - 1) {
+			Native_SetLong(out, buf, (int)len - 1);
+			return 1;
+		}
+		return Mod_Took(PyLong_FromString(buf, NULL, 0), out);
 	}
 	errno = 0;
 	long x = buf[0] == '0' ? (long)PyOS_strtoul(buf, &end, 0) : PyOS_strtol(buf, &end, 0);
 	if (*end == 0) {
 		if (errno != 0) {
 			PyErr_SetString(PyExc_OverflowError, "integer literal too large");
-			return NULL;
+			return 0;
 		}
-		return Mod_Const(m, PyInt_FromLong(x));
+		Native_SetInt(out, x);
+		return 1;
 	}
-	return Mod_Const(m, PyFloat_FromDouble(atof(buf)));
+	Native_SetFloat(out, atof(buf));
+	return 1;
 }
 
 static int Mod_Hex(int c) {
 	return c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
 }
 
-/* room for two more characters in the string buffer */
-static byte Mod_Room(char **buf, int len, int *cap) {
-	if (len + 2 < *cap) {
-		return 1;
-	}
-	char *b = realloc(*buf, *cap * 2);
-	if (!b) {
-		PyErr_NoMemory();
-		return 0;
-	}
-	*buf = b;
-	*cap *= 2;
-	return 1;
-}
-
-/* one string in quotes as parsestr of compile.c reads it (no raw or triple quoted strings), appended to buf */
-static byte Mod_String1(modParse_t *m, char **buf, int *len, int *cap) {
+/* one string in quotes as parsestr of compile.c reads it (no raw or triple quoted strings), added to b */
+static byte Mod_String1(modParse_t *m, nativeBuf_t *b) {
 	char q = *m->p++;
 	for (;;) {
 		int c = (unsigned char)*m->p;
@@ -326,10 +477,7 @@ static byte Mod_String1(modParse_t *m, char **buf, int *len, int *cap) {
 					c &= 0xff;
 				} else {
 					/* an unknown escape stays as it is: the backslash and the character */
-					if (!Mod_Room(buf, *len, cap)) {
-						return 0;
-					}
-					(*buf)[(*len)++] = '\\';
+					Native_BufAdd(b, "\\", 1);
 					c = e;
 				}
 			}
@@ -337,39 +485,40 @@ static byte Mod_String1(modParse_t *m, char **buf, int *len, int *cap) {
 				continue;
 			}
 		}
-		if (!Mod_Room(buf, *len, cap)) {
-			return 0;
-		}
-		(*buf)[(*len)++] = (char)c;
+		char ch = (char)c;
+		Native_BufAdd(b, &ch, 1);
 	}
 }
 
 /* a string, adjacent strings joined (parsestrplus) */
-static PyObject *Mod_String(modParse_t *m) {
-	int len = 0, cap = 256;
-	char *buf = malloc(cap);
-	if (!buf) {
-		return PyErr_NoMemory();
-	}
+static byte Mod_String(modParse_t *m, nativeVal_t *out) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_SetNone(out);
 	do {
-		if (!Mod_String1(m, &buf, &len, &cap)) {
-			free(buf);
-			return NULL;
+		if (!Mod_String1(m, &b)) {
+			Native_BufFree(&b);
+			return 0;
 		}
 		Mod_Blanks(m);
 	} while (*m->p == '\'' || *m->p == '"');
-	PyObject *v = Mod_Const(m, Script_StrConst(buf, len));
-	free(buf);
-	return v;
+	Native_SetText(out, b.p, b.len);
+	Native_BufFree(&b);
+	return 1;
 }
 
 /* ---- the evaluator ---- */
 
-static PyObject *Mod_Expr(modParse_t *m);
+/*
+ * Each part of an expression makes its value into *out (None first): 1, or 0 with the error set and *out None. In a
+ * branch not taken (skip) the text is read and every value is None
+ */
+static byte Mod_Expr(modParse_t *m, nativeVal_t *out);
 
 /* LOAD_NAME: the locals (a class body's), the module (through the registry), the builtins; NameError with the name */
-static PyObject *Mod_Load(modParse_t *m, const char *name) {
+static byte Mod_Load(modParse_t *m, const char *name, nativeVal_t *out) {
 	PyObject *v = m->locals != m->globals ? PyDict_GetItemString(m->locals, (char *)name) : NULL;
+	Native_SetNone(out);
 	if (!v) {
 		v = ModVar_Get(&m->ref, name);
 	}
@@ -382,342 +531,508 @@ static PyObject *Mod_Load(modParse_t *m, const char *name) {
 		PyObject *n = PyString_FromString(name);
 		PyErr_SetObject(PyExc_NameError, n);
 		Py_XDECREF(n);
-		return NULL;
+		return 0;
 	}
-	Py_INCREF(v);
-	return v;
+	Mod_FromPy(v, out);
+	return 1;
 }
 
-/* the items up to close into a new list (*comma: a comma came); for a dict the pairs, the value made first */
-static PyObject *Mod_Items(modParse_t *m, char close, byte *comma) {
-	PyObject *list = PyList_New(0);
+/* the items up to close into a new list (*comma: a comma came) */
+static byte Mod_Items(modParse_t *m, char close, byte *comma, nativeVal_t *out) {
+	Native_SetEmpty(out, NV_LIST);
 	*comma = 0;
 	m->depth++;
 	Mod_Blanks(m);
-	while (list && *m->p != close) {
-		PyObject *v = Mod_Expr(m);
-		if (!v || PyList_Append(list, v) != 0) {
-			Py_XDECREF(v);
-			Py_DECREF(list);
-			m->depth--;
-			return NULL;
-		}
-		Py_DECREF(v);
-		if (Mod_Op(m, ",")) {
+	while (*m->p != close) {
+		byte ok = Mod_Expr(m, Native_Append(out));
+		if (ok && Mod_Op(m, ",")) {
 			*comma = 1;
 			Mod_Blanks(m);
-		} else if (*m->p != close) {
-			Py_DECREF(list);
+		} else if (ok && *m->p != close) {
+			Mod_Syntax(m, "',' or a closing bracket expected");
+			ok = 0;
+		}
+		if (!ok) {
+			Native_Free(out);
 			m->depth--;
-			return Mod_Syntax(m, "',' or a closing bracket expected");
+			return 0;
 		}
 	}
 	m->depth--;
-	if (list) {
-		m->p++;
-	}
-	return list;
+	m->p++;
+	return 1;
 }
 
-static PyObject *Mod_Dict(modParse_t *m) {
-	PyObject *d = PyDict_New();
+/* d[k] = v of a display (k and v freed): in the native dict, or once a key is a value the native table does not take
+ * as Python does (an object, an unhashable value) in the Python dict *py made from it with its table (its error) */
+static byte Mod_DictPut(modParse_t *m, nativeVal_t *d, PyObject **py, nativeVal_t *k, nativeVal_t *v) {
+	long h;
+	if (!*py && (Native_Holds(k, 1u << NV_OBJ) || !Native_Hash(k, &h))) {
+		*py = Mod_ToPy(m, d);
+		if (!*py) {
+			return 0;
+		}
+	}
+	if (!*py) {
+		Native_DictSet(d, k, v);
+		return 1;
+	}
+	PyObject *pk = Mod_ToPy(m, k), *pv = pk ? Mod_ToPy(m, v) : NULL;
+	byte ok = pv && PyDict_SetItem(*py, pk, pv) == 0;
+	Py_XDECREF(pk);
+	Py_XDECREF(pv);
+	return ok;
+}
+
+static byte Mod_Dict(modParse_t *m, nativeVal_t *out) {
+	PyObject *py = NULL;
+	byte ok = 1;
+	Native_SetEmpty(out, NV_DICT);
 	m->depth++;
 	Mod_Blanks(m);
-	while (d && *m->p != '}') {
+	while (ok && *m->p != '}') {
 		/* com_dictmaker: the value is made before the key */
 		const char *key = m->p;
+		nativeVal_t k, v;
 		m->skip++;
-		PyObject *k = Mod_Expr(m);
+		ok = Mod_Expr(m, &k);
 		m->skip--;
-		Py_XDECREF(k);
-		if (!k || !Mod_Op(m, ":")) {
-			Py_DECREF(d);
-			m->depth--;
-			return k ? Mod_Syntax(m, "':' expected") : NULL;
+		Native_Free(&k);
+		if (!ok || !Mod_Op(m, ":")) {
+			if (ok) {
+				Mod_Syntax(m, "':' expected");
+			}
+			ok = 0;
+			break;
 		}
-		PyObject *v = Mod_Expr(m);
+		ok = Mod_Expr(m, &v);
 		const char *after = m->p;
 		m->p = key;
-		k = v ? Mod_Expr(m) : NULL;
+		Native_SetNone(&k);
+		ok = ok && Mod_Expr(m, &k);
 		m->p = after;
-		if (!k || (!m->skip && PyDict_SetItem(d, k, v) != 0)) {
-			Py_XDECREF(k);
-			Py_XDECREF(v);
-			Py_DECREF(d);
-			m->depth--;
-			return NULL;
+		if (ok && !m->skip) {
+			ok = Mod_DictPut(m, out, &py, &k, &v);
 		}
-		Py_DECREF(k);
-		Py_DECREF(v);
-		if (!Mod_Op(m, ",") && (Mod_Blanks(m), *m->p != '}')) {
-			Py_DECREF(d);
-			m->depth--;
-			return Mod_Syntax(m, "',' or '}' expected");
+		Native_Free(&k);
+		Native_Free(&v);
+		if (ok && !Mod_Op(m, ",") && (Mod_Blanks(m), *m->p != '}')) {
+			Mod_Syntax(m, "',' or '}' expected");
+			ok = 0;
 		}
-		Mod_Blanks(m);
+		if (ok) {
+			Mod_Blanks(m);
+		}
 	}
 	m->depth--;
-	if (d) {
-		m->p++;
+	if (!ok) {
+		Native_Free(out);
+		Py_XDECREF(py);
+		return 0;
 	}
-	return d;
+	m->p++;
+	if (py) {
+		Native_Free(out);
+		Native_SetObj(out, py);
+		Py_DECREF(py);
+	}
+	return 1;
 }
 
-static PyObject *Mod_Atom(modParse_t *m) {
+static byte Mod_Atom(modParse_t *m, nativeVal_t *out) {
 	Mod_Blanks(m);
 	char c = *m->p, name[MOD_NAME];
+	Native_SetNone(out);
 	if (c == '\'' || c == '"') {
-		return Mod_String(m);
+		return Mod_String(m, out);
 	}
 	if ((c >= '0' && c <= '9') || (c == '.' && m->p[1] >= '0' && m->p[1] <= '9')) {
-		return Mod_Number(m);
+		return Mod_Number(m, out);
 	}
 	if (c == '(' || c == '[') {
 		byte comma;
 		m->p++;
-		PyObject *list = Mod_Items(m, c == '(' ? ')' : ']', &comma);
-		if (!list || c == '[') {
-			return list;
+		if (!Mod_Items(m, c == '(' ? ')' : ']', &comma, out)) {
+			return 0;
+		}
+		if (c == '[') {
+			return 1;
 		}
 		/* (x) is x, (x,) and () are tuples */
-		PyObject *v = PyList_Size(list) == 1 && !comma ? PyList_GetItem(list, 0) : NULL;
-		Py_XINCREF(v);
-		v = v ? v : PyList_AsTuple(list);
-		Py_DECREF(list);
-		return v;
+		if (out->n == 1 && !comma) {
+			nativeVal_t x = out->items[0];
+			out->n = 0;
+			Native_Free(out);
+			*out = x;
+		} else {
+			out->type = NV_TUPLE;
+		}
+		return 1;
 	}
 	if (c == '{') {
 		m->p++;
-		return Mod_Dict(m);
+		return Mod_Dict(m, out);
 	}
 	if (!Mod_Word(m, name, sizeof(name))) {
-		return Mod_Syntax(m, "a value expected");
+		Mod_Syntax(m, "a value expected");
+		return 0;
 	}
-	if (!strcmp(name, "None")) {
-		return Mod_Skipped();
+	if (!strcmp(name, "None") || m->skip) {
+		return 1;
 	}
-	return m->skip ? Mod_Skipped() : Mod_Load(m, name);
+	return Mod_Load(m, name, out);
 }
 
 /* the builtin eval with one string: the definitions read the save variables through it */
-static byte Mod_IsEval(PyObject *f, PyObject *args, PyObject *kw) {
-	return PyCFunction_Check(f) && !strcmp(((PyCFunctionObject *)f)->m_ml->ml_name, "eval") &&
-		((PyCFunctionObject *)f)->m_self == NULL && !kw && PyTuple_Size(args) == 1 &&
-		PyString_Check(PyTuple_GET_ITEM(args, 0));
+static byte Mod_IsEval(const nativeVal_t *f, const nativeVal_t *args, const nativeVal_t *kw) {
+	if (f->type != NV_OBJ || kw->n || args->n != 1 || args->items[0].type != NV_STR) {
+		return 0;
+	}
+	PyObject *o = f->obj;
+	return PyCFunction_Check(o) && !strcmp(((PyCFunctionObject *)o)->m_ml->ml_name, "eval") &&
+		((PyCFunctionObject *)o)->m_self == NULL;
 }
 
-static PyObject *Mod_Eval(modParse_t *outer, PyObject *text);
+static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *out);
 
-static PyObject *Mod_Call(modParse_t *m, PyObject *f) {
-	PyObject *args = PyList_New(0), *kw = NULL;
+/*
+ * f(args, keywords) when not skipped: a port or engine function (Port_Own: the value is still the port's own C
+ * function, not a recorder or another value a case put there) through its entry on the native values, as its adapter
+ * runs it; any other callable, a call with keywords and one with more arguments than an entry takes as before
+ * through Python (Script_CallObject)
+ */
+static byte Mod_Invoke(modParse_t *m, const nativeVal_t *f, nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
+	if (f->type == NV_OBJ && !kw->n && args->n <= PORT_ARGS && Port_Own(f->obj)) {
+		/* a dict goes as the Python dict with the table of its display (Native_Pass would lay it out anew) */
+		for (int i = 0; i < args->n; i++) {
+			if (Native_Holds(&args->items[i], 1u << NV_DICT)) {
+				PyObject *o = Mod_ToPy(m, &args->items[i]);
+				if (!o) {
+					Native_SetNone(out);
+					return 0;
+				}
+				Native_Free(&args->items[i]);
+				Native_SetObj(&args->items[i], o);
+				Py_DECREF(o);
+			}
+		}
+		return Port_Values(PORT_VSITE(), f->obj, args->items, args->n, out, NULL);
+	}
+	PyObject *pf = Mod_ToPy(m, f), *t = pf ? PyTuple_New(args->n) : NULL, *pkw = NULL;
+	byte ok = t != NULL;
+	for (int i = 0; ok && i < args->n; i++) {
+		PyObject *x = Mod_ToPy(m, &args->items[i]);
+		ok = x != NULL;
+		if (ok) {
+			PyTuple_SET_ITEM(t, i, x);
+		}
+	}
+	/* the keywords in their order, a name given twice the last value */
+	for (int i = 0; ok && i < kw->n; i++) {
+		const nativeVal_t *pair = &kw->items[i];
+		PyObject *k = PyString_InternFromString((char *)Native_Text(&pair->items[0]));
+		PyObject *x = k ? Mod_ToPy(m, &pair->items[1]) : NULL;
+		if (x && !pkw) {
+			pkw = PyDict_New();
+		}
+		ok = pkw && x && PyDict_SetItem(pkw, k, x) == 0;
+		Py_XDECREF(k);
+		Py_XDECREF(x);
+	}
+	PyObject *r = ok ? Script_CallObject(pf, t, pkw) : NULL;
+	Py_XDECREF(pf);
+	Py_XDECREF(t);
+	Py_XDECREF(pkw);
+	return Mod_Took(r, out);
+}
+
+static byte Mod_Call(modParse_t *m, const nativeVal_t *f, nativeVal_t *out) {
+	/* the positional values, and the keywords as (name, value) in their order */
+	nativeVal_t args, kw;
+	byte ok = 1;
+	Native_SetNone(out);
+	Native_SetEmpty(&args, NV_LIST);
+	Native_SetEmpty(&kw, NV_LIST);
 	m->depth++;
 	Mod_Blanks(m);
-	while (args && *m->p != ')') {
+	while (ok && *m->p != ')') {
 		const char *at = m->p;
 		char name[MOD_NAME];
-		PyObject *key = NULL;
+		nativeVal_t *slot;
 		if (Mod_Word(m, name, sizeof(name)) && Mod_Op(m, "=") && *m->p != '=') {
-			key = PyString_InternFromString(name);
+			nativeVal_t *pair = Native_Append(&kw);
+			Native_SetEmpty(pair, NV_TUPLE);
+			Native_SetStr(Native_Append(pair), name);
+			slot = Native_Append(pair);
 		} else {
 			m->p = at;
+			slot = Native_Append(&args);
 		}
-		PyObject *v = Mod_Expr(m);
-		if (v && key) {
-			if (!kw) {
-				kw = PyDict_New();
-			}
-			if (!kw || PyDict_SetItem(kw, key, v) != 0) {
-				MOD_CLEAR(v);
-			}
-		} else if (v && PyList_Append(args, v) != 0) {
-			MOD_CLEAR(v);
-		}
-		Py_XDECREF(key);
-		if (!v) {
-			MOD_CLEAR(args);
-			break;
-		}
-		Py_DECREF(v);
-		if (!Mod_Op(m, ",") && (Mod_Blanks(m), *m->p != ')')) {
-			MOD_CLEAR(args);
+		ok = Mod_Expr(m, slot);
+		if (ok && !Mod_Op(m, ",") && (Mod_Blanks(m), *m->p != ')')) {
 			Mod_Syntax(m, "',' or ')' expected");
-			break;
+			ok = 0;
 		}
-		Mod_Blanks(m);
+		if (ok) {
+			Mod_Blanks(m);
+		}
 	}
 	m->depth--;
-	PyObject *r = NULL;
-	if (args) {
+	if (ok) {
 		m->p++;
-		if (m->skip) {
-			r = Mod_Skipped();
-		} else {
-			PyObject *t = PyList_AsTuple(args);
-			if (t && Mod_IsEval(f, t, kw)) {
-				r = Mod_Eval(m, PyTuple_GET_ITEM(t, 0));
-			} else if (t) {
-				r = Script_CallObject(f, t, kw);
-			}
-			Py_XDECREF(t);
+		if (!m->skip) {
+			ok = Mod_IsEval(f, &args, &kw) ? Mod_Eval(m, &args.items[0], out) : Mod_Invoke(m, f, &args, &kw, out);
 		}
 	}
-	Py_XDECREF(args);
-	Py_XDECREF(kw);
-	return r;
+	Native_Free(&args);
+	Native_Free(&kw);
+	return ok;
 }
 
-/* slice_index of ceval: an int index, else TypeError */
-static byte Mod_SliceIndex(PyObject *v, int *pi) {
+/* slice_index of ceval: an int index (v NULL: not given), else TypeError */
+static byte Mod_SliceIndex(const nativeVal_t *v, int *pi) {
 	if (v == NULL) {
 		return 1;
 	}
-	if (!PyInt_Check(v)) {
+	if (v->type != NV_INT) {
 		PyErr_SetString(PyExc_TypeError, "slice index must be int");
 		return 0;
 	}
-	long x = PyInt_AsLong(v);
+	long x = v->i;
 	*pi = x > INT_MAX ? INT_MAX : x < -INT_MAX ? -INT_MAX : (int)x;
 	return 1;
 }
 
-static PyObject *Mod_Subscript(modParse_t *m, PyObject *o) {
-	PyObject *lo = NULL, *hi = NULL, *r = NULL;
-	byte slice = 0;
+/* o[lo:hi] (PySequence_GetSlice) and o[k] (PyObject_GetItem): in C on plain values, else through Python */
+static byte Mod_Get(modParse_t *m, const nativeVal_t *o, const nativeVal_t *k, int lo, int hi, nativeVal_t *out) {
+	if (Mod_Plain(o) && (!k || Mod_Plain(k))) {
+		return k ? Native_Subscript(o, k, out) : Native_Slice(o, lo, hi, out);
+	}
+	PyObject *po = Mod_ToPy(m, o), *pk = po && k ? Mod_ToPy(m, k) : NULL;
+	PyObject *r = !po || (k && !pk) ? NULL : k ? PyObject_GetItem(po, pk) : PySequence_GetSlice(po, lo, hi);
+	Py_XDECREF(po);
+	Py_XDECREF(pk);
+	return Mod_Took(r, out);
+}
+
+static byte Mod_Subscript(modParse_t *m, const nativeVal_t *o, nativeVal_t *out) {
+	nativeVal_t lo, hi;
+	byte haveLo = 0, haveHi = 0, slice = 0, ok = 1;
+	Native_SetNone(&lo);
+	Native_SetNone(&hi);
+	Native_SetNone(out);
 	m->depth++;
 	Mod_Blanks(m);
 	if (*m->p != ':') {
-		lo = Mod_Expr(m);
+		haveLo = Mod_Expr(m, &lo);
 	}
-	if ((lo || *m->p == ':') && Mod_Op(m, ":")) {
+	if ((haveLo || *m->p == ':') && Mod_Op(m, ":")) {
 		slice = 1;
 		Mod_Blanks(m);
 		if (*m->p != ']') {
-			hi = Mod_Expr(m);
-			if (!hi) {
-				Py_XDECREF(lo);
+			haveHi = Mod_Expr(m, &hi);
+			if (!haveHi) {
+				Native_Free(&lo);
 				m->depth--;
-				return NULL;
+				return 0;
 			}
 		}
 	}
 	m->depth--;
-	if ((!lo && !slice) || !Mod_Op(m, "]")) {
-		Py_XDECREF(lo);
-		Py_XDECREF(hi);
-		return lo || slice ? Mod_Syntax(m, "']' expected") : NULL;
+	if ((!haveLo && !slice) || !Mod_Op(m, "]")) {
+		Native_Free(&lo);
+		Native_Free(&hi);
+		if (haveLo || slice) {
+			Mod_Syntax(m, "']' expected");
+		}
+		return 0;
 	}
 	if (m->skip) {
-		r = Mod_Skipped();
+		/* None */
 	} else if (slice) {
 		int ilow = 0, ihigh = INT_MAX;
-		if (Mod_SliceIndex(lo, &ilow) && Mod_SliceIndex(hi, &ihigh)) {
-			r = PySequence_GetSlice(o, ilow, ihigh);
-		}
+		ok = Mod_SliceIndex(haveLo ? &lo : NULL, &ilow) && Mod_SliceIndex(haveHi ? &hi : NULL, &ihigh) &&
+			Mod_Get(m, o, NULL, ilow, ihigh, out);
 	} else {
-		r = PyObject_GetItem(o, lo);
+		ok = Mod_Get(m, o, &lo, 0, 0, out);
 	}
-	Py_XDECREF(lo);
-	Py_XDECREF(hi);
-	return r;
+	Native_Free(&lo);
+	Native_Free(&hi);
+	return ok;
+}
+
+/* o.name (Script_GetAttr) */
+static byte Mod_Attr(modParse_t *m, const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	PyObject *po = Mod_ToPy(m, o), *r = po ? Script_GetAttr(po, name) : NULL;
+	Py_XDECREF(po);
+	return Mod_Took(r, out);
 }
 
 /* an atom and its attributes, calls and subscripts */
-static PyObject *Mod_Postfix(modParse_t *m) {
-	PyObject *v = Mod_Atom(m);
-	while (v) {
+static byte Mod_Postfix(modParse_t *m, nativeVal_t *out) {
+	if (!Mod_Atom(m, out)) {
+		return 0;
+	}
+	for (;;) {
+		nativeVal_t r;
+		byte ok;
 		Mod_Blanks(m);
-		PyObject *r;
+		Native_SetNone(&r);
 		if (*m->p == '.' && !(m->p[1] >= '0' && m->p[1] <= '9')) {
 			char name[MOD_NAME];
 			m->p++;
 			if (!Mod_Word(m, name, sizeof(name))) {
-				Py_DECREF(v);
-				return Mod_Syntax(m, "a name expected after '.'");
+				Native_Free(out);
+				Mod_Syntax(m, "a name expected after '.'");
+				return 0;
 			}
-			r = m->skip ? Mod_Skipped() : Script_GetAttr(v, name);
+			ok = m->skip || Mod_Attr(m, out, name, &r);
 		} else if (*m->p == '(') {
 			m->p++;
-			r = Mod_Call(m, v);
+			ok = Mod_Call(m, out, &r);
 		} else if (*m->p == '[') {
 			m->p++;
-			r = Mod_Subscript(m, v);
+			ok = Mod_Subscript(m, out, &r);
 		} else {
-			return v;
+			return 1;
 		}
-		Py_DECREF(v);
-		v = r;
-	}
-	return NULL;
-}
-
-static PyObject *Mod_Unary(modParse_t *m) {
-	if (Mod_Op(m, "-")) {
-		PyObject *v = Mod_Unary(m), *r = v && !m->skip ? PyNumber_Negative(v) : v ? Mod_Skipped() : NULL;
-		Py_XDECREF(v);
-		return r;
-	}
-	if (Mod_Op(m, "+")) {
-		PyObject *v = Mod_Unary(m), *r = v && !m->skip ? PyNumber_Positive(v) : v ? Mod_Skipped() : NULL;
-		Py_XDECREF(v);
-		return r;
-	}
-	return Mod_Postfix(m);
-}
-
-static PyObject *Mod_Binary(modParse_t *m, PyObject *a, char op, PyObject *b) {
-	PyObject *r = NULL;
-	if (a && b) {
-		if (m->skip) {
-			r = Mod_Skipped();
-		} else if (op == '+') {
-			r = PyNumber_Add(a, b);
-		} else if (op == '-') {
-			r = PyNumber_Subtract(a, b);
-		} else if (op == '*') {
-			r = PyNumber_Multiply(a, b);
-		} else if (op == '/') {
-			r = PyNumber_Divide(a, b);
-		} else {
-			r = PyNumber_Remainder(a, b);
+		Native_Free(out);
+		*out = r;
+		if (!ok) {
+			return 0;
 		}
 	}
-	Py_XDECREF(a);
-	Py_XDECREF(b);
+}
+
+/* -v and +v: ints and floats in C; long ints, the OverflowError of -LONG_MIN and the TypeError of a value without the
+ * operation through Python (PyNumber_Negative, PyNumber_Positive) */
+static byte Mod_Unary(modParse_t *m, nativeVal_t *out) {
+	char op = Mod_Op(m, "-") ? '-' : Mod_Op(m, "+") ? '+' : 0;
+	if (!op) {
+		return Mod_Postfix(m, out);
+	}
+	if (!Mod_Unary(m, out)) {
+		return 0;
+	}
+	if (m->skip) {
+		Native_Free(out);
+	} else if (op == '+' && (out->type == NV_INT || out->type == NV_FLOAT)) {
+		/* int_pos, float_pos: the value itself */
+	} else if (out->type == NV_INT && out->i != LONG_MIN) {
+		long i = out->i;
+		Native_Free(out);
+		Native_SetInt(out, -i);
+	} else if (out->type == NV_FLOAT) {
+		double f = out->f;
+		Native_Free(out);
+		Native_SetFloat(out, -f);
+	} else {
+		PyObject *v = Mod_ToPy(m, out), *r = !v ? NULL : op == '-' ? PyNumber_Negative(v) : PyNumber_Positive(v);
+		Py_XDECREF(v);
+		Native_Free(out);
+		return Mod_Took(r, out);
+	}
+	return 1;
+}
+
+/* a op b into *a (b made: b was made without an error; both freed): Native_Arith on plain values (long ints only add
+ * and subtract there), else PyNumber_Add and the others */
+static byte Mod_Binary(modParse_t *m, nativeVal_t *a, char op, nativeVal_t *b, byte made) {
+	nativeVal_t r;
+	byte ok = made;
+	Native_SetNone(&r);
+	if (ok && !m->skip) {
+		if (Mod_Plain(a) && Mod_Plain(b) &&
+			(op == '+' || op == '-' || !(Native_Holds(a, 1u << NV_LONG) || Native_Holds(b, 1u << NV_LONG)))) {
+			ok = Native_Arith(op, a, b, &r);
+		} else {
+			PyObject *pa = Mod_ToPy(m, a), *pb = pa ? Mod_ToPy(m, b) : NULL, *pr = NULL;
+			if (pb) {
+				pr = op == '+' ? PyNumber_Add(pa, pb) : op == '-' ? PyNumber_Subtract(pa, pb) :
+					op == '*' ? PyNumber_Multiply(pa, pb) : op == '/' ? PyNumber_Divide(pa, pb) : PyNumber_Remainder(pa, pb);
+			}
+			Py_XDECREF(pa);
+			Py_XDECREF(pb);
+			ok = Mod_Took(pr, &r);
+		}
+	}
+	Native_Free(a);
+	Native_Free(b);
+	*a = r;
+	return ok;
+}
+
+static byte Mod_Term(modParse_t *m, nativeVal_t *out) {
+	if (!Mod_Unary(m, out)) {
+		return 0;
+	}
+	for (;;) {
+		nativeVal_t b;
+		Mod_Blanks(m);
+		char op = *m->p;
+		if ((op != '*' && op != '/' && op != '%') || m->p[1] == '*') {
+			return 1;
+		}
+		m->p++;
+		byte made = Mod_Unary(m, &b);
+		if (!Mod_Binary(m, out, op, &b, made)) {
+			return 0;
+		}
+	}
+}
+
+static byte Mod_Sum(modParse_t *m, nativeVal_t *out) {
+	if (!Mod_Term(m, out)) {
+		return 0;
+	}
+	for (;;) {
+		nativeVal_t b;
+		Mod_Blanks(m);
+		char op = *m->p;
+		if (op != '+' && op != '-') {
+			return 1;
+		}
+		m->p++;
+		byte made = Mod_Term(m, &b);
+		if (!Mod_Binary(m, out, op, &b, made)) {
+			return 0;
+		}
+	}
+}
+
+/* a is b (the objects themselves), a in b (PySequence_Contains), cmp(a, b) (PyObject_Compare): 1, 0, -1 with the
+ * error; not is the negation of is and in. Plain values in C (Native_Contains, Native_Compare), the rest and `is`
+ * on the values as Python objects */
+static int Mod_Relation(modParse_t *m, const nativeVal_t *a, const nativeVal_t *b, byte is, byte in, byte not, int *cmp) {
+	if (!is && Mod_Plain(a) && Mod_Plain(b)) {
+		if (in) {
+			int r = Native_Contains(b, a);
+			return r < 0 ? -1 : r != not;
+		}
+		*cmp = Native_Compare(a, b);
+		return 1;
+	}
+	PyObject *pa = Mod_ToPy(m, a), *pb = pa ? Mod_ToPy(m, b) : NULL;
+	int r = -1;
+	if (pb && is) {
+		r = (pa == pb) != not;
+	} else if (pb && in) {
+		r = PySequence_Contains(pb, pa);
+		r = r < 0 ? -1 : r != not;
+	} else if (pb) {
+		*cmp = PyObject_Compare(pa, pb);
+		r = *cmp && PyErr_Occurred() ? -1 : 1;
+	}
+	Py_XDECREF(pa);
+	Py_XDECREF(pb);
 	return r;
 }
 
-static PyObject *Mod_Term(modParse_t *m) {
-	PyObject *v = Mod_Unary(m);
-	for (;;) {
-		Mod_Blanks(m);
-		char op = *m->p;
-		if (!v || (op != '*' && op != '/' && op != '%') || m->p[1] == '*') {
-			return v;
-		}
-		m->p++;
-		v = Mod_Binary(m, v, op, Mod_Unary(m));
-	}
-}
-
-static PyObject *Mod_Sum(modParse_t *m) {
-	PyObject *v = Mod_Term(m);
-	for (;;) {
-		Mod_Blanks(m);
-		char op = *m->p;
-		if (!v || (op != '+' && op != '-')) {
-			return v;
-		}
-		m->p++;
-		v = Mod_Binary(m, v, op, Mod_Term(m));
-	}
-}
-
 /* a comparison as cmp_outcome of ceval makes it (an int 0 or 1, Py_False or Py_True) */
-static PyObject *Mod_Compare(modParse_t *m) {
+static byte Mod_Compare(modParse_t *m, nativeVal_t *out) {
 	static const char *const ops[] = { "<=", ">=", "==", "!=", "<>", "<", ">", NULL };
-	PyObject *a = Mod_Sum(m);
-	if (!a) {
-		return NULL;
+	if (!Mod_Sum(m, out)) {
+		return 0;
 	}
 	int op = -1;
 	for (int i = 0; ops[i] && op < 0; i++) {
@@ -738,128 +1053,140 @@ static PyObject *Mod_Compare(modParse_t *m) {
 				is = 1;
 				not = Mod_Keyword(m, "not");
 			} else {
-				return a;
+				return 1;
 			}
 		}
 	}
-	PyObject *b = Mod_Sum(m);
-	if (!b || m->skip) {
-		Py_DECREF(a);
-		return b;
+	nativeVal_t b;
+	byte made = Mod_Sum(m, &b);
+	if (!made || m->skip) {
+		Native_Free(out);
+		*out = b;
+		return made;
 	}
-	int res = 0;
-	if (is) {
-		res = (a == b) != not;
-	} else if (in) {
-		res = PySequence_Contains(b, a);
-		res = res < 0 ? -1 : res != not;
-	} else {
-		int cmp = PyObject_Compare(a, b);
-		if (cmp && PyErr_Occurred()) {
-			res = -1;
-		} else {
-			switch (op) {
-			case 0: res = cmp <= 0; break;
-			case 1: res = cmp >= 0; break;
-			case 2: res = cmp == 0; break;
-			case 3: case 4: res = cmp != 0; break;
-			case 5: res = cmp < 0; break;
-			default: res = cmp > 0; break;
-			}
+	int cmp = 0, res = Mod_Relation(m, out, &b, is, in, not, &cmp);
+	if (res > 0 && !is && !in) {
+		switch (op) {
+		case 0: res = cmp <= 0; break;
+		case 1: res = cmp >= 0; break;
+		case 2: res = cmp == 0; break;
+		case 3: case 4: res = cmp != 0; break;
+		case 5: res = cmp < 0; break;
+		default: res = cmp > 0; break;
 		}
 	}
-	Py_DECREF(a);
-	Py_DECREF(b);
+	Native_Free(out);
+	Native_Free(&b);
 	if (res < 0) {
-		return NULL;
+		return 0;
 	}
-	PyObject *r = res ? Py_True : Py_False;
-	Py_INCREF(r);
-	return r;
+	Mod_SetBool(out, res);
+	return 1;
 }
 
-static PyObject *Mod_Not(modParse_t *m) {
+static byte Mod_Not(modParse_t *m, nativeVal_t *out) {
 	if (!Mod_Keyword(m, "not")) {
-		return Mod_Compare(m);
+		return Mod_Compare(m, out);
 	}
-	PyObject *v = Mod_Not(m);
-	if (!v || m->skip) {
-		return v;
+	byte ok = Mod_Not(m, out);
+	if (!ok || m->skip) {
+		return ok;
 	}
-	int t = PyObject_IsTrue(v);
-	Py_DECREF(v);
+	int t = Mod_Truth(out);
+	Native_Free(out);
 	if (t < 0) {
-		return NULL;
+		return 0;
 	}
-	PyObject *r = t ? Py_False : Py_True;
-	Py_INCREF(r);
-	return r;
+	Mod_SetBool(out, !t);
+	return 1;
 }
 
 /* a and b, a or b: the right side is made only when the left one does not decide (JUMP_IF_FALSE, JUMP_IF_TRUE) */
-static PyObject *Mod_Logic(modParse_t *m, PyObject *(*side)(modParse_t *), const char *kw, int stopWhen) {
-	PyObject *v = side(m);
-	while (v && Mod_Keyword(m, kw)) {
-		int t = m->skip ? 0 : PyObject_IsTrue(v);
+static byte Mod_Logic(modParse_t *m, byte (*side)(modParse_t *, nativeVal_t *), const char *kw, int stopWhen,
+	nativeVal_t *out) {
+	if (!side(m, out)) {
+		return 0;
+	}
+	while (Mod_Keyword(m, kw)) {
+		int t = m->skip ? 0 : Mod_Truth(out);
 		if (t < 0) {
-			Py_DECREF(v);
-			return NULL;
+			Native_Free(out);
+			return 0;
 		}
 		if (!m->skip && t == stopWhen) {
+			nativeVal_t r;
 			m->skip++;
-			PyObject *r = side(m);
+			byte ok = side(m, &r);
 			m->skip--;
-			if (!r) {
-				Py_DECREF(v);
-				return NULL;
+			Native_Free(&r);
+			if (!ok) {
+				Native_Free(out);
+				return 0;
 			}
-			Py_DECREF(r);
 		} else {
-			Py_DECREF(v);
-			v = side(m);
+			Native_Free(out);
+			if (!side(m, out)) {
+				return 0;
+			}
 		}
 	}
-	return v;
+	return 1;
 }
 
-static PyObject *Mod_And(modParse_t *m) {
-	return Mod_Logic(m, Mod_Not, "and", 0);
+static byte Mod_And(modParse_t *m, nativeVal_t *out) {
+	return Mod_Logic(m, Mod_Not, "and", 0, out);
 }
 
-static PyObject *Mod_Expr(modParse_t *m) {
+static byte Mod_Expr(modParse_t *m, nativeVal_t *out) {
+	Native_SetNone(out);
 	if (m->nest >= MOD_DEPTH) {
-		return Mod_Syntax(m, "nested too deep");
+		Mod_Syntax(m, "nested too deep");
+		return 0;
 	}
 	m->nest++;
-	PyObject *v = Mod_Logic(m, Mod_And, "or", 1);
+	byte ok = Mod_Logic(m, Mod_And, "or", 1, out);
 	m->nest--;
-	return v;
+	return ok;
 }
 
-/* eval(text) in the namespace of the module (the save variables): this parser, else the eval of Python */
-static PyObject *Mod_Eval(modParse_t *outer, PyObject *text) {
-	const char *s = PyString_AsString(text);
-	if ((int)strlen(s) != PyString_Size(text)) {
-		return Script_EvalValue(outer->globals, text);	/* the ValueError of builtin eval */
-	}
-	modParse_t m = { .p = s, .text = s, .file = "eval", .module = outer->module, .mod = outer->mod,
-		.globals = outer->globals, .locals = outer->locals, .consts = PyList_New(0), .ref = outer->ref };
-	if (!m.consts) {
-		return NULL;
-	}
-	m.depth = 1;
-	PyObject *v = Mod_Expr(&m);
-	Mod_Blanks(&m);
-	if (v && *m.p) {
-		MOD_CLEAR(v);
-		Mod_Syntax(&m, "the end expected");
-	}
-	Py_DECREF(m.consts);
-	if (!v && m.syntax) {
+/*
+ * eval(text) in the namespace of the module (the save variables): a plain literal through the reader of the saves
+ * (Native_LiteralText, as Mode_EvalSave), else this parser, else the eval of Python (Script_EvalValue: the ValueError
+ * of a text with a 0 byte, its literals, its SyntaxError). The constants are those of the eval's own code (Mod_Pin)
+ */
+static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *out) {
+	const char *s = Native_Text(text);
+	if ((int)strlen(s) == text->n) {
+		modParse_t m = { .p = s, .text = s, .file = "eval", .module = outer->module, .mod = outer->mod,
+			.globals = outer->globals, .locals = outer->locals, .consts = PyList_New(0), .ref = outer->ref };
+		if (!m.consts) {
+			Native_SetNone(out);
+			return 0;
+		}
+		m.depth = 1;
+		byte ok = Native_LiteralText(text, out), literal = ok;
+		if (!literal) {
+			ok = Mod_Expr(&m, out);
+			Mod_Blanks(&m);
+			if (ok && *m.p) {
+				Native_Free(out);
+				Mod_Syntax(&m, "the end expected");
+				ok = 0;
+			}
+		}
+		if (ok && !Mod_Pin(&m, out)) {
+			Native_Free(out);
+			ok = 0;
+		}
+		Py_DECREF(m.consts);
+		if (ok || literal || !m.syntax) {
+			return ok;
+		}
 		PyErr_Clear();
-		v = Script_EvalValue(outer->globals, text);
 	}
-	return v;
+	PyObject *t = Native_ToPy(text), *r = t ? Script_EvalValue(outer->globals, t) : NULL;
+	Py_XDECREF(t);
+	return Mod_Took(r, out);
 }
 
 /* ---- the statements ---- */
@@ -891,6 +1218,16 @@ static byte Mod_Store(modParse_t *m, const char *name, PyObject *v) {
 	}
 	byte ok = m->skip || Mod_Put(m, name, v);
 	Py_DECREF(v);
+	return ok;
+}
+
+/* the same for a value of the evaluator (freed): the place where it becomes the object the dict holds (Mod_ToPy,
+ * OBJLIB 5) */
+static byte Mod_StoreVal(modParse_t *m, const char *name, nativeVal_t *v) {
+	PyObject *o = m->skip ? NULL : Mod_ToPy(m, v);
+	byte ok = m->skip || (o && Mod_Put(m, name, o));
+	Py_XDECREF(o);
+	Native_Free(v);
 	return ok;
 }
 
@@ -977,10 +1314,21 @@ static byte Mod_Def(modParse_t *m) {
 
 static byte Mod_Let(modParse_t *m) {
 	char name[MOD_NAME];
+	nativeVal_t v;
 	if (!Mod_Word(m, name, sizeof(name)) || !Mod_Op(m, "=")) {
 		return Mod_Syntax(m, "let <name> = <value>"), 0;
 	}
-	return Mod_Store(m, name, Mod_Expr(m)) && Mod_EndLine(m);
+	return Mod_Expr(m, &v) && Mod_StoreVal(m, name, &v) && Mod_EndLine(m);
+}
+
+/* o.name = v (STORE_ATTR through the registry for a pack module) and o[k] = v (STORE_SUBSCR) on the objects */
+static byte Mod_SetOn(modParse_t *m, const nativeVal_t *o, const char *name, const nativeVal_t *k, const nativeVal_t *v) {
+	PyObject *pv = Mod_ToPy(m, v), *po = pv ? Mod_ToPy(m, o) : NULL, *pk = po && k ? Mod_ToPy(m, k) : NULL;
+	byte ok = po && (k ? pk && PyObject_SetItem(po, pk, pv) == 0 : ModVar_SetObjAttr(po, name, pv) == 0);
+	Py_XDECREF(pv);
+	Py_XDECREF(po);
+	Py_XDECREF(pk);
+	return ok;
 }
 
 /*
@@ -989,68 +1337,65 @@ static byte Mod_Let(modParse_t *m) {
  */
 static byte Mod_Set(modParse_t *m) {
 	const char *target = m->p, *last = NULL;
+	nativeVal_t o, v, k;
 	/* the parts of the target without making them: where the last one starts */
 	m->skip++;
-	PyObject *o = Mod_Atom(m);
-	while (o) {
+	byte ok = Mod_Atom(m, &o);
+	while (ok) {
+		nativeVal_t r;
 		Mod_Blanks(m);
 		if (*m->p != '.' && *m->p != '(' && *m->p != '[') {
 			break;
 		}
-		last = m->p;
-		PyObject *r = *m->p == '.' ? (m->p++, Mod_Word(m, (char[MOD_NAME]){ 0 }, MOD_NAME) ? Mod_Skipped() : NULL) :
-			*m->p == '(' ? (m->p++, Mod_Call(m, o)) : (m->p++, Mod_Subscript(m, o));
-		Py_DECREF(o);
+		last = m->p++;
+		Native_SetNone(&r);
+		ok = *last == '.' ? Mod_Word(m, (char[MOD_NAME]){ 0 }, MOD_NAME) : *last == '(' ? Mod_Call(m, &o, &r) :
+			Mod_Subscript(m, &o, &r);
+		Native_Free(&o);
 		o = r;
 	}
 	m->skip--;
-	Py_XDECREF(o);
-	if (!o || !last || *last == '(' || !Mod_Op(m, "=")) {
+	Native_Free(&o);
+	if (!ok || !last || *last == '(' || !Mod_Op(m, "=")) {
 		return Mod_Syntax(m, "set <object>.<name> = <value> or set <object>[<key>] = <value>"), 0;
 	}
-	PyObject *v = Mod_Expr(m);
+	if (!Mod_Expr(m, &v)) {
+		return 0;
+	}
 	const char *end = m->p;
-	if (!v) {
-		return 0;
-	}
 	/* the object: the target up to its last part, made now */
-	char *head = malloc(last - target + 1);
-	if (!head) {
-		Py_DECREF(v);
-		PyErr_NoMemory();
-		return 0;
-	}
-	memcpy(head, target, last - target);
-	head[last - target] = 0;
+	nativeBuf_t head;
+	Native_BufInit(&head);
+	Native_BufAdd(&head, target, (int)(last - target));
 	modParse_t h = *m;
-	h.p = h.text = head;
-	o = Mod_Expr(&h);
-	free(head);
-	byte ok = 0;
+	h.p = h.text = head.p;
+	ok = Mod_Expr(&h, &o);
+	Native_BufFree(&head);
 	m->p = last;
-	if (o && *last == '.') {
+	if (ok && *last == '.') {
 		char name[MOD_NAME];
 		m->p++;
 		Mod_Word(m, name, sizeof(name));
-		ok = m->skip || ModVar_SetObjAttr(o, name, v) == 0;
-	} else if (o) {
+		ok = m->skip || Mod_SetOn(m, &o, name, NULL, &v);
+	} else if (ok) {
 		m->p++;
 		m->depth++;
-		PyObject *k = Mod_Expr(m);
+		ok = Mod_Expr(m, &k);
 		m->depth--;
-		ok = k && (m->skip || PyObject_SetItem(o, k, v) == 0);
-		Py_XDECREF(k);
+		ok = ok && (m->skip || Mod_SetOn(m, &o, NULL, &k, &v));
+		Native_Free(&k);
 	}
-	Py_XDECREF(o);
-	Py_DECREF(v);
+	Native_Free(&o);
+	Native_Free(&v);
 	m->p = end;
 	return ok && Mod_EndLine(m);
 }
 
 static byte Mod_Call1(modParse_t *m) {
-	PyObject *v = Mod_Expr(m);
-	Py_XDECREF(v);
-	return v && Mod_EndLine(m);
+	nativeVal_t v;
+	byte ok = Mod_Expr(m, &v);
+	Native_Free(&v);
+	return ok && Mod_EndLine(m);
 }
 
 static byte Mod_Del(modParse_t *m) {
@@ -1087,13 +1432,13 @@ static int Mod_Block(modParse_t *m, char *stop, int size);
 
 /* if <expr> ... [else ...] end */
 static byte Mod_If(modParse_t *m) {
-	PyObject *v = Mod_Expr(m);
-	if (!v || !Mod_EndLine(m)) {
-		Py_XDECREF(v);
+	nativeVal_t v;
+	if (!Mod_Expr(m, &v) || !Mod_EndLine(m)) {
+		Native_Free(&v);
 		return 0;
 	}
-	int t = m->skip ? 0 : PyObject_IsTrue(v);
-	Py_DECREF(v);
+	int t = m->skip ? 0 : Mod_Truth(&v);
+	Native_Free(&v);
 	if (t < 0) {
 		return 0;
 	}
@@ -1124,10 +1469,13 @@ static byte Mod_Class(modParse_t *m) {
 	Mod_Blanks(m);
 	if (*m->p == '(') {
 		byte comma;
+		nativeVal_t list;
 		m->p++;
-		PyObject *list = Mod_Items(m, ')', &comma);
-		bases = list ? PyList_AsTuple(list) : NULL;
-		Py_XDECREF(list);
+		if (Mod_Items(m, ')', &comma, &list)) {
+			list.type = NV_TUPLE;
+			bases = Mod_ToPy(m, &list);
+			Native_Free(&list);
+		}
 	} else {
 		bases = PyTuple_New(0);
 	}

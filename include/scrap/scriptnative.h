@@ -62,7 +62,9 @@ typedef struct nativeVal_s {
 	int max;			/* NV_LIST, NV_TUPLE: the room for items; NV_DICT: the slots */
 	char *text;			/* NV_STR, NV_LONG: a text of NATIVE_TEXT or more bytes (owned), else NULL */
 	struct nativeVal_s *items;	/* NV_LIST, NV_TUPLE, NV_DICT (owned), else NULL */
-	PyObject *obj;			/* NV_OBJ: the value (a reference owned), else NULL */
+	PyObject *obj;			/* NV_OBJ: the value (a reference owned). A number or text may keep the Python object it
+					 * came from here (the .mod evaluator, OBJLIB 5; a reference owned, copied and freed with
+					 * the value, read by nobody else), else NULL */
 } nativeVal_t;
 
 void Native_SetNone(nativeVal_t *v);
@@ -598,6 +600,24 @@ void TestNative_Command(nativeBuf_t *out, const char *arg);
 
 /* Scrap.Def(name): the default value of the engine variable, as Native_GVarGet gives the value */
 byte Native_GVarDef(const char *name, nativeVal_t *out);
+
+/* ---- the values of the .mod evaluator (stage 6) ---- */
+
+/* *v an NV_OBJ that holds o (a new reference; OBJLIB 7) */
+void Native_SetObj(nativeVal_t *v, PyObject *o);
+/* v or a value in it (an item, a key, a value of a dict, at any depth) has one of types (a mask of 1 << NV_) */
+byte Native_Holds(const nativeVal_t *v, unsigned types);
+/* eval(text) when text is a plain literal: a text without 0 bytes, Native_Literal after its leading blanks (as the
+ * readers of the save texts take it first). 1 with *out (Native_Free it), else 0 without an error and *out None */
+byte Native_LiteralText(const nativeVal_t *text, nativeVal_t *out);
+/*
+ * OBJLIB 9: the dict d as a new Python dict with the same table, each key and value (made by conv: a new reference,
+ * NULL with the error) in the slot it has in d, so that its keys come in the order 1.5.2 gives when the keys are set
+ * in the order d was made (Native_ToPy sets them in slot order, which can place two colliding keys otherwise). A dict
+ * with deleted slots, or one whose keys Python's lookdict would not find in their slots, is made in slot order. NULL
+ * with the error (an unhashable key)
+ */
+PyObject *Native_ToPyDict(const nativeVal_t *d, PyObject *(*conv)(const nativeVal_t *v, void *ctx), void *ctx);
 
 #include "scrap/scriptports.h"
 
