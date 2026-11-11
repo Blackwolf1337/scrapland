@@ -244,10 +244,7 @@ static byte Gk_GateKeeperSpeech(const nativeVal_t *usrName, const nativeVal_t *c
 
 /* an argument kept as the object itself (NV_OBJ): the foe group DoorFoe stores */
 static void Gk_Obj(PyObject *o, nativeVal_t *v) {
-	Native_SetNone(v);
-	v->type = NV_OBJ;
-	v->obj = o;
-	Py_INCREF(o);
+	Native_SetObj(v, o);
 }
 
 /* DoorFoe(EntityName, FoeType): the characters the gatekeeper lets pass. FoeType is stored as the value it is: an

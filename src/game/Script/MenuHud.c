@@ -52,9 +52,10 @@ static double Hud_Num(const nativeVal_t *v) {
 		PyErr_Clear();
 		return d;
 	}
-	case NV_OBJ: {
+	case NV_OBJ:
+	case NV_REF: {
 		/* OBJLIB 7: an object with its own int */
-		long l = PyInt_AsLong(v->obj);
+		long l = PyInt_AsLong(Native_PyOf(v));
 		PyErr_Clear();
 		return (double)l;
 	}

@@ -102,11 +102,11 @@ static void Base_SetObj(int id, const char *item, const char *var, const nativeV
 /* str(v) of the script into b (Native_BufFree it); an object's str the Python way (OBJLIB 7), "" when it fails */
 static const char *Base_Text(const nativeVal_t *v, nativeBuf_t *b) {
 	Native_BufInit(b);
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		Native_Repr(b, v, NR_STR);
 		return b->p;
 	}
-	PyObject *t = PyObject_Str(v->obj);
+	PyObject *t = PyObject_Str(Native_PyOf(v));
 	if (t) {
 		Native_BufAdd(b, PyString_AsString(t), PyString_Size(t));
 		Py_DECREF(t);

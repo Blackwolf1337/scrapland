@@ -1328,8 +1328,8 @@ static byte MissionsFuncs_SetMultipleMissionTargets_E(const nativeVal_t *a, int 
 	if (n != 1) {
 		return Port_Arity(n, 1);
 	}
-	PyObject *list = a[0].type == NV_OBJ ? a[0].obj : Native_ToPy(&a[0]);
-	if (a[0].type == NV_OBJ) {
+	PyObject *list = Native_IsObj(&a[0]) ? Native_PyOf(&a[0]) : Native_ToPy(&a[0]);
+	if (Native_IsObj(&a[0])) {
 		Py_INCREF(list);
 	}
 	byte ok = list && Mf_SetMultipleMissionTargets(list);

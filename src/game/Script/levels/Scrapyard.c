@@ -232,11 +232,11 @@ static byte Sy_RaiseValue(const char *module, const nativeVal_t *v) {
 		}
 		return 0;
 	}
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return Native_Raise(NE_TYPE, "exceptions must be strings, classes, or instances");
 	}
 	/* OBJLIB 7 */
-	PyObject *type = Script_Ref(v->obj), *value = Script_Ref(Py_None), *tb = NULL;
+	PyObject *type = Script_Ref(Native_PyOf(v)), *value = Script_Ref(Py_None), *tb = NULL;
 	while (PyTuple_Check(type) && PyTuple_Size(type) > 0) {
 		PyObject *tmp = type;
 		type = Script_Ref(PyTuple_GET_ITEM(type, 0));

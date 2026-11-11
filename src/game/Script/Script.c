@@ -995,10 +995,7 @@ static void Def_FromPy(PyObject *o, nativeVal_t *v) {
 		Native_Arg(o, v);
 		return;
 	}
-	Native_SetNone(v);
-	v->type = NV_OBJ;
-	v->obj = o;
-	Py_INCREF(o);
+	Native_SetObj(v, o);
 }
 
 /* the $name of the file (a borrowed reference), NULL when it has none */
@@ -1306,7 +1303,7 @@ static const char *Def_Word(scriptDef_t *m, const char *t, byte quoted, char *ou
 
 /* the value is a list or a tuple (a $name's list is its object) */
 static byte Def_IsSequence(const nativeVal_t *v) {
-	return v->type == NV_LIST || v->type == NV_TUPLE || (v->type == NV_OBJ && (PyList_Check(v->obj) || PyTuple_Check(v->obj)));
+	return v->type == NV_LIST || v->type == NV_TUPLE || (Native_IsObj(v) && (PyList_Check(Native_PyOf(v)) || PyTuple_Check(Native_PyOf(v))));
 }
 
 /* the list name as a tuple of lists, one per entry line, into *out (as Def_Value) */

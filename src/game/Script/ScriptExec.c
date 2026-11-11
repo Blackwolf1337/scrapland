@@ -393,7 +393,7 @@ byte Exec_Cat(nativeVal_t *out, int n, ...) {
 	for (int i = 1; ok && i < n; i++) {
 		const nativeVal_t *b = va_arg(va, const nativeVal_t *);
 		Native_SetNone(&r);
-		if (acc.type != NV_OBJ && b->type != NV_OBJ) {
+		if (!Native_IsObj(&acc) && !Native_IsObj(b)) {
 			ok = Native_Arith('+', &acc, b, &r);
 		} else {
 			/* OBJLIB 7: an instance adds with its __add__ or __radd__ */

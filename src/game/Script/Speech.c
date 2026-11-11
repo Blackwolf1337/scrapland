@@ -75,8 +75,8 @@ static byte Sp_CatS(const char *text, const nativeVal_t *b, nativeVal_t *out) {
 static byte Sp_Item(const nativeVal_t *v, long i, nativeVal_t *out) {
 	nativeVal_t tmp;
 	Native_SetNone(out);
-	if (v->type == NV_OBJ) {
-		PyObject *r = PySequence_GetItem(v->obj, (int)i);
+	if (Native_IsObj(v)) {
+		PyObject *r = PySequence_GetItem(Native_PyOf(v), (int)i);
 		if (!r) {
 			return 0;
 		}

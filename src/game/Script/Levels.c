@@ -318,7 +318,7 @@ static PyObject *Level_ReprPy(PyObject *v) {
 /* an argument of a step as the native value a call passes on (Native_Pass: a list of a $name that holds only native
  * values is one): 1 with *out (Native_Free it), 0 with *out None when it holds an object (OBJLIB 7) */
 static byte Level_ArgNative(const nativeVal_t *v, nativeVal_t *out) {
-	if (Native_Pass(v, out) && !Native_Holds(out, 1 << NV_OBJ)) {
+	if (Native_Pass(v, out) && !Native_Holds(out, NV_OBJS)) {
 		return 1;
 	}
 	Native_Free(out);
