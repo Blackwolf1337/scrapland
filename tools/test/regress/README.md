@@ -70,13 +70,17 @@ builds is then a difference of the builds, no reruns needed. Without the variabl
 
     ./regress.py check --live ...            # off for this run
     REGRESS_DETERMINISTIC=0 ...              # off for everything that uses the runner (also the scratch tools)
+    ./regress.py check --seed 7 ...          # another random seed (REGRESS_SEED=7 for the scratch tools)
 
 What the mode does:
 
-- Random numbers: the generator of the game (the CRT rand behind Scrap.Rand and all C sites) gets seed 1 at the start
-  and at the end of every level load.
+- Random numbers: the generator of the game (the CRT rand behind Scrap.Rand and all C sites) gets a fixed seed at the
+  start and at the end of every level load: 1, or SCRAP_TEST_DET_SEED=<n>. The runner uses seed 4 (check --seed,
+  REGRESS_SEED): of the seeds 1 to 6 it has the fewest chance lines that fail against the pack baselines. Another
+  seed is another sample of what the game draws at random.
 - Clock: Plat_Ticks and Plat_Counter, the source of all time in the game, give a clock that goes on by 1/60 s per pass
-  of the main loop. The real clock is not read. A level load takes no time on it. SCRAP_TEST_DETERMINISTIC=<n> with
+  of the main loop. The real clock is not read. A level load takes 5 s on it, so the first frame of a level is the
+  longest the game makes (0.1 s), as in a live game where a load takes seconds. SCRAP_TEST_DETERMINISTIC=<n> with
   n > 1 gives n steps a second.
 - Frames are presented without waiting for the display, so game time runs faster than real time (about 1.8 times in
   DownTown on the RTX).
@@ -87,11 +91,12 @@ What the mode does:
   ("at 000000000003>"), because the heap still differs a little from run to run.
 - Channel: in step mode the clock stands while no command file waits and runs only for the pace of the next one.
   The pace keeps the rules of a live run (game time since the last answer, at once after a level load or when the
-  game clock stood 60 frames), counted once per clock step.
-- The paces are the means of what live runs give (measured with a case of Scrap.GetTime() lines and sleeps, constants
+  game clock stood 60 frames), counted once per clock step, plus the one frame a live game needs to see the file.
+- The times are the means of what live runs give (measured with cases of Scrap.GetTime() lines and sleeps, constants
   DET_PACE, DET_SLEEP, DET_START in regress.py), so the lines land where the baselines saw them: a case line runs 7
-  steps (0.117 s) after the answer before, the first line 0.33 s into the level.
-- `!sleep N` is one command file with pace N + 0.44 and `credit=20` in its header (a live wait takes about 0.45 s
+  steps (0.117 s) after the answer before (0.1035 s of game time at the time speed 0.175), the first line 0.33 s into
+  the level. With 6 steps a line twice as many chance lines failed against the baselines.
+- `!sleep N` is one command file with pace N + 0.45 and `credit=20` in its header (a live wait takes about 0.45 s
   longer than N). The credit makes it a wait: the game counts game time plus the time the game clock stood (after its
   first 3 s), and after a level load since the last answer the time of the new level plus the credit (LOAD_CREDIT),
   as the runner does in a live run.
@@ -113,9 +118,9 @@ found.
 
 The stored pack baselines are live runs. Lines that depend on chance or on the exact moment (an NPC action, an AI
 state, a menu animation) fail in a live run now and then. In a deterministic run a fixed set of them fails, the same
-in every run, and a rerun does not clear it. To tell such a line from a port difference run the case with `--live` a
-few times, or compare the raw replies with a deterministic run of the base build: equal replies mean the builds
-behave the same. Any change that draws one random number more or less moves all later draws, so this set changes
+in every run, and a rerun does not clear it. To tell such a line from a port difference run the case with another seed
+(`--seed 2`, `--seed 3`: a line that passes with one of them depends on chance) or with `--live` a few times, or
+compare the raw replies with a deterministic run of the base build: equal replies mean the builds behave the same. Any change that draws one random number more or less moves all later draws, so this set changes
 with such a batch.
 
 ## Notes

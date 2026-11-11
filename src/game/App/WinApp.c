@@ -321,6 +321,8 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 	}
 	if (TestDet_On()) {
 		Con_Printf("Deterministic test mode on: %d steps a second\n", TestDet_Fps());
+		/* the level of the start is loaded */
+		TestDet_Seed(1);
 	}
 	for (;;) {
 		byte waiting = App_Waiting();

@@ -8,8 +8,9 @@
  *                 delta, the world timers, the engine timers, the texts, the music fades, the net timers) give a clock
  *                 of the mode that starts at a fixed value and goes on by one fixed step per pass of the main loop
  *                 (TESTDET_FPS steps a second; SCRAP_TEST_DETERMINISTIC=<n> with n > 1: n steps a second), whatever
- *                 the real clock does. A level load takes no time on it.
- *   the random    crt_rand gets a fixed seed at the start and at the end of every level load (TestDet_Seed)
+ *                 the real clock does. A level load takes a fixed time on it (5 s).
+ *   the random    crt_rand gets a fixed seed at the start and at the end of every level load (TestDet_Seed): 1, or
+ *                 SCRAP_TEST_DET_SEED=<n> (another seed is another sample of what the game draws at random)
  *   the sound     the mixer is not run by the device thread but by the clock of the mode (Snd_MixTo), so a sound ends
  *                 after the same number of frames in every run
  *   the channel   the pace of the command files of the test channel is counted once per step of the clock; with

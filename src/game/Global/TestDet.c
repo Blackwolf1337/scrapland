@@ -12,9 +12,14 @@
 #define TESTDET_TICKS 10000000		/* ticks of Plat_Counter a second */
 #define TESTDET_START 1000			/* the clock at the start, in seconds (never 0: a time of 0 means "not set" to
 									 * some of the game's timers) */
-#define TESTDET_SEED 1				/* the seed of the MSVC runtime at its start */
+#define TESTDET_SEED 1				/* the seed of the MSVC runtime at its start; SCRAP_TEST_DET_SEED=<n>: another */
 
 static int det_fps = -1;			/* -1: not asked yet, 0: off */
+#define TESTDET_LOAD 5				/* seconds a level load takes on the clock. A live load takes seconds, so the
+									 * first frame of a level is the longest the game makes (0.1 s) and all that
+									 * runs on real time starts that much later than the world clock */
+static unsigned int det_seed = TESTDET_SEED;
+static int64_t det_loadTicks;		/* the time of the level loads so far */
 static uint32_t det_frame;
 static uint32_t det_loads;
 static uint32_t det_loadFrame;
@@ -27,6 +32,10 @@ int TestDet_Fps(void) {
 		int n = e ? atoi(e) : 0;
 
 		det_fps = n == 1 ? TESTDET_FPS : n > 1 && n <= 1000 ? n : 0;
+		e = getenv("SCRAP_TEST_DET_SEED");
+		if (e && *e) {
+			det_seed = (unsigned int)strtoul(e, NULL, 10);
+		}
 		e = getenv("SCRAP_TEST_DET_TRACE");
 		if (det_fps && e && *e && (det_trace = fopen(e, "w")) != NULL) {
 			g_TestDetTrace = 1;
@@ -40,7 +49,7 @@ int TestDet_On(void) {
 }
 
 int64_t TestDet_Counter(void) {
-	return (int64_t)TESTDET_START * TESTDET_TICKS + (int64_t)det_frame * TESTDET_TICKS / TestDet_Fps();
+	return (int64_t)TESTDET_START * TESTDET_TICKS + det_loadTicks + (int64_t)det_frame * TESTDET_TICKS / TestDet_Fps();
 }
 
 uint32_t TestDet_Frame(void) {
@@ -72,10 +81,11 @@ void TestDet_Seed(int load) {
 	if (!TestDet_On()) {
 		return;
 	}
-	crt_srand(TESTDET_SEED);
+	crt_srand(det_seed);
 	if (load) {
 		det_loads++;
 		det_loadFrame = det_frame;
+		det_loadTicks += (int64_t)TESTDET_LOAD * TESTDET_TICKS;
 		TestDet_Trace("level loaded");
 	}
 }

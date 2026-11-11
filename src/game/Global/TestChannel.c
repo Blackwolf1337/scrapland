@@ -86,10 +86,12 @@ static struct {					/* the time since the last answer (TC_DetTrack) */
 	double stood;				/* time the game clock stood, without the first TC_STAND_FREE steps of each stand */
 	uint32_t still;				/* steps the game clock has stood in a row (not reset by an answer, as tc_paceStill) */
 	uint32_t answer;			/* TestDet_Frame() of the last answer */
+	uint32_t met;				/* TestDet_Frame() + 1 of the step in which the pace of a command file was met, else 0 */
 	byte loaded;				/* a level load ended since the last answer */
 } tc_det;
 #define TC_STILL_STEPS 60		/* a paced command file runs when the game clock stood that many steps (frames) */
 #define TC_STAND_FREE 180		/* steps of a stand that do not count for a wait (the runner's live wait: 3 s) */
+#define TC_PACE_SLACK 1e-4		/* the game time is a sum of float steps: 6 steps of 1/60 s are a pace of 0.1 */
 
 /* ---- the answer: a growing text ---- */
 
@@ -1123,11 +1125,27 @@ static int TC_PaceDone(double pace, double credit) {
 	if (TestDet_On()) {
 		TC_DetTrack();
 		if (credit >= 0.0) {
-			return tc_det.world + tc_det.stood + (tc_det.loaded ? credit : 0.0) >= pace;
+			return tc_det.world + tc_det.stood + (tc_det.loaded ? credit : 0.0) + TC_PACE_SLACK >= pace;
 		}
-		/* one step at least, as a live game gets no command file in the frame of its answer */
-		return !(pace > 0.0 && (TestDet_Frame() == tc_det.answer
-			|| (!tc_det.loaded && tc_det.world < pace && tc_det.still < TC_STILL_STEPS)));
+		if (pace <= 0.0) {
+			return 1;
+		}
+		/* a live game gets no command file in the frame of its answer */
+		if (TestDet_Frame() == tc_det.answer) {
+			return 0;
+		}
+		if (tc_det.loaded || tc_det.still >= TC_STILL_STEPS) {
+			return 1;
+		}
+		if (tc_det.world + TC_PACE_SLACK < pace) {
+			return 0;
+		}
+		/* and it sees the file one frame after the pace is met, more often than not (6.4 to 7 frames a line
+		 * measured for the pace 0.1 at 60 frames a second, 0.1035 s of game time a line at the time speed 0.175) */
+		if (!tc_det.met) {
+			tc_det.met = TestDet_Frame() + 1;
+		}
+		return TestDet_Frame() >= tc_det.met;
 	}
 	double gt = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
 	if (gt != tc_paceLast) {
@@ -1167,6 +1185,7 @@ static void TC_Poll(void) {
 		tc_det.world = tc_det.stood = 0.0;
 		tc_det.loaded = 0;
 		tc_det.answer = TestDet_Frame();
+		tc_det.met = 0;
 	}
 	Mem_Free(b.p);
 	Mem_Free(text);
