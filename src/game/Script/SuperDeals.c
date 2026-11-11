@@ -93,25 +93,30 @@ static byte Sd_PutI(const char *mod, const char *name, nativeVal_t *slot, long i
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) (Mode_Later for a number) with delay a
  * value of the script (a global of the module, the result of a function); func as a value (its entry) */
 static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *func, const nativeVal_t *args, int n) {
-	nativeVal_t now, t;
-	PyObject *fn = Mode_GlobalPy(mod, func);
-	if (!fn) {
+	nativeVal_t now, t, fn;
+	if (!Mode_RefG(mod, func, &fn)) {
 		return 0;
 	}
 	Native_SetFloat(&now, Mode_Time());
 	Native_SetNone(&t);
-	byte ok = Native_Arith('+', &now, delay, &t) && Mode_Schedule(&t, fn, args, n, NULL);
+	byte ok = Native_Arith('+', &now, delay, &t) && Mode_ScheduleV(&t, &fn, args, n, NULL);
 	Native_Free(&t);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
-/* the same with func an object (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish) at Scrap.GetTime() + delay
- * (the entry of a port's own function) */
-static byte Sd_LaterObj(double delay, PyObject *fn, const nativeVal_t *args, int n) {
+/* the same with func a value held by reference (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish; OBJLIB 7) at
+ * Scrap.GetTime() + delay (the entry of a port's own function) */
+static byte Sd_LaterObj(double delay, const nativeVal_t *fn, const nativeVal_t *args, int n) {
 	nativeVal_t t;
 	Native_SetFloat(&t, Mode_Time() + delay);
-	return Mode_Schedule(&t, fn, args, n, NULL);
+	return Mode_ScheduleV(&t, fn, args, n, NULL);
+}
+
+/* MissionsFuncs.OnSuperDealFinish as the module holds it, by reference (OBJLIB 7: the function object Speech keeps
+ * and the scheduler gets) */
+static byte Sd_FinishRef(nativeVal_t *out) {
+	return Mode_RefMod("MissionsFuncs", "OnSuperDealFinish", out);
 }
 
 /* e = Scrap.CreateEntity(name, pos[0], pos[1], pos[2], cls) as the handle value */
@@ -212,28 +217,29 @@ static void Sd_Params(long win, const char *mode, const char *retry, nativeVal_t
 	Native_SetStr(Native_Append(out), retry);
 }
 
-/* Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params), how ForceRemoteCom or AddRemoteCom */
-static byte Sd_Remote(const char *how, const nativeVal_t *cad, const nativeVal_t *who, PyObject *func,
+/* Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params), how ForceRemoteCom or AddRemoteCom; func
+ * a reference, given to Speech as the object it is */
+static byte Sd_Remote(const char *how, const nativeVal_t *cad, const nativeVal_t *who, const nativeVal_t *func,
 	const nativeVal_t *params) {
 	if (!strcmp(how, "ForceRemoteCom")) {
-		return PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, func, params);
+		return PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, func->obj, params);
 	}
-	return PORT_CALL(Speech, AddRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, func, params);
+	return PORT_CALL(Speech, AddRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, func->obj, params);
 }
 
 /* if (cad and cad != ""): Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params) else:
  * apply(func, params) (func a value: its entry while it is a port's own function, MODE_CBAPPLY) */
-static byte Sd_End(const char *how, const nativeVal_t *cad, const nativeVal_t *who, PyObject *func,
+static byte Sd_End(const char *how, const nativeVal_t *cad, const nativeVal_t *who, const nativeVal_t *func,
 	const nativeVal_t *params) {
 	if (Sd_Text(cad)) {
 		return Sd_Remote(how, cad, who, func, params);
 	}
-	return MODE_CBAPPLY(func, params, NULL);
+	return Mode_Apply(func, params, NULL);
 }
 
 /* the same with the crazy gambler speaking and func (MissionsFuncs.OnSuperDealFinish as the script read it) called
  * with (win, mode, retry) */
-static byte Sd_FinishFn(const char *how, const nativeVal_t *cad, PyObject *func, long win, const char *mode,
+static byte Sd_FinishFn(const char *how, const nativeVal_t *cad, const nativeVal_t *func, long win, const char *mode,
 	const char *retry) {
 	nativeVal_t who, params;
 	Native_SetStr(&who, CG);
@@ -245,9 +251,9 @@ static byte Sd_FinishFn(const char *how, const nativeVal_t *cad, PyObject *func,
 
 /* the same with MissionsFuncs.OnSuperDealFinish read here */
 static byte Sd_Finish(const char *how, const nativeVal_t *cad, long win, const char *mode, const char *retry) {
-	PyObject *func = Script_Attr("MissionsFuncs", "OnSuperDealFinish");
-	byte ok = func && Sd_FinishFn(how, cad, func, win, mode, retry);
-	Py_XDECREF(func);
+	nativeVal_t func;
+	byte ok = Sd_FinishRef(&func) && Sd_FinishFn(how, cad, &func, win, mode, retry);
+	Native_Free(&func);
 	return ok;
 }
 
@@ -294,13 +300,13 @@ static byte Sd_ShipSafe(void) {
 /* MissionsFuncs.cameraData = MissionsFuncs.mapsCameraData[map] (OBJLIB 5: the object of the table, as the script
  * shares it) */
 static byte Sd_Camera(const char *map) {
-	PyObject *cams = Script_Attr("MissionsFuncs", "mapsCameraData");
-	PyObject *key = cams ? PyString_FromString((char *)map) : NULL;
-	PyObject *c = key ? PyObject_GetItem(cams, key) : NULL;
-	byte ok = c && Mode_SetModPy("MissionsFuncs", "cameraData", c);
-	Py_XDECREF(c);
-	Py_XDECREF(key);
-	Py_XDECREF(cams);
+	nativeVal_t cams, key, c = { 0 };
+	Native_SetText(&key, map, (int)strlen(map));
+	byte ok = Mode_RefMod("MissionsFuncs", "mapsCameraData", &cams) && Mode_RefSub(&cams, &key, &c) &&
+		Mode_RefToMod("MissionsFuncs", "cameraData", &c);
+	Native_Free(&c);
+	Native_Free(&key);
+	Native_Free(&cams);
 	return ok;
 }
 
@@ -543,15 +549,14 @@ MODE_FN(Dm, CreateEnemies, 0, Dm_CreateEnemiesC())
 /* Speech.AddRemoteCom(Scrap.GetSaveVar(cadVar), "CrazyGambler", mod.func) (mod.func a value Speech keeps, OBJLIB 5;
  * its call there takes the entry, Mode_Apply) */
 static byte Sd_GamblerSays(const char *cadVar, const char *mod, const char *func) {
-	nativeVal_t cad;
-	PyObject *fn = Mode_GlobalPy(mod, func);
-	if (!fn) {
+	nativeVal_t cad, fn;
+	if (!Mode_RefG(mod, func, &fn)) {
 		return 0;
 	}
 	Mode_SaveVar(cadVar, &cad);
-	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vsO", &cad, CG, fn);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vsO", &cad, CG, fn.obj);
 	Native_Free(&cad);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -614,9 +619,8 @@ static byte Dm_Finish(void) {
 /* the hook of a mission instead of the score table: KeepPlaying(enemiesFrags.keys()), after the message when there
  * is one (how is the Speech function; the hook a variable, OBJLIB 5) */
 static byte Dm_Keep(const char *how, const nativeVal_t *cad) {
-	nativeVal_t keys, params, who;
-	PyObject *hook = Mode_GlobalPy(DM, "KeepPlaying");
-	if (!hook) {
+	nativeVal_t keys, params, who, hook;
+	if (!Mode_RefG(DM, "KeepPlaying", &hook)) {
 		return 0;
 	}
 	Native_SetNone(&keys);
@@ -626,11 +630,11 @@ static byte Dm_Keep(const char *how, const nativeVal_t *cad) {
 		*Native_Append(&params) = keys;
 		Native_SetNone(&keys);
 		Native_SetStr(&who, CG);
-		ok = Sd_End(how, cad, &who, hook, &params);
+		ok = Sd_End(how, cad, &who, &hook, &params);
 		Native_Free(&params);
 	}
 	Native_Free(&keys);
-	Py_DECREF(hook);
+	Native_Free(&hook);
 	return ok;
 }
 
@@ -638,8 +642,7 @@ static byte Dm_Keep(const char *how, const nativeVal_t *cad) {
  * of the result (player: he won), the scorer off; then the last message and the score table, or KeepPlaying of a
  * mission. how is the Speech function; cam the winner the camera looks at (NULL: none) */
 static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *cam) {
-	nativeVal_t cad;
-	PyObject *func = NULL;
+	nativeVal_t cad, func = { 0 };
 	if ((safe && !Sd_UsrSafe()) || !Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") ||
 		!Mode_Import("Parking") || !PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "DeathMatch") ||
 		!PORT_CALL(MissionsFuncs, RelaxShipsInList, NULL, "s", "DeathMatch")) {
@@ -647,18 +650,18 @@ static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *c
 	}
 	Mode_SaveS("PlayerWinsCombat", player ? "1" : "0");
 	Mode_SaveVar(player ? "CombatFinishPlayerWinsTextCad" : "CombatFinishPlayerLoosesTextCad", &cad);
-	byte ok = (cam || (func = Script_Attr("MissionsFuncs", "OnSuperDealFinish")) != NULL) && Sd_ScorerOff() &&
+	byte ok = (cam || Sd_FinishRef(&func)) && Sd_ScorerOff() &&
 		Dm_Finish() && Mode_Read(DM, "KeepPlaying", &dm.keepPlaying);
 	if (ok && !Native_True(&dm.keepPlaying)) {
 		if (cam) {
 			ok = Sd_CamOnWinner(cam) && Sd_Finish(how, &cad, 0, "DeathMatch", "DeathMatch.RestartCombat");
 		} else {
-			ok = Sd_FinishFn(how, &cad, func, player, "DeathMatch", player ? "" : "DeathMatch.RestartCombat");
+			ok = Sd_FinishFn(how, &cad, &func, player, "DeathMatch", player ? "" : "DeathMatch.RestartCombat");
 		}
 	} else if (ok) {
 		ok = Dm_Keep(how, &cad);
 	}
-	Py_XDECREF(func);
+	Native_Free(&func);
 	Native_Free(&cad);
 	return ok;
 }
@@ -1026,28 +1029,27 @@ static byte Vs_OnEnemyDeathC(const nativeVal_t *loser) {
 	byte ok;
 	if (Sd_Text(cad)) {
 		/* Speech.ForceRemoteCom(cad, "CrazyGambler", 1, MissionsFuncs.OnSuperDealFinish, (1, "Versus", "")) after 2 s */
-		PyObject *fn = Script_Attr("Speech", "ForceRemoteCom");
-		PyObject *func = fn ? Script_Attr("MissionsFuncs", "OnSuperDealFinish") : NULL;
-		ok = func != NULL;
+		nativeVal_t fn = { 0 }, func = { 0 };
+		ok = Mode_RefMod("Speech", "ForceRemoteCom", &fn) && Sd_FinishRef(&func);
 		if (ok) {
 			nativeVal_t args[5];
 			Native_Copy(&args[0], cad);
 			Native_SetStr(&args[1], CG);
 			Native_SetInt(&args[2], 1);
-			Native_Arg(func, &args[3]);
+			Mode_RefPlain(&func, &args[3]);
 			args[4] = *params;
 			Native_SetNone(params);
-			ok = Sd_LaterObj(2.0, fn, args, 5);
+			ok = Sd_LaterObj(2.0, &fn, args, 5);
 			for (int i = 0; i < 5; i++) {
 				Native_Free(&args[i]);
 			}
 		}
-		Py_XDECREF(func);
-		Py_XDECREF(fn);
+		Native_Free(&func);
+		Native_Free(&fn);
 	} else {
-		PyObject *fn = Script_Attr("MissionsFuncs", "OnSuperDealFinish");
-		ok = fn && Sd_LaterObj(5.0, fn, params->items, params->n);
-		Py_XDECREF(fn);
+		nativeVal_t fn;
+		ok = Sd_FinishRef(&fn) && Sd_LaterObj(5.0, &fn, params->items, params->n);
+		Native_Free(&fn);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -1094,29 +1096,27 @@ static byte Vs_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winne
 	if (Sd_Text(cad)) {
 		return Mode_Done(&t, Mode_Later(2.0, VS, "EnemyWins", cad, 1, NULL));
 	}
-	PyObject *fn = Script_Attr("MissionsFuncs", "OnSuperDealFinish");
+	nativeVal_t *fn = Mode_V(&t);
+	byte ok = Sd_FinishRef(fn);
 	Sd_Params(0, "Versus", "Versus.RestartCombat", args);
-	byte ok = fn && Sd_LaterObj(5.0, fn, args->items, args->n);
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, ok && Sd_LaterObj(5.0, fn, args->items, args->n));
 }
 
 MODE_FN(Vs, OnPlayerDeath, 2, Vs_OnPlayerDeathC(&a[0], &a[1]))
 
 /* EnemyWins(cad): the enemy's message, then the score table */
 static byte Vs_EnemyWinsC(const nativeVal_t *cad) {
-	nativeVal_t head, params;
-	PyObject *fn;
+	nativeVal_t head, params, fn;
 	Mode_SaveVar("CombatEnemyTypeHead", &head);
-	if (!(fn = Script_Attr("MissionsFuncs", "OnSuperDealFinish"))) {
+	if (!Sd_FinishRef(&fn)) {
 		Native_Free(&head);
 		return 0;
 	}
 	Sd_Params(0, "Versus", "Versus.RestartCombat", &params);
-	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vvOv", cad, &head, fn, &params);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vvOv", cad, &head, fn.obj, &params);
 	Native_Free(&params);
 	Native_Free(&head);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -1284,28 +1284,26 @@ MODE_FN(Tdm, StartCombat, 0, Tdm_StartCombatC())
 /* the end with the hook of a mission: Speech.<how>(cad, ...) then mod.KeepPlaying(args), or KeepPlaying(args) at
  * once without a message (the hook a variable, OBJLIB 5) */
 static byte Sd_EndHook(const char *mod, const char *how, const nativeVal_t *cad, const nativeVal_t *params) {
-	nativeVal_t who;
-	PyObject *hook = Mode_GlobalPy(mod, "KeepPlaying");
-	if (!hook) {
+	nativeVal_t who, hook;
+	if (!Mode_RefG(mod, "KeepPlaying", &hook)) {
 		return 0;
 	}
 	Native_SetStr(&who, CG);
-	byte ok = Sd_End(how, cad, &who, hook, params);
-	Py_DECREF(hook);
+	byte ok = Sd_End(how, cad, &who, &hook, params);
+	Native_Free(&hook);
 	return ok;
 }
 
 /* the end of the team combat after the frag that won it: OnEnemyDeath (the player's team wins) and OnFriendDeath */
 static byte Tdm_End(byte win) {
-	nativeVal_t cad, none;
-	PyObject *func;
+	nativeVal_t cad, none, func = { 0 };
 	if (!Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") || !Mode_Import("Parking")) {
 		return 0;
 	}
 	Mode_SaveS("PlayerWinsCombat", win ? "1" : "0");
 	Mode_SaveVar(win ? "CombatFinishPlayerWinsTextCad" : "CombatFinishPlayerLoosesTextCad", &cad);
 	Native_SetEmpty(&none, NV_TUPLE);
-	byte ok = (func = Script_Attr("MissionsFuncs", "OnSuperDealFinish")) != NULL && Sd_ScorerOff() &&
+	byte ok = Sd_FinishRef(&func) && Sd_ScorerOff() &&
 		PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "Enemies") &&
 		PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "Friends") &&
 		Mode_ListSet("Enemies", "OnDeath", "TeamDeathMatch.OnEnemyDeath2") &&
@@ -1313,11 +1311,11 @@ static byte Tdm_End(byte win) {
 		Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") && Mode_ModNone("Parking", "SwitchCharMissionCallback") &&
 		Mode_Read(TDM, "KeepPlaying", &tdm.keepPlaying);
 	if (ok && !Native_True(&tdm.keepPlaying)) {
-		ok = Sd_UsrSafe() && Sd_FinishFn("ForceRemoteCom", &cad, func, win, "TeamDeathMatch", win ? "" : "TeamDeathMatch.RestartCombat");
+		ok = Sd_UsrSafe() && Sd_FinishFn("ForceRemoteCom", &cad, &func, win, "TeamDeathMatch", win ? "" : "TeamDeathMatch.RestartCombat");
 	} else if (ok) {
 		ok = Sd_EndHook(TDM, "ForceRemoteCom", &cad, &none);
 	}
-	Py_XDECREF(func);
+	Native_Free(&func);
 	Native_Free(&cad);
 	return ok;
 }
@@ -1762,21 +1760,21 @@ static byte Ctf_EndOfCTFC(void) {
 	}
 	/* for name in flagsActive: CTF.RemoveFlag(name), on the list object read before the loop as RemoveFlag changes it
 	 * (OBJLIB 5: the loop of the script runs on the object of the module dict) */
-	PyObject *flags = ok ? Mode_GlobalPy(CTF, "flagsActive") : NULL;
-	ok = flags != NULL;
+	nativeVal_t flags = { 0 };
+	ok = ok && Mode_RefG(CTF, "flagsActive", &flags);
 	for (int i = 0; ok; i++) {
-		PyObject *item;
-		int r = Script_Next(flags, i, &item);
+		nativeVal_t item;
+		int r = Mode_RefNext(&flags, i, &item);
 		if (r <= 0) {
 			ok = r == 0;
 			break;
 		}
 		Native_Free(name);
-		Native_Arg(item, name);
-		Py_DECREF(item);
+		Mode_RefPlain(&item, name);
+		Native_Free(&item);
 		ok = PORT_OWN(CTF, RemoveFlag, NULL, "v", name);
 	}
-	Py_XDECREF(flags);
+	Native_Free(&flags);
 	if (!ok || !Mode_GVarSetS("LeaderFlag", "") ||
 		!PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "CTFEnemies") ||
 		!PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "CTFFriends") ||
@@ -2000,14 +1998,11 @@ static byte Ctf_SpawnFlagsC(const nativeVal_t *pos, const nativeVal_t *num) {
 	byte ok = Mode_Range(num, &n);
 	for (long i = 0; ok && i < n; i++) {
 		/* flagsSpecial.append(CTF.CreateFlag(pos)) on the list read before the call */
-		nativeVal_t name;
+		nativeVal_t name, list;
 		Native_SetNone(&name);
-		PyObject *list = Mode_GlobalPy(CTF, "flagsSpecial"), *x = NULL, *r = NULL;
-		ok = list && PORT_OWN(CTF, CreateFlag, &name, "v", pos) && (x = Native_ToPy(&name)) != NULL &&
-			(r = Script_Method(list, "append", "(O)", x)) != NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(x);
-		Py_XDECREF(list);
+		ok = Mode_RefG(CTF, "flagsSpecial", &list) && PORT_OWN(CTF, CreateFlag, &name, "v", pos) &&
+			Mode_RefCall(&list, "append", &name, 1, NULL);
+		Native_Free(&list);
 		Native_Free(&name);
 	}
 	if (!ok || !Mode_UsrHandle(usr)) {
@@ -2092,10 +2087,11 @@ static byte Sd_PreEnd(byte win, const char *cadVar, const char *whoVar, const ch
 	} else {
 		Native_SetStr(&who, CG);
 	}
-	PyObject *func = Script_Attr("MissionsFuncs", "OnSuperDealFinish");
+	nativeVal_t func;
+	byte ok = Sd_FinishRef(&func);
 	Sd_Params(win, mode, retry, &params);
-	byte ok = func && Sd_Remote("ForceRemoteCom", &cad, &who, func, &params);
-	Py_XDECREF(func);
+	ok = ok && Sd_Remote("ForceRemoteCom", &cad, &who, &func, &params);
+	Native_Free(&func);
 	Native_Free(&params);
 	Native_Free(&cad);
 	Native_Free(&who);
@@ -2397,14 +2393,13 @@ MODE_KW(Dom, CreateBaton, "|O", "pos") {
 /* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) (mod.func a value Speech keeps, OBJLIB 5; its call there
  * takes the entry, Mode_Apply) */
 static byte Sd_GamblerKey(const char *key, const char *mod, const char *func) {
-	nativeVal_t none;
-	PyObject *fn = Mode_GlobalPy(mod, func);
-	if (!fn) {
+	nativeVal_t none, fn;
+	if (!Mode_RefG(mod, func, &fn)) {
 		return 0;
 	}
 	Native_SetEmpty(&none, NV_TUPLE);
-	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, CG, fn, &none);
-	Py_DECREF(fn);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, CG, fn.obj, &none);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -2446,13 +2441,12 @@ static byte Dom_CrazyGamblerStartDominationC(void) {
 	if (!Sd_PutI(DOM, "CrazyGamblerStartDominationFirst", &dom.startFirst, 0)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *f = Mode_GlobalPy(DOM, "StartDomination");
+	nativeVal_t *f = Mode_V(&t);
+	byte ok = Mode_RefG(DOM, "StartDomination", f);
 	Native_Free(v);
 	Mode_SaveVar("DominationStartTextCad", v);
 	Native_SetEmpty(fn, NV_TUPLE);
-	byte ok = f && PORT_CALL(Speech, AddRemoteCom, NULL, "vsOv", v, CG, f, fn);
-	Py_XDECREF(f);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, ok && PORT_CALL(Speech, AddRemoteCom, NULL, "vsOv", v, CG, f->obj, fn));
 }
 
 MODE_FN(Dom, CrazyGamblerStartDomination, 0, Dom_CrazyGamblerStartDominationC())
@@ -3220,16 +3214,15 @@ MODE_FN(Mr, LostBatonMessage, 0, Sd_LostBaton("Mission_WinMortalRace_SystemMessa
 /* CrazyGamblerStartMortalRace(): the player boarded: the racers line up, the crazy gambler's message puts the first
  * buoy */
 static byte Mr_CrazyGamblerStartMortalRaceC(void) {
-	nativeVal_t cad, none;
-	PyObject *fn;
+	nativeVal_t cad, none, fn = { 0 };
 	if (!Mode_Import("Parking") || !Mode_Import("Speech") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
 		!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", MR, "SetVulnerable")) {
 		return 0;
 	}
 	Mode_SaveVar("MortalRaceStartTextCad", &cad);
 	Native_SetEmpty(&none, NV_TUPLE);
-	byte ok = (fn = Mode_GlobalPy(MR, "CreateFirstWaypoint")) != NULL && PORT_CALL(Speech, AddRemoteCom, NULL, "vsOv", &cad, CG, fn, &none);
-	Py_XDECREF(fn);
+	byte ok = Mode_RefG(MR, "CreateFirstWaypoint", &fn) && PORT_CALL(Speech, AddRemoteCom, NULL, "vsOv", &cad, CG, fn.obj, &none);
+	Native_Free(&fn);
 	Native_Free(&cad);
 	return ok && PORT_OWN(MortalRace, InitRace, NULL, "");
 }
@@ -3696,17 +3689,15 @@ static byte Mr_RacerCheckPoint(const nativeVal_t *l, const nativeVal_t *who) {
 	}
 	if (Native_Compare(n, &mr.numWaypoints) >= 0) {
 		/* the race lost */
-		PyObject *func;
+		nativeVal_t *func = Mode_V(&t);
 		if (!Mode_VDel(l) || !Mode_EntityH(who, e) || !PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 0L) ||
-			!Sd_ScorerOff() || !(func = Script_Attr("MissionsFuncs", "OnSuperDealFinish"))) {
+			!Sd_ScorerOff() || !Sd_FinishRef(func)) {
 			return Mode_Done(&t, 0);
 		}
 		Sd_Params(0, "MortalRace", "MortalRace.RestartRace", params);
 		Mode_SaveVar("MortalRaceFinishPlayerLoosesTextCad", cad);
 		Mode_SaveVar("MortalRaceFinishPlayerLoosesTextFoe", foe);
-		byte ok = Sd_Remote("ForceRemoteCom", cad, foe, func, params);
-		Py_DECREF(func);
-		return Mode_Done(&t, ok && PORT_OWN(MortalRace, EndOfMortalRace, NULL, ""));
+		return Mode_Done(&t, Sd_Remote("ForceRemoteCom", cad, foe, func, params) && PORT_OWN(MortalRace, EndOfMortalRace, NULL, ""));
 	}
 	/* BestScorer = the most buoys of a racer */
 	if (!Sd_PutI(MR, "BestScorer", &mr.bestScorer, 0) || !Mode_Keys(MR, "BayScorer", 1, keys)) {
@@ -4094,16 +4085,15 @@ MODE_FN(Mr, RespawnPlayer, 3, Mr_RespawnPlayerC(&a[0], &a[1], &a[2]))
 
 /* PreOnVictory(): the race over, the player safe, the last message, then the score table */
 static byte Mr_PreOnVictoryC(void) {
-	nativeVal_t cad, foe, params;
-	PyObject *func;
+	nativeVal_t cad, foe, params, func = { 0 };
 	if (!PORT_OWN(MortalRace, EndOfMortalRace, NULL, "") || !Sd_UsrSafe() || !Mode_GVarSetS("OnItemTakenAI", "")) {
 		return 0;
 	}
 	Mode_SaveVar("MortalRaceFinishPlayerWinsTextCad", &cad);
 	Mode_SaveVar("MortalRaceFinishPlayerWinsTextFoe", &foe);
 	Sd_Params(1, "MortalRace", "", &params);
-	byte ok = (func = Script_Attr("MissionsFuncs", "OnSuperDealFinish")) != NULL && Sd_Remote("ForceRemoteCom", &cad, &foe, func, &params);
-	Py_XDECREF(func);
+	byte ok = Sd_FinishRef(&func) && Sd_Remote("ForceRemoteCom", &cad, &foe, &func, &params);
+	Native_Free(&func);
 	Native_Free(&cad);
 	Native_Free(&foe);
 	Native_Free(&params);
