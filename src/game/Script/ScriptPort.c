@@ -726,6 +726,17 @@ int Native_Seam(const char *module, const char *name, nativeHook_t *hook) {
 	return 1;
 }
 
+void Native_HookClear(void) {
+	while (port_hooks) {
+		portHook_t *h = port_hooks;
+		port_hooks = h->next;
+		Native_HookFree(&h->hook);
+		Mem_Free(h->module);
+		Mem_Free(h->name);
+		Mem_Free(h);
+	}
+}
+
 void Native_HookFree(nativeHook_t *hook) {
 	Native_Free(&hook->f);
 	hook->call = NULL;

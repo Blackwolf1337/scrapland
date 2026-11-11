@@ -263,6 +263,7 @@ void Python_Close(void) {
 	Py_LineEnd(Py_LineImport(init) && Py_LineCall("Init.Close", PyTuple_New(0)));
 	cPy_Function_ClearAll();
 	CharsNPC_Close();
+	Native_HookClear();
 	Py_Finalize();
 	g_PythonReady = 0;
 }

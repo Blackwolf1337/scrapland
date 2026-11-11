@@ -400,7 +400,7 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
  * own function, a hook (what the case put there, and for a function of the test channel, a recorder or a lambda, its
  * C function and record, so the call does not go through an object of Python) or deleted. The entry is made at the
  * first question from what the module holds then; the test channel's stores of module attributes keep it in step
- * (Native_HookStore). Native_Seam: 0 for the engine's own function (the port calls the C directly), 1 with *hook (a
+ * (Native_HookStore), and the entries go when the modules are made again for the next level (Native_HookClear). Native_Seam: 0 for the engine's own function (the port calls the C directly), 1 with *hook (a
  * copy that Native_HookCall takes over or Native_HookFree drops), -1 with the AttributeError of a deleted one (or the
  * error of the first lookup).
  */
@@ -417,6 +417,8 @@ byte Native_HookCall(nativeHook_t *hook, nativeVal_t *out, const char *fmt, ...)
 void Native_HookFree(nativeHook_t *hook);
 /* o.name = v (v NULL: del o.name) was done: when o is a module and module.name has a seam entry, it follows */
 void Native_HookStore(const nativeVal_t *o, const char *name, const nativeVal_t *v);
+/* every seam entry dropped: the modules are made again (Python_Close before the next level) */
+void Native_HookClear(void);
 /* the test channel's function that tells its own functions: 1 with the C function and record of f */
 void Native_HookFinder(byte (*find)(const nativeVal_t *f, nativeHook_t *hook));
 /*
