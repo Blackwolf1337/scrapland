@@ -88,7 +88,8 @@ typedef struct nativeVal_s {
 					 * came from here (the .mod evaluator, OBJLIB 5; a reference owned, copied and freed with
 					 * the value, read by nobody else), else NULL */
 	struct cEntityRef *ent;		/* NV_ENT: the handle (held once by this value), else NULL */
-	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL */
+	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL (under SCRAP_NATIVE_REF=2,
+					 * the check of batch 9a, an NV_OBJ holds the view of its object here too) */
 } nativeVal_t;
 
 void Native_SetNone(nativeVal_t *v);
@@ -403,7 +404,8 @@ typedef struct nativeVar_s {
  * entity handle (cPyEntity) as NV_ENT, any other value (a function, a class instance, or a container that holds one
  * or a handle: the container keeps its identity) as NV_OBJ (OBJLIB 7); always 1. Under SCRAP_NATIVE_REF=1 (the check
  * of batch 9a, NObj_RefMode) such a value is the NV_REF view of the object when Native_FromPyRef takes its type (a
- * list, dict, instance, class, function, method or module) */
+ * list, dict, instance, class, function, method or module); under SCRAP_NATIVE_REF=2 it is the NV_OBJ and holds
+ * that view too */
 byte Native_Arg(PyObject *o, nativeVal_t *v);
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
  * is missing or of a form the C does not take (TypeError naming it) */

@@ -154,8 +154,12 @@ void NObj_FromPy(PyObject *o, nativeVal_t *v);
 PyObject *NObj_ToPy(const nativeVal_t *v);
 /* the Python object the value's object has now (borrowed), NULL when it has none (no conversion) */
 PyObject *NObj_Py(const nativeVal_t *v);
-/* SCRAP_NATIVE_REF=1 (read once): Native_Arg gives the NV_REF view of an object Native_FromPyRef takes where it
- * gives an NV_OBJ without it. For the checks of batch 9a; the default leaves every user on NV_OBJ */
+/* SCRAP_NATIVE_REF (read once), for the checks of batch 9a; 0, the default, leaves every user on NV_OBJ:
+ *   1  Native_Arg gives the NV_REF view of an object Native_FromPyRef takes where it gives an NV_OBJ without it
+ *      (what the later batches switch the users to: a user that tests NV_OBJ sees another kind)
+ *   2  Native_Arg gives the NV_OBJ as before and the value also holds the view of its object (nativeVal_t.ref): every
+ *      such value of the game makes, shares and frees a view, with no change for any user (the check of the
+ *      identity table and of the counts under the load of the whole game) */
 byte NObj_RefMode(void);
 
 #endif

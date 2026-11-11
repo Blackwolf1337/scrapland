@@ -216,15 +216,15 @@ void NObj_Counts(unsigned long *made, unsigned long *freed, unsigned long *views
 }
 
 byte NObj_RefMode(void) {
-	static int on = -1;
-	if (on < 0) {
+	static int mode = -1;
+	if (mode < 0) {
 		const char *e = getenv("SCRAP_NATIVE_REF");
-		on = e && !strcmp(e, "1");
+		mode = e && !strcmp(e, "1") ? 1 : e && !strcmp(e, "2") ? 2 : 0;
 	}
-	return (byte)on;
+	return (byte)mode;
 }
 
-/* the check of batch 9a: under SCRAP_NATIVE_REF=1 the program prints at its end the objects made and freed (what is
+/* the checks of batch 9a: under SCRAP_NATIVE_REF the program prints at its end the objects made and freed (what is
  * left then is held by the C state of the ports, which is never freed, or was lost) */
 __attribute__((destructor)) static void Obj_AtExit(void) {
 	if (NObj_RefMode()) {

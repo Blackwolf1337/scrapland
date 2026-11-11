@@ -2954,11 +2954,16 @@ static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte gl
 
 byte Native_Arg(PyObject *o, nativeVal_t *v) {
 	if (PyEntity_Check(o) || !Native_FromPyAny(o, v)) {
-		/* the check of batch 9a: the view of the object in place of the NV_OBJ */
-		if (NObj_RefMode() && Native_FromPyRef(o, v)) {
+		/* the checks of batch 9a: the view of the object in place of the NV_OBJ (1), or held next to it (2) */
+		byte mode = NObj_RefMode();
+		nativeVal_t view;
+		if (mode == 1 && Native_FromPyRef(o, v)) {
 			return 1;
 		}
 		Native_SetObj(v, o);
+		if (mode == 2 && v->type == NV_OBJ && Native_FromPyRef(o, &view)) {
+			v->ref = view.ref;
+		}
 	}
 	return 1;
 }
