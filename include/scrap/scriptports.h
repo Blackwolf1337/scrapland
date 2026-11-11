@@ -1036,8 +1036,14 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 
 /* Net.c */
 PORT_DECL(Net, PurgeServerMapList) /* ? */
+PORT_DECL(Net, Spectate) /* 2 */
+PORT_DECL(Net, ClientJoinDef) /* 11 */
+PORT_DECL(Net, LoadSinglePlayer) /* 1 */
 #define PORTS_Net \
-	PORT_DEF(Net, PurgeServerMapList, Net_PurgeServerMapList)
+	PORT_DEF(Net, PurgeServerMapList, Net_PurgeServerMapList) \
+	PORT_DEF(Net, Spectate, Net_Spectate) \
+	PORT_DEF(Net, ClientJoinDef, Net_ClientJoinDef) \
+	PORT_DEF(Net, LoadSinglePlayer, Net_LoadSinglePlayer)
 
 /* NetModes.c */
 PORT_DECL(NDeathMatch, DeathFunc) /* 3 */
@@ -5528,6 +5534,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2632
+#define PORT_COUNT 2635
 
 #endif

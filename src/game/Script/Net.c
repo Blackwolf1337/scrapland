@@ -6,7 +6,8 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C on native values; the module has no
  * state of its own in C. ModesMap is read from the module dict when the map list is purged (OBJLIB 5); IsClient,
- * IsServer, Scrap.Set and Scrap.LoadLevel go through their seams (OBJLIB 7).
+ * IsServer, Scrap.Set and Scrap.LoadLevel go through their seams (OBJLIB 7). The functions of the table have native
+ * entries (MODE_FN, stage 6 batch 6f) except the two default callbacks on the shared adapter Mode_PyNone2.
  */
 #include "scrap/app.h"
 #include "scrap/net.h"
@@ -15,11 +16,11 @@
 #include "scrap/scriptmodes.h"
 
 /* Spectate(id, value): the camera of player id flies free and its target stops, or back */
-static byte Net_SpectateC(const nativeVal_t *id, int on) {
-	int i;
+static byte Net_SpectateC(const nativeVal_t *id, const nativeVal_t *value) {
+	int i, on = Mode_Truth(value);
 	nativeVal_t name, target;
 	cEntity *cam, *t;
-	if (!Native_ArgInt(id, &i)) {
+	if (on < 0 || !Native_ArgInt(id, &i)) {
 		return 0;
 	}
 	/* cam = Scrap.GetEntity(Scrap.GetCam(id)); Scrap.GetEntity(cam.MainTarget).Active = not value;
@@ -68,48 +69,20 @@ static byte Net_LoadSinglePlayerC(const nativeVal_t *path) {
 	return 1;
 }
 
-/* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
+/* ---- the entries and adapters of the module table (OBJLIB 7: the adapters with the arguments and the errors of the
+ * Python calls) ---- */
 
 MODE_FNANY(Net, PurgeServerMapList, Mode_PurgeServerMapList("Net"))
-
-static PyObject *Net_Spectate(PyObject *self, PyObject *args) {
-	PyObject *id, *value;
-	nativeVal_t i;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &id, &value)) {
-		return NULL;
-	}
-	int on = PyObject_IsTrue(value);
-	if (on < 0 || !Native_Arg(id, &i)) {
-		return NULL;
-	}
-	byte ok = Net_SpectateC(&i, on);
-	Native_Free(&i);
-	return Mode_Result(ok);
-}
-
-static PyObject *Net_ClientJoinDef(PyObject *self, PyObject *args) {
-	PyObject *a[11];
-	(void)self;
-	return PyArg_ParseTuple(args, "OOOOOOOOOOO", &a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7], &a[8], &a[9],
-		&a[10]) ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *Net_LoadSinglePlayer(PyObject *self, PyObject *args) {
-	PyObject *path;
-	nativeVal_t p;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Native_Arg(path, &p)) {
-		return NULL;
-	}
-	byte ok = Net_LoadSinglePlayerC(&p);
-	Native_Free(&p);
-	return Mode_Result(ok);
-}
+MODE_FN(Net, Spectate, 2, Net_SpectateC(&a[0], &a[1]))
+/* ClientJoinDef: the default callback does nothing with its arguments */
+MODE_FN(Net, ClientJoinDef, 11, 1)
+MODE_FN(Net, LoadSinglePlayer, 1, Net_LoadSinglePlayerC(&a[0]))
 
 PyMethodDef g_NetMethods[] = {
 	{ "PurgeServerMapList", Net_PurgeServerMapList, 1, NULL },
 	{ "Spectate", Net_Spectate, 1, NULL },
+	/* OBJLIB 7: the two default callbacks stay the shared adapter without an entry (Mode_PyNone2): functions of one
+	 * adapter compare equal (ClientCreateDef == ClientAfterCreateDef, and the other modules' functions of it) */
 	{ "ClientCreateDef", Mode_PyNone2, 1, NULL },
 	{ "ClientAfterCreateDef", Mode_PyNone2, 1, NULL },
 	{ "ClientJoinDef", Net_ClientJoinDef, 1, NULL },
