@@ -576,7 +576,7 @@ static byte Into_InitMission(void) {
 	}
 	/* OBJLIB 5: the list object of the module, as the script passes it (P: the entry keeps it as the targets) */
 	nativeVal_t bishops;
-	byte ok = Mode_RefG(IG, "bishops", &bishops) && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "P", bishops.obj);
+	byte ok = Mode_RefG(IG, "bishops", &bishops) && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "P", Native_PyOf(&bishops));
 	Native_Free(&bishops);
 	return ok && LV_SCORERG(Mission_IntoTheGDB, MissionScorer) && LvN_Draw() &&
 		Mode_GVarSetS("OnFinishAutoUpdate", "Mission_IntoTheGDB.OnFinishScan") &&
@@ -843,7 +843,7 @@ static byte Gd_ForceRemote(const char *key, const char *who, const nativeVal_t *
 	nativeVal_t params;
 	Native_SetEmpty(&params, NV_TUPLE);
 	Native_Copy(Native_Append(&params), param);
-	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O,Parameters=v", key, who, func->obj, &params);
+	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O,Parameters=v", key, who, Native_PyOf(func), &params);
 	Native_Free(&params);
 	return ok;
 }
@@ -1215,7 +1215,7 @@ static byte Re_PreSetNextMission(const char *module, byte second) {
 		return LV_CALL("MapMatrix", "RestoreMatrix", NULL, "");
 	}
 	nativeVal_t fn;
-	ok = Mode_RefG(module, "ShowDTMessage", &fn) && LV_CALL("MapMatrix", "RestoreMatrix", NULL, "O", fn.obj);
+	ok = Mode_RefG(module, "ShowDTMessage", &fn) && LV_CALL("MapMatrix", "RestoreMatrix", NULL, "O", Native_PyOf(&fn));
 	Native_Free(&fn);
 	return ok;
 }

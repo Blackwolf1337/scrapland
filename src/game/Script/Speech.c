@@ -75,7 +75,7 @@ static byte Sp_CatS(const char *text, const nativeVal_t *b, nativeVal_t *out) {
 static byte Sp_Item(const nativeVal_t *v, long i, nativeVal_t *out) {
 	nativeVal_t tmp;
 	Native_SetNone(out);
-	if (v->type == NV_OBJ) {
+	if (Native_IsObj(v)) {
 		nativeVal_t r;
 		if (!Mode_RefItem(v, i, &r)) {
 			return 0;

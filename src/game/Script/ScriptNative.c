@@ -2269,14 +2269,16 @@ byte Native_True(const nativeVal_t *v) {
 /* OBJLIB 7: the number of a Python value of no native kind as "i" (asDouble 0) or "d" of PyArg_Parse reads it (the
  * number methods of an instance): 0 without an error when it reads none or v holds no object */
 static byte Native_ObjNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
-	if (!v->obj) {
+	PyObject *o = Native_PyOf(v);
+	if (!o) {
 		/* no value (the delete of an attribute) */
+		PyErr_Clear();
 		return 0;
 	}
 	if (asDouble) {
-		*d = PyFloat_AsDouble(v->obj);
+		*d = PyFloat_AsDouble(o);
 	} else {
-		*i = (int)PyInt_AsLong(v->obj);
+		*i = (int)PyInt_AsLong(o);
 	}
 	if (PyErr_Occurred()) {
 		PyErr_Clear();
@@ -2287,7 +2289,7 @@ static byte Native_ObjNum(const nativeVal_t *v, byte asDouble, double *d, int *i
 
 /* the number of a value an entity variable is set from: Native_ArgNum, an NV_OBJ through its number methods */
 static byte Native_EntNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
-	return v->type == NV_OBJ ? Native_ObjNum(v, asDouble, d, i) : Native_ArgNum(v, asDouble, d, i);
+	return Native_IsObj(v) ? Native_ObjNum(v, asDouble, d, i) : Native_ArgNum(v, asDouble, d, i);
 }
 
 byte Native_EntStore(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
@@ -2954,16 +2956,7 @@ static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte gl
 
 byte Native_Arg(PyObject *o, nativeVal_t *v) {
 	if (PyEntity_Check(o) || !Native_FromPyAny(o, v)) {
-		/* the checks of batch 9a: the view of the object in place of the NV_OBJ (1), or held next to it (2) */
-		byte mode = NObj_RefMode();
-		nativeVal_t view;
-		if (mode == 1 && Native_FromPyRef(o, v)) {
-			return 1;
-		}
 		Native_SetObj(v, o);
-		if (mode == 2 && v->type == NV_OBJ && Native_FromPyRef(o, &view)) {
-			v->ref = view.ref;
-		}
 	}
 	return 1;
 }
@@ -3100,9 +3093,46 @@ void Native_SetObj(nativeVal_t *v, PyObject *o) {
 		v->ent = EntRef_Keep(((cPyEntity *)o)->ref);
 		return;
 	}
+	/* the view of a list, dict, instance, class, function, method or module (SCRAP_NATIVE_REF=0: the NV_OBJ of
+	 * before, for one more round of comparison) */
+	if (NObj_RefMode() && Native_FromPyRef(o, v)) {
+		return;
+	}
 	Native_Clear(v, NV_OBJ);
 	Py_INCREF(o);
 	v->obj = o;
+}
+
+byte Native_IsObj(const nativeVal_t *v) {
+	return v->type == NV_OBJ || v->type == NV_REF;
+}
+
+PyObject *Native_PyOf(const nativeVal_t *v) {
+	if (v->type == NV_REF) {
+		/* the object keeps the reference: native data crosses to Python here */
+		PyObject *o = NObj_ToPy(v);
+		Py_XDECREF(o);
+		return o;
+	}
+	return v->type == NV_OBJ ? v->obj : NULL;
+}
+
+void Native_SetMissing(nativeVal_t *v) {
+	Native_Clear(v, NV_OBJ);
+}
+
+byte Native_IsMissing(const nativeVal_t *v) {
+	return v->type == NV_OBJ && !v->obj;
+}
+
+void Native_KeepPy(nativeVal_t *v, PyObject *o) {
+	Py_INCREF(o);
+	Py_XDECREF(v->obj);
+	v->obj = o;
+}
+
+PyObject *Native_KeptPy(const nativeVal_t *v) {
+	return v->obj;
 }
 
 /* ---- entity handles as values (stage 7, batch 7c) ---- */

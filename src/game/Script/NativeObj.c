@@ -240,15 +240,16 @@ byte NObj_RefMode(void) {
 	static int mode = -1;
 	if (mode < 0) {
 		const char *e = getenv("SCRAP_NATIVE_REF");
-		mode = e && !strcmp(e, "1") ? 1 : e && !strcmp(e, "2") ? 2 : 0;
+		mode = !(e && !strcmp(e, "0"));
 	}
 	return (byte)mode;
 }
 
-/* the checks of batch 9a: under SCRAP_NATIVE_REF the program prints at its end the objects made and freed (what is
- * left then is held by the C state of the ports, which is never freed, or was lost) */
+/* under SCRAP_NATIVE_COUNT=1 the program prints at its end the objects made and freed (what is left then is held by
+ * the C state of the ports, which is never freed, or was lost) */
 __attribute__((destructor)) static void Obj_AtExit(void) {
-	if (NObj_RefMode()) {
+	const char *e = getenv("SCRAP_NATIVE_COUNT");
+	if (e && !strcmp(e, "1")) {
 		printf("native objects at exit: made %lu freed %lu left %lu views %u crossed %lu\n", obj_made, obj_freed,
 			obj_made - obj_freed, obj_tableCount, obj_crossed);
 		fflush(stdout);
@@ -888,7 +889,7 @@ PyObject *NObj_ToPy(const nativeVal_t *v) {
 }
 
 PyObject *NObj_Py(const nativeVal_t *v) {
-	return v->type == NV_REF ? v->ref->py : NULL;
+	return v->type == NV_REF ? v->ref->py : v->type == NV_OBJ ? v->obj : NULL;
 }
 
 /* ---- classes and instances (classobject.c) ---- */

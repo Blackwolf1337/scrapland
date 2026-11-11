@@ -240,7 +240,7 @@ static byte Mt_Sched(const nativeVal_t *at, const nativeVal_t *fn, const nativeV
 			Native_Free(&items[k]);
 		}
 	} else {
-		ok = LV_CALL("Scrap", "AddScheduledFunc", NULL, "vOvv", at, fn->obj, args, &name);
+		ok = LV_CALL("Scrap", "AddScheduledFunc", NULL, "vOvv", at, Native_PyOf(fn), args, &name);
 	}
 	Native_Free(&name);
 	return ok;

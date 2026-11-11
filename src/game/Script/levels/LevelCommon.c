@@ -831,8 +831,8 @@ byte LvN_Com(const char *key, const char *who, const char *module, const char *f
 	}
 	/* the function read before Speech.AddRemoteCom (the script after it: the same unless both are gone) */
 	nativeVal_t then;
-	byte ok = Mode_RefG(module, func, &then) && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, who, then.obj, params) :
-		PORT_CALL(Speech, AddRemoteCom, NULL, "ssO", key, who, then.obj));
+	byte ok = Mode_RefG(module, func, &then) && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, who, Native_PyOf(&then), params) :
+		PORT_CALL(Speech, AddRemoteCom, NULL, "ssO", key, who, Native_PyOf(&then)));
 	Native_Free(&then);
 	return ok;
 }

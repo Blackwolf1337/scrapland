@@ -1501,7 +1501,7 @@ static byte GetAuthorization_FreeHuman(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_DoorFoe("GateKeeper_08", "DtritusGroupGateKeeper") || !Mode_RefG(GA, "StartScene", &start)) {
 		return 0;
 	}
-	byte ok = PORT_CALL(GateKeeper, SetDoor, NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", start.obj);
+	byte ok = PORT_CALL(GateKeeper, SetDoor, NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", Native_PyOf(&start));
 	Native_Free(&start);
 	if (!ok || !PO_ENTS("GateKeeper_08", "UseFunc", "Mission_GetAuthorization.TalkPepe") || !Mode_Target("GateKeeper_08")) {
 		return 0;

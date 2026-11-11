@@ -47,6 +47,8 @@ typedef enum {
 	1 << NV_TUPLE | 1 << NV_DICT | 1 << NV_OBJ | 1 << NV_ENT | 1 << NV_REF)
 /* the kinds held by reference, with an identity of their own: a Python value, an entity handle and a native object */
 #define NV_REFS (1u << NV_OBJ | 1u << NV_ENT | 1u << NV_REF)
+/* the kinds that hold an object: a native object or its view (NV_REF) and a Python value of another type (NV_OBJ) */
+#define NV_OBJS (1u << NV_OBJ | 1u << NV_REF)
 
 /*
  * A value of the scripts in C: None, an int (a C long, as the int of Python 1.5.2), a float, a text, a vector (the
@@ -88,8 +90,7 @@ typedef struct nativeVal_s {
 					 * came from here (the .mod evaluator, OBJLIB 5; a reference owned, copied and freed with
 					 * the value, read by nobody else), else NULL */
 	struct cEntityRef *ent;		/* NV_ENT: the handle (held once by this value), else NULL */
-	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL (under SCRAP_NATIVE_REF=2,
-					 * the check of batch 9a, an NV_OBJ holds the view of its object here too) */
+	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL */
 } nativeVal_t;
 
 void Native_SetNone(nativeVal_t *v);
@@ -405,10 +406,9 @@ typedef struct nativeVar_s {
 
 /* an argument of an adapter as a native value (Native_Free it): the native types as Native_FromPyAny takes them, an
  * entity handle (cPyEntity) as NV_ENT, any other value (a function, a class instance, or a container that holds one
- * or a handle: the container keeps its identity) as NV_OBJ (OBJLIB 7); always 1. Under SCRAP_NATIVE_REF=1 (the check
- * of batch 9a, NObj_RefMode) such a value is the NV_REF view of the object when Native_FromPyRef takes its type (a
- * list, dict, instance, class, function, method or module); under SCRAP_NATIVE_REF=2 it is the NV_OBJ and holds
- * that view too */
+ * or a handle: the container keeps its identity) as Native_SetObj gives it: the NV_REF view of a list, dict, instance,
+ * class, function, method or module, else NV_OBJ (a tuple that holds objects); always 1. SCRAP_NATIVE_REF=0 gives the
+ * NV_OBJ of before for all of them (one more round, for comparison) */
 byte Native_Arg(PyObject *o, nativeVal_t *v);
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
  * is missing or of a form the C does not take (TypeError naming it) */
@@ -701,8 +701,25 @@ byte Native_GVarDef(const char *name, nativeVal_t *out);
 
 /* ---- the values of the .mod evaluator (stage 6) ---- */
 
-/* *v an NV_OBJ that holds o (a new reference; OBJLIB 7); an entity handle (cPyEntity) as the NV_ENT of its handle */
+/* *v the value that holds the Python object o itself (a new reference): the NV_REF view of a list, dict, instance,
+ * class, function, method or module (scrap/nativeobj.h), an entity handle (cPyEntity) as the NV_ENT of its handle, an
+ * object of another type as NV_OBJ (OBJLIB 9) */
 void Native_SetObj(nativeVal_t *v, PyObject *o);
+/*
+ * The accessors of the users (no file but the native layer tests NV_OBJ or reads nativeVal_t.obj):
+ * Native_IsObj: v holds an object, a native one or a view (NV_REF) or a Python value (NV_OBJ, also the missing
+ * argument below). Native_PyOf: the Python object behind such a value while Python exists (borrowed, valid while the
+ * value lives; native data crosses to Python for it, NULL with the error when that fails), NULL for any other value.
+ */
+byte Native_IsObj(const nativeVal_t *v);
+PyObject *Native_PyOf(const nativeVal_t *v);
+/* the argument of a keyword entry that is not given (an NV_OBJ without an object) */
+void Native_SetMissing(nativeVal_t *v);
+byte Native_IsMissing(const nativeVal_t *v);
+/* OBJLIB 5: the Python object a number or text came from, kept with the value (the constants of the .mod evaluator):
+ * set (a new reference) and read (borrowed, NULL for none; of an NV_OBJ its object) */
+void Native_KeepPy(nativeVal_t *v, PyObject *o);
+PyObject *Native_KeptPy(const nativeVal_t *v);
 /* v or a value in it (an item, a key, a value of a dict, at any depth) has one of types (a mask of 1 << NV_) */
 byte Native_Holds(const nativeVal_t *v, unsigned types);
 /* eval(text) when text is a plain literal: a text without 0 bytes, Native_Literal after its leading blanks (as the

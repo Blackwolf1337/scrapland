@@ -1177,7 +1177,7 @@ static PyObject *TX_Main(void) {
 /* OBJLIB 9: the Python object behind a value (borrowed): the one of a view or of an NV_OBJ; NULL for native data and
  * the kinds by value */
 static PyObject *TX_Py(const nativeVal_t *v) {
-	return v->type == NV_REF ? NObj_Py(v) : v->type == NV_OBJ ? v->obj : NULL;
+	return NObj_Py(v);
 }
 
 /* o as the value the evaluator works on: numbers, texts, None and tuples by value, a handle as NV_ENT, a list, dict,
@@ -1185,9 +1185,8 @@ static PyObject *TX_Py(const nativeVal_t *v) {
  * and freed with the value), so `is` finds one tuple twice and the tuple goes back to Python as that object */
 static void TX_FromPy(PyObject *o, nativeVal_t *out) {
 	NObj_FromPy(o, out);
-	if (out->type == NV_TUPLE && PyTuple_Check(o) && !out->obj) {
-		Py_INCREF(o);
-		out->obj = o;
+	if (out->type == NV_TUPLE && PyTuple_Check(o) && !Native_KeptPy(out)) {
+		Native_KeepPy(out, o);
 	}
 }
 
@@ -1215,10 +1214,10 @@ static void TX_Give(nativeVal_t *v) {
 static PyObject *TX_ToPy(const nativeVal_t *v) {
 	nativeVal_t t;
 
-	if (v->type == NV_TUPLE && v->obj && PyTuple_Check(v->obj)) {
+	if (v->type == NV_TUPLE && Native_KeptPy(v) && PyTuple_Check(Native_KeptPy(v))) {
 		/* the tuple it came from (TX_FromPy) */
-		Py_INCREF(v->obj);
-		return v->obj;
+		Py_INCREF(Native_KeptPy(v));
+		return Native_KeptPy(v);
 	}
 	if (!Native_Holds(v, 1u << NV_DICT)) {
 		return Native_ToPy(v);
@@ -1563,7 +1562,7 @@ static byte X_Call(tcNode *x, tcScope *s, nativeVal_t *out) {
  * (Native_Free tmp after); NULL for a Python object (a view, a handle) and the other native objects */
 static const nativeVal_t *TX_Plain(const nativeVal_t *v, nativeVal_t *tmp) {
 	Native_SetNone(tmp);
-	if (v->type == NV_OBJ || v->type == NV_ENT) {
+	if (v->type == NV_ENT || (Native_IsObj(v) && v->type != NV_REF)) {
 		return NULL;
 	}
 	if (v->type != NV_REF) {
@@ -1718,7 +1717,7 @@ static byte X_Is(const nativeVal_t *v, const nativeVal_t *w) {
 	}
 	if (v->type == NV_TUPLE && w->type == NV_TUPLE) {
 		/* the empty tuple is one object; another tuple is the same one when both came from one Python tuple */
-		return (!v->n && !w->n) || (v->obj && v->obj == w->obj);
+		return (!v->n && !w->n) || (Native_KeptPy(v) && Native_KeptPy(v) == Native_KeptPy(w));
 	}
 	return NObj_Is(v, w);
 }
@@ -1799,7 +1798,7 @@ static byte X_Eval(tcNode *x, tcScope *s, nativeVal_t *out) {
 		if (X_Eval(x->a, s, &a)) {
 			long lo, hi;
 			ok = X_Bounds(x, s, &lo, &hi);
-			if (ok && a.type == NV_TUPLE && a.obj && (lo < 0 ? lo + a.n : lo) <= 0 && (hi < 0 ? hi + a.n : hi) >= a.n) {
+			if (ok && a.type == NV_TUPLE && Native_KeptPy(&a) && (lo < 0 ? lo + a.n : lo) <= 0 && (hi < 0 ? hi + a.n : hi) >= a.n) {
 				/* tupleslice: the whole tuple (the bounds as PySequence_GetSlice takes them) is the tuple itself */
 				Native_Copy(out, &a);
 			} else if (ok) {
@@ -2353,7 +2352,7 @@ static double TX_Round(double x, int digits) {
 
 /* a Python object by value: NV_OBJ, a view, an entity handle (an operation of Python on it) */
 static byte TX_IsPy(const nativeVal_t *v) {
-	return v->type == NV_OBJ || v->type == NV_ENT || (v->type == NV_REF && NObj_Py(v));
+	return v->type == NV_ENT || NObj_Py(v);
 }
 
 static int TB_Map(nativeVal_t *a, int n, nativeVal_t *out) {
@@ -2612,7 +2611,7 @@ static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
 	if (!TX_Arity("type", n, 1, 1)) {
 		return 0;
 	}
-	PyObject *py = a->type == NV_REF ? NObj_Py(a) : a->type == NV_OBJ ? a->obj : NULL;
+	PyObject *py = NObj_Py(a);
 	if (py) {
 		t = py->ob_type;
 	} else {
@@ -2901,7 +2900,7 @@ static int TB_Id(nativeVal_t *a, int n, nativeVal_t *out) {
 		return 0;
 	}
 	/* OBJLIB 9: the address of the Python object of a view (a value without one is made into one by Python's id) */
-	PyObject *py = a->type == NV_REF ? NObj_Py(a) : a->type == NV_OBJ ? a->obj : NULL;
+	PyObject *py = NObj_Py(a);
 	if (!py) {
 		return -1;
 	}
@@ -3485,7 +3484,7 @@ static int X_SeqLength(const nativeVal_t *v) {
 static byte X_SeqItem(const nativeVal_t *v, int i, nativeVal_t *out) {
 	nativeVal_t key;
 
-	if (v->type == NV_REF || v->type == NV_OBJ) {
+	if (Native_IsObj(v)) {
 		Native_SetInt(&key, i);
 		return NObj_GetItem(v, &key, out);
 	}
