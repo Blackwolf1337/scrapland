@@ -101,8 +101,9 @@ static void Hud_Deep(nativeVal_t *v, int depth) {
 /* ---- the steps ---- */
 
 /* the mission scorer is shown when one of its three statuses is on */
-static void Step_MissionVisible(int id, PyObject *args) {
+static void Step_MissionVisible(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	for (int i = 0; i < 3; i++) {
 		char var[0x10];
 		Str_Printf(var, sizeof(var), "Status%d", i);
@@ -113,7 +114,7 @@ static void Step_MissionVisible(int id, PyObject *args) {
 	}
 }
 
-static void Step_Rows(int id, PyObject *args);
+static void Step_Rows(int id, const nativeVal_t *args, int n);
 
 static const scriptStep_t hud_steps[] = {
 	{ "missionvisible", Step_MissionVisible },
@@ -489,23 +490,24 @@ static void Racer_CreateRacerCore(int id) {
 static const nativeVal_t *racer_scores;
 
 /* run rows: one row per player, at most 24, small font for more than 12 */
-static void Step_Rows(int id, PyObject *args) {
+static void Step_Rows(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	const nativeVal_t *data = racer_scores;
-	int n = 0;
-	if (data && !Native_Len(data, &n)) {
+	int rows = 0;
+	if (data && !Native_Len(data, &rows)) {
 		/* the TypeError of a value that is no sequence dropped: no rows */
 		PyErr_Clear();
-		n = 0;
+		rows = 0;
 	}
-	byte small = n > 12;
+	byte small = rows > 12;
 	int border = small ? 2 : 3;
 	int step = (small ? 9 : 18) + border * 2;
 	byte showPing = !Mode_ModGetI("Init", "OffLineGame", 0);
 	nativeVal_t spect;
 	byte haveSpect = Mode_ModGet("RacerScorer", "SPECTATOR_POINTS", &spect);
 	PyErr_Clear();
-	for (int i = 0; i < n && i < 24; i++) {
+	for (int i = 0; i < rows && i < 24; i++) {
 		nativeVal_t info, f[5], c[7];
 		char nm[0x20] = "", sc[0x40] = "", ping[0x40] = "", pl[0x80] = "";
 		byte have[5];

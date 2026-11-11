@@ -14,6 +14,7 @@
 #include "scrap/console.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
 static const char betty_def[] = {
@@ -163,17 +164,17 @@ static void Char_Event(double t, const char *name, const char *func) {
 
 /* speech name module func: Speech.SpeechRoutines[name] = module.func (an error is left set: the loader prints it, as
  * it does for every step, or stops a file that stops where the script stops) */
-static void Step_Speech(int id, PyObject *args) {
-	char *name, *module, *func;
+static void Step_Speech(int id, const nativeVal_t *args, int n) {
+	const char *name, *module, *func;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "sss", &name, &module, &func)) {
+	if (!Mode_Parse(args, n, "sss", &name, &module, &func)) {
 		return;
 	}
 	/* OBJLIB 5, 6: a function of a module named at run time (the import) into the table of Speech, a dict variable */
 	PyObject *speech = Script_Module("Speech");
 	PyObject *routines = speech ? PyObject_GetAttrString(speech, "SpeechRoutines") : NULL;
 	PyObject *m = routines ? Script_Module(module) : NULL;
-	PyObject *f = m ? PyObject_GetAttrString(m, func) : NULL;
+	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
 	PyObject *key = f ? PyString_FromString(name) : NULL;
 	if (key) {
 		PyObject_SetItem(routines, key, f);
@@ -198,12 +199,12 @@ static void Char_Spread(double first, double end, int count, const char *name, c
 }
 
 /* spread first end count name func */
-static void Step_Spread(int id, PyObject *args) {
+static void Step_Spread(int id, const nativeVal_t *args, int n) {
 	double first, end;
 	int count;
-	char *name, *func;
+	const char *name, *func;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "ddiss", &first, &end, &count, &name, &func)) {
+	if (!Mode_Parse(args, n, "ddiss", &first, &end, &count, &name, &func)) {
 		PyErr_Print();
 		return;
 	}
@@ -211,10 +212,11 @@ static void Step_Spread(int id, PyObject *args) {
 }
 
 /* timedname name func: an event at 0 named name + `SAct.GetAct("AnmTotalTime")` (Sputnik) */
-static void Step_TimedName(int id, PyObject *args) {
-	char *name, *func, n[0x80];
+static void Step_TimedName(int id, const nativeVal_t *args, int n) {
+	const char *name, *func;
+	char event[0x80];
 	(void)id;
-	if (!PyArg_ParseTuple(args, "ss", &name, &func)) {
+	if (!Mode_Parse(args, n, "ss", &name, &func)) {
 		PyErr_Print();
 		return;
 	}
@@ -223,17 +225,18 @@ static void Step_TimedName(int id, PyObject *args) {
 	Char_ActVar("AnmTotalTime", &t);
 	Native_BufInit(&r);
 	Native_Repr(&r, &t, NR_REPR);
-	Str_Printf(n, sizeof(n), "%s%s", name, r.p);
+	Str_Printf(event, sizeof(event), "%s%s", name, r.p);
 	Native_BufFree(&r);
-	Char_Event(0.0, n, func);
+	Char_Event(0.0, event, func);
 }
 
 /* Betty's attack: the camera turns (15 steps) and the hits (16) between frames 43 and 83 */
-static void Step_BettyHit(int id, PyObject *args) {
+static void Step_BettyHit(int id, const nativeVal_t *args, int n) {
 	static const char *const rotations[15] = { "24,   0", "48,  -6", "72, -14", "96, -20", "120,-25", "144,-30",
 		"168,-35", "192,-40", "216,-35", "240,-30", "264,-25", "288,-20", "312,-14", "336, -6", "360,  0" };
 	(void)id;
 	(void)args;
+	(void)n;
 	double hit = Char_Frame(43), end = Char_Frame(83), last = end - hit;
 	for (int i = 0; i < 15; i++) {
 		Char_Event(hit + last * i / 16, rotations[i], "!BettyCameraSet");

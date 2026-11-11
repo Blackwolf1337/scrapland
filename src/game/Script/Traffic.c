@@ -19,7 +19,7 @@
  * go through their refs (stage 7); the ships and profiles the calls give (handle values) and CharsNPC.CharRes stay
  * Python values read by name (OBJLIB 5, 7), the hooks onTrackCreate and OnPoliceCreatedCallback are values of the
  * variables (OBJLIB 5) called through the entries of port functions (PORT_VALUE); the steps of police.def take the
- * arguments of their lines as a tuple (OBJLIB 6). The functions of Traffic call each other in C as the port did (the
+ * values of their lines as native values. The functions of Traffic call each other in C as the port did (the
  * engine callbacks name them "Traffic.<name>").
  */
 #include <string.h>
@@ -273,33 +273,32 @@ PyMethodDef g_TrafficMethods[] = {
 /* ---- the police by reputation (police.def) ---- */
 
 /* run wave <ship> ...: one wave appended to OutPolice.PoliceWaves */
-static void Step_Wave(int id, PyObject *args) {
+static void Step_Wave(int id, const nativeVal_t *args, int n) {
+	nativeVal_t wave;
 	(void)id;
-	PyObject *waves = Script_Global("OutPolice", "PoliceWaves");
-	PyObject *wave = waves ? PySequence_List(args) : NULL;
-	PyObject *r = wave ? Script_Method(waves, "append", "(O)", wave) : NULL;
-	if (!r) {
+	/* the list holds the values as they are: a list of a $name in it is that list */
+	if (!Script_StepValues(args, n, NV_LIST, 0, &wave) || !Mode_VarCall("OutPolice", "PoliceWaves", 1, "append", &wave)) {
 		PyErr_Print();
 	}
-	Py_XDECREF(r);
-	Py_XDECREF(wave);
-	Py_XDECREF(waves);
+	Native_Free(&wave);
 }
 
 /* run defscale <var> <factor>: Scrap.Set(var, Scrap.Def(var) * factor) */
-static void Step_DefScale(int id, PyObject *args) {
-	PyObject *var, *factor;
+static void Step_DefScale(int id, const nativeVal_t *args, int n) {
+	const nativeVal_t *var, *factor;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "OO", &var, &factor)) {
+	if (!Mode_Parse(args, n, "OO", &var, &factor)) {
 		PyErr_Print();
 		return;
 	}
-	PyObject *def = PORT_ASK(Scrap, Def, "O", var);
-	PyObject *v = def ? PyNumber_Multiply(def, factor) : NULL;
-	if (!v || !PORT_CALL(Scrap, Set, NULL, "OO", var, v)) {
+	/* OBJLIB 9: the * of the script on whatever Scrap.Def gives and the factor is */
+	PyObject *def = PORT_ASK(Scrap, Def, "v", var), *f = def ? Native_ToPy(factor) : NULL;
+	PyObject *v = f ? PyNumber_Multiply(def, f) : NULL;
+	if (!v || !PORT_CALL(Scrap, Set, NULL, "vO", var, v)) {
 		PyErr_Print();
 	}
 	Py_XDECREF(v);
+	Py_XDECREF(f);
 	Py_XDECREF(def);
 }
 

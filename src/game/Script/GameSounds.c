@@ -37,8 +37,8 @@ static const char doorsound_def[] = {
 #embed "../../../data/sound/doorsound.def"
 	, 0 };
 
-static void Sound_StepTake(int id, PyObject *args);
-static void DoorSound_StepInitSound(int id, PyObject *args);
+static void Sound_StepTake(int id, const nativeVal_t *args, int n);
+static void DoorSound_StepInitSound(int id, const nativeVal_t *args, int n);
 
 static const scriptStep_t gsound_steps[] = {
 	{ "take", Sound_StepTake },
@@ -84,21 +84,22 @@ static int Gs_NotOutdoor(void) {
 
 /* run take <key> <sound> <volume>: ItemTake[key] = (sound, volume) and the sound file Missions/<sound>.wav (an error
  * is left set, it stops the file) */
-static void Sound_StepTake(int id, PyObject *args) {
+static void Sound_StepTake(int id, const nativeVal_t *args, int n) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *a, *pair, *file;
+	nativeVal_t *a = Mode_V(&t), *b = Mode_V(&t), *c = Mode_V(&t), *pair, *file;
 	(void)id;
-	if (!Mode_Args(args, 3, &t, &a)) {
+	/* the three values as a call passes them on */
+	if (!(n == 3 ? Native_Pass(&args[0], a) && Native_Pass(&args[1], b) && Native_Pass(&args[2], c) : Port_Arity(n, 3))) {
 		Mode_Done(&t, 0);
 		return;
 	}
 	pair = Mode_V(&t);
 	file = Mode_V(&t);
 	Native_SetEmpty(pair, NV_TUPLE);
-	Native_Copy(Native_Append(pair), &a[1]);
-	Native_Copy(Native_Append(pair), &a[2]);
-	Mode_Done(&t, Mode_DictPut(SND, "ItemTake", NULL, &a[0], pair) &&
-		Mode_Cat(&t, file, 3, Mode_S(&t, "Missions/"), &a[1], Mode_S(&t, ".wav")) && Mode_LoadSoundSeam(file));
+	Native_Copy(Native_Append(pair), b);
+	Native_Copy(Native_Append(pair), c);
+	Mode_Done(&t, Mode_DictPut(SND, "ItemTake", NULL, a, pair) &&
+		Mode_Cat(&t, file, 3, Mode_S(&t, "Missions/"), b, Mode_S(&t, ".wav")) && Mode_LoadSoundSeam(file));
 }
 
 /* SetStdDamageSounds(EntityName): the damage sounds of a ship in a level with ships */
@@ -513,11 +514,10 @@ static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
 /* run initsound <args>: SetInitDoorSound(args) through the module's globals, as SetSlide calls it (an error is left
  * set, it stops the file): the function as a value, applied to the arguments of the line (Mode_Apply: the entry of
  * a port function; SetInitDoorSound, a keyword adapter of its own, has no entry and no ref, OBJLIB 7) */
-static void DoorSound_StepInitSound(int id, PyObject *args) {
+static void DoorSound_StepInitSound(int id, const nativeVal_t *args, int n) {
 	nativeVal_t f = { 0 }, a;
 	(void)id;
-	Native_Arg(args, &a);
-	if (LvN_GObj(DOOR, "SetInitDoorSound", &f)) {
+	if (Script_StepValues(args, n, NV_TUPLE, 1, &a) && LvN_GObj(DOOR, "SetInitDoorSound", &f)) {
 		Mode_Apply(&f, &a, NULL);
 	}
 	Native_Free(&f);

@@ -798,11 +798,12 @@ PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...)
 	return r;
 }
 
-void Script_StepPrint(int id, PyObject *args) {
-	char *text;
+void Script_StepPrint(int id, const nativeVal_t *args, int n) {
+	const char *text;
 	(void)id;
 	PyObject *out = PySys_GetObject("stdout");
-	if (!PyArg_ParseTuple(args, "s", &text) || !out || PyFile_WriteString(text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
+	if (!(n == 1 ? Native_ArgStr(&args[0], 1, &text) : Port_Arity(n, 1)) || !out ||
+		PyFile_WriteString((char *)text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
 		PyErr_Print();
 	}
 }
@@ -969,7 +970,7 @@ static const char *Def_Tokens(const char *p, char *buf, int size, scriptLine_t *
 /*
  * The values of a file are native values (nativeVal_t). The $names stay the dict the C function gives (or the file's
  * own), holding Python values (OBJLIB 6: the callers make the dict, a caller may run several sections on one dict, and
- * the steps take Python arguments and give $names as Python values): a value read from there, or from a module
+ * the steps give $names as Python values): a value read from there, or from a module
  * variable (%Module.var), is the native value Native_Arg makes of it, but a list or dict, or a tuple holding one,
  * stays the object itself as an NV_OBJ, so that it keeps its identity (a step appends to the list of a $name in place,
  * a call or a setvar may keep it).
@@ -1428,7 +1429,7 @@ static void Def_ArgsFree(defArgs_t *a) {
 	}
 }
 
-/* the positional arguments as the tuple a step or a call through Python takes (NULL with the error) */
+/* the positional arguments as the tuple a call through Python takes (NULL with the error) */
 static PyObject *Def_PyArgs(const defArgs_t *a) {
 	PyObject *t = PyTuple_New(a->npos);
 	for (int i = 0; t && i < a->npos; i++) {
@@ -1563,20 +1564,31 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	Def_ArgsFree(&a);
 }
 
+byte Script_StepValues(const nativeVal_t *args, int n, int type, byte pass, nativeVal_t *out) {
+	nativeVal_t seq;
+	Native_SetEmpty(&seq, type);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(&seq), &args[i]);
+	}
+	if (!pass) {
+		*out = seq;
+		return 1;
+	}
+	byte ok = Native_Pass(&seq, out);
+	Native_Free(&seq);
+	return ok;
+}
+
 static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
 	for (const scriptStep_t *s = m->steps; s && s->name; s++) {
 		if (strcmp(s->name, l->tok[1])) {
 			continue;
 		}
-		/* OBJLIB 6: the steps take the positional values of the line as a tuple of Python values */
+		/* the positional values of the line as they are (the Name=value ones are evaluated and dropped) */
 		defArgs_t a;
 		Def_Args(m, l, 2, &a);
-		PyObject *args = Def_PyArgs(&a);
+		s->fn(m->id, a.v, a.npos);
 		Def_ArgsFree(&a);
-		if (args) {
-			s->fn(m->id, args);
-			Py_DECREF(args);
-		}
 		/* a step that failed leaves its error set: it stops a file of Script_RunFileTry */
 		if (PyErr_Occurred()) {
 			if (m->stop) {

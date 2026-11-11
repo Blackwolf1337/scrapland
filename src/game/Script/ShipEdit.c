@@ -40,26 +40,27 @@ static const char *se_useModule = SE;
 
 /* run use <Attr> <key> [item]: Attr = GetLangStr(key) % UseTxt (of the current item, or of item); the error left set
  * stops the file */
-static void Step_Use(int id, PyObject *args) {
-	char *var, *key, *item = NULL;
-	if (PyArg_ParseTuple(args, "ss|s", &var, &key, &item)) {
+static void Step_Use(int id, const nativeVal_t *args, int n) {
+	const char *var, *key, *item = NULL;
+	if (Mode_Parse(args, n, "ss|s", &var, &key, &item)) {
 		Sn_SetUseC(id, item ? item : Script_CurrentItem(), var, key, se_useModule);
 	}
 }
 
 /* run sputnikhint <n>: the hint of hangar n on Sputnik's screen (no ship, a destroyed one with the rebuild cost, an
  * incomplete one, a valid one) */
-static void Step_SputnikHint(int id, PyObject *args) {
+static void Step_SputnikHint(int id, const nativeVal_t *args, int n) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *i = Mode_V(&t), *e = Mode_V(&t), *x = Mode_V(&t), *r = Mode_V(&t), *cad = Mode_V(&t), *cost = Mode_V(&t);
 	nativeVal_t *money = Mode_V(&t), *lang = Mode_V(&t), *use = Mode_V(&t), *text = Mode_V(&t), *rep = Mode_V(&t);
-	long n;
-	if (!PyArg_ParseTuple(args, "l", &n)) {
+	long hangar;
+	if (!Mode_Parse(args, n, "l", &hangar)) {
+		Mode_Done(&t, 0);
 		return;
 	}
 	char name[0x20];
-	Str_Printf(name, sizeof(name), "Hangar%ld", n);
-	Native_SetInt(i, n - 1);
+	Str_Printf(name, sizeof(name), "Hangar%ld", hangar);
+	Native_SetInt(i, hangar - 1);
 	int none = Sn_At(SE, "editedShips", i, e) ? Mode_Cmp(e, "==", &se_none) : -1;
 	int lost = 0;
 	if (none == 0) {
@@ -108,9 +109,10 @@ static void Step_SputnikHint(int id, PyObject *args) {
 }
 
 /* run ramp: SpeedRamp2.X = baseShipInfoX + speedRampX + SpeedRamp1.ScaleX * SpeedRamp1.W */
-static void Step_Ramp(int id, PyObject *args) {
+static void Step_Ramp(int id, const nativeVal_t *args, int n) {
 	nativeVal_t a = { 0 }, b = { 0 }, x = { 0 }, sx = { 0 }, w = { 0 }, p = { 0 }, s = { 0 };
 	(void)args;
+	(void)n;
 	byte ok = Mode_G(HT, "baseShipInfoX", &a) && Mode_G(HT, "speedRampX", &b) && Mode_Arith('+', &a, &b, &x);
 	if (ok) {
 		Mode_ScorerGet(id, "SpeedRamp1", "ScaleX", &sx);

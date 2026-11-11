@@ -112,8 +112,9 @@ static void Controls_Refresh(void) {
 	}
 }
 
-static void Step_KeyItems(int id, PyObject *args) {
+static void Step_KeyItems(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	for (int i = 0; i < controls.numActions; i++) {
 		const char *control = controls.actions[i];
 		char item[0x48];
@@ -191,9 +192,10 @@ static byte Pad_OptionName(const nativeVal_t *key, nativeVal_t *out) {
  * PlaceMenuOption(id, i, options[key][1]) and SetOptionValue(id, options[key][1]) of the module; an error stops the
  * step (left set for the runner)
  */
-static void Step_PadOptions(int id, PyObject *args) {
+static void Step_PadOptions(int id, const nativeVal_t *args, int n) {
 	nativeVal_t keys = { 0 };
 	(void)args;
+	(void)n;
 	if (!Mode_Keys(PM, "options", 1, &keys)) {
 		return;
 	}
@@ -318,9 +320,9 @@ static byte Pad_TextOf(int id, const nativeVal_t *set) {
 }
 
 /* padtext <set>: the end of ShowPadConfig after the picture, the lines and the texts of the action set */
-static void Step_PadText(int id, PyObject *args) {
+static void Step_PadText(int id, const nativeVal_t *args, int n) {
 	const char *set;
-	if (PyArg_ParseTuple(args, "s", &set)) {
+	if (Mode_Parse(args, n, "s", &set)) {
 		Pad_Lines(id, set);
 		Pad_Text(id, set);
 	}
@@ -343,9 +345,9 @@ static void Mouse_Apply(int id) {
 }
 
 /* the script switched the variable twice to show it: 1 shows Yes, anything else becomes 0 and shows No */
-static void Step_Invert(int id, PyObject *args) {
+static void Step_Invert(int id, const nativeVal_t *args, int n) {
 	const char *item;
-	if (!PyArg_ParseTuple(args, "s", &item)) {
+	if (!Mode_Parse(args, n, "s", &item)) {
 		PyErr_Print();
 		return;
 	}
@@ -354,9 +356,9 @@ static void Step_Invert(int id, PyObject *args) {
 	Script_SetStr(id, item, "Text", Script_Lang(yes ? "Menu_Question_Yes" : "Menu_Question_No"));
 }
 
-static void Step_Sensitivity(int id, PyObject *args) {
+static void Step_Sensitivity(int id, const nativeVal_t *args, int n) {
 	const char *item, *var;
-	if (!PyArg_ParseTuple(args, "ss", &item, &var)) {
+	if (!Mode_Parse(args, n, "ss", &item, &var)) {
 		PyErr_Print();
 		return;
 	}

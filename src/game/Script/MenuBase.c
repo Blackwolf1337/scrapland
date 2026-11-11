@@ -117,22 +117,21 @@ static const char *Base_Text(const nativeVal_t *v, nativeBuf_t *b) {
 /* ---- the steps of base.def ---- */
 
 /* titlebar y text font */
-static void Step_TitleBar(int id, PyObject *args) {
-	PyObject *y;
-	char *text, *font;
-	/* OBJLIB 6: the steps take the arguments of the line as a tuple */
-	if (!PyArg_ParseTuple(args, "Oss", &y, &text, &font)) {
+static void Step_TitleBar(int id, const nativeVal_t *args, int n) {
+	const nativeVal_t *y;
+	const char *text, *font;
+	nativeVal_t v;
+	if (!Mode_Parse(args, n, "Oss", &y, &text, &font) || !Native_Pass(y, &v)) {
 		PyErr_Print();
 		return;
 	}
-	nativeVal_t v;
-	Native_Arg(y, &v);
 	Base_TitleBar(id, &v, text, font);
 	Native_Free(&v);
 }
 
-static void Step_Circuit(int id, PyObject *args) {
+static void Step_Circuit(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	Base_Circuit(id, 1);
 }
 

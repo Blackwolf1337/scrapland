@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <math.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/console.h"
@@ -4034,6 +4035,31 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out) {
 	return 1;
 }
 
+/* the number of v as "l" of PyArg reads it: PyInt_AsLong as Mode_ArgInt takes it, not cut to an int */
+static byte Mode_ArgLong(const nativeVal_t *v, long *out) {
+	int i;
+	if (v->type == NV_OBJ) {
+		*out = PyInt_AsLong(v->obj);
+		return *out != -1 || !PyErr_Occurred();
+	}
+	if (!Native_ArgInt(v, &i)) {
+		return 0;
+	}
+	*out = v->type == NV_INT ? v->i : v->type == NV_FLOAT ? (long)v->f :
+		v->type == NV_LONG ? strtol(Native_Text(v), NULL, 10) : i;
+	return 1;
+}
+
+/* the number of v as "d" and "f" of PyArg read it: Native_ArgDouble, and an NV_OBJ through PyFloat_AsDouble as
+ * getargs.c has it (an instance's __float__) */
+static byte Mode_ArgDouble(const nativeVal_t *v, double *out) {
+	if (v->type != NV_OBJ) {
+		return Native_ArgDouble(v, out);
+	}
+	*out = PyFloat_AsDouble(v->obj);
+	return !PyErr_Occurred();
+}
+
 static byte Mode_FmtLetter(char c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
@@ -4133,21 +4159,31 @@ static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list 
 	if (c == '(') {
 		return Mode_ParseGroup(v, f, va, levels, buf, size);
 	}
-	/* "s" and "O" give pointers into v: top level only (an item of a group is a copy) */
-	CHECK(top || c == 'i' || c == 'd' || c == 'f');
+	/* "s", "S" and "O" give pointers into v: top level only (an item of a group is a copy) */
+	CHECK(top || c == 'i' || c == 'l' || c == 'd' || c == 'f');
 	if (c == 'i') {
 		msg = Mode_ArgInt(v, va_arg(*va, int *)) ? NULL : "integer<i>";
+	} else if (c == 'l') {
+		msg = Mode_ArgLong(v, va_arg(*va, long *)) ? NULL : "integer<l>";
 	} else if (c == 'd') {
 		/* PyFloat_AsDouble raised already: seterror keeps its error */
-		msg = Native_ArgDouble(v, va_arg(*va, double *)) ? NULL : "float<d>";
+		msg = Mode_ArgDouble(v, va_arg(*va, double *)) ? NULL : "float<d>";
 	} else if (c == 'f') {
 		/* the double cut to a float, as getargs.c stores it */
 		double d;
 		float *p = va_arg(*va, float *);
-		if (Native_ArgDouble(v, &d)) {
+		if (Mode_ArgDouble(v, &d)) {
 			*p = (float)d;
 		} else {
 			msg = "float<f>";
+		}
+	} else if (c == 'S') {
+		/* a text of any bytes: the argument itself */
+		if (v->type == NV_STR) {
+			*va_arg(*va, const nativeVal_t **) = v;
+		} else {
+			(void)va_arg(*va, const nativeVal_t **);
+			msg = "string";
 		}
 	} else if (c == 's') {
 		const char **p = va_arg(*va, const char **);

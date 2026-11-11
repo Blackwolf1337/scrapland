@@ -34,14 +34,12 @@ static const char hulltab_def[] = {
 #define HULL_MIN_BLUE 176
 
 /* the step usehint <key>: the Hint of the item, Scrap.GetLangStr(key) % UseTxt (the error left set stops the file) */
-static void HT_StepHint(int id, PyObject *args) {
+static void HT_StepHint(int id, const nativeVal_t *args, int n) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *key = Mode_V(&t), *lang = Mode_V(&t), *use = Mode_V(&t), *hint = Mode_V(&t);
-	/* OBJLIB 6: the step takes the arguments of the line as a tuple */
-	PyObject *k = Script_Index(args, 0);
+	nativeVal_t *lang = Mode_V(&t), *use = Mode_V(&t), *hint = Mode_V(&t);
 	const char *s;
-	byte ok = k && Native_Arg(k, key) && Native_ArgStr(key, 1, &s);
-	Py_XDECREF(k);
+	/* the first value of the line (args[0] of the script) */
+	byte ok = (n > 0 || Native_Raise(NE_INDEX, "tuple index out of range")) && Native_ArgStr(&args[0], 1, &s);
 	if (ok) {
 		Mode_Lang(s, lang);
 		ok = Mode_G("HullTab", "UseTxt", use) && Native_Arith('%', lang, use, hint) &&

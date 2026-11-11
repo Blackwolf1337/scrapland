@@ -1021,20 +1021,18 @@ PyMethodDef g_SPostmanMethods[] = {
 
 /* ---- SRace ---- */
 
-/* the step "point <text>" of srace.def: a checkpoint of the route (OBJLIB 6: the steps take Python arguments) */
-static void SRace_StepPoint(int id, PyObject *args) {
-	nativeVal_t text, p;
+/* the step "point <text>" of srace.def: a checkpoint of the route */
+static void SRace_StepPoint(int id, const nativeVal_t *args, int n) {
+	nativeVal_t p;
 	(void)id;
-	if (PyTuple_Size(args) != 1 || split.raceBuild.type != NV_LIST) {
+	if (n != 1 || split.raceBuild.type != NV_LIST) {
 		return;
 	}
-	Native_Arg(PyTuple_GetItem(args, 0), &text);
-	if (Native_EvalText("SRace", &text, &p)) {
+	if (Native_EvalText("SRace", &args[0], &p)) {
 		*Native_Append(&split.raceBuild) = p;
 	} else {
 		PyErr_Clear();
 	}
-	Native_Free(&text);
 }
 
 static const scriptStep_t srace_steps[] = {

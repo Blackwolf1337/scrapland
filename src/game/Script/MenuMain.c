@@ -44,10 +44,9 @@ static const struct {
 	{ "MusicSlider", "MusicMainVolume" } };
 
 /* volume slider var: the slider at the value of the engine variable */
-static void Step_Volume(int id, PyObject *args) {
+static void Step_Volume(int id, const nativeVal_t *args, int n) {
 	const char *slider, *var;
-	/* OBJLIB 6: the steps take the arguments of the line as a tuple */
-	if (!PyArg_ParseTuple(args, "ss", &slider, &var)) {
+	if (!Mode_Parse(args, n, "ss", &slider, &var)) {
 		PyErr_Print();
 		return;
 	}
@@ -55,8 +54,9 @@ static void Step_Volume(int id, PyObject *args) {
 }
 
 /* the entries without a left neighbour lead to the Spacelords button */
-static void Step_Spacelords(int id, PyObject *args) {
+static void Step_Spacelords(int id, const nativeVal_t *args, int n) {
 	(void)args;
+	(void)n;
 	for (int i = 1;; i++) {
 		char item[0x20];
 		Str_Printf(item, sizeof(item), "Item%d", i);

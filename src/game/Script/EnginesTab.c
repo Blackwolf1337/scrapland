@@ -42,17 +42,14 @@ static const int et_forbidden[3] = { 200, 30, 30 };
 
 
 /* the step usehint <key>: the Hint of the item, Scrap.GetLangStr(key) % UseTxt (the error left set stops the file) */
-static void ET_StepHint(int id, PyObject *args) {
-	nativeVal_t key = { 0 }, hint = { 0 };
+static void ET_StepHint(int id, const nativeVal_t *args, int n) {
+	nativeVal_t hint = { 0 };
 	const char *k;
-	/* OBJLIB 6: the step takes the arguments of the line as a tuple */
-	PyObject *o = Script_Index(args, 0);
-	byte ok = o && Native_Arg(o, &key) && Mode_ItemText(&key, &k) && Mode_LangUse(MOD, k, &hint);
-	Py_XDECREF(o);
-	if (ok) {
+	/* the first value of the line (args[0] of the script) */
+	if ((n > 0 || Native_Raise(NE_INDEX, "tuple index out of range")) && Mode_ItemText(&args[0], &k) &&
+		Mode_LangUse(MOD, k, &hint)) {
 		Mode_ScorerPut(id, Script_CurrentItem(), "Hint", &hint);
 	}
-	Native_Free(&key);
 	Native_Free(&hint);
 }
 

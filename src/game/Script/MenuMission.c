@@ -307,10 +307,11 @@ static void Mission_UseTxt(char *out, int size) {
 }
 
 /* run content: the status of the page read, its description, objectives and hints */
-static void Step_Content(int id, PyObject *args) {
+static void Step_Content(int id, const nativeVal_t *args, int n) {
 	const missionPage_t *p = mission_page;
 	char desc[0x1000] = "", title[0x200], use[0x80], hint[0x200];
 	(void)args;
+	(void)n;
 	if (!p) {
 		return;
 	}
