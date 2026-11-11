@@ -10,6 +10,8 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/script.h"
 #include "levels/Levels.h"
 
@@ -577,19 +579,25 @@ static PyObject *Level_SectionFunction(int i, levelPool_t *pool, int n, char *to
  */
 static void Level_ReplaySections(int i, PyObject *module, PyObject *defs) {
 	const char *p = level_files[i].text;
-	PyObject *dict = PyModule_GetDict(module);
+	modVarRef_t ref;
 	int n = 0;
+	if (!ModVar_RefOf(module, &ref)) {
+		return;
+	}
 	while (*p && n < LEVEL_FUNCS) {
 		const char *eol = strchr(p, '\n');
 		int len = eol ? (int)(eol - p) : (int)strlen(p);
 		if (len > 8 && !strncmp(p, "section ", 8)) {
 			char line[0x200], *tok[24];
+			nativeVal_t old;
 			int nt = Level_SectionWords(p + 8, len - 8, line, tok);
-			PyObject *old = nt ? PyDict_GetItemString(dict, tok[0]) : NULL;
-			if (old && PyDict_GetItemString(defs, tok[0]) == old && !Script_TableHas(level_files[i].module, tok[0])) {
-				Script_ReplaySet(dict, tok[0], old);
+			Native_SetNone(&old);
+			if (nt && ModVar_GetVal(&ref, tok[0], &old) && NObj_Py(&old) &&
+				PyDict_GetItemString(defs, tok[0]) == NObj_Py(&old) && !Script_TableHas(level_files[i].module, tok[0])) {
+				Script_ReplaySet(&ref, tok[0], &old);
 				n++;
 			}
+			Native_Free(&old);
 		}
 		p += len + (eol != NULL);
 	}

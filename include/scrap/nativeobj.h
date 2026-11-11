@@ -158,6 +158,16 @@ PyObject *NObj_ToPy(const nativeVal_t *v);
 /* the Python object behind the value now (borrowed): the one of a view, of an NV_OBJ; NULL for native data that never
  * crossed and the kinds by value (no conversion, unlike Native_PyOf) */
 PyObject *NObj_Py(const nativeVal_t *v);
+/* the table of a dict object of native data (NV_DICT, changed in place by the caller with the Native_Dict functions);
+ * NULL for a view, a dict that crossed, another value */
+nativeVal_t *NObj_DictData(const nativeVal_t *d);
+/* Native_FromPyAny(Native_ToPy(v)) without the crossing of native data: numbers, texts, None, and lists, tuples and
+ * dicts (by value, objects, views) of them by value, 32 deep (a dict with its table); 1 with *out (Native_Free it),
+ * 0 without an error and *out None when v holds another value (an instance, a function, a module, an entity handle) */
+byte NObj_Plain(const nativeVal_t *v, nativeVal_t *out);
+/* Native_Arg(Native_ToPy(v)) the same way: NObj_Plain, else the object or handle itself (an NV_OBJ as Native_SetObj
+ * gives it, a tuple that holds an object as its Python tuple) */
+void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out);
 /* 1 by default: Native_SetObj and Native_Arg give the NV_REF view of an object Native_FromPyRef takes. 0 under
  * SCRAP_NATIVE_REF=0 (read once): the NV_OBJ of before batch 9a2, kept one more round for comparison */
 byte NObj_RefMode(void);

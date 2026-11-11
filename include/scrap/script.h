@@ -95,9 +95,11 @@ byte Script_TableHas(const char *module, const char *name);
  * functions the script lacks are added) */
 void Script_TableReplay(PyObject *module, PyMethodDef *methods);
 /* the dict writes the loader made after the .pyc for the function cur under name, on a module made in C with the
- * values in place: the other names, tuples and dict values that hold cur and name itself (OBJLIB 5: they decide the
- * key order of the module dict until the variables leave the dicts) */
-void Script_ReplaySet(PyObject *dict, const char *name, PyObject *cur);
+ * values in place: the other names, tuples and dict values that hold cur and name itself (they decide the key order of
+ * the module's variables, scrap/modvars.h) */
+struct modVarRef_s;
+struct nativeVal_s;
+void Script_ReplaySet(const struct modVarRef_s *ref, const char *name, const struct nativeVal_s *cur);
 /*
  * after a module made in C: the dict writes the loader made after the .pyc, with the values in place, for
  * every table of script_modules, the level data and the level tables (the functions the script lacks, and the sets

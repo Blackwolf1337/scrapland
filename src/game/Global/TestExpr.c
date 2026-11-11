@@ -1300,7 +1300,12 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 
 	Native_SetNone(out);
 	if (!v && !strcmp(name, "__globals__")) {
-		/* the globals the line or lambda runs in (helpers set their module variables through it) */
+		/* the globals the line or lambda runs in (helpers set their module variables through it): a pack module's
+		 * variables in the registry */
+		if (s->inMod) {
+			ModVar_Space(&s->mv, out);
+			return 1;
+		}
 		return Native_FromPyRef(s->globals, out);
 	}
 	for (const tcEnv *e = s->env ? s->env->up : NULL; !v && e; e = e->up) {
@@ -1310,10 +1315,16 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 		Native_Copy(out, v);
 		return 1;
 	}
-	PyObject *g = s->inMod ? ModVar_Get(&s->mv, name) : PyDict_GetItemString(s->globals, (char *)name);
-	if (g) {
-		TX_FromPy(g, out);
-		return 1;
+	if (s->inMod) {
+		if (ModVar_GetVal(&s->mv, name, out)) {
+			return 1;
+		}
+	} else {
+		PyObject *g = PyDict_GetItemString(s->globals, (char *)name);
+		if (g) {
+			TX_FromPy(g, out);
+			return 1;
+		}
 	}
 	return TX_Result(TX_GlobalPy(name), out);
 }
@@ -1321,12 +1332,15 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 /* name = v in the globals (a variable of a pack module through the registry); statements run at the top level only,
  * a lambda has no assignment */
 static byte X_SetName(tcScope *s, const char *name, const nativeVal_t *v) {
+	if (s->inMod) {
+		return ModVar_SetVal(&s->mv, name, v) == 0;
+	}
 	PyObject *o = TX_ToPy(v);
 
 	if (!o) {
 		return 0;
 	}
-	int r = s->inMod ? ModVar_Set(&s->mv, name, o) : PyDict_SetItemString(s->globals, (char *)name, o);
+	int r = PyDict_SetItemString(s->globals, (char *)name, o);
 	Py_DECREF(o);
 	return r == 0;
 }
@@ -1359,6 +1373,8 @@ static void X_NoError(void) {
  * through the registry, the attribute of a native object, of a view through Python (NObj_GetAttr does the three);
  * 0 with the error set, or without one for a handle that gives none */
 static byte TX_GetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	modVarRef_t mv;
+
 	Native_SetNone(out);
 	if (o->type == NV_ENT) {
 		cEntity *e = Native_Ent(o);
@@ -1374,7 +1390,7 @@ static byte TX_GetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out)
 			return 1;
 		}
 		/* gone, a method, or no such member: the handle's own path, with its console lines */
-	} else if (TX_Py(o) && NObj_Kind(o) != NO_FUNCTION) {
+	} else if (TX_Py(o) && NObj_Kind(o) != NO_FUNCTION && !ModVar_OfVal(o, &mv)) {
 		/* a view: the attribute of its Python object (as NObj_GetAttr gets it), a tuple with its object */
 		return TX_Result(ModVar_ObjAttr(TX_Py(o), name), out);
 	}
@@ -3611,15 +3627,20 @@ PyObject *TcX_Statement(const char *line) {
  * none; del: removed (out unused) */
 static byte TX_ResultVar(PyObject *globals, byte del, nativeVal_t *out) {
 	modVarRef_t mv;
-	byte inMod = ModVar_OfDict(globals, &mv);
-	PyObject *v = inMod ? ModVar_Get(&mv, "result") : PyDict_GetItemString(globals, "result");
+	nativeVal_t r;
 
-	if (v && del) {
-		if (inMod) {
+	if (ModVar_OfDict(globals, &mv)) {
+		byte has = ModVar_GetVal(&mv, "result", del ? &r : out);
+		if (has && del) {
+			Native_Free(&r);
 			ModVar_Del(&mv, "result");
-		} else {
-			PyDict_DelItemString(globals, "result");
+			return 0;
 		}
+		return has;
+	}
+	PyObject *v = PyDict_GetItemString(globals, "result");
+	if (v && del) {
+		PyDict_DelItemString(globals, "result");
 		return 0;
 	}
 	if (v && !del) {

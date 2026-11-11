@@ -19,6 +19,9 @@
 
 /* ---- values ---- */
 
+/* the depth of the containers the literal reader and Native_FromPyAny take */
+#define NATIVE_DEPTH 32
+
 /* the longest text a native value holds in place (with its 0); a longer one is in an owned buffer */
 #define NATIVE_TEXT 0x80
 
@@ -428,6 +431,8 @@ byte Native_FromPy(PyObject *o, unsigned types, nativeVal_t *v);
 /* any value of the native types (None, int, long, float, text, and lists, tuples and dicts of them, 32 deep; a dict
  * in the slots Python has it in) into *v: 1 (Native_Free it), else 0 without an error and *v None */
 byte Native_FromPyAny(PyObject *o, nativeVal_t *v);
+/* the same for a value at that depth inside a container (the containers stop at NATIVE_DEPTH as there) */
+byte Native_FromPyAt(PyObject *o, nativeVal_t *v, int depth);
 
 /*
  * OBJLIB 9: *out the value an adapter's Native_Arg gets when a caller passes v through Python (Native_ToPy and back),

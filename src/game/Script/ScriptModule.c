@@ -44,6 +44,7 @@
 #include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
 
@@ -520,12 +521,25 @@ static byte Mod_String(modParse_t *m, nativeVal_t *out) {
  */
 static byte Mod_Expr(modParse_t *m, nativeVal_t *out);
 
+/* a module variable's value as the evaluator keeps it: a tuple with its Python tuple by reference, as Mod_FromPy takes
+ * it, else as it is */
+static void Mod_Var(nativeVal_t *v) {
+	PyObject *t = v->type == NV_TUPLE ? Native_KeptPy(v) : NULL;
+	if (t) {
+		Py_INCREF(t);
+		Native_Free(v);
+		Native_SetObj(v, t);
+		Py_DECREF(t);
+	}
+}
+
 /* LOAD_NAME: the locals (a class body's), the module (through the registry), the builtins; NameError with the name */
 static byte Mod_Load(modParse_t *m, const char *name, nativeVal_t *out) {
 	PyObject *v = m->locals != m->globals ? PyDict_GetItemString(m->locals, (char *)name) : NULL;
 	Native_SetNone(out);
-	if (!v) {
-		v = ModVar_Get(&m->ref, name);
+	if (!v && ModVar_GetVal(&m->ref, name, out)) {
+		Mod_Var(out);
+		return 1;
 	}
 	if (!v) {
 		PyObject *b = ModVar_Get(&m->ref, "__builtins__");
@@ -866,8 +880,14 @@ static byte Mod_Subscript(modParse_t *m, const nativeVal_t *o, nativeVal_t *out)
 	return ok;
 }
 
-/* o.name (Script_GetAttr) */
+/* o.name (Script_GetAttr; a pack module's variable in the registry) */
 static byte Mod_Attr(modParse_t *m, const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	modVarRef_t mv;
+	if (ModVar_OfVal(o, &mv)) {
+		byte ok = ModVar_AttrVal(&mv, name, out);
+		Mod_Var(out);
+		return ok;
+	}
 	PyObject *po = Mod_ToPy(m, o), *r = po ? Script_GetAttr(po, name) : NULL;
 	Py_XDECREF(po);
 	return Mod_Took(r, out);
@@ -1226,12 +1246,21 @@ static byte Mod_Store(modParse_t *m, const char *name, PyObject *v) {
 	return ok;
 }
 
-/* the same for a value of the evaluator (freed): the place where it becomes the object the dict holds (Mod_ToPy,
- * OBJLIB 5) */
-static byte Mod_StoreVal(modParse_t *m, const char *name, nativeVal_t *v) {
-	PyObject *o = m->skip ? NULL : Mod_ToPy(m, v);
-	byte ok = m->skip || (o && Mod_Put(m, name, o));
+/* name = v (not freed) in the locals: a native value into the module's variables, an object into a class body's dict
+ * (Mod_ToPy, OBJLIB 9) */
+static byte Mod_PutVal(modParse_t *m, const char *name, const nativeVal_t *v) {
+	if (m->locals == m->globals && NObj_RefMode()) {
+		return ModVar_SetVal(&m->ref, name, v) == 0;
+	}
+	PyObject *o = Mod_ToPy(m, v);
+	byte ok = o && Mod_Put(m, name, o);
 	Py_XDECREF(o);
+	return ok;
+}
+
+/* the same for a value of the evaluator when not skipped (freed) */
+static byte Mod_StoreVal(modParse_t *m, const char *name, nativeVal_t *v) {
+	byte ok = m->skip || Mod_PutVal(m, name, v);
 	Native_Free(v);
 	return ok;
 }
@@ -1273,29 +1302,30 @@ static byte Mod_From(modParse_t *m) {
 	if (!mod && !m->skip) {
 		return 0;
 	}
-	PyObject *d = mod ? PyModule_GetDict(mod) : NULL;
-	byte ok = 1;
+	modVarRef_t from;
+	byte has = mod && ModVar_RefOf(mod, &from), ok = 1;
+	nativeVal_t k, v;
 	if (Mod_Op(m, "*")) {
-		PyObject *k, *v;
 		int pos = 0;
-		/* OBJLIB 5: the walk of the module's dict, in its order (the order of the stores) */
-		while (ok && d && PyDict_Next(d, &pos, &k, &v)) {
-			if (PyString_Check(k) && PyString_AsString(k)[0] != '_') {
-				ok = Mod_Put(m, PyString_AsString(k), v);
+		/* the walk of the module's variables in the slot order of its dict (the order of the stores) */
+		while (ok && has && ModVar_Next(&from, &pos, &k, &v)) {
+			if (k.type == NV_STR && Native_Text(&k)[0] != '_') {
+				ok = Mod_PutVal(m, Native_Text(&k), &v);
 			}
+			Native_Free(&k);
+			Native_Free(&v);
 		}
 	} else {
 		while (ok && Mod_Word(m, name, sizeof(name))) {
-			if (!d) {
+			if (!has) {
 				continue;
 			}
-			PyObject *v = ModVar_DictGet(d, name);
-			if (!v) {
+			if (!ModVar_GetVal(&from, name, &v)) {
 				PyErr_Format(PyExc_ImportError, "cannot import name %.200s", name);
 				ok = 0;
 			} else {
-				Py_INCREF(v);
-				ok = Mod_Store(m, name, v);
+				ok = m->skip || Mod_PutVal(m, name, &v);
+				Native_Free(&v);
 			}
 		}
 	}
@@ -1328,6 +1358,10 @@ static byte Mod_Let(modParse_t *m) {
 
 /* o.name = v (STORE_ATTR through the registry for a pack module) and o[k] = v (STORE_SUBSCR) on the objects */
 static byte Mod_SetOn(modParse_t *m, const nativeVal_t *o, const char *name, const nativeVal_t *k, const nativeVal_t *v) {
+	modVarRef_t mv;
+	if (!k && NObj_RefMode() && ModVar_OfVal(o, &mv)) {
+		return ModVar_SetAttrVal(&mv, name, v);
+	}
 	PyObject *pv = Mod_ToPy(m, v), *po = pv ? Mod_ToPy(m, o) : NULL, *pk = po && k ? Mod_ToPy(m, k) : NULL;
 	byte ok = po && (k ? pk && PyObject_SetItem(po, pk, pv) == 0 : ModVar_SetObjAttr(po, name, pv) == 0);
 	Py_XDECREF(pv);

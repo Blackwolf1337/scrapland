@@ -11,6 +11,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/global.h"
+#include "scrap/modvars.h"
 #include "scrap/pyfunction.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
@@ -239,7 +240,7 @@ static byte cPy_Function_SetPython(cPy_Function *self, const char *module, const
 	if (!m) {
 		Con_Warnf("cPy_Function::SetFunc: Module does not exist.\n '%s'.'%s'\n", module, func);
 	} else {
-		self->func = PyDict_GetItemString(PyModule_GetDict(m), (char *)func);
+		self->func = ModVar_DictGet(PyModule_GetDict(m), func);
 		if (!self->func) {
 			Con_Warnf("cPy_Function::SetFunc: No function in module.\n '%s'.'%s'\n", module, func);
 		} else if (!PyCallable_Check(self->func)) {

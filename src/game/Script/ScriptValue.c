@@ -604,9 +604,9 @@ static PyObject *Lit_Dict(scriptLit_t *l) {
 	return d;
 }
 
-/* the builtins of the frame of eval (a dict, the one of a module) */
+/* the builtins of the frame of eval (a dict, the one of a module), a module's through the registry */
 static PyObject *Lit_BuiltinsDict(PyObject *globals) {
-	PyObject *b = PyDict_GetItemString(globals, "__builtins__");
+	PyObject *b = ModVar_DictGet(globals, "__builtins__");
 	return PyModule_Check(b) ? PyModule_GetDict(b) : b;
 }
 
@@ -665,7 +665,7 @@ static PyObject *Lit_Item(scriptLit_t *l) {
 
 /* the globals give the frame of eval its builtins (else PyFrame_New raises) */
 static byte Lit_Builtins(PyObject *globals) {
-	PyObject *b = globals && PyDict_Check(globals) ? PyDict_GetItemString(globals, "__builtins__") : NULL;
+	PyObject *b = globals && PyDict_Check(globals) ? ModVar_DictGet(globals, "__builtins__") : NULL;
 	return b && (PyDict_Check(b) || PyModule_Check(b));
 }
 

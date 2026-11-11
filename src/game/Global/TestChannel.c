@@ -554,27 +554,15 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 				continue;
 			}
 			TC_Addf(b, "== %s\n", name);
-			if (ModVar_Of(m, &ref)) {
+			/* the names of the registry, a module without a table by its string keys (both sorted) */
+			if (ModVar_RefOf(m, &ref)) {
 				const char **vars;
 				int n = ModVar_Names(&ref, &vars);
 				for (int j = 0; j < n; j++) {
 					TC_DumpVar(b, name, vars[j], ModVar_Get(&ref, vars[j]), seen);
 				}
 				Mem_Free(vars);
-				continue;
 			}
-			PyObject *d = PyModule_GetDict(m), *keys = PyDict_Keys(d);
-			if (!keys) {
-				continue;
-			}
-			PyList_Sort(keys);
-			for (int j = 0; j < PyList_Size(keys); j++) {
-				PyObject *k = PyList_GetItem(keys, j);
-				if (PyString_Check(k)) {
-					TC_DumpVar(b, name, PyString_AsString(k), PyDict_GetItem(d, k), seen);
-				}
-			}
-			Py_DECREF(keys);
 		}
 	}
 	PyErr_Clear();
@@ -865,6 +853,8 @@ static void TC_In(tcBuf *b, const char *arg) {
 		quiet = 1;
 		arg += 3;
 	}
+	/* the module dict as the key of the module: a pack module's variables are in the registry (TestExpr reads and
+	 * writes them there, ModVar_OfDict) */
 	TcX_Run(b, arg, PyModule_GetDict(m), quiet);
 	Py_DECREF(m);
 }
