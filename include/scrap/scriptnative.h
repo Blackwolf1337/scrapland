@@ -32,9 +32,10 @@ typedef enum {
 	NV_LIST,
 	NV_TUPLE,
 	NV_DICT,
-	NV_OBJ,				/* OBJLIB 7: a Python value of another type (an entity handle, a function, a class
-					 * instance), held by reference: only adapters make it (Native_Arg), the native
-					 * functions refuse it with the error the script raised for it */
+	NV_OBJ,				/* OBJLIB 7: a Python value of another type (a function, a class instance, a
+					 * container that holds one or an entity handle), held by reference: only adapters make
+					 * it (Native_Arg), the native functions refuse it with the error the script raised for
+					 * it */
 	NV_ENT,				/* an entity handle of the scripts (the cPyEntity of Python): a cEntityRef, the link in
 					 * the ring of the entity and the name the handle was made with */
 } nativeType_t;
