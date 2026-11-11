@@ -238,7 +238,7 @@ PyObject *ModVar_Attr(const modVarRef_t *ref, const char *name) {
 	}
 	PyObject *v = ModVar_Get(ref, name);
 	if (!v) {
-		PyErr_SetString(PyExc_AttributeError, (char *)name);
+		Native_Raise(NE_ATTRIBUTE, "%s", name);
 		return NULL;
 	}
 	Py_INCREF(v);
@@ -247,14 +247,14 @@ PyObject *ModVar_Attr(const modVarRef_t *ref, const char *name) {
 
 int ModVar_SetAttr(const modVarRef_t *ref, const char *name, PyObject *v) {
 	if (name[0] == '_' && !strcmp(name, "__dict__")) {
-		PyErr_SetString(PyExc_TypeError, "read-only special attribute");
+		Native_Raise(NE_TYPE, "read-only special attribute");
 		return -1;
 	}
 	if (v) {
 		return ModVar_Set(ref, name, v);
 	}
 	if (ModVar_Del(ref, name) != 0) {
-		PyErr_SetString(PyExc_AttributeError, "delete non-existing module attribute");
+		Native_Raise(NE_ATTRIBUTE, "delete non-existing module attribute");
 		return -1;
 	}
 	return 0;
@@ -314,7 +314,7 @@ int ModVar_SetGlobal(const char *module, const char *name, PyObject *v) {
 		r = ModVar_Set(&ref, name, v);
 	} else if (m) {
 		/* PyModule_GetDict's SystemError */
-		PyErr_BadInternalCall();
+		Native_Raise(NE_SYSTEM, "bad argument to internal function");
 	}
 	Py_XDECREF(m);
 	return r;
@@ -325,8 +325,8 @@ int ModVar_DelGlobal(const char *module, const char *name) {
 	modVarRef_t ref;
 	int r = m ? 0 : -1;
 	if (m && (!MV_Ref(m, &ref) || ModVar_Del(&ref, name) != 0)) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_NameError, (char *)name);
+		Native_ErrClear();
+		Native_Raise(NE_NAME, "%s", name);
 		r = -1;
 	}
 	Py_XDECREF(m);

@@ -308,6 +308,9 @@ const char *Native_ErrName(nativeError_t kind);
 /* the exception of e as the script sees it (sys.exc_type): the object of a standard kind (OBJLIB 7: the string of
  * Python, so `is` holds), a copy of the type of NE_OTHER (None for no error) */
 void Native_ErrType(const nativeErr_t *e, nativeVal_t *out);
+/* the error as an except clause takes it (sys.exc_type and sys.exc_value: normalized, Native_ErrType and the value),
+ * cleared; None and None for no error */
+void Native_ErrCaught(nativeVal_t *type, nativeVal_t *value);
 /* str() of the exception and of the value of e added to b ("TypeError", "function requires ..."): 0 with the error of
  * a str that fails */
 byte Native_ErrTypeStr(nativeBuf_t *b, const nativeErr_t *e);

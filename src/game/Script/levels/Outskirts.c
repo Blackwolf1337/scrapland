@@ -1651,7 +1651,7 @@ static byte Merc_ScanShip(void) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_G(IM, "lonelyMerc", m) || !Mode_VGet(m, "Pos", mpos)) {
-		/* except: the scan again a second later (OBJLIB 7: the error is the Python exception until errors are a C state) */
+		/* except: the scan again a second later */
 		Native_ErrClear();
 		return Mode_Done(&t, Mode_Later(1.0, IM, "ScanShip", NULL, 0, "ScanShip"));
 	}

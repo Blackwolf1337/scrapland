@@ -88,13 +88,13 @@ static void cScheduledFunc_Run(cScheduledFunc *self) {
 	if (self->site) {
 		g_SchedulerCalls[1]++;
 		if (!cScheduledFunc_CallEntry(self)) {
-			PyErr_Print();
+			Native_ErrPrint();
 		}
 	} else {
 		g_SchedulerCalls[0]++;
 		PyObject *r = PyEval_CallObject(self->func, self->params);
 		if (!r) {
-			PyErr_Print();
+			Native_ErrPrint();
 		} else {
 			Py_DECREF(r);
 		}

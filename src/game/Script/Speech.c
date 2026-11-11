@@ -758,7 +758,7 @@ static byte Sp_AutoSpeech(const nativeVal_t *a) {
 	if (Mode_Sub(routines, type, f)) {
 		return Mode_Done(&t, Mode_CallArgs(f, NULL, a, 4));
 	}
-	/* OBJLIB 7: the KeyError of the script is the Python exception */
+	/* except KeyError */
 	if (!Mode_CatchKeyError()) {
 		return Mode_Done(&t, 0);
 	}
@@ -1030,7 +1030,7 @@ static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_
 			return Mode_Done(&t, 0);
 		}
 		if (!Mode_Sub(dict, head, model)) {
-			/* OBJLIB 7: the KeyError of the script is the Python exception */
+			/* except KeyError */
 			if (!Mode_CatchKeyError()) {
 				return Mode_Done(&t, 0);
 			}
@@ -1341,7 +1341,7 @@ static byte Sp_OnObjectSpeech(const nativeVal_t *obj, const nativeVal_t *type, c
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_Sub(dict, type, model)) {
-		/* OBJLIB 7: the KeyError of the script is the Python exception */
+		/* except KeyError */
 		if (!Mode_CatchKeyError()) {
 			return Mode_Done(&t, 0);
 		}

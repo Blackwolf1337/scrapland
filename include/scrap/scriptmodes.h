@@ -568,7 +568,7 @@ byte Mode_ApplyNext(const char *module);
 int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const char *name);
 /* a == i of the script (Native_Compare can not fail on native values) */
 byte Mode_EqI(const nativeVal_t *a, long i);
-/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
+/* raise "text" (a string exception of the script, its own object): 0 */
 byte Mode_RaiseText(const char *text);
 /* `usr and usr.Name == name`: 1, 0, -1 */
 int Mode_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name);

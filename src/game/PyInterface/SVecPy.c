@@ -128,7 +128,7 @@ API_FN(SVec, GetAngle) {
 /* AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector. Takes x, y, z or a tuple; degrees. */
 API_FN(SVec, GetRotAng) {
 	double x, y, z;
-	if (!Mode_Parse(a, n, "ddd", &x, &y, &z) && (PyErr_Clear(), !Mode_Parse(a, n, "(ddd)", &x, &y, &z))) {
+	if (!Mode_Parse(a, n, "ddd", &x, &y, &z) && (Native_ErrClear(), !Mode_Parse(a, n, "(ddd)", &x, &y, &z))) {
 		return 0;
 	}
 	vec3_t dir = { (float)x, (float)y, (float)z };

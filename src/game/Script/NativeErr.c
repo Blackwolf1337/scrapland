@@ -162,6 +162,16 @@ void Native_ErrType(const nativeErr_t *e, nativeVal_t *out) {
 	}
 }
 
+void Native_ErrCaught(nativeVal_t *type, nativeVal_t *value) {
+	nativeErr_t e;
+	Native_ErrFetch(&e);
+	Native_ErrNormalize(&e);
+	Native_ErrType(&e, type);
+	*value = e.value;
+	Native_SetNone(&e.value);
+	Native_ErrFree(&e);
+}
+
 byte Native_ErrTypeStr(nativeBuf_t *b, const nativeErr_t *e) {
 	if (e->kind != NE_OTHER) {
 		Native_BufAdd(b, e->kind == NE_NONE ? "None" : ne_names[e->kind], -1);

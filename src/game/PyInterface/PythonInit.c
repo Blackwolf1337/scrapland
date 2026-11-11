@@ -38,9 +38,9 @@ byte g_PythonReady;
 /* the end of a start line: its error printed, else the line flushed */
 static void Py_LineEnd(byte ok) {
 	if (!ok) {
-		PyErr_Print();
+		Native_ErrPrint();
 	} else if (Py_FlushLine()) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 }
 
@@ -58,7 +58,7 @@ static byte Py_LineExpr(PyObject *v) {
 			err = Py_FlushLine();
 		}
 		if (!err && !(out = PySys_GetObject("stdout"))) {
-			PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+			Native_Raise(NE_RUNTIME, "lost sys.stdout");
 			err = -1;
 		}
 		if (!err) {
@@ -330,7 +330,7 @@ void Py_GateNote(const char *what, const char *name, const char *file) {
 static void Py_GateRefuse(const char *name, const char *file) {
 	Py_IgnoredOnce(name, file);
 	Py_GateNote("refused", name, file);
-	PyErr_Format(PyExc_ImportError, "pack module %.100s (%.100s) refused: no C definition", name, file);
+	Native_Raise(NE_IMPORT, "pack module %.100s (%.100s) refused: no C definition", name, file);
 }
 
 /* the import of Python would read a .py or .pyc that was not preloaded (src/python/import.c) */
@@ -367,12 +367,12 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 			int made = Py_ModuleMake(name, file, &m);
 			if (made) {
 				if (made < 0) {
-					PyErr_Print();
+					Native_ErrPrint();
 				}
 				CHECK(m != NULL);
 			} else {
 				Py_GateRefuse(name, file);
-				PyErr_Clear();
+				Native_ErrClear();
 			}
 			Py_XDECREF(m);
 		}
@@ -390,10 +390,10 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 			PyObject *err = PySys_GetObject("stderr");
 			if (Py_VerboseFlag) {
 				PyFile_WriteString("'import site' failed; traceback:\n", err);
-				PyErr_Print();
+				Native_ErrPrint();
 			} else {
 				PyFile_WriteString("'import site' failed; use -v for traceback\n", err);
-				PyErr_Clear();
+				Native_ErrClear();
 			}
 		}
 	}

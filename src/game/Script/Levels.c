@@ -456,13 +456,13 @@ static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 	PyObject *section = PyTuple_GetItem(self, 1), *params = PyTuple_GetItem(self, 2), *defs = PyTuple_GetItem(self, 3);
 	int np = PyTuple_Size(params), na = PyTuple_Size(args);
 	if (np == 0 && (na > 0 || (kw && PyDict_Size(kw) > 0))) {
-		PyErr_SetString(PyExc_TypeError, "no arguments expected");
+		Native_Raise(NE_TYPE, "no arguments expected");
 		return NULL;
 	}
 	if (na > np) {
 		char msg[0x80];
 		Str_Printf(msg, sizeof(msg), "too many arguments; expected %d, got %d", np, na);
-		PyErr_SetString(PyExc_TypeError, msg);
+		Native_Raise(NE_TYPE, "%s", msg);
 		return NULL;
 	}
 	PyObject *vars = PyDict_New();
@@ -484,7 +484,7 @@ static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 			if (err) {
 				char msg[0x80];
 				Str_Printf(msg, sizeof(msg), err, PyString_Check(key) ? PyString_AsString(key) : "?");
-				PyErr_SetString(PyExc_TypeError, msg);
+				Native_Raise(NE_TYPE, "%s", msg);
 				Py_DECREF(vars);
 				return NULL;
 			}
@@ -500,7 +500,7 @@ static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 		if (!d) {
 			char msg[0x80];
 			Str_Printf(msg, sizeof(msg), "not enough arguments; expected %d, got %d", np - PyDict_Size(defs), i);
-			PyErr_SetString(PyExc_TypeError, msg);
+			Native_Raise(NE_TYPE, "%s", msg);
 			Py_DECREF(vars);
 			return NULL;
 		}
@@ -593,7 +593,7 @@ static void Level_ReplaySections(int i, PyObject *module, PyObject *defs) {
 		}
 		p += len + (eol != NULL);
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	Con_Verbosef("Script: %d functions of %s are data in %s\n", n, level_files[i].module, level_files[i].name);
 }
 
@@ -667,7 +667,7 @@ PyObject *Script_LevelDataFunction(const char *module, const char *name) {
 		return NULL;
 	}
 	if (pool->used >= LEVEL_FUNCS) {
-		PyErr_Format(PyExc_SystemError, "more than %d data functions in %s", LEVEL_FUNCS, module);
+		Native_Raise(NE_SYSTEM, "more than %d data functions in %s", LEVEL_FUNCS, module);
 		return NULL;
 	}
 	char line[0x200], *tok[24];

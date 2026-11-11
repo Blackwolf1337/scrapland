@@ -88,10 +88,10 @@ int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals) {
 		((PyMethodObject *)m)->im_class = cls;
 		Py_DECREF(Py_None);
 	} else if (cls) {
-		PyErr_SetString(PyExc_TypeError, "CharSpawnPos: the class of the module definition without its __init__");
+		Native_Raise(NE_TYPE, "CharSpawnPos: the class of the module definition without its __init__");
 	}
 	Py_XDECREF(cls);
-	return !PyErr_Occurred();
+	return !Native_Failed();
 }
 
 /*

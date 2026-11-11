@@ -7,6 +7,7 @@
 
 #include "scrap/console.h"
 #include "scrap/scorer.h"
+#include "scrap/scriptnative.h"
 
 static PyTypeObject cPyMenuEntity_Type;
 PyObject *ScorerItem_PyNew(int player, const char *name) {
@@ -106,7 +107,7 @@ static int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 			return 0;
 		}
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	if (PyArg_Parse(v, "d", &d)) {
 		parsed = 1;
@@ -114,14 +115,14 @@ static int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 			return 0;
 		}
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	if (PyArg_Parse(v, "s", &s)) {
 		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 1) {
 			return 0;
 		}
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 		if (!parsed) {
 			Con_Errorf("(%d,'%s')->%s : Menu invalid type.\n", m->player, m->name, name);
 			return -1;

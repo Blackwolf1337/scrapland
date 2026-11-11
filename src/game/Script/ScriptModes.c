@@ -282,8 +282,8 @@ PyObject *Mode_Handle(cEntity *e) {
 
 /* a getattr that gave NULL: the error of the call as the interpreter reports it when none is set */
 static byte Mode_AttrFail(void) {
-	if (!PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, "error return without exception set");
+	if (!Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "error return without exception set");
 	}
 	return 0;
 }
@@ -1586,7 +1586,7 @@ PyObject *Mode_From(const char *module, const char *name) {
 	byte imported;
 	PyObject *v = ModVar_Lookup(module, name, &imported);
 	if (imported && !v) {
-		PyErr_Format(PyExc_ImportError, "cannot import name %.230s", name);
+		Native_Raise(NE_IMPORT, "cannot import name %.230s", name);
 	}
 	return v;
 }
@@ -1917,7 +1917,7 @@ byte Mode_SaveInt(const char *name, nativeVal_t *out) {
 
 int Mode_Cmp(const nativeVal_t *a, const char *op, const nativeVal_t *b) {
 	int c = Native_Compare(a, b);
-	if (c && PyErr_Occurred()) {
+	if (c && Native_Failed()) {
 		return -1;
 	}
 	switch (op[0]) {
@@ -2411,7 +2411,7 @@ void Mode_Elems(nativeVal_t *v) {
 	for (int i = 0; i < n; i++) {
 		PyObject *x = PySequence_GetItem(o, i);
 		if (!x) {
-			PyErr_Clear();
+			Native_ErrClear();
 			break;
 		}
 		Native_Arg(x, Native_Append(&items));
@@ -2700,12 +2700,10 @@ byte Mode_EqI(const nativeVal_t *a, long i) {
 }
 
 byte Mode_RaiseText(const char *text) {
-	/* OBJLIB 7 */
-	PyObject *s = PyString_FromString((char *)text);
-	if (s) {
-		PyErr_SetObject(s, Py_None);
-		Py_DECREF(s);
-	}
+	nativeVal_t s;
+	Native_SetText(&s, text, (int)strlen(text));
+	Native_RaiseObj(&s, NULL);
+	Native_Free(&s);
 	return 0;
 }
 
@@ -3411,9 +3409,9 @@ byte Mode_Set0I(const char *item, const char *var, long i) {
 
 byte Mode_Printed(byte ok, const char *module, const char *func) {
 	if (!ok) {
-		/* OBJLIB 7: the error printed where Script_Call printed it; the menu goes on */
+		/* the error printed where Script_Call printed it; the menu goes on */
 		Con_Warnf("Script: %s.%s failed\n", module, func);
-		PyErr_Print();
+		Native_ErrPrint();
 	}
 	return ok;
 }
@@ -3595,7 +3593,7 @@ byte Mode_UsrSeam(long id, nativeVal_t *out) {
 byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {
 	PyObject *f = Script_Attr(module, func);
 	byte ok = f && Mode_SchedAdd((float)time, f, args, n, name ? name : "");
-	PyErr_Clear();
+	Native_ErrClear();
 	Py_XDECREF(f);
 	return ok;
 }
@@ -3606,10 +3604,10 @@ void Mode_CallVarIf(const char *module, const char *var, long id) {
 		Native_SetInt(&a, id);
 		/* the callback through its entry while it is a port's own function (Port_Value) */
 		if (!Mode_CallArgs(&f, NULL, &a, 1)) {
-			PyErr_Print();
+			Native_ErrPrint();
 		}
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	Native_Free(&f);
 }
 
@@ -3754,7 +3752,7 @@ byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *a
 	if (f) {
 		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, args, name ? name : "");
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	Py_XDECREF(f);
 	return f != NULL;
 }
@@ -3848,7 +3846,7 @@ void Mode_ModPutS(const char *module, const char *var, const char *s) {
 
 int Mode_CmpOp(const nativeVal_t *a, const nativeVal_t *b, char op) {
 	int c = Native_Compare(a, b);
-	if (PyErr_Occurred()) {
+	if (Native_Failed()) {
 		return -1;
 	}
 	switch (op) {
@@ -4043,7 +4041,7 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out) {
 	}
 	/* "i" of getargs.c: PyInt_AsLong through the number methods of the object */
 	long l = PyInt_AsLong(Native_PyOf(v));
-	if (l == -1 && PyErr_Occurred()) {
+	if (l == -1 && Native_Failed()) {
 		return 0;
 	}
 	*out = (int)l;
@@ -4055,7 +4053,7 @@ static byte Mode_ArgLong(const nativeVal_t *v, long *out) {
 	int i;
 	if (Native_IsObj(v)) {
 		*out = PyInt_AsLong(Native_PyOf(v));
-		return *out != -1 || !PyErr_Occurred();
+		return *out != -1 || !Native_Failed();
 	}
 	if (!Native_ArgInt(v, &i)) {
 		return 0;
@@ -4072,7 +4070,7 @@ static byte Mode_ArgDouble(const nativeVal_t *v, double *out) {
 		return Native_ArgDouble(v, out);
 	}
 	*out = PyFloat_AsDouble(Native_PyOf(v));
-	return !PyErr_Occurred();
+	return !Native_Failed();
 }
 
 static byte Mode_FmtLetter(char c) {
@@ -4245,7 +4243,7 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 	if (!msg) {
 		return 1;
 	}
-	if (PyErr_Occurred()) {
+	if (Native_Failed()) {
 		return 0;
 	}
 	/* seterror: "argument <i>[, item <j>...]: expected <msg> found" */
@@ -4615,8 +4613,14 @@ static byte Lib_MathOut(double x, nativeVal_t *out) {
 		return Native_Raise(NE_OVERFLOW, "math range error");
 	}
 	if (errno) {
-		/* OBJLIB 9: the (errno, text) value of PyErr_SetFromErrno */
-		PyErr_SetFromErrno(PyExc_ValueError);
+		/* the (errno, text) value of PyErr_SetFromErrno */
+		nativeVal_t v;
+		const char *text = strerror(errno);
+		Native_SetEmpty(&v, NV_TUPLE);
+		Native_SetInt(Native_Append(&v), errno);
+		Native_SetText(Native_Append(&v), text, (int)strlen(text));
+		Native_RaiseVal(NE_VALUE, &v);
+		Native_Free(&v);
 		return 0;
 	}
 	Native_SetFloat(out, x);
@@ -5100,10 +5104,10 @@ byte Mode_RefModule(const char *name, nativeVal_t *out) {
 }
 
 byte Mode_CatchKeyError(void) {
-	if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+	if (!Native_ErrIs(NE_KEY)) {
 		return 0;
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	return 1;
 }
 
@@ -5174,7 +5178,7 @@ int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
 	int c = y ? PyObject_Compare(x, y) : -2;
 	if (y) {
 		/* cmp_outcome of ceval: an error only counts with a result that is not 0 */
-		c = c && PyErr_Occurred() ? -2 : c < 0 ? -1 : c > 0;
+		c = c && Native_Failed() ? -2 : c < 0 ? -1 : c > 0;
 	}
 	Py_XDECREF(y);
 	Py_XDECREF(x);

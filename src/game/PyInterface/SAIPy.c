@@ -178,7 +178,7 @@ static byte SetState_Error(const char *entity, const char *state, int err, const
 	}
 	Con_Bluef("\n**************************************************************************************************"
 		"\n\n");
-	return !PyErr_Occurred();
+	return !Native_Failed();
 }
 
 static int CheckAIEntity(cEntity *e, const char *type) {

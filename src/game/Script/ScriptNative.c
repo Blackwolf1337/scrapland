@@ -379,7 +379,7 @@ byte Native_Hash(const nativeVal_t *v, long *out) {
 		/* OBJLIB 7 */
 		*out = PyObject_Hash(v->obj);
 		if (*out == -1) {
-			PyErr_Clear();
+			Native_ErrClear();
 			return 0;
 		}
 		return 1;
@@ -657,7 +657,7 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 			Native_BufAdd(b, PyString_AsString(r), PyString_Size(r));
 			Py_DECREF(r);
 		}
-		PyErr_Clear();
+		Native_ErrClear();
 		return;
 	}
 	case NV_ENT: {
@@ -672,7 +672,7 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 	case NV_REF:
 		/* as for an NV_OBJ, a repr that fails adds nothing */
 		if (!NObj_Repr(b, v, mode)) {
-			PyErr_Clear();
+			Native_ErrClear();
 		}
 		return;
 	case NV_INT:
@@ -1199,7 +1199,7 @@ const nativeVal_t *Native_GetItem(const nativeVal_t *seq, long i, byte subscript
 		return v;
 	}
 	if (seq->type == NV_DICT || !Native_Len(seq, &n)) {
-		PyErr_Clear();
+		Native_ErrClear();
 		Native_Raise(NE_TYPE, subscript ? "unsubscriptable object" : "unindexable object");
 		return NULL;
 	}
@@ -1324,7 +1324,7 @@ int Native_Compare(const nativeVal_t *a, const nativeVal_t *b) {
 	if (ta == NV_OBJ && tb == NV_OBJ) {
 		/* OBJLIB 7: two Python values of other types compare as Python compares them */
 		int c = PyObject_Compare(a->obj, b->obj);
-		PyErr_Clear();
+		Native_ErrClear();
 		return c < 0 ? -1 : c > 0;
 	}
 	if (ta != tb || ta == NV_OBJ) {
@@ -2225,7 +2225,7 @@ byte Native_True(const nativeVal_t *v) {
 	case NV_OBJ: {
 		/* OBJLIB 7: PyObject_IsTrue (an entity handle is true) */
 		int t = PyObject_IsTrue(v->obj);
-		PyErr_Clear();
+		Native_ErrClear();
 		return t > 0;
 	}
 	case NV_ENT:
@@ -2242,7 +2242,7 @@ static byte Native_ObjNum(const nativeVal_t *v, byte asDouble, double *d, int *i
 	PyObject *o = Native_PyOf(v);
 	if (!o) {
 		/* no value (the delete of an attribute) */
-		PyErr_Clear();
+		Native_ErrClear();
 		return 0;
 	}
 	if (asDouble) {
@@ -2250,8 +2250,8 @@ static byte Native_ObjNum(const nativeVal_t *v, byte asDouble, double *d, int *i
 	} else {
 		*i = (int)PyInt_AsLong(o);
 	}
-	if (PyErr_Occurred()) {
-		PyErr_Clear();
+	if (Native_Failed()) {
+		Native_ErrClear();
 		return 0;
 	}
 	return 1;
@@ -2775,7 +2775,7 @@ byte Native_FromPy(PyObject *o, unsigned types, nativeVal_t *v) {
 		PyArg_ParseTuple(o, "ddd", &x, &y, &z)) {
 		Native_SetVec(v, x, y, z);
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 		return 0;
 	}
 	return 1;
@@ -2821,7 +2821,7 @@ static byte Native_FromPyIn(PyObject *o, nativeVal_t *v, int depth) {
 			Native_SetLong(v, PyString_AsString(r), PyString_Size(r) - 1);
 			Py_DECREF(r);
 		}
-		PyErr_Clear();
+		Native_ErrClear();
 		return r != NULL;
 	}
 	if (depth >= NLIT_DEPTH) {
@@ -3189,8 +3189,7 @@ byte Native_FillPyDict(PyObject *o, const nativeVal_t *d, PyObject *(*conv)(cons
 	if (d->i == d->n) {
 		t = PyPool_Malloc(sizeof(*t) * (size_t)d->max);
 		if (!t) {
-			PyErr_NoMemory();
-			return 0;
+			return Native_RaiseVal(NE_MEMORY, NULL);
 		}
 		memset(t, 0, sizeof(*t) * (size_t)d->max);
 		pd->ma_table = t;

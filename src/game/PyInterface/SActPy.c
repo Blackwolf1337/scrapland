@@ -26,7 +26,7 @@ static byte SetVar(const nativeVal_t *a, int n, varfunc_t var, void *obj, native
 	if (Mode_Parse(a, n, "ss", &name, &s)) {
 		return Api_Build(out, "i", var(obj, name, 1, (char **)&s, NULL, NULL));
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	if (!Mode_Parse(a, n, "sd", &name, &d)) {
 		return 0;
 	}
@@ -157,7 +157,7 @@ API_FN(SAct, SetAct) {
 	if (g_pAuxAction && SetVar(a, n, (varfunc_t)cAction_Var, g_pAuxAction, out)) {
 		return 1;
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	Con_Debugf("Caution: SAct.SetAct(): AuxActClass not defined.\n");
 	return 1;
 }
@@ -199,7 +199,7 @@ static void Event_FuncName(const cPy_Function *f, char *out, int size) {
 		PyObject *name = PyObject_GetAttrString((PyObject *)f->func, "__name__");
 		Str_Copy(out, name && PyString_Check(name) ? PyString_AsString(name) : "?", size);
 		Py_XDECREF(name);
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 }
 

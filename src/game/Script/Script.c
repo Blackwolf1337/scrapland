@@ -295,7 +295,7 @@ static void Script_ReplayRefs(PyObject *dict, PyObject *key, PyObject *cur) {
 		}
 	}
 	Script_SetDeferred(dict, later);
-	PyErr_Clear();
+	Native_ErrClear();
 }
 
 /*
@@ -404,7 +404,8 @@ void Script_CheckSilent(const char *kind) {
 static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) {
 	scriptChecked_t *c = PyCObject_AsVoidPtr(self);
 	int flags = c->orig.ml_flags;
-	PyObject *arg = args, *r, *pending = PyErr_Occurred();
+	PyObject *arg = args, *r;
+	byte pending = Native_Failed();
 	if (!(flags & METH_VARARGS)) {
 		int size = PyTuple_Size(args);
 		arg = size == 1 ? PyTuple_GET_ITEM(args, 0) : size == 0 ? NULL : args;
@@ -419,14 +420,14 @@ static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) 
 	if (flags & METH_KEYWORDS) {
 		r = ((PyCFunctionWithKeywords)(void (*)(void))c->orig.ml_meth)(c->self, arg, kw);
 	} else if (kw && PyDict_Size(kw) != 0) {
-		PyErr_SetString(PyExc_TypeError, "this function takes no keyword arguments");
+		Native_Raise(NE_TYPE, "this function takes no keyword arguments");
 		r = NULL;
 	} else {
 		r = c->orig.ml_meth(c->self, arg);
 	}
-	if (!r && !PyErr_Occurred()) {
+	if (!r && !Native_Failed()) {
 		Script_CheckSilent("return");
-	} else if (r && !pending && PyErr_Occurred()) {
+	} else if (r && !pending && Native_Failed()) {
 		/* the error stays pending and raises at a later line (one pending before the call is an engine
 		 * function's that returned a value with an error set, as the original does) */
 		Script_CheckSilent("return with error set");
@@ -447,7 +448,7 @@ PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *mod
 	}
 	scriptChecked_t *c = calloc(1, sizeof(*c));
 	if (!c) {
-		return PyErr_NoMemory();
+		return Native_RaiseVal(NE_MEMORY, NULL), NULL;
 	}
 	c->orig = *def;
 	c->self = self;
@@ -495,7 +496,7 @@ void Script_CheckEngine(void) {
 			}
 		}
 		Py_XDECREF(keys);
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 }
 
@@ -666,7 +667,7 @@ double Script_GetFloat(const char *module, const char *var, double def) {
 	PyObject *v = Script_Attr(module, var);
 	double d = v && PyFloat_Check(v) ? PyFloat_AsDouble(v) : v && PyInt_Check(v) ? (double)PyInt_AsLong(v) : def;
 	if (!v) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	Py_XDECREF(v);
 	return d;
@@ -676,10 +677,10 @@ double Script_GetFloat(const char *module, const char *var, double def) {
 
 byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
 	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
-	if (v && !ok && !PyErr_Occurred()) {
+	if (v && !ok && !Native_Failed()) {
 		/* an entity variable the engine refuses fails without an exception; ceval reports it so */
 		Script_CheckSilent("Script_HSet (engine)");
-		PyErr_SetString(PyExc_SystemError, "error return without exception set");
+		Native_Raise(NE_SYSTEM, "error return without exception set");
 	}
 	Py_XDECREF(v);
 	return ok;
@@ -711,7 +712,7 @@ int Script_NumCmp(PyObject *a, long n) {
 	PyObject *b = PyInt_FromLong(n);
 	int c = b ? PyObject_Compare(a, b) : 0;
 	Py_XDECREF(b);
-	return PyErr_Occurred() ? -2 : c;
+	return Native_Failed() ? -2 : c;
 }
 
 byte Script_Later(double delay, PyObject *func, PyObject *args, const char *name) {
@@ -804,7 +805,7 @@ void Script_StepPrint(int id, const nativeVal_t *args, int n) {
 	PyObject *out = PySys_GetObject("stdout");
 	if (!(n == 1 ? Native_ArgStr(&args[0], 1, &text) : Port_Arity(n, 1)) || !out ||
 		PyFile_WriteString((char *)text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
-		PyErr_Print();
+		Native_ErrPrint();
 	}
 }
 
@@ -840,7 +841,7 @@ int Script_GetInt(const char *module, const char *var, int def) {
 		r = (int)PyFloat_AsDouble(v);
 	}
 	if (!v) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	Py_XDECREF(v);
 	return r;
@@ -853,7 +854,7 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 		Str_Copy(out, PyString_AsString(v), size);
 	}
 	if (!v) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	Py_XDECREF(v);
 	return out;
@@ -861,7 +862,7 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 
 void Script_SetVar(const char *module, const char *var, PyObject *value) {
 	if (!value || ModVar_SetModAttr(module, var, value) < 0) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	Py_XDECREF(value);
 }
@@ -1264,7 +1265,7 @@ static byte Def_Value(scriptDef_t *m, const char *t, byte quoted, nativeVal_t *o
 				m->failed = 1;
 				return 0;
 			}
-			PyErr_Clear();
+			Native_ErrClear();
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);
 			return 0;
 		}
@@ -1555,7 +1556,7 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 			m->failed = !ok;
 		} else if (!ok) {
 			Con_Warnf("Script: %s.%s failed\n", module, func);
-			PyErr_Print();
+			Native_ErrPrint();
 		}
 	}
 	Def_ArgsFree(&a);
@@ -1587,12 +1588,12 @@ static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
 		s->fn(m->id, a.v, a.npos);
 		Def_ArgsFree(&a);
 		/* a step that failed leaves its error set: it stops a file of Script_RunFileTry */
-		if (PyErr_Occurred()) {
+		if (Native_Failed()) {
 			if (m->stop) {
 				m->failed = 1;
 			} else {
 				Con_Warnf("%s:%d: step %s failed\n", m->name, m->line, l->tok[1]);
-				PyErr_Print();
+				Native_ErrPrint();
 			}
 		}
 		return;
@@ -1639,14 +1640,14 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		if (v && m->object && ModVar_SetObjAttr(m->object, var, v) < 0) {
 			if (m->stop) {
 				/* an entity handle the engine refuses without an exception: ceval's SystemError */
-				if (!PyErr_Occurred()) {
+				if (!Native_Failed()) {
 					Script_CheckSilent("def object set (engine)");
 					Script_Fail();
 				}
 				m->failed = 1;
 			} else {
 				Con_Warnf("%s:%d: cannot set %s\n", m->name, m->line, var);
-				PyErr_Clear();
+				Native_ErrClear();
 			}
 		}
 		Py_XDECREF(v);
@@ -1659,9 +1660,9 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		if (Def_Value(m, value, quoted, &nv) && !Native_EntStore(World_FindEntity(m->entity), m->entity, var, &nv) &&
 			m->stop) {
 			/* the attribute set of the handle fails without an exception: ceval's SystemError */
-			if (!PyErr_Occurred()) {
+			if (!Native_Failed()) {
 				Script_CheckSilent("def entity set (engine)");
-				PyErr_SetString(PyExc_SystemError, "error return without exception set");
+				Native_Raise(NE_SYSTEM, "error return without exception set");
 			}
 			m->failed = 1;
 		}
@@ -1893,8 +1894,8 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 		/* a stopping file stops at an object it cannot get, as the script's obj.var = ... raises (a missing $value
 		 * is an unbound name there) */
 		if (!m->object && m->stop) {
-			if (!PyErr_Occurred()) {
-				PyErr_SetString(PyExc_NameError, l->tok[1][0] == '$' ? l->tok[1] + 1 : l->tok[1]);
+			if (!Native_Failed()) {
+				Native_Raise(NE_NAME, "%s", l->tok[1][0] == '$' ? l->tok[1] + 1 : l->tok[1]);
 			}
 			m->failed = 1;
 		}
@@ -1928,7 +1929,7 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 		if (!(cmd[0] == 'l' ? PORT_CALL(Menu, LinkLR, NULL, "iss", (long)m->id, a, b) :
 			PORT_CALL(Menu, LinkUD, NULL, "iss", (long)m->id, a, b))) {
 			Con_Warnf("Script: Menu.%s failed\n", cmd[0] == 'l' ? "LinkLR" : "LinkUD");
-			PyErr_Print();
+			Native_ErrPrint();
 		}
 	} else if (!strcmp(cmd, "default") && l->n == 2) {
 		Script_SetDefault(m->id, Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));
@@ -2042,9 +2043,9 @@ byte Script_RunFile(int id, const char *name, const char *section, const char *b
 byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars) {
 	if (!Def_RunFile(id, name, section, builtin, steps, vars, 1)) {
-		if (!PyErr_Occurred()) {
+		if (!Native_Failed()) {
 			Script_CheckSilent("Script_RunFileTry");
-			PyErr_Format(PyExc_SystemError, "%s could not be read", name);
+			Native_Raise(NE_SYSTEM, "%s could not be read", name);
 		}
 		return 0;
 	}

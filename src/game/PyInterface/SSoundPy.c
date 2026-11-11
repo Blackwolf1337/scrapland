@@ -104,7 +104,7 @@ API_FN(SSound, SetPS) {
 		char *v = (char *)s;
 		return Api_Build(out, "i", cSoundPS_Var(ps, var, 1, &v, NULL, NULL));
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	if (!Mode_Parse(a, n, "ssd", &psName, &var, &d)) {
 		return 0;
 	}

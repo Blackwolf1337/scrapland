@@ -337,7 +337,7 @@ const char *cPy_Function_Name(cPy_Function *self) {
 				mod && PyString_Check(mod) ? "." : "", PyString_AsString(fn));
 		}
 		Py_XDECREF(fn);
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	return name;
 }
@@ -442,7 +442,7 @@ static __attribute__((noinline)) int cPy_Function_CallEntry(portSite_t *site, co
 	int result = 0;
 
 	if (!Port_BoundCall(site, NULL, p ? p->a : NULL, p ? p->n : 0, &res, NULL)) {
-		PyErr_Print();
+		Native_ErrPrint();
 	} else if (res.type == NV_INT) {
 		result = (int)res.i;
 	}
@@ -492,7 +492,7 @@ int cPy_Function_Execute(cPy_Function *self, byte clear) {
 			} else {
 				PyObject *r = PyEval_CallObject(func, args);
 				if (!r) {
-					PyErr_Print();
+					Native_ErrPrint();
 				} else {
 					if (PyInt_Check(r)) {
 						result = PyInt_AsLong(r);

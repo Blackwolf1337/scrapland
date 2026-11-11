@@ -492,8 +492,8 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
 	if (Script_Enter((uintptr_t)__builtin_frame_address(0))) {
 		ok = ref->entry(a, n, r);
 		Script_Leave();
-		if (!ok && !PyErr_Occurred()) {
-			PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+		if (!ok && !Native_Failed()) {
+			Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
 		}
 	}
 	return ok;
