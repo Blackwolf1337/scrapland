@@ -1788,7 +1788,13 @@ static byte X_Eval(tcNode *x, tcScope *s, nativeVal_t *out) {
 	case X_SLICE:
 		if (X_Eval(x->a, s, &a)) {
 			long lo, hi;
-			ok = X_Bounds(x, s, &lo, &hi) && NObj_GetSlice(&a, lo, hi, out);
+			ok = X_Bounds(x, s, &lo, &hi);
+			if (ok && a.type == NV_TUPLE && a.obj && (lo < 0 ? lo + a.n : lo) <= 0 && (hi < 0 ? hi + a.n : hi) >= a.n) {
+				/* tupleslice: the whole tuple (the bounds as PySequence_GetSlice takes them) is the tuple itself */
+				Native_Copy(out, &a);
+			} else if (ok) {
+				ok = NObj_GetSlice(&a, lo, hi, out);
+			}
 			Native_Free(&a);
 		}
 		break;
