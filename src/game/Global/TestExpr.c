@@ -1497,8 +1497,9 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 		for (int i = 0; i < n; i++) {
 			TX_Give(&a[i]);
 		}
-		if (TX_Py(f) && NObj_Kind(f) != NO_FUNCTION) {
-			/* a view: its Python object called as NObj_Call calls it, the result as TX_FromPy gives it */
+		if (TX_Py(f)) {
+			/* a view (a native function that crossed too): its Python object called as NObj_Call calls a view (the
+			 * entry of a port's own function), the result as TX_FromPy gives it */
 			PyObject *r = NULL;
 			Port_Values(PORT_VSITE(), TX_Py(f), a, n, NULL, &r);
 			ok = TX_Result(r, out);
