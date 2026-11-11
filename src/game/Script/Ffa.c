@@ -23,6 +23,11 @@
  * engine to the entries of the functions they hold (Port_Callback); the functions given to the scheduler take their
  * entries (Port_Scheduled; those of SInput and SNet too, stage 7), the ones set into other
  * modules are values of their variables (OBJLIB 5).
+ *
+ * State on values (stage 6, batch 6f): no function works on Python objects. ModLib (a module object), the functions
+ * read from it, from the globals and from SInput and SNet for the scheduler, and the menu entries of the mode set
+ * into Menu and PCMenu (lists that keep their identity) are held by reference (NV_OBJ) and go through the helpers of
+ * scrap/scriptmodes.h (Mode_GObjAttr, Mode_CallArgs, Mode_ScheduleV, Mode_ModToV, Mode_ModSetGlobal; OBJLIB 7).
  */
 #include <limits.h>
 #include <stdlib.h>
@@ -51,23 +56,10 @@ static struct {
 
 /* ---- helpers ---- */
 
-/* ModLib.name, the object of the mode's module (a new reference; OBJLIB 5: the module is a variable) */
-static PyObject *Ffa_LibObj(const char *name) {
-	PyObject *lib = Script_Global("Ffa", "ModLib");
-	PyObject *o = lib ? PyObject_GetAttrString(lib, (char *)name) : NULL;
-	Py_XDECREF(lib);
-	return o;
-}
-
-/* ModLib.name as a value */
+/* ModLib.name of the mode's module as a value (a function as NV_OBJ; OBJLIB 5: the module is a variable, read at
+ * every use) */
 static byte Ffa_LibGet(const char *name, nativeVal_t *out) {
-	PyObject *o = Ffa_LibObj(name);
-	if (!o) {
-		return 0;
-	}
-	Native_Arg(o, out);
-	Py_DECREF(o);
-	return 1;
+	return Mode_GObjAttr("Ffa", "ModLib", name, out);
 }
 
 /* truth(ModLib.TeamGame): 1, 0, -1 with the error */
@@ -81,33 +73,26 @@ static int Ffa_Team(void) {
 	return t;
 }
 
-/* ModLib.name(...) (n of 0, 1 or 3 values) through the entry of the function there, the result into out (NULL:
+/* ModLib.name(...) on the n values of args through the entry of the function there, the result into out (NULL:
  * dropped) */
-static byte Ffa_Lib(const char *name, nativeVal_t *out, int n, const nativeVal_t *a, const nativeVal_t *b,
-	const nativeVal_t *c) {
-	PyObject *fn = Ffa_LibObj(name);
-	if (!fn) {
-		return 0;
-	}
-	byte ok = n == 0 ? PORT_VALUE(fn, out, "") : n == 1 ? PORT_VALUE(fn, out, "v", a) : PORT_VALUE(fn, out, "vvv", a, b, c);
-	Py_DECREF(fn);
+static byte Ffa_Lib(const char *name, nativeVal_t *out, const nativeVal_t *args, int n) {
+	nativeVal_t fn;
+	byte ok = Ffa_LibGet(name, &fn) && Mode_CallArgs(&fn, out, args, n);
+	Native_Free(&fn);
 	return ok;
 }
 
-/* module.var = ModLib.name as the object it is (OBJLIB 5) */
+/* module.var = ModLib.name as the object it is (OBJLIB 5: the menu entries of the mode keep their identity) */
 static byte Ffa_LibToMod(const char *module, const char *var, const char *name) {
-	PyObject *o = Ffa_LibObj(name);
-	byte ok = o && Mode_SetModPy(module, var, o);
-	Py_XDECREF(o);
+	nativeVal_t lib;
+	byte ok = Mode_G("Ffa", "ModLib", &lib) && Mode_ModToV(module, var, &lib, name);
+	Native_Free(&lib);
 	return ok;
 }
 
 /* module.var = the global name of Ffa as the object it is (a function of the module, OBJLIB 5) */
 static byte Ffa_GlobalToMod(const char *module, const char *var, const char *name) {
-	PyObject *o = Script_Global("Ffa", name);
-	byte ok = o && Mode_SetModPy(module, var, o);
-	Py_XDECREF(o);
-	return ok;
+	return Mode_ModSetGlobal(module, var, "Ffa", name);
 }
 
 /* RacerScorer.SPECTATOR_POINTS (OBJLIB 5) */
@@ -204,7 +189,7 @@ static int Ffa_Out(modeVals_t *t) {
 static byte Ffa_TopDescriptor(void) {
 	nativeVal_t d;
 	Native_SetNone(&d);
-	byte ok = Ffa_Lib("GetGameDescriptor", &d, 0, NULL, NULL, NULL) && Mode_SetModVar("RacerScorer", "ScorerTopMessage", &d);
+	byte ok = Ffa_Lib("GetGameDescriptor", &d, NULL, 0) && Mode_SetModVar("RacerScorer", "ScorerTopMessage", &d);
 	Native_Free(&d);
 	return ok;
 }
@@ -301,24 +286,23 @@ static byte Ffa_ShowPresFireMessageC(const nativeVal_t *id, const nativeVal_t *m
 	double timy = Mode_Time();
 	/* AddScheduledFunc(timy + 1.0, SInput.Bind, (id, "Racer", "Fire", "Ffa.RestartOnPress")): the function as the
 	 * module holds it (the scheduler takes its entry, Port_Scheduled) */
-	PyObject *bind = Script_Attr("SInput", "Bind");
+	nativeVal_t *bind = Mode_V(&t);
+	byte ok = Mode_ModGet("SInput", "Bind", bind);
 	Native_SetFloat(tm, timy + 1.0);
 	Native_SetEmpty(args, NV_LIST);
 	Native_Copy(Native_Append(args), id);
 	Native_SetStr(Native_Append(args), "Racer");
 	Native_SetStr(Native_Append(args), "Fire");
 	Native_SetStr(Native_Append(args), "Ffa.RestartOnPress");
-	byte ok = bind && Mode_Schedule(tm, bind, args->items, 4, NULL);
-	Py_XDECREF(bind);
-	if (!ok || !Mode_MPFunc(0, "")) {
+	if (!ok || !Mode_ScheduleV(tm, bind, args->items, 4, NULL) || !Mode_MPFunc(0, "")) {
 		return Mode_Done(&t, 0);
 	}
 	if (timy > 10.0) {
-		PyObject *fn = Script_Global("Ffa", "DelayedRestartOnTime");
+		nativeVal_t *fn = Mode_V(&t);
+		ok = Mode_G("Ffa", "DelayedRestartOnTime", fn);
 		Native_SetFloat(tm, timy + 10.0);
 		Native_SetStr(name, "DelayedRestartOnTime");
-		ok = fn && Mode_Schedule(tm, fn, id, 1, name);
-		Py_XDECREF(fn);
+		ok = ok && Mode_ScheduleV(tm, fn, id, 1, name);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -439,10 +423,10 @@ static byte Ffa_ServerEndOfGameC(void) {
 	}
 	/* AddScheduledFunc(Scrap.GetTime() + 10.0, SNet.ServerChangeLevel, (next,)) (the scheduler takes its
 	 * entry, Port_Scheduled) */
-	PyObject *fn = Script_Attr("SNet", "ServerChangeLevel");
+	nativeVal_t *fn = Mode_V(&t);
+	ok = Mode_ModGet("SNet", "ServerChangeLevel", fn);
 	Native_SetFloat(tm, Mode_Time() + 10.0);
-	ok = fn && Mode_Schedule(tm, fn, next, 1, NULL);
-	Py_XDECREF(fn);
+	ok = ok && Mode_ScheduleV(tm, fn, next, 1, NULL);
 	return Mode_Done(&t, ok && PORT_OWN(Ffa, EndOfGame, NULL, ""));
 }
 
@@ -479,7 +463,9 @@ static byte Ffa_OnDeathServerC(const nativeVal_t *looser, const nativeVal_t *win
 	if (has < 0 || (!has && !SCORER_PUT(xname, Mode_I(&t, 0)))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Ffa_Score(xname, xprev) || !Ffa_Score(looser, lprev) || !Ffa_Lib("DeathFunc", NULL, 3, xname, looser, add) ||
+	/* ModLib.DeathFunc(xname, LooserName, add): the three values side by side (views, not freed) */
+	const nativeVal_t death[3] = { *xname, *looser, *add };
+	if (!Ffa_Score(xname, xprev) || !Ffa_Score(looser, lprev) || !Ffa_Lib("DeathFunc", NULL, death, 3) ||
 		!PORT_OWN(Ffa, ActualizeGameScorer, NULL, "") || !Ffa_Score(xname, now)) {
 		return Mode_Done(&t, 0);
 	}
@@ -492,10 +478,10 @@ static byte Ffa_OnDeathServerC(const nativeVal_t *looser, const nativeVal_t *win
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Ffa_Lib("CheckEndOfGame", end, 0, NULL, NULL, NULL) || (!Native_True(end) && !PORT_OWN(Ffa, OnDeath, NULL, "vv", looser, winner))) {
+	if (!Ffa_Lib("CheckEndOfGame", end, NULL, 0) || (!Native_True(end) && !PORT_OWN(Ffa, OnDeath, NULL, "vv", looser, winner))) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Ffa_Lib("ServerHidePlayer", NULL, 1, looser, NULL, NULL));
+	return Mode_Done(&t, Ffa_Lib("ServerHidePlayer", NULL, looser, 1));
 }
 
 /* OnDeathClient(LooserName, WinnerName) */
@@ -569,7 +555,7 @@ static byte Ffa_ClientJoinC(const nativeVal_t *a) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(pn);
-	if (!Mode_VGet(ply, "Name", pn) || !Ffa_Lib("ServerHidePlayer", NULL, 1, pn, NULL, NULL)) {
+	if (!Mode_VGet(ply, "Name", pn) || !Ffa_Lib("ServerHidePlayer", NULL, pn, 1)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(pn);
@@ -675,11 +661,10 @@ static byte Ffa_TryToModifyC(const nativeVal_t *a) {
 	}
 	/* AddScheduledFunc(Scrap.GetTime() + 0.75, TryToModify, args, entityname + "Modify"): the scheduler takes the entry
 	 * of the global while it is the port's own function */
-	PyObject *fn = Script_Global("Ffa", "TryToModify");
+	nativeVal_t *fn = Mode_V(&t);
+	byte ok = Mode_G("Ffa", "TryToModify", fn);
 	Native_SetFloat(tm, Mode_Time() + 0.75);
-	byte ok = fn && Mode_Cat(&t, name, 2, &a[0], Mode_S(&t, "Modify")) && Mode_Schedule(tm, fn, a, 11, name);
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, ok && Mode_Cat(&t, name, 2, &a[0], Mode_S(&t, "Modify")) && Mode_ScheduleV(tm, fn, a, 11, name));
 }
 
 /* PlayerMsgShow(streang, entityname): streang % the player's name for 2.5 s (not in the first 2.5 s of a level) */
@@ -732,7 +717,7 @@ static byte Ffa_PlayerJoinGameC(const nativeVal_t *name) {
 static byte Ffa_ClientExitC(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *s = Mode_V(&t);
-	if (!Ffa_Lib("ServerHidePlayer", NULL, 1, name, NULL, NULL)) {
+	if (!Ffa_Lib("ServerHidePlayer", NULL, name, 1)) {
 		return Mode_Done(&t, 0);
 	}
 	int has = Mode_HasKey("Ffa", "Scorer", 1, name);
@@ -872,7 +857,7 @@ static byte Ffa_InitServerC(const nativeVal_t *dedicated) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, Ffa_Lib("InitServerMod", NULL, 0, NULL, NULL, NULL));
+	return Mode_Done(&t, Ffa_Lib("InitServerMod", NULL, NULL, 0));
 }
 
 /* ClientSetConfig(entityname, ...): the ship of a player set up (the server's own ship when ForceServerVehicle), its
@@ -1301,7 +1286,7 @@ static byte Ffa_ServerSpectateC(const nativeVal_t *name) {
 	const char *n = Native_Text(name);
 	byte ok = SCORER_PUT(en, sp) && PORT_OWN(Ffa, ServerSendPlayerStatus, NULL, "v", en) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, "");
 	Native_Free(en);
-	ok = ok && Mode_NameGet(n, "Name", en) && Ffa_Lib("ServerHidePlayer", NULL, 1, en, NULL, NULL);
+	ok = ok && Mode_NameGet(n, "Name", en) && Ffa_Lib("ServerHidePlayer", NULL, en, 1);
 	Native_Free(en);
 	return Mode_Done(&t, ok && Mode_NameGet(n, "Name", en) && PORT_OWN(Ffa, PlayerSpectator, NULL, "v", en));
 }
@@ -1318,7 +1303,7 @@ static byte Ffa_InitClientC(void) {
 			return 0;
 		}
 	}
-	return PORT_OWN(Ffa, StdInitFfa, NULL, "") && Ffa_Lib("InitClientMod", NULL, 0, NULL, NULL, NULL);
+	return PORT_OWN(Ffa, StdInitFfa, NULL, "") && Ffa_Lib("InitClientMod", NULL, NULL, 0);
 }
 
 /* StdInitFfa(): the ship controls, the "press fire" scorer, the scorer back from a menu */
@@ -1330,7 +1315,7 @@ static byte Ffa_StdInitFfaC(void) {
 		return 0;
 	}
 	Input_SelectActionSetNamed("Racer");
-	byte ok = Ffa_Lib("GetGameDescriptor", &d, 0, NULL, NULL, NULL) && PORT_OWN(Ffa, ShowPresFireMessage, NULL, "iv", 0L, &d) &&
+	byte ok = Ffa_Lib("GetGameDescriptor", &d, NULL, 0) && PORT_OWN(Ffa, ShowPresFireMessage, NULL, "iv", 0L, &d) &&
 		Ffa_GlobalToMod("RacerScorer", "BackMenuFunc", "BackMenuFunc");
 	Native_Free(&d);
 	return ok;
@@ -1903,7 +1888,7 @@ FFA_FN(CheckGameStart, 0, Ffa_CheckGameStartC(out))
 FFA_FN(UsrPos, 1, Ffa_UsrPosC(&a[0], out))
 FFA_FN(ShowScorer, 2, Ffa_ShowScorerC(&a[0], &a[1]))
 FFA_FN(BackMenuFunc, 1, FR(isScorerVisible, "isScorerVisible") && PORT_OWN(Ffa, ShowScorer, NULL, "vv", &a[0], &ffa.isScorerVisible))
-FFA_FN(ShowHelp, 1, Ffa_Lib("ShowHelp", NULL, 1, &a[0], NULL, NULL))
+FFA_FN(ShowHelp, 1, Ffa_Lib("ShowHelp", NULL, &a[0], 1))
 FFA_FN(SetupGameRules, 1, Ffa_SetupGameRulesC(&a[0]))
 FFA_FN(SendGameRules, 1, Ffa_SendGameRulesC(&a[0]))
 FFA_FN(SetScorerValues, 1, Ffa_SetScorerValuesC(&a[0]))
