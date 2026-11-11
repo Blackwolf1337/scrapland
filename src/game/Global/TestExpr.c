@@ -1178,14 +1178,24 @@ static PyObject *TX_Py(const nativeVal_t *v) {
 	return v->type == NV_REF ? NObj_Py(v) : v->type == NV_OBJ ? v->obj : NULL;
 }
 
-/* r (a new reference, given away; NULL: the error is set) as the value the evaluator works on: numbers, texts, None
- * and tuples by value, a handle as NV_ENT, a list, dict, instance, class, function, method or module as its view */
+/* o as the value the evaluator works on: numbers, texts, None and tuples by value, a handle as NV_ENT, a list, dict,
+ * instance, class, function, method or module as its view. OBJLIB 9: a tuple keeps its Python object in .obj (copied
+ * and freed with the value), so `is` finds one tuple twice and the tuple goes back to Python as that object */
+static void TX_FromPy(PyObject *o, nativeVal_t *out) {
+	NObj_FromPy(o, out);
+	if (out->type == NV_TUPLE && PyTuple_Check(o) && !out->obj) {
+		Py_INCREF(o);
+		out->obj = o;
+	}
+}
+
+/* r (a new reference, given away; NULL: the error is set) as TX_FromPy gives it */
 static byte TX_Result(PyObject *r, nativeVal_t *out) {
 	Native_SetNone(out);
 	if (!r) {
 		return 0;
 	}
-	NObj_FromPy(r, out);
+	TX_FromPy(r, out);
 	Py_DECREF(r);
 	return 1;
 }
@@ -1203,6 +1213,11 @@ static void TX_Give(nativeVal_t *v) {
 static PyObject *TX_ToPy(const nativeVal_t *v) {
 	nativeVal_t t;
 
+	if (v->type == NV_TUPLE && v->obj && PyTuple_Check(v->obj)) {
+		/* the tuple it came from (TX_FromPy) */
+		Py_INCREF(v->obj);
+		return v->obj;
+	}
 	if (!Native_Holds(v, 1u << NV_DICT)) {
 		return Native_ToPy(v);
 	}
@@ -1298,7 +1313,7 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 	}
 	PyObject *g = s->inMod ? ModVar_Get(&s->mv, name) : PyDict_GetItemString(s->globals, (char *)name);
 	if (g) {
-		NObj_FromPy(g, out);
+		TX_FromPy(g, out);
 		return 1;
 	}
 	return TX_Result(TX_GlobalPy(name), out);
@@ -1360,6 +1375,9 @@ static byte TX_GetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out)
 			return 1;
 		}
 		/* gone, a method, or no such member: the handle's own path, with its console lines */
+	} else if (TX_Py(o) && NObj_Kind(o) != NO_FUNCTION) {
+		/* a view: the attribute of its Python object (as NObj_GetAttr gets it), a tuple with its object */
+		return TX_Result(ModVar_ObjAttr(TX_Py(o), name), out);
 	}
 	return NObj_GetAttr(o, name, out);
 }
@@ -1479,7 +1497,14 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 		for (int i = 0; i < n; i++) {
 			TX_Give(&a[i]);
 		}
-		ok = NObj_Call(f, a, n, out);
+		if (TX_Py(f) && NObj_Kind(f) != NO_FUNCTION) {
+			/* a view: its Python object called as NObj_Call calls it, the result as TX_FromPy gives it */
+			PyObject *r = NULL;
+			Port_Values(PORT_VSITE(), TX_Py(f), a, n, NULL, &r);
+			ok = TX_Result(r, out);
+		} else {
+			ok = NObj_Call(f, a, n, out);
+		}
 	}
 	/* a value with an error left set is the error (as the next check of the interpreter raises it) */
 	if (ok && PyErr_Occurred()) {
@@ -1680,6 +1705,10 @@ static byte X_Is(const nativeVal_t *v, const nativeVal_t *w) {
 	}
 	if (v->type == NV_STR && w->type == NV_STR) {
 		return v->n <= 1 && Native_Equal(v, w);
+	}
+	if (v->type == NV_TUPLE && w->type == NV_TUPLE) {
+		/* the empty tuple is one object; another tuple is the same one when both came from one Python tuple */
+		return (!v->n && !w->n) || (v->obj && v->obj == w->obj);
 	}
 	return NObj_Is(v, w);
 }
@@ -1998,7 +2027,7 @@ static PyObject *TX_LambdaPy(PyObject *self, PyObject *args, PyObject *kw) {
 	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), pairs, r;
 
 	for (int i = 0; i < n; i++) {
-		NObj_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
+		TX_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
 	}
 	Native_SetEmpty(&pairs, NV_LIST);
 	if (kw) {
@@ -2008,7 +2037,7 @@ static PyObject *TX_LambdaPy(PyObject *self, PyObject *args, PyObject *kw) {
 			nativeVal_t *pair = Native_Append(&pairs);
 			Native_SetEmpty(pair, NV_TUPLE);
 			NObj_FromPy(k, Native_Append(pair));
-			NObj_FromPy(v, Native_Append(pair));
+			TX_FromPy(v, Native_Append(pair));
 		}
 	}
 	byte ok = TX_LambdaRun(f, a, n, kw ? &pairs : NULL, &r);
@@ -3178,7 +3207,7 @@ static PyObject *TX_Adapt(int i, PyObject *args) {
 	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), r;
 
 	for (int k = 0; k < n; k++) {
-		NObj_FromPy(PyTuple_GET_ITEM(args, k), &a[k]);
+		TX_FromPy(PyTuple_GET_ITEM(args, k), &a[k]);
 	}
 	Native_SetNone(&r);
 	byte ok = tx_natives[i].fn(a, n, &r) > 0;
@@ -3588,7 +3617,7 @@ static byte TX_ResultVar(PyObject *globals, byte del, nativeVal_t *out) {
 		return 0;
 	}
 	if (v && !del) {
-		NObj_FromPy(v, out);
+		TX_FromPy(v, out);
 	}
 	return v != NULL;
 }
