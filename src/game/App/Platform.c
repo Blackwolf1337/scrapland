@@ -30,6 +30,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 #define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
 static cGVar GVar_InactiveBackgroundApp;
@@ -509,6 +510,9 @@ static void Plat_Key(const SDL_KeyboardEvent *k) {
 }
 
 static void Plat_Event(const SDL_Event *ev, byte *quit) {
+	if (g_TestDetTrace) {
+		TestDet_Trace("event %x", (unsigned)ev->type);
+	}
 	switch (ev->type) {
 	case SDL_EVENT_QUIT:
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
@@ -552,8 +556,12 @@ static void Plat_Event(const SDL_Event *ev, byte *quit) {
 		Plat_PadRemoved(ev->gdevice.which);
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
-		plat.mouseX += ev->motion.xrel;
-		plat.mouseY += ev->motion.yrel;
+		/* the deterministic test mode: the motion the window gets while it comes up (the pointer enters it, in one
+		 * or two events, before or after the focus) is no input of the test: none counts before the clock starts */
+		if (!TestDet_On() || TestDet_Frame()) {
+			plat.mouseX += ev->motion.xrel;
+			plat.mouseY += ev->motion.yrel;
+		}
 		if (g_Engine && g_Engine->active && g_Engine->ready && g_Engine->device) {
 			Rd_DevSetCursorPosition(g_Engine->device, (int)ev->motion.x, (int)ev->motion.y, 0);
 		}
@@ -784,14 +792,22 @@ void Plat_DebugBreak(void) {
 
 /* ---- the timers ---- */
 
+/* in the deterministic test mode both clocks are the clock of the mode (scrap/testdet.h) */
 uint32_t Plat_Ticks(void) {
+	if (TestDet_On()) {
+		return (uint32_t)(TestDet_Counter() / 10000);
+	}
+	return (uint32_t)SDL_GetTicks();
+}
+
+uint32_t Plat_RealTicks(void) {
 	return (uint32_t)SDL_GetTicks();
 }
 
 /* the counter in 100 ns ticks (10 MHz) on every system, as QueryPerformanceCounter on Windows: the game's integer
  * time math was made for that frequency (SDL's counter on Linux counts nanoseconds) */
 int Plat_Counter(int64_t *out) {
-	*out = (int64_t)(SDL_GetTicksNS() / 100);
+	*out = TestDet_On() ? TestDet_Counter() : (int64_t)(SDL_GetTicksNS() / 100);
 	return 1;
 }
 

@@ -67,6 +67,23 @@ LOAD_CREDIT = 20.0
 LOAD_WAIT = 240.0
 # real seconds after the end of a load that still count as the load (the new level's scripts start)
 LOAD_START = 15.0
+# the deterministic test mode of the game (include/scrap/testdet.h): the games run with SCRAP_TEST_DETERMINISTIC=1 and
+# SCRAP_TEST_CHANNEL=step, so two runs of a case on one build give the same replies. On by default; off with
+# REGRESS_DETERMINISTIC=0 or check --live (the games then run as a player's game: real clock, random seed).
+DETERMINISTIC = os.environ.get('REGRESS_DETERMINISTIC', '1') != '0'
+# the random seed of the deterministic games (SCRAP_TEST_DET_SEED), REGRESS_SEED or check --seed. Another seed is another
+# sample of what the game draws at random: a line that fails with one seed and passes with another depends on chance.
+# The default is the one of the seeds 1 to 6 with the fewest chance lines that fail against the pack baselines (2 of
+# the 25 cases known for them on 2026-11-11, the others 3 to 5).
+DET_SEED = os.environ.get('REGRESS_SEED', '4')
+# The game time a deterministic run gives the case lines, set to the mean of what live runs give them (measured
+# 2026-11-11 on the RTX with cases of Scrap.GetTime() lines and sleeps), so the lines land where the baselines saw
+# them. A line: the pace 0.1 as in a live run; the game adds the one frame a live game needs to see the file (7 steps
+# of 1/60 s a line; with 6 steps twice as many chance lines failed). A !sleep n: n + 0.45 s (the live wait looks
+# every 0.2 real seconds and asks twice). The first line: 0.33 s into the level (0.1 s more before the helper load).
+DET_PACE = 0.1
+DET_SLEEP = 0.45
+DET_START = 0.1
 _lock = threading.Lock()
 PORT_CASES = set()
 
@@ -126,14 +143,14 @@ def case_hash(case):
 	return h.hexdigest()[:16]
 
 
-def _cmd(g, code, timeout=10.0):
+def _cmd(g, code, timeout=10.0, pace=0.1, credit=None):
 	"""channel commands in game g, paced as the old harness answered: every command file at least 0.1 s of game time
 	after the answer before; a level load that a command started (Scrap.LoadLevel loads at once, the answer comes after
 	it) does not count against the timeout (loads took 40 s on the shared 610M, Lane.loads)"""
 	if not g.running():
 		raise RuntimeError('game %s does not run' % g.name)
 	loading = getattr(g, 'loading', None)
-	seq = scrap_mcp.channel.write(g.game, code, None, 0.1)
+	seq = scrap_mcp.channel.write(g.game, code, None, pace, credit=credit)
 	end = time.time() + timeout
 	while True:
 		try:
@@ -150,10 +167,19 @@ class Lane:
 	def __init__(self, tag, exe='native64'):
 		self.tag, self.exe = tag, exe
 		self.game = None
+		self.det, self.pace = False, 0.1
 
-	def q(self, code, timeout=LINE_TIMEOUT):
-		"""channel commands (one command file)"""
-		return _cmd(self.game, code, timeout)
+	def q(self, code, timeout=LINE_TIMEOUT, pace=None, credit=None):
+		"""channel commands (one command file); pace: default that of the run (0.1, deterministic DET_PACE)"""
+		return _cmd(self.game, code, timeout, self.pace if pace is None else pace, credit)
+
+	def has_det(self, build):
+		"""whether the build knows the deterministic test mode (a build from before it runs live)"""
+		try:
+			with open(os.path.join(build + ('-asan' if self.exe == 'native64asan' else ''), 'ScrapC'), 'rb') as f:
+				return b'SCRAP_TEST_DETERMINISTIC' in f.read()
+		except OSError:
+			return False
 
 	def line(self, line, timeout=LINE_TIMEOUT):
 		"""a case line: its commands (tochannel.py) in one command file, the answer the first error of the helper
@@ -164,12 +190,12 @@ class Lane:
 			return '!! not on the channel: %s' % e
 		return self.commands(cmds, timeout)
 
-	def commands(self, cmds, timeout=LINE_TIMEOUT):
+	def commands(self, cmds, timeout=LINE_TIMEOUT, pace=None):
 		"""channel commands in one command file; the first error answer of all but the last, else the last answer"""
 		if len(cmds) == 1:
-			return self.q(cmds[0], timeout)
+			return self.q(cmds[0], timeout, pace)
 		mark = "'--tc-mark--'"
-		out = self.q('\n'.join(cmds[:-1] + [mark, cmds[-1]]), timeout)
+		out = self.q('\n'.join(cmds[:-1] + [mark, cmds[-1]]), timeout, pace)
 		head, sep, tail = out.partition(mark + '\n')
 		if not sep:
 			head, sep, tail = out.partition(mark)
@@ -240,6 +266,14 @@ class Lane:
 		game does not answer; at most 2 n + 120 real seconds. A load the game output shows (loads()) goes to
 		gsleep_load: real seconds of a slow load must not count, or the read after the wait comes earlier in the new
 		level on a loaded machine (on the 610M shared with other games a load took 40 s instead of 5)."""
+		if self.det:
+			# the game counts the wait itself, in steps of its clock: a command file with the pace n that does nothing.
+			# The game clock runs as fast as the frames come, so the real time of the wait is not known
+			try:
+				self.q('None', timeout=10 * n + 300, pace=n + DET_SLEEP, credit=LOAD_CREDIT)
+			except RuntimeError:
+				pass
+			return
 		start = time.time()
 		end = start + 2 * n + 120
 		if self.loads()[0] > self.line_loads:
@@ -313,7 +347,12 @@ class Lane:
 			scrap_mcp.GAMES[self.tag] = g
 		self.game = g
 		env = {'SCRAP_VK_DEVICE': VK_DEVICE}
-		res = {'case': case, 'level': level, 'tag': self.tag, 'pack': False, 'build': build,
+		self.det = DETERMINISTIC and self.has_det(build)
+		self.pace = DET_PACE if self.det else 0.1
+		if self.det:
+			env.update({'SCRAP_TEST_DETERMINISTIC': '1', 'SCRAP_TEST_CHANNEL': 'step'})
+			env['SCRAP_TEST_DET_SEED'] = DET_SEED
+		res = {'case': case, 'level': level, 'tag': self.tag, 'pack': False, 'build': build, 'det': self.det,
 			   'hash': case_hash(case), 'date': time.strftime('%Y-%m-%d %H:%M:%S'), 'blocks': [], 'status': 'ok'}
 		try:
 			opts = {'name': self.tag, 'exe': self.exe, 'map': 'Levels/' + level, 'env': env, 'timeout': 2400}
@@ -323,12 +362,13 @@ class Lane:
 				if not g.running() or time.time() > end:
 					raise RuntimeError('no answer at the level start')
 				try:
-					self.q('Scrap.GetLevelPath()', timeout=2.0)
+					# deterministic: without a pace, so a question that is asked again moves no clock
+					self.q('Scrap.GetLevelPath()', timeout=2.0, pace=0 if self.det else None)
 					break
 				except RuntimeError:
 					pass
 			res['ready'] = round(time.time() - t0, 1)
-			r = self.commands(tochannel.helper_load('fst') + ['None'])
+			r = self.commands(tochannel.helper_load('fst') + ['None'], pace=self.pace + DET_START if self.det else None)
 			if r != 'None':
 				raise RuntimeError('channel/fst.tc: %s' % r)
 			timeouts = 0
@@ -394,15 +434,18 @@ def save(path, res):
 
 def lanes_run(tags, jobs, build, done, exe='native64'):
 	"""jobs: list of (level, case, outpath), longest first; runs them over the lanes; done(job, res) per result. The
-	cases that start a real server have a queue of their own: a lane that gets the port lock (a file lock next to the
-	slots, so the runs of all checkouts that share the game data share it) takes the next of
+	cases that start a real server have a queue of their own: a lane that gets the port lock (one file lock for the
+	machine, so the runs of all checkouts and slot folders share it) takes the next of
 	them, else the next other case, so the server cases run spread over the whole run, one at a time."""
 	normal, ports = queue.Queue(), queue.Queue()
 	for j in jobs:
 		(ports if j[1] in PORT_CASES else normal).put(j)
-	# the server port is one for the machine: a lock of this checkout alone let a run of another worktree start its
-	# server at the same time (SNet.InitServer answered 0, fc-ffa2 failed in all lines)
-	lockpath = os.path.join(slot.SLOTS, '.regress-port.lock')
+	# the server port is one for the machine: a lock next to the slots let a run with a slot folder of its own (another
+	# worktree, private slots) start its server at the same time (SNet.InitServer answered 0, fc-ffa2 failed in all
+	# lines), so the lock has one path for the user on this machine
+	lockdir = os.path.join(os.environ.get('XDG_CACHE_HOME') or os.path.expanduser('~/.cache'), 'scrapland')
+	os.makedirs(lockdir, exist_ok=True)
+	lockpath = os.path.join(lockdir, 'regress-port.lock')
 
 	def worker(tag):
 		lane = Lane(tag, exe)
@@ -513,6 +556,11 @@ def report(outdir, cases, results, t0=None):
 
 
 def cmd_check(a):
+	global DETERMINISTIC, DET_SEED
+	if a.live:
+		DETERMINISTIC = False
+	if a.seed:
+		DET_SEED = a.seed
 	cases = pick(read_cases(), a.cases)
 	outdir = a.out or os.path.join(RESULTS, time.strftime('%Y%m%d-%H%M%S'))
 	os.makedirs(outdir, exist_ok=True)
@@ -523,7 +571,8 @@ def cmd_check(a):
 	rev = subprocess.run(['git', '-C', os.path.dirname(os.path.abspath(a.build)), 'log', '-1', '--format=%h %s'],
 						 capture_output=True, text=True).stdout.strip()
 	exe = os.path.join(a.build, 'ScrapC')
-	info = 'build %s (%s), ScrapC of %s' % (a.build, rev, time.ctime(os.path.getmtime(exe)))
+	info = 'build %s (%s), ScrapC of %s, %s' % (a.build, rev, time.ctime(os.path.getmtime(exe)),
+											   'deterministic, seed %s' % DET_SEED if DETERMINISTIC else 'live')
 	open(os.path.join(outdir, 'build.txt'), 'w').write(info + '\n')
 	log(info)
 
@@ -589,6 +638,10 @@ def main():
 	c.add_argument('--lanes', default='ca,ca2,ca3')
 	c.add_argument('--build', default=os.environ.get('FUNC_BUILD', DEFAULT_BUILD))
 	c.add_argument('--out')
+	c.add_argument('--live', action='store_true', help='without the deterministic test mode of the game (as '
+					'REGRESS_DETERMINISTIC=0): real clock and random seed, replies differ from run to run')
+	c.add_argument('--seed', help='the random seed of the deterministic games (default: REGRESS_SEED, else %s); a '
+					'failing line that passes with another seed depends on chance' % DET_SEED)
 	c.add_argument('--asan', action='store_true', help='the -asan twin of the build (lanes e.g. cax); ASan reports '
 					'show as wine: ERROR: AddressSanitizer in the report')
 	c.add_argument('cases', nargs='*')

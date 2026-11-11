@@ -9,6 +9,10 @@
 #                         -fno-omit-frame-pointer, FFmpeg as in build-linux64)
 #        SCRAP_GAME_DIR   the game folder, default <build>/game (made by mkgame.sh --native)
 #        LEVELS_JOBS      levels at the same time, default 4; worker n > 0 uses the game folder <game>-<n>
+#        SCRAP_TEST_DETERMINISTIC   the deterministic test mode of the game (include/scrap/testdet.h), default 1: fixed
+#                         random seed and a clock of 60 fixed steps a second, so a level runs the same way every time
+#                         (the game time a level gets then depends on the frames it draws in LEVELS_TIME); 0: off,
+#                         n > 1: n steps a second (longer steps: more game time on a slow build)
 # The log of a level is <game folder of its worker>/levels-<level>.log. The lines come in the order of the levels.
 root=$(cd "$(dirname "$0")/../.." && pwd)
 build=${SCRAP_BUILD:-$root/build-linux64-asan}
@@ -23,7 +27,7 @@ trap 'rm -rf "$out"' EXIT
 # level <name> <game folder>: one line into $out/<name>
 level() {
 	local L=$1 g=$2 log=$2/levels-$1.log rc asan fatal py
-	SCRAP_BUILD=$build SCRAP_GAME_DIR=$g HEADLESS_TIMEOUT=${LEVELS_TIME:-120} NATIVE_LOG=$log \
+	SCRAP_TEST_DETERMINISTIC=${SCRAP_TEST_DETERMINISTIC:-1} SCRAP_BUILD=$build SCRAP_GAME_DIR=$g HEADLESS_TIMEOUT=${LEVELS_TIME:-120} NATIVE_LOG=$log \
 		ASAN_OPTIONS=detect_leaks=0:quarantine_size_mb=2048${ASAN_EXTRA:+:$ASAN_EXTRA} "$root/tools/test/native.sh" -imap:Levels/"$L" > /dev/null 2>&1
 	rc=$?
 	asan=$(grep -A40 "ERROR: AddressSanitizer" "$log" | grep -E "ERROR|#[0-9]+ 0x[0-9a-f]+ in [A-Za-z]" |

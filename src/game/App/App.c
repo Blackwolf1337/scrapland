@@ -24,6 +24,7 @@
 #include "scrap/world.h"
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 #define g_CAppVftable (&CApp_vftable)
 #define g_LoadMsgIndex (GVar_iLoadMsgString.value.i)		/* iLoadMsgString: the next loading tip */
@@ -85,6 +86,7 @@ CApp *CApp_ctor(CApp *self, const char *cmdLine) {
 	cString_ctor(&self->levelPath);
 	cString_ctor(&self->newLevelPath);
 	crt_srand((unsigned int)crt_time32(NULL));
+	TestDet_Seed(0);
 	GVars_Init();
 	size_t n = strlen(cmdLine) + 1;
 	char *p = Mem_Alloc(n);
@@ -433,6 +435,8 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 		self->onLevelLoaded = NULL;
 	}
 	Engine_LevelLoaded();
+	/* the deterministic test mode: every level starts with the same random numbers */
+	TestDet_Seed(1);
 	double t1 = App_GetTime(self);
 	Con_Printf("Level loaded in %.2f seconds\n", t1 - t0);
 	if (g_XLoadOn) {

@@ -60,6 +60,7 @@
 #include "scrap/scorer.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
+#include "scrap/testdet.h"
 #include "scrap/timer.h"
 #include "scrap/world.h"
 #include "testchannel.h"
@@ -77,6 +78,23 @@ static double tc_answerTime;	/* game time of the last answer (pace=) */
 static double tc_paceLast;		/* game time of the frame before */
 static int tc_paceStill;		/* frames the game clock stood while a paced command waited */
 static byte tc_worldRan;		/* the world update looked in the frame before (TestChannel_WorldFrame) */
+/* the deterministic test mode (scrap/testdet.h) */
+static byte tc_step;			/* SCRAP_TEST_CHANNEL=step: the clock stands between the command files */
+static byte tc_hold;			/* the clock stands in this pass of the main loop (TestChannel_Hold) */
+static struct {					/* the time since the last answer (TC_DetTrack) */
+	uint32_t step;				/* TestDet_Frame() of the last look */
+	uint32_t loads;				/* TestDet_Loads() of the last look */
+	double gt;					/* game time of the last look */
+	double world;				/* game time passed; after a level load the time of the new level */
+	double stood;				/* time the game clock stood, without the first TC_STAND_FREE steps of each stand */
+	uint32_t still;				/* steps the game clock has stood in a row (not reset by an answer, as tc_paceStill) */
+	uint32_t answer;			/* TestDet_Frame() of the last answer */
+	uint32_t met;				/* TestDet_Frame() + 1 of the step in which the pace of a command file was met, else 0 */
+	byte loaded;				/* a level load ended since the last answer */
+} tc_det;
+#define TC_STILL_STEPS 60		/* a paced command file runs when the game clock stood that many steps (frames) */
+#define TC_STAND_FREE 180		/* steps of a stand that do not count for a wait (the runner's live wait: 3 s) */
+#define TC_PACE_SLACK 1e-4		/* the game time is a sum of float steps: 6 steps of 1/60 s are a pace of 0.1 */
 
 /* ---- the answer: a growing text ---- */
 
@@ -1298,15 +1316,15 @@ static void TC_Run(tcBuf *b, char *body) {
 
 /* ---- the files ---- */
 
-/* the number on the first line of a file; -1 when there is none */
-/* the number on the first line of a file; -1 when there is none. pace (may be NULL): the seconds of "pace=<s>" after
- * the number, else 0 */
-static long TC_FileSeq(const char *name, double *pace) {
+/* the number on the first line of a file; -1 when there is none. pace (may be NULL, then credit too): the seconds of
+ * "pace=<s>" after the number, else 0; credit: those of "credit=<s>" after the pace, -1 without it */
+static long TC_FileSeq(const char *name, double *pace, double *credit) {
 	char head[0x40];
 	void *f = crt_fopen(name, "rb");
 
 	if (pace) {
 		*pace = 0.0;
+		*credit = -1.0;
 	}
 	if (!f) {
 		return -1;
@@ -1318,6 +1336,9 @@ static long TC_FileSeq(const char *name, double *pace) {
 	long seq = strtol(head, &end, 10);
 	if (end > head && pace && !strncmp(end, " pace=", 6)) {
 		*pace = strtod(end + 6, &end);
+		if (!strncmp(end, " credit=", 8)) {
+			*credit = strtod(end + 8, &end);
+		}
 	}
 	return end > head && (*end == '\n' || *end == '\r') ? seq : -1;
 }
@@ -1349,6 +1370,39 @@ static char *TC_ReadFile(const char *name) {
 	return text;
 }
 
+/* the deterministic test mode: the heap addresses in the reprs of an answer (" at 55d0c8a41b2c>", " at 0x7f..>")
+ * differ from run to run even without the random layout of the address space (the heap of a run depends on its
+ * environment and on the threads of the drivers). Each address is replaced by the number of its first appearance
+ * in the answers of this run, in the same width, so equal runs answer equal bytes and one object keeps one value */
+static void TC_NumberAddresses(tcBuf *b) {
+	static uint64_t *seen;
+	static int count, cap;
+
+	for (char *p = b->p ? strstr(b->p, " at ") : NULL; p; p = strstr(p, " at ")) {
+		p += 4;
+		char *digits = p + (p[0] == '0' && p[1] == 'x' ? 2 : 0), *end;
+		uint64_t addr = strtoull(digits, &end, 16);
+		int width = (int)(end - digits), i;
+
+		if (width < 6 || width > 16 || *end != '>') {
+			continue;
+		}
+		for (i = 0; i < count && seen[i] != addr; i++) {
+		}
+		if (i == count) {
+			if (count == cap) {
+				cap = cap ? cap * 2 : 0x100;
+				seen = Mem_Realloc(seen, (uint32_t)cap * sizeof(*seen));
+			}
+			seen[count++] = addr;
+		}
+		char num[0x20];
+		snprintf(num, sizeof(num), "%0*x", width, (unsigned)i + 1);
+		memcpy(digits, num, (size_t)width);
+		p = end;
+	}
+}
+
 static void TC_WriteReply(long seq, const tcBuf *b) {
 	char head[0x20];
 	void *f = crt_fopen(TC_TMP, "wb");
@@ -1375,22 +1429,82 @@ void TestChannel_Enable(void) {
 	tc_on = 1;
 }
 
-/* a new command file runs (paced) and is answered */
-static void TC_Poll(void) {
-	double pace;
-	long seq = TC_FileSeq(TC_CMD, &pace);
-	if (seq < 0 || seq == tc_seq) {
-		return;
+/* the deterministic test mode: the time since the last answer, looked at once per step of the mode's clock (several
+ * looks in one step change nothing, so the hold and the poll of one pass agree) */
+static void TC_DetTrack(void) {
+	double gt = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
+	uint32_t steps = TestDet_Frame() - tc_det.step;
+
+	if (TestDet_Loads() != tc_det.loads) {
+		/* a new level: its own time so far */
+		tc_det.loads = TestDet_Loads();
+		tc_det.loaded = 1;
+		tc_det.world = gt;
+		tc_det.stood = 0.0;
+		tc_det.still = 0;
+	} else if (gt != tc_det.gt) {
+		tc_det.world += gt > tc_det.gt ? gt - tc_det.gt : 0.0;
+		tc_det.still = 0;
+	} else if (steps) {
+		uint32_t before = tc_det.still;
+
+		tc_det.still += steps;
+		if (tc_det.still > TC_STAND_FREE) {
+			tc_det.stood += (double)(tc_det.still - (before > TC_STAND_FREE ? before : TC_STAND_FREE))
+				/ (double)TestDet_Fps();
+		}
 	}
-	/* "pace=<s>": not before s seconds of game time after the last answer, as the polling script function of the old
-	 * harness answered (mcpgame.py looked every 0.1 s of game time); at once after a level load (the clock starts over)
-	 * or when the clock stood for 60 frames */
+	tc_det.gt = gt;
+	tc_det.step = TestDet_Frame();
+}
+
+/* "pace=<s>" has passed: not before s seconds of game time after the last answer, as the polling script function of
+ * the old harness answered (mcpgame.py looked every 0.1 s of game time); at once after a level load (the clock starts
+ * over) or when the clock stood for 60 frames.
+ * The deterministic test mode keeps these rules on its own count (TC_DetTrack: game time passed, steps instead of
+ * frames looked at), so the hold of the clock and the poll decide alike. "credit=<s>" after the pace makes the
+ * command file a wait (the !sleep of the regress runner, which the runner does itself in a live run): the pace is
+ * game time plus the time the game clock stood (after its first 3 s); after a level load that ended since the last
+ * answer it is the time of the new level, and the load counts for the credit */
+static int TC_PaceDone(double pace, double credit) {
+	if (TestDet_On()) {
+		TC_DetTrack();
+		if (credit >= 0.0) {
+			return tc_det.world + tc_det.stood + (tc_det.loaded ? credit : 0.0) + TC_PACE_SLACK >= pace;
+		}
+		if (pace <= 0.0) {
+			return 1;
+		}
+		/* a live game gets no command file in the frame of its answer */
+		if (TestDet_Frame() == tc_det.answer) {
+			return 0;
+		}
+		if (tc_det.loaded || tc_det.still >= TC_STILL_STEPS) {
+			return 1;
+		}
+		if (tc_det.world + TC_PACE_SLACK < pace) {
+			return 0;
+		}
+		/* and it sees the file one frame after the pace is met, more often than not (6.4 to 7 frames a line
+		 * measured for the pace 0.1 at 60 frames a second, 0.1035 s of game time a line at the time speed 0.175) */
+		if (!tc_det.met) {
+			tc_det.met = TestDet_Frame() + 1;
+		}
+		return TestDet_Frame() >= tc_det.met;
+	}
 	double gt = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
 	if (gt != tc_paceLast) {
 		tc_paceStill = 0;
 	}
 	tc_paceLast = gt;
-	if (pace > 0.0 && gt >= tc_answerTime && gt < tc_answerTime + pace && ++tc_paceStill < 60) {
+	return !(pace > 0.0 && gt >= tc_answerTime && gt < tc_answerTime + pace && ++tc_paceStill < 60);
+}
+
+/* a new command file runs (paced) and is answered */
+static void TC_Poll(void) {
+	double pace, credit;
+	long seq = TC_FileSeq(TC_CMD, &pace, &credit);
+	if (seq < 0 || seq == tc_seq || !TC_PaceDone(pace, credit)) {
 		return;
 	}
 	char *text = TC_ReadFile(TC_CMD);
@@ -1401,33 +1515,69 @@ static void TC_Poll(void) {
 	}
 	tcBuf b = { 0 };
 	tc_seq = seq;
+	if (g_TestDetTrace) {
+		TestDet_Trace("command file%s: %.60s", tc_hold ? " (clock held)" : "", nl + 1);
+	}
 	TC_Run(&b, nl + 1);
+	if (TestDet_On()) {
+		TC_NumberAddresses(&b);
+	}
 	TC_WriteReply(seq, &b);
 	tc_answerTime = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
+	if (TestDet_On()) {
+		/* the count of TC_DetTrack starts over */
+		TC_DetTrack();
+		tc_det.world = tc_det.stood = 0.0;
+		tc_det.loaded = 0;
+		tc_det.answer = TestDet_Frame();
+		tc_det.met = 0;
+	}
 	Mem_Free(b.p);
 	Mem_Free(text);
+}
+
+/* the start, once: the environment */
+static void TC_Start(void) {
+	if (tc_started) {
+		return;
+	}
+	const char *e = getenv("SCRAP_TEST_CHANNEL");
+	tc_started = 1;
+	tc_on |= e && *e && strcmp(e, "0");
+	if (!tc_on) {
+		return;
+	}
+	tc_step = e && !strcmp(e, "step") && TestDet_On();
+	/* the answer of a run before this start (the same game folder) is not run again */
+	tc_seq = TC_FileSeq(TC_REPLY, NULL, NULL);
+	Con_Printf("Test channel on: %s\n", TC_CMD);
+}
+
+int TestChannel_Hold(void) {
+	double pace, credit;
+
+	TC_Start();
+	if (!tc_step) {
+		return 0;
+	}
+	long seq = TC_FileSeq(TC_CMD, &pace, &credit);
+	tc_hold = seq < 0 || seq == tc_seq || TC_PaceDone(pace, credit);
+	return tc_hold;
 }
 
 void TestChannel_Frame(double now) {
 	static double last;
 
-	if (tc_started && (!tc_on || (now >= last && now - last < 0.005))) {
+	/* the clock of the deterministic test mode is no real time: it looks in every frame */
+	if (tc_started && (!tc_on || (!TestDet_On() && now >= last && now - last < 0.005))) {
 		return;
 	}
 	last = now;
-	if (!tc_started) {
-		const char *e = getenv("SCRAP_TEST_CHANNEL");
-		tc_started = 1;
-		tc_on |= e && *e && strcmp(e, "0");
-		if (!tc_on) {
-			return;
-		}
-		/* the answer of a run before this start (the same game folder) is not run again */
-		tc_seq = TC_FileSeq(TC_REPLY, NULL);
-		Con_Printf("Test channel on: %s\n", TC_CMD);
-	}
-	/* the world update of the frame before looked already (the clock runs): it looks again in this frame */
-	if (!tc_on || tc_worldRan) {
+	TC_Start();
+	/* the world update of the frame before looked already (the clock runs): it looks again in this frame. While the
+	 * clock of the deterministic test mode stands there is no world update: a command file whose pace has passed runs
+	 * here, between two frames */
+	if (!tc_on || (tc_worldRan && !tc_hold)) {
 		tc_worldRan = 0;
 		return;
 	}

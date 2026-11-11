@@ -170,8 +170,11 @@ class Game:
             m = a['map']
             args.append('-imap:' + (m if '/' in m else 'Levels/' + m))
         args += list(a.get('args') or [])
+        if a.get('deterministic'):
+            env['SCRAP_TEST_DETERMINISTIC'] = '1'
         if exe != 'ref':
-            env['SCRAP_TEST_CHANNEL'] = '1'
+            # the regress runner asks for 'step' (the deterministic test mode with the clock held between commands)
+            env['SCRAP_TEST_CHANNEL'] = str((a.get('env') or {}).get('SCRAP_TEST_CHANNEL', '1'))
         before = time.time() - 0.5
         runner = 'native.sh' if exe in NATIVE_BUILDS else 'wine.sh'
         if exe in NATIVE_BUILDS:
@@ -421,6 +424,8 @@ TOOLS = [
          'args': {'type': 'array', 'items': {'type': 'string'}, 'description': 'more arguments of the game'},
          'env': {'type': 'object', 'description': 'more environment variables (SCRAP_VK_DEBUG, SCRAP_RD_DUMP, ...)'},
          'validation': {'type': 'boolean', 'description': 'the Vulkan validation layer on (see vkcheck)'},
+         'deterministic': {'type': 'boolean', 'description': 'SCRAP_TEST_DETERMINISTIC=1: fixed random seed, a clock '
+                           'of 60 fixed steps a second and the sound mixed by it, so a run repeats (not ref)'},
          'trace': {'type': 'number', 'description': 'SCRAP_VK_TRACE: the render calls of the first frame this many '
                    'seconds after the device go into scrapdecomp.log (see trace)'},
          'size': {'type': 'string', 'description': 'the display of gamescope, default 1280x720'},
