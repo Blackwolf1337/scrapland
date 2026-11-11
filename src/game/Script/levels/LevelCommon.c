@@ -1514,7 +1514,7 @@ byte LvN_BoostMessage(const char *module) {
 		Mode_G(module, "prevSwitchVehicleMissionCallback", prev) && Mode_SetModVar("Parking", "SwitchVehicleMissionCallback", prev);
 	if (ok) {
 		Mode_Lang("Mission_FirstCrazyBet_SystemMessage4", text);
-		ok = LV_CALL("SInput", "GetDefinedEntry", key, "isss", 0L, "Racer", "Boost", "Mouse") && Native_Arith('%', text, key, msg) &&
+		ok = PORT_CALL(SInput, GetDefinedEntry, key, "isss", 0L, "Racer", "Boost", "Mouse") && Native_Arith('%', text, key, msg) &&
 			Mode_MsgText(msg, Mode_Time() + 10);
 	}
 	return Mode_Done(&t, ok);

@@ -13,8 +13,8 @@
  * variable of another module that the script set with Script_SetVar keeps dropping its error. Entities are handle
  * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
  * Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set, Scrap.SetAlarm, Scrap.GetAlarm,
- * SScorer.SetMsgText, SScorer.SetLabelText, SFX.BishopSellLife, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the
- * SAct functions of the fake speech and SSound.SetMusic (fr6b.py).
+ * SScorer.SetMsgText, SScorer.SetLabelText, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the SAct functions of
+ * the fake speech and SSound.SetMusic (fr6b.py); SFX.BishopSellLife (fc-tp-map swaps it) through its ref (stage 7).
  *
  * Direct calls (stage 3): the functions of the other ports (MissionsFuncs, SaveGame, GateKeeper, Elevator, Metro,
  * CharsNPC, MisItems, Scene) and the own functions of the modules (their globals) go through their refs (PORT_CALL,
@@ -29,7 +29,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include "scrap/fx.h"
 #include "scrap/input.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -103,26 +102,10 @@ static byte Tp_Gate(const char *keeper, const char *door, const char *group, con
 	return ok;
 }
 
-/* SFX.BishopSellLife(attacker, attacked) through its seam (fc-tp-map swaps it), the CHECKs of the engine function */
+/* SFX.BishopSellLife(attacker, attacked) through its ref (fc-tp-map swaps it: the seam of PORT_CALL calls what it
+ * puts there) */
 static byte Tp_SellLife(const char *attacker, const nativeVal_t *attacked) {
-	PyObject *hook;
-	const char *s;
-	int seam = Native_Seam("SFX", "BishopSellLife", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "sv", attacker, attacked);
-	}
-	if (!Tp_Str(attacked, 2, &s)) {
-		return 0;
-	}
-	cEntity *a = World_FindEntity(attacker);
-	if (a) {
-		CHECK(Entity_IsType(a, TYEN_WITH_LIFE));
-	}
-	cEntity *b = World_FindEntity(s);
-	CHECK(b);
-	CHECK(Entity_IsType(b, TYEN_WITH_LIFE));
-	FX_BishopSellLife(a, b);
-	return 1;
+	return PORT_CALL(SFX, BishopSellLife, NULL, "sv", attacker, attacked);
 }
 
 /* float(Scrap.GetSaveVar(name)) */

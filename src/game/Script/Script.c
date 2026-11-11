@@ -716,6 +716,7 @@ int Script_NumCmp(PyObject *a, long n) {
 
 byte Script_Later(double delay, PyObject *func, PyObject *args, const char *name) {
 	double t = (double)Timer_GetTime(&g_pWorld->timer) + delay;
+	/* OBJLIB 7: Scrap.AddScheduledFunc by name (its entry keeps the objects given, MODE_PYENTRY) */
 	byte ok = func && args && (name ? Script_Try("Scrap", "AddScheduledFunc", "(dOOs)", t, func, args, name) :
 		Script_Try("Scrap", "AddScheduledFunc", "(dOO)", t, func, args));
 	Py_XDECREF(args);
@@ -1354,9 +1355,9 @@ static void Def_Set(scriptDef_t *m, const char *item, const char *var, const cha
 		} else if (ok && v.type == NV_STR) {
 			Script_SetStr(m->id, item, var, Native_Text(&v));
 		} else if (ok && m->stop) {
-			/* another value goes to SScorer.Set as in the script, with its TypeError (OBJLIB 7: by name) */
+			/* another value goes to SScorer.Set as in the script, with its TypeError (through its ref) */
 			PyObject *o = Native_ToPy(&v);
-			PyObject *r = o ? Script_Ask("SScorer", "Set", "(issO)", m->id, item, var, o) : NULL;
+			PyObject *r = o ? PORT_ASK(SScorer, Set, "issO", (long)m->id, item, var, o) : NULL;
 			m->failed = r == NULL;
 			Py_XDECREF(r);
 			Py_XDECREF(o);

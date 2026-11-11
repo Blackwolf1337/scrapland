@@ -20,7 +20,7 @@
  * OBJLIB 5) and the functions held in variables (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc; OBJLIB 5) are called
  * through the entries of port functions (PORT_VALUE); the calls given to the scheduler (ReSpawnShip, ReloadNext,
  * BattonRepos, the race count down) take the entry of a port's own function (stage 4: Port_Scheduled), SScorer and
- * SSound there stay Python until they have entries (OBJLIB 7); the functions set as values into Split and Vehicles
+ * SSound there their engine entries (stage 7); the functions set as values into Split and Vehicles
  * stay Python values (OBJLIB 5).
  */
 #include <limits.h>
@@ -1224,8 +1224,8 @@ static byte SRace_InitC(void) {
 		!Mode_Play(s1, v1)) {
 		return Mode_Done(&t, 0);
 	}
-	/* the functions SScorer.SetMsgText and SSound.Play as the modules hold them (OBJLIB 7: the scheduler takes their
-	 * entries once the engine modules have them, Port_Scheduled) */
+	/* the functions SScorer.SetMsgText and SSound.Play as the modules hold them (the scheduler takes their
+	 * entries, Port_Scheduled) */
 	PyObject *msg = Script_Attr("SScorer", "SetMsgText"), *play = msg ? Script_Attr("SSound", "Play") : NULL;
 	byte ok = play != NULL;
 	for (int i = 0; ok && i < 3; i++) {

@@ -18,8 +18,8 @@
  * UsrEntity, Rand, GetAlarm, TestLine and Preload3DObject, SAI.GetStateVehicle, SLogic.SetOnFloor, SScorer.Set and
  * SetMsgText and SAct. Through their refs (stage 7: the native entries; a function a case put there, as _bon records
  * them, by name): SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAct.GetClass of an
- * entity's ActCtrl, SLogic.IsEnemyActive and Scrap.CreateEntityList. By name (OBJLIB 7: no native entry yet): the
- * calls the cases record with _bon (SScorer.CancelSpeech, AddModel), SInput.Bind and SInput.GetDefinedEntry.
+ * entity's ActCtrl, SLogic.IsEnemyActive, Scrap.CreateEntityList, the calls the cases record with _bon
+ * (SScorer.CancelSpeech, AddModel), SInput.Bind and SInput.GetDefinedEntry.
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, SaveGame, RaceMaker, RacerScorer,
  * VehiclesNPC, Vehicles, Elevator, Metro, Traffic, Items, Scene, OutMap), the keyword calls among them
@@ -705,7 +705,7 @@ static byte Win2nd_CancelMission(void) {
 	}
 	Native_SetEmpty(empty, NV_DICT);
 	ok = ok && Mode_Put(WR, "BayScorer", NULL, empty) && LvN_PutI(WR, "YourScore", -1) && LvN_PutS(WR, "waypointName", "") &&
-		LvN_PutI(WR, "iStartPos", 0) && LV_CALL("SInput", "Bind", NULL, "isss", 0L, "Racer", "CM", "");
+		LvN_PutI(WR, "iStartPos", 0) && PORT_CALL(SInput, Bind, NULL, "isss", 0L, "Racer", "CM", "");
 	return Mode_Done(&t, ok);
 }
 
@@ -780,7 +780,7 @@ static byte Demo_ShowSystemMessage(void) {
 static byte Demo_Init(void) {
 	nativeVal_t metro = { 0 }, prev = { 0 };
 	byte ok = Mode_Import("RaceMaker") && Mode_Import("Parking") &&
-		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) && Os_CloseDoors() &&
+		PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) && Os_CloseDoors() &&
 		Os_Metro("Mission_Demo_HumphreyRace.OnMetroUsedToPress", &metro);
 	Native_Free(&metro);
 	if (ok && LvN_SaveIs("MissionState", "HumphreyRace")) {
@@ -1004,7 +1004,7 @@ static byte Police_InitStatus(void) {
 /* Init(LevelPath): the gates and the metro closed, the death hook, the mission or Berto by the state */
 static byte Police_Init(void) {
 	byte ok = Os_CloseDoors() && Mode_EntSetI("DM_Door_MetroExt_", "ArrowCanUse", 0) &&
-		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) && Mode_Import("Chars") &&
+		PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) && Mode_Import("Chars") &&
 		LvN_ModSetGlobal("Chars", "OnMainCharDeath", KP, "OnMainCharDeath") &&
 		(!LvN_SaveIs("PlayerHasBeenKilled", "1") ||
 			(Mode_SaveS("PlayerHasBeenKilled", "0") && LvN_Com("Mission_DestroyPolice_RemoteMessage5", "Bishop", NULL, NULL, NULL)));
@@ -1392,7 +1392,7 @@ static byte Humphrey_OnHumphreyDeath(const nativeVal_t *a) {
 	for (int i = 1; i < 4; i++) {
 		(void)TV();
 	}
-	byte ok = Mode_Import("Vehicles") && LV_CALL("SScorer", "CancelSpeech", NULL, "") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) &&
+	byte ok = Mode_Import("Vehicles") && PORT_CALL(SScorer, CancelSpeech, NULL, "") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1]) &&
 		Mode_DelSchedS("LaunchTaunt") && Mode_SaveInt("NumHumphreyLifes", lifes) && Native_Arith('-', lifes, Mode_I(&t, 1), n);
 	if (ok && Native_Compare(n, Mode_I(&t, 0)) < 0) {
 		Native_Free(n);
@@ -3418,7 +3418,7 @@ static byte Hunt_Init(void) {
 	nativeVal_t *zero = TV(), *n = TV(), *e = TV();
 	Native_SetInt(zero, 0);
 	int back = Mode_SetAlarm(zero) && Mode_SaveInt("NumFunctionariesKilled", n) && Mode_Put(FH, "numFunctionariesKilled", NULL, n) &&
-		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) &&
+		PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) &&
 		Mode_Read(FH, "numFunctionariesKilled", n) ? Mode_CmpI(n, ">=", 1) : -1;
 	if (back != 0) {
 		return Mode_Done(&t, back > 0 && PORT_LOWN(Mission_FunctionaryHunting, ComeBack, NULL, ""));

@@ -15,8 +15,8 @@
  * the objects they are). Scrap.GetEntity, Set, OpenPack, ClosePack, ConsoleError, SSound.LoadSound and the SAct
  * functions go through their seams (OBJLIB 7); string.upper is C. The calls of the module functions through the
  * globals, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound go through their refs (PORT_OWN,
- * PORT_CALL: the seam, OBJLIB 5), and so does SAct.GetAction of a value that is no text (stage 7). SSound.CreatePS and
- * SetPS stay by name (OBJLIB 7: no native entry yet). The .def runner takes its $names as a dict and gives its steps
+ * PORT_CALL: the seam, OBJLIB 5), and so do SAct.GetAction of a value that is no text, SSound.CreatePS and SetPS
+ * (stage 7). The .def runner takes its $names as a dict and gives its steps
  * Python arguments (OBJLIB 6).
  */
 #include <string.h>
@@ -214,21 +214,20 @@ static byte Gs_SetPS(const nativeVal_t *a, byte interval) {
 	static const char *const vars[] = { "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler" };
 	const nativeVal_t *name = &a[0];
 	nativeVal_t c = { 0 };
-	byte ok = Native_CallMod("SSound", "CreatePS", NULL, "v", name) && Native_CallMod("SSound", "SetPS", NULL, "vsv", name, "Sound",
-		&a[2]);
+	byte ok = PORT_CALL(SSound, CreatePS, NULL, "v", name) && PORT_CALL(SSound, SetPS, NULL, "vsv", name, "Sound", &a[2]);
 	for (int i = 0; ok && i < 3; i++) {
 		static const char *const axes[3] = { "X", "Y", "Z" };
-		ok = Mode_Item(&a[1], i, &c) && Native_CallMod("SSound", "SetPS", NULL, "vsv", name, axes[i], &c);
+		ok = Mode_Item(&a[1], i, &c) && PORT_CALL(SSound, SetPS, NULL, "vsv", name, axes[i], &c);
 		Native_Free(&c);
 	}
 	for (int i = 0; ok && i < 5; i++) {
-		ok = Native_CallMod("SSound", "SetPS", NULL, "vsv", name, vars[i], &a[5 + i]);
+		ok = PORT_CALL(SSound, SetPS, NULL, "vsv", name, vars[i], &a[5 + i]);
 		if (ok && i == 1) {
-			ok = Native_CallMod("SSound", "SetPS", NULL, "vsi", name, "Loop", interval ? 0L : 1L);
+			ok = PORT_CALL(SSound, SetPS, NULL, "vsi", name, "Loop", interval ? 0L : 1L);
 		}
 	}
-	return ok && (!interval || (Native_CallMod("SSound", "SetPS", NULL, "vsv", name, "MaxInterval", &a[4]) &&
-		Native_CallMod("SSound", "SetPS", NULL, "vsv", name, "MinInterval", &a[3])));
+	return ok && (!interval || (PORT_CALL(SSound, SetPS, NULL, "vsv", name, "MaxInterval", &a[4]) &&
+		PORT_CALL(SSound, SetPS, NULL, "vsv", name, "MinInterval", &a[3])));
 }
 
 /* Gs_SetPS on the slots of SetPSInterval's arguments (v[i] NULL when it is not given: the default put in, the

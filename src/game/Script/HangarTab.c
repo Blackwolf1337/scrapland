@@ -16,9 +16,9 @@
  * ShipEdit are changed in place on their objects. ShipEdit, ShipMaker and Vehicles are called through their refs
  * (PORT_CALL: directly while the attribute holds the port's function, else by name), the module's own functions through
  * its globals as the script calls them (PORT_OWN, the same seam on the global). Menu's link functions are named at run
- * time and called through their entries while they are Menu's own (Sn_Link), the SScorer and SSound calls stay by name
- * (OBJLIB 7); the helpers of ShipEdit.h (Sn_Multi, Sn_Link) are those of ShipEdit.c. ComputeShipTotalCost evaluates its
- * text through the name chain of the module (OBJLIB 6), the .def runner takes Python values (OBJLIB 6).
+ * time and called through their entries while they are Menu's own (Sn_Link), the SScorer and SSound calls go through
+ * their refs (stage 7); the helpers of ShipEdit.h (Sn_Multi, Sn_Link) are those of ShipEdit.c. ComputeShipTotalCost
+ * evaluates its text through the name chain of the module (OBJLIB 6), the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
@@ -229,15 +229,13 @@ static byte Ht_TabsOn(int id, byte on) {
 	return ok;
 }
 
-/* SScorer.<fn>(id, text) by name (SetOnNext, SetOnPrev, SetDefault, SetOnCancel; OBJLIB 7) */
-static byte Ht_Scorer(const char *fn, int id, const char *s) {
-	return Native_CallMod("SScorer", fn, NULL, "is", (long)id, s);
-}
+/* SScorer.<fn>(id, text) through the ref of fn (SetOnNext, SetOnPrev, SetDefault, SetOnCancel) */
+#define HT_SCORER(fn, id, s) PORT_CALL(SScorer, fn, NULL, "is", (long)(id), s)
 
 /* the tab keys of the scorer: ShipEdit.ChangeTabRight and Left, or none */
 static byte Ht_NextPrev(int id, byte on) {
-	return Ht_Scorer("SetOnNext", id, on ? "ShipEdit.ChangeTabRight" : "") &&
-		Ht_Scorer("SetOnPrev", id, on ? "ShipEdit.ChangeTabLeft" : "");
+	return HT_SCORER(SetOnNext, id, on ? "ShipEdit.ChangeTabRight" : "") &&
+		HT_SCORER(SetOnPrev, id, on ? "ShipEdit.ChangeTabLeft" : "");
 }
 
 /* the buttons that change the ship on the platform: OnAccept of the hangars, the tabs, Sell, Exit, the ship type
@@ -282,7 +280,7 @@ static byte Ht_PlatformButtons(int id, byte on) {
 		Script_SetStr(id, "PrevPilot", "OnAccept", on ? "HangarTab.PrevPilot" : "");
 		Script_SetStr(id, "NextPilot", "OnAccept", on ? "HangarTab.NextPilot" : "");
 	}
-	return (on || Ht_TabRing(id, "UnLinkLR")) && Ht_Scorer("SetOnCancel", id, on ? "ShipEdit.ExitEditShipMenu" : "");
+	return (on || Ht_TabRing(id, "UnLinkLR")) && HT_SCORER(SetOnCancel, id, on ? "ShipEdit.ExitEditShipMenu" : "");
 }
 
 /* DisableChangePlatformButtons(id), EnableChangePlatformButtons(id) */
@@ -1526,17 +1524,17 @@ static void Ht_NoSlots(int id) {
 	Script_SetStr(id, "NumSlotsMissileWeapons", "Text", "");
 }
 
-/* SSound.SetPS(name, var, d), SSound.SetPS(name, var, i) and SSound.SetPS(name, var, v) by name (OBJLIB 7) */
+/* SSound.SetPS(name, var, d), SSound.SetPS(name, var, i) and SSound.SetPS(name, var, v) through its ref */
 static byte Ht_SetPSd(const char *name, const char *var, double d) {
-	return Native_CallMod("SSound", "SetPS", NULL, "ssd", name, var, d);
+	return PORT_CALL(SSound, SetPS, NULL, "ssd", name, var, d);
 }
 
 static byte Ht_SetPSi(const char *name, const char *var, long i) {
-	return Native_CallMod("SSound", "SetPS", NULL, "ssi", name, var, i);
+	return PORT_CALL(SSound, SetPS, NULL, "ssi", name, var, i);
 }
 
 static byte Ht_SetPSv(const char *name, const char *var, const nativeVal_t *v) {
-	return Native_CallMod("SSound", "SetPS", NULL, "ssv", name, var, v);
+	return PORT_CALL(SSound, SetPS, NULL, "ssv", name, var, v);
 }
 
 /* the hologram sounds: the start sound at the camera and the loop (holograms) */
@@ -1550,7 +1548,7 @@ static byte Ht_HologramSound(void) {
 	Mode_CamName(0, cn);
 	Native_SetFloat(vol, 0.35);
 	byte ok = Mode_EntitySeam(cn, cam) && Mode_VGet(cam, "camPos", pos) && Mode_ModVar("Sound", "HologramStartSound", snd) &&
-		Mode_PlaySoundSeam(pos, snd, vol) && Native_CallMod("SSound", "CreatePS", NULL, "s", "EditHologramLoopSound");
+		Mode_PlaySoundSeam(pos, snd, vol) && PORT_CALL(SSound, CreatePS, NULL, "s", "EditHologramLoopSound");
 	Native_Free(snd);
 	ok = ok && Mode_ModVar("Sound", "HologramLoopSound", snd) && Ht_SetPSv("EditHologramLoopSound", "Sound", snd);
 	for (int i = 0; ok && i < 3; i++) {
@@ -1696,7 +1694,7 @@ static byte Ht_DefaultHangar(int id) {
 	byte ok = Ht_G("currentHangar", &cur) && Mode_Arith('+', &cur, Mode_IntVal(&k, 1), &n);
 	if (ok) {
 		Mode_Repr(&n, &r);
-		ok = Sn_Cat("Hangar", &r, NULL, &s) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, &s);
+		ok = Sn_Cat("Hangar", &r, NULL, &s) && PORT_CALL(SScorer, SetDefault, NULL, "iv", (long)id, &s);
 	}
 	Native_Free(&cur);
 	Native_Free(&n);
@@ -1799,7 +1797,7 @@ static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
 		if (c) {
 			Ht_HideInfo(id);
 		}
-		if (!Ht_PlatformButtons(id, 0) || !Ht_Scorer("SetOnNext", id, "") || !Ht_Scorer("SetOnPrev", id, "")) {
+		if (!Ht_PlatformButtons(id, 0) || !HT_SCORER(SetOnNext, id, "") || !HT_SCORER(SetOnPrev, id, "")) {
 			return 0;
 		}
 		int lost = Ht_AtCmp("destroyedShips", "currentHangar", "==", Mode_IntVal(&x, 1));
@@ -1866,7 +1864,7 @@ static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
 		return 0;
 	}
 	Ht_HideInfo(id);
-	if (LvN_EqS(control, "HangarAux") ? !Ht_Scorer("SetDefault", id, "HangarAux") : !Ht_DefaultHangar(id)) {
+	if (LvN_EqS(control, "HangarAux") ? !HT_SCORER(SetDefault, id, "HangarAux") : !Ht_DefaultHangar(id)) {
 		return 0;
 	}
 	return Ht_PlatformButtons(id, 0) && PORT_CALL(ShipEdit, LaunchPlatformAnim, NULL, "");

@@ -18,8 +18,8 @@
  * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, Ffa and the
  * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam,
  * OBJLIB 5); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time and
- * called through the entries of the functions there (MODE_CBATTR); the engine calls go through their refs (stage 7),
- * those of SScorer and SSound stay by name (OBJLIB 7: no native entry yet); the .def runner takes Python values
+ * called through the entries of the functions there (MODE_CBATTR); the engine calls go through their refs (stage 7,
+ * those of SScorer and SSound among them); the .def runner takes Python values
  * (OBJLIB 6). The texts of the ships in the save and engine variables are made as before.
  */
 #include <stdarg.h>
@@ -147,7 +147,7 @@ byte Sn_Set(int id, const nativeVal_t *item, const char *var, const nativeVal_t 
 	if (item->type == NV_STR && strlen(Native_Text(item)) == (size_t)item->n) {
 		return Native_ScorerSet(id, Native_Text(item), var, v);
 	}
-	return Native_CallMod("SScorer", "Set", NULL, "ivsv", (long)id, item, var, v);
+	return PORT_CALL(SScorer, Set, NULL, "ivsv", (long)id, item, var, v);
 }
 
 byte Sn_SetC(int id, const char *item, const char *var, const nativeVal_t *v) {
@@ -1098,9 +1098,9 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 	}
 	Native_Copy(control, control0);
 	if (Native_True(direction)) {
-		/* SScorer.Get(id, prevTab, direction) by name: the variable of the tab is the tab beside it */
+		/* SScorer.Get(id, prevTab, direction): the variable of the tab is the tab beside it */
 		Native_Free(control);
-		if (!Se_G("prevTab", p) || !Native_CallMod("SScorer", "Get", control, "ivv", (long)id, p, direction)) {
+		if (!Se_G("prevTab", p) || !PORT_CALL(SScorer, Get, control, "ivv", (long)id, p, direction)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(p);
@@ -1151,7 +1151,7 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 		static const char *const then[] = { "Hangar3", "Hangar2", "Hangar1", NULL };
 		ok = Se_LinksUD(id, "ShipEditTabHangar", first) && PORT_CALL(HangarTab, ShowHangarPanel, NULL, "i", (long)id) &&
 			Se_LinksUD(id, "ShipEditTabHangar", then) && Se_TabHint(id, control, "HINT_Tabs1", 0) &&
-			Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) && Se_StartRotate();
+			PORT_CALL(SScorer, SetDefault, NULL, "iv", (long)id, control) && Se_StartRotate();
 	} else if (LvN_EqS(control, "ShipEditTabEngines")) {
 		static const char *const links[] = { "Recycle", "Exit", "PrevEngine", NULL };
 		c = Se_G("prevTab", p) ? LvN_EqS(p, "ShipEditTabHull") : -1;
@@ -1165,17 +1165,17 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 		c = ok && Se_G("prevTab", p) ? Mode_Cmp(p, "!=", tab) : -1;
 		ok = c == 0 || (c > 0 && PORT_CALL(EnginesTab, ShowEnginesPanel, NULL, "i", (long)id) &&
 			Se_RotateShip(Mode_IntVal(k, 180)));
-		ok = ok && Se_TabHint(id, control, "HINT_Tabs2", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
+		ok = ok && Se_TabHint(id, control, "HINT_Tabs2", 0) && PORT_CALL(SScorer, SetDefault, NULL, "iv", (long)id, control) &&
 			Se_LinksUD(id, "ShipEditTabEngines", links) && Se_ShipGet("Model", model) && Sn_Cat("", model, "EngineGroup1", grp) &&
 			Sn_LinkV("LinkUD", id, tab, grp) && Sn_Link("LinkUD", id, "ShipEditTabEngines", "Engine1");
 	} else if (LvN_EqS(control, "ShipEditTabWeapons")) {
 		static const char *const weapons[] = { "Devastator", "Tesla", "ATPC", "Inferno", "Swarm", "Vulcan", NULL };
 		ok = Se_Swept(180.0, hasAng ? shipAng : NULL, swept) && PORT_CALL(WeaponsTab, ShowWeaponsPanel, NULL, "i", (long)id) &&
-			Se_TabHint(id, control, "HINT_Tabs3", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
+			Se_TabHint(id, control, "HINT_Tabs3", 0) && PORT_CALL(SScorer, SetDefault, NULL, "iv", (long)id, control) &&
 			Se_LinksUD(id, "ShipEditTabWeapons", weapons) && Se_RotateShip(Mode_IntVal(k, 0));
 	} else if (LvN_EqS(control, "ShipEditTabHull")) {
 		ok = Se_Swept(90.0, hasAng ? shipAng : NULL, swept) && PORT_CALL(HullTab, ShowHullPanel, NULL, "i", (long)id) &&
-			Se_TabHint(id, control, "HINT_Tabs4", 0) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, control) &&
+			Se_TabHint(id, control, "HINT_Tabs4", 0) && PORT_CALL(SScorer, SetDefault, NULL, "iv", (long)id, control) &&
 			Se_RotateShip(Mode_IntVal(k, 270));
 	}
 	c = ok ? Mode_CmpI(swept, "!=", -1) : -1;
@@ -1684,8 +1684,8 @@ static byte Se_FreeEdit(void) {
 
 /* the tab keys of the scorer: ShipEdit.ChangeTabRight and Left, or none */
 static byte Se_NextPrev(int id, byte on) {
-	return Native_CallMod("SScorer", "SetOnNext", NULL, "is", (long)id, on ? "ShipEdit.ChangeTabRight" : "") &&
-		Native_CallMod("SScorer", "SetOnPrev", NULL, "is", (long)id, on ? "ShipEdit.ChangeTabLeft" : "");
+	return PORT_CALL(SScorer, SetOnNext, NULL, "is", (long)id, on ? "ShipEdit.ChangeTabRight" : "") &&
+		PORT_CALL(SScorer, SetOnPrev, NULL, "is", (long)id, on ? "ShipEdit.ChangeTabLeft" : "");
 }
 
 /* EnterEditShipMenu(id, control): the editor opens (from the main menu it loads the ShipEdit level first) */
@@ -1740,7 +1740,7 @@ static byte Se_EnterEditShipMenu(int id) {
 		PORT_OWN(ShipEdit, AddDefaultPanelContent, NULL, "ii", (long)id, 4L) &&
 		PORT_CALL(HangarTab, SetHangarPanel, NULL, "i", (long)id) && PORT_CALL(EnginesTab, SetEnginesPanel, NULL, "i", (long)id) &&
 		PORT_CALL(WeaponsTab, SetWeaponsPanel, NULL, "i", (long)id) && PORT_CALL(HullTab, SetHullPanel, NULL, "i", (long)id) &&
-		Native_CallMod("SScorer", "SetOnSpecialHint", NULL, "iss", (long)id, "ShipEdit.ShowSpecialHint", Script_Lang("HINT_NoMoney")) &&
+		PORT_CALL(SScorer, SetOnSpecialHint, NULL, "iss", (long)id, "ShipEdit.ShowSpecialHint", Script_Lang("HINT_NoMoney")) &&
 		Se_LinksUD(id, "ShipEditTabHangar", links) && PORT_CALL(HangarTab, SetSellVisible, NULL, "ii", (long)id, 1L) &&
 		PORT_CALL(HangarTab, SetSellActive, NULL, "ii", (long)id, 0L);
 	Native_SetStr(hangar, "");
@@ -1758,7 +1758,7 @@ static byte Se_EnterEditShipMenu(int id) {
 	if (aux > 0) {
 		Native_Free(tabs);
 		ok = PORT_CALL(HangarTab, ShowShipInfo, NULL, "i", (long)id) && Se_NextPrev(id, 0) &&
-			Native_CallMod("SScorer", "SetDefault", NULL, "is", (long)id, "HangarAux") && Mode_Import(SE) &&
+			PORT_CALL(SScorer, SetDefault, NULL, "is", (long)id, "HangarAux") && Mode_Import(SE) &&
 			LvN_ModGet(SE, "tabs", tabs) && Sn_TabsOn(id, tabs, 0);
 	} else if (aux == 0) {
 		Native_SetStr(x, "");
@@ -1774,15 +1774,15 @@ static byte Se_EnterEditShipMenu(int id) {
 			ok = ok && Se_G("tabs", tabs) && Sn_TabsOn(id, tabs, 1) && Se_NextPrev(id, 1);
 			Native_Free(tabs);
 			ok = ok && Se_G("tabs", tabs) && Sn_TabRing(id, tabs, "LinkLR") && PORT_CALL(HangarTab, ShowShipInfo, NULL, "i", (long)id) &&
-				Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, hangar);
+				PORT_CALL(SScorer, SetDefault, NULL, "iv", (long)id, hangar);
 		} else {
-			ok = c == 0 && Native_CallMod("SScorer", "SetDefault", NULL, "is", (long)id, "Hangar1");
+			ok = c == 0 && PORT_CALL(SScorer, SetDefault, NULL, "is", (long)id, "Hangar1");
 		}
 	} else {
 		ok = 0;
 	}
 	ok = ok && PORT_CALL(HangarTab, ShowHangarPanel, NULL, "i", (long)id) &&
-		Native_CallMod("SScorer", "SetOnCancel", NULL, "is", (long)id, "ShipEdit.ExitEditShipMenu");
+		PORT_CALL(SScorer, SetOnCancel, NULL, "is", (long)id, "ShipEdit.ExitEditShipMenu");
 	c = ok ? Se_HasShip() : -1;
 	return Mode_Done(&t, c == 0 || (c > 0 && Se_StartRotate()));
 }
@@ -1835,7 +1835,7 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 	if (ok) {
 		Mode_Repr(lost, rep);
 		ok = Mode_SetSaveVar("Hangar.DestroyedShips", rep) && Mode_SetModVar(HT, "holograms", Mode_IntVal(k, 0)) &&
-			Native_CallMod("SSound", "SetPS", NULL, "ssd", "EditHologramLoopSound", "Volume", 0.0) && Mode_StopAllSounds();
+			PORT_CALL(SSound, SetPS, NULL, "ssd", "EditHologramLoopSound", "Volume", 0.0) && Mode_StopAllSounds();
 	}
 	c = ok ? Se_HasShip() : -1;
 	if (c > 0) {

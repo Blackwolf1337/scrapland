@@ -15,15 +15,14 @@
  * SSound.Play, SScorer.Set; OBJLIB 7). The entities the script holds are handle values (OBJLIB 7).
  *
  * Direct calls (stage 3): the calls of other ports (Speech, MissionsFuncs, SaveGame, RaceMaker, VehiclesNPC, Vehicles,
- * Traffic, PhoneCab, Menu, Elevator, Metro, MapRace) and of the module's own functions through its globals
- * (PORT_LOWN: a mission may replace one) go through their refs (PORT_CALL, the keyword calls among them), the
- * callbacks handed to Speech and Menu by the refs of their functions (LV_COM, LV_ONEND, LV_SCORERG), and so do the
- * engine functions with native entries (stage 7: SAI.SetStateVehicle and SetInertia, Scrap.Achievement and
- * Scrap.SetMoney of a long). By name stay: SScorer.AddModel and CancelSpeech (OBJLIB 7: no native entry yet); the
- * functions handed on as values: to the scheduler (the entry of a port's own function, stage 4:
- * Port_Scheduled), as the callbacks of Parking and Alarm, the AfterRemoteComFunc of Speech.ForceRemoteCom (values of
- * their variables, OBJLIB 5). The InitStatus functions that only set the traffic ships,
- * the start positions of the races (LvN_StartPos) and Mission_DestroyCommSats2 are LevelCommon's.
+ * Traffic, PhoneCab, Menu, Elevator, Metro, MapRace) and of the module's own functions through its globals (PORT_LOWN:
+ * a mission may replace one) go through their refs (PORT_CALL, the keyword calls among them), the callbacks handed to
+ * Speech and Menu by the refs of their functions (LV_COM, LV_ONEND, LV_SCORERG), and so do the engine functions with
+ * native entries (stage 7: SAI.SetStateVehicle and SetInertia, Scrap.Achievement and Scrap.SetMoney of a long,
+ * SScorer.AddModel and CancelSpeech). By name stay the functions handed on as values: to the scheduler (the entry of a
+ * port's own function, stage 4: Port_Scheduled), as the callbacks of Parking and Alarm, the AfterRemoteComFunc of
+ * Speech.ForceRemoteCom (values of their variables, OBJLIB 5). The InitStatus functions that only set the traffic
+ * ships, the start positions of the races (LvN_StartPos) and Mission_DestroyCommSats2 are LevelCommon's.
  */
 #include "scrap/game.h"
 #include "scrap/input.h"
@@ -1458,8 +1457,8 @@ static PyObject *Stupidus_InitStatus(PyObject *self, PyObject *args) {
 static byte Stupidus_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	/* SScorer.AddModel by name: fc-r6b-cm4 records it (OBJLIB 7) */
-	return LV_CALL("SScorer", "AddModel", NULL, "isssiii", 0L, "EvilBerto", "Models/Heads/HeadEvilBerto/HeadEvilBerto", "", 4L, 25L, 10L) &&
+	/* SScorer.AddModel through its ref: fc-r6b-cm4 records it */
+	return PORT_CALL(SScorer, AddModel, NULL, "isssiii", 0L, "EvilBerto", "Models/Heads/HeadEvilBerto/HeadEvilBerto", "", 4L, 25L, 10L) &&
 		Cm_PreloadG(DS, "AmplifierModel") && PORT_LOWN(Mission_DestroyStupidus, CreateStupidus, NULL, "");
 }
 
@@ -2657,8 +2656,8 @@ static byte Gambler_Init(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t pos;
 	(void)a;
 	(void)out;
-	/* SScorer.AddModel by name: the cases record it (OBJLIB 7) */
-	if (!LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 20L) ||
+	/* SScorer.AddModel through its ref: the cases record it */
+	if (!PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 20L) ||
 		!Cm_PreloadG(CG, "BossMatrixModel") || !Mode_ListSet("Enemies", "OnDeath", "Mission_DefeatCrazyGambler3.OnCrazyGamblerDeath")) {
 		return 0;
 	}
@@ -2807,8 +2806,7 @@ static byte Gambler_OnCrazyGamblerDeath(const nativeVal_t *a, nativeVal_t *out) 
 			return Mode_Done(&t, 0);
 		}
 		if (LvN_EqI(n, 0)) {
-			/* SScorer.CancelSpeech by name (OBJLIB 7) */
-			if (!LV_CALL("SScorer", "CancelSpeech", NULL, "") || !LvN_ScorerOff() || !Mode_EntityH(&a[0], e) || !LvN_SetI(e, "Money", -1) ||
+			if (!PORT_CALL(SScorer, CancelSpeech, NULL, "") || !LvN_ScorerOff() || !Mode_EntityH(&a[0], e) || !LvN_SetI(e, "Money", -1) ||
 				!Mode_VGet(e, "Pos", pos)) {
 				return Mode_Done(&t, 0);
 			}

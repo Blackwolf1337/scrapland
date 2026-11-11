@@ -25,8 +25,8 @@
  * record or swap go through their seams (AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, UsrEntity, Set,
  * SetAlarm, GetAlarm, ConsoleError, DelSaveVars, SScorer.Fade, the SAct functions; OBJLIB 7). The entities the script
  * holds are handle values (OBJLIB 7). SAI.SetStateChar and GetStateChar, SLogic.SetOnFloor, the call of the map
- * elements (Scrap.SetCallFunc and its parameters) and SAct.GetCls go through their refs (stage 7),
- * SScorer.SetSpeechText stays by name (OBJLIB 7: no native entry yet); CharsNPC.CharRes and the GateKeeper groups are
+ * elements (Scrap.SetCallFunc and its parameters), SAct.GetCls and SScorer.SetSpeechText go through their refs
+ * (stage 7); CharsNPC.CharRes and the GateKeeper groups are
  * the objects they are (OBJLIB 5).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Chars,
@@ -38,7 +38,7 @@
  * SetNextMission sections of Mission_BeatPickus, MapSnd.PoliceCheats and PoliceBossCheats; OBJLIB 6); apply on
  * MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext); the functions given to the scheduler and to the
  * entities (Mode_Later, the UseFunc texts) take the entry of a port's own function (stage 4: Port_Scheduled,
- * PYF_ENTRY; SScorer.Fade stays Python, OBJLIB 7), the ones given to Scene, Alarm and CharConversor as callbacks
+ * PYF_ENTRY; SScorer.Fade its engine entry, stage 7), the ones given to Scene, Alarm and CharConversor as callbacks
  * (PO_HOOK) are values of their variables (OBJLIB 5). MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
 #include "scrap/scrap.h"
@@ -121,8 +121,8 @@ static byte Po_Fade(const int *from, const int *to, double time) {
 	return Mode_Fade(0, from, to, time);
 }
 
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, SScorer.Fade, (0, from, to, time)) (OBJLIB 7: the function of
- * SScorer, which the scheduler takes as its entry once SScorer has entries) */
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, SScorer.Fade, (0, from, to, time)) (the function of SScorer
+ * as the module holds it: the scheduler takes its entry, Port_Scheduled) */
 static byte Po_FadeLater(double delay, const int *from, const int *to, double time) {
 	nativeVal_t args[4];
 	Native_SetInt(&args[0], 0);
@@ -2210,9 +2210,8 @@ static byte JailBreak_NextMission(const nativeVal_t *a, nativeVal_t *out) {
 	byte pc = !Native_True(&x);
 	Native_Free(&x);
 	if (pc) {
-		/* SScorer.SetSpeechText by name (OBJLIB 7) */
 		Mode_Lang("XBox_Load_Msg_1", &text);
-		byte ok = LV_CALL("SScorer", "SetSpeechText", NULL, "viiii", &text, 10L, 255L, 255L, 255L);
+		byte ok = PORT_CALL(SScorer, SetSpeechText, NULL, "viiii", &text, 10L, 255L, 255L, 255L);
 		Native_Free(&text);
 		if (!ok) {
 			return 0;

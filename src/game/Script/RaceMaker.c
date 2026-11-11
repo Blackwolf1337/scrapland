@@ -24,8 +24,8 @@
  * SaveGame, VehiclesNPC, OutMap, RacerScorer) and the module's own functions (through its globals, as the script calls
  * them) go through their refs (PORT_CALL, PORT_OWN, stage 3), string.find and replace through the native twins, and so
  * do SAI.SetStateVehicle, InitVehicleRace and AddVehicleRace, Scrap.SetCam, the call function of Scrap, SVec.GetAngle
- * and CProd (stage 7). SInput.GetActionSet stays by name (OBJLIB 7: no native entry yet), the class VehiclesNPC.cShipAI
- * too (OBJLIB 5: a class the .mod defines); the hooks, GetDealType and the races of MapRace are called as the values
+ * and CProd and SInput.GetActionSet (stage 7). The class VehiclesNPC.cShipAI stays by name (OBJLIB 5: a class the .mod
+ * defines); the hooks, GetDealType and the races of MapRace are called as the values
  * the script calls, through the entries of port functions (Mode_CallArgs, MODE_CBGLOBAL; OBJLIB 5: the variables); the
  * scorer file takes its $names as a dict (OBJLIB 6).
  */
@@ -124,10 +124,10 @@ static byte Rm_Double(nativeVal_t *out) {
 	return ok;
 }
 
-/* Menu.DrawScorer(0, SInput.GetActionSet()) (OBJLIB 7: SInput by name) */
+/* Menu.DrawScorer(0, SInput.GetActionSet()) */
 static byte Rm_Draw(void) {
 	nativeVal_t set = { 0 };
-	byte ok = Native_CallMod("SInput", "GetActionSet", &set, "") && PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set);
+	byte ok = PORT_CALL(SInput, GetActionSet, &set, "") && PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set);
 	Native_Free(&set);
 	return ok;
 }
@@ -758,8 +758,8 @@ static byte Rm_CountDownLight(int side) {
 }
 
 /* CreateRaceCountDown(): the two traffic lights beside the start with their light effect, and the red, yellow and
- * green flashes and beeps (OBJLIB 7: SScorer.Fade and SSound.Play scheduled as the functions of the modules, through
- * their entries once those modules have them) */
+ * green flashes and beeps (SScorer.Fade and SSound.Play scheduled as the functions of the modules: the scheduler
+ * takes their entries, Port_Scheduled) */
 static byte Rm_CreateRaceCountDown(void) {
 	static const long fades[3][4] = { { 255, 0, 0, 64 }, { 255, 255, 0, 64 }, { 0, 255, 0, 64 } };
 	static const double fadetimes[3] = { 1.5, 1.0, 1.5 };

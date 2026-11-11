@@ -972,7 +972,7 @@ byte Mode_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativ
 	double p[3], vol;
 	const char *s;
 	if (!Mode_Vec3(pos, p) || !Mode_Str(name, &s) || !Mode_Num(volume, &vol)) {
-		return Native_CallMod("SSound", "PlaySound", NULL, "vvv", pos, name, volume);
+		return PORT_CALL(SSound, PlaySound, NULL, "vvv", pos, name, volume);
 	}
 	vec3_t at = { (float)p[0], (float)p[1], (float)p[2] };
 	Sound_PlayAt(&at, s, vol, 0.0, 0.0, 1.0);
@@ -1217,7 +1217,7 @@ byte Mode_ScorerPut(int id, const char *item, const char *var, const nativeVal_t
 	} else if (v->type == NV_INT || v->type == NV_FLOAT) {
 		Script_SetNum(id, item, var, v->type == NV_INT ? (double)v->i : v->f);
 	} else {
-		return Native_CallMod("SScorer", "Set", NULL, "issv", (long)id, item, var, v);
+		return PORT_CALL(SScorer, Set, NULL, "issv", (long)id, item, var, v);
 	}
 	return 1;
 }
@@ -1674,7 +1674,7 @@ byte Mode_Get2DPos(const nativeVal_t *pos, nativeVal_t *out) {
 	float uv[2];
 	if (!Mode_VecOf(pos, x)) {
 		/* "(fff)" of the engine function: its TypeError */
-		return Native_CallMod("SScorer", "Get2DPos", out, "v", pos);
+		return PORT_CALL(SScorer, Get2DPos, out, "v", pos);
 	}
 	vec3_t p = { (float)x[0], (float)x[1], (float)x[2] };
 	Engine_WorldToScreen(&p, uv, 0);

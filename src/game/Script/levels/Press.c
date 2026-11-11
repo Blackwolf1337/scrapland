@@ -26,12 +26,13 @@
  * through their globals (PORT_LOWN, the same seam on the global: a mission may replace one). The callbacks of Speech
  * and of the CharsNPC characters are named by their refs (LV_ONEND, LV_COM, LV_CALLBACK, LV_MISSIONCHAR); they and the
  * hooks of PR_HOOK are the values of the variables (OBJLIB 5). SAI.SetStateChar and GetStateChar,
- * SLogic.SendSentinelToWatch and Scrap.CallElements go through their refs (stage 7), SScorer.AddModel and SSound.UsePS
- * stay by name (OBJLIB 7: no native entry yet); the plain
+ * SLogic.SendSentinelToWatch, Scrap.CallElements, SScorer.AddModel and SSound.UsePS go through their refs (stage 7);
+ * the plain
  * functions of the .def files are data, called and given as callbacks by name (OBJLIB 6); the call lines of the scene
  * tables and of News1 are data in C (Mode_Calls: a port's function through its entry); CharsNPC.CharRes and the
  * GateKeeper groups are the objects they are (OBJLIB 5); the scheduler takes the entry of a port's own function
- * (stage 4: Port_Scheduled), SScorer.Fade and the bound methods stay Python (OBJLIB 7). MapPlanes is LevelCommon's.
+ * (stage 4: Port_Scheduled) and of SScorer.Fade (stage 7), the bound methods stay Python (OBJLIB 7). MapPlanes is
+ * LevelCommon's.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -1551,9 +1552,9 @@ PyMethodDef g_PressGetCrazyDataMethods[] = {
 static byte GoToPress_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	/* SScorer.AddModel by name: the cases record it (OBJLIB 7) */
+	/* SScorer.AddModel through its ref: the cases record it */
 	return Mode_Import("Elevator") && LV_OWN(GP, "LoadScene", NULL, "") &&
-		LV_CALL("SScorer", "AddModel", NULL, "isssiii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 25L, 10L) &&
+		PORT_CALL(SScorer, AddModel, NULL, "isssiii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 25L, 10L) &&
 		Pr_BossDoor("DtritusGroupGateKeeper", "GateKeeper.UseDoor", NULL) && PR_HOOK("Elevator", "OnElevatorReachDown", GP, "LaunchScene");
 }
 
@@ -1993,8 +1994,8 @@ static byte ArchbishopKilled_SetNextMission(const nativeVal_t *a, nativeVal_t *o
 		return 0;
 	}
 	Mode_Saves(saves);
-	/* SSound.UsePS by name: the cases record it (OBJLIB 7) */
-	return LV_CALL("SSound", "UsePS", NULL, "i", 1L) && PR_LATER(2, HK, "CGCalls") && Mode_GVarSetI("isActionIndoor", 1);
+	/* SSound.UsePS through its ref: the cases record it */
+	return PORT_CALL(SSound, UsePS, NULL, "i", 1L) && PR_LATER(2, HK, "CGCalls") && Mode_GVarSetI("isActionIndoor", 1);
 }
 
 /* CGCalls(): the crazy gambler's call for the number of crazy deals done (not in the twelfth deal) */
@@ -2122,10 +2123,10 @@ static byte PressMeeting_SetNextMission(const nativeVal_t *a, nativeVal_t *out) 
 	nativeVal_t lst, it;
 	(void)a;
 	(void)out;
-	/* SSound.UsePS by name: the cases record it (OBJLIB 7) */
+	/* SSound.UsePS through its ref: the cases record it */
 	if (!Mode_GVarSetI("isActionIndoor", 1) || !Mode_Fade(0, lv_black, lv_clear, 1.0) || !Mode_WayPoint() ||
 		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_FaceTheMayor", "DownTown") ||
-		!Mode_MMDesc("Mission_FaceTheMayor_MissionText1", 1) || !LV_CALL("SSound", "UsePS", NULL, "i", 1L)) {
+		!Mode_MMDesc("Mission_FaceTheMayor_MissionText1", 1) || !PORT_CALL(SSound, UsePS, NULL, "i", 1L)) {
 		return 0;
 	}
 	LvN_Str(&it, "SBETTY1");
@@ -2265,8 +2266,8 @@ static byte Pr_CreateChar(const char *name) {
 	return ok;
 }
 
-/* Scrap.AddScheduledFunc(time, SScorer.Fade, (0, from, to, secs)) at the time value time (OBJLIB 7: the function of
- * SScorer, which the scheduler takes as its entry once SScorer has entries) */
+/* Scrap.AddScheduledFunc(time, SScorer.Fade, (0, from, to, secs)) at the time value time (the function of SScorer
+ * as the module holds it: the scheduler takes its entry, Port_Scheduled) */
 static byte Pr_FadeAt(const nativeVal_t *time, const int *from, const int *to, double secs) {
 	nativeVal_t args[4];
 	PyObject *fn = Script_Attr("SScorer", "Fade");
@@ -2296,9 +2297,9 @@ static byte MeetBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&seb);
 	(void)a;
 	(void)out;
-	/* SScorer.AddModel by name: the cases record it (OBJLIB 7) */
-	if (!LV_CALL("SScorer", "AddModel", NULL, "isssiiii", 0L, "Sebastian", "Models/Chars/Sebastian/Sebastian", "Models/Chars/Sebastian/Anm/Sebastian",
-		3L, 25L, -10L, 1L)) {
+	/* SScorer.AddModel through its ref: the cases record it */
+	if (!PORT_CALL(SScorer, AddModel, NULL, "isssiiii", 0L, "Sebastian", "Models/Chars/Sebastian/Sebastian",
+		"Models/Chars/Sebastian/Anm/Sebastian", 3L, 25L, -10L, 1L)) {
 		return 0;
 	}
 	Mode_SaveVar("MissionState", &state);
@@ -2888,8 +2889,8 @@ static byte TalkToBoss_CreateHuman(const nativeVal_t *a, nativeVal_t *out) {
 static byte TalkToBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	/* SScorer.AddModel by name: the cases record it (OBJLIB 7) */
-	if (!LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L)) {
+	/* SScorer.AddModel through its ref: the cases record it */
+	if (!PORT_CALL(SScorer, AddModel, NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L)) {
 		return 0;
 	}
 	if (LvN_SaveIs("MissionState", "FreeHuman2")) {

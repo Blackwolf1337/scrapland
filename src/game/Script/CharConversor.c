@@ -20,9 +20,8 @@
  * characters and machines are handle values (OBJLIB 7). The other ports (Chars, CharAct, Menu, SaveGame, CharScorer,
  * DoorSound) are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
  * by name) and string.replace through its native twin; the module's own functions through its globals as the script
- * calls them (PORT_OWN, the same seam on the global), and so do SLogic.Flash, SendSentinelToWatch and SAct.GetCls
- * (stage 7). The SFX, SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 7: no native
- * entry yet); Menu.LinkLR and LinkUD come
+ * calls them (PORT_OWN, the same seam on the global), and so do SLogic.Flash, SendSentinelToWatch, SAct.GetCls, the
+ * SFX functions, SInput.GetDefinedEntry and SScorer.Add and SetOnCancel (stage 7); Menu.LinkLR and LinkUD come
  * from a from import (OBJLIB 6) and are called through their entries while they are Menu's own (PORT_VALUE); the .def
  * files take their $names as a dict (OBJLIB 6).
  */
@@ -200,7 +199,7 @@ static byte Cc_DrawBackground(const nativeVal_t *id, const nativeVal_t *elem, na
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *name = Mode_V(&t);
 	if (!Mode_Cat(&t, name, 2, Mode_S(&t, "BackgroundElement"), elem) ||
-		!Native_CallMod("SScorer", "Add", NULL, "vvs", id, name, "Sprite")) {
+		!PORT_CALL(SScorer, Add, NULL, "vvs", id, name, "Sprite")) {
 		return Mode_Done(&t, 0);
 	}
 	for (int i = 0; i < 9; i++) {
@@ -320,10 +319,10 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	}
 	Py_XDECREF(lr);
 	Py_XDECREF(ud);
-	return Mode_Done(&t, ok && Native_CallMod("SScorer", "SetOnCancel", NULL, "vs", id, "CharConversor.ExitCharConversor"));
+	return Mode_Done(&t, ok && PORT_CALL(SScorer, SetOnCancel, NULL, "vs", id, "CharConversor.ExitCharConversor"));
 }
 
-/* SpawnChar(c, ChrConv): a character appears out of a conversor (OBJLIB 7: SFX by name) */
+/* SpawnChar(c, ChrConv): a character appears out of a conversor */
 static byte Cc_SpawnChar(const nativeVal_t *c, const nativeVal_t *conv) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *p = Mode_V(&t), *a = Mode_V(&t), *y = Mode_V(&t), *y2 = Mode_V(&t), *ang = Mode_V(&t);
@@ -338,7 +337,7 @@ static byte Cc_SpawnChar(const nativeVal_t *c, const nativeVal_t *conv) {
 	Native_Copy(&ang->items[1], y2);
 	return Mode_Done(&t, Mode_VSet(c, "Ang", ang) && Mode_VObj(c, "Name", name) && LvN_SetOnFloor(name) &&
 		Mode_VObj(c, "Name", name2) && Mode_VObj(conv, "Name", cn) &&
-		Native_CallMod("SFX", "CharacterConversor", NULL, "vvi", name2, cn, 2L));
+		PORT_CALL(SFX, CharacterConversor, NULL, "vvi", name2, cn, 2L));
 }
 
 /* MarkSpawnWaypoint(ChrConvName): a way point at the conversor */
@@ -420,10 +419,10 @@ static byte Cc_EnterCharConversor(const nativeVal_t *uname, const nativeVal_t *c
 	return Mode_Done(&t, ok);
 }
 
-/* SFX.CharacterConversor(_usrName, _charName, step) of the module's globals (OBJLIB 7: SFX by name) */
+/* SFX.CharacterConversor(_usrName, _charName, step) of the module's globals */
 static byte Cc_Fx(long step) {
 	nativeVal_t u = { 0 }, c = { 0 };
-	byte ok = Cc_G("_usrName", &u) && Cc_G("_charName", &c) && Native_CallMod("SFX", "CharacterConversor", NULL, "vvi", &u, &c, step);
+	byte ok = Cc_G("_usrName", &u) && Cc_G("_charName", &c) && PORT_CALL(SFX, CharacterConversor, NULL, "vvi", &u, &c, step);
 	Native_Free(&u);
 	Native_Free(&c);
 	return ok;
@@ -480,12 +479,12 @@ static byte Cc_HeadAnim(const nativeVal_t *id, const nativeVal_t *control, const
 }
 
 /* ShowCharDesc(id, control, lostfocus): the description of the character with the key of the special action; its
- * head talks, the one that lost the focus stops (OBJLIB 7: SInput.GetDefinedEntry by name) */
+ * head talks, the one that lost the focus stops */
 static byte Cc_ShowCharDesc(const nativeVal_t *id, const nativeVal_t *control, const nativeVal_t *lost) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *entry = Mode_V(&t), *pair = Mode_V(&t), *lang = Mode_V(&t), *text = Mode_V(&t), *item = Mode_V(&t);
 	nativeVal_t *f = Mode_V(&t), *k = Mode_V(&t), *anim = Mode_V(&t);
-	if (!Native_CallMod("SInput", "GetDefinedEntry", entry, "isss", 0L, "Walk", "Action", "Mouse")) {
+	if (!PORT_CALL(SInput, GetDefinedEntry, entry, "isss", 0L, "Walk", "Action", "Mouse")) {
 		return Mode_Done(&t, 0);
 	}
 	if (LvN_EqS(control, "Char_Desktop")) {
@@ -578,7 +577,7 @@ static byte Cc_PossessionCam(const nativeVal_t *ent) {
 
 /* Possession(UserName, PossessedName): the player takes the character it flashed (one of ConversionChars, alive,
  * not invulnerable): the character dies without effects, a new player of its class stands there, the camera flies
- * over in slow motion and NewPlayer finishes (OBJLIB 7: SFX by name) */
+ * over in slow motion and NewPlayer finishes */
 static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	static const int white[4] = { 255, 255, 255, 255 }, clear[4] = { 255, 255, 255, 0 };
 	modeVals_t t = { .n = 0 };
@@ -644,7 +643,7 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	if (!Mode_VObj(ent, "Pos", epos) || !Mode_VObj(ent, "Ang", eang) ||
 		!PORT_CALL(Chars, CreateMainChar, newme, "svvv", pl, ch, epos, eang) || !LvN_SetI(newme, "UsrControl", -1) ||
 		!LvN_SetS(newme, "ForceAction", "Flashed") || !Mode_VObj(me, "Name", mn) || !Mode_VObj(newme, "Name", nn) ||
-		!Cc_G("PossessionTime", pt) || !Native_CallMod("SFX", "CharacterConversion", NULL, "vvv", mn, nn, pt) ||
+		!Cc_G("PossessionTime", pt) || !PORT_CALL(SFX, CharacterConversion, NULL, "vvv", mn, nn, pt) ||
 		!Mode_VObj(newme, "CamTgt", v) || !Cc_GSet("AuxInterp", "CamTgt", v) || (Native_Free(v), !Mode_VObj(newme, "Pos", v)) ||
 		!Cc_GSet("AuxInterp", "MovePos", v) || (Native_Free(v), !Mode_VObj(newme, "ViewAng", v)) ||
 		!Cc_GSet("AuxInterp", "MoveAng", v) || !Cc_GSet("AuxInterp", "MoveFade", Mode_I(&t, 3)) ||

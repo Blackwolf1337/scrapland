@@ -14,10 +14,10 @@
  * Scrap.SetMoney, UsrEntity, GetEntity, DeleteScheduledFuncs and SInput.SetActionSet go through their seams and the
  * characters and vehicles are handle values (OBJLIB 7). The other ports (RaceMaker, Speech, Menu, SaveGame,
  * MissionsFuncs, PhoneCab, Chars) are called through their refs, the keyword calls too (PORT_CALL, stage 3), and
- * string.replace with its count and string.find through the native twins; SAI.SetStateVehicle goes through its ref
- * (stage 7), SInput.GetActionSet stays by name (OBJLIB 7: no native entry yet); the variables of other modules that a
- * test or the game may set to any object (Init.Outdoor, Speech.ObjEntity, PhoneCab.audioComEntity, RaceMaker.Players)
- * are read as values of any type.
+ * string.replace with its count and string.find through the native twins; SAI.SetStateVehicle and
+ * SInput.GetActionSet go through their refs (stage 7); the variables of other modules that a test or the game may set
+ * to any object (Init.Outdoor, Speech.ObjEntity, PhoneCab.audioComEntity, RaceMaker.Players) are read as values of any
+ * type.
  */
 #include <limits.h>
 #include <string.h>
@@ -519,8 +519,7 @@ static byte Chal_Release(nativeVal_t *seq) {
 }
 
 /* CancelChallenge(challType): the player left the race or the combat: the bet is lost, the foes go back to their
- * lists and a revenge is pending (OBJLIB 7: SInput.GetActionSet by name; OBJLIB 5: the callbacks of Parking and Alarm
- * set to None in their modules) */
+ * lists and a revenge is pending (OBJLIB 5: the callbacks of Parking and Alarm set to None in their modules) */
 static byte Chal_CancelChallenge(const nativeVal_t *type) {
 	static const char *const mods[] = { "Speech", "Menu", "Parking", "Alarm", "RaceMaker", "string" };
 	modeVals_t t = { .n = 0 };
@@ -547,7 +546,7 @@ static byte Chal_CancelChallenge(const nativeVal_t *type) {
 	}
 	Mode_SaveVar("Challenge.Foe", who);
 	if (!PORT_CALL(Speech, AddRemoteCom, NULL, "vv", left, who) ||
-		!Native_CallMod("SInput", "GetActionSet", set, "") || !LvN_ModNone("Menu", "MissionScorerCall") ||
+		!PORT_CALL(SInput, GetActionSet, set, "") || !LvN_ModNone("Menu", "MissionScorerCall") ||
 		!PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, set)) {
 		return Mode_Done(&t, 0);
 	}
