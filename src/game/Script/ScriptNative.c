@@ -3155,6 +3155,14 @@ const char *Native_EntName(const nativeVal_t *v) {
 	return v->ent->name;
 }
 
+void Native_EntPrint(const char *name, char *buf, int size) {
+	if (World_FindEntity(name)) {
+		Str_Printf(buf, size, "Entity: %s", name);
+	} else {
+		Str_Printf(buf, size, " : The Entity called '%s' is invalid.", name);
+	}
+}
+
 byte Native_Holds(const nativeVal_t *v, unsigned types) {
 	const nativeVal_t *k, *x;
 	int pos = 0;

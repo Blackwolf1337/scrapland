@@ -1167,7 +1167,9 @@ void TcX_Counts(nativeBuf_t *out, byte reset) {
 
 /* ---- values ---- */
 
-PyObject *TcX_Main(void) {
+/* OBJLIB 9b: the dict of __main__, the globals of the channel's top level (TcX_Run with no globals, TcX_Eval,
+ * TcX_Statement, TcX_SetMain) */
+static PyObject *TX_Main(void) {
 	PyObject *m = PyImport_AddModule("__main__");
 	return m ? PyModule_GetDict(m) : NULL;
 }
@@ -1275,15 +1277,19 @@ static PyObject *TX_GlobalPy(const char *name) {
 	return v;
 }
 
-PyObject *TcX_Name(const char *name) {
-	PyObject *v = PyDict_GetItemString(TcX_Main(), (char *)name);
+byte TcX_Name(const char *name, nativeVal_t *out) {
+	PyObject *v = PyDict_GetItemString(TX_Main(), (char *)name);
 
 	if (v) {
-		Py_INCREF(v);
-		return v;
+		TX_FromPy(v, out);
+		return 1;
 	}
-	return TX_GlobalPy(name);
+	return TX_Result(TX_GlobalPy(name), out);
 }
+
+/* a name of the top level with a value of its own while TcX_Bind runs a line (before the globals) */
+static const char *tx_bound;
+static const nativeVal_t *tx_boundVal;
 
 /* the parameter name of the lambda of e, NULL when it has none */
 static const nativeVal_t *TX_EnvFind(const tcEnv *e, const char *name) {
@@ -1305,6 +1311,9 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 	}
 	for (const tcEnv *e = s->env ? s->env->up : NULL; !v && e; e = e->up) {
 		v = TX_EnvFind(e, name);
+	}
+	if (!v && tx_bound && !strcmp(name, tx_bound)) {
+		v = tx_boundVal;
 	}
 	if (v) {
 		Native_Copy(out, v);
@@ -2026,15 +2035,56 @@ static byte TX_LambdaRun(tcFunc *f, nativeVal_t *a, int na, const nativeVal_t *p
 	return ok;
 }
 
+/* OBJLIB 7: the arguments of a call from Python as native values (TX_FromPy each; TX_ArgsFree them) */
+static nativeVal_t *TX_ArgsIn(PyObject *args, int *n) {
+	*n = args ? PyTuple_Size(args) : 0;
+	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(*n + 1) * sizeof(*a)));
+
+	for (int i = 0; i < *n; i++) {
+		TX_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
+	}
+	return a;
+}
+
+static void TX_ArgsFree(nativeVal_t *a, int n) {
+	for (int i = 0; i < n; i++) {
+		Native_Free(&a[i]);
+	}
+	Mem_Free(a);
+}
+
+/* OBJLIB 7: the result r of a native call (freed) as the Python object its caller gets, NULL when the call failed */
+static PyObject *TX_ResultOut(byte ok, nativeVal_t *r) {
+	PyObject *res = ok ? TX_ToPy(r) : NULL;
+
+	Native_Free(r);
+	return res;
+}
+
+/* OBJLIB 9: the C function object of Python of a channel function: the record rec (freed by drop with the object) in
+ * the self (record, items[0], items[1], items[2]), the 4-tuple the module dump of the channel shows (the self of a
+ * lambda and of a recorder before batch 8a) */
+static byte TX_PyFunc(PyMethodDef *def, void *rec, void (*drop)(void *), PyObject *const items[3], nativeVal_t *out) {
+	PyObject *cf = PyCObject_FromVoidPtr(rec, drop);
+
+	Native_SetNone(out);
+	if (!cf) {
+		drop(rec);
+		return 0;
+	}
+	PyObject *self = Py_BuildValue("(OOOO)", cf, items[0], items[1], items[2]);
+	PyObject *fn = self ? PyCFunction_New(def, self) : NULL;
+	Py_XDECREF(self);
+	Py_DECREF(cf);
+	return TX_Result(fn, out);
+}
+
 /* OBJLIB 9: the C function of the Python object of a lambda; self: (the record, None, globals, None) */
 static PyObject *TX_LambdaPy(PyObject *self, PyObject *args, PyObject *kw) {
 	tcFunc *f = PyCObject_AsVoidPtr(PyTuple_GetItem(self, 0));
-	int n = args ? PyTuple_Size(args) : 0;
-	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), pairs, r;
+	int n;
+	nativeVal_t *a = TX_ArgsIn(args, &n), pairs, r;
 
-	for (int i = 0; i < n; i++) {
-		TX_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
-	}
 	Native_SetEmpty(&pairs, NV_LIST);
 	if (kw) {
 		PyObject *k, *v;
@@ -2047,14 +2097,9 @@ static PyObject *TX_LambdaPy(PyObject *self, PyObject *args, PyObject *kw) {
 		}
 	}
 	byte ok = TX_LambdaRun(f, a, n, kw ? &pairs : NULL, &r);
-	for (int i = 0; i < n; i++) {
-		Native_Free(&a[i]);
-	}
-	Mem_Free(a);
+	TX_ArgsFree(a, n);
 	Native_Free(&pairs);
-	PyObject *res = ok ? TX_ToPy(&r) : NULL;
-	Native_Free(&r);
-	return res;
+	return TX_ResultOut(ok, &r);
 }
 
 static PyMethodDef tx_lambdaDef = { "<lambda>", (PyCFunction)(void (*)(void))TX_LambdaPy, METH_VARARGS | METH_KEYWORDS, NULL };
@@ -2084,18 +2129,69 @@ static byte X_Lambda(tcNode *x, tcScope *s, nativeVal_t *out) {
 	}
 	f->globals = s->globals;
 	Py_INCREF(f->globals);
-	PyObject *cf = PyCObject_FromVoidPtr(f, TX_FuncFree);
-	if (!cf) {
-		TX_FuncFree(f);
-		return 0;
+	PyObject *items[3] = { Py_None, f->globals, Py_None };
+	return TX_PyFunc(&tx_lambdaDef, f, TX_FuncFree, items, out);
+}
+
+/* a native function of the channel's verbs (TcX_NewFunc) */
+typedef struct tcCFn {
+	nativeCall_t call;
+	void *ctx;
+	void (*drop)(void *ctx);
+	PyMethodDef def;		/* OBJLIB 9: of its C function object */
+	char name[];
+} tcCFn;
+
+static void TX_CFnFree(void *p) {
+	tcCFn *f = p;
+
+	if (f->drop) {
+		f->drop(f->ctx);
 	}
-	/* the self of the C function: (record, None, globals, None), the form the module dump of the channel shows as
-	 * "self=?" (the 4-tuple of a lambda before batch 8a) */
-	PyObject *self = Py_BuildValue("(OOOO)", cf, Py_None, f->globals, Py_None);
-	PyObject *fn = self ? PyCFunction_New(&tx_lambdaDef, self) : NULL;
-	Py_XDECREF(self);
-	Py_DECREF(cf);
-	return TX_Result(fn, out);
+	Mem_Free(f);
+}
+
+/* OBJLIB 7: the C function of its Python object, for the callers through Python (the seams of the engine functions,
+ * the game calling a module variable); self: (the record, ...) */
+static PyObject *TX_CFnPy(PyObject *self, PyObject *args) {
+	tcCFn *f = PyCObject_AsVoidPtr(PyTuple_GetItem(self, 0));
+	int n;
+	nativeVal_t *a = TX_ArgsIn(args, &n), r;
+
+	Native_SetNone(&r);
+	byte ok = f->call(f->ctx, a, n, &r);
+	TX_ArgsFree(a, n);
+	return TX_ResultOut(ok, &r);
+}
+
+byte TcX_NewFunc(nativeVal_t *out, const char *name, nativeCall_t call, void *ctx, void (*drop)(void *ctx),
+	const nativeVal_t self[3]) {
+	size_t len = strlen(name) + 1;
+	PyObject *items[3] = { NULL, NULL, NULL };
+	tcCFn *f = Mem_Alloc((uint32_t)(sizeof(tcCFn) + len));
+
+	memset(f, 0, sizeof(tcCFn));
+	f->call = call;
+	f->ctx = ctx;
+	f->drop = drop;
+	memcpy(f->name, name, len);
+	f->def.ml_name = f->name;
+	f->def.ml_meth = TX_CFnPy;
+	f->def.ml_flags = METH_VARARGS;
+	byte ok = 1;
+	for (int i = 0; i < 3 && ok; i++) {
+		ok = (items[i] = TX_ToPy(&self[i])) != NULL;
+	}
+	if (ok) {
+		ok = TX_PyFunc(&f->def, f, TX_CFnFree, items, out);
+	} else {
+		Native_SetNone(out);
+		TX_CFnFree(f);
+	}
+	for (int i = 0; i < 3; i++) {
+		Py_XDECREF(items[i]);
+	}
+	return ok;
 }
 
 /* ---- the builtins and the channel's own functions on native values ---- */
@@ -2154,7 +2250,7 @@ static byte TX_NullResult(void) {
 
 /* how the sequence protocol takes v: 1 a sequence the evaluator reads (a text, a tuple or list by value, a list
  * object or view), 0 a value without sequence methods, -1 one only Python reads (an instance, a Python object) */
-static int TX_SeqOf(const nativeVal_t *v) {
+int TcX_SeqOf(const nativeVal_t *v) {
 	switch (v->type) {
 	case NV_STR:
 	case NV_TUPLE:
@@ -2169,8 +2265,8 @@ static int TX_SeqOf(const nativeVal_t *v) {
 	return 0;
 }
 
-/* the length of a sequence of TX_SeqOf 1, -1 with the error */
-static int TX_SeqLen(const nativeVal_t *v) {
+/* the length of a sequence of TcX_SeqOf 1, -1 with the error */
+int TcX_SeqLen(const nativeVal_t *v) {
 	int n;
 
 	if (v->type == NV_REF) {
@@ -2180,7 +2276,7 @@ static int TX_SeqLen(const nativeVal_t *v) {
 }
 
 /* item i of such a sequence */
-static byte TX_SeqGet(const nativeVal_t *v, int i, nativeVal_t *out) {
+byte TcX_SeqGet(const nativeVal_t *v, int i, nativeVal_t *out) {
 	if (v->type == NV_REF) {
 		nativeVal_t key;
 		Native_SetInt(&key, i);
@@ -2193,7 +2289,7 @@ static byte TX_SeqGet(const nativeVal_t *v, int i, nativeVal_t *out) {
 static byte TX_SeqList(const nativeVal_t *v, nativeType_t type, nativeVal_t *out) {
 	Native_SetEmpty(out, type);
 	for (int i = 0;; i++) {
-		int n = TX_SeqLen(v);
+		int n = TcX_SeqLen(v);
 		if (n < 0) {
 			Native_Free(out);
 			return 0;
@@ -2201,7 +2297,7 @@ static byte TX_SeqList(const nativeVal_t *v, nativeType_t type, nativeVal_t *out
 		if (i >= n) {
 			return 1;
 		}
-		if (!TX_SeqGet(v, i, Native_Append(out))) {
+		if (!TcX_SeqGet(v, i, Native_Append(out))) {
 			Native_Free(out);
 			return 0;
 		}
@@ -2265,11 +2361,11 @@ static int TB_Map(nativeVal_t *a, int n, nativeVal_t *out) {
 	}
 	if (a[0].type == NV_NONE && n == 2) {
 		/* map(None, S) is list(S) */
-		int k = TX_SeqOf(&a[1]);
+		int k = TcX_SeqOf(&a[1]);
 		return k < 0 ? -1 : k ? TX_SeqList(&a[1], NV_LIST, out) : Native_Raise(NE_TYPE, "list() argument must be a sequence");
 	}
 	for (int i = 1; i < n; i++) {
-		int k = TX_SeqOf(&a[i]);
+		int k = TcX_SeqOf(&a[i]);
 		if (k <= 0) {
 			return k < 0 ? -1 : Native_Raise(NE_TYPE, "argument %d to map() must be a sequence object", i + 1);
 		}
@@ -2280,9 +2376,9 @@ static int TB_Map(nativeVal_t *a, int n, nativeVal_t *out) {
 		byte any = 0;
 		Native_SetEmpty(&args, NV_TUPLE);
 		for (int j = 1; j < n; j++) {
-			int len = TX_SeqLen(&a[j]);
+			int len = TcX_SeqLen(&a[j]);
 			nativeVal_t *item = Native_Append(&args);
-			if (len < 0 || (i < len && !TX_SeqGet(&a[j], i, item))) {
+			if (len < 0 || (i < len && !TcX_SeqGet(&a[j], i, item))) {
 				Native_Free(&args);
 				Native_Free(out);
 				return 0;
@@ -2352,7 +2448,7 @@ static int TB_Filter(nativeVal_t *a, int n, nativeVal_t *out) {
 		Native_BufFree(&b);
 		return 1;
 	}
-	int k = TX_SeqOf(seq);
+	int k = TcX_SeqOf(seq);
 	if (k <= 0) {
 		return k < 0 ? -1 : Native_Raise(NE_TYPE, "argument 2 to filter() must be a sequence type");
 	}
@@ -2361,7 +2457,7 @@ static int TB_Filter(nativeVal_t *a, int n, nativeVal_t *out) {
 	Native_SetEmpty(out, tuple ? NV_TUPLE : NV_LIST);
 	for (int i = 0;; i++) {
 		nativeVal_t item;
-		int len = TX_SeqLen(seq);
+		int len = TcX_SeqLen(seq);
 		if (len < 0) {
 			Native_Free(out);
 			return 0;
@@ -2369,7 +2465,7 @@ static int TB_Filter(nativeVal_t *a, int n, nativeVal_t *out) {
 		if (i >= len) {
 			return 1;
 		}
-		if (!TX_SeqGet(seq, i, &item)) {
+		if (!TcX_SeqGet(seq, i, &item)) {
 			Native_Free(out);
 			return 0;
 		}
@@ -2393,7 +2489,7 @@ static int TB_Reduce(nativeVal_t *a, int n, nativeVal_t *out) {
 	if (!TX_Arity("reduce", n, 2, 3)) {
 		return 0;
 	}
-	int k = TX_SeqOf(&a[1]);
+	int k = TcX_SeqOf(&a[1]);
 	if (k <= 0) {
 		return k < 0 ? -1 : Native_Raise(NE_TYPE, "2nd argument to reduce() must be a sequence object");
 	}
@@ -2403,7 +2499,7 @@ static int TB_Reduce(nativeVal_t *a, int n, nativeVal_t *out) {
 	}
 	for (int i = 0;; i++) {
 		nativeVal_t args[2];
-		int len = TX_SeqLen(&a[1]);
+		int len = TcX_SeqLen(&a[1]);
 		if (len < 0) {
 			Native_Free(&r);
 			return 0;
@@ -2411,7 +2507,7 @@ static int TB_Reduce(nativeVal_t *a, int n, nativeVal_t *out) {
 		if (i >= len) {
 			break;
 		}
-		if (!TX_SeqGet(&a[1], i, &args[1])) {
+		if (!TcX_SeqGet(&a[1], i, &args[1])) {
 			Native_Free(&r);
 			return 0;
 		}
@@ -2443,7 +2539,7 @@ static int TB_Apply(nativeVal_t *a, int n, nativeVal_t *out) {
 	}
 	Native_SetEmpty(&args, NV_TUPLE);
 	if (n > 1 && a[1].type != NV_TUPLE) {
-		int k = TX_SeqOf(&a[1]);
+		int k = TcX_SeqOf(&a[1]);
 		if (k <= 0) {
 			return k < 0 ? -1 : Native_Raise(NE_TYPE, "apply() 2nd argument must be a sequence");
 		}
@@ -2691,7 +2787,7 @@ static int TB_MinMax(nativeVal_t *a, int n, nativeVal_t *out, int sign) {
 	} else if (!TX_Arity("min/max", n, 1, 1)) {
 		return 0;
 	} else {
-		int k = TX_SeqOf(a);
+		int k = TcX_SeqOf(a);
 		if (k <= 0) {
 			return k < 0 ? -1 : Native_Raise(NE_TYPE, "min() or max() of non-sequence");
 		}
@@ -2700,7 +2796,7 @@ static int TB_MinMax(nativeVal_t *a, int n, nativeVal_t *out, int sign) {
 	Native_SetNone(&w);
 	for (int i = 0;; i++) {
 		nativeVal_t x;
-		int len = n > 1 ? n : TX_SeqLen(seq);
+		int len = n > 1 ? n : TcX_SeqLen(seq);
 		if (len < 0) {
 			Native_Free(&w);
 			return 0;
@@ -2708,7 +2804,7 @@ static int TB_MinMax(nativeVal_t *a, int n, nativeVal_t *out, int sign) {
 		if (i >= len) {
 			break;
 		}
-		if (!(n > 1 ? (Native_Copy(&x, &a[i]), 1) : TX_SeqGet(seq, i, &x))) {
+		if (!(n > 1 ? (Native_Copy(&x, &a[i]), 1) : TcX_SeqGet(seq, i, &x))) {
 			Native_Free(&w);
 			return 0;
 		}
@@ -2758,7 +2854,7 @@ static int TB_Seq(nativeVal_t *a, int n, nativeVal_t *out, nativeType_t type) {
 		Native_Copy(out, a);
 		return 1;
 	}
-	int k = TX_SeqOf(a);
+	int k = TcX_SeqOf(a);
 	if (k <= 0) {
 		return k < 0 ? -1 : Native_Raise(NE_TYPE, type == NV_TUPLE ? "tuple() argument must be a sequence" :
 			"list() argument must be a sequence");
@@ -3209,20 +3305,13 @@ static const struct {
 
 /* OBJLIB 9: native function i called from Python: the arguments as native values, the result as a Python object */
 static PyObject *TX_Adapt(int i, PyObject *args) {
-	int n = PyTuple_Size(args);
-	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), r;
+	int n;
+	nativeVal_t *a = TX_ArgsIn(args, &n), r;
 
-	for (int k = 0; k < n; k++) {
-		TX_FromPy(PyTuple_GET_ITEM(args, k), &a[k]);
-	}
 	Native_SetNone(&r);
 	byte ok = tx_natives[i].fn(a, n, &r) > 0;
-	for (int k = 0; k < n; k++) {
-		Native_Free(&a[k]);
-	}
-	Mem_Free(a);
-	PyObject *res = ok ? TX_ToPy(&r) : NULL;
-	Native_Free(&r);
+	TX_ArgsFree(a, n);
+	PyObject *res = TX_ResultOut(ok, &r);
 	if (!ok) {
 		TX_NullResult();
 	}
@@ -3312,6 +3401,20 @@ static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVa
 		byte ok = TX_LambdaRun(rec, a, n, kw ? &pairs : NULL, out);
 		if (kw) {
 			Native_Free(&pairs);
+		}
+		return ok;
+	}
+	if (cf->m_ml->ml_meth == TX_CFnPy) {
+		tcCFn *rec = PyCObject_AsVoidPtr(PyTuple_GetItem(cf->m_self, 0));
+		if (TX_HasKw(kw)) {
+			return Native_Raise(NE_TYPE, "this function takes no keyword arguments");
+		}
+		for (int k = 0; k < n; k++) {
+			NObj_Share(&a[k]);
+		}
+		byte ok = rec->call(rec->ctx, a, n, out);
+		if (!ok) {
+			Native_Free(out);
 		}
 		return ok;
 	}
@@ -3569,42 +3672,64 @@ static byte TX_RunTree(tcTree *tree, tcNode *prog, PyObject *globals, nativeVal_
 	return ok;
 }
 
-PyObject *TcX_Eval(const char *line) {
+byte TcX_Eval(const char *line, nativeVal_t *out) {
 	tcTree *tree;
 	tcNode *prog = TX_Read(line, &tree);
-	nativeVal_t v;
-	byte has = 0;
-	PyObject *o = NULL;
+	byte has = 0, ok = 0;
 
+	Native_SetNone(out);
 	if (prog && !(prog->flags & 1)) {
 		TX_Syntax(line);
-	} else if (prog && TX_RunTree(tree, prog, TcX_Main(), &v, &has) && has) {
-		o = TX_ToPy(&v);
+	} else if (prog) {
+		ok = TX_RunTree(tree, prog, TX_Main(), out, &has) && has;
 	}
-	if (has) {
-		Native_Free(&v);
+	if (!ok && has) {
+		Native_Free(out);
 	}
 	TX_Release(tree);
-	return o;
+	return ok;
 }
 
-PyObject *TcX_Statement(const char *line) {
+/* TcX_Statement, and TcX_Bind with bind (NULL: none) giving bindVal */
+static byte TX_Statement(const char *line, const char *bind, const nativeVal_t *bindVal, nativeVal_t *out) {
 	tcTree *tree;
 	tcNode *prog = TX_Read(line, &tree);
-	nativeVal_t v;
-	byte has = 0, was = tx_builtinAttr;
-	PyObject *o = NULL;
+	byte has = 0, ok = 0, was = tx_builtinAttr;
 
+	Native_SetNone(out);
 	tx_builtinAttr = 1;
-	if (prog && TX_RunTree(tree, prog, TcX_Main(), &v, &has)) {
-		o = has ? TX_ToPy(&v) : Py_ReturnNone();
+	tx_bound = bind;
+	tx_boundVal = bindVal;
+	if (prog) {
+		ok = TX_RunTree(tree, prog, TX_Main(), out, &has);
 	}
-	if (has) {
-		Native_Free(&v);
+	tx_bound = NULL;
+	tx_boundVal = NULL;
+	if (!ok && has) {
+		Native_Free(out);
 	}
 	tx_builtinAttr = was;
 	TX_Release(tree);
-	return o;
+	return ok;
+}
+
+byte TcX_Statement(const char *line, nativeVal_t *out) {
+	return TX_Statement(line, NULL, NULL, out);
+}
+
+byte TcX_Bind(const char *line, const char *name, const nativeVal_t *v) {
+	nativeVal_t r;
+	byte ok = TX_Statement(line, name, v, &r);
+
+	Native_Free(&r);
+	return ok;
+}
+
+byte TcX_SetMain(const char *name, const nativeVal_t *v) {
+	tcScope s;
+
+	X_Scope(&s, NULL, TX_Main());
+	return X_SetName(&s, name, v);
 }
 
 /* the global "result" of globals (a variable of a pack module through the registry) into *out: 1, 0 when it has
@@ -3634,6 +3759,9 @@ void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet) {
 	nativeVal_t v;
 	byte ok = 0, has = 0;
 
+	if (!globals) {
+		globals = TX_Main();
+	}
 	if (prog) {
 		if (!(prog->flags & 1)) {
 			TX_ResultVar(globals, 1, NULL);
