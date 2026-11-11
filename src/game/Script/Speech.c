@@ -41,7 +41,7 @@ static byte Sp_Has(const char *var, nativeVal_t *out) {
 	if (Sp_G(var, out)) {
 		return 1;
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	return 0;
 }
 
@@ -76,12 +76,12 @@ static byte Sp_Item(const nativeVal_t *v, long i, nativeVal_t *out) {
 	nativeVal_t tmp;
 	Native_SetNone(out);
 	if (v->type == NV_OBJ) {
-		PyObject *r = PySequence_GetItem(v->obj, (int)i);
-		if (!r) {
+		nativeVal_t r;
+		if (!Mode_RefItem(v, i, &r)) {
 			return 0;
 		}
-		Native_Arg(r, out);
-		Py_DECREF(r);
+		Mode_RefPlain(&r, out);
+		Native_Free(&r);
 		return 1;
 	}
 	Native_SetNone(&tmp);
@@ -248,11 +248,12 @@ static byte Sp_PlayVoiceScheduledV(const nativeVal_t *channel, const nativeVal_t
 	if (!Mode_Arith('+', &now, stime, &t)) {
 		return 0;
 	}
-	PyObject *fn = Mode_GlobalPy(SP, "ScheduledVoiceCallback");
+	nativeVal_t fn;
+	byte ok = Mode_RefG(SP, "ScheduledVoiceCallback", &fn);
 	Native_Copy(&a[0], channel);
 	Native_Copy(&a[1], rtime);
-	byte ok = fn && Mode_Schedule(&t, fn, a, 2, NULL);
-	Py_XDECREF(fn);
+	ok = ok && Mode_ScheduleV(&t, &fn, a, 2, NULL);
+	Native_Free(&fn);
 	Native_Free(&a[0]);
 	Native_Free(&a[1]);
 	Native_Free(&t);
@@ -334,7 +335,7 @@ static byte Sp_AbortSpeech(void) {
 	if (Sp_G("DefTextColor", def)) {
 		Mode_ModPut(SP, "TextColor", def);
 	} else {
-		PyErr_Clear();
+		Mode_DropError();
 	}
 	if (!Sp_SpeechText(Mode_S(&t, ""), Mode_I(&t, 0), "TextColor") || !Mode_SpeechCallback("")) {
 		return Mode_Done(&t, 0);
@@ -387,21 +388,12 @@ static byte Sp_NormalAbortSpeech(void) {
 	return Sp_AbortSpeech();
 }
 
-/* AbortNPCSpeech(UsrName="", CharName=""): prints the names (OBJLIB 7: the print of the script on Python's stdout) */
-static PyObject *Speech_AbortNPCSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "UsrName", "CharName", NULL };
-	PyObject *a = NULL, *b = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &a, &b)) {
-		return NULL;
-	}
-	PyObject *out = PySys_GetObject("stdout");
-	PyObject *sa = a ? PyObject_Str(a) : PyString_FromString(""), *sb = b ? PyObject_Str(b) : PyString_FromString("");
-	byte ok = out && sa && sb && PyFile_WriteObject(sa, out, Py_PRINT_RAW) == 0 && PyFile_WriteString(" ", out) == 0 &&
-		PyFile_WriteObject(sb, out, Py_PRINT_RAW) == 0 && PyFile_WriteString("\n", out) == 0;
-	Py_XDECREF(sa);
-	Py_XDECREF(sb);
-	return ok ? Py_ReturnNone() : NULL;
+/* AbortNPCSpeech(UsrName="", CharName=""): prints the names (OBJLIB 7: on Python's stdout, Mode_WriteLine) */
+MODE_KW(Speech, AbortNPCSpeech, "|OO", "UsrName", "CharName") {
+	const nativeVal_t *items[2] = { &v[0], &v[1] };
+	Mode_KwDefS(v, given, 0, "");
+	Mode_KwDefS(v, given, 1, "");
+	return Mode_WriteLine(items, 2);
 }
 
 /* ---- the answer ---- */
@@ -767,10 +759,9 @@ static byte Sp_AutoSpeech(const nativeVal_t *a) {
 		return Mode_Done(&t, Mode_CallArgs(f, NULL, a, 4));
 	}
 	/* OBJLIB 7: the KeyError of the script is the Python exception */
-	if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+	if (!Mode_CatchKeyError()) {
 		return Mode_Done(&t, 0);
 	}
-	PyErr_Clear();
 	char buf[0x20];
 	Str_Printf(buf, sizeof(buf), "StdAnsw%d", (int)Scrap_RandRange(0, 2.9));
 	Native_SetStr(msg, "TalkMsg");
@@ -1040,10 +1031,9 @@ static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_
 		}
 		if (!Mode_Sub(dict, head, model)) {
 			/* OBJLIB 7: the KeyError of the script is the Python exception */
-			if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+			if (!Mode_CatchKeyError()) {
 				return Mode_Done(&t, 0);
 			}
-			PyErr_Clear();
 			Native_Copy(model, head);
 		}
 		if (!Mode_HeadMonitor(model, txt, index)) {
@@ -1132,7 +1122,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 		const char *lib = SaveVar_Get("Mission.Library");
 		map[0] = 0;
 		if (!LvN_ModGet("Init", "UpperMap", mapV)) {
-			PyErr_Clear();
+			Mode_DropError();
 		} else if (mapV->type == NV_STR) {
 			Str_Copy(map, Native_Text(mapV), sizeof(map));
 		}
@@ -1147,7 +1137,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 	}
 	prev[0] = 0;
 	if (!LvN_ModGet(SP, "prevTaunt", prevV)) {
-		PyErr_Clear();
+		Mode_DropError();
 	} else if (prevV->type == NV_STR) {
 		Str_Copy(prev, Native_Text(prevV), sizeof(prev));
 	}
@@ -1352,10 +1342,9 @@ static byte Sp_OnObjectSpeech(const nativeVal_t *obj, const nativeVal_t *type, c
 	}
 	if (!Mode_Sub(dict, type, model)) {
 		/* OBJLIB 7: the KeyError of the script is the Python exception */
-		if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+		if (!Mode_CatchKeyError()) {
 			return Mode_Done(&t, 0);
 		}
-		PyErr_Clear();
 		Native_Copy(model, type);
 	}
 	if (!Mode_VSet(obj, "HeadModel", model) || !Sp_HSetI(obj, "HeadAnimIndex", 0)) {
@@ -1458,12 +1447,16 @@ MODE_FNANY(Speech, CancelRemoteCom, Mode_CancelSpeech())
 MODE_FNANY(Speech, ObjectAutoAnswer, Sp_ObjectAutoAnswer())
 MODE_FNANY(Speech, ObjectAutoAnswer2, Sp_ObjectAutoAnswer2())
 
-static PyObject *Speech_DoRemote(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+/* DoRemote(): its answer as an int */
+static byte Sp_DoRemoteOut(nativeVal_t *out) {
 	int r = Sp_DoRemote();
-	return r < 0 ? NULL : PyInt_FromLong(r);
+	if (r >= 0) {
+		Native_SetInt(out, r);
+	}
+	return r >= 0;
 }
+
+MODE_FNANY(Speech, DoRemote, Sp_DoRemoteOut(out))
 
 MODE_FN(Speech, ScheduledVoiceCallback, 2, Sp_ScheduledVoiceCallback(&a[0], &a[1]))
 MODE_FN(Speech, PlayVoiceScheduled, 3, Sp_PlayVoiceScheduledV(&a[0], &a[1], &a[2]))

@@ -213,10 +213,7 @@ PyMethodDef g_OutskirtsMapRaceMethods[] = {
 
 /* ---- Mission_Win2ndRace: the great race of the crazy gambler against four racers through 20 checkpoints ---- */
 
-static PyObject *Win2nd_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, WR, ships_police5);
-}
+MODE_FN(Win2nd, InitStatus, 1, LvN_AcShips(WR, ships_police5))
 
 /* Init(LevelPath): the countdown resources, the race profile, the alarm hooks, the race (unless the alarm is on) */
 static byte Win2nd_Init(void) {
@@ -425,9 +422,9 @@ static byte Wr_NoScorer(const nativeVal_t *l) {
 
 /* Scrap.AddScheduledFunc(at, SAI.SetStateVehicle, args) of n values */
 static byte Wr_SchedState(const nativeVal_t *at, const nativeVal_t *args, int n) {
-	PyObject *fn = Script_Attr("SAI", "SetStateVehicle");
-	byte ok = fn && Mode_Schedule(at, fn, args, n, NULL);
-	Py_XDECREF(fn);
+	nativeVal_t fn;
+	byte ok = Mode_RefMod("SAI", "SetStateVehicle", &fn) && Mode_ScheduleV(at, &fn, args, n, NULL);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -710,14 +707,8 @@ static byte Win2nd_CancelMission(void) {
 }
 
 /* the keyword adapter of OnCounterMeasure(id=0) */
-static PyObject *Win2nd_OnCounterMeasurePy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "id", NULL };
-	PyObject *id = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", kwlist, &id)) {
-		return NULL;
-	}
-	return Mode_Result(Win2nd_OnCounterMeasure());
+MODE_KW(Win2nd, OnCounterMeasurePy, "|O", "id") {
+	return Win2nd_OnCounterMeasure();
 }
 
 LV_CORE0(Win2nd_Init)
@@ -920,10 +911,7 @@ PyMethodDef g_OutskirtsDemoHumphreyRaceMethods[] = {
 
 /* ---- Mission_GoToOutskirts: the crazy gambler calls until the player takes the elevator to GamblinDen ---- */
 
-static PyObject *GoTo_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, GO, ships_all);
-}
+MODE_FN(GoTo, InitStatus, 1, LvN_AcShips(GO, ships_all))
 
 /* Speech.AddRemoteCom(key, "CrazyGambler", LaunchCrazyGamblerComunication, (messageInterval,)) */
 static byte GoTo_Call(const char *key) {
@@ -1144,10 +1132,7 @@ PyMethodDef g_OutskirtsKillPoliceMethods[] = {
 
 /* ---- Mission_TransportKiller: the transport that only the ATPC hurts, its data pack, then the police boss ---- */
 
-static PyObject *Transport_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, TK, ships_police5);
-}
+MODE_FN(Transport, InitStatus, 1, LvN_AcShips(TK, ships_police5))
 
 static byte Transport_Init(void) {
 	if (LvN_SaveIs("Mission_TransportKiller", "Begin")) {
@@ -1313,10 +1298,7 @@ static const char *const humphrey_profile[] = { "Ship=SHUMP1", "StupidPathFindin
 
 MODE_FN(Humphrey, GetHumphreyProfile, 0, LvN_Profile(humphrey_profile, out))
 
-static PyObject *Humphrey_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, HU, ships_police4);
-}
+MODE_FN(Humphrey, InitStatus, 1, LvN_AcShips(HU, ships_police4))
 
 /* Humphrey red, an enemy and the target */
 static byte Hu_Enemy(const nativeVal_t *h) {
@@ -1403,7 +1385,7 @@ static byte Humphrey_OnHumphreyDeath(const nativeVal_t *a) {
 		ok = Mode_SetSaveVar("NumHumphreyLifes", rep);
 	}
 	if (ok && LvN_EqI(n, 0)) {
-		PyObject *set = NULL;
+		nativeVal_t *set = Mode_V(&t);
 		Mode_Lang(msg, text);
 		Native_SetFloat(now, Mode_Time());
 		Native_SetInt(&args[0], 0);
@@ -1411,10 +1393,9 @@ static byte Humphrey_OnHumphreyDeath(const nativeVal_t *a) {
 		LvN_Str(&args[2], "Noise");
 		Native_SetInt(&args[3], 1);
 		ok = LvN_ScorerOff() && PORT_CALL(Speech, CalculateSpeechTime, st, "v", text) && Native_Arith('-', st, Mode_I(&t, 2), d) &&
-			Native_Arith('+', now, d, at) && (set = Script_Attr("SScorer", "Set")) != NULL && Mode_Schedule(at, set, args, 4, NULL) &&
+			Native_Arith('+', now, d, at) && Mode_RefMod("SScorer", "Set", set) && Mode_ScheduleV(at, set, args, 4, NULL) &&
 			/* OBJLIB 6: BossAppears is a section of mission_destroyhumphrey.def */
 			LvN_Com(msg, "Betty", HU, "BossAppears", LvN_NoArgs());
-		Py_XDECREF(set);
 	} else if (ok) {
 		ok = Mode_Later(3, HU, "CreateHumphrey", NULL, 0, NULL);
 	}
@@ -1671,7 +1652,7 @@ static byte Merc_ScanShip(void) {
 	}
 	if (!Mode_G(IM, "lonelyMerc", m) || !Mode_VGet(m, "Pos", mpos)) {
 		/* except: the scan again a second later (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		PyErr_Clear();
+		Mode_DropError();
 		return Mode_Done(&t, Mode_Later(1.0, IM, "ScanShip", NULL, 0, "ScanShip"));
 	}
 	byte ok = Mode_VGet(usr, "Pos", up) && Mode_VecSub(mpos, up, sub) && Mode_VecModSqr(sub, d) && Mode_G(IM, "MAX_SCANNING_DIST", m1) &&
@@ -1804,14 +1785,8 @@ static byte Merc_MissionScorer(const nativeVal_t *id) {
 }
 
 /* the keyword adapter of InitIdentifyMerc(elevator=None) */
-static PyObject *Merc_InitIdentifyMercPy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "elevator", NULL };
-	PyObject *elevator = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", kwlist, &elevator)) {
-		return NULL;
-	}
-	return Mode_Result(Merc_InitIdentifyMerc());
+MODE_KW(Merc, InitIdentifyMercPy, "|O", "elevator") {
+	return Merc_InitIdentifyMerc();
 }
 
 LV_CORE0(Merc_CreateLonelyMercProfiles)
@@ -1886,10 +1861,7 @@ static const char *const rudolph_profile[] = { "Ship=SFUNC1", "StupidPathFinding
 MODE_FN(Rudolph, GetRudolphProfile, 0, LvN_Profile(rudolph_profile, out))
 
 /* RaceList(): the checkpoints of the race (the same as MapRace.EasyRaceOurskirts1) */
-static PyObject *Rudolph_RaceList(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_StartPos(args, races[0].pos, races[0].n);
-}
+MODE_FN(Rudolph, RaceList, 0, LvN_StartPos(races[0].pos, races[0].n))
 
 
 /* InitStatus(LevelPath): the race of the mission, no alarm, the traffic */
@@ -1913,13 +1885,7 @@ static byte Rudolph_Init(void) {
 		PORT_LOWN(Mission_KillRudolph, InitTalkToPoliceBoss, NULL, "");
 }
 
-static PyObject *Rudolph_GetDealType(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return PyString_FromString("Race");
-}
+MODE_FN(Rudolph, GetDealType, 0, (Native_SetStr(out, "Race"), 1))
 
 /* MissionsFuncs.SetMissionTarget(rudolphEntityName) */
 static byte Kr_Target(void) {
@@ -3055,10 +3021,7 @@ static const char *const traitorius_profile[] = { "Ship=SFUNC1", "StupidPathFind
 
 MODE_FN(Traitorius, GetTraitoriusProfile, 0, LvN_Profile(traitorius_profile, out))
 
-static PyObject *Traitorius_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, AT, ships_all);
-}
+MODE_FN(Traitorius, InitStatus, 1, LvN_AcShips(AT, ships_all))
 
 /* Init(LevelPath): Traitorius to frighten, or his call once frightened */
 static byte Traitorius_Init(void) {
@@ -3399,10 +3362,7 @@ static const char *const police_friends_profile[] = { "Ship=SPOLI2", "StupidPath
 MODE_FN(Hunt, GetFuncEnemiesProfile, 0, LvN_Profile(func_enemies_profile, out))
 MODE_FN(Hunt, GetPoliceFriendsProfile, 0, LvN_Profile(police_friends_profile, out))
 
-static PyObject *Hunt_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, FH, ships_all);
-}
+MODE_FN(Hunt, InitStatus, 1, LvN_AcShips(FH, ships_all))
 
 /* `isPoliceShip(v)` of the module (its global function): 1, 0, -1 */
 static int Fh_IsPolice(const nativeVal_t *v) {

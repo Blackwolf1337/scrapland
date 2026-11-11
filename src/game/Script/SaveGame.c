@@ -33,34 +33,14 @@
 
 /* ---- engine calls of the module ---- */
 
-/* Scrap.DelSaveVars(prefix) of a value through its seam (fr7b.py records it) */
+/* Scrap.DelSaveVars(prefix) of a value through its ref (OBJLIB 7, the seam: fr7b.py records it) */
 static byte SG_DelSaveVarsV(const nativeVal_t *prefix) {
-	PyObject *hook;
-	const char *s;
-	int seam = Native_Seam("Scrap", "DelSaveVars", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "v", prefix);
-	}
-	if (!Native_ArgStr(prefix, 1, &s)) {
-		return 0;
-	}
-	SaveVars_Delete(s);
-	return 1;
+	return PORT_CALL(Scrap, DelSaveVars, NULL, "v", prefix);
 }
 
-/* Scrap.GetAlarm() through its seam (fc-pk-dt and the edge files swap it): (on, level, value) */
+/* Scrap.GetAlarm() through its ref (fc-pk-dt and the edge files swap it): (on, level, value) */
 static byte SG_Alarm(nativeVal_t *out) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "GetAlarm", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, out, "");
-	}
-	/* "ifi" */
-	Native_SetEmpty(out, NV_TUPLE);
-	Native_SetInt(Native_Append(out), g_pWorld->alarm.on != 0);
-	Native_SetFloat(Native_Append(out), (double)g_pWorld->alarm.value);
-	Native_SetInt(Native_Append(out), Alarm_GetValue(&g_pWorld->alarm));
-	return 1;
+	return PORT_CALL(Scrap, GetAlarm, out, "");
 }
 
 /* Scrap.FileExist(name): 1 or 0, -1 with the TypeError of "s" */
@@ -516,15 +496,16 @@ static byte SG_LoadGame(const nativeVal_t *slot) {
 	}
 	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 5:
 	 * the global; the function of the object through its entry) */
-	PyObject *menu = Mode_GlobalPy(SG, "Menu");
-	if (!menu) {
+	nativeVal_t *menu = Mode_V(&t), *box = Mode_V(&t);
+	if (!Mode_RefG(SG, "Menu", menu)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Lang("XBox_ErrorLoad_Msg", msg);
-	PyObject *box = Script_GetAttr(menu, "ShowTextBox");
-	byte ok = box && PORT_VALUE(box, NULL, "ivss", 0L, msg, "Menu.MainMenu", "Menu.MainMenu");
-	Py_XDECREF(box);
-	Py_DECREF(menu);
+	byte ok = Mode_RefGetAttr(menu, "ShowTextBox", box);
+	if (ok) {
+		const nativeVal_t args[4] = { *Mode_I(&t, 0), *msg, *Mode_S(&t, "Menu.MainMenu"), *Mode_S(&t, "Menu.MainMenu") };
+		ok = Mode_CallArgs(box, NULL, args, 4);
+	}
 	return Mode_Done(&t, ok);
 }
 
@@ -768,17 +749,8 @@ MODE_FN(SaveGame, LoadGame, 1, SG_LoadGame(&a[0]))
 MODE_FN(SaveGame, SaveReg, 2, SG_SaveReg(&a[0], &a[1]))
 MODE_FN(SaveGame, QSaveReg, 1, SG_QSaveReg(&a[0]))
 
-static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *a;
-	(void)self;
-	if (!Mode_Args(args, 1, &t, &a)) {
-		return Mode_Done(&t, 0), NULL;
-	}
-	PyObject *r = SG_GetReg(&a[0]);
-	Mode_Done(&t, 0);
-	return r;
-}
+/* GetReg gives the class by reference (OBJLIB 7) */
+MODE_FN(SaveGame, GetReg, 1, Mode_RefTake(SG_GetReg(&a[0]), out))
 
 /* the keyword functions (MODE_KW) */
 MODE_KW(SaveGame, MarkWayPoint, "OO|O", "Map", "Spawn", "ExtraComeFrom") {

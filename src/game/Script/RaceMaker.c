@@ -535,10 +535,7 @@ static byte Rm_CamPoint(const nativeVal_t *wayp, const nativeVal_t *ang, const n
 
 /* Scrap.AddScheduledFunc(time, func, args) with func the global name of the module (its entry, Port_Scheduled) */
 static byte Rm_At(const nativeVal_t *time, const char *name, const nativeVal_t *args, int n) {
-	PyObject *fn = Mode_GlobalPy(RM, name);
-	byte ok = fn && Mode_Schedule(time, fn, args, n, NULL);
-	Py_XDECREF(fn);
-	return ok;
+	return Mode_AtG(time, RM, name, args, n);
 }
 
 /* StartCameraTravelling(ItemName, VehicleName, isRace=1, speed="Normal"): the player's ship flies to the item and a
@@ -735,11 +732,13 @@ static byte Rm_BesideStart(long x, long y, long z, nativeVal_t *out) {
 	return ok;
 }
 
-/* e.method(s) of a handle value (OBJLIB 7: the Python method) */
+/* e.method(s) of a handle value (OBJLIB 7: the bound method by reference) */
 static byte Rm_Method(const nativeVal_t *e, const char *method, const char *s) {
-	PyObject *fn = Mode_VBound(e, method);
-	byte ok = fn && Native_Call(fn, NULL, "s", s);
-	Py_XDECREF(fn);
+	nativeVal_t fn, arg;
+	Native_SetText(&arg, s, (int)strlen(s));
+	byte ok = Mode_VBoundV(e, method, &fn) && Mode_RefApply(&fn, &arg, 1, NULL);
+	Native_Free(&arg);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -777,19 +776,19 @@ static byte Rm_CreateRaceCountDown(void) {
 		Mode_Ints3(&a[2], 0, 0, 0);
 		Native_SetInt(Native_Append(&a[2]), 0);
 		Native_SetFloat(&a[3], fadetimes[i]);
-		PyObject *fade = Script_Attr("SScorer", "Fade");
-		byte ok = fade && Mode_Schedule(&when, fade, a, 4, NULL);
-		Py_XDECREF(fade);
+		nativeVal_t fn = { 0 };
+		byte ok = Mode_RefMod("SScorer", "Fade", &fn) && Mode_ScheduleV(&when, &fn, a, 4, NULL);
+		Native_Free(&fn);
 		for (int k = 0; k < 4; k++) {
 			Native_Free(&a[k]);
 		}
 		Native_SetFloat(&when, Mode_Time() + 1.9 * i);
-		PyObject *play = ok ? Script_Attr("SSound", "Play") : NULL;
+		ok = ok && Mode_RefMod("SSound", "Play", &fn);
 		Native_SetNone(&b[0]);
 		Native_SetNone(&b[1]);
-		ok = play && Rm_G(i < 2 ? "RaceCountDownSound1" : "RaceCountDownSound2", &b[0]) &&
-			Rm_G(i < 2 ? "RaceCountDownSound1Vol" : "RaceCountDownSound2Vol", &b[1]) && Mode_Schedule(&when, play, b, 2, NULL);
-		Py_XDECREF(play);
+		ok = ok && Rm_G(i < 2 ? "RaceCountDownSound1" : "RaceCountDownSound2", &b[0]) &&
+			Rm_G(i < 2 ? "RaceCountDownSound1Vol" : "RaceCountDownSound2Vol", &b[1]) && Mode_ScheduleV(&when, &fn, b, 2, NULL);
+		Native_Free(&fn);
 		Native_Free(&b[0]);
 		Native_Free(&b[1]);
 		if (!ok) {
@@ -882,9 +881,10 @@ static byte Rm_HeadArgs(const nativeVal_t *name, const nativeVal_t *pos, const n
 static byte Rm_HeadLater(nativeVal_t *timy, const nativeVal_t *a) {
 	nativeVal_t step, next = { 0 };
 	Native_SetFloat(&step, 0.05);
-	PyObject *fn = Script_Attr("SAI", "SetStateVehicle");
-	byte ok = fn && Mode_Schedule(timy, fn, a->items, a->n, NULL) && Mode_Arith('+', timy, &step, &next);
-	Py_XDECREF(fn);
+	nativeVal_t fn;
+	byte ok = Mode_RefMod("SAI", "SetStateVehicle", &fn) && Mode_ScheduleV(timy, &fn, a->items, a->n, NULL) &&
+		Mode_Arith('+', timy, &step, &next);
+	Native_Free(&fn);
 	if (ok) {
 		Native_Free(timy);
 		*timy = next;
@@ -1353,11 +1353,12 @@ static byte Rm_RaceTaunt(const nativeVal_t *foe, int taunt, int msg) {
 	} else {
 		Native_Copy(when, now);
 	}
-	PyObject *fn = Script_Attr("SAI", "SetStateVehicle");
+	nativeVal_t *fn = Mode_V(&t);
+	byte ok = Mode_RefMod("SAI", "SetStateVehicle", fn);
 	Native_SetFloat(four, 4.0);
 	Native_SetEmpty(a, NV_TUPLE);
 	Native_SetInt(Native_Append(a), 1);
-	byte ok = fn && Rm_G("Players", players) && LvN_Item(players, 0, Native_Append(a)) && Rm_G("NPC_START_ITEM", npc) &&
+	ok = ok && Rm_G("Players", players) && LvN_Item(players, 0, Native_Append(a)) && Rm_G("NPC_START_ITEM", npc) &&
 		Mode_VObj(npc, "Pos", np) && LvN_Item(np, 0, Native_Append(a)) && LvN_Item(np, 1, Native_Append(a)) &&
 		LvN_Item(np, 2, Native_Append(a)) && (Native_Free(npc), Rm_G("NPC_START_ITEM", npc)) && Mode_VObj(npc, "Radius", r) &&
 		Mode_Arith('/', r, four, rad);
@@ -1365,18 +1366,16 @@ static byte Rm_RaceTaunt(const nativeVal_t *foe, int taunt, int msg) {
 		Native_Copy(Native_Append(a), rad);
 		Native_SetInt(Native_Append(a), 1);
 		Native_SetFloat(Native_Append(a), 1.0);
-		ok = Mode_Schedule(when, fn, a->items, a->n, NULL);
+		ok = Mode_ScheduleV(when, fn, a->items, a->n, NULL);
 	}
-	Py_XDECREF(fn);
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
 	if (msg && Rm_NoTutorial()) {
 		Mode_Lang("RaceSystemGetShip", cad);
 		Native_SetStr(name, "SF_Secondary");
-		fn = Mode_GlobalPy(RM, "ShowSystemMessage");
-		ok = fn && Mode_Schedule(when, fn, cad, 1, name);
-		Py_XDECREF(fn);
+		Native_Free(fn);
+		ok = Mode_RefG(RM, "ShowSystemMessage", fn) && Mode_ScheduleV(when, fn, cad, 1, name);
 	}
 	return Mode_Done(&t, ok);
 }
@@ -1419,10 +1418,7 @@ static byte Rm_InitRace(const nativeVal_t *foe, nativeVal_t *const *opt) {
 	if (!iscrazy) {
 		Mode_Lang("RaceHowTo", lang);
 		Native_SetFloat(now, Mode_Time());
-		PyObject *fn = Mode_GlobalPy(RM, "FirstTimeRace");
-		byte ok = fn && Mode_Schedule(now, fn, lang, 1, NULL);
-		Py_XDECREF(fn);
-		if (!ok) {
+		if (!Mode_AtG(now, RM, "FirstTimeRace", lang, 1)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -1494,9 +1490,7 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 	}
 	Native_SetFloat(now, Mode_Time());
 	Mode_Lang("CombatHowTo", lang);
-	PyObject *fn = Mode_GlobalPy(RM, "FirstTimeCombat");
-	byte ok = fn && Mode_Schedule(now, fn, lang, 1, NULL);
-	Py_XDECREF(fn);
+	byte ok = Mode_AtG(now, RM, "FirstTimeCombat", lang, 1);
 	int partners = ok && Mode_Put(RM, "ChallengeFoeType", NULL, foeArg) &&
 		Mode_ListSet("Enemies", "OnDeath", "RaceMaker.NPCCombatKilled") && Rm_NearestDummy(dummy) &&
 		Mode_SaveInt("Challenge.NumEnemies", num) && Rm_Partners(list) ? Mode_Len(list) : -1;
@@ -1558,10 +1552,9 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 	}
 	Mode_Lang("CombatSystemGetShip", cad);
 	Native_SetStr(name, "SF_Secondary");
-	fn = Rm_At(when, "MoveCombatNPCsToPos", pos, 1) ? Mode_GlobalPy(RM, "ShowSystemMessage") : NULL;
-	ok = fn && Mode_Schedule(when, fn, cad, 1, name);
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	nativeVal_t *fn = Mode_V(&t);
+	return Mode_Done(&t, Rm_At(when, "MoveCombatNPCsToPos", pos, 1) && Mode_RefG(RM, "ShowSystemMessage", fn) &&
+		Mode_ScheduleV(when, fn, cad, 1, name));
 }
 
 /* MoveCombatNPCsToPos(pos): the challenged ships that do not fight yet fly to the place */
@@ -1636,17 +1629,12 @@ static byte Rm_SetScorerValues(const nativeVal_t *id) {
 static byte Rm_MissionScorer2(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *you = Mode_V(&t);
-	PyObject *mh = Mode_From("Scorer", "MarginH"), *mv = mh ? Mode_From("Scorer", "MarginV") : NULL;
-	int go = mv && Mode_Import("Menu") && Rm_G("YourScore", you) ? Mode_CmpI(you, ">", -1) : -1;
-	Py_XDECREF(mv);
+	nativeVal_t *mh = Mode_V(&t), *mv = Mode_V(&t);
+	int go = Mode_FromV("Scorer", "MarginH", mh) && Mode_FromV("Scorer", "MarginV", mv) && Mode_Import("Menu") &&
+		Rm_G("YourScore", you) ? Mode_CmpI(you, ">", -1) : -1;
 	int pid = 0;
-	PyObject *vars = go > 0 && Native_ArgInt(id, &pid) ? Py_BuildValue("{s:O}", "mh", mh) : NULL;
-	Py_XDECREF(mh);
-	if (vars) {
-		Script_RunFile(pid, "menus/race.def", "scores", race_def, NULL, vars);
-		Py_DECREF(vars);
-	}
-	return Mode_Done(&t, go == 0 || (vars && PORT_OWN(RaceMaker, SetScorerValues, NULL, "v", id)));
+	byte ran = go > 0 && Native_ArgInt(id, &pid) && MODE_DEFRUN(0, pid, "menus/race.def", "scores", race_def, 1, "mh", mh);
+	return Mode_Done(&t, go == 0 || (ran && PORT_OWN(RaceMaker, SetScorerValues, NULL, "v", id)));
 }
 
 /* MissionScorer(id): the timer to get into a ship (data/menus/race.def, section timer), the scores in a race
@@ -1671,18 +1659,9 @@ static byte Rm_MissionScorer(const nativeVal_t *id) {
 	if (!Native_ArgInt(id, &pid)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *o[6] = { Native_ToPy(x), Native_ToPy(y), Native_ToPy(&c[0]), Native_ToPy(&c[1]), Native_ToPy(&c[2]),
-		Native_ToPy(&c[3]) };
-	PyObject *vars = o[0] && o[1] && o[2] && o[3] && o[4] && o[5] ? Py_BuildValue("{s:O,s:O,s:O,s:O,s:O,s:O}", "x", o[0], "y",
-		o[1], "r", o[2], "g", o[3], "b", o[4], "a", o[5]) : NULL;
-	for (int i = 0; i < 6; i++) {
-		Py_XDECREF(o[i]);
-	}
-	if (!vars) {
+	if (!MODE_DEFRUN(0, pid, "menus/race.def", "timer", race_def, 6, "x", x, "y", y, "r", &c[0], "g", &c[1], "b", &c[2], "a", &c[3])) {
 		return Mode_Done(&t, 0);
 	}
-	Script_RunFile(pid, "menus/race.def", "timer", race_def, NULL, vars);
-	Py_DECREF(vars);
 	int race = Rm_IsRace();
 	return Mode_Done(&t, race >= 0 && (!race || PORT_OWN(RaceMaker, MissionScorer2, NULL, "v", id)));
 }

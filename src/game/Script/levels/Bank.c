@@ -81,17 +81,6 @@ static int Ba_EntTrue(const nativeVal_t *name, nativeVal_t *e) {
 	return Mode_EntityH(name, e) ? Native_True(e) : -1;
 }
 
-/* Scrap.DelSaveVars(prefix) through its seam (fr7b.py _SPK records it) */
-static byte Ba_DelSaves(const char *prefix) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "DelSaveVars", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "s", prefix);
-	}
-	SaveVars_Delete(prefix);
-	return 1;
-}
-
 /* the core of a level function on its first argument */
 #define BA_CORE1(fn) static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { (void)out; return fn(&a[0]); }
 
@@ -232,7 +221,7 @@ static byte Mt_Chain(long i, nativeVal_t *out) {
 /* Scrap.AddScheduledFunc(at, fn, args, "DeleteShent") with args a value of the script (the tuples of MapSnd): its
  * items; another value goes to the engine function by name as it is (its error; OBJLIB 7: AddScheduledFunc keeps the
  * objects it is given, its entry works on Python objects, MODE_PYENTRY) */
-static byte Mt_Sched(const nativeVal_t *at, PyObject *fn, const nativeVal_t *args) {
+static byte Mt_Sched(const nativeVal_t *at, const nativeVal_t *fn, const nativeVal_t *args) {
 	nativeVal_t name = { 0 }, items[4] = { 0 };
 	LvN_Str(&name, "DeleteShent");
 	byte ok;
@@ -246,12 +235,12 @@ static byte Mt_Sched(const nativeVal_t *at, PyObject *fn, const nativeVal_t *arg
 		if (!ok) {
 			k--;
 		}
-		ok = ok && Mode_Schedule(at, fn, items, n, &name);
+		ok = ok && Mode_ScheduleV(at, fn, items, n, &name);
 		while (k-- > 0) {
 			Native_Free(&items[k]);
 		}
 	} else {
-		ok = LV_CALL("Scrap", "AddScheduledFunc", NULL, "vOvv", at, fn, args, &name);
+		ok = LV_CALL("Scrap", "AddScheduledFunc", NULL, "vOvv", at, fn->obj, args, &name);
 	}
 	Native_Free(&name);
 	return ok;
@@ -259,18 +248,17 @@ static byte Mt_Sched(const nativeVal_t *at, PyObject *fn, const nativeVal_t *arg
 
 /* the same at time + delay with fn the global func of the module and args () or (arg) */
 static byte Mt_SchedG(const nativeVal_t *time, long delay, const char *func, const nativeVal_t *arg) {
-	nativeVal_t at = { 0 }, d = { 0 }, name = { 0 };
-	PyObject *fn = Mode_GlobalPy(MT, func);
-	if (!fn) {
+	nativeVal_t at = { 0 }, d = { 0 }, name = { 0 }, fn;
+	if (!Mode_RefG(MT, func, &fn)) {
 		return 0;
 	}
 	Native_SetInt(&d, delay);
 	Native_SetNone(&at);
 	LvN_Str(&name, "DeleteShent");
-	byte ok = Mode_Arith('+', time, &d, &at) && Mode_Schedule(&at, fn, arg, arg ? 1 : 0, &name);
+	byte ok = Mode_Arith('+', time, &d, &at) && Mode_ScheduleV(&at, &fn, arg, arg ? 1 : 0, &name);
 	Native_Free(&at);
 	Native_Free(&name);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -368,16 +356,17 @@ static byte Mt_Prize(const nativeVal_t *time) {
 		Native_Subscript(&models, &k, &model) && Mt_Chain(3, &pos) && PORT_LOWN(MapTreasure, MakeCoin, &l, "vvv", &name, &model, &pos) &&
 		LvN_SetI(&l, "rTime", 1) && LvN_SetS(&l, "OnTake", "MapTreasure.BigPrize") && Mt_SchedG(time, 50, "BlinkBigPrize", &l);
 	if (ok) {
-		PyObject *del = Mode_VBound(&l, "Del");
+		nativeVal_t del;
+		ok = Mode_VBoundV(&l, "Del", &del);
 		LvN_Int(&d, 60);
-		ok = del && Mode_Arith('+', time, &d, &at);
+		ok = ok && Mode_Arith('+', time, &d, &at);
 		if (ok) {
 			nativeVal_t nm = { 0 };
 			LvN_Str(&nm, "DeleteShent");
-			ok = Mode_Schedule(&at, del, NULL, 0, &nm);
+			ok = Mode_ScheduleV(&at, &del, NULL, 0, &nm);
 			Native_Free(&nm);
 		}
-		Py_XDECREF(del);
+		Native_Free(&del);
 	}
 	ok = ok && Mt_SchedG(time, 61, "DeleteShent", NULL) && Mt_Sound("Price");
 	Native_Free(&coin);
@@ -394,8 +383,7 @@ static byte Mt_Prize(const nativeVal_t *time) {
 /* the ticks against the time of the chain, the next coin blinks */
 static byte Mt_Ticks(const nativeVal_t *time) {
 	nativeVal_t t0 = { 0 }, at = { 0 }, deltimy = { 0 }, timy = { 0 }, bad = { 0 }, acc = { 0 }, x = { 0 };
-	nativeVal_t tt = { 0 }, step = { 0 }, zero = { 0 };
-	PyObject *play = NULL;
+	nativeVal_t tt = { 0 }, step = { 0 }, zero = { 0 }, play = { 0 }, fn = { 0 };
 	Native_SetNone(&t0);
 	Native_SetNone(&at);
 	Native_SetNone(&deltimy);
@@ -405,14 +393,14 @@ static byte Mt_Ticks(const nativeVal_t *time) {
 	Native_SetNone(&x);
 	Native_SetFloat(&step, 0.05);
 	Native_SetInt(&zero, 0);
-	PyObject *fn = Mode_GlobalPy(MT, "DeleteShent");
-	byte ok = fn && Mt_Chain(0, &t0) && Mode_Arith('+', time, &t0, &at) && Mt_Sched(&at, fn, LvN_NoArgs());
-	Py_XDECREF(fn);
+	byte ok = Mode_RefG(MT, "DeleteShent", &fn) && Mt_Chain(0, &t0) && Mode_Arith('+', time, &t0, &at) &&
+		Mt_Sched(&at, &fn, LvN_NoArgs());
+	Native_Free(&fn);
 	Native_Free(&t0);
 	Native_Free(&at);
 	ok = ok && LvN_ModGet("MapSnd", "TickInit", &deltimy) && Mt_Chain(0, &t0) && Mode_Arith('-', &t0, &deltimy, &timy) &&
 		LvN_ModGet("MapSnd", "BadCoin", &bad) && Mode_Arith('+', time, &timy, &x) && LvN_ModGet("MapSnd", "TickAcc", &acc) &&
-		Mode_Arith('+', &x, &acc, &at) && (play = Script_Attr("SSound", "Play")) != NULL && Mt_Sched(&at, play, &bad);
+		Mode_Arith('+', &x, &acc, &at) && Mode_RefMod("SSound", "Play", &play) && Mt_Sched(&at, &play, &bad);
 	for (int boly = 0; ok;) {
 		Native_Free(&x);
 		ok = Mode_Arith('-', &timy, &deltimy, &x);
@@ -437,12 +425,11 @@ static byte Mt_Ticks(const nativeVal_t *time) {
 		boly = !boly;
 		Native_Free(&at);
 		Native_SetNone(&at);
-		Py_XDECREF(play);
-		play = NULL;
-		ok = ok && Mode_Arith('+', time, &timy, &at) && (play = Script_Attr("SSound", "Play")) != NULL && Mt_Sched(&at, play, &tt);
+		Native_Free(&play);
+		ok = ok && Mode_Arith('+', time, &timy, &at) && Mode_RefMod("SSound", "Play", &play) && Mt_Sched(&at, &play, &tt);
 		Native_Free(&tt);
 	}
-	Py_XDECREF(play);
+	Native_Free(&play);
 	if (ok) {
 		nativeVal_t shent = { 0 }, zf = { 0 };
 		Native_SetFloat(&zf, 0.0);
@@ -569,10 +556,11 @@ static byte MapTreasure_BigPrize(const nativeVal_t *item) {
 	if (ok) {
 		/* Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, l.Del, ()) */
 		nativeVal_t at = { 0 };
-		PyObject *del = Mode_VBound(&l, "Del");
+		nativeVal_t del;
+		ok = Mode_VBoundV(&l, "Del", &del);
 		Native_SetFloat(&at, Mode_Time() + 1.0);
-		ok = del && Mode_Schedule(&at, del, NULL, 0, NULL);
-		Py_XDECREF(del);
+		ok = ok && Mode_ScheduleV(&at, &del, NULL, 0, NULL);
+		Native_Free(&del);
 	}
 	ok = ok && LvN_ModGet("Sound", "ItemTake", &take);
 	if (ok) {
@@ -703,7 +691,9 @@ static byte MapTreasure_CreateCoins(void) {
 
 
 /* one round of the loop of the module code (f stored before): varname = "Bank.Circuit."+`f`;
- * Scrap.CreateSaveVar(varname, "0"); Coins.append(Circuit[f][int(Scrap.GetSaveVar(varname))]) */
+ * Scrap.CreateSaveVar(varname, "0"); Coins.append(Circuit[f][int(Scrap.GetSaveVar(varname))]) (OBJLIB 7: a hook of
+ * the module code, ScriptModule.c's table: it and MapTreasure_ModCoins run on the dict of the module's names, with the
+ * loop variables f and varname left in the module and every name looked up there) */
 static byte Mt_CoinsBody(PyObject *locals, PyObject *f, void *ctx) {
 	(void)ctx;
 	PyObject *repr = Script_Repr(f);
@@ -1275,9 +1265,7 @@ static byte GetDataPart2_OnFuncStartsWorking(const nativeVal_t *name) {
 		ok = Mode_Arith('+', &now, &time, &x) && Mode_Arith('+', &x, &one, &at);
 	}
 	if (ok) {
-		PyObject *fn = Mode_GlobalPy(GD, "OnDownloadAborted");
-		ok = fn && Mode_Schedule(&at, fn, name, 1, NULL);
-		Py_XDECREF(fn);
+		ok = Mode_AtG(&at, GD, "OnDownloadAborted", name, 1);
 	}
 	Native_Free(&r);
 	Native_Free(&time);
@@ -1475,18 +1463,6 @@ PyMethodDef g_BankGetDataPart2Methods[] = {
 
 /* ---- Mission_InfiltrateBank ---- */
 
-/* SInput.GetActionSet() through its seam (fc-r6-ib swaps it) */
-static byte Ib_ActionSet(nativeVal_t *out) {
-	PyObject *hook;
-	int seam = Native_Seam("SInput", "GetActionSet", &hook);
-	Native_SetNone(out);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, out, "");
-	}
-	Native_SetStr(out, TABLE_AT(g_ActionSets, Input_GetActionSet())->name);
-	return 1;
-}
-
 /* InitStatus(LevelPath): Dtritus' resources; the player is not the bank master */
 static byte InfiltrateBank_InitStatus(void) {
 	if (!PORT_CALL(Chars, AddNewCharRes, NULL, "si", "Dtritus", 0L)) {
@@ -1546,7 +1522,7 @@ static byte InfiltrateBank_UseDoor(const nativeVal_t *a) {
 /* TestEndOfElevator(): the scene once the player walks again */
 static byte InfiltrateBank_TestEndOfElevator(void) {
 	nativeVal_t set = { 0 }, usr = { 0 };
-	if (!Ib_ActionSet(&set)) {
+	if (!Mode_ActionSetGet(&set)) {
 		return 0;
 	}
 	byte walk = LvN_EqS(&set, "Walk");
@@ -1640,31 +1616,16 @@ static byte InfiltrateBank_LaunchScene(const nativeVal_t *usr) {
 /* bm = CharsNPC.CharRes[BankMasterName]; bm.CallbackFunc.append(CreateBankMaster); bm.Pos = dummy[1] into *pos
  * (OBJLIB 5: the character objects of CharsNPC) */
 static byte Ib_CharRes(const nativeVal_t *dummy, nativeVal_t *pos) {
-	nativeVal_t name = { 0 };
-	PyObject *res = Script_Attr("CharsNPC", "CharRes");
-	if (!res || !Mode_G(IB, "BankMasterName", &name)) {
-		Py_XDECREF(res);
-		return 0;
-	}
-	PyObject *key = Native_ToPy(&name);
+	nativeVal_t name = { 0 }, res = { 0 }, bm = { 0 }, cb = { 0 }, append = { 0 }, fn = { 0 };
+	byte ok = Mode_RefMod("CharsNPC", "CharRes", &res) && Mode_G(IB, "BankMasterName", &name) && Mode_RefSub(&res, &name, &bm) &&
+		Mode_RefAttr(&bm, "CallbackFunc", &cb) && Mode_RefAttr(&cb, "append", &append) && Mode_RefG(IB, "CreateBankMaster", &fn) &&
+		Mode_RefApply(&append, &fn, 1, NULL) && LvN_Item(dummy, 1, pos) && Mode_VSet(&bm, "Pos", pos);
+	Native_Free(&fn);
+	Native_Free(&append);
+	Native_Free(&cb);
+	Native_Free(&bm);
 	Native_Free(&name);
-	PyObject *bm = key ? PyObject_GetItem(res, key) : NULL;
-	PyObject *cb = bm ? PyObject_GetAttrString(bm, "CallbackFunc") : NULL;
-	PyObject *append = cb ? PyObject_GetAttrString(cb, "append") : NULL;
-	PyObject *fn = append ? Mode_GlobalPy(IB, "CreateBankMaster") : NULL;
-	byte ok = fn && Native_Call(append, NULL, "O", fn);
-	if (ok) {
-		nativeVal_t b = { 0 };
-		Native_Arg(bm, &b);
-		ok = LvN_Item(dummy, 1, pos) && Mode_VSet(&b, "Pos", pos);
-		Native_Free(&b);
-	}
-	Py_XDECREF(fn);
-	Py_XDECREF(append);
-	Py_XDECREF(cb);
-	Py_XDECREF(bm);
-	Py_XDECREF(key);
-	Py_DECREF(res);
+	Native_Free(&res);
 	return ok;
 }
 
@@ -1704,7 +1665,7 @@ static byte InfiltrateBank_BankMasterSpeech(const nativeVal_t *a) {
 /* SetNextMission(): the bank master can be possessed again, the hooks off, Mission_MeetBerto in Scrapyard */
 static byte InfiltrateBank_SetNextMission(void) {
 	nativeVal_t bm = { 0 };
-	if (!Mode_Import("CharConversor") || !Ba_DelSaves("MissionState")) {
+	if (!Mode_Import("CharConversor") || !Mode_DelSaveVars("MissionState")) {
 		return 0;
 	}
 	LvN_Str(&bm, "BankMaster");

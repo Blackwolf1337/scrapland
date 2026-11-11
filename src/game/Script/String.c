@@ -6,201 +6,240 @@
  * any object (len, -, *, +, the comparisons), so a wrong argument fails with the error of the line of string.py, and
  * load the other functions (find, rfind, split, capitalize, join) and the builtins as the script does (LOAD_GLOBAL:
  * the module, then the builtins).
+ *
+ * The functions work on values held by reference (OBJLIB 7 and 9: the operators of any object and the builtins are
+ * Python's until the object library goes; the Mode_Ref helpers of scrap/scriptmodes.h): the adapters hand the
+ * caller's objects over as they are (MODE_REFADAPTER, MODE_REFKW), so a function that gives its argument back gives
+ * the same object.
  */
 #include <limits.h>
 
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
-#define K(o) Script_Keep(&r, (o))
-
-/* a global of string as its functions load it (the module, then the builtins): a new reference */
-static PyObject *Str_Global(const char *name) {
-	PyObject *m = Script_Module("string"), *v = NULL;
-	int found = m ? Script_NameChain(NULL, PyModule_GetDict(m), name, &v) : -1;
-	if (found == 0) {
-		PyErr_Format(PyExc_SystemError, "string: cannot load %.100s", name);
-	}
-	Py_XDECREF(m);
-	return found > 0 ? v : NULL;
+/* a global of string as its functions load it (the module, then the builtins) */
+static byte Str_Global(const char *name, nativeVal_t *out) {
+	execScope_t x = { .module = "string" };
+	int found = Mode_EvalChain(&x, name, out);
+	return found > 0 || (found < 0 && Native_Raise(NE_SYSTEM, "string: cannot load %.100s", name));
 }
 
-/* width - len(s) (a new reference) */
-static PyObject *Str_Room(PyObject *width, PyObject *s) {
-	int len = PyObject_Length(s);
-	PyObject *n = len < 0 && PyErr_Occurred() ? NULL : PyInt_FromLong(len);
-	PyObject *d = n ? PyNumber_Subtract(width, n) : NULL;
-	Py_XDECREF(n);
-	return d;
+/* len(s) as a value: 0 with the error of a value without length */
+static byte Str_Len(const nativeVal_t *s, nativeVal_t *out) {
+	int len = Mode_RefSize(s);
+	if (len < 0 && Mode_ErrorSet()) {
+		return 0;
+	}
+	Native_SetInt(out, len);
+	return 1;
 }
 
-/* the sign of PyObject_Compare(a, b) as cmp_outcome of ceval takes it; -2 with the error set */
-static int Str_Cmp(PyObject *a, PyObject *b) {
-	if (!a || !b) {
-		return -2;
-	}
-	int c = PyObject_Compare(a, b);
-	return c && PyErr_Occurred() ? -2 : c < 0 ? -1 : c > 0;
+/* width - len(s) */
+static byte Str_Room(const nativeVal_t *width, const nativeVal_t *s, nativeVal_t *out) {
+	nativeVal_t n;
+	Native_SetNone(out);
+	return Str_Len(s, &n) && Mode_RefOp('-', width, &n, out);
 }
 
 /* `n <= 0` of the padding functions: 1, 0, or -1 with the error set */
-static int Str_None(PyObject *n) {
-	PyObject *zero = PyInt_FromLong(0);
-	int c = Str_Cmp(n, zero);
-	Py_XDECREF(zero);
+static int Str_None(const nativeVal_t *n) {
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	int c = Mode_RefCmp(n, &zero);
 	return c == -2 ? -1 : c <= 0;
 }
 
-/* text * n (a new reference) */
-static PyObject *Str_Times(const char *text, PyObject *n) {
-	PyObject *t = n ? PyString_FromString(text) : NULL;
-	PyObject *v = t ? PyNumber_Multiply(t, n) : NULL;
-	Py_XDECREF(t);
-	return v;
+/* text * n */
+static byte Str_Times(const char *text, const nativeVal_t *n, nativeVal_t *out) {
+	nativeVal_t t;
+	Native_SetStr(&t, text);
+	return Mode_RefOp('*', &t, n, out);
+}
+
+/* f(a, b[, c, d]) of a function of the module, the result by reference */
+static byte Str_Call(const nativeVal_t *f, nativeVal_t *out, int n, const nativeVal_t *a, const nativeVal_t *b,
+	const nativeVal_t *c, const nativeVal_t *d) {
+	const nativeVal_t args[4] = { *a, *b, n > 2 ? *c : *a, n > 3 ? *d : *a };
+	return Mode_RefApply(f, args, n, out);
 }
 
 /* index(s, sub, i=0, last=None) and rindex: find (rfind) of the module, ValueError when the result is negative */
-static PyObject *Str_Index(PyObject *args, PyObject *kw, const char *find) {
-	static char *kwlist[] = { "s", "sub", "i", "last", NULL };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *s, *sub, *i = NULL, *last = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OO", kwlist, &s, &sub, &i, &last)) {
-		return NULL;
+static byte Str_Index(const nativeVal_t *v, const byte *given, const char *find, nativeVal_t *out) {
+	nativeVal_t zero, len, f = { 0 }, res = { 0 };
+	const nativeVal_t *i = given[2] ? &v[2] : &zero, *last = &v[3];
+	Native_SetInt(&zero, 0);
+	if (!given[3] || Mode_RefIsNone(last)) {
+		if (!Str_Len(&v[0], &len)) {
+			return 0;
+		}
+		last = &len;
 	}
-	i = i ? i : K(PyInt_FromLong(0));
-	if (i && last == Py_None) {
-		int len = PyObject_Length(s);
-		last = len < 0 && PyErr_Occurred() ? NULL : K(PyInt_FromLong(len));
+	byte ok = Str_Global(find, &f) && Str_Call(&f, &res, 4, &v[0], &v[1], i, last);
+	Native_Free(&f);
+	int c = ok ? Mode_RefCmp(&res, &zero) : -2;
+	if (c >= 0) {
+		*out = res;
+		return 1;
 	}
-	PyObject *f = i && last ? K(Str_Global(find)) : NULL;
-	PyObject *res = f ? K(Script_CallObject(f, K(Py_BuildValue("(OOOO)", s, sub, i, last)), NULL)) : NULL;
-	PyObject *zero = res ? K(PyInt_FromLong(0)) : NULL;
-	int c = Str_Cmp(res, zero);
-	if (c == -2) {
-		return Script_Done(&r, NULL);
-	}
-	if (c < 0) {
-		PyErr_SetString(PyExc_ValueError, "substring not found in string.index");
-		return Script_Done(&r, NULL);
-	}
-	return Script_Done(&r, Script_Ref(res));
+	Native_Free(&res);
+	return c == -2 ? 0 : Native_Raise(NE_VALUE, "substring not found in string.index");
 }
 
-static PyObject *String_index(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Str_Index(args, kw, "find");
+MODE_REFKW(String, index, "OO|OO", "s", "sub", "i", "last") {
+	return Str_Index(v, given, "find", out);
 }
 
-static PyObject *String_rindex(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Str_Index(args, kw, "rfind");
+MODE_REFKW(String, rindex, "OO|OO", "s", "sub", "i", "last") {
+	return Str_Index(v, given, "rfind", out);
+}
+
+/* the start of ljust, rjust and center: n = width - len(s); 1 with n, 0 when the function is done (ok: s itself as
+ * the result when it is that long, else the error) */
+static byte Str_Short(const nativeVal_t *s, const nativeVal_t *width, nativeVal_t *n, nativeVal_t *out, byte *ok) {
+	int le = Str_Room(width, s, n) ? Str_None(n) : -1;
+	if (le > 0) {
+		Native_Copy(out, s);
+	}
+	*ok = le > 0;
+	if (le) {
+		Native_Free(n);
+	}
+	return !le;
 }
 
 /* ljust(s, width), rjust(s, width): s with blanks after (before) it up to width; s itself when it is that long */
-static PyObject *Str_Just(PyObject *args, byte right) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *s, *width;
-	if (!PyArg_ParseTuple(args, "OO", &s, &width)) {
-		return NULL;
+static byte Str_Just(const nativeVal_t *s, const nativeVal_t *width, byte right, nativeVal_t *out) {
+	nativeVal_t n, pad = { 0 };
+	byte ok;
+	if (!Str_Short(s, width, &n, out, &ok)) {
+		return ok;
 	}
-	PyObject *n = K(Str_Room(width, s));
-	int le = n ? Str_None(n) : -1;
-	if (le) {
-		return Script_Done(&r, le > 0 ? Script_Ref(s) : NULL);
-	}
-	PyObject *pad = K(Str_Times(" ", n));
-	return Script_Done(&r, !pad ? NULL : right ? PyNumber_Add(pad, s) : PyNumber_Add(s, pad));
+	ok = Str_Times(" ", &n, &pad) && (right ? Mode_RefOp('+', &pad, s, out) : Mode_RefOp('+', s, &pad, out));
+	Native_Free(&pad);
+	Native_Free(&n);
+	return ok;
 }
 
-static PyObject *String_ljust(PyObject *self, PyObject *args) {
-	(void)self;
-	return Str_Just(args, 0);
+static byte String_ljust_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return n == 2 ? Str_Just(&a[0], &a[1], 0, out) : Port_Arity(n, 2);
 }
 
-static PyObject *String_rjust(PyObject *self, PyObject *args) {
-	(void)self;
-	return Str_Just(args, 1);
+static byte String_rjust_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return n == 2 ? Str_Just(&a[0], &a[1], 1, out) : Port_Arity(n, 2);
+}
+
+MODE_REFADAPTER(String, ljust)
+MODE_REFADAPTER(String, rjust)
+
+/* `if v:` of a value made by an operator (released): 1, 0, -1 with the error (made: the operator gave it) */
+static int Str_True(byte made, nativeVal_t *v) {
+	int t = made ? Mode_Truth(v) : -1;
+	Native_Free(v);
+	return t;
 }
 
 /* center(s, width): half the blanks before s (one more when both n and width are odd), the rest after it */
-static PyObject *String_center(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *s, *width;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &s, &width)) {
-		return NULL;
+static byte Str_Center(const nativeVal_t *s, const nativeVal_t *width, nativeVal_t *out) {
+	nativeVal_t n, two, one, half = { 0 }, r = { 0 }, left = { 0 }, mid = { 0 }, rest = { 0 }, right = { 0 };
+	byte ok;
+	if (!Str_Short(s, width, &n, out, &ok)) {
+		return ok;
 	}
-	PyObject *n = K(Str_Room(width, s));
-	int le = n ? Str_None(n) : -1;
-	if (le) {
-		return Script_Done(&r, le > 0 ? Script_Ref(s) : NULL);
-	}
-	PyObject *two = K(PyInt_FromLong(2));
-	PyObject *half = two ? K(PyNumber_Divide(n, two)) : NULL;
+	Native_SetInt(&two, 2);
+	Native_SetInt(&one, 1);
 	/* if n%2 and width%2: half = half+1 */
-	int odd = half ? Script_True(K(PyNumber_Remainder(n, two))) : -1;
+	int odd = Mode_RefOp('/', &n, &two, &half) ? Str_True(Mode_RefOp('%', &n, &two, &r), &r) : -1;
 	if (odd > 0) {
-		odd = Script_True(K(PyNumber_Remainder(width, two)));
+		odd = Str_True(Mode_RefOp('%', width, &two, &r), &r);
 		if (odd > 0) {
-			PyObject *one = K(PyInt_FromLong(1));
-			half = one ? K(PyNumber_Add(half, one)) : NULL;
-			odd = half ? 0 : -1;
+			odd = Mode_RefOp('+', &half, &one, &r) ? 0 : -1;
+			Native_Free(&half);
+			half = r;
 		}
 	}
-	PyObject *left = odd >= 0 ? K(Str_Times(" ", half)) : NULL;
-	PyObject *mid = left ? K(PyNumber_Add(left, s)) : NULL;
-	PyObject *rest = mid ? K(PyNumber_Subtract(n, half)) : NULL;
-	PyObject *right = rest ? K(Str_Times(" ", rest)) : NULL;
-	return Script_Done(&r, right ? PyNumber_Add(mid, right) : NULL);
+	ok = odd >= 0 && Str_Times(" ", &half, &left) && Mode_RefOp('+', &left, s, &mid) && Mode_RefOp('-', &n, &half, &rest) &&
+		Str_Times(" ", &rest, &right) && Mode_RefOp('+', &mid, &right, out);
+	Native_Free(&right);
+	Native_Free(&rest);
+	Native_Free(&mid);
+	Native_Free(&left);
+	Native_Free(&half);
+	Native_Free(&n);
+	return ok;
 }
+
+static byte String_center_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return n == 2 ? Str_Center(&a[0], &a[1], out) : Port_Arity(n, 2);
+}
+
+MODE_REFADAPTER(String, center)
 
 /* zfill(x, width): the string (or the repr of x) with zeros after its sign up to width */
-static PyObject *String_zfill(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *x, *width;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &x, &width)) {
-		return NULL;
+static byte Str_Zfill(const nativeVal_t *x, const nativeVal_t *width, nativeVal_t *out) {
+	nativeVal_t s = { 0 }, n, plain, sign, first = { 0 }, tail = { 0 }, room = { 0 }, zeros = { 0 }, head = { 0 };
+	Mode_RefPlain(x, &plain);
+	byte text = plain.type == NV_STR;
+	Native_Free(&plain);
+	if (text) {
+		Native_Copy(&s, x);
+	} else if (!Mode_RefRepr(x, &s)) {
+		return 0;
 	}
-	PyObject *s = x->ob_type == &PyString_Type ? x : K(PyObject_Repr(x));
-	int len = s ? PyObject_Length(s) : -1;
-	PyObject *n = len < 0 && (!s || PyErr_Occurred()) ? NULL : K(PyInt_FromLong(len));
-	int c = Str_Cmp(n, width);
+	int c = Str_Len(&s, &n) ? Mode_RefCmp(&n, width) : -2;
 	if (c == -2 || c >= 0) {
-		return Script_Done(&r, c == -2 ? NULL : Script_Ref(s));
+		if (c != -2) {
+			*out = s;
+			return 1;
+		}
+		Native_Free(&s);
+		return 0;
 	}
-	PyObject *sign = K(PyString_FromString(""));
-	PyObject *first = sign ? K(PySequence_GetItem(s, 0)) : NULL;
-	if (!first) {
-		return Script_Done(&r, NULL);
+	Native_SetStr(&sign, "");
+	byte ok = Mode_RefItem(&s, 0, &first);
+	if (ok) {
+		Mode_RefPlain(&first, &plain);
+		const char *f = plain.type == NV_STR ? Native_Text(&plain) : "";
+		if ((f[0] == '-' || f[0] == '+') && f[1] == 0) {
+			Native_Copy(&sign, &first);
+			ok = Mode_RefSlice(&s, 1, INT_MAX, &tail);
+			Native_Free(&s);
+			s = tail;
+		}
+		Native_Free(&plain);
 	}
-	const char *f = PyString_Check(first) ? PyString_AS_STRING(first) : "";
-	if ((f[0] == '-' || f[0] == '+') && f[1] == 0) {
-		sign = first;
-		s = K(PySequence_GetSlice(s, 1, INT_MAX));
-	}
-	PyObject *zeros = s ? K(Str_Times("0", K(PyNumber_Subtract(width, n)))) : NULL;
-	PyObject *head = zeros ? K(PyNumber_Add(sign, zeros)) : NULL;
-	return Script_Done(&r, head ? PyNumber_Add(head, s) : NULL);
+	ok = ok && Mode_RefOp('-', width, &n, &room) && Str_Times("0", &room, &zeros) && Mode_RefOp('+', &sign, &zeros, &head) &&
+		Mode_RefOp('+', &head, &s, out);
+	Native_Free(&head);
+	Native_Free(&zeros);
+	Native_Free(&room);
+	Native_Free(&first);
+	Native_Free(&sign);
+	Native_Free(&s);
+	return ok;
 }
 
+static byte String_zfill_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return n == 2 ? Str_Zfill(&a[0], &a[1], out) : Port_Arity(n, 2);
+}
+
+MODE_REFADAPTER(String, zfill)
+
 /* capwords(s, sep=None): join(map(capitalize, split(s, sep)), sep or ' ') with the functions of the module */
-static PyObject *String_capwords(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "s", "sep", NULL };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *s, *sep = Py_None;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", kwlist, &s, &sep)) {
-		return NULL;
-	}
-	PyObject *join = K(Str_Global("join"));
-	PyObject *map = join ? K(Str_Global("map")) : NULL;
-	PyObject *cap = map ? K(Str_Global("capitalize")) : NULL;
-	PyObject *split = cap ? K(Str_Global("split")) : NULL;
-	PyObject *words = split ? K(Script_CallObject(split, K(Py_BuildValue("(OO)", s, sep)), NULL)) : NULL;
-	PyObject *caps = words ? K(Script_CallObject(map, K(Py_BuildValue("(OO)", cap, words)), NULL)) : NULL;
-	int t = caps ? PyObject_IsTrue(sep) : -1;
-	PyObject *with = t < 0 ? NULL : t ? sep : K(PyString_FromString(" "));
-	return Script_Done(&r, with ? Script_CallObject(join, K(Py_BuildValue("(OO)", caps, with)), NULL) : NULL);
+MODE_REFKW(String, capwords, "O|O", "s", "sep") {
+	nativeVal_t join = { 0 }, map = { 0 }, cap = { 0 }, split = { 0 }, words = { 0 }, caps = { 0 }, blank;
+	byte ok = Str_Global("join", &join) && Str_Global("map", &map) && Str_Global("capitalize", &cap) &&
+		Str_Global("split", &split) && Str_Call(&split, &words, 2, &v[0], &v[1], NULL, NULL) &&
+		Str_Call(&map, &caps, 2, &cap, &words, NULL, NULL);
+	int t = ok ? Mode_Truth(&v[1]) : -1;
+	Native_SetStr(&blank, " ");
+	ok = t >= 0 && Str_Call(&join, out, 2, &caps, t ? &v[1] : &blank, NULL, NULL);
+	Native_Free(&caps);
+	Native_Free(&words);
+	Native_Free(&split);
+	Native_Free(&cap);
+	Native_Free(&map);
+	Native_Free(&join);
+	return ok;
 }
 
 PyMethodDef g_StringMethods[] = {
@@ -213,3 +252,5 @@ PyMethodDef g_StringMethods[] = {
 	{ "capwords", (PyCFunction)(void (*)(void))String_capwords, 3, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(String)

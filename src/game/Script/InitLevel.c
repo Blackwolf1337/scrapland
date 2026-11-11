@@ -41,9 +41,9 @@ static int In_Flag(const char *name) {
 
 /* o.func(arg) of a module object, through the entry of the function there */
 static byte In_Method(const nativeVal_t *o, const char *func, const nativeVal_t *arg) {
-	PyObject *m = Mode_VBound(o, func);
-	byte ok = m && PORT_VALUE(m, NULL, "v", arg);
-	Py_XDECREF(m);
+	nativeVal_t m;
+	byte ok = Mode_VBoundV(o, func, &m) && Mode_CallArgs(&m, NULL, arg, 1);
+	Native_Free(&m);
 	return ok;
 }
 
@@ -109,16 +109,16 @@ static byte In_PreloadMlibsN(void) {
 	if (!Mode_Import("Map")) {
 		return 0;
 	}
-	/* OBJLIB 6: the module object itself for dir() */
-	PyObject *map = Script_Module("Map");
-	int m = map ? In_IsMission() : -1;
+	/* OBJLIB 7: the module object itself for dir(), by reference */
+	nativeVal_t map;
+	int m = Mode_RefModule("Map", &map) ? In_IsMission() : -1;
 	byte ok = m >= 0;
 	if (ok && m) {
 		Mode_SaveVar("Mission.Library", &lib);
 		ok = LvN_ModAppend("Map", "Libraries", &lib);
 	}
 	int has = -1;
-	if (ok && Native_CallMod("__builtin__", "dir", &names, "O", map)) {
+	if (ok && Native_CallMod("__builtin__", "dir", &names, "v", &map)) {
 		LvN_Str(&key, "Libraries");
 		has = Native_Contains(&names, &key);
 	}
@@ -136,7 +136,7 @@ static byte In_PreloadMlibsN(void) {
 				Native_CallMod("__builtin__", "__import__", &mod, "v", &name) && PORT_OWN(Init, AddMLib, NULL, "v", &mod);
 		}
 	}
-	Py_XDECREF(map);
+	Native_Free(&map);
 	Native_Free(&lib);
 	Native_Free(&names);
 	Native_Free(&libs);
@@ -461,19 +461,12 @@ MODE_FNANY(Init, isMission, In_IsMissionOut(out))
 
 MODE_FNANY(Init, SetArrowSize, In_SetArrowSizeN())
 
-static PyObject *Init_SetMapLabelText(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(In_SetMapLabelTextN());
-}
+MODE_FNANY(Init, SetMapLabelText, In_SetMapLabelTextN())
+MODE_FNANY(Init, Close, In_CloseN())
 
-static PyObject *Init_Close(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(In_CloseN());
-}
-
-/* ---- the loops of the module code (data/modules/init.mod; OBJLIB 6: they work on the dict of the module code) ---- */
+/* ---- the loops of the module code (data/modules/init.mod; OBJLIB 7: hooks of the module code, ScriptModule.c's table:
+ * they run on the dict of the module's names, with the constants as the compiler made them and the loop variable left
+ * in the module) ---- */
 
 static byte In_LoadCharBody(PyObject *locals, PyObject *fn, void *ctx) {
 	(void)ctx;

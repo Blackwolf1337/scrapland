@@ -152,9 +152,7 @@ static byte Np_Exec(const nativeVal_t *code, const nativeVal_t *kb, const native
 		eq + 4 <= s + n - tl && !strcmp(s + n - tl, tail)) {
 		char name[0x40];
 		int len = (int)(eq - s) - 3, tlen = (int)(s + n - tl - (eq + 4));
-		PyObject *quoted = len < (int)sizeof(name) ? Script_StrConst(eq + 4, tlen) : NULL;
-		byte plain = Script_IsQuotable(quoted);
-		Py_XDECREF(quoted);
+		byte plain = len < (int)sizeof(name) && Script_IsQuotableText(eq + 4, tlen);
 		if (plain) {
 			nativeVal_t text, v = { 0 };
 			memcpy(name, s + 3, len);
@@ -334,8 +332,9 @@ static byte News_SettingsBody(PyObject *locals, PyObject *f, void *ctx) {
 	return res != NULL;
 }
 
-/* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` (OBJLIB 6: the module
- * code runs with the names of the module) */
+/* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` (OBJLIB 7: a hook of
+ * the module code, ScriptModule.c's table: it runs on the dict of the module's names, with the constants of the code
+ * object as the compiler made them, `f` left in the module, apply and Scrap.Set looked up there) */
 int NewsPanel_ModSettings(PyObject *module, PyObject *locals) {
 	static const struct {
 		const char *var;

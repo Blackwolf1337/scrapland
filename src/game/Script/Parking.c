@@ -336,10 +336,10 @@ static byte Pk_PlayVoiceChannelN(const nativeVal_t *channel) {
 	}
 	Native_SetFloat(&now, Mode_Time());
 	/* SSound.StopVoice as the module holds it (the scheduler takes its entry, Port_Scheduled) */
-	PyObject *stop = NULL;
+	nativeVal_t stop = { 0 };
 	byte ok = Native_Arith('+', &now, &timy, &sum) && Native_Arith('+', &sum, &def, &at) &&
-		(stop = Script_Attr("SSound", "StopVoice")) != NULL && Mode_Schedule(&at, stop, channel, 1, NULL);
-	Py_XDECREF(stop);
+		Mode_RefMod("SSound", "StopVoice", &stop) && Mode_ScheduleV(&at, &stop, channel, 1, NULL);
+	Native_Free(&stop);
 	Native_Free(&timy);
 	Native_Free(&sum);
 	Native_Free(&at);
@@ -1023,17 +1023,6 @@ static byte Pk_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
 	return s->type == NV_STR ? Native_Split(s, sep, out) : PORT_CALL(string, split, out, "vs", s, sep);
 }
 
-/* d.has_key(key) of a value of the script (the method of whatever value it is; OBJLIB 7): 1, 0, -1 with the error */
-static int Pk_HasKey(const nativeVal_t *d, const nativeVal_t *key) {
-	PyObject *o = Native_ToPy(d), *k = o ? Native_ToPy(key) : NULL;
-	PyObject *r = k ? Script_Method(o, "has_key", "(O)", k) : NULL;
-	int t = r ? PyObject_IsTrue(r) : -1;
-	Py_XDECREF(r);
-	Py_XDECREF(k);
-	Py_XDECREF(o);
-	return t;
-}
-
 /* AllShips in upper case without the mercenaries' ships, the list changed in place (OBJLIB 5: other modules and the
  * cases hold it) */
 static byte Pk_AllShips(void) {
@@ -1083,7 +1072,7 @@ static byte Pk_CreateParkedShipN(const nativeVal_t *const *a, nativeVal_t *out) 
 	/* Type=None */
 	if (a[2] && Native_True(a[2])) {
 		int has;
-		if (!Pk_Split(a[2], "_", nam) || !Pk_G("ShipTypes", types) || !Pk_Item(nam, 0, key) || (has = Pk_HasKey(types, key)) < 0) {
+		if (!Pk_Split(a[2], "_", nam) || !Pk_G("ShipTypes", types) || !Pk_Item(nam, 0, key) || (has = Mode_RefHasKey(types, key)) < 0) {
 			return Mode_Done(&t, 0);
 		}
 		if (has) {
@@ -1472,15 +1461,17 @@ MODE_FN(Parking, ShowNextMap, 3, Pk_ShowNextMapN(&a[0]))
 MODE_FN(Parking, DoorInitializator, 1, Pk_DoorInitializatorN())
 MODE_FN(Parking, Init, 0, Pk_InitN())
 
-static byte Parking_UseShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Mode_KwEntry(a, n, "OOOO|O", Pk_UseShipN, out);
+/* the slots of a keyword function for a core that takes NULL for an argument not given */
+static void Pk_Given(const nativeVal_t *v, const byte *given, int n, const nativeVal_t **p) {
+	for (int i = 0; i < n; i++) {
+		p[i] = given[i] ? &v[i] : NULL;
+	}
 }
 
-static char *Parking_UseShip_N[] = { "UsrName", "CharName", "optId", "FullOption", "BoxName", NULL };
-
-static PyObject *Parking_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "OOOO|O", Parking_UseShip_N, Pk_UseShipN);
+MODE_KW(Parking, UseShip, "OOOO|O", "UsrName", "CharName", "optId", "FullOption", "BoxName") {
+	const nativeVal_t *p[5];
+	Pk_Given(v, given, 5, p);
+	return Pk_UseShipN(p, out);
 }
 
 MODE_KW(Parking, SetCameraStart, "OOO|OO", "cp", "v", "iPos", "split", "testline") {
@@ -1489,15 +1480,10 @@ MODE_KW(Parking, SetCameraStart, "OOO|OO", "cp", "v", "iPos", "split", "testline
 	return Pk_SetCameraStartN(v);
 }
 
-static byte Parking_CreateParkedShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Mode_KwEntry(a, n, "OO|O", Pk_CreateParkedShipN, out);
-}
-
-static char *Parking_CreateParkedShip_N[] = { "Pos", "Angle", "Type", NULL };
-
-static PyObject *Parking_CreateParkedShip(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", Parking_CreateParkedShip_N, Pk_CreateParkedShipN);
+MODE_KW(Parking, CreateParkedShip, "OO|O", "Pos", "Angle", "Type") {
+	const nativeVal_t *p[3];
+	Pk_Given(v, given, 3, p);
+	return Pk_CreateParkedShipN(p, out);
 }
 
 PyMethodDef g_ParkingMethods[] = {

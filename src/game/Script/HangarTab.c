@@ -668,39 +668,36 @@ static byte Ht_ShowHangarPanel(int id) {
 	return Ht_UpdateHangars(id);
 }
 
-/* eval(text) in a function of HangarTab (its globals, locals the dict of the function's variables); a name with
+/* a section of shipedit.def with the $names of vars (Sn_Vars: given away, NULL: its error; OBJLIB 6: the runner of
+ * ShipEdit takes the $names as a dict) */
+static byte Ht_Def(int id, const char *section, PyObject *vars) {
+	byte ok = vars && Sn_Def(id, section, vars, HT);
+	Py_XDECREF(vars);
+	return ok;
+}
+
+/* eval(text) in a function of HangarTab (its globals, locals the variables of the function in x); a name with
  * attributes and subscripts ("prevShip.Model", "ShipEdit.editedShips[3].NEng0", all the game passes) is looked up
- * directly (OBJLIB 6: the name chain on the module dict) */
-static byte Ht_Eval(const nativeVal_t *text, PyObject *locals, nativeVal_t *out) {
-	PyObject *g = Script_Attr(HT, "__dict__"), *v;
+ * directly (Mode_EvalChain) */
+static byte Ht_Eval(const nativeVal_t *text, const execScope_t *x, nativeVal_t *out) {
 	Native_SetNone(out);
-	if (!g) {
-		return 0;
-	}
 	if (text->type == NV_STR && strlen(Native_Text(text)) == (size_t)text->n) {
 		const char *s = Native_Text(text);
 		while (*s == ' ' || *s == '\t') {
 			s++;
 		}
-		int found = Script_NameChain(locals, g, s, &v);
-		if (found) {
-			Py_DECREF(g);
-			if (found < 0) {
-				return 0;
-			}
-			Native_Arg(v, out);
-			Py_DECREF(v);
-			return 1;
+		int found = Mode_EvalChain(x, s, out);
+		if (found >= 0) {
+			return found;
 		}
 	}
 	/* another expression (only a caller of ComputeShipTotalCost from the console) is Script_NotRead's error */
-	Py_DECREF(g);
 	Script_NotRead("ComputeShipTotalCost", Native_Text(text));
 	return 0;
 }
 
 /* eval(cad + attr) */
-static byte Ht_EvalAttr(const nativeVal_t *cad, const char *attr, PyObject *locals, nativeVal_t *out) {
+static byte Ht_EvalAttr(const nativeVal_t *cad, const char *attr, const execScope_t *locals, nativeVal_t *out) {
 	nativeVal_t s = { 0 };
 	byte ok = Sn_Cat("", cad, attr, &s) && Ht_Eval(&s, locals, out);
 	Native_Free(&s);
@@ -708,7 +705,7 @@ static byte Ht_EvalAttr(const nativeVal_t *cad, const char *attr, PyObject *loca
 }
 
 /* eval(cad + attr + v) */
-static byte Ht_EvalAttrV(const nativeVal_t *cad, const char *attr, const nativeVal_t *v, PyObject *locals,
+static byte Ht_EvalAttrV(const nativeVal_t *cad, const char *attr, const nativeVal_t *v, const execScope_t *locals,
 	nativeVal_t *out) {
 	nativeVal_t s = { 0 }, s2 = { 0 };
 	byte ok = Sn_Cat("", cad, attr, &s) && Native_Arith('+', &s, v, &s2) && Ht_Eval(&s2, locals, out);
@@ -734,16 +731,14 @@ static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	/* OBJLIB 6: the locals of the function as the name chain reads them */
-	PyObject *loc = PyDict_New(), *c = loc ? Native_ToPy(cad) : NULL;
-	byte ok = c && PyDict_SetItemString(loc, "cad", c) == 0;
-	Py_XDECREF(c);
-	for (int i = 0; ok && i < 3; i++) {
-		PyObject *m = Script_Module(mods[i]);
-		ok = m && PyDict_SetItemString(loc, (char *)mods[i], m) == 0;
-		Py_XDECREF(m);
+	/* the locals of the function as the name chain reads them: cad and the modules it imported */
+	execScope_t scope = { .module = HT };
+	const execScope_t *loc = &scope;
+	Exec_Var(&scope, "cad", cad);
+	for (int i = 0; i < 3; i++) {
+		Exec_Var(&scope, mods[i], NULL);
 	}
-	ok = ok && Ht_EvalAttr(cad, ".Model", loc, name) && PORT_CALL(ShipMaker, GetShipPrice, price, "v", name) &&
+	byte ok = Ht_EvalAttr(cad, ".Model", loc, name) && PORT_CALL(ShipMaker, GetShipPrice, price, "v", name) &&
 		Native_ToInt(price, cost) && LvN_ModGet(SE, "shipsEnginesLayouts", layouts) && Mode_Sub(layouts, name, layout);
 	int n = ok ? Mode_Len(layout) : -1;
 	ok = n >= 0;
@@ -798,7 +793,6 @@ static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 	}
 	ok = ok && Ht_EvalAttr(cad, ".MaxLife", loc, a) && Ht_EvalAttr(cad, ".MinLife", loc, b) && Mode_Arith('-', a, b, num) &&
 		LvN_ModGet("ShipMaker", "armorPieceCost", costs) && Mode_Arith('*', num, costs, p) && Mode_Arith('+', cost, p, out);
-	Py_XDECREF(loc);
 	return Mode_Done(&t, ok);
 }
 
@@ -1304,9 +1298,8 @@ static byte Ht_Reference(int id) {
 		}
 		for (int j = 0; ok && j < words->n; j++) {
 			ok = Native_SeqItem(words, j, w) && Sn_Cat(texts[i][1], w, NULL, name);
-			PyObject *vars = ok ? Sn_Vars(4, "name", name, "word", w, "x", x, "y", y) : NULL;
-			ok = vars && Sn_Def(id, "word", vars, HT) && Mode_Arith('+', y, Mode_IntVal(k, 22), y2);
-			Py_XDECREF(vars);
+			ok = ok && Ht_Def(id, "word", Sn_Vars(4, "name", name, "word", w, "x", x, "y", y)) &&
+				Mode_Arith('+', y, Mode_IntVal(k, 22), y2);
 			if (ok) {
 				Native_Free(y);
 				*y = *y2;
@@ -1339,26 +1332,20 @@ static byte Ht_SetHangarPanel(int id) {
 	Native_SetInt(mp, m);
 	Native_SetInt(sput, s);
 	Native_SetInt(aux9, a);
-	PyObject *vars = Sn_Vars(3, "mp", mp, "sputnik", sput, "aux9", aux9);
-	byte ok = vars && Sn_Def(id, "panel", vars, HT);
-	Py_XDECREF(vars);
+	byte ok = Ht_Def(id, "panel", Sn_Vars(3, "mp", mp, "sputnik", sput, "aux9", aux9));
 	for (int i = 0; ok && i < 3; i++) {
 		for (int j = 0; ok && j < 3; j++) {
 			Native_SetInt(n, i * 3 + j + 1);
 			Native_SetInt(x, 52 + 42 * j);
 			Native_SetInt(y, 204 + 42 * i);
-			vars = Sn_Vars(4, "n", n, "x", x, "y", y, "sputnik", sput);
-			ok = vars && Sn_Def(id, "hangar", vars, HT);
-			Py_XDECREF(vars);
+			ok = Ht_Def(id, "hangar", Sn_Vars(4, "n", n, "x", x, "y", y, "sputnik", sput));
 		}
 	}
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(Mode_IntVal(k, Mode_GetMoney()), money);
-	vars = Sn_Vars(3, "mp", mp, "sputnik", sput, "money", money);
-	ok = vars && Sn_Def(id, "info", vars, HT);
-	Py_XDECREF(vars);
+	ok = Ht_Def(id, "info", Sn_Vars(3, "mp", mp, "sputnik", sput, "money", money));
 	int pilots = ok ? Ht_Pilots() : -1;
 	if (pilots < 0) {
 		return Mode_Done(&t, 0);
@@ -1374,9 +1361,7 @@ static byte Ht_SetHangarPanel(int id) {
 			Native_Free(l);
 			Native_Free(x);
 			ok = ok && LvN_ModGet("ShipMaker", "PilotsList", l) && LvN_Item(l, i, x) && Native_Slice(x, 2, 0x7fffffff, model);
-			vars = ok ? Sn_Vars(2, "name", name, "model", model) : NULL;
-			ok = vars && Sn_Def(id, "pilot", vars, HT);
-			Py_XDECREF(vars);
+			ok = ok && Ht_Def(id, "pilot", Sn_Vars(2, "name", name, "model", model));
 		}
 		ok = ok && Ht_PilotVisible(id, 1);
 		Native_SetStr(nick, "");
@@ -1389,9 +1374,7 @@ static byte Ht_SetHangarPanel(int id) {
 				Mode_Lang("ShipEdit_Pilot", nick);
 			}
 		}
-		vars = ok && p >= 0 ? Sn_Vars(1, "nick", nick) : NULL;
-		ok = vars && Sn_Def(id, "pilots", vars, HT);
-		Py_XDECREF(vars);
+		ok = ok && p >= 0 && Ht_Def(id, "pilots", Sn_Vars(1, "nick", nick));
 	}
 	int noship = 0;
 	if (ok && pilots) {
@@ -1402,10 +1385,7 @@ static byte Ht_SetHangarPanel(int id) {
 	}
 	Native_SetInt(n, pilots);
 	Native_SetInt(x, noship);
-	vars = Sn_Vars(3, "mp", mp, "pilots", n, "noship", x);
-	ok = vars && Sn_Def(id, "links", vars, HT);
-	Py_XDECREF(vars);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, Ht_Def(id, "links", Sn_Vars(3, "mp", mp, "pilots", n, "noship", x)));
 }
 
 static const char *const ht_speedInfo[] = { "MaxSpeedText", "MaxSpeed", "BoostRechargeTime", "BoostRechargeTimeUnits",
@@ -2142,85 +2122,41 @@ MODE_IFN(HT_SellShip, 2, Ht_SellShip(id))
 MODE_IFN(HT_AddReferenceShipControls, 1, Ht_Reference(id))
 MODE_FN(HT, CreateEmptyShip, 1, Ht_CreateEmptyShip(&a[0]))
 
-static PyObject *HT_AuxShowMoney(PyObject *self, PyObject *args) {
-	char *symbol;
+static byte HT_AuxShowMoney_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *symbol;
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &id, &symbol)) {
-		return NULL;
-	}
-	return Mode_Result(Ht_AuxShowMoney(id, symbol));
+	(void)out;
+	return Mode_Parse(a, n, "is", &id, &symbol) && Ht_AuxShowMoney(id, symbol);
 }
+
+MODE_ADAPTER(HT, AuxShowMoney)
 
 /* ComputeShipTotalCost(cad="prevShip") */
-static byte HT_ComputeShipTotalCostK(const nativeVal_t *const *a, nativeVal_t *out) {
-	nativeVal_t cad;
-	Native_SetStr(&cad, "prevShip");
-	byte ok = Ht_TotalCost(a[0] ? a[0] : &cad, out);
-	Native_Free(&cad);
-	return ok;
-}
-
-static byte HT_ComputeShipTotalCost_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Mode_KwEntry(a, n, "|O", HT_ComputeShipTotalCostK, out);
-}
-
-static char *HT_ComputeShipTotalCost_N[] = { "cad", NULL };
-
-static PyObject *HT_ComputeShipTotalCost(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "|O", HT_ComputeShipTotalCost_N, HT_ComputeShipTotalCostK);
+MODE_KW(HT, ComputeShipTotalCost, "|O", "cad") {
+	Mode_KwDefS(v, given, 0, "prevShip");
+	return Ht_TotalCost(&v[0], out);
 }
 
 /* ScaleSpeedRamp(id, offsetX, offsetY, isMiniShip=0) */
-static byte HT_ScaleSpeedRamp_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	const nativeVal_t *ox, *oy, *mini = NULL;
+MODE_KWT(HT, ScaleSpeedRamp, "iOO|O", "id", "offsetX", "offsetY", "isMiniShip") {
+	const nativeVal_t *ox, *oy, *mini;
 	int id;
-	(void)out;
-	return Mode_Parse(a, n, "iOO|O", &id, &ox, &oy, &mini) && Ht_ScaleSpeedRamp(id, ox, oy, mini);
-}
-
-static PyObject *HT_ScaleSpeedRamp(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "offsetX", "offsetY", "isMiniShip", NULL };
-	(void)self;
-	return Mode_KwIdEntry(args, kw, "iOO|O", names, HT_ScaleSpeedRamp_E);
+	return Mode_Parse(v, 4, "iOOO", &id, &ox, &oy, &mini) && Ht_ScaleSpeedRamp(id, ox, oy, given[3] ? mini : NULL);
 }
 
 /* ShowShipInfo(id, showAmmoInfo=1) */
-static byte HT_ShowShipInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	const nativeVal_t *ammo = NULL;
+MODE_KWT(HT, ShowShipInfo, "i|O", "id", "showAmmoInfo") {
+	const nativeVal_t *ammo;
 	int id;
-	(void)out;
-	return Mode_Parse(a, n, "i|O", &id, &ammo) && Ht_ShowInfo(id, ammo ? Native_True(ammo) : 1);
+	return Mode_Parse(v, 2, "iO", &id, &ammo) && Ht_ShowInfo(id, given[1] ? Native_True(ammo) : 1);
 }
 
-static PyObject *HT_ShowShipInfo(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "showAmmoInfo", NULL };
-	(void)self;
-	return Mode_KwIdEntry(args, kw, "i|O", names, HT_ShowShipInfo_E);
-}
-
-static PyObject *HT_SelectHangar(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "control", "skipanim", NULL };
-	PyObject *control = NULL, *skip = NULL;
-	nativeVal_t a = { 0 }, s = { 0 };
+/* SelectHangar(id, control="", skipanim=0) */
+MODE_KWT(HT, SelectHangar, "i|OO", "id", "control", "skipanim") {
+	const nativeVal_t *control, *skip;
 	int id;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|OO", names, &id, &control, &skip)) {
-		return NULL;
-	}
-	if (control) {
-		Native_Arg(control, &a);
-	} else {
-		Native_SetStr(&a, "");
-	}
-	if (skip) {
-		Native_Arg(skip, &s);
-	}
-	byte ok = Ht_SelectHangar(id, &a, skip ? Native_True(&s) : 0);
-	Native_Free(&a);
-	Native_Free(&s);
-	return Mode_Result(ok);
+	Mode_KwDefS(v, given, 1, "");
+	return Mode_Parse(v, 3, "iOO", &id, &control, &skip) && Ht_SelectHangar(id, control, given[2] ? Native_True(skip) : 0);
 }
 
 PyMethodDef g_HangarTabMethods[] = {

@@ -128,9 +128,8 @@ static byte Metro_RecoverUsr(void) {
 
 /* OutDoorInitializator(DoorClass, val=0): the door of Elevator with the event Recover 0.1 s before the end of Down;
  * door and val as the caller gave them (they go to Elevator as they are) */
-static byte Metro_OutDoor(PyObject *door, PyObject *val) {
-	static const char *const mods[] = { "Elevator", NULL };
-	if (!Script_Import(mods) || !PORT_CALL(Elevator, DoorInitializator, NULL, "OO", door, val)) {
+static byte Metro_OutDoor(const nativeVal_t *door, const nativeVal_t *val) {
+	if (!Mode_Import("Elevator") || !PORT_CALL(Elevator, DoorInitializator, NULL, "vv", door, val)) {
 		return 0;
 	}
 	Native_ActAction("Down");
@@ -222,41 +221,36 @@ static byte Metro_SetUsrParams(const nativeVal_t *name, const nativeVal_t *ang) 
  * player walks in, the other characters hide */
 static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 	static const char *const mods[] = { "Elevator", "Menu", NULL };
-	PyObject *pid = Native_ToPy(id), *pctl = pid ? Native_ToPy(control) : NULL;
-	byte ok = pctl && Script_Import(mods) && PORT_CALL(Menu, BackToGame, NULL, "OO", pid, pctl);
-	Py_XDECREF(pid);
-	Py_XDECREF(pctl);
-	if (!ok) {
+	if (!Script_Import(mods) || !PORT_CALL(Menu, BackToGame, NULL, "vv", id, control)) {
 		return 0;
 	}
-	PyObject *cp[4] = { NULL };
+	nativeVal_t cp[4] = { 0 };
+	byte ok = 1;
 	for (int i = 0; ok && i < 4; i++) {
 		nativeVal_t tmp;
 		if (i == 2) {
 			/* "MoveLevel " + control[8:] */
-			nativeVal_t head, tail, ml;
+			nativeVal_t head, tail;
 			Native_SetStr(&head, "MoveLevel ");
 			ok = Native_Slice(control, 8, INT_MAX, &tail);
 			if (ok) {
-				ok = Native_Arith('+', &head, &tail, &ml);
+				ok = Native_Arith('+', &head, &tail, &cp[i]);
 				Native_Free(&tail);
 			}
-			if (ok) {
-				cp[i] = Native_ToPy(&ml);
-				Native_Free(&ml);
+		} else {
+			const nativeVal_t *p = Metro_Read(MV_PARAMS) ? Native_GetItem(&metro.callParams, i, 1, &tmp) : NULL;
+			ok = p != NULL;
+			if (p) {
+				Native_Copy(&cp[i], p);
 			}
-		} else if (Metro_Read(MV_PARAMS)) {
-			const nativeVal_t *p = Native_GetItem(&metro.callParams, i, 1, &tmp);
-			cp[i] = p ? Native_ToPy(p) : NULL;
 			if (p == &tmp) {
 				Native_Free(&tmp);
 			}
 		}
-		ok = ok && cp[i];
 	}
-	ok = ok && PORT_CALL(Elevator, UseElevator, NULL, "OOOO", cp[0], cp[1], cp[2], cp[3]);
+	ok = ok && PORT_CALL(Elevator, UseElevator, NULL, "vvvv", &cp[0], &cp[1], &cp[2], &cp[3]);
 	for (int i = 0; i < 4; i++) {
-		Py_XDECREF(cp[i]);
+		Native_Free(&cp[i]);
 	}
 	if (!ok || !Metro_Read(MV_PARAMS)) {
 		return 0;
@@ -339,27 +333,18 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 	}
 	byte ok = Metro_Read(MV_MAP);
 	int mission = ok && Native_Equal(&up, &metro.missionMap);
-	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
-	PyObject *px = ok ? Native_ToPy(x) : NULL, *py = px ? Native_ToPy(y) : NULL;
-	PyObject *pn = py ? Native_ToPy(name) : NULL, *ps = pn ? Native_ToPy(sprite) : NULL;
-	PyObject *vars = ps ? Py_BuildValue("{s:O,s:O,s:O,s:O,s:i}", "x", px, "y", py, "name", pn, "sprite", ps, "mission",
-		mission) : NULL;
-	Py_XDECREF(px);
-	Py_XDECREF(py);
-	Py_XDECREF(ps);
+	/* OBJLIB 6: the .def runner takes its $names as a dict (one dict for the sections of a station) */
+	nativeVal_t mv;
+	PyObject *vars = ok ? Mode_DefVars(5, "x", x, "y", y, "name", name, "sprite", sprite, "mission", Mode_IntVal(&mv, mission)) : NULL;
 	if (!vars) {
-		Py_XDECREF(pn);
 		Native_Free(&up);
 		return 0;
 	}
 	if (mission) {
 		Script_RunFile(0, METRO_FILE, "mission", metro_def, NULL, vars);
 	}
-	/* OBJLIB 5: Init.Path is a variable of Init */
-	PyObject *path = Script_Attr("Init", "Path");
 	nativeVal_t p;
-	ok = path && Native_Arg(path, &p);
-	Py_XDECREF(path);
+	ok = Mode_ModGet("Init", "Path", &p);
 	if (ok) {
 		ok = Metro_UpperTail(&p, 7, &here);
 		Native_Free(&p);
@@ -373,16 +358,14 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 	const char *section = "here";
 	if (ok && !usrhere) {
 		/* Elevator.isOutMap(Name) and Chars.CanDrive(Scrap.UsrEntity(0)) (the handle goes to Chars) */
-		PyObject *out = PORT_ASK(Elevator, isOutMap, "O", pn);
-		int cantgo = Script_True(out);
-		Py_XDECREF(out);
+		nativeVal_t r = { 0 }, usr = { 0 };
+		int cantgo = PORT_CALL(Elevator, isOutMap, &r, "v", name) ? Mode_Truth(&r) : -1;
+		Native_Free(&r);
 		if (cantgo > 0) {
-			PyObject *usr = Script_Usr();
-			PyObject *drive = usr ? PORT_ASK(Chars, CanDrive, "O", usr) : NULL;
-			int d = Script_True(drive);
+			int d = PORT_CALL(Scrap, UsrEntity, &usr, "i", 0L) && PORT_CALL(Chars, CanDrive, &r, "v", &usr) ? Mode_Truth(&r) : -1;
 			cantgo = d < 0 ? -1 : !d;
-			Py_XDECREF(drive);
-			Py_XDECREF(usr);
+			Native_Free(&r);
+			Native_Free(&usr);
 		}
 		ok = cantgo >= 0;
 		section = cantgo ? "cantgo" : "go";
@@ -393,7 +376,6 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 			Script_RunFile(0, METRO_FILE, "usrhere", metro_def, NULL, vars);
 		}
 	}
-	Py_XDECREF(pn);
 	Py_DECREF(vars);
 	return ok;
 }
@@ -452,10 +434,8 @@ static byte Metro_OnUse(nativeVal_t *params) {
 		return 0;
 	}
 	/* OBJLIB 5: from Menu import BackButtonYStart */
-	PyObject *back = Script_Attr("Menu", "BackButtonYStart");
-	if (!back) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_ImportError, "cannot import name BackButtonYStart");
+	nativeVal_t back;
+	if (!Mode_FromV("Menu", "BackButtonYStart", &back)) {
 		return 0;
 	}
 	/* SScorer.SetOnCancel(0, "Menu.BackToGame") */
@@ -476,37 +456,37 @@ static byte Metro_OnUse(nativeVal_t *params) {
 		ok = Metro_Station(&x, &y, &name, &sprite);
 	}
 	if (ok) {
-		PyObject *vars = Py_BuildValue("{s:O}", "back", back);
-		Script_RunFile(0, METRO_FILE, "menu", metro_def, NULL, vars);
-		Py_XDECREF(vars);
+		MODE_DEFRUN(0, 0, METRO_FILE, "menu", metro_def, 1, "back", &back);
 	}
-	Py_DECREF(back);
+	Native_Free(&back);
 	return ok;
 }
 
 /* SetAsMetro(EntityName): the door of the level is a metro station; name as the caller gave it (it goes to
  * Elevator as it is) */
-static byte Metro_SetAsMetro(PyObject *name) {
+static byte Metro_SetAsMetro(const nativeVal_t *name) {
 	static const char *const mods[] = { "Elevator", "Init", NULL };
 	if (!Script_Import(mods)) {
 		return 0;
 	}
 	/* Elevator.ConnectElevators([EntityName], [Init.Path[7:]]) (OBJLIB 5: Init.Path is a variable of Init) */
-	PyObject *path = Script_Attr("Init", "Path");
-	PyObject *tail = path ? PySequence_GetSlice(path, 7, INT_MAX) : NULL;
-	PyObject *names = tail ? Py_BuildValue("[O]", name) : NULL, *maps = names ? Py_BuildValue("[O]", tail) : NULL;
-	byte ok = maps && PORT_CALL(Elevator, ConnectElevators, NULL, "OO", names, maps);
-	Py_XDECREF(maps);
-	Py_XDECREF(names);
-	Py_XDECREF(tail);
-	Py_XDECREF(path);
-	nativeVal_t n = { 0 }, v;
+	nativeVal_t path, names, maps;
+	Native_SetEmpty(&names, NV_LIST);
+	Native_SetEmpty(&maps, NV_LIST);
+	byte ok = Mode_ModGet("Init", "Path", &path) && Mode_Slice(&path, 7, INT_MAX, Native_Append(&maps));
+	Native_Copy(Native_Append(&names), name);
+	ok = ok && PORT_CALL(Elevator, ConnectElevators, NULL, "vv", &names, &maps);
+	Native_Free(&maps);
+	Native_Free(&names);
+	Native_Free(&path);
+	nativeVal_t v;
+	const nativeVal_t *n = name;
 	cEntity *elv = NULL;
-	ok = ok && Native_Arg(name, &n) && Native_GetEntity(&n, &elv);
+	ok = ok && Native_GetEntity(n, &elv);
 	if (ok && !elv) {
 		ok = Native_Raise(NE_TYPE, "attribute-less object (assign or del)");
 	}
-	const char *ref = Native_Text(&n);
+	const char *ref = Native_Text(n);
 	Native_SetInt(&v, 0);
 	ok = ok && Native_EntSet(elv, ref, "ArrnOpt", &v);
 	if (ok) {
@@ -521,36 +501,23 @@ static byte Metro_SetAsMetro(PyObject *name) {
 		Native_Free(&v);
 	}
 	Native_SetStr(&v, "Metro.OnUse");
-	ok = ok && Native_EntSet(elv, ref, "UseFunc", &v);
-	Native_Free(&n);
-	return ok;
+	return ok && Native_EntSet(elv, ref, "UseFunc", &v);
 }
 
-/* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
+/* ---- the functions of the module table (MODE_FN: the arguments as native values, the arity errors of
+ * PyArg_ParseTuple) ---- */
 
-static PyObject *Metro_CalculateMissionMap(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &name) ? Mode_Result(Metro_MissionMap()) : NULL;
+MODE_FN(Metro, CalculateMissionMap, 1, Metro_MissionMap())
+MODE_FN(Metro, RecoverUsrPy, 3, Metro_RecoverUsr())
+
+/* OutDoorInitializator(DoorClass, val=0) */
+static byte Metro_OutDoorArgs(const nativeVal_t *a, int n) {
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	return Metro_OutDoor(&a[0], n > 1 ? &a[1] : &zero);
 }
 
-static PyObject *Metro_RecoverUsrPy(PyObject *self, PyObject *args) {
-	PyObject *name, *event, *time;
-	(void)self;
-	return PyArg_ParseTuple(args, "OOO", &name, &event, &time) ? Mode_Result(Metro_RecoverUsr()) : NULL;
-}
-
-static PyObject *Metro_OutDoorInitializator(PyObject *self, PyObject *args) {
-	PyObject *door, *val = NULL;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &door, &val)) {
-		return NULL;
-	}
-	PyObject *zero = val ? NULL : PyInt_FromLong(0);
-	byte ok = Metro_OutDoor(door, val ? val : zero);
-	Py_XDECREF(zero);
-	return Mode_Result(ok);
-}
+MODE_FNOPT(Metro, OutDoorInitializator, 1, 2, Metro_OutDoorArgs(a, n))
 
 /* SetUsrParams(name, ang=0) */
 static byte Metro_SetUsrParamsArgs(const nativeVal_t *a, int n) {
@@ -560,124 +527,46 @@ static byte Metro_SetUsrParamsArgs(const nativeVal_t *a, int n) {
 }
 
 MODE_FNOPT(Metro, SetUsrParamsPy, 1, 2, Metro_SetUsrParamsArgs(a, n))
+MODE_FN(Metro, UseMetroPy, 2, Metro_UseMetro(&a[0], &a[1]))
 
-static PyObject *Metro_UseMetroPy(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	nativeVal_t i, c;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &id, &control) || !Native_Arg(id, &i)) {
-		return NULL;
-	}
-	if (!Native_Arg(control, &c)) {
-		Native_Free(&i);
-		return NULL;
-	}
-	byte ok = Metro_UseMetro(&i, &c);
-	Native_Free(&i);
-	Native_Free(&c);
-	return Mode_Result(ok);
+/* CreateStation(X, Y, Name, SpriteIndex=6) */
+static byte Metro_StationArgs(const nativeVal_t *a, int n) {
+	nativeVal_t six;
+	Native_SetInt(&six, 6);
+	return Metro_Station(&a[0], &a[1], &a[2], n > 3 ? &a[3] : &six);
 }
 
-static PyObject *Metro_CreateStation(PyObject *self, PyObject *args) {
-	PyObject *o[4] = { NULL };
-	nativeVal_t v[4] = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO|O", &o[0], &o[1], &o[2], &o[3])) {
-		return NULL;
-	}
-	byte ok = 1;
-	for (int i = 0; ok && i < 4; i++) {
-		if (o[i]) {
-			ok = Native_Arg(o[i], &v[i]);
-		} else {
-			Native_SetInt(&v[i], 6);
-		}
-	}
-	ok = ok && Metro_Station(&v[0], &v[1], &v[2], &v[3]);
-	for (int i = 0; i < 4; i++) {
-		Native_Free(&v[i]);
-	}
-	return Mode_Result(ok);
-}
+MODE_FNOPT(Metro, CreateStation, 3, 4, Metro_StationArgs(a, n))
+MODE_FN(Metro, ShowHintPy, 3, Metro_ShowHint(&a[0], &a[1]))
+MODE_FN(Metro, HideHintPy, 3, Metro_HideHint(&a[0]))
 
-static PyObject *Metro_ShowHintPy(PyObject *self, PyObject *args) {
-	PyObject *id, *control, *lost;
-	nativeVal_t i, c;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &id, &control, &lost) || !Native_Arg(id, &i)) {
-		return NULL;
-	}
-	if (!Native_Arg(control, &c)) {
-		Native_Free(&i);
-		return NULL;
-	}
-	byte ok = Metro_ShowHint(&i, &c);
-	Native_Free(&i);
-	Native_Free(&c);
-	return Mode_Result(ok);
-}
-
-static PyObject *Metro_HideHintPy(PyObject *self, PyObject *args) {
-	PyObject *id, *control, *lost;
-	nativeVal_t i;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &id, &control, &lost) || !Native_Arg(id, &i)) {
-		return NULL;
-	}
-	byte ok = Metro_HideHint(&i);
-	Native_Free(&i);
-	return Mode_Result(ok);
-}
-
-static PyObject *Metro_OnUsePy(PyObject *self, PyObject *args) {
-	PyObject *o[4];
+/* OnUse(a, b, c, d): the four arguments as the tuple CallParams */
+static byte Metro_OnUseArgs(const nativeVal_t *a) {
 	nativeVal_t params;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &o[0], &o[1], &o[2], &o[3])) {
-		return NULL;
-	}
 	Native_SetEmpty(&params, NV_TUPLE);
-	byte ok = 1;
-	for (int i = 0; ok && i < 4; i++) {
-		ok = Native_Arg(o[i], Native_Append(&params));
+	for (int i = 0; i < 4; i++) {
+		Native_Copy(Native_Append(&params), &a[i]);
 	}
-	ok = ok && Metro_OnUse(&params);
+	byte ok = Metro_OnUse(&params);
 	Native_Free(&params);
-	return Mode_Result(ok);
-}
-
-static PyObject *Metro_SetAsMetroPy(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &name) ? Mode_Result(Metro_SetAsMetro(name)) : NULL;
-}
-
-/* the entry: the name as the call by name passes it (Native_ToPy) */
-static byte Metro_SetAsMetroPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	(void)out;
-	if (n != 1) {
-		return Port_Arity(n, 1);
-	}
-	PyObject *name = Native_ToPy(&a[0]);
-	byte ok = name && Metro_SetAsMetro(name);
-	Py_XDECREF(name);
 	return ok;
 }
 
+MODE_FN(Metro, OnUsePy, 4, Metro_OnUseArgs(a))
+MODE_FN(Metro, SetAsMetroPy, 1, Metro_SetAsMetro(&a[0]))
+
 /* DoorInitializator(DoorClass): the station door, its sound heard farther */
-static PyObject *Metro_DoorInitializator(PyObject *self, PyObject *args) {
-	PyObject *door;
+static byte Metro_Door(const nativeVal_t *door) {
 	nativeVal_t v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &door)) {
-		return NULL;
+	Native_SetInt(&v, 1);
+	if (!Metro_OutDoor(door, &v)) {
+		return 0;
 	}
-	PyObject *one = PyInt_FromLong(1);
-	byte ok = one && Metro_OutDoor(door, one);
-	Py_XDECREF(one);
 	Native_SetInt(&v, 1800);
-	return Mode_Result(ok && Native_ClsSet("SoundDispZ", &v));
+	return Native_ClsSet("SoundDispZ", &v);
 }
+
+MODE_FN(Metro, DoorInitializator, 1, Metro_Door(&a[0]))
 
 /* ObjInitializator(elv, ExtraInfo): the door of Elevator that opens by itself */
 static PyObject *Metro_ObjInitializator(PyObject *self, PyObject *args) {

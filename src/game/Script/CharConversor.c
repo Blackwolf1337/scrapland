@@ -211,14 +211,6 @@ static byte Cc_DrawBackground(const nativeVal_t *id, const nativeVal_t *elem, na
 	return Mode_Done(&t, 1);
 }
 
-/* the $names of a charconv.def section as the dict Script_RunFile takes (OBJLIB 6): char, x, y, state */
-static PyObject *Cc_Vars(const nativeVal_t *ch, long x, long y, const char *state) {
-	PyObject *c = Native_ToPy(ch);
-	PyObject *d = c ? Py_BuildValue("{s:O,s:i,s:i,s:s}", "char", c, "x", x, "y", y, "state", state) : NULL;
-	Py_XDECREF(c);
-	return d;
-}
-
 /* "Char_" + ConversionChars[i] */
 static byte Cc_CharItem(long i, nativeVal_t *out) {
 	nativeVal_t chars = { 0 }, ch = { 0 }, pre;
@@ -230,12 +222,12 @@ static byte Cc_CharItem(long i, nativeVal_t *out) {
 }
 
 /* f(id, "Char_" + ConversionChars[a], "Char_" + ConversionChars[b]) of a link function of Menu (b < 0: "CharExit") */
-static byte Cc_Link(PyObject *f, const nativeVal_t *id, long a, long b) {
-	nativeVal_t x = { 0 }, y = { 0 };
-	byte ok = Cc_CharItem(a, &x) && (b < 0 ? (Native_SetStr(&y, "CharExit"), 1) : Cc_CharItem(b, &y)) &&
-		PORT_VALUE(f, NULL, "vvv", id, &x, &y);
-	Native_Free(&x);
-	Native_Free(&y);
+static byte Cc_Link(const nativeVal_t *f, const nativeVal_t *id, long a, long b) {
+	nativeVal_t v[3] = { *id };
+	byte ok = Cc_CharItem(a, &v[1]) && (b < 0 ? (Native_SetStr(&v[2], "CharExit"), 1) : Cc_CharItem(b, &v[2])) &&
+		Mode_CallArgs(f, NULL, v, 3);
+	Native_Free(&v[1]);
+	Native_Free(&v[2]);
 	return ok;
 }
 
@@ -255,7 +247,9 @@ static byte Cc_Heads(int pid, int total, int *count) {
 			/* the names of the items, as the script builds them (a TypeError for a character that is no text) */
 			int sel = avail >= 0 && Mode_Cat(&t, n1, 2, Mode_S(&t, avail ? "CharHead_" : "CharNotAvailable_"), ch) &&
 				Mode_Cat(&t, n2, 2, Mode_S(&t, "Char_"), ch) ? (Mode_SaveVar("Char", sv), Mode_Cmp(ch, "==", sv)) : -1;
-			PyObject *vars = sel >= 0 ? Cc_Vars(ch, 88 + 95 * j, 76 + 92 * i, sel ? "sel" : avail ? "normal" : "dead") : NULL;
+			/* the $names of the two sections as one dict (OBJLIB 6): char, x, y, state */
+			PyObject *vars = sel >= 0 ? Mode_DefVars(4, "char", ch, "x", Mode_I(&t, 88 + 95 * j), "y", Mode_I(&t, 76 + 92 * i),
+				"state", Mode_S(&t, sel ? "sel" : avail ? "normal" : "dead")) : NULL;
 			if (vars) {
 				Script_RunFile(pid, "menus/charconv.def", avail ? "head" : "na", charconv_def, NULL, vars);
 				Script_RunFile(pid, "menus/charconv.def", "button", charconv_def, NULL, vars);
@@ -283,20 +277,18 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 		Mode_Len(avl) < 0 || !Cc_Heads(pid, total, &count)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *rest = PyDict_New();
-	if (!rest) {
+	if (!MODE_DEFRUN(0, pid, "menus/charconv.def", "rest", charconv_def, 0)) {
 		return Mode_Done(&t, 0);
 	}
-	Script_RunFile(pid, "menus/charconv.def", "rest", charconv_def, NULL, rest);
-	Py_DECREF(rest);
 	Mode_SaveVar("Char", sv);
 	if (!Mode_Cat(&t, control, 2, Mode_S(&t, "Char_"), sv) ||
 		!PORT_OWN(CharConversor, ShowCharDesc, NULL, "vvv", id, control, none)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *lr = Mode_From("Menu", "LinkLR"), *ud = lr ? Mode_From("Menu", "LinkUD") : NULL;
+	nativeVal_t *lr = Mode_V(&t), *ud = Mode_V(&t);
+	byte ok = Mode_FromV("Menu", "LinkLR", lr) && Mode_FromV("Menu", "LinkUD", ud);
 	Native_Free(chars);
-	byte ok = ud && Cc_G("ConversionChars", chars) && Mode_Len(chars) >= 0;
+	ok = ok && Cc_G("ConversionChars", chars) && Mode_Len(chars) >= 0;
 	for (int i = 0; ok && i < 3; i++) {
 		for (int j = 0; ok && j < 4; j++) {
 			ok = Cc_Link(lr, id, i * 5 + j, i * 5 + j + 1);
@@ -304,11 +296,11 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	}
 	for (int j = 0; ok && j < 5; j++) {
 		for (int i = 0; ok && i < 2; i++) {
-			nativeVal_t a = { 0 }, b = { 0 };
-			ok = Cc_CharItem(i * 5 + j, &a) && Cc_CharItem(i * 5 + j + 5, &b) &&
-				(i * 5 + j >= 10 || PORT_VALUE(ud, NULL, "vvv", id, &a, &b));
-			Native_Free(&a);
-			Native_Free(&b);
+			nativeVal_t v[3] = { *id };
+			ok = Cc_CharItem(i * 5 + j, &v[1]) && Cc_CharItem(i * 5 + j + 5, &v[2]) &&
+				(i * 5 + j >= 10 || Mode_CallArgs(ud, NULL, v, 3));
+			Native_Free(&v[1]);
+			Native_Free(&v[2]);
 		}
 	}
 	ok = ok && Cc_Link(lr, id, 14, -1);
@@ -317,8 +309,6 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 		ok = Cc_CharItem(i, name) && Mode_ScorerSet(id, name, "Down", Mode_S(&t, "CharExit")) &&
 			Mode_ScorerSet(id, Mode_S(&t, "CharExit"), "Up", name);
 	}
-	Py_XDECREF(lr);
-	Py_XDECREF(ud);
 	return Mode_Done(&t, ok && PORT_CALL(SScorer, SetOnCancel, NULL, "vs", id, "CharConversor.ExitCharConversor"));
 }
 
@@ -658,13 +648,13 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 		return Mode_Done(&t, 0);
 	}
 	/* the global NewPlayer: the scheduler takes its entry */
-	PyObject *fn = Mode_GlobalPy(CC, "NewPlayer");
+	nativeVal_t *fn = Mode_V(&t);
+	byte ok = Mode_RefG(CC, "NewPlayer", fn);
 	Native_Copy(&pa[0], newme);
 	Native_Copy(&pa[1], me);
-	byte ok = fn && Mode_Schedule(t2, fn, pa, 2, NULL);
+	ok = ok && Mode_ScheduleV(t2, fn, pa, 2, NULL);
 	Native_Free(&pa[0]);
 	Native_Free(&pa[1]);
-	Py_XDECREF(fn);
 	return Mode_Done(&t, ok && Cc_PossessionCam(ent));
 }
 
@@ -692,9 +682,9 @@ static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(when, Mode_Time() + 0.1);
-	PyObject *alarm = Script_Attr("Scrap", "SetAlarm");
-	byte ok = alarm && Mode_Schedule(when, alarm, Mode_I(&t, 1), 1, NULL) && LvN_SetS(newme, "ForceAction", "FlashedEnd");
-	Py_XDECREF(alarm);
+	nativeVal_t *alarm = Mode_V(&t);
+	byte ok = Mode_RefMod("Scrap", "SetAlarm", alarm) && Mode_ScheduleV(when, alarm, Mode_I(&t, 1), 1, NULL) &&
+		LvN_SetS(newme, "ForceAction", "FlashedEnd");
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
@@ -729,31 +719,15 @@ MODE_FN(CharConversor, ConvertExecute, 0, Cc_ConvertExecute())
 MODE_FN(CharConversor, Possession, 2, Cc_Possession(&a[0], &a[1]))
 MODE_FN(CharConversor, NewPlayer, 2, Cc_NewPlayer(&a[0], &a[1]))
 
-static PyObject *CharConversor_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
-	PyObject *id, *elem, *o[9] = { NULL };
-	nativeVal_t a[2], v[9], *pv[9] = { NULL };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOOOOOO", names, &id, &elem, &o[0], &o[1], &o[2], &o[3], &o[5],
-		&o[6], &o[7], &o[8])) {
-		return NULL;
+/* DrawBackground(id, elem, posX, posY, sizeX, sizeY, alpha, red, green, blue): the optional ones as the port took
+ * them (the fifth value, the alpha of the port, is never given) */
+MODE_KWT(CharConversor, DrawBackground, "OO|OOOOOOOO", "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green",
+	"blue") {
+	nativeVal_t *pv[9] = { NULL };
+	for (int i = 0; i < 8; i++) {
+		pv[i < 4 ? i : i + 1] = given[2 + i] ? &v[2 + i] : NULL;
 	}
-	Native_Arg(id, &a[0]);
-	Native_Arg(elem, &a[1]);
-	for (int i = 0; i < 9; i++) {
-		Native_SetNone(&v[i]);
-		if (o[i]) {
-			Native_Arg(o[i], &v[i]);
-			pv[i] = &v[i];
-		}
-	}
-	byte ok = Cc_DrawBackground(&a[0], &a[1], pv);
-	for (int i = 0; i < 9; i++) {
-		Native_Free(&v[i]);
-	}
-	Native_Free(&a[0]);
-	Native_Free(&a[1]);
-	return Mode_Result(ok);
+	return Cc_DrawBackground(&v[0], &v[1], pv);
 }
 
 PyMethodDef g_CharConversorMethods[] = {

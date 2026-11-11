@@ -137,33 +137,26 @@ static void Char_SetCls(const char *cls, const char *var, double d) {
 	}
 }
 
-/* the adapter of a function on the entity name (PyArg "s", the further n arguments any values the C does not read) */
+/* a function on the entity name ("s", the further arguments of fmt any values the C does not read): its entry
+ * (Mode_Parse) and its adapter */
 #define CHAR_FN(pre, name, fmt, call) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		char *ent; \
-		PyObject *x1, *x2; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, fmt, &ent, &x1, &x2)) { \
-			return NULL; \
-		} \
-		return Mode_Result(call); \
-	}
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		const char *ent; \
+		const nativeVal_t *x1, *x2; \
+		(void)out; \
+		return Mode_Parse(a, n, fmt, &ent, &x1, &x2) && (call); \
+	} \
+	MODE_ADAPTER(pre, name)
 
-/* the adapter of a speech routine (usr, ch, opt, full): "sssO" */
+/* a speech routine (usr, ch, opt, full): "sssO" */
 #define CHAR_SPEECH(pre, name, core) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		char *usr, *ch, *opt; \
-		PyObject *o; \
-		nativeVal_t full; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "sssO", &usr, &ch, &opt, &o)) { \
-			return NULL; \
-		} \
-		Native_Arg(o, &full); \
-		byte ok = core(usr, ch, opt, &full); \
-		Native_Free(&full); \
-		return Mode_Result(ok); \
-	}
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		const char *usr, *ch, *opt; \
+		const nativeVal_t *full; \
+		(void)out; \
+		return Mode_Parse(a, n, "sssO", &usr, &ch, &opt, &full) && core(usr, ch, opt, full); \
+	} \
+	MODE_ADAPTER(pre, name)
 
 /* SScorer.SetMsgText(Scrap.GetLangStr("INSPECT_CHAR_CantTalk"), Scrap.GetTime() + 2): the speech of a character that
  * does not talk */
@@ -379,27 +372,30 @@ static byte Char_Options(nativeVal_t *out) {
 	return LvN_ModGet("CharsNPC", "optionsList", out);
 }
 
-/* CharsNPC.optionsList.insert(0, text) as the port did it (PyList_Insert: the SystemError of a value that is no list) */
+/* CharsNPC.optionsList.insert(0, text) as the port did it, on the list itself (Mode_RefInsert: the SystemError of a
+ * value that is no list) */
 static byte Char_OptionsFirst(const char *text) {
-	PyObject *list = Script_Attr("CharsNPC", "optionsList"), *item = list ? PyString_FromString(text) : NULL;
-	int r = item ? PyList_Insert(list, 0, item) : -1;
-	Py_XDECREF(item);
-	Py_XDECREF(list);
-	return r == 0;
+	nativeVal_t list, item;
+	Native_SetText(&item, text, (int)strlen(text));
+	byte ok = Mode_RefMod("CharsNPC", "optionsList", &list) && Mode_RefInsert(&list, 0, &item);
+	Native_Free(&item);
+	Native_Free(&list);
+	return ok;
 }
 
 /* CharsNPC.optionsList, CharsNPC.subOptionsList = lists[0], lists[1] of a result of CharsNPC.ClassifyOptions (the
  * objects themselves, Script_SetVar's dropped errors): 0 with the error of an item */
-static byte Char_SetOptionLists(PyObject *lists) {
-	PyObject *a = PySequence_GetItem(lists, 0), *b = PySequence_GetItem(lists, 1);
-	byte ok = a && b;
+static byte Char_SetOptionLists(const nativeVal_t *lists) {
+	nativeVal_t a, b;
+	byte ok = Mode_RefItem(lists, 0, &a);
+	ok = Mode_RefItem(lists, 1, &b) && ok;
 	if (ok) {
-		if (!Mode_SetModPy("CharsNPC", "optionsList", a) || !Mode_SetModPy("CharsNPC", "subOptionsList", b)) {
+		if (!Mode_RefToMod("CharsNPC", "optionsList", &a) || !Mode_RefToMod("CharsNPC", "subOptionsList", &b)) {
 			Mode_DropError();
 		}
 	}
-	Py_XDECREF(a);
-	Py_XDECREF(b);
+	Native_Free(&a);
+	Native_Free(&b);
 	return ok;
 }
 
@@ -544,17 +540,9 @@ static byte CrazyGambler_Speech(const char *usr, const char *ch, const char *opt
 }
 
 /* the end of the speech that starts the mega deal */
-static PyObject *CrazyGambler_StartSuperDeal(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(PORT_CALL(MissionsFuncs, StartActualSuperDeal, NULL, ""));
-}
+MODE_FNANY(CrazyGambler, StartSuperDeal, PORT_CALL(MissionsFuncs, StartActualSuperDeal, NULL, ""))
 
-static PyObject *CrazyGambler_CalculateStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(CrazyGambler_Status() >= 0);
-}
+MODE_FNANY(CrazyGambler, CalculateStatus, CrazyGambler_Status() >= 0)
 
 CHAR_SPEECH(CrazyGambler, CrazyGamblerSpeech, CrazyGambler_Speech)
 
@@ -698,9 +686,9 @@ static byte Police_Talk(const char *usr, const char *ch) {
 	if ((r = Char_Spch("Generics_Police_InitMsg1", ans)) <= 0) {
 		return r == 0;
 	}
-	PyObject *lists = PORT_ASK(CharsNPC, ClassifyOptions, "s", "Police");
-	byte ok = lists && Char_SetOptionLists(lists);
-	Py_XDECREF(lists);
+	nativeVal_t lists;
+	byte ok = MODE_REFASK(CharsNPC, ClassifyOptions, &lists, "s", "Police") && Char_SetOptionLists(&lists);
+	Native_Free(&lists);
 	if (!ok) {
 		return 0;
 	}
@@ -892,11 +880,7 @@ static byte Police_EndOfSpeech(void) {
 CHAR_FN(Police, GoToMission, "s", (Char_SetInt(ent, "LLogicGotoMainMission", 1), 1))
 CHAR_SPEECH(Police, PoliceSpeech, Police_Speech)
 
-static PyObject *Police_OnEndOfSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(Police_EndOfSpeech());
-}
+MODE_FNANY(Police, OnEndOfSpeech, Police_EndOfSpeech())
 
 PyMethodDef g_PoliceFuncs[] = {
 	{ "AbortSiren", Char_AbortSiren, 1, NULL },
@@ -1032,11 +1016,7 @@ static byte Bishop_StartSelling(const nativeVal_t *e) {
 	return 1;
 }
 
-static PyObject *Bishop_AddLifesPy(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(Bishop_AddLifes());
-}
+MODE_FNANY(Bishop, AddLifesPy, Bishop_AddLifes())
 
 CHAR_SPEECH(Bishop, BishopSpeech, Bishop_Speech)
 MODE_FN(Bishop, StartSellingLife, 1, Bishop_StartSelling(&a[0]))
@@ -1093,21 +1073,10 @@ static byte Messenger_ObjInit(const nativeVal_t *elv) {
 	return ok;
 }
 
-static PyObject *Messenger_MakeDataPack(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Result(Messenger_MakePack());
-}
+MODE_FNANY(Messenger, MakeDataPack, Messenger_MakePack())
 
 /* the teleport script asks the doors and objects of the level */
-static PyObject *Messenger_DoorInitializator(PyObject *self, PyObject *args) {
-	PyObject *cls, *def = NULL;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &cls, &def)) {
-		return NULL;
-	}
-	return Py_ReturnNone();
-}
+MODE_FNOPT(Messenger, DoorInitializator, 1, 2, 1)
 
 MODE_FN(Messenger, ObjInitializator, 2, Messenger_ObjInit(&a[0]))
 

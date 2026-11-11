@@ -111,7 +111,7 @@ static byte DownTown_InitStatus(void) {
 	nativeVal_t *od = TV(), *prev = TV(), *tail = TV(), *pm = TV();
 	if (!PORT_CALL(SAI, GetOD, NULL, "") || !PORT_CALL(SAI, GetOD, od, "") || !Mode_SetModVar("Init", "Outdoor", od)) {
 		/* except: pass (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		PyErr_Clear();
+		Mode_DropError();
 	}
 	Mode_SaveVar("PrevMap", prev);
 	ok = Native_Slice(prev, 7, INT_MAX, tail) && Native_Upper(tail, pm) &&
@@ -189,12 +189,9 @@ PyMethodDef g_DownTownMapRaceMethods[] = {
 
 /* ---- Mission_FirstContactPress: Berto calls, on to the press ---- */
 
-static PyObject *Press_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, FC,
-		"[\"SPoliBoss1\", \"SMerc1\",\"SMerc2\",\"SMerc3\",\"SLMerc\",\"SMayor1\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\","
-		"\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]");
-}
+MODE_FN(Press, InitStatus, 1, LvN_AcShips(FC,
+	"[\"SPoliBoss1\", \"SMerc1\",\"SMerc2\",\"SMerc3\",\"SLMerc\","
+	"\"SMayor1\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\"," "\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]"))
 
 /* Init(LevelPath): Berto's call, then on to the press; C although the converter made it data, because the .def
  * reader keeps the quotes of the texts in the tuple of parameters ("Mission_MeetBoss" with its quotes) */
@@ -372,10 +369,7 @@ static const char *const gambler_profile[] = {
 
 MODE_FN(Gambler, GetCrazyGamblerProfile, 0, LvN_Profile(gambler_profile, out))
 
-static PyObject *Gambler_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, CG, "[\"SFunc1\",\"SBerto1\",\"SBetty1\"]");
-}
+MODE_FN(Gambler, InitStatus, 1, LvN_AcShips(CG, "[\"SFunc1\",\"SBerto1\",\"SBetty1\"]"))
 
 /* int(Scrap.GetSaveVar("NumCrazyGamblerLifes")) into out */
 static byte Gambler_Lifes(nativeVal_t *out) {
@@ -510,10 +504,7 @@ static const char *const mayor_profile[] = {
 
 MODE_FN(Mayor, GetMayorProfile, 0, LvN_Profile(mayor_profile, out))
 
-static PyObject *Mayor_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, FM, "[\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
-}
+MODE_FN(Mayor, InitStatus, 1, LvN_AcShips(FM, "[\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]"))
 
 /* Init(LevelPath): the mayor is not at the townhall; DeepThroat's warning and the mayor's taunt once the player is in
  * a ship, or the phone cab after the fight */
@@ -663,10 +654,7 @@ PyMethodDef g_DownTownFaceTheMayorMethods[] = {
 
 /* ---- Mission_Massacre: points for every ship the player destroys before the timer runs out ---- */
 
-static PyObject *Massacre_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, MS, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
-}
+MODE_FN(Massacre, InitStatus, 1, LvN_AcShips(MS, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]"))
 
 /* Scrap.Set("TimeSpecialUseTimer", betweenDeathsTime + add) (add 0: the value itself) */
 static byte Ms_Timer(long add) {
@@ -822,10 +810,7 @@ static const char *const func_profile[] = {
 
 MODE_FN(Data, GetFuncEnemiesProfile, 0, LvN_Profile(func_profile, out))
 
-static PyObject *Data_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, GD, "[\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
-}
+MODE_FN(Data, InitStatus, 1, LvN_AcShips(GD, "[\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]"))
 
 /* Init(LevelPath): the list of the transports and its callbacks, the first transport, the mission while the player is
  * in a ship, the boss */
@@ -1182,7 +1167,7 @@ static byte Data_TakeData(const nativeVal_t *a) {
 	Mode_SaveVar("NumData", sv);
 	if (!Native_ToInt(sv, ni) || !Native_Arith('+', ni, Mode_I(&t, 1), num) || !Mode_G(GD, "MAX_DATA_UNITS", max)) {
 		/* except: return (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		PyErr_Clear();
+		Mode_DropError();
 		return Mode_Done(&t, 1);
 	}
 	if (Native_Compare(num, max) > 0) {
@@ -1461,10 +1446,7 @@ static const char *const humphrey_profile[] = {
 
 MODE_FN(Hump, GetHumphreyProfile, 0, LvN_Profile(humphrey_profile, out))
 
-static PyObject *Hump_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, DH, "[\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
-}
+MODE_FN(Hump, InitStatus, 1, LvN_AcShips(DH, "[\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]"))
 
 /* Init(LevelPath): the step of the mission by MissionState */
 static byte Hump_Init(void) {
@@ -1952,18 +1934,9 @@ static byte Plus_Init(void) {
 }
 
 /* RaceList(): the checkpoints of the race (those of EasyRaceDownTown2) */
-static PyObject *Plus_RaceList(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_StartPos(args, races[1].pos, races[1].n);
-}
+MODE_FN(Plus, RaceList, 0, LvN_StartPos(races[1].pos, races[1].n))
 
-static PyObject *Plus_GetDealType(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return PyString_FromString("Race");
-}
+MODE_FN(Plus, GetDealType, 0, (Native_SetStr(out, "Race"), 1))
 
 /* EndOfRace(ItemName, VehicleName): Ficus on the end of the race (the police, a win, a defeat), his phone cab */
 static byte Plus_EndOfRace(const nativeVal_t *a) {
@@ -2749,10 +2722,7 @@ PyMethodDef g_DownTownProtectMayorTransportMethods[] = {
 
 /* ---- Mission_StealMayorShip: in the mayor's ship the player destroys twenty police ships, then parks it ---- */
 
-static PyObject *Steal_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, SM, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
-}
+MODE_FN(Steal, InitStatus, 1, LvN_AcShips(SM, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]"))
 
 /* `numCopsKilled < COPS_TO_KILL`: 1, 0, -1 */
 static int Sm_Hunting(void) {

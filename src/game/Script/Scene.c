@@ -89,14 +89,16 @@ static byte Sc_BaseAddActor(const nativeVal_t *name, const nativeVal_t *cls, con
 		!Sc_G("SceneName", scene)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 5: the list of the scene in Actors, appended in place (append of three values makes a tuple in 1.5.2) */
-	PyObject *the = Mode_AtPy(SC, "Actors", scene);
-	PyObject *append = NULL;
-	byte ok = the && Mode_Read(SC, "SceneName", scene) && Native_Arith('+', scene, name, actor) &&
-		(append = PyObject_GetAttrString(the, "append")) != NULL && Mode_Cat(&t, dummy, 2, Mode_S(&t, "Actor_"), name) &&
-		Native_Call(append, NULL, "vvv", dummy, actor, cls);
-	Py_XDECREF(append);
-	Py_XDECREF(the);
+	/* OBJLIB 5: the list of the scene in Actors, held by reference and appended in place (append of three values makes
+	 * a tuple in 1.5.2) */
+	nativeVal_t *all = Mode_V(&t), *the = Mode_V(&t), *append = Mode_V(&t);
+	byte ok = Mode_RefG(SC, "Actors", all) && Mode_RefSub(all, scene, the) && Mode_Read(SC, "SceneName", scene) &&
+		Native_Arith('+', scene, name, actor) && Mode_RefAttr(the, "append", append) &&
+		Mode_Cat(&t, dummy, 2, Mode_S(&t, "Actor_"), name);
+	if (ok) {
+		const nativeVal_t args[3] = { *dummy, *actor, *cls };
+		ok = Mode_RefApply(append, args, 3, NULL);
+	}
 	return Mode_Done(&t, ok && Mode_SActV("CreateClass", actor, r) && LvN_SetCls("ModelFilePath", path));
 }
 
@@ -114,22 +116,25 @@ static byte Sc_AddCharActor(const nativeVal_t *name, const nativeVal_t *cls) {
 
 /* LocalActors[SceneName].method(arg) on the list itself (OBJLIB 5); in: `arg in LocalActors[SceneName]` instead */
 static int Sc_LocalList(const nativeVal_t *scene, const char *method, const nativeVal_t *arg) {
-	PyObject *l = Mode_AtPy(SC, "LocalActors", scene);
-	if (!l) {
+	nativeVal_t all = { 0 }, l = { 0 };
+	int r = -1;
+	if (!Mode_RefG(SC, "LocalActors", &all) || !Mode_RefSub(&all, scene, &l)) {
+		Native_Free(&all);
 		return -1;
 	}
-	int r;
 	if (!method) {
 		nativeVal_t v;
-		Native_Arg(l, &v);
+		Mode_RefPlain(&l, &v);
 		r = Mode_In(&v, arg);
 		Native_Free(&v);
 	} else {
-		PyObject *m = PyObject_GetAttrString(l, (char *)method);
-		r = m && Native_Call(m, NULL, "v", arg) ? 1 : -1;
-		Py_XDECREF(m);
+		/* the method as the plain attribute of the list (no error is added to an object that sets none) */
+		nativeVal_t m;
+		r = Mode_RefAttr(&l, method, &m) && Mode_RefApply(&m, arg, 1, NULL) ? 1 : -1;
+		Native_Free(&m);
 	}
-	Py_DECREF(l);
+	Native_Free(&l);
+	Native_Free(&all);
 	return r;
 }
 
@@ -265,7 +270,7 @@ static byte Sc_SetDefSounds(const nativeVal_t *name, const nativeVal_t *type) {
 	if (Mode_Read(SC, "SceneName", scene) && Sc_MapSnd(&x, scene, name)) {
 		return Mode_Done(&t, 1);
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	return Mode_Done(&t, Mode_Read(SC, "SceneName", scene) && Sc_MapSndWarning(scene, name));
 }
 
@@ -322,12 +327,11 @@ static byte Sc_PlayStream(const nativeVal_t *event) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(time, Mode_Time() + 0.5);
-	PyObject *fn = Mode_GlobalPy(SC, "PlayVoiceVol");
+	/* the function as the global holds it (OBJLIB 7: by reference; the scheduler takes the entry of the port's own) */
+	nativeVal_t *fn = Mode_V(&t);
 	Native_SetInt(&args[0], 2);
-	byte ok = fn && LvN_Item(cads, 1, c1) && PORT_CALL(string, atof, &args[1], "v", c1) &&
-		Mode_Schedule(time, fn, args, 2, NULL);
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, Mode_RefG(SC, "PlayVoiceVol", fn) && LvN_Item(cads, 1, c1) && PORT_CALL(string, atof, &args[1], "v", c1) &&
+		Mode_ScheduleV(time, fn, args, 2, NULL));
 }
 
 /* PlayText(EntityName, EventName, Time): the subtitle of the event ("time\001key") */
@@ -428,9 +432,8 @@ static byte Sc_EndOfScene(const nativeVal_t *ename) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(time, Mode_Time() + 0.2);
-	PyObject *fn = Mode_GlobalPy(SC, "DelClass");
-	byte ok = fn && Mode_Schedule(time, fn, sname, 1, NULL);
-	Py_XDECREF(fn);
+	nativeVal_t *fn = Mode_V(&t);
+	byte ok = Mode_RefG(SC, "DelClass", fn) && Mode_ScheduleV(time, fn, sname, 1, NULL);
 	if (!ok || !Mode_GVarSetI("DisableSkipSlot", 0) || !Mode_GVarSetI("PauseInactivityTime", 0) ||
 		!Mode_GVarSetI("CameraScene", 0) || !Sc_G("EndOfSceneCallback", cb)) {
 		return Mode_Done(&t, 0);
@@ -494,7 +497,7 @@ static byte Sc_LoadSounds(const nativeVal_t *cls, const nativeVal_t *path) {
 	if (Sc_MapSnd(&x, cls, NULL)) {
 		return 1;
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	return Sc_MapSndWarning(cls, NULL);
 }
 
@@ -673,9 +676,8 @@ static byte Sc_Play(const nativeVal_t *cls) {
 	Native_SetStr(&args[0], "DisableSkipSlot");
 	Native_SetInt(&args[1], 1);
 	/* Scrap.Set as the module holds it: the scheduler takes its entry (Port_Scheduled) */
-	PyObject *set = Script_Attr("Scrap", "Set");
-	byte ok = set && Mode_Schedule(time, set, args, 2, NULL);
-	Py_XDECREF(set);
+	nativeVal_t *set = Mode_V(&t);
+	byte ok = Mode_RefMod("Scrap", "Set", set) && Mode_ScheduleV(time, set, args, 2, NULL);
 	Native_Free(actors);
 	Native_Free(list);
 	n = ok && Sc_G("Actors", actors) && Mode_Sub(actors, cls, list) ? Mode_Loop(list) : -1;

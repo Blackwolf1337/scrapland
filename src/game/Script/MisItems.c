@@ -47,14 +47,13 @@ static byte Mi_TakeSound(const nativeVal_t *itm, const char *key) {
 
 /* Scrap.AddScheduledFunc(when, h.Del, (), name): the item goes at when */
 static byte Mi_DelLater(const nativeVal_t *h, const nativeVal_t *when, const char *name) {
-	nativeVal_t nm;
-	PyObject *del = Mode_VBound(h, "Del");
-	if (!del) {
+	nativeVal_t nm, del;
+	if (!Mode_VBoundV(h, "Del", &del)) {
 		return 0;
 	}
 	Native_SetStr(&nm, name);
-	byte ok = Mode_Schedule(when, del, NULL, 0, &nm);
-	Py_DECREF(del);
+	byte ok = Mode_ScheduleV(when, &del, NULL, 0, &nm);
+	Native_Free(&del);
 	return ok;
 }
 
@@ -83,7 +82,7 @@ static byte Mi_InitModels(void) {
 		ok = PORT_OWN(MisItems, GetObjModel, model, "s", "ExtraLife") && Mode_PreloadOnes(model) &&
 			PORT_OWN(MisItems, GetObjModel, model2, "s", "Battery") && Mode_PreloadOnes(model2);
 	}
-	return Mode_Done(&t, ok && !PyErr_Occurred());
+	return Mode_Done(&t, ok && !Mode_ErrorSet());
 }
 
 /* the kind of box a dead ship leaves for the player (what the ship needs most); 0 with the error */
@@ -106,7 +105,7 @@ static byte Mi_BoxKind(modeVals_t *t, nativeVal_t *typo) {
 		return 0;
 	}
 	int low = Native_Compare(rnd, ratio) > 0;
-	if (PyErr_Occurred()) {
+	if (Mode_ErrorSet()) {
 		return 0;
 	}
 	if (low) {
@@ -139,11 +138,9 @@ static byte Mi_DropBox(modeVals_t *t, const nativeVal_t *v) {
 	if (!Mode_VSet(l, "rTime", rt)) {
 		return 0;
 	}
-	PyObject *del = Mode_VBound(l, "Del");
-	byte ok = del && Mi_TimePlus(Mode_I(t, 20), when) && Native_Arith('+', Mode_S(t, "Delete"), typo, tag) &&
-		Mode_Schedule(when, del, NULL, 0, tag);
-	Py_XDECREF(del);
-	return ok;
+	nativeVal_t *del = Mode_V(t);
+	return Mode_VBoundV(l, "Del", del) && Mi_TimePlus(Mode_I(t, 20), when) && Native_Arith('+', Mode_S(t, "Delete"), typo, tag) &&
+		Mode_ScheduleV(when, del, NULL, 0, tag);
 }
 
 /* OnVehicleDeat(v): a ship that dies below the atmosphere drops coins (traffic, or at random without a super deal)
@@ -162,15 +159,14 @@ static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 		return Mode_Done(&t, 0);
 	}
 	drop = drop && Native_Compare(y, atm) < 0;
-	if (PyErr_Occurred()) {
+	if (Mode_ErrorSet()) {
 		return Mode_Done(&t, 0);
 	}
 	if (drop) {
 		/* Init.SuperDealModule holds the module of the running super deal (None without one), which is no native
 		 * value: only its truth is taken, from the Python object */
-		PyObject *sd = Mode_Import("Init") ? Script_Attr("Init", "SuperDealModule") : NULL;
-		int deal = sd ? PyObject_IsTrue(sd) : -1;
-		Py_XDECREF(sd);
+		nativeVal_t *sd = Mode_V(&t);
+		int deal = Mode_Import("Init") && Mode_RefMod("Init", "SuperDealModule", sd) ? Mode_Truth(sd) : -1;
 		if (deal < 0) {
 			return Mode_Done(&t, 0);
 		}
@@ -203,7 +199,7 @@ static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 		return Mode_Done(&t, 0);
 	}
 	int del = !Native_Compare(ctl, Mode_I(&t, -1));
-	return Mode_Done(&t, !PyErr_Occurred() && (!del || Mode_VDel(v)));
+	return Mode_Done(&t, !Mode_ErrorSet() && (!del || Mode_VDel(v)));
 }
 
 MODE_FN(MisItems, OnVehicleDeat, 1, Mi_OnVehicleDeat(&a[0]))
@@ -217,7 +213,7 @@ static byte Mi_TargetReward(const nativeVal_t *v, nativeVal_t *out) {
 	}
 	int has = Native_Compare(&money, &zero) > 0;
 	Native_Free(&money);
-	if (PyErr_Occurred()) {
+	if (Mode_ErrorSet()) {
 		return 0;
 	}
 	if (has) {
@@ -254,15 +250,15 @@ static byte Mi_GiveMoney(const nativeVal_t *item, const nativeVal_t *vehicle) {
 		return Mode_Done(&t, 0);
 	}
 	int none = Native_Compare(usr, Mode_V(&t)) == 0;
-	if (PyErr_Occurred() || none) {
-		return Mode_Done(&t, !PyErr_Occurred());
+	if (Mode_ErrorSet() || none) {
+		return Mode_Done(&t, !Mode_ErrorSet());
 	}
 	Native_Free(usr);
 	if (!Mode_UsrHandle(usr) || !Mode_VGet(usr, "Name", un)) {
 		return Mode_Done(&t, 0);
 	}
 	int mine = !Native_Compare(vehicle, un);
-	if (PyErr_Occurred()) {
+	if (Mode_ErrorSet()) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok;
@@ -277,7 +273,7 @@ static byte Mi_GiveMoney(const nativeVal_t *item, const nativeVal_t *vehicle) {
 		Mode_VSet(itm, "rTime", rt) && Mode_Import("Sound") && Mode_VGet(e, "UsrControl", ctl);
 	if (ok) {
 		int other = Native_Compare(ctl, Mode_I(&t, -1)) != 0;
-		ok = !PyErr_Occurred() && Mi_TakeSound(itm, other ? "MoneyItem" : "MoneyItemOther");
+		ok = !Mode_ErrorSet() && Mi_TakeSound(itm, other ? "MoneyItem" : "MoneyItemOther");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -312,7 +308,7 @@ static byte Mi_MoneyModel(const nativeVal_t *quanto, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		int more = Native_Compare(v, quanto) > 0;
-		if (PyErr_Occurred()) {
+		if (Mode_ErrorSet()) {
 			return Mode_Done(&t, 0);
 		}
 		if (more) {
@@ -369,10 +365,7 @@ static byte Mi_CreateItem(const nativeVal_t *pos, const nativeVal_t *name, const
 		return Mode_Done(&t, 0);
 	}
 	/* the function the scheduler keeps: the entry of a port's own function, any other value the Python way */
-	PyObject *f = Native_ToPy(func);
-	byte ok = f && Mode_Schedule(when2, f, out, 1, NULL);
-	Py_XDECREF(f);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, Mode_ScheduleV(when2, func, out, 1, NULL));
 }
 
 MODE_FN(MisItems, CreateItem, 4, Mi_CreateItem(&a[0], &a[1], &a[2], &a[3], out))
@@ -389,11 +382,10 @@ static byte Mi_CreateCoin(const nativeVal_t *pos, const nativeVal_t *money, nati
 	Native_BufAdd(&b, "_Euros", -1);
 	Native_SetText(&name, b.p, b.len);
 	Native_BufFree(&b);
-	PyObject *act = NULL;
-	byte ok = PORT_OWN(MisItems, GetMoneyModel, &model, "v", money) &&
-		(act = Mode_GlobalPy("MisItems", "ActivateCoin")) != NULL &&
-		PORT_OWN(MisItems, CreateItem, out, "vvvO", pos, &name, &model, act);
-	Py_XDECREF(act);
+	nativeVal_t act = { 0 };
+	byte ok = PORT_OWN(MisItems, GetMoneyModel, &model, "v", money) && Mode_G("MisItems", "ActivateCoin", &act) &&
+		PORT_OWN(MisItems, CreateItem, out, "vvvv", pos, &name, &model, &act);
+	Native_Free(&act);
 	Native_Free(&name);
 	Native_Free(&model);
 	return ok;
@@ -413,21 +405,21 @@ MODE_FN(MisItems, ActivateBattery, 1, Mi_Activate(&a[0], "MisItems.TakeBattery")
 
 /* CreateBattery(Pos, ActivateFunc=None): a battery only the player takes */
 static byte Mi_CreateBattery(const nativeVal_t *pos, const nativeVal_t *act, nativeVal_t *out) {
-	nativeVal_t none, model = { 0 };
-	PyObject *a = NULL;
+	nativeVal_t none, model = { 0 }, fn = { 0 };
+	const nativeVal_t *a = act;
 	Native_SetNone(&none);
-	if (!Native_Compare(act, &none)) {
-		if (!(a = Mode_GlobalPy("MisItems", "ActivateBattery"))) {
-			return 0;
-		}
-	} else if (PyErr_Occurred() || !(a = Native_ToPy(act))) {
+	int isNone = Mode_CmpOp(act, &none, '=');
+	if (isNone < 0 || (isNone && !Mode_G("MisItems", "ActivateBattery", &fn))) {
 		return 0;
+	}
+	if (isNone) {
+		a = &fn;
 	}
 	/* the global CreateItem is looked up after GetObjModel (the script looked it up first) */
 	byte ok = PORT_OWN(MisItems, GetObjModel, &model, "s", "Battery") &&
-		PORT_OWN(MisItems, CreateItem, out, "vsvO", pos, "Battery", &model, a) &&
+		PORT_OWN(MisItems, CreateItem, out, "vsvv", pos, "Battery", &model, a) &&
 		Mode_VSet(out, "OnlyUser", (Native_SetInt(&none, 1), &none));
-	Py_DECREF(a);
+	Native_Free(&fn);
 	Native_Free(&model);
 	return ok;
 }
@@ -457,7 +449,7 @@ static byte Mi_TakeBattery(const nativeVal_t *item, const nativeVal_t *charName)
 		return Mode_Done(&t, 0);
 	}
 	int over = Native_Compare(now, full) > 0;
-	byte ok = !PyErr_Occurred() && (!over || Mode_VSet(me, "Energy", full)) && Mi_TakeSound(itm, "TakeBattery");
+	byte ok = !Mode_ErrorSet() && (!over || Mode_VSet(me, "Energy", full)) && Mi_TakeSound(itm, "TakeBattery");
 	return Mode_Done(&t, ok);
 }
 
@@ -474,8 +466,8 @@ static byte Mi_DazedCoin(const nativeVal_t *name) {
 		return Mode_Done(&t, 0);
 	}
 	int few = Native_Compare(money, limit) <= 0;
-	if (PyErr_Occurred() || few) {
-		return Mode_Done(&t, !PyErr_Occurred());
+	if (Mode_ErrorSet() || few) {
+		return Mode_Done(&t, !Mode_ErrorSet());
 	}
 	Native_Free(money);
 	Native_Free(dr);
@@ -555,10 +547,8 @@ static byte Cw_Init(void) {
 		return Mode_Done(&t, 0);
 	}
 	/* the module's CrazyWing: the scheduler takes its entry */
-	PyObject *f = Mode_GlobalPy("CrazyWing", "CrazyWing");
-	byte ok = f && Mode_Schedule(when, f, NULL, 0, Mode_S(&t, "CrazyWind"));
-	Py_XDECREF(f);
-	return Mode_Done(&t, ok);
+	nativeVal_t *f = Mode_V(&t);
+	return Mode_Done(&t, Mode_RefG("CrazyWing", "CrazyWing", f) && Mode_ScheduleV(when, f, NULL, 0, Mode_S(&t, "CrazyWind")));
 }
 
 /* CrazyWing(): the wind blows: the next one, and a character goes crazy unless the alarm is on */
@@ -630,16 +620,15 @@ static byte Cw_SetCrazy(void) {
 	}
 	Native_Free(v);
 	/* DeCrazy(guy, ch.CanPhoto) in CrazyWingTime (the scheduler takes its entry) */
-	PyObject *f = NULL;
-	ok = Mode_G("CrazyWing", "CrazyWingTime", ct) && Mi_TimePlus(ct, when) && (f = Mode_GlobalPy("CrazyWing", "DeCrazy")) &&
+	nativeVal_t *f = Mode_V(&t);
+	ok = Mode_G("CrazyWing", "CrazyWingTime", ct) && Mi_TimePlus(ct, when) && Mode_RefG("CrazyWing", "DeCrazy", f) &&
 		Mode_VGet(ch, "CanPhoto", v);
 	if (ok) {
 		Native_SetEmpty(args, NV_TUPLE);
 		Native_Copy(Native_Append(args), guy);
 		Native_Copy(Native_Append(args), v);
-		ok = Mode_Schedule(when, f, args->items, 2, NULL);
+		ok = Mode_ScheduleV(when, f, args->items, 2, NULL);
 	}
-	Py_XDECREF(f);
 	ok = ok && Mode_VSet(ch, "CanPhoto", Mode_I(&t, 1)) && Mode_VSet(ch, "DefLoop", Mode_S(&t, "Crazy"));
 	return Mode_Done(&t, ok);
 }
@@ -744,13 +733,7 @@ static byte Cw_Photo(const nativeVal_t *e, nativeVal_t *out) {
 		ok = Cw_Prize("SecondPrize", "CrazyWindRepeat", NULL);
 	} else if (seen == 0) {
 		/* CrazyWingList.append(ctr), the list of the module in place (OBJLIB 5) */
-		PyObject *l = Mode_GlobalPy("CrazyWing", "CrazyWingList"), *c = l ? Native_ToPy(ctr) : NULL;
-		PyObject *r = c ? Script_Method(l, "append", "(O)", c) : NULL;
-		ok = r != NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(c);
-		Py_XDECREF(l);
-		ok = ok && PORT_OWN(CrazyWing, AllInList, all, "");
+		ok = Mode_Append("CrazyWing", "CrazyWingList", ctr) && PORT_OWN(CrazyWing, AllInList, all, "");
 		if (ok && Native_True(all)) {
 			/* then Scrap.Achievement(12), which does nothing on the PC */
 			ok = Cw_Prize("BigPrize", "CrazyWindAll", NULL);

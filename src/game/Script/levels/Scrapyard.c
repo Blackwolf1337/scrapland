@@ -80,11 +80,16 @@ static byte Sy_OnDeath(const nativeVal_t *looser, const nativeVal_t *winner) {
 	return Mode_Import("Vehicles") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", looser, winner);
 }
 
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, ()) of a callable (a bound method; OBJLIB 7: Python until the
- * entities are C); fn is taken over */
-static byte Sy_LaterPy(double delay, PyObject *fn) {
-	byte ok = fn && Mode_LaterPy(delay, fn, NULL, 0, NULL);
-	Py_XDECREF(fn);
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, h.Del, ()) of a handle value (the bound method by reference;
+ * OBJLIB 7: Python until the entities are C) */
+static byte Sy_LaterDel(double delay, const nativeVal_t *h) {
+	nativeVal_t del, at;
+	byte ok = Mode_VBoundV(h, "Del", &del);
+	if (ok) {
+		Native_SetFloat(&at, Mode_Time() + delay);
+		ok = Mode_ScheduleV(&at, &del, NULL, 0, NULL);
+	}
+	Native_Free(&del);
 	return ok;
 }
 
@@ -235,7 +240,7 @@ static byte Sy_RaiseValue(const char *module, const nativeVal_t *v) {
 	if (v->type != NV_OBJ) {
 		return Native_Raise(NE_TYPE, "exceptions must be strings, classes, or instances");
 	}
-	/* OBJLIB 7 */
+	/* OBJLIB 7: the exception is a class or an instance of Python (the error state is Python's until stage 7d) */
 	PyObject *type = Script_Ref(v->obj), *value = Script_Ref(Py_None), *tb = NULL;
 	while (PyTuple_Check(type) && PyTuple_Size(type) > 0) {
 		PyObject *tmp = type;
@@ -508,10 +513,10 @@ static byte MT_TriggerTakenN(const nativeVal_t *a, const mtTaken_t *tt) {
 		nativeVal_t lairs = { 0 }, lair = { 0 }, next = { 0 };
 		Native_SetNone(&lair);
 		Native_SetNone(&next);
-		PyObject *fn = Mode_GlobalPy(MT, tt->create);
-		byte ok = fn && Mode_G(MT, tt->lairs, &lairs) && Native_Subscript(&lairs, item, &lair) && Mode_Schedule(timy, fn, &lair, 1, nm) &&
-			Native_Arith('+', timy, step, &next);
-		Py_XDECREF(fn);
+		nativeVal_t fn;
+		byte ok = Mode_RefG(MT, tt->create, &fn) && Mode_G(MT, tt->lairs, &lairs) && Native_Subscript(&lairs, item, &lair) &&
+			Mode_ScheduleV(timy, &fn, &lair, 1, nm) && Native_Arith('+', timy, step, &next);
+		Native_Free(&fn);
 		Native_Free(&lairs);
 		Native_Free(&lair);
 		if (ok) {
@@ -1324,9 +1329,10 @@ static int Fd_End(void) {
  * mission_finddtritusmatrix.def, OBJLIB 6) is the function object of the keyword. Its lookup comes before the one of
  * Speech.ForceRemoteCom (the script looked that up first; the error differs only when both fail) */
 static byte Fd_ForceCom(const char *key) {
-	PyObject *then = Mode_GlobalPy(FD, "SetNextMission");
-	byte ok = then && PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O", key, "DeepThroat", then);
-	Py_XDECREF(then);
+	nativeVal_t then;
+	byte ok = Mode_RefG(FD, "SetNextMission", &then) &&
+		PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O", key, "DeepThroat", then.obj);
+	Native_Free(&then);
 	return ok;
 }
 
@@ -1399,7 +1405,7 @@ static byte Dtritus_TakeMatrixN(const nativeVal_t *a) {
 	byte ok = Mode_G(FD, "dtritusMatrix", dm) && LvN_SetI(dm, "rTime", 20);
 	if (ok) {
 		Native_Free(dm);
-		ok = Mode_G(FD, "dtritusMatrix", dm) && Sy_LaterPy(5.0, Mode_VBound(dm, "Del"));
+		ok = Mode_G(FD, "dtritusMatrix", dm) && Sy_LaterDel(5.0, dm);
 	}
 	if (ok) {
 		Native_Free(arrow);
@@ -1649,7 +1655,7 @@ static byte Clue_InitMosquitoN(const nativeVal_t *a) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_Str(suffix, "CheckArrow");
-	byte ok = Mode_EntityH(&a[0], it) && LvN_SetI(it, "rTime", 20) && Sy_LaterPy(5.0, Mode_VBound(it, "Del")) &&
+	byte ok = Mode_EntityH(&a[0], it) && LvN_SetI(it, "rTime", 20) && Sy_LaterDel(5.0, it) &&
 		Native_Arith('+', &a[0], suffix, an) && Mode_EntityH(an, arrow) && Mode_VDel(arrow) &&
 		Mode_ListSet("Enemies", "OnDeath", "Mission_MosquitoClue.MosquitoDeath") && Mode_G(MC, "lairsList", lairs) &&
 		Native_Subscript(lairs, n, pos) && Mode_G(MC, "numMosquitosInLair", count) && Mode_Range(count, &num);
@@ -1740,7 +1746,7 @@ static byte Clue_MosquitoDeathN(const nativeVal_t *a) {
 static byte Clue_TakeDataPackN(void) {
 	nativeVal_t it = { 0 }, arrow = { 0 };
 	Native_SetNone(&arrow);
-	byte ok = LvN_Entity("MissionDataPack", &it) && LvN_SetI(&it, "rTime", 20) && Sy_LaterPy(5.0, Mode_VBound(&it, "Del")) &&
+	byte ok = LvN_Entity("MissionDataPack", &it) && LvN_SetI(&it, "rTime", 20) && Sy_LaterDel(5.0, &it) &&
 		LvN_Entity("MissionCheckArrow", &arrow) && Mode_VDel(&arrow) && Mode_GVarSetI("RemainTalkTime", 0) &&
 		LV_COM("Mission_Get1stClue_RemoteMessage5", "PoliceBoss", Mission_MosquitoClue, InitPoliChat, NULL);
 	Native_Free(&it);
@@ -2032,29 +2038,11 @@ static byte Merc_CreateMercN(const nativeVal_t *killed, const nativeVal_t *first
 	return Mode_Done(&t, ok);
 }
 
-static PyObject *Merc_CreateMerc(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "killedByPlayer", "firstfit", NULL };
-	PyObject *k = NULL, *ff = NULL;
-	nativeVal_t killed = { 0 }, firstfit = { 0 }, out = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", kwlist, &k, &ff)) {
-		return NULL;
-	}
-	if (k) {
-		Native_Arg(k, &killed);
-	} else {
-		Native_SetInt(&killed, 0);
-	}
-	if (ff) {
-		Native_Arg(ff, &firstfit);
-	} else {
-		Native_SetInt(&firstfit, 0);
-	}
-	Native_SetNone(&out);
-	byte ok = Merc_CreateMercN(&killed, &firstfit, &out);
-	Native_Free(&killed);
-	Native_Free(&firstfit);
-	return Mode_Return(ok, &out);
+/* CreateMerc(killedByPlayer=0, firstfit=0) */
+MODE_KW(Merc, CreateMerc, "|OO", "killedByPlayer", "firstfit") {
+	Mode_KwDefI(v, given, 0, 0);
+	Mode_KwDefI(v, given, 1, 0);
+	return Merc_CreateMercN(&v[0], &v[1], out);
 }
 
 /* OnStupidMercDeath(LooserName, WinnerName): he comes back 2 s later (killed by the player or not) */

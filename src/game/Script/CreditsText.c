@@ -56,14 +56,14 @@ static byte Credits_Read(int k) {
 /* the C value of the variable k into the module, as Script_SetVar of the script port (a failed set is no error) */
 static void Credits_Put(int k) {
 	if (!Native_Put("CreditsText", &credits_vars[k], 0)) {
-		PyErr_Clear();
+		Mode_DropError();
 	}
 }
 
 /* the number of a variable as Script_GetInt and Script_GetFloat read it (an int or a float, else def) */
 static double Credits_Num(int k, double def) {
 	if (!Credits_Read(k)) {
-		PyErr_Clear();
+		Mode_DropError();
 		return def;
 	}
 	const nativeVal_t *v = credits_vars[k].values;
@@ -73,7 +73,7 @@ static double Credits_Num(int k, double def) {
 /* range(MAX_TEXT_LINES) (Script_GetInt: an int, a float cut, else 20) */
 static int Credits_Max(void) {
 	if (!Credits_Read(CV_MAX)) {
-		PyErr_Clear();
+		Mode_DropError();
 		return 20;
 	}
 	const nativeVal_t *v = &credits.maxLines;
@@ -112,13 +112,9 @@ static byte Credits_Init(void) {
 	if (!Mode_Import("Menu")) {
 		return 0;
 	}
-	/* OBJLIB 5: the module's own function goes into a variable of Menu (Menu calls it through its entry) */
-	PyObject *f = Script_Attr("CreditsText", "CreditsScorer");
-	if (!f) {
-		return 0;
-	}
-	Script_SetVar("Menu", "MovieScorerCall", f);
-	return Credits_Scorer(0);
+	/* OBJLIB 5: the module's own function goes into a variable of Menu as the object it is (Menu calls it through its
+	 * entry) */
+	return Mode_ModTo("Menu", "MovieScorerCall", "CreditsText", "CreditsScorer") && Credits_Scorer(0);
 }
 
 /* PrintData(Vis): the lines of TextInfo on the page of player 0 */
@@ -217,10 +213,10 @@ static byte Credits_Step(const char *func, const nativeVal_t *val, double d) {
 	if (!Native_Arith('+', val, &dv, &next)) {
 		return 0;
 	}
-	/* the function by name: the scheduler takes its entry (Script_LaterIn, Port_Scheduled) */
-	PyObject *n = Native_ToPy(&next);
+	/* the function by name: the scheduler takes its entry (Mode_LaterIn, Port_Scheduled) */
+	byte ok = Mode_LaterIn(0.05, "CreditsText", func, &next, 1, NULL);
 	Native_Free(&next);
-	return n && Script_LaterIn(0.05, "CreditsText", func, Py_BuildValue("(N)", n), NULL);
+	return ok;
 }
 
 /* ShowUp(val=0.5): the lines go on the page; at val 0 it fades in for a time by its lines, then ShowDown */
@@ -244,28 +240,25 @@ static byte Credits_ShowUp(const nativeVal_t *val) {
 	Script_SetNum(0, CREDITS_ITEM, "Life", time - 1.2 - 0.5);
 	Script_SetNum(0, CREDITS_ITEM, "FadeIn", 0.5);
 	Script_SetNum(0, CREDITS_ITEM, "FadeOut", 1.2);
-	return Script_LaterIn(time, "CreditsText", "ShowDown", PyTuple_New(0), NULL);
+	return Mode_LaterIn(time, "CreditsText", "ShowDown", NULL, 0, NULL);
 }
 
-/* ShowDown(val=0.0): ten more steps of 0.05 s while the page fades out, then EndOfCredits() when it is set; *res
- * what EndOfCredits() gave (a new reference, NULL for None) */
-static byte Credits_ShowDown(const nativeVal_t *val, PyObject **res) {
-	*res = NULL;
+/* ShowDown(val=0.0): ten more steps of 0.05 s while the page fades out, then EndOfCredits() when it is set; out
+ * what EndOfCredits() gave */
+static byte Credits_ShowDown(const nativeVal_t *val, nativeVal_t *out) {
 	if (!Credits_InMovie()) {
 		return Credits_Clean();
 	}
 	if (Credits_Cmp(val, 0.5, 1) < 0) {
 		return Credits_Step("ShowDown", val, 0.05);
 	}
-	/* EndOfCredits is a function the level puts into the module (OBJLIB 5), called through its entry (ShowDown gives
-	 * what it gives) */
-	PyObject *end = Script_Attr("CreditsText", "EndOfCredits");
-	int t = end ? PyObject_IsTrue(end) : -1;
-	if (t > 0) {
-		Port_Values(PORT_VSITE(), end, NULL, 0, NULL, res);
-	}
-	Py_XDECREF(end);
-	return t == 0 || *res != NULL;
+	/* EndOfCredits is a function the level puts into the module (OBJLIB 5, held by reference: OBJLIB 7), called through
+	 * its entry (ShowDown gives what it gives) */
+	nativeVal_t end;
+	int t = Mode_ModGet("CreditsText", "EndOfCredits", &end) ? Mode_Truth(&end) : -1;
+	byte ok = t == 0 || (t > 0 && Mode_CallArgs(&end, out, NULL, 0));
+	Native_Free(&end);
+	return ok;
 }
 
 /* 590 - x of the script (the right corner) */
@@ -364,68 +357,36 @@ static byte Credits_Show(const char *rep) {
 	return Credits_ShowUp(&half);
 }
 
-/* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
+/* ---- the functions of the module table: MODE_FN, and entries that parse with the formats of the port (Mode_Parse) ---- */
 
-static PyObject *CreditsText_CreditsScorer(PyObject *self, PyObject *args) {
+static byte CreditsText_CreditsScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(Credits_Scorer(id)) : NULL;
+	(void)out;
+	return Mode_Parse(a, n, "i", &id) && Credits_Scorer(id);
 }
 
+MODE_ADAPTER(CreditsText, CreditsScorer)
 MODE_FN(CreditsText, Init, 0, Credits_Init())
+MODE_FN(CreditsText, PrintData, 1, Credits_Print())
 
-static PyObject *CreditsText_PrintData(PyObject *self, PyObject *args) {
-	PyObject *vis;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &vis) ? Mode_Result(Credits_Print()) : NULL;
-}
-
-static PyObject *CreditsText_PrintDataGuay(PyObject *self, PyObject *args) {
+static byte CreditsText_PrintDataGuay_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	double vis;
-	(void)self;
-	return PyArg_ParseTuple(args, "d", &vis) ? Mode_Result(Credits_PrintGuay(vis)) : NULL;
+	(void)out;
+	return Mode_Parse(a, n, "d", &vis) && Credits_PrintGuay(vis);
 }
 
-static PyObject *CreditsText_CleanCredits(PyObject *self, PyObject *args) {
-	(void)self;
-	return PyArg_ParseTuple(args, "") ? Mode_Result(Credits_Clean()) : NULL;
+MODE_ADAPTER(CreditsText, PrintDataGuay)
+MODE_FN(CreditsText, CleanCredits, 0, Credits_Clean())
+
+/* ShowUp(val=0.5), ShowDown(val=0.0) */
+static byte Credits_ShowArgs(const nativeVal_t *a, int n, byte up, nativeVal_t *out) {
+	nativeVal_t def;
+	Native_SetFloat(&def, up ? 0.5 : 0.0);
+	return up ? Credits_ShowUp(n ? &a[0] : &def) : Credits_ShowDown(n ? &a[0] : &def, out);
 }
 
-/* the optional argument val of ShowUp and ShowDown (def when it is not given): 0 with the error set */
-static byte Credits_Val(PyObject *args, double def, nativeVal_t *val) {
-	PyObject *o = NULL;
-	if (!PyArg_ParseTuple(args, "|O", &o)) {
-		return 0;
-	}
-	if (!o) {
-		Native_SetFloat(val, def);
-		return 1;
-	}
-	return Native_Arg(o, val);
-}
-
-static PyObject *CreditsText_ShowUp(PyObject *self, PyObject *args) {
-	nativeVal_t val;
-	(void)self;
-	if (!Credits_Val(args, 0.5, &val)) {
-		return NULL;
-	}
-	byte ok = Credits_ShowUp(&val);
-	Native_Free(&val);
-	return Mode_Result(ok);
-}
-
-static PyObject *CreditsText_ShowDown(PyObject *self, PyObject *args) {
-	nativeVal_t val;
-	PyObject *res;
-	(void)self;
-	if (!Credits_Val(args, 0.0, &val)) {
-		return NULL;
-	}
-	byte ok = Credits_ShowDown(&val, &res);
-	Native_Free(&val);
-	return !ok ? NULL : res ? res : Py_ReturnNone();
-}
+MODE_FNOPT(CreditsText, ShowUp, 0, 1, Credits_ShowArgs(a, n, 1, out))
+MODE_FNOPT(CreditsText, ShowDown, 0, 1, Credits_ShowArgs(a, n, 0, out))
 
 /* ShowCredit(num): the page of `num` */
 static byte Credits_ShowNum(const nativeVal_t *num) {

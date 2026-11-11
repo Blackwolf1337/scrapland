@@ -34,8 +34,9 @@
 
 #define NPC "CharsNPC"
 
-/* ---- the class CharSpawnPos (OBJLIB 9: a class of the Python object library with a C __init__, made by the hooks of
- * the module code) ---- */
+/* ---- the class CharSpawnPos (OBJLIB 7: a class of the Python object library with a C __init__, made by the hooks of
+ * the module code; its instances are the spawn points other modules and the cases hold, so the class, its method
+ * objects and the instances stay Python objects until the classes are native) ---- */
 
 /* CharSpawnPos.__init__(self) of charsnpc.py:20: self.CallbackFunc = [] */
 static PyObject *Npc_SpawnPosInit(PyObject *self, PyObject *args) {
@@ -189,26 +190,23 @@ static void Npc_Insert0(nativeVal_t *lst, const nativeVal_t *v) {
 
 /* CharRes[key] (the global) as the object it is (OBJLIB 5: the spawn points are instances of the Python class) */
 static byte Npc_Res(const nativeVal_t *key, nativeVal_t *out) {
-	PyObject *o = Mode_AtPy(NPC, "CharRes", key);
-	if (!o) {
-		return 0;
+	nativeVal_t res, o = { 0 };
+	Native_SetNone(out);
+	byte ok = Mode_RefG(NPC, "CharRes", &res) && Mode_RefSub(&res, key, &o);
+	if (ok) {
+		Mode_RefPlain(&o, out);
 	}
-	Native_Arg(o, out);
-	Py_DECREF(o);
-	return 1;
+	Native_Free(&o);
+	Native_Free(&res);
+	return ok;
 }
 
-/* CharSpawnPos() of the global class (OBJLIB 5) */
+/* CharSpawnPos() of the global class (OBJLIB 7: the class object and its new instance), the instance by reference */
 static byte Npc_SpawnPos(nativeVal_t *out) {
 	PyObject *cls = Mode_GlobalPy(NPC, "CharSpawnPos");
 	PyObject *csp = cls ? Npc_NewSpawnPos(cls) : NULL;
 	Py_XDECREF(cls);
-	if (!csp) {
-		return 0;
-	}
-	Native_Arg(csp, out);
-	Py_DECREF(csp);
-	return 1;
+	return Mode_RefTake(csp, out);
 }
 
 /* string.find(s, sub) != -1 (the native twin of strop's find): 1, 0, -1 with the error set */

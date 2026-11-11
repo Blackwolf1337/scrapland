@@ -57,22 +57,6 @@ static byte Vv_SetYes(int id, const char *item, int yes) {
 	return ok;
 }
 
-/* the adapters of the functions (id, control) with control any value */
-#define VV_FN(func, call) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
-		int id; \
-		PyObject *control; \
-		nativeVal_t c; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "iO", &id, &control)) { \
-			return NULL; \
-		} \
-		Native_Arg(control, &c); \
-		byte ok = call; \
-		Native_Free(&c); \
-		return Mode_Result(ok); \
-	}
-
 /* Apply_SetFog(id, control): R_FogEnable from the Fog item */
 static byte Vv_ApplyFog(int id) {
 	int yes = Vv_IsYes(id, "Fog");
@@ -120,11 +104,12 @@ static byte Vv_ChangeBoolean(int id, const nativeVal_t *control) {
 	return ok;
 }
 
-VV_FN(PCMenu_Apply_SetActive, ((void)c, Mode_ApplyFlash(id)))
-VV_FN(PCMenu_Apply_SetFog, ((void)c, Vv_ApplyFog(id)))
-VV_FN(PCMenu_Apply_SetTextureFilter, ((void)c, Vv_ApplyFilter(id)))
-VV_FN(PCMenu_Apply_SetVideoLock, ((void)c, Vv_ApplyLock(id)))
-VV_FN(PCMenu_ChangeBoolean, Vv_ChangeBoolean(id, &c))
+/* the functions (id, control) with control any value (MODE_IFN) */
+MODE_IFN(PCMenu_Apply_SetActive, 2, Mode_ApplyFlash(id))
+MODE_IFN(PCMenu_Apply_SetFog, 2, Vv_ApplyFog(id))
+MODE_IFN(PCMenu_Apply_SetTextureFilter, 2, Vv_ApplyFilter(id))
+MODE_IFN(PCMenu_Apply_SetVideoLock, 2, Vv_ApplyLock(id))
+MODE_IFN(PCMenu_ChangeBoolean, 2, Vv_ChangeBoolean(id, &a[1]))
 
 /* DrawLine(id, name, posX=64, posY=64, sizeX=512, sizeY=352, alpha=92, red=0, green=0, blue=32): a sprite as a
  * coloured rectangle, added when the item is not there (v: the eight values) */
@@ -146,28 +131,12 @@ static byte Vv_DrawLine(const nativeVal_t *id, const nativeVal_t *name, const na
 	return Mode_ScorerSet(id, name, "Visible", &one);
 }
 
-static PyObject *PCMenu_DrawLine(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "id", "name", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
+MODE_KWT(PCMenu, DrawLine, "OO|OOOOOOOO", "id", "name", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue") {
 	static const long defs[8] = { 64, 64, 512, 352, 92, 0, 0, 32 };
-	PyObject *o[10] = { NULL };
-	nativeVal_t v[10];
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOOOOOO", kwlist, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6],
-		&o[7], &o[8], &o[9])) {
-		return NULL;
+	for (int i = 2; i < 10; i++) {
+		Mode_KwDefI(v, given, i, defs[i - 2]);
 	}
-	for (int i = 0; i < 10; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &v[i]);
-		} else {
-			Native_SetInt(&v[i], defs[i - 2]);
-		}
-	}
-	byte ok = Vv_DrawLine(&v[0], &v[1], &v[2]);
-	for (int i = 0; i < 10; i++) {
-		Native_Free(&v[i]);
-	}
-	return Mode_Result(ok);
+	return Vv_DrawLine(&v[0], &v[1], &v[2]);
 }
 
 /* `global name; name = []` then name.append(prefix + Scrap.GetLangStr(key)) per key (the key itself when lang is 0,
@@ -199,35 +168,16 @@ static byte Vv_Fill(const char *name, const char *const *keys, const char *const
 static const char *const vv_levels[] = { "Menu_Question_High", "Menu_Question_Medium", "Menu_Question_Low",
 	"Menu_Question_No" };
 
+static const char *const vv_marks[] = { "\2 ", "\2 ", "\2 ", "\3 " };
+static const char *const vv_filters[] = { "Point", "Bilinear", "Trilinear", "Anisotropic x2", "Anisotropic x4",
+	"Anisotropic x8" };
+
 /* FillShadowsDetail(): ShadowsDetailList, high, medium, low with the Yes mark, no with the No mark */
-static PyObject *PCMenu_FillShadowsDetail(PyObject *self, PyObject *args) {
-	static const char *const marks[] = { "\2 ", "\2 ", "\2 ", "\3 " };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Mode_Result(Vv_Fill("ShadowsDetailList", vv_levels, marks, 4, 1));
-}
-
+MODE_FN(PCMenu, FillShadowsDetail, 0, Vv_Fill("ShadowsDetailList", vv_levels, vv_marks, 4, 1))
 /* FillTextureDetail(): TextureDetailList, high, medium, low */
-static PyObject *PCMenu_FillTextureDetail(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Mode_Result(Vv_Fill("TextureDetailList", vv_levels, NULL, 3, 1));
-}
-
+MODE_FN(PCMenu, FillTextureDetail, 0, Vv_Fill("TextureDetailList", vv_levels, NULL, 3, 1))
 /* FillTextureFilter(): TextureFilterList, the names of the filters */
-static PyObject *PCMenu_FillTextureFilter(PyObject *self, PyObject *args) {
-	static const char *const filters[] = { "Point", "Bilinear", "Trilinear", "Anisotropic x2", "Anisotropic x4",
-		"Anisotropic x8" };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Mode_Result(Vv_Fill("TextureFilterList", filters, NULL, 6, 0));
-}
+MODE_FN(PCMenu, FillTextureFilter, 0, Vv_Fill("TextureFilterList", vv_filters, NULL, 6, 0))
 
 /* int(cad[lo:hi]) of the script into out */
 static byte Vv_Number(const nativeVal_t *cad, long lo, long hi, nativeVal_t *out) {
@@ -313,13 +263,7 @@ static byte Vv_FillVideoModes(void) {
 	return ok;
 }
 
-static PyObject *PCMenu_FillVideoModes(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Mode_Result(Vv_FillVideoModes());
-}
+MODE_FN(PCMenu, FillVideoModes, 0, Vv_FillVideoModes())
 
 /*
  * The slider formulas: GammaFormula(value=-1, gamma=-1) gives the gamma of a slider value (value >= 0) or the value
@@ -535,14 +479,7 @@ static byte Vv_UpdateOptions(int id) {
 		Vv_SceneYes(id, "DuDv", scene, "R_SceneDuDvRTarget") && Vv_SetYes(id, "Shadows", 0);
 }
 
-static PyObject *PCMenu_UpdateVideoOptions(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	return Mode_Result(Vv_UpdateOptions(id));
-}
+MODE_IFN(PCMenu_UpdateVideoOptions, 1, Vv_UpdateOptions(id))
 
 /* VideoGetLast(id): the values the video menu of the script set back on Back */
 static byte Vv_GetLast(void) {
@@ -565,14 +502,7 @@ static byte Vv_GetLast(void) {
 	return 1;
 }
 
-static PyObject *PCMenu_VideoGetLast(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	return Mode_Result(Vv_GetLast());
-}
+MODE_FN(PCMenu, VideoGetLast, 1, Vv_GetLast())
 
 PyMethodDef g_MenuVideoVarsMethods[] = {
 	{ "Apply_SetActive", PCMenu_Apply_SetActive, 1, NULL },

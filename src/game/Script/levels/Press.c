@@ -441,13 +441,7 @@ static byte Pr_NotAvailable(const char *name) {
 	Native_Free(&l);
 	byte ok = in >= 0;
 	if (in > 0) {
-		PyObject *o = Script_Attr("CharConversor", "AvailableChars");
-		PyObject *x = o ? Native_ToPy(&v) : NULL;
-		PyObject *r = x ? Script_Method(o, "remove", "(O)", x) : NULL;
-		ok = r != NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(x);
-		Py_XDECREF(o);
+		ok = Mode_VarCall("CharConversor", "AvailableChars", 0, "remove", &v);
 	}
 	Native_Free(&v);
 	return ok;
@@ -588,16 +582,10 @@ PyMethodDef g_PressMapMethods[] = {
 /* ---- MapPlanes ---- */
 
 /* Init(LevelPath) */
-static PyObject *PressPlanes_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_PlanesInit(args, MPL);
-}
+MODE_FN(PressPlanes, Init, 1, LvN_PlanesInit(MPL))
 
 /* TakenPhoto(Name) */
-static PyObject *PressPlanes_TakenPhoto(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_PlanesPhoto(args, MPL, "PressBlueprints.Ships", "PressBlueprints.Engines");
-}
+MODE_FN(PressPlanes, TakenPhoto, 1, LvN_PlanesPhoto(&a[0], MPL, "PressBlueprints.Ships", "PressBlueprints.Engines", out))
 
 PyMethodDef g_PressMapPlanesMethods[] = {
 	{ "Init", PressPlanes_Init, METH_VARARGS, NULL },
@@ -1079,10 +1067,10 @@ static byte Pr_TakenDel(const nativeVal_t *it) {
 		return 0;
 	}
 	Native_SetFloat(&time, Mode_Time() + 5);
-	/* OBJLIB 7: the scheduler keeps the bound method (Python until the entities are C) */
-	PyObject *del = Mode_VBound(it, "Del");
-	byte ok = del && Mode_Schedule(&time, del, NULL, 0, NULL);
-	Py_XDECREF(del);
+	/* OBJLIB 7: the scheduler keeps the bound method (Python until the entities are C), held by reference */
+	nativeVal_t del;
+	byte ok = Mode_VBoundV(it, "Del", &del) && Mode_ScheduleV(&time, &del, NULL, 0, NULL);
+	Native_Free(&del);
 	return ok;
 }
 
@@ -1404,10 +1392,10 @@ static byte Pr_MissionTarget(const char *name, const char *use, const long *pos)
 	}
 	/* CharsNPC.CreateChar(CharsNPC.CharRes[name]) (OBJLIB 5: the character object of CharsNPC) */
 	LvN_Str(&k, name);
-	PyObject *ch = Mode_CharRes(&k);
+	nativeVal_t ch;
+	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && PORT_CALL(CharsNPC, CreateChar, NULL, "O", ch.obj);
 	Native_Free(&k);
-	byte ok = ch && PORT_CALL(CharsNPC, CreateChar, NULL, "O", ch);
-	Py_XDECREF(ch);
+	Native_Free(&ch);
 	if (!ok || !LvN_Entity(name, &e)) {
 		return 0;
 	}
@@ -1647,14 +1635,14 @@ static byte Pr_CheckHumanDist(const char *module, nativeVal_t *out) {
 
 /* CharsNPC.CharRes[key].var = (x, y, z) (OBJLIB 5: the character objects of CharsNPC) */
 static byte Pr_ResSet(const char *key, const char *var, long x, long y, long z) {
-	nativeVal_t k, v;
+	nativeVal_t k, v, ch;
 	LvN_Str(&k, key);
-	PyObject *ch = Mode_CharRes(&k);
+	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch);
 	Native_Free(&k);
 	Mode_Ints3(&v, x, y, z);
-	byte ok = ch && Mode_HSet(ch, var, &v);
+	ok = ok && Mode_VSet(&ch, var, &v);
 	Native_Free(&v);
-	Py_XDECREF(ch);
+	Native_Free(&ch);
 	return ok;
 }
 
@@ -1813,14 +1801,8 @@ static byte Gw_LoadNextMission(void) {
 	return PORT_CALL(SaveGame, QLoad, NULL, "s", "Levels/GamblinDen");
 }
 
-static PyObject *GoWithHuman_LoadNextMission(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "name", NULL };
-	PyObject *name = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &name)) {
-		return NULL;
-	}
-	return Mode_Result(Gw_LoadNextMission());
+MODE_KW(GoWithHuman, LoadNextMission, "|O", "name") {
+	return Gw_LoadNextMission();
 }
 
 static const char *const gowithhuman_scene2[] = {
@@ -2269,9 +2251,8 @@ static byte Pr_CreateChar(const char *name) {
 /* Scrap.AddScheduledFunc(time, SScorer.Fade, (0, from, to, secs)) at the time value time (the function of SScorer
  * as the module holds it: the scheduler takes its entry, Port_Scheduled) */
 static byte Pr_FadeAt(const nativeVal_t *time, const int *from, const int *to, double secs) {
-	nativeVal_t args[4];
-	PyObject *fn = Script_Attr("SScorer", "Fade");
-	if (!fn) {
+	nativeVal_t args[4], fn;
+	if (!Mode_RefMod("SScorer", "Fade", &fn)) {
 		return 0;
 	}
 	Native_SetInt(&args[0], 0);
@@ -2282,10 +2263,10 @@ static byte Pr_FadeAt(const nativeVal_t *time, const int *from, const int *to, d
 		Native_SetInt(Native_Append(&args[2]), to[i]);
 	}
 	Native_SetFloat(&args[3], secs);
-	byte ok = Mode_Schedule(time, fn, args, 4, NULL);
+	byte ok = Mode_ScheduleV(time, &fn, args, 4, NULL);
 	Native_Free(&args[1]);
 	Native_Free(&args[2]);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -2343,22 +2324,10 @@ static byte MeetBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* the optional usr of the prolog functions: the entry and the adapter of a core without arguments (the adapter keeps
- * the keyword usr and the errors of PyArg_ParseTupleAndKeywords) */
+/* the optional usr of the prolog functions: the keyword function of a core without arguments */
 #define PR_USRFN(fn, core) \
-	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
-		const nativeVal_t *usr = NULL; \
-		(void)out; \
-		return Mode_Parse(a, n, "|O", &usr) && core(); \
-	} \
-	static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
-		static char *names[] = { "usr", NULL }; \
-		PyObject *usr = NULL; \
-		(void)self; \
-		if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) { \
-			return NULL; \
-		} \
-		return Mode_Result(core()); \
+	MODE_KWBY(Mode_KwAdapter, fn, "|O", "usr") { \
+		return core(); \
 	}
 
 /* PlayProlog0(usr=None): the player at the start of the prolog; the gatekeeper of the boss room comes alive */
@@ -2515,37 +2484,32 @@ static byte MeetBoss_OnActionPressed(const nativeVal_t *a, nativeVal_t *out) {
 
 /* Speech.RemoteCom.remove(the last queued com of key) (OBJLIB 5: the list of Speech in place) */
 static byte Mb_UnqueueCom(const char *key) {
-	PyObject *list = Script_Attr("Speech", "RemoteCom");
-	if (!list) {
+	nativeVal_t list, found = { 0 };
+	if (!Mode_RefMod("Speech", "RemoteCom", &list)) {
 		return 0;
 	}
-	int n = PyObject_Length(list);
-	PyObject *found = NULL;
-	byte ok = n >= 0;
+	int n = Mode_RefSize(&list);
+	byte ok = n >= 0, any = 0;
 	for (int i = 0; ok && i < n; i++) {
-		nativeVal_t k;
+		nativeVal_t k, rc = { 0 }, k0 = { 0 };
 		Native_SetNone(&k);
-		PyObject *rc = PySequence_GetItem(list, i), *k0 = rc ? PySequence_GetItem(rc, 0) : NULL;
-		ok = k0 != NULL;
+		ok = Mode_RefItem(&list, i, &rc) && Mode_RefItem(&rc, 0, &k0);
 		if (ok) {
-			Native_Arg(k0, &k);
+			Mode_RefPlain(&k0, &k);
 			if (LvN_EqS(&k, key)) {
-				Py_XDECREF(found);
+				Native_Free(&found);
 				found = rc;
-				Py_INCREF(found);
+				Native_SetNone(&rc);
+				any = 1;
 			}
 		}
 		Native_Free(&k);
-		Py_XDECREF(k0);
-		Py_XDECREF(rc);
+		Native_Free(&k0);
+		Native_Free(&rc);
 	}
-	if (ok && found) {
-		PyObject *r = Script_Method(list, "remove", "(O)", found);
-		ok = r != NULL;
-		Py_XDECREF(r);
-	}
-	Py_XDECREF(found);
-	Py_DECREF(list);
+	ok = ok && (!any || Mode_RefCall(&list, "remove", &found, 1, NULL));
+	Native_Free(&found);
+	Native_Free(&list);
 	return ok;
 }
 
@@ -3234,14 +3198,8 @@ static byte Wd_LaunchScene(void) {
 	return LvN_ModNone("Elevator", "OnElevatorReachDown") && Mode_Target("") && PR_LATER(0.1, WD, "PlayScene");
 }
 
-static PyObject *DeepThroat_LaunchScene(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "charName", NULL };
-	PyObject *name = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &name)) {
-		return NULL;
-	}
-	return Mode_Result(Wd_LaunchScene());
+MODE_KW(DeepThroat, LaunchScene, "|O", "charName") {
+	return Wd_LaunchScene();
 }
 
 /* PlayScene(): Deep Throat discovered */
