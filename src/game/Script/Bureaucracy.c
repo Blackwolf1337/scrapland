@@ -61,13 +61,8 @@ static byte Bureaucracy_Class(const nativeVal_t *cls, const nativeVal_t *file) {
 	if (!g_pAuxActClass) {
 		g_pAuxActClass = cActClassList_Create(g_pActClassList, full.p);
 		ok = file->type == NV_STR || Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
-		/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
-		PyObject *c = ok ? Native_ToPy(cls) : NULL, *f = c ? Native_ToPy(file) : NULL;
-		PyObject *vars = f ? Py_BuildValue("{s:O,s:O}", "cls", c, "file", f) : NULL;
-		ok = vars && Script_RunFileTry(0, "chars/bureaucracy.def", "Class", bureaucracy_def, NULL, vars);
-		Py_XDECREF(c);
-		Py_XDECREF(f);
-		Py_XDECREF(vars);
+		/* OBJLIB 6: the $names go to the .def runner as a dict (MODE_DEFRUN) */
+		ok = ok && MODE_DEFRUN(1, 0, "chars/bureaucracy.def", "Class", bureaucracy_def, 2, "cls", cls, "file", file);
 	}
 	Native_BufFree(&full);
 	return ok;
@@ -169,46 +164,12 @@ static byte Bureaucracy_CreateBureaucracyClass_E(const nativeVal_t *a, int n, na
 	return Bureaucracy_Class(a[0].type == NV_OBJ ? &none : &a[0], a[1].type == NV_OBJ ? &none : &a[1]);
 }
 
-static PyObject *Bureaucracy_CreateBureaucracyClass(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, Bureaucracy_CreateBureaucracyClass_E);
-}
+MODE_ADAPTER(Bureaucracy, CreateBureaucracyClass)
 
-/* Init(fromViewer = 0) of the argument object (NULL: not given) */
-static byte Bureaucracy_InitObj(PyObject *viewer) {
-	/* OBJLIB 7: the import of the function is a module object (found in C since batch 6b) */
-	PyObject *string = Script_Module("string");
-	if (!string) {
-		return 0;
-	}
-	Py_DECREF(string);
-	int fromViewer = viewer ? PyObject_IsTrue(viewer) : 0;
+/* Init(fromViewer = 0): the import of the function, then the truth of the argument (not given: 0) */
+MODE_KW(Bureaucracy, InitPy, "|O", "fromViewer") {
+	int fromViewer = Mode_Import("string") ? given[0] ? Mode_Truth(&v[0]) : 0 : -1;
 	return fromViewer >= 0 && Bureaucracy_Init(fromViewer);
-}
-
-/* the entry (stage 3, the call of InitLevel through its ref): fromViewer as the object its call through Python
- * passes */
-static byte Bureaucracy_InitPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	nativeVal_t v[1];
-	byte given[1];
-	(void)out;
-	if (!Mode_KwSlots(a, n, "|O", v, given)) {
-		return 0;
-	}
-	PyObject *viewer = given[0] ? Native_ToPy(&v[0]) : NULL;
-	byte ok = (!given[0] || viewer) && Bureaucracy_InitObj(viewer);
-	Py_XDECREF(viewer);
-	return ok;
-}
-
-static PyObject *Bureaucracy_InitPy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "fromViewer", NULL };
-	PyObject *viewer = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &viewer)) {
-		return NULL;
-	}
-	return Bureaucracy_InitObj(viewer) ? Py_ReturnNone() : NULL;
 }
 
 PyMethodDef g_BureaucracyMethods[] = {

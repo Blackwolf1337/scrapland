@@ -36,7 +36,7 @@ PORT_DECL(Bureaucracy, CreateBureaucracyClass) /* 2 */
 PORT_DECL(Bureaucracy, Init) /* ? */
 #define PORTS_Bureaucracy \
 	PORT_DEF(Bureaucracy, CreateBureaucracyClass, Bureaucracy_CreateBureaucracyClass) \
-	PORT_DEF(Bureaucracy, Init, Bureaucracy_InitPy)
+	PORT_DEFK(Bureaucracy, Init, Bureaucracy_InitPy)
 
 /* Challenge.c */
 PORT_DECL(Challenge, ComputeReward) /* 3 */
@@ -269,15 +269,63 @@ PORT_DECL(CharsNPC, GenericNPCSpeech) /* 4 */
 	PORT_DEF(CharsNPC, GenericNPCSpeech, CharsNPC_GenericNPCSpeech)
 
 /* Chat.c */
+PORT_DECL(Chat, GetID) /* ? */
+PORT_DECL(Chat, CycleUp) /* ? */
+PORT_DECL(Chat, CycleUpAndSet) /* ? */
+PORT_DECL(Chat, CycleDown) /* ? */
+PORT_DECL(Chat, CycleDownAndSet) /* ? */
+PORT_DECL(Chat, ServerReSendChat) /* 2 */
+PORT_DECL(Chat, PrintChatString) /* 2 */
+PORT_DECL(Chat, SendChatString) /* ? */
+PORT_DECL(Chat, EndChat) /* ? */
+PORT_DECL(Chat, GetMyShip) /* 0 */
+PORT_DECL(Chat, InitChat) /* ? */
+PORT_DECL(Chat, ConsoleChatString) /* 1 */
+PORT_DECL(Chat, qchat1) /* ? */
+PORT_DECL(Chat, qchat2) /* ? */
+PORT_DECL(Chat, qchat3) /* ? */
+PORT_DECL(Chat, qchat4) /* ? */
+PORT_DECL(Chat, qchat5) /* ? */
+PORT_DECL(Chat, qchat6) /* ? */
 PORT_DECL(Chat, SetChatProc) /* 0 */
 #define PORTS_Chat \
+	PORT_DEF(Chat, GetID, Chat_GetID) \
+	PORT_DEF(Chat, CycleUp, Chat_CycleUp) \
+	PORT_DEF(Chat, CycleUpAndSet, Chat_CycleUpAndSet) \
+	PORT_DEF(Chat, CycleDown, Chat_CycleDown) \
+	PORT_DEF(Chat, CycleDownAndSet, Chat_CycleDownAndSet) \
+	PORT_DEF(Chat, ServerReSendChat, Chat_ServerReSendChat) \
+	PORT_DEF(Chat, PrintChatString, Chat_PrintChatString) \
+	PORT_DEF(Chat, SendChatString, Chat_SendChatString) \
+	PORT_DEF(Chat, EndChat, Chat_EndChat) \
+	PORT_DEF(Chat, GetMyShip, Chat_GetMyShip) \
+	PORT_DEF(Chat, InitChat, Chat_InitChat) \
+	PORT_DEF(Chat, ConsoleChatString, Chat_ConsoleChatString) \
+	PORT_DEF(Chat, qchat1, Chat_qchat1) \
+	PORT_DEF(Chat, qchat2, Chat_qchat2) \
+	PORT_DEF(Chat, qchat3, Chat_qchat3) \
+	PORT_DEF(Chat, qchat4, Chat_qchat4) \
+	PORT_DEF(Chat, qchat5, Chat_qchat5) \
+	PORT_DEF(Chat, qchat6, Chat_qchat6) \
 	PORT_DEF(Chat, SetChatProc, Chat_SetChatProc)
 
 /* CreditsText.c */
 PORT_DECL(CreditsText, Init) /* 0 */
+PORT_DECL(CreditsText, CreditsScorer) /* ? */
+PORT_DECL(CreditsText, PrintDataGuay) /* ? */
+PORT_DECL(CreditsText, PrintData) /* 1 */
+PORT_DECL(CreditsText, ShowUp) /* ? */
+PORT_DECL(CreditsText, ShowDown) /* ? */
+PORT_DECL(CreditsText, CleanCredits) /* 0 */
 PORT_DECL(CreditsText, ShowCredit) /* 1 */
 #define PORTS_CreditsText \
 	PORT_DEF(CreditsText, Init, CreditsText_Init) \
+	PORT_DEF(CreditsText, CreditsScorer, CreditsText_CreditsScorer) \
+	PORT_DEF(CreditsText, PrintDataGuay, CreditsText_PrintDataGuay) \
+	PORT_DEF(CreditsText, PrintData, CreditsText_PrintData) \
+	PORT_DEF(CreditsText, ShowUp, CreditsText_ShowUp) \
+	PORT_DEF(CreditsText, ShowDown, CreditsText_ShowDown) \
+	PORT_DEF(CreditsText, CleanCredits, CreditsText_CleanCredits) \
 	PORT_DEF(CreditsText, ShowCredit, CreditsText_ShowCredit)
 
 /* Doors.c */
@@ -622,6 +670,7 @@ PORT_DECL(HangarTab, IsShipValid) /* 1 */
 PORT_DECL(HangarTab, ComputeShipTotalCost) /* ? */
 PORT_DECL(HangarTab, ShowRebuildShipMoney) /* 3 */
 PORT_DECL(HangarTab, HideRebuildShipMoney) /* 3 */
+PORT_DECL(HangarTab, AuxShowMoney) /* ? */
 PORT_DECL(HangarTab, ShowMoneyBuyingShip) /* 3 */
 PORT_DECL(HangarTab, ShowMoneySellingShip) /* 3 */
 PORT_DECL(HangarTab, HideMoney) /* 3 */
@@ -636,6 +685,7 @@ PORT_DECL(HangarTab, PrevShipToEdit) /* 2 */
 PORT_DECL(HangarTab, NextShipToEdit) /* 2 */
 PORT_DECL(HangarTab, SetShipTypeButtonsState) /* 2 */
 PORT_DECL(HangarTab, SelectShipToEdit) /* 1 */
+PORT_DECL(HangarTab, SelectHangar) /* ? */
 PORT_DECL(HangarTab, SelectItem) /* 2 */
 PORT_DECL(HangarTab, CreateEmptyShip) /* 1 */
 PORT_DECL(HangarTab, BuyShip) /* 2 */
@@ -661,20 +711,22 @@ PORT_DECL(HangarTab, HideShipMiniInfo) /* 3 */
 	PORT_DEFK(HangarTab, ComputeShipTotalCost, HT_ComputeShipTotalCost) \
 	PORT_DEF(HangarTab, ShowRebuildShipMoney, HT_ShowRebuildShipMoney) \
 	PORT_DEF(HangarTab, HideRebuildShipMoney, HT_HideRebuildShipMoney) \
+	PORT_DEF(HangarTab, AuxShowMoney, HT_AuxShowMoney) \
 	PORT_DEF(HangarTab, ShowMoneyBuyingShip, HT_ShowMoneyBuyingShip) \
 	PORT_DEF(HangarTab, ShowMoneySellingShip, HT_ShowMoneySellingShip) \
 	PORT_DEF(HangarTab, HideMoney, HT_HideMoney) \
-	PORT_DEF(HangarTab, ScaleSpeedRamp, HT_ScaleSpeedRamp) \
+	PORT_DEFK(HangarTab, ScaleSpeedRamp, HT_ScaleSpeedRamp) \
 	PORT_DEF(HangarTab, GetSpeedRampOffsets, HT_GetSpeedRampOffsets) \
 	PORT_DEF(HangarTab, GetMaxSpeedTime, HT_GetMaxSpeedTime) \
 	PORT_DEF(HangarTab, SetHangarPanel, HT_SetHangarPanel) \
 	PORT_DEF(HangarTab, CmSec2Value, HT_CmSec2Value) \
-	PORT_DEF(HangarTab, ShowShipInfo, HT_ShowShipInfo) \
+	PORT_DEFK(HangarTab, ShowShipInfo, HT_ShowShipInfo) \
 	PORT_DEF(HangarTab, HideShipInfo, HT_HideShipInfo) \
 	PORT_DEF(HangarTab, PrevShipToEdit, HT_PrevShipToEdit) \
 	PORT_DEF(HangarTab, NextShipToEdit, HT_NextShipToEdit) \
 	PORT_DEF(HangarTab, SetShipTypeButtonsState, HT_SetShipTypeButtonsState) \
 	PORT_DEF(HangarTab, SelectShipToEdit, HT_SelectShipToEdit) \
+	PORT_DEFK(HangarTab, SelectHangar, HT_SelectHangar) \
 	PORT_DEF(HangarTab, SelectItem, HT_SelectItem) \
 	PORT_DEF(HangarTab, CreateEmptyShip, HT_CreateEmptyShip) \
 	PORT_DEF(HangarTab, BuyShip, HT_BuyShip) \
@@ -993,18 +1045,60 @@ PORT_DECL(PCMenu, ShowConectionStatus) /* ? */
 	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus)
 
 /* MenuVideoVars.c */
+PORT_DECL(PCMenu, Apply_SetActive) /* 2 */
+PORT_DECL(PCMenu, Apply_SetFog) /* 2 */
+PORT_DECL(PCMenu, Apply_SetTextureFilter) /* 2 */
+PORT_DECL(PCMenu, Apply_SetVideoLock) /* 2 */
+PORT_DECL(PCMenu, ChangeBoolean) /* 2 */
+PORT_DECL(PCMenu, DrawLine) /* ? */
+PORT_DECL(PCMenu, FillShadowsDetail) /* 0 */
+PORT_DECL(PCMenu, FillTextureDetail) /* 0 */
+PORT_DECL(PCMenu, FillTextureFilter) /* 0 */
+PORT_DECL(PCMenu, FillVideoModes) /* 0 */
 PORT_DECL(PCMenu, GammaFormula) /* ? */
 PORT_DECL(PCMenu, MouseSensitivityFormula) /* ? */
+PORT_DECL(PCMenu, UpdateVideoOptions) /* 1 */
+PORT_DECL(PCMenu, VideoGetLast) /* 1 */
 #define PORTS_MenuVideoVars \
+	PORT_DEF(PCMenu, Apply_SetActive, PCMenu_Apply_SetActive) \
+	PORT_DEF(PCMenu, Apply_SetFog, PCMenu_Apply_SetFog) \
+	PORT_DEF(PCMenu, Apply_SetTextureFilter, PCMenu_Apply_SetTextureFilter) \
+	PORT_DEF(PCMenu, Apply_SetVideoLock, PCMenu_Apply_SetVideoLock) \
+	PORT_DEF(PCMenu, ChangeBoolean, PCMenu_ChangeBoolean) \
+	PORT_DEFK(PCMenu, DrawLine, PCMenu_DrawLine) \
+	PORT_DEF(PCMenu, FillShadowsDetail, PCMenu_FillShadowsDetail) \
+	PORT_DEF(PCMenu, FillTextureDetail, PCMenu_FillTextureDetail) \
+	PORT_DEF(PCMenu, FillTextureFilter, PCMenu_FillTextureFilter) \
+	PORT_DEF(PCMenu, FillVideoModes, PCMenu_FillVideoModes) \
 	PORT_DEFK(PCMenu, GammaFormula, PCMenu_GammaFormula) \
-	PORT_DEFK(PCMenu, MouseSensitivityFormula, PCMenu_MouseSensitivityFormula)
+	PORT_DEFK(PCMenu, MouseSensitivityFormula, PCMenu_MouseSensitivityFormula) \
+	PORT_DEF(PCMenu, UpdateVideoOptions, PCMenu_UpdateVideoOptions) \
+	PORT_DEF(PCMenu, VideoGetLast, PCMenu_VideoGetLast)
 
 /* Metro.c */
+PORT_DECL(Metro, CalculateMissionMap) /* 1 */
+PORT_DECL(Metro, RecoverUsr) /* 3 */
+PORT_DECL(Metro, OutDoorInitializator) /* ? */
 PORT_DECL(Metro, SetUsrParams) /* ? */
+PORT_DECL(Metro, UseMetro) /* 2 */
+PORT_DECL(Metro, CreateStation) /* ? */
+PORT_DECL(Metro, ShowHint) /* 3 */
+PORT_DECL(Metro, HideHint) /* 3 */
+PORT_DECL(Metro, OnUse) /* 4 */
 PORT_DECL(Metro, SetAsMetro) /* 1 */
+PORT_DECL(Metro, DoorInitializator) /* 1 */
 #define PORTS_Metro \
+	PORT_DEF(Metro, CalculateMissionMap, Metro_CalculateMissionMap) \
+	PORT_DEF(Metro, RecoverUsr, Metro_RecoverUsrPy) \
+	PORT_DEF(Metro, OutDoorInitializator, Metro_OutDoorInitializator) \
 	PORT_DEF(Metro, SetUsrParams, Metro_SetUsrParamsPy) \
-	PORT_DEF(Metro, SetAsMetro, Metro_SetAsMetroPy)
+	PORT_DEF(Metro, UseMetro, Metro_UseMetroPy) \
+	PORT_DEF(Metro, CreateStation, Metro_CreateStation) \
+	PORT_DEF(Metro, ShowHint, Metro_ShowHintPy) \
+	PORT_DEF(Metro, HideHint, Metro_HideHintPy) \
+	PORT_DEF(Metro, OnUse, Metro_OnUsePy) \
+	PORT_DEF(Metro, SetAsMetro, Metro_SetAsMetroPy) \
+	PORT_DEF(Metro, DoorInitializator, Metro_DoorInitializator)
 
 /* MisItems.c */
 PORT_DECL(MisItems, Init) /* 0 */
@@ -5673,6 +5767,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2703
+#define PORT_COUNT 2750
 
 #endif
