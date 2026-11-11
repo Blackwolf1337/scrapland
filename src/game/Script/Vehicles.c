@@ -113,9 +113,11 @@ static byte Veh_SetFX(const nativeVal_t *h, const char *type) {
 	if (e) {
 		return Mode_SetFX(e, type);
 	}
-	PyObject *m = Mode_VBound(h, "SetFX");
-	byte ok = m && Native_Call(m, NULL, "s", type);
-	Py_XDECREF(m);
+	nativeVal_t m, arg;
+	Native_SetText(&arg, type, (int)strlen(type));
+	byte ok = Mode_VBoundV(h, "SetFX", &m) && Mode_CallArgs(&m, NULL, &arg, 1);
+	Native_Free(&arg);
+	Native_Free(&m);
 	return ok;
 }
 
@@ -411,28 +413,16 @@ static byte Veh_GetCoinN(const nativeVal_t *name, const nativeVal_t *coin) {
 	return Mode_Done(&t, !LvN_EqI(st, 9) || PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 3L, name));
 }
 
-static PyObject *Vehicles_GetRandomMercenaryHead(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+/* GetRandomMercenaryHead(): any arguments */
+static byte Veh_RandomHead(nativeVal_t *out) {
 	int i = (int)Scrap_RandRange(0.0, 2.99);
-	return PyString_FromString(i == 0 ? "MercenaryA" : i == 1 ? "MercenaryB" : "MercenaryC");
+	Native_SetStr(out, i == 0 ? "MercenaryA" : i == 1 ? "MercenaryB" : "MercenaryC");
+	return 1;
 }
+
+MODE_FNANY(Vehicles, GetRandomMercenaryHead, Veh_RandomHead(out))
 
 /* ---- OnDeath ---- */
-
-/* v[key] = x of the script on a native value (OBJLIB 9: the item assignment of the Python value, with its errors) */
-static byte Veh_SetItem(nativeVal_t *v, const nativeVal_t *key, const nativeVal_t *x) {
-	PyObject *o = Native_ToPy(v), *k = o ? Native_ToPy(key) : NULL, *px = k ? Native_ToPy(x) : NULL;
-	byte ok = px && PyObject_SetItem(o, k, px) == 0;
-	if (ok) {
-		Native_Free(v);
-		Native_Arg(o, v);
-	}
-	Py_XDECREF(px);
-	Py_XDECREF(k);
-	Py_XDECREF(o);
-	return ok;
-}
 
 /* the player's ship of single player is lost: its hangar marked destroyed, the emergency ship next to Sputnik */
 static byte Veh_LosePlayerShip(void) {
@@ -444,7 +434,8 @@ static byte Veh_LosePlayerShip(void) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Hangar.DestroyedShips", text);
-	if (!Native_EvalText(VEH, text, lost) || !Veh_SetItem(lost, hangar, Mode_I(&t, 1)) || !Veh_SetItem(lost, Mode_I(&t, 9), Mode_I(&t, 0))) {
+	if (!Native_EvalText(VEH, text, lost) || !Mode_SetItem(lost, hangar, Mode_I(&t, 1)) || !Mode_SetItem(lost,
+		Mode_I(&t, 9), Mode_I(&t, 0))) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(lost, rep);

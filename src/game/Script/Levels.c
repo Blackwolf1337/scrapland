@@ -226,20 +226,20 @@ static levelPool_t *Level_Pool(const char *module) {
 
 /* the folder of the level that loads: the last part of Init.Path in lower case ("Levels/Police" -> "police") */
 static byte Level_Current(char *out, int size) {
-	PyObject *path = Script_Attr("Init", "Path");
-	if (!path || !PyString_Check(path)) {
-		Py_XDECREF(path);
-		PyErr_Clear();
+	nativeVal_t path;
+	if (!Mode_ModGet("Init", "Path", &path) || path.type != NV_STR) {
+		Native_Free(&path);
+		Mode_DropError();
 		return 0;
 	}
-	const char *p = PyString_AsString(path), *slash = strrchr(p, '/');
+	const char *p = Native_Text(&path), *slash = strrchr(p, '/');
 	Str_Copy(out, slash ? slash + 1 : p, size);
 	for (char *c = out; *c; c++) {
 		if (*c >= 'A' && *c <= 'Z') {
 			*c = (char)(*c - 'A' + 'a');
 		}
 	}
-	Py_DECREF(path);
+	Native_Free(&path);
 	return 1;
 }
 
@@ -251,11 +251,12 @@ static void Level_StepVecRot(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "SOOO", &name, &pos, &off, &ang)) {
 		return;
 	}
-	PyObject *rot = PORT_ASK(SVec, Rotate3D, "vv", off, ang), *v = rot ? PORT_ASK(SVec, Add, "vO", pos, rot) : NULL;
-	Py_XDECREF(rot);
-	if (v) {
-		Script_SetValue(Native_Text(name), v);
+	nativeVal_t rot = { 0 }, v = { 0 };
+	if (PORT_CALL(SVec, Rotate3D, &rot, "vv", off, ang) && PORT_CALL(SVec, Add, &v, "vv", pos, &rot)) {
+		Mode_SetValue(Native_Text(name), &v);
 	}
+	Native_Free(&v);
+	Native_Free(&rot);
 }
 
 /* run setdef <var>: Scrap.Set(var, Scrap.Def(var)), the engine variable back to its default (the end of the scene
@@ -266,11 +267,11 @@ static void Level_StepSetDef(int id, const nativeVal_t *args, int n) {
 		Native_Raise(NE_TYPE, "setdef takes one variable name");
 		return;
 	}
-	PyObject *def = PORT_ASK(Scrap, Def, "v", &args[0]);
-	if (def) {
-		PORT_CALL(Scrap, Set, NULL, "vO", &args[0], def);
-		Py_DECREF(def);
+	nativeVal_t def = { 0 };
+	if (PORT_CALL(Scrap, Def, &def, "v", &args[0])) {
+		PORT_CALL(Scrap, Set, NULL, "vv", &args[0], &def);
 	}
+	Native_Free(&def);
 }
 
 /* run saveint <name> <savevar>: $name = int(Scrap.GetSaveVar(savevar)) */
@@ -281,12 +282,16 @@ static void Level_StepSaveInt(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "sO", &name, &var)) {
 		return;
 	}
-	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "v", var), *v = s ? PyNumber_Int(s) : NULL;
-	Py_XDECREF(s);
-	if (v) {
-		Script_SetValue(name, v);
+	nativeVal_t s = { 0 }, v = { 0 };
+	if (PORT_CALL(Scrap, GetSaveVar, &s, "v", var) && Mode_Int(&s, &v)) {
+		Mode_SetValue(name, &v);
 	}
+	Native_Free(&v);
+	Native_Free(&s);
 }
+
+/* OBJLIB 6: savelistadd and evalappend below keep Python values: the save text may be a name that evaluates to a list
+ * other holders see (Script_EvalIn), and the list of a $name is changed as the object it is */
 
 /* Scrap.SetSaveVar(var, text) of a step, its error printed by the runner */
 static void Level_SetSave(const nativeVal_t *var, PyObject *text) {
@@ -378,7 +383,10 @@ static void Level_StepNewList(int id, const nativeVal_t *args, int n) {
 	const char *name;
 	(void)id;
 	if (Mode_Parse(args, n, "s", &name)) {
-		Script_SetValue(name, PyList_New(0));
+		nativeVal_t empty;
+		Native_SetEmpty(&empty, NV_LIST);
+		Mode_SetValue(name, &empty);
+		Native_Free(&empty);
 	}
 }
 
@@ -410,18 +418,18 @@ static void Level_StepRepr(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "sO", &name, &v)) {
 		return;
 	}
-	PyObject *o = NULL, *r;
+	nativeVal_t r = { 0 };
+	byte ok = 1;
 	if (Level_ArgNative(v, &x)) {
-		r = Level_Repr(&x);
+		Mode_Repr(&x, &r);
 		Native_Free(&x);
 	} else {
-		o = Native_ToPy(v);
-		r = o ? PyObject_Repr(o) : NULL;
+		ok = Mode_ReprV(v, &r);
 	}
-	Py_XDECREF(o);
-	if (r) {
-		Script_SetValue(name, r);
+	if (ok) {
+		Mode_SetValue(name, &r);
 	}
+	Native_Free(&r);
 }
 
 static const scriptStep_t level_steps[] = {

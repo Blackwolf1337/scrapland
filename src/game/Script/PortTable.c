@@ -3001,6 +3001,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Vehicles_CreateDumbMotor,
 	&port_Vehicles_DumbShipHit,
 	&port_Vehicles_GetCoin,
+	&port_Vehicles_GetRandomMercenaryHead,
 	&port_Vehicles_Init,
 	&port_Vehicles_MotorHit,
 	&port_Vehicles_OnClientDeath,

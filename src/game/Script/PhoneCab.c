@@ -100,7 +100,7 @@ static int Phone_Marked(const nativeVal_t *e) {
 		}
 		int c = Native_Compare(&radar, &n);
 		Native_Free(&radar);
-		if (PyErr_Occurred()) {
+		if (Mode_Failed()) {
 			return -1;
 		}
 		if (!c) {
@@ -219,11 +219,7 @@ static byte Phone_DummyAng(const nativeVal_t *dummy, nativeVal_t *out) {
 
 /* the action classes (phonecab.def), $name for a press desktop */
 static byte Phone_Class(const char *section, const nativeVal_t *name) {
-	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
-	PyObject *n = name ? Native_ToPy(name) : NULL, *vars = n ? Py_BuildValue("{s:O}", "name", n) : NULL;
-	Script_RunFile(0, PHONECAB_FILE, section, phonecab_def, NULL, vars);
-	Py_XDECREF(vars);
-	Py_XDECREF(n);
+	Mode_DefRun(0, PHONECAB_FILE, section, phonecab_def, NULL, 0, name ? 1 : 0, "name", name);
 	return 1;
 }
 
@@ -337,12 +333,16 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 	}
 	if (!wins) {
 		Mode_SaveVar("Revenge.NumEnemies", fr);
-		PyObject *launch = Native_ToInt(fr, num) ? Script_Attr("Challenge", "LaunchRevenge") : NULL;
-		if (!launch) {
+		/* OBJLIB 5: Challenge.LaunchRevenge goes into Speech.OnEndOfSpeech as the object it is (Mode_ModTo; a failed
+		 * set is dropped as Script_SetVar dropped it); it is looked up first, where the script evaluates it */
+		nativeVal_t *launch = Mode_V(&t);
+		if (!Native_ToInt(fr, num) || !Mode_ModGet("Challenge", "LaunchRevenge", launch)) {
 			return Mode_Done(&t, 0);
 		}
 		Phone_SetVar("Challenge", "numChallengeEnemies", num);
-		Script_SetVar("Speech", "OnEndOfSpeech", launch);
+		if (!Mode_ModTo("Speech", "OnEndOfSpeech", "Challenge", "LaunchRevenge")) {
+			Mode_DropError();
+		}
 		Native_SetEmpty(empty, NV_TUPLE);
 		Phone_SetVar("Speech", "OnEndOfSpeechParams", empty);
 	}
@@ -408,7 +408,7 @@ static byte PhoneCab_Nearest(const nativeVal_t *usrPos, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		int nearer = dist->type == NV_NONE || Native_Compare(nd, dist) < 0;
-		if (PyErr_Occurred()) {
+		if (Mode_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		if (nearer) {
@@ -583,7 +583,7 @@ static int PhoneCab_IsFree(const nativeVal_t *res) {
 	Native_SetInt(&zero, 0);
 	int c = Native_Compare(&radar, &zero);
 	Native_Free(&radar);
-	return PyErr_Occurred() ? -1 : !c;
+	return Mode_Failed() ? -1 : !c;
 }
 
 /* res = Scrap.GetEntity(res.NextInList) */
@@ -628,7 +628,7 @@ static byte PhoneCab_Free(nativeVal_t *out) {
 				nativeVal_t n;
 				Native_SetInt(&n, i);
 				int same = !Native_Compare(&n, index);
-				if (PyErr_Occurred()) {
+				if (Mode_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				if (same) {
@@ -655,12 +655,8 @@ static byte PhoneCab_Free(nativeVal_t *out) {
 		}
 	}
 	/* OBJLIB 7: the string exception of the script (raise "Aqui ...") */
-	PyObject *text = PyString_FromString("Aqui no se debe de llegar nunca, siempre se ha de devolver una cabina (res != None)");
-	if (text) {
-		PyErr_SetObject(text, Py_None);
-		Py_DECREF(text);
-	}
-	return Mode_Done(&t, 0);
+	return Mode_Done(&t,
+		Mode_RaiseText("Aqui no se debe de llegar nunca, siempre se ha de devolver una cabina (res != None)"));
 }
 
 MODE_FNANY(PhoneCab, GetFree, PhoneCab_Free(out))

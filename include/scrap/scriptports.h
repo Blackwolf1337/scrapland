@@ -3767,6 +3767,7 @@ PORT_DECL(Vehicles, DumbShipHit) /* 3 */
 PORT_DECL(Vehicles, OnClientDeath) /* 2 */
 PORT_DECL(Vehicles, ActivateHitType) /* 2 */
 PORT_DECL(Vehicles, GetCoin) /* 2 */
+PORT_DECL(Vehicles, GetRandomMercenaryHead) /* ? */
 PORT_DECL(Vehicles, OnDeath) /* 2 */
 PORT_DECL(Vehicles, SwitchView) /* 2 */
 PORT_DECL(Vehicles, SetActiveCam) /* 3 */
@@ -3785,6 +3786,7 @@ PORT_DECL(Vehicles, Init) /* 0 */
 	PORT_DEF(Vehicles, OnClientDeath, Vehicles_OnClientDeath) \
 	PORT_DEF(Vehicles, ActivateHitType, Vehicles_ActivateHitType) \
 	PORT_DEF(Vehicles, GetCoin, Vehicles_GetCoin) \
+	PORT_DEF(Vehicles, GetRandomMercenaryHead, Vehicles_GetRandomMercenaryHead) \
 	PORT_DEF(Vehicles, OnDeath, Vehicles_OnDeath) \
 	PORT_DEF(Vehicles, SwitchView, Vehicles_SwitchView) \
 	PORT_DEF(Vehicles, SetActiveCam, Vehicles_SetActiveCam) \
@@ -6368,6 +6370,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 3049
+#define PORT_COUNT 3050
 
 #endif

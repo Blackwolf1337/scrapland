@@ -17,7 +17,7 @@
  * Direct calls (stage 3): Parking, Menu, CharScorer, SputnikInterface and the module's own Assign (through its
  * global, as the script called it) through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). apply of
  * Parking.UseShip on the kept UseParams takes the entry while the attribute is the port's own function (stage 4:
- * MODE_CBAPPLYSEQ), EndOfSelection is put into SputnikInterface as the object it is (OBJLIB 5).
+ * MODE_CBAPPLYSEQV), EndOfSelection is put into SputnikInterface as the object it is (OBJLIB 5).
  */
 #include <string.h>
 
@@ -245,10 +245,11 @@ static byte Spt_BackCamera(void) {
 		return 0;
 	}
 	/* apply(Parking.UseShip, UseParams): the function of the module (its entry while it is the port's), the
-	 * arguments as the builtin takes them (MODE_CBAPPLYSEQ) */
-	PyObject *fn = Script_Attr("Parking", "UseShip");
-	byte ok = fn && Mode_G(SP, "UseParams", &params) && MODE_CBAPPLYSEQ(fn, &params, NULL);
-	Py_XDECREF(fn);
+	 * arguments as the builtin takes them (MODE_CBAPPLYSEQV) */
+	nativeVal_t fn;
+	byte ok = Mode_ModGet("Parking", "UseShip", &fn) && Mode_G(SP, "UseParams", &params) &&
+		MODE_CBAPPLYSEQV(&fn, &params, NULL);
+	Native_Free(&fn);
 	Native_Free(&params);
 	return ok;
 }

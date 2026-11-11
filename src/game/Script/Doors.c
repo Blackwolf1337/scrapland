@@ -383,10 +383,7 @@ static byte Elv_ExecOpt(const nativeVal_t *elv, const nativeVal_t *name, long i,
 	const nativeVal_t *fullcad) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *lit = Mode_V(&t), *text = Mode_V(&t), *n = Mode_V(&t), *rep = Mode_V(&t), *code = Mode_V(&t);
-	PyObject *id = Native_ToPy(idcad);
-	byte quotable = id && Script_IsQuotable(id);
-	Py_XDECREF(id);
-	if (quotable) {
+	if (Mode_Quotable(idcad)) {
 		char var[0x20];
 		Str_Printf(var, sizeof(var), "ArrOpt%ld", i);
 		return Mode_Done(&t, Mode_Cat(&t, lit, 2, idcad, Mode_S(&t, ":")) && Native_Arith('+', lit, fullcad, text) &&
@@ -941,12 +938,13 @@ static byte Elv_TryFirst(void) {
 	return Elv_Hook("OnElevatorReachDown", &none, 0);
 }
 
-/* Scrap.AddScheduledFunc(0, func, args, name) with func an object (the entry of a port's own function) */
-static byte Elv_Later0(PyObject *func, const nativeVal_t *args, int n, const char *name) {
+/* Scrap.AddScheduledFunc(0, func, args, name) with func a function value (OBJLIB 7: held as NV_OBJ; the entry of a
+ * port's own function) */
+static byte Elv_Later0(const nativeVal_t *func, const nativeVal_t *args, int n, const char *name) {
 	nativeVal_t zero, nm;
 	Native_SetInt(&zero, 0);
 	LvN_Str(&nm, name);
-	byte ok = func && Mode_Schedule(&zero, func, args, n, &nm);
+	byte ok = Mode_ScheduleV(&zero, func, args, n, &nm);
 	Native_Free(&nm);
 	return ok;
 }
@@ -988,10 +986,9 @@ static byte Elv_FromDoor(const nativeVal_t *from) {
 	nativeVal_t args[2];
 	args[0] = *un;
 	Native_SetInt(&args[1], metro ? 0 : 180);
-	PyObject *fn = Mode_Import("Metro") ? Script_Attr("Metro", "SetUsrParams") : NULL;
-	byte ok = Elv_Later0(fn, args, 2, "MetroSetUsrParams");
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
+	nativeVal_t *fn = Mode_V(&t);
+	return Mode_Done(&t, Mode_Import("Metro") && Mode_ModGet("Metro", "SetUsrParams", fn) &&
+		Elv_Later0(fn, args, 2, "MetroSetUsrParams"));
 }
 
 /* the import of the port that places the player, then Scrap.UsrEntity(0) for its SpawnChar */
@@ -1008,10 +1005,8 @@ static byte Elv_PlayerCreatedElevator(void) {
 		return Mode_Done(&t, 0);
 	}
 	/* the global TryToElevatorLaunchFirst: the scheduler takes its entry */
-	PyObject *fn = Mode_GlobalPy(ELV, "TryToElevatorLaunchFirst");
-	byte ok = Elv_Later0(fn, NULL, 0, "TELF");
-	Py_XDECREF(fn);
-	if (!ok) {
+	nativeVal_t *fn = Mode_V(&t);
+	if (!Mode_G(ELV, "TryToElevatorLaunchFirst", fn) || !Elv_Later0(fn, NULL, 0, "TELF")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("ComeFrom", from);

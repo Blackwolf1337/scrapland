@@ -17,7 +17,7 @@
  *
  * Direct calls (stage 3): Elevator and Speech through their refs (PORT_CALL: the port seam, OBJLIB 5). apply of
  * LocalCallFunc and the door functions take the entry when the value is a port's own function (stage 4:
- * MODE_CBAPPLYSEQ, Mode_CallArgs), else they are called the Python way; EndOfSpeech is put into Speech as the object
+ * MODE_CBAPPLYSEQV, Mode_CallArgs), else they are called the Python way; EndOfSpeech is put into Speech as the object
  * it is (OBJLIB 5).
  */
 #include "scrap/scrap.h"
@@ -149,13 +149,10 @@ static byte Gk_EndOfSpeech(void) {
 		return Mode_Done(&t, 1);
 	}
 	/* apply(LocalCallFunc, LocalParams): the entry while the function is a port's own, the arguments as the builtin
-	 * takes them (MODE_CBAPPLYSEQ) */
-	PyObject *f = NULL;
-	byte ok = Mode_Read(GK, "LocalCallFunc", fn) && Mode_G(GK, "LocalParams", params) &&
-		(f = Native_ToPy(fn)) != NULL && MODE_CBAPPLYSEQ(f, params, NULL) &&
-		Mode_Put(GK, "LocalCallFunc", NULL, none) && Mode_Put(GK, "LocalParams", NULL, none);
-	Py_XDECREF(f);
-	return Mode_Done(&t, ok);
+	 * takes them (MODE_CBAPPLYSEQV) */
+	return Mode_Done(&t, Mode_Read(GK, "LocalCallFunc", fn) && Mode_G(GK, "LocalParams", params) &&
+		MODE_CBAPPLYSEQV(fn, params, NULL) && Mode_Put(GK, "LocalCallFunc", NULL, none) &&
+		Mode_Put(GK, "LocalParams", NULL, none));
 }
 
 /* the talk that opens the door: the answer, EndOfSpeech at its end with the door callback, the abort restores the
@@ -242,14 +239,6 @@ static byte Gk_GateKeeperSpeech(const nativeVal_t *usrName, const nativeVal_t *c
 		Mode_S(&t, " is an invalid foe type.\n")) && Mode_ConsoleError(msg));
 }
 
-/* an argument kept as the object itself (NV_OBJ): the foe group DoorFoe stores */
-static void Gk_Obj(PyObject *o, nativeVal_t *v) {
-	Native_SetNone(v);
-	v->type = NV_OBJ;
-	v->obj = o;
-	Py_INCREF(o);
-}
-
 /* DoorFoe(EntityName, FoeType): the characters the gatekeeper lets pass. FoeType is stored as the value it is: an
  * NV_OBJ is the caller's object (the letter P, the adapter), a native value becomes a new object */
 static byte GateKeeper_DoorFoe_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -262,21 +251,11 @@ static byte GateKeeper_DoorFoe_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	return Mode_AtSet(GK, "GateKeepers", &a[0], "FoeType", &a[1]) && Mode_AtSet(GK, "GateKeepers", &a[0], "MPass", &zero);
 }
 
-/* DoorFoe through Python: FoeType kept as the object it is (OBJLIB 5: GateKeeper.PoliceGroupGateKeeper itself) */
+/* DoorFoe through Python: FoeType (argument 1) kept as the object it is (OBJLIB 5: the group list
+ * GateKeeper.PoliceGroupGateKeeper itself; Mode_EntryObj) */
 static PyObject *GateKeeper_DoorFoe(PyObject *self, PyObject *args) {
-	PyObject *name, *foe;
-	nativeVal_t a[2], out;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &foe)) {
-		return NULL;
-	}
-	Native_Arg(name, &a[0]);
-	Gk_Obj(foe, &a[1]);
-	Native_SetNone(&out);
-	byte ok = GateKeeper_DoorFoe_E(a, 2, &out);
-	Native_Free(&a[0]);
-	Native_Free(&a[1]);
-	return Mode_Return(ok, &out);
+	return Mode_EntryObj(args, GateKeeper_DoorFoe_E, 1 << 1);
 }
 
 MODE_KW(GateKeeper, SetDoor, "OO|OO", "EntityName", "DoorName", "CanPassFunc", "ClosedFunc") {
