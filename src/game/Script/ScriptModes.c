@@ -3525,20 +3525,37 @@ void Mode_ModPutI(const char *module, const char *var, long i) {
 
 /* ---- batch P (CharsNPC, GameSounds, MenuMission) ---- */
 
-PyObject *Mode_DefVars(int n, ...) {
-	nativeVal_t d, k, v;
-	va_list va;
-	Native_SetEmpty(&d, NV_DICT);
-	va_start(va, n);
+/* the n pairs of a name and a const nativeVal_t * of va into names and vals (up to MODE_DEFVARS) */
+static void Mode_DefPairs(int n, va_list va, const char **names, const nativeVal_t **vals) {
+	CHECK(n <= MODE_DEFVARS);
 	for (int i = 0; i < n; i++) {
-		Native_SetStr(&k, va_arg(va, const char *));
-		Native_Copy(&v, va_arg(va, const nativeVal_t *));
+		names[i] = va_arg(va, const char *);
+		vals[i] = va_arg(va, const nativeVal_t *);
+	}
+}
+
+/* the dict of the $names (OBJLIB 6): a new reference, NULL with the error */
+static PyObject *Mode_DefDict(const char *const *names, const nativeVal_t *const *vals, int n) {
+	nativeVal_t d, k, v;
+	Native_SetEmpty(&d, NV_DICT);
+	for (int i = 0; i < n; i++) {
+		Native_SetStr(&k, names[i]);
+		Native_Copy(&v, vals[i]);
 		Native_DictSet(&d, &k, &v);
 	}
-	va_end(va);
 	PyObject *vars = Native_ToPy(&d);
 	Native_Free(&d);
 	return vars;
+}
+
+PyObject *Mode_DefVars(int n, ...) {
+	const char *names[MODE_DEFVARS];
+	const nativeVal_t *vals[MODE_DEFVARS];
+	va_list va;
+	va_start(va, n);
+	Mode_DefPairs(n, va, names, vals);
+	va_end(va);
+	return Mode_DefDict(names, vals, n);
 }
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
@@ -4837,16 +4854,6 @@ byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out) {
 
 /* ---- the ports without Python objects (stage 6, batch 6g) ---- */
 
-byte Mode_DefRunVars(byte stop, int id, const char *name, const char *section, const char *builtin, PyObject *vars) {
-	if (!vars) {
-		return 0;
-	}
-	byte ok = stop ? Script_RunFileTry(id, name, section, builtin, NULL, vars) :
-		(Script_RunFile(id, name, section, builtin, NULL, vars), 1);
-	Py_DECREF(vars);
-	return ok;
-}
-
 /* Mode_KwTyped; ref: an O argument by reference (Native_SetObj), else as Native_Arg makes it */
 static PyObject *Mode_KwParsed(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry, byte ref) {
 	union {
@@ -5066,10 +5073,6 @@ int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key) {
 	return t;
 }
 
-byte Mode_ErrorSet(void) {
-	return PyErr_Occurred() != NULL;
-}
-
 byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out) {
 	return Mode_RefTake(Mode_VBound(h, method), out);
 }
@@ -5154,15 +5157,20 @@ int Mode_RefNext(const nativeVal_t *o, int i, nativeVal_t *out) {
 	return r > 0 ? Mode_RefTake(item, out) : r;
 }
 
-byte Mode_RefOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+/* a op b the Python way (OBJLIB 9): '+', '-', '*', '/', '&', else '%'; a new reference, NULL with the error */
+static PyObject *Mode_NumOp(char op, const nativeVal_t *a, const nativeVal_t *b) {
 	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL, *r = NULL;
 	if (y) {
 		r = op == '+' ? PyNumber_Add(x, y) : op == '-' ? PyNumber_Subtract(x, y) : op == '*' ? PyNumber_Multiply(x, y) :
-			op == '/' ? PyNumber_Divide(x, y) : PyNumber_Remainder(x, y);
+			op == '/' ? PyNumber_Divide(x, y) : op == '&' ? PyNumber_And(x, y) : PyNumber_Remainder(x, y);
 	}
 	Py_XDECREF(y);
 	Py_XDECREF(x);
-	return Mode_RefTake(r, out);
+	return r;
+}
+
+byte Mode_RefOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	return Mode_RefTake(Mode_NumOp(op, a, b), out);
 }
 
 int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
@@ -5238,18 +5246,10 @@ byte Mode_Failed(void) {
 
 byte Mode_DefRunV(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
 	byte stop, const char *const *names, const nativeVal_t *const *vals, int n) {
-	/* OBJLIB 6: the $names as the dict the runner takes (NULL for none, and when it could not be made) */
-	PyObject *vars = NULL;
-	if (n) {
-		nativeVal_t d, k, v;
-		Native_SetEmpty(&d, NV_DICT);
-		for (int i = 0; i < n; i++) {
-			Native_SetStr(&k, names[i]);
-			Native_Copy(&v, vals[i]);
-			Native_DictSet(&d, &k, &v);
-		}
-		vars = Native_ToPy(&d);
-		Native_Free(&d);
+	/* OBJLIB 6: the $names as the dict the runner takes (NULL for none); a dict that could not be made runs nothing */
+	PyObject *vars = n ? Mode_DefDict(names, vals, n) : NULL;
+	if (n && !vars) {
+		return 0;
 	}
 	byte ok = stop ? Script_RunFileTry(id, file, section, builtin, steps, vars) :
 		Script_RunFile(id, file, section, builtin, steps, vars);
@@ -5261,11 +5261,7 @@ byte Mode_DefRunVa(int id, const char *file, const char *section, const char *bu
 	byte stop, int n, va_list va) {
 	const char *names[MODE_DEFVARS];
 	const nativeVal_t *vals[MODE_DEFVARS];
-	CHECK(n <= MODE_DEFVARS);
-	for (int i = 0; i < n; i++) {
-		names[i] = va_arg(va, const char *);
-		vals[i] = va_arg(va, const nativeVal_t *);
-	}
+	Mode_DefPairs(n, va, names, vals);
 	return Mode_DefRunV(id, file, section, builtin, steps, stop, names, vals, n);
 }
 
@@ -5284,17 +5280,6 @@ byte Mode_CbLinkV(portSite_t *site, const nativeVal_t *fn, int id, const char *a
 	byte ok = f && Mode_CbLink(site, f, id, a, b);
 	Py_XDECREF(f);
 	return ok;
-}
-
-byte Mode_ModuleV(const char *name, nativeVal_t *out) {
-	PyObject *m = Script_Module(name);
-	Native_SetNone(out);
-	if (!m) {
-		return 0;
-	}
-	Native_SetObj(out, m);
-	Py_DECREF(m);
-	return 1;
 }
 
 byte Mode_StrBuf(const nativeVal_t *v, nativeBuf_t *b) {
@@ -5351,17 +5336,14 @@ byte Mode_VarCall0(const char *module, const char *var, byte global, const char 
 	return r != NULL;
 }
 
-/* a op b through a number function of Python (OBJLIB 9), the result as Native_Arg makes it; *out None when it fails */
-static byte Mode_PyOp(PyObject *(*op)(PyObject *, PyObject *), const nativeVal_t *a, const nativeVal_t *b,
-	nativeVal_t *out) {
-	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL, *r = y ? op(x, y) : NULL;
+/* Mode_NumOp with the result as Native_Arg makes it (Mode_RefOp keeps it by reference); *out None when it fails */
+static byte Mode_PyOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	PyObject *r = Mode_NumOp(op, a, b);
 	Native_SetNone(out);
 	if (r) {
 		Native_Arg(r, out);
 	}
 	Py_XDECREF(r);
-	Py_XDECREF(y);
-	Py_XDECREF(x);
 	return r != NULL;
 }
 
@@ -5370,11 +5352,11 @@ byte Mode_And(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 		Native_SetInt(out, a->i & b->i);
 		return 1;
 	}
-	return Mode_PyOp(PyNumber_And, a, b, out);
+	return Mode_PyOp('&', a, b, out);
 }
 
 byte Mode_Times(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
-	return Mode_PyOp(PyNumber_Multiply, a, b, out);
+	return Mode_PyOp('*', a, b, out);
 }
 
 byte Mode_ModAt(const char *module, const char *var, const nativeVal_t *key, nativeVal_t *out) {
@@ -5391,7 +5373,7 @@ byte Mode_ModAt(const char *module, const char *var, const nativeVal_t *key, nat
 }
 
 byte Mode_Plus(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
-	return Mode_PyOp(PyNumber_Add, a, b, out);
+	return Mode_PyOp('+', a, b, out);
 }
 
 byte Mode_SetItem(nativeVal_t *v, const nativeVal_t *key, const nativeVal_t *x) {

@@ -267,8 +267,8 @@ static byte Chat_Init(int id) {
 	if (!Mode_Import("Menu") || !Chat_MyShip() || !Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_IdText(slot, &t)) {
 		return 0;
 	}
-	/* OBJLIB 6: the $names go to the .def runner as a dict (MODE_DEFRUN) */
-	return MODE_DEFRUN(0, id, "menus/chat.def", "InitChat", chat_def, 1, "sendid", &t);
+	/* OBJLIB 6: the $names go to the .def runner as a dict (Mode_DefRun) */
+	return Mode_DefRun(id, "menus/chat.def", "InitChat", chat_def, NULL, 0, 1, "sendid", &t);
 }
 
 /* ---- the functions of the module table: the entries parse their arguments with the formats of the port (Mode_Parse:
