@@ -1039,7 +1039,7 @@ PyMethodDef g_SPostmanMethods[] = {
 
 /* ---- SRace ---- */
 
-/* the step "point <text>" of srace.def: a checkpoint of the route (OBJLIB 6: the steps take Python arguments) */
+/* the step "point <text>" of srace.def: a checkpoint of the route */
 static void SRace_StepPoint(int id, const nativeVal_t *args, int n) {
 	nativeVal_t p;
 	(void)id;

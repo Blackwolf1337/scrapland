@@ -19,7 +19,7 @@
  * go through their refs (stage 7); the ships and profiles the calls give (handle values) and CharsNPC.CharRes stay
  * Python values read by name (OBJLIB 5, 7), the hooks onTrackCreate and OnPoliceCreatedCallback are values of the
  * variables (OBJLIB 5) called through the entries of port functions (PORT_VALUE); the steps of police.def take the
- * arguments of their lines as a tuple (OBJLIB 6). The functions of Traffic call each other in C as the port did (the
+ * values of their lines as native values. The functions of Traffic call each other in C as the port did (the
  * engine callbacks name them "Traffic.<name>").
  */
 #include <string.h>

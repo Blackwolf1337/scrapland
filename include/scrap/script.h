@@ -132,13 +132,6 @@ typedef struct scriptStep_s {
  * error */
 byte Script_StepValues(const struct nativeVal_s *args, int n, int type, struct nativeVal_s *out);
 
-/* a step not converted yet (fn on the tuple of the values as Python values) as fn_Py for the table */
-void Script_StepPy(int id, const struct nativeVal_s *args, int n, void (*fn)(int id, PyObject *args));
-#define SCRIPT_PYSTEP(fn) \
-	static void fn##_Py(int id, const struct nativeVal_s *args, int n) { \
-		Script_StepPy(id, args, n, fn); \
-	}
-
 /*
  * runs the .def file name (scrapc/<name> of the packs, else builtin) for the scorer of player id: the lines before
  * the first section and those of section (NULL for a file without sections). steps are the C steps it may run (NULL

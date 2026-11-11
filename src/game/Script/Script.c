@@ -969,7 +969,7 @@ static const char *Def_Tokens(const char *p, char *buf, int size, scriptLine_t *
 /*
  * The values of a file are native values (nativeVal_t). The $names stay the dict the C function gives (or the file's
  * own), holding Python values (OBJLIB 6: the callers make the dict, a caller may run several sections on one dict, and
- * the steps take Python arguments and give $names as Python values): a value read from there, or from a module
+ * the steps give $names as Python values): a value read from there, or from a module
  * variable (%Module.var), is the native value Native_Arg makes of it, but a list or dict, or a tuple holding one,
  * stays the object itself as an NV_OBJ, so that it keeps its identity (a step appends to the list of a $name in place,
  * a call or a setvar may keep it).
@@ -1428,7 +1428,7 @@ static void Def_ArgsFree(defArgs_t *a) {
 	}
 }
 
-/* the positional arguments as the tuple a step or a call through Python takes (NULL with the error) */
+/* the positional arguments as the tuple a call through Python takes (NULL with the error) */
 static PyObject *Def_PyArgs(const defArgs_t *a) {
 	PyObject *t = PyTuple_New(a->npos);
 	for (int i = 0; t && i < a->npos; i++) {
@@ -1572,16 +1572,6 @@ byte Script_StepValues(const nativeVal_t *args, int n, int type, nativeVal_t *ou
 	byte ok = Native_Pass(&seq, out);
 	Native_Free(&seq);
 	return ok;
-}
-
-void Script_StepPy(int id, const nativeVal_t *args, int n, void (*fn)(int id, PyObject *args)) {
-	defArgs_t a = { .npos = n, .n = n };
-	memcpy(a.v, args, n * sizeof(a.v[0]));
-	PyObject *t = Def_PyArgs(&a);
-	if (t) {
-		fn(id, t);
-		Py_DECREF(t);
-	}
 }
 
 static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
