@@ -9,6 +9,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 void App_GetConfigDir(char *buf, int size);
 
@@ -288,6 +289,9 @@ static byte SaveGame_WriteVars(cAbstractFile *f, const char *desc) {
 	if (!desc) {
 		int32_t t;
 		crt_time32(&t);
+		if (TestDet_On()) {
+			t = TestDet_WallTime(NULL);
+		}
 		char *s = crt_asctime(crt_gmtime32(&t));
 		s[strlen(s) - 1] = 0;
 		cAbstractFile_WriteString(f, s);
@@ -333,6 +337,10 @@ byte SaveGame_Save(const char *name, const char *desc) {
 	SaveGame_WriteVars(&f.base, desc);
 	cFile_Close(&f.base);
 	cFile_dtor(&f);
+	/* the deterministic test mode: the file time, which orders the list of the saved games, by the mode's clock */
+	if (TestDet_On()) {
+		TestDet_WallTime(path);
+	}
 	return 1;
 }
 

@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <utime.h>
 
 #include "scrap/crt.h"
 #include "scrap/snd.h"
@@ -88,6 +89,18 @@ void TestDet_Seed(int load) {
 		det_loadTicks += (int64_t)TESTDET_LOAD * TESTDET_TICKS;
 		TestDet_Trace("level loaded");
 	}
+}
+
+int32_t TestDet_WallTime(const char *path) {
+	/* from 2001-09-09 01:46:40 UTC, and half a second: where in a second the clock starts is free, and with this
+	 * the saves of the case fc-r8r-games fall into the seconds the pack baselines saw them in */
+	int32_t now = 1000000000 + (int32_t)((TestDet_Counter() + TESTDET_TICKS / 2) / TESTDET_TICKS);
+
+	if (path) {
+		struct utimbuf t = { .actime = now, .modtime = now };
+		utime(path, &t);
+	}
+	return now;
 }
 
 uint32_t TestDet_Loads(void) {

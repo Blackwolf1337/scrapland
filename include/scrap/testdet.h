@@ -43,6 +43,10 @@ void TestDet_Seed(int load);
 /* the level loads so far and TestDet_Frame() at the end of the last one */
 uint32_t TestDet_Loads(void);
 uint32_t TestDet_LoadFrame(void);
+/* the wall clock of the mode for what the game writes: a fixed date plus the seconds of the mode's clock. path: the
+ * file gets it as its time too (the list of the saved games is sorted by the file time in whole seconds: two saves of
+ * one command have the same time, unless the real clock turns a second between them) */
+int32_t TestDet_WallTime(const char *path);
 
 /* SCRAP_TEST_DET_TRACE=<file> with the mode on: what the game takes in and draws at random, to find where two runs
  * part (tools/test/regress/dettrace.py compares two such files). A line "<step> <what>" per step of the clock, per

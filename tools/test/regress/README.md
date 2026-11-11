@@ -102,6 +102,9 @@ What the mode does:
   as the runner does in a live run.
 - The question at the start (Scrap.GetLevelPath()) is sent without a pace, so asking it again moves no clock.
 - The two loops of the net code that wait for the goodbye of a closing client or server make a clock step per pass.
+- A saved game gets its date and its file time from the mode's clock (a fixed date plus the clock's seconds). The
+  list of the saved games is sorted by the file time in whole seconds: two saves of one case line have the same time,
+  unless the real clock turns a second between them (seen once in three runs of fc-r8r-games).
 - The pass of the main loop that loads a level makes no step, whether the next command file is there already or not.
 - Mouse motion from before the first step does not count (the pointer entering the new window comes as one or two
   events, before or after the focus).
