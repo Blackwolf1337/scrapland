@@ -49,12 +49,8 @@ byte Sn_TabsOn(int id, const nativeVal_t *tabs, byte on);
 byte Sn_At(const char *module, const char *var, const nativeVal_t *key, nativeVal_t *out);
 /* (dummy[2][0], dummy[2][1] + 180 + extra, 0) (extra NULL for none) */
 byte Sn_FrontAng(const nativeVal_t *dummy, const nativeVal_t *extra, nativeVal_t *out);
-/* the $names of a section: n pairs of a C name and a value (const nativeVal_t *); a new dict, NULL with the error */
-PyObject *Sn_Vars(int n, ...);
-/* a section of shipedit.def with the values of vars (borrowed, NULL for none), UseTxt of module for the step use */
-byte Sn_Def(int id, const char *section, PyObject *vars, const char *module);
-/* the same with the $names given as values: n pairs of a name and a const nativeVal_t * (Mode_DefRunVa). Sn_Vars and
- * Sn_Def stay for HangarTab.c until it takes this form */
+/* a section of shipedit.def, UseTxt of module for the step use, with the $names given as values: n pairs of a name
+ * and a const nativeVal_t * (Mode_DefRunVa) */
 byte Sn_DefV(int id, const char *section, const char *module, int n, ...);
 
 #endif

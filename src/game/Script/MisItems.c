@@ -82,7 +82,7 @@ static byte Mi_InitModels(void) {
 		ok = PORT_OWN(MisItems, GetObjModel, model, "s", "ExtraLife") && Mode_PreloadOnes(model) &&
 			PORT_OWN(MisItems, GetObjModel, model2, "s", "Battery") && Mode_PreloadOnes(model2);
 	}
-	return Mode_Done(&t, ok && !Mode_ErrorSet());
+	return Mode_Done(&t, ok && !Mode_Failed());
 }
 
 /* the kind of box a dead ship leaves for the player (what the ship needs most); 0 with the error */
@@ -105,7 +105,7 @@ static byte Mi_BoxKind(modeVals_t *t, nativeVal_t *typo) {
 		return 0;
 	}
 	int low = Native_Compare(rnd, ratio) > 0;
-	if (Mode_ErrorSet()) {
+	if (Mode_Failed()) {
 		return 0;
 	}
 	if (low) {
@@ -159,7 +159,7 @@ static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 		return Mode_Done(&t, 0);
 	}
 	drop = drop && Native_Compare(y, atm) < 0;
-	if (Mode_ErrorSet()) {
+	if (Mode_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	if (drop) {
@@ -199,7 +199,7 @@ static byte Mi_OnVehicleDeat(const nativeVal_t *v) {
 		return Mode_Done(&t, 0);
 	}
 	int del = !Native_Compare(ctl, Mode_I(&t, -1));
-	return Mode_Done(&t, !Mode_ErrorSet() && (!del || Mode_VDel(v)));
+	return Mode_Done(&t, !Mode_Failed() && (!del || Mode_VDel(v)));
 }
 
 MODE_FN(MisItems, OnVehicleDeat, 1, Mi_OnVehicleDeat(&a[0]))
@@ -213,7 +213,7 @@ static byte Mi_TargetReward(const nativeVal_t *v, nativeVal_t *out) {
 	}
 	int has = Native_Compare(&money, &zero) > 0;
 	Native_Free(&money);
-	if (Mode_ErrorSet()) {
+	if (Mode_Failed()) {
 		return 0;
 	}
 	if (has) {
@@ -250,15 +250,15 @@ static byte Mi_GiveMoney(const nativeVal_t *item, const nativeVal_t *vehicle) {
 		return Mode_Done(&t, 0);
 	}
 	int none = Native_Compare(usr, Mode_V(&t)) == 0;
-	if (Mode_ErrorSet() || none) {
-		return Mode_Done(&t, !Mode_ErrorSet());
+	if (Mode_Failed() || none) {
+		return Mode_Done(&t, !Mode_Failed());
 	}
 	Native_Free(usr);
 	if (!Mode_UsrHandle(usr) || !Mode_VGet(usr, "Name", un)) {
 		return Mode_Done(&t, 0);
 	}
 	int mine = !Native_Compare(vehicle, un);
-	if (Mode_ErrorSet()) {
+	if (Mode_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok;
@@ -273,7 +273,7 @@ static byte Mi_GiveMoney(const nativeVal_t *item, const nativeVal_t *vehicle) {
 		Mode_VSet(itm, "rTime", rt) && Mode_Import("Sound") && Mode_VGet(e, "UsrControl", ctl);
 	if (ok) {
 		int other = Native_Compare(ctl, Mode_I(&t, -1)) != 0;
-		ok = !Mode_ErrorSet() && Mi_TakeSound(itm, other ? "MoneyItem" : "MoneyItemOther");
+		ok = !Mode_Failed() && Mi_TakeSound(itm, other ? "MoneyItem" : "MoneyItemOther");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -308,7 +308,7 @@ static byte Mi_MoneyModel(const nativeVal_t *quanto, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		int more = Native_Compare(v, quanto) > 0;
-		if (Mode_ErrorSet()) {
+		if (Mode_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		if (more) {
@@ -449,7 +449,7 @@ static byte Mi_TakeBattery(const nativeVal_t *item, const nativeVal_t *charName)
 		return Mode_Done(&t, 0);
 	}
 	int over = Native_Compare(now, full) > 0;
-	byte ok = !Mode_ErrorSet() && (!over || Mode_VSet(me, "Energy", full)) && Mi_TakeSound(itm, "TakeBattery");
+	byte ok = !Mode_Failed() && (!over || Mode_VSet(me, "Energy", full)) && Mi_TakeSound(itm, "TakeBattery");
 	return Mode_Done(&t, ok);
 }
 
@@ -466,8 +466,8 @@ static byte Mi_DazedCoin(const nativeVal_t *name) {
 		return Mode_Done(&t, 0);
 	}
 	int few = Native_Compare(money, limit) <= 0;
-	if (Mode_ErrorSet() || few) {
-		return Mode_Done(&t, !Mode_ErrorSet());
+	if (Mode_Failed() || few) {
+		return Mode_Done(&t, !Mode_Failed());
 	}
 	Native_Free(money);
 	Native_Free(dr);

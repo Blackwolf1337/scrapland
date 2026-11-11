@@ -1633,7 +1633,8 @@ static byte Rm_MissionScorer2(const nativeVal_t *id) {
 	int go = Mode_FromV("Scorer", "MarginH", mh) && Mode_FromV("Scorer", "MarginV", mv) && Mode_Import("Menu") &&
 		Rm_G("YourScore", you) ? Mode_CmpI(you, ">", -1) : -1;
 	int pid = 0;
-	byte ran = go > 0 && Native_ArgInt(id, &pid) && MODE_DEFRUN(0, pid, "menus/race.def", "scores", race_def, 1, "mh", mh);
+	byte ran = go > 0 && Native_ArgInt(id, &pid) &&
+		Mode_DefRun(pid, "menus/race.def", "scores", race_def, NULL, 0, 1, "mh", mh);
 	return Mode_Done(&t, go == 0 || (ran && PORT_OWN(RaceMaker, SetScorerValues, NULL, "v", id)));
 }
 
@@ -1659,7 +1660,8 @@ static byte Rm_MissionScorer(const nativeVal_t *id) {
 	if (!Native_ArgInt(id, &pid)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!MODE_DEFRUN(0, pid, "menus/race.def", "timer", race_def, 6, "x", x, "y", y, "r", &c[0], "g", &c[1], "b", &c[2], "a", &c[3])) {
+	if (!Mode_DefRun(pid, "menus/race.def", "timer", race_def, NULL, 0, 6, "x", x, "y", y, "r", &c[0], "g", &c[1], "b",
+			&c[2], "a", &c[3])) {
 		return Mode_Done(&t, 0);
 	}
 	int race = Rm_IsRace();

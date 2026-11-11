@@ -528,7 +528,7 @@ static int Den_RandUp(long lo, long hi) {
 	int up = -1;
 	if (Mode_Rand(&a, &b, &r)) {
 		up = Native_Compare(&r, &z) > 0;
-		if (Mode_ErrorSet()) {
+		if (Mode_Failed()) {
 			up = -1;
 		}
 	}
@@ -679,7 +679,7 @@ static byte Den_CharUsrDanceC(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	int dance = Native_Compare(&a[1], Mode_I(&t, 0)) > 0;
-	if (Mode_ErrorSet()) {
+	if (Mode_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	if (dance) {
@@ -750,14 +750,14 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 			return Mode_Done(&t, 0);
 		}
 		int busy = Native_Compare(r, Mode_I(&t, 0)) > 0;
-		if (Mode_ErrorSet()) {
+		if (Mode_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		busy = busy || islm;
 		Native_Free(r);
 		if (busy) {
 			int tired = Native_Compare(ctr, Mode_I(&t, 3)) >= 0;
-			if (Mode_ErrorSet()) {
+			if (Mode_Failed()) {
 				return Mode_Done(&t, 0);
 			}
 			if (tired && !islm) {
@@ -765,7 +765,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 					return Mode_Done(&t, 0);
 				}
 				int drunk = Native_Compare(b, Mode_I(&t, 0)) > 0;
-				if (Mode_ErrorSet()) {
+				if (Mode_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				Native_Free(b);
@@ -791,7 +791,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 					return Mode_Done(&t, 0);
 				}
 				int empty = Native_Compare(r, Mode_I(&t, 0)) < 0;
-				if (Mode_ErrorSet()) {
+				if (Mode_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				if (empty) {
@@ -865,7 +865,7 @@ static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
 			return Mode_Done(&t, 0);
 		}
 		int second = !Native_Compare(v1, name);
-		if (Mode_ErrorSet()) {
+		if (Mode_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(name);
@@ -943,7 +943,7 @@ static byte Den_MercenarySpeechC(const nativeVal_t *a, nativeVal_t *out) {
 				direct = 1;
 			} else {
 				int few = Native_Compare(lives, Mode_I(&t, 3)) < 0;
-				if (Mode_ErrorSet()) {
+				if (Mode_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				if (few) {

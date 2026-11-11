@@ -286,34 +286,6 @@ byte Sn_FrontAng(const nativeVal_t *dummy, const nativeVal_t *extra, nativeVal_t
 	return ok;
 }
 
-/* OBJLIB 6: the $names as a dict and Sn_Def on it stay for HangarTab.c (batch 6g); ShipEdit uses Sn_DefV */
-PyObject *Sn_Vars(int n, ...) {
-	PyObject *d = PyDict_New();
-	va_list ap;
-	va_start(ap, n);
-	for (int i = 0; i < n; i++) {
-		const char *name = va_arg(ap, const char *);
-		const nativeVal_t *v = va_arg(ap, const nativeVal_t *);
-		PyObject *o = d ? Native_ToPy(v) : NULL;
-		if (!o || PyDict_SetItemString(d, (char *)name, o) < 0) {
-			Py_XDECREF(d);
-			d = NULL;
-		}
-		Py_XDECREF(o);
-	}
-	va_end(ap);
-	return d;
-}
-
-/* OBJLIB 6: the section on a dict of $names, for HangarTab.c (see Sn_Vars) */
-byte Sn_Def(int id, const char *section, PyObject *vars, const char *module) {
-	const char *outer = se_useModule;
-	se_useModule = module;
-	byte ok = Script_RunFileTry(id, "menus/shipedit.def", section, shipedit_def, shipedit_steps, vars);
-	se_useModule = outer;
-	return ok;
-}
-
 byte Sn_DefV(int id, const char *section, const char *module, int n, ...) {
 	const char *outer = se_useModule;
 	va_list va;

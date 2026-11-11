@@ -456,7 +456,7 @@ static byte Metro_OnUse(nativeVal_t *params) {
 		ok = Metro_Station(&x, &y, &name, &sprite);
 	}
 	if (ok) {
-		MODE_DEFRUN(0, 0, METRO_FILE, "menu", metro_def, 1, "back", &back);
+		Mode_DefRun(0, METRO_FILE, "menu", metro_def, NULL, 0, 1, "back", &back);
 	}
 	Native_Free(&back);
 	return ok;
