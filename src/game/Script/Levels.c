@@ -226,20 +226,20 @@ static levelPool_t *Level_Pool(const char *module) {
 
 /* the folder of the level that loads: the last part of Init.Path in lower case ("Levels/Police" -> "police") */
 static byte Level_Current(char *out, int size) {
-	PyObject *path = Script_Attr("Init", "Path");
-	if (!path || !PyString_Check(path)) {
-		Py_XDECREF(path);
-		PyErr_Clear();
+	nativeVal_t path;
+	if (!Mode_ModGet("Init", "Path", &path) || path.type != NV_STR) {
+		Native_Free(&path);
+		Mode_DropError();
 		return 0;
 	}
-	const char *p = PyString_AsString(path), *slash = strrchr(p, '/');
+	const char *p = Native_Text(&path), *slash = strrchr(p, '/');
 	Str_Copy(out, slash ? slash + 1 : p, size);
 	for (char *c = out; *c; c++) {
 		if (*c >= 'A' && *c <= 'Z') {
 			*c = (char)(*c - 'A' + 'a');
 		}
 	}
-	Py_DECREF(path);
+	Native_Free(&path);
 	return 1;
 }
 
@@ -251,11 +251,12 @@ static void Level_StepVecRot(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "SOOO", &name, &pos, &off, &ang)) {
 		return;
 	}
-	PyObject *rot = PORT_ASK(SVec, Rotate3D, "vv", off, ang), *v = rot ? PORT_ASK(SVec, Add, "vO", pos, rot) : NULL;
-	Py_XDECREF(rot);
-	if (v) {
-		Script_SetValue(Native_Text(name), v);
+	nativeVal_t rot = { 0 }, v = { 0 };
+	if (PORT_CALL(SVec, Rotate3D, &rot, "vv", off, ang) && PORT_CALL(SVec, Add, &v, "vv", pos, &rot)) {
+		Mode_SetValue(Native_Text(name), &v);
 	}
+	Native_Free(&v);
+	Native_Free(&rot);
 }
 
 /* run setdef <var>: Scrap.Set(var, Scrap.Def(var)), the engine variable back to its default (the end of the scene
@@ -266,11 +267,11 @@ static void Level_StepSetDef(int id, const nativeVal_t *args, int n) {
 		Native_Raise(NE_TYPE, "setdef takes one variable name");
 		return;
 	}
-	PyObject *def = PORT_ASK(Scrap, Def, "v", &args[0]);
-	if (def) {
-		PORT_CALL(Scrap, Set, NULL, "vO", &args[0], def);
-		Py_DECREF(def);
+	nativeVal_t def = { 0 };
+	if (PORT_CALL(Scrap, Def, &def, "v", &args[0])) {
+		PORT_CALL(Scrap, Set, NULL, "vv", &args[0], &def);
 	}
+	Native_Free(&def);
 }
 
 /* run saveint <name> <savevar>: $name = int(Scrap.GetSaveVar(savevar)) */
@@ -281,12 +282,16 @@ static void Level_StepSaveInt(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "sO", &name, &var)) {
 		return;
 	}
-	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "v", var), *v = s ? PyNumber_Int(s) : NULL;
-	Py_XDECREF(s);
-	if (v) {
-		Script_SetValue(name, v);
+	nativeVal_t s = { 0 }, v = { 0 };
+	if (PORT_CALL(Scrap, GetSaveVar, &s, "v", var) && Mode_Int(&s, &v)) {
+		Mode_SetValue(name, &v);
 	}
+	Native_Free(&v);
+	Native_Free(&s);
 }
+
+/* OBJLIB 6: savelistadd and evalappend below keep Python values: the save text may be a name that evaluates to a list
+ * other holders see (Script_EvalIn), and the list of a $name is changed as the object it is */
 
 /* Scrap.SetSaveVar(var, text) of a step, its error printed by the runner */
 static void Level_SetSave(const nativeVal_t *var, PyObject *text) {
@@ -296,7 +301,7 @@ static void Level_SetSave(const nativeVal_t *var, PyObject *text) {
 	}
 }
 
-/* the repr of a native value as a Python text (a new reference) */
+/* the repr of a native value as a Python text (a new reference; OBJLIB 6, for savelistadd) */
 static PyObject *Level_Repr(const nativeVal_t *v) {
 	nativeBuf_t b;
 	Native_BufInit(&b);
@@ -307,7 +312,7 @@ static PyObject *Level_Repr(const nativeVal_t *v) {
 }
 
 /* `v` of a step (a new reference, NULL with the error): Native_Repr when v is a native value (the same text), any
- * other value the Python way */
+ * other value the Python way (OBJLIB 6, for savelistadd) */
 static PyObject *Level_ReprPy(PyObject *v) {
 	nativeVal_t nv;
 	PyObject *r = Native_FromPyAny(v, &nv) ? Level_Repr(&nv) : PyObject_Repr(v);
@@ -349,7 +354,8 @@ static byte Level_SaveListAddNative(const nativeVal_t *var, PyObject *s, const n
  *   if not item in lst:
  *       lst.append(item)
  *       Scrap.SetSaveVar(savevar, `lst`)
- * A list literal and a native item on native values; any other text (a name, the errors) or item the Python way.
+ * A list literal and a native item on native values; any other text (a name, the errors) or item the Python way
+ * (OBJLIB 6: a name evaluates to the object other holders see).
  */
 static void Level_StepSaveListAdd(int id, const nativeVal_t *args, int n) {
 	const nativeVal_t *var, *item;
@@ -378,7 +384,10 @@ static void Level_StepNewList(int id, const nativeVal_t *args, int n) {
 	const char *name;
 	(void)id;
 	if (Mode_Parse(args, n, "s", &name)) {
-		Script_SetValue(name, PyList_New(0));
+		nativeVal_t empty;
+		Native_SetEmpty(&empty, NV_LIST);
+		Mode_SetValue(name, &empty);
+		Native_Free(&empty);
 	}
 }
 
@@ -410,18 +419,18 @@ static void Level_StepRepr(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "sO", &name, &v)) {
 		return;
 	}
-	PyObject *o = NULL, *r;
+	nativeVal_t r = { 0 };
+	byte ok = 1;
 	if (Level_ArgNative(v, &x)) {
-		r = Level_Repr(&x);
+		Mode_Repr(&x, &r);
 		Native_Free(&x);
 	} else {
-		o = Native_ToPy(v);
-		r = o ? PyObject_Repr(o) : NULL;
+		ok = Mode_ReprV(v, &r);
 	}
-	Py_XDECREF(o);
-	if (r) {
-		Script_SetValue(name, r);
+	if (ok) {
+		Mode_SetValue(name, &r);
 	}
+	Native_Free(&r);
 }
 
 static const scriptStep_t level_steps[] = {
@@ -437,7 +446,10 @@ static const scriptStep_t level_steps[] = {
 
 /*
  * a function of a level module: self is (file index, section, parameter names, defaults dict); the arguments bound
- * like those of a Python function (the error texts of ceval), then the section runs with them as $names
+ * like those of a Python function (the error texts of ceval), then the section runs with them as $names. OBJLIB 7:
+ * the data functions of the level modules are function objects (a C function bound to that self tuple, with keyword
+ * arguments and defaults), made by Level_SectionFunction for the module dicts; they and the functions below that
+ * make, replay and look them up stay on Python objects until the tables go
  */
 static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 	int file = (int)PyInt_AsLong(PyTuple_GetItem(self, 0));
@@ -505,7 +517,8 @@ static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 	return ok ? Py_ReturnNone() : NULL;
 }
 
-/* the value of a default parameter of a section line, as the .def parser reads a value (a new reference) */
+/* the value of a default parameter of a section line, as the .def parser reads a value (a new reference; OBJLIB 7,
+ * see Level_Call) */
 static PyObject *Level_Default(const char *text) {
 	char buf[LEVEL_NAME + 8];
 	Str_Printf(buf, sizeof(buf), "(%s,)", text);
@@ -528,7 +541,7 @@ static int Level_SectionWords(const char *text, int len, char line[0x200], char 
 }
 
 /* the function of the section tok of file i, its method definition in slot n of the pool (a new reference, NULL on
- * an error) */
+ * an error; OBJLIB 7, see Level_Call) */
 static PyObject *Level_SectionFunction(int i, levelPool_t *pool, int n, char *tok[24], int nt) {
 	PyObject *params = PyTuple_New(nt - 1), *defs = PyDict_New();
 	for (int k = 1; params && defs && k < nt; k++) {
@@ -609,6 +622,7 @@ void Script_LevelModuleStart(const char *module) {
 	}
 }
 
+/* OBJLIB 7: the table and data functions of a level module as function objects (see Level_Call) */
 PyObject *Script_LevelTableFunction(const char *module, const char *name) {
 	char level[LEVEL_NAME];
 	if (!Level_Current(level, sizeof(level))) {

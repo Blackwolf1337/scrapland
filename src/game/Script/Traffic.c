@@ -185,10 +185,10 @@ static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, con
 		!PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 4L, name)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *hook = Mode_GlobalPy("Traffic", "onTrackCreate");
-	byte ok = hook && PORT_VALUE(hook, NULL, "v", o1) && Traffic_RailDeath(killer) && Traffic_ResetPathN();
-	Py_XDECREF(hook);
-	return Mode_Done(&t, ok);
+	/* OBJLIB 5: the hook is a function value of the module */
+	nativeVal_t *hook = Mode_V(&t);
+	return Mode_Done(&t, Mode_G("Traffic", "onTrackCreate", hook) && Mode_CallArgs(hook, NULL, o1, 1) &&
+		Traffic_RailDeath(killer) && Traffic_ResetPathN());
 }
 
 /* InitCivilTraffic(): the death callbacks of the rail lists and NumNormal, NumHeavy and NumMedium ships */
@@ -278,7 +278,7 @@ static void Step_Wave(int id, const nativeVal_t *args, int n) {
 	(void)id;
 	/* the list holds the values as they are: a list of a $name in it is that list */
 	if (!Script_StepValues(args, n, NV_LIST, 0, &wave) || !Mode_VarCall("OutPolice", "PoliceWaves", 1, "append", &wave)) {
-		PyErr_Print();
+		Mode_PrintError();
 	}
 	Native_Free(&wave);
 }
@@ -288,18 +288,17 @@ static void Step_DefScale(int id, const nativeVal_t *args, int n) {
 	const nativeVal_t *var, *factor;
 	(void)id;
 	if (!Mode_Parse(args, n, "OO", &var, &factor)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
-	/* OBJLIB 9: the * of the script on whatever Scrap.Def gives and the factor is */
-	PyObject *def = PORT_ASK(Scrap, Def, "v", var), *f = def ? Native_ToPy(factor) : NULL;
-	PyObject *v = f ? PyNumber_Multiply(def, f) : NULL;
-	if (!v || !PORT_CALL(Scrap, Set, NULL, "vO", var, v)) {
-		PyErr_Print();
+	/* OBJLIB 9: the * of the script on whatever Scrap.Def gives and the factor is (Mode_Times) */
+	nativeVal_t def = { 0 }, v = { 0 };
+	if (!PORT_CALL(Scrap, Def, &def, "v", var) || !Mode_Times(&def, factor, &v) ||
+		!PORT_CALL(Scrap, Set, NULL, "vv", var, &v)) {
+		Mode_PrintError();
 	}
-	Py_XDECREF(v);
-	Py_XDECREF(f);
-	Py_XDECREF(def);
+	Native_Free(&v);
+	Native_Free(&def);
 }
 
 static const scriptStep_t police_steps[] = {
@@ -346,10 +345,11 @@ static byte OutPolice_MakePoliN(const nativeVal_t *type) {
 	}
 	Native_SetStr(&list, "OutCop");
 	/* OBJLIB 5: the hook is a function value of the module */
-	PyObject *hook = Mode_VSet(&ship, "EntityList", &list) ? Mode_GlobalPy("OutPolice", "OnPoliceCreatedCallback") : NULL;
-	int t = hook ? PyObject_IsTrue(hook) : -1;
-	byte ok = t >= 0 && (!t || PORT_VALUE(hook, NULL, "v", &ship));
-	Py_XDECREF(hook);
+	nativeVal_t hook = { 0 };
+	int t = Mode_VSet(&ship, "EntityList", &list) && Mode_G("OutPolice", "OnPoliceCreatedCallback", &hook) ?
+		Mode_Truth(&hook) : -1;
+	byte ok = t >= 0 && (!t || Mode_CallArgs(&hook, NULL, &ship, 1));
+	Native_Free(&hook);
 	Native_Free(&ship);
 	return ok;
 }
@@ -392,7 +392,7 @@ static byte OutPolice_InitShipsN(void) {
 	}
 	Native_SetInt(len, count);
 	int c = Native_Compare(cur, len);
-	if (PyErr_Occurred()) {
+	if (Mode_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	if (c >= 0) {
@@ -487,7 +487,7 @@ static byte OutPolice_NextWaveN(const nativeVal_t *doprice) {
 	if (go > 0) {
 		/* iPoliceWave != 1 */
 		go = OutPolice_G("iPoliceWave", i) ? Native_Compare(i, Mode_I(&t, 1)) != 0 : -1;
-		if (PyErr_Occurred()) {
+		if (Mode_Failed()) {
 			go = -1;
 		}
 	}
@@ -523,10 +523,7 @@ static byte OutPolice_NextWave_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	return Mode_Parse(a, n, "|O", &doprice) && OutPolice_NextWaveN(doprice);
 }
 
-static PyObject *OutPolice_NextWave(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, OutPolice_NextWave_E);
-}
+MODE_ADAPTER(OutPolice, NextWave)
 
 PyMethodDef g_OutPoliceMethods[] = {
 	{ "MakePoli", OutPolice_MakePoli, 1, NULL },
@@ -546,13 +543,10 @@ static byte InPolice_IncludeN(const nativeVal_t *name) {
 	if (!Mode_Import("CharsNPC")) {
 		return 0;
 	}
-	/* OBJLIB 5 and 7: CharRes holds the character objects of CharsNPC; CharRes[chrname] the Python way */
-	PyObject *res = Script_Attr("CharsNPC", "CharRes"), *key = res ? Native_ToPy(name) : NULL;
-	PyObject *ctr = key ? PyObject_GetItem(res, key) : NULL;
-	byte ok = ctr && Mode_HGet(ctr, "ActCtrl", &act);
-	Py_XDECREF(ctr);
-	Py_XDECREF(key);
-	Py_XDECREF(res);
+	/* OBJLIB 5 and 7: CharRes holds the character objects of CharsNPC (an instance is held as NV_OBJ) */
+	nativeVal_t ctr;
+	byte ok = Mode_ModAt("CharsNPC", "CharRes", name, &ctr) && Mode_VGet(&ctr, "ActCtrl", &act);
+	Native_Free(&ctr);
 	if (!ok) {
 		return 0;
 	}

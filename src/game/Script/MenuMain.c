@@ -16,7 +16,9 @@
  * time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit,
  * GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams (OBJLIB 7); the death camera
  * schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list of saved
- * games comes from the engine as a Python list and the .def runner takes Python values (OBJLIB 6).
+ * games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun; OBJLIB 6:
+ * a dict inside the runner). Every function of the table has a native entry (stage 6, batch 6h: Mode_IdControl,
+ * Mode_Parse, MODE_FNANY).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -47,7 +49,7 @@ static const struct {
 static void Step_Volume(int id, const nativeVal_t *args, int n) {
 	const char *slider, *var;
 	if (!Mode_Parse(args, n, "ss", &slider, &var)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	Script_SetNum(id, slider, "Value", GVar_GetNum(var, 0));
@@ -73,11 +75,10 @@ static const scriptStep_t main_steps[] = {
 	{ NULL, NULL },
 };
 
-/* OBJLIB 6: the $names of the section as a dict (given away, or NULL) */
-static void Main_Run(int id, const char *section, PyObject *vars) {
-	Script_RunFile(id, MAIN_FILE, section, main_def, main_steps, vars);
-	Py_XDECREF(vars);
-}
+/* a section of main.def with its $names: n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner takes them
+ * as a dict) */
+#define Main_Run(id, section, n, ...) \
+	Mode_DefRun(id, MAIN_FILE, section, main_def, main_steps, 0, n __VA_OPT__(, ) __VA_ARGS__)
 
 /* ---- values and calls ---- */
 
@@ -116,7 +117,7 @@ static void Main_SaveList(nativeVal_t *out) {
 static int Main_Len(const nativeVal_t *seq) {
 	int n;
 	if (!Native_Len(seq, &n)) {
-		PyErr_Clear();
+		Mode_DropError();
 		return -1;
 	}
 	return n;
@@ -125,7 +126,7 @@ static int Main_Len(const nativeVal_t *seq) {
 /* Menu.saveGamesList into *out (lists held as one NV_OBJ made native): 0 when it is not there (the error dropped) */
 static byte Main_SavesVar(nativeVal_t *out) {
 	if (!Mode_ModGet("Menu", "saveGamesList", out)) {
-		PyErr_Clear();
+		Mode_DropError();
 		return 0;
 	}
 	Mode_ElemsIn(out);
@@ -166,8 +167,10 @@ static void Main_Single(int id) {
 	byte xbox = GVar_GetNum("IsXbox", 0) == 1;
 	byte canSave = (GVar_GetNum("IsXbox", 0) == 0 || GVar_GetNum("XboxCanSave", 0) == 1) &&
 		atoi(SaveVar_Get("Player.NumLives")) > -1;
-	Main_Run(id, "Single", Py_BuildValue("{s:s,s:i,s:i,s:i}", "menu", main ? "main" : "game", "saves", saves > 0, "xbox",
-		xbox, "cansave", canSave));
+	modeVals_t t = { .n = 0 };
+	Main_Run(id, "Single", 4, "menu", Mode_S(&t, main ? "main" : "game"), "saves", Mode_I(&t, saves > 0), "xbox",
+		Mode_I(&t, xbox), "cansave", Mode_I(&t, canSave));
+	Mode_Done(&t, 1);
 	if (!main) {
 		Main_PutInt("fromSinglePlayer", 1);
 	}
@@ -176,7 +179,9 @@ static void Main_Single(int id) {
 static void Main_Create(int id, const char *back) {
 	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	int saves = Main_SaveGames(1);
-	Main_Run(id, "Main", Py_BuildValue("{s:i,s:s,s:i}", "saves", saves > 0, "back", back, "steam", 0));
+	modeVals_t t = { .n = 0 };
+	Main_Run(id, "Main", 3, "saves", Mode_I(&t, saves > 0), "back", Mode_S(&t, back), "steam", Mode_I(&t, 0));
+	Mode_Done(&t, 1);
 }
 
 /* the main menu through Menu.onCreateMainMenu, which a mod may replace; Escape returns to the game */
@@ -216,7 +221,9 @@ static void Main_MovieScorer(int id) {
 	}
 	Main_Cinema(id, 1);
 	GVar_SetNum("MaxTalkLineSizePix", 620 - marginH * 2);
-	Main_Run(id, "Movie", Py_BuildValue("{s:i}", "talky", 475 - marginV));
+	modeVals_t t = { .n = 0 };
+	Main_Run(id, "Movie", 1, "talky", Mode_I(&t, 475 - marginV));
+	Mode_Done(&t, 1);
 	/* OBJLIB 5: the callback variable of Menu */
 	Mode_CallVarIf("Menu", "MovieScorerCall", id);
 }
@@ -253,7 +260,7 @@ static void Main_BackToGame(int id) {
 	Input_SelectActionSetNamed(mode);
 	byte haveSpeed = Mode_ModGet("Menu", "LastTimeSpeed", &speed);
 	byte havePitch = Mode_ModGet("Menu", "currentSoundPitch", &pitch);
-	PyErr_Clear();
+	Mode_DropError();
 	if (haveSpeed && (speed.type == NV_FLOAT || speed.type == NV_INT)) {
 		Timer_SetSpeed(&g_pWorld->timer, (float)(speed.type == NV_FLOAT ? speed.f : (double)speed.i));
 	}
@@ -320,7 +327,9 @@ static void Main_DeathInfo(int id) {
 			}
 		}
 	}
-	Main_Run(id, "Death", Py_BuildValue("{s:s,s:s}", "show", show, "text2", text));
+	modeVals_t t = { .n = 0 };
+	Main_Run(id, "Death", 2, "show", Mode_S(&t, show), "text2", Mode_S(&t, text));
+	Mode_Done(&t, 1);
 }
 
 /* ---- the skill and the saved games ---- */
@@ -341,7 +350,10 @@ static void Main_SkillMenu(int id, const char *func, const char *back, byte lit)
 	char current[0x20];
 	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	Str_Printf(current, sizeof(current), "Item%d", (int)GVar_GetNum("GameSkill", 0) + 1);
-	Main_Run(id, "Skill", Py_BuildValue("{s:s,s:s,s:s,s:i}", "func", func, "back", back, "current", current, "lit", lit));
+	modeVals_t t = { .n = 0 };
+	Main_Run(id, "Skill", 4, "func", Mode_S(&t, func), "back", Mode_S(&t, back), "current", Mode_S(&t, current), "lit",
+		Mode_I(&t, lit));
+	Mode_Done(&t, 1);
 }
 
 /* the menu entry ItemN of a control: its last digit (the script reads the one character) */
@@ -362,7 +374,7 @@ static byte Main_Entry(const nativeVal_t *list, int i, int k, nativeVal_t *out) 
 	if (v) {
 		Native_Copy(out, v);
 	} else {
-		PyErr_Clear();
+		Mode_DropError();
 	}
 	Native_Free(&t2);
 	Native_Free(&t1);
@@ -451,7 +463,7 @@ static void Main_GamesMenu(int id, byte save) {
 			Native_Free(&list);
 			list = rest;
 		} else {
-			PyErr_Clear();
+			Mode_DropError();
 		}
 		n--;
 	}
@@ -475,10 +487,10 @@ static void Main_GamesMenu(int id, byte save) {
 	if (save) {
 		Str_Printf(current, sizeof(current), "Item%d", n < 6 ? n + 1 : 1);
 	}
-	PyObject *pe = Native_ToPy(&entries);
-	Main_Run(id, "Games", pe ? Py_BuildValue("{s:s,s:O,s:i,s:s}", "title", Script_Lang(save ? "Menu_SaveGame" :
-		"Menu_LoadGame"), "entries", pe, "autosave", autoSave, "current", current) : NULL);
-	Py_XDECREF(pe);
+	modeVals_t t = { .n = 0 };
+	Main_Run(id, "Games", 4, "title", Mode_S(&t, Script_Lang(save ? "Menu_SaveGame" : "Menu_LoadGame")), "entries",
+		&entries, "autosave", Mode_I(&t, autoSave), "current", Mode_S(&t, current));
+	Mode_Done(&t, 1);
 	Native_Free(&entries);
 	Native_Free(&list);
 }
@@ -559,7 +571,7 @@ static void Main_AuxSaveGame(int id, const char *control) {
 	byte ok = PORT_CALL(Speech, CalculateSpeechTime, &r, "s", text);
 	double add = ok && r.type == NV_FLOAT ? r.f : ok && r.type == NV_INT ? (double)r.i : 0.0;
 	if (!ok) {
-		PyErr_Print();
+		Mode_PrintError();
 	}
 	Native_Free(&r);
 	Scorer_SetMsgText(text, (float)(Timer_GetTime(&g_pWorld->timer) + add), "Horatio");
@@ -592,13 +604,13 @@ static const char *Main_SaveVarOr(const char *var) {
 
 /* Initialize: the textures and talking heads of the level, then the scorer of the mode */
 static void Main_Initialize(void) {
-	/* OBJLIB 6: PCMenu.Menu is the module object of Menu */
-	PyObject *menu = Script_Module("Menu");
-	if (menu && !Mode_SetModPy("PCMenu", "Menu", menu)) {
-		PyErr_Clear();
+	/* OBJLIB 7: PCMenu.Menu is the module object of Menu (held as NV_OBJ) */
+	nativeVal_t menu;
+	if (Mode_ModuleV("Menu", &menu)) {
+		Mode_ModPut("PCMenu", "Menu", &menu);
 	}
-	Py_XDECREF(menu);
-	PyErr_Clear();
+	Native_Free(&menu);
+	Mode_DropError();
 	byte main = Mode_ModGetI("Init", "inMainMenu", 0) != 0;
 	byte xbox = Mode_ModGetI("Menu", "isXbox", 0) != 0;
 	byte outdoor = Mode_ModGetI("Init", "Outdoor", 0) != 0;
@@ -610,13 +622,20 @@ static void Main_Initialize(void) {
 	if (Mode_ModGetI("Init", "isDemo", 0) && xbox) {
 		GVar_SetStr("CheckInactivityFunc", "!ExecuteDemoLauncher");
 	}
-	Main_Run(0, "preload", Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}", "main", main,
-		"xbox", xbox, "outdoor", outdoor, "outdoorpc", outdoor && !xbox, "metro", !shipEdit && !junkyard && !xbox,
-		"multi", multiPlayer || net, "editor", junkyard || shipEdit || net, "heads",
-		!main && !(shipEdit && GVar_GetNum("isXbox", 0)), "edit", edit, "bosses",
-		edit || strcmp(Main_SaveVarOr("GameAct"), "Epilogue"), "boss", Mode_ModGetI("Menu", "HeadBoss", 0) || edit,
-		"dtritus", !outdoor || edit, "lonelymerc", !strcmp(Main_SaveVarOr("LonelyMercDataActive"), "1"), "bertos",
-		!strcmp(Main_SaveVarOr("CreateBertos"), "1"), "messenger", Mode_ModGetI("Menu", "OutHeadMessenger", 0) != 0));
+	modeVals_t t = { .n = 0 };
+	byte heads = !main && !(shipEdit && GVar_GetNum("isXbox", 0));
+	byte bosses = edit || strcmp(Main_SaveVarOr("GameAct"), "Epilogue");
+	byte boss = Mode_ModGetI("Menu", "HeadBoss", 0) || edit;
+	byte lonelyMerc = !strcmp(Main_SaveVarOr("LonelyMercDataActive"), "1");
+	byte bertos = !strcmp(Main_SaveVarOr("CreateBertos"), "1");
+	byte messenger = Mode_ModGetI("Menu", "OutHeadMessenger", 0) != 0;
+	Main_Run(0, "preload", 15, "main", Mode_I(&t, main), "xbox", Mode_I(&t, xbox), "outdoor", Mode_I(&t, outdoor),
+		"outdoorpc", Mode_I(&t, outdoor && !xbox), "metro", Mode_I(&t, !shipEdit && !junkyard && !xbox), "multi",
+		Mode_I(&t, multiPlayer || net), "editor", Mode_I(&t, junkyard || shipEdit || net), "heads", Mode_I(&t, heads),
+		"edit", Mode_I(&t, edit), "bosses", Mode_I(&t, bosses), "boss", Mode_I(&t, boss), "dtritus",
+		Mode_I(&t, !outdoor || edit), "lonelymerc", Mode_I(&t, lonelyMerc), "bertos", Mode_I(&t, bertos), "messenger",
+		Mode_I(&t, messenger));
+	Mode_Done(&t, 1);
 	if (!main) {
 		/* the module chosen at run time (OBJLIB 7: both Init are Mode_PyNone, no ref: the call through Python) */
 		const char *scorer = outdoor && !shipEdit ? "RacerScorer" : "CharScorer";
@@ -638,8 +657,10 @@ static void Main_DebugMenu(int id) {
 		}
 	}
 	Str_Printf(debug, sizeof(debug), "%d", (int)GVar_GetNum("Debug", 0));
-	Main_Run(id, "Debug", Py_BuildValue("{s:s,s:s,s:s}", "back", Mode_ModGetI("Menu", "fromSinglePlayer", 0) ?
-		"Menu.SinglePlayerMenu" : "Menu.MainMenu", "debug", debug, "ai", ai));
+	modeVals_t t = { .n = 0 };
+	Main_Run(id, "Debug", 3, "back", Mode_S(&t, Mode_ModGetI("Menu", "fromSinglePlayer", 0) ? "Menu.SinglePlayerMenu" :
+		"Menu.MainMenu"), "debug", Mode_S(&t, debug), "ai", Mode_S(&t, ai));
+	Mode_Done(&t, 1);
 }
 
 /* the next value of an engine variable, back to min after max */
@@ -677,7 +698,7 @@ static void Main_DebugAI(int id, const char *control) {
 /* the error of a call the C asked printed (the death camera goes on): ok passed on */
 static byte Main_Asked(byte ok) {
 	if (!ok) {
-		PyErr_Print();
+		Mode_PrintError();
 	}
 	return ok;
 }
@@ -685,7 +706,7 @@ static byte Main_Asked(byte ok) {
 /* o.name = v of a value, the error printed */
 static void Main_SetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v) {
 	if (!Mode_VSet(o, name, v)) {
-		PyErr_Print();
+		Mode_PrintError();
 	}
 }
 
@@ -710,7 +731,7 @@ static void Main_Sound(const char *sound, const char *volume) {
 	if (haveSnd && haveVol) {
 		Mode_Printed(Mode_Play(&snd, &vol), "SSound", "Play");
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	Native_Free(&vol);
 	Native_Free(&snd);
 }
@@ -746,7 +767,7 @@ static byte Main_TVOff(void) {
 			}
 			Native_Free(&u);
 		}
-		PyErr_Clear();
+		Mode_DropError();
 		Native_Free(&act);
 	}
 	GVar_SetNum("MotionBlurFactorBegin", 0);
@@ -756,7 +777,7 @@ static byte Main_TVOff(void) {
 	GVar_SetNum("MotionBlurOffVar", 0);
 	byte havePos = Mode_VObj(&lc, "camPos", &camPos);
 	byte haveAng = Mode_VObj(&lc, "camAng", &camAng);
-	PyErr_Clear();
+	Mode_DropError();
 	Main_SetAttrI(&cp, "nWayPoint", 2);
 	if (havePos) {
 		Main_SetAttr(&cp, "camPos", &camPos);
@@ -777,7 +798,7 @@ static byte Main_TVOff(void) {
 	byte car = 0;
 	if (hasUsr) {
 		car = Mode_VIsType(&usr, "Car") > 0;
-		PyErr_Clear();
+		Mode_DropError();
 	}
 	Main_SetAttrI(&cp, "FOV01", car ? 90 : 100);
 	/* the end of the path: above and behind the camera, under the top of the level, before a wall */
@@ -789,7 +810,7 @@ static byte Main_TVOff(void) {
 		}
 		Native_Free(&tmp);
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	nativeVal_t off, ang;
 	Mode_Ints3(&off, 0, car ? 500 : 200, car ? -1000 : -400);
 	Native_SetEmpty(&ang, NV_TUPLE);
@@ -823,7 +844,7 @@ static byte Main_TVOff(void) {
 		}
 		Native_Free(&ty);
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	byte haveDest = 0;
 	if (haveResv) {
 		nativeVal_t list;
@@ -843,7 +864,7 @@ static byte Main_TVOff(void) {
 		Native_Copy(&pos, &resv);
 		havePos01 = 1;
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	if (havePos01) {
 		Main_SetAttr(&cp, "Pos01", &pos);
 	}
@@ -855,7 +876,7 @@ static byte Main_TVOff(void) {
 	Native_Free(&ang);
 	GVar_SetNum("CinemaBlackBandHeight", 0);
 	byte haveName = Mode_VObj(&cp, "Name", &name);
-	PyErr_Clear();
+	Mode_DropError();
 	if (haveName) {
 		Native_SetInt(&v[0], 0);
 		Native_Copy(&v[1], &name);
@@ -895,71 +916,77 @@ static void Main_TVOffEnd(void) {
 
 /* ---- the functions of Menu (adapters) ---- */
 
-#define MAIN_ARGS(args) \
+#define MAIN_ARGS(a, n) \
 	int id; \
 	const char *control; \
-	if (!Script_Args(args, &id, &control)) { \
-		return NULL; \
+	if (!Mode_IdControl(a, n, &id, &control)) { \
+		return 0; \
 	}
 
-static PyObject *Menu_SinglePlayerMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_SinglePlayerMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Main_Single(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, SinglePlayerMenu)
 
-static PyObject *Menu_AudioMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_AudioMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
-	Main_Run(id, "Audio", NULL);
-	return Py_ReturnNone();
+	Main_Run(id, "Audio", 0);
+	return 1;
 }
+MODE_ADAPTER(Menu, AudioMenu)
 
-static PyObject *Main_VolumeStepArgs(PyObject *args, double sign) {
+static byte Main_VolumeStepArgs(const nativeVal_t *a, int n, double sign) {
 	int id;
-	char *control, *prev;
-	if (!PyArg_ParseTuple(args, "iss", &id, &control, &prev)) {
-		return NULL;
+	const char *control, *prev;
+	if (!Mode_Parse(a, n, "iss", &id, &control, &prev)) {
+		return 0;
 	}
-	return Mode_Result(Main_VolumeStep(id, prev, sign));
+	return Main_VolumeStep(id, prev, sign);
 }
 
-static PyObject *Menu_AudioVolumeSliderFocus_Sub(PyObject *self, PyObject *args) {
-	(void)self;
-	return Main_VolumeStepArgs(args, -1.0);
+static byte Menu_AudioVolumeSliderFocus_Sub_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Main_VolumeStepArgs(a, n, -1.0);
 }
+MODE_ADAPTER(Menu, AudioVolumeSliderFocus_Sub)
 
-static PyObject *Menu_AudioVolumeSliderFocus_Add(PyObject *self, PyObject *args) {
-	(void)self;
-	return Main_VolumeStepArgs(args, 1.0);
+static byte Menu_AudioVolumeSliderFocus_Add_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Main_VolumeStepArgs(a, n, 1.0);
 }
+MODE_ADAPTER(Menu, AudioVolumeSliderFocus_Add)
 
-static PyObject *Menu_AudioVolumeChange(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_AudioVolumeChange_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Main_ApplyVolumes(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, AudioVolumeChange)
 
 MODE_IDFN(Menu_MainMenu, (Main_MainMenu(id, control), 1))
 
 /* CreateMainMenu(id, control, backfunc) */
-static PyObject *Menu_CreateMainMenu(PyObject *self, PyObject *args) {
+static byte Menu_CreateMainMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	PyObject *control;
-	char *back;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOs", &id, &control, &back)) {
-		return NULL;
+	const nativeVal_t *control;
+	const char *back;
+	(void)out;
+	if (!Mode_Parse(a, n, "iOs", &id, &control, &back)) {
+		return 0;
 	}
 	Main_Create(id, back);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, CreateMainMenu)
 
 MODE_IDFN(Menu_BackToGame, (Main_BackToGame(id), 1))
 
@@ -997,81 +1024,92 @@ static byte Menu_MovieScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 }
 MODE_ADAPTER(Menu, MovieScorer)
 
-static PyObject *Menu_Init(PyObject *self, PyObject *args) {
+static byte Menu_Init_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Main_Init(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, Init)
 
 MODE_IFN(Menu_DeathInfo, 1, (Main_DeathInfo(id), 1))
 
-static PyObject *Menu_ExitGame(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Menu_ExitGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Mode_Printed(Mode_Exit(), "Scrap", "Exit");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, ExitGame)
 
-static PyObject *Menu_ByeMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_ByeMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Main_YesNo(id, "Menu_ExitGame_Question", "Menu.ExitGame", "Menu.MainMenu");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, ByeMenu)
 
-static PyObject *Menu_SetSkillMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_SetSkillMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Main_SkillMenu(id, "Menu.SetSkill", "Menu.OptionsMenu", 1);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, SetSkillMenu)
 
-static PyObject *Menu_SetSkill(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
-	return Mode_Result(Main_SetSkill(id, control));
+static byte Menu_SetSkill_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
+	return Main_SetSkill(id, control);
 }
+MODE_ADAPTER(Menu, SetSkill)
 
-static PyObject *Menu_StartNewGame(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_StartNewGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Main_SkillMenu(id, "Menu.NewGame", "Menu.MainMenu", 0);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, StartNewGame)
 
-static PyObject *Menu_NewGame(PyObject *self, PyObject *args) {
-	char n[0x10];
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_NewGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	char skill[0x10];
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)id;
 	MODE_PRINTED(SaveGame, NewGame, "");
-	Str_Printf(n, sizeof(n), "%d", Main_Digit(control, 4) - 1);
-	SaveVar_Set("GameSkill", n);
-	return Py_ReturnNone();
+	Str_Printf(skill, sizeof(skill), "%d", Main_Digit(control, 4) - 1);
+	SaveVar_Set("GameSkill", skill);
+	return 1;
 }
+MODE_ADAPTER(Menu, NewGame)
 
-static PyObject *Menu_AuxAbortGame(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Menu_AuxAbortGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	SaveVars_Delete("");
 	Main_QLoad("Levels/Menu");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, AuxAbortGame)
 
-static PyObject *Menu_AbortGame(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_AbortGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Main_YesNo(id, "Menu_AbortGame_Question", "Menu.AuxAbortGame", "Menu.SinglePlayerMenu");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, AbortGame)
 
 /* AuxLoadGame(id, control): the game of slotToLoad, then back to it */
 static void Main_AuxLoadGame(int id, const char *control) {
@@ -1081,93 +1119,92 @@ static void Main_AuxLoadGame(int id, const char *control) {
 
 MODE_IDFN(Menu_AuxLoadGame, (Main_AuxLoadGame(id, control), 1))
 
-static PyObject *Menu_LoadGame(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_LoadGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	Main_LoadGame(id, control);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, LoadGame)
 
-static PyObject *Menu_LoadLastSavedGame(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	Main_LoadLast();
-	return Py_ReturnNone();
-}
-
-static PyObject *Menu_AuxSaveGame(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
-	Main_AuxSaveGame(id, control);
-	return Py_ReturnNone();
-}
-
-static PyObject *Menu_SaveGame(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
-	Main_SaveGame(id, control);
-	return Py_ReturnNone();
-}
-
-static PyObject *Menu_LoadGameMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
-	(void)control;
-	Main_GamesMenu(id, 0);
-	return Py_ReturnNone();
-}
-
-static PyObject *Menu_SaveGameMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
-	(void)control;
-	Main_GamesMenu(id, 1);
-	return Py_ReturnNone();
-}
-
-static PyObject *Menu_isAutoSave(PyObject *self, PyObject *args) {
-	char *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	return PyInt_FromLong(Main_IsAutoSave(name));
-}
-
-static PyObject *Menu_ComposeSaveGameName(PyObject *self, PyObject *args) {
-	char *name, out[0x200];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	Main_SaveName(name, out, sizeof(out));
-	return PyString_FromString(out);
-}
-
-/* Initialize takes any arguments (stage 3: its entry for the call of InitLevel through its ref) */
-static byte Menu_Initialize_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+static byte Menu_LoadLastSavedGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
 	(void)n;
 	(void)out;
-	Main_Initialize();
+	Main_LoadLast();
 	return 1;
 }
+MODE_ADAPTER(Menu, LoadLastSavedGame)
 
-static PyObject *Menu_Initialize(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	Main_Initialize();
-	return Py_ReturnNone();
+static byte Menu_AuxSaveGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
+	Main_AuxSaveGame(id, control);
+	return 1;
 }
+MODE_ADAPTER(Menu, AuxSaveGame)
+
+static byte Menu_SaveGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
+	Main_SaveGame(id, control);
+	return 1;
+}
+MODE_ADAPTER(Menu, SaveGame)
+
+static byte Menu_LoadGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
+	(void)control;
+	Main_GamesMenu(id, 0);
+	return 1;
+}
+MODE_ADAPTER(Menu, LoadGameMenu)
+
+static byte Menu_SaveGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
+	(void)control;
+	Main_GamesMenu(id, 1);
+	return 1;
+}
+MODE_ADAPTER(Menu, SaveGameMenu)
+
+static byte Menu_isAutoSave_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
+	}
+	Native_SetInt(out, Main_IsAutoSave(name));
+	return 1;
+}
+MODE_ADAPTER(Menu, isAutoSave)
+
+static byte Menu_ComposeSaveGameName_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *name;
+	char text[0x200];
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
+	}
+	Main_SaveName(name, text, sizeof(text));
+	Native_SetText(out, text, (int)strlen(text));
+	return 1;
+}
+MODE_ADAPTER(Menu, ComposeSaveGameName)
+
+/* Initialize takes any arguments (stage 3: its entry for the call of InitLevel through its ref) */
+MODE_FNANY(Menu, Initialize, (Main_Initialize(), 1))
 
 /* CreditsMenu: the credits run in the menu level */
-static PyObject *Menu_CreditsMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Menu_CreditsMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	GVar_SetNum("ShowCredits", 1);
 	Main_QLoad("levels/menu");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, CreditsMenu)
 
 /* GameOver(id): the death of the player in a single player game, the television switches off */
 static byte Menu_GameOver_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1183,126 +1220,122 @@ static byte Menu_GameOver_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 }
 MODE_ADAPTER(Menu, GameOver)
 
-static PyObject *Menu_DebugMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_DebugMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Main_DebugMenu(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugMenu)
 
-#define MAIN_CYCLE(func, var, max) \
-	static PyObject *func(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		Main_Cycle(var, 0, max); \
-		return Py_ReturnNone(); \
-	}
+/* a debug entry that steps an engine variable (any arguments) */
+#define MAIN_CYCLE(name, var, max) MODE_FNANY(Menu, name, (Main_Cycle(var, 0, max), 1))
 
-MAIN_CYCLE(Menu_DebugSet_Console, "ShowConsoleLog", 1)
-MAIN_CYCLE(Menu_DebugSet_RenderInfo, "R_ShowInfo", 5)
-MAIN_CYCLE(Menu_DebugSet_SoundInfo, "S_Show", 2)
-MAIN_CYCLE(Menu_DebugSet_WorldInfo, "CShow", 7)
-MAIN_CYCLE(Menu_DebugSet_ObjectPool, "O_Show", 1)
-MAIN_CYCLE(Menu_DebugSet_SceneRenderTarget, "R_SceneRTarget", 1)
-MAIN_CYCLE(Menu_DebugSet_MapCollision, "ShowMapCollision", 7)
+MAIN_CYCLE(DebugSet_Console, "ShowConsoleLog", 1)
+MAIN_CYCLE(DebugSet_RenderInfo, "R_ShowInfo", 5)
+MAIN_CYCLE(DebugSet_SoundInfo, "S_Show", 2)
+MAIN_CYCLE(DebugSet_WorldInfo, "CShow", 7)
+MAIN_CYCLE(DebugSet_ObjectPool, "O_Show", 1)
+MAIN_CYCLE(DebugSet_SceneRenderTarget, "R_SceneRTarget", 1)
+MAIN_CYCLE(DebugSet_MapCollision, "ShowMapCollision", 7)
 
-static PyObject *Menu_DebugSet_Level(PyObject *self, PyObject *args) {
+static byte Menu_DebugSet_Level_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char text[0x40];
-	(void)self;
-	MAIN_ARGS(args);
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	Str_Printf(text, sizeof(text), "Debug Level: %d", Main_Cycle("Debug", 0, 3));
 	Script_SetStr(id, "Item1", "Text", text);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugSet_Level)
 
-static PyObject *Menu_DebugSet_StencilShadows(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Menu_DebugSet_StencilShadows_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	GVar_SetNum("R_StencilTog", 1);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugSet_StencilShadows)
 
-static PyObject *Menu_DebugSet_AI(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_DebugSet_AI_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	Main_DebugAI(id, control);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugSet_AI)
 
 /* the Python code of XboxPyDebug ran here (a debug line typed by the user): there is no interpreter, an error says so */
-static PyObject *Menu_DebugSet_XboxPyDebug(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Menu_DebugSet_XboxPyDebug_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	const char *code = GVar_GetStr("XboxPyDebug");
 	Con_Printf("XboxPyDebug: %s\n", code);
 	Con_Errorf("XboxPyDebug: no Python interpreter in this build\n");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugSet_XboxPyDebug)
 
 /* DebugSet_CycleVar(var, min, max) */
-static PyObject *Menu_DebugSet_CycleVar(PyObject *self, PyObject *args) {
-	char *var;
+static byte Menu_DebugSet_CycleVar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *var;
 	int min, max;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sii", &var, &min, &max)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "sii", &var, &min, &max)) {
+		return 0;
 	}
 	Main_Cycle(var, min, max);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugSet_CycleVar)
 
-static PyObject *Menu_DebugSet_ChangeMapMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	MAIN_ARGS(args);
+static byte Menu_DebugSet_ChangeMapMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	MAIN_ARGS(a, n);
 	(void)control;
 	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
-	Main_Run(id, "ChangeMap", NULL);
-	return Py_ReturnNone();
+	Main_Run(id, "ChangeMap", 0);
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugSet_ChangeMapMenu)
 
-static PyObject *Menu_DebugSet_ChangeMapExec(PyObject *self, PyObject *args) {
+static byte Menu_DebugSet_ChangeMapExec_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char level[0x100];
-	(void)self;
-	MAIN_ARGS(args);
+	(void)out;
+	MAIN_ARGS(a, n);
 	Str_Printf(level, sizeof(level), "Levels/%s", Script_GetStr(id, control, "Text"));
 	Main_QLoad(level);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, DebugSet_ChangeMapExec)
 
 /* TVOff(): any arguments; 0 without an error where the C returned it (the errors of the calls were printed) */
 MODE_FNANY(Menu, TVOff, Main_TVOff())
 
 /* SetCam(id, path): the camera on the path, one frame later */
-static PyObject *Menu_SetCam(PyObject *self, PyObject *args) {
-	PyObject *o[2];
-	nativeVal_t v[2];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &o[0], &o[1])) {
-		return NULL;
-	}
-	Native_Arg(o[0], &v[0]);
-	Native_Arg(o[1], &v[1]);
-	Mode_SchedAt(Mode_Time(), "Scrap", "SetCam", v, 2, NULL);
-	Native_Free(&v[0]);
-	Native_Free(&v[1]);
-	return Py_ReturnNone();
-}
+MODE_FN(Menu, SetCam, 2, (Mode_SchedAt(Mode_Time(), "Scrap", "SetCam", a, 2, NULL), 1))
 
-static PyObject *Menu_TVOffEnd(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Menu_TVOffEnd_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Main_TVOffEnd();
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, TVOffEnd)
 
-static PyObject *Menu_BlackTV(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Menu_BlackTV_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	MODE_PRINTED(Menu, DeathInfo, "i", 0L);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(Menu, BlackTV)
 
 PyMethodDef g_MenuMainMethods[] = {
 	{ "SinglePlayerMenu", Menu_SinglePlayerMenu, 1, NULL },

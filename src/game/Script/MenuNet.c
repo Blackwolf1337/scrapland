@@ -11,8 +11,9 @@
  * refs (PORT_CALL: directly while the attribute holds the port's function, else by name), and so are Scrap.SaveConfig
  * and Scrap.Exit (stage 7), their failures printed as before; the connection status schedules itself (a function
  * object of its own, OBJLIB 7; the scheduler takes its entry, Port_Scheduled). The $names of the sections are made on
- * native values (Mode_DefVars, stage 6 batch 6f); the .def runner takes them as a dict and the steps their arguments
- * as a tuple (OBJLIB 6).
+ * native values (Mode_DefRunVa, stage 6 batches 6f and 6h); the .def runner takes them as a dict (OBJLIB 6) and the
+ * steps their arguments as native values. Every function of the table but BrowseFormatServerLine has a native entry
+ * (batch 6h).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,10 +80,10 @@ typedef struct {
 	int num;
 } netMapList_t;
 
-static void Net_RunMenu(int id, const char *section, PyObject *vars);
+static void Net_RunMenu(int id, const char *section, int n, ...);
 static void Net_RunPage(int id, const char *section, const char *tab);
 
-/* the values every page may use, as values of t: NET_PAIRS(c) are their name and value pairs for Mode_DefVars
+/* the values every page may use, as values of t: NET_PAIRS(c) are their name and value pairs for Net_RunMenu
  * (NET_COMMON of them), other $names follow */
 #define NET_COMMON 6
 #define NET_PAIRS(c) "tab", c[0], "domain", c[1], "motd", c[2], "motdx", c[3], "motdy", c[4], "serveraddress", c[5]
@@ -284,8 +285,6 @@ static void Net_CutText(const char *text, int maxlen, char *out, int size) {
 
 /* ---- the connection ---- */
 
-static PyObject *Net_StatusFunc(void);
-
 /* the state of the connection every quarter second: messages, the password page */
 static void Net_ConnectionStatus(void) {
 	char last[0x200];
@@ -322,15 +321,17 @@ static void Net_ConnectionStatus(void) {
 		MODE_PRINTED(Menu, DrawMenuTitleBar, "ids", 0L, bar, title);
 	}
 	/* a full server ends the polling (the script deleted its own next call). OBJLIB 7: the port's own function as a
-	 * function object of its own (not the module attribute: a case that replaces PCMenu.ShowConectionStatus does not
-	 * change the polling) with an empty argument tuple; the scheduler takes its entry (Port_Scheduled) */
+	 * function object of its own, made once from its table row and held as a value (not the module attribute: a case
+	 * that replaces PCMenu.ShowConectionStatus does not change the polling), without arguments; the scheduler takes
+	 * its entry (Port_Scheduled) */
 	if (!full) {
-		PyObject *f = Net_StatusFunc();
-		PyObject *params = PyTuple_New(0);
-		if (f && params) {
-			Scheduler_Add(&g_pWorld->scheduler, Timer_GetTime(&g_pWorld->timer) + 0.25f, f, params, "ConectionStatus");
+		static nativeVal_t status;
+		if (status.type != NV_OBJ) {
+			Mode_OwnFunc(g_MenuNetMethods, "ShowConectionStatus", &status);
 		}
-		Py_XDECREF(params);
+		if (status.type == NV_OBJ) {
+			Mode_SchedFn(Timer_GetTime(&g_pWorld->timer) + 0.25f, &status, NULL, 0, "ConectionStatus");
+		}
 	}
 }
 
@@ -352,7 +353,7 @@ static void Net_TryJoin(int id) {
 	}
 	nativeVal_t v;
 	Native_SetText(&v, title, (int)strlen(title));
-	Net_RunMenu(id, "connecting", Mode_DefVars(1, "title", &v));
+	Net_RunMenu(id, "connecting", 1, "title", &v);
 	Native_Free(&v);
 	Net_ConnectionStatus();
 }
@@ -396,7 +397,7 @@ static void Step_ColumnText(int id, const nativeVal_t *args, int n) {
 	int maxlen;
 	char text[0x200];
 	if (!Mode_Parse(args, n, "si", &key, &maxlen)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	Net_CutText(Script_Lang(key), maxlen, text, sizeof(text));
@@ -642,9 +643,9 @@ static void Net_CreateMenu(int id) {
 	modeVals_t t = { .n = 0 };
 	const nativeVal_t *c[NET_COMMON];
 	Net_Common(&t, "Create", c);
-	Net_RunMenu(id, "Create", Mode_DefVars(NET_COMMON + 4, NET_PAIRS(c), "servername", Mode_S(&t, GVar_GetStr("ServerName")),
+	Net_RunMenu(id, "Create", NET_COMMON + 4, NET_PAIRS(c), "servername", Mode_S(&t, GVar_GetStr("ServerName")),
 		"players", Mode_S(&t, players), "fraglimit", Mode_S(&t, frags), "advanced",
-		Mode_S(&t, *advanced ? advanced : "Advanced")));
+		Mode_S(&t, *advanced ? advanced : "Advanced"));
 	Mode_Done(&t, 1);
 }
 
@@ -704,7 +705,7 @@ static void Step_MapSlots(int id, const nativeVal_t *args, int n) {
 static void Step_MapPreviews(int id, const nativeVal_t *args, int n) {
 	int x, y;
 	if (!Mode_Parse(args, n, "ii", &x, &y)) {
-		PyErr_Print();
+		Mode_PrintError();
 		return;
 	}
 	nativeVal_t maps;
@@ -746,11 +747,13 @@ static const scriptStep_t net_steps[] = {
 	{ NULL, NULL },
 };
 
-/* OBJLIB 6: the .def runner takes the $names as a Python dict (vars, made by Mode_DefVars: given away, NULL for
- * none) */
-static void Net_RunMenu(int id, const char *section, PyObject *vars) {
-	Script_RunFile(id, NET_FILE, section, net_def, net_steps, vars);
-	Py_XDECREF(vars);
+/* a section of net.def with its $names: n pairs of a name and a const nativeVal_t * (Mode_DefRunVa; OBJLIB 6: the
+ * runner takes them as a dict) */
+static void Net_RunMenu(int id, const char *section, int n, ...) {
+	va_list va;
+	va_start(va, n);
+	Mode_DefRunVa(id, NET_FILE, section, net_def, net_steps, 0, n, va);
+	va_end(va);
 }
 
 static void Net_Common(modeVals_t *t, const char *tab, const nativeVal_t **c) {
@@ -769,7 +772,7 @@ static void Net_RunPage(int id, const char *section, const char *tab) {
 	modeVals_t t = { .n = 0 };
 	const nativeVal_t *c[NET_COMMON];
 	Net_Common(&t, tab, c);
-	Net_RunMenu(id, section, Mode_DefVars(NET_COMMON, NET_PAIRS(c)));
+	Net_RunMenu(id, section, NET_COMMON, NET_PAIRS(c));
 	Mode_Done(&t, 1);
 }
 
@@ -780,17 +783,17 @@ static void Net_JoinMenu(int id) {
 	const nativeVal_t *c[NET_COMMON];
 	Str_Copy(current, sc && sc->current ? sc->current : "Join", sizeof(current));
 	Net_Common(&t, "Join", c);
-	Net_RunMenu(id, "Join", Mode_DefVars(NET_COMMON + 1, NET_PAIRS(c), "current", Mode_S(&t, current)));
+	Net_RunMenu(id, "Join", NET_COMMON + 1, NET_PAIRS(c), "current", Mode_S(&t, current));
 	Mode_Done(&t, 1);
 }
 
 /* ---- the functions of PCMenu ---- */
 
-#define NET_ARGS(args) \
+#define NET_ARGS(a, n) \
 	int id; \
 	const char *control; \
-	if (!Script_Args(args, &id, &control)) { \
-		return NULL; \
+	if (!Mode_IdControl(a, n, &id, &control)) { \
+		return 0; \
 	}
 
 /* MultiPlayerMenu(id, control): the join page from the main menu and the editor, else the page of the game */
@@ -801,26 +804,27 @@ static void Net_MultiPlayerMenu(int id) {
 		return;
 	}
 	nativeVal_t v;
-	Net_RunMenu(id, "Multiplayer", Mode_DefVars(1, "server", Mode_IntVal(&v, Net_IsServer() != 0)));
+	Net_RunMenu(id, "Multiplayer", 1, "server", Mode_IntVal(&v, Net_IsServer() != 0));
 }
 
 MODE_IDFN(PCMenu_MultiPlayerMenu, (Net_MultiPlayerMenu(id), 1))
 
-static PyObject *PCMenu_MenuRestartServer(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_MenuRestartServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)id;
 	(void)control;
 	char path[0x100];
 	if (Timer_GetTime(&g_pWorld->timer) > 15 && Net_IsServer()) {
 		Net_ServerChangeLevel(Mode_ModGetS("Init", "Path", path, sizeof(path)));
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MenuRestartServer)
 
-static PyObject *PCMenu_MenuJoinGame(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_MenuJoinGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	char text[0x100], *colon;
 	Net_CloseClient();
@@ -832,36 +836,36 @@ static PyObject *PCMenu_MenuJoinGame(PyObject *self, PyObject *args) {
 	GVar_SetStr("DefaultServerAddress", text);
 	GVar_SetNum("DefaultServerPort", colon ? atoi(colon + 1) : GVar_GetNum("DefaultServerPort", 1));
 	Net_TryJoin(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MenuJoinGame)
 
-static PyObject *PCMenu_TryJoin(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_TryJoin_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_TryJoin(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, TryJoin)
 
-/* OBJLIB 7: the entry on Python values (the "i|O" of Script_Args) */
-MODE_PYENTRY(PCMenu_TryJoin)
-
-static PyObject *PCMenu_JoinPassword(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_JoinPassword_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	GVar_SetStr("ClientPassword", Script_GetStr(id, "Item1", "Text"));
 	Net_TryJoin(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, JoinPassword)
 
 /* AskPassword(id, control): the password page of the server */
 static void Net_AskPassword(int id) {
 	const char *title = Script_Lang("Menu_Multiplayer_Advanced_Password");
 	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	modeVals_t t = { .n = 0 };
-	Net_RunMenu(id, "password", Mode_DefVars(2, "title", Mode_S(&t, *title ? title : "Password"), "password",
-		Mode_S(&t, GVar_GetStr("ClientPassword"))));
+	Net_RunMenu(id, "password", 2, "title", Mode_S(&t, *title ? title : "Password"), "password",
+		Mode_S(&t, GVar_GetStr("ClientPassword")));
 	Mode_Done(&t, 1);
 }
 
@@ -870,99 +874,97 @@ MODE_IDFN(PCMenu_AskPassword, (Net_AskPassword(id), 1))
 /* ShowConectionStatus(): any arguments */
 MODE_FNANY(PCMenu, ShowConectionStatus, (Net_ConnectionStatus(), 1))
 
-static PyMethodDef net_status_def = { "ShowConectionStatus", PCMenu_ShowConectionStatus, 1, NULL };
-
-static PyObject *Net_StatusFunc(void) {
-	static PyObject *f;
-	if (!f) {
-		f = PyCFunction_New(&net_status_def, NULL);
-	}
-	return f;
-}
-
-static PyObject *PCMenu_AbortJoin(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_AbortJoin_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Scheduler_Delete(&g_pWorld->scheduler, "ConectionStatus");
 	Net_CloseClient();
 	Net_JoinMenu(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, AbortJoin)
 
-static PyObject *PCMenu_SpecifyIPMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_SpecifyIPMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_RunPage(id, "ip", "Join");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, SpecifyIPMenu)
 
-static PyObject *PCMenu_AbortMultiplayerGame(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_AbortMultiplayerGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	MODE_PRINTED(Menu, YesNoMenu, "isss", (long)id, Script_Lang("Menu_AbortGame_Question"), "Menu.AuxAbortGame",
 		"PCMenu.MultiPlayerMenu");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, AbortMultiplayerGame)
 
 /* NetDefaultContentMenu(id, control[, tab]): Back, the garage and the Create/Join tabs, the message of the day */
-static PyObject *PCMenu_NetDefaultContentMenu(PyObject *self, PyObject *args) {
+static byte PCMenu_NetDefaultContentMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	PyObject *control;
-	char *tab = "Create";
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO|s", &id, &control, &tab)) {
-		return NULL;
+	const nativeVal_t *control;
+	const char *tab = "Create";
+	(void)out;
+	if (!Mode_Parse(a, n, "iO|s", &id, &control, &tab)) {
+		return 0;
 	}
 	Net_RunPage(id, "content", tab);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, NetDefaultContentMenu)
 
-static PyObject *PCMenu_NetJoinGameMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_NetJoinGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_JoinMenu(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, NetJoinGameMenu)
 
-static PyObject *Net_Domain(PyObject *args, const char *domain) {
-	NET_ARGS(args);
+static byte Net_Domain(const nativeVal_t *a, int n, const char *domain) {
+	NET_ARGS(a, n);
 	(void)control;
 	Net_DoneBrowser();
 	Str_Copy(net.domain, domain, sizeof(net.domain));
 	Net_JoinMenu(id);
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *PCMenu_NetJoinInternetMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Domain(args, "Internet");
+static byte PCMenu_NetJoinInternetMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Domain(a, n, "Internet");
 }
+MODE_ADAPTER(PCMenu, NetJoinInternetMenu)
 
-static PyObject *PCMenu_NetJoinLocalMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Domain(args, "Local");
+static byte PCMenu_NetJoinLocalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Domain(a, n, "Local");
 }
+MODE_ADAPTER(PCMenu, NetJoinLocalMenu)
 
-static PyObject *PCMenu_NetJoinIPMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Domain(args, "IP");
+static byte PCMenu_NetJoinIPMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Domain(a, n, "IP");
 }
+MODE_ADAPTER(PCMenu, NetJoinIPMenu)
 
 /* OnNetBrowse(address, flags, name, players, maxPlayers, version, port, type, ping, map): a server answered */
-static PyObject *PCMenu_OnNetBrowse(PyObject *self, PyObject *args) {
-	char *address, *name, *type, *map;
+static byte PCMenu_OnNetBrowse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *address, *name, *type, *map;
 	int flags, players, maxPlayers, version, port, ping;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sisiiiisis", &address, &flags, &name, &players, &maxPlayers, &version, &port, &type,
+	(void)out;
+	if (!Mode_Parse(a, n, "sisiiiisis", &address, &flags, &name, &players, &maxPlayers, &version, &port, &type,
 		&ping, &map)) {
-		return NULL;
+		return 0;
 	}
 	if (net.numServers >= NET_MAX_SERVERS) {
-		return Py_ReturnNone();
+		return 1;
 	}
 	netServer_t *s = &net.servers[net.numServers++];
 	s->ping = ping;
@@ -978,57 +980,66 @@ static PyObject *PCMenu_OnNetBrowse(PyObject *self, PyObject *args) {
 	s->flags = flags;
 	Net_Sort();
 	Net_UpdateBrowser(0);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, OnNetBrowse)
 
-static PyObject *PCMenu_BrowserSortExecute(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte PCMenu_BrowserSortExecute_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Net_Sort();
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, BrowserSortExecute)
 
-static PyObject *PCMenu_BrowseLocalMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte PCMenu_BrowseLocalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Net_BrowseLocal();
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, BrowseLocalMenu)
 
 /* MasterCommand(text): a message of the master server, "msg=" is the message of the day */
-static PyObject *PCMenu_MasterCommand(PyObject *self, PyObject *args) {
-	char *text;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
+static byte PCMenu_MasterCommand_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *text;
+	(void)out;
+	if (!Mode_Parse(a, n, "s", &text)) {
+		return 0;
 	}
 	if (!strncmp(text, "msg=", 4)) {
 		Str_Copy(net.motd, text + 4, sizeof(net.motd));
 		Script_SetStr(0, "MOTD", "Text", net.motd);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MasterCommand)
 
-static PyObject *PCMenu_BrowseINetMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte PCMenu_BrowseINetMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
 	Net_BrowseInternet();
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, BrowseINetMenu)
 
-static PyObject *PCMenu_InetMasterBrowse(PyObject *self, PyObject *args) {
+static byte PCMenu_InetMasterBrowse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int i;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &i)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &i)) {
+		return 0;
 	}
-	return PyInt_FromLong(Net_MasterBrowse(i));
+	Native_SetInt(out, Net_MasterBrowse(i));
+	return 1;
 }
+MODE_ADAPTER(PCMenu, InetMasterBrowse)
 
 /* the script called a MainMenu of its own module here, which does not exist; the main menu of Menu is meant */
-static PyObject *PCMenu_BrowserMenuBack(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_BrowserMenuBack_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	cScorer *sc = Scorer_Get(id);
 	if (sc) {
 		cPy_Function_SetFunc(&sc->onNext, "");
@@ -1036,80 +1047,88 @@ static PyObject *PCMenu_BrowserMenuBack(PyObject *self, PyObject *args) {
 	}
 	Net_DoneBrowser();
 	MODE_PRINTED(Menu, MainMenu, "is", (long)id, control);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, BrowserMenuBack)
 
-static PyObject *PCMenu_RefreshBrowseMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_RefreshBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_Refresh(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, RefreshBrowseMenu)
 
-static PyObject *PCMenu_RefreshBrowseMenuButton(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_RefreshBrowseMenuButton_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_DoneBrowser();
 	Net_Refresh(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, RefreshBrowseMenuButton)
 
 /* the arrows and the page keys of the browser; the names are the script's (Previous scrolls down) */
-static PyObject *Net_Scroll(PyObject *args, int how) {
-	NET_ARGS(args);
+static byte Net_Scroll(const nativeVal_t *a, int n, int how) {
+	NET_ARGS(a, n);
 	(void)control;
-	int n = net.numServers;
+	int count = net.numServers;
 	if (how == 0) {
-		if (n <= net.index + NET_SLOTS) {
-			return Py_ReturnNone();
+		if (count <= net.index + NET_SLOTS) {
+			return 1;
 		}
 		net.index++;
 	} else if (how == 1) {
 		if (net.index <= 0) {
-			return Py_ReturnNone();
+			return 1;
 		}
 		net.index--;
 	} else if (how == 2) {
-		net.index = n <= NET_SLOTS ? 0 : n > net.index + NET_SLOTS * 2 ? net.index + NET_SLOTS : n - NET_SLOTS;
+		net.index = count <= NET_SLOTS ? 0 : count > net.index + NET_SLOTS * 2 ? net.index + NET_SLOTS :
+			count - NET_SLOTS;
 	} else {
 		net.index = net.index > NET_SLOTS - 1 ? net.index - NET_SLOTS : 0;
 	}
 	Net_UpdateBrowser(id);
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *PCMenu_BrowseLocalMenuPrevious(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Scroll(args, 0);
+static byte PCMenu_BrowseLocalMenuPrevious_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Scroll(a, n, 0);
 }
+MODE_ADAPTER(PCMenu, BrowseLocalMenuPrevious)
 
-static PyObject *PCMenu_BrowseLocalMenuNext(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Scroll(args, 1);
+static byte PCMenu_BrowseLocalMenuNext_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Scroll(a, n, 1);
 }
+MODE_ADAPTER(PCMenu, BrowseLocalMenuNext)
 
-static PyObject *PCMenu_BrowseLocalMenuPgUp(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Scroll(args, 2);
+static byte PCMenu_BrowseLocalMenuPgUp_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Scroll(a, n, 2);
 }
+MODE_ADAPTER(PCMenu, BrowseLocalMenuPgUp)
 
-static PyObject *PCMenu_BrowseLocalMenuPgDown(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Scroll(args, 3);
+static byte PCMenu_BrowseLocalMenuPgDown_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Scroll(a, n, 3);
 }
+MODE_ADAPTER(PCMenu, BrowseLocalMenuPgDown)
 
 /* BrowseLocalJoin(id, "BrowserSlotN"): joins the server of that line when its mode and map are here */
-static PyObject *PCMenu_BrowseLocalJoin(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_BrowseLocalJoin_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	if (strlen(control) <= 11) {
-		return Py_ReturnNone();
+		return 1;
 	}
 	int i = atoi(control + 11) - 1 + net.index;
 	if (i < 0 || i >= net.numServers) {
-		return Py_ReturnNone();
+		return 1;
 	}
 	const netServer_t *s = &net.servers[i];
 	char file[0x100], msg[0x100];
@@ -1128,75 +1147,80 @@ static PyObject *PCMenu_BrowseLocalJoin(PyObject *self, PyObject *args) {
 			Str_Printf(msg, sizeof(msg), check ? "%s map not found." : "%s modification not supported.",
 				check ? s->map : s->type);
 			Script_SetStr(0, "MOTD", "Text", msg);
-			return Py_ReturnNone();
+			return 1;
 		}
 	}
 	GVar_SetNum("DefaultServerPort", s->port);
 	Net_DoneBrowser();
 	Net_TryJoin(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, BrowseLocalJoin)
 
 /* UnicodeParse(text, maxlen) */
-static PyObject *PCMenu_UnicodeParse(PyObject *self, PyObject *args) {
-	char *text;
+static byte PCMenu_UnicodeParse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const char *text;
 	int maxlen;
-	char out[0x400];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "si", &text, &maxlen)) {
-		return NULL;
+	char cut[0x400];
+	if (!Mode_Parse(a, n, "si", &text, &maxlen)) {
+		return 0;
 	}
-	Net_CutText(text, maxlen, out, sizeof(out));
-	return PyString_FromString(out);
+	Net_CutText(text, maxlen, cut, sizeof(cut));
+	Native_SetText(out, cut, (int)strlen(cut));
+	return 1;
 }
+MODE_ADAPTER(PCMenu, UnicodeParse)
 
-static PyObject *PCMenu_CreateBrowseMenu(PyObject *self, PyObject *args) {
+static byte PCMenu_CreateBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Net_RunPage(id, "browser", "Join");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, CreateBrowseMenu)
 
-static PyObject *PCMenu_BrowserColumnBack_Click(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_BrowserColumnBack_Click_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	Net_SortBy(id, strlen(control) > 18 ? control + 18 : "");
-	return Py_ReturnNone();
+	return 1;
+}
+MODE_ADAPTER(PCMenu, BrowserColumnBack_Click)
+
+/* the slider area (id, control, previous) draws its handle while it has the focus */
+static byte Net_SliderFocus(const nativeVal_t *a, int n, const char *render) {
+	int id;
+	const nativeVal_t *x, *y;
+	if (!Mode_Parse(a, n, "iOO", &id, &x, &y)) {
+		return 0;
+	}
+	Script_SetStr(id, "BrowserSliderArea", "OnRender", render);
+	return 1;
 }
 
-static PyObject *PCMenu_BrowserSliderGainFocus(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *a, *b;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &a, &b)) {
-		return NULL;
-	}
-	Script_SetStr(id, "BrowserSliderArea", "OnRender", "PCMenu.BrowserSliderOnRender");
-	return Py_ReturnNone();
+static byte PCMenu_BrowserSliderGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_SliderFocus(a, n, "PCMenu.BrowserSliderOnRender");
 }
+MODE_ADAPTER(PCMenu, BrowserSliderGainFocus)
 
-static PyObject *PCMenu_BrowserSliderLooseFocus(PyObject *self, PyObject *args) {
-	int id;
-	PyObject *a, *b;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &a, &b)) {
-		return NULL;
-	}
-	Script_SetStr(id, "BrowserSliderArea", "OnRender", "");
-	return Py_ReturnNone();
+static byte PCMenu_BrowserSliderLooseFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_SliderFocus(a, n, "");
 }
+MODE_ADAPTER(PCMenu, BrowserSliderLooseFocus)
 
 /* while the slider has the focus and accept is held, the cursor height picks the first server shown */
-static PyObject *PCMenu_BrowserSliderOnRender(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_BrowserSliderOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
-	int n = net.numServers;
-	if (!Input_MenuAccept(id) || n <= NET_SLOTS) {
-		return Py_ReturnNone();
+	int count = net.numServers;
+	if (!Input_MenuAccept(id) || count <= NET_SLOTS) {
+		return 1;
 	}
 	double y = Script_GetNum(id, "Cursor", "Y") - NET_SLIDER_Y - 5;
 	if (y < 0) {
@@ -1206,38 +1230,43 @@ static PyObject *PCMenu_BrowserSliderOnRender(PyObject *self, PyObject *args) {
 		y = NET_SLIDER_H - 10;
 	}
 	int old = net.index;
-	net.index = (int)((double)(n - NET_SLOTS + 1) * (y / (NET_SLIDER_H - 10)));
-	if (net.index >= n - NET_SLOTS) {
-		net.index = n - NET_SLOTS;
+	net.index = (int)((double)(count - NET_SLOTS + 1) * (y / (NET_SLIDER_H - 10)));
+	if (net.index >= count - NET_SLOTS) {
+		net.index = count - NET_SLOTS;
 	}
 	if (old != net.index) {
 		Net_UpdateBrowser(id);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, BrowserSliderOnRender)
 
-static PyObject *PCMenu_UpdateBrowseSlider(PyObject *self, PyObject *args) {
+static byte PCMenu_UpdateBrowseSlider_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Net_UpdateSlider(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, UpdateBrowseSlider)
 
-static PyObject *PCMenu_UpdateBrowseMenu(PyObject *self, PyObject *args) {
+static byte PCMenu_UpdateBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Net_UpdateBrowser(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, UpdateBrowseMenu)
 
 /* BrowseFormatServerLine(info): info as the script kept it, (ping, address, name, players, max, version, port,
- * type, map, flags) */
+ * type, map, flags). OBJLIB 7: the adapter parses with PyArg (a tuple format with texts in it, "(issiiiissi)":
+ * Mode_Parse takes numbers only inside a tuple, and the errors of the nested format are those of getargs.c), so the
+ * function has no entry */
 static PyObject *PCMenu_BrowseFormatServerLine(PyObject *self, PyObject *args) {
 	netServer_t s;
 	char *address, *name, *type, *map, line[0x100];
@@ -1250,23 +1279,26 @@ static PyObject *PCMenu_BrowseFormatServerLine(PyObject *self, PyObject *args) {
 	Str_Copy(s.type, type, sizeof(s.type));
 	Str_Copy(s.map, map, sizeof(s.map));
 	Net_ServerLine(&s, line, sizeof(line));
-	return PyString_FromString(line);
+	nativeVal_t r;
+	Native_SetText(&r, line, (int)strlen(line));
+	return Mode_Return(1, &r);
 }
 
-static PyObject *PCMenu_NetCreateGameMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_NetCreateGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_CreateMenu(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, NetCreateGameMenu)
 
 /* MenuInitServer: starts a server on the first chosen map (all maps of the mode when none is chosen) */
-static PyObject *PCMenu_MenuInitServer(PyObject *self, PyObject *args) {
+static byte PCMenu_MenuInitServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char level[0x100];
 	netMapList_t maps;
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_GetServerMaps(&maps);
 	if (maps.num <= 0) {
@@ -1276,17 +1308,18 @@ static PyObject *PCMenu_MenuInitServer(PyObject *self, PyObject *args) {
 	}
 	if (maps.num <= 0) {
 		Native_Raise(NE_INDEX, "MenuInitServer: no maps");
-		return NULL;
+		return 0;
 	}
 	Str_Printf(level, sizeof(level), "Levels/%s", maps.names[0]);
 	Net_InitServer(level, (int)GVar_GetNum("DefaultMaxPlayersOnServer", 0), 0, 0);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MenuInitServer)
 
-static PyObject *PCMenu_AdvancedServer(PyObject *self, PyObject *args) {
+static byte PCMenu_AdvancedServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char pass[0x100], force[0x100], rate[0x100];
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
 	byte usePass = GVar_GetNum("UseServerPassword", 0) != 0;
@@ -1296,38 +1329,42 @@ static PyObject *PCMenu_AdvancedServer(PyObject *self, PyObject *args) {
 		Net_Text("Menu_Multiplayer_Advanced_Force", "Force server vehicle"));
 	Net_DataRateText(rate, sizeof(rate));
 	modeVals_t t = { .n = 0 };
-	Net_RunMenu(id, "Advanced", Mode_DefVars(6, "title", Mode_S(&t, Net_Text("Menu_Multiplayer_Advanced_Options", "Advanced Options")),
-		"pass", Mode_S(&t, pass), "password", Mode_S(&t, GVar_GetStr("ServerPassword")), "force", Mode_S(&t, force), "datarate",
-		Mode_S(&t, rate), "usepass", Mode_I(&t, usePass)));
+	Net_RunMenu(id, "Advanced", 6,
+		"title", Mode_S(&t, Net_Text("Menu_Multiplayer_Advanced_Options", "Advanced Options")),
+		"pass", Mode_S(&t, pass), "password", Mode_S(&t, GVar_GetStr("ServerPassword")), "force", Mode_S(&t, force),
+		"datarate", Mode_S(&t, rate), "usepass", Mode_I(&t, usePass));
 	Mode_Done(&t, 1);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, AdvancedServer)
 
-static PyObject *PCMenu_BackToCreateServer(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_BackToCreateServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	GVar_SetStr("ServerPassword", Script_GetStr(id, "Item2", "Text"));
 	Net_CreateMenu(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, BackToCreateServer)
 
-static PyObject *PCMenu_SwitchForceVehicle(PyObject *self, PyObject *args) {
+static byte PCMenu_SwitchForceVehicle_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char text[0x100];
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	byte on = GVar_GetNum("ForceServerVehicle", 0) == 0;
 	Str_Printf(text, sizeof(text), "%c %s", on ? 2 : 3, Net_Text("Menu_Multiplayer_Advanced_Force", "Force server vehicle"));
 	Script_SetStr(id, "Item3", "Text", text);
 	GVar_SetNum("ForceServerVehicle", on);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, SwitchForceVehicle)
 
-static PyObject *PCMenu_SwitchUsePass(PyObject *self, PyObject *args) {
+static byte PCMenu_SwitchUsePass_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char text[0x100];
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	const char *password = Net_Text("Menu_Multiplayer_Advanced_Password", "Password");
 	if (GVar_GetNum("UseServerPassword", 0)) {
@@ -1345,15 +1382,16 @@ static PyObject *PCMenu_SwitchUsePass(PyObject *self, PyObject *args) {
 		Net_Link(0, id, "Item2", "Item1");
 		Script_SetNum(id, "Item2", "Visible", 1);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, SwitchUsePass)
 
 /* RunDedicatedServer: not in a menu of the game; the game ends and starts again as a dedicated server */
-static PyObject *PCMenu_RunDedicatedServer(PyObject *self, PyObject *args) {
+static byte PCMenu_RunDedicatedServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char params[0x100];
 	netMapList_t maps;
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_GetServerMaps(&maps);
 	if (maps.num <= 0) {
@@ -1365,14 +1403,15 @@ static PyObject *PCMenu_RunDedicatedServer(PyObject *self, PyObject *args) {
 	Str_Printf(params, sizeof(params), "-console -dedicated -imap:\"Levels/%s\"", maps.num ? maps.names[0] : "");
 	GVar_SetStr("ReRunAtExitParams", params);
 	MODE_PRINTED(Scrap, Exit, "");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, RunDedicatedServer)
 
-static PyObject *PCMenu_SetDataRate(PyObject *self, PyObject *args) {
+static byte PCMenu_SetDataRate_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	static const int rates[] = { 2560, 5120, 10240, 15360, 20480, 30720, 40960, 409600000 };
 	char text[0x100];
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	int limit = (int)GVar_GetNum("ServerDataRateLimit", 0);
 	int next = rates[0];
@@ -1384,21 +1423,24 @@ static PyObject *PCMenu_SetDataRate(PyObject *self, PyObject *args) {
 	GVar_SetNum("ServerDataRateLimit", next);
 	Net_DataRateText(text, sizeof(text));
 	Script_SetStr(id, "Item4", "Text", text);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, SetDataRate)
 
-static PyObject *PCMenu_GetDataRateText(PyObject *self, PyObject *args) {
+static byte PCMenu_GetDataRateText_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char text[0x100];
-	(void)self;
-	(void)args;
+	(void)a;
+	(void)n;
 	Net_DataRateText(text, sizeof(text));
-	return PyString_FromString(text);
+	Native_SetText(out, text, (int)strlen(text));
+	return 1;
 }
+MODE_ADAPTER(PCMenu, GetDataRateText)
 
 /* the previous and next mode of Net.Modes, round */
-static PyObject *Net_StepMode(PyObject *args, int dir) {
+static byte Net_StepMode(const nativeVal_t *a, int n, int dir) {
 	int count;
-	NET_ARGS(args);
+	NET_ARGS(a, n);
 	(void)control;
 	int i = Net_ModeIndex(&count);
 	if (count > 0) {
@@ -1406,34 +1448,37 @@ static PyObject *Net_StepMode(PyObject *args, int dir) {
 	}
 	net.mapIndex = 0;
 	Net_UpdateServerType(id);
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *PCMenu_ServerTypePrev(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_StepMode(args, -1);
+static byte PCMenu_ServerTypePrev_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_StepMode(a, n, -1);
 }
+MODE_ADAPTER(PCMenu, ServerTypePrev)
 
-static PyObject *PCMenu_ServerTypeNext(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_StepMode(args, 1);
+static byte PCMenu_ServerTypeNext_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_StepMode(a, n, 1);
 }
+MODE_ADAPTER(PCMenu, ServerTypeNext)
 
-static PyObject *PCMenu_UpdateServerType(PyObject *self, PyObject *args) {
+static byte PCMenu_UpdateServerType_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Net_UpdateServerType(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, UpdateServerType)
 
 /* the help text of the mode in a box, its name above */
-static PyObject *PCMenu_ServerTypeInfo(PyObject *self, PyObject *args) {
+static byte PCMenu_ServerTypeInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char key[0x80], nameKey[0x80];
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	const char *type = GVar_GetStr("ServerType");
 	Str_Printf(nameKey, sizeof(nameKey), "Net_Type_%s", type);
@@ -1461,64 +1506,69 @@ static PyObject *PCMenu_ServerTypeInfo(PyObject *self, PyObject *args) {
 	Script_SetNum(id, "ServerTypeInfo", "Red", 160);
 	Script_SetNum(id, "ServerTypeInfo", "Green", 180);
 	Script_SetNum(id, "ServerTypeInfo", "Blue", 255);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ServerTypeInfo)
 
 /* the map arrows; the names are the script's (MapUp scrolls down) */
-static PyObject *PCMenu_MapUp(PyObject *self, PyObject *args) {
+static byte PCMenu_MapUp_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	netMapList_t maps;
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_ModeMaps(&maps);
 	if (maps.num > net.mapIndex + NET_MAP_SLOTS) {
 		net.mapIndex++;
 		Net_UpdateMapList(id);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MapUp)
 
-static PyObject *PCMenu_MapDown(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_MapDown_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	if (net.mapIndex > 0) {
 		net.mapIndex--;
 		Net_UpdateMapList(id);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MapDown)
 
 /* OnGainFocus/OnLooseFocus (id, a, b) of an item: its OnRender on or off */
-static PyObject *Net_Render(PyObject *args, const char *item, const char *func) {
+static byte Net_Render(const nativeVal_t *a, int n, const char *item, const char *func) {
 	int id;
-	char *a, *b;
-	if (!PyArg_ParseTuple(args, "iss", &id, &a, &b)) {
-		return NULL;
+	const char *x, *y;
+	if (!Mode_Parse(a, n, "iss", &id, &x, &y)) {
+		return 0;
 	}
 	/* the map slider names its item, the edit fields get it as the first argument */
-	Script_SetStr(id, item ? item : a, "OnRender", func);
-	return Py_ReturnNone();
+	Script_SetStr(id, item ? item : x, "OnRender", func);
+	return 1;
 }
 
-static PyObject *PCMenu_MapSliderGainFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, "MapSliderArea", "PCMenu.MapSliderOnRender");
+static byte PCMenu_MapSliderGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Render(a, n, "MapSliderArea", "PCMenu.MapSliderOnRender");
 }
+MODE_ADAPTER(PCMenu, MapSliderGainFocus)
 
-static PyObject *PCMenu_MapSliderLooseFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, "MapSliderArea", "");
+static byte PCMenu_MapSliderLooseFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Render(a, n, "MapSliderArea", "");
 }
+MODE_ADAPTER(PCMenu, MapSliderLooseFocus)
 
-static PyObject *PCMenu_MapSliderOnRender(PyObject *self, PyObject *args) {
+static byte PCMenu_MapSliderOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	netMapList_t maps;
-	(void)self;
-	NET_ARGS(args);
+	(void)out;
+	NET_ARGS(a, n);
 	(void)control;
 	Net_ModeMaps(&maps);
 	if (!Input_MenuAccept(id) || maps.num <= NET_MAP_SLOTS) {
-		return Py_ReturnNone();
+		return 1;
 	}
 	double y = Script_GetNum(id, "Cursor", "Y") - NET_MAP_SLIDER_Y - 5;
 	if (y < 0) {
@@ -1535,35 +1585,38 @@ static PyObject *PCMenu_MapSliderOnRender(PyObject *self, PyObject *args) {
 	if (old != net.mapIndex) {
 		Net_UpdateMapList(id);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MapSliderOnRender)
 
-static PyObject *PCMenu_UpdateMapSlider(PyObject *self, PyObject *args) {
+static byte PCMenu_UpdateMapSlider_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Net_UpdateMapSlider(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, UpdateMapSlider)
 
-static PyObject *PCMenu_UpdateMapList(PyObject *self, PyObject *args) {
+static byte PCMenu_UpdateMapList_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Net_UpdateMapList(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, UpdateMapList)
 
 /* MapChoose(id, "MapSlotN"): the map of the line in or out of the maps of the server */
-static PyObject *PCMenu_MapChoose(PyObject *self, PyObject *args) {
-	netMapList_t maps, out = { .num = 0 };
+static byte PCMenu_MapChoose_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	netMapList_t maps, chosen = { .num = 0 };
+	(void)out;
 	char name[0x40];
-	(void)self;
-	NET_ARGS(args);
+	NET_ARGS(a, n);
 	Str_Copy(name, Script_GetStr(id, control, "Hint"), sizeof(name));
 	Net_GetServerMaps(&maps);
 	byte selected = 0;
@@ -1571,16 +1624,17 @@ static PyObject *PCMenu_MapChoose(PyObject *self, PyObject *args) {
 		if (!strcmp(maps.names[i], name)) {
 			selected = 1;
 		} else {
-			Str_Copy(out.names[out.num++], maps.names[i], sizeof(out.names[0]));
+			Str_Copy(chosen.names[chosen.num++], maps.names[i], sizeof(chosen.names[0]));
 		}
 	}
-	if (!selected && out.num < NET_MAX_MAPS) {
-		Str_Copy(out.names[out.num++], name, sizeof(out.names[0]));
+	if (!selected && chosen.num < NET_MAX_MAPS) {
+		Str_Copy(chosen.names[chosen.num++], name, sizeof(chosen.names[0]));
 	}
-	Net_SetServerMaps(&out);
+	Net_SetServerMaps(&chosen);
 	Net_UpdateMapList(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MapChoose)
 
 static void Net_Fade(int id, const char *map, const char *how) {
 	char item[0x80];
@@ -1590,12 +1644,12 @@ static void Net_Fade(int id, const char *map, const char *how) {
 }
 
 /* MapPreviewOn(id, control, prev): the picture of the map fades in, the one of the previous line out */
-static PyObject *PCMenu_MapPreviewOn(PyObject *self, PyObject *args) {
+static byte PCMenu_MapPreviewOn_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	char *control, *prev, last[0x40], map[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iss", &id, &control, &prev)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "iss", &id, &control, &prev)) {
+		return 0;
 	}
 	Str_Copy(last, Script_GetStr(id, prev, "Hint"), sizeof(last));
 	Str_Copy(map, Script_GetStr(id, control, "Hint"), sizeof(map));
@@ -1603,51 +1657,58 @@ static PyObject *PCMenu_MapPreviewOn(PyObject *self, PyObject *args) {
 		Net_Fade(id, last, "!ScorerSpriteFadeOut");
 	}
 	Net_Fade(id, map, "!ScorerSpriteFadeIn");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MapPreviewOn)
 
-static PyObject *PCMenu_MapPreviewOff(PyObject *self, PyObject *args) {
+static byte PCMenu_MapPreviewOff_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	char *control, *prev, map[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iss", &id, &control, &prev)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Parse(a, n, "iss", &id, &control, &prev)) {
+		return 0;
 	}
 	Str_Copy(map, Script_GetStr(id, control, "Hint"), sizeof(map));
 	if (map[0]) {
 		Net_Fade(id, map, "!ScorerSpriteFadeOut");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, MapPreviewOff)
 
-static PyObject *PCMenu_ServerNameGainFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "PCMenu.ServerNameOnRender");
+static byte PCMenu_ServerNameGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Render(a, n, NULL, "PCMenu.ServerNameOnRender");
 }
+MODE_ADAPTER(PCMenu, ServerNameGainFocus)
 
 /* the LooseFocus of the edit fields (ServerName, PlayersNumber, FragLimit): no OnRender */
-static PyObject *PCMenu_EditLooseFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "");
+static byte PCMenu_EditLooseFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Render(a, n, NULL, "");
 }
+MODE_ADAPTER(PCMenu, EditLooseFocus)
 
-static PyObject *PCMenu_PlayersNumberGainFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "PCMenu.PlayersNumberOnRender");
+static byte PCMenu_PlayersNumberGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Render(a, n, NULL, "PCMenu.PlayersNumberOnRender");
 }
+MODE_ADAPTER(PCMenu, PlayersNumberGainFocus)
 
-static PyObject *PCMenu_FragLimitGainFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "PCMenu.FragLimitOnRender");
+static byte PCMenu_FragLimitGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Net_Render(a, n, NULL, "PCMenu.FragLimitOnRender");
 }
+MODE_ADAPTER(PCMenu, FragLimitGainFocus)
 
 /* while an edit field has the focus its text goes to the engine variable each frame */
-static PyObject *PCMenu_ServerNameOnRender(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_ServerNameOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	GVar_SetStr("ServerName", Script_GetStr(id, control, "Text"));
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ServerNameOnRender)
 
 /* the number in the field kept in min..max ("" counts as min) */
 static int Net_Clamp(int id, const char *control, int min, int max) {
@@ -1661,19 +1722,21 @@ static int Net_Clamp(int id, const char *control, int min, int max) {
 	return v;
 }
 
-static PyObject *PCMenu_PlayersNumberOnRender(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_PlayersNumberOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	GVar_SetNum("DefaultMaxPlayersOnServer", Net_Clamp(id, control, 2, 16) - 1);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, PlayersNumberOnRender)
 
-static PyObject *PCMenu_FragLimitOnRender(PyObject *self, PyObject *args) {
-	(void)self;
-	NET_ARGS(args);
+static byte PCMenu_FragLimitOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	NET_ARGS(a, n);
 	GVar_SetNum("FragLimit", Net_Clamp(id, control, 1, 99));
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, FragLimitOnRender)
 
 PyMethodDef g_MenuNetMethods[] = {
 	{ "MultiPlayerMenu", PCMenu_MultiPlayerMenu, 1, NULL },

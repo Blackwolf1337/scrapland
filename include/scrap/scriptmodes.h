@@ -1238,4 +1238,90 @@ byte Mode_RefDelAttr(const nativeVal_t *o, const char *name);
 /* long(v) of the script (OBJLIB 9: PyNumber_Long, the result as Native_Arg makes it) */
 byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out);
 
+/* ---- the menus, the ship editor and the other ports on the native helpers (stage 6, batch 6h) ---- */
+
+/* the error that is set printed as the script printed its traceback, and dropped (PyErr_Print of the C ports;
+ * OBJLIB 7: the Python exception until errors are a C state) */
+void Mode_PrintError(void);
+/* an error is set (PyErr_Occurred of the C ports; OBJLIB 7) */
+byte Mode_Failed(void);
+/* Script_RunFile (stop: Script_RunFileTry) of a .def section with its $names given as values: the n pairs that follow,
+ * each a name and a const nativeVal_t * (up to MODE_DEFVARS; OBJLIB 6: the runner takes them as a dict, Mode_DefVars;
+ * an NV_OBJ goes in as the object it is). 0 as the runner gives it */
+#define MODE_DEFVARS 24
+struct scriptStep_s;
+byte Mode_DefRun(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
+	byte stop, int n, ...);
+/* the same with the pairs as a va_list (for a file's own variadic run function) */
+byte Mode_DefRunVa(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
+	byte stop, int n, va_list va);
+/* the same with the names and the values as arrays */
+byte Mode_DefRunV(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
+	byte stop, const char *const *names, const nativeVal_t *const *vals, int n);
+/* fn(id, a, b) of a link function of Menu held as a value (Mode_LinkCall: its entry while it is Menu's own) */
+byte Mode_CbLinkV(portSite_t *site, const nativeVal_t *fn, int id, const char *a, const char *b);
+#define Mode_LinkCallV(fn, id, a, b) Mode_CbLinkV(PORT_VSITE(), fn, id, a, b)
+/* the module object of a module of the scripts as a value (Script_Module: a pack module from the table, its
+ * ImportError; OBJLIB 7: a module is held as NV_OBJ): Native_Free it; 0 with the error and *out None */
+byte Mode_ModuleV(const char *name, nativeVal_t *out);
+/* str(v) of the script added to b: a native value as Native_Repr NR_STR writes it, an object's str the Python way
+ * (OBJLIB 7): 0 with the error of its __str__ left set and nothing added */
+byte Mode_StrBuf(const nativeVal_t *v, nativeBuf_t *b);
+/* the int of a value as PyInt_AsLong gives it (an int, a float cut, a long int that fits, an object's __int__;
+ * OBJLIB 7): -1 with the error set for the rest */
+long Mode_AsLong(const nativeVal_t *v);
+/* a $name of the .def file that runs = v, for its steps (Script_SetValue; OBJLIB 6: the runner keeps the $names as
+ * Python values, an NV_OBJ as the object it is) */
+void Mode_SetValue(const char *name, const nativeVal_t *v);
+/* the port's own function of the row called name of a PyMethodDef table as a function object of its own, held as a
+ * value (OBJLIB 7: for a call the scheduler keeps whatever the module attribute holds then; made once by the caller):
+ * 0 with the error and *fn None */
+byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn);
+/* fn(args...) at the time (as a float) on the scheduler itself, with the function a value (Mode_SchedAt reads it from
+ * the module; the entry of a port's own function, else the Python call on the tuple of the values): 0 with the error
+ * of the tuple */
+byte Mode_SchedFn(double time, const nativeVal_t *fn, const nativeVal_t *args, int n, const char *name);
+/* var.method() of a variable of a module (global as for Mode_Keys), in place, the result dropped (sort of a list;
+ * Mode_VarCall takes one argument) */
+byte Mode_VarCall0(const char *module, const char *var, byte global, const char *method);
+/* a & b of the script into *out (None when it fails): two ints in C, other values through PyNumber_And (OBJLIB 9:
+ * long ints, the TypeError of other operands) */
+byte Mode_And(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* a * b of the script the Python way for every operand, into *out (None when it fails; OBJLIB 9: PyNumber_Multiply
+ * on whatever the values are; Mode_Arith multiplies plain numbers in C) */
+byte Mode_Times(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* module.var[key] of a variable of another module (read as its attribute) as any value (an instance, a function as
+ * NV_OBJ, a handle as NV_ENT; the errors of the attribute and of the subscript): Native_Free it; *out None when it
+ * fails */
+byte Mode_ModAt(const char *module, const char *var, const nativeVal_t *key, nativeVal_t *out);
+/* a + b of the script the Python way for every operand, into *out (None when it fails; OBJLIB 9: PyNumber_Add, an
+ * instance's __add__ or __radd__; Native_Arith concatenates native values in C) */
+byte Mode_Plus(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* v[key] = x of the script on a native value (OBJLIB 9: the item assignment of the Python value with its errors; *v
+ * is the changed value then) */
+byte Mode_SetItem(nativeVal_t *v, const nativeVal_t *key, const nativeVal_t *x);
+/* a text value pasted between quotes reads back as itself (Script_IsQuotable: the exec lines the ports make into
+ * direct sets); 0 for any other value */
+byte Mode_Quotable(const nativeVal_t *text);
+/* apply(f, args) as the builtin apply takes args, with the function a value (Mode_CbApplySeq) */
+byte Mode_CbApplySeqV(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
+#define MODE_CBAPPLYSEQV(f, args, out) Mode_CbApplySeqV(PORT_VSITE(), f, args, out)
+/* the adapter of a function that keeps or changes an argument as the object it is (OBJLIB 5: a list stored by
+ * identity or sorted in place): Mode_Entry with the arguments whose bits are set in objs given to the entry as the
+ * objects themselves (NV_OBJ, whatever they are; Native_Arg would copy a plain list) */
+PyObject *Mode_EntryObj(PyObject *args, portEntry_t entry, unsigned objs);
+/* int(v) of the script into *out: Native_ToInt (numbers and texts), an object through PyNumber_Int (OBJLIB 9: an
+ * instance's __int__) */
+byte Mode_Int(const nativeVal_t *v, nativeVal_t *out);
+/* `v` of the script as a text value the Python way (PyObject_Repr of the value as an object; Mode_Repr drops the
+ * error of an object's __repr__): 0 with that error and *out None */
+byte Mode_ReprV(const nativeVal_t *v, nativeVal_t *out);
+/* the global var of module = src.name of another module as the object it is (OBJLIB 5: a function a module keeps to
+ * put back later; Mode_ModTo sets the attribute of another module) */
+byte Mode_PutFromMod(const char *module, const char *var, const char *src, const char *name);
+/* var.method(a, b) of a variable of a module (global as for Mode_Keys), in place, the result dropped (the append of
+ * 1.5.2 with two arguments, which appends the pair) */
+byte Mode_VarCall2(const char *module, const char *var, byte global, const char *method, const nativeVal_t *a,
+	const nativeVal_t *b);
+
 #endif

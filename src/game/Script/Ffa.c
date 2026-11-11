@@ -1918,6 +1918,7 @@ static byte Ffa_ActualizeGameScorer_E(const nativeVal_t *a, int n, nativeVal_t *
 
 static char *Ffa_ActualizeGameScorer_N[] = { "NowShowScorer", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *Ffa_ActualizeGameScorer(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "|O", Ffa_ActualizeGameScorer_N, Ffa_ActualizeGameScorerK);

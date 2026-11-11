@@ -44,31 +44,24 @@ static byte Fx_IsZero(const nativeVal_t *v) {
 
 /* Init(): the effect files of the level; $dudv and $shipedit are the two conditions with an "or" of the script */
 static byte Fx_Init(void) {
-	nativeVal_t xbox = { 0 }, dudvRT = { 0 };
-	PyObject *junk = NULL, *edit = NULL;
+	nativeVal_t xbox = { 0 }, dudvRT = { 0 }, junk = { 0 }, edit = { 0 }, v[2];
 	int off = -1;
 	if (Native_GVarGet("isXbox", &xbox) && Native_GVarGet("R_SceneDuDvRTarget", &dudvRT)) {
-		/* OBJLIB 5: variables of Init */
-		junk = Script_Global("Init", "isJunkYard");
-		edit = junk ? Script_Global("Init", "isShipEdit") : NULL;
-		off = edit ? Native_NetOff() : -1;
+		/* OBJLIB 5: variables of Init (any value: the truth of an object is its own) */
+		off = Mode_G("Init", "isJunkYard", &junk) && Mode_G("Init", "isShipEdit", &edit) ? Native_NetOff() : -1;
 	}
 	int a = Fx_IsZero(&xbox) || !Fx_IsZero(&dudvRT);
 	Native_Free(&xbox);
 	Native_Free(&dudvRT);
-	int b = off >= 0 ? Script_True(junk) : -1, c = b > 0 ? 1 : b == 0 ? Script_True(edit) : -1;
-	Py_XDECREF(junk);
-	Py_XDECREF(edit);
+	int b = off >= 0 ? Mode_Truth(&junk) : -1, c = b > 0 ? 1 : b == 0 ? Mode_Truth(&edit) : -1;
+	Native_Free(&junk);
+	Native_Free(&edit);
 	if (b < 0 || c < 0) {
 		return 0;
 	}
-	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
-	PyObject *vars = Py_BuildValue("{s:i,s:i}", "dudv", a, "shipedit", b || c || !off);
-	if (!vars) {
-		return 0;
-	}
-	Script_RunFile(0, "fx/fx.def", "Init", fx_def, fx_steps, vars);
-	Py_DECREF(vars);
+	Native_SetInt(&v[0], a);
+	Native_SetInt(&v[1], b || c || !off);
+	Mode_DefRun(0, "fx/fx.def", "Init", fx_def, fx_steps, 0, 2, "dudv", &v[0], "shipedit", &v[1]);
 	return 1;
 }
 
@@ -124,18 +117,14 @@ static byte Fx_Motors(const cEntityRef *ref) {
 		Native_Free(&up);
 		up = cut;
 	}
-	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
-	PyObject *m = ok ? Native_ToPy(&up) : NULL, *n = m ? Native_ToPy(&name) : NULL;
-	PyObject *vars = n ? Py_BuildValue("{s:O,s:O}", "model", m, "name", n) : NULL;
-	Py_XDECREF(m);
-	Py_XDECREF(n);
+	if (ok) {
+		Mode_DefRun(0, "fx/fx.def", "Motors", fx_def, fx_steps, 0, 2, "model", &up, "name", &name);
+	}
 	Native_Free(&up);
 	Native_Free(&name);
-	if (!vars) {
+	if (!ok) {
 		return 0;
 	}
-	Script_RunFile(0, "fx/fx.def", "Motors", fx_def, fx_steps, vars);
-	Py_DECREF(vars);
 	if (indoor) {
 		nativeVal_t scale = { 0 }, v = { 0 };
 		byte ok = Native_EntVar(ref->link.target, ref->name, "ShipMotorScale", &scale) && Fx_Scale(&scale, &v) &&
@@ -167,18 +156,7 @@ static byte Fx_MoneyTransfer(const nativeVal_t *from, const nativeVal_t *to, con
 /* ---- the adapters of the module table (OBJLIB 7: arguments, the mirror and the errors of the Python calls) ---- */
 
 /* Init takes any arguments; its entry for the call of InitLevel through its ref (stage 3) */
-static byte Fx_InitPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	(void)a;
-	(void)n;
-	(void)out;
-	return Mode_Import("Init") && Fx_Init();
-}
-
-static PyObject *Fx_InitPy(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Fx_InitPy_E(NULL, 0, NULL) ? Py_ReturnNone() : NULL;
-}
+MODE_FNANY(Fx, InitPy, Mode_Import("Init") && Fx_Init())
 
 /* GetMotorClass(name): string.upper of a value without a native form raises its TypeError */
 static byte Fx_MotorClassArg(const nativeVal_t *name, nativeVal_t *out) {
@@ -200,10 +178,9 @@ static byte Fx_MotorsArg(const nativeVal_t *e) {
 	if (e->type == NV_ENT) {
 		return Fx_Motors(e->ent);
 	}
-	PyObject *o = Native_ToPy(e), *m = o ? Script_GetAttr(o, "Model") : NULL;
-	Py_XDECREF(o);
-	if (m) {
-		Py_DECREF(m);
+	nativeVal_t m;
+	if (Mode_VObj(e, "Model", &m)) {
+		Native_Free(&m);
 		Native_Raise(NE_TYPE, "Fx.SetUpShipMotors: not an entity");
 	}
 	return 0;

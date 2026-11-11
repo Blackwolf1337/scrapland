@@ -12,7 +12,7 @@
  * ZoneList, AcFlag, BattonOwner, FlagInitPos, race and the model and sound names of the modes. The C works on them in
  * the struct split; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles,
  * held by reference (NV_OBJ) until entities are native values (OBJLIB 7). The .def sections take their $names as a dict
- * (Mode_DefVars) and the steps their arguments as a tuple (OBJLIB 6).
+ * (Mode_DefRun) and the steps their arguments as native values (OBJLIB 6).
  *
  * State on values (stage 6, batch 6f): apart from that dict and the steps no function works on Python objects. ModLib
  * (a module object) and the functions held in variables or given to the scheduler are held by reference (NV_OBJ) and go
@@ -58,18 +58,11 @@ static struct {
 	nativeVal_t raceBuild;		/* the checkpoints srace.def gives while it runs */
 } split;
 
-/* a section of split.def for player id with the $names of vars (given away; named: the section takes some, vars NULL
- * is then the error of making them; OBJLIB 6: a dict until the .def runner takes C values): 0 with the error set when
- * a line raised */
-static byte Split_RunVars(int id, const char *section, byte named, PyObject *vars) {
-	byte ok = (!named || vars) && Script_RunFileTry(id, "menus/split.def", section, split_def, split_steps, vars);
-	Py_XDECREF(vars);
-	return ok;
-}
-
-/* the same with the $names of the n pairs that follow, a name and a const nativeVal_t * each (Mode_DefVars) */
+/* a section of split.def for player id with the $names of the n pairs that follow, a name and a const nativeVal_t *
+ * each (Mode_DefRun; OBJLIB 6: a dict until the .def runner takes C values): 0 with the error set when a line
+ * raised */
 #define Split_Run(id, section, n, ...) \
-	Split_RunVars(id, section, (n) != 0, (n) ? Mode_DefVars(n __VA_OPT__(, ) __VA_ARGS__) : NULL)
+	Mode_DefRun(id, "menus/split.def", section, split_def, split_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
 /* module.var = the global name of src as the object it is (OBJLIB 5: a function as a value of another module): the
  * NameError of a global that is gone; a failed set is no error (Script_SetVar) */
@@ -1031,7 +1024,7 @@ static void SRace_StepPoint(int id, const nativeVal_t *args, int n) {
 	if (Native_EvalText("SRace", &args[0], &p)) {
 		*Native_Append(&split.raceBuild) = p;
 	} else {
-		PyErr_Clear();
+		Mode_DropError();
 	}
 }
 

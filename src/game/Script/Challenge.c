@@ -187,10 +187,7 @@ static byte Chal_Spch(byte obj, const nativeVal_t *foe, const nativeVal_t *cad, 
 
 /* Speech.OnEndOfSpeech = the function name of the module (OBJLIB 5: the function object itself) */
 static byte Chal_OnEnd(const char *name) {
-	PyObject *f = Mode_GlobalPy("Challenge", name);
-	byte ok = f && Mode_SetModPy("Speech", "OnEndOfSpeech", f);
-	Py_XDECREF(f);
-	return ok;
+	return Mode_ModSetGlobal("Speech", "OnEndOfSpeech", "Challenge", name);
 }
 
 /* Init.Outdoor == 1: 1, 0, -1 with the error */

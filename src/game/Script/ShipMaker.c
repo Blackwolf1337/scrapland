@@ -111,6 +111,7 @@ static byte ShipMaker_AddShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 
 static char *ShipMaker_AddShip_N[] = { "name", "Mass", "Style", "Engine", "BoostTime", "TopBoostTime", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ShipMaker_AddShip(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "OOOO|OO", ShipMaker_AddShip_N, Sm_AddShipK);
@@ -120,24 +121,10 @@ static PyObject *ShipMaker_AddShip(PyObject *self, PyObject *args, PyObject *kw)
  * is not 0, 0, -1 with the error */
 static int Sm_HasAnm(const nativeVal_t *anm, const char *flag) {
 	nativeVal_t bits, and;
-	int r = -1;
-	Native_SetNone(&and);
 	if (!Mode_G(SM, flag, &bits)) {
 		return -1;
 	}
-	if (anm->type == NV_INT && bits.type == NV_INT) {
-		Native_SetInt(&and, anm->i & bits.i);
-		r = Mode_CmpI(&and, "!=", 0);
-	} else {
-		PyObject *x = Native_ToPy(anm), *y = x ? Native_ToPy(&bits) : NULL, *z = y ? PyNumber_And(x, y) : NULL;
-		if (z) {
-			Native_Arg(z, &and);
-			r = Mode_CmpI(&and, "!=", 0);
-		}
-		Py_XDECREF(z);
-		Py_XDECREF(y);
-		Py_XDECREF(x);
-	}
+	int r = Mode_And(anm, &bits, &and) ? Mode_CmpI(&and, "!=", 0) : -1;
 	Native_Free(&and);
 	Native_Free(&bits);
 	return r;
@@ -592,12 +579,13 @@ static byte Sm_InitN(void) {
 	if (online < 0) {
 		return 0;
 	}
-	/* demo and online are read where the script reads them; Init does not change them on the way. OBJLIB 6: the .def
-	 * runner takes its $names as a dict */
-	PyObject *vars = Py_BuildValue("{s:i,s:i,s:i}", "full", !demo, "boss", !demo && boss, "online", online);
-	byte ok = vars && Script_RunFileTry(0, SHIPMAKER_FILE, "Init", shipmaker_def, NULL, vars);
-	Py_XDECREF(vars);
-	if (!ok) {
+	/* demo and online are read where the script reads them; Init does not change them on the way */
+	nativeVal_t v[3];
+	Native_SetInt(&v[0], !demo);
+	Native_SetInt(&v[1], !demo && boss);
+	Native_SetInt(&v[2], online);
+	if (!Mode_DefRun(0, SHIPMAKER_FILE, "Init", shipmaker_def, NULL, 1, 3, "full", &v[0], "boss", &v[1], "online",
+		&v[2])) {
 		return 0;
 	}
 	/* the pilots */
@@ -610,6 +598,7 @@ static byte Sm_InitN(void) {
 	}
 	if (edit == 0) {
 		nativeVal_t pilots, act, x;
+		byte ok;
 		if (!Mode_G(SM, "PilotsList", &pilots)) {
 			return 0;
 		}
@@ -757,6 +746,7 @@ static byte ShipMaker_InitAnmShip_E(const nativeVal_t *a, int n, nativeVal_t *ou
 
 static char *ShipMaker_InitAnmShip_N[] = { "model", "ch0", "ch1", "ch2", "ch3", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ShipMaker_InitAnmShip(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "O|OOOO", ShipMaker_InitAnmShip_N, Sm_InitAnmShipK);

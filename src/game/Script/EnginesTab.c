@@ -15,7 +15,7 @@
  * holds the port's function, else by name), string.atoi and string.find through their native twins, and the module's
  * own functions through its globals as the script calls them (PORT_OWN, the same seam on the global). The link
  * functions of Menu come from a from import (OBJLIB 6) and are called through their entries while they are Menu's own
- * (Mode_LinkCall); the .def runner takes Python values (OBJLIB 6).
+ * (held as values, OBJLIB 7: Mode_LinkCallV); the .def runner takes Python values (OBJLIB 6).
  */
 #include <limits.h>
 #include <math.h>
@@ -58,18 +58,14 @@ static const scriptStep_t enginestab_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of enginestab.def (vars: the $names, NULL for none): 0 with the error of the file */
-static byte ET_Run(int id, const char *section, PyObject *vars) {
-	return Script_RunFileTry(id, ENGINESTAB_FILE, section, enginestab_def, enginestab_steps, vars);
-}
+/* a section of enginestab.def with its $names, n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner
+ * takes them as a dict): 0 with the error of the file */
+#define ET_Run(id, section, n, ...) \
+	Mode_DefRun(id, ENGINESTAB_FILE, section, enginestab_def, enginestab_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
-/* the section with the value v as $v (OBJLIB 6: the .def runner takes its $names as a dict) */
+/* the section with the value v as $v */
 static byte ET_RunV(int id, const char *section, const nativeVal_t *v) {
-	PyObject *o = Native_ToPy(v), *vars = o ? Py_BuildValue("{s:O}", "v", o) : NULL;
-	byte ok = vars && ET_Run(id, section, vars);
-	Py_XDECREF(vars);
-	Py_XDECREF(o);
-	return ok;
+	return ET_Run(id, section, 1, "v", v);
 }
 
 /* a global of the module as its functions read it (out None before) */
@@ -474,6 +470,7 @@ static byte ET_HighlightCurrentMountedEngine_E(const nativeVal_t *a, int n, nati
 	return Mode_Parse(a, n, "i|O", &id, &def) && ET_Highlight(id, def ? def : &one);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ET_HighlightCurrentMountedEngine(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "setDefault", NULL };
 	(void)self;
@@ -707,18 +704,18 @@ static byte ET_ShowEngineDesc(int id, const nativeVal_t *control) {
 }
 
 MODE_IFN(ET_ShowEngineDescPy, 3, ET_ShowEngineDesc(id, &a[1]))
-MODE_IFN(ET_HideEngineDesc, 3, ET_Run(id, "hidedesc", NULL))
+MODE_IFN(ET_HideEngineDesc, 3, ET_Run(id, "hidedesc", 0))
 
 /* ChangeRecycleButtonState(id): the recycle button works only for a bay with engines; the links follow (from
- * Menu import LinkLR: OBJLIB 6, the calls through Mode_LinkCall) */
+ * Menu import LinkLR: OBJLIB 6, the calls through Mode_LinkCallV on the function values) */
 static byte ET_RecycleState(int id) {
 	static const char *const mods[] = { "HangarTab", "ShipEdit", NULL };
 	nativeVal_t bay = { 0 }, ne = { 0 }, layout = { 0 };
-	PyObject *linkLR = Mode_From("Menu", "LinkLR");
-	byte ok = linkLR && Script_Import(mods);
+	nativeVal_t linkLR;
+	byte ok = Mode_FromV("Menu", "LinkLR", &linkLR) && Script_Import(mods);
 	int l = ok ? ET_Len("currentEngineGroup") : -1;
 	if (l <= 0) {
-		Py_XDECREF(linkLR);
+		Native_Free(&linkLR);
 		return l == 0;
 	}
 	int has = 0;
@@ -748,17 +745,17 @@ static byte ET_RecycleState(int id) {
 	/* the bays 2 .. n first, then bay 1 */
 	for (int i = 0; ok && i < groups; i++) {
 		char name[ET_ITEM];
-		ok = ET_GroupName(i < groups - 1 ? i + 2 : 1, name) && Mode_LinkCall(linkLR, id, name, to);
+		ok = ET_GroupName(i < groups - 1 ? i + 2 : 1, name) && Mode_LinkCallV(&linkLR, id, name, to);
 	}
 	if (ok && groups == 0) {
 		char name[ET_ITEM];
-		ok = ET_GroupName(1, name) && Mode_LinkCall(linkLR, id, name, to);
+		ok = ET_GroupName(1, name) && Mode_LinkCallV(&linkLR, id, name, to);
 	}
-	ok = ok && (!has || Mode_LinkCall(linkLR, id, "Recycle", "Exit"));
+	ok = ok && (!has || Mode_LinkCallV(&linkLR, id, "Recycle", "Exit"));
 	Native_Free(&bay);
 	Native_Free(&ne);
 	Native_Free(&layout);
-	Py_XDECREF(linkLR);
+	Native_Free(&linkLR);
 	return ok;
 }
 
@@ -1104,6 +1101,7 @@ static byte ET_SelectEngineGroupPy_E(const nativeVal_t *a, int n, nativeVal_t *o
 	return Mode_Parse(a, n, "iO|O", &id, &control, &def) && ET_SelectEngineGroup(id, control, def ? def : &one);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *ET_SelectEngineGroupPy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "setDefault", NULL };
 	(void)self;
@@ -1112,12 +1110,7 @@ static PyObject *ET_SelectEngineGroupPy(PyObject *self, PyObject *args, PyObject
 
 /* the method of a list variable of the module called in place (OBJLIB 5: sort and append of the script's lists) */
 static byte ET_ListMethod(const char *var, const char *method, const nativeVal_t *arg) {
-	PyObject *list = Script_Global(MOD, var), *a = list && arg ? Native_ToPy(arg) : NULL;
-	PyObject *r = !list || (arg && !a) ? NULL : arg ? Script_Method(list, method, "(O)", a) : Script_Method(list, method, "()");
-	Py_XDECREF(r);
-	Py_XDECREF(a);
-	Py_XDECREF(list);
-	return r != NULL;
+	return arg ? Mode_VarCall(MOD, var, 1, method, arg) : Mode_VarCall0(MOD, var, 1, method);
 }
 
 /* the bay boxes of SetEnginesPanel for every ship that can be edited */
@@ -1152,18 +1145,7 @@ static byte ET_GroupBoxes(int id, const nativeVal_t *ratio) {
 				ET_Op(b2, '-', b0, dw) && ET_Op(dw, '*', ratio, w) && ET_Item(bay, 3, b3) &&
 				(Native_Free(b1), ET_Item(bay, 1, b1)) && ET_Op(b3, '-', b1, h) && Mode_ItemText(name, &s);
 			if (ok) {
-				/* OBJLIB 6: the .def runner takes its $names as a dict */
-				PyObject *on = Native_ToPy(name), *ox = Native_ToPy(x), *oy = Native_ToPy(b1), *ow = Native_ToPy(w);
-				PyObject *oh = Native_ToPy(h);
-				PyObject *vars = on && ox && oy && ow && oh ? Py_BuildValue("{s:O,s:O,s:O,s:O,s:O}", "name", on, "x", ox, "y",
-					oy, "w", ow, "h", oh) : NULL;
-				ok = vars && ET_Run(id, "group", vars);
-				Py_XDECREF(vars);
-				Py_XDECREF(on);
-				Py_XDECREF(ox);
-				Py_XDECREF(oy);
-				Py_XDECREF(ow);
-				Py_XDECREF(oh);
+				ok = ET_Run(id, "group", 5, "name", name, "x", x, "y", b1, "w", w, "h", h);
 			}
 			Mode_Release(&t, mark);
 		}
@@ -1178,7 +1160,7 @@ static byte ET_SetEnginesPanel(int id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *aspect = Mode_V(&t), *num = Mode_V(&t), *ratio = Mode_V(&t), *empty = Mode_V(&t), *save = Mode_V(&t);
 	nativeVal_t *keys = Mode_V(&t);
-	if (!Script_Import(mods) || !ET_Run(id, "desc", NULL) || !Native_GVarGet("PhysicalAspectRatio", aspect)) {
+	if (!Script_Import(mods) || !ET_Run(id, "desc", 0) || !Native_GVarGet("PhysicalAspectRatio", aspect)) {
 		return Mode_Done(&t, 0);
 	}
 	/* 1.3333333333333 in the source; the marshal of the shipped .pyc kept 12 digits */
@@ -1214,21 +1196,21 @@ static byte ET_SetEnginesPanel(int id) {
 		Native_SetStr(&b, ".alpha.tga");
 		nativeVal_t f1 = { 0 };
 		ok = ET_EngineI(i, 1, &e) && ET_Op(&a, '+', &e, &f1) && ET_Op(&f1, '+', &b, &file);
-		PyObject *o = ok ? Native_ToPy(&file) : NULL, *vars = o ? Py_BuildValue("{s:i,s:O}", "n", i + 1, "file", o) : NULL;
-		ok = vars && ET_Run(id, "inlist", vars);
-		Py_XDECREF(vars);
-		Py_XDECREF(o);
+		nativeVal_t num;
+		Native_SetInt(&num, i + 1);
+		ok = ok && ET_Run(id, "inlist", 2, "n", &num, "file", &file);
 		Native_Free(&e);
 		Native_Free(&f1);
 		Native_Free(&file);
 	}
 	for (int i = 0; ok && i < 4; i++) {
-		PyObject *vars = Py_BuildValue("{s:i,s:i}", "n", i + 1, "y", ENGINES_Y + 62 * i);
-		ok = vars && ET_Run(id, "slot", vars);
-		Py_XDECREF(vars);
+		nativeVal_t num, y;
+		Native_SetInt(&num, i + 1);
+		Native_SetInt(&y, ENGINES_Y + 62 * i);
+		ok = ET_Run(id, "slot", 2, "n", &num, "y", &y);
 	}
-	ok = ok && ET_Run(id, "recycle", NULL) && PORT_OWN(EnginesTab, SetRecycleVisible, NULL, "ii", (long)id, 0L) &&
-		ET_Run(id, "arrows", NULL) && PORT_OWN(EnginesTab, SetPrevNextEngineVisible, NULL, "ii", (long)id, 0L);
+	ok = ok && ET_Run(id, "recycle", 0) && PORT_OWN(EnginesTab, SetRecycleVisible, NULL, "ii", (long)id, 0L) &&
+		ET_Run(id, "arrows", 0) && PORT_OWN(EnginesTab, SetPrevNextEngineVisible, NULL, "ii", (long)id, 0L);
 	return Mode_Done(&t, ok);
 }
 
@@ -1258,33 +1240,34 @@ MODE_ADAPTER(ET, SetPrevNextEngineVisible)
 MODE_ADAPTER(ET, SetRecycleVisible)
 
 /* the links of ShowEnginesPanel between the list, the bays, the recycle button and the exit (from Menu import
- * LinkLR, LinkUD, UnLinkUD: OBJLIB 6, the calls through Mode_LinkCall) */
+ * LinkLR, LinkUD, UnLinkUD: OBJLIB 6, the calls through Mode_LinkCallV on the function values) */
 static byte ET_ShowLinks(int id, int groups) {
 	static const char *const left[] = { "NextEngine", "PrevEngine", "Engine2", "Engine3", "Engine4" };
 	char name[ET_ITEM], other[ET_ITEM];
-	PyObject *linkLR = Mode_From("Menu", "LinkLR"), *linkUD = linkLR ? Mode_From("Menu", "LinkUD") : NULL;
-	PyObject *unlinkUD = linkUD ? Mode_From("Menu", "UnLinkUD") : NULL;
-	byte ok = unlinkUD && ET_GroupName(1, name);
+	nativeVal_t linkLR = { 0 }, linkUD = { 0 }, unlinkUD = { 0 };
+	byte ok = Mode_FromV("Menu", "LinkLR", &linkLR) && Mode_FromV("Menu", "LinkUD", &linkUD) &&
+		Mode_FromV("Menu", "UnLinkUD", &unlinkUD) && ET_GroupName(1, name);
 	for (int i = 0; ok && i < 5; i++) {
-		ok = Mode_LinkCall(linkLR, id, left[i], name);
+		ok = Mode_LinkCallV(&linkLR, id, left[i], name);
 	}
 	for (int i = groups; ok && i > 0; i--) {
-		ok = ET_GroupName(i, name) && Mode_LinkCall(linkLR, id, "Engine1", name) && Mode_LinkCall(linkLR, id, name, "Recycle");
+		ok = ET_GroupName(i, name) && Mode_LinkCallV(&linkLR, id, "Engine1", name) &&
+			Mode_LinkCallV(&linkLR, id, name, "Recycle");
 	}
-	ok = ok && Mode_LinkCall(linkLR, id, "Recycle", "Exit");
+	ok = ok && Mode_LinkCallV(&linkLR, id, "Recycle", "Exit");
 	for (int i = 0; ok && i < groups - 1; i++) {
-		ok = ET_GroupName(i + 1, name) && ET_GroupName(i + 2, other) && Mode_LinkCall(linkUD, id, name, other);
+		ok = ET_GroupName(i + 1, name) && ET_GroupName(i + 2, other) && Mode_LinkCallV(&linkUD, id, name, other);
 	}
 	/* currentEngineGroup = ...: a local of the script, the module variable stays */
 	ok = ok && ET_GroupName(1, name);
-	Py_XDECREF(linkLR);
-	Py_XDECREF(linkUD);
-	Py_XDECREF(unlinkUD);
+	Native_Free(&linkLR);
+	Native_Free(&linkUD);
+	Native_Free(&unlinkUD);
 	return ok;
 }
 
 /* ShowEnginesPanel(id): the tab with the list from its start and the bays of the ship (from Menu import LinkUD:
- * OBJLIB 6, the calls through Mode_LinkCall) */
+ * OBJLIB 6, the calls through Mode_LinkCallV on the function values) */
 static byte ET_ShowEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	static const char *const mods2[] = { "ShipMaker", "string", NULL };
@@ -1293,8 +1276,9 @@ static byte ET_ShowEnginesPanel(int id) {
 	etLoad_t l = { 0 };
 	nativeVal_t zero;
 	Native_SetInt(&zero, 0);
-	PyObject *linkUD = Mode_From("Menu", "LinkUD");
-	byte ok = linkUD && Script_Import(mods) && Mode_Put(MOD, "engineIndex", NULL, &zero) && ET_Layout(layout);
+	nativeVal_t linkUD;
+	byte ok = Mode_FromV("Menu", "LinkUD", &linkUD) && Script_Import(mods) &&
+		Mode_Put(MOD, "engineIndex", NULL, &zero) && ET_Layout(layout);
 	int groups = ok ? Native_Size(layout) : -1;
 	ok = groups >= 0 && PORT_OWN(EnginesTab, SetRecycleVisible, NULL, "ii", (long)id, 1L);
 	if (ok) {
@@ -1303,19 +1287,19 @@ static byte ET_ShowEnginesPanel(int id) {
 		Script_SetStr(id, "Recycle", "OnAccept", "");
 	}
 	int count = ok ? ET_Len("enginesList") : -1;
-	ok = count >= 0 && Mode_LinkCall(linkUD, id, "PrevEngine", "Engine1");
+	ok = count >= 0 && Mode_LinkCallV(&linkUD, id, "PrevEngine", "Engine1");
 	for (int i = 0; ok && i < count; i++) {
 		char name[0x20], next[0x20];
 		Str_Printf(name, sizeof(name), "Engine%d", i + 1);
 		Mode_ItemVisible(id, name, 1);
 		if (i + 2 <= count) {
 			Str_Printf(next, sizeof(next), "Engine%d", i + 2);
-			ok = Mode_LinkCall(linkUD, id, name, next);
+			ok = Mode_LinkCallV(&linkUD, id, name, next);
 		} else {
 			Script_SetStr(id, name, "Down", "");
 		}
 	}
-	ok = ok && (count < 4 || Mode_LinkCall(linkUD, id, "Engine4", "NextEngine")) &&
+	ok = ok && (count < 4 || Mode_LinkCallV(&linkUD, id, "Engine4", "NextEngine")) &&
 		PORT_OWN(EnginesTab, SetPrevNextEngineVisible, NULL, "ii", (long)id, 1L);
 	if (count > 4) {
 		count = 4;
@@ -1373,7 +1357,7 @@ static byte ET_ShowEnginesPanel(int id) {
 	}
 	ok = ok && PORT_OWN(EnginesTab, HighlightCurrentMountedEngine, NULL, "ii", (long)id, 0L);
 	ET_LoadFree(&l);
-	Py_XDECREF(linkUD);
+	Native_Free(&linkUD);
 	return Mode_Done(&t, ok);
 }
 
@@ -1391,10 +1375,9 @@ static byte ET_CreateLayouts(int id) {
 	for (int i = 0; ok && i < 4; i++) {
 		for (int j = 0; ok && j < 2; j++) {
 			char n[8];
-			/* OBJLIB 6 */
-			PyObject *vars = Py_BuildValue("{s:s}", "n", ET_IconName(n, sizeof(n), i, j));
-			ok = vars && ET_Run(id, "icons", vars);
-			Py_XDECREF(vars);
+			nativeVal_t icon;
+			Native_SetStr(&icon, ET_IconName(n, sizeof(n), i, j));
+			ok = ET_Run(id, "icons", 1, "n", &icon);
 		}
 	}
 	return ok;
@@ -1616,10 +1599,7 @@ static byte ET_UpdateLayoutsStatePy_E(const nativeVal_t *a, int n, nativeVal_t *
 	return Mode_Parse(a, n, "iOO", &id, &index, &state) && ET_UpdateLayoutsState(id, index, state);
 }
 
-static PyObject *ET_UpdateLayoutsStatePy(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_Entry(args, ET_UpdateLayoutsStatePy_E);
-}
+MODE_ADAPTER(ET, UpdateLayoutsStatePy)
 
 /* UpdateLayoutsGlow(id, control): the icons of the bay control glow, the others not */
 static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
@@ -1677,7 +1657,7 @@ MODE_IFN(ET_UpdateLayoutsGlowPy, 2, ET_UpdateLayoutsGlow(id, &a[1]))
 MODE_IFN(ET_LayoutsGainFocus, 3, PORT_OWN(EnginesTab, UpdateLayoutsGlow, NULL, "iv", (long)id, &a[1]))
 MODE_IFN(ET_LayoutsLostFocus, 3, PORT_OWN(EnginesTab, UpdateLayoutsGlow, NULL, "iv", (long)id, &a[2]))
 
-/* HideEnginesPanel(id) (from Menu import UnLinkLR: OBJLIB 6, the call through Mode_LinkCall) */
+/* HideEnginesPanel(id) (from Menu import UnLinkLR: OBJLIB 6, the call through Mode_LinkCallV on the function value) */
 static byte ET_HideEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	nativeVal_t ship = { 0 }, none, layout = { 0 };
@@ -1697,7 +1677,7 @@ static byte ET_HideEnginesPanel(int id) {
 			}
 		}
 	}
-	byte ok = some >= 0 && PORT_OWN(EnginesTab, HideLayouts, NULL, "i", (long)id) && ET_Run(id, "hidepredict", NULL) &&
+	byte ok = some >= 0 && PORT_OWN(EnginesTab, HideLayouts, NULL, "i", (long)id) && ET_Run(id, "hidepredict", 0) &&
 		PORT_OWN(EnginesTab, SetRecycleVisible, NULL, "ii", (long)id, 0L);
 	if (!ok) {
 		return 0;
@@ -1718,9 +1698,9 @@ static byte ET_HideEnginesPanel(int id) {
 			Mode_ItemVisible(id, name, 0);
 		}
 	}
-	PyObject *unlinkLR = Mode_From("Menu", "UnLinkLR");
-	ok = unlinkLR && Mode_LinkCall(unlinkLR, id, "Recycle", "Exit");
-	Py_XDECREF(unlinkLR);
+	nativeVal_t unlinkLR;
+	ok = Mode_FromV("Menu", "UnLinkLR", &unlinkLR) && Mode_LinkCallV(&unlinkLR, id, "Recycle", "Exit");
+	Native_Free(&unlinkLR);
 	return ok;
 }
 

@@ -492,6 +492,7 @@ static byte OutMap_GetNearestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeV
 
 static char *OutMap_GetNearestFreeSpawnPos_N[] = { "initialPos", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "|O", OutMap_GetNearestFreeSpawnPos_N, OutMap_NearestK);
@@ -503,6 +504,7 @@ static byte OutMap_GetFarthestFreeSpawnPos_E(const nativeVal_t *a, int n, native
 
 static char *OutMap_GetFarthestFreeSpawnPos_N[] = { "initialPos", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *OutMap_GetFarthestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "|O", OutMap_GetFarthestFreeSpawnPos_N, OutMap_FarthestK);
@@ -551,7 +553,7 @@ static byte It_GetNam(const nativeVal_t *name, nativeVal_t *out) {
 	return Mode_Done(&t, ok);
 }
 
-/* SWeap.<name>(n) (InitAmmo, InitWeap) through its seam */
+/* SWeap.<name>(n) (InitAmmo, InitWeap) through its seam (OBJLIB 7: the hook of a case, as the seams below) */
 static byte It_InitTable(const char *name, void *table, byte weap) {
 	PyObject *hook;
 	int seam = Native_Seam("SWeap", name, &hook);
@@ -646,20 +648,19 @@ static byte It_Ship(long i, const nativeVal_t *list, const nativeVal_t *typo) {
 		return Mode_Done(&t, 0);
 	}
 	/* OBJLIB 7: fn = v.SetModel (a bound method of the entity), taken before the model is picked as the script does */
-	PyObject *fn = Mode_VBound(v, "SetModel");
-	int n = fn ? Native_Size(list) : -1;
+	nativeVal_t *fn = Mode_V(&t);
+	int n = Mode_VBoundV(v, "SetModel", fn) ? Native_Size(list) : -1;
 	if (n >= 0) {
 		Native_SetFloat(r, Scrap_RandRange(0.0, (double)n - 0.1));
 	}
 	/* SAI.EnableAIVehicle by name (OBJLIB 7: its entry works on Python objects, MODE_PYENTRY) */
-	byte ok = n >= 0 && Native_ToInt(r, k) && Native_Subscript(list, k, model) && Native_Call(fn, NULL, "v", model) &&
+	byte ok = n >= 0 && Native_ToInt(r, k) && Native_Subscript(list, k, model) && Mode_CallArgs(fn, NULL, model, 1) &&
 		Mode_VSet(v, "Traf_Type", typo) && PORT_CALL(Fx, SetUpShipMotors, NULL, "v", v) &&
 		Mode_VGet(v, "Name", vname) &&
 		Native_CallMod("SAI", "EnableAIVehicle", NULL, "vidiiiiidiidd", vname, 1L, 0.1, 2L, 0L, 1L, 0L, 4L, 0.5, 3L, 4L,
 			0.785, 0.25) &&
 		Mode_VGet(v, "Name", vname2) && PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 4L, vname2) &&
 		Mode_VSet(v, "Traf_Active", Mode_I(&t, 1)) && PORT_OWN(InTraffic, SetSound, NULL, "v", v);
-	Py_XDECREF(fn);
 	return Mode_Done(&t, ok);
 }
 

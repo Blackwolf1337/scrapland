@@ -302,24 +302,25 @@ static const scriptStep_t video_steps[] = {
 
 /* ---- the functions of PCMenu ---- */
 
-#define VIDEO_ARGS(args) \
+#define VIDEO_ARGS(a, n) \
 	int id; \
 	const char *control; \
-	if (!Script_Args(args, &id, &control)) { \
-		return NULL; \
+	if (!Mode_IdControl(a, n, &id, &control)) { \
+		return 0; \
 	}
 
-static PyObject *PCMenu_VideoMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_VideoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Script_RunFile(id, "menus/video.def", NULL, video_def, video_steps, NULL);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, VideoMenu)
 
-static PyObject *PCMenu_ChangeVideoMode(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_ChangeVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	int before = video.selected;
@@ -328,30 +329,33 @@ static PyObject *PCMenu_ChangeVideoMode(PyObject *self, PyObject *args) {
 		video.selected = video.valid[0];
 	}
 	Video_ShowMode(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ChangeVideoMode)
 
-static PyObject *PCMenu_PrevVideoMode(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_PrevVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	Video_PrevMode(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, PrevVideoMode)
 
-static PyObject *PCMenu_NextVideoMode(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_NextVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	Video_NextMode(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, NextVideoMode)
 
-static PyObject *PCMenu_ChangeTextureFilter(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_ChangeTextureFilter_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	int i = Video_FilterIndex(id) + 1;
@@ -360,119 +364,132 @@ static PyObject *PCMenu_ChangeTextureFilter(PyObject *self, PyObject *args) {
 	}
 	Script_SetStr(id, "TextureFilter", "Text", video_filters[i]);
 	Video_ApplyTextureFilter(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ChangeTextureFilter)
 
-static PyObject *PCMenu_ChangeTextureDetail(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_ChangeTextureDetail_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	int i = (Video_Index(id, "TextureDetail", video.detail, 3) + 1) % 3;
 	Script_SetStr(id, "TextureDetail", "Text", video.detail[i]);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ChangeTextureDetail)
 
-static PyObject *PCMenu_ChangeShadowsDetail(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_ChangeShadowsDetail_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	int i = (Video_Index(id, "ShadowsDetail", video.shadows, 4) + 1) % 4;
 	Script_SetStr(id, "ShadowsDetail", "Text", video.shadows[i]);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ChangeShadowsDetail)
 
 /* a Yes/No item: flips, and Lock and Fog apply at once */
-static PyObject *Video_ChangeYesNo(PyObject *args, const char *item, void (*apply)(int id)) {
-	VIDEO_ARGS(args);
+static byte Video_ChangeYesNo(const nativeVal_t *a, int n, const char *item, void (*apply)(int id)) {
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	Video_SetYes(id, item, !Video_Yes(id, item));
 	if (apply) {
 		apply(id);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *PCMenu_ChangeVSync(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_ChangeYesNo(args, "VSync", NULL);
+static byte PCMenu_ChangeVSync_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_ChangeYesNo(a, n, "VSync", NULL);
 }
+MODE_ADAPTER(PCMenu, ChangeVSync)
 
-static PyObject *PCMenu_ChangeLock(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_ChangeYesNo(args, "Lock", Video_ApplyLock);
+static byte PCMenu_ChangeLock_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_ChangeYesNo(a, n, "Lock", Video_ApplyLock);
 }
+MODE_ADAPTER(PCMenu, ChangeLock)
 
-static PyObject *PCMenu_ChangeFog(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_ChangeYesNo(args, "Fog", Video_ApplyFog);
+static byte PCMenu_ChangeFog_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_ChangeYesNo(a, n, "Fog", Video_ApplyFog);
 }
+MODE_ADAPTER(PCMenu, ChangeFog)
 
-static PyObject *PCMenu_ChangeBloom(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_ChangeYesNo(args, "Bloom", NULL);
+static byte PCMenu_ChangeBloom_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_ChangeYesNo(a, n, "Bloom", NULL);
 }
+MODE_ADAPTER(PCMenu, ChangeBloom)
 
-static PyObject *PCMenu_ChangeMotionBlur(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_ChangeYesNo(args, "MotionBlur", NULL);
+static byte PCMenu_ChangeMotionBlur_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_ChangeYesNo(a, n, "MotionBlur", NULL);
 }
+MODE_ADAPTER(PCMenu, ChangeMotionBlur)
 
-static PyObject *PCMenu_ChangeDuDv(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_ChangeYesNo(args, "DuDv", NULL);
+static byte PCMenu_ChangeDuDv_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_ChangeYesNo(a, n, "DuDv", NULL);
 }
+MODE_ADAPTER(PCMenu, ChangeDuDv)
 
-static PyObject *PCMenu_ChangeGamma(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_ChangeGamma_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Mode_ApplyFlash(id);
 	Video_ApplyGamma(id);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ChangeGamma)
 
 /* the dummies left and right of the gamma title step the slider and give the focus back */
-static PyObject *Video_GammaStep(PyObject *args, double sign) {
+static byte Video_GammaStep(const nativeVal_t *a, int n, double sign) {
 	int id;
-	char *control, *prev;
-	if (!PyArg_ParseTuple(args, "iss", &id, &control, &prev)) {
-		return NULL;
+	const char *control, *prev;
+	if (!Mode_Parse(a, n, "iss", &id, &control, &prev)) {
+		return 0;
 	}
 	double v = Script_GetNum(id, "Gamma", "Value");
 	Script_SetNum(id, "Gamma", "Value", v + sign * Script_GetNum(id, "Gamma", "ValueStep"));
 	Script_SetDefault(id, prev);
 	Mode_ApplyFlash(id);
 	Video_ApplyGamma(id);
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *PCMenu_GammaSliderFocus_Sub(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_GammaStep(args, -1.0);
+static byte PCMenu_GammaSliderFocus_Sub_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_GammaStep(a, n, -1.0);
 }
+MODE_ADAPTER(PCMenu, GammaSliderFocus_Sub)
 
-static PyObject *PCMenu_GammaSliderFocus_Add(PyObject *self, PyObject *args) {
-	(void)self;
-	return Video_GammaStep(args, 1.0);
+static byte PCMenu_GammaSliderFocus_Add_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return Video_GammaStep(a, n, 1.0);
 }
+MODE_ADAPTER(PCMenu, GammaSliderFocus_Add)
 
-static PyObject *PCMenu_ChangeDisplay(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_ChangeDisplay_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	static const int next[3] = { 2, 0, 1 };	/* windowed, borderless, fullscreen */
 	Mode_ApplyFlash(id);
 	Script_SetStr(id, "Display", "Text", video.display[next[Video_DisplayIndex(id)]]);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ChangeDisplay)
 
 /* Back: the values the menu set at once go back */
-static PyObject *PCMenu_VideoMenuBack(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_VideoMenuBack_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	GVar_SetNum("R_TexFilter", video.lastTexFilter);
 	GVar_SetNum("R_MipFilter", video.lastMipFilter);
 	GVar_SetNum("VideoGammaRGB", video.lastGamma);
@@ -481,12 +498,13 @@ static PyObject *PCMenu_VideoMenuBack(PyObject *self, PyObject *args) {
 	GVar_SetNum("R_VideoLockBuf", video.lastLockBuf);
 	/* OBJLIB 5: the alias Menu.OptionsMenu (= MLib.OptionsMenu of menu.mod) by name */
 	Mode_Printed(Native_CallMod("Menu", "OptionsMenu", NULL, "is", (long)id, control), "Menu", "OptionsMenu");
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, VideoMenuBack)
 
-static PyObject *PCMenu_VideoDefaults(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_VideoDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	(void)control;
 	Script_SetNum(id, "Gamma", "Value", Video_GammaToValue(1.0f));
 	Mode_ApplyFlash(id);
@@ -503,8 +521,9 @@ static PyObject *PCMenu_VideoDefaults(PyObject *self, PyObject *args) {
 	Video_SetYes(id, "Bloom", 1);
 	Video_SetYes(id, "MotionBlur", 1);
 	Video_SetYes(id, "DuDv", 1);
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, VideoDefaults)
 
 /* the mode of the desktop size, 32 bpp first (else the largest one) */
 static int Video_DesktopMode(void) {
@@ -521,9 +540,9 @@ static int Video_DesktopMode(void) {
 	return best;
 }
 
-static PyObject *PCMenu_ApplyChanges(PyObject *self, PyObject *args) {
-	(void)self;
-	VIDEO_ARGS(args);
+static byte PCMenu_ApplyChanges_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	VIDEO_ARGS(a, n);
 	byte reset = 0;
 
 	/* ScrapC: the display mode first, the engine reset applies it */
@@ -562,8 +581,9 @@ static PyObject *PCMenu_ApplyChanges(PyObject *self, PyObject *args) {
 	if (reset || mode != video.current) {
 		Video_SetCurrentMode(mode);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+MODE_ADAPTER(PCMenu, ApplyChanges)
 
 PyMethodDef g_MenuVideoMethods[] = {
 	{ "VideoMenu", PCMenu_VideoMenu, 1, NULL },
@@ -588,3 +608,5 @@ PyMethodDef g_MenuVideoMethods[] = {
 	{ "ChangeDisplay", PCMenu_ChangeDisplay, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
+
+PORTS(MenuVideo)

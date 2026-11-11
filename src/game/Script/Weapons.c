@@ -33,21 +33,17 @@ static const scriptStep_t weapons_steps[] = {
 /* a section of weapons.def with $idWeap, $idAmmo and $server (NULL for those a section does not use); it stops where
  * the script stops: 0 with the error set */
 static byte Weap_Run(const char *section, const nativeVal_t *idWeap, const nativeVal_t *idAmmo, const nativeVal_t *server) {
-	static const char *const names[] = { "idWeap", "idAmmo", "server" };
-	const nativeVal_t *vals[] = { idWeap, idAmmo, server };
-	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
-	PyObject *vars = PyDict_New();
-	byte ok = vars != NULL;
-	for (int i = 0; ok && i < 3; i++) {
-		if (vals[i]) {
-			PyObject *o = Native_ToPy(vals[i]);
-			ok = o && PyDict_SetItemString(vars, (char *)names[i], o) == 0;
-			Py_XDECREF(o);
+	static const char *const all[] = { "idWeap", "idAmmo", "server" };
+	const nativeVal_t *given[] = { idWeap, idAmmo, server }, *vals[3];
+	const char *names[3];
+	int n = 0;
+	for (int i = 0; i < 3; i++) {
+		if (given[i]) {
+			names[n] = all[i];
+			vals[n++] = given[i];
 		}
 	}
-	ok = ok && Script_RunFileTry(0, "weapons/weapons.def", section, weapons_def, weapons_steps, vars);
-	Py_XDECREF(vars);
-	return ok;
+	return Mode_DefRunV(0, "weapons/weapons.def", section, weapons_def, weapons_steps, 1, names, vals, n);
 }
 
 /* `global name; name = "0"+`id`` */
@@ -127,7 +123,7 @@ static byte Weap_Client(const char *mod, const nativeVal_t *a, const char *exec,
 	}
 	int eq = !Native_Compare(&a[1], &mine);
 	Native_Free(&mine);
-	if (PyErr_Occurred()) {
+	if (Mode_Failed()) {
 		/* OBJLIB 7: the compare of an object that raised */
 		return 0;
 	}
@@ -446,7 +442,7 @@ static byte Sonic_Hit(const nativeVal_t *name) {
 			Native_Free(&v[SPEED]);
 			v[SPEED] = low;
 		}
-		ok = !PyErr_Occurred();
+		ok = !Mode_Failed();
 	}
 	ok = ok && Mode_Get(e, ref, "Vel", &v[VEL]) && Mode_VecNorm(&v[VEC], &v[NORM]) &&
 		Mode_VecProd(&v[NORM], &v[SPEED], &v[PUSH]) && Mode_VecAdd(&v[VEL], &v[PUSH], &sum) && Mode_Set(e, ref, "Vel", &sum);

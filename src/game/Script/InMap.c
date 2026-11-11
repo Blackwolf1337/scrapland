@@ -12,7 +12,7 @@
 #include "scrap/collisiongrid.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
-#include "scrap/scriptnative.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/world.h"
 
 /* the start after the map name is set */
@@ -35,17 +35,17 @@ static byte InMap_Start(void) {
 	}
 	/* the mercenaries only stay friends in Gamblinden and the Junkyard (OBJLIB 5: Init.UpperMap is a variable of
 	 * Init) */
-	PyObject *upper = Script_Attr("Init", "UpperMap");
-	if (!upper) {
+	nativeVal_t upper;
+	if (!Mode_ModGet("Init", "UpperMap", &upper)) {
 		return 0;
 	}
-	const char *u = PyString_Check(upper) ? PyString_AsString(upper) : NULL;
+	const char *u = upper.type == NV_STR ? Native_Text(&upper) : NULL;
 	if (!u || (strcmp(u, "GAMBLINDEN") && strcmp(u, "JUNKYARD"))) {
 		SaveVar_Set("MercFriends.MercenaryA_Smartie", "0");
 		SaveVar_Set("MercFriends.MercenaryC_Brutus", "0");
 		SaveVar_Set("MercFriends.MercenaryB_Dumber", "0");
 	}
-	Py_DECREF(upper);
+	Native_Free(&upper);
 	GVar_SetNum("CharGrav", 1960);
 	if (!PORT_CALL(DTritusDesktop, Init, NULL, "") || !PORT_CALL(NewsPanel, Init, NULL, "")) {
 		return 0;
@@ -66,45 +66,27 @@ static byte InMap_Init(const char *path) {
 	return InMap_Start();
 }
 
-/* ---- the adapter of the module table (OBJLIB 7: the argument and the errors of the Python calls) ---- */
+/* ---- the function of the module table ---- */
 
-/* Init(LevelPath) of the path object */
-static byte InMap_InitObj(PyObject *path) {
-	/* OBJLIB 7: the imports of the function are module objects (found in C since batch 6b) */
-	PyObject *chars = Script_Module("Chars");
-	PyObject *string = chars ? Script_Module("string") : NULL;
-	Py_XDECREF(chars);
-	if (!string) {
+/* Init(LevelPath) of the path value */
+static byte InMap_InitV(const nativeVal_t *path) {
+	nativeVal_t suffix, map;
+	/* the imports of the function (pack modules from the table since batch 6b) */
+	if (!Mode_Import("Chars") || !Mode_Import("string")) {
 		return 0;
 	}
-	Py_DECREF(string);
-	if (PyString_Check(path) && PyString_Size(path) < 0x100 && strlen(PyString_AsString(path)) == (size_t)PyString_Size(path)) {
-		return InMap_Init(PyString_AsString(path));
+	if (path->type == NV_STR && path->n < 0x100 && strlen(Native_Text(path)) == (size_t)path->n) {
+		return InMap_Init(Native_Text(path));
 	}
-	/* any other LevelPath goes the script's way: the error of + (or a value Scrap.Set takes or refuses) */
-	PyObject *map = Script_PlusS(Script_Ref(path), "/2D/Map%i.tga");
-	byte ok = map && PORT_CALL(Scrap, Set, NULL, "sO", "FileNameMap2D", map);
-	Py_XDECREF(map);
+	/* any other LevelPath goes the script's way: the error of + (OBJLIB 9: Mode_Plus), or a value Scrap.Set takes
+	 * or refuses */
+	Native_SetStr(&suffix, "/2D/Map%i.tga");
+	byte ok = Mode_Plus(path, &suffix, &map) && PORT_CALL(Scrap, Set, NULL, "sv", "FileNameMap2D", &map);
+	Native_Free(&map);
 	return ok && InMap_Start();
 }
 
-/* the entry (stage 3, the call of InitLevel through its ref): the path as the object its call through Python passes */
-static byte InMap_InitPy_E(const nativeVal_t *a, int n, nativeVal_t *out) {
-	(void)out;
-	if (n != 1) {
-		return Port_Arity(n, 1);
-	}
-	PyObject *path = Native_ToPy(&a[0]);
-	byte ok = path && InMap_InitObj(path);
-	Py_XDECREF(path);
-	return ok;
-}
-
-static PyObject *InMap_InitPy(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &path) && InMap_InitObj(path) ? Py_ReturnNone() : NULL;
-}
+MODE_FN(InMap, InitPy, 1, InMap_InitV(&a[0]))
 
 PyMethodDef g_InMapMethods[] = {
 	{ "Init", InMap_InitPy, 1, NULL },

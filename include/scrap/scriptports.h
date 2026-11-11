@@ -188,6 +188,157 @@ PORT_DECL(Messenger, ObjInitializator) /* 2 */
 	PORT_DEF(Messenger, DoorInitializator, Messenger_DoorInitializator) \
 	PORT_DEF(Messenger, ObjInitializator, Messenger_ObjInitializator)
 
+/* Characters.c */
+PORT_DECL(Betty, Init) /* ? */
+PORT_DECL(Betty, OnCreate) /* ? */
+PORT_DECL(Betty, OnFreeResources) /* ? */
+PORT_DECL(Betty, EnterSlowSpeed) /* ? */
+PORT_DECL(Betty, ExitSlowSpeed) /* ? */
+PORT_DECL(BankDirector, Init) /* ? */
+PORT_DECL(BankDirector, OnCreate) /* ? */
+PORT_DECL(BankDirector, OnFreeResources) /* ? */
+PORT_DECL(Boss, Init) /* ? */
+PORT_DECL(Boss, OnCreate) /* ? */
+PORT_DECL(CrazyGambler, Init) /* ? */
+PORT_DECL(CrazyGambler, OnCreate) /* ? */
+PORT_DECL(Humphrey, Init) /* ? */
+PORT_DECL(Humphrey, OnCreate) /* ? */
+PORT_DECL(Maintenance, Init) /* ? */
+PORT_DECL(Maintenance, OnCreate) /* ? */
+PORT_DECL(Mayor, Init) /* ? */
+PORT_DECL(Mayor, OnCreate) /* ? */
+PORT_DECL(Rusty, Init) /* ? */
+PORT_DECL(Rusty, OnCreate) /* ? */
+PORT_DECL(Rusty, OnFreeResources) /* ? */
+PORT_DECL(Sebastian, Init) /* ? */
+PORT_DECL(Sebastian, OnCreate) /* ? */
+PORT_DECL(Sebastian, OnFreeResources) /* ? */
+PORT_DECL(Sentinel, Init) /* ? */
+PORT_DECL(Sentinel, OnCreate) /* ? */
+PORT_DECL(SputnikJunkyard, Init) /* ? */
+PORT_DECL(SputnikJunkyard, OnCreate) /* ? */
+PORT_DECL(Bishop, Init) /* ? */
+PORT_DECL(Bishop, OnCreate) /* ? */
+PORT_DECL(Bishop, OnFreeResources) /* ? */
+PORT_DECL(Functionary, Init) /* ? */
+PORT_DECL(Functionary, OnCreate) /* ? */
+PORT_DECL(Functionary, OnFreeResources) /* ? */
+PORT_DECL(Gear, Init) /* ? */
+PORT_DECL(Gear, OnCreate) /* ? */
+PORT_DECL(Gear, OnFreeResources) /* ? */
+PORT_DECL(Gear, LoadSirenActs) /* ? */
+PORT_DECL(Gear, DropMissileEvent) /* 2 */
+PORT_DECL(BankMaster, Init) /* ? */
+PORT_DECL(BankMaster, OnCreate) /* ? */
+PORT_DECL(BankMaster, OnFreeResources) /* ? */
+PORT_DECL(Berto, Init) /* ? */
+PORT_DECL(Berto, OnCreate) /* ? */
+PORT_DECL(Berto, OnFreeResources) /* ? */
+PORT_DECL(Nurse, Init) /* ? */
+PORT_DECL(Nurse, OnCreate) /* ? */
+PORT_DECL(Nurse, OnFreeResources) /* ? */
+PORT_DECL(Desktop, Init) /* ? */
+PORT_DECL(Desktop, OnCreate) /* ? */
+PORT_DECL(Desktop, OnFreeResources) /* ? */
+PORT_DECL(Police, Init) /* ? */
+PORT_DECL(Police, OnCreate) /* ? */
+PORT_DECL(Police, OnFreeResources) /* ? */
+PORT_DECL(Police, LoadSirenActs) /* ? */
+PORT_DECL(GateKeeper, Init) /* ? */
+PORT_DECL(Dtritus, Init) /* ? */
+PORT_DECL(Dtritus, OnCreate) /* ? */
+PORT_DECL(Dtritus, OnFreeResources) /* ? */
+PORT_DECL(Sputnik, Init) /* ? */
+PORT_DECL(Sputnik, OnCreate) /* ? */
+PORT_DECL(PoliceBoss, Init) /* ? */
+PORT_DECL(PoliceBoss, OnCreate) /* ? */
+PORT_DECL(PoliceBoss, OnFreeResources) /* ? */
+PORT_DECL(Messenger, Init) /* ? */
+PORT_DECL(Messenger, OnCreate) /* ? */
+PORT_DECL(Messenger, OnFreeResources) /* ? */
+PORT_DECL(Human, Init) /* ? */
+PORT_DECL(Human, OnCreate) /* ? */
+PORT_DECL(MercenaryA, Init) /* ? */
+PORT_DECL(MercenaryA, OnCreate) /* ? */
+PORT_DECL(MercenaryB, Init) /* ? */
+PORT_DECL(MercenaryC, Init) /* ? */
+PORT_DECL(MercenaryL, Init) /* ? */
+#define PORTS_Characters \
+	PORT_DEF(Betty, Init, Betty_Init) \
+	PORT_DEF(Betty, OnCreate, Betty_OnCreate) \
+	PORT_DEF(Betty, OnFreeResources, Betty_OnFreeResources) \
+	PORT_DEF(Betty, EnterSlowSpeed, Betty_EnterSlowSpeed) \
+	PORT_DEF(Betty, ExitSlowSpeed, Betty_ExitSlowSpeed) \
+	PORT_DEF(BankDirector, Init, BankDirector_Init) \
+	PORT_DEF(BankDirector, OnCreate, BankDirector_OnCreate) \
+	PORT_DEF(BankDirector, OnFreeResources, BankDirector_OnFreeResources) \
+	PORT_DEF(Boss, Init, Boss_Init) \
+	PORT_DEF(Boss, OnCreate, Boss_OnCreate) \
+	PORT_DEF(CrazyGambler, Init, CrazyGambler_Init) \
+	PORT_DEF(CrazyGambler, OnCreate, CrazyGambler_OnCreate) \
+	PORT_DEF(Humphrey, Init, Humphrey_Init) \
+	PORT_DEF(Humphrey, OnCreate, Humphrey_OnCreate) \
+	PORT_DEF(Maintenance, Init, Maintenance_Init) \
+	PORT_DEF(Maintenance, OnCreate, Maintenance_OnCreate) \
+	PORT_DEF(Mayor, Init, Mayor_Init) \
+	PORT_DEF(Mayor, OnCreate, Mayor_OnCreate) \
+	PORT_DEF(Rusty, Init, Rusty_Init) \
+	PORT_DEF(Rusty, OnCreate, Rusty_OnCreate) \
+	PORT_DEF(Rusty, OnFreeResources, Rusty_OnFreeResources) \
+	PORT_DEF(Sebastian, Init, Sebastian_Init) \
+	PORT_DEF(Sebastian, OnCreate, Sebastian_OnCreate) \
+	PORT_DEF(Sebastian, OnFreeResources, Sebastian_OnFreeResources) \
+	PORT_DEF(Sentinel, Init, Sentinel_Init) \
+	PORT_DEF(Sentinel, OnCreate, Sentinel_OnCreate) \
+	PORT_DEF(SputnikJunkyard, Init, SputnikJunkyard_Init) \
+	PORT_DEF(SputnikJunkyard, OnCreate, SputnikJunkyard_OnCreate) \
+	PORT_DEF(Bishop, Init, Bishop_Init) \
+	PORT_DEF(Bishop, OnCreate, Bishop_OnCreate) \
+	PORT_DEF(Bishop, OnFreeResources, Bishop_OnFreeResources) \
+	PORT_DEF(Functionary, Init, Functionary_Init) \
+	PORT_DEF(Functionary, OnCreate, Functionary_OnCreate) \
+	PORT_DEF(Functionary, OnFreeResources, Functionary_OnFreeResources) \
+	PORT_DEF(Gear, Init, Gear_Init) \
+	PORT_DEF(Gear, OnCreate, Gear_OnCreate) \
+	PORT_DEF(Gear, OnFreeResources, Gear_OnFreeResources) \
+	PORT_DEF(Gear, LoadSirenActs, Gear_LoadSirenActs) \
+	PORT_DEF(Gear, DropMissileEvent, Gear_DropMissileEvent) \
+	PORT_DEF(BankMaster, Init, BankMaster_Init) \
+	PORT_DEF(BankMaster, OnCreate, BankMaster_OnCreate) \
+	PORT_DEF(BankMaster, OnFreeResources, BankMaster_OnFreeResources) \
+	PORT_DEF(Berto, Init, Berto_Init) \
+	PORT_DEF(Berto, OnCreate, Berto_OnCreate) \
+	PORT_DEF(Berto, OnFreeResources, Berto_OnFreeResources) \
+	PORT_DEF(Nurse, Init, Nurse_Init) \
+	PORT_DEF(Nurse, OnCreate, Nurse_OnCreate) \
+	PORT_DEF(Nurse, OnFreeResources, Nurse_OnFreeResources) \
+	PORT_DEF(Desktop, Init, Desktop_Init) \
+	PORT_DEF(Desktop, OnCreate, Desktop_OnCreate) \
+	PORT_DEF(Desktop, OnFreeResources, Desktop_OnFreeResources) \
+	PORT_DEF(Police, Init, Police_Init) \
+	PORT_DEF(Police, OnCreate, Police_OnCreate) \
+	PORT_DEF(Police, OnFreeResources, Police_OnFreeResources) \
+	PORT_DEF(Police, LoadSirenActs, Police_LoadSirenActs) \
+	PORT_DEF(GateKeeper, Init, GateKeeper_Init) \
+	PORT_DEF(Dtritus, Init, Dtritus_Init) \
+	PORT_DEF(Dtritus, OnCreate, Dtritus_OnCreate) \
+	PORT_DEF(Dtritus, OnFreeResources, Dtritus_OnFreeResources) \
+	PORT_DEF(Sputnik, Init, Sputnik_Init) \
+	PORT_DEF(Sputnik, OnCreate, Sputnik_OnCreate) \
+	PORT_DEF(PoliceBoss, Init, PoliceBoss_Init) \
+	PORT_DEF(PoliceBoss, OnCreate, PoliceBoss_OnCreate) \
+	PORT_DEF(PoliceBoss, OnFreeResources, PoliceBoss_OnFreeResources) \
+	PORT_DEF(Messenger, Init, Messenger_Init) \
+	PORT_DEF(Messenger, OnCreate, Messenger_OnCreate) \
+	PORT_DEF(Messenger, OnFreeResources, Messenger_OnFreeResources) \
+	PORT_DEF(Human, Init, Human_Init) \
+	PORT_DEF(Human, OnCreate, Human_OnCreate) \
+	PORT_DEF(MercenaryA, Init, MercenaryA_Init) \
+	PORT_DEF(MercenaryA, OnCreate, MercenaryA_OnCreate) \
+	PORT_DEF(MercenaryB, Init, MercenaryB_Init) \
+	PORT_DEF(MercenaryC, Init, MercenaryC_Init) \
+	PORT_DEF(MercenaryL, Init, MercenaryL_Init)
+
 /* Chars.c */
 PORT_DECL(Chars, CanDrive) /* 1 */
 PORT_DECL(Chars, CreateMainChar) /* 4 */
@@ -912,6 +1063,7 @@ PORT_DECL(Menu, UnLinkUD) /* ? */
 PORT_DECL(Menu, DrawBackMainMenu) /* ? */
 PORT_DECL(Menu, DrawBackSubMenu) /* ? */
 PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
+PORT_DECL(Menu, DrawCircuitMenu) /* ? */
 PORT_DECL(Menu, DrawMenuTitleBar) /* ? */
 PORT_DECL(Menu, StartNewMenu) /* ? */
 PORT_DECL(Menu, VerticalMenu) /* ? */
@@ -920,6 +1072,9 @@ PORT_DECL(Menu, DisableMenuItem) /* ? */
 PORT_DECL(Menu, ShowTextBox) /* ? */
 PORT_DECL(Menu, ShowWarning) /* ? */
 PORT_DECL(Menu, SetTabDefaults) /* ? */
+PORT_DECL(Menu, SliderMenu) /* ? */
+PORT_DECL(Menu, PreviousNextMenu) /* ? */
+PORT_DECL(Menu, PreviousNextMenuSimple) /* ? */
 #define PORTS_MenuBase \
 	PORT_DEF(Menu, LinkLR, Menu_LinkLR) \
 	PORT_DEF(Menu, LinkUD, Menu_LinkUD) \
@@ -928,6 +1083,7 @@ PORT_DECL(Menu, SetTabDefaults) /* ? */
 	PORT_DEF(Menu, DrawBackMainMenu, Menu_DrawBackMainMenu) \
 	PORT_DEF(Menu, DrawBackSubMenu, Menu_DrawBackSubMenu) \
 	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
+	PORT_DEF(Menu, DrawCircuitMenu, Menu_DrawCircuitMenu) \
 	PORT_DEF(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
 	PORT_DEF(Menu, StartNewMenu, Menu_StartNewMenu) \
 	PORT_DEFK(Menu, VerticalMenu, Menu_VerticalMenu) \
@@ -935,7 +1091,10 @@ PORT_DECL(Menu, SetTabDefaults) /* ? */
 	PORT_DEF(Menu, DisableMenuItem, Menu_DisableMenuItem) \
 	PORT_DEF(Menu, ShowTextBox, Menu_ShowTextBox) \
 	PORT_DEF(Menu, ShowWarning, Menu_ShowWarning) \
-	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults)
+	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults) \
+	PORT_DEF(Menu, SliderMenu, Menu_SliderMenu) \
+	PORT_DEF(Menu, PreviousNextMenu, Menu_PreviousNextMenu) \
+	PORT_DEF(Menu, PreviousNextMenuSimple, Menu_PreviousNextMenuSimple)
 
 /* MenuControls.c */
 PORT_DECL(PCMenu, OptionsMenu) /* ? */
@@ -945,10 +1104,29 @@ PORT_DECL(PCMenu, RacerMoveControlsMenu) /* ? */
 PORT_DECL(PCMenu, RacerAttackControlsMenu) /* ? */
 PORT_DECL(PCMenu, WalkCharControlsMenu) /* ? */
 PORT_DECL(PCMenu, UseCharControlsMenu) /* ? */
+PORT_DECL(PCMenu, CreateControlMenu) /* ? */
+PORT_DECL(PCMenu, RefreshControlMenu) /* ? */
+PORT_DECL(PCMenu, ClearKeyEntry) /* ? */
+PORT_DECL(PCMenu, WaitForKeyPress) /* ? */
+PORT_DECL(PCMenu, AbortWaitRedefine) /* ? */
+PORT_DECL(PCMenu, KetRedefineFunc) /* ? */
+PORT_DECL(PCMenu, ResetEverything) /* ? */
+PORT_DECL(PCMenu, ResetToDefault) /* ? */
+PORT_DECL(PCMenu, OptionYesNo) /* ? */
+PORT_DECL(PCMenu, InvertMouse) /* ? */
+PORT_DECL(PCMenu, AlwaysRun) /* ? */
+PORT_DECL(PCMenu, MouseSensitivityChange) /* ? */
+PORT_DECL(PCMenu, MouseSensitivitySliderFocus_Sub) /* ? */
+PORT_DECL(PCMenu, MouseSensitivitySliderFocus_Add) /* ? */
+PORT_DECL(PCMenu, ControllerConfig) /* ? */
+PORT_DECL(PCMenu, ControllerConfigCharMenu) /* ? */
+PORT_DECL(PCMenu, ControllerConfigShipMenu) /* ? */
 PORT_DECL(PCMenu, FillControllerMenu) /* ? */
 PORT_DECL(PCMenu, PlaceMenuOption) /* ? */
 PORT_DECL(PCMenu, SetOptionValue) /* ? */
 PORT_DECL(PCMenu, ShowPadConfig) /* ? */
+PORT_DECL(PCMenu, UpdatePadText) /* ? */
+PORT_DECL(PCMenu, SwitchOption) /* ? */
 #define PORTS_MenuControls \
 	PORT_DEF(PCMenu, OptionsMenu, PCMenu_OptionsMenu) \
 	PORT_DEF(PCMenu, ControlsMenu, PCMenu_ControlsMenu) \
@@ -957,10 +1135,29 @@ PORT_DECL(PCMenu, ShowPadConfig) /* ? */
 	PORT_DEF(PCMenu, RacerAttackControlsMenu, PCMenu_RacerAttackControlsMenu) \
 	PORT_DEF(PCMenu, WalkCharControlsMenu, PCMenu_WalkCharControlsMenu) \
 	PORT_DEF(PCMenu, UseCharControlsMenu, PCMenu_UseCharControlsMenu) \
+	PORT_DEF(PCMenu, CreateControlMenu, PCMenu_CreateControlMenu) \
+	PORT_DEF(PCMenu, RefreshControlMenu, PCMenu_RefreshControlMenu) \
+	PORT_DEF(PCMenu, ClearKeyEntry, PCMenu_ClearKeyEntry) \
+	PORT_DEF(PCMenu, WaitForKeyPress, PCMenu_WaitForKeyPress) \
+	PORT_DEF(PCMenu, AbortWaitRedefine, PCMenu_AbortWaitRedefine) \
+	PORT_DEF(PCMenu, KetRedefineFunc, PCMenu_AbortWaitRedefine) \
+	PORT_DEF(PCMenu, ResetEverything, PCMenu_ResetEverything) \
+	PORT_DEF(PCMenu, ResetToDefault, PCMenu_ResetToDefault) \
+	PORT_DEF(PCMenu, OptionYesNo, PCMenu_OptionYesNo) \
+	PORT_DEF(PCMenu, InvertMouse, PCMenu_InvertMouse) \
+	PORT_DEF(PCMenu, AlwaysRun, PCMenu_AlwaysRun) \
+	PORT_DEF(PCMenu, MouseSensitivityChange, PCMenu_MouseSensitivityChange) \
+	PORT_DEF(PCMenu, MouseSensitivitySliderFocus_Sub, PCMenu_MouseSensitivitySliderFocus_Sub) \
+	PORT_DEF(PCMenu, MouseSensitivitySliderFocus_Add, PCMenu_MouseSensitivitySliderFocus_Add) \
+	PORT_DEF(PCMenu, ControllerConfig, PCMenu_ControllerConfig) \
+	PORT_DEF(PCMenu, ControllerConfigCharMenu, PCMenu_ControllerConfigCharMenu) \
+	PORT_DEF(PCMenu, ControllerConfigShipMenu, PCMenu_ControllerConfigShipMenu) \
 	PORT_DEF(PCMenu, FillControllerMenu, PCMenu_FillControllerMenu) \
 	PORT_DEF(PCMenu, PlaceMenuOption, PCMenu_PlaceMenuOption) \
 	PORT_DEF(PCMenu, SetOptionValue, PCMenu_SetOptionValue) \
-	PORT_DEF(PCMenu, ShowPadConfig, PCMenu_ShowPadConfig)
+	PORT_DEF(PCMenu, ShowPadConfig, PCMenu_ShowPadConfig) \
+	PORT_DEF(PCMenu, UpdatePadText, PCMenu_UpdatePadText) \
+	PORT_DEF(PCMenu, SwitchOption, PCMenu_SwitchOption)
 
 /* MenuHud.c */
 PORT_DECL(Scorer, CreateStatusScorer) /* ? */
@@ -968,6 +1165,7 @@ PORT_DECL(Scorer, CreateCopMeterScorer) /* 1 */
 PORT_DECL(Scorer, CreateMonitorScorer) /* ? */
 PORT_DECL(Scorer, CreateMsgScorer) /* 1 */
 PORT_DECL(Scorer, ShowMissionScorer) /* ? */
+PORT_DECL(Scorer, CreateRadarScorer) /* ? */
 PORT_DECL(Scorer, Blink) /* ? */
 PORT_DECL(Scorer, MissionScorerBar_SetDefaults) /* ? */
 PORT_DECL(CharScorer, CreateRadarScorer) /* 1 */
@@ -981,6 +1179,7 @@ PORT_DECL(RacerScorer, CreateRadarScorer) /* 1 */
 PORT_DECL(RacerScorer, Create) /* 1 */
 PORT_DECL(RacerScorer, CreateRacer) /* 1 */
 PORT_DECL(RacerScorer, ShowScorer) /* ? */
+PORT_DECL(RacerScorer, MultiplayerUpdatePing) /* ? */
 PORT_DECL(RacerScorer, InitMissionScorer) /* ? */
 PORT_DECL(RacerScorer, MissionScorer) /* 1 */
 PORT_DECL(RacerScorer, MissionScorerTeam) /* 1 */
@@ -991,6 +1190,7 @@ PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
 	PORT_DEF(Scorer, CreateMonitorScorer, Scorer_CreateMonitorScorer) \
 	PORT_DEF(Scorer, CreateMsgScorer, Scorer_CreateMsgScorer) \
 	PORT_DEF(Scorer, ShowMissionScorer, Scorer_ShowMissionScorer) \
+	PORT_DEF(Scorer, CreateRadarScorer, Scorer_CreateRadarScorer) \
 	PORT_DEF(Scorer, Blink, Scorer_Blink) \
 	PORT_DEF(Scorer, MissionScorerBar_SetDefaults, Scorer_MissionScorerBar_SetDefaults) \
 	PORT_DEF(CharScorer, CreateRadarScorer, CharScorer_CreateRadarScorer) \
@@ -1004,49 +1204,327 @@ PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
 	PORT_DEF(RacerScorer, Create, Racer_Create) \
 	PORT_DEF(RacerScorer, CreateRacer, Racer_CreateRacer) \
 	PORT_DEF(RacerScorer, ShowScorer, Racer_ShowScorer) \
+	PORT_DEF(RacerScorer, MultiplayerUpdatePing, Racer_MultiplayerUpdatePing) \
 	PORT_DEF(RacerScorer, InitMissionScorer, Racer_InitMissionScorer) \
 	PORT_DEF(RacerScorer, MissionScorer, Racer_MissionScorer) \
 	PORT_DEF(RacerScorer, MissionScorerTeam, Racer_MissionScorerTeam) \
 	PORT_DEF(RacerScorer, UpdateMissionScorer, Racer_UpdateMissionScorer)
 
 /* MenuMain.c */
+PORT_DECL(Menu, SinglePlayerMenu) /* ? */
+PORT_DECL(Menu, AudioMenu) /* ? */
+PORT_DECL(Menu, AudioVolumeSliderFocus_Sub) /* ? */
+PORT_DECL(Menu, AudioVolumeSliderFocus_Add) /* ? */
+PORT_DECL(Menu, AudioVolumeChange) /* ? */
 PORT_DECL(Menu, MainMenu) /* ? */
+PORT_DECL(Menu, CreateMainMenu) /* ? */
 PORT_DECL(Menu, BackToGame) /* ? */
 PORT_DECL(Menu, DrawScorer) /* ? */
 PORT_DECL(Menu, InitMenuSys) /* ? */
 PORT_DECL(Menu, MovieScorer) /* ? */
+PORT_DECL(Menu, Init) /* ? */
 PORT_DECL(Menu, DeathInfo) /* 1 */
+PORT_DECL(Menu, ExitGame) /* ? */
+PORT_DECL(Menu, ByeMenu) /* ? */
+PORT_DECL(Menu, SetSkillMenu) /* ? */
+PORT_DECL(Menu, SetSkill) /* ? */
+PORT_DECL(Menu, StartNewGame) /* ? */
+PORT_DECL(Menu, NewGame) /* ? */
+PORT_DECL(Menu, AuxAbortGame) /* ? */
+PORT_DECL(Menu, AbortGame) /* ? */
 PORT_DECL(Menu, AuxLoadGame) /* ? */
+PORT_DECL(Menu, LoadGame) /* ? */
+PORT_DECL(Menu, LoadLastSavedGame) /* ? */
+PORT_DECL(Menu, AuxSaveGame) /* ? */
+PORT_DECL(Menu, SaveGame) /* ? */
+PORT_DECL(Menu, LoadGameMenu) /* ? */
+PORT_DECL(Menu, SaveGameMenu) /* ? */
+PORT_DECL(Menu, isAutoSave) /* ? */
+PORT_DECL(Menu, ComposeSaveGameName) /* ? */
 PORT_DECL(Menu, Initialize) /* ? */
+PORT_DECL(Menu, CreditsMenu) /* ? */
 PORT_DECL(Menu, GameOver) /* ? */
+PORT_DECL(Menu, DebugMenu) /* ? */
+PORT_DECL(Menu, DebugSet_Level) /* ? */
+PORT_DECL(Menu, DebugSet_Console) /* ? */
+PORT_DECL(Menu, DebugSet_RenderInfo) /* ? */
+PORT_DECL(Menu, DebugSet_SoundInfo) /* ? */
+PORT_DECL(Menu, DebugSet_WorldInfo) /* ? */
+PORT_DECL(Menu, DebugSet_ObjectPool) /* ? */
+PORT_DECL(Menu, DebugSet_SceneRenderTarget) /* ? */
+PORT_DECL(Menu, DebugSet_StencilShadows) /* ? */
+PORT_DECL(Menu, DebugSet_AI) /* ? */
+PORT_DECL(Menu, DebugSet_MapCollision) /* ? */
+PORT_DECL(Menu, DebugSet_XboxPyDebug) /* ? */
+PORT_DECL(Menu, DebugSet_CycleVar) /* ? */
+PORT_DECL(Menu, DebugSet_ChangeMapMenu) /* ? */
+PORT_DECL(Menu, DebugSet_ChangeMapExec) /* ? */
 PORT_DECL(Menu, TVOff) /* ? */
+PORT_DECL(Menu, SetCam) /* 2 */
+PORT_DECL(Menu, TVOffEnd) /* ? */
+PORT_DECL(Menu, BlackTV) /* ? */
 #define PORTS_MenuMain \
+	PORT_DEF(Menu, SinglePlayerMenu, Menu_SinglePlayerMenu) \
+	PORT_DEF(Menu, AudioMenu, Menu_AudioMenu) \
+	PORT_DEF(Menu, AudioVolumeSliderFocus_Sub, Menu_AudioVolumeSliderFocus_Sub) \
+	PORT_DEF(Menu, AudioVolumeSliderFocus_Add, Menu_AudioVolumeSliderFocus_Add) \
+	PORT_DEF(Menu, AudioVolumeChange, Menu_AudioVolumeChange) \
 	PORT_DEF(Menu, MainMenu, Menu_MainMenu) \
+	PORT_DEF(Menu, CreateMainMenu, Menu_CreateMainMenu) \
 	PORT_DEF(Menu, BackToGame, Menu_BackToGame) \
 	PORT_DEF(Menu, DrawScorer, Menu_DrawScorer) \
 	PORT_DEF(Menu, InitMenuSys, Menu_InitMenuSys) \
 	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
+	PORT_DEF(Menu, Init, Menu_Init) \
 	PORT_DEF(Menu, DeathInfo, Menu_DeathInfo) \
+	PORT_DEF(Menu, ExitGame, Menu_ExitGame) \
+	PORT_DEF(Menu, ByeMenu, Menu_ByeMenu) \
+	PORT_DEF(Menu, SetSkillMenu, Menu_SetSkillMenu) \
+	PORT_DEF(Menu, SetSkill, Menu_SetSkill) \
+	PORT_DEF(Menu, StartNewGame, Menu_StartNewGame) \
+	PORT_DEF(Menu, NewGame, Menu_NewGame) \
+	PORT_DEF(Menu, AuxAbortGame, Menu_AuxAbortGame) \
+	PORT_DEF(Menu, AbortGame, Menu_AbortGame) \
 	PORT_DEF(Menu, AuxLoadGame, Menu_AuxLoadGame) \
+	PORT_DEF(Menu, LoadGame, Menu_LoadGame) \
+	PORT_DEF(Menu, LoadLastSavedGame, Menu_LoadLastSavedGame) \
+	PORT_DEF(Menu, AuxSaveGame, Menu_AuxSaveGame) \
+	PORT_DEF(Menu, SaveGame, Menu_SaveGame) \
+	PORT_DEF(Menu, LoadGameMenu, Menu_LoadGameMenu) \
+	PORT_DEF(Menu, SaveGameMenu, Menu_SaveGameMenu) \
+	PORT_DEF(Menu, isAutoSave, Menu_isAutoSave) \
+	PORT_DEF(Menu, ComposeSaveGameName, Menu_ComposeSaveGameName) \
 	PORT_DEF(Menu, Initialize, Menu_Initialize) \
+	PORT_DEF(Menu, CreditsMenu, Menu_CreditsMenu) \
 	PORT_DEF(Menu, GameOver, Menu_GameOver) \
-	PORT_DEF(Menu, TVOff, Menu_TVOff)
+	PORT_DEF(Menu, DebugMenu, Menu_DebugMenu) \
+	PORT_DEF(Menu, DebugSet_Level, Menu_DebugSet_Level) \
+	PORT_DEF(Menu, DebugSet_Console, Menu_DebugSet_Console) \
+	PORT_DEF(Menu, DebugSet_RenderInfo, Menu_DebugSet_RenderInfo) \
+	PORT_DEF(Menu, DebugSet_SoundInfo, Menu_DebugSet_SoundInfo) \
+	PORT_DEF(Menu, DebugSet_WorldInfo, Menu_DebugSet_WorldInfo) \
+	PORT_DEF(Menu, DebugSet_ObjectPool, Menu_DebugSet_ObjectPool) \
+	PORT_DEF(Menu, DebugSet_SceneRenderTarget, Menu_DebugSet_SceneRenderTarget) \
+	PORT_DEF(Menu, DebugSet_StencilShadows, Menu_DebugSet_StencilShadows) \
+	PORT_DEF(Menu, DebugSet_AI, Menu_DebugSet_AI) \
+	PORT_DEF(Menu, DebugSet_MapCollision, Menu_DebugSet_MapCollision) \
+	PORT_DEF(Menu, DebugSet_XboxPyDebug, Menu_DebugSet_XboxPyDebug) \
+	PORT_DEF(Menu, DebugSet_CycleVar, Menu_DebugSet_CycleVar) \
+	PORT_DEF(Menu, DebugSet_ChangeMapMenu, Menu_DebugSet_ChangeMapMenu) \
+	PORT_DEF(Menu, DebugSet_ChangeMapExec, Menu_DebugSet_ChangeMapExec) \
+	PORT_DEF(Menu, TVOff, Menu_TVOff) \
+	PORT_DEF(Menu, SetCam, Menu_SetCam) \
+	PORT_DEF(Menu, TVOffEnd, Menu_TVOffEnd) \
+	PORT_DEF(Menu, BlackTV, Menu_BlackTV)
 
 /* MenuMission.c */
+PORT_DECL(Menu, MenuMissionInfo) /* ? */
+PORT_DECL(Menu, MenuMissionInfo_Left) /* ? */
+PORT_DECL(Menu, MenuMissionInfo_Right) /* ? */
+PORT_DECL(Menu, GoPrimaryMission) /* ? */
+PORT_DECL(Menu, GoCrazyDeal) /* ? */
+PORT_DECL(Menu, GoNotes) /* ? */
 PORT_DECL(Menu, EnterMissionInfo) /* ? */
+PORT_DECL(Menu, ExitMissionInfo) /* ? */
+PORT_DECL(Menu, MenuObjetive) /* ? */
+PORT_DECL(Menu, CrazyDealObjetive) /* ? */
+PORT_DECL(Menu, MissionNotesText) /* ? */
 #define PORTS_MenuMission \
-	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo)
+	PORT_DEF(Menu, MenuMissionInfo, Menu_MenuMissionInfo) \
+	PORT_DEF(Menu, MenuMissionInfo_Left, Menu_MenuMissionInfo_Left) \
+	PORT_DEF(Menu, MenuMissionInfo_Right, Menu_MenuMissionInfo_Right) \
+	PORT_DEF(Menu, GoPrimaryMission, Menu_GoPrimaryMission) \
+	PORT_DEF(Menu, GoCrazyDeal, Menu_GoCrazyDeal) \
+	PORT_DEF(Menu, GoNotes, Menu_GoNotes) \
+	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo) \
+	PORT_DEF(Menu, ExitMissionInfo, Menu_ExitMissionInfo) \
+	PORT_DEF(Menu, MenuObjetive, Menu_MenuObjetive) \
+	PORT_DEF(Menu, CrazyDealObjetive, Menu_CrazyDealObjetive) \
+	PORT_DEF(Menu, MissionNotesText, Menu_MissionNotesText)
 
 /* MenuNet.c */
 PORT_DECL(PCMenu, MultiPlayerMenu) /* ? */
+PORT_DECL(PCMenu, MenuRestartServer) /* ? */
+PORT_DECL(PCMenu, MenuJoinGame) /* ? */
 PORT_DECL(PCMenu, TryJoin) /* ? */
+PORT_DECL(PCMenu, JoinPassword) /* ? */
 PORT_DECL(PCMenu, AskPassword) /* ? */
 PORT_DECL(PCMenu, ShowConectionStatus) /* ? */
+PORT_DECL(PCMenu, AbortJoin) /* ? */
+PORT_DECL(PCMenu, SpecifyIPMenu) /* ? */
+PORT_DECL(PCMenu, AbortMultiplayerGame) /* ? */
+PORT_DECL(PCMenu, NetDefaultContentMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinGameMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinInternetMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinLocalMenu) /* ? */
+PORT_DECL(PCMenu, NetJoinIPMenu) /* ? */
+PORT_DECL(PCMenu, OnNetBrowse) /* ? */
+PORT_DECL(PCMenu, BrowserSortExecute) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenu) /* ? */
+PORT_DECL(PCMenu, MasterCommand) /* ? */
+PORT_DECL(PCMenu, BrowseINetMenu) /* ? */
+PORT_DECL(PCMenu, InetMasterBrowse) /* ? */
+PORT_DECL(PCMenu, BrowserMenuBack) /* ? */
+PORT_DECL(PCMenu, RefreshBrowseMenu) /* ? */
+PORT_DECL(PCMenu, RefreshBrowseMenuButton) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuPrevious) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuNext) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuPgUp) /* ? */
+PORT_DECL(PCMenu, BrowseLocalMenuPgDown) /* ? */
+PORT_DECL(PCMenu, BrowseLocalJoin) /* ? */
+PORT_DECL(PCMenu, UnicodeParse) /* ? */
+PORT_DECL(PCMenu, CreateBrowseMenu) /* ? */
+PORT_DECL(PCMenu, BrowserColumnBack_Click) /* ? */
+PORT_DECL(PCMenu, BrowserSliderGainFocus) /* ? */
+PORT_DECL(PCMenu, BrowserSliderLooseFocus) /* ? */
+PORT_DECL(PCMenu, BrowserSliderOnRender) /* ? */
+PORT_DECL(PCMenu, UpdateBrowseSlider) /* ? */
+PORT_DECL(PCMenu, UpdateBrowseMenu) /* ? */
+PORT_DECL(PCMenu, NetCreateGameMenu) /* ? */
+PORT_DECL(PCMenu, MenuInitServer) /* ? */
+PORT_DECL(PCMenu, AdvancedServer) /* ? */
+PORT_DECL(PCMenu, BackToCreateServer) /* ? */
+PORT_DECL(PCMenu, SwitchForceVehicle) /* ? */
+PORT_DECL(PCMenu, SwitchUsePass) /* ? */
+PORT_DECL(PCMenu, RunDedicatedServer) /* ? */
+PORT_DECL(PCMenu, SetDataRate) /* ? */
+PORT_DECL(PCMenu, GetDataRateText) /* ? */
+PORT_DECL(PCMenu, ServerTypePrev) /* ? */
+PORT_DECL(PCMenu, ServerTypeNext) /* ? */
+PORT_DECL(PCMenu, UpdateServerType) /* ? */
+PORT_DECL(PCMenu, ServerTypeInfo) /* ? */
+PORT_DECL(PCMenu, MapUp) /* ? */
+PORT_DECL(PCMenu, MapDown) /* ? */
+PORT_DECL(PCMenu, MapSliderGainFocus) /* ? */
+PORT_DECL(PCMenu, MapSliderLooseFocus) /* ? */
+PORT_DECL(PCMenu, MapSliderOnRender) /* ? */
+PORT_DECL(PCMenu, UpdateMapSlider) /* ? */
+PORT_DECL(PCMenu, UpdateMapList) /* ? */
+PORT_DECL(PCMenu, MapChoose) /* ? */
+PORT_DECL(PCMenu, MapPreviewOn) /* ? */
+PORT_DECL(PCMenu, MapPreviewOff) /* ? */
+PORT_DECL(PCMenu, ServerNameGainFocus) /* ? */
+PORT_DECL(PCMenu, ServerNameLooseFocus) /* ? */
+PORT_DECL(PCMenu, ServerNameOnRender) /* ? */
+PORT_DECL(PCMenu, PlayersNumberGainFocus) /* ? */
+PORT_DECL(PCMenu, PlayersNumberLooseFocus) /* ? */
+PORT_DECL(PCMenu, PlayersNumberOnRender) /* ? */
+PORT_DECL(PCMenu, FragLimitGainFocus) /* ? */
+PORT_DECL(PCMenu, FragLimitLooseFocus) /* ? */
+PORT_DECL(PCMenu, FragLimitOnRender) /* ? */
 #define PORTS_MenuNet \
 	PORT_DEF(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
-	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin) \
+	PORT_DEF(PCMenu, MenuRestartServer, PCMenu_MenuRestartServer) \
+	PORT_DEF(PCMenu, MenuJoinGame, PCMenu_MenuJoinGame) \
+	PORT_DEF(PCMenu, TryJoin, PCMenu_TryJoin) \
+	PORT_DEF(PCMenu, JoinPassword, PCMenu_JoinPassword) \
 	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword) \
-	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus)
+	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus) \
+	PORT_DEF(PCMenu, AbortJoin, PCMenu_AbortJoin) \
+	PORT_DEF(PCMenu, SpecifyIPMenu, PCMenu_SpecifyIPMenu) \
+	PORT_DEF(PCMenu, AbortMultiplayerGame, PCMenu_AbortMultiplayerGame) \
+	PORT_DEF(PCMenu, NetDefaultContentMenu, PCMenu_NetDefaultContentMenu) \
+	PORT_DEF(PCMenu, NetJoinGameMenu, PCMenu_NetJoinGameMenu) \
+	PORT_DEF(PCMenu, NetJoinInternetMenu, PCMenu_NetJoinInternetMenu) \
+	PORT_DEF(PCMenu, NetJoinLocalMenu, PCMenu_NetJoinLocalMenu) \
+	PORT_DEF(PCMenu, NetJoinIPMenu, PCMenu_NetJoinIPMenu) \
+	PORT_DEF(PCMenu, OnNetBrowse, PCMenu_OnNetBrowse) \
+	PORT_DEF(PCMenu, BrowserSortExecute, PCMenu_BrowserSortExecute) \
+	PORT_DEF(PCMenu, BrowseLocalMenu, PCMenu_BrowseLocalMenu) \
+	PORT_DEF(PCMenu, MasterCommand, PCMenu_MasterCommand) \
+	PORT_DEF(PCMenu, BrowseINetMenu, PCMenu_BrowseINetMenu) \
+	PORT_DEF(PCMenu, InetMasterBrowse, PCMenu_InetMasterBrowse) \
+	PORT_DEF(PCMenu, BrowserMenuBack, PCMenu_BrowserMenuBack) \
+	PORT_DEF(PCMenu, RefreshBrowseMenu, PCMenu_RefreshBrowseMenu) \
+	PORT_DEF(PCMenu, RefreshBrowseMenuButton, PCMenu_RefreshBrowseMenuButton) \
+	PORT_DEF(PCMenu, BrowseLocalMenuPrevious, PCMenu_BrowseLocalMenuPrevious) \
+	PORT_DEF(PCMenu, BrowseLocalMenuNext, PCMenu_BrowseLocalMenuNext) \
+	PORT_DEF(PCMenu, BrowseLocalMenuPgUp, PCMenu_BrowseLocalMenuPgUp) \
+	PORT_DEF(PCMenu, BrowseLocalMenuPgDown, PCMenu_BrowseLocalMenuPgDown) \
+	PORT_DEF(PCMenu, BrowseLocalJoin, PCMenu_BrowseLocalJoin) \
+	PORT_DEF(PCMenu, UnicodeParse, PCMenu_UnicodeParse) \
+	PORT_DEF(PCMenu, CreateBrowseMenu, PCMenu_CreateBrowseMenu) \
+	PORT_DEF(PCMenu, BrowserColumnBack_Click, PCMenu_BrowserColumnBack_Click) \
+	PORT_DEF(PCMenu, BrowserSliderGainFocus, PCMenu_BrowserSliderGainFocus) \
+	PORT_DEF(PCMenu, BrowserSliderLooseFocus, PCMenu_BrowserSliderLooseFocus) \
+	PORT_DEF(PCMenu, BrowserSliderOnRender, PCMenu_BrowserSliderOnRender) \
+	PORT_DEF(PCMenu, UpdateBrowseSlider, PCMenu_UpdateBrowseSlider) \
+	PORT_DEF(PCMenu, UpdateBrowseMenu, PCMenu_UpdateBrowseMenu) \
+	PORT_DEF(PCMenu, NetCreateGameMenu, PCMenu_NetCreateGameMenu) \
+	PORT_DEF(PCMenu, MenuInitServer, PCMenu_MenuInitServer) \
+	PORT_DEF(PCMenu, AdvancedServer, PCMenu_AdvancedServer) \
+	PORT_DEF(PCMenu, BackToCreateServer, PCMenu_BackToCreateServer) \
+	PORT_DEF(PCMenu, SwitchForceVehicle, PCMenu_SwitchForceVehicle) \
+	PORT_DEF(PCMenu, SwitchUsePass, PCMenu_SwitchUsePass) \
+	PORT_DEF(PCMenu, RunDedicatedServer, PCMenu_RunDedicatedServer) \
+	PORT_DEF(PCMenu, SetDataRate, PCMenu_SetDataRate) \
+	PORT_DEF(PCMenu, GetDataRateText, PCMenu_GetDataRateText) \
+	PORT_DEF(PCMenu, ServerTypePrev, PCMenu_ServerTypePrev) \
+	PORT_DEF(PCMenu, ServerTypeNext, PCMenu_ServerTypeNext) \
+	PORT_DEF(PCMenu, UpdateServerType, PCMenu_UpdateServerType) \
+	PORT_DEF(PCMenu, ServerTypeInfo, PCMenu_ServerTypeInfo) \
+	PORT_DEF(PCMenu, MapUp, PCMenu_MapUp) \
+	PORT_DEF(PCMenu, MapDown, PCMenu_MapDown) \
+	PORT_DEF(PCMenu, MapSliderGainFocus, PCMenu_MapSliderGainFocus) \
+	PORT_DEF(PCMenu, MapSliderLooseFocus, PCMenu_MapSliderLooseFocus) \
+	PORT_DEF(PCMenu, MapSliderOnRender, PCMenu_MapSliderOnRender) \
+	PORT_DEF(PCMenu, UpdateMapSlider, PCMenu_UpdateMapSlider) \
+	PORT_DEF(PCMenu, UpdateMapList, PCMenu_UpdateMapList) \
+	PORT_DEF(PCMenu, MapChoose, PCMenu_MapChoose) \
+	PORT_DEF(PCMenu, MapPreviewOn, PCMenu_MapPreviewOn) \
+	PORT_DEF(PCMenu, MapPreviewOff, PCMenu_MapPreviewOff) \
+	PORT_DEF(PCMenu, ServerNameGainFocus, PCMenu_ServerNameGainFocus) \
+	PORT_DEF(PCMenu, ServerNameLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEF(PCMenu, ServerNameOnRender, PCMenu_ServerNameOnRender) \
+	PORT_DEF(PCMenu, PlayersNumberGainFocus, PCMenu_PlayersNumberGainFocus) \
+	PORT_DEF(PCMenu, PlayersNumberLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEF(PCMenu, PlayersNumberOnRender, PCMenu_PlayersNumberOnRender) \
+	PORT_DEF(PCMenu, FragLimitGainFocus, PCMenu_FragLimitGainFocus) \
+	PORT_DEF(PCMenu, FragLimitLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEF(PCMenu, FragLimitOnRender, PCMenu_FragLimitOnRender)
+
+/* MenuVideo.c */
+PORT_DECL(PCMenu, VideoMenu) /* ? */
+PORT_DECL(PCMenu, VideoMenuBack) /* ? */
+PORT_DECL(PCMenu, VideoDefaults) /* ? */
+PORT_DECL(PCMenu, ApplyChanges) /* ? */
+PORT_DECL(PCMenu, ChangeVideoMode) /* ? */
+PORT_DECL(PCMenu, PrevVideoMode) /* ? */
+PORT_DECL(PCMenu, NextVideoMode) /* ? */
+PORT_DECL(PCMenu, ChangeTextureFilter) /* ? */
+PORT_DECL(PCMenu, ChangeTextureDetail) /* ? */
+PORT_DECL(PCMenu, ChangeShadowsDetail) /* ? */
+PORT_DECL(PCMenu, ChangeVSync) /* ? */
+PORT_DECL(PCMenu, ChangeLock) /* ? */
+PORT_DECL(PCMenu, ChangeFog) /* ? */
+PORT_DECL(PCMenu, ChangeBloom) /* ? */
+PORT_DECL(PCMenu, ChangeMotionBlur) /* ? */
+PORT_DECL(PCMenu, ChangeDuDv) /* ? */
+PORT_DECL(PCMenu, ChangeGamma) /* ? */
+PORT_DECL(PCMenu, GammaSliderFocus_Sub) /* ? */
+PORT_DECL(PCMenu, GammaSliderFocus_Add) /* ? */
+PORT_DECL(PCMenu, ChangeDisplay) /* ? */
+#define PORTS_MenuVideo \
+	PORT_DEF(PCMenu, VideoMenu, PCMenu_VideoMenu) \
+	PORT_DEF(PCMenu, VideoMenuBack, PCMenu_VideoMenuBack) \
+	PORT_DEF(PCMenu, VideoDefaults, PCMenu_VideoDefaults) \
+	PORT_DEF(PCMenu, ApplyChanges, PCMenu_ApplyChanges) \
+	PORT_DEF(PCMenu, ChangeVideoMode, PCMenu_ChangeVideoMode) \
+	PORT_DEF(PCMenu, PrevVideoMode, PCMenu_PrevVideoMode) \
+	PORT_DEF(PCMenu, NextVideoMode, PCMenu_NextVideoMode) \
+	PORT_DEF(PCMenu, ChangeTextureFilter, PCMenu_ChangeTextureFilter) \
+	PORT_DEF(PCMenu, ChangeTextureDetail, PCMenu_ChangeTextureDetail) \
+	PORT_DEF(PCMenu, ChangeShadowsDetail, PCMenu_ChangeShadowsDetail) \
+	PORT_DEF(PCMenu, ChangeVSync, PCMenu_ChangeVSync) \
+	PORT_DEF(PCMenu, ChangeLock, PCMenu_ChangeLock) \
+	PORT_DEF(PCMenu, ChangeFog, PCMenu_ChangeFog) \
+	PORT_DEF(PCMenu, ChangeBloom, PCMenu_ChangeBloom) \
+	PORT_DEF(PCMenu, ChangeMotionBlur, PCMenu_ChangeMotionBlur) \
+	PORT_DEF(PCMenu, ChangeDuDv, PCMenu_ChangeDuDv) \
+	PORT_DEF(PCMenu, ChangeGamma, PCMenu_ChangeGamma) \
+	PORT_DEF(PCMenu, GammaSliderFocus_Sub, PCMenu_GammaSliderFocus_Sub) \
+	PORT_DEF(PCMenu, GammaSliderFocus_Add, PCMenu_GammaSliderFocus_Add) \
+	PORT_DEF(PCMenu, ChangeDisplay, PCMenu_ChangeDisplay)
 
 /* MenuVideoVars.c */
 PORT_DECL(PCMenu, Apply_SetActive) /* 2 */
@@ -2514,53 +2992,381 @@ PORT_DECL(ShipMaker, InitAnmShip) /* ? */
 	PORT_DEFK(ShipMaker, InitAnmShip, ShipMaker_InitAnmShip)
 
 /* Sounds.c */
+PORT_DECL(BankDirectorSound, LoadSounds) /* ? */
+PORT_DECL(BankDirectorSound, SetSounds) /* ? */
+PORT_DECL(BankDirectorSound, TalkSnd) /* ? */
+PORT_DECL(BankDirectorSound, Talk0Snd) /* ? */
+PORT_DECL(BankDirectorSound, Talk1Snd) /* ? */
+PORT_DECL(BankDirectorSound, Talk2Snd) /* ? */
 PORT_DECL(BankDirectorSound, InitLoops) /* 1 */
+PORT_DECL(BankDirectorSound, Init) /* 1 */
+PORT_DECL(BankMasterSound, LoadSounds) /* ? */
+PORT_DECL(BankMasterSound, SetSounds) /* ? */
+PORT_DECL(BankMasterSound, TalkSnd) /* ? */
+PORT_DECL(BankMasterSound, Talk0Snd) /* ? */
+PORT_DECL(BankMasterSound, Talk1Snd) /* ? */
 PORT_DECL(BankMasterSound, InitLoops) /* 1 */
+PORT_DECL(BankMasterSound, Init) /* 1 */
+PORT_DECL(BertoSound, LoadSounds) /* ? */
+PORT_DECL(BertoSound, SetSounds) /* ? */
+PORT_DECL(BertoSound, TalkSnd) /* ? */
+PORT_DECL(BertoSound, Talk0Snd) /* ? */
+PORT_DECL(BertoSound, Talk1Snd) /* ? */
+PORT_DECL(BertoSound, Talk2Snd) /* ? */
 PORT_DECL(BertoSound, InitLoops) /* 1 */
+PORT_DECL(BertoSound, Init) /* 1 */
+PORT_DECL(BettySound, LoadSounds) /* ? */
+PORT_DECL(BettySound, SetSounds) /* ? */
+PORT_DECL(BettySound, TalkSnd) /* ? */
+PORT_DECL(BettySound, Talk0Snd) /* ? */
+PORT_DECL(BettySound, Talk1Snd) /* ? */
+PORT_DECL(BettySound, Talk2Snd) /* ? */
 PORT_DECL(BettySound, InitLoops) /* 1 */
+PORT_DECL(BettySound, Init) /* 1 */
+PORT_DECL(BishopSound, LoadSounds) /* ? */
+PORT_DECL(BishopSound, SetSounds) /* ? */
+PORT_DECL(BishopSound, TalkSnd) /* ? */
+PORT_DECL(BishopSound, Talk0Snd) /* ? */
+PORT_DECL(BishopSound, Talk1Snd) /* ? */
+PORT_DECL(BishopSound, Talk2Snd) /* ? */
 PORT_DECL(BishopSound, InitLoops) /* 1 */
+PORT_DECL(BishopSound, Init) /* 1 */
+PORT_DECL(BossSound, LoadSounds) /* ? */
+PORT_DECL(BossSound, SetSounds) /* ? */
+PORT_DECL(BossSound, TalkSnd) /* ? */
+PORT_DECL(BossSound, Talk0Snd) /* ? */
+PORT_DECL(BossSound, Talk1Snd) /* ? */
+PORT_DECL(BossSound, Talk2Snd) /* ? */
 PORT_DECL(BossSound, InitLoops) /* 1 */
+PORT_DECL(BossSound, Init) /* 1 */
+PORT_DECL(CrazyGamblerSound, LoadSounds) /* ? */
+PORT_DECL(CrazyGamblerSound, SetSounds) /* ? */
+PORT_DECL(CrazyGamblerSound, TalkSnd) /* ? */
+PORT_DECL(CrazyGamblerSound, Talk0Snd) /* ? */
+PORT_DECL(CrazyGamblerSound, Talk1Snd) /* ? */
+PORT_DECL(CrazyGamblerSound, Talk2Snd) /* ? */
 PORT_DECL(CrazyGamblerSound, InitLoops) /* 1 */
+PORT_DECL(CrazyGamblerSound, Init) /* 1 */
+PORT_DECL(DesktopSound, LoadSounds) /* ? */
+PORT_DECL(DesktopSound, SetSounds) /* ? */
+PORT_DECL(DesktopSound, TalkSnd) /* ? */
+PORT_DECL(DesktopSound, Talk0Snd) /* ? */
 PORT_DECL(DesktopSound, InitLoops) /* 1 */
+PORT_DECL(DesktopSound, Init) /* 1 */
+PORT_DECL(DtritusSound, LoadSounds) /* ? */
+PORT_DECL(DtritusSound, SetSounds) /* ? */
+PORT_DECL(DtritusSound, TalkSnd) /* ? */
+PORT_DECL(DtritusSound, Talk0Snd) /* ? */
+PORT_DECL(DtritusSound, Talk1Snd) /* ? */
+PORT_DECL(DtritusSound, Talk2Snd) /* ? */
+PORT_DECL(DtritusSound, Talk3Snd) /* ? */
+PORT_DECL(DtritusSound, Talk4Snd) /* ? */
+PORT_DECL(DtritusSound, Talk5Snd) /* ? */
 PORT_DECL(DtritusSound, InitLoops) /* 1 */
+PORT_DECL(DtritusSound, Init) /* 1 */
+PORT_DECL(FunctionarySound, LoadSounds) /* ? */
+PORT_DECL(FunctionarySound, SetSounds) /* ? */
+PORT_DECL(FunctionarySound, TalkSnd) /* ? */
+PORT_DECL(FunctionarySound, Talk0Snd) /* ? */
+PORT_DECL(FunctionarySound, Talk2Snd) /* ? */
+PORT_DECL(FunctionarySound, Talk1Snd) /* ? */
 PORT_DECL(FunctionarySound, InitLoops) /* 1 */
+PORT_DECL(FunctionarySound, Init) /* 1 */
+PORT_DECL(GateKeeperSound, LoadSounds) /* ? */
+PORT_DECL(GateKeeperSound, SetSounds) /* ? */
+PORT_DECL(GateKeeperSound, TalkSnd) /* ? */
+PORT_DECL(GateKeeperSound, TalkNoSnd) /* ? */
 PORT_DECL(GateKeeperSound, InitLoops) /* 1 */
+PORT_DECL(GateKeeperSound, Init) /* 1 */
+PORT_DECL(GearSound, LoadSounds) /* ? */
+PORT_DECL(GearSound, SetSounds) /* ? */
+PORT_DECL(GearSound, TalkSnd) /* ? */
+PORT_DECL(GearSound, Init) /* 1 */
 PORT_DECL(GearSound, InitLoops) /* 1 */
+PORT_DECL(HumanSound, LoadSounds) /* ? */
+PORT_DECL(HumanSound, SetSounds) /* ? */
+PORT_DECL(HumanSound, TalkSnd) /* ? */
+PORT_DECL(HumanSound, Talk0Snd) /* ? */
+PORT_DECL(HumanSound, Init) /* 1 */
+PORT_DECL(HumphreySound, LoadSounds) /* ? */
+PORT_DECL(HumphreySound, SetSounds) /* ? */
+PORT_DECL(HumphreySound, TalkSnd) /* ? */
+PORT_DECL(HumphreySound, Talk0Snd) /* ? */
+PORT_DECL(HumphreySound, Talk1Snd) /* ? */
+PORT_DECL(HumphreySound, Talk2Snd) /* ? */
+PORT_DECL(HumphreySound, Init) /* 1 */
+PORT_DECL(MaintenanceSound, LoadSounds) /* ? */
+PORT_DECL(MaintenanceSound, SetSounds) /* ? */
+PORT_DECL(MaintenanceSound, TalkSnd) /* ? */
 PORT_DECL(MaintenanceSound, InitLoops) /* 1 */
+PORT_DECL(MaintenanceSound, Init) /* 1 */
+PORT_DECL(MayorSound, LoadSounds) /* ? */
+PORT_DECL(MayorSound, SetSounds) /* ? */
+PORT_DECL(MayorSound, TalkSnd) /* ? */
+PORT_DECL(MayorSound, Talk0Snd) /* ? */
+PORT_DECL(MayorSound, Talk1Snd) /* ? */
+PORT_DECL(MayorSound, Talk2Snd) /* ? */
 PORT_DECL(MayorSound, InitLoops) /* 1 */
+PORT_DECL(MayorSound, Init) /* 1 */
+PORT_DECL(MercenarySound, LoadSounds) /* ? */
+PORT_DECL(MercenarySound, SetSounds) /* ? */
+PORT_DECL(MercenarySound, Init) /* 2 */
+PORT_DECL(MessengerSound, LoadSounds) /* ? */
+PORT_DECL(MessengerSound, SetSounds) /* ? */
+PORT_DECL(MessengerSound, TalkSnd) /* ? */
+PORT_DECL(MessengerSound, Talk0Snd) /* ? */
+PORT_DECL(MessengerSound, Talk1Snd) /* ? */
 PORT_DECL(MessengerSound, InitLoops) /* 1 */
+PORT_DECL(MessengerSound, Init) /* 1 */
+PORT_DECL(NurseSound, LoadSounds) /* ? */
+PORT_DECL(NurseSound, SetSounds) /* ? */
+PORT_DECL(NurseSound, TalkSnd) /* ? */
+PORT_DECL(NurseSound, Talk0Snd) /* ? */
+PORT_DECL(NurseSound, Talk1Snd) /* ? */
 PORT_DECL(NurseSound, InitLoops) /* 1 */
+PORT_DECL(NurseSound, Init) /* 1 */
+PORT_DECL(PoliceBossSound, LoadSounds) /* ? */
+PORT_DECL(PoliceBossSound, SetSounds) /* ? */
+PORT_DECL(PoliceBossSound, TalkSnd) /* ? */
+PORT_DECL(PoliceBossSound, Talk0Snd) /* ? */
+PORT_DECL(PoliceBossSound, Talk1Snd) /* ? */
+PORT_DECL(PoliceBossSound, Talk2Snd) /* ? */
+PORT_DECL(PoliceBossSound, Init) /* 1 */
+PORT_DECL(PoliceSound, LoadSounds) /* ? */
+PORT_DECL(PoliceSound, SetSounds) /* ? */
+PORT_DECL(PoliceSound, TalkSnd) /* ? */
+PORT_DECL(PoliceSound, Talk0Snd) /* ? */
+PORT_DECL(PoliceSound, Talk1Snd) /* ? */
+PORT_DECL(PoliceSound, Talk2Snd) /* ? */
 PORT_DECL(PoliceSound, InitLoops) /* 1 */
+PORT_DECL(PoliceSound, Init) /* 1 */
+PORT_DECL(RustySound, LoadSounds) /* ? */
+PORT_DECL(RustySound, SetSounds) /* ? */
+PORT_DECL(RustySound, TalkSnd) /* ? */
+PORT_DECL(RustySound, Talk0Snd) /* ? */
+PORT_DECL(RustySound, Talk1Snd) /* ? */
+PORT_DECL(RustySound, Talk2Snd) /* ? */
 PORT_DECL(RustySound, InitLoops) /* 1 */
+PORT_DECL(RustySound, Init) /* 1 */
+PORT_DECL(SebastianSound, LoadSounds) /* ? */
+PORT_DECL(SebastianSound, SetSounds) /* ? */
+PORT_DECL(SebastianSound, TalkSnd) /* ? */
+PORT_DECL(SebastianSound, Talk1Snd) /* ? */
+PORT_DECL(SebastianSound, Talk2Snd) /* ? */
+PORT_DECL(SebastianSound, Talk3Snd) /* ? */
+PORT_DECL(SebastianSound, Talk4Snd) /* ? */
 PORT_DECL(SebastianSound, InitLoops) /* 1 */
+PORT_DECL(SebastianSound, Init) /* 1 */
+PORT_DECL(SentinelSound, LoadSounds) /* ? */
+PORT_DECL(SentinelSound, SetSounds) /* ? */
+PORT_DECL(SentinelSound, TalkSnd) /* ? */
+PORT_DECL(SentinelSound, Talk0Snd) /* ? */
+PORT_DECL(SentinelSound, Talk1Snd) /* ? */
 PORT_DECL(SentinelSound, InitLoops) /* 1 */
+PORT_DECL(SentinelSound, Init) /* 1 */
+PORT_DECL(SputnikJunkyardSound, LoadSounds) /* ? */
+PORT_DECL(SputnikJunkyardSound, SetSounds) /* ? */
+PORT_DECL(SputnikJunkyardSound, TalkSnd) /* ? */
 PORT_DECL(SputnikJunkyardSound, InitLoops) /* 1 */
+PORT_DECL(SputnikJunkyardSound, Init) /* 1 */
+PORT_DECL(SputnikSound, LoadSounds) /* ? */
+PORT_DECL(SputnikSound, SetSounds) /* ? */
+PORT_DECL(SputnikSound, TalkSnd) /* ? */
 PORT_DECL(SputnikSound, InitLoops) /* 1 */
+PORT_DECL(SputnikSound, Init) /* 1 */
+PORT_DECL(TestCSound, LoadSounds) /* ? */
+PORT_DECL(TestCSound, SetSounds) /* ? */
+PORT_DECL(TestCSound, TalkSnd) /* ? */
 PORT_DECL(TestCSound, InitLoops) /* 1 */
+PORT_DECL(TestCSound, Init) /* 1 */
 #define PORTS_Sounds \
+	PORT_DEFK(BankDirectorSound, LoadSounds, BankDirectorSound_LoadSounds) \
+	PORT_DEFK(BankDirectorSound, SetSounds, BankDirectorSound_SetSounds) \
+	PORT_DEFK(BankDirectorSound, TalkSnd, BankDirectorSound_TalkSnd) \
+	PORT_DEFK(BankDirectorSound, Talk0Snd, BankDirectorSound_Talk0Snd) \
+	PORT_DEFK(BankDirectorSound, Talk1Snd, BankDirectorSound_Talk1Snd) \
+	PORT_DEFK(BankDirectorSound, Talk2Snd, BankDirectorSound_Talk2Snd) \
 	PORT_DEF(BankDirectorSound, InitLoops, BankDirectorSound_InitLoops) \
+	PORT_DEF(BankDirectorSound, Init, BankDirectorSound_Init) \
+	PORT_DEFK(BankMasterSound, LoadSounds, BankMasterSound_LoadSounds) \
+	PORT_DEFK(BankMasterSound, SetSounds, BankMasterSound_SetSounds) \
+	PORT_DEFK(BankMasterSound, TalkSnd, BankMasterSound_TalkSnd) \
+	PORT_DEFK(BankMasterSound, Talk0Snd, BankMasterSound_Talk0Snd) \
+	PORT_DEFK(BankMasterSound, Talk1Snd, BankMasterSound_Talk1Snd) \
 	PORT_DEF(BankMasterSound, InitLoops, BankMasterSound_InitLoops) \
+	PORT_DEF(BankMasterSound, Init, BankMasterSound_Init) \
+	PORT_DEFK(BertoSound, LoadSounds, BertoSound_LoadSounds) \
+	PORT_DEFK(BertoSound, SetSounds, BertoSound_SetSounds) \
+	PORT_DEFK(BertoSound, TalkSnd, BertoSound_TalkSnd) \
+	PORT_DEFK(BertoSound, Talk0Snd, BertoSound_Talk0Snd) \
+	PORT_DEFK(BertoSound, Talk1Snd, BertoSound_Talk1Snd) \
+	PORT_DEFK(BertoSound, Talk2Snd, BertoSound_Talk2Snd) \
 	PORT_DEF(BertoSound, InitLoops, BertoSound_InitLoops) \
+	PORT_DEF(BertoSound, Init, BertoSound_Init) \
+	PORT_DEFK(BettySound, LoadSounds, BettySound_LoadSounds) \
+	PORT_DEFK(BettySound, SetSounds, BettySound_SetSounds) \
+	PORT_DEFK(BettySound, TalkSnd, BettySound_TalkSnd) \
+	PORT_DEFK(BettySound, Talk0Snd, BettySound_Talk0Snd) \
+	PORT_DEFK(BettySound, Talk1Snd, BettySound_Talk1Snd) \
+	PORT_DEFK(BettySound, Talk2Snd, BettySound_Talk2Snd) \
 	PORT_DEF(BettySound, InitLoops, BettySound_InitLoops) \
+	PORT_DEF(BettySound, Init, BettySound_Init) \
+	PORT_DEFK(BishopSound, LoadSounds, BishopSound_LoadSounds) \
+	PORT_DEFK(BishopSound, SetSounds, BishopSound_SetSounds) \
+	PORT_DEFK(BishopSound, TalkSnd, BishopSound_TalkSnd) \
+	PORT_DEFK(BishopSound, Talk0Snd, BishopSound_Talk0Snd) \
+	PORT_DEFK(BishopSound, Talk1Snd, BishopSound_Talk1Snd) \
+	PORT_DEFK(BishopSound, Talk2Snd, BishopSound_Talk2Snd) \
 	PORT_DEF(BishopSound, InitLoops, BishopSound_InitLoops) \
+	PORT_DEF(BishopSound, Init, BishopSound_Init) \
+	PORT_DEFK(BossSound, LoadSounds, BossSound_LoadSounds) \
+	PORT_DEFK(BossSound, SetSounds, BossSound_SetSounds) \
+	PORT_DEFK(BossSound, TalkSnd, BossSound_TalkSnd) \
+	PORT_DEFK(BossSound, Talk0Snd, BossSound_Talk0Snd) \
+	PORT_DEFK(BossSound, Talk1Snd, BossSound_Talk1Snd) \
+	PORT_DEFK(BossSound, Talk2Snd, BossSound_Talk2Snd) \
 	PORT_DEF(BossSound, InitLoops, BossSound_InitLoops) \
+	PORT_DEF(BossSound, Init, BossSound_Init) \
+	PORT_DEFK(CrazyGamblerSound, LoadSounds, CrazyGamblerSound_LoadSounds) \
+	PORT_DEFK(CrazyGamblerSound, SetSounds, CrazyGamblerSound_SetSounds) \
+	PORT_DEFK(CrazyGamblerSound, TalkSnd, CrazyGamblerSound_TalkSnd) \
+	PORT_DEFK(CrazyGamblerSound, Talk0Snd, CrazyGamblerSound_Talk0Snd) \
+	PORT_DEFK(CrazyGamblerSound, Talk1Snd, CrazyGamblerSound_Talk1Snd) \
+	PORT_DEFK(CrazyGamblerSound, Talk2Snd, CrazyGamblerSound_Talk2Snd) \
 	PORT_DEF(CrazyGamblerSound, InitLoops, CrazyGamblerSound_InitLoops) \
+	PORT_DEF(CrazyGamblerSound, Init, CrazyGamblerSound_Init) \
+	PORT_DEFK(DesktopSound, LoadSounds, DesktopSound_LoadSounds) \
+	PORT_DEFK(DesktopSound, SetSounds, DesktopSound_SetSounds) \
+	PORT_DEFK(DesktopSound, TalkSnd, DesktopSound_TalkSnd) \
+	PORT_DEFK(DesktopSound, Talk0Snd, DesktopSound_Talk0Snd) \
 	PORT_DEF(DesktopSound, InitLoops, DesktopSound_InitLoops) \
+	PORT_DEF(DesktopSound, Init, DesktopSound_Init) \
+	PORT_DEFK(DtritusSound, LoadSounds, DtritusSound_LoadSounds) \
+	PORT_DEFK(DtritusSound, SetSounds, DtritusSound_SetSounds) \
+	PORT_DEFK(DtritusSound, TalkSnd, DtritusSound_TalkSnd) \
+	PORT_DEFK(DtritusSound, Talk0Snd, DtritusSound_Talk0Snd) \
+	PORT_DEFK(DtritusSound, Talk1Snd, DtritusSound_Talk1Snd) \
+	PORT_DEFK(DtritusSound, Talk2Snd, DtritusSound_Talk2Snd) \
+	PORT_DEFK(DtritusSound, Talk3Snd, DtritusSound_Talk3Snd) \
+	PORT_DEFK(DtritusSound, Talk4Snd, DtritusSound_Talk4Snd) \
+	PORT_DEFK(DtritusSound, Talk5Snd, DtritusSound_Talk5Snd) \
 	PORT_DEF(DtritusSound, InitLoops, DtritusSound_InitLoops) \
+	PORT_DEF(DtritusSound, Init, DtritusSound_Init) \
+	PORT_DEFK(FunctionarySound, LoadSounds, FunctionarySound_LoadSounds) \
+	PORT_DEFK(FunctionarySound, SetSounds, FunctionarySound_SetSounds) \
+	PORT_DEFK(FunctionarySound, TalkSnd, FunctionarySound_TalkSnd) \
+	PORT_DEFK(FunctionarySound, Talk0Snd, FunctionarySound_Talk0Snd) \
+	PORT_DEFK(FunctionarySound, Talk2Snd, FunctionarySound_Talk2Snd) \
+	PORT_DEFK(FunctionarySound, Talk1Snd, FunctionarySound_Talk1Snd) \
 	PORT_DEF(FunctionarySound, InitLoops, FunctionarySound_InitLoops) \
+	PORT_DEF(FunctionarySound, Init, FunctionarySound_Init) \
+	PORT_DEFK(GateKeeperSound, LoadSounds, GateKeeperSound_LoadSounds) \
+	PORT_DEFK(GateKeeperSound, SetSounds, GateKeeperSound_SetSounds) \
+	PORT_DEFK(GateKeeperSound, TalkSnd, GateKeeperSound_TalkSnd) \
+	PORT_DEFK(GateKeeperSound, TalkNoSnd, GateKeeperSound_TalkNoSnd) \
 	PORT_DEF(GateKeeperSound, InitLoops, GateKeeperSound_InitLoops) \
+	PORT_DEF(GateKeeperSound, Init, GateKeeperSound_Init) \
+	PORT_DEFK(GearSound, LoadSounds, GearSound_LoadSounds) \
+	PORT_DEFK(GearSound, SetSounds, GearSound_SetSounds) \
+	PORT_DEFK(GearSound, TalkSnd, GearSound_TalkSnd) \
+	PORT_DEF(GearSound, Init, GearSound_Init) \
 	PORT_DEF(GearSound, InitLoops, GearSound_InitLoops) \
+	PORT_DEFK(HumanSound, LoadSounds, HumanSound_LoadSounds) \
+	PORT_DEFK(HumanSound, SetSounds, HumanSound_SetSounds) \
+	PORT_DEFK(HumanSound, TalkSnd, HumanSound_TalkSnd) \
+	PORT_DEFK(HumanSound, Talk0Snd, HumanSound_Talk0Snd) \
+	PORT_DEF(HumanSound, Init, HumanSound_Init) \
+	PORT_DEFK(HumphreySound, LoadSounds, HumphreySound_LoadSounds) \
+	PORT_DEFK(HumphreySound, SetSounds, HumphreySound_SetSounds) \
+	PORT_DEFK(HumphreySound, TalkSnd, HumphreySound_TalkSnd) \
+	PORT_DEFK(HumphreySound, Talk0Snd, HumphreySound_Talk0Snd) \
+	PORT_DEFK(HumphreySound, Talk1Snd, HumphreySound_Talk1Snd) \
+	PORT_DEFK(HumphreySound, Talk2Snd, HumphreySound_Talk2Snd) \
+	PORT_DEF(HumphreySound, Init, HumphreySound_Init) \
+	PORT_DEFK(MaintenanceSound, LoadSounds, MaintenanceSound_LoadSounds) \
+	PORT_DEFK(MaintenanceSound, SetSounds, MaintenanceSound_SetSounds) \
+	PORT_DEFK(MaintenanceSound, TalkSnd, MaintenanceSound_TalkSnd) \
 	PORT_DEF(MaintenanceSound, InitLoops, MaintenanceSound_InitLoops) \
+	PORT_DEF(MaintenanceSound, Init, MaintenanceSound_Init) \
+	PORT_DEFK(MayorSound, LoadSounds, MayorSound_LoadSounds) \
+	PORT_DEFK(MayorSound, SetSounds, MayorSound_SetSounds) \
+	PORT_DEFK(MayorSound, TalkSnd, MayorSound_TalkSnd) \
+	PORT_DEFK(MayorSound, Talk0Snd, MayorSound_Talk0Snd) \
+	PORT_DEFK(MayorSound, Talk1Snd, MayorSound_Talk1Snd) \
+	PORT_DEFK(MayorSound, Talk2Snd, MayorSound_Talk2Snd) \
 	PORT_DEF(MayorSound, InitLoops, MayorSound_InitLoops) \
+	PORT_DEF(MayorSound, Init, MayorSound_Init) \
+	PORT_DEFK(MercenarySound, LoadSounds, MercenarySound_LoadSounds) \
+	PORT_DEFK(MercenarySound, SetSounds, MercenarySound_SetSounds) \
+	PORT_DEF(MercenarySound, Init, MercenarySound_Init) \
+	PORT_DEFK(MessengerSound, LoadSounds, MessengerSound_LoadSounds) \
+	PORT_DEFK(MessengerSound, SetSounds, MessengerSound_SetSounds) \
+	PORT_DEFK(MessengerSound, TalkSnd, MessengerSound_TalkSnd) \
+	PORT_DEFK(MessengerSound, Talk0Snd, MessengerSound_Talk0Snd) \
+	PORT_DEFK(MessengerSound, Talk1Snd, MessengerSound_Talk1Snd) \
 	PORT_DEF(MessengerSound, InitLoops, MessengerSound_InitLoops) \
+	PORT_DEF(MessengerSound, Init, MessengerSound_Init) \
+	PORT_DEFK(NurseSound, LoadSounds, NurseSound_LoadSounds) \
+	PORT_DEFK(NurseSound, SetSounds, NurseSound_SetSounds) \
+	PORT_DEFK(NurseSound, TalkSnd, NurseSound_TalkSnd) \
+	PORT_DEFK(NurseSound, Talk0Snd, NurseSound_Talk0Snd) \
+	PORT_DEFK(NurseSound, Talk1Snd, NurseSound_Talk1Snd) \
 	PORT_DEF(NurseSound, InitLoops, NurseSound_InitLoops) \
+	PORT_DEF(NurseSound, Init, NurseSound_Init) \
+	PORT_DEFK(PoliceBossSound, LoadSounds, PoliceBossSound_LoadSounds) \
+	PORT_DEFK(PoliceBossSound, SetSounds, PoliceBossSound_SetSounds) \
+	PORT_DEFK(PoliceBossSound, TalkSnd, PoliceBossSound_TalkSnd) \
+	PORT_DEFK(PoliceBossSound, Talk0Snd, PoliceBossSound_Talk0Snd) \
+	PORT_DEFK(PoliceBossSound, Talk1Snd, PoliceBossSound_Talk1Snd) \
+	PORT_DEFK(PoliceBossSound, Talk2Snd, PoliceBossSound_Talk2Snd) \
+	PORT_DEF(PoliceBossSound, Init, PoliceBossSound_Init) \
+	PORT_DEFK(PoliceSound, LoadSounds, PoliceSound_LoadSounds) \
+	PORT_DEFK(PoliceSound, SetSounds, PoliceSound_SetSounds) \
+	PORT_DEFK(PoliceSound, TalkSnd, PoliceSound_TalkSnd) \
+	PORT_DEFK(PoliceSound, Talk0Snd, PoliceSound_Talk0Snd) \
+	PORT_DEFK(PoliceSound, Talk1Snd, PoliceSound_Talk1Snd) \
+	PORT_DEFK(PoliceSound, Talk2Snd, PoliceSound_Talk2Snd) \
 	PORT_DEF(PoliceSound, InitLoops, PoliceSound_InitLoops) \
+	PORT_DEF(PoliceSound, Init, PoliceSound_Init) \
+	PORT_DEFK(RustySound, LoadSounds, RustySound_LoadSounds) \
+	PORT_DEFK(RustySound, SetSounds, RustySound_SetSounds) \
+	PORT_DEFK(RustySound, TalkSnd, RustySound_TalkSnd) \
+	PORT_DEFK(RustySound, Talk0Snd, RustySound_Talk0Snd) \
+	PORT_DEFK(RustySound, Talk1Snd, RustySound_Talk1Snd) \
+	PORT_DEFK(RustySound, Talk2Snd, RustySound_Talk2Snd) \
 	PORT_DEF(RustySound, InitLoops, RustySound_InitLoops) \
+	PORT_DEF(RustySound, Init, RustySound_Init) \
+	PORT_DEFK(SebastianSound, LoadSounds, SebastianSound_LoadSounds) \
+	PORT_DEFK(SebastianSound, SetSounds, SebastianSound_SetSounds) \
+	PORT_DEFK(SebastianSound, TalkSnd, SebastianSound_TalkSnd) \
+	PORT_DEFK(SebastianSound, Talk1Snd, SebastianSound_Talk1Snd) \
+	PORT_DEFK(SebastianSound, Talk2Snd, SebastianSound_Talk2Snd) \
+	PORT_DEFK(SebastianSound, Talk3Snd, SebastianSound_Talk3Snd) \
+	PORT_DEFK(SebastianSound, Talk4Snd, SebastianSound_Talk4Snd) \
 	PORT_DEF(SebastianSound, InitLoops, SebastianSound_InitLoops) \
+	PORT_DEF(SebastianSound, Init, SebastianSound_Init) \
+	PORT_DEFK(SentinelSound, LoadSounds, SentinelSound_LoadSounds) \
+	PORT_DEFK(SentinelSound, SetSounds, SentinelSound_SetSounds) \
+	PORT_DEFK(SentinelSound, TalkSnd, SentinelSound_TalkSnd) \
+	PORT_DEFK(SentinelSound, Talk0Snd, SentinelSound_Talk0Snd) \
+	PORT_DEFK(SentinelSound, Talk1Snd, SentinelSound_Talk1Snd) \
 	PORT_DEF(SentinelSound, InitLoops, SentinelSound_InitLoops) \
+	PORT_DEF(SentinelSound, Init, SentinelSound_Init) \
+	PORT_DEFK(SputnikJunkyardSound, LoadSounds, SputnikJunkyardSound_LoadSounds) \
+	PORT_DEFK(SputnikJunkyardSound, SetSounds, SputnikJunkyardSound_SetSounds) \
+	PORT_DEFK(SputnikJunkyardSound, TalkSnd, SputnikJunkyardSound_TalkSnd) \
 	PORT_DEF(SputnikJunkyardSound, InitLoops, SputnikJunkyardSound_InitLoops) \
+	PORT_DEF(SputnikJunkyardSound, Init, SputnikJunkyardSound_Init) \
+	PORT_DEFK(SputnikSound, LoadSounds, SputnikSound_LoadSounds) \
+	PORT_DEFK(SputnikSound, SetSounds, SputnikSound_SetSounds) \
+	PORT_DEFK(SputnikSound, TalkSnd, SputnikSound_TalkSnd) \
 	PORT_DEF(SputnikSound, InitLoops, SputnikSound_InitLoops) \
-	PORT_DEF(TestCSound, InitLoops, TestCSound_InitLoops)
+	PORT_DEF(SputnikSound, Init, SputnikSound_Init) \
+	PORT_DEFK(TestCSound, LoadSounds, TestCSound_LoadSounds) \
+	PORT_DEFK(TestCSound, SetSounds, TestCSound_SetSounds) \
+	PORT_DEFK(TestCSound, TalkSnd, TestCSound_TalkSnd) \
+	PORT_DEF(TestCSound, InitLoops, TestCSound_InitLoops) \
+	PORT_DEF(TestCSound, Init, TestCSound_Init)
 
 /* Speech.c */
 PORT_DECL(Speech, ScheduledVoiceCallback) /* 2 */
@@ -3184,6 +3990,7 @@ PORT_DECL(Vehicles, DumbShipHit) /* 3 */
 PORT_DECL(Vehicles, OnClientDeath) /* 2 */
 PORT_DECL(Vehicles, ActivateHitType) /* 2 */
 PORT_DECL(Vehicles, GetCoin) /* 2 */
+PORT_DECL(Vehicles, GetRandomMercenaryHead) /* ? */
 PORT_DECL(Vehicles, OnDeath) /* 2 */
 PORT_DECL(Vehicles, SwitchView) /* 2 */
 PORT_DECL(Vehicles, SetActiveCam) /* 3 */
@@ -3202,6 +4009,7 @@ PORT_DECL(Vehicles, Init) /* 0 */
 	PORT_DEF(Vehicles, OnClientDeath, Vehicles_OnClientDeath) \
 	PORT_DEF(Vehicles, ActivateHitType, Vehicles_ActivateHitType) \
 	PORT_DEF(Vehicles, GetCoin, Vehicles_GetCoin) \
+	PORT_DEF(Vehicles, GetRandomMercenaryHead, Vehicles_GetRandomMercenaryHead) \
 	PORT_DEF(Vehicles, OnDeath, Vehicles_OnDeath) \
 	PORT_DEF(Vehicles, SwitchView, Vehicles_SwitchView) \
 	PORT_DEF(Vehicles, SetActiveCam, Vehicles_SetActiveCam) \
@@ -3332,7 +4140,9 @@ PORT_DECL(Sonic, Init) /* 1 */
 PORT_DECL(WeaponsTab, ShowWeightPrediction) /* 3 */
 PORT_DECL(WeaponsTab, HideWeightPrediction) /* 3 */
 PORT_DECL(WeaponsTab, ShowWeaponDesc) /* 3 */
+PORT_DECL(WeaponsTab, HideWeaponDesc) /* ? */
 PORT_DECL(WeaponsTab, ShowWeaponUpgradeDesc) /* 3 */
+PORT_DECL(WeaponsTab, HideWeaponUpgradeDesc) /* ? */
 PORT_DECL(WeaponsTab, ShowSlotMarker) /* 3 */
 PORT_DECL(WeaponsTab, HideSlotMarker) /* 3 */
 PORT_DECL(WeaponsTab, LoadWeapon) /* 2 */
@@ -3348,7 +4158,9 @@ PORT_DECL(WeaponsTab, HideWeaponsPanel) /* 1 */
 	PORT_DEF(WeaponsTab, ShowWeightPrediction, WT_ShowWeightPrediction) \
 	PORT_DEF(WeaponsTab, HideWeightPrediction, WT_HideWeightPrediction) \
 	PORT_DEF(WeaponsTab, ShowWeaponDesc, WT_ShowWeaponDescPy) \
+	PORT_DEF(WeaponsTab, HideWeaponDesc, WT_HideWeaponDesc) \
 	PORT_DEF(WeaponsTab, ShowWeaponUpgradeDesc, WT_ShowWeaponUpgradeDescPy) \
+	PORT_DEF(WeaponsTab, HideWeaponUpgradeDesc, WT_HideWeaponUpgradeDesc) \
 	PORT_DEF(WeaponsTab, ShowSlotMarker, WT_ShowSlotMarkerPy) \
 	PORT_DEF(WeaponsTab, HideSlotMarker, WT_HideSlotMarkerPy) \
 	PORT_DEF(WeaponsTab, LoadWeapon, WT_LoadWeaponPy) \
@@ -4136,11 +4948,15 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 
 /* levels/Fake.c */
 PORT_DECLL(fake, Map, Init) /* 1 */
+PORT_DECLL(fake, Map, PlayFake2) /* ? */
+PORT_DECLL(fake, Map, NextLevel) /* ? */
 PORT_DECLL(fake, Map, CreateFakeBertoShip) /* 0 */
 PORT_DECLL(fake, Map, ActivateBertoEngines) /* 3 */
 PORT_DECLL(fake, Map, LoadFake2Scene) /* 0 */
 #define PORTS_levels_Fake \
 	PORT_DEFL(fake, Map, Init, Fk_InitPy) \
+	PORT_DEFLK(fake, Map, PlayFake2, Fk_PlayFake2Py) \
+	PORT_DEFLK(fake, Map, NextLevel, Fk_NextLevelPy) \
 	PORT_DEFL(fake, Map, CreateFakeBertoShip, Fk_CreateFakeBertoShipPy) \
 	PORT_DEFL(fake, Map, ActivateBertoEngines, Fk_ActivateBertoEnginesPy) \
 	PORT_DEFL(fake, Map, LoadFake2Scene, Fk_LoadFake2ScenePy)
@@ -5863,6 +6679,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2798
+#define PORT_COUNT 3203
 
 #endif

@@ -182,9 +182,10 @@ byte Sn_LinkV(const char *fn, int id, const nativeVal_t *a, const nativeVal_t *b
 }
 
 byte Sn_From(const char *name) {
-	PyObject *o = Mode_From("Menu", name);
-	Py_XDECREF(o);
-	return o != NULL;
+	nativeVal_t f;
+	byte ok = Mode_FromV("Menu", name, &f);
+	Native_Free(&f);
+	return ok;
 }
 
 byte Sn_Cat(const char *prefix, const nativeVal_t *v, const char *suffix, nativeVal_t *out) {
@@ -285,6 +286,7 @@ byte Sn_FrontAng(const nativeVal_t *dummy, const nativeVal_t *extra, nativeVal_t
 	return ok;
 }
 
+/* OBJLIB 6: the $names as a dict and Sn_Def on it stay for HangarTab.c (batch 6g); ShipEdit uses Sn_DefV */
 PyObject *Sn_Vars(int n, ...) {
 	PyObject *d = PyDict_New();
 	va_list ap;
@@ -303,10 +305,22 @@ PyObject *Sn_Vars(int n, ...) {
 	return d;
 }
 
+/* OBJLIB 6: the section on a dict of $names, for HangarTab.c (see Sn_Vars) */
 byte Sn_Def(int id, const char *section, PyObject *vars, const char *module) {
 	const char *outer = se_useModule;
 	se_useModule = module;
 	byte ok = Script_RunFileTry(id, "menus/shipedit.def", section, shipedit_def, shipedit_steps, vars);
+	se_useModule = outer;
+	return ok;
+}
+
+byte Sn_DefV(int id, const char *section, const char *module, int n, ...) {
+	const char *outer = se_useModule;
+	va_list va;
+	se_useModule = module;
+	va_start(va, n);
+	byte ok = Mode_DefRunVa(id, "menus/shipedit.def", section, shipedit_def, shipedit_steps, 1, n, va);
+	va_end(va);
 	se_useModule = outer;
 	return ok;
 }
@@ -877,52 +891,50 @@ static byte Se_StartRotate(void) {
 
 /* DrawBackground(id, elem, posX=64, posY=64, sizeX=512, sizeY=352, alpha=92, red=0, green=0, blue=32) of ShipEdit
  * (the sprite BackgroundElement<elem>) and of HangarTab (the sprite Background, no elem) */
-static PyObject *Se_DrawBackground(PyObject *args, PyObject *kw, byte elem) {
-	static char *names[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
-	static char *names2[] = { "id", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
+static byte Se_DrawBackground(const nativeVal_t *id, const nativeVal_t *elem, const nativeVal_t *const *v) {
 	static const char *const vars[] = { "X", "Y", "ScaleX", "ScaleY", "Unit", "Alpha", "Red", "Green", "Blue" };
 	static const long defs[] = { 64, 64, 512, 352, 1, 92, 0, 0, 32 };
-	PyObject *oid, *e = NULL, *v[8] = { NULL };
-	byte ok = elem ? PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOOOOOO", names, &oid, &e, &v[0], &v[1], &v[2], &v[3],
-		&v[4], &v[5], &v[6], &v[7]) : PyArg_ParseTupleAndKeywords(args, kw, "O|OOOOOOOO", names2, &oid, &v[0], &v[1], &v[2],
-		&v[3], &v[4], &v[5], &v[6], &v[7]);
-	if (!ok) {
-		return NULL;
-	}
-	nativeVal_t id = { 0 }, name = { 0 }, x = { 0 }, val = { 0 };
-	Native_Arg(oid, &id);
+	nativeVal_t name = { 0 }, def;
+	byte ok = 1;
 	if (elem) {
-		Native_Arg(e, &x);
-		ok = Sn_Cat("BackgroundElement", &x, NULL, &name);
+		ok = Sn_Cat("BackgroundElement", elem, NULL, &name);
 	} else {
 		Native_SetStr(&name, "Background");
 	}
-	ok = ok && Mode_ScorerAdd(&id, &name, "Sprite");
+	ok = ok && Mode_ScorerAdd(id, &name, "Sprite");
 	for (int i = 0; ok && i < 9; i++) {
-		PyObject *o = i == 4 ? NULL : v[i < 4 ? i : i - 1];
-		Native_Free(&val);
-		if (o) {
-			Native_Arg(o, &val);
-		} else {
-			Native_SetInt(&val, defs[i]);
-		}
-		ok = Mode_ScorerSet(&id, &name, vars[i], &val);
+		/* Unit is always 1, the eight values follow in the order of the keywords */
+		const nativeVal_t *o = i == 4 ? NULL : v[i < 4 ? i : i - 1];
+		Native_SetInt(&def, defs[i]);
+		ok = Mode_ScorerSet(id, &name, vars[i], o ? o : &def);
 	}
-	Native_Free(&id);
 	Native_Free(&name);
-	Native_Free(&x);
-	Native_Free(&val);
-	return Mode_Result(ok);
+	return ok;
 }
 
+/* the cores of the two keyword functions: the arguments by slot, NULL for one not given */
+static byte Se_DrawBackgroundK(const nativeVal_t *const *a, nativeVal_t *out) {
+	(void)out;
+	return Se_DrawBackground(a[0], a[1], a + 2);
+}
+
+static byte Ht_DrawBackgroundK(const nativeVal_t *const *a, nativeVal_t *out) {
+	(void)out;
+	return Se_DrawBackground(a[0], NULL, a + 1);
+}
+
+/* OBJLIB 7: the keyword adapters (the names and the arity errors of PyArg_ParseTupleAndKeywords, Mode_KwCall); they
+ * serve the tables of three modules and have no entry */
 PyObject *ShipEdit_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
 	(void)self;
-	return Se_DrawBackground(args, kw, 1);
+	return Mode_KwCall(args, kw, "OO|OOOOOOOO", names, Se_DrawBackgroundK);
 }
 
 PyObject *HangarTab_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "id", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
 	(void)self;
-	return Se_DrawBackground(args, kw, 0);
+	return Mode_KwCall(args, kw, "O|OOOOOOOO", names, Ht_DrawBackgroundK);
 }
 
 /* AddShipEditTabs(id, tabs): the tabs of the editor (the Hangar tab alone on Sputnik's screen); the first one is
@@ -953,11 +965,10 @@ static byte Se_AddShipEditTabs(int id, const nativeVal_t *tabs) {
 		int n = ok ? Native_Size(tabs) : -1;
 		Native_SetInt(first, counter == 2);
 		Native_SetInt(only, n == 1);
-		PyObject *vars = n >= 0 ? Sn_Vars(8, "name", name, "tab", tab, "text", text, "x", startX, "init", init, "end", end,
-			"first", first, "only", only) : NULL;
-		ok = vars && Sn_Def(id, "tab", vars, SE) && Mode_Arith('/', tabSize, Mode_IntVal(k, 2), width) &&
+		ok = n >= 0 &&
+			Sn_DefV(id, "tab", SE, 8, "name", name, "tab", tab, "text", text, "x", startX, "init", init, "end", end,
+			"first", first, "only", only) && Mode_Arith('/', tabSize, Mode_IntVal(k, 2), width) &&
 			Mode_Arith('+', startX, width, x2);
-		Py_XDECREF(vars);
 		if (ok) {
 			Native_SetEmpty(px, NV_TUPLE);
 			Native_Copy(Native_Append(px), startX);
@@ -1002,9 +1013,7 @@ static byte Se_AddDefaultPanelContent(int id, const nativeVal_t *ntabs) {
 	ok = ok && Mode_Arith('/', b, Mode_IntVal(k, 2), a);
 	Native_Free(b);
 	ok = ok && Mode_Arith('+', a, Mode_IntVal(k, 42), b) && Mode_Arith('-', b, Mode_IntVal(c, 1), w2);
-	PyObject *vars = ok ? Sn_Vars(2, "x2", x2, "w2", w2) : NULL;
-	ok = vars && Sn_Def(id, "background", vars, SE);
-	Py_XDECREF(vars);
+	ok = ok && Sn_DefV(id, "background", SE, 2, "x2", x2, "w2", w2);
 	return Mode_Done(&t, ok);
 }
 
@@ -1213,7 +1222,7 @@ static byte Se_Clean(void) {
 			Native_Free(&e);
 			/* try: editedShips[i].Del() except: print "Ya borrada" (the error of the lookup too) */
 			if (!Se_AtI("editedShips", i, &e) || !Mode_VDel(&e)) {
-				PyErr_Clear();
+				Mode_DropError();
 				Native_SetStr(&msg, "Ya borrada");
 				c = Mode_PrintV(&msg) ? 1 : -1;
 			}
@@ -2083,6 +2092,7 @@ static byte SE_ChangeTab_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 		Se_ChangeTab(id, control, direction ? direction : &none);
 }
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *SE_ChangeTab(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "direction", NULL };
 	(void)self;
@@ -2102,6 +2112,7 @@ static byte SE_CreateShipFromSaveVar_E(const nativeVal_t *a, int n, nativeVal_t 
 
 static char *SE_CreateShipFromSaveVar_N[] = { "cad", "pos", "name", NULL };
 
+/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *SE_CreateShipFromSaveVar(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Mode_KwCall(args, kw, "OO|O", SE_CreateShipFromSaveVar_N, SE_CreateShipFromSaveVarK);
