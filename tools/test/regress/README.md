@@ -61,6 +61,10 @@ checkout (tools/mcp); REGRESS_MCP_DIR takes the tools/mcp of another checkout.
   data take turns. A lock per checkout once let another worktree's run start its server at the same time
   (SNet.InitServer answered 0).
 
+## Notes
+
+The case fc-r8j-snd-DownTown passes `Scrap.Set` on. A recorder that swallowed it made the rail traffic load a model that is in no pack. `native ports` also prints the lines `modules pack/none/absent/other/added/made/loaded` and `def calls registry/byname/other/errors`. `rd/msw-run.py` is gone with the interpreter, and mission starts are compared through the test channel.
+
 ## Harness
 
 The game runs with the test channel and no Python code at all. tochannel.py turns each case line into the channel
