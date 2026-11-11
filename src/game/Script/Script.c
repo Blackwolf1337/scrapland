@@ -1643,22 +1643,19 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		return;
 	}
 	if (target == TARGET_ENTITY) {
-		/* a script variable of the entity, as `entity.var = value` of a script (OBJLIB 7: the value as its Python
-		 * object to the handle's set) */
+		/* a script variable of the entity, as `entity.var = value` of a script (the set of the handle on the native
+		 * value) */
 		nativeVal_t nv;
-		PyObject *v = Def_Value(m, value, quoted, &nv) ? Native_ToPy(&nv) : NULL;
-		Native_Free(&nv);
-		if (v) {
-			if (PyEntity_SetVar(World_FindEntity(m->entity), m->entity, var, v) < 0 && m->stop) {
-				/* the attribute set of the handle fails without an exception: ceval's SystemError */
-				if (!PyErr_Occurred()) {
-					Script_CheckSilent("def entity set (engine)");
-					PyErr_SetString(PyExc_SystemError, "error return without exception set");
-				}
-				m->failed = 1;
+		if (Def_Value(m, value, quoted, &nv) && !Native_EntStore(World_FindEntity(m->entity), m->entity, var, &nv) &&
+			m->stop) {
+			/* the attribute set of the handle fails without an exception: ceval's SystemError */
+			if (!PyErr_Occurred()) {
+				Script_CheckSilent("def entity set (engine)");
+				PyErr_SetString(PyExc_SystemError, "error return without exception set");
 			}
-			Py_DECREF(v);
+			m->failed = 1;
 		}
+		Native_Free(&nv);
 		return;
 	}
 	void *obj = target == TARGET_CLASS ? (void *)g_pAuxActClass : (void *)g_pAuxAction;

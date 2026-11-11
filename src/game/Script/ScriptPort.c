@@ -59,9 +59,9 @@ portSite_t *Port_Sites(void) {
 	return port_sites;
 }
 
-/* an argument that holds an NV_OBJ */
+/* an argument that holds an NV_OBJ or an entity handle */
 static byte Port_HoldsObj(const nativeVal_t *v) {
-	if (v->type == NV_OBJ) {
+	if (NV_REFS >> v->type & 1) {
 		return 1;
 	}
 	if (v->type == NV_LIST || v->type == NV_TUPLE) {
@@ -71,9 +71,9 @@ static byte Port_HoldsObj(const nativeVal_t *v) {
 			}
 		}
 	} else if (v->type == NV_DICT) {
-		/* key and value pairs; a free or deleted slot has a key type beyond NV_OBJ */
+		/* key and value pairs; a free or deleted slot has a key type beyond NV_ENT */
 		for (int i = 0; i < v->max; i++) {
-			if (v->items[2 * i].type <= NV_OBJ && (Port_HoldsObj(&v->items[2 * i]) || Port_HoldsObj(&v->items[2 * i + 1]))) {
+			if (v->items[2 * i].type <= NV_ENT && (Port_HoldsObj(&v->items[2 * i]) || Port_HoldsObj(&v->items[2 * i + 1]))) {
 				return 1;
 			}
 		}
@@ -186,10 +186,7 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 		if (!x->o) {
 			return 0;
 		}
-		Native_SetNone(v);
-		v->type = NV_OBJ;
-		v->obj = x->o;
-		Py_INCREF(x->o);
+		Native_SetObj(v, x->o);
 		return 1;
 	}
 	return 0;

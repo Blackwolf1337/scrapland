@@ -79,8 +79,8 @@ byte Mode_Print(const nativeVal_t *const *items, int n);
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
 /* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
 byte Mode_NextInSlot(cEntity **e);
-/* the handle a script holds for the entity (OBJLIB 7: entities are Python handles in module variables and in the
- * arguments of other ports until entities are native values): a new reference, None for NULL */
+/* the handle a script holds for the entity as its Python object (OBJLIB 7: for the module dicts and the arguments
+ * given as objects; Mode_EntHandle gives the native value): a new reference, None for NULL */
 PyObject *Mode_Handle(cEntity *e);
 /* handle-or-object helpers: o.var, o.var = v, o.SetModel(file) as the script does them on any value (an entity
  * handle in C, any other object the Python way with its errors) */
@@ -89,7 +89,8 @@ byte Mode_HSet(PyObject *o, const char *var, const nativeVal_t *v);
 byte Mode_HSetModel(PyObject *o, const char *module, const char *modelVar);
 /* o.SetModel(file) with the file given */
 byte Mode_HModel(PyObject *o, const nativeVal_t *file);
-/* the same on a value (an NV_OBJ handle, or a native value with the error of its getattr or setattr) */
+/* the same on a value (an entity handle, NV_ENT, in C without a Python object; another object the Python way; a native
+ * value with the error of its getattr or setattr) */
 byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out);
 byte Mode_VSet(const nativeVal_t *o, const char *var, const nativeVal_t *v);
 /* the entity of a handle the script holds by the name it was made with: var of it (an entity that is gone: the
@@ -194,11 +195,11 @@ byte Mode_SetModel(cEntity *e, const nativeVal_t *file);
 byte Mode_SetFX(cEntity *e, const char *type);
 int Mode_IsType(cEntity *e, const char *type);
 int Mode_Del(cEntity *e);
-/* Scrap.UsrEntity(0) through its seam (fc-mis2 swaps it): the handle (NV_OBJ, OBJLIB 7) or None */
+/* Scrap.UsrEntity(0) through its seam (fc-mis2 swaps it): the handle (NV_ENT) or None */
 byte Mode_UsrHandle(nativeVal_t *out);
-/* the handle of entity e as a value (NV_OBJ, OBJLIB 7), None for NULL */
+/* the handle of entity e as a value (NV_ENT: a new handle, no Python object), None for NULL */
 byte Mode_EntHandle(cEntity *e, nativeVal_t *out);
-/* Scrap.GetEntity(name) as the handle value (NV_OBJ, OBJLIB 7) or None */
+/* Scrap.GetEntity(name) as the handle value (NV_ENT) or None */
 byte Mode_EntityH(const nativeVal_t *name, nativeVal_t *out);
 /* h.IsType(type), h.Del(), h.SetModel(file) of a value of the script: an entity handle in C (None and a handle whose
  * entity is gone with the errors of the script), another object the Python way. IsType gives 1 or 0, -1 with the
@@ -283,7 +284,7 @@ byte Mode_PurgeServerMapList(const char *module);
 /* ---- adapters ---- */
 
 /* the n arguments of an adapter (the arity error of PyArg_ParseTuple, up to 11) as native values of t, one after the
- * other from *a (Native_Arg: other objects as NV_OBJ) */
+ * other from *a (Native_Arg: an entity handle as NV_ENT, other objects as NV_OBJ) */
 byte Mode_Args(PyObject *args, int n, modeVals_t *t, nativeVal_t **a);
 /* the result of an adapter: NULL for 0, None when out is None, else out as a Python value; t freed */
 PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
@@ -332,7 +333,7 @@ byte Mode_ItemText(const nativeVal_t *v, const char **out);
 /* `from module import name` in a function of a script (OBJLIB 6: the import; the link functions of Menu it gives are
  * called through their entries, Mode_LinkCall): a new reference, NULL with the ImportError */
 PyObject *Mode_From(const char *module, const char *name);
-/* the value of HangarTab.prevShip (the handle as NV_OBJ, None, or what a test put there; Native_Free it): 0 with the
+/* the value of HangarTab.prevShip (the handle as NV_ENT, None, or what a test put there; Native_Free it): 0 with the
  * AttributeError of the module attribute */
 byte Mode_PrevShip(nativeVal_t *ship);
 /* HangarTab.prevShip.<var> and its set: the ship being edited, read as the attribute of HangarTab at every use
@@ -386,7 +387,7 @@ byte Mode_SetLockAlarm(const nativeVal_t *lock);
 /* the same with an int */
 byte Mode_SetLockAlarmI(long lock);
 /* o.var of a value as any value (Mode_VGet takes only native values from an object that is no entity handle: here a
- * function, an instance or a handle in the attribute is an NV_OBJ, OBJLIB 7); the errors of the attribute */
+ * function or an instance in the attribute is an NV_OBJ, OBJLIB 7, a handle an NV_ENT); the errors of the attribute */
 byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out);
 
 /* (a, b, c) of three ints */
@@ -515,7 +516,7 @@ byte Mode_VSetF(const nativeVal_t *h, const char *var, double d);
 /* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
  * item as Native_Arg makes it) */
 byte Mode_Item(const nativeVal_t *x, long i, nativeVal_t *out);
-/* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
+/* module.var of another module as a value (any object: a handle as NV_ENT, a function, a module as NV_OBJ) */
 byte Mode_ModGet(const char *module, const char *var, nativeVal_t *out);
 /* module.var = None */
 byte Mode_ModNone(const char *module, const char *var);
@@ -943,6 +944,9 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
 /* the adapter of a function whose entry checks its own arguments (Mode_Parse, Port_Arity): the arguments as native
  * values (Native_Arg), the entry, the result as Python (None for None, NULL for 0) */
 PyObject *Mode_Entry(PyObject *args, portEntry_t entry);
+/* the same for a method of an object (the methods of the entity handles): self as the first argument of the entry,
+ * the arguments of the call after it (self NULL: Mode_Entry) */
+PyObject *Mode_SelfEntry(PyObject *self, PyObject *args, portEntry_t entry);
 /* the core of a keyword function: its arguments by slot, NULL for one not given (the core applies the default) */
 typedef byte (*modeKwCore_t)(const nativeVal_t *const *a, nativeVal_t *out);
 /* the adapter of a keyword function of "O" arguments (fmt and names of PyArg_ParseTupleAndKeywords, up to PORT_ARGS)

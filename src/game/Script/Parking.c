@@ -413,7 +413,7 @@ static byte Pk_SetCameraStartN(const nativeVal_t *a) {
 
 /* v.IsType("Car") as the script calls it (the value of the method of another object) */
 static byte Pk_IsCar(const nativeVal_t *v, nativeVal_t *out) {
-	if (v->type == NV_OBJ && PyEntity_Check(v->obj)) {
+	if (v->type == NV_ENT) {
 		int k = Mode_VIsType(v, "Car");
 		if (k >= 0) {
 			Native_SetInt(out, k);

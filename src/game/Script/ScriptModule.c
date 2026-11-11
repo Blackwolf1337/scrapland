@@ -231,9 +231,10 @@ static PyObject *Mod_Skipped(void) {
 
 static PyObject *Mod_ToPy(modParse_t *m, const nativeVal_t *v);
 
-/* plain: no NV_OBJ and no dict at any depth, the values the native operations take as Python takes them */
+/* plain: no NV_OBJ, no entity handle and no dict at any depth, the values the native operations take as Python takes
+ * them */
 static byte Mod_Plain(const nativeVal_t *v) {
-	return !Native_Holds(v, 1u << NV_OBJ | 1u << NV_DICT);
+	return !Native_Holds(v, NV_REFS | 1u << NV_DICT);
 }
 
 /* the number or text *v is the object o from here on (Mod_ToPy gives it back) */
@@ -567,7 +568,7 @@ static byte Mod_Items(modParse_t *m, char close, byte *comma, nativeVal_t *out) 
  * as Python does (an object, an unhashable value) in the Python dict *py made from it with its table (its error) */
 static byte Mod_DictPut(modParse_t *m, nativeVal_t *d, PyObject **py, nativeVal_t *k, nativeVal_t *v) {
 	long h;
-	if (!*py && (Native_Holds(k, 1u << NV_OBJ) || !Native_Hash(k, &h))) {
+	if (!*py && (Native_Holds(k, NV_REFS) || !Native_Hash(k, &h))) {
 		*py = Mod_ToPy(m, d);
 		if (!*py) {
 			return 0;

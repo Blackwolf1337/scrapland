@@ -602,7 +602,7 @@ static byte It_ShowHint(const nativeVal_t *item) {
 		PyObject *k = Native_ToPy(item);
 		ok = k && PyObject_DelItem(hints, k) == 0;
 		Py_XDECREF(k);
-		e = PyEntity_Get(h->obj);
+		e = Native_Ent(h);
 		ok = ok && (e ? Mode_Del(e) >= 0 : Native_EntVar(NULL, ref, "Del", now));
 	}
 	Py_XDECREF(hints);

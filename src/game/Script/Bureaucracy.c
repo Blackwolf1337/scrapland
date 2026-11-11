@@ -166,7 +166,7 @@ static byte Bureaucracy_CreateBureaucracyClass_E(const nativeVal_t *a, int n, na
 		return Port_Arity(n, 2);
 	}
 	Native_SetNone(&none);
-	return Bureaucracy_Class(a[0].type == NV_OBJ ? &none : &a[0], a[1].type == NV_OBJ ? &none : &a[1]);
+	return Bureaucracy_Class(NV_REFS >> a[0].type & 1 ? &none : &a[0], NV_REFS >> a[1].type & 1 ? &none : &a[1]);
 }
 
 static PyObject *Bureaucracy_CreateBureaucracyClass(PyObject *self, PyObject *args) {
