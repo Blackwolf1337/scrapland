@@ -3436,7 +3436,9 @@ PORT_DECL(Sonic, Init) /* 1 */
 PORT_DECL(WeaponsTab, ShowWeightPrediction) /* 3 */
 PORT_DECL(WeaponsTab, HideWeightPrediction) /* 3 */
 PORT_DECL(WeaponsTab, ShowWeaponDesc) /* 3 */
+PORT_DECL(WeaponsTab, HideWeaponDesc) /* ? */
 PORT_DECL(WeaponsTab, ShowWeaponUpgradeDesc) /* 3 */
+PORT_DECL(WeaponsTab, HideWeaponUpgradeDesc) /* ? */
 PORT_DECL(WeaponsTab, ShowSlotMarker) /* 3 */
 PORT_DECL(WeaponsTab, HideSlotMarker) /* 3 */
 PORT_DECL(WeaponsTab, LoadWeapon) /* 2 */
@@ -3452,7 +3454,9 @@ PORT_DECL(WeaponsTab, HideWeaponsPanel) /* 1 */
 	PORT_DEF(WeaponsTab, ShowWeightPrediction, WT_ShowWeightPrediction) \
 	PORT_DEF(WeaponsTab, HideWeightPrediction, WT_HideWeightPrediction) \
 	PORT_DEF(WeaponsTab, ShowWeaponDesc, WT_ShowWeaponDescPy) \
+	PORT_DEF(WeaponsTab, HideWeaponDesc, WT_HideWeaponDesc) \
 	PORT_DEF(WeaponsTab, ShowWeaponUpgradeDesc, WT_ShowWeaponUpgradeDescPy) \
+	PORT_DEF(WeaponsTab, HideWeaponUpgradeDesc, WT_HideWeaponUpgradeDesc) \
 	PORT_DEF(WeaponsTab, ShowSlotMarker, WT_ShowSlotMarkerPy) \
 	PORT_DEF(WeaponsTab, HideSlotMarker, WT_HideSlotMarkerPy) \
 	PORT_DEF(WeaponsTab, LoadWeapon, WT_LoadWeaponPy) \
@@ -5885,6 +5889,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2809
+#define PORT_COUNT 2811
 
 #endif

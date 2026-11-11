@@ -14,8 +14,9 @@
  * ShipEdit are read as their attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL:
  * directly while the attribute holds the port's function, else by name), the module's own functions through its
  * globals as the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu come from a
- * from import (OBJLIB 6) and are called through their entries while they are Menu's own (Mode_LinkCall, PORT_VALUE);
- * the .def runner takes Python values (OBJLIB 6).
+ * from import (OBJLIB 6) and are called through their entries while they are Menu's own (held as values:
+ * Mode_LinkCallV, Mode_CallArgs; OBJLIB 7); the .def sections get their $names as values (Mode_DefRun; OBJLIB 6: a
+ * dict inside the runner).
  */
 #include <string.h>
 
@@ -62,10 +63,10 @@ static const scriptStep_t weaponstab_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of weaponstab.def (vars: the $names, NULL for none): 0 with the error of the file */
-static byte WT_Run(int id, const char *section, PyObject *vars) {
-	return Script_RunFileTry(id, WEAPONSTAB_FILE, section, weaponstab_def, weaponstab_steps, vars);
-}
+/* a section of weaponstab.def with its $names, n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner
+ * takes them as a dict): 0 with the error of the file */
+#define WT_Run(id, section, n, ...) \
+	Mode_DefRun(id, WEAPONSTAB_FILE, section, weaponstab_def, weaponstab_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
 /* a global of the module as its functions read it (out None before) */
 static byte WT_G(const char *name, nativeVal_t *out) {
@@ -183,7 +184,7 @@ static byte WT_NumSlots(const nativeVal_t *weapon, nativeVal_t *out) {
 		if (!Native_Compare(weapon, &a) || !Native_Compare(weapon, &b)) {
 			return Mode_ShipGet(kinds[k][2], out);
 		}
-		if (PyErr_Occurred()) {
+		if (Mode_Failed()) {
 			return 0;
 		}
 	}
@@ -322,7 +323,7 @@ static byte WT_WeightPrediction(int id, const nativeVal_t *control, nativeVal_t 
 }
 
 MODE_IFN(WT_ShowWeightPrediction, 3, WT_WeightPrediction(id, &a[1], out))
-MODE_IFN(WT_HideWeightPrediction, 3, WT_Run(id, "hideweight", NULL))
+MODE_IFN(WT_HideWeightPrediction, 3, WT_Run(id, "hideweight", 0))
 
 /* the tab behind a description as wide as its text */
 static void WT_FitTab(int id, const char *text, const char *tab, int margin) {
@@ -393,26 +394,28 @@ static byte WT_ShowWeaponDesc(int id, const nativeVal_t *control) {
 MODE_IFN(WT_ShowWeaponDescPy, 3, WT_ShowWeaponDesc(id, &a[1]))
 
 /* HideWeaponDesc(id, control, gainfocus) and HideWeaponUpgradeDesc(id, control, gainfocus) */
-static PyObject *WT_HideTwo(PyObject *args, const char *a, const char *b) {
+static byte WT_HideTwo(const nativeVal_t *a, int n, const char *item, const char *tab) {
 	int id;
-	PyObject *control, *gain;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &gain)) {
-		return NULL;
+	const nativeVal_t *control, *gain;
+	if (!Mode_Parse(a, n, "iOO", &id, &control, &gain)) {
+		return 0;
 	}
-	Script_SetNum(id, a, "Visible", 0);
-	Script_SetNum(id, b, "Visible", 0);
-	return Py_ReturnNone();
+	Script_SetNum(id, item, "Visible", 0);
+	Script_SetNum(id, tab, "Visible", 0);
+	return 1;
 }
 
-static PyObject *WT_HideWeaponDesc(PyObject *self, PyObject *args) {
-	(void)self;
-	return WT_HideTwo(args, "WeaponDesc", "WeaponDescTab");
+static byte WT_HideWeaponDesc_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return WT_HideTwo(a, n, "WeaponDesc", "WeaponDescTab");
 }
+MODE_ADAPTER(WT, HideWeaponDesc)
 
-static PyObject *WT_HideWeaponUpgradeDesc(PyObject *self, PyObject *args) {
-	(void)self;
-	return WT_HideTwo(args, "WeaponUpgradeDesc", "WeaponUpgradeDescTab");
+static byte WT_HideWeaponUpgradeDesc_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return WT_HideTwo(a, n, "WeaponUpgradeDesc", "WeaponUpgradeDescTab");
 }
+MODE_ADAPTER(WT, HideWeaponUpgradeDesc)
 
 /* ShowWeaponUpgradeDesc(id, control, lostfocus): the text of the upgrade of the tile */
 static byte WT_ShowWeaponUpgradeDesc(int id, const nativeVal_t *control) {
@@ -701,8 +704,8 @@ static int WT_Lit(int id, const char *item) {
 }
 
 /* the links of the upgrade tiles after FillSlots (single player) */
-static byte WT_UpgradeLinks(int id, const nativeVal_t *control, long slots, PyObject *linkLR, PyObject *linkUD,
-	PyObject *unlinkLR) {
+static byte WT_UpgradeLinks(int id, const nativeVal_t *control, long slots, const nativeVal_t *linkLR,
+	const nativeVal_t *linkUD, const nativeVal_t *unlinkLR) {
 	char last[WT_NAME], first[WT_NAME];
 	const char *c;
 	int has1 = WT_Lit(id, "Upgrade1Tile"), has2 = has1 < 0 ? -1 : WT_Lit(id, "Upgrade2Tile");
@@ -710,7 +713,8 @@ static byte WT_UpgradeLinks(int id, const nativeVal_t *control, long slots, PyOb
 		return 0;
 	}
 	if (has1 || has2) {
-		if (!Mode_LinkCall(linkUD, id, "Upgrade1Tile", "Exit") || !Mode_LinkCall(linkUD, id, "Upgrade2Tile", "Exit")) {
+		if (!Mode_LinkCallV(linkUD, id, "Upgrade1Tile", "Exit") || !Mode_LinkCallV(linkUD, id, "Upgrade2Tile",
+			"Exit")) {
 			return 0;
 		}
 		Script_SetStr(id, "Upgrade1Tile", "Up", c);
@@ -720,13 +724,14 @@ static byte WT_UpgradeLinks(int id, const nativeVal_t *control, long slots, PyOb
 		return 0;
 	}
 	if (has1 && has2) {
-		return Mode_LinkCall(linkLR, id, "Upgrade1Tile", "Upgrade2Tile") && Mode_LinkCall(linkLR, id, last, "Upgrade1Tile") &&
-			Mode_LinkCall(linkLR, id, "Upgrade2Tile", first);
+		return Mode_LinkCallV(linkLR, id, "Upgrade1Tile", "Upgrade2Tile") && Mode_LinkCallV(linkLR, id, last,
+			"Upgrade1Tile") &&
+			Mode_LinkCallV(linkLR, id, "Upgrade2Tile", first);
 	}
 	if (has1 || has2) {
 		const char *tile = has1 ? "Upgrade1Tile" : "Upgrade2Tile";
-		return Mode_LinkCall(unlinkLR, id, "Upgrade1Tile", "Upgrade2Tile") && Mode_LinkCall(linkLR, id, last, tile) &&
-			Mode_LinkCall(linkLR, id, tile, first);
+		return Mode_LinkCallV(unlinkLR, id, "Upgrade1Tile", "Upgrade2Tile") && Mode_LinkCallV(linkLR, id, last, tile) &&
+			Mode_LinkCallV(linkLR, id, tile, first);
 	}
 	return 1;
 }
@@ -787,15 +792,28 @@ static byte WT_SlotSprites(int id, const nativeVal_t *control, long slots) {
 	return 1;
 }
 
+/* fn(id, a, b) of a link function held as a value, with a a value of the script and b a text of C (the entry of
+ * Menu's own function, Mode_CallArgs) */
+static byte WT_LinkV(const nativeVal_t *fn, int id, const nativeVal_t *a, const char *b) {
+	nativeVal_t v[3];
+	Native_SetInt(&v[0], id);
+	Native_Copy(&v[1], a);
+	Native_SetText(&v[2], b, (int)strlen(b));
+	byte ok = Mode_CallArgs(fn, NULL, v, 3);
+	Native_Free(&v[1]);
+	Native_Free(&v[2]);
+	return ok;
+}
+
 /* FillSlots(id, control): the bar with the slots of the weapon, the loaded ones lit, and its links */
 static byte WT_FillSlots(int id, const nativeVal_t *control) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", "ShipMaker", "string", NULL };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *numSlots = Mode_V(&t), *label = Mode_V(&t), *area = Mode_V(&t);
 	char name[WT_NAME], other[WT_NAME];
-	PyObject *linkLR = Mode_From("Menu", "LinkLR"), *linkUD = linkLR ? Mode_From("Menu", "LinkUD") : NULL;
-	PyObject *unlinkLR = linkUD ? Mode_From("Menu", "UnLinkLR") : NULL;
-	byte ok = unlinkLR && Script_Import(mods) && WT_NumSlots(control, numSlots);
+	nativeVal_t linkLR = { 0 }, linkUD = { 0 }, unlinkLR = { 0 };
+	byte ok = Mode_FromV("Menu", "LinkLR", &linkLR) && Mode_FromV("Menu", "LinkUD", &linkUD) &&
+		Mode_FromV("Menu", "UnLinkLR", &unlinkLR) && Script_Import(mods) && WT_NumSlots(control, numSlots);
 	double textWidth = 0, x = 84, y = 151;
 	long slots = 0;
 	if (ok) {
@@ -831,11 +849,11 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 		ok = Mode_Range(numSlots, &slots) && WT_PlaceSlots(id, control, slots, x, y);
 	}
 	for (long i = 0; ok && i < slots - 1; i++) {
-		ok = WT_Slot(name, control, i) && WT_Slot(other, control, i + 1) && Mode_LinkCall(linkLR, id, name, other);
+		ok = WT_Slot(name, control, i) && WT_Slot(other, control, i + 1) && Mode_LinkCallV(&linkLR, id, name, other);
 	}
 	for (long i = 0; ok && i < slots; i++) {
-		ok = WT_Slot(name, control, i) && PORT_VALUE(linkUD, NULL, "ivs", (long)id, control, name) &&
-			Mode_LinkCall(linkUD, id, name, "Exit");
+		ok = WT_Slot(name, control, i) && WT_LinkV(&linkUD, id, control, name) &&
+			Mode_LinkCallV(&linkUD, id, name, "Exit");
 	}
 	/* list.remove(control) of the six weapons: the others */
 	int skip = -1;
@@ -848,24 +866,24 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 	}
 	ok = ok && (skip >= 0 || Native_Raise(NE_VALUE, "list.remove(x): x not in list")) && WT_Slot(other, control, 0);
 	for (int i = 0; ok && i < 6; i++) {
-		ok = i == skip || Mode_LinkCall(linkUD, id, wt_linked[i], other);
+		ok = i == skip || Mode_LinkCallV(&linkUD, id, wt_linked[i], other);
 	}
-	ok = ok && PORT_VALUE(linkUD, NULL, "ivs", (long)id, control, other) && Mode_LinkCall(linkUD, id, other, "Exit") &&
+	ok = ok && WT_LinkV(&linkUD, id, control, other) && Mode_LinkCallV(&linkUD, id, other, "Exit") &&
 		WT_SlotSprites(id, control, slots);
 	multi = ok ? WT_IsMulti() : -1;
 	if (multi == 0) {
 		ok = PORT_OWN(WeaponsTab, UpdateUpgrades, NULL, "iv", (long)id, control) &&
-			WT_UpgradeLinks(id, control, slots, linkLR, linkUD, unlinkLR);
+			WT_UpgradeLinks(id, control, slots, &linkLR, &linkUD, &unlinkLR);
 	} else if (multi > 0) {
-		ok = WT_Slot(name, control, slots - 1) && Mode_LinkCall(linkLR, id, name, other);
+		ok = WT_Slot(name, control, slots - 1) && Mode_LinkCallV(&linkLR, id, name, other);
 	}
 	ok = ok && multi >= 0;
 	if (ok) {
 		Script_SetStr(id, "Exit", "Up", other);
 	}
-	Py_XDECREF(linkLR);
-	Py_XDECREF(linkUD);
-	Py_XDECREF(unlinkLR);
+	Native_Free(&linkLR);
+	Native_Free(&linkUD);
+	Native_Free(&unlinkLR);
 	return Mode_Done(&t, ok);
 }
 
@@ -998,10 +1016,12 @@ static byte WT_UpdateUpgrades(int id, const nativeVal_t *control) {
 	nativeVal_t *upgrade = Mode_V(&t), *u1 = Mode_S(&t, ""), *u2 = Mode_S(&t, ""), *a = Mode_V(&t), *b = Mode_V(&t);
 	nativeVal_t *auxs = Mode_V(&t), *aux = Mode_V(&t), *ai = Mode_V(&t);
 	char name1[WT_NAME], name2[WT_NAME];
-	PyObject *l1 = Script_Import(mods) ? Mode_From("Menu", "LinkLR") : NULL, *l2 = l1 ? Mode_From("Menu", "LinkUD") : NULL;
-	byte ok = l2 && WT_Cat(name1, "", control, "Upgrade1") && WT_Cat(name2, "", control, "Upgrade2");
-	Py_XDECREF(l1);
-	Py_XDECREF(l2);
+	/* from Menu import LinkLR, LinkUD (not called here) */
+	nativeVal_t l1 = { 0 }, l2 = { 0 };
+	byte ok = Script_Import(mods) && Mode_FromV("Menu", "LinkLR", &l1) && Mode_FromV("Menu", "LinkUD", &l2) &&
+		WT_Cat(name1, "", control, "Upgrade1") && WT_Cat(name2, "", control, "Upgrade2");
+	Native_Free(&l1);
+	Native_Free(&l2);
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
@@ -1111,12 +1131,12 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetDefault(id, c);
-	PyObject *unlinkUD = WT_WeaponColors(id, control, 1) ? Mode_From("Menu", "UnLinkUD") : NULL;
-	byte ok = unlinkUD != NULL;
+	nativeVal_t unlinkUD = { 0 };
+	byte ok = WT_WeaponColors(id, control, 1) && Mode_FromV("Menu", "UnLinkUD", &unlinkUD);
 	for (int i = 0; ok && i < 6; i++) {
-		ok = Mode_LinkCall(unlinkUD, id, wt_unlink[i], "Exit");
+		ok = Mode_LinkCallV(&unlinkUD, id, wt_unlink[i], "Exit");
 	}
-	Py_XDECREF(unlinkUD);
+	Native_Free(&unlinkUD);
 	if (ok) {
 		Script_SetStr(id, "ShipEditTabWeapons", "Down", c);
 		Script_SetStr(id, c, "Up", "ShipEditTabWeapons");
@@ -1252,11 +1272,10 @@ static byte WT_SetWeaponsPanel(int id) {
 	if (!Script_Import(mods)) {
 		return 0;
 	}
-	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
 	int single = Native_NetOff();
-	PyObject *vars = single >= 0 ? Py_BuildValue("{s:i}", "single", single) : NULL;
-	byte ok = vars && WT_Run(id, "panel", vars);
-	Py_XDECREF(vars);
+	nativeVal_t v;
+	Native_SetInt(&v, single);
+	byte ok = single >= 0 && WT_Run(id, "panel", 1, "single", &v);
 	nativeVal_t keys = { 0 };
 	ok = ok && Mode_Keys(MOD, "auxUpgradeId", 1, &keys);
 	int n = ok ? Native_ForCount(&keys) : -1;
@@ -1271,21 +1290,15 @@ static byte WT_SetWeaponsPanel(int id) {
 			Str_Printf(slot, sizeof(slot), "Slot%d", j);
 			Native_SetStr(&s, slot);
 			ok = Native_Arith('+', &w, &s, &name) && Mode_ItemText(&name, &text);
-			PyObject *o = ok ? Native_ToPy(&name) : NULL;
-			vars = o ? Py_BuildValue("{s:O}", "name", o) : NULL;
-			ok = vars && WT_Run(id, "slot", vars);
-			Py_XDECREF(vars);
-			Py_XDECREF(o);
+			ok = ok && WT_Run(id, "slot", 1, "name", &name);
 			Native_Free(&name);
 		}
 		Native_Free(&w);
 	}
 	Native_Free(&keys);
 	int multi = ok ? WT_IsMulti() : -1;
-	vars = multi >= 0 ? Py_BuildValue("{s:i}", "multi", multi) : NULL;
-	ok = vars && WT_Run(id, "boxes", vars);
-	Py_XDECREF(vars);
-	return ok;
+	Native_SetInt(&v, multi);
+	return multi >= 0 && WT_Run(id, "boxes", 1, "multi", &v);
 }
 
 MODE_IFN(WT_SetWeaponsPanelPy, 1, WT_SetWeaponsPanel(id))
@@ -1352,22 +1365,24 @@ static byte WT_LinkItem(long i, nativeVal_t *out) {
 }
 
 /* fn(id, controlsToLinkList[i], controlsToLinkList[j]) (j -1: "Exit") */
-static byte WT_LinkItems(PyObject *fn, int id, long i, long j) {
-	nativeVal_t a = { 0 }, b = { 0 };
-	byte ok = WT_LinkItem(i, &a) && (j < 0 ? (Native_SetStr(&b, "Exit"), 1) : WT_LinkItem(j, &b)) &&
-		PORT_VALUE(fn, NULL, "ivv", (long)id, &a, &b);
-	Native_Free(&a);
-	Native_Free(&b);
+static byte WT_LinkItems(const nativeVal_t *fn, int id, long i, long j) {
+	nativeVal_t a[3] = { { 0 }, { 0 }, { 0 } };
+	Native_SetInt(&a[0], id);
+	byte ok = WT_LinkItem(i, &a[1]) && (j < 0 ? (Native_SetStr(&a[2], "Exit"), 1) : WT_LinkItem(j, &a[2])) &&
+		Mode_CallArgs(fn, NULL, a, 3);
+	Native_Free(&a[1]);
+	Native_Free(&a[2]);
 	return ok;
 }
 
 /* ShowWeaponsPanel(id): the six weapons, those the player does not have dark; the ones he has linked */
 static byte WT_ShowWeaponsPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "string", NULL };
-	PyObject *linkLR = Mode_From("Menu", "LinkLR"), *linkUD = linkLR ? Mode_From("Menu", "LinkUD") : NULL;
+	nativeVal_t linkLR = { 0 }, linkUD = { 0 };
 	nativeVal_t empty, list = { 0 };
 	Native_SetEmpty(&empty, NV_LIST);
-	byte ok = linkUD && Script_Import(mods) && Mode_Put(MOD, "controlsToLinkList", NULL, &empty);
+	byte ok = Mode_FromV("Menu", "LinkLR", &linkLR) && Mode_FromV("Menu", "LinkUD", &linkUD) && Script_Import(mods) &&
+		Mode_Put(MOD, "controlsToLinkList", NULL, &empty);
 	for (int i = 0; ok && i < 6; i++) {
 		ok = WT_ShowWeapon(id, wt_shown[i]);
 	}
@@ -1375,11 +1390,12 @@ static byte WT_ShowWeaponsPanel(int id) {
 	Native_Free(&list);
 	ok = last >= -1;
 	for (int i = 0; ok && i < last; i++) {
-		ok = WT_LinkItems(linkLR, id, i, i + 1) && WT_LinkItems(linkUD, id, i, -1);
+		ok = WT_LinkItems(&linkLR, id, i, i + 1) && WT_LinkItems(&linkUD, id, i, -1);
 	}
-	ok = ok && WT_LinkItems(linkLR, id, last, 0) && WT_LinkItems(linkUD, id, last, -1) && WT_LinkItems(linkUD, id, 0, -1);
-	Py_XDECREF(linkLR);
-	Py_XDECREF(linkUD);
+	ok = ok && WT_LinkItems(&linkLR, id, last, 0) && WT_LinkItems(&linkUD, id, last, -1) && WT_LinkItems(&linkUD, id, 0,
+		-1);
+	Native_Free(&linkLR);
+	Native_Free(&linkUD);
 	return ok;
 }
 
@@ -1415,16 +1431,16 @@ static byte WT_HideWeaponsPanel(int id) {
 	for (int i = 0; ok && i < 6; i++) {
 		ok = PORT_OWN(WeaponsTab, HideSlots, NULL, "is", (long)id, wt_linked[i]);
 	}
-	PyObject *unlinkUD = ok ? Mode_From("Menu", "UnLinkUD") : NULL, *unlinkLR = unlinkUD ? Mode_From("Menu", "UnLinkLR") : NULL;
-	ok = unlinkLR != NULL;
+	nativeVal_t unlinkUD = { 0 }, unlinkLR = { 0 };
+	ok = ok && Mode_FromV("Menu", "UnLinkUD", &unlinkUD) && Mode_FromV("Menu", "UnLinkLR", &unlinkLR);
 	for (int i = 0; ok && i < 6; i++) {
-		ok = Mode_LinkCall(unlinkUD, id, wt_unlink[i], "Exit");
+		ok = Mode_LinkCallV(&unlinkUD, id, wt_unlink[i], "Exit");
 	}
 	int last = ok && WT_G("controlsToLinkList", &list) ? Native_Size(&list) : -1;
 	Native_Free(&list);
-	ok = last >= 0 && (last == 0 || WT_LinkItems(unlinkLR, id, last - 1, -1));
-	Py_XDECREF(unlinkUD);
-	Py_XDECREF(unlinkLR);
+	ok = last >= 0 && (last == 0 || WT_LinkItems(&unlinkLR, id, last - 1, -1));
+	Native_Free(&unlinkUD);
+	Native_Free(&unlinkLR);
 	return ok;
 }
 

@@ -2805,6 +2805,8 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_WeaponsTab_FillSlots,
 	&port_WeaponsTab_HideSlotMarker,
 	&port_WeaponsTab_HideSlots,
+	&port_WeaponsTab_HideWeaponDesc,
+	&port_WeaponsTab_HideWeaponUpgradeDesc,
 	&port_WeaponsTab_HideWeaponsPanel,
 	&port_WeaponsTab_HideWeightPrediction,
 	&port_WeaponsTab_LoadWeapon,
