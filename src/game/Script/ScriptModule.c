@@ -222,8 +222,9 @@ static PyObject *Mod_Skipped(void) {
  * an attribute or a call of Python gives is taken as Mod_FromPy takes it: a number or a text as a native value, any
  * other object (a list or dict a module holds, a module, a function, a class, an entity) by reference as an NV_OBJ, so
  * that lists and dicts stay shared and change in place. An operation on a value that holds such an object or a dict
- * goes through Python (the same result and error). A value becomes a Python object where it goes into Python: the
- * store into the module or a class body (Mod_StoreVal, OBJLIB 5: the dict slots are the store until batch 5h), the
+ * goes through Python (the same result and error). The stores and loads of the module's own names and the attributes
+ * of pack modules go to the registry as native values (scrap/modvars.h, batch 9b1). A value becomes a Python object
+ * where it goes into Python: the store into a class body (Mod_ToPy), the
  * call of a callable that is no port or engine function, the set of another object's attribute or item, the
  * operations through Python (Mod_ToPy). So that `is` and the objects stored stay the ones they were, a number or text
  * that came from a Python object keeps that object next to its value (nativeVal_t.obj, Mod_Keep), through copies too;
@@ -1250,7 +1251,12 @@ static byte Mod_Store(modParse_t *m, const char *name, PyObject *v) {
  * (Mod_ToPy, OBJLIB 9) */
 static byte Mod_PutVal(modParse_t *m, const char *name, const nativeVal_t *v) {
 	if (m->locals == m->globals && NObj_RefMode()) {
-		return ModVar_SetVal(&m->ref, name, v) == 0;
+		/* the numbers and texts as the objects of this code's constants (Mod_Leaf): `is` finds them */
+		nativeVal_t c;
+		Native_Copy(&c, v);
+		byte ok = Mod_Pin(m, &c) && ModVar_SetVal(&m->ref, name, &c) == 0;
+		Native_Free(&c);
+		return ok;
 	}
 	PyObject *o = Mod_ToPy(m, v);
 	byte ok = o && Mod_Put(m, name, o);

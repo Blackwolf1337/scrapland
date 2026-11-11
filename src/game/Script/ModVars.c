@@ -172,7 +172,8 @@ static void MV_FromPy(PyObject *o, nativeVal_t *v) {
 }
 
 /* *out the form of v a variable holds: lists and dicts as objects (NObj_Share), a vector as the tuple of three floats
- * it is in Python, a tuple with its Python tuple (one object for `is`, as the dict slot was; native data in it crosses);
+ * it is in Python, a tuple with its Python tuple and an entity handle with its Python object (one object for `is`, id
+ * and hash, as the dict slot had it; native data in a tuple crosses);
  * SCRAP_NATIVE_REF=0: the value as Python made it. 0 with the error */
 static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
 	if (!NObj_RefMode()) {
@@ -194,6 +195,16 @@ static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
 		Native_Copy(out, v);
 	}
 	NObj_Share(out);
+	if (out->type == NV_ENT && !Native_KeptPy(out)) {
+		/* the handle's Python object lives while the variable holds it, as in the dict slot: its address is the one
+		 * id, hash, repr and cmp of the handle show */
+		PyObject *o = Native_ToPy(out);
+		if (o) {
+			Native_KeepPy(out, o);
+			Py_DECREF(o);
+		}
+		PyErr_Clear();
+	}
 	if (out->type == NV_TUPLE && !Native_KeptPy(out)) {
 		PyObject *o = Native_ToPy(out);
 		if (!o) {
