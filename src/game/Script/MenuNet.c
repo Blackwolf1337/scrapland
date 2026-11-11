@@ -1329,10 +1329,10 @@ static byte PCMenu_AdvancedServer_E(const nativeVal_t *a, int n, nativeVal_t *ou
 		Net_Text("Menu_Multiplayer_Advanced_Force", "Force server vehicle"));
 	Net_DataRateText(rate, sizeof(rate));
 	modeVals_t t = { .n = 0 };
-	Net_RunMenu(id, "Advanced", 6, "title", Mode_S(&t, Net_Text("Menu_Multiplayer_Advanced_Options",
-		"Advanced Options")),
-		"pass", Mode_S(&t, pass), "password", Mode_S(&t, GVar_GetStr("ServerPassword")), "force", Mode_S(&t, force), "datarate",
-		Mode_S(&t, rate), "usepass", Mode_I(&t, usePass));
+	Net_RunMenu(id, "Advanced", 6,
+		"title", Mode_S(&t, Net_Text("Menu_Multiplayer_Advanced_Options", "Advanced Options")),
+		"pass", Mode_S(&t, pass), "password", Mode_S(&t, GVar_GetStr("ServerPassword")), "force", Mode_S(&t, force),
+		"datarate", Mode_S(&t, rate), "usepass", Mode_I(&t, usePass));
 	Mode_Done(&t, 1);
 	return 1;
 }

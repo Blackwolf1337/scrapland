@@ -965,8 +965,8 @@ static byte Se_AddShipEditTabs(int id, const nativeVal_t *tabs) {
 		int n = ok ? Native_Size(tabs) : -1;
 		Native_SetInt(first, counter == 2);
 		Native_SetInt(only, n == 1);
-		ok = n >= 0 && Sn_DefV(id, "tab", SE, 8, "name", name, "tab", tab, "text", text, "x", startX, "init", init,
-			"end", end,
+		ok = n >= 0 &&
+			Sn_DefV(id, "tab", SE, 8, "name", name, "tab", tab, "text", text, "x", startX, "init", init, "end", end,
 			"first", first, "only", only) && Mode_Arith('/', tabSize, Mode_IntVal(k, 2), width) &&
 			Mode_Arith('+', startX, width, x2);
 		if (ok) {

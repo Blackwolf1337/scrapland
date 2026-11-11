@@ -220,11 +220,11 @@ static void Hud_BarDefaults(int id, const char *name, const int *c) {
 	for (int i = 0; i < 12; i++) {
 		Native_SetInt(&v[i], c[i]);
 	}
-	Hud_Run(id, "missionbar", 15, "name", &nm, "x", &x, "y", &y, "backr", &v[0], "backg", &v[1], "backb", &v[2],
-		"backa",
-		&v[3], "mainr", &v[4], "maing", &v[5], "mainb", &v[6], "maina", &v[7], "blackr", &v[8], "blackg", &v[9],
-			"blackb",
-		&v[10], "blacka", &v[11]);
+	Hud_Run(id, "missionbar", 15, "name", &nm, "x", &x, "y", &y,
+		"backr", &v[0], "backg", &v[1], "backb", &v[2], "backa", &v[3],
+		"mainr", &v[4], "maing", &v[5], "mainb", &v[6], "maina", &v[7],
+		"blackr", &v[8], "blackg", &v[9], "blackb", &v[10],
+		"blacka", &v[11]);
 	Native_Free(&nm);
 	Native_Free(&x);
 	Native_Free(&y);
@@ -507,9 +507,9 @@ static void Racer_CreateRacerCore(int id) {
 	}
 	modeVals_t t = { .n = 0 };
 	Racer_Run(id, "racer", 8, "net", Mode_I(&t, net), "camera", Mode_I(&t, camera), "spectator", Mode_I(&t, spectator),
-		"target", Mode_I(&t, camera && Hud_True(&cam, "Target")), "showlocal", Mode_I(&t, !spectator || !net), "split",
-		Mode_I(&t, Mode_ModGetI("Scorer", "SplitScreen", 0) != 0), "online", Mode_I(&t, Net_IsClient() ||
-			Net_IsServer()),
+		"target", Mode_I(&t, camera && Hud_True(&cam, "Target")), "showlocal", Mode_I(&t, !spectator || !net),
+		"split", Mode_I(&t, Mode_ModGetI("Scorer", "SplitScreen", 0) != 0),
+		"online", Mode_I(&t, Net_IsClient() || Net_IsServer()),
 		"descriptor", Mode_S(&t, "\nDescriptor"));
 	Mode_Done(&t, 1);
 	Native_Free(&cam);
@@ -573,11 +573,11 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 			}
 		}
 		modeVals_t t = { .n = 0 };
-		Racer_Run(id, "row", 16, "n", Mode_I(&t, i), "y", Mode_I(&t, y), "liney", Mode_I(&t, y + step - 2), "font",
-			Mode_S(&t, small ? "Terminal8" : "HoratioSmall"), "step", Mode_I(&t, step), "name", Mode_S(&t, nm), "score",
-			Mode_S(&t, sc), "ping", Mode_S(&t, ping), "player", Mode_S(&t, pl), "r", &c[0], "g", &c[1], "b", &c[2],
-				"br",
-			&c[3], "bg", &c[4], "bb", &c[5], "ba", &c[6]);
+		Racer_Run(id, "row", 16, "n", Mode_I(&t, i), "y", Mode_I(&t, y), "liney", Mode_I(&t, y + step - 2),
+			"font", Mode_S(&t, small ? "Terminal8" : "HoratioSmall"), "step", Mode_I(&t, step),
+			"name", Mode_S(&t, nm), "score", Mode_S(&t, sc), "ping", Mode_S(&t, ping), "player", Mode_S(&t, pl),
+			"r", &c[0], "g", &c[1], "b", &c[2], "br", &c[3],
+			"bg", &c[4], "bb", &c[5], "ba", &c[6]);
 		Mode_Done(&t, 1);
 		for (int k = 0; k < 7; k++) {
 			Native_Free(&c[k]);

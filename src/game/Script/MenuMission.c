@@ -366,8 +366,8 @@ static void Mission_Menu(int id, const char *name) {
 	const missionPage_t *outer = mission_page;
 	mission_page = p;
 	Str_Printf(back, sizeof(back), "\x15 %s", Script_Lang("XBox_Menu_Back"));
-	static const char *const names[12] = { "page", "ltitle", "rtitle", "red", "green", "blue", "tred", "tgreen",
-		"tblue",
+	static const char *const names[12] = { "page", "ltitle", "rtitle",
+		"red", "green", "blue", "tred", "tgreen", "tblue",
 		"xbox", "outdoor", "xboxback" };
 	nativeVal_t v[12];
 	const nativeVal_t *vals[12] = { Mission_Text(&v[0], p->page), Mission_Text(&v[1], p->left),
