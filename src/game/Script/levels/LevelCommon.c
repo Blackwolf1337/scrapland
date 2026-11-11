@@ -53,7 +53,7 @@ static byte Lv_SndId(const nativeVal_t *name, byte beepI, nativeVal_t *out) {
 	return ok;
 }
 
-static byte Lv_SndCore(const nativeVal_t *a, const lvSndElement_t *table) {
+byte LvN_SndElements(const nativeVal_t *a, const lvSndElement_t *table) {
 	const nativeVal_t *name = &a[0];
 	if (!Mode_Import("Sound") || !LvN_GAdd("MapSnd", "cntr", 1, NULL)) {
 		return 0;
@@ -126,11 +126,12 @@ static byte Lv_SndCore(const nativeVal_t *a, const lvSndElement_t *table) {
 	return ok;
 }
 
+/* OBJLIB 7: the adapter body of the level tables that are not on MODE_FN yet (Townhall's MapSnd) */
 PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table) {
-	LV_WHOLE(6, Lv_SndCore(a, table));
+	LV_WHOLE(6, LvN_SndElements(a, table));
 }
 
-static byte Lv_PlanesCore(const char *module) {
+byte LvN_PlanesInit(const char *module) {
 	nativeVal_t dummy, n0, plane, ships, engines, both, ang, name, pre, pln, a2, pos;
 	if (!Mode_Import("MissionsFuncs") || !Mode_Import("CharAct") || !LvN_ModSetGlobal("CharAct", "TakenPhotoMap", module, "TakenPhoto")) {
 		return 0;
@@ -185,10 +186,6 @@ static byte Lv_PlanesCore(const char *module) {
 	return ok;
 }
 
-PyObject *Lv_PlanesInit(PyObject *args, const char *module) {
-	LV_WHOLE(1, Lv_PlanesCore(module));
-}
-
 /* the photo of a blueprint into its hangar list: the list of the module (Naves, Motores) loses it and is saved, the
  * hangar list gets item, the message of key with the name of the ship */
 static byte Lv_PhotoTo(const char *module, const char *var, const char *saveVar, const nativeVal_t *plano, const char *hangar,
@@ -227,7 +224,7 @@ static byte Lv_PhotoTo(const char *module, const char *var, const char *saveVar,
 	return ok;
 }
 
-static byte Lv_PhotoCore(const nativeVal_t *name, const char *module, const char *ships, const char *engines, nativeVal_t *out) {
+byte LvN_PlanesPhoto(const nativeVal_t *name, const char *module, const char *ships, const char *engines, nativeVal_t *out) {
 	nativeVal_t head, plano, list, up, rest, h, zero;
 	Native_SetNone(&head);
 	if (!Native_Slice(name, 0, 5, &head)) {
@@ -282,10 +279,6 @@ static byte Lv_PhotoCore(const nativeVal_t *name, const char *module, const char
 	return ok;
 }
 
-PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, const char *engines) {
-	LV_WHOLE(1, Lv_PhotoCore(&a[0], module, ships, engines, out));
-}
-
 byte LvN_AcShips(const char *module, const char *ships) {
 	nativeVal_t v;
 	if (!Mode_Import("Traffic")) {
@@ -295,10 +288,6 @@ byte LvN_AcShips(const char *module, const char *ships) {
 	byte ok = LvN_SaveList("Traffic.AcShips", module, &v) && Mode_SetModVar("Traffic", "AcShips", &v);
 	Native_Free(&v);
 	return ok;
-}
-
-PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships) {
-	LV_WHOLE(1, LvN_AcShips(module, ships));
 }
 
 byte LvN_StartPos(const double (*pos)[4], int n) {
@@ -319,10 +308,6 @@ byte LvN_StartPos(const double (*pos)[4], int n) {
 		}
 	}
 	return 1;
-}
-
-PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n) {
-	LV_WHOLE(0, LvN_StartPos(pos, n));
 }
 
 /* ---- Mission_DestroyCommSats1, 2 and 3 (Outskirts, Commercial, DownTown): one script with the level's details ---- */
@@ -506,16 +491,17 @@ static byte Probes_OnProbeDeath(const nativeVal_t *a, const lvProbes_t *p, nativ
 		if (ok) {
 			/* Scrap.AddScheduledFunc(Scrap.GetTime() + 2, Speech.AddRemoteCom, (msg, "CrazyGambler", SetNextMission, ())) */
 			Native_SetFloat(&t, Mode_Time() + 2);
-			PyObject *fn = Script_Attr("Speech", "AddRemoteCom");
+			nativeVal_t fn;
+			ok = Mode_RefMod("Speech", "AddRemoteCom", &fn);
 			Str_Printf(msg, sizeof(msg), "%s_RemoteMessage1", p->module);
 			LvN_Str(&args[0], msg);
 			LvN_Str(&args[1], "CrazyGambler");
 			Native_SetEmpty(&args[3], NV_TUPLE);
-			ok = fn && LvN_GObj(p->module, "SetNextMission", &args[2]) && Mode_Schedule(&t, fn, args, 4, NULL);
-			if (fn) {
+			if (ok) {
+				ok = LvN_GObj(p->module, "SetNextMission", &args[2]) && Mode_ScheduleV(&t, &fn, args, 4, NULL);
 				Native_Free(&args[2]);
 			}
-			Py_XDECREF(fn);
+			Native_Free(&fn);
 			Native_Free(&args[0]);
 			Native_Free(&args[1]);
 			Native_Free(&args[3]);
@@ -685,13 +671,13 @@ byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
 }
 
 byte LvN_GObj(const char *module, const char *name, nativeVal_t *out) {
-	PyObject *o = Mode_GlobalPy(module, name);
+	nativeVal_t o;
 	Native_SetNone(out);
-	if (!o) {
+	if (!Mode_RefG(module, name, &o)) {
 		return 0;
 	}
-	Native_Arg(o, out);
-	Py_DECREF(o);
+	Mode_RefPlain(&o, out);
+	Native_Free(&o);
 	return 1;
 }
 
@@ -803,12 +789,7 @@ byte LvN_Append(nativeVal_t *lst, const nativeVal_t *x) {
 		return 1;
 	}
 	/* the append method of another value: its error, as the script meets it */
-	PyObject *o = Native_ToPy(lst), *v = o ? Native_ToPy(x) : NULL;
-	PyObject *r = v ? Script_Method(o, "append", "(O)", v) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(v);
-	Py_XDECREF(o);
-	return r ? Native_Raise(NE_SYSTEM, "append of a value that is no list") : 0;
+	return Mode_RefCall(lst, "append", x, 1, NULL) && Native_Raise(NE_SYSTEM, "append of a value that is no list");
 }
 
 byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item) {
@@ -821,12 +802,7 @@ byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item) 
 
 byte LvN_ListRemove(nativeVal_t *lst, const nativeVal_t *x) {
 	if (lst->type != NV_LIST) {
-		PyObject *o = Native_ToPy(lst), *v = o ? Native_ToPy(x) : NULL;
-		PyObject *r = v ? Script_Method(o, "remove", "(O)", v) : NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(v);
-		Py_XDECREF(o);
-		return r ? Native_Raise(NE_SYSTEM, "remove of a value that is no list") : 0;
+		return Mode_RefCall(lst, "remove", x, 1, NULL) && Native_Raise(NE_SYSTEM, "remove of a value that is no list");
 	}
 	for (int i = 0; i < lst->n; i++) {
 		if (!Native_Compare(&lst->items[i], x)) {
@@ -854,10 +830,10 @@ byte LvN_Com(const char *key, const char *who, const char *module, const char *f
 		return PORT_CALL(Speech, AddRemoteCom, NULL, "ss", key, who);
 	}
 	/* the function read before Speech.AddRemoteCom (the script after it: the same unless both are gone) */
-	PyObject *then = Mode_GlobalPy(module, func);
-	byte ok = then && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, who, then, params) :
-		PORT_CALL(Speech, AddRemoteCom, NULL, "ssO", key, who, then));
-	Py_XDECREF(then);
+	nativeVal_t then;
+	byte ok = Mode_RefG(module, func, &then) && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, who, then.obj, params) :
+		PORT_CALL(Speech, AddRemoteCom, NULL, "ssO", key, who, then.obj));
+	Native_Free(&then);
 	return ok;
 }
 
@@ -885,22 +861,18 @@ byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target) {
 }
 
 byte LvN_Callback(const char *name, const char *module, const char *func) {
-	nativeVal_t key;
+	/* OBJLIB 5 and 7: the character object of CharsNPC, its list and the function, by reference */
+	nativeVal_t key, ch = { 0 }, cb = { 0 }, append = { 0 }, fn = { 0 };
 	LvN_Str(&key, name);
-	PyObject *ch = Mode_CharRes(&key);
+	byte ok = Mode_RefTake(Mode_CharRes(&key), &ch);
 	Native_Free(&key);
-	PyObject *cb = ch ? PyObject_GetAttrString(ch, "CallbackFunc") : NULL;
-	PyObject *append = cb ? PyObject_GetAttrString(cb, "append") : NULL;
-	PyObject *fn = append ? Mode_GlobalPy(module, func) : NULL;
-	PyObject *a = fn ? Py_BuildValue("(O)", fn) : NULL;
-	PyObject *r = a ? Script_CallObject(append, a, NULL) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(a);
-	Py_XDECREF(fn);
-	Py_XDECREF(append);
-	Py_XDECREF(cb);
-	Py_XDECREF(ch);
-	return r != NULL;
+	ok = ok && Mode_RefAttr(&ch, "CallbackFunc", &cb) && Mode_RefAttr(&cb, "append", &append) && Mode_RefG(module, func, &fn) &&
+		Mode_RefApply(&append, &fn, 1, NULL);
+	Native_Free(&fn);
+	Native_Free(&append);
+	Native_Free(&cb);
+	Native_Free(&ch);
+	return ok;
 }
 
 byte LvN_MissionChar(const char *name, const char *module, const char *func) {
@@ -1079,17 +1051,14 @@ byte LvN_Entity(const char *name, nativeVal_t *out) {
 }
 
 byte LvN_LaterObj(double delay, const nativeVal_t *func, const nativeVal_t *args, int n) {
-	PyObject *fn = Native_ToPy(func);
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_LaterPy(delay, fn, args, n, NULL);
-	Py_DECREF(fn);
-	return ok;
+	nativeVal_t t;
+	Native_SetFloat(&t, Mode_Time() + delay);
+	return Mode_ScheduleV(&t, func, args, n, NULL);
 }
 
 byte LvN_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const char *cls,
 	nativeVal_t *out) {
+	/* OBJLIB 7: the seam of Scrap.CreateEntity (the hook object; the entity handle is 7c's) */
 	PyObject *hook;
 	Native_SetNone(out);
 	int seam = Native_Seam("Scrap", "CreateEntity", &hook);
@@ -1128,7 +1097,8 @@ void LvN_Label(const char *key, nativeVal_t *out) {
 	Native_Free(&colon);
 }
 
-/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */
+/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error
+ * (OBJLIB 7: the seams that call the C core of the engine keep the hook object until the seams are C hooks, 7d) */
 #define LV_SEAM(module, name) \
 	PyObject *hook; \
 	int seam = Native_Seam(module, name, &hook); \
@@ -1526,14 +1496,13 @@ byte LvN_ClosePressHangar(void) {
 }
 
 byte LvN_RoutineCall(const char *kind, const nativeVal_t *a) {
-	/* OBJLIB 5: the functions of Speech as the objects its table holds */
-	PyObject *r = Script_Attr("Speech", "SpeechRoutines");
-	PyObject *k = r ? PyString_FromString((char *)kind) : NULL;
-	PyObject *fn = k ? PyObject_GetItem(r, k) : NULL;
-	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
-	Py_XDECREF(fn);
-	Py_XDECREF(k);
-	Py_XDECREF(r);
+	/* OBJLIB 5: the functions of Speech as the objects its table holds, by reference */
+	nativeVal_t r, k, fn = { 0 };
+	Native_SetText(&k, kind, (int)strlen(kind));
+	byte ok = Mode_RefMod("Speech", "SpeechRoutines", &r) && Mode_RefSub(&r, &k, &fn) && Mode_RefApply(&fn, a, 4, NULL);
+	Native_Free(&fn);
+	Native_Free(&k);
+	Native_Free(&r);
 	return ok;
 }
 

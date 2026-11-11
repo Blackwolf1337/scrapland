@@ -348,10 +348,7 @@ static const lvSndElement_t police_snd[] = {
 };
 
 /* SndElements(Name, x, y, z, angx, angy) */
-static PyObject *PoliceMapSnd_SndElements(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_SndElements(args, police_snd);
-}
+MODE_FN(PoliceMapSnd, SndElements, 6, LvN_SndElements(a, police_snd))
 
 PyMethodDef g_PoliceMapSndMethods[] = {
 	{ "SndElements", PoliceMapSnd_SndElements, METH_VARARGS, NULL },
@@ -361,15 +358,9 @@ PyMethodDef g_PoliceMapSndMethods[] = {
 /* ---- MapPlanes ---- */
 
 /* Init(LevelPath), TakenPhoto(Name): the police blueprints (levels/LevelCommon.c, shared with Press) */
-static PyObject *MapPlanes_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_PlanesInit(args, MP);
-}
+MODE_FN(MapPlanes, Init, 1, LvN_PlanesInit(MP))
 
-static PyObject *MapPlanes_TakenPhoto(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_PlanesPhoto(args, MP, "PoliceBlueprints.Ships", "PoliceBlueprints.Engines");
-}
+MODE_FN(MapPlanes, TakenPhoto, 1, LvN_PlanesPhoto(&a[0], MP, "PoliceBlueprints.Ships", "PoliceBlueprints.Engines", out))
 
 PyMethodDef g_PoliceMapPlanesMethods[] = {
 	{ "Init", MapPlanes_Init, METH_VARARGS, NULL },
@@ -817,10 +808,9 @@ static byte BeatPickus_CreateLauncher(const nativeVal_t *a, nativeVal_t *out) {
 /* del Speech.RemoteCom; Speech.RemoteCom = [] (OBJLIB 5: the attribute of the module deleted, the error of a missing
  * one) */
 static byte Bp_NoComs(void) {
-	nativeVal_t l;
-	PyObject *speech = Script_Module("Speech");
-	byte ok = speech && PyObject_SetAttrString(speech, "RemoteCom", NULL) == 0;
-	Py_XDECREF(speech);
+	nativeVal_t l, speech;
+	byte ok = Mode_RefModule("Speech", &speech) && Mode_RefDelAttr(&speech, "RemoteCom");
+	Native_Free(&speech);
 	if (!ok) {
 		return 0;
 	}
@@ -943,14 +933,8 @@ static byte Bp_AskPickus(void) {
 	return ok;
 }
 
-static PyObject *BeatPickus_AskPickus(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
-	}
-	return Mode_Result(Bp_AskPickus());
+MODE_KW(BeatPickus, AskPickus, "|O", "usr") {
+	return Bp_AskPickus();
 }
 
 /* OnTalkToPickus(UsrName, CharName, optId, FullOption): Pickus tells about the plans (PreGetFuncShipPlans at the
@@ -1513,12 +1497,12 @@ static byte GetAuthorization_FreeHuman(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t dummy, pos, l;
 	(void)a;
 	(void)out;
-	PyObject *start;
-	if (!Mode_DoorFoe("GateKeeper_08", "DtritusGroupGateKeeper") || !(start = Mode_GlobalPy(GA, "StartScene"))) {
+	nativeVal_t start;
+	if (!Mode_DoorFoe("GateKeeper_08", "DtritusGroupGateKeeper") || !Mode_RefG(GA, "StartScene", &start)) {
 		return 0;
 	}
-	byte ok = PORT_CALL(GateKeeper, SetDoor, NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", start);
-	Py_DECREF(start);
+	byte ok = PORT_CALL(GateKeeper, SetDoor, NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", start.obj);
+	Native_Free(&start);
 	if (!ok || !PO_ENTS("GateKeeper_08", "UseFunc", "Mission_GetAuthorization.TalkPepe") || !Mode_Target("GateKeeper_08")) {
 		return 0;
 	}
@@ -1934,12 +1918,11 @@ static byte JailBreak_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 
 /* CharsNPC.CharRes[key].var = v (OBJLIB 5: the character objects of CharsNPC) */
 static byte Jb_ResSet(const char *key, const char *var, const nativeVal_t *v) {
-	nativeVal_t k;
+	nativeVal_t k, ch;
 	LvN_Str(&k, key);
-	PyObject *ch = Mode_CharRes(&k);
+	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_VSet(&ch, var, v);
 	Native_Free(&k);
-	byte ok = ch && Mode_HSet(ch, var, v);
-	Py_XDECREF(ch);
+	Native_Free(&ch);
 	return ok;
 }
 
@@ -1960,10 +1943,10 @@ static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&k);
 		Native_SetNone(&act);
 		ok = Native_SeqItem(&keys, i, &k);
-		PyObject *ch = ok ? Mode_CharRes(&k) : NULL;
-		int other = ch && Mode_HGet(ch, "ActCtrl", &act) ? !LvN_EqS(&act, "GateKeeper") : -1;
+		nativeVal_t ch = { 0 };
+		int other = ok && Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_VGet(&ch, "ActCtrl", &act) ? !LvN_EqS(&act, "GateKeeper") : -1;
 		ok = other >= 0 && (!other || Mode_ModDictDel("CharsNPC", "CharRes", &k));
-		Py_XDECREF(ch);
+		Native_Free(&ch);
 		Native_Free(&k);
 		Native_Free(&act);
 	}
@@ -2078,17 +2061,18 @@ static byte JailBreak_InitPuffReborn(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	LvN_Str(&k, "Desktop_JailBreak");
-	PyObject *cr = Mode_CharRes(&k);
+	nativeVal_t cr;
+	byte ok = Mode_RefTake(Mode_CharRes(&k), &cr);
 	Native_Free(&k);
-	if (!cr) {
+	if (!ok) {
 		return 0;
 	}
 	Native_SetNone(&v);
-	byte ok = Mode_HGet(cr, "Pos", &v) && Mode_VSet(&a[0], "Pos", &v);
+	ok = Mode_VGet(&cr, "Pos", &v) && Mode_VSet(&a[0], "Pos", &v);
 	Native_Free(&v);
-	ok = ok && Mode_HGet(cr, "Ang", &v) && Mode_VSet(&a[0], "Ang", &v);
+	ok = ok && Mode_VGet(&cr, "Ang", &v) && Mode_VSet(&a[0], "Ang", &v);
 	Native_Free(&v);
-	Py_DECREF(cr);
+	Native_Free(&cr);
 	Native_SetNone(&name);
 	ok = ok && LvN_SetG(&a[0], "InCtrl_Walk", JB, "PuffWalk") && LvN_SetG(&a[0], "InCtrl_HRot", JB, "PuffTurn") && Mode_VGet(&a[0], "Name", &name) &&
 		PO_LATER1(2.0, JB, "CheckForJump", &name) && LvN_SetS(&a[0], "UseFunc", "Mission_JailBreak.StaplerSpeech");
@@ -2449,7 +2433,7 @@ static byte Pc_TrySound(const char *func, const char *msg) {
 	if (Mode_Import("MapSnd") && LV_CALL("MapSnd", func, NULL, "")) {
 		return 1;
 	}
-	PyErr_Clear();
+	Mode_DropError();
 	LvN_Str(&m, msg);
 	byte ok = Mode_ConsoleError(&m);
 	Native_Free(&m);
@@ -2555,13 +2539,14 @@ static byte Pc_PlayLater(const nativeVal_t *time, double delay, const char *play
 	Native_SetNone(&at);
 	byte ok = Native_Arith('+', &base, &d, &at);
 	Native_Free(&base);
-	PyObject *fn = ok ? Mode_GlobalPy(PC, "PlayAnm") : NULL;
+	nativeVal_t fn = { 0 };
+	ok = ok && Mode_RefG(PC, "PlayAnm", &fn);
 	Native_SetNone(&args[0]);
 	Native_SetNone(&args[1]);
 	LvN_Str(&args[2], action);
 	LvN_Str(&name, "PokerPlay");
-	ok = fn && Mode_G(PC, player, &args[0]) && Mode_G(PC, cards, &args[1]) && Mode_Schedule(&at, fn, args, 3, &name);
-	Py_XDECREF(fn);
+	ok = ok && Mode_G(PC, player, &args[0]) && Mode_G(PC, cards, &args[1]) && Mode_ScheduleV(&at, &fn, args, 3, &name);
+	Native_Free(&fn);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&args[i]);
 	}
@@ -2581,10 +2566,9 @@ static byte PoliceBossCheats_WatchEvents(const nativeVal_t *a, nativeVal_t *out)
 	}
 	Native_SetFloat(&d, 8.0);
 	Native_SetNone(&at);
-	PyObject *fn = Native_Arith('+', &time, &d, &at) ? Native_ToPy(&a[0]) : NULL;
+	byte ok = Native_Arith('+', &time, &d, &at);
 	LvN_Str(&name, "PokerPlay");
-	byte ok = fn && Mode_Schedule(&at, fn, NULL, 0, &name);
-	Py_XDECREF(fn);
+	ok = ok && Mode_ScheduleV(&at, &a[0], NULL, 0, &name);
 	Native_Free(&at);
 	Native_Free(&name);
 	return ok;

@@ -60,11 +60,8 @@ extern PyMethodDef g_GDBReinsertOwnMatrix2Methods[];
 
 /* the colours black (0,0,0,255) and clear (0,0,0,0) of SScorer.Fade (Mode_Fade) */
 extern const int lv_black[4], lv_clear[4];
-/* InitStatus(LevelPath) of a mission with only the lines of LvN_AcShips */
-PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships);
 /* a race of MapRace (no arguments): import RaceMaker; RaceMaker.StartPos = [] and the n points appended as
- * ((x, y, z), angle); LvN_StartPos is its native core (the entries of the races, MODE_FN) */
-PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n);
+ * ((x, y, z), angle) (the entries of the races, MODE_FN) */
 byte LvN_StartPos(const double (*pos)[4], int n);
 /* Mission_DestroyCommSats1, 2 and 3: one script in three levels */
 extern PyMethodDef g_OutskirtsDestroyCommSats1Methods[];
@@ -96,10 +93,13 @@ typedef struct {
  * engine of a "Plano" photo to the hangar lists (the save variables ships and engines keep the module lists): 1, 0,
  * or None for another photo
  */
-PyObject *Lv_PlanesInit(PyObject *args, const char *module);
-PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, const char *engines);
+byte LvN_PlanesInit(const char *module);
+byte LvN_PlanesPhoto(const nativeVal_t *name, const char *module, const char *ships, const char *engines, nativeVal_t *out);
 
-/* SndElements(Name, x, y, z, angx, angy) of the MapSnd of a level with its table of elements (ends with a NULL name) */
+/* SndElements(Name, x, y, z, angx, angy) of the MapSnd of a level with its table of elements (ends with a NULL name):
+ * LvN_SndElements on the six arguments (MODE_FN), Lv_SndElements the adapter body of a table that is not on MODE_FN
+ * yet (OBJLIB 7) */
+byte LvN_SndElements(const nativeVal_t *a, const lvSndElement_t *table);
 PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 
 /*

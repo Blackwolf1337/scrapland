@@ -48,33 +48,27 @@
 
 /* ---- native helpers of this file ---- */
 
-/* SSound.SetMusicVolume(volume) through its seam (fr6b.py records it) */
+/* SSound.SetMusicVolume(volume) through its ref (OBJLIB 7, the seam: fr6b.py records it) */
 static byte Gd_MusicVolume(double volume) {
-	PyObject *hook;
-	int seam = Native_Seam("SSound", "SetMusicVolume", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "d", volume);
-	}
-	SoundSys_SetMusicVolume(g_pSound, (float)volume);
-	return 1;
+	return PORT_CALL(SSound, SetMusicVolume, NULL, "d", volume);
 }
 
 /* CharsNPC.CharRes[name].var into *out (any value: an object as NV_OBJ), and its set */
 static byte Gd_ResGet(const nativeVal_t *name, const char *var, nativeVal_t *out) {
-	PyObject *ch = Mode_CharRes(name);
-	PyObject *v = ch ? Script_GetAttr(ch, var) : NULL;
-	if (v) {
-		Native_Arg(v, out);
+	nativeVal_t ch, v = { 0 };
+	byte ok = Mode_RefTake(Mode_CharRes(name), &ch) && Mode_RefGetAttr(&ch, var, &v);
+	if (ok) {
+		Mode_RefPlain(&v, out);
 	}
-	Py_XDECREF(v);
-	Py_XDECREF(ch);
-	return v != NULL;
+	Native_Free(&v);
+	Native_Free(&ch);
+	return ok;
 }
 
 static byte Gd_ResSet(const nativeVal_t *name, const char *var, const nativeVal_t *v) {
-	PyObject *ch = Mode_CharRes(name);
-	byte ok = ch && Mode_HSet(ch, var, v);
-	Py_XDECREF(ch);
+	nativeVal_t ch;
+	byte ok = Mode_RefTake(Mode_CharRes(name), &ch) && Mode_VSet(&ch, var, v);
+	Native_Free(&ch);
 	return ok;
 }
 
@@ -99,18 +93,15 @@ static byte Gd_ResDel(const char *name) {
 /* CharsNPC.CharRes[name].CallbackFunc.append(fn) with fn the function already read (a global or Map.X, its NameError or
  * AttributeError before the lookup of the character, as the script's lines were ported) */
 static byte Gd_Callback(const char *name, const nativeVal_t *fn) {
-	nativeVal_t k = { 0 };
+	/* OBJLIB 5 and 7: the character object of CharsNPC and its list, by reference */
+	nativeVal_t k = { 0 }, ch, cb = { 0 };
 	LvN_Str(&k, name);
-	PyObject *ch = Mode_CharRes(&k);
-	PyObject *cb = ch ? PyObject_GetAttrString(ch, "CallbackFunc") : NULL;
-	PyObject *x = cb ? Native_ToPy(fn) : NULL;
-	PyObject *r = x ? Script_Method(cb, "append", "(O)", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	Py_XDECREF(cb);
-	Py_XDECREF(ch);
+	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_RefAttr(&ch, "CallbackFunc", &cb) &&
+		Mode_RefCall(&cb, "append", fn, 1, NULL);
+	Native_Free(&cb);
+	Native_Free(&ch);
 	Native_Free(&k);
-	return r != NULL;
+	return ok;
 }
 
 /* the same with fn the global func of module */
@@ -468,14 +459,15 @@ static byte Den_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
 		}
 		Mode_DummyStart(mercs[i][1], 0);
 		LvN_Str(&name, mercs[i][0]);
-		PyObject *res = Mode_CharRes(&name);
+		nativeVal_t res;
+		byte ok = Mode_RefTake(Mode_CharRes(&name), &res);
 		Native_Free(&name);
-		if (!res) {
+		if (!ok) {
 			return 0;
 		}
 		Mode_DummyNext(&d);
-		byte ok = LvN_Item(&d, 1, &p) && Mode_HSet(res, "DancePos", &p);
-		Py_DECREF(res);
+		ok = LvN_Item(&d, 1, &p) && Mode_VSet(&res, "DancePos", &p);
+		Native_Free(&res);
 		Native_Free(&d);
 		Native_Free(&p);
 		if (!ok) {
@@ -536,7 +528,7 @@ static int Den_RandUp(long lo, long hi) {
 	int up = -1;
 	if (Mode_Rand(&a, &b, &r)) {
 		up = Native_Compare(&r, &z) > 0;
-		if (PyErr_Occurred()) {
+		if (Mode_ErrorSet()) {
 			up = -1;
 		}
 	}
@@ -687,7 +679,7 @@ static byte Den_CharUsrDanceC(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	int dance = Native_Compare(&a[1], Mode_I(&t, 0)) > 0;
-	if (PyErr_Occurred()) {
+	if (Mode_ErrorSet()) {
 		return Mode_Done(&t, 0);
 	}
 	if (dance) {
@@ -758,14 +750,14 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 			return Mode_Done(&t, 0);
 		}
 		int busy = Native_Compare(r, Mode_I(&t, 0)) > 0;
-		if (PyErr_Occurred()) {
+		if (Mode_ErrorSet()) {
 			return Mode_Done(&t, 0);
 		}
 		busy = busy || islm;
 		Native_Free(r);
 		if (busy) {
 			int tired = Native_Compare(ctr, Mode_I(&t, 3)) >= 0;
-			if (PyErr_Occurred()) {
+			if (Mode_ErrorSet()) {
 				return Mode_Done(&t, 0);
 			}
 			if (tired && !islm) {
@@ -773,7 +765,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 					return Mode_Done(&t, 0);
 				}
 				int drunk = Native_Compare(b, Mode_I(&t, 0)) > 0;
-				if (PyErr_Occurred()) {
+				if (Mode_ErrorSet()) {
 					return Mode_Done(&t, 0);
 				}
 				Native_Free(b);
@@ -799,7 +791,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 					return Mode_Done(&t, 0);
 				}
 				int empty = Native_Compare(r, Mode_I(&t, 0)) < 0;
-				if (PyErr_Occurred()) {
+				if (Mode_ErrorSet()) {
 					return Mode_Done(&t, 0);
 				}
 				if (empty) {
@@ -873,7 +865,7 @@ static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
 			return Mode_Done(&t, 0);
 		}
 		int second = !Native_Compare(v1, name);
-		if (PyErr_Occurred()) {
+		if (Mode_ErrorSet()) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(name);
@@ -951,7 +943,7 @@ static byte Den_MercenarySpeechC(const nativeVal_t *a, nativeVal_t *out) {
 				direct = 1;
 			} else {
 				int few = Native_Compare(lives, Mode_I(&t, 3)) < 0;
-				if (PyErr_Occurred()) {
+				if (Mode_ErrorSet()) {
 					return Mode_Done(&t, 0);
 				}
 				if (few) {
@@ -1496,14 +1488,14 @@ static byte Bankers_LaunchDeepThroatMessageC(const nativeVal_t *a, nativeVal_t *
 	(void)out;
 	/* Scrap.GetTime() + 3.0, Speech.AddRemoteCom, (key, who, TalkToDeepThroat) in the order of the script */
 	Native_SetFloat(&t, Mode_Time() + 3.0);
-	PyObject *fn = Script_Attr("Speech", "AddRemoteCom");
-	if (!fn) {
+	nativeVal_t fn;
+	if (!Mode_RefMod("Speech", "AddRemoteCom", &fn)) {
 		return 0;
 	}
 	LvN_Str(&args[0], "Mission_VersusAgainstIgor_RemoteMessage4");
 	LvN_Str(&args[1], "DeepThroat");
-	byte ok = LvN_GObj(BK, "TalkToDeepThroat", &args[2]) && Mode_Schedule(&t, fn, args, 3, NULL);
-	Py_DECREF(fn);
+	byte ok = LvN_GObj(BK, "TalkToDeepThroat", &args[2]) && Mode_ScheduleV(&t, &fn, args, 3, NULL);
+	Native_Free(&fn);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&args[i]);
 	}

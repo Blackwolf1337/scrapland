@@ -3538,6 +3538,7 @@ PORT_DECLL(commercial, MapRace, EasyRaceCommercial6) /* 0 */
 PORT_DECLL(commercial, MapRace, EasyRaceCommercial7) /* 0 */
 PORT_DECLL(commercial, MapRace, EasyRaceCommercial8) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile) /* 0 */
+PORT_DECLL(commercial, Mission_DestroyMickus, InitStatus) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyMickus, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyMickus, CreateTransports) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyMickus, InitMission) /* 0 */
@@ -3561,6 +3562,7 @@ PORT_DECLL(commercial, Mission_DestroyMickus, SetNextMission) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyMickus, MissionScorer) /* 1 */
 PORT_DECLL(commercial, Mission_ProtectGus, CreateLonelyMercProfile) /* 0 */
 PORT_DECLL(commercial, Mission_ProtectGus, CreateBishopGusProfile) /* 0 */
+PORT_DECLL(commercial, Mission_ProtectGus, InitStatus) /* 1 */
 PORT_DECLL(commercial, Mission_ProtectGus, Init) /* 1 */
 PORT_DECLL(commercial, Mission_ProtectGus, InitMission) /* 0 */
 PORT_DECLL(commercial, Mission_ProtectGus, AttackEachOther) /* 0 */
@@ -3574,6 +3576,7 @@ PORT_DECLL(commercial, Mission_ProtectGus, UsePhoneCab) /* 4 */
 PORT_DECLL(commercial, Mission_ProtectGus, SetNextMission) /* 0 */
 PORT_DECLL(commercial, Mission_ProtectGus, MissionScorer) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyStupidus, GetStupidusProfile) /* 0 */
+PORT_DECLL(commercial, Mission_DestroyStupidus, InitStatus) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyStupidus, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyStupidus, CreateStupidus) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyStupidus, OnStupidusDeath) /* 2 */
@@ -3582,6 +3585,7 @@ PORT_DECLL(commercial, Mission_DestroyStupidus, DropAmplifier) /* 1 */
 PORT_DECLL(commercial, Mission_DestroyStupidus, TakeAmplifier) /* 2 */
 PORT_DECLL(commercial, Mission_DestroyStupidus, BertoFound) /* 0 */
 PORT_DECLL(commercial, Mission_DestroyStupidus, SetNextMission) /* 0 */
+PORT_DECLL(commercial, Mission_Win1stRace, InitStatus) /* 1 */
 PORT_DECLL(commercial, Mission_Win1stRace, Init) /* 1 */
 PORT_DECLL(commercial, Mission_Win1stRace, InitTimeRace) /* 0 */
 PORT_DECLL(commercial, Mission_Win1stRace, OnRaceStart) /* 2 */
@@ -3593,6 +3597,7 @@ PORT_DECLL(commercial, Mission_Win1stRace, TimeExpired) /* 0 */
 PORT_DECLL(commercial, Mission_Win1stRace, PreSetNextMission) /* 0 */
 PORT_DECLL(commercial, Mission_Win1stRace, SetNextMission) /* 0 */
 PORT_DECLL(commercial, Mission_Win1stRace, MissionScorer) /* 1 */
+PORT_DECLL(commercial, Mission_FirstMeetDeepThroat, InitStatus) /* 1 */
 PORT_DECLL(commercial, Mission_FirstMeetDeepThroat, Init) /* 1 */
 PORT_DECLL(commercial, Mission_FirstMeetDeepThroat, AfterDeepThroatMessageShown) /* 0 */
 PORT_DECLL(commercial, Mission_FirstMeetDeepThroat, AfterDeepThroatMessageShown2) /* 0 */
@@ -3603,6 +3608,7 @@ PORT_DECLL(commercial, Mission_FirstMeetDeepThroat, UsePhoneCab) /* 4 */
 PORT_DECLL(commercial, Mission_FirstMeetDeepThroat, SetNextMission) /* 0 */
 PORT_DECLL(commercial, Mission_FirstMeetDeepThroat, CGCalls) /* 0 */
 PORT_DECLL(commercial, Mission_GetDataPart3, GetFunctionariesEnemiesProfile) /* 0 */
+PORT_DECLL(commercial, Mission_GetDataPart3, InitStatus) /* 1 */
 PORT_DECLL(commercial, Mission_GetDataPart3, Init) /* 1 */
 PORT_DECLL(commercial, Mission_GetDataPart3, InitMission) /* 0 */
 PORT_DECLL(commercial, Mission_GetDataPart3, StopMission) /* 0 */
@@ -3626,6 +3632,7 @@ PORT_DECLL(commercial, Mission_GetDataPart3, UsePhoneCab2) /* 4 */
 PORT_DECLL(commercial, Mission_GetDataPart3, SetNextMission) /* 0 */
 PORT_DECLL(commercial, Mission_GetDataPart3, MissionScorer) /* 1 */
 PORT_DECLL(commercial, Mission_DefeatCrazyGambler3, GetCrazyGamblerProfile) /* 0 */
+PORT_DECLL(commercial, Mission_DefeatCrazyGambler3, InitStatus) /* 1 */
 PORT_DECLL(commercial, Mission_DefeatCrazyGambler3, Init) /* 1 */
 PORT_DECLL(commercial, Mission_DefeatCrazyGambler3, LaunchFirstTaunt) /* 0 */
 PORT_DECLL(commercial, Mission_DefeatCrazyGambler3, LaunchTaunts) /* 0 */
@@ -3672,6 +3679,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, MapRace, EasyRaceCommercial7, MapRace_Race7) \
 	PORT_DEFL(commercial, MapRace, EasyRaceCommercial8, MapRace_Race8) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, GetFuncEnemiesProfile, Mickus_GetFuncEnemiesProfileA) \
+	PORT_DEFL(commercial, Mission_DestroyMickus, InitStatus, Mickus_InitStatus) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, Init, Mickus_InitA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, CreateTransports, Mickus_CreateTransportsA) \
 	PORT_DEFL(commercial, Mission_DestroyMickus, InitMission, Mickus_InitMissionA) \
@@ -3695,6 +3703,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_DestroyMickus, MissionScorer, Mickus_MissionScorerA) \
 	PORT_DEFL(commercial, Mission_ProtectGus, CreateLonelyMercProfile, Gus_CreateLonelyMercProfileA) \
 	PORT_DEFL(commercial, Mission_ProtectGus, CreateBishopGusProfile, Gus_CreateBishopGusProfileA) \
+	PORT_DEFL(commercial, Mission_ProtectGus, InitStatus, Gus_InitStatus) \
 	PORT_DEFL(commercial, Mission_ProtectGus, Init, Gus_InitA) \
 	PORT_DEFL(commercial, Mission_ProtectGus, InitMission, Gus_InitMissionA) \
 	PORT_DEFL(commercial, Mission_ProtectGus, AttackEachOther, Gus_AttackEachOtherA) \
@@ -3708,6 +3717,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_ProtectGus, SetNextMission, Gus_SetNextMissionA) \
 	PORT_DEFL(commercial, Mission_ProtectGus, MissionScorer, Gus_MissionScorerA) \
 	PORT_DEFL(commercial, Mission_DestroyStupidus, GetStupidusProfile, Stupidus_GetStupidusProfileA) \
+	PORT_DEFL(commercial, Mission_DestroyStupidus, InitStatus, Stupidus_InitStatus) \
 	PORT_DEFL(commercial, Mission_DestroyStupidus, Init, Stupidus_InitA) \
 	PORT_DEFL(commercial, Mission_DestroyStupidus, CreateStupidus, Stupidus_CreateStupidusA) \
 	PORT_DEFL(commercial, Mission_DestroyStupidus, OnStupidusDeath, Stupidus_OnStupidusDeathA) \
@@ -3716,6 +3726,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_DestroyStupidus, TakeAmplifier, Stupidus_TakeAmplifierA) \
 	PORT_DEFL(commercial, Mission_DestroyStupidus, BertoFound, Stupidus_BertoFoundA) \
 	PORT_DEFL(commercial, Mission_DestroyStupidus, SetNextMission, Stupidus_SetNextMissionA) \
+	PORT_DEFL(commercial, Mission_Win1stRace, InitStatus, Race_InitStatus) \
 	PORT_DEFL(commercial, Mission_Win1stRace, Init, Race_InitA) \
 	PORT_DEFL(commercial, Mission_Win1stRace, InitTimeRace, Race_InitTimeRaceA) \
 	PORT_DEFL(commercial, Mission_Win1stRace, OnRaceStart, Race_OnRaceStartA) \
@@ -3727,6 +3738,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_Win1stRace, PreSetNextMission, Race_PreSetNextMissionA) \
 	PORT_DEFL(commercial, Mission_Win1stRace, SetNextMission, Race_SetNextMissionA) \
 	PORT_DEFL(commercial, Mission_Win1stRace, MissionScorer, Race_MissionScorerA) \
+	PORT_DEFL(commercial, Mission_FirstMeetDeepThroat, InitStatus, Deep_InitStatus) \
 	PORT_DEFL(commercial, Mission_FirstMeetDeepThroat, Init, Deep_InitA) \
 	PORT_DEFL(commercial, Mission_FirstMeetDeepThroat, AfterDeepThroatMessageShown, Deep_AfterDeepThroatMessageShownA) \
 	PORT_DEFL(commercial, Mission_FirstMeetDeepThroat, AfterDeepThroatMessageShown2, Deep_AfterDeepThroatMessageShown2A) \
@@ -3737,6 +3749,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_FirstMeetDeepThroat, SetNextMission, Deep_SetNextMissionA) \
 	PORT_DEFL(commercial, Mission_FirstMeetDeepThroat, CGCalls, Deep_CGCallsA) \
 	PORT_DEFL(commercial, Mission_GetDataPart3, GetFunctionariesEnemiesProfile, Data_GetFunctionariesEnemiesProfileA) \
+	PORT_DEFL(commercial, Mission_GetDataPart3, InitStatus, Data_InitStatus) \
 	PORT_DEFL(commercial, Mission_GetDataPart3, Init, Data_InitA) \
 	PORT_DEFL(commercial, Mission_GetDataPart3, InitMission, Data_InitMissionA) \
 	PORT_DEFL(commercial, Mission_GetDataPart3, StopMission, Data_StopMissionA) \
@@ -3760,6 +3773,7 @@ PORT_DECLL(commercial, Mission_DestroyPorkinsTransports, MissionScorer) /* 1 */
 	PORT_DEFL(commercial, Mission_GetDataPart3, SetNextMission, Data_SetNextMissionA) \
 	PORT_DEFL(commercial, Mission_GetDataPart3, MissionScorer, Data_MissionScorerA) \
 	PORT_DEFL(commercial, Mission_DefeatCrazyGambler3, GetCrazyGamblerProfile, Gambler_GetCrazyGamblerProfileA) \
+	PORT_DEFL(commercial, Mission_DefeatCrazyGambler3, InitStatus, Gambler_InitStatus) \
 	PORT_DEFL(commercial, Mission_DefeatCrazyGambler3, Init, Gambler_InitA) \
 	PORT_DEFL(commercial, Mission_DefeatCrazyGambler3, LaunchFirstTaunt, Gambler_LaunchFirstTauntA) \
 	PORT_DEFL(commercial, Mission_DefeatCrazyGambler3, LaunchTaunts, Gambler_LaunchTauntsA) \
@@ -3812,6 +3826,7 @@ PORT_DECLL(downtown, MapRace, HardRaceDownTown1) /* 0 */
 PORT_DECLL(downtown, MapRace, HardRaceDownTown2) /* 0 */
 PORT_DECLL(downtown, MapRace, HardRaceDownTown3) /* 0 */
 PORT_DECLL(downtown, MapRace, HardRaceDownTown4) /* 0 */
+PORT_DECLL(downtown, Mission_FirstContactPress, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_FirstContactPress, Init) /* 1 */
 PORT_DECLL(downtown, Mission_BertoMassacre, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_BertoMassacre, StartMission) /* 0 */
@@ -3823,12 +3838,14 @@ PORT_DECLL(downtown, Mission_BertoMassacre, TakeMatrix) /* 2 */
 PORT_DECLL(downtown, Mission_BertoMassacre, GetBerto) /* 0 */
 PORT_DECLL(downtown, Mission_BertoMassacre, MissionScorer) /* 1 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, GetCrazyGamblerProfile) /* 0 */
+PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, Init) /* 1 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, LaunchTaunts) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, CreateCrazyGambler) /* 0 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, OnCrazyGamblerDeath) /* 2 */
 PORT_DECLL(downtown, Mission_DefeatCrazyGambler1, MissionScorer) /* 1 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, GetMayorProfile) /* 0 */
+PORT_DECLL(downtown, Mission_FaceTheMayor, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, Init) /* 1 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, PreLaunchTaunt) /* 0 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, LaunchMayorInitialTaunt) /* 0 */
@@ -3837,12 +3854,14 @@ PORT_DECLL(downtown, Mission_FaceTheMayor, MayorOnDeath) /* 2 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, SetPhoneCab) /* 0 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, UsePhoneCab) /* 4 */
 PORT_DECLL(downtown, Mission_FaceTheMayor, EndOfMission) /* 1 */
+PORT_DECLL(downtown, Mission_Massacre, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_Massacre, Init) /* 1 */
 PORT_DECLL(downtown, Mission_Massacre, OnVehicleCallback) /* 2 */
 PORT_DECLL(downtown, Mission_Massacre, MissionScorer) /* 1 */
 PORT_DECLL(downtown, Mission_Massacre, TimeExpired) /* 0 */
 PORT_DECLL(downtown, Mission_Massacre, SetNextMission) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, GetHumphreyProfile) /* 0 */
+PORT_DECLL(downtown, Mission_DistractHumphrey, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, Init) /* 1 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, CallHumphrey) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, UsePhoneCab) /* 4 */
@@ -3863,6 +3882,7 @@ PORT_DECLL(downtown, Mission_DistractHumphrey, CallDeepThroat) /* 0 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, UsePhoneCab2) /* 4 */
 PORT_DECLL(downtown, Mission_DistractHumphrey, MissionScorer) /* 1 */
 PORT_DECLL(downtown, Mission_GetDataPart1, GetFuncEnemiesProfile) /* 0 */
+PORT_DECLL(downtown, Mission_GetDataPart1, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_GetDataPart1, Init) /* 1 */
 PORT_DECLL(downtown, Mission_GetDataPart1, InitMission) /* 0 */
 PORT_DECLL(downtown, Mission_GetDataPart1, CreateTransport) /* 0 */
@@ -3892,6 +3912,8 @@ PORT_DECLL(downtown, Mission_HumphreyRace, SetNextMission) /* 0 */
 PORT_DECLL(downtown, Mission_MultiplusRace, GetFunctionaryProfile) /* 0 */
 PORT_DECLL(downtown, Mission_MultiplusRace, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_MultiplusRace, Init) /* 1 */
+PORT_DECLL(downtown, Mission_MultiplusRace, RaceList) /* 0 */
+PORT_DECLL(downtown, Mission_MultiplusRace, GetDealType) /* 0 */
 PORT_DECLL(downtown, Mission_MultiplusRace, EndOfRace) /* 2 */
 PORT_DECLL(downtown, Mission_MultiplusRace, SetPhoneCab) /* 0 */
 PORT_DECLL(downtown, Mission_MultiplusRace, UsePhoneCab) /* 4 */
@@ -3931,6 +3953,7 @@ PORT_DECLL(downtown, Mission_ProtectMayorTransport, KillThem) /* 0 */
 PORT_DECLL(downtown, Mission_ProtectMayorTransport, InitKillThemMission) /* ? */
 PORT_DECLL(downtown, Mission_ProtectMayorTransport, InitKillBadGuys) /* ? */
 PORT_DECLL(downtown, Mission_ProtectMayorTransport, RestoreTransport) /* 1 */
+PORT_DECLL(downtown, Mission_StealMayorShip, InitStatus) /* 1 */
 PORT_DECLL(downtown, Mission_StealMayorShip, Init) /* 1 */
 PORT_DECLL(downtown, Mission_StealMayorShip, CreateMissionShip) /* 0 */
 PORT_DECLL(downtown, Mission_StealMayorShip, TestForMissionShip) /* 0 */
@@ -3966,6 +3989,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, MapRace, HardRaceDownTown2, MapRace_Race14) \
 	PORT_DEFL(downtown, MapRace, HardRaceDownTown3, MapRace_Race15) \
 	PORT_DEFL(downtown, MapRace, HardRaceDownTown4, MapRace_Race16) \
+	PORT_DEFL(downtown, Mission_FirstContactPress, InitStatus, Press_InitStatus) \
 	PORT_DEFL(downtown, Mission_FirstContactPress, Init, Press_InitPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, InitStatus, Berto_InitStatusPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, StartMission, Berto_StartMissionPy) \
@@ -3977,12 +4001,14 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_BertoMassacre, GetBerto, Berto_GetBertoPy) \
 	PORT_DEFL(downtown, Mission_BertoMassacre, MissionScorer, Berto_MissionScorerPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, GetCrazyGamblerProfile, Gambler_GetCrazyGamblerProfile) \
+	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, InitStatus, Gambler_InitStatus) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, Init, Gambler_InitPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, LaunchTaunts, Gambler_LaunchTauntsPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, CreateCrazyGambler, Gambler_CreateCrazyGamblerPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, OnCrazyGamblerDeath, Gambler_OnCrazyGamblerDeathPy) \
 	PORT_DEFL(downtown, Mission_DefeatCrazyGambler1, MissionScorer, Gambler_MissionScorerPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, GetMayorProfile, Mayor_GetMayorProfile) \
+	PORT_DEFL(downtown, Mission_FaceTheMayor, InitStatus, Mayor_InitStatus) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, Init, Mayor_InitPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, PreLaunchTaunt, Mayor_PreLaunchTauntPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, LaunchMayorInitialTaunt, Mayor_LaunchMayorInitialTauntPy) \
@@ -3991,12 +4017,14 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_FaceTheMayor, SetPhoneCab, Mayor_SetPhoneCabPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, UsePhoneCab, Mayor_UsePhoneCabPy) \
 	PORT_DEFL(downtown, Mission_FaceTheMayor, EndOfMission, Mayor_EndOfMissionPy) \
+	PORT_DEFL(downtown, Mission_Massacre, InitStatus, Massacre_InitStatus) \
 	PORT_DEFL(downtown, Mission_Massacre, Init, Massacre_InitPy) \
 	PORT_DEFL(downtown, Mission_Massacre, OnVehicleCallback, Massacre_OnVehicleCallbackPy) \
 	PORT_DEFL(downtown, Mission_Massacre, MissionScorer, Massacre_MissionScorerPy) \
 	PORT_DEFL(downtown, Mission_Massacre, TimeExpired, Massacre_TimeExpiredPy) \
 	PORT_DEFL(downtown, Mission_Massacre, SetNextMission, Massacre_SetNextMissionPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, GetHumphreyProfile, Hump_GetHumphreyProfile) \
+	PORT_DEFL(downtown, Mission_DistractHumphrey, InitStatus, Hump_InitStatus) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, Init, Hump_InitPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, CallHumphrey, Hump_CallHumphreyPy) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, UsePhoneCab, Hump_UsePhoneCabPy) \
@@ -4017,6 +4045,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_DistractHumphrey, UsePhoneCab2, Hump_UsePhoneCab2Py) \
 	PORT_DEFL(downtown, Mission_DistractHumphrey, MissionScorer, Hump_MissionScorerPy) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, GetFuncEnemiesProfile, Data_GetFuncEnemiesProfile) \
+	PORT_DEFL(downtown, Mission_GetDataPart1, InitStatus, Data_InitStatus) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, Init, Data_InitPy) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, InitMission, Data_InitMissionPy) \
 	PORT_DEFL(downtown, Mission_GetDataPart1, CreateTransport, Data_CreateTransportPy) \
@@ -4046,6 +4075,8 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFL(downtown, Mission_MultiplusRace, GetFunctionaryProfile, Plus_GetFunctionaryProfile) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, InitStatus, Plus_InitStatusPy) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, Init, Plus_InitPy) \
+	PORT_DEFL(downtown, Mission_MultiplusRace, RaceList, Plus_RaceList) \
+	PORT_DEFL(downtown, Mission_MultiplusRace, GetDealType, Plus_GetDealType) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, EndOfRace, Plus_EndOfRacePy) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, SetPhoneCab, Plus_SetPhoneCabPy) \
 	PORT_DEFL(downtown, Mission_MultiplusRace, UsePhoneCab, Plus_UsePhoneCabPy) \
@@ -4085,6 +4116,7 @@ PORT_DECLL(downtown, Mission_StealMayorShip, ParkMayorShip) /* 0 */
 	PORT_DEFLK(downtown, Mission_ProtectMayorTransport, InitKillThemMission, Escort_InitKillThemMissionPy) \
 	PORT_DEFLK(downtown, Mission_ProtectMayorTransport, InitKillBadGuys, Escort_InitKillBadGuysPy) \
 	PORT_DEFL(downtown, Mission_ProtectMayorTransport, RestoreTransport, Escort_RestoreTransportPy) \
+	PORT_DEFL(downtown, Mission_StealMayorShip, InitStatus, Steal_InitStatus) \
 	PORT_DEFL(downtown, Mission_StealMayorShip, Init, Steal_InitPy) \
 	PORT_DEFL(downtown, Mission_StealMayorShip, CreateMissionShip, Steal_CreateMissionShipPy) \
 	PORT_DEFL(downtown, Mission_StealMayorShip, TestForMissionShip, Steal_TestForMissionShipPy) \
@@ -4120,6 +4152,7 @@ PORT_DECLL(gdb, Map, InitPoliceBishops) /* 0 */
 PORT_DECLL(gdb, Map, EndOfAppears) /* 1 */
 PORT_DECLL(gdb, Map, GiveLife) /* 0 */
 PORT_DECLL(gdb, Map, NextWave) /* 0 */
+PORT_DECLL(gdb, MapMatrix, EndOFScene) /* ? */
 PORT_DECLL(gdb, Mission_IntoTheGDB, GetBishopProfile) /* 0 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, Init) /* 1 */
 PORT_DECLL(gdb, Mission_IntoTheGDB, CreateBishop) /* 1 */
@@ -4159,6 +4192,7 @@ PORT_DECLL(gdb, Mission_ReinsertOwnMatrix2, PreSetNextMission) /* 4 */
 	PORT_DEFL(gdb, Map, EndOfAppears, GDB_EndOfAppearsPy) \
 	PORT_DEFL(gdb, Map, GiveLife, GDB_GiveLifePy) \
 	PORT_DEFL(gdb, Map, NextWave, GDB_NextWavePy) \
+	PORT_DEFLK(gdb, MapMatrix, EndOFScene, Matrix_EndOFScene) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, GetBishopProfile, Into_GetBishopProfile) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, Init, Into_InitPy) \
 	PORT_DEFL(gdb, Mission_IntoTheGDB, CreateBishop, Into_CreateBishopPy) \
@@ -4572,7 +4606,9 @@ PORT_DECLL(orbit, MapDecont, CreateBishopsLauncher) /* 0 */
 PORT_DECLL(orbit, MapDecont, EndOfSceneBishops) /* 1 */
 PORT_DECLL(orbit, MapDecont, LoadBishopsScene) /* 0 */
 PORT_DECLL(orbit, MapDecont, FXBishopsPray) /* 3 */
+PORT_DECLL(orbit, MapDecont, PlayBishops) /* ? */
 PORT_DECLL(orbit, MapDecont, LoadFunctionaryScene) /* 0 */
+PORT_DECLL(orbit, MapDecont, AddDF) /* ? */
 PORT_DECLL(orbit, MapDecont, SetDFAnm) /* 3 */
 PORT_DECLL(orbit, MapDecont, EndOfSceneFunctionary) /* 1 */
 PORT_DECLL(orbit, MapDecont, CreateDownKeyPad) /* 0 */
@@ -4582,6 +4618,9 @@ PORT_DECLL(orbit, MapDecont, PlayFunctionary) /* 4 */
 PORT_DECLL(orbit, MapDecont, LoadFallingScene) /* 0 */
 PORT_DECLL(orbit, Mission_IntroHuman, InitStatus) /* 1 */
 PORT_DECLL(orbit, Mission_IntroHuman, Init) /* 1 */
+PORT_DECLL(orbit, Mission_IntroHuman, BillArrives_B) /* ? */
+PORT_DECLL(orbit, Mission_IntroHuman, BillArrives_C) /* ? */
+PORT_DECLL(orbit, Mission_IntroHuman, SetNextMission) /* ? */
 PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneA) /* 0 */
 PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneB) /* 0 */
 PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneC) /* 0 */
@@ -4614,7 +4653,9 @@ PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneC) /* 0 */
 	PORT_DEFL(orbit, MapDecont, EndOfSceneBishops, Decont_EndOfSceneBishops) \
 	PORT_DEFL(orbit, MapDecont, LoadBishopsScene, Decont_LoadBishopsScene) \
 	PORT_DEFL(orbit, MapDecont, FXBishopsPray, Decont_FXBishopsPray) \
+	PORT_DEFLK(orbit, MapDecont, PlayBishops, Decont_PlayBishops) \
 	PORT_DEFL(orbit, MapDecont, LoadFunctionaryScene, Decont_LoadFunctionaryScene) \
+	PORT_DEFLK(orbit, MapDecont, AddDF, Decont_AddDF) \
 	PORT_DEFL(orbit, MapDecont, SetDFAnm, Decont_SetDFAnm) \
 	PORT_DEFL(orbit, MapDecont, EndOfSceneFunctionary, Decont_EndOfSceneFunctionary) \
 	PORT_DEFL(orbit, MapDecont, CreateDownKeyPad, Decont_CreateDownKeyPad) \
@@ -4624,6 +4665,9 @@ PORT_DECLL(orbit, Mission_IntroHuman, LoadSceneC) /* 0 */
 	PORT_DEFL(orbit, MapDecont, LoadFallingScene, Decont_LoadFallingScene) \
 	PORT_DEFL(orbit, Mission_IntroHuman, InitStatus, Intro_InitStatus) \
 	PORT_DEFL(orbit, Mission_IntroHuman, Init, Intro_Init) \
+	PORT_DEFLK(orbit, Mission_IntroHuman, BillArrives_B, Intro_BillArrives_B) \
+	PORT_DEFLK(orbit, Mission_IntroHuman, BillArrives_C, Intro_BillArrives_C) \
+	PORT_DEFLK(orbit, Mission_IntroHuman, SetNextMission, Intro_SetNextMission) \
 	PORT_DEFL(orbit, Mission_IntroHuman, LoadSceneA, Intro_LoadSceneA) \
 	PORT_DEFL(orbit, Mission_IntroHuman, LoadSceneB, Intro_LoadSceneB) \
 	PORT_DEFL(orbit, Mission_IntroHuman, LoadSceneC, Intro_LoadSceneC)
@@ -4643,6 +4687,7 @@ PORT_DECLL(outskirts, MapRace, MediumRaceOurskirts4) /* 0 */
 PORT_DECLL(outskirts, MapRace, MediumRaceOurskirts5) /* 0 */
 PORT_DECLL(outskirts, MapRace, Mission_Win2ndRace_Race) /* 0 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, GetTraitoriusProfile) /* 0 */
+PORT_DECLL(outskirts, Mission_AttackTraitorius, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, ReassignTarget) /* 0 */
 PORT_DECLL(outskirts, Mission_AttackTraitorius, CreateTraitorius) /* 0 */
@@ -4699,6 +4744,7 @@ PORT_DECLL(outskirts, Mission_DestroyBadDebtors, ShowDeepThroatMessage) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, SetNextMission) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyBadDebtors, MissionScorer) /* 1 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, GetHumphreyProfile) /* 0 */
+PORT_DECLL(outskirts, Mission_DestroyHumphrey, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, CreateHumphrey) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, HumphreyAttacks) /* 0 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, LaunchTaunt) /* 0 */
@@ -4706,6 +4752,7 @@ PORT_DECLL(outskirts, Mission_DestroyHumphrey, OnHumphreyDeath) /* 2 */
 PORT_DECLL(outskirts, Mission_DestroyHumphrey, MissionScorer) /* 1 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, GetFuncEnemiesProfile) /* 0 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, GetPoliceFriendsProfile) /* 0 */
+PORT_DECLL(outskirts, Mission_FunctionaryHunting, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, CreateWaypoint) /* 0 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, EnableMissionWaypoint) /* 0 */
@@ -4724,12 +4771,14 @@ PORT_DECLL(outskirts, Mission_FunctionaryHunting, OnMissionStart) /* 2 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, LaunchMission) /* 0 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, StartCameraTravelling) /* 0 */
 PORT_DECLL(outskirts, Mission_FunctionaryHunting, AbortCameraTravelling) /* 2 */
+PORT_DECLL(outskirts, Mission_GoToOutskirts, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_GoToOutskirts, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_GoToOutskirts, LaunchCrazyGamblerComunication) /* 1 */
 PORT_DECLL(outskirts, Mission_GoToOutskirts, PlayCrazyGamblerComunication) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, CreateLonelyMercProfiles) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, Init) /* 1 */
+PORT_DECLL(outskirts, Mission_IdentifyMerc, InitIdentifyMerc) /* ? */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, CreateLonelyMercInScene) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, CheckTraitoriusDeath) /* 0 */
 PORT_DECLL(outskirts, Mission_IdentifyMerc, EndOfScene) /* 0 */
@@ -4755,8 +4804,10 @@ PORT_DECLL(outskirts, Mission_KillPolice, OnPoliceDeath) /* 2 */
 PORT_DECLL(outskirts, Mission_KillPolice, BertoAppears) /* 0 */
 PORT_DECLL(outskirts, Mission_KillPolice, EnableMetro) /* 0 */
 PORT_DECLL(outskirts, Mission_KillRudolph, GetRudolphProfile) /* 0 */
+PORT_DECLL(outskirts, Mission_KillRudolph, RaceList) /* 0 */
 PORT_DECLL(outskirts, Mission_KillRudolph, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_KillRudolph, Init) /* 1 */
+PORT_DECLL(outskirts, Mission_KillRudolph, GetDealType) /* 0 */
 PORT_DECLL(outskirts, Mission_KillRudolph, InitRace) /* 0 */
 PORT_DECLL(outskirts, Mission_KillRudolph, initCreateRudolph) /* 0 */
 PORT_DECLL(outskirts, Mission_KillRudolph, SetRudolphDef) /* 1 */
@@ -4770,6 +4821,7 @@ PORT_DECLL(outskirts, Mission_KillRudolph, OnClueTaken) /* 2 */
 PORT_DECLL(outskirts, Mission_KillRudolph, InitTalkToPoliceBoss) /* 0 */
 PORT_DECLL(outskirts, Mission_KillRudolph, UsePhoneCab) /* 4 */
 PORT_DECLL(outskirts, Mission_KillRudolph, SetNextMission2) /* 0 */
+PORT_DECLL(outskirts, Mission_TransportKiller, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_TransportKiller, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_TransportKiller, InitTransport) /* 0 */
 PORT_DECLL(outskirts, Mission_TransportKiller, isValidDamage) /* 1 */
@@ -4778,8 +4830,10 @@ PORT_DECLL(outskirts, Mission_TransportKiller, TakeDataPack) /* 2 */
 PORT_DECLL(outskirts, Mission_TransportKiller, TryToDamage) /* 3 */
 PORT_DECLL(outskirts, Mission_TransportKiller, InitCall) /* 0 */
 PORT_DECLL(outskirts, Mission_TransportKiller, SetNextMission) /* 0 */
+PORT_DECLL(outskirts, Mission_Win2ndRace, InitStatus) /* 1 */
 PORT_DECLL(outskirts, Mission_Win2ndRace, Init) /* 1 */
 PORT_DECLL(outskirts, Mission_Win2ndRace, InitRace) /* 0 */
+PORT_DECLL(outskirts, Mission_Win2ndRace, OnCounterMeasure) /* ? */
 PORT_DECLL(outskirts, Mission_Win2ndRace, GetRaceWaypointIndex) /* 0 */
 PORT_DECLL(outskirts, Mission_Win2ndRace, RacerDamaged) /* 3 */
 PORT_DECLL(outskirts, Mission_Win2ndRace, OnRaceStart) /* 2 */
@@ -4802,6 +4856,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, MapRace, MediumRaceOurskirts5, MapRace_Medium5) \
 	PORT_DEFL(outskirts, MapRace, Mission_Win2ndRace_Race, MapRace_Win2nd) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, GetTraitoriusProfile, Traitorius_GetTraitoriusProfile) \
+	PORT_DEFL(outskirts, Mission_AttackTraitorius, InitStatus, Traitorius_InitStatus) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, Init, Traitorius_InitPy) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, ReassignTarget, Traitorius_ReassignTargetPy) \
 	PORT_DEFL(outskirts, Mission_AttackTraitorius, CreateTraitorius, Traitorius_CreateTraitoriusPy) \
@@ -4858,6 +4913,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, SetNextMission, Debtors_SetNextMissionPy) \
 	PORT_DEFL(outskirts, Mission_DestroyBadDebtors, MissionScorer, Debtors_MissionScorerPy) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, GetHumphreyProfile, Humphrey_GetHumphreyProfile) \
+	PORT_DEFL(outskirts, Mission_DestroyHumphrey, InitStatus, Humphrey_InitStatus) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, CreateHumphrey, Humphrey_CreateHumphreyPy) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, HumphreyAttacks, Humphrey_HumphreyAttacksPy) \
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, LaunchTaunt, Humphrey_LaunchTauntPy) \
@@ -4865,6 +4921,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_DestroyHumphrey, MissionScorer, Humphrey_MissionScorerPy) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, GetFuncEnemiesProfile, Hunt_GetFuncEnemiesProfile) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, GetPoliceFriendsProfile, Hunt_GetPoliceFriendsProfile) \
+	PORT_DEFL(outskirts, Mission_FunctionaryHunting, InitStatus, Hunt_InitStatus) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, Init, Hunt_InitPy) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, CreateWaypoint, Hunt_CreateWaypointPy) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, EnableMissionWaypoint, Hunt_EnableMissionWaypointPy) \
@@ -4883,12 +4940,14 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, LaunchMission, Hunt_LaunchMissionPy) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, StartCameraTravelling, Hunt_StartCameraTravellingPy) \
 	PORT_DEFL(outskirts, Mission_FunctionaryHunting, AbortCameraTravelling, Hunt_AbortCameraTravellingPy) \
+	PORT_DEFL(outskirts, Mission_GoToOutskirts, InitStatus, GoTo_InitStatus) \
 	PORT_DEFL(outskirts, Mission_GoToOutskirts, Init, GoTo_InitPy) \
 	PORT_DEFL(outskirts, Mission_GoToOutskirts, LaunchCrazyGamblerComunication, GoTo_LaunchCrazyGamblerComunicationPy) \
 	PORT_DEFL(outskirts, Mission_GoToOutskirts, PlayCrazyGamblerComunication, GoTo_PlayCrazyGamblerComunicationPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, CreateLonelyMercProfiles, Merc_CreateLonelyMercProfilesPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, InitStatus, Merc_InitStatusPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, Init, Merc_InitPy) \
+	PORT_DEFLK(outskirts, Mission_IdentifyMerc, InitIdentifyMerc, Merc_InitIdentifyMercPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, CreateLonelyMercInScene, Merc_CreateLonelyMercInScenePy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, CheckTraitoriusDeath, Merc_CheckTraitoriusDeathPy) \
 	PORT_DEFL(outskirts, Mission_IdentifyMerc, EndOfScene, Merc_EndOfScenePy) \
@@ -4914,8 +4973,10 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_KillPolice, BertoAppears, Police_BertoAppearsPy) \
 	PORT_DEFL(outskirts, Mission_KillPolice, EnableMetro, Police_EnableMetroPy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, GetRudolphProfile, Rudolph_GetRudolphProfile) \
+	PORT_DEFL(outskirts, Mission_KillRudolph, RaceList, Rudolph_RaceList) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, InitStatus, Rudolph_InitStatusPy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, Init, Rudolph_InitPy) \
+	PORT_DEFL(outskirts, Mission_KillRudolph, GetDealType, Rudolph_GetDealType) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, InitRace, Rudolph_InitRacePy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, initCreateRudolph, Rudolph_initCreateRudolphPy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, SetRudolphDef, Rudolph_SetRudolphDefPy) \
@@ -4929,6 +4990,7 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_KillRudolph, InitTalkToPoliceBoss, Rudolph_InitTalkToPoliceBossPy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, UsePhoneCab, Rudolph_UsePhoneCabPy) \
 	PORT_DEFL(outskirts, Mission_KillRudolph, SetNextMission2, Rudolph_SetNextMission2Py) \
+	PORT_DEFL(outskirts, Mission_TransportKiller, InitStatus, Transport_InitStatus) \
 	PORT_DEFL(outskirts, Mission_TransportKiller, Init, Transport_InitPy) \
 	PORT_DEFL(outskirts, Mission_TransportKiller, InitTransport, Transport_InitTransportPy) \
 	PORT_DEFL(outskirts, Mission_TransportKiller, isValidDamage, Transport_isValidDamagePy) \
@@ -4937,8 +4999,10 @@ PORT_DECLL(outskirts, Mission_Win2ndRace, CancelMission) /* 0 */
 	PORT_DEFL(outskirts, Mission_TransportKiller, TryToDamage, Transport_TryToDamagePy) \
 	PORT_DEFL(outskirts, Mission_TransportKiller, InitCall, Transport_InitCallPy) \
 	PORT_DEFL(outskirts, Mission_TransportKiller, SetNextMission, Transport_SetNextMissionPy) \
+	PORT_DEFL(outskirts, Mission_Win2ndRace, InitStatus, Win2nd_InitStatus) \
 	PORT_DEFL(outskirts, Mission_Win2ndRace, Init, Win2nd_InitPy) \
 	PORT_DEFL(outskirts, Mission_Win2ndRace, InitRace, Win2nd_InitRacePy) \
+	PORT_DEFLK(outskirts, Mission_Win2ndRace, OnCounterMeasure, Win2nd_OnCounterMeasurePy) \
 	PORT_DEFL(outskirts, Mission_Win2ndRace, GetRaceWaypointIndex, Win2nd_GetRaceWaypointIndexPy) \
 	PORT_DEFL(outskirts, Mission_Win2ndRace, RacerDamaged, Win2nd_RacerDamagedPy) \
 	PORT_DEFL(outskirts, Mission_Win2ndRace, OnRaceStart, Win2nd_OnRaceStartPy) \
@@ -4952,6 +5016,9 @@ PORT_DECLL(police, Map, CreateFicusDeadClass) /* 0 */
 PORT_DECLL(police, Map, CreateFicus) /* 0 */
 PORT_DECLL(police, Map, InitStatus) /* 1 */
 PORT_DECLL(police, Map, Init) /* 1 */
+PORT_DECLL(police, MapSnd, SndElements) /* 6 */
+PORT_DECLL(police, MapPlanes, Init) /* 1 */
+PORT_DECLL(police, MapPlanes, TakenPhoto) /* 1 */
 PORT_DECLL(police, Mission_BeatPickus, InitStatus) /* 1 */
 PORT_DECLL(police, Mission_BeatPickus, Init) /* 1 */
 PORT_DECLL(police, Mission_BeatPickus, DisableIAFunctionary) /* 1 */
@@ -4972,6 +5039,7 @@ PORT_DECLL(police, Mission_BeatPickus, LaunchPickusFightScene) /* 2 */
 PORT_DECLL(police, Mission_BeatPickus, CreatePickusBeatenClass) /* 0 */
 PORT_DECLL(police, Mission_BeatPickus, InitPickusBeaten) /* 0 */
 PORT_DECLL(police, Mission_BeatPickus, DelThug) /* 1 */
+PORT_DECLL(police, Mission_BeatPickus, AskPickus) /* ? */
 PORT_DECLL(police, Mission_BeatPickus, OnTalkToPickus) /* 4 */
 PORT_DECLL(police, Mission_BeatPickus, PreGetFuncShipPlans) /* 0 */
 PORT_DECLL(police, Mission_BeatPickus, GetFuncShipPlans) /* 0 */
@@ -5055,6 +5123,9 @@ PORT_DECLL(police, Mission_PoliceBossCheats, SetNextMission) /* 0 */
 	PORT_DEFL(police, Map, CreateFicus, PoMap_CreateFicusA) \
 	PORT_DEFL(police, Map, InitStatus, PoMap_InitStatusA) \
 	PORT_DEFL(police, Map, Init, PoMap_InitA) \
+	PORT_DEFL(police, MapSnd, SndElements, PoliceMapSnd_SndElements) \
+	PORT_DEFL(police, MapPlanes, Init, MapPlanes_Init) \
+	PORT_DEFL(police, MapPlanes, TakenPhoto, MapPlanes_TakenPhoto) \
 	PORT_DEFL(police, Mission_BeatPickus, InitStatus, BeatPickus_InitStatusA) \
 	PORT_DEFL(police, Mission_BeatPickus, Init, BeatPickus_InitA) \
 	PORT_DEFL(police, Mission_BeatPickus, DisableIAFunctionary, BeatPickus_DisableIAFunctionaryA) \
@@ -5075,6 +5146,7 @@ PORT_DECLL(police, Mission_PoliceBossCheats, SetNextMission) /* 0 */
 	PORT_DEFL(police, Mission_BeatPickus, CreatePickusBeatenClass, BeatPickus_CreatePickusBeatenClassA) \
 	PORT_DEFL(police, Mission_BeatPickus, InitPickusBeaten, BeatPickus_InitPickusBeatenA) \
 	PORT_DEFL(police, Mission_BeatPickus, DelThug, BeatPickus_DelThugA) \
+	PORT_DEFLK(police, Mission_BeatPickus, AskPickus, BeatPickus_AskPickus) \
 	PORT_DEFL(police, Mission_BeatPickus, OnTalkToPickus, BeatPickus_OnTalkToPickusA) \
 	PORT_DEFL(police, Mission_BeatPickus, PreGetFuncShipPlans, BeatPickus_PreGetFuncShipPlansA) \
 	PORT_DEFL(police, Mission_BeatPickus, GetFuncShipPlans, BeatPickus_GetFuncShipPlansA) \
@@ -5166,6 +5238,8 @@ PORT_DECLL(press, Map, BrowseAlarmLaunchers) /* 0 */
 PORT_DECLL(press, Map, InitStatus) /* 1 */
 PORT_DECLL(press, Map, Init) /* 1 */
 PORT_DECLL(press, Map, HideBureau) /* 0 */
+PORT_DECLL(press, MapPlanes, Init) /* 1 */
+PORT_DECLL(press, MapPlanes, TakenPhoto) /* 1 */
 PORT_DECLL(press, MapDemoClose, Init) /* 1 */
 PORT_DECLL(press, MapDemoClose, OnMetroUsed) /* 4 */
 PORT_DECLL(press, MapSnd, LoadSounds) /* 0 */
@@ -5203,6 +5277,7 @@ PORT_DECLL(press, Mission_GoWithHuman, OnPossession) /* 2 */
 PORT_DECLL(press, Mission_GoWithHuman, OnExitConversor) /* 0 */
 PORT_DECLL(press, Mission_GoWithHuman, CheckMaxDist) /* 0 */
 PORT_DECLL(press, Mission_GoWithHuman, CheckHumanDist) /* 0 */
+PORT_DECLL(press, Mission_GoWithHuman, LoadNextMission) /* ? */
 PORT_DECLL(press, Mission_GoWithHuman, LoadScene2) /* 0 */
 PORT_DECLL(press, Mission_GoWithHuman, CreateFakeSpeech) /* 0 */
 PORT_DECLL(press, Mission_GoWithHuman, NormCamera) /* 0 */
@@ -5258,6 +5333,7 @@ PORT_DECLL(press, Mission_TalkToBoss, BossSpeech) /* 4 */
 PORT_DECLL(press, Mission_TalkToBoss, SetNextMission) /* 1 */
 PORT_DECLL(press, Mission_WhoIsDeepThroat, Init) /* 1 */
 PORT_DECLL(press, Mission_WhoIsDeepThroat, UseTeleporter) /* 4 */
+PORT_DECLL(press, Mission_WhoIsDeepThroat, LaunchScene) /* ? */
 PORT_DECLL(press, Mission_WhoIsDeepThroat, PlayScene) /* 0 */
 PORT_DECLL(press, Mission_WhoIsTheBaddie, InitStatus) /* 1 */
 PORT_DECLL(press, Mission_WhoIsTheBaddie, Init) /* 1 */
@@ -5281,6 +5357,8 @@ PORT_DECLL(press, Mission_WhoIsTheBaddie, LoadScene) /* 0 */
 	PORT_DEFL(press, Map, InitStatus, PressMap_InitStatusA) \
 	PORT_DEFL(press, Map, Init, PressMap_InitA) \
 	PORT_DEFL(press, Map, HideBureau, PressMap_HideBureauA) \
+	PORT_DEFL(press, MapPlanes, Init, PressPlanes_Init) \
+	PORT_DEFL(press, MapPlanes, TakenPhoto, PressPlanes_TakenPhoto) \
 	PORT_DEFL(press, MapDemoClose, Init, DemoClose_InitA) \
 	PORT_DEFL(press, MapDemoClose, OnMetroUsed, DemoClose_OnMetroUsedA) \
 	PORT_DEFL(press, MapSnd, LoadSounds, PressSnd_LoadSoundsA) \
@@ -5318,6 +5396,7 @@ PORT_DECLL(press, Mission_WhoIsTheBaddie, LoadScene) /* 0 */
 	PORT_DEFL(press, Mission_GoWithHuman, OnExitConversor, GoWithHuman_OnExitConversorA) \
 	PORT_DEFL(press, Mission_GoWithHuman, CheckMaxDist, GoWithHuman_CheckMaxDistA) \
 	PORT_DEFL(press, Mission_GoWithHuman, CheckHumanDist, GoWithHuman_CheckHumanDistA) \
+	PORT_DEFLK(press, Mission_GoWithHuman, LoadNextMission, GoWithHuman_LoadNextMission) \
 	PORT_DEFL(press, Mission_GoWithHuman, LoadScene2, GoWithHuman_LoadScene2A) \
 	PORT_DEFL(press, Mission_GoWithHuman, CreateFakeSpeech, GoWithHuman_CreateFakeSpeechA) \
 	PORT_DEFL(press, Mission_GoWithHuman, NormCamera, Pr_NormCameraA) \
@@ -5335,9 +5414,9 @@ PORT_DECLL(press, Mission_WhoIsTheBaddie, LoadScene) /* 0 */
 	PORT_DEFL(press, Mission_MeetBoss, DeactivateEmero, MeetBoss_DeactivateEmeroA) \
 	PORT_DEFL(press, Mission_MeetBoss, ActivateEmero, MeetBoss_ActivateEmeroA) \
 	PORT_DEFL(press, Mission_MeetBoss, Init, MeetBoss_InitA) \
-	PORT_DEFL(press, Mission_MeetBoss, PlayProlog0, MeetBoss_PlayProlog0) \
-	PORT_DEFL(press, Mission_MeetBoss, PlayProlog1, MeetBoss_PlayProlog1) \
-	PORT_DEFL(press, Mission_MeetBoss, PlayProlog2, MeetBoss_PlayProlog2) \
+	PORT_DEFLK(press, Mission_MeetBoss, PlayProlog0, MeetBoss_PlayProlog0) \
+	PORT_DEFLK(press, Mission_MeetBoss, PlayProlog1, MeetBoss_PlayProlog1) \
+	PORT_DEFLK(press, Mission_MeetBoss, PlayProlog2, MeetBoss_PlayProlog2) \
 	PORT_DEFL(press, Mission_MeetBoss, CreateBattery, MeetBoss_CreateBatteryA) \
 	PORT_DEFL(press, Mission_MeetBoss, AssingOnTakeBattery, MeetBoss_AssingOnTakeBatteryA) \
 	PORT_DEFL(press, Mission_MeetBoss, OnTakeBattery, MeetBoss_OnTakeBatteryA) \
@@ -5363,7 +5442,7 @@ PORT_DECLL(press, Mission_WhoIsTheBaddie, LoadScene) /* 0 */
 	PORT_DEFL(press, Mission_TalkToBoss, HideHumanIntoBureau, TalkToBoss_HideHumanIntoBureauA) \
 	PORT_DEFL(press, Mission_TalkToBoss, CreateSceneLaunchers, TalkToBoss_CreateSceneLaunchersA) \
 	PORT_DEFL(press, Mission_TalkToBoss, LaunchScene, TalkToBoss_LaunchSceneA) \
-	PORT_DEFL(press, Mission_TalkToBoss, EndOfScene, TalkToBoss_EndOfScene) \
+	PORT_DEFLK(press, Mission_TalkToBoss, EndOfScene, TalkToBoss_EndOfScene) \
 	PORT_DEFL(press, Mission_TalkToBoss, OnPossession, TalkToBoss_OnPossessionA) \
 	PORT_DEFL(press, Mission_TalkToBoss, OnExitConversor, TalkToBoss_OnExitConversorA) \
 	PORT_DEFL(press, Mission_TalkToBoss, CheckMaxDist, TalkToBoss_CheckMaxDistA) \
@@ -5373,6 +5452,7 @@ PORT_DECLL(press, Mission_WhoIsTheBaddie, LoadScene) /* 0 */
 	PORT_DEFL(press, Mission_TalkToBoss, SetNextMission, TalkToBoss_SetNextMissionA) \
 	PORT_DEFL(press, Mission_WhoIsDeepThroat, Init, DeepThroat_InitA) \
 	PORT_DEFL(press, Mission_WhoIsDeepThroat, UseTeleporter, DeepThroat_UseTeleporterA) \
+	PORT_DEFLK(press, Mission_WhoIsDeepThroat, LaunchScene, DeepThroat_LaunchScene) \
 	PORT_DEFL(press, Mission_WhoIsDeepThroat, PlayScene, DeepThroat_PlaySceneA) \
 	PORT_DEFL(press, Mission_WhoIsTheBaddie, InitStatus, Baddie_InitStatusA) \
 	PORT_DEFL(press, Mission_WhoIsTheBaddie, Init, Baddie_InitA) \
@@ -5469,6 +5549,7 @@ PORT_DECLL(scrapyard, Mission_MosquitoClue, InitPoliChat) /* 0 */
 PORT_DECLL(scrapyard, Mission_MosquitoClue, SetNextMission) /* 0 */
 PORT_DECLL(scrapyard, Mission_StupidMerc, InitStatus) /* 1 */
 PORT_DECLL(scrapyard, Mission_StupidMerc, Init) /* 1 */
+PORT_DECLL(scrapyard, Mission_StupidMerc, CreateMerc) /* ? */
 PORT_DECLL(scrapyard, Mission_StupidMerc, OnStupidMercDeath) /* 2 */
 PORT_DECLL(scrapyard, Mission_StupidMerc, OnStupidMercDamage) /* 3 */
 PORT_DECLL(scrapyard, Mission_StupidMerc, CheckAITakesLife) /* 1 */
@@ -5566,6 +5647,7 @@ PORT_DECLL(scrapyard, Mission_TalkToDeepThroat, SetNextMission) /* 0 */
 	PORT_DEFL(scrapyard, Mission_MosquitoClue, SetNextMission, Clue_SetNextMission) \
 	PORT_DEFL(scrapyard, Mission_StupidMerc, InitStatus, Merc_InitStatus) \
 	PORT_DEFL(scrapyard, Mission_StupidMerc, Init, Merc_Init) \
+	PORT_DEFLK(scrapyard, Mission_StupidMerc, CreateMerc, Merc_CreateMerc) \
 	PORT_DEFL(scrapyard, Mission_StupidMerc, OnStupidMercDeath, Merc_OnStupidMercDeath) \
 	PORT_DEFL(scrapyard, Mission_StupidMerc, OnStupidMercDamage, Merc_OnStupidMercDamage) \
 	PORT_DEFL(scrapyard, Mission_StupidMerc, CheckAITakesLife, Merc_CheckAITakesLife) \
@@ -5781,6 +5863,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2757
+#define PORT_COUNT 2798
 
 #endif

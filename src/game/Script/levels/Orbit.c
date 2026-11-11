@@ -426,14 +426,14 @@ static byte Decont_OpenGateKeeperDoorN(const nativeVal_t *door) {
 	}
 	Native_SetFloat(&when, Mode_Time() + 4.0);
 	/* SScorer.SetMsgText as the object of the module (the scheduler takes its entry, Port_Scheduled) */
-	PyObject *fn = Script_Attr("SScorer", "SetMsgText");
-	if (!fn) {
+	nativeVal_t fn;
+	if (!Mode_RefMod("SScorer", "SetMsgText", &fn)) {
 		return 0;
 	}
 	Mode_Lang("Mission_Decontamination_SystemMessage4", &args[0]);
 	Native_SetFloat(&args[1], Mode_Time() + 10.0);
-	ok = Mode_Schedule(&when, fn, args, 2, NULL);
-	Py_DECREF(fn);
+	ok = Mode_ScheduleV(&when, &fn, args, 2, NULL);
+	Native_Free(&fn);
 	Native_Free(&args[0]);
 	return ok;
 }
@@ -500,16 +500,12 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 	if (!Mode_EntityH(charName, ch) || !Mode_EntityH(usrName, usr) || !LvN_Speakers(usrName, charName)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 5 and 7: GateKeeper.GateKeepers holds the gatekeeper objects; GateKeepers[CharName] the Python way */
-	PyObject *gks = Script_Attr("GateKeeper", "GateKeepers"), *key = gks ? Native_ToPy(charName) : NULL;
-	PyObject *g = key ? PyObject_GetItem(gks, key) : NULL;
-	Py_XDECREF(key);
-	Py_XDECREF(gks);
-	if (!g) {
+	/* OBJLIB 5 and 7: GateKeeper.GateKeepers holds the gatekeeper objects; GateKeepers[CharName] by reference */
+	nativeVal_t *gks = Mode_V(&t), *g = Mode_V(&t);
+	if (!Mode_RefMod("GateKeeper", "GateKeepers", gks) || !Mode_RefSub(gks, charName, g)) {
 		return Mode_Done(&t, 0);
 	}
-	Native_Arg(g, gc);
-	Py_DECREF(g);
+	Mode_RefPlain(g, gc);
 	if (!Mode_VObj(gc, "Door", dn) || !Mode_EntityH(dn, door)) {
 		return Mode_Done(&t, 0);
 	}
@@ -519,12 +515,7 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 		Native_SetFloat(now, Mode_Time());
 		ok = PORT_CALL(Speech, CalculateSpeechTime, st, "v", cad) && Native_Arith('+', now, st, when) &&
 			LvN_GObj(MD, "ShowSkipConvsMsg", fn);
-		if (ok) {
-			PyObject *f = Native_ToPy(fn);
-			ok = f && Mode_Schedule(when, f, NULL, 0, NULL);
-			Py_XDECREF(f);
-		}
-		ok = ok &&
+		ok = ok && Mode_ScheduleV(when, fn, NULL, 0, NULL) &&
 			Mode_Spch("Mission_Decontamination_GateKeeper_InitMsg1", "Mission_Decontamination_GateKeeper_InitAns1", "TalkNPC") &&
 			Mode_AnsLst(answers, 4) && PORT_LOWN(MapDecont, CheckShowNextHowto, NULL, "");
 	} else if (LvN_EqS(opt, "Mission_Decontamination_GateKeeper_3")) {
@@ -546,9 +537,8 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 		if (ok) {
 			/* gc.CanPassFunc(door, CharName): the function value of the gatekeeper (MapDecont.OpenGateKeeperDoor
 			 * through its entry while it is the port's) */
-			PyObject *f = Native_ToPy(fn);
-			ok = f && PORT_VALUE(f, NULL, "vv", door, charName);
-			Py_XDECREF(f);
+			const nativeVal_t args[2] = { *door, *charName };
+			ok = Mode_CallArgs(fn, NULL, args, 2);
 		}
 		ok = ok && LvN_SetS(ch, "AbortSelectFunc", "GateKeeper.RestoreState");
 	} else {
@@ -844,31 +834,20 @@ static byte Decont_PlayBishopsN(const nativeVal_t *item, const nativeVal_t *ch) 
 	}
 	Native_SetFloat(&when, Mode_Time());
 	/* Scene.Play as the object of the module: the scheduler takes its entry */
-	PyObject *fn = Script_Attr("Scene", "Play");
-	if (!fn) {
+	nativeVal_t fn;
+	if (!Mode_RefMod("Scene", "Play", &fn)) {
 		return 0;
 	}
 	LvN_Str(&scene, "Bishops");
-	byte ok = Mode_Schedule(&when, fn, &scene, 1, NULL);
-	Py_DECREF(fn);
+	byte ok = Mode_ScheduleV(&when, &fn, &scene, 1, NULL);
+	Native_Free(&fn);
 	Native_Free(&scene);
 	return ok;
 }
 
-static PyObject *Decont_PlayBishops(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "ItemName", "CharName", NULL };
-	PyObject *item = Py_None, *ch = Py_None;
-	nativeVal_t a[2] = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &item, &ch)) {
-		return NULL;
-	}
-	Native_Arg(item, &a[0]);
-	Native_Arg(ch, &a[1]);
-	byte ok = Decont_PlayBishopsN(&a[0], &a[1]);
-	Native_Free(&a[0]);
-	Native_Free(&a[1]);
-	return Mode_Result(ok);
+/* PlayBishops(ItemName=None, CharName=None) */
+MODE_KW(Decont, PlayBishops, "|OO", "ItemName", "CharName") {
+	return Decont_PlayBishopsN(&v[0], &v[1]);
 }
 
 static const char *const functionary_scene1[] = {
@@ -1018,27 +997,10 @@ static byte Decont_AddDFN(const nativeVal_t *frame, const nativeVal_t *act, cons
 	return Mode_Done(&t, LvN_SetAct("EventFunc", name));
 }
 
-static PyObject *Decont_AddDF(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "Action", "DefLoop", "EntityName", NULL };
-	PyObject *o[4] = { NULL, NULL, NULL, NULL };
-	nativeVal_t a[4] = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|O", names, &o[0], &o[1], &o[2], &o[3])) {
-		return NULL;
-	}
-	for (int i = 0; i < 3; i++) {
-		Native_Arg(o[i], &a[i]);
-	}
-	if (o[3]) {
-		Native_Arg(o[3], &a[3]);
-	} else {
-		LvN_Str(&a[3], "DM_DesktopFunctionary_00");
-	}
-	byte ok = Decont_AddDFN(&a[0], &a[1], &a[2], &a[3]);
-	for (int i = 0; i < 4; i++) {
-		Native_Free(&a[i]);
-	}
-	return Mode_Result(ok);
+/* AddDF(frame, Action, DefLoop, EntityName="DM_DesktopFunctionary_00") */
+MODE_KW(Decont, AddDF, "OOO|O", "frame", "Action", "DefLoop", "EntityName") {
+	Mode_KwDefS(v, given, 3, "DM_DesktopFunctionary_00");
+	return Decont_AddDFN(&v[0], &v[1], &v[2], &v[3]);
 }
 
 /* SetDFAnm(EntityName, EventName, Time): EventName is "action,loop,entity" */
@@ -1282,16 +1244,10 @@ static byte Intro_SetNextMissionN(void) {
 	return ok;
 }
 
-/* the adapter of a function (usr=None) of the scene chain */
+/* a function (usr=None) of the scene chain (MODE_KW) */
 #define IH_USR_FN(name, call) \
-	static PyObject *Intro_##name(PyObject *self, PyObject *args, PyObject *kw) { \
-		static char *names[] = { "usr", NULL }; \
-		PyObject *usr = NULL; \
-		(void)self; \
-		if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) { \
-			return NULL; \
-		} \
-		return Mode_Result(call); \
+	MODE_KW(Intro, name, "|O", "usr") { \
+		return call; \
 	}
 
 /* BillArrives_B(usr=None), BillArrives_C(usr=None): the next scene */

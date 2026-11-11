@@ -396,20 +396,17 @@ PyMethodDef g_GDBMapMethods[] = {
 /* ---- MapMatrix ---- */
 
 /* EndOFScene(usr = None): the scene of the matrix ends: the fade, then the function RestoreMatrix was given */
-static PyObject *Matrix_EndOFScene(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "usr", NULL };
-	PyObject *usr = Py_None;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", kwlist, &usr) || !Mode_Fade(0, lv_black, lv_clear, 1.0)) {
-		return NULL;
+MODE_KW(Matrix, EndOFScene, "|O", "usr") {
+	nativeVal_t fn;
+	if (!Mode_Fade(0, lv_black, lv_clear, 1.0)) {
+		return 0;
 	}
-	/* EndFunc is the function value RestoreMatrix put into the module (None, or a function of the data: OBJLIB 6; a
-	 * port's function through its entry) */
-	PyObject *fn = Mode_GlobalPy(MX, "EndFunc");
-	int t = fn ? PyObject_IsTrue(fn) : -1;
-	byte ok = t >= 0 && (!t || PORT_VALUE(fn, NULL, ""));
-	Py_XDECREF(fn);
-	return Mode_Result(ok);
+	/* EndFunc is the function value RestoreMatrix put into the module (None, or a function of the data: OBJLIB 6, held
+	 * by reference; a port's function through its entry) */
+	int t = Mode_RefG(MX, "EndFunc", &fn) ? Mode_Truth(&fn) : -1;
+	byte ok = t >= 0 && (!t || Mode_CallArgs(&fn, NULL, NULL, 0));
+	Native_Free(&fn);
+	return ok;
 }
 
 PyMethodDef g_GDBMapMatrixMethods[] = {
@@ -578,9 +575,9 @@ static byte Into_InitMission(void) {
 		return 0;
 	}
 	/* OBJLIB 5: the list object of the module, as the script passes it (P: the entry keeps it as the targets) */
-	PyObject *bishops = Mode_GlobalPy(IG, "bishops");
-	byte ok = bishops && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "P", bishops);
-	Py_XDECREF(bishops);
+	nativeVal_t bishops;
+	byte ok = Mode_RefG(IG, "bishops", &bishops) && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "P", bishops.obj);
+	Native_Free(&bishops);
 	return ok && LV_SCORERG(Mission_IntoTheGDB, MissionScorer) && LvN_Draw() &&
 		Mode_GVarSetS("OnFinishAutoUpdate", "Mission_IntoTheGDB.OnFinishScan") &&
 		Mode_Later(1.0, IG, "ScanShip", NULL, 0, "ScanShip");
@@ -842,11 +839,11 @@ static byte Into_OnBishopsDamage(void) {
 
 /* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = (param,)) (func the function object, OBJLIB
  * 5) */
-static byte Gd_ForceRemote(const char *key, const char *who, PyObject *func, const nativeVal_t *param) {
+static byte Gd_ForceRemote(const char *key, const char *who, const nativeVal_t *func, const nativeVal_t *param) {
 	nativeVal_t params;
 	Native_SetEmpty(&params, NV_TUPLE);
 	Native_Copy(Native_Append(&params), param);
-	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O,Parameters=v", key, who, func, &params);
+	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O,Parameters=v", key, who, func->obj, &params);
 	Native_Free(&params);
 	return ok;
 }
@@ -883,9 +880,10 @@ static byte Into_DropMatrix(const nativeVal_t *pos) {
 		Native_Free(&empty);
 	}
 	if (ok) {
-		PyObject *fn = Mode_GlobalPy(IG, "ReinsertMatrix");
-		ok = fn && Mode_VGet(&l, "Name", &n) && Gd_ForceRemote("Mission_IntoTheGDB_RemoteMessage5", "DeepThroat", fn, &n);
-		Py_XDECREF(fn);
+		nativeVal_t fn;
+		ok = Mode_RefG(IG, "ReinsertMatrix", &fn) && Mode_VGet(&l, "Name", &n) &&
+			Gd_ForceRemote("Mission_IntoTheGDB_RemoteMessage5", "DeepThroat", &fn, &n);
+		Native_Free(&fn);
 	}
 	Native_Free(&name);
 	Native_Free(&l);
@@ -919,10 +917,11 @@ static byte Into_TakeMatrix(const nativeVal_t *ch) {
 	if (ok && Native_True(&e)) {
 		ok = LvN_Activate(&e, 0) && LvN_SetI(&e, "rTime", 20);
 		/* OBJLIB 7: the scheduler keeps the bound method e.Del (Python until the entities are C) */
-		PyObject *del = ok ? Mode_VBound(&e, "Del") : NULL;
+		nativeVal_t del = { 0 };
+		ok = ok && Mode_VBoundV(&e, "Del", &del);
 		Native_SetFloat(&t, Mode_Time() + 5);
-		ok = del && Mode_Schedule(&t, del, NULL, 0, NULL);
-		Py_XDECREF(del);
+		ok = ok && Mode_ScheduleV(&t, &del, NULL, 0, NULL);
+		Native_Free(&del);
 	}
 	Native_Free(&e);
 	ok = ok && LvN_Entity("MissionCheckArrow", &e) && (!Native_True(&e) || Mode_VDel(&e));
@@ -1215,9 +1214,9 @@ static byte Re_PreSetNextMission(const char *module, byte second) {
 	if (!second) {
 		return LV_CALL("MapMatrix", "RestoreMatrix", NULL, "");
 	}
-	PyObject *fn = Mode_GlobalPy(module, "ShowDTMessage");
-	ok = fn && LV_CALL("MapMatrix", "RestoreMatrix", NULL, "O", fn);
-	Py_XDECREF(fn);
+	nativeVal_t fn;
+	ok = Mode_RefG(module, "ShowDTMessage", &fn) && LV_CALL("MapMatrix", "RestoreMatrix", NULL, "O", fn.obj);
+	Native_Free(&fn);
 	return ok;
 }
 

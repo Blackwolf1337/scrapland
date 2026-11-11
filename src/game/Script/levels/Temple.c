@@ -69,18 +69,21 @@ static byte Tp_Str(const nativeVal_t *v, int arg, const char **s) {
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.AddRemoteCom, (key, who, the global then of module)) */
 static byte Tp_ComAt(double delay, const char *key, const char *who, const char *module, const char *then) {
-	nativeVal_t a[3];
-	PyObject *add = Script_Attr("Speech", "AddRemoteCom");
-	if (!add) {
+	nativeVal_t a[3], add, at;
+	if (!Mode_RefMod("Speech", "AddRemoteCom", &add)) {
 		return 0;
 	}
 	LvN_Str(&a[0], key);
 	LvN_Str(&a[1], who);
-	byte ok = LvN_GObj(module, then, &a[2]) && Mode_LaterPy(delay, add, a, 3, NULL);
+	byte ok = LvN_GObj(module, then, &a[2]);
+	if (ok) {
+		Native_SetFloat(&at, Mode_Time() + delay);
+		ok = Mode_ScheduleV(&at, &add, a, 3, NULL);
+	}
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&a[i]);
 	}
-	Py_DECREF(add);
+	Native_Free(&add);
 	return ok;
 }
 
@@ -94,11 +97,12 @@ static byte Tp_UseFunc(const char *name, const char *func) {
 
 /* a gatekeeper on its door against a foe group of GateKeeper, the door used through UseDoor */
 static byte Tp_Gate(const char *keeper, const char *door, const char *group, const char *use) {
-	/* OBJLIB 5: the group is the object of GateKeeper, as the script passes it */
-	PyObject *g = Mode_Import("GateKeeper") ? Script_Attr("GateKeeper", group) : NULL;
-	byte ok = g && (!door || PORT_CALL(GateKeeper, SetDoor, NULL, "ss", keeper, door)) &&
-		PORT_CALL(GateKeeper, DoorFoe, NULL, "sP", keeper, g) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
-	Py_XDECREF(g);
+	/* OBJLIB 5: the group is the object of GateKeeper, as the script passes it (held by reference) */
+	nativeVal_t g = { 0 };
+	byte ok = Mode_Import("GateKeeper") && Mode_RefMod("GateKeeper", group, &g) &&
+		(!door || PORT_CALL(GateKeeper, SetDoor, NULL, "ss", keeper, door)) &&
+		PORT_CALL(GateKeeper, DoorFoe, NULL, "sP", keeper, g.obj) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
+	Native_Free(&g);
 	return ok;
 }
 
@@ -373,25 +377,24 @@ static byte Xl_MoveLife(const nativeVal_t *l, const nativeVal_t *dist) {
 
 /* MoveLifes(dist): the lives of the list Lifes (the list object of the module: it holds the handles, OBJLIB 5 and 7) */
 static byte Xl_MoveLifes(const nativeVal_t *dist) {
-	PyObject *lifes = Mode_GlobalPy(XL, "Lifes");
-	if (!lifes) {
+	nativeVal_t lifes;
+	if (!Mode_RefG(XL, "Lifes", &lifes)) {
 		return 0;
 	}
 	byte ok = 1;
 	for (int i = 0; ok; i++) {
-		PyObject *o;
-		int more = Script_Next(lifes, i, &o);
+		nativeVal_t o, l;
+		int more = Mode_RefNext(&lifes, i, &o);
 		if (more <= 0) {
 			ok = more == 0;
 			break;
 		}
-		nativeVal_t l;
-		Native_Arg(o, &l);
-		Py_DECREF(o);
+		Mode_RefPlain(&o, &l);
+		Native_Free(&o);
 		ok = Xl_MoveLife(&l, dist);
 		Native_Free(&l);
 	}
-	Py_DECREF(lifes);
+	Native_Free(&lifes);
 	return ok;
 }
 
@@ -411,26 +414,6 @@ static byte Xl_SwitchAlarm(const nativeVal_t *status) {
 	return Mode_GVarSetI("BishopAttackOnAlarm", 0) && Xl_Move(-600);
 }
 
-/* -v of the script (PyNumber_Negative: -0.0 for 0.0, the OverflowError of the smallest int, others by Python) */
-static byte Xl_Neg(const nativeVal_t *v, nativeVal_t *out) {
-	Native_SetNone(out);
-	if (v->type == NV_INT && v->i != LONG_MIN) {
-		Native_SetInt(out, -v->i);
-		return 1;
-	}
-	if (v->type == NV_FLOAT) {
-		Native_SetFloat(out, -v->f);
-		return 1;
-	}
-	PyObject *o = Native_ToPy(v), *r = o ? PyNumber_Negative(o) : NULL;
-	if (r) {
-		Native_Arg(r, out);
-	}
-	Py_XDECREF(r);
-	Py_XDECREF(o);
-	return r != NULL;
-}
-
 /* the life item of a dummy (name, pos, ang): its save variable, the item, its respawn time, into Lifes */
 static byte Xl_Life(const nativeVal_t *dummy) {
 	nativeVal_t name, spawn, neg, pos, c[3], l, model, radius, v;
@@ -444,7 +427,7 @@ static byte Xl_Life(const nativeVal_t *dummy) {
 	Native_SetNone(&model);
 	Native_SetNone(&radius);
 	Native_SetNone(&v);
-	byte ok = LvN_Item(dummy, 0, &name) && Mode_G(XL, "TimeToSpawn", &spawn) && Xl_Neg(&spawn, &neg) && Tp_Str(&name, 1, &s);
+	byte ok = LvN_Item(dummy, 0, &name) && Mode_G(XL, "TimeToSpawn", &spawn) && Mode_Neg(&spawn, &neg) && Tp_Str(&name, 1, &s);
 	if (ok) {
 		Native_BufInit(&rep);
 		Native_Repr(&rep, &neg, NR_REPR);
@@ -599,13 +582,13 @@ static byte Ad_ForbiddenMsg(void) {
 	if (!ok) {
 		return 0;
 	}
-	nativeVal_t t, nm;
-	PyObject *f = Mode_GlobalPy(AD, "ForbiddenMsg");
+	nativeVal_t t, nm, f;
+	ok = Mode_RefG(AD, "ForbiddenMsg", &f);
 	Native_SetFloat(&t, time + 1.0);
 	LvN_Str(&nm, "ForbiddenMsg");
-	ok = f && Mode_Schedule(&t, f, NULL, 0, &nm);
+	ok = ok && Mode_ScheduleV(&t, &f, NULL, 0, &nm);
 	Native_Free(&nm);
-	Py_XDECREF(f);
+	Native_Free(&f);
 	return ok;
 }
 
@@ -638,12 +621,9 @@ static byte Ad_CreateViscProofs(void) {
 			Mode_VGet(&prf, "Pos", &p) && Mode_VecAdd(&p, &off, &v) && Mode_VSet(&prf, "MovePos", &v) && Mode_VSet(&prf, "Pos", &v);
 		if (ok) {
 			/* ProofsNames.append(prf.Name): the list read before the name, as the script reads them */
-			PyObject *names = Mode_GlobalPy(AD, "ProofsNames"), *x = NULL, *r = NULL;
-			ok = names && Mode_VGet(&prf, "Name", &pn) && (x = Native_ToPy(&pn)) != NULL &&
-				(r = Script_Method(names, "append", "(O)", x)) != NULL;
-			Py_XDECREF(r);
-			Py_XDECREF(x);
-			Py_XDECREF(names);
+			nativeVal_t names;
+			ok = Mode_RefG(AD, "ProofsNames", &names) && Mode_VGet(&prf, "Name", &pn) && Mode_RefCall(&names, "append", &pn, 1, NULL);
+			Native_Free(&names);
 		}
 		Native_Free(&d);
 		Native_Free(&pos);
@@ -832,7 +812,7 @@ static byte Ag_DeepThroatAppears(const nativeVal_t *name) {
 	}
 	byte ok = !Native_True(&e) || LvN_SetS(&e, "UseFunc", "Bishop.BishopSpeech");
 	Native_Free(&e);
-	ok = ok && PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "O", Py_None) && Ag_AddToList("Hangar.shipsToEditList", "SBishop1") &&
+	ok = ok && Mode_Target(NULL) && Ag_AddToList("Hangar.shipsToEditList", "SBishop1") &&
 		Ag_AddToList("Hangar.availableEnginesList", "MBISHOP1");
 	if (ok) {
 		SaveVar_Inc("NewBluePrintAvaliable", 2);
@@ -860,13 +840,10 @@ static byte Ag_PreCallDeepThroat(void) {
 	Native_Free(&chars);
 	if (ok) {
 		/* OBJLIB 5: the list object of CharConversor, changed in place */
-		PyObject *av = Script_Attr("CharConversor", "AvailableChars"), *x = av ? Native_ToPy(&dt) : NULL;
-		in = x ? PySequence_Contains(av, x) : -1;
-		PyObject *r = in > 0 ? Script_Method(av, "remove", "(O)", x) : NULL;
-		ok = in == 0 || r != NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(x);
-		Py_XDECREF(av);
+		nativeVal_t av;
+		in = Mode_RefMod("CharConversor", "AvailableChars", &av) ? Mode_In(&av, &dt) : -1;
+		ok = in == 0 || (in > 0 && Mode_RefCall(&av, "remove", &dt, 1, NULL));
+		Native_Free(&av);
 	}
 	Native_Free(&dt);
 	ok = ok && PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_TalkToDeepThroat4_MissionText1", 1L);
@@ -945,10 +922,7 @@ PyMethodDef g_TempleTalkToDeepThroatMethods[] = {
 
 /* the global fn of the mission at Scrap.GetTime() + 0.1 */
 static byte Ma_Soon(const char *fn) {
-	PyObject *f = Mode_GlobalPy(MA, fn);
-	byte ok = f && Mode_LaterPy(0.1, f, NULL, 0, NULL);
-	Py_XDECREF(f);
-	return ok;
+	return Mode_Later(0.1, MA, fn, NULL, 0, NULL);
 }
 
 /* UseDoor(...): through the gatekeeper's door; the scene starts when the player walks again */

@@ -384,10 +384,7 @@ static const char *const func_enemies_profile[] = { "Ship=SFUNC1", "StupidPathFi
 
 CM_PROFILE(Mickus_GetFuncEnemiesProfile, func_enemies_profile)
 
-static PyObject *Mickus_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, DMK, ac_ships_bertos);
-}
+MODE_FN(Mickus, InitStatus, 1, LvN_AcShips(DMK, ac_ships_bertos))
 
 /* Init(LevelPath): the transports, the mission when the player has a ship, the callbacks of boarding */
 static byte Mickus_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -765,18 +762,6 @@ static byte Mickus_TraitoriusFuncEnemiesCom(const nativeVal_t *a, nativeVal_t *o
 	return ok;
 }
 
-/* long(v) of the script (OBJLIB 9: through the Python number function) */
-static byte Mk_Long(const nativeVal_t *v, nativeVal_t *out) {
-	PyObject *o = Native_ToPy(v), *r = o ? PyNumber_Long(o) : NULL;
-	Native_SetNone(out);
-	if (r) {
-		Native_Arg(r, out);
-	}
-	Py_XDECREF(r);
-	Py_XDECREF(o);
-	return r != NULL;
-}
-
 /* the functionaries of FuncEnemies leave the chase (the loop over the list by NextInList) */
 static byte Mk_FuncsOff(void) {
 	nativeVal_t name;
@@ -816,11 +801,11 @@ static byte Mickus_CheckMickusVisibility(const nativeVal_t *a, nativeVal_t *out)
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(usr) && Native_True(mic)) {
-		if (!Cm_Dist(usr, mic, 1, ds) || !Mk_Long(ds, d) || !Mode_G(DMK, "MAX_MICKUS_DIST", g) || !Mk_Long(g, m1)) {
+		if (!Cm_Dist(usr, mic, 1, ds) || !Mode_ToLong(ds, d) || !Mode_G(DMK, "MAX_MICKUS_DIST", g) || !Mode_ToLong(g, m1)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(g);
-		if (!Mode_G(DMK, "MAX_MICKUS_DIST", g) || !Mk_Long(g, m2) || !Mode_Arith('*', m1, m2, mm)) {
+		if (!Mode_G(DMK, "MAX_MICKUS_DIST", g) || !Mode_ToLong(g, m2) || !Mode_Arith('*', m1, m2, mm)) {
 			return Mode_Done(&t, 0);
 		}
 		int far = Mode_Cmp(d, ">", mm);
@@ -1100,10 +1085,7 @@ static byte Gus_CreateBishopGusProfile(const nativeVal_t *a, nativeVal_t *out) {
 	return Pg_Profile(bishop_gus_profile, "BishopGus");
 }
 
-static PyObject *Gus_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, PG, ac_ships_bertos);
-}
+MODE_FN(Gus, InitStatus, 1, LvN_AcShips(PG, ac_ships_bertos))
 
 /* Init(LevelPath): the fight (now or when the player boards a ship), or the phone cab after it */
 static byte Gus_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -1448,10 +1430,7 @@ static const char *const stupidus_profile[] = { "Ship=SFUNC1", "StupidPathFindin
 
 CM_PROFILE(Stupidus_GetStupidusProfile, stupidus_profile)
 
-static PyObject *Stupidus_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, DS, "[\"SMerc1\",\"SMerc2\",\"SBishop1\",\"SArchbishop1\"]");
-}
+MODE_FN(Stupidus, InitStatus, 1, LvN_AcShips(DS, "[\"SMerc1\",\"SMerc2\",\"SBishop1\",\"SArchbishop1\"]"))
 
 /* Init(LevelPath): the head of evil Berto, the amplifier model, Stupidus */
 static byte Stupidus_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -1568,10 +1547,7 @@ PyMethodDef g_CommercialDestroyStupidusMethods[] = {
 
 /* ---- Mission_Win1stRace: a time race through the checkpoints of race 8 ---- */
 
-static PyObject *Race_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, WR, ac_ships_bertos);
-}
+MODE_FN(Race, InitStatus, 1, LvN_AcShips(WR, ac_ships_bertos))
 
 /* Init(LevelPath): the alarm hooks, the countdown resources, the race (unless the alarm is on) */
 static byte Race_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -1832,34 +1808,31 @@ PyMethodDef g_CommercialWin1stRaceMethods[] = {
 
 /* ---- Mission_FirstMeetDeepThroat: DeepThroat calls every minute until the player uses the phone cab ---- */
 
-static PyObject *Deep_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, FM, ac_ships_bertos);
-}
+MODE_FN(Deep, InitStatus, 1, LvN_AcShips(FM, ac_ships_bertos))
 
 /* DeepThroat's call in 60 s: Speech.RemoteComunication(key, "DeepThroat", 1, then) under the name DeepThroatFirstMeet */
 static byte Fm_Call(const char *key, const char *then) {
 	nativeVal_t time, args[4], name;
 	Native_SetFloat(&time, Mode_Time() + 60.0);
 	/* the function of Speech: the scheduler takes its entry (Port_Scheduled) */
-	PyObject *fn = Script_Attr("Speech", "RemoteComunication");
-	if (!fn) {
+	nativeVal_t fn;
+	if (!Mode_RefMod("Speech", "RemoteComunication", &fn)) {
 		return 0;
 	}
 	if (!LvN_GObj(FM, then, &args[3])) {
-		Py_DECREF(fn);
+		Native_Free(&fn);
 		return 0;
 	}
 	LvN_Str(&args[0], key);
 	LvN_Str(&args[1], "DeepThroat");
 	Native_SetInt(&args[2], 1);
 	LvN_Str(&name, "DeepThroatFirstMeet");
-	byte ok = Mode_Schedule(&time, fn, args, 4, &name);
+	byte ok = Mode_ScheduleV(&time, &fn, args, 4, &name);
 	for (int i = 0; i < 4; i++) {
 		Native_Free(&args[i]);
 	}
 	Native_Free(&name);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -1983,10 +1956,7 @@ static const char *const functionaries_profile[] = { "Ship=SFUNC1", "StupidPathF
 
 CM_PROFILE(Data_GetFunctionariesEnemiesProfile, functionaries_profile)
 
-static PyObject *Data_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, GD, ac_ships_bertos);
-}
+MODE_FN(Data, InitStatus, 1, LvN_AcShips(GD, ac_ships_bertos))
 
 /* Init(LevelPath): the part of the mission of the save state: call the boss, get the data, call DeepThroat */
 static byte Data_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -2076,7 +2046,7 @@ static byte Data_InitMission(const nativeVal_t *a, nativeVal_t *out) {
 		ok = Gd_Target(&usr, &e);
 		/* try: ... except: pass */
 		if (ok && !Gd_Flee(&usr)) {
-			PyErr_Clear();
+			Mode_DropError();
 		}
 	}
 	Native_Free(&fn);
@@ -2646,10 +2616,7 @@ static const char *const crazy_gambler_profile[] = { "Ship=SBANKMASTER1", "Stupi
 
 CM_PROFILE(Gambler_GetCrazyGamblerProfile, crazy_gambler_profile)
 
-static PyObject *Gambler_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_AcShipsStatus(args, CG, ac_ships_bertos);
-}
+MODE_FN(Gambler, InitStatus, 1, LvN_AcShips(CG, ac_ships_bertos))
 
 /* Init(LevelPath): the evil gambler's head, his copies (or the matrix when all are dead), the taunts */
 static byte Gambler_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -2775,17 +2742,16 @@ static byte Gambler_CreateCrazyGamblers(const nativeVal_t *a, nativeVal_t *out) 
  * a function handed on as a value; Speech keeps it in its variable OnEndOfSpeech and calls it with Mode_Apply, the
  * entry of a port's own function) */
 static byte Cm_ForceCom(const char *key, const char *who, const char *module, const char *func) {
-	nativeVal_t args[2];
-	PyObject *fn = Mode_GlobalPy(module, func);
-	if (!fn) {
+	nativeVal_t args[2], fn;
+	if (!Mode_RefG(module, func, &fn)) {
 		return 0;
 	}
 	LvN_Str(&args[0], key);
 	LvN_Str(&args[1], who);
-	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", &args[0], &args[1], fn, LvN_NoArgs());
+	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", &args[0], &args[1], fn.obj, LvN_NoArgs());
 	Native_Free(&args[0]);
 	Native_Free(&args[1]);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -3273,15 +3239,13 @@ static byte Porkins_GetMayorReward(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Native_SetFloat(time, Mode_Time() + 2);
 	/* the function of Speech: the scheduler takes its entry (Port_Scheduled) */
-	PyObject *fn = Script_Attr("Speech", "AddRemoteCom");
-	if (!fn) {
+	nativeVal_t *fn = Mode_V(&t);
+	if (!Mode_RefMod("Speech", "AddRemoteCom", fn)) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_Str(args, "Mission_Campaign2_RemoteMessage4");
 	LvN_Str(who, "DeepThroat");
-	byte ok = LvN_GObj(PT, "PreCallDeepThroat", then) && Mode_Schedule(time, fn, args, 3, NULL);
-	Py_DECREF(fn);
-	return Mode_Done(&t, ok);
+	return Mode_Done(&t, LvN_GObj(PT, "PreCallDeepThroat", then) && Mode_ScheduleV(time, fn, args, 3, NULL));
 }
 
 static byte Porkins_PreCallDeepThroat(const nativeVal_t *a, nativeVal_t *out) {
