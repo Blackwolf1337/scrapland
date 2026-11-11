@@ -1888,6 +1888,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_PCMenu_RacerAttackControlsMenu,
 	&port_PCMenu_RacerMoveControlsMenu,
 	&port_PCMenu_SetOptionValue,
+	&port_PCMenu_ShowConectionStatus,
 	&port_PCMenu_ShowPadConfig,
 	&port_PCMenu_TryJoin,
 	&port_PCMenu_UseCharControlsMenu,

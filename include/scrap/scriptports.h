@@ -887,10 +887,12 @@ PORT_DECL(Menu, EnterMissionInfo) /* ? */
 PORT_DECL(PCMenu, MultiPlayerMenu) /* ? */
 PORT_DECL(PCMenu, TryJoin) /* ? */
 PORT_DECL(PCMenu, AskPassword) /* ? */
+PORT_DECL(PCMenu, ShowConectionStatus) /* ? */
 #define PORTS_MenuNet \
 	PORT_DEF(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
 	PORT_DEFP(PCMenu, TryJoin, PCMenu_TryJoin) \
-	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword)
+	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword) \
+	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus)
 
 /* MenuVideoVars.c */
 PORT_DECL(PCMenu, GammaFormula) /* ? */
@@ -5556,6 +5558,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2646
+#define PORT_COUNT 2647
 
 #endif
