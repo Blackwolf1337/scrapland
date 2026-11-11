@@ -752,7 +752,8 @@ void Mode_ModPutI(const char *module, const char *var, long i);
 /* ---- batch P (CharsNPC, GameSounds, MenuMission) ---- */
 
 /* the $names of a .def section as the dict the runner takes (OBJLIB 6): the n pairs that follow, each a name and a
- * const nativeVal_t * (the names are short texts); a new reference, NULL with the error */
+ * const nativeVal_t * (the names are short texts, up to MODE_DEFVARS); a new reference, NULL with the error. For
+ * sections that share one dict (a let of the first is seen by the next); one section runs with Mode_DefRun */
 PyObject *Mode_DefVars(int n, ...);
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
@@ -1101,13 +1102,6 @@ byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out);
 
 /* ---- the ports without Python objects (stage 6, batch 6g) ---- */
 
-/* a section of a .def file without C steps, with the $names as the dict of Mode_DefVars (vars given away, NULL: 0
- * with its error; OBJLIB 6: the runner takes the $names as a dict); stop: the file ends where a line fails, 0 with
- * its error left set (Script_RunFileTry), else Script_RunFile with its result dropped (1). MODE_DEFRUN takes the n
- * pairs of Mode_DefVars */
-byte Mode_DefRunVars(byte stop, int id, const char *name, const char *section, const char *builtin, PyObject *vars);
-#define MODE_DEFRUN(stop, id, name, section, builtin, n, ...) \
-	Mode_DefRunVars(stop, id, name, section, builtin, Mode_DefVars(n __VA_OPT__(, ) __VA_ARGS__))
 /* the adapter of a keyword function with a typed format (fmt and names of PyArg_ParseTupleAndKeywords; the letters
  * s, i, d, f and O, up to PORT_ARGS): the arguments parsed with fmt for its errors in their order, then the entry on
  * them as native values (a text, an int and a float as the parse converted them, an object as Native_Arg makes it,
@@ -1182,9 +1176,6 @@ byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v);
 byte Mode_RefToMod(const char *module, const char *var, const nativeVal_t *v);
 /* d.has_key(key) of a value of the script (the method of whatever value it is): 1, 0, -1 with the error */
 int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key);
-/* an error of the script is pending (OBJLIB 7: the Python error state; a compare of two values can set one without
- * failing) */
-byte Mode_ErrorSet(void);
 /* h.method as the bound method by reference (Mode_VBound: what the scheduler keeps, e.g. l.Del; OBJLIB 7) */
 byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out);
 /* eval(text) of a name with attributes and subscripts (NAME(.NAME | [n])*, as the game passes them) in a function of
@@ -1193,7 +1184,7 @@ byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out);
  * error of the lookup, -1 without an error for a text that is no such name (*out None) */
 int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out);
 /* the module name as a value (Script_Module: its object by reference, OBJLIB 7; the ImportError when it is not
- * there), e.g. for dir(module) */
+ * there; *out None then), e.g. for dir(module) */
 byte Mode_RefModule(const char *name, nativeVal_t *out);
 /* the pending error is a KeyError (the except KeyError of a script): dropped (1), any other error stays (0) */
 byte Mode_CatchKeyError(void);
@@ -1243,11 +1234,12 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out);
 /* the error that is set printed as the script printed its traceback, and dropped (PyErr_Print of the C ports;
  * OBJLIB 7: the Python exception until errors are a C state) */
 void Mode_PrintError(void);
-/* an error is set (PyErr_Occurred of the C ports; OBJLIB 7) */
+/* an error is set (PyErr_Occurred of the C ports, OBJLIB 7; a compare of two values can set one without failing) */
 byte Mode_Failed(void);
 /* Script_RunFile (stop: Script_RunFileTry) of a .def section with its $names given as values: the n pairs that follow,
  * each a name and a const nativeVal_t * (up to MODE_DEFVARS; OBJLIB 6: the runner takes them as a dict, Mode_DefVars;
- * an NV_OBJ goes in as the object it is). 0 as the runner gives it */
+ * an NV_OBJ goes in as the object it is). 0 as the runner gives it, and when the dict could not be made (nothing
+ * runs then) */
 #define MODE_DEFVARS 24
 struct scriptStep_s;
 byte Mode_DefRun(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
@@ -1261,9 +1253,6 @@ byte Mode_DefRunV(int id, const char *file, const char *section, const char *bui
 /* fn(id, a, b) of a link function of Menu held as a value (Mode_LinkCall: its entry while it is Menu's own) */
 byte Mode_CbLinkV(portSite_t *site, const nativeVal_t *fn, int id, const char *a, const char *b);
 #define Mode_LinkCallV(fn, id, a, b) Mode_CbLinkV(PORT_VSITE(), fn, id, a, b)
-/* the module object of a module of the scripts as a value (Script_Module: a pack module from the table, its
- * ImportError; OBJLIB 7: a module is held as NV_OBJ): Native_Free it; 0 with the error and *out None */
-byte Mode_ModuleV(const char *name, nativeVal_t *out);
 /* str(v) of the script added to b: a native value as Native_Repr NR_STR writes it, an object's str the Python way
  * (OBJLIB 7): 0 with the error of its __str__ left set and nothing added */
 byte Mode_StrBuf(const nativeVal_t *v, nativeBuf_t *b);

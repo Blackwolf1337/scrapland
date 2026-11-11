@@ -668,14 +668,6 @@ static byte Ht_ShowHangarPanel(int id) {
 	return Ht_UpdateHangars(id);
 }
 
-/* a section of shipedit.def with the $names of vars (Sn_Vars: given away, NULL: its error; OBJLIB 6: the runner of
- * ShipEdit takes the $names as a dict) */
-static byte Ht_Def(int id, const char *section, PyObject *vars) {
-	byte ok = vars && Sn_Def(id, section, vars, HT);
-	Py_XDECREF(vars);
-	return ok;
-}
-
 /* eval(text) in a function of HangarTab (its globals, locals the variables of the function in x); a name with
  * attributes and subscripts ("prevShip.Model", "ShipEdit.editedShips[3].NEng0", all the game passes) is looked up
  * directly (Mode_EvalChain) */
@@ -1298,7 +1290,7 @@ static byte Ht_Reference(int id) {
 		}
 		for (int j = 0; ok && j < words->n; j++) {
 			ok = Native_SeqItem(words, j, w) && Sn_Cat(texts[i][1], w, NULL, name);
-			ok = ok && Ht_Def(id, "word", Sn_Vars(4, "name", name, "word", w, "x", x, "y", y)) &&
+			ok = ok && Sn_DefV(id, "word", HT, 4, "name", name, "word", w, "x", x, "y", y) &&
 				Mode_Arith('+', y, Mode_IntVal(k, 22), y2);
 			if (ok) {
 				Native_Free(y);
@@ -1309,7 +1301,7 @@ static byte Ht_Reference(int id) {
 			Native_Free(name);
 		}
 	}
-	return Mode_Done(&t, ok && Sn_Def(id, "reference", NULL, HT));
+	return Mode_Done(&t, ok && Sn_DefV(id, "reference", HT, 0));
 }
 
 /* SetHangarPanel(id): the Hangar panel (the layout of shipedit.def): the mini information, the hint, the emergency
@@ -1332,20 +1324,20 @@ static byte Ht_SetHangarPanel(int id) {
 	Native_SetInt(mp, m);
 	Native_SetInt(sput, s);
 	Native_SetInt(aux9, a);
-	byte ok = Ht_Def(id, "panel", Sn_Vars(3, "mp", mp, "sputnik", sput, "aux9", aux9));
+	byte ok = Sn_DefV(id, "panel", HT, 3, "mp", mp, "sputnik", sput, "aux9", aux9);
 	for (int i = 0; ok && i < 3; i++) {
 		for (int j = 0; ok && j < 3; j++) {
 			Native_SetInt(n, i * 3 + j + 1);
 			Native_SetInt(x, 52 + 42 * j);
 			Native_SetInt(y, 204 + 42 * i);
-			ok = Ht_Def(id, "hangar", Sn_Vars(4, "n", n, "x", x, "y", y, "sputnik", sput));
+			ok = Sn_DefV(id, "hangar", HT, 4, "n", n, "x", x, "y", y, "sputnik", sput);
 		}
 	}
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(Mode_IntVal(k, Mode_GetMoney()), money);
-	ok = Ht_Def(id, "info", Sn_Vars(3, "mp", mp, "sputnik", sput, "money", money));
+	ok = Sn_DefV(id, "info", HT, 3, "mp", mp, "sputnik", sput, "money", money);
 	int pilots = ok ? Ht_Pilots() : -1;
 	if (pilots < 0) {
 		return Mode_Done(&t, 0);
@@ -1361,7 +1353,7 @@ static byte Ht_SetHangarPanel(int id) {
 			Native_Free(l);
 			Native_Free(x);
 			ok = ok && LvN_ModGet("ShipMaker", "PilotsList", l) && LvN_Item(l, i, x) && Native_Slice(x, 2, 0x7fffffff, model);
-			ok = ok && Ht_Def(id, "pilot", Sn_Vars(2, "name", name, "model", model));
+			ok = ok && Sn_DefV(id, "pilot", HT, 2, "name", name, "model", model);
 		}
 		ok = ok && Ht_PilotVisible(id, 1);
 		Native_SetStr(nick, "");
@@ -1374,7 +1366,7 @@ static byte Ht_SetHangarPanel(int id) {
 				Mode_Lang("ShipEdit_Pilot", nick);
 			}
 		}
-		ok = ok && p >= 0 && Ht_Def(id, "pilots", Sn_Vars(1, "nick", nick));
+		ok = ok && p >= 0 && Sn_DefV(id, "pilots", HT, 1, "nick", nick);
 	}
 	int noship = 0;
 	if (ok && pilots) {
@@ -1385,7 +1377,7 @@ static byte Ht_SetHangarPanel(int id) {
 	}
 	Native_SetInt(n, pilots);
 	Native_SetInt(x, noship);
-	return Mode_Done(&t, Ht_Def(id, "links", Sn_Vars(3, "mp", mp, "pilots", n, "noship", x)));
+	return Mode_Done(&t, Sn_DefV(id, "links", HT, 3, "mp", mp, "pilots", n, "noship", x));
 }
 
 static const char *const ht_speedInfo[] = { "MaxSpeedText", "MaxSpeed", "BoostRechargeTime", "BoostRechargeTimeUnits",

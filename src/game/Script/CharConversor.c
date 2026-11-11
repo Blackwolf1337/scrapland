@@ -277,7 +277,7 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 		Mode_Len(avl) < 0 || !Cc_Heads(pid, total, &count)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!MODE_DEFRUN(0, pid, "menus/charconv.def", "rest", charconv_def, 0)) {
+	if (!Mode_DefRun(pid, "menus/charconv.def", "rest", charconv_def, NULL, 0, 0)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("Char", sv);

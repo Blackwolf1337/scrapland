@@ -606,7 +606,7 @@ static const char *Main_SaveVarOr(const char *var) {
 static void Main_Initialize(void) {
 	/* OBJLIB 7: PCMenu.Menu is the module object of Menu (held as NV_OBJ) */
 	nativeVal_t menu;
-	if (Mode_ModuleV("Menu", &menu)) {
+	if (Mode_RefModule("Menu", &menu)) {
 		Mode_ModPut("PCMenu", "Menu", &menu);
 	}
 	Native_Free(&menu);

@@ -61,8 +61,9 @@ static byte Bureaucracy_Class(const nativeVal_t *cls, const nativeVal_t *file) {
 	if (!g_pAuxActClass) {
 		g_pAuxActClass = cActClassList_Create(g_pActClassList, full.p);
 		ok = file->type == NV_STR || Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
-		/* OBJLIB 6: the $names go to the .def runner as a dict (MODE_DEFRUN) */
-		ok = ok && MODE_DEFRUN(1, 0, "chars/bureaucracy.def", "Class", bureaucracy_def, 2, "cls", cls, "file", file);
+		/* OBJLIB 6: the $names go to the .def runner as a dict (Mode_DefRun) */
+		ok = ok && Mode_DefRun(0, "chars/bureaucracy.def", "Class", bureaucracy_def, NULL, 1, 2, "cls", cls, "file",
+			file);
 	}
 	Native_BufFree(&full);
 	return ok;
