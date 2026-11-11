@@ -37,6 +37,7 @@
  */
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -2064,7 +2065,7 @@ static byte X_Lambda(tcNode *x, tcScope *s, nativeVal_t *out) {
 
 /*
  * The builtin functions the cases and the helpers call (map, filter, reduce, apply, getattr, hasattr, setattr, delattr,
- * type, len, str, repr, int, float, round, range, abs, min, max, cmp, tuple, list, callable, __import__) run here when
+ * type, len, str, repr, int, float, round, range, abs, min, max, cmp, tuple, list, callable, __import__, id) run here when
  * the evaluator calls them, with the argument forms, results and error texts of bltinmodule.c of 1.5.2. A name still
  * gives the builtin's own function object of Python (its identity, repr and doc stay); the call is native. A form a
  * native one does not take (an instance or a Python object as the sequence, cmp of texts, a dotted __import__, ...)
@@ -2761,6 +2762,19 @@ static int TB_Callable(nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
+static int TB_Id(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("id", n, 1, 1)) {
+		return 0;
+	}
+	/* OBJLIB 9: the address of the Python object of a view (a value without one is made into one by Python's id) */
+	PyObject *py = a->type == NV_REF ? NObj_Py(a) : a->type == NV_OBJ ? a->obj : NULL;
+	if (!py) {
+		return -1;
+	}
+	Native_SetInt(out, (long)(intptr_t)py);
+	return 1;
+}
+
 static int TB_Import(nativeVal_t *a, int n, nativeVal_t *out) {
 	if (!TX_Arity("__import__", n, 1, 4) || !TX_ArgText("__import__", 1, a, 1)) {
 		return 0;
@@ -3150,6 +3164,7 @@ static const struct {
 	{ "list", TB_List },
 	{ "callable", TB_Callable },
 	{ "__import__", TB_Import },
+	{ "id", TB_Id },
 };
 
 #define TX_OWN 16		/* the channel's functions and the twins: tx_defs */
