@@ -61,6 +61,63 @@ checkout (tools/mcp); REGRESS_MCP_DIR takes the tools/mcp of another checkout.
   data take turns. A lock per checkout once let another worktree's run start its server at the same time
   (SNet.InitServer answered 0).
 
+## Deterministic mode
+
+By default the runner starts the games in the deterministic test mode of the game (include/scrap/testdet.h,
+SCRAP_TEST_DETERMINISTIC=1) with the test channel in step mode (SCRAP_TEST_CHANNEL=step). Two runs of a case on the same
+build then give the same replies, byte for byte, on any slot and under any machine load. A difference between two
+builds is then a difference of the builds, no reruns needed. Without the variable the game runs exactly as before.
+
+    ./regress.py check --live ...            # off for this run
+    REGRESS_DETERMINISTIC=0 ...              # off for everything that uses the runner (also the scratch tools)
+
+What the mode does:
+
+- Random numbers: the generator of the game (the CRT rand behind Scrap.Rand and all C sites) gets seed 1 at the start
+  and at the end of every level load.
+- Clock: Plat_Ticks and Plat_Counter, the source of all time in the game, give a clock that goes on by 1/60 s per pass
+  of the main loop. The real clock is not read. A level load takes no time on it. SCRAP_TEST_DETERMINISTIC=<n> with
+  n > 1 gives n steps a second.
+- Frames are presented without waiting for the display, so game time runs faster than real time (about 1.8 times in
+  DownTown on the RTX).
+- Sound: the mixer runs on the mode's clock in the main thread, not on the device thread. A voice ends after the same
+  number of frames in every run.
+- Addresses: on Linux the game starts itself again without address space randomization. Heap addresses in replies
+  ("<X instance at 5555583f2978>") are replaced by the number of their first appearance in the replies of the run
+  ("at 000000000003>"), because the heap still differs a little from run to run.
+- Channel: in step mode the clock stands while no command file waits and runs only for the pace of the next one.
+  The pace keeps the rules of a live run (game time since the last answer, at once after a level load or when the
+  game clock stood 60 frames), counted once per clock step.
+- The paces are the means of what live runs give (measured with a case of Scrap.GetTime() lines and sleeps, constants
+  DET_PACE, DET_SLEEP, DET_START in regress.py), so the lines land where the baselines saw them: a case line runs 7
+  steps (0.117 s) after the answer before, the first line 0.33 s into the level.
+- `!sleep N` is one command file with pace N + 0.44 and `credit=20` in its header (a live wait takes about 0.45 s
+  longer than N). The credit makes it a wait: the game counts game time plus the time the game clock stood (after its
+  first 3 s), and after a level load since the last answer the time of the new level plus the credit (LOAD_CREDIT),
+  as the runner does in a live run.
+- The question at the start (Scrap.GetLevelPath()) is sent without a pace, so asking it again moves no clock.
+- The two loops of the net code that wait for the goodbye of a closing client or server make a clock step per pass.
+- The pass of the main loop that loads a level makes no step, whether the next command file is there already or not.
+- Mouse motion from before the first step does not count (the pointer entering the new window comes as one or two
+  events, before or after the focus).
+
+A build from before the mode (no SCRAP_TEST_DETERMINISTIC string in the binary) runs live, and the result file says
+`"det": false`. golden.sh and levels.sh set SCRAP_TEST_DETERMINISTIC=1 too (SCRAP_TEST_DETERMINISTIC=0 switches it
+off). They do not use step mode, the game runs on. The scrap MCP launch has the option `deterministic`.
+
+When two runs of one build still differ, start both with SCRAP_TEST_DET_TRACE=<file> (an absolute path, one file per
+game) and compare the files with `./dettrace.py <A> <B> <build>/ScrapC`. The trace has a line per clock step, per
+crt_rand call (with its caller), per window or input event, per command file and per level load. The first differing
+line names the frame and the code where the runs part. This is how the level load race and the mouse motion were
+found.
+
+The stored pack baselines are live runs. Lines that depend on chance or on the exact moment (an NPC action, an AI
+state, a menu animation) fail in a live run now and then. In a deterministic run a fixed set of them fails, the same
+in every run, and a rerun does not clear it. To tell such a line from a port difference run the case with `--live` a
+few times, or compare the raw replies with a deterministic run of the base build: equal replies mean the builds
+behave the same. Any change that draws one random number more or less moves all later draws, so this set changes
+with such a batch.
+
 ## Notes
 
 The case fc-r8j-snd-DownTown passes `Scrap.Set` on. A recorder that swallowed it made the rail traffic load a model that is in no pack. `native ports` also prints the lines `modules pack/none/absent/other/added/made/loaded` and `def calls registry/byname/other/errors`. `rd/msw-run.py` is gone with the interpreter, and mission starts are compared through the test channel.

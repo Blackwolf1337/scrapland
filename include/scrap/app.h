@@ -59,6 +59,9 @@ byte Console_ReprVar(const char *name, char *buf, int size);
 void TestChannel_Enable(void);
 void TestChannel_Frame(double now);
 void TestChannel_WorldFrame(void);
+/* SCRAP_TEST_CHANNEL=step in the deterministic test mode (scrap/testdet.h): 1 while the clock of the mode has to stand:
+ * no command file waits, or the one that waits has had its pace */
+int TestChannel_Hold(void);
 void CWinApp_LoadLevel(CApp *app, const char *level);
 void Loading_Init(void);
 void Loading_End(void);

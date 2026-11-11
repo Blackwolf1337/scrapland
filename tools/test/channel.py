@@ -2,7 +2,8 @@
 """The tool side of the test channel of the game (src/game/Global/TestChannel.c; the game runs with -TestChannel or
 SCRAP_TEST_CHANNEL=1): writes test_cmd.txt in the game folder ("<number>\\n<commands>", through a temporary file and a
 rename) and waits for test_reply.txt with the same number ("<number>\\n<answers>\\n.end\\n"). The game looks once a
-frame, also while the world clock stands, but not during a level load or the start video.
+frame, also while the world clock stands, but not during a level load or the start video. With SCRAP_TEST_CHANNEL=step
+and SCRAP_TEST_DETERMINISTIC=1 the game clock stands while no command file waits and runs only for the pace of one.
 
   channel.py <game folder> <line> ...         runs the lines (one command file), prints the answers
   channel.py <game folder> -f <file>          the lines of a file
@@ -29,14 +30,20 @@ def next_seq(game):
         return int(time.time()) % 100000
 
 
-def write(game, body, seq=None, pace=None, enc=None):
+def write(game, body, seq=None, pace=None, enc=None, credit=None):
     """writes the command file (through a temporary file and a rename); its number. pace: the game runs it only after
     that many seconds of game time since its last answer (as the old harness answered every 0.1 s of game time).
+    credit: makes the command file a wait of the deterministic test mode (SCRAP_TEST_DETERMINISTIC=1; the !sleep of
+    the regress runner): the pace is game time plus the time the game clock stood, and a level load that ended since
+    the last answer counts for that many seconds, the rest is the time of the new level.
     enc: the encoding of the file, default that of the locale ('latin-1' passes the bytes of the game's texts)"""
     seq = next_seq(game) if seq is None else seq
     tmp = os.path.join(game, TMP)
     with open(tmp, 'w', newline='\n', encoding=enc) as f:
-        f.write('%d%s\n%s\n' % (seq, ' pace=%g' % pace if pace else '', body))
+        head = ' pace=%g' % pace if pace else ''
+        if head and credit:
+            head += ' credit=%g' % credit
+        f.write('%d%s\n%s\n' % (seq, head, body))
     os.replace(tmp, os.path.join(game, CMD))
     return seq
 

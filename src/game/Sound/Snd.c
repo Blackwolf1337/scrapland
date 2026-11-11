@@ -11,6 +11,7 @@
 
 #include "scrap/crt.h"
 #include "scrap/snd.h"
+#include "scrap/testdet.h"
 #include "sound/ma.h"
 
 #define STB_VORBIS_HEADER_ONLY
@@ -260,7 +261,8 @@ int Snd_Init(void) {
 	}
 	snd.ctxInit = 1;
 	snprintf(snd.name, sizeof(snd.name), "%s: %s", ma_get_backend_name(snd.ctx.backend), snd.device.playback.name);
-	if (ma_device_start(&snd.device) != MA_SUCCESS) {
+	/* the deterministic test mode mixes by its own clock (Snd_MixTo): the device stays stopped */
+	if (!TestDet_On() && ma_device_start(&snd.device) != MA_SUCCESS) {
 		ma_device_uninit(&snd.device);
 		ma_context_uninit(&snd.ctx);
 		ma_mutex_uninit(&snd.lock);
@@ -273,6 +275,21 @@ int Snd_Init(void) {
 	snd.init = 1;
 	snd.error = SND_ERR_NONE;
 	return 1;
+}
+
+void Snd_MixTo(uint32_t frame, uint32_t fps) {
+	static uint64_t mixed;
+	float out[2 * 1024];
+	uint64_t to = (uint64_t)frame * SND_RATE / fps;
+
+	if (!snd.init) {
+		mixed = to;
+	}
+	while (mixed < to) {
+		uint32_t n = to - mixed < 1024 ? (uint32_t)(to - mixed) : 1024;
+		Snd_DeviceData(NULL, out, NULL, n);
+		mixed += n;
+	}
 }
 
 void Snd_Close(void) {

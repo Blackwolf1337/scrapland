@@ -33,6 +33,9 @@ typedef void (*SndPcmCallback)(void *buf, int bytes, void *user);
 
 /* the output (the null device when there is none, so the channels still run); 0 on failure */
 int Snd_Init(void);
+/* the deterministic test mode (scrap/testdet.h): the device thread does not mix, this does: up to the output frame
+ * of step number frame of fps steps a second */
+void Snd_MixTo(uint32_t frame, uint32_t fps);
 void Snd_Close(void);
 int Snd_GetError(void);
 /* the name of the output backend and device, for the log */

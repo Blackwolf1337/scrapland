@@ -17,6 +17,7 @@
 #include "scrap/platform.h"
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 #define g_CWinAppVftable (&CWinApp_vftable)
 #define g_ScrapTitle str_Scrapland	/* "Scrapland" */
@@ -318,8 +319,17 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 	if (!App_Init(g_pApp)) {
 		return 0;
 	}
+	if (TestDet_On()) {
+		Con_Printf("Deterministic test mode on: %d steps a second\n", TestDet_Fps());
+	}
 	for (;;) {
 		byte waiting = App_Waiting();
+		/* the deterministic test mode: one step of its clock per pass; none in the pass that loads a level (the load
+		 * comes first in the frame, whether a command file waits or not) and none while the test channel holds the
+		 * game */
+		if (TestDet_On() && (waiting || !(g_pApp->loadPending || TestChannel_Hold()))) {
+			TestDet_Tick();
+		}
 		if (Plat_PumpEvents(waiting)) {
 			if (!waiting) {
 				break;

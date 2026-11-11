@@ -9,6 +9,8 @@
 #        GOLDEN_UPDATE=1                 stores the output as the new expected one (after reviewing the difference)
 #        SCRAP_BUILD                     the build folder, default build-linux64
 #        GOLDEN_TIMEOUT                  seconds, default 240
+#        SCRAP_TEST_DETERMINISTIC=0      without the deterministic test mode of the game (include/scrap/testdet.h),
+#                                        which is on by default: fixed random seed and clock
 root=$(cd "$(dirname "$0")/../.." && pwd)
 build=$(realpath -m "${SCRAP_BUILD:-$root/build-linux64}")
 game=$build/golden
@@ -27,7 +29,7 @@ endgame() {
 }
 
 python3 "$dir/run.py" prepare "$game" || exit 1
-SCRAP_TEST_CHANNEL=1 SCRAP_BUILD=$build SCRAP_GAME_DIR=$game HEADLESS_TIMEOUT=$timeout NATIVE_LOG=$build/golden.log \
+SCRAP_TEST_DETERMINISTIC=${SCRAP_TEST_DETERMINISTIC:-1} SCRAP_TEST_CHANNEL=1 SCRAP_BUILD=$build SCRAP_GAME_DIR=$game HEADLESS_TIMEOUT=$timeout NATIVE_LOG=$build/golden.log \
 	"$root/tools/test/native.sh" -fullscreen:0 &
 pid=$!
 python3 "$dir/run.py" collect "$game" "$timeout"

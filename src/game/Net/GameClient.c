@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/net.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 /* GameClient */
 static char g_NetClientServer[256];
@@ -24,6 +25,10 @@ byte Net_CloseClient(void) {
 	cNetClient_Goodbye(g_NetClient);
 	/* the goodbye goes out until the server answers or g_NetCloseTime passes */
 	while (cNetClient_Flush(g_NetClient, Net_TimeMs(), 0)) {
+		/* the clock of the deterministic test mode goes on only by its steps */
+		if (TestDet_On()) {
+			TestDet_Tick();
+		}
 	}
 	cNetClient *c = g_NetClient;
 	if (c) {

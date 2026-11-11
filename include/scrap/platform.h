@@ -96,6 +96,8 @@ void Plat_DebugBreak(void);
 
 /* ms since the start (timeGetTime), the performance counter and its frequency (QueryPerformanceCounter/Frequency) */
 uint32_t Plat_Ticks(void);
+/* the real ms also in the deterministic test mode, for the loops that draw until a time has passed */
+uint32_t Plat_RealTicks(void);
 int Plat_Counter(int64_t *out);
 int Plat_Frequency(int64_t *out);
 
