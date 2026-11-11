@@ -72,13 +72,7 @@ static int Mf_HasKey(const nativeVal_t *d, const nativeVal_t *key) {
 	if (d->type == NV_DICT && Native_Hash(key, &h)) {
 		return Native_DictGet(d, key) != NULL;
 	}
-	PyObject *o = Native_ToPy(d), *k = o ? Native_ToPy(key) : NULL;
-	PyObject *r = k ? Script_Method(o, "has_key", "(O)", k) : NULL;
-	int t = r ? PyObject_IsTrue(r) : -1;
-	Py_XDECREF(r);
-	Py_XDECREF(k);
-	Py_XDECREF(o);
-	return t;
+	return Mode_RefHasKey(d, key);
 }
 
 /* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) (the list a value of the script; GetEntity through its seam) */
@@ -91,15 +85,10 @@ static byte Mf_First(const nativeVal_t *list, nativeVal_t *e) {
 	return ok;
 }
 
-/* the Scrap.SetSaveVar(name, text) of SuperDealOnVictory through its seam (the stage 4 cases record it) */
+/* the Scrap.SetSaveVar(name, text) of SuperDealOnVictory through its ref (OBJLIB 7, the seam: the stage 4 cases
+ * record it) */
 static byte Mf_SetSaveSeam(const char *name, const char *text) {
-	PyObject *hook;
-	int seam = Native_Seam("Scrap", "SetSaveVar", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "ss", name, text);
-	}
-	SaveVar_Set(name, text);
-	return 1;
+	return PORT_CALL(Scrap, SetSaveVar, NULL, "ss", name, text);
 }
 
 /* (a, b) != (Scrap.GetSaveVar("Mission.Map"), Scrap.GetSaveVar("Mission.Library")): the level is reloaded. The
@@ -160,11 +149,10 @@ static byte Mf_Init(void) {
 	if (Mf_SaveIs("AutoSaveGameOnLoad", "1")) {
 		/* Scrap.AddScheduledFunc(0, SaveGame.SaveGame, (0,)): the time the int 0 (the scheduler takes the entry of the
 		 * function of the module) */
-		PyObject *fn = Script_Attr("SaveGame", "SaveGame");
+		nativeVal_t *fn = Mode_V(&t);
+		byte ok = Mode_RefMod("SaveGame", "SaveGame", fn);
 		Native_SetInt(time, 0);
-		byte ok = fn && Mode_Schedule(time, fn, Mode_I(&t, 0), 1, NULL);
-		Py_XDECREF(fn);
-		if (!ok) {
+		if (!ok || !Mode_ScheduleV(time, fn, Mode_I(&t, 0), 1, NULL)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -333,12 +321,10 @@ static byte Mf_SetMissionTarget(const nativeVal_t *tgt) {
 
 /* SetMultipleMissionTargets(tgtList): several targets; the list becomes targetsList itself (OBJLIB 5: the mission
  * keeps it and sees DelMissionTarget take its names out) */
-static byte Mf_SetMultipleMissionTargets(PyObject *list) {
-	if (!PORT_OWN(MissionsFuncs, CleanAllTargets, NULL, "")) {
-		return 0;
-	}
-	Py_INCREF(list);
-	return Script_SetGlobal(MF, "targetsList", list) && LvN_PutNone(MF, "currentTarget") && Mf_TargetAll("targetsList", 1);
+static byte Mf_SetMultipleMissionTargets(const nativeVal_t *list) {
+	/* a reference is the object itself, a native list becomes a new list object (as its call through Python makes it) */
+	return PORT_OWN(MissionsFuncs, CleanAllTargets, NULL, "") && Mode_Put(MF, "targetsList", NULL, list) &&
+		LvN_PutNone(MF, "currentTarget") && Mf_TargetAll("targetsList", 1);
 }
 
 /* CleanAllTargets(): no target any more */
@@ -386,55 +372,51 @@ static byte Mf_IsCharMissionObjective(const nativeVal_t *name, nativeVal_t *out)
 	return 1;
 }
 
-/* cls.name as the script reads it (a new reference, NULL with the error) */
-static PyObject *Mf_Attr(PyObject *cls, const char *name) {
-	return Script_GetAttr(cls, name);
-}
-
 /* `if cls.name:` (1, 0, -1 with the error) */
-static int Mf_AttrTrue(PyObject *cls, const char *name) {
-	PyObject *v = Mf_Attr(cls, name);
-	int t = v ? PyObject_IsTrue(v) : -1;
-	Py_XDECREF(v);
+static int Mf_AttrTrue(const nativeVal_t *cls, const char *name) {
+	nativeVal_t v;
+	int t = Mode_RefGetAttr(cls, name, &v) ? Mode_Truth(&v) : -1;
+	Native_Free(&v);
 	return t;
 }
 
 /* CharMissionDialog(UsrName, CharName, optId, FullOption): the talk of a mission character from its spawn point in
  * CharsNPC.CharRes (initMsg, initAns, speechOptionsList, afterInitSpeechFunc once); the character and its lists are
- * the objects of CharsNPC (OBJLIB 5) */
+ * the objects of CharsNPC, held by reference (OBJLIB 5 and 7: the character is a class instance; its attributes go to
+ * Speech as the objects they are) */
 static byte Mf_CharMissionDialog(const nativeVal_t *usr, const nativeVal_t *name, const nativeVal_t *opt) {
 	if (!Mode_Import("Speech") || !Mode_Import("CharsNPC") || !Mode_SetModVar("Speech", "PlayerName", usr) ||
 		!Mode_SetModVar("Speech", "NPCName", name)) {
 		return 0;
 	}
-	PyObject *cls = Mode_CharRes(name);
-	if (!cls) {
+	nativeVal_t cls, msg = { 0 }, ans = { 0 }, l = { 0 }, fn = { 0 }, none;
+	if (!Mode_RefTake(Mode_CharRes(name), &cls)) {
 		return 0;
 	}
 	byte ok = 1;
+	Native_SetNone(&none);
 	if (Mf_Is(opt, "Talk")) {
-		PyObject *msg = Mf_Attr(cls, "initMsg"), *ans = msg ? Mf_Attr(cls, "initAns") : NULL;
-		ok = ans && PORT_CALL(Speech, OnSpch, NULL, "OOs", msg, ans, "TalkNPC");
-		Py_XDECREF(msg);
-		Py_XDECREF(ans);
-		int has = ok ? Mf_AttrTrue(cls, "speechOptionsList") : -1;
+		ok = Mode_RefGetAttr(&cls, "initMsg", &msg) && Mode_RefGetAttr(&cls, "initAns", &ans) &&
+			PORT_CALL(Speech, OnSpch, NULL, "OOs", msg.obj, ans.obj, "TalkNPC");
+		int has = ok ? Mf_AttrTrue(&cls, "speechOptionsList") : -1;
 		if (has > 0) {
-			PyObject *l = Mf_Attr(cls, "speechOptionsList");
-			ok = l && PORT_CALL(Speech, StdAnsLst, NULL, "O", l);
-			Py_XDECREF(l);
+			ok = Mode_RefGetAttr(&cls, "speechOptionsList", &l) && PORT_CALL(Speech, StdAnsLst, NULL, "O", l.obj);
 		}
-		has = ok && has >= 0 ? Mf_AttrTrue(cls, "afterInitSpeechFunc") : -1;
+		has = ok && has >= 0 ? Mf_AttrTrue(&cls, "afterInitSpeechFunc") : -1;
 		if (has > 0) {
-			PyObject *fn = Mf_Attr(cls, "afterInitSpeechFunc");
-			ok = fn && Mode_SetModPy("Speech", "OnEndOfSpeech", fn) && PyObject_SetAttrString(cls, "afterInitSpeechFunc", Py_None) == 0;
-			Py_XDECREF(fn);
+			ok = Mode_RefGetAttr(&cls, "afterInitSpeechFunc", &fn) && Mode_RefToMod("Speech", "OnEndOfSpeech", &fn) &&
+				Mode_RefSetAttr(&cls, "afterInitSpeechFunc", &none);
 		}
 		ok = ok && has >= 0;
 	} else {
-		int has = Mf_AttrTrue(cls, "speechOptionsList");
+		int has = Mf_AttrTrue(&cls, "speechOptionsList");
 		ok = has >= 0 && (!has || PORT_CALL(Speech, StdOnSpch, NULL, "v", opt));
 	}
-	Py_DECREF(cls);
+	Native_Free(&msg);
+	Native_Free(&ans);
+	Native_Free(&l);
+	Native_Free(&fn);
+	Native_Free(&cls);
 	return ok;
 }
 
@@ -453,7 +435,7 @@ static byte Mf_CancelSecondaryMission(const nativeVal_t *id) {
 }
 
 /* the revenge of a ship challenge after the death: Challenge.SetRevengeParams and its arguments for the restart */
-static byte Mf_Revenge(PyObject **restart, nativeVal_t *params) {
+static byte Mf_Revenge(nativeVal_t *restart, nativeVal_t *params) {
 	nativeVal_t ctype = { 0 }, foe = { 0 }, empty;
 	Mode_SaveVar("Challenge.Type", &ctype);
 	Mode_SaveVar("Challenge.Foe", &foe);
@@ -462,10 +444,10 @@ static byte Mf_Revenge(PyObject **restart, nativeVal_t *params) {
 	byte ok = 1;
 	if (revenge) {
 		/* the function the scheduler gets is the one of the module (its entry) */
-		PyObject *fn = Script_Attr("Challenge", "SetRevengeParams");
-		ok = fn != NULL;
+		nativeVal_t fn;
+		ok = Mode_RefMod("Challenge", "SetRevengeParams", &fn);
 		if (ok) {
-			Py_DECREF(*restart);
+			Native_Free(restart);
 			*restart = fn;
 			Native_Free(params);
 			Native_SetEmpty(params, NV_TUPLE);
@@ -494,8 +476,8 @@ static byte Mf_SinglePlayerDeath(void) {
 		return Mode_Done(&t, 0);
 	}
 	/* the function the scheduler gets is the one of the module (its entry) */
-	PyObject *restart = Script_Attr("SaveGame", "StartGame");
-	if (!restart) {
+	nativeVal_t *restart = Mode_V(&t), *at = Mode_V(&t);
+	if (!Mode_RefMod("SaveGame", "StartGame", restart)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetEmpty(params, NV_TUPLE);
@@ -554,7 +536,7 @@ static byte Mf_SinglePlayerDeath(void) {
 			if (car > 0) {
 				car = Mode_VObj(usr, "Type", utype) ? Mode_Cmp(utype, "==", Mode_S(&t, "Car")) : -1;
 			}
-			ok = car >= 0 && (!car || Mf_Revenge(&restart, params));
+			ok = car >= 0 && (!car || Mf_Revenge(restart, params));
 			if (ok && Mf_SaveIs("Spawn", "DM_Player_Spawn_Junkyard")) {
 				ok = Mode_Import("PhoneCab") && Mode_Import("Init") && Mode_Import("SaveGame") &&
 					PORT_CALL(PhoneCab, GetFree, pcb, "") && Mode_VObj(pcb, "Name", pname) &&
@@ -568,8 +550,10 @@ static byte Mf_SinglePlayerDeath(void) {
 	} else if (alive < 0) {
 		ok = 0;
 	}
-	ok = ok && Mode_LaterPy(5.0, restart, params->items, params->n, NULL);
-	Py_DECREF(restart);
+	if (ok) {
+		Native_SetFloat(at, Mode_Time() + 5.0);
+		ok = Mode_ScheduleV(at, restart, params->items, params->n, NULL);
+	}
 	return Mode_Done(&t, ok);
 }
 
@@ -975,13 +959,9 @@ static byte Mf_BuildMultipleEnemiesData(const nativeVal_t *wins, const nativeVal
 		}
 	} else {
 		/* enemies.keys() and enemies[k] of any other value (its errors) */
-		PyObject *o = Native_ToPy(enemies), *r = o ? Script_Method(o, "keys", "()") : NULL;
-		Py_XDECREF(o);
-		if (!r) {
+		if (!Mode_RefCall(enemies, "keys", NULL, 0, keys)) {
 			return Mode_Done(&t, 0);
 		}
-		Native_Arg(r, keys);
-		Py_DECREF(r);
 		int n = Mode_Loop(keys);
 		for (int i = 0; i < n; i++) {
 			nativeVal_t k = { 0 };
@@ -1211,9 +1191,8 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
  * form (a mod, a save edited by hand) gets the SyntaxError of the reader. id and control are the values the scorer
  * passed (variables of the function, with cad).
  */
-static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, byte victory) {
-	/* OBJLIB 7: the objects themselves (a list the text changes is the caller's), borrowed */
-	nativeVal_t cad = { 0 }, vid = { .type = NV_OBJ, .obj = id }, vcontrol = { .type = NV_OBJ, .obj = control };
+static byte Mf_SuperDealEnd(const nativeVal_t *id, const nativeVal_t *control, const char *var, byte victory) {
+	nativeVal_t cad = { 0 };
 	Mode_SaveVar(var, &cad);
 	if (!Native_True(&cad) || Mf_Is(&cad, "")) {
 		Native_Free(&cad);
@@ -1224,8 +1203,8 @@ static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, by
 		return 0;
 	}
 	execScope_t x = { .module = MF };
-	Exec_Var(&x, "id", &vid);
-	Exec_Var(&x, "control", &vcontrol);
+	Exec_Var(&x, "id", id);
+	Exec_Var(&x, "control", control);
 	Exec_Var(&x, "cad", &cad);
 	byte ok = Exec_Text(&x, &cad);
 	Native_Free(&cad);
@@ -1234,17 +1213,19 @@ static byte Mf_SuperDealEnd(PyObject *id, PyObject *control, const char *var, by
 
 /* SuperDealOnDefeat(id, control), SuperDealOnVictory(id, control): the code the super deal left in OnAbort or
  * OnVictory */
-static PyObject *MissionsFuncs_SuperDealOnDefeat(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	(void)self;
-	return PyArg_ParseTuple(args, "OO", &id, &control) ? Mode_Result(Mf_SuperDealEnd(id, control, "OnAbort", 0)) : NULL;
+static byte MissionsFuncs_SuperDealOnDefeat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return n == 2 ? Mf_SuperDealEnd(&a[0], &a[1], "OnAbort", 0) : Port_Arity(n, 2);
 }
 
-static PyObject *MissionsFuncs_SuperDealOnVictory(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	(void)self;
-	return PyArg_ParseTuple(args, "OO", &id, &control) ? Mode_Result(Mf_SuperDealEnd(id, control, "OnVictory", 1)) : NULL;
+static byte MissionsFuncs_SuperDealOnVictory_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return n == 2 ? Mf_SuperDealEnd(&a[0], &a[1], "OnVictory", 1) : Port_Arity(n, 2);
 }
+
+/* the adapters hand id and control over by reference (OBJLIB 7: a list the text changes is the caller's) */
+MODE_REFADAPTER(MissionsFuncs, SuperDealOnDefeat)
+MODE_REFADAPTER(MissionsFuncs, SuperDealOnVictory)
 
 /* ---- adapters ---- */
 
@@ -1321,28 +1302,14 @@ MODE_ADAPTER(MissionsFuncs, CreatePhotoObject)
 MODE_ADAPTER(MissionsFuncs, SetInvulnerableShipsInList)
 MODE_ADAPTER(MissionsFuncs, OnSuperDealFinish)
 
-/* SetMultipleMissionTargets(tgtList) of a native caller: an NV_OBJ list is the object itself, a native list becomes a
- * new list object (as its call through Python makes it) */
+/* SetMultipleMissionTargets(tgtList): the list object itself into targetsList (OBJLIB 5: the adapter hands it over
+ * by reference; a native caller's list becomes a new list object, as its call through Python makes it) */
 static byte MissionsFuncs_SetMultipleMissionTargets_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
-	if (n != 1) {
-		return Port_Arity(n, 1);
-	}
-	PyObject *list = a[0].type == NV_OBJ ? a[0].obj : Native_ToPy(&a[0]);
-	if (a[0].type == NV_OBJ) {
-		Py_INCREF(list);
-	}
-	byte ok = list && Mf_SetMultipleMissionTargets(list);
-	Py_XDECREF(list);
-	return ok;
+	return n == 1 ? Mf_SetMultipleMissionTargets(&a[0]) : Port_Arity(n, 1);
 }
 
-/* SetMultipleMissionTargets(tgtList): the list object itself into targetsList (OBJLIB 5) */
-static PyObject *MissionsFuncs_SetMultipleMissionTargets(PyObject *self, PyObject *args) {
-	PyObject *list;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &list) ? Mode_Result(Mf_SetMultipleMissionTargets(list)) : NULL;
-}
+MODE_REFADAPTER(MissionsFuncs, SetMultipleMissionTargets)
 
 PyMethodDef g_MissionsFuncsMethods[] = {
 	{ "Init", MissionsFuncs_Init, 1, NULL },

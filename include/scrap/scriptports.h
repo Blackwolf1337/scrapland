@@ -780,6 +780,8 @@ PORT_DECL(Init, isMission) /* ? */
 PORT_DECL(Init, PreloadMlibs) /* 1 */
 PORT_DECL(Init, SetArrowSize) /* ? */
 PORT_DECL(Init, Init) /* 1 */
+PORT_DECL(Init, SetMapLabelText) /* ? */
+PORT_DECL(Init, Close) /* ? */
 #define PORTS_InitLevel \
 	PORT_DEF(Init, LoadCharLib, Init_LoadCharLib) \
 	PORT_DEF(Init, AddMLib, Init_AddMLib) \
@@ -788,7 +790,9 @@ PORT_DECL(Init, Init) /* 1 */
 	PORT_DEF(Init, isMission, Init_isMission) \
 	PORT_DEF(Init, PreloadMlibs, Init_PreloadMlibs) \
 	PORT_DEF(Init, SetArrowSize, Init_SetArrowSize) \
-	PORT_DEF(Init, Init, Init_Init)
+	PORT_DEF(Init, Init, Init_Init) \
+	PORT_DEF(Init, SetMapLabelText, Init_SetMapLabelText) \
+	PORT_DEF(Init, Close, Init_Close)
 
 /* Items.c */
 PORT_DECL(Items, ResetUpgrade) /* 1 */
@@ -1185,6 +1189,8 @@ PORT_DECL(MissionsFuncs, BuildTeamDeathMatchData) /* 1 */
 PORT_DECL(MissionsFuncs, BuildVersusData) /* 1 */
 PORT_DECL(MissionsFuncs, BuildDominationData) /* 1 */
 PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
+PORT_DECL(MissionsFuncs, SuperDealOnDefeat) /* 2 */
+PORT_DECL(MissionsFuncs, SuperDealOnVictory) /* 2 */
 #define PORTS_MissionsFuncs \
 	PORT_DEF(MissionsFuncs, Init, MissionsFuncs_Init) \
 	PORT_DEF(MissionsFuncs, TryMsg, MissionsFuncs_TryMsg) \
@@ -1226,7 +1232,9 @@ PORT_DECL(MissionsFuncs, BuildCTFData) /* 1 */
 	PORT_DEF(MissionsFuncs, BuildTeamDeathMatchData, MissionsFuncs_BuildTeamDeathMatchData) \
 	PORT_DEF(MissionsFuncs, BuildVersusData, MissionsFuncs_BuildVersusData) \
 	PORT_DEF(MissionsFuncs, BuildDominationData, MissionsFuncs_BuildDominationData) \
-	PORT_DEF(MissionsFuncs, BuildCTFData, MissionsFuncs_BuildCTFData)
+	PORT_DEF(MissionsFuncs, BuildCTFData, MissionsFuncs_BuildCTFData) \
+	PORT_DEF(MissionsFuncs, SuperDealOnDefeat, MissionsFuncs_SuperDealOnDefeat) \
+	PORT_DEF(MissionsFuncs, SuperDealOnVictory, MissionsFuncs_SuperDealOnVictory)
 
 /* Net.c */
 PORT_DECL(Net, PurgeServerMapList) /* ? */
@@ -2298,6 +2306,7 @@ PORT_DECL(SaveGame, StartGame) /* ? */
 PORT_DECL(SaveGame, Restart) /* ? */
 PORT_DECL(SaveGame, QSaveReg) /* 1 */
 PORT_DECL(SaveGame, SaveReg) /* 2 */
+PORT_DECL(SaveGame, GetReg) /* 1 */
 PORT_DECL(SaveGame, InitVars) /* ? */
 #define PORTS_SaveGame \
 	PORT_DEF(SaveGame, MMDesc, SaveGame_MMDesc) \
@@ -2318,6 +2327,7 @@ PORT_DECL(SaveGame, InitVars) /* ? */
 	PORT_DEF(SaveGame, Restart, SaveGame_Restart) \
 	PORT_DEF(SaveGame, QSaveReg, SaveGame_QSaveReg) \
 	PORT_DEF(SaveGame, SaveReg, SaveGame_SaveReg) \
+	PORT_DEF(SaveGame, GetReg, SaveGame_GetReg) \
 	PORT_DEF(SaveGame, InitVars, SaveGame_InitVars)
 
 /* Scene.c */
@@ -2560,6 +2570,7 @@ PORT_DECL(Speech, NormalAbortSpeech) /* ? */
 PORT_DECL(Speech, CallEndOfSpeech) /* ? */
 PORT_DECL(Speech, AbortSpeech) /* ? */
 PORT_DECL(Speech, RestoreState) /* 1 */
+PORT_DECL(Speech, AbortNPCSpeech) /* ? */
 PORT_DECL(Speech, AutoAnswer) /* ? */
 PORT_DECL(Speech, StopMenuEvents) /* ? */
 PORT_DECL(Speech, RestartMenuEvents) /* ? */
@@ -2582,6 +2593,7 @@ PORT_DECL(Speech, RunNI) /* ? */
 PORT_DECL(Speech, ObjNIEnd) /* ? */
 PORT_DECL(Speech, LaunchTaunt) /* 3 */
 PORT_DECL(Speech, RestoreSpeech) /* ? */
+PORT_DECL(Speech, DoRemote) /* ? */
 PORT_DECL(Speech, OffVoice) /* 1 */
 PORT_DECL(Speech, RemoteComunication) /* ? */
 PORT_DECL(Speech, ForceRemoteComInternal) /* ? */
@@ -2608,6 +2620,7 @@ PORT_DECL(Speech, EndObjectAnswer) /* 0 */
 	PORT_DEF(Speech, CallEndOfSpeech, Speech_CallEndOfSpeech) \
 	PORT_DEFK(Speech, AbortSpeech, Speech_AbortSpeech) \
 	PORT_DEF(Speech, RestoreState, Speech_RestoreState) \
+	PORT_DEFK(Speech, AbortNPCSpeech, Speech_AbortNPCSpeech) \
 	PORT_DEF(Speech, AutoAnswer, Speech_AutoAnswer) \
 	PORT_DEF(Speech, StopMenuEvents, Speech_StopMenuEvents) \
 	PORT_DEF(Speech, RestartMenuEvents, Speech_RestartMenuEvents) \
@@ -2630,6 +2643,7 @@ PORT_DECL(Speech, EndObjectAnswer) /* 0 */
 	PORT_DEF(Speech, ObjNIEnd, Speech_ObjNIEnd) \
 	PORT_DEF(Speech, LaunchTaunt, Speech_LaunchTaunt) \
 	PORT_DEF(Speech, RestoreSpeech, Speech_RestoreSpeech) \
+	PORT_DEF(Speech, DoRemote, Speech_DoRemote) \
 	PORT_DEF(Speech, OffVoice, Speech_OffVoice) \
 	PORT_DEFK(Speech, RemoteComunication, Speech_RemoteComunication) \
 	PORT_DEFK(Speech, ForceRemoteComInternal, Speech_ForceRemoteComInternal) \
@@ -5767,6 +5781,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 2750
+#define PORT_COUNT 2757
 
 #endif

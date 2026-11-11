@@ -31,7 +31,7 @@
 static int It_Has(const nativeVal_t *ups, const nativeVal_t *key) {
 	nativeVal_t v;
 	if (!Native_Subscript(ups, key, &v)) {
-		PyErr_Clear();
+		Mode_DropError();
 		return 0;
 	}
 	Native_Free(&v);
@@ -63,8 +63,7 @@ static byte It_SetUp(nativeVal_t *ups, const nativeVal_t *key, const nativeVal_t
 
 /* a == b of the script (the error of a compare that raised) */
 static int It_Eq(const nativeVal_t *a, const nativeVal_t *b) {
-	int c = Native_Compare(a, b);
-	return PyErr_Occurred() ? -1 : c == 0;
+	return Mode_CmpOp(a, b, '=');
 }
 
 /* SVec.Prod(SVec.Norm((Scrap.Rand(-1,1), Scrap.Rand(-1,1), Scrap.Rand(-1,1))), 100.0): a random speed of a dropped
@@ -143,8 +142,8 @@ static byte It_DropUpgrade(const nativeVal_t *veh, const nativeVal_t *id, const 
 	if (!Mode_G("Items", "Upgrades", ups)) {
 		return Mode_Done(&t, 0);
 	}
-	int nz = Native_Compare(id, zero);
-	if (PyErr_Occurred()) {
+	int nz = Mode_CmpOp(id, zero, '!');
+	if (nz < 0) {
 		return Mode_Done(&t, 0);
 	}
 	if (!nz || !It_Has(ups, id)) {
@@ -538,17 +537,17 @@ static byte It_Init(void) {
 	if (!PORT_OWN(Items, InitResources, NULL, "")) {
 		return 0;
 	}
-	PyObject *last = Mode_GlobalPy("Net", "ClientCreate");
-	byte ok = last && Script_SetGlobal("Items", "LastClientCreate", last);
-	PyObject *mine = ok ? Mode_GlobalPy("Items", "ClientCreate") : NULL;
-	ok = mine && Script_SetGlobal("Net", "ClientCreate", mine);
-	nativeVal_t flags = { 0 }, first = { 0 }, zero;
+	nativeVal_t last = { 0 }, mine = { 0 }, flags = { 0 }, first = { 0 }, zero;
+	byte ok = Mode_RefG("Net", "ClientCreate", &last) && Mode_Put("Items", "LastClientCreate", NULL, &last) &&
+		Mode_RefG("Items", "ClientCreate", &mine) && Mode_Put("Net", "ClientCreate", NULL, &mine);
+	Native_Free(&last);
+	Native_Free(&mine);
 	Native_SetInt(&zero, 0);
 	ok = ok && Mode_NetFlags(&flags) && Native_Subscript(&flags, &zero, &first);
-	int client = ok ? Native_Compare(&first, &zero) : 0;
+	int client = ok ? Mode_CmpOp(&first, &zero, '!') : -1;
 	Native_Free(&flags);
 	Native_Free(&first);
-	if (!ok || PyErr_Occurred()) {
+	if (client < 0) {
 		return 0;
 	}
 	return client || PORT_OWN(Items, BrowseItemPos, NULL, "");
@@ -561,7 +560,8 @@ MODE_FNANY(Items, Init, It_Init())
 
 /* ---- hints and interactive objects ---- */
 
-/* hints[item][i] of the Hints dict object (OBJLIB 5 and 7: its items hold functions) as a value */
+/* hints[item][i] of the Hints dict object (OBJLIB 5 and 7: its items hold functions) as a value. The dict stays the
+ * Python object in ShowHint until the entity handles are native (7c: the deleted key and the handle's entity) */
 static byte It_HintItem(PyObject *hints, const nativeVal_t *item, int i, nativeVal_t *out) {
 	PyObject *k = Native_ToPy(item), *h = k ? PyObject_GetItem(hints, k) : NULL, *v = h ? Script_Index(h, i) : NULL;
 	byte ok = v && Native_Arg(v, out);
