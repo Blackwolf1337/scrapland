@@ -59,7 +59,7 @@ portSite_t *Port_Sites(void) {
 	return port_sites;
 }
 
-/* an argument that holds an NV_OBJ or an entity handle */
+/* an argument that holds an NV_OBJ, an entity handle or a native object */
 static byte Port_HoldsObj(const nativeVal_t *v) {
 	if (NV_REFS >> v->type & 1) {
 		return 1;
@@ -71,9 +71,9 @@ static byte Port_HoldsObj(const nativeVal_t *v) {
 			}
 		}
 	} else if (v->type == NV_DICT) {
-		/* key and value pairs; a free or deleted slot has a key type beyond NV_ENT */
+		/* key and value pairs; a free or deleted slot has a key type beyond NV_REF */
 		for (int i = 0; i < v->max; i++) {
-			if (v->items[2 * i].type <= NV_ENT && (Port_HoldsObj(&v->items[2 * i]) || Port_HoldsObj(&v->items[2 * i + 1]))) {
+			if (v->items[2 * i].type <= NV_REF && (Port_HoldsObj(&v->items[2 * i]) || Port_HoldsObj(&v->items[2 * i + 1]))) {
 				return 1;
 			}
 		}
