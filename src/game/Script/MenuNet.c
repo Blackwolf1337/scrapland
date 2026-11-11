@@ -9,8 +9,10 @@
  * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps; OBJLIB 5),
  * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through their
  * refs (PORT_CALL: directly while the attribute holds the port's function, else by name), and so are Scrap.SaveConfig
- * and Scrap.Exit (stage 7), their failures printed as before; the connection status schedules itself (the scheduler
- * takes its entry, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
+ * and Scrap.Exit (stage 7), their failures printed as before; the connection status schedules itself (a function
+ * object of its own, OBJLIB 7; the scheduler takes its entry, Port_Scheduled). The $names of the sections are made on
+ * native values (Mode_DefVars, stage 6 batch 6f); the .def runner takes them as a dict and the steps their arguments
+ * as a tuple (OBJLIB 6).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,7 +80,13 @@ typedef struct {
 } netMapList_t;
 
 static void Net_RunMenu(int id, const char *section, PyObject *vars);
-static PyObject *Net_Vars(const char *tab);
+static void Net_RunPage(int id, const char *section, const char *tab);
+
+/* the values every page may use, as values of t: NET_PAIRS(c) are their name and value pairs for Mode_DefVars
+ * (NET_COMMON of them), other $names follow */
+#define NET_COMMON 6
+#define NET_PAIRS(c) "tab", c[0], "domain", c[1], "motd", c[2], "motdx", c[3], "motdy", c[4], "serveraddress", c[5]
+static void Net_Common(modeVals_t *t, const char *tab, const nativeVal_t **c);
 static void Net_JoinMenu(int id);
 
 /* Menu.LinkUD (ud) or Menu.LinkLR (id, a, b) through the module, a failure printed */
@@ -313,8 +321,9 @@ static void Net_ConnectionStatus(void) {
 	if (strcmp(last, title)) {
 		MODE_PRINTED(Menu, DrawMenuTitleBar, "ids", 0L, bar, title);
 	}
-	/* a full server ends the polling (the script deleted its own next call); the function of the module with an empty
-	 * argument tuple: the scheduler takes the entry while it is the port's own function (Port_Scheduled) */
+	/* a full server ends the polling (the script deleted its own next call). OBJLIB 7: the port's own function as a
+	 * function object of its own (not the module attribute: a case that replaces PCMenu.ShowConectionStatus does not
+	 * change the polling) with an empty argument tuple; the scheduler takes its entry (Port_Scheduled) */
 	if (!full) {
 		PyObject *f = Net_StatusFunc();
 		PyObject *params = PyTuple_New(0);
@@ -341,10 +350,10 @@ static void Net_TryJoin(int id) {
 	} else {
 		Str_Copy(title, fmt, sizeof(title));
 	}
-	/* OBJLIB 6: the $names of the section as a dict */
-	PyObject *vars = Py_BuildValue("{s:s}", "title", title);
-	Net_RunMenu(id, "connecting", vars);
-	Py_XDECREF(vars);
+	nativeVal_t v;
+	Native_SetText(&v, title, (int)strlen(title));
+	Net_RunMenu(id, "connecting", Mode_DefVars(1, "title", &v));
+	Native_Free(&v);
 	Net_ConnectionStatus();
 }
 
@@ -628,18 +637,13 @@ static void Net_CreateMenu(int id) {
 	const char *advanced = Script_Lang("Menu_Multiplayer_Advanced");
 	Str_Printf(players, sizeof(players), "%d", (int)GVar_GetNum("DefaultMaxPlayersOnServer", 0) + 1);
 	Str_Printf(frags, sizeof(frags), "%d", (int)GVar_GetNum("FragLimit", 0));
-	/* OBJLIB 6: the $names of the section as a dict */
-	PyObject *vars = Net_Vars("Create");
-	PyObject *more = Py_BuildValue("{s:s,s:s,s:s,s:s}", "servername", GVar_GetStr("ServerName"), "players", players,
-		"fraglimit", frags, "advanced", *advanced ? advanced : "Advanced");
-	PyObject *k, *v;
-	int pos = 0;
-	while (vars && more && PyDict_Next(more, &pos, &k, &v)) {
-		PyDict_SetItem(vars, k, v);
-	}
-	Py_XDECREF(more);
-	Net_RunMenu(id, "Create", vars);
-	Py_XDECREF(vars);
+	modeVals_t t = { .n = 0 };
+	const nativeVal_t *c[NET_COMMON];
+	Net_Common(&t, "Create", c);
+	Net_RunMenu(id, "Create", Mode_DefVars(NET_COMMON + 4, NET_PAIRS(c), "servername", Mode_S(&t, GVar_GetStr("ServerName")),
+		"players", Mode_S(&t, players), "fraglimit", Mode_S(&t, frags), "advanced",
+		Mode_S(&t, *advanced ? advanced : "Advanced")));
+	Mode_Done(&t, 1);
 }
 
 /* a text of the language, or the English one when the language has none */
@@ -739,32 +743,42 @@ static const scriptStep_t net_steps[] = {
 	{ NULL, NULL },
 };
 
-/* the values every page may use (OBJLIB 6: the $names of a section as a dict) */
-static PyObject *Net_Vars(const char *tab) {
-	int marginH = (int)Mode_ModGetI("Scorer", "MarginH", 0);
-	int marginV = (int)Mode_ModGetI("Scorer", "MarginV", 0);
-	return Py_BuildValue("{s:s,s:s,s:s,s:i,s:i,s:s}", "tab", tab, "domain", net.domain, "motd", net.motd, "motdx",
-		marginH + 5, "motdy", 480 - marginV - 20, "serveraddress", GVar_GetStr("DefaultServerAddress"));
-}
-
-/* OBJLIB 6: the .def runner takes the $names as a Python dict */
+/* OBJLIB 6: the .def runner takes the $names as a Python dict (vars, made by Mode_DefVars: given away, NULL for
+ * none) */
 static void Net_RunMenu(int id, const char *section, PyObject *vars) {
 	Script_RunFile(id, NET_FILE, section, net_def, net_steps, vars);
+	Py_XDECREF(vars);
+}
+
+static void Net_Common(modeVals_t *t, const char *tab, const nativeVal_t **c) {
+	int marginH = (int)Mode_ModGetI("Scorer", "MarginH", 0);
+	int marginV = (int)Mode_ModGetI("Scorer", "MarginV", 0);
+	c[0] = Mode_S(t, tab);
+	c[1] = Mode_S(t, net.domain);
+	c[2] = Mode_S(t, net.motd);
+	c[3] = Mode_I(t, marginH + 5);
+	c[4] = Mode_I(t, 480 - marginV - 20);
+	c[5] = Mode_S(t, GVar_GetStr("DefaultServerAddress"));
+}
+
+/* a section with the values every page may use and nothing else */
+static void Net_RunPage(int id, const char *section, const char *tab) {
+	modeVals_t t = { .n = 0 };
+	const nativeVal_t *c[NET_COMMON];
+	Net_Common(&t, tab, c);
+	Net_RunMenu(id, section, Mode_DefVars(NET_COMMON, NET_PAIRS(c)));
+	Mode_Done(&t, 1);
 }
 
 static void Net_JoinMenu(int id) {
 	cScorer *sc = Scorer_Get(id);
 	char current[0x80];
+	modeVals_t t = { .n = 0 };
+	const nativeVal_t *c[NET_COMMON];
 	Str_Copy(current, sc && sc->current ? sc->current : "Join", sizeof(current));
-	/* OBJLIB 6: the $names of the section as a dict */
-	PyObject *vars = Net_Vars("Join");
-	if (vars) {
-		PyObject *c = PyString_FromString(current);
-		PyDict_SetItemString(vars, "current", c);
-		Py_XDECREF(c);
-	}
-	Net_RunMenu(id, "Join", vars);
-	Py_XDECREF(vars);
+	Net_Common(&t, "Join", c);
+	Net_RunMenu(id, "Join", Mode_DefVars(NET_COMMON + 1, NET_PAIRS(c), "current", Mode_S(&t, current)));
+	Mode_Done(&t, 1);
 }
 
 /* ---- the functions of PCMenu ---- */
@@ -783,9 +797,8 @@ static void Net_MultiPlayerMenu(int id) {
 		Net_JoinMenu(id);
 		return;
 	}
-	PyObject *vars = Py_BuildValue("{s:i}", "server", Net_IsServer() != 0);
-	Net_RunMenu(id, "Multiplayer", vars);
-	Py_XDECREF(vars);
+	nativeVal_t v;
+	Net_RunMenu(id, "Multiplayer", Mode_DefVars(1, "server", Mode_IntVal(&v, Net_IsServer() != 0)));
 }
 
 MODE_IDFN(PCMenu_MultiPlayerMenu, (Net_MultiPlayerMenu(id), 1))
@@ -843,20 +856,16 @@ static PyObject *PCMenu_JoinPassword(PyObject *self, PyObject *args) {
 static void Net_AskPassword(int id) {
 	const char *title = Script_Lang("Menu_Multiplayer_Advanced_Password");
 	MODE_PRINTED(Menu, StartNewMenu, "i", (long)id);
-	PyObject *vars = Py_BuildValue("{s:s,s:s}", "title", *title ? title : "Password", "password",
-		GVar_GetStr("ClientPassword"));
-	Net_RunMenu(id, "password", vars);
-	Py_XDECREF(vars);
+	modeVals_t t = { .n = 0 };
+	Net_RunMenu(id, "password", Mode_DefVars(2, "title", Mode_S(&t, *title ? title : "Password"), "password",
+		Mode_S(&t, GVar_GetStr("ClientPassword"))));
+	Mode_Done(&t, 1);
 }
 
 MODE_IDFN(PCMenu_AskPassword, (Net_AskPassword(id), 1))
 
-static PyObject *PCMenu_ShowConectionStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	Net_ConnectionStatus();
-	return Py_ReturnNone();
-}
+/* ShowConectionStatus(): any arguments */
+MODE_FNANY(PCMenu, ShowConectionStatus, (Net_ConnectionStatus(), 1))
 
 static PyMethodDef net_status_def = { "ShowConectionStatus", PCMenu_ShowConectionStatus, 1, NULL };
 
@@ -882,9 +891,7 @@ static PyObject *PCMenu_SpecifyIPMenu(PyObject *self, PyObject *args) {
 	(void)self;
 	NET_ARGS(args);
 	(void)control;
-	PyObject *vars = Net_Vars("Join");
-	Net_RunMenu(id, "ip", vars);
-	Py_XDECREF(vars);
+	Net_RunPage(id, "ip", "Join");
 	return Py_ReturnNone();
 }
 
@@ -906,9 +913,7 @@ static PyObject *PCMenu_NetDefaultContentMenu(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "iO|s", &id, &control, &tab)) {
 		return NULL;
 	}
-	PyObject *vars = Net_Vars(tab);
-	Net_RunMenu(id, "content", vars);
-	Py_XDECREF(vars);
+	Net_RunPage(id, "content", tab);
 	return Py_ReturnNone();
 }
 
@@ -1148,9 +1153,7 @@ static PyObject *PCMenu_CreateBrowseMenu(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &id)) {
 		return NULL;
 	}
-	PyObject *vars = Net_Vars("Join");
-	Net_RunMenu(id, "browser", vars);
-	Py_XDECREF(vars);
+	Net_RunPage(id, "browser", "Join");
 	return Py_ReturnNone();
 }
 
@@ -1289,11 +1292,11 @@ static PyObject *PCMenu_AdvancedServer(PyObject *self, PyObject *args) {
 	Str_Printf(force, sizeof(force), "%c %s", GVar_GetNum("ForceServerVehicle", 0) ? 2 : 3,
 		Net_Text("Menu_Multiplayer_Advanced_Force", "Force server vehicle"));
 	Net_DataRateText(rate, sizeof(rate));
-	PyObject *vars = Py_BuildValue("{s:s,s:s,s:s,s:s,s:s,s:i}", "title",
-		Net_Text("Menu_Multiplayer_Advanced_Options", "Advanced Options"), "pass", pass, "password",
-		GVar_GetStr("ServerPassword"), "force", force, "datarate", rate, "usepass", usePass);
-	Net_RunMenu(id, "Advanced", vars);
-	Py_XDECREF(vars);
+	modeVals_t t = { .n = 0 };
+	Net_RunMenu(id, "Advanced", Mode_DefVars(6, "title", Mode_S(&t, Net_Text("Menu_Multiplayer_Advanced_Options", "Advanced Options")),
+		"pass", Mode_S(&t, pass), "password", Mode_S(&t, GVar_GetStr("ServerPassword")), "force", Mode_S(&t, force), "datarate",
+		Mode_S(&t, rate), "usepass", Mode_I(&t, usePass)));
+	Mode_Done(&t, 1);
 	return Py_ReturnNone();
 }
 

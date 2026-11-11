@@ -10,18 +10,23 @@
  * the .def keys read and set it: the map tables, MortalProfiles, PlayersReady, Scorer, FirstTime, RespawnTime,
  * ModLib, OnDeathFunc and the spawn functions FuncGetSpawnPos/FuncGetReSpawnPos (the race replaces them) of Split;
  * ZoneList, AcFlag, BattonOwner, FlagInitPos, race and the model and sound names of the modes. The C works on them in
- * the struct split; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles
- * and stay Python objects until entities are native values (OBJLIB 7). The .def sections take their $names as a dict
- * (OBJLIB 6).
+ * the struct split; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles,
+ * held by reference (NV_OBJ) until entities are native values (OBJLIB 7). The .def sections take their $names as a dict
+ * (Mode_DefVars) and the steps their arguments as a tuple (OBJLIB 6).
+ *
+ * State on values (stage 6, batch 6f): apart from that dict and the steps no function works on Python objects. ModLib
+ * (a module object) and the functions held in variables or given to the scheduler are held by reference (NV_OBJ) and go
+ * through the helpers of scrap/scriptmodes.h (Mode_VObj, Mode_CallArgs, MODE_CBGLOBAL, Mode_ScheduleV,
+ * Mode_ModSetGlobal; OBJLIB 7).
  *
  * Direct calls (stage 3): the functions of Split call each other through PORT_OWN (the global, a mission may replace
  * one), the modes call their own functions and Split, and all call the other ports through PORT_CALL
  * (scrap/scriptnative.h: the port seam). The mode's InitStatus and Init through ModLib (a module in a variable,
  * OBJLIB 5) and the functions held in variables (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc; OBJLIB 5) are called
- * through the entries of port functions (PORT_VALUE); the calls given to the scheduler (ReSpawnShip, ReloadNext,
+ * through the entries of port functions (Mode_CallArgs); the calls given to the scheduler (ReSpawnShip, ReloadNext,
  * BattonRepos, the race count down) take the entry of a port's own function (stage 4: Port_Scheduled), SScorer and
  * SSound there their engine entries (stage 7); the functions set as values into Split and Vehicles
- * stay Python values (OBJLIB 5).
+ * stay the objects the globals hold (OBJLIB 5).
  */
 #include <limits.h>
 #include <stdarg.h>
@@ -53,32 +58,40 @@ static struct {
 	nativeVal_t raceBuild;		/* the checkpoints srace.def gives while it runs */
 } split;
 
-/* a section of split.def for player id with the $names of the n pairs (OBJLIB 6: a dict until the .def runner takes
- * C values): 0 with the error set when a line raised */
-static byte Split_Run(int id, const char *section, int n, ...) {
-	PyObject *vars = NULL;
-	if (n) {
-		va_list va;
-		va_start(va, n);
-		vars = PyDict_New();
-		for (int i = 0; vars && i < n; i++) {
-			const char *name = va_arg(va, const char *);
-			PyObject *v = Native_ToPy(va_arg(va, const nativeVal_t *));
-			if (!v || PyDict_SetItemString(vars, (char *)name, v) < 0) {
-				Py_XDECREF(v);
-				Py_DECREF(vars);
-				vars = NULL;
-				break;
-			}
-			Py_DECREF(v);
-		}
-		va_end(va);
-		if (!vars) {
-			return 0;
-		}
-	}
-	byte ok = Script_RunFileTry(id, "menus/split.def", section, split_def, split_steps, vars);
+/* a section of split.def for player id with the $names of vars (given away; named: the section takes some, vars NULL
+ * is then the error of making them; OBJLIB 6: a dict until the .def runner takes C values): 0 with the error set when
+ * a line raised */
+static byte Split_RunVars(int id, const char *section, byte named, PyObject *vars) {
+	byte ok = (!named || vars) && Script_RunFileTry(id, "menus/split.def", section, split_def, split_steps, vars);
 	Py_XDECREF(vars);
+	return ok;
+}
+
+/* the same with the $names of the n pairs that follow, a name and a const nativeVal_t * each (Mode_DefVars) */
+#define Split_Run(id, section, n, ...) \
+	Split_RunVars(id, section, (n) != 0, (n) ? Mode_DefVars(n __VA_OPT__(, ) __VA_ARGS__) : NULL)
+
+/* module.var = the global name of src as the object it is (OBJLIB 5: a function as a value of another module): the
+ * NameError of a global that is gone; a failed set is no error (Script_SetVar) */
+static byte Split_ToMod(const char *module, const char *var, const char *src, const char *name) {
+	nativeVal_t f;
+	if (!Mode_G(src, name, &f)) {
+		return 0;
+	}
+	Native_Free(&f);
+	if (!Mode_ModSetGlobal(module, var, src, name)) {
+		Mode_DropError();
+	}
+	return 1;
+}
+
+/* ModLib.func() of the mode (OBJLIB 5: the module a variable holds), through the entry of the function there */
+static byte Split_Lib(const char *func) {
+	nativeVal_t lib, f;
+	Native_SetNone(&f);
+	byte ok = Mode_G("Split", "ModLib", &lib) && Mode_VObj(&lib, func, &f) && Mode_CallArgs(&f, NULL, NULL, 0);
+	Native_Free(&f);
+	Native_Free(&lib);
 	return ok;
 }
 
@@ -157,14 +170,10 @@ static byte Split_CreateUserShipC(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *sp = Mode_V(&t), *at = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *name = Mode_V(&t);
 	nativeVal_t *ang = Mode_V(&t), *cname = Mode_V(&t), *zero = Mode_V(&t), *pos = Mode_V(&t), *vn = Mode_V(&t), *cn = Mode_V(&t);
-	PyObject *fn;
 	cEntity *v, *cam;
-	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !(fn = Mode_GlobalPy("Split", "FuncGetSpawnPos"))) {
-		return Mode_Done(&t, 0);
-	}
-	byte ok = PORT_VALUE(fn, sp, "v", id);
-	Py_DECREF(fn);
-	if (!ok || !Native_Subscript(sp, Mode_I(&t, 0), at) || !Native_Subscript(at, Mode_I(&t, 0), x) ||
+	/* sp = FuncGetSpawnPos(id): the function the variable holds, through its entry (the race sets its own) */
+	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !MODE_CBGLOBAL("Split", "FuncGetSpawnPos", sp, "v", id) ||
+		!Native_Subscript(sp, Mode_I(&t, 0), at) || !Native_Subscript(at, Mode_I(&t, 0), x) ||
 		!Native_Subscript(at, Mode_I(&t, 1), y) || !Native_Subscript(at, Mode_I(&t, 2), z) || !Split_Name(&t, "Player", id, name) ||
 		!Mode_Create(name, x, y, z, "Car", &v)) {
 		return Mode_Done(&t, 0);
@@ -187,40 +196,26 @@ static byte Split_CreateUserShipC(const nativeVal_t *id) {
 
 /* Init(): the mode's state, both players with ships, the deaths through OnDeathCallback, the ship choice */
 static byte Split_InitC(void) {
-	PyObject *mod = Mode_GlobalPy("Split", "ModLib");
-	PyObject *f = mod ? Script_GetAttr(mod, "InitStatus") : NULL;
-	byte ok = f && PORT_VALUE(f, NULL, "");
-	Py_XDECREF(f);
-	Py_XDECREF(mod);
-	if (!ok || !Mode_GVarSetS("MainMissionEvent", "") || !Mode_Import("Menu") || !Mode_Import("Vehicles") ||
+	if (!Split_Lib("InitStatus") || !Mode_GVarSetS("MainMissionEvent", "") || !Mode_Import("Menu") || !Mode_Import("Vehicles") ||
 		!PORT_OWN(Split, CreateUserShip, NULL, "i", 0L) || !PORT_OWN(Split, CreateUserShip, NULL, "i", 1L)) {
 		return 0;
 	}
-	/* Vehicles.OnDeathCallback = OnDeathCallback (OBJLIB 5: the function as a value; a failed set is no error) */
-	PyObject *cb = Mode_GlobalPy("Split", "OnDeathCallback");
-	if (!cb) {
-		return 0;
-	}
-	Script_SetVar("Vehicles", "OnDeathCallback", cb);
-	return PORT_OWN(Split, ChooseShips, NULL, "");
+	/* Vehicles.OnDeathCallback = OnDeathCallback */
+	return Split_ToMod("Vehicles", "OnDeathCallback", "Split", "OnDeathCallback") && PORT_OWN(Split, ChooseShips, NULL, "");
 }
 
 /* ReSpawnShip(LooserName): back at a spawn point (the race: where it died) without upgrades */
 static byte Split_ReSpawnShipC(const nativeVal_t *name) {
 	static const char *const upgrades[] = { "Upgrd00", "Upgrd01", "Upgrd02", "Upgrd03", "Upgrd04", "Upgrd05", "Upgrd06" };
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *sp = Mode_V(&t), *ang = Mode_V(&t), *pos = Mode_V(&t);
+	nativeVal_t *sp = Mode_V(&t), *ang = Mode_V(&t), *pos = Mode_V(&t), *h = Mode_V(&t);
 	cEntity *e;
-	PyObject *fn;
-	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_Ent(name, &e) || !(fn = Mode_GlobalPy("Split", "FuncGetReSpawnPos"))) {
+	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_Ent(name, &e)) {
 		return Mode_Done(&t, 0);
 	}
-	/* the handle of the ship goes to the spawn function (OBJLIB 7) */
+	/* sp = FuncGetReSpawnPos(v): the handle of the ship goes to the spawn function the variable holds (OBJLIB 7) */
 	const char *n = Native_Text(name);
-	PyObject *h = Mode_Handle(e);
-	byte ok = PORT_VALUE(fn, sp, "O", h);
-	Py_DECREF(h);
-	Py_DECREF(fn);
+	byte ok = Mode_EntHandle(e, h) && MODE_CBGLOBAL("Split", "FuncGetReSpawnPos", sp, "v", h);
 	cEntity *at = e ? World_FindEntity(n) : NULL;
 	if (!ok || !Split_Ang(&t, sp, ang) || !(e ? Native_EntSet(at, n, "Ang", ang) : Mode_Set(NULL, n, "Ang", ang)) ||
 		!Native_Subscript(sp, Mode_I(&t, 0), pos) || !Native_EntSet(World_FindEntity(n), n, "Pos", pos)) {
@@ -235,20 +230,18 @@ static byte Split_ReSpawnShipC(const nativeVal_t *name) {
 }
 
 /* OnDeathCallback(LooserName, WinnerName): the respawn RespawnTime later, then the mode's OnDeathFunc */
-static byte Split_OnDeathCallbackC(const nativeVal_t *looser, const nativeVal_t *winner) {
+static byte Split_OnDeathCallbackC(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *rt = Mode_V(&t), *f = Mode_V(&t), *cb = Mode_V(&t);
-	if (!Mode_G("Split", "RespawnTime", rt) || !Native_ToFloat(rt, f) || !Mode_LaterIn(f->f, "Split", "ReSpawnShip", looser, 1, NULL)) {
+	nativeVal_t *rt = Mode_V(&t), *f = Mode_V(&t), *cb = Mode_V(&t), *fn = Mode_V(&t);
+	if (!Mode_G("Split", "RespawnTime", rt) || !Native_ToFloat(rt, f) || !Mode_LaterIn(f->f, "Split", "ReSpawnShip", &a[0], 1, NULL)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *fn = Mode_GlobalPy("Split", "OnDeathFunc");
-	if (!fn) {
+	/* `if OnDeathFunc: OnDeathFunc(LooserName, WinnerName)`: the function the variable holds, through its entry */
+	if (!Mode_G("Split", "OnDeathFunc", fn)) {
 		return Mode_Done(&t, 0);
 	}
-	int set = PyObject_IsTrue(fn);
-	byte ok = set >= 0 && (!set || PORT_VALUE(fn, cb, "vv", looser, winner));
-	Py_DECREF(fn);
-	return Mode_Done(&t, ok);
+	int set = Mode_Truth(fn);
+	return Mode_Done(&t, set >= 0 && (!set || Mode_CallArgs(fn, cb, a, 2)));
 }
 
 static byte Split_ChooseShipsC(void) {
@@ -361,11 +354,7 @@ static byte Split_StartGameC(void) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(first)) {
-		PyObject *mod = Mode_GlobalPy("Split", "ModLib");
-		PyObject *f = mod ? Script_GetAttr(mod, "Init") : NULL;
-		byte ok = f && PORT_VALUE(f, NULL, "");
-		Py_XDECREF(f);
-		Py_XDECREF(mod);
+		byte ok = Split_Lib("Init");
 		Native_SetStr(msg, "Cu\xf1" "aaaao");
 		if (!ok || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_PrintV(msg)) {
 			return Mode_Done(&t, 0);
@@ -619,7 +608,7 @@ MODE_FNANY(Split, PurgeServerMapList, Mode_PurgeServerMapList("Split"))
 SP_FN(GetSpawnPos, 1, Mode_Import("OutMap") && PORT_CALL(OutMap, GetSpawnPos, out, ""))
 SP_FN(CreateUserShip, 1, Split_CreateUserShipC(&a[0]))
 SP_FN(ReSpawnShip, 1, Split_ReSpawnShipC(&a[0]))
-SP_FN(OnDeathCallback, 2, Split_OnDeathCallbackC(&a[0], &a[1]))
+SP_FN(OnDeathCallback, 2, Split_OnDeathCallbackC(a))
 SP_FN(NextShip, 1, PORT_OWN(Split, ChangeShip, NULL, "vi", &a[0], 1L))
 SP_FN(PrevShip, 1, PORT_OWN(Split, ChangeShip, NULL, "vi", &a[0], 0L))
 SP_FN(EndOfGame, 1, Split_EndOfGameC(&a[0]))
@@ -701,28 +690,23 @@ PyMethodDef g_SplitMethods[] = {
  * in the module) */
 static byte Sm_Players(const char *mod, const char *tg) {
 	cEntity *e0 = World_FindEntity("Player0");
-	if (!Script_SetGlobal(mod, "pl0", Mode_Handle(e0))) {
+	if (!Mode_PutHandle(mod, "pl0", e0)) {
 		return 0;
 	}
 	cEntity *e1 = World_FindEntity("Player1");
-	return Script_SetGlobal(mod, "pl1", Mode_Handle(e1)) && Mode_SetS(e0, "Player0", "TgType", tg) && Mode_SetS(e1, "Player1", "TgType", tg);
+	return Mode_PutHandle(mod, "pl1", e1) && Mode_SetS(e0, "Player0", "TgType", tg) && Mode_SetS(e1, "Player1", "TgType", tg);
 }
 
 /* import Split; Split.OnDeathFunc = OnDeathFunc (the mode's) */
 static byte Sm_OnDeath(const char *mod) {
-	PyObject *f = Mode_Import("Split") ? Mode_GlobalPy(mod, "OnDeathFunc") : NULL;
-	if (!f) {
-		return 0;
-	}
-	Script_SetVar("Split", "OnDeathFunc", f);
-	return 1;
+	return Mode_Import("Split") && Split_ToMod("Split", "OnDeathFunc", mod, "OnDeathFunc");
 }
 
 /* pl<i>.var = v of the mode */
 static byte Sm_SetPl(const char *mod, int i, const char *var, const nativeVal_t *v) {
-	PyObject *pl = Mode_GlobalPy(mod, i ? "pl1" : "pl0");
-	byte ok = pl && Mode_HSet(pl, var, v);
-	Py_XDECREF(pl);
+	nativeVal_t pl;
+	byte ok = Mode_G(mod, i ? "pl1" : "pl0", &pl) && Mode_VSet(&pl, var, v);
+	Native_Free(&pl);
 	return ok;
 }
 
@@ -785,9 +769,9 @@ static byte Sm_RndFlag(const char *mod) {
 
 /* Flag.SetModel(file) of the mode */
 static byte Sm_FlagModel(const char *mod, const nativeVal_t *file) {
-	PyObject *flag = Mode_GlobalPy(mod, "Flag");
-	byte ok = flag && Mode_HModel(flag, file);
-	Py_XDECREF(flag);
+	nativeVal_t flag;
+	byte ok = Mode_G(mod, "Flag", &flag) && Mode_VModel(&flag, file);
+	Native_Free(&flag);
 	return ok;
 }
 
@@ -813,9 +797,7 @@ static byte Sm_FlagToGlobal(const char *mod, const char *name) {
 static byte Sm_WayToFlag(const char *mod, const char *var) {
 	nativeVal_t name;
 	Native_SetNone(&name);
-	PyObject *flag = Mode_GlobalPy(mod, "Flag");
-	byte ok = flag && Mode_HGet(flag, "Name", &name) && Mode_GVarSet(var, &name);
-	Py_XDECREF(flag);
+	byte ok = Mode_FlagGet(mod, "Name", &name) && Mode_GVarSet(var, &name);
 	Native_Free(&name);
 	return ok;
 }
@@ -827,7 +809,7 @@ static byte Sm_NewFlag(const char *mod, const char *model, long radius) {
 	nativeVal_t *file = Mode_V(&t);
 	cEntity *e;
 	if (!Mode_Create(Mode_S(&t, "FlagToBeHunted"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "Item", &e) ||
-		!Script_SetGlobal(mod, "Flag", Mode_Handle(e))) {
+		!Mode_PutHandle(mod, "Flag", e)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_G(mod, model, file) && Sm_FlagModel(mod, file) && Mode_FlagSet(mod, "Radius", Mode_I(&t, radius)) &&
@@ -1194,18 +1176,9 @@ static byte SRace_LoadSound(const char *var) {
 
 /* InitStatus(): the spawn functions of Split, the count down sounds, the route and the flag */
 static byte SRace_InitStatusC(void) {
-	PyObject *f1 = Mode_Import("Split") ? Mode_GlobalPy("SRace", "InitRacePos") : NULL;
-	if (!f1) {
-		return 0;
-	}
-	/* OBJLIB 5: the functions as values of Split */
-	Script_SetVar("Split", "FuncGetSpawnPos", f1);
-	PyObject *f2 = Mode_GlobalPy("SRace", "GetReSpawnPos");
-	if (!f2) {
-		return 0;
-	}
-	Script_SetVar("Split", "FuncGetReSpawnPos", f2);
-	return SRace_LoadSound("RaceCountDownSound1") && SRace_LoadSound("RaceCountDownSound2") && PORT_CALL(SRace, BrowseAreas, NULL, "") &&
+	/* Split.FuncGetSpawnPos = InitRacePos; Split.FuncGetReSpawnPos = GetReSpawnPos */
+	return Mode_Import("Split") && Split_ToMod("Split", "FuncGetSpawnPos", "SRace", "InitRacePos") &&
+		Split_ToMod("Split", "FuncGetReSpawnPos", "SRace", "GetReSpawnPos") && SRace_LoadSound("RaceCountDownSound1") && SRace_LoadSound("RaceCountDownSound2") && PORT_CALL(SRace, BrowseAreas, NULL, "") &&
 		PORT_CALL(SRace, CreateFlag, NULL, "");
 }
 
@@ -1226,8 +1199,8 @@ static byte SRace_InitC(void) {
 	}
 	/* the functions SScorer.SetMsgText and SSound.Play as the modules hold them (the scheduler takes their
 	 * entries, Port_Scheduled) */
-	PyObject *msg = Script_Attr("SScorer", "SetMsgText"), *play = msg ? Script_Attr("SSound", "Play") : NULL;
-	byte ok = play != NULL;
+	nativeVal_t *msg = Mode_V(&t), *play = Mode_V(&t);
+	byte ok = Mode_ModGet("SScorer", "SetMsgText", msg) && Mode_ModGet("SSound", "Play", play);
 	for (int i = 0; ok && i < 3; i++) {
 		int mark = t.n;
 		nativeVal_t *timy = Mode_V(&t), *args = Mode_V(&t), *s = Mode_V(&t), *v = Mode_V(&t);
@@ -1235,11 +1208,10 @@ static byte SRace_InitC(void) {
 		Native_SetEmpty(args, NV_LIST);
 		Native_SetStr(Native_Append(args), counts[i]);
 		Native_SetFloat(Native_Append(args), timy->f + 1.0);
-		ok = Mode_Schedule(timy, msg, args->items, 2, NULL);
+		ok = Mode_ScheduleV(timy, msg, args->items, 2, NULL);
 		if (ok && i == 2) {
-			PyObject *ctr = Mode_GlobalPy("SRace", "ControlToRacers");
-			ok = ctr && Mode_Schedule(timy, ctr, NULL, 0, NULL);
-			Py_XDECREF(ctr);
+			nativeVal_t *ctr = Mode_V(&t);
+			ok = Mode_G("SRace", "ControlToRacers", ctr) && Mode_ScheduleV(timy, ctr, NULL, 0, NULL);
 		}
 		ok = ok && Mode_G("SRace", i == 2 ? "RaceCountDownSound2" : "RaceCountDownSound1", s) &&
 			Mode_G("SRace", i == 2 ? "RaceCountDownSound2Vol" : "RaceCountDownSound1Vol", v);
@@ -1248,12 +1220,10 @@ static byte SRace_InitC(void) {
 			Native_SetEmpty(args, NV_LIST);
 			Native_Copy(Native_Append(args), s);
 			Native_Copy(Native_Append(args), v);
-			ok = Mode_Schedule(timy, play, args->items, 2, NULL);
+			ok = Mode_ScheduleV(timy, play, args->items, 2, NULL);
 		}
 		Mode_Release(&t, mark);
 	}
-	Py_XDECREF(play);
-	Py_XDECREF(msg);
 	return Mode_Done(&t, ok);
 }
 
