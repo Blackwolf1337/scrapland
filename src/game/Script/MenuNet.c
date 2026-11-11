@@ -326,10 +326,10 @@ static void Net_ConnectionStatus(void) {
 	 * its entry (Port_Scheduled) */
 	if (!full) {
 		static nativeVal_t status;
-		if (status.type != NV_OBJ) {
+		if (!Native_IsObj(&status)) {
 			Mode_OwnFunc(g_MenuNetMethods, "ShowConectionStatus", &status);
 		}
-		if (status.type == NV_OBJ) {
+		if (Native_IsObj(&status)) {
 			Mode_SchedFn(Timer_GetTime(&g_pWorld->timer) + 0.25f, &status, NULL, 0, "ConectionStatus");
 		}
 	}
@@ -477,7 +477,7 @@ static void Net_ModeMaps(netMapList_t *list) {
 	Native_SetStr(&key, GVar_GetStr("ServerType"));
 	if (modes.type == NV_DICT) {
 		maps = Native_DictGet(&modes, &key);
-	} else if (modes.type == NV_OBJ && Mode_Sub(&modes, &key, &sub)) {
+	} else if (Native_IsObj(&modes) && Mode_Sub(&modes, &key, &sub)) {
 		/* OBJLIB 7: a dict that holds objects (handles) looked up the Python way */
 		maps = &sub;
 	}

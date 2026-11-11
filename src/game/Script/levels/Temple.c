@@ -101,7 +101,7 @@ static byte Tp_Gate(const char *keeper, const char *door, const char *group, con
 	nativeVal_t g = { 0 };
 	byte ok = Mode_Import("GateKeeper") && Mode_RefMod("GateKeeper", group, &g) &&
 		(!door || PORT_CALL(GateKeeper, SetDoor, NULL, "ss", keeper, door)) &&
-		PORT_CALL(GateKeeper, DoorFoe, NULL, "sP", keeper, g.obj) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
+		PORT_CALL(GateKeeper, DoorFoe, NULL, "sP", keeper, Native_PyOf(&g)) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
 	Native_Free(&g);
 	return ok;
 }

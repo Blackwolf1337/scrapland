@@ -155,14 +155,11 @@ void NObj_FromPy(PyObject *o, nativeVal_t *v);
 /* Native_ToPy of an NV_REF: its Python object (a new reference), made from the native data at the first crossing
  * (see the head comment); NULL with the error */
 PyObject *NObj_ToPy(const nativeVal_t *v);
-/* the Python object the value's object has now (borrowed), NULL when it has none (no conversion) */
+/* the Python object behind the value now (borrowed): the one of a view, of an NV_OBJ; NULL for native data that never
+ * crossed and the kinds by value (no conversion, unlike Native_PyOf) */
 PyObject *NObj_Py(const nativeVal_t *v);
-/* SCRAP_NATIVE_REF (read once), for the checks of batch 9a; 0, the default, leaves every user on NV_OBJ:
- *   1  Native_Arg gives the NV_REF view of an object Native_FromPyRef takes where it gives an NV_OBJ without it
- *      (what the later batches switch the users to: a user that tests NV_OBJ sees another kind)
- *   2  Native_Arg gives the NV_OBJ as before and the value also holds the view of its object (nativeVal_t.ref): every
- *      such value of the game makes, shares and frees a view, with no change for any user (the check of the
- *      identity table and of the counts under the load of the whole game) */
+/* 1 by default: Native_SetObj and Native_Arg give the NV_REF view of an object Native_FromPyRef takes. 0 under
+ * SCRAP_NATIVE_REF=0 (read once): the NV_OBJ of before batch 9a2, kept one more round for comparison */
 byte NObj_RefMode(void);
 
 #endif

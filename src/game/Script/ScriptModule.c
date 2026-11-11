@@ -239,8 +239,7 @@ static byte Mod_Plain(const nativeVal_t *v) {
 
 /* the number or text *v is the object o from here on (Mod_ToPy gives it back) */
 static void Mod_Keep(nativeVal_t *v, PyObject *o) {
-	Py_INCREF(o);
-	v->obj = o;
+	Native_KeepPy(v, o);
 }
 
 /* o (borrowed) as the evaluator keeps it: None, an int, a float, a text or a long int as a native value (with o
@@ -311,9 +310,10 @@ static PyObject *Mod_ToPyConv(const nativeVal_t *v, void *m) {
  * display) */
 static PyObject *Mod_ToPy(modParse_t *m, const nativeVal_t *v) {
 	PyObject *o;
-	if (v->obj) {
-		Py_INCREF(v->obj);
-		return v->obj;
+	o = Native_KeptPy(v);
+	if (o) {
+		Py_INCREF(o);
+		return o;
 	}
 	switch (v->type) {
 	case NV_INT:
@@ -347,12 +347,16 @@ static PyObject *Mod_ToPy(modParse_t *m, const nativeVal_t *v) {
 /* the numbers and texts in *v that keep no object get theirs now (Mod_Leaf): the constants of an eval, which are
  * those of its own code; 0 with the error */
 static byte Mod_Pin(modParse_t *m, nativeVal_t *v) {
-	if (v->obj) {
+	if (Native_KeptPy(v)) {
 		return 1;
 	}
 	if (v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG) {
-		v->obj = Mod_Leaf(m, v);
-		return v->obj != NULL;
+		PyObject *leaf = Mod_Leaf(m, v);
+		if (leaf) {
+			Native_KeepPy(v, leaf);
+			Py_DECREF(leaf);
+		}
+		return leaf != NULL;
 	}
 	if (v->type == NV_LIST || v->type == NV_TUPLE) {
 		for (int i = 0; i < v->n; i++) {
@@ -381,7 +385,7 @@ static void Mod_SetBool(nativeVal_t *out, int t) {
 
 /* `if v:` (PyObject_IsTrue for an object, which can fail): 1, 0, -1 with the error */
 static int Mod_Truth(const nativeVal_t *v) {
-	return v->type == NV_OBJ ? PyObject_IsTrue(v->obj) : Native_True(v);
+	return Native_IsObj(v) ? PyObject_IsTrue(Native_PyOf(v)) : Native_True(v);
 }
 
 /* ---- the scanner of constants ---- */
@@ -686,10 +690,10 @@ static byte Mod_Atom(modParse_t *m, nativeVal_t *out) {
 
 /* the builtin eval with one string: the definitions read the save variables through it */
 static byte Mod_IsEval(const nativeVal_t *f, const nativeVal_t *args, const nativeVal_t *kw) {
-	if (f->type != NV_OBJ || kw->n || args->n != 1 || args->items[0].type != NV_STR) {
+	if (!Native_IsObj(f) || kw->n || args->n != 1 || args->items[0].type != NV_STR) {
 		return 0;
 	}
-	PyObject *o = f->obj;
+	PyObject *o = Native_PyOf(f);
 	return PyCFunction_Check(o) && !strcmp(((PyCFunctionObject *)o)->m_ml->ml_name, "eval") &&
 		((PyCFunctionObject *)o)->m_self == NULL;
 }
@@ -703,7 +707,7 @@ static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *ou
  * through Python (Script_CallObject)
  */
 static byte Mod_Invoke(modParse_t *m, const nativeVal_t *f, nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
-	if (f->type == NV_OBJ && !kw->n && args->n <= PORT_ARGS && Port_Own(f->obj)) {
+	if (Native_IsObj(f) && !kw->n && args->n <= PORT_ARGS && Port_Own(Native_PyOf(f))) {
 		/* a dict goes as the Python dict with the table of its display (Native_Pass would lay it out anew) */
 		for (int i = 0; i < args->n; i++) {
 			if (Native_Holds(&args->items[i], 1u << NV_DICT)) {
@@ -717,7 +721,7 @@ static byte Mod_Invoke(modParse_t *m, const nativeVal_t *f, nativeVal_t *args, c
 				Py_DECREF(o);
 			}
 		}
-		return Port_Values(PORT_VSITE(), f->obj, args->items, args->n, out, NULL);
+		return Port_Values(PORT_VSITE(), Native_PyOf(f), args->items, args->n, out, NULL);
 	}
 	PyObject *pf = Mod_ToPy(m, f), *t = pf ? PyTuple_New(args->n) : NULL, *pkw = NULL;
 	byte ok = t != NULL;

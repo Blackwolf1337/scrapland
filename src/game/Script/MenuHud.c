@@ -52,7 +52,8 @@ static double Hud_Num(const nativeVal_t *v) {
 		Mode_DropError();
 		return d;
 	}
-	case NV_OBJ: {
+	case NV_OBJ:
+	case NV_REF: {
 		/* OBJLIB 7: an object with its own int */
 		long l = Mode_AsLong(v);
 		Mode_DropError();
