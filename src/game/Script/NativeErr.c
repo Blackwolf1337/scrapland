@@ -99,12 +99,11 @@ static nativeError_t NErr_KindOf(const nativeVal_t *type);
 
 byte Native_RaiseObj(const nativeVal_t *type, const nativeVal_t *value) {
 	nativeError_t kind = NErr_KindOf(type);
-	nativeVal_t t;
+	nativeVal_t t, v;
 	if (kind != NE_OTHER) {
 		return Native_RaiseVal(kind, value);
 	}
 	Native_Copy(&t, type);
-	nativeVal_t v;
 	Native_SetNone(&v);
 	if (value) {
 		Native_Copy(&v, value);
@@ -425,9 +424,10 @@ static nativeError_t NErr_KindOfPy(PyObject *o) {
 	return NE_OTHER;
 }
 
+/* the kind of a value raised as the exception: a standard one only as its own object (an object of another type or a
+ * text made anew is no standard exception) */
 static nativeError_t NErr_KindOf(const nativeVal_t *type) {
-	PyObject *o = Native_KeptPy(type);
-	return NErr_KindOfPy(o ? o : type->type == NV_REF ? Native_PyOf(type) : NULL);
+	return NErr_KindOfPy(Native_KeptPy(type));
 }
 
 /* the native value of an object of Python's error state; a number, text, tuple or handle keeps the object, so the way
