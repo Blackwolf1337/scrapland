@@ -1392,94 +1392,6 @@ static byte X_GetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) 
 	return 1;
 }
 
-/* OBJLIB 9: o.name of Python objects for the functions of the channel that are still Python functions */
-static PyObject *TXP_GetAttr(PyObject *o, PyObject *name) {
-	return ModVar_ObjAttr(o, PyString_AsString(name));
-}
-
-static int TXP_SetAttr(PyObject *o, PyObject *name, PyObject *v) {
-	return ModVar_SetObjAttr(o, PyString_AsString(name), v);
-}
-
-/* getattr, hasattr, setattr and delattr of __builtin__ (bltinmodule.c of 1.5.2: the same argument formats, errors and
- * results), the variables of the pack modules through the registry */
-static PyObject *TB_GetAttr(PyObject *self, PyObject *args) {
-	PyObject *o, *name, *dflt = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OS|O:getattr", &o, &name, &dflt)) {
-		return NULL;
-	}
-	PyObject *v = TXP_GetAttr(o, name);
-	if (!v && dflt) {
-		PyErr_Clear();
-		Py_INCREF(dflt);
-		v = dflt;
-	}
-	return v;
-}
-
-static PyObject *TB_HasAttr(PyObject *self, PyObject *args) {
-	PyObject *o, *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OS:hasattr", &o, &name)) {
-		return NULL;
-	}
-	PyObject *v = TXP_GetAttr(o, name);
-	if (!v) {
-		PyErr_Clear();
-		Py_INCREF(Py_False);
-		return Py_False;
-	}
-	Py_DECREF(v);
-	Py_INCREF(Py_True);
-	return Py_True;
-}
-
-static PyObject *TB_SetAttr(PyObject *self, PyObject *args) {
-	PyObject *o, *name, *value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OSO:setattr", &o, &name, &value) || TXP_SetAttr(o, name, value) != 0) {
-		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *TB_DelAttr(PyObject *self, PyObject *args) {
-	PyObject *o, *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OS:delattr", &o, &name) || TXP_SetAttr(o, name, NULL) != 0) {
-		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyMethodDef tx_attrTwins[] = {
-	{ "getattr", TB_GetAttr, METH_VARARGS, NULL },
-	{ "hasattr", TB_HasAttr, METH_VARARGS, NULL },
-	{ "setattr", TB_SetAttr, METH_VARARGS, NULL },
-	{ "delattr", TB_DelAttr, METH_VARARGS, NULL },
-};
-
-/* the twin of the builtin function of that name (with its doc), NULL for every other name */
-static PyObject *TX_AttrTwin(const char *name, PyObject *builtin) {
-	if (!PyCFunction_Check(builtin)) {
-		return NULL;
-	}
-	for (size_t i = 0; i < sizeof(tx_attrTwins) / sizeof(tx_attrTwins[0]); i++) {
-		if (!strcmp(name, tx_attrTwins[i].ml_name)) {
-			tx_attrTwins[i].ml_doc = ((PyCFunctionObject *)builtin)->m_ml->ml_doc;
-			return PyCFunction_New(&tx_attrTwins[i], NULL);
-		}
-	}
-	return NULL;
-}
-
 /* the bounds of a slice node as SLICE+n takes them (ints; an omitted one 0 and NOBJ_END): 0 with the error set */
 static byte X_Bounds(tcNode *x, tcScope *s, long *lo, long *hi) {
 	nativeVal_t a, b;
@@ -1544,13 +1456,23 @@ static byte TX_CallPy(const nativeVal_t *f, const nativeVal_t *a, int n, const n
 	return TX_Result(r, out);
 }
 
+/* the call of a native function of the evaluator (a lambda, a builtin, a function of the channel): 1 or 0 as the call
+ * gives, -1 (nothing done) for any other callable */
+static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out);
+static byte TX_NullResult(void);
+
 /* f(a[0..n-1], **kw): kw NULL, or the dict of the keywords. The values of a may be taken (they are None then). 0 with
  * the error set */
 static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
 	byte ok;
 
 	Native_SetNone(out);
-	if (kw) {
+	int r = TX_Native(f, a, n, kw, out);
+	if (r >= 0) {
+		ok = (byte)r;
+	} else if (kw) {
+		/* OBJLIB 9: keywords to a callable that is no lambda (a port function): through Python */
+		TX_Count("call", "keywords");
 		ok = TX_CallPy(f, a, n, kw, out);
 	} else {
 		for (int i = 0; i < n; i++) {
@@ -1563,7 +1485,7 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 		Native_Free(out);
 		ok = 0;
 	}
-	return ok;
+	return ok || TX_NullResult();
 }
 
 static byte X_Call(tcNode *x, tcScope *s, nativeVal_t *out) {
@@ -2138,6 +2060,1247 @@ static byte X_Lambda(tcNode *x, tcScope *s, nativeVal_t *out) {
 	return TX_Result(fn, out);
 }
 
+/* ---- the builtins and the channel's own functions on native values ---- */
+
+/*
+ * The builtin functions the cases and the helpers call (map, filter, reduce, apply, getattr, hasattr, setattr, delattr,
+ * type, len, str, repr, int, float, round, range, abs, min, max, cmp, tuple, list, callable, __import__) run here when
+ * the evaluator calls them, with the argument forms, results and error texts of bltinmodule.c of 1.5.2. A name still
+ * gives the builtin's own function object of Python (its identity, repr and doc stay); the call is native. A form a
+ * native one does not take (an instance or a Python object as the sequence, cmp of texts, a dotted __import__, ...)
+ * goes to the Python builtin and is counted ("builtin <name>"), as every other builtin is (dir, id, open, ...).
+ *
+ * The channel's functions (tc_..., the helpers of the regression cases, see the head of the file) and the twins of
+ * getattr, hasattr, setattr and delattr (which reach the pack modules through the registry) are native only. OBJLIB 9:
+ * their function objects are C function objects of Python on adapters, so Python code and the game can hold and call
+ * them too.
+ *
+ * Each takes n arguments (copies the function may take over or change) and gives 1 with *out, 0 with the error raised,
+ * -1 (nothing raised) for a form that goes to the Python builtin.
+ */
+typedef int (*tcNative_t)(nativeVal_t *a, int n, nativeVal_t *out);
+
+/* the TypeError of PyArg_ParseTuple for n arguments to fname (NULL: "function") of min to max: 1 when n fits */
+static byte TX_Arity(const char *fname, int n, int min, int max) {
+	if (n >= min && n <= max) {
+		return 1;
+	}
+	int k = n < min ? min : max;
+	return Native_Raise(NE_TYPE, "%s requires %s %d argument%s; %d given", fname ? fname : "function",
+		min == max ? "exactly" : n < min ? "at least" : "at most", k, k == 1 ? "" : "s", n);
+}
+
+/* the "S" or "s" (nul 1: no 0 bytes) of PyArg_ParseTuple for argument i of fname: 1 when v is such a text */
+static byte TX_ArgText(const char *fname, int i, const nativeVal_t *v, byte nul) {
+	const char *expected = "string";
+
+	if (v->type == NV_STR) {
+		if (!nul || strlen(Native_Text(v)) == (size_t)v->n) {
+			return 1;
+		}
+		expected = "string without null bytes";
+	}
+	if (fname) {
+		return Native_Raise(NE_TYPE, "%s, argument %d: expected %s, %s found", fname, i, expected, Native_TypeName(v));
+	}
+	return Native_Raise(NE_TYPE, "argument %d: expected %s, %s found", i, expected, Native_TypeName(v));
+}
+
+/* the "NULL result without error in call_object" of a call that failed without an error: 0 */
+static byte TX_NullResult(void) {
+	if (!PyErr_Occurred()) {
+		PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+	}
+	return 0;
+}
+
+/* how the sequence protocol takes v: 1 a sequence the evaluator reads (a text, a tuple or list by value, a list
+ * object or view), 0 a value without sequence methods, -1 one only Python reads (an instance, a Python object) */
+static int TX_SeqOf(const nativeVal_t *v) {
+	switch (v->type) {
+	case NV_STR:
+	case NV_TUPLE:
+	case NV_LIST:
+	case NV_VEC:
+		return 1;
+	case NV_OBJ:
+		return -1;
+	case NV_REF:
+		return NObj_Kind(v) == NO_LIST ? 1 : NObj_Kind(v) == NO_INSTANCE ? -1 : 0;
+	}
+	return 0;
+}
+
+/* the length of a sequence of TX_SeqOf 1, -1 with the error */
+static int TX_SeqLen(const nativeVal_t *v) {
+	int n;
+
+	if (v->type == NV_REF) {
+		return NObj_Len(v);
+	}
+	return Native_Len(v, &n) ? n : -1;
+}
+
+/* item i of such a sequence */
+static byte TX_SeqGet(const nativeVal_t *v, int i, nativeVal_t *out) {
+	if (v->type == NV_REF) {
+		nativeVal_t key;
+		Native_SetInt(&key, i);
+		return NObj_GetItem(v, &key, out);
+	}
+	return Native_SeqItem(v, i, out);
+}
+
+/* the items of such a sequence as a list by value (PySequence_List): 0 with the error */
+static byte TX_SeqList(const nativeVal_t *v, nativeType_t type, nativeVal_t *out) {
+	Native_SetEmpty(out, type);
+	for (int i = 0;; i++) {
+		int n = TX_SeqLen(v);
+		if (n < 0) {
+			Native_Free(out);
+			return 0;
+		}
+		if (i >= n) {
+			return 1;
+		}
+		if (!TX_SeqGet(v, i, Native_Append(out))) {
+			Native_Free(out);
+			return 0;
+		}
+	}
+}
+
+/* the keywords of a call (a dict by value or an object) as (name, value) tuples in the dict's order: 0 with the error */
+static byte TX_Pairs(const nativeVal_t *kw, nativeVal_t *pairs) {
+	nativeVal_t items;
+
+	Native_SetEmpty(pairs, NV_LIST);
+	if (kw->type == NV_DICT) {
+		const nativeVal_t *k, *v;
+		int pos = 0;
+		while (Native_DictNext(kw, &pos, &k, &v)) {
+			nativeVal_t *pair = Native_Append(pairs);
+			Native_SetEmpty(pair, NV_TUPLE);
+			Native_Copy(Native_Append(pair), k);
+			Native_Copy(Native_Append(pair), v);
+		}
+		return 1;
+	}
+	if (!NObj_CallMethod(kw, "items", NULL, 0, &items)) {
+		return 0;
+	}
+	byte ok = TX_SeqList(&items, NV_LIST, pairs);
+	Native_Free(&items);
+	return ok;
+}
+
+/* a dict by value or a dict object */
+static byte TX_IsDict(const nativeVal_t *v) {
+	return v->type == NV_DICT || NObj_Kind(v) == NO_DICT;
+}
+
+/* kw is a dict with keywords (a call with an empty dict has none) */
+static byte TX_HasKw(const nativeVal_t *kw) {
+	return kw && TX_IsDict(kw) && (kw->type == NV_DICT ? kw->n > 0 : NObj_Len(kw) > 0);
+}
+
+/* round(x, digits) of bltinmodule.c */
+static double TX_Round(double x, int digits) {
+	double f = 1.0;
+
+	for (int i = digits < 0 ? -digits : digits; --i >= 0;) {
+		f = f * 10.0;
+	}
+	x = digits < 0 ? x / f : x * f;
+	x = x >= 0.0 ? floor(x + 0.5) : ceil(x - 0.5);
+	return digits < 0 ? x * f : x / f;
+}
+
+/* a Python object by value: NV_OBJ, a view, an entity handle (an operation of Python on it) */
+static byte TX_IsPy(const nativeVal_t *v) {
+	return v->type == NV_OBJ || v->type == NV_ENT || (v->type == NV_REF && NObj_Py(v));
+}
+
+static int TB_Map(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (n < 2) {
+		return Native_Raise(NE_TYPE, "map() requires at least two args");
+	}
+	if (a[0].type == NV_NONE && n == 2) {
+		/* map(None, S) is list(S) */
+		int k = TX_SeqOf(&a[1]);
+		return k < 0 ? -1 : k ? TX_SeqList(&a[1], NV_LIST, out) : Native_Raise(NE_TYPE, "list() argument must be a sequence");
+	}
+	for (int i = 1; i < n; i++) {
+		int k = TX_SeqOf(&a[i]);
+		if (k <= 0) {
+			return k < 0 ? -1 : Native_Raise(NE_TYPE, "argument %d to map() must be a sequence object", i + 1);
+		}
+	}
+	Native_SetEmpty(out, NV_LIST);
+	for (int i = 0;; i++) {
+		nativeVal_t args, value;
+		byte any = 0;
+		Native_SetEmpty(&args, NV_TUPLE);
+		for (int j = 1; j < n; j++) {
+			int len = TX_SeqLen(&a[j]);
+			nativeVal_t *item = Native_Append(&args);
+			if (len < 0 || (i < len && !TX_SeqGet(&a[j], i, item))) {
+				Native_Free(&args);
+				Native_Free(out);
+				return 0;
+			}
+			any |= i < len;
+		}
+		if (!any) {
+			Native_Free(&args);
+			return 1;
+		}
+		if (a[0].type == NV_NONE) {
+			value = args;
+		} else {
+			byte ok = TX_Call(&a[0], args.items, args.n, NULL, &value);
+			Native_Free(&args);
+			if (!ok) {
+				Native_Free(out);
+				return 0;
+			}
+		}
+		*Native_Append(out) = value;
+	}
+}
+
+/* func(item) is true (func None: the item is): 1, 0, -1 with the error */
+static int TX_Good(nativeVal_t *func, const nativeVal_t *item) {
+	nativeVal_t arg, r;
+
+	if (func->type == NV_NONE) {
+		return Native_True(item);
+	}
+	Native_Copy(&arg, item);
+	byte ok = TX_Call(func, &arg, 1, NULL, &r);
+	Native_Free(&arg);
+	int t = ok ? Native_True(&r) : -1;
+	Native_Free(&r);
+	return t;
+}
+
+static int TB_Filter(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("filter", n, 2, 2)) {
+		return 0;
+	}
+	nativeVal_t *seq = &a[1];
+	if (seq->type == NV_STR) {
+		/* filterstring: no character is false */
+		nativeBuf_t b;
+		if (a[0].type == NV_NONE) {
+			Native_Copy(out, seq);
+			return 1;
+		}
+		Native_BufInit(&b);
+		for (int i = 0; i < seq->n; i++) {
+			nativeVal_t c;
+			Native_SetText(&c, Native_Text(seq) + i, 1);
+			int t = TX_Good(&a[0], &c);
+			Native_Free(&c);
+			if (t < 0) {
+				Native_BufFree(&b);
+				return 0;
+			}
+			if (t) {
+				Native_BufAdd(&b, Native_Text(seq) + i, 1);
+			}
+		}
+		Native_SetText(out, b.p, b.len);
+		Native_BufFree(&b);
+		return 1;
+	}
+	int k = TX_SeqOf(seq);
+	if (k <= 0) {
+		return k < 0 ? -1 : Native_Raise(NE_TYPE, "argument 2 to filter() must be a sequence type");
+	}
+	/* filtertuple gives a tuple, the rest a list */
+	byte tuple = seq->type == NV_TUPLE || seq->type == NV_VEC;
+	Native_SetEmpty(out, tuple ? NV_TUPLE : NV_LIST);
+	for (int i = 0;; i++) {
+		nativeVal_t item;
+		int len = TX_SeqLen(seq);
+		if (len < 0) {
+			Native_Free(out);
+			return 0;
+		}
+		if (i >= len) {
+			return 1;
+		}
+		if (!TX_SeqGet(seq, i, &item)) {
+			Native_Free(out);
+			return 0;
+		}
+		int t = TX_Good(&a[0], &item);
+		if (t > 0) {
+			*Native_Append(out) = item;
+		} else {
+			Native_Free(&item);
+			if (t < 0) {
+				Native_Free(out);
+				return 0;
+			}
+		}
+	}
+}
+
+static int TB_Reduce(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t r;
+	byte has = n > 2;
+
+	if (!TX_Arity("reduce", n, 2, 3)) {
+		return 0;
+	}
+	int k = TX_SeqOf(&a[1]);
+	if (k <= 0) {
+		return k < 0 ? -1 : Native_Raise(NE_TYPE, "2nd argument to reduce() must be a sequence object");
+	}
+	Native_SetNone(&r);
+	if (has) {
+		Native_Copy(&r, &a[2]);
+	}
+	for (int i = 0;; i++) {
+		nativeVal_t args[2];
+		int len = TX_SeqLen(&a[1]);
+		if (len < 0) {
+			Native_Free(&r);
+			return 0;
+		}
+		if (i >= len) {
+			break;
+		}
+		if (!TX_SeqGet(&a[1], i, &args[1])) {
+			Native_Free(&r);
+			return 0;
+		}
+		if (!has) {
+			r = args[1];
+			has = 1;
+			continue;
+		}
+		args[0] = r;
+		byte ok = TX_Call(&a[0], args, 2, NULL, &r);
+		Native_Free(&args[0]);
+		Native_Free(&args[1]);
+		if (!ok) {
+			return 0;
+		}
+	}
+	if (!has) {
+		return Native_Raise(NE_TYPE, "reduce of empty sequence with no initial value");
+	}
+	*out = r;
+	return 1;
+}
+
+static int TB_Apply(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t args;
+
+	if (!TX_Arity("apply", n, 1, 3)) {
+		return 0;
+	}
+	Native_SetEmpty(&args, NV_TUPLE);
+	if (n > 1 && a[1].type != NV_TUPLE) {
+		int k = TX_SeqOf(&a[1]);
+		if (k <= 0) {
+			return k < 0 ? -1 : Native_Raise(NE_TYPE, "apply() 2nd argument must be a sequence");
+		}
+		if (!TX_SeqList(&a[1], NV_TUPLE, &args)) {
+			return 0;
+		}
+	} else if (n > 1) {
+		Native_Copy(&args, &a[1]);
+	}
+	if (n > 2 && !TX_IsDict(&a[2])) {
+		Native_Free(&args);
+		return Native_Raise(NE_TYPE, "apply() 3rd argument must be dictionary");
+	}
+	byte ok = TX_Call(&a[0], args.items, args.n, n > 2 && TX_HasKw(&a[2]) ? &a[2] : NULL, out);
+	Native_Free(&args);
+	return ok;
+}
+
+static int TB_GetAttr(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("getattr", n, 2, 3) || !TX_ArgText("getattr", 2, &a[1], 0)) {
+		return 0;
+	}
+	if (TX_GetAttr(&a[0], Native_Text(&a[1]), out)) {
+		return 1;
+	}
+	if (n > 2) {
+		PyErr_Clear();
+		Native_Copy(out, &a[2]);
+		return 1;
+	}
+	return TX_NullResult();
+}
+
+static int TB_HasAttr(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t v;
+
+	if (!TX_Arity("hasattr", n, 2, 2) || !TX_ArgText("hasattr", 2, &a[1], 0)) {
+		return 0;
+	}
+	byte ok = TX_GetAttr(&a[0], Native_Text(&a[1]), &v);
+	Native_Free(&v);
+	if (!ok) {
+		PyErr_Clear();
+	}
+	Native_SetInt(out, ok);
+	return 1;
+}
+
+static int TB_SetAttr(nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	if (!TX_Arity("setattr", n, 3, 3) || !TX_ArgText("setattr", 2, &a[1], 0)) {
+		return 0;
+	}
+	return TX_SetAttr(&a[0], Native_Text(&a[1]), &a[2]) || TX_NullResult();
+}
+
+static int TB_DelAttr(nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	if (!TX_Arity("delattr", n, 2, 2) || !TX_ArgText("delattr", 2, &a[1], 0)) {
+		return 0;
+	}
+	return TX_SetAttr(&a[0], Native_Text(&a[1]), NULL) || TX_NullResult();
+}
+
+static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
+	/* OBJLIB 9: the type objects are Python's (a value by value names the type it has as a Python object) */
+	PyTypeObject *t = NULL;
+
+	if (!TX_Arity("type", n, 1, 1)) {
+		return 0;
+	}
+	PyObject *py = a->type == NV_REF ? NObj_Py(a) : a->type == NV_OBJ ? a->obj : NULL;
+	if (py) {
+		t = py->ob_type;
+	} else {
+		switch (a->type) {
+		case NV_NONE:
+			t = Py_None->ob_type;
+			break;
+		case NV_INT:
+			t = &PyInt_Type;
+			break;
+		case NV_FLOAT:
+			t = &PyFloat_Type;
+			break;
+		case NV_STR:
+			t = &PyString_Type;
+			break;
+		case NV_LONG:
+			t = &PyLong_Type;
+			break;
+		case NV_LIST:
+			t = &PyList_Type;
+			break;
+		case NV_TUPLE:
+		case NV_VEC:
+			t = &PyTuple_Type;
+			break;
+		case NV_DICT:
+			t = &PyDict_Type;
+			break;
+		case NV_REF:
+			switch (NObj_Kind(a)) {
+			case NO_LIST:
+				t = &PyList_Type;
+				break;
+			case NO_DICT:
+				t = &PyDict_Type;
+				break;
+			case NO_INSTANCE:
+				t = &PyInstance_Type;
+				break;
+			case NO_CLASS:
+				t = &PyClass_Type;
+				break;
+			case NO_METHOD:
+				t = &PyMethod_Type;
+				break;
+			case NO_MODULE:
+				t = &PyModule_Type;
+				break;
+			default:
+				t = !strcmp(NObj_TypeName(a), "function") ? &PyFunction_Type : &PyCFunction_Type;
+				break;
+			}
+			break;
+		default:
+			/* an entity handle: the type of its face */
+			return -1;
+		}
+	}
+	Native_SetObj(out, (PyObject *)t);
+	return 1;
+}
+
+static int TB_Len(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("len", n, 1, 1)) {
+		return 0;
+	}
+	int len = NObj_Len(a);
+	if (len < 0) {
+		return 0;
+	}
+	Native_SetInt(out, len);
+	return 1;
+}
+
+static int TB_Str(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TX_Arity("str", n, 1, 1) && TX_Repr(a, NR_STR, out);
+}
+
+static int TB_Repr(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TX_Arity("repr", n, 1, 1) && TX_Repr(a, NR_REPR, out);
+}
+
+static int TB_Int(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("int", n, 1, 1)) {
+		return 0;
+	}
+	return a->type == NV_REF || TX_IsPy(a) ? -1 : Native_ToInt(a, out);
+}
+
+static int TB_Float(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("float", n, 1, 1)) {
+		return 0;
+	}
+	return a->type == NV_REF || TX_IsPy(a) ? -1 : Native_ToFloat(a, out);
+}
+
+static int TB_RoundFn(nativeVal_t *a, int n, nativeVal_t *out) {
+	double x;
+	int digits = 0;
+
+	if (!TX_Arity("round", n, 1, 2)) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		if (a[i].type == NV_REF || TX_IsPy(&a[i])) {
+			return -1;
+		}
+	}
+	if (!Native_ArgDouble(&a[0], &x) || (n > 1 && !Native_ArgInt(&a[1], &digits))) {
+		return 0;
+	}
+	Native_SetFloat(out, TX_Round(x, digits));
+	return 1;
+}
+
+static int TB_Range(nativeVal_t *a, int n, nativeVal_t *out) {
+	long lo = 0, hi = 0, step = 1, *bound[3] = { &hi, NULL, NULL };
+
+	if (n < 1 || n > 3) {
+		return Native_Raise(NE_TYPE, "range() requires 1-3 int arguments");
+	}
+	if (n > 1) {
+		bound[0] = &lo;
+		bound[1] = &hi;
+		bound[2] = &step;
+	}
+	for (int i = 0; i < n; i++) {
+		if (a[i].type == NV_REF || TX_IsPy(&a[i])) {
+			return -1;
+		}
+		if (!Mode_Range(&a[i], bound[i])) {
+			return 0;
+		}
+	}
+	if (step == 0) {
+		return Native_Raise(NE_VALUE, "zero step for range()");
+	}
+	/* get_len_of_range */
+	unsigned long count = 0;
+	if (step > 0 && lo < hi) {
+		count = ((unsigned long)hi - (unsigned long)lo - 1) / (unsigned long)step + 1;
+	} else if (step < 0 && hi < lo) {
+		count = ((unsigned long)lo - (unsigned long)hi - 1) / (0ul - (unsigned long)step) + 1;
+	}
+	if (count > (unsigned long)INT_MAX) {
+		return Native_Raise(NE_OVERFLOW, "range() has too many items");
+	}
+	Native_SetEmpty(out, NV_LIST);
+	for (unsigned long i = 0; i < count; i++, lo += step) {
+		Native_SetInt(Native_Append(out), lo);
+	}
+	return 1;
+}
+
+static int TB_Abs(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("abs", n, 1, 1)) {
+		return 0;
+	}
+	return a->type == NV_REF && (NObj_Py(a) || NObj_Kind(a) == NO_INSTANCE) ? -1 : Mode_Abs(a, out);
+}
+
+/* min (sign -1) and max (1) */
+static int TB_MinMax(nativeVal_t *a, int n, nativeVal_t *out, int sign) {
+	nativeVal_t args, w;
+	const nativeVal_t *seq = &args;
+	byte has = 0;
+
+	if (n > 1) {
+		args.type = NV_TUPLE;
+		args.items = a;
+		args.n = n;
+	} else if (!TX_Arity("min/max", n, 1, 1)) {
+		return 0;
+	} else {
+		int k = TX_SeqOf(a);
+		if (k <= 0) {
+			return k < 0 ? -1 : Native_Raise(NE_TYPE, "min() or max() of non-sequence");
+		}
+		seq = a;
+	}
+	Native_SetNone(&w);
+	for (int i = 0;; i++) {
+		nativeVal_t x;
+		int len = n > 1 ? n : TX_SeqLen(seq);
+		if (len < 0) {
+			Native_Free(&w);
+			return 0;
+		}
+		if (i >= len) {
+			break;
+		}
+		if (!(n > 1 ? (Native_Copy(&x, &a[i]), 1) : TX_SeqGet(seq, i, &x))) {
+			Native_Free(&w);
+			return 0;
+		}
+		if (!has || Native_Compare(&x, &w) * sign > 0) {
+			Native_Free(&w);
+			w = x;
+			has = 1;
+		} else {
+			Native_Free(&x);
+		}
+	}
+	if (!has) {
+		return Native_Raise(NE_VALUE, "min() or max() of empty sequence");
+	}
+	*out = w;
+	return 1;
+}
+
+static int TB_Min(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TB_MinMax(a, n, out, -1);
+}
+
+static int TB_Max(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TB_MinMax(a, n, out, 1);
+}
+
+static int TB_Cmp(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("cmp", n, 2, 2)) {
+		return 0;
+	}
+	/* the compare of texts and of containers gives the difference of two bytes, not only the sign: Python's */
+	for (int i = 0; i < 2; i++) {
+		if (a[i].type != NV_INT && a[i].type != NV_FLOAT && a[i].type != NV_LONG && a[i].type != NV_NONE) {
+			return -1;
+		}
+	}
+	Native_SetInt(out, Native_Compare(&a[0], &a[1]));
+	return 1;
+}
+
+/* tuple(v) and list(v) */
+static int TB_Seq(nativeVal_t *a, int n, nativeVal_t *out, nativeType_t type) {
+	if (!TX_Arity(type == NV_TUPLE ? "tuple" : "list", n, 1, 1)) {
+		return 0;
+	}
+	if (type == NV_TUPLE && a->type == NV_TUPLE) {
+		Native_Copy(out, a);
+		return 1;
+	}
+	int k = TX_SeqOf(a);
+	if (k <= 0) {
+		return k < 0 ? -1 : Native_Raise(NE_TYPE, type == NV_TUPLE ? "tuple() argument must be a sequence" :
+			"list() argument must be a sequence");
+	}
+	return TX_SeqList(a, type, out);
+}
+
+static int TB_Tuple(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TB_Seq(a, n, out, NV_TUPLE);
+}
+
+static int TB_List(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TB_Seq(a, n, out, NV_LIST);
+}
+
+static int TB_Callable(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t call;
+	int k;
+
+	if (!TX_Arity("callable", n, 1, 1)) {
+		return 0;
+	}
+	if (a->type == NV_OBJ) {
+		return -1;
+	}
+	k = NObj_Kind(a);
+	if (k == NO_INSTANCE) {
+		/* an instance with __call__ */
+		k = NObj_GetAttr(a, "__call__", &call);
+		Native_Free(&call);
+		if (!k) {
+			PyErr_Clear();
+		}
+	} else {
+		k = k == NO_FUNCTION || k == NO_METHOD || k == NO_CLASS;
+	}
+	Native_SetInt(out, k);
+	return 1;
+}
+
+static int TB_Import(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity("__import__", n, 1, 4) || !TX_ArgText("__import__", 1, a, 1)) {
+		return 0;
+	}
+	/* `import name`; a package or the globals, locals and fromlist of the call: Python's */
+	if (n > 1 || !a->n || strchr(Native_Text(a), '.')) {
+		return -1;
+	}
+	return TX_Result(Script_Module(Native_Text(a)), out);
+}
+
+/* tc_sdn: the names of the objects of x */
+static byte TP_SdnVal(const nativeVal_t *x, int depth, nativeVal_t *out) {
+	nativeVal_t name, cls;
+
+	Native_SetNone(out);
+	if (depth > TX_EVAL_DEPTH) {
+		PyErr_SetString(PyExc_RuntimeError, "maximum recursion depth exceeded");
+		return 0;
+	}
+	if (x->type == NV_TUPLE || x->type == NV_VEC || x->type == NV_LIST || NObj_Kind(x) == NO_LIST) {
+		/* the items walked; a tuple stays a tuple, a list becomes a new one */
+		nativeVal_t items;
+		if (!TX_SeqList(x, x->type == NV_TUPLE || x->type == NV_VEC ? NV_TUPLE : NV_LIST, &items)) {
+			return 0;
+		}
+		Native_SetEmpty(out, items.type);
+		for (int i = 0; i < items.n; i++) {
+			if (!TP_SdnVal(&items.items[i], depth + 1, Native_Append(out))) {
+				Native_Free(&items);
+				Native_Free(out);
+				return 0;
+			}
+		}
+		Native_Free(&items);
+		return 1;
+	}
+	if (TX_IsDict(x)) {
+		/* a new dict: the keys in the order of x, the values walked */
+		nativeVal_t pairs;
+		if (!TX_Pairs(x, &pairs)) {
+			return 0;
+		}
+		Native_SetEmpty(out, NV_DICT);
+		for (int i = 0; i < pairs.n; i++) {
+			nativeVal_t k, v;
+			if (!TP_SdnVal(&pairs.items[i].items[1], depth + 1, &v)) {
+				Native_Free(&pairs);
+				Native_Free(out);
+				return 0;
+			}
+			Native_Copy(&k, &pairs.items[i].items[0]);
+			Native_DictSet(out, &k, &v);
+		}
+		Native_Free(&pairs);
+		return 1;
+	}
+	if (x->type == NV_FLOAT) {
+		Native_SetFloat(out, TX_Round(x->f, 2));
+		return 1;
+	}
+	if (x->type == NV_ENT) {
+		/* 'ent:' + x.Name; '?' when it gives no text */
+		if (TX_GetAttr(x, "Name", &name) && name.type == NV_STR) {
+			nativeVal_t prefix;
+			Native_SetStr(&prefix, "ent:");
+			byte ok = Native_Arith('+', &prefix, &name, out);
+			Native_Free(&name);
+			return ok;
+		}
+		Native_Free(&name);
+		PyErr_Clear();
+		Native_SetStr(out, "ent:?");
+		return 1;
+	}
+	if (x->type != NV_STR) {
+		if (TX_GetAttr(x, "__name__", &name)) {
+			/* 'fn:' + x.__name__ (the TypeError of + for a name that is no text) */
+			nativeVal_t prefix;
+			Native_SetStr(&prefix, "fn:");
+			byte ok = name.type == NV_STR ? Native_Arith('+', &prefix, &name, out)
+				: Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+			Native_Free(&name);
+			return ok;
+		}
+		PyErr_Clear();
+	}
+	if (NObj_Kind(x) == NO_INSTANCE) {
+		/* 'inst:' + the name of its class */
+		byte ok = NObj_GetAttr(x, "__class__", &cls) && NObj_GetAttr(&cls, "__name__", &name);
+		Native_Free(&cls);
+		if (ok) {
+			nativeVal_t prefix;
+			Native_SetStr(&prefix, "inst:");
+			ok = Native_Arith('+', &prefix, &name, out);
+		}
+		Native_Free(&name);
+		return ok;
+	}
+	Native_Copy(out, x);
+	return 1;
+}
+
+static int TP_Sdn(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TX_Arity(NULL, n, 1, 1) && TP_SdnVal(a, 0, out);
+}
+
+/* f(*args, **kw) as PyEval_CallObjectWithKeywords takes the arguments (args a tuple, kw None or a dict): 0 with the
+ * error */
+static byte TP_CallArgs(nativeVal_t *f, const nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
+	nativeVal_t list;
+
+	Native_SetNone(out);
+	if (args->type != NV_TUPLE) {
+		return Native_Raise(NE_TYPE, "argument list must be a tuple");
+	}
+	if (kw && kw->type != NV_NONE && !TX_IsDict(kw)) {
+		return Native_Raise(NE_TYPE, "keyword list must be a dictionary");
+	}
+	Native_Copy(&list, args);
+	byte ok = TX_Call(f, list.items, list.n, kw && TX_HasKw(kw) ? kw : NULL, out);
+	Native_Free(&list);
+	return ok;
+}
+
+/* the pending error as (type, value) native values, cleared (sys.exc_type and sys.exc_value in an except clause).
+ * OBJLIB 7: the error state of Python */
+static void TP_Caught(nativeVal_t *type, nativeVal_t *value) {
+	PyObject *t, *v, *tb;
+
+	PyErr_Fetch(&t, &v, &tb);
+	PyErr_NormalizeException(&t, &v, &tb);
+	NObj_FromPy(t ? t : Py_None, type);
+	NObj_FromPy(v ? v : Py_None, value);
+	Py_XDECREF(t);
+	Py_XDECREF(v);
+	Py_XDECREF(tb);
+}
+
+static int TP_Catch(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t tv[2];
+
+	if (!TX_Arity(NULL, n, 2, 4)) {
+		return 0;
+	}
+	if (TP_CallArgs(&a[0], &a[1], n > 2 ? &a[2] : NULL, out)) {
+		return 1;
+	}
+	TP_Caught(&tv[0], &tv[1]);
+	byte ok = 1;
+	if (n < 4 || a[3].type == NV_NONE) {
+		Native_SetEmpty(out, NV_TUPLE);
+		*Native_Append(out) = tv[0];
+		*Native_Append(out) = tv[1];
+	} else {
+		ok = TX_Call(&a[3], tv, 2, NULL, out);
+		Native_Free(&tv[0]);
+		Native_Free(&tv[1]);
+	}
+	return ok;
+}
+
+static int TP_Try(nativeVal_t *a, int n, nativeVal_t *out) {
+	if (!TX_Arity(NULL, n, 3, 3)) {
+		return 0;
+	}
+	if (!TP_CallArgs(&a[0], &a[1], NULL, out)) {
+		PyErr_Clear();
+		Native_Copy(out, &a[2]);
+	}
+	return 1;
+}
+
+static int TP_Finally(nativeVal_t *a, int n, nativeVal_t *out) {
+	PyObject *t, *v, *tb;
+	nativeVal_t r;
+
+	if (!TX_Arity(NULL, n, 3, 3)) {
+		return 0;
+	}
+	byte ok = TP_CallArgs(&a[0], &a[1], NULL, out);
+	PyErr_Fetch(&t, &v, &tb);
+	if (!TX_Call(&a[2], NULL, 0, NULL, &r)) {
+		/* an exception of the cleanup replaces the one before, as in a finally clause */
+		Py_XDECREF(t);
+		Py_XDECREF(v);
+		Py_XDECREF(tb);
+		Native_Free(out);
+		return 0;
+	}
+	Native_Free(&r);
+	PyErr_Restore(t, v, tb);
+	return ok;
+}
+
+static int TP_Swap(nativeVal_t *a, int n, nativeVal_t *out) {
+	PyObject *t, *v, *tb;
+	nativeVal_t old;
+
+	if (!TX_Arity(NULL, n, 4, 4) || !TX_ArgText(NULL, 2, &a[1], 0)) {
+		return 0;
+	}
+	const char *name = Native_Text(&a[1]);
+	if (!TX_GetAttr(&a[0], name, &old)) {
+		return TX_NullResult();
+	}
+	if (!TX_SetAttr(&a[0], name, &a[2])) {
+		Native_Free(&old);
+		return TX_NullResult();
+	}
+	byte ok = TX_Call(&a[3], NULL, 0, NULL, out);
+	PyErr_Fetch(&t, &v, &tb);
+	if (!TX_SetAttr(&a[0], name, &old)) {
+		PyErr_Clear();
+	}
+	PyErr_Restore(t, v, tb);
+	Native_Free(&old);
+	return ok;
+}
+
+/* a new class name ("Module.Class" sets its module, else __main__) with the items of the dict attrs (NULL or None:
+ * none): 0 with the error */
+static byte TP_MakeClass(const nativeVal_t *name, const nativeVal_t *attrs, nativeVal_t *out) {
+	const char *full = Native_Text(name), *dot = strrchr(full, '.');
+	nativeVal_t dict, pairs, k, v;
+
+	Native_SetNone(out);
+	if (attrs && attrs->type != NV_NONE && !TX_IsDict(attrs)) {
+		return Native_Raise(NE_TYPE, "the attributes must be a dict");
+	}
+	Native_SetEmpty(&dict, NV_DICT);
+	if (attrs && attrs->type != NV_NONE) {
+		if (!TX_Pairs(attrs, &pairs)) {
+			return 0;
+		}
+		for (int i = 0; i < pairs.n; i++) {
+			Native_Copy(&k, &pairs.items[i].items[0]);
+			Native_Copy(&v, &pairs.items[i].items[1]);
+			Native_DictSet(&dict, &k, &v);
+		}
+		Native_Free(&pairs);
+	}
+	/* __module__ before PyClass_New adds __doc__ */
+	Native_SetStr(&k, "__module__");
+	if (dot) {
+		Native_SetText(&v, full, (int)(dot - full));
+	} else {
+		Native_SetStr(&v, "__main__");
+	}
+	Native_DictSet(&dict, &k, &v);
+	return NObj_NewClass(out, dot ? dot + 1 : full, NULL, NULL, &dict);
+}
+
+static int TP_Class(nativeVal_t *a, int n, nativeVal_t *out) {
+	return TX_Arity(NULL, n, 1, 2) && TX_ArgText(NULL, 1, a, 1) && TP_MakeClass(a, n > 1 ? &a[1] : NULL, out);
+}
+
+static int TP_Obj(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t klass, pairs;
+	static const char *const special[2] = { "__call__", "__repr__" };
+
+	if (!TX_Arity(NULL, n, 2, 4) || !TX_ArgText(NULL, 1, a, 1) || !TP_MakeClass(a, NULL, &klass)) {
+		return 0;
+	}
+	byte ok = NObj_Call(&klass, NULL, 0, out);
+	Native_Free(&klass);
+	if (ok && a[1].type != NV_NONE) {
+		if (!TX_IsDict(&a[1])) {
+			ok = Native_Raise(NE_TYPE, "the attributes must be a dict");
+		} else if ((ok = TX_Pairs(&a[1], &pairs)) != 0) {
+			for (int i = 0; ok && i < pairs.n; i++) {
+				const nativeVal_t *k = &pairs.items[i].items[0];
+				ok = k->type == NV_STR ? TX_SetAttr(out, Native_Text(k), &pairs.items[i].items[1])
+					: Native_Raise(NE_TYPE, "attribute name must be string");
+			}
+			Native_Free(&pairs);
+		}
+	}
+	for (int i = 0; ok && i < 2; i++) {
+		if (n > i + 2 && a[i + 2].type != NV_NONE) {
+			ok = TX_SetAttr(out, special[i], &a[i + 2]);
+		}
+	}
+	if (!ok) {
+		Native_Free(out);
+	}
+	return ok;
+}
+
+static int TP_Walk(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t x;
+
+	if (!TX_Arity(NULL, n, 2, 2)) {
+		return 0;
+	}
+	Native_SetEmpty(out, NV_LIST);
+	Native_Copy(&x, &a[0]);
+	for (int k = 0; Native_True(&x) && k <= 100000; k++) {
+		nativeVal_t arg, y;
+		Native_Copy(Native_Append(out), &x);
+		arg = x;
+		byte ok = TX_Call(&a[1], &arg, 1, NULL, &y);
+		Native_Free(&arg);
+		if (!ok) {
+			Native_Free(out);
+			return 0;
+		}
+		x = y;
+	}
+	Native_Free(&x);
+	return 1;
+}
+
+static int TP_Sorted(nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t slice, r;
+
+	if (!TX_Arity(NULL, n, 1, 1) || !NObj_GetSlice(a, 0, NOBJ_END, &slice)) {
+		return 0;
+	}
+	/* a new list of the items, sorted as list.sort does */
+	byte ok = TX_SeqList(&slice, NV_LIST, out);
+	Native_Free(&slice);
+	if (ok) {
+		NObj_Share(out);
+		ok = NObj_CallMethod(out, "sort", NULL, 0, &r);
+		Native_Free(&r);
+	}
+	if (!ok) {
+		Native_Free(out);
+	}
+	return ok;
+}
+
+static int TP_Set(nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return TX_Arity(NULL, n, 3, 3) && NObj_SetItem(&a[0], &a[1], &a[2]);
+}
+
+static int TP_Del(nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return TX_Arity(NULL, n, 2, 2) && NObj_DelItem(&a[0], &a[1]);
+}
+
+static int TP_Clear(nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)out;
+	return TX_Arity(NULL, n, 1, 1) && NObj_SetSlice(a, 0, NOBJ_END, NULL);
+}
+
+/* the native functions: the channel's own and the twins first (in the order of tx_defs), then the builtins */
+static const struct {
+	const char *name;
+	tcNative_t fn;
+} tx_natives[] = {
+	{ "tc_sdn", TP_Sdn },
+	{ "tc_catch", TP_Catch },
+	{ "tc_try", TP_Try },
+	{ "tc_finally", TP_Finally },
+	{ "tc_swap", TP_Swap },
+	{ "tc_obj", TP_Obj },
+	{ "tc_class", TP_Class },
+	{ "tc_walk", TP_Walk },
+	{ "tc_sorted", TP_Sorted },
+	{ "tc_set", TP_Set },
+	{ "tc_del", TP_Del },
+	{ "tc_clear", TP_Clear },
+	{ "getattr", TB_GetAttr },
+	{ "hasattr", TB_HasAttr },
+	{ "setattr", TB_SetAttr },
+	{ "delattr", TB_DelAttr },
+	{ "map", TB_Map },
+	{ "filter", TB_Filter },
+	{ "reduce", TB_Reduce },
+	{ "apply", TB_Apply },
+	{ "type", TB_Type },
+	{ "len", TB_Len },
+	{ "str", TB_Str },
+	{ "repr", TB_Repr },
+	{ "int", TB_Int },
+	{ "float", TB_Float },
+	{ "round", TB_RoundFn },
+	{ "range", TB_Range },
+	{ "abs", TB_Abs },
+	{ "min", TB_Min },
+	{ "max", TB_Max },
+	{ "cmp", TB_Cmp },
+	{ "tuple", TB_Tuple },
+	{ "list", TB_List },
+	{ "callable", TB_Callable },
+	{ "__import__", TB_Import },
+};
+
+#define TX_OWN 16		/* the channel's functions and the twins: tx_defs */
+#define TX_NATIVES ((int)(sizeof(tx_natives) / sizeof(tx_natives[0])))
+
+/* OBJLIB 9: native function i called from Python: the arguments as native values, the result as a Python object */
+static PyObject *TX_Adapt(int i, PyObject *args) {
+	int n = PyTuple_Size(args);
+	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), r;
+
+	for (int k = 0; k < n; k++) {
+		NObj_FromPy(PyTuple_GET_ITEM(args, k), &a[k]);
+	}
+	Native_SetNone(&r);
+	byte ok = tx_natives[i].fn(a, n, &r) > 0;
+	for (int k = 0; k < n; k++) {
+		Native_Free(&a[k]);
+	}
+	Mem_Free(a);
+	PyObject *res = ok ? TX_ToPy(&r) : NULL;
+	Native_Free(&r);
+	if (!ok) {
+		TX_NullResult();
+	}
+	return res;
+}
+
+#define TX_ADAPTER(i) \
+	static PyObject *TX_Adapt##i(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return TX_Adapt(i, args); \
+	}
+TX_ADAPTER(0)
+TX_ADAPTER(1)
+TX_ADAPTER(2)
+TX_ADAPTER(3)
+TX_ADAPTER(4)
+TX_ADAPTER(5)
+TX_ADAPTER(6)
+TX_ADAPTER(7)
+TX_ADAPTER(8)
+TX_ADAPTER(9)
+TX_ADAPTER(10)
+TX_ADAPTER(11)
+TX_ADAPTER(12)
+TX_ADAPTER(13)
+TX_ADAPTER(14)
+TX_ADAPTER(15)
+
+static PyMethodDef tx_defs[TX_OWN] = {
+	{ "tc_sdn", TX_Adapt0, METH_VARARGS, NULL },
+	{ "tc_catch", TX_Adapt1, METH_VARARGS, NULL },
+	{ "tc_try", TX_Adapt2, METH_VARARGS, NULL },
+	{ "tc_finally", TX_Adapt3, METH_VARARGS, NULL },
+	{ "tc_swap", TX_Adapt4, METH_VARARGS, NULL },
+	{ "tc_obj", TX_Adapt5, METH_VARARGS, NULL },
+	{ "tc_class", TX_Adapt6, METH_VARARGS, NULL },
+	{ "tc_walk", TX_Adapt7, METH_VARARGS, NULL },
+	{ "tc_sorted", TX_Adapt8, METH_VARARGS, NULL },
+	{ "tc_set", TX_Adapt9, METH_VARARGS, NULL },
+	{ "tc_del", TX_Adapt10, METH_VARARGS, NULL },
+	{ "tc_clear", TX_Adapt11, METH_VARARGS, NULL },
+	{ "getattr", TX_Adapt12, METH_VARARGS, NULL },
+	{ "hasattr", TX_Adapt13, METH_VARARGS, NULL },
+	{ "setattr", TX_Adapt14, METH_VARARGS, NULL },
+	{ "delattr", TX_Adapt15, METH_VARARGS, NULL },
+};
+
+/* a new function object of the channel's function name, NULL (no error) when there is none; nothing is kept between
+ * lines (the interpreter's objects go with every level load) */
+static PyObject *TP_Function(const char *name) {
+	for (int i = 0; i < 12; i++) {
+		if (!strcmp(tx_defs[i].ml_name, name)) {
+			return PyCFunction_New(&tx_defs[i], NULL);
+		}
+	}
+	return NULL;
+}
+
+/* the twin of the builtin getattr, hasattr, setattr or delattr (with its doc), NULL for every other name */
+static PyObject *TX_AttrTwin(const char *name, PyObject *builtin) {
+	if (!PyCFunction_Check(builtin)) {
+		return NULL;
+	}
+	for (int i = 12; i < TX_OWN; i++) {
+		if (!strcmp(name, tx_defs[i].ml_name)) {
+			tx_defs[i].ml_doc = ((PyCFunctionObject *)builtin)->m_ml->ml_doc;
+			return PyCFunction_New(&tx_defs[i], NULL);
+		}
+	}
+	return NULL;
+}
+
+static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
+	PyObject *py = TX_Py(f);
+	int i = TX_NATIVES;
+
+	if (!py || !PyCFunction_Check(py)) {
+		return -1;
+	}
+	PyCFunctionObject *cf = (PyCFunctionObject *)py;
+	if (cf->m_ml == &tx_lambdaDef) {
+		nativeVal_t pairs;
+		tcFunc *rec = PyCObject_AsVoidPtr(PyTuple_GetItem(cf->m_self, 0));
+		if (kw && !TX_Pairs(kw, &pairs)) {
+			return 0;
+		}
+		byte ok = TX_LambdaRun(rec, a, n, kw ? &pairs : NULL, out);
+		if (kw) {
+			Native_Free(&pairs);
+		}
+		return ok;
+	}
+	if (cf->m_ml >= tx_defs && cf->m_ml < tx_defs + TX_OWN) {
+		i = (int)(cf->m_ml - tx_defs);
+	} else if (!cf->m_self) {
+		/* a builtin of that name that is still the builtin's own function object */
+		PyObject *b = PyImport_AddModule("__builtin__");
+		PyObject *own = b ? PyDict_GetItemString(PyModule_GetDict(b), cf->m_ml->ml_name) : NULL;
+		for (i = TX_OWN; i < TX_NATIVES && strcmp(tx_natives[i].name, cf->m_ml->ml_name); i++) {
+		}
+		if (i == TX_NATIVES || !own || !PyCFunction_Check(own) || ((PyCFunctionObject *)own)->m_ml != cf->m_ml) {
+			if (!own || own != py) {
+				return -1;
+			}
+			/* a builtin that is not native here */
+			TX_Count("builtin", cf->m_ml->ml_name);
+			return TX_CallPy(f, a, n, kw, out);
+		}
+	} else {
+		return -1;
+	}
+	if (TX_HasKw(kw)) {
+		return Native_Raise(NE_TYPE, "this function takes no keyword arguments");
+	}
+	/* the arguments are copies: a list or dict among them is an object the function may change */
+	for (int k = 0; k < n; k++) {
+		NObj_Share(&a[k]);
+	}
+	int r = tx_natives[i].fn(a, n, out);
+	if (r < 0) {
+		Native_Free(out);
+		TX_Count("builtin", tx_natives[i].name);
+		return TX_CallPy(f, a, n, NULL, out);
+	}
+	if (!r) {
+		Native_Free(out);
+	}
+	return r;
+}
+
 /* ---- statements ---- */
 
 /* the items of a sequence a tuple or list of targets takes (PySequence_Length, then PySequence_GetItem): by value, of
@@ -2460,409 +3623,4 @@ void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet) {
 	if (has) {
 		Native_Free(&v);
 	}
-}
-
-/* ---- the channel's own functions ---- */
-
-static PyObject *TP_SdnObj(PyObject *x, int depth);
-
-/* the items of a tuple or list through TP_SdnObj, as a new list */
-static PyObject *TP_SdnList(PyObject *x, int depth) {
-	int n = PySequence_Length(x);
-	PyObject *out = n >= 0 ? PyList_New(n) : NULL;
-
-	for (int i = 0; out && i < n; i++) {
-		PyObject *item = PySequence_GetItem(x, i);
-		PyObject *v = item ? TP_SdnObj(item, depth + 1) : NULL;
-		Py_XDECREF(item);
-		if (!v) {
-			Py_DECREF(out);
-			return NULL;
-		}
-		PyList_SetItem(out, i, v);
-	}
-	return out;
-}
-
-/* the prefix and a string attribute: "ent:" + x.Name; NULL with the error set */
-static PyObject *TP_Prefixed(const char *prefix, PyObject *s) {
-	PyObject *v = PyString_FromString(prefix);
-
-	if (v) {
-		PyString_Concat(&v, s);
-	}
-	return v;
-}
-
-static PyObject *TP_SdnObj(PyObject *x, int depth) {
-	if (depth > TX_EVAL_DEPTH) {
-		PyErr_SetString(PyExc_RuntimeError, "maximum recursion depth exceeded");
-		return NULL;
-	}
-	if (PyTuple_Check(x)) {
-		PyObject *list = TP_SdnList(x, depth);
-		PyObject *v = list ? PyList_AsTuple(list) : NULL;
-		Py_XDECREF(list);
-		return v;
-	}
-	if (PyList_Check(x)) {
-		return TP_SdnList(x, depth);
-	}
-	if (PyDict_Check(x)) {
-		PyObject *d = PyDict_New(), *k, *item;
-		int pos = 0;
-		while (d && PyDict_Next(x, &pos, &k, &item)) {
-			PyObject *v = TP_SdnObj(item, depth + 1);
-			if (!v || PyDict_SetItem(d, k, v) != 0) {
-				Py_XDECREF(v);
-				Py_DECREF(d);
-				return NULL;
-			}
-			Py_DECREF(v);
-		}
-		return d;
-	}
-	if (PyFloat_Check(x)) {
-		PyObject *round = TX_GlobalPy("round");
-		PyObject *v = round ? PyObject_CallFunction(round, "(Oi)", x, 2) : NULL;
-		Py_XDECREF(round);
-		return v;
-	}
-	if (!strcmp(x->ob_type->tp_name, "cPyEntity")) {
-		PyObject *name = PyObject_GetAttrString(x, "Name");
-		PyObject *v = name ? TP_Prefixed("ent:", name) : NULL;
-		Py_XDECREF(name);
-		if (!v) {
-			PyErr_Clear();
-			v = PyString_FromString("ent:?");
-		}
-		return v;
-	}
-	if (!PyString_Check(x)) {
-		PyObject *name = PyObject_GetAttrString(x, "__name__");
-		if (name) {
-			PyObject *v = TP_Prefixed("fn:", name);
-			Py_DECREF(name);
-			return v;
-		}
-		PyErr_Clear();
-	}
-	if (PyInstance_Check(x)) {
-		return TP_Prefixed("inst:", ((PyInstanceObject *)x)->in_class->cl_name);
-	}
-	Py_INCREF(x);
-	return x;
-}
-
-static PyObject *TP_Sdn(PyObject *self, PyObject *args) {
-	PyObject *x;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &x)) {
-		return NULL;
-	}
-	return TP_SdnObj(x, 0);
-}
-
-static PyObject *TP_Catch(PyObject *self, PyObject *args) {
-	PyObject *f, *fargs, *kw = Py_None, *handler = Py_None;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|OO", &f, &fargs, &kw, &handler)) {
-		return NULL;
-	}
-	PyObject *v = PyEval_CallObjectWithKeywords(f, fargs, kw == Py_None ? NULL : kw);
-	if (v && PyErr_Occurred()) {
-		Py_DECREF(v);
-		v = NULL;
-	}
-	if (v) {
-		return v;
-	}
-	PyObject *t, *val, *tb;
-	PyErr_Fetch(&t, &val, &tb);
-	PyErr_NormalizeException(&t, &val, &tb);
-	if (!t) {
-		Py_INCREF(Py_None);
-		t = Py_None;
-	}
-	if (!val) {
-		Py_INCREF(Py_None);
-		val = Py_None;
-	}
-	if (handler == Py_None) {
-		v = Py_BuildValue("(OO)", t, val);
-	} else {
-		v = PyObject_CallFunction(handler, "(OO)", t, val);
-	}
-	Py_DECREF(t);
-	Py_DECREF(val);
-	Py_XDECREF(tb);
-	return v;
-}
-
-static PyObject *TP_Try(PyObject *self, PyObject *args) {
-	PyObject *f, *fargs, *dflt;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &f, &fargs, &dflt)) {
-		return NULL;
-	}
-	PyObject *v = PyEval_CallObject(f, fargs);
-	if (v && PyErr_Occurred()) {
-		Py_DECREF(v);
-		v = NULL;
-	}
-	if (!v) {
-		PyErr_Clear();
-		Py_INCREF(dflt);
-		v = dflt;
-	}
-	return v;
-}
-
-static PyObject *TP_Finally(PyObject *self, PyObject *args) {
-	PyObject *f, *fargs, *after;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &f, &fargs, &after)) {
-		return NULL;
-	}
-	PyObject *v = PyEval_CallObject(f, fargs);
-	if (v && PyErr_Occurred()) {
-		Py_DECREF(v);
-		v = NULL;
-	}
-	PyObject *t, *val, *tb;
-	PyErr_Fetch(&t, &val, &tb);
-	PyObject *r = PyEval_CallObject(after, NULL);
-	if (!r) {
-		/* an exception of the cleanup replaces the one before, as in a finally clause */
-		Py_XDECREF(t);
-		Py_XDECREF(val);
-		Py_XDECREF(tb);
-		Py_XDECREF(v);
-		return NULL;
-	}
-	Py_DECREF(r);
-	PyErr_Restore(t, val, tb);
-	return v;
-}
-
-static PyObject *TP_Swap(PyObject *self, PyObject *args) {
-	PyObject *o, *name, *value, *f;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OSOO", &o, &name, &value, &f)) {
-		return NULL;
-	}
-	PyObject *old = TXP_GetAttr(o, name);
-	if (!old || TXP_SetAttr(o, name, value) != 0) {
-		Py_XDECREF(old);
-		return NULL;
-	}
-	PyObject *v = PyEval_CallObject(f, NULL);
-	if (v && PyErr_Occurred()) {
-		Py_DECREF(v);
-		v = NULL;
-	}
-	PyObject *t, *val, *tb;
-	PyErr_Fetch(&t, &val, &tb);
-	if (TXP_SetAttr(o, name, old) != 0) {
-		PyErr_Clear();
-	}
-	PyErr_Restore(t, val, tb);
-	Py_DECREF(old);
-	return v;
-}
-
-/* a new class name ("Module.Class" sets its module, else __main__) with the items of the dict attrs; NULL with the error
- * set */
-static PyObject *TP_MakeClass(const char *name, PyObject *attrs) {
-	char mod[0x80];
-	const char *dot = strrchr(name, '.');
-
-	if (attrs != Py_None && !PyDict_Check(attrs)) {
-		PyErr_SetString(PyExc_TypeError, "the attributes must be a dict");
-		return NULL;
-	}
-	Str_Copy(mod, "__main__", sizeof(mod));
-	if (dot) {
-		snprintf(mod, sizeof(mod), "%.*s", (int)(dot - name), name);
-	}
-	PyObject *cdict = PyDict_New(), *k, *v;
-	int pos = 0;
-	while (cdict && attrs != Py_None && PyDict_Next(attrs, &pos, &k, &v)) {
-		if (PyDict_SetItem(cdict, k, v) != 0) {
-			Py_DECREF(cdict);
-			return NULL;
-		}
-	}
-	PyObject *ms = PyString_FromString(mod);
-	if (!cdict || !ms || PyDict_SetItemString(cdict, "__module__", ms) != 0) {
-		Py_XDECREF(cdict);
-		Py_XDECREF(ms);
-		return NULL;
-	}
-	Py_DECREF(ms);
-	PyObject *bases = PyTuple_New(0);
-	PyObject *cname = PyString_FromString(dot ? dot + 1 : name);
-	PyObject *klass = bases && cname ? PyClass_New(bases, cdict, cname) : NULL;
-	Py_DECREF(cdict);
-	Py_XDECREF(bases);
-	Py_XDECREF(cname);
-	return klass;
-}
-
-static PyObject *TP_Class(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *attrs = Py_None;
-
-	(void)self;
-	return PyArg_ParseTuple(args, "s|O", &name, &attrs) ? TP_MakeClass(name, attrs) : NULL;
-}
-
-static PyObject *TP_Obj(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *attrs, *call = Py_None, *repr = Py_None;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sO|OO", &name, &attrs, &call, &repr)) {
-		return NULL;
-	}
-	PyObject *klass = TP_MakeClass(name, Py_None);
-	PyObject *inst = klass ? PyInstance_New(klass, NULL, NULL) : NULL;
-	Py_XDECREF(klass);
-	if (inst && attrs != Py_None) {
-		PyObject *k, *v;
-		int pos = 0;
-		if (!PyDict_Check(attrs)) {
-			PyErr_SetString(PyExc_TypeError, "the attributes must be a dict");
-			Py_DECREF(inst);
-			return NULL;
-		}
-		while (PyDict_Next(attrs, &pos, &k, &v)) {
-			if (PyObject_SetAttr(inst, k, v) != 0) {
-				Py_DECREF(inst);
-				return NULL;
-			}
-		}
-	}
-	if (inst && ((call != Py_None && PyObject_SetAttrString(inst, "__call__", call) != 0)
-			|| (repr != Py_None && PyObject_SetAttrString(inst, "__repr__", repr) != 0))) {
-		Py_DECREF(inst);
-		return NULL;
-	}
-	return inst;
-}
-
-static PyObject *TP_Walk(PyObject *self, PyObject *args) {
-	PyObject *x, *next;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &x, &next)) {
-		return NULL;
-	}
-	PyObject *list = PyList_New(0);
-	Py_INCREF(x);
-	for (int n = 0; list && x; n++) {
-		int t = PyObject_IsTrue(x);
-		if (t <= 0 || n > 100000) {
-			if (t < 0) {
-				Py_DECREF(list);
-				list = NULL;
-			}
-			break;
-		}
-		if (PyList_Append(list, x) != 0) {
-			Py_DECREF(list);
-			list = NULL;
-			break;
-		}
-		PyObject *y = PyObject_CallFunction(next, "(O)", x);
-		Py_DECREF(x);
-		x = y;
-		if (!x) {
-			Py_DECREF(list);
-			list = NULL;
-		}
-	}
-	Py_XDECREF(x);
-	return list;
-}
-
-static PyObject *TP_Sorted(PyObject *self, PyObject *args) {
-	PyObject *seq;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &seq)) {
-		return NULL;
-	}
-	PyObject *list = PySequence_GetSlice(seq, 0, INT_MAX);
-	if (list && !PyList_Check(list)) {
-		PyObject *l = PySequence_List(list);
-		Py_DECREF(list);
-		list = l;
-	}
-	if (list && PyList_Sort(list) != 0) {
-		Py_DECREF(list);
-		list = NULL;
-	}
-	return list;
-}
-
-static PyObject *TP_None(int r) {
-	if (r != 0) {
-		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *TP_Set(PyObject *self, PyObject *args) {
-	PyObject *o, *k, *v;
-
-	(void)self;
-	return PyArg_ParseTuple(args, "OOO", &o, &k, &v) ? TP_None(PyObject_SetItem(o, k, v)) : NULL;
-}
-
-static PyObject *TP_Del(PyObject *self, PyObject *args) {
-	PyObject *o, *k;
-
-	(void)self;
-	return PyArg_ParseTuple(args, "OO", &o, &k) ? TP_None(PyObject_DelItem(o, k)) : NULL;
-}
-
-static PyObject *TP_Clear(PyObject *self, PyObject *args) {
-	PyObject *o;
-
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &o) ? TP_None(PySequence_DelSlice(o, 0, INT_MAX)) : NULL;
-}
-
-static PyMethodDef tp_functions[] = {
-	{ "tc_sdn", TP_Sdn, METH_VARARGS, NULL },
-	{ "tc_catch", TP_Catch, METH_VARARGS, NULL },
-	{ "tc_try", TP_Try, METH_VARARGS, NULL },
-	{ "tc_finally", TP_Finally, METH_VARARGS, NULL },
-	{ "tc_swap", TP_Swap, METH_VARARGS, NULL },
-	{ "tc_obj", TP_Obj, METH_VARARGS, NULL },
-	{ "tc_class", TP_Class, METH_VARARGS, NULL },
-	{ "tc_walk", TP_Walk, METH_VARARGS, NULL },
-	{ "tc_sorted", TP_Sorted, METH_VARARGS, NULL },
-	{ "tc_set", TP_Set, METH_VARARGS, NULL },
-	{ "tc_del", TP_Del, METH_VARARGS, NULL },
-	{ "tc_clear", TP_Clear, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL }
-};
-
-/* a new function object of the channel's function name, NULL (no error) when there is none; nothing is kept between
- * lines (the interpreter's objects go with every level load) */
-static PyObject *TP_Function(const char *name) {
-	for (PyMethodDef *m = tp_functions; m->ml_name; m++) {
-		if (!strcmp(m->ml_name, name)) {
-			return PyCFunction_New(m, NULL);
-		}
-	}
-	return NULL;
 }
