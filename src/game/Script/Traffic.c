@@ -276,7 +276,8 @@ PyMethodDef g_TrafficMethods[] = {
 static void Step_Wave(int id, const nativeVal_t *args, int n) {
 	nativeVal_t wave;
 	(void)id;
-	if (!Script_StepValues(args, n, NV_LIST, &wave) || !Mode_VarCall("OutPolice", "PoliceWaves", 1, "append", &wave)) {
+	/* the list holds the values as they are: a list of a $name in it is that list */
+	if (!Script_StepValues(args, n, NV_LIST, 0, &wave) || !Mode_VarCall("OutPolice", "PoliceWaves", 1, "append", &wave)) {
 		PyErr_Print();
 	}
 	Native_Free(&wave);

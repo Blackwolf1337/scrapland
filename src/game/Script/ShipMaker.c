@@ -512,7 +512,7 @@ static void ShipMaker_StepStdShip(int id, const nativeVal_t *args, int n) {
 	(void)id;
 	Native_SetNone(&v);
 	/* the values of the line as one tuple (one that holds an object is no tuple of values: OBJLIB 7) */
-	if (Script_StepValues(args, n, NV_TUPLE, &a) && Mode_G(SM, "StdShips", &table)) {
+	if (Script_StepValues(args, n, NV_TUPLE, 1, &a) && Mode_G(SM, "StdShips", &table)) {
 		if (a.type != NV_TUPLE || a.n != 8) {
 			Native_Raise(NE_TYPE, "stdship takes 8 values");
 		} else if (Native_Slice(&a, 1, 8, &v)) {

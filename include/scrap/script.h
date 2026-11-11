@@ -127,10 +127,10 @@ typedef struct scriptStep_s {
 	void (*fn)(int id, const struct nativeVal_s *args, int n);
 } scriptStep_t;
 
-/* the n values of a step as one list or tuple (type NV_LIST or NV_TUPLE) in *out, as the value a call passes on
- * (Native_Pass: copies, and the object itself where a value holds one; Native_Free it either way): 1, or 0 with the
- * error */
-byte Script_StepValues(const struct nativeVal_s *args, int n, int type, struct nativeVal_s *out);
+/* the n values of a step as one list or tuple (type NV_LIST or NV_TUPLE) of copies in *out (Native_Free it); an
+ * NV_OBJ stays the object it is. pass: as the value a call passes on instead (Native_Pass: what an adapter makes of
+ * the tuple of the values): 1, or 0 with the error and *out None */
+byte Script_StepValues(const struct nativeVal_s *args, int n, int type, byte pass, struct nativeVal_s *out);
 
 /*
  * runs the .def file name (scrapc/<name> of the packs, else builtin) for the scorer of player id: the lines before

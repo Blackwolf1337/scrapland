@@ -518,7 +518,7 @@ static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
 static void DoorSound_StepInitSound(int id, const nativeVal_t *args, int n) {
 	nativeVal_t f = { 0 }, a;
 	(void)id;
-	if (Script_StepValues(args, n, NV_TUPLE, &a) && LvN_GObj(DOOR, "SetInitDoorSound", &f)) {
+	if (Script_StepValues(args, n, NV_TUPLE, 1, &a) && LvN_GObj(DOOR, "SetInitDoorSound", &f)) {
 		Mode_Apply(&f, &a, NULL);
 	}
 	Native_Free(&f);
