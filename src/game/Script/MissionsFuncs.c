@@ -397,10 +397,10 @@ static byte Mf_CharMissionDialog(const nativeVal_t *usr, const nativeVal_t *name
 	Native_SetNone(&none);
 	if (Mf_Is(opt, "Talk")) {
 		ok = Mode_RefGetAttr(&cls, "initMsg", &msg) && Mode_RefGetAttr(&cls, "initAns", &ans) &&
-			PORT_CALL(Speech, OnSpch, NULL, "OOs", msg.obj, ans.obj, "TalkNPC");
+			PORT_CALL(Speech, OnSpch, NULL, "OOs", Native_PyOf(&msg), Native_PyOf(&ans), "TalkNPC");
 		int has = ok ? Mf_AttrTrue(&cls, "speechOptionsList") : -1;
 		if (has > 0) {
-			ok = Mode_RefGetAttr(&cls, "speechOptionsList", &l) && PORT_CALL(Speech, StdAnsLst, NULL, "O", l.obj);
+			ok = Mode_RefGetAttr(&cls, "speechOptionsList", &l) && PORT_CALL(Speech, StdAnsLst, NULL, "O", Native_PyOf(&l));
 		}
 		has = ok && has >= 0 ? Mf_AttrTrue(&cls, "afterInitSpeechFunc") : -1;
 		if (has > 0) {

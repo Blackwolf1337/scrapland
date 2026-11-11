@@ -2400,7 +2400,7 @@ byte Mode_LoadSoundSeam(const nativeVal_t *file) {
 }
 
 void Mode_Elems(nativeVal_t *v) {
-	PyObject *o = v->type == NV_OBJ ? v->obj : NULL;
+	PyObject *o = Native_IsObj(v) ? Native_PyOf(v) : NULL;
 	if (!o || (!PyList_Check(o) && !PyTuple_Check(o))) {
 		return;
 	}
@@ -2451,9 +2451,9 @@ byte Mode_VSetF(const nativeVal_t *h, const char *var, double d) {
 byte Mode_Item(const nativeVal_t *x, long i, nativeVal_t *out) {
 	nativeVal_t k;
 	Native_SetNone(out);
-	if (x->type == NV_OBJ) {
+	if (Native_IsObj(x)) {
 		/* OBJLIB 7 */
-		PyObject *n = PyInt_FromLong(i), *r = n ? PyObject_GetItem(x->obj, n) : NULL;
+		PyObject *n = PyInt_FromLong(i), *r = n ? PyObject_GetItem(Native_PyOf(x), n) : NULL;
 		Py_XDECREF(n);
 		if (!r) {
 			return 0;
@@ -2827,11 +2827,11 @@ int Mode_Len(nativeVal_t *v) {
 
 byte Mode_Sub(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
 	Native_SetNone(out);
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return Native_Subscript(v, key, out);
 	}
 	/* OBJLIB 7: PyObject_GetItem of the object, the item as Native_Arg makes it */
-	PyObject *k = Native_ToPy(key), *r = k ? PyObject_GetItem(v->obj, k) : NULL;
+	PyObject *k = Native_ToPy(key), *r = k ? PyObject_GetItem(Native_PyOf(v), k) : NULL;
 	Py_XDECREF(k);
 	if (!r) {
 		return 0;
@@ -2992,9 +2992,10 @@ byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out) {
 		Native_SetLong(out, d, (int)strlen(d));
 		return 1;
 	}
-	case NV_OBJ: {
+	case NV_OBJ:
+	case NV_REF: {
 		/* OBJLIB 7: an object with its own abs */
-		PyObject *r = PyNumber_Absolute(v->obj);
+		PyObject *r = PyNumber_Absolute(Native_PyOf(v));
 		if (!r) {
 			return 0;
 		}
@@ -3034,9 +3035,10 @@ byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
 		}
 		return 1;
 	}
-	case NV_OBJ: {
+	case NV_OBJ:
+	case NV_REF: {
 		/* OBJLIB 7: an object with its own negation */
-		PyObject *r = PyNumber_Negative(v->obj);
+		PyObject *r = PyNumber_Negative(Native_PyOf(v));
 		if (!r) {
 			return 0;
 		}
@@ -3051,7 +3053,7 @@ byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
 /* ---- the hubs of batch K (CharAct, Alarm, NewsPanel, Scene, Speech) ---- */
 
 int Mode_In(const nativeVal_t *seq, const nativeVal_t *x) {
-	if (seq->type != NV_OBJ && x->type != NV_OBJ) {
+	if (!Native_IsObj(seq) && !Native_IsObj(x)) {
 		return Native_Contains(seq, x);
 	}
 	/* OBJLIB 7: PySequence_In of the objects (a list that holds handles, a handle tested) */
@@ -4023,11 +4025,11 @@ byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nat
 /* ---- native entries of hand and keyword adapters (stage 3, batch A2a) ---- */
 
 byte Mode_ArgInt(const nativeVal_t *v, int *out) {
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return Native_ArgInt(v, out);
 	}
 	/* "i" of getargs.c: PyInt_AsLong through the number methods of the object */
-	long l = PyInt_AsLong(v->obj);
+	long l = PyInt_AsLong(Native_PyOf(v));
 	if (l == -1 && PyErr_Occurred()) {
 		return 0;
 	}
@@ -4038,8 +4040,8 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out) {
 /* the number of v as "l" of PyArg reads it: PyInt_AsLong as Mode_ArgInt takes it, not cut to an int */
 static byte Mode_ArgLong(const nativeVal_t *v, long *out) {
 	int i;
-	if (v->type == NV_OBJ) {
-		*out = PyInt_AsLong(v->obj);
+	if (Native_IsObj(v)) {
+		*out = PyInt_AsLong(Native_PyOf(v));
 		return *out != -1 || !PyErr_Occurred();
 	}
 	if (!Native_ArgInt(v, &i)) {
@@ -4053,10 +4055,10 @@ static byte Mode_ArgLong(const nativeVal_t *v, long *out) {
 /* the number of v as "d" and "f" of PyArg read it: Native_ArgDouble, and an NV_OBJ through PyFloat_AsDouble as
  * getargs.c has it (an instance's __float__) */
 static byte Mode_ArgDouble(const nativeVal_t *v, double *out) {
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return Native_ArgDouble(v, out);
 	}
-	*out = PyFloat_AsDouble(v->obj);
+	*out = PyFloat_AsDouble(Native_PyOf(v));
 	return !PyErr_Occurred();
 }
 
@@ -4108,7 +4110,7 @@ static const char *Mode_ParseGroup(const nativeVal_t *v, const char **f, va_list
 		}
 	}
 	/* OBJLIB 7: an NV_OBJ (a list that holds a handle) the Python way */
-	PyObject *obj = v->type == NV_OBJ ? v->obj : NULL;
+	PyObject *obj = Native_IsObj(v) ? Native_PyOf(v) : NULL;
 	byte seq = v->type == NV_LIST || v->type == NV_TUPLE || v->type == NV_STR || v->type == NV_VEC;
 	if (obj ? !PySequence_Check(obj) : !seq) {
 		levels[0] = 0;
@@ -4288,7 +4290,7 @@ PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **name
 }
 
 byte Mode_KwGiven(const nativeVal_t *a, int n, int i) {
-	return i < n && !(a[i].type == NV_OBJ && !a[i].obj);
+	return i < n && !Native_IsMissing(&a[i]);
 }
 
 byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t core, nativeVal_t *out) {
@@ -4328,8 +4330,7 @@ PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **n
 /* ---- the native entries of stage 3 batch A1 (hand, keyword and PyArg adapters on their entries) ---- */
 
 void Mode_KwSkip(nativeVal_t *v) {
-	Native_SetNone(v);
-	v->type = NV_OBJ;
+	Native_SetMissing(v);
 }
 
 byte Mode_KwSlots(const nativeVal_t *a, int n, const char *fmt, nativeVal_t *v, byte *given) {
@@ -4777,7 +4778,7 @@ byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeV
 
 int Mode_Truth(const nativeVal_t *v) {
 	/* OBJLIB 7: the truth of an object (an instance's __nonzero__ or __len__ may raise) */
-	return v->type == NV_OBJ ? PyObject_IsTrue(v->obj) : Native_True(v);
+	return Native_IsObj(v) ? PyObject_IsTrue(Native_PyOf(v)) : Native_True(v);
 }
 
 byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
@@ -4914,17 +4915,18 @@ byte Mode_FromV(const char *module, const char *name, nativeVal_t *out) {
 }
 
 byte Mode_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return Native_Slice(v, lo, hi, out);
 	}
-	return Mode_ObjOut(PySequence_GetSlice(v->obj, (int)lo, (int)hi), out);
+	return Mode_ObjOut(PySequence_GetSlice(Native_PyOf(v), (int)lo, (int)hi), out);
 }
 
 byte Mode_Sliceable(const nativeVal_t *v) {
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return v->type == NV_STR || v->type == NV_LIST || v->type == NV_TUPLE || v->type == NV_VEC;
 	}
-	PySequenceMethods *sq = v->obj ? v->obj->ob_type->tp_as_sequence : NULL;
+	PyObject *p = Native_PyOf(v);
+	PySequenceMethods *sq = p ? p->ob_type->tp_as_sequence : NULL;
 	return sq && sq->sq_slice;
 }
 
@@ -4947,8 +4949,8 @@ byte Mode_RefMod(const char *module, const char *var, nativeVal_t *out) {
 }
 
 void Mode_RefPlain(const nativeVal_t *o, nativeVal_t *out) {
-	if (o->type == NV_OBJ && o->obj) {
-		Native_Arg(o->obj, out);
+	if (Native_IsObj(o) && Native_PyOf(o)) {
+		Native_Arg(Native_PyOf(o), out);
 	} else {
 		Native_Copy(out, o);
 	}
@@ -5190,7 +5192,7 @@ byte Mode_RefSlice(const nativeVal_t *o, long lo, long hi, nativeVal_t *out) {
 }
 
 byte Mode_RefIsNone(const nativeVal_t *o) {
-	return o->type == NV_NONE || (o->type == NV_OBJ && o->obj == Py_None);
+	return o->type == NV_NONE || (Native_IsObj(o) && Native_PyOf(o) == Py_None);
 }
 
 PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
@@ -5296,11 +5298,11 @@ byte Mode_ModuleV(const char *name, nativeVal_t *out) {
 }
 
 byte Mode_StrBuf(const nativeVal_t *v, nativeBuf_t *b) {
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		Native_Repr(b, v, NR_STR);
 		return 1;
 	}
-	PyObject *t = PyObject_Str(v->obj);
+	PyObject *t = PyObject_Str(Native_PyOf(v));
 	if (!t) {
 		return 0;
 	}
@@ -5437,10 +5439,10 @@ PyObject *Mode_EntryObj(PyObject *args, portEntry_t entry, unsigned objs) {
 }
 
 byte Mode_Int(const nativeVal_t *v, nativeVal_t *out) {
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return Native_ToInt(v, out);
 	}
-	PyObject *r = PyNumber_Int(v->obj);
+	PyObject *r = PyNumber_Int(Native_PyOf(v));
 	if (!r) {
 		return 0;
 	}

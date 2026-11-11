@@ -501,8 +501,8 @@ static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *ou
 		return Port_Arity(n, 1);
 	}
 	/* OBJLIB 5: the list object itself, sorted in place */
-	PyObject *list = a[0].type == NV_OBJ ? a[0].obj : Native_ToPy(&a[0]);
-	if (a[0].type == NV_OBJ) {
+	PyObject *list = Native_IsObj(&a[0]) ? Native_PyOf(&a[0]) : Native_ToPy(&a[0]);
+	if (Native_IsObj(&a[0])) {
 		Py_INCREF(list);
 	}
 	byte ok = list && Gs_LoadSndListPy(list);

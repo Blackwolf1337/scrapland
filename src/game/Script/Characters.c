@@ -456,7 +456,7 @@ static byte Gear_DropMissileEvent_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	}
 	for (int i = 0; i < 2; i++) {
 		/* OBJLIB 7: a value without a native form (an object, an entity handle) is refused by the + below as None is */
-		if (a[i].type == NV_OBJ || a[i].type == NV_ENT) {
+		if (Native_IsObj(&a[i]) || a[i].type == NV_ENT) {
 			Native_SetNone(&frame[i]);
 		} else {
 			Native_Copy(&frame[i], &a[i]);

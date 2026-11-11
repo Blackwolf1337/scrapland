@@ -237,11 +237,11 @@ static byte Sy_RaiseValue(const char *module, const nativeVal_t *v) {
 		}
 		return 0;
 	}
-	if (v->type != NV_OBJ) {
+	if (!Native_IsObj(v)) {
 		return Native_Raise(NE_TYPE, "exceptions must be strings, classes, or instances");
 	}
 	/* OBJLIB 7: the exception is a class or an instance of Python (the error state is Python's until stage 7d) */
-	PyObject *type = Script_Ref(v->obj), *value = Script_Ref(Py_None), *tb = NULL;
+	PyObject *type = Script_Ref(Native_PyOf(v)), *value = Script_Ref(Py_None), *tb = NULL;
 	while (PyTuple_Check(type) && PyTuple_Size(type) > 0) {
 		PyObject *tmp = type;
 		type = Script_Ref(PyTuple_GET_ITEM(type, 0));
@@ -1331,7 +1331,7 @@ static int Fd_End(void) {
 static byte Fd_ForceCom(const char *key) {
 	nativeVal_t then;
 	byte ok = Mode_RefG(FD, "SetNextMission", &then) &&
-		PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O", key, "DeepThroat", then.obj);
+		PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O", key, "DeepThroat", Native_PyOf(&then));
 	Native_Free(&then);
 	return ok;
 }
