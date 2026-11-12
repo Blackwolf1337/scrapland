@@ -247,6 +247,40 @@ static void PyEntity_Dealloc(PyObject *self) {
 	ScriptPool_Free(self);
 }
 
+/* tp_repr, tp_hash, tp_compare: the face shows, hashes and orders as its handle (Native_Repr, Native_Hash, Native_Compare
+ * of the NV_ENT), whose address the scripts see */
+static void PyEntity_Val(PyObject *self, nativeVal_t *v) {
+	Native_SetNone(v);
+	v->type = NV_ENT;
+	v->ent = ((cPyEntity *)self)->ref;
+}
+
+static PyObject *PyEntity_Repr(PyObject *self) {
+	nativeVal_t v;
+	nativeBuf_t b;
+	PyEntity_Val(self, &v);
+	Native_BufInit(&b);
+	Native_Repr(&b, &v, NR_REPR);
+	PyObject *r = PyString_FromStringAndSize(b.p, b.len);
+	Native_BufFree(&b);
+	return r;
+}
+
+static long PyEntity_Hash(PyObject *self) {
+	nativeVal_t v;
+	long h = -1;
+	PyEntity_Val(self, &v);
+	Native_Hash(&v, &h);
+	return h;
+}
+
+static int PyEntity_Compare(PyObject *a, PyObject *b) {
+	nativeVal_t x, y;
+	PyEntity_Val(a, &x);
+	PyEntity_Val(b, &y);
+	return Native_Compare(&x, &y);
+}
+
 /* tp_print: the text goes to fprintf as the format, like in the original */
 static int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
 	static char buf[0x100];
@@ -369,4 +403,7 @@ static PyTypeObject cPyEntity_Type = {
 	.tp_print = (void *)PyEntity_Print,
 	.tp_getattr = (void *)PyEntity_GetAttr,
 	.tp_setattr = (void *)PyEntity_SetAttr,
+	.tp_compare = (void *)PyEntity_Compare,
+	.tp_repr = (void *)PyEntity_Repr,
+	.tp_hash = (void *)PyEntity_Hash,
 };

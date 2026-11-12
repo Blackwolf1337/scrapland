@@ -90,9 +90,11 @@ typedef struct nativeVal_s {
 	int max;			/* NV_LIST, NV_TUPLE: the room for items; NV_DICT: the slots */
 	char *text;			/* NV_STR, NV_LONG: a text of NATIVE_TEXT or more bytes (owned), else NULL */
 	struct nativeVal_s *items;	/* NV_LIST, NV_TUPLE, NV_DICT (owned), else NULL */
-	PyObject *obj;			/* NV_OBJ: the value (a reference owned). A number or text may keep the Python object it
-					 * came from here (the .mod evaluator, OBJLIB 5 (9c); a reference owned, copied and freed with
-					 * the value, read by nobody else), else NULL */
+	PyObject *obj;			/* NV_OBJ: the value (a reference owned); a module variable's value by value may cache
+					 * its Python form here for the borrowed readers of ModVar_Get (OBJLIB 9; a reference owned,
+					 * copied and freed with the value), else NULL */
+	uintptr_t id;			/* NV_INT, NV_FLOAT, NV_STR, NV_LONG, NV_TUPLE: the identity of the object the value is
+					 * (Native_IdOf), copied with it; 0: none of its own */
 	struct cEntityRef *ent;		/* NV_ENT: the handle (held once by this value), else NULL */
 	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL */
 } nativeVal_t;
@@ -153,6 +155,37 @@ nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key);
 byte Native_DictDel(nativeVal_t *d, const nativeVal_t *key);
 /* the next key and value of the dict in the order of 1.5.2 from *pos (0 at the start), as PyDict_Next: 0 at the end */
 byte Native_DictNext(const nativeVal_t *d, int *pos, const nativeVal_t **key, const nativeVal_t **value);
+
+/* ---- identity ---- */
+
+/*
+ * What `is` of Python 1.5.2 compares for a number, text or tuple is the object, which the native value does not have:
+ * a value keeps the identity of the object it stands for in nativeVal_t.id (copies keep it, the setters clear it). The
+ * ids are numbers that are never reused. A value without one (0: the result of an operation, a value of the engine) is
+ * the object 1.5.2 shares for it when there is one (Native_IdOf: the ints -1 to 99, the empty text and the texts of one
+ * character, the empty tuple), else an object of its own that nothing else is.
+ */
+#define NATIVE_ID_TRUE 0x301		/* Py_True and Py_False: ints 1 and 0 that are not the small ints */
+#define NATIVE_ID_FALSE 0x302
+#define NATIVE_ID_ERR 0x400		/* + the kind (nativeError_t): the name of a standard exception, as __builtin__ holds it */
+
+/* the identity of v (NV_INT, NV_FLOAT, NV_STR, NV_LONG, NV_TUPLE): its own, else the shared object's, else 0 */
+uintptr_t Native_IdOf(const nativeVal_t *v);
+/* a new identity */
+uintptr_t Native_NewId(void);
+/* v and the items of its tuples (at any depth) get an identity of their own where Native_IdOf has none: a value a
+ * variable holds is one object for every reader */
+void Native_Pin(nativeVal_t *v);
+/* the same for v alone (not its items) */
+void Native_PinTop(nativeVal_t *v);
+/* the identity of a text interned as PyString_InternInPlace does it (one object per text; the empty text and those of
+ * one character are the shared ones) */
+uintptr_t Native_InternId(const char *s, int len);
+/* the int 1 or 0 of a comparison or a not (Py_True, Py_False: cmp_outcome of ceval.c) */
+void Native_SetBool(nativeVal_t *v, int t);
+/* a is b of the scripts: None with None, objects and entity handles as NObj_Is, numbers, texts and tuples by
+ * Native_IdOf (two values without an identity are two objects) */
+byte Native_Is(const nativeVal_t *a, const nativeVal_t *b);
 
 /* ---- texts of values ---- */
 
@@ -327,6 +360,8 @@ byte Native_ErrValueStr(nativeBuf_t *b, const nativeErr_t *e);
 void Py_ErrSet(PyObject *type, PyObject *value, PyObject *tb);
 PyObject *Py_ErrType(void);
 void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb);
+/* the identity of the object o when it is a standard exception (NATIVE_ID_ERR + its kind), else 0 */
+uintptr_t Py_ErrIdOf(PyObject *o);
 /* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...;
  * the type name of an NV_OBJ; "cPyEntity" for an entity handle) */
 const char *Native_TypeName(const nativeVal_t *v);
@@ -402,8 +437,8 @@ byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *o
  * vector as a tuple), else __methods__ or a method of the handle (a function bound to h, NObj_NewBound); 1 with *out,
  * 0 with the console line of the handle and the AttributeError, or without an error when the entity is gone */
 byte Native_EntGetAttr(const nativeVal_t *h, const char *name, nativeVal_t *out);
-/* the address the repr of the handle v (NV_ENT) shows: its Python object's while it has one (OBJLIB 7e4b), else its
- * own */
+/* the address the repr of the handle v (NV_ENT) shows, which its id, hash and order go by: the handle's (its Python
+ * face shows the same, OBJLIB 9) */
 uintptr_t Native_EntAddr(const nativeVal_t *v);
 /* the core of the attribute set of a handle: v as an int, float, vector and text, in this order, each form it reads
  * as goes to the variable of that type until one takes it (1); 0 with the console line of the handle (ref names the
@@ -884,10 +919,6 @@ PyObject *Native_PyOf(const nativeVal_t *v);
 /* the argument of a keyword entry that is not given (an NV_OBJ without an object) */
 void Native_SetMissing(nativeVal_t *v);
 byte Native_IsMissing(const nativeVal_t *v);
-/* OBJLIB 5 (9c): the Python object a number or text came from, kept with the value (the constants of the .mod
- * evaluator): set (a new reference) and read (borrowed, NULL for none; of an NV_OBJ its object) */
-void Native_KeepPy(nativeVal_t *v, PyObject *o);
-PyObject *Native_KeptPy(const nativeVal_t *v);
 /* v or a value in it (an item, a key, a value of a dict, at any depth) has one of types (a mask of 1 << NV_) */
 byte Native_Holds(const nativeVal_t *v, unsigned types);
 /* eval(text) when text is a plain literal: a text without 0 bytes, Native_Literal after its leading blanks (as the

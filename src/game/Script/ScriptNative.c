@@ -40,6 +40,7 @@ static void Native_Clear(nativeVal_t *v, byte type) {
 	v->text = NULL;
 	v->items = NULL;
 	v->obj = NULL;
+	v->id = 0;
 	v->ent = NULL;
 	v->ref = NULL;
 }
@@ -160,6 +161,97 @@ void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
 			}
 		}
 	}
+}
+
+/* ---- identity ---- */
+
+/* the shared objects of 1.5.2: the small ints (small_ints of intobject.c), the texts of one character and the empty
+ * one (characters and nullstring of stringobject.c), the empty tuple (free_tuples[0]) */
+#define NATIVE_ID_INT 0x100		/* + i + 1 for i from -1 to 99 */
+#define NATIVE_ID_CHAR 0x200		/* + the character */
+#define NATIVE_ID_EMPTY 0x300		/* the empty text */
+#define NATIVE_ID_ETUPLE 0x303
+/* the first id Native_NewId gives */
+#define NATIVE_ID_FIRST 0x1000
+
+static uintptr_t nv_lastId = NATIVE_ID_FIRST;
+/* the interned texts: text -> its id (an int) */
+static nativeVal_t nv_interned;
+
+uintptr_t Native_NewId(void) {
+	return ++nv_lastId;
+}
+
+uintptr_t Native_IdOf(const nativeVal_t *v) {
+	if (v->id) {
+		return v->id;
+	}
+	switch (v->type) {
+	case NV_INT:
+		return v->i >= -1 && v->i < 100 ? (uintptr_t)(NATIVE_ID_INT + v->i + 1) : 0;
+	case NV_STR:
+		return v->n == 0 ? NATIVE_ID_EMPTY : v->n == 1 ? NATIVE_ID_CHAR + (unsigned char)Native_Text(v)[0] : 0;
+	case NV_TUPLE:
+		return v->n == 0 ? NATIVE_ID_ETUPLE : 0;
+	}
+	return 0;
+}
+
+void Native_PinTop(nativeVal_t *v) {
+	if ((v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG || v->type == NV_TUPLE) &&
+		!Native_IdOf(v)) {
+		v->id = Native_NewId();
+	}
+}
+
+void Native_Pin(nativeVal_t *v) {
+	Native_PinTop(v);
+	if (v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			Native_Pin(&v->items[i]);
+		}
+	}
+}
+
+uintptr_t Native_InternId(const char *s, int len) {
+	nativeVal_t key, id;
+	if (len <= 1) {
+		return len ? NATIVE_ID_CHAR + (unsigned char)s[0] : NATIVE_ID_EMPTY;
+	}
+	if (nv_interned.type != NV_DICT) {
+		Native_SetEmpty(&nv_interned, NV_DICT);
+	}
+	Native_SetText(&key, s, len);
+	const nativeVal_t *x = Native_DictGet(&nv_interned, &key);
+	if (x) {
+		Native_Free(&key);
+		return (uintptr_t)x->i;
+	}
+	uintptr_t n = Native_NewId();
+	Native_SetInt(&id, (long)n);
+	Native_DictSet(&nv_interned, &key, &id);
+	return n;
+}
+
+void Native_SetBool(nativeVal_t *v, int t) {
+	Native_SetInt(v, t != 0);
+	v->id = t ? NATIVE_ID_TRUE : NATIVE_ID_FALSE;
+}
+
+byte Native_Is(const nativeVal_t *a, const nativeVal_t *b) {
+	switch (a->type) {
+	case NV_INT:
+	case NV_FLOAT:
+	case NV_STR:
+	case NV_LONG:
+	case NV_TUPLE:
+		if (a->type != b->type) {
+			return 0;
+		}
+		uintptr_t x = Native_IdOf(a);
+		return x && x == Native_IdOf(b);
+	}
+	return NObj_Is(a, b);
 }
 
 byte Native_IsStr(const nativeVal_t *v, const char *text) {
@@ -662,8 +754,7 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 		return;
 	}
 	case NV_ENT: {
-		/* PyObject_Repr of a type without repr and str; the address is the one of its Python object while it has
-		 * one (the text Python gives for it then) */
+		/* PyObject_Repr of a type without repr and str */
 		char at[0x40];
 		snprintf(at, sizeof(at), "<cPyEntity object at %lx>", (long)Native_EntAddr(v));
 		Native_BufAdd(b, at, -1);
@@ -2956,6 +3047,7 @@ static byte Native_TakeVal(const nativeVal_t *v, unsigned types, nativeVal_t *ou
 		Native_Copy(out, v);
 		Py_XDECREF(out->obj);
 		out->obj = NULL;
+		out->id = 0;
 		return 1;
 	}
 	if (Native_HoldsData(v)) {
@@ -2969,7 +3061,7 @@ static byte Native_TakeVal(const nativeVal_t *v, unsigned types, nativeVal_t *ou
 		Native_Free(out);
 		return 0;
 	}
-	PyObject *o = NObj_Py(v) ? NObj_Py(v) : v->type != NV_ENT ? v->obj : NULL;
+	PyObject *o = NObj_Py(v);
 	if (o) {
 		Py_INCREF(o);
 	} else if ((o = Native_ToPy(v)) == NULL) {
@@ -3189,16 +3281,6 @@ byte Native_IsMissing(const nativeVal_t *v) {
 	return v->type == NV_OBJ && !v->obj;
 }
 
-void Native_KeepPy(nativeVal_t *v, PyObject *o) {
-	Py_INCREF(o);
-	Py_XDECREF(v->obj);
-	v->obj = o;
-}
-
-PyObject *Native_KeptPy(const nativeVal_t *v) {
-	return v->obj;
-}
-
 /* ---- entity handles as values (stage 7, batch 7c) ---- */
 
 byte Native_SetEnt(nativeVal_t *v, const char *name) {
@@ -3220,7 +3302,7 @@ const char *Native_EntName(const nativeVal_t *v) {
 }
 
 uintptr_t Native_EntAddr(const nativeVal_t *v) {
-	return v->ent->face ? (uintptr_t)v->ent->face : (uintptr_t)v->ent;
+	return (uintptr_t)v->ent;
 }
 
 void Native_EntPrint(const char *name, char *buf, int size) {

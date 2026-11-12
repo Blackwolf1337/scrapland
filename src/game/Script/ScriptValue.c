@@ -471,9 +471,13 @@ PyObject *Script_Usr(void) {
 	return PORT_ASK(Scrap, UsrEntity, "i", 0L);
 }
 
+byte Script_IsNameText(const char *s, int len) {
+	return (int)strspn(s, LIT_NAME_CHARS) == len;
+}
+
 PyObject *Script_StrConst(const char *s, int len) {
 	PyObject *v = PyString_FromStringAndSize((char *)s, len);
-	if (v && (int)strspn(PyString_AsString(v), LIT_NAME_CHARS) == len) {
+	if (v && Script_IsNameText(PyString_AsString(v), len)) {
 		PyString_InternInPlace(&v);
 	}
 	return v;

@@ -387,11 +387,17 @@ void NObj_FromPy(PyObject *o, nativeVal_t *v) {
 	}
 }
 
+void NObj_PyId(PyObject *o, nativeVal_t *v) {
+	if (o == Py_True || o == Py_False) {
+		v->id = o == Py_True ? NATIVE_ID_TRUE : NATIVE_ID_FALSE;
+	} else if ((v->id = Py_ErrIdOf(o)) == 0) {
+		Native_Pin(v);
+	}
+}
+
 void NObj_FromPyKept(PyObject *o, nativeVal_t *v) {
 	NObj_FromPy(o, v);
-	if (v->type != NV_OBJ && v->type != NV_REF) {
-		Native_KeepPy(v, o);
-	}
+	NObj_PyId(o, v);
 }
 
 /* the result r of a Python call (a new reference, given away) into *out: 1, or 0 with *out None when r is NULL (the
@@ -1260,6 +1266,7 @@ static byte Obj_Plain(const nativeVal_t *v, nativeVal_t *out, int depth) {
 		Native_Copy(out, v);
 		Py_XDECREF(out->obj);
 		out->obj = NULL;
+		out->id = 0;
 		return 1;
 	case NV_OBJ:
 		return Native_FromPyAt(v->obj, out, depth);
@@ -1339,8 +1346,8 @@ void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out) {
 		out->obj = NULL;
 		return;
 	}
-	/* a tuple, list or dict that holds an object or a handle: as Python has it (a tuple keeps its object) */
-	PyObject *o = v->type == NV_TUPLE && v->obj && PyTuple_Check(v->obj) ? (Py_INCREF(v->obj), v->obj) : Native_ToPy(v);
+	/* a tuple, list or dict that holds an object or a handle: as Python has it */
+	PyObject *o = Native_ToPy(v);
 	if (o) {
 		Native_SetObj(out, o);
 		Py_DECREF(o);

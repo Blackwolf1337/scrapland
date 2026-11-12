@@ -233,8 +233,10 @@ nativeVal_t *NObj_DictData(const nativeVal_t *d);
 /* the items of a list object of native data (an NV_LIST by value, changed in place by the caller); NULL for a view,
  * a list that crossed, another value */
 const nativeVal_t *NObj_ListData(const nativeVal_t *l);
-/* NObj_FromPy, a value by value with o kept (Native_KeepPy: the same object goes back to Python), as a variable holds
- * a value of Python */
+/* the identity of the Python object o for v, the value it was made into: True, False and the standard exceptions their
+ * own ones, any other number, text or tuple one of its own (Native_Pin) */
+void NObj_PyId(PyObject *o, nativeVal_t *v);
+/* NObj_FromPy with NObj_PyId, as a variable holds a value of Python */
 void NObj_FromPyKept(PyObject *o, nativeVal_t *v);
 /* Native_FromPyAny(Native_ToPy(v)) without the crossing of native data: numbers, texts, None, and lists, tuples and
  * dicts (by value, objects, views) of them by value, 32 deep (a dict with its table); 1 with *out (Native_Free it),

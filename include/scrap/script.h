@@ -344,6 +344,8 @@ PyObject *Script_NotRead(const char *where, const char *text);
 byte Script_HasBuiltins(const struct nativeVal_s *globals);
 /* a string constant of len chars as the compiler makes it (interned when it has only name characters) */
 PyObject *Script_StrConst(const char *s, int len);
+/* the len bytes at s are only name characters (ASCII letters, digits and _): the compiler interns such a constant */
+byte Script_IsNameText(const char *s, int len);
 /* s[0:len] is a Python 1.5.2 name (ASCII letters, digits and _, not a keyword) */
 byte Script_IsName(const char *s, int len);
 /* o is a string that between single quotes in a line of Python is itself again; the same for the n bytes of s */

@@ -9,7 +9,7 @@
  * they went), and those variables are the key of the module here. A shared list, dict, instance, function or module
  * is held as its NV_REF, a number, text, None or tuple by value. OBJLIB 7e4b: a reader that needs a Python object
  * gets the one of the value (Native_ToPy: a view's own object, native data crossing once, a number or text made once
- * and kept with the value, nativeVal_t.obj); Python code on the face of a module comes here through the module type
+ * and cached with the value, nativeVal_t.obj); Python code on the face of a module comes here through the module type
  * (MV_PyGetattr).
  *
  * The names: the table's, and the overflow list of each module file. A name the table does not have is taken into the
@@ -152,8 +152,8 @@ static nativeVal_t *MV_Slot(nativeVal_t *t, const char *name) {
 }
 
 /* *out the form of v a variable holds: lists and dicts as objects (NObj_Share), a vector as the tuple of three floats
- * it is in Python, a tuple with its Python tuple and an entity handle with its Python object (one object for `is`, id
- * and hash, as the dict slot had it; native data in a tuple crosses);
+ * it is in Python, a tuple with an identity of its own and of its items (Native_Pin: one object for `is`, as the dict
+ * slot had it);
  * SCRAP_NATIVE_REF=0: the value as Python made it, a value that holds native objects (there are no views then) as it
  * is. 0 with the error */
 static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
@@ -176,24 +176,8 @@ static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
 		Native_Copy(out, v);
 	}
 	NObj_Share(out);
-	if (out->type == NV_ENT && !Native_KeptPy(out)) {
-		/* the handle's Python object lives while the variable holds it, as in the dict slot: its address is the one
-		 * id, hash, repr and cmp of the handle show */
-		PyObject *o = Native_ToPy(out);
-		if (o) {
-			Native_KeepPy(out, o);
-			Py_DECREF(o);
-		}
-		Native_ErrClear();
-	}
-	if (out->type == NV_TUPLE && !Native_KeptPy(out)) {
-		PyObject *o = Native_ToPy(out);
-		if (!o) {
-			Native_Free(out);
-			return 0;
-		}
-		Native_KeepPy(out, o);
-		Py_DECREF(o);
+	if (out->type == NV_TUPLE) {
+		Native_Pin(out);
 	}
 	return 1;
 }
@@ -210,12 +194,8 @@ static PyObject *MV_Py(nativeVal_t *s) {
 		return o;
 	}
 	if (!s->obj) {
-		PyObject *o = Native_ToPy(s);
-		if (!o) {
-			return NULL;
-		}
-		Native_KeepPy(s, o);
-		Py_DECREF(o);
+		/* the Python form, made once for the borrowed readers */
+		s->obj = Native_ToPy(s);
 	}
 	return s->obj;
 }
