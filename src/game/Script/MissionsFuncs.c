@@ -1235,11 +1235,7 @@ static byte MissionsFuncs_SuperDealOnVictory_E(const nativeVal_t *a, int n, nati
 	return n == 2 ? Mf_SuperDealEnd(&a[0], &a[1], "OnVictory", 1) : Port_Arity(n, 2);
 }
 
-/* the adapters hand id and control over by reference (OBJLIB 7: a list the text changes is the caller's) */
-MODE_REFADAPTER(MissionsFuncs, SuperDealOnDefeat)
-MODE_REFADAPTER(MissionsFuncs, SuperDealOnVictory)
-
-/* ---- adapters ---- */
+/* ---- entries ---- */
 
 MODE_FN(MissionsFuncs, Init, 0, Mf_Init())
 MODE_FN(MissionsFuncs, TryMsg, 1, Mf_TryMsg(&a[0]))
@@ -1309,65 +1305,58 @@ static byte MissionsFuncs_OnSuperDealFinish_E(const nativeVal_t *a, int n, nativ
 	return Mode_Parse(a, n, "O|OO", &victory, &type, &retry) && Mf_OnSuperDealFinish(victory, type, retry);
 }
 
-MODE_ADAPTER(MissionsFuncs, ActivateTarget)
-MODE_ADAPTER(MissionsFuncs, CreatePhotoObject)
-MODE_ADAPTER(MissionsFuncs, SetInvulnerableShipsInList)
-MODE_ADAPTER(MissionsFuncs, OnSuperDealFinish)
-
-/* SetMultipleMissionTargets(tgtList): the list object itself into targetsList (OBJLIB 5 (7e): the adapter hands it over
- * by reference; a native caller's list becomes a new list object, as its call through Python makes it) */
+/* SetMultipleMissionTargets(tgtList): the list object itself into targetsList (OBJLIB 5 (7e): a native caller's list
+ * becomes a new list object, as its call through Python made it) */
 static byte MissionsFuncs_SetMultipleMissionTargets_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return n == 1 ? Mf_SetMultipleMissionTargets(&a[0]) : Port_Arity(n, 1);
 }
 
-MODE_REFADAPTER(MissionsFuncs, SetMultipleMissionTargets)
-
-PyMethodDef g_MissionsFuncsMethods[] = {
-	{ "Init", MissionsFuncs_Init, 1, NULL },
-	{ "TryMsg", MissionsFuncs_TryMsg, 1, NULL },
-	{ "SetNextMission", MissionsFuncs_SetNextMission, 1, NULL },
-	{ "SetFirstDemoMission", MissionsFuncs_SetFirstDemoMission, 1, NULL },
-	{ "SetOutMissionArrow", MissionsFuncs_SetOutMissionArrow, 1, NULL },
-	{ "ActivateTarget", MissionsFuncs_ActivateTarget, 1, NULL },
-	{ "GetSecondary", MissionsFuncs_GetSecondary, 1, NULL },
-	{ "SetSecondary", MissionsFuncs_SetSecondary, 1, NULL },
-	{ "FinishGame", MissionsFuncs_FinishGame, 1, NULL },
-	{ "ShowMissionInfo", MissionsFuncs_ShowMissionInfo, 1, NULL },
-	{ "SetMissionTarget", MissionsFuncs_SetMissionTarget, 1, NULL },
-	{ "SetMultipleMissionTargets", MissionsFuncs_SetMultipleMissionTargets, 1, NULL },
-	{ "CleanAllTargets", MissionsFuncs_CleanAllTargets, 1, NULL },
-	{ "DelMissionTarget", MissionsFuncs_DelMissionTarget, 1, NULL },
-	{ "IsCharMissionObjective", MissionsFuncs_IsCharMissionObjective, 1, NULL },
-	{ "CharMissionDialog", MissionsFuncs_CharMissionDialog, 1, NULL },
-	{ "CancelSecondaryMission", MissionsFuncs_CancelSecondaryMission, 1, NULL },
-	{ "SinglePlayerDeath", MissionsFuncs_SinglePlayerDeath, 1, NULL },
-	{ "CreatePhotoObject", MissionsFuncs_CreatePhotoObject, 1, NULL },
-	{ "UnsetPhotoObject", MissionsFuncs_UnsetPhotoObject, 1, NULL },
-	{ "ReassignBertosPlayerTarget", MissionsFuncs_ReassignBertosPlayerTarget, 1, NULL },
-	{ "CreateBerto", MissionsFuncs_CreateBerto, 1, NULL },
-	{ "CreateBertos", MissionsFuncs_CreateBertos, 1, NULL },
-	{ "OnBertoDeath", MissionsFuncs_OnBertoDeath, 1, NULL },
-	{ "CrazyDealStatus", MissionsFuncs_CrazyDealStatus, 1, NULL },
-	{ "GetNumCrazyDealCompleted", MissionsFuncs_GetNumCrazyDealCompleted, 1, NULL },
-	{ "OnCrazyDealFinishedMessage", MissionsFuncs_OnCrazyDealFinishedMessage, 1, NULL },
-	{ "OnCrazyDealTarget", MissionsFuncs_OnCrazyDealTarget, 1, NULL },
-	{ "NewCrazyDeal", MissionsFuncs_NewCrazyDeal, 1, NULL },
-	{ "SetNextSuperDeal", MissionsFuncs_SetNextSuperDeal, 1, NULL },
-	{ "StartActualSuperDeal", MissionsFuncs_StartActualSuperDeal, 1, NULL },
-	{ "EndOfSuperDeal", MissionsFuncs_EndOfSuperDeal, 1, NULL },
-	{ "StartSuperDeal", MissionsFuncs_StartSuperDeal, 1, NULL },
-	{ "RelaxShipsInList", MissionsFuncs_RelaxShipsInList, 1, NULL },
-	{ "SetInvulnerableShipsInList", MissionsFuncs_SetInvulnerableShipsInList, 1, NULL },
-	{ "OnSuperDealFinish", MissionsFuncs_OnSuperDealFinish, 1, NULL },
-	{ "BuildMultipleEnemiesData", MissionsFuncs_BuildMultipleEnemiesData, 1, NULL },
-	{ "BuildTeamDeathMatchData", MissionsFuncs_BuildTeamDeathMatchData, 1, NULL },
-	{ "BuildVersusData", MissionsFuncs_BuildVersusData, 1, NULL },
-	{ "BuildDominationData", MissionsFuncs_BuildDominationData, 1, NULL },
-	{ "BuildCTFData", MissionsFuncs_BuildCTFData, 1, NULL },
-	{ "SuperDealOnDefeat", MissionsFuncs_SuperDealOnDefeat, 1, NULL },
-	{ "SuperDealOnVictory", MissionsFuncs_SuperDealOnVictory, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MissionsFuncsMethods[] = {
+	PORT_FN(Init, MissionsFuncs_Init),
+	PORT_FN(TryMsg, MissionsFuncs_TryMsg),
+	PORT_FN(SetNextMission, MissionsFuncs_SetNextMission),
+	PORT_FN(SetFirstDemoMission, MissionsFuncs_SetFirstDemoMission),
+	PORT_FN(SetOutMissionArrow, MissionsFuncs_SetOutMissionArrow),
+	PORT_FN(ActivateTarget, MissionsFuncs_ActivateTarget),
+	PORT_FN(GetSecondary, MissionsFuncs_GetSecondary),
+	PORT_FN(SetSecondary, MissionsFuncs_SetSecondary),
+	PORT_FN(FinishGame, MissionsFuncs_FinishGame),
+	PORT_FN(ShowMissionInfo, MissionsFuncs_ShowMissionInfo),
+	PORT_FN(SetMissionTarget, MissionsFuncs_SetMissionTarget),
+	PORT_FN(SetMultipleMissionTargets, MissionsFuncs_SetMultipleMissionTargets),
+	PORT_FN(CleanAllTargets, MissionsFuncs_CleanAllTargets),
+	PORT_FN(DelMissionTarget, MissionsFuncs_DelMissionTarget),
+	PORT_FN(IsCharMissionObjective, MissionsFuncs_IsCharMissionObjective),
+	PORT_FN(CharMissionDialog, MissionsFuncs_CharMissionDialog),
+	PORT_FN(CancelSecondaryMission, MissionsFuncs_CancelSecondaryMission),
+	PORT_FN(SinglePlayerDeath, MissionsFuncs_SinglePlayerDeath),
+	PORT_FN(CreatePhotoObject, MissionsFuncs_CreatePhotoObject),
+	PORT_FN(UnsetPhotoObject, MissionsFuncs_UnsetPhotoObject),
+	PORT_FN(ReassignBertosPlayerTarget, MissionsFuncs_ReassignBertosPlayerTarget),
+	PORT_FN(CreateBerto, MissionsFuncs_CreateBerto),
+	PORT_FN(CreateBertos, MissionsFuncs_CreateBertos),
+	PORT_FN(OnBertoDeath, MissionsFuncs_OnBertoDeath),
+	PORT_FN(CrazyDealStatus, MissionsFuncs_CrazyDealStatus),
+	PORT_FN(GetNumCrazyDealCompleted, MissionsFuncs_GetNumCrazyDealCompleted),
+	PORT_FN(OnCrazyDealFinishedMessage, MissionsFuncs_OnCrazyDealFinishedMessage),
+	PORT_FN(OnCrazyDealTarget, MissionsFuncs_OnCrazyDealTarget),
+	PORT_FN(NewCrazyDeal, MissionsFuncs_NewCrazyDeal),
+	PORT_FN(SetNextSuperDeal, MissionsFuncs_SetNextSuperDeal),
+	PORT_FN(StartActualSuperDeal, MissionsFuncs_StartActualSuperDeal),
+	PORT_FN(EndOfSuperDeal, MissionsFuncs_EndOfSuperDeal),
+	PORT_FN(StartSuperDeal, MissionsFuncs_StartSuperDeal),
+	PORT_FN(RelaxShipsInList, MissionsFuncs_RelaxShipsInList),
+	PORT_FN(SetInvulnerableShipsInList, MissionsFuncs_SetInvulnerableShipsInList),
+	PORT_FN(OnSuperDealFinish, MissionsFuncs_OnSuperDealFinish),
+	PORT_FN(BuildMultipleEnemiesData, MissionsFuncs_BuildMultipleEnemiesData),
+	PORT_FN(BuildTeamDeathMatchData, MissionsFuncs_BuildTeamDeathMatchData),
+	PORT_FN(BuildVersusData, MissionsFuncs_BuildVersusData),
+	PORT_FN(BuildDominationData, MissionsFuncs_BuildDominationData),
+	PORT_FN(BuildCTFData, MissionsFuncs_BuildCTFData),
+	PORT_FN(SuperDealOnDefeat, MissionsFuncs_SuperDealOnDefeat),
+	PORT_FN(SuperDealOnVictory, MissionsFuncs_SuperDealOnVictory),
+	PORT_FNEND
 };
 
 PORTS(MissionsFuncs)

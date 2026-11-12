@@ -293,7 +293,6 @@ static byte Scorer_ShowMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t 
 	return 1;
 }
 
-
 static byte Scorer_CreateRadarScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	(void)out;
@@ -316,7 +315,6 @@ static byte Scorer_Blink_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-
 /* MissionScorerBar_SetDefaults(id, name, (back rgba), (main rgba), (black rgba)) */
 static byte Scorer_MissionScorerBar_SetDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *name;
@@ -329,7 +327,6 @@ static byte Scorer_MissionScorerBar_SetDefaults_E(const nativeVal_t *a, int n, n
 	Hud_BarDefaults(id, name, c);
 	return 1;
 }
-
 
 const portFn_t g_ScorerMethods[] = {
 	PORT_FN(CreateStatusScorer, Scorer_CreateStatusScorer),
@@ -722,7 +719,6 @@ static byte Racer_ShowScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-
 static byte Racer_MultiplayerUpdatePing_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
 	(void)n;
@@ -750,7 +746,6 @@ static byte Racer_InitMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t *
 	}
 	return 1;
 }
-
 
 MODE_IFN(Racer_UpdateMissionScorer, 3, (Racer_UpdateMission(id, &a[1], &a[2]), 1))
 

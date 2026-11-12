@@ -465,7 +465,7 @@ static byte Om_Init(const nativeVal_t *path) {
 		Mode_PrintV(Mode_S(&t, "Map initialized as Outdor")));
 }
 
-/* the adapters (the arity errors of the script's functions) and their entries */
+/* the entries (the arity errors of the script's functions) */
 MODE_FN(OutMap, BrowseSpawnPos, 0, Om_BrowseSpawnPos())
 MODE_FN(OutMap, GetSpawnPos, 0, Om_GetSpawnPos(out))
 MODE_FN(OutMap, GetFreeSpawnPos, 0, Om_GetFreeSpawnPos(out))
@@ -493,12 +493,6 @@ static byte OutMap_GetNearestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeV
 static char *OutMap_GetNearestFreeSpawnPos_N[] = { "initialPos", NULL };
 static const char OutMap_GetNearestFreeSpawnPos_F[] = "|O";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "|O", OutMap_GetNearestFreeSpawnPos_N, OutMap_NearestK);
-}
-
 static byte OutMap_GetFarthestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "|O", OutMap_FarthestK, out);
 }
@@ -506,28 +500,20 @@ static byte OutMap_GetFarthestFreeSpawnPos_E(const nativeVal_t *a, int n, native
 static char *OutMap_GetFarthestFreeSpawnPos_N[] = { "initialPos", NULL };
 static const char OutMap_GetFarthestFreeSpawnPos_F[] = "|O";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *OutMap_GetFarthestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "|O", OutMap_GetFarthestFreeSpawnPos_N, OutMap_FarthestK);
-}
-
-PyMethodDef g_OutMapMethods[] = {
-	{ "BrowseSpawnPos", OutMap_BrowseSpawnPos, 1, NULL },
-	{ "GetSpawnPos", OutMap_GetSpawnPos, 1, NULL },
-	{ "GetFreeSpawnPos", OutMap_GetFreeSpawnPos, 1, NULL },
-	{ "GetFreeSpawnPosReal", OutMap_GetFreeSpawnPosReal, 1, NULL },
-	{ "GetNearestFreeSpawnPosReal", OutMap_GetNearestFreeSpawnPosReal, 1, NULL },
-	{ "GetFreeSpawn", OutMap_GetFreeSpawn, 1, NULL },
-	{ "GetNearestFreeSpawnPos", (PyCFunction)(void (*)(void))OutMap_GetNearestFreeSpawnPos, METH_VARARGS | METH_KEYWORDS,
-		NULL },
-	{ "GetFarthestFreeSpawnPos", (PyCFunction)(void (*)(void))OutMap_GetFarthestFreeSpawnPos,
-		METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "CreatePlayers", OutMap_CreatePlayers, 1, NULL },
-	{ "InitOutMap", OutMap_InitOutMap, 1, NULL },
-	{ "BrowseAtmospherePos", OutMap_BrowseAtmospherePos, 1, NULL },
-	{ "Init", OutMap_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutMapMethods[] = {
+	PORT_FN(BrowseSpawnPos, OutMap_BrowseSpawnPos),
+	PORT_FN(GetSpawnPos, OutMap_GetSpawnPos),
+	PORT_FN(GetFreeSpawnPos, OutMap_GetFreeSpawnPos),
+	PORT_FN(GetFreeSpawnPosReal, OutMap_GetFreeSpawnPosReal),
+	PORT_FN(GetNearestFreeSpawnPosReal, OutMap_GetNearestFreeSpawnPosReal),
+	PORT_FN(GetFreeSpawn, OutMap_GetFreeSpawn),
+	PORT_FNK(GetNearestFreeSpawnPos, OutMap_GetNearestFreeSpawnPos),
+	PORT_FNK(GetFarthestFreeSpawnPos, OutMap_GetFarthestFreeSpawnPos),
+	PORT_FN(CreatePlayers, OutMap_CreatePlayers),
+	PORT_FN(InitOutMap, OutMap_InitOutMap),
+	PORT_FN(BrowseAtmospherePos, OutMap_BrowseAtmospherePos),
+	PORT_FN(Init, OutMap_Init),
+	PORT_FNEND
 };
 
 /* ---- InTraffic ---- */
@@ -728,7 +714,7 @@ static byte It_SetSound(const nativeVal_t *v) {
 	return Mode_VSet(v, "snd00_vol", &x);
 }
 
-/* the adapters and their entries */
+/* the entries */
 MODE_FN(It, GetNamPy, 1, It_GetNam(&a[0], out))
 MODE_FN(InTraffic, FakeWeap, 0, It_FakeWeap())
 MODE_FN(InTraffic, LoadFakeTraffic, 0, It_LoadFakeTraffic())
@@ -736,14 +722,14 @@ MODE_FN(It, CreateListPy, 3, It_CreateList(&a[0], &a[1], &a[2]))
 MODE_FN(InTraffic, FakeTraffic, 0, It_FakeTraffic())
 MODE_FN(It, SetSoundPy, 1, It_SetSound(&a[0]))
 
-PyMethodDef g_InTrafficMethods[] = {
-	{ "GetNam", It_GetNamPy, 1, NULL },
-	{ "FakeWeap", InTraffic_FakeWeap, 1, NULL },
-	{ "LoadFakeTraffic", InTraffic_LoadFakeTraffic, 1, NULL },
-	{ "CreateList", It_CreateListPy, 1, NULL },
-	{ "FakeTraffic", InTraffic_FakeTraffic, 1, NULL },
-	{ "SetSound", It_SetSoundPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_InTrafficMethods[] = {
+	PORT_FN(GetNam, It_GetNamPy),
+	PORT_FN(FakeWeap, InTraffic_FakeWeap),
+	PORT_FN(LoadFakeTraffic, InTraffic_LoadFakeTraffic),
+	PORT_FN(CreateList, It_CreateListPy),
+	PORT_FN(FakeTraffic, InTraffic_FakeTraffic),
+	PORT_FN(SetSound, It_SetSoundPy),
+	PORT_FNEND
 };
 
 PORTS(OutMap)

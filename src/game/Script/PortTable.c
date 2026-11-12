@@ -476,6 +476,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Fx_Init,
 	&port_Fx_MoneyTransfer,
 	&port_Fx_SetUpShipMotors,
+	&port_GateKeeper_DoNothingFunc,
 	&port_GateKeeper_DoorFoe,
 	&port_GateKeeper_EndOfSpeech,
 	&port_GateKeeper_GateKeeperSpeech,
@@ -1004,8 +1005,10 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_MessengerSound_TalkSnd,
 	&port_Metro_CalculateMissionMap,
 	&port_Metro_CreateStation,
+	&port_Metro_DoNothing,
 	&port_Metro_DoorInitializator,
 	&port_Metro_HideHint,
+	&port_Metro_ObjInitializator,
 	&port_Metro_OnUse,
 	&port_Metro_OutDoorInitializator,
 	&port_Metro_RecoverUsr,
@@ -1013,6 +1016,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Metro_SetUsrParams,
 	&port_Metro_ShowHint,
 	&port_Metro_UseMetro,
+	&port_Metro_WrongOpt,
 	&port_MisItems_ActivateBattery,
 	&port_MisItems_ActivateCoin,
 	&port_MisItems_CreateBattery,
@@ -6461,6 +6465,10 @@ PORT_TRAMP(3221)
 PORT_TRAMP(3222)
 PORT_TRAMP(3223)
 PORT_TRAMP(3224)
+PORT_TRAMP(3225)
+PORT_TRAMP(3226)
+PORT_TRAMP(3227)
+PORT_TRAMP(3228)
 
 const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp0,
@@ -9688,4 +9696,8 @@ const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp3222,
 	Port_Tramp3223,
 	Port_Tramp3224,
+	Port_Tramp3225,
+	Port_Tramp3226,
+	Port_Tramp3227,
+	Port_Tramp3228,
 };

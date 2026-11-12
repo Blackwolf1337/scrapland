@@ -4,8 +4,8 @@
  * class of a kind of desk once; the class itself is data/chars/bureaucracy.def. BureaucracyTableFile (the model
  * folder, the Press map changes it) stays a variable of the module.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. BureaucracyTableFile is read from the registry where Init reads it.
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the function
+ * table rows name the entries. BureaucracyTableFile is read from the registry where Init reads it.
  * CreateBureaucracyClass is called through its ref for each desk (PORT_CALL: directly while the attribute holds the
  * port's function, else by name, as a mission may replace it).
  */
@@ -143,7 +143,7 @@ static byte Bureaucracy_Init(int fromViewer) {
 	return ok;
 }
 
-/* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
+/* ---- the entries of the module table ---- */
 
 /* CreateBureaucracyClass(cls, file): an argument without a native form (an NV_OBJ of Native_Arg) is None, which the
  * function refuses with the same error (only a class instance with __radd__ could do otherwise) */
@@ -157,18 +157,16 @@ static byte Bureaucracy_CreateBureaucracyClass_E(const nativeVal_t *a, int n, na
 	return Bureaucracy_Class(NV_REFS >> a[0].type & 1 ? &none : &a[0], NV_REFS >> a[1].type & 1 ? &none : &a[1]);
 }
 
-MODE_ADAPTER(Bureaucracy, CreateBureaucracyClass)
-
 /* Init(fromViewer = 0): the import of the function, then the truth of the argument (not given: 0) */
 MODE_KW(Bureaucracy, InitPy, "|O", "fromViewer") {
 	int fromViewer = Mode_Import("string") ? given[0] ? Mode_Truth(&v[0]) : 0 : -1;
 	return fromViewer >= 0 && Bureaucracy_Init(fromViewer);
 }
 
-PyMethodDef g_BureaucracyMethods[] = {
-	{ "CreateBureaucracyClass", Bureaucracy_CreateBureaucracyClass, 1, NULL },
-	{ "Init", (PyCFunction)(void (*)(void))Bureaucracy_InitPy, 3, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BureaucracyMethods[] = {
+	PORT_FN(CreateBureaucracyClass, Bureaucracy_CreateBureaucracyClass),
+	PORT_FNK(Init, Bureaucracy_InitPy),
+	PORT_FNEND
 };
 
 PORTS(Bureaucracy)

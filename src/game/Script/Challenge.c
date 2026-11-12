@@ -696,7 +696,7 @@ static byte Chal_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, con
 	return Mode_Done(&t, ok >= 0);
 }
 
-/* the adapters (the arity errors of the script's functions) */
+/* the entries (the arity errors of the script's functions) */
 MODE_FN(Challenge, ComputeReward, 3, Chal_Reward(&a[0], &a[1], &a[2], out))
 MODE_FNOPT(Challenge, Init, 0, 1, Chal_Init(MODE_OPT(0)))
 MODE_FN(Challenge, SetChallengerSkills, 2, Chal_Skills(&a[0], &a[1]))
@@ -711,21 +711,21 @@ MODE_FN(Challenge, CancelChallenge, 1, Chal_CancelChallenge(&a[0]))
 MODE_FN(Challenge, SetChallengeOptions, 1, Chal_SetChallengeOptions(&a[0]))
 MODE_FN(Challenge, AddChallenge, 3, Chal_AddChallenge(&a[0], &a[1], &a[2]))
 
-PyMethodDef g_ChallengeMethods[] = {
-	{ "ComputeReward", Challenge_ComputeReward, 1, NULL },
-	{ "Init", Challenge_Init, 1, NULL },
-	{ "SetChallengerSkills", Challenge_SetChallengerSkills, 1, NULL },
-	{ "OnChallengeOpt", Challenge_OnChallengeOpt, 1, NULL },
-	{ "SetRevengeParams", Challenge_SetRevengeParams, 1, NULL },
-	{ "SetRevenge", Challenge_SetRevenge, 1, NULL },
-	{ "LaunchRevenge", Challenge_LaunchRevenge, 1, NULL },
-	{ "LaunchChallenge", Challenge_LaunchChallenge, 1, NULL },
-	{ "CleanChallenge", Challenge_CleanChallenge, 1, NULL },
-	{ "CleanRevenge", Challenge_CleanRevenge, 1, NULL },
-	{ "CancelChallenge", Challenge_CancelChallenge, 1, NULL },
-	{ "SetChallengeOptions", Challenge_SetChallengeOptions, 1, NULL },
-	{ "AddChallenge", Challenge_AddChallenge, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ChallengeMethods[] = {
+	PORT_FN(ComputeReward, Challenge_ComputeReward),
+	PORT_FN(Init, Challenge_Init),
+	PORT_FN(SetChallengerSkills, Challenge_SetChallengerSkills),
+	PORT_FN(OnChallengeOpt, Challenge_OnChallengeOpt),
+	PORT_FN(SetRevengeParams, Challenge_SetRevengeParams),
+	PORT_FN(SetRevenge, Challenge_SetRevenge),
+	PORT_FN(LaunchRevenge, Challenge_LaunchRevenge),
+	PORT_FN(LaunchChallenge, Challenge_LaunchChallenge),
+	PORT_FN(CleanChallenge, Challenge_CleanChallenge),
+	PORT_FN(CleanRevenge, Challenge_CleanRevenge),
+	PORT_FN(CancelChallenge, Challenge_CancelChallenge),
+	PORT_FN(SetChallengeOptions, Challenge_SetChallengeOptions),
+	PORT_FN(AddChallenge, Challenge_AddChallenge),
+	PORT_FNEND
 };
 
 PORTS(Challenge)

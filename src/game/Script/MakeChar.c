@@ -245,7 +245,6 @@ static byte MakeChar_AddDiscover_E(const nativeVal_t *a, int n, nativeVal_t *out
 	return 1;
 }
 
-
 static void MC_Move(const char *ch, const char *action, const char *anm, double turn, double disp, int loop) {
 	MC_Create(action);
 	MC_Anm(ch, anm);
@@ -271,7 +270,6 @@ static byte MakeChar_AddMove_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	MC_Move(ch, action, anm, MC_ArgNum(turn, 0.0), MC_ArgNum(disp, 0.0), loop);
 	return 1;
 }
-
 
 /* the moves of a list (AddWalkActions and its Init and End kin), list NULL for the four of def; the list's length as
  * PySequence_Length takes it (its TypeError left set, as the port went on), items that are no text "" */
@@ -490,7 +488,6 @@ static byte MakeChar_AddMorphAction_E(const nativeVal_t *a, int n, nativeVal_t *
 	return 1;
 }
 
-
 /* the morphs of the eyes and the lips of the characters of the lists */
 static void MC_DefMorphs(const char *ch) {
 	char file[0x80];
@@ -513,7 +510,6 @@ static byte MakeChar_AddDefMorphActions_E(const nativeVal_t *a, int n, nativeVal
 	MC_DefMorphs(ch);
 	return 1;
 }
-
 
 /* EventAnimCommand(time, name[, discard]): an animation command; a negative time is the end of the animation */
 MODE_KWT(MakeChar, EventAnimCommand, "Os|i", "Time", "Name", "Discard") {
@@ -592,7 +588,6 @@ static byte MakeChar_AddBreakLoopAction_E(const nativeVal_t *a, int n, nativeVal
 	return 1;
 }
 
-
 /* flashed by the camera: the end of each part leads to the next; the police listen */
 MODE_KWT(MakeChar, AddFlashedAction, "s|i", "CharName", "ListenPolice") {
 	const char *ch;
@@ -621,7 +616,6 @@ static byte MakeChar_AddCrazyAction_E(const nativeVal_t *a, int n, nativeVal_t *
 	MC_BreakLoop(ch, "Crazy", 1);
 	return 1;
 }
-
 
 /* dazed by the mayor: a coin falls a quarter into the start; the character goes into DazedChars */
 MODE_KWT(MakeChar, AddDazeAction, "s|i", "CharName", "ListenMayor") {
@@ -668,7 +662,6 @@ static byte MakeChar_SetSitActions_E(const nativeVal_t *a, int n, nativeVal_t *o
 	return 1;
 }
 
-
 /* InitChar(name): a new class with the defaults of a character, MaxSpeed and MinSpeed back to theirs */
 static byte MakeChar_InitChar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *ch;
@@ -710,7 +703,6 @@ static byte MakeChar_InitChar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	MC_DefMorphs(ch);
 	return 1;
 }
-
 
 /* SetNodeRotation(set, node, x, y): the angle pair of a node in hundredths */
 static void MC_NodeRotation(const nativeVal_t *set, const nativeVal_t *node, const nativeVal_t *x, const nativeVal_t *y) {

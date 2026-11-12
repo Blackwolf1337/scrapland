@@ -1734,7 +1734,7 @@ static byte Rm_GetRandomShipIAProfile(const nativeVal_t *foe, const nativeVal_t 
 	return Mode_Done(&t, Mode_Cat(&t, out, 4, head, rep, Mode_S(&t, "_"), profile));
 }
 
-/* the adapters (the arity errors of the script's functions) */
+/* the entries (the arity errors of the script's functions) */
 MODE_FN(RaceMaker, ShowSystemMessage, 1, Rm_ShowSystemMessage(&a[0]))
 MODE_FN(RaceMaker, ShowSystemMessageDelay, 2, Mode_LaterV(&a[1], RM, "ShowSystemMessage", &a[0], 1, NULL))
 MODE_FN(RaceMaker, NPCCombatKilled, 2, Rm_NPCCombatKilled(&a[0]))
@@ -1799,49 +1799,47 @@ MODE_KW(RaceMaker, InitCombat, "O|OOO", "foeType", "isRevenge", "isCrazyDeal", "
 	return Rm_InitCombat(&v[0], given[1] ? &v[1] : NULL);
 }
 
-#define KW(fn) (PyCFunction)(void (*)(void))fn, 3
-
-PyMethodDef g_RaceMakerMethods[] = {
-	{ "ShowSystemMessage", RaceMaker_ShowSystemMessage, 1, NULL },
-	{ "ShowSystemMessageDelay", RaceMaker_ShowSystemMessageDelay, 1, NULL },
-	{ "NPCCombatKilled", RaceMaker_NPCCombatKilled, 1, NULL },
-	{ "DeleteCurrentWaypoint", RaceMaker_DeleteCurrentWaypoint, 1, NULL },
-	{ "MovePlayersToTraffic", RaceMaker_MovePlayersToTraffic, 1, NULL },
-	{ "EndOfRace", RaceMaker_EndOfRace, 1, NULL },
-	{ "RaceStart", RaceMaker_RaceStart, 1, NULL },
-	{ "OnCounterMeasure", KW(RaceMaker_OnCounterMeasure), NULL },
-	{ "RacerKilled", RaceMaker_RacerKilled, 1, NULL },
-	{ "RacerInterruptedByAlarm", RaceMaker_RacerInterruptedByAlarm, 1, NULL },
-	{ "RacerDamaged", RaceMaker_RacerDamaged, 1, NULL },
-	{ "RacerLeft", RaceMaker_RacerLeft, 1, NULL },
-	{ "AbortCameraTravelling", RaceMaker_AbortCameraTravelling, 1, NULL },
-	{ "StartCameraTravelling", KW(RaceMaker_StartCameraTravelling), NULL },
-	{ "OnRaceStart", RaceMaker_OnRaceStart, 1, NULL },
-	{ "RaceGo", RaceMaker_RaceGo, 1, NULL },
-	{ "CreateRaceCountDown", RaceMaker_CreateRaceCountDown, 1, NULL },
-	{ "DestroyRaceCountDown", RaceMaker_DestroyRaceCountDown, 1, NULL },
-	{ "DestroyRaceCountDownEnd", RaceMaker_DestroyRaceCountDownEnd, 1, NULL },
-	{ "Counter", KW(RaceMaker_Counter), NULL },
-	{ "OnCheckPoint", RaceMaker_OnCheckPoint, 1, NULL },
-	{ "OnNearCheckPoint", RaceMaker_OnNearCheckPoint, 1, NULL },
-	{ "NameOponGoItem", RaceMaker_NameOponGoItem, 1, NULL },
-	{ "LocalGetDealType", RaceMaker_LocalGetDealType, 1, NULL },
-	{ "StopTimer", RaceMaker_StopTimer, 1, NULL },
-	{ "StartTimer", RaceMaker_StartTimer, 1, NULL },
-	{ "FirstTimeRace", RaceMaker_FirstTimeRace, 1, NULL },
-	{ "FirstTimeCombat", RaceMaker_FirstTimeCombat, 1, NULL },
-	{ "PointObjectTo", RaceMaker_PointObjectTo, 1, NULL },
-	{ "PreloadCnDnResources", RaceMaker_PreloadCnDnResources, 1, NULL },
-	{ "InitRace", KW(RaceMaker_InitRace), NULL },
-	{ "InitCombat", KW(RaceMaker_InitCombat), NULL },
-	{ "MoveCombatNPCsToPos", RaceMaker_MoveCombatNPCsToPos, 1, NULL },
-	{ "PlaceNPCAtRacePos", RaceMaker_PlaceNPCAtRacePos, 1, NULL },
-	{ "SetScorerValues", RaceMaker_SetScorerValues, 1, NULL },
-	{ "MissionScorer2", RaceMaker_MissionScorer2, 1, NULL },
-	{ "MissionScorer", RaceMaker_MissionScorer, 1, NULL },
-	{ "InitShipIAProfile", RaceMaker_InitShipIAProfile, 1, NULL },
-	{ "GetRandomShipIAProfile", RaceMaker_GetRandomShipIAProfile, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_RaceMakerMethods[] = {
+	PORT_FN(ShowSystemMessage, RaceMaker_ShowSystemMessage),
+	PORT_FN(ShowSystemMessageDelay, RaceMaker_ShowSystemMessageDelay),
+	PORT_FN(NPCCombatKilled, RaceMaker_NPCCombatKilled),
+	PORT_FN(DeleteCurrentWaypoint, RaceMaker_DeleteCurrentWaypoint),
+	PORT_FN(MovePlayersToTraffic, RaceMaker_MovePlayersToTraffic),
+	PORT_FN(EndOfRace, RaceMaker_EndOfRace),
+	PORT_FN(RaceStart, RaceMaker_RaceStart),
+	PORT_FNK(OnCounterMeasure, RaceMaker_OnCounterMeasure),
+	PORT_FN(RacerKilled, RaceMaker_RacerKilled),
+	PORT_FN(RacerInterruptedByAlarm, RaceMaker_RacerInterruptedByAlarm),
+	PORT_FN(RacerDamaged, RaceMaker_RacerDamaged),
+	PORT_FN(RacerLeft, RaceMaker_RacerLeft),
+	PORT_FN(AbortCameraTravelling, RaceMaker_AbortCameraTravelling),
+	PORT_FNK(StartCameraTravelling, RaceMaker_StartCameraTravelling),
+	PORT_FN(OnRaceStart, RaceMaker_OnRaceStart),
+	PORT_FN(RaceGo, RaceMaker_RaceGo),
+	PORT_FN(CreateRaceCountDown, RaceMaker_CreateRaceCountDown),
+	PORT_FN(DestroyRaceCountDown, RaceMaker_DestroyRaceCountDown),
+	PORT_FN(DestroyRaceCountDownEnd, RaceMaker_DestroyRaceCountDownEnd),
+	PORT_FNK(Counter, RaceMaker_Counter),
+	PORT_FN(OnCheckPoint, RaceMaker_OnCheckPoint),
+	PORT_FN(OnNearCheckPoint, RaceMaker_OnNearCheckPoint),
+	PORT_FN(NameOponGoItem, RaceMaker_NameOponGoItem),
+	PORT_FN(LocalGetDealType, RaceMaker_LocalGetDealType),
+	PORT_FN(StopTimer, RaceMaker_StopTimer),
+	PORT_FN(StartTimer, RaceMaker_StartTimer),
+	PORT_FN(FirstTimeRace, RaceMaker_FirstTimeRace),
+	PORT_FN(FirstTimeCombat, RaceMaker_FirstTimeCombat),
+	PORT_FN(PointObjectTo, RaceMaker_PointObjectTo),
+	PORT_FN(PreloadCnDnResources, RaceMaker_PreloadCnDnResources),
+	PORT_FNK(InitRace, RaceMaker_InitRace),
+	PORT_FNK(InitCombat, RaceMaker_InitCombat),
+	PORT_FN(MoveCombatNPCsToPos, RaceMaker_MoveCombatNPCsToPos),
+	PORT_FN(PlaceNPCAtRacePos, RaceMaker_PlaceNPCAtRacePos),
+	PORT_FN(SetScorerValues, RaceMaker_SetScorerValues),
+	PORT_FN(MissionScorer2, RaceMaker_MissionScorer2),
+	PORT_FN(MissionScorer, RaceMaker_MissionScorer),
+	PORT_FN(InitShipIAProfile, RaceMaker_InitShipIAProfile),
+	PORT_FN(GetRandomShipIAProfile, RaceMaker_GetRandomShipIAProfile),
+	PORT_FNEND
 };
 
 PORTS(RaceMaker)

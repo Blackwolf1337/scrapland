@@ -240,8 +240,7 @@ static byte Gk_GateKeeperSpeech(const nativeVal_t *usrName, const nativeVal_t *c
 }
 
 /* DoorFoe(EntityName, FoeType): the characters the gatekeeper lets pass. FoeType is stored as the value it is: an
- * object (an NV_REF, or an NV_OBJ of the letter P and the adapter) is the caller's object, a value by value becomes a
- * new object */
+ * object (an NV_REF or an NV_OBJ) is the caller's object, a value by value becomes a new object */
 static byte GateKeeper_DoorFoe_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t zero;
 	(void)out;
@@ -250,13 +249,6 @@ static byte GateKeeper_DoorFoe_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	}
 	Native_SetInt(&zero, 0);
 	return Mode_AtSet(GK, "GateKeepers", &a[0], "FoeType", &a[1]) && Mode_AtSet(GK, "GateKeepers", &a[0], "MPass", &zero);
-}
-
-/* DoorFoe through Python: FoeType (argument 1) kept as the object it is (OBJLIB 5 (7e: Mode_EntryObj): the
- * group list GateKeeper.PoliceGroupGateKeeper itself) */
-static PyObject *GateKeeper_DoorFoe(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_EntryObj(args, GateKeeper_DoorFoe_E, 1 << 1);
 }
 
 MODE_KW(GateKeeper, SetDoor, "OO|OO", "EntityName", "DoorName", "CanPassFunc", "ClosedFunc") {
@@ -270,17 +262,17 @@ MODE_FN(GateKeeper, RestoreState, 1, Gk_RestoreState(&a[0]))
 MODE_FN(GateKeeper, EndOfSpeech, 0, Gk_EndOfSpeech())
 MODE_FN(GateKeeper, GateKeeperSpeech, 4, Gk_GateKeeperSpeech(&a[0], &a[1], &a[2]))
 
-PyMethodDef g_GateKeeperFuncs[] = {
-	{ "UseDoor", GateKeeper_UseDoor, 1, NULL },
-	{ "OnCreate", GateKeeper_OnCreate, 1, NULL },
-	{ "DoNothingFunc", Mode_PyNone2, 1, NULL },
-	{ "SetDoor", (PyCFunction)(void (*)(void))GateKeeper_SetDoor, 3, NULL },
-	{ "DoorFoe", GateKeeper_DoorFoe, 1, NULL },
-	{ "GetGateKeeperId", GateKeeper_GetGateKeeperId, 1, NULL },
-	{ "RestoreState", GateKeeper_RestoreState, 1, NULL },
-	{ "EndOfSpeech", GateKeeper_EndOfSpeech, 1, NULL },
-	{ "GateKeeperSpeech", GateKeeper_GateKeeperSpeech, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GateKeeperFuncs[] = {
+	PORT_FN(UseDoor, GateKeeper_UseDoor),
+	PORT_FN(OnCreate, GateKeeper_OnCreate),
+	PORT_FN(DoNothingFunc, Mode_PyNone2),
+	PORT_FNK(SetDoor, GateKeeper_SetDoor),
+	PORT_FN(DoorFoe, GateKeeper_DoorFoe),
+	PORT_FN(GetGateKeeperId, GateKeeper_GetGateKeeperId),
+	PORT_FN(RestoreState, GateKeeper_RestoreState),
+	PORT_FN(EndOfSpeech, GateKeeper_EndOfSpeech),
+	PORT_FN(GateKeeperSpeech, GateKeeper_GateKeeperSpeech),
+	PORT_FNEND
 };
 
 PORTS(GateKeeper)

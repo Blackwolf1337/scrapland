@@ -2121,7 +2121,6 @@ static byte HT_AuxShowMoney_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_Parse(a, n, "is", &id, &symbol) && Ht_AuxShowMoney(id, symbol);
 }
 
-
 /* ComputeShipTotalCost(cad="prevShip") */
 MODE_KW(HT, ComputeShipTotalCost, "|O", "cad") {
 	Mode_KwDefS(v, given, 0, "prevShip");

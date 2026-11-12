@@ -372,9 +372,9 @@ extern const portFn_t g_SpeechMethods[];
 /* the C SaveGame module (src/game/Script/SaveGame.c) */
 extern const portFn_t g_SaveGameMethods[];
 /* the C Fx module (src/game/Script/Fx.c, data/fx/fx.def) */
-extern PyMethodDef g_FxMethods[];
+extern const portFn_t g_FxMethods[];
 /* the C Items module (src/game/Script/Items.c) */
-extern PyMethodDef g_ItemsMethods[];
+extern const portFn_t g_ItemsMethods[];
 extern const portFn_t g_NetMethods[];
 /* the online game modes (src/game/Script/NetModes.c) */
 extern const portFn_t g_NDeathMatchMethods[];
@@ -399,17 +399,17 @@ extern const portFn_t g_SputnikInterfaceMethods[];
 /* the ship editor (src/game/Script/ShipEdit.c, HangarTab.c, data/menus/shipedit.def) */
 extern const portFn_t g_ShipEditMethods[];
 extern const portFn_t g_HangarTabMethods[];
-extern PyMethodDef g_VehiclesMethods[];
-extern PyMethodDef g_VehiclesNPCMethods[];
+extern const portFn_t g_VehiclesMethods[];
+extern const portFn_t g_VehiclesNPCMethods[];
 extern const portFn_t g_SplitMethods[];
 extern const portFn_t g_SDeathMatchMethods[];
 extern const portFn_t g_SFlagHuntMethods[];
 extern const portFn_t g_SPostmanMethods[];
 extern const portFn_t g_SRaceMethods[];
 /* the functions of the Init module (src/game/Script/InitLevel.c) */
-extern PyMethodDef g_InitMethods[];
+extern const portFn_t g_InitMethods[];
 /* the functions string.py keeps in Python (src/game/Script/String.c) */
-extern PyMethodDef g_StringMethods[];
+extern const portFn_t g_StringMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */
 extern const portFn_t g_BankDirectorSoundMethods[];
 extern const portFn_t g_BankMasterSoundMethods[];
@@ -473,8 +473,8 @@ extern const portFn_t g_MercenaryLMethods[];
 
 /* the start of an indoor map (src/game/Script/InMap.c) and the desks of the functionaries
  * (src/game/Script/Bureaucracy.c) */
-extern PyMethodDef g_InMapMethods[];
-extern PyMethodDef g_BureaucracyMethods[];
+extern const portFn_t g_InMapMethods[];
+extern const portFn_t g_BureaucracyMethods[];
 /* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
 extern const portFn_t g_ChatMethods[];
 extern const portFn_t g_CreditsTextMethods[];
@@ -483,13 +483,13 @@ extern const portFn_t g_FfaMethods[];
 
 /* the mission scripts: the traffic and the police (src/game/Script/Traffic.c), the phone cabs and Dtritus' desktop
  * (src/game/Script/PhoneCab.c), the metro (src/game/Script/Metro.c) and the challenges (src/game/Script/Challenge.c) */
-extern PyMethodDef g_TrafficMethods[];
-extern PyMethodDef g_OutPoliceMethods[];
-extern PyMethodDef g_InPoliceMethods[];
-extern PyMethodDef g_PhoneCabMethods[];
-extern PyMethodDef g_DTritusDesktopMethods[];
-extern PyMethodDef g_MetroMethods[];
-extern PyMethodDef g_ChallengeMethods[];
+extern const portFn_t g_TrafficMethods[];
+extern const portFn_t g_OutPoliceMethods[];
+extern const portFn_t g_InPoliceMethods[];
+extern const portFn_t g_PhoneCabMethods[];
+extern const portFn_t g_DTritusDesktopMethods[];
+extern const portFn_t g_MetroMethods[];
+extern const portFn_t g_ChallengeMethods[];
 /* the options of a challenge against foe of the kind type ("Race", "Combat") on the entity ch, with the rewards or
  * the lives they cost (Challenge.SetChallengeOptions, PhoneCab.SetRevengeOptions): 0 with the error set */
 struct nativeVal_s;
@@ -497,19 +497,19 @@ byte Challenge_SetOptions(const struct nativeVal_s *ch, const struct nativeVal_s
 /* the missions (issue #2 step 8a): the alarm and the news panels (src/game/Script/Alarm.c), the doors, elevators and
  * teleporters (src/game/Script/Doors.c), the items and the crazy wind (src/game/Script/MisItems.c), the mission flow
  * (src/game/Script/MissionsFuncs.c) */
-extern PyMethodDef g_AlarmMethods[];
-extern PyMethodDef g_NewsPanelMethods[];
-extern PyMethodDef g_DoorsMethods[];
-extern PyMethodDef g_ElevatorMethods[];
-extern PyMethodDef g_TeleportMethods[];
-extern PyMethodDef g_MisItemsMethods[];
-extern PyMethodDef g_CrazyWingMethods[];
-extern PyMethodDef g_MissionsFuncsMethods[];
+extern const portFn_t g_AlarmMethods[];
+extern const portFn_t g_NewsPanelMethods[];
+extern const portFn_t g_DoorsMethods[];
+extern const portFn_t g_ElevatorMethods[];
+extern const portFn_t g_TeleportMethods[];
+extern const portFn_t g_MisItemsMethods[];
+extern const portFn_t g_CrazyWingMethods[];
+extern const portFn_t g_MissionsFuncsMethods[];
 /* the cut scenes (src/game/Script/Scene.c), the character conversors and the possession
  * (src/game/Script/CharConversor.c), the races and combats of the challenges (src/game/Script/RaceMaker.c) */
-extern PyMethodDef g_SceneMethods[];
+extern const portFn_t g_SceneMethods[];
 extern const portFn_t g_CharConversorMethods[];
-extern PyMethodDef g_RaceMakerMethods[];
+extern const portFn_t g_RaceMakerMethods[];
 
 /* the general sounds: the sound files of a level, the ship and damage sounds, the point sounds of the maps and the door
  * sounds (src/game/Script/GameSounds.c, data/sound/sound.def, outsound.def, doorsound.def) */
@@ -517,20 +517,20 @@ extern const portFn_t g_SoundMethods[];
 extern const portFn_t g_OutSoundMethods[];
 extern const portFn_t g_DoorSoundMethods[];
 /* the start of an outdoor level and its spawn points, the fake traffic indoors (src/game/Script/OutMap.c) */
-extern PyMethodDef g_OutMapMethods[];
-extern PyMethodDef g_InTrafficMethods[];
+extern const portFn_t g_OutMapMethods[];
+extern const portFn_t g_InTrafficMethods[];
 /* the ship tables and SetShipParams (src/game/Script/ShipMaker.c, data/vehicles/shipmaker.def), the player's ship,
  * boarding, parking and the parked ships, the speed rings (src/game/Script/Parking.c) */
 extern const portFn_t g_ShipMakerMethods[];
-extern PyMethodDef g_ParkingMethods[];
-extern PyMethodDef g_AcceleratorMethods[];
+extern const portFn_t g_ParkingMethods[];
+extern const portFn_t g_AcceleratorMethods[];
 /* the game modes of the single player super deals (src/game/Script/SuperDeals.c) */
-extern PyMethodDef g_DeathMatchMethods[];
-extern PyMethodDef g_TeamDeathMatchMethods[];
-extern PyMethodDef g_VersusMethods[];
-extern PyMethodDef g_CTFMethods[];
-extern PyMethodDef g_DominationMethods[];
-extern PyMethodDef g_MortalRaceMethods[];
+extern const portFn_t g_DeathMatchMethods[];
+extern const portFn_t g_TeamDeathMatchMethods[];
+extern const portFn_t g_VersusMethods[];
+extern const portFn_t g_CTFMethods[];
+extern const portFn_t g_DominationMethods[];
+extern const portFn_t g_MortalRaceMethods[];
 /* the tabs of the ship editor: engines, weapons and hull (src/game/Script/EnginesTab.c, WeaponsTab.c, HullTab.c,
  * data/menus/enginestab.def, weaponstab.def, hulltab.def) */
 extern const portFn_t g_EnginesTabMethods[];
@@ -553,7 +553,7 @@ extern const portFn_t g_MessengerFuncs[];
 extern const portFn_t g_GearDefFuncs[];
 extern const portFn_t g_PoliceDefFuncs[];
 /* Sputnik's ship functions (src/game/Script/Sputnik.c) and the gatekeepers (src/game/Script/GateKeeper.c) */
-extern PyMethodDef g_SputnikFuncs[];
-extern PyMethodDef g_GateKeeperFuncs[];
+extern const portFn_t g_SputnikFuncs[];
+extern const portFn_t g_GateKeeperFuncs[];
 
 #endif

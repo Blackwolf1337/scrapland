@@ -306,7 +306,6 @@ static byte Chat_GetID_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return ok;
 }
 
-
 /* CycleUp(AndSet), CycleDown(AndSet): the cycle and, with set, the receiver on the chat line */
 static byte Chat_CycleSet(const nativeVal_t *a, int n, int step, byte set) {
 	int id, slot;
@@ -364,7 +363,6 @@ static byte Chat_SendChatString_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	return ok;
 }
 
-
 static byte Chat_EndChat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	(void)out;
@@ -389,7 +387,6 @@ static byte Chat_SendRead(int id, const char *text) {
 	Chat_Free(&c);
 	return ok;
 }
-
 
 /* ConsoleChatString(estrin): a line of the full screen console goes to the receiver of player 0 */
 MODE_FN(Chat, ConsoleChatString, 1, Chat_SendRead(0, Chat_Text(&a[0])))

@@ -1227,7 +1227,6 @@ static byte ET_SetRecycleVisible_E(const nativeVal_t *a, int n, nativeVal_t *out
 	return ET_SetVisible(a, n, "Recycle", "recyclevisible");
 }
 
-
 /* the links of ShowEnginesPanel between the list, the bays, the recycle button and the exit (from Menu import
  * LinkLR, LinkUD, UnLinkUD: OBJLIB 6, the calls through Mode_LinkCallV on the function values) */
 static byte ET_ShowLinks(int id, int groups) {
@@ -1556,7 +1555,6 @@ static byte ET_HideLayouts_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-
 /* UpdateLayoutsState(id, index, state): the icons of bay index active (orange) or not (blue) */
 static byte ET_UpdateLayoutsState(int id, const nativeVal_t *index, const nativeVal_t *state) {
 	static const int on[4] = { 255, 200, 45, 255 };
@@ -1586,7 +1584,6 @@ static byte ET_UpdateLayoutsStatePy_E(const nativeVal_t *a, int n, nativeVal_t *
 	(void)out;
 	return Mode_Parse(a, n, "iOO", &id, &index, &state) && ET_UpdateLayoutsState(id, index, state);
 }
-
 
 /* UpdateLayoutsGlow(id, control): the icons of the bay control glow, the others not */
 static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {

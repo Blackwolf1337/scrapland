@@ -8,7 +8,7 @@
  * runs the script's text for any other iWeap).
  *
  * Native C (docs/objlib-plan.md, stages 2 and 3): the functions call the engine in C and work on C values; the
- * PyMethodDef entries are adapters. The variables are read where the script reads them as its globals; Upgrades is
+ * function table rows name the entries. The variables are read where the script reads them as its globals; Upgrades is
  * changed in place on the dict object of the module (Mode_DictPut), Hints stays a Python object (its items hold the
  * functions of the missions, OBJLIB 5 (9c) and 7). The module's own functions that the script calls as its
  * globals (CreateBox, InitResources, BrowseItemPos, SetInteractiveObjOnFloor) go through their refs (PORT_OWN);
@@ -715,35 +715,35 @@ static byte It_CreateObj(const nativeVal_t *dname, const nativeVal_t *radius, na
 
 MODE_FN(Items, CreateInteractiveObj, 2, It_CreateObj(&a[0], &a[1], out))
 
-PyMethodDef g_ItemsMethods[] = {
-	{ "ResetUpgrade", Items_ResetUpgrade, 1, NULL },
-	{ "RestoreUpgrade", Items_RestoreUpgrade, 1, NULL },
-	{ "DropAll", Items_DropAll, 1, NULL },
-	{ "DropUpgrade", Items_DropUpgrade, 1, NULL },
-	{ "BaseOnTakeUpgrade", Items_BaseOnTakeUpgrade, 1, NULL },
-	{ "OnTakeiXtr", Items_OnTakeiXtr, 1, NULL },
-	{ "OnTakeiSiz", Items_OnTakeiSiz, 1, NULL },
-	{ "OnTakeaBom", Items_OnTakeaBom, 1, NULL },
-	{ "OnTakeaSpd", Items_OnTakeaSpd, 1, NULL },
-	{ "OnTakedAim", Items_OnTakedAim, 1, NULL },
-	{ "OnTakedBom", Items_OnTakedBom, 1, NULL },
-	{ "OnTaketAim", Items_OnTaketAim, 1, NULL },
-	{ "OnTaketTra", Items_OnTaketTra, 1, NULL },
-	{ "OnTakesRot", Items_OnTakesRot, 1, NULL },
-	{ "OnTakesRck", Items_OnTakesRck, 1, NULL },
-	{ "OnTakevAim", Items_OnTakevAim, 1, NULL },
-	{ "OnTakevSpd", Items_OnTakevSpd, 1, NULL },
-	{ "SetSound", Items_SetSound, 1, NULL },
-	{ "ClientCreate", Items_ClientCreate, 1, NULL },
-	{ "CreateBox", Items_CreateBox, 1, NULL },
-	{ "BrowseItemPos", Items_BrowseItemPos, 1, NULL },
-	{ "InitResources", Items_InitResources, 1, NULL },
-	{ "Init", Items_Init, 1, NULL },
-	{ "ShowHint", Items_ShowHint, 1, NULL },
-	{ "Hint", Items_Hint, 1, NULL },
-	{ "CreateInteractiveObj", Items_CreateInteractiveObj, 1, NULL },
-	{ "SetInteractiveObjOnFloor", Items_SetInteractiveObjOnFloor, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ItemsMethods[] = {
+	PORT_FN(ResetUpgrade, Items_ResetUpgrade),
+	PORT_FN(RestoreUpgrade, Items_RestoreUpgrade),
+	PORT_FN(DropAll, Items_DropAll),
+	PORT_FN(DropUpgrade, Items_DropUpgrade),
+	PORT_FN(BaseOnTakeUpgrade, Items_BaseOnTakeUpgrade),
+	PORT_FN(OnTakeiXtr, Items_OnTakeiXtr),
+	PORT_FN(OnTakeiSiz, Items_OnTakeiSiz),
+	PORT_FN(OnTakeaBom, Items_OnTakeaBom),
+	PORT_FN(OnTakeaSpd, Items_OnTakeaSpd),
+	PORT_FN(OnTakedAim, Items_OnTakedAim),
+	PORT_FN(OnTakedBom, Items_OnTakedBom),
+	PORT_FN(OnTaketAim, Items_OnTaketAim),
+	PORT_FN(OnTaketTra, Items_OnTaketTra),
+	PORT_FN(OnTakesRot, Items_OnTakesRot),
+	PORT_FN(OnTakesRck, Items_OnTakesRck),
+	PORT_FN(OnTakevAim, Items_OnTakevAim),
+	PORT_FN(OnTakevSpd, Items_OnTakevSpd),
+	PORT_FN(SetSound, Items_SetSound),
+	PORT_FN(ClientCreate, Items_ClientCreate),
+	PORT_FN(CreateBox, Items_CreateBox),
+	PORT_FN(BrowseItemPos, Items_BrowseItemPos),
+	PORT_FN(InitResources, Items_InitResources),
+	PORT_FN(Init, Items_Init),
+	PORT_FN(ShowHint, Items_ShowHint),
+	PORT_FN(Hint, Items_Hint),
+	PORT_FN(CreateInteractiveObj, Items_CreateInteractiveObj),
+	PORT_FN(SetInteractiveObjOnFloor, Items_SetInteractiveObjOnFloor),
+	PORT_FNEND
 };
 
 PORTS(Items)

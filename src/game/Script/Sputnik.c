@@ -433,25 +433,25 @@ MODE_FN(Sputnik, InitHello, 3, Spt_FX(0, "CharacterSputnikHello"))
 MODE_FN(Sputnik, InitBye, 3, Spt_FX(0, "CharacterSputnikBye"))
 MODE_FN(Sputnik, InitInterface, 3, Spt_FX(0, "CharacterSputnikInterface"))
 
-PyMethodDef g_SputnikFuncs[] = {
-	{ "Assign", (PyCFunction)(void (*)(void))Sputnik_Assign, 3, NULL },
-	{ "ChangeRelax", Sputnik_ChangeRelax, 1, NULL },
-	{ "ByeBye", Sputnik_ByeBye, 1, NULL },
-	{ "BackCamera", Sputnik_BackCamera, 1, NULL },
-	{ "UseShip", (PyCFunction)(void (*)(void))Sputnik_UseShip, 3, NULL },
-	{ "ChangeShip", Sputnik_ChangeShip, 1, NULL },
-	{ "CreateShip", Sputnik_CreateShip, 1, NULL },
-	{ "ShowInterface", Sputnik_ShowInterface, 1, NULL },
-	{ "EnterInterface", Sputnik_EnterInterface, 1, NULL },
-	{ "EndOfSelection", Sputnik_EndOfSelection, 1, NULL },
-	{ "BackControl", Sputnik_BackControl, 1, NULL },
-	{ "SetSptAt", Sputnik_SetSptAt, 1, NULL },
-	{ "InitSuck", Sputnik_InitSuck, 1, NULL },
-	{ "InitMake", Sputnik_InitMake, 1, NULL },
-	{ "InitHello", Sputnik_InitHello, 1, NULL },
-	{ "InitBye", Sputnik_InitBye, 1, NULL },
-	{ "InitInterface", Sputnik_InitInterface, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SputnikFuncs[] = {
+	PORT_FNK(Assign, Sputnik_Assign),
+	PORT_FN(ChangeRelax, Sputnik_ChangeRelax),
+	PORT_FN(ByeBye, Sputnik_ByeBye),
+	PORT_FN(BackCamera, Sputnik_BackCamera),
+	PORT_FNK(UseShip, Sputnik_UseShip),
+	PORT_FN(ChangeShip, Sputnik_ChangeShip),
+	PORT_FN(CreateShip, Sputnik_CreateShip),
+	PORT_FN(ShowInterface, Sputnik_ShowInterface),
+	PORT_FN(EnterInterface, Sputnik_EnterInterface),
+	PORT_FN(EndOfSelection, Sputnik_EndOfSelection),
+	PORT_FN(BackControl, Sputnik_BackControl),
+	PORT_FN(SetSptAt, Sputnik_SetSptAt),
+	PORT_FN(InitSuck, Sputnik_InitSuck),
+	PORT_FN(InitMake, Sputnik_InitMake),
+	PORT_FN(InitHello, Sputnik_InitHello),
+	PORT_FN(InitBye, Sputnik_InitBye),
+	PORT_FN(InitInterface, Sputnik_InitInterface),
+	PORT_FNEND
 };
 
 PORTS(Sputnik)
