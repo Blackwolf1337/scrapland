@@ -564,19 +564,19 @@ LV_FN(PressMap, InitStatusA, 1, PressMap_InitStatus)
 LV_FN(PressMap, InitA, 1, PressMap_Init)
 LV_FN(PressMap, HideBureauA, 0, PressMap_HideBureau)
 
-PyMethodDef g_PressMapMethods[] = {
-	{ "RemoteMsg", PressMap_RemoteMsgA, METH_VARARGS, NULL },
-	{ "ForbiddenMsg", PressMap_ForbiddenMsgA, METH_VARARGS, NULL },
-	{ "StartAlarmator", PressMap_StartAlarmatorA, METH_VARARGS, NULL },
-	{ "ActivateAlarm", PressMap_ActivateAlarmA, METH_VARARGS, NULL },
-	{ "CreateActivators", PressMap_CreateActivatorsA, METH_VARARGS, NULL },
-	{ "CreateDeactivators", PressMap_CreateDeactivatorsA, METH_VARARGS, NULL },
-	{ "DeactivateAlarm", PressMap_DeactivateAlarmA, METH_VARARGS, NULL },
-	{ "BrowseAlarmLaunchers", PressMap_BrowseAlarmLaunchersA, METH_VARARGS, NULL },
-	{ "InitStatus", PressMap_InitStatusA, METH_VARARGS, NULL },
-	{ "Init", PressMap_InitA, METH_VARARGS, NULL },
-	{ "HideBureau", PressMap_HideBureauA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressMapMethods[] = {
+	PORT_FN(RemoteMsg, PressMap_RemoteMsgA),
+	PORT_FN(ForbiddenMsg, PressMap_ForbiddenMsgA),
+	PORT_FN(StartAlarmator, PressMap_StartAlarmatorA),
+	PORT_FN(ActivateAlarm, PressMap_ActivateAlarmA),
+	PORT_FN(CreateActivators, PressMap_CreateActivatorsA),
+	PORT_FN(CreateDeactivators, PressMap_CreateDeactivatorsA),
+	PORT_FN(DeactivateAlarm, PressMap_DeactivateAlarmA),
+	PORT_FN(BrowseAlarmLaunchers, PressMap_BrowseAlarmLaunchersA),
+	PORT_FN(InitStatus, PressMap_InitStatusA),
+	PORT_FN(Init, PressMap_InitA),
+	PORT_FN(HideBureau, PressMap_HideBureauA),
+	PORT_FNEND
 };
 
 /* ---- MapPlanes ---- */
@@ -587,10 +587,10 @@ MODE_FN(PressPlanes, Init, 1, LvN_PlanesInit(MPL))
 /* TakenPhoto(Name) */
 MODE_FN(PressPlanes, TakenPhoto, 1, LvN_PlanesPhoto(&a[0], MPL, "PressBlueprints.Ships", "PressBlueprints.Engines", out))
 
-PyMethodDef g_PressMapPlanesMethods[] = {
-	{ "Init", PressPlanes_Init, METH_VARARGS, NULL },
-	{ "TakenPhoto", PressPlanes_TakenPhoto, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressMapPlanesMethods[] = {
+	PORT_FN(Init, PressPlanes_Init),
+	PORT_FN(TakenPhoto, PressPlanes_TakenPhoto),
+	PORT_FNEND
 };
 
 /* ---- MapDemoClose ---- */
@@ -637,10 +637,10 @@ static byte DemoClose_OnMetroUsed(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(DemoClose, InitA, 1, DemoClose_Init)
 LV_FN(DemoClose, OnMetroUsedA, 4, DemoClose_OnMetroUsed)
 
-PyMethodDef g_PressMapDemoCloseMethods[] = {
-	{ "Init", DemoClose_InitA, METH_VARARGS, NULL },
-	{ "OnMetroUsed", DemoClose_OnMetroUsedA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressMapDemoCloseMethods[] = {
+	PORT_FN(Init, DemoClose_InitA),
+	PORT_FN(OnMetroUsed, DemoClose_OnMetroUsedA),
+	PORT_FNEND
 };
 
 /* ---- MapSnd ---- */
@@ -889,11 +889,11 @@ LV_FN(PressSnd, LoadSoundsA, 0, PressSnd_LoadSounds)
 LV_FN(PressSnd, SetSoundsA, 0, PressSnd_SetSounds)
 LV_FN(PressSnd, News1A, 0, PressSnd_News1)
 
-PyMethodDef g_PressMapSndMethods[] = {
-	{ "LoadSounds", PressSnd_LoadSoundsA, METH_VARARGS, NULL },
-	{ "SetSounds", PressSnd_SetSoundsA, METH_VARARGS, NULL },
-	{ "News1", PressSnd_News1A, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressMapSndMethods[] = {
+	PORT_FN(LoadSounds, PressSnd_LoadSoundsA),
+	PORT_FN(SetSounds, PressSnd_SetSoundsA),
+	PORT_FN(News1, PressSnd_News1A),
+	PORT_FNEND
 };
 
 /* ---- Mission_FicusBanker ---- */
@@ -1128,18 +1128,18 @@ LV_FN(FicusBanker, SpawnCheckA, 2, FicusBanker_SpawnCheck)
 LV_FN(FicusBanker, TakeCheckA, 2, FicusBanker_TakeCheck)
 LV_FN(FicusBanker, SetNextMissionA, 0, FicusBanker_SetNextMission)
 
-PyMethodDef g_PressFicusBankerMethods[] = {
-	{ "InitStatus", FicusBanker_InitStatusA, METH_VARARGS, NULL },
-	{ "Init", FicusBanker_InitA, METH_VARARGS, NULL },
-	{ "CreatePoliceFicusInit", FicusBanker_CreatePoliceFicusInitA, METH_VARARGS, NULL },
-	{ "FicusMissionSpeech", FicusBanker_FicusMissionSpeechA, METH_VARARGS, NULL },
-	{ "CreateBankDirectorScrapusInit", FicusBanker_CreateBankDirectorScrapusInitA, METH_VARARGS, NULL },
-	{ "ScrapusMissionSpeech", FicusBanker_ScrapusMissionSpeechA, METH_VARARGS, NULL },
-	{ "InitKillScrapus", FicusBanker_InitKillScrapusA, METH_VARARGS, NULL },
-	{ "SpawnCheck", FicusBanker_SpawnCheckA, METH_VARARGS, NULL },
-	{ "TakeCheck", FicusBanker_TakeCheckA, METH_VARARGS, NULL },
-	{ "SetNextMission", FicusBanker_SetNextMissionA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressFicusBankerMethods[] = {
+	PORT_FN(InitStatus, FicusBanker_InitStatusA),
+	PORT_FN(Init, FicusBanker_InitA),
+	PORT_FN(CreatePoliceFicusInit, FicusBanker_CreatePoliceFicusInitA),
+	PORT_FN(FicusMissionSpeech, FicusBanker_FicusMissionSpeechA),
+	PORT_FN(CreateBankDirectorScrapusInit, FicusBanker_CreateBankDirectorScrapusInitA),
+	PORT_FN(ScrapusMissionSpeech, FicusBanker_ScrapusMissionSpeechA),
+	PORT_FN(InitKillScrapus, FicusBanker_InitKillScrapusA),
+	PORT_FN(SpawnCheck, FicusBanker_SpawnCheckA),
+	PORT_FN(TakeCheck, FicusBanker_TakeCheckA),
+	PORT_FN(SetNextMission, FicusBanker_SetNextMissionA),
+	PORT_FNEND
 };
 
 /* ---- Mission_GetCrazyData ---- */
@@ -1516,21 +1516,21 @@ LV_FN(CrazyData, FindTrurlA, 0, CrazyData_FindTrurl)
 LV_FN(CrazyData, TrurlSpeechA, 4, CrazyData_TrurlSpeech)
 LV_FN(CrazyData, MissionScorerA, 1, CrazyData_MissionScorer)
 
-PyMethodDef g_PressGetCrazyDataMethods[] = {
-	{ "Init", CrazyData_InitA, METH_VARARGS, NULL },
-	{ "GetCrazyData", CrazyData_GetCrazyDataA, METH_VARARGS, NULL },
-	{ "OnAlarmActivated", CrazyData_OnAlarmActivatedA, METH_VARARGS, NULL },
-	{ "OnSwitchPressed", CrazyData_OnSwitchPressedA, METH_VARARGS, NULL },
-	{ "StartTimer", CrazyData_StartTimerA, METH_VARARGS, NULL },
-	{ "TimeExpired", CrazyData_TimeExpiredA, METH_VARARGS, NULL },
-	{ "GoToPressRoom", CrazyData_GoToPressRoomA, METH_VARARGS, NULL },
-	{ "OnFakeBureauTaken", CrazyData_OnFakeBureauTakenA, METH_VARARGS, NULL },
-	{ "FindHumphrey", CrazyData_FindHumphreyA, METH_VARARGS, NULL },
-	{ "HumphreySpeech", CrazyData_HumphreySpeechA, METH_VARARGS, NULL },
-	{ "FindTrurl", CrazyData_FindTrurlA, METH_VARARGS, NULL },
-	{ "TrurlSpeech", CrazyData_TrurlSpeechA, METH_VARARGS, NULL },
-	{ "MissionScorer", CrazyData_MissionScorerA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressGetCrazyDataMethods[] = {
+	PORT_FN(Init, CrazyData_InitA),
+	PORT_FN(GetCrazyData, CrazyData_GetCrazyDataA),
+	PORT_FN(OnAlarmActivated, CrazyData_OnAlarmActivatedA),
+	PORT_FN(OnSwitchPressed, CrazyData_OnSwitchPressedA),
+	PORT_FN(StartTimer, CrazyData_StartTimerA),
+	PORT_FN(TimeExpired, CrazyData_TimeExpiredA),
+	PORT_FN(GoToPressRoom, CrazyData_GoToPressRoomA),
+	PORT_FN(OnFakeBureauTaken, CrazyData_OnFakeBureauTakenA),
+	PORT_FN(FindHumphrey, CrazyData_FindHumphreyA),
+	PORT_FN(HumphreySpeech, CrazyData_HumphreySpeechA),
+	PORT_FN(FindTrurl, CrazyData_FindTrurlA),
+	PORT_FN(TrurlSpeech, CrazyData_TrurlSpeechA),
+	PORT_FN(MissionScorer, CrazyData_MissionScorerA),
+	PORT_FNEND
 };
 
 /* ---- Mission_GoToPress ---- */
@@ -1556,10 +1556,10 @@ static byte GoToPress_CrazySads(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(GoToPress, InitA, 1, GoToPress_Init)
 LV_FN(GoToPress, CrazySadsA, 1, GoToPress_CrazySads)
 
-PyMethodDef g_PressGoToPressMethods[] = {
-	{ "Init", GoToPress_InitA, METH_VARARGS, NULL },
-	{ "CrazySads", GoToPress_CrazySadsA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressGoToPressMethods[] = {
+	PORT_FN(Init, GoToPress_InitA),
+	PORT_FN(CrazySads, GoToPress_CrazySadsA),
+	PORT_FNEND
 };
 
 /* ---- the human who follows Dtritus (Mission_GoWithHuman and Mission_TalkToBoss) ---- */
@@ -1946,20 +1946,20 @@ LV_FN(GoWithHuman, CreateFakeSpeechA, 0, GoWithHuman_CreateFakeSpeech)
 LV_FN(Pr, NormCameraA, 0, Pr_NormCamera)
 LV_FN(Pr, SetTalkA, 0, Pr_SetTalk)
 
-PyMethodDef g_PressGoWithHumanMethods[] = {
-	{ "InitStatus", GoWithHuman_InitStatusA, METH_VARARGS, NULL },
-	{ "CreateHuman", GoWithHuman_CreateHumanA, METH_VARARGS, NULL },
-	{ "Init", GoWithHuman_InitA, METH_VARARGS, NULL },
-	{ "OnPossession", GoWithHuman_OnPossessionA, METH_VARARGS, NULL },
-	{ "OnExitConversor", GoWithHuman_OnExitConversorA, METH_VARARGS, NULL },
-	{ "CheckMaxDist", GoWithHuman_CheckMaxDistA, METH_VARARGS, NULL },
-	{ "CheckHumanDist", GoWithHuman_CheckHumanDistA, METH_VARARGS, NULL },
-	{ "LoadNextMission", (PyCFunction)(void (*)(void))GoWithHuman_LoadNextMission, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "LoadScene2", GoWithHuman_LoadScene2A, METH_VARARGS, NULL },
-	{ "CreateFakeSpeech", GoWithHuman_CreateFakeSpeechA, METH_VARARGS, NULL },
-	{ "NormCamera", Pr_NormCameraA, METH_VARARGS, NULL },
-	{ "SetTalk", Pr_SetTalkA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressGoWithHumanMethods[] = {
+	PORT_FN(InitStatus, GoWithHuman_InitStatusA),
+	PORT_FN(CreateHuman, GoWithHuman_CreateHumanA),
+	PORT_FN(Init, GoWithHuman_InitA),
+	PORT_FN(OnPossession, GoWithHuman_OnPossessionA),
+	PORT_FN(OnExitConversor, GoWithHuman_OnExitConversorA),
+	PORT_FN(CheckMaxDist, GoWithHuman_CheckMaxDistA),
+	PORT_FN(CheckHumanDist, GoWithHuman_CheckHumanDistA),
+	PORT_FNK(LoadNextMission, GoWithHuman_LoadNextMission),
+	PORT_FN(LoadScene2, GoWithHuman_LoadScene2A),
+	PORT_FN(CreateFakeSpeech, GoWithHuman_CreateFakeSpeechA),
+	PORT_FN(NormCamera, Pr_NormCameraA),
+	PORT_FN(SetTalk, Pr_SetTalkA),
+	PORT_FNEND
 };
 
 /* ---- Mission_HumphreyArchbishopKilled ---- */
@@ -1992,10 +1992,10 @@ static byte ArchbishopKilled_CGCalls(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(ArchbishopKilled, SetNextMissionA, 1, ArchbishopKilled_SetNextMission)
 LV_FN(ArchbishopKilled, CGCallsA, 0, ArchbishopKilled_CGCalls)
 
-PyMethodDef g_PressHumphreyArchbishopKilledMethods[] = {
-	{ "SetNextMission", ArchbishopKilled_SetNextMissionA, METH_VARARGS, NULL },
-	{ "CGCalls", ArchbishopKilled_CGCallsA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressHumphreyArchbishopKilledMethods[] = {
+	PORT_FN(SetNextMission, ArchbishopKilled_SetNextMissionA),
+	PORT_FN(CGCalls, ArchbishopKilled_CGCallsA),
+	PORT_FNEND
 };
 
 /* ---- Mission_IntroHuman2 ---- */
@@ -2092,10 +2092,10 @@ static byte IntroHuman2_LoadScene(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(IntroHuman2, LaunchHumphreySpeechA, 1, IntroHuman2_LaunchHumphreySpeech)
 LV_FN(IntroHuman2, LoadSceneA, 0, IntroHuman2_LoadScene)
 
-PyMethodDef g_PressIntroHuman2Methods[] = {
-	{ "LaunchHumphreySpeech", IntroHuman2_LaunchHumphreySpeechA, METH_VARARGS, NULL },
-	{ "LoadScene", IntroHuman2_LoadSceneA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressIntroHuman2Methods[] = {
+	PORT_FN(LaunchHumphreySpeech, IntroHuman2_LaunchHumphreySpeechA),
+	PORT_FN(LoadScene, IntroHuman2_LoadSceneA),
+	PORT_FNEND
 };
 
 /* ---- Mission_PressMeeting ---- */
@@ -2120,9 +2120,9 @@ static byte PressMeeting_SetNextMission(const nativeVal_t *a, nativeVal_t *out) 
 
 LV_FN(PressMeeting, SetNextMissionA, 1, PressMeeting_SetNextMission)
 
-PyMethodDef g_PressPressMeetingMethods[] = {
-	{ "SetNextMission", PressMeeting_SetNextMissionA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressPressMeetingMethods[] = {
+	PORT_FN(SetNextMission, PressMeeting_SetNextMissionA),
+	PORT_FNEND
 };
 
 /* ---- Mission_MeetBoss ---- */
@@ -2773,36 +2773,36 @@ LV_FN(MeetBoss, ChallengeHumphreyA, 0, MeetBoss_ChallengeHumphrey)
 LV_FN(MeetBoss, HumphreySpeechA, 4, MeetBoss_HumphreySpeech)
 LV_FN(MeetBoss, SetNextMissionA, 0, MeetBoss_SetNextMission)
 
-PyMethodDef g_PressMeetBossMethods[] = {
-	{ "InitStatus", MeetBoss_InitStatusA, METH_VARARGS, NULL },
-	{ "AfterBrowseNPC", MeetBoss_AfterBrowseNPCA, METH_VARARGS, NULL },
-	{ "CreateHumphreyInit", MeetBoss_CreateHumphreyInitA, METH_VARARGS, NULL },
-	{ "CreateBertoInit", MeetBoss_CreateBertoInitA, METH_VARARGS, NULL },
-	{ "BertoSpeech", MeetBoss_BertoSpeechA, METH_VARARGS, NULL },
-	{ "BertoSpeech2", MeetBoss_BertoSpeech2A, METH_VARARGS, NULL },
-	{ "DeactivateEmero", MeetBoss_DeactivateEmeroA, METH_VARARGS, NULL },
-	{ "ActivateEmero", MeetBoss_ActivateEmeroA, METH_VARARGS, NULL },
-	{ "Init", MeetBoss_InitA, METH_VARARGS, NULL },
-	{ "PlayProlog0", (PyCFunction)(void (*)(void))MeetBoss_PlayProlog0, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "PlayProlog1", (PyCFunction)(void (*)(void))MeetBoss_PlayProlog1, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "PlayProlog2", (PyCFunction)(void (*)(void))MeetBoss_PlayProlog2, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "CreateBattery", MeetBoss_CreateBatteryA, METH_VARARGS, NULL },
-	{ "AssingOnTakeBattery", MeetBoss_AssingOnTakeBatteryA, METH_VARARGS, NULL },
-	{ "OnTakeBattery", MeetBoss_OnTakeBatteryA, METH_VARARGS, NULL },
-	{ "PreBertoPossession", MeetBoss_PreBertoPossessionA, METH_VARARGS, NULL },
-	{ "BertoPossession", MeetBoss_BertoPossessionA, METH_VARARGS, NULL },
-	{ "OnWarning", MeetBoss_OnWarningA, METH_VARARGS, NULL },
-	{ "OnActionPressed", MeetBoss_OnActionPressedA, METH_VARARGS, NULL },
-	{ "OnPossession", MeetBoss_OnPossessionA, METH_VARARGS, NULL },
-	{ "ShowMessage", MeetBoss_ShowMessageA, METH_VARARGS, NULL },
-	{ "OnAlarmEnd", MeetBoss_OnAlarmEndA, METH_VARARGS, NULL },
-	{ "UseConversor", MeetBoss_UseConversorA, METH_VARARGS, NULL },
-	{ "OnConversorUsed", MeetBoss_OnConversorUsedA, METH_VARARGS, NULL },
-	{ "CheckConversion", MeetBoss_CheckConversionA, METH_VARARGS, NULL },
-	{ "ChallengeHumphrey", MeetBoss_ChallengeHumphreyA, METH_VARARGS, NULL },
-	{ "HumphreySpeech", MeetBoss_HumphreySpeechA, METH_VARARGS, NULL },
-	{ "SetNextMission", MeetBoss_SetNextMissionA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressMeetBossMethods[] = {
+	PORT_FN(InitStatus, MeetBoss_InitStatusA),
+	PORT_FN(AfterBrowseNPC, MeetBoss_AfterBrowseNPCA),
+	PORT_FN(CreateHumphreyInit, MeetBoss_CreateHumphreyInitA),
+	PORT_FN(CreateBertoInit, MeetBoss_CreateBertoInitA),
+	PORT_FN(BertoSpeech, MeetBoss_BertoSpeechA),
+	PORT_FN(BertoSpeech2, MeetBoss_BertoSpeech2A),
+	PORT_FN(DeactivateEmero, MeetBoss_DeactivateEmeroA),
+	PORT_FN(ActivateEmero, MeetBoss_ActivateEmeroA),
+	PORT_FN(Init, MeetBoss_InitA),
+	PORT_FNK(PlayProlog0, MeetBoss_PlayProlog0),
+	PORT_FNK(PlayProlog1, MeetBoss_PlayProlog1),
+	PORT_FNK(PlayProlog2, MeetBoss_PlayProlog2),
+	PORT_FN(CreateBattery, MeetBoss_CreateBatteryA),
+	PORT_FN(AssingOnTakeBattery, MeetBoss_AssingOnTakeBatteryA),
+	PORT_FN(OnTakeBattery, MeetBoss_OnTakeBatteryA),
+	PORT_FN(PreBertoPossession, MeetBoss_PreBertoPossessionA),
+	PORT_FN(BertoPossession, MeetBoss_BertoPossessionA),
+	PORT_FN(OnWarning, MeetBoss_OnWarningA),
+	PORT_FN(OnActionPressed, MeetBoss_OnActionPressedA),
+	PORT_FN(OnPossession, MeetBoss_OnPossessionA),
+	PORT_FN(ShowMessage, MeetBoss_ShowMessageA),
+	PORT_FN(OnAlarmEnd, MeetBoss_OnAlarmEndA),
+	PORT_FN(UseConversor, MeetBoss_UseConversorA),
+	PORT_FN(OnConversorUsed, MeetBoss_OnConversorUsedA),
+	PORT_FN(CheckConversion, MeetBoss_CheckConversionA),
+	PORT_FN(ChallengeHumphrey, MeetBoss_ChallengeHumphreyA),
+	PORT_FN(HumphreySpeech, MeetBoss_HumphreySpeechA),
+	PORT_FN(SetNextMission, MeetBoss_SetNextMissionA),
+	PORT_FNEND
 };
 
 /* ---- Mission_TalkToBoss ---- */
@@ -3149,24 +3149,24 @@ LV_FN(TalkToBoss, GoTalkToBossA, 0, TalkToBoss_GoTalkToBoss)
 LV_FN(TalkToBoss, BossSpeechA, 4, TalkToBoss_BossSpeech)
 LV_FN(TalkToBoss, SetNextMissionA, 1, TalkToBoss_SetNextMission)
 
-PyMethodDef g_PressTalkToBossMethods[] = {
-	{ "InitStatus", TalkToBoss_InitStatusA, METH_VARARGS, NULL },
-	{ "AfterBrowseNPC", TalkToBoss_AfterBrowseNPCA, METH_VARARGS, NULL },
-	{ "SetBossSpeech", TalkToBoss_SetBossSpeechA, METH_VARARGS, NULL },
-	{ "CreateHuman", TalkToBoss_CreateHumanA, METH_VARARGS, NULL },
-	{ "Init", TalkToBoss_InitA, METH_VARARGS, NULL },
-	{ "HideHumanIntoBureau", TalkToBoss_HideHumanIntoBureauA, METH_VARARGS, NULL },
-	{ "CreateSceneLaunchers", TalkToBoss_CreateSceneLaunchersA, METH_VARARGS, NULL },
-	{ "LaunchScene", TalkToBoss_LaunchSceneA, METH_VARARGS, NULL },
-	{ "EndOfScene", (PyCFunction)(void (*)(void))TalkToBoss_EndOfScene, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "OnPossession", TalkToBoss_OnPossessionA, METH_VARARGS, NULL },
-	{ "OnExitConversor", TalkToBoss_OnExitConversorA, METH_VARARGS, NULL },
-	{ "CheckMaxDist", TalkToBoss_CheckMaxDistA, METH_VARARGS, NULL },
-	{ "CheckHumanDist", TalkToBoss_CheckHumanDistA, METH_VARARGS, NULL },
-	{ "GoTalkToBoss", TalkToBoss_GoTalkToBossA, METH_VARARGS, NULL },
-	{ "BossSpeech", TalkToBoss_BossSpeechA, METH_VARARGS, NULL },
-	{ "SetNextMission", TalkToBoss_SetNextMissionA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressTalkToBossMethods[] = {
+	PORT_FN(InitStatus, TalkToBoss_InitStatusA),
+	PORT_FN(AfterBrowseNPC, TalkToBoss_AfterBrowseNPCA),
+	PORT_FN(SetBossSpeech, TalkToBoss_SetBossSpeechA),
+	PORT_FN(CreateHuman, TalkToBoss_CreateHumanA),
+	PORT_FN(Init, TalkToBoss_InitA),
+	PORT_FN(HideHumanIntoBureau, TalkToBoss_HideHumanIntoBureauA),
+	PORT_FN(CreateSceneLaunchers, TalkToBoss_CreateSceneLaunchersA),
+	PORT_FN(LaunchScene, TalkToBoss_LaunchSceneA),
+	PORT_FNK(EndOfScene, TalkToBoss_EndOfScene),
+	PORT_FN(OnPossession, TalkToBoss_OnPossessionA),
+	PORT_FN(OnExitConversor, TalkToBoss_OnExitConversorA),
+	PORT_FN(CheckMaxDist, TalkToBoss_CheckMaxDistA),
+	PORT_FN(CheckHumanDist, TalkToBoss_CheckHumanDistA),
+	PORT_FN(GoTalkToBoss, TalkToBoss_GoTalkToBossA),
+	PORT_FN(BossSpeech, TalkToBoss_BossSpeechA),
+	PORT_FN(SetNextMission, TalkToBoss_SetNextMissionA),
+	PORT_FNEND
 };
 
 /* ---- Mission_WhoIsDeepThroat ---- */
@@ -3215,12 +3215,12 @@ LV_FN(DeepThroat, InitA, 1, DeepThroat_Init)
 LV_FN(DeepThroat, UseTeleporterA, 4, DeepThroat_UseTeleporter)
 LV_FN(DeepThroat, PlaySceneA, 0, DeepThroat_PlayScene)
 
-PyMethodDef g_PressWhoIsDeepThroatMethods[] = {
-	{ "Init", DeepThroat_InitA, METH_VARARGS, NULL },
-	{ "UseTeleporter", DeepThroat_UseTeleporterA, METH_VARARGS, NULL },
-	{ "LaunchScene", (PyCFunction)(void (*)(void))DeepThroat_LaunchScene, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "PlayScene", DeepThroat_PlaySceneA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressWhoIsDeepThroatMethods[] = {
+	PORT_FN(Init, DeepThroat_InitA),
+	PORT_FN(UseTeleporter, DeepThroat_UseTeleporterA),
+	PORT_FNK(LaunchScene, DeepThroat_LaunchScene),
+	PORT_FN(PlayScene, DeepThroat_PlaySceneA),
+	PORT_FNEND
 };
 
 /* ---- Mission_WhoIsTheBaddie ---- */
@@ -3431,18 +3431,18 @@ LV_FN(Baddie, EndOfSceneA, 1, Baddie_EndOfScene)
 LV_FN(Baddie, CreateFakeSpeechA, 0, Baddie_CreateFakeSpeech)
 LV_FN(Baddie, LoadSceneA, 0, Baddie_LoadScene)
 
-PyMethodDef g_PressWhoIsTheBaddieMethods[] = {
-	{ "InitStatus", Baddie_InitStatusA, METH_VARARGS, NULL },
-	{ "Init", Baddie_InitA, METH_VARARGS, NULL },
-	{ "GoForHuman", Baddie_GoForHumanA, METH_VARARGS, NULL },
-	{ "OnBureauUsed", Baddie_OnBureauUsedA, METH_VARARGS, NULL },
-	{ "PlayScene", Baddie_PlaySceneA, METH_VARARGS, NULL },
-	{ "EndOfScene", Baddie_EndOfSceneA, METH_VARARGS, NULL },
-	{ "CreateFakeSpeech", Baddie_CreateFakeSpeechA, METH_VARARGS, NULL },
-	{ "NormCamera", Pr_NormCameraA, METH_VARARGS, NULL },
-	{ "SetTalk", Pr_SetTalkA, METH_VARARGS, NULL },
-	{ "LoadScene", Baddie_LoadSceneA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PressWhoIsTheBaddieMethods[] = {
+	PORT_FN(InitStatus, Baddie_InitStatusA),
+	PORT_FN(Init, Baddie_InitA),
+	PORT_FN(GoForHuman, Baddie_GoForHumanA),
+	PORT_FN(OnBureauUsed, Baddie_OnBureauUsedA),
+	PORT_FN(PlayScene, Baddie_PlaySceneA),
+	PORT_FN(EndOfScene, Baddie_EndOfSceneA),
+	PORT_FN(CreateFakeSpeech, Baddie_CreateFakeSpeechA),
+	PORT_FN(NormCamera, Pr_NormCameraA),
+	PORT_FN(SetTalk, Pr_SetTalkA),
+	PORT_FN(LoadScene, Baddie_LoadSceneA),
+	PORT_FNEND
 };
 
 PORTS(levels_Press)
