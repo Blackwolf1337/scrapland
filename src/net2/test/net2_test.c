@@ -1034,6 +1034,98 @@ static void Test_Reassembly(void) {
 	Net2_Destroy(h);
 }
 
+/* a DATA packet from the client with the client's real keys: what a hostile peer after the handshake can send */
+static void SendAuthentic(Peer *cli, Peer *srv, const uint8_t *plain, int n) {
+	uint8_t pkt[NET2_MTU];
+	Net2Conn *c = &cli->h->conns[0];
+	uint32_t seq = ++c->sendSeq;
+
+	Net2Pkt_WriteHeader(pkt, c->id, seq);
+	Net2Crypto_Seal(pkt + N2_HEADER, c->sendKey, 0, seq, pkt, plain, n);
+	Link_Push(&g_link, &cli->port.addr, &srv->port.addr, pkt, N2_HEADER + n + N2_TAG, g_link.now);
+}
+
+/* random bytes into the decoders; well formed chunk lists with hostile fields into a live connection */
+static void Test_Fuzz(void) {
+	static const uint8_t kinds[3] = { NET2_RELIABLE, NET2_SEQUENCED, NET2_UNRELIABLE };
+	uint8_t buf[NET2_MTU + 64];
+	Net2ServerInfo info;
+	uint32_t token, time;
+	Net2Reader r;
+	Net2Chunk ck;
+	int valid = 0;
+
+	g_rng = 4242;
+	for (int i = 0; i < 200000; i++) {
+		int size = (int)(Rand() % (sizeof(buf) + 1));
+		for (int j = 0; j < size; j++) {
+			buf[j] = (uint8_t)Rand();
+		}
+		if (size > 0 && i % 2) {
+			buf[0] = (uint8_t)(1 + Rand() % 5);
+		}
+		if (Net2Pkt_CheckChunks(buf, size, 3, kinds)) {
+			valid++;
+			Net2R_Init(&r, buf, size);
+			while (Net2Pkt_ReadChunk(&r, &ck) > 0) {
+				T_ASSERT(ck.size >= 0 && ck.data + ck.size <= buf + size);
+			}
+		}
+		Net2Lan_ReadInfo(buf, size, &token, &time, &info);
+		T_ASSERT(info.name[NET2_INFO_NAME] == 0 && memchr(info.name, 0, sizeof(info.name)) != NULL);
+	}
+
+	Peer srv, cli;
+	Link_Reset(0, 0, 5, 0, 31337);
+	Net2Config cfg;
+	Net2_DefaultConfig(&cfg, 1);
+	cfg.maxConns = 2;
+	cfg.appVersion = 7;
+	cfg.maxRecvBuffer = 200000;
+	Peer_Make(&srv, "10.0.0.1:29000", 1, &cfg);
+	Peer_Make(&cli, "10.0.0.2:29001", 0, NULL);
+	Peer *all[2] = { &srv, &cli };
+	T_ASSERT(Connect(&srv, &cli, "10.0.0.1:29000"));
+	static uint8_t src[NET2_FRAG_SIZE];
+	memset(src, 0x5a, sizeof(src));
+	int sent = 0;
+	for (int i = 0; i < 20000 && srv.disconnects == 0; i++) {
+		Net2Writer w;
+		Net2Acks a = { Rand() % 4 ? cli.h->conns[0].recv.top : Rand(), Rand(), Rand() };
+		Net2W_Init(&w, buf, N2_PLAIN_MAX);
+		Net2Pkt_WriteAcks(&w, &a);
+		for (int k = 0; k < 8; k++) {
+			Net2Chunk c;
+			memset(&c, 0, sizeof(c));
+			c.type = 1 + (int)(Rand() % 4);
+			c.channel = c.type == N2K_UNRELIABLE ? 2 : c.type == N2K_SEQUENCED ? 1 : 0;
+			c.id = (uint16_t)(Rand() % 4 ? Rand() % 300 : Rand());
+			c.count = c.type == N2K_FRAGMENT ? 2 + (int)(Rand() % (NET2_MAX_FRAGS - 1)) : 1;
+			c.index = (int)(Rand() % (uint32_t)c.count);
+			c.size = c.type == N2K_FRAGMENT ? (c.index < c.count - 1 ? NET2_FRAG_SIZE : 1 + (int)(Rand() % 100))
+				: (int)(Rand() % 200);
+			c.data = src;
+			Net2Pkt_WriteChunk(&w, &c);
+		}
+		SendAuthentic(&cli, &srv, buf, w.pos);
+		sent++;
+		Step(all, 2, 1);
+		T_ASSERT(srv.h->conns[0].recvBytes <= 200000 + NET2_MAX_MESSAGE);
+	}
+	T_ASSERT(sent == 20000 && srv.disconnects == 0);
+	/* an authentic packet with a malformed chunk list: the server drops the peer with a protocol error */
+	uint8_t bad[N2_ACKS + 3];
+	memset(bad, 0, sizeof(bad));
+	bad[N2_ACKS] = 9;
+	SendAuthentic(&cli, &srv, bad, sizeof(bad));
+	RUN_UNTIL(all, 2, srv.disconnects && cli.disconnects, 400);
+	T_ASSERT(srv.disconnects == 1 && srv.reason == NET2_DR_PROTOCOL);
+	T_ASSERT(cli.disconnects == 1 && cli.reason == NET2_DR_PROTOCOL);
+	printf("fuzz: %d of 200000 random chunk lists well formed, 20000 hostile packets taken\n", valid);
+	Net2_Destroy(srv.h);
+	Net2_Destroy(cli.h);
+}
+
 static void Test_Query(void) {
 	Peer srv, cli;
 	Net2ServerInfo info;
@@ -1156,6 +1248,7 @@ int main(void) {
 	Test_Query();
 	Test_CookieRefresh();
 	Test_Rate();
+	Test_Fuzz();
 	printf("net2_test: %d checks, %d failed\n", g_checks, g_fails);
 	return g_fails != 0;
 }
