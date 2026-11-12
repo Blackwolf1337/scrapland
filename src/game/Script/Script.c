@@ -533,9 +533,32 @@ static PyMethodDef *Script_TableDef(const char *module, const char *name) {
 	return found;
 }
 
-PyObject *Script_TableFunction(const char *module, const char *name) {
+byte Script_Checking(void) {
+	return Script_CheckOn();
+}
+
+byte Script_FunctionOf(PyMethodDef *def, const char *module, nativeVal_t *out) {
+	const portRef_t *ref = Script_CheckOn() ? NULL : Port_OfDef(def);
+	Native_SetNone(out);
+	if (ref) {
+		NObj_NewPortFunc(out, ref);
+		return 1;
+	}
+	/* OBJLIB 9: a function the entries do not take, and every one under SCRAP_NULL_CHECK (its wrapper), as the C
+	 * function object of Python */
+	PyObject *f = Script_CheckFunction(def, NULL, module);
+	if (!f) {
+		return 0;
+	}
+	NObj_FromPy(f, out);
+	Py_DECREF(f);
+	return 1;
+}
+
+byte Script_TableFunction(const char *module, const char *name, nativeVal_t *out) {
 	PyMethodDef *found = Script_TableDef(module, name);
-	return found ? Script_CheckFunction(found, NULL, module) : NULL;
+	Native_SetNone(out);
+	return found && Script_FunctionOf(found, module, out);
 }
 
 byte Script_TableHas(const char *module, const char *name) {
@@ -561,11 +584,10 @@ void Script_TableReplay(PyObject *module, PyMethodDef *methods) {
 			Native_Free(&cur);
 			continue;
 		}
-		PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
-		if (f) {
-			ModVar_Set(&ref, m->ml_name, f);
-			Py_DECREF(f);
+		if (Script_FunctionOf(m, PyModule_GetName(module), &cur)) {
+			ModVar_SetVal(&ref, m->ml_name, &cur);
 		}
+		Native_Free(&cur);
 	}
 }
 
@@ -581,7 +603,7 @@ void Script_ReplaySet(const modVarRef_t *ref, const char *name, const nativeVal_
 	Native_Free(&v);
 }
 
-void Script_ModuleExtras(const char *name, PyObject *module, PyObject *defs) {
+void Script_ModuleExtras(const char *name, PyObject *module, const nativeVal_t *defs) {
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
 		if (!strcmp(script_modules[i].name, name)) {
 			Script_TableReplay(module, script_modules[i].methods);
@@ -1327,6 +1349,9 @@ static const char *Def_Word(scriptDef_t *m, const char *t, byte quoted, char *ou
 
 /* the value is a list or a tuple (a $name's list is its object) */
 static byte Def_IsSequence(const nativeVal_t *v) {
+	if (NObj_Native(v)) {
+		return NObj_Kind(v) == NO_LIST;
+	}
 	return v->type == NV_LIST || v->type == NV_TUPLE || (Native_IsObj(v) && (PyList_Check(Native_PyOf(v)) || PyTuple_Check(Native_PyOf(v))));
 }
 

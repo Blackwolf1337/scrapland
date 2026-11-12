@@ -2748,7 +2748,7 @@ static byte Cm_ForceCom(const char *key, const char *who, const char *module, co
 	}
 	LvN_Str(&args[0], key);
 	LvN_Str(&args[1], who);
-	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", &args[0], &args[1], Native_PyOf(&fn), LvN_NoArgs());
+	byte ok = PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=v,Parameters=v", &args[0], &args[1], &fn, LvN_NoArgs());
 	Native_Free(&args[0]);
 	Native_Free(&args[1]);
 	Native_Free(&fn);

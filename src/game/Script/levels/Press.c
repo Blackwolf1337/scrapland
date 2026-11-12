@@ -1393,7 +1393,7 @@ static byte Pr_MissionTarget(const char *name, const char *use, const long *pos)
 	/* CharsNPC.CreateChar(CharsNPC.CharRes[name]) (OBJLIB 5 (9c: the character object, an instance)) */
 	LvN_Str(&k, name);
 	nativeVal_t ch;
-	byte ok = Mode_CharRes(&k, &ch) && PORT_CALL(CharsNPC, CreateChar, NULL, "O", Native_PyOf(&ch));
+	byte ok = Mode_CharRes(&k, &ch) && PORT_CALL(CharsNPC, CreateChar, NULL, "v", &ch);
 	Native_Free(&k);
 	Native_Free(&ch);
 	if (!ok || !LvN_Entity(name, &e)) {

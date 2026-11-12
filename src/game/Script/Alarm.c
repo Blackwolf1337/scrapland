@@ -335,7 +335,8 @@ static byte News_SettingsBody(PyObject *locals, PyObject *f, void *ctx) {
 /* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` (OBJLIB 7: a hook of
  * the module code, ScriptModule.c's table: it runs on the dict of the module's names, with the constants of the code
  * object as the compiler made them, `f` left in the module, apply and Scrap.Set looked up there) */
-int NewsPanel_ModSettings(PyObject *module, PyObject *locals) {
+int NewsPanel_ModSettings(PyObject *module, PyObject *locals, nativeVal_t *body) {
+	(void)body;
 	static const struct {
 		const char *var;
 		const char *text;	/* a string value, else num */

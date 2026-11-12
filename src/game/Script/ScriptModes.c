@@ -362,13 +362,15 @@ byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out) {
 	if (o->type == NV_ENT) {
 		return Native_EntVar(Native_Ent(o), Native_EntName(o), var, out);
 	}
-	if (NObj_State(o) == 0) {
-		/* an object of native data: its attribute without a crossing, in the form Mode_HGet takes it */
-		nativeVal_t r;
+	if (NObj_Native(o)) {
+		/* as Mode_HGet: the attribute as a plain value */
+		nativeVal_t v;
 		Native_SetNone(out);
-		byte ok = NObj_GetAttr(o, var, &r) &&
-			(NObj_Plain(&r, out) || Native_Raise(NE_TYPE, "%s: not a value native C takes", var));
-		Native_Free(&r);
+		if (!NObj_GetAttr(o, var, &v)) {
+			return Mode_AttrFail();
+		}
+		byte ok = NObj_Plain(&v, out) || Native_Raise(NE_TYPE, "%s: not a value native C takes", var);
+		Native_Free(&v);
 		return ok;
 	}
 	PyObject *po = Native_ToPy(o);
@@ -381,7 +383,7 @@ byte Mode_VSet(const nativeVal_t *o, const char *var, const nativeVal_t *v) {
 	if (o->type == NV_ENT) {
 		return Native_EntSet(Native_Ent(o), Native_EntName(o), var, v);
 	}
-	if (NObj_State(o) == 0) {
+	if (NObj_Native(o)) {
 		return NObj_SetAttr(o, var, v);
 	}
 	PyObject *po = Native_ToPy(o);
@@ -427,10 +429,12 @@ byte Mode_NameSet(const char *name, const char *var, const nativeVal_t *v) {
 	return Native_EntSet(World_FindEntity(name), name, var, v);
 }
 
-/* dict[key] of a dict variable of the module (the object itself, Native_Free it): 0 with the error */
+/* dict[key] of a dict variable of the module as an object (a new reference) */
+/* dict[key] of the global dict of module, by reference into *out */
 static byte Mode_At(const char *module, const char *dict, const nativeVal_t *key, nativeVal_t *out) {
 	nativeVal_t d;
-	byte ok = ModVar_GlobalVal(module, dict, &d) && NObj_GetItem(&d, key, out);
+	Native_SetNone(out);
+	byte ok = Mode_RefG(module, dict, &d) && Mode_RefSub(&d, key, out);
 	Native_Free(&d);
 	return ok;
 }
@@ -1915,6 +1919,16 @@ byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out) {
 	if (o->type == NV_ENT) {
 		return Mode_VGet(o, var, out);
 	}
+	if (NObj_Native(o)) {
+		nativeVal_t v;
+		Native_SetNone(out);
+		if (!NObj_GetAttr(o, var, &v)) {
+			return Mode_AttrFail();
+		}
+		NObj_ArgOf(&v, out);
+		Native_Free(&v);
+		return 1;
+	}
 	PyObject *po = Native_ToPy(o);
 	if (!po) {
 		return 0;
@@ -1958,7 +1972,11 @@ byte Mode_KeyText(const char *key, const char *action, nativeVal_t *out) {
 }
 
 byte Mode_CharRes(const nativeVal_t *key, nativeVal_t *out) {
-	return Mode_RefMod("CharsNPC", "CharRes", out) && Mode_RefKeyIn(out, key);
+	nativeVal_t res;
+	Native_SetNone(out);
+	byte ok = Mode_RefMod("CharsNPC", "CharRes", &res) && Mode_RefSub(&res, key, out);
+	Native_Free(&res);
+	return ok;
 }
 
 void Mode_Saves(const char *const *pairs) {
@@ -2460,14 +2478,27 @@ byte Mode_LoadSoundSeam(const nativeVal_t *file) {
 	return Mode_LoadSound(file);
 }
 
+/* the result r of an operation on a native object (taken over) as Native_Arg makes a result: 1 with *out, 0 */
+static byte Mode_NativeOut(byte ok, nativeVal_t *r, nativeVal_t *out) {
+	if (ok) {
+		NObj_ArgOf(r, out);
+	}
+	Native_Free(r);
+	return ok;
+}
+
 void Mode_Elems(nativeVal_t *v) {
-	const nativeVal_t *data = NObj_ListData(v);
-	if (data) {
-		/* a list object of native data: its items as Native_Arg makes those of its Python list, without a crossing */
-		nativeVal_t items;
+	if (NObj_Kind(v) == NO_LIST && NObj_Native(v)) {
+		/* the items of a list object as Native_Arg makes them */
+		nativeVal_t items, k, x;
+		int n = NObj_Len(v);
 		Native_SetEmpty(&items, NV_LIST);
-		for (int i = 0; i < data->n; i++) {
-			NObj_ArgOf(&data->items[i], Native_Append(&items));
+		for (int i = 0; i < n; i++) {
+			Native_SetInt(&k, i);
+			if (!Mode_NativeOut(NObj_GetItem(v, &k, &x), &x, Native_Append(&items))) {
+				Native_ErrClear();
+				break;
+			}
 		}
 		Native_Free(v);
 		*v = items;
@@ -2521,23 +2552,12 @@ byte Mode_VSetF(const nativeVal_t *h, const char *var, double d) {
 	return Mode_VSet(h, var, &v);
 }
 
-/* x[key] of an object of native data, the item as Native_Arg makes the one of its Python object */
-static byte Mode_ItemOf(const nativeVal_t *x, const nativeVal_t *key, nativeVal_t *out) {
-	nativeVal_t r;
-	byte ok = NObj_GetItem(x, key, &r);
-	if (ok) {
-		NObj_ArgOf(&r, out);
-	}
-	Native_Free(&r);
-	return ok;
-}
-
 byte Mode_Item(const nativeVal_t *x, long i, nativeVal_t *out) {
-	nativeVal_t k;
+	nativeVal_t k, r;
 	Native_SetNone(out);
-	if (NObj_State(x) == 0) {
+	if (NObj_Native(x)) {
 		Native_SetInt(&k, i);
-		return Mode_ItemOf(x, &k, out);
+		return Mode_NativeOut(NObj_GetItem(x, &k, &r), &r, out);
 	}
 	if (Native_IsObj(x)) {
 		/* OBJLIB 7 */
@@ -2916,8 +2936,9 @@ byte Mode_Sub(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
 	if (!Native_IsObj(v)) {
 		return Native_Subscript(v, key, out);
 	}
-	if (NObj_State(v) == 0) {
-		return Mode_ItemOf(v, key, out);
+	if (NObj_Native(v) && !Native_Holds(key, 1u << NV_OBJ)) {
+		nativeVal_t r;
+		return Mode_NativeOut(NObj_GetItem(v, key, &r), &r, out);
 	}
 	/* OBJLIB 7: PyObject_GetItem of the object, the item as Native_Arg makes it */
 	PyObject *k = Native_ToPy(key), *r = k ? PyObject_GetItem(Native_PyOf(v), k) : NULL;
@@ -3145,6 +3166,9 @@ byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
 int Mode_In(const nativeVal_t *seq, const nativeVal_t *x) {
 	if (!Native_IsObj(seq) && !Native_IsObj(x)) {
 		return Native_Contains(seq, x);
+	}
+	if ((NObj_Native(seq) || NObj_Native(x)) && !Native_Holds(seq, 1u << NV_OBJ) && !Native_Holds(x, 1u << NV_OBJ)) {
+		return NObj_Contains(seq, x);
 	}
 	/* OBJLIB 7: PySequence_In of the objects (a list that holds handles, a handle tested) */
 	PyObject *s = Native_ToPy(seq), *o = s ? Native_ToPy(x) : NULL;
@@ -4844,11 +4868,9 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control) 
  * (Port_Value), else the call through Python; one site per call site through the macros of scrap/scriptmodes.h ---- */
 
 byte Mode_CbArgs(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n) {
-	/* a value that is no object is called the Python way too: the TypeError of a value that is no callable */
-	PyObject *fn = Native_ToPy(f);
-	byte ok = fn && Port_Values(site, fn, args, n, out, NULL);
-	Py_XDECREF(fn);
-	return ok;
+	/* a native object natively; a value that is no object is called the Python way too: the TypeError of a value that
+	 * is no callable */
+	return Port_ValuesOf(site, f, args, n, out, NULL);
 }
 
 byte Mode_CbApplyPy(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out) {
@@ -4878,6 +4900,9 @@ byte Mode_CbApplySeq(portSite_t *site, PyObject *fn, const nativeVal_t *args, na
 }
 
 byte Mode_CbApply(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out) {
+	if (NObj_Native(f) && args->type == NV_TUPLE) {
+		return Port_ValuesOf(site, f, args->items, args->n, out, NULL);
+	}
 	PyObject *fn = Native_ToPy(f);
 	byte ok = fn && Mode_CbApplyPy(site, fn, args, out);
 	Py_XDECREF(fn);
@@ -4890,8 +4915,15 @@ byte Mode_CbLink(portSite_t *site, PyObject *fn, int id, const char *a, const ch
 
 byte Mode_CbGlobal(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
-	PyObject *f = Script_Global(module, name);
+	nativeVal_t nf;
 	va_start(va, fmt);
+	if (Native_NativeVar(module, name, &nf)) {
+		byte ok = Port_NativeCallVa(&nf, out, fmt, va);
+		va_end(va);
+		Native_Free(&nf);
+		return ok;
+	}
+	PyObject *f = Script_Global(module, name);
 	byte ok = f && Port_ValueVa(site, f, out, fmt, va);
 	va_end(va);
 	Py_XDECREF(f);
@@ -4900,8 +4932,15 @@ byte Mode_CbGlobal(portSite_t *site, const char *module, const char *name, nativ
 
 byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
-	PyObject *f = Script_Attr(module, name);
+	nativeVal_t nf;
 	va_start(va, fmt);
+	if (Native_NativeVar(module, name, &nf)) {
+		byte ok = Port_NativeCallVa(&nf, out, fmt, va);
+		va_end(va);
+		Native_Free(&nf);
+		return ok;
+	}
+	PyObject *f = Script_Attr(module, name);
 	byte ok = f && Port_ValueVa(site, f, out, fmt, va);
 	va_end(va);
 	Py_XDECREF(f);
@@ -4911,8 +4950,9 @@ byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeV
 /* ---- the state of the online and split screen modes on values (stage 6, batch 6f) ---- */
 
 int Mode_Truth(const nativeVal_t *v) {
-	/* OBJLIB 7: the truth of an object (an instance's __nonzero__ or __len__ may raise) */
-	return Native_IsObj(v) ? PyObject_IsTrue(Native_PyOf(v)) : Native_True(v);
+	/* an object by its kind (no crossing); OBJLIB 7: the truth of a Python object (an instance's __nonzero__ or __len__
+	 * may raise) */
+	return NObj_Native(v) ? NObj_True(v) : Native_IsObj(v) ? PyObject_IsTrue(Native_PyOf(v)) : Native_True(v);
 }
 
 byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
@@ -5042,6 +5082,11 @@ byte Mode_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {
 	if (!Native_IsObj(v)) {
 		return Native_Slice(v, lo, hi, out);
 	}
+	if (NObj_Native(v)) {
+		nativeVal_t r;
+		Native_SetNone(out);
+		return Mode_NativeOut(NObj_GetSlice(v, lo, hi, &r), &r, out);
+	}
 	return Mode_ObjOut(PySequence_GetSlice(Native_PyOf(v), (int)lo, (int)hi), out);
 }
 
@@ -5064,37 +5109,16 @@ byte Mode_RefTake(PyObject *o, nativeVal_t *out) {
 	return 1;
 }
 
-byte Mode_RefVal(nativeVal_t *v, nativeVal_t *out) {
-	if (NObj_RefMode() && (v->type == NV_REF || v->type == NV_ENT)) {
-		/* the object or handle itself: native data does not cross */
-		*out = *v;
-		Native_SetNone(v);
-		return 1;
-	}
-	PyObject *o = Native_KeptPy(v);
-	if (o) {
-		Py_INCREF(o);
-	} else {
-		o = Native_ToPy(v);
-	}
-	Native_Free(v);
-	return Mode_RefTake(o, out);
-}
-
 byte Mode_RefG(const char *module, const char *name, nativeVal_t *out) {
-	nativeVal_t v;
-	Native_SetNone(out);
-	return ModVar_GlobalVal(module, name, &v) && Mode_RefVal(&v, out);
+	return ModVar_GlobalVal(module, name, out);
 }
 
 byte Mode_RefMod(const char *module, const char *var, nativeVal_t *out) {
-	nativeVal_t v;
-	Native_SetNone(out);
-	return ModVar_ModAttrVal(module, var, &v) && Mode_RefVal(&v, out);
+	return ModVar_ModAttrVal(module, var, out);
 }
 
 void Mode_RefPlain(const nativeVal_t *o, nativeVal_t *out) {
-	if (NObj_State(o) == 0) {
+	if (NObj_Native(o)) {
 		NObj_ArgOf(o, out);
 	} else if (Native_IsObj(o) && Native_PyOf(o)) {
 		Native_Arg(Native_PyOf(o), out);
@@ -5103,9 +5127,16 @@ void Mode_RefPlain(const nativeVal_t *o, nativeVal_t *out) {
 	}
 }
 
+/* the kinds of native objects that are no sequence for PySequence_GetItem and PySequence_Length (1.5.2: no
+ * tp_as_sequence; an instance has one, it asks __getitem__ and __len__) */
+static byte Mode_RefNoSeq(const nativeVal_t *o) {
+	int k = NObj_Kind(o);
+	return k != NO_LIST && k != NO_INSTANCE;
+}
+
 int Mode_RefLen(const nativeVal_t *o) {
-	if (NObj_ListData(o)) {
-		return NObj_Len(o);
+	if (NObj_Native(o)) {
+		return Mode_RefNoSeq(o) ? (Native_Raise(NE_TYPE, "len() of unsized object"), -1) : NObj_Len(o);
 	}
 	PyObject *p = Native_ToPy(o);
 	int n = p ? PySequence_Length(p) : -1;
@@ -5114,7 +5145,7 @@ int Mode_RefLen(const nativeVal_t *o) {
 }
 
 int Mode_RefSize(const nativeVal_t *o) {
-	if (NObj_State(o) == 0) {
+	if (NObj_Native(o)) {
 		return NObj_Len(o);
 	}
 	PyObject *p = Native_ToPy(o);
@@ -5123,11 +5154,26 @@ int Mode_RefSize(const nativeVal_t *o) {
 	return n;
 }
 
+/* o[i] (x NULL) or o[i] = x of a native object as PySequence_GetItem and PySequence_SetItem take it: a negative
+ * index plus the length once, then the item of the list or the instance's special method */
+static byte Mode_RefSeqAt(const nativeVal_t *o, long i, const nativeVal_t *x, nativeVal_t *out) {
+	nativeVal_t key;
+	if (Mode_RefNoSeq(o)) {
+		return Native_Raise(NE_TYPE, x ? "object doesn't support item assignment" : "unindexable object");
+	}
+	if (i < 0 && NObj_Kind(o) == NO_LIST) {
+		i += NObj_Len(o);
+		if (i < 0) {
+			return Native_Raise(NE_INDEX, x ? "list assignment index out of range" : "list index out of range");
+		}
+	}
+	Native_SetInt(&key, i);
+	return x ? NObj_SetItem(o, &key, x) : NObj_GetItem(o, &key, out);
+}
+
 byte Mode_RefItem(const nativeVal_t *o, long i, nativeVal_t *out) {
-	if (NObj_ListData(o)) {
-		nativeVal_t k, x;
-		Native_SetInt(&k, i);
-		return NObj_GetItem(o, &k, &x) ? Mode_RefVal(&x, out) : (Native_SetNone(out), 0);
+	if (NObj_Native(o)) {
+		return Mode_RefSeqAt(o, i, NULL, out);
 	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = Mode_RefTake(p ? PySequence_GetItem(p, (int)i) : NULL, out);
@@ -5137,14 +5183,6 @@ byte Mode_RefItem(const nativeVal_t *o, long i, nativeVal_t *out) {
 
 /* op 0: o[key] into out, 1: o[key] = v, 2: del o[key] */
 static byte Mode_RefKey(const nativeVal_t *o, const nativeVal_t *key, int op, const nativeVal_t *v, nativeVal_t *out) {
-	if (NObj_State(o) == 0) {
-		/* an object of native data: no crossing */
-		nativeVal_t x;
-		if (op != 0) {
-			return op == 1 ? NObj_SetItem(o, key, v) : NObj_DelItem(o, key);
-		}
-		return NObj_GetItem(o, key, &x) ? Mode_RefVal(&x, out) : (Native_SetNone(out), 0);
-	}
 	PyObject *p = Native_ToPy(o), *k = p ? Native_ToPy(key) : NULL, *x = k && v ? Native_ToPy(v) : NULL;
 	byte ok = k && (!v || x);
 	if (ok && op == 0) {
@@ -5161,18 +5199,13 @@ static byte Mode_RefKey(const nativeVal_t *o, const nativeVal_t *key, int op, co
 }
 
 byte Mode_RefSub(const nativeVal_t *o, const nativeVal_t *key, nativeVal_t *out) {
-	return Mode_RefKey(o, key, 0, NULL, out);
-}
-
-byte Mode_RefKeyIn(nativeVal_t *o, const nativeVal_t *key) {
-	nativeVal_t x;
-	byte ok = Mode_RefKey(o, key, 0, NULL, &x);
-	Native_Free(o);
-	*o = x;
-	return ok;
+	return NObj_Native(o) ? NObj_GetItem(o, key, out) : Mode_RefKey(o, key, 0, NULL, out);
 }
 
 byte Mode_RefSetItem(const nativeVal_t *o, long i, const nativeVal_t *v) {
+	if (NObj_Native(o)) {
+		return Mode_RefSeqAt(o, i, v, NULL);
+	}
 	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
 	byte ok = x && PySequence_SetItem(p, (int)i, x) == 0;
 	Py_XDECREF(x);
@@ -5181,14 +5214,17 @@ byte Mode_RefSetItem(const nativeVal_t *o, long i, const nativeVal_t *v) {
 }
 
 byte Mode_RefSetSub(const nativeVal_t *o, const nativeVal_t *key, const nativeVal_t *v) {
-	return Mode_RefKey(o, key, 1, v, NULL);
+	return NObj_Native(o) ? NObj_SetItem(o, key, v) : Mode_RefKey(o, key, 1, v, NULL);
 }
 
 byte Mode_RefDelSub(const nativeVal_t *o, const nativeVal_t *key) {
-	return Mode_RefKey(o, key, 2, NULL, NULL);
+	return NObj_Native(o) ? NObj_DelItem(o, key) : Mode_RefKey(o, key, 2, NULL, NULL);
 }
 
 byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	if (NObj_Native(o)) {
+		return NObj_GetAttr(o, name, out);
+	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = Mode_RefTake(p ? PyObject_GetAttrString(p, (char *)name) : NULL, out);
 	Py_XDECREF(p);
@@ -5196,6 +5232,9 @@ byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
 }
 
 byte Mode_RefSetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v) {
+	if (NObj_Native(o)) {
+		return NObj_SetAttr(o, name, v);
+	}
 	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
 	byte ok = x && PyObject_SetAttrString(p, (char *)name, x) == 0;
 	Py_XDECREF(x);
@@ -5204,6 +5243,16 @@ byte Mode_RefSetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *
 }
 
 byte Mode_RefCall(const nativeVal_t *o, const char *method, const nativeVal_t *args, int n, nativeVal_t *out) {
+	if (NObj_Native(o)) {
+		nativeVal_t r;
+		byte ok = NObj_CallMethod(o, method, args, n, &r);
+		if (out) {
+			*out = r;
+		} else {
+			Native_Free(&r);
+		}
+		return ok;
+	}
 	/* the method as Script_Method reads it (Script_GetAttr: an object that fails without an exception, the handle of a
 	 * deleted entity, gets ceval's SystemError) */
 	PyObject *p = Native_ToPy(o), *f = p ? Script_GetAttr(p, method) : NULL;
@@ -5219,6 +5268,18 @@ byte Mode_RefCall(const nativeVal_t *o, const char *method, const nativeVal_t *a
 }
 
 byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v) {
+	if (NObj_Native(o)) {
+		if (NObj_Kind(o) != NO_LIST) {
+			/* PyList_Insert's PyErr_BadInternalCall */
+			return Native_Raise(NE_SYSTEM, "bad argument to internal function");
+		}
+		nativeVal_t a[2], r;
+		Native_SetInt(&a[0], at);
+		a[1] = *v;
+		byte ok = at < 0 ? NObj_CallMethod(o, "append", v, 1, &r) : NObj_CallMethod(o, "insert", a, 2, &r);
+		Native_Free(&r);
+		return ok;
+	}
 	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
 	byte ok = x && (at < 0 ? PyList_Append(p, x) : PyList_Insert(p, at, x)) == 0;
 	Py_XDECREF(x);
@@ -5227,6 +5288,10 @@ byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v) {
 }
 
 byte Mode_RefToMod(const char *module, const char *var, const nativeVal_t *v) {
+	if (!Native_Holds(v, 1u << NV_OBJ)) {
+		/* the value as it is (an object of native data stays one) */
+		return ModVar_SetModAttrVal(module, var, v);
+	}
 	PyObject *x = Native_ToPy(v);
 	byte ok = Mode_SetModPy(module, var, x);
 	Py_XDECREF(x);
@@ -5307,6 +5372,9 @@ byte Mode_WriteLine(const nativeVal_t *const *items, int n) {
 }
 
 byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	if (NObj_Native(o)) {
+		return NObj_GetAttr(o, name, out);
+	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = Mode_RefTake(p ? Script_GetAttr(p, name) : NULL, out);
 	Py_XDECREF(p);
@@ -5325,6 +5393,22 @@ PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry) {
 }
 
 int Mode_RefNext(const nativeVal_t *o, int i, nativeVal_t *out) {
+	if (NObj_Native(o)) {
+		/* Script_Next: PySequence_Check, then the item up to the IndexError */
+		Native_SetNone(out);
+		if (Mode_RefNoSeq(o)) {
+			Native_Raise(NE_TYPE, "loop over non-sequence");
+			return -1;
+		}
+		if (Mode_RefSeqAt(o, i, NULL, out)) {
+			return 1;
+		}
+		if (Native_ErrIs(NE_INDEX)) {
+			Native_ErrClear();
+			return 0;
+		}
+		return -1;
+	}
 	PyObject *p = Native_ToPy(o), *item = NULL;
 	int r = p ? Script_Next(p, i, &item) : -1;
 	Py_XDECREF(p);
@@ -5349,6 +5433,9 @@ byte Mode_RefOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t
 }
 
 int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
+	if ((NObj_Native(a) || NObj_Native(b)) && !Native_Holds(a, 1u << NV_OBJ) && !Native_Holds(b, 1u << NV_OBJ)) {
+		return NObj_Compare(a, b);
+	}
 	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL;
 	int c = y ? PyObject_Compare(x, y) : -2;
 	if (y) {
@@ -5361,6 +5448,17 @@ int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
 }
 
 byte Mode_RefRepr(const nativeVal_t *o, nativeVal_t *out) {
+	if (NObj_Native(o)) {
+		nativeBuf_t b;
+		Native_BufInit(&b);
+		byte ok = NObj_Repr(&b, o, NR_REPR);
+		Native_SetNone(out);
+		if (ok) {
+			Native_SetText(out, b.p, b.len);
+		}
+		Native_BufFree(&b);
+		return ok;
+	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = Mode_RefTake(p ? PyObject_Repr(p) : NULL, out);
 	Py_XDECREF(p);
@@ -5368,6 +5466,9 @@ byte Mode_RefRepr(const nativeVal_t *o, nativeVal_t *out) {
 }
 
 byte Mode_RefSlice(const nativeVal_t *o, long lo, long hi, nativeVal_t *out) {
+	if (NObj_Native(o)) {
+		return NObj_GetSlice(o, lo, hi, out);
+	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = Mode_RefTake(p ? PySequence_GetSlice(p, (int)lo, (int)hi) : NULL, out);
 	Py_XDECREF(p);
@@ -5383,6 +5484,16 @@ PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char 
 }
 
 byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeVal_t *out) {
+	if (NObj_Native(f)) {
+		nativeVal_t r;
+		byte ok = NObj_Call(f, args, n, &r);
+		if (out) {
+			*out = r;
+		} else {
+			Native_Free(&r);
+		}
+		return ok;
+	}
 	PyObject *fn = Native_ToPy(f), *params = fn ? Mode_ArgsTuple(args, n) : NULL;
 	PyObject *r = params ? Script_CallObject(fn, params, NULL) : NULL;
 	Py_XDECREF(params);
@@ -5395,6 +5506,9 @@ byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeV
 }
 
 byte Mode_RefDelAttr(const nativeVal_t *o, const char *name) {
+	if (NObj_Native(o)) {
+		return NObj_DelAttr(o, name);
+	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = p && PyObject_SetAttrString(p, (char *)name, NULL) == 0;
 	Py_XDECREF(p);
@@ -5452,6 +5566,9 @@ byte Mode_StrBuf(const nativeVal_t *v, nativeBuf_t *b) {
 	if (!Native_IsObj(v)) {
 		Native_Repr(b, v, NR_STR);
 		return 1;
+	}
+	if (NObj_Native(v)) {
+		return NObj_Repr(b, v, NR_STR);
 	}
 	PyObject *t = PyObject_Str(Native_PyOf(v));
 	if (!t) {
@@ -5528,17 +5645,14 @@ byte Mode_Times(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 
 byte Mode_ModAt(const char *module, const char *var, const nativeVal_t *key, nativeVal_t *out) {
 	nativeVal_t d;
-	if (!ModVar_ModAttrVal(module, var, &d)) {
-		Native_SetNone(out);
-		return 0;
-	}
-	if (d.type == NV_REF && NObj_RefMode()) {
-		Native_SetNone(out);
-		byte ok = Mode_ItemOf(&d, key, out);
+	if (Mode_RefMod(module, var, &d) && NObj_Native(&d)) {
+		/* a dict or list object of a pack module: its item natively */
+		byte ok = Mode_Sub(&d, key, out);
 		Native_Free(&d);
 		return ok;
 	}
 	Native_Free(&d);
+	Native_ErrClear();
 	PyObject *o = Script_Attr(module, var), *k = o ? Native_ToPy(key) : NULL;
 	PyObject *x = k ? PyObject_GetItem(o, k) : NULL;
 	Native_SetNone(out);

@@ -226,9 +226,9 @@ static void Sd_Params(long win, const char *mode, const char *retry, nativeVal_t
 static byte Sd_Remote(const char *how, const nativeVal_t *cad, const nativeVal_t *who, const nativeVal_t *func,
 	const nativeVal_t *params) {
 	if (!strcmp(how, "ForceRemoteCom")) {
-		return PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, Native_PyOf(func), params);
+		return PORT_CALL(Speech, ForceRemoteCom, NULL, "vv;AfterRemoteComFunc=v,Parameters=v", cad, who, func, params);
 	}
-	return PORT_CALL(Speech, AddRemoteCom, NULL, "vv;AfterRemoteComFunc=O,Parameters=v", cad, who, Native_PyOf(func), params);
+	return PORT_CALL(Speech, AddRemoteCom, NULL, "vv;AfterRemoteComFunc=v,Parameters=v", cad, who, func, params);
 }
 
 /* if (cad and cad != ""): Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params) else:
@@ -552,7 +552,7 @@ static byte Sd_GamblerSays(const char *cadVar, const char *mod, const char *func
 		return 0;
 	}
 	Mode_SaveVar(cadVar, &cad);
-	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vsO", &cad, CG, Native_PyOf(&fn));
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vsv", &cad, CG, &fn);
 	Native_Free(&cad);
 	Native_Free(&fn);
 	return ok;
@@ -1119,7 +1119,7 @@ static byte Vs_EnemyWinsC(const nativeVal_t *cad) {
 		return 0;
 	}
 	Sd_Params(0, "Versus", "Versus.RestartCombat", &params);
-	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vvOv", cad, &head, Native_PyOf(&fn), &params);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "vvvv", cad, &head, &fn, &params);
 	Native_Free(&params);
 	Native_Free(&head);
 	Native_Free(&fn);
@@ -2424,7 +2424,7 @@ static byte Sd_GamblerKey(const char *key, const char *mod, const char *func) {
 		return 0;
 	}
 	Native_SetEmpty(&none, NV_TUPLE);
-	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, CG, Native_PyOf(&fn), &none);
+	byte ok = PORT_CALL(Speech, AddRemoteCom, NULL, "ssvv", key, CG, &fn, &none);
 	Native_Free(&fn);
 	return ok;
 }
@@ -2472,7 +2472,7 @@ static byte Dom_CrazyGamblerStartDominationC(void) {
 	Native_Free(v);
 	Mode_SaveVar("DominationStartTextCad", v);
 	Native_SetEmpty(fn, NV_TUPLE);
-	return Mode_Done(&t, ok && PORT_CALL(Speech, AddRemoteCom, NULL, "vsOv", v, CG, Native_PyOf(f), fn));
+	return Mode_Done(&t, ok && PORT_CALL(Speech, AddRemoteCom, NULL, "vsvv", v, CG, f, fn));
 }
 
 MODE_FN(Dom, CrazyGamblerStartDomination, 0, Dom_CrazyGamblerStartDominationC())
@@ -3257,7 +3257,7 @@ static byte Mr_CrazyGamblerStartMortalRaceC(void) {
 	}
 	Mode_SaveVar("MortalRaceStartTextCad", &cad);
 	Native_SetEmpty(&none, NV_TUPLE);
-	byte ok = Mode_RefG(MR, "CreateFirstWaypoint", &fn) && PORT_CALL(Speech, AddRemoteCom, NULL, "vsOv", &cad, CG, Native_PyOf(&fn), &none);
+	byte ok = Mode_RefG(MR, "CreateFirstWaypoint", &fn) && PORT_CALL(Speech, AddRemoteCom, NULL, "vsvv", &cad, CG, &fn, &none);
 	Native_Free(&fn);
 	Native_Free(&cad);
 	return ok && PORT_OWN(MortalRace, InitRace, NULL, "");

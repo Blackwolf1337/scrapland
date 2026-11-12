@@ -456,10 +456,19 @@ int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a);
 PyObject *Native_ArgPy(const nativeArg_t *a);
 /* the tuple of n arguments (NULL as for one of them) */
 PyObject *Native_PyArgs(const nativeArg_t *a, int n);
-/* module.name(...) through the module attribute (an AttributeError when it is not there) */
+/* module.name(...) through the module attribute (an AttributeError when it is not there); a native object there (a
+ * class, an instance, a callback of a pack module: not a port function) is called natively (Port_NativeCallVa) */
 byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
-/* name(...) as a function of the module calls a global of its own (the NameError of the script when it is gone) */
+/* name(...) as a function of the module calls a global of its own (the NameError of the script when it is gone); a
+ * native object as above */
 byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
+/* the variable module.name of a loaded pack module when it holds a native object a port function is not (a class, an
+ * instance, a callback): 1 with *f (Native_Free it), else 0 without an error and *f None (no import is made) */
+byte Native_NativeVar(const char *module, const char *name, nativeVal_t *f);
+/* f(...) of a native object f (NObj_Native) on the letters of Native_Call, each argument as its adapter would get it
+ * (the packing of the entries): NObj_Call, the result as Native_Arg makes it into *out (NULL: dropped); 0 with the
+ * error */
+byte Port_NativeCallVa(const nativeVal_t *f, nativeVal_t *out, const char *fmt, va_list va);
 /* Scrap.GetEntity(name): 1 with the entity in *out (NULL when there is none: the script gets None), 0 with the
  * TypeError of its argument for a value that is no text */
 byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
@@ -670,6 +679,10 @@ byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v
  * a ref on Python objects (MODE_PYENTRY) and under SCRAP_PORT_SLOW=1 (OBJLIB 7).
  */
 const portRef_t *Port_Own(PyObject *f);
+/* the ref of the function a port table entry makes (its adapter under its name, the flags of a ref: METH_VARARGS, and
+ * METH_KEYWORDS when the ref takes keywords, no doc), for a native function object of it (NObj_NewPortFunc); NULL when
+ * there is none and under SCRAP_PORT_SLOW=1 */
+const portRef_t *Port_OfDef(const PyMethodDef *def);
 /*
  * The call of a value f: the entry of the port function f is (Port_Own; the arguments packed as its adapter gets them,
  * the depth check of Port_Entry), else the call through Python of Native_Call (OBJLIB 7: the same object). f NULL
@@ -682,6 +695,10 @@ const portRef_t *Port_Own(PyObject *f);
 byte Port_Value(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, ...);
 byte Port_ValueVa(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, va_list va);
 byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout);
+/* the same for a value f: a native port function through its entry as above, a view or another Python value through
+ * Port_Values on its object, any other native object through NObj_Call (no crossing) */
+byte Port_ValuesOf(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out,
+	PyObject **pyout);
 /* the ref a value site names before its first call through an entry */
 extern const portRef_t port_value;
 #define PORT_VSITE() (&(static portSite_t){ .ref = &port_value, .global = 2, .file = __FILE__, .line = __LINE__ })

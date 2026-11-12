@@ -1323,7 +1323,7 @@ static int Fd_End(void) {
 static byte Fd_ForceCom(const char *key) {
 	nativeVal_t then;
 	byte ok = Mode_RefG(FD, "SetNextMission", &then) &&
-		PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=O", key, "DeepThroat", Native_PyOf(&then));
+		PORT_CALL(Speech, ForceRemoteCom, NULL, "ss;AfterRemoteComFunc=v", key, "DeepThroat", &then);
 	Native_Free(&then);
 	return ok;
 }

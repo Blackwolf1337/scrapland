@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -396,11 +397,22 @@ static byte Mf_CharMissionDialog(const nativeVal_t *usr, const nativeVal_t *name
 	byte ok = 1;
 	Native_SetNone(&none);
 	if (Mf_Is(opt, "Talk")) {
-		ok = Mode_RefGetAttr(&cls, "initMsg", &msg) && Mode_RefGetAttr(&cls, "initAns", &ans) &&
-			PORT_CALL(Speech, OnSpch, NULL, "OOs", Native_PyOf(&msg), Native_PyOf(&ans), "TalkNPC");
+		ok = Mode_RefGetAttr(&cls, "initMsg", &msg) && Mode_RefGetAttr(&cls, "initAns", &ans);
+		if (ok) {
+			/* as the letter O hands them over (a list of plain values as a copy) */
+			nativeVal_t m, a;
+			NObj_ArgOf(&msg, &m);
+			NObj_ArgOf(&ans, &a);
+			ok = PORT_CALL(Speech, OnSpch, NULL, "vvs", &m, &a, "TalkNPC");
+			Native_Free(&m);
+			Native_Free(&a);
+		}
 		int has = ok ? Mf_AttrTrue(&cls, "speechOptionsList") : -1;
-		if (has > 0) {
-			ok = Mode_RefGetAttr(&cls, "speechOptionsList", &l) && PORT_CALL(Speech, StdAnsLst, NULL, "O", Native_PyOf(&l));
+		if (has > 0 && (ok = Mode_RefGetAttr(&cls, "speechOptionsList", &l)) != 0) {
+			nativeVal_t x;
+			NObj_ArgOf(&l, &x);
+			ok = PORT_CALL(Speech, StdAnsLst, NULL, "v", &x);
+			Native_Free(&x);
 		}
 		has = ok && has >= 0 ? Mf_AttrTrue(&cls, "afterInitSpeechFunc") : -1;
 		if (has > 0) {

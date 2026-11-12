@@ -395,9 +395,8 @@ static byte Bots_InitServerModC(const char *m) {
 			Native_Subscript(ships, key, ship) && Mode_ModVar("ShipMaker", "PilotsList", pilots);
 		int npilots = ok ? Native_Size(pilots) : -1;
 		ok = npilots >= 0;
-		/* pd = VehiclesNPC.GetIAProf(bot[1]): the profile object of VehiclesNPC, changed in place below (OBJLIB 7: an
-		 * instance of the class cShipAI of vehiclesnpc.mod, held by reference as NV_OBJ: the object itself on both
-		 * paths) */
+		/* pd = VehiclesNPC.GetIAProf(bot[1]): the profile object of VehiclesNPC, changed in place below (a native
+		 * instance of the class cShipAI of vehiclesnpc.mod, held by reference: the object itself on both paths) */
 		ok = ok && PORT_CALL(VehiclesNPC, GetIAProf, prof, "v", b1) && Native_Subscript(bot, Mode_I(&t, 2), b2) &&
 			PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", prof, b2);
 		/* pd.CadenceShootCM = 0; pd.AngAttack = 3.14; VehiclesNPC.AIProf[bot[2]] = pd */
