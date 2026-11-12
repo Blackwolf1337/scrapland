@@ -52,7 +52,7 @@ static byte Om_DominationSetVars(const omDomination_t *d) {
 	Mode_DummyNext(&dummy);
 	byte ok = 1;
 	while (ok && Native_True(&dummy)) {
-		/* Domination.zones.append(dummy[1]) (OBJLIB 5: the list of Domination, changed in place) */
+		/* Domination.zones.append(dummy[1]) (the list of Domination, changed in place) */
 		ok = LvN_Item(&dummy, 1, &pos) && LvN_ModAppend("Domination", "zones", &pos);
 		Native_Free(&pos);
 		Native_Free(&dummy);

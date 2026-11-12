@@ -5,7 +5,7 @@
  * folder, the Press map changes it) stays a variable of the module.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. BureaucracyTableFile is mirrored from the module dict where Init reads it (OBJLIB 5).
+ * entries are adapters. BureaucracyTableFile is read from the registry where Init reads it.
  * CreateBureaucracyClass is called through its ref for each desk (PORT_CALL: directly while the attribute holds the
  * port's function, else by name, as a mission may replace it).
  */
@@ -22,16 +22,6 @@
 static const char bureaucracy_def[] = {
 #embed "../../../data/chars/bureaucracy.def"
 	, 0 };
-
-static struct {
-	nativeVal_t tableFile;		/* BureaucracyTableFile: any value, CreateBureaucracyClass gets it */
-} bureaucracy;
-
-/* OBJLIB 5: the mirror in the module dict, read where the script reads it */
-static const nativeVar_t bureaucracy_vars[] = {
-	{ "BureaucracyTableFile", &bureaucracy.tableFile, 0, NV_ANY },
-	{ NULL, NULL, 0, 0 },
-};
 
 /* text + v of the script (the engine reads the result up to a 0 byte) into b */
 static byte Bureaucracy_Cat(nativeBuf_t *b, const char *text, const nativeVal_t *v) {
@@ -76,14 +66,17 @@ static byte Bureaucracy_Desk(const char *name, const double *pos, const double *
 		return Native_Raise(NE_INDEX, "list index out of range");
 	}
 	const char *b = strchr(a + 1, '_');
-	nativeVal_t kind;
+	nativeVal_t kind, file;
 	Native_SetText(&kind, a + 1, b ? (int)(b - a - 1) : (int)strlen(a + 1));
-	if (!Native_Import("Bureaucracy", bureaucracy_vars)) {
+	/* BureaucracyTableFile (any value, CreateBureaucracyClass gets it) */
+	Native_SetNone(&file);
+	if (!Native_VarTake("Bureaucracy", "BureaucracyTableFile", 0, NV_ANY, &file)) {
 		Native_Free(&kind);
 		return 0;
 	}
 	/* through the module (a mission may put another function there) */
-	byte ok = PORT_CALL(Bureaucracy, CreateBureaucracyClass, NULL, "vv", &kind, &bureaucracy.tableFile);
+	byte ok = PORT_CALL(Bureaucracy, CreateBureaucracyClass, NULL, "vv", &kind, &file);
+	Native_Free(&file);
 	if (!ok) {
 		Native_Free(&kind);
 		return 0;

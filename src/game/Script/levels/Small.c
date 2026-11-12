@@ -5,7 +5,8 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the dummy search, the entities (Scrap.CreateEntity through its seam, the
  * handles as values, OBJLIB 7), the camera and the engine variables (Scrap.Set through its seam) in C; Init.Outdoor
- * and CharsNPC.AfterBrowseNPC are variables of other modules, set and changed in place (OBJLIB 5).
+ * and CharsNPC.AfterBrowseNPC are variables of other modules, set and changed in place (OBJLIB 5 (9c: AfterBrowseNPC
+ * holds functions)).
  *
  * Direct calls (stage 3): Elevator.ConnectElevators and ShipEdit.EnterEditShipMenu go through their refs (PORT_CALL).
  * The NetModes bots put their own function into ShipEdit.EnterEditShipMenu; the call then takes the slow path to it.

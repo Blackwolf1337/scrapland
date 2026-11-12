@@ -8,9 +8,9 @@
  * scorer) as native values. The variables of other modules are read where the C read them (Init.isShipEdit, Outdoor,
  * isJunkYard, OffLineGame, Scorer.MarginH, MarginV, SplitScreen, MissionScorerBar_X and _Y, Menu.MissionScorerCall,
  * RacerScorer.SPECTATOR_POINTS and the texts of the scores), the variables of RacerScorer are written at once
- * (OBJLIB 5). The scorer functions and Menu are called through their refs (PORT_CALL: directly while the attribute
+ * (the registry). The scorer functions and Menu are called through their refs (PORT_CALL: directly while the attribute
  * holds the port's function, else by name, a failure printed); the callback Menu.MissionScorerCall is called as the
- * value it holds (OBJLIB 5); SScorer.SetCinema, Scrap.GetCam, GetEntity and UsrEntity go through their seams
+ * value it holds (OBJLIB 5 (9c)); SScorer.SetCinema, Scrap.GetCam, GetEntity and UsrEntity go through their seams
  * (OBJLIB 7); Blink and the ping update schedule themselves (Mode_SchedAt: the scheduler takes their entries).
  */
 #include <string.h>
@@ -445,7 +445,8 @@ static void Hud_CharCreate(int id) {
 	if (!Mode_ModGetI("Init", "Outdoor", 0) && !Mode_ModGetI("Init", "isJunkYard", 0)) {
 		MODE_PRINTED(CharScorer, CreateSpecialActionScorer, "i", (long)id);
 	}
-	/* OBJLIB 5: the callback variable of Menu */
+	/* OBJLIB 5 (9c): the callback variable of Menu */
+
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 
@@ -514,7 +515,8 @@ static void Racer_CreateRacerCore(int id) {
 	Mode_Done(&t, 1);
 	Native_Free(&cam);
 	Native_Free(&camName);
-	/* OBJLIB 5: the callback variable of Menu */
+	/* OBJLIB 5 (9c): the callback variable of Menu */
+
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 

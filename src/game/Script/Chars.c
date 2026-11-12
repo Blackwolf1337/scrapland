@@ -6,14 +6,15 @@
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values. The sound functions set the
  * events of SAct's current class and action in C. CharRes (the [class, discardable] pairs other scripts fill too),
  * CanDriveList and the hooks of the missions (OnCreateMainChar, OnMainCharDeath) stay variables of the module: they
- * are read where the port read them and lists are changed in place (OBJLIB 5); Init walks the CharRes object itself,
+ * are read where the port read them and lists are changed in place; Init walks the CharRes object itself,
  * as the script's loop, while the character scripts it starts append to it. The characters are handle values
  * (OBJLIB 7). The engine functions the port called by name go through their seams (GetEntity,
  * CreateEntity, GetNetFlags, the dummy search, the scheduler, SAct.GetClass/SetCls/DelClass, SInput.SetActionSet,
  * SLogic.SetOnFloor); the other ports (CharsNPC, CharScorer, MissionsFuncs) and the functions of the module the
- * script calls through its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5), the
- * function given to the scheduler by name through its entry (Port_Scheduled). The exec of a character's Init keeps the
- * reader of the game's texts (OBJLIB 6); the eval of the saved batteries reads its literal natively (Mode_EvalIn).
+ * script calls through its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5 (9c)),
+ * the function given to the scheduler by name through its entry (Port_Scheduled). The exec of a character's Init keeps
+ * the reader of the game's texts (OBJLIB 6); the eval of the saved batteries reads its literal natively
+ * (Mode_EvalIn).
  */
 #include <string.h>
 
@@ -375,7 +376,7 @@ static byte Ch_Init(void) {
 	if ((Mode_ModGetI("Init", "Outdoor", 0) || Mode_ModGetI("Init", "isJunkYard", 0)) && Ch_AddResS("Sputnik", 0) < 0) {
 		return 0;
 	}
-	/* OBJLIB 5: the CharRes list Init's loop walks is held by reference (the character scripts it starts append to
+	/* the CharRes list Init's loop walks is held by reference (the character scripts it starts append to
 	 * it): its length as the for loop takes it each turn (-1 with the error left set, as the port went on), and
 	 * cr[1] = 0 on the item itself */
 	nativeVal_t list, zero;

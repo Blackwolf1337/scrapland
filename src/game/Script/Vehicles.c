@@ -7,15 +7,15 @@
  * through their modules.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * variables of the module are read where the script reads them as its globals (OBJLIB 5: the missions and the cases set
+ * variables of the module are read where the script reads them as its globals (the missions and the cases set
  * OnDeathCallback, ForceDeathTaunt and the factors). The ships, missiles and cameras are handle values (OBJLIB 7). The
  * other ports are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
  * by name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
  * global: a mission, a net weapon or a case may replace one). The net chain stays Script_Hook on Net's functions, the
  * hooks LastClientCreate and LastClientAfterCreate are called through the module's globals by name and OnDeathCallback
- * and the ShipCallback functions of ShipMaker as values (OBJLIB 5: variables). SAI, SWeap, SLogic and Scrap.SetCam go
- * through their refs (stage 7), SFX, SNet.GetObjName and SSound.PlaySound (its six arguments) too; Scrap.GetEntity,
- * CreateEntity, UsrEntity,
+ * and the ShipCallback functions of ShipMaker as values (OBJLIB 5 (9c: functions as values)). SAI, SWeap, SLogic and
+ * Scrap.SetCam go through their refs (stage 7), SFX, SNet.GetObjName and SSound.PlaySound (its six arguments) too;
+ * Scrap.GetEntity, CreateEntity, UsrEntity,
  * GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go through their seams. The texts of
  * the net resources of the lost engines ("DmM:<model>") stay as they were.
  */
@@ -159,7 +159,7 @@ static byte Veh_ClientCreateN(const nativeVal_t *name, const nativeVal_t *res) {
 		ok = PORT_OWN(Vehicles, CreateDumbMotor, &l, "vvvv", name, &z, &z, &model) && LvN_SetS(&l, "OnHit", "Vehicles.MotorHit");
 		Native_Free(&z);
 	} else if (ok) {
-		/* OBJLIB 5: the hook of the net chain, a variable of the module */
+		/* OBJLIB 5 (9c): the hook of the net chain, a variable of the module */
 		ok = Native_CallGlobal(VEH, "LastClientCreate", NULL, "vv", name, res);
 	}
 	Native_Free(&model);
@@ -171,7 +171,7 @@ static byte Veh_ClientAfterCreateN(const nativeVal_t *name, const nativeVal_t *r
 	nativeVal_t model;
 	Native_SetNone(&model);
 	int mine = Veh_IsMotor(res, &model);
-	/* OBJLIB 5: LastClientAfterCreate, the hook of the net chain, is a variable of the module */
+	/* OBJLIB 5 (9c): LastClientAfterCreate, the hook of the net chain, is a variable of the module */
 	byte ok = mine >= 0 && (mine ? PORT_OWN(Vehicles, SetUpDumbMotor, NULL, "vv", name, &model) :
 		Native_CallGlobal(VEH, "LastClientAfterCreate", NULL, "vv", name, res));
 	Native_Free(&model);
@@ -901,7 +901,7 @@ static byte Veh_SetStdPropertiesN(const nativeVal_t *name, const nativeVal_t *mo
 
 /* Init(): the net chain, then ShipMaker and OutSound */
 static byte Veh_InitN(void) {
-	/* OBJLIB 5: the chains of Net's functions stay Python functions until they are C hook pointers */
+	/* OBJLIB 5 (9c): the chains of Net's functions stay Python functions until they are C hook pointers */
 	if (!Mode_Import("Net") || !Script_Hook(VEH, "Net", "ClientAfterCreate", "LastClientAfterCreate") ||
 		!Script_Hook(VEH, "Net", "ClientCreate", "LastClientCreate") || !Mode_Import("ShipMaker") ||
 		!PORT_CALL(ShipMaker, Init, NULL, "") || !Mode_Import("OutSound") || !PORT_CALL(OutSound, Init, NULL, "")) {

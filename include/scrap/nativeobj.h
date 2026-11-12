@@ -189,6 +189,9 @@ PyObject *NObj_Py(const nativeVal_t *v);
 /* the table of a dict object of native data (NV_DICT, changed in place by the caller with the Native_Dict functions);
  * NULL for a view, a dict that crossed, another value */
 nativeVal_t *NObj_DictData(const nativeVal_t *d);
+/* the items of a list object of native data (an NV_LIST by value, changed in place by the caller); NULL for a view,
+ * a list that crossed, another value */
+const nativeVal_t *NObj_ListData(const nativeVal_t *l);
 /* Native_FromPyAny(Native_ToPy(v)) without the crossing of native data: numbers, texts, None, and lists, tuples and
  * dicts (by value, objects, views) of them by value, 32 deep (a dict with its table); 1 with *out (Native_Free it),
  * 0 without an error and *out None when v holds another value (an instance, a function, a module, an entity handle) */
@@ -199,5 +202,8 @@ void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out);
 /* 1 by default: Native_SetObj and Native_Arg give the NV_REF view of an object Native_FromPyRef takes. 0 under
  * SCRAP_NATIVE_REF=0 (read once): the NV_OBJ of before batch 9a2, kept one more round for comparison */
 byte NObj_RefMode(void);
+/* the measure of what stays native: 0 native data, 1 the view of an object Python made, 2 native data that crossed to
+ * Python (now a view too); -1 for a value that is no NV_REF */
+int NObj_State(const nativeVal_t *v);
 
 #endif

@@ -11,16 +11,16 @@
  * waves are data/missions/police.def.
  *
  * The three modules are native C (docs/objlib-plan.md, stage 2): their functions work on C values, read the variables
- * of their modules where the script reads them and write them back to the module at once (OBJLIB 5: the level files,
+ * of their modules from the registry where the script reads them and write them back at once (the level files,
  * ShipMaker, Vehicles and the cases read and set them), and set the engine variables, the money and the save variables
  * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams). The calls of
- * VehiclesNPC, SaveGame and RaceMaker go through their refs (PORT_CALL: the seam, OBJLIB 5). The class
- * VehiclesNPC.cShipAI is called by name (OBJLIB 5: a class the .mod defines); SAI.SetStateVehicle and SAI.EnableAIChar
- * go through their refs (stage 7); the ships and profiles the calls give (handle values) and CharsNPC.CharRes stay
- * Python values read by name (OBJLIB 5, 7), the hooks onTrackCreate and OnPoliceCreatedCallback are values of the
- * variables (OBJLIB 5) called through the entries of port functions (PORT_VALUE); the steps of police.def take the
- * values of their lines as native values. The functions of Traffic call each other in C as the port did (the
- * engine callbacks name them "Traffic.<name>").
+ * VehiclesNPC, SaveGame and RaceMaker go through their refs (PORT_CALL: the seam, OBJLIB 5 (9c)). The class
+ * VehiclesNPC.cShipAI is called by name (OBJLIB 5 (9c: a class the .mod defines)); SAI.SetStateVehicle and
+ * SAI.EnableAIChar go through their refs (stage 7); the ships and profiles the calls give (handle values) and
+ * CharsNPC.CharRes stay Python values read by name (OBJLIB 5 (9c: instances), 7), the hooks onTrackCreate and
+ * OnPoliceCreatedCallback are values of the variables (OBJLIB 5 (9c: functions as values)) called through the
+ * entries of port functions (PORT_VALUE); the steps of police.def take the values of their lines as native values.
+ * The functions of Traffic call each other in C as the port did (the engine callbacks name them "Traffic.<name>").
  */
 #include <string.h>
 
@@ -59,7 +59,7 @@ static byte Traffic_ResetPathN(void) {
 	return ok;
 }
 
-/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf (OBJLIB 5: the class by name; the profile
+/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf (OBJLIB 5 (9c: the class by name); the profile
  * objects are Python values, OBJLIB 7): profile the name of the profile, or NULL for the save variable
  * StdShipAIProfile; hook 0 sets FactorHookMap to 0 */
 static byte Traffic_Profile(const nativeVal_t *ship, const char *profile, byte hook) {
@@ -175,7 +175,7 @@ static byte Traffic_RailDeath(const nativeVal_t *killer) {
 }
 
 /* the death of a rail ship of list (HeavyTraffic...) from ships (AcHeavyShips...): a new one of type, the hook
- * onTrackCreate, the death, the path back (OBJLIB 5: the hook a value of the module) */
+ * onTrackCreate, the death, the path back (OBJLIB 5 (9c: the hook a function value of the module)) */
 static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, const char *list, const char *type) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ship = Mode_V(&t), *o1 = Mode_V(&t), *name = Mode_V(&t);
@@ -185,7 +185,7 @@ static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, con
 		!PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 4L, name)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 5: the hook is a function value of the module */
+	/* OBJLIB 5 (9c): the hook is a function value of the module */
 	nativeVal_t *hook = Mode_V(&t);
 	return Mode_Done(&t, Mode_G("Traffic", "onTrackCreate", hook) && Mode_CallArgs(hook, NULL, o1, 1) &&
 		Traffic_RailDeath(killer) && Traffic_ResetPathN());
@@ -344,7 +344,7 @@ static byte OutPolice_MakePoliN(const nativeVal_t *type) {
 		return 0;
 	}
 	Native_SetStr(&list, "OutCop");
-	/* OBJLIB 5: the hook is a function value of the module */
+	/* OBJLIB 5 (9c): the hook is a function value of the module */
 	nativeVal_t hook = { 0 };
 	int t = Mode_VSet(&ship, "EntityList", &list) && Mode_G("OutPolice", "OnPoliceCreatedCallback", &hook) ?
 		Mode_Truth(&hook) : -1;
@@ -422,8 +422,8 @@ static byte OutPolice_InitWavesN(void) {
 	return OutPolice_SetWave(&zero);
 }
 
-/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] (OBJLIB 5: the
- * class VehiclesNPC.cShipAI by name; the profile objects are Python values, OBJLIB 7) */
+/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] (OBJLIB 5 (9c:
+ * the class VehiclesNPC.cShipAI by name); the profile objects are Python values, OBJLIB 7) */
 static byte OutPolice_InitAIProfilesN(void) {
 	static const char *const types[] = { "Rookie", "Pilot", "Veteran", "Elite", "Ace", "MegaAce" };
 	if (!Mode_Import("VehiclesNPC")) {

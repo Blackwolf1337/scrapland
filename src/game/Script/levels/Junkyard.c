@@ -10,7 +10,7 @@
  * variables), MapShipEdit (LastPlayer, ArrowMissionState), Mission_RustyFirstContact (kb, rusty, Params).
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of the
- * modules are read where the script reads them and written through at once (OBJLIB 5); the keypad, Rusty, the player
+ * modules are read where the script reads them and written through at once; the keypad, Rusty, the player
  * and HangarTab.prevShip are handle values (OBJLIB 7). fc-r7b-jy records many engine functions, so these go through
  * their seams: Scrap.AddScheduledFunc, CreateEntity, CreateEntityList, Set, SetMoney, SetTimeSpeed,
  * UsrEntity, ConsoleError, SScorer.Add, Set, SetDefault and SetMsgText, SInput.SetActionSet, SSound.SetMusic and the
@@ -22,7 +22,7 @@
  * PORT_LCALL, PORT_LOWN). The scene tables and EndOfMission's apply call a port's function through its entry
  * (Mode_Calls, MODE_CBAPPLYSEQV), and so does the scheduler (Mode_AtG, Mode_ScheduleV of the tutorial steps;
  * Port_Scheduled). By name stay the data functions LoadMecanicScene and TutorialMsg (OBJLIB 6) and the functions set
- * as callbacks (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5).
+ * as callbacks (Elevator, Scene, ShipEdit, the speech routines; OBJLIB 5 (9c)).
  */
 #include <string.h>
 

@@ -12,7 +12,7 @@
  * (save variables, Scrap.Get, the alarm, the entity lists, the scorer items, the vector math, the money). The variables
  * of the modules are read where the script reads them and written through at once; the lists and dicts of the racers,
  * the police ships, the bankers, the mercenaries, the treasures and the police friends are changed in place on the
- * objects of the modules (OBJLIB 5). The ships, the items, the phone cabs and the cameras are handle values, the
+ * objects of the modules. The ships, the items, the phone cabs and the cameras are handle values, the
  * profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine functions the cases record or swap go through their
  * seams: Scrap.AddScheduledFunc, DeleteScheduledFuncs, DelSaveVars, CreateEntity, Set, SetAlarm, SetLockAlarm,
  * UsrEntity, Rand, GetAlarm, TestLine and Preload3DObject, SAI.GetStateVehicle, SLogic.SetOnFloor, SScorer.Set and
@@ -25,11 +25,11 @@
  * VehiclesNPC, Vehicles, Elevator, Metro, Traffic, Items, Scene, OutMap), the keyword calls among them
  * (RaceMaker.InitRace, Speech.AddRemoteCom with InsertFirst, Speech.AutoAddNI with HeadName) and the own functions of
  * the modules (their globals) go through their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_SCORERG; the seam
- * takes the call by name when a mission or a case has put something else there, OBJLIB 5). By name: the sections of
- * the .def files and XBMenu (OBJLIB 6), the class VehiclesNPC.cShipAI (OBJLIB 5); the functions given to the
+ * takes the call by name when a mission or a case has put something else there, OBJLIB 5 (9c)). By name: the sections
+ * of the .def files and XBMenu (OBJLIB 6), the class VehiclesNPC.cShipAI (OBJLIB 5 (9c)); the functions given to the
  * scheduler and to the entities (Mode_Later, Mode_AtG, the OnTake and OnDeath texts) take the entry of a port's own
  * function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to the speech callbacks (the callback globals) are
- * values of their variables (OBJLIB 5).
+ * values of their variables (OBJLIB 5 (9c)).
  */
 #include <limits.h>
 
@@ -218,8 +218,8 @@ MODE_FN(Win2nd, InitStatus, 1, LvN_AcShips(WR, ships_police5))
 /* Init(LevelPath): the countdown resources, the race profile, the alarm hooks, the race (unless the alarm is on) */
 static byte Win2nd_Init(void) {
 	nativeVal_t sp = { 0 }, prof = { 0 };
-	/* OBJLIB 5: the class cShipAI, a variable of VehiclesNPC made by its .mod code (a mod may replace it), called by name
-	 * until the variable registry holds it; its instances are Python objects (OBJLIB 7) */
+	/* OBJLIB 5 (9c): the class cShipAI, a variable of VehiclesNPC made by its .mod code (a mod may replace it), called
+	 * by name; its instances are Python objects (OBJLIB 7) */
 	int alarm = Mode_Import("Alarm") && Mode_Import("RaceMaker") && Mode_Import("VehiclesNPC") &&
 		PORT_CALL(RaceMaker, PreloadCnDnResources, NULL, "") && LV_CALL("VehiclesNPC", "cShipAI", &sp, "") && Mode_G(WR, "RACE_PROFILE", &prof) &&
 		PORT_CALL(VehiclesNPC, SetAIProfile, NULL, "vv", &sp, &prof) && LvN_ModSetGlobal("Alarm", "TempAbortMissionCallback", WR, "OnAlarmOn") &&
@@ -1455,8 +1455,8 @@ static byte Merc_CreateLonelyMercProfiles(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pd2 = TV(), *pd1 = TV();
 	byte ok = LvN_Profile(lonely_normal_profile, pd2) && Mode_ModDictPut("VehiclesNPC", "AIProf", Mode_S(&t, "LonelyMercNormal"), pd2) &&
-		/* OBJLIB 5: the class cShipAI, a variable of VehiclesNPC made by its .mod code (a mod may replace it), called
-		 * by name until the variable registry holds it; its instances are Python objects (OBJLIB 7) */
+		/* OBJLIB 5 (9c): the class cShipAI, a variable of VehiclesNPC made by its .mod code (a mod may replace it),
+		 * called by name; its instances are Python objects (OBJLIB 7) */
 		LV_CALL("VehiclesNPC", "cShipAI", pd1, "") && Mode_SetAttrs(pd1, lonely_hard_profile) &&
 		Mode_ModDictPut("VehiclesNPC", "AIProf", Mode_S(&t, "LonelyMercHard"), pd1);
 	return Mode_Done(&t, ok);
@@ -3143,7 +3143,7 @@ static int At_CallsPolice(void) {
 }
 
 /* Speech.AddRemoteCom(key, "Traitorius", Scrap.SetAlarm, (1,), InsertFirst=1): his call of the police (OBJLIB 7:
- * the engine function Scrap.SetAlarm goes as the function value; Speech keeps it in RemoteCom, OBJLIB 5) */
+ * the engine function Scrap.SetAlarm goes as the function value; Speech keeps it in RemoteCom, OBJLIB 5 (9c)) */
 static byte At_PoliceCall(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *args = TV(), *who = TV(), *fn = TV(), *p = TV();

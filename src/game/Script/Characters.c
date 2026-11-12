@@ -5,8 +5,8 @@
  * character module. The module code of a script (file names and other values) stays in the script.
  *
  * Native C (docs/objlib-plan.md, stage 2): the steps and the missile events of Gear read and set the current action
- * in C on C values. Init.Path and the table of Speech the speech step fills (OBJLIB 5, 6: Speech
- * calls its functions through their entries) stay Python.
+ * in C on C values. Init.Path and the table of Speech the speech step fills (OBJLIB 5 (9c), 6: Speech calls its
+ * functions through their entries) stay Python.
  */
 #include <string.h>
 
@@ -170,7 +170,7 @@ static void Step_Speech(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "sss", &name, &module, &func)) {
 		return;
 	}
-	/* OBJLIB 5, 7: a function of a module named at run time (held as NV_OBJ) into the table of Speech, a dict
+	/* OBJLIB 5 (9c), 7: a function of a module named at run time (held as NV_OBJ) into the table of Speech, a dict
 	 * variable changed in place; the table is looked up before the function, as the script evaluates them */
 	nativeVal_t routines, f = { 0 }, key;
 	if (Mode_ModGet("Speech", "SpeechRoutines", &routines) && Mode_ModGet(module, func, &f)) {
@@ -258,7 +258,7 @@ static void Char_InitVars(const char *name, const char *file, const char *builti
 	const nativeVal_t *vals[MODE_DEFVARS];
 	nativeVal_t xbox, lv;
 	va_list va;
-	/* OBJLIB 5: Init.Path is a variable of Init */
+	/* Init.Path is a variable of Init */
 	Script_GetString("Init", "Path", level, sizeof(level));
 	for (char *p = level; *p; p++) {
 		if (*p >= 'a' && *p <= 'z') {

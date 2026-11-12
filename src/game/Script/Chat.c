@@ -3,10 +3,11 @@
  * for network games and Init.Init calls SetChatProc, which names the callbacks of the engine (the chat key, the
  * received lines, the console, the six quick messages). The chat line itself is data/menus/chat.def.
  *
- * Native C (docs/objlib-plan.md, the pilot of stage 2): the state is the struct chat, the functions call the engine
- * in C and work on C texts; the PyMethodDef entries are adapters. SendID (the receiver of each player: "ALL" or the
- * ship "net<n>") and MyShip (the ship of this machine, skipped while cycling) are mirrored into the module dict
- * (OBJLIB 5): chat.mod sets them, the tests read and write them there. A line goes over the network as
+ * Native C (docs/objlib-plan.md, the pilot of stage 2): the functions call the engine in C and work on C texts; the
+ * PyMethodDef entries are adapters. SendID (the receiver of each player: "ALL" or the ship "net<n>") and MyShip (the
+ * ship of this machine, skipped while cycling) are variables of the module (chat.mod sets them, the tests read and
+ * write them): an entry point reads them from the registry into a chatVars_t for its call and writes a change there
+ * at once. A line goes over the network as
  * "<receiver>\t<text>"; the server shows it and sends it on (to all, or to the one receiver).
  */
 #include <string.h>
@@ -28,24 +29,32 @@ static const char chat_def[] = {
 /* a line of the chat as the C builds it (the network takes 0x80 characters of it) */
 #define CHAT_LINE 0x200
 
-static struct {
+/* the values of the variables of the module as one call of an entry point reads them */
+typedef struct {
 	nativeVal_t sendID[CHAT_PLAYERS];	/* texts */
 	nativeVal_t myShip;			/* a text, or what SNet.GetMyClientShip gave (0 off the network) */
-} chat;
+} chatVars_t;
 
-/* OBJLIB 5: the mirror in the module dict, taken in by the entry points that read it */
-static const nativeVar_t chat_vars[] = {
-	{ "SendID", chat.sendID, CHAT_PLAYERS, 1 << NV_STR },
-	{ "MyShip", &chat.myShip, 0, 1 << NV_NONE | 1 << NV_INT | 1 << NV_FLOAT | 1 << NV_STR },
-	{ NULL, NULL, 0, 0 },
-};
-#define CHAT_SENDID (&chat_vars[0])
-#define CHAT_MYSHIP (&chat_vars[1])
-/* only SendID (the table from its entry on would take MyShip too) */
-static const nativeVar_t chat_sendIDOnly[] = {
-	{ "SendID", chat.sendID, CHAT_PLAYERS, 1 << NV_STR },
-	{ NULL, NULL, 0, 0 },
-};
+/* the forms MyShip takes */
+#define CHAT_SHIPTYPES (1 << NV_NONE | 1 << NV_INT | 1 << NV_FLOAT | 1 << NV_STR)
+
+/* SendID (and MyShip with ship) from the module into *c (Chat_Free it also after a failure): 0 with the error of
+ * the read (an AttributeError) or the TypeError of a value of another form */
+static byte Chat_Read(chatVars_t *c, byte ship) {
+	for (int i = 0; i < CHAT_PLAYERS; i++) {
+		Native_SetNone(&c->sendID[i]);
+	}
+	Native_SetNone(&c->myShip);
+	return Native_VarItems("Chat", "SendID", CHAT_PLAYERS, 1 << NV_STR, c->sendID) &&
+		(!ship || Native_VarTake("Chat", "MyShip", 0, CHAT_SHIPTYPES, &c->myShip));
+}
+
+static void Chat_Free(chatVars_t *c) {
+	for (int i = 0; i < CHAT_PLAYERS; i++) {
+		Native_Free(&c->sendID[i]);
+	}
+	Native_Free(&c->myShip);
+}
 
 /* a + b + c of the script on texts; c NULL is a value that is no text (the TypeError of string +) */
 static byte Chat_Cat(char *out, const char *a, const char *b, const char *c) {
@@ -57,9 +66,10 @@ static byte Chat_Cat(char *out, const char *a, const char *b, const char *c) {
 }
 
 /* SendID[slot] = text */
-static byte Chat_SetTo(int slot, const char *text) {
-	Native_SetStr(&chat.sendID[slot], text);
-	return Native_Put("Chat", CHAT_SENDID, slot);
+static byte Chat_SetTo(chatVars_t *c, int slot, const char *text) {
+	Native_Free(&c->sendID[slot]);
+	Native_SetStr(&c->sendID[slot], text);
+	return Native_VarSetItem("Chat", "SendID", slot, &c->sendID[slot]);
 }
 
 /* SNet.SendChatString(to, line) (through its ref, the seam: fc-chat records it) */
@@ -79,7 +89,7 @@ static byte Chat_ClientShip(nativeVal_t *out) {
 	if (!PORT_CALL(SNet, GetMyClientShip, &r, "")) {
 		return 0;
 	}
-	if (!(CHAT_MYSHIP->types & 1 << r.type) || (r.type == NV_STR && (r.n >= NATIVE_TEXT || strlen(Native_Text(&r)) != (size_t)r.n))) {
+	if (!(CHAT_SHIPTYPES & 1 << r.type) || (r.type == NV_STR && (r.n >= NATIVE_TEXT || strlen(Native_Text(&r)) != (size_t)r.n))) {
 		Native_Free(&r);
 		return Native_Raise(NE_TYPE, "SNet.GetMyClientShip: not a value Chat.MyShip takes");
 	}
@@ -88,9 +98,9 @@ static byte Chat_ClientShip(nativeVal_t *out) {
 }
 
 /* GetID(id): the receiver as the chat line shows it; a receiver that is no longer a ship becomes "ALL" */
-static byte Chat_IdText(int slot, nativeVal_t *out) {
+static byte Chat_IdText(chatVars_t *c, int slot, nativeVal_t *out) {
 	for (;;) {
-		const nativeVal_t *to = &chat.sendID[slot];
+		const nativeVal_t *to = &c->sendID[slot];
 		if (Native_IsStr(to, "ALL")) {
 			Native_SetStr(out, "[To All]");
 			return 1;
@@ -99,7 +109,7 @@ static byte Chat_IdText(int slot, nativeVal_t *out) {
 		if (e && Entity_IsType(e, "Car")) {
 			return Native_EntVar(e, to->s, "Descriptor", out);
 		}
-		if (!Chat_SetTo(slot, "ALL")) {
+		if (!Chat_SetTo(c, slot, "ALL")) {
 			return 0;
 		}
 	}
@@ -107,9 +117,9 @@ static byte Chat_IdText(int slot, nativeVal_t *out) {
 
 /* CycleUp, CycleDown: the next ship net<n> up or down that exists and is not mine, "ALL" past the ends (n 0 to
  * 257) */
-static byte Chat_Cycle(int slot, int step) {
+static byte Chat_Cycle(chatVars_t *c, int slot, int step) {
 	for (;;) {
-		const nativeVal_t *to = &chat.sendID[slot];
+		const nativeVal_t *to = &c->sendID[slot];
 		long ctr = step > 0 ? -1 : 257;
 		/* int(SendID[id][3:]) */
 		if (!Native_IsStr(to, "ALL") && !Native_IntOfText(strlen(to->s) > 3 ? to->s + 3 : "", &ctr)) {
@@ -117,14 +127,14 @@ static byte Chat_Cycle(int slot, int step) {
 		}
 		ctr += step;
 		if (step > 0 ? ctr > 257 : ctr < 0) {
-			return Chat_SetTo(slot, "ALL");
+			return Chat_SetTo(c, slot, "ALL");
 		}
 		char name[0x20];
 		Str_Printf(name, sizeof(name), "net%ld", ctr);
-		if (!Chat_SetTo(slot, name)) {
+		if (!Chat_SetTo(c, slot, name)) {
 			return 0;
 		}
-		if (World_FindEntity(name) && !Native_Equal(&chat.sendID[slot], &chat.myShip)) {
+		if (World_FindEntity(name) && !Native_Equal(&c->sendID[slot], &c->myShip)) {
 			return 1;
 		}
 	}
@@ -212,11 +222,11 @@ static byte Chat_End(int id) {
 /* SendChatString(id, ChatStr, console=0): "<player> text" to the receiver of the player; the server shows it at
  * once, a client sends it (and shows a private line itself); the chat line closes unless it came from the console.
  * text NULL is a value that is no text. */
-static byte Chat_Send(int id, const char *text, int console) {
+static byte Chat_Send(chatVars_t *c, int id, const char *text, int console) {
 	int slot;
 	char named[CHAT_LINE], str[CHAT_LINE], full[CHAT_LINE];
 	if (!Chat_Cat(named, "<", GVar_GetStr("PlayerName"), "> ") || !Chat_Cat(str, named, "", text) ||
-		!Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_Cat(full, chat.sendID[slot].s, "\t", str)) {
+		!Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_Cat(full, c->sendID[slot].s, "\t", str)) {
 		return 0;
 	}
 	int server = Native_NetFlag(1);
@@ -224,47 +234,56 @@ static byte Chat_Send(int id, const char *text, int console) {
 	if (ok && server) {
 		ok = Chat_Print(full);
 	} else if (ok) {
-		ok = (Native_IsStr(&chat.sendID[slot], "ALL") || Chat_Print(full)) && Chat_SendNet(-1, full);
+		ok = (Native_IsStr(&c->sendID[slot], "ALL") || Chat_Print(full)) && Chat_SendNet(-1, full);
 	}
 	return ok && (console || Chat_End(id));
 }
 
-/* MyShip into the module, as the Script_SetVar of the script port: a failed set is no error */
-static void Chat_PutShip(void) {
-	if (!Native_Put("Chat", CHAT_MYSHIP, 0)) {
+/* MyShip = ship into the module, as the Script_SetVar of the script port: a failed set is no error */
+static void Chat_PutShip(const nativeVal_t *ship) {
+	if (!Mode_SetModVar("Chat", "MyShip", ship)) {
 		Native_ErrClear();
 	}
 }
 
-/* GetMyShip(): the ship of this machine (a client asks the network, the server has net256 when it plays) */
-static byte Chat_MyShip(void) {
+/* GetMyShip(): the ship of this machine (a client asks the network, the server has net256 when it plays), also into
+ * *ship (Native_Free it) */
+static byte Chat_MyShip(nativeVal_t *ship) {
 	int client = Native_NetFlag(0);
+	Native_Free(ship);
 	if (client < 0) {
 		return 0;
 	}
 	if (client) {
-		nativeVal_t ship;
-		if (!Chat_ClientShip(&ship)) {
+		if (!Chat_ClientShip(ship)) {
 			return 0;
 		}
-		chat.myShip = ship;
 	} else if (World_FindEntity("net256")) {
-		Native_SetStr(&chat.myShip, "net256");
+		Native_SetStr(ship, "net256");
 	} else {
 		/* the script sets "net256" first, then "" */
-		Native_SetStr(&chat.myShip, "net256");
-		Chat_PutShip();
-		Native_SetStr(&chat.myShip, "");
+		Native_SetStr(ship, "net256");
+		Chat_PutShip(ship);
+		Native_SetStr(ship, "");
 	}
-	Chat_PutShip();
+	Chat_PutShip(ship);
 	return 1;
 }
 
+static byte Chat_GetMyShip_C(void) {
+	nativeVal_t ship;
+	Native_SetNone(&ship);
+	byte ok = Chat_MyShip(&ship);
+	Native_Free(&ship);
+	return ok;
+}
+
 /* InitChat(id): the chat key opens the chat line */
-static byte Chat_Init(int id) {
+static byte Chat_Init(chatVars_t *c, int id) {
 	int slot;
 	nativeVal_t t;
-	if (!Mode_Import("Menu") || !Chat_MyShip() || !Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_IdText(slot, &t)) {
+	if (!Mode_Import("Menu") || !Chat_MyShip(&c->myShip) || !Native_Index(id, CHAT_PLAYERS, &slot) ||
+		!Chat_IdText(c, slot, &t)) {
 		return 0;
 	}
 	return Mode_DefRun(id, "menus/chat.def", "InitChat", chat_def, NULL, 0, 1, "sendid", &t);
@@ -280,8 +299,11 @@ static const char *Chat_Text(const nativeVal_t *v) {
 
 static byte Chat_GetID_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, slot;
-	return Mode_Parse(a, n, "i", &id) && Native_Import("Chat", chat_sendIDOnly) && Native_Index(id, CHAT_PLAYERS, &slot) &&
-		Chat_IdText(slot, out);
+	chatVars_t c = { 0 };
+	byte ok = Mode_Parse(a, n, "i", &id) && Chat_Read(&c, 0) && Native_Index(id, CHAT_PLAYERS, &slot) &&
+		Chat_IdText(&c, slot, out);
+	Chat_Free(&c);
+	return ok;
 }
 
 MODE_ADAPTER(Chat, GetID)
@@ -290,11 +312,11 @@ MODE_ADAPTER(Chat, GetID)
 static byte Chat_CycleSet(const nativeVal_t *a, int n, int step, byte set) {
 	int id, slot;
 	nativeVal_t t;
-	if (!Mode_Parse(a, n, "i", &id) || !Native_Import("Chat", chat_vars) || !Native_Index(id, CHAT_PLAYERS, &slot) ||
-		!Chat_Cycle(slot, step)) {
-		return 0;
-	}
-	return !set || (Chat_IdText(slot, &t) && Chat_ShowTo(id, &t));
+	chatVars_t c = { 0 };
+	byte ok = Mode_Parse(a, n, "i", &id) && Chat_Read(&c, 1) && Native_Index(id, CHAT_PLAYERS, &slot) &&
+		Chat_Cycle(&c, slot, step) && (!set || (Chat_IdText(&c, slot, &t) && Chat_ShowTo(id, &t)));
+	Chat_Free(&c);
+	return ok;
 }
 
 #define CHAT_CYCLE(name, step, set) \
@@ -337,8 +359,11 @@ static byte Chat_SendChatString_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	if (!Mode_Parse(a, n, "iO|O", &id, &text, &console)) {
 		return 0;
 	}
-	int c = console ? Mode_Truth(console) : 0;
-	return c >= 0 && Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, Chat_Text(text), c);
+	int con = console ? Mode_Truth(console) : 0;
+	chatVars_t c = { 0 };
+	byte ok = con >= 0 && Chat_Read(&c, 0) && Chat_Send(&c, id, Chat_Text(text), con);
+	Chat_Free(&c);
+	return ok;
 }
 
 MODE_ADAPTER(Chat, SendChatString)
@@ -350,18 +375,29 @@ static byte Chat_EndChat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 MODE_ADAPTER(Chat, EndChat)
-MODE_FN(Chat, GetMyShip, 0, Chat_MyShip())
+MODE_FN(Chat, GetMyShip, 0, Chat_GetMyShip_C())
 
 static byte Chat_InitChat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	(void)out;
-	return Mode_Parse(a, n, "i", &id) && Native_Import("Chat", chat_sendIDOnly) && Chat_Init(id);
+	chatVars_t c = { 0 };
+	byte ok = Mode_Parse(a, n, "i", &id) && Chat_Read(&c, 0) && Chat_Init(&c, id);
+	Chat_Free(&c);
+	return ok;
+}
+
+/* a line of player id to its receiver (Chat_Send with the variables read) */
+static byte Chat_SendRead(int id, const char *text) {
+	chatVars_t c = { 0 };
+	byte ok = Chat_Read(&c, 0) && Chat_Send(&c, id, text, 1);
+	Chat_Free(&c);
+	return ok;
 }
 
 MODE_ADAPTER(Chat, InitChat)
 
 /* ConsoleChatString(estrin): a line of the full screen console goes to the receiver of player 0 */
-MODE_FN(Chat, ConsoleChatString, 1, Native_Import("Chat", chat_sendIDOnly) && Chat_Send(0, Chat_Text(&a[0]), 1))
+MODE_FN(Chat, ConsoleChatString, 1, Chat_SendRead(0, Chat_Text(&a[0])))
 
 /* qchat1 .. qchat6(id): the quick message QuickMessageString<n> */
 static byte Chat_Quick(const nativeVal_t *a, int n, int num) {
@@ -371,7 +407,7 @@ static byte Chat_Quick(const nativeVal_t *a, int n, int num) {
 		return 0;
 	}
 	Str_Printf(var, sizeof(var), "QuickMessageString%d", num);
-	return Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, GVar_GetStr(var), 1);
+	return Chat_SendRead(id, GVar_GetStr(var));
 }
 
 #define CHAT_QUICK(num) \

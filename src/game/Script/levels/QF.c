@@ -6,12 +6,13 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of the
  * mission are read where the script reads them and written through at once, plansNames is changed in place on the
- * object of the module (OBJLIB 5); the photo objects are handle values (OBJLIB 7).
+ * object of the module; the photo objects are handle values (OBJLIB 7).
  *
- * Direct calls (stage 3): MissionsFuncs, Speech, RaceMaker, TeamDeathMatch and the C functions of the mission go through
- * their refs (PORT_CALL, LV_COM), string.find through its native twin. The remote message whose end is the data function
- * AllBankersAgainstPlayer keeps the name (OBJLIB 6); the scheduled calls (Mode_Later, Mode_LaterIn) take the entry of
- * a port's own function (stage 4: Port_Scheduled), the function set as CharAct.TakenPhoto is a value (OBJLIB 5).
+ * Direct calls (stage 3): MissionsFuncs, Speech, RaceMaker, TeamDeathMatch and the C functions of the mission go
+ * through their refs (PORT_CALL, LV_COM), string.find through its native twin. The remote message whose end is the
+ * data function AllBankersAgainstPlayer keeps the name (OBJLIB 6); the scheduled calls (Mode_Later, Mode_LaterIn)
+ * take the entry of a port's own function (stage 4: Port_Scheduled), the function set as CharAct.TakenPhoto is a
+ * value (OBJLIB 5 (9c)).
  */
 #include "scrap/scrap.h"
 #include "Levels.h"

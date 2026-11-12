@@ -2336,6 +2336,7 @@ int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
 		a[i].type = fmt[i];
 		switch (fmt[i]) {
 		case 'v':
+		case 'r':
 			a[i].v = va_arg(va, const nativeVal_t *);
 			break;
 		case 'i':
@@ -2360,6 +2361,7 @@ PyObject *Native_ArgPy(const nativeArg_t *a) {
 	/* another letter fails the call without an error, as it always did */
 	switch (a->type) {
 	case 'v':
+	case 'r':
 		return Native_ToPy(a->v);
 	case 'i':
 		return PyInt_FromLong(a->i);
@@ -2949,35 +2951,57 @@ static byte Native_IsListOf(const nativeVal_t *v, int n) {
 	return (NObj_Kind(v) == NO_LIST || (v->type == NV_OBJ && PyList_Check(v->obj))) && NObj_Len(v) == n;
 }
 
-/* the variables of module: a missing one is the AttributeError of a module attribute (global 0) or the NameError of a
+/* the variable of module: a missing one is the AttributeError of a module attribute (global 0) or the NameError of a
  * global the script reads (global 1) */
-static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte global) {
-	for (const nativeVar_t *var = vars; var->name; var++) {
-		nativeVal_t o;
-		if (!(global ? ModVar_GlobalVal(module, var->name, &o) : ModVar_ModAttrVal(module, var->name, &o))) {
-			return 0;
-		}
-		byte ok = 1;
-		if (!var->count) {
-			ok = Native_TakeVal(&o, var->types, var->values);
-		} else if (!Native_IsListOf(&o, var->count)) {
-			ok = 0;
-		} else {
-			for (int i = 0; ok && i < var->count; i++) {
-				nativeVal_t k, item;
-				Native_SetInt(&k, i);
-				ok = NObj_GetItem(&o, &k, &item) && Native_TakeVal(&item, var->types, &var->values[i]);
-				Native_Free(&item);
-			}
-		}
-		Native_Free(&o);
-		if (!ok) {
-			/* a value only Python code can have put there (the C writes the forms it takes) */
-			return Native_Raise(NE_TYPE, var->count ? "%s.%s: not a list of %d values the C module takes" :
-				"%s.%s: not a value the C module takes", module, var->name, var->count);
-		}
+static byte Native_Var(const char *module, const char *name, byte global, nativeVal_t *out) {
+	return global ? ModVar_GlobalVal(module, name, out) : ModVar_ModAttrVal(module, name, out);
+}
+
+byte Native_VarTake(const char *module, const char *name, byte global, unsigned types, nativeVal_t *out) {
+	nativeVal_t o;
+	if (!Native_Var(module, name, global, &o)) {
+		return 0;
 	}
-	return 1;
+	byte ok = Native_TakeVal(&o, types, out);
+	Native_Free(&o);
+	/* a value only Python code can have put there (the C writes the forms it takes) */
+	return ok || Native_Raise(NE_TYPE, "%s.%s: not a value the C module takes", module, name);
+}
+
+byte Native_VarItems(const char *module, const char *name, int count, unsigned types, nativeVal_t *out) {
+	nativeVal_t o;
+	if (!ModVar_ModAttrVal(module, name, &o)) {
+		return 0;
+	}
+	byte ok = Native_IsListOf(&o, count);
+	for (int i = 0; ok && i < count; i++) {
+		nativeVal_t k, item;
+		Native_SetInt(&k, i);
+		ok = NObj_GetItem(&o, &k, &item) && Native_TakeVal(&item, types, &out[i]);
+		Native_Free(&item);
+	}
+	Native_Free(&o);
+	return ok || Native_Raise(NE_TYPE, "%s.%s: not a list of %d values the C module takes", module, name, count);
+}
+
+byte Native_VarSetItem(const char *module, const char *name, int index, const nativeVal_t *v) {
+	nativeVal_t list, k;
+	if (!ModVar_ModAttrVal(module, name, &list)) {
+		return 0;
+	}
+	byte ok;
+	if (NObj_Kind(&list) == NO_LIST) {
+		Native_SetInt(&k, index);
+		ok = NObj_SetItem(&list, &k, v);
+	} else {
+		/* PySequence_SetItem's errors for another value */
+		PyObject *l = Native_ToPy(&list), *o = l ? Native_ToPy(v) : NULL;
+		ok = o && PySequence_SetItem(l, index, o) == 0;
+		Py_XDECREF(o);
+		Py_XDECREF(l);
+	}
+	Native_Free(&list);
+	return ok;
 }
 
 byte Native_Arg(PyObject *o, nativeVal_t *v) {
@@ -3082,38 +3106,6 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out) {
 	Native_Arg(o, out);
 	Py_DECREF(o);
 	return 1;
-}
-
-byte Native_Import(const char *module, const nativeVar_t *vars) {
-	return Native_ImportBy(module, vars, 0);
-}
-
-byte Native_ImportGlobals(const char *module, const nativeVar_t *vars) {
-	return Native_ImportBy(module, vars, 1);
-}
-
-byte Native_Put(const char *module, const nativeVar_t *var, int index) {
-	const nativeVal_t *v = var->count ? &var->values[index] : var->values;
-	nativeVal_t list, k;
-	if (!var->count) {
-		return ModVar_SetModAttrVal(module, var->name, v);
-	}
-	if (!ModVar_ModAttrVal(module, var->name, &list)) {
-		return 0;
-	}
-	byte ok;
-	if (NObj_Kind(&list) == NO_LIST) {
-		Native_SetInt(&k, index);
-		ok = NObj_SetItem(&list, &k, v);
-	} else {
-		/* PySequence_SetItem's errors for another value */
-		PyObject *l = Native_ToPy(&list), *o = l ? Native_ToPy(v) : NULL;
-		ok = o && PySequence_SetItem(l, index, o) == 0;
-		Py_XDECREF(o);
-		Py_XDECREF(l);
-	}
-	Native_Free(&list);
-	return ok;
 }
 
 /* ---- the native level files of batch G ---- */

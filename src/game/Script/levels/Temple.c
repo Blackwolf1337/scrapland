@@ -7,24 +7,25 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h) and call the engine in C
  * (save variables, Scrap.Get and Scrap.Set, the dummy search, the time, the language texts, the action set, the
  * vector math, the textures). The variables of the modules are read where the script reads them and written through
- * at once (OBJLIB 5); MapExtraLifes.Lifes holds the handles of the lives and stays the list object of the module,
+ * at once; MapExtraLifes.Lifes holds the handles of the lives and stays the list object of the module,
  * CharConversor.AvailableChars, Alarm.SetAlarmCallback, CharsNPC.AfterBrowseNPC and the callbacks of the characters are
- * changed in place on their objects, the gatekeeper groups are passed as the objects of GateKeeper (OBJLIB 5); a
- * variable of another module that the script set with Script_SetVar keeps dropping its error. Entities are handle
- * values (OBJLIB 7). The engine functions the cases record or swap go through their seams:
- * Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set, Scrap.SetAlarm, Scrap.GetAlarm,
- * SScorer.SetMsgText, SScorer.SetLabelText, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the SAct functions of
- * the fake speech and SSound.SetMusic (fr6b.py); SFX.BishopSellLife (fc-tp-map swaps it) through its ref (stage 7).
+ * changed in place on their objects, the gatekeeper groups are passed as the objects of GateKeeper (OBJLIB 5 (9c: the
+ * GateKeeper refs take Python objects)); a variable of another module that the script set with Script_SetVar keeps
+ * dropping its error. Entities are handle values (OBJLIB 7). The engine functions the cases record or swap go through
+ * their seams: Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set, Scrap.SetAlarm,
+ * Scrap.GetAlarm, SScorer.SetMsgText, SScorer.SetLabelText, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the
+ * SAct functions of the fake speech and SSound.SetMusic (fr6b.py); SFX.BishopSellLife (fc-tp-map swaps it) through
+ * its ref (stage 7).
  *
  * Direct calls (stage 3): the functions of the other ports (MissionsFuncs, SaveGame, GateKeeper, Elevator, Metro,
  * CharsNPC, MisItems, Scene) and the own functions of the modules (their globals) go through their refs (PORT_CALL,
  * PORT_LOWN, LV_CALLBACK; the seam takes the call by name when a mission or a case has put something else there,
- * OBJLIB 5). The GateKeeper refs take Python objects and always go by name. By name: the sections of the .def files
- * (ShowDeepThroatMessage, DeepThroatCalls, LoadYakuzziScene: Tp_Do, OBJLIB 6); string.splitfields of a value that is no
- * text is the native twin. The functions given to the scheduler (Speech.AddRemoteCom of Tp_ComAt, Mode_Schedule,
- * Ma_Soon) and to the entities (the UseFunc and OnTake texts) take the entry of a port's own function (stage 4:
- * Port_Scheduled, PYF_ENTRY); the ones given to Elevator, CharAct, Alarm, CharsNPC, DTritusDesktop, Scene and Speech
- * as callbacks are values of their variables (OBJLIB 5).
+ * OBJLIB 5 (9c)). The GateKeeper refs take Python objects and always go by name. By name: the sections of the .def
+ * files (ShowDeepThroatMessage, DeepThroatCalls, LoadYakuzziScene: Tp_Do, OBJLIB 6); string.splitfields of a value
+ * that is no text is the native twin. The functions given to the scheduler (Speech.AddRemoteCom of Tp_ComAt,
+ * Mode_Schedule, Ma_Soon) and to the entities (the UseFunc and OnTake texts) take the entry of a port's own function
+ * (stage 4: Port_Scheduled, PYF_ENTRY); the ones given to Elevator, CharAct, Alarm, CharsNPC, DTritusDesktop, Scene
+ * and Speech as callbacks are values of their variables (OBJLIB 5 (9c: functions as values)).
  */
 #include <limits.h>
 #include <string.h>
@@ -97,7 +98,7 @@ static byte Tp_UseFunc(const char *name, const char *func) {
 
 /* a gatekeeper on its door against a foe group of GateKeeper, the door used through UseDoor */
 static byte Tp_Gate(const char *keeper, const char *door, const char *group, const char *use) {
-	/* OBJLIB 5: the group is the object of GateKeeper, as the script passes it (held by reference) */
+	/* OBJLIB 5 (9c: the GateKeeper refs take Python objects): the group is the object of GateKeeper (by reference) */
 	nativeVal_t g = { 0 };
 	byte ok = Mode_Import("GateKeeper") && Mode_RefMod("GateKeeper", group, &g) &&
 		(!door || PORT_CALL(GateKeeper, SetDoor, NULL, "ss", keeper, door)) &&
@@ -375,7 +376,7 @@ static byte Xl_MoveLife(const nativeVal_t *l, const nativeVal_t *dist) {
 	return ok;
 }
 
-/* MoveLifes(dist): the lives of the list Lifes (the list object of the module: it holds the handles, OBJLIB 5 and 7) */
+/* MoveLifes(dist): the lives of the list Lifes (the list object of the module: it holds the handles, OBJLIB 7) */
 static byte Xl_MoveLifes(const nativeVal_t *dist) {
 	nativeVal_t lifes;
 	if (!Mode_RefG(XL, "Lifes", &lifes)) {
@@ -839,7 +840,7 @@ static byte Ag_PreCallDeepThroat(void) {
 	}
 	Native_Free(&chars);
 	if (ok) {
-		/* OBJLIB 5: the list object of CharConversor, changed in place */
+		/* the list object of CharConversor, changed in place */
 		nativeVal_t av;
 		in = Mode_RefMod("CharConversor", "AvailableChars", &av) ? Mode_In(&av, &dt) : -1;
 		ok = in == 0 || (in > 0 && Mode_RefCall(&av, "remove", &dt, 1, NULL));

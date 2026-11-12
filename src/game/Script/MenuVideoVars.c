@@ -6,7 +6,7 @@
  * the script; each does what the script does, line by line on the module variables (a missing one is a NameError).
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * module variables are read as globals where the script reads them and written at once (OBJLIB 5). The scorer and
+ * module variables are read as globals where the script reads them and written at once. The scorer and
  * engine calls the script made by name go through their seams (SScorer.Get, SScorer.Set, SScorer.Add, Scrap.Get,
  * Scrap.Set; OBJLIB 7); the video modes, the language texts and string.find are C. GammaFormula is called with its
  * keyword through its ref (PORT_OWN, stage 3).

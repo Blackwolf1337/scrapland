@@ -17,9 +17,9 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of the
  * modules are read where the script reads them and written through at once; the lists shent, DealCoins, Coins and
  * activatedDesktops are changed in place on the objects of the module, the coins and desks of the chains and missions
- * are handle values, a list of handles (shent, DealCoins) is read as a native list of handle values (OBJLIB 5, 7).
- * The character objects of CharsNPC.CharRes and their CallbackFunc lists stay Python objects (OBJLIB 5). Through their
- * seams:
+ * are handle values, a list of handles (shent, DealCoins) is read as a native list of handle values (OBJLIB 7).
+ * The character objects of CharsNPC.CharRes and their CallbackFunc lists stay Python objects (OBJLIB 5 (9c)). Through
+ * their seams:
  * Scrap.AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, Preload3DObject, Set, ConsoleError, UsrEntity and
  * DelSaveVars, SSound.Play, SScorer.Set and Fade, the SAct functions (fc-r6-ib records SetCls) and SInput.GetActionSet
  * in TestEndOfElevator (fc-r6-ib swaps it). MapTreasure_ModCoins, the module code, stays on the Python objects
@@ -28,12 +28,12 @@
  * Direct calls (stage 3): the functions of the other ports (CharsNPC, Elevator, Metro, GateKeeper, Chars,
  * MissionsFuncs, SaveGame, Speech, Scene, Scorer) and the own functions of the modules (their globals) go through
  * their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_SCORERG, LV_MISSIONCHAR; the seam takes the call by name when
- * a mission or a case has put something else there, OBJLIB 5). The GateKeeper refs take Python objects and always go
- * by name. By name: the sections of the .def files (Mission_GetDataPart2.SetNextMission,
+ * a mission or a case has put something else there, OBJLIB 5 (9c)). The GateKeeper refs take Python objects and always
+ * go by name. By name: the sections of the .def files (Mission_GetDataPart2.SetNextMission,
  * Mission_InfiltrateBank.LoadScene; OBJLIB 6); the functions given to the scheduler and to the entities (Mode_Later,
  * Mode_Schedule, the UseFunc and OnTake texts) take the entry of a port's own function (stage 4: Port_Scheduled,
  * PYF_ENTRY), the ones given to the character objects, to GateKeeper, CharConversor and Scene as callbacks are values
- * of their variables (OBJLIB 5).
+ * of their variables (OBJLIB 5 (9c)).
  */
 #include <limits.h>
 #include <string.h>
@@ -1615,7 +1615,7 @@ static byte InfiltrateBank_LaunchScene(const nativeVal_t *usr) {
 }
 
 /* bm = CharsNPC.CharRes[BankMasterName]; bm.CallbackFunc.append(CreateBankMaster); bm.Pos = dummy[1] into *pos
- * (OBJLIB 5: the character objects of CharsNPC) */
+ * (OBJLIB 5 (9c: the character objects of CharsNPC, instances)) */
 static byte Ib_CharRes(const nativeVal_t *dummy, nativeVal_t *pos) {
 	nativeVal_t name = { 0 }, res = { 0 }, bm = { 0 }, cb = { 0 }, append = { 0 }, fn = { 0 };
 	byte ok = Mode_RefMod("CharsNPC", "CharRes", &res) && Mode_G(IB, "BankMasterName", &name) && Mode_RefSub(&res, &name, &bm) &&
