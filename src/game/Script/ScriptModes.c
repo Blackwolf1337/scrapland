@@ -250,17 +250,7 @@ byte Mode_Preload(const nativeVal_t *name) {
 }
 
 byte Mode_Print(const nativeVal_t *const *items, int n) {
-	PyObject *o[MODE_PRINT_MAX] = { NULL };
-	byte ok = 1;
-	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
-	for (int k = 0; ok && k < n; k++) {
-		ok = (o[k] = Native_ToPy(items[k])) != NULL;
-	}
-	ok = ok && Script_Print(o, n);
-	for (int k = 0; k < n; k++) {
-		Py_XDECREF(o[k]);
-	}
-	return ok;
+	return Script_Print(items, n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX);
 }
 
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v) {
@@ -3735,7 +3725,12 @@ PyObject *Mode_EvalPy(const char *module, PyObject *text) {
 		return o;
 	}
 	Native_Free(&v);
-	return Script_EvalIn(module, text);
+	nativeVal_t t, r;
+	NObj_FromPy(text, &t);
+	PyObject *o = Script_EvalIn(module, &t, &r) ? Native_ToPy(&r) : NULL;
+	Native_Free(&r);
+	Native_Free(&t);
+	return o;
 }
 
 byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out) {
@@ -3743,14 +3738,13 @@ byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out
 		return 1;
 	}
 	Native_SetNone(out);
-	/* OBJLIB 6: the bare names, name chains and errors of the reader of Script_EvalIn */
-	PyObject *t = Native_ToPy(text), *v = t ? Script_EvalIn(module, t) : NULL;
-	Py_XDECREF(t);
-	if (!v) {
+	/* the bare names, name chains and errors of the reader of Script_EvalIn, in the form a call through Python gave */
+	nativeVal_t v;
+	if (!Script_EvalIn(module, text, &v)) {
 		return 0;
 	}
-	Native_Arg(v, out);
-	Py_DECREF(v);
+	NObj_ArgOf(&v, out);
+	Native_Free(&v);
 	return 1;
 }
 
@@ -5187,37 +5181,43 @@ byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out) {
 }
 
 int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out) {
-	/* the module dict as the globals: the key of its variables in the registry (Script_NameChain reads through it) */
-	PyObject *m = Script_Module(x->module), *g = m && PyModule_Check(m) ? PyModule_GetDict(m) : NULL;
-	PyObject *loc = g ? PyDict_New() : NULL, *v = NULL;
-	if (m && !g) {
-		/* what module_getattr of no module gives for __dict__ */
-		Py_DECREF(m);
-		m = NULL;
-		Native_Raise(NE_ATTRIBUTE, "__dict__");
-	}
-	byte ok = loc != NULL;
+	/* the module as the globals (Script_NameChain reads its variables through the registry), the variables of x as
+	 * the locals, a dict object */
+	nativeVal_t m, loc, v;
 	Native_SetNone(out);
-	for (int i = 0; ok && i < x->n; i++) {
-		PyObject *o = x->vars[i].v ? Native_ToPy(x->vars[i].v) : Script_Module(x->vars[i].name);
-		ok = o && PyDict_SetItemString(loc, (char *)x->vars[i].name, o) == 0;
-		Py_XDECREF(o);
+	if (!Script_Module(x->module, &m)) {
+		return 0;
 	}
-	int found = ok ? Script_NameChain(loc, g, text, &v) : -1;
-	Py_XDECREF(loc);
-	Py_XDECREF(m);
+	if (NObj_Kind(&m) != NO_MODULE) {
+		/* what module_getattr of no module gives for __dict__ */
+		Native_Free(&m);
+		return Native_Raise(NE_ATTRIBUTE, "__dict__");
+	}
+	NObj_NewDict(&loc);
+	byte ok = 1;
+	for (int i = 0; ok && i < x->n; i++) {
+		nativeVal_t key, o;
+		ok = x->vars[i].v ? (NObj_CallArg(x->vars[i].v, &o), 1) : Script_Module(x->vars[i].name, &o);
+		Native_SetStr(&key, x->vars[i].name);
+		ok = ok && NObj_SetItem(&loc, &key, &o);
+		Native_Free(&key);
+		Native_Free(&o);
+	}
+	int found = ok ? Script_NameChain(&loc, &m, text, &v) : -1;
+	Native_Free(&loc);
+	Native_Free(&m);
 	if (!ok) {
 		return 0;
 	}
 	if (found > 0) {
-		Native_Arg(v, out);
-		Py_DECREF(v);
+		NObj_ArgOf(&v, out);
+		Native_Free(&v);
 	}
 	return found > 0 ? 1 : found < 0 ? 0 : -1;
 }
 
 byte Mode_RefModule(const char *name, nativeVal_t *out) {
-	return Mode_RefTake(Script_Module(name), out);
+	return Script_Module(name, out);
 }
 
 byte Mode_CatchKeyError(void) {
@@ -5229,22 +5229,28 @@ byte Mode_CatchKeyError(void) {
 }
 
 byte Mode_WriteLine(const nativeVal_t *const *items, int n) {
-	PyObject *out = PySys_GetObject("stdout"), *s[MODE_PRINT_MAX] = { NULL };
-	byte ok = out != NULL;
+	nativeVal_t out, s[MODE_PRINT_MAX];
+	byte ok = Script_SysVar("stdout", &out);
 	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
 	/* every text is made before the first is written; a failed one does not stop the others */
 	for (int i = 0; i < n; i++) {
-		PyObject *o = Native_ToPy(items[i]);
-		s[i] = o ? PyObject_Str(o) : NULL;
-		Py_XDECREF(o);
-		ok = ok && s[i];
+		nativeBuf_t b;
+		Native_BufInit(&b);
+		Native_SetNone(&s[i]);
+		if (NObj_Repr(&b, items[i], NR_STR)) {
+			Native_SetText(&s[i], b.p, b.len);
+		} else {
+			ok = 0;
+		}
+		Native_BufFree(&b);
 	}
 	for (int i = 0; ok && i < n; i++) {
-		ok = PyFile_WriteObject(s[i], out, Py_PRINT_RAW) == 0 && PyFile_WriteString(i + 1 < n ? " " : "\n", out) == 0;
+		ok = Script_FileWrite(&out, &s[i], 1) && Script_FileWriteText(&out, i + 1 < n ? " " : "\n");
 	}
 	for (int i = 0; i < n; i++) {
-		Py_XDECREF(s[i]);
+		Native_Free(&s[i]);
 	}
+	Native_Free(&out);
 	return ok;
 }
 

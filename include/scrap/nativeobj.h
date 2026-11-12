@@ -44,8 +44,8 @@ typedef enum {
 					 * with a context, a method of a list or dict bound to it; as a view also a Python
 					 * function or C function */
 	NO_METHOD,			/* a function of a class bound to an instance, or unbound */
-	NO_MODULE,			/* a module: a pack module is native (its variables are the registry's; OBJLIB 9: its
-					 * module object of Python is its key, the one object per module), any other one a view */
+	NO_MODULE,			/* a module: its name and its variables (a dict object; a pack module's are the
+					 * registry's, scrap/modvars.h) */
 	NO_TYPE,			/* a type object (what type() gives): one per type name, kept for good */
 	NO_COBJ,			/* a C object of the engine (a scorer item): its type's functions on its context */
 } nativeObjKind_t;
@@ -153,8 +153,13 @@ void NObj_NewCObj(nativeVal_t *out, const nativeCType_t *type, void *ctx);
 /* the text the print statement writes for v when its type has one (a C object with print): 1 with the text in buf, 0
  * for any other value */
 byte NObj_PrintText(const nativeVal_t *v, char *buf, int size);
-/* the module name as the scripts import it (OBJLIB 9: the view of its module object): 0 with the ImportError */
+/* the module name as the scripts import it (Script_Module): 0 with the ImportError */
 byte NObj_Module(nativeVal_t *out, const char *name);
+/* a new module name (PyModule_New: its variables __name__ and __doc__ None), in no module store */
+void NObj_NewModule(nativeVal_t *out, const char *name);
+/* the variables of the module m (a dict object, held by the module: the pointer is the module's key while it lives),
+ * NULL for any other value */
+const nativeVal_t *NObj_ModuleVars(const nativeVal_t *m);
 
 /* ---- operations on a value (an NV_REF by its object; the kinds by value as Native_ of scriptnative.h has them, an
  * NV_OBJ and an entity handle through Python). Each: 1 with *out made (Native_Free it), 0 with the error raised ---- */
@@ -228,6 +233,9 @@ nativeVal_t *NObj_DictData(const nativeVal_t *d);
 /* the items of a list object of native data (an NV_LIST by value, changed in place by the caller); NULL for a view,
  * a list that crossed, another value */
 const nativeVal_t *NObj_ListData(const nativeVal_t *l);
+/* NObj_FromPy, a value by value with o kept (Native_KeepPy: the same object goes back to Python), as a variable holds
+ * a value of Python */
+void NObj_FromPyKept(PyObject *o, nativeVal_t *v);
 /* Native_FromPyAny(Native_ToPy(v)) without the crossing of native data: numbers, texts, None, and lists, tuples and
  * dicts (by value, objects, views) of them by value, 32 deep (a dict with its table); 1 with *out (Native_Free it),
  * 0 without an error and *out None when v holds another value (an instance, a function, a module, an entity handle) */

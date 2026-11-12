@@ -367,9 +367,10 @@ static int Port_Twin(const portRef_t *ref, const char *fmt, va_list va, byte dir
 	if (!direct || strchr(fmt, ';') || Port_Slow() || Port_ObjArgs(fmt, va)) {
 		return Port_Look(ref, 0, 1, hook);
 	}
-	PyObject *m = Script_Module(ref->module);
-	Py_XDECREF(m);
-	return m ? 0 : -1;
+	nativeVal_t m;
+	byte ok = Script_Module(ref->module, &m);
+	Native_Free(&m);
+	return ok ? 0 : -1;
 }
 
 /* a call of a site: the result into *out as Native_Arg takes it (pyout NULL), or as the Python object into *pyout;

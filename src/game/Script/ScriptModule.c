@@ -57,7 +57,7 @@ typedef struct {
 
 #include "ModuleFiles.inc"
 
-typedef int (*moduleHook_t)(PyObject *module, PyObject *locals, nativeVal_t *body);
+typedef int (*moduleHook_t)(const nativeVal_t *module, nativeVal_t *body);
 
 /* the C hooks of the definitions ("c <name>"): module, name, function (0 with an error set when it fails); body is the
  * dict object of the class body the hook stands in, NULL in the module code */
@@ -75,17 +75,20 @@ static const struct {
 	{ NULL, NULL, NULL },
 };
 
-PyObject *Script_ModuleName(PyObject *locals, const char *text) {
-	PyObject *v;
-	int found = Script_NameChain(locals, locals, text, &v);
+PyObject *Script_ModuleName(const nativeVal_t *ns, const char *text) {
+	nativeVal_t v;
+	int found = Script_NameChain(ns, ns, text, &v);
 	if (found == 0) {
 		Native_Raise(NE_SYSTEM, "module code: cannot load %.100s", text);
 	}
-	return found > 0 ? v : NULL;
+	PyObject *o = found > 0 ? Native_ToPy(&v) : NULL;
+	Native_Free(&v);
+	return o;
 }
 
-byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptForBody_t body, void *ctx) {
-	byte ok = 1;
+byte Script_ModuleFor(const nativeVal_t *ns, const char *var, PyObject *seq, scriptForBody_t body, void *ctx) {
+	modVarRef_t ref;
+	byte ok = ModVar_RefOfNs(ns, &ref);
 	for (int i = 0; ok; i++) {
 		PyObject *item;
 		int n = Script_Next(seq, i, &item);
@@ -93,7 +96,7 @@ byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptFo
 			ok = n == 0;
 			break;
 		}
-		ok = ModVar_DictSet(locals, var, item) == 0 && body(locals, item, ctx);
+		ok = ModVar_Set(&ref, var, item) == 0 && body(ns, item, ctx);
 		Py_DECREF(item);
 	}
 	return ok;
@@ -109,9 +112,7 @@ typedef struct {
 	const char *text;		/* the whole text, for the line of an error */
 	const char *file;		/* the definition (or "eval") */
 	const char *module;		/* the module name */
-	PyObject *mod;			/* the module */
-	PyObject *globals;		/* its dict */
-	PyObject *locals;		/* the module dict (the module code's locals) */
+	const nativeVal_t *mod;		/* the module: the globals and the locals of the module code */
 	nativeVal_t *body;		/* the dict object a class body's names go to, NULL in the module code */
 	PyObject *consts;		/* the constants of this code object, a list */
 	int depth;			/* open brackets: newlines are blanks inside them */
@@ -211,11 +212,6 @@ static byte Mod_Op(modParse_t *m, const char *op) {
 }
 
 /* the value of a branch not taken for the statements that make Python objects (import, def): None */
-static PyObject *Mod_Skipped(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* ---- the values ---- */
 
 /*
@@ -540,7 +536,7 @@ static void Mod_Var(nativeVal_t *v) {
 
 /* LOAD_NAME: the locals (a class body's), the module (through the registry), the builtins; NameError with the name */
 static byte Mod_Load(modParse_t *m, const char *name, nativeVal_t *out) {
-	PyObject *v = NULL;
+	byte ok = 0;
 	Native_SetNone(out);
 	if (m->body) {
 		nativeVal_t key;
@@ -556,16 +552,21 @@ static byte Mod_Load(modParse_t *m, const char *name, nativeVal_t *out) {
 		Mod_Var(out);
 		return 1;
 	}
-	if (!v) {
-		PyObject *b = ModVar_Get(&m->ref, "__builtins__");
-		b = b && PyModule_Check(b) ? PyModule_GetDict(b) : b;
-		v = b && PyDict_Check(b) ? PyDict_GetItemString(b, (char *)name) : NULL;
+	/* the builtins: the module's __builtins__ (a module: its variables; a dict) */
+	nativeVal_t b, key;
+	if (ModVar_GetVal(&m->ref, "__builtins__", &b)) {
+		const nativeVal_t *vars = NObj_ModuleVars(&b);
+		Native_SetStr(&key, name);
+		if (vars || b.type == NV_DICT || NObj_Kind(&b) == NO_DICT) {
+			ok = NObj_GetItem(vars ? vars : &b, &key, out);
+			if (!ok) {
+				Native_ErrClear();
+			}
+		}
+		Native_Free(&key);
+		Native_Free(&b);
 	}
-	if (!v) {
-		return Native_Raise(NE_NAME, "%s", name);
-	}
-	Mod_FromPy(v, out);
-	return 1;
+	return ok || Native_Raise(NE_NAME, "%s", name);
 }
 
 /* the items up to close into a new list (*comma: a comma came) */
@@ -1245,7 +1246,7 @@ static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *ou
 	const char *s = Native_Text(text);
 	if ((int)strlen(s) == text->n) {
 		modParse_t m = { .p = s, .text = s, .file = "eval", .module = outer->module, .mod = outer->mod,
-			.globals = outer->globals, .locals = outer->locals, .consts = PyList_New(0), .ref = outer->ref };
+			.consts = PyList_New(0), .ref = outer->ref };
 		if (!m.consts) {
 			Native_SetNone(out);
 			return 0;
@@ -1271,9 +1272,7 @@ static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *ou
 		}
 		Native_ErrClear();
 	}
-	PyObject *t = Native_ToPy(text), *r = t ? Script_EvalValue(outer->globals, t) : NULL;
-	Py_XDECREF(t);
-	return Mod_Took(r, out);
+	return Script_EvalText(outer->mod, text, out);
 }
 
 /* ---- the statements ---- */
@@ -1338,15 +1337,6 @@ static byte Mod_Put(modParse_t *m, const char *name, PyObject *v) {
 	return ModVar_Set(&m->ref, name, v) == 0;
 }
 
-/* the same when not skipped; v is given away */
-static byte Mod_Store(modParse_t *m, const char *name, PyObject *v) {
-	if (!v) {
-		return 0;
-	}
-	byte ok = m->skip || Mod_Put(m, name, v);
-	Py_DECREF(v);
-	return ok;
-}
 
 /* name = v (not freed) in the locals: a native value into the module's variables, an object into a class body's dict
  * (Mod_ToPy, OBJLIB 9) */
@@ -1394,8 +1384,8 @@ static byte Mod_Function(modParse_t *m, const char *name, nativeVal_t *out) {
 static byte Mod_Import(modParse_t *m) {
 	char name[MOD_NAME];
 	while (Mod_Word(m, name, sizeof(name))) {
-		PyObject *v = m->skip ? Mod_Skipped() : Script_ModuleIn(name, m->globals);
-		if (!Mod_Store(m, name, v)) {
+		nativeVal_t v;
+		if (!m->skip && (!Script_ModuleIn(name, m->mod, &v) || !Mod_StoreVal(m, name, &v))) {
 			return 0;
 		}
 	}
@@ -1408,12 +1398,13 @@ static byte Mod_From(modParse_t *m) {
 	if (!Mod_Word(m, name, sizeof(name)) || !Mod_Keyword(m, "import")) {
 		return Mod_Syntax(m, "from <module> import <names>"), 0;
 	}
-	PyObject *mod = m->skip ? NULL : Script_ModuleIn(name, m->globals);
-	if (!mod && !m->skip) {
+	nativeVal_t mod;
+	Native_SetNone(&mod);
+	if (!m->skip && !Script_ModuleIn(name, m->mod, &mod)) {
 		return 0;
 	}
 	modVarRef_t from;
-	byte has = mod && ModVar_RefOf(mod, &from), ok = 1;
+	byte has = !m->skip && ModVar_OfVal(&mod, &from), ok = 1;
 	nativeVal_t k, v;
 	if (Mod_Op(m, "*")) {
 		int pos = 0;
@@ -1439,7 +1430,7 @@ static byte Mod_From(modParse_t *m) {
 			}
 		}
 	}
-	Py_XDECREF(mod);
+	Native_Free(&mod);
 	return ok && Mod_EndLine(m);
 }
 
@@ -1591,7 +1582,7 @@ static byte Mod_Hook(modParse_t *m) {
 	}
 	for (int i = 0; module_hooks[i].fn; i++) {
 		if (!strcmp(module_hooks[i].module, m->module) && !strcmp(module_hooks[i].name, name)) {
-			return m->skip || module_hooks[i].fn(m->mod, m->locals, m->body);
+			return m->skip || module_hooks[i].fn(m->mod, m->body);
 		}
 	}
 	Native_Raise(NE_SYSTEM, "%.100s:%d: no C hook %.60s", m->file, Mod_Line(m), name);
@@ -1730,10 +1721,6 @@ static int Mod_Block(modParse_t *m, char *stop, int size) {
 
 /* ---- the loader ---- */
 
-/* the lookups and makes by path (Script_ModuleCounts) */
-static unsigned long mod_counts[SMC_COUNT];
-
-static PyObject *Mod_Add(const char *name, byte *made);
 
 static byte Mod_On(void) {
 	const char *e = getenv("SCRAP_PACK_SCRIPTS");
@@ -1764,8 +1751,34 @@ static const moduleFile_t *Mod_Find(const char *name) {
 	return any;
 }
 
-int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
-	*module = NULL;
+/* PyImport_AddModule of a pack module: the module in the store, a new empty one when there is none or the entry is no
+ * module; 1 with *m, 0 with the error */
+static byte Mod_Add(const char *name, nativeVal_t *m) {
+	if (Script_ModuleLoaded(name, m) && NObj_Kind(m) == NO_MODULE) {
+		return 1;
+	}
+	nativeVal_t key;
+	Native_Free(m);
+	NObj_NewModule(m, name);
+	Native_SetStr(&key, name);
+	byte ok = NObj_SetItem(Script_Modules(), &key, m);
+	Native_Free(&key);
+	if (!ok) {
+		Native_Free(m);
+	}
+	return ok;
+}
+
+/* name = v into the variables of module m (the dict's store) */
+static void Mod_SysVar(const nativeVal_t *m, const char *name, const nativeVal_t *v) {
+	nativeVal_t key;
+	Native_SetStr(&key, name);
+	NObj_SetItem(NObj_ModuleVars(m), &key, v);
+	Native_Free(&key);
+}
+
+int Script_ModuleMake(const char *name, const char *file, nativeVal_t *module) {
+	Native_SetNone(module);
 	if (!Mod_On()) {
 		return 0;
 	}
@@ -1786,29 +1799,24 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 			Con_Verbosef("Script: %s from the packs\n", path);
 		}
 	}
-	byte fresh;
-	PyObject *m = Mod_Add(name, &fresh);
-	PyObject *d = m ? PyModule_GetDict(m) : NULL;
-	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = m, .globals = d, .locals = d,
-		.consts = PyList_New(0) };
-	modVarRef_t was;
-	int ok = d && mp.consts, bound = 0;
+	nativeVal_t m;
+	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = &m, .consts = PyList_New(0) };
+	modVarRef_t was, ref;
+	int ok = Mod_Add(name, &m) && mp.consts, bound = 0;
 	Native_SetEmpty(&mp.defs, NV_DICT);
 	/* as PyImport_ExecCodeModuleEx: the builtins and __file__ before the module code */
-	if (ok && !PyDict_GetItemString(d, "__builtins__")) {
-		ok = PyDict_SetItemString(d, "__builtins__", PyEval_GetBuiltins()) == 0;
+	if (ok && ModVar_OfVal(&m, &ref) && !ModVar_Has(&ref, "__builtins__")) {
+		Mod_SysVar(&m, "__builtins__", Script_Builtins());
 	}
 	if (ok) {
 		char fpath[0x100];
+		nativeVal_t v;
 		Str_Printf(fpath, sizeof(fpath), "PACK: %s", file);
-		PyObject *v = PyString_FromString(fpath);
-		if (v) {
-			PyDict_SetItemString(d, "__file__", v);
-			Py_DECREF(v);
-		}
-		Native_ErrClear();
+		Native_SetStr(&v, fpath);
+		Mod_SysVar(&m, "__file__", &v);
+		Native_Free(&v);
 		/* the module code stores and loads its names through the registry */
-		ModVar_Making(name, mf->level, d, &mp.ref, &was);
+		ModVar_Making(name, mf->level, &m, &mp.ref, &was);
 		bound = 1;
 		Script_LevelModuleStart(name);
 		char stop[16];
@@ -1823,100 +1831,19 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	if (ok) {
 		/* the writes the loader makes after the module code (the functions of the C tables the script does not have,
 		 * the sets that may resize the dict), as after the .pyc */
-		Script_ModuleExtras(name, m, &mp.defs);
+		Script_ModuleExtras(name, &m, &mp.defs);
 		/* the names of the module for the registry of the module variables (a mod's own, the hooks' too) */
-		ModVar_Made(name, mf->level, d);
+		ModVar_Made(name, mf->level, &m);
 	} else if (bound) {
 		ModVar_Unmade(name, &was);
 	}
 	Native_Free(&mp.defs);
 	if (!ok) {
+		Native_Free(&m);
 		return -1;
 	}
-	mod_counts[SMC_MADE]++;
-	Py_INCREF(m);
+	Script_ModuleCount(SMC_MADE);
 	*module = m;
 	Con_Verbosef("Script: %s made in C from %s\n", name, mf->name);
 	return 1;
-}
-
-/* ---- the modules by name (batch 6b) ---- */
-
-/* sys.modules: the store of the module objects until stage 7 */
-static PyObject *Mod_Modules(void) {
-	return PyImport_GetModuleDict();
-}
-
-PyObject *Script_ModuleLoaded(const char *name) {
-	return PyDict_GetItemString(Mod_Modules(), (char *)name);
-}
-
-PyObject *Script_Module(const char *name) {
-	byte pack = ModVar_HasModule(name);
-	PyObject *m = pack ? Script_ModuleLoaded(name) : NULL;
-	if (!m) {
-		mod_counts[pack ? SMC_ABSENT : SMC_OTHER]++;
-		return PyImport_ImportModule((char *)name);
-	}
-	if (m == Py_None) {
-		/* what load_next of the import raises for an entry None */
-		mod_counts[SMC_NONE]++;
-		Native_Raise(NE_IMPORT, "No module named %.200s", name);
-		return NULL;
-	}
-	mod_counts[SMC_PACK]++;
-	Py_INCREF(m);
-	return m;
-}
-
-PyObject *Script_ModuleIn(const char *name, PyObject *globals) {
-	PyObject *n = globals && PyDict_Check(globals) ? PyDict_GetItemString(globals, "__name__") : NULL;
-	/* get_parent of the import: a package (__path__) or a dotted module name looks for name in the package first */
-	if (n && PyString_Check(n) && (PyDict_GetItemString(globals, "__path__") || strchr(PyString_AsString(n), '.'))) {
-		mod_counts[SMC_OTHER]++;
-		return PyImport_ImportModuleEx((char *)name, globals, NULL, NULL);
-	}
-	return Script_Module(name);
-}
-
-/* PyImport_AddModule of a pack module: the module in sys.modules, a new empty one when there is none or the entry is
- * no module (borrowed); *made 1 for a new one */
-static PyObject *Mod_Add(const char *name, byte *made) {
-	PyObject *m = Script_ModuleLoaded(name);
-	*made = !m || !PyModule_Check(m);
-	if (!*made) {
-		return m;
-	}
-	m = PyModule_New((char *)name);
-	if (m && PyDict_SetItemString(Mod_Modules(), (char *)name, m) != 0) {
-		Py_DECREF(m);
-		return NULL;
-	}
-	/* the reference of sys.modules keeps it */
-	Py_XDECREF(m);
-	return m;
-}
-
-PyObject *Script_ModuleAdd(const char *name) {
-	if (!ModVar_HasModule(name)) {
-		mod_counts[SMC_OTHER]++;
-		return PyImport_AddModule((char *)name);
-	}
-	byte made;
-	PyObject *m = Mod_Add(name, &made);
-	mod_counts[made ? SMC_ADDED : SMC_PACK]++;
-	return m;
-}
-
-void Script_ModuleCountLoaded(void) {
-	mod_counts[SMC_LOADED]++;
-}
-
-void Script_ModuleCounts(unsigned long counts[SMC_COUNT], byte reset) {
-	for (int i = 0; i < SMC_COUNT; i++) {
-		counts[i] = mod_counts[i];
-		if (reset) {
-			mod_counts[i] = 0;
-		}
-	}
 }

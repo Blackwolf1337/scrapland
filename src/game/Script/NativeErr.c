@@ -10,6 +10,7 @@
  */
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/global.h"
@@ -495,13 +496,22 @@ void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb) {
 /* sys.last_type, sys.last_value and (deleted) sys.last_traceback, sys.stdout's soft space ended: 0 when there is no
  * sys.stderr */
 static byte NErr_PrintStart(nativeErr_t *e) {
-	PySys_SetObject("last_type", e->kind == NE_OTHER ? NErr_Py(&e->type) : *ne_py[e->kind]);
-	PySys_SetObject("last_value", NErr_Py(&e->value));
-	PySys_SetObject("last_traceback", NULL);
-	if (!PySys_GetObject("stderr")) {
+	nativeVal_t t;
+	if (e->kind == NE_OTHER) {
+		Native_Copy(&t, &e->type);
+	} else {
+		/* the name of the standard exception as __builtin__ has it (OBJLIB 7e4b: with its object) */
+		NObj_FromPyKept(*ne_py[e->kind], &t);
+	}
+	Script_SetSysVar("last_type", &t);
+	Native_Free(&t);
+	Script_SetSysVar("last_value", &e->value);
+	Script_SetSysVar("last_traceback", NULL);
+	if (!Script_SysVar("stderr", &t)) {
 		return 0;
 	}
-	if (Py_FlushLine()) {
+	Native_Free(&t);
+	if (!Script_FlushLine()) {
 		Native_ErrClear();
 	}
 	return 1;
@@ -510,20 +520,20 @@ static byte NErr_PrintStart(nativeErr_t *e) {
 /* SystemExit: the program ends with the code of the value (None 0, an int itself, else 1 after its str) */
 static void NErr_Exit(nativeErr_t *e) {
 	nativeBuf_t b;
-	if (Py_FlushLine()) {
+	if (!Script_FlushLine()) {
 		Native_ErrClear();
 	}
 	fflush(stdout);
 	if (e->value.type == NV_NONE) {
-		Py_Exit(0);
+		exit(0);
 	}
 	if (e->value.type == NV_INT) {
-		Py_Exit((int)e->value.i);
+		exit((int)e->value.i);
 	}
 	Native_BufInit(&b);
 	if (NObj_Repr(&b, &e->value, NR_STR)) {
 		fwrite(b.p, 1, (size_t)b.len, stderr);
 	}
 	fprintf(stderr, "\n");
-	Py_Exit(1);
+	exit(1);
 }

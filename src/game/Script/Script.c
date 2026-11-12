@@ -65,7 +65,6 @@
 #include "scrap/scriptnative.h"
 #include "scrap/timer.h"
 #include "compile.h"
-#include "frameobject.h"
 
 #define SCRIPT_MAX_FILE 0x10000
 #define SCRIPT_MAX_TOKENS 16
@@ -374,12 +373,7 @@ void Script_CheckSilent(const char *kind) {
 	}
 	const char *label = script_checkDepth > 0 ? script_checkStack[script_checkDepth - 1] : "?";
 	char where[160] = "-", trace[400] = "";
-	PyThreadState *ts = PyThreadState_Get();
-	if (ts && ts->frame) {
-		PyFrameObject *fr = ts->frame;
-		Str_Printf(where, sizeof(where), "%s:%d %s", PyString_AsString(fr->f_code->co_filename),
-			PyCode_Addr2Line(fr->f_code, fr->f_lasti), PyString_AsString(fr->f_code->co_name));
-	}
+	/* there is no Python frame to name */
 	unsigned h = Script_CheckHash(Script_CheckHash(2166136261u, kind), label);
 	if (script_checkEngine) {
 		h = Script_CheckHash(h, where);
@@ -488,37 +482,6 @@ PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *mod
 	return f;
 }
 
-void Script_CheckEngine(void) {
-	static const char *const modules[] = {
-		"Scrap", "SInput", "SNet", "SWeap", "SScorer", "SVec", "SSound", "SAI", "SAct", "SFX", "SLogic",
-	};
-
-	if (!Script_CheckOn() || !script_checkEngine) {
-		return;
-	}
-	for (size_t i = 0; i < sizeof(modules) / sizeof(modules[0]); i++) {
-		PyObject *m = PyDict_GetItemString(PyImport_GetModuleDict(), (char *)modules[i]);
-		PyObject *dict = m ? PyModule_GetDict(m) : NULL;
-		PyObject *keys = dict ? PyDict_Keys(dict) : NULL;
-		int n = keys ? PyList_Size(keys) : 0;
-		for (int k = 0; k < n; k++) {
-			PyObject *key = PyList_GetItem(keys, k);
-			PyObject *v = PyDict_GetItem(dict, key);
-			if (!v || !PyCFunction_Check(v)) {
-				continue;
-			}
-			PyCFunctionObject *cf = (PyCFunctionObject *)v;
-			PyObject *f = Script_CheckFunction(cf->m_ml, cf->m_self, modules[i]);
-			if (f) {
-				PyDict_SetItem(dict, key, f);
-				Py_DECREF(f);
-			}
-		}
-		Py_XDECREF(keys);
-		Native_ErrClear();
-	}
-}
-
 const char *Script_Row(PyMethodDef *methods, const portFn_t *fns, int i, scriptRow_t *row) {
 	row->def = methods ? &methods[i] : NULL;
 	row->fn = methods ? NULL : &fns[i];
@@ -594,11 +557,12 @@ byte Script_TableHas(const char *module, const char *name) {
  * 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
  * as they did after the .pyc (Sound modules of 21 keys).
  */
-void Script_TableReplay(PyObject *module, PyMethodDef *methods, const portFn_t *fns) {
+void Script_TableReplay(const nativeVal_t *module, PyMethodDef *methods, const portFn_t *fns) {
 	modVarRef_t ref;
 	scriptRow_t row;
 	const char *name;
-	if (!ModVar_RefOf(module, &ref)) {
+	nativeVal_t mname;
+	if (!ModVar_OfVal(module, &ref) || !ModVar_GetVal(&ref, "__name__", &mname)) {
 		return;
 	}
 	for (int k = 0; (name = Script_Row(methods, fns, k, &row)) != NULL; k++) {
@@ -608,11 +572,12 @@ void Script_TableReplay(PyObject *module, PyMethodDef *methods, const portFn_t *
 			Native_Free(&cur);
 			continue;
 		}
-		if (Script_FunctionOf(&row, PyModule_GetName(module), &cur)) {
+		if (Script_FunctionOf(&row, Native_Text(&mname), &cur)) {
 			ModVar_SetVal(&ref, name, &cur);
 		}
 		Native_Free(&cur);
 	}
+	Native_Free(&mname);
 }
 
 void Script_ReplaySet(const modVarRef_t *ref, const char *name, const nativeVal_t *cur) {
@@ -627,7 +592,7 @@ void Script_ReplaySet(const modVarRef_t *ref, const char *name, const nativeVal_
 	Native_Free(&v);
 }
 
-void Script_ModuleExtras(const char *name, PyObject *module, const nativeVal_t *defs) {
+void Script_ModuleExtras(const char *name, const nativeVal_t *module, const nativeVal_t *defs) {
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
 		if (!strcmp(script_modules[i].name, name)) {
 			Script_TableReplay(module, script_modules[i].methods, script_modules[i].fns);
@@ -845,11 +810,13 @@ PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...)
 void Script_StepPrint(int id, const nativeVal_t *args, int n) {
 	const char *text;
 	(void)id;
-	PyObject *out = PySys_GetObject("stdout");
-	if (!(n == 1 ? Native_ArgStr(&args[0], 1, &text) : Port_Arity(n, 1)) || !out ||
-		PyFile_WriteString((char *)text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
+	nativeVal_t out;
+	byte has = Script_SysVar("stdout", &out);
+	if (!(n == 1 ? Native_ArgStr(&args[0], 1, &text) : Port_Arity(n, 1)) || !has ||
+		!Script_FileWriteText(&out, text) || !Script_FileWriteText(&out, "\n")) {
 		Native_ErrPrint();
 	}
+	Native_Free(&out);
 }
 
 PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...) {

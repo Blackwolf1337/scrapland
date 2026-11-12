@@ -314,15 +314,6 @@ static PyObject *Level_Repr(const nativeVal_t *v) {
 	return text;
 }
 
-/* `v` of a step (a new reference, NULL with the error): Native_Repr when v is a native value (the same text), any
- * other value the Python way (OBJLIB 6, for savelistadd) */
-static PyObject *Level_ReprPy(PyObject *v) {
-	nativeVal_t nv;
-	PyObject *r = Native_FromPyAny(v, &nv) ? Level_Repr(&nv) : PyObject_Repr(v);
-	Native_Free(&nv);
-	return r;
-}
-
 /* an argument of a step as the native value a call passes on (Native_Pass: a list of a $name that holds only native
  * values is one): 1 with *out (Native_Free it), 0 with *out None when it holds an object (OBJLIB 7) */
 static byte Level_ArgNative(const nativeVal_t *v, nativeVal_t *out) {
@@ -371,15 +362,26 @@ static void Level_StepSaveListAdd(int id, const nativeVal_t *args, int n) {
 		Py_DECREF(s);
 		return;
 	}
-	PyObject *lst = s ? Script_EvalIn("__main__", s) : NULL, *x = lst ? Native_ToPy(item) : NULL;
-	Py_XDECREF(s);
-	if (x && PySequence_Contains(lst, x) == 0) {
-		PyObject *r = Script_Method(lst, "append", "(O)", x);
-		Level_SetSave(var, r ? Level_ReprPy(lst) : NULL);
-		Py_XDECREF(r);
+	nativeVal_t text, lst, x, r;
+	if (!s) {
+		return;
 	}
-	Py_XDECREF(x);
-	Py_XDECREF(lst);
+	NObj_FromPy(s, &text);
+	Py_DECREF(s);
+	if (Script_EvalIn("__main__", &text, &lst)) {
+		NObj_CallArg(item, &x);
+		if (NObj_Contains(&lst, &x) == 0) {
+			nativeBuf_t b;
+			Native_BufInit(&b);
+			byte ok = NObj_CallMethod(&lst, "append", &x, 1, &r) && NObj_Repr(&b, &lst, NR_REPR);
+			Level_SetSave(var, ok ? PyString_FromStringAndSize(b.p, b.len) : NULL);
+			Native_BufFree(&b);
+			Native_Free(&r);
+		}
+		Native_Free(&x);
+	}
+	Native_Free(&lst);
+	Native_Free(&text);
 }
 
 /* run newlist <name>: $name = [] */
@@ -759,11 +761,11 @@ static byte Level_SectionFunction(int i, levelPool_t *pool, int n, char *tok[24]
  * place (Script_ReplaySet): the sections whose name the module code defined (defs holds those functions by name) and
  * no table of script_modules took before
  */
-static void Level_ReplaySections(int i, PyObject *module, const nativeVal_t *defs) {
+static void Level_ReplaySections(int i, const nativeVal_t *module, const nativeVal_t *defs) {
 	const char *p = level_files[i].text;
 	modVarRef_t ref;
 	int n = 0;
-	if (!ModVar_RefOf(module, &ref)) {
+	if (!ModVar_OfVal(module, &ref)) {
 		return;
 	}
 	while (*p && n < LEVEL_FUNCS) {
@@ -871,7 +873,7 @@ byte Script_LevelDataFunction(const char *module, const char *name, nativeVal_t 
 	return nt && Level_SectionFunction(i, pool, pool->used++, tok, nt, out);
 }
 
-void Script_LevelModuleExtras(const char *name, PyObject *module, const nativeVal_t *defs) {
+void Script_LevelModuleExtras(const char *name, const nativeVal_t *module, const nativeVal_t *defs) {
 	char level[LEVEL_NAME];
 	if (!Level_Current(level, sizeof(level))) {
 		return;

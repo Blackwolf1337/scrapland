@@ -187,6 +187,9 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode);
  * quoted or adjacent texts, control characters, newlines, comments, nesting deeper than 32, unhashable keys, a
  * leading blank). None is the constant: no script binds the name None */
 byte Native_Literal(const char *s, nativeVal_t *out);
+/* the same with what the name None gives in the namespace of eval (LOAD_NAME: a variable None of the globals, else the
+ * builtins'; a copy put in), NULL: no None there (a text with None is refused) */
+byte Native_LiteralNone(const char *s, const nativeVal_t *none, nativeVal_t *out);
 
 /* ---- operations of the scripts ---- */
 
@@ -337,6 +340,11 @@ const nativeVal_t *Native_GetItem(const nativeVal_t *seq, long i, byte subscript
 /* the text of argument arg (from 1) of an engine function as its "s" reads it: 1 with *out, else 0 with the TypeError
  * of getargs.c ("argument 1: expected string, int found", "... string without null bytes ...") */
 byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out);
+/* the TypeError of PyArg_ParseTuple for n arguments to fname (NULL: "function") of min to max: 1 when n fits */
+byte Native_Arity(const char *fname, int n, int min, int max);
+/* the "S" or "s" (nul 1: no 0 bytes) of PyArg_ParseTuple for argument i of fname (NULL: none named): 1 when v is such
+ * a text, else 0 with the TypeError */
+byte Native_ArgTextOf(const char *fname, int i, const nativeVal_t *v, byte nul);
 /* string.upper(v) (strop.upper: islower and toupper on every byte): 1 with *out (Native_Free it), else 0 with the
  * TypeError of a value that is no text ("read-only character buffer, int") */
 byte Native_Upper(const nativeVal_t *in, nativeVal_t *out);

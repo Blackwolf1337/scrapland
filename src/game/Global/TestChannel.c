@@ -941,13 +941,14 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 		const char *name = names.names[i];
 		/* OBJLIB 9b: the module object; the names of the registry, a module without a table by its string keys (both
 		 * sorted) */
-		PyObject *m = Script_ModuleLoaded(name);
-		if (!m || !PyModule_Check(m)) {
+		nativeVal_t m;
+		if (!Script_ModuleLoaded(name, &m) || NObj_Kind(&m) != NO_MODULE) {
+			Native_Free(&m);
 			TC_Addf(b, "== %s missing\n", name);
 			continue;
 		}
 		TC_Addf(b, "== %s\n", name);
-		if (ModVar_RefOf(m, &ref)) {
+		if (ModVar_OfVal(&m, &ref)) {
 			const char **vars;
 			int n = ModVar_Names(&ref, &vars);
 			for (int j = 0; j < n; j++) {
@@ -955,6 +956,7 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 			}
 			Mem_Free(vars);
 		}
+		Native_Free(&m);
 	}
 	Native_ErrClear();
 	for (int i = 0; i < seen.n; i++) {
@@ -1222,9 +1224,8 @@ static void TC_In(tcBuf *b, const char *arg) {
 		quiet = 1;
 		arg += 3;
 	}
-	/* the module dict as the key of the module: a pack module's variables are in the registry (TestExpr reads and
-	 * writes them there, ModVar_OfDict) */
-	TcX_Run(b, arg, PyModule_GetDict(Native_PyOf(&m)), quiet);
+	/* a pack module's variables are in the registry (TestExpr reads and writes them there) */
+	TcX_Run(b, arg, &m, quiet);
 	Native_Free(&m);
 }
 

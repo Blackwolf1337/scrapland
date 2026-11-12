@@ -128,9 +128,8 @@ typedef struct tcEnv {
 /* where names are found while a node runs */
 typedef struct tcScope {
 	tcEnv *env;		/* the parameters of the lambda that runs and of those around it, NULL at the top level */
-	PyObject *globals;	/* OBJLIB 9: the dict of __main__ or of a module (the channel's verbs hand it in) */
-	byte inMod;		/* the globals are those of a pack module: its variables through the registry (mv) */
-	modVarRef_t mv;
+	const nativeVal_t *globals;	/* the module __main__ or another module (the channel's verbs hand it in) */
+	modVarRef_t mv;		/* its variables through the registry */
 } tcScope;
 
 static int tx_depth;
@@ -1167,11 +1166,10 @@ void TcX_Counts(nativeBuf_t *out, byte reset) {
 
 /* ---- values ---- */
 
-/* the dict of __main__, the key of the globals of the channel's top level (TcX_Run with no globals, TcX_Eval,
- * TcX_Statement, TcX_SetMain): its variables are the registry's (ModVar_Keep) */
-static PyObject *TX_Main(void) {
-	PyObject *m = PyImport_AddModule("__main__");
-	return m ? PyModule_GetDict(m) : NULL;
+/* the module __main__, the globals of the channel's top level (TcX_Run with no globals, TcX_Eval, TcX_Statement,
+ * TcX_SetMain): its variables are the registry's (ModVar_Keep) */
+static const nativeVal_t *TX_Main(void) {
+	return Script_Main();
 }
 
 /* OBJLIB 9: the Python object behind a value (borrowed): the one of a view or of an NV_OBJ; NULL for native data and
@@ -1253,34 +1251,44 @@ static byte TP_Function(const char *name, int first, int last, nativeVal_t *out)
 /* a name the scopes of the line do not give: the builtins (getattr, setattr, hasattr and delattr as the twins that
  * reach the pack modules through the registry), the channel's functions, the modules: 1 with *out, 0 with the error */
 static byte TX_Global(const char *name, nativeVal_t *out) {
-	PyObject *b = PyImport_AddModule("__builtin__");
-	PyObject *v = b ? PyDict_GetItemString(PyModule_GetDict(b), (char *)name) : NULL;
+	nativeVal_t key, v;
 
 	Native_SetNone(out);
-	if (v ? PyCFunction_Check(v) && TP_Function(name, TX_TWINS, TX_OWN, out) :
-		!strncmp(name, "tc_", 3) && TP_Function(name, 0, TX_TWINS, out)) {
-		return 1;
-	}
-	if (!v) {
-		v = Script_ModuleLoaded(name);
-	}
-	if (v) {
-		TX_FromPy(v, out);
-		return 1;
-	}
-	v = Script_Module(name);
-	if (!v && Native_ErrIs(NE_IMPORT)) {
-		/* what LOAD_NAME raises */
+	Native_SetStr(&key, name);
+	byte has = NObj_GetItem(Script_Builtins(), &key, &v);
+	Native_Free(&key);
+	if (!has) {
 		Native_ErrClear();
-		Native_Raise(NE_NAME, "%s", name);
 	}
-	return TX_Result(v, out);
+	if (has ? NObj_Kind(&v) == NO_FUNCTION && TP_Function(name, TX_TWINS, TX_OWN, out) :
+		!strncmp(name, "tc_", 3) && TP_Function(name, 0, TX_TWINS, out)) {
+		if (has) {
+			Native_Free(&v);
+		}
+		return 1;
+	}
+	if (has) {
+		*out = v;
+		return 1;
+	}
+	if (Script_ModuleLoaded(name, out)) {
+		return 1;
+	}
+	if (!Script_Module(name, out)) {
+		if (Native_ErrIs(NE_IMPORT)) {
+			/* what LOAD_NAME raises */
+			Native_ErrClear();
+			Native_Raise(NE_NAME, "%s", name);
+		}
+		return 0;
+	}
+	return 1;
 }
 
 byte TcX_Name(const char *name, nativeVal_t *out) {
 	modVarRef_t mv;
 
-	ModVar_RefOfDict(TX_Main(), &mv);
+	ModVar_RefOfNs(TX_Main(), &mv);
 	if (ModVar_GetVal(&mv, name, out)) {
 		return 1;
 	}
@@ -1308,11 +1316,8 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 	if (!v && !strcmp(name, "__globals__")) {
 		/* the globals the line or lambda runs in (helpers set their module variables through it): a pack module's
 		 * variables in the registry */
-		if (s->inMod) {
-			ModVar_Space(&s->mv, out);
-			return 1;
-		}
-		return Native_FromPyRef(s->globals, out);
+		ModVar_Space(&s->mv, out);
+		return 1;
 	}
 	for (const tcEnv *e = s->env ? s->env->up : NULL; !v && e; e = e->up) {
 		v = TX_EnvFind(e, name);
@@ -1324,16 +1329,8 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 		Native_Copy(out, v);
 		return 1;
 	}
-	if (s->inMod) {
-		if (ModVar_GetVal(&s->mv, name, out)) {
-			return 1;
-		}
-	} else {
-		PyObject *g = PyDict_GetItemString(s->globals, (char *)name);
-		if (g) {
-			TX_FromPy(g, out);
-			return 1;
-		}
+	if (ModVar_GetVal(&s->mv, name, out)) {
+		return 1;
 	}
 	return TX_Global(name, out);
 }
@@ -1341,24 +1338,14 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 /* name = v in the globals (a variable of a pack module through the registry); statements run at the top level only,
  * a lambda has no assignment */
 static byte X_SetName(tcScope *s, const char *name, const nativeVal_t *v) {
-	if (s->inMod) {
-		return ModVar_SetVal(&s->mv, name, v) == 0;
-	}
-	PyObject *o = TX_ToPy(v);
-
-	if (!o) {
-		return 0;
-	}
-	int r = PyDict_SetItemString(s->globals, (char *)name, o);
-	Py_DECREF(o);
-	return r == 0;
+	return ModVar_SetVal(&s->mv, name, v) == 0;
 }
 
 /* the scope of the top level of a line (env NULL) or of a lambda that runs in globals */
-static void X_Scope(tcScope *s, tcEnv *env, PyObject *globals) {
+static void X_Scope(tcScope *s, tcEnv *env, const nativeVal_t *globals) {
 	s->env = env;
 	s->globals = globals;
-	s->inMod = ModVar_OfDict(globals, &s->mv);
+	CHECK(ModVar_RefOfNs(globals, &s->mv));
 }
 
 /* ---- running ---- */
@@ -1951,7 +1938,7 @@ typedef struct tcFunc {
 	tcTree *t;
 	tcNode *x;
 	tcEnv *env;
-	PyObject *globals;
+	nativeVal_t globals;
 	nativeVal_t defaults[];
 } tcFunc;
 
@@ -1973,7 +1960,7 @@ static void TX_FuncFree(void *p) {
 		Native_Free(&f->defaults[i]);
 	}
 	TX_EnvDrop(f->env);
-	Py_XDECREF(f->globals);
+	Native_Free(&f->globals);
 	tcTree *t = f->t;
 	Mem_Free(f);
 	TX_Release(t);
@@ -2057,7 +2044,7 @@ static byte TX_LambdaRun(tcFunc *f, nativeVal_t *a, int na, const nativeVal_t *p
 		for (int i = 0; i < slots; i++) {
 			NObj_Share(&e->v[i]);
 		}
-		X_Scope(&s, e, f->globals);
+		X_Scope(&s, e, &f->globals);
 		tx_tree = f->t;
 		ok = X_Eval(x->a, &s, out);
 		tx_tree = was;
@@ -2132,8 +2119,7 @@ static byte X_Lambda(tcNode *x, tcScope *s, nativeVal_t *out) {
 	if (f->env) {
 		f->env->refs++;
 	}
-	f->globals = s->globals;
-	Py_INCREF(f->globals);
+	Native_Copy(&f->globals, s->globals);
 	TX_FuncNew(out, "<lambda>", TX_LambdaCall, f, TX_FuncFree, TX_LambdaKw, NULL);
 	return 1;
 }
@@ -2216,31 +2202,6 @@ void TcX_Init(void) {
  */
 typedef int (*tcNative_t)(nativeVal_t *a, int n, nativeVal_t *out);
 
-/* the TypeError of PyArg_ParseTuple for n arguments to fname (NULL: "function") of min to max: 1 when n fits */
-static byte TX_Arity(const char *fname, int n, int min, int max) {
-	if (n >= min && n <= max) {
-		return 1;
-	}
-	int k = n < min ? min : max;
-	return Native_Raise(NE_TYPE, "%s requires %s %d argument%s; %d given", fname ? fname : "function",
-		min == max ? "exactly" : n < min ? "at least" : "at most", k, k == 1 ? "" : "s", n);
-}
-
-/* the "S" or "s" (nul 1: no 0 bytes) of PyArg_ParseTuple for argument i of fname: 1 when v is such a text */
-static byte TX_ArgText(const char *fname, int i, const nativeVal_t *v, byte nul) {
-	const char *expected = "string";
-
-	if (v->type == NV_STR) {
-		if (!nul || strlen(Native_Text(v)) == (size_t)v->n) {
-			return 1;
-		}
-		expected = "string without null bytes";
-	}
-	if (fname) {
-		return Native_Raise(NE_TYPE, "%s, argument %d: expected %s, %s found", fname, i, expected, Native_TypeName(v));
-	}
-	return Native_Raise(NE_TYPE, "argument %d: expected %s, %s found", i, expected, Native_TypeName(v));
-}
 
 /* the "NULL result without error in call_object" of a call that failed without an error: 0 */
 static byte TX_NullResult(void) {
@@ -2421,7 +2382,7 @@ static int TX_Good(nativeVal_t *func, const nativeVal_t *item) {
 }
 
 static int TB_Filter(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("filter", n, 2, 2)) {
+	if (!Native_Arity("filter", n, 2, 2)) {
 		return 0;
 	}
 	nativeVal_t *seq = &a[1];
@@ -2488,7 +2449,7 @@ static int TB_Reduce(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t r;
 	byte has = n > 2;
 
-	if (!TX_Arity("reduce", n, 2, 3)) {
+	if (!Native_Arity("reduce", n, 2, 3)) {
 		return 0;
 	}
 	int k = TcX_SeqOf(&a[1]);
@@ -2536,7 +2497,7 @@ static int TB_Reduce(nativeVal_t *a, int n, nativeVal_t *out) {
 static int TB_Apply(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t args;
 
-	if (!TX_Arity("apply", n, 1, 3)) {
+	if (!Native_Arity("apply", n, 1, 3)) {
 		return 0;
 	}
 	Native_SetEmpty(&args, NV_TUPLE);
@@ -2561,7 +2522,7 @@ static int TB_Apply(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_GetAttr(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("getattr", n, 2, 3) || !TX_ArgText("getattr", 2, &a[1], 0)) {
+	if (!Native_Arity("getattr", n, 2, 3) || !Native_ArgTextOf("getattr", 2, &a[1], 0)) {
 		return 0;
 	}
 	if (TX_GetAttr(&a[0], Native_Text(&a[1]), out)) {
@@ -2578,7 +2539,7 @@ static int TB_GetAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 static int TB_HasAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t v;
 
-	if (!TX_Arity("hasattr", n, 2, 2) || !TX_ArgText("hasattr", 2, &a[1], 0)) {
+	if (!Native_Arity("hasattr", n, 2, 2) || !Native_ArgTextOf("hasattr", 2, &a[1], 0)) {
 		return 0;
 	}
 	byte ok = TX_GetAttr(&a[0], Native_Text(&a[1]), &v);
@@ -2592,7 +2553,7 @@ static int TB_HasAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 
 static int TB_SetAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
-	if (!TX_Arity("setattr", n, 3, 3) || !TX_ArgText("setattr", 2, &a[1], 0)) {
+	if (!Native_Arity("setattr", n, 3, 3) || !Native_ArgTextOf("setattr", 2, &a[1], 0)) {
 		return 0;
 	}
 	return TX_SetAttr(&a[0], Native_Text(&a[1]), &a[2]) || TX_NullResult();
@@ -2600,14 +2561,14 @@ static int TB_SetAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 
 static int TB_DelAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
-	if (!TX_Arity("delattr", n, 2, 2) || !TX_ArgText("delattr", 2, &a[1], 0)) {
+	if (!Native_Arity("delattr", n, 2, 2) || !Native_ArgTextOf("delattr", 2, &a[1], 0)) {
 		return 0;
 	}
 	return TX_SetAttr(&a[0], Native_Text(&a[1]), NULL) || TX_NullResult();
 }
 
 static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("type", n, 1, 1)) {
+	if (!Native_Arity("type", n, 1, 1)) {
 		return 0;
 	}
 	NObj_TypeOf(a, out);
@@ -2615,7 +2576,7 @@ static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Len(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("len", n, 1, 1)) {
+	if (!Native_Arity("len", n, 1, 1)) {
 		return 0;
 	}
 	int len = NObj_Len(a);
@@ -2627,22 +2588,22 @@ static int TB_Len(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Str(nativeVal_t *a, int n, nativeVal_t *out) {
-	return TX_Arity("str", n, 1, 1) && TX_Repr(a, NR_STR, out);
+	return Native_Arity("str", n, 1, 1) && TX_Repr(a, NR_STR, out);
 }
 
 static int TB_Repr(nativeVal_t *a, int n, nativeVal_t *out) {
-	return TX_Arity("repr", n, 1, 1) && TX_Repr(a, NR_REPR, out);
+	return Native_Arity("repr", n, 1, 1) && TX_Repr(a, NR_REPR, out);
 }
 
 static int TB_Int(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("int", n, 1, 1)) {
+	if (!Native_Arity("int", n, 1, 1)) {
 		return 0;
 	}
 	return a->type == NV_REF || TX_IsPy(a) ? -1 : Native_ToInt(a, out);
 }
 
 static int TB_Float(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("float", n, 1, 1)) {
+	if (!Native_Arity("float", n, 1, 1)) {
 		return 0;
 	}
 	return a->type == NV_REF || TX_IsPy(a) ? -1 : Native_ToFloat(a, out);
@@ -2652,7 +2613,7 @@ static int TB_RoundFn(nativeVal_t *a, int n, nativeVal_t *out) {
 	double x;
 	int digits = 0;
 
-	if (!TX_Arity("round", n, 1, 2)) {
+	if (!Native_Arity("round", n, 1, 2)) {
 		return 0;
 	}
 	for (int i = 0; i < n; i++) {
@@ -2707,7 +2668,7 @@ static int TB_Range(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Abs(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("abs", n, 1, 1)) {
+	if (!Native_Arity("abs", n, 1, 1)) {
 		return 0;
 	}
 	return a->type == NV_REF && (NObj_Py(a) || NObj_Kind(a) == NO_INSTANCE) ? -1 : Mode_Abs(a, out);
@@ -2723,7 +2684,7 @@ static int TB_MinMax(nativeVal_t *a, int n, nativeVal_t *out, int sign) {
 		args.type = NV_TUPLE;
 		args.items = a;
 		args.n = n;
-	} else if (!TX_Arity("min/max", n, 1, 1)) {
+	} else if (!Native_Arity("min/max", n, 1, 1)) {
 		return 0;
 	} else {
 		int k = TcX_SeqOf(a);
@@ -2771,7 +2732,7 @@ static int TB_Max(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Cmp(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("cmp", n, 2, 2)) {
+	if (!Native_Arity("cmp", n, 2, 2)) {
 		return 0;
 	}
 	/* the compare of texts and of containers gives the difference of two bytes, not only the sign: Python's */
@@ -2786,7 +2747,7 @@ static int TB_Cmp(nativeVal_t *a, int n, nativeVal_t *out) {
 
 /* tuple(v) and list(v) */
 static int TB_Seq(nativeVal_t *a, int n, nativeVal_t *out, nativeType_t type) {
-	if (!TX_Arity(type == NV_TUPLE ? "tuple" : "list", n, 1, 1)) {
+	if (!Native_Arity(type == NV_TUPLE ? "tuple" : "list", n, 1, 1)) {
 		return 0;
 	}
 	if (type == NV_TUPLE && a->type == NV_TUPLE) {
@@ -2813,7 +2774,7 @@ static int TB_Callable(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t call;
 	int k;
 
-	if (!TX_Arity("callable", n, 1, 1)) {
+	if (!Native_Arity("callable", n, 1, 1)) {
 		return 0;
 	}
 	if (a->type == NV_OBJ) {
@@ -2835,7 +2796,7 @@ static int TB_Callable(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Id(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("id", n, 1, 1)) {
+	if (!Native_Arity("id", n, 1, 1)) {
 		return 0;
 	}
 	/* OBJLIB 9: the address of the Python object of a view (a value without one is made into one by Python's id) */
@@ -2848,14 +2809,14 @@ static int TB_Id(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Import(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity("__import__", n, 1, 4) || !TX_ArgText("__import__", 1, a, 1)) {
+	if (!Native_Arity("__import__", n, 1, 4) || !Native_ArgTextOf("__import__", 1, a, 1)) {
 		return 0;
 	}
 	/* `import name`; a package or the globals, locals and fromlist of the call: Python's */
 	if (n > 1 || !a->n || strchr(Native_Text(a), '.')) {
 		return -1;
 	}
-	return TX_Result(Script_Module(Native_Text(a)), out);
+	return Script_Module(Native_Text(a), out);
 }
 
 /* tc_sdn: the names of the objects of x */
@@ -2951,7 +2912,7 @@ static byte TP_SdnVal(const nativeVal_t *x, int depth, nativeVal_t *out) {
 }
 
 static int TP_Sdn(nativeVal_t *a, int n, nativeVal_t *out) {
-	return TX_Arity(NULL, n, 1, 1) && TP_SdnVal(a, 0, out);
+	return Native_Arity(NULL, n, 1, 1) && TP_SdnVal(a, 0, out);
 }
 
 /* f(*args, **kw) as PyEval_CallObjectWithKeywords takes the arguments (args a tuple, kw None or a dict): 0 with the
@@ -2975,7 +2936,7 @@ static byte TP_CallArgs(nativeVal_t *f, const nativeVal_t *args, const nativeVal
 static int TP_Catch(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t tv[2];
 
-	if (!TX_Arity(NULL, n, 2, 4)) {
+	if (!Native_Arity(NULL, n, 2, 4)) {
 		return 0;
 	}
 	if (TP_CallArgs(&a[0], &a[1], n > 2 ? &a[2] : NULL, out)) {
@@ -2996,7 +2957,7 @@ static int TP_Catch(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TP_Try(nativeVal_t *a, int n, nativeVal_t *out) {
-	if (!TX_Arity(NULL, n, 3, 3)) {
+	if (!Native_Arity(NULL, n, 3, 3)) {
 		return 0;
 	}
 	if (!TP_CallArgs(&a[0], &a[1], NULL, out)) {
@@ -3010,7 +2971,7 @@ static int TP_Finally(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeErr_t e;
 	nativeVal_t r;
 
-	if (!TX_Arity(NULL, n, 3, 3)) {
+	if (!Native_Arity(NULL, n, 3, 3)) {
 		return 0;
 	}
 	byte ok = TP_CallArgs(&a[0], &a[1], NULL, out);
@@ -3030,7 +2991,7 @@ static int TP_Swap(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeErr_t e;
 	nativeVal_t old;
 
-	if (!TX_Arity(NULL, n, 4, 4) || !TX_ArgText(NULL, 2, &a[1], 0)) {
+	if (!Native_Arity(NULL, n, 4, 4) || !Native_ArgTextOf(NULL, 2, &a[1], 0)) {
 		return 0;
 	}
 	const char *name = Native_Text(&a[1]);
@@ -3085,14 +3046,14 @@ static byte TP_MakeClass(const nativeVal_t *name, const nativeVal_t *attrs, nati
 }
 
 static int TP_Class(nativeVal_t *a, int n, nativeVal_t *out) {
-	return TX_Arity(NULL, n, 1, 2) && TX_ArgText(NULL, 1, a, 1) && TP_MakeClass(a, n > 1 ? &a[1] : NULL, out);
+	return Native_Arity(NULL, n, 1, 2) && Native_ArgTextOf(NULL, 1, a, 1) && TP_MakeClass(a, n > 1 ? &a[1] : NULL, out);
 }
 
 static int TP_Obj(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t klass, pairs;
 	static const char *const special[2] = { "__call__", "__repr__" };
 
-	if (!TX_Arity(NULL, n, 2, 4) || !TX_ArgText(NULL, 1, a, 1) || !TP_MakeClass(a, NULL, &klass)) {
+	if (!Native_Arity(NULL, n, 2, 4) || !Native_ArgTextOf(NULL, 1, a, 1) || !TP_MakeClass(a, NULL, &klass)) {
 		return 0;
 	}
 	byte ok = NObj_Call(&klass, NULL, 0, out);
@@ -3123,7 +3084,7 @@ static int TP_Obj(nativeVal_t *a, int n, nativeVal_t *out) {
 static int TP_Walk(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t x;
 
-	if (!TX_Arity(NULL, n, 2, 2)) {
+	if (!Native_Arity(NULL, n, 2, 2)) {
 		return 0;
 	}
 	Native_SetEmpty(out, NV_LIST);
@@ -3147,7 +3108,7 @@ static int TP_Walk(nativeVal_t *a, int n, nativeVal_t *out) {
 static int TP_Sorted(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t slice, r;
 
-	if (!TX_Arity(NULL, n, 1, 1) || !NObj_GetSlice(a, 0, NOBJ_END, &slice)) {
+	if (!Native_Arity(NULL, n, 1, 1) || !NObj_GetSlice(a, 0, NOBJ_END, &slice)) {
 		return 0;
 	}
 	/* a new list of the items, sorted as list.sort does */
@@ -3166,17 +3127,17 @@ static int TP_Sorted(nativeVal_t *a, int n, nativeVal_t *out) {
 
 static int TP_Set(nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
-	return TX_Arity(NULL, n, 3, 3) && NObj_SetItem(&a[0], &a[1], &a[2]);
+	return Native_Arity(NULL, n, 3, 3) && NObj_SetItem(&a[0], &a[1], &a[2]);
 }
 
 static int TP_Del(nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
-	return TX_Arity(NULL, n, 2, 2) && NObj_DelItem(&a[0], &a[1]);
+	return Native_Arity(NULL, n, 2, 2) && NObj_DelItem(&a[0], &a[1]);
 }
 
 static int TP_Clear(nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
-	return TX_Arity(NULL, n, 1, 1) && NObj_SetSlice(a, 0, NOBJ_END, NULL);
+	return Native_Arity(NULL, n, 1, 1) && NObj_SetSlice(a, 0, NOBJ_END, NULL);
 }
 
 /* the native functions: the channel's own and the twins first, then the builtins */
@@ -3297,8 +3258,16 @@ static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVa
 	} else if (!((PyCFunctionObject *)py)->m_self) {
 		PyCFunctionObject *cf = (PyCFunctionObject *)py;
 		/* a builtin of that name that is still the builtin's own function object */
-		PyObject *b = PyImport_AddModule("__builtin__");
-		PyObject *own = b ? PyDict_GetItemString(PyModule_GetDict(b), cf->m_ml->ml_name) : NULL;
+		nativeVal_t key, ownv;
+		Native_SetStr(&key, cf->m_ml->ml_name);
+		byte found = NObj_GetItem(Script_Builtins(), &key, &ownv);
+		Native_Free(&key);
+		if (!found) {
+			Native_ErrClear();
+		}
+		/* the dict holds the view, so its object stays */
+		PyObject *own = found ? NObj_Py(&ownv) : NULL;
+		Native_Free(&ownv);
 		for (i = TX_OWN; i < TX_NATIVES && strcmp(tx_natives[i].name, cf->m_ml->ml_name); i++) {
 		}
 		if (i == TX_NATIVES || !own || !PyCFunction_Check(own) || ((PyCFunctionObject *)own)->m_ml != cf->m_ml) {
@@ -3436,7 +3405,7 @@ static byte X_Delete(tcNode *t, tcScope *s) {
 
 	switch (t->kind) {
 	case X_NAME:
-		if ((s->inMod ? ModVar_Del(&s->mv, t->name) : PyDict_DelItemString(s->globals, (char *)t->name)) != 0) {
+		if (ModVar_Del(&s->mv, t->name) != 0) {
 			Native_ErrClear();
 			return Native_Raise(NE_NAME, "%s", t->name);
 		}
@@ -3500,7 +3469,7 @@ static byte X_Exec(tcNode *st, tcScope *s, nativeVal_t *value, byte *has) {
 		return X_Delete(st->a, s);
 	case S_IMPORT:
 		for (int i = 0; i < st->n; i++) {
-			ok = TX_Result(Script_Module(st->names[i]), &v) && X_SetName(s, st->names[i], &v);
+			ok = Script_Module(st->names[i], &v) && X_SetName(s, st->names[i], &v);
 			Native_Free(&v);
 			if (!ok) {
 				return 0;
@@ -3528,7 +3497,7 @@ static tcNode *TX_Read(const char *line, tcTree **tree) {
 
 /* runs prog of tree in globals: 0 with the error set; *has 1 with *last the value of a last expression statement
  * (Native_Free it) */
-static byte TX_RunTree(tcTree *tree, tcNode *prog, PyObject *globals, nativeVal_t *last, byte *has) {
+static byte TX_RunTree(tcTree *tree, tcNode *prog, const nativeVal_t *globals, nativeVal_t *last, byte *has) {
 	tcTree *was = tx_tree;
 	tcScope s;
 	byte ok = 1;
@@ -3609,31 +3578,23 @@ byte TcX_SetMain(const char *name, const nativeVal_t *v) {
 
 /* the global "result" of globals (a variable of a pack module through the registry) into *out: 1, 0 when it has
  * none; del: removed (out unused) */
-static byte TX_ResultVar(PyObject *globals, byte del, nativeVal_t *out) {
+static byte TX_ResultVar(const nativeVal_t *globals, byte del, nativeVal_t *out) {
 	modVarRef_t mv;
 	nativeVal_t r;
 
-	if (ModVar_OfDict(globals, &mv)) {
-		byte has = ModVar_GetVal(&mv, "result", del ? &r : out);
-		if (has && del) {
-			Native_Free(&r);
-			ModVar_Del(&mv, "result");
-			return 0;
-		}
-		return has;
-	}
-	PyObject *v = PyDict_GetItemString(globals, "result");
-	if (v && del) {
-		PyDict_DelItemString(globals, "result");
+	if (!ModVar_RefOfNs(globals, &mv)) {
 		return 0;
 	}
-	if (v && !del) {
-		TX_FromPy(v, out);
+	byte has = ModVar_GetVal(&mv, "result", del ? &r : out);
+	if (has && del) {
+		Native_Free(&r);
+		ModVar_Del(&mv, "result");
+		return 0;
 	}
-	return v != NULL;
+	return has;
 }
 
-void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet) {
+void TcX_Run(tcBuf *b, const char *line, const nativeVal_t *globals, byte quiet) {
 	tcTree *tree;
 	tcNode *prog = TX_Read(line, &tree);
 	nativeVal_t v;

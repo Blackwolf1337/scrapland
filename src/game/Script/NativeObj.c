@@ -343,11 +343,9 @@ byte Native_FromPyRef(PyObject *o, nativeVal_t *v) {
 	if (n) {
 		NObj_Keep(n);
 	} else {
-		modVarRef_t mv;
+		/* a view (a module object of Python is a face found above: modules are native) */
 		n = Obj_New((byte)kind);
-		/* a pack module is native from the start: the registry has its variables, the module object is its key and
-		 * what it gives to Python (OBJLIB 9: the module objects are Python's until stage 7e) */
-		n->born = kind == NO_MODULE && ModVar_Of(o, &mv);
+		n->born = 0;
 		n->binds = PyFunction_Check(o) != 0;
 		const portRef_t *face = NObj_PortFace(o);
 		if (face) {
@@ -386,6 +384,13 @@ void NObj_FromPy(PyObject *o, nativeVal_t *v) {
 		if (PyEntity_Check(o) || !Native_FromPyRef(o, v)) {
 			Native_SetObj(v, o);
 		}
+	}
+}
+
+void NObj_FromPyKept(PyObject *o, nativeVal_t *v) {
+	NObj_FromPy(o, v);
+	if (v->type != NV_OBJ && v->type != NV_REF) {
+		Native_KeepPy(v, o);
 	}
 }
 
@@ -824,14 +829,26 @@ void NObj_SetMethodClass(const nativeVal_t *m, const nativeVal_t *cls) {
 }
 
 byte NObj_Module(nativeVal_t *out, const char *name) {
-	PyObject *m = Script_Module(name);
-	Native_SetNone(out);
-	if (!m) {
-		return 0;
-	}
-	Native_FromPyRef(m, out);
-	Py_DECREF(m);
-	return 1;
+	return Script_Module(name, out);
+}
+
+void NObj_NewModule(nativeVal_t *out, const char *name) {
+	nativeObj_t *o = Obj_New(NO_MODULE);
+	nativeVal_t k, v;
+	o->name = Obj_Text(name);
+	NObj_NewDict(&o->data);
+	/* PyModule_New: __name__, __doc__ None */
+	Native_SetStr(&k, "__name__");
+	Native_SetText(&v, name, (int)strlen(name));
+	Native_DictSet(NObj_DictData(&o->data), &k, &v);
+	Native_SetStr(&k, "__doc__");
+	Native_SetNone(&v);
+	Native_DictSet(NObj_DictData(&o->data), &k, &v);
+	Obj_SetRef(out, o);
+}
+
+const nativeVal_t *NObj_ModuleVars(const nativeVal_t *m) {
+	return Obj_IsKind(m, NO_MODULE) && m->ref->born ? &m->ref->data : NULL;
 }
 
 /* ---- OBJLIB 9: native data crosses to Python ---- */
@@ -1165,8 +1182,19 @@ static PyObject *Obj_ToPy(nativeObj_t *o) {
 		}
 		Obj_Crossed(o, py);
 		break;
+	case NO_MODULE:
+		/* OBJLIB 7e4b: a module object of Python as its face (its getattr and setattr reach the native module, ModVars.c);
+		 * the module stays native (Obj_View) */
+		py = PyModule_New(o->name);
+		if (!py) {
+			return NULL;
+		}
+		ModVar_FaceHook();
+		Obj_Crossed(o, py);
+		Py_INCREF(o->py);
+		return o->py;
 	default:
-		Native_Raise(NE_SYSTEM, "a native module without its Python object");
+		Native_Raise(NE_SYSTEM, "a native object without its Python object");
 		return NULL;
 	case NO_COBJ:
 		/* OBJLIB 7e4b: a face of its type; the C object stays native (Obj_View) */
@@ -1608,15 +1636,11 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 		Obj_Addf(b, "<%.80s object at %lx>", o->ctype->name, (long)Obj_Addr(o));
 		return 1;
 	case NO_MODULE: {
-		/* module_repr, the name and file of the module dict (the registry's variables) */
-		modVarRef_t mv;
+		/* module_repr, the name and file of the module dict (its variables) */
+		modVarRef_t mv = { .file = -1, .vars = &o->data };
 		nativeVal_t name, file;
-		Native_SetNone(&name);
-		Native_SetNone(&file);
-		if (ModVar_Of(o->py, &mv)) {
-			ModVar_GetVal(&mv, "__name__", &name);
-			ModVar_GetVal(&mv, "__file__", &file);
-		}
+		ModVar_GetVal(&mv, "__name__", &name);
+		ModVar_GetVal(&mv, "__file__", &file);
 		const char *n = name.type == NV_STR ? Native_Text(&name) : "?";
 		if (file.type == NV_STR) {
 			Obj_Addf(b, "<module '%.50s' from '%.255s'>", n, Native_Text(&file));
@@ -2373,7 +2397,7 @@ static byte Obj_FindMethod(nativeObj_t *o, const char *name, nativeVal_t *out) {
 
 /* getattr of a Python object (a pack module through the registry of the module variables, as the channel reads it) */
 static byte Obj_PyGetAttr(PyObject *py, const char *name, nativeVal_t *out) {
-	PyObject *r = ModVar_ObjAttr(py, name);
+	PyObject *r = PyObject_GetAttrString(py, (char *)name);
 	Py_DECREF(py);
 	return Obj_Result(r, out);
 }
@@ -2555,7 +2579,7 @@ static byte Obj_SetAttr(const nativeVal_t *t, const char *name, const nativeVal_
 	PyObject *py = Obj_Forward(t);
 	if (py) {
 		PyObject *x = v ? Native_ToPy(v) : NULL;
-		int r = !v || x ? ModVar_SetObjAttr(py, name, x) : -1;
+		int r = !v || x ? PyObject_SetAttrString(py, (char *)name, x) : -1;
 		Py_XDECREF(x);
 		Py_DECREF(py);
 		return r == 0;

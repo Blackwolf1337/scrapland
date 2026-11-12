@@ -4,6 +4,7 @@
 #include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/pyfunction.h"
 #include "scrap/mempool.h"
 #include "scrap/scrap.h"
@@ -23,187 +24,182 @@ cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
 
 #define g_PyStaticBuffer (&cStaticBuffer_PyStaticBuffer[0])
 
-/* frees the free lists of the object types after Py_Finalize */
+/* OBJLIB 7e4b: frees the free lists of the object types of the library at the end */
 void Py_FiniObjects(void);
 
 byte g_PythonReady;
 
 /*
  * The start and end lines of the exe, each a PyRun_SimpleString of the engine in __main__ (single_input; "Scrap
- * input", CR dropped), made in C: a line that
- * fails prints its error and the next line runs; a value an expression statement gives is printed when it is not None
- * (PRINT_EXPR of the interactive mode); Py_FlushLine ends every line. Names are looked up in __main__ as LOAD_NAME
- * does, imports stored there.
+ * input", CR dropped), made in C on the native modules (src/game/Script/ScriptImport.c): a line that fails prints its
+ * error and the next line runs; a value an expression statement gives is printed when it is not None (PRINT_EXPR of
+ * the interactive mode); Py_FlushLine ends every line. Names are looked up in __main__ as LOAD_NAME does, imports
+ * stored there.
  */
 
 /* the end of a start line: its error printed, else the line flushed */
 static void Py_LineEnd(byte ok) {
 	if (!ok) {
 		Native_ErrPrint();
-	} else if (Py_FlushLine()) {
+	} else if (!Script_FlushLine()) {
 		Native_ErrClear();
 	}
 }
 
 /* an expression statement of single_input (PRINT_EXPR): a value that is not None printed with its repr and kept in
- * __builtin__._; v given away; 0 with the error set */
-static byte Py_LineExpr(PyObject *v) {
-	int err = 0;
-	if (!v) {
-		return 0;
+ * __builtin__._; 0 with the error set */
+static byte Py_LineExpr(const nativeVal_t *v) {
+	nativeVal_t key, none, out;
+	if (v->type == NV_NONE) {
+		return 1;
 	}
-	if (v != Py_None) {
-		PyObject *b = PyEval_GetBuiltins(), *out = NULL;
-		err = PyDict_SetItemString(b, "_", Py_None);
-		if (!err) {
-			err = Py_FlushLine();
+	Native_SetStr(&key, "_");
+	Native_SetNone(&none);
+	byte ok = NObj_SetItem(Script_Builtins(), &key, &none) && Script_FlushLine();
+	if (ok && !Script_SysVar("stdout", &out)) {
+		ok = Native_Raise(NE_RUNTIME, "lost sys.stdout");
+	} else if (ok) {
+		ok = Script_FileWrite(&out, v, 0);
+		if (ok) {
+			Script_SoftSpace(&out, 1);
+			ok = Script_FlushLine();
 		}
-		if (!err && !(out = PySys_GetObject("stdout"))) {
-			Native_Raise(NE_RUNTIME, "lost sys.stdout");
-			err = -1;
-		}
-		if (!err) {
-			err = PyFile_WriteObject(v, out, 0);
-		}
-		if (!err) {
-			PyFile_SoftSpace(out, 1);
-			err = Py_FlushLine();
-		}
-		if (!err) {
-			err = PyDict_SetItemString(b, "_", v);
-		}
+		Native_Free(&out);
 	}
-	Py_DECREF(v);
-	return err == 0;
+	ok = ok && NObj_SetItem(Script_Builtins(), &key, v);
+	Native_Free(&key);
+	return ok;
 }
 
-/* name = v in __main__ (STORE_NAME into the registry's variables of __main__, v given away) */
-static byte Py_LineStore(const char *name, PyObject *v) {
-	PyObject *m = v ? PyImport_AddModule("__main__") : NULL;
-	int bad = !m || ModVar_DictSet(PyModule_GetDict(m), name, v) != 0;
-	Py_XDECREF(v);
-	return !bad;
+/* name = v in __main__ (STORE_NAME into the registry's variables of __main__) */
+static byte Py_LineStore(const char *name, const nativeVal_t *v) {
+	modVarRef_t ref;
+	return ModVar_OfVal(Script_Main(), &ref) && ModVar_SetVal(&ref, name, v) == 0;
 }
 
 /* import a, b, ... in __main__ (NULL ends the names; the line stops at the first error) */
 static byte Py_LineImport(const char *const *names) {
 	for (; *names; names++) {
-		if (!Py_LineStore(*names, Script_Module(*names))) {
+		nativeVal_t m;
+		byte ok = Script_Module(*names, &m) && Py_LineStore(*names, &m);
+		Native_Free(&m);
+		if (!ok) {
 			return 0;
 		}
 	}
 	return 1;
 }
 
-/* a name of __main__ with attributes ("Init.Init") as LOAD_NAME and LOAD_ATTR find it: a new reference */
-static PyObject *Py_LineName(const char *text) {
-	PyObject *m = PyImport_AddModule("__main__"), *v = NULL;
-	return m && Script_NameChain(NULL, PyModule_GetDict(m), text, &v) > 0 ? v : NULL;
-}
-
-/* name(args) as an expression statement of a line (args given away) */
-static byte Py_LineCall(const char *name, PyObject *args) {
-	PyObject *f = args ? Py_LineName(name) : NULL, *r = f ? PyEval_CallObject(f, args) : NULL;
-	Py_XDECREF(f);
-	Py_XDECREF(args);
-	return Py_LineExpr(r);
+/* name(args) as an expression statement of a line ("Init.Init": LOAD_NAME and LOAD_ATTR in __main__), n arguments */
+static byte Py_LineCall(const char *name, const nativeVal_t *a, int n) {
+	nativeVal_t f, r;
+	byte ok = Script_NameChain(NULL, Script_Main(), name, &f) > 0 && NObj_Call(&f, a, n, &r);
+	Native_Free(&f);
+	if (ok) {
+		ok = Py_LineExpr(&r);
+		Native_Free(&r);
+	}
+	return ok;
 }
 
 /* func('text') of a line as the exe builds it (Str_Printf in 0x100 chars): the text between the quotes becomes the
- * string the compiler makes of it (escapes, interning); a quote or a control character in it, or a cut line, is the
- * line's SyntaxError */
+ * string the compiler makes of it (escapes); a quote or a control character in it, or a cut line, is the line's
+ * SyntaxError */
 static byte Py_LineCallText(const char *func, const char *text) {
 	char cmd[0x100];
 	int n = Str_Printf(cmd, sizeof(cmd), "%s('%s')", func, text), len = (int)strlen(func);
-	PyObject *m = PyImport_AddModule("__main__"), *v = NULL;
-	if (m && n == (int)strlen(cmd) && n > len + 2 && cmd[n - 1] == ')') {
+	nativeVal_t v;
+	byte ok = 0;
+	Native_SetNone(&v);
+	if (n == (int)strlen(cmd) && n > len + 2 && cmd[n - 1] == ')') {
 		cmd[n - 1] = '\0';
-		v = Script_Literal(PyModule_GetDict(m), cmd + len + 1);
+		ok = Native_Literal(cmd + len + 1, &v) && v.type == NV_STR;
 	}
-	if (!v || !PyString_Check(v)) {
-		Py_XDECREF(v);
+	if (!ok) {
+		Native_Free(&v);
 		Script_NotRead("start line", cmd);
 		return 0;
 	}
-	return Py_LineCall(func, Py_BuildValue("(N)", v));
+	ok = Py_LineCall(func, &v, 1);
+	Native_Free(&v);
+	return ok;
 }
 
-/* write(message) of the classes ConsoleOutput and ConsoleErrorOutput: Scrap.ConsoleOut(message) or
+/* the call of a start line with one text argument */
+static byte Py_LineCallStr(const char *func, const char *a) {
+	nativeVal_t v;
+	Native_SetStr(&v, a);
+	byte ok = Py_LineCall(func, &v, 1);
+	Native_Free(&v);
+	return ok;
+}
+
+/* write(message) of the classes ConsoleOutput (ctx 0) and ConsoleErrorOutput (1): Scrap.ConsoleOut(message) or
  * Scrap.ConsoleError(message), 'None' for None */
-static PyObject *Py_ConsoleWrite(PyObject *args, const char *func) {
-	PyObject *message;
-	if (!PyArg_ParseTuple(args, "O", &message)) {
-		return NULL;
+static byte Py_ConsoleWrite(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t none;
+	(void)out;
+	if (!Native_Arity(NULL, n, 1, 1)) {
+		return 0;
 	}
-	PyObject *r = message == Py_None ? Script_Ask("Scrap", func, "(s)", "None") : Script_Ask("Scrap", func, "(O)",
-		message);
-	if (!r) {
-		return NULL;
-	}
-	Py_DECREF(r);
-	return Py_ReturnNone();
+	Native_SetStr(&none, "None");
+	const nativeVal_t *m = a[0].type == NV_NONE ? &none : &a[0];
+	return ctx ? PORT_CALL(Scrap, ConsoleError, NULL, "v", m) : PORT_CALL(Scrap, ConsoleOut, NULL, "v", m);
 }
 
-static PyObject *Py_ConsoleOutWrite(PyObject *self, PyObject *args) {
-	(void)self;
-	return Py_ConsoleWrite(args, "ConsoleOut");
+static byte Py_ConsoleFlush(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)ctx;
+	(void)a;
+	(void)out;
+	return Native_Arity(NULL, n, 0, 0);
 }
 
-static PyObject *Py_ConsoleErrorWrite(PyObject *self, PyObject *args) {
-	(void)self;
-	return Py_ConsoleWrite(args, "ConsoleError");
-}
-
-static PyObject *Py_ConsoleFlush(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_ReturnNone();
-}
-
-static PyMethodDef py_consoleOut[] = { { "write", Py_ConsoleOutWrite, 1, NULL }, { "flush", Py_ConsoleFlush, 1, NULL } };
-static PyMethodDef py_consoleError[] = { { "write", Py_ConsoleErrorWrite, 1, NULL },
-	{ "flush", Py_ConsoleFlush, 1, NULL } };
-
-/* class name: softspace = 1, write(message), flush() (C functions in the class, called from the instance with the
- * message alone), in __main__; the dict filled in the order of the class body, then __doc__ and __module__ as
+/* class name: softspace = 1, write(message), flush() (C functions in the class, not bound: called from the instance
+ * with the message alone), in __main__; the dict filled in the order of the class body, then __doc__ and __module__ as
  * PyClass_New adds them */
-static byte Py_LineConsoleClass(const char *name, PyMethodDef *methods) {
-	PyObject *d = PyDict_New(), *n = d ? PyString_InternFromString((char *)name) : NULL, *c = NULL;
-	PyObject *one = n ? PyInt_FromLong(1) : NULL, *w = one ? PyCFunction_New(&methods[0], NULL) : NULL;
-	PyObject *fl = w ? PyCFunction_New(&methods[1], NULL) : NULL, *b = fl ? PyTuple_New(0) : NULL;
-	if (b && !PyDict_SetItemString(d, "softspace", one) && !PyDict_SetItemString(d, "write", w) &&
-		!PyDict_SetItemString(d, "flush", fl) && !PyDict_SetItemString(d, "__doc__", Py_None) &&
-		!PyDict_SetItemString(d, "__module__", PyDict_GetItemString(PyModule_GetDict(PyImport_AddModule("__main__")),
-		"__name__"))) {
-		c = PyClass_New(b, d, n);
+static byte Py_LineConsoleClass(const char *name, byte error) {
+	static const char *const keys[] = { "softspace", "write", "flush", "__doc__", "__module__" };
+	nativeVal_t d, v[5], cls, key;
+	Native_SetInt(&v[0], 1);
+	NObj_NewCallback(&v[1], "write", Py_ConsoleWrite, (void *)(intptr_t)error, NULL, 0);
+	NObj_NewCallback(&v[2], "flush", Py_ConsoleFlush, NULL, NULL, 0);
+	Native_SetNone(&v[3]);
+	Native_SetStr(&v[4], "__main__");
+	Native_SetEmpty(&d, NV_DICT);
+	for (int i = 0; i < 5; i++) {
+		Native_SetStr(&key, keys[i]);
+		Native_DictSet(&d, &key, &v[i]);
 	}
-	Py_XDECREF(b);
-	Py_XDECREF(fl);
-	Py_XDECREF(w);
-	Py_XDECREF(one);
-	Py_XDECREF(n);
-	Py_XDECREF(d);
-	return Py_LineStore(name, c);
+	byte ok = NObj_NewClass(&cls, name, NULL, NULL, &d) && Py_LineStore(name, &cls);
+	Native_Free(&cls);
+	Native_Free(&d);
+	return ok;
 }
 
 /* sys.<attr> = <name of a class>() */
 static byte Py_LineSysOutput(const char *attr, const char *cls) {
-	PyObject *c = Py_LineName(cls), *o = c ? PyEval_CallObject(c, NULL) : NULL, *sys = o ? Py_LineName("sys") : NULL;
-	int bad = !sys || PyObject_SetAttrString(sys, (char *)attr, o) != 0;
-	Py_XDECREF(sys);
-	Py_XDECREF(o);
-	Py_XDECREF(c);
-	return !bad;
+	nativeVal_t c, o, sys;
+	Native_SetNone(&sys);
+	byte ok = Script_NameChain(NULL, Script_Main(), cls, &c) > 0 && NObj_Call(&c, NULL, 0, &o);
+	Native_Free(&c);
+	ok = ok && Script_NameChain(NULL, Script_Main(), "sys", &sys) > 0 && NObj_SetAttr(&sys, attr, &o);
+	if (ok || o.type != NV_NONE) {
+		Native_Free(&o);
+	}
+	Native_Free(&sys);
+	return ok;
 }
 
 /* print 'Python Ver '+sys.version */
 static byte Py_LineVersion(void) {
-	PyObject *v = Py_LineName("sys.version"), *t = v ? Script_SPlus("Python Ver ", v) : NULL;
-	byte ok = t && Script_Print(&t, 1);
-	Py_XDECREF(t);
-	Py_XDECREF(v);
+	nativeVal_t v, head, t;
+	const nativeVal_t *items[1] = { &t };
+	Native_SetStr(&head, "Python Ver ");
+	Native_SetNone(&t);
+	byte ok = Script_NameChain(NULL, Script_Main(), "sys.version", &v) > 0 && Native_Arith('+', &head, &v, &t) &&
+		Script_Print(items, 1);
+	Native_Free(&v);
+	Native_Free(&t);
 	return ok;
 }
 
@@ -211,28 +207,30 @@ void Python_Init(void) {
 	static const char *const sys[] = { "sys", NULL }, *const engine[] = { "Scrap", "SInput", "SNet", "SWeap", "SScorer",
 		"SVec", "SSound", "SAI", "SAct", "SFX", "SLogic", NULL }, *const init[] = { "Init", NULL },
 		*const viewer[] = { "Viewer", NULL };
+	nativeVal_t a[2];
 
-	Py_Initialize();
+	/* the modules of Py_Initialize */
+	CHECK(Script_ImportStart());
 	g_PythonReady = 1;
-	/* the variables of __main__ (the start lines' imports, the test channel's names) are native values */
-	ModVar_Keep(PyModule_GetDict(PyImport_AddModule("__main__")));
-	Py_LineEnd(Py_LineConsoleClass("ConsoleOutput", py_consoleOut));
-	Py_LineEnd(Py_LineConsoleClass("ConsoleErrorOutput", py_consoleError));
+	Py_LineEnd(Py_LineConsoleClass("ConsoleOutput", 0));
+	Py_LineEnd(Py_LineConsoleClass("ConsoleErrorOutput", 1));
 	Py_LineEnd(Py_LineImport(sys));
 	Py_LineEnd(Py_LineSysOutput("stdout", "ConsoleOutput"));
 	Py_LineEnd(Py_LineSysOutput("stderr", "ConsoleErrorOutput"));
 	Py_LineEnd(Py_LineVersion());
-	Py_LineEnd(Py_LineCall("sys.path.append", Py_BuildValue("(s)", "Scripts")));
+	Py_LineEnd(Py_LineCallStr("sys.path.append", "Scripts"));
 	Py_LineEnd(Py_LineImport(engine));
-	Script_CheckEngine();
-	g_PyPackImport = 1;
 	if (g_IsViewer) {
 		Py_LineEnd(Py_LineImport(viewer));
 		Py_LineEnd(Py_LineCallText("Viewer.Init", g_pApp->levelPath));
 	} else {
-		Py_LineEnd(Py_LineCall("Scrap.OpenPack", Py_BuildValue("(s)", "Scripts")));
-		Py_LineEnd(Py_LineCall("Scrap.PreloadLibrary", Py_BuildValue("(ss)", "Init", "Init.pyc")));
-		Py_LineEnd(Py_LineCall("Scrap.ClosePack", PyTuple_New(0)));
+		Py_LineEnd(Py_LineCallStr("Scrap.OpenPack", "Scripts"));
+		Native_SetStr(&a[0], "Init");
+		Native_SetStr(&a[1], "Init.pyc");
+		Py_LineEnd(Py_LineCall("Scrap.PreloadLibrary", a, 2));
+		Native_Free(&a[0]);
+		Native_Free(&a[1]);
+		Py_LineEnd(Py_LineCall("Scrap.ClosePack", NULL, 0));
 		Py_LineEnd(Py_LineImport(init));
 		Py_LineEnd(Py_LineCallText("Init.Init", g_pApp->levelPath));
 	}
@@ -262,13 +260,13 @@ void Python_Init(void) {
 void Python_Close(void) {
 	static const char *const init[] = { "Init", NULL };
 
-	Py_LineEnd(Py_LineImport(init) && Py_LineCall("Init.Close", PyTuple_New(0)));
+	Py_LineEnd(Py_LineImport(init) && Py_LineCall("Init.Close", NULL, 0));
 	cPy_Function_ClearAll();
 	CharsNPC_Close();
-	/* the module variables live in the registry, not in the module dicts that the cleanup of Py_Finalize clears */
+	/* the module variables set to None as the module cleanup of Py_Finalize cleared the module dicts */
 	ModVar_Close();
 	Native_HookClear();
-	Py_Finalize();
+	Script_ImportEnd();
 	g_PythonReady = 0;
 }
 
@@ -279,21 +277,20 @@ void Python_Shutdown(void) {
 
 /*
  * The gate of the pack modules. There is no interpreter, so a module without a C definition is not loaded (a .pyc of
- * the packs or of a mod, a .py or .pyc the import would read): it stays out of sys.modules (an import of it raises
- * ImportError) and a console line says so the first time for each name. SCRAP_PY_GATE=<file> appends a line per pack
- * module the engine would load: the level, what happened, the module name and the file. What happened: "cmod" (the
- * module is made from its C definition, Script_ModuleMake), "loaded" (it is loaded already, PreloadLibrary does
- * nothing), "import" (a file the import of Python would read, not preloaded), "refused" and "notread" (a text
- * Script_NotRead does not run).
+ * the packs or of a mod): it stays out of the module store (an import of it raises ImportError) and a console line
+ * says so the first time for each name. SCRAP_PY_GATE=<file> appends a line per pack module the engine would load:
+ * the level, what happened, the module name and the file. What happened: "cmod" (the module is made from its C
+ * definition, Script_ModuleMake), "loaded" (it is loaded already, PreloadLibrary does nothing), "refused" and
+ * "notread" (a text Script_NotRead does not run).
  */
-static int py_gate = -1;
-static FILE *py_gateFile;
+static int gate_on = -1;
+static FILE *gate_file;
 
-#define PY_IGNORED_MAX 512
+#define GATE_IGNORED_MAX 512
 
 /* the console line of a module that is not loaded, once for each name */
-static void Py_IgnoredOnce(const char *name, const char *file) {
-	static char seen[PY_IGNORED_MAX][0x40];
+static void Gate_IgnoredOnce(const char *name, const char *file) {
+	static char seen[GATE_IGNORED_MAX][0x40];
 	static int n;
 
 	for (int i = 0; i < n; i++) {
@@ -301,55 +298,48 @@ static void Py_IgnoredOnce(const char *name, const char *file) {
 			return;
 		}
 	}
-	if (n < PY_IGNORED_MAX) {
+	if (n < GATE_IGNORED_MAX) {
 		Str_Copy(seen[n++], name, sizeof(seen[0]));
 	}
 	Con_Printf("%s (%s) not loaded: it is Python code, this build has no interpreter\n", name, file);
 }
 
-static byte Py_GateOn(void) {
-	if (py_gate < 0) {
+static byte Gate_On(void) {
+	if (gate_on < 0) {
 		const char *e = getenv("SCRAP_PY_GATE");
-		py_gate = e && *e && strcmp(e, "0");
-		if (py_gate) {
-			py_gateFile = strcmp(e, "1") ? fopen(e, "a") : NULL;
+		gate_on = e && *e && strcmp(e, "0");
+		if (gate_on) {
+			gate_file = strcmp(e, "1") ? fopen(e, "a") : NULL;
 		}
 	}
-	return py_gate > 0;
+	return gate_on > 0;
 }
 
-void Py_GateNote(const char *what, const char *name, const char *file) {
-	if (!Py_GateOn()) {
+void Script_GateNote(const char *what, const char *name, const char *file) {
+	if (!Gate_On()) {
 		return;
 	}
 	const char *level = g_pApp && g_pApp->levelPath ? g_pApp->levelPath : "-";
-	if (py_gateFile) {
-		fprintf(py_gateFile, "%s\t%s\t%s\t%s\n", level, what, name, file);
-		fflush(py_gateFile);
+	if (gate_file) {
+		fprintf(gate_file, "%s\t%s\t%s\t%s\n", level, what, name, file);
+		fflush(gate_file);
 	} else {
 		Con_Printf("PYGATE %s %s %s %s\n", level, what, name, file);
 	}
 }
 
 /* a module without a C definition: the refusal is logged and ImportError set */
-static void Py_GateRefuse(const char *name, const char *file) {
-	Py_IgnoredOnce(name, file);
-	Py_GateNote("refused", name, file);
+static void Gate_Refuse(const char *name, const char *file) {
+	Gate_IgnoredOnce(name, file);
+	Script_GateNote("refused", name, file);
 	Native_Raise(NE_IMPORT, "pack module %.100s (%.100s) refused: no C definition", name, file);
 }
 
-/* the import of Python would read a .py or .pyc that was not preloaded (src/python/import.c) */
-static void Py_GateImport(const char *path) {
-	const char *base = strrchr(path, '/');
-	Py_GateNote("import", base ? base + 1 : path, path);
-	Py_GateRefuse(base ? base + 1 : path, path);
-}
-
 /* a module made from its C definition (1), none (0, it is refused) or a failed one (-1, error set); logged */
-static int Py_ModuleMake(const char *name, const char *file, PyObject **m) {
+static int Gate_ModuleMake(const char *name, const char *file, nativeVal_t *m) {
 	int made = Script_ModuleMake(name, file, m);
 	if (made) {
-		Py_GateNote("cmod", name, file);
+		Script_GateNote("cmod", name, file);
 	}
 	return made;
 }
@@ -361,46 +351,43 @@ static int Py_ModuleMake(const char *name, const char *file, PyObject **m) {
  * read from packs it logs the file.
  */
 void Pack_PreloadLibrary(const char *name, const char *file) {
+	nativeVal_t m;
 	CHECK(Py_IsReady());
-	g_PyImportGate = Py_GateImport;
 	if (PackLog_Closed()) {
-		if (Script_ModuleLoaded(name)) {
-			Script_ModuleCountLoaded();
-			Py_GateNote("loaded", name, file);
+		if (Script_ModuleLoaded(name, &m)) {
+			Script_ModuleCount(SMC_LOADED);
+			Script_GateNote("loaded", name, file);
 		} else {
-			PyObject *m = NULL;
-			int made = Py_ModuleMake(name, file, &m);
+			int made = Gate_ModuleMake(name, file, &m);
 			if (made) {
 				if (made < 0) {
 					Native_ErrPrint();
 				}
-				CHECK(m != NULL);
 			} else {
-				Py_GateRefuse(name, file);
+				Gate_Refuse(name, file);
 				Native_ErrClear();
 			}
-			Py_XDECREF(m);
 		}
+		Native_Free(&m);
 	} else {
 		Con_Verbosef("Trying to open 'PACK: %s', using import %s\n", file, name);
 		PackLog_Add(file);
-		PyObject *m = NULL;
-		int made = Script_ModuleLoaded(name) ? 0 : Py_ModuleMake(name, file, &m);
+		byte loaded = Script_ModuleLoaded(name, &m);
+		int made = loaded ? 0 : Gate_ModuleMake(name, file, &m);
 		if (!made) {
-			Py_GateRefuse(name, file);
+			Gate_Refuse(name, file);
 		}
-		if (m) {
-			Py_DECREF(m);
-		} else {
-			PyObject *err = PySys_GetObject("stderr");
-			if (Py_VerboseFlag) {
-				PyFile_WriteString("'import site' failed; traceback:\n", err);
-				Native_ErrPrint();
-			} else {
-				PyFile_WriteString("'import site' failed; use -v for traceback\n", err);
-				Native_ErrClear();
+		if (made <= 0) {
+			/* the message of the exe for a failed import here (Py_VerboseFlag is never set); PyFile_WriteString writes
+			 * nothing while the error of the import is set */
+			nativeVal_t err;
+			if (Script_SysVar("stderr", &err)) {
+				Script_FileWriteText(&err, "'import site' failed; use -v for traceback\n");
 			}
+			Native_Free(&err);
+			Native_ErrClear();
 		}
+		Native_Free(&m);
 	}
 }
 

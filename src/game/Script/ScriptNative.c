@@ -741,6 +741,7 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 typedef struct {
 	const char *p;
 	int depth;
+	const nativeVal_t *none;	/* what the name None gives (NULL: a literal refused) */
 } nativeLit_t;
 
 static byte NLit_Item(nativeLit_t *l, nativeVal_t *out);
@@ -996,7 +997,10 @@ static byte NLit_Item(nativeLit_t *l, nativeVal_t *out) {
 	}
 	if (!strncmp(l->p, "None", 4) && NLit_End(l->p[4])) {
 		l->p += 4;
-		Native_SetNone(out);
+		if (!l->none) {
+			return 0;
+		}
+		Native_Copy(out, l->none);
 		return 1;
 	}
 	if (NLit_Digit(c)) {
@@ -1030,7 +1034,12 @@ static byte NLit_Item(nativeLit_t *l, nativeVal_t *out) {
 }
 
 byte Native_Literal(const char *s, nativeVal_t *out) {
-	nativeLit_t l = { .p = s, .depth = 0 };
+	static const nativeVal_t none = { .type = NV_NONE };
+	return Native_LiteralNone(s, &none, out);
+}
+
+byte Native_LiteralNone(const char *s, const nativeVal_t *none, nativeVal_t *out) {
+	nativeLit_t l = { .p = s, .depth = 0, .none = none };
 	byte commas;
 	Native_SetEmpty(out, NV_LIST);
 	if (!s || *s == ' ' || *s == '\t' || *s == '\0' || !NLit_Items(&l, '\0', out, &commas)) {
@@ -1061,6 +1070,30 @@ const char *Native_TypeName(const nativeVal_t *v) {
 		return NObj_TypeName(v);
 	}
 	return v->type == NV_OBJ ? v->obj->ob_type->tp_name : names[v->type];
+}
+
+byte Native_Arity(const char *fname, int n, int min, int max) {
+	if (n >= min && n <= max) {
+		return 1;
+	}
+	int k = n < min ? min : max;
+	return Native_Raise(NE_TYPE, "%s requires %s %d argument%s; %d given", fname ? fname : "function",
+		min == max ? "exactly" : n < min ? "at least" : "at most", k, k == 1 ? "" : "s", n);
+}
+
+byte Native_ArgTextOf(const char *fname, int i, const nativeVal_t *v, byte nul) {
+	const char *expected = "string";
+
+	if (v->type == NV_STR) {
+		if (!nul || strlen(Native_Text(v)) == (size_t)v->n) {
+			return 1;
+		}
+		expected = "string without null bytes";
+	}
+	if (fname) {
+		return Native_Raise(NE_TYPE, "%s, argument %d: expected %s, %s found", fname, i, expected, Native_TypeName(v));
+	}
+	return Native_Raise(NE_TYPE, "argument %d: expected %s, %s found", i, expected, Native_TypeName(v));
 }
 
 byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out) {
@@ -1161,13 +1194,15 @@ byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *o
 		return 1;
 	}
 	s += strspn(s, " \t");
-	/* OBJLIB 6: a name chain in the module's globals, else the error of a text no reader takes (and its note in the
-	 * gate log), as Script_EvalValue gives them */
-	PyObject *m = Script_Module(module);
-	PyObject *v = m ? Script_EvalOther(PyModule_GetDict(m), s) : NULL;
-	Py_XDECREF(m);
-	byte ok = v && Native_Arg(v, out);
-	Py_XDECREF(v);
+	/* a name chain in the module's globals, else the error of a text no reader takes (and its note in the gate log),
+	 * as Script_EvalText gives them; the value in the form a call through Python gave it */
+	nativeVal_t m, v;
+	byte ok = Script_Module(module, &m) && Script_EvalOther(&m, s, &v);
+	Native_Free(&m);
+	if (ok) {
+		NObj_ArgOf(&v, out);
+		Native_Free(&v);
+	}
 	return ok;
 }
 

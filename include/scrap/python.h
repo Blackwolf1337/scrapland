@@ -26,12 +26,11 @@ static inline PyObject *Py_ReturnNone(void) {
 	return Py_None;
 }
 
-/* the engine's flag in its import.c (src/python/import.c) */
-extern int g_PyPackImport;
-/* told of every .py or .pyc the import of Python would read (not the preloaded modules): it refuses each one with
- * ImportError set (the gate of PythonInit.c, SCRAP_PY_GATE) */
-extern void (*g_PyImportGate)(const char *path);
-/* a line in the log of the gate (SCRAP_PY_GATE): the level, what, the module name, a detail; nothing when it is off */
-void Py_GateNote(const char *what, const char *name, const char *detail);
+/* OBJLIB 7e4b: the built-in module name of the library as its init function makes it, without an interpreter (a new
+ * reference, NULL with the error: ImportError for a name the table does not have), and sys.path as Py_Initialize made
+ * it (a new list, src/python/import.c) */
+PyObject *Py_LibModule(const char *name);
+PyObject *Py_LibPath(void);
+
 
 #endif

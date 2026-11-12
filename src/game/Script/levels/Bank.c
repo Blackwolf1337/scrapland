@@ -693,11 +693,12 @@ static byte MapTreasure_CreateCoins(void) {
  * Scrap.CreateSaveVar(varname, "0"); Coins.append(Circuit[f][int(Scrap.GetSaveVar(varname))]) (OBJLIB 7: a hook of
  * the module code, ScriptModule.c's table: it and MapTreasure_ModCoins run on the dict of the module's names, with the
  * loop variables f and varname left in the module and every name looked up there) */
-static byte Mt_CoinsBody(PyObject *locals, PyObject *f, void *ctx) {
+static byte Mt_CoinsBody(const nativeVal_t *locals, PyObject *f, void *ctx) {
 	(void)ctx;
 	PyObject *repr = Script_Repr(f);
 	PyObject *name = repr ? Script_SPlus("Bank.Circuit.", repr) : NULL;
-	byte ok = name && ModVar_DictSet(locals, "varname", name) == 0;
+	modVarRef_t ref;
+	byte ok = name && ModVar_RefOfNs(locals, &ref) && ModVar_Set(&ref, "varname", name) == 0;
 	Py_XDECREF(repr);
 	Py_XDECREF(name);
 	PyObject *create = ok ? Script_ModuleName(locals, "Scrap.CreateSaveVar") : NULL;
@@ -730,9 +731,9 @@ static byte Mt_CoinsBody(PyObject *locals, PyObject *f, void *ctx) {
 	return res != NULL;
 }
 /* maptreasure.py:2836, `for f in range(len(Circuit)): ...`: the chain of each circuit as the save variable keeps it */
-int MapTreasure_ModCoins(PyObject *module, PyObject *locals, nativeVal_t *body) {
+int MapTreasure_ModCoins(const nativeVal_t *module, nativeVal_t *body) {
+	const nativeVal_t *locals = module;
 	(void)body;
-	(void)module;
 	PyObject *range = Script_ModuleName(locals, "range");
 	PyObject *len = range ? Script_ModuleName(locals, "len") : NULL;
 	PyObject *circuit = len ? Script_ModuleName(locals, "Circuit") : NULL;

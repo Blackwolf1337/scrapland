@@ -472,7 +472,7 @@ MODE_FNANY(Init, Close, In_CloseN())
  * they run on the dict of the module's names, with the constants as the compiler made them and the loop variable left
  * in the module) ---- */
 
-static byte In_LoadCharBody(PyObject *locals, PyObject *fn, void *ctx) {
+static byte In_LoadCharBody(const nativeVal_t *locals, PyObject *fn, void *ctx) {
 	(void)ctx;
 	PyObject *f = Script_ModuleName(locals, "LoadCharLib");
 	PyObject *args = f ? Py_BuildValue("(O)", fn) : NULL;
@@ -484,13 +484,13 @@ static byte In_LoadCharBody(PyObject *locals, PyObject *fn, void *ctx) {
 }
 
 /* init.py:205, `for fn in ('Nurse', ...): LoadCharLib(fn)`: the characters of an indoor level and their sounds */
-int Init_ModLoadChars(PyObject *module, PyObject *locals, nativeVal_t *body) {
+int Init_ModLoadChars(const nativeVal_t *module, nativeVal_t *body) {
+	const nativeVal_t *locals = module;
 	(void)body;
 	static const char *const chars[] = { "Nurse", "Police", "Desktop", "Gear", "Sentinel", "Berto", "BankDirector",
 		"Mayor", "GateKeeper", "Betty", "Dtritus", "Bishop", "Functionary", "Humphrey", "PoliceBoss", "Messenger",
 		"Human", "BankMaster" };
 	enum { NUM_CHARS = sizeof(chars) / sizeof(chars[0]) };
-	(void)module;
 	PyObject *seq = PyTuple_New(NUM_CHARS);
 	for (int i = 0; seq && i < NUM_CHARS; i++) {
 		PyObject *v = Script_StrConst(chars[i], (int)strlen(chars[i]));
@@ -507,7 +507,7 @@ int Init_ModLoadChars(PyObject *module, PyObject *locals, nativeVal_t *body) {
 }
 
 /* apply(apply, func): func is (Scrap.PreloadLibrary, (module, file)) */
-static byte In_ExtraBody(PyObject *locals, PyObject *func, void *ctx) {
+static byte In_ExtraBody(const nativeVal_t *locals, PyObject *func, void *ctx) {
 	(void)ctx;
 	PyObject *apply = Script_ModuleName(locals, "apply");
 	PyObject *args = apply ? Py_BuildValue("(OO)", apply, func) : NULL;
@@ -519,9 +519,9 @@ static byte In_ExtraBody(PyObject *locals, PyObject *func, void *ctx) {
 }
 
 /* init.py:251, `for func in ExtraExecs[UpperMap]: apply(apply, func)`: the extra characters of some levels */
-int Init_ModExtraExecs(PyObject *module, PyObject *locals, nativeVal_t *body) {
+int Init_ModExtraExecs(const nativeVal_t *module, nativeVal_t *body) {
+	const nativeVal_t *locals = module;
 	(void)body;
-	(void)module;
 	PyObject *table = Script_ModuleName(locals, "ExtraExecs");
 	PyObject *key = table ? Script_ModuleName(locals, "UpperMap") : NULL;
 	PyObject *seq = key ? PyObject_GetItem(table, key) : NULL;
