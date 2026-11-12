@@ -609,7 +609,7 @@ static byte Probes_MissionScorer(const nativeVal_t *a, const lvProbes_t *p, nati
 #define PROBES(n) \
 	PROBES_FN(n, InitStatus) PROBES_FN(n, Init) PROBES_FN(n, IsValidPoint) PROBES_FN(n, CreateProbes) PROBES_FN(n, OnProbeDeath) \
 	PROBES_FN(n, DestroyShipsInList) PROBES_FN(n, DestroyEnemyShips) PROBES_FN(n, MissionScorer)
-#define PROBES_DEF(n, fn) { #fn, Probes##n##_##fn, 1, NULL },
+#define PROBES_DEF(n, fn) PORT_FN(fn, Probes##n##_##fn),
 #define PROBES_DEFS(n) \
 	PROBES_DEF(n, InitStatus) PROBES_DEF(n, Init) PROBES_DEF(n, IsValidPoint) PROBES_DEF(n, CreateProbes) PROBES_DEF(n, OnProbeDeath) \
 	PROBES_DEF(n, DestroyShipsInList) PROBES_DEF(n, DestroyEnemyShips) PROBES_DEF(n, MissionScorer)
@@ -620,21 +620,21 @@ PROBES(2)
 PROBES_FN(1, SetNextMission)
 PROBES_FN(2, SetNextMission)
 
-PyMethodDef g_OutskirtsDestroyCommSats1Methods[] = {
+const portFn_t g_OutskirtsDestroyCommSats1Methods[] = {
 	PROBES_DEFS(0)
-	{ NULL, NULL, 0, NULL },
+	PORT_FNEND
 };
 
-PyMethodDef g_CommercialDestroyCommSats2Methods[] = {
+const portFn_t g_CommercialDestroyCommSats2Methods[] = {
 	PROBES_DEFS(1)
 	PROBES_DEF(1, SetNextMission)
-	{ NULL, NULL, 0, NULL },
+	PORT_FNEND
 };
 
-PyMethodDef g_DownTownDestroyCommSats3Methods[] = {
+const portFn_t g_DownTownDestroyCommSats3Methods[] = {
 	PROBES_DEFS(2)
 	PROBES_DEF(2, SetNextMission)
-	{ NULL, NULL, 0, NULL },
+	PORT_FNEND
 };
 
 /* ---- native lines of the level scripts (Levels.h; docs/objlib-plan.md, stage 2) ---- */

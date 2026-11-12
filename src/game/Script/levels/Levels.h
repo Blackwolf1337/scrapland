@@ -12,22 +12,22 @@
 #include "scrap/scriptmodes.h"
 
 /* Bank (Data.packed levels/bank) */
-extern PyMethodDef g_BankMapMethods[];
-extern PyMethodDef g_BankMapTreasureMethods[];
-extern PyMethodDef g_BankCatchRudolphMethods[];
-extern PyMethodDef g_BankGetDataPart2Methods[];
-extern PyMethodDef g_BankInfiltrateBankMethods[];
+extern const portFn_t g_BankMapMethods[];
+extern const portFn_t g_BankMapTreasureMethods[];
+extern const portFn_t g_BankCatchRudolphMethods[];
+extern const portFn_t g_BankGetDataPart2Methods[];
+extern const portFn_t g_BankInfiltrateBankMethods[];
 
 /* Police (data01.packed levels/police) */
-extern PyMethodDef g_PoliceMapMethods[];
-extern PyMethodDef g_PoliceMapPlanesMethods[];
-extern PyMethodDef g_PoliceMapSndMethods[];
-extern PyMethodDef g_PoliceBeatPickusMethods[];
-extern PyMethodDef g_PoliceFicusDeadMethods[];
-extern PyMethodDef g_PoliceGetAuthorizationMethods[];
-extern PyMethodDef g_PoliceInitEpilogueMethods[];
-extern PyMethodDef g_PoliceJailBreakMethods[];
-extern PyMethodDef g_PolicePoliceBossCheatsMethods[];
+extern const portFn_t g_PoliceMapMethods[];
+extern const portFn_t g_PoliceMapPlanesMethods[];
+extern const portFn_t g_PoliceMapSndMethods[];
+extern const portFn_t g_PoliceBeatPickusMethods[];
+extern const portFn_t g_PoliceFicusDeadMethods[];
+extern const portFn_t g_PoliceGetAuthorizationMethods[];
+extern const portFn_t g_PoliceInitEpilogueMethods[];
+extern const portFn_t g_PoliceJailBreakMethods[];
+extern const portFn_t g_PolicePoliceBossCheatsMethods[];
 
 /* Townhall (data02.packed levels/townhall) */
 extern const portFn_t g_TownhallMapMethods[];
@@ -38,23 +38,23 @@ extern const portFn_t g_TownhallSheriffMayorMethods[];
 extern const portFn_t g_TownhallTalkToMayorMethods[];
 
 /* Scrapyard (data02.packed levels/scrapyard) */
-extern PyMethodDef g_ScrapyardMapMethods[];
-extern PyMethodDef g_ScrapyardMapTriggersMethods[];
-extern PyMethodDef g_ScrapyardAmbushMethods[];
-extern PyMethodDef g_ScrapyardDefeatCrazyGambler2Methods[];
-extern PyMethodDef g_ScrapyardFindDtritusMatrixMethods[];
-extern PyMethodDef g_ScrapyardMeetBertoMethods[];
-extern PyMethodDef g_ScrapyardMosquitoClueMethods[];
-extern PyMethodDef g_ScrapyardStupidMercMethods[];
-extern PyMethodDef g_ScrapyardStupidMercAgainMethods[];
-extern PyMethodDef g_ScrapyardTalkToDeepThroatMethods[];
+extern const portFn_t g_ScrapyardMapMethods[];
+extern const portFn_t g_ScrapyardMapTriggersMethods[];
+extern const portFn_t g_ScrapyardAmbushMethods[];
+extern const portFn_t g_ScrapyardDefeatCrazyGambler2Methods[];
+extern const portFn_t g_ScrapyardFindDtritusMatrixMethods[];
+extern const portFn_t g_ScrapyardMeetBertoMethods[];
+extern const portFn_t g_ScrapyardMosquitoClueMethods[];
+extern const portFn_t g_ScrapyardStupidMercMethods[];
+extern const portFn_t g_ScrapyardStupidMercAgainMethods[];
+extern const portFn_t g_ScrapyardTalkToDeepThroatMethods[];
 
 /* GDB (data03.packed levels/gdb) */
-extern PyMethodDef g_GDBMapMethods[];
-extern PyMethodDef g_GDBMapMatrixMethods[];
-extern PyMethodDef g_GDBIntoTheGDBMethods[];
-extern PyMethodDef g_GDBReinsertOwnMatrixMethods[];
-extern PyMethodDef g_GDBReinsertOwnMatrix2Methods[];
+extern const portFn_t g_GDBMapMethods[];
+extern const portFn_t g_GDBMapMatrixMethods[];
+extern const portFn_t g_GDBIntoTheGDBMethods[];
+extern const portFn_t g_GDBReinsertOwnMatrixMethods[];
+extern const portFn_t g_GDBReinsertOwnMatrix2Methods[];
 
 /* ---- whole functions and data the level scripts share (src/game/Script/levels/LevelCommon.c) */
 
@@ -64,9 +64,9 @@ extern const int lv_black[4], lv_clear[4];
  * ((x, y, z), angle) (the entries of the races, MODE_FN) */
 byte LvN_StartPos(const double (*pos)[4], int n);
 /* Mission_DestroyCommSats1, 2 and 3: one script in three levels */
-extern PyMethodDef g_OutskirtsDestroyCommSats1Methods[];
-extern PyMethodDef g_CommercialDestroyCommSats2Methods[];
-extern PyMethodDef g_DownTownDestroyCommSats3Methods[];
+extern const portFn_t g_OutskirtsDestroyCommSats1Methods[];
+extern const portFn_t g_CommercialDestroyCommSats2Methods[];
+extern const portFn_t g_DownTownDestroyCommSats3Methods[];
 
 /*
  * a sound element of the map (MapSnd.SndElements(Name, x, y, z, angx, angy), called by the engine for the map
