@@ -123,14 +123,14 @@ static byte Om_TenthSetVars(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(Om, SixthSetVarsPy, 0, Om_SixthSetVars)
 LV_FN(Om, TenthSetVarsPy, 0, Om_TenthSetVars)
 
-PyMethodDef g_OmSixthMethods[] = {
-	{ "SetVars", Om_SixthSetVarsPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OmSixthMethods[] = {
+	PORT_FN(SetVars, Om_SixthSetVarsPy),
+	PORT_FNEND
 };
 
-PyMethodDef g_OmTenthMethods[] = {
-	{ "SetVars", Om_TenthSetVarsPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OmTenthMethods[] = {
+	PORT_FN(SetVars, Om_TenthSetVarsPy),
+	PORT_FNEND
 };
 
 PORTS(levels_OM)

@@ -4205,30 +4205,30 @@ PORT_DECLL(ab, Map, detraffic) /* 1 */
 PORT_DECLL(ab, Map, OnDeath) /* 2 */
 PORT_DECLL(ab, Map, RealOnDeath) /* 2 */
 #define PORTS_levels_AB \
-	PORT_DEFL(ab, MapFinalFight, GetBossProfile, Ff_GetBossProfilePy) \
-	PORT_DEFL(ab, MapFinalFight, FakeShips, Ff_FakeShipsPy) \
-	PORT_DEFL(ab, MapFinalFight, InitStatus, Ff_InitStatusPy) \
-	PORT_DEFL(ab, MapFinalFight, Init, Ff_InitPy) \
-	PORT_DEFL(ab, MapFinalFight, CreateBoss, Ff_CreateBossPy) \
-	PORT_DEFL(ab, MapFinalFight, SetShieldPhase, Ff_SetShieldPhasePy) \
-	PORT_DEFL(ab, MapFinalFight, MissionScorer, Ff_MissionScorerPy) \
-	PORT_DEFL(ab, MapFinalFight, SetFase, Ff_SetFasePy) \
-	PORT_DEFL(ab, MapFinalFight, BossAttacks, Ff_BossAttacksPy) \
-	PORT_DEFL(ab, MapFinalFight, BossRelax, Ff_BossRelaxPy) \
-	PORT_DEFL(ab, MapFinalFight, OnPlayerDeath, Ff_OnPlayerDeathPy) \
-	PORT_DEFL(ab, MapFinalFight, RespawnPlayer, Ff_RespawnPlayerPy) \
-	PORT_DEFL(ab, MapFinalFight, LaunchTaunt, Ff_LaunchTauntPy) \
-	PORT_DEFL(ab, MapFinalFight, OnBossRecoversZero, Ff_OnBossRecoversZeroPy) \
-	PORT_DEFL(ab, MapFinalFight, OnBossRecoversEnd, Ff_OnBossRecoversEndPy) \
-	PORT_DEFL(ab, MapFinalFight, OnBossDestroyed, Ff_OnBossDestroyedPy) \
-	PORT_DEFL(ab, MapFinalFight, PreLoadFinal, Ff_PreLoadFinalPy) \
-	PORT_DEFL(ab, Map, onTrackCreate, AbMap_onTrackCreatePy) \
-	PORT_DEFL(ab, Map, InitStatus, AbMap_InitStatusPy) \
-	PORT_DEFL(ab, Map, Init, AbMap_InitPy) \
-	PORT_DEFL(ab, Map, CreateAsteroid, AbMap_CreateAsteroidPy) \
-	PORT_DEFL(ab, Map, detraffic, AbMap_detrafficPy) \
-	PORT_DEFL(ab, Map, OnDeath, AbMap_OnDeathPy) \
-	PORT_DEFL(ab, Map, RealOnDeath, AbMap_RealOnDeathPy)
+	PORT_DEFLN(ab, MapFinalFight, GetBossProfile, Ff_GetBossProfilePy) \
+	PORT_DEFLN(ab, MapFinalFight, FakeShips, Ff_FakeShipsPy) \
+	PORT_DEFLN(ab, MapFinalFight, InitStatus, Ff_InitStatusPy) \
+	PORT_DEFLN(ab, MapFinalFight, Init, Ff_InitPy) \
+	PORT_DEFLN(ab, MapFinalFight, CreateBoss, Ff_CreateBossPy) \
+	PORT_DEFLN(ab, MapFinalFight, SetShieldPhase, Ff_SetShieldPhasePy) \
+	PORT_DEFLN(ab, MapFinalFight, MissionScorer, Ff_MissionScorerPy) \
+	PORT_DEFLN(ab, MapFinalFight, SetFase, Ff_SetFasePy) \
+	PORT_DEFLN(ab, MapFinalFight, BossAttacks, Ff_BossAttacksPy) \
+	PORT_DEFLN(ab, MapFinalFight, BossRelax, Ff_BossRelaxPy) \
+	PORT_DEFLN(ab, MapFinalFight, OnPlayerDeath, Ff_OnPlayerDeathPy) \
+	PORT_DEFLN(ab, MapFinalFight, RespawnPlayer, Ff_RespawnPlayerPy) \
+	PORT_DEFLN(ab, MapFinalFight, LaunchTaunt, Ff_LaunchTauntPy) \
+	PORT_DEFLN(ab, MapFinalFight, OnBossRecoversZero, Ff_OnBossRecoversZeroPy) \
+	PORT_DEFLN(ab, MapFinalFight, OnBossRecoversEnd, Ff_OnBossRecoversEndPy) \
+	PORT_DEFLN(ab, MapFinalFight, OnBossDestroyed, Ff_OnBossDestroyedPy) \
+	PORT_DEFLN(ab, MapFinalFight, PreLoadFinal, Ff_PreLoadFinalPy) \
+	PORT_DEFLN(ab, Map, onTrackCreate, AbMap_onTrackCreatePy) \
+	PORT_DEFLN(ab, Map, InitStatus, AbMap_InitStatusPy) \
+	PORT_DEFLN(ab, Map, Init, AbMap_InitPy) \
+	PORT_DEFLN(ab, Map, CreateAsteroid, AbMap_CreateAsteroidPy) \
+	PORT_DEFLN(ab, Map, detraffic, AbMap_detrafficPy) \
+	PORT_DEFLN(ab, Map, OnDeath, AbMap_OnDeathPy) \
+	PORT_DEFLN(ab, Map, RealOnDeath, AbMap_RealOnDeathPy)
 
 /* levels/ABIndoor.c */
 PORT_DECLL(abindoor, Map, InitStatus) /* 1 */
@@ -4238,12 +4238,12 @@ PORT_DECLL(abindoor, Map, LaunchCinematic) /* 4 */
 PORT_DECLL(abindoor, Map, ShowEndTitle) /* 1 */
 PORT_DECLL(abindoor, Map, FadeEndTitle) /* 1 */
 #define PORTS_levels_ABIndoor \
-	PORT_DEFL(abindoor, Map, InitStatus, Abi_InitStatusPy) \
-	PORT_DEFL(abindoor, Map, Init, Abi_InitPy) \
-	PORT_DEFLK(abindoor, Map, Goodbye, Abi_GoodbyePy) \
-	PORT_DEFL(abindoor, Map, LaunchCinematic, Abi_LaunchCinematicPy) \
-	PORT_DEFL(abindoor, Map, ShowEndTitle, Abi_ShowEndTitlePy) \
-	PORT_DEFL(abindoor, Map, FadeEndTitle, Abi_FadeEndTitlePy)
+	PORT_DEFLN(abindoor, Map, InitStatus, Abi_InitStatusPy) \
+	PORT_DEFLN(abindoor, Map, Init, Abi_InitPy) \
+	PORT_DEFLNK(abindoor, Map, Goodbye, Abi_GoodbyePy) \
+	PORT_DEFLN(abindoor, Map, LaunchCinematic, Abi_LaunchCinematicPy) \
+	PORT_DEFLN(abindoor, Map, ShowEndTitle, Abi_ShowEndTitlePy) \
+	PORT_DEFLN(abindoor, Map, FadeEndTitle, Abi_FadeEndTitlePy)
 
 /* levels/Bank.c */
 PORT_DECLL(bank, Map, InitStatus) /* 1 */
@@ -4960,12 +4960,12 @@ PORT_DECLL(fake, Map, CreateFakeBertoShip) /* 0 */
 PORT_DECLL(fake, Map, ActivateBertoEngines) /* 3 */
 PORT_DECLL(fake, Map, LoadFake2Scene) /* 0 */
 #define PORTS_levels_Fake \
-	PORT_DEFL(fake, Map, Init, Fk_InitPy) \
-	PORT_DEFLK(fake, Map, PlayFake2, Fk_PlayFake2Py) \
-	PORT_DEFLK(fake, Map, NextLevel, Fk_NextLevelPy) \
-	PORT_DEFL(fake, Map, CreateFakeBertoShip, Fk_CreateFakeBertoShipPy) \
-	PORT_DEFL(fake, Map, ActivateBertoEngines, Fk_ActivateBertoEnginesPy) \
-	PORT_DEFL(fake, Map, LoadFake2Scene, Fk_LoadFake2ScenePy)
+	PORT_DEFLN(fake, Map, Init, Fk_InitPy) \
+	PORT_DEFLNK(fake, Map, PlayFake2, Fk_PlayFake2Py) \
+	PORT_DEFLNK(fake, Map, NextLevel, Fk_NextLevelPy) \
+	PORT_DEFLN(fake, Map, CreateFakeBertoShip, Fk_CreateFakeBertoShipPy) \
+	PORT_DEFLN(fake, Map, ActivateBertoEngines, Fk_ActivateBertoEnginesPy) \
+	PORT_DEFLN(fake, Map, LoadFake2Scene, Fk_LoadFake2ScenePy)
 
 /* levels/GDB.c */
 PORT_DECLL(gdb, Map, InitStatus) /* 1 */
@@ -5152,108 +5152,108 @@ PORT_DECLL(gamblinden, Mission_ThreeStooges, MercenaryCSpeech) /* 4 */
 PORT_DECLL(gamblinden, Mission_ThreeStooges, MercenaryBSpeech) /* 4 */
 PORT_DECLL(gamblinden, Mission_ThreeStooges, SetNextMission) /* 1 */
 #define PORTS_levels_GamblinDen \
-	PORT_DEFL(gamblinden, Map, InitStatus, Den_InitStatus) \
-	PORT_DEFL(gamblinden, Map, AfterBrowseNPC, Den_AfterBrowseNPC) \
-	PORT_DEFL(gamblinden, Map, CreateFixedInit, Den_CreateFixedInit) \
-	PORT_DEFL(gamblinden, Map, CreateFixedMercInit, Den_CreateFixedMercInit) \
-	PORT_DEFL(gamblinden, Map, CreateLonelyMerc, Den_CreateLonelyMerc) \
-	PORT_DEFL(gamblinden, Map, Init, Den_Init) \
-	PORT_DEFL(gamblinden, Map, LonelyMercSpeech, Den_LonelyMercSpeech) \
-	PORT_DEFL(gamblinden, Map, CharUsrAct, Den_CharUsrAct) \
-	PORT_DEFL(gamblinden, Map, CharUsrDance, Den_CharUsrDance) \
-	PORT_DEFLK(gamblinden, Map, MercDrink, Den_MercDrink) \
-	PORT_DEFLK(gamblinden, Map, ChatNPCs, Den_ChatNPCs) \
-	PORT_DEFL(gamblinden, Map, CharDance, Den_CharDance) \
-	PORT_DEFL(gamblinden, Map, MercenarySpeech, Den_MercenarySpeech) \
-	PORT_DEFL(gamblinden, Map, StartContract, Den_StartContract) \
-	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, InitStatus, Before_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, Init, Before_Init) \
-	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, CrazyGamblerSpeech, Before_CrazyGamblerSpeech) \
-	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, MercenariesSpeech, Before_MercenariesSpeech) \
-	PORT_DEFLK(gamblinden, Mission_BeforeFinalFight, SetNextMission, Before_SetNextMission) \
-	PORT_DEFL(gamblinden, Mission_BeforeFinalFight, LoadScene, Before_LoadScene) \
-	PORT_DEFL(gamblinden, Mission_AfterFinalFight, InitStatus, After_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_AfterFinalFight, Init, After_Init) \
-	PORT_DEFL(gamblinden, Mission_ArrangeIgorCombat, InitStatus, Igor_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_ArrangeIgorCombat, Init, Igor_Init) \
-	PORT_DEFL(gamblinden, Mission_ArrangeIgorCombat, TalkToIgor, Igor_TalkToIgor) \
-	PORT_DEFL(gamblinden, Mission_ArrangeIgorCombat, IgorSpeech, Igor_IgorSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeIgorCombat, TalkToCrazyGambler, Igor_TalkToCrazyGambler) \
-	PORT_DEFL(gamblinden, Mission_ArrangeIgorCombat, CrazyGamblerSpeech, Igor_CrazyGamblerSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeIgorCombat, LaunchIgorCombat, Igor_LaunchIgorCombat) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCTF, InitStatus, Ctf_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCTF, Init, Ctf_Init) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCTF, CreateTraitoriusInit, Ctf_CreateTraitoriusInit) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCTF, TraitoriusSpeech, Ctf_TraitoriusSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCTF, TalkToCrazyGambler, Ctf_TalkToCrazyGambler) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCTF, CrazyGamblerSpeech, Ctf_CrazyGamblerSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCTF, LaunchBankersCTF, Ctf_LaunchBankersCTF) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, InitStatus, Bankers_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, Init, Bankers_Init) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, LaunchIgorDefeatedSpeech, Bankers_LaunchIgorDefeatedSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, LaunchDeepThroatMessage, Bankers_LaunchDeepThroatMessage) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, TalkToDeepThroat, Bankers_TalkToDeepThroat) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, DeepThroatSpeech, Bankers_DeepThroatSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, TalkToPoliceBoss, Bankers_TalkToPoliceBoss) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, PoliceBossSpeech, Bankers_PoliceBossSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, PoliceBossSpeech2, Bankers_PoliceBossSpeech2) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, TalkToCrazyGambler, Bankers_TalkToCrazyGambler) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, CrazyGamblerSpeech, Bankers_CrazyGamblerSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeBankersCombat, LaunchBankersCombat, Bankers_LaunchBankersCombat) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, InitStatus, First_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, Init, First_Init) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, TalkToCrazyGambler, First_TalkToCrazyGambler) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, CrazyGamblerSpeech, First_CrazyGamblerSpeech) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, TalkToIgor, First_TalkToIgor) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, IgorSpeech, First_IgorSpeech) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, TalkToMercenaries, First_TalkToMercenaries) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, MercenaryASpeech, First_MercenaryASpeech) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, MercenaryCSpeech, First_MercenaryCSpeech) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, MercenaryBSpeech, First_MercenaryBSpeech) \
-	PORT_DEFL(gamblinden, Mission_IgorFirstContact, SetNextMission, First_SetNextMission) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, InitStatus, Go_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, AfterBrowseNPC, Go_AfterBrowseNPC) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, CreateMercenaryInit, Go_CreateMercenaryInit) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, MercenarySpeech, Go_MercenarySpeech) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, HumanSpeech, Go_HumanSpeech) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, CrazyGamblerSpeech, Go_CrazyGamblerSpeech) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, Init, Go_Init) \
-	PORT_DEFL(gamblinden, Mission_GoToGamblinDen, LoadScene, Go_LoadScene) \
-	PORT_DEFLK(gamblinden, Mission_GoToGamblinDen, SetNextMission, Go_SetNextMission) \
-	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, InitStatus, Traitor_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, Init, Traitor_Init) \
-	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, CreateTraitoriusInit, Traitor_CreateTraitoriusInit) \
-	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, LaunchTraitoriusSpeech, Traitor_LaunchTraitoriusSpeech) \
-	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, TraitoriusSpeech, Traitor_TraitoriusSpeech) \
-	PORT_DEFL(gamblinden, Mission_TalkToTraitoriusAfterCTF, SetNextMission, Traitor_SetNextMission) \
-	PORT_DEFL(gamblinden, Mission_BackFromMortalRace, InitStatus, Back_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_BackFromMortalRace, Init, Back_Init) \
-	PORT_DEFL(gamblinden, Mission_BackFromMortalRace, TalkToDeepThroat, Back_TalkToDeepThroat) \
-	PORT_DEFL(gamblinden, Mission_BackFromMortalRace, AfterDeepThroatMessageShown, Back_AfterDeepThroatMessageShown) \
-	PORT_DEFL(gamblinden, Mission_BackFromMortalRace, DeepThroatSpeech, Back_DeepThroatSpeech) \
-	PORT_DEFL(gamblinden, Mission_BackFromMortalRace, SetNextMission, Back_SetNextMission) \
-	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, InitStatus, Meet_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, Init, Meet_Init) \
-	PORT_DEFLK(gamblinden, Mission_CrazyGamblerFirstContact, OnEndOfScene, Meet_OnEndOfScene) \
-	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerFirstSpeech, Meet_CrazyGamblerFirstSpeech) \
-	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerSecondSpeech, Meet_CrazyGamblerSecondSpeech) \
-	PORT_DEFLK(gamblinden, Mission_CrazyGamblerFirstContact, EndOfTalk, Meet_EndOfTalk) \
-	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, SetNextMission, Meet_SetNextMission) \
-	PORT_DEFL(gamblinden, Mission_CrazyGamblerFirstContact, LoadScene, Meet_LoadScene) \
-	PORT_DEFL(gamblinden, Mission_ArrangeMortalRace, InitStatus, Mortal_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_ArrangeMortalRace, Init, Mortal_Init) \
-	PORT_DEFL(gamblinden, Mission_ArrangeMortalRace, CrazyGamblerSpeech, Mortal_CrazyGamblerSpeech) \
-	PORT_DEFL(gamblinden, Mission_ArrangeMortalRace, LaunchMortalRace, Mortal_LaunchMortalRace) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, InitStatus, Stooges_InitStatus) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, Init, Stooges_Init) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, AfterBrowseNPC, Stooges_AfterBrowseNPC) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, CreateMercenaryAInit, Stooges_CreateMercenaryAInit) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, CreateMercenaryBInit, Stooges_CreateMercenaryBInit) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, CreateMercenaryCInit, Stooges_CreateMercenaryCInit) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, MercenaryASpeech, Stooges_MercenaryASpeech) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, MercenaryCSpeech, Stooges_MercenaryCSpeech) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, MercenaryBSpeech, Stooges_MercenaryBSpeech) \
-	PORT_DEFL(gamblinden, Mission_ThreeStooges, SetNextMission, Stooges_SetNextMission)
+	PORT_DEFLN(gamblinden, Map, InitStatus, Den_InitStatus) \
+	PORT_DEFLN(gamblinden, Map, AfterBrowseNPC, Den_AfterBrowseNPC) \
+	PORT_DEFLN(gamblinden, Map, CreateFixedInit, Den_CreateFixedInit) \
+	PORT_DEFLN(gamblinden, Map, CreateFixedMercInit, Den_CreateFixedMercInit) \
+	PORT_DEFLN(gamblinden, Map, CreateLonelyMerc, Den_CreateLonelyMerc) \
+	PORT_DEFLN(gamblinden, Map, Init, Den_Init) \
+	PORT_DEFLN(gamblinden, Map, LonelyMercSpeech, Den_LonelyMercSpeech) \
+	PORT_DEFLN(gamblinden, Map, CharUsrAct, Den_CharUsrAct) \
+	PORT_DEFLN(gamblinden, Map, CharUsrDance, Den_CharUsrDance) \
+	PORT_DEFLNK(gamblinden, Map, MercDrink, Den_MercDrink) \
+	PORT_DEFLNK(gamblinden, Map, ChatNPCs, Den_ChatNPCs) \
+	PORT_DEFLN(gamblinden, Map, CharDance, Den_CharDance) \
+	PORT_DEFLN(gamblinden, Map, MercenarySpeech, Den_MercenarySpeech) \
+	PORT_DEFLN(gamblinden, Map, StartContract, Den_StartContract) \
+	PORT_DEFLN(gamblinden, Mission_BeforeFinalFight, InitStatus, Before_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_BeforeFinalFight, Init, Before_Init) \
+	PORT_DEFLN(gamblinden, Mission_BeforeFinalFight, CrazyGamblerSpeech, Before_CrazyGamblerSpeech) \
+	PORT_DEFLN(gamblinden, Mission_BeforeFinalFight, MercenariesSpeech, Before_MercenariesSpeech) \
+	PORT_DEFLNK(gamblinden, Mission_BeforeFinalFight, SetNextMission, Before_SetNextMission) \
+	PORT_DEFLN(gamblinden, Mission_BeforeFinalFight, LoadScene, Before_LoadScene) \
+	PORT_DEFLN(gamblinden, Mission_AfterFinalFight, InitStatus, After_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_AfterFinalFight, Init, After_Init) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeIgorCombat, InitStatus, Igor_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeIgorCombat, Init, Igor_Init) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeIgorCombat, TalkToIgor, Igor_TalkToIgor) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeIgorCombat, IgorSpeech, Igor_IgorSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeIgorCombat, TalkToCrazyGambler, Igor_TalkToCrazyGambler) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeIgorCombat, CrazyGamblerSpeech, Igor_CrazyGamblerSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeIgorCombat, LaunchIgorCombat, Igor_LaunchIgorCombat) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCTF, InitStatus, Ctf_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCTF, Init, Ctf_Init) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCTF, CreateTraitoriusInit, Ctf_CreateTraitoriusInit) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCTF, TraitoriusSpeech, Ctf_TraitoriusSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCTF, TalkToCrazyGambler, Ctf_TalkToCrazyGambler) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCTF, CrazyGamblerSpeech, Ctf_CrazyGamblerSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCTF, LaunchBankersCTF, Ctf_LaunchBankersCTF) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, InitStatus, Bankers_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, Init, Bankers_Init) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, LaunchIgorDefeatedSpeech, Bankers_LaunchIgorDefeatedSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, LaunchDeepThroatMessage, Bankers_LaunchDeepThroatMessage) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, TalkToDeepThroat, Bankers_TalkToDeepThroat) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, DeepThroatSpeech, Bankers_DeepThroatSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, TalkToPoliceBoss, Bankers_TalkToPoliceBoss) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, PoliceBossSpeech, Bankers_PoliceBossSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, PoliceBossSpeech2, Bankers_PoliceBossSpeech2) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, TalkToCrazyGambler, Bankers_TalkToCrazyGambler) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, CrazyGamblerSpeech, Bankers_CrazyGamblerSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeBankersCombat, LaunchBankersCombat, Bankers_LaunchBankersCombat) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, InitStatus, First_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, Init, First_Init) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, TalkToCrazyGambler, First_TalkToCrazyGambler) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, CrazyGamblerSpeech, First_CrazyGamblerSpeech) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, TalkToIgor, First_TalkToIgor) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, IgorSpeech, First_IgorSpeech) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, TalkToMercenaries, First_TalkToMercenaries) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, MercenaryASpeech, First_MercenaryASpeech) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, MercenaryCSpeech, First_MercenaryCSpeech) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, MercenaryBSpeech, First_MercenaryBSpeech) \
+	PORT_DEFLN(gamblinden, Mission_IgorFirstContact, SetNextMission, First_SetNextMission) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, InitStatus, Go_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, AfterBrowseNPC, Go_AfterBrowseNPC) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, CreateMercenaryInit, Go_CreateMercenaryInit) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, MercenarySpeech, Go_MercenarySpeech) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, HumanSpeech, Go_HumanSpeech) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, CrazyGamblerSpeech, Go_CrazyGamblerSpeech) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, Init, Go_Init) \
+	PORT_DEFLN(gamblinden, Mission_GoToGamblinDen, LoadScene, Go_LoadScene) \
+	PORT_DEFLNK(gamblinden, Mission_GoToGamblinDen, SetNextMission, Go_SetNextMission) \
+	PORT_DEFLN(gamblinden, Mission_TalkToTraitoriusAfterCTF, InitStatus, Traitor_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_TalkToTraitoriusAfterCTF, Init, Traitor_Init) \
+	PORT_DEFLN(gamblinden, Mission_TalkToTraitoriusAfterCTF, CreateTraitoriusInit, Traitor_CreateTraitoriusInit) \
+	PORT_DEFLN(gamblinden, Mission_TalkToTraitoriusAfterCTF, LaunchTraitoriusSpeech, Traitor_LaunchTraitoriusSpeech) \
+	PORT_DEFLN(gamblinden, Mission_TalkToTraitoriusAfterCTF, TraitoriusSpeech, Traitor_TraitoriusSpeech) \
+	PORT_DEFLN(gamblinden, Mission_TalkToTraitoriusAfterCTF, SetNextMission, Traitor_SetNextMission) \
+	PORT_DEFLN(gamblinden, Mission_BackFromMortalRace, InitStatus, Back_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_BackFromMortalRace, Init, Back_Init) \
+	PORT_DEFLN(gamblinden, Mission_BackFromMortalRace, TalkToDeepThroat, Back_TalkToDeepThroat) \
+	PORT_DEFLN(gamblinden, Mission_BackFromMortalRace, AfterDeepThroatMessageShown, Back_AfterDeepThroatMessageShown) \
+	PORT_DEFLN(gamblinden, Mission_BackFromMortalRace, DeepThroatSpeech, Back_DeepThroatSpeech) \
+	PORT_DEFLN(gamblinden, Mission_BackFromMortalRace, SetNextMission, Back_SetNextMission) \
+	PORT_DEFLN(gamblinden, Mission_CrazyGamblerFirstContact, InitStatus, Meet_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_CrazyGamblerFirstContact, Init, Meet_Init) \
+	PORT_DEFLNK(gamblinden, Mission_CrazyGamblerFirstContact, OnEndOfScene, Meet_OnEndOfScene) \
+	PORT_DEFLN(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerFirstSpeech, Meet_CrazyGamblerFirstSpeech) \
+	PORT_DEFLN(gamblinden, Mission_CrazyGamblerFirstContact, CrazyGamblerSecondSpeech, Meet_CrazyGamblerSecondSpeech) \
+	PORT_DEFLNK(gamblinden, Mission_CrazyGamblerFirstContact, EndOfTalk, Meet_EndOfTalk) \
+	PORT_DEFLN(gamblinden, Mission_CrazyGamblerFirstContact, SetNextMission, Meet_SetNextMission) \
+	PORT_DEFLN(gamblinden, Mission_CrazyGamblerFirstContact, LoadScene, Meet_LoadScene) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeMortalRace, InitStatus, Mortal_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeMortalRace, Init, Mortal_Init) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeMortalRace, CrazyGamblerSpeech, Mortal_CrazyGamblerSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ArrangeMortalRace, LaunchMortalRace, Mortal_LaunchMortalRace) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, InitStatus, Stooges_InitStatus) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, Init, Stooges_Init) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, AfterBrowseNPC, Stooges_AfterBrowseNPC) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, CreateMercenaryAInit, Stooges_CreateMercenaryAInit) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, CreateMercenaryBInit, Stooges_CreateMercenaryBInit) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, CreateMercenaryCInit, Stooges_CreateMercenaryCInit) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, MercenaryASpeech, Stooges_MercenaryASpeech) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, MercenaryCSpeech, Stooges_MercenaryCSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, MercenaryBSpeech, Stooges_MercenaryBSpeech) \
+	PORT_DEFLN(gamblinden, Mission_ThreeStooges, SetNextMission, Stooges_SetNextMission)
 
 /* levels/Junkyard.c */
 PORT_DECLL(junkyard, Map, InitStatus) /* 1 */
@@ -5285,34 +5285,34 @@ PORT_DECLL(junkyard, Mission_RustyFirstContact, EnterEditShipTutorial) /* 2 */
 PORT_DECLL(junkyard, Mission_RustyFirstContact, TutorialMsgInit) /* 2 */
 PORT_DECLL(junkyard, Mission_RustyFirstContact, EditShipTutorial_Step) /* 3 */
 #define PORTS_levels_Junkyard \
-	PORT_DEFL(junkyard, Map, InitStatus, JunkyardMap_InitStatusPy) \
-	PORT_DEFL(junkyard, Map, Init, JunkyardMap_InitPy) \
-	PORT_DEFL(junkyard, MapShipEdit, EnterEditShip, MapShipEdit_EnterEditShipPy) \
-	PORT_DEFL(junkyard, MapShipEdit, SetInteract, MapShipEdit_SetInteractPy) \
-	PORT_DEFL(junkyard, MapShipEdit, OnEndOfShipEdit, MapShipEdit_OnEndOfShipEditPy) \
-	PORT_DEFL(junkyard, MapShipEdit, CanUseElevator, MapShipEdit_CanUseElevatorPy) \
-	PORT_DEFL(junkyard, MapShipEdit, UseElevator, MapShipEdit_UseElevatorPy) \
-	PORT_DEFL(junkyard, MapShipEdit, Init, MapShipEdit_InitPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, InitStatus, Rusty_InitStatusPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, Init, Rusty_InitPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, CreateFakeBertoShip, Rusty_CreateFakeBertoShipPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, ShowExtras, Rusty_ShowExtrasPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, StartInitialScene, Rusty_StartInitialScenePy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, LoadMecanicFinalScene, Rusty_LoadMecanicFinalScenePy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, FXMecanicFinalSputnik, Rusty_FXMecanicFinalSputnikPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, BertoGoHome, Rusty_BertoGoHomePy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, BackDownBerto, Rusty_BackDownBertoPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, EndOfBertoBye, Rusty_EndOfBertoByePy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, StartInitBuildShip, Rusty_StartInitBuildShipPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, InitBuildShip, Rusty_InitBuildShipPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, EnterEditShipFirstTime, Rusty_EnterEditShipFirstTimePy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, NoTutorialEnterEditShip, Rusty_NoTutorialEnterEditShipPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, OnEndOfShipEditFirstTime, Rusty_OnEndOfShipEditFirstTimePy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, UseElevatorFirstTime, Rusty_UseElevatorFirstTimePy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, EndOfMission, Rusty_EndOfMissionPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, EnterEditShipTutorial, Rusty_EnterEditShipTutorialPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, TutorialMsgInit, Rusty_TutorialMsgInitPy) \
-	PORT_DEFL(junkyard, Mission_RustyFirstContact, EditShipTutorial_Step, Rusty_EditShipTutorial_StepPy)
+	PORT_DEFLN(junkyard, Map, InitStatus, JunkyardMap_InitStatusPy) \
+	PORT_DEFLN(junkyard, Map, Init, JunkyardMap_InitPy) \
+	PORT_DEFLN(junkyard, MapShipEdit, EnterEditShip, MapShipEdit_EnterEditShipPy) \
+	PORT_DEFLN(junkyard, MapShipEdit, SetInteract, MapShipEdit_SetInteractPy) \
+	PORT_DEFLN(junkyard, MapShipEdit, OnEndOfShipEdit, MapShipEdit_OnEndOfShipEditPy) \
+	PORT_DEFLN(junkyard, MapShipEdit, CanUseElevator, MapShipEdit_CanUseElevatorPy) \
+	PORT_DEFLN(junkyard, MapShipEdit, UseElevator, MapShipEdit_UseElevatorPy) \
+	PORT_DEFLN(junkyard, MapShipEdit, Init, MapShipEdit_InitPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, InitStatus, Rusty_InitStatusPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, Init, Rusty_InitPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, CreateFakeBertoShip, Rusty_CreateFakeBertoShipPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, ShowExtras, Rusty_ShowExtrasPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, StartInitialScene, Rusty_StartInitialScenePy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, LoadMecanicFinalScene, Rusty_LoadMecanicFinalScenePy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, FXMecanicFinalSputnik, Rusty_FXMecanicFinalSputnikPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, BertoGoHome, Rusty_BertoGoHomePy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, BackDownBerto, Rusty_BackDownBertoPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, EndOfBertoBye, Rusty_EndOfBertoByePy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, StartInitBuildShip, Rusty_StartInitBuildShipPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, InitBuildShip, Rusty_InitBuildShipPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, EnterEditShipFirstTime, Rusty_EnterEditShipFirstTimePy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, NoTutorialEnterEditShip, Rusty_NoTutorialEnterEditShipPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, OnEndOfShipEditFirstTime, Rusty_OnEndOfShipEditFirstTimePy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, UseElevatorFirstTime, Rusty_UseElevatorFirstTimePy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, EndOfMission, Rusty_EndOfMissionPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, EnterEditShipTutorial, Rusty_EnterEditShipTutorialPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, TutorialMsgInit, Rusty_TutorialMsgInitPy) \
+	PORT_DEFLN(junkyard, Mission_RustyFirstContact, EditShipTutorial_Step, Rusty_EditShipTutorial_StepPy)
 
 /* levels/LevelCommon.c */
 PORT_DECLL(commercial, Mission_DestroyCommSats2, InitStatus) /* 1 */
@@ -5396,8 +5396,8 @@ PORT_DECLL(menu, Map, cremeteoro) /* ? */
 PORT_DECLL(om, SuperDeal_Sixth, SetVars) /* 0 */
 PORT_DECLL(om, SuperDeal_Tenth, SetVars) /* 0 */
 #define PORTS_levels_OM \
-	PORT_DEFL(om, SuperDeal_Sixth, SetVars, Om_SixthSetVarsPy) \
-	PORT_DEFL(om, SuperDeal_Tenth, SetVars, Om_TenthSetVarsPy)
+	PORT_DEFLN(om, SuperDeal_Sixth, SetVars, Om_SixthSetVarsPy) \
+	PORT_DEFLN(om, SuperDeal_Tenth, SetVars, Om_TenthSetVarsPy)
 
 /* levels/Orbit.c */
 PORT_DECLL(orbit, Map, InitStatus) /* 1 */
@@ -6294,11 +6294,11 @@ PORT_DECLL(qf, Mission_BankersCombat, OnEndOfSuperCrazyDeal) /* 0 */
 PORT_DECLL(qf, Mission_BankersCombat, BankersAttackPlayer) /* 0 */
 PORT_DECLL(qf, Mission_BankersCombat, SetNextMission) /* 0 */
 #define PORTS_levels_QF \
-	PORT_DEFL(qf, Mission_BankersCombat, CreatePlans, Bc_CreatePlansPy) \
-	PORT_DEFL(qf, Mission_BankersCombat, TakePlanPhoto, Bc_TakePlanPhotoPy) \
-	PORT_DEFL(qf, Mission_BankersCombat, OnEndOfSuperCrazyDeal, Bc_OnEndOfSuperCrazyDealPy) \
-	PORT_DEFL(qf, Mission_BankersCombat, BankersAttackPlayer, Bc_BankersAttackPlayerPy) \
-	PORT_DEFL(qf, Mission_BankersCombat, SetNextMission, Bc_SetNextMissionPy)
+	PORT_DEFLN(qf, Mission_BankersCombat, CreatePlans, Bc_CreatePlansPy) \
+	PORT_DEFLN(qf, Mission_BankersCombat, TakePlanPhoto, Bc_TakePlanPhotoPy) \
+	PORT_DEFLN(qf, Mission_BankersCombat, OnEndOfSuperCrazyDeal, Bc_OnEndOfSuperCrazyDealPy) \
+	PORT_DEFLN(qf, Mission_BankersCombat, BankersAttackPlayer, Bc_BankersAttackPlayerPy) \
+	PORT_DEFLN(qf, Mission_BankersCombat, SetNextMission, Bc_SetNextMissionPy)
 
 /* levels/Scrapyard.c */
 PORT_DECLL(scrapyard, Map, InitStatus) /* 1 */
@@ -6504,11 +6504,11 @@ PORT_DECLL(nano, Map, Init) /* 1 */
 PORT_DECLL(shipedit, Map, Init) /* 1 */
 PORT_DECLL(shipedit, MapSnd, Init) /* 1 */
 #define PORTS_levels_Small \
-	PORT_DEFL(tuczone, Map, Init, Tuc_InitPy) \
-	PORT_DEFL(nano, Map, InitStatus, Nano_InitStatusPy) \
-	PORT_DEFL(nano, Map, Init, Nano_InitPy) \
-	PORT_DEFL(shipedit, Map, Init, Se_InitPy) \
-	PORT_DEFL(shipedit, MapSnd, Init, Se_SndInitPy)
+	PORT_DEFLN(tuczone, Map, Init, Tuc_InitPy) \
+	PORT_DEFLN(nano, Map, InitStatus, Nano_InitStatusPy) \
+	PORT_DEFLN(nano, Map, Init, Nano_InitPy) \
+	PORT_DEFLN(shipedit, Map, Init, Se_InitPy) \
+	PORT_DEFLN(shipedit, MapSnd, Init, Se_SndInitPy)
 
 /* levels/Temple.c */
 PORT_DECLL(temple, Map, InitStatus) /* 1 */

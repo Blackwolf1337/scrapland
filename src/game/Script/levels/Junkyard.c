@@ -247,10 +247,10 @@ LV_CORE0(JunkyardMap_Init)
 LV_FN(JunkyardMap, InitStatusPy, 1, JunkyardMap_InitStatus_C)
 LV_FN(JunkyardMap, InitPy, 1, JunkyardMap_Init_C)
 
-PyMethodDef g_JunkyardMapMethods[] = {
-	{ "InitStatus", JunkyardMap_InitStatusPy, METH_VARARGS, NULL },
-	{ "Init", JunkyardMap_InitPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_JunkyardMapMethods[] = {
+	PORT_FN(InitStatus, JunkyardMap_InitStatusPy),
+	PORT_FN(Init, JunkyardMap_InitPy),
+	PORT_FNEND
 };
 
 /* ---- MapShipEdit ---- */
@@ -451,14 +451,14 @@ LV_FN(MapShipEdit, CanUseElevatorPy, 4, MapShipEdit_CanUseElevator_C)
 LV_FN(MapShipEdit, UseElevatorPy, 4, MapShipEdit_UseElevator_C)
 LV_FN(MapShipEdit, InitPy, 1, MapShipEdit_Init_C)
 
-PyMethodDef g_JunkyardMapShipEditMethods[] = {
-	{ "EnterEditShip", MapShipEdit_EnterEditShipPy, METH_VARARGS, NULL },
-	{ "SetInteract", MapShipEdit_SetInteractPy, METH_VARARGS, NULL },
-	{ "OnEndOfShipEdit", MapShipEdit_OnEndOfShipEditPy, METH_VARARGS, NULL },
-	{ "CanUseElevator", MapShipEdit_CanUseElevatorPy, METH_VARARGS, NULL },
-	{ "UseElevator", MapShipEdit_UseElevatorPy, METH_VARARGS, NULL },
-	{ "Init", MapShipEdit_InitPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_JunkyardMapShipEditMethods[] = {
+	PORT_FN(EnterEditShip, MapShipEdit_EnterEditShipPy),
+	PORT_FN(SetInteract, MapShipEdit_SetInteractPy),
+	PORT_FN(OnEndOfShipEdit, MapShipEdit_OnEndOfShipEditPy),
+	PORT_FN(CanUseElevator, MapShipEdit_CanUseElevatorPy),
+	PORT_FN(UseElevator, MapShipEdit_UseElevatorPy),
+	PORT_FN(Init, MapShipEdit_InitPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_RustyFirstContact ---- */
@@ -1200,28 +1200,28 @@ LV_FN(Rusty, EnterEditShipTutorialPy, 2, Rusty_EnterEditShipTutorial_C)
 LV_FN(Rusty, TutorialMsgInitPy, 2, Rusty_TutorialMsgInit_C)
 LV_FN(Rusty, EditShipTutorial_StepPy, 3, Rusty_EditShipTutorial_Step_C)
 
-PyMethodDef g_JunkyardRustyFirstContactMethods[] = {
-	{ "InitStatus", Rusty_InitStatusPy, METH_VARARGS, NULL },
-	{ "Init", Rusty_InitPy, METH_VARARGS, NULL },
-	{ "CreateFakeBertoShip", Rusty_CreateFakeBertoShipPy, METH_VARARGS, NULL },
-	{ "ShowExtras", Rusty_ShowExtrasPy, METH_VARARGS, NULL },
-	{ "StartInitialScene", Rusty_StartInitialScenePy, METH_VARARGS, NULL },
-	{ "LoadMecanicFinalScene", Rusty_LoadMecanicFinalScenePy, METH_VARARGS, NULL },
-	{ "FXMecanicFinalSputnik", Rusty_FXMecanicFinalSputnikPy, METH_VARARGS, NULL },
-	{ "BertoGoHome", Rusty_BertoGoHomePy, METH_VARARGS, NULL },
-	{ "BackDownBerto", Rusty_BackDownBertoPy, METH_VARARGS, NULL },
-	{ "EndOfBertoBye", Rusty_EndOfBertoByePy, METH_VARARGS, NULL },
-	{ "StartInitBuildShip", Rusty_StartInitBuildShipPy, METH_VARARGS, NULL },
-	{ "InitBuildShip", Rusty_InitBuildShipPy, METH_VARARGS, NULL },
-	{ "EnterEditShipFirstTime", Rusty_EnterEditShipFirstTimePy, METH_VARARGS, NULL },
-	{ "NoTutorialEnterEditShip", Rusty_NoTutorialEnterEditShipPy, METH_VARARGS, NULL },
-	{ "OnEndOfShipEditFirstTime", Rusty_OnEndOfShipEditFirstTimePy, METH_VARARGS, NULL },
-	{ "UseElevatorFirstTime", Rusty_UseElevatorFirstTimePy, METH_VARARGS, NULL },
-	{ "EndOfMission", Rusty_EndOfMissionPy, METH_VARARGS, NULL },
-	{ "EnterEditShipTutorial", Rusty_EnterEditShipTutorialPy, METH_VARARGS, NULL },
-	{ "TutorialMsgInit", Rusty_TutorialMsgInitPy, METH_VARARGS, NULL },
-	{ "EditShipTutorial_Step", Rusty_EditShipTutorial_StepPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_JunkyardRustyFirstContactMethods[] = {
+	PORT_FN(InitStatus, Rusty_InitStatusPy),
+	PORT_FN(Init, Rusty_InitPy),
+	PORT_FN(CreateFakeBertoShip, Rusty_CreateFakeBertoShipPy),
+	PORT_FN(ShowExtras, Rusty_ShowExtrasPy),
+	PORT_FN(StartInitialScene, Rusty_StartInitialScenePy),
+	PORT_FN(LoadMecanicFinalScene, Rusty_LoadMecanicFinalScenePy),
+	PORT_FN(FXMecanicFinalSputnik, Rusty_FXMecanicFinalSputnikPy),
+	PORT_FN(BertoGoHome, Rusty_BertoGoHomePy),
+	PORT_FN(BackDownBerto, Rusty_BackDownBertoPy),
+	PORT_FN(EndOfBertoBye, Rusty_EndOfBertoByePy),
+	PORT_FN(StartInitBuildShip, Rusty_StartInitBuildShipPy),
+	PORT_FN(InitBuildShip, Rusty_InitBuildShipPy),
+	PORT_FN(EnterEditShipFirstTime, Rusty_EnterEditShipFirstTimePy),
+	PORT_FN(NoTutorialEnterEditShip, Rusty_NoTutorialEnterEditShipPy),
+	PORT_FN(OnEndOfShipEditFirstTime, Rusty_OnEndOfShipEditFirstTimePy),
+	PORT_FN(UseElevatorFirstTime, Rusty_UseElevatorFirstTimePy),
+	PORT_FN(EndOfMission, Rusty_EndOfMissionPy),
+	PORT_FN(EnterEditShipTutorial, Rusty_EnterEditShipTutorialPy),
+	PORT_FN(TutorialMsgInit, Rusty_TutorialMsgInitPy),
+	PORT_FN(EditShipTutorial_Step, Rusty_EditShipTutorial_StepPy),
+	PORT_FNEND
 };
 
 PORTS(levels_Junkyard)

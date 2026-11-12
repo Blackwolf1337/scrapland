@@ -320,14 +320,14 @@ MODE_KW(Fk, NextLevelPy, "|O", "usr") {
 	return Fk_NextLevel();
 }
 
-PyMethodDef g_FakeMapMethods[] = {
-	{ "Init", Fk_InitPy, 1, NULL },
-	{ "PlayFake2", (PyCFunction)(void (*)(void))Fk_PlayFake2Py, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "NextLevel", (PyCFunction)(void (*)(void))Fk_NextLevelPy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "CreateFakeBertoShip", Fk_CreateFakeBertoShipPy, 1, NULL },
-	{ "ActivateBertoEngines", Fk_ActivateBertoEnginesPy, 1, NULL },
-	{ "LoadFake2Scene", Fk_LoadFake2ScenePy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_FakeMapMethods[] = {
+	PORT_FN(Init, Fk_InitPy),
+	PORT_FNK(PlayFake2, Fk_PlayFake2Py),
+	PORT_FNK(NextLevel, Fk_NextLevelPy),
+	PORT_FN(CreateFakeBertoShip, Fk_CreateFakeBertoShipPy),
+	PORT_FN(ActivateBertoEngines, Fk_ActivateBertoEnginesPy),
+	PORT_FN(LoadFake2Scene, Fk_LoadFake2ScenePy),
+	PORT_FNEND
 };
 
 PORTS(levels_Fake)
