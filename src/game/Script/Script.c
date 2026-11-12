@@ -822,12 +822,6 @@ byte Script_EntTrue(const char *ent, const char *var) {
 	return Entity_VarS(e, var, &s, 0) && s && *s;
 }
 
-int Script_EntSet(const char *ent, const char *var, PyObject *v) {
-	int r = v ? PyEntity_SetVar(World_FindEntity(ent), ent, var, v) : -1;
-	Py_XDECREF(v);
-	return r;
-}
-
 PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
 	PyObject *r = callable && args ? Script_CallObject(callable, args, NULL) : NULL;
 	Py_XDECREF(args);
@@ -1664,7 +1658,7 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		nativeVal_t nv;
 		byte got = Def_Value(m, value, quoted, &nv), bad = 0;
 		if (got && m->hasObject) {
-			bad = !Mode_RefSetAttr(&m->object, var, &nv);
+			bad = !Mode_VSet(&m->object, var, &nv);
 		}
 		Native_Free(&nv);
 		if (bad) {

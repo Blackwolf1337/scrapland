@@ -231,12 +231,10 @@ int Script_NumCmp(PyObject *a, long n);
 byte Script_Later(double delay, PyObject *func, PyObject *args, const char *name);
 byte Script_LaterIn(double delay, const char *module, const char *func, PyObject *args, const char *name);
 
-/* script variables of entities by name, as the Python entity handle reads and writes them: the number of a variable
- * (int, else float; def when the entity or the variable is not there), its text (def likewise), and ent.var = v (v
- * given away; 0, or -1 with the message printed) */
+/* script variables of entities by name, as the entity handle reads them: the number of a variable (int, else float;
+ * def when the entity or the variable is not there) and its text (def likewise) */
 double Script_EntNum(const char *ent, const char *var, double def);
 const char *Script_EntStr(const char *ent, const char *var, const char *def);
-int Script_EntSet(const char *ent, const char *var, PyObject *v);
 /* `if ent.var:` of a script (0 when the entity or the variable is not there) */
 byte Script_EntTrue(const char *ent, const char *var);
 
@@ -324,8 +322,6 @@ PyObject *Script_NotRead(const char *where, const char *text);
 PyObject *Script_Literal(PyObject *globals, const char *s);
 /* the globals give a frame valid builtins (a dict or a module in __builtins__), as exec and eval need */
 byte Script_HasBuiltins(PyObject *globals);
-/* the plain literal text in the globals of __main__ (Script_Literal), NULL without an error for any other text */
-PyObject *Script_EvalMain(const char *text);
 /* a string constant of len chars as the compiler makes it (interned when it has only name characters) */
 PyObject *Script_StrConst(const char *s, int len);
 /* s[0:len] is a Python 1.5.2 name (ASCII letters, digits and _, not a keyword) */

@@ -2607,7 +2607,8 @@ static int TB_DelAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
-	/* OBJLIB 9: the type objects are Python's (a value by value names the type it has as a Python object) */
+	/* a native type object; OBJLIB 9: keyed by the type object of Python (a value by value names the type it has as a
+	 * Python object) */
 	PyTypeObject *t = NULL;
 
 	if (!TX_Arity("type", n, 1, 1)) {
@@ -2662,6 +2663,9 @@ static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
 				break;
 			case NO_MODULE:
 				t = &PyModule_Type;
+				break;
+			case NO_TYPE:
+				t = &PyType_Type;
 				break;
 			default:
 				t = !strcmp(NObj_TypeName(a), "function") ? &PyFunction_Type : &PyCFunction_Type;

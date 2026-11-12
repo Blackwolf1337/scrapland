@@ -46,6 +46,8 @@ typedef enum {
 	NO_METHOD,			/* a function of a class bound to an instance, or unbound */
 	NO_MODULE,			/* a module: a pack module is native (its variables are the registry's; OBJLIB 9: its
 					 * module object of Python is its key, the one object per module), any other one a view */
+	NO_TYPE,			/* a type object (what type() gives): its name; OBJLIB 9: the type object of Python is
+					 * its key, the one object per type */
 } nativeObjKind_t;
 
 typedef struct nativeObj_s nativeObj_t;
@@ -166,7 +168,7 @@ byte NObj_HashQuiet(const nativeVal_t *v, long *out);
 /* Native_True */
 byte NObj_True(const nativeVal_t *v);
 /* Native_TypeName: "list", "dictionary", "instance", "class", "function", "builtin_function_or_method", "instance
- * method", "module" */
+ * method", "module", "type" */
 const char *NObj_TypeName(const nativeVal_t *v);
 
 /* ---- OBJLIB 9: the bridge ---- */

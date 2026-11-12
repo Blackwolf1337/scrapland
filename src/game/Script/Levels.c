@@ -636,16 +636,31 @@ static byte Level_NCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out
 	return Level_NCallKw(ctx, a, n, NULL, out);
 }
 
-/* the value of a default parameter of a section line, as the .def parser reads a value (a new reference; OBJLIB 7,
- * see Level_Call) */
-static PyObject *Level_Default(const char *text) {
+/* the value of a default parameter of a section line, as the .def parser reads a value: 1 with *out (Native_Free
+ * it), 0 when the text is no plain literal */
+static byte Level_DefaultN(const char *text, nativeVal_t *out) {
 	char buf[LEVEL_NAME + 8];
+	nativeVal_t t;
 	Str_Printf(buf, sizeof(buf), "(%s,)", text);
-	PyObject *t = Script_EvalMain(buf);
-	PyObject *v = t && PyTuple_Check(t) && PyTuple_Size(t) == 1 ? PyTuple_GetItem(t, 0) : NULL;
-	Py_XINCREF(v);
-	Py_XDECREF(t);
-	return v;
+	Native_SetNone(out);
+	if (!Native_Literal(buf, &t)) {
+		return 0;
+	}
+	byte ok = t.type == NV_TUPLE && t.n == 1;
+	if (ok) {
+		*out = t.items[0];
+		Native_SetNone(&t.items[0]);
+	}
+	Native_Free(&t);
+	return ok;
+}
+
+/* the same as a Python value (a new reference, NULL without one; OBJLIB 7, for Level_Call) */
+static PyObject *Level_Default(const char *text) {
+	nativeVal_t v;
+	PyObject *o = Level_DefaultN(text, &v) ? Native_ToPy(&v) : NULL;
+	Native_Free(&v);
+	return o;
 }
 
 /* the words of a section line "section <Func> <params>" (line: the text after "section ", len chars) into line and
@@ -681,26 +696,47 @@ static PyObject *Level_SectionSelf(int i, char *tok[24], int nt) {
 	return self;
 }
 
-/* the function of the section tok of file i into *out: a native function on the self as native values; under
- * SCRAP_NULL_CHECK (or with a default value that has no native form) the C function object of Python, its method
- * definition in slot n of the pool (OBJLIB 7, see Level_Call). 1, 0 with the error */
-static byte Level_SectionFunction(int i, levelPool_t *pool, int n, char *tok[24], int nt, nativeVal_t *out) {
-	PyObject *self = Level_SectionSelf(i, tok, nt);
-	nativeVal_t v;
-	Native_SetNone(out);
-	if (!self) {
-		return 0;
+/* the same self as native values into *out: (i, name, parameter names, defaults dict by value) */
+static void Level_SectionSelfN(int i, char *tok[24], int nt, nativeVal_t *out) {
+	nativeVal_t *params, *defs;
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_SetInt(Native_Append(out), i);
+	Native_SetStr(Native_Append(out), tok[0]);
+	Native_SetEmpty(Native_Append(out), NV_TUPLE);
+	Native_SetEmpty(Native_Append(out), NV_DICT);
+	params = &out->items[2];
+	defs = &out->items[3];
+	for (int k = 1; k < nt; k++) {
+		char *eq = strchr(tok[k], '=');
+		nativeVal_t key, d;
+		if (eq) {
+			*eq = 0;
+			if (Level_DefaultN(eq + 1, &d)) {
+				Native_SetStr(&key, tok[k]);
+				Native_DictSet(defs, &key, &d);
+			}
+		}
+		Native_SetStr(Native_Append(params), tok[k]);
 	}
-	if (!Script_Checking() && Native_FromPyAny(self, &v)) {
+}
+
+/* the function of the section tok of file i into *out: a native function on the self as native values; under
+ * SCRAP_NULL_CHECK the C function object of Python, its method definition in slot n of the pool (OBJLIB 7, see
+ * Level_Call). 1, 0 with the error */
+static byte Level_SectionFunction(int i, levelPool_t *pool, int n, char *tok[24], int nt, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (!Script_Checking()) {
 		levelFn_t *f = Mem_Alloc(sizeof(*f));
 		f->file = i;
-		f->self = v;
-		Py_DECREF(self);
+		Level_SectionSelfN(i, tok, nt, &f->self);
 		NObj_NewCallback(out, tok[0], Level_NCall, f, Level_FnFree, 0);
 		NObj_SetCallback(out, &f->self, Level_NCallKw);
 		return 1;
 	}
-	Native_ErrClear();
+	PyObject *self = Level_SectionSelf(i, tok, nt);
+	if (!self) {
+		return 0;
+	}
 	Str_Copy(pool->names[n], tok[0], LEVEL_NAME);
 	PyMethodDef *def = &pool->defs[n];
 	def->ml_name = pool->names[n];

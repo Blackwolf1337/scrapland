@@ -276,11 +276,6 @@ byte Mode_NextInSlot(cEntity **e) {
 	return ok;
 }
 
-PyObject *Mode_Handle(cEntity *e) {
-	PyObject *h = e ? PyEntity_New(e->name) : NULL;
-	return h ? h : Py_ReturnNone();
-}
-
 /* a getattr that gave NULL: the error of the call as the interpreter reports it when none is set */
 static byte Mode_AttrFail(void) {
 	if (!Native_Failed()) {

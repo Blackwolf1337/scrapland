@@ -79,9 +79,6 @@ byte Mode_Print(const nativeVal_t *const *items, int n);
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
 /* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
 byte Mode_NextInSlot(cEntity **e);
-/* the handle a script holds for the entity as its Python object (OBJLIB 7: for the module dicts and the arguments
- * given as objects; Mode_EntHandle gives the native value): a new reference, None for NULL */
-PyObject *Mode_Handle(cEntity *e);
 /* handle-or-object helpers: o.var, o.var = v, o.SetModel(file) as the script does them on any value (an entity
  * handle in C, any other object the Python way with its errors) */
 byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out);
