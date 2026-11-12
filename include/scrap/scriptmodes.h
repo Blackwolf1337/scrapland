@@ -829,10 +829,11 @@ void Mode_ItemVisible(int id, const char *item, int v);
 #define Mode_LinkCall(fn, id, a, b) Mode_CbLink(PORT_VSITE(), fn, id, a, b)
 byte Mode_SoundOf(const char *name);
 /* the int value i in v (v returned); (a, b, c) of copies of three values; Scrap.Rand(a, b) as the C ports draw it
- * (the C directly); an adapter of a script function that does nothing (any arguments, None) */
+ * (the C directly); a script function that does nothing (any arguments, None): its entry and its adapter */
 const nativeVal_t *Mode_IntVal(nativeVal_t *v, long i);
 void Mode_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c);
 void Mode_RandF(double a, double b, nativeVal_t *out);
+byte Mode_PyNone_E(const nativeVal_t *a, int n, nativeVal_t *out);
 PyObject *Mode_PyNone(PyObject *self, PyObject *args);
 /* the Apply button of the option menus flashes once something changed (1) */
 byte Mode_ApplyFlash(int id);
@@ -853,7 +854,8 @@ byte Mode_AppendName(const char *module, const char *name, const nativeVal_t *h)
 byte Mode_SetAng(const nativeVal_t *h, const nativeVal_t *x);
 /* the system message (Mode_SpeechMsg) of the language text of key */
 byte Mode_LangMsg(const char *key);
-/* an adapter of a script function of two arguments that does nothing (the arity error of "OO", None) */
+/* a script function of two arguments that does nothing (the arity error of "OO", None): its entry and its adapter */
+byte Mode_PyNone2_E(const nativeVal_t *a, int n, nativeVal_t *out);
 PyObject *Mode_PyNone2(PyObject *self, PyObject *args);
 /* Flag.var = v with Flag the global of the module (OBJLIB 7: the flag is the entity handle in the module dict) */
 byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v);

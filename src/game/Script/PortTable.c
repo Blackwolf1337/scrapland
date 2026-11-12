@@ -160,6 +160,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_CharScorer_Create,
 	&port_CharScorer_CreateRadarScorer,
 	&port_CharScorer_CreateSpecialActionScorer,
+	&port_CharScorer_Init,
 	&port_Chars_ActSound,
 	&port_Chars_ActSoundLoop,
 	&port_Chars_AddNewCharRes,
@@ -894,6 +895,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_MayorSound_Talk2Snd,
 	&port_MayorSound_TalkSnd,
 	&port_Menu_AbortGame,
+	&port_Menu_AddTabs,
 	&port_Menu_AudioMenu,
 	&port_Menu_AudioVolumeChange,
 	&port_Menu_AudioVolumeSliderFocus_Add,
@@ -931,6 +933,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Menu_DrawCircuitMenu,
 	&port_Menu_DrawMenuTitleBar,
 	&port_Menu_DrawScorer,
+	&port_Menu_DummyFunc,
 	&port_Menu_EnterMissionInfo,
 	&port_Menu_ExitGame,
 	&port_Menu_ExitMissionInfo,
@@ -954,6 +957,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Menu_MissionNotesText,
 	&port_Menu_MovieScorer,
 	&port_Menu_NewGame,
+	&port_Menu_PlaySpacelords,
 	&port_Menu_PreviousNextMenu,
 	&port_Menu_PreviousNextMenuSimple,
 	&port_Menu_SaveGame,
@@ -2244,6 +2248,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_PCMenu_Apply_SetVideoLock,
 	&port_PCMenu_AskPassword,
 	&port_PCMenu_BackToCreateServer,
+	&port_PCMenu_BrowseFormatServerLine,
 	&port_PCMenu_BrowseINetMenu,
 	&port_PCMenu_BrowseLocalJoin,
 	&port_PCMenu_BrowseLocalMenu,
@@ -2484,6 +2489,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_RacerScorer_CreateTargetScorer,
 	&port_RacerScorer_CreateWaypointScorer,
 	&port_RacerScorer_CreateWeaponScorer,
+	&port_RacerScorer_Init,
 	&port_RacerScorer_InitMissionScorer,
 	&port_RacerScorer_MissionScorer,
 	&port_RacerScorer_MissionScorerTeam,
@@ -2756,6 +2762,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Scene_UnhideChars,
 	&port_Scorer_Blink,
 	&port_Scorer_CreateCopMeterScorer,
+	&port_Scorer_CreateMissionScorer,
 	&port_Scorer_CreateMonitorScorer,
 	&port_Scorer_CreateMsgScorer,
 	&port_Scorer_CreateRadarScorer,
@@ -6425,6 +6432,13 @@ PORT_TRAMP(3203)
 PORT_TRAMP(3204)
 PORT_TRAMP(3205)
 PORT_TRAMP(3206)
+PORT_TRAMP(3207)
+PORT_TRAMP(3208)
+PORT_TRAMP(3209)
+PORT_TRAMP(3210)
+PORT_TRAMP(3211)
+PORT_TRAMP(3212)
+PORT_TRAMP(3213)
 
 const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp0,
@@ -9634,4 +9648,11 @@ const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp3204,
 	Port_Tramp3205,
 	Port_Tramp3206,
+	Port_Tramp3207,
+	Port_Tramp3208,
+	Port_Tramp3209,
+	Port_Tramp3210,
+	Port_Tramp3211,
+	Port_Tramp3212,
+	Port_Tramp3213,
 };

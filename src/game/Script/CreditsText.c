@@ -5,8 +5,8 @@
  * for a time that grows with its lines and goes (ShowDown), then EndOfCredits runs. Leaving the movie (another
  * action set than Inactive) empties the page. The item of the page is data/menus/credits.def.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. MAX_TEXT_LINES, TextInfo (the lines of the page), TextPos, TextFont, TextLines and ctr (the
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the function table
+ * rows name the entries. MAX_TEXT_LINES, TextInfo (the lines of the page), TextPos, TextFont, TextLines and ctr (the
  * corner of the next page) are variables of the module (creditstext.mod sets them, credits.def and the tests read
  * them): read from the registry where the script reads them, written there where it writes them. EndOfCredits (a
  * function), the scheduled steps and Menu.MovieScorerCall stay by name.
@@ -356,7 +356,6 @@ static byte CreditsText_CreditsScorer_E(const nativeVal_t *a, int n, nativeVal_t
 	return Mode_Parse(a, n, "i", &id) && Credits_Scorer(id);
 }
 
-MODE_ADAPTER(CreditsText, CreditsScorer)
 MODE_FN(CreditsText, Init, 0, Credits_Init())
 MODE_FN(CreditsText, PrintData, 1, Credits_Print())
 
@@ -366,7 +365,6 @@ static byte CreditsText_PrintDataGuay_E(const nativeVal_t *a, int n, nativeVal_t
 	return Mode_Parse(a, n, "d", &vis) && Credits_PrintGuay(vis);
 }
 
-MODE_ADAPTER(CreditsText, PrintDataGuay)
 MODE_FN(CreditsText, CleanCredits, 0, Credits_Clean())
 
 /* ShowUp(val=0.5), ShowDown(val=0.0) */
@@ -394,16 +392,16 @@ static byte Credits_ShowNum(const nativeVal_t *num) {
 
 MODE_FN(CreditsText, ShowCredit, 1, Credits_ShowNum(&a[0]))
 
-PyMethodDef g_CreditsTextMethods[] = {
-	{ "Init", CreditsText_Init, 1, NULL },
-	{ "CreditsScorer", CreditsText_CreditsScorer, 1, NULL },
-	{ "PrintDataGuay", CreditsText_PrintDataGuay, 1, NULL },
-	{ "PrintData", CreditsText_PrintData, 1, NULL },
-	{ "ShowUp", CreditsText_ShowUp, 1, NULL },
-	{ "ShowDown", CreditsText_ShowDown, 1, NULL },
-	{ "CleanCredits", CreditsText_CleanCredits, 1, NULL },
-	{ "ShowCredit", CreditsText_ShowCredit, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CreditsTextMethods[] = {
+	PORT_FN(Init, CreditsText_Init),
+	PORT_FN(CreditsScorer, CreditsText_CreditsScorer),
+	PORT_FN(PrintDataGuay, CreditsText_PrintDataGuay),
+	PORT_FN(PrintData, CreditsText_PrintData),
+	PORT_FN(ShowUp, CreditsText_ShowUp),
+	PORT_FN(ShowDown, CreditsText_ShowDown),
+	PORT_FN(CleanCredits, CreditsText_CleanCredits),
+	PORT_FN(ShowCredit, CreditsText_ShowCredit),
+	PORT_FNEND
 };
 
 PORTS(CreditsText)

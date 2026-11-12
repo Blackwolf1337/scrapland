@@ -470,14 +470,14 @@ PORT_DECL(CreditsText, ShowDown) /* ? */
 PORT_DECL(CreditsText, CleanCredits) /* 0 */
 PORT_DECL(CreditsText, ShowCredit) /* 1 */
 #define PORTS_CreditsText \
-	PORT_DEF(CreditsText, Init, CreditsText_Init) \
-	PORT_DEF(CreditsText, CreditsScorer, CreditsText_CreditsScorer) \
-	PORT_DEF(CreditsText, PrintDataGuay, CreditsText_PrintDataGuay) \
-	PORT_DEF(CreditsText, PrintData, CreditsText_PrintData) \
-	PORT_DEF(CreditsText, ShowUp, CreditsText_ShowUp) \
-	PORT_DEF(CreditsText, ShowDown, CreditsText_ShowDown) \
-	PORT_DEF(CreditsText, CleanCredits, CreditsText_CleanCredits) \
-	PORT_DEF(CreditsText, ShowCredit, CreditsText_ShowCredit)
+	PORT_DEFN(CreditsText, Init, CreditsText_Init) \
+	PORT_DEFN(CreditsText, CreditsScorer, CreditsText_CreditsScorer) \
+	PORT_DEFN(CreditsText, PrintDataGuay, CreditsText_PrintDataGuay) \
+	PORT_DEFN(CreditsText, PrintData, CreditsText_PrintData) \
+	PORT_DEFN(CreditsText, ShowUp, CreditsText_ShowUp) \
+	PORT_DEFN(CreditsText, ShowDown, CreditsText_ShowDown) \
+	PORT_DEFN(CreditsText, CleanCredits, CreditsText_CleanCredits) \
+	PORT_DEFN(CreditsText, ShowCredit, CreditsText_ShowCredit)
 
 /* Doors.c */
 PORT_DECL(Doors, StdInitializator) /* 1 */
@@ -1066,6 +1066,8 @@ PORT_DECL(Menu, DrawBackOptionMenu) /* ? */
 PORT_DECL(Menu, DrawCircuitMenu) /* ? */
 PORT_DECL(Menu, DrawMenuTitleBar) /* ? */
 PORT_DECL(Menu, StartNewMenu) /* ? */
+PORT_DECL(Menu, AddTabs) /* ? */
+PORT_DECL(Menu, DummyFunc) /* ? */
 PORT_DECL(Menu, VerticalMenu) /* ? */
 PORT_DECL(Menu, YesNoMenu) /* ? */
 PORT_DECL(Menu, DisableMenuItem) /* ? */
@@ -1076,25 +1078,27 @@ PORT_DECL(Menu, SliderMenu) /* ? */
 PORT_DECL(Menu, PreviousNextMenu) /* ? */
 PORT_DECL(Menu, PreviousNextMenuSimple) /* ? */
 #define PORTS_MenuBase \
-	PORT_DEF(Menu, LinkLR, Menu_LinkLR) \
-	PORT_DEF(Menu, LinkUD, Menu_LinkUD) \
-	PORT_DEF(Menu, UnLinkLR, Menu_UnLinkLR) \
-	PORT_DEF(Menu, UnLinkUD, Menu_UnLinkUD) \
-	PORT_DEF(Menu, DrawBackMainMenu, Menu_DrawBackMainMenu) \
-	PORT_DEF(Menu, DrawBackSubMenu, Menu_DrawBackSubMenu) \
-	PORT_DEF(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
-	PORT_DEF(Menu, DrawCircuitMenu, Menu_DrawCircuitMenu) \
-	PORT_DEF(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
-	PORT_DEF(Menu, StartNewMenu, Menu_StartNewMenu) \
-	PORT_DEFK(Menu, VerticalMenu, Menu_VerticalMenu) \
-	PORT_DEF(Menu, YesNoMenu, Menu_YesNoMenu) \
-	PORT_DEF(Menu, DisableMenuItem, Menu_DisableMenuItem) \
-	PORT_DEF(Menu, ShowTextBox, Menu_ShowTextBox) \
-	PORT_DEF(Menu, ShowWarning, Menu_ShowWarning) \
-	PORT_DEF(Menu, SetTabDefaults, Menu_SetTabDefaults) \
-	PORT_DEF(Menu, SliderMenu, Menu_SliderMenu) \
-	PORT_DEF(Menu, PreviousNextMenu, Menu_PreviousNextMenu) \
-	PORT_DEF(Menu, PreviousNextMenuSimple, Menu_PreviousNextMenuSimple)
+	PORT_DEFN(Menu, LinkLR, Menu_LinkLR) \
+	PORT_DEFN(Menu, LinkUD, Menu_LinkUD) \
+	PORT_DEFN(Menu, UnLinkLR, Menu_UnLinkLR) \
+	PORT_DEFN(Menu, UnLinkUD, Menu_UnLinkUD) \
+	PORT_DEFN(Menu, DrawBackMainMenu, Menu_DrawBackMainMenu) \
+	PORT_DEFN(Menu, DrawBackSubMenu, Menu_DrawBackSubMenu) \
+	PORT_DEFN(Menu, DrawBackOptionMenu, Menu_DrawBackOptionMenu) \
+	PORT_DEFN(Menu, DrawCircuitMenu, Menu_DrawCircuitMenu) \
+	PORT_DEFN(Menu, DrawMenuTitleBar, Menu_DrawMenuTitleBar) \
+	PORT_DEFN(Menu, StartNewMenu, Menu_StartNewMenu) \
+	PORT_DEFNK(Menu, AddTabs, Menu_AddTabs) \
+	PORT_DEFN(Menu, DummyFunc, Mode_PyNone) \
+	PORT_DEFNK(Menu, VerticalMenu, Menu_VerticalMenu) \
+	PORT_DEFN(Menu, YesNoMenu, Menu_YesNoMenu) \
+	PORT_DEFN(Menu, DisableMenuItem, Menu_DisableMenuItem) \
+	PORT_DEFN(Menu, ShowTextBox, Menu_ShowTextBox) \
+	PORT_DEFN(Menu, ShowWarning, Menu_ShowWarning) \
+	PORT_DEFN(Menu, SetTabDefaults, Menu_SetTabDefaults) \
+	PORT_DEFN(Menu, SliderMenu, Menu_SliderMenu) \
+	PORT_DEFN(Menu, PreviousNextMenu, Menu_PreviousNextMenu) \
+	PORT_DEFN(Menu, PreviousNextMenuSimple, Menu_PreviousNextMenuSimple)
 
 /* MenuControls.c */
 PORT_DECL(PCMenu, OptionsMenu) /* ? */
@@ -1128,49 +1132,52 @@ PORT_DECL(PCMenu, ShowPadConfig) /* ? */
 PORT_DECL(PCMenu, UpdatePadText) /* ? */
 PORT_DECL(PCMenu, SwitchOption) /* ? */
 #define PORTS_MenuControls \
-	PORT_DEF(PCMenu, OptionsMenu, PCMenu_OptionsMenu) \
-	PORT_DEF(PCMenu, ControlsMenu, PCMenu_ControlsMenu) \
-	PORT_DEF(PCMenu, MouseControlsMenu, PCMenu_MouseControlsMenu) \
-	PORT_DEF(PCMenu, RacerMoveControlsMenu, PCMenu_RacerMoveControlsMenu) \
-	PORT_DEF(PCMenu, RacerAttackControlsMenu, PCMenu_RacerAttackControlsMenu) \
-	PORT_DEF(PCMenu, WalkCharControlsMenu, PCMenu_WalkCharControlsMenu) \
-	PORT_DEF(PCMenu, UseCharControlsMenu, PCMenu_UseCharControlsMenu) \
-	PORT_DEF(PCMenu, CreateControlMenu, PCMenu_CreateControlMenu) \
-	PORT_DEF(PCMenu, RefreshControlMenu, PCMenu_RefreshControlMenu) \
-	PORT_DEF(PCMenu, ClearKeyEntry, PCMenu_ClearKeyEntry) \
-	PORT_DEF(PCMenu, WaitForKeyPress, PCMenu_WaitForKeyPress) \
-	PORT_DEF(PCMenu, AbortWaitRedefine, PCMenu_AbortWaitRedefine) \
-	PORT_DEF(PCMenu, KetRedefineFunc, PCMenu_AbortWaitRedefine) \
-	PORT_DEF(PCMenu, ResetEverything, PCMenu_ResetEverything) \
-	PORT_DEF(PCMenu, ResetToDefault, PCMenu_ResetToDefault) \
-	PORT_DEF(PCMenu, OptionYesNo, PCMenu_OptionYesNo) \
-	PORT_DEF(PCMenu, InvertMouse, PCMenu_InvertMouse) \
-	PORT_DEF(PCMenu, AlwaysRun, PCMenu_AlwaysRun) \
-	PORT_DEF(PCMenu, MouseSensitivityChange, PCMenu_MouseSensitivityChange) \
-	PORT_DEF(PCMenu, MouseSensitivitySliderFocus_Sub, PCMenu_MouseSensitivitySliderFocus_Sub) \
-	PORT_DEF(PCMenu, MouseSensitivitySliderFocus_Add, PCMenu_MouseSensitivitySliderFocus_Add) \
-	PORT_DEF(PCMenu, ControllerConfig, PCMenu_ControllerConfig) \
-	PORT_DEF(PCMenu, ControllerConfigCharMenu, PCMenu_ControllerConfigCharMenu) \
-	PORT_DEF(PCMenu, ControllerConfigShipMenu, PCMenu_ControllerConfigShipMenu) \
-	PORT_DEF(PCMenu, FillControllerMenu, PCMenu_FillControllerMenu) \
-	PORT_DEF(PCMenu, PlaceMenuOption, PCMenu_PlaceMenuOption) \
-	PORT_DEF(PCMenu, SetOptionValue, PCMenu_SetOptionValue) \
-	PORT_DEF(PCMenu, ShowPadConfig, PCMenu_ShowPadConfig) \
-	PORT_DEF(PCMenu, UpdatePadText, PCMenu_UpdatePadText) \
-	PORT_DEF(PCMenu, SwitchOption, PCMenu_SwitchOption)
+	PORT_DEFN(PCMenu, OptionsMenu, PCMenu_OptionsMenu) \
+	PORT_DEFN(PCMenu, ControlsMenu, PCMenu_ControlsMenu) \
+	PORT_DEFN(PCMenu, MouseControlsMenu, PCMenu_MouseControlsMenu) \
+	PORT_DEFN(PCMenu, RacerMoveControlsMenu, PCMenu_RacerMoveControlsMenu) \
+	PORT_DEFN(PCMenu, RacerAttackControlsMenu, PCMenu_RacerAttackControlsMenu) \
+	PORT_DEFN(PCMenu, WalkCharControlsMenu, PCMenu_WalkCharControlsMenu) \
+	PORT_DEFN(PCMenu, UseCharControlsMenu, PCMenu_UseCharControlsMenu) \
+	PORT_DEFN(PCMenu, CreateControlMenu, PCMenu_CreateControlMenu) \
+	PORT_DEFN(PCMenu, RefreshControlMenu, PCMenu_RefreshControlMenu) \
+	PORT_DEFN(PCMenu, ClearKeyEntry, PCMenu_ClearKeyEntry) \
+	PORT_DEFN(PCMenu, WaitForKeyPress, PCMenu_WaitForKeyPress) \
+	PORT_DEFN(PCMenu, AbortWaitRedefine, PCMenu_AbortWaitRedefine) \
+	PORT_DEFN(PCMenu, KetRedefineFunc, PCMenu_AbortWaitRedefine) \
+	PORT_DEFN(PCMenu, ResetEverything, PCMenu_ResetEverything) \
+	PORT_DEFN(PCMenu, ResetToDefault, PCMenu_ResetToDefault) \
+	PORT_DEFN(PCMenu, OptionYesNo, PCMenu_OptionYesNo) \
+	PORT_DEFN(PCMenu, InvertMouse, PCMenu_InvertMouse) \
+	PORT_DEFN(PCMenu, AlwaysRun, PCMenu_AlwaysRun) \
+	PORT_DEFN(PCMenu, MouseSensitivityChange, PCMenu_MouseSensitivityChange) \
+	PORT_DEFN(PCMenu, MouseSensitivitySliderFocus_Sub, PCMenu_MouseSensitivitySliderFocus_Sub) \
+	PORT_DEFN(PCMenu, MouseSensitivitySliderFocus_Add, PCMenu_MouseSensitivitySliderFocus_Add) \
+	PORT_DEFN(PCMenu, ControllerConfig, PCMenu_ControllerConfig) \
+	PORT_DEFN(PCMenu, ControllerConfigCharMenu, PCMenu_ControllerConfigCharMenu) \
+	PORT_DEFN(PCMenu, ControllerConfigShipMenu, PCMenu_ControllerConfigShipMenu) \
+	PORT_DEFN(PCMenu, FillControllerMenu, PCMenu_FillControllerMenu) \
+	PORT_DEFN(PCMenu, PlaceMenuOption, PCMenu_PlaceMenuOption) \
+	PORT_DEFN(PCMenu, SetOptionValue, PCMenu_SetOptionValue) \
+	PORT_DEFNK(PCMenu, ShowPadConfig, PCMenu_ShowPadConfig) \
+	PORT_DEFN(PCMenu, UpdatePadText, PCMenu_UpdatePadText) \
+	PORT_DEFN(PCMenu, SwitchOption, PCMenu_SwitchOption)
 
 /* MenuHud.c */
 PORT_DECL(Scorer, CreateStatusScorer) /* ? */
 PORT_DECL(Scorer, CreateCopMeterScorer) /* 1 */
 PORT_DECL(Scorer, CreateMonitorScorer) /* ? */
 PORT_DECL(Scorer, CreateMsgScorer) /* 1 */
+PORT_DECL(Scorer, CreateMissionScorer) /* ? */
 PORT_DECL(Scorer, ShowMissionScorer) /* ? */
 PORT_DECL(Scorer, CreateRadarScorer) /* ? */
 PORT_DECL(Scorer, Blink) /* ? */
 PORT_DECL(Scorer, MissionScorerBar_SetDefaults) /* ? */
+PORT_DECL(CharScorer, Init) /* ? */
 PORT_DECL(CharScorer, CreateRadarScorer) /* 1 */
 PORT_DECL(CharScorer, CreateSpecialActionScorer) /* 1 */
 PORT_DECL(CharScorer, Create) /* 1 */
+PORT_DECL(RacerScorer, Init) /* ? */
 PORT_DECL(RacerScorer, CreateWeaponScorer) /* 1 */
 PORT_DECL(RacerScorer, CreateCannonScorer) /* 1 */
 PORT_DECL(RacerScorer, CreateTargetScorer) /* 1 */
@@ -1185,30 +1192,33 @@ PORT_DECL(RacerScorer, MissionScorer) /* 1 */
 PORT_DECL(RacerScorer, MissionScorerTeam) /* 1 */
 PORT_DECL(RacerScorer, UpdateMissionScorer) /* 3 */
 #define PORTS_MenuHud \
-	PORT_DEF(Scorer, CreateStatusScorer, Scorer_CreateStatusScorer) \
-	PORT_DEF(Scorer, CreateCopMeterScorer, Scorer_CreateCopMeterScorer) \
-	PORT_DEF(Scorer, CreateMonitorScorer, Scorer_CreateMonitorScorer) \
-	PORT_DEF(Scorer, CreateMsgScorer, Scorer_CreateMsgScorer) \
-	PORT_DEF(Scorer, ShowMissionScorer, Scorer_ShowMissionScorer) \
-	PORT_DEF(Scorer, CreateRadarScorer, Scorer_CreateRadarScorer) \
-	PORT_DEF(Scorer, Blink, Scorer_Blink) \
-	PORT_DEF(Scorer, MissionScorerBar_SetDefaults, Scorer_MissionScorerBar_SetDefaults) \
-	PORT_DEF(CharScorer, CreateRadarScorer, CharScorer_CreateRadarScorer) \
-	PORT_DEF(CharScorer, CreateSpecialActionScorer, CharScorer_CreateSpecialActionScorer) \
-	PORT_DEF(CharScorer, Create, CharScorer_Create) \
-	PORT_DEF(RacerScorer, CreateWeaponScorer, Racer_CreateWeaponScorer) \
-	PORT_DEF(RacerScorer, CreateCannonScorer, Racer_CreateCannonScorer) \
-	PORT_DEF(RacerScorer, CreateTargetScorer, Racer_CreateTargetScorer) \
-	PORT_DEF(RacerScorer, CreateWaypointScorer, Racer_CreateWaypointScorer) \
-	PORT_DEF(RacerScorer, CreateRadarScorer, Racer_CreateRadarScorer) \
-	PORT_DEF(RacerScorer, Create, Racer_Create) \
-	PORT_DEF(RacerScorer, CreateRacer, Racer_CreateRacer) \
-	PORT_DEF(RacerScorer, ShowScorer, Racer_ShowScorer) \
-	PORT_DEF(RacerScorer, MultiplayerUpdatePing, Racer_MultiplayerUpdatePing) \
-	PORT_DEF(RacerScorer, InitMissionScorer, Racer_InitMissionScorer) \
-	PORT_DEF(RacerScorer, MissionScorer, Racer_MissionScorer) \
-	PORT_DEF(RacerScorer, MissionScorerTeam, Racer_MissionScorerTeam) \
-	PORT_DEF(RacerScorer, UpdateMissionScorer, Racer_UpdateMissionScorer)
+	PORT_DEFN(Scorer, CreateStatusScorer, Scorer_CreateStatusScorer) \
+	PORT_DEFN(Scorer, CreateCopMeterScorer, Scorer_CreateCopMeterScorer) \
+	PORT_DEFN(Scorer, CreateMonitorScorer, Scorer_CreateMonitorScorer) \
+	PORT_DEFN(Scorer, CreateMsgScorer, Scorer_CreateMsgScorer) \
+	PORT_DEFNK(Scorer, CreateMissionScorer, Scorer_CreateMissionScorer) \
+	PORT_DEFN(Scorer, ShowMissionScorer, Scorer_ShowMissionScorer) \
+	PORT_DEFN(Scorer, CreateRadarScorer, Scorer_CreateRadarScorer) \
+	PORT_DEFN(Scorer, Blink, Scorer_Blink) \
+	PORT_DEFN(Scorer, MissionScorerBar_SetDefaults, Scorer_MissionScorerBar_SetDefaults) \
+	PORT_DEFN(CharScorer, Init, Mode_PyNone) \
+	PORT_DEFN(CharScorer, CreateRadarScorer, CharScorer_CreateRadarScorer) \
+	PORT_DEFN(CharScorer, CreateSpecialActionScorer, CharScorer_CreateSpecialActionScorer) \
+	PORT_DEFN(CharScorer, Create, CharScorer_Create) \
+	PORT_DEFN(RacerScorer, Init, Mode_PyNone) \
+	PORT_DEFN(RacerScorer, CreateWeaponScorer, Racer_CreateWeaponScorer) \
+	PORT_DEFN(RacerScorer, CreateCannonScorer, Racer_CreateCannonScorer) \
+	PORT_DEFN(RacerScorer, CreateTargetScorer, Racer_CreateTargetScorer) \
+	PORT_DEFN(RacerScorer, CreateWaypointScorer, Racer_CreateWaypointScorer) \
+	PORT_DEFN(RacerScorer, CreateRadarScorer, Racer_CreateRadarScorer) \
+	PORT_DEFN(RacerScorer, Create, Racer_Create) \
+	PORT_DEFN(RacerScorer, CreateRacer, Racer_CreateRacer) \
+	PORT_DEFN(RacerScorer, ShowScorer, Racer_ShowScorer) \
+	PORT_DEFN(RacerScorer, MultiplayerUpdatePing, Racer_MultiplayerUpdatePing) \
+	PORT_DEFN(RacerScorer, InitMissionScorer, Racer_InitMissionScorer) \
+	PORT_DEFN(RacerScorer, MissionScorer, Racer_MissionScorer) \
+	PORT_DEFN(RacerScorer, MissionScorerTeam, Racer_MissionScorerTeam) \
+	PORT_DEFN(RacerScorer, UpdateMissionScorer, Racer_UpdateMissionScorer)
 
 /* MenuMain.c */
 PORT_DECL(Menu, SinglePlayerMenu) /* ? */
@@ -1218,6 +1228,7 @@ PORT_DECL(Menu, AudioVolumeSliderFocus_Add) /* ? */
 PORT_DECL(Menu, AudioVolumeChange) /* ? */
 PORT_DECL(Menu, MainMenu) /* ? */
 PORT_DECL(Menu, CreateMainMenu) /* ? */
+PORT_DECL(Menu, PlaySpacelords) /* ? */
 PORT_DECL(Menu, BackToGame) /* ? */
 PORT_DECL(Menu, DrawScorer) /* ? */
 PORT_DECL(Menu, InitMenuSys) /* ? */
@@ -1264,58 +1275,59 @@ PORT_DECL(Menu, SetCam) /* 2 */
 PORT_DECL(Menu, TVOffEnd) /* ? */
 PORT_DECL(Menu, BlackTV) /* ? */
 #define PORTS_MenuMain \
-	PORT_DEF(Menu, SinglePlayerMenu, Menu_SinglePlayerMenu) \
-	PORT_DEF(Menu, AudioMenu, Menu_AudioMenu) \
-	PORT_DEF(Menu, AudioVolumeSliderFocus_Sub, Menu_AudioVolumeSliderFocus_Sub) \
-	PORT_DEF(Menu, AudioVolumeSliderFocus_Add, Menu_AudioVolumeSliderFocus_Add) \
-	PORT_DEF(Menu, AudioVolumeChange, Menu_AudioVolumeChange) \
-	PORT_DEF(Menu, MainMenu, Menu_MainMenu) \
-	PORT_DEF(Menu, CreateMainMenu, Menu_CreateMainMenu) \
-	PORT_DEF(Menu, BackToGame, Menu_BackToGame) \
-	PORT_DEF(Menu, DrawScorer, Menu_DrawScorer) \
-	PORT_DEF(Menu, InitMenuSys, Menu_InitMenuSys) \
-	PORT_DEF(Menu, MovieScorer, Menu_MovieScorer) \
-	PORT_DEF(Menu, Init, Menu_Init) \
-	PORT_DEF(Menu, DeathInfo, Menu_DeathInfo) \
-	PORT_DEF(Menu, ExitGame, Menu_ExitGame) \
-	PORT_DEF(Menu, ByeMenu, Menu_ByeMenu) \
-	PORT_DEF(Menu, SetSkillMenu, Menu_SetSkillMenu) \
-	PORT_DEF(Menu, SetSkill, Menu_SetSkill) \
-	PORT_DEF(Menu, StartNewGame, Menu_StartNewGame) \
-	PORT_DEF(Menu, NewGame, Menu_NewGame) \
-	PORT_DEF(Menu, AuxAbortGame, Menu_AuxAbortGame) \
-	PORT_DEF(Menu, AbortGame, Menu_AbortGame) \
-	PORT_DEF(Menu, AuxLoadGame, Menu_AuxLoadGame) \
-	PORT_DEF(Menu, LoadGame, Menu_LoadGame) \
-	PORT_DEF(Menu, LoadLastSavedGame, Menu_LoadLastSavedGame) \
-	PORT_DEF(Menu, AuxSaveGame, Menu_AuxSaveGame) \
-	PORT_DEF(Menu, SaveGame, Menu_SaveGame) \
-	PORT_DEF(Menu, LoadGameMenu, Menu_LoadGameMenu) \
-	PORT_DEF(Menu, SaveGameMenu, Menu_SaveGameMenu) \
-	PORT_DEF(Menu, isAutoSave, Menu_isAutoSave) \
-	PORT_DEF(Menu, ComposeSaveGameName, Menu_ComposeSaveGameName) \
-	PORT_DEF(Menu, Initialize, Menu_Initialize) \
-	PORT_DEF(Menu, CreditsMenu, Menu_CreditsMenu) \
-	PORT_DEF(Menu, GameOver, Menu_GameOver) \
-	PORT_DEF(Menu, DebugMenu, Menu_DebugMenu) \
-	PORT_DEF(Menu, DebugSet_Level, Menu_DebugSet_Level) \
-	PORT_DEF(Menu, DebugSet_Console, Menu_DebugSet_Console) \
-	PORT_DEF(Menu, DebugSet_RenderInfo, Menu_DebugSet_RenderInfo) \
-	PORT_DEF(Menu, DebugSet_SoundInfo, Menu_DebugSet_SoundInfo) \
-	PORT_DEF(Menu, DebugSet_WorldInfo, Menu_DebugSet_WorldInfo) \
-	PORT_DEF(Menu, DebugSet_ObjectPool, Menu_DebugSet_ObjectPool) \
-	PORT_DEF(Menu, DebugSet_SceneRenderTarget, Menu_DebugSet_SceneRenderTarget) \
-	PORT_DEF(Menu, DebugSet_StencilShadows, Menu_DebugSet_StencilShadows) \
-	PORT_DEF(Menu, DebugSet_AI, Menu_DebugSet_AI) \
-	PORT_DEF(Menu, DebugSet_MapCollision, Menu_DebugSet_MapCollision) \
-	PORT_DEF(Menu, DebugSet_XboxPyDebug, Menu_DebugSet_XboxPyDebug) \
-	PORT_DEF(Menu, DebugSet_CycleVar, Menu_DebugSet_CycleVar) \
-	PORT_DEF(Menu, DebugSet_ChangeMapMenu, Menu_DebugSet_ChangeMapMenu) \
-	PORT_DEF(Menu, DebugSet_ChangeMapExec, Menu_DebugSet_ChangeMapExec) \
-	PORT_DEF(Menu, TVOff, Menu_TVOff) \
-	PORT_DEF(Menu, SetCam, Menu_SetCam) \
-	PORT_DEF(Menu, TVOffEnd, Menu_TVOffEnd) \
-	PORT_DEF(Menu, BlackTV, Menu_BlackTV)
+	PORT_DEFN(Menu, SinglePlayerMenu, Menu_SinglePlayerMenu) \
+	PORT_DEFN(Menu, AudioMenu, Menu_AudioMenu) \
+	PORT_DEFN(Menu, AudioVolumeSliderFocus_Sub, Menu_AudioVolumeSliderFocus_Sub) \
+	PORT_DEFN(Menu, AudioVolumeSliderFocus_Add, Menu_AudioVolumeSliderFocus_Add) \
+	PORT_DEFN(Menu, AudioVolumeChange, Menu_AudioVolumeChange) \
+	PORT_DEFN(Menu, MainMenu, Menu_MainMenu) \
+	PORT_DEFN(Menu, CreateMainMenu, Menu_CreateMainMenu) \
+	PORT_DEFN(Menu, PlaySpacelords, Mode_PyNone) \
+	PORT_DEFN(Menu, BackToGame, Menu_BackToGame) \
+	PORT_DEFN(Menu, DrawScorer, Menu_DrawScorer) \
+	PORT_DEFN(Menu, InitMenuSys, Menu_InitMenuSys) \
+	PORT_DEFN(Menu, MovieScorer, Menu_MovieScorer) \
+	PORT_DEFN(Menu, Init, Menu_Init) \
+	PORT_DEFN(Menu, DeathInfo, Menu_DeathInfo) \
+	PORT_DEFN(Menu, ExitGame, Menu_ExitGame) \
+	PORT_DEFN(Menu, ByeMenu, Menu_ByeMenu) \
+	PORT_DEFN(Menu, SetSkillMenu, Menu_SetSkillMenu) \
+	PORT_DEFN(Menu, SetSkill, Menu_SetSkill) \
+	PORT_DEFN(Menu, StartNewGame, Menu_StartNewGame) \
+	PORT_DEFN(Menu, NewGame, Menu_NewGame) \
+	PORT_DEFN(Menu, AuxAbortGame, Menu_AuxAbortGame) \
+	PORT_DEFN(Menu, AbortGame, Menu_AbortGame) \
+	PORT_DEFN(Menu, AuxLoadGame, Menu_AuxLoadGame) \
+	PORT_DEFN(Menu, LoadGame, Menu_LoadGame) \
+	PORT_DEFN(Menu, LoadLastSavedGame, Menu_LoadLastSavedGame) \
+	PORT_DEFN(Menu, AuxSaveGame, Menu_AuxSaveGame) \
+	PORT_DEFN(Menu, SaveGame, Menu_SaveGame) \
+	PORT_DEFN(Menu, LoadGameMenu, Menu_LoadGameMenu) \
+	PORT_DEFN(Menu, SaveGameMenu, Menu_SaveGameMenu) \
+	PORT_DEFN(Menu, isAutoSave, Menu_isAutoSave) \
+	PORT_DEFN(Menu, ComposeSaveGameName, Menu_ComposeSaveGameName) \
+	PORT_DEFN(Menu, Initialize, Menu_Initialize) \
+	PORT_DEFN(Menu, CreditsMenu, Menu_CreditsMenu) \
+	PORT_DEFN(Menu, GameOver, Menu_GameOver) \
+	PORT_DEFN(Menu, DebugMenu, Menu_DebugMenu) \
+	PORT_DEFN(Menu, DebugSet_Level, Menu_DebugSet_Level) \
+	PORT_DEFN(Menu, DebugSet_Console, Menu_DebugSet_Console) \
+	PORT_DEFN(Menu, DebugSet_RenderInfo, Menu_DebugSet_RenderInfo) \
+	PORT_DEFN(Menu, DebugSet_SoundInfo, Menu_DebugSet_SoundInfo) \
+	PORT_DEFN(Menu, DebugSet_WorldInfo, Menu_DebugSet_WorldInfo) \
+	PORT_DEFN(Menu, DebugSet_ObjectPool, Menu_DebugSet_ObjectPool) \
+	PORT_DEFN(Menu, DebugSet_SceneRenderTarget, Menu_DebugSet_SceneRenderTarget) \
+	PORT_DEFN(Menu, DebugSet_StencilShadows, Menu_DebugSet_StencilShadows) \
+	PORT_DEFN(Menu, DebugSet_AI, Menu_DebugSet_AI) \
+	PORT_DEFN(Menu, DebugSet_MapCollision, Menu_DebugSet_MapCollision) \
+	PORT_DEFN(Menu, DebugSet_XboxPyDebug, Menu_DebugSet_XboxPyDebug) \
+	PORT_DEFN(Menu, DebugSet_CycleVar, Menu_DebugSet_CycleVar) \
+	PORT_DEFN(Menu, DebugSet_ChangeMapMenu, Menu_DebugSet_ChangeMapMenu) \
+	PORT_DEFN(Menu, DebugSet_ChangeMapExec, Menu_DebugSet_ChangeMapExec) \
+	PORT_DEFN(Menu, TVOff, Menu_TVOff) \
+	PORT_DEFN(Menu, SetCam, Menu_SetCam) \
+	PORT_DEFN(Menu, TVOffEnd, Menu_TVOffEnd) \
+	PORT_DEFN(Menu, BlackTV, Menu_BlackTV)
 
 /* MenuMission.c */
 PORT_DECL(Menu, MenuMissionInfo) /* ? */
@@ -1330,17 +1342,17 @@ PORT_DECL(Menu, MenuObjetive) /* ? */
 PORT_DECL(Menu, CrazyDealObjetive) /* ? */
 PORT_DECL(Menu, MissionNotesText) /* ? */
 #define PORTS_MenuMission \
-	PORT_DEF(Menu, MenuMissionInfo, Menu_MenuMissionInfo) \
-	PORT_DEF(Menu, MenuMissionInfo_Left, Menu_MenuMissionInfo_Left) \
-	PORT_DEF(Menu, MenuMissionInfo_Right, Menu_MenuMissionInfo_Right) \
-	PORT_DEF(Menu, GoPrimaryMission, Menu_GoPrimaryMission) \
-	PORT_DEF(Menu, GoCrazyDeal, Menu_GoCrazyDeal) \
-	PORT_DEF(Menu, GoNotes, Menu_GoNotes) \
-	PORT_DEF(Menu, EnterMissionInfo, Menu_EnterMissionInfo) \
-	PORT_DEF(Menu, ExitMissionInfo, Menu_ExitMissionInfo) \
-	PORT_DEF(Menu, MenuObjetive, Menu_MenuObjetive) \
-	PORT_DEF(Menu, CrazyDealObjetive, Menu_CrazyDealObjetive) \
-	PORT_DEF(Menu, MissionNotesText, Menu_MissionNotesText)
+	PORT_DEFN(Menu, MenuMissionInfo, Menu_MenuMissionInfo) \
+	PORT_DEFN(Menu, MenuMissionInfo_Left, Menu_MenuMissionInfo_Left) \
+	PORT_DEFN(Menu, MenuMissionInfo_Right, Menu_MenuMissionInfo_Right) \
+	PORT_DEFN(Menu, GoPrimaryMission, Menu_GoPrimaryMission) \
+	PORT_DEFN(Menu, GoCrazyDeal, Menu_GoCrazyDeal) \
+	PORT_DEFN(Menu, GoNotes, Menu_GoNotes) \
+	PORT_DEFN(Menu, EnterMissionInfo, Menu_EnterMissionInfo) \
+	PORT_DEFN(Menu, ExitMissionInfo, Menu_ExitMissionInfo) \
+	PORT_DEFN(Menu, MenuObjetive, Menu_MenuObjetive) \
+	PORT_DEFN(Menu, CrazyDealObjetive, Menu_CrazyDealObjetive) \
+	PORT_DEFN(Menu, MissionNotesText, Menu_MissionNotesText)
 
 /* MenuNet.c */
 PORT_DECL(PCMenu, MultiPlayerMenu) /* ? */
@@ -1380,6 +1392,7 @@ PORT_DECL(PCMenu, BrowserSliderLooseFocus) /* ? */
 PORT_DECL(PCMenu, BrowserSliderOnRender) /* ? */
 PORT_DECL(PCMenu, UpdateBrowseSlider) /* ? */
 PORT_DECL(PCMenu, UpdateBrowseMenu) /* ? */
+PORT_DECL(PCMenu, BrowseFormatServerLine) /* ? */
 PORT_DECL(PCMenu, NetCreateGameMenu) /* ? */
 PORT_DECL(PCMenu, MenuInitServer) /* ? */
 PORT_DECL(PCMenu, AdvancedServer) /* ? */
@@ -1413,75 +1426,76 @@ PORT_DECL(PCMenu, FragLimitGainFocus) /* ? */
 PORT_DECL(PCMenu, FragLimitLooseFocus) /* ? */
 PORT_DECL(PCMenu, FragLimitOnRender) /* ? */
 #define PORTS_MenuNet \
-	PORT_DEF(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
-	PORT_DEF(PCMenu, MenuRestartServer, PCMenu_MenuRestartServer) \
-	PORT_DEF(PCMenu, MenuJoinGame, PCMenu_MenuJoinGame) \
-	PORT_DEF(PCMenu, TryJoin, PCMenu_TryJoin) \
-	PORT_DEF(PCMenu, JoinPassword, PCMenu_JoinPassword) \
-	PORT_DEF(PCMenu, AskPassword, PCMenu_AskPassword) \
-	PORT_DEF(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus) \
-	PORT_DEF(PCMenu, AbortJoin, PCMenu_AbortJoin) \
-	PORT_DEF(PCMenu, SpecifyIPMenu, PCMenu_SpecifyIPMenu) \
-	PORT_DEF(PCMenu, AbortMultiplayerGame, PCMenu_AbortMultiplayerGame) \
-	PORT_DEF(PCMenu, NetDefaultContentMenu, PCMenu_NetDefaultContentMenu) \
-	PORT_DEF(PCMenu, NetJoinGameMenu, PCMenu_NetJoinGameMenu) \
-	PORT_DEF(PCMenu, NetJoinInternetMenu, PCMenu_NetJoinInternetMenu) \
-	PORT_DEF(PCMenu, NetJoinLocalMenu, PCMenu_NetJoinLocalMenu) \
-	PORT_DEF(PCMenu, NetJoinIPMenu, PCMenu_NetJoinIPMenu) \
-	PORT_DEF(PCMenu, OnNetBrowse, PCMenu_OnNetBrowse) \
-	PORT_DEF(PCMenu, BrowserSortExecute, PCMenu_BrowserSortExecute) \
-	PORT_DEF(PCMenu, BrowseLocalMenu, PCMenu_BrowseLocalMenu) \
-	PORT_DEF(PCMenu, MasterCommand, PCMenu_MasterCommand) \
-	PORT_DEF(PCMenu, BrowseINetMenu, PCMenu_BrowseINetMenu) \
-	PORT_DEF(PCMenu, InetMasterBrowse, PCMenu_InetMasterBrowse) \
-	PORT_DEF(PCMenu, BrowserMenuBack, PCMenu_BrowserMenuBack) \
-	PORT_DEF(PCMenu, RefreshBrowseMenu, PCMenu_RefreshBrowseMenu) \
-	PORT_DEF(PCMenu, RefreshBrowseMenuButton, PCMenu_RefreshBrowseMenuButton) \
-	PORT_DEF(PCMenu, BrowseLocalMenuPrevious, PCMenu_BrowseLocalMenuPrevious) \
-	PORT_DEF(PCMenu, BrowseLocalMenuNext, PCMenu_BrowseLocalMenuNext) \
-	PORT_DEF(PCMenu, BrowseLocalMenuPgUp, PCMenu_BrowseLocalMenuPgUp) \
-	PORT_DEF(PCMenu, BrowseLocalMenuPgDown, PCMenu_BrowseLocalMenuPgDown) \
-	PORT_DEF(PCMenu, BrowseLocalJoin, PCMenu_BrowseLocalJoin) \
-	PORT_DEF(PCMenu, UnicodeParse, PCMenu_UnicodeParse) \
-	PORT_DEF(PCMenu, CreateBrowseMenu, PCMenu_CreateBrowseMenu) \
-	PORT_DEF(PCMenu, BrowserColumnBack_Click, PCMenu_BrowserColumnBack_Click) \
-	PORT_DEF(PCMenu, BrowserSliderGainFocus, PCMenu_BrowserSliderGainFocus) \
-	PORT_DEF(PCMenu, BrowserSliderLooseFocus, PCMenu_BrowserSliderLooseFocus) \
-	PORT_DEF(PCMenu, BrowserSliderOnRender, PCMenu_BrowserSliderOnRender) \
-	PORT_DEF(PCMenu, UpdateBrowseSlider, PCMenu_UpdateBrowseSlider) \
-	PORT_DEF(PCMenu, UpdateBrowseMenu, PCMenu_UpdateBrowseMenu) \
-	PORT_DEF(PCMenu, NetCreateGameMenu, PCMenu_NetCreateGameMenu) \
-	PORT_DEF(PCMenu, MenuInitServer, PCMenu_MenuInitServer) \
-	PORT_DEF(PCMenu, AdvancedServer, PCMenu_AdvancedServer) \
-	PORT_DEF(PCMenu, BackToCreateServer, PCMenu_BackToCreateServer) \
-	PORT_DEF(PCMenu, SwitchForceVehicle, PCMenu_SwitchForceVehicle) \
-	PORT_DEF(PCMenu, SwitchUsePass, PCMenu_SwitchUsePass) \
-	PORT_DEF(PCMenu, RunDedicatedServer, PCMenu_RunDedicatedServer) \
-	PORT_DEF(PCMenu, SetDataRate, PCMenu_SetDataRate) \
-	PORT_DEF(PCMenu, GetDataRateText, PCMenu_GetDataRateText) \
-	PORT_DEF(PCMenu, ServerTypePrev, PCMenu_ServerTypePrev) \
-	PORT_DEF(PCMenu, ServerTypeNext, PCMenu_ServerTypeNext) \
-	PORT_DEF(PCMenu, UpdateServerType, PCMenu_UpdateServerType) \
-	PORT_DEF(PCMenu, ServerTypeInfo, PCMenu_ServerTypeInfo) \
-	PORT_DEF(PCMenu, MapUp, PCMenu_MapUp) \
-	PORT_DEF(PCMenu, MapDown, PCMenu_MapDown) \
-	PORT_DEF(PCMenu, MapSliderGainFocus, PCMenu_MapSliderGainFocus) \
-	PORT_DEF(PCMenu, MapSliderLooseFocus, PCMenu_MapSliderLooseFocus) \
-	PORT_DEF(PCMenu, MapSliderOnRender, PCMenu_MapSliderOnRender) \
-	PORT_DEF(PCMenu, UpdateMapSlider, PCMenu_UpdateMapSlider) \
-	PORT_DEF(PCMenu, UpdateMapList, PCMenu_UpdateMapList) \
-	PORT_DEF(PCMenu, MapChoose, PCMenu_MapChoose) \
-	PORT_DEF(PCMenu, MapPreviewOn, PCMenu_MapPreviewOn) \
-	PORT_DEF(PCMenu, MapPreviewOff, PCMenu_MapPreviewOff) \
-	PORT_DEF(PCMenu, ServerNameGainFocus, PCMenu_ServerNameGainFocus) \
-	PORT_DEF(PCMenu, ServerNameLooseFocus, PCMenu_EditLooseFocus) \
-	PORT_DEF(PCMenu, ServerNameOnRender, PCMenu_ServerNameOnRender) \
-	PORT_DEF(PCMenu, PlayersNumberGainFocus, PCMenu_PlayersNumberGainFocus) \
-	PORT_DEF(PCMenu, PlayersNumberLooseFocus, PCMenu_EditLooseFocus) \
-	PORT_DEF(PCMenu, PlayersNumberOnRender, PCMenu_PlayersNumberOnRender) \
-	PORT_DEF(PCMenu, FragLimitGainFocus, PCMenu_FragLimitGainFocus) \
-	PORT_DEF(PCMenu, FragLimitLooseFocus, PCMenu_EditLooseFocus) \
-	PORT_DEF(PCMenu, FragLimitOnRender, PCMenu_FragLimitOnRender)
+	PORT_DEFN(PCMenu, MultiPlayerMenu, PCMenu_MultiPlayerMenu) \
+	PORT_DEFN(PCMenu, MenuRestartServer, PCMenu_MenuRestartServer) \
+	PORT_DEFN(PCMenu, MenuJoinGame, PCMenu_MenuJoinGame) \
+	PORT_DEFN(PCMenu, TryJoin, PCMenu_TryJoin) \
+	PORT_DEFN(PCMenu, JoinPassword, PCMenu_JoinPassword) \
+	PORT_DEFN(PCMenu, AskPassword, PCMenu_AskPassword) \
+	PORT_DEFN(PCMenu, ShowConectionStatus, PCMenu_ShowConectionStatus) \
+	PORT_DEFN(PCMenu, AbortJoin, PCMenu_AbortJoin) \
+	PORT_DEFN(PCMenu, SpecifyIPMenu, PCMenu_SpecifyIPMenu) \
+	PORT_DEFN(PCMenu, AbortMultiplayerGame, PCMenu_AbortMultiplayerGame) \
+	PORT_DEFN(PCMenu, NetDefaultContentMenu, PCMenu_NetDefaultContentMenu) \
+	PORT_DEFN(PCMenu, NetJoinGameMenu, PCMenu_NetJoinGameMenu) \
+	PORT_DEFN(PCMenu, NetJoinInternetMenu, PCMenu_NetJoinInternetMenu) \
+	PORT_DEFN(PCMenu, NetJoinLocalMenu, PCMenu_NetJoinLocalMenu) \
+	PORT_DEFN(PCMenu, NetJoinIPMenu, PCMenu_NetJoinIPMenu) \
+	PORT_DEFN(PCMenu, OnNetBrowse, PCMenu_OnNetBrowse) \
+	PORT_DEFN(PCMenu, BrowserSortExecute, PCMenu_BrowserSortExecute) \
+	PORT_DEFN(PCMenu, BrowseLocalMenu, PCMenu_BrowseLocalMenu) \
+	PORT_DEFN(PCMenu, MasterCommand, PCMenu_MasterCommand) \
+	PORT_DEFN(PCMenu, BrowseINetMenu, PCMenu_BrowseINetMenu) \
+	PORT_DEFN(PCMenu, InetMasterBrowse, PCMenu_InetMasterBrowse) \
+	PORT_DEFN(PCMenu, BrowserMenuBack, PCMenu_BrowserMenuBack) \
+	PORT_DEFN(PCMenu, RefreshBrowseMenu, PCMenu_RefreshBrowseMenu) \
+	PORT_DEFN(PCMenu, RefreshBrowseMenuButton, PCMenu_RefreshBrowseMenuButton) \
+	PORT_DEFN(PCMenu, BrowseLocalMenuPrevious, PCMenu_BrowseLocalMenuPrevious) \
+	PORT_DEFN(PCMenu, BrowseLocalMenuNext, PCMenu_BrowseLocalMenuNext) \
+	PORT_DEFN(PCMenu, BrowseLocalMenuPgUp, PCMenu_BrowseLocalMenuPgUp) \
+	PORT_DEFN(PCMenu, BrowseLocalMenuPgDown, PCMenu_BrowseLocalMenuPgDown) \
+	PORT_DEFN(PCMenu, BrowseLocalJoin, PCMenu_BrowseLocalJoin) \
+	PORT_DEFN(PCMenu, UnicodeParse, PCMenu_UnicodeParse) \
+	PORT_DEFN(PCMenu, CreateBrowseMenu, PCMenu_CreateBrowseMenu) \
+	PORT_DEFN(PCMenu, BrowserColumnBack_Click, PCMenu_BrowserColumnBack_Click) \
+	PORT_DEFN(PCMenu, BrowserSliderGainFocus, PCMenu_BrowserSliderGainFocus) \
+	PORT_DEFN(PCMenu, BrowserSliderLooseFocus, PCMenu_BrowserSliderLooseFocus) \
+	PORT_DEFN(PCMenu, BrowserSliderOnRender, PCMenu_BrowserSliderOnRender) \
+	PORT_DEFN(PCMenu, UpdateBrowseSlider, PCMenu_UpdateBrowseSlider) \
+	PORT_DEFN(PCMenu, UpdateBrowseMenu, PCMenu_UpdateBrowseMenu) \
+	PORT_DEFN(PCMenu, BrowseFormatServerLine, PCMenu_BrowseFormatServerLine) \
+	PORT_DEFN(PCMenu, NetCreateGameMenu, PCMenu_NetCreateGameMenu) \
+	PORT_DEFN(PCMenu, MenuInitServer, PCMenu_MenuInitServer) \
+	PORT_DEFN(PCMenu, AdvancedServer, PCMenu_AdvancedServer) \
+	PORT_DEFN(PCMenu, BackToCreateServer, PCMenu_BackToCreateServer) \
+	PORT_DEFN(PCMenu, SwitchForceVehicle, PCMenu_SwitchForceVehicle) \
+	PORT_DEFN(PCMenu, SwitchUsePass, PCMenu_SwitchUsePass) \
+	PORT_DEFN(PCMenu, RunDedicatedServer, PCMenu_RunDedicatedServer) \
+	PORT_DEFN(PCMenu, SetDataRate, PCMenu_SetDataRate) \
+	PORT_DEFN(PCMenu, GetDataRateText, PCMenu_GetDataRateText) \
+	PORT_DEFN(PCMenu, ServerTypePrev, PCMenu_ServerTypePrev) \
+	PORT_DEFN(PCMenu, ServerTypeNext, PCMenu_ServerTypeNext) \
+	PORT_DEFN(PCMenu, UpdateServerType, PCMenu_UpdateServerType) \
+	PORT_DEFN(PCMenu, ServerTypeInfo, PCMenu_ServerTypeInfo) \
+	PORT_DEFN(PCMenu, MapUp, PCMenu_MapUp) \
+	PORT_DEFN(PCMenu, MapDown, PCMenu_MapDown) \
+	PORT_DEFN(PCMenu, MapSliderGainFocus, PCMenu_MapSliderGainFocus) \
+	PORT_DEFN(PCMenu, MapSliderLooseFocus, PCMenu_MapSliderLooseFocus) \
+	PORT_DEFN(PCMenu, MapSliderOnRender, PCMenu_MapSliderOnRender) \
+	PORT_DEFN(PCMenu, UpdateMapSlider, PCMenu_UpdateMapSlider) \
+	PORT_DEFN(PCMenu, UpdateMapList, PCMenu_UpdateMapList) \
+	PORT_DEFN(PCMenu, MapChoose, PCMenu_MapChoose) \
+	PORT_DEFN(PCMenu, MapPreviewOn, PCMenu_MapPreviewOn) \
+	PORT_DEFN(PCMenu, MapPreviewOff, PCMenu_MapPreviewOff) \
+	PORT_DEFN(PCMenu, ServerNameGainFocus, PCMenu_ServerNameGainFocus) \
+	PORT_DEFN(PCMenu, ServerNameLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEFN(PCMenu, ServerNameOnRender, PCMenu_ServerNameOnRender) \
+	PORT_DEFN(PCMenu, PlayersNumberGainFocus, PCMenu_PlayersNumberGainFocus) \
+	PORT_DEFN(PCMenu, PlayersNumberLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEFN(PCMenu, PlayersNumberOnRender, PCMenu_PlayersNumberOnRender) \
+	PORT_DEFN(PCMenu, FragLimitGainFocus, PCMenu_FragLimitGainFocus) \
+	PORT_DEFN(PCMenu, FragLimitLooseFocus, PCMenu_EditLooseFocus) \
+	PORT_DEFN(PCMenu, FragLimitOnRender, PCMenu_FragLimitOnRender)
 
 /* MenuVideo.c */
 PORT_DECL(PCMenu, VideoMenu) /* ? */
@@ -1542,20 +1556,20 @@ PORT_DECL(PCMenu, MouseSensitivityFormula) /* ? */
 PORT_DECL(PCMenu, UpdateVideoOptions) /* 1 */
 PORT_DECL(PCMenu, VideoGetLast) /* 1 */
 #define PORTS_MenuVideoVars \
-	PORT_DEF(PCMenu, Apply_SetActive, PCMenu_Apply_SetActive) \
-	PORT_DEF(PCMenu, Apply_SetFog, PCMenu_Apply_SetFog) \
-	PORT_DEF(PCMenu, Apply_SetTextureFilter, PCMenu_Apply_SetTextureFilter) \
-	PORT_DEF(PCMenu, Apply_SetVideoLock, PCMenu_Apply_SetVideoLock) \
-	PORT_DEF(PCMenu, ChangeBoolean, PCMenu_ChangeBoolean) \
-	PORT_DEFK(PCMenu, DrawLine, PCMenu_DrawLine) \
-	PORT_DEF(PCMenu, FillShadowsDetail, PCMenu_FillShadowsDetail) \
-	PORT_DEF(PCMenu, FillTextureDetail, PCMenu_FillTextureDetail) \
-	PORT_DEF(PCMenu, FillTextureFilter, PCMenu_FillTextureFilter) \
-	PORT_DEF(PCMenu, FillVideoModes, PCMenu_FillVideoModes) \
-	PORT_DEFK(PCMenu, GammaFormula, PCMenu_GammaFormula) \
-	PORT_DEFK(PCMenu, MouseSensitivityFormula, PCMenu_MouseSensitivityFormula) \
-	PORT_DEF(PCMenu, UpdateVideoOptions, PCMenu_UpdateVideoOptions) \
-	PORT_DEF(PCMenu, VideoGetLast, PCMenu_VideoGetLast)
+	PORT_DEFN(PCMenu, Apply_SetActive, PCMenu_Apply_SetActive) \
+	PORT_DEFN(PCMenu, Apply_SetFog, PCMenu_Apply_SetFog) \
+	PORT_DEFN(PCMenu, Apply_SetTextureFilter, PCMenu_Apply_SetTextureFilter) \
+	PORT_DEFN(PCMenu, Apply_SetVideoLock, PCMenu_Apply_SetVideoLock) \
+	PORT_DEFN(PCMenu, ChangeBoolean, PCMenu_ChangeBoolean) \
+	PORT_DEFNK(PCMenu, DrawLine, PCMenu_DrawLine) \
+	PORT_DEFN(PCMenu, FillShadowsDetail, PCMenu_FillShadowsDetail) \
+	PORT_DEFN(PCMenu, FillTextureDetail, PCMenu_FillTextureDetail) \
+	PORT_DEFN(PCMenu, FillTextureFilter, PCMenu_FillTextureFilter) \
+	PORT_DEFN(PCMenu, FillVideoModes, PCMenu_FillVideoModes) \
+	PORT_DEFNK(PCMenu, GammaFormula, PCMenu_GammaFormula) \
+	PORT_DEFNK(PCMenu, MouseSensitivityFormula, PCMenu_MouseSensitivityFormula) \
+	PORT_DEFN(PCMenu, UpdateVideoOptions, PCMenu_UpdateVideoOptions) \
+	PORT_DEFN(PCMenu, VideoGetLast, PCMenu_VideoGetLast)
 
 /* Metro.c */
 PORT_DECL(Metro, CalculateMissionMap) /* 1 */
@@ -2793,26 +2807,26 @@ PORT_DECL(SaveGame, SaveReg) /* 2 */
 PORT_DECL(SaveGame, GetReg) /* 1 */
 PORT_DECL(SaveGame, InitVars) /* ? */
 #define PORTS_SaveGame \
-	PORT_DEF(SaveGame, MMDesc, SaveGame_MMDesc) \
-	PORT_DEF(SaveGame, SMDesc, SaveGame_SMDesc) \
-	PORT_DEF(SaveGame, SaveGame, SaveGame_SaveGame) \
-	PORT_DEFK(SaveGame, InstantSaveGame, SaveGame_InstantSaveGame) \
-	PORT_DEF(SaveGame, LoadGame, SaveGame_LoadGame) \
-	PORT_DEF(SaveGame, NewGame, SaveGame_NewGame) \
-	PORT_DEF(SaveGame, CheckAllBlueprints, SaveGame_CheckAllBlueprints) \
-	PORT_DEFK(SaveGame, MarkWayPoint, SaveGame_MarkWayPoint) \
-	PORT_DEF(SaveGame, QWayPoint, SaveGame_QWayPoint) \
-	PORT_DEF(SaveGame, SaveAlarm, SaveGame_SaveAlarm) \
-	PORT_DEF(SaveGame, LoadAlarm, SaveGame_LoadAlarm) \
-	PORT_DEF(SaveGame, SaveMoney, SaveGame_SaveMoney) \
-	PORT_DEF(SaveGame, LoadMoney, SaveGame_LoadMoney) \
-	PORT_DEFK(SaveGame, QLoad, SaveGame_QLoad) \
-	PORT_DEFK(SaveGame, StartGame, SaveGame_StartGame) \
-	PORT_DEF(SaveGame, Restart, SaveGame_Restart) \
-	PORT_DEF(SaveGame, QSaveReg, SaveGame_QSaveReg) \
-	PORT_DEF(SaveGame, SaveReg, SaveGame_SaveReg) \
-	PORT_DEF(SaveGame, GetReg, SaveGame_GetReg) \
-	PORT_DEF(SaveGame, InitVars, SaveGame_InitVars)
+	PORT_DEFN(SaveGame, MMDesc, SaveGame_MMDesc) \
+	PORT_DEFN(SaveGame, SMDesc, SaveGame_SMDesc) \
+	PORT_DEFN(SaveGame, SaveGame, SaveGame_SaveGame) \
+	PORT_DEFNK(SaveGame, InstantSaveGame, SaveGame_InstantSaveGame) \
+	PORT_DEFN(SaveGame, LoadGame, SaveGame_LoadGame) \
+	PORT_DEFN(SaveGame, NewGame, SaveGame_NewGame) \
+	PORT_DEFN(SaveGame, CheckAllBlueprints, SaveGame_CheckAllBlueprints) \
+	PORT_DEFNK(SaveGame, MarkWayPoint, SaveGame_MarkWayPoint) \
+	PORT_DEFN(SaveGame, QWayPoint, SaveGame_QWayPoint) \
+	PORT_DEFN(SaveGame, SaveAlarm, SaveGame_SaveAlarm) \
+	PORT_DEFN(SaveGame, LoadAlarm, SaveGame_LoadAlarm) \
+	PORT_DEFN(SaveGame, SaveMoney, SaveGame_SaveMoney) \
+	PORT_DEFN(SaveGame, LoadMoney, SaveGame_LoadMoney) \
+	PORT_DEFNK(SaveGame, QLoad, SaveGame_QLoad) \
+	PORT_DEFNK(SaveGame, StartGame, SaveGame_StartGame) \
+	PORT_DEFN(SaveGame, Restart, SaveGame_Restart) \
+	PORT_DEFN(SaveGame, QSaveReg, SaveGame_QSaveReg) \
+	PORT_DEFN(SaveGame, SaveReg, SaveGame_SaveReg) \
+	PORT_DEFN(SaveGame, GetReg, SaveGame_GetReg) \
+	PORT_DEFN(SaveGame, InitVars, SaveGame_InitVars)
 
 /* Scene.c */
 PORT_DECL(Scene, BaseAddActor) /* 3 */
@@ -6687,6 +6701,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFLN(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 3207
+#define PORT_COUNT 3214
 
 #endif

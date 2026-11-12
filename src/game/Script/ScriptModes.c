@@ -3918,6 +3918,13 @@ void Mode_RandF(double a, double b, nativeVal_t *out) {
 	Native_SetFloat(out, Scrap_RandRange(a, b));
 }
 
+byte Mode_PyNone_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	(void)a;
+	(void)n;
+	(void)out;
+	return 1;
+}
+
 PyObject *Mode_PyNone(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
@@ -4010,6 +4017,12 @@ byte Mode_LangMsg(const char *key) {
 	byte ok = Mode_SpeechMsg(&t);
 	Native_Free(&t);
 	return ok;
+}
+
+byte Mode_PyNone2_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	const nativeVal_t *x, *y;
+	(void)out;
+	return Mode_Parse(a, n, "OO", &x, &y);
 }
 
 PyObject *Mode_PyNone2(PyObject *self, PyObject *args) {

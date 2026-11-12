@@ -3,8 +3,8 @@
  * radar), the CharScorer module (the HUD on foot) and the RacerScorer module (the HUD in a ship, the scores of a
  * game, the scorer of race missions). The layouts are data/menus/hud.def and data/menus/racer.def.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters that
- * parse the arguments as before (the same TypeErrors) and take the objects (the scores, the values of the mission
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries,
+ * which parse the arguments as before (the same TypeErrors) and take the objects (the scores, the values of the mission
  * scorer) as native values. The variables of other modules are read where the C read them (Init.isShipEdit, Outdoor,
  * isJunkYard, OffLineGame, Scorer.MarginH, MarginV, SplitScreen, MissionScorerBar_X and _Y, Menu.MissionScorerCall,
  * RacerScorer.SPECTATOR_POINTS and the texts of the scores), the variables of RacerScorer are written at once
@@ -230,7 +230,7 @@ static void Hud_BarDefaults(int id, const char *name, const int *c) {
 	Native_Free(&y);
 }
 
-/* ---- the functions of Scorer (adapters) ---- */
+/* ---- the functions of Scorer (entries) ---- */
 
 /* CreateStatusScorer(id, char=0) */
 static byte Scorer_CreateStatusScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -246,7 +246,6 @@ static byte Scorer_CreateStatusScorer_E(const nativeVal_t *a, int n, nativeVal_t
 	Hud_Run(id, "status", 3, "char", &v[0], "multi", &v[1], "split", &v[2]);
 	return 1;
 }
-MODE_ADAPTER(Scorer, CreateStatusScorer)
 
 MODE_IFN(Scorer_CreateCopMeterScorer, 1, (Hud_Run(id, "copmeter", 0), 1))
 
@@ -260,7 +259,6 @@ static byte Scorer_CreateMonitorScorer_E(const nativeVal_t *a, int n, nativeVal_
 	Hud_RunI(id, "monitor", "char", ch != 0);
 	return 1;
 }
-MODE_ADAPTER(Scorer, CreateMonitorScorer)
 
 /* CreateMsgScorer(id) */
 static void Hud_Msg(int id) {
@@ -272,16 +270,15 @@ static void Hud_Msg(int id) {
 
 MODE_IFN(Scorer_CreateMsgScorer, 1, (Hud_Msg(id), 1))
 
-/* OBJLIB 7: a keyword adapter (the keywords and the errors of PyArg_ParseTupleAndKeywords for "i|i") */
-static PyObject *Scorer_CreateMissionScorer(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "enabled", NULL };
-	int id, enabled = 1;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|i", names, &id, &enabled)) {
-		return NULL;
+/* CreateMissionScorer(id, enabled=1) */
+MODE_KWT(Scorer, CreateMissionScorer, "i|i", "id", "enabled") {
+	int id, enabled;
+	Mode_KwDefI(v, given, 1, 1);
+	if (!Mode_Parse(v, 2, "ii", &id, &enabled)) {
+		return 0;
 	}
 	Hud_RunI(id, "mission", "enabled", enabled != 0);
-	return Mode_Result(1);
+	return 1;
 }
 
 /* ShowMissionScorer(id, status=0, value) */
@@ -296,7 +293,6 @@ static byte Scorer_ShowMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t 
 	return 1;
 }
 
-MODE_ADAPTER(Scorer, ShowMissionScorer)
 
 static byte Scorer_CreateRadarScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -307,7 +303,6 @@ static byte Scorer_CreateRadarScorer_E(const nativeVal_t *a, int n, nativeVal_t 
 	Hud_Run(id, "radar", 0);
 	return 1;
 }
-MODE_ADAPTER(Scorer, CreateRadarScorer)
 
 /* Blink(n, item="Radar") */
 static byte Scorer_Blink_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -321,7 +316,6 @@ static byte Scorer_Blink_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-MODE_ADAPTER(Scorer, Blink)
 
 /* MissionScorerBar_SetDefaults(id, name, (back rgba), (main rgba), (black rgba)) */
 static byte Scorer_MissionScorerBar_SetDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -336,19 +330,18 @@ static byte Scorer_MissionScorerBar_SetDefaults_E(const nativeVal_t *a, int n, n
 	return 1;
 }
 
-MODE_ADAPTER(Scorer, MissionScorerBar_SetDefaults)
 
-PyMethodDef g_ScorerMethods[] = {
-	{ "CreateStatusScorer", Scorer_CreateStatusScorer, 1, NULL },
-	{ "CreateCopMeterScorer", Scorer_CreateCopMeterScorer, 1, NULL },
-	{ "CreateMonitorScorer", Scorer_CreateMonitorScorer, 1, NULL },
-	{ "CreateMsgScorer", Scorer_CreateMsgScorer, 1, NULL },
-	{ "CreateMissionScorer", (PyCFunction)(void (*)(void))Scorer_CreateMissionScorer, 3, NULL },
-	{ "ShowMissionScorer", Scorer_ShowMissionScorer, 1, NULL },
-	{ "CreateRadarScorer", Scorer_CreateRadarScorer, 1, NULL },
-	{ "Blink", Scorer_Blink, 1, NULL },
-	{ "MissionScorerBar_SetDefaults", Scorer_MissionScorerBar_SetDefaults, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScorerMethods[] = {
+	PORT_FN(CreateStatusScorer, Scorer_CreateStatusScorer),
+	PORT_FN(CreateCopMeterScorer, Scorer_CreateCopMeterScorer),
+	PORT_FN(CreateMonitorScorer, Scorer_CreateMonitorScorer),
+	PORT_FN(CreateMsgScorer, Scorer_CreateMsgScorer),
+	PORT_FNK(CreateMissionScorer, Scorer_CreateMissionScorer),
+	PORT_FN(ShowMissionScorer, Scorer_ShowMissionScorer),
+	PORT_FN(CreateRadarScorer, Scorer_CreateRadarScorer),
+	PORT_FN(Blink, Scorer_Blink),
+	PORT_FN(MissionScorerBar_SetDefaults, Scorer_MissionScorerBar_SetDefaults),
+	PORT_FNEND
 };
 
 /* ---- the cores of CharScorer ---- */
@@ -450,7 +443,7 @@ static void Hud_CharCreate(int id) {
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 
-/* ---- the functions of CharScorer (adapters) ---- */
+/* ---- the functions of CharScorer (entries) ---- */
 
 MODE_IFN(CharScorer_CreateRadarScorer, 1,
 	(Hud_RunI(id, "charradar", "outdoor", Mode_ModGetI("Init", "Outdoor", 0) != 0), 1))
@@ -458,12 +451,12 @@ MODE_IFN(CharScorer_CreateSpecialActionScorer, 1, Hud_SpecialAction(id))
 
 MODE_IFN(CharScorer_Create, 1, (Hud_CharCreate(id), 1))
 
-PyMethodDef g_CharScorerMethods[] = {
-	{ "Init", Mode_PyNone, 1, NULL },
-	{ "CreateRadarScorer", CharScorer_CreateRadarScorer, 1, NULL },
-	{ "CreateSpecialActionScorer", CharScorer_CreateSpecialActionScorer, 1, NULL },
-	{ "Create", CharScorer_Create, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CharScorerMethods[] = {
+	PORT_FN(Init, Mode_PyNone),
+	PORT_FN(CreateRadarScorer, CharScorer_CreateRadarScorer),
+	PORT_FN(CreateSpecialActionScorer, CharScorer_CreateSpecialActionScorer),
+	PORT_FN(Create, CharScorer_Create),
+	PORT_FNEND
 };
 
 /* ---- the cores of RacerScorer ---- */
@@ -687,7 +680,7 @@ static void Racer_MissionScorerCore(int id) {
 	Native_Free(&limit);
 }
 
-/* ---- the functions of RacerScorer (adapters) ---- */
+/* ---- the functions of RacerScorer (entries) ---- */
 
 #define RACER_SECTION(func, section) MODE_IFN(func, 1, (Racer_Run(id, section, 0), 1))
 
@@ -729,7 +722,6 @@ static byte Racer_ShowScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-MODE_ADAPTER(Racer, ShowScorer)
 
 static byte Racer_MultiplayerUpdatePing_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -738,7 +730,6 @@ static byte Racer_MultiplayerUpdatePing_E(const nativeVal_t *a, int n, nativeVal
 	Racer_UpdatePing();
 	return 1;
 }
-MODE_ADAPTER(Racer, MultiplayerUpdatePing)
 
 /* InitMissionScorer([you[, bad[, limit]]]) */
 static byte Racer_InitMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -760,7 +751,6 @@ static byte Racer_InitMissionScorer_E(const nativeVal_t *a, int n, nativeVal_t *
 	return 1;
 }
 
-MODE_ADAPTER(Racer, InitMissionScorer)
 
 MODE_IFN(Racer_UpdateMissionScorer, 3, (Racer_UpdateMission(id, &a[1], &a[2]), 1))
 
@@ -768,22 +758,22 @@ MODE_IFN(Racer_MissionScorer, 1, (Racer_MissionScorerCore(id), 1))
 
 RACER_SECTION(Racer_MissionScorerTeam, "missionteam")
 
-PyMethodDef g_RacerScorerMethods[] = {
-	{ "Init", Mode_PyNone, 1, NULL },
-	{ "CreateWeaponScorer", Racer_CreateWeaponScorer, 1, NULL },
-	{ "CreateCannonScorer", Racer_CreateCannonScorer, 1, NULL },
-	{ "CreateTargetScorer", Racer_CreateTargetScorer, 1, NULL },
-	{ "CreateWaypointScorer", Racer_CreateWaypointScorer, 1, NULL },
-	{ "CreateRadarScorer", Racer_CreateRadarScorer, 1, NULL },
-	{ "Create", Racer_Create, 1, NULL },
-	{ "CreateRacer", Racer_CreateRacer, 1, NULL },
-	{ "ShowScorer", Racer_ShowScorer, 1, NULL },
-	{ "MultiplayerUpdatePing", Racer_MultiplayerUpdatePing, 1, NULL },
-	{ "InitMissionScorer", Racer_InitMissionScorer, 1, NULL },
-	{ "MissionScorer", Racer_MissionScorer, 1, NULL },
-	{ "MissionScorerTeam", Racer_MissionScorerTeam, 1, NULL },
-	{ "UpdateMissionScorer", Racer_UpdateMissionScorer, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_RacerScorerMethods[] = {
+	PORT_FN(Init, Mode_PyNone),
+	PORT_FN(CreateWeaponScorer, Racer_CreateWeaponScorer),
+	PORT_FN(CreateCannonScorer, Racer_CreateCannonScorer),
+	PORT_FN(CreateTargetScorer, Racer_CreateTargetScorer),
+	PORT_FN(CreateWaypointScorer, Racer_CreateWaypointScorer),
+	PORT_FN(CreateRadarScorer, Racer_CreateRadarScorer),
+	PORT_FN(Create, Racer_Create),
+	PORT_FN(CreateRacer, Racer_CreateRacer),
+	PORT_FN(ShowScorer, Racer_ShowScorer),
+	PORT_FN(MultiplayerUpdatePing, Racer_MultiplayerUpdatePing),
+	PORT_FN(InitMissionScorer, Racer_InitMissionScorer),
+	PORT_FN(MissionScorer, Racer_MissionScorer),
+	PORT_FN(MissionScorerTeam, Racer_MissionScorerTeam),
+	PORT_FN(UpdateMissionScorer, Racer_UpdateMissionScorer),
+	PORT_FNEND
 };
 
 PORTS(MenuHud)

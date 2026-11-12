@@ -346,21 +346,21 @@ int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyOb
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern const portFn_t g_MenuVideoMethods[];
 /* the C options and controls menus of PCMenu (src/game/Script/MenuControls.c) */
-extern PyMethodDef g_MenuControlsMethods[];
+extern const portFn_t g_MenuControlsMethods[];
 /* the C multiplayer menus of PCMenu (src/game/Script/MenuNet.c) */
-extern PyMethodDef g_MenuNetMethods[];
+extern const portFn_t g_MenuNetMethods[];
 /* the helpers of pcmenu.py on the variables of its video menu (src/game/Script/MenuVideoVars.c) */
-extern PyMethodDef g_MenuVideoVarsMethods[];
+extern const portFn_t g_MenuVideoVarsMethods[];
 /* the C building blocks of the Menu module (src/game/Script/MenuBase.c) */
-extern PyMethodDef g_MenuBaseMethods[];
+extern const portFn_t g_MenuBaseMethods[];
 /* the C main menus of the Menu module (src/game/Script/MenuMain.c) */
-extern PyMethodDef g_MenuMainMethods[];
+extern const portFn_t g_MenuMainMethods[];
 /* the C mission info pages of the Menu module (src/game/Script/MenuMission.c) */
-extern PyMethodDef g_MenuMissionMethods[];
+extern const portFn_t g_MenuMissionMethods[];
 /* the C HUD: the Scorer, CharScorer and RacerScorer modules (src/game/Script/MenuHud.c) */
-extern PyMethodDef g_ScorerMethods[];
-extern PyMethodDef g_CharScorerMethods[];
-extern PyMethodDef g_RacerScorerMethods[];
+extern const portFn_t g_ScorerMethods[];
+extern const portFn_t g_CharScorerMethods[];
+extern const portFn_t g_RacerScorerMethods[];
 /* the C Chars module (src/game/Script/Chars.c) */
 extern PyMethodDef g_CharsMethods[];
 /* the C MakeChar module (src/game/Script/MakeChar.c) */
@@ -370,7 +370,7 @@ extern PyMethodDef g_CharActMethods[];
 /* the C Speech module (src/game/Script/Speech.c) */
 extern PyMethodDef g_SpeechMethods[];
 /* the C SaveGame module (src/game/Script/SaveGame.c) */
-extern PyMethodDef g_SaveGameMethods[];
+extern const portFn_t g_SaveGameMethods[];
 /* the C Fx module (src/game/Script/Fx.c, data/fx/fx.def) */
 extern PyMethodDef g_FxMethods[];
 /* the C Items module (src/game/Script/Items.c) */
@@ -477,7 +477,7 @@ extern PyMethodDef g_InMapMethods[];
 extern PyMethodDef g_BureaucracyMethods[];
 /* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
 extern PyMethodDef g_ChatMethods[];
-extern PyMethodDef g_CreditsTextMethods[];
+extern const portFn_t g_CreditsTextMethods[];
 /* the base of the online game modes (src/game/Script/Ffa.c) */
 extern PyMethodDef g_FfaMethods[];
 
