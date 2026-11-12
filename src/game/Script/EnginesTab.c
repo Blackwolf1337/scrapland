@@ -466,7 +466,7 @@ static byte ET_HighlightCurrentMountedEngine_E(const nativeVal_t *a, int n, nati
 	int id;
 	(void)out;
 	Native_SetInt(&one, 1);
-	return Mode_Parse(a, n, "i|O", &id, &def) && ET_Highlight(id, def ? def : &one);
+	return Mode_KwArity(a, n, "i|O") && Mode_Parse(a, n, "i|O", &id, &def) && ET_Highlight(id, def ? def : &one);
 }
 
 static char *ET_HighlightCurrentMountedEngine_N[] = { "id", "setDefault", NULL };
@@ -1093,7 +1093,8 @@ static byte ET_SelectEngineGroupPy_E(const nativeVal_t *a, int n, nativeVal_t *o
 	int id;
 	(void)out;
 	Native_SetInt(&one, 1);
-	return Mode_Parse(a, n, "iO|O", &id, &control, &def) && ET_SelectEngineGroup(id, control, def ? def : &one);
+	return Mode_KwArity(a, n, "iO|O") && Mode_Parse(a, n, "iO|O", &id, &control, &def) &&
+		ET_SelectEngineGroup(id, control, def ? def : &one);
 }
 
 static char *ET_SelectEngineGroupPy_N[] = { "id", "control", "setDefault", NULL };

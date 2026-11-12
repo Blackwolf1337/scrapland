@@ -196,7 +196,7 @@ static byte HT_TestArrows_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	(void)out;
 	Native_SetInt(&def, 1);
-	return Mode_Parse(a, n, "i|O", &id, &change) && HT_Arrows(id, change ? change : &def);
+	return Mode_KwArity(a, n, "i|O") && Mode_Parse(a, n, "i|O", &id, &change) && HT_Arrows(id, change ? change : &def);
 }
 
 static char *HT_TestArrows_N[] = { "id", "changeDefault", NULL };

@@ -2062,7 +2062,7 @@ static byte SE_ChangeTab_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t none = { 0 };
 	int id;
 	(void)out;
-	return Mode_Parse(a, n, "iO|O", &id, &control, &direction) &&
+	return Mode_KwArity(a, n, "iO|O") && Mode_Parse(a, n, "iO|O", &id, &control, &direction) &&
 		Se_ChangeTab(id, control, direction ? direction : &none);
 }
 

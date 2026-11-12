@@ -981,6 +981,9 @@ void Mode_KwSkip(nativeVal_t *v);
  * value a[i] (a view, not freed) with given[i] 1, or None with given[i] 0 for one not given (i >= n or Mode_KwSkip);
  * the arity error of PyArg_ParseTupleAndKeywords for a count beyond the slots or a required one not given */
 byte Mode_KwSlots(const nativeVal_t *a, int n, const char *fmt, nativeVal_t *v, byte *given);
+/* only the arity errors of Mode_KwSlots: a keyword entry whose optional slots end the format (no gap after the n
+ * arguments) parses a and n with Mode_Parse after it */
+byte Mode_KwArity(const nativeVal_t *a, int n, const char *fmt);
 /* slot i of Mode_KwSlots a default when it is not given: a text (shorter than NATIVE_TEXT), an int, a float */
 void Mode_KwDefS(nativeVal_t *v, const byte *given, int i, const char *s);
 void Mode_KwDefI(nativeVal_t *v, const byte *given, int i, long l);

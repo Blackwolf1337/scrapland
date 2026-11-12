@@ -4509,6 +4509,15 @@ byte Mode_KwSlots(const nativeVal_t *a, int n, const char *fmt, nativeVal_t *v, 
 	return Mode_Arity(req, min, max);
 }
 
+byte Mode_KwArity(const nativeVal_t *a, int n, const char *fmt) {
+	nativeVal_t v[PORT_ARGS];
+	byte given[PORT_ARGS];
+	int min, max;
+	Mode_FmtCount(fmt, &min, &max);
+	CHECK(max <= PORT_ARGS);
+	return Mode_KwSlots(a, n, fmt, v, given);
+}
+
 void Mode_KwDefS(nativeVal_t *v, const byte *given, int i, const char *s) {
 	if (!given[i]) {
 		Native_SetStr(&v[i], s);

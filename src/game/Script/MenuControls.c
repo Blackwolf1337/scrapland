@@ -745,7 +745,7 @@ static byte PCMenu_ShowPadConfig_E(const nativeVal_t *a, int n, nativeVal_t *out
 	double yoff = 0;
 	int id;
 	(void)out;
-	return Mode_Parse(a, n, "iO|d", &id, &set, &yoff) && Pad_ShowConfig(id, set, yoff);
+	return Mode_KwArity(a, n, "iO|d") && Mode_Parse(a, n, "iO|d", &id, &set, &yoff) && Pad_ShowConfig(id, set, yoff);
 }
 
 /*
