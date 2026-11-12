@@ -5,8 +5,8 @@
  * character module. The module code of a script (file names and other values) stays in the script.
  *
  * Native C (docs/objlib-plan.md, stage 2): the steps and the missile events of Gear read and set the current action
- * in C on C values. The $names of the files (OBJLIB 6), Init.Path and the table of Speech the speech step fills
- * (OBJLIB 5, 6: Speech calls its functions through their entries) stay Python.
+ * in C on C values. Init.Path and the table of Speech the speech step fills (OBJLIB 5, 6: Speech
+ * calls its functions through their entries) stay Python.
  */
 #include <string.h>
 
@@ -251,7 +251,7 @@ static const scriptStep_t char_steps[] = {
 #define CHAR_OWN 2
 
 /* the Init of a character: its file with the $names xbox and level, and before them the more pairs of a name and a
- * const nativeVal_t * (up to MODE_DEFVARS - CHAR_OWN; Mode_DefRunV, OBJLIB 6: the runner takes them as a dict) */
+ * const nativeVal_t * (up to MODE_DEFVARS - CHAR_OWN; Mode_DefRunV) */
 static void Char_InitVars(const char *name, const char *file, const char *builtin, int more, ...) {
 	char level[0x100];
 	const char *names[MODE_DEFVARS];

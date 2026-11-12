@@ -3664,28 +3664,22 @@ static void Mode_DefPairs(int n, va_list va, const char **names, const nativeVal
 	}
 }
 
-/* the dict of the $names (OBJLIB 6): a new reference, NULL with the error */
-static PyObject *Mode_DefDict(const char *const *names, const nativeVal_t *const *vals, int n) {
-	nativeVal_t d, k, v;
-	Native_SetEmpty(&d, NV_DICT);
+/* the dict object of the $names into *out (None for none) */
+static void Mode_DefDict(nativeVal_t *out, const char *const *names, const nativeVal_t *const *vals, int n) {
+	Native_SetNone(out);
 	for (int i = 0; i < n; i++) {
-		Native_SetStr(&k, names[i]);
-		Native_Copy(&v, vals[i]);
-		Native_DictSet(&d, &k, &v);
+		Script_DefVar(out, names[i], vals[i]);
 	}
-	PyObject *vars = Native_ToPy(&d);
-	Native_Free(&d);
-	return vars;
 }
 
-PyObject *Mode_DefVars(int n, ...) {
+void Mode_DefVars(nativeVal_t *out, int n, ...) {
 	const char *names[MODE_DEFVARS];
 	const nativeVal_t *vals[MODE_DEFVARS];
 	va_list va;
 	va_start(va, n);
 	Mode_DefPairs(n, va, names, vals);
 	va_end(va);
-	return Mode_DefDict(names, vals, n);
+	Mode_DefDict(out, names, vals, n);
 }
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
@@ -5521,14 +5515,11 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out) {
 
 byte Mode_DefRunV(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
 	byte stop, const char *const *names, const nativeVal_t *const *vals, int n) {
-	/* OBJLIB 6: the $names as the dict the runner takes (NULL for none); a dict that could not be made runs nothing */
-	PyObject *vars = n ? Mode_DefDict(names, vals, n) : NULL;
-	if (n && !vars) {
-		return 0;
-	}
-	byte ok = stop ? Script_RunFileTry(id, file, section, builtin, steps, vars) :
-		Script_RunFile(id, file, section, builtin, steps, vars);
-	Py_XDECREF(vars);
+	nativeVal_t vars;
+	Mode_DefDict(&vars, names, vals, n);
+	byte ok = stop ? Script_RunFileTry(id, file, section, builtin, steps, &vars) :
+		Script_RunFile(id, file, section, builtin, steps, &vars);
+	Native_Free(&vars);
 	return ok;
 }
 
@@ -5582,7 +5573,7 @@ long Mode_AsLong(const nativeVal_t *v) {
 }
 
 void Mode_SetValue(const char *name, const nativeVal_t *v) {
-	Script_SetValue(name, Native_ToPy(v));
+	Script_SetValue(name, v);
 }
 
 byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn) {

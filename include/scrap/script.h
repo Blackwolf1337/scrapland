@@ -134,8 +134,7 @@ void Script_LevelModuleExtras(const char *name, PyObject *module, const struct n
 struct nativeVal_s;
 byte Level_FixedInitN(const struct nativeVal_s *e);
 /* a step of a .def file that C does ("run <name> [arg ...]"): args the n positional values of the line as the runner
- * has them (borrowed; a list or dict of a $name is the object itself as an NV_OBJ). A step that fails leaves its
- * error set */
+ * has them (borrowed; a list or dict of a $name is the object itself). A step that fails leaves its error set */
 typedef struct scriptStep_s {
 	const char *name;
 	void (*fn)(int id, const struct nativeVal_s *args, int n);
@@ -149,10 +148,14 @@ byte Script_StepValues(const struct nativeVal_s *args, int n, int type, byte pas
 /*
  * runs the .def file name (scrapc/<name> of the packs, else builtin) for the scorer of player id: the lines before
  * the first section and those of section (NULL for a file without sections). steps are the C steps it may run (NULL
- * ends the table), vars a dict of the $names it may use (or NULL). 0 when it could not be read.
+ * ends the table), vars the dict object of the $names it may use (Script_DefVar; NULL or None: none; the lets of the
+ * file go into it). 0 when it could not be read.
  */
 byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
-	PyObject *vars);
+	const struct nativeVal_s *vars);
+/* the $name name = v in the dict object *vars of a .def file (*vars None: a new one; v copied as a call through Python
+ * hands it on, NObj_CallArg) */
+void Script_DefVar(struct nativeVal_s *vars, const char *name, const struct nativeVal_s *v);
 
 /*
  * Script_RunFile for a port that must stop where the script stops: a call line whose function raises, an entity line
@@ -160,7 +163,7 @@ byte Script_RunFile(int id, const char *name, const char *section, const char *b
  * file; 0 with the error left set for the caller (not printed)
  */
 byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
-	PyObject *vars);
+	const struct nativeVal_s *vars);
 
 /* OBJLIB 7: the calls of the call lines of .def files since the start (or the last reset) by path, for the test
  * channel's "native ports": through the registry (the port's or the engine's entry while the module attribute is its
@@ -174,8 +177,8 @@ void Script_StepPrint(int id, const struct nativeVal_s *args, int n);
 
 /* the last item of the .def file that runs ("" when none runs), for its steps */
 const char *Script_CurrentItem(void);
-/* a $name of the .def file that runs, for its steps (value given away) */
-void Script_SetValue(const char *name, PyObject *value);
+/* a $name of the .def file that runs, for its steps (copied as Script_DefVar copies it) */
+void Script_SetValue(const char *name, const struct nativeVal_s *value);
 
 /* the scorer items of player id */
 void Script_Add(int id, const char *item, const char *type);

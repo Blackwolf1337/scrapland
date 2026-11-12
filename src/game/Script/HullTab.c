@@ -12,7 +12,7 @@
  * while the attribute holds the port's function, else by name), the module's own functions through its globals as
  * the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu come from a from import
  * (OBJLIB 6) and are called through their entries while they are Menu's own (held as values, OBJLIB 7:
- * Mode_LinkCallV); the .def sections get their $names as values (Mode_DefRun; OBJLIB 6: a dict inside the runner).
+ * Mode_LinkCallV); the .def sections get their $names as values (Mode_DefRun).
  */
 #include <limits.h>
 
@@ -53,8 +53,7 @@ static const scriptStep_t hulltab_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of hulltab.def with its $names, n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner takes
- * them as a dict): 0 with the error of the file */
+/* a section of hulltab.def with its $names, n pairs of a name and a value (Mode_DefRun): 0 with the error of the file */
 #define HT_Run(id, section, n, ...) \
 	Mode_DefRun(id, HULLTAB_FILE, section, hulltab_def, hulltab_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 

@@ -15,7 +15,7 @@
  * the .mod defines, no port function), the scheduler takes the entry of the global InitMercs (Port_Scheduled), SAI and
  * SWeap go through their refs (stage 7) except SAI.EnableAIVehicle (by name, OBJLIB 7: see below), Scrap.GetEntity,
  * CreateEntity, ConsoleError and AddScheduledFunc go through their seams. The .def runner takes its $names
- * as a dict (OBJLIB 6).
+ * as native values.
  */
 #include <string.h>
 

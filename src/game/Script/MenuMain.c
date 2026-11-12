@@ -16,8 +16,7 @@
  * time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit,
  * GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams; the death camera
  * schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list of saved
- * games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun; OBJLIB 6:
- * a dict inside the runner). Every function of the table has a native entry (stage 6, batch 6h: Mode_IdControl,
+ * games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun). Every function of the table has a native entry (stage 6, batch 6h: Mode_IdControl,
  * Mode_Parse, MODE_FNANY).
  */
 #include <stdlib.h>
@@ -75,8 +74,7 @@ static const scriptStep_t main_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of main.def with its $names: n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner takes them
- * as a dict) */
+/* a section of main.def with its $names: n pairs of a name and a value (Mode_DefRun) */
 #define Main_Run(id, section, n, ...) \
 	Mode_DefRun(id, MAIN_FILE, section, main_def, main_steps, 0, n __VA_OPT__(, ) __VA_ARGS__)
 

@@ -16,8 +16,7 @@
  * functions go through their seams; string.upper is C. The calls of the module functions through the
  * globals, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound go through their refs (PORT_OWN,
  * PORT_CALL: the seam, OBJLIB 5), and so do SAct.GetAction of a value that is no text, SSound.CreatePS and SetPS
- * (stage 7). The .def runner takes its $names as a dict and gives its steps
- * Python arguments (OBJLIB 6).
+ * (stage 7). The .def runner takes its $names as a dict object of native values.
  */
 #include <string.h>
 
@@ -46,8 +45,7 @@ static const scriptStep_t gsound_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of one of the files with its $names, n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner
- * takes them as a dict): an error in the file (a call that raises, an entity that refuses a variable) stops it like
+/* a section of one of the files with its $names, n pairs of a name and a value (Mode_DefRun): an error in the file (a call that raises, an entity that refuses a variable) stops it like
  * the script */
 #define GS_RUN(file, builtin, section, n, ...) \
 	Mode_DefRun(0, file, section, builtin, gsound_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)

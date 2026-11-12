@@ -11,7 +11,7 @@
  * refs (PORT_CALL: directly while the attribute holds the port's function, else by name), and so are Scrap.SaveConfig
  * and Scrap.Exit (stage 7), their failures printed as before; the connection status schedules itself (a function
  * object of its own, OBJLIB 7; the scheduler takes its entry, Port_Scheduled). The $names of the sections are made on
- * native values (Mode_DefRunVa, stage 6 batches 6f and 6h); the .def runner takes them as a dict (OBJLIB 6) and the
+ * native values (Mode_DefRunVa, stage 6 batches 6f and 6h); the .def runner and the
  * steps their arguments as native values. Every function of the table but BrowseFormatServerLine has a native entry
  * (batch 6h).
  */
@@ -747,8 +747,7 @@ static const scriptStep_t net_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of net.def with its $names: n pairs of a name and a const nativeVal_t * (Mode_DefRunVa; OBJLIB 6: the
- * runner takes them as a dict) */
+/* a section of net.def with its $names: n pairs of a name and a const nativeVal_t * (Mode_DefRunVa) */
 static void Net_RunMenu(int id, const char *section, int n, ...) {
 	va_list va;
 	va_start(va, n);

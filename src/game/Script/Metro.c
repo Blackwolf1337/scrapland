@@ -333,15 +333,15 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 	}
 	byte ok = Metro_Read(MV_MAP);
 	int mission = ok && Native_Equal(&up, &metro.missionMap);
-	/* OBJLIB 6: the .def runner takes its $names as a dict (one dict for the sections of a station) */
-	nativeVal_t mv;
-	PyObject *vars = ok ? Mode_DefVars(5, "x", x, "y", y, "name", name, "sprite", sprite, "mission", Mode_IntVal(&mv, mission)) : NULL;
-	if (!vars) {
+	/* one dict of $names for the sections of a station */
+	nativeVal_t mv, vars;
+	if (!ok) {
 		Native_Free(&up);
 		return 0;
 	}
+	Mode_DefVars(&vars, 5, "x", x, "y", y, "name", name, "sprite", sprite, "mission", Mode_IntVal(&mv, mission));
 	if (mission) {
-		Script_RunFile(0, METRO_FILE, "mission", metro_def, NULL, vars);
+		Script_RunFile(0, METRO_FILE, "mission", metro_def, NULL, &vars);
 	}
 	nativeVal_t p;
 	ok = Mode_ModGet("Init", "Path", &p);
@@ -353,7 +353,7 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 	Native_Free(&up);
 	Native_Free(&here);
 	if (ok) {
-		Script_RunFile(0, METRO_FILE, "station", metro_def, NULL, vars);
+		Script_RunFile(0, METRO_FILE, "station", metro_def, NULL, &vars);
 	}
 	const char *section = "here";
 	if (ok && !usrhere) {
@@ -371,12 +371,12 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 		section = cantgo ? "cantgo" : "go";
 	}
 	if (ok) {
-		Script_RunFile(0, METRO_FILE, section, metro_def, NULL, vars);
+		Script_RunFile(0, METRO_FILE, section, metro_def, NULL, &vars);
 		if (usrhere) {
-			Script_RunFile(0, METRO_FILE, "usrhere", metro_def, NULL, vars);
+			Script_RunFile(0, METRO_FILE, "usrhere", metro_def, NULL, &vars);
 		}
 	}
-	Py_DECREF(vars);
+	Native_Free(&vars);
 	return ok;
 }
 
