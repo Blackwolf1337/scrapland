@@ -831,8 +831,8 @@ byte LvN_Com(const char *key, const char *who, const char *module, const char *f
 	}
 	/* the function read before Speech.AddRemoteCom (the script after it: the same unless both are gone) */
 	nativeVal_t then;
-	byte ok = Mode_RefG(module, func, &then) && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssOv", key, who, Native_PyOf(&then), params) :
-		PORT_CALL(Speech, AddRemoteCom, NULL, "ssO", key, who, Native_PyOf(&then)));
+	byte ok = Mode_RefG(module, func, &then) && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssvv", key, who, &then, params) :
+		PORT_CALL(Speech, AddRemoteCom, NULL, "ssv", key, who, &then));
 	Native_Free(&then);
 	return ok;
 }
@@ -864,7 +864,7 @@ byte LvN_Callback(const char *name, const char *module, const char *func) {
 	/* OBJLIB 5 and 7: the character object of CharsNPC, its list and the function, by reference */
 	nativeVal_t key, ch = { 0 }, cb = { 0 }, append = { 0 }, fn = { 0 };
 	LvN_Str(&key, name);
-	byte ok = Mode_RefTake(Mode_CharRes(&key), &ch);
+	byte ok = Mode_CharRes(&key, &ch);
 	Native_Free(&key);
 	ok = ok && Mode_RefAttr(&ch, "CallbackFunc", &cb) && Mode_RefAttr(&cb, "append", &append) && Mode_RefG(module, func, &fn) &&
 		Mode_RefApply(&append, &fn, 1, NULL);

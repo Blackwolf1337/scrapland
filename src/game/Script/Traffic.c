@@ -543,7 +543,7 @@ static byte InPolice_IncludeN(const nativeVal_t *name) {
 	if (!Mode_Import("CharsNPC")) {
 		return 0;
 	}
-	/* OBJLIB 5 and 7: CharRes holds the character objects of CharsNPC (an instance is held as NV_OBJ) */
+	/* CharRes holds the character objects of CharsNPC (native instances, held by reference) */
 	nativeVal_t ctr;
 	byte ok = Mode_ModAt("CharsNPC", "CharRes", name, &ctr) && Mode_VGet(&ctr, "ActCtrl", &act);
 	Native_Free(&ctr);

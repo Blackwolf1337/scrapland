@@ -240,7 +240,8 @@ static byte Gk_GateKeeperSpeech(const nativeVal_t *usrName, const nativeVal_t *c
 }
 
 /* DoorFoe(EntityName, FoeType): the characters the gatekeeper lets pass. FoeType is stored as the value it is: an
- * NV_OBJ is the caller's object (the letter P, the adapter), a native value becomes a new object */
+ * object (an NV_REF, or an NV_OBJ of the letter P and the adapter) is the caller's object, a value by value becomes a
+ * new object */
 static byte GateKeeper_DoorFoe_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t zero;
 	(void)out;

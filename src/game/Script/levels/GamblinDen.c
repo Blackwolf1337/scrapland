@@ -56,7 +56,7 @@ static byte Gd_MusicVolume(double volume) {
 /* CharsNPC.CharRes[name].var into *out (any value: an object as NV_OBJ), and its set */
 static byte Gd_ResGet(const nativeVal_t *name, const char *var, nativeVal_t *out) {
 	nativeVal_t ch, v = { 0 };
-	byte ok = Mode_RefTake(Mode_CharRes(name), &ch) && Mode_RefGetAttr(&ch, var, &v);
+	byte ok = Mode_CharRes(name, &ch) && Mode_RefGetAttr(&ch, var, &v);
 	if (ok) {
 		Mode_RefPlain(&v, out);
 	}
@@ -67,7 +67,7 @@ static byte Gd_ResGet(const nativeVal_t *name, const char *var, nativeVal_t *out
 
 static byte Gd_ResSet(const nativeVal_t *name, const char *var, const nativeVal_t *v) {
 	nativeVal_t ch;
-	byte ok = Mode_RefTake(Mode_CharRes(name), &ch) && Mode_VSet(&ch, var, v);
+	byte ok = Mode_CharRes(name, &ch) && Mode_VSet(&ch, var, v);
 	Native_Free(&ch);
 	return ok;
 }
@@ -96,7 +96,7 @@ static byte Gd_Callback(const char *name, const nativeVal_t *fn) {
 	/* OBJLIB 5 and 7: the character object of CharsNPC and its list, by reference */
 	nativeVal_t k = { 0 }, ch, cb = { 0 };
 	LvN_Str(&k, name);
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_RefAttr(&ch, "CallbackFunc", &cb) &&
+	byte ok = Mode_CharRes(&k, &ch) && Mode_RefAttr(&ch, "CallbackFunc", &cb) &&
 		Mode_RefCall(&cb, "append", fn, 1, NULL);
 	Native_Free(&cb);
 	Native_Free(&ch);
@@ -460,7 +460,7 @@ static byte Den_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
 		Mode_DummyStart(mercs[i][1], 0);
 		LvN_Str(&name, mercs[i][0]);
 		nativeVal_t res;
-		byte ok = Mode_RefTake(Mode_CharRes(&name), &res);
+		byte ok = Mode_CharRes(&name, &res);
 		Native_Free(&name);
 		if (!ok) {
 			return 0;

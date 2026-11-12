@@ -1501,7 +1501,7 @@ static byte GetAuthorization_FreeHuman(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_DoorFoe("GateKeeper_08", "DtritusGroupGateKeeper") || !Mode_RefG(GA, "StartScene", &start)) {
 		return 0;
 	}
-	byte ok = PORT_CALL(GateKeeper, SetDoor, NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", Native_PyOf(&start));
+	byte ok = PORT_CALL(GateKeeper, SetDoor, NULL, "ssv", "GateKeeper_08", "DM_Door_PoliceSegurity_00", &start);
 	Native_Free(&start);
 	if (!ok || !PO_ENTS("GateKeeper_08", "UseFunc", "Mission_GetAuthorization.TalkPepe") || !Mode_Target("GateKeeper_08")) {
 		return 0;
@@ -1920,7 +1920,7 @@ static byte JailBreak_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 static byte Jb_ResSet(const char *key, const char *var, const nativeVal_t *v) {
 	nativeVal_t k, ch;
 	LvN_Str(&k, key);
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_VSet(&ch, var, v);
+	byte ok = Mode_CharRes(&k, &ch) && Mode_VSet(&ch, var, v);
 	Native_Free(&k);
 	Native_Free(&ch);
 	return ok;
@@ -1944,7 +1944,7 @@ static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&act);
 		ok = Native_SeqItem(&keys, i, &k);
 		nativeVal_t ch = { 0 };
-		int other = ok && Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_VGet(&ch, "ActCtrl", &act) ? !LvN_EqS(&act, "GateKeeper") : -1;
+		int other = ok && Mode_CharRes(&k, &ch) && Mode_VGet(&ch, "ActCtrl", &act) ? !LvN_EqS(&act, "GateKeeper") : -1;
 		ok = other >= 0 && (!other || Mode_ModDictDel("CharsNPC", "CharRes", &k));
 		Native_Free(&ch);
 		Native_Free(&k);
@@ -2062,7 +2062,7 @@ static byte JailBreak_InitPuffReborn(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	LvN_Str(&k, "Desktop_JailBreak");
 	nativeVal_t cr;
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &cr);
+	byte ok = Mode_CharRes(&k, &cr);
 	Native_Free(&k);
 	if (!ok) {
 		return 0;

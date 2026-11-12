@@ -396,8 +396,9 @@ void Mode_Ints3(nativeVal_t *out, long a, long b, long c);
 void Mode_Texts(nativeVal_t *out, const char *const *texts, int n);
 /* Scrap.GetLangStr(key) % SInput.GetDefinedEntry(0, "Walk", action, "Mouse") (None for a key without an entry) */
 byte Mode_KeyText(const char *key, const char *action, nativeVal_t *out);
-/* CharsNPC.CharRes[key] (OBJLIB 5: the character objects of CharsNPC): a new reference, NULL with the error */
-PyObject *Mode_CharRes(const nativeVal_t *key);
+/* CharsNPC.CharRes[key] (the character objects of CharsNPC, instances of its class) by reference into *out: 1, 0 with
+ * the error and *out None */
+byte Mode_CharRes(const nativeVal_t *key, nativeVal_t *out);
 /* Scrap.SetSaveVar(name, value) of each pair of texts (a NULL name ends them) */
 void Mode_Saves(const char *const *pairs);
 /* int(Scrap.GetSaveVar(name)) into out (its ValueError) */
@@ -1135,17 +1136,19 @@ byte Mode_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out);
 byte Mode_Sliceable(const nativeVal_t *v);
 
 /*
- * Values held by reference (OBJLIB 5 and 7): a list or dict that several holders share and change in place (a module
- * variable other modules and the cases hold, the item of such a list), a class instance, a function. Mode_RefG and
- * Mode_RefMod give the object itself as an NV_OBJ, also when it is a list, tuple or dict of plain values (Mode_G and
- * Mode_ModGet give a copy of those); the Mode_Ref functions work on the object in place, with the errors of the
- * Python operation. A value that is no NV_OBJ is taken as the Python value it makes (a new object).
+ * Values held by reference: a list or dict that several holders share and change in place (a module variable other
+ * modules and the cases hold, the item of such a list), a class instance, a function, a module. Mode_RefG and
+ * Mode_RefMod give the variable's value as the registry holds it (an object as its NV_REF, a list or dict of plain
+ * values too; Mode_G and Mode_ModGet give a copy of those); the Mode_Ref functions work on the object in place, with
+ * the errors of the Python operation: a native object (NObj_Native) natively, a view or another Python value
+ * (OBJLIB 7) the Python way, a value by value as the Python value it makes (a new object).
  */
 /* the object o as a reference into out (o released): 0 for NULL, with its error. MODE_REFASK: the result of a port
  * function by reference (PORT_ASK: what a function put in its place returns keeps its identity) */
 byte Mode_RefTake(PyObject *o, nativeVal_t *out);
 #define MODE_REFASK(module, name, out, ...) Mode_RefTake(PORT_ASK(module, name, __VA_ARGS__), out)
-/* the global name of module (its NameError) and module.var of another module (its AttributeError) by reference */
+/* the global name of module (its NameError) and module.var of another module (its AttributeError) by reference (the
+ * registry's value: ModVar_GlobalVal, ModVar_ModAttrVal) */
 byte Mode_RefG(const char *module, const char *name, nativeVal_t *out);
 byte Mode_RefMod(const char *module, const char *var, nativeVal_t *out);
 /* the value a reference holds as the functions read values (Native_Arg: a copy of a list, tuple or dict of plain
@@ -1218,9 +1221,9 @@ byte Mode_RefIsNone(const nativeVal_t *o);
 PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* MODE_KWT with that adapter */
 #define MODE_REFKW(pre, name, fmt, ...) MODE_KWBY(Mode_RefKwAdapter, pre##_##name, fmt, __VA_ARGS__)
-/* f(args...) of a value by reference with n values, always the Python call of the object (Script_CallObject on the
- * tuple of the values: a bound method, a function of a table; Mode_CallArgs takes the entry of a port function), the
- * result by reference into out (NULL: dropped) */
+/* f(args...) of a value by reference with n values: a native object natively (NObj_Call), any other the Python call
+ * of the object (Script_CallObject on the tuple of the values: a bound method, a function of a table; Mode_CallArgs
+ * takes the entry of a port function), the result by reference into out (NULL: dropped) */
 byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeVal_t *out);
 /* del o.name of the script (PyObject_SetAttrString with no value: the AttributeError of a missing one) */
 byte Mode_RefDelAttr(const nativeVal_t *o, const char *name);
