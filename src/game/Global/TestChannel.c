@@ -887,6 +887,15 @@ static void TC_DumpReg(tcBuf *b, const char *module, const modVarRef_t *ref, con
 		TC_DumpVar(b, module, key, NULL, seen);
 		return;
 	}
+	if (Native_Holds(&v, 1u << NV_OBJ)) {
+		/* a value with a Python object in it: in the form a view's operations give it (a tuple by value) */
+		PyObject *o = ModVar_Get(ref, key);
+		Native_Free(&v);
+		if (o) {
+			NObj_FromPy(o, &v);
+		}
+		Native_ErrClear();
+	}
 	TC_DumpVar(b, module, key, &v, seen);
 	Native_Free(&v);
 }
