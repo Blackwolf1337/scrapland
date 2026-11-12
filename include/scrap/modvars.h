@@ -7,23 +7,19 @@
  * own let line, a name a C hook, a load time call, a port or a test puts into the module) goes to the overflow list of
  * the module the first time the registry sees it, so mods keep working.
  *
- * The values (batch 9b1): the registry holds the value of every variable of a module made from a .mod file as a native
- * value (scrap/scriptnative.h): shared lists, dicts, instances, functions and modules as their NV_REF, numbers, texts,
- * None and tuples by value; the variables of one module are a dict object of native values in the slot order of the
- * dict of 1.5.2, so keys(), items(), a from-import walk and the writes that resize it go as they went. The module dict
- * is the key of the module (the evaluators pass it as their globals, ModVar_OfDict leads from it to the variables) and
- * keeps only what its module object needs (__name__, __doc__, __builtins__, __file__). A reader that needs a Python
- * object gets the one of the value (Native_ToPy: the view's own object, native data crossing there once, a number or
- * text made once and kept with the value), so the identity holds both ways; Python code on the module object comes
- * here through the getattr and setattr of the module type, and its __dict__ is the module dict filled with every
- * variable first. The test channel (src/game/Global/TestChannel.c, TestExpr.c: names, __globals__, X.__dict__, dump),
- * the helpers of the ports by module name (Script_Global, Script_SetGlobal, Script_Attr, Script_SetVar,
- * Native_VarTake, Native_VarSetItem, the Mode_ helpers of scrap/scriptmodes.h and the LvN_ wrappers on them), the
- * module code of the .mod files (its stores, loads and deletes, from the start of the module code on: ModVar_Making, and its from-import), the
- * C hooks of module code, the writes of the loader (Script_ReplaySet), the .def runner, Script_NameChain and
- * Script_GetAttr read and write module variables only through here. The variables of __main__ are here too
- * (ModVar_Keep). A dict without variables here (Scrap, a module of the C or one a test made, a class body) holds its
- * own values.
+ * The values (batch 9b1, 7e4a): a module is a native object (NObj_NewModule) whose variables are a dict object of
+ * native values: shared lists, dicts, instances, functions and modules as their NV_REF, numbers, texts, None and tuples
+ * by value, in the slot order of the dict of 1.5.2, so keys(), items(), a from-import walk and the writes that resize
+ * it go as they went. Those variables are the key of the module here (ModVar_OfVal leads from a module value to its
+ * table and overflow list, ModVar_RefOfNs from a namespace: a module or a dict object). The test channel
+ * (src/game/Global/TestChannel.c, TestExpr.c: names, __globals__, X.__dict__, dump), the helpers of the ports by
+ * module name (Script_Global, Script_SetGlobal, Script_Attr, Script_SetVar, the Mode_ helpers of scrap/scriptmodes.h
+ * and the LvN_ wrappers on them), the module code of the .mod files (its stores, loads and deletes, from the start of
+ * the module code on: ModVar_Making, and its from-import), the C hooks of module code, the writes of the loader
+ * (Script_ReplaySet), the .def runner, Script_NameChain and the getattr and setattr of modules read and write module
+ * variables only through here. The variables of __main__ are here too (ModVar_Keep). OBJLIB 7e4b: a reader that needs
+ * a Python object gets the one of the value (Native_ToPy, kept with the value), and the face of a module that crossed
+ * to Python reaches its variables through the getattr and setattr of the module type (ModVar_FaceHook).
  *
  * The variables with a C place (the place text of the table: the port that reads and writes them) have no C copy: the
  * port reads the value here where the script reads it and writes it here where the script writes it, so the value

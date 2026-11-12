@@ -4,17 +4,13 @@
  * variables (batch 9b1), the access by module name that the helpers of the ports use (batch 5b) and the access by
  * namespace dict of the module code, its C hooks and the name chains (batch 5c).
  *
- * The values: every module dict a module file was made into has its variables here, a dict object of native values
- * (mvSpace_t: name -> value, in the slot order the dict of 1.5.2 gives the same stores and deletes, so keys(), items()
- * and a from-import walk go as they went). A shared list, dict, instance, function or module is held as its NV_REF,
- * a number, text, None or tuple by value. The module dict itself keeps only what the module object needs of it (its
- * __name__, __doc__, __builtins__, __file__ as the setup wrote them) and serves as the key of the module: the
- * evaluators pass it as their globals, and ModVar_OfDict leads from it to the variables. A reader that needs a Python
- * object gets the one of the value (Native_ToPy: a view's own object, native data crossing once, a number or text
- * made once and kept with the value, nativeVal_t.obj); Python code that reads the module object's attributes comes
- * here through the module type (MV_PyGetattr), and its __dict__ is the module dict filled with the variables first
- * (MV_SyncDict). A dict without variables here (Scrap, a module a test made, a class body) holds its own
- * values as before.
+ * The values: every module is a native object whose variables are a dict object of native values (name -> value, in
+ * the slot order the dict of 1.5.2 gives the same stores and deletes, so keys(), items() and a from-import walk go as
+ * they went), and those variables are the key of the module here. A shared list, dict, instance, function or module
+ * is held as its NV_REF, a number, text, None or tuple by value. OBJLIB 7e4b: a reader that needs a Python object
+ * gets the one of the value (Native_ToPy: a view's own object, native data crossing once, a number or text made once
+ * and kept with the value, nativeVal_t.obj); Python code on the face of a module comes here through the module type
+ * (MV_PyGetattr).
  *
  * The names: the table's, and the overflow list of each module file. A name the table does not have is taken into the
  * overflow list when ModVar_Find meets it among the variables (a lookup, a write, the walk of ModVar_Names) and when
