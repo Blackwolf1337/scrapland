@@ -29,11 +29,31 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test'))
 import channel  # noqa: E402
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05')
 ROOT = os.environ.get('SCRAP_MCP_ROOT') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-REF_EXE = os.path.join(ROOT, 'build-ref-noexact', 'ScrapC.exe')
-SLOTS = os.path.join(ROOT, 'build-mcp')
+
+
+def data_root(root):
+    """The checkout with the game data (game/) and the slots: root itself, else the main checkout of the worktree root
+    (agent worktrees have no game folder; the builds stay those of root)."""
+    if os.path.isdir(os.path.join(root, 'game')):
+        return root
+    try:
+        common = subprocess.run(['git', '-C', root, 'rev-parse', '--git-common-dir'], capture_output=True,
+                                text=True).stdout.strip()
+        main = os.path.dirname(os.path.abspath(os.path.join(root, common))) if common else ''
+        if main and os.path.isdir(os.path.join(main, 'game')):
+            return main
+    except OSError:
+        pass
+    return root
+
+
+DATA = data_root(ROOT)
+REF_EXE = os.path.join(DATA, 'build-ref-noexact', 'ScrapC.exe')
+# the slot folders: SCRAP_MCP_SLOTS (private slots, e.g. in a temporary folder), else build-mcp of the data checkout
+SLOTS = os.path.abspath(os.environ.get('SCRAP_MCP_SLOTS') or os.path.join(DATA, 'build-mcp'))
 RUNTIME = os.environ.get('XDG_RUNTIME_DIR') or '/run/user/%d' % os.getuid()
 INSTRUCTIONS = (
     'Runs ScrapC of the Scrapland checkout without a window (gamescope headless, muted, on the AMD 610M). '
@@ -41,8 +61,11 @@ INSTRUCTIONS = (
     'build under Wine, ref = the frozen reference; map= loads a level), wait kind=ready waits until the menu or the '
     'level runs. cmd runs test channel commands in the game (values, calls with literal arguments, engine and entity '
     'variables, module dumps, console lines; not in ref, which has no test channel). menu_dump lists the items of the open menu, open_menu, click, key and mouse drive it. screenshot and compare show the window, log reads log.html '
-    'or scrapdecomp.log, trace and vkcheck need launch with trace= or validation=true. quit ends a game. Build '
-    'first; launch copies the build into the slot.')
+    'or scrapdecomp.log, trace and vkcheck need launch with trace= or validation=true. quit ends a game. Network '
+    'games: server_launch starts a server (dedicated by default, port 29100-29199), launch connect=host:port with '
+    'player= starts a client that joins it, wait kind=joined spawn=true until its ship flies, state gives what each '
+    'side sees (players net<id>, positions, scores) as JSON, hold keeps keys down on several games at once, '
+    'server_quit ends the server. Build first; launch copies the build into the slot.')
 
 
 def text(s):
@@ -90,7 +113,7 @@ class Game:
         self.game = os.path.join(self.dir, exe + '-game')
         binDir = os.path.join(self.game, 'Bin')
         if not os.path.isdir(binDir):
-            r = subprocess.run([os.path.join(ROOT, 'tools', 'test', 'mkgame.sh'), '--native', self.game, ROOT],
+            r = subprocess.run([os.path.join(ROOT, 'tools', 'test', 'mkgame.sh'), '--native', self.game, DATA],
                                capture_output=True, text=True)
             if r.returncode:
                 raise RuntimeError('mkgame.sh failed: %s' % (r.stderr or r.stdout))
@@ -121,7 +144,7 @@ class Game:
         if exe in NATIVE_BUILDS:
             return self.prepare_native(exe)
         if not os.path.isdir(os.path.join(self.game, 'Bin')) or not os.path.isdir(self.prefix):
-            r = subprocess.run([os.path.join(ROOT, 'tools', 'test', 'mkgame.sh'), '--into', self.dir, ROOT],
+            r = subprocess.run([os.path.join(ROOT, 'tools', 'test', 'mkgame.sh'), '--into', self.dir, DATA],
                                capture_output=True, text=True)
             if r.returncode:
                 raise RuntimeError('mkgame.sh failed: %s' % (r.stderr or r.stdout))
@@ -149,6 +172,10 @@ class Game:
         exe = a.get('exe', 'native64')
         if exe != 'ref' and exe not in WIN_BUILDS and exe not in NATIVE_BUILDS:
             raise RuntimeError("exe is one of: ref, %s" % ', '.join(list(WIN_BUILDS) + list(NATIVE_BUILDS)))
+        if a.get('reset'):
+            if exe not in NATIVE_BUILDS:
+                raise RuntimeError('reset is for the native builds (native64, native64asan)')
+            reset_slot(self.name, exe)
         self.prepare(exe)
         if exe != 'ref' and not self.has_channel(exe):
             raise RuntimeError('the game binary of %s has no test channel (an old build): build it again' % exe)
@@ -169,6 +196,8 @@ class Game:
         if a.get('map'):
             m = a['map']
             args.append('-imap:' + (m if '/' in m else 'Levels/' + m))
+        # engine variables of the config file as -name:value (before args: -dedicated and -server come last)
+        args += [param(k, v) for k, v in (a.get('settings') or {}).items()]
         args += list(a.get('args') or [])
         if a.get('deterministic'):
             env['SCRAP_TEST_DETERMINISTIC'] = '1'
@@ -330,6 +359,31 @@ class Game:
 GAMES = {}
 
 
+def reset_slot(name, exe):
+    """The slot back to the fixed state of the regression runner (tools/test/regress/slot.py): the engine
+    configuration from its template (PlayerName Tester, ServerType DeathMatch, ...), no saves, nothing a run left in
+    the game folder, and no intro video (a game is ready in seconds)"""
+    sys.path.insert(0, os.path.join(ROOT, 'tools', 'test', 'regress'))
+    try:
+        import slot
+    finally:
+        sys.path.pop(0)
+    slot.reset(name, exe, slots=SLOTS, main=DATA)
+
+
+def param(name, value):
+    """-name:value for the command line of the game. The reader of the engine (CApp_ParseCmdLine) starts a new
+    parameter at every '-', starts the value again at every ':' and drops blanks, so values are kept to letters,
+    digits and _ . [ ] , ' (a map list such as ['FZ','OM'] is quoted in double quotes)."""
+    if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', name):
+        raise RuntimeError('bad engine variable name %r' % name)
+    v = str(value)
+    if not re.fullmatch(r"[A-Za-z0-9_.\[\],']+", v) or (v.startswith("'") and "[" not in v):
+        raise RuntimeError("the value %r of %s cannot pass the command line of the game (letters, digits and "
+                           "_ . [ ] , ' only)" % (v, name))
+    return '-%s:%s' % (name, '"%s"' % v if "'" in v else v)
+
+
 def game_of(a, create=False):
     name = a.get('name') or 'main'
     if not re.fullmatch(r'[A-Za-z0-9_-]+', name):
@@ -429,12 +483,63 @@ TOOLS = [
          'trace': {'type': 'number', 'description': 'SCRAP_VK_TRACE: the render calls of the first frame this many '
                    'seconds after the device go into scrapdecomp.log (see trace)'},
          'size': {'type': 'string', 'description': 'the display of gamescope, default 1280x720'},
-         'timeout': {'type': 'number', 'description': 'seconds until the game is killed, default 3600'}})},
+         'timeout': {'type': 'number', 'description': 'seconds until the game is killed, default 3600'},
+         'connect': {'type': 'string', 'description': 'host:port of a server (server_launch): the client starts in '
+                     'the menu level, waits until it answers and calls SNet.InitClient; then wait kind=joined. '
+                     'Not with map'},
+         'player': {'type': 'string', 'description': 'PlayerName of the game (letters, digits, _ . [ ]); default the '
+                    'game name with connect'},
+         'team': {'type': 'integer', 'description': 'PlayerTeamID: 0 red, 2 green'},
+         'settings': {'type': 'object', 'description': 'engine variables of the config file passed as -name:value '
+                      '(e.g. {"ClientPPS": 20})'},
+         'reset': {'type': 'boolean', 'description': 'the slot back to the template of the regression runner first '
+                   '(config, no saves, no intro video: ready in seconds); native builds only'}})},
+    {'name': 'server_launch', 'description': 'Start a network server game in its own slot (no window, muted) and '
+     'wait until it serves: dedicated (-dedicated, no own ship) or a host that plays (dedicated=false, -server). '
+     'Clients join with launch connect=127.0.0.1:<port>.', 'inputSchema': schema({
+         'name': {'type': 'string', 'description': 'the game, default server'},
+         'mode': {'type': 'string', 'description': 'ServerType: DeathMatch (default), TeamDM, FlagHunt, TeamFlag, '
+                  'Postman, TeamPost, DeathMatchBots'},
+         'map': {'type': 'string', 'description': 'the level, default FZ'},
+         'maps': {'type': 'array', 'items': {'type': 'string'}, 'description': 'ServerMapList, default [map]'},
+         'port': {'type': 'integer', 'description': 'UDP port, default the first free one of 29100-29199'},
+         'dedicated': {'type': 'boolean', 'description': 'default true'},
+         'player': {'type': 'string', 'description': 'PlayerName of a host that plays, default Host'},
+         'max_players': {'type': 'integer', 'description': 'DefaultMaxPlayersOnServer, default 8 (1..16)'},
+         'fraglimit': {'type': 'integer', 'description': 'default 20'},
+         'password': {'type': 'string', 'description': 'a server password (default none)'},
+         'server_name': {'type': 'string', 'description': 'ServerName, default Test_Server'},
+         'bots': {'type': 'integer', 'description': 'server bots: mode DeathMatchBots with this many (3 or more; '
+                  'the mode makes 3, the tool adds the rest through NDeathMatchBots.BotsList and InitServerMod)'},
+         'deterministic': {'type': 'boolean', 'description': 'SCRAP_TEST_DETERMINISTIC=1 (fixed seed, fixed step '
+                           'clock; the network timing between games stays real)'},
+         'exe': {'type': 'string', 'enum': ['native64', 'native64asan', 'c64']},
+         'env': {'type': 'object'}, 'args': {'type': 'array', 'items': {'type': 'string'}},
+         'settings': {'type': 'object', 'description': 'more engine variables as -name:value'},
+         'reset': {'type': 'boolean', 'description': 'reset the slot first (as launch)'},
+         'size': {'type': 'string'}, 'timeout': {'type': 'number', 'description': 'seconds until the game is killed, '
+                                                                                 'default 3600'}})},
+    {'name': 'server_quit', 'description': 'End a server game (default name server).',
+     'inputSchema': schema({'name': {'type': 'string', 'description': 'default server'}})},
+    {'name': 'state', 'description': 'What games see of the network game, as JSON (one object per game): level, '
+     'net flags, own ship, scores (Ffa.Scorer), the players and bots (ships net<id>, id <= 512) with Pos, Vel, Ang, '
+     'Life, Active, Descriptor (player name), TgType, and the count of the other net<id> objects.',
+     'inputSchema': schema({'name': NAME, 'names': {'type': 'array', 'items': {'type': 'string'},
+                                                     'description': 'several games, asked one after the other'}})},
+    {'name': 'hold', 'description': 'Hold keys and mouse buttons down together for some seconds on one or several '
+     'games at once (XTEST on the display of each game). Ship keys: w forward, s back, a d strafe, left right up down '
+     'turn, ctrl (LCONTROL) or button 1 fire, button 2 boost, space countermeasure.', 'inputSchema': schema({
+         'name': NAME, 'names': {'type': 'array', 'items': {'type': 'string'}},
+         'keys': {'type': 'array', 'items': {'type': 'string'}},
+         'buttons': {'type': 'array', 'items': {'type': 'integer'}, 'description': '1 left, 2 middle, 3 right'},
+         'seconds': {'type': 'number', 'description': 'default 1'}, 'screenshot': {'type': 'boolean'}})},
     {'name': 'quit', 'description': 'End a game (all of them with name=all).', 'inputSchema': schema({'name': NAME})},
     {'name': 'status', 'description': 'The games and whether they run.', 'inputSchema': schema()},
     {'name': 'wait', 'description': 'Wait until the game answers (kind=ready: the menu or the level runs), a '
-     'log line matches (kind=log), or for seconds (kind=time).', 'inputSchema': schema({
-         'name': NAME, 'kind': {'type': 'string', 'enum': ['ready', 'log', 'time']},
+     'log line matches (kind=log), for seconds (kind=time), or a client has its ship on the server (kind=joined).', 'inputSchema': schema({
+         'name': NAME, 'kind': {'type': 'string', 'enum': ['ready', 'log', 'time', 'joined']},
+         'spawn': {'type': 'boolean', 'description': 'kind=joined: then Ffa.RestartOnPress(0) (the Fire key of the '
+                   'help screen) and wait until the ship is active'},
          'pattern': {'type': 'string', 'description': 'regex for kind=log'},
          'which': {'type': 'string', 'enum': ['game', 'engine'], 'description': 'kind=log: game = log.html (default), '
                    'engine = scrapdecomp.log'},
@@ -490,10 +595,12 @@ TOOLS = [
          'hold': {'type': 'number', 'description': 'seconds the button is held, default 0.08'},
          'screenshot': {'type': 'boolean'}})},
     {'name': 'configure', 'description': 'Point native64, native64asan or c64 at another build folder for this '
-     'server process only (e.g. a worktree), or back to the default; applies to the next launch.', 'inputSchema': schema({
+     'server process only (e.g. a worktree), or back to the default; applies to the next launch. slots= moves the '
+     'slot folder.', 'inputSchema': schema({
          'exe': {'type': 'string', 'enum': ['native64', 'native64asan', 'c64']},
-         'build': {'type': 'string', 'description': 'build folder, absolute or relative to the repo; empty: default'}},
-         ['exe'])},
+         'build': {'type': 'string', 'description': 'build folder, absolute or relative to the repo; empty: default'},
+         'slots': {'type': 'string', 'description': 'another folder for the slots (private slots; empty: back to '
+                   'SCRAP_MCP_SLOTS or build-mcp); all games must be ended'}})},
 ]
 
 
@@ -675,6 +782,225 @@ class XInput:
         self.sync(0.03)
 
 
+# ---- multiplayer: a server game, clients that connect to it, their state through the test channel, held input
+
+PORTS = (29100, 29199)
+PLAYER_RX = r'[A-Za-z0-9_.\[\]]{1,15}'
+BOT_SHIPS = (('SArchbishop1', 'MegaAce'), ('SHump1', 'MegaAce'), ('SBankMaster1', 'MegaAce'))
+
+
+def udp_free(port):
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.bind(('0.0.0.0', port))
+        return True
+    except OSError:
+        return False
+    finally:
+        s.close()
+
+
+def free_port():
+    """the first UDP port of PORTS that no game of this server uses and that can be bound"""
+    taken = set(g.opts.get('port') for g in GAMES.values() if g.running())
+    for p in range(PORTS[0], PORTS[1] + 1):
+        if p not in taken and udp_free(p):
+            return p
+    raise RuntimeError('no free UDP port in %d-%d' % PORTS)
+
+
+def wait_answer(g, timeout):
+    """waits until the game answers the test channel; its level"""
+    end = time.time() + timeout
+    while time.time() < end and g.running():
+        try:
+            return g.cmd('Scrap.GetLevelPath()', timeout=2)
+        except RuntimeError:
+            pass
+    raise RuntimeError('game %s did not answer in %.0f s%s' % (g.name, timeout, '' if g.running() else ' (it ended)'))
+
+
+def answers(g, lines, timeout=15):
+    """the answers of several channel commands (one command file), each read as a Python literal where it is one"""
+    out = g.cmd('\n'.join(lines), timeout=timeout).split('\n')
+    if len(out) != len(lines):
+        raise RuntimeError('game %s answered %d lines to %d commands: %s' % (g.name, len(out), len(lines), out[:3]))
+    res = []
+    for line in out:
+        try:
+            res.append(ast.literal_eval(line))
+        except (ValueError, SyntaxError):
+            res.append(line)
+    return res
+
+
+def server_start(a):
+    """server_launch: a server game on a level, dedicated (no own ship, -dedicated) or a host that plays (-server)"""
+    g = game_of(dict(a, name=a.get('name') or 'server'), create=True)
+    mode = a.get('mode') or 'DeathMatch'
+    bots = int(a.get('bots') or 0)
+    if bots:
+        if bots < 3:
+            raise RuntimeError('DeathMatchBots makes the 3 bots of its BotsList; bots is 3 or more')
+        mode = 'DeathMatchBots'
+    if not re.fullmatch(r'[A-Za-z]+', mode):
+        raise RuntimeError('mode is a ServerType: DeathMatch, TeamDM, FlagHunt, TeamFlag, Postman, TeamPost, '
+                           'DeathMatchBots')
+    level = a.get('map') or 'FZ'
+    level = level.split('/')[-1]
+    maps = a.get('maps') or [level]
+    if not all(re.fullmatch(r'[A-Za-z0-9_]+', m) for m in maps):
+        raise RuntimeError('maps are level names like FZ')
+    port = int(a.get('port') or free_port())
+    if not udp_free(port):
+        raise RuntimeError('UDP port %d is taken' % port)
+    dedicated = a.get('dedicated', True)
+    settings = {'ServerType': mode, 'ServerMapList': '[%s]' % ','.join("'%s'" % m for m in maps),
+                'DefaultServerPort': port, 'DefaultMaxPlayersOnServer': int(a.get('max_players', 8)),
+                'Fraglimit': int(a.get('fraglimit', 20)), 'ForceServerVehicle': 0,
+                'ServerName': a.get('server_name') or 'Test_Server'}
+    # the dedicated server reads Scrap.cfg of the game folder (App_GetConfigDir is "" there), whose settings asked for
+    # a password (UseServerPassword 1, seen 2026-11-13): off unless a password is given
+    if a.get('password'):
+        settings.update({'UseServerPassword': 1, 'ServerPassword': a['password']})
+    else:
+        settings['UseServerPassword'] = 0
+    if not dedicated:
+        settings['PlayerName'] = a.get('player') or 'Host'
+    settings.update(a.get('settings') or {})
+    opts = {k: a[k] for k in ('exe', 'env', 'deterministic', 'size', 'timeout', 'validation', 'reset') if k in a}
+    opts.update({'name': g.name, 'map': level, 'settings': settings,
+                 'args': list(a.get('args') or []) + ['-dedicated' if dedicated else '-server']})
+    msg = g.start(opts)
+    g.opts.update({'role': 'server', 'port': port, 'mode': mode, 'dedicated': bool(dedicated)})
+    wait_answer(g, float(a.get('ready_timeout', 120)))
+    end = time.time() + 30
+    data = None
+    while time.time() < end:
+        data = answers(g, ['SNet.GetServerData()'])[0]
+        if isinstance(data, tuple) and data[2]:
+            break
+        time.sleep(0.5)
+    if not (isinstance(data, tuple) and data[2]):
+        raise RuntimeError('game %s answers but runs no server: %r' % (g.name, data))
+    g.opts['port'] = data[2]
+    added = ''
+    if bots > 3:
+        extra = [('[Bot%d]' % (i + 1),) + BOT_SHIPS[i % 3] for i in range(3, bots)]
+        r = g.cmd('NDeathMatchBots.BotsList = %r\nNDeathMatchBots.InitServerMod()' % (extra,), timeout=30)
+        added = ', %d bots added (%s)' % (len(extra), r.replace('\n', ' '))
+    return '%s\nserver %s on 127.0.0.1:%d: %s on %s, %s%s' % (
+        msg.split(';')[0], g.name, data[2], mode, level, 'dedicated' if dedicated else 'the host plays', added)
+
+
+def connect_target(target):
+    host, _, port = str(target).rpartition(':')
+    if not host or not port.isdigit():
+        raise RuntimeError('connect is host:port, e.g. 127.0.0.1:29100')
+    return ('127.0.0.1' if host == 'localhost' else host), int(port)
+
+
+def client_connect(g, a):
+    """after the launch of a client: the menu level answers, then SNet.InitClient (what the join menu calls)"""
+    host, port = connect_target(a['connect'])
+    if not re.fullmatch(r'[A-Za-z0-9.\-]+', host):
+        raise RuntimeError('bad host %r' % host)
+    wait_answer(g, float(a.get('ready_timeout', 120)))
+    r = g.cmd("SNet.InitClient('%s', %d)" % (host, port), timeout=15)
+    g.opts.update({'role': 'client', 'connect': '%s:%d' % (host, port)})
+    if r.strip() != '1':
+        raise RuntimeError('SNet.InitClient answered %s' % r)
+    return 'client %s connects to %s:%d as %s; wait kind=joined' % (g.name, host, port, g.opts.get('player', '?'))
+
+
+def wait_joined(g, timeout, spawn):
+    """waits until a client has its own ship (the level of the server loaded); spawn: then Ffa.RestartOnPress(0), as
+    the Fire key on the help screen, and waits until the ship is active"""
+    end = time.time() + timeout
+    ship = None
+    while time.time() < end and g.running():
+        try:
+            lvl, ship = answers(g, ['Scrap.GetLevelPath()', 'SNet.GetMyClientShip()'], timeout=2)
+            if isinstance(ship, str) and ship.startswith('net'):
+                break
+        except RuntimeError:
+            pass
+        time.sleep(0.5)
+    else:
+        raise RuntimeError('client %s has no ship after %.0f s%s' % (g.name, timeout, '' if g.running() else ' (ended)'))
+    g.opts['ship'] = ship
+    if not spawn:
+        return 'client %s joined %s with ship %s' % (g.name, lvl, ship)
+    g.cmd('Ffa.RestartOnPress(0)', timeout=10)
+    while time.time() < end and g.running():
+        act = answers(g, ['ent %s Active' % ship], timeout=5)[0]
+        if isinstance(act, list) and act and act[0][1] == 1:
+            return 'client %s joined %s with ship %s, active' % (g.name, lvl, ship)
+        time.sleep(0.5)
+    raise RuntimeError('ship %s of client %s did not become active in %.0f s' % (ship, g.name, timeout))
+
+
+ENT_VARS = ('Pos', 'Vel', 'Ang', 'Life', 'Active', 'Descriptor', 'TgType')
+
+
+def net_id(name):
+    m = re.fullmatch(r'net(\d+)', name or '')
+    return int(m.group(1)) if m else None
+
+
+def game_state(g):
+    """what a game sees of the network game: level, flags, own ship, scores, the players (ships net<id> with id
+    <= 512: players and bots) with their variables, and the count of the other net<id> objects"""
+    lvl, flags, t, ship, ents = answers(g, ['Scrap.GetLevelPath()', 'Scrap.GetNetFlags()', 'Scrap.GetTime()',
+                                            'SNet.GetMyClientShip()', 'ents vwilr'])
+    st = {'name': g.name, 'role': g.opts.get('role', 'game'), 'level': lvl, 'time': t,
+          'client': bool(flags[0]), 'server': bool(flags[1]), 'dedicated': bool(flags[2]),
+          'ship': ship if isinstance(ship, str) and ship else None}
+    names = [n for n in (ents if isinstance(ents, list) else []) if net_id(n) is not None]
+    st['objects'] = len([n for n in names if net_id(n) > 512])
+    if not (st['client'] or st['server']):
+        st['players'], st['scores'] = {}, {}
+        return st
+    scores = answers(g, ['tc_try(lambda: Ffa.Scorer, (), None)'])[0]
+    st['scores'] = scores if isinstance(scores, dict) else {}
+    players = sorted(set([n for n in names if net_id(n) <= 512] + list(st['scores'])), key=net_id)
+    st['players'] = {}
+    if players:
+        rows = answers(g, ['ent %s %s' % (n, ' '.join(ENT_VARS)) for n in players])
+        for n, row in zip(players, rows):
+            st['players'][n] = {k.lower(): v for k, v in row} if isinstance(row, list) else {'error': row}
+    return st
+
+
+def hold_input(games, keys, buttons, seconds):
+    """keys and mouse buttons held down together for seconds on every game at once (XTEST, the display of each game)"""
+    xis = []
+    try:
+        for g in games:
+            xis.append(XInput(g))
+        codes = [[xi.keycode(k) for k in keys] for xi in xis]
+        for xi, cs in zip(xis, codes):
+            for c in cs:
+                xi.xtst.XTestFakeKeyEvent(xi.dpy, c, 1, 0)
+            for b in buttons:
+                xi.xtst.XTestFakeButtonEvent(xi.dpy, int(b), 1, 0)
+            xi.x11.XSync(xi.dpy, 0)
+        time.sleep(seconds)
+        for xi, cs in zip(xis, codes):
+            for b in buttons:
+                xi.xtst.XTestFakeButtonEvent(xi.dpy, int(b), 0, 0)
+            for c in reversed(cs):
+                xi.xtst.XTestFakeKeyEvent(xi.dpy, c, 0, 0)
+            xi.x11.XSync(xi.dpy, 0)
+    finally:
+        for xi in xis:
+            xi.__exit__()
+    return 'held %s for %.2f s on %s' % (', '.join(list(keys) + ['button %s' % b for b in buttons]) or 'nothing',
+                                         seconds, ', '.join('%s (X display %s)' % (g.name, xi.display)
+                                                            for g, xi in zip(games, xis)))
+
+
 def after_shot(g, a, msg):
     content = [text(msg)]
     if a.get('screenshot'):
@@ -685,14 +1011,58 @@ def after_shot(g, a, msg):
 def call(name, a):
     if name == 'launch':
         g = game_of(a, create=True)
-        return [text(g.start(a))]
+        b = dict(a)
+        settings = dict(a.get('settings') or {})
+        player = a.get('player') or (g.name if a.get('connect') else None)
+        if player:
+            if not re.fullmatch(PLAYER_RX, player):
+                raise RuntimeError('player is 1 to 15 letters, digits, _ . [ ]')
+            settings['PlayerName'] = player
+        if a.get('team') is not None:
+            settings['PlayerTeamID'] = int(a['team'])
+        b['settings'] = settings
+        if a.get('connect'):
+            if a.get('map'):
+                raise RuntimeError('a client with connect starts in the menu level: no map')
+            connect_target(a['connect'])
+        msg = g.start(b)
+        if player:
+            g.opts['player'] = player
+        if a.get('connect'):
+            try:
+                msg = msg.split(';')[0] + '\n' + client_connect(g, a)
+            except RuntimeError as e:
+                raise RuntimeError('%s; the game runs (quit it)' % e)
+        return [text(msg)]
+    if name == 'server_launch':
+        return [text(server_start(a))]
+    if name == 'server_quit':
+        return [text(game_of({'name': a.get('name') or 'server'}).stop())]
+    if name == 'state':
+        names = a.get('names') or [a.get('name') or 'main']
+        out = []
+        for n in names:
+            g = game_of({'name': n})
+            try:
+                out.append(game_state(g))
+            except RuntimeError as e:
+                out.append({'name': n, 'error': str(e)})
+        return [text(json.dumps(out if a.get('names') else out[0]))]
+    if name == 'hold':
+        games = [game_of({'name': n}) for n in (a.get('names') or [a.get('name') or 'main'])]
+        msg = hold_input(games, a.get('keys') or [], a.get('buttons') or [], float(a.get('seconds', 1.0)))
+        return after_shot(games[0], a, msg)
     if name == 'quit':
         if a.get('name') == 'all':
             return [text('\n'.join(g.stop() for g in GAMES.values() if g.proc) or 'no game runs')]
         return [text(game_of(a).stop())]
     if name == 'status':
-        rows = ['%s: %s, %s%s' % (n, g.opts.get('exe', 'native64'), 'runs' if g.running() else 'ended',
-                                      ', map ' + g.opts['map'] if g.opts.get('map') else '') for n, g in GAMES.items()]
+        rows = ['%s: %s, %s%s%s' % (n, g.opts.get('exe', 'native64'), 'runs' if g.running() else 'ended',
+                                        ', map ' + g.opts['map'] if g.opts.get('map') else '',
+                                        ', server %s port %s' % (g.opts.get('mode'), g.opts.get('port'))
+                                        if g.opts.get('role') == 'server' else
+                                        ', client of %s' % g.opts['connect'] if g.opts.get('connect') else '')
+                for n, g in GAMES.items()]
         return [text('\n'.join(rows) or 'no game')]
     if name == 'wait':
         g = game_of(a)
@@ -712,6 +1082,8 @@ def call(name, a):
         if not g.channel():
             raise RuntimeError('game %s is the reference exe, which has no test channel: use kind=log or kind=time'
                                % g.name)
+        if kind == 'joined':
+            return after_shot(g, a, wait_joined(g, timeout, a.get('spawn')))
         while time.time() - start < timeout and g.running():
             try:
                 level = g.cmd('Scrap.GetLevelPath()', timeout=2)
@@ -805,6 +1177,16 @@ def call(name, a):
                                                     ', button %d' % a['button'] if a.get('button') else '', xi.display)
         return after_shot(g, a, msg)
     if name == 'configure':
+        global SLOTS
+        if 'slots' in a:
+            if any(g.running() for g in GAMES.values()):
+                raise RuntimeError('quit all games before the slot folder changes')
+            SLOTS = os.path.abspath(a['slots'] or os.environ.get('SCRAP_MCP_SLOTS') or os.path.join(DATA, 'build-mcp'))
+            GAMES.clear()
+            if not a.get('exe'):
+                return [text('slots in %s' % SLOTS)]
+        if not a.get('exe'):
+            raise RuntimeError('configure takes exe (with build) or slots')
         exe = a['exe']
         builds, defaults, binary = (WIN_BUILDS, DEFAULT_WIN_BUILDS, 'ScrapC.exe') if exe in WIN_BUILDS else \
             (NATIVE_BUILDS, DEFAULT_NATIVE_BUILDS, 'ScrapC')

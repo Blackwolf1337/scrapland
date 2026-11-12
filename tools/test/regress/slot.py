@@ -19,7 +19,7 @@
 #                                      intro videos, missing in the GOG data, the same way), which saves 32 s per start;
 #                                      no script reads them
 #   slot-<tag>/wine.log, shot.png      removed (the game output of the last run)
-# Only paths inside build-mcp/slot-<tag> are touched.
+# Only paths inside build-mcp/slot-<tag> (or slot-<tag> of the slots folder passed in) are touched.
 import os
 import shutil
 import subprocess
@@ -43,11 +43,14 @@ def _rm(path, slot):
 		shutil.rmtree(path)
 
 
-def reset(tag, exe='native64'):
-	slot = os.path.join(SLOTS, 'slot-' + tag)
+def reset(tag, exe='native64', slots=None, main=None):
+	"""slots: the folder of the slots (default SLOTS), main: the checkout with the game data (default MAIN); the scrap
+	MCP server passes its own (SCRAP_MCP_SLOTS, private slots)"""
+	MAIN_ = main or MAIN
+	slot = os.path.join(slots or SLOTS, 'slot-' + tag)
 	game = os.path.join(slot, exe + '-game')
 	if not os.path.isdir(os.path.join(game, 'Bin')):
-		r = subprocess.run([os.path.join(HERE, '..', 'mkgame.sh'), '--native', game, MAIN],
+		r = subprocess.run([os.path.join(HERE, '..', 'mkgame.sh'), '--native', game, MAIN_],
 						   capture_output=True, text=True)
 		if r.returncode:
 			raise RuntimeError('mkgame.sh failed: %s' % (r.stderr or r.stdout))
@@ -56,7 +59,7 @@ def reset(tag, exe='native64'):
 		p = os.path.join(slot, n)
 		if os.path.lexists(p):
 			_rm(p, slot)
-	maingame = os.path.join(MAIN, 'game')
+	maingame = os.path.join(MAIN_, 'game')
 	for n in os.listdir(game):
 		p = os.path.join(game, n)
 		if n == 'Video':
