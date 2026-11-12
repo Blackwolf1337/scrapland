@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/nativeobj.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 
@@ -339,7 +340,10 @@ static byte Exec_Run(execScope_t *x, PyObject *globals, const execStmt_t *st) {
 	}
 	if (ok && st->value) {
 		Str_Copy(name, st->t[last].text, st->t[last].len + 1);
-		ok = Mode_HSet(v, name, &value) || Exec_Fail();
+		nativeVal_t target;
+		NObj_FromPy(v, &target);
+		ok = Mode_VSet(&target, name, &value) || Exec_Fail();
+		Native_Free(&target);
 	}
 	Py_XDECREF(v);
 	Native_Free(&value);

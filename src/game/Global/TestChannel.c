@@ -399,6 +399,11 @@ static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr) {
 	case NV_DICT:
 		return TC_PrintDict(b, v, pr);
 	case NV_REF:
+		if (NObj_PrintText(v, tmp, sizeof(tmp))) {
+			/* a C object's own text (a scorer item), through fprintf as its format in the original */
+			TC_Add(b, tmp, -1);
+			return 1;
+		}
 		if (NObj_Kind(v) == NO_LIST || NObj_Kind(v) == NO_DICT) {
 			byte list = NObj_Kind(v) == NO_LIST;
 			for (int i = 0; i < pr->depth && i < TC_PRINT_DEPTH; i++) {

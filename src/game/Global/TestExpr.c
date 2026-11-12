@@ -2607,77 +2607,10 @@ static int TB_DelAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
-	/* a native type object; OBJLIB 9: keyed by the type object of Python (a value by value names the type it has as a
-	 * Python object) */
-	PyTypeObject *t = NULL;
-
 	if (!TX_Arity("type", n, 1, 1)) {
 		return 0;
 	}
-	PyObject *py = NObj_Py(a);
-	if (py) {
-		t = py->ob_type;
-	} else {
-		switch (a->type) {
-		case NV_NONE:
-			t = Py_None->ob_type;
-			break;
-		case NV_INT:
-			t = &PyInt_Type;
-			break;
-		case NV_FLOAT:
-			t = &PyFloat_Type;
-			break;
-		case NV_STR:
-			t = &PyString_Type;
-			break;
-		case NV_LONG:
-			t = &PyLong_Type;
-			break;
-		case NV_LIST:
-			t = &PyList_Type;
-			break;
-		case NV_TUPLE:
-		case NV_VEC:
-			t = &PyTuple_Type;
-			break;
-		case NV_DICT:
-			t = &PyDict_Type;
-			break;
-		case NV_REF:
-			switch (NObj_Kind(a)) {
-			case NO_LIST:
-				t = &PyList_Type;
-				break;
-			case NO_DICT:
-				t = &PyDict_Type;
-				break;
-			case NO_INSTANCE:
-				t = &PyInstance_Type;
-				break;
-			case NO_CLASS:
-				t = &PyClass_Type;
-				break;
-			case NO_METHOD:
-				t = &PyMethod_Type;
-				break;
-			case NO_MODULE:
-				t = &PyModule_Type;
-				break;
-			case NO_TYPE:
-				t = &PyType_Type;
-				break;
-			default:
-				t = !strcmp(NObj_TypeName(a), "function") ? &PyFunction_Type : &PyCFunction_Type;
-				break;
-			}
-			break;
-		default:
-			/* an entity handle: the type of its face */
-			return -1;
-		}
-	}
-	Native_SetObj(out, (PyObject *)t);
+	NObj_TypeOf(a, out);
 	return 1;
 }
 

@@ -144,15 +144,10 @@ static inline uint32_t Scorer_PackColor(uint32_t r, uint32_t g, uint32_t b, uint
 	return ((a << 8 | r) << 8 | g) << 8 | b;
 }
 void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time);
-/* cPyMenuEntity (type object): Python handle of a scorer item by player and item name */
-typedef struct cPyMenuEntity {
-	PyObject_HEAD
-	int player;
-	char *name;			/* Mem_Alloc copy */
-} cPyMenuEntity;
-
-/* the handle of a scorer item, NULL (no Python error) if there is no such item */
-PyObject *ScorerItem_PyNew(int player, const char *name);
+struct nativeVal_s;
+/* the handle of a scorer item by player and item name (cPyMenuEntity, a native C object): 1 with *out, 0 without an
+ * error and *out None if there is no such item */
+byte ScorerItem_New(int player, const char *name, struct nativeVal_s *out);
 
 void Scorer_AddChatMsg(const char *text, uint32_t rgb);
 void Scorer_SetConsole(int on);

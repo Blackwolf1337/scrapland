@@ -294,7 +294,7 @@ API_FN(SScorer, Accept) {
 	return Mode_Parse(a, n, "is", &player, &name) && Api_Build(out, "i", Scorer_AcceptItem(player, name));
 }
 
-/* GetItem(player, item) : the Python object of the item (an NV_OBJ, OBJLIB 7), None if not found */
+/* GetItem(player, item) : the handle of the item, None if not found */
 API_FN(SScorer, GetItem) {
 	int player;
 	const char *name;
@@ -303,13 +303,13 @@ API_FN(SScorer, GetItem) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (sc && cScorer_FindItem(sc, name)) {
-		return Api_Object(ScorerItem_PyNew(player, name), out);
+		return ScorerItem_New(player, name, out);
 	}
 	return 1;
 }
 
 /*
- * New(player, name, type[, flag]) : makes the item and returns its Python object. The original returns NULL without
+ * New(player, name, type[, flag]) : makes the item and returns its handle. The original returns NULL without
  * an exception when that fails (SystemError in Python). An unknown type still does so: tools/test/golden records it.
  * differs from the original: a player without a scorer and a duplicated name raise a ValueError.
  */
@@ -324,7 +324,7 @@ API_FN(SScorer, New) {
 		return Native_Raise(NE_VALUE, "SScorer.New: no scorer for player %d", player);
 	}
 	if (cScorer_AddItem(sc, name, type, flag != 0)) {
-		return Api_Object(ScorerItem_PyNew(player, name), out);
+		return ScorerItem_New(player, name, out);
 	}
 	if (cScorer_FindItem(sc, name)) {
 		return Native_Raise(NE_VALUE, "SScorer.New: item '%.128s' already exists", name);

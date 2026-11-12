@@ -284,93 +284,18 @@ static byte Mode_AttrFail(void) {
 	return 0;
 }
 
-byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out) {
-	modVarRef_t mv;
-	if (PyEntity_Check(o)) {
-		return Native_EntVar(PyEntity_Get(o), ((cPyEntity *)o)->ref->name, var, out);
-	}
-	if (ModVar_Of(o, &mv)) {
-		/* a pack module's variable in the registry */
-		nativeVal_t v;
-		byte ok = ModVar_AttrVal(&mv, var, &v) &&
-			(NObj_Plain(&v, out) || Native_Raise(NE_TYPE, "%s: not a value native C takes", var));
-		Native_Free(&v);
-		return ok;
-	}
-	PyObject *r = ModVar_ObjAttr(o, var);
-	if (!r) {
-		return Mode_AttrFail();
-	}
-	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s: not a value native C takes", var);
-	Py_DECREF(r);
-	return ok;
-}
-
-byte Mode_HSet(PyObject *o, const char *var, const nativeVal_t *v) {
-	modVarRef_t mv;
-	if (PyEntity_Check(o)) {
-		return Native_EntSet(PyEntity_Get(o), ((cPyEntity *)o)->ref->name, var, v);
-	}
-	if (ModVar_Of(o, &mv)) {
-		return ModVar_SetAttrVal(&mv, var, v);
-	}
-	PyObject *x = Native_ToPy(v);
-	int r = x ? ModVar_SetObjAttr(o, var, x) : -1;
-	Py_XDECREF(x);
-	return r == 0;
-}
-
-byte Mode_HSetModel(PyObject *o, const char *module, const char *modelVar) {
-	nativeVal_t model;
-	byte ok;
-	if (PyEntity_Check(o)) {
-		cEntity *e = PyEntity_Get(o);
-		const char *file;
-		if (!e) {
-			/* the method of a handle whose entity is gone */
-			return Native_EntVar(NULL, ((cPyEntity *)o)->ref->name, "SetModel", &model);
-		}
-		if (!Mode_G(module, modelVar, &model)) {
-			return 0;
-		}
-		/* "s|d" */
-		ok = Native_ArgStr(&model, 1, &file);
-		if (ok) {
-			Entity_SetModel(e, file, 1.0f, 1.0f, 1.0f, 1);
-		}
-		Native_Free(&model);
-		return ok;
-	}
-	PyObject *meth = PyObject_GetAttrString(o, "SetModel");
-	if (!meth) {
-		return Mode_AttrFail();
-	}
-	ok = Mode_G(module, modelVar, &model) && Native_Call(meth, NULL, "v", &model);
-	if (ok || model.type != NV_NONE) {
-		Native_Free(&model);
-	}
-	Py_DECREF(meth);
-	return ok;
-}
-
 byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out) {
 	if (o->type == NV_ENT) {
 		return Native_EntVar(Native_Ent(o), Native_EntName(o), var, out);
 	}
-	if (NObj_Native(o)) {
-		/* as Mode_HGet: the attribute as a plain value */
-		nativeVal_t v;
-		Native_SetNone(out);
-		if (!NObj_GetAttr(o, var, &v)) {
-			return Mode_AttrFail();
-		}
-		byte ok = NObj_Plain(&v, out) || Native_Raise(NE_TYPE, "%s: not a value native C takes", var);
-		Native_Free(&v);
-		return ok;
+	/* the attribute as a plain value */
+	nativeVal_t v;
+	Native_SetNone(out);
+	if (!NObj_GetAttr(o, var, &v)) {
+		return Mode_AttrFail();
 	}
-	PyObject *po = Native_ToPy(o);
-	byte ok = po && Mode_HGet(po, var, out);
-	Py_XDECREF(po);
+	byte ok = NObj_Plain(&v, out) || Native_Raise(NE_TYPE, "%s: not a value native C takes", var);
+	Native_Free(&v);
 	return ok;
 }
 
@@ -378,13 +303,7 @@ byte Mode_VSet(const nativeVal_t *o, const char *var, const nativeVal_t *v) {
 	if (o->type == NV_ENT) {
 		return Native_EntSet(Native_Ent(o), Native_EntName(o), var, v);
 	}
-	if (NObj_Native(o)) {
-		return NObj_SetAttr(o, var, v);
-	}
-	PyObject *po = Native_ToPy(o);
-	byte ok = po && Mode_HSet(po, var, v);
-	Py_XDECREF(po);
-	return ok;
+	return NObj_SetAttr(o, var, v);
 }
 
 /* h.SetModel(file) of a handle */
@@ -401,19 +320,6 @@ static byte Mode_RefModel(const cEntityRef *ref, const nativeVal_t *file) {
 	}
 	Entity_SetModel(e, f, 1.0f, 1.0f, 1.0f, 1);
 	return 1;
-}
-
-byte Mode_HModel(PyObject *o, const nativeVal_t *file) {
-	if (PyEntity_Check(o)) {
-		return Mode_RefModel(((cPyEntity *)o)->ref, file);
-	}
-	PyObject *meth = PyObject_GetAttrString(o, "SetModel");
-	if (!meth) {
-		return Mode_AttrFail();
-	}
-	byte ok = Native_Call(meth, NULL, "v", file);
-	Py_DECREF(meth);
-	return ok;
 }
 
 byte Mode_NameGet(const char *name, const char *var, nativeVal_t *out) {
@@ -1130,12 +1036,16 @@ static int Mode_MethodOf(const nativeVal_t *h, const char *method, cEntity **e) 
 	return h->type == NV_NONE ? Mode_Method(NULL, method) : -1;
 }
 
-/* h.method(args) of another object the Python way (fmt and the arguments as Native_Call takes them) */
-static byte Mode_PyMethod(const nativeVal_t *h, const char *method, nativeVal_t *out, const char *fmt, const char *s) {
-	PyObject *o = Native_ToPy(h), *m = o ? PyObject_GetAttrString(o, (char *)method) : NULL;
-	byte ok = m ? (s ? Native_Call(m, out, fmt, s) : Native_Call(m, out, fmt)) : (o && Mode_AttrFail());
-	Py_XDECREF(m);
-	Py_XDECREF(o);
+/* h.method(a[0..n-1]) of another object: its attribute (Mode_VBoundV), called; out NULL drops the result */
+static byte Mode_ObjCall(const nativeVal_t *h, const char *method, nativeVal_t *out, const nativeVal_t *a, int n) {
+	nativeVal_t m, r;
+	byte ok = Mode_VBoundV(h, method, &m) && NObj_Call(&m, a, n, &r);
+	Native_Free(&m);
+	if (ok && out) {
+		*out = r;
+	} else if (ok) {
+		Native_Free(&r);
+	}
 	return ok;
 }
 
@@ -1145,9 +1055,13 @@ int Mode_VIsType(const nativeVal_t *h, const char *type) {
 	if (k >= 0) {
 		return k ? Entity_IsType(e, type) != 0 : -1;
 	}
-	nativeVal_t r = { 0 };
-	k = Mode_PyMethod(h, "IsType", &r, "s", type) ? Native_True(&r) : -1;
-	Native_Free(&r);
+	nativeVal_t r, t;
+	Native_SetStr(&t, type);
+	k = Mode_ObjCall(h, "IsType", &r, &t, 1) ? Native_True(&r) : -1;
+	if (k >= 0) {
+		Native_Free(&r);
+	}
+	Native_Free(&t);
 	return k;
 }
 
@@ -1157,26 +1071,14 @@ byte Mode_VDel(const nativeVal_t *h) {
 	if (k >= 0) {
 		return k && (cEntity_Del(e), 1);
 	}
-	return Mode_PyMethod(h, "Del", NULL, "", NULL);
+	return Mode_ObjCall(h, "Del", NULL, NULL, 0);
 }
 
 byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file) {
 	if (h->type == NV_ENT) {
 		return Mode_RefModel(h->ent, file);
 	}
-	PyObject *o = Native_ToPy(h);
-	byte ok = o && Mode_HModel(o, file);
-	Py_XDECREF(o);
-	return ok;
-}
-
-PyObject *Mode_VBound(const nativeVal_t *h, const char *method) {
-	PyObject *o = Native_ToPy(h), *m = o ? PyObject_GetAttrString(o, (char *)method) : NULL;
-	if (o && !m) {
-		Mode_AttrFail();
-	}
-	Py_XDECREF(o);
-	return m;
+	return Mode_ObjCall(h, "SetModel", NULL, file, 1);
 }
 
 byte Mode_PreloadOnes(const nativeVal_t *name) {
@@ -3162,7 +3064,11 @@ byte Mode_VSetFX(const nativeVal_t *h, const char *type) {
 	if (k >= 0) {
 		return k && Mode_SetFX(e, type);
 	}
-	return Mode_PyMethod(h, "SetFX", NULL, "s", type);
+	nativeVal_t t;
+	Native_SetStr(&t, type);
+	byte ok = Mode_ObjCall(h, "SetFX", NULL, &t, 1);
+	Native_Free(&t);
+	return ok;
 }
 
 byte Mode_SActV(const char *fn, const nativeVal_t *name, nativeVal_t *out) {
@@ -4016,9 +3922,9 @@ byte Mode_PyNone2_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v) {
-	PyObject *flag = Mode_GlobalPy(module, "Flag");
-	byte ok = flag && Mode_HSet(flag, var, v);
-	Py_XDECREF(flag);
+	nativeVal_t flag;
+	byte ok = ModVar_GlobalVal(module, "Flag", &flag) && Mode_VSet(&flag, var, v);
+	Native_Free(&flag);
 	return ok;
 }
 
@@ -4908,9 +4814,36 @@ int Mode_Truth(const nativeVal_t *v) {
 }
 
 byte Mode_VSetModel(const nativeVal_t *h, const char *module, const char *modelVar) {
-	PyObject *o = Native_ToPy(h);
-	byte ok = o && Mode_HSetModel(o, module, modelVar);
-	Py_XDECREF(o);
+	nativeVal_t model, m, r;
+	byte ok;
+	if (h->type == NV_ENT) {
+		cEntity *e = Native_Ent(h);
+		const char *file;
+		if (!e) {
+			/* the method of a handle whose entity is gone */
+			return Native_EntVar(NULL, Native_EntName(h), "SetModel", &model);
+		}
+		if (!Mode_G(module, modelVar, &model)) {
+			return 0;
+		}
+		/* "s|d" */
+		ok = Native_ArgStr(&model, 1, &file);
+		if (ok) {
+			Entity_SetModel(e, file, 1.0f, 1.0f, 1.0f, 1);
+		}
+		Native_Free(&model);
+		return ok;
+	}
+	/* the method first, then the model */
+	if (!Mode_VBoundV(h, "SetModel", &m)) {
+		return 0;
+	}
+	ok = Mode_G(module, modelVar, &model) && NObj_Call(&m, &model, 1, &r);
+	if (ok) {
+		Native_Free(&r);
+	}
+	Native_Free(&model);
+	Native_Free(&m);
 	return ok;
 }
 
@@ -5250,7 +5183,7 @@ int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key) {
 }
 
 byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out) {
-	return Mode_RefTake(Mode_VBound(h, method), out);
+	return NObj_GetAttr(h, method, out) || Mode_AttrFail();
 }
 
 int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out) {

@@ -53,9 +53,6 @@ void Api_Module(const char *name, const portFn_t *fns);
  * are skipped. Always 1
  */
 byte Api_Build(nativeVal_t *out, const char *fmt, ...);
-/* the Python object o (a new reference, released here: a scorer item of SScorer.GetItem) as an NV_OBJ in *out
- * (OBJLIB 7): 1, or 0 for NULL (the error as it is) */
-byte Api_Object(PyObject *o, nativeVal_t *out);
 /* a new handle of the entity called name as an NV_ENT in *out (Native_SetEnt): 1, or 0 without an error when there is
  * no such entity (the adapter's NULL: the SystemError of the call) */
 byte Api_Handle(const char *name, nativeVal_t *out);

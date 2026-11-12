@@ -390,6 +390,13 @@ byte Native_EntRead(cEntity *e, const char *name, nativeVal_t *out);
  * characters). 0 when the entity has no such variable: the console line of the handle and its AttributeError; e NULL
  * is the handle of an entity that is gone (its console line and ceval's SystemError) */
 byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out);
+/* getattr of the handle h (NV_ENT) as the type cPyEntity gives it: a script variable of the entity (Native_EntRead, a
+ * vector as a tuple), else __methods__ or a method of the handle (a function bound to h, NObj_NewBound); 1 with *out,
+ * 0 with the console line of the handle and the AttributeError, or without an error when the entity is gone */
+byte Native_EntGetAttr(const nativeVal_t *h, const char *name, nativeVal_t *out);
+/* the address the repr of the handle v (NV_ENT) shows: its Python object's while it has one (OBJLIB 7e4b), else its
+ * own */
+uintptr_t Native_EntAddr(const nativeVal_t *v);
 /* the core of the attribute set of a handle: v as an int, float, vector and text, in this order, each form it reads
  * as goes to the variable of that type until one takes it (1); 0 with the console line of the handle (ref names the
  * entity in it) when e is NULL (the entity is gone), v has none of the forms or no variable takes it */

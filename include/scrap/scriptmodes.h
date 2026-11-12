@@ -79,15 +79,8 @@ byte Mode_Print(const nativeVal_t *const *items, int n);
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
 /* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
 byte Mode_NextInSlot(cEntity **e);
-/* handle-or-object helpers: o.var, o.var = v, o.SetModel(file) as the script does them on any value (an entity
- * handle in C, any other object the Python way with its errors) */
-byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out);
-byte Mode_HSet(PyObject *o, const char *var, const nativeVal_t *v);
-byte Mode_HSetModel(PyObject *o, const char *module, const char *modelVar);
-/* o.SetModel(file) with the file given */
-byte Mode_HModel(PyObject *o, const nativeVal_t *file);
-/* the same on a value (an entity handle, NV_ENT, in C without a Python object; another object the Python way; a native
- * value with the error of its getattr or setattr) */
+/* o.var, o.var = v as the script does them on any value: an entity handle with its console lines, any other value
+ * through NObj_GetAttr and NObj_SetAttr with their errors (the attribute as a plain value, NObj_Plain) */
 byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out);
 byte Mode_VSet(const nativeVal_t *o, const char *var, const nativeVal_t *v);
 /* the entity of a handle the script holds by the name it was made with: var of it (an entity that is gone: the
@@ -198,14 +191,11 @@ byte Mode_EntHandle(cEntity *e, nativeVal_t *out);
 /* Scrap.GetEntity(name) as the handle value (NV_ENT) or None */
 byte Mode_EntityH(const nativeVal_t *name, nativeVal_t *out);
 /* h.IsType(type), h.Del(), h.SetModel(file) of a value of the script: an entity handle in C (None and a handle whose
- * entity is gone with the errors of the script), another object the Python way. IsType gives 1 or 0, -1 with the
- * error */
+ * entity is gone with the errors of the script), another object by its attribute (Mode_VBoundV). IsType gives 1 or 0,
+ * -1 with the error */
 int Mode_VIsType(const nativeVal_t *h, const char *type);
 byte Mode_VDel(const nativeVal_t *h);
 byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file);
-/* h.method as a bound method (OBJLIB 7: what the scheduler keeps, e.g. l.Del, the Python way until entities are C): a
- * new reference, NULL with the error */
-PyObject *Mode_VBound(const nativeVal_t *h, const char *method);
 /* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (through the seam with those arguments) */
 byte Mode_PreloadOnes(const nativeVal_t *name);
 /* Scrap.EntityListGet(list, var): a text (None for none), a float or an int; the engine's console line and NULL result
@@ -1162,7 +1152,8 @@ byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v);
 byte Mode_RefToMod(const char *module, const char *var, const nativeVal_t *v);
 /* d.has_key(key) of a value of the script (the method of whatever value it is): 1, 0, -1 with the error */
 int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key);
-/* h.method as the bound method by reference (Mode_VBound: what the scheduler keeps, e.g. l.Del; OBJLIB 7) */
+/* h.method as the bound method (what the scheduler keeps, e.g. l.Del: NObj_GetAttr, a getattr that gives nothing
+ * without an error raises the SystemError of ceval) */
 byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out);
 /* eval(text) of a name with attributes and subscripts (NAME(.NAME | [n])*, as the game passes them) in a function of
  * the module of x: the variables and imports of x are the locals of the function, then the globals of the module and

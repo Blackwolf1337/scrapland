@@ -665,8 +665,7 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 		/* PyObject_Repr of a type without repr and str; the address is the one of its Python object while it has
 		 * one (the text Python gives for it then) */
 		char at[0x40];
-		snprintf(at, sizeof(at), "<cPyEntity object at %lx>",
-			(long)(intptr_t)(v->ent->face ? (void *)v->ent->face : (void *)v->ent));
+		snprintf(at, sizeof(at), "<cPyEntity object at %lx>", (long)Native_EntAddr(v));
 		Native_BufAdd(b, at, -1);
 		return;
 	}
@@ -3183,6 +3182,10 @@ cEntity *Native_Ent(const nativeVal_t *v) {
 
 const char *Native_EntName(const nativeVal_t *v) {
 	return v->ent->name;
+}
+
+uintptr_t Native_EntAddr(const nativeVal_t *v) {
+	return v->ent->face ? (uintptr_t)v->ent->face : (uintptr_t)v->ent;
 }
 
 void Native_EntPrint(const char *name, char *buf, int size) {
