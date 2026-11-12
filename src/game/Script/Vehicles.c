@@ -917,6 +917,7 @@ static byte Vehicles_SetProperties_E(const nativeVal_t *a, int n, nativeVal_t *o
 
 static char *Vehicles_SetProperties_N[] = { "EntityName", "Model", "MaxLife", "Pilot", "Motor0", "Motor1", "Motor2", "Motor3", "WeapList",
 		"PlayerName", "localedit", NULL };
+static const char Vehicles_SetProperties_F[] = "OOOOOOOOOO|O";
 
 /* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *Vehicles_SetProperties(PyObject *self, PyObject *args, PyObject *kw) {

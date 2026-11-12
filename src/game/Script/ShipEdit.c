@@ -2083,6 +2083,7 @@ static byte SE_CreateShipFromSaveVar_E(const nativeVal_t *a, int n, nativeVal_t 
 }
 
 static char *SE_CreateShipFromSaveVar_N[] = { "cad", "pos", "name", NULL };
+static const char SE_CreateShipFromSaveVar_F[] = "OO|O";
 
 /* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *SE_CreateShipFromSaveVar(PyObject *self, PyObject *args, PyObject *kw) {

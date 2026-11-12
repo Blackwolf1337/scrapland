@@ -493,6 +493,7 @@ static byte VehiclesNPC_MakeAI_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 }
 
 static char *VehiclesNPC_MakeAI_N[] = { "TypeShip", "Name", "FarPos", "InitState", NULL };
+static const char VehiclesNPC_MakeAI_F[] = "O|OOO";
 
 /* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *VehiclesNPC_MakeAI(PyObject *self, PyObject *args, PyObject *kw) {
@@ -505,6 +506,7 @@ static byte VehiclesNPC_ModAIProff_E(const nativeVal_t *a, int n, nativeVal_t *o
 }
 
 static char *VehiclesNPC_ModAIProff_N[] = { "o1", "pd", "useLife", NULL };
+static const char VehiclesNPC_ModAIProff_F[] = "OO|O";
 
 /* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *VehiclesNPC_ModAIProff(PyObject *self, PyObject *args, PyObject *kw) {
@@ -517,6 +519,7 @@ static byte VehiclesNPC_SetIAProf_E(const nativeVal_t *a, int n, nativeVal_t *ou
 }
 
 static char *VehiclesNPC_SetIAProf_N[] = { "o1", "TypeShip", "InitState", NULL };
+static const char VehiclesNPC_SetIAProf_F[] = "OO|O";
 
 /* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *VehiclesNPC_SetIAProf(PyObject *self, PyObject *args, PyObject *kw) {

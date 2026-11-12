@@ -75,166 +75,166 @@
 #define SCRIPT_MAX_NESTED 4
 
 static const scriptModule_t script_modules[] = {
-	{ "PCMenu", g_MenuVideoMethods },
-	{ "PCMenu", g_MenuControlsMethods },
-	{ "PCMenu", g_MenuNetMethods },
-	{ "PCMenu", g_MenuVideoVarsMethods },
-	{ "Menu", g_MenuBaseMethods },
-	{ "Menu", g_MenuMainMethods },
-	{ "Menu", g_MenuMissionMethods },
-	{ "Scorer", g_ScorerMethods },
-	{ "CharScorer", g_CharScorerMethods },
-	{ "RacerScorer", g_RacerScorerMethods },
-	{ "Chars", g_CharsMethods },
-	{ "MakeChar", g_MakeCharMethods },
-	{ "CharAct", g_CharActMethods },
-	{ "Speech", g_SpeechMethods },
-	{ "SaveGame", g_SaveGameMethods },
-	{ "Fx", g_FxMethods },
-	{ "Items", g_ItemsMethods },
-	{ "Net", g_NetMethods },
-	{ "NDeathMatch", g_NDeathMatchMethods },
-	{ "NDeathMatchBots", g_NDeathMatchBotsMethods },
-	{ "NTeamDM", g_NTeamDMMethods },
-	{ "NTeamFlag", g_NTeamFlagMethods },
-	{ "NFlagHunt", g_NFlagHuntMethods },
-	{ "NPostman", g_NPostmanMethods },
-	{ "NTeamPost", g_NTeamPostMethods },
-	{ "Weapons", g_WeaponsMethods },
-	{ "Vulcan", g_VulcanMethods },
-	{ "Devastator", g_DevastatorMethods },
-	{ "Tesla", g_TeslaMethods },
-	{ "ATPC", g_ATPCMethods },
-	{ "Laser", g_LaserMethods },
-	{ "Swarm", g_SwarmMethods },
-	{ "Inferno", g_InfernoMethods },
-	{ "Cloud", g_CloudMethods },
-	{ "EMI", g_EMIMethods },
-	{ "Sonic", g_SonicMethods },
-	{ "SputnikInterface", g_SputnikInterfaceMethods },
-	{ "ShipEdit", g_ShipEditMethods },
-	{ "HangarTab", g_HangarTabMethods },
-	{ "Vehicles", g_VehiclesMethods },
-	{ "VehiclesNPC", g_VehiclesNPCMethods },
-	{ "Split", g_SplitMethods },
-	{ "SDeathMatch", g_SDeathMatchMethods },
-	{ "SFlagHunt", g_SFlagHuntMethods },
-	{ "SPostman", g_SPostmanMethods },
-	{ "SRace", g_SRaceMethods },
-	{ "Init", g_InitMethods },
-	{ "string", g_StringMethods },
-	{ "BankDirectorSound", g_BankDirectorSoundMethods },
-	{ "BankMasterSound", g_BankMasterSoundMethods },
-	{ "BertoSound", g_BertoSoundMethods },
-	{ "BettySound", g_BettySoundMethods },
-	{ "BishopSound", g_BishopSoundMethods },
-	{ "BossSound", g_BossSoundMethods },
-	{ "CrazyGamblerSound", g_CrazyGamblerSoundMethods },
-	{ "DesktopSound", g_DesktopSoundMethods },
-	{ "DtritusSound", g_DtritusSoundMethods },
-	{ "FunctionarySound", g_FunctionarySoundMethods },
-	{ "GateKeeperSound", g_GateKeeperSoundMethods },
-	{ "GearSound", g_GearSoundMethods },
-	{ "HumanSound", g_HumanSoundMethods },
-	{ "HumphreySound", g_HumphreySoundMethods },
-	{ "MaintenanceSound", g_MaintenanceSoundMethods },
-	{ "MayorSound", g_MayorSoundMethods },
-	{ "MercenarySound", g_MercenarySoundMethods },
-	{ "MessengerSound", g_MessengerSoundMethods },
-	{ "NurseSound", g_NurseSoundMethods },
-	{ "PoliceBossSound", g_PoliceBossSoundMethods },
-	{ "PoliceSound", g_PoliceSoundMethods },
-	{ "RustySound", g_RustySoundMethods },
-	{ "SebastianSound", g_SebastianSoundMethods },
-	{ "SentinelSound", g_SentinelSoundMethods },
-	{ "SputnikJunkyardSound", g_SputnikJunkyardSoundMethods },
-	{ "SputnikSound", g_SputnikSoundMethods },
-	{ "TestCSound", g_TestCSoundMethods },
-	{ "CharsNPC", g_CharsNPCMethods },
-	{ "Betty", g_BettyMethods },
-	{ "BankDirector", g_BankDirectorMethods },
-	{ "Boss", g_BossMethods },
-	{ "Boss", g_BossFuncs },
-	{ "CrazyGambler", g_CrazyGamblerMethods },
-	{ "CrazyGambler", g_CrazyGamblerFuncs },
-	{ "Humphrey", g_HumphreyMethods },
-	{ "Maintenance", g_MaintenanceMethods },
-	{ "Maintenance", g_MaintenanceFuncs },
-	{ "Mayor", g_MayorMethods },
-	{ "Mayor", g_MayorFuncs },
-	{ "Rusty", g_RustyMethods },
-	{ "Rusty", g_RustyFuncs },
-	{ "Sebastian", g_SebastianMethods },
-	{ "Sentinel", g_SentinelMethods },
-	{ "SputnikJunkyard", g_SputnikJunkyardMethods },
-	{ "SputnikJunkyard", g_SputnikJunkyardFuncs },
-	{ "Bishop", g_BishopMethods },
-	{ "Bishop", g_BishopFuncs },
-	{ "Functionary", g_FunctionaryMethods },
-	{ "Functionary", g_FunctionaryFuncs },
-	{ "Gear", g_GearMethods },
-	{ "Gear", g_GearFuncs },
-	{ "Gear", g_GearDefFuncs },
-	{ "BankMaster", g_BankMasterMethods },
-	{ "Berto", g_BertoMethods },
-	{ "Nurse", g_NurseMethods },
-	{ "Desktop", g_DesktopMethods },
-	{ "Police", g_PoliceMethods },
-	{ "Police", g_PoliceFuncs },
-	{ "Police", g_PoliceDefFuncs },
-	{ "GateKeeper", g_GateKeeperMethods },
-	{ "GateKeeper", g_GateKeeperFuncs },
-	{ "Dtritus", g_DtritusMethods },
-	{ "Sputnik", g_SputnikMethods },
-	{ "Sputnik", g_SputnikFuncs },
-	{ "PoliceBoss", g_PoliceBossMethods },
-	{ "Messenger", g_MessengerMethods },
-	{ "Messenger", g_MessengerFuncs },
-	{ "Human", g_HumanMethods },
-	{ "MercenaryA", g_MercenaryAMethods },
-	{ "MercenaryB", g_MercenaryBMethods },
-	{ "MercenaryC", g_MercenaryCMethods },
-	{ "MercenaryL", g_MercenaryLMethods },
-	{ "InMap", g_InMapMethods },
-	{ "Bureaucracy", g_BureaucracyMethods },
-	{ "Chat", g_ChatMethods },
-	{ "Ffa", g_FfaMethods },
-	{ "CreditsText", g_CreditsTextMethods },
-	{ "Traffic", g_TrafficMethods },
-	{ "OutPolice", g_OutPoliceMethods },
-	{ "InPolice", g_InPoliceMethods },
-	{ "PhoneCab", g_PhoneCabMethods },
-	{ "DTritusDesktop", g_DTritusDesktopMethods },
-	{ "Metro", g_MetroMethods },
-	{ "Challenge", g_ChallengeMethods },
-	{ "Alarm", g_AlarmMethods },
-	{ "NewsPanel", g_NewsPanelMethods },
-	{ "Doors", g_DoorsMethods },
-	{ "Elevator", g_ElevatorMethods },
-	{ "Teleport", g_TeleportMethods },
-	{ "MisItems", g_MisItemsMethods },
-	{ "CrazyWing", g_CrazyWingMethods },
-	{ "MissionsFuncs", g_MissionsFuncsMethods },
-	{ "Scene", g_SceneMethods },
-	{ "CharConversor", g_CharConversorMethods },
-	{ "RaceMaker", g_RaceMakerMethods },
-	{ "Sound", g_SoundMethods },
-	{ "OutSound", g_OutSoundMethods },
-	{ "DoorSound", g_DoorSoundMethods },
-	{ "OutMap", g_OutMapMethods },
-	{ "InTraffic", g_InTrafficMethods },
-	{ "ShipMaker", g_ShipMakerMethods },
-	{ "Parking", g_ParkingMethods },
-	{ "Accelerator", g_AcceleratorMethods },
-	{ "DeathMatch", g_DeathMatchMethods },
-	{ "TeamDeathMatch", g_TeamDeathMatchMethods },
-	{ "Versus", g_VersusMethods },
-	{ "CTF", g_CTFMethods },
-	{ "Domination", g_DominationMethods },
-	{ "MortalRace", g_MortalRaceMethods },
-	{ "EnginesTab", g_EnginesTabMethods },
-	{ "WeaponsTab", g_WeaponsTabMethods },
-	{ "HullTab", g_HullTabMethods },
+	{ "PCMenu", NULL, g_MenuVideoMethods },
+	{ "PCMenu", g_MenuControlsMethods, NULL },
+	{ "PCMenu", g_MenuNetMethods, NULL },
+	{ "PCMenu", g_MenuVideoVarsMethods, NULL },
+	{ "Menu", g_MenuBaseMethods, NULL },
+	{ "Menu", g_MenuMainMethods, NULL },
+	{ "Menu", g_MenuMissionMethods, NULL },
+	{ "Scorer", g_ScorerMethods, NULL },
+	{ "CharScorer", g_CharScorerMethods, NULL },
+	{ "RacerScorer", g_RacerScorerMethods, NULL },
+	{ "Chars", g_CharsMethods, NULL },
+	{ "MakeChar", g_MakeCharMethods, NULL },
+	{ "CharAct", g_CharActMethods, NULL },
+	{ "Speech", g_SpeechMethods, NULL },
+	{ "SaveGame", g_SaveGameMethods, NULL },
+	{ "Fx", g_FxMethods, NULL },
+	{ "Items", g_ItemsMethods, NULL },
+	{ "Net", g_NetMethods, NULL },
+	{ "NDeathMatch", g_NDeathMatchMethods, NULL },
+	{ "NDeathMatchBots", g_NDeathMatchBotsMethods, NULL },
+	{ "NTeamDM", g_NTeamDMMethods, NULL },
+	{ "NTeamFlag", g_NTeamFlagMethods, NULL },
+	{ "NFlagHunt", g_NFlagHuntMethods, NULL },
+	{ "NPostman", g_NPostmanMethods, NULL },
+	{ "NTeamPost", g_NTeamPostMethods, NULL },
+	{ "Weapons", NULL, g_WeaponsMethods },
+	{ "Vulcan", NULL, g_VulcanMethods },
+	{ "Devastator", NULL, g_DevastatorMethods },
+	{ "Tesla", NULL, g_TeslaMethods },
+	{ "ATPC", NULL, g_ATPCMethods },
+	{ "Laser", NULL, g_LaserMethods },
+	{ "Swarm", NULL, g_SwarmMethods },
+	{ "Inferno", NULL, g_InfernoMethods },
+	{ "Cloud", NULL, g_CloudMethods },
+	{ "EMI", NULL, g_EMIMethods },
+	{ "Sonic", NULL, g_SonicMethods },
+	{ "SputnikInterface", g_SputnikInterfaceMethods, NULL },
+	{ "ShipEdit", g_ShipEditMethods, NULL },
+	{ "HangarTab", g_HangarTabMethods, NULL },
+	{ "Vehicles", g_VehiclesMethods, NULL },
+	{ "VehiclesNPC", g_VehiclesNPCMethods, NULL },
+	{ "Split", g_SplitMethods, NULL },
+	{ "SDeathMatch", g_SDeathMatchMethods, NULL },
+	{ "SFlagHunt", g_SFlagHuntMethods, NULL },
+	{ "SPostman", g_SPostmanMethods, NULL },
+	{ "SRace", g_SRaceMethods, NULL },
+	{ "Init", g_InitMethods, NULL },
+	{ "string", g_StringMethods, NULL },
+	{ "BankDirectorSound", g_BankDirectorSoundMethods, NULL },
+	{ "BankMasterSound", g_BankMasterSoundMethods, NULL },
+	{ "BertoSound", g_BertoSoundMethods, NULL },
+	{ "BettySound", g_BettySoundMethods, NULL },
+	{ "BishopSound", g_BishopSoundMethods, NULL },
+	{ "BossSound", g_BossSoundMethods, NULL },
+	{ "CrazyGamblerSound", g_CrazyGamblerSoundMethods, NULL },
+	{ "DesktopSound", g_DesktopSoundMethods, NULL },
+	{ "DtritusSound", g_DtritusSoundMethods, NULL },
+	{ "FunctionarySound", g_FunctionarySoundMethods, NULL },
+	{ "GateKeeperSound", g_GateKeeperSoundMethods, NULL },
+	{ "GearSound", g_GearSoundMethods, NULL },
+	{ "HumanSound", g_HumanSoundMethods, NULL },
+	{ "HumphreySound", g_HumphreySoundMethods, NULL },
+	{ "MaintenanceSound", g_MaintenanceSoundMethods, NULL },
+	{ "MayorSound", g_MayorSoundMethods, NULL },
+	{ "MercenarySound", g_MercenarySoundMethods, NULL },
+	{ "MessengerSound", g_MessengerSoundMethods, NULL },
+	{ "NurseSound", g_NurseSoundMethods, NULL },
+	{ "PoliceBossSound", g_PoliceBossSoundMethods, NULL },
+	{ "PoliceSound", g_PoliceSoundMethods, NULL },
+	{ "RustySound", g_RustySoundMethods, NULL },
+	{ "SebastianSound", g_SebastianSoundMethods, NULL },
+	{ "SentinelSound", g_SentinelSoundMethods, NULL },
+	{ "SputnikJunkyardSound", g_SputnikJunkyardSoundMethods, NULL },
+	{ "SputnikSound", g_SputnikSoundMethods, NULL },
+	{ "TestCSound", g_TestCSoundMethods, NULL },
+	{ "CharsNPC", g_CharsNPCMethods, NULL },
+	{ "Betty", g_BettyMethods, NULL },
+	{ "BankDirector", g_BankDirectorMethods, NULL },
+	{ "Boss", g_BossMethods, NULL },
+	{ "Boss", g_BossFuncs, NULL },
+	{ "CrazyGambler", g_CrazyGamblerMethods, NULL },
+	{ "CrazyGambler", g_CrazyGamblerFuncs, NULL },
+	{ "Humphrey", g_HumphreyMethods, NULL },
+	{ "Maintenance", g_MaintenanceMethods, NULL },
+	{ "Maintenance", g_MaintenanceFuncs, NULL },
+	{ "Mayor", g_MayorMethods, NULL },
+	{ "Mayor", g_MayorFuncs, NULL },
+	{ "Rusty", g_RustyMethods, NULL },
+	{ "Rusty", g_RustyFuncs, NULL },
+	{ "Sebastian", g_SebastianMethods, NULL },
+	{ "Sentinel", g_SentinelMethods, NULL },
+	{ "SputnikJunkyard", g_SputnikJunkyardMethods, NULL },
+	{ "SputnikJunkyard", g_SputnikJunkyardFuncs, NULL },
+	{ "Bishop", g_BishopMethods, NULL },
+	{ "Bishop", g_BishopFuncs, NULL },
+	{ "Functionary", g_FunctionaryMethods, NULL },
+	{ "Functionary", g_FunctionaryFuncs, NULL },
+	{ "Gear", g_GearMethods, NULL },
+	{ "Gear", g_GearFuncs, NULL },
+	{ "Gear", g_GearDefFuncs, NULL },
+	{ "BankMaster", g_BankMasterMethods, NULL },
+	{ "Berto", g_BertoMethods, NULL },
+	{ "Nurse", g_NurseMethods, NULL },
+	{ "Desktop", g_DesktopMethods, NULL },
+	{ "Police", g_PoliceMethods, NULL },
+	{ "Police", g_PoliceFuncs, NULL },
+	{ "Police", g_PoliceDefFuncs, NULL },
+	{ "GateKeeper", g_GateKeeperMethods, NULL },
+	{ "GateKeeper", g_GateKeeperFuncs, NULL },
+	{ "Dtritus", g_DtritusMethods, NULL },
+	{ "Sputnik", g_SputnikMethods, NULL },
+	{ "Sputnik", g_SputnikFuncs, NULL },
+	{ "PoliceBoss", g_PoliceBossMethods, NULL },
+	{ "Messenger", g_MessengerMethods, NULL },
+	{ "Messenger", g_MessengerFuncs, NULL },
+	{ "Human", g_HumanMethods, NULL },
+	{ "MercenaryA", g_MercenaryAMethods, NULL },
+	{ "MercenaryB", g_MercenaryBMethods, NULL },
+	{ "MercenaryC", g_MercenaryCMethods, NULL },
+	{ "MercenaryL", g_MercenaryLMethods, NULL },
+	{ "InMap", g_InMapMethods, NULL },
+	{ "Bureaucracy", g_BureaucracyMethods, NULL },
+	{ "Chat", g_ChatMethods, NULL },
+	{ "Ffa", g_FfaMethods, NULL },
+	{ "CreditsText", g_CreditsTextMethods, NULL },
+	{ "Traffic", g_TrafficMethods, NULL },
+	{ "OutPolice", g_OutPoliceMethods, NULL },
+	{ "InPolice", g_InPoliceMethods, NULL },
+	{ "PhoneCab", g_PhoneCabMethods, NULL },
+	{ "DTritusDesktop", g_DTritusDesktopMethods, NULL },
+	{ "Metro", g_MetroMethods, NULL },
+	{ "Challenge", g_ChallengeMethods, NULL },
+	{ "Alarm", g_AlarmMethods, NULL },
+	{ "NewsPanel", g_NewsPanelMethods, NULL },
+	{ "Doors", g_DoorsMethods, NULL },
+	{ "Elevator", g_ElevatorMethods, NULL },
+	{ "Teleport", g_TeleportMethods, NULL },
+	{ "MisItems", g_MisItemsMethods, NULL },
+	{ "CrazyWing", g_CrazyWingMethods, NULL },
+	{ "MissionsFuncs", g_MissionsFuncsMethods, NULL },
+	{ "Scene", g_SceneMethods, NULL },
+	{ "CharConversor", g_CharConversorMethods, NULL },
+	{ "RaceMaker", g_RaceMakerMethods, NULL },
+	{ "Sound", g_SoundMethods, NULL },
+	{ "OutSound", g_OutSoundMethods, NULL },
+	{ "DoorSound", g_DoorSoundMethods, NULL },
+	{ "OutMap", g_OutMapMethods, NULL },
+	{ "InTraffic", g_InTrafficMethods, NULL },
+	{ "ShipMaker", g_ShipMakerMethods, NULL },
+	{ "Parking", g_ParkingMethods, NULL },
+	{ "Accelerator", g_AcceleratorMethods, NULL },
+	{ "DeathMatch", g_DeathMatchMethods, NULL },
+	{ "TeamDeathMatch", g_TeamDeathMatchMethods, NULL },
+	{ "Versus", g_VersusMethods, NULL },
+	{ "CTF", g_CTFMethods, NULL },
+	{ "Domination", g_DominationMethods, NULL },
+	{ "MortalRace", g_MortalRaceMethods, NULL },
+	{ "EnginesTab", g_EnginesTabMethods, NULL },
+	{ "WeaponsTab", g_WeaponsTabMethods, NULL },
+	{ "HullTab", g_HullTabMethods, NULL },
 };
 
 /* whether an item of the tuple t is the object cur */
@@ -519,35 +519,55 @@ void Script_CheckEngine(void) {
 	}
 }
 
-/* the last table of module that has name (as the loader put them in), NULL if none */
-static PyMethodDef *Script_TableDef(const char *module, const char *name) {
-	PyMethodDef *found = NULL;
+const char *Script_Row(PyMethodDef *methods, const portFn_t *fns, int i, scriptRow_t *row) {
+	row->def = methods ? &methods[i] : NULL;
+	row->fn = methods ? NULL : &fns[i];
+	return methods ? methods[i].ml_name : fns[i].name;
+}
+
+/* the last row of module's tables that has name (as the loader put them in): 1 with *found, 0 if none */
+static byte Script_TableDef(const char *module, const char *name, scriptRow_t *found) {
+	byte any = 0;
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
-		if (!strcmp(script_modules[i].name, module)) {
-			for (PyMethodDef *m = script_modules[i].methods; m->ml_name; m++) {
-				if (!strcmp(m->ml_name, name)) {
-					found = m;
-				}
+		const scriptModule_t *sm = &script_modules[i];
+		scriptRow_t row;
+		const char *rn;
+		if (strcmp(sm->name, module)) {
+			continue;
+		}
+		for (int k = 0; (rn = Script_Row(sm->methods, sm->fns, k, &row)) != NULL; k++) {
+			if (!strcmp(rn, name)) {
+				*found = row;
+				any = 1;
 			}
 		}
 	}
-	return found;
+	return any;
 }
 
 byte Script_Checking(void) {
 	return Script_CheckOn();
 }
 
-byte Script_FunctionOf(PyMethodDef *def, const char *module, nativeVal_t *out) {
-	const portRef_t *ref = Script_CheckOn() ? NULL : Port_OfDef(def);
+byte Script_FunctionOf(const scriptRow_t *row, const char *module, nativeVal_t *out) {
 	Native_SetNone(out);
+	if (row->fn) {
+		/* a function table: the native function of its ref (OBJLIB 7e2: SCRAP_NULL_CHECK has no wrapper for it) */
+		const portRef_t *ref = Port_OfFn(module, row->fn);
+		if (!ref) {
+			return Native_Raise(NE_SYSTEM, "%s.%s has no port ref", module, row->fn->name);
+		}
+		NObj_NewPortFunc(out, ref);
+		return 1;
+	}
+	const portRef_t *ref = Script_CheckOn() ? NULL : Port_OfDef(row->def);
 	if (ref) {
 		NObj_NewPortFunc(out, ref);
 		return 1;
 	}
-	/* OBJLIB 9: a function the entries do not take, and every one under SCRAP_NULL_CHECK (its wrapper), as the C
+	/* OBJLIB 7e2: a function the entries do not take, and every one under SCRAP_NULL_CHECK (its wrapper), as the C
 	 * function object of Python */
-	PyObject *f = Script_CheckFunction(def, NULL, module);
+	PyObject *f = Script_CheckFunction(row->def, NULL, module);
 	if (!f) {
 		return 0;
 	}
@@ -557,13 +577,14 @@ byte Script_FunctionOf(PyMethodDef *def, const char *module, nativeVal_t *out) {
 }
 
 byte Script_TableFunction(const char *module, const char *name, nativeVal_t *out) {
-	PyMethodDef *found = Script_TableDef(module, name);
+	scriptRow_t found;
 	Native_SetNone(out);
-	return found && Script_FunctionOf(found, module, out);
+	return Script_TableDef(module, name, &found) && Script_FunctionOf(&found, module, out);
 }
 
 byte Script_TableHas(const char *module, const char *name) {
-	return Script_TableDef(module, name) != NULL;
+	scriptRow_t found;
+	return Script_TableDef(module, name, &found);
 }
 
 /*
@@ -573,20 +594,22 @@ byte Script_TableHas(const char *module, const char *name) {
  * 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
  * as they did after the .pyc (Sound modules of 21 keys).
  */
-void Script_TableReplay(PyObject *module, PyMethodDef *methods) {
+void Script_TableReplay(PyObject *module, PyMethodDef *methods, const portFn_t *fns) {
 	modVarRef_t ref;
+	scriptRow_t row;
+	const char *name;
 	if (!ModVar_RefOf(module, &ref)) {
 		return;
 	}
-	for (PyMethodDef *m = methods; m->ml_name; m++) {
+	for (int k = 0; (name = Script_Row(methods, fns, k, &row)) != NULL; k++) {
 		nativeVal_t cur;
-		if (ModVar_GetVal(&ref, m->ml_name, &cur)) {
-			Script_ReplaySet(&ref, m->ml_name, &cur);
+		if (ModVar_GetVal(&ref, name, &cur)) {
+			Script_ReplaySet(&ref, name, &cur);
 			Native_Free(&cur);
 			continue;
 		}
-		if (Script_FunctionOf(m, PyModule_GetName(module), &cur)) {
-			ModVar_SetVal(&ref, m->ml_name, &cur);
+		if (Script_FunctionOf(&row, PyModule_GetName(module), &cur)) {
+			ModVar_SetVal(&ref, name, &cur);
 		}
 		Native_Free(&cur);
 	}
@@ -607,7 +630,7 @@ void Script_ReplaySet(const modVarRef_t *ref, const char *name, const nativeVal_
 void Script_ModuleExtras(const char *name, PyObject *module, const nativeVal_t *defs) {
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
 		if (!strcmp(script_modules[i].name, name)) {
-			Script_TableReplay(module, script_modules[i].methods);
+			Script_TableReplay(module, script_modules[i].methods, script_modules[i].fns);
 		}
 	}
 	Script_LevelModuleExtras(name, module, defs);

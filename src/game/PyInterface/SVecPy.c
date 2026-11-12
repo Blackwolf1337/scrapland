@@ -1,5 +1,5 @@
 /*
- * Python module SVec (method table SVec_methods): 3D vector math for the game scripts. Original source
+ * Python module SVec (function table SVec_methods): 3D vector math for the game scripts. Original source
  * PyInterface/SVecPy.cpp.
  *
  * Vectors come in as tuples. Functions parsing "d" compute in double, functions parsing "f" in float (SSE single
@@ -155,106 +155,24 @@ static char str_PyDoc_SVec_NormAng[44];
 static char str_PyDoc_SVec_Prod[];
 static char str_PyDoc_SVec_Rotate3D[];
 static char str_PyDoc_SVec_Sub[];
-extern const char str_PyMethod_SScorer_Add[];
-static const char str_PyMethod_SVec_CProd[];
-static const char str_PyMethod_SVec_DProd[];
-static const char str_PyMethod_SVec_GetAngle[];
-static const char str_PyMethod_SVec_GetRotAng[];
-static const char str_PyMethod_SVec_Mod[];
-static const char str_PyMethod_SVec_ModSqr[];
-static const char str_PyMethod_SVec_Norm[];
-static const char str_PyMethod_SVec_NormAng[];
-static const char str_PyMethod_SVec_Prod[];
-static const char str_PyMethod_SVec_Rotate3D[];
-static const char str_PyMethod_SVec_Sub[];
-static PyMethodDef SVec_methods[13] = {
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Add,
-		.ml_meth = (void *)SVec_Add,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_Add,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_Sub,
-		.ml_meth = (void *)SVec_Sub,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_Sub,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_Mod,
-		.ml_meth = (void *)SVec_Mod,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_Mod,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_ModSqr,
-		.ml_meth = (void *)SVec_ModSqr,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_ModSqr,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_Norm,
-		.ml_meth = (void *)SVec_Norm,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_Norm,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_Prod,
-		.ml_meth = (void *)SVec_Prod,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_Prod,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_DProd,
-		.ml_meth = (void *)SVec_DProd,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_DProd,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_CProd,
-		.ml_meth = (void *)SVec_CProd,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_CProd,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_Rotate3D,
-		.ml_meth = (void *)SVec_Rotate3D,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_Rotate3D,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_GetAngle,
-		.ml_meth = (void *)SVec_GetAngle,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_GetAngle,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_GetRotAng,
-		.ml_meth = (void *)SVec_GetRotAng,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_GetRotAng,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SVec_NormAng,
-		.ml_meth = (void *)SVec_NormAng,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SVec_NormAng,
-	},
+static const portFn_t SVec_methods[] = {
+	PORT_FND(Add, SVec_Add, str_PyDoc_SVec_Add),
+	PORT_FND(Sub, SVec_Sub, str_PyDoc_SVec_Sub),
+	PORT_FND(Mod, SVec_Mod, str_PyDoc_SVec_Mod),
+	PORT_FND(ModSqr, SVec_ModSqr, str_PyDoc_SVec_ModSqr),
+	PORT_FND(Norm, SVec_Norm, str_PyDoc_SVec_Norm),
+	PORT_FND(Prod, SVec_Prod, str_PyDoc_SVec_Prod),
+	PORT_FND(DProd, SVec_DProd, str_PyDoc_SVec_DProd),
+	PORT_FND(CProd, SVec_CProd, str_PyDoc_SVec_CProd),
+	PORT_FND(Rotate3D, SVec_Rotate3D, str_PyDoc_SVec_Rotate3D),
+	PORT_FND(GetAngle, SVec_GetAngle, str_PyDoc_SVec_GetAngle),
+	PORT_FND(GetRotAng, SVec_GetRotAng, str_PyDoc_SVec_GetRotAng),
+	PORT_FND(NormAng, SVec_NormAng, str_PyDoc_SVec_NormAng),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SVec, 0x42fc80)
 
-static const char str_PyMethod_SVec_Sub[] = "Sub";
-static const char str_PyMethod_SVec_Mod[] = "Mod";
-static const char str_PyMethod_SVec_ModSqr[] = "ModSqr";
-static const char str_PyMethod_SVec_Norm[] = "Norm";
-static const char str_PyMethod_SVec_Prod[] = "Prod";
-static const char str_PyMethod_SVec_DProd[] = "DProd";
-static const char str_PyMethod_SVec_CProd[] = "CProd";
-static const char str_PyMethod_SVec_Rotate3D[] = "Rotate3D";
-static const char str_PyMethod_SVec_GetAngle[] = "GetAngle";
-static const char str_PyMethod_SVec_GetRotAng[] = "GetRotAng";
-static const char str_PyMethod_SVec_NormAng[] = "NormAng";
 
 static char str_PyDoc_SVec_Add[] = "res Add(v1,v2) : suma dos vectores 3D";
 

@@ -14,12 +14,23 @@
 #include <stdint.h>
 
 #include "scrap/python.h"
+#include "scrap/scriptnative.h"
 
-/* the C functions of one pack module */
+/* the C functions of one pack module: a function table (stage 7e, scrap/scriptnative.h), or a PyMethodDef table not
+ * converted yet (OBJLIB 7e2) */
 typedef struct scriptModule_s {
 	const char *name;		/* the module name of the script, PCMenu */
 	PyMethodDef *methods;		/* put into the module under their names, the table ends with a NULL name */
+	const portFn_t *fns;		/* the same as a function table (methods NULL) */
 } scriptModule_t;
+
+/* a row of such a table: def of a PyMethodDef table or fn of a function table (the other NULL) */
+typedef struct scriptRow_s {
+	PyMethodDef *def;
+	const portFn_t *fn;
+} scriptRow_t;
+/* the name of row i of the tables methods or fns (the one that is not NULL), NULL at the end; *row the row */
+const char *Script_Row(PyMethodDef *methods, const portFn_t *fns, int i, scriptRow_t *row);
 
 /* the function object of a C function of the script tables (PyCFunction_New(def, self)); with SCRAP_NULL_CHECK set
  * a wrapper that reports a NULL return without an error (module names it in the report) */
@@ -94,9 +105,9 @@ struct nativeVal_s;
 /* SCRAP_NULL_CHECK is set (the functions of the tables are the wrappers of Script_CheckFunction) */
 byte Script_Checking(void);
 /* the function object of a C function of the script tables into *out: the native function of its port ref
- * (NObj_NewPortFunc, Port_OfDef), else (no ref, SCRAP_NULL_CHECK) the view of Script_CheckFunction's object; 1, or 0
- * with the error */
-byte Script_FunctionOf(PyMethodDef *def, const char *module, struct nativeVal_s *out);
+ * (NObj_NewPortFunc; Port_OfFn, Port_OfDef), else (a PyMethodDef row without a ref, SCRAP_NULL_CHECK) the view of
+ * Script_CheckFunction's object; 1, or 0 with the error */
+byte Script_FunctionOf(const scriptRow_t *row, const char *module, struct nativeVal_s *out);
 /* the function name of module from the C tables (script_modules, the last table that has it) into *out: 1, 0 with
  * *out None (an error set when making it failed, none when no table has it) */
 byte Script_TableFunction(const char *module, const char *name, struct nativeVal_s *out);
@@ -104,7 +115,7 @@ byte Script_TableFunction(const char *module, const char *name, struct nativeVal
 byte Script_TableHas(const char *module, const char *name);
 /* the dict writes the loader made after the .pyc for a table, on a module made in C with the values in place (the
  * functions the script lacks are added) */
-void Script_TableReplay(PyObject *module, PyMethodDef *methods);
+void Script_TableReplay(PyObject *module, PyMethodDef *methods, const portFn_t *fns);
 /* the dict writes the loader made after the .pyc for the function cur under name, on a module made in C with the
  * values in place: the other names, tuples and dict values that hold cur and name itself (they decide the key order of
  * the module's variables, scrap/modvars.h) */
@@ -333,7 +344,7 @@ byte Script_IsQuotableText(const char *s, int n);
 int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyObject **out);
 
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
-extern PyMethodDef g_MenuVideoMethods[];
+extern const portFn_t g_MenuVideoMethods[];
 /* the C options and controls menus of PCMenu (src/game/Script/MenuControls.c) */
 extern PyMethodDef g_MenuControlsMethods[];
 /* the C multiplayer menus of PCMenu (src/game/Script/MenuNet.c) */
@@ -373,17 +384,17 @@ extern PyMethodDef g_NTeamFlagMethods[];
 extern PyMethodDef g_NFlagHuntMethods[];
 extern PyMethodDef g_NPostmanMethods[];
 extern PyMethodDef g_NTeamPostMethods[];
-extern PyMethodDef g_WeaponsMethods[];
-extern PyMethodDef g_VulcanMethods[];
-extern PyMethodDef g_DevastatorMethods[];
-extern PyMethodDef g_TeslaMethods[];
-extern PyMethodDef g_ATPCMethods[];
-extern PyMethodDef g_LaserMethods[];
-extern PyMethodDef g_SwarmMethods[];
-extern PyMethodDef g_InfernoMethods[];
-extern PyMethodDef g_CloudMethods[];
-extern PyMethodDef g_EMIMethods[];
-extern PyMethodDef g_SonicMethods[];
+extern const portFn_t g_WeaponsMethods[];
+extern const portFn_t g_VulcanMethods[];
+extern const portFn_t g_DevastatorMethods[];
+extern const portFn_t g_TeslaMethods[];
+extern const portFn_t g_ATPCMethods[];
+extern const portFn_t g_LaserMethods[];
+extern const portFn_t g_SwarmMethods[];
+extern const portFn_t g_InfernoMethods[];
+extern const portFn_t g_CloudMethods[];
+extern const portFn_t g_EMIMethods[];
+extern const portFn_t g_SonicMethods[];
 extern PyMethodDef g_SputnikInterfaceMethods[];
 /* the ship editor (src/game/Script/ShipEdit.c, HangarTab.c, data/menus/shipedit.def) */
 extern PyMethodDef g_ShipEditMethods[];

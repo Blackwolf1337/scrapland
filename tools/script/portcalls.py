@@ -93,7 +93,7 @@ def owners(pp):
 	for level, module, g in ports.registrations():
 		if g in tabs:
 			own[tabs[g][0]].add(module)
-			cfunc.update((module, name) for name, _ in tabs[g][1])
+			cfunc.update((module, row[0]) for row in tabs[g][1])
 	return own, cfunc
 
 

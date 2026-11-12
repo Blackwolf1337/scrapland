@@ -1,5 +1,5 @@
 /*
- * Python module SSound (method table SSound_methods): sounds, music, voices and sound property
+ * Python module SSound (function table SSound_methods): sounds, music, voices and sound property
  * sets. The original source file is not known (no CHECK in it); the other modules are PyInterface/S*Py.cpp.
  */
 #include "scrap/python.h"
@@ -238,147 +238,29 @@ static char str_PyDoc_SSound_StopAllSounds[];
 static char str_PyDoc_SSound_StopVoice[];
 static char str_PyDoc_SSound_UsePS[];
 static char str_PyDoc_SSound_VoiceRemain[72];
-static const char str_PyMethod_SSound_CreatePS[];
-static const char str_PyMethod_SSound_DeleteAllSounds[];
-static const char str_PyMethod_SSound_GetPS[];
-static const char str_PyMethod_SSound_LoadSound[];
-static const char str_PyMethod_SSound_OpenVoice[];
-static const char str_PyMethod_SSound_Play[];
-static const char str_PyMethod_SSound_PlaySound[];
-static const char str_PyMethod_SSound_PlayVoice[];
-static const char str_PyMethod_SSound_SetMusic[];
-static const char str_PyMethod_SSound_SetMusicVolume[];
-static const char str_PyMethod_SSound_SetPS[];
-static const char str_PyMethod_SSound_SetVoiceString[];
-static const char str_PyMethod_SSound_SetVoiceVolume[];
-static const char str_PyMethod_SSound_StopAllSounds[];
-static const char str_PyMethod_SSound_StopVoice[];
-static const char str_PyMethod_SSound_UsePS[];
-static const char str_PyMethod_SSound_VoiceRemain[];
-static PyMethodDef SSound_methods[18] = {
-	{
-		.ml_name = (void *)str_PyMethod_SSound_LoadSound,
-		.ml_meth = (void *)SSound_LoadSound,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_LoadSound,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_PlaySound,
-		.ml_meth = (void *)SSound_PlaySound,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_PlaySound,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_Play,
-		.ml_meth = (void *)SSound_Play,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_Play,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_StopAllSounds,
-		.ml_meth = (void *)SSound_StopAllSounds,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_StopAllSounds,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_SetPS,
-		.ml_meth = (void *)SSound_SetPS,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_SetPS,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_GetPS,
-		.ml_meth = (void *)SSound_GetPS,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_GetPS,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_UsePS,
-		.ml_meth = (void *)SSound_UsePS,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_UsePS,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_CreatePS,
-		.ml_meth = (void *)SSound_CreatePS,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_CreatePS,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_SetMusic,
-		.ml_meth = (void *)SSound_SetMusic,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_SetMusic,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_SetMusicVolume,
-		.ml_meth = (void *)SSound_SetMusicVolume,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_SetMusicVolume,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_OpenVoice,
-		.ml_meth = (void *)SSound_OpenVoice,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_OpenVoice,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_PlayVoice,
-		.ml_meth = (void *)SSound_PlayVoice,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_PlayVoice,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_StopVoice,
-		.ml_meth = (void *)SSound_StopVoice,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_StopVoice,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_VoiceRemain,
-		.ml_meth = (void *)SSound_VoiceRemain,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_VoiceRemain,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_SetVoiceVolume,
-		.ml_meth = (void *)SSound_SetVoiceVolume,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_SetVoiceVolume,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_SetVoiceString,
-		.ml_meth = (void *)SSound_SetVoiceString,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_SetVoiceString,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SSound_DeleteAllSounds,
-		.ml_meth = (void *)SSound_DeleteAllSounds,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SSound_DeleteAllSounds,
-	},
+static const portFn_t SSound_methods[] = {
+	PORT_FND(LoadSound, SSound_LoadSound, str_PyDoc_SSound_LoadSound),
+	PORT_FND(PlaySound, SSound_PlaySound, str_PyDoc_SSound_PlaySound),
+	PORT_FND(Play, SSound_Play, str_PyDoc_SSound_Play),
+	PORT_FND(StopAllSounds, SSound_StopAllSounds, str_PyDoc_SSound_StopAllSounds),
+	PORT_FND(SetPS, SSound_SetPS, str_PyDoc_SSound_SetPS),
+	PORT_FND(GetPS, SSound_GetPS, str_PyDoc_SSound_GetPS),
+	PORT_FND(UsePS, SSound_UsePS, str_PyDoc_SSound_UsePS),
+	PORT_FND(CreatePS, SSound_CreatePS, str_PyDoc_SSound_CreatePS),
+	PORT_FND(SetMusic, SSound_SetMusic, str_PyDoc_SSound_SetMusic),
+	PORT_FND(SetMusicVolume, SSound_SetMusicVolume, str_PyDoc_SSound_SetMusicVolume),
+	PORT_FND(OpenVoice, SSound_OpenVoice, str_PyDoc_SSound_OpenVoice),
+	PORT_FND(PlayVoice, SSound_PlayVoice, str_PyDoc_SSound_PlayVoice),
+	PORT_FND(StopVoice, SSound_StopVoice, str_PyDoc_SSound_StopVoice),
+	PORT_FND(VoiceRemain, SSound_VoiceRemain, str_PyDoc_SSound_VoiceRemain),
+	PORT_FND(SetVoiceVolume, SSound_SetVoiceVolume, str_PyDoc_SSound_SetVoiceVolume),
+	PORT_FND(SetVoiceString, SSound_SetVoiceString, str_PyDoc_SSound_SetVoiceString),
+	PORT_FND(DeleteAllSounds, SSound_DeleteAllSounds, str_PyDoc_SSound_DeleteAllSounds),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SSound, 0x42f558)
 
-static const char str_PyMethod_SSound_LoadSound[] = "LoadSound";
-static const char str_PyMethod_SSound_PlaySound[] = "PlaySound";
-static const char str_PyMethod_SSound_Play[] = "Play";
-static const char str_PyMethod_SSound_StopAllSounds[] = "StopAllSounds";
-static const char str_PyMethod_SSound_SetPS[] = "SetPS";
-static const char str_PyMethod_SSound_GetPS[] = "GetPS";
-static const char str_PyMethod_SSound_UsePS[] = "UsePS";
-static const char str_PyMethod_SSound_CreatePS[] = "CreatePS";
-static const char str_PyMethod_SSound_SetMusic[] = "SetMusic";
-static const char str_PyMethod_SSound_SetMusicVolume[] = "SetMusicVolume";
-static const char str_PyMethod_SSound_OpenVoice[] = "OpenVoice";
-static const char str_PyMethod_SSound_PlayVoice[] = "PlayVoice";
-static const char str_PyMethod_SSound_StopVoice[] = "StopVoice";
-static const char str_PyMethod_SSound_VoiceRemain[] = "VoiceRemain";
-static const char str_PyMethod_SSound_SetVoiceVolume[] = "SetVoiceVolume";
-static const char str_PyMethod_SSound_SetVoiceString[] = "SetVoiceString";
-static const char str_PyMethod_SSound_DeleteAllSounds[] = "DeleteAllSounds";
 
 static char str_PyDoc_SSound_SetVoiceVolume[] = "SetVoiceVolume(channel,volume) : set the volume of a voice.";
 

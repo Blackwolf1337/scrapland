@@ -113,6 +113,11 @@ void NObj_CallArg(const nativeVal_t *v, nativeVal_t *out);
 byte NObj_Native(const nativeVal_t *v);
 /* the port ref of a port function made by NObj_NewPortFunc, NULL for any other value */
 const portRef_t *NObj_PortRef(const nativeVal_t *f);
+/* OBJLIB 7e2: the ref of the C function object a port function gives to Python (its face: no adapter, the call goes to
+ * the native function), NULL for any other object */
+const portRef_t *NObj_PortFace(PyObject *f);
+/* OBJLIB 7e2: a new C function object of the port function of ref (a new reference, NULL with the error) */
+PyObject *NObj_PortFuncPy(const portRef_t *ref);
 /* the method object of func (a function object) for cls: bound to the instance self, or unbound (self NULL). 0 with a
  * TypeError when func, self or cls is not of that kind */
 byte NObj_NewMethod(nativeVal_t *out, const nativeVal_t *func, const nativeVal_t *self, const nativeVal_t *cls);

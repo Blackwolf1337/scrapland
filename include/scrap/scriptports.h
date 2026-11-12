@@ -1,6 +1,6 @@
 /*
  * The refs of the port functions that have a native entry (PORT_CALL and PORT_OWN, include/scrap/scriptnative.h),
- * one per table function: made by tools/script/ports.py from the PyMethodDef tables of src/game/Script, their
+ * one per table function: made by tools/script/ports.py from the function tables of src/game/Script, their
  * registrations in Script.c and Levels.c, the tables of the engine modules (src/game/PyInterface) and the
  * entries. Do not edit: run the tool after a table or an entry changes, and to resolve a merge. The number after
  * each ref is the count of arguments its entry takes.
@@ -1505,26 +1505,26 @@ PORT_DECL(PCMenu, GammaSliderFocus_Sub) /* ? */
 PORT_DECL(PCMenu, GammaSliderFocus_Add) /* ? */
 PORT_DECL(PCMenu, ChangeDisplay) /* ? */
 #define PORTS_MenuVideo \
-	PORT_DEF(PCMenu, VideoMenu, PCMenu_VideoMenu) \
-	PORT_DEF(PCMenu, VideoMenuBack, PCMenu_VideoMenuBack) \
-	PORT_DEF(PCMenu, VideoDefaults, PCMenu_VideoDefaults) \
-	PORT_DEF(PCMenu, ApplyChanges, PCMenu_ApplyChanges) \
-	PORT_DEF(PCMenu, ChangeVideoMode, PCMenu_ChangeVideoMode) \
-	PORT_DEF(PCMenu, PrevVideoMode, PCMenu_PrevVideoMode) \
-	PORT_DEF(PCMenu, NextVideoMode, PCMenu_NextVideoMode) \
-	PORT_DEF(PCMenu, ChangeTextureFilter, PCMenu_ChangeTextureFilter) \
-	PORT_DEF(PCMenu, ChangeTextureDetail, PCMenu_ChangeTextureDetail) \
-	PORT_DEF(PCMenu, ChangeShadowsDetail, PCMenu_ChangeShadowsDetail) \
-	PORT_DEF(PCMenu, ChangeVSync, PCMenu_ChangeVSync) \
-	PORT_DEF(PCMenu, ChangeLock, PCMenu_ChangeLock) \
-	PORT_DEF(PCMenu, ChangeFog, PCMenu_ChangeFog) \
-	PORT_DEF(PCMenu, ChangeBloom, PCMenu_ChangeBloom) \
-	PORT_DEF(PCMenu, ChangeMotionBlur, PCMenu_ChangeMotionBlur) \
-	PORT_DEF(PCMenu, ChangeDuDv, PCMenu_ChangeDuDv) \
-	PORT_DEF(PCMenu, ChangeGamma, PCMenu_ChangeGamma) \
-	PORT_DEF(PCMenu, GammaSliderFocus_Sub, PCMenu_GammaSliderFocus_Sub) \
-	PORT_DEF(PCMenu, GammaSliderFocus_Add, PCMenu_GammaSliderFocus_Add) \
-	PORT_DEF(PCMenu, ChangeDisplay, PCMenu_ChangeDisplay)
+	PORT_DEFN(PCMenu, VideoMenu, PCMenu_VideoMenu) \
+	PORT_DEFN(PCMenu, VideoMenuBack, PCMenu_VideoMenuBack) \
+	PORT_DEFN(PCMenu, VideoDefaults, PCMenu_VideoDefaults) \
+	PORT_DEFN(PCMenu, ApplyChanges, PCMenu_ApplyChanges) \
+	PORT_DEFN(PCMenu, ChangeVideoMode, PCMenu_ChangeVideoMode) \
+	PORT_DEFN(PCMenu, PrevVideoMode, PCMenu_PrevVideoMode) \
+	PORT_DEFN(PCMenu, NextVideoMode, PCMenu_NextVideoMode) \
+	PORT_DEFN(PCMenu, ChangeTextureFilter, PCMenu_ChangeTextureFilter) \
+	PORT_DEFN(PCMenu, ChangeTextureDetail, PCMenu_ChangeTextureDetail) \
+	PORT_DEFN(PCMenu, ChangeShadowsDetail, PCMenu_ChangeShadowsDetail) \
+	PORT_DEFN(PCMenu, ChangeVSync, PCMenu_ChangeVSync) \
+	PORT_DEFN(PCMenu, ChangeLock, PCMenu_ChangeLock) \
+	PORT_DEFN(PCMenu, ChangeFog, PCMenu_ChangeFog) \
+	PORT_DEFN(PCMenu, ChangeBloom, PCMenu_ChangeBloom) \
+	PORT_DEFN(PCMenu, ChangeMotionBlur, PCMenu_ChangeMotionBlur) \
+	PORT_DEFN(PCMenu, ChangeDuDv, PCMenu_ChangeDuDv) \
+	PORT_DEFN(PCMenu, ChangeGamma, PCMenu_ChangeGamma) \
+	PORT_DEFN(PCMenu, GammaSliderFocus_Sub, PCMenu_GammaSliderFocus_Sub) \
+	PORT_DEFN(PCMenu, GammaSliderFocus_Add, PCMenu_GammaSliderFocus_Add) \
+	PORT_DEFN(PCMenu, ChangeDisplay, PCMenu_ChangeDisplay)
 
 /* MenuVideoVars.c */
 PORT_DECL(PCMenu, Apply_SetActive) /* 2 */
@@ -2105,28 +2105,28 @@ PORT_DECL(SAI, SetRotStaticObj) /* 3 */
 PORT_DECL(SAI, SetInertia) /* 2 */
 PORT_DECL(SAI, GetOD) /* ? */
 #define PORTS_PyInterface_SAIPy \
-	PORT_DEF(SAI, AnalizeMap, SAI_AnalyzeMap) \
-	PORT_DEF(SAI, AnalizeGraph, SAI_AnalyzeGraph) \
-	PORT_DEF(SAI, AnalizeGraph2D, SAI_AnalyzeGraph2D) \
-	PORT_DEF(SAI, AnalizeTraffic, SAI_AnalyzeTraffic) \
-	PORT_DEF(SAI, BuildGraph, SAI_BuildGraph) \
-	PORT_DEF(SAI, BuildGraph2D, SAI_BuildGraph2D) \
-	PORT_DEF(SAI, SetStateVehicle, SAI_SetStateVehicle) \
-	PORT_DEF(SAI, SetStateChar, SAI_SetStateChar) \
-	PORT_DEF(SAI, GetStateVehicle, SAI_GetStateVehicle) \
-	PORT_DEF(SAI, GetStateChar, SAI_GetStateChar) \
-	PORT_DEF(SAI, EnableAIVehicle, SAI_EnableAIVehicle) \
-	PORT_DEF(SAI, EnableAIChar, SAI_EnableAIChar) \
-	PORT_DEF(SAI, IniAI, SAI_IniAI) \
-	PORT_DEF(SAI, GetNextRacePoint, SAI_GetNextRacePoint) \
-	PORT_DEF(SAI, GetNearestItemLife, SAI_GetNearestItemLife) \
-	PORT_DEF(SAI, GetRandomVisibilityPoint, SAI_GetRandomVisibilityPoint) \
-	PORT_DEF(SAI, GetReposCharPos, SAI_GetReposCharPos) \
-	PORT_DEF(SAI, InitVehicleRace, SAI_InitVehicleRace) \
-	PORT_DEF(SAI, AddVehicleRace, SAI_AddVehicleRace) \
-	PORT_DEF(SAI, SetRotStaticObj, SAI_SetRotStaticObj) \
-	PORT_DEF(SAI, SetInertia, SAI_SetInertia) \
-	PORT_DEF(SAI, GetOD, SAI_GetOD)
+	PORT_DEFND(SAI, AnalizeMap, SAI_AnalyzeMap, str_PyDoc_SAI_AnalyzeMap) \
+	PORT_DEFND(SAI, AnalizeGraph, SAI_AnalyzeGraph, str_PyDoc_SAI_AnalyzeGraph) \
+	PORT_DEFND(SAI, AnalizeGraph2D, SAI_AnalyzeGraph2D, str_PyDoc_SAI_AnalyzeGraph2D) \
+	PORT_DEFND(SAI, AnalizeTraffic, SAI_AnalyzeTraffic, str_PyDoc_SAI_AnalyzeTraffic) \
+	PORT_DEFND(SAI, BuildGraph, SAI_BuildGraph, str_PyDoc_SAI_BuildGraph) \
+	PORT_DEFND(SAI, BuildGraph2D, SAI_BuildGraph2D, str_PyDoc_SAI_BuildGraph2D) \
+	PORT_DEFND(SAI, SetStateVehicle, SAI_SetStateVehicle, str_PyDoc_SAI_SetStateVehicle) \
+	PORT_DEFND(SAI, SetStateChar, SAI_SetStateChar, str_PyDoc_SAI_SetStateChar) \
+	PORT_DEFND(SAI, GetStateVehicle, SAI_GetStateVehicle, str_PyDoc_SAI_GetStateVehicle) \
+	PORT_DEFND(SAI, GetStateChar, SAI_GetStateChar, str_PyDoc_SAI_GetStateChar) \
+	PORT_DEFND(SAI, EnableAIVehicle, SAI_EnableAIVehicle, str_PyDoc_SAI_EnableAIVehicle) \
+	PORT_DEFND(SAI, EnableAIChar, SAI_EnableAIChar, str_PyDoc_SAI_EnableAIChar) \
+	PORT_DEFND(SAI, IniAI, SAI_IniAI, str_PyDoc_SAI_IniAI) \
+	PORT_DEFND(SAI, GetNextRacePoint, SAI_GetNextRacePoint, str_PyDoc_SAI_GetNextRacePoint) \
+	PORT_DEFND(SAI, GetNearestItemLife, SAI_GetNearestItemLife, str_PyDoc_SAI_GetNearestItemLife) \
+	PORT_DEFND(SAI, GetRandomVisibilityPoint, SAI_GetRandomVisibilityPoint, str_PyDoc_SAI_GetRandomVisibilityPoint) \
+	PORT_DEFND(SAI, GetReposCharPos, SAI_GetReposCharPos, str_PyDoc_SAI_GetReposCharPos) \
+	PORT_DEFND(SAI, InitVehicleRace, SAI_InitVehicleRace, str_PyDoc_SAI_InitVehicleRace) \
+	PORT_DEFND(SAI, AddVehicleRace, SAI_AddVehicleRace, str_PyDoc_SAI_AddVehicleRace) \
+	PORT_DEFND(SAI, SetRotStaticObj, SAI_SetRotStaticObj, str_PyDoc_SAI_SetRotStaticObj) \
+	PORT_DEFND(SAI, SetInertia, SAI_SetInertia, str_PyDoc_SAI_SetInertia) \
+	PORT_DEFND(SAI, GetOD, SAI_GetOD, "")
 
 /* PyInterface/SActPy.c */
 PORT_DECL(SAct, CreateClass) /* 1 */
@@ -2140,16 +2140,16 @@ PORT_DECL(SAct, SetAct) /* ? */
 PORT_DECL(SAct, GetAct) /* ? */
 PORT_DECL(SAct, DumpEvents) /* 1 */
 #define PORTS_PyInterface_SActPy \
-	PORT_DEF(SAct, CreateClass, SAct_CreateClass) \
-	PORT_DEF(SAct, DelClass, SAct_DelClass) \
-	PORT_DEF(SAct, GetClass, SAct_GetClass) \
-	PORT_DEF(SAct, SetCls, SAct_SetCls) \
-	PORT_DEF(SAct, GetCls, SAct_GetCls) \
-	PORT_DEF(SAct, CreateAction, SAct_CreateAction) \
-	PORT_DEF(SAct, GetAction, SAct_GetAction) \
-	PORT_DEF(SAct, SetAct, SAct_SetAct) \
-	PORT_DEF(SAct, GetAct, SAct_GetAct) \
-	PORT_DEF(SAct, DumpEvents, SAct_DumpEvents)
+	PORT_DEFND(SAct, CreateClass, SAct_CreateClass, str_PyDoc_SAct_CreateClass) \
+	PORT_DEFND(SAct, DelClass, SAct_DelClass, str_PyDoc_SAct_DelClass) \
+	PORT_DEFND(SAct, GetClass, SAct_GetClass, str_PyDoc_SAct_GetClass) \
+	PORT_DEFND(SAct, SetCls, SAct_SetCls, str_PyDoc_SAct_SetCls) \
+	PORT_DEFND(SAct, GetCls, SAct_GetCls, str_PyDoc_SAct_GetCls) \
+	PORT_DEFND(SAct, CreateAction, SAct_CreateAction, str_PyDoc_SAct_CreateAction) \
+	PORT_DEFND(SAct, GetAction, SAct_GetAction, str_PyDoc_SAct_GetAction) \
+	PORT_DEFND(SAct, SetAct, SAct_SetAct, str_PyDoc_SAct_SetAct) \
+	PORT_DEFND(SAct, GetAct, SAct_GetAct, str_PyDoc_SAct_GetAct) \
+	PORT_DEFND(SAct, DumpEvents, SAct_DumpEvents, "DumpEvents(file) : ScrapC only, every class, action and event into the file")
 
 /* PyInterface/SFXPy.c */
 PORT_DECL(SFX, ShipExplosion) /* 6 */
@@ -2159,12 +2159,12 @@ PORT_DECL(SFX, BishopSellLife) /* 2 */
 PORT_DECL(SFX, MoneyTransfer) /* 3 */
 PORT_DECL(SFX, EmbeddedSet) /* 2 */
 #define PORTS_PyInterface_SFXPy \
-	PORT_DEF(SFX, ShipExplosion, SFX_ShipExplosion) \
-	PORT_DEF(SFX, CharacterConversor, SFX_CharacterConversor) \
-	PORT_DEF(SFX, CharacterConversion, SFX_CharacterConversion) \
-	PORT_DEF(SFX, BishopSellLife, SFX_BishopSellLife) \
-	PORT_DEF(SFX, MoneyTransfer, SFX_MoneyTransfer) \
-	PORT_DEF(SFX, EmbeddedSet, SFX_EmbeddedSet)
+	PORT_DEFND(SFX, ShipExplosion, SFX_ShipExplosion, str_PyDoc_SFX_ShipExplosion) \
+	PORT_DEFND(SFX, CharacterConversor, SFX_CharacterConversor, str_PyDoc_SFX_CharacterConversor) \
+	PORT_DEFND(SFX, CharacterConversion, SFX_CharacterConversion, str_PyDoc_SFX_CharacterConversion) \
+	PORT_DEFND(SFX, BishopSellLife, SFX_BishopSellLife, str_PyDoc_SFX_BishopSellLife) \
+	PORT_DEFND(SFX, MoneyTransfer, SFX_MoneyTransfer, str_PyDoc_SFX_MoneyTransfer) \
+	PORT_DEFND(SFX, EmbeddedSet, SFX_EmbeddedSet, str_PyDoc_SFX_EmbeddedSet)
 
 /* PyInterface/SInputPy.c */
 PORT_DECL(SInput, SetActionSet) /* 1 */
@@ -2188,26 +2188,26 @@ PORT_DECL(SInput, Rumble) /* 4 */
 PORT_DECL(SInput, ResetToSplit) /* 0 */
 PORT_DECL(SInput, CheckPadButton) /* 2 */
 #define PORTS_PyInterface_SInputPy \
-	PORT_DEF(SInput, SetActionSet, SInput_SetActionSet) \
-	PORT_DEF(SInput, GetActionSet, SInput_GetActionSet) \
-	PORT_DEF(SInput, AssingEntry, SInput_AssingEntry) \
-	PORT_DEF(SInput, GetEntry, SInput_GetEntry) \
-	PORT_DEF(SInput, ListenToDefine, SInput_ListenToDefine) \
-	PORT_DEF(SInput, AbortListenToDefine, SInput_AbortListenToDefine) \
-	PORT_DEF(SInput, GetDefinedList, SInput_GetDefinedList) \
-	PORT_DEF(SInput, GetDefinedEntry, SInput_GetDefinedEntry) \
-	PORT_DEF(SInput, ClearDefinedList, SInput_ClearDefinedList) \
-	PORT_DEF(SInput, ResetToDefault, SInput_ResetToDefault) \
-	PORT_DEF(SInput, SetString, SInput_SetString) \
-	PORT_DEF(SInput, GetString, SInput_GetString) \
-	PORT_DEF(SInput, GetCursorChar, SInput_GetCursorChar) \
-	PORT_DEF(SInput, GetVirtualKeyboard, SInput_GetVirtualKeyboard) \
-	PORT_DEF(SInput, SetVirtualKeyboard, SInput_SetVirtualKeyboard) \
-	PORT_DEF(SInput, SetInputFunc, SInput_SetInputFunc) \
-	PORT_DEF(SInput, Bind, SInput_Bind) \
-	PORT_DEF(SInput, Rumble, SInput_Rumble) \
-	PORT_DEF(SInput, ResetToSplit, SInput_ResetToSplit) \
-	PORT_DEF(SInput, CheckPadButton, SInput_CheckPadButton)
+	PORT_DEFND(SInput, SetActionSet, SInput_SetActionSet, str_PyDoc_SInput_SetActionSet) \
+	PORT_DEFND(SInput, GetActionSet, SInput_GetActionSet, str_PyDoc_SInput_GetActionSet) \
+	PORT_DEFND(SInput, AssingEntry, SInput_AssingEntry, str_PyDoc_SInput_AssingEntry) \
+	PORT_DEFND(SInput, GetEntry, SInput_GetEntry, str_PyDoc_SInput_GetEntry) \
+	PORT_DEFND(SInput, ListenToDefine, SInput_ListenToDefine, str_PyDoc_SInput_ListenToDefine) \
+	PORT_DEFND(SInput, AbortListenToDefine, SInput_AbortListenToDefine, str_PyDoc_SInput_AbortListenToDefine) \
+	PORT_DEFND(SInput, GetDefinedList, SInput_GetDefinedList, str_PyDoc_SInput_GetDefinedList) \
+	PORT_DEFND(SInput, GetDefinedEntry, SInput_GetDefinedEntry, str_PyDoc_SInput_GetDefinedEntry) \
+	PORT_DEFND(SInput, ClearDefinedList, SInput_ClearDefinedList, str_PyDoc_SInput_ClearDefinedList) \
+	PORT_DEFND(SInput, ResetToDefault, SInput_ResetToDefault, str_PyDoc_SInput_ResetToDefault) \
+	PORT_DEFND(SInput, SetString, SInput_SetString, str_PyDoc_SInput_SetString) \
+	PORT_DEFND(SInput, GetString, SInput_GetString, str_PyDoc_SInput_GetString) \
+	PORT_DEFND(SInput, GetCursorChar, SInput_GetCursorChar, str_PyDoc_SInput_GetCursorChar) \
+	PORT_DEFND(SInput, GetVirtualKeyboard, SInput_GetVirtualKeyboard, str_PyDoc_SInput_GetVirtualKeyboard) \
+	PORT_DEFND(SInput, SetVirtualKeyboard, SInput_SetVirtualKeyboard, str_PyDoc_SInput_SetVirtualKeyboard) \
+	PORT_DEFND(SInput, SetInputFunc, SInput_SetInputFunc, str_PyDoc_SInput_SetInputFunc) \
+	PORT_DEFND(SInput, Bind, SInput_Bind, str_PyDoc_SInput_Bind) \
+	PORT_DEFND(SInput, Rumble, SInput_Rumble, str_PyDoc_SInput_Rumble) \
+	PORT_DEFND(SInput, ResetToSplit, SInput_ResetToSplit, str_PyDoc_SInput_ResetToSplit) \
+	PORT_DEFND(SInput, CheckPadButton, SInput_CheckPadButton, str_PyDoc_SInput_CheckPadButton)
 
 /* PyInterface/SLogic.c */
 PORT_DECL(SLogic, SendSentinelToWatch) /* 1 */
@@ -2223,18 +2223,18 @@ PORT_DECL(SLogic, ChangeZoneState) /* 2 */
 PORT_DECL(SLogic, ChangeBatonState) /* 2 */
 PORT_DECL(SLogic, UpdateTauntEndTime) /* ? */
 #define PORTS_PyInterface_SLogic \
-	PORT_DEF(SLogic, SendSentinelToWatch, SLogic_SendSentinelToWatch) \
-	PORT_DEF(SLogic, GearAttack, SLogic_GearAttack) \
-	PORT_DEF(SLogic, SetCharState, SLogic_SetCharState) \
-	PORT_DEF(SLogic, IsEnemyActive, SLogic_IsEnemyActive) \
-	PORT_DEF(SLogic, GetNearestShip, SLogic_GetNearestShip) \
-	PORT_DEF(SLogic, SetOnFloor, SLogic_SetOnFloor) \
-	PORT_DEF(SLogic, Flash, SLogic_Flash) \
-	PORT_DEF(SLogic, SetShipToRegenerate, SLogic_SetShipToRegenerate) \
-	PORT_DEF(SLogic, SetDominationZones, SLogic_SetDominationZones) \
-	PORT_DEF(SLogic, ChangeZoneState, SLogic_ChangeZoneState) \
-	PORT_DEF(SLogic, ChangeBatonState, SLogic_ChangeBatonState) \
-	PORT_DEF(SLogic, UpdateTauntEndTime, SLogic_UpdateTauntEndTime)
+	PORT_DEFND(SLogic, SendSentinelToWatch, SLogic_SendSentinelToWatch, str_PyDoc_SLogic_SendSentinelToWatch) \
+	PORT_DEFND(SLogic, GearAttack, SLogic_GearAttack, str_PyDoc_SLogic_GearAttack) \
+	PORT_DEFND(SLogic, SetCharState, SLogic_SetCharState, str_PyDoc_SLogic_SetCharState) \
+	PORT_DEFND(SLogic, IsEnemyActive, SLogic_IsEnemyActive, str_PyDoc_SLogic_IsEnemyActive) \
+	PORT_DEFND(SLogic, GetNearestShip, SLogic_GetNearestShip, str_PyDoc_SLogic_GetNearestShip) \
+	PORT_DEFND(SLogic, SetOnFloor, SLogic_SetOnFloor, str_PyDoc_SLogic_SetOnFloor) \
+	PORT_DEFND(SLogic, Flash, SLogic_Flash, str_PyDoc_SLogic_Flash) \
+	PORT_DEFND(SLogic, SetShipToRegenerate, SLogic_SetShipToRegenerate, str_PyDoc_SLogic_SetShipToRegenerate) \
+	PORT_DEFND(SLogic, SetDominationZones, SLogic_SetDominationZones, str_PyDoc_SLogic_SetDominationZones) \
+	PORT_DEFND(SLogic, ChangeZoneState, SLogic_ChangeZoneState, str_PyDoc_SLogic_ChangeZoneState) \
+	PORT_DEFND(SLogic, ChangeBatonState, SLogic_ChangeBatonState, str_PyDoc_SLogic_ChangeBatonState) \
+	PORT_DEFND(SLogic, UpdateTauntEndTime, SLogic_UpdateTauntEndTime, str_PyDoc_SLogic_UpdateTauntEndTime)
 
 /* PyInterface/SNetPy.c */
 PORT_DECL(SNet, InitServer) /* 3 */
@@ -2263,31 +2263,31 @@ PORT_DECL(SNet, IsMaster) /* 0 */
 PORT_DECL(SNet, PingInetSvrs) /* 0 */
 PORT_DECL(SNet, GetPing) /* 1 */
 #define PORTS_PyInterface_SNetPy \
-	PORT_DEF(SNet, InitServer, SNet_InitServer) \
-	PORT_DEF(SNet, CloseServer, SNet_CloseServer) \
-	PORT_DEF(SNet, ServerChangeLevel, SNet_ServerChangeLevel) \
-	PORT_DEF(SNet, IsServer, SNet_IsServer) \
-	PORT_DEF(SNet, IsDedicated, SNet_IsDedicated) \
-	PORT_DEF(SNet, GetServerData, SNet_GetServerData) \
-	PORT_DEF(SNet, AddResource, SNet_AddResource) \
-	PORT_DEF(SNet, ModifyUsrData, SNet_ModifyUsrData) \
-	PORT_DEF(SNet, GetBotName, SNet_GetBotName) \
-	PORT_DEF(SNet, GetObjName, SNet_GetObjName) \
-	PORT_DEF(SNet, Kick, SNet_Kick) \
-	PORT_DEF(SNet, InitClient, SNet_InitClient) \
-	PORT_DEF(SNet, CloseClient, SNet_CloseClient) \
-	PORT_DEF(SNet, IsClient, SNet_IsClient) \
-	PORT_DEF(SNet, GetClientData, SNet_GetClientData) \
-	PORT_DEF(SNet, GetMyClientShip, SNet_GetMyClientShip) \
-	PORT_DEF(SNet, InitBrowser, SNet_InitBrowser) \
-	PORT_DEF(SNet, DoneBrowser, SNet_DoneBrowser) \
-	PORT_DEF(SNet, SendUsrString, SNet_SendUsrString) \
-	PORT_DEF(SNet, SendChatString, SNet_SendChatString) \
-	PORT_DEF(SNet, SendCtrlString, SNet_SendCtrlString) \
-	PORT_DEF(SNet, SendMasterString, SNet_SendMasterString) \
-	PORT_DEF(SNet, IsMaster, SNet_IsMaster) \
-	PORT_DEF(SNet, PingInetSvrs, SNet_PingInetSvrs) \
-	PORT_DEF(SNet, GetPing, SNet_GetPing)
+	PORT_DEFND(SNet, InitServer, SNet_InitServer, str_PyDoc_SNet_InitServer) \
+	PORT_DEFND(SNet, CloseServer, SNet_CloseServer, str_PyDoc_SNet_CloseServer) \
+	PORT_DEFND(SNet, ServerChangeLevel, SNet_ServerChangeLevel, str_PyDoc_SNet_ServerChangeLevel) \
+	PORT_DEFND(SNet, IsServer, SNet_IsServer, str_PyDoc_SNet_IsServer) \
+	PORT_DEFND(SNet, IsDedicated, SNet_IsDedicated, str_PyDoc_SNet_IsDedicated) \
+	PORT_DEFND(SNet, GetServerData, SNet_GetServerData, str_PyDoc_SNet_GetServerData) \
+	PORT_DEFND(SNet, AddResource, SNet_AddResource, str_PyDoc_SNet_AddResource) \
+	PORT_DEFND(SNet, ModifyUsrData, SNet_ModifyUsrData, str_PyDoc_SNet_ModifyUsrData) \
+	PORT_DEFND(SNet, GetBotName, SNet_GetBotName, str_PyDoc_SNet_GetBotName) \
+	PORT_DEFND(SNet, GetObjName, SNet_GetObjName, str_PyDoc_SNet_GetObjName) \
+	PORT_DEFND(SNet, Kick, SNet_Kick, str_PyDoc_SNet_Kick) \
+	PORT_DEFND(SNet, InitClient, SNet_InitClient, str_PyDoc_SNet_InitClient) \
+	PORT_DEFND(SNet, CloseClient, SNet_CloseClient, str_PyDoc_SNet_CloseClient) \
+	PORT_DEFND(SNet, IsClient, SNet_IsClient, str_PyDoc_SNet_IsClient) \
+	PORT_DEFND(SNet, GetClientData, SNet_GetClientData, str_PyDoc_SNet_GetClientData) \
+	PORT_DEFND(SNet, GetMyClientShip, SNet_GetMyClientShip, str_PyDoc_SNet_GetMyClientShip) \
+	PORT_DEFND(SNet, InitBrowser, SNet_InitBrowser, str_PyDoc_SNet_InitBrowser) \
+	PORT_DEFND(SNet, DoneBrowser, SNet_DoneBrowser, str_PyDoc_SNet_DoneBrowser) \
+	PORT_DEFND(SNet, SendUsrString, SNet_SendUsrString, str_PyDoc_SNet_SendUsrString) \
+	PORT_DEFND(SNet, SendChatString, SNet_SendChatString, str_PyDoc_SNet_SendChatString) \
+	PORT_DEFND(SNet, SendCtrlString, SNet_SendCtrlString, str_PyDoc_SNet_SendCtrlString) \
+	PORT_DEFND(SNet, SendMasterString, SNet_SendMasterString, str_PyDoc_SNet_SendMasterString) \
+	PORT_DEFND(SNet, IsMaster, SNet_IsMaster, str_PyDoc_SNet_IsMaster) \
+	PORT_DEFND(SNet, PingInetSvrs, SNet_PingInetSvrs, str_PyDoc_SNet_PingInetSvrs) \
+	PORT_DEFND(SNet, GetPing, SNet_GetPing, str_PyDoc_SNet_GetPing)
 
 /* PyInterface/SScorerPy.c */
 PORT_DECL(SScorer, Add) /* ? */
@@ -2326,41 +2326,41 @@ PORT_DECL(SScorer, New) /* ? */
 PORT_DECL(SScorer, Items) /* 1 */
 PORT_DECL(SScorer, Accept) /* 2 */
 #define PORTS_PyInterface_SScorerPy \
-	PORT_DEF(SScorer, Add, SScorer_Add) \
-	PORT_DEF(SScorer, Clear, SScorer_Clear) \
-	PORT_DEF(SScorer, Set, SScorer_Set) \
-	PORT_DEF(SScorer, Get, SScorer_Get) \
-	PORT_DEF(SScorer, Show, SScorer_Show) \
-	PORT_DEF(SScorer, Hide, SScorer_Hide) \
-	PORT_DEF(SScorer, SetCursor, SScorer_SetCursor) \
-	PORT_DEF(SScorer, SetDefault, SScorer_SetDefault) \
-	PORT_DEF(SScorer, GetDefault, SScorer_GetDefault) \
-	PORT_DEF(SScorer, GetActual, SScorer_GetCurrent) \
-	PORT_DEF(SScorer, SetOnCancel, SScorer_SetOnCancel) \
-	PORT_DEF(SScorer, SetOnNext, SScorer_SetOnNext) \
-	PORT_DEF(SScorer, SetOnPrev, SScorer_SetOnPrev) \
-	PORT_DEF(SScorer, SetOnSpecialHint, SScorer_SetOnSpecialHint) \
-	PORT_DEF(SScorer, AddModel, SScorer_AddModel) \
-	PORT_DEF(SScorer, SetMPFunc, SScorer_SetMPFunc) \
-	PORT_DEF(SScorer, PreloadTexture, SScorer_PreloadTexture) \
-	PORT_DEF(SScorer, AddChatMsg, SScorer_AddChatMsg) \
-	PORT_DEF(SScorer, SetConsole, SScorer_SetConsole) \
-	PORT_DEF(SScorer, SetSpeechText, SScorer_SetSpeechText) \
-	PORT_DEF(SScorer, SetSpeechCallback, SScorer_SetSpeechCallback) \
-	PORT_DEF(SScorer, CancelSpeech, SScorer_CancelSpeech) \
-	PORT_DEF(SScorer, SetHeadMonitor, SScorer_SetHeadMonitor) \
-	PORT_DEF(SScorer, Fade, SScorer_Fade) \
-	PORT_DEF(SScorer, SetCinema, SScorer_SetCinema) \
-	PORT_DEF(SScorer, SetMsgText, SScorer_SetMsgText) \
-	PORT_DEF(SScorer, SetLabelText, SScorer_SetLabelText) \
-	PORT_DEF(SScorer, Get2DPos, SScorer_Get2DPos) \
-	PORT_DEF(SScorer, GetTextArea, SScorer_GetTextArea) \
-	PORT_DEF(SScorer, GetMenuAccept, SScorer_GetMenuAccept) \
-	PORT_DEF(SScorer, SetMarkerSprite, SScorer_SetMarkerSprite) \
-	PORT_DEF(SScorer, GetItem, SScorer_GetItem) \
-	PORT_DEF(SScorer, New, SScorer_New) \
-	PORT_DEF(SScorer, Items, SScorer_Items) \
-	PORT_DEF(SScorer, Accept, SScorer_Accept)
+	PORT_DEFND(SScorer, Add, SScorer_Add, str_PyDoc_SScorer_Add) \
+	PORT_DEFND(SScorer, Clear, SScorer_Clear, str_PyDoc_SScorer_Clear) \
+	PORT_DEFND(SScorer, Set, SScorer_Set, str_PyDoc_SScorer_Set) \
+	PORT_DEFND(SScorer, Get, SScorer_Get, str_PyDoc_SScorer_Get) \
+	PORT_DEFND(SScorer, Show, SScorer_Show, str_PyDoc_SScorer_Show) \
+	PORT_DEFND(SScorer, Hide, SScorer_Hide, str_PyDoc_SScorer_Hide) \
+	PORT_DEFND(SScorer, SetCursor, SScorer_SetCursor, str_PyDoc_SScorer_SetCursor) \
+	PORT_DEFND(SScorer, SetDefault, SScorer_SetDefault, str_PyDoc_SScorer_SetDefault) \
+	PORT_DEFND(SScorer, GetDefault, SScorer_GetDefault, str_PyDoc_SScorer_GetDefault) \
+	PORT_DEFND(SScorer, GetActual, SScorer_GetCurrent, str_PyDoc_SScorer_GetCurrent) \
+	PORT_DEFND(SScorer, SetOnCancel, SScorer_SetOnCancel, str_PyDoc_SScorer_SetOnCancel) \
+	PORT_DEFND(SScorer, SetOnNext, SScorer_SetOnNext, str_PyDoc_SScorer_SetOnNext) \
+	PORT_DEFND(SScorer, SetOnPrev, SScorer_SetOnPrev, str_PyDoc_SScorer_SetOnPrev) \
+	PORT_DEFND(SScorer, SetOnSpecialHint, SScorer_SetOnSpecialHint, str_PyDoc_SScorer_SetOnSpecialHint) \
+	PORT_DEFND(SScorer, AddModel, SScorer_AddModel, str_PyDoc_SScorer_AddModel) \
+	PORT_DEFND(SScorer, SetMPFunc, SScorer_SetMPFunc, str_PyDoc_SScorer_SetMPFunc) \
+	PORT_DEFND(SScorer, PreloadTexture, SScorer_PreloadTexture, str_PyDoc_SScorer_PreloadTexture) \
+	PORT_DEFND(SScorer, AddChatMsg, SScorer_AddChatMsg, str_PyDoc_SScorer_AddChatMsg) \
+	PORT_DEFND(SScorer, SetConsole, SScorer_SetConsole, str_PyDoc_SScorer_SetConsole) \
+	PORT_DEFND(SScorer, SetSpeechText, SScorer_SetSpeechText, str_PyDoc_SScorer_SetSpeechText) \
+	PORT_DEFND(SScorer, SetSpeechCallback, SScorer_SetSpeechCallback, str_PyDoc_SScorer_SetSpeechCallback) \
+	PORT_DEFND(SScorer, CancelSpeech, SScorer_CancelSpeech, str_PyDoc_SScorer_CancelSpeech) \
+	PORT_DEFND(SScorer, SetHeadMonitor, SScorer_SetHeadMonitor, str_PyDoc_SScorer_SetHeadMonitor) \
+	PORT_DEFND(SScorer, Fade, SScorer_Fade, str_PyDoc_SScorer_Fade) \
+	PORT_DEFND(SScorer, SetCinema, SScorer_SetCinema, str_PyDoc_SScorer_SetCinema) \
+	PORT_DEFND(SScorer, SetMsgText, SScorer_SetMsgText, str_PyDoc_SScorer_SetMsgText) \
+	PORT_DEFND(SScorer, SetLabelText, SScorer_SetLabelText, str_PyDoc_SScorer_SetLabelText) \
+	PORT_DEFND(SScorer, Get2DPos, SScorer_Get2DPos, str_PyDoc_SScorer_Get2DPos) \
+	PORT_DEFND(SScorer, GetTextArea, SScorer_GetTextArea, str_PyDoc_SScorer_GetTextArea) \
+	PORT_DEFND(SScorer, GetMenuAccept, SScorer_GetMenuAccept, str_PyDoc_SScorer_GetMenuAccept) \
+	PORT_DEFND(SScorer, SetMarkerSprite, SScorer_SetMarkerSprite, str_PyDoc_SScorer_SetMarkerSprite) \
+	PORT_DEFND(SScorer, GetItem, SScorer_GetItem, str_PyDoc_SScorer_GetItem) \
+	PORT_DEFND(SScorer, New, SScorer_New, str_PyDoc_SScorer_New) \
+	PORT_DEFND(SScorer, Items, SScorer_Items, "Items(playernumber) : the item names in draw order (ScrapC)") \
+	PORT_DEFND(SScorer, Accept, SScorer_Accept, "Accept(playernumber,ItemName) : runs the OnAccept of the item (ScrapC)")
 
 /* PyInterface/SSoundPy.c */
 PORT_DECL(SSound, LoadSound) /* 1 */
@@ -2381,23 +2381,23 @@ PORT_DECL(SSound, SetVoiceVolume) /* 2 */
 PORT_DECL(SSound, SetVoiceString) /* 2 */
 PORT_DECL(SSound, DeleteAllSounds) /* 0 */
 #define PORTS_PyInterface_SSoundPy \
-	PORT_DEF(SSound, LoadSound, SSound_LoadSound) \
-	PORT_DEF(SSound, PlaySound, SSound_PlaySound) \
-	PORT_DEF(SSound, Play, SSound_Play) \
-	PORT_DEF(SSound, StopAllSounds, SSound_StopAllSounds) \
-	PORT_DEF(SSound, SetPS, SSound_SetPS) \
-	PORT_DEF(SSound, GetPS, SSound_GetPS) \
-	PORT_DEF(SSound, UsePS, SSound_UsePS) \
-	PORT_DEF(SSound, CreatePS, SSound_CreatePS) \
-	PORT_DEF(SSound, SetMusic, SSound_SetMusic) \
-	PORT_DEF(SSound, SetMusicVolume, SSound_SetMusicVolume) \
-	PORT_DEF(SSound, OpenVoice, SSound_OpenVoice) \
-	PORT_DEF(SSound, PlayVoice, SSound_PlayVoice) \
-	PORT_DEF(SSound, StopVoice, SSound_StopVoice) \
-	PORT_DEF(SSound, VoiceRemain, SSound_VoiceRemain) \
-	PORT_DEF(SSound, SetVoiceVolume, SSound_SetVoiceVolume) \
-	PORT_DEF(SSound, SetVoiceString, SSound_SetVoiceString) \
-	PORT_DEF(SSound, DeleteAllSounds, SSound_DeleteAllSounds)
+	PORT_DEFND(SSound, LoadSound, SSound_LoadSound, str_PyDoc_SSound_LoadSound) \
+	PORT_DEFND(SSound, PlaySound, SSound_PlaySound, str_PyDoc_SSound_PlaySound) \
+	PORT_DEFND(SSound, Play, SSound_Play, str_PyDoc_SSound_Play) \
+	PORT_DEFND(SSound, StopAllSounds, SSound_StopAllSounds, str_PyDoc_SSound_StopAllSounds) \
+	PORT_DEFND(SSound, SetPS, SSound_SetPS, str_PyDoc_SSound_SetPS) \
+	PORT_DEFND(SSound, GetPS, SSound_GetPS, str_PyDoc_SSound_GetPS) \
+	PORT_DEFND(SSound, UsePS, SSound_UsePS, str_PyDoc_SSound_UsePS) \
+	PORT_DEFND(SSound, CreatePS, SSound_CreatePS, str_PyDoc_SSound_CreatePS) \
+	PORT_DEFND(SSound, SetMusic, SSound_SetMusic, str_PyDoc_SSound_SetMusic) \
+	PORT_DEFND(SSound, SetMusicVolume, SSound_SetMusicVolume, str_PyDoc_SSound_SetMusicVolume) \
+	PORT_DEFND(SSound, OpenVoice, SSound_OpenVoice, str_PyDoc_SSound_OpenVoice) \
+	PORT_DEFND(SSound, PlayVoice, SSound_PlayVoice, str_PyDoc_SSound_PlayVoice) \
+	PORT_DEFND(SSound, StopVoice, SSound_StopVoice, str_PyDoc_SSound_StopVoice) \
+	PORT_DEFND(SSound, VoiceRemain, SSound_VoiceRemain, str_PyDoc_SSound_VoiceRemain) \
+	PORT_DEFND(SSound, SetVoiceVolume, SSound_SetVoiceVolume, str_PyDoc_SSound_SetVoiceVolume) \
+	PORT_DEFND(SSound, SetVoiceString, SSound_SetVoiceString, str_PyDoc_SSound_SetVoiceString) \
+	PORT_DEFND(SSound, DeleteAllSounds, SSound_DeleteAllSounds, str_PyDoc_SSound_DeleteAllSounds)
 
 /* PyInterface/SVecPy.c */
 PORT_DECL(SVec, Add) /* 2 */
@@ -2413,18 +2413,18 @@ PORT_DECL(SVec, GetAngle) /* 2 */
 PORT_DECL(SVec, GetRotAng) /* ? */
 PORT_DECL(SVec, NormAng) /* 1 */
 #define PORTS_PyInterface_SVecPy \
-	PORT_DEF(SVec, Add, SVec_Add) \
-	PORT_DEF(SVec, Sub, SVec_Sub) \
-	PORT_DEF(SVec, Mod, SVec_Mod) \
-	PORT_DEF(SVec, ModSqr, SVec_ModSqr) \
-	PORT_DEF(SVec, Norm, SVec_Norm) \
-	PORT_DEF(SVec, Prod, SVec_Prod) \
-	PORT_DEF(SVec, DProd, SVec_DProd) \
-	PORT_DEF(SVec, CProd, SVec_CProd) \
-	PORT_DEF(SVec, Rotate3D, SVec_Rotate3D) \
-	PORT_DEF(SVec, GetAngle, SVec_GetAngle) \
-	PORT_DEF(SVec, GetRotAng, SVec_GetRotAng) \
-	PORT_DEF(SVec, NormAng, SVec_NormAng)
+	PORT_DEFND(SVec, Add, SVec_Add, str_PyDoc_SVec_Add) \
+	PORT_DEFND(SVec, Sub, SVec_Sub, str_PyDoc_SVec_Sub) \
+	PORT_DEFND(SVec, Mod, SVec_Mod, str_PyDoc_SVec_Mod) \
+	PORT_DEFND(SVec, ModSqr, SVec_ModSqr, str_PyDoc_SVec_ModSqr) \
+	PORT_DEFND(SVec, Norm, SVec_Norm, str_PyDoc_SVec_Norm) \
+	PORT_DEFND(SVec, Prod, SVec_Prod, str_PyDoc_SVec_Prod) \
+	PORT_DEFND(SVec, DProd, SVec_DProd, str_PyDoc_SVec_DProd) \
+	PORT_DEFND(SVec, CProd, SVec_CProd, str_PyDoc_SVec_CProd) \
+	PORT_DEFND(SVec, Rotate3D, SVec_Rotate3D, str_PyDoc_SVec_Rotate3D) \
+	PORT_DEFND(SVec, GetAngle, SVec_GetAngle, str_PyDoc_SVec_GetAngle) \
+	PORT_DEFND(SVec, GetRotAng, SVec_GetRotAng, str_PyDoc_SVec_GetRotAng) \
+	PORT_DEFND(SVec, NormAng, SVec_NormAng, str_PyDoc_SVec_NormAng)
 
 /* PyInterface/SWeapPy.c */
 PORT_DECL(SWeap, GetNWeap) /* 0 */
@@ -2443,21 +2443,21 @@ PORT_DECL(SWeap, FillPriority) /* 0 */
 PORT_DECL(SWeap, GetFirstiWeap) /* 0 */
 PORT_DECL(SWeap, NetExec) /* ? */
 #define PORTS_PyInterface_SWeapPy \
-	PORT_DEF(SWeap, GetNWeap, SWeap_GetNWeap) \
-	PORT_DEF(SWeap, GetNAmmo, SWeap_GetNAmmo) \
-	PORT_DEF(SWeap, InitWeap, SWeap_InitWeap) \
-	PORT_DEF(SWeap, InitAmmo, SWeap_InitAmmo) \
-	PORT_DEF(SWeap, GetFAmmo, SWeap_GetFAmmo) \
-	PORT_DEF(SWeap, GetSAmmo, SWeap_GetSAmmo) \
-	PORT_DEF(SWeap, SetFAmmo, SWeap_SetFAmmo) \
-	PORT_DEF(SWeap, SetSAmmo, SWeap_SetSAmmo) \
-	PORT_DEF(SWeap, GetFWeap, SWeap_GetFWeap) \
-	PORT_DEF(SWeap, GetSWeap, SWeap_GetSWeap) \
-	PORT_DEF(SWeap, SetFWeap, SWeap_SetFWeap) \
-	PORT_DEF(SWeap, SetSWeap, SWeap_SetSWeap) \
-	PORT_DEF(SWeap, FillPriority, SWeap_FillPriority) \
-	PORT_DEF(SWeap, GetFirstiWeap, SWeap_GetFirstiWeap) \
-	PORT_DEF(SWeap, NetExec, SWeap_NetExec)
+	PORT_DEFND(SWeap, GetNWeap, SWeap_GetNWeap, str_PyDoc_SWeap_GetNWeap) \
+	PORT_DEFND(SWeap, GetNAmmo, SWeap_GetNAmmo, str_PyDoc_SWeap_GetNAmmo) \
+	PORT_DEFND(SWeap, InitWeap, SWeap_InitWeap, str_PyDoc_SWeap_InitWeap) \
+	PORT_DEFND(SWeap, InitAmmo, SWeap_InitAmmo, str_PyDoc_SWeap_InitAmmo) \
+	PORT_DEFND(SWeap, GetFAmmo, SWeap_GetFAmmo, str_PyDoc_SWeap_GetFAmmo) \
+	PORT_DEFND(SWeap, GetSAmmo, SWeap_GetSAmmo, str_PyDoc_SWeap_GetSAmmo) \
+	PORT_DEFND(SWeap, SetFAmmo, SWeap_SetFAmmo, str_PyDoc_SWeap_SetFAmmo) \
+	PORT_DEFND(SWeap, SetSAmmo, SWeap_SetSAmmo, str_PyDoc_SWeap_SetSAmmo) \
+	PORT_DEFND(SWeap, GetFWeap, SWeap_GetFWeap, str_PyDoc_SWeap_GetFWeap) \
+	PORT_DEFND(SWeap, GetSWeap, SWeap_GetSWeap, str_PyDoc_SWeap_GetSWeap) \
+	PORT_DEFND(SWeap, SetFWeap, SWeap_SetFWeap, str_PyDoc_SWeap_SetFWeap) \
+	PORT_DEFND(SWeap, SetSWeap, SWeap_SetSWeap, str_PyDoc_SWeap_SetSWeap) \
+	PORT_DEFND(SWeap, FillPriority, SWeap_FillPriority, str_PyDoc_SWeap_FillPriority) \
+	PORT_DEFND(SWeap, GetFirstiWeap, SWeap_GetFirstiWeap, str_PyDoc_SWeap_GetFirstiWeap) \
+	PORT_DEFND(SWeap, NetExec, SWeap_NetExec, str_PyDoc_SWeap_NetExec)
 
 /* PyInterface/ScrapPy.c */
 PORT_DECL(Scrap, Print) /* 1 */
@@ -2537,14 +2537,17 @@ PORT_DECL(Scrap, LoadGameVars) /* 1 */
 PORT_DECL(Scrap, CreateSaveProfile) /* 1 */
 PORT_DECL(Scrap, DeleteProfile) /* 1 */
 PORT_DECL(Scrap, SetSaveProfile) /* 2 */
+PORT_DECL(Scrap, GetSavedProfilesList) /* 0 */
 PORT_DECL(Scrap, GetFreeBlocks) /* 0 */
 PORT_DECL(Scrap, LaunchDashboard) /* 1 */
 PORT_DECL(Scrap, DeselectProfile) /* 0 */
 PORT_DECL(Scrap, SaveGameVars) /* ? */
 PORT_DECL(Scrap, SaveConfig) /* 0 */
+PORT_DECL(Scrap, GetSaveGamesList) /* 1 */
 PORT_DECL(Scrap, SetLanguage) /* ? */
 PORT_DECL(Scrap, GetLanguage) /* 0 */
 PORT_DECL(Scrap, GetLangStr) /* 1 */
+PORT_DECL(Scrap, GetLangEntries) /* ? */
 PORT_DECL(Scrap, GetAlarm) /* 0 */
 PORT_DECL(Scrap, SetAlarm) /* 1 */
 PORT_DECL(Scrap, SetAlarmGrow) /* 1 */
@@ -2572,117 +2575,120 @@ PORT_DECL(Scrap, IsSteam) /* 0 */
 PORT_DECL(Scrap, GetGogID) /* 0 */
 PORT_DECL(Scrap, ConsoleExec) /* 1 */
 #define PORTS_PyInterface_ScrapPy \
-	PORT_DEF(Scrap, Print, Scrap_Print) \
-	PORT_DEF(Scrap, ConsoleOut, Scrap_ConsoleOut) \
-	PORT_DEF(Scrap, ConsoleError, Scrap_ConsoleError) \
-	PORT_DEF(Scrap, DebugInput, Scrap_DebugInput) \
-	PORT_DEF(Scrap, Verbose, Scrap_Verbose) \
-	PORT_DEF(Scrap, Ver, Scrap_Ver) \
-	PORT_DEF(Scrap, ExtractPack, Scrap_ExtractPack) \
-	PORT_DEF(Scrap, OpenPack, Scrap_OpenPack) \
-	PORT_DEF(Scrap, ClosePack, Scrap_ClosePack) \
-	PORT_DEF(Scrap, PreloadLibrary, Scrap_PreloadLibrary) \
-	PORT_DEF(Scrap, Preload3DObject, Scrap_Preload3DObject) \
-	PORT_DEF(Scrap, PreloadAnm, Scrap_PreloadAnm) \
-	PORT_DEF(Scrap, PythonCompileAll, Scrap_PythonCompileAll) \
-	PORT_DEF(Scrap, Get, Scrap_Get) \
-	PORT_DEF(Scrap, Def, Scrap_Def) \
-	PORT_DEF(Scrap, Des, Scrap_Des) \
-	PORT_DEF(Scrap, Set, Scrap_Set) \
-	PORT_DEF(Scrap, ShowGVars, Scrap_ShowGVars) \
-	PORT_DEF(Scrap, SwitchMissionArrows, Scrap_SwitchMissionArrows) \
-	PORT_DEF(Scrap, GetTime, Scrap_GetTime) \
-	PORT_DEF(Scrap, GetTimeSpeed, Scrap_GetTimeSpeed) \
-	PORT_DEF(Scrap, SetTime, Scrap_SetTime) \
-	PORT_DEF(Scrap, SetTimeSpeed, Scrap_SetTimeSpeed) \
-	PORT_DEF(Scrap, AddScheduledFunc, Scrap_AddScheduledFunc) \
-	PORT_DEF(Scrap, DeleteScheduledFuncs, Scrap_DeleteScheduledFuncs) \
-	PORT_DEF(Scrap, SetCam, Scrap_SetCam) \
-	PORT_DEF(Scrap, GetCam, Scrap_GetCam) \
-	PORT_DEF(Scrap, GetMinCamDist, Scrap_GetMinCamDist) \
-	PORT_DEF(Scrap, GetEntity, Scrap_GetEntity) \
-	PORT_DEF(Scrap, GetFirst, Scrap_GetFirst) \
-	PORT_DEF(Scrap, CreateEntity, Scrap_CreateEntity) \
-	PORT_DEF(Scrap, UsrEntity, Scrap_UsrEntity) \
-	PORT_DEF(Scrap, EntityListGet, Scrap_EntityListGet) \
-	PORT_DEF(Scrap, EntityListSet, Scrap_EntityListSet) \
-	PORT_DEF(Scrap, CreateEntityList, Scrap_CreateEntityList) \
-	PORT_DEF(Scrap, LoadLevel, Scrap_LoadLevel) \
-	PORT_DEF(Scrap, GetLevelPath, Scrap_GetLevelPath) \
-	PORT_DEF(Scrap, GetNewLevelPath, Scrap_GetNewLevelPath) \
-	PORT_DEF(Scrap, SetGrid, Scrap_SetGrid) \
-	PORT_DEF(Scrap, GetFloor, Scrap_GetFloor) \
-	PORT_DEF(Scrap, CreateElements, Scrap_CreateElements) \
-	PORT_DEF(Scrap, CallElements, Scrap_CallElements) \
-	PORT_DEF(Scrap, GetNetFlags, Scrap_GetNetFlags) \
-	PORT_DEF(Scrap, StartDummySearch, Scrap_StartDummySearch) \
-	PORT_DEF(Scrap, NextDummySearch, Scrap_NextDummySearch) \
-	PORT_DEF(Scrap, Rand, Scrap_Rand) \
-	PORT_DEF(Scrap, Round, Scrap_Round) \
-	PORT_DEF(Scrap, SetDebrisSys, Scrap_SetDebrisSys) \
-	PORT_DEF(Scrap, DropDebris, Scrap_DropDebris) \
-	PORT_DEF(Scrap, SetDebrisValue, Scrap_SetDebrisValue) \
-	PORT_DEF(Scrap, ModelInfo, Scrap_ModelInfo) \
-	PORT_DEF(Scrap, ListModels, Scrap_ListModels) \
-	PORT_DEF(Scrap, BuildFont, Scrap_BuildFont) \
-	PORT_DEF(Scrap, ScreenShot, Scrap_ScreenShot) \
-	PORT_DEF(Scrap, ProcessDVF, Scrap_ProcessDVF) \
-	PORT_DEF(Scrap, VideoPlayer, Scrap_VideoPlayer) \
-	PORT_DEF(Scrap, MusicPlayer, Scrap_MusicPlayer) \
-	PORT_DEF(Scrap, GetVideoCurrentMode, Scrap_GetVideoCurrentMode) \
-	PORT_DEF(Scrap, SetVideoCurrentMode, Scrap_SetVideoCurrentMode) \
-	PORT_DEF(Scrap, GetVideoModes, Scrap_GetVideoModes) \
-	PORT_DEF(Scrap, TestLine, Scrap_TestLine) \
-	PORT_DEF(Scrap, TestSphere, Scrap_TestSphere) \
-	PORT_DEF(Scrap, SphereCall, Scrap_SphereCall) \
-	PORT_DEF(Scrap, SetCallFunc, Scrap_SetCallFunc) \
-	PORT_DEF(Scrap, AddParamf, Scrap_AddParamf) \
-	PORT_DEF(Scrap, AddParami, Scrap_AddParami) \
-	PORT_DEF(Scrap, AddParams, Scrap_AddParams) \
-	PORT_DEF(Scrap, Execute, Scrap_Execute) \
-	PORT_DEF(Scrap, DelSaveVars, Scrap_DelSaveVars) \
-	PORT_DEF(Scrap, CreateSaveVar, Scrap_CreateSaveVar) \
-	PORT_DEF(Scrap, GetSaveVar, Scrap_GetSaveVar) \
-	PORT_DEF(Scrap, SetSaveVar, Scrap_SetSaveVar) \
-	PORT_DEF(Scrap, IncSaveVar, Scrap_IncSaveVar) \
-	PORT_DEF(Scrap, LoadGameVars, Scrap_LoadGameVars) \
-	PORT_DEF(Scrap, CreateSaveProfile, Scrap_CreateSaveProfile) \
-	PORT_DEF(Scrap, DeleteProfile, Scrap_DeleteProfile) \
-	PORT_DEF(Scrap, SetSaveProfile, Scrap_SetSaveProfile) \
-	PORT_DEF(Scrap, GetFreeBlocks, Scrap_GetFreeBlocks) \
-	PORT_DEF(Scrap, LaunchDashboard, Scrap_LaunchDashboard) \
-	PORT_DEF(Scrap, DeselectProfile, Scrap_DeselectProfile) \
-	PORT_DEF(Scrap, SaveGameVars, Scrap_SaveGameVars) \
-	PORT_DEF(Scrap, SaveConfig, Scrap_SaveConfig) \
-	PORT_DEF(Scrap, SetLanguage, Scrap_SetLanguage) \
-	PORT_DEF(Scrap, GetLanguage, Scrap_GetLanguage) \
-	PORT_DEF(Scrap, GetLangStr, Scrap_GetLangStr) \
-	PORT_DEF(Scrap, GetAlarm, Scrap_GetAlarm) \
-	PORT_DEF(Scrap, SetAlarm, Scrap_SetAlarm) \
-	PORT_DEF(Scrap, SetAlarmGrow, Scrap_SetAlarmGrow) \
-	PORT_DEF(Scrap, GetAlarmChars, Scrap_GetAlarmChars) \
-	PORT_DEF(Scrap, SetAlarmChar, Scrap_SetAlarmChar) \
-	PORT_DEF(Scrap, GetLockAlarm, Scrap_GetLockAlarm) \
-	PORT_DEF(Scrap, SetLockAlarm, Scrap_SetLockAlarm) \
-	PORT_DEF(Scrap, GetMoney, Scrap_GetMoney) \
-	PORT_DEF(Scrap, SetMoney, Scrap_SetMoney) \
-	PORT_DEF(Scrap, AddParkingZone, Scrap_AddParkingZone) \
-	PORT_DEF(Scrap, GetFarestParked, Scrap_GetFarestParked) \
-	PORT_DEF(Scrap, GetNearestParked, Scrap_GetNearestParked) \
-	PORT_DEF(Scrap, AddItem, Scrap_AddItem) \
-	PORT_DEF(Scrap, InitLoading, Scrap_InitLoading) \
-	PORT_DEF(Scrap, EndLoading, Scrap_EndLoading) \
-	PORT_DEF(Scrap, Exit, Scrap_Exit) \
-	PORT_DEF(Scrap, FileExist, Scrap_FileExist) \
-	PORT_DEF(Scrap, RunApp, Scrap_RunApp) \
-	PORT_DEF(Scrap, Achievement, Scrap_Achievement) \
-	PORT_DEF(Scrap, OpenStore, Scrap_OpenStore) \
-	PORT_DEF(Scrap, IsApp, Scrap_IsApp) \
-	PORT_DEF(Scrap, GetSteamID, Scrap_GetSteamID) \
-	PORT_DEF(Scrap, GetSteamTicket, Scrap_GetSteamTicket) \
-	PORT_DEF(Scrap, IsSteam, Scrap_IsSteam) \
-	PORT_DEF(Scrap, GetGogID, Scrap_GetGogID) \
-	PORT_DEF(Scrap, ConsoleExec, Scrap_ConsoleExec)
+	PORT_DEFND(Scrap, Print, Scrap_Print, str_PyDoc_Scrap_Print) \
+	PORT_DEFND(Scrap, ConsoleOut, Scrap_ConsoleOut, str_PyDoc_Scrap_ConsoleOut) \
+	PORT_DEFND(Scrap, ConsoleError, Scrap_ConsoleError, str_PyDoc_Scrap_ConsoleError) \
+	PORT_DEFND(Scrap, DebugInput, Scrap_DebugInput, str_PyDoc_Scrap_DebugInput) \
+	PORT_DEFND(Scrap, Verbose, Scrap_Verbose, str_PyDoc_Scrap_Verbose) \
+	PORT_DEFND(Scrap, Ver, Scrap_Ver, str_PyDoc_Scrap_Ver) \
+	PORT_DEFND(Scrap, ExtractPack, Scrap_ExtractPack, str_PyDoc_Scrap_ExtractPack) \
+	PORT_DEFND(Scrap, OpenPack, Scrap_OpenPack, str_PyDoc_Scrap_OpenPack) \
+	PORT_DEFND(Scrap, ClosePack, Scrap_ClosePack, str_PyDoc_Scrap_ClosePack) \
+	PORT_DEFND(Scrap, PreloadLibrary, Scrap_PreloadLibrary, str_PyDoc_Scrap_PreloadLibrary) \
+	PORT_DEFND(Scrap, Preload3DObject, Scrap_Preload3DObject, str_PyDoc_Scrap_Preload3DObject) \
+	PORT_DEFND(Scrap, PreloadAnm, Scrap_PreloadAnm, str_PyDoc_Scrap_PreloadAnm) \
+	PORT_DEFND(Scrap, PythonCompileAll, Scrap_PythonCompileAll, str_PyDoc_Scrap_PythonCompileAll) \
+	PORT_DEFND(Scrap, Get, Scrap_Get, str_PyDoc_Scrap_Get) \
+	PORT_DEFND(Scrap, Def, Scrap_Def, str_PyDoc_Scrap_Def) \
+	PORT_DEFND(Scrap, Des, Scrap_Des, str_PyDoc_Scrap_Des) \
+	PORT_DEFND(Scrap, Set, Scrap_Set, str_PyDoc_Scrap_Set) \
+	PORT_DEFND(Scrap, ShowGVars, Scrap_ShowGVars, str_PyDoc_Scrap_ShowGVars) \
+	PORT_DEFND(Scrap, SwitchMissionArrows, Scrap_SwitchMissionArrows, str_PyDoc_Scrap_SwitchMissionArrows) \
+	PORT_DEFND(Scrap, GetTime, Scrap_GetTime, str_PyDoc_Scrap_GetTime) \
+	PORT_DEFND(Scrap, GetTimeSpeed, Scrap_GetTimeSpeed, str_PyDoc_Scrap_GetTimeSpeed) \
+	PORT_DEFND(Scrap, SetTime, Scrap_SetTime, str_PyDoc_Scrap_SetTime) \
+	PORT_DEFND(Scrap, SetTimeSpeed, Scrap_SetTimeSpeed, str_PyDoc_Scrap_SetTimeSpeed) \
+	PORT_DEFND(Scrap, AddScheduledFunc, Scrap_AddScheduledFunc, str_PyDoc_Scrap_AddScheduledFunc) \
+	PORT_DEFND(Scrap, DeleteScheduledFuncs, Scrap_DeleteScheduledFuncs, str_PyDoc_Scrap_DeleteScheduledFuncs) \
+	PORT_DEFND(Scrap, SetCam, Scrap_SetCam, str_PyDoc_Scrap_SetCam) \
+	PORT_DEFND(Scrap, GetCam, Scrap_GetCam, str_PyDoc_Scrap_GetCam) \
+	PORT_DEFND(Scrap, GetMinCamDist, Scrap_GetMinCamDist, str_PyDoc_Scrap_GetMinCamDist) \
+	PORT_DEFND(Scrap, GetEntity, Scrap_GetEntity, str_PyDoc_Scrap_GetEntity) \
+	PORT_DEFND(Scrap, GetFirst, Scrap_GetFirst, str_PyDoc_Scrap_GetFirst) \
+	PORT_DEFND(Scrap, CreateEntity, Scrap_CreateEntity, str_PyDoc_Scrap_CreateEntity) \
+	PORT_DEFND(Scrap, UsrEntity, Scrap_UsrEntity, str_PyDoc_Scrap_UsrEntity) \
+	PORT_DEFND(Scrap, EntityListGet, Scrap_EntityListGet, str_PyDoc_Scrap_EntityListGet) \
+	PORT_DEFND(Scrap, EntityListSet, Scrap_EntityListSet, str_PyDoc_Scrap_EntityListSet) \
+	PORT_DEFND(Scrap, CreateEntityList, Scrap_CreateEntityList, str_PyDoc_Scrap_CreateEntityList) \
+	PORT_DEFND(Scrap, LoadLevel, Scrap_LoadLevel, str_PyDoc_Scrap_LoadLevel) \
+	PORT_DEFND(Scrap, GetLevelPath, Scrap_GetLevelPath, str_PyDoc_Scrap_GetLevelPath) \
+	PORT_DEFND(Scrap, GetNewLevelPath, Scrap_GetNewLevelPath, str_PyDoc_Scrap_GetNewLevelPath) \
+	PORT_DEFND(Scrap, SetGrid, Scrap_SetGrid, str_PyDoc_Scrap_SetGrid) \
+	PORT_DEFND(Scrap, GetFloor, Scrap_GetFloor, str_PyDoc_Scrap_GetFloor) \
+	PORT_DEFND(Scrap, CreateElements, Scrap_CreateElements, str_PyDoc_Scrap_CreateElements) \
+	PORT_DEFND(Scrap, CallElements, Scrap_CallElements, str_PyDoc_Scrap_CallElements) \
+	PORT_DEFND(Scrap, GetNetFlags, Scrap_GetNetFlags, str_PyDoc_Scrap_GetNetFlags) \
+	PORT_DEFND(Scrap, StartDummySearch, Scrap_StartDummySearch, str_PyDoc_Scrap_StartDummySearch) \
+	PORT_DEFND(Scrap, NextDummySearch, Scrap_NextDummySearch, str_PyDoc_Scrap_NextDummySearch) \
+	PORT_DEFND(Scrap, Rand, Scrap_Rand, str_PyDoc_Scrap_Rand) \
+	PORT_DEFND(Scrap, Round, Scrap_Round, str_PyDoc_Scrap_Round) \
+	PORT_DEFND(Scrap, SetDebrisSys, Scrap_SetDebrisSys, str_PyDoc_Scrap_SetDebrisSys) \
+	PORT_DEFND(Scrap, DropDebris, Scrap_DropDebris, str_PyDoc_Scrap_DropDebris) \
+	PORT_DEFND(Scrap, SetDebrisValue, Scrap_SetDebrisValue, str_PyDoc_Scrap_SetDebrisValue) \
+	PORT_DEFND(Scrap, ModelInfo, Scrap_ModelInfo, str_PyDoc_Scrap_ModelInfo) \
+	PORT_DEFND(Scrap, ListModels, Scrap_ListModels, str_PyDoc_Scrap_ListModels) \
+	PORT_DEFND(Scrap, BuildFont, Scrap_BuildFont, str_PyDoc_Scrap_BuildFont) \
+	PORT_DEFND(Scrap, ScreenShot, Scrap_ScreenShot, str_PyDoc_Scrap_ScreenShot) \
+	PORT_DEFND(Scrap, ProcessDVF, Scrap_ProcessDVF, str_PyDoc_Scrap_ProcessDVF) \
+	PORT_DEFND(Scrap, VideoPlayer, Scrap_VideoPlayer, str_PyDoc_Scrap_VideoPlayer) \
+	PORT_DEFND(Scrap, MusicPlayer, Scrap_MusicPlayer, str_PyDoc_Scrap_MusicPlayer) \
+	PORT_DEFND(Scrap, GetVideoCurrentMode, Scrap_GetVideoCurrentMode, str_PyDoc_Scrap_GetVideoCurrentMode) \
+	PORT_DEFND(Scrap, SetVideoCurrentMode, Scrap_SetVideoCurrentMode, str_PyDoc_Scrap_SetVideoCurrentMode) \
+	PORT_DEFND(Scrap, GetVideoModes, Scrap_GetVideoModes, str_PyDoc_Scrap_GetVideoModes) \
+	PORT_DEFND(Scrap, TestLine, Scrap_TestLine, str_PyDoc_Scrap_TestLine) \
+	PORT_DEFND(Scrap, TestSphere, Scrap_TestSphere, str_PyDoc_Scrap_TestSphere) \
+	PORT_DEFND(Scrap, SphereCall, Scrap_SphereCall, str_PyDoc_Scrap_SphereCall) \
+	PORT_DEFND(Scrap, SetCallFunc, Scrap_SetCallFunc, str_PyDoc_Scrap_SetCallFunc) \
+	PORT_DEFND(Scrap, AddParamf, Scrap_AddParamf, str_PyDoc_Scrap_AddParamf) \
+	PORT_DEFND(Scrap, AddParami, Scrap_AddParami, str_PyDoc_Scrap_AddParami) \
+	PORT_DEFND(Scrap, AddParams, Scrap_AddParams, str_PyDoc_Scrap_AddParams) \
+	PORT_DEFND(Scrap, Execute, Scrap_Execute, str_PyDoc_Scrap_Execute) \
+	PORT_DEFND(Scrap, DelSaveVars, Scrap_DelSaveVars, str_PyDoc_Scrap_DelSaveVars) \
+	PORT_DEFND(Scrap, CreateSaveVar, Scrap_CreateSaveVar, str_PyDoc_Scrap_CreateSaveVar) \
+	PORT_DEFND(Scrap, GetSaveVar, Scrap_GetSaveVar, str_PyDoc_Scrap_GetSaveVar) \
+	PORT_DEFND(Scrap, SetSaveVar, Scrap_SetSaveVar, str_PyDoc_Scrap_SetSaveVar) \
+	PORT_DEFND(Scrap, IncSaveVar, Scrap_IncSaveVar, str_PyDoc_Scrap_IncSaveVar) \
+	PORT_DEFND(Scrap, LoadGameVars, Scrap_LoadGameVars, str_PyDoc_Scrap_LoadGameVars) \
+	PORT_DEFND(Scrap, CreateSaveProfile, Scrap_CreateSaveProfile, str_PyDoc_Scrap_CreateSaveProfile) \
+	PORT_DEFND(Scrap, DeleteProfile, Scrap_DeleteProfile, str_PyDoc_Scrap_DeleteProfile) \
+	PORT_DEFND(Scrap, SetSaveProfile, Scrap_SetSaveProfile, str_PyDoc_Scrap_SetSaveProfile) \
+	PORT_DEFND(Scrap, GetSavedProfilesList, Scrap_GetSavedProfilesList, str_PyDoc_Scrap_GetSavedProfilesList) \
+	PORT_DEFND(Scrap, GetFreeBlocks, Scrap_GetFreeBlocks, str_PyDoc_Scrap_GetFreeBlocks) \
+	PORT_DEFND(Scrap, LaunchDashboard, Scrap_LaunchDashboard, str_PyDoc_Scrap_LaunchDashboard) \
+	PORT_DEFND(Scrap, DeselectProfile, Scrap_DeselectProfile, str_PyDoc_Scrap_DeselectProfile) \
+	PORT_DEFND(Scrap, SaveGameVars, Scrap_SaveGameVars, str_PyDoc_Scrap_SaveGameVars) \
+	PORT_DEFND(Scrap, SaveConfig, Scrap_SaveConfig, str_PyDoc_Scrap_SaveConfig) \
+	PORT_DEFND(Scrap, GetSaveGamesList, Scrap_GetSaveGamesList, str_PyDoc_Scrap_GetSaveGamesList) \
+	PORT_DEFND(Scrap, SetLanguage, Scrap_SetLanguage, str_PyDoc_Scrap_SetLanguage) \
+	PORT_DEFND(Scrap, GetLanguage, Scrap_GetLanguage, str_PyDoc_Scrap_GetLanguage) \
+	PORT_DEFND(Scrap, GetLangStr, Scrap_GetLangStr, str_PyDoc_Scrap_GetLangStr) \
+	PORT_DEFND(Scrap, GetLangEntries, Scrap_GetLangEntries, str_PyDoc_Scrap_GetLangEntries) \
+	PORT_DEFND(Scrap, GetAlarm, Scrap_GetAlarm, str_PyDoc_Scrap_GetAlarm) \
+	PORT_DEFND(Scrap, SetAlarm, Scrap_SetAlarm, str_PyDoc_Scrap_SetAlarm) \
+	PORT_DEFND(Scrap, SetAlarmGrow, Scrap_SetAlarmGrow, str_PyDoc_Scrap_SetAlarmGrow) \
+	PORT_DEFND(Scrap, GetAlarmChars, Scrap_GetAlarmChars, str_PyDoc_Scrap_GetAlarmChars) \
+	PORT_DEFND(Scrap, SetAlarmChar, Scrap_SetAlarmChar, str_PyDoc_Scrap_SetAlarmChar) \
+	PORT_DEFND(Scrap, GetLockAlarm, Scrap_GetLockAlarm, str_PyDoc_Scrap_GetLockAlarm) \
+	PORT_DEFND(Scrap, SetLockAlarm, Scrap_SetLockAlarm, str_PyDoc_Scrap_SetLockAlarm) \
+	PORT_DEFND(Scrap, GetMoney, Scrap_GetMoney, str_PyDoc_Scrap_GetMoney) \
+	PORT_DEFND(Scrap, SetMoney, Scrap_SetMoney, str_PyDoc_Scrap_SetMoney) \
+	PORT_DEFND(Scrap, AddParkingZone, Scrap_AddParkingZone, str_PyDoc_Scrap_AddParkingZone) \
+	PORT_DEFND(Scrap, GetFarestParked, Scrap_GetFarestParked, str_PyDoc_Scrap_GetFarestParked) \
+	PORT_DEFND(Scrap, GetNearestParked, Scrap_GetNearestParked, str_PyDoc_Scrap_GetNearestParked) \
+	PORT_DEFND(Scrap, AddItem, Scrap_AddItem, str_PyDoc_Scrap_AddItem) \
+	PORT_DEFND(Scrap, InitLoading, Scrap_InitLoading, str_PyDoc_Scrap_InitLoading) \
+	PORT_DEFND(Scrap, EndLoading, Scrap_EndLoading, str_PyDoc_Scrap_EndLoading) \
+	PORT_DEFND(Scrap, Exit, Scrap_Exit, str_PyDoc_Scrap_Exit) \
+	PORT_DEFND(Scrap, FileExist, Scrap_FileExist, str_PyDoc_Scrap_FileExist) \
+	PORT_DEFND(Scrap, RunApp, Scrap_RunApp, str_PyDoc_Scrap_RunApp) \
+	PORT_DEFND(Scrap, Achievement, Scrap_Achievement, str_PyDoc_Scrap_Achievement) \
+	PORT_DEFND(Scrap, OpenStore, Scrap_OpenStore, str_PyDoc_Scrap_OpenStore) \
+	PORT_DEFND(Scrap, IsApp, Scrap_IsApp, str_PyDoc_Scrap_IsApp) \
+	PORT_DEFND(Scrap, GetSteamID, Scrap_GetSteamID, str_PyDoc_Scrap_GetSteamID) \
+	PORT_DEFND(Scrap, GetSteamTicket, Scrap_GetSteamTicket, str_PyDoc_Scrap_GetSteamTicket) \
+	PORT_DEFND(Scrap, IsSteam, Scrap_IsSteam, str_PyDoc_Scrap_IsSteam) \
+	PORT_DEFND(Scrap, GetGogID, Scrap_GetGogID, str_PyDoc_Scrap_GetGogID) \
+	PORT_DEFND(Scrap, ConsoleExec, Scrap_ConsoleExec, "ConsoleExec(line) : runs a line of the console")
 
 /* RaceMaker.c */
 PORT_DECL(RaceMaker, ShowSystemMessage) /* 1 */
@@ -4089,52 +4095,52 @@ PORT_DECL(Sonic, SetUpSonic) /* 1 */
 PORT_DECL(Sonic, LoadResources) /* ? */
 PORT_DECL(Sonic, Init) /* 1 */
 #define PORTS_Weapons \
-	PORT_DEF(Weapons, InitAmmo, Weapons_InitAmmo) \
-	PORT_DEF(Weapons, InitWeapons, Weapons_InitWeapons) \
-	PORT_DEF(Weapons, Init, Weapons_Init) \
-	PORT_DEF(Vulcan, LoadResources, Vulcan_LoadResources) \
-	PORT_DEF(Vulcan, Init, Vulcan_Init) \
-	PORT_DEF(Devastator, LoadResources, Devastator_LoadResources) \
-	PORT_DEF(Devastator, Init, Devastator_Init) \
-	PORT_DEF(Tesla, LoadResources, Tesla_LoadResources) \
-	PORT_DEF(Tesla, Init, Tesla_Init) \
-	PORT_DEF(ATPC, LoadResources, ATPC_LoadResources) \
-	PORT_DEF(ATPC, Init, ATPC_Init) \
-	PORT_DEF(Laser, LoadResources, Laser_LoadResources) \
-	PORT_DEF(Laser, Init, Laser_Init) \
-	PORT_DEF(Swarm, ClientCreate, Swarm_ClientCreate) \
-	PORT_DEF(Swarm, ClientAfterCreate, Swarm_ClientAfterCreate) \
-	PORT_DEF(Swarm, LoadResources, Swarm_LoadResources) \
-	PORT_DEF(Swarm, Init, Swarm_Init) \
-	PORT_DEF(Inferno, ClientCreate, Inferno_ClientCreate) \
-	PORT_DEF(Inferno, ClientAfterCreate, Inferno_ClientAfterCreate) \
-	PORT_DEF(Inferno, LoadResources, Inferno_LoadResources) \
-	PORT_DEF(Inferno, Init, Inferno_Init) \
-	PORT_DEF(Cloud, ClientCreate, Cloud_ClientCreate) \
-	PORT_DEF(Cloud, ClientAfterCreate, Cloud_ClientAfterCreate) \
-	PORT_DEF(Cloud, ActivateHitType, Weap_ActivateHitType) \
-	PORT_DEF(Cloud, CreateCloud, Cloud_CreateCloud) \
-	PORT_DEF(Cloud, SetUpCloud, Cloud_SetUpCloud) \
-	PORT_DEF(Cloud, LoadResources, Cloud_LoadResources) \
-	PORT_DEF(Cloud, Init, Cloud_Init) \
-	PORT_DEF(EMI, ClientCreate, EMI_ClientCreate) \
-	PORT_DEF(EMI, ClientAfterCreate, EMI_ClientAfterCreate) \
-	PORT_DEF(EMI, ActivateHitType, Weap_ActivateHitType) \
-	PORT_DEF(EMI, CreateEMI, EMI_CreateEMI) \
-	PORT_DEF(EMI, SetUpEMI, EMI_SetUpEMI) \
-	PORT_DEF(EMI, LoadResources, EMI_LoadResources) \
-	PORT_DEF(EMI, Init, EMI_Init) \
-	PORT_DEF(Sonic, ClientCreate, Sonic_ClientCreate) \
-	PORT_DEF(Sonic, ClientAfterCreate, Sonic_ClientAfterCreate) \
-	PORT_DEF(Sonic, SonicHit, Sonic_SonicHit) \
-	PORT_DEF(Sonic, OnHit, Sonic_OnHit) \
-	PORT_DEF(Sonic, OnServerHit, Sonic_OnServerHit) \
-	PORT_DEF(Sonic, OnDeath, Sonic_OnDeath) \
-	PORT_DEF(Sonic, SetUpToDetonate, Sonic_SetUpToDetonate) \
-	PORT_DEF(Sonic, CreateSonic, Sonic_CreateSonic) \
-	PORT_DEF(Sonic, SetUpSonic, Sonic_SetUpSonic) \
-	PORT_DEF(Sonic, LoadResources, Sonic_LoadResources) \
-	PORT_DEF(Sonic, Init, Sonic_Init)
+	PORT_DEFN(Weapons, InitAmmo, Weapons_InitAmmo) \
+	PORT_DEFN(Weapons, InitWeapons, Weapons_InitWeapons) \
+	PORT_DEFN(Weapons, Init, Weapons_Init) \
+	PORT_DEFN(Vulcan, LoadResources, Vulcan_LoadResources) \
+	PORT_DEFN(Vulcan, Init, Vulcan_Init) \
+	PORT_DEFN(Devastator, LoadResources, Devastator_LoadResources) \
+	PORT_DEFN(Devastator, Init, Devastator_Init) \
+	PORT_DEFN(Tesla, LoadResources, Tesla_LoadResources) \
+	PORT_DEFN(Tesla, Init, Tesla_Init) \
+	PORT_DEFN(ATPC, LoadResources, ATPC_LoadResources) \
+	PORT_DEFN(ATPC, Init, ATPC_Init) \
+	PORT_DEFN(Laser, LoadResources, Laser_LoadResources) \
+	PORT_DEFN(Laser, Init, Laser_Init) \
+	PORT_DEFN(Swarm, ClientCreate, Swarm_ClientCreate) \
+	PORT_DEFN(Swarm, ClientAfterCreate, Swarm_ClientAfterCreate) \
+	PORT_DEFN(Swarm, LoadResources, Swarm_LoadResources) \
+	PORT_DEFN(Swarm, Init, Swarm_Init) \
+	PORT_DEFN(Inferno, ClientCreate, Inferno_ClientCreate) \
+	PORT_DEFN(Inferno, ClientAfterCreate, Inferno_ClientAfterCreate) \
+	PORT_DEFN(Inferno, LoadResources, Inferno_LoadResources) \
+	PORT_DEFN(Inferno, Init, Inferno_Init) \
+	PORT_DEFN(Cloud, ClientCreate, Cloud_ClientCreate) \
+	PORT_DEFN(Cloud, ClientAfterCreate, Cloud_ClientAfterCreate) \
+	PORT_DEFN(Cloud, ActivateHitType, Weap_ActivateHitType) \
+	PORT_DEFN(Cloud, CreateCloud, Cloud_CreateCloud) \
+	PORT_DEFN(Cloud, SetUpCloud, Cloud_SetUpCloud) \
+	PORT_DEFN(Cloud, LoadResources, Cloud_LoadResources) \
+	PORT_DEFN(Cloud, Init, Cloud_Init) \
+	PORT_DEFN(EMI, ClientCreate, EMI_ClientCreate) \
+	PORT_DEFN(EMI, ClientAfterCreate, EMI_ClientAfterCreate) \
+	PORT_DEFN(EMI, ActivateHitType, Weap_ActivateHitType) \
+	PORT_DEFN(EMI, CreateEMI, EMI_CreateEMI) \
+	PORT_DEFN(EMI, SetUpEMI, EMI_SetUpEMI) \
+	PORT_DEFN(EMI, LoadResources, EMI_LoadResources) \
+	PORT_DEFN(EMI, Init, EMI_Init) \
+	PORT_DEFN(Sonic, ClientCreate, Sonic_ClientCreate) \
+	PORT_DEFN(Sonic, ClientAfterCreate, Sonic_ClientAfterCreate) \
+	PORT_DEFN(Sonic, SonicHit, Sonic_SonicHit) \
+	PORT_DEFN(Sonic, OnHit, Sonic_OnHit) \
+	PORT_DEFN(Sonic, OnServerHit, Sonic_OnServerHit) \
+	PORT_DEFN(Sonic, OnDeath, Sonic_OnDeath) \
+	PORT_DEFN(Sonic, SetUpToDetonate, Sonic_SetUpToDetonate) \
+	PORT_DEFN(Sonic, CreateSonic, Sonic_CreateSonic) \
+	PORT_DEFN(Sonic, SetUpSonic, Sonic_SetUpSonic) \
+	PORT_DEFN(Sonic, LoadResources, Sonic_LoadResources) \
+	PORT_DEFN(Sonic, Init, Sonic_Init)
 
 /* WeaponsTab.c */
 PORT_DECL(WeaponsTab, ShowWeightPrediction) /* 3 */
@@ -6570,6 +6576,7 @@ PORT_DECLL(townhall, Map, InitStatus) /* 1 */
 PORT_DECLL(townhall, Map, CreateGearMayor) /* 1 */
 PORT_DECLL(townhall, Map, Init) /* 1 */
 PORT_DECLL(townhall, Map, OrbitLockMsg) /* 4 */
+PORT_DECLL(townhall, MapSnd, SndElements) /* 6 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, InitStatus) /* 1 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, AfterBrowseNPC) /* 0 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, CreateMayorInit) /* 1 */
@@ -6622,63 +6629,64 @@ PORT_DECLL(townhall, Mission_TalkToMayor, EndOfStealFunctionary) /* 0 */
 PORT_DECLL(townhall, Mission_TalkToMayor, SetNextMission) /* 0 */
 PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 #define PORTS_levels_Townhall \
-	PORT_DEFL(townhall, Map, InitStatus, TownhallMap_InitStatus) \
-	PORT_DEFL(townhall, Map, CreateGearMayor, TownhallMap_CreateGearMayor) \
-	PORT_DEFL(townhall, Map, Init, TownhallMap_Init) \
-	PORT_DEFL(townhall, Map, OrbitLockMsg, TownhallMap_OrbitLockMsg) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, InitStatus, ApologizeMayor_InitStatus) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, AfterBrowseNPC, ApologizeMayor_AfterBrowseNPC) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, CreateMayorInit, ApologizeMayor_CreateMayorInit) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, Init, ApologizeMayor_Init) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, ForbiddenMsg, ApologizeMayor_ForbiddenMsg) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, MayorSpeech, ApologizeMayor_MayorSpeech) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, SetTransportMission, ApologizeMayor_SetTransportMission) \
-	PORT_DEFLK(townhall, Mission_ApologizeMayor, ChooseStapler, ApologizeMayor_ChooseStapler) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, InitStaplerMission, ApologizeMayor_InitStaplerMission) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, StaplerSpeech, ApologizeMayor_StaplerSpeech) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, StaplerDead, ApologizeMayor_StaplerDead) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, MayorMessage, ApologizeMayor_MayorMessage) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, MissionScorer, ApologizeMayor_MissionScorer) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, InitStatus, CatchTrurl_InitStatus) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, Init, CatchTrurl_Init) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CreateTrurl, CatchTrurl_CreateTrurl) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, OnCatchTrurl, CatchTrurl_OnCatchTrurl) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, OnCatchTrurlAgain, CatchTrurl_OnCatchTrurlAgain) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, FunctionaryMissionSpeech, CatchTrurl_FunctionaryMissionSpeech) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, SetCallbackFuncs, CatchTrurl_SetCallbackFuncs) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, SpawnMap, CatchTrurl_SpawnMap) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CreateMap, CatchTrurl_CreateMap) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, TakeMapPhoto, CatchTrurl_TakeMapPhoto) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, KillFunctionaries, CatchTrurl_KillFunctionaries) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CatchTrurlAgain, CatchTrurl_CatchTrurlAgain) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, SetNextMission, CatchTrurl_SetNextMission) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CGCalls, CatchTrurl_CGCalls) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, InitStatus, SheriffMayor_InitStatus) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, CreateMayor, SheriffMayor_CreateMayor) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, CreatePoliceBoss, SheriffMayor_CreatePoliceBoss) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, ReadyToTalk, SheriffMayor_ReadyToTalk) \
-	PORT_DEFLK(townhall, Mission_SheriffMayor, Blablibla, SheriffMayor_Blablibla) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, PoliceBossMissionSpeech, SheriffMayor_PoliceBossMissionSpeech) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, OnPay, SheriffMayor_OnPay) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, SetNextMission, SheriffMayor_SetNextMission) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, InitStatus, TalkToMayor_InitStatus) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, AfterBrowseNPC, TalkToMayor_AfterBrowseNPC) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CreateMayorInit, TalkToMayor_CreateMayorInit) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CreateBishopPorkins, TalkToMayor_CreateBishopPorkins) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CreateFunctionaryTamayo, TalkToMayor_CreateFunctionaryTamayo) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, Init, TalkToMayor_Init) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, MayorSpeech, TalkToMayor_MayorSpeech) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, BishopSpeech, TalkToMayor_BishopSpeech) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, FunctionarySpeech, TalkToMayor_FunctionarySpeech) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, StealFunctionary, TalkToMayor_StealFunctionary) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CheckTamayoMoney, TalkToMayor_CheckTamayoMoney) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, RestoreTamayoState, TalkToMayor_RestoreTamayoState) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, OnBankerSteal, TalkToMayor_OnBankerSteal) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, EndOfStealFunctionary, TalkToMayor_EndOfStealFunctionary) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, SetNextMission, TalkToMayor_SetNextMission) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
+	PORT_DEFLN(townhall, Map, InitStatus, TownhallMap_InitStatus) \
+	PORT_DEFLN(townhall, Map, CreateGearMayor, TownhallMap_CreateGearMayor) \
+	PORT_DEFLN(townhall, Map, Init, TownhallMap_Init) \
+	PORT_DEFLN(townhall, Map, OrbitLockMsg, TownhallMap_OrbitLockMsg) \
+	PORT_DEFLN(townhall, MapSnd, SndElements, TownhallMapSnd_SndElements) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, InitStatus, ApologizeMayor_InitStatus) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, AfterBrowseNPC, ApologizeMayor_AfterBrowseNPC) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, CreateMayorInit, ApologizeMayor_CreateMayorInit) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, Init, ApologizeMayor_Init) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, ForbiddenMsg, ApologizeMayor_ForbiddenMsg) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, MayorSpeech, ApologizeMayor_MayorSpeech) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, SetTransportMission, ApologizeMayor_SetTransportMission) \
+	PORT_DEFLNK(townhall, Mission_ApologizeMayor, ChooseStapler, ApologizeMayor_ChooseStapler) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, InitStaplerMission, ApologizeMayor_InitStaplerMission) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, StaplerSpeech, ApologizeMayor_StaplerSpeech) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, StaplerDead, ApologizeMayor_StaplerDead) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, MayorMessage, ApologizeMayor_MayorMessage) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, MissionScorer, ApologizeMayor_MissionScorer) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, InitStatus, CatchTrurl_InitStatus) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, Init, CatchTrurl_Init) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CreateTrurl, CatchTrurl_CreateTrurl) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, OnCatchTrurl, CatchTrurl_OnCatchTrurl) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, OnCatchTrurlAgain, CatchTrurl_OnCatchTrurlAgain) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, FunctionaryMissionSpeech, CatchTrurl_FunctionaryMissionSpeech) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, SetCallbackFuncs, CatchTrurl_SetCallbackFuncs) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, SpawnMap, CatchTrurl_SpawnMap) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CreateMap, CatchTrurl_CreateMap) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, TakeMapPhoto, CatchTrurl_TakeMapPhoto) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, KillFunctionaries, CatchTrurl_KillFunctionaries) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CatchTrurlAgain, CatchTrurl_CatchTrurlAgain) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, SetNextMission, CatchTrurl_SetNextMission) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CGCalls, CatchTrurl_CGCalls) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, InitStatus, SheriffMayor_InitStatus) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, CreateMayor, SheriffMayor_CreateMayor) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, CreatePoliceBoss, SheriffMayor_CreatePoliceBoss) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, ReadyToTalk, SheriffMayor_ReadyToTalk) \
+	PORT_DEFLNK(townhall, Mission_SheriffMayor, Blablibla, SheriffMayor_Blablibla) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, PoliceBossMissionSpeech, SheriffMayor_PoliceBossMissionSpeech) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, OnPay, SheriffMayor_OnPay) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, SetNextMission, SheriffMayor_SetNextMission) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, InitStatus, TalkToMayor_InitStatus) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, AfterBrowseNPC, TalkToMayor_AfterBrowseNPC) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CreateMayorInit, TalkToMayor_CreateMayorInit) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CreateBishopPorkins, TalkToMayor_CreateBishopPorkins) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CreateFunctionaryTamayo, TalkToMayor_CreateFunctionaryTamayo) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, Init, TalkToMayor_Init) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, MayorSpeech, TalkToMayor_MayorSpeech) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, BishopSpeech, TalkToMayor_BishopSpeech) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, FunctionarySpeech, TalkToMayor_FunctionarySpeech) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, StealFunctionary, TalkToMayor_StealFunctionary) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CheckTamayoMoney, TalkToMayor_CheckTamayoMoney) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, RestoreTamayoState, TalkToMayor_RestoreTamayoState) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, OnBankerSteal, TalkToMayor_OnBankerSteal) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, EndOfStealFunctionary, TalkToMayor_EndOfStealFunctionary) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, SetNextMission, TalkToMayor_SetNextMission) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 3203
+#define PORT_COUNT 3207
 
 #endif

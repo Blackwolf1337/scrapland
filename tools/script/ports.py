@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # The refs of the direct calls between script ports (stage 3 of docs/objlib-plan.md, PORT_CALL in
-# include/scrap/scriptnative.h): writes include/scrap/scriptports.h from the PyMethodDef tables of src/game/Script,
-# their registrations in Script.c and Levels.c and the native entries (<adapter>_E, made by MODE_FN and LV_FN or by
-# hand), found in the preprocessed sources (compile_commands.json of a build folder), and the registry of stage 4:
-# src/game/Script/PortTable.c, all refs sorted by module and name (strcmp order) for Port_Find.
+# include/scrap/scriptnative.h): writes include/scrap/scriptports.h from the function tables of src/game/Script
+# (portFn_t, stage 7e; the PyMethodDef tables not converted yet), their registrations in Script.c and Levels.c and the
+# native entries (<fn>_E, made by MODE_FN and LV_FN or by hand), found in the preprocessed sources
+# (compile_commands.json of a build folder), and the registry of stage 4: src/game/Script/PortTable.c, all refs sorted
+# by module and name (strcmp order) for Port_Find.
 #
 #   tools/script/ports.py                 write the header and the table (run it after a table or an entry changes,
 #                                         and to resolve a merge of either)
@@ -13,13 +14,15 @@
 #   --build <dir>                         the build folder for the preprocessor (default build-linux64)
 #
 # The engine modules (stage 7: Scrap, SScorer, ... of src/game/PyInterface, the files with SD_PY_MODULE(<Module>, rva)
-# and its designated-initializer table <Module>_methods) get refs the same way, one per function with an entry, listed
-# under the file's path from src/game (PORTS(PyInterface_ScrapPy) at the end of src/game/PyInterface/ScrapPy.c).
+# and its function table <Module>_methods) get refs the same way, one per function, listed under the file's path from
+# src/game (PORTS(PyInterface_ScrapPy) at the end of src/game/PyInterface/ScrapPy.c).
 #
 # One ref per table function with an entry: port_<Module>_<Func>, or port_<level>_<Module>_<Func> for the modules
-# of a level (Map, Mission_X: Levels.c entries). A keyword entry whose file defines the names of its slots as
-# char *<adapter>_N[] (MODE_KW, the Mode_KwCall adapters) gets PORT_DEFK or PORT_DEFLK: its ref takes keyword calls.
-# portcalls.py imports this file.
+# of a level (Map, Mission_X: Levels.c entries). A row of a function table gives PORT_DEFN (PORT_DEFLN for a level),
+# PORT_DEFNK for a keyword row (PORT_FNK: the names of the slots <fn>_N and their format <fn>_F, as MODE_KW makes
+# them), PORT_DEFND for a row with a __doc__ text (PORT_FND). A row of a PyMethodDef table not converted yet gives
+# PORT_DEF with its adapter, PORT_DEFK when the file defines char *<adapter>_N[] (and <adapter>_F).
+# portcalls.py imports this file; fntable.py converts the PyMethodDef tables of a file.
 import argparse, collections, concurrent.futures, json, os, re, shlex, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -31,6 +34,11 @@ HEADER = os.path.join(ROOT, 'include/scrap/scriptports.h')
 TABLEFILE = os.path.join(SCRIPT, 'PortTable.c')
 
 TABLE = re.compile(r'\bPyMethodDef\s+(g_\w+)\s*\[\s*\]\s*=\s*\{')
+# a function table (stage 7e, portFn_t of include/scrap/scriptnative.h) and its rows as the preprocessor gives them:
+# PORT_FN(Name, fn) is { "Name", fn_E, 0, ((void *)0) }, PORT_FNK has 1, PORT_FND(Name, fn, doc) the doc (a symbol
+# or a text)
+FNTABLE = re.compile(r'\bportFn_t\s+(\w+)\s*\[\s*\d*\s*\]\s*=\s*\{')
+FNROW = re.compile(r'\{\s*"(\w+)",\s*(\w+)_E,\s*([01]),\s*(\(\s*\(\s*void\s*\*\s*\)\s*0\s*\)|\w+|"(?:[^"\\]|\\.)*")\s*\}')
 # a row: { "Name", adapter, ... }, the adapter maybe cast as (PyCFunction) or (PyCFunction)(void (*)(void)) (keywords)
 ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(?:\(\s*void\s*\(\s*\*\s*\)\s*\(\s*void\s*\)\s*\)\s*)?(\w+)')
 # the parameters maybe [[maybe_unused]] (API_FN of include/scrap/scriptapi.h)
@@ -47,7 +55,8 @@ ENGINE_TABLE = re.compile(r'\bPyMethodDef\s+(\w+)_methods\s*\[\s*\d*\s*\]\s*=\s*
 ENGINE_ROW = re.compile(r'\.ml_name\s*=\s*(?:\(\s*void\s*\*\s*\)\s*)?(?:(str_PyMethod_\w+)|"(\w+)")\s*,\s*'
 	r'\.ml_meth\s*=\s*(?:\(\s*void\s*\*\s*\)\s*)?(?:\(PyCFunction\)\s*)?(\w+)')
 ENGINE_NAME = re.compile(r'\b(str_PyMethod_\w+)\s*\[\s*\d*\s*\]\s*=\s*"(\w+)"')
-Ref = collections.namedtuple('Ref', 'file level module name adapter nargs kw')
+# kw: 'K' a keyword entry; fn: a row of a function table (no adapter: the PORT_DEFN forms); doc: its __doc__ symbol
+Ref = collections.namedtuple('Ref', 'file level module name adapter nargs kw fn doc', defaults=(False, None))
 
 
 def path_of(f):
@@ -72,38 +81,56 @@ def sources():
 	return sorted(f for f in out if os.path.join(SCRIPT, f) != TABLEFILE)
 
 
+def table_body(text, m):
+	"""the text of the table that m (TABLE or FNTABLE) starts, up to its closing brace"""
+	depth, i = 1, m.end()
+	while depth and i < len(text):
+		depth += {'{': 1, '}': -1}.get(text[i], 0)
+		i += 1
+	return text[m.end():i]
+
+
+def fn_rows(body):
+	"""[(Python name, fn, keywords, doc symbol or None)] of the rows of a function table"""
+	return [(n, fn, k == '1', None if d.startswith('(') else d) for n, fn, k, d in FNROW.findall(body)]
+
+
 def tables(pp):
-	"""g_name -> (file, [(Python name, adapter)]) of the tables in the preprocessed files"""
+	"""g_name -> (file, rows) of the tables in the preprocessed files: [(Python name, adapter)] of a PyMethodDef table,
+	[(Python name, fn, keywords, doc)] of a function table (4-tuples)"""
 	tabs = {}
 	for f, lines in pp.items():
 		text = '\n'.join(x for _, x in lines)
 		for m in TABLE.finditer(text):
-			depth, i = 1, m.end()
-			while depth and i < len(text):
-				depth += {'{': 1, '}': -1}.get(text[i], 0)
-				i += 1
-			tabs[m.group(1)] = (f, ROW.findall(text[m.end():i]))
+			tabs[m.group(1)] = (f, ROW.findall(table_body(text, m)))
+		for m in FNTABLE.finditer(text):
+			tabs[m.group(1)] = (f, fn_rows(table_body(text, m)))
 	return tabs
 
 
 def registrations():
 	"""[(level or None, module, g_name)] in the order of Script.c and Levels.c"""
 	regs = [(None, m.group(1), m.group(2)) for m in
-		re.finditer(r'\{ "(\w+)", (g_\w+) \}', open(os.path.join(SCRIPT, 'Script.c')).read())]
+		re.finditer(r'\{ "(\w+)", (?:NULL, )?(g_\w+)(?:, NULL)? \}', open(os.path.join(SCRIPT, 'Script.c')).read())]
 	regs += [(m.group(1), m.group(2), m.group(3)) for m in
-		re.finditer(r'\{ "(\w+)", "(\w+)", (g_\w+) \}', open(os.path.join(SCRIPT, 'Levels.c')).read())]
+		re.finditer(r'\{ "(\w+)", "(\w+)", (?:NULL, )?(g_\w+)(?:, NULL)? \}', open(os.path.join(SCRIPT, 'Levels.c')).read())]
 	return regs
 
 
 def engine_tables(pp):
-	"""[(module, file, [(Python name, adapter)])] of the engine modules in the preprocessed engine files (pp), the names
-	of the rows from the str_PyMethod_ texts of all of them (one file can use another's: SScorer_Get)"""
+	"""[(module, file, rows)] of the engine modules in the preprocessed engine files (pp): the rows of a function table
+	(stage 7e) as fn_rows gives them, of a PyMethodDef table [(Python name, adapter)] with the names from the
+	str_PyMethod_ texts of all of them (one file can use another's: SScorer_Get)"""
 	names, out = {}, []
 	text = {f: '\n'.join(x for _, x in lines) for f, lines in pp.items()}
 	for t in text.values():
 		names.update(ENGINE_NAME.findall(t))
 	for f in sorted(pp):
 		modules = set(ENGINE_MODULE.findall(open(path_of(f), errors='replace').read()))
+		for m in FNTABLE.finditer(text[f]):
+			g = m.group(1)[:-len('_methods')] if m.group(1).endswith('_methods') else None
+			if g in modules:
+				out.append((g, f, fn_rows(table_body(text[f], m))))
 		for m in ENGINE_TABLE.finditer(text[f]):
 			if m.group(1) not in modules:
 				continue
@@ -210,12 +237,15 @@ def refs(build, pp=None):
 		if g not in tabs:
 			continue
 		f, rows = tabs[g]
-		for name, adapter in rows:
+		for row in rows:
+			name, adapter = row[0], row[1]
 			key = (level, module, name)
 			if key in seen:
 				problems.append('%s.%s%s is in two tables (%s, %s): no ref' % (module, name,
 					' of ' + level if level else '', seen[key].file if seen[key] else '?', f))
 				dup.add(key)
+			elif len(row) == 4:
+				seen[key] = fn_ref(f, level, module, row, ents[f], kws[f], problems)
 			elif adapter in ents[f]:
 				seen[key] = Ref(f, level, module, name, adapter, ents[f][adapter],
 					'K' if adapter in kws[f] else '')
@@ -227,12 +257,15 @@ def refs(build, pp=None):
 		ents[f], kws[f] = entries(lines, True)
 	for module, f, rows in engine_tables(epp):
 		# a row given twice (Scrap.GetFreeBlocks): one function
-		for name, adapter in dict.fromkeys(rows):
+		for row in dict.fromkeys(rows):
+			name, adapter = row[0], row[1]
 			key = (None, module, name)
 			if key in seen:
 				problems.append('%s.%s is in two tables (%s, %s): no ref' % (module, name,
 					seen[key].file if seen[key] else '?', f))
 				dup.add(key)
+			elif len(row) == 4:
+				seen[key] = fn_ref(f, None, module, row, ents[f], kws[f], problems)
 			elif adapter in ents[f]:
 				seen[key] = Ref(f, None, module, name, adapter, ents[f][adapter],
 					'K' if adapter in kws[f] else '')
@@ -245,6 +278,17 @@ def refs(build, pp=None):
 	return out, problems
 
 
+def fn_ref(f, level, module, row, ents, kws, problems):
+	"""the Ref of a row of a function table (its entry fn_E is there: the row names it); a keyword row needs the names
+	of the slots (fn_N and fn_F, MODE_KW), and has no doc"""
+	name, fn, kw, doc = row
+	if kw and fn not in kws:
+		problems.append('%s.%s (%s): a keyword row without %s_N' % (module, name, f, fn))
+	if kw and doc:
+		problems.append('%s.%s (%s): a keyword row with a doc' % (module, name, f))
+	return Ref(f, level, module, name, fn, ents.get(fn), 'K' if kw else '', True, doc)
+
+
 def listname(f):
 	return 'PORTS_' + f[:-2].replace('/', '_')
 
@@ -252,7 +296,7 @@ def listname(f):
 def header(byfile):
 	o = ['/*',
 		' * The refs of the port functions that have a native entry (PORT_CALL and PORT_OWN, include/scrap/scriptnative.h),',
-		' * one per table function: made by tools/script/ports.py from the PyMethodDef tables of src/game/Script, their',
+		' * one per table function: made by tools/script/ports.py from the function tables of src/game/Script, their',
 		' * registrations in Script.c and Levels.c, the tables of the engine modules (src/game/PyInterface) and the',
 		' * entries. Do not edit: run the tool after a table or an entry changes, and to resolve a merge. The number after',
 		' * each ref is the count of arguments its entry takes.',
@@ -268,11 +312,12 @@ def header(byfile):
 			o.append('%s /* %s */' % (d, '?' if r.nargs is None else r.nargs))
 		o.append('#define %s \\' % listname(f))
 		for r in rs:
-			k = r.kw
+			k = ('N' if r.fn else '') + r.kw + ('D' if r.doc else '')
+			doc = ', ' + r.doc if r.doc else ''
 			if r.level:
-				o.append('\tPORT_DEFL%s(%s, %s, %s, %s) \\' % (k, r.level, r.module, r.name, r.adapter))
+				o.append('\tPORT_DEFL%s(%s, %s, %s, %s%s) \\' % (k, r.level, r.module, r.name, r.adapter, doc))
 			else:
-				o.append('\tPORT_DEF%s(%s, %s, %s) \\' % (k, r.module, r.name, r.adapter))
+				o.append('\tPORT_DEF%s(%s, %s, %s%s) \\' % (k, r.module, r.name, r.adapter, doc))
 		o[-1] = o[-1][:-2]
 		o.append('')
 	o.append('/* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */')
@@ -301,6 +346,13 @@ def table(byfile):
 		'',
 		'const portRef_t *const g_PortTable[PORT_COUNT] = {']
 	o += ['\t&%s,' % refname(r) for r in rs]
+	o.append('};')
+	o.append('')
+	o.append('/* OBJLIB 7e2: the C functions of the C function objects of the refs (NObj_PortFuncPy), one per ref */')
+	o += ['PORT_TRAMP(%d)' % i for i in range(len(rs))]
+	o.append('')
+	o.append('const portTramp_t g_PortTramps[PORT_COUNT] = {')
+	o += ['\tPort_Tramp%d,' % i for i in range(len(rs))]
 	o.append('};')
 	return '\n'.join(o) + '\n'
 

@@ -4,7 +4,7 @@
  * 1) and a Desktop entry at the front of the video modes (VideoDesktop: the size of the desktop).
  *
  * Native C (docs/objlib-plan.md, stage 2): the state is the struct video, the functions call the engine in C; the
- * PyMethodDef entries are adapters (id and the control as a text, anything else as ""). The options menu after Apply
+ * function table rows name the entries (id and the control as a text, anything else as ""). The options menu after Apply
  * is called through its ref (PORT_CALL: directly while PCMenu holds the port's function, else by name), after Back
  * by name through the alias Menu.OptionsMenu (OBJLIB 5 (9c: a variable of Menu, PCMenu's or XBMenu's function)); a
  * failure is printed as before.
@@ -316,7 +316,6 @@ static byte PCMenu_VideoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Script_RunFile(id, "menus/video.def", NULL, video_def, video_steps, NULL);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, VideoMenu)
 
 static byte PCMenu_ChangeVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -331,7 +330,6 @@ static byte PCMenu_ChangeVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Video_ShowMode(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ChangeVideoMode)
 
 static byte PCMenu_PrevVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -341,7 +339,6 @@ static byte PCMenu_PrevVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Video_PrevMode(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, PrevVideoMode)
 
 static byte PCMenu_NextVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -351,7 +348,6 @@ static byte PCMenu_NextVideoMode_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Video_NextMode(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, NextVideoMode)
 
 static byte PCMenu_ChangeTextureFilter_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -366,7 +362,6 @@ static byte PCMenu_ChangeTextureFilter_E(const nativeVal_t *a, int n, nativeVal_
 	Video_ApplyTextureFilter(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ChangeTextureFilter)
 
 static byte PCMenu_ChangeTextureDetail_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -377,7 +372,6 @@ static byte PCMenu_ChangeTextureDetail_E(const nativeVal_t *a, int n, nativeVal_
 	Script_SetStr(id, "TextureDetail", "Text", video.detail[i]);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ChangeTextureDetail)
 
 static byte PCMenu_ChangeShadowsDetail_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -388,7 +382,6 @@ static byte PCMenu_ChangeShadowsDetail_E(const nativeVal_t *a, int n, nativeVal_
 	Script_SetStr(id, "ShadowsDetail", "Text", video.shadows[i]);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ChangeShadowsDetail)
 
 /* a Yes/No item: flips, and Lock and Fog apply at once */
 static byte Video_ChangeYesNo(const nativeVal_t *a, int n, const char *item, void (*apply)(int id)) {
@@ -406,37 +399,31 @@ static byte PCMenu_ChangeVSync_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	(void)out;
 	return Video_ChangeYesNo(a, n, "VSync", NULL);
 }
-MODE_ADAPTER(PCMenu, ChangeVSync)
 
 static byte PCMenu_ChangeLock_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Video_ChangeYesNo(a, n, "Lock", Video_ApplyLock);
 }
-MODE_ADAPTER(PCMenu, ChangeLock)
 
 static byte PCMenu_ChangeFog_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Video_ChangeYesNo(a, n, "Fog", Video_ApplyFog);
 }
-MODE_ADAPTER(PCMenu, ChangeFog)
 
 static byte PCMenu_ChangeBloom_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Video_ChangeYesNo(a, n, "Bloom", NULL);
 }
-MODE_ADAPTER(PCMenu, ChangeBloom)
 
 static byte PCMenu_ChangeMotionBlur_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Video_ChangeYesNo(a, n, "MotionBlur", NULL);
 }
-MODE_ADAPTER(PCMenu, ChangeMotionBlur)
 
 static byte PCMenu_ChangeDuDv_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Video_ChangeYesNo(a, n, "DuDv", NULL);
 }
-MODE_ADAPTER(PCMenu, ChangeDuDv)
 
 static byte PCMenu_ChangeGamma_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -446,7 +433,6 @@ static byte PCMenu_ChangeGamma_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	Video_ApplyGamma(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ChangeGamma)
 
 /* the dummies left and right of the gamma title step the slider and give the focus back */
 static byte Video_GammaStep(const nativeVal_t *a, int n, double sign) {
@@ -467,13 +453,11 @@ static byte PCMenu_GammaSliderFocus_Sub_E(const nativeVal_t *a, int n, nativeVal
 	(void)out;
 	return Video_GammaStep(a, n, -1.0);
 }
-MODE_ADAPTER(PCMenu, GammaSliderFocus_Sub)
 
 static byte PCMenu_GammaSliderFocus_Add_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Video_GammaStep(a, n, 1.0);
 }
-MODE_ADAPTER(PCMenu, GammaSliderFocus_Add)
 
 static byte PCMenu_ChangeDisplay_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -484,7 +468,6 @@ static byte PCMenu_ChangeDisplay_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Script_SetStr(id, "Display", "Text", video.display[next[Video_DisplayIndex(id)]]);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ChangeDisplay)
 
 /* Back: the values the menu set at once go back */
 static byte PCMenu_VideoMenuBack_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -500,7 +483,6 @@ static byte PCMenu_VideoMenuBack_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Mode_Printed(Native_CallMod("Menu", "OptionsMenu", NULL, "is", (long)id, control), "Menu", "OptionsMenu");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, VideoMenuBack)
 
 static byte PCMenu_VideoDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -523,7 +505,6 @@ static byte PCMenu_VideoDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Video_SetYes(id, "DuDv", 1);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, VideoDefaults)
 
 /* the mode of the desktop size, 32 bpp first (else the largest one) */
 static int Video_DesktopMode(void) {
@@ -583,30 +564,29 @@ static byte PCMenu_ApplyChanges_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ApplyChanges)
 
-PyMethodDef g_MenuVideoMethods[] = {
-	{ "VideoMenu", PCMenu_VideoMenu, 1, NULL },
-	{ "VideoMenuBack", PCMenu_VideoMenuBack, 1, NULL },
-	{ "VideoDefaults", PCMenu_VideoDefaults, 1, NULL },
-	{ "ApplyChanges", PCMenu_ApplyChanges, 1, NULL },
-	{ "ChangeVideoMode", PCMenu_ChangeVideoMode, 1, NULL },
-	{ "PrevVideoMode", PCMenu_PrevVideoMode, 1, NULL },
-	{ "NextVideoMode", PCMenu_NextVideoMode, 1, NULL },
-	{ "ChangeTextureFilter", PCMenu_ChangeTextureFilter, 1, NULL },
-	{ "ChangeTextureDetail", PCMenu_ChangeTextureDetail, 1, NULL },
-	{ "ChangeShadowsDetail", PCMenu_ChangeShadowsDetail, 1, NULL },
-	{ "ChangeVSync", PCMenu_ChangeVSync, 1, NULL },
-	{ "ChangeLock", PCMenu_ChangeLock, 1, NULL },
-	{ "ChangeFog", PCMenu_ChangeFog, 1, NULL },
-	{ "ChangeBloom", PCMenu_ChangeBloom, 1, NULL },
-	{ "ChangeMotionBlur", PCMenu_ChangeMotionBlur, 1, NULL },
-	{ "ChangeDuDv", PCMenu_ChangeDuDv, 1, NULL },
-	{ "ChangeGamma", PCMenu_ChangeGamma, 1, NULL },
-	{ "GammaSliderFocus_Sub", PCMenu_GammaSliderFocus_Sub, 1, NULL },
-	{ "GammaSliderFocus_Add", PCMenu_GammaSliderFocus_Add, 1, NULL },
-	{ "ChangeDisplay", PCMenu_ChangeDisplay, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuVideoMethods[] = {
+	PORT_FN(VideoMenu, PCMenu_VideoMenu),
+	PORT_FN(VideoMenuBack, PCMenu_VideoMenuBack),
+	PORT_FN(VideoDefaults, PCMenu_VideoDefaults),
+	PORT_FN(ApplyChanges, PCMenu_ApplyChanges),
+	PORT_FN(ChangeVideoMode, PCMenu_ChangeVideoMode),
+	PORT_FN(PrevVideoMode, PCMenu_PrevVideoMode),
+	PORT_FN(NextVideoMode, PCMenu_NextVideoMode),
+	PORT_FN(ChangeTextureFilter, PCMenu_ChangeTextureFilter),
+	PORT_FN(ChangeTextureDetail, PCMenu_ChangeTextureDetail),
+	PORT_FN(ChangeShadowsDetail, PCMenu_ChangeShadowsDetail),
+	PORT_FN(ChangeVSync, PCMenu_ChangeVSync),
+	PORT_FN(ChangeLock, PCMenu_ChangeLock),
+	PORT_FN(ChangeFog, PCMenu_ChangeFog),
+	PORT_FN(ChangeBloom, PCMenu_ChangeBloom),
+	PORT_FN(ChangeMotionBlur, PCMenu_ChangeMotionBlur),
+	PORT_FN(ChangeDuDv, PCMenu_ChangeDuDv),
+	PORT_FN(ChangeGamma, PCMenu_ChangeGamma),
+	PORT_FN(GammaSliderFocus_Sub, PCMenu_GammaSliderFocus_Sub),
+	PORT_FN(GammaSliderFocus_Add, PCMenu_GammaSliderFocus_Add),
+	PORT_FN(ChangeDisplay, PCMenu_ChangeDisplay),
+	PORT_FNEND
 };
 
 PORTS(MenuVideo)

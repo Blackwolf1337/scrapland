@@ -278,6 +278,10 @@ byte Mode_PurgeServerMapList(const char *module);
 
 /* ---- adapters ---- */
 
+/* OBJLIB 7e2: the macros below still make the adapter of a PyMethodDef table next to the entry, [[maybe_unused]]: a
+ * file whose table is a function table (portFn_t, scrap/scriptnative.h) uses only the entry. They go with the last
+ * PyMethodDef table of the ports. */
+
 /* the n arguments of an adapter (the arity error of PyArg_ParseTuple, up to 11) as native values of t, one after the
  * other from *a (Native_Arg: an entity handle as NV_ENT, other objects as NV_OBJ) */
 byte Mode_Args(PyObject *args, int n, modeVals_t *t, nativeVal_t **a);
@@ -292,7 +296,7 @@ PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
 		(void)out; \
 		return n == (nargs) ? (call) : Port_Arity(n, nargs); \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		modeVals_t t = { .n = 0 }; \
 		nativeVal_t *a, *out = Mode_V(&t); \
 		(void)self; \
@@ -869,6 +873,9 @@ byte Mode_SaveCopy(const char *name, const char *from);
 /* 1 when min <= n <= max, else 0 with the TypeError of PyArg_ParseTuple for n arguments ("function requires at least
  * 2 arguments; 1 given") */
 byte Mode_Arity(int n, int min, int max);
+/* the least (*min) and the most (*max) arguments of a PyArg format: letters and groups at the top level, the least
+ * those before the '|' */
+void Mode_FmtCount(const char *fmt, int *min, int *max);
 /* the arguments of an adapter with min required and up to max in all ("O..|O.." of PyArg_ParseTuple, max up to 11) as
  * native values of t, one after the other from *a (those not given None): the count given, -1 with the error */
 int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **a);
@@ -881,7 +888,7 @@ int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **
 		(void)out; \
 		return Mode_Arity(n, min, max) ? (call) : 0; \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		modeVals_t t = { .n = 0 }; \
 		nativeVal_t *a, *out = Mode_V(&t); \
 		(void)self; \
@@ -899,7 +906,7 @@ int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **
 		(void)out; \
 		return (call); \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		modeVals_t t = { .n = 0 }; \
 		nativeVal_t *out = Mode_V(&t); \
 		(void)self; \
@@ -920,6 +927,10 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out);
  * items ("i", "l", "d" and "f" items only). 1, or 0 with the error
  */
 byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
+/* the conversion errors of fmt on the n slots of a keyword call (Mode_KwSkip: a slot not given, its item skipped), in
+ * slot order and without outputs (the errors vgetargskeywords gives before an unknown keyword): 1, or 0 with the
+ * error */
+byte Mode_ParseSlots(const nativeVal_t *a, int n, const char *fmt);
 /* the adapter of a function whose entry checks its own arguments (Mode_Parse, Port_Arity): the arguments as native
  * values (Native_Arg), the entry, the result as Python (None for None, NULL for 0) */
 PyObject *Mode_Entry(PyObject *args, portEntry_t entry);
@@ -948,7 +959,7 @@ PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **n
 		(void)out; \
 		return n != (nargs) ? Port_Arity(n, nargs) : Mode_ArgInt(&a[0], &id) && (call); \
 	} \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_Entry(args, fn##_E); \
 	}
@@ -957,7 +968,7 @@ PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **n
 
 /* pre_name, the PyArg adapter of the entry pre_name_E (Mode_Entry) */
 #define MODE_ADAPTER(pre, name) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_Entry(args, pre##_##name##_E); \
 	}
@@ -989,10 +1000,11 @@ PORT_DECL(math, fabs)
 PORT_DECL(math, fmod)
 /* a keyword function of a module (prefix pre): the format (letters O, | before the optional ones, up to 8) and the
  * names of its arguments, then the body of pre_name_K(v, given, out) on the slots of Mode_KwSlots (the defaults of the
- * script with Mode_KwDef*): pre_name_E, its entry, pre_name, its adapter (Mode_KwAdapter), and pre_name_N, the names
- * (the keyword calls through its ref, PORT_DEFK) */
+ * script with Mode_KwDef*): pre_name_E, its entry, pre_name, its adapter (Mode_KwAdapter), pre_name_N, the names, and
+ * pre_name_F, the format (the keyword calls through its ref, PORT_DEFK) */
 #define MODE_KW(pre, name, fmt, ...) \
 	static char *pre##_##name##_N[] = { __VA_ARGS__, NULL }; \
+	[[maybe_unused]] static const char pre##_##name##_F[] = fmt; \
 	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out); \
 	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
@@ -1000,7 +1012,7 @@ PORT_DECL(math, fmod)
 		byte given[8]; \
 		return Mode_KwSlots(a, n, fmt, v, given) && pre##_##name##_K(v, given, out); \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
 		(void)self; \
 		return Mode_KwAdapter(args, kw, fmt, pre##_##name##_N, pre##_##name##_E); \
 	} \
@@ -1020,7 +1032,7 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
 		(void)out; \
 		return Mode_IdControl(a, n, &id, &control) && (call); \
 	} \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_Entry(args, fn##_E); \
 	}
@@ -1085,8 +1097,12 @@ PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **nam
  * them with Mode_Parse (the defaults of the script set first: Mode_KwDef*). MODE_KWBY is the form with the adapter
  * and the function named (pasted in the macro the file writes: a module name can be a macro of the file); MODE_REFKW
  * (below) uses it with the adapter by reference */
-#define MODE_KWBY(adapter, fn, fmt, ...) \
+#define MODE_KWBY(adapter, fn, fmt, ...) MODE_KWBYF(adapter, fn, fmt, fmt, __VA_ARGS__)
+/* MODE_KWBY with the text of fn_F given: "&" in front of the format for an entry that takes its arguments by
+ * reference (MODE_REFKW: Port_KwCall hands the values over as they are) */
+#define MODE_KWBYF(adapter, fn, fmt, ffmt, ...) \
 	static char *fn##_N[] = { __VA_ARGS__, NULL }; \
+	[[maybe_unused]] static const char fn##_F[] = ffmt; \
 	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out); \
 	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
@@ -1094,7 +1110,7 @@ PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **nam
 		byte given[PORT_ARGS]; \
 		return Mode_KwSlots(a, n, fmt, v, given) && fn##_K(v, given, out); \
 	} \
-	static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
+	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
 		(void)self; \
 		return adapter(args, kw, fmt, fn##_N, fn##_E); \
 	} \
@@ -1176,7 +1192,7 @@ byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
  * adapters) and 7). MODE_REFADAPTER(pre, name) is that adapter of the entry pre_name_E */
 PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry);
 #define MODE_REFADAPTER(pre, name) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_RefEntry(args, pre##_##name##_E); \
 	}
@@ -1195,7 +1211,7 @@ byte Mode_RefIsNone(const nativeVal_t *o);
  * given, as MODE_REFADAPTER) */
 PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* MODE_KWT with that adapter */
-#define MODE_REFKW(pre, name, fmt, ...) MODE_KWBY(Mode_RefKwAdapter, pre##_##name, fmt, __VA_ARGS__)
+#define MODE_REFKW(pre, name, fmt, ...) MODE_KWBYF(Mode_RefKwAdapter, pre##_##name, fmt, "&" fmt, __VA_ARGS__)
 /* f(args...) of a value by reference with n values: a native object natively (NObj_Call), any other the Python call
  * of the object (Script_CallObject on the tuple of the values: a bound method, a function of a table; Mode_CallArgs
  * takes the entry of a port function), the result by reference into out (NULL: dropped) */
@@ -1231,10 +1247,6 @@ byte Mode_StrBuf(const nativeVal_t *v, nativeBuf_t *b);
 long Mode_AsLong(const nativeVal_t *v);
 /* a $name of the .def file that runs = v, for its steps (Script_SetValue) */
 void Mode_SetValue(const char *name, const nativeVal_t *v);
-/* the port's own function of the row called name of a PyMethodDef table as a function object of its own, held as a
- * value (a native port function; OBJLIB 7: a C function object for a row without a ref): for a call the scheduler
- * keeps whatever the module attribute holds then; made once by the caller. 0 with the error and *fn None */
-byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn);
 /* fn(args...) at the time (as a float) on the scheduler itself, with the function a value (Mode_SchedAt reads it from
  * the module; the entry of a port function, else the call of the value on the tuple of the values): always 1 */
 byte Mode_SchedFn(double time, const nativeVal_t *fn, const nativeVal_t *args, int n, const char *name);

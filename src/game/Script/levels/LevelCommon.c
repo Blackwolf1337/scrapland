@@ -20,16 +20,6 @@ const int lv_black[4] = { 0, 0, 0, 255 }, lv_clear[4] = { 0, 0, 0, 0 };
 
 /* ---- whole functions the level tables share (native: docs/objlib-plan.md, stage 2) ---- */
 
-/* the adapter of a whole function: its n arguments as values, the core, the result (out, None when it stays None) */
-#define LV_WHOLE(nargs, call) \
-	modeVals_t t = { .n = 0 }; \
-	nativeVal_t *a, *out = Mode_V(&t); \
-	if (!Mode_Args(args, nargs, &t, &a)) { \
-		return Mode_Done(&t, 0), NULL; \
-	} \
-	(void)a; \
-	return Mode_Out(&t, call, out)
-
 /* name + `MapSnd.cntr` (prefix "I" in front with beepI) */
 static byte Lv_SndId(const nativeVal_t *name, byte beepI, nativeVal_t *out) {
 	nativeVal_t cntr, rep, i, x;
@@ -124,11 +114,6 @@ byte LvN_SndElements(const nativeVal_t *a, const lvSndElement_t *table) {
 	Native_Free(&off);
 	Native_Free(&sum);
 	return ok;
-}
-
-/* OBJLIB 7: the adapter body of the level tables that are not on MODE_FN yet (Townhall's MapSnd) */
-PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table) {
-	LV_WHOLE(6, LvN_SndElements(a, table));
 }
 
 byte LvN_PlanesInit(const char *module) {

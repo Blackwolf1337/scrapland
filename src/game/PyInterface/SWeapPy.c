@@ -1,5 +1,5 @@
 /*
- * Python module SWeap (method table SWeap_methods): weapon and ammo descriptors of the world.
+ * Python module SWeap (function table SWeap_methods): weapon and ammo descriptors of the world.
  * Index checks of the tables stop on int3 like the original (TABLE_AT).
  */
 #include <string.h>
@@ -174,156 +174,67 @@ API_FN(SWeap, NetExec) {
 	return 1;
 }
 
-static const char str_PyMethod_SWeap_GetNWeap[] = "GetNWeap";
 
 static char str_PyDoc_SWeap_GetNWeap[] = "GetNWeap() : Obtiene el numero de armas en el juego";
 
-static const char str_PyMethod_SWeap_GetNAmmo[] = "GetNAmmo";
 
 static char str_PyDoc_SWeap_GetNAmmo[] = "GetNAmmo() : Obtiene el numero de municiones en el juego";
 
-static const char str_PyMethod_SWeap_InitWeap[] = "InitWeap";
 
 static char str_PyDoc_SWeap_InitWeap[] = "InitWeap(num) : Inicializa las armas num es el numero de armas";
 
-static const char str_PyMethod_SWeap_InitAmmo[] = "InitAmmo";
 
 static char str_PyDoc_SWeap_InitAmmo[56] = "InitAmmo(num) : Inicializa las municiones del juego";
 
-static const char str_PyMethod_SWeap_GetFAmmo[] = "GetFAmmo";
 
 static char str_PyDoc_SWeap_GetFAmmo[] =
 	"GetFAmmo(numammo,svar) : Obtiene un valor numerico de las municiones";
 
-static const char str_PyMethod_SWeap_GetSAmmo[] = "GetSAmmo";
 
 static char str_PyDoc_SWeap_GetSAmmo[72] =
 	"GetSAmmo(numammo,svar) : Obtiene un valor cadena de las municiones";
 
-static const char str_PyMethod_SWeap_SetFAmmo[] = "SetFAmmo";
 
 static char str_PyDoc_SWeap_SetFAmmo[80] =
 	"GetFAmmo(numammo,svar,fvalue) : Pone un valor numerico de las municiones";
 
-static const char str_PyMethod_SWeap_SetSAmmo[] = "SetSAmmo";
 
 static char str_PyDoc_SWeap_SetSAmmo[] =
 	"SetSAmmo(numammo,svar,svalue) : Pone un valor cadena de las municiones";
 
-static const char str_PyMethod_SWeap_GetFWeap[] = "GetFWeap";
 
 static char str_PyDoc_SWeap_GetFWeap[] =
 	"GetFWeap(numWeap,svar) : Obtiene un valor numerico de las municiones";
 
-static const char str_PyMethod_SWeap_GetSWeap[] = "GetSWeap";
 
 static char str_PyDoc_SWeap_GetSWeap[72] =
 	"GetSWeap(numWeap,svar) : Obtiene un valor cadena de las municiones";
 
-static const char str_PyMethod_SWeap_SetFWeap[] = "SetFWeap";
 
 static char str_PyDoc_SWeap_SetFWeap[80] =
 	"GetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las municiones";
 
-static const char str_PyMethod_SWeap_SetSWeap[] = "SetSWeap";
-static const char str_PyMethod_SWeap_FillPriority[] = "FillPriority";
-static const char str_PyMethod_SWeap_GetFirstiWeap[] = "GetFirstiWeap";
-static const char str_PyMethod_SWeap_NetExec[] = "NetExec";
 static char str_PyDoc_SWeap_FillPriority[];
 static char str_PyDoc_SWeap_GetFirstiWeap[];
 static char str_PyDoc_SWeap_NetExec[];
 static char str_PyDoc_SWeap_SetSWeap[];
-static PyMethodDef SWeap_methods[16] = {
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_GetNWeap,
-		.ml_meth = (void *)SWeap_GetNWeap,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_GetNWeap,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_GetNAmmo,
-		.ml_meth = (void *)SWeap_GetNAmmo,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_GetNAmmo,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_InitWeap,
-		.ml_meth = (void *)SWeap_InitWeap,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_InitWeap,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_InitAmmo,
-		.ml_meth = (void *)SWeap_InitAmmo,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_InitAmmo,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_GetFAmmo,
-		.ml_meth = (void *)SWeap_GetFAmmo,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_GetFAmmo,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_GetSAmmo,
-		.ml_meth = (void *)SWeap_GetSAmmo,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_GetSAmmo,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_SetFAmmo,
-		.ml_meth = (void *)SWeap_SetFAmmo,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_SetFAmmo,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_SetSAmmo,
-		.ml_meth = (void *)SWeap_SetSAmmo,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_SetSAmmo,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_GetFWeap,
-		.ml_meth = (void *)SWeap_GetFWeap,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_GetFWeap,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_GetSWeap,
-		.ml_meth = (void *)SWeap_GetSWeap,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_GetSWeap,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_SetFWeap,
-		.ml_meth = (void *)SWeap_SetFWeap,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_SetFWeap,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_SetSWeap,
-		.ml_meth = (void *)SWeap_SetSWeap,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_SetSWeap,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_FillPriority,
-		.ml_meth = (void *)SWeap_FillPriority,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_FillPriority,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_GetFirstiWeap,
-		.ml_meth = (void *)SWeap_GetFirstiWeap,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_GetFirstiWeap,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SWeap_NetExec,
-		.ml_meth = (void *)SWeap_NetExec,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SWeap_NetExec,
-	},
+static const portFn_t SWeap_methods[] = {
+	PORT_FND(GetNWeap, SWeap_GetNWeap, str_PyDoc_SWeap_GetNWeap),
+	PORT_FND(GetNAmmo, SWeap_GetNAmmo, str_PyDoc_SWeap_GetNAmmo),
+	PORT_FND(InitWeap, SWeap_InitWeap, str_PyDoc_SWeap_InitWeap),
+	PORT_FND(InitAmmo, SWeap_InitAmmo, str_PyDoc_SWeap_InitAmmo),
+	PORT_FND(GetFAmmo, SWeap_GetFAmmo, str_PyDoc_SWeap_GetFAmmo),
+	PORT_FND(GetSAmmo, SWeap_GetSAmmo, str_PyDoc_SWeap_GetSAmmo),
+	PORT_FND(SetFAmmo, SWeap_SetFAmmo, str_PyDoc_SWeap_SetFAmmo),
+	PORT_FND(SetSAmmo, SWeap_SetSAmmo, str_PyDoc_SWeap_SetSAmmo),
+	PORT_FND(GetFWeap, SWeap_GetFWeap, str_PyDoc_SWeap_GetFWeap),
+	PORT_FND(GetSWeap, SWeap_GetSWeap, str_PyDoc_SWeap_GetSWeap),
+	PORT_FND(SetFWeap, SWeap_SetFWeap, str_PyDoc_SWeap_SetFWeap),
+	PORT_FND(SetSWeap, SWeap_SetSWeap, str_PyDoc_SWeap_SetSWeap),
+	PORT_FND(FillPriority, SWeap_FillPriority, str_PyDoc_SWeap_FillPriority),
+	PORT_FND(GetFirstiWeap, SWeap_GetFirstiWeap, str_PyDoc_SWeap_GetFirstiWeap),
+	PORT_FND(NetExec, SWeap_NetExec, str_PyDoc_SWeap_NetExec),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SWeap, 0x430128)
