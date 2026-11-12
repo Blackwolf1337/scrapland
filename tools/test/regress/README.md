@@ -100,7 +100,10 @@ What the mode does:
   longer than N). The credit makes it a wait: the game counts game time plus the time the game clock stood (after its
   first 3 s), and after a level load since the last answer the time of the new level plus the credit (LOAD_CREDIT),
   as the runner does in a live run.
-- The question at the start (Scrap.GetLevelPath()) is sent without a pace, so asking it again moves no clock.
+- The question at the start (Scrap.GetLevelPath()) is sent without a pace, so asking it again moves no clock. The
+  runner asks it again every 2 s until the game answers; an answer without a pace in the step of the answer before
+  does not start the count of the pace over (else a second answer after the first world frame of the level made the
+  whole case run 6 steps later, seen in fc-rm-dt2, fc-r7b-gw and four more cases on a loaded machine).
 - The two loops of the net code that wait for the goodbye of a closing client or server make a clock step per pass.
 - A saved game gets its date and its file time from the mode's clock (a fixed date plus the clock's seconds). The
   list of the saved games is sorted by the file time in whole seconds: two saves of one case line have the same time,
@@ -117,7 +120,8 @@ When two runs of one build still differ, start both with SCRAP_TEST_DET_TRACE=<f
 game) and compare the files with `./dettrace.py <A> <B> <build>/ScrapC`. The trace has a line per clock step, per
 crt_rand call (with its caller), per window or input event, per command file and per level load. The first differing
 line names the frame and the code where the runs part. This is how the level load race and the mouse motion were
-found.
+found. `REGRESS_DET_TRACE=<folder>` makes regress.py give every game of a run its own trace, <folder>/<case>.trace
+(about 10 MB a case), so a case that differs in a full run can be compared without running it again.
 
 The stored pack baselines are live runs. Lines that depend on chance or on the exact moment (an NPC action, an AI
 state, a menu animation) fail in a live run now and then. In a deterministic run a fixed set of them fails, the same
