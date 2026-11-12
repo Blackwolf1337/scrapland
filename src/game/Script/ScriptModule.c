@@ -1267,14 +1267,15 @@ static byte Mod_EndLine(modParse_t *m) {
 }
 
 /* the native value v as a class body keeps it (copied into *out): its numbers and texts as the objects of the body's
- * constants (Mod_Pin), a tuple with its Python tuple as a variable keeps it (one object for `is`); 0 with the error */
+ * constants (Mod_Pin), a tuple of plain values with its Python tuple as a variable keeps it (one object for `is`); 0
+ * with the error */
 static byte Mod_BodyVal(modParse_t *m, const nativeVal_t *v, nativeVal_t *out) {
 	Native_Copy(out, v);
 	if (!Mod_Pin(m, out)) {
 		Native_Free(out);
 		return 0;
 	}
-	if (out->type == NV_TUPLE && !Native_KeptPy(out)) {
+	if (out->type == NV_TUPLE && !Native_KeptPy(out) && !Native_Holds(out, 1u << NV_REF)) {
 		PyObject *t = Mod_ToPy(m, out);
 		if (!t) {
 			Native_Free(out);

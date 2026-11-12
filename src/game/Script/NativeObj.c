@@ -719,6 +719,8 @@ static PyObject *Obj_Conv(const nativeVal_t *v, void *ctx) {
 static PyObject *Obj_Tramp(PyObject *self, PyObject *args, PyObject *kw) {
 	nativeFn_t *f = PyCObject_AsVoidPtr(self);
 	int n = PyTuple_Size(args);
+	/* the keywords only when the C function object was made with METH_KEYWORDS (else Python passes two arguments) */
+	kw = f->def.ml_flags & METH_KEYWORDS ? kw : NULL;
 	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), r, pairs;
 	for (int i = 0; i < n; i++) {
 		NObj_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
@@ -735,7 +737,7 @@ static PyObject *Obj_Tramp(PyObject *self, PyObject *args, PyObject *kw) {
 			NObj_FromPy(x, Native_Append(pair));
 		}
 	}
-	byte ok = f->callkw ? f->callkw(f->ctx, a, n, kw ? &pairs : NULL, &r) : f->call(f->ctx, a, n, &r);
+	byte ok = f->callkw && kw ? f->callkw(f->ctx, a, n, &pairs, &r) : f->call(f->ctx, a, n, &r);
 	Native_Free(&pairs);
 	for (int i = 0; i < n; i++) {
 		Native_Free(&a[i]);
