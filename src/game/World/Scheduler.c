@@ -1,6 +1,6 @@
 /*
- * Scheduled Python functions, original source World/ScheduledFunctions.cpp (include/scrap/scheduler.h), and in ScrapC
- * the native entries of port functions (stage 4 of docs/objlib-plan.md).
+ * Scheduled Python functions, original source World/ScheduledFunctions.cpp (include/scrap/scheduler.h); in ScrapC
+ * function values and the native entries of port functions (stage 4 of docs/objlib-plan.md).
  */
 #include <string.h>
 
@@ -41,13 +41,12 @@ static void SchedList_RemoveHead(cSchedList *list) {
 	DList_RemoveHead(list);
 }
 
-/* OBJLIB 7: the calls of Scheduler_Run by kind, Python and port entry (the test channel) */
+/* the calls of Scheduler_Run by kind, value and port entry (the test channel) */
 static unsigned long g_SchedulerCalls[2];
 
 static void cScheduledFunc_Free(cScheduledFunc *f) {
 	if (f) {
-		Py_XDECREF(f->func);
-		Py_XDECREF(f->params);
+		Native_Free(&f->func);
 		Native_Free(&f->args);
 		operator_delete(f);
 	}
@@ -57,47 +56,27 @@ static void cScheduledFunc_Free(cScheduledFunc *f) {
 static cScheduledFunc *cScheduledFunc_New(float time, const char *name) {
 	cScheduledFunc *f = operator_new(sizeof(*f));
 	CHECK(f != NULL);
-	f->func = NULL;
-	f->params = NULL;
+	Native_SetNone(&f->func);
+	Native_SetNone(&f->args);
 	f->active = 1;
 	f->site = NULL;
-	Native_SetNone(&f->args);
 	f->time = time;
 	Str_Copy(f->name, name, sizeof(f->name));
 	return f;
 }
 
-/* the call of a port entry as the Python call of its adapter: the items of the tuple as objects, the native values as
- * the adapter would get them; 1, or 0 with the error */
-static byte cScheduledFunc_CallEntry(const cScheduledFunc *self) {
-	nativeArg_t a[PORT_ARGS];
-	if (!self->params) {
-		return Port_BoundCall(self->site, NULL, self->args.items, self->args.n, NULL, NULL);
-	}
-	int n = PyTuple_Size(self->params);
-	for (int i = 0; i < n; i++) {
-		a[i].type = 'O';
-		a[i].o = PyTuple_GetItem(self->params, i);
-	}
-	return Port_BoundCall(self->site, a, NULL, n, NULL, NULL);
-}
-
 /* the call with the function marked as running */
 static void cScheduledFunc_Run(cScheduledFunc *self) {
+	byte ok;
 	self->active = 0;
-	if (self->site) {
-		g_SchedulerCalls[1]++;
-		if (!cScheduledFunc_CallEntry(self)) {
-			Native_ErrPrint();
-		}
+	g_SchedulerCalls[self->site != NULL]++;
+	if (self->args.type != NV_TUPLE) {
+		ok = Native_Raise(NE_TYPE, "argument list must be a tuple");
 	} else {
-		g_SchedulerCalls[0]++;
-		PyObject *r = PyEval_CallObject(self->func, self->params);
-		if (!r) {
-			Native_ErrPrint();
-		} else {
-			Py_DECREF(r);
-		}
+		ok = Port_CallKept(self->site, &self->func, self->args.items, self->args.n, NULL);
+	}
+	if (!ok) {
+		Native_ErrPrint();
 	}
 	self->active = 1;
 }
@@ -125,37 +104,28 @@ static void Scheduler_Insert(cScheduledFuncStack *self, cScheduledFunc *f) {
 	}
 }
 
-void Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name) {
-	CHECK(func != NULL);
-	CHECK(params != NULL);
+void Scheduler_Add(cScheduledFuncStack *self, float time, const nativeVal_t *func, const nativeVal_t *params,
+	const char *name) {
 	cScheduledFunc *f = cScheduledFunc_New(time, name);
-	if (PyTuple_Check(params) && PyTuple_Size(params) <= PORT_ARGS) {
-		f->site = Port_Scheduled(func);
+	if (params->type == NV_VEC) {
+		Native_SetEmpty(&f->args, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetFloat(Native_Append(&f->args), params->v[i]);
+		}
+	} else {
+		Native_Copy(&f->args, params);
+	}
+	if (f->args.type == NV_TUPLE && f->args.n <= PORT_ARGS) {
+		f->site = Port_ScheduledOf(func);
 	}
 	if (!f->site) {
-		f->func = func;
-		Py_INCREF(func);
-	}
-	f->params = params;
-	Py_INCREF(params);
-	Scheduler_Insert(self, f);
-}
-
-void Scheduler_AddEntry(cScheduledFuncStack *self, float time, portSite_t *site, const nativeVal_t *args, int n,
-	const char *name) {
-	CHECK(site != NULL);
-	CHECK(n >= 0 && n <= PORT_ARGS);
-	cScheduledFunc *f = cScheduledFunc_New(time, name);
-	f->site = site;
-	Native_SetEmpty(&f->args, NV_TUPLE);
-	for (int i = 0; i < n; i++) {
-		Native_Copy(Native_Append(&f->args), &args[i]);
+		Native_Copy(&f->func, func);
 	}
 	Scheduler_Insert(self, f);
 }
 
-void Scheduler_Counts(unsigned long *python, unsigned long *entry, byte reset) {
-	*python = g_SchedulerCalls[0];
+void Scheduler_Counts(unsigned long *value, unsigned long *entry, byte reset) {
+	*value = g_SchedulerCalls[0];
 	*entry = g_SchedulerCalls[1];
 	if (reset) {
 		memset(g_SchedulerCalls, 0, sizeof(g_SchedulerCalls));

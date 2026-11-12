@@ -2720,6 +2720,29 @@ byte NObj_Call(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *o
 	return ok;
 }
 
+byte NObj_Callable(const nativeVal_t *v) {
+	nativeVal_t call;
+	if (v->type == NV_OBJ || (v->type == NV_REF && Obj_View(v->ref))) {
+		return PyCallable_Check(NObj_Py(v)) != 0;
+	}
+	if (v->type != NV_REF) {
+		return 0;
+	}
+	switch (v->ref->kind) {
+	case NO_FUNCTION:
+	case NO_METHOD:
+	case NO_CLASS:
+		return 1;
+	case NO_INSTANCE:
+		if (!Obj_InstLook(v->ref, "__call__", &call)) {
+			return 0;
+		}
+		Native_Free(&call);
+		return 1;
+	}
+	return 0;
+}
+
 /* the keyword pairs as the dict a call through Python takes (NULL with the error) */
 static PyObject *Obj_KwToPy(const nativeVal_t *kw) {
 	PyObject *d = PyDict_New();

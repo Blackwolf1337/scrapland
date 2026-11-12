@@ -590,8 +590,7 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
  *
  * The letter P passes a PyObject * as the object itself: the slow path as O, the fast path as an NV_OBJ that holds it
  * (O there gives what Native_Arg makes of it: a copy of a pure list). It is for the entries that take an NV_OBJ to keep
- * the caller's object (MissionsFuncs.SetMultipleMissionTargets). A ref of an entry on Python objects (MODE_PYENTRY,
- * portRef_t.py) always takes the slow path: the adapter gets the objects themselves only that way.
+ * the caller's object (MissionsFuncs.SetMultipleMissionTargets).
  */
 
 /* the most arguments of a port function (Mode_Args) */
@@ -609,7 +608,6 @@ typedef struct {
 	PyCFunction adapter;		/* OBJLIB 5: what the attribute holds while it is the port's own function */
 	portEntry_t entry;
 	char **kw;			/* the names of the entry's slots for keyword calls, NULL for none */
-	byte py;			/* OBJLIB 7: the entry calls the adapter on Python objects (MODE_PYENTRY): the slow way */
 } portRef_t;
 
 /* a call site of PORT_CALL or PORT_OWN (one static per site) and the counts of the paths it took (OBJLIB 7) */
@@ -650,25 +648,22 @@ const portRef_t *Port_Find(const char *module, const char *name);
  * Mission_Y.Init share the name), without self (a recorder of the test channel has one); never under
  * SCRAP_PORT_SLOW=1 (OBJLIB 7). The test of the seam (Port_Seam) and of the callbacks (Port_Callback). */
 byte Port_IsOwn(const portRef_t *ref, PyObject *f);
-/* a callback bound by name (cPy_Function PYF_ENTRY): the ref of module.name whose own function f is (Port_IsOwn, not
- * a ref on Python objects, and the function's own name that one: cPy_Function_Name gives it), as the site that
- * counts its calls (fast: the calls, errors: the failed ones; listed in Port_Callbacks once bound, file "callback");
- * NULL when f is none of them */
-portSite_t *Port_Callback(const char *module, const char *name, PyObject *f);
+/* a callback bound by name (cPy_Function PYF_ENTRY): the ref of module.name when the value f is its port function under
+ * its own name, else the ref of the port function f is (by its adapter and own name: a variable that holds another
+ * module's function, an alias), as the site that counts its calls (fast: the calls, errors: the failed ones; listed
+ * in Port_Callbacks once bound, file "callback"); NULL when f is no port function (a native port function, or the
+ * view of a C function object of an engine module) and under SCRAP_PORT_SLOW=1 */
+portSite_t *Port_CallbackOf(const char *module, const char *name, const nativeVal_t *f);
 /* the callbacks bound since the start, the last one first (OBJLIB 7: the counters of the test channel) */
 portSite_t *Port_Callbacks(void);
-/* OBJLIB 7: the C function object (borrowed) the site of Port_Callback was first bound to: the same adapter, for the
- * Python call of a callback given more parameters than an entry takes (PORT_ARGS) */
-PyObject *Port_CallbackFunc(const portSite_t *site);
 /* the entry of ref on n native arguments a, with the depth check of Script_CallObject (Script_Enter), the result into
  * *r (None when it fails; Native_Free it either way): 1, or 0 with the error set (an entry that fails without one
  * gives the SystemError of call_object) */
 byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r);
-/* a function given to the scheduler (cScheduledFunc, stage 4): the ref of Port_Own (by the adapter and the function's
- * own name), as the site that counts its scheduled calls (listed in Port_ScheduledSites once scheduled, file
- * "scheduled"); NULL when Port_Own finds none (a recorder, a lambda, a bound method, an engine function, a ref on
- * Python objects, everything under SCRAP_PORT_SLOW=1) */
-portSite_t *Port_Scheduled(PyObject *f);
+/* a function value given to the scheduler (cScheduledFunc, stage 4): the ref of the port function f is (by its adapter
+ * and own name, as Port_CallbackOf), as the site that counts its scheduled calls (listed in Port_ScheduledSites once
+ * scheduled, file "scheduled"); NULL for any other value (a lambda, a recorder, a method, a class, an instance) */
+portSite_t *Port_ScheduledOf(const nativeVal_t *f);
 /* the functions scheduled as entries since the start, the last one first (OBJLIB 7: the counters of the test
  * channel) */
 portSite_t *Port_ScheduledSites(void);
@@ -688,7 +683,7 @@ byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v
  * its own name (__name__: an alias in a table under another name is the ref of that name), so a variable that holds
  * another module's function (Net.ClientCreate = Ffa.ClientCreate) is the entry of that function, as the Python call
  * would run its adapter. NULL for any other value (a recorder, a lambda, a bound method, a class, an engine function),
- * a ref on Python objects (MODE_PYENTRY) and under SCRAP_PORT_SLOW=1 (OBJLIB 7).
+ * and under SCRAP_PORT_SLOW=1 (OBJLIB 7).
  */
 const portRef_t *Port_Own(PyObject *f);
 /* the ref of the function a port table entry makes (its adapter under its name, the flags of a ref: METH_VARARGS, and
@@ -711,6 +706,11 @@ byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nat
  * Port_Values on its object, any other native object through NObj_Call (no crossing) */
 byte Port_ValuesOf(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out,
 	PyObject **pyout);
+/* the call of a function value the engine keeps for later (a callback of cPy_Function, a scheduled function, the done
+ * of Scrap.VideoPlayer): bound (its site of Port_CallbackOf or Port_ScheduledOf) through the entry (Port_BoundCall),
+ * else NObj_Call of f (a native object natively, a view through Python) on the arguments as a call through Python
+ * hands them over; the result into *out as Native_Arg takes it (NULL: dropped). 1, or 0 with the error set */
+byte Port_CallKept(portSite_t *bound, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out);
 /* the ref a value site names before its first call through an entry */
 extern const portRef_t port_value;
 #define PORT_VSITE() (&(static portSite_t){ .ref = &port_value, .global = 2, .file = __FILE__, .line = __LINE__ })
@@ -743,26 +743,20 @@ extern const portRef_t port_value;
 /* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
  * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL
  * for the modules of a level (the cast through void (*)(void) as in the tables: a keyword adapter has three
- * parameters); PORT_DEFK and PORT_DEFLK for a keyword entry with the names of its slots (adapter_N), PORT_DEFP and
- * PORT_DEFLP for an entry on Python objects (Mode_PyEntry) */
+ * parameters); PORT_DEFK and PORT_DEFLK for a keyword entry with the names of its slots (adapter_N) */
 #define PORT_DECL(module, name) extern portRef_t port_##module##_##name;
 #define PORT_DECLL(level, module, name) extern portRef_t port_##level##_##module##_##name;
 #define PORT_DEF(module, name, adapter) \
-	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, NULL, 0 };
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, NULL };
 #define PORT_DEFL(level, module, name, adapter) \
 	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
-		NULL, 0 };
+		NULL };
 #define PORT_DEFK(module, name, adapter) \
-	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, adapter##_N, \
-		0 };
+	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
+		adapter##_N };
 #define PORT_DEFLK(level, module, name, adapter) \
 	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
-		adapter##_N, 0 };
-#define PORT_DEFP(module, name, adapter) \
-	portRef_t port_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, NULL, 1 };
-#define PORT_DEFLP(level, module, name, adapter) \
-	portRef_t port_##level##_##module##_##name = { #module, #name, (PyCFunction)(void (*)(void))adapter, adapter##_E, \
-		NULL, 1 };
+		adapter##_N };
 #define PORTS(file) PORTS_##file
 
 /* ---- the lines the game execs (src/game/Script/ScriptExec.c) ---- */

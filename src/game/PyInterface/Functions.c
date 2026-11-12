@@ -1,8 +1,8 @@
 /*
  * cPy_Function: callbacks by name for the engine and the scripts. Original source: PyInterface/Functions.cpp.
- * A function is a Python function (PYF_PYTHON, parameters in a Python list), a C function of the registry
- * (PYF_NATIVE, parameters written into a cFileMem) or, in ScrapC, the native entry of a port function (PYF_ENTRY,
- * stage 4 of docs/objlib-plan.md: "Module.Func" names the port's own C function, parameters as native values). The
+ * A function is a Python function (in ScrapC a function value, PYF_VALUE, parameters in a tuple value), a C function
+ * of the registry (PYF_NATIVE, parameters written into a cFileMem) or, in ScrapC, the native entry of a port function
+ * (PYF_ENTRY, stage 4 of docs/objlib-plan.md: "Module.Func" names a port function, parameters as native values). The
  * parameter files and blocks are reused through free lists.
  */
 #include <stdio.h>
@@ -12,6 +12,7 @@
 #include "scrap/crt.h"
 #include "scrap/global.h"
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/pyfunction.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
@@ -42,7 +43,7 @@ static void ParamFile_Free(cFileMem *f) {
 	g_FreeParamFiles = f;
 }
 
-/* the parameters of a port entry (PYF_ENTRY): native values as the adapter's Mode_Args makes them of the Python list */
+/* the parameters of a port entry (PYF_ENTRY): native values as the adapter's Mode_Args made them of the Python list */
 typedef struct cPy_EntryParams {
 	nativeVal_t a[PORT_ARGS];
 	int n;
@@ -71,7 +72,7 @@ static void EntryParams_Free(cPy_EntryParams *p) {
 	g_FreeEntryParams = p;
 }
 
-/* OBJLIB 7: the calls of Execute by kind (the test channel) */
+/* the calls of Execute by kind: value, C function, port entry (the test channel) */
 static unsigned long g_PyFunctionCalls[3];
 
 /*
@@ -135,22 +136,35 @@ static byte cPy_Function_NativeParams(cPy_Function *self) {
 	return 1;
 }
 
-/* creates the parameter list of a Python function */
-static void cPy_Function_PyParams(cPy_Function *self) {
-	if ((self->flags & PYF_PYTHON) && !self->params) {
-		self->params = PyList_New(0);
-		CHECK(self->params);
-	}
+/* a new value (None), for the function and the parameters of PYF_VALUE */
+static nativeVal_t *Value_New(void) {
+	nativeVal_t *v = Mem_Alloc(sizeof(*v));
+	Native_SetNone(v);
+	return v;
 }
 
-/* drops the parameters: the list, or the file or the block goes back to its free list */
+static void Value_Delete(nativeVal_t *v) {
+	Native_Free(v);
+	Mem_Free(v);
+}
+
+/* the place of the next parameter of a function value, in its tuple (made at the first one) */
+static nativeVal_t *cPy_Function_ValueParam(cPy_Function *self) {
+	nativeVal_t *t = self->params;
+	if (!t) {
+		self->params = t = Value_New();
+		Native_SetEmpty(t, NV_TUPLE);
+	}
+	return Native_Append(t);
+}
+
+/* drops the parameters: the tuple, or the file or the block goes back to its free list */
 static void cPy_Function_ReleaseParams(cPy_Function *self) {
-	if (self->flags & PYF_PYTHON) {
-		PyObject *list = self->params;
-		if (!list) {
+	if (self->flags & PYF_VALUE) {
+		if (!self->params) {
 			return;
 		}
-		Py_DECREF(list);
+		Value_Delete(self->params);
 	} else if (self->flags & PYF_ENTRY) {
 		if (!self->params) {
 			return;
@@ -167,26 +181,22 @@ static void cPy_Function_ReleaseParams(cPy_Function *self) {
 	self->params = NULL;
 }
 
-static void cPy_Function_ReleasePyParams(cPy_Function *self) {
-	if ((self->flags & PYF_PYTHON) && self->params) {
-		PyObject *list = self->params;
-		Py_DECREF(list);
-		self->params = NULL;
-	}
-}
-
-/* the function of a Python binding is borrowed, only the parameter list is released */
-static void cPy_Function_ClearPython(cPy_Function *self) {
-	if (self->flags & PYF_PYTHON) {
-		self->func = NULL;
-		cPy_Function_ReleasePyParams(self);
-		self->flags &= ~PYF_PYTHON;
+/* the binding of a Python function as the original clears it (the parameter list released); here the value and its
+ * tuple */
+static void cPy_Function_ClearValue(cPy_Function *self) {
+	if (self->flags & PYF_VALUE) {
+		if (self->func) {
+			Value_Delete(self->func);
+			self->func = NULL;
+		}
+		cPy_Function_ReleaseParams(self);
+		self->flags &= ~PYF_VALUE;
 	}
 }
 
 void cPy_Function_Clear(cPy_Function *self) {
-	if (self->flags & PYF_PYTHON) {
-		cPy_Function_ClearPython(self);
+	if (self->flags & PYF_VALUE) {
+		cPy_Function_ClearValue(self);
 		return;
 	}
 	cPy_Function_ReleaseParams(self);
@@ -228,11 +238,14 @@ byte cPy_Function_SetNative(cPy_Function *self, nativefunc_t func) {
 }
 
 /*
- * binds module.func; only a Python binding is cleared before. The binding is what the module holds at this time; when
- * that is the port's own C function of module.func, its native entry (PYF_ENTRY), else the object (PYF_PYTHON).
+ * binds module.func; only a binding of a value is cleared before (the original: of a Python function). The binding is
+ * what the module holds at this time, read as a native value (ModVar_GetVal: no crossing); when that is a port
+ * function, its native entry (PYF_ENTRY), else a copy of the value (PYF_VALUE).
  */
-static byte cPy_Function_SetPython(cPy_Function *self, const char *module, const char *func) {
-	cPy_Function_ClearPython(self);
+static byte cPy_Function_SetValue(cPy_Function *self, const char *module, const char *func) {
+	modVarRef_t ref;
+	nativeVal_t v;
+	cPy_Function_ClearValue(self);
 	if (!module || !func) {
 		return 0;
 	}
@@ -240,22 +253,26 @@ static byte cPy_Function_SetPython(cPy_Function *self, const char *module, const
 	if (!m) {
 		Con_Warnf("cPy_Function::SetFunc: Module does not exist.\n '%s'.'%s'\n", module, func);
 	} else {
-		self->func = ModVar_DictGet(PyModule_GetDict(m), func);
-		if (!self->func) {
+		ModVar_RefOfDict(PyModule_GetDict(m), &ref);
+		if (!ModVar_GetVal(&ref, func, &v)) {
 			Con_Warnf("cPy_Function::SetFunc: No function in module.\n '%s'.'%s'\n", module, func);
-		} else if (!PyCallable_Check(self->func)) {
+		} else if (!NObj_Callable(&v)) {
 			Con_Warnf("cPy_Function::SetFunc: Element found in module but isn\xb4t callable.\n '%s'.'%s' \n",
 				module, func);
 		} else {
-			portSite_t *site = Port_Callback(module, func, self->func);
+			portSite_t *site = Port_CallbackOf(module, func, &v);
 			if (site) {
 				self->func = site;
 				self->flags |= PYF_ENTRY;
+				Native_Free(&v);
 			} else {
-				self->flags |= PYF_PYTHON;
+				self->func = Value_New();
+				*(nativeVal_t *)self->func = v;
+				self->flags |= PYF_VALUE;
 			}
 			return 1;
 		}
+		Native_Free(&v);
 	}
 	cPy_Function_Clear(self);
 	return 0;
@@ -313,11 +330,11 @@ byte cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	if (!Py_IsReady()) {
 		return 1;
 	}
-	return cPy_Function_SetPython(self, module, dot + 1);
+	return cPy_Function_SetValue(self, module, dot + 1);
 }
 
 int cPy_Function_IsValid(cPy_Function *self) {
-	return (self->flags & (PYF_PYTHON | PYF_NATIVE | PYF_ENTRY)) != 0;
+	return (self->flags & (PYF_VALUE | PYF_NATIVE | PYF_ENTRY)) != 0;
 }
 
 const char *cPy_Function_Name(cPy_Function *self) {
@@ -329,120 +346,105 @@ const char *cPy_Function_Name(cPy_Function *self) {
 	} else if (self->flags & PYF_ENTRY) {
 		/* the __name__ of the C function, without the module (not a Python function) */
 		snprintf(name, sizeof(name), "%s", ((portSite_t *)self->func)->ref->name);
-	} else if ((self->flags & PYF_PYTHON) && self->func) {
-		PyObject *f = self->func;
-		PyObject *fn = PyObject_GetAttrString(f, "__name__");
-		PyObject *mod = PyFunction_Check(f) ? PyDict_GetItemString(PyFunction_GetGlobals(f), "__name__") : NULL;
-		if (fn && PyString_Check(fn)) {
-			snprintf(name, sizeof(name), "%s%s%s", mod && PyString_Check(mod) ? PyString_AsString(mod) : "",
-				mod && PyString_Check(mod) ? "." : "", PyString_AsString(fn));
+	} else if ((self->flags & PYF_VALUE) && self->func) {
+		/* __name__ (no Python function is left, so never "module.function") */
+		nativeVal_t fn;
+		if (NObj_GetAttr(self->func, "__name__", &fn) && fn.type == NV_STR) {
+			snprintf(name, sizeof(name), "%s", Native_Text(&fn));
 		}
-		Py_XDECREF(fn);
+		Native_Free(&fn);
 		Native_ErrClear();
 	}
 	return name;
 }
 
 /*
- * OBJLIB 7: a parameter past PORT_ARGS (an entry takes no more; no callback of the engine passes more): the binding
- * goes back to the port's C function object (Port_CallbackFunc: the same adapter as the object bound at SetFunc),
- * PYF_PYTHON with the parameters as its list (what Mode_Args makes of them), so the call is the Python call of the
- * original with its errors.
+ * A parameter past PORT_ARGS (an entry takes no more; no callback of the engine passes more): the binding becomes the
+ * port function as a value (PYF_VALUE) with the parameters as its tuple, so the call is the call of the function
+ * object with its errors (the arity error of its adapter).
  */
-static void cPy_Function_EntryToPython(cPy_Function *self) {
+static void cPy_Function_EntryToValue(cPy_Function *self) {
 	portSite_t *site = self->func;
 	cPy_EntryParams *p = self->params;
-	PyObject *list = PyList_New(0);
-	CHECK(list);
+	nativeVal_t *t = Value_New();
+	Native_SetEmpty(t, NV_TUPLE);
 	for (int i = 0; i < p->n; i++) {
-		PyObject *o = Native_ToPy(&p->a[i]);
-		CHECK(o);
-		PyList_Append(list, o);
-		Py_DECREF(o);
+		Native_Copy(Native_Append(t), &p->a[i]);
 	}
 	EntryParams_Free(p);
-	self->func = Port_CallbackFunc(site);
-	self->params = list;
-	self->flags = (self->flags & ~PYF_ENTRY) | PYF_PYTHON;
+	self->func = Value_New();
+	NObj_NewPortFunc(self->func, site->ref);
+	self->params = t;
+	self->flags = (self->flags & ~PYF_ENTRY) | PYF_VALUE;
 }
 
-/* the place of the next parameter of a port entry; NULL when the binding went back to Python with it */
-static nativeVal_t *cPy_Function_EntryParam(cPy_Function *self) {
-	cPy_EntryParams *p = self->params;
-	if (!p) {
-		self->params = p = EntryParams_Get();
+/* the place of the next parameter: in the block of a port entry or the tuple of a value; NULL for a C function or
+ * without a binding */
+static nativeVal_t *cPy_Function_Param(cPy_Function *self) {
+	if (self->flags & PYF_ENTRY) {
+		cPy_EntryParams *p = self->params;
+		if (!p) {
+			self->params = p = EntryParams_Get();
+		}
+		if (p->n < PORT_ARGS) {
+			return &p->a[p->n++];
+		}
+		cPy_Function_EntryToValue(self);
 	}
-	if (p->n == PORT_ARGS) {
-		cPy_Function_EntryToPython(self);
-		return NULL;
-	}
-	return &p->a[p->n++];
+	return self->flags & PYF_VALUE ? cPy_Function_ValueParam(self) : NULL;
 }
 
 void cPy_Function_AddParamI(cPy_Function *self, int v) {
-	nativeVal_t *a;
-	if ((self->flags & PYF_ENTRY) && (a = cPy_Function_EntryParam(self)) != NULL) {
+	nativeVal_t *a = cPy_Function_Param(self);
+	if (a) {
 		Native_SetInt(a, v);
 	} else if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile *f = self->params;
 		VFile_Write(f, &v, sizeof(v));
-	} else if (self->flags & PYF_PYTHON) {
-		cPy_Function_PyParams(self);
-		PyObject *o = PyInt_FromLong(v);
-		PyList_Append(self->params, o);
-		Py_DECREF(o);
 	}
 }
 
 void cPy_Function_AddParamF(cPy_Function *self, float v) {
-	nativeVal_t *a;
-	if ((self->flags & PYF_ENTRY) && (a = cPy_Function_EntryParam(self)) != NULL) {
+	nativeVal_t *a = cPy_Function_Param(self);
+	if (a) {
 		Native_SetFloat(a, v);
 	} else if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile *f = self->params;
 		VFile_Write(f, &v, sizeof(v));
-	} else if (self->flags & PYF_PYTHON) {
-		cPy_Function_PyParams(self);
-		PyObject *o = PyFloat_FromDouble(v);
-		PyList_Append(self->params, o);
-		Py_DECREF(o);
 	}
 }
 
 void cPy_Function_AddParamS(cPy_Function *self, const char *v) {
-	nativeVal_t *a;
-	if (!(self->flags & (PYF_PYTHON | PYF_NATIVE | PYF_ENTRY))) {
+	if (!(self->flags & (PYF_VALUE | PYF_NATIVE | PYF_ENTRY))) {
 		return;
 	}
 	if (!v) {
 		v = "";
 	}
-	if ((self->flags & PYF_ENTRY) && (a = cPy_Function_EntryParam(self)) != NULL) {
+	nativeVal_t *a = cPy_Function_Param(self);
+	if (a) {
 		Native_SetText(a, v, (int)strlen(v));
 	} else if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile_WriteString(self->params, v);
-	} else if (self->flags & PYF_PYTHON) {
-		cPy_Function_PyParams(self);
-		PyObject *o = PyString_FromString((char *)v);
-		PyList_Append(self->params, o);
-		Py_DECREF(o);
 	}
 }
 
 /*
- * The call of a port entry as PyEval_CallObject called its adapter (Mode_Args, the entry, Mode_Out), with the depth
- * check of the direct calls (Port_BoundCall): the int result, else 0; a failure printed as the Python call printed it.
- * The result goes through the conversions of the adapter and the int check (Native_Pass: they can fail). Not inlined:
- * the result value stays off the frame of cPy_Function_Execute, which is on the stack during a Python call.
+ * The call of a port entry (site, the parameters a, n) as PyEval_CallObject called its adapter (Mode_Args, the entry,
+ * Mode_Out), with the depth check of the direct calls (Port_BoundCall), or of a function value f natively
+ * (Port_CallKept): the int result, else 0; a failure printed as the Python call printed it. The result of an entry
+ * goes through the conversions of the adapter and the int check (Native_Pass: they can fail). Not inlined: the result
+ * value stays off the frame of cPy_Function_Execute, which is on the stack during a call.
  */
-static __attribute__((noinline)) int cPy_Function_CallEntry(portSite_t *site, const cPy_EntryParams *p) {
+static __attribute__((noinline)) int cPy_Function_Call(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a,
+	int n) {
 	nativeVal_t res;
 	int result = 0;
 
-	if (!Port_BoundCall(site, NULL, p ? p->a : NULL, p ? p->n : 0, &res, NULL)) {
+	if (!Port_CallKept(site, f, a, n, &res)) {
 		Native_ErrPrint();
 	} else if (res.type == NV_INT) {
 		result = (int)res.i;
@@ -453,7 +455,7 @@ static __attribute__((noinline)) int cPy_Function_CallEntry(portSite_t *site, co
 
 /*
  * With clear a C function gets NULL as its parameter file: the original reads the field again after the clear.
- * A Python function still gets the tuple made before, a port entry the parameters added before.
+ * A function value still gets the tuple made before, a port entry the parameters added before.
  */
 int cPy_Function_Execute(cPy_Function *self, byte clear) {
 	int result = 0;
@@ -473,34 +475,29 @@ int cPy_Function_Execute(cPy_Function *self, byte clear) {
 			if (clear) {
 				cPy_Function_Clear(self);
 			}
-			result = cPy_Function_CallEntry(site, p);
+			result = cPy_Function_Call(site, NULL, p ? p->a : NULL, p ? p->n : 0);
 			if (p) {
 				EntryParams_Free(p);
 			}
 		}
-	} else if (self->flags & PYF_PYTHON) {
+	} else if (self->flags & PYF_VALUE) {
 		g_PyFunctionCalls[0]++;
 		if (!Py_IsReady()) {
 			Con_Warnf("WARNING : Impossible to execute \n Python closed!.\n");
 		} else {
-			PyObject *func = self->func;
-			PyObject *args = self->params ? PyList_AsTuple(self->params) : PyTuple_New(0);
+			/* the call holds the function (the callback may bind this function again) and owns the parameters, as
+			 * the Python call held its function and owned its tuple */
+			nativeVal_t f;
+			nativeVal_t *args = self->params;
+			Native_Copy(&f, self->func);
+			self->params = NULL;
 			if (clear) {
 				cPy_Function_Clear(self);
 			}
-			if (!func || !args) {
-				Con_Warnf("WARNING : No pyton function preloaded : \n");
-			} else {
-				PyObject *r = PyEval_CallObject(func, args);
-				if (!r) {
-					Native_ErrPrint();
-				} else {
-					if (PyInt_Check(r)) {
-						result = PyInt_AsLong(r);
-					}
-					Py_DECREF(r);
-				}
-				Py_DECREF(args);
+			result = cPy_Function_Call(NULL, &f, args ? args->items : NULL, args ? args->n : 0);
+			Native_Free(&f);
+			if (args) {
+				Value_Delete(args);
 			}
 		}
 	} else if (self->flags & PYF_NATIVE) {
@@ -542,8 +539,8 @@ void cPy_Function_ClearAll(void) {
 	Con_Printf("%d Functions %d cleared\n", n, freed);
 }
 
-void cPy_Function_Counts(unsigned long *python, unsigned long *native, unsigned long *entry, byte reset) {
-	*python = g_PyFunctionCalls[0];
+void cPy_Function_Counts(unsigned long *value, unsigned long *native, unsigned long *entry, byte reset) {
+	*value = g_PyFunctionCalls[0];
 	*native = g_PyFunctionCalls[1];
 	*entry = g_PyFunctionCalls[2];
 	if (reset) {

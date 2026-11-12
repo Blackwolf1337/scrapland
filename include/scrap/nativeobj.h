@@ -150,6 +150,9 @@ byte NObj_Call(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *o
 /* o.name(a[0], ..., a[n - 1]): NObj_GetAttr, then NObj_Call (the one lookup of the list and dict methods: append,
  * insert, extend, pop, remove, index, count, reverse, sort; keys, values, items, has_key, get, update, clear, copy) */
 byte NObj_CallMethod(const nativeVal_t *o, const char *name, const nativeVal_t *a, int n, nativeVal_t *out);
+/* callable(v) as PyCallable_Check: a function, a method, a class, an instance that has __call__, a view or Python
+ * value by its object; 0 for anything else */
+byte NObj_Callable(const nativeVal_t *v);
 /* f(a..., **kw) with kw as nativeCallKw_t has them (NULL or empty: NObj_Call): a callback with its callkw, a class,
  * instance or method of native data natively, a port function and a Python object through Python (the adapter takes
  * the keywords); a native function without callkw raises "this function takes no keyword arguments" */

@@ -157,7 +157,10 @@ PyObject *ScorerItem_PyNew(int player, const char *name);
 void Scorer_AddChatMsg(const char *text, uint32_t rgb);
 void Scorer_SetConsole(int on);
 void Scorer_SetSpeechText(const char *text, float time, int a, int b, int c);
-void Scorer_SetSpeechCallback(const char *func, PyObject *arg);
+struct nativeVal_s;
+/* the talk callback by name (cPy_Function_SetFunc); the items of arg (a list value, NULL: none) that are a text, a
+ * float or an int are its parameters */
+void Scorer_SetSpeechCallback(const char *func, const struct nativeVal_s *arg);
 void Scorer_CancelSpeech(float time);
 void Scorer_SetHeadMonitor(const char *a, const char *b, int c);
 void Scorer_SetMsgText(const char *text, float time, const char *font);

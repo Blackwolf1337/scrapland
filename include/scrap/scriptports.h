@@ -2115,7 +2115,7 @@ PORT_DECL(SAI, GetOD) /* ? */
 	PORT_DEF(SAI, SetStateChar, SAI_SetStateChar) \
 	PORT_DEF(SAI, GetStateVehicle, SAI_GetStateVehicle) \
 	PORT_DEF(SAI, GetStateChar, SAI_GetStateChar) \
-	PORT_DEFP(SAI, EnableAIVehicle, SAI_EnableAIVehicle) \
+	PORT_DEF(SAI, EnableAIVehicle, SAI_EnableAIVehicle) \
 	PORT_DEF(SAI, EnableAIChar, SAI_EnableAIChar) \
 	PORT_DEF(SAI, IniAI, SAI_IniAI) \
 	PORT_DEF(SAI, GetNextRacePoint, SAI_GetNextRacePoint) \
@@ -2346,7 +2346,7 @@ PORT_DECL(SScorer, Accept) /* 2 */
 	PORT_DEF(SScorer, AddChatMsg, SScorer_AddChatMsg) \
 	PORT_DEF(SScorer, SetConsole, SScorer_SetConsole) \
 	PORT_DEF(SScorer, SetSpeechText, SScorer_SetSpeechText) \
-	PORT_DEFP(SScorer, SetSpeechCallback, SScorer_SetSpeechCallback) \
+	PORT_DEF(SScorer, SetSpeechCallback, SScorer_SetSpeechCallback) \
 	PORT_DEF(SScorer, CancelSpeech, SScorer_CancelSpeech) \
 	PORT_DEF(SScorer, SetHeadMonitor, SScorer_SetHeadMonitor) \
 	PORT_DEF(SScorer, Fade, SScorer_Fade) \
@@ -2595,7 +2595,7 @@ PORT_DECL(Scrap, ConsoleExec) /* 1 */
 	PORT_DEF(Scrap, GetTimeSpeed, Scrap_GetTimeSpeed) \
 	PORT_DEF(Scrap, SetTime, Scrap_SetTime) \
 	PORT_DEF(Scrap, SetTimeSpeed, Scrap_SetTimeSpeed) \
-	PORT_DEFP(Scrap, AddScheduledFunc, Scrap_AddScheduledFunc) \
+	PORT_DEF(Scrap, AddScheduledFunc, Scrap_AddScheduledFunc) \
 	PORT_DEF(Scrap, DeleteScheduledFuncs, Scrap_DeleteScheduledFuncs) \
 	PORT_DEF(Scrap, SetCam, Scrap_SetCam) \
 	PORT_DEF(Scrap, GetCam, Scrap_GetCam) \
@@ -2627,7 +2627,7 @@ PORT_DECL(Scrap, ConsoleExec) /* 1 */
 	PORT_DEF(Scrap, BuildFont, Scrap_BuildFont) \
 	PORT_DEF(Scrap, ScreenShot, Scrap_ScreenShot) \
 	PORT_DEF(Scrap, ProcessDVF, Scrap_ProcessDVF) \
-	PORT_DEFP(Scrap, VideoPlayer, Scrap_VideoPlayer) \
+	PORT_DEF(Scrap, VideoPlayer, Scrap_VideoPlayer) \
 	PORT_DEF(Scrap, MusicPlayer, Scrap_MusicPlayer) \
 	PORT_DEF(Scrap, GetVideoCurrentMode, Scrap_GetVideoCurrentMode) \
 	PORT_DEF(Scrap, SetVideoCurrentMode, Scrap_SetVideoCurrentMode) \

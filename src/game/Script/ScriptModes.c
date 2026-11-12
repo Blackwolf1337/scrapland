@@ -638,66 +638,63 @@ byte Mode_DelSchedS(const char *name) {
 	return ok;
 }
 
-/* the tuple of the n values args (NULL with the error) */
+/* the tuple of the n values args */
+static void Mode_ArgsVal(const nativeVal_t *args, int n, nativeVal_t *t) {
+	Native_SetEmpty(t, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(t), &args[i]);
+	}
+}
+
+/* the same as a Python tuple (NULL with the error) */
 static PyObject *Mode_ArgsTuple(const nativeVal_t *args, int n) {
 	nativeVal_t t;
-	Native_SetEmpty(&t, NV_TUPLE);
-	for (int i = 0; i < n; i++) {
-		Native_Copy(Native_Append(&t), &args[i]);
-	}
+	Mode_ArgsVal(args, n, &t);
 	PyObject *params = Native_ToPy(&t);
 	Native_Free(&t);
 	return params;
 }
 
-/* func with the n values args at time on the world's scheduler: the port's own function as its entry on the values
- * (Port_Scheduled), anything else as the Python call on their tuple; 0 with the error of the tuple */
-static byte Mode_SchedAdd(float time, PyObject *func, const nativeVal_t *args, int n, const char *name) {
-	portSite_t *site = n <= PORT_ARGS ? Port_Scheduled(func) : NULL;
-	if (site) {
-		Scheduler_AddEntry(&g_pWorld->scheduler, time, site, args, n, name);
-		return 1;
-	}
-	PyObject *params = Mode_ArgsTuple(args, n);
-	if (!params) {
-		return 0;
-	}
-	Scheduler_Add(&g_pWorld->scheduler, time, func, params, name);
-	Py_DECREF(params);
-	return 1;
+/* func with the n values args at time on the world's scheduler (a port function as its entry on the values) */
+static void Mode_SchedAdd(float time, const nativeVal_t *func, const nativeVal_t *args, int n, const char *name) {
+	nativeVal_t t;
+	Mode_ArgsVal(args, n, &t);
+	Scheduler_Add(&g_pWorld->scheduler, time, func, &t, name);
+	Native_Free(&t);
 }
 
-byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *args, int n, const nativeVal_t *name) {
+byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
+	const nativeVal_t *name) {
 	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "AddScheduledFunc", &hook);
 	byte ok = 0;
 	if (seam > 0) {
 		/* the recorder gets the arguments as their tuple */
-		PyObject *params = Mode_ArgsTuple(args, n);
-		if (!params) {
-			Native_HookFree(&hook);
-			return 0;
-		}
-		ok = name ? Native_HookCall(&hook, NULL, "vOOv", time, func, params, name) :
-			Native_HookCall(&hook, NULL, "vOO", time, func, params);
-		Py_DECREF(params);
+		nativeVal_t t;
+		Mode_ArgsVal(args, n, &t);
+		ok = name ? Native_HookCall(&hook, NULL, "vvvv", time, func, &t, name) :
+			Native_HookCall(&hook, NULL, "vvv", time, func, &t);
+		Native_Free(&t);
 	} else if (seam == 0) {
 		/* "dOO|s" */
 		double d;
 		const char *s = "";
-		ok = Native_ArgDouble(time, &d) && (!name || Native_ArgStr(name, 4, &s)) &&
+		ok = Native_ArgDouble(time, &d) && (!name || Native_ArgStr(name, 4, &s));
+		if (ok) {
 			Mode_SchedAdd((float)d, func, args, n, s);
+		}
 	}
 	return ok;
 }
 
-byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, const char *name) {
+/* the same at Scrap.GetTime() + delay */
+static byte Mode_LaterVal(double delay, const nativeVal_t *func, const nativeVal_t *args, int n, const char *name) {
 	nativeVal_t t, nm;
 	Native_SetFloat(&t, Mode_Time() + delay);
 	if (name) {
 		Native_SetText(&nm, name, (int)strlen(name));
 	}
-	byte ok = Mode_Schedule(&t, func, args, n, name ? &nm : NULL);
+	byte ok = Mode_ScheduleV(&t, func, args, n, name ? &nm : NULL);
 	if (name) {
 		Native_Free(&nm);
 	}
@@ -707,14 +704,12 @@ byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, 
 /* Mode_Later with the function of the module as its global (global 1) or as its attribute */
 static byte Mode_LaterBy(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name,
 	byte global) {
-	/* the function scheduled is the one of the module now (a mission may have replaced it): its entry while it is the
-	 * port's own (Mode_Schedule) */
-	PyObject *fn = global ? Script_Global(module, func) : Script_Attr(module, func);
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_LaterPy(delay, fn, args, n, name);
-	Py_DECREF(fn);
+	/* the function scheduled is the one of the module now (a mission may have replaced it): its entry while it is a
+	 * port function (Mode_ScheduleV) */
+	nativeVal_t fn;
+	byte ok = (global ? Mode_RefG(module, func, &fn) : Mode_RefMod(module, func, &fn)) &&
+		Mode_LaterVal(delay, &fn, args, n, name);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -2071,12 +2066,9 @@ byte Mode_GSetI(const char *module, const char *var, const char *attr, long i) {
 }
 
 byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n) {
-	PyObject *fn = Script_Global(module, func);
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_Schedule(time, fn, args, n, NULL);
-	Py_DECREF(fn);
+	nativeVal_t fn;
+	byte ok = Mode_RefG(module, func, &fn) && Mode_ScheduleV(time, &fn, args, n, NULL);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -2282,22 +2274,22 @@ byte Mode_LaterV(const nativeVal_t *delay, const char *module, const char *func,
 	if (!Native_Arith('+', &now, delay, &time)) {
 		return 0;
 	}
-	/* the function scheduled is the one of the module now (a mission may have replaced it): its entry while it is the
-	 * port's own (Mode_Schedule) */
-	PyObject *fn = Script_Global(module, func);
-	if (!fn) {
+	/* the function scheduled is the one of the module now (a mission may have replaced it): its entry while it is a
+	 * port function (Mode_ScheduleV) */
+	nativeVal_t fn;
+	if (!Mode_RefG(module, func, &fn)) {
 		Native_Free(&time);
 		return 0;
 	}
 	if (name) {
 		Native_SetText(&nm, name, (int)strlen(name));
 	}
-	byte ok = Mode_Schedule(&time, fn, args, n, name ? &nm : NULL);
+	byte ok = Mode_ScheduleV(&time, &fn, args, n, name ? &nm : NULL);
 	if (name) {
 		Native_Free(&nm);
 	}
 	Native_Free(&time);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -2635,9 +2627,8 @@ byte Mode_ModTo(const char *module, const char *var, const char *src, const char
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.<func>, args[, name]) of n values (name NULL: none) */
 byte Mode_LaterSpeech(const char *func, const nativeVal_t *delay, const nativeVal_t *args, int n, const char *name) {
-	nativeVal_t now = { 0 }, at = { 0 }, nm = { 0 };
-	PyObject *fn = Script_Attr("Speech", func);
-	if (!fn) {
+	nativeVal_t now = { 0 }, at = { 0 }, nm = { 0 }, fn;
+	if (!Mode_RefMod("Speech", func, &fn)) {
 		return 0;
 	}
 	Native_SetFloat(&now, Mode_Time());
@@ -2645,12 +2636,12 @@ byte Mode_LaterSpeech(const char *func, const nativeVal_t *delay, const nativeVa
 	if (name) {
 		LvN_Str(&nm, name);
 	}
-	byte ok = Native_Arith('+', &now, delay, &at) && Mode_Schedule(&at, fn, args, n, name ? &nm : NULL);
+	byte ok = Native_Arith('+', &now, delay, &at) && Mode_ScheduleV(&at, &fn, args, n, name ? &nm : NULL);
 	if (name) {
 		Native_Free(&nm);
 	}
 	Native_Free(&at);
-	Py_DECREF(fn);
+	Native_Free(&fn);
 	return ok;
 }
 
@@ -2867,20 +2858,16 @@ byte Mode_FirstOf(const char *list, nativeVal_t *e) {
 	return ok;
 }
 
-/* itm.rTime = 20 and its Del 5 s later (OBJLIB 7: the scheduler keeps the bound method, the Python call until the
- * entities are native) */
+/* itm.rTime = 20 and its Del 5 s later (OBJLIB 7: the scheduler keeps the bound method of the entity handle, a view
+ * called through Python until the entities are native) */
 byte Mode_DelLater(const nativeVal_t *itm) {
-	nativeVal_t time;
-	if (!LvN_SetI(itm, "rTime", 20)) {
-		return 0;
-	}
-	PyObject *del = Mode_VBound(itm, "Del");
-	if (!del) {
+	nativeVal_t time, del;
+	if (!LvN_SetI(itm, "rTime", 20) || !Mode_VBoundV(itm, "Del", &del)) {
 		return 0;
 	}
 	Native_SetFloat(&time, Mode_Time() + 5);
-	byte ok = Mode_Schedule(&time, del, NULL, 0, NULL);
-	Py_DECREF(del);
+	byte ok = Mode_ScheduleV(&time, &del, NULL, 0, NULL);
+	Native_Free(&del);
 	return ok;
 }
 
@@ -3727,10 +3714,13 @@ byte Mode_UsrSeam(long id, nativeVal_t *out) {
 }
 
 byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {
-	PyObject *f = Script_Attr(module, func);
-	byte ok = f && Mode_SchedAdd((float)time, f, args, n, name ? name : "");
+	nativeVal_t f;
+	byte ok = Mode_RefMod(module, func, &f);
+	if (ok) {
+		Mode_SchedAdd((float)time, &f, args, n, name ? name : "");
+	}
 	Native_ErrClear();
-	Py_XDECREF(f);
+	Native_Free(&f);
 	return ok;
 }
 
@@ -3881,16 +3871,6 @@ byte Mode_PrintS(const char *text) {
 	byte ok = Mode_PrintV(&t);
 	Native_Free(&t);
 	return ok;
-}
-
-byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name) {
-	PyObject *f = Script_Attr(module, func);
-	if (f) {
-		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, args, name ? name : "");
-	}
-	Native_ErrClear();
-	Py_XDECREF(f);
-	return f != NULL;
 }
 
 void Mode_PrintedCall(portSite_t *site, const char *module, const char *func, long id) {
@@ -4140,35 +4120,6 @@ int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **
 	return n;
 }
 
-/* the adapter fn or kwfn on the arguments as Python values, its result into out */
-static byte Mode_PyCall(PyCFunction fn, PyCFunctionWithKeywords kwfn, const nativeVal_t *a, int n, nativeVal_t *out) {
-	PyObject *args = PyTuple_New(n);
-	for (int i = 0; args && i < n; i++) {
-		PyObject *o = Native_ToPy(&a[i]);
-		if (!o) {
-			Py_DECREF(args);
-			return 0;
-		}
-		PyTuple_SET_ITEM(args, i, o);
-	}
-	PyObject *r = !args ? NULL : fn ? fn(NULL, args) : kwfn(NULL, args, NULL);
-	Py_XDECREF(args);
-	if (!r) {
-		return 0;
-	}
-	Native_Arg(r, out);
-	Py_DECREF(r);
-	return 1;
-}
-
-byte Mode_PyEntry(PyCFunction fn, const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Mode_PyCall(fn, NULL, a, n, out);
-}
-
-byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Mode_PyCall(NULL, fn, a, n, out);
-}
-
 /* ---- native entries of hand and keyword adapters (stage 3, batch A2a) ---- */
 
 byte Mode_ArgInt(const nativeVal_t *v, int *out) {
@@ -4392,17 +4343,25 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 }
 
 PyObject *Mode_SelfEntry(PyObject *self, PyObject *args, portEntry_t entry) {
-	nativeVal_t a[1 + PORT_ARGS], out;
-	/* more than PORT_ARGS arguments: no entry takes them, its arity error comes before it reads one */
-	int k = self != NULL, n = (int)PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
+	nativeVal_t buf[1 + PORT_ARGS], *a = buf, out;
+	int k = self != NULL, n = (int)PyTuple_Size(args);
+	/* more than PORT_ARGS arguments in a block of their own: SAI.EnableAIVehicle takes up to 27, any other entry gives
+	 * its arity error before it reads one */
+	if (n > PORT_ARGS) {
+		a = Mem_Alloc((uint32_t)((size_t)(k + n) * sizeof(*a)));
+	}
 	if (self) {
 		Native_Arg(self, &a[0]);
 	}
-	for (int i = 0; i < m; i++) {
+	for (int i = 0; i < n; i++) {
 		Native_Arg(PyTuple_GET_ITEM(args, i), &a[k + i]);
 	}
 	Native_SetNone(&out);
-	return Mode_KwOut(a, k + m, entry(a, k + n, &out), &out);
+	PyObject *r = Mode_KwOut(a, k + n, entry(a, k + n, &out), &out);
+	if (a != buf) {
+		Mem_Free(a);
+	}
+	return r;
 }
 
 PyObject *Mode_Entry(PyObject *args, portEntry_t entry) {
@@ -4838,15 +4797,15 @@ static byte Lib_MathFmod(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Lib_Math2(a, n, out, Lib_Fmod);
 }
 
-portRef_t port_string_find = { "string", "find", NULL, Lib_Find, NULL, 0 };
-portRef_t port_string_replace = { "string", "replace", NULL, Lib_Replace, NULL, 0 };
-portRef_t port_string_atoi = { "string", "atoi", NULL, Lib_Atoi, NULL, 0 };
-portRef_t port_string_atof = { "string", "atof", NULL, Lib_Atof, NULL, 0 };
-portRef_t port_string_split = { "string", "split", NULL, Lib_Split, NULL, 0 };
-portRef_t port_string_splitfields = { "string", "splitfields", NULL, Lib_Split, NULL, 0 };
-portRef_t port_math_sqrt = { "math", "sqrt", NULL, Lib_MathSqrt, NULL, 0 };
-portRef_t port_math_fabs = { "math", "fabs", NULL, Lib_MathFabs, NULL, 0 };
-portRef_t port_math_fmod = { "math", "fmod", NULL, Lib_MathFmod, NULL, 0 };
+portRef_t port_string_find = { "string", "find", NULL, Lib_Find, NULL };
+portRef_t port_string_replace = { "string", "replace", NULL, Lib_Replace, NULL };
+portRef_t port_string_atoi = { "string", "atoi", NULL, Lib_Atoi, NULL };
+portRef_t port_string_atof = { "string", "atof", NULL, Lib_Atof, NULL };
+portRef_t port_string_split = { "string", "split", NULL, Lib_Split, NULL };
+portRef_t port_string_splitfields = { "string", "splitfields", NULL, Lib_Split, NULL };
+portRef_t port_math_sqrt = { "math", "sqrt", NULL, Lib_MathSqrt, NULL };
+portRef_t port_math_fabs = { "math", "fabs", NULL, Lib_MathFabs, NULL };
+portRef_t port_math_fmod = { "math", "fmod", NULL, Lib_MathFmod, NULL };
 
 /* ---- the menus of stage 3 batch B11 ---- */
 
@@ -4948,14 +4907,6 @@ int Mode_Truth(const nativeVal_t *v) {
 	/* an object by its kind (no crossing); OBJLIB 7: the truth of a Python object (an instance's __nonzero__ or __len__
 	 * may raise) */
 	return NObj_Native(v) ? NObj_True(v) : Native_IsObj(v) ? PyObject_IsTrue(Native_PyOf(v)) : Native_True(v);
-}
-
-byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
-	const nativeVal_t *name) {
-	PyObject *fn = Native_ToPy(func);
-	byte ok = fn && Mode_Schedule(time, fn, args, n, name);
-	Py_XDECREF(fn);
-	return ok;
 }
 
 byte Mode_VSetModel(const nativeVal_t *h, const char *module, const char *modelVar) {
@@ -5589,6 +5540,11 @@ byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn) {
 	Native_SetNone(fn);
 	for (PyMethodDef *row = table; row->ml_name; row++) {
 		if (!strcmp(row->ml_name, name)) {
+			const portRef_t *ref = Port_OfDef(row);
+			if (ref) {
+				NObj_NewPortFunc(fn, ref);
+				return 1;
+			}
 			PyObject *f = PyCFunction_New(row, NULL);
 			if (!f) {
 				return 0;
@@ -5602,10 +5558,8 @@ byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn) {
 }
 
 byte Mode_SchedFn(double time, const nativeVal_t *fn, const nativeVal_t *args, int n, const char *name) {
-	PyObject *f = Native_ToPy(fn);
-	byte ok = f && Mode_SchedAdd((float)time, f, args, n, name ? name : "");
-	Py_XDECREF(f);
-	return ok;
+	Mode_SchedAdd((float)time, fn, args, n, name ? name : "");
+	return 1;
 }
 
 byte Mode_VarCall0(const char *module, const char *var, byte global, const char *method) {

@@ -9,6 +9,7 @@
 #include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
+#include "scrap/nativeobj.h"
 #include "scrap/python.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -76,22 +77,18 @@ API_FN(Scrap, AddParams) {
 	return 1;
 }
 
-/* AddScheduledFunc(time,func,params[,name]) : Ejecuta un codigo en python en un instante de tiempo. OBJLIB 7: the
- * scheduler keeps the callable and the argument tuple as the objects given, so the entry is the adapter on Python
- * objects (MODE_PYENTRY: its ref takes the slow path) */
-static PyObject *Scrap_AddScheduledFunc(PyObject *self, PyObject *args) {
+/* AddScheduledFunc(time,func,params[,name]) : Ejecuta un codigo en python en un instante de tiempo. The scheduler
+ * keeps the function and the arguments as the values given */
+API_FN(Scrap, AddScheduledFunc) {
 	double time;
-	PyObject *func, *params;
-	char *name = "";
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "dOO|s", &time, &func, &params, &name)) {
-		return NULL;
+	const nativeVal_t *func, *params;
+	const char *name = "";
+	if (!Mode_Parse(a, n, "dOO|s", &time, &func, &params, &name)) {
+		return 0;
 	}
 	Scheduler_Add(&g_pWorld->scheduler, (float)time, func, params, name);
-	return Py_ReturnNone();
+	return 1;
 }
-MODE_PYENTRY(Scrap_AddScheduledFunc)
 
 /* BuildFont(name, size) */
 API_FN(Scrap, BuildFont) {
@@ -813,51 +810,43 @@ API_FN(Scrap, Verbose) {
 	return 1;
 }
 
-/* the callback of the video of Scrap.VideoPlayer, until it ends */
-static PyObject *videoPlayerDone;
+/* the callback of the video of Scrap.VideoPlayer (a copy of the value), until it ends */
+static nativeVal_t videoPlayerDone;
 
 static void VideoPlayer_Done(int result) {
-	PyObject *f = videoPlayerDone;
-	videoPlayerDone = NULL;
-	PyObject *args = Py_BuildValue("(i)", result);
-	PyObject *r = args ? PyEval_CallObject(f, args) : NULL;
-	if (!r) {
+	nativeVal_t f = videoPlayerDone, r;
+	Native_SetNone(&videoPlayerDone);
+	Native_SetInt(&r, result);
+	if (!Port_CallKept(NULL, &f, &r, 1, NULL)) {
 		Native_ErrPrint();
 	}
-	Py_XDECREF(r);
-	Py_XDECREF(args);
-	Py_DECREF(f);
+	Native_Free(&f);
 }
 
 /*
  * VideoPlayer(name[, cmd[, done]]) : cmd default "play". differs from the original on purpose (no blocking waits):
  * it returns at once, the video plays on and the frame waits for it; done(result) is called when it ends (an
- * addition: 0 not found, 1 played to the end or not opened, 2 stopped by a key). OBJLIB 7: the entry is the adapter
- * on Python objects (MODE_PYENTRY, its ref takes the slow path): done is kept as the object given, and for "a|b"
- * Video_PlayFile keeps a pointer into the text of name until b plays
+ * addition: 0 not found, 1 played to the end or not opened, 2 stopped by a key). done is kept as the value given;
+ * for "a|b" the video keeps its own copy of b until it plays
  */
-static PyObject *Scrap_VideoPlayer(PyObject *self, PyObject *args) {
-	char *name, *cmd = "play";
-	PyObject *done = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|sO", &name, &cmd, &done)) {
-		return NULL;
+API_FN(Scrap, VideoPlayer) {
+	const char *name, *cmd = "play";
+	const nativeVal_t *done = NULL;
+	if (!Mode_Parse(a, n, "s|sO", &name, &cmd, &done)) {
+		return 0;
 	}
-	if (done && done != Py_None && !PyCallable_Check(done)) {
+	if (done && done->type != NV_NONE && !NObj_Callable(done)) {
 		Con_Warnf("VideoPlayer: done is not callable, ignored\n");
 		done = NULL;
 	}
-	if (!done || done == Py_None || crt_stricmp(cmd, "play")) {
+	if (!done || done->type == NV_NONE || crt_stricmp(cmd, "play")) {
 		Video_Play(name, cmd, 0.0f);
-		return Py_ReturnNone();
+		return 1;
 	}
-	Py_INCREF(done);
-	videoPlayerDone = done;
+	Native_Copy(&videoPlayerDone, done);
 	Video_PlayThen(name, VideoPlayer_Done);
-	return Py_ReturnNone();
+	return 1;
 }
-MODE_PYENTRY(Scrap_VideoPlayer)
 
 /* --- batch 4: engine variables, entities, files, random numbers, Steam apps --- */
 

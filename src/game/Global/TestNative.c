@@ -14,10 +14,10 @@
  *                            when none), sorted by file and line ("no sites" when none ran); then the callbacks by name
  *                            bound to a port's entry (cPy_Function PYF_ENTRY, stage 4) since the start: "callback
  *                            <Module>.<Func> calls <n> errors <n>", sorted by name, and the calls of cPy_Function by
- *                            kind: "callbacks python <n> native <n> entry <n>"; then the functions given to the
+ *                            kind: "callbacks value <n> native <n> entry <n>"; then the functions given to the
  *                            scheduler as a port's entry (cScheduledFunc, stage 4) since the start: "scheduled
  *                            <Module>.<Func> calls <n> errors <n>", sorted by name, and the calls of the scheduler
- *                            by kind: "scheduled python <n> entry <n>"; then the modules by name (batch 6b,
+ *                            by kind: "scheduled value <n> entry <n>"; then the modules by name (batch 6b,
  *                            Script_ModuleCounts): "modules pack <n> none <n> absent <n> other <n> added <n> made <n>
  *                            loaded <n>" (pack modules found in sys.modules, whose entry is None, not loaded; other
  *                            names; pack modules made empty by Script_ModuleAdd, made from their .mod file, found
@@ -100,18 +100,18 @@ static void TN_Bound(nativeBuf_t *out, portSite_t *list, const char *label, byte
 /* the counts of the callbacks and scheduled functions bound to port entries, of cPy_Function's calls and of the
  * scheduler's calls by kind */
 static void TN_Callbacks(nativeBuf_t *out, byte reset) {
-	unsigned long python, native, entry;
+	unsigned long python, native, entry, value;
 	char line[128];
 	TN_Bound(out, Port_Callbacks(), "callback", reset);
-	cPy_Function_Counts(&python, &native, &entry, reset);
+	cPy_Function_Counts(&value, &native, &entry, reset);
 	if (!reset) {
-		snprintf(line, sizeof(line), "callbacks python %lu native %lu entry %lu\n", python, native, entry);
+		snprintf(line, sizeof(line), "callbacks value %lu native %lu entry %lu\n", value, native, entry);
 		Native_BufAdd(out, line, -1);
 	}
 	TN_Bound(out, Port_ScheduledSites(), "scheduled", reset);
-	Scheduler_Counts(&python, &entry, reset);
+	Scheduler_Counts(&value, &entry, reset);
 	if (!reset) {
-		snprintf(line, sizeof(line), "scheduled python %lu entry %lu\n", python, entry);
+		snprintf(line, sizeof(line), "scheduled value %lu entry %lu\n", value, entry);
 		Native_BufAdd(out, line, -1);
 	}
 	unsigned long mods[SMC_COUNT];

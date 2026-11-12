@@ -42,19 +42,16 @@ API_FN(SScorer, SetSpeechText) {
 	return 1;
 }
 
-/* SetSpeechCallback(func[, arg]) : the list arg is kept as given (its items the callback's arguments) */
-static PyObject *SScorer_SetSpeechCallback(PyObject *self, PyObject *args) {
-	char *func;
-	PyObject *arg = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|O", &func, &arg)) {
-		return NULL;
+/* SetSpeechCallback(func[, arg]) : the items of the list arg are the callback's arguments */
+API_FN(SScorer, SetSpeechCallback) {
+	const char *func;
+	const nativeVal_t *arg = NULL;
+	if (!Mode_Parse(a, n, "s|O", &func, &arg)) {
+		return 0;
 	}
 	Scorer_SetSpeechCallback(func, arg);
-	return Py_ReturnNone();
+	return 1;
 }
-MODE_PYENTRY(SScorer_SetSpeechCallback)
 
 /* CancelSpeech() */
 API_FN(SScorer, CancelSpeech) {
