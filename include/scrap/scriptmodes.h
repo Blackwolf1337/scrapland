@@ -79,9 +79,6 @@ byte Mode_Print(const nativeVal_t *const *items, int n);
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
 /* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
 byte Mode_NextInSlot(cEntity **e);
-/* the handle a script holds for the entity as its Python object (OBJLIB 7: for the module dicts and the arguments
- * given as objects; Mode_EntHandle gives the native value): a new reference, None for NULL */
-PyObject *Mode_Handle(cEntity *e);
 /* handle-or-object helpers: o.var, o.var = v, o.SetModel(file) as the script does them on any value (an entity
  * handle in C, any other object the Python way with its errors) */
 byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out);
@@ -750,10 +747,10 @@ void Mode_ModPutI(const char *module, const char *var, long i);
 
 /* ---- batch P (CharsNPC, GameSounds, MenuMission) ---- */
 
-/* the $names of a .def section as the dict the runner takes (OBJLIB 6): the n pairs that follow, each a name and a
- * const nativeVal_t * (the names are short texts, up to MODE_DEFVARS); a new reference, NULL with the error. For
- * sections that share one dict (a let of the first is seen by the next); one section runs with Mode_DefRun */
-PyObject *Mode_DefVars(int n, ...);
+/* the $names of a .def section as the dict object the runner takes, into *out (Native_Free it): the n pairs that
+ * follow, each a name and a const nativeVal_t * (the names are short texts, up to MODE_DEFVARS). For sections that
+ * share one dict (a let of the first is seen by the next); one section runs with Mode_DefRun */
+void Mode_DefVars(nativeVal_t *out, int n, ...);
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
 
@@ -1211,9 +1208,8 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out);
 /* ---- the menus, the ship editor and the other ports on the native helpers (stage 6, batch 6h) ---- */
 
 /* Script_RunFile (stop: Script_RunFileTry) of a .def section with its $names given as values: the n pairs that follow,
- * each a name and a const nativeVal_t * (up to MODE_DEFVARS; OBJLIB 6: the runner takes them as a dict, Mode_DefVars;
- * an NV_OBJ goes in as the object it is). 0 as the runner gives it, and when the dict could not be made (nothing
- * runs then) */
+ * each a name and a const nativeVal_t * (up to MODE_DEFVARS; the runner takes them as a dict object, Mode_DefVars).
+ * 0 as the runner gives it */
 #define MODE_DEFVARS 24
 struct scriptStep_s;
 byte Mode_DefRun(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
@@ -1233,8 +1229,7 @@ byte Mode_StrBuf(const nativeVal_t *v, nativeBuf_t *b);
 /* the int of a value as PyInt_AsLong gives it (an int, a float cut, a long int that fits, an object's __int__;
  * OBJLIB 7): -1 with the error set for the rest */
 long Mode_AsLong(const nativeVal_t *v);
-/* a $name of the .def file that runs = v, for its steps (Script_SetValue; OBJLIB 6: the runner keeps the $names as
- * Python values, an NV_OBJ as the object it is) */
+/* a $name of the .def file that runs = v, for its steps (Script_SetValue) */
 void Mode_SetValue(const char *name, const nativeVal_t *v);
 /* the port's own function of the row called name of a PyMethodDef table as a function object of its own, held as a
  * value (a native port function; OBJLIB 7: a C function object for a row without a ref): for a call the scheduler
@@ -1275,8 +1270,8 @@ PyObject *Mode_EntryObj(PyObject *args, portEntry_t entry, unsigned objs);
 /* int(v) of the script into *out: Native_ToInt (numbers and texts), an object through PyNumber_Int (OBJLIB 9: an
  * instance's __int__) */
 byte Mode_Int(const nativeVal_t *v, nativeVal_t *out);
-/* `v` of the script as a text value the Python way (PyObject_Repr of the value as an object; Mode_Repr drops the
- * error of an object's __repr__): 0 with that error and *out None */
+/* `v` of the script as a text value with the error of an object's __repr__ (NObj_Repr; Mode_Repr drops it): 0 with
+ * that error and *out None */
 byte Mode_ReprV(const nativeVal_t *v, nativeVal_t *out);
 /* the global var of module = src.name of another module as the object it is (OBJLIB 5 (9c: functions as values): a
  * function a module keeps to put back later; Mode_ModTo sets the attribute of another module) */

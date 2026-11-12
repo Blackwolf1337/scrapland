@@ -168,16 +168,6 @@ PyObject *PyEntity_Face(cEntityRef *ref) {
 	return (PyObject *)self;
 }
 
-PyObject *PyEntity_New(const char *name) {
-	cEntityRef *ref = EntRef_New(name);
-	if (!ref) {
-		return NULL;
-	}
-	PyObject *self = PyEntity_Face(ref);
-	EntRef_Drop(ref);
-	return self;
-}
-
 byte PyEntity_Check(PyObject *o) {
 	return o->ob_type == &cPyEntity_Type;
 }
@@ -260,7 +250,7 @@ static PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
  * v NULL is `del handle.name`: the original parses the NULL value (a crash when the entity lives); here it is a value
  * of none of the forms ("Invalid type").
  */
-int PyEntity_SetVar(cEntity *e, const char *ref, const char *name, PyObject *v) {
+static int PyEntity_SetVar(cEntity *e, const char *ref, const char *name, PyObject *v) {
 	nativeVal_t x;
 	if (v) {
 		Native_Arg(v, &x);

@@ -6,8 +6,8 @@
  * (CharName, ActName). The module code (isPC) stays in the scripts.
  *
  * Native C (docs/objlib-plan.md, stage 2): the module has no state and calls no engine function itself; the sections
- * call the engine through the .def runner, which takes its $names (and the entity handle $e of InitLoops) as a dict
- * until it takes C values (OBJLIB 6). InitLoops has a native entry for the direct calls of other ports (stage 3,
+ * call the engine through the .def runner, which takes its $names (and the entity handle $e of InitLoops) as native
+ * values. InitLoops has a native entry for the direct calls of other ports (stage 3,
  * PORT_CALL); it hands its argument on as the Python value.
  */
 #include <string.h>

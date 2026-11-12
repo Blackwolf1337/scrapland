@@ -7,8 +7,7 @@
  * the attributes of those modules; MissionsFuncs.CrazyDealStatus and the Menu functions are called through
  * their refs (PORT_CALL: directly while the attribute holds the port's function, else by name), the GetMenuDescription
  * of the running super deal through its entry (Mode_CallArgs; OBJLIB 5 (9c: its module is a variable of Init)); their
- * errors are printed as before (OBJLIB 7). The .def runner takes its $names as a dict and the texts of the content
- * step as Python values (OBJLIB 6).
+ * errors are printed as before (OBJLIB 7). The .def runner takes its $names as a dict object of native values.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -351,8 +350,7 @@ static const scriptStep_t mission_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of mission.def with its $names as n names and values (Mode_DefRunV; OBJLIB 6: the runner takes them as a
- * dict) */
+/* a section of mission.def with its $names as n names and values (Mode_DefRunV) */
 static void Mission_Run(int id, const char *section, const char *const *names, const nativeVal_t *const *vals, int n) {
 	Mode_DefRunV(id, MISSION_FILE, section, mission_def, mission_steps, 0, names, vals, n);
 }

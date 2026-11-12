@@ -286,7 +286,6 @@ static byte Chat_Init(chatVars_t *c, int id) {
 		!Chat_IdText(c, slot, &t)) {
 		return 0;
 	}
-	/* OBJLIB 6: the $names go to the .def runner as a dict (Mode_DefRun) */
 	return Mode_DefRun(id, "menus/chat.def", "InitChat", chat_def, NULL, 0, 1, "sendid", &t);
 }
 

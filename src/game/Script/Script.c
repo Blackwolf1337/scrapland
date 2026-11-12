@@ -36,7 +36,7 @@
  * &AnmTotalTime). @, %, $ and & values may end in operations with numbers, done left to right with Python's numbers:
  * $x+10, &AnmTotalTime/4*2.
  * $(name) inside a word or text is the value name as text.
- * The values are native values (nativeVal_t, see the comment above Def_Shared). A call line calls the entry of a port or
+ * The values are native values (nativeVal_t, see the comment above Def_Lookup). A call line calls the entry of a port or
  * engine function through the registry of stage 4 (Port_Invoke) while the module attribute is that function itself,
  * else by name through Python as a script did (Def_Call).
  */
@@ -55,6 +55,7 @@
 #include "scrap/filepak.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/pyentity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
@@ -801,12 +802,6 @@ byte Script_EntTrue(const char *ent, const char *var) {
 	return Entity_VarS(e, var, &s, 0) && s && *s;
 }
 
-int Script_EntSet(const char *ent, const char *var, PyObject *v) {
-	int r = v ? PyEntity_SetVar(World_FindEntity(ent), ent, var, v) : -1;
-	Py_XDECREF(v);
-	return r;
-}
-
 PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
 	PyObject *r = callable && args ? Script_CallObject(callable, args, NULL) : NULL;
 	Py_XDECREF(args);
@@ -926,14 +921,15 @@ enum { TARGET_ITEM, TARGET_ACTION, TARGET_CLASS, TARGET_ENTITY, TARGET_OBJECT };
 typedef struct {
 	int id;
 	const scriptStep_t *steps;
-	PyObject *vars;			/* the $names of the C function, a dict or NULL */
-	PyObject *ownVars;		/* the dict of let and measure when the function gave none */
+	nativeVal_t vars;		/* the $names: the dict object of the C function, the file's own one let and measure
+					 * made when it gave none, or None */
 	const char *text;		/* the whole file */
 	const char *section;
 	char item[0x80];		/* the last item */
 	byte target;			/* what attribute lines set: TARGET_ITEM, TARGET_ACTION, TARGET_CLASS or TARGET_ENTITY */
 	char entity[0x80];		/* the entity of TARGET_ENTITY */
-	PyObject *object;		/* the Python object of TARGET_OBJECT (a reference of the file) */
+	nativeVal_t object;		/* the object of TARGET_OBJECT */
+	byte hasObject;			/* the object line gave a value */
 	scriptBlock_t blocks[SCRIPT_MAX_BLOCKS];
 	int numBlocks;
 	scriptBlock_t *open;		/* the style or list whose lines follow */
@@ -994,55 +990,39 @@ static const char *Def_Tokens(const char *p, char *buf, int size, scriptLine_t *
 }
 
 /*
- * The values of a file are native values (nativeVal_t). The $names stay the dict the C function gives (or the file's
- * own), holding Python values (OBJLIB 6: the callers make the dict, a caller may run several sections on one dict, and
- * the steps give $names as Python values): a value read from there, or from a module
- * variable (%Module.var), is the native value Native_Arg makes of it, but a list or dict, or a tuple holding one,
- * stays the object itself as an NV_OBJ, so that it keeps its identity (a step appends to the list of a $name in place,
- * a call or a setvar may keep it).
+ * The values of a file are native values (nativeVal_t). The $names are a dict object of native values (the C function
+ * gives it, a caller may run several sections on one dict, or the file makes its own at the first let): a value goes
+ * in as a call through Python hands it on (NObj_CallArg: a list or dict becomes an object, a vector the tuple of its
+ * floats), so a list or dict keeps its identity in the runner (a step appends to the list of a $name in place, a call
+ * or a setvar may keep it). A module variable (%Module.var) is the registry's value.
  */
 
-/* the object keeps its identity in the runner: a list or dict, or a tuple that holds one */
-static byte Def_Shared(PyObject *o) {
-	if (PyList_Check(o) || PyDict_Check(o)) {
-		return 1;
+/* the $name of the file into *out (a copy, Native_Free it): 0 and *out None when it has none */
+static byte Def_Lookup(scriptDef_t *m, const char *name, nativeVal_t *out) {
+	const nativeVal_t *d = m ? NObj_DictData(&m->vars) : NULL, *v = NULL;
+	Native_SetNone(out);
+	if (d) {
+		nativeVal_t key;
+		Native_SetStr(&key, name);
+		v = Native_DictGet(d, &key);
+		Native_Free(&key);
 	}
-	for (int i = 0; PyTuple_Check(o) && i < PyTuple_Size(o); i++) {
-		if (Def_Shared(PyTuple_GetItem(o, i))) {
-			return 1;
-		}
+	if (v) {
+		Native_Copy(out, v);
 	}
-	return 0;
+	return v != NULL;
 }
 
-/* a Python value of the $names or of a module as the native value of the runner (Native_Free it) */
-static void Def_FromPy(PyObject *o, nativeVal_t *v) {
-	if (!Def_Shared(o)) {
-		Native_Arg(o, v);
-		return;
+void Script_DefVar(nativeVal_t *vars, const char *name, const nativeVal_t *v) {
+	nativeVal_t key, x;
+	if (vars->type != NV_REF) {
+		NObj_NewDict(vars);
 	}
-	Native_SetObj(v, o);
-}
-
-/* the $name of the file (a borrowed reference), NULL when it has none */
-static PyObject *Def_Lookup(scriptDef_t *m, const char *name) {
-	return m && m->vars ? PyDict_GetItemString(m->vars, (char *)name) : NULL;
-}
-
-/* str() of the value added to b: 1, or 0 with the error of str. None, numbers and texts as Native_Repr writes them
- * (the texts of str of 1.5.2), any other value through its Python object (OBJLIB 7: str of an object) */
-static byte Def_Str(const nativeVal_t *v, nativeBuf_t *b) {
-	if (v->type == NV_NONE || v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG) {
-		Native_Repr(b, v, NR_STR);
-		return 1;
-	}
-	PyObject *o = Native_ToPy(v), *s = o ? PyObject_Str(o) : NULL;
-	if (s) {
-		Native_BufAdd(b, PyString_AsString(s), PyString_Size(s));
-	}
-	Py_XDECREF(s);
-	Py_XDECREF(o);
-	return s != NULL;
+	Native_SetStr(&key, name);
+	NObj_CallArg(v, &x);
+	NObj_SetItem(vars, &key, &x);
+	Native_Free(&x);
+	Native_Free(&key);
 }
 
 /* the text s with {Key} replaced by the language texts and $(name) by the value name of the file */
@@ -1060,13 +1040,9 @@ static const char *Def_Text(scriptDef_t *m, const char *s, char *out, int size) 
 				t = Script_Lang(key);
 			} else {
 				Str_Copy(key, s + 2, (int)(close - s) - 1);
-				PyObject *o = Def_Lookup(m, key);
 				nativeVal_t v;
-				Native_SetNone(&v);
-				if (o) {
-					Def_FromPy(o, &v);
-				}
-				if (o && Def_Str(&v, &str)) {
+				byte has = Def_Lookup(m, key, &v);
+				if (has && Mode_StrBuf(&v, &str)) {
 					t = str.p;
 				} else {
 					Con_Warnf("%s:%d: no value %s\n", m ? m->name : "", m ? m->line : 0, key);
@@ -1208,12 +1184,10 @@ static byte Def_Value(scriptDef_t *m, const char *t, byte quoted, nativeVal_t *o
 		char name[0x40];
 		const char *ops = Def_Ops(t + 1);
 		Str_Copy(name, t + 1, ops - t < (int)sizeof(name) ? (int)(ops - t) : (int)sizeof(name));
-		PyObject *v = Def_Lookup(m, name);
-		if (!v) {
+		if (!Def_Lookup(m, name, out)) {
 			Con_Warnf("%s:%d: no value %s\n", m->name, m->line, t);
 			return 0;
 		}
-		Def_FromPy(v, out);
 		return Def_Arith(m, out, ops);
 	}
 	if (!strcmp(t, "None")) {
@@ -1283,9 +1257,10 @@ static byte Def_Value(scriptDef_t *m, const char *t, byte quoted, nativeVal_t *o
 			return Def_Arith(m, out, ops);
 		}
 		/* a global of the level module whose function runs ($__module__) raises NameError like the script's read */
-		PyObject *own = Def_Lookup(m, "__module__");
-		PyObject *v = own && PyString_Check(own) && !strcmp(PyString_AsString(own), a) ? Script_Global(a, var) : Script_Attr(a, var);
-		if (!v) {
+		nativeVal_t own;
+		byte global = Def_Lookup(m, "__module__", &own) && own.type == NV_STR && !strcmp(Native_Text(&own), a);
+		Native_Free(&own);
+		if (!(global ? ModVar_GlobalVal(a, var, out) : ModVar_ModAttrVal(a, var, out))) {
 			if (m->stop) {
 				m->failed = 1;
 				return 0;
@@ -1294,8 +1269,6 @@ static byte Def_Value(scriptDef_t *m, const char *t, byte quoted, nativeVal_t *o
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);
 			return 0;
 		}
-		Def_FromPy(v, out);
-		Py_DECREF(v);
 		return Def_Arith(m, out, ops);
 	}
 	if (Def_Number(t, &d)) {
@@ -1317,7 +1290,7 @@ static const char *Def_Word(scriptDef_t *m, const char *t, byte quoted, char *ou
 		nativeVal_t v;
 		nativeBuf_t str;
 		Native_BufInit(&str);
-		if (Def_Value(m, t, 0, &v) && Def_Str(&v, &str)) {
+		if (Def_Value(m, t, 0, &v) && Mode_StrBuf(&v, &str)) {
 			Str_Copy(out, str.p, size);
 		}
 		Native_BufFree(&str);
@@ -1660,16 +1633,12 @@ static const char *const def_commands[] = { "style", "item", "use", "set", "lr",
  * text or a number; or a variable of the entity (TARGET_ENTITY) */
 static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char *value, byte quoted) {
 	if (target == TARGET_OBJECT) {
-		/* an attribute of a Python object, as `obj.var = value` of a script (a pack module's variable through the
-		 * registry; OBJLIB 7: the value as its Python object) */
+		/* an attribute of an object, as `obj.var = value` of a script (a pack module's variable through the
+		 * registry) */
 		nativeVal_t nv;
-		modVarRef_t mv;
 		byte got = Def_Value(m, value, quoted, &nv), bad = 0;
-		PyObject *v = NULL;
-		if (got && m->object && ModVar_Of(m->object, &mv)) {
-			bad = !ModVar_SetAttrVal(&mv, var, &nv);
-		} else if (got && (v = Native_ToPy(&nv)) != NULL && m->object) {
-			bad = ModVar_SetObjAttr(m->object, var, v) < 0;
+		if (got && m->hasObject) {
+			bad = !Mode_VSet(&m->object, var, &nv);
 		}
 		Native_Free(&nv);
 		if (bad) {
@@ -1685,7 +1654,6 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 				Native_ErrClear();
 			}
 		}
-		Py_XDECREF(v);
 		return;
 	}
 	if (target == TARGET_ENTITY) {
@@ -1732,20 +1700,9 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 	Native_Free(&v);
 }
 
-/* a $name of the file as a Python value (given away): into its own dict when the C function gave none */
-static void Def_Store(scriptDef_t *m, const char *name, PyObject *v) {
-	if (!m->vars) {
-		m->vars = m->ownVars = PyDict_New();
-	}
-	if (m->vars && v) {
-		PyDict_SetItemString(m->vars, (char *)name, v);
-	}
-	Py_XDECREF(v);
-}
-
-/* a $name of the file (OBJLIB 6: the dict keeps the value as its Python object) */
+/* a $name of the file: into its own dict when the C function gave none */
 static void Def_SetVar(scriptDef_t *m, const char *name, const nativeVal_t *v) {
-	Def_Store(m, name, Native_ToPy(v));
+	Script_DefVar(&m->vars, name, v);
 }
 
 /* let <name> <value> [value ...]: the sum of the values, or the value when there is one that is no number */
@@ -1850,11 +1807,9 @@ const char *Script_CurrentItem(void) {
 	return def_running ? def_running->item : "";
 }
 
-void Script_SetValue(const char *name, PyObject *value) {
+void Script_SetValue(const char *name, const nativeVal_t *value) {
 	if (def_running) {
-		Def_Store(def_running, name, value);
-	} else {
-		Py_XDECREF(value);
+		Def_SetVar(def_running, name, value);
 	}
 }
 
@@ -1921,14 +1876,12 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 		Def_Word(m, l->tok[1], l->quoted[1], m->entity, sizeof(m->entity));
 		m->target = TARGET_ENTITY;
 	} else if (!strcmp(cmd, "object") && l->n == 2) {
-		nativeVal_t v;
-		Py_XDECREF(m->object);
-		m->object = Def_Value(m, l->tok[1], l->quoted[1], &v) ? Native_ToPy(&v) : NULL;
-		Native_Free(&v);
+		Native_Free(&m->object);
+		m->hasObject = Def_Value(m, l->tok[1], l->quoted[1], &m->object);
 		m->target = TARGET_OBJECT;
 		/* a stopping file stops at an object it cannot get, as the script's obj.var = ... raises (a missing $value
 		 * is an unbound name there) */
-		if (!m->object && m->stop) {
+		if (!m->hasObject && m->stop) {
 			if (!Native_Failed()) {
 				Native_Raise(NE_NAME, "%s", l->tok[1][0] == '$' ? l->tok[1] + 1 : l->tok[1]);
 			}
@@ -1941,7 +1894,9 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 			return;
 		}
 		nativeVal_t v;
-		Script_SetVar(a, var, Def_Value(m, l->tok[2], l->quoted[2], &v) ? Native_ToPy(&v) : NULL);
+		if (!Def_Value(m, l->tok[2], l->quoted[2], &v) || !ModVar_SetModAttrVal(a, var, &v)) {
+			Native_ErrClear();
+		}
 		Native_Free(&v);
 	} else if (!strcmp(cmd, "item") && l->n >= 3) {
 		m->target = TARGET_ITEM;
@@ -2033,7 +1988,7 @@ static void Def_Run(scriptDef_t *m, byte header, const char *section) {
 }
 
 static byte Def_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
-	PyObject *vars, byte stop) {
+	const nativeVal_t *vars, byte stop) {
 	/* a file may run another from a call (CreateControlMenu): one buffer per level */
 	static char files[SCRIPT_MAX_NESTED][SCRIPT_MAX_FILE];
 	static int level;
@@ -2054,8 +2009,13 @@ static byte Def_RunFile(int id, const char *name, const char *section, const cha
 		Con_Warnf("Script: no %s\n", name);
 		return 0;
 	}
-	scriptDef_t m = { .id = id, .steps = steps, .vars = vars, .text = text, .section = section, .name = name,
-		.stop = stop };
+	scriptDef_t m = { .id = id, .steps = steps, .text = text, .section = section, .name = name, .stop = stop };
+	Native_SetNone(&m.object);
+	if (vars) {
+		Native_Copy(&m.vars, vars);
+	} else {
+		Native_SetNone(&m.vars);
+	}
 	scriptDef_t *outer = def_running;
 	def_running = &m;
 	level++;
@@ -2065,18 +2025,18 @@ static byte Def_RunFile(int id, const char *name, const char *section, const cha
 	if (m.depth && !m.failed) {
 		Con_Warnf("%s: if without end\n", name);
 	}
-	Py_XDECREF(m.ownVars);
-	Py_XDECREF(m.object);
+	Native_Free(&m.vars);
+	Native_Free(&m.object);
 	return !m.failed;
 }
 
 byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
-	PyObject *vars) {
+	const nativeVal_t *vars) {
 	return Def_RunFile(id, name, section, builtin, steps, vars, 0);
 }
 
 byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
-	PyObject *vars) {
+	const nativeVal_t *vars) {
 	if (!Def_RunFile(id, name, section, builtin, steps, vars, 1)) {
 		if (!Native_Failed()) {
 			Script_CheckSilent("Script_RunFileTry");

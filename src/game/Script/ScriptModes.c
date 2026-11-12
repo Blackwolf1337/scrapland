@@ -276,11 +276,6 @@ byte Mode_NextInSlot(cEntity **e) {
 	return ok;
 }
 
-PyObject *Mode_Handle(cEntity *e) {
-	PyObject *h = e ? PyEntity_New(e->name) : NULL;
-	return h ? h : Py_ReturnNone();
-}
-
 /* a getattr that gave NULL: the error of the call as the interpreter reports it when none is set */
 static byte Mode_AttrFail(void) {
 	if (!Native_Failed()) {
@@ -3656,28 +3651,22 @@ static void Mode_DefPairs(int n, va_list va, const char **names, const nativeVal
 	}
 }
 
-/* the dict of the $names (OBJLIB 6): a new reference, NULL with the error */
-static PyObject *Mode_DefDict(const char *const *names, const nativeVal_t *const *vals, int n) {
-	nativeVal_t d, k, v;
-	Native_SetEmpty(&d, NV_DICT);
+/* the dict object of the $names into *out (None for none) */
+static void Mode_DefDict(nativeVal_t *out, const char *const *names, const nativeVal_t *const *vals, int n) {
+	Native_SetNone(out);
 	for (int i = 0; i < n; i++) {
-		Native_SetStr(&k, names[i]);
-		Native_Copy(&v, vals[i]);
-		Native_DictSet(&d, &k, &v);
+		Script_DefVar(out, names[i], vals[i]);
 	}
-	PyObject *vars = Native_ToPy(&d);
-	Native_Free(&d);
-	return vars;
 }
 
-PyObject *Mode_DefVars(int n, ...) {
+void Mode_DefVars(nativeVal_t *out, int n, ...) {
 	const char *names[MODE_DEFVARS];
 	const nativeVal_t *vals[MODE_DEFVARS];
 	va_list va;
 	va_start(va, n);
 	Mode_DefPairs(n, va, names, vals);
 	va_end(va);
-	return Mode_DefDict(names, vals, n);
+	Mode_DefDict(out, names, vals, n);
 }
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
@@ -5477,14 +5466,11 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out) {
 
 byte Mode_DefRunV(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
 	byte stop, const char *const *names, const nativeVal_t *const *vals, int n) {
-	/* OBJLIB 6: the $names as the dict the runner takes (NULL for none); a dict that could not be made runs nothing */
-	PyObject *vars = n ? Mode_DefDict(names, vals, n) : NULL;
-	if (n && !vars) {
-		return 0;
-	}
-	byte ok = stop ? Script_RunFileTry(id, file, section, builtin, steps, vars) :
-		Script_RunFile(id, file, section, builtin, steps, vars);
-	Py_XDECREF(vars);
+	nativeVal_t vars;
+	Mode_DefDict(&vars, names, vals, n);
+	byte ok = stop ? Script_RunFileTry(id, file, section, builtin, steps, &vars) :
+		Script_RunFile(id, file, section, builtin, steps, &vars);
+	Native_Free(&vars);
 	return ok;
 }
 
@@ -5538,7 +5524,7 @@ long Mode_AsLong(const nativeVal_t *v) {
 }
 
 void Mode_SetValue(const char *name, const nativeVal_t *v) {
-	Script_SetValue(name, Native_ToPy(v));
+	Script_SetValue(name, v);
 }
 
 byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn) {
@@ -5681,14 +5667,15 @@ byte Mode_Int(const nativeVal_t *v, nativeVal_t *out) {
 }
 
 byte Mode_ReprV(const nativeVal_t *v, nativeVal_t *out) {
-	PyObject *o = Native_ToPy(v), *r = o ? PyObject_Repr(o) : NULL;
+	nativeBuf_t b;
 	Native_SetNone(out);
-	if (r) {
-		Native_SetText(out, PyString_AsString(r), PyString_Size(r));
+	Native_BufInit(&b);
+	byte ok = NObj_Repr(&b, v, NR_REPR);
+	if (ok) {
+		Native_SetText(out, b.p, b.len);
 	}
-	Py_XDECREF(r);
-	Py_XDECREF(o);
-	return r != NULL;
+	Native_BufFree(&b);
+	return ok;
 }
 
 byte Mode_PutFromMod(const char *module, const char *var, const char *src, const char *name) {

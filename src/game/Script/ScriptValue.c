@@ -697,13 +697,6 @@ PyObject *Script_Literal(PyObject *globals, const char *s) {
 	return v;
 }
 
-PyObject *Script_EvalMain(const char *text) {
-	PyObject *main = PyImport_AddModule("__main__");
-	PyObject *v = main ? Script_Literal(PyModule_GetDict(main), text) : NULL;
-	Native_ErrClear();
-	return v;
-}
-
 byte Script_IsName(const char *s, int len) {
 	static const char *const keywords[] = { "and", "assert", "break", "class", "continue", "def", "del", "elif", "else",
 		"except", "exec", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "not", "or", "pass",

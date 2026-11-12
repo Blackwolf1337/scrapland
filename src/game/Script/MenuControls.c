@@ -9,8 +9,7 @@
  * the script calls through its globals are called so through their refs (PORT_OWN: directly while the global holds
  * the port's function, else by name; PlaceMenuOption, SetOptionValue, ShowPadConfig, FillControllerMenu), and
  * Menu.YesNoMenu through the module (PORT_CALL, a failure printed); the scorer and engine calls the C made by name go
- * through their seams (SScorer.Get, Set and Add, Scrap.Get and Set, SInput.ResetToDefault); the .def runner
- * takes Python values (OBJLIB 6).
+ * through their seams (SScorer.Get, Set and Add, Scrap.Get and Set, SInput.ResetToDefault).
  */
 #include <string.h>
 
@@ -375,8 +374,7 @@ static const scriptStep_t controls_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of options.def with its $names: n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner takes
- * them as a dict) */
+/* a section of options.def with its $names: n pairs of a name and a value (Mode_DefRun) */
 #define Controls_RunMenu(id, section, n, ...) \
 	Mode_DefRun(id, OPTIONS_FILE, section, options_def, controls_steps, 0, n __VA_OPT__(, ) __VA_ARGS__)
 

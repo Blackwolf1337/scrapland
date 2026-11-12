@@ -26,7 +26,7 @@
 #include "scrap/timer.h"
 #include "game/Script/levels/Levels.h"
 
-/* ent.var = v as the port set it (Script_EntSet: the console line of the handle, no error) */
+/* ent.var = v as the port set it (the console line of the handle, no error) */
 static void Char_Set(const char *ent, const char *var, const nativeVal_t *v) {
 	if (!Native_EntSet(World_FindEntity(ent), ent, var, v)) {
 		Native_ErrClear();

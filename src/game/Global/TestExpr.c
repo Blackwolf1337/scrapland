@@ -1167,8 +1167,8 @@ void TcX_Counts(nativeBuf_t *out, byte reset) {
 
 /* ---- values ---- */
 
-/* OBJLIB 9b: the dict of __main__, the globals of the channel's top level (TcX_Run with no globals, TcX_Eval,
- * TcX_Statement, TcX_SetMain) */
+/* the dict of __main__, the key of the globals of the channel's top level (TcX_Run with no globals, TcX_Eval,
+ * TcX_Statement, TcX_SetMain): its variables are the registry's (ModVar_Keep) */
 static PyObject *TX_Main(void) {
 	PyObject *m = PyImport_AddModule("__main__");
 	return m ? PyModule_GetDict(m) : NULL;
@@ -1245,28 +1245,28 @@ static byte TX_Repr(const nativeVal_t *v, nativeRepr_t mode, nativeVal_t *out) {
 
 /* ---- names ---- */
 
-static PyObject *TP_Function(const char *name);
-static PyObject *TX_AttrTwin(const char *name, PyObject *builtin);
+#define TX_TWINS 12		/* the channel's functions: tx_natives[0] to [TX_TWINS - 1] */
+#define TX_OWN 16		/* then the twins of getattr, hasattr, setattr and delattr */
+
+static byte TP_Function(const char *name, int first, int last, nativeVal_t *out);
 
 /* a name the scopes of the line do not give: the builtins (getattr, setattr, hasattr and delattr as the twins that
- * reach the pack modules through the registry), the channel's functions, the modules (new reference) */
-static PyObject *TX_GlobalPy(const char *name) {
+ * reach the pack modules through the registry), the channel's functions, the modules: 1 with *out, 0 with the error */
+static byte TX_Global(const char *name, nativeVal_t *out) {
 	PyObject *b = PyImport_AddModule("__builtin__");
 	PyObject *v = b ? PyDict_GetItemString(PyModule_GetDict(b), (char *)name) : NULL;
-	PyObject *twin = v ? TX_AttrTwin(name, v) : NULL;
 
-	if (twin) {
-		return twin;
+	Native_SetNone(out);
+	if (v ? PyCFunction_Check(v) && TP_Function(name, TX_TWINS, TX_OWN, out) :
+		!strncmp(name, "tc_", 3) && TP_Function(name, 0, TX_TWINS, out)) {
+		return 1;
 	}
 	if (!v) {
-		if (!strncmp(name, "tc_", 3) && (v = TP_Function(name)) != NULL) {
-			return v;
-		}
 		v = Script_ModuleLoaded(name);
 	}
 	if (v) {
-		Py_INCREF(v);
-		return v;
+		TX_FromPy(v, out);
+		return 1;
 	}
 	v = Script_Module(name);
 	if (!v && Native_ErrIs(NE_IMPORT)) {
@@ -1274,17 +1274,17 @@ static PyObject *TX_GlobalPy(const char *name) {
 		Native_ErrClear();
 		Native_Raise(NE_NAME, "%s", name);
 	}
-	return v;
+	return TX_Result(v, out);
 }
 
 byte TcX_Name(const char *name, nativeVal_t *out) {
-	PyObject *v = PyDict_GetItemString(TX_Main(), (char *)name);
+	modVarRef_t mv;
 
-	if (v) {
-		TX_FromPy(v, out);
+	ModVar_RefOfDict(TX_Main(), &mv);
+	if (ModVar_GetVal(&mv, name, out)) {
 		return 1;
 	}
-	return TX_Result(TX_GlobalPy(name), out);
+	return TX_Global(name, out);
 }
 
 /* a name of the top level with a value of its own while TcX_Bind runs a line (before the globals) */
@@ -1335,7 +1335,7 @@ static byte X_Name(const char *name, tcScope *s, nativeVal_t *out) {
 			return 1;
 		}
 	}
-	return TX_Result(TX_GlobalPy(name), out);
+	return TX_Global(name, out);
 }
 
 /* name = v in the globals (a variable of a pack module through the registry); statements run at the top level only,
@@ -2066,32 +2066,6 @@ static byte TX_LambdaRun(tcFunc *f, nativeVal_t *a, int na, const nativeVal_t *p
 	return ok;
 }
 
-/* OBJLIB 7: the arguments of a call from Python as native values (TX_FromPy each; TX_ArgsFree them) */
-static nativeVal_t *TX_ArgsIn(PyObject *args, int *n) {
-	*n = args ? PyTuple_Size(args) : 0;
-	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(*n + 1) * sizeof(*a)));
-
-	for (int i = 0; i < *n; i++) {
-		TX_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
-	}
-	return a;
-}
-
-static void TX_ArgsFree(nativeVal_t *a, int n) {
-	for (int i = 0; i < n; i++) {
-		Native_Free(&a[i]);
-	}
-	Mem_Free(a);
-}
-
-/* OBJLIB 7: the result r of a native call (freed) as the Python object its caller gets, NULL when the call failed */
-static PyObject *TX_ResultOut(byte ok, nativeVal_t *r) {
-	PyObject *res = ok ? TX_ToPy(r) : NULL;
-
-	Native_Free(r);
-	return res;
-}
-
 /*
  * A function of the channel (a lambda, a function of the verbs) is a native callback function (NObj_NewCallback) on its
  * record, called natively by the evaluator, by the game (NObj_Call) and through the seams. Its __self__ is a 4-tuple:
@@ -2633,7 +2607,8 @@ static int TB_DelAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
-	/* OBJLIB 9: the type objects are Python's (a value by value names the type it has as a Python object) */
+	/* a native type object; OBJLIB 9: keyed by the type object of Python (a value by value names the type it has as a
+	 * Python object) */
 	PyTypeObject *t = NULL;
 
 	if (!TX_Arity("type", n, 1, 1)) {
@@ -2688,6 +2663,9 @@ static int TB_Type(nativeVal_t *a, int n, nativeVal_t *out) {
 				break;
 			case NO_MODULE:
 				t = &PyModule_Type;
+				break;
+			case NO_TYPE:
+				t = &PyType_Type;
 				break;
 			default:
 				t = !strcmp(NObj_TypeName(a), "function") ? &PyFunction_Type : &PyCFunction_Type;
@@ -3268,7 +3246,7 @@ static int TP_Clear(nativeVal_t *a, int n, nativeVal_t *out) {
 	return TX_Arity(NULL, n, 1, 1) && NObj_SetSlice(a, 0, NOBJ_END, NULL);
 }
 
-/* the native functions: the channel's own and the twins first (in the order of tx_defs), then the builtins */
+/* the native functions: the channel's own and the twins first, then the builtins */
 static const struct {
 	const char *name;
 	tcNative_t fn;
@@ -3312,88 +3290,40 @@ static const struct {
 	{ "id", TB_Id },
 };
 
-#define TX_OWN 16		/* the channel's functions and the twins: tx_defs */
 #define TX_NATIVES ((int)(sizeof(tx_natives) / sizeof(tx_natives[0])))
 
-/* OBJLIB 9: native function i called from Python: the arguments as native values, the result as a Python object */
-static PyObject *TX_Adapt(int i, PyObject *args) {
-	int n;
-	nativeVal_t *a = TX_ArgsIn(args, &n), r;
+/* the function object of the channel's function or twin i (its index the context) called from outside the evaluator
+ * (a port, the game, a native call): the arguments copied as the evaluator hands them over */
+static byte TX_OwnCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t *c = n ? Mem_Alloc((uint32_t)((size_t)n * sizeof(*c))) : NULL;
 
-	Native_SetNone(&r);
-	byte ok = tx_natives[i].fn(a, n, &r) > 0;
-	TX_ArgsFree(a, n);
-	PyObject *res = TX_ResultOut(ok, &r);
+	for (int k = 0; k < n; k++) {
+		Native_Copy(&c[k], &a[k]);
+		NObj_Share(&c[k]);
+	}
+	Native_SetNone(out);
+	byte ok = tx_natives[(intptr_t)ctx].fn(c, n, out) > 0;
+	for (int k = 0; k < n; k++) {
+		Native_Free(&c[k]);
+	}
+	Mem_Free(c);
 	if (!ok) {
+		Native_Free(out);
 		TX_NullResult();
 	}
-	return res;
+	return ok;
 }
 
-#define TX_ADAPTER(i) \
-	static PyObject *TX_Adapt##i(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return TX_Adapt(i, args); \
-	}
-TX_ADAPTER(0)
-TX_ADAPTER(1)
-TX_ADAPTER(2)
-TX_ADAPTER(3)
-TX_ADAPTER(4)
-TX_ADAPTER(5)
-TX_ADAPTER(6)
-TX_ADAPTER(7)
-TX_ADAPTER(8)
-TX_ADAPTER(9)
-TX_ADAPTER(10)
-TX_ADAPTER(11)
-TX_ADAPTER(12)
-TX_ADAPTER(13)
-TX_ADAPTER(14)
-TX_ADAPTER(15)
-
-static PyMethodDef tx_defs[TX_OWN] = {
-	{ "tc_sdn", TX_Adapt0, METH_VARARGS, NULL },
-	{ "tc_catch", TX_Adapt1, METH_VARARGS, NULL },
-	{ "tc_try", TX_Adapt2, METH_VARARGS, NULL },
-	{ "tc_finally", TX_Adapt3, METH_VARARGS, NULL },
-	{ "tc_swap", TX_Adapt4, METH_VARARGS, NULL },
-	{ "tc_obj", TX_Adapt5, METH_VARARGS, NULL },
-	{ "tc_class", TX_Adapt6, METH_VARARGS, NULL },
-	{ "tc_walk", TX_Adapt7, METH_VARARGS, NULL },
-	{ "tc_sorted", TX_Adapt8, METH_VARARGS, NULL },
-	{ "tc_set", TX_Adapt9, METH_VARARGS, NULL },
-	{ "tc_del", TX_Adapt10, METH_VARARGS, NULL },
-	{ "tc_clear", TX_Adapt11, METH_VARARGS, NULL },
-	{ "getattr", TX_Adapt12, METH_VARARGS, NULL },
-	{ "hasattr", TX_Adapt13, METH_VARARGS, NULL },
-	{ "setattr", TX_Adapt14, METH_VARARGS, NULL },
-	{ "delattr", TX_Adapt15, METH_VARARGS, NULL },
-};
-
-/* a new function object of the channel's function name, NULL (no error) when there is none; nothing is kept between
- * lines (the interpreter's objects go with every level load) */
-static PyObject *TP_Function(const char *name) {
-	for (int i = 0; i < 12; i++) {
-		if (!strcmp(tx_defs[i].ml_name, name)) {
-			return PyCFunction_New(&tx_defs[i], NULL);
+/* the function object of the channel's function name among tx_natives[first] to [last - 1] (a C function: repr
+ * "<built-in function name>"), made at each look up: 1 with *out, 0 (no error) when there is none */
+static byte TP_Function(const char *name, int first, int last, nativeVal_t *out) {
+	for (int i = first; i < last; i++) {
+		if (!strcmp(tx_natives[i].name, name)) {
+			NObj_NewCallback(out, tx_natives[i].name, TX_OwnCall, (void *)(intptr_t)i, NULL, 0);
+			return 1;
 		}
 	}
-	return NULL;
-}
-
-/* the twin of the builtin getattr, hasattr, setattr or delattr (with its doc), NULL for every other name */
-static PyObject *TX_AttrTwin(const char *name, PyObject *builtin) {
-	if (!PyCFunction_Check(builtin)) {
-		return NULL;
-	}
-	for (int i = 12; i < TX_OWN; i++) {
-		if (!strcmp(name, tx_defs[i].ml_name)) {
-			tx_defs[i].ml_doc = ((PyCFunctionObject *)builtin)->m_ml->ml_doc;
-			return PyCFunction_New(&tx_defs[i], NULL);
-		}
-	}
-	return NULL;
+	return 0;
 }
 
 static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
@@ -3427,13 +3357,12 @@ static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVa
 		}
 		return ok;
 	}
-	if (!py || !PyCFunction_Check(py)) {
+	if (NObj_CallbackOf(f, &call, &ctx) && call == TX_OwnCall) {
+		i = (int)(intptr_t)ctx;
+	} else if (!py || !PyCFunction_Check(py)) {
 		return -1;
-	}
-	PyCFunctionObject *cf = (PyCFunctionObject *)py;
-	if (cf->m_ml >= tx_defs && cf->m_ml < tx_defs + TX_OWN) {
-		i = (int)(cf->m_ml - tx_defs);
-	} else if (!cf->m_self) {
+	} else if (!((PyCFunctionObject *)py)->m_self) {
+		PyCFunctionObject *cf = (PyCFunctionObject *)py;
 		/* a builtin of that name that is still the builtin's own function object */
 		PyObject *b = PyImport_AddModule("__builtin__");
 		PyObject *own = b ? PyDict_GetItemString(PyModule_GetDict(b), cf->m_ml->ml_name) : NULL;
