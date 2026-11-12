@@ -7,8 +7,8 @@
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values and call the engine's action
  * classes in C. The module variables are read where the port read them (as numbers, Script_GetFloat, or by the
- * membership of a name, errors dropped) and written through at once (OBJLIB 5: the character scripts, Scene and
- * CharAct read and write them in the dict); DazedChars is changed in place. Every function has a native entry that
+ * membership of a name, errors dropped) and written through at once (the character scripts, Scene and
+ * CharAct read and write them); DazedChars is changed in place. Every function has a native entry that
  * parses its arguments with the formats of the port (Mode_Parse; the keyword functions MODE_KWT with the script's
  * names).
  */

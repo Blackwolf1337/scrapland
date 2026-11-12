@@ -6,16 +6,16 @@
  * module, its code (the save variable StdShipAIProfile) stays in the script.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * variables are read where the script reads them as its globals and StdShips and AIProf changed in place (OBJLIB 5:
+ * variables are read where the script reads them as its globals and StdShips and AIProf changed in place (
  * Traffic, the level files, the police and the cases read them and put profiles into AIProf). The profile objects (a
  * cShipAI instance), the ships (handle values) and the hooks stay Python values (OBJLIB 7). Vehicles, OutMap, Parking
  * and Traffic are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else by
  * name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
- * global: a mission or a case may replace one). The class cShipAI is called as the module's variable (OBJLIB 5: a class
- * the .mod defines, no port function), the scheduler takes the entry of the global InitMercs (Port_Scheduled), SAI and
- * SWeap go through their refs (stage 7) except SAI.EnableAIVehicle (by name, OBJLIB 7: see below), Scrap.GetEntity,
- * CreateEntity, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The .def runner takes its $names
- * as a dict (OBJLIB 6).
+ * global: a mission or a case may replace one). The class cShipAI is called as the module's variable (OBJLIB 5 (9c: a
+ * class the .mod defines, no port function)), the scheduler takes the entry of the global InitMercs (Port_Scheduled),
+ * SAI and SWeap go through their refs (stage 7) except SAI.EnableAIVehicle (by name, OBJLIB 7: see below),
+ * Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The .def runner
+ * takes its $names as a dict (OBJLIB 6).
  */
 #include <string.h>
 
@@ -216,7 +216,7 @@ static byte Npc_GetIAProfN(const nativeVal_t *type, nativeVal_t *out) {
 	if (known) {
 		return Mode_Done(&t, Mode_Sub(prof, type, out));
 	}
-	/* OBJLIB 5: the class cShipAI, a variable of the module (the class of the .mod, no port function) */
+	/* OBJLIB 5 (9c): the class cShipAI, a variable of the module (the class of the .mod, no port function) */
 	if (!LvN_GObj(NPC, "cShipAI", cls) || !Mode_CallArgs(cls, out, NULL, 0) || !Mode_VSet(out, "Ship", type)) {
 		return Mode_Done(&t, 0);
 	}

@@ -4,7 +4,7 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the state of the keys menu is the struct controls, the functions call the
  * engine in C and work on C values; the PyMethodDef entries are adapters. The pad menu keeps its state in the module
- * variables options and currentActionSet as the script (OBJLIB 5: read where the C read them, written at once, the
+ * variables options and currentActionSet as the script (read where the C read them, written at once, the
  * option rows of optionsChar and optionsShip put into options as the objects they are). The helpers of the pad menu
  * the script calls through its globals are called so through their refs (PORT_OWN: directly while the global holds
  * the port's function, else by name; PlaceMenuOption, SetOptionValue, ShowPadConfig, FillControllerMenu), and

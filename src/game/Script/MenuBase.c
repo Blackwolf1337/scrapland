@@ -9,7 +9,7 @@
  * A menu that holds handles or other objects is made native item by item (Mode_ElemsIn), the objects stay NV_OBJ. The
  * variables of other modules are read where the C read them (Init.inMainMenu, isShipEdit, isDemo, Menu.isXbox,
  * TitleBarYOff, BackButtonYStart, QuestionMenuYStart, backFunc, Scorer.MarginH and MarginV), Menu.currentSoundPitch
- * and VerticalMenuLastControl are written at once (OBJLIB 5). Menu.InitMenuSys is called through its ref (PORT_CALL:
+ * and VerticalMenuLastControl are written at once. Menu.InitMenuSys is called through its ref (PORT_CALL:
  * directly while the attribute holds the port's function, else by name); ShowWarning schedules itself, the scheduler
  * takes its entry (stage 4: Mode_SchedAt, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
  */

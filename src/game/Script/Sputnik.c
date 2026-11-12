@@ -8,16 +8,16 @@
  * LastPos, LastAng, LastHangar, UseParams (the arguments of Parking.UseShip after the suck animation) and Angulus.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the variables where the script
- * reads them as its globals; a change is written to the module at once (OBJLIB 5). Sputnik, the player and the
+ * reads them as its globals; a change is written to the module at once. Sputnik, the player and the
  * ships of Parking (PlayerShip, DtritusPlate, read as its attributes at every use) are handle values (OBJLIB 7).
  * Scrap.GetEntity, CreateEntity, SLogic.SetOnFloor, SInput.SetActionSet, SScorer.Fade, SetCinema and Scrap.Set go
  * through their seams (OBJLIB 7: the cases record or swap them); the vector math, the language texts, the save
  * variable and the camera name are C.
  *
  * Direct calls (stage 3): Parking, Menu, CharScorer, SputnikInterface and the module's own Assign (through its
- * global, as the script called it) through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). apply of
+ * global, as the script called it) through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5 (9c)). apply of
  * Parking.UseShip on the kept UseParams takes the entry while the attribute is the port's own function (stage 4:
- * MODE_CBAPPLYSEQV), EndOfSelection is put into SputnikInterface as the object it is (OBJLIB 5).
+ * MODE_CBAPPLYSEQV), EndOfSelection is put into SputnikInterface as the object it is (OBJLIB 5 (9c)).
  */
 #include <string.h>
 

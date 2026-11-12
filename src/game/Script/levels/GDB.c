@@ -9,22 +9,22 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h) and call the engine in C
  * (save variables, Scrap.Get, the alarm, the entity lists, the dummy search, the scorer items, the vector math). The
  * variables of the modules are read where the script reads them and written through at once; the lists of bishops are
- * changed in place on the objects of the modules (OBJLIB 5). The bishops, the restore point and the matrix are handle
+ * changed in place on the objects of the modules. The bishops, the restore point and the matrix are handle
  * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
- * Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.SetAlarm, Scrap.UsrEntity, Scrap.Rand (fc-r7d-gd2), Scrap.CreateEntity
- * (fr6.py), Scrap.Set, SScorer.Set, SScorer.Fade, Scrap.Preload3DObject, Scrap.GetAlarm and SLogic.SetOnFloor;
- * SAI.SetStateVehicle goes through its ref (stage 7); the profiles of the bishops are VehiclesNPC.cShipAI instances
- * (OBJLIB 7).
+ * Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.SetAlarm, Scrap.UsrEntity, Scrap.Rand (fc-r7d-gd2),
+ * Scrap.CreateEntity (fr6.py), Scrap.Set, SScorer.Set, SScorer.Fade, Scrap.Preload3DObject, Scrap.GetAlarm and
+ * SLogic.SetOnFloor; SAI.SetStateVehicle goes through its ref (stage 7); the profiles of the bishops are
+ * VehiclesNPC.cShipAI instances (OBJLIB 7).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, RaceMaker, VehiclesNPC, OutPolice,
  * Elevator, Items, Scorer through Mode_BarDefaults), the keyword call of Speech.ForceRemoteCom and the own functions of
  * the modules (Map's attributes, the globals of the missions) go through their refs (PORT_CALL, PORT_LCALL, PORT_LOWN,
- * LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there, OBJLIB 5). By
+ * LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there, OBJLIB 5 (9c)). By
  * name: the sections of the .def files (PreSetNextMission of Mission_IntoTheGDB, SetNextMission of
  * Mission_ReinsertOwnMatrix, MapMatrix.RestoreMatrix; OBJLIB 6) and __builtin__.range of a count that is no int
  * (OBJLIB 9); the functions given to the scheduler and to the entities take the entry of a port's own function (stage
  * 4: Port_Scheduled, PYF_ENTRY; the bound method e.Del stays Python, OBJLIB 7), the ones given to Speech, Parking and
- * Elevator as callbacks are values of their variables (OBJLIB 5).
+ * Elevator as callbacks are values of their variables (OBJLIB 5 (9c)).
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -574,7 +574,7 @@ static byte Into_InitMission(void) {
 	if (!Mode_Import("Parking")) {
 		return 0;
 	}
-	/* OBJLIB 5: the list object of the module, as the script passes it (P: the entry keeps it as the targets) */
+	/* OBJLIB 5 (7e: "P" hands the Python list to the entry): the list object of the module, kept as the targets */
 	nativeVal_t bishops;
 	byte ok = Mode_RefG(IG, "bishops", &bishops) && PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "P", Native_PyOf(&bishops));
 	Native_Free(&bishops);
@@ -1210,7 +1210,7 @@ static byte Re_PreSetNextMission(const char *module, byte second) {
 		return 0;
 	}
 	/* OBJLIB 6: MapMatrix.RestoreMatrix is the scene of the data (data/levels/gdb/mapmatrix.def); ShowDTMessage a
-	 * function of mission_reinsertownmatrix2.def, passed as the object (OBJLIB 5) */
+	 * function of mission_reinsertownmatrix2.def, passed as the object (OBJLIB 5 (9c)) */
 	if (!second) {
 		return LV_CALL("MapMatrix", "RestoreMatrix", NULL, "");
 	}

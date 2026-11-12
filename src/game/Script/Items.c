@@ -9,10 +9,10 @@
  *
  * Native C (docs/objlib-plan.md, stages 2 and 3): the functions call the engine in C and work on C values; the
  * PyMethodDef entries are adapters. The variables are read where the script reads them as its globals; Upgrades is
- * changed in place on the dict object of the module (Mode_DictPut, OBJLIB 5), Hints stays a Python object (its items
- * hold the functions of the missions, OBJLIB 5 and 7). The module's own functions that the script calls as its
+ * changed in place on the dict object of the module (Mode_DictPut), Hints stays a Python object (its items hold the
+ * functions of the missions, OBJLIB 5 (9c) and 7). The module's own functions that the script calls as its
  * globals (CreateBox, InitResources, BrowseItemPos, SetInteractiveObjOnFloor) go through their refs (PORT_OWN);
- * LastClientCreate and the hook into Net are variables (OBJLIB 5), called through the entries of port functions as
+ * LastClientCreate and the hook into Net are variables (OBJLIB 5 (9c)), called through the entries of port functions as
  * the functions of the hints values (Mode_CallArgs, MODE_CBGLOBAL); the boxes are entity handles where they leave the
  * module (OBJLIB 7).
  */
@@ -397,7 +397,7 @@ static byte It_ClientCreate(const nativeVal_t *name, const nativeVal_t *res) {
 	byte box = head.type == NV_STR && !strcmp(Native_Text(&head), "Box:");
 	Native_Free(&head);
 	if (!box) {
-		/* OBJLIB 5: the creation that was in Net before, a variable of the module called as the value it holds */
+		/* OBJLIB 5 (9c): the creation that was in Net before, a variable of the module called as the value it holds */
 		return MODE_CBGLOBAL("Items", "LastClientCreate", NULL, "vv", name, res);
 	}
 	Native_SetInt(&zero, 0);
@@ -533,7 +533,7 @@ static byte It_Init(void) {
 	if (!Mode_Import("Net")) {
 		return 0;
 	}
-	/* the module's functions as its globals; OBJLIB 5: Net's ClientCreate as a value of both modules */
+	/* the module's functions as its globals; OBJLIB 5 (9c): Net's ClientCreate as a value of both modules */
 	if (!PORT_OWN(Items, InitResources, NULL, "")) {
 		return 0;
 	}
@@ -560,8 +560,8 @@ MODE_FNANY(Items, Init, It_Init())
 
 /* ---- hints and interactive objects ---- */
 
-/* hints[item][i] of the Hints dict object (OBJLIB 5 and 7: its items hold functions) as a value. The dict stays the
- * Python object in ShowHint until the entity handles are native (7c: the deleted key and the handle's entity) */
+/* hints[item][i] of the Hints dict object (OBJLIB 5 (9c) and 7: its items hold functions) as a value. The dict stays
+ * the Python object in ShowHint until the entity handles are native (7c: the deleted key and the handle's entity) */
 static byte It_HintItem(PyObject *hints, const nativeVal_t *item, int i, nativeVal_t *out) {
 	PyObject *k = Native_ToPy(item), *h = k ? PyObject_GetItem(hints, k) : NULL, *v = h ? Script_Index(h, i) : NULL;
 	byte ok = v && Native_Arg(v, out);

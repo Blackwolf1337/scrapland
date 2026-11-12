@@ -11,10 +11,10 @@
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
  * module where the script reads them (a missing one is the NameError of the script) and write them back at once,
- * the dicts and lists in place (OBJLIB 5). The spawn points are instances of the Python class CharSpawnPos and the
- * characters handle values (OBJLIB 5, 7): their attributes are read and set the Python way, and the lists of
- * functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read again on
- * each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
+ * the dicts and lists in place. The spawn points are instances of the Python class CharSpawnPos and the
+ * characters handle values (OBJLIB 5 (9c: instances), 7): their attributes are read and set the Python way, and the
+ * lists of functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read
+ * again on each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
  * SLogic.SetOnFloor, SScorer.SetMsgText, Scrap.GetLangEntries and the scheduler go through their seams (OBJLIB 7); the
  * save variables, the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice,
  * DTritusDesktop, CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly
@@ -188,7 +188,7 @@ static void Npc_Insert0(nativeVal_t *lst, const nativeVal_t *v) {
 	Native_Copy(&lst->items[0], v);
 }
 
-/* CharRes[key] (the global) as the object it is (OBJLIB 5: the spawn points are instances of the Python class) */
+/* CharRes[key] (the global) as the object it is (OBJLIB 5 (9c: the spawn points are instances of the Python class)) */
 static byte Npc_Res(const nativeVal_t *key, nativeVal_t *out) {
 	nativeVal_t res, o = { 0 };
 	Native_SetNone(out);

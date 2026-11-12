@@ -8,21 +8,22 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of both
  * modules are read where the script reads them and written through at once; ShipMaker.StdShips is changed in place,
- * the function values put into ShipMaker, Chars, Parking, Traffic and Menu are the objects of the module (OBJLIB 5).
- * The boss, its shield and the asteroids are handle values (OBJLIB 7). The alarm, the save variables, the regeneration,
- * the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set, Scrap.SetAlarm,
- * Scrap.SetLockAlarm, Scrap.Rand, Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs, Scrap.AddScheduledFunc,
- * Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams (OBJLIB 7: cases record them).
- * The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute) and SAI.SetStateVehicle go through
- * their refs (stage 7: the native entries, a function a case put there by name).
+ * the function values put into ShipMaker, Chars, Parking, Traffic and Menu are the objects of the module (OBJLIB 5
+ * (9c)). The boss, its shield and the asteroids are handle values (OBJLIB 7). The alarm, the save variables, the
+ * regeneration, the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set,
+ * Scrap.SetAlarm, Scrap.SetLockAlarm, Scrap.Rand, Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs,
+ * Scrap.AddScheduledFunc, Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams
+ * (OBJLIB 7: cases record them). The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute)
+ * and SAI.SetStateVehicle go through their refs (stage 7: the native entries, a function a case put there by
+ * name).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, Vehicles, VehiclesNPC, ShipMaker, Traffic,
  * Elevator, Scorer, Menu, SaveGame) and the own functions of both modules (their globals) go through their refs
  * (PORT_CALL, PORT_LOWN, LV_SCORERG; the seam takes the call by name when a mission or a case has put something else
- * there, OBJLIB 5). By name: PrevCreateStdShips (a variable holding ShipMaker's own function; OBJLIB 5). The functions
- * given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the OnDeath texts) take the entry of a port's
- * own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to ShipMaker, Chars, Parking and Traffic are
- * values of their variables (OBJLIB 5).
+ * there, OBJLIB 5 (9c)). By name: PrevCreateStdShips (a variable holding ShipMaker's own function; OBJLIB 5 (9c)). The
+ * functions given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the OnDeath texts) take the entry of
+ * a port's own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to ShipMaker, Chars, Parking and Traffic are
+ * values of their variables (OBJLIB 5 (9c)).
  */
 #include <string.h>
 
@@ -114,7 +115,7 @@ static byte Ff_FakeShips(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t ship, key;
 	(void)a;
 	(void)out;
-	/* OBJLIB 5: PrevCreateStdShips is a variable that holds ShipMaker's function (InitStatus), called by name */
+	/* OBJLIB 5 (9c): PrevCreateStdShips is a variable that holds ShipMaker's function (InitStatus), called by name */
 	if (!Mode_Import("ShipMaker") || !LV_OWN(FF, "PrevCreateStdShips", NULL, "")) {
 		return 0;
 	}
@@ -133,7 +134,7 @@ static byte Ff_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("ShipMaker")) {
 		return 0;
 	}
-	/* OBJLIB 5: the function object of ShipMaker, kept as the object it is */
+	/* OBJLIB 5 (9c): the function object of ShipMaker, kept as the object it is */
 	return Mode_PutFromMod(FF, "PrevCreateStdShips", "ShipMaker", "CreateStdShips") &&
 		LvN_ModSetGlobal("ShipMaker", "CreateStdShips", FF, "FakeShips");
 }

@@ -5,12 +5,12 @@
  * variables of the module.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters.
- * rebuildCost and EndSputnikCallBack are read where the script reads them and the callback cleared at once (OBJLIB 5).
+ * rebuildCost and EndSputnikCallBack are read where the script reads them and the callback cleared at once.
  * The variables of ShipEdit and HangarTab (editedShips with the ship handles, destroyedShips, currentHangar,
- * fromSputnik) are read and set as their attributes, destroyedShips changed in place (OBJLIB 5 and 7). Menu,
+ * fromSputnik) are read and set as their attributes, destroyedShips changed in place (OBJLIB 7). Menu,
  * ShipEdit, HangarTab, SaveGame and the module's own functions (through its attributes, as the script called them) go
- * through their refs (PORT_CALL, the seam OBJLIB 5); the scorer calls too (stage 7), EndSputnikCallBack is
- * called as a value (OBJLIB 5); SetMoney goes through its seam (fc-r7b-jy records it, OBJLIB 7).
+ * through their refs (PORT_CALL, the seam OBJLIB 5 (9c)); the scorer calls too (stage 7), EndSputnikCallBack is
+ * called as a value (OBJLIB 5 (9c)); SetMoney goes through its seam (fc-r7b-jy records it, OBJLIB 7).
  */
 #include "scrap/app.h"
 #include "scrap/script.h"

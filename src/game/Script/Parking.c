@@ -15,17 +15,18 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters with
  * the argument formats of the C port. The variables of the module are read where the script reads them as its globals
- * and written at once (OBJLIB 5: the missions, Doors, the levels and the cases read and set them); AllShips is changed
+ * and written at once (the missions, Doors, the levels and the cases read and set them); AllShips is changed
  * in place. The ships, cameras, boxes and the plate are handle values (OBJLIB 7). The module's own functions the script
  * calls as its globals (Parking's and Accelerator's) and the other ports (ShipMaker, Sputnik, Menu, RacerScorer,
  * CharScorer, Chars, ShipEdit, Vehicles, SaveGame, Speech, RaceMaker) go through their refs (PORT_OWN, PORT_CALL: the
- * seam, OBJLIB 5; a mission or a case may replace one), and so do Scrap.SetCam, SwitchMissionArrows, AddParkingZone,
- * CreateEntityList and EntityListGet (stage 7); string.split of other values than texts stays by name (OBJLIB 7).
- * Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch, NextDummySearch, GetAlarm,
- * SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc, SInput.SetActionSet,
- * SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor, SAct.GetAction and SetAct go
- * through their seams (OBJLIB 7: the cases record or swap them). The evals of the save texts read literals with the
- * native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB 6).
+ * seam, OBJLIB 5 (9c); a mission or a case may replace one), and so do Scrap.SetCam, SwitchMissionArrows,
+ * AddParkingZone, CreateEntityList and EntityListGet (stage 7); string.split of other values than texts stays by name
+ * (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
+ * NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc,
+ * SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor,
+ * SAct.GetAction and SetAct go through their seams (OBJLIB 7: the cases record or swap them). The evals of the
+ * save texts read literals with the native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB
+ * 6).
  */
 #include <string.h>
 
@@ -1023,8 +1024,8 @@ static byte Pk_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
 	return s->type == NV_STR ? Native_Split(s, sep, out) : PORT_CALL(string, split, out, "vs", s, sep);
 }
 
-/* AllShips in upper case without the mercenaries' ships, the list changed in place (OBJLIB 5: other modules and the
- * cases hold it) */
+/* AllShips in upper case without the mercenaries' ships, the list changed in place (other modules and the cases
+ * hold it) */
 static byte Pk_AllShips(void) {
 	static const char *const mercs[] = { "SMERC1", "SMERC2", "SMERC3" };
 	nativeVal_t keys = { 0 }, it = { 0 }, up = { 0 }, k, s;

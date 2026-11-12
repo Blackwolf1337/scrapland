@@ -6,9 +6,9 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of Map are
  * read where the script reads them and written through at once, CreditsText.EndOfCredits gets the function object of
- * Map (OBJLIB 5). The cameras are handle values (OBJLIB 7). The engine variables, the dummy search, the camera, the
- * action set, the vector math and the random numbers are C; Scrap.Set, Scrap.CreateEntity, the SAct class and action
- * functions, SSound.SetMusic and Scrap.AddScheduledFunc go through their seams (OBJLIB 7). Scrap.SetDebrisSys,
+ * Map (OBJLIB 5 (9c)). The cameras are handle values (OBJLIB 7). The engine variables, the dummy search, the camera,
+ * the action set, the vector math and the random numbers are C; Scrap.Set, Scrap.CreateEntity, the SAct class and
+ * action functions, SSound.SetMusic and Scrap.AddScheduledFunc go through their seams (OBJLIB 7). Scrap.SetDebrisSys,
  * SetDebrisValue, DropDebris and MusicPlayer (fc-lvl-menu swaps the last three) and the loading of CreditsText
  * (Scrap.OpenPack, PreloadLibrary, ClosePack) go through their refs (stage 7).
  *
@@ -167,7 +167,7 @@ static byte Menu_ShowCredits(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("CreditsText") || !LvN_PutI(MAP, "CreditsCtr", 0) || !LvN_GObj(MAP, "NextCredit", &next)) {
 		return 0;
 	}
-	/* OBJLIB 5: the function object of Map */
+	/* OBJLIB 5 (9c): the function object of Map */
 	LvN_SetVar("CreditsText", "EndOfCredits", &next);
 	Native_Free(&next);
 	return PORT_LOWN(Map, NextCredit, NULL, "") && Mode_GVarSetS("EscapeEvent", "Map.EndCredits") &&

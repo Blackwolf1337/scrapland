@@ -1,8 +1,8 @@
 /*
  * Direct calls between the script ports (include/scrap/scriptnative.h, stage 3 of docs/objlib-plan.md): the seam
- * that tells whether a module attribute is still the port's own C function (OBJLIB 5), the call of its native entry
- * with the arguments packed as the adapter would get them, and the old call through Python when something else is
- * there (OBJLIB 7, with SCRAP_PORT_SLOW=1 forcing it and the counters of each call site for the test channel).
+ * that tells whether a module attribute is still the port's own C function (OBJLIB 5 (9c)), the call of its native
+ * entry with the arguments packed as the adapter would get them, and the old call through Python when something else
+ * is there (OBJLIB 7, with SCRAP_PORT_SLOW=1 forcing it and the counters of each call site for the test channel).
  * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable), the callbacks bound
  * to port functions (Port_Callback, cPy_Function PYF_ENTRY), the functions given to the scheduler (Port_Scheduled,
  * cScheduledFunc), the call of such a bound site (Port_BoundCall), and the calls of values that hold port functions

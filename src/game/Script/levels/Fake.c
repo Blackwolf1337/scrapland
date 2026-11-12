@@ -6,17 +6,17 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of Map are
  * read where the script reads them and written through at once, TrafficList is changed in place, the lists of InTraffic
- * and Scene.EndOfSceneCallback get new values as the script sets them (OBJLIB 5). Berto's ship and the traffic ships are
- * handle values, TrafficList holds them and is looped as a list of handle values (OBJLIB 7). The camera, the engine variables, the
- * save variables, string.split and the eval of the event name are C; Scrap.CreateEntity and Scrap.Set go through their
- * seams (OBJLIB 7).
+ * and Scene.EndOfSceneCallback get new values as the script sets them. Berto's ship and the traffic ships are
+ * handle values, TrafficList holds them and is looped as a list of handle values (OBJLIB 7). The camera, the engine
+ * variables, the save variables, string.split and the eval of the event name are C; Scrap.CreateEntity and Scrap.Set
+ * go through their seams (OBJLIB 7).
  *
  * Direct calls (stage 3): the functions of the other ports (InTraffic, Scene, Fx, CreditsText, SaveGame, MissionsFuncs)
  * and the own functions of Map (CreateFakeBertoShip, LoadFake2Scene) go through their refs (PORT_CALL, PORT_LOWN; the
- * seam takes the call by name when a case has put something else there, OBJLIB 5). By name: the sections of map.def
- * (LoadFake0Scene, LoadFake1Scene, PlayFake0; OBJLIB 6) and the call table of the flight scene, whose "Module.Func"
- * names the scene recorders of the cases see (Mode_Calls: the function there, a port's through its entry);
- * Scene.EndOfSceneCallback and the event functions of the scene are values (OBJLIB 5).
+ * seam takes the call by name when a case has put something else there, OBJLIB 5 (9c)). By name: the sections of
+ * map.def (LoadFake0Scene, LoadFake1Scene, PlayFake0; OBJLIB 6) and the call table of the flight scene, whose
+ * "Module.Func" names the scene recorders of the cases see (Mode_Calls: the function there, a port's through its
+ * entry); Scene.EndOfSceneCallback and the event functions of the scene are values (OBJLIB 5 (9c)).
  */
 #include <string.h>
 
@@ -228,7 +228,7 @@ static byte Fk_Traffic(const nativeVal_t *nam, const nativeVal_t *ctr) {
 		!LvN_SetI(v, "Traf_Active", 1)) {
 		return Mode_Done(&t, 0);
 	}
-	/* TrafficList.append(nam, v): the append of 1.5.2 with two arguments appends the pair, in place (OBJLIB 5) */
+	/* TrafficList.append(nam, v): the append of 1.5.2 with two arguments appends the pair, in place */
 	return Mode_Done(&t, Mode_VarCall2(MAP, "TrafficList", 1, "append", nam, v));
 }
 

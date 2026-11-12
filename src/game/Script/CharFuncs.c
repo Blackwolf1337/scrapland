@@ -7,9 +7,8 @@
  *
  * The functions are native C (docs/objlib-plan.md, stage 2): they work on C texts and values and on the entity
  * variables in C. The module variables are read where the port read them (Script_GetInt, Script_GetFloat and
- * Script_GetString forms, errors dropped) and written through at once with the port's dropped errors (OBJLIB 5).
- * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity
- * (OBJLIB 5). The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through
+ * Script_GetString forms, errors dropped) and written through at once with the port's dropped errors.
+ * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity. The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through
  * their refs (PORT_CALL, PORT_ASK: directly while the attribute holds the port's function, else by name); the engine
  * functions the port called by name go through their seams (OBJLIB 7: SetMsgText, CreateEntity, Scrap.Set,
  * SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
@@ -365,7 +364,7 @@ PyMethodDef g_SputnikJunkyardFuncs[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
-/* ---- CharsNPC.optionsList: the options of the talk that runs (OBJLIB 5: the list object itself) ---- */
+/* ---- CharsNPC.optionsList: the options of the talk that runs (the list object itself) ---- */
 
 /* CharsNPC.optionsList as a value (its AttributeError when it is not there) */
 static byte Char_Options(nativeVal_t *out) {

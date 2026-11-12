@@ -11,14 +11,14 @@
  * globals, because the level scripts set EndOfSceneCallback and read the rest.
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
- * script reads them and write them back at once, the lists of Actors and LocalActors changed in place (OBJLIB 5).
+ * script reads them and write them back at once, the lists of Actors and LocalActors changed in place.
  * The entities are handle values, the functions of the module are called through their refs as globals (PORT_OWN:
  * a level may replace one) and the callback as the value it holds. Scrap.Set, GetEntity, UsrEntity, CreateEntity,
  * ConsoleError, OpenPack, ClosePack, GetAlarm, the dummy search and the scheduler, the SAct calls, the voices,
  * SScorer.SetLabelText, SetMsgText, SetSpeechText and SetSpeechCallback and SInput.SetActionSet go through their seams
- * (OBJLIB 7: the cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof go through refs.
- * The lines the game execs (the generic lines of a scene, the sound lines of SetDefSounds and Load) go through the
- * exec reader on native values (ScriptExec.c).
+ * (OBJLIB 7: the cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof go through
+ * refs. The lines the game execs (the generic lines of a scene, the sound lines of SetDefSounds and Load) go through
+ * the exec reader on native values (ScriptExec.c).
  */
 #include <limits.h>
 #include <string.h>
@@ -89,7 +89,7 @@ static byte Sc_BaseAddActor(const nativeVal_t *name, const nativeVal_t *cls, con
 		!Sc_G("SceneName", scene)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 5: the list of the scene in Actors, held by reference and appended in place (append of three values makes
+	/* the list of the scene in Actors, held by reference and appended in place (append of three values makes
 	 * a tuple in 1.5.2) */
 	nativeVal_t *all = Mode_V(&t), *the = Mode_V(&t), *append = Mode_V(&t);
 	byte ok = Mode_RefG(SC, "Actors", all) && Mode_RefSub(all, scene, the) && Mode_Read(SC, "SceneName", scene) &&
@@ -114,7 +114,7 @@ static byte Sc_AddCharActor(const nativeVal_t *name, const nativeVal_t *cls) {
 		PORT_CALL(MakeChar, AddDefMorphActions, NULL, "v", cls) && Mode_SActSet(1, "DefAction", "Relax", 0));
 }
 
-/* LocalActors[SceneName].method(arg) on the list itself (OBJLIB 5); in: `arg in LocalActors[SceneName]` instead */
+/* LocalActors[SceneName].method(arg) on the list itself; in: `arg in LocalActors[SceneName]` instead */
 static int Sc_LocalList(const nativeVal_t *scene, const char *method, const nativeVal_t *arg) {
 	nativeVal_t all = { 0 }, l = { 0 };
 	int r = -1;

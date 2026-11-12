@@ -5,7 +5,7 @@
  * weapons replace the callbacks.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C on native values; the module has no
- * state of its own in C. ModesMap is read from the module dict when the map list is purged (OBJLIB 5); IsClient,
+ * state of its own in C. ModesMap is read from the registry when the map list is purged; IsClient,
  * IsServer, Scrap.Set and Scrap.LoadLevel go through their seams (OBJLIB 7). The functions of the table have native
  * entries (MODE_FN, stage 6 batch 6f) except the two default callbacks on the shared adapter Mode_PyNone2.
  */

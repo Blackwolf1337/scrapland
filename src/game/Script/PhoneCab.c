@@ -10,13 +10,13 @@
  * data/missions/phonecab.def.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The variables are read and written where the script does it (OBJLIB 5): the module globals
+ * entries are adapters. The variables are read and written where the script does it (the registry): the module globals
  * above, Init.Path, the Challenge and Speech variables (set as Script_SetVar does, an error is dropped). The calls of
  * SaveGame, Speech, Challenge and CharsNPC go through their refs (PORT_CALL), Challenge's options through its C
- * function; the mission's DialogController is called as the value of the variable (OBJLIB 5), and the module's
- * functions put into Speech.OnOutOfRange are values Speech keeps (OBJLIB 5) and calls through their entries. The cabs,
- * communicators and desktops are entity handle values (OBJLIB 7): the module variables keep them and the scripts pass
- * them in.
+ * function; the mission's DialogController is called as the value of the variable (OBJLIB 5 (9c)), and the module's
+ * functions put into Speech.OnOutOfRange are values Speech keeps (OBJLIB 5 (9c)) and calls through their entries. The
+ * cabs, communicators and desktops are entity handle values (OBJLIB 7): the module variables keep them and the scripts
+ * pass them in.
  */
 #include <string.h>
 
@@ -325,7 +325,7 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 	} else if (!PhoneCab_PrintError(a)) {
 		return Mode_Done(&t, 0);
 	}
-	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 5: the function of the module as the value of the variable) */
+	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 5 (9c: the function of the module as a value)) */
 	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
 	wins = PhoneCab_Wins();
 	if (wins < 0) {
@@ -333,8 +333,8 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 	}
 	if (!wins) {
 		Mode_SaveVar("Revenge.NumEnemies", fr);
-		/* OBJLIB 5: Challenge.LaunchRevenge goes into Speech.OnEndOfSpeech as the object it is (Mode_ModTo; a failed
-		 * set is dropped as Script_SetVar dropped it); it is looked up first, where the script evaluates it */
+		/* OBJLIB 5 (9c): Challenge.LaunchRevenge goes into Speech.OnEndOfSpeech as the object it is (Mode_ModTo; a
+		 * failed set is dropped as Script_SetVar dropped it); it is looked up first, where the script evaluates it */
 		nativeVal_t *launch = Mode_V(&t);
 		if (!Native_ToInt(fr, num) || !Mode_ModGet("Challenge", "LaunchRevenge", launch)) {
 			return Mode_Done(&t, 0);
@@ -739,7 +739,9 @@ static byte DTritus_Use(const nativeVal_t *a) {
 		return Mode_Done(&t, alarm > 0 &&
 			PORT_CALL(Speech, AddRemoteCom, NULL, "ss", "Generics_DeepThroatTaunt_1", "DeepThroat"));
 	}
-	/* OBJLIB 5: the mission's talk function, the variable read again and called as the value it holds */
+	/* OBJLIB 5 (9c): the mission's talk function,
+
+ the variable read again and called as the value it holds */
 	return Mode_Done(&t, Native_CallGlobal("DTritusDesktop", "DialogController", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]));
 }
 

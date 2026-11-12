@@ -20,7 +20,7 @@
 
 /*
  * OutMap is native C (docs/objlib-plan.md, stage 2): its functions work on C values and read StartPos, iStartPos and
- * SpawRes where the script reads them and write them back at once (OBJLIB 5: Ffa and the cases read and set them).
+ * SpawRes where the script reads them and write them back at once (Ffa and the cases read and set them).
  * The engine calls the cases record or swap go through their seams (OBJLIB 7: SAI.GetNextRacePoint, Scrap.TestSphere,
  * TestLine, UsrEntity, StartDummySearch, NextDummySearch, CreateEntity, GetEntity, Set, SetGrid, GetNetFlags and
  * SInput.SetActionSet); the player and the entities are handle values (OBJLIB 7). The other ports (Ffa, Split,
@@ -532,7 +532,7 @@ PyMethodDef g_OutMapMethods[] = {
 
 /*
  * InTraffic is native C (docs/objlib-plan.md, stage 2): its functions work on C values and read the variables of the
- * module where the script reads them (OBJLIB 5). The engine calls fc-snd-th records (SWeap.InitAmmo, InitWeap,
+ * module where the script reads them. The engine calls fc-snd-th records (SWeap.InitAmmo, InitWeap,
  * SetFWeap, SSound.LoadSound, Scrap.Preload3DObject) and Scrap.CreateEntity and Scrap.Set go through their seams
  * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7), their SetModel is called as a bound method (OBJLIB 7).
  * Fx.SetUpShipMotors goes through its ref (PORT_CALL), the module's own functions through its globals (PORT_OWN);
