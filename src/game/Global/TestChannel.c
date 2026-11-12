@@ -89,6 +89,8 @@ static struct {					/* the time since the last answer (TC_DetTrack) */
 	double stood;				/* time the game clock stood, without the first TC_STAND_FREE steps of each stand */
 	uint32_t still;				/* steps the game clock has stood in a row (not reset by an answer, as tc_paceStill) */
 	uint32_t answer;			/* TestDet_Frame() of the last answer */
+	uint32_t answerLoads;		/* TestDet_Loads() at the last answer */
+	byte answered;				/* a command file was answered since the start */
 	uint32_t met;				/* TestDet_Frame() + 1 of the step in which the pace of a command file was met, else 0 */
 	byte loaded;				/* a level load ended since the last answer */
 } tc_det;
@@ -1507,12 +1509,20 @@ static void TC_Poll(void) {
 	TC_WriteReply(seq, &b);
 	tc_answerTime = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
 	if (TestDet_On()) {
-		/* the count of TC_DetTrack starts over */
+		/* the count of TC_DetTrack starts over, but not for a command file without a pace in the step of the answer
+		 * before (no level load between): the runner asks its start question again when the game is slow to come
+		 * up, and a second answer after the first world frame of the level lost that frame's 0.1 s for the pace of
+		 * the next line, so the whole case ran 6 steps later (fc-rm-dt2, fc-r7b-gw and others, now and then) */
 		TC_DetTrack();
-		tc_det.world = tc_det.stood = 0.0;
-		tc_det.loaded = 0;
-		tc_det.answer = TestDet_Frame();
-		tc_det.met = 0;
+		if (pace > 0.0 || !tc_det.answered || TestDet_Frame() != tc_det.answer
+			|| TestDet_Loads() != tc_det.answerLoads) {
+			tc_det.world = tc_det.stood = 0.0;
+			tc_det.loaded = 0;
+			tc_det.answer = TestDet_Frame();
+			tc_det.answerLoads = TestDet_Loads();
+			tc_det.met = 0;
+		}
+		tc_det.answered = 1;
 	}
 	Mem_Free(b.p);
 	Mem_Free(text);
