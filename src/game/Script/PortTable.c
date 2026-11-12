@@ -2192,6 +2192,8 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_NTeamPost_ShowHelp,
 	&port_NTeamPost_TakeFlag,
 	&port_NTeamPost_TryLinkFlagTo,
+	&port_Net_ClientAfterCreateDef,
+	&port_Net_ClientCreateDef,
 	&port_Net_ClientJoinDef,
 	&port_Net_LoadSinglePlayer,
 	&port_Net_PurgeServerMapList,
@@ -2544,6 +2546,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_SAct_SetAct,
 	&port_SAct_SetCls,
 	&port_SDeathMatch_Init,
+	&port_SDeathMatch_InitStatus,
 	&port_SDeathMatch_OnDeathFunc,
 	&port_SFX_BishopSellLife,
 	&port_SFX_CharacterConversion,
@@ -2632,6 +2635,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_SRace_Init,
 	&port_SRace_InitRacePos,
 	&port_SRace_InitStatus,
+	&port_SRace_OnDeathFunc,
 	&port_SRace_TakeFlag,
 	&port_SScorer_Accept,
 	&port_SScorer_Add,
@@ -6453,6 +6457,10 @@ PORT_TRAMP(3217)
 PORT_TRAMP(3218)
 PORT_TRAMP(3219)
 PORT_TRAMP(3220)
+PORT_TRAMP(3221)
+PORT_TRAMP(3222)
+PORT_TRAMP(3223)
+PORT_TRAMP(3224)
 
 const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp0,
@@ -9676,4 +9684,8 @@ const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp3218,
 	Port_Tramp3219,
 	Port_Tramp3220,
+	Port_Tramp3221,
+	Port_Tramp3222,
+	Port_Tramp3223,
+	Port_Tramp3224,
 };

@@ -375,15 +375,15 @@ extern const portFn_t g_SaveGameMethods[];
 extern PyMethodDef g_FxMethods[];
 /* the C Items module (src/game/Script/Items.c) */
 extern PyMethodDef g_ItemsMethods[];
-extern PyMethodDef g_NetMethods[];
+extern const portFn_t g_NetMethods[];
 /* the online game modes (src/game/Script/NetModes.c) */
-extern PyMethodDef g_NDeathMatchMethods[];
-extern PyMethodDef g_NDeathMatchBotsMethods[];
-extern PyMethodDef g_NTeamDMMethods[];
-extern PyMethodDef g_NTeamFlagMethods[];
-extern PyMethodDef g_NFlagHuntMethods[];
-extern PyMethodDef g_NPostmanMethods[];
-extern PyMethodDef g_NTeamPostMethods[];
+extern const portFn_t g_NDeathMatchMethods[];
+extern const portFn_t g_NDeathMatchBotsMethods[];
+extern const portFn_t g_NTeamDMMethods[];
+extern const portFn_t g_NTeamFlagMethods[];
+extern const portFn_t g_NFlagHuntMethods[];
+extern const portFn_t g_NPostmanMethods[];
+extern const portFn_t g_NTeamPostMethods[];
 extern const portFn_t g_WeaponsMethods[];
 extern const portFn_t g_VulcanMethods[];
 extern const portFn_t g_DevastatorMethods[];
@@ -401,11 +401,11 @@ extern const portFn_t g_ShipEditMethods[];
 extern const portFn_t g_HangarTabMethods[];
 extern PyMethodDef g_VehiclesMethods[];
 extern PyMethodDef g_VehiclesNPCMethods[];
-extern PyMethodDef g_SplitMethods[];
-extern PyMethodDef g_SDeathMatchMethods[];
-extern PyMethodDef g_SFlagHuntMethods[];
-extern PyMethodDef g_SPostmanMethods[];
-extern PyMethodDef g_SRaceMethods[];
+extern const portFn_t g_SplitMethods[];
+extern const portFn_t g_SDeathMatchMethods[];
+extern const portFn_t g_SFlagHuntMethods[];
+extern const portFn_t g_SPostmanMethods[];
+extern const portFn_t g_SRaceMethods[];
 /* the functions of the Init module (src/game/Script/InitLevel.c) */
 extern PyMethodDef g_InitMethods[];
 /* the functions string.py keeps in Python (src/game/Script/String.c) */
@@ -476,10 +476,10 @@ extern const portFn_t g_MercenaryLMethods[];
 extern PyMethodDef g_InMapMethods[];
 extern PyMethodDef g_BureaucracyMethods[];
 /* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
-extern PyMethodDef g_ChatMethods[];
+extern const portFn_t g_ChatMethods[];
 extern const portFn_t g_CreditsTextMethods[];
 /* the base of the online game modes (src/game/Script/Ffa.c) */
-extern PyMethodDef g_FfaMethods[];
+extern const portFn_t g_FfaMethods[];
 
 /* the mission scripts: the traffic and the police (src/game/Script/Traffic.c), the phone cabs and Dtritus' desktop
  * (src/game/Script/PhoneCab.c), the metro (src/game/Script/Metro.c) and the challenges (src/game/Script/Challenge.c) */
