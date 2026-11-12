@@ -160,6 +160,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_CharScorer_Create,
 	&port_CharScorer_CreateRadarScorer,
 	&port_CharScorer_CreateSpecialActionScorer,
+	&port_CharScorer_Init,
 	&port_Chars_ActSound,
 	&port_Chars_ActSoundLoop,
 	&port_Chars_AddNewCharRes,
@@ -321,6 +322,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_DoorSound_ConversorSetSounds,
 	&port_DoorSound_LoadSndList,
 	&port_DoorSound_LoadSounds,
+	&port_DoorSound_SetInitDoorSound,
 	&port_DoorSound_SetSlide,
 	&port_Doors_CreateDoorClass,
 	&port_Doors_Init,
@@ -474,6 +476,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Fx_Init,
 	&port_Fx_MoneyTransfer,
 	&port_Fx_SetUpShipMotors,
+	&port_GateKeeper_DoNothingFunc,
 	&port_GateKeeper_DoorFoe,
 	&port_GateKeeper_EndOfSpeech,
 	&port_GateKeeper_GateKeeperSpeech,
@@ -508,6 +511,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_HangarTab_ComputeShipTotalCost,
 	&port_HangarTab_CreateEmptyShip,
 	&port_HangarTab_DisableChangePlatformButtons,
+	&port_HangarTab_DrawBackground,
 	&port_HangarTab_EnableChangePlatformButtons,
 	&port_HangarTab_GetMaxSpeedTime,
 	&port_HangarTab_GetSpeedRampOffsets,
@@ -894,6 +898,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_MayorSound_Talk2Snd,
 	&port_MayorSound_TalkSnd,
 	&port_Menu_AbortGame,
+	&port_Menu_AddTabs,
 	&port_Menu_AudioMenu,
 	&port_Menu_AudioVolumeChange,
 	&port_Menu_AudioVolumeSliderFocus_Add,
@@ -931,6 +936,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Menu_DrawCircuitMenu,
 	&port_Menu_DrawMenuTitleBar,
 	&port_Menu_DrawScorer,
+	&port_Menu_DummyFunc,
 	&port_Menu_EnterMissionInfo,
 	&port_Menu_ExitGame,
 	&port_Menu_ExitMissionInfo,
@@ -954,6 +960,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Menu_MissionNotesText,
 	&port_Menu_MovieScorer,
 	&port_Menu_NewGame,
+	&port_Menu_PlaySpacelords,
 	&port_Menu_PreviousNextMenu,
 	&port_Menu_PreviousNextMenuSimple,
 	&port_Menu_SaveGame,
@@ -998,8 +1005,10 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_MessengerSound_TalkSnd,
 	&port_Metro_CalculateMissionMap,
 	&port_Metro_CreateStation,
+	&port_Metro_DoNothing,
 	&port_Metro_DoorInitializator,
 	&port_Metro_HideHint,
+	&port_Metro_ObjInitializator,
 	&port_Metro_OnUse,
 	&port_Metro_OutDoorInitializator,
 	&port_Metro_RecoverUsr,
@@ -1007,6 +1016,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Metro_SetUsrParams,
 	&port_Metro_ShowHint,
 	&port_Metro_UseMetro,
+	&port_Metro_WrongOpt,
 	&port_MisItems_ActivateBattery,
 	&port_MisItems_ActivateCoin,
 	&port_MisItems_CreateBattery,
@@ -2186,6 +2196,8 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_NTeamPost_ShowHelp,
 	&port_NTeamPost_TakeFlag,
 	&port_NTeamPost_TryLinkFlagTo,
+	&port_Net_ClientAfterCreateDef,
+	&port_Net_ClientCreateDef,
 	&port_Net_ClientJoinDef,
 	&port_Net_LoadSinglePlayer,
 	&port_Net_PurgeServerMapList,
@@ -2244,6 +2256,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_PCMenu_Apply_SetVideoLock,
 	&port_PCMenu_AskPassword,
 	&port_PCMenu_BackToCreateServer,
+	&port_PCMenu_BrowseFormatServerLine,
 	&port_PCMenu_BrowseINetMenu,
 	&port_PCMenu_BrowseLocalJoin,
 	&port_PCMenu_BrowseLocalMenu,
@@ -2484,12 +2497,15 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_RacerScorer_CreateTargetScorer,
 	&port_RacerScorer_CreateWaypointScorer,
 	&port_RacerScorer_CreateWeaponScorer,
+	&port_RacerScorer_Init,
 	&port_RacerScorer_InitMissionScorer,
 	&port_RacerScorer_MissionScorer,
 	&port_RacerScorer_MissionScorerTeam,
 	&port_RacerScorer_MultiplayerUpdatePing,
 	&port_RacerScorer_ShowScorer,
 	&port_RacerScorer_UpdateMissionScorer,
+	&port_Rusty_ActionPress,
+	&port_Rusty_ActionRelease,
 	&port_Rusty_Init,
 	&port_Rusty_OnCreate,
 	&port_Rusty_OnFreeResources,
@@ -2534,6 +2550,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_SAct_SetAct,
 	&port_SAct_SetCls,
 	&port_SDeathMatch_Init,
+	&port_SDeathMatch_InitStatus,
 	&port_SDeathMatch_OnDeathFunc,
 	&port_SFX_BishopSellLife,
 	&port_SFX_CharacterConversion,
@@ -2622,6 +2639,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_SRace_Init,
 	&port_SRace_InitRacePos,
 	&port_SRace_InitStatus,
+	&port_SRace_OnDeathFunc,
 	&port_SRace_TakeFlag,
 	&port_SScorer_Accept,
 	&port_SScorer_Add,
@@ -2756,6 +2774,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Scene_UnhideChars,
 	&port_Scorer_Blink,
 	&port_Scorer_CreateCopMeterScorer,
+	&port_Scorer_CreateMissionScorer,
 	&port_Scorer_CreateMonitorScorer,
 	&port_Scorer_CreateMsgScorer,
 	&port_Scorer_CreateRadarScorer,
@@ -2908,6 +2927,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_ShipEdit_CreatePlayerShip,
 	&port_ShipEdit_CreateShipFromSaveVar,
 	&port_ShipEdit_DoorInitializator,
+	&port_ShipEdit_DrawBackground,
 	&port_ShipEdit_EndMoveEngine,
 	&port_ShipEdit_EnterEditShipMenu,
 	&port_ShipEdit_ExitEditShipMenu,
@@ -3075,6 +3095,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Sputnik_ShowInterface,
 	&port_Sputnik_UseShip,
 	&port_SputnikInterface_AddDefaultPanelContent,
+	&port_SputnikInterface_DrawBackground,
 	&port_SputnikInterface_EnterSputnikInterface,
 	&port_SputnikInterface_ExitSputnikInterface,
 	&port_SputnikInterface_SelectShip,
@@ -3191,6 +3212,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Weapons_Init,
 	&port_Weapons_InitAmmo,
 	&port_Weapons_InitWeapons,
+	&port_WeaponsTab_DoNothing,
 	&port_WeaponsTab_FillSlots,
 	&port_WeaponsTab_HideSlotMarker,
 	&port_WeaponsTab_HideSlots,
@@ -6425,6 +6447,28 @@ PORT_TRAMP(3203)
 PORT_TRAMP(3204)
 PORT_TRAMP(3205)
 PORT_TRAMP(3206)
+PORT_TRAMP(3207)
+PORT_TRAMP(3208)
+PORT_TRAMP(3209)
+PORT_TRAMP(3210)
+PORT_TRAMP(3211)
+PORT_TRAMP(3212)
+PORT_TRAMP(3213)
+PORT_TRAMP(3214)
+PORT_TRAMP(3215)
+PORT_TRAMP(3216)
+PORT_TRAMP(3217)
+PORT_TRAMP(3218)
+PORT_TRAMP(3219)
+PORT_TRAMP(3220)
+PORT_TRAMP(3221)
+PORT_TRAMP(3222)
+PORT_TRAMP(3223)
+PORT_TRAMP(3224)
+PORT_TRAMP(3225)
+PORT_TRAMP(3226)
+PORT_TRAMP(3227)
+PORT_TRAMP(3228)
 
 const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp0,
@@ -9634,4 +9678,26 @@ const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp3204,
 	Port_Tramp3205,
 	Port_Tramp3206,
+	Port_Tramp3207,
+	Port_Tramp3208,
+	Port_Tramp3209,
+	Port_Tramp3210,
+	Port_Tramp3211,
+	Port_Tramp3212,
+	Port_Tramp3213,
+	Port_Tramp3214,
+	Port_Tramp3215,
+	Port_Tramp3216,
+	Port_Tramp3217,
+	Port_Tramp3218,
+	Port_Tramp3219,
+	Port_Tramp3220,
+	Port_Tramp3221,
+	Port_Tramp3222,
+	Port_Tramp3223,
+	Port_Tramp3224,
+	Port_Tramp3225,
+	Port_Tramp3226,
+	Port_Tramp3227,
+	Port_Tramp3228,
 };

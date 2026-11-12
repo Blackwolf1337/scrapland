@@ -12,7 +12,7 @@
  * their refs (PORT_CALL, PORT_ASK: directly while the attribute holds the port's function, else by name); the engine
  * functions the port called by name go through their seams (SetMsgText, CreateEntity, Scrap.Set,
  * SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
- * The adapters parse the arguments as before.
+ * The entries parse the arguments as before.
  */
 #include <string.h>
 
@@ -137,15 +137,14 @@ static void Char_SetCls(const char *cls, const char *var, double d) {
 }
 
 /* a function on the entity name ("s", the further arguments of fmt any values the C does not read): its entry
- * (Mode_Parse) and its adapter */
+ * (Mode_Parse) */
 #define CHAR_FN(pre, name, fmt, call) \
 	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		const char *ent; \
 		const nativeVal_t *x1, *x2; \
 		(void)out; \
 		return Mode_Parse(a, n, fmt, &ent, &x1, &x2) && (call); \
-	} \
-	MODE_ADAPTER(pre, name)
+	}
 
 /* a speech routine (usr, ch, opt, full): "sssO" */
 #define CHAR_SPEECH(pre, name, core) \
@@ -154,8 +153,7 @@ static void Char_SetCls(const char *cls, const char *var, double d) {
 		const nativeVal_t *full; \
 		(void)out; \
 		return Mode_Parse(a, n, "sssO", &usr, &ch, &opt, &full) && core(usr, ch, opt, full); \
-	} \
-	MODE_ADAPTER(pre, name)
+	}
 
 /* SScorer.SetMsgText(Scrap.GetLangStr("INSPECT_CHAR_CantTalk"), Scrap.GetTime() + 2): the speech of a character that
  * does not talk */
@@ -248,20 +246,20 @@ CHAR_FN(Functionary, ExitFastEffect, "s", (Functionary_Exit(ent), 1))
 CHAR_FN(Functionary, ActionPress, "s", Functionary_Press(ent))
 CHAR_FN(Functionary, ActionRelease, "s", Functionary_Release(ent))
 
-PyMethodDef g_FunctionaryFuncs[] = {
-	{ "EnterFastEffect", Functionary_EnterFastEffect, 1, NULL },
-	{ "ExitFastEffect", Functionary_ExitFastEffect, 1, NULL },
-	{ "ActionPress", Functionary_ActionPress, 1, NULL },
-	{ "ActionRelease", Functionary_ActionRelease, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_FunctionaryFuncs[] = {
+	PORT_FN(EnterFastEffect, Functionary_EnterFastEffect),
+	PORT_FN(ExitFastEffect, Functionary_ExitFastEffect),
+	PORT_FN(ActionPress, Functionary_ActionPress),
+	PORT_FN(ActionRelease, Functionary_ActionRelease),
+	PORT_FNEND
 };
 
 /* ---- Rusty: his action presses do nothing (the class names them) ---- */
 
-PyMethodDef g_RustyFuncs[] = {
-	{ "ActionPress", Mode_PyNone, 1, NULL },
-	{ "ActionRelease", Mode_PyNone, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_RustyFuncs[] = {
+	PORT_FN(ActionPress, Mode_PyNone),
+	PORT_FN(ActionRelease, Mode_PyNone),
+	PORT_FNEND
 };
 
 /* ---- Boss ---- */
@@ -295,10 +293,10 @@ static byte Boss_Speech(const char *usr, const char *ch, const char *opt, const 
 CHAR_FN(Boss, ActionPress, "s", Boss_Press(ent))
 CHAR_SPEECH(Boss, BossSpeech, Boss_Speech)
 
-PyMethodDef g_BossFuncs[] = {
-	{ "ActionPress", Boss_ActionPress, 1, NULL },
-	{ "BossSpeech", Boss_BossSpeech, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BossFuncs[] = {
+	PORT_FN(ActionPress, Boss_ActionPress),
+	PORT_FN(BossSpeech, Boss_BossSpeech),
+	PORT_FNEND
 };
 
 /* ---- Mayor: the action loops while the key is held ---- */
@@ -323,10 +321,10 @@ static byte Mayor_ReCheck(const char *name) {
 CHAR_FN(Mayor, MayorActionPress, "s", Mayor_Press(ent))
 CHAR_FN(Mayor, MayorReCheckAction, "sOO", Mayor_ReCheck(ent))
 
-PyMethodDef g_MayorFuncs[] = {
-	{ "MayorActionPress", Mayor_MayorActionPress, 1, NULL },
-	{ "MayorReCheckAction", Mayor_MayorReCheckAction, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MayorFuncs[] = {
+	PORT_FN(MayorActionPress, Mayor_MayorActionPress),
+	PORT_FN(MayorReCheckAction, Mayor_MayorReCheckAction),
+	PORT_FNEND
 };
 
 /* ---- Maintenance, SputnikJunkyard: they do not talk ---- */
@@ -353,15 +351,15 @@ static byte Maintenance_WorkFX(const char *name) {
 
 CHAR_FN(Maintenance, MaintenanceWorkFX, "sOO", Maintenance_WorkFX(ent))
 
-PyMethodDef g_MaintenanceFuncs[] = {
-	{ "MaintenanceTalk", Char_CantTalk, 1, NULL },
-	{ "MaintenanceWorkFX", Maintenance_MaintenanceWorkFX, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MaintenanceFuncs[] = {
+	PORT_FN(MaintenanceTalk, Char_CantTalk),
+	PORT_FN(MaintenanceWorkFX, Maintenance_MaintenanceWorkFX),
+	PORT_FNEND
 };
 
-PyMethodDef g_SputnikJunkyardFuncs[] = {
-	{ "SputnikJunkyardTalk", Char_CantTalk, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SputnikJunkyardFuncs[] = {
+	PORT_FN(SputnikJunkyardTalk, Char_CantTalk),
+	PORT_FNEND
 };
 
 /* ---- CharsNPC.optionsList: the options of the talk that runs (the list object itself) ---- */
@@ -545,11 +543,11 @@ MODE_FNANY(CrazyGambler, CalculateStatus, CrazyGambler_Status() >= 0)
 
 CHAR_SPEECH(CrazyGambler, CrazyGamblerSpeech, CrazyGambler_Speech)
 
-PyMethodDef g_CrazyGamblerFuncs[] = {
-	{ "CalculateStatus", CrazyGambler_CalculateStatus, 1, NULL },
-	{ "CrazyGamblerSpeech", CrazyGambler_CrazyGamblerSpeech, 1, NULL },
-	{ "StartSuperDeal", CrazyGambler_StartSuperDeal, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CrazyGamblerFuncs[] = {
+	PORT_FN(CalculateStatus, CrazyGambler_CalculateStatus),
+	PORT_FN(CrazyGamblerSpeech, CrazyGambler_CrazyGamblerSpeech),
+	PORT_FN(StartSuperDeal, CrazyGambler_StartSuperDeal),
+	PORT_FNEND
 };
 
 /* ---- Gear and Police: the siren on channel 1 (its actions are in their files) ---- */
@@ -566,10 +564,10 @@ static byte Char_AbortSirenC(const char *name) {
 CHAR_FN(Gear, StartSirenLoop, "sOO", (Char_SetText(ent, "Action", "Siren"), 1))
 CHAR_FN(Char, AbortSiren, "sOO", Char_AbortSirenC(ent))
 
-PyMethodDef g_GearFuncs[] = {
-	{ "StartSirenLoop", Gear_StartSirenLoop, 1, NULL },
-	{ "AbortSiren", Char_AbortSiren, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GearFuncs[] = {
+	PORT_FN(StartSirenLoop, Gear_StartSirenLoop),
+	PORT_FN(AbortSiren, Char_AbortSiren),
+	PORT_FNEND
 };
 
 /* ---- Police: his speech, the bribe and the way to the main mission ---- */
@@ -881,12 +879,12 @@ CHAR_SPEECH(Police, PoliceSpeech, Police_Speech)
 
 MODE_FNANY(Police, OnEndOfSpeech, Police_EndOfSpeech())
 
-PyMethodDef g_PoliceFuncs[] = {
-	{ "AbortSiren", Char_AbortSiren, 1, NULL },
-	{ "GoToMission", Police_GoToMission, 1, NULL },
-	{ "PoliceSpeech", Police_PoliceSpeech, 1, NULL },
-	{ "OnEndOfSpeech", Police_OnEndOfSpeech, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceFuncs[] = {
+	PORT_FN(AbortSiren, Char_AbortSiren),
+	PORT_FN(GoToMission, Police_GoToMission),
+	PORT_FN(PoliceSpeech, Police_PoliceSpeech),
+	PORT_FN(OnEndOfSpeech, Police_OnEndOfSpeech),
+	PORT_FNEND
 };
 
 /* ---- Bishop: he sells three lives for BishopLivePrice ---- */
@@ -1032,13 +1030,13 @@ static byte Bishop_SellFX(const char *name) {
 
 CHAR_FN(Bishop, FXBishopSellLife, "sOO", Bishop_SellFX(ent))
 
-PyMethodDef g_BishopFuncs[] = {
-	{ "AddLifes", Bishop_AddLifesPy, 1, NULL },
-	{ "BishopSpeech", Bishop_BishopSpeech, 1, NULL },
-	{ "StartSellingLife", Bishop_StartSellingLife, 1, NULL },
-	{ "SellLife", Bishop_SellLife, 1, NULL },
-	{ "FXBishopSellLife", Bishop_FXBishopSellLife, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BishopFuncs[] = {
+	PORT_FN(AddLifes, Bishop_AddLifesPy),
+	PORT_FN(BishopSpeech, Bishop_BishopSpeech),
+	PORT_FN(StartSellingLife, Bishop_StartSellingLife),
+	PORT_FN(SellLife, Bishop_SellLife),
+	PORT_FN(FXBishopSellLife, Bishop_FXBishopSellLife),
+	PORT_FNEND
 };
 
 /* ---- Messenger: the data pack he carries (Messenger.MDP, MakeMDP stay module variables) ---- */
@@ -1079,11 +1077,11 @@ MODE_FNOPT(Messenger, DoorInitializator, 1, 2, 1)
 
 MODE_FN(Messenger, ObjInitializator, 2, Messenger_ObjInit(&a[0]))
 
-PyMethodDef g_MessengerFuncs[] = {
-	{ "MakeDataPack", Messenger_MakeDataPack, 1, NULL },
-	{ "DoorInitializator", Messenger_DoorInitializator, 1, NULL },
-	{ "ObjInitializator", Messenger_ObjInitializator, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MessengerFuncs[] = {
+	PORT_FN(MakeDataPack, Messenger_MakeDataPack),
+	PORT_FN(DoorInitializator, Messenger_DoorInitializator),
+	PORT_FN(ObjInitializator, Messenger_ObjInitializator),
+	PORT_FNEND
 };
 
 PORTS(CharFuncs)

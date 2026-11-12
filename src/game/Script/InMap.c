@@ -88,9 +88,9 @@ static byte InMap_InitV(const nativeVal_t *path) {
 
 MODE_FN(InMap, InitPy, 1, InMap_InitV(&a[0]))
 
-PyMethodDef g_InMapMethods[] = {
-	{ "Init", InMap_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_InMapMethods[] = {
+	PORT_FN(Init, InMap_InitPy),
+	PORT_FNEND
 };
 
 PORTS(InMap)

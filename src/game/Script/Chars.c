@@ -564,25 +564,25 @@ MODE_FN(Chars, CreateStartupPlayer, 0, Ch_CreateStartupPlayer(out))
 /* Init takes any arguments (the port did not parse them) */
 MODE_FNANY(Chars, Init, Ch_Init())
 
-PyMethodDef g_CharsMethods[] = {
-	{ "CanDrive", Chars_CanDrive, 1, NULL },
-	{ "CreateMainChar", Chars_CreateMainChar, 1, NULL },
-	{ "SetOnFloor", Chars_SetOnFloor, 1, NULL },
-	{ "IntSetChar", Chars_IntSetChar, 1, NULL },
-	{ "ActSound", Chars_ActSound, 1, NULL },
-	{ "StrSound", Chars_StrSound, 1, NULL },
-	{ "StrSoundStop", Chars_StrSoundStop, 1, NULL },
-	{ "ActSoundLoop", Chars_ActSoundLoop, 1, NULL },
-	{ "DiscardRes", Chars_DiscardRes, 1, NULL },
-	{ "TryToDiscardThis", Chars_TryToDiscardThis, 1, NULL },
-	{ "LoadRes", Chars_LoadRes, 1, NULL },
-	{ "AddNewCharRes", Chars_AddNewCharRes, 1, NULL },
-	{ "LocalLoadRes", Chars_LocalLoadRes, 1, NULL },
-	{ "MainCharDeath", Chars_MainCharDeath, 1, NULL },
-	{ "CreatePlayersList", Chars_CreatePlayersList, 1, NULL },
-	{ "Init", Chars_Init, 1, NULL },
-	{ "CreateStartupPlayer", Chars_CreateStartupPlayer, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CharsMethods[] = {
+	PORT_FN(CanDrive, Chars_CanDrive),
+	PORT_FN(CreateMainChar, Chars_CreateMainChar),
+	PORT_FN(SetOnFloor, Chars_SetOnFloor),
+	PORT_FN(IntSetChar, Chars_IntSetChar),
+	PORT_FN(ActSound, Chars_ActSound),
+	PORT_FN(StrSound, Chars_StrSound),
+	PORT_FN(StrSoundStop, Chars_StrSoundStop),
+	PORT_FN(ActSoundLoop, Chars_ActSoundLoop),
+	PORT_FN(DiscardRes, Chars_DiscardRes),
+	PORT_FN(TryToDiscardThis, Chars_TryToDiscardThis),
+	PORT_FN(LoadRes, Chars_LoadRes),
+	PORT_FN(AddNewCharRes, Chars_AddNewCharRes),
+	PORT_FN(LocalLoadRes, Chars_LocalLoadRes),
+	PORT_FN(MainCharDeath, Chars_MainCharDeath),
+	PORT_FN(CreatePlayersList, Chars_CreatePlayersList),
+	PORT_FN(Init, Chars_Init),
+	PORT_FN(CreateStartupPlayer, Chars_CreateStartupPlayer),
+	PORT_FNEND
 };
 
 PORTS(Chars)

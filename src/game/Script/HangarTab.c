@@ -10,9 +10,9 @@
  * the layout constants (hangarBaseX, baseShipInfoX, speedRampX and the others). The module code (the save variable
  * Hangar.iHangarShip) stays in the script.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the PyMethodDef entries are adapters with
- * the argument formats of the C port. The variables of the module are read where the script reads them and written at
- * once; prevShip, miniShip and the ships of ShipEdit.editedShips are handle values (OBJLIB 7), the lists of
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the function table rows name the entries,
+ * which take the argument formats of the C port. The variables of the module are read where the script reads them and
+ * written at once; prevShip, miniShip and the ships of ShipEdit.editedShips are handle values (OBJLIB 7), the lists of
  * ShipEdit are changed in place on their objects. ShipEdit, ShipMaker and Vehicles are called through their refs
  * (PORT_CALL: directly while the attribute holds the port's function, else by name), the module's own functions through
  * its globals as the script calls them (PORT_OWN, the same seam on the global). Menu's link functions are named at run
@@ -2076,7 +2076,7 @@ static byte Ht_SellShip(int id) {
 	return Mode_Done(&t, ok);
 }
 
-/* ---- adapters: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
+/* ---- entries: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
 
 MODE_IFN(HT_ShowBoostPrediction, 2, Ht_BoostPrediction(id, &a[1]))
 MODE_IFN(HT_DisableChangePlatformButtons, 1, Ht_Platform(id, 0))
@@ -2121,8 +2121,6 @@ static byte HT_AuxShowMoney_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_Parse(a, n, "is", &id, &symbol) && Ht_AuxShowMoney(id, symbol);
 }
 
-MODE_ADAPTER(HT, AuxShowMoney)
-
 /* ComputeShipTotalCost(cad="prevShip") */
 MODE_KW(HT, ComputeShipTotalCost, "|O", "cad") {
 	Mode_KwDefS(v, given, 0, "prevShip");
@@ -2151,49 +2149,49 @@ MODE_KWT(HT, SelectHangar, "i|OO", "id", "control", "skipanim") {
 	return Mode_Parse(v, 3, "iOO", &id, &control, &skip) && Ht_SelectHangar(id, control, given[2] ? Native_True(skip) : 0);
 }
 
-PyMethodDef g_HangarTabMethods[] = {
-	{ "ShowBoostPrediction", HT_ShowBoostPrediction, 1, NULL },
-	{ "DisableChangePlatformButtons", HT_DisableChangePlatformButtons, 1, NULL },
-	{ "EnableChangePlatformButtons", HT_EnableChangePlatformButtons, 1, NULL },
-	{ "PrevPilot", HT_PrevPilot, 1, NULL },
-	{ "NextPilot", HT_NextPilot, 1, NULL },
-	{ "DrawBackground", (PyCFunction)(void (*)(void))HangarTab_DrawBackground, 3, NULL },
-	{ "SetSellVisible", HT_SetSellVisible, 1, NULL },
-	{ "SetSellActive", HT_SetSellActive, 1, NULL },
-	{ "SetExitVisible", HT_SetExitVisible, 1, NULL },
-	{ "SetShipTypeVisible", HT_SetShipTypeVisible, 1, NULL },
-	{ "SetPilotVisible", HT_SetPilotVisible, 1, NULL },
-	{ "HideHangarPanel", HT_HideHangarPanel, 1, NULL },
-	{ "UpdateHangars", HT_UpdateHangars, 1, NULL },
-	{ "ShowHangarPanel", HT_ShowHangarPanel, 1, NULL },
-	{ "IsShipValid", HT_IsShipValid, 1, NULL },
-	{ "ComputeShipTotalCost", (PyCFunction)(void (*)(void))HT_ComputeShipTotalCost, 3, NULL },
-	{ "ShowRebuildShipMoney", HT_ShowRebuildShipMoney, 1, NULL },
-	{ "HideRebuildShipMoney", HT_HideRebuildShipMoney, 1, NULL },
-	{ "AuxShowMoney", HT_AuxShowMoney, 1, NULL },
-	{ "ShowMoneyBuyingShip", HT_ShowMoneyBuyingShip, 1, NULL },
-	{ "ShowMoneySellingShip", HT_ShowMoneySellingShip, 1, NULL },
-	{ "HideMoney", HT_HideMoney, 1, NULL },
-	{ "ScaleSpeedRamp", (PyCFunction)(void (*)(void))HT_ScaleSpeedRamp, 3, NULL },
-	{ "GetSpeedRampOffsets", HT_GetSpeedRampOffsets, 1, NULL },
-	{ "GetMaxSpeedTime", HT_GetMaxSpeedTime, 1, NULL },
-	{ "SetHangarPanel", HT_SetHangarPanel, 1, NULL },
-	{ "CmSec2Value", HT_CmSec2Value, 1, NULL },
-	{ "ShowShipInfo", (PyCFunction)(void (*)(void))HT_ShowShipInfo, 3, NULL },
-	{ "HideShipInfo", HT_HideShipInfo, 1, NULL },
-	{ "PrevShipToEdit", HT_PrevShipToEdit, 1, NULL },
-	{ "NextShipToEdit", HT_NextShipToEdit, 1, NULL },
-	{ "SetShipTypeButtonsState", HT_SetShipTypeButtonsState, 1, NULL },
-	{ "SelectShipToEdit", HT_SelectShipToEdit, 1, NULL },
-	{ "SelectHangar", (PyCFunction)(void (*)(void))HT_SelectHangar, 3, NULL },
-	{ "SelectItem", HT_SelectItem, 1, NULL },
-	{ "CreateEmptyShip", HT_CreateEmptyShip, 1, NULL },
-	{ "BuyShip", HT_BuyShip, 1, NULL },
-	{ "SellShip", HT_SellShip, 1, NULL },
-	{ "AddReferenceShipControls", HT_AddReferenceShipControls, 1, NULL },
-	{ "ShowShipMiniInfo", HT_ShowShipMiniInfo, 1, NULL },
-	{ "HideShipMiniInfo", HT_HideShipMiniInfo, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_HangarTabMethods[] = {
+	PORT_FN(ShowBoostPrediction, HT_ShowBoostPrediction),
+	PORT_FN(DisableChangePlatformButtons, HT_DisableChangePlatformButtons),
+	PORT_FN(EnableChangePlatformButtons, HT_EnableChangePlatformButtons),
+	PORT_FN(PrevPilot, HT_PrevPilot),
+	PORT_FN(NextPilot, HT_NextPilot),
+	PORT_FNK(DrawBackground, HangarTab_DrawBackground),
+	PORT_FN(SetSellVisible, HT_SetSellVisible),
+	PORT_FN(SetSellActive, HT_SetSellActive),
+	PORT_FN(SetExitVisible, HT_SetExitVisible),
+	PORT_FN(SetShipTypeVisible, HT_SetShipTypeVisible),
+	PORT_FN(SetPilotVisible, HT_SetPilotVisible),
+	PORT_FN(HideHangarPanel, HT_HideHangarPanel),
+	PORT_FN(UpdateHangars, HT_UpdateHangars),
+	PORT_FN(ShowHangarPanel, HT_ShowHangarPanel),
+	PORT_FN(IsShipValid, HT_IsShipValid),
+	PORT_FNK(ComputeShipTotalCost, HT_ComputeShipTotalCost),
+	PORT_FN(ShowRebuildShipMoney, HT_ShowRebuildShipMoney),
+	PORT_FN(HideRebuildShipMoney, HT_HideRebuildShipMoney),
+	PORT_FN(AuxShowMoney, HT_AuxShowMoney),
+	PORT_FN(ShowMoneyBuyingShip, HT_ShowMoneyBuyingShip),
+	PORT_FN(ShowMoneySellingShip, HT_ShowMoneySellingShip),
+	PORT_FN(HideMoney, HT_HideMoney),
+	PORT_FNK(ScaleSpeedRamp, HT_ScaleSpeedRamp),
+	PORT_FN(GetSpeedRampOffsets, HT_GetSpeedRampOffsets),
+	PORT_FN(GetMaxSpeedTime, HT_GetMaxSpeedTime),
+	PORT_FN(SetHangarPanel, HT_SetHangarPanel),
+	PORT_FN(CmSec2Value, HT_CmSec2Value),
+	PORT_FNK(ShowShipInfo, HT_ShowShipInfo),
+	PORT_FN(HideShipInfo, HT_HideShipInfo),
+	PORT_FN(PrevShipToEdit, HT_PrevShipToEdit),
+	PORT_FN(NextShipToEdit, HT_NextShipToEdit),
+	PORT_FN(SetShipTypeButtonsState, HT_SetShipTypeButtonsState),
+	PORT_FN(SelectShipToEdit, HT_SelectShipToEdit),
+	PORT_FNK(SelectHangar, HT_SelectHangar),
+	PORT_FN(SelectItem, HT_SelectItem),
+	PORT_FN(CreateEmptyShip, HT_CreateEmptyShip),
+	PORT_FN(BuyShip, HT_BuyShip),
+	PORT_FN(SellShip, HT_SellShip),
+	PORT_FN(AddReferenceShipControls, HT_AddReferenceShipControls),
+	PORT_FN(ShowShipMiniInfo, HT_ShowShipMiniInfo),
+	PORT_FN(HideShipMiniInfo, HT_HideShipMiniInfo),
+	PORT_FNEND
 };
 
 PORTS(HangarTab)

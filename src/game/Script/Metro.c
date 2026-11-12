@@ -4,8 +4,8 @@
  * an elevator ride (Elevator.UseElevator with "MoveLevel <station>") while the player walks into the train. The
  * layout of the map is data/menus/metro.def.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The module variables (MissionMap, OutOfMetro, WalkCharSpeed; PlayerName and CallParams, which
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the function table
+ * rows name the entries. The module variables (MissionMap, OutOfMetro, WalkCharSpeed; PlayerName and CallParams, which
  * the script creates on the first use) are read from the registry where the script reads them and written there where
  * it writes them. The calls of Elevator, Menu and Chars go through their refs (stage 3); Init.Path and
  * Menu.BackButtonYStart are read by name.
@@ -576,41 +576,36 @@ static byte Metro_Door(const nativeVal_t *door) {
 
 MODE_FN(Metro, DoorInitializator, 1, Metro_Door(&a[0]))
 
-/* ObjInitializator(elv, ExtraInfo): the door of Elevator that opens by itself */
-static PyObject *Metro_ObjInitializator(PyObject *self, PyObject *args) {
+/* ObjInitializator(elv, ExtraInfo): the door of Elevator that opens by itself (the attribute set of a value that is
+ * no handle with its error) */
+static byte Metro_ObjInit(const nativeVal_t *a) {
 	static const char *const mods[] = { "Elevator", NULL };
-	PyObject *elv, *extra;
 	nativeVal_t v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &elv, &extra) || !Script_Import(mods) ||
-		!PORT_CALL(Elevator, ObjInitializator, NULL, "OO", elv, extra)) {
-		return NULL;
+	if (!Script_Import(mods) || !PORT_CALL(Elevator, ObjInitializator, NULL, "vv", &a[0], &a[1])) {
+		return 0;
 	}
-	if (!PyEntity_Check(elv)) {
-		/* OBJLIB 7: the attribute set of another value, with its error */
-		return Mode_Result(Script_HSet(elv, "OnObjSlot", PyString_FromString("!AutoDoorSlot")));
-	}
-	const cEntityRef *ref = ((cPyEntity *)elv)->ref;
 	Native_SetStr(&v, "!AutoDoorSlot");
-	return Mode_Result(Native_EntSet(ref->link.target, ref->name, "OnObjSlot", &v));
+	return Mode_VSet(&a[0], "OnObjSlot", &v);
 }
 
-PyMethodDef g_MetroMethods[] = {
-	{ "CalculateMissionMap", Metro_CalculateMissionMap, 1, NULL },
-	{ "WrongOpt", Mode_PyNone2, 1, NULL },
-	{ "RecoverUsr", Metro_RecoverUsrPy, 1, NULL },
-	{ "OutDoorInitializator", Metro_OutDoorInitializator, 1, NULL },
-	{ "SetUsrParams", Metro_SetUsrParamsPy, 1, NULL },
-	{ "UseMetro", Metro_UseMetroPy, 1, NULL },
-	{ "CreateStation", Metro_CreateStation, 1, NULL },
-	{ "DoNothing", Mode_PyNone2, 1, NULL },
-	{ "ShowHint", Metro_ShowHintPy, 1, NULL },
-	{ "HideHint", Metro_HideHintPy, 1, NULL },
-	{ "OnUse", Metro_OnUsePy, 1, NULL },
-	{ "SetAsMetro", Metro_SetAsMetroPy, 1, NULL },
-	{ "DoorInitializator", Metro_DoorInitializator, 1, NULL },
-	{ "ObjInitializator", Metro_ObjInitializator, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+MODE_FN(Metro, ObjInitializator, 2, Metro_ObjInit(a))
+
+const portFn_t g_MetroMethods[] = {
+	PORT_FN(CalculateMissionMap, Metro_CalculateMissionMap),
+	PORT_FN(WrongOpt, Mode_PyNone2),
+	PORT_FN(RecoverUsr, Metro_RecoverUsrPy),
+	PORT_FN(OutDoorInitializator, Metro_OutDoorInitializator),
+	PORT_FN(SetUsrParams, Metro_SetUsrParamsPy),
+	PORT_FN(UseMetro, Metro_UseMetroPy),
+	PORT_FN(CreateStation, Metro_CreateStation),
+	PORT_FN(DoNothing, Mode_PyNone2),
+	PORT_FN(ShowHint, Metro_ShowHintPy),
+	PORT_FN(HideHint, Metro_HideHintPy),
+	PORT_FN(OnUse, Metro_OnUsePy),
+	PORT_FN(SetAsMetro, Metro_SetAsMetroPy),
+	PORT_FN(DoorInitializator, Metro_DoorInitializator),
+	PORT_FN(ObjInitializator, Metro_ObjInitializator),
+	PORT_FNEND
 };
 
 PORTS(Metro)

@@ -12,9 +12,13 @@
 #define HT "HangarTab"
 
 /* ShipEdit.DrawBackground(id, elem, posX=64, ...), also SputnikInterface.DrawBackground (the same script code) */
-PyObject *ShipEdit_DrawBackground(PyObject *self, PyObject *args, PyObject *kw);
+extern char *ShipEdit_DrawBackground_N[];
+extern const char ShipEdit_DrawBackground_F[];
+byte ShipEdit_DrawBackground_E(const nativeVal_t *a, int n, nativeVal_t *out);
 /* HangarTab.DrawBackground(id, posX=64, ...): ShipEdit's DrawBackground without elem (the sprite Background) */
-PyObject *HangarTab_DrawBackground(PyObject *self, PyObject *args, PyObject *kw);
+extern char *HangarTab_DrawBackground_N[];
+extern const char HangarTab_DrawBackground_F[];
+byte HangarTab_DrawBackground_E(const nativeVal_t *a, int n, nativeVal_t *out);
 
 /*
  * ---- native helpers (docs/objlib-plan.md, stage 2) ----

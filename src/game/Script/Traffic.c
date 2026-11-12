@@ -234,7 +234,7 @@ static byte Traffic_InitN(void) {
 		Mode_GVarSetS("OnPlayerHelpedPolice", "Traffic.OnPlayerHelpedPolice");
 }
 
-/* the adapters and their entries (no arguments: the arity of the script's functions is not checked, as the port did) */
+/* the entries (no arguments: the arity of the script's functions is not checked, as the port did) */
 MODE_FNANY(Traffic, SetPath, Traffic_SetPathN())
 MODE_FNANY(Traffic, ResetPath, Traffic_ResetPathN())
 MODE_FNANY(Traffic, InitAIProfiles, Traffic_InitAIProfilesN())
@@ -251,23 +251,23 @@ MODE_FN(Traffic, HeavyTrafficDeath, 2, Traffic_TrackDeath(&a[1], "AcHeavyShips",
 MODE_FN(Traffic, NormalTrafficDeath, 2, Traffic_TrackDeath(&a[1], "AcNormalShips", "NormalTraffic", "Light"))
 MODE_FN(Traffic, MediumTrafficDeath, 2, Traffic_TrackDeath(&a[1], "AcMediumShips", "MediumTraffic", "Medium"))
 
-PyMethodDef g_TrafficMethods[] = {
-	{ "SetPath", Traffic_SetPath, 1, NULL },
-	{ "ResetPath", Traffic_ResetPath, 1, NULL },
-	{ "InitAIProfiles", Traffic_InitAIProfiles, 1, NULL },
-	{ "EmptyFunc", Traffic_EmptyFunc, 1, NULL },
-	{ "MakeTrafic", Traffic_MakeTrafic, 1, NULL },
-	{ "InitTraffic", Traffic_InitTraffic, 1, NULL },
-	{ "OnNeedMoreTraffic", Traffic_OnNeedMoreTraffic, 1, NULL },
-	{ "OnNeedMoreChasingTraffic", Traffic_OnNeedMoreChasingTraffic, 1, NULL },
-	{ "OnPlayerHelpedPolice", Traffic_OnPlayerHelpedPolice, 1, NULL },
-	{ "RailTrafficDeath", Traffic_RailTrafficDeath, 1, NULL },
-	{ "HeavyTrafficDeath", Traffic_HeavyTrafficDeath, 1, NULL },
-	{ "NormalTrafficDeath", Traffic_NormalTrafficDeath, 1, NULL },
-	{ "MediumTrafficDeath", Traffic_MediumTrafficDeath, 1, NULL },
-	{ "InitCivilTraffic", Traffic_InitCivilTraffic, 1, NULL },
-	{ "Init", Traffic_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TrafficMethods[] = {
+	PORT_FN(SetPath, Traffic_SetPath),
+	PORT_FN(ResetPath, Traffic_ResetPath),
+	PORT_FN(InitAIProfiles, Traffic_InitAIProfiles),
+	PORT_FN(EmptyFunc, Traffic_EmptyFunc),
+	PORT_FN(MakeTrafic, Traffic_MakeTrafic),
+	PORT_FN(InitTraffic, Traffic_InitTraffic),
+	PORT_FN(OnNeedMoreTraffic, Traffic_OnNeedMoreTraffic),
+	PORT_FN(OnNeedMoreChasingTraffic, Traffic_OnNeedMoreChasingTraffic),
+	PORT_FN(OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPolice),
+	PORT_FN(RailTrafficDeath, Traffic_RailTrafficDeath),
+	PORT_FN(HeavyTrafficDeath, Traffic_HeavyTrafficDeath),
+	PORT_FN(NormalTrafficDeath, Traffic_NormalTrafficDeath),
+	PORT_FN(MediumTrafficDeath, Traffic_MediumTrafficDeath),
+	PORT_FN(InitCivilTraffic, Traffic_InitCivilTraffic),
+	PORT_FN(Init, Traffic_Init),
+	PORT_FNEND
 };
 
 /* ---- the police by reputation (police.def) ---- */
@@ -508,7 +508,7 @@ static byte OutPolice_NextWaveN(const nativeVal_t *doprice) {
 	return Mode_Done(&t, go >= 0);
 }
 
-/* the adapters and their entries (MakePoli and NextWave check their arguments, the others take any, as the port did) */
+/* the entries (MakePoli and NextWave check their arguments, the others take any, as the port did) */
 MODE_FN(OutPolice, MakePoli, 1, OutPolice_MakePoliN(&a[0]))
 
 MODE_FNANY(OutPolice, InitShips, OutPolice_InitShipsN())
@@ -523,16 +523,14 @@ static byte OutPolice_NextWave_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	return Mode_Parse(a, n, "|O", &doprice) && OutPolice_NextWaveN(doprice);
 }
 
-MODE_ADAPTER(OutPolice, NextWave)
-
-PyMethodDef g_OutPoliceMethods[] = {
-	{ "MakePoli", OutPolice_MakePoli, 1, NULL },
-	{ "Init", OutPolice_Init, 1, NULL },
-	{ "NextWave", OutPolice_NextWave, 1, NULL },
-	{ "InitShips", OutPolice_InitShips, 1, NULL },
-	{ "InitWaves", OutPolice_InitWaves, 1, NULL },
-	{ "InitAIProfiles", OutPolice_InitAIProfiles, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutPoliceMethods[] = {
+	PORT_FN(MakePoli, OutPolice_MakePoli),
+	PORT_FN(Init, OutPolice_Init),
+	PORT_FN(NextWave, OutPolice_NextWave),
+	PORT_FN(InitShips, OutPolice_InitShips),
+	PORT_FN(InitWaves, OutPolice_InitWaves),
+	PORT_FN(InitAIProfiles, OutPolice_InitAIProfiles),
+	PORT_FNEND
 };
 
 /* ---- InPolice ---- */
@@ -584,11 +582,11 @@ MODE_FN(InPolice, Include, 1, InPolice_IncludeN(&a[0]))
 MODE_FNANY(InPolice, SetGVars, InPolice_SetGVarsN())
 MODE_FNANY(InPolice, Init, InPolice_InitN())
 
-PyMethodDef g_InPoliceMethods[] = {
-	{ "Include", InPolice_Include, 1, NULL },
-	{ "SetGVars", InPolice_SetGVars, 1, NULL },
-	{ "Init", InPolice_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_InPoliceMethods[] = {
+	PORT_FN(Include, InPolice_Include),
+	PORT_FN(SetGVars, InPolice_SetGVars),
+	PORT_FN(Init, InPolice_Init),
+	PORT_FNEND
 };
 
 PORTS(Traffic)

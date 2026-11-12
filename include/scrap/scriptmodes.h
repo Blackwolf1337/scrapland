@@ -305,8 +305,6 @@ PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
 		} \
 		return Mode_Out(&t, pre##_##name##_E(a, nargs, out), out); \
 	}
-/* Py_None for 1, NULL for 0 */
-PyObject *Mode_Result(byte ok);
 /* the value as the result of an adapter (freed), NULL for 0 */
 PyObject *Mode_Return(byte ok, nativeVal_t *v);
 
@@ -829,11 +827,11 @@ void Mode_ItemVisible(int id, const char *item, int v);
 #define Mode_LinkCall(fn, id, a, b) Mode_CbLink(PORT_VSITE(), fn, id, a, b)
 byte Mode_SoundOf(const char *name);
 /* the int value i in v (v returned); (a, b, c) of copies of three values; Scrap.Rand(a, b) as the C ports draw it
- * (the C directly); an adapter of a script function that does nothing (any arguments, None) */
+ * (the C directly); the entry of a script function that does nothing (any arguments, None) */
 const nativeVal_t *Mode_IntVal(nativeVal_t *v, long i);
 void Mode_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c);
 void Mode_RandF(double a, double b, nativeVal_t *out);
-PyObject *Mode_PyNone(PyObject *self, PyObject *args);
+byte Mode_PyNone_E(const nativeVal_t *a, int n, nativeVal_t *out);
 /* the Apply button of the option menus flashes once something changed (1) */
 byte Mode_ApplyFlash(int id);
 /* Scrap.StartDummySearch(name, flag) with the name a value of the script, through its seam (the TypeError of "s" for
@@ -853,8 +851,8 @@ byte Mode_AppendName(const char *module, const char *name, const nativeVal_t *h)
 byte Mode_SetAng(const nativeVal_t *h, const nativeVal_t *x);
 /* the system message (Mode_SpeechMsg) of the language text of key */
 byte Mode_LangMsg(const char *key);
-/* an adapter of a script function of two arguments that does nothing (the arity error of "OO", None) */
-PyObject *Mode_PyNone2(PyObject *self, PyObject *args);
+/* the entry of a script function of two arguments that does nothing (the arity error of "OO", None) */
+byte Mode_PyNone2_E(const nativeVal_t *a, int n, nativeVal_t *out);
 /* Flag.var = v with Flag the global of the module (OBJLIB 7: the flag is the entity handle in the module dict) */
 byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v);
 /* Scrap.GetEntity(Scrap.GetCam(0)) through the seam of GetEntity; its EntityLink = link */
@@ -939,18 +937,11 @@ PyObject *Mode_Entry(PyObject *args, portEntry_t entry);
 PyObject *Mode_SelfEntry(PyObject *self, PyObject *args, portEntry_t entry);
 /* the core of a keyword function: its arguments by slot, NULL for one not given (the core applies the default) */
 typedef byte (*modeKwCore_t)(const nativeVal_t *const *a, nativeVal_t *out);
-/* the adapter of a keyword function of "O" arguments (fmt and names of PyArg_ParseTupleAndKeywords, up to PORT_ARGS)
- * through its core, the result as Mode_Entry gives it; the names at file scope as <adapter>_N give the ref the keyword
- * calls (PORT_DEFK) */
-PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core);
 /* the entry of such a function: the n arguments given in order (the arity error of fmt), the others not given, and
  * an argument skipped with Mode_KwSkip not given (a required one: the arity error of the keywords) */
 byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t core, nativeVal_t *out);
 /* argument i of the n of a keyword entry is given: i < n and not skipped (Mode_KwSkip) */
 byte Mode_KwGiven(const nativeVal_t *a, int n, int i);
-/* the adapter of a keyword function of an int id and "O" arguments, one of them optional at most ("iO|O"): the
- * keywords and the errors of fmt, then its entry on the arguments given (the id as an int) */
-PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* a function with its adapter named fn whose first argument is an int id ("i"), nargs arguments in all (the others
  * native values in a): fn_E, its entry, and fn, its adapter */
 #define MODE_IFN(fn, nargs, call) \
@@ -979,6 +970,9 @@ void Mode_KwSkip(nativeVal_t *v);
  * value a[i] (a view, not freed) with given[i] 1, or None with given[i] 0 for one not given (i >= n or Mode_KwSkip);
  * the arity error of PyArg_ParseTupleAndKeywords for a count beyond the slots or a required one not given */
 byte Mode_KwSlots(const nativeVal_t *a, int n, const char *fmt, nativeVal_t *v, byte *given);
+/* only the arity errors of Mode_KwSlots: a keyword entry whose optional slots end the format (no gap after the n
+ * arguments) parses a and n with Mode_Parse after it */
+byte Mode_KwArity(const nativeVal_t *a, int n, const char *fmt);
 /* slot i of Mode_KwSlots a default when it is not given: a text (shorter than NATIVE_TEXT), an int, a float */
 void Mode_KwDefS(nativeVal_t *v, const byte *given, int i, const char *s);
 void Mode_KwDefI(nativeVal_t *v, const byte *given, int i, long l);
@@ -1275,10 +1269,6 @@ byte Mode_Quotable(const nativeVal_t *text);
 /* apply(f, args) as the builtin apply takes args, with the function a value (Mode_CbApplySeq) */
 byte Mode_CbApplySeqV(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
 #define MODE_CBAPPLYSEQV(f, args, out) Mode_CbApplySeqV(PORT_VSITE(), f, args, out)
-/* the adapter of a function that keeps or changes an argument as the object it is (OBJLIB 5 (7e: the adapter); a list
- * stored by identity or sorted in place): Mode_Entry with the arguments whose bits are set in objs given to the entry
- * as the objects themselves (NV_OBJ, whatever they are; Native_Arg would copy a plain list) */
-PyObject *Mode_EntryObj(PyObject *args, portEntry_t entry, unsigned objs);
 /* int(v) of the script into *out: Native_ToInt (numbers and texts), an object through PyNumber_Int (OBJLIB 9: an
  * instance's __int__) */
 byte Mode_Int(const nativeVal_t *v, nativeVal_t *out);

@@ -5,17 +5,17 @@
  * and the hired mercenaries. The class cShipAI, StdShips, AIProf, Mercs, UseMercs and lmigd stay variables of the
  * module, its code (the save variable StdShipAIProfile) stays in the script.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * variables are read where the script reads them as its globals and StdShips and AIProf changed in place (
- * Traffic, the level files, the police and the cases read them and put profiles into AIProf). The profile objects (a
- * cShipAI instance), the ships (handle values) and the hooks stay Python values (OBJLIB 7). Vehicles, OutMap, Parking
- * and Traffic are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else by
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries.
+ * The variables are read where the script reads them as its globals and StdShips and AIProf changed in place ( Traffic,
+ * the level files, the police and the cases read them and put profiles into AIProf). The profile objects (a cShipAI
+ * instance), the ships (handle values) and the hooks stay Python values (OBJLIB 7). Vehicles, OutMap, Parking and
+ * Traffic are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else by
  * name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
  * global: a mission or a case may replace one). The class cShipAI is called as the module's variable (OBJLIB 5 (9c: a
  * class the .mod defines, no port function)), the scheduler takes the entry of the global InitMercs (Port_Scheduled),
  * SAI and SWeap go through their refs (stage 7) except SAI.EnableAIVehicle (by name, OBJLIB 7: see below),
- * Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams. The .def runner
- * takes its $names as native values.
+ * Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams. The .def runner takes its
+ * $names as native values.
  */
 #include <string.h>
 
@@ -470,8 +470,8 @@ static byte Npc_InitN(void) {
 	return Mode_Done(&t, ok && Mode_ScheduleV(time, f, NULL, 0, name));
 }
 
-/* the functions with keyword arguments: one core each on the arguments by slot (NULL for one not given), the adapter
- * (Mode_KwCall) and the entry (Mode_KwEntry) */
+/* the functions with keyword arguments: one core each on the arguments by slot (NULL for one not given), and the
+ * entry (Mode_KwEntry) */
 static byte Npc_MakeAIK(const nativeVal_t *const *a, nativeVal_t *out) {
 	nativeVal_t name, init;
 	Native_SetStr(&name, "Traffic");
@@ -495,12 +495,6 @@ static byte VehiclesNPC_MakeAI_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 static char *VehiclesNPC_MakeAI_N[] = { "TypeShip", "Name", "FarPos", "InitState", NULL };
 static const char VehiclesNPC_MakeAI_F[] = "O|OOO";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *VehiclesNPC_MakeAI(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "O|OOO", VehiclesNPC_MakeAI_N, Npc_MakeAIK);
-}
-
 static byte VehiclesNPC_ModAIProff_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "OO|O", Npc_ModAIProffK, out);
 }
@@ -508,24 +502,12 @@ static byte VehiclesNPC_ModAIProff_E(const nativeVal_t *a, int n, nativeVal_t *o
 static char *VehiclesNPC_ModAIProff_N[] = { "o1", "pd", "useLife", NULL };
 static const char VehiclesNPC_ModAIProff_F[] = "OO|O";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *VehiclesNPC_ModAIProff(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", VehiclesNPC_ModAIProff_N, Npc_ModAIProffK);
-}
-
 static byte VehiclesNPC_SetIAProf_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_KwEntry(a, n, "OO|O", Npc_SetIAProfK, out);
 }
 
 static char *VehiclesNPC_SetIAProf_N[] = { "o1", "TypeShip", "InitState", NULL };
 static const char VehiclesNPC_SetIAProf_F[] = "OO|O";
-
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *VehiclesNPC_SetIAProf(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", VehiclesNPC_SetIAProf_N, Npc_SetIAProfK);
-}
 
 MODE_FN(VehiclesNPC, InitStdShips, 0, Npc_InitStdShipsN())
 MODE_FN(VehiclesNPC, GetIAProf, 1, Npc_GetIAProfN(&a[0], out))
@@ -535,18 +517,18 @@ MODE_FN(VehiclesNPC, MercOnDeath, 2, Npc_MercOnDeathN(&a[0], &a[1]))
 MODE_FN(VehiclesNPC, InitMercs, 0, Npc_InitMercsN())
 MODE_FN(VehiclesNPC, Init, 0, Npc_InitN())
 
-PyMethodDef g_VehiclesNPCMethods[] = {
-	{ "InitStdShips", VehiclesNPC_InitStdShips, 1, NULL },
-	{ "MakeAI", (PyCFunction)(void (*)(void))VehiclesNPC_MakeAI, 3, NULL },
-	{ "GetIAProf", VehiclesNPC_GetIAProf, 1, NULL },
-	{ "ModAIProff", (PyCFunction)(void (*)(void))VehiclesNPC_ModAIProff, 3, NULL },
-	{ "SetIAProf", (PyCFunction)(void (*)(void))VehiclesNPC_SetIAProf, 3, NULL },
-	{ "SetAIProfile", VehiclesNPC_SetAIProfile, 1, NULL },
-	{ "SetStdProperties", VehiclesNPC_SetStdProperties, 1, NULL },
-	{ "MercOnDeath", VehiclesNPC_MercOnDeath, 1, NULL },
-	{ "InitMercs", VehiclesNPC_InitMercs, 1, NULL },
-	{ "Init", VehiclesNPC_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_VehiclesNPCMethods[] = {
+	PORT_FN(InitStdShips, VehiclesNPC_InitStdShips),
+	PORT_FNK(MakeAI, VehiclesNPC_MakeAI),
+	PORT_FN(GetIAProf, VehiclesNPC_GetIAProf),
+	PORT_FNK(ModAIProff, VehiclesNPC_ModAIProff),
+	PORT_FNK(SetIAProf, VehiclesNPC_SetIAProf),
+	PORT_FN(SetAIProfile, VehiclesNPC_SetAIProfile),
+	PORT_FN(SetStdProperties, VehiclesNPC_SetStdProperties),
+	PORT_FN(MercOnDeath, VehiclesNPC_MercOnDeath),
+	PORT_FN(InitMercs, VehiclesNPC_InitMercs),
+	PORT_FN(Init, VehiclesNPC_Init),
+	PORT_FNEND
 };
 
 PORTS(VehiclesNPC)

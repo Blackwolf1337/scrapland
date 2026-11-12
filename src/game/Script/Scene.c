@@ -777,7 +777,7 @@ static byte Sc_EndOutDoorScene(void) {
 		PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, prev));
 }
 
-/* ---- adapters ---- */
+/* ---- entries ---- */
 
 MODE_FN(Scene, BaseAddActor, 3, Sc_BaseAddActor(&a[0], &a[1], &a[2]))
 MODE_FN(Scene, AddCharActor, 2, Sc_AddCharActor(&a[0], &a[1]))
@@ -851,42 +851,40 @@ MODE_KW(Scene, InitOutDoorScene, "|O", "HideChars") {
 	return Sc_InitOutDoorScene(&v[0]);
 }
 
-#define KW(fn) (PyCFunction)(void (*)(void))fn, 3
-
-PyMethodDef g_SceneMethods[] = {
-	{ "BaseAddActor", Scene_BaseAddActor, 1, NULL },
-	{ "AddCharActor", Scene_AddCharActor, 1, NULL },
-	{ "AddLocalActor", Scene_AddLocalActor, 1, NULL },
-	{ "ActorAction", KW(Scene_ActorAction), NULL },
-	{ "ActorActEvent", Scene_ActorActEvent, 1, NULL },
-	{ "ActorBreakChannel", Scene_ActorBreakChannel, 1, NULL },
-	{ "ActorActBreakChanne", Scene_ActorActBreakChanne, 1, NULL },
-	{ "ObjAction", KW(Scene_ObjAction), NULL },
-	{ "ObjActEvent", Scene_ObjActEvent, 1, NULL },
-	{ "SetDefSounds", Scene_SetDefSounds, 1, NULL },
-	{ "CreateLocalAction", KW(Scene_CreateLocalAction), NULL },
-	{ "ExecGeneric", Scene_ExecGeneric, 1, NULL },
-	{ "AddGeneric", KW(Scene_AddGeneric), NULL },
-	{ "AddStream", KW(Scene_AddStream), NULL },
-	{ "PlayStream", Scene_PlayStream, 1, NULL },
-	{ "PlayVoiceVol", Scene_PlayVoiceVol, 1, NULL },
-	{ "PlayText", Scene_PlayText, 1, NULL },
-	{ "SetText", Scene_SetText, 1, NULL },
-	{ "StopSpeech", KW(Scene_StopSpeech), NULL },
-	{ "AddText", KW(Scene_AddText), NULL },
-	{ "AbortScene", Scene_AbortScene, 1, NULL },
-	{ "EndOfScene", Scene_EndOfScene, 1, NULL },
-	{ "DelClass", Scene_DelClass, 1, NULL },
-	{ "AddSound", KW(Scene_AddSound), NULL },
-	{ "Load", Scene_Load, 1, NULL },
-	{ "UnhideChars", Scene_UnhideChars, 1, NULL },
-	{ "HideThis", Scene_HideThis, 1, NULL },
-	{ "HideChars", Scene_HideChars, 1, NULL },
-	{ "HideVehiclesToo", Scene_HideVehiclesToo, 1, NULL },
-	{ "Play", Scene_Play, 1, NULL },
-	{ "InitOutDoorScene", KW(Scene_InitOutDoorScene), NULL },
-	{ "EndOutDoorScene", Scene_EndOutDoorScene, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SceneMethods[] = {
+	PORT_FN(BaseAddActor, Scene_BaseAddActor),
+	PORT_FN(AddCharActor, Scene_AddCharActor),
+	PORT_FN(AddLocalActor, Scene_AddLocalActor),
+	PORT_FNK(ActorAction, Scene_ActorAction),
+	PORT_FN(ActorActEvent, Scene_ActorActEvent),
+	PORT_FN(ActorBreakChannel, Scene_ActorBreakChannel),
+	PORT_FN(ActorActBreakChanne, Scene_ActorActBreakChanne),
+	PORT_FNK(ObjAction, Scene_ObjAction),
+	PORT_FN(ObjActEvent, Scene_ObjActEvent),
+	PORT_FN(SetDefSounds, Scene_SetDefSounds),
+	PORT_FNK(CreateLocalAction, Scene_CreateLocalAction),
+	PORT_FN(ExecGeneric, Scene_ExecGeneric),
+	PORT_FNK(AddGeneric, Scene_AddGeneric),
+	PORT_FNK(AddStream, Scene_AddStream),
+	PORT_FN(PlayStream, Scene_PlayStream),
+	PORT_FN(PlayVoiceVol, Scene_PlayVoiceVol),
+	PORT_FN(PlayText, Scene_PlayText),
+	PORT_FN(SetText, Scene_SetText),
+	PORT_FNK(StopSpeech, Scene_StopSpeech),
+	PORT_FNK(AddText, Scene_AddText),
+	PORT_FN(AbortScene, Scene_AbortScene),
+	PORT_FN(EndOfScene, Scene_EndOfScene),
+	PORT_FN(DelClass, Scene_DelClass),
+	PORT_FNK(AddSound, Scene_AddSound),
+	PORT_FN(Load, Scene_Load),
+	PORT_FN(UnhideChars, Scene_UnhideChars),
+	PORT_FN(HideThis, Scene_HideThis),
+	PORT_FN(HideChars, Scene_HideChars),
+	PORT_FN(HideVehiclesToo, Scene_HideVehiclesToo),
+	PORT_FN(Play, Scene_Play),
+	PORT_FNK(InitOutDoorScene, Scene_InitOutDoorScene),
+	PORT_FN(EndOutDoorScene, Scene_EndOutDoorScene),
+	PORT_FNEND
 };
 
 PORTS(Scene)

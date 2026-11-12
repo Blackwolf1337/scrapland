@@ -982,13 +982,12 @@ static byte Po_RespawnFlagC(const char *m) {
 	return Mode_Import("Ffa") && Mode_SetModVar("Ffa", "MasterFlag", &none) && PO_OWN(m, ServerDropFlag, NULL, "");
 }
 
-/* ---- the entries and adapters of the module tables (OBJLIB 7: the adapters with the arguments, results and the
- * errors of the Python calls) ---- */
+/* ---- the entries of the module tables ---- */
 
 /* the entry of module mod for a function that does nothing with its n arguments */
 #define NM_PASS(mod, name, nargs) MODE_FN(mod, name, nargs, 1)
 
-#define NM_ENTRY(mod, name) { #name, mod##_##name, 1, NULL },
+#define NM_ENTRY(mod, name) PORT_FN(name, mod##_##name),
 
 /* the functions every mode has, those of the free for all and of the team modes, the ones that do nothing */
 #define NM_COMMON(mod) MODE_FN(mod, ShowHelp, 1, Nm_ShowHelpC(#mod, &a[0]))
@@ -1005,15 +1004,15 @@ NM_PASS(NDeathMatch, InitClientModPass, 0)
 NM_PASS(NDeathMatch, ServerHidePlayerPass, 1)
 MODE_FN(NDeathMatch, DeathFunc, 3, Nm_DeathFuncC(a))
 
-PyMethodDef g_NDeathMatchMethods[] = {
+const portFn_t g_NDeathMatchMethods[] = {
 	NM_ENTRY(NDeathMatch, DeathFunc)
 	NM_ENTRY(NDeathMatch, CheckEndOfGame)
 	NM_ENTRY(NDeathMatch, GetGameDescriptor)
-	{ "InitServerMod", NDeathMatch_InitClientModPass, 1, NULL },
-	{ "InitClientMod", NDeathMatch_InitClientModPass, 1, NULL },
+	PORT_FN(InitServerMod, NDeathMatch_InitClientModPass),
+	PORT_FN(InitClientMod, NDeathMatch_InitClientModPass),
 	NM_ENTRY(NDeathMatch, ShowHelp)
-	{ "ServerHidePlayer", NDeathMatch_ServerHidePlayerPass, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+	PORT_FN(ServerHidePlayer, NDeathMatch_ServerHidePlayerPass),
+	PORT_FNEND
 };
 
 NM_COMMON(NDeathMatchBots)
@@ -1027,7 +1026,7 @@ MODE_FN(NDeathMatchBots, SetBotState, 1, Bots_SetBotStateC(&a[0]))
 MODE_FN(NDeathMatchBots, CheckBotState, 1, Bots_CheckBotStateC("NDeathMatchBots", &a[0]))
 MODE_FN(NDeathMatchBots, InitServerMod, 0, Bots_InitServerModC("NDeathMatchBots"))
 
-PyMethodDef g_NDeathMatchBotsMethods[] = {
+const portFn_t g_NDeathMatchBotsMethods[] = {
 	NM_ENTRY(NDeathMatchBots, DeathFunc)
 	NM_ENTRY(NDeathMatchBots, Reborn)
 	NM_ENTRY(NDeathMatchBots, CheckEndOfGame)
@@ -1036,10 +1035,10 @@ PyMethodDef g_NDeathMatchBotsMethods[] = {
 	NM_ENTRY(NDeathMatchBots, SetBotState)
 	NM_ENTRY(NDeathMatchBots, CheckBotState)
 	NM_ENTRY(NDeathMatchBots, InitServerMod)
-	{ "InitClientMod", NDeathMatchBots_InitClientModPass, 1, NULL },
+	PORT_FN(InitClientMod, NDeathMatchBots_InitClientModPass),
 	NM_ENTRY(NDeathMatchBots, ShowHelp)
-	{ "ServerHidePlayer", NDeathMatchBots_ServerHidePlayerPass, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+	PORT_FN(ServerHidePlayer, NDeathMatchBots_ServerHidePlayerPass),
+	PORT_FNEND
 };
 
 NM_COMMON(NTeamDM)
@@ -1048,15 +1047,15 @@ NM_PASS(NTeamDM, InitClientModPass, 0)
 NM_PASS(NTeamDM, ServerHidePlayerPass, 1)
 MODE_FN(NTeamDM, DeathFunc, 3, NTeamDM_DeathFuncC(a))
 
-PyMethodDef g_NTeamDMMethods[] = {
+const portFn_t g_NTeamDMMethods[] = {
 	NM_ENTRY(NTeamDM, DeathFunc)
-	{ "CheckEndOfGame", NTeamDM_CheckEndOfTeamGame, 1, NULL },
-	{ "GetGameDescriptor", NTeamDM_TeamDescriptor, 1, NULL },
-	{ "InitServerMod", NTeamDM_InitClientModPass, 1, NULL },
-	{ "InitClientMod", NTeamDM_InitClientModPass, 1, NULL },
+	PORT_FN(CheckEndOfGame, NTeamDM_CheckEndOfTeamGame),
+	PORT_FN(GetGameDescriptor, NTeamDM_TeamDescriptor),
+	PORT_FN(InitServerMod, NTeamDM_InitClientModPass),
+	PORT_FN(InitClientMod, NTeamDM_InitClientModPass),
 	NM_ENTRY(NTeamDM, ShowHelp)
-	{ "ServerHidePlayer", NTeamDM_ServerHidePlayerPass, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+	PORT_FN(ServerHidePlayer, NTeamDM_ServerHidePlayerPass),
+	PORT_FNEND
 };
 
 /* the functions of a flag mode (v 1 the team version) */
@@ -1078,7 +1077,7 @@ PyMethodDef g_NTeamDMMethods[] = {
 	NM_ENTRY(mod, InitServerMod) \
 	NM_ENTRY(mod, InitClientMod) \
 	NM_ENTRY(mod, ShowHelp) \
-	{ "ServerHidePlayer", mod##_ServerHidePlayerPass, 1, NULL }, \
+	PORT_FN(ServerHidePlayer, mod##_ServerHidePlayerPass), \
 	NM_ENTRY(mod, GetRndFlag) \
 	NM_ENTRY(mod, BrowseAreas) \
 	NM_ENTRY(mod, CreateFlag) \
@@ -1090,21 +1089,21 @@ PyMethodDef g_NTeamDMMethods[] = {
 FL_MODE(NFlagHunt, 0)
 NM_FFAEND(NFlagHunt)
 
-PyMethodDef g_NFlagHuntMethods[] = {
+const portFn_t g_NFlagHuntMethods[] = {
 	FL_ENTRIES(NFlagHunt)
 	NM_ENTRY(NFlagHunt, CheckEndOfGame)
 	NM_ENTRY(NFlagHunt, GetGameDescriptor)
-	{ NULL, NULL, 0, NULL },
+	PORT_FNEND
 };
 
 FL_MODE(NTeamFlag, 1)
 NM_TEAMEND(NTeamFlag)
 
-PyMethodDef g_NTeamFlagMethods[] = {
+const portFn_t g_NTeamFlagMethods[] = {
 	FL_ENTRIES(NTeamFlag)
-	{ "CheckEndOfGame", NTeamFlag_CheckEndOfTeamGame, 1, NULL },
-	{ "GetGameDescriptor", NTeamFlag_TeamDescriptor, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+	PORT_FN(CheckEndOfGame, NTeamFlag_CheckEndOfTeamGame),
+	PORT_FN(GetGameDescriptor, NTeamFlag_TeamDescriptor),
+	PORT_FNEND
 };
 
 /* DeathFunc of NPostman does nothing, NTeamPost scores the winner */
@@ -1156,21 +1155,21 @@ PyMethodDef g_NTeamFlagMethods[] = {
 PO_MODE(NPostman, 0)
 NM_FFAEND(NPostman)
 
-PyMethodDef g_NPostmanMethods[] = {
+const portFn_t g_NPostmanMethods[] = {
 	PO_ENTRIES(NPostman)
 	NM_ENTRY(NPostman, CheckEndOfGame)
 	NM_ENTRY(NPostman, GetGameDescriptor)
-	{ NULL, NULL, 0, NULL },
+	PORT_FNEND
 };
 
 PO_MODE(NTeamPost, 1)
 NM_TEAMEND(NTeamPost)
 
-PyMethodDef g_NTeamPostMethods[] = {
+const portFn_t g_NTeamPostMethods[] = {
 	PO_ENTRIES(NTeamPost)
-	{ "CheckEndOfGame", NTeamPost_CheckEndOfTeamGame, 1, NULL },
-	{ "GetGameDescriptor", NTeamPost_TeamDescriptor, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+	PORT_FN(CheckEndOfGame, NTeamPost_CheckEndOfTeamGame),
+	PORT_FN(GetGameDescriptor, NTeamPost_TeamDescriptor),
+	PORT_FNEND
 };
 
 PORTS(NetModes)

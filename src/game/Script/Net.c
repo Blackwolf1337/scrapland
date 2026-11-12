@@ -7,7 +7,7 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C on native values; the module has no
  * state of its own in C. ModesMap is read from the registry when the map list is purged; IsClient,
  * IsServer, Scrap.Set and Scrap.LoadLevel go through their seams. The functions of the table have native
- * entries (MODE_FN, stage 6 batch 6f) except the two default callbacks on the shared adapter Mode_PyNone2.
+ * entries (MODE_FN, stage 6 batch 6f; the two default callbacks the shared Mode_PyNone2_E).
  */
 #include "scrap/app.h"
 #include "scrap/net.h"
@@ -69,8 +69,7 @@ static byte Net_LoadSinglePlayerC(const nativeVal_t *path) {
 	return 1;
 }
 
-/* ---- the entries and adapters of the module table (OBJLIB 7: the adapters with the arguments and the errors of the
- * Python calls) ---- */
+/* ---- the entries of the module table ---- */
 
 MODE_FNANY(Net, PurgeServerMapList, Mode_PurgeServerMapList("Net"))
 MODE_FN(Net, Spectate, 2, Net_SpectateC(&a[0], &a[1]))
@@ -78,16 +77,16 @@ MODE_FN(Net, Spectate, 2, Net_SpectateC(&a[0], &a[1]))
 MODE_FN(Net, ClientJoinDef, 11, 1)
 MODE_FN(Net, LoadSinglePlayer, 1, Net_LoadSinglePlayerC(&a[0]))
 
-PyMethodDef g_NetMethods[] = {
-	{ "PurgeServerMapList", Net_PurgeServerMapList, 1, NULL },
-	{ "Spectate", Net_Spectate, 1, NULL },
-	/* OBJLIB 7: the two default callbacks stay the shared adapter without an entry (Mode_PyNone2): functions of one
-	 * adapter compare equal (ClientCreateDef == ClientAfterCreateDef, and the other modules' functions of it) */
-	{ "ClientCreateDef", Mode_PyNone2, 1, NULL },
-	{ "ClientAfterCreateDef", Mode_PyNone2, 1, NULL },
-	{ "ClientJoinDef", Net_ClientJoinDef, 1, NULL },
-	{ "LoadSinglePlayer", Net_LoadSinglePlayer, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+/* the two default callbacks share the entry Mode_PyNone2_E: functions of one entry compare equal (ClientCreateDef ==
+ * ClientAfterCreateDef, and the other modules' functions of it) */
+const portFn_t g_NetMethods[] = {
+	PORT_FN(PurgeServerMapList, Net_PurgeServerMapList),
+	PORT_FN(Spectate, Net_Spectate),
+	PORT_FN(ClientCreateDef, Mode_PyNone2),
+	PORT_FN(ClientAfterCreateDef, Mode_PyNone2),
+	PORT_FN(ClientJoinDef, Net_ClientJoinDef),
+	PORT_FN(LoadSinglePlayer, Net_LoadSinglePlayer),
+	PORT_FNEND
 };
 
 PORTS(Net)

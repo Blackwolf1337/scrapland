@@ -8,7 +8,7 @@
  * HangarTab, ShipMaker and Sound are used through their modules.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
- * PyMethodDef entries are adapters. The module's variables are read where the script reads them, canBeMounted,
+ * function table rows name the entries. The module's variables are read where the script reads them, canBeMounted,
  * nEngSlots and enginesList changed in place on the module's objects; the ship being edited is
  * HangarTab.prevShip as a handle value (OBJLIB 7), the tables of ShipMaker and ShipEdit are read as their
  * attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly while the attribute
@@ -466,15 +466,11 @@ static byte ET_HighlightCurrentMountedEngine_E(const nativeVal_t *a, int n, nati
 	int id;
 	(void)out;
 	Native_SetInt(&one, 1);
-	return Mode_Parse(a, n, "i|O", &id, &def) && ET_Highlight(id, def ? def : &one);
+	return Mode_KwArity(a, n, "i|O") && Mode_Parse(a, n, "i|O", &id, &def) && ET_Highlight(id, def ? def : &one);
 }
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *ET_HighlightCurrentMountedEngine(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "setDefault", NULL };
-	(void)self;
-	return Mode_KwIdEntry(args, kw, "i|O", names, ET_HighlightCurrentMountedEngine_E);
-}
+static char *ET_HighlightCurrentMountedEngine_N[] = { "id", "setDefault", NULL };
+static const char ET_HighlightCurrentMountedEngine_F[] = "i|O";
 
 /* the description of engine eng of the list (the tile Engine<n>) */
 static byte ET_Desc(int id, const nativeVal_t *n, const nativeVal_t *eng) {
@@ -1097,15 +1093,12 @@ static byte ET_SelectEngineGroupPy_E(const nativeVal_t *a, int n, nativeVal_t *o
 	int id;
 	(void)out;
 	Native_SetInt(&one, 1);
-	return Mode_Parse(a, n, "iO|O", &id, &control, &def) && ET_SelectEngineGroup(id, control, def ? def : &one);
+	return Mode_KwArity(a, n, "iO|O") && Mode_Parse(a, n, "iO|O", &id, &control, &def) &&
+		ET_SelectEngineGroup(id, control, def ? def : &one);
 }
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *ET_SelectEngineGroupPy(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "control", "setDefault", NULL };
-	(void)self;
-	return Mode_KwIdEntry(args, kw, "iO|O", names, ET_SelectEngineGroupPy_E);
-}
+static char *ET_SelectEngineGroupPy_N[] = { "id", "control", "setDefault", NULL };
+static const char ET_SelectEngineGroupPy_F[] = "iO|O";
 
 /* the method of a list variable of the module called in place (sort and append of the script's lists) */
 static byte ET_ListMethod(const char *var, const char *method, const nativeVal_t *arg) {
@@ -1234,9 +1227,6 @@ static byte ET_SetRecycleVisible_E(const nativeVal_t *a, int n, nativeVal_t *out
 	(void)out;
 	return ET_SetVisible(a, n, "Recycle", "recyclevisible");
 }
-
-MODE_ADAPTER(ET, SetPrevNextEngineVisible)
-MODE_ADAPTER(ET, SetRecycleVisible)
 
 /* the links of ShowEnginesPanel between the list, the bays, the recycle button and the exit (from Menu import
  * LinkLR, LinkUD, UnLinkUD: OBJLIB 6, the calls through Mode_LinkCallV on the function values) */
@@ -1566,8 +1556,6 @@ static byte ET_HideLayouts_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-MODE_ADAPTER(ET, HideLayouts)
-
 /* UpdateLayoutsState(id, index, state): the icons of bay index active (orange) or not (blue) */
 static byte ET_UpdateLayoutsState(int id, const nativeVal_t *index, const nativeVal_t *state) {
 	static const int on[4] = { 255, 200, 45, 255 };
@@ -1597,8 +1585,6 @@ static byte ET_UpdateLayoutsStatePy_E(const nativeVal_t *a, int n, nativeVal_t *
 	(void)out;
 	return Mode_Parse(a, n, "iOO", &id, &index, &state) && ET_UpdateLayoutsState(id, index, state);
 }
-
-MODE_ADAPTER(ET, UpdateLayoutsStatePy)
 
 /* UpdateLayoutsGlow(id, control): the icons of the bay control glow, the others not */
 static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
@@ -1877,31 +1863,31 @@ static byte ET_ScrollDown(int id, const nativeVal_t *control) {
 
 MODE_IFN(ET_ScrollEngineListDown, 2, ET_ScrollDown(id, &a[1]))
 
-PyMethodDef g_EnginesTabMethods[] = {
-	{ "HighlightCurrentMountedEngine", (PyCFunction)(void (*)(void))ET_HighlightCurrentMountedEngine, 3, NULL },
-	{ "ShowEngineDesc", ET_ShowEngineDescPy, 1, NULL },
-	{ "HideEngineDesc", ET_HideEngineDesc, 1, NULL },
-	{ "ChangeRecycleButtonState", ET_ChangeRecycleButtonState, 1, NULL },
-	{ "UpdateEnginesList", ET_UpdateEnginesList, 1, NULL },
-	{ "PutEngine", ET_PutEnginePy, 1, NULL },
-	{ "RecycleEngine", ET_RecycleEnginePy, 1, NULL },
-	{ "ShowMoneySellingEngine", ET_ShowMoneySellingEnginePy, 1, NULL },
-	{ "SelectEngineGroup", (PyCFunction)(void (*)(void))ET_SelectEngineGroupPy, 3, NULL },
-	{ "SetEnginesPanel", ET_SetEnginesPanelPy, 1, NULL },
-	{ "SetPrevNextEngineVisible", ET_SetPrevNextEngineVisible, 1, NULL },
-	{ "SetRecycleVisible", ET_SetRecycleVisible, 1, NULL },
-	{ "ShowEnginesPanel", ET_ShowEnginesPanelPy, 1, NULL },
-	{ "CreateLayouts", ET_CreateLayoutsPy, 1, NULL },
-	{ "UpdateLayouts", ET_UpdateLayoutsPy, 1, NULL },
-	{ "HideLayouts", ET_HideLayouts, 1, NULL },
-	{ "UpdateLayoutsState", ET_UpdateLayoutsStatePy, 1, NULL },
-	{ "UpdateLayoutsGlow", ET_UpdateLayoutsGlowPy, 1, NULL },
-	{ "LayoutsGainFocus", ET_LayoutsGainFocus, 1, NULL },
-	{ "LayoutsLostFocus", ET_LayoutsLostFocus, 1, NULL },
-	{ "HideEnginesPanel", ET_HideEnginesPanelPy, 1, NULL },
-	{ "ScrollEngineListUp", ET_ScrollEngineListUp, 1, NULL },
-	{ "ScrollEngineListDown", ET_ScrollEngineListDown, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_EnginesTabMethods[] = {
+	PORT_FNK(HighlightCurrentMountedEngine, ET_HighlightCurrentMountedEngine),
+	PORT_FN(ShowEngineDesc, ET_ShowEngineDescPy),
+	PORT_FN(HideEngineDesc, ET_HideEngineDesc),
+	PORT_FN(ChangeRecycleButtonState, ET_ChangeRecycleButtonState),
+	PORT_FN(UpdateEnginesList, ET_UpdateEnginesList),
+	PORT_FN(PutEngine, ET_PutEnginePy),
+	PORT_FN(RecycleEngine, ET_RecycleEnginePy),
+	PORT_FN(ShowMoneySellingEngine, ET_ShowMoneySellingEnginePy),
+	PORT_FNK(SelectEngineGroup, ET_SelectEngineGroupPy),
+	PORT_FN(SetEnginesPanel, ET_SetEnginesPanelPy),
+	PORT_FN(SetPrevNextEngineVisible, ET_SetPrevNextEngineVisible),
+	PORT_FN(SetRecycleVisible, ET_SetRecycleVisible),
+	PORT_FN(ShowEnginesPanel, ET_ShowEnginesPanelPy),
+	PORT_FN(CreateLayouts, ET_CreateLayoutsPy),
+	PORT_FN(UpdateLayouts, ET_UpdateLayoutsPy),
+	PORT_FN(HideLayouts, ET_HideLayouts),
+	PORT_FN(UpdateLayoutsState, ET_UpdateLayoutsStatePy),
+	PORT_FN(UpdateLayoutsGlow, ET_UpdateLayoutsGlowPy),
+	PORT_FN(LayoutsGainFocus, ET_LayoutsGainFocus),
+	PORT_FN(LayoutsLostFocus, ET_LayoutsLostFocus),
+	PORT_FN(HideEnginesPanel, ET_HideEnginesPanelPy),
+	PORT_FN(ScrollEngineListUp, ET_ScrollEngineListUp),
+	PORT_FN(ScrollEngineListDown, ET_ScrollEngineListDown),
+	PORT_FNEND
 };
 
 PORTS(EnginesTab)

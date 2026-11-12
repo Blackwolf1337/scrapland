@@ -80,12 +80,12 @@ MODE_FN(Alarm, SetAlarm, 1, Al_SetAlarm(&a[0]))
 MODE_FN(Alarm, Nothing, 0, 1)
 MODE_FN(Alarm, DeactivateAlarm, 0, Al_DeactivateAlarm())
 
-PyMethodDef g_AlarmMethods[] = {
-	{ "SetAlarm", Alarm_SetAlarm, 1, NULL },
-	{ "ActivateAlarm", Alarm_Nothing, 1, NULL },
-	{ "DeactivateAlarm", Alarm_DeactivateAlarm, 1, NULL },
-	{ "Init", Alarm_Nothing, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_AlarmMethods[] = {
+	PORT_FN(SetAlarm, Alarm_SetAlarm),
+	PORT_FN(ActivateAlarm, Alarm_Nothing),
+	PORT_FN(DeactivateAlarm, Alarm_DeactivateAlarm),
+	PORT_FN(Init, Alarm_Nothing),
+	PORT_FNEND
 };
 
 /* ---- NewsPanel ---- */
@@ -368,14 +368,14 @@ int NewsPanel_ModSettings(PyObject *module, PyObject *locals, nativeVal_t *body)
 	return ok;
 }
 
-PyMethodDef g_NewsPanelMethods[] = {
-	{ "GetNews", NewsPanel_GetNews, 1, NULL },
-	{ "FillNews", NewsPanel_FillNews, 1, NULL },
-	{ "Init", NewsPanel_Init, 1, NULL },
-	{ "UseNewsPanel", NewsPanel_UseNewsPanel, 1, NULL },
-	{ "EndOfNews", NewsPanel_EndOfNews, 1, NULL },
-	{ "SwitchAlarm", NewsPanel_SwitchAlarm, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_NewsPanelMethods[] = {
+	PORT_FN(GetNews, NewsPanel_GetNews),
+	PORT_FN(FillNews, NewsPanel_FillNews),
+	PORT_FN(Init, NewsPanel_Init),
+	PORT_FN(UseNewsPanel, NewsPanel_UseNewsPanel),
+	PORT_FN(EndOfNews, NewsPanel_EndOfNews),
+	PORT_FN(SwitchAlarm, NewsPanel_SwitchAlarm),
+	PORT_FNEND
 };
 
 PORTS(Alarm)

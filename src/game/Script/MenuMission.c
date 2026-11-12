@@ -396,7 +396,6 @@ static byte Menu_MenuMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Mission_Menu(id, control);
 	return 1;
 }
-MODE_ADAPTER(Menu, MenuMissionInfo)
 
 /* the arrows: the page of the arrow (its name), the cursor on the arrow that leads further the same way */
 static byte Mission_Arrow(const nativeVal_t *a, int n, byte left) {
@@ -413,13 +412,11 @@ static byte Menu_MenuMissionInfo_Left_E(const nativeVal_t *a, int n, nativeVal_t
 	(void)out;
 	return Mission_Arrow(a, n, 1);
 }
-MODE_ADAPTER(Menu, MenuMissionInfo_Left)
 
 static byte Menu_MenuMissionInfo_Right_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Mission_Arrow(a, n, 0);
 }
-MODE_ADAPTER(Menu, MenuMissionInfo_Right)
 
 #define MISSION_GO(func, page) MODE_IDFN(func, (Mission_Menu(id, page), 1))
 
@@ -448,7 +445,6 @@ static byte Menu_EnterMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	}
 	return 1;
 }
-MODE_ADAPTER(Menu, EnterMissionInfo)
 
 static byte Menu_ExitMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -462,7 +458,6 @@ static byte Menu_ExitMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *out
 	MODE_PRINTED(Menu, BackToGame, "i", (long)id);
 	return 1;
 }
-MODE_ADAPTER(Menu, ExitMissionInfo)
 
 /* MenuObjetive(id, num, text1, text2, (red, green, blue), (textred, textgreen, textblue)) */
 static byte Menu_MenuObjetive_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -476,7 +471,6 @@ static byte Menu_MenuObjetive_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Mission_Objective(id, num, t1, t2, frame, text);
 	return 1;
 }
-MODE_ADAPTER(Menu, MenuObjetive)
 
 static byte Menu_CrazyDealObjetive_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, num;
@@ -486,7 +480,6 @@ static byte Menu_CrazyDealObjetive_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Native_SetInt(out, Mission_DealObjective(id, num));
 	return 1;
 }
-MODE_ADAPTER(Menu, CrazyDealObjetive)
 
 static byte Menu_MissionNotesText_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -497,21 +490,20 @@ static byte Menu_MissionNotesText_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Mission_Notes(id);
 	return 1;
 }
-MODE_ADAPTER(Menu, MissionNotesText)
 
-PyMethodDef g_MenuMissionMethods[] = {
-	{ "MenuMissionInfo", Menu_MenuMissionInfo, 1, NULL },
-	{ "MenuMissionInfo_Left", Menu_MenuMissionInfo_Left, 1, NULL },
-	{ "MenuMissionInfo_Right", Menu_MenuMissionInfo_Right, 1, NULL },
-	{ "GoPrimaryMission", Menu_GoPrimaryMission, 1, NULL },
-	{ "GoCrazyDeal", Menu_GoCrazyDeal, 1, NULL },
-	{ "GoNotes", Menu_GoNotes, 1, NULL },
-	{ "EnterMissionInfo", Menu_EnterMissionInfo, 1, NULL },
-	{ "ExitMissionInfo", Menu_ExitMissionInfo, 1, NULL },
-	{ "MenuObjetive", Menu_MenuObjetive, 1, NULL },
-	{ "CrazyDealObjetive", Menu_CrazyDealObjetive, 1, NULL },
-	{ "MissionNotesText", Menu_MissionNotesText, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuMissionMethods[] = {
+	PORT_FN(MenuMissionInfo, Menu_MenuMissionInfo),
+	PORT_FN(MenuMissionInfo_Left, Menu_MenuMissionInfo_Left),
+	PORT_FN(MenuMissionInfo_Right, Menu_MenuMissionInfo_Right),
+	PORT_FN(GoPrimaryMission, Menu_GoPrimaryMission),
+	PORT_FN(GoCrazyDeal, Menu_GoCrazyDeal),
+	PORT_FN(GoNotes, Menu_GoNotes),
+	PORT_FN(EnterMissionInfo, Menu_EnterMissionInfo),
+	PORT_FN(ExitMissionInfo, Menu_ExitMissionInfo),
+	PORT_FN(MenuObjetive, Menu_MenuObjetive),
+	PORT_FN(CrazyDealObjetive, Menu_CrazyDealObjetive),
+	PORT_FN(MissionNotesText, Menu_MissionNotesText),
+	PORT_FNEND
 };
 
 PORTS(MenuMission)

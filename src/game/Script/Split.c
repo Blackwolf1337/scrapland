@@ -589,7 +589,7 @@ static byte Split_BlackBackC(const nativeVal_t *id) {
 	return Mode_Done(&t, Split_Id(id, &i) && Split_Run(i, "black", 1, "y", Mode_I(&t, lower == 0 ? 50 : 290)));
 }
 
-/* the adapters of the module table (OBJLIB 7: arguments, results and the errors of the Python calls) */
+/* the entries of the module table */
 #define SP_FN(name, nargs, call) MODE_FN(Split, name, nargs, call)
 
 /* the functions without arguments that ignore whatever they get */
@@ -639,40 +639,38 @@ MODE_KW(Split, ConfirmAbort, "OO|OO", "id", "event", "Execute", "TXT") {
 	return Split_ConfirmAbortC(&v[0], &v[1], given[2] ? &v[2] : NULL, given[3] ? &v[3] : NULL);
 }
 
-#define KW(fn) (PyCFunction)(void (*)(void))fn, 3
-
-PyMethodDef g_SplitMethods[] = {
-	{ "PurgeServerMapList", Split_PurgeServerMapList, 1, NULL },
-	{ "GetSpawnPos", Split_GetSpawnPos, 1, NULL },
-	{ "CreateUserShip", Split_CreateUserShip, 1, NULL },
-	{ "Init", Split_Init, 1, NULL },
-	{ "GetReSpawnPos", Split_GetSpawnPos, 1, NULL },
-	{ "ReSpawnShip", Split_ReSpawnShip, 1, NULL },
-	{ "OnDeathCallback", Split_OnDeathCallback, 1, NULL },
-	{ "ChooseShips", Split_ChooseShips, 1, NULL },
-	{ "ChangeShip", KW(Split_ChangeShip), NULL },
-	{ "NextShip", Split_NextShip, 1, NULL },
-	{ "PrevShip", Split_PrevShip, 1, NULL },
-	{ "StartGame", KW(Split_StartGame), NULL },
-	{ "DefaultSplitScorer", Split_DefaultSplitScorer, 1, NULL },
-	{ "EndOfGame", Split_EndOfGame, 1, NULL },
-	{ "ReloadNext", Split_ReloadNext, 1, NULL },
-	{ "ActualizeScorer", Split_ActualizeScorer, 1, NULL },
-	{ "MissionScorer", Split_MissionScorer, 1, NULL },
-	{ "SeleShip", Split_SeleShip, 1, NULL },
-	{ "InitChooseScorer", Split_InitChooseScorer, 1, NULL },
-	{ "ReadyToStartScorer", Split_ReadyToStartScorer, 1, NULL },
-	{ "ConfirmAbortMain", Split_ConfirmAbortMain, 1, NULL },
-	{ "ConfirmAbortPause", Split_ConfirmAbortPause, 1, NULL },
-	{ "ConfirmRestartPause", Split_ConfirmRestartPause, 1, NULL },
-	{ "ConfirmAbort", KW(Split_ConfirmAbort), NULL },
-	{ "Abort", Split_Abort, 1, NULL },
-	{ "Restart", Split_Restart, 1, NULL },
-	{ "PauseGame", Split_PauseGame, 1, NULL },
-	{ "PauseGameMenu", Split_PauseGameMenu, 1, NULL },
-	{ "LittleText", Split_LittleText, 1, NULL },
-	{ "BlackBack", Split_BlackBack, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SplitMethods[] = {
+	PORT_FN(PurgeServerMapList, Split_PurgeServerMapList),
+	PORT_FN(GetSpawnPos, Split_GetSpawnPos),
+	PORT_FN(CreateUserShip, Split_CreateUserShip),
+	PORT_FN(Init, Split_Init),
+	PORT_FN(GetReSpawnPos, Split_GetSpawnPos),
+	PORT_FN(ReSpawnShip, Split_ReSpawnShip),
+	PORT_FN(OnDeathCallback, Split_OnDeathCallback),
+	PORT_FN(ChooseShips, Split_ChooseShips),
+	PORT_FNK(ChangeShip, Split_ChangeShip),
+	PORT_FN(NextShip, Split_NextShip),
+	PORT_FN(PrevShip, Split_PrevShip),
+	PORT_FNK(StartGame, Split_StartGame),
+	PORT_FN(DefaultSplitScorer, Split_DefaultSplitScorer),
+	PORT_FN(EndOfGame, Split_EndOfGame),
+	PORT_FN(ReloadNext, Split_ReloadNext),
+	PORT_FN(ActualizeScorer, Split_ActualizeScorer),
+	PORT_FN(MissionScorer, Split_MissionScorer),
+	PORT_FN(SeleShip, Split_SeleShip),
+	PORT_FN(InitChooseScorer, Split_InitChooseScorer),
+	PORT_FN(ReadyToStartScorer, Split_ReadyToStartScorer),
+	PORT_FN(ConfirmAbortMain, Split_ConfirmAbortMain),
+	PORT_FN(ConfirmAbortPause, Split_ConfirmAbortPause),
+	PORT_FN(ConfirmRestartPause, Split_ConfirmRestartPause),
+	PORT_FNK(ConfirmAbort, Split_ConfirmAbort),
+	PORT_FN(Abort, Split_Abort),
+	PORT_FN(Restart, Split_Restart),
+	PORT_FN(PauseGame, Split_PauseGame),
+	PORT_FN(PauseGameMenu, Split_PauseGameMenu),
+	PORT_FN(LittleText, Split_LittleText),
+	PORT_FN(BlackBack, Split_BlackBack),
+	PORT_FNEND
 };
 
 /* ---- the modes: SDeathMatch, SFlagHunt, SPostman, SRace ---- */
@@ -840,11 +838,11 @@ static byte SDeathMatch_OnDeathFuncC(const nativeVal_t *looser, const nativeVal_
 MODE_FNANY(SDeathMatch, Init, SDeathMatch_InitC())
 MODE_FN(SDeathMatch, OnDeathFunc, 2, SDeathMatch_OnDeathFuncC(&a[0], &a[1]))
 
-PyMethodDef g_SDeathMatchMethods[] = {
-	{ "InitStatus", Mode_PyNone, 1, NULL },
-	{ "Init", SDeathMatch_Init, 1, NULL },
-	{ "OnDeathFunc", SDeathMatch_OnDeathFunc, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SDeathMatchMethods[] = {
+	PORT_FN(InitStatus, Mode_PyNone),
+	PORT_FN(Init, SDeathMatch_Init),
+	PORT_FN(OnDeathFunc, SDeathMatch_OnDeathFunc),
+	PORT_FNEND
 };
 
 /* ---- SFlagHunt ---- */
@@ -875,15 +873,15 @@ MODE_FNANY(SFlagHunt, Init, Sm_Players("SFlagHunt", "Killer") && Sm_OnDeath("SFl
 /* OnDeathFunc(LooserName, WinnerName): a death costs a point */
 MODE_FN(SFlagHunt, OnDeathFunc, 2, Mode_Import("Split") && Sm_Score(&a[0], -1) >= 0 && Sm_Actualize())
 
-PyMethodDef g_SFlagHuntMethods[] = {
-	{ "BrowseAreas", SFlagHunt_BrowseAreas, 1, NULL },
-	{ "GetRndFlag", SFlagHunt_GetRndFlag, 1, NULL },
-	{ "TakeFlag", SFlagHunt_TakeFlag, 1, NULL },
-	{ "CreateFlag", SFlagHunt_CreateFlag, 1, NULL },
-	{ "InitStatus", SFlagHunt_InitStatus, 1, NULL },
-	{ "Init", SFlagHunt_Init, 1, NULL },
-	{ "OnDeathFunc", SFlagHunt_OnDeathFunc, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SFlagHuntMethods[] = {
+	PORT_FN(BrowseAreas, SFlagHunt_BrowseAreas),
+	PORT_FN(GetRndFlag, SFlagHunt_GetRndFlag),
+	PORT_FN(TakeFlag, SFlagHunt_TakeFlag),
+	PORT_FN(CreateFlag, SFlagHunt_CreateFlag),
+	PORT_FN(InitStatus, SFlagHunt_InitStatus),
+	PORT_FN(Init, SFlagHunt_Init),
+	PORT_FN(OnDeathFunc, SFlagHunt_OnDeathFunc),
+	PORT_FNEND
 };
 
 /* ---- SPostman ---- */
@@ -1005,17 +1003,17 @@ MODE_FN(SPostman, OnDeathFunc, 2, SPostman_OnDeathFuncC(&a[0]))
 /* BattonRepos(): the data pack back at its start (the script sets it twice) */
 MODE_FNANY(SPostman, BattonRepos, Sm_FlagToGlobal("SPostman", "FlagInitPos") && Sm_FlagToGlobal("SPostman", "FlagInitPos"))
 
-PyMethodDef g_SPostmanMethods[] = {
-	{ "BrowseAreas", SPostman_BrowseAreas, 1, NULL },
-	{ "GetRndFlag", SPostman_GetRndFlag, 1, NULL },
-	{ "TakeArea", SPostman_TakeArea, 1, NULL },
-	{ "TakeFlag", SPostman_TakeFlag, 1, NULL },
-	{ "CreateFlag", SPostman_CreateFlag, 1, NULL },
-	{ "InitStatus", SPostman_InitStatus, 1, NULL },
-	{ "Init", SPostman_Init, 1, NULL },
-	{ "OnDeathFunc", SPostman_OnDeathFunc, 1, NULL },
-	{ "BattonRepos", SPostman_BattonRepos, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SPostmanMethods[] = {
+	PORT_FN(BrowseAreas, SPostman_BrowseAreas),
+	PORT_FN(GetRndFlag, SPostman_GetRndFlag),
+	PORT_FN(TakeArea, SPostman_TakeArea),
+	PORT_FN(TakeFlag, SPostman_TakeFlag),
+	PORT_FN(CreateFlag, SPostman_CreateFlag),
+	PORT_FN(InitStatus, SPostman_InitStatus),
+	PORT_FN(Init, SPostman_Init),
+	PORT_FN(OnDeathFunc, SPostman_OnDeathFunc),
+	PORT_FN(BattonRepos, SPostman_BattonRepos),
+	PORT_FNEND
 };
 
 /* ---- SRace ---- */
@@ -1240,18 +1238,18 @@ MODE_FNANY(SRace, Init, SRace_InitC())
 MODE_FNANY(SRace, ControlToRacers, Sm_SetPl("SRace", 0, "UsrControl", &(nativeVal_t){ .type = NV_INT, .i = 0 }) &&
 	Sm_SetPl("SRace", 1, "UsrControl", &(nativeVal_t){ .type = NV_INT, .i = 1 }))
 
-PyMethodDef g_SRaceMethods[] = {
-	{ "BrowseAreas", SRace_BrowseAreas, 1, NULL },
-	{ "GetRndFlag", SRace_GetRndFlag, 1, NULL },
-	{ "TakeFlag", SRace_TakeFlag, 1, NULL },
-	{ "CreateFlag", SRace_CreateFlag, 1, NULL },
-	{ "InitRacePos", SRace_InitRacePos, 1, NULL },
-	{ "GetReSpawnPos", SRace_GetReSpawnPos, 1, NULL },
-	{ "InitStatus", SRace_InitStatus, 1, NULL },
-	{ "Init", SRace_Init, 1, NULL },
-	{ "ControlToRacers", SRace_ControlToRacers, 1, NULL },
-	{ "OnDeathFunc", Mode_PyNone2, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SRaceMethods[] = {
+	PORT_FN(BrowseAreas, SRace_BrowseAreas),
+	PORT_FN(GetRndFlag, SRace_GetRndFlag),
+	PORT_FN(TakeFlag, SRace_TakeFlag),
+	PORT_FN(CreateFlag, SRace_CreateFlag),
+	PORT_FN(InitRacePos, SRace_InitRacePos),
+	PORT_FN(GetReSpawnPos, SRace_GetReSpawnPos),
+	PORT_FN(InitStatus, SRace_InitStatus),
+	PORT_FN(Init, SRace_Init),
+	PORT_FN(ControlToRacers, SRace_ControlToRacers),
+	PORT_FN(OnDeathFunc, Mode_PyNone2),
+	PORT_FNEND
 };
 
 PORTS(Split)

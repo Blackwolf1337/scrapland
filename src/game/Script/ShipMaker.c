@@ -9,11 +9,11 @@
  * shipsCosts, enginesCosts, FLAPS_ANM, MOTOR_ANM, PILOTAMN and armorPieceCost. The module code (PilotsList with the
  * lonely mercenary, AmorPieceWeight) stays in the script.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * tables are read where the script reads them as its globals and changed in place on the module's objects (
- * the .mod file, the editor tabs, Vehicles and the cases read them). The module's own functions are called through
- * its globals as the script calls them (PORT_OWN: directly while the global holds the port's function, else by name,
- * so a mission's replacement such as AB's FakeShips for CreateStdShips, or a case's, still gets the call), Fx and
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries.
+ * The tables are read where the script reads them as its globals and changed in place on the module's objects (the
+ * .mod file, the editor tabs, Vehicles and the cases read them). The module's own functions are called through its
+ * globals as the script calls them (PORT_OWN: directly while the global holds the port's function, else by name, so a
+ * mission's replacement such as AB's FakeShips for CreateStdShips, or a case's, still gets the call), Fx and
  * VehiclesNPC through their refs (PORT_CALL); the ships (handle values) and the functions ShipCallback holds stay
  * Python values (OBJLIB 7). Scrap.GetEntity, Preload3DObject and the SAct calls go through their seams (fc-om-dt,
  * fc-r7b-fb and the scene cases swap or record them, OBJLIB 7); Scrap.PreloadAnm, Verbose, SWeap.GetNWeap and GetSWeap
@@ -111,12 +111,6 @@ static byte ShipMaker_AddShip_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 
 static char *ShipMaker_AddShip_N[] = { "name", "Mass", "Style", "Engine", "BoostTime", "TopBoostTime", NULL };
 static const char ShipMaker_AddShip_F[] = "OOOO|OO";
-
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *ShipMaker_AddShip(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "OOOO|OO", ShipMaker_AddShip_N, Sm_AddShipK);
-}
 
 /* (anm & bits) of the script with bits the global flag (ints in C; OBJLIB 9: other numbers the Python way): 1 when it
  * is not 0, 0, -1 with the error */
@@ -748,12 +742,6 @@ static byte ShipMaker_InitAnmShip_E(const nativeVal_t *a, int n, nativeVal_t *ou
 static char *ShipMaker_InitAnmShip_N[] = { "model", "ch0", "ch1", "ch2", "ch3", NULL };
 static const char ShipMaker_InitAnmShip_F[] = "O|OOOO";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *ShipMaker_InitAnmShip(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "O|OOOO", ShipMaker_InitAnmShip_N, Sm_InitAnmShipK);
-}
-
 MODE_FN(ShipMaker, SetShipPrice, 2, Sm_SetShipPriceN(&a[0], &a[1]))
 MODE_FN(ShipMaker, GetShipPrice, 1, Sm_Get("shipsCosts", &a[0], out))
 MODE_FN(ShipMaker, SetEnginePrice, 2, Sm_Put("enginesCosts", &a[0], &a[1]))
@@ -777,32 +765,32 @@ MODE_FN(ShipMaker, CreateStdShips, 0, Sm_CreateStdShipsN())
 MODE_FN(ShipMaker, Init, 0, Sm_InitN())
 MODE_FN(ShipMaker, SetAnmShip, 2, Sm_SetAnmShipN(&a[0], &a[1]))
 
-PyMethodDef g_ShipMakerMethods[] = {
-	{ "SetShipPrice", ShipMaker_SetShipPrice, 1, NULL },
-	{ "GetShipPrice", ShipMaker_GetShipPrice, 1, NULL },
-	{ "SetEnginePrice", ShipMaker_SetEnginePrice, 1, NULL },
-	{ "GetEnginePrice", ShipMaker_GetEnginePrice, 1, NULL },
-	{ "AddShipTon", ShipMaker_AddShipTon, 1, NULL },
-	{ "GetShipTon", ShipMaker_GetShipTon, 1, NULL },
-	{ "AddShipBalance", ShipMaker_AddShipBalance, 1, NULL },
-	{ "GetShipBalance", ShipMaker_GetShipBalance, 1, NULL },
-	{ "AddShip", (PyCFunction)(void (*)(void))ShipMaker_AddShip, 3, NULL },
-	{ "GetShip", ShipMaker_GetShip, 1, NULL },
-	{ "AddMotor", ShipMaker_AddMotor, 1, NULL },
-	{ "GetMotor", ShipMaker_GetMotor, 1, NULL },
-	{ "IncludeMotor", ShipMaker_IncludeMotor, 1, NULL },
-	{ "AddWeapon", ShipMaker_AddWeapon, 1, NULL },
-	{ "GetWeapon", ShipMaker_GetWeapon, 1, NULL },
-	{ "CalculateVerticalBalance", ShipMaker_CalculateVerticalBalance, 1, NULL },
-	{ "SetUpChars", ShipMaker_SetUpChars, 1, NULL },
-	{ "AddChar", ShipMaker_AddChar, 1, NULL },
-	{ "GetBoostFactor", ShipMaker_GetBoostFactor, 1, NULL },
-	{ "SetShipParams", ShipMaker_SetShipParams, 1, NULL },
-	{ "CreateStdShips", ShipMaker_CreateStdShips, 1, NULL },
-	{ "Init", ShipMaker_Init, 1, NULL },
-	{ "SetAnmShip", ShipMaker_SetAnmShip, 1, NULL },
-	{ "InitAnmShip", (PyCFunction)(void (*)(void))ShipMaker_InitAnmShip, 3, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ShipMakerMethods[] = {
+	PORT_FN(SetShipPrice, ShipMaker_SetShipPrice),
+	PORT_FN(GetShipPrice, ShipMaker_GetShipPrice),
+	PORT_FN(SetEnginePrice, ShipMaker_SetEnginePrice),
+	PORT_FN(GetEnginePrice, ShipMaker_GetEnginePrice),
+	PORT_FN(AddShipTon, ShipMaker_AddShipTon),
+	PORT_FN(GetShipTon, ShipMaker_GetShipTon),
+	PORT_FN(AddShipBalance, ShipMaker_AddShipBalance),
+	PORT_FN(GetShipBalance, ShipMaker_GetShipBalance),
+	PORT_FNK(AddShip, ShipMaker_AddShip),
+	PORT_FN(GetShip, ShipMaker_GetShip),
+	PORT_FN(AddMotor, ShipMaker_AddMotor),
+	PORT_FN(GetMotor, ShipMaker_GetMotor),
+	PORT_FN(IncludeMotor, ShipMaker_IncludeMotor),
+	PORT_FN(AddWeapon, ShipMaker_AddWeapon),
+	PORT_FN(GetWeapon, ShipMaker_GetWeapon),
+	PORT_FN(CalculateVerticalBalance, ShipMaker_CalculateVerticalBalance),
+	PORT_FN(SetUpChars, ShipMaker_SetUpChars),
+	PORT_FN(AddChar, ShipMaker_AddChar),
+	PORT_FN(GetBoostFactor, ShipMaker_GetBoostFactor),
+	PORT_FN(SetShipParams, ShipMaker_SetShipParams),
+	PORT_FN(CreateStdShips, ShipMaker_CreateStdShips),
+	PORT_FN(Init, ShipMaker_Init),
+	PORT_FN(SetAnmShip, ShipMaker_SetAnmShip),
+	PORT_FNK(InitAnmShip, ShipMaker_InitAnmShip),
+	PORT_FNEND
 };
 
 PORTS(ShipMaker)

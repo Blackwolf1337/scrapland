@@ -328,7 +328,7 @@ static byte Dr_Init(const nativeVal_t *onlyArg) {
 	return Mode_Import("Elevator") && PORT_CALL(Elevator, Init, NULL, "");
 }
 
-/* the adapters (the arity errors of the script's functions) */
+/* the entries (the arity errors of the script's functions) */
 MODE_FN(Doors, StdInitializator, 1, 1)
 MODE_FN(Doors, StdObjInitializator, 2, 1)
 MODE_FN(Doors, UsrObjInitializator, 2, Dr_UsrObjInitializator(&a[0]))
@@ -336,14 +336,14 @@ MODE_FN(Doors, CreateDoorClass, 1, Dr_CreateDoorClass(&a[0], out))
 MODE_FN(Doors, InitDoorInfo, 0, Dr_InitDoorInfo())
 MODE_FNOPT(Doors, Init, 0, 1, Dr_Init(MODE_OPT(0)))
 
-PyMethodDef g_DoorsMethods[] = {
-	{ "StdInitializator", Doors_StdInitializator, 1, NULL },
-	{ "StdObjInitializator", Doors_StdObjInitializator, 1, NULL },
-	{ "UsrObjInitializator", Doors_UsrObjInitializator, 1, NULL },
-	{ "CreateDoorClass", Doors_CreateDoorClass, 1, NULL },
-	{ "InitDoorInfo", Doors_InitDoorInfo, 1, NULL },
-	{ "Init", Doors_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DoorsMethods[] = {
+	PORT_FN(StdInitializator, Doors_StdInitializator),
+	PORT_FN(StdObjInitializator, Doors_StdObjInitializator),
+	PORT_FN(UsrObjInitializator, Doors_UsrObjInitializator),
+	PORT_FN(CreateDoorClass, Doors_CreateDoorClass),
+	PORT_FN(InitDoorInfo, Doors_InitDoorInfo),
+	PORT_FN(Init, Doors_Init),
+	PORT_FNEND
 };
 
 
@@ -1069,28 +1069,28 @@ MODE_FN(Elevator, SetDef, 2, Elv_SetDef(&a[0], &a[1]))
 MODE_FN(Elevator, TryToElevatorLaunchFirst, 0, Elv_TryFirst())
 MODE_FN(Elevator, PlayerCreatedElevator, 0, Elv_PlayerCreatedElevator())
 
-PyMethodDef g_ElevatorMethods[] = {
-	{ "isOutMap", Elevator_isOutMap, 1, NULL },
-	{ "ElevatorCamera", Elevator_ElevatorCamera, 1, NULL },
-	{ "ElevatorBackCamera", Elevator_ElevatorBackCamera, 1, NULL },
-	{ "ConnectElevators", Elevator_ConnectElevators, 1, NULL },
-	{ "DoorInitializator", Elevator_DoorInitializator, 1, NULL },
-	{ "ObjInitializator", Elevator_ObjInitializator, 1, NULL },
-	{ "ObjInitializatorNang", Elevator_ObjInitializatorNang, 1, NULL },
-	{ "UseElevator", Elevator_UseElevator, 1, NULL },
-	{ "ElevatorActiveToGet", Elevator_ElevatorActiveToGet, 1, NULL },
-	{ "ElevatorCloseToGo", Elevator_ElevatorCloseToGo, 1, NULL },
-	{ "ElevatorHaveClose", Elevator_ElevatorHaveClose, 1, NULL },
-	{ "ElevatorReachUp", Elevator_ElevatorReachUp, 1, NULL },
-	{ "ElevatorReachDown", Elevator_ElevatorReachDown, 1, NULL },
-	{ "ElevatorHaveOpen", Elevator_ElevatorHaveOpen, 1, NULL },
-	{ "LinkToElevator", Elevator_LinkToElevator, 1, NULL },
-	{ "UnlinkFromElevator", Elevator_UnlinkFromElevator, 1, NULL },
-	{ "Init", Elevator_Init, 1, NULL },
-	{ "SetDef", Elevator_SetDef, 1, NULL },
-	{ "TryToElevatorLaunchFirst", Elevator_TryToElevatorLaunchFirst, 1, NULL },
-	{ "PlayerCreatedElevator", Elevator_PlayerCreatedElevator, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ElevatorMethods[] = {
+	PORT_FN(isOutMap, Elevator_isOutMap),
+	PORT_FN(ElevatorCamera, Elevator_ElevatorCamera),
+	PORT_FN(ElevatorBackCamera, Elevator_ElevatorBackCamera),
+	PORT_FN(ConnectElevators, Elevator_ConnectElevators),
+	PORT_FN(DoorInitializator, Elevator_DoorInitializator),
+	PORT_FN(ObjInitializator, Elevator_ObjInitializator),
+	PORT_FN(ObjInitializatorNang, Elevator_ObjInitializatorNang),
+	PORT_FN(UseElevator, Elevator_UseElevator),
+	PORT_FN(ElevatorActiveToGet, Elevator_ElevatorActiveToGet),
+	PORT_FN(ElevatorCloseToGo, Elevator_ElevatorCloseToGo),
+	PORT_FN(ElevatorHaveClose, Elevator_ElevatorHaveClose),
+	PORT_FN(ElevatorReachUp, Elevator_ElevatorReachUp),
+	PORT_FN(ElevatorReachDown, Elevator_ElevatorReachDown),
+	PORT_FN(ElevatorHaveOpen, Elevator_ElevatorHaveOpen),
+	PORT_FN(LinkToElevator, Elevator_LinkToElevator),
+	PORT_FN(UnlinkFromElevator, Elevator_UnlinkFromElevator),
+	PORT_FN(Init, Elevator_Init),
+	PORT_FN(SetDef, Elevator_SetDef),
+	PORT_FN(TryToElevatorLaunchFirst, Elevator_TryToElevatorLaunchFirst),
+	PORT_FN(PlayerCreatedElevator, Elevator_PlayerCreatedElevator),
+	PORT_FNEND
 };
 
 /* ---- Teleport ---- */
@@ -1136,12 +1136,12 @@ MODE_FN(Teleport, ObjInitializator, 2, Tp_ObjInitializator(&a[0], &a[1]))
 MODE_FN(Teleport, Link, 2, Tp_Link(&a[0], &a[1]))
 MODE_FN(Teleport, FXAction, 3, Tp_FXAction(&a[0], &a[1], &a[2]))
 
-PyMethodDef g_TeleportMethods[] = {
-	{ "DoorInitializator", Teleport_DoorInitializator, 1, NULL },
-	{ "ObjInitializator", Teleport_ObjInitializator, 1, NULL },
-	{ "Link", Teleport_Link, 1, NULL },
-	{ "FXAction", Teleport_FXAction, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TeleportMethods[] = {
+	PORT_FN(DoorInitializator, Teleport_DoorInitializator),
+	PORT_FN(ObjInitializator, Teleport_ObjInitializator),
+	PORT_FN(Link, Teleport_Link),
+	PORT_FN(FXAction, Teleport_FXAction),
+	PORT_FNEND
 };
 
 PORTS(Doors)

@@ -8,14 +8,14 @@
  * times and prizes, CrazyWingList) with the module code (the save variables of the crazy wind); the functions read
  * them as their globals.
  *
- * Native C (docs/objlib-plan.md, stages 2 and 3): the functions call the engine in C and work on C values; the
- * PyMethodDef entries are adapters. The variables are read where the script reads them (its globals, Init.Outdoor
- * and Init.SuperDealModule as attributes, OBJLIB 5 (9c: a module as a value)); CrazyWingList is appended to in place.
- * The module's own functions the script calls as its globals (GetMoneyModel, GetObjModel, CreateItem, CreateCoin,
+ * Native C (docs/objlib-plan.md, stages 2 and 3): the functions call the engine in C and work on C values; the function
+ * table rows name the entries. The variables are read where the script reads them (its globals, Init.Outdoor and
+ * Init.SuperDealModule as attributes, OBJLIB 5 (9c: a module as a value)); CrazyWingList is appended to in place. The
+ * module's own functions the script calls as its globals (GetMoneyModel, GetObjModel, CreateItem, CreateCoin,
  * GetTargetReward, InitCrazyWing, SetCrazy, AllInList) go through their refs as globals (PORT_OWN), Items and
  * SaveGame.SaveMoney through theirs (PORT_CALL). The Activate functions given to CreateItem and the functions the
- * scheduler keeps (DeCrazy, CrazyWing) are values the scheduler takes as entries (stage 4: Port_Scheduled). Entities are handle values
- * (OBJLIB 7): the engine gives them to the callbacks and the scripts pass them on.
+ * scheduler keeps (DeCrazy, CrazyWing) are values the scheduler takes as entries (stage 4: Port_Scheduled). Entities
+ * are handle values (OBJLIB 7): the engine gives them to the callbacks and the scripts pass them on.
  */
 #include <string.h>
 
@@ -514,21 +514,21 @@ MODE_FN(MisItems, DazedCoin, 3, Mi_DazedCoin(&a[0]))
 
 MODE_FN(MisItems, Init, 0, Mi_InitModels())
 
-PyMethodDef g_MisItemsMethods[] = {
-	{ "Init", MisItems_Init, 1, NULL },
-	{ "OnVehicleDeat", MisItems_OnVehicleDeat, 1, NULL },
-	{ "GetTargetReward", MisItems_GetTargetReward, 1, NULL },
-	{ "GiveMoney", MisItems_GiveMoney, 1, NULL },
-	{ "GetMoneyModel", MisItems_GetMoneyModel, 1, NULL },
-	{ "GetObjModel", MisItems_GetObjModel, 1, NULL },
-	{ "CreateItem", MisItems_CreateItem, 1, NULL },
-	{ "CreateCoin", MisItems_CreateCoin, 1, NULL },
-	{ "ActivateCoin", MisItems_ActivateCoin, 1, NULL },
-	{ "CreateBattery", MisItems_CreateBattery, 1, NULL },
-	{ "ActivateBattery", MisItems_ActivateBattery, 1, NULL },
-	{ "TakeBattery", MisItems_TakeBattery, 1, NULL },
-	{ "DazedCoin", MisItems_DazedCoin, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MisItemsMethods[] = {
+	PORT_FN(Init, MisItems_Init),
+	PORT_FN(OnVehicleDeat, MisItems_OnVehicleDeat),
+	PORT_FN(GetTargetReward, MisItems_GetTargetReward),
+	PORT_FN(GiveMoney, MisItems_GiveMoney),
+	PORT_FN(GetMoneyModel, MisItems_GetMoneyModel),
+	PORT_FN(GetObjModel, MisItems_GetObjModel),
+	PORT_FN(CreateItem, MisItems_CreateItem),
+	PORT_FN(CreateCoin, MisItems_CreateCoin),
+	PORT_FN(ActivateCoin, MisItems_ActivateCoin),
+	PORT_FN(CreateBattery, MisItems_CreateBattery),
+	PORT_FN(ActivateBattery, MisItems_ActivateBattery),
+	PORT_FN(TakeBattery, MisItems_TakeBattery),
+	PORT_FN(DazedCoin, MisItems_DazedCoin),
+	PORT_FNEND
 };
 
 /* ---- CrazyWing ---- */
@@ -770,15 +770,15 @@ MODE_FN(CrazyWing, RestoreSpeech, 0, Cw_RestoreSpeech())
 
 MODE_FN(CrazyWing, AllInList, 0, Cw_AllInList(out))
 
-PyMethodDef g_CrazyWingMethods[] = {
-	{ "InitCrazyWing", CrazyWing_InitCrazyWing, 1, NULL },
-	{ "CrazyWing", CrazyWing_CrazyWing, 1, NULL },
-	{ "SetCrazy", CrazyWing_SetCrazy, 1, NULL },
-	{ "DeCrazy", CrazyWing_DeCrazy, 1, NULL },
-	{ "RestoreSpeech", CrazyWing_RestoreSpeech, 1, NULL },
-	{ "AllInList", CrazyWing_AllInList, 1, NULL },
-	{ "CrazyPhoto", CrazyWing_CrazyPhoto, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CrazyWingMethods[] = {
+	PORT_FN(InitCrazyWing, CrazyWing_InitCrazyWing),
+	PORT_FN(CrazyWing, CrazyWing_CrazyWing),
+	PORT_FN(SetCrazy, CrazyWing_SetCrazy),
+	PORT_FN(DeCrazy, CrazyWing_DeCrazy),
+	PORT_FN(RestoreSpeech, CrazyWing_RestoreSpeech),
+	PORT_FN(AllInList, CrazyWing_AllInList),
+	PORT_FN(CrazyPhoto, CrazyWing_CrazyPhoto),
+	PORT_FNEND
 };
 
 PORTS(MisItems)

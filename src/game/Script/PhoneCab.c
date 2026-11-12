@@ -9,8 +9,8 @@
  * DTritusDesktop.DTritusDesktop and DialogController (the missions set the talk there). The action classes are
  * data/missions/phonecab.def.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The variables are read and written where the script does it (the registry): the module globals
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the function table
+ * rows name the entries. The variables are read and written where the script does it (the registry): the module globals
  * above, Init.Path, the Challenge and Speech variables (set as Script_SetVar does, an error is dropped). The calls of
  * SaveGame, Speech, Challenge and CharsNPC go through their refs (PORT_CALL), Challenge's options through its C
  * function; the mission's DialogController is called as the value of the variable (OBJLIB 5 (9c)), and the module's
@@ -661,21 +661,21 @@ static byte PhoneCab_Free(nativeVal_t *out) {
 
 MODE_FNANY(PhoneCab, GetFree, PhoneCab_Free(out))
 
-PyMethodDef g_PhoneCabMethods[] = {
-	{ "ForceResetPhoneCab", PhoneCab_ForceResetPhoneCab, 1, NULL },
-	{ "RevengeSpeech", PhoneCab_RevengeSpeech, 1, NULL },
-	{ "SetRevengeOptions", PhoneCab_SetRevengeOptions, 1, NULL },
-	{ "GetNearestPhoneCab", PhoneCab_GetNearestPhoneCab, 1, NULL },
-	{ "CreatePhoneCab", PhoneCab_CreatePhoneCab, 1, NULL },
-	{ "CreateAudioCom", PhoneCab_CreateAudioCom, 1, NULL },
-	{ "DefUseAudioCom", PhoneCab_DefUseAudioCom, 1, NULL },
-	{ "UseAudioCom", PhoneCab_UseAudioCom, 1, NULL },
-	{ "SpawnChar", PhoneCab_SpawnChar, 1, NULL },
-	{ "CreatePhoneCabClass", PhoneCab_CreatePhoneCabClass, 1, NULL },
-	{ "CreateAudioComClass", PhoneCab_CreateAudioComClass, 1, NULL },
-	{ "Init", PhoneCab_Init, 1, NULL },
-	{ "GetFree", PhoneCab_GetFree, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PhoneCabMethods[] = {
+	PORT_FN(ForceResetPhoneCab, PhoneCab_ForceResetPhoneCab),
+	PORT_FN(RevengeSpeech, PhoneCab_RevengeSpeech),
+	PORT_FN(SetRevengeOptions, PhoneCab_SetRevengeOptions),
+	PORT_FN(GetNearestPhoneCab, PhoneCab_GetNearestPhoneCab),
+	PORT_FN(CreatePhoneCab, PhoneCab_CreatePhoneCab),
+	PORT_FN(CreateAudioCom, PhoneCab_CreateAudioCom),
+	PORT_FN(DefUseAudioCom, PhoneCab_DefUseAudioCom),
+	PORT_FN(UseAudioCom, PhoneCab_UseAudioCom),
+	PORT_FN(SpawnChar, PhoneCab_SpawnChar),
+	PORT_FN(CreatePhoneCabClass, PhoneCab_CreatePhoneCabClass),
+	PORT_FN(CreateAudioComClass, PhoneCab_CreateAudioComClass),
+	PORT_FN(Init, PhoneCab_Init),
+	PORT_FN(GetFree, PhoneCab_GetFree),
+	PORT_FNEND
 };
 
 /* ---- DTritusDesktop ---- */
@@ -843,18 +843,18 @@ static byte DTritus_NPCs(void) {
 
 MODE_FNANY(DTritus, InitNPCS, DTritus_NPCs())
 
-PyMethodDef g_DTritusDesktopMethods[] = {
-	{ "ForceResetDTritusDesktop", DTritus_ForceResetDTritusDesktop, 1, NULL },
-	{ "SpawnChar", DTritus_SpawnChar, 1, NULL },
-	{ "CreateDTritusDesktopClass", DTritus_CreateDTritusDesktopClass, 1, NULL },
-	{ "CreateDTritusDesktop", DTritus_CreateDTritusDesktop, 1, NULL },
-	{ "DefUseDTritusDesktop", DTritus_DefUseDTritusDesktop, 1, NULL },
-	{ "UseDTritusDesktop", DTritus_UseDTritusDesktop, 1, NULL },
-	{ "CreatePressDesktopClass", DTritus_CreatePressDesktopClass, 1, NULL },
-	{ "CreatePressDesktop", DTritus_CreatePressDesktop, 1, NULL },
-	{ "Init", DTritus_Init, 1, NULL },
-	{ "InitNPCS", DTritus_InitNPCS, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DTritusDesktopMethods[] = {
+	PORT_FN(ForceResetDTritusDesktop, DTritus_ForceResetDTritusDesktop),
+	PORT_FN(SpawnChar, DTritus_SpawnChar),
+	PORT_FN(CreateDTritusDesktopClass, DTritus_CreateDTritusDesktopClass),
+	PORT_FN(CreateDTritusDesktop, DTritus_CreateDTritusDesktop),
+	PORT_FN(DefUseDTritusDesktop, DTritus_DefUseDTritusDesktop),
+	PORT_FN(UseDTritusDesktop, DTritus_UseDTritusDesktop),
+	PORT_FN(CreatePressDesktopClass, DTritus_CreatePressDesktopClass),
+	PORT_FN(CreatePressDesktop, DTritus_CreatePressDesktop),
+	PORT_FN(Init, DTritus_Init),
+	PORT_FN(InitNPCS, DTritus_InitNPCS),
+	PORT_FNEND
 };
 
 PORTS(PhoneCab)

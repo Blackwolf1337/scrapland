@@ -4,8 +4,8 @@
  * scale of the indoor traffic and the money transfer. The constants FX... and the file names stay variables of the
  * module, other scripts and the file read them.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The motor classes FXMOTOR_* that GetMotorClass gives are variables of the module (fx.mod sets
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the function table
+ * rows name the entries. The motor classes FXMOTOR_* that GetMotorClass gives are variables of the module (fx.mod sets
  * them, other scripts read them), read from the registry at each call. Init.isJunkYard and Init.isShipEdit stay by
  * name.
  */
@@ -143,7 +143,7 @@ static byte Fx_MoneyTransfer(const nativeVal_t *from, const nativeVal_t *to, con
 	return 1;
 }
 
-/* ---- the adapters of the module table (OBJLIB 7: arguments, the mirror and the errors of the Python calls) ---- */
+/* ---- the entries of the module table (the mirror) ---- */
 
 /* Init takes any arguments; its entry for the call of InitLevel through its ref (stage 3) */
 MODE_FNANY(Fx, InitPy, Mode_Import("Init") && Fx_Init())
@@ -191,12 +191,12 @@ MODE_FN(Fx, GetMotorClass, 1, Fx_MotorClassArg(&a[0], out))
 MODE_FN(Fx, SetUpShipMotors, 1, Fx_MotorsArg(&a[0]))
 MODE_FN(Fx, MoneyTransferPy, 3, Fx_MoneyTransferArgs(a))
 
-PyMethodDef g_FxMethods[] = {
-	{ "Init", Fx_InitPy, 1, NULL },
-	{ "GetMotorClass", Fx_GetMotorClass, 1, NULL },
-	{ "SetUpShipMotors", Fx_SetUpShipMotors, 1, NULL },
-	{ "MoneyTransfer", Fx_MoneyTransferPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_FxMethods[] = {
+	PORT_FN(Init, Fx_InitPy),
+	PORT_FN(GetMotorClass, Fx_GetMotorClass),
+	PORT_FN(SetUpShipMotors, Fx_SetUpShipMotors),
+	PORT_FN(MoneyTransfer, Fx_MoneyTransferPy),
+	PORT_FNEND
 };
 
 PORTS(Fx)

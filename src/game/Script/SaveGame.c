@@ -730,7 +730,7 @@ static PyObject *SG_GetReg(const nativeVal_t *name) {
 	return res;
 }
 
-/* ---- adapters ---- */
+/* ---- entries ---- */
 
 MODE_FN(SaveGame, MMDesc, 2, SG_MMDesc(&a[0], &a[1]))
 MODE_FN(SaveGame, SMDesc, 2, SG_SMDesc(&a[0], &a[1]))
@@ -770,28 +770,28 @@ MODE_KW(SaveGame, InstantSaveGame, "O|O", "iSlot", "showMsgOnFailure") {
 	return SG_InstantSaveGame(&v[0], given[1] ? &v[1] : NULL);
 }
 
-PyMethodDef g_SaveGameMethods[] = {
-	{ "MMDesc", SaveGame_MMDesc, 1, NULL },
-	{ "SMDesc", SaveGame_SMDesc, 1, NULL },
-	{ "SaveGame", SaveGame_SaveGame, 1, NULL },
-	{ "InstantSaveGame", (PyCFunction)(void (*)(void))SaveGame_InstantSaveGame, 3, NULL },
-	{ "LoadGame", SaveGame_LoadGame, 1, NULL },
-	{ "NewGame", SaveGame_NewGame, 1, NULL },
-	{ "CheckAllBlueprints", SaveGame_CheckAllBlueprints, 1, NULL },
-	{ "MarkWayPoint", (PyCFunction)(void (*)(void))SaveGame_MarkWayPoint, 3, NULL },
-	{ "QWayPoint", SaveGame_QWayPoint, 1, NULL },
-	{ "SaveAlarm", SaveGame_SaveAlarm, 1, NULL },
-	{ "LoadAlarm", SaveGame_LoadAlarm, 1, NULL },
-	{ "SaveMoney", SaveGame_SaveMoney, 1, NULL },
-	{ "LoadMoney", SaveGame_LoadMoney, 1, NULL },
-	{ "QLoad", (PyCFunction)(void (*)(void))SaveGame_QLoad, 3, NULL },
-	{ "StartGame", (PyCFunction)(void (*)(void))SaveGame_StartGame, 3, NULL },
-	{ "Restart", SaveGame_Restart, 1, NULL },
-	{ "QSaveReg", SaveGame_QSaveReg, 1, NULL },
-	{ "SaveReg", SaveGame_SaveReg, 1, NULL },
-	{ "GetReg", SaveGame_GetReg, 1, NULL },
-	{ "InitVars", SaveGame_InitVars, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SaveGameMethods[] = {
+	PORT_FN(MMDesc, SaveGame_MMDesc),
+	PORT_FN(SMDesc, SaveGame_SMDesc),
+	PORT_FN(SaveGame, SaveGame_SaveGame),
+	PORT_FNK(InstantSaveGame, SaveGame_InstantSaveGame),
+	PORT_FN(LoadGame, SaveGame_LoadGame),
+	PORT_FN(NewGame, SaveGame_NewGame),
+	PORT_FN(CheckAllBlueprints, SaveGame_CheckAllBlueprints),
+	PORT_FNK(MarkWayPoint, SaveGame_MarkWayPoint),
+	PORT_FN(QWayPoint, SaveGame_QWayPoint),
+	PORT_FN(SaveAlarm, SaveGame_SaveAlarm),
+	PORT_FN(LoadAlarm, SaveGame_LoadAlarm),
+	PORT_FN(SaveMoney, SaveGame_SaveMoney),
+	PORT_FN(LoadMoney, SaveGame_LoadMoney),
+	PORT_FNK(QLoad, SaveGame_QLoad),
+	PORT_FNK(StartGame, SaveGame_StartGame),
+	PORT_FN(Restart, SaveGame_Restart),
+	PORT_FN(QSaveReg, SaveGame_QSaveReg),
+	PORT_FN(SaveReg, SaveGame_SaveReg),
+	PORT_FN(GetReg, SaveGame_GetReg),
+	PORT_FN(InitVars, SaveGame_InitVars),
+	PORT_FNEND
 };
 
 PORTS(SaveGame)

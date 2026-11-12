@@ -12,15 +12,15 @@
  * armorPieceWeight, ctnRotating, isRotating, EndShipEditCallBack, isXbox, UseTxt and the constants. The module code
  * (the save variables of the hangars) stays in the script.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the PyMethodDef entries are adapters with
- * the argument formats of the C port. The variables of the module are read where the script reads them and written at
- * once; the ships, the camera and the platform are handle values (OBJLIB 7), editedShips and tabPixelX are
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the function table rows name the entries,
+ * which take the argument formats of the C port. The variables of the module are read where the script reads them and
+ * written at once; the ships, the camera and the platform are handle values (OBJLIB 7), editedShips and tabPixelX are
  * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, Ffa and the
- * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam,
- * OBJLIB 5 (9c)); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time
- * and called through the entries of the functions there (MODE_CBATTR); the engine calls go through their refs (stage
- * 7, those of SScorer and SSound among them); the .def runner takes Python values
- * (OBJLIB 6). The texts of the ships in the save and engine variables are made as before.
+ * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam, OBJLIB 5
+ * (9c)); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time and
+ * called through the entries of the functions there (MODE_CBATTR); the engine calls go through their refs (stage 7,
+ * those of SScorer and SSound among them); the .def runner takes Python values (OBJLIB 6). The texts of the ships in
+ * the save and engine variables are made as before.
  */
 #include <stdarg.h>
 #include <string.h>
@@ -895,18 +895,20 @@ static byte Ht_DrawBackgroundK(const nativeVal_t *const *a, nativeVal_t *out) {
 	return Se_DrawBackground(a[0], NULL, a + 1);
 }
 
-/* OBJLIB 7: the keyword adapters (the names and the arity errors of PyArg_ParseTupleAndKeywords, Mode_KwCall); they
- * serve the tables of three modules and have no entry */
-PyObject *ShipEdit_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
-	(void)self;
-	return Mode_KwCall(args, kw, "OO|OOOOOOOO", names, Se_DrawBackgroundK);
+/* the keyword entries (Mode_KwEntry); they serve the tables of three modules */
+char *ShipEdit_DrawBackground_N[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue",
+	NULL };
+const char ShipEdit_DrawBackground_F[] = "OO|OOOOOOOO";
+
+byte ShipEdit_DrawBackground_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, ShipEdit_DrawBackground_F, Se_DrawBackgroundK, out);
 }
 
-PyObject *HangarTab_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
-	(void)self;
-	return Mode_KwCall(args, kw, "O|OOOOOOOO", names, Ht_DrawBackgroundK);
+char *HangarTab_DrawBackground_N[] = { "id", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
+const char HangarTab_DrawBackground_F[] = "O|OOOOOOOO";
+
+byte HangarTab_DrawBackground_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	return Mode_KwEntry(a, n, HangarTab_DrawBackground_F, Ht_DrawBackgroundK, out);
 }
 
 /* AddShipEditTabs(id, tabs): the tabs of the editor (the Hangar tab alone on Sputnik's screen); the first one is
@@ -2022,7 +2024,7 @@ static byte Se_ShowSpecialHint(nativeVal_t *out) {
 	return 1;
 }
 
-/* ---- adapters: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
+/* ---- entries: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
 
 MODE_FN(SE, IsEditingMultiplayer, 0, Se_IsEditingMultiplayer(out))
 MODE_FN(SE, RustyOnPlatform, 1, Se_RustyOnPlatform(&a[0], out))
@@ -2060,16 +2062,12 @@ static byte SE_ChangeTab_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t none = { 0 };
 	int id;
 	(void)out;
-	return Mode_Parse(a, n, "iO|O", &id, &control, &direction) &&
+	return Mode_KwArity(a, n, "iO|O") && Mode_Parse(a, n, "iO|O", &id, &control, &direction) &&
 		Se_ChangeTab(id, control, direction ? direction : &none);
 }
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *SE_ChangeTab(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "control", "direction", NULL };
-	(void)self;
-	return Mode_KwIdEntry(args, kw, "iO|O", names, SE_ChangeTab_E);
-}
+static char *SE_ChangeTab_N[] = { "id", "control", "direction", NULL };
+static const char SE_ChangeTab_F[] = "iO|O";
 
 /* CreateShipFromSaveVar(cad, pos, name="") */
 static byte SE_CreateShipFromSaveVarK(const nativeVal_t *const *a, nativeVal_t *out) {
@@ -2085,46 +2083,40 @@ static byte SE_CreateShipFromSaveVar_E(const nativeVal_t *a, int n, nativeVal_t 
 static char *SE_CreateShipFromSaveVar_N[] = { "cad", "pos", "name", NULL };
 static const char SE_CreateShipFromSaveVar_F[] = "OO|O";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *SE_CreateShipFromSaveVar(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "OO|O", SE_CreateShipFromSaveVar_N, SE_CreateShipFromSaveVarK);
-}
-
-PyMethodDef g_ShipEditMethods[] = {
-	{ "IsEditingMultiplayer", SE_IsEditingMultiplayer, 1, NULL },
-	{ "RustyOnPlatform", SE_RustyOnPlatform, 1, NULL },
-	{ "PointObjectTo", SE_PointObjectTo, 1, NULL },
-	{ "LaunchPlatformAnim", SE_LaunchPlatformAnim, 1, NULL },
-	{ "ChangeShip", SE_ChangeShip, 1, NULL },
-	{ "VerifyChangeShip", SE_VerifyChangeShip, 1, NULL },
-	{ "DoorInitializator", SE_DoorInitializator, 1, NULL },
-	{ "ObjInitializator", SE_ObjInitializator, 1, NULL },
-	{ "EndMoveEngine", SE_EndMoveEngine, 1, NULL },
-	{ "RotateShip", SE_RotateShip, 1, NULL },
-	{ "LoopRotateShip", SE_LoopRotateShip, 1, NULL },
-	{ "StartRotateLoop", SE_StartRotateLoop, 1, NULL },
-	{ "StopRotateLoop", SE_StopRotateLoop, 1, NULL },
-	{ "DrawBackground", (PyCFunction)(void (*)(void))ShipEdit_DrawBackground, 3, NULL },
-	{ "AddShipEditTabs", SE_AddShipEditTabs, 1, NULL },
-	{ "AddDefaultPanelContent", SE_AddDefaultPanelContent, 1, NULL },
-	{ "ChangeTabLeft", SE_ChangeTabLeft, 1, NULL },
-	{ "ChangeTabRight", SE_ChangeTabRight, 1, NULL },
-	{ "ChangeTab", (PyCFunction)(void (*)(void))SE_ChangeTab, 3, NULL },
-	{ "CleanEditedShips", SE_CleanEditedShips, 1, NULL },
-	{ "CreatePlayerShip", SE_CreatePlayerShip, 1, NULL },
-	{ "SetupForEdit", SE_SetupForEdit, 1, NULL },
-	{ "SaveShipInfoInSaveVar", SE_SaveShipInfoInSaveVar, 1, NULL },
-	{ "SaveShipInfoInGVar", SE_SaveShipInfoInGVar, 1, NULL },
-	{ "CreateShipFromSaveVar", (PyCFunction)(void (*)(void))SE_CreateShipFromSaveVar, 3, NULL },
-	{ "AssignShip", SE_AssignShip, 1, NULL },
-	{ "SetupEdit", SE_SetupEdit, 1, NULL },
-	{ "FreeEdit", SE_FreeEdit, 1, NULL },
-	{ "EnterEditShipMenu", SE_EnterEditShipMenu, 1, NULL },
-	{ "ExitEditShipMenu", SE_ExitEditShipMenu, 1, NULL },
-	{ "SaveShip", SE_SaveShip, 1, NULL },
-	{ "ShowSpecialHint", SE_ShowSpecialHint, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ShipEditMethods[] = {
+	PORT_FN(IsEditingMultiplayer, SE_IsEditingMultiplayer),
+	PORT_FN(RustyOnPlatform, SE_RustyOnPlatform),
+	PORT_FN(PointObjectTo, SE_PointObjectTo),
+	PORT_FN(LaunchPlatformAnim, SE_LaunchPlatformAnim),
+	PORT_FN(ChangeShip, SE_ChangeShip),
+	PORT_FN(VerifyChangeShip, SE_VerifyChangeShip),
+	PORT_FN(DoorInitializator, SE_DoorInitializator),
+	PORT_FN(ObjInitializator, SE_ObjInitializator),
+	PORT_FN(EndMoveEngine, SE_EndMoveEngine),
+	PORT_FN(RotateShip, SE_RotateShip),
+	PORT_FN(LoopRotateShip, SE_LoopRotateShip),
+	PORT_FN(StartRotateLoop, SE_StartRotateLoop),
+	PORT_FN(StopRotateLoop, SE_StopRotateLoop),
+	PORT_FNK(DrawBackground, ShipEdit_DrawBackground),
+	PORT_FN(AddShipEditTabs, SE_AddShipEditTabs),
+	PORT_FN(AddDefaultPanelContent, SE_AddDefaultPanelContent),
+	PORT_FN(ChangeTabLeft, SE_ChangeTabLeft),
+	PORT_FN(ChangeTabRight, SE_ChangeTabRight),
+	PORT_FNK(ChangeTab, SE_ChangeTab),
+	PORT_FN(CleanEditedShips, SE_CleanEditedShips),
+	PORT_FN(CreatePlayerShip, SE_CreatePlayerShip),
+	PORT_FN(SetupForEdit, SE_SetupForEdit),
+	PORT_FN(SaveShipInfoInSaveVar, SE_SaveShipInfoInSaveVar),
+	PORT_FN(SaveShipInfoInGVar, SE_SaveShipInfoInGVar),
+	PORT_FNK(CreateShipFromSaveVar, SE_CreateShipFromSaveVar),
+	PORT_FN(AssignShip, SE_AssignShip),
+	PORT_FN(SetupEdit, SE_SetupEdit),
+	PORT_FN(FreeEdit, SE_FreeEdit),
+	PORT_FN(EnterEditShipMenu, SE_EnterEditShipMenu),
+	PORT_FN(ExitEditShipMenu, SE_ExitEditShipMenu),
+	PORT_FN(SaveShip, SE_SaveShip),
+	PORT_FN(ShowSpecialHint, SE_ShowSpecialHint),
+	PORT_FNEND
 };
 
 PORTS(ShipEdit)

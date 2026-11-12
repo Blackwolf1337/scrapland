@@ -4,14 +4,14 @@
  * layouts are data/menus/base.def; the functions here compute the places (with the integer and float arithmetic of
  * the script) and hand them to it.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters that
- * parse the arguments as before (the same TypeErrors) and take the objects (titles, menus, places) as native values.
- * A menu that holds handles or other objects is made native item by item (Mode_ElemsIn), the objects stay NV_OBJ. The
- * variables of other modules are read where the C read them (Init.inMainMenu, isShipEdit, isDemo, Menu.isXbox,
- * TitleBarYOff, BackButtonYStart, QuestionMenuYStart, backFunc, Scorer.MarginH and MarginV), Menu.currentSoundPitch
- * and VerticalMenuLastControl are written at once. Menu.InitMenuSys is called through its ref (PORT_CALL:
- * directly while the attribute holds the port's function, else by name); ShowWarning schedules itself, the scheduler
- * takes its entry (stage 4: Mode_SchedAt, Port_Scheduled).
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries,
+ * which parse the arguments as before (the same TypeErrors) and take the objects (titles, menus, places) as native
+ * values. A menu that holds handles or other objects is made native item by item (Mode_ElemsIn), the objects stay
+ * NV_OBJ. The variables of other modules are read where the C read them (Init.inMainMenu, isShipEdit, isDemo,
+ * Menu.isXbox, TitleBarYOff, BackButtonYStart, QuestionMenuYStart, backFunc, Scorer.MarginH and MarginV),
+ * Menu.currentSoundPitch and VerticalMenuLastControl are written at once. Menu.InitMenuSys is called through its ref
+ * (PORT_CALL: directly while the attribute holds the port's function, else by name); ShowWarning schedules itself, the
+ * scheduler takes its entry (stage 4: Mode_SchedAt, Port_Scheduled).
  */
 #include <string.h>
 
@@ -504,7 +504,7 @@ static byte Base_TextBox(int id, const nativeVal_t *desc, const char *accept, co
 
 /*
  * ShowWarning(id, desc): a text box once the player plays (on foot or in a ship, time running): 1, 0 with the error;
- * 2 when the player does not play yet (the adapter schedules the call again)
+ * 2 when the player does not play yet (the entry schedules the call again)
  */
 static int Base_ShowWarning(int id, const nativeVal_t *desc) {
 	cActionSet *set = TABLE_AT(g_ActionSets, Input_GetActionSet());
@@ -535,7 +535,7 @@ static void Base_Place(int id, const char *section, const char *name, const nati
 	Native_Free(&nm);
 }
 
-/* ---- the functions of Menu (adapters) ---- */
+/* ---- the functions of Menu (entries) ---- */
 
 #define BASE_LINK(name, va, vb, clear) \
 	static byte Menu_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
@@ -552,8 +552,7 @@ static void Base_Place(int id, const char *section, const char *name, const nati
 			Base_Link(id, x, va, y, vb); \
 		} \
 		return 1; \
-	} \
-	MODE_ADAPTER(Menu, name)
+	}
 
 BASE_LINK(LinkLR, "Right", "Left", 0)
 BASE_LINK(LinkUD, "Down", "Up", 0)
@@ -571,8 +570,7 @@ BASE_LINK(UnLinkUD, "Down", "Up", 1)
 		Base_Run(id, section, 0); \
 		Base_Circuit(id, 1); \
 		return 1; \
-	} \
-	MODE_ADAPTER(Menu, name)
+	}
 
 BASE_BACK(DrawBackMainMenu, "backmain")
 BASE_BACK(DrawBackSubMenu, "backsub")
@@ -587,7 +585,6 @@ static byte Menu_DrawCircuitMenu_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Base_Circuit(id, drawBack != 0);
 	return 1;
 }
-MODE_ADAPTER(Menu, DrawCircuitMenu)
 
 /* DrawMenuTitleBar(id[, Y[, text[, font]]]) */
 static byte Menu_DrawMenuTitleBar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -603,7 +600,6 @@ static byte Menu_DrawMenuTitleBar_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Base_TitleBar(id, y, text, font);
 	return 1;
 }
-MODE_ADAPTER(Menu, DrawMenuTitleBar)
 
 static byte Menu_StartNewMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -614,24 +610,25 @@ static byte Menu_StartNewMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Base_NewMenu(id);
 	return 1;
 }
-MODE_ADAPTER(Menu, StartNewMenu)
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *Menu_AddTabs(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "menu", "actual", "ParamTabSize", "Hint", "CenterTextInTabs", NULL };
-	int id, tabSize = 17, hint = 1, center = 0;
-	PyObject *menu;
-	char *actual;
+/* AddTabs(id, menu, actual, ParamTabSize=17, Hint=1, CenterTextInTabs=0) */
+MODE_KWT(Menu, AddTabs, "iOs|iii", "id", "menu", "actual", "ParamTabSize", "Hint", "CenterTextInTabs") {
+	const nativeVal_t *menu;
+	const char *actual;
+	int id, tabSize, hint, center;
 	nativeVal_t m;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "iOs|iii", names, &id, &menu, &actual, &tabSize, &hint, &center)) {
-		return NULL;
+	Mode_KwDefI(v, given, 3, 17);
+	Mode_KwDefI(v, given, 4, 1);
+	Mode_KwDefI(v, given, 5, 0);
+	if (!Mode_Parse(v, 6, "iOsiii", &id, &menu, &actual, &tabSize, &hint, &center)) {
+		return 0;
 	}
-	Native_Arg(menu, &m);
+	/* the menu list is read in place (Mode_ElemsIn): a copy */
+	Native_Copy(&m, menu);
 	Mode_ElemsIn(&m);
 	byte ok = Base_AddTabs(id, &m, actual, tabSize, hint, center);
 	Native_Free(&m);
-	return Mode_Result(ok);
+	return ok;
 }
 
 /* the keyword names of VerticalMenu (its ref takes keyword calls, PORT_DEFK) */
@@ -665,36 +662,6 @@ static byte Menu_VerticalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return ok;
 }
 
-/* the adapter on the objects as PyArg_ParseTupleAndKeywords takes them (the order of its errors kept) */
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw) {
-	char **names = Menu_VerticalMenu_N;
-	int id;
-	PyObject *o[7] = { NULL };
-	char *font = "ScrapBig", *fontTitle = "ScrapBig";
-	nativeVal_t v[7];
-	(void)self;
-	/* title, menu, backfunc, XStart, VerticalStep, MinYStart, YStart */
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "iOOO|OOsOOs", names, &id, &o[0], &o[1], &o[2], &o[3], &o[4], &font,
-		&o[5], &o[6], &fontTitle)) {
-		return NULL;
-	}
-	for (int i = 0; i < 7; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &v[i]);
-		} else {
-			Native_SetNone(&v[i]);
-		}
-	}
-	Mode_ElemsIn(&v[1]);
-	byte ok = Base_VerticalMenu(id, &v[0], &v[1], &v[2], o[3] ? &v[3] : NULL, o[4] ? &v[4] : NULL, font,
-		o[5] ? &v[5] : NULL, o[6] ? &v[6] : NULL, fontTitle);
-	for (int i = 0; i < 7; i++) {
-		Native_Free(&v[i]);
-	}
-	return Mode_Result(ok);
-}
-
 /* YesNoMenu(id, title, yes, no): a question with Yes and No */
 static byte Menu_YesNoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -712,7 +679,6 @@ static byte Menu_YesNoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 		Mode_I(&t, !strcmp(yes, "Menu.ExitGame")));
 	return Mode_Done(&t, 1);
 }
-MODE_ADAPTER(Menu, YesNoMenu)
 
 /* DisableMenuItem(id, n, count): entry n of a vertical menu grey, skipped by the keys (not the first or last) */
 static byte Menu_DisableMenuItem_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -738,7 +704,6 @@ static byte Menu_DisableMenuItem_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Script_SetStr(id, next, "Up", prev);
 	return 1;
 }
-MODE_ADAPTER(Menu, DisableMenuItem)
 
 static byte Menu_ShowTextBox_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -747,7 +712,6 @@ static byte Menu_ShowTextBox_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Mode_Parse(a, n, "iOss|O", &id, &desc, &accept, &back, &button) && Base_TextBox(id, desc, accept, back, button);
 }
-MODE_ADAPTER(Menu, ShowTextBox)
 
 static byte Menu_ShowWarning_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -765,7 +729,6 @@ static byte Menu_ShowWarning_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Mode_SchedAt(Timer_GetTime(&g_pWorld->timer) + 0.25f, "Menu", "ShowWarning", a, 2, "ShowWarning");
 	return 1;
 }
-MODE_ADAPTER(Menu, ShowWarning)
 
 static byte Menu_SetTabDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -777,7 +740,6 @@ static byte Menu_SetTabDefaults_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	Base_TabDefaults(id, control);
 	return 1;
 }
-MODE_ADAPTER(Menu, SetTabDefaults)
 
 /* SliderMenu(id, name, x, y) */
 static byte Menu_SliderMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -791,7 +753,6 @@ static byte Menu_SliderMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Base_Place(id, "slider", name, x, y, NULL);
 	return 1;
 }
-MODE_ADAPTER(Menu, SliderMenu)
 
 /* PreviousNextMenu(id, name, x, y, size) and PreviousNextMenuSimple: arrows left and right of a value */
 static byte Base_Arrows(const nativeVal_t *a, int n, const char *section) {
@@ -809,37 +770,35 @@ static byte Menu_PreviousNextMenu_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	(void)out;
 	return Base_Arrows(a, n, "prevnext");
 }
-MODE_ADAPTER(Menu, PreviousNextMenu)
 
 static byte Menu_PreviousNextMenuSimple_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Base_Arrows(a, n, "prevnextsimple");
 }
-MODE_ADAPTER(Menu, PreviousNextMenuSimple)
 
-PyMethodDef g_MenuBaseMethods[] = {
-	{ "LinkLR", Menu_LinkLR, 1, NULL },
-	{ "LinkUD", Menu_LinkUD, 1, NULL },
-	{ "UnLinkLR", Menu_UnLinkLR, 1, NULL },
-	{ "UnLinkUD", Menu_UnLinkUD, 1, NULL },
-	{ "DrawBackMainMenu", Menu_DrawBackMainMenu, 1, NULL },
-	{ "DrawBackSubMenu", Menu_DrawBackSubMenu, 1, NULL },
-	{ "DrawBackOptionMenu", Menu_DrawBackOptionMenu, 1, NULL },
-	{ "DrawCircuitMenu", Menu_DrawCircuitMenu, 1, NULL },
-	{ "DrawMenuTitleBar", Menu_DrawMenuTitleBar, 1, NULL },
-	{ "StartNewMenu", Menu_StartNewMenu, 1, NULL },
-	{ "AddTabs", (PyCFunction)(void (*)(void))Menu_AddTabs, 3, NULL },
-	{ "DummyFunc", Mode_PyNone, 1, NULL },
-	{ "VerticalMenu", (PyCFunction)(void (*)(void))Menu_VerticalMenu, 3, NULL },
-	{ "YesNoMenu", Menu_YesNoMenu, 1, NULL },
-	{ "DisableMenuItem", Menu_DisableMenuItem, 1, NULL },
-	{ "ShowTextBox", Menu_ShowTextBox, 1, NULL },
-	{ "ShowWarning", Menu_ShowWarning, 1, NULL },
-	{ "SetTabDefaults", Menu_SetTabDefaults, 1, NULL },
-	{ "SliderMenu", Menu_SliderMenu, 1, NULL },
-	{ "PreviousNextMenu", Menu_PreviousNextMenu, 1, NULL },
-	{ "PreviousNextMenuSimple", Menu_PreviousNextMenuSimple, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuBaseMethods[] = {
+	PORT_FN(LinkLR, Menu_LinkLR),
+	PORT_FN(LinkUD, Menu_LinkUD),
+	PORT_FN(UnLinkLR, Menu_UnLinkLR),
+	PORT_FN(UnLinkUD, Menu_UnLinkUD),
+	PORT_FN(DrawBackMainMenu, Menu_DrawBackMainMenu),
+	PORT_FN(DrawBackSubMenu, Menu_DrawBackSubMenu),
+	PORT_FN(DrawBackOptionMenu, Menu_DrawBackOptionMenu),
+	PORT_FN(DrawCircuitMenu, Menu_DrawCircuitMenu),
+	PORT_FN(DrawMenuTitleBar, Menu_DrawMenuTitleBar),
+	PORT_FN(StartNewMenu, Menu_StartNewMenu),
+	PORT_FNK(AddTabs, Menu_AddTabs),
+	PORT_FN(DummyFunc, Mode_PyNone),
+	PORT_FNK(VerticalMenu, Menu_VerticalMenu),
+	PORT_FN(YesNoMenu, Menu_YesNoMenu),
+	PORT_FN(DisableMenuItem, Menu_DisableMenuItem),
+	PORT_FN(ShowTextBox, Menu_ShowTextBox),
+	PORT_FN(ShowWarning, Menu_ShowWarning),
+	PORT_FN(SetTabDefaults, Menu_SetTabDefaults),
+	PORT_FN(SliderMenu, Menu_SliderMenu),
+	PORT_FN(PreviousNextMenu, Menu_PreviousNextMenu),
+	PORT_FN(PreviousNextMenuSimple, Menu_PreviousNextMenuSimple),
+	PORT_FNEND
 };
 
 PORTS(MenuBase)

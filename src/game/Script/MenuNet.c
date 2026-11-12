@@ -3,17 +3,16 @@
  * the address and password pages, the connection to a server, the create page with the advanced options and the
  * part the create and join pages share. The layout is data/menus/net.def, one section per page.
  *
- * Native C (docs/objlib-plan.md, stage 2): the state is the struct net (the servers of the browser, the page, the
- * sort, the message of the day), the functions call the engine in C; the PyMethodDef entries are adapters (the
- * argument formats as before). The variables of other modules are read where the C read them (Init.inMainMenu,
- * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps),
- * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through their
- * refs (PORT_CALL: directly while the attribute holds the port's function, else by name), and so are Scrap.SaveConfig
- * and Scrap.Exit (stage 7), their failures printed as before; the connection status schedules itself (a function
- * object of its own, OBJLIB 7; the scheduler takes its entry, Port_Scheduled). The $names of the sections are made on
- * native values (Mode_DefRunVa, stage 6 batches 6f and 6h); the .def runner and the
- * steps their arguments as native values. Every function of the table but BrowseFormatServerLine has a native entry
- * (batch 6h).
+ * Native C (docs/objlib-plan.md, stage 2): the state is the struct net (the servers of the browser, the page, the sort,
+ * the message of the day), the functions call the engine in C; the function table rows name the entries (the argument
+ * formats as before). The variables of other modules are read where the C read them (Init.inMainMenu, isShipEdit, Path,
+ * Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps), Menu.fromMultiPlayer is written
+ * at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through their refs (PORT_CALL: directly while
+ * the attribute holds the port's function, else by name), and so are Scrap.SaveConfig and Scrap.Exit (stage 7), their
+ * failures printed as before; the connection status schedules itself (a function object of its own, OBJLIB 7; the
+ * scheduler takes its entry, Port_Scheduled). The $names of the sections are made on native values (Mode_DefRunVa,
+ * stage 6 batches 6f and 6h); the .def runner and the steps their arguments as native values. Every function of the
+ * table has a native entry (batch 6h; BrowseFormatServerLine in 7e2).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -820,7 +819,6 @@ static byte PCMenu_MenuRestartServer_E(const nativeVal_t *a, int n, nativeVal_t 
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MenuRestartServer)
 
 static byte PCMenu_MenuJoinGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -838,7 +836,6 @@ static byte PCMenu_MenuJoinGame_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	Net_TryJoin(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MenuJoinGame)
 
 static byte PCMenu_TryJoin_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -847,7 +844,6 @@ static byte PCMenu_TryJoin_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Net_TryJoin(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, TryJoin)
 
 static byte PCMenu_JoinPassword_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -857,7 +853,6 @@ static byte PCMenu_JoinPassword_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	Net_TryJoin(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, JoinPassword)
 
 /* AskPassword(id, control): the password page of the server */
 static void Net_AskPassword(int id) {
@@ -883,7 +878,6 @@ static byte PCMenu_AbortJoin_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Net_JoinMenu(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, AbortJoin)
 
 static byte PCMenu_SpecifyIPMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -892,7 +886,6 @@ static byte PCMenu_SpecifyIPMenu_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Net_RunPage(id, "ip", "Join");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, SpecifyIPMenu)
 
 static byte PCMenu_AbortMultiplayerGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -902,7 +895,6 @@ static byte PCMenu_AbortMultiplayerGame_E(const nativeVal_t *a, int n, nativeVal
 		"PCMenu.MultiPlayerMenu");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, AbortMultiplayerGame)
 
 /* NetDefaultContentMenu(id, control[, tab]): Back, the garage and the Create/Join tabs, the message of the day */
 static byte PCMenu_NetDefaultContentMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -916,7 +908,6 @@ static byte PCMenu_NetDefaultContentMenu_E(const nativeVal_t *a, int n, nativeVa
 	Net_RunPage(id, "content", tab);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, NetDefaultContentMenu)
 
 static byte PCMenu_NetJoinGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -925,7 +916,6 @@ static byte PCMenu_NetJoinGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Net_JoinMenu(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, NetJoinGameMenu)
 
 static byte Net_Domain(const nativeVal_t *a, int n, const char *domain) {
 	NET_ARGS(a, n);
@@ -940,19 +930,16 @@ static byte PCMenu_NetJoinInternetMenu_E(const nativeVal_t *a, int n, nativeVal_
 	(void)out;
 	return Net_Domain(a, n, "Internet");
 }
-MODE_ADAPTER(PCMenu, NetJoinInternetMenu)
 
 static byte PCMenu_NetJoinLocalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Domain(a, n, "Local");
 }
-MODE_ADAPTER(PCMenu, NetJoinLocalMenu)
 
 static byte PCMenu_NetJoinIPMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Domain(a, n, "IP");
 }
-MODE_ADAPTER(PCMenu, NetJoinIPMenu)
 
 /* OnNetBrowse(address, flags, name, players, maxPlayers, version, port, type, ping, map): a server answered */
 static byte PCMenu_OnNetBrowse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -982,7 +969,6 @@ static byte PCMenu_OnNetBrowse_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	Net_UpdateBrowser(0);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, OnNetBrowse)
 
 static byte PCMenu_BrowserSortExecute_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -991,7 +977,6 @@ static byte PCMenu_BrowserSortExecute_E(const nativeVal_t *a, int n, nativeVal_t
 	Net_Sort();
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BrowserSortExecute)
 
 static byte PCMenu_BrowseLocalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -1000,7 +985,6 @@ static byte PCMenu_BrowseLocalMenu_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Net_BrowseLocal();
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BrowseLocalMenu)
 
 /* MasterCommand(text): a message of the master server, "msg=" is the message of the day */
 static byte PCMenu_MasterCommand_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1015,7 +999,6 @@ static byte PCMenu_MasterCommand_E(const nativeVal_t *a, int n, nativeVal_t *out
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MasterCommand)
 
 static byte PCMenu_BrowseINetMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -1024,7 +1007,6 @@ static byte PCMenu_BrowseINetMenu_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Net_BrowseInternet();
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BrowseINetMenu)
 
 static byte PCMenu_InetMasterBrowse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int i;
@@ -1034,7 +1016,6 @@ static byte PCMenu_InetMasterBrowse_E(const nativeVal_t *a, int n, nativeVal_t *
 	Native_SetInt(out, Net_MasterBrowse(i));
 	return 1;
 }
-MODE_ADAPTER(PCMenu, InetMasterBrowse)
 
 /* the script called a MainMenu of its own module here, which does not exist; the main menu of Menu is meant */
 static byte PCMenu_BrowserMenuBack_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1049,7 +1030,6 @@ static byte PCMenu_BrowserMenuBack_E(const nativeVal_t *a, int n, nativeVal_t *o
 	MODE_PRINTED(Menu, MainMenu, "is", (long)id, control);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BrowserMenuBack)
 
 static byte PCMenu_RefreshBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1058,7 +1038,6 @@ static byte PCMenu_RefreshBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t 
 	Net_Refresh(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, RefreshBrowseMenu)
 
 static byte PCMenu_RefreshBrowseMenuButton_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1068,7 +1047,6 @@ static byte PCMenu_RefreshBrowseMenuButton_E(const nativeVal_t *a, int n, native
 	Net_Refresh(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, RefreshBrowseMenuButton)
 
 /* the arrows and the page keys of the browser; the names are the script's (Previous scrolls down) */
 static byte Net_Scroll(const nativeVal_t *a, int n, int how) {
@@ -1099,25 +1077,21 @@ static byte PCMenu_BrowseLocalMenuPrevious_E(const nativeVal_t *a, int n, native
 	(void)out;
 	return Net_Scroll(a, n, 0);
 }
-MODE_ADAPTER(PCMenu, BrowseLocalMenuPrevious)
 
 static byte PCMenu_BrowseLocalMenuNext_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Scroll(a, n, 1);
 }
-MODE_ADAPTER(PCMenu, BrowseLocalMenuNext)
 
 static byte PCMenu_BrowseLocalMenuPgUp_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Scroll(a, n, 2);
 }
-MODE_ADAPTER(PCMenu, BrowseLocalMenuPgUp)
 
 static byte PCMenu_BrowseLocalMenuPgDown_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Scroll(a, n, 3);
 }
-MODE_ADAPTER(PCMenu, BrowseLocalMenuPgDown)
 
 /* BrowseLocalJoin(id, "BrowserSlotN"): joins the server of that line when its mode and map are here */
 static byte PCMenu_BrowseLocalJoin_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1155,7 +1129,6 @@ static byte PCMenu_BrowseLocalJoin_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Net_TryJoin(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BrowseLocalJoin)
 
 /* UnicodeParse(text, maxlen) */
 static byte PCMenu_UnicodeParse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1169,7 +1142,6 @@ static byte PCMenu_UnicodeParse_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	Native_SetText(out, cut, (int)strlen(cut));
 	return 1;
 }
-MODE_ADAPTER(PCMenu, UnicodeParse)
 
 static byte PCMenu_CreateBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1180,7 +1152,6 @@ static byte PCMenu_CreateBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *
 	Net_RunPage(id, "browser", "Join");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, CreateBrowseMenu)
 
 static byte PCMenu_BrowserColumnBack_Click_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1188,7 +1159,6 @@ static byte PCMenu_BrowserColumnBack_Click_E(const nativeVal_t *a, int n, native
 	Net_SortBy(id, strlen(control) > 18 ? control + 18 : "");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BrowserColumnBack_Click)
 
 /* the slider area (id, control, previous) draws its handle while it has the focus */
 static byte Net_SliderFocus(const nativeVal_t *a, int n, const char *render) {
@@ -1205,13 +1175,11 @@ static byte PCMenu_BrowserSliderGainFocus_E(const nativeVal_t *a, int n, nativeV
 	(void)out;
 	return Net_SliderFocus(a, n, "PCMenu.BrowserSliderOnRender");
 }
-MODE_ADAPTER(PCMenu, BrowserSliderGainFocus)
 
 static byte PCMenu_BrowserSliderLooseFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_SliderFocus(a, n, "");
 }
-MODE_ADAPTER(PCMenu, BrowserSliderLooseFocus)
 
 /* while the slider has the focus and accept is held, the cursor height picks the first server shown */
 static byte PCMenu_BrowserSliderOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1239,7 +1207,6 @@ static byte PCMenu_BrowserSliderOnRender_E(const nativeVal_t *a, int n, nativeVa
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BrowserSliderOnRender)
 
 static byte PCMenu_UpdateBrowseSlider_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1250,7 +1217,6 @@ static byte PCMenu_UpdateBrowseSlider_E(const nativeVal_t *a, int n, nativeVal_t
 	Net_UpdateSlider(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, UpdateBrowseSlider)
 
 static byte PCMenu_UpdateBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1261,27 +1227,61 @@ static byte PCMenu_UpdateBrowseMenu_E(const nativeVal_t *a, int n, nativeVal_t *
 	Net_UpdateBrowser(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, UpdateBrowseMenu)
 
 /* BrowseFormatServerLine(info): info as the script kept it, (ping, address, name, players, max, version, port,
- * type, map, flags). OBJLIB 7: the adapter parses with PyArg (a tuple format with texts in it, "(issiiiissi)":
- * Mode_Parse takes numbers only inside a tuple, and the errors of the nested format are those of getargs.c), so the
- * function has no entry */
-static PyObject *PCMenu_BrowseFormatServerLine(PyObject *self, PyObject *args) {
+ * type, map, flags), with the errors of the nested format "(issiiiissi)" of getargs.c (converttuple, convertsimple:
+ * the item and the type found; an NV_OBJ is no sequence here) */
+static byte PCMenu_BrowseFormatServerLine_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	static const char kinds[] = "issiiiissi";
+	const nativeVal_t *info;
+	char texts[10][sizeof(((netServer_t *)0)->name)], line[0x100];
+	int nums[10] = { 0 }, len = 0;
 	netServer_t s;
-	char *address, *name, *type, *map, line[0x100];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(issiiiissi)", &s.ping, &address, &name, &s.numPlayers, &s.maxPlayers, &s.version,
-		&s.port, &type, &map, &s.flags)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "O", &info)) {
+		return 0;
 	}
-	Str_Copy(s.name, name, sizeof(s.name));
-	Str_Copy(s.type, type, sizeof(s.type));
-	Str_Copy(s.map, map, sizeof(s.map));
+	if (info->type != NV_LIST && info->type != NV_TUPLE && info->type != NV_STR && info->type != NV_VEC) {
+		return Native_Raise(NE_TYPE, "argument 1: expected 10-sequence, %s found", Native_TypeName(info));
+	}
+	Native_Len(info, &len);
+	if (len != 10) {
+		return Native_Raise(NE_TYPE, "argument 1: expected 10-sequence, %d-sequence found", len);
+	}
+	for (int i = 0; i < 10; i++) {
+		nativeVal_t tmp;
+		const char *msg = NULL;
+		Native_SetNone(&tmp);
+		const nativeVal_t *item = Native_GetItem(info, i, 0, &tmp);
+		if (kinds[i] == 'i') {
+			msg = Mode_ArgInt(item, &nums[i]) ? NULL : "integer<i>";
+		} else if (item->type != NV_STR) {
+			msg = "string";
+		} else if (strlen(Native_Text(item)) != (size_t)item->n) {
+			msg = "string without null bytes";
+		} else {
+			Str_Copy(texts[i], Native_Text(item), sizeof(texts[i]));
+		}
+		if (msg && !Native_Failed()) {
+			Native_Raise(NE_TYPE, "argument 1, item %d: expected %s, %s found", i, msg, Native_TypeName(item));
+		}
+		Native_Free(&tmp);
+		if (msg) {
+			return 0;
+		}
+	}
+	memset(&s, 0, sizeof(s));
+	s.ping = nums[0];
+	s.numPlayers = nums[3];
+	s.maxPlayers = nums[4];
+	s.version = nums[5];
+	s.port = nums[6];
+	s.flags = nums[9];
+	Str_Copy(s.name, texts[2], sizeof(s.name));
+	Str_Copy(s.type, texts[7], sizeof(s.type));
+	Str_Copy(s.map, texts[8], sizeof(s.map));
 	Net_ServerLine(&s, line, sizeof(line));
-	nativeVal_t r;
-	Native_SetText(&r, line, (int)strlen(line));
-	return Mode_Return(1, &r);
+	Native_SetText(out, line, (int)strlen(line));
+	return 1;
 }
 
 static byte PCMenu_NetCreateGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1291,7 +1291,6 @@ static byte PCMenu_NetCreateGameMenu_E(const nativeVal_t *a, int n, nativeVal_t 
 	Net_CreateMenu(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, NetCreateGameMenu)
 
 /* MenuInitServer: starts a server on the first chosen map (all maps of the mode when none is chosen) */
 static byte PCMenu_MenuInitServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1314,7 +1313,6 @@ static byte PCMenu_MenuInitServer_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Net_InitServer(level, (int)GVar_GetNum("DefaultMaxPlayersOnServer", 0), 0, 0);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MenuInitServer)
 
 static byte PCMenu_AdvancedServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char pass[0x100], force[0x100], rate[0x100];
@@ -1336,7 +1334,6 @@ static byte PCMenu_AdvancedServer_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Mode_Done(&t, 1);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, AdvancedServer)
 
 static byte PCMenu_BackToCreateServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1346,7 +1343,6 @@ static byte PCMenu_BackToCreateServer_E(const nativeVal_t *a, int n, nativeVal_t
 	Net_CreateMenu(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, BackToCreateServer)
 
 static byte PCMenu_SwitchForceVehicle_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char text[0x100];
@@ -1359,7 +1355,6 @@ static byte PCMenu_SwitchForceVehicle_E(const nativeVal_t *a, int n, nativeVal_t
 	GVar_SetNum("ForceServerVehicle", on);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, SwitchForceVehicle)
 
 static byte PCMenu_SwitchUsePass_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char text[0x100];
@@ -1384,7 +1379,6 @@ static byte PCMenu_SwitchUsePass_E(const nativeVal_t *a, int n, nativeVal_t *out
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, SwitchUsePass)
 
 /* RunDedicatedServer: not in a menu of the game; the game ends and starts again as a dedicated server */
 static byte PCMenu_RunDedicatedServer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1405,7 +1399,6 @@ static byte PCMenu_RunDedicatedServer_E(const nativeVal_t *a, int n, nativeVal_t
 	MODE_PRINTED(Scrap, Exit, "");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, RunDedicatedServer)
 
 static byte PCMenu_SetDataRate_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	static const int rates[] = { 2560, 5120, 10240, 15360, 20480, 30720, 40960, 409600000 };
@@ -1425,7 +1418,6 @@ static byte PCMenu_SetDataRate_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	Script_SetStr(id, "Item4", "Text", text);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, SetDataRate)
 
 static byte PCMenu_GetDataRateText_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char text[0x100];
@@ -1435,7 +1427,6 @@ static byte PCMenu_GetDataRateText_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Native_SetText(out, text, (int)strlen(text));
 	return 1;
 }
-MODE_ADAPTER(PCMenu, GetDataRateText)
 
 /* the previous and next mode of Net.Modes, round */
 static byte Net_StepMode(const nativeVal_t *a, int n, int dir) {
@@ -1455,13 +1446,11 @@ static byte PCMenu_ServerTypePrev_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	(void)out;
 	return Net_StepMode(a, n, -1);
 }
-MODE_ADAPTER(PCMenu, ServerTypePrev)
 
 static byte PCMenu_ServerTypeNext_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_StepMode(a, n, 1);
 }
-MODE_ADAPTER(PCMenu, ServerTypeNext)
 
 static byte PCMenu_UpdateServerType_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1472,7 +1461,6 @@ static byte PCMenu_UpdateServerType_E(const nativeVal_t *a, int n, nativeVal_t *
 	Net_UpdateServerType(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, UpdateServerType)
 
 /* the help text of the mode in a box, its name above */
 static byte PCMenu_ServerTypeInfo_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1508,7 +1496,6 @@ static byte PCMenu_ServerTypeInfo_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Script_SetNum(id, "ServerTypeInfo", "Blue", 255);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ServerTypeInfo)
 
 /* the map arrows; the names are the script's (MapUp scrolls down) */
 static byte PCMenu_MapUp_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1523,7 +1510,6 @@ static byte PCMenu_MapUp_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MapUp)
 
 static byte PCMenu_MapDown_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1535,7 +1521,6 @@ static byte PCMenu_MapDown_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MapDown)
 
 /* OnGainFocus/OnLooseFocus (id, a, b) of an item: its OnRender on or off */
 static byte Net_Render(const nativeVal_t *a, int n, const char *item, const char *func) {
@@ -1553,13 +1538,11 @@ static byte PCMenu_MapSliderGainFocus_E(const nativeVal_t *a, int n, nativeVal_t
 	(void)out;
 	return Net_Render(a, n, "MapSliderArea", "PCMenu.MapSliderOnRender");
 }
-MODE_ADAPTER(PCMenu, MapSliderGainFocus)
 
 static byte PCMenu_MapSliderLooseFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Render(a, n, "MapSliderArea", "");
 }
-MODE_ADAPTER(PCMenu, MapSliderLooseFocus)
 
 static byte PCMenu_MapSliderOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	netMapList_t maps;
@@ -1587,7 +1570,6 @@ static byte PCMenu_MapSliderOnRender_E(const nativeVal_t *a, int n, nativeVal_t 
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MapSliderOnRender)
 
 static byte PCMenu_UpdateMapSlider_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1598,7 +1580,6 @@ static byte PCMenu_UpdateMapSlider_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Net_UpdateMapSlider(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, UpdateMapSlider)
 
 static byte PCMenu_UpdateMapList_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1609,7 +1590,6 @@ static byte PCMenu_UpdateMapList_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Net_UpdateMapList(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, UpdateMapList)
 
 /* MapChoose(id, "MapSlotN"): the map of the line in or out of the maps of the server */
 static byte PCMenu_MapChoose_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1634,7 +1614,6 @@ static byte PCMenu_MapChoose_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Net_UpdateMapList(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MapChoose)
 
 static void Net_Fade(int id, const char *map, const char *how) {
 	char item[0x80];
@@ -1659,7 +1638,6 @@ static byte PCMenu_MapPreviewOn_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	Net_Fade(id, map, "!ScorerSpriteFadeIn");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MapPreviewOn)
 
 static byte PCMenu_MapPreviewOff_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1674,32 +1652,27 @@ static byte PCMenu_MapPreviewOff_E(const nativeVal_t *a, int n, nativeVal_t *out
 	}
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MapPreviewOff)
 
 static byte PCMenu_ServerNameGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Render(a, n, NULL, "PCMenu.ServerNameOnRender");
 }
-MODE_ADAPTER(PCMenu, ServerNameGainFocus)
 
 /* the LooseFocus of the edit fields (ServerName, PlayersNumber, FragLimit): no OnRender */
 static byte PCMenu_EditLooseFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Render(a, n, NULL, "");
 }
-MODE_ADAPTER(PCMenu, EditLooseFocus)
 
 static byte PCMenu_PlayersNumberGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Render(a, n, NULL, "PCMenu.PlayersNumberOnRender");
 }
-MODE_ADAPTER(PCMenu, PlayersNumberGainFocus)
 
 static byte PCMenu_FragLimitGainFocus_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Net_Render(a, n, NULL, "PCMenu.FragLimitOnRender");
 }
-MODE_ADAPTER(PCMenu, FragLimitGainFocus)
 
 /* while an edit field has the focus its text goes to the engine variable each frame */
 static byte PCMenu_ServerNameOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1708,7 +1681,6 @@ static byte PCMenu_ServerNameOnRender_E(const nativeVal_t *a, int n, nativeVal_t
 	GVar_SetStr("ServerName", Script_GetStr(id, control, "Text"));
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ServerNameOnRender)
 
 /* the number in the field kept in min..max ("" counts as min) */
 static int Net_Clamp(int id, const char *control, int min, int max) {
@@ -1728,7 +1700,6 @@ static byte PCMenu_PlayersNumberOnRender_E(const nativeVal_t *a, int n, nativeVa
 	GVar_SetNum("DefaultMaxPlayersOnServer", Net_Clamp(id, control, 2, 16) - 1);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, PlayersNumberOnRender)
 
 static byte PCMenu_FragLimitOnRender_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1736,80 +1707,79 @@ static byte PCMenu_FragLimitOnRender_E(const nativeVal_t *a, int n, nativeVal_t 
 	GVar_SetNum("FragLimit", Net_Clamp(id, control, 1, 99));
 	return 1;
 }
-MODE_ADAPTER(PCMenu, FragLimitOnRender)
 
-PyMethodDef g_MenuNetMethods[] = {
-	{ "MultiPlayerMenu", PCMenu_MultiPlayerMenu, 1, NULL },
-	{ "MenuRestartServer", PCMenu_MenuRestartServer, 1, NULL },
-	{ "MenuJoinGame", PCMenu_MenuJoinGame, 1, NULL },
-	{ "TryJoin", PCMenu_TryJoin, 1, NULL },
-	{ "JoinPassword", PCMenu_JoinPassword, 1, NULL },
-	{ "AskPassword", PCMenu_AskPassword, 1, NULL },
-	{ "ShowConectionStatus", PCMenu_ShowConectionStatus, 1, NULL },
-	{ "AbortJoin", PCMenu_AbortJoin, 1, NULL },
-	{ "SpecifyIPMenu", PCMenu_SpecifyIPMenu, 1, NULL },
-	{ "AbortMultiplayerGame", PCMenu_AbortMultiplayerGame, 1, NULL },
-	{ "NetDefaultContentMenu", PCMenu_NetDefaultContentMenu, 1, NULL },
-	{ "NetJoinGameMenu", PCMenu_NetJoinGameMenu, 1, NULL },
-	{ "NetJoinInternetMenu", PCMenu_NetJoinInternetMenu, 1, NULL },
-	{ "NetJoinLocalMenu", PCMenu_NetJoinLocalMenu, 1, NULL },
-	{ "NetJoinIPMenu", PCMenu_NetJoinIPMenu, 1, NULL },
-	{ "OnNetBrowse", PCMenu_OnNetBrowse, 1, NULL },
-	{ "BrowserSortExecute", PCMenu_BrowserSortExecute, 1, NULL },
-	{ "BrowseLocalMenu", PCMenu_BrowseLocalMenu, 1, NULL },
-	{ "MasterCommand", PCMenu_MasterCommand, 1, NULL },
-	{ "BrowseINetMenu", PCMenu_BrowseINetMenu, 1, NULL },
-	{ "InetMasterBrowse", PCMenu_InetMasterBrowse, 1, NULL },
-	{ "BrowserMenuBack", PCMenu_BrowserMenuBack, 1, NULL },
-	{ "RefreshBrowseMenu", PCMenu_RefreshBrowseMenu, 1, NULL },
-	{ "RefreshBrowseMenuButton", PCMenu_RefreshBrowseMenuButton, 1, NULL },
-	{ "BrowseLocalMenuPrevious", PCMenu_BrowseLocalMenuPrevious, 1, NULL },
-	{ "BrowseLocalMenuNext", PCMenu_BrowseLocalMenuNext, 1, NULL },
-	{ "BrowseLocalMenuPgUp", PCMenu_BrowseLocalMenuPgUp, 1, NULL },
-	{ "BrowseLocalMenuPgDown", PCMenu_BrowseLocalMenuPgDown, 1, NULL },
-	{ "BrowseLocalJoin", PCMenu_BrowseLocalJoin, 1, NULL },
-	{ "UnicodeParse", PCMenu_UnicodeParse, 1, NULL },
-	{ "CreateBrowseMenu", PCMenu_CreateBrowseMenu, 1, NULL },
-	{ "BrowserColumnBack_Click", PCMenu_BrowserColumnBack_Click, 1, NULL },
-	{ "BrowserSliderGainFocus", PCMenu_BrowserSliderGainFocus, 1, NULL },
-	{ "BrowserSliderLooseFocus", PCMenu_BrowserSliderLooseFocus, 1, NULL },
-	{ "BrowserSliderOnRender", PCMenu_BrowserSliderOnRender, 1, NULL },
-	{ "UpdateBrowseSlider", PCMenu_UpdateBrowseSlider, 1, NULL },
-	{ "UpdateBrowseMenu", PCMenu_UpdateBrowseMenu, 1, NULL },
-	{ "BrowseFormatServerLine", PCMenu_BrowseFormatServerLine, 1, NULL },
-	{ "NetCreateGameMenu", PCMenu_NetCreateGameMenu, 1, NULL },
-	{ "MenuInitServer", PCMenu_MenuInitServer, 1, NULL },
-	{ "AdvancedServer", PCMenu_AdvancedServer, 1, NULL },
-	{ "BackToCreateServer", PCMenu_BackToCreateServer, 1, NULL },
-	{ "SwitchForceVehicle", PCMenu_SwitchForceVehicle, 1, NULL },
-	{ "SwitchUsePass", PCMenu_SwitchUsePass, 1, NULL },
-	{ "RunDedicatedServer", PCMenu_RunDedicatedServer, 1, NULL },
-	{ "SetDataRate", PCMenu_SetDataRate, 1, NULL },
-	{ "GetDataRateText", PCMenu_GetDataRateText, 1, NULL },
-	{ "ServerTypePrev", PCMenu_ServerTypePrev, 1, NULL },
-	{ "ServerTypeNext", PCMenu_ServerTypeNext, 1, NULL },
-	{ "UpdateServerType", PCMenu_UpdateServerType, 1, NULL },
-	{ "ServerTypeInfo", PCMenu_ServerTypeInfo, 1, NULL },
-	{ "MapUp", PCMenu_MapUp, 1, NULL },
-	{ "MapDown", PCMenu_MapDown, 1, NULL },
-	{ "MapSliderGainFocus", PCMenu_MapSliderGainFocus, 1, NULL },
-	{ "MapSliderLooseFocus", PCMenu_MapSliderLooseFocus, 1, NULL },
-	{ "MapSliderOnRender", PCMenu_MapSliderOnRender, 1, NULL },
-	{ "UpdateMapSlider", PCMenu_UpdateMapSlider, 1, NULL },
-	{ "UpdateMapList", PCMenu_UpdateMapList, 1, NULL },
-	{ "MapChoose", PCMenu_MapChoose, 1, NULL },
-	{ "MapPreviewOn", PCMenu_MapPreviewOn, 1, NULL },
-	{ "MapPreviewOff", PCMenu_MapPreviewOff, 1, NULL },
-	{ "ServerNameGainFocus", PCMenu_ServerNameGainFocus, 1, NULL },
-	{ "ServerNameLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
-	{ "ServerNameOnRender", PCMenu_ServerNameOnRender, 1, NULL },
-	{ "PlayersNumberGainFocus", PCMenu_PlayersNumberGainFocus, 1, NULL },
-	{ "PlayersNumberLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
-	{ "PlayersNumberOnRender", PCMenu_PlayersNumberOnRender, 1, NULL },
-	{ "FragLimitGainFocus", PCMenu_FragLimitGainFocus, 1, NULL },
-	{ "FragLimitLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
-	{ "FragLimitOnRender", PCMenu_FragLimitOnRender, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuNetMethods[] = {
+	PORT_FN(MultiPlayerMenu, PCMenu_MultiPlayerMenu),
+	PORT_FN(MenuRestartServer, PCMenu_MenuRestartServer),
+	PORT_FN(MenuJoinGame, PCMenu_MenuJoinGame),
+	PORT_FN(TryJoin, PCMenu_TryJoin),
+	PORT_FN(JoinPassword, PCMenu_JoinPassword),
+	PORT_FN(AskPassword, PCMenu_AskPassword),
+	PORT_FN(ShowConectionStatus, PCMenu_ShowConectionStatus),
+	PORT_FN(AbortJoin, PCMenu_AbortJoin),
+	PORT_FN(SpecifyIPMenu, PCMenu_SpecifyIPMenu),
+	PORT_FN(AbortMultiplayerGame, PCMenu_AbortMultiplayerGame),
+	PORT_FN(NetDefaultContentMenu, PCMenu_NetDefaultContentMenu),
+	PORT_FN(NetJoinGameMenu, PCMenu_NetJoinGameMenu),
+	PORT_FN(NetJoinInternetMenu, PCMenu_NetJoinInternetMenu),
+	PORT_FN(NetJoinLocalMenu, PCMenu_NetJoinLocalMenu),
+	PORT_FN(NetJoinIPMenu, PCMenu_NetJoinIPMenu),
+	PORT_FN(OnNetBrowse, PCMenu_OnNetBrowse),
+	PORT_FN(BrowserSortExecute, PCMenu_BrowserSortExecute),
+	PORT_FN(BrowseLocalMenu, PCMenu_BrowseLocalMenu),
+	PORT_FN(MasterCommand, PCMenu_MasterCommand),
+	PORT_FN(BrowseINetMenu, PCMenu_BrowseINetMenu),
+	PORT_FN(InetMasterBrowse, PCMenu_InetMasterBrowse),
+	PORT_FN(BrowserMenuBack, PCMenu_BrowserMenuBack),
+	PORT_FN(RefreshBrowseMenu, PCMenu_RefreshBrowseMenu),
+	PORT_FN(RefreshBrowseMenuButton, PCMenu_RefreshBrowseMenuButton),
+	PORT_FN(BrowseLocalMenuPrevious, PCMenu_BrowseLocalMenuPrevious),
+	PORT_FN(BrowseLocalMenuNext, PCMenu_BrowseLocalMenuNext),
+	PORT_FN(BrowseLocalMenuPgUp, PCMenu_BrowseLocalMenuPgUp),
+	PORT_FN(BrowseLocalMenuPgDown, PCMenu_BrowseLocalMenuPgDown),
+	PORT_FN(BrowseLocalJoin, PCMenu_BrowseLocalJoin),
+	PORT_FN(UnicodeParse, PCMenu_UnicodeParse),
+	PORT_FN(CreateBrowseMenu, PCMenu_CreateBrowseMenu),
+	PORT_FN(BrowserColumnBack_Click, PCMenu_BrowserColumnBack_Click),
+	PORT_FN(BrowserSliderGainFocus, PCMenu_BrowserSliderGainFocus),
+	PORT_FN(BrowserSliderLooseFocus, PCMenu_BrowserSliderLooseFocus),
+	PORT_FN(BrowserSliderOnRender, PCMenu_BrowserSliderOnRender),
+	PORT_FN(UpdateBrowseSlider, PCMenu_UpdateBrowseSlider),
+	PORT_FN(UpdateBrowseMenu, PCMenu_UpdateBrowseMenu),
+	PORT_FN(BrowseFormatServerLine, PCMenu_BrowseFormatServerLine),
+	PORT_FN(NetCreateGameMenu, PCMenu_NetCreateGameMenu),
+	PORT_FN(MenuInitServer, PCMenu_MenuInitServer),
+	PORT_FN(AdvancedServer, PCMenu_AdvancedServer),
+	PORT_FN(BackToCreateServer, PCMenu_BackToCreateServer),
+	PORT_FN(SwitchForceVehicle, PCMenu_SwitchForceVehicle),
+	PORT_FN(SwitchUsePass, PCMenu_SwitchUsePass),
+	PORT_FN(RunDedicatedServer, PCMenu_RunDedicatedServer),
+	PORT_FN(SetDataRate, PCMenu_SetDataRate),
+	PORT_FN(GetDataRateText, PCMenu_GetDataRateText),
+	PORT_FN(ServerTypePrev, PCMenu_ServerTypePrev),
+	PORT_FN(ServerTypeNext, PCMenu_ServerTypeNext),
+	PORT_FN(UpdateServerType, PCMenu_UpdateServerType),
+	PORT_FN(ServerTypeInfo, PCMenu_ServerTypeInfo),
+	PORT_FN(MapUp, PCMenu_MapUp),
+	PORT_FN(MapDown, PCMenu_MapDown),
+	PORT_FN(MapSliderGainFocus, PCMenu_MapSliderGainFocus),
+	PORT_FN(MapSliderLooseFocus, PCMenu_MapSliderLooseFocus),
+	PORT_FN(MapSliderOnRender, PCMenu_MapSliderOnRender),
+	PORT_FN(UpdateMapSlider, PCMenu_UpdateMapSlider),
+	PORT_FN(UpdateMapList, PCMenu_UpdateMapList),
+	PORT_FN(MapChoose, PCMenu_MapChoose),
+	PORT_FN(MapPreviewOn, PCMenu_MapPreviewOn),
+	PORT_FN(MapPreviewOff, PCMenu_MapPreviewOff),
+	PORT_FN(ServerNameGainFocus, PCMenu_ServerNameGainFocus),
+	PORT_FN(ServerNameLooseFocus, PCMenu_EditLooseFocus),
+	PORT_FN(ServerNameOnRender, PCMenu_ServerNameOnRender),
+	PORT_FN(PlayersNumberGainFocus, PCMenu_PlayersNumberGainFocus),
+	PORT_FN(PlayersNumberLooseFocus, PCMenu_EditLooseFocus),
+	PORT_FN(PlayersNumberOnRender, PCMenu_PlayersNumberOnRender),
+	PORT_FN(FragLimitGainFocus, PCMenu_FragLimitGainFocus),
+	PORT_FN(FragLimitLooseFocus, PCMenu_EditLooseFocus),
+	PORT_FN(FragLimitOnRender, PCMenu_FragLimitOnRender),
+	PORT_FNEND
 };
 
 PORTS(MenuNet)
