@@ -9,7 +9,7 @@
  * save texts are made with the 1.5.2 repr of the native layer and read with its literal reader, so
  * every text the game writes stays byte for byte. Scrap.UsrEntity, GetAlarm, SetAlarm, SetMoney, Set, DelSaveVars,
  * ConsoleError, AddScheduledFunc, SNet.IsServer, IsClient, SInput.GetActionSet, SetActionSet, SSound.StopVoice,
- * StopAllSounds and SScorer.SetMsgText go through their seams (OBJLIB 7: the cases record or swap them);
+ * StopAllSounds and SScorer.SetMsgText go through their seams (the cases record or swap them);
  * Scrap.MusicPlayer, LoadLevel and Achievement go through their refs (stage 7: the cases record them, the seam calls
  * what they put there), and so do SNet.CloseServer and CloseClient (the online games run through them).
  * The other ports (Scorer, Challenge, Speech, MissionsFuncs) and the functions of the module the script calls through
@@ -33,7 +33,7 @@
 
 /* ---- engine calls of the module ---- */
 
-/* Scrap.DelSaveVars(prefix) of a value through its ref (OBJLIB 7, the seam: fr7b.py records it) */
+/* Scrap.DelSaveVars(prefix) of a value through its ref (the seam: fr7b.py records it) */
 static byte SG_DelSaveVarsV(const nativeVal_t *prefix) {
 	return PORT_CALL(Scrap, DelSaveVars, NULL, "v", prefix);
 }

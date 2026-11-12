@@ -9,7 +9,7 @@
  * and Scene.EndOfSceneCallback get new values as the script sets them. Berto's ship and the traffic ships are
  * handle values, TrafficList holds them and is looped as a list of handle values (OBJLIB 7). The camera, the engine
  * variables, the save variables, string.split and the eval of the event name are C; Scrap.CreateEntity and Scrap.Set
- * go through their seams (OBJLIB 7).
+ * go through their seams.
  *
  * Direct calls (stage 3): the functions of the other ports (InTraffic, Scene, Fx, CreditsText, SaveGame, MissionsFuncs)
  * and the own functions of Map (CreateFakeBertoShip, LoadFake2Scene) go through their refs (PORT_CALL, PORT_LOWN; the

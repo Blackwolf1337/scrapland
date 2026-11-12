@@ -59,7 +59,7 @@ static int Mission_ModInt(const char *module, const char *var, int def) {
 	int r = def;
 	if (!Mode_ModGet(module, var, &v)) {
 		/* OBJLIB 7 */
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_INT) {
 		r = (int)v.i;
 	} else if (v.type == NV_FLOAT) {
@@ -113,7 +113,7 @@ static byte Mission_DealStatus(int num, nativeVal_t *out) {
 		return 1;
 	}
 	/* OBJLIB 7 */
-	Mode_PrintError();
+	Native_ErrPrint();
 	return 0;
 }
 
@@ -129,7 +129,7 @@ static byte Mission_Ready(const nativeVal_t *res) {
 	const nativeVal_t *a = Mission_Item(res, 1, &ta), *b = Mission_Item(res, 2, &tb);
 	byte ready = a && b && Native_Compare(a, b) >= 0;
 	/* OBJLIB 7 */
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&ta);
 	Native_Free(&tb);
 	return ready;
@@ -165,7 +165,7 @@ static byte Mission_DealObjective(int id, int num) {
 		Str_Printf(count, sizeof(count), "%s / %s", ra, rb);
 		Mission_ObjectiveText(id, num, Script_Lang(key), count, frame, text);
 		/* OBJLIB 7 */
-		Mode_DropError();
+		Native_ErrClear();
 		Native_Free(&tn);
 		Native_Free(&ta);
 		Native_Free(&tb);
@@ -184,7 +184,7 @@ static int Mission_ListCount(const char *var) {
 		if (!Native_Len(&v, &n)) {
 			n = -1;
 			/* OBJLIB 7 */
-			Mode_DropError();
+			Native_ErrClear();
 		}
 		Native_Free(&v);
 	}
@@ -235,7 +235,7 @@ static void Mission_DealDesc(int id, char *desc, int size) {
 			}
 		} else {
 			/* OBJLIB 7 */
-			Mode_PrintError();
+			Native_ErrPrint();
 		}
 		Native_Free(&r);
 		Native_Free(&f);
@@ -299,7 +299,7 @@ static void Mission_UseTxt(char *out, int size) {
 	out[0] = 0;
 	if (!Mode_ModGet("Menu", "UseTxt", &v)) {
 		/* OBJLIB 7 */
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_STR) {
 		Str_Copy(out, Native_Text(&v), size);
 	}

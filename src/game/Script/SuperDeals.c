@@ -15,7 +15,7 @@
  * variable where the script reads the global and writes it where the script writes it, lists and dicts are changed in
  * place on the object the variable holds. Entities the script holds are handle values (NV_OBJ, OBJLIB 7): a handle
  * whose entity is gone gives the errors of the script. The engine
- * functions the cases record or swap go through their seams (OBJLIB 7, scrap/scriptmodes.h: Scrap.AddScheduledFunc,
+ * functions the cases record or swap go through their seams (scrap/scriptmodes.h: Scrap.AddScheduledFunc,
  * Scrap.UsrEntity, Scrap.Set, SSound.Play, SScorer.SetMsgText, SScorer.Set, Scrap.Preload3DObject,
  * SAI.GetStateVehicle); SAI.SetStateVehicle, SLogic.ChangeBatonState and SetDominationZones go through their refs
  * (stage 7).

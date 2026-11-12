@@ -12,7 +12,7 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of the
  * modules are read where the script reads them and written through at once; the keypad, Rusty, the player
  * and HangarTab.prevShip are handle values (OBJLIB 7). fc-r7b-jy records many engine functions, so these go through
- * their seams (OBJLIB 7): Scrap.AddScheduledFunc, CreateEntity, CreateEntityList, Set, SetMoney, SetTimeSpeed,
+ * their seams: Scrap.AddScheduledFunc, CreateEntity, CreateEntityList, Set, SetMoney, SetTimeSpeed,
  * UsrEntity, ConsoleError, SScorer.Add, Set, SetDefault and SetMsgText, SInput.SetActionSet, SSound.SetMusic and the
  * SAct functions of the scene; Scrap.OpenPack, PreloadLibrary and ClosePack (Mission_RustyFirstContact.InitStatus) and
  * the default form of Scrap.Def go through their refs (stage 7).
@@ -36,14 +36,14 @@
 #define MSE "MapShipEdit"
 #define RF "Mission_RustyFirstContact"
 
-/* ---- engine calls through their seams (OBJLIB 7: fc-r7b-jy records them) ---- */
+/* ---- engine calls through their seams (fc-r7b-jy records them) ---- */
 
 /* the hook a case put at module.name: called (ok in *ok, 1), or 0 when the engine's own C function is there */
 #define JY_SEAM(mod, name, ...) \
-	PyObject *hook; \
+	nativeHook_t hook; \
 	int seam = Native_Seam(mod, name, &hook); \
 	if (seam) { \
-		return seam > 0 && Native_HookCall(hook, NULL, __VA_ARGS__); \
+		return seam > 0 && Native_HookCall(&hook, NULL, __VA_ARGS__); \
 	}
 
 /* Scrap.SetMoney(i) */

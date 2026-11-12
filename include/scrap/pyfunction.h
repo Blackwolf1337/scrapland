@@ -62,7 +62,7 @@ void cPy_Function_AddParamI(cPy_Function *self, int v);
 void cPy_Function_AddParamF(cPy_Function *self, float v);
 void cPy_Function_AddParamS(cPy_Function *self, const char *v);
 /* calls the function; the int result of a Python function or a port entry, else 0. clear drops function and
- * parameters first. A failure of a Python function or a port entry is printed (PyErr_Print). */
+ * parameters first. A failure of a Python function or a port entry is printed (Native_ErrPrint). */
 int cPy_Function_Execute(cPy_Function *self, byte clear);
 /* clears every function of the ring and frees the parameter files */
 void cPy_Function_ClearAll(void);

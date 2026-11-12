@@ -12,7 +12,7 @@
  * Both modules are native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the globals where
  * the script reads them and write them back at once (the missions, the levels and the cases read and set
  * them). The hooks and callbacks are called as the values they hold, the panels are handle values and Scrap.Set,
- * CreateEntity and the dummy search go through their seams (OBJLIB 7). Speech.RemoteComunication and the functions
+ * CreateEntity and the dummy search go through their seams. Speech.RemoteComunication and the functions
  * of the modules through their globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5
  * (9c)); the imports stay (OBJLIB 6), and a news line that is not the form GetNews makes runs through the exec reader
  * (OBJLIB 6).

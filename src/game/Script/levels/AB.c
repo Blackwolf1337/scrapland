@@ -13,9 +13,8 @@
  * regeneration, the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set,
  * Scrap.SetAlarm, Scrap.SetLockAlarm, Scrap.Rand, Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs,
  * Scrap.AddScheduledFunc, Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams
- * (OBJLIB 7: cases record them). The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute)
- * and SAI.SetStateVehicle go through their refs (stage 7: the native entries, a function a case put there by
- * name).
+ * (cases record them). The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute) and
+ * SAI.SetStateVehicle go through their refs (stage 7: the native entries, a function a case put there by name).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, Vehicles, VehiclesNPC, ShipMaker, Traffic,
  * Elevator, Scorer, Menu, SaveGame) and the own functions of both modules (their globals) go through their refs

@@ -13,7 +13,7 @@
  * The three modules are native C (docs/objlib-plan.md, stage 2): their functions work on C values, read the variables
  * of their modules from the registry where the script reads them and write them back at once (the level files,
  * ShipMaker, Vehicles and the cases read and set them), and set the engine variables, the money and the save variables
- * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams, OBJLIB 7). The calls of
+ * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams). The calls of
  * VehiclesNPC, SaveGame and RaceMaker go through their refs (PORT_CALL: the seam, OBJLIB 5 (9c)). The class
  * VehiclesNPC.cShipAI is called by name (OBJLIB 5 (9c: a class the .mod defines)); SAI.SetStateVehicle and
  * SAI.EnableAIChar go through their refs (stage 7); the ships and profiles the calls give (handle values) and
@@ -278,7 +278,7 @@ static void Step_Wave(int id, const nativeVal_t *args, int n) {
 	(void)id;
 	/* the list holds the values as they are: a list of a $name in it is that list */
 	if (!Script_StepValues(args, n, NV_LIST, 0, &wave) || !Mode_VarCall("OutPolice", "PoliceWaves", 1, "append", &wave)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 	}
 	Native_Free(&wave);
 }
@@ -288,14 +288,14 @@ static void Step_DefScale(int id, const nativeVal_t *args, int n) {
 	const nativeVal_t *var, *factor;
 	(void)id;
 	if (!Mode_Parse(args, n, "OO", &var, &factor)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	/* OBJLIB 9: the * of the script on whatever Scrap.Def gives and the factor is (Mode_Times) */
 	nativeVal_t def = { 0 }, v = { 0 };
 	if (!PORT_CALL(Scrap, Def, &def, "v", var) || !Mode_Times(&def, factor, &v) ||
 		!PORT_CALL(Scrap, Set, NULL, "vv", var, &v)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 	}
 	Native_Free(&v);
 	Native_Free(&def);
@@ -392,7 +392,7 @@ static byte OutPolice_InitShipsN(void) {
 	}
 	Native_SetInt(len, count);
 	int c = Native_Compare(cur, len);
-	if (Mode_Failed()) {
+	if (Native_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	if (c >= 0) {
@@ -487,7 +487,7 @@ static byte OutPolice_NextWaveN(const nativeVal_t *doprice) {
 	if (go > 0) {
 		/* iPoliceWave != 1 */
 		go = OutPolice_G("iPoliceWave", i) ? Native_Compare(i, Mode_I(&t, 1)) != 0 : -1;
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			go = -1;
 		}
 	}

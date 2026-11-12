@@ -14,7 +14,7 @@
  * of the modules are read where the script reads them and written through at once; the lists of the transports, the
  * functionaries and the taunts are changed in place on the objects of the modules. The ships, the items,
  * the phone cabs and the cameras are handle values, the profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine
- * functions the cases record or swap go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, DeleteScheduledFuncs,
+ * functions the cases record or swap go through their seams: Scrap.AddScheduledFunc, DeleteScheduledFuncs,
  * DelSaveVars, CreateEntity, Set, SetAlarm, UsrEntity, Rand and GetAlarm, SScorer.Set, SetMsgText and SAct. Through
  * their refs (stage 7: the native entries; a function a case put there, as _bon records them, by name):
  * SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAI.GetOD, SetInertia and SetRotStaticObj,
@@ -110,8 +110,8 @@ static byte DownTown_InitStatus(void) {
 	}
 	nativeVal_t *od = TV(), *prev = TV(), *tail = TV(), *pm = TV();
 	if (!PORT_CALL(SAI, GetOD, NULL, "") || !PORT_CALL(SAI, GetOD, od, "") || !Mode_SetModVar("Init", "Outdoor", od)) {
-		/* except: pass (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		Mode_DropError();
+		/* except: pass */
+		Native_ErrClear();
 	}
 	Mode_SaveVar("PrevMap", prev);
 	ok = Native_Slice(prev, 7, INT_MAX, tail) && Native_Upper(tail, pm) &&
@@ -1166,8 +1166,8 @@ static byte Data_TakeData(const nativeVal_t *a) {
 	}
 	Mode_SaveVar("NumData", sv);
 	if (!Native_ToInt(sv, ni) || !Native_Arith('+', ni, Mode_I(&t, 1), num) || !Mode_G(GD, "MAX_DATA_UNITS", max)) {
-		/* except: return (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		Mode_DropError();
+		/* except: return */
+		Native_ErrClear();
 		return Mode_Done(&t, 1);
 	}
 	if (Native_Compare(num, max) > 0) {

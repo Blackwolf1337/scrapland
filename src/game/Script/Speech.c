@@ -17,7 +17,7 @@
  * the functions RunNI calls (OnSpch, OnObjSpch) are the values of the module. The entities are handle values; the
  * voices, SScorer.SetSpeechText, SetSpeechCallback, SetHeadMonitor, CancelSpeech, SetMsgText and Set, Scrap.Set,
  * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, GetLangEntries, DeleteScheduledFuncs and the scheduler go through
- * their seams (OBJLIB 7: the cases record most of them); SVec.GetRotAng and NormAng go through their refs (stage 7),
+ * their seams (the cases record most of them); SVec.GetRotAng and NormAng go through their refs (stage 7),
  * string.split and find are the native twins (PORT_CALL; by name for an argument that holds an object, OBJLIB 9).
  */
 #include <string.h>
@@ -41,7 +41,7 @@ static byte Sp_Has(const char *var, nativeVal_t *out) {
 	if (Sp_G(var, out)) {
 		return 1;
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	return 0;
 }
 
@@ -335,7 +335,7 @@ static byte Sp_AbortSpeech(void) {
 	if (Sp_G("DefTextColor", def)) {
 		Mode_ModPut(SP, "TextColor", def);
 	} else {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	if (!Sp_SpeechText(Mode_S(&t, ""), Mode_I(&t, 0), "TextColor") || !Mode_SpeechCallback("")) {
 		return Mode_Done(&t, 0);
@@ -758,7 +758,7 @@ static byte Sp_AutoSpeech(const nativeVal_t *a) {
 	if (Mode_Sub(routines, type, f)) {
 		return Mode_Done(&t, Mode_CallArgs(f, NULL, a, 4));
 	}
-	/* OBJLIB 7: the KeyError of the script is the Python exception */
+	/* except KeyError */
 	if (!Mode_CatchKeyError()) {
 		return Mode_Done(&t, 0);
 	}
@@ -1030,7 +1030,7 @@ static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_
 			return Mode_Done(&t, 0);
 		}
 		if (!Mode_Sub(dict, head, model)) {
-			/* OBJLIB 7: the KeyError of the script is the Python exception */
+			/* except KeyError */
 			if (!Mode_CatchKeyError()) {
 				return Mode_Done(&t, 0);
 			}
@@ -1122,7 +1122,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 		const char *lib = SaveVar_Get("Mission.Library");
 		map[0] = 0;
 		if (!LvN_ModGet("Init", "UpperMap", mapV)) {
-			Mode_DropError();
+			Native_ErrClear();
 		} else if (mapV->type == NV_STR) {
 			Str_Copy(map, Native_Text(mapV), sizeof(map));
 		}
@@ -1137,7 +1137,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 	}
 	prev[0] = 0;
 	if (!LvN_ModGet(SP, "prevTaunt", prevV)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (prevV->type == NV_STR) {
 		Str_Copy(prev, Native_Text(prevV), sizeof(prev));
 	}
@@ -1341,7 +1341,7 @@ static byte Sp_OnObjectSpeech(const nativeVal_t *obj, const nativeVal_t *type, c
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_Sub(dict, type, model)) {
-		/* OBJLIB 7: the KeyError of the script is the Python exception */
+		/* except KeyError */
 		if (!Mode_CatchKeyError()) {
 			return Mode_Done(&t, 0);
 		}

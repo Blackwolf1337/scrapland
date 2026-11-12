@@ -55,7 +55,7 @@ static const char *Base_Str(const nativeVal_t *seq, int i, char *out, int size) 
 	}
 	Native_Free(&tmp);
 	/* OBJLIB 7: the IndexError or TypeError of an odd entry dropped */
-	Mode_DropError();
+	Native_ErrClear();
 	return out;
 }
 
@@ -79,7 +79,7 @@ static const char *Base_EntryName(const nativeVal_t *menu, int i, int k, const c
 		Str_Printf(out, size, "%s%d", prefix, i + 1);
 	}
 	Native_Free(&tmp);
-	Mode_DropError();
+	Native_ErrClear();
 	return out;
 }
 
@@ -114,7 +114,7 @@ static void Step_TitleBar(int id, const nativeVal_t *args, int n) {
 	const char *text, *font;
 	nativeVal_t v;
 	if (!Mode_Parse(args, n, "Oss", &y, &text, &font) || !Native_Pass(y, &v)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	Base_TitleBar(id, &v, text, font);
@@ -447,7 +447,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 		if (text && text->type == NV_STR) {
 			Str_Copy(lastText, Native_Text(text), sizeof(lastText));
 		}
-		Mode_DropError();
+		Native_ErrClear();
 		Native_Free(&ttmp);
 		Native_Free(&etmp);
 	}

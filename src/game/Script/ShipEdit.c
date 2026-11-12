@@ -1194,7 +1194,7 @@ static byte Se_Clean(void) {
 			Native_Free(&e);
 			/* try: editedShips[i].Del() except: print "Ya borrada" (the error of the lookup too) */
 			if (!Se_AtI("editedShips", i, &e) || !Mode_VDel(&e)) {
-				Mode_DropError();
+				Native_ErrClear();
 				Native_SetStr(&msg, "Ya borrada");
 				c = Mode_PrintV(&msg) ? 1 : -1;
 			}

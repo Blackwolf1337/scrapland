@@ -41,7 +41,7 @@ PyObject *Script_Global(const char *module, const char *name) {
 	byte imported;
 	PyObject *v = ModVar_Lookup(module, name, &imported);
 	if (imported && !v) {
-		PyErr_SetString(PyExc_NameError, (char *)name);
+		Native_Raise(NE_NAME, "%s", name);
 	}
 	return v;
 }
@@ -76,8 +76,8 @@ PyObject *Script_GetAttr(PyObject *o, const char *name) {
 }
 
 PyObject *Script_Fail(void) {
-	if (!PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, "error return without exception set");
+	if (!Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "error return without exception set");
 	}
 	return NULL;
 }
@@ -106,7 +106,7 @@ static uintptr_t Script_StackFloor(void) {
 byte Script_Enter(uintptr_t frame) {
 	PyThreadState *ts = PyThreadState_Get();
 	if (ts->recursion_depth >= SCRIPT_MAX_DEPTH || frame < Script_StackFloor()) {
-		PyErr_SetString(PyExc_RuntimeError, "Maximum recursion depth exceeded");
+		Native_Raise(NE_RUNTIME, "Maximum recursion depth exceeded");
 		return 0;
 	}
 	ts->recursion_depth++;
@@ -153,7 +153,7 @@ int Script_Eq(PyObject *a, PyObject *b) {
 		return -1;
 	}
 	int c = PyObject_Compare(a, b);
-	return PyErr_Occurred() ? -1 : c == 0;
+	return Native_Failed() ? -1 : c == 0;
 }
 
 PyObject *Script_Repr(PyObject *o) {
@@ -166,15 +166,15 @@ int Script_Next(PyObject *seq, int i, PyObject **item) {
 		return -1;
 	}
 	if (!PySequence_Check(seq)) {
-		PyErr_SetString(PyExc_TypeError, "loop over non-sequence");
+		Native_Raise(NE_TYPE, "loop over non-sequence");
 		return -1;
 	}
 	*item = PySequence_GetItem(seq, i);
 	if (*item) {
 		return 1;
 	}
-	if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-		PyErr_Clear();
+	if (Native_ErrIs(NE_INDEX)) {
+		Native_ErrClear();
 		return 0;
 	}
 	return -1;
@@ -183,7 +183,7 @@ int Script_Next(PyObject *seq, int i, PyObject **item) {
 byte Script_Print(PyObject *const *items, int n) {
 	PyObject *w = PySys_GetObject("stdout");
 	if (!w) {
-		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+		Native_Raise(NE_RUNTIME, "lost sys.stdout");
 		return 0;
 	}
 	for (int i = 0; i < n; i++) {
@@ -225,7 +225,7 @@ PyObject *Script_EvalIn(const char *module, PyObject *text) {
 
 PyObject *Script_NotRead(const char *where, const char *text) {
 	Py_GateNote("notread", where, text);
-	PyErr_SetString(PyExc_SyntaxError, "invalid syntax");
+	Native_Raise(NE_SYNTAX, "invalid syntax");
 	return NULL;
 }
 
@@ -258,24 +258,29 @@ static byte Eval_Juxtaposed(const char *s) {
 	if (e == b) {
 		return 0;
 	}
-	PyObject *v = Py_BuildValue("(s(ziis))", *e ? "invalid syntax" : "unexpected EOF while parsing", NULL, 1,
-		(int)(e - s), s);
-	if (v) {
-		PyErr_SetObject(PyExc_SyntaxError, v);
-		Py_DECREF(v);
-	}
+	const char *msg = *e ? "invalid syntax" : "unexpected EOF while parsing";
+	nativeVal_t v, *at;
+	Native_SetEmpty(&v, NV_TUPLE);
+	Native_SetText(Native_Append(&v), msg, (int)strlen(msg));
+	Native_SetEmpty(at = Native_Append(&v), NV_TUPLE);
+	Native_Append(at);
+	Native_SetInt(Native_Append(at), 1);
+	Native_SetInt(Native_Append(at), (long)(e - s));
+	Native_SetText(Native_Append(at), s, (int)strlen(s));
+	Native_RaiseVal(NE_SYNTAX, &v);
+	Native_Free(&v);
 	return 1;
 }
 
 PyObject *Script_EvalValue(PyObject *globals, PyObject *text) {
 	/* the checks of builtin eval before it parses: a string without NUL, its leading blanks skipped */
 	if (!PyString_Check(text)) {
-		PyErr_SetString(PyExc_TypeError, "eval() argument 1 must be string or code object");
+		Native_Raise(NE_TYPE, "eval() argument 1 must be string or code object");
 		return NULL;
 	}
 	const char *s = PyString_AsString(text);
 	if ((int)strlen(s) != PyString_Size(text)) {
-		PyErr_SetString(PyExc_ValueError, "embedded '\\0' in string arg");
+		Native_Raise(NE_VALUE, "embedded '\\0' in string arg");
 		return NULL;
 	}
 	while (*s == ' ' || *s == '\t') {
@@ -296,7 +301,7 @@ PyObject *Script_EvalOther(PyObject *globals, const char *s) {
 	if (len > 0 && len < (int)sizeof(name)) {
 		memcpy(name, s, len);
 		name[len] = '\0';
-		PyErr_Clear();
+		Native_ErrClear();
 		int found = Script_NameChain(NULL, globals, name, &v);
 		if (found) {
 			return found > 0 ? v : NULL;
@@ -359,7 +364,7 @@ static PyObject *Lit_Const(scriptLit_t *l, PyObject *v) {
 			return Script_Ref(w);
 		}
 	}
-	if (PyErr_Occurred() || PyList_Append(l->consts, v) != 0) {
+	if (Native_Failed() || PyList_Append(l->consts, v) != 0) {
 		Py_DECREF(v);
 		return NULL;
 	}
@@ -687,7 +692,7 @@ PyObject *Script_Literal(PyObject *globals, const char *s) {
 	}
 	Py_XDECREF(l.consts);
 	if (!v) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	return v;
 }
@@ -695,7 +700,7 @@ PyObject *Script_Literal(PyObject *globals, const char *s) {
 PyObject *Script_EvalMain(const char *text) {
 	PyObject *main = PyImport_AddModule("__main__");
 	PyObject *v = main ? Script_Literal(PyModule_GetDict(main), text) : NULL;
-	PyErr_Clear();
+	Native_ErrClear();
 	return v;
 }
 
@@ -774,11 +779,7 @@ int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyOb
 			x = x || locals == globals ? x : ModVar_DictGet(globals, name);
 			x = x ? x : PyDict_GetItemString(b, name);
 			if (!x) {
-				PyObject *w = PyString_InternFromString(name);
-				if (w) {
-					PyErr_SetObject(PyExc_NameError, w);
-				}
-				Py_XDECREF(w);
+				Native_Raise(NE_NAME, "%s", name);
 			}
 			v = Script_Ref(x);
 		} else {

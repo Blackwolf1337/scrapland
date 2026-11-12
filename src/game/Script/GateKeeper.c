@@ -13,7 +13,7 @@
  * once. The gatekeeper objects of GateKeepers, the door functions and the callbacks are the objects themselves
  * (OBJLIB 5 (9c) and 7: they are set and called the Python way), and DoorFoe keeps the foe group it gets (the
  * group tuples of the module keep their identity). Entities are handle values; Scrap.GetEntity, GetAlarm,
- * ConsoleError and SScorer.SetMsgText go through their seams (OBJLIB 7: fc-gk-po records or swaps them).
+ * ConsoleError and SScorer.SetMsgText go through their seams (fc-gk-po records or swaps them).
  *
  * Direct calls (stage 3): Elevator and Speech through their refs (PORT_CALL: the port seam, OBJLIB 5 (9c)). apply of
  * LocalCallFunc and the door functions take the entry when the value is a port's own function (stage 4:

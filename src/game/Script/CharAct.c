@@ -8,7 +8,7 @@
  * handles to the scheduled calls (PlayerDeathCall, NPCDeathCall), so the characters are handle values (OBJLIB 7) and
  * the values the script reads from them (e.Pos, e.Money / 4) go on to the functions it calls. The hooks are read as
  * the module attributes they are and called as the values they hold. Scrap.GetEntity, the scheduler, SSound.Play and
- * SScorer.Fade and SetMsgText go through their seams (OBJLIB 7: the cases record or swap them); CrazyWing.CrazyPhoto
+ * SScorer.Fade and SetMsgText go through their seams (the cases record or swap them); CrazyWing.CrazyPhoto
  * is called through its ref (PORT_CALL: directly while the attribute holds the port's function, else by name). The
  * calls the scheduler keeps by name (CharsNPC.Respawn, MisItems.CreateBattery and CreateCoin) take their entries
  * (stage 4: Port_Scheduled); the variable CharsNPC.CharRes (OBJLIB 5 (9c: instances)) and the imports

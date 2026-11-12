@@ -6,7 +6,7 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C on native values; the module has no
  * state of its own in C. ModesMap is read from the registry when the map list is purged; IsClient,
- * IsServer, Scrap.Set and Scrap.LoadLevel go through their seams (OBJLIB 7). The functions of the table have native
+ * IsServer, Scrap.Set and Scrap.LoadLevel go through their seams. The functions of the table have native
  * entries (MODE_FN, stage 6 batch 6f) except the two default callbacks on the shared adapter Mode_PyNone2.
  */
 #include "scrap/app.h"
@@ -48,11 +48,11 @@ static byte Net_LoadSinglePlayerC(const nativeVal_t *path) {
 		return 0;
 	}
 	if (c == 0 && s == 0) {
-		/* Scrap.LoadLevel(path) (OBJLIB 7: through the seam, fc-weap records it) */
-		PyObject *hook;
+		/* Scrap.LoadLevel(path) (through the seam, fc-weap records it) */
+		nativeHook_t hook;
 		int seam = Native_Seam("Scrap", "LoadLevel", &hook);
 		if (seam) {
-			return seam > 0 && Native_HookCall(hook, NULL, "v", path);
+			return seam > 0 && Native_HookCall(&hook, NULL, "v", path);
 		}
 	}
 	/* SNet.CloseClient(path), SNet.CloseServer(path), Scrap.LoadLevel(path): a text argument */

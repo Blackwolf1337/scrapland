@@ -14,7 +14,7 @@
  * global: a mission or a case may replace one). The class cShipAI is called as the module's variable (OBJLIB 5 (9c: a
  * class the .mod defines, no port function)), the scheduler takes the entry of the global InitMercs (Port_Scheduled),
  * SAI and SWeap go through their refs (stage 7) except SAI.EnableAIVehicle (by name, OBJLIB 7: see below),
- * Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams (OBJLIB 7). The .def runner
+ * Scrap.GetEntity, CreateEntity, ConsoleError and AddScheduledFunc go through their seams. The .def runner
  * takes its $names as a dict (OBJLIB 6).
  */
 #include <string.h>

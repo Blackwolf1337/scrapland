@@ -233,11 +233,11 @@ void Mode_DummyNext(nativeVal_t *out) {
 }
 
 byte Mode_Preload(const nativeVal_t *name) {
-	/* OBJLIB 7: through the seam, fc-nm-po records it */
-	PyObject *hook;
+	/* through the seam, fc-nm-po records it */
+	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "Preload3DObject", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "v", name);
+		return seam > 0 && Native_HookCall(&hook, NULL, "v", name);
 	}
 	/* "s|ddd" */
 	const char *n;
@@ -283,8 +283,8 @@ PyObject *Mode_Handle(cEntity *e) {
 
 /* a getattr that gave NULL: the error of the call as the interpreter reports it when none is set */
 static byte Mode_AttrFail(void) {
-	if (!PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, "error return without exception set");
+	if (!Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "error return without exception set");
 	}
 	return 0;
 }
@@ -453,7 +453,7 @@ byte Mode_AtSet(const char *module, const char *dict, const nativeVal_t *key, co
 
 /* the seam of module.name: 0 engine, 1 *hook set, -1 error */
 #define MODE_SEAM(module, name) \
-	PyObject *hook; \
+	nativeHook_t hook; \
 	int seam = Native_Seam(module, name, &hook); \
 	if (seam < 0) { \
 		return 0; \
@@ -461,15 +461,17 @@ byte Mode_AtSet(const char *module, const char *dict, const nativeVal_t *key, co
 
 /* SNet.IsClient(), SNet.IsServer() through the seam: the truth of what the test put there */
 static int Mode_NetIs(const char *name, byte engine) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("SNet", name, &hook);
 	if (seam <= 0) {
 		return seam < 0 ? -1 : engine;
 	}
-	PyObject *o = Script_Invoke(hook, PyTuple_New(0));
-	Py_DECREF(hook);
-	int t = o ? PyObject_IsTrue(o) : -1;
-	Py_XDECREF(o);
+	nativeVal_t o;
+	if (!Native_HookCall(&hook, &o, "")) {
+		return -1;
+	}
+	int t = Mode_Truth(&o);
+	Native_Free(&o);
 	return t;
 }
 
@@ -484,7 +486,7 @@ int Mode_IsServer(void) {
 byte Mode_Send(const nativeVal_t *id, const nativeVal_t *s) {
 	MODE_SEAM("SNet", "SendUsrString");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vv", id, s);
+		return Native_HookCall(&hook, NULL, "vv", id, s);
 	}
 	int i;
 	const char *text;
@@ -507,7 +509,7 @@ byte Mode_SendS(long id, const char *s) {
 byte Mode_ModifyUsrData(const nativeVal_t *id) {
 	MODE_SEAM("SNet", "ModifyUsrData");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", id);
+		return Native_HookCall(&hook, NULL, "v", id);
 	}
 	int i;
 	if (!Native_ArgInt(id, &i)) {
@@ -521,7 +523,7 @@ byte Mode_ModifyUsrData(const nativeVal_t *id) {
 static byte Mode_Text(const char *name, const nativeVal_t *text, double time) {
 	MODE_SEAM("SScorer", name);
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vd", text, time);
+		return Native_HookCall(&hook, NULL, "vd", text, time);
 	}
 	const char *s;
 	if (!Native_ArgStr(text, 1, &s)) {
@@ -546,7 +548,7 @@ byte Mode_LabelText(const nativeVal_t *text, double time) {
 byte Mode_MPFunc(long id, const char *func) {
 	MODE_SEAM("SScorer", "SetMPFunc");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "is", id, func);
+		return Native_HookCall(&hook, NULL, "is", id, func);
 	}
 	cScorer *sc = Scorer_Get((int)id);
 	if (sc) {
@@ -558,7 +560,7 @@ byte Mode_MPFunc(long id, const char *func) {
 byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *var, const nativeVal_t *v) {
 	MODE_SEAM("SScorer", "Set");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vvsv", id, item, var, v);
+		return Native_HookCall(&hook, NULL, "vvsv", id, item, var, v);
 	}
 	/* "issd" after "isss": the errors of the second form */
 	int i;
@@ -572,9 +574,9 @@ byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time
 	if (seam) {
 		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
 		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
+		byte ok = b && Native_HookCall(&hook, NULL, "iOOv", id, a, b, time);
 		if (!b) {
-			Py_DECREF(hook);
+			Native_HookFree(&hook);
 		}
 		Py_XDECREF(a);
 		Py_XDECREF(b);
@@ -601,7 +603,7 @@ byte Mode_Fade(long id, const int *from, const int *to, double time) {
 byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const char *func) {
 	MODE_SEAM("SInput", "Bind");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vsss", id, set, action, func);
+		return Native_HookCall(&hook, NULL, "vsss", id, set, action, func);
 	}
 	int i;
 	if (!Native_ArgInt(id, &i)) {
@@ -614,7 +616,7 @@ byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const
 byte Mode_DelSched(const nativeVal_t *name) {
 	MODE_SEAM("Scrap", "DeleteScheduledFuncs");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", name);
+		return Native_HookCall(&hook, NULL, "v", name);
 	}
 	const char *s;
 	if (!Native_ArgStr(name, 1, &s)) {
@@ -662,18 +664,18 @@ static byte Mode_SchedAdd(float time, PyObject *func, const nativeVal_t *args, i
 }
 
 byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *args, int n, const nativeVal_t *name) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "AddScheduledFunc", &hook);
 	byte ok = 0;
 	if (seam > 0) {
 		/* the recorder gets the arguments as their tuple */
 		PyObject *params = Mode_ArgsTuple(args, n);
 		if (!params) {
-			Py_DECREF(hook);
+			Native_HookFree(&hook);
 			return 0;
 		}
-		ok = name ? Native_HookCall(hook, NULL, "vOOv", time, func, params, name) :
-			Native_HookCall(hook, NULL, "vOO", time, func, params);
+		ok = name ? Native_HookCall(&hook, NULL, "vOOv", time, func, params, name) :
+			Native_HookCall(&hook, NULL, "vOO", time, func, params);
 		Py_DECREF(params);
 	} else if (seam == 0) {
 		/* "dOO|s" */
@@ -742,7 +744,7 @@ byte Mode_GVarSetN(const char *name, double d) {
 byte Mode_Rand(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 	MODE_SEAM("Scrap", "Rand");
 	if (seam) {
-		return Native_HookCall(hook, out, "vv", a, b);
+		return Native_HookCall(&hook, out, "vv", a, b);
 	}
 	/* "dd" */
 	double x, y;
@@ -763,7 +765,7 @@ byte Mode_RandD(double a, double b, nativeVal_t *out) {
 byte Mode_ConsoleError(const nativeVal_t *text) {
 	MODE_SEAM("Scrap", "ConsoleError");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", text);
+		return Native_HookCall(&hook, NULL, "v", text);
 	}
 	const char *s;
 	if (!Native_ArgStr(text, 1, &s)) {
@@ -776,7 +778,7 @@ byte Mode_ConsoleError(const nativeVal_t *text) {
 byte Mode_Play(const nativeVal_t *sound, const nativeVal_t *volume) {
 	MODE_SEAM("SSound", "Play");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vv", sound, volume);
+		return Native_HookCall(&hook, NULL, "vv", sound, volume);
 	}
 	/* "s|dd" */
 	const char *name;
@@ -892,7 +894,7 @@ byte Mode_Rotate(const nativeVal_t *v, const nativeVal_t *rot, nativeVal_t *out)
 byte Mode_AIState(const nativeVal_t *name, nativeVal_t *out) {
 	MODE_SEAM("SAI", "GetStateVehicle");
 	if (seam) {
-		return Native_HookCall(hook, out, "v", name);
+		return Native_HookCall(&hook, out, "v", name);
 	}
 	const char *n;
 	if (!Native_ArgStr(name, 1, &n)) {
@@ -922,7 +924,7 @@ byte Mode_Label(byte msg, const char *key, long secs) {
 byte Mode_NetFlags(nativeVal_t *out) {
 	MODE_SEAM("Scrap", "GetNetFlags");
 	if (seam) {
-		return Native_HookCall(hook, out, "");
+		return Native_HookCall(&hook, out, "");
 	}
 	uint32_t f = g_pApp->flags;
 	Native_SetEmpty(out, NV_TUPLE);
@@ -1104,7 +1106,7 @@ int Mode_Del(cEntity *e) {
 byte Mode_UsrHandle(nativeVal_t *out) {
 	MODE_SEAM("Scrap", "UsrEntity");
 	if (seam) {
-		return Native_HookCall(hook, out, "i", 0L);
+		return Native_HookCall(&hook, out, "i", 0L);
 	}
 	return Mode_EntHandle(Mode_Usr(), out);
 }
@@ -1184,10 +1186,10 @@ PyObject *Mode_VBound(const nativeVal_t *h, const char *method) {
 }
 
 byte Mode_PreloadOnes(const nativeVal_t *name) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "Preload3DObject", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "viii", name, 1L, 1L, 1L);
+		return seam > 0 && Native_HookCall(&hook, NULL, "viii", name, 1L, 1L, 1L);
 	}
 	return Mode_Preload(name);
 }
@@ -1226,7 +1228,7 @@ byte Mode_SetOnFloor(const nativeVal_t *name) {
 }
 
 int Mode_AlarmOn(void) {
-	PyObject *hook;
+	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "GetAlarm", &hook);
 	if (!seam) {
 		return g_pWorld->alarm.on != 0;
@@ -1236,7 +1238,7 @@ int Mode_AlarmOn(void) {
 	}
 	nativeVal_t a = { 0 }, k, on = { 0 };
 	Native_SetInt(&k, 0);
-	int t = Native_HookCall(hook, &a, "") && Native_Subscript(&a, &k, &on) ? Native_True(&on) : -1;
+	int t = Native_HookCall(&hook, &a, "") && Native_Subscript(&a, &k, &on) ? Native_True(&on) : -1;
 	Native_Free(&a);
 	Native_Free(&on);
 	return t;
@@ -1650,7 +1652,7 @@ PyObject *Mode_From(const char *module, const char *name) {
 	byte imported;
 	PyObject *v = ModVar_Lookup(module, name, &imported);
 	if (imported && !v) {
-		PyErr_Format(PyExc_ImportError, "cannot import name %.230s", name);
+		Native_Raise(NE_IMPORT, "cannot import name %.230s", name);
 	}
 	return v;
 }
@@ -1781,7 +1783,7 @@ void Mode_RandomVisPoint(nativeVal_t *out) {
 byte Mode_SetAlarm(const nativeVal_t *level) {
 	MODE_SEAM("Scrap", "SetAlarm");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", level);
+		return Native_HookCall(&hook, NULL, "v", level);
 	}
 	double d;
 	if (!Native_ArgDouble(level, &d)) {
@@ -1893,7 +1895,7 @@ byte Mode_EntSetI(const char *name, const char *var, long i) {
 byte Mode_SetLockAlarm(const nativeVal_t *lock) {
 	MODE_SEAM("Scrap", "SetLockAlarm");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", lock);
+		return Native_HookCall(&hook, NULL, "v", lock);
 	}
 	int i;
 	if (!Native_ArgInt(lock, &i)) {
@@ -1976,7 +1978,7 @@ byte Mode_SaveInt(const char *name, nativeVal_t *out) {
 
 int Mode_Cmp(const nativeVal_t *a, const char *op, const nativeVal_t *b) {
 	int c = Native_Compare(a, b);
-	if (c && PyErr_Occurred()) {
+	if (c && Native_Failed()) {
 		return -1;
 	}
 	switch (op[0]) {
@@ -2252,7 +2254,7 @@ byte Mode_BossTraffic(byte comSats) {
 byte Mode_DelSaveVars(const char *prefix) {
 	MODE_SEAM("Scrap", "DelSaveVars");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "s", prefix);
+		return Native_HookCall(&hook, NULL, "s", prefix);
 	}
 	SaveVars_Delete(prefix);
 	return 1;
@@ -2291,7 +2293,7 @@ byte Mode_LaterV(const nativeVal_t *delay, const char *module, const char *func,
 byte Mode_TestLineSeam(const nativeVal_t *from, const nativeVal_t *to, const nativeVal_t *list, nativeVal_t *out) {
 	MODE_SEAM("Scrap", "TestLine");
 	if (seam) {
-		return Native_HookCall(hook, out, "vvv", from, to, list);
+		return Native_HookCall(&hook, out, "vvv", from, to, list);
 	}
 	return Mode_TestLine(from, to, list, out);
 }
@@ -2453,7 +2455,7 @@ byte Mode_GOpI(const char *module, const char *name, char op, long i) {
 byte Mode_LoadSoundSeam(const nativeVal_t *file) {
 	MODE_SEAM("SSound", "LoadSound");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", file);
+		return Native_HookCall(&hook, NULL, "v", file);
 	}
 	return Mode_LoadSound(file);
 }
@@ -2482,7 +2484,7 @@ void Mode_Elems(nativeVal_t *v) {
 	for (int i = 0; i < n; i++) {
 		PyObject *x = PySequence_GetItem(o, i);
 		if (!x) {
-			PyErr_Clear();
+			Native_ErrClear();
 			break;
 		}
 		Native_Arg(x, Native_Append(&items));
@@ -2786,12 +2788,10 @@ byte Mode_EqI(const nativeVal_t *a, long i) {
 }
 
 byte Mode_RaiseText(const char *text) {
-	/* OBJLIB 7 */
-	PyObject *s = PyString_FromString((char *)text);
-	if (s) {
-		PyErr_SetObject(s, Py_None);
-		Py_DECREF(s);
-	}
+	nativeVal_t s;
+	Native_SetText(&s, text, (int)strlen(text));
+	Native_RaiseObj(&s, NULL);
+	Native_Free(&s);
 	return 0;
 }
 
@@ -2934,7 +2934,7 @@ byte Mode_RacePoint(const nativeVal_t *pos, long minDist, long maxDist, nativeVa
 	double x[3];
 	MODE_SEAM("SAI", "GetNextRacePoint");
 	if (seam) {
-		return Native_HookCall(hook, out, "vii", pos, minDist, maxDist);
+		return Native_HookCall(&hook, out, "vii", pos, minDist, maxDist);
 	}
 	if (!Mode_VecOf(pos, x)) {
 		return PORT_CALL(SAI, GetNextRacePoint, out, "vii", pos, minDist, maxDist);
@@ -2960,11 +2960,11 @@ byte Mode_TestSpherePos(const nativeVal_t *pos, long r, const char *list, native
 		Native_Free(&c[--n]);
 	}
 	if (ok) {
-		PyObject *hook;
+		nativeHook_t hook;
 		int seam = Native_Seam("Scrap", "TestSphere", &hook);
 		Native_SetInt(&rad, r);
 		Native_SetStr(&l, list);
-		ok = seam < 0 ? 0 : seam ? Native_HookCall(hook, out, "vvvis", &c[0], &c[1], &c[2], r, list) :
+		ok = seam < 0 ? 0 : seam ? Native_HookCall(&hook, out, "vvvis", &c[0], &c[1], &c[2], r, list) :
 			Mode_TestSphere(&c[0], &c[1], &c[2], &rad, &l, NULL, out);
 	}
 	while (n-- > 0) {
@@ -2976,7 +2976,7 @@ byte Mode_TestSpherePos(const nativeVal_t *pos, long r, const char *list, native
 byte Mode_DummyStartSeam(const char *name, long flag) {
 	MODE_SEAM("Scrap", "StartDummySearch");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "si", name, flag);
+		return Native_HookCall(&hook, NULL, "si", name, flag);
 	}
 	Mode_DummyStart(name, (int)flag);
 	return 1;
@@ -2985,7 +2985,7 @@ byte Mode_DummyStartSeam(const char *name, long flag) {
 byte Mode_DummyNextSeam(nativeVal_t *out) {
 	MODE_SEAM("Scrap", "NextDummySearch");
 	if (seam) {
-		return Native_HookCall(hook, out, "");
+		return Native_HookCall(&hook, out, "");
 	}
 	Mode_DummyNext(out);
 	return 1;
@@ -2994,7 +2994,7 @@ byte Mode_DummyNextSeam(nativeVal_t *out) {
 byte Mode_SetGrid(long x, long y, long z) {
 	MODE_SEAM("Scrap", "SetGrid");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "iii", x, y, z);
+		return Native_HookCall(&hook, NULL, "iii", x, y, z);
 	}
 	vec3_t size = { (float)x, (float)y, (float)z };
 	Grid_Set(&g_pWorld->grid, &size);
@@ -3005,7 +3005,7 @@ byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out) {
 	Native_SetNone(out);
 	MODE_SEAM("Scrap", "GetEntity");
 	if (seam) {
-		return Native_HookCall(hook, out, "v", name);
+		return Native_HookCall(&hook, out, "v", name);
 	}
 	return Mode_EntityH(name, out);
 }
@@ -3013,7 +3013,7 @@ byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out) {
 byte Mode_ActionSet(const char *name) {
 	MODE_SEAM("SInput", "SetActionSet");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "s", name);
+		return Native_HookCall(&hook, NULL, "s", name);
 	}
 	Mode_SetActionSet(name);
 	return 1;
@@ -3022,7 +3022,7 @@ byte Mode_ActionSet(const char *name) {
 byte Mode_SetMoneySeam(const nativeVal_t *money) {
 	MODE_SEAM("Scrap", "SetMoney");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", money);
+		return Native_HookCall(&hook, NULL, "v", money);
 	}
 	return Mode_SetMoney(money);
 }
@@ -3030,7 +3030,7 @@ byte Mode_SetMoneySeam(const nativeVal_t *money) {
 byte Mode_IncSaveVar(const char *name) {
 	MODE_SEAM("Scrap", "IncSaveVar");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "s", name);
+		return Native_HookCall(&hook, NULL, "s", name);
 	}
 	SaveVar_Inc(name, 1);
 	return 1;
@@ -3039,7 +3039,7 @@ byte Mode_IncSaveVar(const char *name) {
 byte Mode_TimeSpeed(double speed) {
 	MODE_SEAM("Scrap", "SetTimeSpeed");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "d", speed);
+		return Native_HookCall(&hook, NULL, "d", speed);
 	}
 	Mode_SetTimeSpeed(speed);
 	return 1;
@@ -3168,7 +3168,7 @@ byte Mode_SActV(const char *fn, const nativeVal_t *name, nativeVal_t *out) {
 	Native_SetNone(out);
 	MODE_SEAM("SAct", fn);
 	if (seam) {
-		return Native_HookCall(hook, out, "v", name);
+		return Native_HookCall(&hook, out, "v", name);
 	}
 	if (!Native_ArgStr(name, 1, &s)) {
 		return 0;
@@ -3186,7 +3186,7 @@ byte Mode_ActionSetV(const nativeVal_t *name) {
 	const char *s;
 	MODE_SEAM("SInput", "SetActionSet");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", name);
+		return Native_HookCall(&hook, NULL, "v", name);
 	}
 	if (!Native_ArgStr(name, 1, &s)) {
 		return 0;
@@ -3204,7 +3204,7 @@ byte Mode_Pack(const nativeVal_t *path) {
 	const char *s;
 	MODE_SEAM("Scrap", path ? "OpenPack" : "ClosePack");
 	if (seam) {
-		return path ? Native_HookCall(hook, NULL, "v", path) : Native_HookCall(hook, NULL, "");
+		return path ? Native_HookCall(&hook, NULL, "v", path) : Native_HookCall(&hook, NULL, "");
 	}
 	if (!path) {
 		cString_Set(g_PackName, "");
@@ -3223,7 +3223,7 @@ static byte Mode_TextV(byte msg, const nativeVal_t *text, const nativeVal_t *tim
 	double d;
 	MODE_SEAM("SScorer", msg ? "SetMsgText" : "SetLabelText");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vv", text, time);
+		return Native_HookCall(&hook, NULL, "vv", text, time);
 	}
 	if (!Native_ArgStr(text, 1, &s) || !Native_ArgDouble(time, &d)) {
 		return 0;
@@ -3246,7 +3246,7 @@ byte Mode_SpeechText(const nativeVal_t *text, const nativeVal_t *time, const nat
 	int c[3];
 	MODE_SEAM("SScorer", "SetSpeechText");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vvvvv", text, time, r, g, b);
+		return Native_HookCall(&hook, NULL, "vvvvv", text, time, r, g, b);
 	}
 	/* "sdiii" */
 	if (!Native_ArgStr(text, 1, &s) || !Native_ArgDouble(time, &d) || !Native_ArgInt(r, &c[0]) || !Native_ArgInt(g, &c[1]) ||
@@ -3261,7 +3261,7 @@ byte Mode_SpeechCallbackV(const nativeVal_t *func) {
 	const char *s;
 	MODE_SEAM("SScorer", "SetSpeechCallback");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", func);
+		return Native_HookCall(&hook, NULL, "v", func);
 	}
 	/* "s|O" */
 	if (!Native_ArgStr(func, 1, &s)) {
@@ -3282,7 +3282,7 @@ byte Mode_SpeechCallback(const char *func) {
 byte Mode_CancelSpeech(void) {
 	MODE_SEAM("SScorer", "CancelSpeech");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "");
+		return Native_HookCall(&hook, NULL, "");
 	}
 	Scorer_CancelSpeech(0);
 	return 1;
@@ -3293,7 +3293,7 @@ byte Mode_HeadMonitor(const nativeVal_t *a, const nativeVal_t *b, const nativeVa
 	int i;
 	MODE_SEAM("SScorer", "SetHeadMonitor");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vvv", a, b, c);
+		return Native_HookCall(&hook, NULL, "vvv", a, b, c);
 	}
 	if (!Native_ArgStr(a, 1, &s) || !Native_ArgStr(b, 2, &t) || !Native_ArgInt(c, &i)) {
 		return 0;
@@ -3306,7 +3306,7 @@ byte Mode_StopVoice(const nativeVal_t *ch) {
 	int i;
 	MODE_SEAM("SSound", "StopVoice");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", ch);
+		return Native_HookCall(&hook, NULL, "v", ch);
 	}
 	if (!Native_ArgInt(ch, &i)) {
 		return 0;
@@ -3320,7 +3320,7 @@ byte Mode_PlayVoice(const nativeVal_t *ch, const nativeVal_t *text) {
 	int i;
 	MODE_SEAM("SSound", "PlayVoice");
 	if (seam) {
-		return text ? Native_HookCall(hook, NULL, "vv", ch, text) : Native_HookCall(hook, NULL, "v", ch);
+		return text ? Native_HookCall(&hook, NULL, "vv", ch, text) : Native_HookCall(&hook, NULL, "v", ch);
 	}
 	/* "i|s" */
 	if (!Native_ArgInt(ch, &i) || (text && !Native_ArgStr(text, 2, &s))) {
@@ -3336,7 +3336,7 @@ byte Mode_OpenVoice(const nativeVal_t *file, const nativeVal_t *ch, const native
 	int i, a = 1;
 	MODE_SEAM("SSound", "OpenVoice");
 	if (seam) {
-		return arg ? Native_HookCall(hook, NULL, "vvv", file, ch, arg) : Native_HookCall(hook, NULL, "vv", file, ch);
+		return arg ? Native_HookCall(&hook, NULL, "vvv", file, ch, arg) : Native_HookCall(&hook, NULL, "vv", file, ch);
 	}
 	/* "si|i" */
 	if (!Native_ArgStr(file, 1, &s) || !Native_ArgInt(ch, &i) || (arg && !Native_ArgInt(arg, &a))) {
@@ -3353,7 +3353,7 @@ byte Mode_VoiceRemain(const nativeVal_t *ch, const nativeVal_t *def, nativeVal_t
 	Native_SetNone(out);
 	MODE_SEAM("SSound", "VoiceRemain");
 	if (seam) {
-		return Native_HookCall(hook, out, "vv", ch, def);
+		return Native_HookCall(&hook, out, "vv", ch, def);
 	}
 	/* "id" */
 	if (!Native_ArgInt(ch, &i) || !Native_ArgDouble(def, &d)) {
@@ -3371,7 +3371,7 @@ byte Mode_VoiceVolume(const nativeVal_t *ch, const nativeVal_t *vol) {
 	double d;
 	MODE_SEAM("SSound", "SetVoiceVolume");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vv", ch, vol);
+		return Native_HookCall(&hook, NULL, "vv", ch, vol);
 	}
 	if (!Native_ArgInt(ch, &i) || !Native_ArgDouble(vol, &d)) {
 		return 0;
@@ -3383,7 +3383,7 @@ byte Mode_VoiceVolume(const nativeVal_t *ch, const nativeVal_t *vol) {
 byte Mode_StopAllSounds(void) {
 	MODE_SEAM("SSound", "StopAllSounds");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "");
+		return Native_HookCall(&hook, NULL, "");
 	}
 	SoundSys_StopAllSounds(g_pSound);
 	return 1;
@@ -3431,7 +3431,7 @@ byte Mode_PreloadTexture(const nativeVal_t *name) {
 	const char *s;
 	MODE_SEAM("SScorer", "PreloadTexture");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "v", name);
+		return Native_HookCall(&hook, NULL, "v", name);
 	}
 	/* "s|i" */
 	if (!Native_ArgStr(name, 1, &s)) {
@@ -3526,9 +3526,9 @@ byte Mode_Set0I(const char *item, const char *var, long i) {
 
 byte Mode_Printed(byte ok, const char *module, const char *func) {
 	if (!ok) {
-		/* OBJLIB 7: the error printed where Script_Call printed it; the menu goes on */
+		/* the error printed where Script_Call printed it; the menu goes on */
 		Con_Warnf("Script: %s.%s failed\n", module, func);
-		PyErr_Print();
+		Native_ErrPrint();
 	}
 	return ok;
 }
@@ -3537,7 +3537,7 @@ byte Mode_GVarGetV(const nativeVal_t *name, nativeVal_t *out) {
 	const char *s;
 	MODE_SEAM("Scrap", "Get");
 	if (seam) {
-		return Native_HookCall(hook, out, "v", name);
+		return Native_HookCall(&hook, out, "v", name);
 	}
 	return Native_ArgStr(name, 1, &s) && Native_GVarGet(s, out);
 }
@@ -3547,7 +3547,7 @@ byte Mode_ScorerGetVal(const nativeVal_t *id, const nativeVal_t *item, const cha
 	const char *s;
 	MODE_SEAM("SScorer", "Get");
 	if (seam) {
-		return Native_HookCall(hook, out, "vvs", id, item, var);
+		return Native_HookCall(&hook, out, "vvs", id, item, var);
 	}
 	/* "iss" */
 	if (!Native_ArgInt(id, &i) || !Native_ArgStr(item, 2, &s)) {
@@ -3560,7 +3560,7 @@ byte Mode_ScorerGetVal(const nativeVal_t *id, const nativeVal_t *item, const cha
 byte Mode_ScorerAddV(const nativeVal_t *id, const nativeVal_t *name, const char *type) {
 	MODE_SEAM("SScorer", "Add");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vvs", id, name, type);
+		return Native_HookCall(&hook, NULL, "vvs", id, name, type);
 	}
 	return Mode_ScorerAdd(id, name, type);
 }
@@ -3568,7 +3568,7 @@ byte Mode_ScorerAddV(const nativeVal_t *id, const nativeVal_t *name, const char 
 byte Mode_ResetKeys(void) {
 	MODE_SEAM("SInput", "ResetToDefault");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "");
+		return Native_HookCall(&hook, NULL, "");
 	}
 	Input_ResetToDefault();
 	return 1;
@@ -3587,23 +3587,18 @@ void Mode_ElemsIn(nativeVal_t *v) {
 byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume) {
 	MODE_SEAM("SSound", "PlaySound");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "vvv", pos, name, volume);
+		return Native_HookCall(&hook, NULL, "vvv", pos, name, volume);
 	}
 	return Mode_PlaySound(pos, name, volume);
 }
 
 /* ---- the character hubs of batch M (MakeChar, Chars, CharFuncs) ---- */
 
-void Mode_DropError(void) {
-	/* OBJLIB 7: the Python exception until errors are a C state */
-	PyErr_Clear();
-}
-
 long Mode_ModGetI(const char *module, const char *var, long def) {
 	nativeVal_t v = { 0 };
 	long r = def;
 	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_INT) {
 		r = (int)v.i;
 	} else if (v.type == NV_FLOAT) {
@@ -3617,7 +3612,7 @@ double Mode_ModGetN(const char *module, const char *var, double def) {
 	nativeVal_t v = { 0 };
 	double r = def;
 	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_FLOAT) {
 		r = v.f;
 	} else if (v.type == NV_INT) {
@@ -3629,7 +3624,7 @@ double Mode_ModGetN(const char *module, const char *var, double def) {
 
 void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v) {
 	if (!Mode_SetModVar(module, var, v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 
@@ -3679,7 +3674,7 @@ PyObject *Mode_DefVars(int n, ...) {
 byte Mode_SetCinema(long id, long on, double time) {
 	MODE_SEAM("SScorer", "SetCinema");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "iid", id, on, time);
+		return Native_HookCall(&hook, NULL, "iid", id, on, time);
 	}
 	/* "iif" */
 	cScorer *sc = Scorer_Get((int)id);
@@ -3693,7 +3688,7 @@ byte Mode_CamSeam(long i, nativeVal_t *out) {
 	Native_SetNone(out);
 	MODE_SEAM("Scrap", "GetCam");
 	if (seam) {
-		return Native_HookCall(hook, out, "i", i);
+		return Native_HookCall(&hook, out, "i", i);
 	}
 	Mode_CamName((int)i, out);
 	return 1;
@@ -3703,7 +3698,7 @@ byte Mode_UsrSeam(long id, nativeVal_t *out) {
 	Native_SetNone(out);
 	MODE_SEAM("Scrap", "UsrEntity");
 	if (seam) {
-		return Native_HookCall(hook, out, "i", id);
+		return Native_HookCall(&hook, out, "i", id);
 	}
 	/* "i" read as unsigned: a player above 3 (or below 0) is NULL without an exception, which the call reports */
 	if ((uint32_t)(int)id > 3) {
@@ -3715,7 +3710,7 @@ byte Mode_UsrSeam(long id, nativeVal_t *out) {
 byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {
 	PyObject *f = Script_Attr(module, func);
 	byte ok = f && Mode_SchedAdd((float)time, f, args, n, name ? name : "");
-	PyErr_Clear();
+	Native_ErrClear();
 	Py_XDECREF(f);
 	return ok;
 }
@@ -3726,10 +3721,10 @@ void Mode_CallVarIf(const char *module, const char *var, long id) {
 		Native_SetInt(&a, id);
 		/* the callback through its entry while it is a port's own function (Port_Value) */
 		if (!Mode_CallArgs(&f, NULL, &a, 1)) {
-			PyErr_Print();
+			Native_ErrPrint();
 		}
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	Native_Free(&f);
 }
 
@@ -3737,7 +3732,7 @@ byte Mode_CreateSeam(const char *type, long x, long y, long z, const char *name,
 	Native_SetNone(out);
 	MODE_SEAM("Scrap", "CreateEntity");
 	if (seam) {
-		return Native_HookCall(hook, out, "siiis", type, x, y, z, name);
+		return Native_HookCall(&hook, out, "siiis", type, x, y, z, name);
 	}
 	/* "sddds" */
 	return Mode_EntHandle(cWorld_CreateEntity(g_pWorld, type, (float)x, (float)y, (float)z, name), out);
@@ -3746,7 +3741,7 @@ byte Mode_CreateSeam(const char *type, long x, long y, long z, const char *name,
 byte Mode_Exit(void) {
 	MODE_SEAM("Scrap", "Exit");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "");
+		return Native_HookCall(&hook, NULL, "");
 	}
 	App_Exit(g_pApp);
 	return 1;
@@ -3758,7 +3753,7 @@ const char *Mode_ModGetS(const char *module, const char *var, char *out, int siz
 	nativeVal_t v = { 0 };
 	out[0] = 0;
 	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	} else if (v.type == NV_STR) {
 		Str_Copy(out, Native_Text(&v), size);
 	}
@@ -3775,7 +3770,7 @@ byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out) 
 byte Mode_ListSetSeam(const char *list, const char *var, const char *value) {
 	MODE_SEAM("Scrap", "EntityListSet");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "sss", list, var, value);
+		return Native_HookCall(&hook, NULL, "sss", list, var, value);
 	}
 	return Mode_ListSet(list, var, value);
 }
@@ -3785,7 +3780,7 @@ byte Mode_ListSetSeam(const char *list, const char *var, const char *value) {
 byte Mode_ActionSetGet(nativeVal_t *out) {
 	MODE_SEAM("SInput", "GetActionSet");
 	if (seam) {
-		return Native_HookCall(hook, out, "");
+		return Native_HookCall(&hook, out, "");
 	}
 	Mode_ActionSetName(out);
 	return 1;
@@ -3874,7 +3869,7 @@ byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *a
 	if (f) {
 		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, args, name ? name : "");
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	Py_XDECREF(f);
 	return f != NULL;
 }
@@ -3946,11 +3941,11 @@ byte Mode_ApplyFlash(int id) {
 }
 
 byte Mode_DummyStartV(const nativeVal_t *name, long flag) {
-	PyObject *hook;
+	nativeHook_t hook;
 	const char *s;
 	int seam = Native_Seam("Scrap", "StartDummySearch", &hook);
 	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "vi", name, flag);
+		return seam > 0 && Native_HookCall(&hook, NULL, "vi", name, flag);
 	}
 	if (!Native_ArgStr(name, 1, &s)) {
 		return 0;
@@ -3968,7 +3963,7 @@ void Mode_ModPutS(const char *module, const char *var, const char *s) {
 
 int Mode_CmpOp(const nativeVal_t *a, const nativeVal_t *b, char op) {
 	int c = Native_Compare(a, b);
-	if (PyErr_Occurred()) {
+	if (Native_Failed()) {
 		return -1;
 	}
 	switch (op) {
@@ -4163,7 +4158,7 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out) {
 	}
 	/* "i" of getargs.c: PyInt_AsLong through the number methods of the object */
 	long l = PyInt_AsLong(Native_PyOf(v));
-	if (l == -1 && PyErr_Occurred()) {
+	if (l == -1 && Native_Failed()) {
 		return 0;
 	}
 	*out = (int)l;
@@ -4175,7 +4170,7 @@ static byte Mode_ArgLong(const nativeVal_t *v, long *out) {
 	int i;
 	if (Native_IsObj(v)) {
 		*out = PyInt_AsLong(Native_PyOf(v));
-		return *out != -1 || !PyErr_Occurred();
+		return *out != -1 || !Native_Failed();
 	}
 	if (!Native_ArgInt(v, &i)) {
 		return 0;
@@ -4192,7 +4187,7 @@ static byte Mode_ArgDouble(const nativeVal_t *v, double *out) {
 		return Native_ArgDouble(v, out);
 	}
 	*out = PyFloat_AsDouble(Native_PyOf(v));
-	return !PyErr_Occurred();
+	return !Native_Failed();
 }
 
 static byte Mode_FmtLetter(char c) {
@@ -4365,7 +4360,7 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 	if (!msg) {
 		return 1;
 	}
-	if (PyErr_Occurred()) {
+	if (Native_Failed()) {
 		return 0;
 	}
 	/* seterror: "argument <i>[, item <j>...]: expected <msg> found" */
@@ -4735,8 +4730,14 @@ static byte Lib_MathOut(double x, nativeVal_t *out) {
 		return Native_Raise(NE_OVERFLOW, "math range error");
 	}
 	if (errno) {
-		/* OBJLIB 9: the (errno, text) value of PyErr_SetFromErrno */
-		PyErr_SetFromErrno(PyExc_ValueError);
+		/* the (errno, text) value of PyErr_SetFromErrno */
+		nativeVal_t v;
+		const char *text = strerror(errno);
+		Native_SetEmpty(&v, NV_TUPLE);
+		Native_SetInt(Native_Append(&v), errno);
+		Native_SetText(Native_Append(&v), text, (int)strlen(text));
+		Native_RaiseVal(NE_VALUE, &v);
+		Native_Free(&v);
 		return 0;
 	}
 	Native_SetFloat(out, x);
@@ -5251,7 +5252,7 @@ int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out) {
 		/* what module_getattr of no module gives for __dict__ */
 		Py_DECREF(m);
 		m = NULL;
-		PyErr_SetString(PyExc_AttributeError, "__dict__");
+		Native_Raise(NE_ATTRIBUTE, "__dict__");
 	}
 	byte ok = loc != NULL;
 	Native_SetNone(out);
@@ -5278,10 +5279,10 @@ byte Mode_RefModule(const char *name, nativeVal_t *out) {
 }
 
 byte Mode_CatchKeyError(void) {
-	if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+	if (!Native_ErrIs(NE_KEY)) {
 		return 0;
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	return 1;
 }
 
@@ -5352,7 +5353,7 @@ int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
 	int c = y ? PyObject_Compare(x, y) : -2;
 	if (y) {
 		/* cmp_outcome of ceval: an error only counts with a result that is not 0 */
-		c = c && PyErr_Occurred() ? -2 : c < 0 ? -1 : c > 0;
+		c = c && Native_Failed() ? -2 : c < 0 ? -1 : c > 0;
 	}
 	Py_XDECREF(y);
 	Py_XDECREF(x);
@@ -5408,15 +5409,6 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out) {
 }
 
 /* ---- the menus, the ship editor and the other ports on the native helpers (stage 6, batch 6h) ---- */
-
-void Mode_PrintError(void) {
-	/* OBJLIB 7: the traceback of the Python exception until errors are a C state */
-	PyErr_Print();
-}
-
-byte Mode_Failed(void) {
-	return PyErr_Occurred() != NULL;
-}
 
 byte Mode_DefRunV(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
 	byte stop, const char *const *names, const nativeVal_t *const *vals, int n) {

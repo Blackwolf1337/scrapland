@@ -201,7 +201,7 @@ static void Step_Spread(int id, const nativeVal_t *args, int n) {
 	const char *name, *func;
 	(void)id;
 	if (!Mode_Parse(args, n, "ddiss", &first, &end, &count, &name, &func)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	Char_Spread(first, end, count, name, func);
@@ -213,7 +213,7 @@ static void Step_TimedName(int id, const nativeVal_t *args, int n) {
 	char event[0x80];
 	(void)id;
 	if (!Mode_Parse(args, n, "ss", &name, &func)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	nativeVal_t t;

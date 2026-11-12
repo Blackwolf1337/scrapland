@@ -374,7 +374,7 @@ static void Step_InGame(int id, const nativeVal_t *args, int n) {
 	if (func && func->type == NV_STR && !Native_Text(func)[0]) {
 		MODE_PRINTED(Menu, DisableMenuItem, "iii", (long)id, 2L, 5L);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	if (func == &tmp) {
 		Native_Free(&tmp);
 	}
@@ -397,7 +397,7 @@ static void Step_ColumnText(int id, const nativeVal_t *args, int n) {
 	int maxlen;
 	char text[0x200];
 	if (!Mode_Parse(args, n, "si", &key, &maxlen)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	Net_CutText(Script_Lang(key), maxlen, text, sizeof(text));
@@ -456,7 +456,7 @@ static void Net_SetServerMaps(const netMapList_t *list) {
  * when it is not there (no error); a list that holds objects is made native item by item */
 static byte Net_Script(const char *var, nativeVal_t *out) {
 	if (!Mode_ModGet("Net", var, out)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return 0;
 	}
 	Mode_Elems(out);
@@ -494,7 +494,7 @@ static void Net_ModeMaps(netMapList_t *list) {
 		}
 		Native_Free(&tmp);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&sub);
 	Native_Free(&modes);
 }
@@ -613,7 +613,7 @@ static int Net_ModeIndex(int *count) {
 		}
 		Native_Free(&tmp);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&modes);
 	return found;
 }
@@ -624,7 +624,7 @@ static void Net_SetMode(int index) {
 	if (e) {
 		GVar_SetStr("ServerType", e);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&tmp);
 	Native_Free(&modes);
 }
@@ -705,7 +705,7 @@ static void Step_MapSlots(int id, const nativeVal_t *args, int n) {
 static void Step_MapPreviews(int id, const nativeVal_t *args, int n) {
 	int x, y;
 	if (!Mode_Parse(args, n, "ii", &x, &y)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	nativeVal_t maps;
@@ -726,7 +726,7 @@ static void Step_MapPreviews(int id, const nativeVal_t *args, int n) {
 		}
 		Native_Free(&tmp);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&maps);
 }
 

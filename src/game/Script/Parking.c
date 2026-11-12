@@ -24,9 +24,8 @@
  * (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
  * NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc,
  * SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor,
- * SAct.GetAction and SetAct go through their seams (OBJLIB 7: the cases record or swap them). The evals of the
- * save texts read literals with the native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB
- * 6).
+ * SAct.GetAction and SetAct go through their seams (the cases record or swap them). The evals of the save texts read
+ * literals with the native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB 6).
  */
 #include <string.h>
 

@@ -94,7 +94,7 @@ static byte HT_ShowPrediction(int id, byte up) {
 			return Mode_Done(&t, 0);
 		}
 		green = Native_Compare(money, cost) < 0 ? 0 : 255;
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -123,7 +123,7 @@ static int HT_AtLimit(byte min) {
 	int r = -1;
 	if (Mode_ShipGet("MaxLife", &a) && (min ? Mode_ShipGet("MinLife", &b) : Mode_ShipTable("ShipTon", 1, &b))) {
 		r = !Native_Compare(&a, &b);
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			r = -1;
 		}
 	}
@@ -231,7 +231,7 @@ static int HT_Single(void) {
 	}
 	int c = Native_Compare(&v, &one) != 0;
 	Native_Free(&v);
-	return Mode_Failed() ? -1 : c;
+	return Native_Failed() ? -1 : c;
 }
 
 /* the hull after the change: MaxLife op value, Life = MaxLife, the ship parameters, the info and the state */
@@ -249,7 +249,7 @@ static byte HT_Apply(int id, char op, const nativeVal_t *value) {
 /* a > b of the script: 1 or 0, -1 with the error */
 static int HT_Gt(const nativeVal_t *a, const nativeVal_t *b) {
 	int c = Native_Compare(a, b) > 0;
-	return Mode_Failed() ? -1 : c;
+	return Native_Failed() ? -1 : c;
 }
 
 /* plates taken off (value > 0 of them): as many as there are above the minimum; the money back */
@@ -262,9 +262,9 @@ static byte HT_TakeOff(int id, nativeVal_t *value, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	int none = Native_Compare(ml, mn) <= 0;
-	if (Mode_Failed() || none) {
+	if (Native_Failed() || none) {
 		Native_SetInt(out, 0);
-		return Mode_Done(&t, !Mode_Failed());
+		return Mode_Done(&t, !Native_Failed());
 	}
 	Native_Free(ml);
 	Native_Free(mn);
@@ -361,7 +361,7 @@ static byte HT_PutOn(int id, nativeVal_t *value, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		int poor = Native_Compare(rest, cost2) < 0;
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		if (poor) {
@@ -384,7 +384,7 @@ static byte HT_ChangeHull(int id, const nativeVal_t *v, nativeVal_t *out) {
 	}
 	Native_SetInt(&zero, 0);
 	int neg = Native_Compare(v, &zero) < 0;
-	if (Mode_Failed()) {
+	if (Native_Failed()) {
 		return 0;
 	}
 	byte ok;
@@ -417,7 +417,7 @@ static byte HT_SetHullState(int id) {
 		return Mode_Done(&t, 0);
 	}
 	int some = Native_Compare(ship, Mode_V(&t)) != 0;
-	if (Mode_Failed()) {
+	if (Native_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	if (some) {
@@ -425,7 +425,7 @@ static byte HT_SetHullState(int id) {
 			return Mode_Done(&t, 0);
 		}
 		int above = Native_Compare(life, minl) > 0;
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		Script_SetNum(id, "HullText", "TextColorRed", above ? HULL_RED : HULL_MIN_RED);
@@ -462,7 +462,7 @@ static byte HT_SliderChange(int id) {
 		return Mode_Done(&t, 0);
 	}
 	int change = Native_Compare(diff, zero) != 0;
-	if (Mode_Failed()) {
+	if (Native_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	if (!change) {
@@ -473,7 +473,7 @@ static byte HT_SliderChange(int id) {
 	}
 	int up = HT_Gt(diff, zero);
 	int stuck = up > 0 ? !Native_Compare(ret, zero) : 0;
-	if (up < 0 || Mode_Failed()) {
+	if (up < 0 || Native_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, !stuck ||

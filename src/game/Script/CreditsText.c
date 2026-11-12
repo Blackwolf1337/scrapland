@@ -42,7 +42,7 @@ static byte Credits_Read(int k, nativeVal_t *out) {
 /* the variable k of the module set to v, as Script_SetVar of the script port (a failed set is no error) */
 static void Credits_Put(int k, const nativeVal_t *v) {
 	if (!Mode_SetModVar("CreditsText", credits_names[k], v)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 
@@ -50,7 +50,7 @@ static void Credits_Put(int k, const nativeVal_t *v) {
 static double Credits_Num(int k, double def) {
 	nativeVal_t v;
 	if (!Credits_Read(k, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return def;
 	}
 	double d = v.type == NV_INT ? (double)v.i : v.type == NV_FLOAT ? v.f : def;
@@ -62,7 +62,7 @@ static double Credits_Num(int k, double def) {
 static int Credits_Max(void) {
 	nativeVal_t v;
 	if (!Credits_Read(CV_MAX, &v)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return 20;
 	}
 	int n = v.type == NV_INT ? (int)v.i : v.type == NV_FLOAT ? (int)v.f : 20;

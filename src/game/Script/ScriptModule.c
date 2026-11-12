@@ -78,7 +78,7 @@ PyObject *Script_ModuleName(PyObject *locals, const char *text) {
 	PyObject *v;
 	int found = Script_NameChain(locals, locals, text, &v);
 	if (found == 0) {
-		PyErr_Format(PyExc_SystemError, "module code: cannot load %.100s", text);
+		Native_Raise(NE_SYSTEM, "module code: cannot load %.100s", text);
 	}
 	return found > 0 ? v : NULL;
 }
@@ -131,7 +131,7 @@ static int Mod_Line(modParse_t *m) {
 }
 
 static PyObject *Mod_Syntax(modParse_t *m, const char *what) {
-	if (!PyErr_Occurred()) {
+	if (!Native_Failed()) {
 		char near[24];
 		int n = 0;
 		while (n < (int)sizeof(near) - 1 && m->p[n] && m->p[n] != '\n') {
@@ -139,7 +139,7 @@ static PyObject *Mod_Syntax(modParse_t *m, const char *what) {
 			n++;
 		}
 		near[n] = 0;
-		PyErr_Format(PyExc_SyntaxError, "%.100s:%d: %.100s at '%.24s'", m->file, Mod_Line(m), what, near);
+		Native_Raise(NE_SYNTAX, "%.100s:%d: %.100s at '%.24s'", m->file, Mod_Line(m), what, near);
 	}
 	m->syntax = 1;
 	return NULL;
@@ -429,7 +429,7 @@ static byte Mod_Number(modParse_t *m, nativeVal_t *out) {
 	long x = buf[0] == '0' ? (long)PyOS_strtoul(buf, &end, 0) : PyOS_strtol(buf, &end, 0);
 	if (*end == 0) {
 		if (errno != 0) {
-			PyErr_SetString(PyExc_OverflowError, "integer literal too large");
+			Native_Raise(NE_OVERFLOW, "integer literal too large");
 			return 0;
 		}
 		Native_SetInt(out, x);
@@ -554,10 +554,7 @@ static byte Mod_Load(modParse_t *m, const char *name, nativeVal_t *out) {
 		v = b && PyDict_Check(b) ? PyDict_GetItemString(b, (char *)name) : NULL;
 	}
 	if (!v) {
-		PyObject *n = PyString_FromString(name);
-		PyErr_SetObject(PyExc_NameError, n);
-		Py_XDECREF(n);
-		return 0;
+		return Native_Raise(NE_NAME, "%s", name);
 	}
 	Mod_FromPy(v, out);
 	return 1;
@@ -827,7 +824,7 @@ static byte Mod_SliceIndex(const nativeVal_t *v, int *pi) {
 		return 1;
 	}
 	if (v->type != NV_INT) {
-		PyErr_SetString(PyExc_TypeError, "slice index must be int");
+		Native_Raise(NE_TYPE, "slice index must be int");
 		return 0;
 	}
 	long x = v->i;
@@ -1083,7 +1080,7 @@ static int Mod_Relation(modParse_t *m, const nativeVal_t *a, const nativeVal_t *
 			return r < 0 ? -1 : r != not;
 		}
 		*cmp = NObj_Compare(a, b);
-		return *cmp && PyErr_Occurred() ? -1 : 1;
+		return *cmp && Native_Failed() ? -1 : 1;
 	}
 	PyObject *pa = Mod_ToPy(m, a), *pb = pa ? Mod_ToPy(m, b) : NULL;
 	int r = -1;
@@ -1094,7 +1091,7 @@ static int Mod_Relation(modParse_t *m, const nativeVal_t *a, const nativeVal_t *
 		r = r < 0 ? -1 : r != not;
 	} else if (pb) {
 		*cmp = PyObject_Compare(pa, pb);
-		r = *cmp && PyErr_Occurred() ? -1 : 1;
+		r = *cmp && Native_Failed() ? -1 : 1;
 	}
 	Py_XDECREF(pa);
 	Py_XDECREF(pb);
@@ -1255,7 +1252,7 @@ static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *ou
 		if (ok || literal || !m.syntax) {
 			return ok;
 		}
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	PyObject *t = Native_ToPy(text), *r = t ? Script_EvalValue(outer->globals, t) : NULL;
 	Py_XDECREF(t);
@@ -1321,14 +1318,14 @@ static byte Mod_StoreVal(modParse_t *m, const char *name, nativeVal_t *v) {
 /* the function name of the module: a level table, script_modules, the level data */
 static PyObject *Mod_Function(modParse_t *m, const char *name) {
 	PyObject *f = Script_LevelTableFunction(m->module, name);
-	if (!f && !PyErr_Occurred()) {
+	if (!f && !Native_Failed()) {
 		f = Script_TableFunction(m->module, name);
 	}
-	if (!f && !PyErr_Occurred()) {
+	if (!f && !Native_Failed()) {
 		f = Script_LevelDataFunction(m->module, name);
 	}
-	if (!f && !PyErr_Occurred()) {
-		PyErr_Format(PyExc_SystemError, "%.100s:%d: %.60s.%.60s has no C definition", m->file, Mod_Line(m), m->module,
+	if (!f && !Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "%.100s:%d: %.60s.%.60s has no C definition", m->file, Mod_Line(m), m->module,
 			name);
 	}
 	return f;
@@ -1374,7 +1371,7 @@ static byte Mod_From(modParse_t *m) {
 				continue;
 			}
 			if (!ModVar_GetVal(&from, name, &v)) {
-				PyErr_Format(PyExc_ImportError, "cannot import name %.200s", name);
+				Native_Raise(NE_IMPORT, "cannot import name %.200s", name);
 				ok = 0;
 			} else {
 				ok = m->skip || Mod_PutVal(m, name, &v);
@@ -1497,11 +1494,7 @@ static byte Mod_Del(modParse_t *m) {
 	}
 	if (!m->skip &&
 		(m->locals == m->globals ? ModVar_Del(&m->ref, name) : PyDict_DelItemString(m->locals, name)) != 0) {
-		PyErr_Clear();
-		PyObject *n = PyString_FromString(name);
-		PyErr_SetObject(PyExc_NameError, n);
-		Py_XDECREF(n);
-		return 0;
+		return Native_Raise(NE_NAME, "%s", name);
 	}
 	return Mod_EndLine(m);
 }
@@ -1516,7 +1509,7 @@ static byte Mod_Hook(modParse_t *m) {
 			return m->skip || module_hooks[i].fn(m->mod, m->locals);
 		}
 	}
-	PyErr_Format(PyExc_SystemError, "%.100s:%d: no C hook %.60s", m->file, Mod_Line(m), name);
+	Native_Raise(NE_SYSTEM, "%.100s:%d: no C hook %.60s", m->file, Mod_Line(m), name);
 	return 0;
 }
 
@@ -1589,18 +1582,18 @@ static byte Mod_Class(modParse_t *m) {
 	if (r && !m->skip) {
 		for (int i = 0; i < PyTuple_Size(bases); i++) {
 			if (!PyClass_Check(PyTuple_GET_ITEM(bases, i))) {
-				PyErr_SetString(PyExc_TypeError, "base is not a class object");
+				Native_Raise(NE_TYPE, "base is not a class object");
 			}
 		}
 		/* PyClass_New takes __module__ from the globals of the frame that runs, which is not this module's here */
 		PyObject *modname = ModVar_Get(&m->ref, "__name__");
-		if (!PyErr_Occurred() && !PyDict_GetItemString(body.locals, "__doc__")) {
+		if (!Native_Failed() && !PyDict_GetItemString(body.locals, "__doc__")) {
 			PyDict_SetItemString(body.locals, "__doc__", Py_None);
 		}
-		if (!PyErr_Occurred() && modname && !PyDict_GetItemString(body.locals, "__module__")) {
+		if (!Native_Failed() && modname && !PyDict_GetItemString(body.locals, "__module__")) {
 			PyDict_SetItemString(body.locals, "__module__", modname);
 		}
-		PyObject *n = PyErr_Occurred() ? NULL : PyString_InternFromString(name);
+		PyObject *n = Native_Failed() ? NULL : PyString_InternFromString(name);
 		cls = n ? PyClass_New(bases, body.locals, n) : NULL;
 		Py_XDECREF(n);
 		r = cls != NULL;
@@ -1655,8 +1648,8 @@ static int Mod_Block(modParse_t *m, char *stop, int size) {
 			return Mod_Syntax(m, "unknown statement"), 0;
 		}
 		if (!stmts[i].fn(m)) {
-			if (!PyErr_Occurred()) {
-				PyErr_Format(PyExc_SystemError, "%.100s:%d: %s failed", m->file, Mod_Line(m), word);
+			if (!Native_Failed()) {
+				Native_Raise(NE_SYSTEM, "%.100s:%d: %s failed", m->file, Mod_Line(m), word);
 			}
 			return 0;
 		}
@@ -1740,7 +1733,7 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 			PyDict_SetItemString(d, "__file__", v);
 			Py_DECREF(v);
 		}
-		PyErr_Clear();
+		Native_ErrClear();
 		/* the module code stores and loads its names through the registry */
 		ModVar_Making(name, mf->level, d, &mp.ref, &was);
 		bound = 1;
@@ -1795,7 +1788,7 @@ PyObject *Script_Module(const char *name) {
 	if (m == Py_None) {
 		/* what load_next of the import raises for an entry None */
 		mod_counts[SMC_NONE]++;
-		PyErr_Format(PyExc_ImportError, "No module named %.200s", name);
+		Native_Raise(NE_IMPORT, "No module named %.200s", name);
 		return NULL;
 	}
 	mod_counts[SMC_PACK]++;

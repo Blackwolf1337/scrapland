@@ -121,6 +121,7 @@ add_library(python152 STATIC
 	src/python/classobject.c
 	src/python/config.c
 	src/python/dictobject.c
+	src/python/errors.c
 	src/python/getpathp.c
 	src/python/import.c
 	src/python/intobject.c
@@ -158,7 +159,6 @@ add_library(python152 STATIC
 	${PY152}/Objects/tupleobject.c
 	${PY152}/Objects/typeobject.c
 	${PY152}/Parser/myreadline.c
-	${PY152}/Python/errors.c
 	${PY152}/Python/frozen.c
 	${PY152}/Python/getargs.c
 	${PY152}/Python/getcompiler.c

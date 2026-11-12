@@ -270,7 +270,7 @@ static byte Sc_SetDefSounds(const nativeVal_t *name, const nativeVal_t *type) {
 	if (Mode_Read(SC, "SceneName", scene) && Sc_MapSnd(&x, scene, name)) {
 		return Mode_Done(&t, 1);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	return Mode_Done(&t, Mode_Read(SC, "SceneName", scene) && Sc_MapSndWarning(scene, name));
 }
 
@@ -497,7 +497,7 @@ static byte Sc_LoadSounds(const nativeVal_t *cls, const nativeVal_t *path) {
 	if (Sc_MapSnd(&x, cls, NULL)) {
 		return 1;
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	return Sc_MapSndWarning(cls, NULL);
 }
 

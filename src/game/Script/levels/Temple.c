@@ -12,10 +12,10 @@
  * changed in place on their objects, the gatekeeper groups are passed as the objects of GateKeeper (OBJLIB 5 (9c: the
  * GateKeeper refs take Python objects)); a variable of another module that the script set with Script_SetVar keeps
  * dropping its error. Entities are handle values (OBJLIB 7). The engine functions the cases record or swap go through
- * their seams (OBJLIB 7): Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set,
- * Scrap.SetAlarm, Scrap.GetAlarm, SScorer.SetMsgText, SScorer.SetLabelText, SSound.PlaySound and SLogic.SetOnFloor
- * (fc-tp-map), the SAct functions of the fake speech and SSound.SetMusic (fr6b.py); SFX.BishopSellLife (fc-tp-map
- * swaps it) through its ref (stage 7).
+ * their seams: Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set, Scrap.SetAlarm,
+ * Scrap.GetAlarm, SScorer.SetMsgText, SScorer.SetLabelText, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the
+ * SAct functions of the fake speech and SSound.SetMusic (fr6b.py); SFX.BishopSellLife (fc-tp-map swaps it) through
+ * its ref (stage 7).
  *
  * Direct calls (stage 3): the functions of the other ports (MissionsFuncs, SaveGame, GateKeeper, Elevator, Metro,
  * CharsNPC, MisItems, Scene) and the own functions of the modules (their globals) go through their refs (PORT_CALL,

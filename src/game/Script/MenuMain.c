@@ -14,11 +14,11 @@
  * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5 (9c); BackMenuFunc through
  * the entry of the function it holds, MODE_PRINTEDCALL), the Init of the scorer of the mode by its module chosen at
  * run time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and
- * Scrap.Exit, GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams (OBJLIB 7); the death
- * camera schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list
- * of saved games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun;
- * OBJLIB 6: a dict inside the runner). Every function of the table has a native entry (stage 6, batch 6h:
- * Mode_IdControl, Mode_Parse, MODE_FNANY).
+ * Scrap.Exit, GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams; the death camera
+ * schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list of saved
+ * games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun; OBJLIB 6:
+ * a dict inside the runner). Every function of the table has a native entry (stage 6, batch 6h: Mode_IdControl,
+ * Mode_Parse, MODE_FNANY).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +49,7 @@ static const struct {
 static void Step_Volume(int id, const nativeVal_t *args, int n) {
 	const char *slider, *var;
 	if (!Mode_Parse(args, n, "ss", &slider, &var)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 		return;
 	}
 	Script_SetNum(id, slider, "Value", GVar_GetNum(var, 0));
@@ -117,7 +117,7 @@ static void Main_SaveList(nativeVal_t *out) {
 static int Main_Len(const nativeVal_t *seq) {
 	int n;
 	if (!Native_Len(seq, &n)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return -1;
 	}
 	return n;
@@ -126,7 +126,7 @@ static int Main_Len(const nativeVal_t *seq) {
 /* Menu.saveGamesList into *out (lists held as one NV_OBJ made native): 0 when it is not there (the error dropped) */
 static byte Main_SavesVar(nativeVal_t *out) {
 	if (!Mode_ModGet("Menu", "saveGamesList", out)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return 0;
 	}
 	Mode_ElemsIn(out);
@@ -260,7 +260,7 @@ static void Main_BackToGame(int id) {
 	Input_SelectActionSetNamed(mode);
 	byte haveSpeed = Mode_ModGet("Menu", "LastTimeSpeed", &speed);
 	byte havePitch = Mode_ModGet("Menu", "currentSoundPitch", &pitch);
-	Mode_DropError();
+	Native_ErrClear();
 	if (haveSpeed && (speed.type == NV_FLOAT || speed.type == NV_INT)) {
 		Timer_SetSpeed(&g_pWorld->timer, (float)(speed.type == NV_FLOAT ? speed.f : (double)speed.i));
 	}
@@ -374,7 +374,7 @@ static byte Main_Entry(const nativeVal_t *list, int i, int k, nativeVal_t *out) 
 	if (v) {
 		Native_Copy(out, v);
 	} else {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	Native_Free(&t2);
 	Native_Free(&t1);
@@ -463,7 +463,7 @@ static void Main_GamesMenu(int id, byte save) {
 			Native_Free(&list);
 			list = rest;
 		} else {
-			Mode_DropError();
+			Native_ErrClear();
 		}
 		n--;
 	}
@@ -571,7 +571,7 @@ static void Main_AuxSaveGame(int id, const char *control) {
 	byte ok = PORT_CALL(Speech, CalculateSpeechTime, &r, "s", text);
 	double add = ok && r.type == NV_FLOAT ? r.f : ok && r.type == NV_INT ? (double)r.i : 0.0;
 	if (!ok) {
-		Mode_PrintError();
+		Native_ErrPrint();
 	}
 	Native_Free(&r);
 	Scorer_SetMsgText(text, (float)(Timer_GetTime(&g_pWorld->timer) + add), "Horatio");
@@ -610,7 +610,7 @@ static void Main_Initialize(void) {
 		Mode_ModPut("PCMenu", "Menu", &menu);
 	}
 	Native_Free(&menu);
-	Mode_DropError();
+	Native_ErrClear();
 	byte main = Mode_ModGetI("Init", "inMainMenu", 0) != 0;
 	byte xbox = Mode_ModGetI("Menu", "isXbox", 0) != 0;
 	byte outdoor = Mode_ModGetI("Init", "Outdoor", 0) != 0;
@@ -698,7 +698,7 @@ static void Main_DebugAI(int id, const char *control) {
 /* the error of a call the C asked printed (the death camera goes on): ok passed on */
 static byte Main_Asked(byte ok) {
 	if (!ok) {
-		Mode_PrintError();
+		Native_ErrPrint();
 	}
 	return ok;
 }
@@ -706,7 +706,7 @@ static byte Main_Asked(byte ok) {
 /* o.name = v of a value, the error printed */
 static void Main_SetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v) {
 	if (!Mode_VSet(o, name, v)) {
-		Mode_PrintError();
+		Native_ErrPrint();
 	}
 }
 
@@ -731,7 +731,7 @@ static void Main_Sound(const char *sound, const char *volume) {
 	if (haveSnd && haveVol) {
 		Mode_Printed(Mode_Play(&snd, &vol), "SSound", "Play");
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&vol);
 	Native_Free(&snd);
 }
@@ -767,7 +767,7 @@ static byte Main_TVOff(void) {
 			}
 			Native_Free(&u);
 		}
-		Mode_DropError();
+		Native_ErrClear();
 		Native_Free(&act);
 	}
 	GVar_SetNum("MotionBlurFactorBegin", 0);
@@ -777,7 +777,7 @@ static byte Main_TVOff(void) {
 	GVar_SetNum("MotionBlurOffVar", 0);
 	byte havePos = Mode_VObj(&lc, "camPos", &camPos);
 	byte haveAng = Mode_VObj(&lc, "camAng", &camAng);
-	Mode_DropError();
+	Native_ErrClear();
 	Main_SetAttrI(&cp, "nWayPoint", 2);
 	if (havePos) {
 		Main_SetAttr(&cp, "camPos", &camPos);
@@ -798,7 +798,7 @@ static byte Main_TVOff(void) {
 	byte car = 0;
 	if (hasUsr) {
 		car = Mode_VIsType(&usr, "Car") > 0;
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	Main_SetAttrI(&cp, "FOV01", car ? 90 : 100);
 	/* the end of the path: above and behind the camera, under the top of the level, before a wall */
@@ -810,7 +810,7 @@ static byte Main_TVOff(void) {
 		}
 		Native_Free(&tmp);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	nativeVal_t off, ang;
 	Mode_Ints3(&off, 0, car ? 500 : 200, car ? -1000 : -400);
 	Native_SetEmpty(&ang, NV_TUPLE);
@@ -844,7 +844,7 @@ static byte Main_TVOff(void) {
 		}
 		Native_Free(&ty);
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	byte haveDest = 0;
 	if (haveResv) {
 		nativeVal_t list;
@@ -864,7 +864,7 @@ static byte Main_TVOff(void) {
 		Native_Copy(&pos, &resv);
 		havePos01 = 1;
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	if (havePos01) {
 		Main_SetAttr(&cp, "Pos01", &pos);
 	}
@@ -876,7 +876,7 @@ static byte Main_TVOff(void) {
 	Native_Free(&ang);
 	GVar_SetNum("CinemaBlackBandHeight", 0);
 	byte haveName = Mode_VObj(&cp, "Name", &name);
-	Mode_DropError();
+	Native_ErrClear();
 	if (haveName) {
 		Native_SetInt(&v[0], 0);
 		Native_Copy(&v[1], &name);
