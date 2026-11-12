@@ -218,3 +218,6 @@ else()
 endif()
 # the unused functions of python152 (above)
 target_link_options(ScrapC PRIVATE -Wl,--gc-sections)
+
+# Net2, the transport of the new multiplayer (include/scrap/net2.h; not linked into ScrapC yet)
+add_subdirectory(src/net2)
