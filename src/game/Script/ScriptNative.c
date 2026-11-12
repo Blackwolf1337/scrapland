@@ -2336,6 +2336,7 @@ int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
 		a[i].type = fmt[i];
 		switch (fmt[i]) {
 		case 'v':
+		case 'r':
 			a[i].v = va_arg(va, const nativeVal_t *);
 			break;
 		case 'i':
@@ -2360,6 +2361,7 @@ PyObject *Native_ArgPy(const nativeArg_t *a) {
 	/* another letter fails the call without an error, as it always did */
 	switch (a->type) {
 	case 'v':
+	case 'r':
 		return Native_ToPy(a->v);
 	case 'i':
 		return PyInt_FromLong(a->i);

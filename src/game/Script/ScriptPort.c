@@ -167,6 +167,13 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 	switch (x->type) {
 	case 'v':
 		return Native_Pass(x->v, v);
+	case 'r':
+		/* the object itself (P for a native value) */
+		if (Native_IsObj(x->v) || x->v->type == NV_ENT) {
+			Native_Copy(v, x->v);
+			return 1;
+		}
+		return Native_Pass(x->v, v);
 	case 'i':
 		Native_SetInt(v, x->i);
 		return 1;
@@ -291,7 +298,7 @@ static __attribute__((noinline)) byte Port_ObjArgs(const char *fmt, va_list va) 
 	Port_Read(fmt, c, &p);
 	va_end(c);
 	for (int i = 0; !obj && i < p.n; i++) {
-		obj = p.a[i].type == 'O' || p.a[i].type == 'P' || (p.a[i].type == 'v' && Port_HoldsObj(p.a[i].v));
+		obj = p.a[i].type == 'O' || p.a[i].type == 'P' || ((p.a[i].type == 'v' || p.a[i].type == 'r') && Port_HoldsObj(p.a[i].v));
 	}
 	return obj;
 }

@@ -438,7 +438,7 @@ PyMethodDef g_OutSoundMethods[] = {
 /* LoadSndList(list) of the module's global with a list as the object it is (the lists of the module are sorted in
  * place); list made by the caller (0: its error) and freed */
 static byte Gs_LoadSndListOf(byte made, nativeVal_t *list) {
-	byte ok = made && PORT_OWN(DoorSound, LoadSndList, NULL, "v", list);
+	byte ok = made && PORT_OWN(DoorSound, LoadSndList, NULL, "r", list);
 	Native_Free(list);
 	return ok;
 }
