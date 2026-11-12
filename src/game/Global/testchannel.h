@@ -32,7 +32,7 @@ byte TcX_Statement(const char *line, nativeVal_t *out);
 /* the statements of line as TcX_Statement runs them, the name name giving v (as a global of __main__ would, without
  * one): 0 with the error set */
 byte TcX_Bind(const char *line, const char *name, const nativeVal_t *v);
-/* __main__.name = v (OBJLIB 9b: into the dict of __main__): 0 with the error set */
+/* __main__.name = v (a variable of __main__ in the registry): 0 with the error set */
 byte TcX_SetMain(const char *name, const nativeVal_t *v);
 /* the statements of a line ("a = f(); b(); result = (a, b)") in the globals of a module dict (NULL: __main__),
  * answered as the game side of the MCP server (the old tools/mcp/mcpgame.py) answered a line: a single expression its

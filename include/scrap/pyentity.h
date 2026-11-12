@@ -43,11 +43,5 @@ byte PyEntity_Check(PyObject *o);
 /* the Python object of the handle (a new reference): its face, a new one when it has none; NULL with the error */
 PyObject *PyEntity_Face(cEntityRef *ref);
 
-/* the handle of the entity with that name as a new Python object, NULL without one (no Python error set) */
-PyObject *PyEntity_New(const char *name);
-
-/* a script variable of the entity from a Python value, as `handle.name = v` sets it: 0, or -1 with the message
- * printed (ref names the entity in it) */
-int PyEntity_SetVar(cEntity *e, const char *ref, const char *name, PyObject *v);
 
 #endif

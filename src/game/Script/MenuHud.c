@@ -11,8 +11,7 @@
  * (the registry). The scorer functions and Menu are called through their refs (PORT_CALL: directly while the attribute
  * holds the port's function, else by name, a failure printed); the callback Menu.MissionScorerCall is called as the
  * value it holds (OBJLIB 5 (9c)); SScorer.SetCinema, Scrap.GetCam, GetEntity and UsrEntity go through their seams
- * (OBJLIB 7); Blink and the ping update schedule themselves (Mode_SchedAt: the scheduler takes their entries); the
- * .def runner takes Python values (OBJLIB 6).
+ * (OBJLIB 7); Blink and the ping update schedule themselves (Mode_SchedAt: the scheduler takes their entries).
  */
 #include <string.h>
 
@@ -126,7 +125,7 @@ static const scriptStep_t hud_steps[] = {
 #define HUD_MARGINS 4
 
 /* a section of a file with the margins of the screen and more $names: n pairs of a name and a const nativeVal_t *
- * (up to MODE_DEFVARS - HUD_MARGINS; Mode_DefRunV, OBJLIB 6: the runner takes them as a dict). The margins are read
+ * (up to MODE_DEFVARS - HUD_MARGINS; Mode_DefRunV). The margins are read
  * after the values of the pairs were made, as before */
 static void Hud_RunFile(int id, const char *file, const char *builtin, const char *section, int n, ...) {
 	static const char *const margins[HUD_MARGINS] = { "mh", "mv", "right", "bottom" };

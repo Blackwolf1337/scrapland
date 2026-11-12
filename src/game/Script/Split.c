@@ -11,8 +11,8 @@
  * ModLib, OnDeathFunc and the spawn functions FuncGetSpawnPos/FuncGetReSpawnPos (the race replaces them) of Split;
  * ZoneList, AcFlag, BattonOwner, FlagInitPos, race and the model and sound names of the modes. The C works on them in
  * values of the call; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles,
- * held by reference (NV_OBJ) until entities are native values (OBJLIB 7). The .def sections take their $names as a dict
- * (Mode_DefRun) and the steps their arguments as native values (OBJLIB 6).
+ * held by reference (NV_OBJ) until entities are native values (OBJLIB 7). The .def sections take their $names
+ * (Mode_DefRun) and the steps their arguments as native values.
  *
  * State on values (stage 6, batch 6f): apart from that dict and the steps no function works on Python objects. ModLib
  * (a module object) and the functions held in variables or given to the scheduler are held by reference (NV_OBJ) and go
@@ -53,7 +53,7 @@ static const scriptStep_t split_steps[] = {
 static nativeVal_t split_raceBuild;
 
 /* a section of split.def for player id with the $names of the n pairs that follow, a name and a const nativeVal_t *
- * each (Mode_DefRun; OBJLIB 6: a dict until the .def runner takes C values): 0 with the error set when a line
+ * each (Mode_DefRun): 0 with the error set when a line
  * raised */
 #define Split_Run(id, section, n, ...) \
 	Mode_DefRun(id, "menus/split.def", section, split_def, split_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)

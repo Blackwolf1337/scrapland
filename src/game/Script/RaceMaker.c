@@ -27,7 +27,7 @@
  * and CProd and SInput.GetActionSet (stage 7). The class VehiclesNPC.cShipAI stays by name (OBJLIB 5 (9c: a class the
  * .mod defines)); the hooks, GetDealType and the races of MapRace are called as the values
  * the script calls, through the entries of port functions (Mode_CallArgs, MODE_CBGLOBAL; OBJLIB 5 (9c: functions as
- * values)); the scorer file takes its $names as a dict (OBJLIB 6).
+ * values)); the scorer file takes its $names as native values.
  */
 #include <limits.h>
 
@@ -1624,8 +1624,7 @@ static byte Rm_SetScorerValues(const nativeVal_t *id) {
 		Rm_You(id, "Blue", ahead ? 255 : 0) && Rm_You(id, "Red", ahead ? 0 : 255));
 }
 
-/* MissionScorer2(id): the race scores once the race started (data/menus/race.def, section scores; OBJLIB 6: the
- * $names as a dict) */
+/* MissionScorer2(id): the race scores once the race started (data/menus/race.def, section scores) */
 static byte Rm_MissionScorer2(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *you = Mode_V(&t);
@@ -1638,8 +1637,7 @@ static byte Rm_MissionScorer2(const nativeVal_t *id) {
 	return Mode_Done(&t, go == 0 || (ran && PORT_OWN(RaceMaker, SetScorerValues, NULL, "v", id)));
 }
 
-/* MissionScorer(id): the timer to get into a ship (data/menus/race.def, section timer), the scores in a race
- * (OBJLIB 6: the $names as a dict) */
+/* MissionScorer(id): the timer to get into a ship (data/menus/race.def, section timer), the scores in a race */
 static byte Rm_MissionScorer(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *tx = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *col = Mode_V(&t), *c = Mode_V(&t);

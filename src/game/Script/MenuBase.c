@@ -11,7 +11,7 @@
  * TitleBarYOff, BackButtonYStart, QuestionMenuYStart, backFunc, Scorer.MarginH and MarginV), Menu.currentSoundPitch
  * and VerticalMenuLastControl are written at once. Menu.InitMenuSys is called through its ref (PORT_CALL:
  * directly while the attribute holds the port's function, else by name); ShowWarning schedules itself, the scheduler
- * takes its entry (stage 4: Mode_SchedAt, Port_Scheduled); the .def runner takes Python values (OBJLIB 6).
+ * takes its entry (stage 4: Mode_SchedAt, Port_Scheduled).
  */
 #include <string.h>
 
@@ -133,8 +133,7 @@ static const scriptStep_t base_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of base.def with its $names: n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner takes them
- * as a dict) */
+/* a section of base.def with its $names: n pairs of a name and a value (Mode_DefRun) */
 #define Base_Run(id, section, n, ...) \
 	Mode_DefRun(id, BASE_FILE, section, base_def, base_steps, 0, n __VA_OPT__(, ) __VA_ARGS__)
 /* a section that stops where the script stops: 0 with the error set */

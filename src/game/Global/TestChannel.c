@@ -39,9 +39,9 @@
  *   native [str|check] <literal>   native values without Python objects (TestNative.c)
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
  * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code). The verbs work on
- * native values (scrap/scriptnative.h, scrap/nativeobj.h) and the error state in C; what still goes through Python is
- * marked: the dicts of __main__ and of the modules (OBJLIB 9b) and print of a value of a type the native values do not
- * have (OBJLIB 7e).
+ * native values (scrap/scriptnative.h, scrap/nativeobj.h) and the error state in C; the names of __main__ and of the pack
+ * modules are the registry's (scrap/modvars.h). What still goes through Python is marked: the module objects as the
+ * keys of the modules (OBJLIB 9b) and print of a value of a type the native values do not have (OBJLIB 7e).
  */
 #include <math.h>
 #include <stdarg.h>

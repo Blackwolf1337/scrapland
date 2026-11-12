@@ -531,6 +531,9 @@ byte Native_FromPy(PyObject *o, unsigned types, nativeVal_t *v);
 byte Native_FromPyAny(PyObject *o, nativeVal_t *v);
 /* the same for a value at that depth inside a container (the containers stop at NATIVE_DEPTH as there) */
 byte Native_FromPyAt(PyObject *o, nativeVal_t *v, int depth);
+/* the Python dict o as an NV_DICT in *v with each key and value in the slot Python has it in (the deleted keys stay
+ * dummies), converted by conv (its depth one more than depth): 1, else 0 when conv refused one (*v None) */
+byte Native_DictOfPy(PyObject *o, nativeVal_t *v, byte (*conv)(PyObject *, nativeVal_t *, int), int depth);
 
 /*
  * OBJLIB 9: *out the value an adapter's Native_Arg gets when a caller passes v through Python (Native_ToPy and back),

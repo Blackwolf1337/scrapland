@@ -247,15 +247,16 @@ static byte Cc_Heads(int pid, int total, int *count) {
 			/* the names of the items, as the script builds them (a TypeError for a character that is no text) */
 			int sel = avail >= 0 && Mode_Cat(&t, n1, 2, Mode_S(&t, avail ? "CharHead_" : "CharNotAvailable_"), ch) &&
 				Mode_Cat(&t, n2, 2, Mode_S(&t, "Char_"), ch) ? (Mode_SaveVar("Char", sv), Mode_Cmp(ch, "==", sv)) : -1;
-			/* the $names of the two sections as one dict (OBJLIB 6): char, x, y, state */
-			PyObject *vars = sel >= 0 ? Mode_DefVars(4, "char", ch, "x", Mode_I(&t, 88 + 95 * j), "y", Mode_I(&t, 76 + 92 * i),
-				"state", Mode_S(&t, sel ? "sel" : avail ? "normal" : "dead")) : NULL;
-			if (vars) {
-				Script_RunFile(pid, "menus/charconv.def", avail ? "head" : "na", charconv_def, NULL, vars);
-				Script_RunFile(pid, "menus/charconv.def", "button", charconv_def, NULL, vars);
-				Py_DECREF(vars);
+			/* the $names of the two sections as one dict: char, x, y, state */
+			if (sel >= 0) {
+				nativeVal_t vars;
+				Mode_DefVars(&vars, 4, "char", ch, "x", Mode_I(&t, 88 + 95 * j), "y", Mode_I(&t, 76 + 92 * i),
+					"state", Mode_S(&t, sel ? "sel" : avail ? "normal" : "dead"));
+				Script_RunFile(pid, "menus/charconv.def", avail ? "head" : "na", charconv_def, NULL, &vars);
+				Script_RunFile(pid, "menus/charconv.def", "button", charconv_def, NULL, &vars);
+				Native_Free(&vars);
 			}
-			if (!Mode_Done(&t, vars != NULL)) {
+			if (!Mode_Done(&t, sel >= 0)) {
 				return 0;
 			}
 		}

@@ -15,7 +15,7 @@
  * holds the port's function, else by name), string.atoi and string.find through their native twins, and the module's
  * own functions through its globals as the script calls them (PORT_OWN, the same seam on the global). The link
  * functions of Menu come from a from import (OBJLIB 6) and are called through their entries while they are Menu's own
- * (held as values, OBJLIB 7: Mode_LinkCallV); the .def runner takes Python values (OBJLIB 6).
+ * (held as values, OBJLIB 7: Mode_LinkCallV).
  */
 #include <limits.h>
 #include <math.h>
@@ -58,8 +58,7 @@ static const scriptStep_t enginestab_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of enginestab.def with its $names, n pairs of a name and a value (Mode_DefRun; OBJLIB 6: the runner
- * takes them as a dict): 0 with the error of the file */
+/* a section of enginestab.def with its $names, n pairs of a name and a value (Mode_DefRun): 0 with the error of the file */
 #define ET_Run(id, section, n, ...) \
 	Mode_DefRun(id, ENGINESTAB_FILE, section, enginestab_def, enginestab_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
