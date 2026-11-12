@@ -84,6 +84,9 @@ DET_SEED = os.environ.get('REGRESS_SEED', '4')
 DET_PACE = 0.1
 DET_SLEEP = 0.45
 DET_START = 0.1
+# REGRESS_DET_TRACE=<folder>: each deterministic game writes its trace (SCRAP_TEST_DET_TRACE) to <folder>/<case>.trace,
+# so the cases of two runs that part can be compared with dettrace.py without running them again
+DET_TRACE = os.environ.get('REGRESS_DET_TRACE')
 _lock = threading.Lock()
 PORT_CASES = set()
 
@@ -352,6 +355,9 @@ class Lane:
 		if self.det:
 			env.update({'SCRAP_TEST_DETERMINISTIC': '1', 'SCRAP_TEST_CHANNEL': 'step'})
 			env['SCRAP_TEST_DET_SEED'] = DET_SEED
+			if DET_TRACE:
+				os.makedirs(DET_TRACE, exist_ok=True)
+				env['SCRAP_TEST_DET_TRACE'] = os.path.join(os.path.abspath(DET_TRACE), case + '.trace')
 		res = {'case': case, 'level': level, 'tag': self.tag, 'pack': False, 'build': build, 'det': self.det,
 			   'hash': case_hash(case), 'date': time.strftime('%Y-%m-%d %H:%M:%S'), 'blocks': [], 'status': 'ok'}
 		try:
