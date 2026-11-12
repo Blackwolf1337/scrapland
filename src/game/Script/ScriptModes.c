@@ -1589,10 +1589,6 @@ PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out) {
 	return r;
 }
 
-PyObject *Mode_Result(byte ok) {
-	return ok ? Py_ReturnNone() : NULL;
-}
-
 PyObject *Mode_Return(byte ok, nativeVal_t *v) {
 	PyObject *r = ok ? Native_ToPy(v) : NULL;
 	Native_Free(v);
@@ -3925,12 +3921,6 @@ byte Mode_PyNone_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-PyObject *Mode_PyNone(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 byte Mode_ApplyFlash(int id) {
 	Script_SetStr(id, "Apply", "Effect", "Outline");
 	Script_SetNum(id, "Apply", "Red", 255);
@@ -4023,12 +4013,6 @@ byte Mode_PyNone2_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const nativeVal_t *x, *y;
 	(void)out;
 	return Mode_Parse(a, n, "OO", &x, &y);
-}
-
-PyObject *Mode_PyNone2(PyObject *self, PyObject *args) {
-	PyObject *a, *b;
-	(void)self;
-	return PyArg_ParseTuple(args, "OO", &a, &b) ? Py_ReturnNone() : NULL;
 }
 
 byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v) {
@@ -4419,33 +4403,6 @@ PyObject *Mode_Entry(PyObject *args, portEntry_t entry) {
 	return Mode_SelfEntry(NULL, args, entry);
 }
 
-PyObject *Mode_KwCall(PyObject *args, PyObject *kw, const char *fmt, char **names, modeKwCore_t core) {
-	PyObject *o[PORT_ARGS] = { NULL };
-	nativeVal_t v[PORT_ARGS], out;
-	const nativeVal_t *a[PORT_ARGS] = { NULL };
-	int min, max;
-	Mode_FmtCount(fmt, &min, &max);
-	CHECK(max <= PORT_ARGS);
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6],
-		&o[7], &o[8], &o[9], &o[10])) {
-		return NULL;
-	}
-	for (int i = 0; i < max; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &v[i]);
-			a[i] = &v[i];
-		}
-	}
-	Native_SetNone(&out);
-	byte ok = core(a, &out);
-	for (int i = 0; i < max; i++) {
-		if (a[i]) {
-			Native_Free(&v[i]);
-		}
-	}
-	return Mode_KwOut(NULL, 0, ok, &out);
-}
-
 byte Mode_KwGiven(const nativeVal_t *a, int n, int i) {
 	return i < n && !Native_IsMissing(&a[i]);
 }
@@ -4463,25 +4420,6 @@ byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t cor
 		req += i < min && p[i];
 	}
 	return Mode_Arity(req < min ? req : min, min, max) && core(p, out);
-}
-
-PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
-	PyObject *o[PORT_ARGS - 1] = { NULL };
-	nativeVal_t a[PORT_ARGS], out;
-	int id, min, max, n = 1;
-	Mode_FmtCount(fmt, &min, &max);
-	/* the arguments given are the first n: the optional ones cannot leave a gap */
-	CHECK(fmt[0] == 'i' && max - min <= 1 && max <= PORT_ARGS);
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &id, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6],
-		&o[7], &o[8], &o[9])) {
-		return NULL;
-	}
-	Native_SetInt(&a[0], id);
-	for (; n < max && o[n - 1]; n++) {
-		Native_Arg(o[n - 1], &a[n]);
-	}
-	Native_SetNone(&out);
-	return Mode_KwOut(a, n, entry(a, n, &out), &out);
 }
 
 /* ---- the native entries of stage 3 batch A1 (hand, keyword and PyArg adapters on their entries) ---- */
@@ -5677,25 +5615,6 @@ byte Mode_CbApplySeqV(portSite_t *site, const nativeVal_t *f, const nativeVal_t 
 	byte ok = fn && Mode_CbApplySeq(site, fn, args, out);
 	Py_XDECREF(fn);
 	return ok;
-}
-
-PyObject *Mode_EntryObj(PyObject *args, portEntry_t entry, unsigned objs) {
-	nativeVal_t a[PORT_ARGS], out;
-	int n = (int)PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
-	for (int i = 0; i < m; i++) {
-		PyObject *o = PyTuple_GET_ITEM(args, i);
-		if (objs >> i & 1) {
-			/* the object itself, also an entity handle: the entry stores or changes this very object */
-			Native_SetNone(&a[i]);
-			a[i].type = NV_OBJ;
-			a[i].obj = o;
-			Py_INCREF(o);
-		} else {
-			Native_Arg(o, &a[i]);
-		}
-	}
-	Native_SetNone(&out);
-	return Mode_KwOut(a, m, entry(a, n, &out), &out);
 }
 
 byte Mode_Int(const nativeVal_t *v, nativeVal_t *out) {
