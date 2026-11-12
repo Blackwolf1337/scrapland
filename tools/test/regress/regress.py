@@ -58,7 +58,9 @@ DEFAULT_BUILD = os.path.join(REPO, 'build-linux64')
 BASELINES = os.path.join(HERE, 'baselines')
 HELPERS = os.path.join(HERE, 'helpers')
 RESULTS = os.path.join(REPO, 'build-regress')
-VK_DEVICE = os.environ.get('REGRESS_VK_DEVICE', '1002:164e')
+# one GPU or a comma list: the lanes take them in turn (REGRESS_VK_DEVICE=10de:27b0,1002:164e spreads the games)
+VK_DEVICES = os.environ.get('REGRESS_VK_DEVICE', '1002:164e').split(',')
+LANE_DEVICE = {}
 LINE_TIMEOUT = 30.0
 CASE_TIMEOUT = 1500.0
 # game seconds a level load counts for in a !sleep (the real-time sleeps of the cases covered the load)
@@ -349,7 +351,7 @@ class Lane:
 		with _lock:
 			scrap_mcp.GAMES[self.tag] = g
 		self.game = g
-		env = {'SCRAP_VK_DEVICE': VK_DEVICE}
+		env = {'SCRAP_VK_DEVICE': LANE_DEVICE.get(self.tag, VK_DEVICES[0])}
 		self.det = DETERMINISTIC and self.has_det(build)
 		self.pace = DET_PACE if self.det else 0.1
 		if self.det:
@@ -443,6 +445,8 @@ def lanes_run(tags, jobs, build, done, exe='native64'):
 	cases that start a real server have a queue of their own: a lane that gets the port lock (one file lock for the
 	machine, so the runs of all checkouts and slot folders share it) takes the next of
 	them, else the next other case, so the server cases run spread over the whole run, one at a time."""
+	for i, t in enumerate(tags):
+		LANE_DEVICE[t] = VK_DEVICES[i % len(VK_DEVICES)]
 	normal, ports = queue.Queue(), queue.Queue()
 	for j in jobs:
 		(ports if j[1] in PORT_CASES else normal).put(j)
