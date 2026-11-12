@@ -464,11 +464,11 @@ static portSite_t *Port_Bound(int kind, int i) {
 
 static int Port_AdapterIndex(PyCFunction meth, const char *name);
 
-/* the adapter and the own name (__name__) of the port function the value f may be: a native port function, or the view
- * of a C function object without self; 0 for any other value and under SCRAP_PORT_SLOW=1 */
+/* the adapter and the own name (__name__) of the port function the value f may be: a native port function, or a C
+ * function object without self (a view, an NV_OBJ); 0 for any other value and under SCRAP_PORT_SLOW=1 */
 static byte Port_FuncOf(const nativeVal_t *f, PyCFunction *meth, const char **name) {
 	const portRef_t *ref = NObj_PortRef(f);
-	PyObject *py = ref || f->type != NV_REF ? NULL : NObj_Py(f);
+	PyObject *py = ref ? NULL : NObj_Py(f);
 	if (Port_Slow()) {
 		return 0;
 	}
