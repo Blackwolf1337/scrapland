@@ -300,7 +300,7 @@ static const char *Chat_Text(const nativeVal_t *v) {
 
 static byte Chat_GetID_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id, slot;
-	chatVars_t c;
+	chatVars_t c = { 0 };
 	byte ok = Mode_Parse(a, n, "i", &id) && Chat_Read(&c, 0) && Native_Index(id, CHAT_PLAYERS, &slot) &&
 		Chat_IdText(&c, slot, out);
 	Chat_Free(&c);
@@ -313,7 +313,7 @@ MODE_ADAPTER(Chat, GetID)
 static byte Chat_CycleSet(const nativeVal_t *a, int n, int step, byte set) {
 	int id, slot;
 	nativeVal_t t;
-	chatVars_t c;
+	chatVars_t c = { 0 };
 	byte ok = Mode_Parse(a, n, "i", &id) && Chat_Read(&c, 1) && Native_Index(id, CHAT_PLAYERS, &slot) &&
 		Chat_Cycle(&c, slot, step) && (!set || (Chat_IdText(&c, slot, &t) && Chat_ShowTo(id, &t)));
 	Chat_Free(&c);
@@ -361,7 +361,7 @@ static byte Chat_SendChatString_E(const nativeVal_t *a, int n, nativeVal_t *out)
 		return 0;
 	}
 	int con = console ? Mode_Truth(console) : 0;
-	chatVars_t c;
+	chatVars_t c = { 0 };
 	byte ok = con >= 0 && Chat_Read(&c, 0) && Chat_Send(&c, id, Chat_Text(text), con);
 	Chat_Free(&c);
 	return ok;
@@ -381,7 +381,7 @@ MODE_FN(Chat, GetMyShip, 0, Chat_GetMyShip_C())
 static byte Chat_InitChat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	(void)out;
-	chatVars_t c;
+	chatVars_t c = { 0 };
 	byte ok = Mode_Parse(a, n, "i", &id) && Chat_Read(&c, 0) && Chat_Init(&c, id);
 	Chat_Free(&c);
 	return ok;
@@ -389,7 +389,7 @@ static byte Chat_InitChat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 
 /* a line of player id to its receiver (Chat_Send with the variables read) */
 static byte Chat_SendRead(int id, const char *text) {
-	chatVars_t c;
+	chatVars_t c = { 0 };
 	byte ok = Chat_Read(&c, 0) && Chat_Send(&c, id, text, 1);
 	Chat_Free(&c);
 	return ok;
