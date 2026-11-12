@@ -2698,6 +2698,8 @@ byte NObj_Call(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *o
 		Native_Free(&call);
 		return ok;
 	}
+	case NO_MODULE:
+		return Native_Raise(NE_TYPE, "call of non-function (type module)");
 	}
 	/* a method: the instance first; unbound, the first argument is an instance of its class */
 	nativeVal_t fn;
