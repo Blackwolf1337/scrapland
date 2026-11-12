@@ -7,7 +7,7 @@
 #define SCRAP_HASHTABLE_H
 
 #include "scrap/game.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 
 HashTable *HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive);
 /* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive (global.h) */

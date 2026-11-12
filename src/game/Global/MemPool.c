@@ -1,13 +1,12 @@
 /*
- * Block pools of the interpreter's allocator. Original source: PyInterface/pymempool.cpp. PyPool_Malloc,
- * PyPool_Realloc and PyPool_Free are the malloc, realloc and free of the Python code in the exe; they count
- * into the Python memory statistics.
+ * Block pools. Original source: PyInterface/pymempool.cpp. ScriptPool_Malloc, ScriptPool_Realloc and ScriptPool_Free
+ * are the malloc, realloc and free of the Python code in the exe (the pool keeps its name "Python"); they count into
+ * the script memory statistics.
  */
 #include <string.h>
 
 #include "scrap/console.h"
-#include "scrap/pymempool.h"
-#include "scrap/python.h"
+#include "scrap/mempool.h"
 #include "scrap/staticinit.h"
 
 /* class of a size: words of 4 bytes, 1 to 32; 0 or larger sizes have none */
@@ -178,63 +177,63 @@ static void MemPools_PrintAll(void) {
 	}
 }
 
-static cMemPool *g_PyPool;
+static cMemPool *g_ScriptPool;
 
-static uint32_t g_PyPoolValues[32] = {
+static uint32_t g_ScriptPoolValues[32] = {
 	115, 36, 102, 944, 411, 410, 2643, 2070, 2182, 1877, 1189, 956, 642, 1320, 208, 120, 113, 64, 76, 63, 42, 59,
 	38, 52, 23, 30, 42, 22, 24, 28, 19, 24,
 };
 
-static cMemPool *PyPool_Get(void) {
-	if (!g_PyPool) {
+static cMemPool *ScriptPool_Get(void) {
+	if (!g_ScriptPool) {
 		cMemPool *mem = operator_new(sizeof(*mem));
-		g_PyPool = mem ? cMemPool_ctor(mem, "Python", g_PyPoolValues) : NULL;
+		g_ScriptPool = mem ? cMemPool_ctor(mem, "Python", g_ScriptPoolValues) : NULL;
 	}
-	return g_PyPool;
+	return g_ScriptPool;
 }
 
-static void *PyPool_MallocImpl(uint32_t size) {
-	return cMemPool_Alloc(PyPool_Get(), size);
+static void *ScriptPool_MallocImpl(uint32_t size) {
+	return cMemPool_Alloc(ScriptPool_Get(), size);
 }
 
-static void *PyPool_ReallocImpl(void *p, uint32_t size) {
-	return cMemPool_Realloc(PyPool_Get(), p, size);
+static void *ScriptPool_ReallocImpl(void *p, uint32_t size) {
+	return cMemPool_Realloc(ScriptPool_Get(), p, size);
 }
 
-static void PyPool_FreeImpl(void *p) {
-	cMemPool_Free(PyPool_Get(), p);
+static void ScriptPool_FreeImpl(void *p) {
+	cMemPool_Free(ScriptPool_Get(), p);
 }
 
-void PyPool_Delete(void) {
-	cMemPool *pool = g_PyPool;
+void ScriptPool_Delete(void) {
+	cMemPool *pool = g_ScriptPool;
 	if (pool) {
 		cMemPool_dtor(pool);
 		operator_delete(pool);
-		g_PyPool = NULL;
+		g_ScriptPool = NULL;
 	}
 }
 
-cMemStats g_PyMemStats;
+cMemStats g_ScriptMemStats;
 cMemStats *g_MemStatsContext;
 
 /* the entry points set the statistics context only for the call (and leave it NULL) */
-void *PyPool_Malloc(size_t size) {
-	g_MemStatsContext = (&g_PyMemStats);
-	void *p = PyPool_MallocImpl(size);
+void *ScriptPool_Malloc(size_t size) {
+	g_MemStatsContext = (&g_ScriptMemStats);
+	void *p = ScriptPool_MallocImpl(size);
 	g_MemStatsContext = NULL;
 	return p;
 }
 
-void *PyPool_Realloc(void *p, size_t size) {
-	g_MemStatsContext = (&g_PyMemStats);
-	void *np = PyPool_ReallocImpl(p, size);
+void *ScriptPool_Realloc(void *p, size_t size) {
+	g_MemStatsContext = (&g_ScriptMemStats);
+	void *np = ScriptPool_ReallocImpl(p, size);
 	g_MemStatsContext = NULL;
 	return np;
 }
 
-void PyPool_Free(void *p) {
-	g_MemStatsContext = (&g_PyMemStats);
-	PyPool_FreeImpl(p);
+void ScriptPool_Free(void *p) {
+	g_MemStatsContext = (&g_ScriptMemStats);
+	ScriptPool_FreeImpl(p);
 	g_MemStatsContext = NULL;
 }
 

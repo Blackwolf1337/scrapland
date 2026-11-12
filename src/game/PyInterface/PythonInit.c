@@ -5,7 +5,7 @@
 #include "scrap/console.h"
 #include "scrap/modvars.h"
 #include "scrap/pyfunction.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/staticinit.h"
@@ -274,7 +274,7 @@ void Python_Close(void) {
 
 void Python_Shutdown(void) {
 	Py_FiniObjects();
-	PyPool_Delete();
+	ScriptPool_Delete();
 }
 
 /*

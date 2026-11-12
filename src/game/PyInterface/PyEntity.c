@@ -179,7 +179,7 @@ static void PyEntity_Dealloc(PyObject *self) {
 		ref->face = NULL;
 		EntRef_Drop(ref);
 	}
-	PyPool_Free(self);
+	ScriptPool_Free(self);
 }
 
 /* tp_print: the text goes to fprintf as the format, like in the original */

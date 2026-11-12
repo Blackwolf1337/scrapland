@@ -3247,7 +3247,7 @@ byte Native_FillPyDict(PyObject *o, const nativeVal_t *d, PyObject *(*conv)(cons
 	nativePyDict_t *pd = (nativePyDict_t *)o;
 	nativePyEntry_t *t = NULL;
 	if (d->i == d->n) {
-		t = PyPool_Malloc(sizeof(*t) * (size_t)d->max);
+		t = ScriptPool_Malloc(sizeof(*t) * (size_t)d->max);
 		if (!t) {
 			return Native_RaiseVal(NE_MEMORY, NULL);
 		}

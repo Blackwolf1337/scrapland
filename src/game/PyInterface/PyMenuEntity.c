@@ -29,7 +29,7 @@ PyObject *ScorerItem_PyNew(int player, const char *name) {
 /* tp_dealloc */
 static void PyMenuEntity_Dealloc(PyObject *self) {
 	Mem_Free(((cPyMenuEntity *)self)->name);
-	PyPool_Free(self);
+	ScriptPool_Free(self);
 }
 
 /* tp_print: the text goes to fprintf as the format, like in the original */
