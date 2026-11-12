@@ -981,28 +981,28 @@ MODE_FN(CharsNPC, ClassifyOptions, 1, Npc_ClassifyOptions(&a[0], out))
 MODE_FN(CharsNPC, PlayOption, 5, Npc_PlayOption(&a[0], &a[1], &a[2], &a[3], &a[4]))
 MODE_FN(CharsNPC, GenericNPCSpeech, 4, Npc_GenericNPCSpeech(&a[0], &a[1], &a[2], &a[3]))
 
-PyMethodDef g_CharsNPCMethods[] = {
-	{ "AddNPCPos", CharsNPC_AddNPCPos, 1, NULL },
-	{ "CreateMissionChar", CharsNPC_CreateMissionChar, 1, NULL },
-	{ "DeleteMissionChar", CharsNPC_DeleteMissionChar, 1, NULL },
-	{ "SetReposChars", CharsNPC_SetReposChars, 1, NULL },
-	{ "CreateReposChars", CharsNPC_CreateReposChars, 1, NULL },
-	{ "BrowseNPC", CharsNPC_BrowseNPC, 1, NULL },
-	{ "AssignAttrib", CharsNPC_AssignAttrib, 1, NULL },
-	{ "CallCreateChar", CharsNPC_CallCreateChar, 1, NULL },
-	{ "CreateChar", CharsNPC_CreateChar, 1, NULL },
-	{ "CharNPCInclude", CharsNPC_CharNPCInclude, 1, NULL },
-	{ "Respawn", CharsNPC_Respawn, 1, NULL },
-	{ "ActiveSpawned", CharsNPC_ActiveSpawned, 1, NULL },
-	{ "Init", CharsNPC_Init, 1, NULL },
-	{ "CheckActualEntity", CharsNPC_CheckActualEntity, 1, NULL },
-	{ "MercsHired", CharsNPC_MercsHired, 1, NULL },
-	{ "IncludeSubOptions", CharsNPC_IncludeSubOptions, 1, NULL },
-	{ "Classify", CharsNPC_Classify, 1, NULL },
-	{ "ClassifyOptions", CharsNPC_ClassifyOptions, 1, NULL },
-	{ "PlayOption", CharsNPC_PlayOption, 1, NULL },
-	{ "GenericNPCSpeech", CharsNPC_GenericNPCSpeech, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CharsNPCMethods[] = {
+	PORT_FN(AddNPCPos, CharsNPC_AddNPCPos),
+	PORT_FN(CreateMissionChar, CharsNPC_CreateMissionChar),
+	PORT_FN(DeleteMissionChar, CharsNPC_DeleteMissionChar),
+	PORT_FN(SetReposChars, CharsNPC_SetReposChars),
+	PORT_FN(CreateReposChars, CharsNPC_CreateReposChars),
+	PORT_FN(BrowseNPC, CharsNPC_BrowseNPC),
+	PORT_FN(AssignAttrib, CharsNPC_AssignAttrib),
+	PORT_FN(CallCreateChar, CharsNPC_CallCreateChar),
+	PORT_FN(CreateChar, CharsNPC_CreateChar),
+	PORT_FN(CharNPCInclude, CharsNPC_CharNPCInclude),
+	PORT_FN(Respawn, CharsNPC_Respawn),
+	PORT_FN(ActiveSpawned, CharsNPC_ActiveSpawned),
+	PORT_FN(Init, CharsNPC_Init),
+	PORT_FN(CheckActualEntity, CharsNPC_CheckActualEntity),
+	PORT_FN(MercsHired, CharsNPC_MercsHired),
+	PORT_FN(IncludeSubOptions, CharsNPC_IncludeSubOptions),
+	PORT_FN(Classify, CharsNPC_Classify),
+	PORT_FN(ClassifyOptions, CharsNPC_ClassifyOptions),
+	PORT_FN(PlayOption, CharsNPC_PlayOption),
+	PORT_FN(GenericNPCSpeech, CharsNPC_GenericNPCSpeech),
+	PORT_FNEND
 };
 
 PORTS(CharsNPC)

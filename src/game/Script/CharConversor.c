@@ -698,7 +698,7 @@ static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
 		PORT_CALL(Menu, ShowWarning, NULL, "iv", 0L, msg));
 }
 
-/* the adapters (the arity errors of the script's functions) */
+/* the entries (the arity errors of the script's functions) */
 MODE_FN(CharConversor, GetNearestConversionPoint, 1, Cc_GetNearestConversionPoint(&a[0], out))
 MODE_FN(CharConversor, CreateConversorClass, 0, Cc_CreateConversorClass())
 MODE_FN(CharConversor, Init, 0, Cc_Init())
@@ -731,29 +731,29 @@ MODE_KWT(CharConversor, DrawBackground, "OO|OOOOOOOO", "id", "elem", "posX", "po
 	return Cc_DrawBackground(&v[0], &v[1], pv);
 }
 
-PyMethodDef g_CharConversorMethods[] = {
-	{ "GetNearestConversionPoint", CharConversor_GetNearestConversionPoint, 1, NULL },
-	{ "CreateConversorClass", CharConversor_CreateConversorClass, 1, NULL },
-	{ "Init", CharConversor_Init, 1, NULL },
-	{ "ConvertChar", CharConversor_ConvertChar, 1, NULL },
-	{ "CPPos", CharConversor_CPPos, 1, NULL },
-	{ "CPAng", CharConversor_CPAng, 1, NULL },
-	{ "DrawBackground", (PyCFunction)(void (*)(void))CharConversor_DrawBackground, 3, NULL },
-	{ "AddInterfaceContent", CharConversor_AddInterfaceContent, 1, NULL },
-	{ "SpawnChar", CharConversor_SpawnChar, 1, NULL },
-	{ "MarkSpawnWaypoint", CharConversor_MarkSpawnWaypoint, 1, NULL },
-	{ "EnterCharConversor", CharConversor_EnterCharConversor, 1, NULL },
-	{ "InitOfScene", CharConversor_InitOfScene, 1, NULL },
-	{ "EndOfScene", CharConversor_EndOfScene, 1, NULL },
-	{ "InitInterfaceEvent", CharConversor_InitInterfaceEvent, 1, NULL },
-	{ "ExitCharConversor", CharConversor_ExitCharConversor, 1, NULL },
-	{ "ShowCharDesc", CharConversor_ShowCharDesc, 1, NULL },
-	{ "HideCharDesc", CharConversor_HideCharDesc, 1, NULL },
-	{ "Convert", CharConversor_Convert, 1, NULL },
-	{ "ConvertExecute", CharConversor_ConvertExecute, 1, NULL },
-	{ "Possession", CharConversor_Possession, 1, NULL },
-	{ "NewPlayer", CharConversor_NewPlayer, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CharConversorMethods[] = {
+	PORT_FN(GetNearestConversionPoint, CharConversor_GetNearestConversionPoint),
+	PORT_FN(CreateConversorClass, CharConversor_CreateConversorClass),
+	PORT_FN(Init, CharConversor_Init),
+	PORT_FN(ConvertChar, CharConversor_ConvertChar),
+	PORT_FN(CPPos, CharConversor_CPPos),
+	PORT_FN(CPAng, CharConversor_CPAng),
+	PORT_FNK(DrawBackground, CharConversor_DrawBackground),
+	PORT_FN(AddInterfaceContent, CharConversor_AddInterfaceContent),
+	PORT_FN(SpawnChar, CharConversor_SpawnChar),
+	PORT_FN(MarkSpawnWaypoint, CharConversor_MarkSpawnWaypoint),
+	PORT_FN(EnterCharConversor, CharConversor_EnterCharConversor),
+	PORT_FN(InitOfScene, CharConversor_InitOfScene),
+	PORT_FN(EndOfScene, CharConversor_EndOfScene),
+	PORT_FN(InitInterfaceEvent, CharConversor_InitInterfaceEvent),
+	PORT_FN(ExitCharConversor, CharConversor_ExitCharConversor),
+	PORT_FN(ShowCharDesc, CharConversor_ShowCharDesc),
+	PORT_FN(HideCharDesc, CharConversor_HideCharDesc),
+	PORT_FN(Convert, CharConversor_Convert),
+	PORT_FN(ConvertExecute, CharConversor_ConvertExecute),
+	PORT_FN(Possession, CharConversor_Possession),
+	PORT_FN(NewPlayer, CharConversor_NewPlayer),
+	PORT_FNEND
 };
 
 PORTS(CharConversor)

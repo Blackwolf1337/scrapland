@@ -322,6 +322,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_DoorSound_ConversorSetSounds,
 	&port_DoorSound_LoadSndList,
 	&port_DoorSound_LoadSounds,
+	&port_DoorSound_SetInitDoorSound,
 	&port_DoorSound_SetSlide,
 	&port_Doors_CreateDoorClass,
 	&port_Doors_Init,
@@ -2497,6 +2498,8 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_RacerScorer_MultiplayerUpdatePing,
 	&port_RacerScorer_ShowScorer,
 	&port_RacerScorer_UpdateMissionScorer,
+	&port_Rusty_ActionPress,
+	&port_Rusty_ActionRelease,
 	&port_Rusty_Init,
 	&port_Rusty_OnCreate,
 	&port_Rusty_OnFreeResources,
@@ -6447,6 +6450,9 @@ PORT_TRAMP(3214)
 PORT_TRAMP(3215)
 PORT_TRAMP(3216)
 PORT_TRAMP(3217)
+PORT_TRAMP(3218)
+PORT_TRAMP(3219)
+PORT_TRAMP(3220)
 
 const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp0,
@@ -9667,4 +9673,7 @@ const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp3215,
 	Port_Tramp3216,
 	Port_Tramp3217,
+	Port_Tramp3218,
+	Port_Tramp3219,
+	Port_Tramp3220,
 };

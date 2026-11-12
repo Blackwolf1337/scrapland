@@ -304,8 +304,7 @@ static byte Char_Callback(const char *file, const char *builtin, const char *sec
 	static byte mod##_##fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		(void)out; \
 		return Char_Callback("chars/" #file ".def", file##_def, #fn, a, n); \
-	} \
-	MODE_ADAPTER(mod, fn)
+	}
 
 #define CHAR_ONCREATE(mod, file) CHAR_CALLBACK(mod, file, OnCreate)
 #define CHAR_ONFREE(mod, file) CHAR_CALLBACK(mod, file, OnFreeResources)
@@ -319,7 +318,6 @@ static byte Betty_Init_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Char_Init("Betty", "chars/betty.def", betty_def);
 	return 1;
 }
-MODE_ADAPTER(Betty, Init)
 
 CHAR_ONCREATE(Betty, betty)
 CHAR_ONFREE(Betty, betty)
@@ -338,21 +336,19 @@ static byte Betty_EnterSlowSpeed_E(const nativeVal_t *a, int n, nativeVal_t *out
 	(void)out;
 	return Char_Pitch(a, n, 0.5);
 }
-MODE_ADAPTER(Betty, EnterSlowSpeed)
 
 static byte Betty_ExitSlowSpeed_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Char_Pitch(a, n, 1.0);
 }
-MODE_ADAPTER(Betty, ExitSlowSpeed)
 
-PyMethodDef g_BettyMethods[] = {
-	{ "Init", Betty_Init, 1, NULL },
-	{ "OnCreate", Betty_OnCreate, 1, NULL },
-	{ "OnFreeResources", Betty_OnFreeResources, 1, NULL },
-	{ "EnterSlowSpeed", Betty_EnterSlowSpeed, 1, NULL },
-	{ "ExitSlowSpeed", Betty_ExitSlowSpeed, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BettyMethods[] = {
+	PORT_FN(Init, Betty_Init),
+	PORT_FN(OnCreate, Betty_OnCreate),
+	PORT_FN(OnFreeResources, Betty_OnFreeResources),
+	PORT_FN(EnterSlowSpeed, Betty_EnterSlowSpeed),
+	PORT_FN(ExitSlowSpeed, Betty_ExitSlowSpeed),
+	PORT_FNEND
 };
 
 /* ---- the other characters: Init, OnCreate and OnFreeResources from the file (as far as the script has them); their
@@ -364,22 +360,21 @@ PyMethodDef g_BettyMethods[] = {
  * GateKeeper.c) */
 #define CHAR_MODULE0(mod, file) \
 	CHAR_INIT(mod, file) \
-	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
+	const portFn_t g_##mod##Methods[] = { PORT_FN(Init, mod##_Init), PORT_FNEND };
 
 /* Init and OnCreate */
 #define CHAR_MODULE1(mod, file) \
 	CHAR_INIT(mod, file) \
 	CHAR_ONCREATE(mod, file) \
-	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { "OnCreate", mod##_OnCreate, 1, NULL }, \
-		{ NULL, NULL, 0, NULL } };
+	const portFn_t g_##mod##Methods[] = { PORT_FN(Init, mod##_Init), PORT_FN(OnCreate, mod##_OnCreate), PORT_FNEND };
 
 /* Init, OnCreate and OnFreeResources */
 #define CHAR_MODULE2(mod, file) \
 	CHAR_INIT(mod, file) \
 	CHAR_ONCREATE(mod, file) \
 	CHAR_ONFREE(mod, file) \
-	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { "OnCreate", mod##_OnCreate, 1, NULL }, \
-		{ "OnFreeResources", mod##_OnFreeResources, 1, NULL }, { NULL, NULL, 0, NULL } };
+	const portFn_t g_##mod##Methods[] = { PORT_FN(Init, mod##_Init), PORT_FN(OnCreate, mod##_OnCreate), \
+		PORT_FN(OnFreeResources, mod##_OnFreeResources), PORT_FNEND };
 
 CHAR_MODULE2(BankDirector, bankdirector)
 CHAR_MODULE1(Boss, boss)
@@ -467,17 +462,16 @@ static byte Gear_DropMissileEvent_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Native_Free(&frame[1]);
 	return ok;
 }
-MODE_ADAPTER(Gear, DropMissileEvent)
 
-PyMethodDef g_GearDefFuncs[] = {
-	{ "LoadSirenActs", Gear_LoadSirenActs, 1, NULL },
-	{ "DropMissileEvent", Gear_DropMissileEvent, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GearDefFuncs[] = {
+	PORT_FN(LoadSirenActs, Gear_LoadSirenActs),
+	PORT_FN(DropMissileEvent, Gear_DropMissileEvent),
+	PORT_FNEND
 };
 
-PyMethodDef g_PoliceDefFuncs[] = {
-	{ "LoadSirenActs", Police_LoadSirenActs, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceDefFuncs[] = {
+	PORT_FN(LoadSirenActs, Police_LoadSirenActs),
+	PORT_FNEND
 };
 
 /* ---- the mercenaries: one file, the class and the dance from Init(MercName="MercenaryA", doDance=1) ---- */
@@ -500,16 +494,18 @@ static byte MercenaryA_Init_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Mercenary_Init(merc, dance);
 	return 1;
 }
-MODE_ADAPTER(MercenaryA, Init)
 
 #define MERC_INIT(mod, dance) \
 	MODE_FNANY(mod, Init, (Mercenary_Init(#mod, dance), 1)) \
-	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
+	const portFn_t g_##mod##Methods[] = { PORT_FN(Init, mod##_Init), PORT_FNEND };
 
 CHAR_ONCREATE(MercenaryA, mercenarya)
 
-PyMethodDef g_MercenaryAMethods[] = { { "Init", MercenaryA_Init, 1, NULL }, { "OnCreate", MercenaryA_OnCreate, 1, NULL },
-	{ NULL, NULL, 0, NULL } };
+const portFn_t g_MercenaryAMethods[] = {
+	PORT_FN(Init, MercenaryA_Init),
+	PORT_FN(OnCreate, MercenaryA_OnCreate),
+	PORT_FNEND
+};
 MERC_INIT(MercenaryB, 1)
 MERC_INIT(MercenaryC, 1)
 MERC_INIT(MercenaryL, 0)

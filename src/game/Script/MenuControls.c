@@ -652,8 +652,7 @@ static byte Pad_Config(int id, const nativeVal_t *control) {
 		const nativeVal_t *c; \
 		(void)out; \
 		return Mode_Parse(a, n, "iO", &id, &c) && (call); \
-	} \
-	MODE_ADAPTER(PCMenu, name)
+	}
 
 PAD_FN(ControllerConfig, Pad_Config(id, c))
 PAD_FN(ControllerConfigCharMenu, Pad_Open(id, c, "Walk", 0))

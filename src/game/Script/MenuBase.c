@@ -552,8 +552,7 @@ static void Base_Place(int id, const char *section, const char *name, const nati
 			Base_Link(id, x, va, y, vb); \
 		} \
 		return 1; \
-	} \
-	MODE_ADAPTER(Menu, name)
+	}
 
 BASE_LINK(LinkLR, "Right", "Left", 0)
 BASE_LINK(LinkUD, "Down", "Up", 0)
@@ -571,8 +570,7 @@ BASE_LINK(UnLinkUD, "Down", "Up", 1)
 		Base_Run(id, section, 0); \
 		Base_Circuit(id, 1); \
 		return 1; \
-	} \
-	MODE_ADAPTER(Menu, name)
+	}
 
 BASE_BACK(DrawBackMainMenu, "backmain")
 BASE_BACK(DrawBackSubMenu, "backsub")

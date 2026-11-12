@@ -207,15 +207,15 @@ static byte CA_NoFXDeathArgs(const nativeVal_t *a, int n) {
 
 MODE_FNOPT(CharAct, NoFXDeath, 2, 3, CA_NoFXDeathArgs(a, n))
 
-PyMethodDef g_CharActMethods[] = {
-	{ "ActionPhoto", CharAct_ActionPhoto, 1, NULL },
-	{ "Photograph", CharAct_Photograph, 1, NULL },
-	{ "OnDeath", CharAct_OnDeath, 1, NULL },
-	{ "NoFXDeath", CharAct_NoFXDeath, 1, NULL },
-	{ "PlayerDeathCall", CharAct_PlayerDeathCall, 1, NULL },
-	{ "NPCDeathCall", CharAct_NPCDeathCall, 1, NULL },
-	{ "OnCreate", CharAct_OnCreate, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CharActMethods[] = {
+	PORT_FN(ActionPhoto, CharAct_ActionPhoto),
+	PORT_FN(Photograph, CharAct_Photograph),
+	PORT_FN(OnDeath, CharAct_OnDeath),
+	PORT_FN(NoFXDeath, CharAct_NoFXDeath),
+	PORT_FN(PlayerDeathCall, CharAct_PlayerDeathCall),
+	PORT_FN(NPCDeathCall, CharAct_NPCDeathCall),
+	PORT_FN(OnCreate, CharAct_OnCreate),
+	PORT_FNEND
 };
 
 PORTS(CharAct)
