@@ -927,6 +927,10 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out);
  * items ("i", "l", "d" and "f" items only). 1, or 0 with the error
  */
 byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
+/* the conversion errors of fmt on the n slots of a keyword call (Mode_KwSkip: a slot not given, its item skipped), in
+ * slot order and without outputs (the errors vgetargskeywords gives before an unknown keyword): 1, or 0 with the
+ * error */
+byte Mode_ParseSlots(const nativeVal_t *a, int n, const char *fmt);
 /* the adapter of a function whose entry checks its own arguments (Mode_Parse, Port_Arity): the arguments as native
  * values (Native_Arg), the entry, the result as Python (None for None, NULL for 0) */
 PyObject *Mode_Entry(PyObject *args, portEntry_t entry);

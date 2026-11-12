@@ -4303,6 +4303,20 @@ static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list 
 	return msg;
 }
 
+/* seterror of getargs.c for argument i: "argument <i>[, item <j>...]: expected <msg> found" (0; none when an error is
+ * set already) */
+static byte Mode_ParseError(int i, const int *levels, const char *msg) {
+	if (Native_Failed()) {
+		return 0;
+	}
+	char where[128];
+	int k = snprintf(where, sizeof(where), "argument %d", i);
+	for (int l = 0; levels[l] > 0 && k < (int)sizeof(where); l++) {
+		k += snprintf(where + k, sizeof(where) - k, ", item %d", levels[l] - 1);
+	}
+	return Native_Raise(NE_TYPE, "%s: expected %s found", where, msg);
+}
+
 byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 	int min, max, levels[32];
 	char buf[256];
@@ -4321,19 +4335,49 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 		msg = Mode_ParseItem(&a[i], &f, &va, levels, buf, sizeof(buf), 1);
 	}
 	va_end(va);
-	if (!msg) {
-		return 1;
+	return !msg || Mode_ParseError(i, levels, msg);
+}
+
+/* item *f of a format on v with its outputs into the pointers after msg (scratch: only the conversion errors count) */
+static void Mode_ParseScratch(const nativeVal_t *v, const char **f, int *levels, char *buf, int size, const char **msg,
+	...) {
+	va_list va;
+	va_start(va, msg);
+	*msg = Mode_ParseItem(v, f, &va, levels, buf, size, 1);
+	va_end(va);
+}
+
+byte Mode_ParseSlots(const nativeVal_t *a, int n, const char *fmt) {
+	union {
+		int i;
+		long l;
+		double d;
+		float f;
+		const void *p;
+	} u[16];
+	int levels[32];
+	char buf[256];
+	const char *f = fmt, *msg = NULL;
+	for (int i = 0; i < n && *f; i++) {
+		if (*f == '|') {
+			f++;
+		}
+		if (Native_IsMissing(&a[i])) {
+			/* a slot not given: its item skipped (a group as a whole) */
+			int level = 0;
+			do {
+				level += (*f == '(') - (*f == ')');
+				f++;
+			} while (level > 0 && *f);
+			continue;
+		}
+		Mode_ParseScratch(&a[i], &f, levels, buf, sizeof(buf), &msg, &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6],
+			&u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15]);
+		if (msg) {
+			return !Native_Failed() && Mode_ParseError(i + 1, levels, msg);
+		}
 	}
-	if (Native_Failed()) {
-		return 0;
-	}
-	/* seterror: "argument <i>[, item <j>...]: expected <msg> found" */
-	char where[128];
-	int k = snprintf(where, sizeof(where), "argument %d", i);
-	for (int l = 0; levels[l] > 0 && k < (int)sizeof(where); l++) {
-		k += snprintf(where + k, sizeof(where) - k, ", item %d", levels[l] - 1);
-	}
-	return Native_Raise(NE_TYPE, "%s: expected %s found", where, msg);
+	return 1;
 }
 
 PyObject *Mode_SelfEntry(PyObject *self, PyObject *args, portEntry_t entry) {

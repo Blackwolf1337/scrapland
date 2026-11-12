@@ -635,6 +635,17 @@ byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const native
 		if (len < min || len > max) {
 			return Mode_Arity(len, min, max);
 		}
+		/* the conversions of the slots given, in slot order */
+		nativeVal_t slots[PORT_ARGS];
+		for (int k = 0; k < m; k++) {
+			Mode_KwSkip(&slots[k]);
+		}
+		for (int i = 0; i < given; i++) {
+			slots[(int)slot[i]] = v[i];
+		}
+		if (!Mode_ParseSlots(slots, m, ref->kwfmt)) {
+			return 0;
+		}
 		Native_SetEmpty(&d, NV_DICT);
 		for (int i = 0; i < nk; i++) {
 			nativeVal_t k2, x2;
@@ -907,10 +918,17 @@ static portHook_t *Port_HookOf(const char *module, const char *name) {
 	return h;
 }
 
-/* f is the engine's own function of name: a C function of the module table without self (a function of the test
- * channel has one). OBJLIB 7e: the C function object of Python */
+/* f is the engine's own function of name: a port function of that name (the native function of the module's table, or
+ * its C function object), or a C function object of that name without self (a function of the test channel has one) */
 static byte Port_HookOwn(const char *name, const nativeVal_t *f) {
-	PyObject *py = NObj_Py(f);
+	const portRef_t *ref = NObj_PortRef(f);
+	PyObject *py = ref ? NULL : NObj_Py(f);
+	if (!ref && py) {
+		ref = NObj_PortFace(py);
+	}
+	if (ref) {
+		return !strcmp(ref->name, name);
+	}
 	return py && PyCFunction_Check(py) && !PyCFunction_GET_SELF(py) &&
 		!strcmp(((PyCFunctionObject *)py)->m_ml->ml_name, name);
 }
