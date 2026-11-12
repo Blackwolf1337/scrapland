@@ -19,7 +19,6 @@
 # One ref per table function with an entry: port_<Module>_<Func>, or port_<level>_<Module>_<Func> for the modules
 # of a level (Map, Mission_X: Levels.c entries). A keyword entry whose file defines the names of its slots as
 # char *<adapter>_N[] (MODE_KW, the Mode_KwCall adapters) gets PORT_DEFK or PORT_DEFLK: its ref takes keyword calls.
-# An entry on Python objects (Mode_PyEntry) gets PORT_DEFP or PORT_DEFLP: its calls take the slow path.
 # portcalls.py imports this file.
 import argparse, collections, concurrent.futures, json, os, re, shlex, subprocess, sys
 
@@ -38,7 +37,6 @@ ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(?:\(\s*void\s*\(\s*\*
 UNUSED = r'(?:\[\[maybe_unused\]\]\s*)?'
 ENTRY = re.compile(r'\bbyte\s+(\w+)_E\s*\(\s*' + UNUSED + r'const\s+nativeVal_t\s*\*\s*\w+\s*,\s*' + UNUSED +
 	r'int\s+\w+\s*,\s*' + UNUSED + r'nativeVal_t\s*\*\s*\w+\s*\)\s*\{')
-PYENTRY = re.compile(r'\bMode_PyEntry(?:Kw)?\(')
 NAMES = re.compile(r'\bchar\s*\*\s*(\w+)_N\s*\[\s*\]\s*=')
 ARITY = re.compile(r'Port_Arity\(\s*\w+\s*,\s*\(?(\d+)\)?\s*\)')
 # the arguments of an engine entry: Mode_Parse(a, n, "<PyArg format>") (a fixed count gives the entry's count)
@@ -165,7 +163,7 @@ def entries(lines, engine=False):
 	with the names of their keyword slots (<adapter>_N); engine: an engine file, whose entries check their arguments
 	with Mode_Parse(a, n, "<format>") first (a port entry can parse its keyword slots that way)"""
 	text = '\n'.join(t for _, t in lines)
-	out, kw, py = {}, set(NAMES.findall(text)), set()
+	out, kw = {}, set(NAMES.findall(text))
 	for m in ENTRY.finditer(text):
 		# the count in the entry's own body (an entry without one is followed by other functions)
 		depth, i = 1, m.end()
@@ -179,9 +177,7 @@ def entries(lines, engine=False):
 			out[m.group(1)] = p[0][1] if all(c == (p[0][1], p[0][1]) for c in p) else None
 		else:
 			out[m.group(1)] = int(a.group(1)) if a else None
-		if PYENTRY.search(text, m.end(), i):
-			py.add(m.group(1))
-	return out, kw, py
+	return out, kw
 
 
 def parse_counts(fmt):
@@ -206,9 +202,9 @@ def refs(build, pp=None):
 	preprocessed sources when the caller has them)"""
 	pp = pp or preprocess(sources(), build)
 	tabs, problems = tables(pp), []
-	ents, kws, pys = {}, {}, {}
+	ents, kws = {}, {}
 	for f, lines in pp.items():
-		ents[f], kws[f], pys[f] = entries(lines)
+		ents[f], kws[f] = entries(lines)
 	seen, dup = {}, set()
 	for level, module, g in registrations():
 		if g not in tabs:
@@ -221,14 +217,14 @@ def refs(build, pp=None):
 					' of ' + level if level else '', seen[key].file if seen[key] else '?', f))
 				dup.add(key)
 			elif adapter in ents[f]:
-				seen[key] = Ref(f, level, module, name, adapter, ents[f][adapter], 'K' if adapter in kws[f] else
-					'P' if adapter in pys[f] else '')
+				seen[key] = Ref(f, level, module, name, adapter, ents[f][adapter],
+					'K' if adapter in kws[f] else '')
 			else:
 				seen[key] = None
 	# the engine modules, in table order (their names are not those of a port module)
 	epp = {f: pp[f] for f in engine_sources() if f in pp} or preprocess(engine_sources(), build)
 	for f, lines in epp.items():
-		ents[f], kws[f], pys[f] = entries(lines, True)
+		ents[f], kws[f] = entries(lines, True)
 	for module, f, rows in engine_tables(epp):
 		# a row given twice (Scrap.GetFreeBlocks): one function
 		for name, adapter in dict.fromkeys(rows):
@@ -238,8 +234,8 @@ def refs(build, pp=None):
 					seen[key].file if seen[key] else '?', f))
 				dup.add(key)
 			elif adapter in ents[f]:
-				seen[key] = Ref(f, None, module, name, adapter, ents[f][adapter], 'K' if adapter in kws[f] else
-					'P' if adapter in pys[f] else '')
+				seen[key] = Ref(f, None, module, name, adapter, ents[f][adapter],
+					'K' if adapter in kws[f] else '')
 			else:
 				seen[key] = None
 	out = collections.defaultdict(list)

@@ -536,8 +536,8 @@ PyMethodDef g_OutMapMethods[] = {
  * SetFWeap, SSound.LoadSound, Scrap.Preload3DObject) and Scrap.CreateEntity and Scrap.Set go through their seams
  * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7), their SetModel is called as a bound method (OBJLIB 7).
  * Fx.SetUpShipMotors goes through its ref (PORT_CALL), the module's own functions through its globals (PORT_OWN);
- * SAI.SetStateVehicle goes through its ref (stage 7), SAI.EnableAIVehicle stays by name (OBJLIB 7: its entry works on
- * Python objects, MODE_PYENTRY).
+ * SAI.SetStateVehicle goes through its ref (stage 7), SAI.EnableAIVehicle by name (13 arguments, more than a port
+ * site takes).
  */
 
 /* a global of the module as its functions read it (out None before) */
@@ -653,7 +653,7 @@ static byte It_Ship(long i, const nativeVal_t *list, const nativeVal_t *typo) {
 	if (n >= 0) {
 		Native_SetFloat(r, Scrap_RandRange(0.0, (double)n - 0.1));
 	}
-	/* SAI.EnableAIVehicle by name (OBJLIB 7: its entry works on Python objects, MODE_PYENTRY) */
+	/* SAI.EnableAIVehicle by name: 13 arguments, a port site takes at most PORT_ARGS */
 	byte ok = n >= 0 && Native_ToInt(r, k) && Native_Subscript(list, k, model) && Mode_CallArgs(fn, NULL, model, 1) &&
 		Mode_VSet(v, "Traf_Type", typo) && PORT_CALL(Fx, SetUpShipMotors, NULL, "v", v) &&
 		Mode_VGet(v, "Name", vname) &&

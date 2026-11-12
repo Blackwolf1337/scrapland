@@ -8,9 +8,8 @@
  *
  * The entry reads its arguments with Mode_Parse in the format of PyArg_ParseTuple the function had (the same letters,
  * arity texts and TypeErrors) and gives its result with Api_Build (the letters of Py_BuildValue). An entity handle is
- * an NV_ENT (Api_Handle: a new handle, the adapter makes its cPyEntity); OBJLIB 7: a function whose arguments or result
- * stay Python objects
- * (a callable or arguments it keeps) has the entry of MODE_PYENTRY, and its ref takes the slow path.
+ * an NV_ENT (Api_Handle: a new handle, the adapter makes its cPyEntity); a function or argument the engine keeps is a
+ * native value (Scrap.AddScheduledFunc, SScorer.SetSpeechCallback, Scrap.VideoPlayer).
  *
  * A module of the engine gets its entries this way:
  *

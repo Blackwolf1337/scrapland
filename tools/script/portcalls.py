@@ -20,7 +20,7 @@
 # Kinds: port (a function of another module with a ref), own (of a module of the file, through its attribute),
 # global (through the module's global), noentry (a C table function without an entry yet), engine (a function of an
 # engine module with a native entry and its ref: convertible), engslow (an engine function without a native entry
-# yet, or whose entry works on Python objects, MODE_PYENTRY: its ref would take the slow path; stays by name), lib,
+# yet: stays by name), lib,
 # other (data functions of the .def files, variables, unknown names). Arity: the count of the positional letters at a
 # site against the count the entry takes (the number in include/scrap/scriptports.h).
 #
@@ -44,8 +44,8 @@
 #                                                              LV_COM, LV_CALLBACK, LV_MISSIONCHAR (the same way)
 #
 # The functions of the engine modules (Scrap, SAI, ...) are converted the same way when they have a native entry (a ref
-# of include/scrap/scriptports.h that is not PORT_DEFP): PORT_CALL(Scrap, SetCam, ...), whose seam sees a function a
-# case put there instead and calls it by name. The others are listed (no entry yet, or an entry on Python objects).
+# of include/scrap/scriptports.h): PORT_CALL(Scrap, SetCam, ...), whose seam sees a function a case put there instead
+# and calls it by name. The others are listed (no entry yet).
 #
 # fmt' is the Py_BuildValue format turned into the letters of Native_Call: i, b, h, l as i (the argument cast to long,
 # the va_arg of Port_Invoke), s and z as s (a NULL text is None for both), d and f as d, O and S as O; other letters
@@ -164,7 +164,7 @@ def nargs_of(f, module, name, idx, line=None):
 def engine_ref(idx, module, name):
 	"""the ref of an engine function with a native entry (its calls can take the fast path), else None"""
 	r = ref_for(idx, module, name, None)
-	return r if r and r.kw != 'P' else None
+	return r
 
 
 def kind(f, no, form, module, name, glob, idx, own, cfunc):
@@ -368,10 +368,9 @@ class File:
 			return None
 		if module in ENGINE:
 			r = self.ref(module, name, pos)
-			if r and r.kw != 'P':
+			if r:
 				return r
-			self.leave(pos, form, '%s.%s: %s' % (module, name, 'an entry on Python objects (MODE_PYENTRY)' if r else
-				'no native entry yet'))
+			self.leave(pos, form, '%s.%s: no native entry yet' % (module, name))
 			return None
 		r = self.ref(module, name, pos)
 		if r is None:

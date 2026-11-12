@@ -8,6 +8,7 @@
 #include "scrap/arrowindicator.h"
 #include "scrap/chartype.h"
 #include "scrap/logic.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
 #include "scrap/staticinit.h"
@@ -293,27 +294,36 @@ void Scorer_CancelSpeech(float time) {
 	g_RemainTalkTime = time;
 }
 
-static void Talk_AddCallbackParams(PyObject *list);
-void Scorer_SetSpeechCallback(const char *func, PyObject *arg) {
+static void Talk_AddCallbackParam(const nativeVal_t *item);
+void Scorer_SetSpeechCallback(const char *func, const nativeVal_t *arg) {
+	nativeVal_t key, item;
 	cPy_Function_SetFunc((&g_TalkCallback), func);
-	if (arg && arg->ob_type == &PyList_Type) {
-		Talk_AddCallbackParams(arg);
+	if (arg && arg->type == NV_LIST) {
+		for (int k = 0; k < arg->n; k++) {
+			Talk_AddCallbackParam(&arg->items[k]);
+		}
+	} else if (arg && NObj_Kind(arg) == NO_LIST) {
+		/* a list object (a view too) */
+		int n = NObj_Len(arg);
+		for (int k = 0; k < n; k++) {
+			Native_SetInt(&key, k);
+			Native_SetNone(&item);
+			if (NObj_GetItem(arg, &key, &item)) {
+				Talk_AddCallbackParam(&item);
+			}
+			Native_Free(&item);
+		}
 	}
 }
 
-/* the items of a Python list as the parameters of the talk callback */
-static void Talk_AddCallbackParams(PyObject *list) {
-	for (int k = 0; k < PyList_Size(list); k++) {
-		PyObject *item = PyList_GetItem(list, k);
-		PyTypeObject *type = item->ob_type;
-
-		if (type == &PyString_Type) {
-			cPy_Function_AddParamS((&g_TalkCallback), PyString_AsString(item));
-		} else if (type == &PyFloat_Type) {
-			cPy_Function_AddParamF((&g_TalkCallback), (float)PyFloat_AsDouble(item));
-		} else if (type == &PyInt_Type) {
-			cPy_Function_AddParamI((&g_TalkCallback), (int)PyInt_AsLong(item));
-		}
+/* an item of the list of the talk callback: a text, a float or an int as its parameter, anything else left out */
+static void Talk_AddCallbackParam(const nativeVal_t *item) {
+	if (item->type == NV_STR) {
+		cPy_Function_AddParamS((&g_TalkCallback), Native_Text(item));
+	} else if (item->type == NV_FLOAT) {
+		cPy_Function_AddParamF((&g_TalkCallback), (float)item->f);
+	} else if (item->type == NV_INT) {
+		cPy_Function_AddParamI((&g_TalkCallback), (int)item->i);
 	}
 }
 

@@ -219,14 +219,11 @@ PyObject *Script_Attr(const char *module, const char *name);
 double Script_GetFloat(const char *module, const char *var, double def);
 
 /* entity handles and values as a script uses them (0 or -1 with the error set): handle.var = v (v given away),
- * handle.var == text, handle.var[0:len(prefix)] == prefix, cmp(value, n) (-2 on an error), and
- * Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args[, name]) (args given away; name NULL for none) */
+ * handle.var == text, handle.var[0:len(prefix)] == prefix, cmp(value, n) (-2 on an error) */
 byte Script_HSet(PyObject *e, const char *var, PyObject *v);
 int Script_HIs(PyObject *e, const char *var, const char *text);
 int Script_HPrefix(PyObject *e, const char *var, const char *prefix);
 int Script_NumCmp(PyObject *a, long n);
-byte Script_Later(double delay, PyObject *func, PyObject *args, const char *name);
-byte Script_LaterIn(double delay, const char *module, const char *func, PyObject *args, const char *name);
 
 /* script variables of entities by name, as the Python entity handle reads and writes them: the number of a variable
  * (int, else float; def when the entity or the variable is not there), its text (def likewise), and ent.var = v (v

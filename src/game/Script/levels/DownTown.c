@@ -20,8 +20,8 @@
  * SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAI.GetOD, SetInertia and SetRotStaticObj,
  * SLogic.IsEnemyActive and GetNearestShip, Scrap.GetFarestParked, CreateEntityList and the call function of the inferno
  * fire (Scrap.SetCallFunc, AddParams, Execute), the calls the cases record with _bon (SScorer.CancelSpeech, AddModel,
- * SSound.StopVoice) and SInput.GetDefinedEntry. SScorer.SetSpeechCallback (an entry on Python objects, MODE_PYENTRY)
- * goes through its seam (Mode_SpeechCallback).
+ * SSound.StopVoice) and SInput.GetDefinedEntry. SScorer.SetSpeechCallback goes through its seam
+ * (Mode_SpeechCallback).
  *
  * Direct calls (stage 3): the calls of other ports (Speech, MissionsFuncs, RaceMaker, RacerScorer, VehiclesNPC,
  * Vehicles, PhoneCab, Parking, Elevator, Metro, Traffic, Items, Scene; the keyword calls RaceMaker.InitRace and

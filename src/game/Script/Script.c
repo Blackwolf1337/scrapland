@@ -760,26 +760,6 @@ int Script_NumCmp(PyObject *a, long n) {
 	return Native_Failed() ? -2 : c;
 }
 
-byte Script_Later(double delay, PyObject *func, PyObject *args, const char *name) {
-	double t = (double)Timer_GetTime(&g_pWorld->timer) + delay;
-	/* OBJLIB 7: Scrap.AddScheduledFunc by name (its entry keeps the objects given, MODE_PYENTRY) */
-	byte ok = func && args && (name ? Script_Try("Scrap", "AddScheduledFunc", "(dOOs)", t, func, args, name) :
-		Script_Try("Scrap", "AddScheduledFunc", "(dOO)", t, func, args));
-	Py_XDECREF(args);
-	return ok;
-}
-
-byte Script_LaterIn(double delay, const char *module, const char *func, PyObject *args, const char *name) {
-	PyObject *f = Script_Attr(module, func);
-	if (!f) {
-		Py_XDECREF(args);
-		return 0;
-	}
-	byte ok = Script_Later(delay, f, args, name);
-	Py_DECREF(f);
-	return ok;
-}
-
 /* ---- script variables of entities, as the Python entity handle reads and writes them ---- */
 
 double Script_EntNum(const char *ent, const char *var, double def) {

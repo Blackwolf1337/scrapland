@@ -125,15 +125,14 @@ byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const
 /* Scrap.DeleteScheduledFuncs(name) */
 byte Mode_DelSched(const nativeVal_t *name);
 byte Mode_DelSchedS(const char *name);
-/* Scrap.AddScheduledFunc(time, func, args[, name]): func a Python callable, args the n native values, name NULL for
- * none. The scheduler keeps the port's own function as its entry on the values (Scheduler_AddEntry), anything else as
- * the callable and the tuple of the values; a recorder of the seam gets the callable and the tuple */
-byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *args, int n, const nativeVal_t *name);
-/* the same at Scrap.GetTime() + delay (func not taken over, name NULL for none) */
-byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, const char *name);
-/* the same with func a global of the module (its NameError when it is gone) */
+/* Scrap.AddScheduledFunc(time, func, args[, name]) through its seam: func a function value, args the n native values,
+ * name NULL for none. The scheduler keeps a port function as its entry on the values, anything else as the value and
+ * the tuple of the values; a recorder of the seam gets the value and the tuple */
+byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
+	const nativeVal_t *name);
+/* the same at Scrap.GetTime() + delay with func a global of the module (its NameError when it is gone) */
 byte Mode_Later(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
-/* the same with func the attribute of the module (Script_LaterIn of the ports) */
+/* the same with func the attribute of the module */
 byte Mode_LaterIn(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
 /* Scrap.Set(name, v) */
 byte Mode_GVarSet(const char *name, const nativeVal_t *v);
@@ -765,7 +764,7 @@ byte Mode_CamSeam(long i, nativeVal_t *out);
 byte Mode_UsrSeam(long id, nativeVal_t *out);
 /* module.func(args...) at the time (as a float) on the scheduler itself, not through Scrap.AddScheduledFunc (the menus
  * schedule this way: a recorder of the cases does not see it); name NULL for none; a missing function dropped. The
- * scheduler keeps the function as Mode_Schedule does */
+ * scheduler keeps the function as Mode_ScheduleV does */
 byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
 /* `if module.var: module.var(id)` of a callback variable (Menu.MissionScorerCall): the error of the call printed, every
  * error dropped */
@@ -812,9 +811,6 @@ PyObject *Mode_EvalPy(const char *module, PyObject *text);
 /* print v, print text: Mode_Print of one value (the text of any length) */
 byte Mode_PrintV(const nativeVal_t *v);
 byte Mode_PrintS(const char *text);
-/* module.func(args) at the time on the scheduler as Mode_SchedAt, with the argument tuple a Python object (borrowed:
- * Menu.ShowWarning schedules itself again with the tuple it got; the entry of a port's own function) */
-byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name);
 /* module.func(id) by a name known at run time (MODE_PRINTEDCALL: the attribute through the entry of the port function
  * it holds, else the Python way, as Mode_CbAttr; MODE_PRINTED for a known name), the failure printed as Mode_Printed
  * prints it */
@@ -913,22 +909,6 @@ int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **
 		(void)args; \
 		return Mode_Out(&t, pre##_##name##_E(NULL, 0, out), out); \
 	}
-/* OBJLIB 7: the entry of an adapter that works on Python objects (the Sf_ frame functions, the type conversions of
- * PyArg formats): the adapter called on the arguments as Python values (Native_ToPy, as the call by name passes them;
- * an NV_OBJ is its object), its result into out (Native_Arg). MODE_PYENTRY(adapter) and MODE_PYENTRYKW(adapter) emit
- * adapter_E after the adapter; a keyword entry takes the arguments by position (maybe unused: tools/script/ports.py
- * gives a keyword adapter, cast through void (*)(void) in its table, no ref yet) */
-byte Mode_PyEntry(PyCFunction fn, const nativeVal_t *a, int n, nativeVal_t *out);
-byte Mode_PyEntryKw(PyCFunctionWithKeywords fn, const nativeVal_t *a, int n, nativeVal_t *out);
-#define MODE_PYENTRY(fn) \
-	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
-		return Mode_PyEntry(fn, a, n, out); \
-	}
-#define MODE_PYENTRYKW(fn) \
-	[[maybe_unused]] static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
-		return Mode_PyEntryKw(fn, a, n, out); \
-	}
-
 /* ---- native entries of hand and keyword adapters (stage 3, batch A2a) ---- */
 
 /* the number of v as "i" of PyArg reads it: Native_ArgInt, and an NV_OBJ through PyInt_AsLong as getargs.c has it
@@ -1081,10 +1061,6 @@ byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeV
 /* `if v:` of the script with the error the truth of an object can raise (PyObject_IsTrue; Native_True drops it): 1 or
  * 0, -1 with the error */
 int Mode_Truth(const nativeVal_t *v);
-/* Mode_Schedule with the function a value of the script, as a global or an attribute gave it (Mode_G, Mode_ModGet; a
- * function held as NV_OBJ, OBJLIB 7: the scheduler takes the entry of a port's own function) */
-byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nativeVal_t *args, int n,
-	const nativeVal_t *name);
 /* h.SetModel(<the global modelVar of module>) of a value of the script (Mode_HSetModel: the handle looked at before
  * the global is read) */
 byte Mode_VSetModel(const nativeVal_t *h, const char *module, const char *modelVar);
@@ -1261,12 +1237,11 @@ long Mode_AsLong(const nativeVal_t *v);
  * Python values, an NV_OBJ as the object it is) */
 void Mode_SetValue(const char *name, const nativeVal_t *v);
 /* the port's own function of the row called name of a PyMethodDef table as a function object of its own, held as a
- * value (OBJLIB 7: for a call the scheduler keeps whatever the module attribute holds then; made once by the caller):
- * 0 with the error and *fn None */
+ * value (a native port function; OBJLIB 7: a C function object for a row without a ref): for a call the scheduler
+ * keeps whatever the module attribute holds then; made once by the caller. 0 with the error and *fn None */
 byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn);
 /* fn(args...) at the time (as a float) on the scheduler itself, with the function a value (Mode_SchedAt reads it from
- * the module; the entry of a port's own function, else the Python call on the tuple of the values): 0 with the error
- * of the tuple */
+ * the module; the entry of a port function, else the call of the value on the tuple of the values): always 1 */
 byte Mode_SchedFn(double time, const nativeVal_t *fn, const nativeVal_t *args, int n, const char *name);
 /* var.method() of a variable of a module (global as for Mode_Keys), in place, the result dropped (sort of a list;
  * Mode_VarCall takes one argument) */

@@ -246,8 +246,7 @@ static byte Npc_ModAIProffN(const nativeVal_t *o1, const nativeVal_t *pd, const 
 	for (int i = 0; ok && i < NVARS; i++) {
 		ok = Mode_VObj(pd, vars[i], &a[i + 2]);
 	}
-	/* SAI.EnableAIVehicle by name with the 26 values (OBJLIB 7: more values than a native entry takes, its entry
-	 * works on Python objects, MODE_PYENTRY) */
+	/* SAI.EnableAIVehicle by name with the 26 values (more than the fast path of a ref takes) */
 	ok = ok && LvN_ModGet("SAI", "EnableAIVehicle", &f) && Mode_CallArgs(&f, NULL, a, NVARS + 2);
 	if (ok && use && Native_True(use)) {
 		ok = Mode_VObj(o1, "Life", &l) && Mode_VObj(pd, "LifeMult", &m) && Mode_Arith('*', &l, &m, &life) && Mode_VSet(o1, "Life", &life);

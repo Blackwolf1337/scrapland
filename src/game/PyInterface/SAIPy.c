@@ -581,30 +581,29 @@ API_FN(SAI, GetStateChar) {
 
 /*
  * EnableAIVehicle(name, enable, ...) : 25 more values in three parameter blocks. As compiled the format has 27
- * conversions for 26 pointers, so a 27th argument writes through an undefined pointer; the same here. Failure
- * returns NULL without a Python exception. OBJLIB 7: up to 27 arguments, more than an entry takes (PORT_ARGS), so the
- * entry is the adapter on Python objects (MODE_PYENTRY: its ref takes the slow path)
+ * conversions for 26 pointers, so a 27th argument writes through an undefined pointer; here it goes into a dummy.
+ * Failure returns NULL without a Python exception. Up to 27 arguments, more than the fast path takes (PORT_ARGS): a
+ * call of 12 or more goes through the adapter (Mode_SelfEntry passes them all)
  */
-static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
-	char *name;
-	int enable;
+API_FN(SAI, EnableAIVehicle) {
+	const char *name;
+	int enable, extra;
 	cAIVehicleParams1 p1 = { .boostItemLife = 1, .boostItemAmmo = 1, .itemAmmo = 0.25f, .hookRace = 0, .hookMap = 0,
 		.strafeEvasion = 0, .percHook = 0, .percHookGetAway = 0 };
 	cAIVehicleParams2 p2;
 	cAIVehicleParams3 p3 = { .cadenceCM = 3, .counterattack = 1.0f, .percCloud = 35, .percSonic = 50,
 		.percElectro = 15 };
 
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sifiiiiifiiff|iiffiiiiiiiiii", &name, &enable, &p1.damageGetAway, &p2.strafe,
+	if (!Mode_Parse(a, n, "sifiiiiifiiff|iiffiiiiiiiiii", &name, &enable, &p1.damageGetAway, &p2.strafe,
 			&p2.brake, &p1.boostGetAway, &p2.stupidPathfinding, &p2.maxTimeStrafe, &p2.maxVelStrafe, &p2.aim,
 			&p3.cadence, &p3.angAttack, &p1.damageItemLife, &p1.boostItemLife, &p1.boostItemAmmo, &p1.itemAmmo,
 			&p3.counterattack, &p1.hookRace, &p1.hookMap, &p1.strafeEvasion, &p3.cadenceCM, &p3.percSonic,
-			&p3.percCloud, &p3.percElectro, &p1.percHook, &p1.percHookGetAway)) {
-		return NULL;
+			&p3.percCloud, &p3.percElectro, &p1.percHook, &p1.percHookGetAway, &extra)) {
+		return 0;
 	}
 	cEntity *e = FindAIEntity(name, TYEN_CAR);
 	if (!e || cVehicleEntity_GetOwnerSlot(e) >= 0) {
-		return NULL;
+		return Native_NullResult();
 	}
 	byte on = enable != 0;
 	cAIVehicle *ai = Entity_GetAI(e);
@@ -617,9 +616,9 @@ static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 	else {
 		cVehicleEntity_EnableAI(Veh(e), on, &p1, &p2, &p3);
 	}
-	return Py_BuildValue("i", 1);
+	Native_SetInt(out, 1);
+	return 1;
 }
-MODE_PYENTRY(SAI_EnableAIVehicle)
 
 /* EnableAIChar(name, enable, arg) : the name must match the entity exactly (the table lookup ignores case) */
 API_FN(SAI, EnableAIChar) {

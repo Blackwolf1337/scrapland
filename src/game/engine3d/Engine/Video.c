@@ -111,7 +111,8 @@ static struct {
 	uint32_t t0;			/* timeGetTime of pts 0 */
 	double pts;			/* of the pending picture, seconds */
 	SndStream *sound;		/* the sound stream, NULL without sound */
-	const char *rest;		/* the name after the '|' of Video_PlayFile, played after the first one */
+	const char *rest;		/* the name after the '|' of Video_PlayFile, played after the first one (in restName) */
+	char restName[MAX_FILEPATH];	/* a copy: the caller's text may be gone by then (a value of the scripts) */
 	const char *restDir;
 	int result;			/* of the Video_PlayFile that ended last */
 } video;
@@ -404,7 +405,8 @@ int Video_PlayFile(const char *name, const char *dir) {
 		}
 		if (r == VIDEO_PENDING) {
 			/* b plays after the video of a, from Video_Step */
-			video.rest = name;
+			Bprintf(video.restName, sizeof(video.restName), "%s", name);
+			video.rest = video.restName;
 			video.restDir = dir;
 			return VIDEO_PENDING;
 		}
