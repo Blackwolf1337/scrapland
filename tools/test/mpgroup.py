@@ -205,6 +205,14 @@ class Run:
         self.m.tool('hold', limit=a.move_secs + 30, names=self.clients, keys=['w'], seconds=a.move_secs)
         time.sleep(a.settle)
         after = self.states()
+        # a ship that spawned facing a wall did not move: back it up once (s) and read again
+        stuck = [c for c, sh in self.ships.items() if sh in srv0 and sh in after[0]['players'] and
+                 dist(srv0[sh]['pos'], after[0]['players'][sh]['pos']) < a.min_move]
+        if stuck:
+            self.say('move: %s did not move forward, backing up' % ', '.join(stuck))
+            self.m.tool('hold', limit=a.move_secs + 30, names=stuck, keys=['s'], seconds=a.move_secs)
+            time.sleep(a.settle)
+            after = self.states()
         self.log.append(('move', [before, after]))
         srv1 = after[0]['players']
         bad, info = [], []

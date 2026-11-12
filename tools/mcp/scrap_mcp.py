@@ -117,6 +117,12 @@ class Game:
                                capture_output=True, text=True)
             if r.returncode:
                 raise RuntimeError('mkgame.sh failed: %s' % (r.stderr or r.stdout))
+        # a game of this slot that is still ending (or one started by another process) keeps the binary busy
+        end = time.time() + 15
+        while self.native_pids()[0] and time.time() < end:
+            time.sleep(0.3)
+        if self.native_pids()[0]:
+            raise RuntimeError('a game of slot %s still runs (pids %s): quit it first' % (self.name, self.native_pids()[0]))
         src = os.path.join(ROOT, build, 'ScrapC')
         if not os.path.isfile(src):
             raise RuntimeError('%s is missing (cmake --build %s first)' % (src, build))
