@@ -6,13 +6,15 @@
  * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable), the callbacks bound
  * to port functions (Port_Callback, cPy_Function PYF_ENTRY), the functions given to the scheduler (Port_Scheduled,
  * cScheduledFunc), the call of such a bound site (Port_BoundCall), and the calls of values that hold port functions
- * (Port_Own by the adapter, Port_Value and Port_Values).
+ * (Port_Own by the adapter, Port_Value and Port_Values). Last the seams of the engine functions as C hooks
+ * (Native_Seam, stage 7d).
  */
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/nativeobj.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 
@@ -492,8 +494,8 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
 	if (Script_Enter((uintptr_t)__builtin_frame_address(0))) {
 		ok = ref->entry(a, n, r);
 		Script_Leave();
-		if (!ok && !PyErr_Occurred()) {
-			PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+		if (!ok && !Native_Failed()) {
+			Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
 		}
 	}
 	return ok;
@@ -626,4 +628,186 @@ byte Port_Value(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt
 
 byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout) {
 	return Port_ValueRun(site, f, NULL, a, n, out, pyout);
+}
+
+/* ---- the seams of the engine functions as C hooks (stage 7d) ---- */
+
+enum { HOOK_OWN, HOOK_SET, HOOK_DELETED };
+
+/* the seam entry of module.name (a list: the seams a run uses, a few dozen) */
+typedef struct portHook_s {
+	char *module, *name;
+	byte state;			/* HOOK_ */
+	nativeHook_t hook;		/* HOOK_SET: what is there */
+	struct portHook_s *next;
+} portHook_t;
+
+static portHook_t *port_hooks;
+static byte (*port_hookFind)(const nativeVal_t *f, nativeHook_t *hook);
+
+void Native_HookFinder(byte (*find)(const nativeVal_t *f, nativeHook_t *hook)) {
+	port_hookFind = find;
+}
+
+static portHook_t *Port_HookOf(const char *module, const char *name) {
+	portHook_t *h = port_hooks;
+	while (h && (strcmp(h->name, name) || strcmp(h->module, module))) {
+		h = h->next;
+	}
+	return h;
+}
+
+/* f is the engine's own function of name: a C function of the module table without self (a function of the test
+ * channel has one). OBJLIB 7e: the C function object of Python */
+static byte Port_HookOwn(const char *name, const nativeVal_t *f) {
+	PyObject *py = NObj_Py(f);
+	return py && PyCFunction_Check(py) && !PyCFunction_GET_SELF(py) &&
+		!strcmp(((PyCFunctionObject *)py)->m_ml->ml_name, name);
+}
+
+/* the entry follows what module.name holds now (f NULL: nothing) */
+static void Port_HookSet(portHook_t *h, const nativeVal_t *f) {
+	nativeHook_t old = h->hook;
+	h->hook.call = NULL;
+	h->hook.ctx = NULL;
+	Native_SetNone(&h->hook.f);
+	h->state = !f ? HOOK_DELETED : Port_HookOwn(h->name, f) ? HOOK_OWN : HOOK_SET;
+	if (h->state == HOOK_SET) {
+		Native_Copy(&h->hook.f, f);
+		if (port_hookFind && !port_hookFind(f, &h->hook)) {
+			h->hook.call = NULL;
+			h->hook.ctx = NULL;
+		}
+	}
+	/* dropped after: a hook running now holds its own copy (Native_Seam) */
+	Native_HookFree(&old);
+}
+
+static char *Port_Dup(const char *s) {
+	size_t len = strlen(s) + 1;
+	return memcpy(Mem_Alloc((uint32_t)len), s, len);
+}
+
+int Native_Seam(const char *module, const char *name, nativeHook_t *hook) {
+	portHook_t *h = Port_HookOf(module, name);
+	if (!h) {
+		/* the first question: what the module holds now (OBJLIB 7: its attribute); the stores after it come through
+		 * Native_HookStore */
+		PyObject *f = Script_Attr(module, name);
+		if (!f && !Native_ErrIs(NE_ATTRIBUTE)) {
+			return -1;
+		}
+		nativeVal_t v;
+		h = Mem_Alloc(sizeof(*h));
+		memset(h, 0, sizeof(*h));
+		h->module = Port_Dup(module);
+		h->name = Port_Dup(name);
+		h->next = port_hooks;
+		port_hooks = h;
+		if (f) {
+			Native_Arg(f, &v);
+			Py_DECREF(f);
+		}
+		Port_HookSet(h, f ? &v : NULL);
+		if (f) {
+			Native_Free(&v);
+		}
+	}
+	if (h->state == HOOK_OWN) {
+		return 0;
+	}
+	if (h->state == HOOK_DELETED) {
+		/* the AttributeError of the module's getattr */
+		Native_Raise(NE_ATTRIBUTE, "%s", name);
+		return -1;
+	}
+	*hook = h->hook;
+	Native_Copy(&hook->f, &h->hook.f);
+	return 1;
+}
+
+void Native_HookClear(void) {
+	while (port_hooks) {
+		portHook_t *h = port_hooks;
+		port_hooks = h->next;
+		Native_HookFree(&h->hook);
+		Mem_Free(h->module);
+		Mem_Free(h->name);
+		Mem_Free(h);
+	}
+}
+
+void Native_HookFree(nativeHook_t *hook) {
+	Native_Free(&hook->f);
+	hook->call = NULL;
+	hook->ctx = NULL;
+}
+
+/* a channel function on the arguments of fmt as its adapter got them, with the depth check of the calls */
+static byte Port_HookRun(const nativeHook_t *hook, nativeVal_t *out, const char *fmt, va_list va) {
+	nativeArg_t x[NATIVE_ARGS];
+	nativeVal_t a[NATIVE_ARGS], r;
+	int n = Native_ReadArgs(fmt, va, x);
+	byte ok = 1;
+	for (int i = 0; i < n; i++) {
+		Native_SetNone(&a[i]);
+	}
+	for (int i = 0; ok && i < n; i++) {
+		ok = Port_Pack(&x[i], &a[i]);
+	}
+	Native_SetNone(&r);
+	if (ok && Script_Enter((uintptr_t)__builtin_frame_address(0))) {
+		ok = hook->call(hook->ctx, a, n, &r);
+		Script_Leave();
+		if (!ok && !Native_Failed()) {
+			Native_NullResult();
+		}
+	} else {
+		ok = 0;
+	}
+	/* the result in the form the script got it, also when it is dropped (the conversion can fail) */
+	nativeVal_t res;
+	if (ok && (ok = Native_Pass(&r, &res)) != 0) {
+		if (out) {
+			*out = res;
+		} else {
+			Native_Free(&res);
+		}
+	}
+	Native_Free(&r);
+	for (int i = 0; i < n; i++) {
+		Native_Free(&a[i]);
+	}
+	return ok;
+}
+
+byte Native_HookCall(nativeHook_t *hook, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	byte ok;
+	va_start(va, fmt);
+	if (hook->call) {
+		ok = Port_HookRun(hook, out, fmt, va);
+	} else {
+		/* OBJLIB 7: any other callable through Python, as the script called it */
+		ok = Native_CallVa(Native_ToPy(&hook->f), out, fmt, va);
+	}
+	va_end(va);
+	Native_HookFree(hook);
+	return ok;
+}
+
+void Native_HookStore(const nativeVal_t *o, const char *name, const nativeVal_t *v) {
+	nativeVal_t mod;
+	if (!port_hooks || NObj_Kind(o) != NO_MODULE) {
+		return;
+	}
+	if (!NObj_GetAttr(o, "__name__", &mod)) {
+		Native_ErrClear();
+		return;
+	}
+	portHook_t *h = mod.type == NV_STR ? Port_HookOf(Native_Text(&mod), name) : NULL;
+	Native_Free(&mod);
+	if (h) {
+		Port_HookSet(h, v);
+	}
 }

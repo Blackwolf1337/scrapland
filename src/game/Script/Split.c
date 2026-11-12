@@ -73,7 +73,7 @@ static byte Split_ToMod(const char *module, const char *var, const char *src, co
 	}
 	Native_Free(&f);
 	if (!Mode_ModSetGlobal(module, var, src, name)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	return 1;
 }
@@ -1024,7 +1024,7 @@ static void SRace_StepPoint(int id, const nativeVal_t *args, int n) {
 	if (Native_EvalText("SRace", &args[0], &p)) {
 		*Native_Append(&split.raceBuild) = p;
 	} else {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 

@@ -123,7 +123,7 @@ static byte MC_InOf(const char *module, const char *list, const char *name) {
 		Native_Free(&s);
 	}
 	if (r < 0) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	Native_Free(&l);
 	return r > 0;
@@ -298,7 +298,7 @@ static void MC_WalkList(const char *ch, double turn, int isRun, double disp, nat
 			if (e == &tmp) {
 				Native_Free(&tmp);
 			}
-			Mode_DropError();
+			Native_ErrClear();
 		} else {
 			Str_Copy(act, def[i], sizeof(act));
 		}
@@ -640,7 +640,7 @@ MODE_KWT(MakeChar, AddDazeAction, "s|i", "CharName", "ListenMayor") {
 	nativeVal_t s;
 	Native_SetText(&s, ch, (int)strlen(ch));
 	if (!Mode_ListAddG("MakeChar", "DazedChars", &s, 0)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	Native_Free(&s);
 	MC_BreakLoop(ch, "Dazed", 202);

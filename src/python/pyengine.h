@@ -6,6 +6,12 @@
 
 void Py_FiniObjects(void);
 
+/* the error state of the engine (src/game/Script/NativeErr.c) behind PyErr_Restore, PyErr_Occurred and PyErr_Fetch
+ * (src/python/errors.c) */
+void Py_ErrSet(PyObject *type, PyObject *value, PyObject *tb);
+PyObject *Py_ErrType(void);
+void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb);
+
 /* sets exc "<what>: no Python interpreter in this build" unless an error is set already; NULL (src/python/nopy) */
 void *Py_NoInterpreter(PyObject *exc, const char *what);
 /* the same as an expression of type t that the compiler knows is NULL, so the code behind a check of it drops */

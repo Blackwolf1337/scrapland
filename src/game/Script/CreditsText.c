@@ -56,14 +56,14 @@ static byte Credits_Read(int k) {
 /* the C value of the variable k into the module, as Script_SetVar of the script port (a failed set is no error) */
 static void Credits_Put(int k) {
 	if (!Native_Put("CreditsText", &credits_vars[k], 0)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 
 /* the number of a variable as Script_GetInt and Script_GetFloat read it (an int or a float, else def) */
 static double Credits_Num(int k, double def) {
 	if (!Credits_Read(k)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return def;
 	}
 	const nativeVal_t *v = credits_vars[k].values;
@@ -73,7 +73,7 @@ static double Credits_Num(int k, double def) {
 /* range(MAX_TEXT_LINES) (Script_GetInt: an int, a float cut, else 20) */
 static int Credits_Max(void) {
 	if (!Credits_Read(CV_MAX)) {
-		Mode_DropError();
+		Native_ErrClear();
 		return 20;
 	}
 	const nativeVal_t *v = &credits.maxLines;

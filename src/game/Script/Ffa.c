@@ -12,7 +12,7 @@
  * isScorerVisible, TotalRed, TotalGreen, SpectatorMode, GameFinished, the colours, MasterFlag, GameScorer,
  * YourPosition, YourScore, Winner, ScorerFraglimit and GameStart there, so the C reads each where the script reads
  * the global and writes it through at once (Scorer is changed in place, as the script does). The engine functions
- * the cases record go through their seams (OBJLIB 7, scrap/scriptmodes.h); entity handles are the entities found again
+ * the cases record go through their seams (scrap/scriptmodes.h); entity handles are the entities found again
  * by name, as the handle finds them.
  *
  * Direct calls (stage 3): the functions call each other through the module globals and the other ports (Net,

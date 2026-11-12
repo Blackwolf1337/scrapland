@@ -196,7 +196,7 @@ static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
 			Native_KeepPy(out, o);
 			Py_DECREF(o);
 		}
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	if (out->type == NV_TUPLE && !Native_KeptPy(out)) {
 		PyObject *o = Native_ToPy(out);
@@ -270,7 +270,7 @@ static void MV_PutPy(nativeVal_t *t, PyObject *key, PyObject *value) {
 	MV_FromPy(value, &v);
 	if (!Native_DictSet(t, &k, &v)) {
 		/* an unhashable key cannot be in a dict */
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 }
 
@@ -341,7 +341,7 @@ static mvSpace_t *MV_Bind(PyObject *dict, byte making) {
 			Py_DECREF(k);
 		}
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	return s;
 }
 
@@ -421,7 +421,7 @@ static void MV_Clear(mvSpace_t *s) {
 			Native_Free(&v);
 		}
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 }
 
 void ModVar_Close(void) {
@@ -596,12 +596,12 @@ int ModVar_Del(const modVarRef_t *ref, const char *name) {
 	}
 	MV_Key(&key, name);
 	byte ok = Native_DictDel(t, &key);
-	Native_Free(&key);
 	if (!ok) {
 		/* PyDict_DelItemString's KeyError */
-		PyObject *k = PyString_FromString(name);
-		PyErr_SetObject(PyExc_KeyError, k);
-		Py_XDECREF(k);
+		Native_RaiseKey(&key);
+	}
+	Native_Free(&key);
+	if (!ok) {
 		return -1;
 	}
 	return 0;
@@ -653,7 +653,7 @@ static PyObject *MV_SyncDict(const modVarRef_t *ref) {
 	while (Native_DictNext(t, &pos, &k, &v)) {
 		PyObject *pk = MV_Py((nativeVal_t *)k), *pv = pk ? MV_Py((nativeVal_t *)v) : NULL;
 		if (!pv || PyDict_SetItem(ref->dict, pk, pv) != 0) {
-			PyErr_Clear();
+			Native_ErrClear();
 		}
 	}
 	keys = PyDict_Keys(ref->dict);
@@ -666,7 +666,7 @@ static PyObject *MV_SyncDict(const modVarRef_t *ref) {
 		Native_Free(&nk);
 	}
 	Py_XDECREF(keys);
-	PyErr_Clear();
+	Native_ErrClear();
 	Py_INCREF(ref->dict);
 	return ref->dict;
 }
@@ -681,7 +681,7 @@ PyObject *ModVar_Attr(const modVarRef_t *ref, const char *name) {
 	}
 	PyObject *v = ModVar_Get(ref, name);
 	if (!v) {
-		PyErr_SetString(PyExc_AttributeError, (char *)name);
+		Native_Raise(NE_ATTRIBUTE, "%s", name);
 		return NULL;
 	}
 	Py_INCREF(v);
@@ -690,15 +690,14 @@ PyObject *ModVar_Attr(const modVarRef_t *ref, const char *name) {
 
 int ModVar_SetAttr(const modVarRef_t *ref, const char *name, PyObject *v) {
 	if (name[0] == '_' && !strcmp(name, "__dict__")) {
-		PyErr_SetString(PyExc_TypeError, "read-only special attribute");
+		Native_Raise(NE_TYPE, "read-only special attribute");
 		return -1;
 	}
 	if (v) {
 		return ModVar_Set(ref, name, v);
 	}
 	if (ModVar_Del(ref, name) != 0) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_AttributeError, "delete non-existing module attribute");
+		Native_Raise(NE_ATTRIBUTE, "delete non-existing module attribute");
 		return -1;
 	}
 	return 0;
@@ -720,7 +719,7 @@ byte ModVar_SetAttrVal(const modVarRef_t *ref, const char *name, const nativeVal
 		return ModVar_SetVal(ref, name, v) == 0;
 	}
 	if (ModVar_Del(ref, name) != 0) {
-		PyErr_Clear();
+		Native_ErrClear();
 		return Native_Raise(NE_ATTRIBUTE, "delete non-existing module attribute");
 	}
 	return 1;
@@ -822,7 +821,7 @@ int ModVar_SetGlobal(const char *module, const char *name, PyObject *v) {
 		r = ModVar_Set(&ref, name, v);
 	} else if (m) {
 		/* PyModule_GetDict's SystemError */
-		PyErr_BadInternalCall();
+		Native_Raise(NE_SYSTEM, "bad argument to internal function");
 	}
 	Py_XDECREF(m);
 	return r;
@@ -835,7 +834,7 @@ byte ModVar_SetGlobalVal(const char *module, const char *name, const nativeVal_t
 	if (m && MV_Ref(m, &ref)) {
 		ok = ModVar_SetVal(&ref, name, v) == 0;
 	} else if (m) {
-		PyErr_BadInternalCall();
+		Native_Raise(NE_SYSTEM, "bad argument to internal function");
 	}
 	Py_XDECREF(m);
 	return ok;
@@ -846,8 +845,8 @@ int ModVar_DelGlobal(const char *module, const char *name) {
 	modVarRef_t ref;
 	int r = m ? 0 : -1;
 	if (m && (!MV_Ref(m, &ref) || ModVar_Del(&ref, name) != 0)) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_NameError, (char *)name);
+		Native_ErrClear();
+		Native_Raise(NE_NAME, "%s", name);
 		r = -1;
 	}
 	Py_XDECREF(m);

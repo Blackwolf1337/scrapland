@@ -9,7 +9,7 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
  * script reads them and write them through at once (OBJLIB 5), and call the engine in C: the save variables, the
  * language texts, the entities and their variables, the dummy search, the time. The engine functions the cases record
- * or swap go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, Scrap.Rand, Scrap.UsrEntity, Scrap.Set,
+ * or swap go through their seams: Scrap.AddScheduledFunc, Scrap.Rand, Scrap.UsrEntity, Scrap.Set,
  * SScorer.SetMsgText, SScorer.Set, SScorer.Fade, SSound.SetMusic, SSound.SetMusicVolume. Entities the script holds are
  * handle values (OBJLIB 7). CharsNPC.CharRes and the other variables of other modules that hold objects are read as
  * objects (OBJLIB 5).
@@ -48,7 +48,7 @@
 
 /* ---- native helpers of this file ---- */
 
-/* SSound.SetMusicVolume(volume) through its ref (OBJLIB 7, the seam: fr6b.py records it) */
+/* SSound.SetMusicVolume(volume) through its ref (the seam: fr6b.py records it) */
 static byte Gd_MusicVolume(double volume) {
 	return PORT_CALL(SSound, SetMusicVolume, NULL, "d", volume);
 }
@@ -528,7 +528,7 @@ static int Den_RandUp(long lo, long hi) {
 	int up = -1;
 	if (Mode_Rand(&a, &b, &r)) {
 		up = Native_Compare(&r, &z) > 0;
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			up = -1;
 		}
 	}
@@ -679,7 +679,7 @@ static byte Den_CharUsrDanceC(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	int dance = Native_Compare(&a[1], Mode_I(&t, 0)) > 0;
-	if (Mode_Failed()) {
+	if (Native_Failed()) {
 		return Mode_Done(&t, 0);
 	}
 	if (dance) {
@@ -750,14 +750,14 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 			return Mode_Done(&t, 0);
 		}
 		int busy = Native_Compare(r, Mode_I(&t, 0)) > 0;
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		busy = busy || islm;
 		Native_Free(r);
 		if (busy) {
 			int tired = Native_Compare(ctr, Mode_I(&t, 3)) >= 0;
-			if (Mode_Failed()) {
+			if (Native_Failed()) {
 				return Mode_Done(&t, 0);
 			}
 			if (tired && !islm) {
@@ -765,7 +765,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 					return Mode_Done(&t, 0);
 				}
 				int drunk = Native_Compare(b, Mode_I(&t, 0)) > 0;
-				if (Mode_Failed()) {
+				if (Native_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				Native_Free(b);
@@ -791,7 +791,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 					return Mode_Done(&t, 0);
 				}
 				int empty = Native_Compare(r, Mode_I(&t, 0)) < 0;
-				if (Mode_Failed()) {
+				if (Native_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				if (empty) {
@@ -865,7 +865,7 @@ static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
 			return Mode_Done(&t, 0);
 		}
 		int second = !Native_Compare(v1, name);
-		if (Mode_Failed()) {
+		if (Native_Failed()) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(name);
@@ -943,7 +943,7 @@ static byte Den_MercenarySpeechC(const nativeVal_t *a, nativeVal_t *out) {
 				direct = 1;
 			} else {
 				int few = Native_Compare(lives, Mode_I(&t, 3)) < 0;
-				if (Mode_Failed()) {
+				if (Native_Failed()) {
 					return Mode_Done(&t, 0);
 				}
 				if (few) {

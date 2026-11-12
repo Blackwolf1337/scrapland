@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "scrap/game.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
@@ -220,9 +221,10 @@ static byte Sy_NearestParked(const nativeVal_t *pos, nativeVal_t *out) {
 /* the native lines of LevelCommon's frame helpers (Lv_X) this file needs */
 
 /* raise v of the script after import module (the do_raise of ceval without value and traceback): a text is a string
- * exception, a tuple raises its first item, a class or an instance (OBJLIB 7: Python objects) as Python raises them,
- * any other value the TypeError; 0 */
+ * exception of its own (a new string object), a tuple raises its first item, a class with an instance of it as the
+ * value, an instance with its class as the exception, any other value the TypeError; 0 */
 static byte Sy_RaiseValue(const char *module, const nativeVal_t *v) {
+	nativeErr_t e = { .kind = NE_OTHER };
 	if (!Mode_Import(module)) {
 		return 0;
 	}
@@ -230,35 +232,25 @@ static byte Sy_RaiseValue(const char *module, const nativeVal_t *v) {
 		v = &v->items[0];
 	}
 	if (v->type == NV_STR) {
-		PyObject *s = Native_ToPy(v);
-		if (s) {
-			PyErr_SetObject(s, Py_None);
-			Py_DECREF(s);
-		}
+		nativeVal_t s;
+		Native_SetText(&s, Native_Text(v), v->n);
+		Native_RaiseObj(&s, NULL);
+		Native_Free(&s);
 		return 0;
 	}
-	if (!Native_IsObj(v)) {
+	Native_SetNone(&e.value);
+	if (NObj_Kind(v) == NO_CLASS) {
+		Native_Copy(&e.type, v);
+		Native_ErrNormalize(&e);
+	} else if (NObj_Kind(v) == NO_INSTANCE) {
+		if (!NObj_GetAttr(v, "__class__", &e.type)) {
+			return 0;
+		}
+		Native_Copy(&e.value, v);
+	} else {
 		return Native_Raise(NE_TYPE, "exceptions must be strings, classes, or instances");
 	}
-	/* OBJLIB 7: the exception is a class or an instance of Python (the error state is Python's until stage 7d) */
-	PyObject *type = Script_Ref(Native_PyOf(v)), *value = Script_Ref(Py_None), *tb = NULL;
-	while (PyTuple_Check(type) && PyTuple_Size(type) > 0) {
-		PyObject *tmp = type;
-		type = Script_Ref(PyTuple_GET_ITEM(type, 0));
-		Py_DECREF(tmp);
-	}
-	if (PyClass_Check(type)) {
-		PyErr_NormalizeException(&type, &value, &tb);
-	} else if (PyInstance_Check(type)) {
-		Py_DECREF(value);
-		value = type;
-		type = Script_Ref((PyObject *)((PyInstanceObject *)type)->in_class);
-	} else if (!PyString_Check(type)) {
-		Py_DECREF(type);
-		Py_DECREF(value);
-		return Native_Raise(NE_TYPE, "exceptions must be strings, classes, or instances");
-	}
-	PyErr_Restore(type, value, tb);
+	Native_ErrRestore(&e);
 	return 0;
 }
 

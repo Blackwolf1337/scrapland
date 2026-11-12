@@ -85,7 +85,7 @@ static byte Mf_First(const nativeVal_t *list, nativeVal_t *e) {
 	return ok;
 }
 
-/* the Scrap.SetSaveVar(name, text) of SuperDealOnVictory through its ref (OBJLIB 7, the seam: the stage 4 cases
+/* the Scrap.SetSaveVar(name, text) of SuperDealOnVictory through its ref (the seam: the stage 4 cases
  * record it) */
 static byte Mf_SetSaveSeam(const char *name, const char *text) {
 	return PORT_CALL(Scrap, SetSaveVar, NULL, "ss", name, text);

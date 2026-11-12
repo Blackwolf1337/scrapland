@@ -44,11 +44,13 @@ void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet);
  * the TypeError of a C function. OBJLIB 9: its object is a C function object of Python named name on the self
  * (record, self[0], self[1], self[2]), the form of a lambda of the channel (repr "<built-in method name of tuple
  * object at ...>"; the module dump shows the 4-tuple as the data of a script function, "self=?" when self[1] is no
- * sequence), so the game calls it as any callable; OBJLIB 7: callers through Python (the seams of the engine
- * functions, Native_Seam) reach it through an adapter. 1 with *out (Native_Free it), 0 with the error set (ctx
+ * sequence), so the game calls it as any callable; OBJLIB 7: callers through Python (the game calling a module
+ * variable) reach it through an adapter; the seams of the engine functions call its C function (Native_HookFinder). 1 with *out (Native_Free it), 0 with the error set (ctx
  * dropped) */
 byte TcX_NewFunc(nativeVal_t *out, const char *name, nativeCall_t call, void *ctx, void (*drop)(void *ctx),
 	const nativeVal_t self[3]);
+/* the channel's functions (recorders, lambdas) as the C hooks of the seams they are put at (Native_HookFinder) */
+void TcX_Init(void);
 /* how the sequence protocol takes v: 1 a sequence the channel reads natively (a text, a tuple or list by value, a
  * list object or view), 0 a value without sequence methods, -1 one only Python reads (an instance, a Python object) */
 int TcX_SeqOf(const nativeVal_t *v);

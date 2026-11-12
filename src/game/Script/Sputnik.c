@@ -11,7 +11,7 @@
  * reads them as its globals; a change is written to the module at once (OBJLIB 5). Sputnik, the player and the
  * ships of Parking (PlayerShip, DtritusPlate, read as its attributes at every use) are handle values (OBJLIB 7).
  * Scrap.GetEntity, CreateEntity, SLogic.SetOnFloor, SInput.SetActionSet, SScorer.Fade, SetCinema and Scrap.Set go
- * through their seams (OBJLIB 7: the cases record or swap them); the vector math, the language texts, the save
+ * through their seams (the cases record or swap them); the vector math, the language texts, the save
  * variable and the camera name are C.
  *
  * Direct calls (stage 3): Parking, Menu, CharScorer, SputnikInterface and the module's own Assign (through its

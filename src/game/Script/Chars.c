@@ -8,7 +8,7 @@
  * CanDriveList and the hooks of the missions (OnCreateMainChar, OnMainCharDeath) stay variables of the module: they
  * are read where the port read them and lists are changed in place (OBJLIB 5); Init walks the CharRes object itself,
  * as the script's loop, while the character scripts it starts append to it. The characters are handle values
- * (OBJLIB 7). The engine functions the port called by name go through their seams (OBJLIB 7: GetEntity,
+ * (OBJLIB 7). The engine functions the port called by name go through their seams (GetEntity,
  * CreateEntity, GetNetFlags, the dummy search, the scheduler, SAct.GetClass/SetCls/DelClass, SInput.SetActionSet,
  * SLogic.SetOnFloor); the other ports (CharsNPC, CharScorer, MissionsFuncs) and the functions of the module the
  * script calls through its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5), the

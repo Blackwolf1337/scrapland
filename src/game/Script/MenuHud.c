@@ -49,14 +49,14 @@ static double Hud_Num(const nativeVal_t *v) {
 		/* OBJLIB 9: long_int (an OverflowError for a long that does not fit) */
 		double d = Native_ToInt(v, &i) && i.type == NV_INT ? (double)i.i : -1.0;
 		Native_Free(&i);
-		Mode_DropError();
+		Native_ErrClear();
 		return d;
 	}
 	case NV_OBJ:
 	case NV_REF: {
 		/* OBJLIB 7: an object with its own int */
 		long l = Mode_AsLong(v);
-		Mode_DropError();
+		Native_ErrClear();
 		return (double)l;
 	}
 	}
@@ -85,7 +85,7 @@ static byte Hud_Item(const nativeVal_t *seq, int i, nativeVal_t *out) {
 	}
 	Native_Free(&tmp);
 	/* OBJLIB 7: the IndexError or TypeError of an odd entry dropped */
-	Mode_DropError();
+	Native_ErrClear();
 	return e != NULL;
 }
 
@@ -211,10 +211,10 @@ static void Hud_Blink(int n, const char *item) {
 static void Hud_BarDefaults(int id, const char *name, const int *c) {
 	nativeVal_t x, y;
 	if (!Mode_ModGet("Scorer", "MissionScorerBar_X", &x)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	if (!Mode_ModGet("Scorer", "MissionScorerBar_Y", &y)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	nativeVal_t nm, v[12];
 	Native_SetText(&nm, name, (int)strlen(name));
@@ -419,7 +419,7 @@ static byte Hud_SpecialAction(int id) {
 		return c == 0;
 	}
 	if (!Mode_VObj(&u, "ActCtrl", &act)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 	nativeVal_t name;
 	/* the C text of the control, "" for a value that is no text */
@@ -472,7 +472,7 @@ PyMethodDef g_CharScorerMethods[] = {
 static byte Hud_True(const nativeVal_t *v, const char *attr) {
 	nativeVal_t a = { 0 };
 	byte t = Mode_VObj(v, attr, &a) && Native_True(&a);
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&a);
 	return t;
 }
@@ -489,11 +489,11 @@ static void Racer_CreateRacerCore(int id) {
 	/* the errors of Scrap.GetCam and Scrap.GetEntity printed, as the C asked them */
 	byte haveName = Mode_CamSeam(id, &camName);
 	if (!haveName) {
-		Mode_PrintError();
+		Native_ErrPrint();
 	}
 	byte haveCam = haveName && Mode_EntitySeam(&camName, &cam);
 	if (haveName && !haveCam) {
-		Mode_PrintError();
+		Native_ErrPrint();
 	}
 	byte camera = haveCam && Native_True(&cam);
 	byte spectator = 0;
@@ -502,7 +502,7 @@ static void Racer_CreateRacerCore(int id) {
 		byte ht = Mode_VObj(&cam, "Target", &t);
 		byte hmt = Mode_VObj(&cam, "MainTarget", &mt);
 		spectator = ht && hmt && Native_Compare(&t, &mt) != 0;
-		Mode_DropError();
+		Native_ErrClear();
 		Native_Free(&t);
 		Native_Free(&mt);
 	}
@@ -530,7 +530,7 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 	int rows = 0;
 	if (data && !Native_Len(data, &rows)) {
 		/* the TypeError of a value that is no sequence dropped: no rows */
-		Mode_DropError();
+		Native_ErrClear();
 		rows = 0;
 	}
 	byte small = rows > 12;
@@ -539,7 +539,7 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 	byte showPing = !Mode_ModGetI("Init", "OffLineGame", 0);
 	nativeVal_t spect;
 	byte haveSpect = Mode_ModGet("RacerScorer", "SPECTATOR_POINTS", &spect);
-	Mode_DropError();
+	Native_ErrClear();
 	for (int i = 0; i < rows && i < 24; i++) {
 		nativeVal_t info, f[5], c[7];
 		char nm[0x20] = "", sc[0x40] = "", ping[0x40] = "", pl[0x80] = "";
@@ -559,7 +559,7 @@ static void Step_Rows(int id, const nativeVal_t *args, int n) {
 		} else if (have[0]) {
 			Hud_Repr(&f[0], sc, sizeof(sc));
 		}
-		Mode_DropError();
+		Native_ErrClear();
 		if (have[4] && f[4].type == NV_STR) {
 			Str_Copy(pl, Native_Text(&f[4]), sizeof(pl));
 		}
@@ -628,7 +628,7 @@ static void Racer_UpdatePing(void) {
 	if (Mode_ModGet("RacerScorer", "MultiplayerUpdatePing_LastTime", &last)) {
 		l = last.type == NV_FLOAT ? last.f : last.type == NV_INT ? (double)last.i : 0;
 	}
-	Mode_DropError();
+	Native_ErrClear();
 	Native_Free(&last);
 	if (now - l < 1) {
 		return;
@@ -658,7 +658,7 @@ static void Racer_UpdateMission(int id, const nativeVal_t *you, const nativeVal_
 	Mode_ModPut("RacerScorer", "missionYou", you);
 	Mode_ModPut("RacerScorer", "missionBad", bad);
 	byte ahead = Native_Compare(you, bad) >= 0;
-	Mode_DropError();
+	Native_ErrClear();
 	Script_SetStr(id, "MissionBest", "Text", Hud_Repr(ahead ? you : bad, a, sizeof(a)));
 	Script_SetStr(id, "MissionBad", "Text", Hud_Repr(ahead ? bad : you, b, sizeof(b)));
 	Script_SetNum(id, "MissionYou", "Y", ahead ? 180 : 200);
@@ -672,7 +672,7 @@ static void Racer_MissionScorerCore(int id) {
 	byte haveLimit = Mode_ModGet("RacerScorer", "missionLimit", &limit);
 	byte haveYou = Mode_ModGet("RacerScorer", "missionYou", &you);
 	byte haveBad = Mode_ModGet("RacerScorer", "missionBad", &bad);
-	Mode_DropError();
+	Native_ErrClear();
 	if (!haveLimit) {
 		Native_SetNone(&limit);
 	}

@@ -13,7 +13,7 @@
  * The modules are native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the variables of
  * Init and of their module where the scripts read them (OBJLIB 5: ItemTake changed in place, the door lists sorted as
  * the objects they are). Scrap.GetEntity, Set, OpenPack, ClosePack, ConsoleError, SSound.LoadSound and the SAct
- * functions go through their seams (OBJLIB 7); string.upper is C. The calls of the module functions through the
+ * functions go through their seams; string.upper is C. The calls of the module functions through the
  * globals, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound go through their refs (PORT_OWN,
  * PORT_CALL: the seam, OBJLIB 5), and so do SAct.GetAction of a value that is no text, SSound.CreatePS and SetPS
  * (stage 7). The .def runner takes its $names as a dict and gives its steps

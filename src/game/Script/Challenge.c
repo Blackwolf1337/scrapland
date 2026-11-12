@@ -687,7 +687,7 @@ static byte Chal_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, con
 		Native_Free(&rep);
 		if (!digits) {
 			/* OBJLIB 7: the SyntaxError of the exec line */
-			PyErr_SetString(PyExc_SyntaxError, "invalid syntax");
+			Native_Raise(NE_SYNTAX, "invalid syntax");
 			return Mode_Done(&t, 0);
 		}
 		ok = Chal_LangOption(ch, var, i ? "ChallengeCombatStdOpt0:" : "ChallengeRaceStdOpt0:",

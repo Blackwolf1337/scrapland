@@ -39,9 +39,9 @@
  *   native [str|check] <literal>   native values without Python objects (TestNative.c)
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
  * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code). The verbs work on
- * native values (scrap/scriptnative.h, scrap/nativeobj.h); what still goes through Python is marked: the error state
- * (OBJLIB 7), the dicts of __main__ and of the modules (OBJLIB 9b) and print of a value of a type the native values do
- * not have (OBJLIB 7e).
+ * native values (scrap/scriptnative.h, scrap/nativeobj.h) and the error state in C; what still goes through Python is
+ * marked: the dicts of __main__ and of the modules (OBJLIB 9b) and print of a value of a type the native values do not
+ * have (OBJLIB 7e).
  */
 #include <math.h>
 #include <stdarg.h>
@@ -125,31 +125,30 @@ void TC_Addf(tcBuf *b, const char *fmt, ...) {
 	TC_Add(b, tmp, -1);
 }
 
-/* OBJLIB 7: str() of a Python object of the error state; a failing one gives "?" and clears the error */
-static void TC_AddPyStr(tcBuf *b, PyObject *o) {
-	PyObject *s = PyObject_Str(o);
+/* str() of the exception (value 0) or of the value of e; a failing one gives "?" and clears its error */
+static void TC_AddErrStr(tcBuf *b, const nativeErr_t *e, byte value) {
+	nativeBuf_t t;
 
-	if (s && PyString_Check(s)) {
-		TC_Add(b, PyString_AsString(s), PyString_Size(s));
+	Native_BufInit(&t);
+	if (value ? Native_ErrValueStr(&t, e) : Native_ErrTypeStr(&t, e)) {
+		TC_Add(b, t.p, t.len);
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 		TC_Add(b, "?", 1);
 	}
-	Py_XDECREF(s);
+	Native_BufFree(&t);
 }
 
 void TC_AddError(tcBuf *b) {
-	PyObject *t, *v, *tb;
+	nativeErr_t e;
 
-	PyErr_Fetch(&t, &v, &tb);
-	PyErr_NormalizeException(&t, &v, &tb);
-	TC_AddPyStr(b, t ? t : Py_None);
+	Native_ErrFetch(&e);
+	Native_ErrNormalize(&e);
+	TC_AddErrStr(b, &e, 0);
 	TC_Add(b, ": ", 2);
-	TC_AddPyStr(b, v ? v : Py_None);
-	Py_XDECREF(t);
-	Py_XDECREF(v);
-	Py_XDECREF(tb);
-	PyErr_Clear();
+	TC_AddErrStr(b, &e, 1);
+	Native_ErrFree(&e);
+	Native_ErrClear();
 }
 
 /* 0 (the error set) when the repr of an object inside the list, tuple or dict by value v fails: Native_Repr leaves
@@ -181,7 +180,7 @@ static byte TC_ReprOk(const nativeVal_t *v) {
 	return ok;
 }
 
-/* repr(), str() or the check() form of v; a failing one gives "?" (OBJLIB 7: the error cleared) */
+/* repr(), str() or the check() form of v; a failing one gives "?" (the error cleared) */
 static void TC_AddVal(tcBuf *b, const nativeVal_t *v, nativeRepr_t mode) {
 	nativeBuf_t t;
 
@@ -189,7 +188,7 @@ static void TC_AddVal(tcBuf *b, const nativeVal_t *v, nativeRepr_t mode) {
 	if ((v->type == NV_REF || TC_ReprOk(v)) && NObj_Repr(&t, v, mode)) {
 		TC_Add(b, t.p, t.len);
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 		TC_Add(b, "?", 1);
 	}
 	Native_BufFree(&t);
@@ -223,7 +222,7 @@ static void TC_Syntax(const char *at) {
 	char msg[0x100];
 
 	snprintf(msg, sizeof(msg), "channel expression: cannot read at '%.60s'", at);
-	PyErr_SetString(PyExc_SyntaxError, msg);
+	Native_Raise(NE_SYNTAX, "%s", msg);
 }
 
 /* ---- golden: the value as check() of the old sdlib.py wrote it ---- */
@@ -471,14 +470,7 @@ static byte TC_RecorderCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t 
 		return 0;
 	}
 	if (r->exc.type != NV_NONE) {
-		/* OBJLIB 7: the error state of Python */
-		PyObject *e = Native_ToPy(&r->exc), *t = e ? Native_ToPy(&r->text) : NULL;
-		if (t) {
-			PyErr_SetObject(e, t);
-		}
-		Py_XDECREF(e);
-		Py_XDECREF(t);
-		return 0;
+		return Native_RaiseObj(&r->exc, &r->text);
 	}
 	Native_Copy(out, &r->value);
 	return 1;
@@ -627,7 +619,7 @@ static void TC_MdDict(tcBuf *b, const nativeVal_t *d, const char *path, tcSeen *
 	int n = NObj_CallMethod(d, "keys", NULL, 0, &keys) ? TcX_SeqLen(&keys) : 0;
 
 	if (n <= 0) {
-		PyErr_Clear();
+		Native_ErrClear();
 		Native_Free(&keys);
 		return;
 	}
@@ -637,7 +629,7 @@ static void TC_MdDict(tcBuf *b, const nativeVal_t *d, const char *path, tcSeen *
 		tcBuf r = { 0 };
 		Native_SetNone(&kv[i]);
 		if (!TcX_SeqGet(&keys, i, &kv[i])) {
-			PyErr_Clear();
+			Native_ErrClear();
 		}
 		TC_AddVal(&r, &kv[i], NR_REPR);
 		ks[i].repr = r.p;
@@ -656,7 +648,7 @@ static void TC_MdDict(tcBuf *b, const nativeVal_t *d, const char *path, tcSeen *
 		if (NObj_GetItem(d, &kv[ks[i].i], &x)) {
 			TC_MdVal(b, &x, sub, seen, depth + 1);
 		} else {
-			PyErr_Clear();
+			Native_ErrClear();
 			TC_MdVal(b, NULL, sub, seen, depth + 1);
 		}
 		Native_Free(&x);
@@ -677,7 +669,7 @@ static void TC_MdAttr(tcBuf *b, const nativeVal_t *v, const char *name) {
 	if (NObj_GetAttr(v, name, &a)) {
 		TC_AddVal(b, &a, NR_STR);
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 		TC_Add(b, "?", 1);
 	}
 	Native_Free(&a);
@@ -691,7 +683,7 @@ static void TC_MdBuiltin(tcBuf *b, const nativeVal_t *v) {
 	TC_Add(b, "builtin ", -1);
 	TC_MdAttr(b, v, "__name__");
 	if (!NObj_GetAttr(v, "__self__", &self)) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	if (self.type == NV_TUPLE && self.n == 4) {
 		const nativeVal_t *list = &self.items[2];
@@ -718,7 +710,7 @@ static void TC_MdBuiltin(tcBuf *b, const nativeVal_t *v) {
 		TC_AddVal(&s, &self.items[3], NR_REPR);
 		TC_Add(&s, ")", 1);
 		if (bad) {
-			PyErr_Clear();
+			Native_ErrClear();
 			s.len = 0;
 			TC_Add(&s, " self=?", -1);
 		}
@@ -769,7 +761,7 @@ static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *s
 	if (kind == NO_MODULE) {
 		nativeVal_t name;
 		byte ok = NObj_GetAttr(v, "__name__", &name) && name.type == NV_STR;
-		PyErr_Clear();
+		Native_ErrClear();
 		TC_Addf(b, "module %s", ok ? Native_Text(&name) : "(null)");
 		Native_Free(&name);
 		return;
@@ -812,7 +804,7 @@ static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *s
 				if (TcX_SeqGet(v, i, &x)) {
 					TC_MdVal(b, &x, sub, seen, depth + 1);
 				} else {
-					PyErr_Clear();
+					Native_ErrClear();
 					TC_MdVal(b, NULL, sub, seen, depth + 1);
 				}
 				Native_Free(&x);
@@ -832,14 +824,14 @@ static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *s
 			if (NObj_GetAttr(v, "__bases__", &bases) && bases.type == NV_TUPLE) {
 				for (int i = 0; i < bases.n; i++) {
 					if (!NObj_GetAttr(&bases.items[i], "__name__", Native_Append(&names))) {
-						PyErr_Clear();
+						Native_ErrClear();
 					}
 				}
 			}
-			PyErr_Clear();
+			Native_ErrClear();
 			Native_Free(&bases);
 			if (!NObj_GetAttr(v, "__dict__", &d)) {
-				PyErr_Clear();
+				Native_ErrClear();
 			}
 			TC_Add(b, "class ", -1);
 			TC_MdAttr(b, v, "__name__");
@@ -850,7 +842,7 @@ static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *s
 			nativeVal_t cls;
 			Native_SetNone(&cls);
 			if (!NObj_GetAttr(v, "__dict__", &d) || !NObj_GetAttr(v, "__class__", &cls)) {
-				PyErr_Clear();
+				Native_ErrClear();
 			}
 			TC_Add(b, "instance of ", -1);
 			TC_MdAttr(b, &cls, "__name__");
@@ -949,7 +941,7 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 			Mem_Free(vars);
 		}
 	}
-	PyErr_Clear();
+	Native_ErrClear();
 	for (int i = 0; i < seen.n; i++) {
 		Native_Free(&seen.vals[i]);
 		Mem_Free(seen.paths[i]);
@@ -1200,7 +1192,7 @@ static void TC_In(tcBuf *b, const char *arg) {
 	name[n] = 0;
 	Native_SetNone(&m);
 	if (!n || !NObj_Module(&m, name) || NObj_Kind(&m) != NO_MODULE) {
-		if (!PyErr_Occurred()) {
+		if (!Native_Failed()) {
 			TC_Syntax(arg);
 		}
 		Native_Free(&m);
@@ -1286,7 +1278,7 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TcX_Run(b, quiet ? arg : line, NULL, quiet);
 	}
 	/* nothing is left pending for the game */
-	PyErr_Clear();
+	Native_ErrClear();
 }
 
 /* runs the body of a command file (CR dropped) */
@@ -1416,6 +1408,7 @@ static void TC_WriteReply(long seq, const tcBuf *b) {
 
 void TestChannel_Enable(void) {
 	tc_on = 1;
+	TcX_Init();
 }
 
 /* the deterministic test mode: the time since the last answer, looked at once per step of the mode's clock (several

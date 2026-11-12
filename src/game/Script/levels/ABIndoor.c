@@ -7,7 +7,7 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The save and engine
  * variables, the scorer items, the action set, the camera and the music are C; Scrap.Set, SScorer.Set, SScorer.Fade,
  * SSound.SetMusic, Scrap.MusicPlayer, Scrap.CreateEntity, Scrap.AddScheduledFunc and the dummy search (fc-abi swaps
- * Scrap.StartDummySearch and NextDummySearch) go through their seams (OBJLIB 7); the ship and the camera are handle
+ * Scrap.StartDummySearch and NextDummySearch) go through their seams; the ship and the camera are handle
  * values (OBJLIB 7); Init.Outdoor and Scene.EndOfSceneCallback are variables of other modules (OBJLIB 5).
  *
  * Direct calls (stage 3): the functions of SaveGame, Elevator, Chars, Menu, MissionsFuncs and Scene and the map's own
@@ -27,10 +27,9 @@
 
 #define MAP "Map"
 
-/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error
- * (OBJLIB 7: the seam) */
+/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */
 #define ABI_SEAM(module, name) \
-	PyObject *hook; \
+	nativeHook_t hook; \
 	int seam = Native_Seam(module, name, &hook); \
 	if (seam < 0) { \
 		return 0; \
@@ -266,7 +265,7 @@ static byte Abi_ShowEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 static byte Abi_MusicPlayer(const char *name, const char *cmd, double volume) {
 	ABI_SEAM("Scrap", "MusicPlayer");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "ssd", name, cmd, volume);
+		return Native_HookCall(&hook, NULL, "ssd", name, cmd, volume);
 	}
 	Music_Play(name, cmd, (float)volume);
 	return 1;

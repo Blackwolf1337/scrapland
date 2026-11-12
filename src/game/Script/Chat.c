@@ -62,7 +62,7 @@ static byte Chat_SetTo(int slot, const char *text) {
 	return Native_Put("Chat", CHAT_SENDID, slot);
 }
 
-/* SNet.SendChatString(to, line) (OBJLIB 7: through its ref, the seam: fc-chat records it) */
+/* SNet.SendChatString(to, line) (through its ref, the seam: fc-chat records it) */
 static byte Chat_SendNet(long to, const char *line) {
 	return PORT_CALL(SNet, SendChatString, NULL, "is", to, line);
 }
@@ -232,7 +232,7 @@ static byte Chat_Send(int id, const char *text, int console) {
 /* MyShip into the module, as the Script_SetVar of the script port: a failed set is no error */
 static void Chat_PutShip(void) {
 	if (!Native_Put("Chat", CHAT_MYSHIP, 0)) {
-		Mode_DropError();
+		Native_ErrClear();
 	}
 }
 

@@ -17,7 +17,7 @@
  * missions where the script reads them and write them back to the module at once (OBJLIB 5), and call the engine in C:
  * save variables, texts, money, entity variables, the scorer; Scrap.UsrEntity, Scrap.Set, Scrap.SetLockAlarm,
  * Scrap.CreateEntity, Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, SScorer.SetMsgText, SetLabelText, Set and
- * the SAct functions through their seams (OBJLIB 7). Entities are handle values (OBJLIB 7). CharsNPC.CharRes and
+ * the SAct functions through their seams. Entities are handle values (OBJLIB 7). CharsNPC.CharRes and
  * Speech.SpeechRoutines are read the Python way (OBJLIB 5). MapSnd.SndElements is LevelCommon's shared Lv_SndElements,
  * native since batch F (Lv_SndCore on values).
  *
@@ -57,7 +57,7 @@ static void Th_TalkAnim(nativeVal_t *out) {
 /* cmp(a, b) of the script: -1, 0 or 1, 2 with the error (only values of other types compared by Python can fail) */
 static int Th_Cmp(const nativeVal_t *a, const nativeVal_t *b) {
 	int c = Native_Compare(a, b);
-	return Mode_Failed() ? 2 : c;
+	return Native_Failed() ? 2 : c;
 }
 
 /* the character stays where it is (Lv_Stay with state 6 and no target) */

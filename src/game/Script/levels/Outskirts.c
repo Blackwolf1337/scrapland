@@ -14,7 +14,7 @@
  * the police ships, the bankers, the mercenaries, the treasures and the police friends are changed in place on the
  * objects of the modules (OBJLIB 5). The ships, the items, the phone cabs and the cameras are handle values, the
  * profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine functions the cases record or swap go through their
- * seams (OBJLIB 7): Scrap.AddScheduledFunc, DeleteScheduledFuncs, DelSaveVars, CreateEntity, Set, SetAlarm, SetLockAlarm,
+ * seams: Scrap.AddScheduledFunc, DeleteScheduledFuncs, DelSaveVars, CreateEntity, Set, SetAlarm, SetLockAlarm,
  * UsrEntity, Rand, GetAlarm, TestLine and Preload3DObject, SAI.GetStateVehicle, SLogic.SetOnFloor, SScorer.Set and
  * SetMsgText and SAct. Through their refs (stage 7: the native entries; a function a case put there, as _bon records
  * them, by name): SAI.SetStateVehicle, Scrap.IncSaveVar, the camera (Scrap.GetCam, SetCam), SAct.GetClass of an
@@ -1651,8 +1651,8 @@ static byte Merc_ScanShip(void) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_G(IM, "lonelyMerc", m) || !Mode_VGet(m, "Pos", mpos)) {
-		/* except: the scan again a second later (OBJLIB 7: the error is the Python exception until errors are a C state) */
-		Mode_DropError();
+		/* except: the scan again a second later */
+		Native_ErrClear();
 		return Mode_Done(&t, Mode_Later(1.0, IM, "ScanShip", NULL, 0, "ScanShip"));
 	}
 	byte ok = Mode_VGet(usr, "Pos", up) && Mode_VecSub(mpos, up, sub) && Mode_VecModSqr(sub, d) && Mode_G(IM, "MAX_SCANNING_DIST", m1) &&

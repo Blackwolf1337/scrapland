@@ -872,20 +872,10 @@ static byte OT_Step(char **tok, int n, nativeVal_t *out) {
 
 /* the error that is set as tc_catch gives it: (type, value) */
 static void OT_Error(nativeVal_t *out) {
-	PyObject *t, *v, *tb;
-	PyErr_Fetch(&t, &v, &tb);
-	PyErr_NormalizeException(&t, &v, &tb);
 	Native_SetEmpty(out, NV_TUPLE);
-	for (int i = 0; i < 2; i++) {
-		PyObject *x = i ? v : t;
-		nativeVal_t *item = Native_Append(out);
-		if (x) {
-			NObj_FromPy(x, item);
-		}
-	}
-	Py_XDECREF(t);
-	Py_XDECREF(v);
-	Py_XDECREF(tb);
+	Native_Append(out);
+	Native_Append(out);
+	Native_ErrCaught(&out->items[0], &out->items[1]);
 }
 
 static void OT_Run(nativeBuf_t *out, byte cross) {
@@ -963,7 +953,7 @@ static void OT_Run(nativeBuf_t *out, byte cross) {
 	for (int i = 0; i < ot_nvars; i++) {
 		/* a class and the unbound method in its dict hold each other (CharSpawnPos, as CharsNPC_Close knows) */
 		if (NObj_Kind(&ot_vars[i].v) == NO_CLASS && !NObj_DelAttr(&ot_vars[i].v, "__init__")) {
-			PyErr_Clear();
+			Native_ErrClear();
 		}
 		Native_Free(&ot_vars[i].v);
 	}

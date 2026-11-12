@@ -1,7 +1,7 @@
 /*
  * Native C helpers of the game mode ports (src/game/Script/ScriptModes.c): Net, Ffa and the online modes (NetModes.c),
  * the split screen (Split.c) and the single player super deals (SuperDeals.c). They call the engine in C on native
- * values. The engine functions the case files of these modules record or swap go through a seam (OBJLIB 7, see
+ * values. The engine functions the case files of these modules record or swap go through a seam (see
  * Native_Seam): Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.Set, Scrap.Rand, Scrap.ConsoleError,
  * Scrap.Preload3DObject, SNet.SendUsrString, SNet.ModifyUsrData, SNet.IsClient, SNet.IsServer, SScorer.SetMsgText,
  * SScorer.SetLabelText, SScorer.SetMPFunc, SScorer.Set, SScorer.Fade, SInput.Bind, SSound.Play and SAI.GetStateVehicle
@@ -101,7 +101,7 @@ byte Mode_NameSet(const char *name, const char *var, const nativeVal_t *v);
 byte Mode_AtGet(const char *module, const char *dict, const nativeVal_t *key, const char *var, nativeVal_t *out);
 byte Mode_AtSet(const char *module, const char *dict, const nativeVal_t *key, const char *var, const nativeVal_t *v);
 
-/* ---- engine calls through their seams (OBJLIB 7) ---- */
+/* ---- engine calls through their seams ---- */
 
 /* SNet.IsClient(), SNet.IsServer(): 1 or 0, -1 with the error */
 int Mode_IsClient(void);
@@ -210,7 +210,7 @@ byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file);
 /* h.method as a bound method (OBJLIB 7: what the scheduler keeps, e.g. l.Del, the Python way until entities are C): a
  * new reference, NULL with the error */
 PyObject *Mode_VBound(const nativeVal_t *h, const char *method);
-/* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (OBJLIB 7: through the seam with those arguments) */
+/* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (through the seam with those arguments) */
 byte Mode_PreloadOnes(const nativeVal_t *name);
 /* Scrap.EntityListGet(list, var): a text (None for none), a float or an int; the engine's console line and NULL result
  * for a missing list, its AttributeError for a missing variable */
@@ -568,7 +568,7 @@ byte Mode_ApplyNext(const char *module);
 int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const char *name);
 /* a == i of the script (Native_Compare can not fail on native values) */
 byte Mode_EqI(const nativeVal_t *a, long i);
-/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
+/* raise "text" (a string exception of the script, its own object): 0 */
 byte Mode_RaiseText(const char *text);
 /* `usr and usr.Name == name`: 1, 0, -1 */
 int Mode_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name);
@@ -739,8 +739,6 @@ byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const n
 
 /* ---- the character hubs of batch M (MakeChar, Chars, CharFuncs) ---- */
 
-/* the error a port drops (PyErr_Clear of the C ports; OBJLIB 7) */
-void Mode_DropError(void);
 /* module.var as Script_GetInt and Script_GetFloat read it: an int (a float cut) or a number, else def; no error (a
  * missing variable or module is def too) */
 long Mode_ModGetI(const char *module, const char *var, long def);
@@ -1231,11 +1229,6 @@ byte Mode_ToLong(const nativeVal_t *v, nativeVal_t *out);
 
 /* ---- the menus, the ship editor and the other ports on the native helpers (stage 6, batch 6h) ---- */
 
-/* the error that is set printed as the script printed its traceback, and dropped (PyErr_Print of the C ports;
- * OBJLIB 7: the Python exception until errors are a C state) */
-void Mode_PrintError(void);
-/* an error is set (PyErr_Occurred of the C ports, OBJLIB 7; a compare of two values can set one without failing) */
-byte Mode_Failed(void);
 /* Script_RunFile (stop: Script_RunFileTry) of a .def section with its $names given as values: the n pairs that follow,
  * each a name and a const nativeVal_t * (up to MODE_DEFVARS; OBJLIB 6: the runner takes them as a dict, Mode_DefVars;
  * an NV_OBJ goes in as the object it is). 0 as the runner gives it, and when the dict could not be made (nothing

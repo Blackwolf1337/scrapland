@@ -10,7 +10,7 @@
  * fromSputnik) are read and set as their attributes, destroyedShips changed in place (OBJLIB 5 and 7). Menu,
  * ShipEdit, HangarTab, SaveGame and the module's own functions (through its attributes, as the script called them) go
  * through their refs (PORT_CALL, the seam OBJLIB 5); the scorer calls too (stage 7), EndSputnikCallBack is
- * called as a value (OBJLIB 5); SetMoney goes through its seam (fc-r7b-jy records it, OBJLIB 7).
+ * called as a value (OBJLIB 5); SetMoney goes through its seam (fc-r7b-jy records it).
  */
 #include "scrap/app.h"
 #include "scrap/script.h"

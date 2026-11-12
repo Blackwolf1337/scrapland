@@ -230,7 +230,7 @@ void NObj_ListViews(nativeBuf_t *b, int max) {
 				Native_BufAdd(b, PyString_AsString(r), PyString_Size(r) > 200 ? 200 : PyString_Size(r));
 				Py_DECREF(r);
 			}
-			PyErr_Clear();
+			Native_ErrClear();
 			Native_BufAdd(b, "\n", 1);
 		}
 	}
@@ -492,7 +492,7 @@ static byte Obj_DictPut(nativeObj_t *d, const char *name, const nativeVal_t *v) 
 static byte Obj_DictRemove(nativeObj_t *d, const char *name) {
 	if (d->py) {
 		if (PyDict_DelItemString(d->py, (char *)name) != 0) {
-			PyErr_Clear();
+			Native_ErrClear();
 			return 0;
 		}
 		return 1;
@@ -660,8 +660,8 @@ static PyObject *Obj_Tramp(PyObject *self, PyObject *args) {
 	Mem_Free(a);
 	PyObject *res = ok ? Native_ToPy(&r) : NULL;
 	Native_Free(&r);
-	if (!ok && !PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+	if (!ok && !Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
 	}
 	return res;
 }
@@ -882,7 +882,7 @@ static PyObject *Obj_ToPy(nativeObj_t *o) {
 		Obj_Crossed(o, py);
 		break;
 	default:
-		PyErr_SetString(PyExc_SystemError, "a native module without its Python object");
+		Native_Raise(NE_SYSTEM, "a native module without its Python object");
 		return NULL;
 	}
 	/* the Python object is the master from here on */
@@ -1002,7 +1002,7 @@ void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out) {
 		Native_SetObj(out, o);
 		Py_DECREF(o);
 	} else {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 }
 
@@ -1280,7 +1280,7 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 				Str_Copy(fname, PyString_AsString(n), sizeof(fname));
 			}
 			Py_XDECREF(n);
-			PyErr_Clear();
+			Native_ErrClear();
 		}
 		if (!o->self) {
 			Obj_Addf(b, "<unbound method %.100s.%.100s>", Obj_ClassName(o->cls), fname);
@@ -1321,7 +1321,7 @@ byte NObj_True(const nativeVal_t *v) {
 	const nativeObj_t *o = v->ref;
 	if (Obj_View(o)) {
 		int t = PyObject_IsTrue(o->py);
-		PyErr_Clear();
+		Native_ErrClear();
 		return t > 0;
 	}
 	/* a list or dict by its length; an instance is true (no __nonzero__ and __len__ of native instances) */
@@ -1379,7 +1379,7 @@ int NObj_Compare(const nativeVal_t *a, const nativeVal_t *b) {
 	PyObject *pb = b->type == NV_REF ? Obj_View(b->ref) : b->type == NV_OBJ ? b->obj : NULL;
 	if (pa && pb) {
 		c = PyObject_Compare(pa, pb);
-		PyErr_Clear();
+		Native_ErrClear();
 		return Obj_Sign(c);
 	}
 	/* a list with a list and a dict with a dict by their items, by value or as objects */
@@ -1433,7 +1433,7 @@ byte NObj_HashQuiet(const nativeVal_t *v, long *out) {
 		/* a view from the start: the hash of the Python object (the address, or its __hash__) */
 		x = PyObject_Hash(o->py);
 		if (x == -1) {
-			PyErr_Clear();
+			Native_ErrClear();
 			return 0;
 		}
 		*out = x;
@@ -2422,8 +2422,8 @@ int NObj_Contains(const nativeVal_t *seq, const nativeVal_t *x) {
 		for (int i = 0; px && r < 0; i++) {
 			PyObject *item = sq->sq_item(py, i);
 			if (!item) {
-				if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-					PyErr_Clear();
+				if (Native_ErrIs(NE_INDEX)) {
+					Native_ErrClear();
 					r = 0;
 				}
 				break;
@@ -2432,7 +2432,7 @@ int NObj_Contains(const nativeVal_t *seq, const nativeVal_t *x) {
 			Py_DECREF(item);
 			if (c == 0) {
 				r = 1;
-			} else if (PyErr_Occurred()) {
+			} else if (Native_Failed()) {
 				break;
 			}
 		}
@@ -2490,8 +2490,8 @@ static byte Obj_CallFunc(nativeObj_t *o, const nativeVal_t *a, int n, nativeVal_
 		Script_Leave();
 		if (!ok) {
 			Native_Free(out);
-			if (!PyErr_Occurred()) {
-				PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+			if (!Native_Failed()) {
+				Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
 			}
 		}
 		return ok;

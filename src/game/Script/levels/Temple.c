@@ -11,7 +11,7 @@
  * CharConversor.AvailableChars, Alarm.SetAlarmCallback, CharsNPC.AfterBrowseNPC and the callbacks of the characters are
  * changed in place on their objects, the gatekeeper groups are passed as the objects of GateKeeper (OBJLIB 5); a
  * variable of another module that the script set with Script_SetVar keeps dropping its error. Entities are handle
- * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
+ * values (OBJLIB 7). The engine functions the cases record or swap go through their seams:
  * Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set, Scrap.SetAlarm, Scrap.GetAlarm,
  * SScorer.SetMsgText, SScorer.SetLabelText, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the SAct functions of
  * the fake speech and SSound.SetMusic (fr6b.py); SFX.BishopSellLife (fc-tp-map swaps it) through its ref (stage 7).

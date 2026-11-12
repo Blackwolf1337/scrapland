@@ -15,7 +15,7 @@
  * characters handle values (OBJLIB 5, 7): their attributes are read and set the Python way, and the lists of
  * functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read again on
  * each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
- * SLogic.SetOnFloor, SScorer.SetMsgText, Scrap.GetLangEntries and the scheduler go through their seams (OBJLIB 7); the
+ * SLogic.SetOnFloor, SScorer.SetMsgText, Scrap.GetLangEntries and the scheduler go through their seams; the
  * save variables, the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice,
  * DTritusDesktop, CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly
  * while the attribute holds the port's function, else by name) and string.find through its native twin;
@@ -88,10 +88,10 @@ int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals) {
 		((PyMethodObject *)m)->im_class = cls;
 		Py_DECREF(Py_None);
 	} else if (cls) {
-		PyErr_SetString(PyExc_TypeError, "CharSpawnPos: the class of the module definition without its __init__");
+		Native_Raise(NE_TYPE, "CharSpawnPos: the class of the module definition without its __init__");
 	}
 	Py_XDECREF(cls);
-	return !PyErr_Occurred();
+	return !Native_Failed();
 }
 
 /*

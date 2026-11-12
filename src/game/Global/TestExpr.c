@@ -260,7 +260,7 @@ static tcNode *TX_Syntax(const char *at) {
 	char msg[0x100];
 
 	snprintf(msg, sizeof(msg), "channel expression: cannot read at '%.60s'", at);
-	PyErr_SetString(PyExc_SyntaxError, msg);
+	Native_Raise(NE_SYNTAX, "%s", msg);
 	return NULL;
 }
 
@@ -1269,10 +1269,10 @@ static PyObject *TX_GlobalPy(const char *name) {
 		return v;
 	}
 	v = Script_Module(name);
-	if (!v && PyErr_ExceptionMatches(PyExc_ImportError)) {
+	if (!v && Native_ErrIs(NE_IMPORT)) {
 		/* what LOAD_NAME raises */
-		PyErr_Clear();
-		PyErr_SetString(PyExc_NameError, name);
+		Native_ErrClear();
+		Native_Raise(NE_NAME, "%s", name);
 	}
 	return v;
 }
@@ -1372,8 +1372,8 @@ static byte tx_builtinAttr;
 /* the error raised when o.name or o.name = v failed without one (an entity handle that gives no value and sets no
  * error): the interpreter's (ceval.c), in a check line the one of the getattr and setattr builtins */
 static void X_NoError(void) {
-	if (!PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, tx_builtinAttr ? "NULL result without error in call_object"
+	if (!Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "%s", tx_builtinAttr ? "NULL result without error in call_object"
 			: "error return without exception set");
 	}
 }
@@ -1410,20 +1410,24 @@ static byte TX_GetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out)
  * none */
 static byte TX_SetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v) {
 	nativeVal_t t;
+	byte ok;
 
 	if (!v) {
-		return NObj_DelAttr(o, name);
-	}
-	if (o->type == NV_ENT && !Native_Holds(v, NV_REFS)) {
+		ok = NObj_DelAttr(o, name);
+	} else if (o->type == NV_ENT && !Native_Holds(v, NV_REFS)) {
 		return Native_EntStore(Native_Ent(o), Native_EntName(o), name, v);
+	} else if (!Native_Holds(v, 1u << NV_DICT)) {
+		ok = NObj_SetAttr(o, name, v);
+	} else {
+		Native_Copy(&t, v);
+		TX_Give(&t);
+		ok = NObj_SetAttr(o, name, &t);
+		Native_Free(&t);
 	}
-	if (!Native_Holds(v, 1u << NV_DICT)) {
-		return NObj_SetAttr(o, name, v);
+	/* the seam of an engine function follows the store (the channel is what replaces them) */
+	if (ok) {
+		Native_HookStore(o, name, v);
 	}
-	Native_Copy(&t, v);
-	TX_Give(&t);
-	byte ok = NObj_SetAttr(o, name, &t);
-	Native_Free(&t);
 	return ok;
 }
 
@@ -1532,7 +1536,7 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 		}
 	}
 	/* a value with an error left set is the error (as the next check of the interpreter raises it) */
-	if (ok && PyErr_Occurred()) {
+	if (ok && Native_Failed()) {
 		Native_Free(out);
 		ok = 0;
 	}
@@ -1585,7 +1589,7 @@ static const nativeVal_t *TX_Plain(const nativeVal_t *v, nativeVal_t *tmp) {
 		return v;
 	}
 	if (NObj_Kind(v) != NO_LIST || NObj_Py(v) || !NObj_GetSlice(v, 0, NOBJ_END, tmp)) {
-		PyErr_Clear();
+		Native_ErrClear();
 		return NULL;
 	}
 	return tmp;
@@ -1780,7 +1784,7 @@ static byte X_Eval(tcNode *x, tcScope *s, nativeVal_t *out) {
 	Native_SetNone(out);
 	if (++tx_depth > TX_EVAL_DEPTH) {
 		tx_depth--;
-		PyErr_SetString(PyExc_RuntimeError, "maximum recursion depth exceeded");
+		Native_Raise(NE_RUNTIME, "maximum recursion depth exceeded");
 		return 0;
 	}
 	switch (x->kind) {
@@ -2167,8 +2171,8 @@ static void TX_CFnFree(void *p) {
 	Mem_Free(f);
 }
 
-/* OBJLIB 7: the C function of its Python object, for the callers through Python (the seams of the engine functions,
- * the game calling a module variable); self: (the record, ...) */
+/* OBJLIB 7: the C function of its Python object, for the callers through Python (the game calling a module
+ * variable); self: (the record, ...) */
 static PyObject *TX_CFnPy(PyObject *self, PyObject *args) {
 	tcCFn *f = PyCObject_AsVoidPtr(PyTuple_GetItem(self, 0));
 	int n;
@@ -2208,6 +2212,51 @@ byte TcX_NewFunc(nativeVal_t *out, const char *name, nativeCall_t call, void *ct
 		Py_XDECREF(items[i]);
 	}
 	return ok;
+}
+
+/* OBJLIB 9: the record of a lambda or a function of the verbs, the first item of the self of its C function object */
+static void *TX_RecOf(PyCFunctionObject *cf) {
+	return PyCObject_AsVoidPtr(PyTuple_GetItem(cf->m_self, 0));
+}
+
+/* a lambda as the C function of a seam: the record on copies of the arguments (TX_LambdaRun takes them) */
+static byte TX_HookLambda(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t c[NATIVE_ARGS];
+
+	for (int i = 0; i < n; i++) {
+		Native_Copy(&c[i], &a[i]);
+	}
+	byte ok = TX_LambdaRun(ctx, c, n, NULL, out);
+	for (int i = 0; i < n; i++) {
+		Native_Free(&c[i]);
+	}
+	return ok;
+}
+
+/* the C function and record of a channel function a case put at a seam (Native_HookFinder) */
+static byte TX_HookFind(const nativeVal_t *f, nativeHook_t *hook) {
+	PyObject *py = TX_Py(f);
+
+	if (!py || !PyCFunction_Check(py)) {
+		return 0;
+	}
+	PyCFunctionObject *cf = (PyCFunctionObject *)py;
+	if (cf->m_ml == &tx_lambdaDef) {
+		hook->call = TX_HookLambda;
+		hook->ctx = TX_RecOf(cf);
+		return 1;
+	}
+	if (cf->m_ml->ml_meth == TX_CFnPy) {
+		tcCFn *rec = TX_RecOf(cf);
+		hook->call = rec->call;
+		hook->ctx = rec->ctx;
+		return 1;
+	}
+	return 0;
+}
+
+void TcX_Init(void) {
+	Native_HookFinder(TX_HookFind);
 }
 
 /* ---- the builtins and the channel's own functions on native values ---- */
@@ -2258,8 +2307,8 @@ static byte TX_ArgText(const char *fname, int i, const nativeVal_t *v, byte nul)
 
 /* the "NULL result without error in call_object" of a call that failed without an error: 0 */
 static byte TX_NullResult(void) {
-	if (!PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+	if (!Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
 	}
 	return 0;
 }
@@ -2582,7 +2631,7 @@ static int TB_GetAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 		return 1;
 	}
 	if (n > 2) {
-		PyErr_Clear();
+		Native_ErrClear();
 		Native_Copy(out, &a[2]);
 		return 1;
 	}
@@ -2598,7 +2647,7 @@ static int TB_HasAttr(nativeVal_t *a, int n, nativeVal_t *out) {
 	byte ok = TX_GetAttr(&a[0], Native_Text(&a[1]), &v);
 	Native_Free(&v);
 	if (!ok) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	Native_SetInt(out, ok);
 	return 1;
@@ -2902,7 +2951,7 @@ static int TB_Callable(nativeVal_t *a, int n, nativeVal_t *out) {
 		k = NObj_GetAttr(a, "__call__", &call);
 		Native_Free(&call);
 		if (!k) {
-			PyErr_Clear();
+			Native_ErrClear();
 		}
 	} else {
 		k = k == NO_FUNCTION || k == NO_METHOD || k == NO_CLASS;
@@ -2941,7 +2990,7 @@ static byte TP_SdnVal(const nativeVal_t *x, int depth, nativeVal_t *out) {
 
 	Native_SetNone(out);
 	if (depth > TX_EVAL_DEPTH) {
-		PyErr_SetString(PyExc_RuntimeError, "maximum recursion depth exceeded");
+		Native_Raise(NE_RUNTIME, "maximum recursion depth exceeded");
 		return 0;
 	}
 	if (x->type == NV_TUPLE || x->type == NV_VEC || x->type == NV_LIST || NObj_Kind(x) == NO_LIST) {
@@ -2995,7 +3044,7 @@ static byte TP_SdnVal(const nativeVal_t *x, int depth, nativeVal_t *out) {
 			return ok;
 		}
 		Native_Free(&name);
-		PyErr_Clear();
+		Native_ErrClear();
 		Native_SetStr(out, "ent:?");
 		return 1;
 	}
@@ -3009,7 +3058,7 @@ static byte TP_SdnVal(const nativeVal_t *x, int depth, nativeVal_t *out) {
 			Native_Free(&name);
 			return ok;
 		}
-		PyErr_Clear();
+		Native_ErrClear();
 	}
 	if (NObj_Kind(x) == NO_INSTANCE) {
 		/* 'inst:' + the name of its class */
@@ -3049,20 +3098,6 @@ static byte TP_CallArgs(nativeVal_t *f, const nativeVal_t *args, const nativeVal
 	return ok;
 }
 
-/* the pending error as (type, value) native values, cleared (sys.exc_type and sys.exc_value in an except clause).
- * OBJLIB 7: the error state of Python */
-static void TP_Caught(nativeVal_t *type, nativeVal_t *value) {
-	PyObject *t, *v, *tb;
-
-	PyErr_Fetch(&t, &v, &tb);
-	PyErr_NormalizeException(&t, &v, &tb);
-	NObj_FromPy(t ? t : Py_None, type);
-	NObj_FromPy(v ? v : Py_None, value);
-	Py_XDECREF(t);
-	Py_XDECREF(v);
-	Py_XDECREF(tb);
-}
-
 static int TP_Catch(nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t tv[2];
 
@@ -3072,7 +3107,7 @@ static int TP_Catch(nativeVal_t *a, int n, nativeVal_t *out) {
 	if (TP_CallArgs(&a[0], &a[1], n > 2 ? &a[2] : NULL, out)) {
 		return 1;
 	}
-	TP_Caught(&tv[0], &tv[1]);
+	Native_ErrCaught(&tv[0], &tv[1]);
 	byte ok = 1;
 	if (n < 4 || a[3].type == NV_NONE) {
 		Native_SetEmpty(out, NV_TUPLE);
@@ -3091,36 +3126,34 @@ static int TP_Try(nativeVal_t *a, int n, nativeVal_t *out) {
 		return 0;
 	}
 	if (!TP_CallArgs(&a[0], &a[1], NULL, out)) {
-		PyErr_Clear();
+		Native_ErrClear();
 		Native_Copy(out, &a[2]);
 	}
 	return 1;
 }
 
 static int TP_Finally(nativeVal_t *a, int n, nativeVal_t *out) {
-	PyObject *t, *v, *tb;
+	nativeErr_t e;
 	nativeVal_t r;
 
 	if (!TX_Arity(NULL, n, 3, 3)) {
 		return 0;
 	}
 	byte ok = TP_CallArgs(&a[0], &a[1], NULL, out);
-	PyErr_Fetch(&t, &v, &tb);
+	Native_ErrFetch(&e);
 	if (!TX_Call(&a[2], NULL, 0, NULL, &r)) {
 		/* an exception of the cleanup replaces the one before, as in a finally clause */
-		Py_XDECREF(t);
-		Py_XDECREF(v);
-		Py_XDECREF(tb);
+		Native_ErrFree(&e);
 		Native_Free(out);
 		return 0;
 	}
 	Native_Free(&r);
-	PyErr_Restore(t, v, tb);
+	Native_ErrRestore(&e);
 	return ok;
 }
 
 static int TP_Swap(nativeVal_t *a, int n, nativeVal_t *out) {
-	PyObject *t, *v, *tb;
+	nativeErr_t e;
 	nativeVal_t old;
 
 	if (!TX_Arity(NULL, n, 4, 4) || !TX_ArgText(NULL, 2, &a[1], 0)) {
@@ -3135,11 +3168,11 @@ static int TP_Swap(nativeVal_t *a, int n, nativeVal_t *out) {
 		return TX_NullResult();
 	}
 	byte ok = TX_Call(&a[3], NULL, 0, NULL, out);
-	PyErr_Fetch(&t, &v, &tb);
+	Native_ErrFetch(&e);
 	if (!TX_SetAttr(&a[0], name, &old)) {
-		PyErr_Clear();
+		Native_ErrClear();
 	}
-	PyErr_Restore(t, v, tb);
+	Native_ErrRestore(&e);
 	Native_Free(&old);
 	return ok;
 }
@@ -3410,7 +3443,7 @@ static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVa
 	PyCFunctionObject *cf = (PyCFunctionObject *)py;
 	if (cf->m_ml == &tx_lambdaDef) {
 		nativeVal_t pairs;
-		tcFunc *rec = PyCObject_AsVoidPtr(PyTuple_GetItem(cf->m_self, 0));
+		tcFunc *rec = TX_RecOf(cf);
 		if (kw && !TX_Pairs(kw, &pairs)) {
 			return 0;
 		}
@@ -3421,7 +3454,7 @@ static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVa
 		return ok;
 	}
 	if (cf->m_ml->ml_meth == TX_CFnPy) {
-		tcCFn *rec = PyCObject_AsVoidPtr(PyTuple_GetItem(cf->m_self, 0));
+		tcCFn *rec = TX_RecOf(cf);
 		if (TX_HasKw(kw)) {
 			return Native_Raise(NE_TYPE, "this function takes no keyword arguments");
 		}
@@ -3578,7 +3611,7 @@ static byte X_Delete(tcNode *t, tcScope *s) {
 	switch (t->kind) {
 	case X_NAME:
 		if ((s->inMod ? ModVar_Del(&s->mv, t->name) : PyDict_DelItemString(s->globals, (char *)t->name)) != 0) {
-			PyErr_Clear();
+			Native_ErrClear();
 			return Native_Raise(NE_NAME, "%s", t->name);
 		}
 		return 1;
@@ -3812,7 +3845,7 @@ void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet) {
 			if (TX_Repr(&v, NR_REPR, &text)) {
 				TC_Add(b, Native_Text(&text), text.n);
 			} else {
-				PyErr_Clear();
+				Native_ErrClear();
 				TC_Add(b, "?", 1);
 			}
 			Native_Free(&text);

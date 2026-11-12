@@ -2046,7 +2046,7 @@ static byte Data_InitMission(const nativeVal_t *a, nativeVal_t *out) {
 		ok = Gd_Target(&usr, &e);
 		/* try: ... except: pass */
 		if (ok && !Gd_Flee(&usr)) {
-			Mode_DropError();
+			Native_ErrClear();
 		}
 	}
 	Native_Free(&fn);

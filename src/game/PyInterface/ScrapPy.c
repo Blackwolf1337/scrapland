@@ -822,7 +822,7 @@ static void VideoPlayer_Done(int result) {
 	PyObject *args = Py_BuildValue("(i)", result);
 	PyObject *r = args ? PyEval_CallObject(f, args) : NULL;
 	if (!r) {
-		PyErr_Print();
+		Native_ErrPrint();
 	}
 	Py_XDECREF(r);
 	Py_XDECREF(args);
@@ -1197,7 +1197,7 @@ API_FN(Scrap, SphereCall) {
 	const char *listName, *func;
 	int flag = 1;
 	if (!Mode_Parse(a, n, "ddddss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
-		PyErr_Clear();
+		Native_ErrClear();
 		if (!Mode_Parse(a, n, "(ddd)dss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
 			return 0;
 		}
