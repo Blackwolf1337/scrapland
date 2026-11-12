@@ -32,14 +32,14 @@ typedef struct {
 	const portFn_t *fns;		/* a function table (stage 7e) in place of methods */
 } levelModule_t;
 
-extern PyMethodDef g_MenuMapMethods[], g_TempleMapMethods[], g_TempleXlMethods[], g_TempleArchbishopDeadMethods[],
+extern const portFn_t g_MenuMapMethods[], g_TempleMapMethods[], g_TempleXlMethods[], g_TempleArchbishopDeadMethods[],
 	g_TempleAskGusMethods[], g_TempleMeetArchbishopMethods[], g_TempleTalkToDeepThroatMethods[];
 
-extern PyMethodDef g_CommercialMapMethods[], g_CommercialMapRaceMethods[], g_CommercialDestroyMickusMethods[],
+extern const portFn_t g_CommercialMapMethods[], g_CommercialMapRaceMethods[], g_CommercialDestroyMickusMethods[],
 	g_CommercialProtectGusMethods[], g_CommercialDestroyStupidusMethods[], g_CommercialWin1stRaceMethods[],
 	g_CommercialFirstMeetDeepThroatMethods[], g_CommercialGetDataPart3Methods[],
 	g_CommercialDefeatCrazyGambler3Methods[], g_CommercialDestroyPorkinsTransportsMethods[];
-extern PyMethodDef g_OrbitMapMethods[], g_OrbitMapDecontMethods[], g_OrbitIntroHumanMethods[];
+extern const portFn_t g_OrbitMapMethods[], g_OrbitMapDecontMethods[], g_OrbitIntroHumanMethods[];
 extern PyMethodDef g_GamblinDenMapMethods[], g_GamblinDenBeforeFinalFightMethods[], g_GamblinDenAfterFinalFightMethods[],
 	g_GamblinDenArrangeIgorCombatMethods[], g_GamblinDenArrangeBankersCTFMethods[], g_GamblinDenArrangeBankersCombatMethods[],
 	g_GamblinDenIgorFirstContactMethods[], g_GamblinDenGoToGamblinDenMethods[], g_GamblinDenTalkToTraitoriusAfterCTFMethods[],
@@ -65,13 +65,13 @@ extern PyMethodDef g_OutskirtsMapMethods[], g_OutskirtsMapRaceMethods[], g_Outsk
 	g_OutskirtsTransportKillerMethods[], g_OutskirtsWin2ndRaceMethods[];
 
 static const levelModule_t level_modules[] = {
-	{ "menu", "Map", g_MenuMapMethods, NULL },
-	{ "temple", "Map", g_TempleMapMethods, NULL },
-	{ "temple", "MapExtraLifes", g_TempleXlMethods, NULL },
-	{ "temple", "Mission_ArchbishopDead", g_TempleArchbishopDeadMethods, NULL },
-	{ "temple", "Mission_AskGus", g_TempleAskGusMethods, NULL },
-	{ "temple", "Mission_MeetArchbishop", g_TempleMeetArchbishopMethods, NULL },
-	{ "temple", "Mission_TalkToDeepThroat", g_TempleTalkToDeepThroatMethods, NULL },
+	{ "menu", "Map", NULL, g_MenuMapMethods },
+	{ "temple", "Map", NULL, g_TempleMapMethods },
+	{ "temple", "MapExtraLifes", NULL, g_TempleXlMethods },
+	{ "temple", "Mission_ArchbishopDead", NULL, g_TempleArchbishopDeadMethods },
+	{ "temple", "Mission_AskGus", NULL, g_TempleAskGusMethods },
+	{ "temple", "Mission_MeetArchbishop", NULL, g_TempleMeetArchbishopMethods },
+	{ "temple", "Mission_TalkToDeepThroat", NULL, g_TempleTalkToDeepThroatMethods },
 	{ "bank", "Map", NULL, g_BankMapMethods },
 	{ "bank", "MapTreasure", NULL, g_BankMapTreasureMethods },
 	{ "bank", "Mission_CatchRudolph", NULL, g_BankCatchRudolphMethods },
@@ -92,20 +92,20 @@ static const levelModule_t level_modules[] = {
 	{ "townhall", "Mission_CatchTrurl", NULL, g_TownhallCatchTrurlMethods },
 	{ "townhall", "Mission_SheriffMayor", NULL, g_TownhallSheriffMayorMethods },
 	{ "townhall", "Mission_TalkToMayor", NULL, g_TownhallTalkToMayorMethods },
-	{ "commercial", "Map", g_CommercialMapMethods, NULL },
-	{ "commercial", "MapRace", g_CommercialMapRaceMethods, NULL },
-	{ "commercial", "Mission_DestroyMickus", g_CommercialDestroyMickusMethods, NULL },
-	{ "commercial", "Mission_ProtectGus", g_CommercialProtectGusMethods, NULL },
-	{ "commercial", "Mission_DestroyStupidus", g_CommercialDestroyStupidusMethods, NULL },
-	{ "commercial", "Mission_Win1stRace", g_CommercialWin1stRaceMethods, NULL },
+	{ "commercial", "Map", NULL, g_CommercialMapMethods },
+	{ "commercial", "MapRace", NULL, g_CommercialMapRaceMethods },
+	{ "commercial", "Mission_DestroyMickus", NULL, g_CommercialDestroyMickusMethods },
+	{ "commercial", "Mission_ProtectGus", NULL, g_CommercialProtectGusMethods },
+	{ "commercial", "Mission_DestroyStupidus", NULL, g_CommercialDestroyStupidusMethods },
+	{ "commercial", "Mission_Win1stRace", NULL, g_CommercialWin1stRaceMethods },
 	{ "commercial", "Mission_DestroyCommSats2", NULL, g_CommercialDestroyCommSats2Methods },
-	{ "commercial", "Mission_FirstMeetDeepThroat", g_CommercialFirstMeetDeepThroatMethods, NULL },
-	{ "commercial", "Mission_GetDataPart3", g_CommercialGetDataPart3Methods, NULL },
-	{ "commercial", "Mission_DefeatCrazyGambler3", g_CommercialDefeatCrazyGambler3Methods, NULL },
-	{ "commercial", "Mission_DestroyPorkinsTransports", g_CommercialDestroyPorkinsTransportsMethods, NULL },
-	{ "orbit", "Map", g_OrbitMapMethods, NULL },
-	{ "orbit", "MapDecont", g_OrbitMapDecontMethods, NULL },
-	{ "orbit", "Mission_IntroHuman", g_OrbitIntroHumanMethods, NULL },
+	{ "commercial", "Mission_FirstMeetDeepThroat", NULL, g_CommercialFirstMeetDeepThroatMethods },
+	{ "commercial", "Mission_GetDataPart3", NULL, g_CommercialGetDataPart3Methods },
+	{ "commercial", "Mission_DefeatCrazyGambler3", NULL, g_CommercialDefeatCrazyGambler3Methods },
+	{ "commercial", "Mission_DestroyPorkinsTransports", NULL, g_CommercialDestroyPorkinsTransportsMethods },
+	{ "orbit", "Map", NULL, g_OrbitMapMethods },
+	{ "orbit", "MapDecont", NULL, g_OrbitMapDecontMethods },
+	{ "orbit", "Mission_IntroHuman", NULL, g_OrbitIntroHumanMethods },
 	{ "om", "SuperDeal_Sixth", g_OmSixthMethods, NULL },
 	{ "om", "SuperDeal_Tenth", g_OmTenthMethods, NULL },
 	{ "qf", "Mission_BankersCombat", g_QfBankersCombatMethods, NULL },

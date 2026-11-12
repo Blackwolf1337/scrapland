@@ -421,18 +421,18 @@ MODE_KW(Menu, cremeteoroPy, "O|O", "vec", "tim") {
 	return Menu_cremeteoro(&v[0], &v[1]);
 }
 
-PyMethodDef g_MenuMapMethods[] = {
-	{ "InitStatus", Menu_InitStatusPy, 1, NULL },
-	{ "EndCredits", (PyCFunction)(void (*)(void))Menu_EndCreditsPy, 3, NULL },
-	{ "FadeOutCreditsEnd", Menu_FadeOutCreditsEndPy, 1, NULL },
-	{ "FadeOutCredits", Menu_FadeOutCreditsPy, 1, NULL },
-	{ "NextCredit", Menu_NextCreditPy, 1, NULL },
-	{ "ShowCredits", Menu_ShowCreditsPy, 1, NULL },
-	{ "SetMotionBlur", Menu_SetMotionBlurPy, 1, NULL },
-	{ "Init", Menu_InitPy, 1, NULL },
-	{ "drotorito", Menu_drotoritoPy, 1, NULL },
-	{ "cremeteoro", (PyCFunction)(void (*)(void))Menu_cremeteoroPy, 3, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuMapMethods[] = {
+	PORT_FN(InitStatus, Menu_InitStatusPy),
+	PORT_FNK(EndCredits, Menu_EndCreditsPy),
+	PORT_FN(FadeOutCreditsEnd, Menu_FadeOutCreditsEndPy),
+	PORT_FN(FadeOutCredits, Menu_FadeOutCreditsPy),
+	PORT_FN(NextCredit, Menu_NextCreditPy),
+	PORT_FN(ShowCredits, Menu_ShowCreditsPy),
+	PORT_FN(SetMotionBlur, Menu_SetMotionBlurPy),
+	PORT_FN(Init, Menu_InitPy),
+	PORT_FN(drotorito, Menu_drotoritoPy),
+	PORT_FNK(cremeteoro, Menu_cremeteoroPy),
+	PORT_FNEND
 };
 
 PORTS(levels_Menu)
