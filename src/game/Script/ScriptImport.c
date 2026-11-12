@@ -185,13 +185,38 @@ static int Imp_Builtin(const char *name) {
 	return -1;
 }
 
-/* init_builtin: the built-in module name made into the store; 1 with *out, 0 with the error ("Cannot re-init internal
- * module"), -1 without one when name is no built-in module */
+/* the copies of the variables of the built-in modules as they were made (_PyImport_FixupExtension), by table index */
+static nativeVal_t imp_copies[sizeof(imp_table) / sizeof(imp_table[0])];
+
+/* FixupExtension: the variables of the built-in module m (table index i) kept as made */
+static void Imp_Fixup(int i, const nativeVal_t *m) {
+	Native_Free(&imp_copies[i]);
+	Native_Copy(&imp_copies[i], NObj_DictData(NObj_ModuleVars(m)));
+}
+
+/* init_builtin: the built-in module name made into the store, or a module made before given its variables as made
+ * again (_PyImport_FindExtension: the module of the store, or a new one, updated with the copy); 1 with *out, 0 with
+ * the error ("Cannot re-init internal module"), -1 without one when name is no built-in module */
 static int Imp_InitBuiltin(const char *name, nativeVal_t *out) {
 	int i = Imp_Builtin(name);
 	Native_SetNone(out);
 	if (i < 0) {
 		return -1;
+	}
+	if (imp_copies[i].type == NV_DICT) {
+		if (!Script_ModuleLoaded(name, out) || NObj_Kind(out) != NO_MODULE) {
+			Native_Free(out);
+			NObj_NewModule(out, name);
+			if (!Imp_Store(name, out)) {
+				Native_Free(out);
+				return 0;
+			}
+		}
+		nativeVal_t *t = NObj_DictData(NObj_ModuleVars(out));
+		if (t) {
+			Native_DictMerge(t, &imp_copies[i], 0);
+		}
+		return 1;
 	}
 	if (!imp_table[i].make) {
 		return Native_Raise(NE_IMPORT, "Cannot re-init internal module %.200s", name);
@@ -200,6 +225,7 @@ static int Imp_InitBuiltin(const char *name, nativeVal_t *out) {
 		Native_Free(out);
 		return 0;
 	}
+	Imp_Fixup(i, out);
 	return 1;
 }
 
@@ -626,6 +652,7 @@ byte Script_ImportStart(void) {
 		Imp_Native(&imp_builtin, bi[i], biFn[i]);
 	}
 	Imp_Store("__builtin__", &imp_builtin);
+	Imp_Fixup(Imp_Builtin("__builtin__"), &imp_builtin);
 	if (!Imp_Lib("sys", &sys)) {
 		return 0;
 	}
@@ -634,6 +661,7 @@ byte Script_ImportStart(void) {
 	Imp_Native(&sys, "setprofile", Sys_SetTrace);
 	Imp_Native(&sys, "setcheckinterval", Sys_SetCheckInterval);
 	Imp_Store("sys", &sys);
+	Imp_Fixup(Imp_Builtin("sys"), &sys);
 	Imp_Put(&sys, "modules", &imp_store);
 	/* OBJLIB 7e4b: the path of the library (getpathp.c) */
 	PyObject *p = Py_LibPath();
@@ -657,6 +685,7 @@ byte Script_ImportStart(void) {
 		return 0;
 	}
 	Imp_Store("signal", &signal);
+	Imp_Fixup(Imp_Builtin("signal"), &signal);
 	Native_Free(&signal);
 	return 1;
 }
@@ -672,6 +701,9 @@ void Script_ImportEnd(void) {
 	Native_Free(&imp_builtin);
 	Native_Free(&imp_sys);
 	Native_Free(&imp_store);
+	for (int i = 0; i < IMP_TABLE; i++) {
+		Native_Free(&imp_copies[i]);
+	}
 }
 
 byte Script_SysVar(const char *name, nativeVal_t *out) {
