@@ -6,11 +6,11 @@
  * Split and the mode of ServerType).
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values and call the engine in C. The state
- * stays in the module dicts and is read where the script reads the global (OBJLIB 5), because the tests, the modes and
+ * is the module variables in the registry, read where the script reads the global, because the tests, the modes and
  * the .def keys read and set it: the map tables, MortalProfiles, PlayersReady, Scorer, FirstTime, RespawnTime,
  * ModLib, OnDeathFunc and the spawn functions FuncGetSpawnPos/FuncGetReSpawnPos (the race replaces them) of Split;
  * ZoneList, AcFlag, BattonOwner, FlagInitPos, race and the model and sound names of the modes. The C works on them in
- * the struct split; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles,
+ * values of the call; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles,
  * held by reference (NV_OBJ) until entities are native values (OBJLIB 7). The .def sections take their $names as a dict
  * (Mode_DefRun) and the steps their arguments as native values (OBJLIB 6).
  *
@@ -22,11 +22,12 @@
  * Direct calls (stage 3): the functions of Split call each other through PORT_OWN (the global, a mission may replace
  * one), the modes call their own functions and Split, and all call the other ports through PORT_CALL
  * (scrap/scriptnative.h: the port seam). The mode's InitStatus and Init through ModLib (a module in a variable,
- * OBJLIB 5) and the functions held in variables (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc; OBJLIB 5) are called
- * through the entries of port functions (Mode_CallArgs); the calls given to the scheduler (ReSpawnShip, ReloadNext,
- * BattonRepos, the race count down) take the entry of a port's own function (stage 4: Port_Scheduled), SScorer and
- * SSound there their engine entries (stage 7); the functions set as values into Split and Vehicles
- * stay the objects the globals hold (OBJLIB 5).
+ * OBJLIB 5 (9c: a module object, its attributes read through Python, Mode_VObj)) and the functions held in variables
+ * (FuncGetSpawnPos, FuncGetReSpawnPos, OnDeathFunc; OBJLIB 5 (9c: Python functions as values)) are called through the
+ * entries of port functions (Mode_CallArgs); the calls given to the scheduler (ReSpawnShip, ReloadNext, BattonRepos,
+ * the race count down) take the entry of a port's own function (stage 4: Port_Scheduled), SScorer and SSound there
+ * their engine entries (stage 7); the functions set as values into Split and Vehicles stay the objects the globals
+ * hold (OBJLIB 5 (9c: set as Python objects, Mode_ModSetGlobal)).
  */
 #include <limits.h>
 #include <stdarg.h>
@@ -48,15 +49,8 @@ static const scriptStep_t split_steps[] = {
 	{ NULL, NULL },
 };
 
-static struct {
-	nativeVal_t scorer;		/* Split.Scorer: the points of both players */
-	nativeVal_t mortalProfiles;	/* Split.MortalProfiles: the hangar profile each player looks at */
-	nativeVal_t playersReady;	/* Split.PlayersReady */
-	nativeVal_t zoneList;		/* ZoneList of the mode that runs: the flag positions */
-	nativeVal_t acFlag;		/* AcFlag of the mode: the zone of the flag, or the checkpoint of the race */
-	nativeVal_t race;		/* SRace.race: the checkpoints, (pos, angle) each */
-	nativeVal_t raceBuild;		/* the checkpoints srace.def gives while it runs */
-} split;
+/* the checkpoints srace.def gives while it runs (C state of the run, no module variable: SRace.race gets them) */
+static nativeVal_t split_raceBuild;
 
 /* a section of split.def for player id with the $names of the n pairs that follow, a name and a const nativeVal_t *
  * each (Mode_DefRun; OBJLIB 6: a dict until the .def runner takes C values): 0 with the error set when a line
@@ -64,8 +58,9 @@ static struct {
 #define Split_Run(id, section, n, ...) \
 	Mode_DefRun(id, "menus/split.def", section, split_def, split_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
-/* module.var = the global name of src as the object it is (OBJLIB 5: a function as a value of another module): the
- * NameError of a global that is gone; a failed set is no error (Script_SetVar) */
+/* module.var = the global name of src as the object it is (a function as a value of another module; OBJLIB 5 (9c:
+ * set as its Python object, Mode_ModSetGlobal)): the NameError of a global that is gone; a failed set is no error
+ * (Script_SetVar) */
 static byte Split_ToMod(const char *module, const char *var, const char *src, const char *name) {
 	nativeVal_t f;
 	if (!Mode_G(src, name, &f)) {
@@ -78,7 +73,8 @@ static byte Split_ToMod(const char *module, const char *var, const char *src, co
 	return 1;
 }
 
-/* ModLib.func() of the mode (OBJLIB 5: the module a variable holds), through the entry of the function there */
+/* ModLib.func() of the mode (the module a variable holds; OBJLIB 5 (9c: its attribute read through Python,
+ * Mode_VObj)), through the entry of the function there */
 static byte Split_Lib(const char *func) {
 	nativeVal_t lib, f;
 	Native_SetNone(&f);
@@ -126,7 +122,8 @@ static byte Split_Ang(modeVals_t *t, const nativeVal_t *sp, nativeVal_t *out) {
 	return 1;
 }
 
-/* list[idx] = list[idx] + d of a list global of Split (Split.Scorer, Split.MortalProfiles), in place */
+/* list[idx] = list[idx] + d of a list global of Split (Split.Scorer, Split.MortalProfiles), in place; the list read
+ * into *slot of the caller (Native_Free it) */
 static byte Split_Add(const char *name, nativeVal_t *slot, const nativeVal_t *idx, long d) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *n = Mode_V(&t);
@@ -305,7 +302,7 @@ static int Split_TryProfile(const nativeVal_t *name, const nativeVal_t *profile)
 /* ChangeShip(id, Up=1): the next (or previous) hangar ship of the profiles 1 to 9 with an engine, else a SMerc1 */
 static byte Split_ChangeShipC(const nativeVal_t *id, const nativeVal_t *up) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *name = Mode_V(&t), *prof = Mode_V(&t), *pilot = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *prof = Mode_V(&t), *pilot = Mode_V(&t), *profiles = Mode_V(&t);
 	if (!Mode_Import("string") || !Mode_Import("ShipMaker") || !Mode_Import("Vehicles")) {
 		return Mode_Done(&t, 0);
 	}
@@ -314,15 +311,15 @@ static byte Split_ChangeShipC(const nativeVal_t *id, const nativeVal_t *up) {
 		return Mode_Done(&t, 0);
 	}
 	for (int n = 0; n < 9; n++) {
-		if (!Split_Add("MortalProfiles", &split.mortalProfiles, id, u ? 1 : -1) || !Native_Subscript(&split.mortalProfiles, id, prof)) {
+		if (!Split_Add("MortalProfiles", profiles, id, u ? 1 : -1) || !Native_Subscript(profiles, id, prof)) {
 			return Mode_Done(&t, 0);
 		}
 		int wrap = Native_Compare(prof, Mode_I(&t, u ? 9 : 1));
 		Native_Free(prof);
-		if ((u ? wrap > 0 : wrap < 0) && !Mode_DictPut("Split", "MortalProfiles", &split.mortalProfiles, id, Mode_I(&t, u ? 1 : 9))) {
+		if ((u ? wrap > 0 : wrap < 0) && !Mode_DictPut("Split", "MortalProfiles", profiles, id, Mode_I(&t, u ? 1 : 9))) {
 			return Mode_Done(&t, 0);
 		}
-		if (!Mode_Read("Split", "MortalProfiles", &split.mortalProfiles) || !Native_Subscript(&split.mortalProfiles, id, prof)) {
+		if (!Mode_Read("Split", "MortalProfiles", profiles) || !Native_Subscript(profiles, id, prof)) {
 			return Mode_Done(&t, 0);
 		}
 		int got = Split_TryProfile(name, prof);
@@ -428,9 +425,10 @@ static byte Split_ReloadNextC(void) {
 /* ActualizeScorer(): a player at FragLimit wins, else the scores are shown */
 static byte Split_ActualizeScorerC(void) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t);
 	for (int i = 0; i < 2; i++) {
 		nativeVal_t *v = Mode_V(&t), *limit = Mode_V(&t);
-		if (!Mode_Read("Split", "Scorer", &split.scorer) || !Native_Subscript(&split.scorer, Mode_I(&t, i), v) ||
+		if (!Mode_Read("Split", "Scorer", scorer) || !Native_Subscript(scorer, Mode_I(&t, i), v) ||
 			!Native_GVarGet("FragLimit", limit)) {
 			return Mode_Done(&t, 0);
 		}
@@ -441,7 +439,7 @@ static byte Split_ActualizeScorerC(void) {
 	for (int i = 0; i < 2; i++) {
 		nativeVal_t *v = Mode_V(&t), *rep = Mode_V(&t);
 		nativeBuf_t b;
-		if (!Mode_Read("Split", "Scorer", &split.scorer) || !Native_Subscript(&split.scorer, Mode_I(&t, i), v)) {
+		if (!Mode_Read("Split", "Scorer", scorer) || !Native_Subscript(scorer, Mode_I(&t, i), v)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_BufInit(&b);
@@ -473,14 +471,14 @@ static byte Split_MissionScorerC(int id) {
 /* SeleShip(id): player id is ready; the round starts when both are */
 static byte Split_SeleShipC(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *v = Mode_V(&t);
-	if (!Mode_DictPut("Split", "PlayersReady", &split.playersReady, id, Mode_I(&t, 1))) {
+	nativeVal_t *v = Mode_V(&t), *ready = Mode_V(&t);
+	if (!Mode_DictPut("Split", "PlayersReady", ready, id, Mode_I(&t, 1))) {
 		return Mode_Done(&t, 0);
 	}
 	int both = 1;
 	for (int i = 0; i < 2 && both; i++) {
 		Native_Free(v);
-		if (!Native_Subscript(&split.playersReady, Mode_I(&t, i), v)) {
+		if (!Native_Subscript(ready, Mode_I(&t, i), v)) {
 			return Mode_Done(&t, 0);
 		}
 		both = !Native_Compare(v, Mode_I(&t, 1));
@@ -493,7 +491,7 @@ static byte Split_InitChooseScorerC(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *tx[3] = { Mode_V(&t), Mode_V(&t), Mode_V(&t) };
 	int i;
-	return Mode_Done(&t, Mode_DictPut("Split", "PlayersReady", &split.playersReady, id, Mode_I(&t, 0)) && Split_Id(id, &i) &&
+	return Mode_Done(&t, Mode_DictPut("Split", "PlayersReady", Mode_V(&t), id, Mode_I(&t, 0)) && Split_Id(id, &i) &&
 		Split_Run(i, "keys_choose", 0) && Mode_ScorerClear(id) && Split_Lang("XBox_Split_SelectShip", NULL, tx[0]) &&
 		Split_Lang("XBox_Split_Start", "\x14", tx[1]) && Split_Lang("XBox_Split_Abort", "\x17", tx[2]) && Split_Texts(Mode_I(&t, i), tx, 3));
 }
@@ -556,7 +554,7 @@ static byte Split_PauseGameMenuC(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *tx[3] = { Mode_V(&t), Mode_V(&t), Mode_V(&t) };
 	int i;
-	return Mode_Done(&t, Mode_DictPut("Split", "PlayersReady", &split.playersReady, id, Mode_I(&t, 0)) && Split_Id(id, &i) &&
+	return Mode_Done(&t, Mode_DictPut("Split", "PlayersReady", Mode_V(&t), id, Mode_I(&t, 0)) && Split_Id(id, &i) &&
 		Split_Run(i, "keys_pause", 0) && Mode_ScorerClear(id) && Split_Lang("XBox_Split_Restart", "\x14", tx[0]) &&
 		Split_Lang("XBox_Split_Abort", "\x17", tx[1]) && Split_Lang("XBox_Split_Return", NULL, tx[2]) && Split_Texts(Mode_I(&t, i), tx, 3));
 }
@@ -709,9 +707,12 @@ static int Sm_Score(const nativeVal_t *name, long d) {
 	if (i < 0) {
 		return 0;
 	}
-	nativeVal_t idx;
+	nativeVal_t idx, scorer;
 	Native_SetInt(&idx, i);
-	return Split_Add("Scorer", &split.scorer, &idx, d) ? 1 : -1;
+	Native_SetNone(&scorer);
+	byte ok = Split_Add("Scorer", &scorer, &idx, d);
+	Native_Free(&scorer);
+	return ok ? 1 : -1;
 }
 
 /* `global ZoneList; ZoneList = []` and the positions of the dummies of pattern (appended to the list in place) */
@@ -719,7 +720,7 @@ static byte Sm_Browse(const char *mod, const char *pattern) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *empty = Mode_V(&t), *d = Mode_V(&t), *pos = Mode_V(&t);
 	Native_SetEmpty(empty, NV_LIST);
-	if (!Mode_Put(mod, "ZoneList", &split.zoneList, empty)) {
+	if (!Mode_Put(mod, "ZoneList", NULL, empty)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_DummyStart(pattern, 1);
@@ -739,25 +740,26 @@ static byte Sm_Browse(const char *mod, const char *pattern) {
 /* GetRndFlag() of SFlagHunt and SPostman: a random zone, the next one when it is the current */
 static byte Sm_RndFlag(const char *mod) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *niu = Mode_V(&t), *s = Mode_V(&t), *len = Mode_V(&t), *v = Mode_V(&t);
-	if (!Mode_Read(mod, "ZoneList", &split.zoneList)) {
+	nativeVal_t *niu = Mode_V(&t), *s = Mode_V(&t), *len = Mode_V(&t), *v = Mode_V(&t), *zones = Mode_V(&t);
+	nativeVal_t *ac = Mode_V(&t);
+	if (!Mode_Read(mod, "ZoneList", zones)) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&split.zoneList);
+	int n = Native_Size(zones);
 	if (n < 0) {
 		return Mode_Done(&t, 0);
 	}
 	/* the engine's Rand in C, as before */
 	Native_SetInt(niu, (long)Scrap_RandRange(0, n));
-	if (!Mode_Read(mod, "AcFlag", &split.acFlag)) {
+	if (!Mode_Read(mod, "AcFlag", ac)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_Compare(niu, &split.acFlag)) {
-		return Mode_Done(&t, Mode_Put(mod, "AcFlag", &split.acFlag, niu));
+	if (Native_Compare(niu, ac)) {
+		return Mode_Done(&t, Mode_Put(mod, "AcFlag", NULL, niu));
 	}
 	Native_SetInt(len, n);
-	return Mode_Done(&t, Native_Arith('+', &split.acFlag, Mode_I(&t, 1), s) && Native_Arith('%', s, len, v) &&
-		Mode_Put(mod, "AcFlag", &split.acFlag, v));
+	return Mode_Done(&t, Native_Arith('+', ac, Mode_I(&t, 1), s) && Native_Arith('%', s, len, v) &&
+		Mode_Put(mod, "AcFlag", NULL, v));
 }
 
 /* Flag.SetModel(file) of the mode */
@@ -770,11 +772,15 @@ static byte Sm_FlagModel(const char *mod, const nativeVal_t *file) {
 
 /* Flag.Pos = ZoneList[AcFlag] of the mode */
 static byte Sm_FlagToZone(const char *mod) {
-	nativeVal_t z;
+	nativeVal_t z, zones, ac;
 	Native_SetNone(&z);
-	byte ok = Mode_Read(mod, "ZoneList", &split.zoneList) && Mode_Read(mod, "AcFlag", &split.acFlag) &&
-		Native_Subscript(&split.zoneList, &split.acFlag, &z) && Mode_FlagSet(mod, "Pos", &z);
+	Native_SetNone(&zones);
+	Native_SetNone(&ac);
+	byte ok = Mode_Read(mod, "ZoneList", &zones) && Mode_Read(mod, "AcFlag", &ac) && Native_Subscript(&zones, &ac, &z) &&
+		Mode_FlagSet(mod, "Pos", &z);
 	Native_Free(&z);
+	Native_Free(&zones);
+	Native_Free(&ac);
 	return ok;
 }
 
@@ -920,7 +926,7 @@ static byte SPostman_TakeAreaC(const nativeVal_t *vehicle) {
 	}
 	return Mode_Done(&t, Mode_Put("SPostman", "BattonOwner", NULL, vehicle) && Mode_Sound("WaySound", "WayVolume") &&
 		PORT_CALL(SPostman, GetRndFlag, NULL, "") && Sm_FlagToZone("SPostman") && Native_Slice(vehicle, 6, INT_MAX, tail) &&
-		Native_ToInt(tail, idx) && Split_Add("Scorer", &split.scorer, idx, 1) && Sm_Actualize());
+		Native_ToInt(tail, idx) && Split_Add("Scorer", Mode_V(&t), idx, 1) && Sm_Actualize());
 }
 
 /* TakeFlag(ItemName, VehicleName): a player takes the data pack and has to bring it to the zone */
@@ -1018,11 +1024,11 @@ PyMethodDef g_SPostmanMethods[] = {
 static void SRace_StepPoint(int id, const nativeVal_t *args, int n) {
 	nativeVal_t p;
 	(void)id;
-	if (n != 1 || split.raceBuild.type != NV_LIST) {
+	if (n != 1 || split_raceBuild.type != NV_LIST) {
 		return;
 	}
 	if (Native_EvalText("SRace", &args[0], &p)) {
-		*Native_Append(&split.raceBuild) = p;
+		*Native_Append(&split_raceBuild) = p;
 	} else {
 		Mode_DropError();
 	}
@@ -1041,15 +1047,15 @@ static byte SRace_BrowseAreasC(void) {
 	}
 	byte ok = 1;
 	if (map.type == NV_STR) {
-		Native_Free(&split.raceBuild);
-		Native_SetEmpty(&split.raceBuild, NV_LIST);
+		Native_Free(&split_raceBuild);
+		Native_SetEmpty(&split_raceBuild, NV_LIST);
 		Script_RunFile(0, "split/srace.def", Native_Text(&map), srace_def, srace_steps, NULL);
-		if (split.raceBuild.n > 0) {
+		if (split_raceBuild.n > 0) {
 			/* race = tuple of the points */
-			split.raceBuild.type = NV_TUPLE;
-			ok = Mode_Put("SRace", "race", &split.race, &split.raceBuild);
+			split_raceBuild.type = NV_TUPLE;
+			ok = Mode_Put("SRace", "race", NULL, &split_raceBuild);
 		}
-		Native_Free(&split.raceBuild);
+		Native_Free(&split_raceBuild);
 	}
 	Native_Free(&map);
 	return ok;
@@ -1057,8 +1063,13 @@ static byte SRace_BrowseAreasC(void) {
 
 /* race[AcFlag] into *out */
 static byte SRace_Point(nativeVal_t *out) {
-	return Mode_Read("SRace", "race", &split.race) && Mode_Read("SRace", "AcFlag", &split.acFlag) &&
-		Native_Subscript(&split.race, &split.acFlag, out);
+	nativeVal_t race, ac;
+	Native_SetNone(&race);
+	Native_SetNone(&ac);
+	byte ok = Mode_Read("SRace", "race", &race) && Mode_Read("SRace", "AcFlag", &ac) && Native_Subscript(&race, &ac, out);
+	Native_Free(&race);
+	Native_Free(&ac);
+	return ok;
 }
 
 /* Flag.Pos = race[AcFlag][0]; Flag.Ang = 0, race[AcFlag][1], 0 */
@@ -1075,17 +1086,16 @@ static byte SRace_PlaceFlag(void) {
 /* GetRndFlag(): the next checkpoint */
 static byte SRace_GetRndFlagC(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *s = Mode_V(&t), *len = Mode_V(&t), *v = Mode_V(&t);
-	if (!Mode_Read("SRace", "AcFlag", &split.acFlag) || !Native_Arith('+', &split.acFlag, Mode_I(&t, 1), s) ||
-		!Mode_Read("SRace", "race", &split.race)) {
+	nativeVal_t *s = Mode_V(&t), *len = Mode_V(&t), *v = Mode_V(&t), *ac = Mode_V(&t), *race = Mode_V(&t);
+	if (!Mode_Read("SRace", "AcFlag", ac) || !Native_Arith('+', ac, Mode_I(&t, 1), s) || !Mode_Read("SRace", "race", race)) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&split.race);
+	int n = Native_Size(race);
 	if (n < 0) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(len, n);
-	return Mode_Done(&t, Native_Arith('%', s, len, v) && Mode_Put("SRace", "AcFlag", &split.acFlag, v));
+	return Mode_Done(&t, Native_Arith('%', s, len, v) && Mode_Put("SRace", "AcFlag", NULL, v));
 }
 
 /* TakeFlag(ItemName, VehicleName): a player scores, the flag goes to the next checkpoint */
@@ -1109,16 +1119,17 @@ static byte SRace_InitRacePosC(const nativeVal_t *id, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *len = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *k = Mode_V(&t), *res = Mode_V(&t), *ang = Mode_V(&t);
 	nativeVal_t *src = Mode_V(&t), *rot = Mode_V(&t), *r = Mode_V(&t), *at = Mode_V(&t), *pos = Mode_V(&t), *a2 = Mode_V(&t);
-	if (!Mode_Read("SRace", "race", &split.race) || !Mode_Read("SRace", "AcFlag", &split.acFlag)) {
+	nativeVal_t *race = Mode_V(&t), *ac = Mode_V(&t);
+	if (!Mode_Read("SRace", "race", race) || !Mode_Read("SRace", "AcFlag", ac)) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&split.race);
+	int n = Native_Size(race);
 	if (n < 0) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(len, n);
-	if (!Native_Arith('+', &split.acFlag, len, a) || !Native_Arith('-', a, Mode_I(&t, 1), b) || !Native_Arith('%', b, len, k) ||
-		!Native_Subscript(&split.race, k, res)) {
+	if (!Native_Arith('+', ac, len, a) || !Native_Arith('-', a, Mode_I(&t, 1), b) || !Native_Arith('%', b, len, k) ||
+		!Native_Subscript(race, k, res)) {
 		return Mode_Done(&t, 0);
 	}
 	int first = Native_Compare(id, Mode_I(&t, 0)) == 0;

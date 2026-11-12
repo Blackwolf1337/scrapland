@@ -239,6 +239,12 @@ static byte Mod_Plain(const nativeVal_t *v) {
 	return !Native_Holds(v, NV_REFS | 1u << NV_DICT);
 }
 
+/* v holds native data that never crossed to Python (a list, dict, instance, ... of the registry or a port): the
+ * operations of scrap/nativeobj.h take it as Python takes its object, so it stays native (Mod_ToPy would cross it) */
+static byte Mod_Data(const nativeVal_t *v) {
+	return NObj_State(v) == 0;
+}
+
 /* the number or text *v is the object o from here on (Mod_ToPy gives it back) */
 static void Mod_Keep(nativeVal_t *v, PyObject *o) {
 	Native_KeepPy(v, o);
@@ -705,7 +711,7 @@ static byte Mod_Atom(modParse_t *m, nativeVal_t *out) {
 
 /* the builtin eval with one string: the definitions read the save variables through it */
 static byte Mod_IsEval(const nativeVal_t *f, const nativeVal_t *args, const nativeVal_t *kw) {
-	if (!Native_IsObj(f) || kw->n || args->n != 1 || args->items[0].type != NV_STR) {
+	if (!Native_IsObj(f) || Mod_Data(f) || kw->n || args->n != 1 || args->items[0].type != NV_STR) {
 		return 0;
 	}
 	PyObject *o = Native_PyOf(f);
@@ -722,6 +728,12 @@ static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *ou
  * through Python (Script_CallObject)
  */
 static byte Mod_Invoke(modParse_t *m, const nativeVal_t *f, nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
+	if (Mod_Data(f) && !kw->n) {
+		/* a function or method of native data (a method of a list or dict object, a data function): its own call */
+		byte ok = NObj_Call(f, args->items, args->n, out);
+		Mod_Var(out);
+		return ok;
+	}
 	if (Native_IsObj(f) && !kw->n && args->n <= PORT_ARGS && Port_Own(Native_PyOf(f))) {
 		/* a dict goes as the Python dict with the table of its display (Native_Pass would lay it out anew) */
 		for (int i = 0; i < args->n; i++) {
@@ -828,6 +840,11 @@ static byte Mod_Get(modParse_t *m, const nativeVal_t *o, const nativeVal_t *k, i
 	if (Mod_Plain(o) && (!k || Mod_Plain(k))) {
 		return k ? Native_Subscript(o, k, out) : Native_Slice(o, lo, hi, out);
 	}
+	if (Mod_Data(o) && (!k || Mod_Plain(k) || Mod_Data(k))) {
+		byte ok = k ? NObj_GetItem(o, k, out) : NObj_GetSlice(o, lo, hi, out);
+		Mod_Var(out);
+		return ok;
+	}
 	PyObject *po = Mod_ToPy(m, o), *pk = po && k ? Mod_ToPy(m, k) : NULL;
 	PyObject *r = !po || (k && !pk) ? NULL : k ? PyObject_GetItem(po, pk) : PySequence_GetSlice(po, lo, hi);
 	Py_XDECREF(po);
@@ -886,6 +903,11 @@ static byte Mod_Attr(modParse_t *m, const nativeVal_t *o, const char *name, nati
 	modVarRef_t mv;
 	if (ModVar_OfVal(o, &mv)) {
 		byte ok = ModVar_AttrVal(&mv, name, out);
+		Mod_Var(out);
+		return ok;
+	}
+	if (Mod_Data(o)) {
+		byte ok = NObj_GetAttr(o, name, out);
 		Mod_Var(out);
 		return ok;
 	}
@@ -961,6 +983,17 @@ static byte Mod_Unary(modParse_t *m, nativeVal_t *out) {
 	return 1;
 }
 
+/* a + b or a * b where a list object of native data takes part: its items by value (shared as they are) with
+ * Native_Arith; 1 with *ok its result, 0 when the operands are no such list and plain values (Python decides) */
+static byte Mod_SeqOp(const nativeVal_t *a, const nativeVal_t *b, char op, nativeVal_t *r, byte *ok) {
+	const nativeVal_t *da = NObj_Kind(a) == NO_LIST ? NObj_ListData(a) : a, *db = NObj_Kind(b) == NO_LIST ? NObj_ListData(b) : b;
+	if (!da || !db || (da == a && !Mod_Plain(a)) || (db == b && !Mod_Plain(b))) {
+		return 0;
+	}
+	*ok = Native_Arith(op, da, db, r);
+	return 1;
+}
+
 /* a op b into *a (b made: b was made without an error; both freed): Native_Arith on plain values (long ints only add
  * and subtract there), else PyNumber_Add and the others */
 static byte Mod_Binary(modParse_t *m, nativeVal_t *a, char op, nativeVal_t *b, byte made) {
@@ -971,6 +1004,8 @@ static byte Mod_Binary(modParse_t *m, nativeVal_t *a, char op, nativeVal_t *b, b
 		if (Mod_Plain(a) && Mod_Plain(b) &&
 			(op == '+' || op == '-' || !(Native_Holds(a, 1u << NV_LONG) || Native_Holds(b, 1u << NV_LONG)))) {
 			ok = Native_Arith(op, a, b, &r);
+		} else if ((op == '+' || op == '*') && (Mod_Data(a) || Mod_Data(b)) && Mod_SeqOp(a, b, op, &r, &ok)) {
+			/* a list object of native data concatenated or repeated (the items themselves, as list_concat) */
 		} else {
 			PyObject *pa = Mod_ToPy(m, a), *pb = pa ? Mod_ToPy(m, b) : NULL, *pr = NULL;
 			if (pb) {
@@ -1037,6 +1072,18 @@ static int Mod_Relation(modParse_t *m, const nativeVal_t *a, const nativeVal_t *
 		}
 		*cmp = Native_Compare(a, b);
 		return 1;
+	}
+	if ((Mod_Data(a) || Mod_Data(b)) && (Mod_Data(a) || Mod_Plain(a)) && (Mod_Data(b) || Mod_Plain(b))) {
+		/* the same on a list, dict or other object of native data and plain values */
+		if (is) {
+			return NObj_Is(a, b) != not;
+		}
+		if (in) {
+			int r = NObj_Contains(b, a);
+			return r < 0 ? -1 : r != not;
+		}
+		*cmp = NObj_Compare(a, b);
+		return *cmp && PyErr_Occurred() ? -1 : 1;
 	}
 	PyObject *pa = Mod_ToPy(m, a), *pb = pa ? Mod_ToPy(m, b) : NULL;
 	int r = -1;

@@ -9,11 +9,12 @@
  * function here, registered in each module; where only names differ, one helper takes them.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values and call the engine in C. The state
- * stays in the module dicts, because the missions, MissionsFuncs, the level files and the score tables read and set
- * it (DeathMatch.enemiesFrags, MortalRace.BayScorer, CTF.flags, Domination.zones, TeamDeathMatch.KeepPlaying, ...):
- * the C keeps the values in the struct of each mode and reads each where the script reads the global, a write goes
- * through at once, lists and dicts are changed in place on the object of the dict (OBJLIB 5). Entities the script
- * holds are handle values (NV_OBJ, OBJLIB 7): a handle whose entity is gone gives the errors of the script. The engine
+ * stays in the variables of the modules, because the missions, MissionsFuncs, the level files and the score tables
+ * read and set it (DeathMatch.enemiesFrags, MortalRace.BayScorer, CTF.flags, Domination.zones,
+ * TeamDeathMatch.KeepPlaying, ...): the registry (scrap/modvars.h) is the one place of each value; a function reads a
+ * variable where the script reads the global and writes it where the script writes it, lists and dicts are changed in
+ * place on the object the variable holds. Entities the script holds are handle values (NV_OBJ, OBJLIB 7): a handle
+ * whose entity is gone gives the errors of the script. The engine
  * functions the cases record or swap go through their seams (OBJLIB 7, scrap/scriptmodes.h: Scrap.AddScheduledFunc,
  * Scrap.UsrEntity, Scrap.Set, SSound.Play, SScorer.SetMsgText, SScorer.Set, Scrap.Preload3DObject,
  * SAI.GetStateVehicle); SAI.SetStateVehicle, SLogic.ChangeBatonState and SetDominationZones go through their refs
@@ -22,10 +23,11 @@
  * Direct calls (stage 3): the functions call the other functions of their module through PORT_OWN (its global, a
  * mission may replace one) and the other ports through PORT_CALL (scrap/scriptnative.h: the port seam). The
  * functions given to the scheduler take their entries (stage 4: Port_Scheduled); the ones handed to Speech as
- * AfterRemoteComFunc are values Speech keeps (OBJLIB 5) and calls through their entries, apply() on
- * MissionsFuncs.OnSuperDealFinish as the script read it takes its entry (MODE_CBAPPLY); the class VehiclesNPC.cShipAI
- * is a variable the .mod defines (OBJLIB 5), the hooks of the missions (KeepPlaying) and the callbacks set in other
- * modules are variables (OBJLIB 5).
+ * AfterRemoteComFunc are values Speech keeps (OBJLIB 5 (9c: they go to Speech as their Python function objects until
+ * functions are native values)) and calls through their entries, apply() on MissionsFuncs.OnSuperDealFinish as the
+ * script read it takes its entry (MODE_CBAPPLY); the class VehiclesNPC.cShipAI is a variable the .mod defines
+ * (OBJLIB 5 (9c: a Python class until the .mod classes are native)); the hooks of the missions (KeepPlaying) and the
+ * callbacks set in other modules are variables read from the registry where the script reads them.
  */
 #include <string.h>
 
@@ -46,8 +48,8 @@
 #define MR "MortalRace"
 #define CG "CrazyGambler"
 
-/* the class VehiclesNPC.cShipAI by name (OBJLIB 5: a class the .mod defines, no port function; its instances are Python
- * objects, OBJLIB 7) */
+/* the class VehiclesNPC.cShipAI by name (OBJLIB 5 (9c: a class the .mod defines, no port function, a Python class until
+ * the .mod classes are native); its instances are Python objects, OBJLIB 7) */
 #define CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 
 /* ---- shared lines ---- */
@@ -73,7 +75,7 @@ static byte Sd_Eq(const nativeVal_t *a, const nativeVal_t *b) {
 	return !Native_Compare(a, b);
 }
 
-/* name = name + add of a global of the module (slot its copy in C), the new value in the slot */
+/* name = name + add of a global of the module, the new value in *slot (Native_Free it) */
 static byte Sd_Add(const char *mod, const char *name, nativeVal_t *slot, long add) {
 	nativeVal_t n, r;
 	Native_SetInt(&n, add);
@@ -83,11 +85,11 @@ static byte Sd_Add(const char *mod, const char *name, nativeVal_t *slot, long ad
 	return ok;
 }
 
-/* a global of the module = an int (slot its copy in C) */
-static byte Sd_PutI(const char *mod, const char *name, nativeVal_t *slot, long i) {
+/* a global of the module = an int */
+static byte Sd_PutI(const char *mod, const char *name, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
-	return Mode_Put(mod, name, slot, &v);
+	return Mode_Put(mod, name, NULL, &v);
 }
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) (Mode_Later for a number) with delay a
@@ -153,13 +155,15 @@ static void Sd_Numbered(const char *prefix, long i, nativeVal_t *out) {
 	Native_SetStr(out, name);
 }
 
-/* if x in list: list.remove(x), of a global list of the module (slot its copy in C), in place */
-static byte Sd_RemoveIn(const char *mod, const char *list, nativeVal_t *slot, const nativeVal_t *x) {
-	if (!Mode_Read(mod, list, slot)) {
-		return 0;
-	}
-	int in = Native_Contains(slot, x);
-	return in > 0 ? Mode_Remove(mod, list, x) && Mode_Read(mod, list, slot) : in == 0;
+/* if x in list: list.remove(x), of a global list of the module, in place */
+static byte Sd_RemoveIn(const char *mod, const char *list, const nativeVal_t *x) {
+	nativeVal_t l;
+	Native_SetNone(&l);
+	byte ok = Mode_Read(mod, list, &l);
+	int in = ok ? Native_Contains(&l, x) : -1;
+	ok = in > 0 ? Mode_Remove(mod, list, x) && Mode_Read(mod, list, &l) : in == 0;
+	Native_Free(&l);
+	return ok;
 }
 
 /* Scrap.GetEntity(name).Del() */
@@ -297,8 +301,7 @@ static byte Sd_ShipSafe(void) {
 	return ok;
 }
 
-/* MissionsFuncs.cameraData = MissionsFuncs.mapsCameraData[map] (OBJLIB 5: the object of the table, as the script
- * shares it) */
+/* MissionsFuncs.cameraData = MissionsFuncs.mapsCameraData[map] (the object of the table, as the script shares it) */
 static byte Sd_Camera(const char *map) {
 	nativeVal_t cams, key, c = { 0 };
 	Native_SetText(&key, map, (int)strlen(map));
@@ -499,11 +502,6 @@ MODE_FN(Sd, Restart, 2, Sd_RestartC())
 
 /* ---- DeathMatch: all against all in the CA, the first with CombatDeaths frags wins ---- */
 
-static struct {
-	nativeVal_t enemiesFrags;	/* the frags of each enemy name (a dict) */
-	nativeVal_t playerFrags, keepPlaying;
-} dm;
-
 MODE_FN(Dm, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_DeathMatch_Description", "CombatDeaths", out))
 MODE_FN(Dm, InitStatus, 1, Sd_StatusC(DM, NULL))
 
@@ -538,7 +536,7 @@ static byte Dm_CreateEnemiesC(void) {
 		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t), *en = Mode_V(&t);
 		Sd_Numbered("Enemy", i, name);
 		ok = Sd_SpawnCarAng(name, e) && PORT_OWN(DeathMatch, SetProfile, NULL, "v", e) &&
-			(size || (Mode_VGet(e, "Name", en) && Mode_DictPut(DM, "enemiesFrags", &dm.enemiesFrags, en, Mode_I(&t, 0))));
+			(size || (Mode_VGet(e, "Name", en) && Mode_DictPut(DM, "enemiesFrags", NULL, en, Mode_I(&t, 0))));
 		Mode_Release(&t, mark);
 	}
 	return Mode_Done(&t, ok);
@@ -546,8 +544,8 @@ static byte Dm_CreateEnemiesC(void) {
 
 MODE_FN(Dm, CreateEnemies, 0, Dm_CreateEnemiesC())
 
-/* Speech.AddRemoteCom(Scrap.GetSaveVar(cadVar), "CrazyGambler", mod.func) (mod.func a value Speech keeps, OBJLIB 5;
- * its call there takes the entry, Mode_Apply) */
+/* Speech.AddRemoteCom(Scrap.GetSaveVar(cadVar), "CrazyGambler", mod.func) (mod.func a value Speech keeps, OBJLIB 5 (9c:
+ * its Python function object until functions are native values); its call there takes the entry, Mode_Apply) */
 static byte Sd_GamblerSays(const char *cadVar, const char *mod, const char *func) {
 	nativeVal_t cad, fn;
 	if (!Mode_RefG(mod, func, &fn)) {
@@ -617,7 +615,7 @@ static byte Dm_Finish(void) {
 }
 
 /* the hook of a mission instead of the score table: KeepPlaying(enemiesFrags.keys()), after the message when there
- * is one (how is the Speech function; the hook a variable, OBJLIB 5) */
+ * is one (how is the Speech function; the hook a variable) */
 static byte Dm_Keep(const char *how, const nativeVal_t *cad) {
 	nativeVal_t keys, params, who, hook;
 	if (!Mode_RefG(DM, "KeepPlaying", &hook)) {
@@ -642,7 +640,7 @@ static byte Dm_Keep(const char *how, const nativeVal_t *cad) {
  * of the result (player: he won), the scorer off; then the last message and the score table, or KeepPlaying of a
  * mission. how is the Speech function; cam the winner the camera looks at (NULL: none) */
 static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *cam) {
-	nativeVal_t cad, func = { 0 };
+	nativeVal_t cad, func = { 0 }, keep;
 	if ((safe && !Sd_UsrSafe()) || !Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") ||
 		!Mode_Import("Parking") || !PORT_CALL(MissionsFuncs, SetInvulnerableShipsInList, NULL, "s", "DeathMatch") ||
 		!PORT_CALL(MissionsFuncs, RelaxShipsInList, NULL, "s", "DeathMatch")) {
@@ -650,9 +648,10 @@ static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *c
 	}
 	Mode_SaveS("PlayerWinsCombat", player ? "1" : "0");
 	Mode_SaveVar(player ? "CombatFinishPlayerWinsTextCad" : "CombatFinishPlayerLoosesTextCad", &cad);
+	Native_SetNone(&keep);
 	byte ok = (cam || Sd_FinishRef(&func)) && Sd_ScorerOff() &&
-		Dm_Finish() && Mode_Read(DM, "KeepPlaying", &dm.keepPlaying);
-	if (ok && !Native_True(&dm.keepPlaying)) {
+		Dm_Finish() && Mode_Read(DM, "KeepPlaying", &keep);
+	if (ok && !Native_True(&keep)) {
 		if (cam) {
 			ok = Sd_CamOnWinner(cam) && Sd_Finish(how, &cad, 0, "DeathMatch", "DeathMatch.RestartCombat");
 		} else {
@@ -661,6 +660,7 @@ static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *c
 	} else if (ok) {
 		ok = Dm_Keep(how, &cad);
 	}
+	Native_Free(&keep);
 	Native_Free(&func);
 	Native_Free(&cad);
 	return ok;
@@ -668,24 +668,28 @@ static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *c
 
 /* the frag counted without the end: the scorer, the dead ship back after 5 s (func), inactive until then */
 static byte Dm_Next(const nativeVal_t *loser, const char *func) {
-	nativeVal_t max;
+	nativeVal_t max, frags;
 	cEntity *e;
 	Native_SetNone(&max);
-	byte ok = Mode_Read(DM, "playerFrags", &dm.playerFrags) && PORT_OWN(DeathMatch, GetMaxFragsEnemies, &max, "") &&
-		Sd_Update(&dm.playerFrags, &max) && Mode_Later(5.0, DM, func, loser, 1, NULL) && Mode_Ent(loser, &e) &&
+	Native_SetNone(&frags);
+	byte ok = Mode_Read(DM, "playerFrags", &frags) && PORT_OWN(DeathMatch, GetMaxFragsEnemies, &max, "") &&
+		Sd_Update(&frags, &max) && Mode_Later(5.0, DM, func, loser, 1, NULL) && Mode_Ent(loser, &e) &&
 		Mode_SetI(e, Native_Text(loser), "Active", 0);
 	Native_Free(&max);
+	Native_Free(&frags);
 	return ok;
 }
 
 /* enemiesFrags[winner] = enemiesFrags[winner] + 1 */
 static byte Dm_Frag(const nativeVal_t *winner) {
-	nativeVal_t n, one, r;
+	nativeVal_t frags, n, one, r;
 	Native_SetInt(&one, 1);
+	Native_SetNone(&frags);
 	Native_SetNone(&n);
 	Native_SetNone(&r);
-	byte ok = Mode_Read(DM, "enemiesFrags", &dm.enemiesFrags) && Native_Subscript(&dm.enemiesFrags, winner, &n) &&
-		Native_Arith('+', &n, &one, &r) && Mode_DictPut(DM, "enemiesFrags", &dm.enemiesFrags, winner, &r);
+	byte ok = Mode_Read(DM, "enemiesFrags", &frags) && Native_Subscript(&frags, winner, &n) &&
+		Native_Arith('+', &n, &one, &r) && Mode_DictPut(DM, "enemiesFrags", NULL, winner, &r);
+	Native_Free(&frags);
 	Native_Free(&n);
 	Native_Free(&r);
 	return ok;
@@ -693,11 +697,13 @@ static byte Dm_Frag(const nativeVal_t *winner) {
 
 /* enemiesFrags[winner] compared with int(CombatDeaths): -1, 0, 1, or -2 with the error */
 static int Dm_FragsCmp(const nativeVal_t *winner) {
-	nativeVal_t frags, deaths;
+	nativeVal_t table, frags, deaths;
+	Native_SetNone(&table);
 	Native_SetNone(&frags);
 	Native_SetNone(&deaths);
-	int c = Mode_Read(DM, "enemiesFrags", &dm.enemiesFrags) && Native_Subscript(&dm.enemiesFrags, winner, &frags) &&
+	int c = Mode_Read(DM, "enemiesFrags", &table) && Native_Subscript(&table, winner, &frags) &&
 		Mode_SaveInt("CombatDeaths", &deaths) ? Native_Compare(&frags, &deaths) : -2;
+	Native_Free(&table);
 	Native_Free(&frags);
 	Native_Free(&deaths);
 	return c;
@@ -716,7 +722,7 @@ static int Dm_IsEnemy(const nativeVal_t *winner) {
  * frag ends the deathmatch */
 static byte Dm_OnEnemyDeathC(const nativeVal_t *loser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *deaths = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *deaths = Mode_V(&t), *frags = Mode_V(&t);
 	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
@@ -729,8 +735,7 @@ static byte Dm_OnEnemyDeathC(const nativeVal_t *loser, const nativeVal_t *winner
 		u = Mode_UsrNameIs(usr, winner);
 		if (u > 0) {
 			player = 1;
-			end = Sd_Add(DM, "playerFrags", &dm.playerFrags, 1) && Mode_SaveInt("CombatDeaths", deaths) ?
-				Sd_Eq(&dm.playerFrags, deaths) : -1;
+			end = Sd_Add(DM, "playerFrags", frags, 1) && Mode_SaveInt("CombatDeaths", deaths) ? Sd_Eq(frags, deaths) : -1;
 		} else if (u == 0) {
 			int in = Dm_IsEnemy(winner);
 			if (in > 0) {
@@ -789,7 +794,7 @@ MODE_FN(Dm, OnPlayerDeath, 2, Dm_OnPlayerDeathC(&a[0], &a[1]))
 static byte Dm_RestartCombatC(void) {
 	nativeVal_t d;
 	Native_SetEmpty(&d, NV_DICT);
-	byte ok = Mode_Put(DM, "enemiesFrags", &dm.enemiesFrags, &d) && Sd_PutI(DM, "playerFrags", &dm.playerFrags, 0) &&
+	byte ok = Mode_Put(DM, "enemiesFrags", NULL, &d) && Sd_PutI(DM, "playerFrags", 0) &&
 		PORT_CALL(SaveGame, Restart, NULL, "");
 	Native_Free(&d);
 	return ok;
@@ -819,10 +824,6 @@ PyMethodDef g_DeathMatchMethods[] = {
 
 /* ---- Versus: one enemy in the CA, the first with CombatDeaths deaths of the other wins ---- */
 
-static struct {
-	nativeVal_t combatDeaths, enemyName, combatEnemyType, combatEnemyProfile, charLangTrans;
-} vs;
-
 MODE_FN(Vs, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_Versus_Description", "CombatDeaths", out))
 MODE_FN(Vs, InitStatus, 1, 1)
 
@@ -833,7 +834,7 @@ static byte Vs_InitC(void) {
 	Native_SetNone(&deaths);
 	byte ok = Mode_Import("Parking") && Mode_Import("Menu") && Mode_Import("Vehicles") && Sd_Camera("CA") &&
 		Mode_SetModVar("Vehicles", "DelPlayerShipOnDeath", &zero) && Mode_SaveInt("CombatDeaths", &deaths) &&
-		Mode_Put(VS, "combatDeaths", &vs.combatDeaths, &deaths) && Mode_Import("Chars") &&
+		Mode_Put(VS, "combatDeaths", NULL, &deaths) && Mode_Import("Chars") &&
 		Mode_ModSetGlobal("Chars", "OnMainCharDeath", VS, "OnPlayerDeath") && PORT_OWN(Versus, CreateEnemy, NULL, "") &&
 		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", VS, "CrazyGamblerStartCombat");
 	Native_Free(&deaths);
@@ -848,25 +849,24 @@ static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *sp = Mode_V(&t), *pos = Mode_V(&t);
 	Mode_V(&t);
-	nativeVal_t *e = Mode_V(&t), *v = Mode_V(&t), *ship = Mode_V(&t);
+	nativeVal_t *e = Mode_V(&t), *v = Mode_V(&t), *ship = Mode_V(&t), *type = Mode_V(&t), *prof = Mode_V(&t);
 	if (!Mode_Import("RaceMaker") || !Mode_Import("VehiclesNPC") || !Mode_Import("MissionsFuncs") || !Mode_Import("OutMap") ||
 		!PORT_CALL(OutMap, GetSpawnPos, sp, "") || !Mode_Unpack(sp, 2, pos) ||
 		!Sd_Create(Mode_S(&t, "Enemy"), &pos[0], "Car", e) || !Mode_SetAng(e, &pos[1]) || !Mode_VGet(e, "Name", v) ||
-		!Mode_Put(VS, "enemyName", &vs.enemyName, v)) {
+		!Mode_Put(VS, "enemyName", NULL, v)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(v);
 	Mode_SaveVar("CombatEnemyType", v);
-	if (!Mode_Put(VS, "combatEnemyType", &vs.combatEnemyType, v)) {
+	if (!Mode_Put(VS, "combatEnemyType", NULL, v)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(v);
 	Mode_SaveVar("CombatEnemyProfile", v);
-	if (!Mode_Put(VS, "combatEnemyProfile", &vs.combatEnemyProfile, v) || !Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) ||
-		!Mode_Read(VS, "combatEnemyProfile", &vs.combatEnemyProfile) ||
-		!PORT_CALL(RaceMaker, InitShipIAProfile, NULL, "vv", &vs.combatEnemyType, &vs.combatEnemyProfile) ||
-		!Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) || !Mode_Read(VS, "combatEnemyProfile", &vs.combatEnemyProfile) ||
-		!Mode_Cat(&t, ship, 4, Mode_S(&t, "S"), &vs.combatEnemyType, Mode_S(&t, "1_"), &vs.combatEnemyProfile) ||
+	if (!Mode_Put(VS, "combatEnemyProfile", NULL, v) || !Mode_Read(VS, "combatEnemyType", type) ||
+		!Mode_Read(VS, "combatEnemyProfile", prof) || !PORT_CALL(RaceMaker, InitShipIAProfile, NULL, "vv", type, prof) ||
+		!Mode_Read(VS, "combatEnemyType", type) || !Mode_Read(VS, "combatEnemyProfile", prof) ||
+		!Mode_Cat(&t, ship, 4, Mode_S(&t, "S"), type, Mode_S(&t, "1_"), prof) ||
 		!PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", e, ship)) {
 		return Mode_Done(&t, 0);
 	}
@@ -910,21 +910,23 @@ MODE_FN(Vs, CrazyGamblerStartCombat, 0, Vs_CrazyGamblerStartCombatC())
 
 /* the text of the enemy's type (auxText of the script, which is never used): CharLangTrans[type] or the type */
 static byte Vs_AuxText(void) {
-	nativeVal_t x;
-	if (!Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType)) {
-		return 0;
-	}
-	int has = Mode_HasKey(VS, "CharLangTrans", 1, &vs.combatEnemyType);
-	if (has < 0) {
-		return 0;
-	}
-	if (!has) {
-		return Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType);
-	}
+	nativeVal_t x, type, trans;
 	Native_SetNone(&x);
-	byte ok = Mode_Read(VS, "CharLangTrans", &vs.charLangTrans) && Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) &&
-		Native_Subscript(&vs.charLangTrans, &vs.combatEnemyType, &x);
+	Native_SetNone(&type);
+	Native_SetNone(&trans);
+	byte ok = Mode_Read(VS, "combatEnemyType", &type);
+	int has = ok ? Mode_HasKey(VS, "CharLangTrans", 1, &type) : -1;
+	if (has == 0) {
+		ok = Mode_Read(VS, "combatEnemyType", &type);
+	} else if (has > 0) {
+		ok = Mode_Read(VS, "CharLangTrans", &trans) && Mode_Read(VS, "combatEnemyType", &type) &&
+			Native_Subscript(&trans, &type, &x);
+	} else {
+		ok = 0;
+	}
 	Native_Free(&x);
+	Native_Free(&type);
+	Native_Free(&trans);
 	return ok;
 }
 
@@ -932,19 +934,20 @@ static byte Vs_AuxText(void) {
 static byte Vs_StartCombatC(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *e = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *limit = Mode_V(&t), *type = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *deaths = Mode_V(&t);
 	if (!Mode_Import("Vehicles") || !Mode_Import("RacerScorer") || !Mode_Import("Menu") || !Mode_Import("MissionsFuncs") ||
-		!Mode_Read(VS, "enemyName", &vs.enemyName) || !Mode_EntityH(&vs.enemyName, e) ||
+		!Mode_Read(VS, "enemyName", name) || !Mode_EntityH(name, e) ||
 		!Mode_ModSetGlobal("Vehicles", "OnDeathCallback", VS, "OnEnemyDeath") || !Mode_SaveInt("NumEnemyDeaths", a) ||
-		!Mode_SaveInt("NumPlayerDeaths", b) || !Mode_Read(VS, "combatDeaths", &vs.combatDeaths)) {
+		!Mode_SaveInt("NumPlayerDeaths", b) || !Mode_Read(VS, "combatDeaths", deaths)) {
 		return Mode_Done(&t, 0);
 	}
-	Mode_Repr(&vs.combatDeaths, limit);
+	Mode_Repr(deaths, limit);
 	if (!Sd_ScorerOn(a, b, limit) || !Mode_VSetS(e, "TgType", "red") || !Mode_VSetS(e, "EntityList", "Enemies") ||
 		!Mode_VSetI(e, "Invulnerable", 0) || !PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 1L)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("CombatEnemyType", type);
-	return Mode_Done(&t, Mode_Put(VS, "combatEnemyType", &vs.combatEnemyType, type) && Vs_AuxText());
+	return Mode_Done(&t, Mode_Put(VS, "combatEnemyType", NULL, type) && Vs_AuxText());
 }
 
 MODE_FN(Vs, StartCombat, 0, Vs_StartCombatC())
@@ -980,10 +983,12 @@ static byte Vs_Update(void) {
 
 /* int(Scrap.GetSaveVar(name)) == combatDeaths: 1, 0, -1 with the error */
 static int Vs_Reached(const char *name) {
-	nativeVal_t n;
+	nativeVal_t n, deaths;
 	Native_SetNone(&n);
-	int r = Mode_SaveInt(name, &n) && Mode_Read(VS, "combatDeaths", &vs.combatDeaths) ? Sd_Eq(&n, &vs.combatDeaths) : -1;
+	Native_SetNone(&deaths);
+	int r = Mode_SaveInt(name, &n) && Mode_Read(VS, "combatDeaths", &deaths) ? Sd_Eq(&n, &deaths) : -1;
 	Native_Free(&n);
+	Native_Free(&deaths);
 	return r;
 }
 
@@ -1001,11 +1006,11 @@ static byte Vs_Over(void) {
  * after 5 s */
 static byte Vs_OnEnemyDeathC(const nativeVal_t *loser) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *cad = Mode_V(&t), *params = Mode_V(&t);
-	if (!Mode_Read(VS, "enemyName", &vs.enemyName)) {
+	nativeVal_t *cad = Mode_V(&t), *params = Mode_V(&t), *name = Mode_V(&t);
+	if (!Mode_Read(VS, "enemyName", name)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Sd_Eq(loser, &vs.enemyName)) {
+	if (!Sd_Eq(loser, name)) {
 		return Mode_Done(&t, 1);
 	}
 	int end = Vs_Count("NumEnemyDeaths") ? Vs_Reached("NumEnemyDeaths") : -1;
@@ -1070,7 +1075,8 @@ static byte Vs_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winne
 	nativeVal_t *enemy = Mode_V(&t), *name = Mode_V(&t), *cad = Mode_V(&t), *e = Mode_V(&t), *args = Mode_V(&t);
 	Mode_V(&t);
 	Mode_V(&t);
-	if (!Mode_Read(VS, "enemyName", &vs.enemyName) || !Mode_EntityH(&vs.enemyName, enemy)) {
+	nativeVal_t *en = Mode_V(&t);
+	if (!Mode_Read(VS, "enemyName", en) || !Mode_EntityH(en, enemy)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(enemy) && (!Mode_VSetS(enemy, "EntityList", "") || !Mode_VGet(enemy, "Name", name) ||
@@ -1125,11 +1131,10 @@ MODE_FN(Vs, EnemyWins, 1, Vs_EnemyWinsC(&a[0]))
 /* RespawnPlayer(Usrname, pos, ang): the player's ship again where it died; the enemy attacks it */
 static byte Vs_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, const nativeVal_t *ang) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *enemy = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *enemy = Mode_V(&t), *en = Mode_V(&t);
 	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_EntityH(name, usr) || !Mode_VGet(usr, "Name", un) ||
 		!PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", un) || !Mode_VSet(usr, "Pos", pos) ||
-		!Mode_VSet(usr, "Ang", ang) || !Mode_Read(VS, "enemyName", &vs.enemyName) ||
-		!Mode_EntityH(&vs.enemyName, enemy)) {
+		!Mode_VSet(usr, "Ang", ang) || !Mode_Read(VS, "enemyName", en) || !Mode_EntityH(en, enemy)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(enemy)) {
@@ -1137,8 +1142,8 @@ static byte Vs_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, c
 	}
 	Native_Free(un);
 	return Mode_Done(&t, Mode_VSetS(enemy, "TgType", "red") && Mode_VSetS(enemy, "EntityList", "Enemies") &&
-		Mode_Read(VS, "enemyName", &vs.enemyName) && Mode_VGet(usr, "Name", un) &&
-		PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, &vs.enemyName, un));
+		Mode_Read(VS, "enemyName", en) && Mode_VGet(usr, "Name", un) &&
+		PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, en, un));
 }
 
 MODE_FN(Vs, RespawnPlayer, 3, Vs_RespawnPlayerC(&a[0], &a[1], &a[2]))
@@ -1171,11 +1176,6 @@ PyMethodDef g_VersusMethods[] = {
 
 /* ---- TeamDeathMatch: the player's team against the enemies in the QF, CombatDeaths frags of a team win ---- */
 
-static struct {
-	nativeVal_t enemiesFrags, friendsFrags, keepPlaying;
-	nativeVal_t enemies, friends;	/* the ship names of each team (lists) */
-} tdm;
-
 MODE_FN(Tdm, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_TeamDeathMatch_Description", "CombatDeaths", out))
 MODE_FN(Tdm, InitStatus, 1, Sd_StatusC(TDM, NULL))
 
@@ -1192,11 +1192,6 @@ MODE_FN(Tdm, SetInvulnerableStatus, 1, Sd_SetInvulnerableStatusC(&a[0], 1))
 /* SetFriendProfile(friend): the AI of a ship of the player's team */
 MODE_FN(Tdm, SetFriendProfile, 1, Sd_Profile(&a[0], "CombatFriendType", "CombatFriendProfile"))
 
-/* the list of a team (enemies or friends) and its slot */
-static nativeVal_t *Tdm_List(byte enemy) {
-	return enemy ? &tdm.enemies : &tdm.friends;
-}
-
 /* SetEnemyProfile(e) or SetFriendProfile(e) of a team through its global */
 static byte Tdm_SetProfile(byte enemy, const nativeVal_t *e) {
 	return enemy ? PORT_OWN(TeamDeathMatch, SetEnemyProfile, NULL, "v", e) :
@@ -1210,7 +1205,7 @@ static byte Tdm_CreateTeam(byte enemy) {
 	nativeVal_t *num = Mode_V(&t);
 	long n = 0;
 	if (!Mode_Import("OutMap") || !Mode_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", num) ||
-		!Sd_PutI(TDM, enemy ? "enemiesFrags" : "friendsFrags", enemy ? &tdm.enemiesFrags : &tdm.friendsFrags, 0) ||
+		!Sd_PutI(TDM, enemy ? "enemiesFrags" : "friendsFrags", 0) ||
 		!Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1231,18 +1226,23 @@ MODE_FN(Tdm, CreateEnemies, 0, Tdm_CreateTeam(1))
 
 /* CrazyGamblerStartCombat(): the player boarded; the crazy gambler's message starts the first combat */
 static byte Tdm_CrazyGamblerStartCombatC(void) {
+	nativeVal_t frags;
+	Native_SetNone(&frags);
 	if (!Mode_Import("Parking") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
 		!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", TDM, "OnVehicle") ||
-		!Mode_Read(TDM, "enemiesFrags", &tdm.enemiesFrags)) {
+		!Mode_Read(TDM, "enemiesFrags", &frags)) {
+		Native_Free(&frags);
 		return 0;
 	}
-	byte first = Mode_EqI(&tdm.enemiesFrags, 0);
+	byte first = Mode_EqI(&frags, 0);
 	if (first) {
-		if (!Mode_Read(TDM, "friendsFrags", &tdm.friendsFrags)) {
+		if (!Mode_Read(TDM, "friendsFrags", &frags)) {
+			Native_Free(&frags);
 			return 0;
 		}
-		first = Mode_EqI(&tdm.friendsFrags, 0);
+		first = Mode_EqI(&frags, 0);
 	}
+	Native_Free(&frags);
 	return first ? Sd_GamblerSays("CombatStartTextCad", TDM, "StartCombat") :
 		PORT_OWN(TeamDeathMatch, StartCombat, NULL, "");
 }
@@ -1265,7 +1265,7 @@ static byte Tdm_Release(const nativeVal_t *names, const char *list) {
 
 /* StartCombat(): the deaths of both lists counted, the scorer, the teams in their lists */
 static byte Tdm_StartCombatC(void) {
-	nativeVal_t deaths, zero;
+	nativeVal_t deaths, zero, team;
 	if (!Mode_Import("Vehicles") || !Mode_Import("RacerScorer") || !Mode_Import("Menu") ||
 		!Mode_ListSet("Enemies", "OnDeath", "TeamDeathMatch.OnEnemyDeath") ||
 		!Mode_ListSet("Friends", "OnDeath", "TeamDeathMatch.OnFriendDeath")) {
@@ -1273,8 +1273,10 @@ static byte Tdm_StartCombatC(void) {
 	}
 	Native_SetInt(&zero, 0);
 	Mode_SaveVar("CombatDeaths", &deaths);
-	byte ok = Sd_ScorerOn(&zero, &zero, &deaths) && Mode_Read(TDM, "enemies", &tdm.enemies) &&
-		Tdm_Release(&tdm.enemies, "Enemies") && Mode_Read(TDM, "friends", &tdm.friends) && Tdm_Release(&tdm.friends, "Friends");
+	Native_SetNone(&team);
+	byte ok = Sd_ScorerOn(&zero, &zero, &deaths) && Mode_Read(TDM, "enemies", &team) && Tdm_Release(&team, "Enemies") &&
+		Mode_Read(TDM, "friends", &team) && Tdm_Release(&team, "Friends");
+	Native_Free(&team);
 	Native_Free(&deaths);
 	return ok;
 }
@@ -1282,7 +1284,7 @@ static byte Tdm_StartCombatC(void) {
 MODE_FN(Tdm, StartCombat, 0, Tdm_StartCombatC())
 
 /* the end with the hook of a mission: Speech.<how>(cad, ...) then mod.KeepPlaying(args), or KeepPlaying(args) at
- * once without a message (the hook a variable, OBJLIB 5) */
+ * once without a message (the hook a variable) */
 static byte Sd_EndHook(const char *mod, const char *how, const nativeVal_t *cad, const nativeVal_t *params) {
 	nativeVal_t who, hook;
 	if (!Mode_RefG(mod, "KeepPlaying", &hook)) {
@@ -1296,10 +1298,11 @@ static byte Sd_EndHook(const char *mod, const char *how, const nativeVal_t *cad,
 
 /* the end of the team combat after the frag that won it: OnEnemyDeath (the player's team wins) and OnFriendDeath */
 static byte Tdm_End(byte win) {
-	nativeVal_t cad, none, func = { 0 };
+	nativeVal_t cad, none, keep, func = { 0 };
 	if (!Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") || !Mode_Import("Parking")) {
 		return 0;
 	}
+	Native_SetNone(&keep);
 	Mode_SaveS("PlayerWinsCombat", win ? "1" : "0");
 	Mode_SaveVar(win ? "CombatFinishPlayerWinsTextCad" : "CombatFinishPlayerLoosesTextCad", &cad);
 	Native_SetEmpty(&none, NV_TUPLE);
@@ -1309,12 +1312,13 @@ static byte Tdm_End(byte win) {
 		Mode_ListSet("Enemies", "OnDeath", "TeamDeathMatch.OnEnemyDeath2") &&
 		Mode_ListSet("Friends", "OnDeath", "TeamDeathMatch.OnFriendDeath2") &&
 		Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") && Mode_ModNone("Parking", "SwitchCharMissionCallback") &&
-		Mode_Read(TDM, "KeepPlaying", &tdm.keepPlaying);
-	if (ok && !Native_True(&tdm.keepPlaying)) {
+		Mode_Read(TDM, "KeepPlaying", &keep);
+	if (ok && !Native_True(&keep)) {
 		ok = Sd_UsrSafe() && Sd_FinishFn("ForceRemoteCom", &cad, &func, win, "TeamDeathMatch", win ? "" : "TeamDeathMatch.RestartCombat");
 	} else if (ok) {
 		ok = Sd_EndHook(TDM, "ForceRemoteCom", &cad, &none);
 	}
+	Native_Free(&keep);
 	Native_Free(&func);
 	Native_Free(&cad);
 	return ok;
@@ -1322,19 +1326,21 @@ static byte Tdm_End(byte win) {
 
 /* the dead ship of a team comes back after 5 s while the team is short (an enemy is deleted at once) */
 static byte Tdm_Refill(byte enemy, const nativeVal_t *loser) {
-	nativeVal_t num, len;
-	nativeVal_t *list = Tdm_List(enemy);
+	nativeVal_t num, len, list;
 	Native_SetNone(&num);
-	if (!Mode_Read(TDM, enemy ? "enemies" : "friends", list)) {
+	Native_SetNone(&list);
+	byte ok = Mode_Read(TDM, enemy ? "enemies" : "friends", &list);
+	int n = ok ? Native_Size(&list) : -1;
+	Native_Free(&list);
+	if (!ok) {
 		return 0;
 	}
-	int n = Native_Size(list);
 	if (n < 0 || !Mode_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", &num)) {
 		Native_Free(&num);
 		return 0;
 	}
 	Native_SetInt(&len, n);
-	byte ok = Native_Compare(&len, &num) >= 0 ||
+	ok = Native_Compare(&len, &num) >= 0 ||
 		(Mode_Later(5.0, TDM, enemy ? "RespawnEnemy" : "RespawnFriend", loser, 1, NULL) && (!enemy || Sd_Del(loser)));
 	Native_Free(&num);
 	return ok;
@@ -1344,9 +1350,9 @@ static byte Tdm_Refill(byte enemy, const nativeVal_t *loser) {
  * combat at CombatDeaths, else the score; a new ship comes after 5 s while the team is short */
 static byte Tdm_Death(byte enemy, const nativeVal_t *loser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *deaths = Mode_V(&t), *e = Mode_V(&t), *list = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *deaths = Mode_V(&t), *e = Mode_V(&t), *list = Mode_V(&t), *slot = Mode_V(&t);
+	nativeVal_t *other = Mode_V(&t);
 	const char *frags = enemy ? "friendsFrags" : "enemiesFrags";
-	nativeVal_t *slot = enemy ? &tdm.friendsFrags : &tdm.enemiesFrags;
 	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1356,7 +1362,7 @@ static byte Tdm_Death(byte enemy, const nativeVal_t *loser, const nativeVal_t *w
 			return Mode_Done(&t, u > 0);
 		}
 	}
-	if (!Sd_RemoveIn(TDM, enemy ? "enemies" : "friends", Tdm_List(enemy), loser) || !Mode_SaveInt("CombatDeaths", deaths)) {
+	if (!Sd_RemoveIn(TDM, enemy ? "enemies" : "friends", loser) || !Mode_SaveInt("CombatDeaths", deaths)) {
 		return Mode_Done(&t, 0);
 	}
 	int end = 0;
@@ -1378,8 +1384,7 @@ static byte Tdm_Death(byte enemy, const nativeVal_t *loser, const nativeVal_t *w
 		if (!Tdm_End(enemy)) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!Mode_Read(TDM, "friendsFrags", &tdm.friendsFrags) || !Mode_Read(TDM, "enemiesFrags", &tdm.enemiesFrags) ||
-		!Sd_Update(&tdm.friendsFrags, &tdm.enemiesFrags)) {
+	} else if (!Mode_Read(TDM, "friendsFrags", slot) || !Mode_Read(TDM, "enemiesFrags", other) || !Sd_Update(slot, other)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Tdm_Refill(enemy, loser));
@@ -1390,7 +1395,7 @@ MODE_FN(Tdm, OnFriendDeath, 2, Tdm_Death(0, &a[0], &a[1]))
 
 /* OnEnemyDeath2 and OnFriendDeath2(LooserName, WinnerName): after the end, the dead ship only comes back */
 static byte Tdm_Death2(byte enemy, const nativeVal_t *loser) {
-	return Sd_RemoveIn(TDM, enemy ? "enemies" : "friends", Tdm_List(enemy), loser) && Tdm_Refill(enemy, loser);
+	return Sd_RemoveIn(TDM, enemy ? "enemies" : "friends", loser) && Tdm_Refill(enemy, loser);
 }
 
 MODE_FN(Tdm, OnEnemyDeath2, 2, Tdm_Death2(1, &a[0]))
@@ -1420,18 +1425,18 @@ MODE_FN(Tdm, RespawnFriend, 1, Tdm_Respawn(0, &a[0]))
  * after 5 s */
 static byte Tdm_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *deaths = Mode_V(&t), *cad = Mode_V(&t), *none = Mode_V(&t);
-	if (!Mode_Import("RacerScorer") || !Mode_Read(TDM, "enemies", &tdm.enemies)) {
+	nativeVal_t *deaths = Mode_V(&t), *cad = Mode_V(&t), *none = Mode_V(&t), *enemies = Mode_V(&t);
+	nativeVal_t *ef = Mode_V(&t), *ff = Mode_V(&t), *keep = Mode_V(&t);
+	if (!Mode_Import("RacerScorer") || !Mode_Read(TDM, "enemies", enemies)) {
 		return Mode_Done(&t, 0);
 	}
-	int in = Native_Contains(&tdm.enemies, winner);
-	if (in < 0 || (in > 0 && !Sd_Add(TDM, "enemiesFrags", &tdm.enemiesFrags, 1))) {
+	int in = Native_Contains(enemies, winner);
+	if (in < 0 || (in > 0 && !Sd_Add(TDM, "enemiesFrags", ef, 1))) {
 		return Mode_Done(&t, 0);
 	}
 	int end = in;
 	if (end > 0) {
-		end = Mode_Read(TDM, "enemiesFrags", &tdm.enemiesFrags) && Mode_SaveInt("CombatDeaths", deaths) ?
-			Native_Compare(&tdm.enemiesFrags, deaths) >= 0 : -1;
+		end = Mode_Read(TDM, "enemiesFrags", ef) && Mode_SaveInt("CombatDeaths", deaths) ? Native_Compare(ef, deaths) >= 0 : -1;
 	}
 	if (end < 0) {
 		return Mode_Done(&t, 0);
@@ -1443,16 +1448,15 @@ static byte Tdm_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winn
 		Mode_SaveS("PlayerWinsCombat", "0");
 		Mode_SaveVar("CombatFinishPlayerLoosesTextCad", cad);
 		if (!Sd_ScorerOff() || !Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") ||
-			!Mode_ModNone("Parking", "SwitchCharMissionCallback") || !Mode_Read(TDM, "KeepPlaying", &tdm.keepPlaying)) {
+			!Mode_ModNone("Parking", "SwitchCharMissionCallback") || !Mode_Read(TDM, "KeepPlaying", keep)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_SetEmpty(none, NV_TUPLE);
-		if (!(Native_True(&tdm.keepPlaying) ? Sd_EndHook(TDM, "AddRemoteCom", cad, none) : Sd_CamOnWinner(winner) &&
+		if (!(Native_True(keep) ? Sd_EndHook(TDM, "AddRemoteCom", cad, none) : Sd_CamOnWinner(winner) &&
 			Sd_Finish("AddRemoteCom", cad, 0, "TeamDeathMatch", "TeamDeathMatch.RestartCombat"))) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!Mode_Read(TDM, "friendsFrags", &tdm.friendsFrags) || !Mode_Read(TDM, "enemiesFrags", &tdm.enemiesFrags) ||
-		!Sd_Update(&tdm.friendsFrags, &tdm.enemiesFrags)) {
+	} else if (!Mode_Read(TDM, "friendsFrags", ff) || !Mode_Read(TDM, "enemiesFrags", ef) || !Sd_Update(ff, ef)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_Later(5.0, TDM, "RespawnPlayer", loser, 1, NULL));
@@ -1464,7 +1468,7 @@ MODE_FN(Tdm, OnPlayerDeath2, 2, Mode_Later(5.0, TDM, "RespawnPlayer", &a[0], 1, 
 
 /* RestartCombat(id, control): the frags at 0 and the level again */
 static byte Tdm_RestartCombatC(void) {
-	return Sd_PutI(TDM, "enemiesFrags", &tdm.enemiesFrags, 0) && Sd_PutI(TDM, "friendsFrags", &tdm.friendsFrags, 0) &&
+	return Sd_PutI(TDM, "enemiesFrags", 0) && Sd_PutI(TDM, "friendsFrags", 0) &&
 		PORT_CALL(SaveGame, Restart, NULL, "");
 }
 
@@ -1498,31 +1502,29 @@ PyMethodDef g_TeamDeathMatchMethods[] = {
 
 /* ---- CTF: the flags in the FZ, the team of the player against the enemies' leader, flags flags win ---- */
 
-static struct {
-	nativeVal_t enemies, friends, flagsActive, flagsSpecial;	/* lists of names */
-	nativeVal_t flags, maxFlags, onDeathSpawnTime, flagsEnemies, flagsFriends;
-} ctf;
-
 MODE_FN(Ctf, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_CTF_Description", "CTFFlags", out))
 MODE_FN(Ctf, InitStatus, 1, Sd_StatusC(CTF, NULL))
 
 /* onDeathSpawnTime = float(Scrap.GetSaveVar(var)); the error of the script when it is under 1 s */
-static byte Sd_SpawnTime(const char *mod, nativeVal_t *slot, const char *var) {
-	nativeVal_t s, d, one;
+static byte Sd_SpawnTime(const char *mod, const char *var) {
+	nativeVal_t s, d, one, time;
 	Mode_SaveVar(var, &s);
 	Native_SetNone(&d);
-	byte ok = Native_ToFloat(&s, &d) && Mode_Put(mod, "onDeathSpawnTime", slot, &d) && Mode_Read(mod, "onDeathSpawnTime", slot);
+	Native_SetNone(&time);
+	byte ok = Native_ToFloat(&s, &d) && Mode_Put(mod, "onDeathSpawnTime", NULL, &d) && Mode_Read(mod, "onDeathSpawnTime", &time);
 	Native_Free(&s);
 	Native_Free(&d);
 	Native_SetFloat(&one, 1.0);
-	return ok && (Native_Compare(slot, &one) >= 0 || Mode_RaiseText("Demasiado poco tiempo de respawn"));
+	ok = ok && (Native_Compare(&time, &one) >= 0 || Mode_RaiseText("Demasiado poco tiempo de respawn"));
+	Native_Free(&time);
+	return ok;
 }
 
 /* Init(LevelPath): the camera of the end, the flags to take, the respawn time, both teams, the start when the player
  * boards */
 static byte Ctf_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Fifth", "SuperDeal_Ninth", NULL };
-	nativeVal_t n, two, one, r, max;
+	nativeVal_t n, two, one, r, max, flags;
 	if (!Mode_Import("Parking") || !Mode_Import("Chars") || !Sd_CameraFor(libs, "FZ") ||
 		!Mode_ModSetGlobal("Chars", "OnMainCharDeath", CTF, "OnPlayerDeath")) {
 		return 0;
@@ -1530,16 +1532,18 @@ static byte Ctf_InitC(void) {
 	Native_SetNone(&n);
 	Native_SetNone(&r);
 	Native_SetNone(&max);
+	Native_SetNone(&flags);
 	Native_SetInt(&two, 2);
 	Native_SetInt(&one, 1);
-	byte ok = Mode_SaveInt("CTFFlags", &n) && Mode_Put(CTF, "flags", &ctf.flags, &n) && Mode_Read(CTF, "flags", &ctf.flags) &&
-		Native_Arith('*', &ctf.flags, &two, &r) && Native_Arith('-', &r, &one, &max) &&
-		Mode_Put(CTF, "maxFlags", &ctf.maxFlags, &max) && Sd_SpawnTime(CTF, &ctf.onDeathSpawnTime, "CTFOnDeathSpawnTime") &&
+	byte ok = Mode_SaveInt("CTFFlags", &n) && Mode_Put(CTF, "flags", NULL, &n) && Mode_Read(CTF, "flags", &flags) &&
+		Native_Arith('*', &flags, &two, &r) && Native_Arith('-', &r, &one, &max) &&
+		Mode_Put(CTF, "maxFlags", NULL, &max) && Sd_SpawnTime(CTF, "CTFOnDeathSpawnTime") &&
 		PORT_OWN(CTF, CreateEnemies, NULL, "") && PORT_OWN(CTF, CreateFriends, NULL, "") &&
 		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", CTF, "CrazyGamblerStartCTF");
 	Native_Free(&n);
 	Native_Free(&r);
 	Native_Free(&max);
+	Native_Free(&flags);
 	if (ok) {
 		nativeVal_t flag;
 		Native_SetStr(&flag, "models/Misc/Flag/Flag.m3d");
@@ -1609,22 +1613,23 @@ static byte Sd_SystemMessage(const char *key) {
 static byte Ctf_StartCTFC(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *limit = Mode_V(&t), *first = Mode_V(&t), *e = Mode_V(&t), *usr = Mode_V(&t), *name = Mode_V(&t);
+	nativeVal_t *list = Mode_V(&t);
 	const nativeVal_t *zero = Mode_I(&t, 0);
 	if (!Mode_Import("Vehicles") || !Mode_Import("Menu") || !Mode_Import("RacerScorer") || !Mode_Import("RaceMaker") ||
-		!Mode_ModSetGlobal("Vehicles", "OnDeathCallback", CTF, "OnVehicleDeathCallback") || !Mode_Read(CTF, "flags", &ctf.flags)) {
+		!Mode_ModSetGlobal("Vehicles", "OnDeathCallback", CTF, "OnVehicleDeathCallback") || !Mode_Read(CTF, "flags", list)) {
 		return Mode_Done(&t, 0);
 	}
-	Mode_Repr(&ctf.flags, limit);
-	if (!Sd_ScorerOn(zero, zero, limit) || !PORT_OWN(CTF, CreateFlag, NULL, "") || !Mode_Read(CTF, "enemies", &ctf.enemies) ||
-		!Sd_MarkShips(&ctf.enemies, "red", "CTFEnemies") || !Mode_Read(CTF, "enemies", &ctf.enemies)) {
+	Mode_Repr(list, limit);
+	if (!Sd_ScorerOn(zero, zero, limit) || !PORT_OWN(CTF, CreateFlag, NULL, "") || !Mode_Read(CTF, "enemies", list) ||
+		!Sd_MarkShips(list, "red", "CTFEnemies") || !Mode_Read(CTF, "enemies", list)) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&ctf.enemies);
+	int n = Native_Size(list);
 	if (n < 0) {
 		return Mode_Done(&t, 0);
 	}
 	if (n > 0) {
-		if (!Mode_Read(CTF, "enemies", &ctf.enemies) || !Mode_Item(&ctf.enemies, 0, first) || !Mode_EntityH(first, e)) {
+		if (!Mode_Read(CTF, "enemies", list) || !Mode_Item(list, 0, first) || !Mode_EntityH(first, e)) {
 			return Mode_Done(&t, 0);
 		}
 		if (Native_True(e)) {
@@ -1636,30 +1641,41 @@ static byte Ctf_StartCTFC(void) {
 			}
 		}
 	}
-	return Mode_Done(&t, Mode_Read(CTF, "friends", &ctf.friends) && Sd_MarkShips(&ctf.friends, "green", "CTFFriends") &&
+	return Mode_Done(&t, Mode_Read(CTF, "friends", list) && Sd_MarkShips(list, "green", "CTFFriends") &&
 		Sd_SystemMessage("SuperDeal_CTF_SystemMessage"));
 }
 
 MODE_FN(Ctf, StartCTF, 0, Ctf_StartCTFC())
 
-/* list.remove(x) of a global list of the module (slot its copy), in place */
-static byte Sd_Remove(const char *mod, const char *list, nativeVal_t *slot, const nativeVal_t *x) {
-	return Mode_Remove(mod, list, x) && Mode_Read(mod, list, slot);
+/* list.remove(x) of a global list of the module, in place, and the global read again (its NameError) */
+static byte Sd_Remove(const char *mod, const char *list, const nativeVal_t *x) {
+	nativeVal_t l;
+	Native_SetNone(&l);
+	byte ok = Mode_Remove(mod, list, x) && Mode_Read(mod, list, &l);
+	Native_Free(&l);
+	return ok;
 }
 
 /* RacerScorer.UpdateMissionScorer(0, flagsFriends, flagsEnemies) */
 static byte Ctf_Update(void) {
-	return Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) && Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies) &&
-		Sd_Update(&ctf.flagsFriends, &ctf.flagsEnemies);
+	nativeVal_t f, e;
+	Native_SetNone(&f);
+	Native_SetNone(&e);
+	byte ok = Mode_Read(CTF, "flagsFriends", &f) && Mode_Read(CTF, "flagsEnemies", &e) && Sd_Update(&f, &e);
+	Native_Free(&f);
+	Native_Free(&e);
+	return ok;
 }
 
 /* CTF.SpawnFlags(pos of the handle, flags<side>); flags<side> = 0; the scorer */
-static byte Ctf_Drop(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
-	nativeVal_t pos;
+static byte Ctf_Drop(const nativeVal_t *h, const char *var) {
+	nativeVal_t pos, n;
 	Native_SetNone(&pos);
-	byte ok = Mode_VGet(h, "Pos", &pos) && Mode_Read(CTF, var, slot) && PORT_OWN(CTF, SpawnFlags, NULL, "vv", &pos, slot) &&
-		Sd_PutI(CTF, var, slot, 0) && Ctf_Update();
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Pos", &pos) && Mode_Read(CTF, var, &n) && PORT_OWN(CTF, SpawnFlags, NULL, "vv", &pos, &n) &&
+		Sd_PutI(CTF, var, 0) && Ctf_Update();
 	Native_Free(&pos);
+	Native_Free(&n);
 	return ok;
 }
 
@@ -1667,21 +1683,21 @@ static byte Ctf_Drop(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
  * dead ship of a team comes back after onDeathSpawnTime */
 static byte Ctf_OnVehicleDeathCallbackC(const nativeVal_t *loser) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *lead = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *lead = Mode_V(&t), *list = Mode_V(&t), *time = Mode_V(&t);
 	const nativeVal_t *one = Mode_I(&t, 1);
 	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
 	int u = Mode_UsrNameIs(usr, loser);
 	if (u) {
-		return Mode_Done(&t, u > 0 && Ctf_Drop(usr, "flagsFriends", &ctf.flagsFriends));
+		return Mode_Done(&t, u > 0 && Ctf_Drop(usr, "flagsFriends"));
 	}
-	if (!Mode_Read(CTF, "enemies", &ctf.enemies)) {
+	if (!Mode_Read(CTF, "enemies", list)) {
 		return Mode_Done(&t, 0);
 	}
-	int en = Native_Contains(&ctf.enemies, loser);
+	int en = Native_Contains(list, loser);
 	if (en > 0) {
-		if (!Sd_Remove(CTF, "enemies", &ctf.enemies, loser) || !Mode_EntityH(loser, e)) {
+		if (!Sd_Remove(CTF, "enemies", loser) || !Mode_EntityH(loser, e)) {
 			return Mode_Done(&t, 0);
 		}
 		if (!Native_True(e)) {
@@ -1690,27 +1706,31 @@ static byte Ctf_OnVehicleDeathCallbackC(const nativeVal_t *loser) {
 		if (!Mode_VGet(e, "LLogicIsLeader", lead)) {
 			return Mode_Done(&t, 0);
 		}
-		byte ok = Mode_EqI(lead, 1) ? Ctf_Drop(e, "flagsEnemies", &ctf.flagsEnemies) && Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) &&
-			Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnEnemy", one, 1) :
-			Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) && Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnEnemy", NULL, 0);
+		byte ok = Mode_EqI(lead, 1) ? Ctf_Drop(e, "flagsEnemies") && Mode_Read(CTF, "onDeathSpawnTime", time) &&
+			Sd_LaterV(time, CTF, "RespawnEnemy", one, 1) :
+			Mode_Read(CTF, "onDeathSpawnTime", time) && Sd_LaterV(time, CTF, "RespawnEnemy", NULL, 0);
 		return Mode_Done(&t, ok && Sd_Del(loser));
 	}
-	if (en < 0 || !Mode_Read(CTF, "friends", &ctf.friends)) {
+	if (en < 0 || !Mode_Read(CTF, "friends", list)) {
 		return Mode_Done(&t, 0);
 	}
-	int fr = Native_Contains(&ctf.friends, loser);
-	return Mode_Done(&t, fr <= 0 ? fr == 0 : Sd_Remove(CTF, "friends", &ctf.friends, loser) &&
-		Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) && Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnFriend", NULL, 0));
+	int fr = Native_Contains(list, loser);
+	return Mode_Done(&t, fr <= 0 ? fr == 0 : Sd_Remove(CTF, "friends", loser) &&
+		Mode_Read(CTF, "onDeathSpawnTime", time) && Sd_LaterV(time, CTF, "RespawnFriend", NULL, 0));
 }
 
 MODE_FN(Ctf, OnVehicleDeathCallback, 2, Ctf_OnVehicleDeathCallbackC(&a[0]))
 
 /* OnPlayerDeath(LooserName, WinnerName): the player comes back after onDeathSpawnTime (CTF and Domination's start) */
-static byte Sd_RespawnLater(const char *mod, nativeVal_t *slot, const nativeVal_t *loser) {
-	return Mode_Read(mod, "onDeathSpawnTime", slot) && Sd_LaterV(slot, mod, "RespawnPlayer", loser, 1);
+static byte Sd_RespawnLater(const char *mod, const nativeVal_t *loser) {
+	nativeVal_t time;
+	Native_SetNone(&time);
+	byte ok = Mode_Read(mod, "onDeathSpawnTime", &time) && Sd_LaterV(&time, mod, "RespawnPlayer", loser, 1);
+	Native_Free(&time);
+	return ok;
 }
 
-MODE_FN(Ctf, OnPlayerDeath, 2, Sd_RespawnLater(CTF, &ctf.onDeathSpawnTime, &a[0]))
+MODE_FN(Ctf, OnPlayerDeath, 2, Sd_RespawnLater(CTF, &a[0]))
 
 /* RemoveFlag(EntityName): the flag gone from the map and from the lists */
 static byte Ctf_RemoveFlagC(const nativeVal_t *name) {
@@ -1719,7 +1739,7 @@ static byte Ctf_RemoveFlagC(const nativeVal_t *name) {
 		return 0;
 	}
 	byte ok = !Native_True(&flag) || (Mode_VSetS(&flag, "OnTake", "") && Mode_VDel(&flag) &&
-		Sd_RemoveIn(CTF, "flagsActive", &ctf.flagsActive, name) && Sd_RemoveIn(CTF, "flagsSpecial", &ctf.flagsSpecial, name));
+		Sd_RemoveIn(CTF, "flagsActive", name) && Sd_RemoveIn(CTF, "flagsSpecial", name));
 	Native_Free(&flag);
 	return ok;
 }
@@ -1741,16 +1761,16 @@ static int Sd_IsLeader(const nativeVal_t *e) {
 /* EndOfCTF(): the leader not the target any more, the flags gone, the ships relax, then the last message */
 static byte Ctf_EndOfCTFC(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t), *list = Mode_V(&t), *flagsN = Mode_V(&t);
 	if (!Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") || !Mode_Import("Parking") ||
-		!Mode_Read(CTF, "enemies", &ctf.enemies)) {
+		!Mode_Read(CTF, "enemies", list)) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_ForCount(&ctf.enemies);
+	int n = Native_ForCount(list);
 	byte ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
 		int lead;
-		ok = Native_SeqItem(&ctf.enemies, i, name) && Mode_EntityH(name, e) && (lead = Sd_IsLeader(e)) >= 0;
+		ok = Native_SeqItem(list, i, name) && Mode_EntityH(name, e) && (lead = Sd_IsLeader(e)) >= 0;
 		if (ok && lead) {
 			ok = PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 0L);
 			break;
@@ -1759,7 +1779,7 @@ static byte Ctf_EndOfCTFC(void) {
 		Native_Free(e);
 	}
 	/* for name in flagsActive: CTF.RemoveFlag(name), on the list object read before the loop as RemoveFlag changes it
-	 * (OBJLIB 5: the loop of the script runs on the object of the module dict) */
+	 * (the loop of the script runs on the object itself) */
 	nativeVal_t flags = { 0 };
 	ok = ok && Mode_RefG(CTF, "flagsActive", &flags);
 	for (int i = 0; ok; i++) {
@@ -1781,11 +1801,11 @@ static byte Ctf_EndOfCTFC(void) {
 		!PORT_CALL(MissionsFuncs, RelaxShipsInList, NULL, "s", "CTFEnemies") ||
 		!PORT_CALL(MissionsFuncs, RelaxShipsInList, NULL, "s", "CTFFriends") || !Sd_ScorerOff() ||
 		!Mode_ModNone("Vehicles", "OnDeathCallback") || !Mode_ModNone("Parking", "SwitchCharMissionCallback") ||
-		!Mode_ModNone("Parking", "SwitchVehicleMissionCallback") || !Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) ||
-		!Mode_Read(CTF, "flags", &ctf.flags)) {
+		!Mode_ModNone("Parking", "SwitchVehicleMissionCallback") || !Mode_Read(CTF, "flagsFriends", list) ||
+		!Mode_Read(CTF, "flags", flagsN)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Native_Compare(&ctf.flagsFriends, &ctf.flags) >= 0 ? PORT_OWN(CTF, PreOnVictory, NULL, "") :
+	return Mode_Done(&t, Native_Compare(list, flagsN) >= 0 ? PORT_OWN(CTF, PreOnVictory, NULL, "") :
 		PORT_OWN(CTF, PreRestartMenu, NULL, ""));
 }
 
@@ -1824,20 +1844,22 @@ MODE_FN(Ctf, RespawnFriend, 0, Ctf_RespawnFriendC())
 
 /* Scrap.Set(var, flagsActive[0]) (the global read again) */
 static byte Ctf_SetFirst(const char *var) {
-	nativeVal_t v;
+	nativeVal_t v, active;
 	Native_SetNone(&v);
-	byte ok = Mode_Read(CTF, "flagsActive", &ctf.flagsActive) && Mode_Item(&ctf.flagsActive, 0, &v) && Mode_GVarSet(var, &v);
+	Native_SetNone(&active);
+	byte ok = Mode_Read(CTF, "flagsActive", &active) && Mode_Item(&active, 0, &v) && Mode_GVarSet(var, &v);
 	Native_Free(&v);
+	Native_Free(&active);
 	return ok;
 }
 
 /* Scrap.Set("CurrentWaypointName", flagsActive[0]) and Scrap.Set("LeaderFlag", flagsActive[0]) while flags are
  * active, else Scrap.Set("LeaderFlag", "") */
 static byte Ctf_Waypoint(void) {
-	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive)) {
-		return 0;
-	}
-	int n = Native_Size(&ctf.flagsActive);
+	nativeVal_t active;
+	Native_SetNone(&active);
+	int n = Mode_Read(CTF, "flagsActive", &active) ? Native_Size(&active) : -1;
+	Native_Free(&active);
 	if (n < 0) {
 		return 0;
 	}
@@ -1846,18 +1868,17 @@ static byte Ctf_Waypoint(void) {
 
 /* len(flagsActive) == 0 and len(flagsSpecial) == 0: 1, 0, -1 with the error */
 static int Ctf_NoFlags(void) {
-	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive)) {
-		return -1;
+	nativeVal_t l;
+	Native_SetNone(&l);
+	int n = Mode_Read(CTF, "flagsActive", &l) ? Native_Size(&l) : -1;
+	if (n == 0) {
+		n = Mode_Read(CTF, "flagsSpecial", &l) ? Native_Size(&l) : -1;
+		n = n < 0 ? -1 : n == 0;
+	} else {
+		n = n < 0 ? -1 : 0;
 	}
-	int n = Native_Size(&ctf.flagsActive);
-	if (n != 0) {
-		return n < 0 ? -1 : 0;
-	}
-	if (!Mode_Read(CTF, "flagsSpecial", &ctf.flagsSpecial)) {
-		return -1;
-	}
-	n = Native_Size(&ctf.flagsSpecial);
-	return n < 0 ? -1 : n == 0;
+	Native_Free(&l);
+	return n;
 }
 
 /* CreateFlag(pos = None): a flag at a spawn point, or thrown from pos by a dead ship (back after 60 s), while fewer
@@ -1865,13 +1886,13 @@ static int Ctf_NoFlags(void) {
 static byte Ctf_CreateFlagC(const nativeVal_t *pos, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *carried = Mode_V(&t), *sp = Mode_V(&t), *at = Mode_V(&t), *flag = Mode_V(&t), *dir = Mode_V(&t);
-	nativeVal_t *norm = Mode_V(&t), *vel = Mode_V(&t), *name = Mode_V(&t);
-	if (!Mode_Import("OutMap") || !Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) ||
-		!Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies) || !Native_Arith('+', &ctf.flagsFriends, &ctf.flagsEnemies, carried) ||
-		!Mode_Read(CTF, "maxFlags", &ctf.maxFlags)) {
+	nativeVal_t *norm = Mode_V(&t), *vel = Mode_V(&t), *name = Mode_V(&t), *ff = Mode_V(&t), *fe = Mode_V(&t);
+	nativeVal_t *max = Mode_V(&t);
+	if (!Mode_Import("OutMap") || !Mode_Read(CTF, "flagsFriends", ff) || !Mode_Read(CTF, "flagsEnemies", fe) ||
+		!Native_Arith('+', ff, fe, carried) || !Mode_Read(CTF, "maxFlags", max)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_Compare(carried, &ctf.maxFlags) >= 0) {
+	if (Native_Compare(carried, max) >= 0) {
 		Native_SetStr(out, "");
 		return Mode_Done(&t, 1);
 	}
@@ -1926,7 +1947,8 @@ MODE_FN(Ctf, ResetFlag, 1, Ctf_ResetFlagC(&a[0]))
  * when none is left */
 static byte Ctf_TakeFlagC(const nativeVal_t *item, const nativeVal_t *who) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *e = Mode_V(&t), *win = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *e = Mode_V(&t), *win = Mode_V(&t), *ff = Mode_V(&t), *fe = Mode_V(&t);
+	nativeVal_t *flags = Mode_V(&t);
 	cEntity *flag;
 	if (!Mode_Import("RacerScorer") || !Mode_Import("Sound") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
@@ -1939,7 +1961,7 @@ static byte Ctf_TakeFlagC(const nativeVal_t *item, const nativeVal_t *who) {
 	}
 	byte taken = 0;
 	if (Sd_Eq(un, who)) {
-		if (!Sd_Add(CTF, "flagsFriends", &ctf.flagsFriends, 1)) {
+		if (!Sd_Add(CTF, "flagsFriends", ff, 1)) {
 			return Mode_Done(&t, 0);
 		}
 		taken = 1;
@@ -1947,13 +1969,13 @@ static byte Ctf_TakeFlagC(const nativeVal_t *item, const nativeVal_t *who) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
-		int in = Mode_Read(CTF, "enemies", &ctf.enemies) ? Native_Contains(&ctf.enemies, who) : -1;
+		int in = Mode_Read(CTF, "enemies", flags) ? Native_Contains(flags, who) : -1;
 		int lead = in > 0 ? (Mode_EntityH(who, e) ? Sd_IsLeader(e) : -1) : in;
 		if (lead < 0) {
 			return Mode_Done(&t, 0);
 		}
 		if (lead) {
-			if (!Sd_Add(CTF, "flagsEnemies", &ctf.flagsEnemies, 1)) {
+			if (!Sd_Add(CTF, "flagsEnemies", fe, 1)) {
 				return Mode_Done(&t, 0);
 			}
 			taken = 1;
@@ -1969,20 +1991,20 @@ static byte Ctf_TakeFlagC(const nativeVal_t *item, const nativeVal_t *who) {
 		return Mode_Done(&t, 0);
 	}
 	int fresh = Ctf_NoFlags();
-	if (fresh < 0 || !Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) || !Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies)) {
+	if (fresh < 0 || !Mode_Read(CTF, "flagsFriends", ff) || !Mode_Read(CTF, "flagsEnemies", fe)) {
 		return Mode_Done(&t, 0);
 	}
-	Native_SetInt(win, Native_Compare(&ctf.flagsFriends, &ctf.flagsEnemies) > 0);
+	Native_SetInt(win, Native_Compare(ff, fe) > 0);
 	if (!Mode_GVarSet("PlayerCTFTeamIsWinning", win) || !Ctf_Waypoint() || !Ctf_Update() ||
-		!Mode_Read(CTF, "flagsFriends", &ctf.flagsFriends) || !Mode_Read(CTF, "flags", &ctf.flags)) {
+		!Mode_Read(CTF, "flagsFriends", ff) || !Mode_Read(CTF, "flags", flags)) {
 		return Mode_Done(&t, 0);
 	}
-	byte end = Sd_Eq(&ctf.flagsFriends, &ctf.flags);
+	byte end = Sd_Eq(ff, flags);
 	if (!end) {
-		if (!Mode_Read(CTF, "flagsEnemies", &ctf.flagsEnemies) || !Mode_Read(CTF, "flags", &ctf.flags)) {
+		if (!Mode_Read(CTF, "flagsEnemies", fe) || !Mode_Read(CTF, "flags", flags)) {
 			return Mode_Done(&t, 0);
 		}
-		end = Sd_Eq(&ctf.flagsEnemies, &ctf.flags);
+		end = Sd_Eq(fe, flags);
 	}
 	return Mode_Done(&t, end ? PORT_OWN(CTF, EndOfCTF, NULL, "") : !fresh || PORT_OWN(CTF, CreateFlag, NULL, ""));
 }
@@ -1993,7 +2015,7 @@ MODE_FN(Ctf, TakeFlag, 2, Ctf_TakeFlagC(&a[0], &a[1]))
  * way point */
 static byte Ctf_SpawnFlagsC(const nativeVal_t *pos, const nativeVal_t *num) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *minName = Mode_V(&t), *minDist = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *minName = Mode_V(&t), *minDist = Mode_V(&t), *active = Mode_V(&t);
 	long n = 0;
 	byte ok = Mode_Range(num, &n);
 	for (long i = 0; ok && i < n; i++) {
@@ -2011,23 +2033,23 @@ static byte Ctf_SpawnFlagsC(const nativeVal_t *pos, const nativeVal_t *num) {
 	if (!Native_True(usr)) {
 		return Mode_Done(&t, Mode_GVarSetS("CurrentWaypointName", ""));
 	}
-	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive)) {
+	if (!Mode_Read(CTF, "flagsActive", active)) {
 		return Mode_Done(&t, 0);
 	}
-	int count = Native_Size(&ctf.flagsActive);
+	int count = Native_Size(active);
 	if (count <= 0) {
 		return Mode_Done(&t, count == 0);
 	}
 	Native_SetStr(minName, "");
 	Native_SetInt(minDist, 2000000);
-	if (!Mode_Read(CTF, "flagsActive", &ctf.flagsActive) || (count = Native_ForCount(&ctf.flagsActive)) < 0) {
+	if (!Mode_Read(CTF, "flagsActive", active) || (count = Native_ForCount(active)) < 0) {
 		return Mode_Done(&t, 0);
 	}
 	for (int i = 0; ok && i < count; i++) {
 		int mark = t.n;
 		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t), *ep = Mode_V(&t), *up = Mode_V(&t), *d = Mode_V(&t);
 		nativeVal_t *dist = Mode_V(&t);
-		ok = Native_SeqItem(&ctf.flagsActive, i, name) && Mode_EntityH(name, e);
+		ok = Native_SeqItem(active, i, name) && Mode_EntityH(name, e);
 		if (ok && Native_True(e)) {
 			ok = Mode_VGet(e, "Pos", ep) && Mode_VGet(usr, "Pos", up) && Mode_VecSub(ep, up, d) && Mode_VecMod(d, dist);
 			if (ok && Native_Compare(dist, minDist) < 0) {
@@ -2133,12 +2155,8 @@ PyMethodDef g_CTFMethods[] = {
 /* ---- Domination: the zones of the OM, taken with the baton; all zones win a round, DominationRounds rounds the deal
  * ---- */
 
-static struct {
-	nativeVal_t zones, enemies, friends;	/* lists: the places (then the names) of the zones, the ship names */
-	nativeVal_t zonesStates;		/* the state of each zone name: 0 neutral, 1 the player's, 2 the enemies' */
-	nativeVal_t zonesCanBeTaken, playerZones, enemyZones, userWithBaton, shipWithBaton, onDeathSpawnTime;
-	nativeVal_t startFirst, msgTime, model, batonRadius;
-} dom;
+/* zones: the places of the zones, then the names; zonesStates: the state of each zone name (0 neutral, 1 the
+ * player's, 2 the enemies') */
 
 /* GetMenuDescription(): the text of the deal with the number of zones */
 static byte Dom_GetMenuDescriptionC(nativeVal_t *out) {
@@ -2147,8 +2165,11 @@ static byte Dom_GetMenuDescriptionC(nativeVal_t *out) {
 		return 0;
 	}
 	Mode_Lang("SuperDeal_Domination_Description", &text);
+	nativeVal_t zones;
 	Native_SetNone(&n);
-	int len = Mode_Read(DOM, "zones", &dom.zones) ? Native_Size(&dom.zones) : -1;
+	Native_SetNone(&zones);
+	int len = Mode_Read(DOM, "zones", &zones) ? Native_Size(&zones) : -1;
+	Native_Free(&zones);
 	byte ok = len >= 0;
 	if (ok) {
 		char s[0x20];
@@ -2164,14 +2185,18 @@ static byte Dom_GetMenuDescriptionC(nativeVal_t *out) {
 MODE_FN(Dom, GetMenuDescription, 0, Dom_GetMenuDescriptionC(out))
 
 /* Scrap.Preload3DObject(name) of a global of the module */
-static byte Sd_PreloadVar(const char *mod, const char *name, nativeVal_t *slot) {
-	return Mode_Read(mod, name, slot) && Mode_Preload(slot);
+static byte Sd_PreloadVar(const char *mod, const char *name) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	byte ok = Mode_Read(mod, name, &v) && Mode_Preload(&v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* InitStatus(LevelPath): the status of the modes and the zone models loaded */
 static byte Dom_InitStatusC(void) {
-	return Sd_StatusC(DOM, NULL) && Sd_PreloadVar(DOM, "ZoneModelNeutral", &dom.model) &&
-		Sd_PreloadVar(DOM, "ZoneModelFriends", &dom.model) && Sd_PreloadVar(DOM, "ZoneModelEnemies", &dom.model);
+	return Sd_StatusC(DOM, NULL) && Sd_PreloadVar(DOM, "ZoneModelNeutral") && Sd_PreloadVar(DOM, "ZoneModelFriends") &&
+		Sd_PreloadVar(DOM, "ZoneModelEnemies");
 }
 
 MODE_FN(Dom, InitStatus, 1, Dom_InitStatusC())
@@ -2181,21 +2206,23 @@ MODE_FN(Dom, InitStatus, 1, Dom_InitStatusC())
  * local of the function (no global statement), so the table of the zones stays as it is. */
 static byte Dom_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Sixth", "SuperDeal_Tenth", NULL };
-	nativeVal_t first;
+	nativeVal_t first, team;
 	Native_SetNone(&first);
+	Native_SetNone(&team);
 	byte ok = Mode_Import("Parking") && Mode_Import("Chars") && Sd_CameraFor(libs, "OM") &&
-		Sd_PreloadVar(DOM, "BatonModel", &dom.model) && Mode_ModSetGlobal("Chars", "OnMainCharDeath", DOM, "OnPlayerDeath") &&
-		Sd_SpawnTime(DOM, &dom.onDeathSpawnTime, "DominationOnDeathSpawnTime") &&
-		Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 1) && PORT_OWN(Domination, CreateEnemies, NULL, "") &&
+		Sd_PreloadVar(DOM, "BatonModel") && Mode_ModSetGlobal("Chars", "OnMainCharDeath", DOM, "OnPlayerDeath") &&
+		Sd_SpawnTime(DOM, "DominationOnDeathSpawnTime") &&
+		Sd_PutI(DOM, "zonesCanBeTaken", 1) && PORT_OWN(Domination, CreateEnemies, NULL, "") &&
 		PORT_OWN(Domination, CreateFriends, NULL, "") &&
 		Mode_GVarSetS("OnDominFriendDeath", "Domination.OnFriendDeath") &&
-		Mode_GVarSetS("OnDominEnemyDeath", "Domination.OnEnemyDeath") && Mode_Read(DOM, "enemies", &dom.enemies) &&
-		Sd_MarkShips(&dom.enemies, "red", "DominationEnemies") && Mode_Read(DOM, "enemies", &dom.enemies) &&
-		Mode_Item(&dom.enemies, 0, &first) && Mode_GVarSet("LeaderName", &first) && Mode_Read(DOM, "friends", &dom.friends) &&
-		Sd_MarkShips(&dom.friends, "green", "DominationFriends") &&
+		Mode_GVarSetS("OnDominEnemyDeath", "Domination.OnEnemyDeath") && Mode_Read(DOM, "enemies", &team) &&
+		Sd_MarkShips(&team, "red", "DominationEnemies") && Mode_Read(DOM, "enemies", &team) &&
+		Mode_Item(&team, 0, &first) && Mode_GVarSet("LeaderName", &first) && Mode_Read(DOM, "friends", &team) &&
+		Sd_MarkShips(&team, "green", "DominationFriends") &&
 		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", DOM, "CrazyGamblerStartDomination") &&
 		Mode_ModSetGlobal("Parking", "SwitchCharMissionCallback", DOM, "ReleaseBaton");
 	Native_Free(&first);
+	Native_Free(&team);
 	return ok;
 }
 
@@ -2220,22 +2247,21 @@ static byte Dom_HideZones(void) {
 }
 
 /* userWithBaton = 0; shipWithBaton = "" (the baton is free) */
-static byte Sd_BatonFree(const char *mod, nativeVal_t *user, nativeVal_t *ship) {
+static byte Sd_BatonFree(const char *mod) {
 	nativeVal_t empty;
 	Native_SetStr(&empty, "");
-	return Sd_PutI(mod, "userWithBaton", user, 0) && Mode_Put(mod, "shipWithBaton", ship, &empty);
+	return Sd_PutI(mod, "userWithBaton", 0) && Mode_Put(mod, "shipWithBaton", NULL, &empty);
 }
 
 /* ReleaseBaton(): the player left his ship with the baton: it drops at a random place */
 static byte Dom_ReleaseBatonC(void) {
-	if (!Mode_Read(DOM, "userWithBaton", &dom.userWithBaton)) {
-		return 0;
-	}
-	if (Native_True(&dom.userWithBaton) && (!Mode_Later(0.5, DOM, "LostBatonMessage", NULL, 0, NULL) ||
-		!Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) || !PORT_OWN(Domination, CreateBaton, NULL, ""))) {
-		return 0;
-	}
-	return Dom_HideZones();
+	nativeVal_t user;
+	Native_SetNone(&user);
+	byte ok = Mode_Read(DOM, "userWithBaton", &user) && (!Native_True(&user) ||
+		(Mode_Later(0.5, DOM, "LostBatonMessage", NULL, 0, NULL) && Sd_BatonFree(DOM) &&
+		PORT_OWN(Domination, CreateBaton, NULL, "")));
+	Native_Free(&user);
+	return ok && Dom_HideZones();
 }
 
 MODE_FN(Dom, ReleaseBaton, 0, Dom_ReleaseBatonC())
@@ -2390,8 +2416,8 @@ MODE_KW(Dom, CreateBaton, "|O", "pos") {
 	return Dom_CreateBatonC(&v[0]);
 }
 
-/* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) (mod.func a value Speech keeps, OBJLIB 5; its call there
- * takes the entry, Mode_Apply) */
+/* Speech.AddRemoteCom(key, "CrazyGambler", mod.func, ()) (mod.func a value Speech keeps, OBJLIB 5 (9c: its Python
+ * function object until functions are native values); its call there takes the entry, Mode_Apply) */
 static byte Sd_GamblerKey(const char *key, const char *mod, const char *func) {
 	nativeVal_t none, fn;
 	if (!Mode_RefG(mod, func, &fn)) {
@@ -2416,16 +2442,16 @@ static byte Dom_AimLeader(const nativeVal_t *usr) {
  * first round */
 static byte Dom_CrazyGamblerStartDominationC(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *v = Mode_V(&t), *fn = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *v = Mode_V(&t), *fn = Mode_V(&t), *start = Mode_V(&t);
 	if (!Mode_Import("Parking") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
 		!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", DOM, "OnVehicle") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
 	int car = Mode_UsrInCar(usr);
-	if (car < 0 || (car && !Dom_AimLeader(usr)) || !Mode_Read(DOM, "CrazyGamblerStartDominationFirst", &dom.startFirst)) {
+	if (car < 0 || (car && !Dom_AimLeader(usr)) || !Mode_Read(DOM, "CrazyGamblerStartDominationFirst", start)) {
 		return Mode_Done(&t, 0);
 	}
-	byte first = Native_True(&dom.startFirst);
+	byte first = Native_True(start);
 	if (first) {
 		Mode_SaveVar("PlayerRounds", v);
 		first = Native_IsStr(v, "0");
@@ -2438,7 +2464,7 @@ static byte Dom_CrazyGamblerStartDominationC(void) {
 	if (!first) {
 		return Mode_Done(&t, PORT_OWN(Domination, StartDomination, NULL, ""));
 	}
-	if (!Sd_PutI(DOM, "CrazyGamblerStartDominationFirst", &dom.startFirst, 0)) {
+	if (!Sd_PutI(DOM, "CrazyGamblerStartDominationFirst", 0)) {
 		return Mode_Done(&t, 0);
 	}
 	nativeVal_t *f = Mode_V(&t);
@@ -2468,32 +2494,32 @@ static void Dom_SetZones(const nativeVal_t *zones) {
 /* StartDomination(): a round: no zones taken, the scorer, the zones at their places, the baton */
 static byte Dom_StartDominationC(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *a = Mode_V(&t), *b = Mode_V(&t), *rounds = Mode_V(&t);
+	nativeVal_t *a = Mode_V(&t), *b = Mode_V(&t), *rounds = Mode_V(&t), *zones = Mode_V(&t);
 	if (!Mode_Import("Vehicles") || !Mode_Import("Menu") || !Mode_Import("RacerScorer") || !Mode_Import("RaceMaker") ||
-		!Sd_PutI(DOM, "playerZones", &dom.playerZones, 0) || !Sd_PutI(DOM, "enemyZones", &dom.enemyZones, 0) ||
+		!Sd_PutI(DOM, "playerZones", 0) || !Sd_PutI(DOM, "enemyZones", 0) ||
 		!Mode_SaveInt("PlayerRounds", a) || !Mode_SaveInt("EnemyRounds", b)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("DominationRounds", rounds);
 	if (!PORT_CALL(RacerScorer, InitMissionScorer, NULL, "vvv", a, b, rounds) ||
 		!Mode_ModSetGlobal("Menu", "MissionScorerCall", DOM, "MissionScorer") || !PORT_OWN(Domination, MissionScorer, NULL, "i", 0L) ||
-		!Mode_Read(DOM, "zones", &dom.zones)) {
+		!Mode_Read(DOM, "zones", zones)) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&dom.zones);
+	int n = Native_Size(zones);
 	byte ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
 		nativeVal_t pos;
 		Native_SetNone(&pos);
-		ok = Mode_Read(DOM, "zones", &dom.zones) && Mode_Item(&dom.zones, i, &pos) && PORT_OWN(Domination, CreateZone, NULL, "iv", (long)i, &pos);
+		ok = Mode_Read(DOM, "zones", zones) && Mode_Item(zones, i, &pos) && PORT_OWN(Domination, CreateZone, NULL, "iv", (long)i, &pos);
 		Native_Free(&pos);
 	}
-	if (!ok || !Mode_Read(DOM, "zones", &dom.zones)) {
+	if (!ok || !Mode_Read(DOM, "zones", zones)) {
 		return Mode_Done(&t, 0);
 	}
-	if (dom.zones.type == NV_LIST) {
-		Dom_SetZones(&dom.zones);
-	} else if (!PORT_CALL(SLogic, SetDominationZones, NULL, "v", &dom.zones)) {
+	if (zones->type == NV_LIST) {
+		Dom_SetZones(zones);
+	} else if (!PORT_CALL(SLogic, SetDominationZones, NULL, "v", zones)) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, PORT_OWN(Domination, CreateBaton, NULL, ""));
@@ -2503,10 +2529,12 @@ MODE_FN(Dom, StartDomination, 0, Dom_StartDominationC())
 
 /* zonesStates[z] == state (the global read again): 1, 0, -1 with the error */
 static int Dom_StateIs(const nativeVal_t *z, long state) {
-	nativeVal_t v;
+	nativeVal_t v, states;
 	Native_SetNone(&v);
-	int r = Mode_Read(DOM, "zonesStates", &dom.zonesStates) && Native_Subscript(&dom.zonesStates, z, &v) ? Mode_EqI(&v, state) : -1;
+	Native_SetNone(&states);
+	int r = Mode_Read(DOM, "zonesStates", &states) && Native_Subscript(&states, z, &v) ? Mode_EqI(&v, state) : -1;
 	Native_Free(&v);
+	Native_Free(&states);
 	return r;
 }
 
@@ -2514,7 +2542,7 @@ static int Dom_StateIs(const nativeVal_t *z, long state) {
 static byte Dom_SetState(const nativeVal_t *z, long state) {
 	nativeVal_t v;
 	Native_SetInt(&v, state);
-	return Mode_DictPut(DOM, "zonesStates", &dom.zonesStates, z, &v);
+	return Mode_DictPut(DOM, "zonesStates", NULL, z, &v);
 }
 
 /* the player or the leader took the baton: SLogic.ChangeBatonState((0, 0, 0), state), the holder (ship, or the name of
@@ -2527,8 +2555,8 @@ static byte Dom_Took(long state, long user, const nativeVal_t *ship, const nativ
 	for (int i = 0; i < 3; i++) {
 		Native_SetInt(Native_Append(&zero), 0);
 	}
-	byte ok = Sd_BatonState(&zero, state) && Sd_PutI(DOM, "userWithBaton", &dom.userWithBaton, user) &&
-		(!usr || Mode_VGet(usr, "Name", &un)) && Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, usr ? &un : ship) && PORT_CALL(Speech, ForceRemoteCom, NULL, "ss", key, CG) &&
+	byte ok = Sd_BatonState(&zero, state) && Sd_PutI(DOM, "userWithBaton", user) &&
+		(!usr || Mode_VGet(usr, "Name", &un)) && Mode_Put(DOM, "shipWithBaton", NULL, usr ? &un : ship) && PORT_CALL(Speech, ForceRemoteCom, NULL, "ss", key, CG) &&
 		Mode_Sound(snd, vol);
 	Native_Free(&zero);
 	Native_Free(&un);
@@ -2594,7 +2622,7 @@ static byte Dom_CreateZoneC(const nativeVal_t *i, const nativeVal_t *pos) {
 	if (!Mode_Cat(&t, name, 2, Mode_S(&t, "Zone"), rep) || !Sd_Create(name, pos, "Item", l) ||
 		!Mode_Read(DOM, "ZoneModelNeutral", model) || !Mode_VModel(l, model) || !Mode_VSetI(l, "Radius", 3000) ||
 		!Mode_VSetS(l, "OnTake", "Domination.TakeZone") || !Mode_VSetI(l, "RadarShow", 0) || !Mode_VGet(l, "Name", ln) ||
-		!Mode_DictPut(DOM, "zonesStates", &dom.zonesStates, ln, Mode_I(&t, 0))) {
+		!Mode_DictPut(DOM, "zonesStates", NULL, ln, Mode_I(&t, 0))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(ln);
@@ -2602,7 +2630,7 @@ static byte Dom_CreateZoneC(const nativeVal_t *i, const nativeVal_t *pos) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(ln);
-	return Mode_Done(&t, Mode_VGet(l2, "Name", ln) && Mode_DictPut(DOM, "zones", &dom.zones, i, ln));
+	return Mode_Done(&t, Mode_VGet(l2, "Name", ln) && Mode_DictPut(DOM, "zones", NULL, i, ln));
 }
 
 MODE_FN(Dom, CreateZone, 2, Dom_CreateZoneC(&a[0], &a[1]))
@@ -2624,27 +2652,25 @@ static byte Dom_Count(const char *key, const nativeVal_t *a, const nativeVal_t *
 }
 
 /* SScorer.Set(0, item, "Text", lang text + ": %d/%d" % (count, n)), n NULL for len(zones) */
-static byte Dom_SetCount(const char *item, const char *key, const char *count, nativeVal_t *slot, const nativeVal_t *n) {
-	nativeVal_t len, text, id, it;
+static byte Dom_SetCount(const char *item, const char *key, const char *count, const nativeVal_t *n) {
+	nativeVal_t len, text, id, it, c, zones;
 	Native_SetNone(&text);
-	if (!Mode_Read(DOM, count, slot)) {
-		return 0;
-	}
-	if (!n) {
-		if (!Mode_Read(DOM, "zones", &dom.zones)) {
-			return 0;
-		}
-		int k = Native_Size(&dom.zones);
-		if (k < 0) {
-			return 0;
-		}
+	Native_SetNone(&c);
+	Native_SetNone(&zones);
+	byte ok = Mode_Read(DOM, count, &c);
+	if (ok && !n) {
+		int k = Mode_Read(DOM, "zones", &zones) ? Native_Size(&zones) : -1;
+		ok = k >= 0;
 		Native_SetInt(&len, k);
 		n = &len;
 	}
 	Native_SetInt(&id, 0);
 	Native_SetStr(&it, item);
-	byte ok = Dom_Count(key, slot, n, &text) && Mode_ScorerSet(&id, &it, "Text", &text);
+	ok = ok && Dom_Count(key, &c, n, &text) && Mode_ScorerSet(&id, &it, "Text", &text);
 	Native_Free(&text);
+	Native_Free(&c);
+	Native_Free(&zones);
+	Native_Free(&it);
 	return ok;
 }
 
@@ -2656,7 +2682,7 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 	nativeVal_t *z = Mode_V(&t), *model = Mode_V(&t), *wname = Mode_V(&t), *idx = Mode_V(&t);
 	nativeVal_t *pr = Mode_V(&t), *er = Mode_V(&t), *dr = Mode_V(&t), *one = Mode_V(&t), *rep = Mode_V(&t);
 	nativeVal_t *fmt = Mode_V(&t), *args = Mode_V(&t), *text = Mode_V(&t), *id = Mode_V(&t), *it = Mode_V(&t);
-	nativeVal_t *own = enemy ? &dom.enemyZones : &dom.playerZones, *other = enemy ? &dom.playerZones : &dom.enemyZones;
+	nativeVal_t *own = Mode_V(&t), *other = Mode_V(&t), *zones = Mode_V(&t);
 	const char *ownVar = enemy ? "enemyZones" : "playerZones", *otherVar = enemy ? "playerZones" : "enemyZones";
 	int was = Dom_StateIs(item, enemy ? 2 : 1);
 	if (was) {
@@ -2666,19 +2692,19 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 	was = Dom_StateIs(item, enemy ? 1 : 2);
 	if (was < 0 || (was && (!Sd_Add(DOM, otherVar, other, -1) ||
 		!Dom_SetCount(enemy ? "PlayerZonesText" : "EnemyZonesText", enemy ? "SuperDeal_DominationPlayerZones" :
-		"SuperDeal_DominationEnemyZones", otherVar, other, NULL)))) {
+		"SuperDeal_DominationEnemyZones", otherVar, NULL)))) {
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
 	if (!Mode_EntityH(item, z) || !Mode_Read(DOM, enemy ? "ZoneModelEnemies" : "ZoneModelFriends", model) ||
-		!Mode_VModel(z, model) || (!enemy && !Mode_VSetI(z, "RadarShow", 0)) || !Mode_Read(DOM, "zones", &dom.zones) ||
-		!Mode_Cat(&t, wname, 2, item, Mode_S(&t, "_WithLife")) || !Mode_Index(&dom.zones, wname, idx)) {
+		!Mode_VModel(z, model) || (!enemy && !Mode_VSetI(z, "RadarShow", 0)) || !Mode_Read(DOM, "zones", zones) ||
+		!Mode_Cat(&t, wname, 2, item, Mode_S(&t, "_WithLife")) || !Mode_Index(zones, wname, idx)) {
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
 	/* SLogic.ChangeZoneState(idx, state) ("ii") */
 	Domination_SetZoneState((int)idx->i, enemy ? 2 : 1);
 	if (!Mode_Sound(enemy ? "EneWaySound" : "WaySound", enemy ? "EneWayVolume" : "WayVolume") || !Sd_Add(DOM, ownVar, own, 1) ||
 		!Dom_SetState(item, enemy ? 2 : 1) || !Dom_SetCount(enemy ? "EnemyZonesText" : "PlayerZonesText", enemy ?
-		"SuperDeal_DominationEnemyZones" : "SuperDeal_DominationPlayerZones", ownVar, own, numZones) || !Sd_Draw() ||
+		"SuperDeal_DominationEnemyZones" : "SuperDeal_DominationPlayerZones", ownVar, numZones) || !Sd_Draw() ||
 		!Mode_Read(DOM, ownVar, own)) {
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
@@ -2695,7 +2721,7 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 	}
 	Native_Free(rep);
 	Mode_Repr(won, rep);
-	if (!Mode_SetSaveVar(enemy ? "EnemyRounds" : "PlayerRounds", rep) || !Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 0)) {
+	if (!Mode_SetSaveVar(enemy ? "EnemyRounds" : "PlayerRounds", rep) || !Sd_PutI(DOM, "zonesCanBeTaken", 0)) {
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
 	if (Native_Compare(won, dr) >= 0) {
@@ -2707,10 +2733,10 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 	/* SScorer.Set(0, "ZonesText", "Text", "%d/%d" % (playerZones, numZones)) */
 	Native_SetStr(fmt, "%d/%d");
 	Native_SetEmpty(args, NV_TUPLE);
-	if (!Mode_Read(DOM, "playerZones", &dom.playerZones)) {
+	if (!Mode_Read(DOM, "playerZones", own)) {
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
-	Native_Copy(Native_Append(args), &dom.playerZones);
+	Native_Copy(Native_Append(args), own);
 	Native_Copy(Native_Append(args), numZones);
 	Native_SetInt(id, 0);
 	Native_SetStr(it, "ZonesText");
@@ -2724,12 +2750,12 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 static byte Dom_TakeZoneC(const nativeVal_t *item, const nativeVal_t *who) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *we = Mode_V(&t), *radar = Mode_V(&t), *num = Mode_V(&t);
-	nativeVal_t *now = Mode_V(&t), *cad = Mode_V(&t), *len = Mode_V(&t), *mt = Mode_V(&t);
+	nativeVal_t *now = Mode_V(&t), *cad = Mode_V(&t), *len = Mode_V(&t), *mt = Mode_V(&t), *v = Mode_V(&t);
 	if (!Mode_Import("RacerScorer") || !Mode_Import("Menu") || !Mode_Import("Sound") || !Mode_Import("Speech") ||
-		!Mode_Read(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken)) {
+		!Mode_Read(DOM, "zonesCanBeTaken", v)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Native_True(&dom.zonesCanBeTaken)) {
+	if (!Native_True(v)) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_UsrHandle(usr)) {
@@ -2737,8 +2763,7 @@ static byte Dom_TakeZoneC(const nativeVal_t *item, const nativeVal_t *who) {
 	}
 	int isUser = Mode_UsrNameIs(usr, who);
 	if (isUser > 0) {
-		isUser = Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton) && Mode_VGet(usr, "Name", un) ?
-			Sd_Eq(&dom.shipWithBaton, un) : -1;
+		isUser = Mode_Read(DOM, "shipWithBaton", v) && Mode_VGet(usr, "Name", un) ? Sd_Eq(v, un) : -1;
 		Native_Free(un);
 	}
 	if (isUser < 0 || !Mode_EntityH(who, we) || !Mode_VGet(we, "RadarShow", radar)) {
@@ -2759,24 +2784,24 @@ static byte Dom_TakeZoneC(const nativeVal_t *item, const nativeVal_t *who) {
 			return Mode_Done(&t, msg == 0);
 		}
 		Native_SetFloat(now, Mode_Time());
-		if (!Mode_Read(DOM, "msgTime", &dom.msgTime)) {
+		if (!Mode_Read(DOM, "msgTime", v)) {
 			return Mode_Done(&t, 0);
 		}
-		if (Native_Compare(&dom.msgTime, now) >= 0) {
+		if (Native_Compare(v, now) >= 0) {
 			return Mode_Done(&t, 1);
 		}
 		double d;
 		Mode_Lang("SuperDeal_Domination_SystemMessage", cad);
 		return Mode_Done(&t, PORT_CALL(Speech, CalculateSpeechTime, len, "v", cad) && Native_Arith('+', now, len, mt) &&
-			Mode_Put(DOM, "msgTime", &dom.msgTime, mt) && Mode_Read(DOM, "msgTime", &dom.msgTime) &&
-			Native_ArgDouble(&dom.msgTime, &d) && Mode_MsgText(cad, d));
+			Mode_Put(DOM, "msgTime", NULL, mt) && Mode_Read(DOM, "msgTime", v) && Native_ArgDouble(v, &d) &&
+			Mode_MsgText(cad, d));
 	}
 	cEntity *z;
-	if (!Mode_Ent(item, &z) || !Mode_Read(DOM, "zones", &dom.zones)) {
+	if (!Mode_Ent(item, &z) || !Mode_Read(DOM, "zones", v)) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&dom.zones);
-	if (n < 0 || !Mode_Read(DOM, "zonesStates", &dom.zonesStates)) {
+	int n = Native_Size(v);
+	if (n < 0 || !Mode_Read(DOM, "zonesStates", v)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(num, n);
@@ -2815,49 +2840,49 @@ static byte Sd_BatonAt(byte race, const nativeVal_t *dead) {
 /* OnPlayerDeath(LooserName, WinnerName): the baton drops where the player died; he comes back after
  * onDeathSpawnTime */
 static byte Dom_OnPlayerDeathC(const nativeVal_t *loser) {
-	nativeVal_t dead;
+	nativeVal_t dead, ship;
 	Native_SetNone(&dead);
-	byte ok = Mode_EntityH(loser, &dead) && Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton);
-	if (ok && Sd_Eq(&dom.shipWithBaton, loser)) {
-		ok = Sd_BatonFree(DOM, &dom.userWithBaton, &dom.shipWithBaton) && Sd_BatonAt(0, &dead);
+	Native_SetNone(&ship);
+	byte ok = Mode_EntityH(loser, &dead) && Mode_Read(DOM, "shipWithBaton", &ship);
+	if (ok && Sd_Eq(&ship, loser)) {
+		ok = Sd_BatonFree(DOM) && Sd_BatonAt(0, &dead);
 	}
 	Native_Free(&dead);
-	return ok && Dom_HideZones() && Sd_RespawnLater(DOM, &dom.onDeathSpawnTime, loser);
+	Native_Free(&ship);
+	return ok && Dom_HideZones() && Sd_RespawnLater(DOM, loser);
 }
 
 MODE_FN(Dom, OnPlayerDeath, 2, Dom_OnPlayerDeathC(&a[0]))
 
 /* Vehicles.OnDeath(loser, winner); dead = Scrap.GetEntity(loser); dead.EntityList = ""; if loser in list:
  * list.remove(loser) (the start of OnEnemyDeath and OnFriendDeath) */
-static byte Dom_Dead(const nativeVal_t *loser, const nativeVal_t *winner, const char *list, nativeVal_t *slot,
-	nativeVal_t *dead) {
+static byte Dom_Dead(const nativeVal_t *loser, const nativeVal_t *winner, const char *list, nativeVal_t *dead) {
 	return Mode_Import("Vehicles") && PORT_CALL(Vehicles, OnDeath, NULL, "vv", loser, winner) && Mode_EntityH(loser, dead) &&
-		Mode_VSetS(dead, "EntityList", "") && Sd_RemoveIn(DOM, list, slot, loser);
+		Mode_VSetS(dead, "EntityList", "") && Sd_RemoveIn(DOM, list, loser);
 }
 
 /* OnEnemyDeath(LooserName, WinnerName): an enemy died (the engine's OnDominEnemyDeath); a new one comes after
  * onDeathSpawnTime, the leader drops the baton */
 static byte Dom_OnEnemyDeathC(const nativeVal_t *loser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *dead = Mode_V(&t), *leader = Mode_V(&t), *is = Mode_V(&t), *empty = Mode_V(&t);
-	if (!Dom_Dead(loser, winner, "enemies", &dom.enemies, dead) || !Native_GVarGet("LeaderName", leader)) {
+	nativeVal_t *dead = Mode_V(&t), *leader = Mode_V(&t), *is = Mode_V(&t), *empty = Mode_V(&t), *v = Mode_V(&t);
+	if (!Dom_Dead(loser, winner, "enemies", dead) || !Native_GVarGet("LeaderName", leader)) {
 		return Mode_Done(&t, 0);
 	}
 	byte isLeader = Sd_Eq(leader, loser);
 	Native_SetInt(is, isLeader);
-	if (!Mode_Read(DOM, "onDeathSpawnTime", &dom.onDeathSpawnTime) || !Sd_LaterV(&dom.onDeathSpawnTime, DOM, "RespawnEnemy", is, 1) ||
-		!Sd_Del(loser)) {
+	if (!Mode_Read(DOM, "onDeathSpawnTime", v) || !Sd_LaterV(v, DOM, "RespawnEnemy", is, 1) || !Sd_Del(loser)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!isLeader) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton)) {
+	if (!Mode_Read(DOM, "shipWithBaton", v)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetStr(empty, "");
-	if (Sd_Eq(&dom.shipWithBaton, leader) && (!Mode_GVarSetS("CurrentWaypointName", "") ||
-		!Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, empty) || !Sd_BatonAt(0, dead))) {
+	if (Sd_Eq(v, leader) && (!Mode_GVarSetS("CurrentWaypointName", "") ||
+		!Mode_Put(DOM, "shipWithBaton", NULL, empty) || !Sd_BatonAt(0, dead))) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_GVarSetS("LeaderName", ""));
@@ -2867,11 +2892,13 @@ MODE_FN(Dom, OnEnemyDeath, 2, Dom_OnEnemyDeathC(&a[0], &a[1]))
 
 /* OnFriendDeath(LooserName, WinnerName): a ship of the player's team died; a new one comes after onDeathSpawnTime */
 static byte Dom_OnFriendDeathC(const nativeVal_t *loser, const nativeVal_t *winner) {
-	nativeVal_t dead;
+	nativeVal_t dead, time;
 	Native_SetNone(&dead);
-	byte ok = Dom_Dead(loser, winner, "friends", &dom.friends, &dead) && Mode_Read(DOM, "onDeathSpawnTime", &dom.onDeathSpawnTime) &&
-		Sd_LaterV(&dom.onDeathSpawnTime, DOM, "RespawnFriend", NULL, 0) && Sd_Del(loser);
+	Native_SetNone(&time);
+	byte ok = Dom_Dead(loser, winner, "friends", &dead) && Mode_Read(DOM, "onDeathSpawnTime", &time) &&
+		Sd_LaterV(&time, DOM, "RespawnFriend", NULL, 0) && Sd_Del(loser);
 	Native_Free(&dead);
+	Native_Free(&time);
 	return ok;
 }
 
@@ -2924,9 +2951,13 @@ static byte Dom_Freeze(const nativeVal_t *names) {
 
 /* EndOfDomination(playerWins): the ships out of their lists and safe, then the last message */
 static byte Dom_EndOfDominationC(const nativeVal_t *wins) {
-	return Mode_Import("Menu") && Mode_Import("Parking") && Mode_Read(DOM, "enemies", &dom.enemies) &&
-		Dom_Freeze(&dom.enemies) && Mode_Read(DOM, "friends", &dom.friends) && Dom_Freeze(&dom.friends) && Sd_ScorerOff() &&
-		Mode_ModNone("Parking", "SwitchCharMissionCallback") && Mode_ModNone("Parking", "SwitchVehicleMissionCallback") &&
+	nativeVal_t team;
+	Native_SetNone(&team);
+	byte ok = Mode_Import("Menu") && Mode_Import("Parking") && Mode_Read(DOM, "enemies", &team) && Dom_Freeze(&team) &&
+		Mode_Read(DOM, "friends", &team) && Dom_Freeze(&team);
+	Native_Free(&team);
+	return ok && Sd_ScorerOff() && Mode_ModNone("Parking", "SwitchCharMissionCallback") &&
+		Mode_ModNone("Parking", "SwitchVehicleMissionCallback") &&
 		(Native_True(wins) ? PORT_OWN(Domination, PreOnVictory, NULL, "") :
 		PORT_OWN(Domination, PreRestartMenu, NULL, ""));
 }
@@ -2946,15 +2977,15 @@ MODE_FN(Dom, PreOnVictory, 0, Sd_PreEnd(1, "DominationFinishPlayerWinsTextCad", 
 
 /* a text of the mission scorer: the zones of a side (Y below the scorer's text, on the Xbox lower) */
 static byte Dom_ScorerText(const nativeVal_t *id, const char *item, long yXbox, long yPc, const char *key,
-	const char *count, nativeVal_t *slot) {
+	const char *count) {
 	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *n = Mode_V(&t), *it = Mode_S(&t, item), *v = Mode_V(&t), *xbox = Mode_V(&t), *y = Mode_V(&t);
-	nativeVal_t *text = Mode_V(&t), *colors = Mode_V(&t);
-	if (!Mode_Read(DOM, "zones", &dom.zones)) {
+	nativeVal_t *text = Mode_V(&t), *colors = Mode_V(&t), *slot = Mode_V(&t);
+	if (!Mode_Read(DOM, "zones", slot)) {
 		return Mode_Done(&t, 0);
 	}
-	int len = Native_Size(&dom.zones);
+	int len = Native_Size(slot);
 	if (len < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -2984,8 +3015,8 @@ static byte Dom_ScorerText(const nativeVal_t *id, const char *item, long yXbox, 
 /* MissionScorer(id): the zones of both sides above the race scorer */
 static byte Dom_MissionScorerC(const nativeVal_t *id) {
 	return Mode_Import("RacerScorer") &&
-		Dom_ScorerText(id, "PlayerZonesText", 80, -5, "SuperDeal_DominationPlayerZones", "playerZones", &dom.playerZones) &&
-		Dom_ScorerText(id, "EnemyZonesText", 105, 20, "SuperDeal_DominationEnemyZones", "enemyZones", &dom.enemyZones) &&
+		Dom_ScorerText(id, "PlayerZonesText", 80, -5, "SuperDeal_DominationPlayerZones", "playerZones") &&
+		Dom_ScorerText(id, "EnemyZonesText", 105, 20, "SuperDeal_DominationEnemyZones", "enemyZones") &&
 		PORT_CALL(RacerScorer, MissionScorer, NULL, "v", id);
 }
 
@@ -3028,13 +3059,8 @@ PyMethodDef g_DominationMethods[] = {
 /* ---- MortalRace: the race of the FZ with the baton; only the ship with the baton counts the buoys, the others hunt
  * it ---- */
 
-static struct {
-	nativeVal_t bayScorer, nameProfileDict;	/* dicts: the buoys of each racer, the profile of each racer name */
-	nativeVal_t racers;			/* the racer names (a list) */
-	nativeVal_t bestScorer, yourScore, iStartPos, waypointName, userWithBaton, shipWithBaton, messageKillShipThrown;
-	nativeVal_t numWaypoints, profileType, respawnTime, batonRadius, model;
-	nativeVal_t baton, prof;		/* the baton's handle and the AI profile object of VehiclesNPC (OBJLIB 7, 5) */
-} mr;
+/* BayScorer: the buoys of each racer; nameProfileDict: the profile of each racer name; baton: the baton's handle;
+ * prof: the AI profile object of VehiclesNPC, changed in place (OBJLIB 7) */
 
 MODE_FN(Mr, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_MortalRace_Description", "MortalRaceWaypoints", out))
 
@@ -3050,12 +3076,12 @@ static byte Mr_InitStatusC(void) {
 MODE_FN(Mr, InitStatus, 1, Mr_InitStatusC())
 
 /* var of the module = conv(Scrap.GetSaveVar(save)) (conv: int, float or the text) */
-static byte Mr_FromSave(const char *var, nativeVal_t *slot, const char *save, char conv) {
+static byte Mr_FromSave(const char *var, const char *save, char conv) {
 	nativeVal_t s, v;
 	Mode_SaveVar(save, &s);
 	Native_SetNone(&v);
 	byte ok = conv == 'i' ? Native_ToInt(&s, &v) : conv == 'f' ? Native_ToFloat(&s, &v) : (Native_Copy(&v, &s), 1);
-	ok = ok && Mode_Put(MR, var, slot, &v);
+	ok = ok && Mode_Put(MR, var, NULL, &v);
 	Native_Free(&s);
 	Native_Free(&v);
 	return ok;
@@ -3065,35 +3091,32 @@ static byte Mr_FromSave(const char *var, nativeVal_t *slot, const char *save, ch
  * the player boards; the baton drops when he leaves the ship */
 static byte Mr_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Second", "SuperDeal_Seventh", "SuperDeal_Twelfth", NULL };
-	nativeVal_t none, text, start, aim;
+	nativeVal_t none, text, start;
 	if (!Mode_Import("Parking") || !Mode_Import("Chars") || !Mode_Import("RaceMaker") || !Sd_CameraFor(libs, "FZ")) {
 		return 0;
 	}
 	Native_SetEmpty(&none, NV_TUPLE);
 	Native_SetNone(&start);
-	Native_SetNone(&aim);
 	byte ok = Mode_SetModVar("MissionsFuncs", "cameraData", &none) && PORT_CALL(RaceMaker, PreloadCnDnResources, NULL, "") &&
-		Sd_PreloadVar(MR, "BatonModel", &mr.model) && Sd_PreloadVar(MR, "WayPointModel", &mr.model) &&
+		Sd_PreloadVar(MR, "BatonModel") && Sd_PreloadVar(MR, "WayPointModel") &&
 		Mode_ModSetGlobal("Chars", "OnMainCharDeath", MR, "OnPlayerDeath");
 	if (ok) {
 		Mode_SaveVar("MortalRaceRace", &text);
 		ok = Native_EvalText(MR, &text, &start) && Mode_SetModVar("RaceMaker", "StartPos", &start);
 		Native_Free(&text);
 	}
-	ok = ok && Mr_FromSave("numWaypoints", &mr.numWaypoints, "MortalRaceWaypoints", 'i') &&
-		Mr_FromSave("respawnTime", &mr.respawnTime, "MortalRaceRespawnTime", 'f') &&
-		Mr_FromSave("profileType", &mr.profileType, "MortalRaceRacersProfile", 's') &&
-		Mr_FromSave("FightingFreezeControlAim", &aim, "MortalRaceFightingFreezeControlAim", 'i') &&
+	ok = ok && Mr_FromSave("numWaypoints", "MortalRaceWaypoints", 'i') && Mr_FromSave("respawnTime", "MortalRaceRespawnTime", 'f') &&
+		Mr_FromSave("profileType", "MortalRaceRacersProfile", 's') &&
+		Mr_FromSave("FightingFreezeControlAim", "MortalRaceFightingFreezeControlAim", 'i') &&
 		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", MR, "CrazyGamblerStartMortalRace") &&
 		Mode_ModSetGlobal("Parking", "SwitchCharMissionCallback", MR, "ReleaseBaton");
 	Native_Free(&start);
-	Native_Free(&aim);
 	return ok;
 }
 
 MODE_FN(Mr, Init, 1, Mr_InitC())
 
-/* RaceMaker.StartPos[i][k] (the variable of RaceMaker read again, OBJLIB 5) */
+/* RaceMaker.StartPos[i][k] (the variable of RaceMaker read again) */
 static byte Mr_StartPos(const nativeVal_t *i, long k, nativeVal_t *out) {
 	nativeVal_t sp, p;
 	Native_SetNone(&sp);
@@ -3106,7 +3129,11 @@ static byte Mr_StartPos(const nativeVal_t *i, long k, nativeVal_t *out) {
 
 /* RaceMaker.StartPos[iStartPos][k] */
 static byte Mr_AtStart(long k, nativeVal_t *out) {
-	return Mode_Read(MR, "iStartPos", &mr.iStartPos) && Mr_StartPos(&mr.iStartPos, k, out);
+	nativeVal_t i;
+	Native_SetNone(&i);
+	byte ok = Mode_Read(MR, "iStartPos", &i) && Mr_StartPos(&i, k, out);
+	Native_Free(&i);
+	return ok;
 }
 
 /* len(RaceMaker.StartPos): -1 with the error */
@@ -3120,10 +3147,13 @@ static int Mr_Count(void) {
 
 /* iStartPos - 1, at least 0 */
 static byte Mr_PrevPos(nativeVal_t *out) {
-	nativeVal_t one, zero;
+	nativeVal_t one, zero, i;
 	Native_SetInt(&one, 1);
 	Native_SetInt(&zero, 0);
-	if (!Mode_Read(MR, "iStartPos", &mr.iStartPos) || !Native_Arith('-', &mr.iStartPos, &one, out)) {
+	Native_SetNone(&i);
+	byte ok = Mode_Read(MR, "iStartPos", &i) && Native_Arith('-', &i, &one, out);
+	Native_Free(&i);
+	if (!ok) {
 		return 0;
 	}
 	if (Native_Compare(out, &zero) < 0) {
@@ -3135,18 +3165,20 @@ static byte Mr_PrevPos(nativeVal_t *out) {
 
 /* iStartPos = (iStartPos + 1) % len(RaceMaker.StartPos) */
 static byte Mr_NextPos(void) {
-	nativeVal_t one, i, n, r;
+	nativeVal_t one, i, n, r, cur;
 	Native_SetInt(&one, 1);
 	Native_SetNone(&i);
 	Native_SetNone(&r);
-	byte ok = Mode_Read(MR, "iStartPos", &mr.iStartPos) && Native_Arith('+', &mr.iStartPos, &one, &i);
+	Native_SetNone(&cur);
+	byte ok = Mode_Read(MR, "iStartPos", &cur) && Native_Arith('+', &cur, &one, &i);
 	int count = ok ? Mr_Count() : -1;
 	if (count >= 0) {
 		Native_SetInt(&n, count);
-		ok = Native_Arith('%', &i, &n, &r) && Mode_Put(MR, "iStartPos", &mr.iStartPos, &r);
+		ok = Native_Arith('%', &i, &n, &r) && Mode_Put(MR, "iStartPos", NULL, &r);
 	} else {
 		ok = 0;
 	}
+	Native_Free(&cur);
 	Native_Free(&i);
 	Native_Free(&r);
 	return ok;
@@ -3178,15 +3210,18 @@ static byte Mr_MoveLater(double delay, const nativeVal_t *pos) {
 
 /* ReleaseBaton(): the player left his ship with the baton: it drops at the last buoy and every racer goes for it */
 static byte Mr_ReleaseBatonC(void) {
-	nativeVal_t i, one, zero, pos;
-	if (!Mode_Import("RaceMaker") || !Mode_Read(MR, "userWithBaton", &mr.userWithBaton)) {
+	nativeVal_t i, one, zero, pos, v;
+	Native_SetNone(&v);
+	if (!Mode_Import("RaceMaker") || !Mode_Read(MR, "userWithBaton", &v)) {
+		Native_Free(&v);
 		return 0;
 	}
-	if (!Native_True(&mr.userWithBaton)) {
+	if (!Native_True(&v)) {
+		Native_Free(&v);
 		return 1;
 	}
-	if (!Mode_Later(0.3, MR, "LostBatonMessage", NULL, 0, NULL) || !Sd_BatonFree(MR, &mr.userWithBaton, &mr.shipWithBaton) ||
-		!Mode_Read(MR, "iStartPos", &mr.iStartPos)) {
+	if (!Mode_Later(0.3, MR, "LostBatonMessage", NULL, 0, NULL) || !Sd_BatonFree(MR) || !Mode_Read(MR, "iStartPos", &v)) {
+		Native_Free(&v);
 		return 0;
 	}
 	/* i = iStartPos - 1; if (i < 0): i = len(RaceMaker.StartPos) - 1 */
@@ -3194,7 +3229,8 @@ static byte Mr_ReleaseBatonC(void) {
 	Native_SetInt(&zero, 0);
 	Native_SetNone(&i);
 	Native_SetNone(&pos);
-	byte ok = Native_Arith('-', &mr.iStartPos, &one, &i);
+	byte ok = Native_Arith('-', &v, &one, &i);
+	Native_Free(&v);
 	if (ok && Native_Compare(&i, &zero) < 0) {
 		int n = Mr_Count();
 		ok = n >= 0;
@@ -3234,7 +3270,7 @@ static byte Mr_CreateBatonC(const nativeVal_t *pos) {
 	nativeVal_t l, l2;
 	Native_SetNone(&l);
 	Native_SetNone(&l2);
-	byte ok = Sd_Baton(MR, pos, "MortalRace.TakeBaton", &l) && Sd_BatonArrow(&l, pos, &l2) && Mode_Put(MR, "baton", &mr.baton, &l) &&
+	byte ok = Sd_Baton(MR, pos, "MortalRace.TakeBaton", &l) && Sd_BatonArrow(&l, pos, &l2) && Mode_Put(MR, "baton", NULL, &l) &&
 		Sd_BatonTarget(&l2);
 	Native_Free(&l);
 	Native_Free(&l2);
@@ -3246,17 +3282,17 @@ MODE_FN(Mr, CreateBaton, 1, Mr_CreateBatonC(&a[0]))
 /* TakeBaton(ItemName, VehicleName): a racer or the player took the baton: the buoy comes back, the others hunt him */
 static byte Mr_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *pos = Mode_V(&t), *un = Mode_V(&t), *v = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *pos = Mode_V(&t), *un = Mode_V(&t), *v = Mode_V(&t), *g = Mode_V(&t);
 	if (!Mode_Import("RaceMaker") || !Mode_Import("Sound") || !Mode_Import("VehiclesNPC") || !Mode_UsrHandle(usr) ||
-		!Mode_Read(MR, "baton", &mr.baton)) {
+		!Mode_Read(MR, "baton", g)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Native_True(&mr.baton)) {
+	if (!Native_True(g)) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, e) || !Mode_VSetI(e, "Active", 1) ||
+	if (!Mode_Read(MR, "waypointName", g) || !Mode_EntityH(g, e) || !Mode_VSetI(e, "Active", 1) ||
 		!Mode_VSetS(e, "OnTake", "MortalRace.OnCheckPoint") || !Sd_Del(item) || !Sd_DelArrow(item) ||
-		!Mode_Put(MR, "baton", &mr.baton, Mode_V(&t)) || !Mode_VGet(e, "Pos", pos)) {
+		!Mode_Put(MR, "baton", NULL, Mode_V(&t)) || !Mode_VGet(e, "Pos", pos)) {
 		return Mode_Done(&t, 0);
 	}
 	int u = Native_True(usr);
@@ -3268,20 +3304,20 @@ static byte Mr_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 		return Mode_Done(&t, 0);
 	}
 	if (racer) {
-		if (!Mode_Read(MR, "messageKillShipThrown", &mr.messageKillShipThrown)) {
+		if (!Mode_Read(MR, "messageKillShipThrown", g)) {
 			return Mode_Done(&t, 0);
 		}
-		if (!Native_True(&mr.messageKillShipThrown)) {
+		if (!Native_True(g)) {
 			int show = u ? Mode_VIsType(usr, "Car") : 1;
 			if (show < 0 || (show && !Sd_SystemMessage("Mission_WinMortalRace_SystemMessage2")) ||
-				!Sd_PutI(MR, "messageKillShipThrown", &mr.messageKillShipThrown, 1)) {
+				!Sd_PutI(MR, "messageKillShipThrown", 1)) {
 				return Mode_Done(&t, 0);
 			}
 		}
 		int car;
-		if (!Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, who) || !Mode_EntityH(who, v) ||
-			!PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", v, 1L) || !Mode_Read(MR, "BatonRadius", &mr.batonRadius) ||
-			!Mr_GoTo(who, pos, &mr.batonRadius) || !PORT_OWN(MortalRace, RacersAttackShip, NULL, "v", who) || (car = Mode_UsrInCar(usr)) < 0 ||
+		if (!Mode_Put(MR, "shipWithBaton", NULL, who) || !Mode_EntityH(who, v) ||
+			!PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", v, 1L) || !Mode_Read(MR, "BatonRadius", g) ||
+			!Mr_GoTo(who, pos, g) || !PORT_OWN(MortalRace, RacersAttackShip, NULL, "v", who) || (car = Mode_UsrInCar(usr)) < 0 ||
 			(car && !Mode_VSet(usr, "Target", who)) || !Mode_GVarSet("CurrentWaypointName", who) || !Mode_VSetS(v, "TgType", "red")) {
 			return Mode_Done(&t, 0);
 		}
@@ -3292,10 +3328,9 @@ static byte Mr_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 		return Mode_Done(&t, me == 0);
 	}
 	return Mode_Done(&t, Sd_SystemMessage("Mission_WinMortalRace_SystemMessage1") &&
-		Sd_PutI(MR, "messageKillShipThrown", &mr.messageKillShipThrown, 0) && Sd_PutI(MR, "userWithBaton", &mr.userWithBaton, 1) &&
-		Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, who) &&
+		Sd_PutI(MR, "messageKillShipThrown", 0) && Sd_PutI(MR, "userWithBaton", 1) && Mode_Put(MR, "shipWithBaton", NULL, who) &&
 		PORT_OWN(MortalRace, RacersAttackShip, NULL, "v", who) &&
-		Mode_Read(MR, "waypointName", &mr.waypointName) && Mode_GVarSet("CurrentWaypointName", &mr.waypointName) &&
+		Mode_Read(MR, "waypointName", g) && Mode_GVarSet("CurrentWaypointName", g) &&
 		Mode_Sound("WaySound", "WayVolume"));
 }
 
@@ -3322,9 +3357,12 @@ static byte Mr_FullAmmo(const nativeVal_t *v) {
 /* RaceMaker.InitShipIAProfile(foe, profileType); ship = RaceMaker.GetRandomShipIAProfile(foe, profileType) (ship the
  * profile) */
 static byte Mr_RacerProfile(const nativeVal_t *foe, nativeVal_t *ship) {
-	return Mode_Read(MR, "profileType", &mr.profileType) &&
-		PORT_CALL(RaceMaker, InitShipIAProfile, NULL, "vv", foe, &mr.profileType) && Mode_Read(MR, "profileType", &mr.profileType) &&
-		PORT_CALL(RaceMaker, GetRandomShipIAProfile, ship, "vv", foe, &mr.profileType);
+	nativeVal_t type;
+	Native_SetNone(&type);
+	byte ok = Mode_Read(MR, "profileType", &type) && PORT_CALL(RaceMaker, InitShipIAProfile, NULL, "vv", foe, &type) &&
+		Mode_Read(MR, "profileType", &type) && PORT_CALL(RaceMaker, GetRandomShipIAProfile, ship, "vv", foe, &type);
+	Native_Free(&type);
+	return ok;
 }
 
 /* h.to = h.from of a handle value */
@@ -3341,16 +3379,16 @@ static byte Mr_Copy(const nativeVal_t *h, const char *from, const char *to) {
 static byte Mr_InitRaceC(const nativeVal_t *first) {
 	static const char *const mods[] = { "Alarm", "Speech", "Parking", "RaceMaker", "RacerScorer", "VehiclesNPC", "math", NULL };
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *empty = Mode_V(&t), *text = Mode_V(&t), *racers = Mode_V(&t);
+	nativeVal_t *empty = Mode_V(&t), *text = Mode_V(&t), *racers = Mode_V(&t), *prof = Mode_V(&t);
 	for (int i = 0; mods[i]; i++) {
 		if (!Mode_Import(mods[i])) {
 			return Mode_Done(&t, 0);
 		}
 	}
 	Native_SetEmpty(empty, NV_DICT);
-	if (!Sd_PutI(MR, "iStartPos", &mr.iStartPos, 0) || !Mode_Put(MR, "BayScorer", &mr.bayScorer, empty) ||
-		!Sd_PutI(MR, "YourScore", &mr.yourScore, -1) || !Mode_ListSet("Race", "OnDeath", "MortalRace.RacerKilled") ||
-		!Mode_ListSet("Race", "OnDamage", "MortalRace.RacerDamaged") || !Sd_PutI(MR, "iStartPos", &mr.iStartPos, 0)) {
+	if (!Sd_PutI(MR, "iStartPos", 0) || !Mode_Put(MR, "BayScorer", NULL, empty) || !Sd_PutI(MR, "YourScore", -1) ||
+		!Mode_ListSet("Race", "OnDeath", "MortalRace.RacerKilled") ||
+		!Mode_ListSet("Race", "OnDamage", "MortalRace.RacerDamaged") || !Sd_PutI(MR, "iStartPos", 0)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("MortalRaceRacers", text);
@@ -3378,14 +3416,14 @@ static byte Mr_InitRaceC(const nativeVal_t *first) {
 		}
 		ok = ok && Mode_Rotate(base, r, rot) && Mode_VecAdd(start, rot, spos) && Mode_Item(racers, i, foe) &&
 			Mode_Cat(&t, name, 2, Mode_S(&t, "MortalRace_Racer_"), foe) && Sd_Create(name, spos, "Car", v) &&
-			Mode_VGet(v, "Name", vn) && Mode_DictPut(MR, "nameProfileDict", &mr.nameProfileDict, vn, foe) &&
+			Mode_VGet(v, "Name", vn) && Mode_DictPut(MR, "nameProfileDict", NULL, vn, foe) &&
 			Mr_RacerProfile(foe, ship);
 		if (ok && profile) {
 			profile = 0;
-			ok = PORT_CALL(VehiclesNPC, GetIAProf, x, "v", ship) && Mode_Put(MR, "prof", &mr.prof, x) &&
-				Mode_Read(MR, "prof", &mr.prof) && Mode_VGet(&mr.prof, "CadenceShoot", Mode_V(&t)) &&
-				Mode_Put(MR, "prevCadenceShoot", NULL, &t.v[t.n - 1]) && Mode_Read(MR, "prof", &mr.prof) &&
-				Mode_VGet(&mr.prof, "ControlAim", Mode_V(&t)) && Mode_Put(MR, "prevControlAim", NULL, &t.v[t.n - 1]);
+			ok = PORT_CALL(VehiclesNPC, GetIAProf, x, "v", ship) && Mode_Put(MR, "prof", NULL, x) &&
+				Mode_Read(MR, "prof", prof) && Mode_VGet(prof, "CadenceShoot", Mode_V(&t)) &&
+				Mode_Put(MR, "prevCadenceShoot", NULL, &t.v[t.n - 1]) && Mode_Read(MR, "prof", prof) &&
+				Mode_VGet(prof, "ControlAim", Mode_V(&t)) && Mode_Put(MR, "prevControlAim", NULL, &t.v[t.n - 1]);
 		}
 		Native_Free(vn);
 		Native_Free(ang);
@@ -3394,7 +3432,7 @@ static byte Mr_InitRaceC(const nativeVal_t *first) {
 			Mr_AtStart(1, ang) && Mode_SetAng(v, ang) && Mode_VSetI(v, "Money", -1) && Mr_Copy(v, "Pos", "MovePos") &&
 			Mr_Copy(v, "Ang", "MoveAng") && Mode_VSetF(v, "MoveTime", 0.001) && Mode_VSetI(v, "LaunchTaunts", 0) && Mr_FullAmmo(v);
 		Native_Free(vn);
-		ok = ok && Mode_VGet(v, "Name", vn) && Mode_DictPut(MR, "BayScorer", &mr.bayScorer, vn, Mode_I(&t, 0)) &&
+		ok = ok && Mode_VGet(v, "Name", vn) && Mode_DictPut(MR, "BayScorer", NULL, vn, Mode_I(&t, 0)) &&
 			Mode_AppendName(MR, "racers", v);
 		Mode_Release(&t, mark);
 	}
@@ -3409,9 +3447,9 @@ MODE_KW(Mr, InitRace, "|O", "createFirstWaypoint") {
 /* CreateFirstWaypoint(): the buoy of the start at the first start position (once), the way point; the buoy */
 static byte Mr_CreateFirstWaypointC(nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *pos = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t);
+	nativeVal_t *pos = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t), *g = Mode_V(&t);
 	if (!Mode_Import("RaceMaker") || !Mode_Import("Speech") || !PORT_OWN(MortalRace, AbortRemoteMessages, NULL, "") ||
-		!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, out)) {
+		!Mode_Read(MR, "waypointName", g) || !Mode_EntityH(g, out)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(out)) {
@@ -3419,11 +3457,10 @@ static byte Mr_CreateFirstWaypointC(nativeVal_t *out) {
 	}
 	Native_Free(out);
 	return Mode_Done(&t, Mr_AtStart(0, pos) && Sd_Create(Mode_S(&t, "CheckPoint"), pos, "Item", out) &&
-		Mode_Read(MR, "WayPointModel", &mr.model) && Mode_VModel(out, &mr.model) && Mode_VSetS(out, "OnTake", "MortalRace.OnRaceStart") &&
+		Mode_Read(MR, "WayPointModel", g) && Mode_VModel(out, g) && Mode_VSetS(out, "OnTake", "MortalRace.OnRaceStart") &&
 		Mode_VSetI(out, "RadarShow", 2) && Mode_VSetI(out, "Radius", 2400) && Mr_AtStart(1, ang) && Mode_SetAng(out, ang) &&
 		Mode_VSetI(out, "FadeInEffect", 0) && Mode_VSetI(out, "FadeOutEffect", 0) && Mode_VGet(out, "Name", name) &&
-		Mode_Put(MR, "waypointName", &mr.waypointName, name) && Mode_Read(MR, "waypointName", &mr.waypointName) &&
-		Mode_GVarSet("CurrentWaypointName", &mr.waypointName));
+		Mode_Put(MR, "waypointName", NULL, name) && Mode_Read(MR, "waypointName", g) && Mode_GVarSet("CurrentWaypointName", g));
 }
 
 MODE_FN(Mr, CreateFirstWaypoint, 0, Mr_CreateFirstWaypointC(out))
@@ -3456,11 +3493,14 @@ MODE_FN(Mr, OnRaceStart, 2, Mr_OnRaceStartC(&a[0], &a[1]))
 /* RacerScorer.InitMissionScorer(0, 0, `numWaypoints`); Menu.MissionScorerCall = RacerScorer.MissionScorer; the scorer
  * drawn */
 static byte Mr_Scorer(void) {
-	nativeVal_t limit;
-	if (!Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
+	nativeVal_t limit, n;
+	Native_SetNone(&n);
+	if (!Mode_Read(MR, "numWaypoints", &n)) {
+		Native_Free(&n);
 		return 0;
 	}
-	Mode_Repr(&mr.numWaypoints, &limit);
+	Mode_Repr(&n, &limit);
+	Native_Free(&n);
 	byte ok = PORT_CALL(RacerScorer, InitMissionScorer, NULL, "iiv", 0L, 0L, &limit) &&
 		Mode_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") && Sd_Draw();
 	Native_Free(&limit);
@@ -3532,12 +3572,11 @@ static int Mr_Hunter(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
  * the waiting ones it reached attack again with their profile (every 2 s) */
 static byte Mr_CheckShipsStateC(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *ship = Mode_V(&t);
+	nativeVal_t *ship = Mode_V(&t), *g = Mode_V(&t);
 	mrHunt_t h = { .ship = ship };
 	Native_SetEmpty(&h.attack, NV_LIST);
 	Native_SetEmpty(&h.freeze, NV_LIST);
-	byte ok = Mode_Import("VehiclesNPC") && Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton) &&
-		Mode_EntityH(&mr.shipWithBaton, ship);
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Read(MR, "shipWithBaton", g) && Mode_EntityH(g, ship);
 	if (ok && Native_True(ship)) {
 		ok = Sd_EachInList("Race", Mr_Hunter, &h);
 		if (ok && h.attack.n > 1) {
@@ -3547,8 +3586,7 @@ static byte Mr_CheckShipsStateC(void) {
 				nativeVal_t *ahead = Mode_V(&t), *at = Mode_V(&t), *at2 = Mode_V(&t), *cnt = Mode_V(&t), *ip = Mode_V(&t);
 				nativeVal_t *pos = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *rad = Mode_V(&t);
 				int count;
-				ok = Mode_Read(MR, "iStartPos", &mr.iStartPos) && Mode_Read(MR, "NUM_WAYPOINTS_AHEAD", ahead) &&
-					Native_Arith('+', &mr.iStartPos, ahead, at) && Native_Arith('+', at, Mode_I(&t, i - 1), at2) &&
+				ok = Mode_Read(MR, "iStartPos", g) && Mode_Read(MR, "NUM_WAYPOINTS_AHEAD", ahead) && Native_Arith('+', g, ahead, at) && Native_Arith('+', at, Mode_I(&t, i - 1), at2) &&
 					(count = Mr_Count()) >= 0;
 				if (ok) {
 					Native_SetInt(cnt, count);
@@ -3564,10 +3602,9 @@ static byte Mr_CheckShipsStateC(void) {
 			nativeVal_t *e = Mode_V(&t), *v = Mode_V(&t), *sn = Mode_V(&t);
 			ok = Mode_EntityH(&h.freeze.items[i], e);
 			if (ok && Native_True(e)) {
-				ok = Mode_Read(MR, "prevCadenceShoot", v) && Mode_Read(MR, "prof", &mr.prof) &&
-					Mode_VSet(&mr.prof, "CadenceShoot", v) && Mode_Read(MR, "prevControlAim", v) && Mode_Read(MR, "prof", &mr.prof) &&
-					Mode_VSet(&mr.prof, "ControlAim", v) && Mode_Read(MR, "prof", &mr.prof) &&
-					PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &mr.prof) && Mode_VGet(ship, "Name", sn) &&
+				ok = Mode_Read(MR, "prevCadenceShoot", v) && Mode_Read(MR, "prof", g) && Mode_VSet(g, "CadenceShoot", v) &&
+					Mode_Read(MR, "prevControlAim", v) && Mode_Read(MR, "prof", g) && Mode_VSet(g, "ControlAim", v) &&
+					Mode_Read(MR, "prof", g) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, g) && Mode_VGet(ship, "Name", sn) &&
 					PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, &h.freeze.items[i], sn);
 			}
 			Mode_Release(&t, mark);
@@ -3582,20 +3619,22 @@ MODE_FN(Mr, CheckShipsState, 0, Mr_CheckShipsStateC())
 
 /* prof.CadenceShoot = mod.<cadence>; prof.ControlAim = mod.<aim>; VehiclesNPC.ModAIProff(e, prof) */
 static byte Mr_Prof(const char *cadence, const char *aim, const nativeVal_t *e) {
-	nativeVal_t v;
+	nativeVal_t v, prof;
 	Native_SetNone(&v);
-	byte ok = Mode_Read(MR, cadence, &v) && Mode_Read(MR, "prof", &mr.prof) && Mode_VSet(&mr.prof, "CadenceShoot", &v) &&
-		Mode_Read(MR, aim, &v) && Mode_Read(MR, "prof", &mr.prof) && Mode_VSet(&mr.prof, "ControlAim", &v);
+	Native_SetNone(&prof);
+	byte ok = Mode_Read(MR, cadence, &v) && Mode_Read(MR, "prof", &prof) && Mode_VSet(&prof, "CadenceShoot", &v) &&
+		Mode_Read(MR, aim, &v) && Mode_Read(MR, "prof", &prof) && Mode_VSet(&prof, "ControlAim", &v);
+	ok = ok && (!e || (Mode_Read(MR, "prof", &prof) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &prof)));
 	Native_Free(&v);
-	return ok && (!e || (Mode_Read(MR, "prof", &mr.prof) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &mr.prof)));
+	Native_Free(&prof);
+	return ok;
 }
 
 /* OnPositionReached(VehicleName): a racer reached the buoy where it waits: it fights there, shooting often and badly */
 static byte Mr_OnPositionReachedC(const nativeVal_t *who) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *ship = Mode_V(&t), *state = Mode_V(&t), *e = Mode_V(&t), *sn = Mode_V(&t);
-	if (!Mode_Import("VehiclesNPC") || !Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton) ||
-		!Mode_EntityH(&mr.shipWithBaton, ship)) {
+	nativeVal_t *ship = Mode_V(&t), *state = Mode_V(&t), *e = Mode_V(&t), *sn = Mode_V(&t), *g = Mode_V(&t);
+	if (!Mode_Import("VehiclesNPC") || !Mode_Read(MR, "shipWithBaton", g) || !Mode_EntityH(g, ship)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(ship)) {
@@ -3608,7 +3647,7 @@ static byte Mr_OnPositionReachedC(const nativeVal_t *who) {
 		return Mode_Done(&t, 1);
 	}
 	return Mode_Done(&t, Mode_Import("VehiclesNPC") && Mr_Prof("FightingFreezeCadenceShoot", "FightingFreezeControlAim", NULL) &&
-		Mode_EntityH(who, e) && Mode_Read(MR, "prof", &mr.prof) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &mr.prof) &&
+		Mode_EntityH(who, e) && Mode_Read(MR, "prof", g) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, g) &&
 		Mode_VGet(ship, "Name", sn) && PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 8L, who, sn));
 }
 
@@ -3616,33 +3655,38 @@ MODE_FN(Mr, OnPositionReached, 1, Mr_OnPositionReachedC(&a[0]))
 
 /* RacerScorer.UpdateMissionScorer(0, YourScore, BestScorer); the scorer drawn */
 static byte Mr_Update(void) {
-	return Mode_Read(MR, "YourScore", &mr.yourScore) && Mode_Read(MR, "BestScorer", &mr.bestScorer) &&
-		Sd_Update(&mr.yourScore, &mr.bestScorer) && Sd_Draw();
+	nativeVal_t your, best;
+	Native_SetNone(&your);
+	Native_SetNone(&best);
+	byte ok = Mode_Read(MR, "YourScore", &your) && Mode_Read(MR, "BestScorer", &best) && Sd_Update(&your, &best);
+	Native_Free(&your);
+	Native_Free(&best);
+	return ok && Sd_Draw();
 }
 
 /* the player took a buoy (with the baton, or his first at the start) */
 static byte Mr_PlayerCheckPoint(nativeVal_t *l, const nativeVal_t *usrName) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *pos = Mode_V(&t), *ang = Mode_V(&t);
-	if (!Mode_Read(MR, "YourScore", &mr.yourScore)) {
+	nativeVal_t *pos = Mode_V(&t), *ang = Mode_V(&t), *your = Mode_V(&t), *g = Mode_V(&t);
+	if (!Mode_Read(MR, "YourScore", your)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_Compare(&mr.yourScore, Mode_I(&t, -1)) > 0) {
+	if (Native_Compare(your, Mode_I(&t, -1)) > 0) {
 		/* a buoy counts only with the baton */
-		if (!Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton)) {
+		if (!Mode_Read(MR, "shipWithBaton", g)) {
 			return Mode_Done(&t, 0);
 		}
-		if (!Sd_Eq(&mr.shipWithBaton, usrName)) {
+		if (!Sd_Eq(g, usrName)) {
 			return Mode_Done(&t, 1);
 		}
 	}
-	if (!Mode_Sound("WaySound", "WayVolume") || !Sd_Add(MR, "YourScore", &mr.yourScore, 1)) {
+	if (!Mode_Sound("WaySound", "WayVolume") || !Sd_Add(MR, "YourScore", your, 1)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_EqI(&mr.yourScore, 0)) {
+	if (Mode_EqI(your, 0)) {
 		/* the first buoy: the baton at the next start position, the racers go for it, the buoy one further */
 		if (!Mr_NextPos() || !Mr_AtStart(0, pos) || !PORT_OWN(MortalRace, CreateBaton, NULL, "v", pos) ||
-			!Mode_Read(MR, "BatonRadius", &mr.batonRadius) || !PORT_OWN(MortalRace, MoveRacersToPos, NULL, "vv", pos, &mr.batonRadius) ||
+			!Mode_Read(MR, "BatonRadius", g) || !PORT_OWN(MortalRace, MoveRacersToPos, NULL, "vv", pos, g) ||
 			!Mr_NextPos()) {
 			return Mode_Done(&t, 0);
 		}
@@ -3656,10 +3700,10 @@ static byte Mr_PlayerCheckPoint(nativeVal_t *l, const nativeVal_t *usrName) {
 		return Mode_Done(&t, Mr_AtStart(0, pos) && Mode_VSet(l, "Pos", pos) && Mr_AtStart(1, ang) && Mode_SetAng(l, ang) &&
 			Mode_VSetI(l, "Active", 0));
 	}
-	if (!Mode_Read(MR, "YourScore", &mr.yourScore) || !Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
+	if (!Mode_Read(MR, "YourScore", your) || !Mode_Read(MR, "numWaypoints", g)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_Compare(&mr.yourScore, &mr.numWaypoints) >= 0) {
+	if (Native_Compare(your, g) >= 0) {
 		return Mode_Done(&t, Mode_VDel(l) && Sd_ScorerOff() && PORT_OWN(MortalRace, PreOnVictory, NULL, ""));
 	}
 	return Mode_Done(&t, Mr_Update() && PORT_OWN(MortalRace, MoveWaypoint, NULL, ""));
@@ -3671,23 +3715,23 @@ static byte Mr_RacerCheckPoint(const nativeVal_t *l, const nativeVal_t *who) {
 	nativeVal_t *n = Mode_V(&t), *r = Mode_V(&t), *e = Mode_V(&t), *cad = Mode_V(&t), *foe = Mode_V(&t), *params = Mode_V(&t);
 	nativeVal_t *keys = Mode_V(&t), *pr = Mode_V(&t);
 	Mode_V(&t);
-	nativeVal_t *res = Mode_V(&t);
-	if (!Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton)) {
+	nativeVal_t *res = Mode_V(&t), *bay = Mode_V(&t), *g = Mode_V(&t);
+	if (!Mode_Read(MR, "shipWithBaton", g)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Sd_Eq(&mr.shipWithBaton, who)) {
+	if (!Sd_Eq(g, who)) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_VSetI(l, "Active", 0) || !Mode_Read(MR, "BayScorer", &mr.bayScorer) || !Native_Subscript(&mr.bayScorer, who, n) ||
-		!Native_Arith('+', n, Mode_I(&t, 1), r) || !Mode_DictPut(MR, "BayScorer", &mr.bayScorer, who, r) ||
-		!Mode_Sound("EneWaySound", "EneWayVolume") || !Mode_Read(MR, "BayScorer", &mr.bayScorer)) {
+	if (!Mode_VSetI(l, "Active", 0) || !Mode_Read(MR, "BayScorer", bay) || !Native_Subscript(bay, who, n) ||
+		!Native_Arith('+', n, Mode_I(&t, 1), r) || !Mode_DictPut(MR, "BayScorer", NULL, who, r) ||
+		!Mode_Sound("EneWaySound", "EneWayVolume") || !Mode_Read(MR, "BayScorer", bay)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(n);
-	if (!Native_Subscript(&mr.bayScorer, who, n) || !Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
+	if (!Native_Subscript(bay, who, n) || !Mode_Read(MR, "numWaypoints", g)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_Compare(n, &mr.numWaypoints) >= 0) {
+	if (Native_Compare(n, g) >= 0) {
 		/* the race lost */
 		nativeVal_t *func = Mode_V(&t);
 		if (!Mode_VDel(l) || !Mode_EntityH(who, e) || !PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", e, 0L) ||
@@ -3700,7 +3744,7 @@ static byte Mr_RacerCheckPoint(const nativeVal_t *l, const nativeVal_t *who) {
 		return Mode_Done(&t, Sd_Remote("ForceRemoteCom", cad, foe, func, params) && PORT_OWN(MortalRace, EndOfMortalRace, NULL, ""));
 	}
 	/* BestScorer = the most buoys of a racer */
-	if (!Sd_PutI(MR, "BestScorer", &mr.bestScorer, 0) || !Mode_Keys(MR, "BayScorer", 1, keys)) {
+	if (!Sd_PutI(MR, "BestScorer", 0) || !Mode_Keys(MR, "BayScorer", 1, keys)) {
 		return Mode_Done(&t, 0);
 	}
 	int count = Native_ForCount(keys);
@@ -3708,25 +3752,24 @@ static byte Mr_RacerCheckPoint(const nativeVal_t *l, const nativeVal_t *who) {
 	for (int i = 0; ok && i < count; i++) {
 		nativeVal_t k, c;
 		Native_SetNone(&c);
-		ok = Native_SeqItem(keys, i, &k) && Mode_Read(MR, "BayScorer", &mr.bayScorer) && Native_Subscript(&mr.bayScorer, &k, &c) &&
-			Mode_Read(MR, "BestScorer", &mr.bestScorer);
-		if (ok && Native_Compare(&c, &mr.bestScorer) > 0) {
+		ok = Native_SeqItem(keys, i, &k) && Mode_Read(MR, "BayScorer", bay) && Native_Subscript(bay, &k, &c) &&
+			Mode_Read(MR, "BestScorer", g);
+		if (ok && Native_Compare(&c, g) > 0) {
 			Native_Free(&c);
-			ok = Mode_Read(MR, "BayScorer", &mr.bayScorer) && Native_Subscript(&mr.bayScorer, &k, &c) &&
-				Mode_Put(MR, "BestScorer", &mr.bestScorer, &c);
+			ok = Mode_Read(MR, "BayScorer", bay) && Native_Subscript(bay, &k, &c) && Mode_Put(MR, "BestScorer", NULL, &c);
 		}
 		Native_Free(&k);
 		Native_Free(&c);
 	}
 	return Mode_Done(&t, ok && PORT_OWN(MortalRace, MoveWaypoint, res, "") && Mode_Unpack(res, 2, pr) &&
-		Mode_Read(MR, "BatonRadius", &mr.batonRadius) && Mr_GoTo(who, &pr[0], &mr.batonRadius) && Mr_Update());
+		Mode_Read(MR, "BatonRadius", g) && Mr_GoTo(who, &pr[0], g) && Mr_Update());
 }
 
 /* OnCheckPoint(ItemName, VehicleName): a buoy taken. The player's first one (YourScore -1 to 0) puts the baton at the
  * next start position; with the baton the player or a racer counts it, numWaypoints win (or lose) the race */
 static byte Mr_OnCheckPointC(const nativeVal_t *item, const nativeVal_t *who) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usrName = Mode_S(&t, ""), *usr = Mode_V(&t), *l = Mode_V(&t);
+	nativeVal_t *usrName = Mode_S(&t, ""), *usr = Mode_V(&t), *l = Mode_V(&t), *your = Mode_V(&t);
 	if (!Mode_Import("RaceMaker") || !Mode_Import("RacerScorer") || !Mode_Import("Sound") || !Mode_Import("VehiclesNPC") ||
 		!Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
@@ -3738,12 +3781,11 @@ static byte Mr_OnCheckPointC(const nativeVal_t *item, const nativeVal_t *who) {
 		}
 	}
 	/* before the player's first buoy the racers' buoys only start the count */
-	if (!Mode_Read(MR, "YourScore", &mr.yourScore)) {
+	if (!Mode_Read(MR, "YourScore", your)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_EqI(&mr.yourScore, -1) && !Sd_Eq(who, usrName)) {
-		return Mode_Done(&t, !Mode_Read(MR, "YourScore", &mr.yourScore) ? 0 :
-			!Mode_EqI(&mr.yourScore, -1) || Sd_PutI(MR, "YourScore", &mr.yourScore, 0));
+	if (Mode_EqI(your, -1) && !Sd_Eq(who, usrName)) {
+		return Mode_Done(&t, !Mode_Read(MR, "YourScore", your) ? 0 : !Mode_EqI(your, -1) || Sd_PutI(MR, "YourScore", 0));
 	}
 	if (!Mode_EntityH(item, l)) {
 		return Mode_Done(&t, 0);
@@ -3762,9 +3804,8 @@ MODE_FN(Mr, Restart, 0, PORT_CALL(MissionsFuncs, OnSuperDealFinish, NULL, "iss",
 /* MoveWaypoint(): the buoy at the next start position, active; (its Pos, its Radius) */
 static byte Mr_MoveWaypointC(nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *l = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t);
-	if (!Mode_Import("RaceMaker") || !Mr_NextPos() || !Mode_Read(MR, "waypointName", &mr.waypointName) ||
-		!Mode_EntityH(&mr.waypointName, l) || !Mr_AtStart(0, pos) || !Mode_VSet(l, "Pos", pos) || !Mr_AtStart(1, ang) ||
+	nativeVal_t *l = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t), *g = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Mr_NextPos() || !Mode_Read(MR, "waypointName", g) || !Mode_EntityH(g, l) || !Mr_AtStart(0, pos) || !Mode_VSet(l, "Pos", pos) || !Mr_AtStart(1, ang) ||
 		!Mode_SetAng(l, ang) || !Mode_VSetS(l, "OnTake", "MortalRace.OnCheckPoint") || !Mode_VSetI(l, "Active", 1)) {
 		return Mode_Done(&t, 0);
 	}
@@ -3776,12 +3817,15 @@ MODE_FN(Mr, MoveWaypoint, 0, Mr_MoveWaypointC(out))
 
 /* EndOfMortalRace(): the buoy gone, the racers back to the traffic */
 static byte Mr_EndOfMortalRaceC(void) {
-	nativeVal_t e;
-	if (!Mode_Import("Vehicles") || !Mode_ModNone("Vehicles", "OnDeathCallback") || !Sd_ScorerOff() ||
-		!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, &e)) {
+	nativeVal_t e, name;
+	Native_SetNone(&name);
+	byte ok = Mode_Import("Vehicles") && Mode_ModNone("Vehicles", "OnDeathCallback") && Sd_ScorerOff() &&
+		Mode_Read(MR, "waypointName", &name) && Mode_EntityH(&name, &e);
+	Native_Free(&name);
+	if (!ok) {
 		return 0;
 	}
-	byte ok = (!Native_True(&e) || Mode_VDel(&e)) && Mode_GVarSetS("OnItemTakenAI", "") &&
+	ok = (!Native_True(&e) || Mode_VDel(&e)) && Mode_GVarSetS("OnItemTakenAI", "") &&
 		PORT_OWN(MortalRace, MoveRacersToTraffic, NULL, "");
 	Native_Free(&e);
 	return ok;
@@ -3813,8 +3857,7 @@ static byte Mr_MoveRacersToTrafficC(void) {
 	}
 	Native_Free(&players);
 	Native_SetStr(&empty, "");
-	return ok && Sd_PutI(MR, "YourScore", &mr.yourScore, -1) && Mode_Put(MR, "waypointName", &mr.waypointName, &empty) &&
-		Sd_PutI(MR, "iStartPos", &mr.iStartPos, 0);
+	return ok && Sd_PutI(MR, "YourScore", -1) && Mode_Put(MR, "waypointName", NULL, &empty) && Sd_PutI(MR, "iStartPos", 0);
 }
 
 MODE_FN(Mr, MoveRacersToTraffic, 0, Mr_MoveRacersToTrafficC())
@@ -3855,13 +3898,17 @@ static int Mr_Attack(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 	if (!a->usr && Sd_Eq(name, a->ship)) {
 		return 1;
 	}
-	return Mode_Read(MR, "prof", &mr.prof) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &mr.prof) &&
+	nativeVal_t prof;
+	Native_SetNone(&prof);
+	int r = Mode_Read(MR, "prof", &prof) && PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, &prof) &&
 		PORT_CALL(SAI, SetStateVehicle, NULL, "ivv", 2L, name, a->ship) ? 1 : -1;
+	Native_Free(&prof);
+	return r;
 }
 
 static byte Mr_RacersAttackShipC(const nativeVal_t *ship) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = Mode_V(&t), *name = Mode_V(&t), *aim = Mode_V(&t);
+	nativeVal_t *usr = Mode_V(&t), *name = Mode_V(&t), *aim = Mode_V(&t), *prof = Mode_V(&t);
 	mrAttack_t a = { .ship = ship };
 	cEntity *e;
 	if (!Mode_Import("VehiclesNPC") || !Mode_UsrHandle(usr) || !Mode_ListGet("Race", "First", name) || !Mode_Ent(name, &e)) {
@@ -3879,7 +3926,7 @@ static byte Mr_RacersAttackShipC(const nativeVal_t *ship) {
 	} else {
 		Native_SetInt(aim, 2);
 	}
-	return Mode_Done(&t, Mode_Read(MR, "prof", &mr.prof) && Mode_VSet(&mr.prof, "ControlAim", aim) &&
+	return Mode_Done(&t, Mode_Read(MR, "prof", prof) && Mode_VSet(prof, "ControlAim", aim) &&
 		Sd_EachInList("Race", Mr_Attack, &a));
 }
 
@@ -3897,19 +3944,21 @@ static byte Mr_DropBaton(const nativeVal_t *dead) {
 
 /* OnPlayerDeath(LooserName, WinnerName): the player drops the baton where he died; he comes back after respawnTime */
 static byte Mr_OnPlayerDeathC(const nativeVal_t *loser) {
-	nativeVal_t e, args[3];
+	nativeVal_t e, g, args[3];
 	Native_SetNone(&e);
+	Native_SetNone(&g);
 	for (int i = 0; i < 3; i++) {
 		Native_SetNone(&args[i]);
 	}
-	byte ok = Mode_EntityH(loser, &e) && Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton);
-	if (ok && Sd_Eq(loser, &mr.shipWithBaton)) {
-		ok = Sd_BatonFree(MR, &mr.userWithBaton, &mr.shipWithBaton) && Mr_DropBaton(&e);
+	byte ok = Mode_EntityH(loser, &e) && Mode_Read(MR, "shipWithBaton", &g);
+	if (ok && Sd_Eq(loser, &g)) {
+		ok = Sd_BatonFree(MR) && Mr_DropBaton(&e);
 	}
 	Native_Copy(&args[0], loser);
-	ok = ok && Mode_VGet(&e, "Pos", &args[1]) && Mode_VGet(&e, "Ang", &args[2]) && Mode_Read(MR, "respawnTime", &mr.respawnTime) &&
-		Sd_LaterV(&mr.respawnTime, MR, "RespawnPlayer", args, 3);
+	ok = ok && Mode_VGet(&e, "Pos", &args[1]) && Mode_VGet(&e, "Ang", &args[2]) && Mode_Read(MR, "respawnTime", &g) &&
+		Sd_LaterV(&g, MR, "RespawnPlayer", args, 3);
 	Native_Free(&e);
+	Native_Free(&g);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&args[i]);
 	}
@@ -3924,25 +3973,25 @@ static byte Mr_RacerKilledC(const nativeVal_t *loser, const nativeVal_t *winner)
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *e = Mode_V(&t), *radar = Mode_V(&t), *empty = Mode_S(&t, ""), *args = Mode_V(&t);
 	Mode_V(&t);
+	nativeVal_t *g = Mode_V(&t);
 	if (!Mode_Import("Vehicles") || !PORT_CALL(Vehicles, OnDeath, NULL, "vv", loser, winner) ||
-		!Sd_RemoveIn(MR, "racers", &mr.racers, loser) || !Mode_EntityH(loser, e)) {
+		!Sd_RemoveIn(MR, "racers", loser) || !Mode_EntityH(loser, e)) {
 		return Mode_Done(&t, 0);
 	}
 	int drop = Native_True(e);
 	if (drop) {
 		drop = Mode_VGet(e, "RadarShow", radar) ? Mode_EqI(radar, 1) : -1;
 	}
-	if (drop < 0 || (drop && (!Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, empty) || !Mr_DropBaton(e)))) {
+	if (drop < 0 || (drop && (!Mode_Put(MR, "shipWithBaton", NULL, empty) || !Mr_DropBaton(e)))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Copy(&args[0], loser);
-	if (!Mode_Read(MR, "nameProfileDict", &mr.nameProfileDict) || !Native_Subscript(&mr.nameProfileDict, loser, &args[1]) ||
-		!Mode_Read(MR, "respawnTime", &mr.respawnTime) || !Sd_LaterV(&mr.respawnTime, MR, "RespawnRacer", args, 2) ||
-		!Sd_Del(loser)) {
+	if (!Mode_Read(MR, "nameProfileDict", g) || !Native_Subscript(g, loser, &args[1]) || !Mode_Read(MR, "respawnTime", g) ||
+		!Sd_LaterV(g, MR, "RespawnRacer", args, 2) || !Sd_Del(loser)) {
 		return Mode_Done(&t, 0);
 	}
 	int has = Mode_HasKey(MR, "nameProfileDict", 1, loser);
-	return Mode_Done(&t, has <= 0 ? has == 0 : Mode_DictDel(MR, "nameProfileDict", &mr.nameProfileDict, loser));
+	return Mode_Done(&t, has <= 0 ? has == 0 : Mode_DictDel(MR, "nameProfileDict", NULL, loser));
 }
 
 MODE_FN(Mr, RacerKilled, 2, Mr_RacerKilledC(&a[0], &a[1]))
@@ -3950,19 +3999,20 @@ MODE_FN(Mr, RacerKilled, 2, Mr_RacerKilledC(&a[0], &a[1]))
 /* RacerDamaged(LooserName, WinnerName, Damage): the player hit a racer before the start: the race starts from the
  * first buoy */
 static byte Mr_RacerDamagedC(const nativeVal_t *winner) {
-	nativeVal_t usr, un;
+	nativeVal_t usr, un, g;
 	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(&usr)) {
 		return 0;
 	}
 	Native_SetNone(&un);
+	Native_SetNone(&g);
 	byte ok = !Native_True(&usr) || Mode_VGet(&usr, "Name", &un);
-	if (ok && Native_True(&usr) && Sd_Eq(&un, winner) && (ok = Mode_Read(MR, "YourScore", &mr.yourScore)) &&
-		Mode_EqI(&mr.yourScore, -1)) {
-		ok = Mode_ListSet("Race", "OnDamage", "") && Mr_Scorer() && Mode_Read(MR, "waypointName", &mr.waypointName) &&
-			PORT_OWN(MortalRace, OnCheckPoint, NULL, "vv", &mr.waypointName, winner);
+	if (ok && Native_True(&usr) && Sd_Eq(&un, winner) && (ok = Mode_Read(MR, "YourScore", &g)) && Mode_EqI(&g, -1)) {
+		ok = Mode_ListSet("Race", "OnDamage", "") && Mr_Scorer() && Mode_Read(MR, "waypointName", &g) &&
+			PORT_OWN(MortalRace, OnCheckPoint, NULL, "vv", &g, winner);
 	}
 	Native_Free(&usr);
 	Native_Free(&un);
+	Native_Free(&g);
 	return ok;
 }
 
@@ -3993,17 +4043,17 @@ static int Mr_RedFirst(const nativeVal_t *e, const nativeVal_t *name, void *arg)
 static byte Mr_RespawnRacerC(const nativeVal_t *name, const nativeVal_t *foe) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *w = Mode_V(&t), *prev = Mode_V(&t), *pos = Mode_V(&t), *v = Mode_V(&t), *vn = Mode_V(&t), *ship = Mode_V(&t);
-	nativeVal_t *bp = Mode_V(&t), *usr = Mode_V(&t), *un = Mode_V(&t);
+	nativeVal_t *bp = Mode_V(&t), *usr = Mode_V(&t), *un = Mode_V(&t), *g = Mode_V(&t);
 	mrRed_t red = { .v = v };
 	if (!Mode_Import("RaceMaker") || !Mode_Import("VehiclesNPC") || !Mode_Import("OutMap") ||
-		!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, w)) {
+		!Mode_Read(MR, "waypointName", g) || !Mode_EntityH(g, w)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(w)) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mr_PrevPos(prev) || !Mr_StartPos(prev, 0, pos) || !Sd_Create(name, pos, "Car", v) || !Mode_VGet(v, "Name", vn) ||
-		!Mode_DictPut(MR, "nameProfileDict", &mr.nameProfileDict, vn, foe) || !Mr_RacerProfile(foe, ship) ||
+		!Mode_DictPut(MR, "nameProfileDict", NULL, vn, foe) || !Mr_RacerProfile(foe, ship) ||
 		!PORT_CALL(VehiclesNPC, SetIAProf, NULL, "vv", v, ship) ||
 		!PORT_CALL(SAI, SetStateVehicle, NULL, "iv", 0L, vn) ||
 		!Mode_VSetS(v, "TgType", "green") || !Mode_VSetS(v, "EntityList", "Race") || !Mode_VSetI(v, "Money", -1) ||
@@ -4014,13 +4064,13 @@ static byte Mr_RespawnRacerC(const nativeVal_t *name, const nativeVal_t *foe) {
 	if (red.found) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_Read(MR, "baton", &mr.baton)) {
+	if (!Mode_Read(MR, "baton", g)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(vn);
-	if (Native_True(&mr.baton)) {
-		return Mode_Done(&t, Mode_Read(MR, "baton", &mr.baton) && Mode_VGet(&mr.baton, "Pos", bp) && Mode_VGet(v, "Name", vn) &&
-			Mode_Read(MR, "BatonRadius", &mr.batonRadius) && Mr_GoTo(vn, bp, &mr.batonRadius));
+	if (Native_True(g)) {
+		return Mode_Done(&t, Mode_Read(MR, "baton", g) && Mode_VGet(g, "Pos", bp) && Mode_VGet(v, "Name", vn) &&
+			Mode_Read(MR, "BatonRadius", g) && Mr_GoTo(vn, bp, g));
 	}
 	if (!Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
@@ -4054,14 +4104,14 @@ static int Mr_Marker(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 static byte Mr_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, const nativeVal_t *ang) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *bp = Mode_V(&t), *d = Mode_V(&t), *dsq = Mode_V(&t), *r = Mode_V(&t);
-	nativeVal_t *rf = Mode_V(&t), *i = Mode_V(&t), *sp = Mode_V(&t), *sa = Mode_V(&t), *a2 = Mode_V(&t);
+	nativeVal_t *rf = Mode_V(&t), *i = Mode_V(&t), *sp = Mode_V(&t), *sa = Mode_V(&t), *a2 = Mode_V(&t), *g = Mode_V(&t);
 	const nativeVal_t *spawnPos = pos, *spawnAng = ang;
 	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_Import("RaceMaker") || !Mode_EntityH(name, usr) ||
-		!Mode_VGet(usr, "Name", un) || !PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", un) || !Mode_Read(MR, "baton", &mr.baton)) {
+		!Mode_VGet(usr, "Name", un) || !PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", un) || !Mode_Read(MR, "baton", g)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_True(&mr.baton)) {
-		if (!Mode_Read(MR, "baton", &mr.baton) || !Mode_VGet(&mr.baton, "Pos", bp) || !Mode_VecSub(bp, pos, d) ||
+	if (Native_True(g)) {
+		if (!Mode_Read(MR, "baton", g) || !Mode_VGet(g, "Pos", bp) || !Mode_VecSub(bp, pos, d) ||
 			!Mode_VecModSqr(d, dsq) || !Mr_Square("BatonRadius", r) || !Native_ToFloat(r, rf)) {
 			return Mode_Done(&t, 0);
 		}

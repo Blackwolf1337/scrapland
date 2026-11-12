@@ -8,21 +8,22 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values and call the engine in C; the texts
  * of the network are made and read by the native repr and literal reader (byte for byte as before). The state is the
- * struct ffa, mirrored into the module dict (OBJLIB 5): the N* modes, the HUD and the tests read and write Scorer,
- * isScorerVisible, TotalRed, TotalGreen, SpectatorMode, GameFinished, the colours, MasterFlag, GameScorer,
- * YourPosition, YourScore, Winner, ScorerFraglimit and GameStart there, so the C reads each where the script reads
- * the global and writes it through at once (Scorer is changed in place, as the script does). The engine functions
+ * variables of the module in the registry (Scorer, isScorerVisible, TotalRed, TotalGreen, SpectatorMode,
+ * GameFinished, the colours, MasterFlag, GameScorer, YourPosition, YourScore, Winner, ScorerFraglimit, GameStart: the
+ * N* modes, the HUD and the tests read and write them too): the C reads each into a value of the call where the script
+ * reads the global and writes it there at once (Scorer is changed in place, as the script does). The engine functions
  * the cases record go through their seams (OBJLIB 7, scrap/scriptmodes.h); entity handles are the entities found again
  * by name, as the handle finds them.
  *
  * Direct calls (stage 3): the functions call each other through the module globals and the other ports (Net,
  * Vehicles, OutMap, RacerScorer, Menu) through their refs (PORT_OWN, PORT_CALL; the seam takes the call by name when
- * a mode, a mission or a case has put something else there, OBJLIB 5). ModLib, the module of the mode, is read at each
- * call (its variables, OBJLIB 5; its functions by their entries, Mode_CallArgs); the functions Net holds in its
- * variables ClientJoin, ClientCreate and ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5) are bound by the
- * engine to the entries of the functions they hold (Port_Callback); the functions given to the scheduler take their
- * entries (Port_Scheduled; those of SInput and SNet too, stage 7), the ones set into other
- * modules are values of their variables (OBJLIB 5).
+ * a mode, a mission or a case has put something else there). ModLib, the module of the mode, is read at each call
+ * (its variables, OBJLIB 5 (9c: ModLib holds the module object, its attributes are read through Python); its
+ * functions by their entries, Mode_CallArgs); the functions Net holds in its variables ClientJoin, ClientCreate and
+ * ClientAfterCreate (the mode's or Net's defaults, OBJLIB 5 (9c: functions as values are Python functions)) are bound
+ * by the engine to the entries of the functions they hold (Port_Callback); the functions given to the scheduler take
+ * their entries (Port_Scheduled; those of SInput and SNet too, stage 7), the ones set into other modules are values of
+ * their variables (OBJLIB 5 (9c: set as Python objects, Mode_ModSetGlobal)).
  *
  * State on values (stage 6, batch 6f): no function works on Python objects. ModLib (a module object), the functions
  * read from it, from the globals and from SInput and SNet for the scheduler, and the menu entries of the mode set
@@ -39,25 +40,19 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 
-static struct {
-	nativeVal_t scorer;		/* the score of each ship name (a dict) */
-	nativeVal_t isScorerVisible, totalRed, totalGreen, spectatorMode, gameFinished, masterFlag, gameScorer;
-	nativeVal_t yourPosition, yourScore, winner, scorerFraglimit, gameStart, usrColor, stdColor, redColor, greenColor;
-} ffa;
-
-/* the global of the module into its slot of ffa (as the script reads it), a write through */
-#define FR(field, name) Mode_Read("Ffa", name, &ffa.field)
-#define FW(field, name, v) Mode_Put("Ffa", name, &ffa.field, v)
-/* Scorer[key] = v in place */
-#define SCORER_PUT(key, v) Mode_DictPut("Ffa", "Scorer", &ffa.scorer, key, v)
+/* the global name of the module into the value *slot of the caller (as the script reads it), name = v */
+#define FR(slot, name) Mode_Read("Ffa", name, slot)
+#define FW(name, v) Mode_Put("Ffa", name, NULL, v)
+/* Scorer[key] = v in place (Scorer, the score of each ship name, read back into *d: a dict the C takes) */
+#define SCORER_PUT(d, key, v) Mode_DictPut("Ffa", "Scorer", d, key, v)
 /* the function a variable of another module holds (Net.ClientJoin, ClientCreate, ClientAfterCreate: the mode sets
- * them), by name (OBJLIB 5) */
+ * them), by name (OBJLIB 5 (9c: called as the Python object of the variable, Native_CallMod)) */
 #define VARCALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 
 /* ---- helpers ---- */
 
-/* ModLib.name of the mode's module as a value (a function as NV_OBJ; OBJLIB 5: the module is a variable, read at
- * every use) */
+/* ModLib.name of the mode's module as a value (the module is a variable, read at every use; OBJLIB 5 (9c: the
+ * attribute is read through the module's Python object, Mode_GObjAttr)) */
 static byte Ffa_LibGet(const char *name, nativeVal_t *out) {
 	return Mode_GObjAttr("Ffa", "ModLib", name, out);
 }
@@ -82,7 +77,8 @@ static byte Ffa_Lib(const char *name, nativeVal_t *out, const nativeVal_t *args,
 	return ok;
 }
 
-/* module.var = ModLib.name as the object it is (OBJLIB 5: the menu entries of the mode keep their identity) */
+/* module.var = ModLib.name as the object it is (the menu entries of the mode keep their identity; OBJLIB 5 (9c: set
+ * through Python, Mode_ModToV)) */
 static byte Ffa_LibToMod(const char *module, const char *var, const char *name) {
 	nativeVal_t lib;
 	byte ok = Mode_G("Ffa", "ModLib", &lib) && Mode_ModToV(module, var, &lib, name);
@@ -90,12 +86,13 @@ static byte Ffa_LibToMod(const char *module, const char *var, const char *name) 
 	return ok;
 }
 
-/* module.var = the global name of Ffa as the object it is (a function of the module, OBJLIB 5) */
+/* module.var = the global name of Ffa as the object it is (a function of the module; OBJLIB 5 (9c: a Python
+ * function object, Mode_ModSetGlobal)) */
 static byte Ffa_GlobalToMod(const char *module, const char *var, const char *name) {
 	return Mode_ModSetGlobal(module, var, "Ffa", name);
 }
 
-/* RacerScorer.SPECTATOR_POINTS (OBJLIB 5) */
+/* RacerScorer.SPECTATOR_POINTS */
 static byte Ffa_Spect(nativeVal_t *out) {
 	return Mode_ModVar("RacerScorer", "SPECTATOR_POINTS", out);
 }
@@ -136,7 +133,11 @@ static byte Ffa_ClientId(modeVals_t *t, const nativeVal_t *name, nativeVal_t *id
 
 /* Scorer[key] into *out (the global read again) */
 static byte Ffa_Score(const nativeVal_t *key, nativeVal_t *out) {
-	return FR(scorer, "Scorer") && Native_Subscript(&ffa.scorer, key, out);
+	nativeVal_t scorer;
+	Native_SetNone(&scorer);
+	byte ok = FR(&scorer, "Scorer") && Native_Subscript(&scorer, key, out);
+	Native_Free(&scorer);
+	return ok;
 }
 
 /* ---- game flow ---- */
@@ -144,13 +145,14 @@ static byte Ffa_Score(const nativeVal_t *key, nativeVal_t *out) {
 /* InitFfa(): the mission scorer and the multiplayer menu entry of the mode */
 static byte Ffa_InitFfaC(void) {
 	return Mode_Import("Menu") && Ffa_GlobalToMod("Menu", "MissionScorerCall", "FfaScorer") &&
-		Ffa_LibToMod("Menu", "MultiplayerMenu", "MultiplayerMenuOnGame") && FW(spectatorMode, "SpectatorMode", &(nativeVal_t){ .type = NV_INT });
+		Ffa_LibToMod("Menu", "MultiplayerMenu", "MultiplayerMenuOnGame") && FW("SpectatorMode", &(nativeVal_t){ .type = NV_INT });
 }
 
 /* SetupUserShip(entityname): the camera NetCam on the player's ship, the ship at a spawn point */
 static byte Ffa_SetupUserShipC(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *cname = Mode_S(&t, "NetCam"), *camName = Mode_V(&t), *sp = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t);
+	nativeVal_t *cname = Mode_S(&t, "NetCam"), *camName = Mode_V(&t), *sp = Mode_V(&t), *pos = Mode_V(&t);
+	nativeVal_t *ang = Mode_V(&t);
 	const nativeVal_t *zero = Mode_I(&t, 0);
 	nativeVal_t *z = Mode_V(&t);
 	cEntity *cam, *us;
@@ -172,17 +174,18 @@ static byte Ffa_RestartOnPressC(const nativeVal_t *id) {
 
 /* the game over or the player of this machine a spectator: GameFinished or YourScore == SPECTATOR_POINTS */
 static int Ffa_Out(modeVals_t *t) {
+	nativeVal_t *gameFinished = Mode_V(t), *yourScore = Mode_V(t);
 	nativeVal_t *sp = Mode_V(t);
 	if (!FR(gameFinished, "GameFinished")) {
 		return -1;
 	}
-	if (Native_True(&ffa.gameFinished)) {
+	if (Native_True(gameFinished)) {
 		return 1;
 	}
 	if (!FR(yourScore, "YourScore") || !Ffa_Spect(sp)) {
 		return -1;
 	}
-	return Ffa_Eq(&ffa.yourScore, sp);
+	return Ffa_Eq(yourScore, sp);
 }
 
 /* RacerScorer.ScorerTopMessage = ModLib.GetGameDescriptor() */
@@ -271,11 +274,12 @@ static byte Ffa_OnDeathC(const nativeVal_t *looser, const nativeVal_t *winner) {
  * automatic */
 static byte Ffa_ShowPresFireMessageC(const nativeVal_t *id, const nativeVal_t *msg) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *gameFinished = Mode_V(&t);
 	nativeVal_t *bot = Mode_V(&t), *tm = Mode_V(&t), *args = Mode_V(&t), *name = Mode_V(&t);
 	if (!FR(gameFinished, "GameFinished")) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_True(&ffa.gameFinished)) {
+	if (Native_True(gameFinished)) {
 		return Mode_Done(&t, 1);
 	}
 	Mode_Lang("Net_Bott_Press_Fire", bot);
@@ -318,7 +322,7 @@ static byte Ffa_EndOfGameC(void) {
 	static const int clear[4] = { 0, 0, 0, 0 }, dark[4] = { 0, 0, 0, 128 };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *top = Mode_V(&t), *bot = Mode_V(&t), *one = Mode_V(&t);
-	if (!Mode_Import("RacerScorer") || !FW(gameFinished, "GameFinished", Mode_I(&t, 1)) || !Mode_Bind(Mode_I(&t, 0), "Racer", "Fire", "") ||
+	if (!Mode_Import("RacerScorer") || !FW("GameFinished", Mode_I(&t, 1)) || !Mode_Bind(Mode_I(&t, 0), "Racer", "Fire", "") ||
 		!Mode_MPFunc(0, "")) {
 		return Mode_Done(&t, 0);
 	}
@@ -353,6 +357,7 @@ static byte Ffa_ServerSendPlayerStatusC(const nativeVal_t *name) {
 /* ServerSendTeamData(): the team totals to all clients */
 static byte Ffa_ServerSendTeamDataC(void) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *totalRed = Mode_V(&t), *totalGreen = Mode_V(&t);
 	nativeVal_t *s = Mode_V(&t), *red = Mode_V(&t), *green = Mode_V(&t);
 	int team = Ffa_Team();
 	if (team <= 0) {
@@ -361,11 +366,11 @@ static byte Ffa_ServerSendTeamDataC(void) {
 	if (!FR(totalRed, "TotalRed")) {
 		return Mode_Done(&t, 0);
 	}
-	Mode_Repr(&ffa.totalRed, red);
+	Mode_Repr(totalRed, red);
 	if (!Mode_Cat(&t, s, 3, Mode_S(&t, "T"), red, Mode_S(&t, ",")) || !FR(totalGreen, "TotalGreen")) {
 		return Mode_Done(&t, 0);
 	}
-	Mode_Repr(&ffa.totalGreen, green);
+	Mode_Repr(totalGreen, green);
 	return Mode_Done(&t, Mode_Cat(&t, s, 2, s, green) && Mode_Send(Mode_I(&t, -1), s));
 }
 
@@ -436,6 +441,7 @@ static byte Ffa_ServerEndOfGameC(void) {
  * changed scores and checks the end of the game */
 static byte Ffa_OnDeathServerC(const nativeVal_t *looser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t);
 	nativeVal_t *lt = Mode_V(&t), *wt = Mode_V(&t), *xprev = Mode_V(&t), *lprev = Mode_V(&t), *now = Mode_V(&t);
 	nativeVal_t *end = Mode_V(&t);
 	const nativeVal_t *xname, *add;
@@ -460,7 +466,7 @@ static byte Ffa_OnDeathServerC(const nativeVal_t *looser, const nativeVal_t *win
 		add = Mode_I(&t, -1);
 	}
 	int has = Mode_HasKey("Ffa", "Scorer", 1, xname);
-	if (has < 0 || (!has && !SCORER_PUT(xname, Mode_I(&t, 0)))) {
+	if (has < 0 || (!has && !SCORER_PUT(scorer, xname, Mode_I(&t, 0)))) {
 		return Mode_Done(&t, 0);
 	}
 	/* ModLib.DeathFunc(xname, LooserName, add): the three values side by side (views, not freed) */
@@ -519,16 +525,17 @@ static byte Ffa_Scorer2StrC(nativeVal_t *out) {
 /* Str2Scorer(cad): the scores from the text of Scorer2Str */
 static byte Ffa_Str2ScorerC(const nativeVal_t *cad) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t);
 	nativeVal_t *empty = Mode_V(&t), *parts = Mode_V(&t);
 	Native_SetEmpty(empty, NV_DICT);
-	if (!Mode_Import("string") || !FW(scorer, "Scorer", empty) || !Native_Split(cad, "-", parts)) {
+	if (!Mode_Import("string") || !FW("Scorer", empty) || !Native_Split(cad, "-", parts)) {
 		return Mode_Done(&t, 0);
 	}
 	for (int i = 0; i < parts->n; i++) {
 		int mark = t.n;
 		nativeVal_t *vals = Mode_V(&t), *v1 = Mode_V(&t), *v = Mode_V(&t), *v0 = Mode_V(&t), *key = Mode_V(&t);
 		if (!Native_Split(&parts->items[i], ",", vals) || !Native_SeqItem(vals, 1, v1) || !Native_ToInt(v1, v) ||
-			!Native_SeqItem(vals, 0, v0) || !Mode_Cat(&t, key, 2, Mode_S(&t, "net"), v0) || !SCORER_PUT(key, v)) {
+			!Native_SeqItem(vals, 0, v0) || !Mode_Cat(&t, key, 2, Mode_S(&t, "net"), v0) || !SCORER_PUT(scorer, key, v)) {
 			return Mode_Done(&t, 0);
 		}
 		Mode_Release(&t, mark);
@@ -545,10 +552,11 @@ static byte Ffa_Str2ScorerC(const nativeVal_t *cad) {
  * it */
 static byte Ffa_ClientJoinC(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t);
 	nativeVal_t *ply = Mode_V(&t), *pn = Mode_V(&t), *cid = Mode_V(&t), *str = Mode_V(&t), *s = Mode_V(&t);
 	if (!Mode_Import("Net") || !VARCALL("Net", "ClientJoin", NULL, FFA_A11, FFA_ARGS(a)) ||
 		!PORT_OWN(Ffa, ClientSetConfig, ply, FFA_A11, FFA_ARGS(a)) || !Mode_VGet(ply, "Name", pn) || !PORT_OWN(Ffa, SetSpawnPos, NULL, "v", pn) ||
-		!SCORER_PUT(&a[0], Mode_I(&t, 0)) || !PORT_OWN(Ffa, ServerSendPlayerStatus, NULL, "v", &a[0]) || !Ffa_ClientId(&t, &a[0], cid) ||
+		!SCORER_PUT(scorer, &a[0], Mode_I(&t, 0)) || !PORT_OWN(Ffa, ServerSendPlayerStatus, NULL, "v", &a[0]) || !Ffa_ClientId(&t, &a[0], cid) ||
 		!PORT_OWN(Ffa, Scorer2Str, str, "") || !Mode_Cat(&t, s, 2, Mode_S(&t, "S="), str) || !Mode_Send(cid, s) ||
 		!PORT_OWN(Ffa, ServerSendTeamData, NULL, "") || !PORT_OWN(Ffa, SendGameRules, NULL, "v", cid) || !Mode_VSet(ply, "Active", Mode_I(&t, 0)) ||
 		!PORT_OWN(Ffa, ActualizeGameScorer, NULL, "")) {
@@ -716,6 +724,7 @@ static byte Ffa_PlayerJoinGameC(const nativeVal_t *name) {
 /* ClientExit(entityname, ModelName, UsrName): a player leaves: its score goes */
 static byte Ffa_ClientExitC(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t);
 	nativeVal_t *s = Mode_V(&t);
 	if (!Ffa_Lib("ServerHidePlayer", NULL, name, 1)) {
 		return Mode_Done(&t, 0);
@@ -724,7 +733,7 @@ static byte Ffa_ClientExitC(const nativeVal_t *name) {
 	if (has <= 0) {
 		return Mode_Done(&t, has == 0);
 	}
-	return Mode_Done(&t, PORT_OWN(Ffa, PlayerDisconected, NULL, "v", name) && Mode_DictDel("Ffa", "Scorer", &ffa.scorer, name) &&
+	return Mode_Done(&t, PORT_OWN(Ffa, PlayerDisconected, NULL, "v", name) && Mode_DictDel("Ffa", "Scorer", scorer, name) &&
 		Mode_Cat(&t, s, 2, Mode_S(&t, "S-"), name) && Mode_Send(Mode_I(&t, -1), s) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, ""));
 }
 
@@ -751,6 +760,7 @@ static byte Ffa_ImportSpawn(void) {
 /* ServerRemoveSpectatorState(entityName): a spectator plays again with 0 points */
 static byte Ffa_ServerRemoveSpectatorStateC(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t);
 	nativeVal_t *score = Mode_V(&t), *sp = Mode_V(&t), *target = Mode_V(&t);
 	if (!Ffa_ImportSpawn()) {
 		return Mode_Done(&t, 0);
@@ -765,7 +775,7 @@ static byte Ffa_ServerRemoveSpectatorStateC(const nativeVal_t *name) {
 	if (c <= 0) {
 		return Mode_Done(&t, c == 0);
 	}
-	if (!SCORER_PUT(name, Mode_I(&t, 0)) || !PORT_OWN(Ffa, ServerSendPlayerStatus, NULL, "v", name) || !PORT_OWN(Ffa, ActualizeGameScorer, NULL, "")) {
+	if (!SCORER_PUT(scorer, name, Mode_I(&t, 0)) || !PORT_OWN(Ffa, ServerSendPlayerStatus, NULL, "v", name) || !PORT_OWN(Ffa, ActualizeGameScorer, NULL, "")) {
 		return Mode_Done(&t, 0);
 	}
 	cEntity *cam = Ffa_Cam();
@@ -910,7 +920,9 @@ static byte Ffa_SvrShowMsgC(const nativeVal_t *msg) {
 
 /* the "S+name:points" message of OnUsrClient */
 static byte Ffa_ScorePlus(modeVals_t *t, const nativeVal_t *s) {
-	nativeVal_t *rest = Mode_V(t), *lst = Mode_V(t), *l0 = Mode_V(t), *l1 = Mode_V(t), *points = Mode_V(t), *target = Mode_V(t);
+	nativeVal_t *scorer = Mode_V(t);
+	nativeVal_t *rest = Mode_V(t), *lst = Mode_V(t), *l0 = Mode_V(t), *l1 = Mode_V(t), *points = Mode_V(t);
+	nativeVal_t *target = Mode_V(t);
 	nativeVal_t *score = Mode_V(t), *sp = Mode_V(t);
 	if (!Native_Slice(s, 2, INT_MAX, rest) || !Native_Split(rest, ":", lst) || !Native_Subscript(lst, Mode_I(t, 1), l1) ||
 		!Native_ToInt(l1, points) || !Native_Subscript(lst, Mode_I(t, 0), l0) || !Mode_Get(Ffa_Cam(), "NetCam", "MainTarget", target)) {
@@ -944,7 +956,7 @@ static byte Ffa_ScorePlus(modeVals_t *t, const nativeVal_t *s) {
 		}
 	}
 	Native_Free(sp);
-	if (!SCORER_PUT(l0, points) || !Ffa_Spect(sp)) {
+	if (!SCORER_PUT(scorer, l0, points) || !Ffa_Spect(sp)) {
 		return 0;
 	}
 	if (Ffa_Eq(points, sp)) {
@@ -957,6 +969,7 @@ static byte Ffa_ScorePlus(modeVals_t *t, const nativeVal_t *s) {
  * the rules */
 static byte Ffa_OnUsrClientC(const nativeVal_t *s) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t), *gameFinished = Mode_V(&t);
 	nativeVal_t *c0 = Mode_V(&t), *c1 = Mode_V(&t), *rest = Mode_V(&t), *tot = Mode_V(&t), *two = Mode_V(&t);
 	Mode_V(&t);
 	nativeVal_t *target = Mode_V(&t);
@@ -978,20 +991,20 @@ static byte Ffa_OnUsrClientC(const nativeVal_t *s) {
 			ok = Ffa_ScorePlus(&t, s);
 		} else if (Native_IsStr(c1, "-")) {
 			ok = Native_Slice(s, 2, INT_MAX, rest) && PORT_OWN(Ffa, PlayerDisconected, NULL, "v", rest) &&
-				Mode_DictDel("Ffa", "Scorer", &ffa.scorer, rest);
+				Mode_DictDel("Ffa", "Scorer", scorer, rest);
 		}
 		return Mode_Done(&t, ok && PORT_OWN(Ffa, ActualizeGameScorer, NULL, ""));
 	}
 	if (Native_IsStr(c0, "T")) {
 		Native_Free(rest);
 		return Mode_Done(&t, Native_Slice(s, 1, INT_MAX, rest) && Native_EvalText("Ffa", rest, tot) && Mode_Unpack(tot, 2, two) &&
-			FW(totalRed, "TotalRed", &two[0]) && FW(totalGreen, "TotalGreen", &two[1]) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, ""));
+			FW("TotalRed", &two[0]) && FW("TotalGreen", &two[1]) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, ""));
 	}
 	if (Native_IsStr(c0, "R")) {
 		if (!FR(gameFinished, "GameFinished")) {
 			return Mode_Done(&t, 0);
 		}
-		return Mode_Done(&t, Native_True(&ffa.gameFinished) ||
+		return Mode_Done(&t, Native_True(gameFinished) ||
 			(Mode_Get(Ffa_Cam(), "NetCam", "MainTarget", target) && PORT_OWN(Ffa, ReSpawnClient, NULL, "v", target)));
 	}
 	if (Native_IsStr(c0, "E")) {
@@ -1007,7 +1020,9 @@ static byte Ffa_OnUsrClientC(const nativeVal_t *s) {
 /* OnUsrServer(id, s): a request of client id on the server: respawn, spectate, a new ship */
 static byte Ffa_OnUsrServerC(const nativeVal_t *id, const nativeVal_t *s) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *rep = Mode_V(&t), *name = Mode_V(&t), *c0 = Mode_V(&t), *en = Mode_V(&t), *msg = Mode_V(&t), *rest = Mode_V(&t);
+	nativeVal_t *gameFinished = Mode_V(&t);
+	nativeVal_t *rep = Mode_V(&t), *name = Mode_V(&t), *c0 = Mode_V(&t), *en = Mode_V(&t), *msg = Mode_V(&t);
+	nativeVal_t *rest = Mode_V(&t);
 	nativeVal_t *data = Mode_V(&t), *v[11];
 	cEntity *e;
 	Mode_Repr(id, rep);
@@ -1019,7 +1034,7 @@ static byte Ffa_OnUsrServerC(const nativeVal_t *id, const nativeVal_t *s) {
 		if (!FR(gameFinished, "GameFinished")) {
 			return Mode_Done(&t, 0);
 		}
-		if (Native_True(&ffa.gameFinished)) {
+		if (Native_True(gameFinished)) {
 			return Mode_Done(&t, 1);
 		}
 		if (e) {
@@ -1165,6 +1180,7 @@ static byte Ffa_JoinGameC(const nativeVal_t *a) {
 /* TeamMenu(id, control): the in-game menu of the team modes: red, green and (when playing) spectate */
 static byte Ffa_TeamMenuC(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *spectatorMode = Mode_V(&t);
 	nativeVal_t *opts = Mode_V(&t), *title = Mode_V(&t), *ys = Mode_V(&t), *row;
 	if (!Mode_Import("Menu") || !PORT_CALL(Menu, StartNewMenu, NULL, "v", id)) {
 		return Mode_Done(&t, 0);
@@ -1181,7 +1197,7 @@ static byte Ffa_TeamMenuC(const nativeVal_t *id) {
 	if (!FR(spectatorMode, "SpectatorMode")) {
 		return Mode_Done(&t, 0);
 	}
-	if (Ffa_Eq(&ffa.spectatorMode, Mode_I(&t, 0))) {
+	if (Ffa_Eq(spectatorMode, Mode_I(&t, 0))) {
 		row = Native_Append(opts);
 		Native_SetEmpty(row, NV_LIST);
 		Mode_Lang("Net_Menu_Spectate", Native_Append(row));
@@ -1198,23 +1214,24 @@ static byte Ffa_TeamMenuC(const nativeVal_t *id) {
 /* GetGameTeamDescriptor(): the title of a team game: tied, red or green ahead */
 static byte Ffa_GetGameTeamDescriptorC(nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *totalRed = Mode_V(&t), *totalGreen = Mode_V(&t);
 	nativeVal_t *pair = Mode_V(&t);
 	if (!Mode_Import("string") || !FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
 		return Mode_Done(&t, 0);
 	}
-	if (Ffa_Eq(&ffa.totalRed, &ffa.totalGreen)) {
-		return Mode_Done(&t, FR(totalGreen, "TotalGreen") && Mode_LangFmt("Net_Title_Teams_Tied", &ffa.totalGreen, out));
+	if (Ffa_Eq(totalRed, totalGreen)) {
+		return Mode_Done(&t, FR(totalGreen, "TotalGreen") && Mode_LangFmt("Net_Title_Teams_Tied", totalGreen, out));
 	}
 	if (!FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
 		return Mode_Done(&t, 0);
 	}
-	byte red = Native_Compare(&ffa.totalRed, &ffa.totalGreen) >= 0;
+	byte red = Native_Compare(totalRed, totalGreen) >= 0;
 	if (!FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetEmpty(pair, NV_TUPLE);
-	Native_Copy(Native_Append(pair), red ? &ffa.totalRed : &ffa.totalGreen);
-	Native_Copy(Native_Append(pair), red ? &ffa.totalGreen : &ffa.totalRed);
+	Native_Copy(Native_Append(pair), red ? totalRed : totalGreen);
+	Native_Copy(Native_Append(pair), red ? totalGreen : totalRed);
 	return Mode_Done(&t, Mode_LangFmt(red ? "Net_Title_Red_Wins" : "Net_Title_Green_Wins", pair, out));
 }
 
@@ -1222,13 +1239,14 @@ static byte Ffa_GetGameTeamDescriptorC(nativeVal_t *out) {
 static byte Ffa_CameraSpectatorC(void) {
 	static const char *const mods[] = { "OutMap", "RacerScorer", "PCMenu" };
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *isScorerVisible = Mode_V(&t);
 	nativeVal_t *sp = Mode_V(&t), *s0 = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t), *a3 = Mode_V(&t);
 	for (int i = 0; i < 3; i++) {
 		if (!Mode_Import(mods[i])) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Ffa_LibToMod("PCMenu", "MultiplayerMenu", "MultiplayerMenuSpectator") || !FW(spectatorMode, "SpectatorMode", Mode_I(&t, 1))) {
+	if (!Ffa_LibToMod("PCMenu", "MultiplayerMenu", "MultiplayerMenuSpectator") || !FW("SpectatorMode", Mode_I(&t, 1))) {
 		return Mode_Done(&t, 0);
 	}
 	cEntity *cam = Ffa_Cam();
@@ -1247,7 +1265,7 @@ static byte Ffa_CameraSpectatorC(void) {
 	Native_SetInt(Native_Append(a3), 0);
 	return Mode_Done(&t, Mode_Set(cam, "NetCam", "camAng", a3) && Ffa_TopDescriptor() &&
 		Mode_SetModVar("RacerScorer", "ScorerBotMessage", Mode_S(&t, "Spectator mode")) && Mode_MPFunc(0, "Ffa.ShowScorer") &&
-		FR(isScorerVisible, "isScorerVisible") && PORT_OWN(Ffa, ShowScorer, NULL, "iv", 0L, &ffa.isScorerVisible) &&
+		FR(isScorerVisible, "isScorerVisible") && PORT_OWN(Ffa, ShowScorer, NULL, "iv", 0L, isScorerVisible) &&
 		PORT_OWN(Ffa, ActualizeGameScorer, NULL, ""));
 }
 
@@ -1255,12 +1273,13 @@ static byte Ffa_CameraSpectatorC(void) {
 static byte Ffa_AbortSpectateModeC(void) {
 	modeVals_t t = { .n = 0 };
 	return Mode_Done(&t, Mode_Import("PCMenu") && Mode_SetI(Ffa_Cam(), "NetCam", "FreeCam", 0) &&
-		Ffa_LibToMod("PCMenu", "MultiplayerMenu", "MultiplayerMenuOnGame") && FW(spectatorMode, "SpectatorMode", Mode_I(&t, 0)));
+		Ffa_LibToMod("PCMenu", "MultiplayerMenu", "MultiplayerMenuOnGame") && FW("SpectatorMode", Mode_I(&t, 0)));
 }
 
 /* ServerSpectate(EntityName): the server makes a player a spectator */
 static byte Ffa_ServerSpectateC(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorer = Mode_V(&t);
 	nativeVal_t *score = Mode_V(&t), *sp = Mode_V(&t), *target = Mode_V(&t), *en = Mode_V(&t);
 	cEntity *e;
 	if (!Mode_Import("OutMap") || !Mode_Import("RacerScorer") || !Ffa_Score(name, score) || !Ffa_Spect(sp)) {
@@ -1284,7 +1303,7 @@ static byte Ffa_ServerSpectateC(const nativeVal_t *name) {
 	}
 	/* the handle of the player, found again by its name after each call */
 	const char *n = Native_Text(name);
-	byte ok = SCORER_PUT(en, sp) && PORT_OWN(Ffa, ServerSendPlayerStatus, NULL, "v", en) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, "");
+	byte ok = SCORER_PUT(scorer, en, sp) && PORT_OWN(Ffa, ServerSendPlayerStatus, NULL, "v", en) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, "");
 	Native_Free(en);
 	ok = ok && Mode_NameGet(n, "Name", en) && Ffa_Lib("ServerHidePlayer", NULL, en, 1);
 	Native_Free(en);
@@ -1354,6 +1373,8 @@ static void Ffa_Row(nativeVal_t *list, const nativeVal_t *score, const nativeVal
  * by team and score; the player of id sorts above an equal score */
 static byte Ffa_GetScorerInfoC(const nativeVal_t *id, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *totalRed = Mode_V(&t), *totalGreen = Mode_V(&t), *masterFlag = Mode_V(&t), *usrColor = Mode_V(&t);
+	nativeVal_t *stdColor = Mode_V(&t), *redColor = Mode_V(&t), *greenColor = Mode_V(&t);
 	nativeVal_t *lists = Mode_V(&t), *userscore = Mode_V(&t), *keys = Mode_V(&t), *none4 = Mode_V(&t), *info = Mode_V(&t);
 	nativeVal_t *tginfo = Mode_V(&t), *tenth = Mode_V(&t);
 	/* killer, red, green, spect */
@@ -1380,7 +1401,7 @@ static byte Ffa_GetScorerInfoC(const nativeVal_t *id, nativeVal_t *out) {
 		if (!Native_SeqItem(keys, i, key) || !FR(masterFlag, "MasterFlag")) {
 			return Mode_Done(&t, 0);
 		}
-		Native_SetStr(flag, Ffa_Eq(&ffa.masterFlag, key) ? "*" : " ");
+		Native_SetStr(flag, Ffa_Eq(masterFlag, key) ? "*" : " ");
 		if (!Mode_Ent(key, &ent) || !Mode_Get(ent, Native_Text(key), "UsrControl", uc)) {
 			return Mode_Done(&t, 0);
 		}
@@ -1389,7 +1410,7 @@ static byte Ffa_GetScorerInfoC(const nativeVal_t *id, nativeVal_t *out) {
 		if (isuser ? !FR(usrColor, "USRCOLOR") : !FR(stdColor, "STDCOLOR")) {
 			return Mode_Done(&t, 0);
 		}
-		color = isuser ? &ffa.usrColor : &ffa.stdColor;
+		color = isuser ? usrColor : stdColor;
 		if (!Ffa_Score(key, score) || !Ffa_Spect(sp)) {
 			return Mode_Done(&t, 0);
 		}
@@ -1425,7 +1446,7 @@ static byte Ffa_GetScorerInfoC(const nativeVal_t *id, nativeVal_t *out) {
 				if (r ? !FR(redColor, "REDCOLOR") : !FR(greenColor, "GREENCOLOR")) {
 					return Mode_Done(&t, 0);
 				}
-				Ffa_Row(r ? red : green, f, desc, color, r ? &ffa.redColor : &ffa.greenColor, key);
+				Ffa_Row(r ? red : green, f, desc, color, r ? redColor : greenColor, key);
 			} else {
 				Ffa_Row(killer, f, desc, color, none4, key);
 			}
@@ -1442,7 +1463,7 @@ static byte Ffa_GetScorerInfoC(const nativeVal_t *id, nativeVal_t *out) {
 	if (!FR(totalGreen, "TotalGreen") || !FR(totalRed, "TotalRed")) {
 		return Mode_Done(&t, 0);
 	}
-	int gw = Native_Compare(&ffa.totalGreen, &ffa.totalRed) > 0;
+	int gw = Native_Compare(totalGreen, totalRed) > 0;
 	if (!Mode_Cat(&t, info, 4, gw ? green : red, gw ? red : green, killer, spect)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1519,15 +1540,16 @@ static byte Ffa_OnPositionChangeC(const nativeVal_t *a) {
 /* isTied(value): 1 when value leads GameScorer alone, 0 when tied at the top, -1 when not at the top */
 static byte Ffa_isTiedC(const nativeVal_t *value, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *gameScorer = Mode_V(&t);
 	long pos = -1, ctr = 0;
 	if (!FR(gameScorer, "GameScorer")) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_ForCount(&ffa.gameScorer);
+	int n = Native_ForCount(gameScorer);
 	for (int i = 0; i < n; i++) {
 		int mark = t.n;
 		nativeVal_t *key = Mode_V(&t), *k0 = Mode_V(&t);
-		if (!Native_SeqItem(&ffa.gameScorer, i, key) || !Native_Subscript(key, Mode_I(&t, 0), k0)) {
+		if (!Native_SeqItem(gameScorer, i, key) || !Native_Subscript(key, Mode_I(&t, 0), k0)) {
 			return Mode_Done(&t, 0);
 		}
 		if (Ffa_Eq(k0, value)) {
@@ -1545,11 +1567,12 @@ static byte Ffa_isTiedC(const nativeVal_t *value, nativeVal_t *out) {
 /* CheckGameStart(): the game counts once two active players (one per team in a team game) are in */
 static byte Ffa_CheckGameStartC(nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *gameStart = Mode_V(&t);
 	nativeVal_t *keys = Mode_V(&t);
 	if (!FR(gameStart, "GameStart")) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_True(&ffa.gameStart)) {
+	if (Native_True(gameStart)) {
 		Native_SetInt(out, 1);
 		return Mode_Done(&t, 1);
 	}
@@ -1599,16 +1622,17 @@ static byte Ffa_CheckGameStartC(nativeVal_t *out) {
 		}
 		Mode_Release(&t, mark);
 	}
-	if (n < 0 || ((team ? green > 0 && red > 0 : red > 1) && !FW(gameStart, "GameStart", Mode_I(&t, 1))) || !FR(gameStart, "GameStart")) {
+	if (n < 0 || ((team ? green > 0 && red > 0 : red > 1) && !FW("GameStart", Mode_I(&t, 1))) || !FR(gameStart, "GameStart")) {
 		return Mode_Done(&t, 0);
 	}
-	Native_Copy(out, &ffa.gameStart);
+	Native_Copy(out, gameStart);
 	return Mode_Done(&t, 1);
 }
 
 /* UsrPos(info): the place of the player's row (USRCOLOR), 1 when none */
 static byte Ffa_UsrPosC(const nativeVal_t *info, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *usrColor = Mode_V(&t);
 	int n = Native_ForCount(info);
 	for (int i = 0; i < n; i++) {
 		int mark = t.n;
@@ -1616,7 +1640,7 @@ static byte Ffa_UsrPosC(const nativeVal_t *info, nativeVal_t *out) {
 		if (!Native_SeqItem(info, i, key) || !Native_Subscript(key, Mode_I(&t, 2), k2) || !FR(usrColor, "USRCOLOR")) {
 			return Mode_Done(&t, 0);
 		}
-		if (Ffa_Eq(k2, &ffa.usrColor)) {
+		if (Ffa_Eq(k2, usrColor)) {
 			Native_SetInt(out, i + 1);
 			return Mode_Done(&t, 1);
 		}
@@ -1630,37 +1654,40 @@ static byte Ffa_UsrPosC(const nativeVal_t *info, nativeVal_t *out) {
  * NULL: the default) */
 static byte Ffa_ActualizeGameScorerC(const nativeVal_t *now) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *gs = Mode_V(&t), *yp = Mode_V(&t), *yp1 = Mode_V(&t), *row = Mode_V(&t), *value = Mode_V(&t), *nw = Mode_V(&t);
-	if (!Mode_Import("RacerScorer") || !PORT_OWN(Ffa, GetScorerInfo, gs, "i", 0L) || !FW(gameScorer, "GameScorer", gs) ||
+	nativeVal_t *isScorerVisible = Mode_V(&t), *gameScorer = Mode_V(&t), *yourPosition = Mode_V(&t);
+	nativeVal_t *yourScore = Mode_V(&t), *winner = Mode_V(&t);
+	nativeVal_t *gs = Mode_V(&t), *yp = Mode_V(&t), *yp1 = Mode_V(&t), *row = Mode_V(&t), *value = Mode_V(&t);
+	nativeVal_t *nw = Mode_V(&t);
+	if (!Mode_Import("RacerScorer") || !PORT_OWN(Ffa, GetScorerInfo, gs, "i", 0L) || !FW("GameScorer", gs) ||
 		!FR(gameScorer, "GameScorer")) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&ffa.gameScorer);
+	int n = Native_Size(gameScorer);
 	if (n < 0) {
 		return Mode_Done(&t, 0);
 	}
 	if (n > 0) {
-		if (!FR(gameScorer, "GameScorer") || !PORT_OWN(Ffa, UsrPos, yp, "v", &ffa.gameScorer) || !FR(gameScorer, "GameScorer") ||
-			!Native_Arith('-', yp, Mode_I(&t, 1), yp1) || !Native_Subscript(&ffa.gameScorer, yp1, row) ||
+		if (!FR(gameScorer, "GameScorer") || !PORT_OWN(Ffa, UsrPos, yp, "v", gameScorer) || !FR(gameScorer, "GameScorer") ||
+			!Native_Arith('-', yp, Mode_I(&t, 1), yp1) || !Native_Subscript(gameScorer, yp1, row) ||
 			!Native_Subscript(row, Mode_I(&t, 0), value) || !PORT_OWN(Ffa, isTied, nw, "v", value) || !FR(yourPosition, "YourPosition")) {
 			return Mode_Done(&t, 0);
 		}
-		int c = !Ffa_Eq(yp, &ffa.yourPosition);
+		int c = !Ffa_Eq(yp, yourPosition);
 		if (!c) {
 			if (!FR(yourScore, "YourScore")) {
 				return Mode_Done(&t, 0);
 			}
-			c = !Ffa_Eq(value, &ffa.yourScore);
+			c = !Ffa_Eq(value, yourScore);
 		}
 		if (!c) {
 			if (!FR(winner, "Winner")) {
 				return Mode_Done(&t, 0);
 			}
-			c = !Ffa_Eq(nw, &ffa.winner);
+			c = !Ffa_Eq(nw, winner);
 		}
 		if (c && (!FR(yourPosition, "YourPosition") || !FR(yourScore, "YourScore") || !FR(winner, "Winner") ||
-			!PORT_OWN(Ffa, OnPositionChange, NULL, "vvvvvv", yp, &ffa.yourPosition, value, &ffa.yourScore, nw, &ffa.winner) ||
-			!FW(yourPosition, "YourPosition", yp) || !FW(yourScore, "YourScore", value) || !FW(winner, "Winner", nw))) {
+			!PORT_OWN(Ffa, OnPositionChange, NULL, "vvvvvv", yp, yourPosition, value, yourScore, nw, winner) ||
+			!FW("YourPosition", yp) || !FW("YourScore", value) || !FW("Winner", nw))) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -1668,7 +1695,7 @@ static byte Ffa_ActualizeGameScorerC(const nativeVal_t *now) {
 	if (team < 0 || (team > 0 && !Ffa_TopDescriptor()) || !FR(isScorerVisible, "isScorerVisible")) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_True(&ffa.isScorerVisible)) {
+	if (Native_True(isScorerVisible)) {
 		return Mode_Done(&t, (now && !Native_True(now)) || PORT_OWN(Ffa, ShowScorer, NULL, "ii", 0L, 1L));
 	}
 	return Mode_Done(&t, PORT_OWN(Ffa, SetScorerValues, NULL, "i", 0L));
@@ -1676,7 +1703,7 @@ static byte Ffa_ActualizeGameScorerC(const nativeVal_t *now) {
 
 /* ShowScorer(id, doit): the scores on screen or the plain HUD (not while a menu is up) */
 static byte Ffa_ShowScorerC(const nativeVal_t *id, const nativeVal_t *doit) {
-	if (!FW(isScorerVisible, "isScorerVisible", doit) || !Mode_Import("RacerScorer")) {
+	if (!FW("isScorerVisible", doit) || !Mode_Import("RacerScorer")) {
 		return 0;
 	}
 	if (Mode_ActionSetIs("Menu")) {
@@ -1686,9 +1713,22 @@ static byte Ffa_ShowScorerC(const nativeVal_t *id, const nativeVal_t *doit) {
 		return 0;
 	}
 	if (Native_True(doit)) {
-		return FR(gameScorer, "GameScorer") && PORT_CALL(RacerScorer, ShowScorer, NULL, "vv", id, &ffa.gameScorer);
+		nativeVal_t gameScorer;
+		Native_SetNone(&gameScorer);
+		byte ok = FR(&gameScorer, "GameScorer") && PORT_CALL(RacerScorer, ShowScorer, NULL, "vv", id, &gameScorer);
+		Native_Free(&gameScorer);
+		return ok;
 	}
 	return PORT_CALL(RacerScorer, Create, NULL, "v", id);
+}
+
+/* BackMenuFunc(id): the scorer as isScorerVisible says */
+static byte Ffa_BackMenuFuncC(const nativeVal_t *id) {
+	nativeVal_t visible;
+	Native_SetNone(&visible);
+	byte ok = FR(&visible, "isScorerVisible") && PORT_OWN(Ffa, ShowScorer, NULL, "vv", id, &visible);
+	Native_Free(&visible);
+	return ok;
 }
 
 /* SetupGameRules(s): the client gets the frag limit */
@@ -1697,17 +1737,18 @@ static byte Ffa_SetupGameRulesC(const nativeVal_t *s) {
 	if (!Native_ToInt(s, &v)) {
 		return 0;
 	}
-	return FW(scorerFraglimit, "ScorerFraglimit", &v) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, "");
+	return FW("ScorerFraglimit", &v) && PORT_OWN(Ffa, ActualizeGameScorer, NULL, "");
 }
 
 /* SendGameRules(clientid): the server sends the frag limit */
 static byte Ffa_SendGameRulesC(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *scorerFraglimit = Mode_V(&t);
 	nativeVal_t *rep = Mode_V(&t), *s = Mode_V(&t);
 	if (!FR(scorerFraglimit, "ScorerFraglimit")) {
 		return Mode_Done(&t, 0);
 	}
-	Mode_Repr(&ffa.scorerFraglimit, rep);
+	Mode_Repr(scorerFraglimit, rep);
 	return Mode_Done(&t, Mode_Cat(&t, s, 2, Mode_S(&t, "G"), rep) && Mode_Send(id, s));
 }
 
@@ -1725,13 +1766,19 @@ static byte Ffa_SetRepr(modeVals_t *t, const nativeVal_t *id, const char *item, 
 
 /* GameScorer[i][0] into *out */
 static byte Ffa_ScorerAt(modeVals_t *t, int i, nativeVal_t *out) {
-	nativeVal_t *row = Mode_V(t);
-	return FR(gameScorer, "GameScorer") && Native_Subscript(&ffa.gameScorer, Mode_I(t, i), row) && Native_Subscript(row, Mode_I(t, 0), out);
+	nativeVal_t gameScorer, *row = Mode_V(t);
+	Native_SetNone(&gameScorer);
+	byte ok = FR(&gameScorer, "GameScorer") && Native_Subscript(&gameScorer, Mode_I(t, i), row) &&
+		Native_Subscript(row, Mode_I(t, 0), out);
+	Native_Free(&gameScorer);
+	return ok;
 }
 
 /* SetScorerValues(id): the numbers of the mission scorer: the limit, the team totals or the best and own score */
 static byte Ffa_SetScorerValuesC(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
+	nativeVal_t *totalRed = Mode_V(&t), *totalGreen = Mode_V(&t), *gameScorer = Mode_V(&t), *yourScore = Mode_V(&t);
+	nativeVal_t *scorerFraglimit = Mode_V(&t);
 	nativeVal_t *fc = Mode_V(&t), *top = Mode_V(&t), *sp = Mode_V(&t), *pts = Mode_V(&t);
 	if (!Mode_Import("RacerScorer")) {
 		return Mode_Done(&t, 0);
@@ -1745,7 +1792,7 @@ static byte Ffa_SetScorerValuesC(const nativeVal_t *id) {
 			return Mode_Done(&t, 1);
 		}
 	}
-	if (!FR(scorerFraglimit, "ScorerFraglimit") || !Ffa_SetRepr(&t, id, "MissionLimit", &ffa.scorerFraglimit)) {
+	if (!FR(scorerFraglimit, "ScorerFraglimit") || !Ffa_SetRepr(&t, id, "MissionLimit", scorerFraglimit)) {
 		return Mode_Done(&t, 0);
 	}
 	int team = Ffa_Team();
@@ -1756,17 +1803,17 @@ static byte Ffa_SetScorerValuesC(const nativeVal_t *id) {
 		if (!FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
 			return Mode_Done(&t, 0);
 		}
-		int r = Native_Compare(&ffa.totalRed, &ffa.totalGreen) > 0;
+		int r = Native_Compare(totalRed, totalGreen) > 0;
 		const char *rc[2] = { r ? "MissionSLimit" : "MissionYou", r ? "MissionBest" : "MissionBad" };
 		const char *gc[2] = { r ? "MissionYou" : "MissionSLimit", r ? "MissionBad" : "MissionBest" };
 		return Mode_Done(&t, Ffa_Set(&t, id, rc[0], "Green", Mode_I(&t, 0)) && Ffa_Set(&t, id, rc[0], "Red", Mode_I(&t, 255)) &&
-			FR(totalRed, "TotalRed") && Ffa_SetRepr(&t, id, rc[1], &ffa.totalRed) && Ffa_Set(&t, id, gc[0], "Green", Mode_I(&t, 255)) &&
-			Ffa_Set(&t, id, gc[0], "Red", Mode_I(&t, 0)) && FR(totalGreen, "TotalGreen") && Ffa_SetRepr(&t, id, gc[1], &ffa.totalGreen));
+			FR(totalRed, "TotalRed") && Ffa_SetRepr(&t, id, rc[1], totalRed) && Ffa_Set(&t, id, gc[0], "Green", Mode_I(&t, 255)) &&
+			Ffa_Set(&t, id, gc[0], "Red", Mode_I(&t, 0)) && FR(totalGreen, "TotalGreen") && Ffa_SetRepr(&t, id, gc[1], totalGreen));
 	}
 	if (!FR(gameScorer, "GameScorer")) {
 		return Mode_Done(&t, 0);
 	}
-	int n = Native_Size(&ffa.gameScorer);
+	int n = Native_Size(gameScorer);
 	if (n == 0) {
 		return Mode_Done(&t, Ffa_Set(&t, id, "MissionBest", "Text", Mode_S(&t, "-")) && Ffa_Set(&t, id, "MissionBad", "Text", Mode_S(&t, "-")) &&
 			Ffa_Set(&t, id, "MissionYou", "Blue", Mode_I(&t, 0)) && Ffa_Set(&t, id, "MissionYou", "Red", Mode_I(&t, 0)));
@@ -1774,11 +1821,11 @@ static byte Ffa_SetScorerValuesC(const nativeVal_t *id) {
 	if (n < 0 || !FR(yourScore, "YourScore") || !Ffa_ScorerAt(&t, 0, top)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Ffa_Eq(&ffa.yourScore, top)) {
-		if (!FR(yourScore, "YourScore") || !Ffa_SetRepr(&t, id, "MissionBest", &ffa.yourScore) || !FR(gameScorer, "GameScorer")) {
+	if (Ffa_Eq(yourScore, top)) {
+		if (!FR(yourScore, "YourScore") || !Ffa_SetRepr(&t, id, "MissionBest", yourScore) || !FR(gameScorer, "GameScorer")) {
 			return Mode_Done(&t, 0);
 		}
-		int len = Native_Size(&ffa.gameScorer);
+		int len = Native_Size(gameScorer);
 		int indx = len > 1 ? 1 : 0;
 		Native_Free(top);
 		if (len < 0 || !Ffa_Spect(sp) || !Ffa_ScorerAt(&t, indx, top)) {
@@ -1799,7 +1846,7 @@ static byte Ffa_SetScorerValuesC(const nativeVal_t *id) {
 	}
 	Native_Free(top);
 	return Mode_Done(&t, Ffa_ScorerAt(&t, 0, top) && Ffa_SetRepr(&t, id, "MissionBest", top) && FR(yourScore, "YourScore") &&
-		Ffa_SetRepr(&t, id, "MissionBad", &ffa.yourScore) && Ffa_Set(&t, id, "MissionYou", "Y", Mode_I(&t, 200)) &&
+		Ffa_SetRepr(&t, id, "MissionBad", yourScore) && Ffa_Set(&t, id, "MissionYou", "Y", Mode_I(&t, 200)) &&
 		Ffa_Set(&t, id, "MissionYou", "Blue", Mode_I(&t, 0)) && Ffa_Set(&t, id, "MissionYou", "Red", Mode_I(&t, 255)));
 }
 
@@ -1887,7 +1934,7 @@ FFA_FN(isTied, 1, Ffa_isTiedC(&a[0], out))
 FFA_FN(CheckGameStart, 0, Ffa_CheckGameStartC(out))
 FFA_FN(UsrPos, 1, Ffa_UsrPosC(&a[0], out))
 FFA_FN(ShowScorer, 2, Ffa_ShowScorerC(&a[0], &a[1]))
-FFA_FN(BackMenuFunc, 1, FR(isScorerVisible, "isScorerVisible") && PORT_OWN(Ffa, ShowScorer, NULL, "vv", &a[0], &ffa.isScorerVisible))
+FFA_FN(BackMenuFunc, 1, Ffa_BackMenuFuncC(&a[0]))
 FFA_FN(ShowHelp, 1, Ffa_Lib("ShowHelp", NULL, &a[0], 1))
 FFA_FN(SetupGameRules, 1, Ffa_SetupGameRulesC(&a[0]))
 FFA_FN(SendGameRules, 1, Ffa_SendGameRulesC(&a[0]))

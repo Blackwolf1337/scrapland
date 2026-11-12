@@ -20,26 +20,26 @@
  * Dumb1c, Dumb2c).
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
- * script reads them and write them back at once (OBJLIB 5), and call the engine in C: save variables, engine
+ * script reads them and write them back at once, and call the engine in C: save variables, engine
  * variables, the dummy search, the language texts, the time speed and the action set. The engine functions the cases
  * record or swap go through their seams (AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, UsrEntity, Set,
  * SetAlarm, GetAlarm, ConsoleError, DelSaveVars, SScorer.Fade, the SAct functions; OBJLIB 7). The entities the script
  * holds are handle values (OBJLIB 7). SAI.SetStateChar and GetStateChar, SLogic.SetOnFloor, the call of the map
  * elements (Scrap.SetCallFunc and its parameters), SAct.GetCls and SScorer.SetSpeechText go through their refs
  * (stage 7); CharsNPC.CharRes and the GateKeeper groups are
- * the objects they are (OBJLIB 5).
+ * the objects they are (OBJLIB 5 (9c: instances, groups to the GateKeeper refs)).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Chars,
  * CharConversor, Elevator, Teleport, Metro, InTraffic, GateKeeper, Scene, RaceMaker, Menu, Init), the keyword call of
  * Speech.OnObjSpch and the own functions of the modules (their globals) go through their refs (PORT_CALL, PORT_LOWN,
  * LV_COM, LV_ONEND, LV_CALLBACK, LV_MISSIONCHAR; the seam takes the call by name when a mission or a case has put
- * something else there, OBJLIB 5). The GateKeeper refs take Python objects and always go by name. By name: the
+ * something else there, OBJLIB 5 (9c)). The GateKeeper refs take Python objects and always go by name. By name: the
  * sections of the .def files (LoadScene, GetAuthorization2, LoadPoliFightScene, InitBossCheats, the Pre and
  * SetNextMission sections of Mission_BeatPickus, MapSnd.PoliceCheats and PoliceBossCheats; OBJLIB 6); apply on
  * MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext); the functions given to the scheduler and to the
  * entities (Mode_Later, the UseFunc texts) take the entry of a port's own function (stage 4: Port_Scheduled,
  * PYF_ENTRY; SScorer.Fade its engine entry, stage 7), the ones given to Scene, Alarm and CharConversor as callbacks
- * (PO_HOOK) are values of their variables (OBJLIB 5). MapSnd.SndElements and MapPlanes are LevelCommon's.
+ * (PO_HOOK) are values of their variables (OBJLIB 5 (9c)). MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -163,7 +163,7 @@ static byte Po_Generic(const nativeVal_t *a) {
 #define PO_LATER(s, module, func) Mode_Later(s, module, func, NULL, 0, NULL)
 #define PO_LATER1(s, module, func, v) Mode_Later(s, module, func, v, 1, NULL)
 
-/* module.var = the global name of src (a function) and = None (OBJLIB 5) */
+/* module.var = the global name of src (a function) and = None (OBJLIB 5 (9c)) */
 #define PO_HOOK(module, var, src, name) LvN_ModSetGlobal(module, var, src, name)
 
 /* the entity of a C name with h.var = "text", = i (Scrap.GetEntity(name).var = ...: the error of None when it is not
@@ -805,8 +805,7 @@ static byte BeatPickus_CreateLauncher(const nativeVal_t *a, nativeVal_t *out) {
 	return Mode_GSetS(BP, "launcher", "OnTake", "Mission_BeatPickus.LaunchPickusFightScene");
 }
 
-/* del Speech.RemoteCom; Speech.RemoteCom = [] (OBJLIB 5: the attribute of the module deleted, the error of a missing
- * one) */
+/* del Speech.RemoteCom; Speech.RemoteCom = [] (the attribute of the module deleted, the error of a missing one) */
 static byte Bp_NoComs(void) {
 	nativeVal_t l, speech;
 	byte ok = Mode_RefModule("Speech", &speech) && Mode_RefDelAttr(&speech, "RemoteCom");
@@ -1916,11 +1915,11 @@ static byte JailBreak_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	return LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", JB, "AfterBrowseNPC");
 }
 
-/* CharsNPC.CharRes[key].var = v (OBJLIB 5: the character objects of CharsNPC) */
+/* CharsNPC.CharRes[key].var = v (OBJLIB 5 (9c: the character objects, instances)) */
 static byte Jb_ResSet(const char *key, const char *var, const nativeVal_t *v) {
 	nativeVal_t k, ch;
 	LvN_Str(&k, key);
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_VSet(&ch, var, v);
+	byte ok = Mode_CharRes(&k, &ch) && Mode_VSet(&ch, var, v);
 	Native_Free(&k);
 	Native_Free(&ch);
 	return ok;
@@ -1944,7 +1943,7 @@ static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&act);
 		ok = Native_SeqItem(&keys, i, &k);
 		nativeVal_t ch = { 0 };
-		int other = ok && Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_VGet(&ch, "ActCtrl", &act) ? !LvN_EqS(&act, "GateKeeper") : -1;
+		int other = ok && Mode_CharRes(&k, &ch) && Mode_VGet(&ch, "ActCtrl", &act) ? !LvN_EqS(&act, "GateKeeper") : -1;
 		ok = other >= 0 && (!other || Mode_ModDictDel("CharsNPC", "CharRes", &k));
 		Native_Free(&ch);
 		Native_Free(&k);
@@ -2062,7 +2061,7 @@ static byte JailBreak_InitPuffReborn(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	LvN_Str(&k, "Desktop_JailBreak");
 	nativeVal_t cr;
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &cr);
+	byte ok = Mode_CharRes(&k, &cr);
 	Native_Free(&k);
 	if (!ok) {
 		return 0;

@@ -899,6 +899,14 @@ PyObject *NObj_Py(const nativeVal_t *v) {
 	return v->type == NV_REF ? v->ref->py : v->type == NV_OBJ ? v->obj : NULL;
 }
 
+int NObj_State(const nativeVal_t *v) {
+	return v->type != NV_REF ? -1 : !v->ref->py ? 0 : v->ref->born ? 2 : 1;
+}
+
+const nativeVal_t *NObj_ListData(const nativeVal_t *l) {
+	return l->type == NV_REF && l->ref->kind == NO_LIST && !l->ref->py ? &l->ref->data : NULL;
+}
+
 nativeVal_t *NObj_DictData(const nativeVal_t *d) {
 	return d->type == NV_REF && d->ref->kind == NO_DICT && !d->ref->py ? &d->ref->data : NULL;
 }

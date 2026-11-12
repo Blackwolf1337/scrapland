@@ -7,8 +7,8 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
  * entries are adapters. MAX_TEXT_LINES, TextInfo (the lines of the page), TextPos, TextFont, TextLines and ctr (the
- * corner of the next page) are mirrored from the module dict where the script reads them and written through where
- * it writes them (OBJLIB 5): creditstext.mod sets them, credits.def and the tests read them there. EndOfCredits (a
+ * corner of the next page) are variables of the module (creditstext.mod sets them, credits.def and the tests read
+ * them): read from the registry where the script reads them, written there where it writes them. EndOfCredits (a
  * function), the scheduled steps and Menu.MovieScorerCall stay by name.
  */
 #include <string.h>
@@ -26,58 +26,48 @@ static const char credits_def[] = {
 
 #define CREDITS_ITEM "Credits"
 
-static struct {
-	nativeVal_t maxLines;		/* MAX_TEXT_LINES: an int or a float, else 20 */
-	nativeVal_t textInfo;		/* TextInfo: the lines (a list, tuple or text) */
-	nativeVal_t textPos;		/* TextPos: (x, y) */
-	nativeVal_t textFont;		/* TextFont */
-	nativeVal_t textLines;		/* TextLines: the count of lines with a text, a number */
-	nativeVal_t ctr;		/* ctr: the corner of the next page, 0 to 3 */
-} credits;
-
-/* OBJLIB 5: the mirror in the module dict, read where the script reads each variable */
-static const nativeVar_t credits_vars[] = {
-	{ "MAX_TEXT_LINES", &credits.maxLines, 0, NV_ANY },
-	{ "TextInfo", &credits.textInfo, 0, NV_ANY },
-	{ "TextPos", &credits.textPos, 0, NV_ANY },
-	{ "TextFont", &credits.textFont, 0, NV_ANY },
-	{ "TextLines", &credits.textLines, 0, NV_ANY },
-	{ "ctr", &credits.ctr, 0, NV_ANY },
-	{ NULL, NULL, 0, 0 },
-};
+/* the variables of the module: MAX_TEXT_LINES (an int or a float, else 20), TextInfo (the lines: a list, tuple or
+ * text), TextPos ((x, y)), TextFont, TextLines (the count of lines with a text, a number), ctr (the corner of the
+ * next page, 0 to 3) */
+static const char *const credits_names[] = { "MAX_TEXT_LINES", "TextInfo", "TextPos", "TextFont", "TextLines", "ctr" };
 enum { CV_MAX, CV_INFO, CV_POS, CV_FONT, CV_LINES, CV_CTR };
 
-/* the variable k of the table from the module: 0 with the error of the script's read (an AttributeError) */
-static byte Credits_Read(int k) {
-	const nativeVar_t one[] = { credits_vars[k], { NULL, NULL, 0, 0 } };
-	return Native_Import("CreditsText", one);
+/* the variable k from the module into *out (Native_Free it): 0 with the error of the script's read (an
+ * AttributeError) */
+static byte Credits_Read(int k, nativeVal_t *out) {
+	Native_SetNone(out);
+	return Native_VarTake("CreditsText", credits_names[k], 0, NV_ANY, out);
 }
 
-/* the C value of the variable k into the module, as Script_SetVar of the script port (a failed set is no error) */
-static void Credits_Put(int k) {
-	if (!Native_Put("CreditsText", &credits_vars[k], 0)) {
+/* the variable k of the module set to v, as Script_SetVar of the script port (a failed set is no error) */
+static void Credits_Put(int k, const nativeVal_t *v) {
+	if (!Mode_SetModVar("CreditsText", credits_names[k], v)) {
 		Mode_DropError();
 	}
 }
 
 /* the number of a variable as Script_GetInt and Script_GetFloat read it (an int or a float, else def) */
 static double Credits_Num(int k, double def) {
-	if (!Credits_Read(k)) {
+	nativeVal_t v;
+	if (!Credits_Read(k, &v)) {
 		Mode_DropError();
 		return def;
 	}
-	const nativeVal_t *v = credits_vars[k].values;
-	return v->type == NV_INT ? (double)v->i : v->type == NV_FLOAT ? v->f : def;
+	double d = v.type == NV_INT ? (double)v.i : v.type == NV_FLOAT ? v.f : def;
+	Native_Free(&v);
+	return d;
 }
 
 /* range(MAX_TEXT_LINES) (Script_GetInt: an int, a float cut, else 20) */
 static int Credits_Max(void) {
-	if (!Credits_Read(CV_MAX)) {
+	nativeVal_t v;
+	if (!Credits_Read(CV_MAX, &v)) {
 		Mode_DropError();
 		return 20;
 	}
-	const nativeVal_t *v = &credits.maxLines;
-	return v->type == NV_INT ? (int)v->i : v->type == NV_FLOAT ? (int)v->f : 20;
+	int n = v.type == NV_INT ? (int)v.i : v.type == NV_FLOAT ? (int)v.f : 20;
+	Native_Free(&v);
+	return n;
 }
 
 /* the line i of the page: SScorer.Set(id, "Credits", "Text<i>", text) */
@@ -112,26 +102,25 @@ static byte Credits_Init(void) {
 	if (!Mode_Import("Menu")) {
 		return 0;
 	}
-	/* OBJLIB 5: the module's own function goes into a variable of Menu as the object it is (Menu calls it through its
-	 * entry) */
+	/* OBJLIB 5 (9c): the module's own function goes into a variable of Menu as the object it is (Menu calls it through
+	 * its entry) */
 	return Mode_ModTo("Menu", "MovieScorerCall", "CreditsText", "CreditsScorer") && Credits_Scorer(0);
 }
 
 /* PrintData(Vis): the lines of TextInfo on the page of player 0 */
 static byte Credits_Print(void) {
 	int n;
-	if (!Credits_Read(CV_INFO) || !Native_Len(&credits.textInfo, &n)) {
-		return 0;
-	}
-	byte ok = 1;
+	nativeVal_t info;
+	byte ok = Credits_Read(CV_INFO, &info) && Native_Len(&info, &n);
 	for (int i = 0; ok && i < n; i++) {
 		nativeVal_t tmp;
-		const nativeVal_t *line = Native_GetItem(&credits.textInfo, i, 0, &tmp);
+		const nativeVal_t *line = Native_GetItem(&info, i, 0, &tmp);
 		ok = line && Credits_SetLine(0, i, line);
 		if (line == &tmp) {
 			Native_Free(&tmp);
 		}
 	}
+	Native_Free(&info);
 	return ok;
 }
 
@@ -141,15 +130,14 @@ static byte Credits_Print(void) {
 static byte Credits_PrintGuay(double vis) {
 	static const char chars[] = "abcdefghijklmnopqrstuvwxyz0123456789!$%&/=?|@#\\/*+-.";
 	int n;
-	if (!Credits_Read(CV_INFO) || !Native_Len(&credits.textInfo, &n)) {
-		return 0;
-	}
-	byte ok = 1;
+	nativeVal_t info;
+	byte ok = Credits_Read(CV_INFO, &info) && Native_Len(&info, &n);
 	for (int i = 0; ok && i < n; i++) {
 		nativeVal_t tmp, txt;
-		const nativeVal_t *line = Native_GetItem(&credits.textInfo, i, 0, &tmp);
+		const nativeVal_t *line = Native_GetItem(&info, i, 0, &tmp);
 		if (!line) {
-			return 0;
+			ok = 0;
+			break;
 		}
 		const char *s = "";
 		int len = 0;
@@ -180,6 +168,7 @@ static byte Credits_PrintGuay(double vis) {
 			Native_Free(&tmp);
 		}
 	}
+	Native_Free(&info);
 	return ok;
 }
 
@@ -252,8 +241,8 @@ static byte Credits_ShowDown(const nativeVal_t *val, nativeVal_t *out) {
 	if (Credits_Cmp(val, 0.5, 1) < 0) {
 		return Credits_Step("ShowDown", val, 0.05);
 	}
-	/* EndOfCredits is a function the level puts into the module (OBJLIB 5, held by reference: OBJLIB 7), called through
-	 * its entry (ShowDown gives what it gives) */
+	/* EndOfCredits is a function the level puts into the module (OBJLIB 5 (9c), held by reference: OBJLIB 7), called
+	 * through its entry (ShowDown gives what it gives) */
 	nativeVal_t end;
 	int t = Mode_ModGet("CreditsText", "EndOfCredits", &end) ? Mode_Truth(&end) : -1;
 	byte ok = t == 0 || (t > 0 && Mode_CallArgs(&end, out, NULL, 0));
@@ -272,15 +261,14 @@ static byte Credits_Right(const nativeVal_t *x, nativeVal_t *out) {
  * empty line) in the next corner of the screen (ctr goes round: top left, bottom right, top right, bottom left) */
 static byte Credits_Show(const char *rep) {
 	char cad[0x80];
+	nativeVal_t lines, info, font, ctr, pos;
 	Str_Printf(cad, sizeof(cad), "Credits_%s_", rep);
-	Native_Free(&credits.textLines);
-	Native_SetInt(&credits.textLines, 0);
-	Credits_Put(CV_LINES);
-	Native_Free(&credits.textInfo);
-	Native_SetEmpty(&credits.textInfo, NV_LIST);
-	Credits_Put(CV_INFO);
-	int lines = 0;
-	byte ok = Credits_Read(CV_FONT);
+	Native_SetInt(&lines, 0);
+	Credits_Put(CV_LINES, &lines);
+	Native_SetEmpty(&info, NV_LIST);
+	Credits_Put(CV_INFO, &info);
+	int count = 0;
+	byte ok = Credits_Read(CV_FONT, &font);
 	for (int i = 0, n = ok ? Credits_Max() : 0; ok && i < n; i++) {
 		char key[0xa0];
 		Str_Printf(key, sizeof(key), "%s%d", cad, i + 1);
@@ -288,32 +276,35 @@ static byte Credits_Show(const char *rep) {
 		const char *txt = Script_Lang(key);
 		if (*txt && strcmp(txt, "-")) {
 			/* SScorer.GetTextArea(TextFont, txt): the script measures the line for a width it never uses */
-			const char *font;
-			ok = Native_ArgStr(&credits.textFont, 1, &font);
+			const char *f;
+			ok = Native_ArgStr(&font, 1, &f);
 			if (ok) {
 				float rect[2], size[2];
-				Font_TextSize(Font_Get(font), rect, size, 0.0f, 0.0f, "%s", txt);
-				Native_SetText(Native_Append(&credits.textInfo), txt, (int)strlen(txt));
-				Native_SetInt(&credits.textLines, ++lines);
-				Credits_Put(CV_LINES);
+				Font_TextSize(Font_Get(f), rect, size, 0.0f, 0.0f, "%s", txt);
+				Native_SetText(Native_Append(&info), txt, (int)strlen(txt));
+				Native_SetInt(&lines, ++count);
+				Credits_Put(CV_LINES, &lines);
 			}
 		} else {
-			Native_SetStr(Native_Append(&credits.textInfo), "");
+			Native_SetStr(Native_Append(&info), "");
 		}
 	}
+	Native_Free(&font);
 	/* the lines so far, as the script's list has them */
-	Credits_Put(CV_INFO);
+	Credits_Put(CV_INFO, &info);
+	Native_Free(&info);
 	nativeVal_t sizex = { 0 };
-	if (!ok || !Native_GVarGet("R_CreditsSizeX", &sizex) || !Credits_Read(CV_CTR)) {
+	if (!ok || !Native_GVarGet("R_CreditsSizeX", &sizex) || !Credits_Read(CV_CTR, &ctr)) {
 		Native_Free(&sizex);
 		return 0;
 	}
 	int corner = -1;
 	for (int k = 0; k < 4 && corner < 0; k++) {
-		if (Credits_Cmp(&credits.ctr, k, 0) == 0) {
+		if (Credits_Cmp(&ctr, k, 0) == 0) {
 			corner = k;
 		}
 	}
+	Native_Free(&ctr);
 	nativeVal_t right = { 0 };
 	ok = !(corner == 1 || corner == 2) || Credits_Right(&sizex, &right);
 	Native_Free(&sizex);
@@ -322,35 +313,35 @@ static byte Credits_Show(const char *rep) {
 			return 0;
 		}
 		static const int y0[4] = { 80, 300, 80, 300 }, dy[4] = { 0, 25, 0, 23 };
-		Native_Free(&credits.textPos);
-		Native_SetEmpty(&credits.textPos, NV_TUPLE);
-		nativeVal_t *x = Native_Append(&credits.textPos);
+		Native_SetEmpty(&pos, NV_TUPLE);
+		nativeVal_t *x = Native_Append(&pos);
 		if (corner == 1 || corner == 2) {
 			*x = right;
 		} else {
 			Native_SetInt(x, 50);
 		}
-		Native_SetInt(Native_Append(&credits.textPos), y0[corner] - lines * dy[corner]);
-		Credits_Put(CV_POS);
-		Native_Free(&credits.ctr);
-		Native_SetInt(&credits.ctr, (corner + 1) % 4);
-		Credits_Put(CV_CTR);
+		Native_SetInt(Native_Append(&pos), y0[corner] - count * dy[corner]);
+		Credits_Put(CV_POS, &pos);
+		Native_Free(&pos);
+		Native_SetInt(&ctr, (corner + 1) % 4);
+		Credits_Put(CV_CTR, &ctr);
 	}
 	/* Scrap.Set("R_CreditsX", TextPos[0]), Scrap.Set("R_CreditsY", TextPos[1]) */
-	if (!Credits_Read(CV_POS)) {
+	if (!Credits_Read(CV_POS, &pos)) {
 		return 0;
 	}
 	static const char *const gvars[2] = { "R_CreditsX", "R_CreditsY" };
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; ok && i < 2; i++) {
 		nativeVal_t tmp;
-		const nativeVal_t *v = Native_GetItem(&credits.textPos, i, 0, &tmp);
+		const nativeVal_t *v = Native_GetItem(&pos, i, 0, &tmp);
 		ok = v && Native_GVarSet(gvars[i], v);
 		if (v == &tmp) {
 			Native_Free(&tmp);
 		}
-		if (!ok) {
-			return 0;
-		}
+	}
+	Native_Free(&pos);
+	if (!ok) {
+		return 0;
 	}
 	nativeVal_t half;
 	Native_SetFloat(&half, 0.5);

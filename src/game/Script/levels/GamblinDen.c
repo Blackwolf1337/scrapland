@@ -7,20 +7,20 @@
  * save variables, the alarm off) stay in the scripts.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
- * script reads them and write them through at once (OBJLIB 5), and call the engine in C: the save variables, the
+ * script reads them and write them through at once, and call the engine in C: the save variables, the
  * language texts, the entities and their variables, the dummy search, the time. The engine functions the cases record
  * or swap go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, Scrap.Rand, Scrap.UsrEntity, Scrap.Set,
  * SScorer.SetMsgText, SScorer.Set, SScorer.Fade, SSound.SetMusic, SSound.SetMusicVolume. Entities the script holds are
  * handle values (OBJLIB 7). CharsNPC.CharRes and the other variables of other modules that hold objects are read as
- * objects (OBJLIB 5).
+ * objects (OBJLIB 5 (9c: instances and functions)).
  *
- * Direct calls (stage 3): the other ports (Speech, CharsNPC, Chars, Elevator, MissionsFuncs, Scene, RaceMaker, Menu) and
- * the C functions of the module go through their refs (PORT_CALL, PORT_LOWN, LV_ONEND, LV_COM; the arrange and
+ * Direct calls (stage 3): the other ports (Speech, CharsNPC, Chars, Elevator, MissionsFuncs, Scene, RaceMaker, Menu)
+ * and the C functions of the module go through their refs (PORT_CALL, PORT_LOWN, LV_ONEND, LV_COM; the arrange and
  * mercenary talks take the ref of their end function; Map.CreateFixedInit has its entry on Orbit.c's
  * Level_FixedInitN). The call tables of the scenes and apply call a port's function through its entry (Mode_Calls,
  * Mode_ApplyNext), and so do the scheduled calls (Mode_Later, Mode_LaterV, the remote message of
  * LaunchDeepThroatMessage; Port_Scheduled). By name stay the functions set as callbacks (CallbackFunc, AfterBrowseNPC,
- * EndOfSceneCallback, DialogController, SpeechRoutines; OBJLIB 5).
+ * EndOfSceneCallback, DialogController, SpeechRoutines; OBJLIB 5 (9c)).
  */
 #include <string.h>
 
@@ -56,7 +56,7 @@ static byte Gd_MusicVolume(double volume) {
 /* CharsNPC.CharRes[name].var into *out (any value: an object as NV_OBJ), and its set */
 static byte Gd_ResGet(const nativeVal_t *name, const char *var, nativeVal_t *out) {
 	nativeVal_t ch, v = { 0 };
-	byte ok = Mode_RefTake(Mode_CharRes(name), &ch) && Mode_RefGetAttr(&ch, var, &v);
+	byte ok = Mode_CharRes(name, &ch) && Mode_RefGetAttr(&ch, var, &v);
 	if (ok) {
 		Mode_RefPlain(&v, out);
 	}
@@ -67,7 +67,7 @@ static byte Gd_ResGet(const nativeVal_t *name, const char *var, nativeVal_t *out
 
 static byte Gd_ResSet(const nativeVal_t *name, const char *var, const nativeVal_t *v) {
 	nativeVal_t ch;
-	byte ok = Mode_RefTake(Mode_CharRes(name), &ch) && Mode_VSet(&ch, var, v);
+	byte ok = Mode_CharRes(name, &ch) && Mode_VSet(&ch, var, v);
 	Native_Free(&ch);
 	return ok;
 }
@@ -93,10 +93,10 @@ static byte Gd_ResDel(const char *name) {
 /* CharsNPC.CharRes[name].CallbackFunc.append(fn) with fn the function already read (a global or Map.X, its NameError or
  * AttributeError before the lookup of the character, as the script's lines were ported) */
 static byte Gd_Callback(const char *name, const nativeVal_t *fn) {
-	/* OBJLIB 5 and 7: the character object of CharsNPC and its list, by reference */
+	/* OBJLIB 5 (9c: an instance) and 7: the character object of CharsNPC and its list, by reference */
 	nativeVal_t k = { 0 }, ch, cb = { 0 };
 	LvN_Str(&k, name);
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && Mode_RefAttr(&ch, "CallbackFunc", &cb) &&
+	byte ok = Mode_CharRes(&k, &ch) && Mode_RefAttr(&ch, "CallbackFunc", &cb) &&
 		Mode_RefCall(&cb, "append", fn, 1, NULL);
 	Native_Free(&cb);
 	Native_Free(&ch);
@@ -460,7 +460,7 @@ static byte Den_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
 		Mode_DummyStart(mercs[i][1], 0);
 		LvN_Str(&name, mercs[i][0]);
 		nativeVal_t res;
-		byte ok = Mode_RefTake(Mode_CharRes(&name), &res);
+		byte ok = Mode_CharRes(&name, &res);
 		Native_Free(&name);
 		if (!ok) {
 			return 0;

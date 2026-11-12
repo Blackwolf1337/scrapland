@@ -11,16 +11,17 @@
  * script). The functions call the others of their module through the module's globals.
  *
  * The modules are native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the variables of
- * Init and of their module where the scripts read them (OBJLIB 5: ItemTake changed in place, the door lists sorted as
+ * Init and of their module where the scripts read them (ItemTake changed in place, the door lists sorted as
  * the objects they are). Scrap.GetEntity, Set, OpenPack, ClosePack, ConsoleError, SSound.LoadSound and the SAct
  * functions go through their seams (OBJLIB 7); string.upper is C. The calls of the module functions through the
  * globals, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound go through their refs (PORT_OWN,
- * PORT_CALL: the seam, OBJLIB 5), and so do SAct.GetAction of a value that is no text, SSound.CreatePS and SetPS
+ * PORT_CALL: the seam, OBJLIB 5 (9c)), and so do SAct.GetAction of a value that is no text, SSound.CreatePS and SetPS
  * (stage 7). The .def runner takes its $names as a dict and gives its steps
  * Python arguments (OBJLIB 6).
  */
 #include <string.h>
 
+#include "scrap/nativeobj.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -434,11 +435,11 @@ PyMethodDef g_OutSoundMethods[] = {
 
 #define DOOR "DoorSound"
 
-/* LoadSndList(list) of the module's global with a list as the object it is (OBJLIB 5: the lists of the module are
- * sorted in place) */
-static byte Gs_LoadSndListOf(PyObject *list) {
-	byte ok = list && PORT_OWN(DoorSound, LoadSndList, NULL, "P", list);
-	Py_XDECREF(list);
+/* LoadSndList(list) of the module's global with a list as the object it is (the lists of the module are sorted in
+ * place); list made by the caller (0: its error) and freed */
+static byte Gs_LoadSndListOf(byte made, nativeVal_t *list) {
+	byte ok = made && PORT_OWN(DoorSound, LoadSndList, NULL, "v", list);
+	Native_Free(list);
 	return ok;
 }
 
@@ -450,12 +451,13 @@ static byte Gs_LoadSounds(void) {
 		!Mode_ModGet("Init", "UpperMap", map) || !Mode_CallArgs(has, r, map, 1)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Native_True(r)) {
-		Native_Free(map);
-		return Mode_Done(&t, Mode_ModGet("Init", "UpperMap", map) && Gs_LoadSndListOf(Mode_AtPy(DOOR, "SoundList", map)));
-	}
+	byte listed = Native_True(r);
 	Native_Free(map);
-	return Mode_Done(&t, Gs_LoadSndListOf(Mode_GlobalPy(DOOR, "AllSounds")) && Mode_ModGet("Init", "UpperMap", map) &&
+	Native_Free(r);
+	if (listed) {
+		return Mode_Done(&t, Mode_ModGet("Init", "UpperMap", map) && Gs_LoadSndListOf(Mode_AtVal(DOOR, "SoundList", map, r), r));
+	}
+	return Mode_Done(&t, Gs_LoadSndListOf(Mode_RefG(DOOR, "AllSounds", r), r) && Mode_ModGet("Init", "UpperMap", map) &&
 		Mode_Cat(&t, msg, 3, Mode_S(&t, "S O N O R U S    E R R O R : "), map, Mode_S(&t, " not in DoorSound.py.\n")) &&
 		Mode_ConsoleError(msg));
 }
@@ -479,7 +481,21 @@ static byte Gs_LoadSndList(nativeVal_t *list) {
 	return n >= 0;
 }
 
-/* LoadSndList of the list object: sorted in place as the object it is (OBJLIB 5), then the loads */
+/* LoadSndList of the list object: sorted in place as the object it is (a native list without a crossing), then the
+ * loads */
+static byte Gs_LoadSndListObj(const nativeVal_t *list) {
+	nativeVal_t r, v;
+	if (!NObj_CallMethod(list, "sort", NULL, 0, &r)) {
+		return 0;
+	}
+	Native_Free(&r);
+	NObj_ArgOf(list, &v);
+	byte ok = Gs_LoadSndList(&v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* the same for a list made from a value (the new list of a call through Python) */
 static byte Gs_LoadSndListPy(PyObject *list) {
 	PyObject *r = Script_Method(list, "sort", "()");
 	if (!r) {
@@ -500,17 +516,18 @@ static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	if (n != 1) {
 		return Port_Arity(n, 1);
 	}
-	/* OBJLIB 5: the list object itself, sorted in place */
-	PyObject *list = Native_IsObj(&a[0]) ? Native_PyOf(&a[0]) : Native_ToPy(&a[0]);
+	/* the list object itself, sorted in place */
 	if (Native_IsObj(&a[0])) {
-		Py_INCREF(list);
+		return Gs_LoadSndListObj(&a[0]);
 	}
+	PyObject *list = Native_ToPy(&a[0]);
 	byte ok = list && Gs_LoadSndListPy(list);
 	Py_XDECREF(list);
 	return ok;
 }
 
-/* the adapter of LoadSndList: the list (argument 0) as the object it is (OBJLIB 5: sorted in place; Mode_EntryObj) */
+/* the adapter of LoadSndList: the list (argument 0) as the object it is (sorted in place; OBJLIB 5 (7e: Mode_EntryObj))
+ * */
 static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
 	(void)self;
 	return Mode_EntryObj(args, DoorSound_LoadSndList_E, 1 << 0);

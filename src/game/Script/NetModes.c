@@ -9,13 +9,12 @@
  * (m) and a variant (v: 1 for the team version of a mode), the per-module entries only pass them on.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values and call the engine in C. The
- * variables of the modes stay in their module dicts, because the tests and Ffa read them and a mission or a test may
- * replace them: the menu entries (MultiplayerMenuOnGame, MultiplayerMenuSpectator), TeamGame, BotsList, the model
- * names, AUTO_RESPAWN_FLAG_TIME and the state of the flag modes (Flag, ZoneList, AcFlag or AcZone, FlagSpawnPos).
- * The C keeps the values it works on in the struct of each mode (nm_state) and reads them from the dict where the
- * script reads the global (OBJLIB 5). The modes read and write the variables of Ffa (Scorer, the team totals,
- * ScorerFraglimit, MasterFlag; OBJLIB 5). The module code of NPostman and NTeamPost creates their flag entity when
- * the module loads; it stays in the .mod files.
+ * variables of the modes stay variables of their modules, because the tests and Ffa read them and a mission or a test
+ * may replace them: the menu entries (MultiplayerMenuOnGame, MultiplayerMenuSpectator), TeamGame, BotsList, the model
+ * names, AUTO_RESPAWN_FLAG_TIME and the state of the flag modes (Flag, ZoneList, AcFlag or AcZone, FlagSpawnPos). The
+ * C reads them from the registry where the script reads the global and keeps no copy. The modes read and write
+ * the variables of Ffa (Scorer, the team totals, ScorerFraglimit, MasterFlag). The module code of NPostman and
+ * NTeamPost creates their flag entity when the module loads; it stays in the .mod files.
  *
  * State on values (stage 6, batch 6f): no function works on Python objects. What a native value cannot say yet is
  * held by reference (NV_OBJ) and goes through the helpers of scrap/scriptmodes.h, OBJLIB 7: Flag and the zones in
@@ -27,7 +26,7 @@
  * one; the shared code picks the site of its module, FL_OWN, PO_OWN, FP_OWN) and Ffa, Menu and VehiclesNPC through
  * PORT_CALL (scrap/scriptnative.h: the port seam). The functions given to the scheduler by name (Reborn,
  * CheckBotState, TryLinkFlagTo, RespawnFlag) take their entries (stage 4: Port_Scheduled). What stays by name:
- * TryGarage set into ShipEdit as a value (OBJLIB 5). SAI.SetStateVehicle goes through its ref (stage 7).
+ * TryGarage set into ShipEdit as a value (OBJLIB 5 (9c)). SAI.SetStateVehicle goes through its ref (stage 7).
  */
 #include <limits.h>
 #include <string.h>
@@ -51,15 +50,6 @@ static const struct {
 };
 #define NM_MODES (int)(sizeof(nm_texts) / sizeof(nm_texts[0]))
 
-/* the values of each mode the C works on (OBJLIB 5: mirrored, the dict holds them between calls) */
-typedef struct {
-	nativeVal_t ac;			/* AcFlag or AcZone: the key of ZoneList the flag goes to */
-	nativeVal_t zoneList;		/* the flag modes: the flag positions by zone (the postman zones are handles) */
-	nativeVal_t flagSpawnPos;	/* the postman modes: the start of the flag */
-} nmState_t;
-
-static nmState_t nm_state[NM_MODES];
-
 static int Nm_Index(const char *m) {
 	for (int i = 0; i < NM_MODES; i++) {
 		if (!strcmp(nm_texts[i].mod, m)) {
@@ -73,7 +63,7 @@ static const char *Nm_Text(const char *m, int help) {
 	return help ? nm_texts[Nm_Index(m)].help : nm_texts[Nm_Index(m)].title;
 }
 
-/* Ffa.<name> into *out (OBJLIB 5: a variable of Ffa) */
+/* Ffa.<name> into *out (a variable of Ffa) */
 static byte Nm_Ffa(const char *name, nativeVal_t *out) {
 	return Mode_ModVar("Ffa", name, out);
 }
@@ -378,7 +368,7 @@ static byte Bots_InitServerModC(const char *m) {
 			return 0;
 		}
 	}
-	/* ShipEdit.EnterEditShipMenu = TryGarage (OBJLIB 5: a function of the module as a value; the calls of
+	/* ShipEdit.EnterEditShipMenu = TryGarage (OBJLIB 5 (9c: a function of the module as a value); the calls of
 	 * EnterEditShipMenu through its ref take the slow path to it) */
 	nativeVal_t *bots = Mode_V(&t);
 	if (!Mode_ModSetGlobal("ShipEdit", "EnterEditShipMenu", m, "TryGarage") || !Mode_G(m, "BotsList", bots)) {
@@ -493,7 +483,7 @@ static byte Fl_DeathFuncC(int v, const nativeVal_t *a) {
  * the second) when it is the last one */
 static byte Fl_RndKey(const char *m, const char *ac) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *slot = &nm_state[Nm_Index(m)].ac;
+	nativeVal_t *slot = Mode_V(&t);
 	nativeVal_t *k = Mode_V(&t), *last = Mode_V(&t), *n = Mode_V(&t), *i = Mode_V(&t), *key = Mode_V(&t);
 	int len;
 	if (!Mode_Keys(m, "ZoneList", 1, k) || !Mode_G(m, ac, last) || (len = Native_Size(k)) < 0 || !Mode_Rand(Mode_I(&t, 0), Mode_I(&t, len), n) ||
@@ -519,7 +509,7 @@ static byte Fl_RndKey(const char *m, const char *ac) {
  * prints each dummy) */
 static byte Fl_BrowseAreasC(const char *m, int v) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *zones = &nm_state[Nm_Index(m)].zoneList, *empty = Mode_V(&t), *dummy = Mode_V(&t);
+	nativeVal_t *zones = Mode_V(&t), *empty = Mode_V(&t), *dummy = Mode_V(&t);
 	Native_SetEmpty(empty, NV_DICT);
 	if (!Mode_Put(m, "ZoneList", zones, empty)) {
 		return Mode_Done(&t, 0);
@@ -562,14 +552,14 @@ static byte Fl_FlagSetup(const char *m, int server, byte postman) {
 		return Mode_Done(&t, 0);
 	}
 	if (server) {
-		nmState_t *st = &nm_state[Nm_Index(m)];
+		nativeVal_t *spawn = Mode_V(&t), *zones = Mode_V(&t), *ac = Mode_V(&t);
 		byte ok = postman || FL_OWN(m, GetRndFlag, NULL, "");
 		ok = ok && Mode_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag"));
 		if (postman) {
-			ok = ok && Mode_Read(m, "FlagSpawnPos", &st->flagSpawnPos) && Mode_FlagSet(m, "Pos", &st->flagSpawnPos);
+			ok = ok && Mode_Read(m, "FlagSpawnPos", spawn) && Mode_FlagSet(m, "Pos", spawn);
 		} else {
-			ok = ok && Mode_Read(m, "ZoneList", &st->zoneList) && Mode_Read(m, "AcFlag", &st->ac) &&
-				Native_Subscript(&st->zoneList, &st->ac, pos) && Mode_FlagSet(m, "Pos", pos);
+			ok = ok && Mode_Read(m, "ZoneList", zones) && Mode_Read(m, "AcFlag", ac) &&
+				Native_Subscript(zones, ac, pos) && Mode_FlagSet(m, "Pos", pos);
 		}
 		if (!ok || !Mode_GVarSet("OnClientJoin", Mode_Name(&t, m, "ClientJoin"))) {
 			return Mode_Done(&t, 0);
@@ -605,10 +595,9 @@ static int Fl_Mine(modeVals_t *t, cEntity *usr, const nativeVal_t *taker, byte t
  * NTeamFlag) or else of an enemy */
 static byte Fl_TakeFlagC(const char *m, int v, const nativeVal_t *taker) {
 	modeVals_t t = { .n = 0 };
-	nmState_t *st = &nm_state[Nm_Index(m)];
-	nativeVal_t *pos = Mode_V(&t);
-	if (!Mode_Import("Sound") || !Mode_Read(m, "ZoneList", &st->zoneList) || !Mode_Read(m, "AcFlag", &st->ac) ||
-		!Native_Subscript(&st->zoneList, &st->ac, pos) || !Mode_FlagSet(m, "Pos", pos)) {
+	nativeVal_t *zones = Mode_V(&t), *ac = Mode_V(&t), *pos = Mode_V(&t);
+	if (!Mode_Import("Sound") || !Mode_Read(m, "ZoneList", zones) || !Mode_Read(m, "AcFlag", ac) ||
+		!Native_Subscript(zones, ac, pos) || !Mode_FlagSet(m, "Pos", pos)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_Compare(taker, Mode_S(&t, ""))) {
@@ -633,7 +622,7 @@ static byte Fl_UsrClientC(const char *m, const char *ac, int drop, const nativeV
 		if (!Native_Slice(&a[1], 1, INT_MAX, rest) || !Native_EvalText(m, rest, val) || !Mode_Unpack(val, 2, two)) {
 			return Mode_Done(&t, 0);
 		}
-		return Mode_Done(&t, Mode_Put(m, ac, &nm_state[Nm_Index(m)].ac, &two[0]) && FP_OWN(m, TakeFlag, NULL, "v", &two[1]));
+		return Mode_Done(&t, Mode_Put(m, ac, NULL, &two[0]) && FP_OWN(m, TakeFlag, NULL, "v", &two[1]));
 	}
 	if (drop) {
 		Native_Free(c0);
@@ -662,7 +651,7 @@ static byte Nm_Join(modeVals_t *t, const nativeVal_t *a, nativeVal_t *id) {
  * then the current zone to the new client */
 static byte Fl_ClientJoinC(const char *m, const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *id = Mode_V(&t), *s = Mode_V(&t), *ac = &nm_state[Nm_Index(m)].ac;
+	nativeVal_t *id = Mode_V(&t), *s = Mode_V(&t), *ac = Mode_V(&t);
 	return Mode_Done(&t, Nm_Join(&t, a, id) && Mode_Read(m, "AcFlag", ac) && Mode_Cat(&t, s, 3, Mode_S(&t, "F'"), ac, Mode_S(&t, "',''")) &&
 		Mode_Send(id, s));
 }
@@ -672,7 +661,7 @@ static byte Fl_ClientJoinC(const char *m, const nativeVal_t *a) {
 static byte Fl_ServerTakeFlagC(const char *m, int v, const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *veh = (nativeVal_t *)&a[1], *started = Mode_V(&t), *s = Mode_V(&t), *end = Mode_V(&t);
-	nativeVal_t *ac = &nm_state[Nm_Index(m)].ac;
+	nativeVal_t *ac = Mode_V(&t);
 	int has;
 	if (!Mode_Import("Ffa") || (has = Mode_HasKey("Ffa", "Scorer", 0, veh)) < 0) {
 		return Mode_Done(&t, 0);
@@ -719,11 +708,10 @@ static byte Po_ServerHidePlayerC(const char *m, const nativeVal_t *veh) {
  * dummy by the rest of its name (OBJLIB 7: the zones are handles in the dict) */
 static byte Po_BrowseAreasC(const char *m) {
 	modeVals_t t = { .n = 0 };
-	nmState_t *st = &nm_state[Nm_Index(m)];
 	nativeVal_t *dummy = Mode_V(&t), *pos = Mode_V(&t);
 	Mode_DummyStart("DM_Domination_Flag", 0);
 	Mode_DummyNext(dummy);
-	if (!Native_Subscript(dummy, Mode_I(&t, 1), pos) || !Mode_Put(m, "FlagSpawnPos", &st->flagSpawnPos, pos)) {
+	if (!Native_Subscript(dummy, Mode_I(&t, 1), pos) || !Mode_Put(m, "FlagSpawnPos", NULL, pos)) {
 		return Mode_Done(&t, 0);
 	}
 	/* ZoneList = {} (a new dict object in the variable; the zones go into it in place) */
@@ -796,17 +784,22 @@ static byte Po_TryLinkFlagToC(const char *m, const nativeVal_t *a) {
 
 /* ZoneList[AcZone].var = v (OBJLIB 7: the zones are entity handles in the dict) */
 static byte Po_ZoneSet(const char *m, const char *var, const nativeVal_t *v) {
-	nativeVal_t *ac = &nm_state[Nm_Index(m)].ac;
-	return Mode_Read(m, "AcZone", ac) && Mode_AtSet(m, "ZoneList", ac, var, v);
+	nativeVal_t ac;
+	Native_SetNone(&ac);
+	byte ok = Mode_Read(m, "AcZone", &ac) && Mode_AtSet(m, "ZoneList", &ac, var, v);
+	Native_Free(&ac);
+	return ok;
 }
 
 /* Scrap.Set("CurrentWaypointName", ZoneList[AcZone].Name) */
 static byte Po_WayToZone(const char *m) {
-	nativeVal_t name, *ac = &nm_state[Nm_Index(m)].ac;
+	nativeVal_t name, ac;
 	Native_SetNone(&name);
-	byte ok = Mode_Read(m, "AcZone", ac) && Mode_AtGet(m, "ZoneList", ac, "Name", &name) &&
+	Native_SetNone(&ac);
+	byte ok = Mode_Read(m, "AcZone", &ac) && Mode_AtGet(m, "ZoneList", &ac, "Name", &name) &&
 		Mode_GVarSet("CurrentWaypointName", &name);
 	Native_Free(&name);
+	Native_Free(&ac);
 	return ok;
 }
 
@@ -908,7 +901,7 @@ static byte Po_SendDrop(modeVals_t *t, const nativeVal_t *pos) {
 /* ClientJoin(...): the join of Ffa, then the carrier and zone to the new client, or the flag's place to all */
 static byte Po_ClientJoinC(const char *m, const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *id = Mode_V(&t), *mf = Mode_V(&t), *s = Mode_V(&t), *pos = Mode_V(&t), *ac = &nm_state[Nm_Index(m)].ac;
+	nativeVal_t *id = Mode_V(&t), *mf = Mode_V(&t), *s = Mode_V(&t), *pos = Mode_V(&t), *ac = Mode_V(&t);
 	if (!Nm_Join(&t, a, id) || !Nm_Ffa("MasterFlag", mf)) {
 		return Mode_Done(&t, 0);
 	}
@@ -942,7 +935,6 @@ static byte Po_ServerTakeBaseC(const char *m, int v, const nativeVal_t *a) {
  * FlagSpawnPos, for all clients */
 static byte Po_ServerDropFlagC(const char *m) {
 	modeVals_t t = { .n = 0 };
-	nmState_t *st = &nm_state[Nm_Index(m)];
 	nativeVal_t *mf = Mode_V(&t), *pos = Mode_V(&t), *delay = Mode_V(&t);
 	if (!Mode_Import("Ffa") || !Nm_Ffa("MasterFlag", mf)) {
 		return Mode_Done(&t, 0);
@@ -953,10 +945,8 @@ static byte Po_ServerDropFlagC(const char *m) {
 			!Nm_Later(m, delay, "RespawnFlag", NULL, 0, "RespawnMainFlag")) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!Mode_DelSchedS("RespawnMainFlag") || !Mode_Read(m, "FlagSpawnPos", &st->flagSpawnPos)) {
+	} else if (!Mode_DelSchedS("RespawnMainFlag") || !Mode_Read(m, "FlagSpawnPos", pos)) {
 		return Mode_Done(&t, 0);
-	} else {
-		Native_Copy(pos, &st->flagSpawnPos);
 	}
 	return Mode_Done(&t, Po_SendDrop(&t, pos) && Mode_FlagSet(m, "OnTake", Mode_Name(&t, m, "ServerTakeFlag")) &&
 		PO_OWN(m, DropFlag, NULL, "v", pos));
@@ -966,7 +956,7 @@ static byte Po_ServerDropFlagC(const char *m) {
  * clients; before the start a label says to wait */
 static byte Po_ServerTakeFlagC(const char *m, const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *veh = (nativeVal_t *)&a[1], *started = Mode_V(&t), *s = Mode_V(&t), *ac = &nm_state[Nm_Index(m)].ac;
+	nativeVal_t *veh = (nativeVal_t *)&a[1], *started = Mode_V(&t), *s = Mode_V(&t), *ac = Mode_V(&t);
 	int has;
 	if (!Mode_Import("Ffa") || (has = Mode_HasKey("Ffa", "Scorer", 0, veh)) < 0) {
 		return Mode_Done(&t, 0);

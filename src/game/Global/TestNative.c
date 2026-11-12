@@ -29,6 +29,8 @@
  *                            reset; views: the entries of the identity table now), then up to 16 of those views as
  *                            "view <type> holders <n> <repr>"
  *   native ports reset       the counts back to 0
+ *   native vars              (batch 9b2) what the module variables hold now (ModVar_Report): the values by kind,
+ *                            each kind of object as native data, views of Python objects and crossed native data
  *   native objtest           the self-test of the native objects: the checks of ot_script on objects made natively,
  *                            one line "<name>: <repr of the tuple of results>" per check (an error as (type, value),
  *                            as tc_catch gives it), then the objects it made and freed. The same checks run as a
@@ -41,6 +43,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scheduler.h"
@@ -983,6 +986,9 @@ void TestNative_Command(nativeBuf_t *out, const char *arg) {
 		arg += 4;
 	} else if (!strcmp(arg, "ports") || !strcmp(arg, "ports reset")) {
 		TN_Ports(out, arg[5] != 0);
+		return;
+	} else if (!strcmp(arg, "vars")) {
+		ModVar_Report(out);
 		return;
 	} else if (!strcmp(arg, "objtest") || !strcmp(arg, "objtest cross")) {
 		OT_Run(out, arg[7] != 0);
