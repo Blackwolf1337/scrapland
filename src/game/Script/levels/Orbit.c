@@ -155,10 +155,10 @@ static byte Orbit_InitN(void) {
 MODE_FN(Orbit, InitStatus, 1, Orbit_InitStatusN())
 MODE_FN(Orbit, Init, 1, Orbit_InitN())
 
-PyMethodDef g_OrbitMapMethods[] = {
-	{ "InitStatus", Orbit_InitStatus, 1, NULL },
-	{ "Init", Orbit_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OrbitMapMethods[] = {
+	PORT_FN(InitStatus, Orbit_InitStatus),
+	PORT_FN(Init, Orbit_Init),
+	PORT_FNEND
 };
 
 /* ---- MapDecont ---- */
@@ -1144,44 +1144,44 @@ MODE_FN(Decont, JumpNextMission, 1, Decont_JumpNextMissionN())
 MODE_FN(Decont, PlayFunctionary, 4, Decont_PlayFunctionaryN())
 MODE_FN(Decont, LoadFallingScene, 0, Decont_LoadFallingSceneN())
 
-PyMethodDef g_OrbitMapDecontMethods[] = {
-	{ "InitStatus", Decont_InitStatus, 1, NULL },
-	{ "Decontamination", Decont_Decontamination, 1, NULL },
-	{ "EndOfScene", Decont_EndOfScene, 1, NULL },
-	{ "DecontaminatedWaypoint", Decont_DecontaminatedWaypoint, 1, NULL },
-	{ "SetWaypoint", Decont_SetWaypoint, 1, NULL },
-	{ "LoadDecontamination", Decont_LoadDecontamination, 1, NULL },
-	{ "Init", Decont_Init, 1, NULL },
-	{ "MsgOffVoice", Decont_MsgOffVoice, 1, NULL },
-	{ "SetFirstInfoPointAsMission", Decont_SetFirstInfoPointAsMission, 1, NULL },
-	{ "CantUseElevator", Decont_CantUseElevator, 1, NULL },
-	{ "CloseGateKeeperDoor", Decont_CloseGateKeeperDoor, 1, NULL },
-	{ "OpenGateKeeperDoor", Decont_OpenGateKeeperDoor, 1, NULL },
-	{ "AfterBrowseNPC", Decont_AfterBrowseNPC, 1, NULL },
-	{ "CreateFunctionaryInit", Decont_CreateFunctionaryInit, 1, NULL },
-	{ "CreateBishopInit", Decont_CreateBishopInit, 1, NULL },
-	{ "CreateGateKeeperInit", Decont_CreateGateKeeperInit, 1, NULL },
-	{ "CreateSentinelInit", Decont_CreateSentinelInit, 1, NULL },
-	{ "ShowSkipConvsMsg", Decont_ShowSkipConvsMsg, 1, NULL },
-	{ "GateKeeperSpeech", Decont_GateKeeperSpeech, 1, NULL },
-	{ "SentinelSpeech", Decont_SentinelSpeech, 1, NULL },
-	{ "GaugeBlink", Decont_GaugeBlink, 1, NULL },
-	{ "CheckShowNextHowto", Decont_CheckShowNextHowto, 1, NULL },
-	{ "CreateBishopsLauncher", Decont_CreateBishopsLauncher, 1, NULL },
-	{ "EndOfSceneBishops", Decont_EndOfSceneBishops, 1, NULL },
-	{ "LoadBishopsScene", Decont_LoadBishopsScene, 1, NULL },
-	{ "FXBishopsPray", Decont_FXBishopsPray, 1, NULL },
-	{ "PlayBishops", (PyCFunction)(void (*)(void))Decont_PlayBishops, 3, NULL },
-	{ "LoadFunctionaryScene", Decont_LoadFunctionaryScene, 1, NULL },
-	{ "AddDF", (PyCFunction)(void (*)(void))Decont_AddDF, 3, NULL },
-	{ "SetDFAnm", Decont_SetDFAnm, 1, NULL },
-	{ "EndOfSceneFunctionary", Decont_EndOfSceneFunctionary, 1, NULL },
-	{ "CreateDownKeyPad", Decont_CreateDownKeyPad, 1, NULL },
-	{ "PlayFalling", Decont_PlayFalling, 1, NULL },
-	{ "JumpNextMission", Decont_JumpNextMission, 1, NULL },
-	{ "PlayFunctionary", Decont_PlayFunctionary, 1, NULL },
-	{ "LoadFallingScene", Decont_LoadFallingScene, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OrbitMapDecontMethods[] = {
+	PORT_FN(InitStatus, Decont_InitStatus),
+	PORT_FN(Decontamination, Decont_Decontamination),
+	PORT_FN(EndOfScene, Decont_EndOfScene),
+	PORT_FN(DecontaminatedWaypoint, Decont_DecontaminatedWaypoint),
+	PORT_FN(SetWaypoint, Decont_SetWaypoint),
+	PORT_FN(LoadDecontamination, Decont_LoadDecontamination),
+	PORT_FN(Init, Decont_Init),
+	PORT_FN(MsgOffVoice, Decont_MsgOffVoice),
+	PORT_FN(SetFirstInfoPointAsMission, Decont_SetFirstInfoPointAsMission),
+	PORT_FN(CantUseElevator, Decont_CantUseElevator),
+	PORT_FN(CloseGateKeeperDoor, Decont_CloseGateKeeperDoor),
+	PORT_FN(OpenGateKeeperDoor, Decont_OpenGateKeeperDoor),
+	PORT_FN(AfterBrowseNPC, Decont_AfterBrowseNPC),
+	PORT_FN(CreateFunctionaryInit, Decont_CreateFunctionaryInit),
+	PORT_FN(CreateBishopInit, Decont_CreateBishopInit),
+	PORT_FN(CreateGateKeeperInit, Decont_CreateGateKeeperInit),
+	PORT_FN(CreateSentinelInit, Decont_CreateSentinelInit),
+	PORT_FN(ShowSkipConvsMsg, Decont_ShowSkipConvsMsg),
+	PORT_FN(GateKeeperSpeech, Decont_GateKeeperSpeech),
+	PORT_FN(SentinelSpeech, Decont_SentinelSpeech),
+	PORT_FN(GaugeBlink, Decont_GaugeBlink),
+	PORT_FN(CheckShowNextHowto, Decont_CheckShowNextHowto),
+	PORT_FN(CreateBishopsLauncher, Decont_CreateBishopsLauncher),
+	PORT_FN(EndOfSceneBishops, Decont_EndOfSceneBishops),
+	PORT_FN(LoadBishopsScene, Decont_LoadBishopsScene),
+	PORT_FN(FXBishopsPray, Decont_FXBishopsPray),
+	PORT_FNK(PlayBishops, Decont_PlayBishops),
+	PORT_FN(LoadFunctionaryScene, Decont_LoadFunctionaryScene),
+	PORT_FNK(AddDF, Decont_AddDF),
+	PORT_FN(SetDFAnm, Decont_SetDFAnm),
+	PORT_FN(EndOfSceneFunctionary, Decont_EndOfSceneFunctionary),
+	PORT_FN(CreateDownKeyPad, Decont_CreateDownKeyPad),
+	PORT_FN(PlayFalling, Decont_PlayFalling),
+	PORT_FN(JumpNextMission, Decont_JumpNextMission),
+	PORT_FN(PlayFunctionary, Decont_PlayFunctionary),
+	PORT_FN(LoadFallingScene, Decont_LoadFallingScene),
+	PORT_FNEND
 };
 
 /* ---- Mission_IntroHuman ---- */
@@ -1396,16 +1396,16 @@ MODE_FN(Intro, LoadSceneB, 0, Mode_Calls(IH, intro_scene_b))
 MODE_FN(Intro, LoadSceneC, 0,
 	Mode_Calls(IH, intro_scene_c) && Ob_SceneFx(IH, "FXSceneDecontaminationFile", "FXSCENEDECONTAMINATION"))
 
-PyMethodDef g_OrbitIntroHumanMethods[] = {
-	{ "InitStatus", Intro_InitStatus, 1, NULL },
-	{ "Init", Intro_Init, 1, NULL },
-	{ "BillArrives_B", (PyCFunction)(void (*)(void))Intro_BillArrives_B, 3, NULL },
-	{ "BillArrives_C", (PyCFunction)(void (*)(void))Intro_BillArrives_C, 3, NULL },
-	{ "SetNextMission", (PyCFunction)(void (*)(void))Intro_SetNextMission, 3, NULL },
-	{ "LoadSceneA", Intro_LoadSceneA, 1, NULL },
-	{ "LoadSceneB", Intro_LoadSceneB, 1, NULL },
-	{ "LoadSceneC", Intro_LoadSceneC, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OrbitIntroHumanMethods[] = {
+	PORT_FN(InitStatus, Intro_InitStatus),
+	PORT_FN(Init, Intro_Init),
+	PORT_FNK(BillArrives_B, Intro_BillArrives_B),
+	PORT_FNK(BillArrives_C, Intro_BillArrives_C),
+	PORT_FNK(SetNextMission, Intro_SetNextMission),
+	PORT_FN(LoadSceneA, Intro_LoadSceneA),
+	PORT_FN(LoadSceneB, Intro_LoadSceneB),
+	PORT_FN(LoadSceneC, Intro_LoadSceneC),
+	PORT_FNEND
 };
 
 PORTS(levels_Orbit)

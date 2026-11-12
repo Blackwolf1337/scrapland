@@ -256,7 +256,7 @@ static byte Cm_UsePhone(const nativeVal_t *a, const char *module, const cmPhone_
 	return ok;
 }
 
-/* the adapter of a UsePhoneCab(UsrName, CharName, optId, FullOption) of a mission */
+/* the core of a UsePhoneCab(UsrName, CharName, optId, FullOption) of a mission */
 #define CM_PHONE(fn, module, ...) \
 	static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
 		static const cmPhone_t p = { __VA_ARGS__ }; \
@@ -336,10 +336,10 @@ static byte CmMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(CmMap, InitStatusA, 1, CmMap_InitStatus)
 LV_FN(CmMap, InitA, 1, CmMap_Init)
 
-PyMethodDef g_CommercialMapMethods[] = {
-	{ "InitStatus", CmMap_InitStatusA, 1, NULL },
-	{ "Init", CmMap_InitA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialMapMethods[] = {
+	PORT_FN(InitStatus, CmMap_InitStatusA),
+	PORT_FN(Init, CmMap_InitA),
+	PORT_FNEND
 };
 
 /* ---- MapRace ---- */
@@ -360,18 +360,18 @@ RACE(6)
 RACE(7)
 RACE(8)
 
-PyMethodDef g_CommercialMapRaceMethods[] = {
-	{ "InitStatus", MapRace_PassA, 1, NULL },
-	{ "Init", MapRace_PassA, 1, NULL },
-	{ "EasyRaceCommercial1", MapRace_Race1, 1, NULL },
-	{ "EasyRaceCommercial2", MapRace_Race2, 1, NULL },
-	{ "EasyRaceCommercial3", MapRace_Race3, 1, NULL },
-	{ "EasyRaceCommercial4", MapRace_Race4, 1, NULL },
-	{ "EasyRaceCommercial5", MapRace_Race5, 1, NULL },
-	{ "EasyRaceCommercial6", MapRace_Race6, 1, NULL },
-	{ "EasyRaceCommercial7", MapRace_Race7, 1, NULL },
-	{ "EasyRaceCommercial8", MapRace_Race8, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialMapRaceMethods[] = {
+	PORT_FN(InitStatus, MapRace_PassA),
+	PORT_FN(Init, MapRace_PassA),
+	PORT_FN(EasyRaceCommercial1, MapRace_Race1),
+	PORT_FN(EasyRaceCommercial2, MapRace_Race2),
+	PORT_FN(EasyRaceCommercial3, MapRace_Race3),
+	PORT_FN(EasyRaceCommercial4, MapRace_Race4),
+	PORT_FN(EasyRaceCommercial5, MapRace_Race5),
+	PORT_FN(EasyRaceCommercial6, MapRace_Race6),
+	PORT_FN(EasyRaceCommercial7, MapRace_Race7),
+	PORT_FN(EasyRaceCommercial8, MapRace_Race8),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyMickus: scan the transports for Mickus, chase him with the functionaries after the player ---- */
@@ -1023,31 +1023,31 @@ LV_FN(Mickus, TakeMoneyA, 2, Mickus_TakeMoney)
 LV_FN(Mickus, SetNextMissionA, 0, Mickus_SetNextMission)
 LV_FN(Mickus, MissionScorerA, 1, Mickus_MissionScorer)
 
-PyMethodDef g_CommercialDestroyMickusMethods[] = {
-	{ "GetFuncEnemiesProfile", Mickus_GetFuncEnemiesProfileA, 1, NULL },
-	{ "InitStatus", Mickus_InitStatus, 1, NULL },
-	{ "Init", Mickus_InitA, 1, NULL },
-	{ "CreateTransports", Mickus_CreateTransportsA, 1, NULL },
-	{ "InitMission", Mickus_InitMissionA, 1, NULL },
-	{ "StopMission", Mickus_StopMissionA, 1, NULL },
-	{ "OnMickusDamage", Mickus_OnMickusDamageA, 1, NULL },
-	{ "ScanShip", Mickus_ScanShipA, 1, NULL },
-	{ "CheckContinueScanning", Mickus_CheckContinueScanningA, 1, NULL },
-	{ "ResetScan", Mickus_ResetScanA, 1, NULL },
-	{ "ResetScan2", Mickus_ResetScan2A, 1, NULL },
-	{ "OnFinishScan", Mickus_OnFinishScanA, 1, NULL },
-	{ "MickusIdentified", Mickus_MickusIdentifiedA, 1, NULL },
-	{ "ReassignTarget", Mickus_ReassignTargetA, 1, NULL },
-	{ "TraitoriusFuncEnemiesCom", Mickus_TraitoriusFuncEnemiesComA, 1, NULL },
-	{ "CheckMickusVisibility", Mickus_CheckMickusVisibilityA, 1, NULL },
-	{ "CreateFuncEnemies", Mickus_CreateFuncEnemiesA, 1, NULL },
-	{ "OnFuncEnemiesDeath", Mickus_OnFuncEnemiesDeathA, 1, NULL },
-	{ "OnTransportsDeath", Mickus_OnTransportsDeathA, 1, NULL },
-	{ "DropMoney", Mickus_DropMoneyA, 1, NULL },
-	{ "TakeMoney", Mickus_TakeMoneyA, 1, NULL },
-	{ "SetNextMission", Mickus_SetNextMissionA, 1, NULL },
-	{ "MissionScorer", Mickus_MissionScorerA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialDestroyMickusMethods[] = {
+	PORT_FN(GetFuncEnemiesProfile, Mickus_GetFuncEnemiesProfileA),
+	PORT_FN(InitStatus, Mickus_InitStatus),
+	PORT_FN(Init, Mickus_InitA),
+	PORT_FN(CreateTransports, Mickus_CreateTransportsA),
+	PORT_FN(InitMission, Mickus_InitMissionA),
+	PORT_FN(StopMission, Mickus_StopMissionA),
+	PORT_FN(OnMickusDamage, Mickus_OnMickusDamageA),
+	PORT_FN(ScanShip, Mickus_ScanShipA),
+	PORT_FN(CheckContinueScanning, Mickus_CheckContinueScanningA),
+	PORT_FN(ResetScan, Mickus_ResetScanA),
+	PORT_FN(ResetScan2, Mickus_ResetScan2A),
+	PORT_FN(OnFinishScan, Mickus_OnFinishScanA),
+	PORT_FN(MickusIdentified, Mickus_MickusIdentifiedA),
+	PORT_FN(ReassignTarget, Mickus_ReassignTargetA),
+	PORT_FN(TraitoriusFuncEnemiesCom, Mickus_TraitoriusFuncEnemiesComA),
+	PORT_FN(CheckMickusVisibility, Mickus_CheckMickusVisibilityA),
+	PORT_FN(CreateFuncEnemies, Mickus_CreateFuncEnemiesA),
+	PORT_FN(OnFuncEnemiesDeath, Mickus_OnFuncEnemiesDeathA),
+	PORT_FN(OnTransportsDeath, Mickus_OnTransportsDeathA),
+	PORT_FN(DropMoney, Mickus_DropMoneyA),
+	PORT_FN(TakeMoney, Mickus_TakeMoneyA),
+	PORT_FN(SetNextMission, Mickus_SetNextMissionA),
+	PORT_FN(MissionScorer, Mickus_MissionScorerA),
+	PORT_FNEND
 };
 
 /* ---- Mission_ProtectGus: the bishop Gus and the lonely mercenary fight, Gus must win ---- */
@@ -1401,23 +1401,23 @@ LV_FN(Gus, UsePhoneCabA, 4, Gus_UsePhoneCab_C)
 LV_FN(Gus, SetNextMissionA, 0, Gus_SetNextMission)
 LV_FN(Gus, MissionScorerA, 1, Gus_MissionScorer)
 
-PyMethodDef g_CommercialProtectGusMethods[] = {
-	{ "CreateLonelyMercProfile", Gus_CreateLonelyMercProfileA, 1, NULL },
-	{ "CreateBishopGusProfile", Gus_CreateBishopGusProfileA, 1, NULL },
-	{ "InitStatus", Gus_InitStatus, 1, NULL },
-	{ "Init", Gus_InitA, 1, NULL },
-	{ "InitMission", Gus_InitMissionA, 1, NULL },
-	{ "AttackEachOther", Gus_AttackEachOtherA, 1, NULL },
-	{ "CreateLonelyMerc", Gus_CreateLonelyMercA, 1, NULL },
-	{ "CreateBishopGus", Gus_CreateBishopGusA, 1, NULL },
-	{ "OnLonelyMercDeath", Gus_OnLonelyMercDeathA, 1, NULL },
-	{ "OnBishopGusDeath", Gus_OnBishopGusDeathA, 1, NULL },
-	{ "PreCallDeepThroat", Gus_PreCallDeepThroatA, 1, NULL },
-	{ "SetPhoneCab", Gus_SetPhoneCabA, 1, NULL },
-	{ "UsePhoneCab", Gus_UsePhoneCabA, 1, NULL },
-	{ "SetNextMission", Gus_SetNextMissionA, 1, NULL },
-	{ "MissionScorer", Gus_MissionScorerA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialProtectGusMethods[] = {
+	PORT_FN(CreateLonelyMercProfile, Gus_CreateLonelyMercProfileA),
+	PORT_FN(CreateBishopGusProfile, Gus_CreateBishopGusProfileA),
+	PORT_FN(InitStatus, Gus_InitStatus),
+	PORT_FN(Init, Gus_InitA),
+	PORT_FN(InitMission, Gus_InitMissionA),
+	PORT_FN(AttackEachOther, Gus_AttackEachOtherA),
+	PORT_FN(CreateLonelyMerc, Gus_CreateLonelyMercA),
+	PORT_FN(CreateBishopGus, Gus_CreateBishopGusA),
+	PORT_FN(OnLonelyMercDeath, Gus_OnLonelyMercDeathA),
+	PORT_FN(OnBishopGusDeath, Gus_OnBishopGusDeathA),
+	PORT_FN(PreCallDeepThroat, Gus_PreCallDeepThroatA),
+	PORT_FN(SetPhoneCab, Gus_SetPhoneCabA),
+	PORT_FN(UsePhoneCab, Gus_UsePhoneCabA),
+	PORT_FN(SetNextMission, Gus_SetNextMissionA),
+	PORT_FN(MissionScorer, Gus_MissionScorerA),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyStupidus: the functionary Stupidus drops the amplifier ---- */
@@ -1531,18 +1531,18 @@ LV_FN(Stupidus, TakeAmplifierA, 2, Stupidus_TakeAmplifier)
 LV_FN(Stupidus, BertoFoundA, 0, Stupidus_BertoFound)
 LV_FN(Stupidus, SetNextMissionA, 0, Stupidus_SetNextMission)
 
-PyMethodDef g_CommercialDestroyStupidusMethods[] = {
-	{ "GetStupidusProfile", Stupidus_GetStupidusProfileA, 1, NULL },
-	{ "InitStatus", Stupidus_InitStatus, 1, NULL },
-	{ "Init", Stupidus_InitA, 1, NULL },
-	{ "CreateStupidus", Stupidus_CreateStupidusA, 1, NULL },
-	{ "OnStupidusDeath", Stupidus_OnStupidusDeathA, 1, NULL },
-	{ "OnStupidusDamage", Stupidus_OnStupidusDamageA, 1, NULL },
-	{ "DropAmplifier", Stupidus_DropAmplifierA, 1, NULL },
-	{ "TakeAmplifier", Stupidus_TakeAmplifierA, 1, NULL },
-	{ "BertoFound", Stupidus_BertoFoundA, 1, NULL },
-	{ "SetNextMission", Stupidus_SetNextMissionA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialDestroyStupidusMethods[] = {
+	PORT_FN(GetStupidusProfile, Stupidus_GetStupidusProfileA),
+	PORT_FN(InitStatus, Stupidus_InitStatus),
+	PORT_FN(Init, Stupidus_InitA),
+	PORT_FN(CreateStupidus, Stupidus_CreateStupidusA),
+	PORT_FN(OnStupidusDeath, Stupidus_OnStupidusDeathA),
+	PORT_FN(OnStupidusDamage, Stupidus_OnStupidusDamageA),
+	PORT_FN(DropAmplifier, Stupidus_DropAmplifierA),
+	PORT_FN(TakeAmplifier, Stupidus_TakeAmplifierA),
+	PORT_FN(BertoFound, Stupidus_BertoFoundA),
+	PORT_FN(SetNextMission, Stupidus_SetNextMissionA),
+	PORT_FNEND
 };
 
 /* ---- Mission_Win1stRace: a time race through the checkpoints of race 8 ---- */
@@ -1788,20 +1788,20 @@ LV_FN(Race, PreSetNextMissionA, 0, Race_PreSetNextMission)
 LV_FN(Race, SetNextMissionA, 0, Race_SetNextMission)
 LV_FN(Race, MissionScorerA, 1, Race_MissionScorer)
 
-PyMethodDef g_CommercialWin1stRaceMethods[] = {
-	{ "InitStatus", Race_InitStatus, 1, NULL },
-	{ "Init", Race_InitA, 1, NULL },
-	{ "InitTimeRace", Race_InitTimeRaceA, 1, NULL },
-	{ "OnRaceStart", Race_OnRaceStartA, 1, NULL },
-	{ "RaceGo", Race_RaceGoA, 1, NULL },
-	{ "OnCheckPoint", Race_OnCheckPointA, 1, NULL },
-	{ "OnAlarmOn", Race_OnAlarmOnA, 1, NULL },
-	{ "OnAlarmOff", Race_OnAlarmOffA, 1, NULL },
-	{ "TimeExpired", Race_TimeExpiredA, 1, NULL },
-	{ "PreSetNextMission", Race_PreSetNextMissionA, 1, NULL },
-	{ "SetNextMission", Race_SetNextMissionA, 1, NULL },
-	{ "MissionScorer", Race_MissionScorerA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialWin1stRaceMethods[] = {
+	PORT_FN(InitStatus, Race_InitStatus),
+	PORT_FN(Init, Race_InitA),
+	PORT_FN(InitTimeRace, Race_InitTimeRaceA),
+	PORT_FN(OnRaceStart, Race_OnRaceStartA),
+	PORT_FN(RaceGo, Race_RaceGoA),
+	PORT_FN(OnCheckPoint, Race_OnCheckPointA),
+	PORT_FN(OnAlarmOn, Race_OnAlarmOnA),
+	PORT_FN(OnAlarmOff, Race_OnAlarmOffA),
+	PORT_FN(TimeExpired, Race_TimeExpiredA),
+	PORT_FN(PreSetNextMission, Race_PreSetNextMissionA),
+	PORT_FN(SetNextMission, Race_SetNextMissionA),
+	PORT_FN(MissionScorer, Race_MissionScorerA),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyCommSats2: levels/LevelCommon.c ---- */
@@ -1932,18 +1932,18 @@ LV_FN(Deep, UsePhoneCabA, 4, Deep_UsePhoneCab_C)
 LV_FN(Deep, SetNextMissionA, 0, Deep_SetNextMission)
 LV_FN(Deep, CGCallsA, 0, Deep_CGCalls)
 
-PyMethodDef g_CommercialFirstMeetDeepThroatMethods[] = {
-	{ "InitStatus", Deep_InitStatus, 1, NULL },
-	{ "Init", Deep_InitA, 1, NULL },
-	{ "AfterDeepThroatMessageShown", Deep_AfterDeepThroatMessageShownA, 1, NULL },
-	{ "AfterDeepThroatMessageShown2", Deep_AfterDeepThroatMessageShown2A, 1, NULL },
-	{ "RestoreDeepThroatMessages", Deep_RestoreDeepThroatMessagesA, 1, NULL },
-	{ "CancelDeepThroatMessages", Deep_CancelDeepThroatMessagesA, 1, NULL },
-	{ "SetPhoneCab", Deep_SetPhoneCabA, 1, NULL },
-	{ "UsePhoneCab", Deep_UsePhoneCabA, 1, NULL },
-	{ "SetNextMission", Deep_SetNextMissionA, 1, NULL },
-	{ "CGCalls", Deep_CGCallsA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialFirstMeetDeepThroatMethods[] = {
+	PORT_FN(InitStatus, Deep_InitStatus),
+	PORT_FN(Init, Deep_InitA),
+	PORT_FN(AfterDeepThroatMessageShown, Deep_AfterDeepThroatMessageShownA),
+	PORT_FN(AfterDeepThroatMessageShown2, Deep_AfterDeepThroatMessageShown2A),
+	PORT_FN(RestoreDeepThroatMessages, Deep_RestoreDeepThroatMessagesA),
+	PORT_FN(CancelDeepThroatMessages, Deep_CancelDeepThroatMessagesA),
+	PORT_FN(SetPhoneCab, Deep_SetPhoneCabA),
+	PORT_FN(UsePhoneCab, Deep_UsePhoneCabA),
+	PORT_FN(SetNextMission, Deep_SetNextMissionA),
+	PORT_FN(CGCalls, Deep_CGCallsA),
+	PORT_FNEND
 };
 
 /* ---- Mission_GetDataPart3: waves of functionaries carry the data cubes ---- */
@@ -2007,6 +2007,8 @@ static byte Gd_Target(const nativeVal_t *usr, const nativeVal_t *e) {
  * first in the list is asked for every one) */
 static byte Gd_Flee(const nativeVal_t *usr) {
 	nativeVal_t name, e;
+	/* Mode_ListGet leaves name as it is when the list is missing */
+	Native_SetNone(&name);
 	Native_SetNone(&e);
 	byte ok = Mode_ListGet("Funcs", "First", &name) && Mode_EntityH(&name, &e);
 	while (ok && Native_True(&e)) {
@@ -2578,32 +2580,32 @@ LV_FN(Data, UsePhoneCab2A, 4, Data_UsePhoneCab2_C)
 LV_FN(Data, SetNextMissionA, 0, Data_SetNextMission)
 LV_FN(Data, MissionScorerA, 1, Data_MissionScorer)
 
-PyMethodDef g_CommercialGetDataPart3Methods[] = {
-	{ "GetFunctionariesEnemiesProfile", Data_GetFunctionariesEnemiesProfileA, 1, NULL },
-	{ "InitStatus", Data_InitStatus, 1, NULL },
-	{ "Init", Data_InitA, 1, NULL },
-	{ "InitMission", Data_InitMissionA, 1, NULL },
-	{ "StopMission", Data_StopMissionA, 1, NULL },
-	{ "CreateWave", Data_CreateWaveA, 1, NULL },
-	{ "CreateFunctionary", Data_CreateFunctionaryA, 1, NULL },
-	{ "ReinsertFunctionaryInWave", Data_ReinsertFunctionaryInWaveA, 1, NULL },
-	{ "OnFunctionaryDeath", Data_OnFunctionaryDeathA, 1, NULL },
-	{ "OnFunctionaryDamage", Data_OnFunctionaryDamageA, 1, NULL },
-	{ "DropData", Data_DropDataA, 1, NULL },
-	{ "CheckAITakesData", Data_CheckAITakesDataA, 1, NULL },
-	{ "CheckAI", Data_CheckAIA, 1, NULL },
-	{ "TakeData", Data_TakeDataA, 1, NULL },
-	{ "CallBoss", Data_CallBossA, 1, NULL },
-	{ "UsePhoneCab", Data_UsePhoneCabA, 1, NULL },
-	{ "PreGetData", Data_PreGetDataA, 1, NULL },
-	{ "GetData", Data_GetDataA, 1, NULL },
-	{ "PreCallDeepThroat", Data_PreCallDeepThroatA, 1, NULL },
-	{ "PreCallDeepThroat2", Data_PreCallDeepThroat2A, 1, NULL },
-	{ "CallDeepThroat", Data_CallDeepThroatA, 1, NULL },
-	{ "UsePhoneCab2", Data_UsePhoneCab2A, 1, NULL },
-	{ "SetNextMission", Data_SetNextMissionA, 1, NULL },
-	{ "MissionScorer", Data_MissionScorerA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialGetDataPart3Methods[] = {
+	PORT_FN(GetFunctionariesEnemiesProfile, Data_GetFunctionariesEnemiesProfileA),
+	PORT_FN(InitStatus, Data_InitStatus),
+	PORT_FN(Init, Data_InitA),
+	PORT_FN(InitMission, Data_InitMissionA),
+	PORT_FN(StopMission, Data_StopMissionA),
+	PORT_FN(CreateWave, Data_CreateWaveA),
+	PORT_FN(CreateFunctionary, Data_CreateFunctionaryA),
+	PORT_FN(ReinsertFunctionaryInWave, Data_ReinsertFunctionaryInWaveA),
+	PORT_FN(OnFunctionaryDeath, Data_OnFunctionaryDeathA),
+	PORT_FN(OnFunctionaryDamage, Data_OnFunctionaryDamageA),
+	PORT_FN(DropData, Data_DropDataA),
+	PORT_FN(CheckAITakesData, Data_CheckAITakesDataA),
+	PORT_FN(CheckAI, Data_CheckAIA),
+	PORT_FN(TakeData, Data_TakeDataA),
+	PORT_FN(CallBoss, Data_CallBossA),
+	PORT_FN(UsePhoneCab, Data_UsePhoneCabA),
+	PORT_FN(PreGetData, Data_PreGetDataA),
+	PORT_FN(GetData, Data_GetDataA),
+	PORT_FN(PreCallDeepThroat, Data_PreCallDeepThroatA),
+	PORT_FN(PreCallDeepThroat2, Data_PreCallDeepThroat2A),
+	PORT_FN(CallDeepThroat, Data_CallDeepThroatA),
+	PORT_FN(UsePhoneCab2, Data_UsePhoneCab2A),
+	PORT_FN(SetNextMission, Data_SetNextMissionA),
+	PORT_FN(MissionScorer, Data_MissionScorerA),
+	PORT_FNEND
 };
 
 /* ---- Mission_DefeatCrazyGambler3: the crazy gambler's copies, then his matrix ---- */
@@ -2850,22 +2852,22 @@ LV_FN(Gambler, TakeMatrixA, 2, Gambler_TakeMatrix)
 LV_FN(Gambler, SetNextMissionA, 0, Gambler_SetNextMission)
 LV_FN(Gambler, MissionScorerA, 1, Gambler_MissionScorer)
 
-PyMethodDef g_CommercialDefeatCrazyGambler3Methods[] = {
-	{ "GetCrazyGamblerProfile", Gambler_GetCrazyGamblerProfileA, 1, NULL },
-	{ "InitStatus", Gambler_InitStatus, 1, NULL },
-	{ "Init", Gambler_InitA, 1, NULL },
-	{ "LaunchFirstTaunt", Gambler_LaunchFirstTauntA, 1, NULL },
-	{ "LaunchTaunts", Gambler_LaunchTauntsA, 1, NULL },
-	{ "RefreshScorer", Gambler_RefreshScorerA, 1, NULL },
-	{ "CreateCrazyGambler", Gambler_CreateCrazyGamblerA, 1, NULL },
-	{ "CreateCrazyGamblers", Gambler_CreateCrazyGamblersA, 1, NULL },
-	{ "OnCrazyGamblerDeath", Gambler_OnCrazyGamblerDeathA, 1, NULL },
-	{ "AfterDeepThroatMessage", Gambler_AfterDeepThroatMessageA, 1, NULL },
-	{ "DropBossMatrix", Gambler_DropBossMatrixA, 1, NULL },
-	{ "TakeMatrix", Gambler_TakeMatrixA, 1, NULL },
-	{ "SetNextMission", Gambler_SetNextMissionA, 1, NULL },
-	{ "MissionScorer", Gambler_MissionScorerA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialDefeatCrazyGambler3Methods[] = {
+	PORT_FN(GetCrazyGamblerProfile, Gambler_GetCrazyGamblerProfileA),
+	PORT_FN(InitStatus, Gambler_InitStatus),
+	PORT_FN(Init, Gambler_InitA),
+	PORT_FN(LaunchFirstTaunt, Gambler_LaunchFirstTauntA),
+	PORT_FN(LaunchTaunts, Gambler_LaunchTauntsA),
+	PORT_FN(RefreshScorer, Gambler_RefreshScorerA),
+	PORT_FN(CreateCrazyGambler, Gambler_CreateCrazyGamblerA),
+	PORT_FN(CreateCrazyGamblers, Gambler_CreateCrazyGamblersA),
+	PORT_FN(OnCrazyGamblerDeath, Gambler_OnCrazyGamblerDeathA),
+	PORT_FN(AfterDeepThroatMessage, Gambler_AfterDeepThroatMessageA),
+	PORT_FN(DropBossMatrix, Gambler_DropBossMatrixA),
+	PORT_FN(TakeMatrix, Gambler_TakeMatrixA),
+	PORT_FN(SetNextMission, Gambler_SetNextMissionA),
+	PORT_FN(MissionScorer, Gambler_MissionScorerA),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyPorkinsTransports: the mayor's campaign against bishop Porkins ---- */
@@ -3367,28 +3369,28 @@ LV_FN(Porkins, SetNextMissionA, 0, Porkins_SetNextMission)
 LV_FN(Porkins, UpdateScorerA, 0, Porkins_UpdateScorer)
 LV_FN(Porkins, MissionScorerA, 1, Porkins_MissionScorer)
 
-PyMethodDef g_CommercialDestroyPorkinsTransportsMethods[] = {
-	{ "GetBishopsEnemiesProfile", Porkins_GetBishopsEnemiesProfileA, 1, NULL },
-	{ "InitStatus", Porkins_InitStatusA, 1, NULL },
-	{ "Init", Porkins_InitA, 1, NULL },
-	{ "InitMission", Porkins_InitMissionA, 1, NULL },
-	{ "CreateMayorTransport", Porkins_CreateMayorTransportA, 1, NULL },
-	{ "CreatePorkinsTransport", Porkins_CreatePorkinsTransportA, 1, NULL },
-	{ "CreateBishop", (PyCFunction)(void (*)(void))Porkins_CreateBishop, 3, NULL },
-	{ "AttackMayorTransport", Porkins_AttackMayorTransportA, 1, NULL },
-	{ "OnPorkinsTransportDeath", Porkins_OnPorkinsTransportDeathA, 1, NULL },
-	{ "OnMayorTransportDeath", Porkins_OnMayorTransportDeathA, 1, NULL },
-	{ "CheckBishopWithoutTarget", Porkins_CheckBishopWithoutTargetA, 1, NULL },
-	{ "OnBishopDeath", Porkins_OnBishopDeathA, 1, NULL },
-	{ "OnBishopDamage", Porkins_OnBishopDamageA, 1, NULL },
-	{ "GetMayorReward", Porkins_GetMayorRewardA, 1, NULL },
-	{ "PreCallDeepThroat", Porkins_PreCallDeepThroatA, 1, NULL },
-	{ "CallDeepThroat", Porkins_CallDeepThroatA, 1, NULL },
-	{ "UsePhoneCab", Porkins_UsePhoneCabA, 1, NULL },
-	{ "SetNextMission", Porkins_SetNextMissionA, 1, NULL },
-	{ "UpdateScorer", Porkins_UpdateScorerA, 1, NULL },
-	{ "MissionScorer", Porkins_MissionScorerA, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CommercialDestroyPorkinsTransportsMethods[] = {
+	PORT_FN(GetBishopsEnemiesProfile, Porkins_GetBishopsEnemiesProfileA),
+	PORT_FN(InitStatus, Porkins_InitStatusA),
+	PORT_FN(Init, Porkins_InitA),
+	PORT_FN(InitMission, Porkins_InitMissionA),
+	PORT_FN(CreateMayorTransport, Porkins_CreateMayorTransportA),
+	PORT_FN(CreatePorkinsTransport, Porkins_CreatePorkinsTransportA),
+	PORT_FNK(CreateBishop, Porkins_CreateBishop),
+	PORT_FN(AttackMayorTransport, Porkins_AttackMayorTransportA),
+	PORT_FN(OnPorkinsTransportDeath, Porkins_OnPorkinsTransportDeathA),
+	PORT_FN(OnMayorTransportDeath, Porkins_OnMayorTransportDeathA),
+	PORT_FN(CheckBishopWithoutTarget, Porkins_CheckBishopWithoutTargetA),
+	PORT_FN(OnBishopDeath, Porkins_OnBishopDeathA),
+	PORT_FN(OnBishopDamage, Porkins_OnBishopDamageA),
+	PORT_FN(GetMayorReward, Porkins_GetMayorRewardA),
+	PORT_FN(PreCallDeepThroat, Porkins_PreCallDeepThroatA),
+	PORT_FN(CallDeepThroat, Porkins_CallDeepThroatA),
+	PORT_FN(UsePhoneCab, Porkins_UsePhoneCabA),
+	PORT_FN(SetNextMission, Porkins_SetNextMissionA),
+	PORT_FN(UpdateScorer, Porkins_UpdateScorerA),
+	PORT_FN(MissionScorer, Porkins_MissionScorerA),
+	PORT_FNEND
 };
 
 PORTS(levels_Commercial)

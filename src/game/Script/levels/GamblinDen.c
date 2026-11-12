@@ -82,7 +82,7 @@ static byte Gd_ResDel(const char *name) {
 }
 
 /* a keyword function with the one optional argument kwname that the core does not read (usr=None, char=None): its
- * adapter and entry (MODE_KW) */
+ * entry (MODE_KW) */
 #define GD_KW1(pre, name, kwname, call) \
 	MODE_KW(pre, name, "|O", kwname) { \
 		return call; \
@@ -833,7 +833,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 	return Mode_Done(&t, Mode_LaterV(delay, "Map", "MercDrink", args, 2, NULL));
 }
 
-/* the keyword adapter and entry of MercDrink(merc, ctr=0) */
+/* the keyword entry of MercDrink(merc, ctr=0) */
 MODE_KW(Den, MercDrink, "O|O", "merc", "ctr") {
 	Mode_KwDefI(v, given, 1, 0);
 	return Den_MercDrinkC(&v[0], &v[1]);
@@ -879,7 +879,7 @@ static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
 	return Mode_Done(&t, Mode_Later(2.5, "Map", "ChatNPCs", args, 2, NULL));
 }
 
-/* the keyword adapter and entry of ChatNPCs(Name, Vals=("PoliceBoss_Default", "CrazyGambler_Default")) */
+/* the keyword entry of ChatNPCs(Name, Vals=("PoliceBoss_Default", "CrazyGambler_Default")) */
 MODE_KW(Den, ChatNPCs, "O|O", "Name", "Vals") {
 	nativeVal_t vals = { 0 };
 	if (!given[1]) {
@@ -1020,22 +1020,22 @@ LV_FN(Den, CharDance, 1, Den_CharDanceC)
 LV_FN(Den, MercenarySpeech, 4, Den_MercenarySpeechC)
 LV_FN(Den, StartContract, 1, Den_StartContractC)
 
-PyMethodDef g_GamblinDenMapMethods[] = {
-	{ "InitStatus", Den_InitStatus, 1, NULL },
-	{ "AfterBrowseNPC", Den_AfterBrowseNPC, 1, NULL },
-	{ "CreateFixedInit", Den_CreateFixedInit, 1, NULL },
-	{ "CreateFixedMercInit", Den_CreateFixedMercInit, 1, NULL },
-	{ "CreateLonelyMerc", Den_CreateLonelyMerc, 1, NULL },
-	{ "Init", Den_Init, 1, NULL },
-	{ "LonelyMercSpeech", Den_LonelyMercSpeech, 1, NULL },
-	{ "CharUsrAct", Den_CharUsrAct, 1, NULL },
-	{ "CharUsrDance", Den_CharUsrDance, 1, NULL },
-	{ "MercDrink", (PyCFunction)(void (*)(void))Den_MercDrink, 3, NULL },
-	{ "ChatNPCs", (PyCFunction)(void (*)(void))Den_ChatNPCs, 3, NULL },
-	{ "CharDance", Den_CharDance, 1, NULL },
-	{ "MercenarySpeech", Den_MercenarySpeech, 1, NULL },
-	{ "StartContract", Den_StartContract, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenMapMethods[] = {
+	PORT_FN(InitStatus, Den_InitStatus),
+	PORT_FN(AfterBrowseNPC, Den_AfterBrowseNPC),
+	PORT_FN(CreateFixedInit, Den_CreateFixedInit),
+	PORT_FN(CreateFixedMercInit, Den_CreateFixedMercInit),
+	PORT_FN(CreateLonelyMerc, Den_CreateLonelyMerc),
+	PORT_FN(Init, Den_Init),
+	PORT_FN(LonelyMercSpeech, Den_LonelyMercSpeech),
+	PORT_FN(CharUsrAct, Den_CharUsrAct),
+	PORT_FN(CharUsrDance, Den_CharUsrDance),
+	PORT_FNK(MercDrink, Den_MercDrink),
+	PORT_FNK(ChatNPCs, Den_ChatNPCs),
+	PORT_FN(CharDance, Den_CharDance),
+	PORT_FN(MercenarySpeech, Den_MercenarySpeech),
+	PORT_FN(StartContract, Den_StartContract),
+	PORT_FNEND
 };
 
 /* ---- Mission_BeforeFinalFight: the crazy gambler's plan for the final fight ---- */
@@ -1193,14 +1193,14 @@ MODE_FN(Before, MercenariesSpeech, 4, Gd_Talk(a, 1, "Mission_FinalFight_InitMsg2
 GD_KW1(Before, SetNextMission, "usr", Before_SetNextMissionC())
 LV_FN(Before, LoadScene, 0, Before_LoadSceneC)
 
-PyMethodDef g_GamblinDenBeforeFinalFightMethods[] = {
-	{ "InitStatus", Before_InitStatus, 1, NULL },
-	{ "Init", Before_Init, 1, NULL },
-	{ "CrazyGamblerSpeech", Before_CrazyGamblerSpeech, 1, NULL },
-	{ "MercenariesSpeech", Before_MercenariesSpeech, 1, NULL },
-	{ "SetNextMission", (PyCFunction)(void (*)(void))Before_SetNextMission, 3, NULL },
-	{ "LoadScene", Before_LoadScene, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenBeforeFinalFightMethods[] = {
+	PORT_FN(InitStatus, Before_InitStatus),
+	PORT_FN(Init, Before_Init),
+	PORT_FN(CrazyGamblerSpeech, Before_CrazyGamblerSpeech),
+	PORT_FN(MercenariesSpeech, Before_MercenariesSpeech),
+	PORT_FNK(SetNextMission, Before_SetNextMission),
+	PORT_FN(LoadScene, Before_LoadScene),
+	PORT_FNEND
 };
 
 /* ---- Mission_AfterFinalFight: the teleporter to the AB indoors ---- */
@@ -1226,10 +1226,10 @@ static byte After_InitC(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(After, InitStatus, 1, After_InitStatusC)
 LV_FN(After, Init, 1, After_InitC)
 
-PyMethodDef g_GamblinDenAfterFinalFightMethods[] = {
-	{ "InitStatus", After_InitStatus, 1, NULL },
-	{ "Init", After_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenAfterFinalFightMethods[] = {
+	PORT_FN(InitStatus, After_InitStatus),
+	PORT_FN(Init, After_Init),
+	PORT_FNEND
 };
 
 /* ---- Mission_ArrangeIgorCombat: the versus against the bishop Igor ---- */
@@ -1312,15 +1312,15 @@ MODE_FN(Igor, CrazyGamblerSpeech, 4, Gd_Arrange(a, "Mission_ArrangeIgorCombat_Cr
 	&PORT_LREF(Mission_ArrangeIgorCombat, LaunchIgorCombat)))
 LV_FN(Igor, LaunchIgorCombat, 0, Igor_LaunchIgorCombatC)
 
-PyMethodDef g_GamblinDenArrangeIgorCombatMethods[] = {
-	{ "InitStatus", Igor_InitStatus, 1, NULL },
-	{ "Init", Igor_Init, 1, NULL },
-	{ "TalkToIgor", Igor_TalkToIgor, 1, NULL },
-	{ "IgorSpeech", Igor_IgorSpeech, 1, NULL },
-	{ "TalkToCrazyGambler", Igor_TalkToCrazyGambler, 1, NULL },
-	{ "CrazyGamblerSpeech", Igor_CrazyGamblerSpeech, 1, NULL },
-	{ "LaunchIgorCombat", Igor_LaunchIgorCombat, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenArrangeIgorCombatMethods[] = {
+	PORT_FN(InitStatus, Igor_InitStatus),
+	PORT_FN(Init, Igor_Init),
+	PORT_FN(TalkToIgor, Igor_TalkToIgor),
+	PORT_FN(IgorSpeech, Igor_IgorSpeech),
+	PORT_FN(TalkToCrazyGambler, Igor_TalkToCrazyGambler),
+	PORT_FN(CrazyGamblerSpeech, Igor_CrazyGamblerSpeech),
+	PORT_FN(LaunchIgorCombat, Igor_LaunchIgorCombat),
+	PORT_FNEND
 };
 
 /* ---- Mission_ArrangeBankersCTF: Traitorius, then the CTF against the bankers ---- */
@@ -1405,15 +1405,15 @@ MODE_FN(Ctf, CrazyGamblerSpeech, 4, Gd_Arrange(a, "Mission_ArrangeTraitoriusComb
 	&PORT_LREF(Mission_ArrangeBankersCTF, LaunchBankersCTF)))
 MODE_FN(Ctf, LaunchBankersCTF, 0, Gd_Launch("Mission_CTFAgainstBankers_MissionText1", "OM", "Mission_BankersCTF", "CTF"))
 
-PyMethodDef g_GamblinDenArrangeBankersCTFMethods[] = {
-	{ "InitStatus", Ctf_InitStatus, 1, NULL },
-	{ "Init", Ctf_Init, 1, NULL },
-	{ "CreateTraitoriusInit", Ctf_CreateTraitoriusInit, 1, NULL },
-	{ "TraitoriusSpeech", Ctf_TraitoriusSpeech, 1, NULL },
-	{ "TalkToCrazyGambler", Ctf_TalkToCrazyGambler, 1, NULL },
-	{ "CrazyGamblerSpeech", Ctf_CrazyGamblerSpeech, 1, NULL },
-	{ "LaunchBankersCTF", Ctf_LaunchBankersCTF, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenArrangeBankersCTFMethods[] = {
+	PORT_FN(InitStatus, Ctf_InitStatus),
+	PORT_FN(Init, Ctf_Init),
+	PORT_FN(CreateTraitoriusInit, Ctf_CreateTraitoriusInit),
+	PORT_FN(TraitoriusSpeech, Ctf_TraitoriusSpeech),
+	PORT_FN(TalkToCrazyGambler, Ctf_TalkToCrazyGambler),
+	PORT_FN(CrazyGamblerSpeech, Ctf_CrazyGamblerSpeech),
+	PORT_FN(LaunchBankersCTF, Ctf_LaunchBankersCTF),
+	PORT_FNEND
 };
 
 /* ---- Mission_ArrangeBankersCombat: after the versus: Igor, DeepThroat, the police boss, the crazy gambler ---- */
@@ -1581,20 +1581,20 @@ MODE_FN(Bankers, CrazyGamblerSpeech, 4, Gd_Arrange(a, "Mission_ArrangeBankersCom
 	&PORT_LREF(Mission_ArrangeBankersCombat, LaunchBankersCombat)))
 LV_FN(Bankers, LaunchBankersCombat, 0, Bankers_LaunchBankersCombatC)
 
-PyMethodDef g_GamblinDenArrangeBankersCombatMethods[] = {
-	{ "InitStatus", Bankers_InitStatus, 1, NULL },
-	{ "Init", Bankers_Init, 1, NULL },
-	{ "LaunchIgorDefeatedSpeech", Bankers_LaunchIgorDefeatedSpeech, 1, NULL },
-	{ "LaunchDeepThroatMessage", Bankers_LaunchDeepThroatMessage, 1, NULL },
-	{ "TalkToDeepThroat", Bankers_TalkToDeepThroat, 1, NULL },
-	{ "DeepThroatSpeech", Bankers_DeepThroatSpeech, 1, NULL },
-	{ "TalkToPoliceBoss", Bankers_TalkToPoliceBoss, 1, NULL },
-	{ "PoliceBossSpeech", Bankers_PoliceBossSpeech, 1, NULL },
-	{ "PoliceBossSpeech2", Bankers_PoliceBossSpeech2, 1, NULL },
-	{ "TalkToCrazyGambler", Bankers_TalkToCrazyGambler, 1, NULL },
-	{ "CrazyGamblerSpeech", Bankers_CrazyGamblerSpeech, 1, NULL },
-	{ "LaunchBankersCombat", Bankers_LaunchBankersCombat, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenArrangeBankersCombatMethods[] = {
+	PORT_FN(InitStatus, Bankers_InitStatus),
+	PORT_FN(Init, Bankers_Init),
+	PORT_FN(LaunchIgorDefeatedSpeech, Bankers_LaunchIgorDefeatedSpeech),
+	PORT_FN(LaunchDeepThroatMessage, Bankers_LaunchDeepThroatMessage),
+	PORT_FN(TalkToDeepThroat, Bankers_TalkToDeepThroat),
+	PORT_FN(DeepThroatSpeech, Bankers_DeepThroatSpeech),
+	PORT_FN(TalkToPoliceBoss, Bankers_TalkToPoliceBoss),
+	PORT_FN(PoliceBossSpeech, Bankers_PoliceBossSpeech),
+	PORT_FN(PoliceBossSpeech2, Bankers_PoliceBossSpeech2),
+	PORT_FN(TalkToCrazyGambler, Bankers_TalkToCrazyGambler),
+	PORT_FN(CrazyGamblerSpeech, Bankers_CrazyGamblerSpeech),
+	PORT_FN(LaunchBankersCombat, Bankers_LaunchBankersCombat),
+	PORT_FNEND
 };
 
 /* ---- Mission_IgorFirstContact: the crazy gambler, Igor, then the three mercenaries ---- */
@@ -1730,19 +1730,19 @@ MODE_FN(First, MercenaryCSpeech, 4, Gd_Merc(a, IF, &first_mercC))
 MODE_FN(First, MercenaryBSpeech, 4, Gd_Merc(a, IF, &first_mercB))
 LV_FN(First, SetNextMission, 0, First_SetNextMissionC)
 
-PyMethodDef g_GamblinDenIgorFirstContactMethods[] = {
-	{ "InitStatus", First_InitStatus, 1, NULL },
-	{ "Init", First_Init, 1, NULL },
-	{ "TalkToCrazyGambler", First_TalkToCrazyGambler, 1, NULL },
-	{ "CrazyGamblerSpeech", First_CrazyGamblerSpeech, 1, NULL },
-	{ "TalkToIgor", First_TalkToIgor, 1, NULL },
-	{ "IgorSpeech", First_IgorSpeech, 1, NULL },
-	{ "TalkToMercenaries", First_TalkToMercenaries, 1, NULL },
-	{ "MercenaryASpeech", First_MercenaryASpeech, 1, NULL },
-	{ "MercenaryCSpeech", First_MercenaryCSpeech, 1, NULL },
-	{ "MercenaryBSpeech", First_MercenaryBSpeech, 1, NULL },
-	{ "SetNextMission", First_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenIgorFirstContactMethods[] = {
+	PORT_FN(InitStatus, First_InitStatus),
+	PORT_FN(Init, First_Init),
+	PORT_FN(TalkToCrazyGambler, First_TalkToCrazyGambler),
+	PORT_FN(CrazyGamblerSpeech, First_CrazyGamblerSpeech),
+	PORT_FN(TalkToIgor, First_TalkToIgor),
+	PORT_FN(IgorSpeech, First_IgorSpeech),
+	PORT_FN(TalkToMercenaries, First_TalkToMercenaries),
+	PORT_FN(MercenaryASpeech, First_MercenaryASpeech),
+	PORT_FN(MercenaryCSpeech, First_MercenaryCSpeech),
+	PORT_FN(MercenaryBSpeech, First_MercenaryBSpeech),
+	PORT_FN(SetNextMission, First_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_GoToGamblinDen: the scene of Bill's plan in the den ---- */
@@ -1992,17 +1992,17 @@ LV_FN(Go, Init, 1, Go_InitC)
 LV_FN(Go, LoadScene, 0, Go_LoadSceneC)
 GD_KW1(Go, SetNextMission, "usr", Go_SetNextMissionC())
 
-PyMethodDef g_GamblinDenGoToGamblinDenMethods[] = {
-	{ "InitStatus", Go_InitStatus, 1, NULL },
-	{ "AfterBrowseNPC", Go_AfterBrowseNPC, 1, NULL },
-	{ "CreateMercenaryInit", Go_CreateMercenaryInit, 1, NULL },
-	{ "MercenarySpeech", Go_MercenarySpeech, 1, NULL },
-	{ "HumanSpeech", Go_HumanSpeech, 1, NULL },
-	{ "CrazyGamblerSpeech", Go_CrazyGamblerSpeech, 1, NULL },
-	{ "Init", Go_Init, 1, NULL },
-	{ "LoadScene", Go_LoadScene, 1, NULL },
-	{ "SetNextMission", (PyCFunction)(void (*)(void))Go_SetNextMission, 3, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenGoToGamblinDenMethods[] = {
+	PORT_FN(InitStatus, Go_InitStatus),
+	PORT_FN(AfterBrowseNPC, Go_AfterBrowseNPC),
+	PORT_FN(CreateMercenaryInit, Go_CreateMercenaryInit),
+	PORT_FN(MercenarySpeech, Go_MercenarySpeech),
+	PORT_FN(HumanSpeech, Go_HumanSpeech),
+	PORT_FN(CrazyGamblerSpeech, Go_CrazyGamblerSpeech),
+	PORT_FN(Init, Go_Init),
+	PORT_FN(LoadScene, Go_LoadScene),
+	PORT_FNK(SetNextMission, Go_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_TalkToTraitoriusAfterCTF: Traitorius sends Dtritus to the meeting with Mr X ---- */
@@ -2069,14 +2069,14 @@ MODE_FN(Traitor, TraitoriusSpeech, 4, Gd_Talk(a, 1, "Mission_CTFAgainstBankers_T
 	"Mission_CTFAgainstBankers_Traitorius_InitAns1"))
 LV_FN(Traitor, SetNextMission, 0, Traitor_SetNextMissionC)
 
-PyMethodDef g_GamblinDenTalkToTraitoriusAfterCTFMethods[] = {
-	{ "InitStatus", Traitor_InitStatus, 1, NULL },
-	{ "Init", Traitor_Init, 1, NULL },
-	{ "CreateTraitoriusInit", Traitor_CreateTraitoriusInit, 1, NULL },
-	{ "LaunchTraitoriusSpeech", Traitor_LaunchTraitoriusSpeech, 1, NULL },
-	{ "TraitoriusSpeech", Traitor_TraitoriusSpeech, 1, NULL },
-	{ "SetNextMission", Traitor_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenTalkToTraitoriusAfterCTFMethods[] = {
+	PORT_FN(InitStatus, Traitor_InitStatus),
+	PORT_FN(Init, Traitor_Init),
+	PORT_FN(CreateTraitoriusInit, Traitor_CreateTraitoriusInit),
+	PORT_FN(LaunchTraitoriusSpeech, Traitor_LaunchTraitoriusSpeech),
+	PORT_FN(TraitoriusSpeech, Traitor_TraitoriusSpeech),
+	PORT_FN(SetNextMission, Traitor_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_BackFromMortalRace: the inferno plans, DeepThroat on the desktop ---- */
@@ -2144,14 +2144,14 @@ LV_FN(Back, AfterDeepThroatMessageShown, 0, Back_AfterDeepThroatMessageShownC)
 LV_FN(Back, DeepThroatSpeech, 4, Back_DeepThroatSpeechC)
 LV_FN(Back, SetNextMission, 0, Back_SetNextMissionC)
 
-PyMethodDef g_GamblinDenBackFromMortalRaceMethods[] = {
-	{ "InitStatus", Back_InitStatus, 1, NULL },
-	{ "Init", Back_Init, 1, NULL },
-	{ "TalkToDeepThroat", Back_TalkToDeepThroat, 1, NULL },
-	{ "AfterDeepThroatMessageShown", Back_AfterDeepThroatMessageShown, 1, NULL },
-	{ "DeepThroatSpeech", Back_DeepThroatSpeech, 1, NULL },
-	{ "SetNextMission", Back_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenBackFromMortalRaceMethods[] = {
+	PORT_FN(InitStatus, Back_InitStatus),
+	PORT_FN(Init, Back_Init),
+	PORT_FN(TalkToDeepThroat, Back_TalkToDeepThroat),
+	PORT_FN(AfterDeepThroatMessageShown, Back_AfterDeepThroatMessageShown),
+	PORT_FN(DeepThroatSpeech, Back_DeepThroatSpeech),
+	PORT_FN(SetNextMission, Back_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_CrazyGamblerFirstContact: the scene of the crazy gambler and his first talk ---- */
@@ -2320,16 +2320,16 @@ GD_KW1(Meet, EndOfTalk, "char", Meet_EndOfTalkC())
 LV_FN(Meet, SetNextMission, 0, Meet_SetNextMissionC)
 LV_FN(Meet, LoadScene, 0, Meet_LoadSceneC)
 
-PyMethodDef g_GamblinDenCrazyGamblerFirstContactMethods[] = {
-	{ "InitStatus", Meet_InitStatus, 1, NULL },
-	{ "Init", Meet_Init, 1, NULL },
-	{ "OnEndOfScene", (PyCFunction)(void (*)(void))Meet_OnEndOfScene, 3, NULL },
-	{ "CrazyGamblerFirstSpeech", Meet_CrazyGamblerFirstSpeech, 1, NULL },
-	{ "CrazyGamblerSecondSpeech", Meet_CrazyGamblerSecondSpeech, 1, NULL },
-	{ "EndOfTalk", (PyCFunction)(void (*)(void))Meet_EndOfTalk, 3, NULL },
-	{ "SetNextMission", Meet_SetNextMission, 1, NULL },
-	{ "LoadScene", Meet_LoadScene, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenCrazyGamblerFirstContactMethods[] = {
+	PORT_FN(InitStatus, Meet_InitStatus),
+	PORT_FN(Init, Meet_Init),
+	PORT_FNK(OnEndOfScene, Meet_OnEndOfScene),
+	PORT_FN(CrazyGamblerFirstSpeech, Meet_CrazyGamblerFirstSpeech),
+	PORT_FN(CrazyGamblerSecondSpeech, Meet_CrazyGamblerSecondSpeech),
+	PORT_FNK(EndOfTalk, Meet_EndOfTalk),
+	PORT_FN(SetNextMission, Meet_SetNextMission),
+	PORT_FN(LoadScene, Meet_LoadScene),
+	PORT_FNEND
 };
 
 /* ---- Mission_ArrangeMortalRace: the mortal race in the FZ ---- */
@@ -2354,12 +2354,12 @@ MODE_FN(Mortal, CrazyGamblerSpeech, 4, Gd_Arrange(a, "Mission_ArrangeMortalRace_
 	&PORT_LREF(Mission_ArrangeMortalRace, LaunchMortalRace)))
 MODE_FN(Mortal, LaunchMortalRace, 0, Gd_Launch("Mission_WinMortalRace_MissionText1", "FZ", "Mission_MortalRace", "MortalRace"))
 
-PyMethodDef g_GamblinDenArrangeMortalRaceMethods[] = {
-	{ "InitStatus", Mortal_InitStatus, 1, NULL },
-	{ "Init", Mortal_Init, 1, NULL },
-	{ "CrazyGamblerSpeech", Mortal_CrazyGamblerSpeech, 1, NULL },
-	{ "LaunchMortalRace", Mortal_LaunchMortalRace, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenArrangeMortalRaceMethods[] = {
+	PORT_FN(InitStatus, Mortal_InitStatus),
+	PORT_FN(Init, Mortal_Init),
+	PORT_FN(CrazyGamblerSpeech, Mortal_CrazyGamblerSpeech),
+	PORT_FN(LaunchMortalRace, Mortal_LaunchMortalRace),
+	PORT_FNEND
 };
 
 /* ---- Mission_ThreeStooges: the first contact with the three mercenaries ---- */
@@ -2430,18 +2430,18 @@ MODE_FN(Stooges, MercenaryCSpeech, 4, Gd_Merc(a, TS, &stooges_mercC))
 MODE_FN(Stooges, MercenaryBSpeech, 4, Gd_Merc(a, TS, &stooges_mercB))
 LV_FN(Stooges, SetNextMission, 1, Stooges_SetNextMissionC)
 
-PyMethodDef g_GamblinDenThreeStoogesMethods[] = {
-	{ "InitStatus", Stooges_InitStatus, 1, NULL },
-	{ "Init", Stooges_Init, 1, NULL },
-	{ "AfterBrowseNPC", Stooges_AfterBrowseNPC, 1, NULL },
-	{ "CreateMercenaryAInit", Stooges_CreateMercenaryAInit, 1, NULL },
-	{ "CreateMercenaryBInit", Stooges_CreateMercenaryBInit, 1, NULL },
-	{ "CreateMercenaryCInit", Stooges_CreateMercenaryCInit, 1, NULL },
-	{ "MercenaryASpeech", Stooges_MercenaryASpeech, 1, NULL },
-	{ "MercenaryCSpeech", Stooges_MercenaryCSpeech, 1, NULL },
-	{ "MercenaryBSpeech", Stooges_MercenaryBSpeech, 1, NULL },
-	{ "SetNextMission", Stooges_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GamblinDenThreeStoogesMethods[] = {
+	PORT_FN(InitStatus, Stooges_InitStatus),
+	PORT_FN(Init, Stooges_Init),
+	PORT_FN(AfterBrowseNPC, Stooges_AfterBrowseNPC),
+	PORT_FN(CreateMercenaryAInit, Stooges_CreateMercenaryAInit),
+	PORT_FN(CreateMercenaryBInit, Stooges_CreateMercenaryBInit),
+	PORT_FN(CreateMercenaryCInit, Stooges_CreateMercenaryCInit),
+	PORT_FN(MercenaryASpeech, Stooges_MercenaryASpeech),
+	PORT_FN(MercenaryCSpeech, Stooges_MercenaryCSpeech),
+	PORT_FN(MercenaryBSpeech, Stooges_MercenaryBSpeech),
+	PORT_FN(SetNextMission, Stooges_SetNextMission),
+	PORT_FNEND
 };
 
 PORTS(levels_GamblinDen)

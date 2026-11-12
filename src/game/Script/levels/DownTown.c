@@ -138,10 +138,10 @@ LV_CORE0(DownTown_Init)
 LV_FN(DownTown, InitStatusPy, 1, DownTown_InitStatus_C)
 LV_FN(DownTown, InitPy, 1, DownTown_Init_C)
 
-PyMethodDef g_DownTownMapMethods[] = {
-	{ "InitStatus", DownTown_InitStatusPy, 1, NULL },
-	{ "Init", DownTown_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownMapMethods[] = {
+	PORT_FN(InitStatus, DownTown_InitStatusPy),
+	PORT_FN(Init, DownTown_InitPy),
+	PORT_FNEND
 };
 
 /* ---- MapRace ---- */
@@ -167,24 +167,24 @@ RACE(14)
 RACE(15)
 RACE(16)
 
-PyMethodDef g_DownTownMapRaceMethods[] = {
-	{ "EasyRaceDownTown1", MapRace_Race1, 1, NULL },
-	{ "EasyRaceDownTown2", MapRace_Race2, 1, NULL },
-	{ "EasyRaceDownTown3", MapRace_Race3, 1, NULL },
-	{ "EasyRaceDownTown4", MapRace_Race4, 1, NULL },
-	{ "MediumRaceDownTown1", MapRace_Race5, 1, NULL },
-	{ "MediumRaceDownTown2", MapRace_Race6, 1, NULL },
-	{ "MediumRaceDownTown3", MapRace_Race7, 1, NULL },
-	{ "MediumRaceDownTown4", MapRace_Race8, 1, NULL },
-	{ "MediumRaceDownTown5", MapRace_Race9, 1, NULL },
-	{ "MediumRaceDownTown6", MapRace_Race10, 1, NULL },
-	{ "MediumRaceDownTown7", MapRace_Race11, 1, NULL },
-	{ "MediumRaceDownTown8", MapRace_Race12, 1, NULL },
-	{ "HardRaceDownTown1", MapRace_Race13, 1, NULL },
-	{ "HardRaceDownTown2", MapRace_Race14, 1, NULL },
-	{ "HardRaceDownTown3", MapRace_Race15, 1, NULL },
-	{ "HardRaceDownTown4", MapRace_Race16, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownMapRaceMethods[] = {
+	PORT_FN(EasyRaceDownTown1, MapRace_Race1),
+	PORT_FN(EasyRaceDownTown2, MapRace_Race2),
+	PORT_FN(EasyRaceDownTown3, MapRace_Race3),
+	PORT_FN(EasyRaceDownTown4, MapRace_Race4),
+	PORT_FN(MediumRaceDownTown1, MapRace_Race5),
+	PORT_FN(MediumRaceDownTown2, MapRace_Race6),
+	PORT_FN(MediumRaceDownTown3, MapRace_Race7),
+	PORT_FN(MediumRaceDownTown4, MapRace_Race8),
+	PORT_FN(MediumRaceDownTown5, MapRace_Race9),
+	PORT_FN(MediumRaceDownTown6, MapRace_Race10),
+	PORT_FN(MediumRaceDownTown7, MapRace_Race11),
+	PORT_FN(MediumRaceDownTown8, MapRace_Race12),
+	PORT_FN(HardRaceDownTown1, MapRace_Race13),
+	PORT_FN(HardRaceDownTown2, MapRace_Race14),
+	PORT_FN(HardRaceDownTown3, MapRace_Race15),
+	PORT_FN(HardRaceDownTown4, MapRace_Race16),
+	PORT_FNEND
 };
 
 /* ---- Mission_FirstContactPress: Berto calls, on to the press ---- */
@@ -211,10 +211,10 @@ static byte Press_Init(void) {
 LV_CORE0(Press_Init)
 LV_FN(Press, InitPy, 1, Press_Init_C)
 
-PyMethodDef g_DownTownFirstContactPressMethods[] = {
-	{ "InitStatus", Press_InitStatus, 1, NULL },
-	{ "Init", Press_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownFirstContactPressMethods[] = {
+	PORT_FN(InitStatus, Press_InitStatus),
+	PORT_FN(Init, Press_InitPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_BertoMassacre: the evil Bertos in waves; after the last of the bar one of them carries the matrix ---- */
@@ -345,17 +345,17 @@ LV_FN(Berto, TakeMatrixPy, 2, Berto_TakeMatrix_C)
 LV_FN(Berto, GetBertoPy, 0, Berto_GetBerto_C)
 LV_FN(Berto, MissionScorerPy, 1, Berto_MissionScorer_C)
 
-PyMethodDef g_DownTownBertoMassacreMethods[] = {
-	{ "InitStatus", Berto_InitStatusPy, 1, NULL },
-	{ "StartMission", Berto_StartMissionPy, 1, NULL },
-	{ "DeepThroatMessage", Berto_DeepThroatMessagePy, 1, NULL },
-	{ "CheckBertoDeath", Berto_CheckBertoDeathPy, 1, NULL },
-	{ "OnBertoFound", Berto_OnBertoFoundPy, 1, NULL },
-	{ "DropMatrix", Berto_DropMatrixPy, 1, NULL },
-	{ "TakeMatrix", Berto_TakeMatrixPy, 1, NULL },
-	{ "GetBerto", Berto_GetBertoPy, 1, NULL },
-	{ "MissionScorer", Berto_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownBertoMassacreMethods[] = {
+	PORT_FN(InitStatus, Berto_InitStatusPy),
+	PORT_FN(StartMission, Berto_StartMissionPy),
+	PORT_FN(DeepThroatMessage, Berto_DeepThroatMessagePy),
+	PORT_FN(CheckBertoDeath, Berto_CheckBertoDeathPy),
+	PORT_FN(OnBertoFound, Berto_OnBertoFoundPy),
+	PORT_FN(DropMatrix, Berto_DropMatrixPy),
+	PORT_FN(TakeMatrix, Berto_TakeMatrixPy),
+	PORT_FN(GetBerto, Berto_GetBertoPy),
+	PORT_FN(MissionScorer, Berto_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_DefeatCrazyGambler1: the crazy gambler comes back until he has lost three lives ---- */
@@ -481,15 +481,15 @@ LV_FN(Gambler, CreateCrazyGamblerPy, 0, Gambler_CreateCrazyGambler_C)
 LV_FN(Gambler, OnCrazyGamblerDeathPy, 2, Gambler_OnCrazyGamblerDeath_C)
 LV_FN(Gambler, MissionScorerPy, 1, Gambler_MissionScorer_C)
 
-PyMethodDef g_DownTownDefeatCrazyGambler1Methods[] = {
-	{ "GetCrazyGamblerProfile", Gambler_GetCrazyGamblerProfile, 1, NULL },
-	{ "InitStatus", Gambler_InitStatus, 1, NULL },
-	{ "Init", Gambler_InitPy, 1, NULL },
-	{ "LaunchTaunts", Gambler_LaunchTauntsPy, 1, NULL },
-	{ "CreateCrazyGambler", Gambler_CreateCrazyGamblerPy, 1, NULL },
-	{ "OnCrazyGamblerDeath", Gambler_OnCrazyGamblerDeathPy, 1, NULL },
-	{ "MissionScorer", Gambler_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownDefeatCrazyGambler1Methods[] = {
+	PORT_FN(GetCrazyGamblerProfile, Gambler_GetCrazyGamblerProfile),
+	PORT_FN(InitStatus, Gambler_InitStatus),
+	PORT_FN(Init, Gambler_InitPy),
+	PORT_FN(LaunchTaunts, Gambler_LaunchTauntsPy),
+	PORT_FN(CreateCrazyGambler, Gambler_CreateCrazyGamblerPy),
+	PORT_FN(OnCrazyGamblerDeath, Gambler_OnCrazyGamblerDeathPy),
+	PORT_FN(MissionScorer, Gambler_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_FaceTheMayor: the crazy mayor in his ship, then DeepThroat at a phone cab ---- */
@@ -638,18 +638,18 @@ LV_FN(Mayor, SetPhoneCabPy, 0, Mayor_SetPhoneCab_C)
 LV_FN(Mayor, UsePhoneCabPy, 4, Mayor_UsePhoneCab_C)
 LV_FN(Mayor, EndOfMissionPy, 1, Mayor_EndOfMission_C)
 
-PyMethodDef g_DownTownFaceTheMayorMethods[] = {
-	{ "GetMayorProfile", Mayor_GetMayorProfile, 1, NULL },
-	{ "InitStatus", Mayor_InitStatus, 1, NULL },
-	{ "Init", Mayor_InitPy, 1, NULL },
-	{ "PreLaunchTaunt", Mayor_PreLaunchTauntPy, 1, NULL },
-	{ "LaunchMayorInitialTaunt", Mayor_LaunchMayorInitialTauntPy, 1, NULL },
-	{ "CreateCrazyMayor", Mayor_CreateCrazyMayorPy, 1, NULL },
-	{ "MayorOnDeath", Mayor_MayorOnDeathPy, 1, NULL },
-	{ "SetPhoneCab", Mayor_SetPhoneCabPy, 1, NULL },
-	{ "UsePhoneCab", Mayor_UsePhoneCabPy, 1, NULL },
-	{ "EndOfMission", Mayor_EndOfMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownFaceTheMayorMethods[] = {
+	PORT_FN(GetMayorProfile, Mayor_GetMayorProfile),
+	PORT_FN(InitStatus, Mayor_InitStatus),
+	PORT_FN(Init, Mayor_InitPy),
+	PORT_FN(PreLaunchTaunt, Mayor_PreLaunchTauntPy),
+	PORT_FN(LaunchMayorInitialTaunt, Mayor_LaunchMayorInitialTauntPy),
+	PORT_FN(CreateCrazyMayor, Mayor_CreateCrazyMayorPy),
+	PORT_FN(MayorOnDeath, Mayor_MayorOnDeathPy),
+	PORT_FN(SetPhoneCab, Mayor_SetPhoneCabPy),
+	PORT_FN(UsePhoneCab, Mayor_UsePhoneCabPy),
+	PORT_FN(EndOfMission, Mayor_EndOfMissionPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_Massacre: points for every ship the player destroys before the timer runs out ---- */
@@ -787,14 +787,14 @@ LV_FN(Massacre, MissionScorerPy, 1, Massacre_MissionScorer_C)
 LV_FN(Massacre, TimeExpiredPy, 0, Massacre_TimeExpired_C)
 LV_FN(Massacre, SetNextMissionPy, 0, Massacre_SetNextMission_C)
 
-PyMethodDef g_DownTownMassacreMethods[] = {
-	{ "InitStatus", Massacre_InitStatus, 1, NULL },
-	{ "Init", Massacre_InitPy, 1, NULL },
-	{ "OnVehicleCallback", Massacre_OnVehicleCallbackPy, 1, NULL },
-	{ "MissionScorer", Massacre_MissionScorerPy, 1, NULL },
-	{ "TimeExpired", Massacre_TimeExpiredPy, 1, NULL },
-	{ "SetNextMission", Massacre_SetNextMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownMassacreMethods[] = {
+	PORT_FN(InitStatus, Massacre_InitStatus),
+	PORT_FN(Init, Massacre_InitPy),
+	PORT_FN(OnVehicleCallback, Massacre_OnVehicleCallbackPy),
+	PORT_FN(MissionScorer, Massacre_MissionScorerPy),
+	PORT_FN(TimeExpired, Massacre_TimeExpiredPy),
+	PORT_FN(SetNextMission, Massacre_SetNextMissionPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyCommSats3: levels/LevelCommon.c ---- */
@@ -1264,25 +1264,25 @@ LV_FN(Data, TakeDataPy, 2, Data_TakeData_C)
 LV_FN(Data, SetNextMissionPy, 0, Data_SetNextMission_C)
 LV_FN(Data, MissionScorerPy, 1, Data_MissionScorer_C)
 
-PyMethodDef g_DownTownGetDataPart1Methods[] = {
-	{ "GetFuncEnemiesProfile", Data_GetFuncEnemiesProfile, 1, NULL },
-	{ "InitStatus", Data_InitStatus, 1, NULL },
-	{ "Init", Data_InitPy, 1, NULL },
-	{ "InitMission", Data_InitMissionPy, 1, NULL },
-	{ "CreateTransport", Data_CreateTransportPy, 1, NULL },
-	{ "CreateFunctionary", Data_CreateFunctionaryPy, 1, NULL },
-	{ "AddTransportToList", Data_AddTransportToListPy, 1, NULL },
-	{ "SpawnFunctionaries", Data_SpawnFunctionariesPy, 1, NULL },
-	{ "OnFunctionaryDeath", Data_OnFunctionaryDeathPy, 1, NULL },
-	{ "OnTransportsDeath", Data_OnTransportsDeathPy, 1, NULL },
-	{ "OnTransportsDamage", Data_OnTransportsDamagePy, 1, NULL },
-	{ "SpawnData", Data_SpawnDataPy, 1, NULL },
-	{ "DropData", Data_DropDataPy, 1, NULL },
-	{ "DelData", Data_DelDataPy, 1, NULL },
-	{ "TakeData", Data_TakeDataPy, 1, NULL },
-	{ "SetNextMission", Data_SetNextMissionPy, 1, NULL },
-	{ "MissionScorer", Data_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownGetDataPart1Methods[] = {
+	PORT_FN(GetFuncEnemiesProfile, Data_GetFuncEnemiesProfile),
+	PORT_FN(InitStatus, Data_InitStatus),
+	PORT_FN(Init, Data_InitPy),
+	PORT_FN(InitMission, Data_InitMissionPy),
+	PORT_FN(CreateTransport, Data_CreateTransportPy),
+	PORT_FN(CreateFunctionary, Data_CreateFunctionaryPy),
+	PORT_FN(AddTransportToList, Data_AddTransportToListPy),
+	PORT_FN(SpawnFunctionaries, Data_SpawnFunctionariesPy),
+	PORT_FN(OnFunctionaryDeath, Data_OnFunctionaryDeathPy),
+	PORT_FN(OnTransportsDeath, Data_OnTransportsDeathPy),
+	PORT_FN(OnTransportsDamage, Data_OnTransportsDamagePy),
+	PORT_FN(SpawnData, Data_SpawnDataPy),
+	PORT_FN(DropData, Data_DropDataPy),
+	PORT_FN(DelData, Data_DelDataPy),
+	PORT_FN(TakeData, Data_TakeDataPy),
+	PORT_FN(SetNextMission, Data_SetNextMissionPy),
+	PORT_FN(MissionScorer, Data_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_HumphreyRace: the first crazy bet, a race against Humphrey with the doors of the level closed ---- */
@@ -1420,19 +1420,19 @@ LV_FN(Bet, PreGivePlans2Py, 0, Bet_PreGivePlans2_C)
 LV_FN(Bet, GivePlansPy, 0, Bet_GivePlans_C)
 LV_FN(Bet, SetNextMissionPy, 0, Bet_SetNextMission_C)
 
-PyMethodDef g_DownTownHumphreyRaceMethods[] = {
-	{ "InitStatus", Bet_InitStatusPy, 1, NULL },
-	{ "ShowSystemMessage", Bet_ShowSystemMessagePy, 1, NULL },
-	{ "Init", Bet_InitPy, 1, NULL },
-	{ "ShowBoostMessage", Bet_ShowBoostMessagePy, 1, NULL },
-	{ "ClosePressHangar", Bet_ClosePressHangarPy, 1, NULL },
-	{ "DelRacers", Bet_DelRacersPy, 1, NULL },
-	{ "CallCrazyGambler", Bet_CallCrazyGamblerPy, 1, NULL },
-	{ "UsePhoneCab", Bet_UsePhoneCabPy, 1, NULL },
-	{ "PreGivePlans2", Bet_PreGivePlans2Py, 1, NULL },
-	{ "GivePlans", Bet_GivePlansPy, 1, NULL },
-	{ "SetNextMission", Bet_SetNextMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownHumphreyRaceMethods[] = {
+	PORT_FN(InitStatus, Bet_InitStatusPy),
+	PORT_FN(ShowSystemMessage, Bet_ShowSystemMessagePy),
+	PORT_FN(Init, Bet_InitPy),
+	PORT_FN(ShowBoostMessage, Bet_ShowBoostMessagePy),
+	PORT_FN(ClosePressHangar, Bet_ClosePressHangarPy),
+	PORT_FN(DelRacers, Bet_DelRacersPy),
+	PORT_FN(CallCrazyGambler, Bet_CallCrazyGamblerPy),
+	PORT_FN(UsePhoneCab, Bet_UsePhoneCabPy),
+	PORT_FN(PreGivePlans2, Bet_PreGivePlans2Py),
+	PORT_FN(GivePlans, Bet_GivePlansPy),
+	PORT_FN(SetNextMission, Bet_SetNextMissionPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_DistractHumphrey: Humphrey and the player race to destroy ten ships, the player must keep him busy ---- */
@@ -1878,29 +1878,29 @@ LV_FN(Hump, CallDeepThroatPy, 0, Hump_CallDeepThroat_C)
 LV_FN(Hump, UsePhoneCab2Py, 4, Hump_UsePhoneCab2_C)
 LV_FN(Hump, MissionScorerPy, 1, Hump_MissionScorer_C)
 
-PyMethodDef g_DownTownDistractHumphreyMethods[] = {
-	{ "GetHumphreyProfile", Hump_GetHumphreyProfile, 1, NULL },
-	{ "InitStatus", Hump_InitStatus, 1, NULL },
-	{ "Init", Hump_InitPy, 1, NULL },
-	{ "CallHumphrey", Hump_CallHumphreyPy, 1, NULL },
-	{ "UsePhoneCab", Hump_UsePhoneCabPy, 1, NULL },
-	{ "CreateWaypoint", Hump_CreateWaypointPy, 1, NULL },
-	{ "OnStartDistraction", Hump_OnStartDistractionPy, 1, NULL },
-	{ "EnableMissionWaypoint", Hump_EnableMissionWaypointPy, 1, NULL },
-	{ "StartCameraTravelling", Hump_StartCameraTravellingPy, 1, NULL },
-	{ "AbortCameraTravelling", Hump_AbortCameraTravellingPy, 1, NULL },
-	{ "CreateHumphrey", Hump_CreateHumphreyPy, 1, NULL },
-	{ "LaunchMission", Hump_LaunchMissionPy, 1, NULL },
-	{ "AssignNewHumphreyTarget", Hump_AssignNewHumphreyTargetPy, 1, NULL },
-	{ "OnHumphreyDeath", Hump_OnHumphreyDeathPy, 1, NULL },
-	{ "OnHumphreyDamage", Hump_OnHumphreyDamagePy, 1, NULL },
-	{ "OnGeneralDamage", Hump_OnGeneralDamagePy, 1, NULL },
-	{ "OnDeath", Hump_OnDeathPy, 1, NULL },
-	{ "StopMission", Hump_StopMissionPy, 1, NULL },
-	{ "CallDeepThroat", Hump_CallDeepThroatPy, 1, NULL },
-	{ "UsePhoneCab2", Hump_UsePhoneCab2Py, 1, NULL },
-	{ "MissionScorer", Hump_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownDistractHumphreyMethods[] = {
+	PORT_FN(GetHumphreyProfile, Hump_GetHumphreyProfile),
+	PORT_FN(InitStatus, Hump_InitStatus),
+	PORT_FN(Init, Hump_InitPy),
+	PORT_FN(CallHumphrey, Hump_CallHumphreyPy),
+	PORT_FN(UsePhoneCab, Hump_UsePhoneCabPy),
+	PORT_FN(CreateWaypoint, Hump_CreateWaypointPy),
+	PORT_FN(OnStartDistraction, Hump_OnStartDistractionPy),
+	PORT_FN(EnableMissionWaypoint, Hump_EnableMissionWaypointPy),
+	PORT_FN(StartCameraTravelling, Hump_StartCameraTravellingPy),
+	PORT_FN(AbortCameraTravelling, Hump_AbortCameraTravellingPy),
+	PORT_FN(CreateHumphrey, Hump_CreateHumphreyPy),
+	PORT_FN(LaunchMission, Hump_LaunchMissionPy),
+	PORT_FN(AssignNewHumphreyTarget, Hump_AssignNewHumphreyTargetPy),
+	PORT_FN(OnHumphreyDeath, Hump_OnHumphreyDeathPy),
+	PORT_FN(OnHumphreyDamage, Hump_OnHumphreyDamagePy),
+	PORT_FN(OnGeneralDamage, Hump_OnGeneralDamagePy),
+	PORT_FN(OnDeath, Hump_OnDeathPy),
+	PORT_FN(StopMission, Hump_StopMissionPy),
+	PORT_FN(CallDeepThroat, Hump_CallDeepThroatPy),
+	PORT_FN(UsePhoneCab2, Hump_UsePhoneCab2Py),
+	PORT_FN(MissionScorer, Hump_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_MultiplusRace: Ficus' race against the police, then Stupidus and his friends ---- */
@@ -2217,32 +2217,30 @@ LV_FN(Plus, MissionScorerPy, 1, Plus_MissionScorer_C)
 LV_FN(Plus, SetNextMissionPy, 0, Plus_SetNextMission_C)
 LV_FN(Plus, CGCallsPy, 0, Plus_CGCalls_C)
 
-PyMethodDef g_DownTownMultiplusRaceMethods[] = {
-	{ "GetFunctionaryProfile", Plus_GetFunctionaryProfile, 1, NULL },
-	{ "InitStatus", Plus_InitStatusPy, 1, NULL },
-	{ "Init", Plus_InitPy, 1, NULL },
-	{ "RaceList", Plus_RaceList, 1, NULL },
-	{ "GetDealType", Plus_GetDealType, 1, NULL },
-	{ "EndOfRace", Plus_EndOfRacePy, 1, NULL },
-	{ "SetPhoneCab", Plus_SetPhoneCabPy, 1, NULL },
-	{ "UsePhoneCab", Plus_UsePhoneCabPy, 1, NULL },
-	{ "InitRace", Plus_InitRacePy, 1, NULL },
-	{ "AfterInitRaceTaunt", Plus_AfterInitRaceTauntPy, 1, NULL },
-	{ "InitKill", Plus_InitKillPy, 1, NULL },
-	{ "SpawnStupidus", Plus_SpawnStupidusPy, 1, NULL },
-	{ "SpawnStupidusFriends", Plus_SpawnStupidusFriendsPy, 1, NULL },
-	{ "StupidusFriendOnDeath", Plus_StupidusFriendOnDeathPy, 1, NULL },
-	{ "RestoreEnemies", Plus_RestoreEnemiesPy, 1, NULL },
-	{ "StupidusOnDeath", Plus_StupidusOnDeathPy, 1, NULL },
-	{ "MissionScorer", Plus_MissionScorerPy, 1, NULL },
-	{ "SetNextMission", Plus_SetNextMissionPy, 1, NULL },
-	{ "CGCalls", Plus_CGCallsPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownMultiplusRaceMethods[] = {
+	PORT_FN(GetFunctionaryProfile, Plus_GetFunctionaryProfile),
+	PORT_FN(InitStatus, Plus_InitStatusPy),
+	PORT_FN(Init, Plus_InitPy),
+	PORT_FN(RaceList, Plus_RaceList),
+	PORT_FN(GetDealType, Plus_GetDealType),
+	PORT_FN(EndOfRace, Plus_EndOfRacePy),
+	PORT_FN(SetPhoneCab, Plus_SetPhoneCabPy),
+	PORT_FN(UsePhoneCab, Plus_UsePhoneCabPy),
+	PORT_FN(InitRace, Plus_InitRacePy),
+	PORT_FN(AfterInitRaceTaunt, Plus_AfterInitRaceTauntPy),
+	PORT_FN(InitKill, Plus_InitKillPy),
+	PORT_FN(SpawnStupidus, Plus_SpawnStupidusPy),
+	PORT_FN(SpawnStupidusFriends, Plus_SpawnStupidusFriendsPy),
+	PORT_FN(StupidusFriendOnDeath, Plus_StupidusFriendOnDeathPy),
+	PORT_FN(RestoreEnemies, Plus_RestoreEnemiesPy),
+	PORT_FN(StupidusOnDeath, Plus_StupidusOnDeathPy),
+	PORT_FN(MissionScorer, Plus_MissionScorerPy),
+	PORT_FN(SetNextMission, Plus_SetNextMissionPy),
+	PORT_FN(CGCalls, Plus_CGCallsPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_ProtectMayorTransport: the mayor's transport through the mercenaries, then the mercenaries ---- */
-
-#define KW(fn) (PyCFunction)(void (*)(void))fn, METH_VARARGS | METH_KEYWORDS
 
 static const char *const merc_profile[] = {
 	"StupidPathFinding=0", "ControlStrafe=2", "ControlBrake=0", "GoNextItemRace=1", "ControlHookRace=0", "CadenceShootCM=5", "UsePercSonic=80",
@@ -2691,33 +2689,33 @@ LV_FN(Escort, MissionScorerPy, 1, Escort_MissionScorer_C)
 LV_FN(Escort, KillThemPy, 0, Escort_KillThem_C)
 LV_FN(Escort, RestoreTransportPy, 1, Escort_RestoreTransport_C)
 
-PyMethodDef g_DownTownProtectMayorTransportMethods[] = {
-	{ "GetMercEnemiesProfile", Escort_GetMercEnemiesProfilePy, 1, NULL },
-	{ "InitStatus", Escort_InitStatusPy, 1, NULL },
-	{ "Init", Escort_InitPy, 1, NULL },
-	{ "MissionInit", Escort_MissionInitPy, 1, NULL },
-	{ "OnMissionStart", Escort_OnMissionStartPy, 1, NULL },
-	{ "OnMissionStart2", Escort_OnMissionStart2Py, 1, NULL },
-	{ "TransGoto", Escort_TransGotoPy, 1, NULL },
-	{ "CreateBadGuy", Escort_CreateBadGuyPy, 1, NULL },
-	{ "AppearsBadGuys", Escort_AppearsBadGuysPy, 1, NULL },
-	{ "AppearsBadGuys2", Escort_AppearsBadGuys2Py, 1, NULL },
-	{ "NextBadGuy", Escort_NextBadGuyPy, 1, NULL },
-	{ "BackToTheTransport", Escort_BackToTheTransportPy, 1, NULL },
-	{ "BackToPlayer", Escort_BackToPlayerPy, 1, NULL },
-	{ "MadGuyDeath", Escort_MadGuyDeathPy, 1, NULL },
-	{ "PreLaunchTraitorius", Escort_PreLaunchTraitoriusPy, 1, NULL },
-	{ "SetNextMission", Escort_SetNextMissionPy, 1, NULL },
-	{ "MadGuyDamage", Escort_MadGuyDamagePy, 1, NULL },
-	{ "MercTauntMessager", Escort_MercTauntMessagerPy, 1, NULL },
-	{ "OnTravelComplete", Escort_OnTravelCompletePy, 1, NULL },
-	{ "ActualizeScorer", Escort_ActualizeScorerPy, 1, NULL },
-	{ "MissionScorer", Escort_MissionScorerPy, 1, NULL },
-	{ "KillThem", Escort_KillThemPy, 1, NULL },
-	{ "InitKillThemMission", KW(Escort_InitKillThemMissionPy), NULL },
-	{ "InitKillBadGuys", KW(Escort_InitKillBadGuysPy), NULL },
-	{ "RestoreTransport", Escort_RestoreTransportPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownProtectMayorTransportMethods[] = {
+	PORT_FN(GetMercEnemiesProfile, Escort_GetMercEnemiesProfilePy),
+	PORT_FN(InitStatus, Escort_InitStatusPy),
+	PORT_FN(Init, Escort_InitPy),
+	PORT_FN(MissionInit, Escort_MissionInitPy),
+	PORT_FN(OnMissionStart, Escort_OnMissionStartPy),
+	PORT_FN(OnMissionStart2, Escort_OnMissionStart2Py),
+	PORT_FN(TransGoto, Escort_TransGotoPy),
+	PORT_FN(CreateBadGuy, Escort_CreateBadGuyPy),
+	PORT_FN(AppearsBadGuys, Escort_AppearsBadGuysPy),
+	PORT_FN(AppearsBadGuys2, Escort_AppearsBadGuys2Py),
+	PORT_FN(NextBadGuy, Escort_NextBadGuyPy),
+	PORT_FN(BackToTheTransport, Escort_BackToTheTransportPy),
+	PORT_FN(BackToPlayer, Escort_BackToPlayerPy),
+	PORT_FN(MadGuyDeath, Escort_MadGuyDeathPy),
+	PORT_FN(PreLaunchTraitorius, Escort_PreLaunchTraitoriusPy),
+	PORT_FN(SetNextMission, Escort_SetNextMissionPy),
+	PORT_FN(MadGuyDamage, Escort_MadGuyDamagePy),
+	PORT_FN(MercTauntMessager, Escort_MercTauntMessagerPy),
+	PORT_FN(OnTravelComplete, Escort_OnTravelCompletePy),
+	PORT_FN(ActualizeScorer, Escort_ActualizeScorerPy),
+	PORT_FN(MissionScorer, Escort_MissionScorerPy),
+	PORT_FN(KillThem, Escort_KillThemPy),
+	PORT_FNK(InitKillThemMission, Escort_InitKillThemMissionPy),
+	PORT_FNK(InitKillBadGuys, Escort_InitKillBadGuysPy),
+	PORT_FN(RestoreTransport, Escort_RestoreTransportPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_StealMayorShip: in the mayor's ship the player destroys twenty police ships, then parks it ---- */
@@ -3039,25 +3037,25 @@ LV_FN(Steal, MissionScorerPy, 1, Steal_MissionScorer_C)
 LV_FN(Steal, OnPoliceDeathPy, 2, Steal_OnPoliceDeath_C)
 LV_FN(Steal, ParkMayorShipPy, 0, Steal_ParkMayorShip_C)
 
-PyMethodDef g_DownTownStealMayorShipMethods[] = {
-	{ "InitStatus", Steal_InitStatus, 1, NULL },
-	{ "Init", Steal_InitPy, 1, NULL },
-	{ "CreateMissionShip", Steal_CreateMissionShipPy, 1, NULL },
-	{ "TestForMissionShip", Steal_TestForMissionShipPy, 1, NULL },
-	{ "SetPlatformTarget", Steal_SetPlatformTargetPy, 1, NULL },
-	{ "TestForCorrectPlatform", Steal_TestForCorrectPlatformPy, 1, NULL },
-	{ "UseParkedMayorShip", Steal_UseParkedMayorShipPy, 1, NULL },
-	{ "UsePhoneCab", Steal_UsePhoneCabPy, 1, NULL },
-	{ "SetNextMission", Steal_SetNextMissionPy, 1, NULL },
-	{ "CGCalls", Steal_CGCallsPy, 1, NULL },
-	{ "StartMission", Steal_StartMissionPy, 1, NULL },
-	{ "ContinueMission", Steal_ContinueMissionPy, 1, NULL },
-	{ "SetPoliceListTargetStatus", Steal_SetPoliceListTargetStatusPy, 1, NULL },
-	{ "ComeBack", Steal_ComeBackPy, 1, NULL },
-	{ "MissionScorer", Steal_MissionScorerPy, 1, NULL },
-	{ "OnPoliceDeath", Steal_OnPoliceDeathPy, 1, NULL },
-	{ "ParkMayorShip", Steal_ParkMayorShipPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DownTownStealMayorShipMethods[] = {
+	PORT_FN(InitStatus, Steal_InitStatus),
+	PORT_FN(Init, Steal_InitPy),
+	PORT_FN(CreateMissionShip, Steal_CreateMissionShipPy),
+	PORT_FN(TestForMissionShip, Steal_TestForMissionShipPy),
+	PORT_FN(SetPlatformTarget, Steal_SetPlatformTargetPy),
+	PORT_FN(TestForCorrectPlatform, Steal_TestForCorrectPlatformPy),
+	PORT_FN(UseParkedMayorShip, Steal_UseParkedMayorShipPy),
+	PORT_FN(UsePhoneCab, Steal_UsePhoneCabPy),
+	PORT_FN(SetNextMission, Steal_SetNextMissionPy),
+	PORT_FN(CGCalls, Steal_CGCallsPy),
+	PORT_FN(StartMission, Steal_StartMissionPy),
+	PORT_FN(ContinueMission, Steal_ContinueMissionPy),
+	PORT_FN(SetPoliceListTargetStatus, Steal_SetPoliceListTargetStatusPy),
+	PORT_FN(ComeBack, Steal_ComeBackPy),
+	PORT_FN(MissionScorer, Steal_MissionScorerPy),
+	PORT_FN(OnPoliceDeath, Steal_OnPoliceDeathPy),
+	PORT_FN(ParkMayorShip, Steal_ParkMayorShipPy),
+	PORT_FNEND
 };
 
 PORTS(levels_DownTown)

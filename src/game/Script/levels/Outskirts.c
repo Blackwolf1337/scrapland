@@ -170,10 +170,10 @@ LV_CORE0(OsMap_Init)
 LV_FN(OsMap, InitStatusPy, 1, OsMap_InitStatus_C)
 LV_FN(OsMap, InitPy, 1, OsMap_Init_C)
 
-PyMethodDef g_OutskirtsMapMethods[] = {
-	{ "InitStatus", OsMap_InitStatusPy, 1, NULL },
-	{ "Init", OsMap_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsMapMethods[] = {
+	PORT_FN(InitStatus, OsMap_InitStatusPy),
+	PORT_FN(Init, OsMap_InitPy),
+	PORT_FNEND
 };
 
 /* ---- MapRace ---- */
@@ -194,19 +194,19 @@ RACE(Medium4, 8)
 RACE(Medium5, 9)
 RACE(Win2nd, 10)
 
-PyMethodDef g_OutskirtsMapRaceMethods[] = {
-	{ "EasyRaceOurskirts1", MapRace_Easy1, 1, NULL },
-	{ "EasyRaceOurskirts2", MapRace_Easy2, 1, NULL },
-	{ "EasyRaceOurskirts3", MapRace_Easy3, 1, NULL },
-	{ "EasyRaceOurskirts4", MapRace_Easy4, 1, NULL },
-	{ "EasyRaceOurskirts5", MapRace_Easy5, 1, NULL },
-	{ "MediumRaceOurskirts1", MapRace_Medium1, 1, NULL },
-	{ "MediumRaceOurskirts2", MapRace_Medium2, 1, NULL },
-	{ "MediumRaceOurskirts3", MapRace_Medium3, 1, NULL },
-	{ "MediumRaceOurskirts4", MapRace_Medium4, 1, NULL },
-	{ "MediumRaceOurskirts5", MapRace_Medium5, 1, NULL },
-	{ "Mission_Win2ndRace_Race", MapRace_Win2nd, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsMapRaceMethods[] = {
+	PORT_FN(EasyRaceOurskirts1, MapRace_Easy1),
+	PORT_FN(EasyRaceOurskirts2, MapRace_Easy2),
+	PORT_FN(EasyRaceOurskirts3, MapRace_Easy3),
+	PORT_FN(EasyRaceOurskirts4, MapRace_Easy4),
+	PORT_FN(EasyRaceOurskirts5, MapRace_Easy5),
+	PORT_FN(MediumRaceOurskirts1, MapRace_Medium1),
+	PORT_FN(MediumRaceOurskirts2, MapRace_Medium2),
+	PORT_FN(MediumRaceOurskirts3, MapRace_Medium3),
+	PORT_FN(MediumRaceOurskirts4, MapRace_Medium4),
+	PORT_FN(MediumRaceOurskirts5, MapRace_Medium5),
+	PORT_FN(Mission_Win2ndRace_Race, MapRace_Win2nd),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyCommSats1: levels/LevelCommon.c ---- */
@@ -706,7 +706,7 @@ static byte Win2nd_CancelMission(void) {
 	return Mode_Done(&t, ok);
 }
 
-/* the keyword adapter of OnCounterMeasure(id=0) */
+/* the keyword entry of OnCounterMeasure(id=0) */
 MODE_KW(Win2nd, OnCounterMeasurePy, "|O", "id") {
 	return Win2nd_OnCounterMeasure();
 }
@@ -728,19 +728,19 @@ LV_FN(Win2nd, OnNearCheckPointPy, 2, Win2nd_OnNearCheckPoint_C)
 LV_FN(Win2nd, NameOponGoItemPy, 1, Win2nd_NameOponGoItem_C)
 LV_FN(Win2nd, CancelMissionPy, 0, Win2nd_CancelMission_C)
 
-PyMethodDef g_OutskirtsWin2ndRaceMethods[] = {
-	{ "InitStatus", Win2nd_InitStatus, 1, NULL },
-	{ "Init", Win2nd_InitPy, 1, NULL },
-	{ "InitRace", Win2nd_InitRacePy, 1, NULL },
-	{ "OnCounterMeasure", (PyCFunction)(void (*)(void))Win2nd_OnCounterMeasurePy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "GetRaceWaypointIndex", Win2nd_GetRaceWaypointIndexPy, 1, NULL },
-	{ "RacerDamaged", Win2nd_RacerDamagedPy, 1, NULL },
-	{ "OnRaceStart", Win2nd_OnRaceStartPy, 1, NULL },
-	{ "OnCheckPoint", Win2nd_OnCheckPointPy, 1, NULL },
-	{ "OnNearCheckPoint", Win2nd_OnNearCheckPointPy, 1, NULL },
-	{ "NameOponGoItem", Win2nd_NameOponGoItemPy, 1, NULL },
-	{ "CancelMission", Win2nd_CancelMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsWin2ndRaceMethods[] = {
+	PORT_FN(InitStatus, Win2nd_InitStatus),
+	PORT_FN(Init, Win2nd_InitPy),
+	PORT_FN(InitRace, Win2nd_InitRacePy),
+	PORT_FNK(OnCounterMeasure, Win2nd_OnCounterMeasurePy),
+	PORT_FN(GetRaceWaypointIndex, Win2nd_GetRaceWaypointIndexPy),
+	PORT_FN(RacerDamaged, Win2nd_RacerDamagedPy),
+	PORT_FN(OnRaceStart, Win2nd_OnRaceStartPy),
+	PORT_FN(OnCheckPoint, Win2nd_OnCheckPointPy),
+	PORT_FN(OnNearCheckPoint, Win2nd_OnNearCheckPointPy),
+	PORT_FN(NameOponGoItem, Win2nd_NameOponGoItemPy),
+	PORT_FN(CancelMission, Win2nd_CancelMissionPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_Demo_HumphreyRace: the race against Humphrey of the demo, then the call to the crazy gambler ---- */
@@ -893,20 +893,20 @@ LV_FN(Demo, UsePhoneCabPy, 4, Demo_UsePhoneCab_C)
 LV_FN(Demo, EnableMetroPy, 0, Demo_EnableMetro_C)
 LV_FN(Demo, OnMetroUsedPy, 4, Demo_OnMetroUsed_C)
 
-PyMethodDef g_OutskirtsDemoHumphreyRaceMethods[] = {
-	{ "InitStatus", Demo_InitStatusPy, 1, NULL },
-	{ "ShowSystemMessage", Demo_ShowSystemMessagePy, 1, NULL },
-	{ "Init", Demo_InitPy, 1, NULL },
-	{ "ShowBoostMessage", Demo_ShowBoostMessagePy, 1, NULL },
-	{ "ClosePressHangar", Demo_ClosePressHangarPy, 1, NULL },
-	{ "DelRacers", Demo_DelRacersPy, 1, NULL },
-	{ "OnPlayerWinsRace", Demo_OnPlayerWinsRacePy, 1, NULL },
-	{ "CallCrazyGambler", Demo_CallCrazyGamblerPy, 1, NULL },
-	{ "ShowRustyMapsSystemMessage", Demo_ShowRustyMapsSystemMessagePy, 1, NULL },
-	{ "UsePhoneCab", Demo_UsePhoneCabPy, 1, NULL },
-	{ "EnableMetro", Demo_EnableMetroPy, 1, NULL },
-	{ "OnMetroUsed", Demo_OnMetroUsedPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsDemoHumphreyRaceMethods[] = {
+	PORT_FN(InitStatus, Demo_InitStatusPy),
+	PORT_FN(ShowSystemMessage, Demo_ShowSystemMessagePy),
+	PORT_FN(Init, Demo_InitPy),
+	PORT_FN(ShowBoostMessage, Demo_ShowBoostMessagePy),
+	PORT_FN(ClosePressHangar, Demo_ClosePressHangarPy),
+	PORT_FN(DelRacers, Demo_DelRacersPy),
+	PORT_FN(OnPlayerWinsRace, Demo_OnPlayerWinsRacePy),
+	PORT_FN(CallCrazyGambler, Demo_CallCrazyGamblerPy),
+	PORT_FN(ShowRustyMapsSystemMessage, Demo_ShowRustyMapsSystemMessagePy),
+	PORT_FN(UsePhoneCab, Demo_UsePhoneCabPy),
+	PORT_FN(EnableMetro, Demo_EnableMetroPy),
+	PORT_FN(OnMetroUsed, Demo_OnMetroUsedPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_GoToOutskirts: the crazy gambler calls until the player takes the elevator to GamblinDen ---- */
@@ -970,12 +970,12 @@ LV_FN(GoTo, InitPy, 1, GoTo_Init_C)
 LV_FN(GoTo, LaunchCrazyGamblerComunicationPy, 1, GoTo_LaunchCrazyGamblerComunication_C)
 LV_FN(GoTo, PlayCrazyGamblerComunicationPy, 0, GoTo_PlayCrazyGamblerComunication_C)
 
-PyMethodDef g_OutskirtsGoToOutskirtsMethods[] = {
-	{ "InitStatus", GoTo_InitStatus, 1, NULL },
-	{ "Init", GoTo_InitPy, 1, NULL },
-	{ "LaunchCrazyGamblerComunication", GoTo_LaunchCrazyGamblerComunicationPy, 1, NULL },
-	{ "PlayCrazyGamblerComunication", GoTo_PlayCrazyGamblerComunicationPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsGoToOutskirtsMethods[] = {
+	PORT_FN(InitStatus, GoTo_InitStatus),
+	PORT_FN(Init, GoTo_InitPy),
+	PORT_FN(LaunchCrazyGamblerComunication, GoTo_LaunchCrazyGamblerComunicationPy),
+	PORT_FN(PlayCrazyGamblerComunication, GoTo_PlayCrazyGamblerComunicationPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_KillPolice: two police ships to kill for the crazy gambler, then Berto and the metro to the press ---- */
@@ -1118,16 +1118,16 @@ LV_FN(Police, OnPoliceDeathPy, 2, Police_OnPoliceDeath_C)
 LV_FN(Police, BertoAppearsPy, 0, Police_BertoAppears_C)
 LV_FN(Police, EnableMetroPy, 0, Police_EnableMetro_C)
 
-PyMethodDef g_OutskirtsKillPoliceMethods[] = {
-	{ "InitStatus", Police_InitStatusPy, 1, NULL },
-	{ "Init", Police_InitPy, 1, NULL },
-	{ "SetPos", Police_SetPosPy, 1, NULL },
-	{ "InitMission", Police_InitMissionPy, 1, NULL },
-	{ "OnAlarm", Police_OnAlarmPy, 1, NULL },
-	{ "OnPoliceDeath", Police_OnPoliceDeathPy, 1, NULL },
-	{ "BertoAppears", Police_BertoAppearsPy, 1, NULL },
-	{ "EnableMetro", Police_EnableMetroPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsKillPoliceMethods[] = {
+	PORT_FN(InitStatus, Police_InitStatusPy),
+	PORT_FN(Init, Police_InitPy),
+	PORT_FN(SetPos, Police_SetPosPy),
+	PORT_FN(InitMission, Police_InitMissionPy),
+	PORT_FN(OnAlarm, Police_OnAlarmPy),
+	PORT_FN(OnPoliceDeath, Police_OnPoliceDeathPy),
+	PORT_FN(BertoAppears, Police_BertoAppearsPy),
+	PORT_FN(EnableMetro, Police_EnableMetroPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_TransportKiller: the transport that only the ATPC hurts, its data pack, then the police boss ---- */
@@ -1275,17 +1275,17 @@ LV_FN(Transport, TryToDamagePy, 3, Transport_TryToDamage_C)
 LV_FN(Transport, InitCallPy, 0, Transport_InitCall_C)
 LV_FN(Transport, SetNextMissionPy, 0, Transport_SetNextMission_C)
 
-PyMethodDef g_OutskirtsTransportKillerMethods[] = {
-	{ "InitStatus", Transport_InitStatus, 1, NULL },
-	{ "Init", Transport_InitPy, 1, NULL },
-	{ "InitTransport", Transport_InitTransportPy, 1, NULL },
-	{ "isValidDamage", Transport_isValidDamagePy, 1, NULL },
-	{ "TryToDeath", Transport_TryToDeathPy, 1, NULL },
-	{ "TakeDataPack", Transport_TakeDataPackPy, 1, NULL },
-	{ "TryToDamage", Transport_TryToDamagePy, 1, NULL },
-	{ "InitCall", Transport_InitCallPy, 1, NULL },
-	{ "SetNextMission", Transport_SetNextMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsTransportKillerMethods[] = {
+	PORT_FN(InitStatus, Transport_InitStatus),
+	PORT_FN(Init, Transport_InitPy),
+	PORT_FN(InitTransport, Transport_InitTransportPy),
+	PORT_FN(isValidDamage, Transport_isValidDamagePy),
+	PORT_FN(TryToDeath, Transport_TryToDeathPy),
+	PORT_FN(TakeDataPack, Transport_TakeDataPackPy),
+	PORT_FN(TryToDamage, Transport_TryToDamagePy),
+	PORT_FN(InitCall, Transport_InitCallPy),
+	PORT_FN(SetNextMission, Transport_SetNextMissionPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyHumphrey: Humphrey attacks again and again until his lives are gone ---- */
@@ -1426,15 +1426,15 @@ LV_FN(Humphrey, LaunchTauntPy, 0, Humphrey_LaunchTaunt_C)
 LV_FN(Humphrey, OnHumphreyDeathPy, 2, Humphrey_OnHumphreyDeath_C)
 LV_FN(Humphrey, MissionScorerPy, 1, Humphrey_MissionScorer_C)
 
-PyMethodDef g_OutskirtsDestroyHumphreyMethods[] = {
-	{ "GetHumphreyProfile", Humphrey_GetHumphreyProfile, 1, NULL },
-	{ "InitStatus", Humphrey_InitStatus, 1, NULL },
-	{ "CreateHumphrey", Humphrey_CreateHumphreyPy, 1, NULL },
-	{ "HumphreyAttacks", Humphrey_HumphreyAttacksPy, 1, NULL },
-	{ "LaunchTaunt", Humphrey_LaunchTauntPy, 1, NULL },
-	{ "OnHumphreyDeath", Humphrey_OnHumphreyDeathPy, 1, NULL },
-	{ "MissionScorer", Humphrey_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsDestroyHumphreyMethods[] = {
+	PORT_FN(GetHumphreyProfile, Humphrey_GetHumphreyProfile),
+	PORT_FN(InitStatus, Humphrey_InitStatus),
+	PORT_FN(CreateHumphrey, Humphrey_CreateHumphreyPy),
+	PORT_FN(HumphreyAttacks, Humphrey_HumphreyAttacksPy),
+	PORT_FN(LaunchTaunt, Humphrey_LaunchTauntPy),
+	PORT_FN(OnHumphreyDeath, Humphrey_OnHumphreyDeathPy),
+	PORT_FN(MissionScorer, Humphrey_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_IdentifyMerc: the lonely mercenary kills Traitorius in a scene, the player scans him, DeepThroat ---- */
@@ -1784,7 +1784,7 @@ static byte Merc_MissionScorer(const nativeVal_t *id) {
 	return Mode_Done(&t, ok);
 }
 
-/* the keyword adapter of InitIdentifyMerc(elevator=None) */
+/* the keyword entry of InitIdentifyMerc(elevator=None) */
 MODE_KW(Merc, InitIdentifyMercPy, "|O", "elevator") {
 	return Merc_InitIdentifyMerc();
 }
@@ -1826,28 +1826,28 @@ LV_FN(Merc, UsePhoneCabPy, 4, Merc_UsePhoneCab_C)
 LV_FN(Merc, SetNextMissionPy, 0, Merc_SetNextMission_C)
 LV_FN(Merc, MissionScorerPy, 1, Merc_MissionScorer_C)
 
-PyMethodDef g_OutskirtsIdentifyMercMethods[] = {
-	{ "CreateLonelyMercProfiles", Merc_CreateLonelyMercProfilesPy, 1, NULL },
-	{ "InitStatus", Merc_InitStatusPy, 1, NULL },
-	{ "Init", Merc_InitPy, 1, NULL },
-	{ "InitIdentifyMerc", (PyCFunction)(void (*)(void))Merc_InitIdentifyMercPy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "CreateLonelyMercInScene", Merc_CreateLonelyMercInScenePy, 1, NULL },
-	{ "CheckTraitoriusDeath", Merc_CheckTraitoriusDeathPy, 1, NULL },
-	{ "EndOfScene", Merc_EndOfScenePy, 1, NULL },
-	{ "DelLonelyMerc", Merc_DelLonelyMercPy, 1, NULL },
-	{ "CreateLonelyMerc", (PyCFunction)(void (*)(void))Merc_CreateLonelyMercPy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "InitMission", Merc_InitMissionPy, 1, NULL },
-	{ "ScanShip", Merc_ScanShipPy, 1, NULL },
-	{ "OnFinishScan", Merc_OnFinishScanPy, 1, NULL },
-	{ "OnLonelyMercDeath", Merc_OnLonelyMercDeathPy, 1, NULL },
-	{ "OnLonelyMercDamage", Merc_OnLonelyMercDamagePy, 1, NULL },
-	{ "PreRespawnLonelyMerc", Merc_PreRespawnLonelyMercPy, 1, NULL },
-	{ "RespawnLonelyMerc", Merc_RespawnLonelyMercPy, 1, NULL },
-	{ "SetPhoneCab", Merc_SetPhoneCabPy, 1, NULL },
-	{ "UsePhoneCab", Merc_UsePhoneCabPy, 1, NULL },
-	{ "SetNextMission", Merc_SetNextMissionPy, 1, NULL },
-	{ "MissionScorer", Merc_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsIdentifyMercMethods[] = {
+	PORT_FN(CreateLonelyMercProfiles, Merc_CreateLonelyMercProfilesPy),
+	PORT_FN(InitStatus, Merc_InitStatusPy),
+	PORT_FN(Init, Merc_InitPy),
+	PORT_FNK(InitIdentifyMerc, Merc_InitIdentifyMercPy),
+	PORT_FN(CreateLonelyMercInScene, Merc_CreateLonelyMercInScenePy),
+	PORT_FN(CheckTraitoriusDeath, Merc_CheckTraitoriusDeathPy),
+	PORT_FN(EndOfScene, Merc_EndOfScenePy),
+	PORT_FN(DelLonelyMerc, Merc_DelLonelyMercPy),
+	PORT_FNK(CreateLonelyMerc, Merc_CreateLonelyMercPy),
+	PORT_FN(InitMission, Merc_InitMissionPy),
+	PORT_FN(ScanShip, Merc_ScanShipPy),
+	PORT_FN(OnFinishScan, Merc_OnFinishScanPy),
+	PORT_FN(OnLonelyMercDeath, Merc_OnLonelyMercDeathPy),
+	PORT_FN(OnLonelyMercDamage, Merc_OnLonelyMercDamagePy),
+	PORT_FN(PreRespawnLonelyMerc, Merc_PreRespawnLonelyMercPy),
+	PORT_FN(RespawnLonelyMerc, Merc_RespawnLonelyMercPy),
+	PORT_FN(SetPhoneCab, Merc_SetPhoneCabPy),
+	PORT_FN(UsePhoneCab, Merc_UsePhoneCabPy),
+	PORT_FN(SetNextMission, Merc_SetNextMissionPy),
+	PORT_FN(MissionScorer, Merc_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_KillRudolph: the race against Rudolph, then his death for the clue, then the police boss ---- */
@@ -2095,26 +2095,26 @@ LV_FN(Rudolph, InitTalkToPoliceBossPy, 0, Rudolph_InitTalkToPoliceBoss_C)
 LV_FN(Rudolph, UsePhoneCabPy, 4, Rudolph_UsePhoneCab_C)
 LV_FN(Rudolph, SetNextMission2Py, 0, Rudolph_SetNextMission2_C)
 
-PyMethodDef g_OutskirtsKillRudolphMethods[] = {
-	{ "GetRudolphProfile", Rudolph_GetRudolphProfile, 1, NULL },
-	{ "RaceList", Rudolph_RaceList, 1, NULL },
-	{ "InitStatus", Rudolph_InitStatusPy, 1, NULL },
-	{ "Init", Rudolph_InitPy, 1, NULL },
-	{ "GetDealType", Rudolph_GetDealType, 1, NULL },
-	{ "InitRace", Rudolph_InitRacePy, 1, NULL },
-	{ "initCreateRudolph", Rudolph_initCreateRudolphPy, 1, NULL },
-	{ "SetRudolphDef", Rudolph_SetRudolphDefPy, 1, NULL },
-	{ "OnDamage", Rudolph_OnDamagePy, 1, NULL },
-	{ "EndOfRace", Rudolph_EndOfRacePy, 1, NULL },
-	{ "SetRudolphAsNone", Rudolph_SetRudolphAsNonePy, 1, NULL },
-	{ "RudolphKilled", Rudolph_RudolphKilledPy, 1, NULL },
-	{ "CreateClue", Rudolph_CreateCluePy, 1, NULL },
-	{ "ActivateClue", Rudolph_ActivateCluePy, 1, NULL },
-	{ "OnClueTaken", Rudolph_OnClueTakenPy, 1, NULL },
-	{ "InitTalkToPoliceBoss", Rudolph_InitTalkToPoliceBossPy, 1, NULL },
-	{ "UsePhoneCab", Rudolph_UsePhoneCabPy, 1, NULL },
-	{ "SetNextMission2", Rudolph_SetNextMission2Py, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsKillRudolphMethods[] = {
+	PORT_FN(GetRudolphProfile, Rudolph_GetRudolphProfile),
+	PORT_FN(RaceList, Rudolph_RaceList),
+	PORT_FN(InitStatus, Rudolph_InitStatusPy),
+	PORT_FN(Init, Rudolph_InitPy),
+	PORT_FN(GetDealType, Rudolph_GetDealType),
+	PORT_FN(InitRace, Rudolph_InitRacePy),
+	PORT_FN(initCreateRudolph, Rudolph_initCreateRudolphPy),
+	PORT_FN(SetRudolphDef, Rudolph_SetRudolphDefPy),
+	PORT_FN(OnDamage, Rudolph_OnDamagePy),
+	PORT_FN(EndOfRace, Rudolph_EndOfRacePy),
+	PORT_FN(SetRudolphAsNone, Rudolph_SetRudolphAsNonePy),
+	PORT_FN(RudolphKilled, Rudolph_RudolphKilledPy),
+	PORT_FN(CreateClue, Rudolph_CreateCluePy),
+	PORT_FN(ActivateClue, Rudolph_ActivateCluePy),
+	PORT_FN(OnClueTaken, Rudolph_OnClueTakenPy),
+	PORT_FN(InitTalkToPoliceBoss, Rudolph_InitTalkToPoliceBossPy),
+	PORT_FN(UsePhoneCab, Rudolph_UsePhoneCabPy),
+	PORT_FN(SetNextMission2, Rudolph_SetNextMission2Py),
+	PORT_FNEND
 };
 
 /* ---- Mission_DestroyBadDebtors: the bank's money transports, the treasures the bankers and mercenaries fight for ---- */
@@ -2976,39 +2976,39 @@ LV_FN(Debtors, ShowDeepThroatMessagePy, 0, Debtors_ShowDeepThroatMessage_C)
 LV_FN(Debtors, SetNextMissionPy, 0, Debtors_SetNextMission_C)
 LV_FN(Debtors, MissionScorerPy, 1, Debtors_MissionScorer_C)
 
-PyMethodDef g_OutskirtsDestroyBadDebtorsMethods[] = {
-	{ "GetMercenariesProfile", Debtors_GetMercenariesProfile, 1, NULL },
-	{ "GetBankDirectorProfile", Debtors_GetBankDirectorProfile, 1, NULL },
-	{ "GetBankerProfile", Debtors_GetBankerProfile, 1, NULL },
-	{ "InitStatus", Debtors_InitStatusPy, 1, NULL },
-	{ "CreateWaypoint", Debtors_CreateWaypointPy, 1, NULL },
-	{ "CreateShip", Debtors_CreateShipPy, 1, NULL },
-	{ "OnInitMission", Debtors_OnInitMissionPy, 1, NULL },
-	{ "ShowScorer", Debtors_ShowScorerPy, 1, NULL },
-	{ "EnableMissionWaypoint", Debtors_EnableMissionWaypointPy, 1, NULL },
-	{ "SelectNewMissionTarget", Debtors_SelectNewMissionTargetPy, 1, NULL },
-	{ "OnMissionTargetDeath", Debtors_OnMissionTargetDeathPy, 1, NULL },
-	{ "BankMasterAttacksMissionTarget", Debtors_BankMasterAttacksMissionTargetPy, 1, NULL },
-	{ "DropTreasure", Debtors_DropTreasurePy, 1, NULL },
-	{ "DelTreasure", Debtors_DelTreasurePy, 1, NULL },
-	{ "SendShipToGetTreasure", Debtors_SendShipToGetTreasurePy, 1, NULL },
-	{ "GetPossibleMercTargets", Debtors_GetPossibleMercTargetsPy, 1, NULL },
-	{ "CreateMercs", Debtors_CreateMercsPy, 1, NULL },
-	{ "CreateBankMaster", (PyCFunction)(void (*)(void))Debtors_CreateBankMasterPy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "CreateBanker", (PyCFunction)(void (*)(void))Debtors_CreateBankerPy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "RespawnBankMaster", Debtors_RespawnBankMasterPy, 1, NULL },
-	{ "OnBankMasterDeath", Debtors_OnBankMasterDeathPy, 1, NULL },
-	{ "CheckMercsFreezed", Debtors_CheckMercsFreezedPy, 1, NULL },
-	{ "OnBankerDeath", Debtors_OnBankerDeathPy, 1, NULL },
-	{ "OnMercDeath", Debtors_OnMercDeathPy, 1, NULL },
-	{ "OnTreasureReached", Debtors_OnTreasureReachedPy, 1, NULL },
-	{ "OnShipReachedTreasurePos", Debtors_OnShipReachedTreasurePosPy, 1, NULL },
-	{ "OnCoinTaken", Debtors_OnCoinTakenPy, 1, NULL },
-	{ "BankMasterSpeech", Debtors_BankMasterSpeechPy, 1, NULL },
-	{ "ShowDeepThroatMessage", Debtors_ShowDeepThroatMessagePy, 1, NULL },
-	{ "SetNextMission", Debtors_SetNextMissionPy, 1, NULL },
-	{ "MissionScorer", Debtors_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsDestroyBadDebtorsMethods[] = {
+	PORT_FN(GetMercenariesProfile, Debtors_GetMercenariesProfile),
+	PORT_FN(GetBankDirectorProfile, Debtors_GetBankDirectorProfile),
+	PORT_FN(GetBankerProfile, Debtors_GetBankerProfile),
+	PORT_FN(InitStatus, Debtors_InitStatusPy),
+	PORT_FN(CreateWaypoint, Debtors_CreateWaypointPy),
+	PORT_FN(CreateShip, Debtors_CreateShipPy),
+	PORT_FN(OnInitMission, Debtors_OnInitMissionPy),
+	PORT_FN(ShowScorer, Debtors_ShowScorerPy),
+	PORT_FN(EnableMissionWaypoint, Debtors_EnableMissionWaypointPy),
+	PORT_FN(SelectNewMissionTarget, Debtors_SelectNewMissionTargetPy),
+	PORT_FN(OnMissionTargetDeath, Debtors_OnMissionTargetDeathPy),
+	PORT_FN(BankMasterAttacksMissionTarget, Debtors_BankMasterAttacksMissionTargetPy),
+	PORT_FN(DropTreasure, Debtors_DropTreasurePy),
+	PORT_FN(DelTreasure, Debtors_DelTreasurePy),
+	PORT_FN(SendShipToGetTreasure, Debtors_SendShipToGetTreasurePy),
+	PORT_FN(GetPossibleMercTargets, Debtors_GetPossibleMercTargetsPy),
+	PORT_FN(CreateMercs, Debtors_CreateMercsPy),
+	PORT_FNK(CreateBankMaster, Debtors_CreateBankMasterPy),
+	PORT_FNK(CreateBanker, Debtors_CreateBankerPy),
+	PORT_FN(RespawnBankMaster, Debtors_RespawnBankMasterPy),
+	PORT_FN(OnBankMasterDeath, Debtors_OnBankMasterDeathPy),
+	PORT_FN(CheckMercsFreezed, Debtors_CheckMercsFreezedPy),
+	PORT_FN(OnBankerDeath, Debtors_OnBankerDeathPy),
+	PORT_FN(OnMercDeath, Debtors_OnMercDeathPy),
+	PORT_FN(OnTreasureReached, Debtors_OnTreasureReachedPy),
+	PORT_FN(OnShipReachedTreasurePos, Debtors_OnShipReachedTreasurePosPy),
+	PORT_FN(OnCoinTaken, Debtors_OnCoinTakenPy),
+	PORT_FN(BankMasterSpeech, Debtors_BankMasterSpeechPy),
+	PORT_FN(ShowDeepThroatMessage, Debtors_ShowDeepThroatMessagePy),
+	PORT_FN(SetNextMission, Debtors_SetNextMissionPy),
+	PORT_FN(MissionScorer, Debtors_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_AttackTraitorius: frighten Traitorius within a minute without killing him, then his call ---- */
@@ -3327,22 +3327,22 @@ LV_FN(Traitorius, UsePhoneCabPy, 4, Traitorius_UsePhoneCab_C)
 LV_FN(Traitorius, SetNextMissionPy, 0, Traitorius_SetNextMission_C)
 LV_FN(Traitorius, MissionScorerPy, 1, Traitorius_MissionScorer_C)
 
-PyMethodDef g_OutskirtsAttackTraitoriusMethods[] = {
-	{ "GetTraitoriusProfile", Traitorius_GetTraitoriusProfile, 1, NULL },
-	{ "InitStatus", Traitorius_InitStatus, 1, NULL },
-	{ "Init", Traitorius_InitPy, 1, NULL },
-	{ "ReassignTarget", Traitorius_ReassignTargetPy, 1, NULL },
-	{ "CreateTraitorius", Traitorius_CreateTraitoriusPy, 1, NULL },
-	{ "OnTraitoriusDamage", Traitorius_OnTraitoriusDamagePy, 1, NULL },
-	{ "OnTraitoriusDeath", Traitorius_OnTraitoriusDeathPy, 1, NULL },
-	{ "TraitoriusTakesLife", Traitorius_TraitoriusTakesLifePy, 1, NULL },
-	{ "TimeExpired", Traitorius_TimeExpiredPy, 1, NULL },
-	{ "PreCallTraitorius", Traitorius_PreCallTraitoriusPy, 1, NULL },
-	{ "CallTraitorius", Traitorius_CallTraitoriusPy, 1, NULL },
-	{ "UsePhoneCab", Traitorius_UsePhoneCabPy, 1, NULL },
-	{ "SetNextMission", Traitorius_SetNextMissionPy, 1, NULL },
-	{ "MissionScorer", Traitorius_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsAttackTraitoriusMethods[] = {
+	PORT_FN(GetTraitoriusProfile, Traitorius_GetTraitoriusProfile),
+	PORT_FN(InitStatus, Traitorius_InitStatus),
+	PORT_FN(Init, Traitorius_InitPy),
+	PORT_FN(ReassignTarget, Traitorius_ReassignTargetPy),
+	PORT_FN(CreateTraitorius, Traitorius_CreateTraitoriusPy),
+	PORT_FN(OnTraitoriusDamage, Traitorius_OnTraitoriusDamagePy),
+	PORT_FN(OnTraitoriusDeath, Traitorius_OnTraitoriusDeathPy),
+	PORT_FN(TraitoriusTakesLife, Traitorius_TraitoriusTakesLifePy),
+	PORT_FN(TimeExpired, Traitorius_TimeExpiredPy),
+	PORT_FN(PreCallTraitorius, Traitorius_PreCallTraitoriusPy),
+	PORT_FN(CallTraitorius, Traitorius_CallTraitoriusPy),
+	PORT_FN(UsePhoneCab, Traitorius_UsePhoneCabPy),
+	PORT_FN(SetNextMission, Traitorius_SetNextMissionPy),
+	PORT_FN(MissionScorer, Traitorius_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_FunctionaryHunting: in a police ship with four police friends, 15 functionaries to kill ---- */
@@ -3740,29 +3740,29 @@ LV_FN(Hunt, LaunchMissionPy, 0, Hunt_LaunchMission_C)
 LV_FN(Hunt, StartCameraTravellingPy, 0, Hunt_StartCameraTravelling_C)
 LV_FN(Hunt, AbortCameraTravellingPy, 2, Hunt_AbortCameraTravelling_C)
 
-PyMethodDef g_OutskirtsFunctionaryHuntingMethods[] = {
-	{ "GetFuncEnemiesProfile", Hunt_GetFuncEnemiesProfile, 1, NULL },
-	{ "GetPoliceFriendsProfile", Hunt_GetPoliceFriendsProfile, 1, NULL },
-	{ "InitStatus", Hunt_InitStatus, 1, NULL },
-	{ "Init", Hunt_InitPy, 1, NULL },
-	{ "CreateWaypoint", Hunt_CreateWaypointPy, 1, NULL },
-	{ "EnableMissionWaypoint", Hunt_EnableMissionWaypointPy, 1, NULL },
-	{ "MissionScorer", Hunt_MissionScorerPy, 1, NULL },
-	{ "ComeBack", Hunt_ComeBackPy, 1, NULL },
-	{ "OnChangeVehicle", Hunt_OnChangeVehiclePy, 1, NULL },
-	{ "CreateNewPoliShip", Hunt_CreateNewPoliShipPy, 1, NULL },
-	{ "CreateNewFuncShip", Hunt_CreateNewFuncShipPy, 1, NULL },
-	{ "CreateFriendsShips", Hunt_CreateFriendsShipsPy, 1, NULL },
-	{ "CreateEnemiesShips", Hunt_CreateEnemiesShipsPy, 1, NULL },
-	{ "SetNextMission", Hunt_SetNextMissionPy, 1, NULL },
-	{ "CGCalls", Hunt_CGCallsPy, 1, NULL },
-	{ "OnFuncDeath", Hunt_OnFuncDeathPy, 1, NULL },
-	{ "isPoliceShip", Hunt_isPoliceShipPy, 1, NULL },
-	{ "OnMissionStart", Hunt_OnMissionStartPy, 1, NULL },
-	{ "LaunchMission", Hunt_LaunchMissionPy, 1, NULL },
-	{ "StartCameraTravelling", Hunt_StartCameraTravellingPy, 1, NULL },
-	{ "AbortCameraTravelling", Hunt_AbortCameraTravellingPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutskirtsFunctionaryHuntingMethods[] = {
+	PORT_FN(GetFuncEnemiesProfile, Hunt_GetFuncEnemiesProfile),
+	PORT_FN(GetPoliceFriendsProfile, Hunt_GetPoliceFriendsProfile),
+	PORT_FN(InitStatus, Hunt_InitStatus),
+	PORT_FN(Init, Hunt_InitPy),
+	PORT_FN(CreateWaypoint, Hunt_CreateWaypointPy),
+	PORT_FN(EnableMissionWaypoint, Hunt_EnableMissionWaypointPy),
+	PORT_FN(MissionScorer, Hunt_MissionScorerPy),
+	PORT_FN(ComeBack, Hunt_ComeBackPy),
+	PORT_FN(OnChangeVehicle, Hunt_OnChangeVehiclePy),
+	PORT_FN(CreateNewPoliShip, Hunt_CreateNewPoliShipPy),
+	PORT_FN(CreateNewFuncShip, Hunt_CreateNewFuncShipPy),
+	PORT_FN(CreateFriendsShips, Hunt_CreateFriendsShipsPy),
+	PORT_FN(CreateEnemiesShips, Hunt_CreateEnemiesShipsPy),
+	PORT_FN(SetNextMission, Hunt_SetNextMissionPy),
+	PORT_FN(CGCalls, Hunt_CGCallsPy),
+	PORT_FN(OnFuncDeath, Hunt_OnFuncDeathPy),
+	PORT_FN(isPoliceShip, Hunt_isPoliceShipPy),
+	PORT_FN(OnMissionStart, Hunt_OnMissionStartPy),
+	PORT_FN(LaunchMission, Hunt_LaunchMissionPy),
+	PORT_FN(StartCameraTravelling, Hunt_StartCameraTravellingPy),
+	PORT_FN(AbortCameraTravelling, Hunt_AbortCameraTravellingPy),
+	PORT_FNEND
 };
 
 PORTS(levels_Outskirts)

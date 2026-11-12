@@ -326,12 +326,12 @@ LV_FN(PoMap, CreateFicusA, 0, PoMap_CreateFicus)
 LV_FN(PoMap, InitStatusA, 1, PoMap_InitStatus)
 LV_FN(PoMap, InitA, 1, PoMap_Init)
 
-PyMethodDef g_PoliceMapMethods[] = {
-	{ "CreateFicusDeadClass", PoMap_CreateFicusDeadClassA, METH_VARARGS, NULL },
-	{ "CreateFicus", PoMap_CreateFicusA, METH_VARARGS, NULL },
-	{ "InitStatus", PoMap_InitStatusA, METH_VARARGS, NULL },
-	{ "Init", PoMap_InitA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceMapMethods[] = {
+	PORT_FN(CreateFicusDeadClass, PoMap_CreateFicusDeadClassA),
+	PORT_FN(CreateFicus, PoMap_CreateFicusA),
+	PORT_FN(InitStatus, PoMap_InitStatusA),
+	PORT_FN(Init, PoMap_InitA),
+	PORT_FNEND
 };
 
 /* ---- MapSnd ---- */
@@ -350,9 +350,9 @@ static const lvSndElement_t police_snd[] = {
 /* SndElements(Name, x, y, z, angx, angy) */
 MODE_FN(PoliceMapSnd, SndElements, 6, LvN_SndElements(a, police_snd))
 
-PyMethodDef g_PoliceMapSndMethods[] = {
-	{ "SndElements", PoliceMapSnd_SndElements, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceMapSndMethods[] = {
+	PORT_FN(SndElements, PoliceMapSnd_SndElements),
+	PORT_FNEND
 };
 
 /* ---- MapPlanes ---- */
@@ -362,10 +362,10 @@ MODE_FN(MapPlanes, Init, 1, LvN_PlanesInit(MP))
 
 MODE_FN(MapPlanes, TakenPhoto, 1, LvN_PlanesPhoto(&a[0], MP, "PoliceBlueprints.Ships", "PoliceBlueprints.Engines", out))
 
-PyMethodDef g_PoliceMapPlanesMethods[] = {
-	{ "Init", MapPlanes_Init, METH_VARARGS, NULL },
-	{ "TakenPhoto", MapPlanes_TakenPhoto, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceMapPlanesMethods[] = {
+	PORT_FN(Init, MapPlanes_Init),
+	PORT_FN(TakenPhoto, MapPlanes_TakenPhoto),
+	PORT_FNEND
 };
 
 /* ---- Mission_BeatPickus ---- */
@@ -1149,36 +1149,36 @@ LV_FN(BeatPickus, TakePlanPhotoA, 1, BeatPickus_TakePlanPhoto)
 LV_FN(BeatPickus, TalkToTraitoriusAgainA, 0, BeatPickus_TalkToTraitoriusAgain)
 LV_FN(BeatPickus, TraitoriusAgainSpeechA, 4, BeatPickus_TraitoriusAgainSpeech)
 
-PyMethodDef g_PoliceBeatPickusMethods[] = {
-	{ "InitStatus", BeatPickus_InitStatusA, METH_VARARGS, NULL },
-	{ "Init", BeatPickus_InitA, METH_VARARGS, NULL },
-	{ "DisableIAFunctionary", BeatPickus_DisableIAFunctionaryA, METH_VARARGS, NULL },
-	{ "OnTraitoriusRespawn", BeatPickus_OnTraitoriusRespawnA, METH_VARARGS, NULL },
-	{ "OnThugRespawn", BeatPickus_OnThugRespawnA, METH_VARARGS, NULL },
-	{ "SetThugsState", (PyCFunction)(void (*)(void))BeatPickus_SetThugsState, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "SetState", BeatPickus_SetStateA, METH_VARARGS, NULL },
-	{ "TraitoriusSpeech", BeatPickus_TraitoriusSpeechA, METH_VARARGS, NULL },
-	{ "HireThugs", BeatPickus_HireThugsA, METH_VARARGS, NULL },
-	{ "ThugLeaderSpeech", BeatPickus_ThugLeaderSpeechA, METH_VARARGS, NULL },
-	{ "ThugNormalSpeech", BeatPickus_ThugNormalSpeechA, METH_VARARGS, NULL },
-	{ "BeatPickus", BeatPickus_BeatPickusA, METH_VARARGS, NULL },
-	{ "OnAlarmActivated", BeatPickus_OnAlarmActivatedA, METH_VARARGS, NULL },
-	{ "CheckMaxDist", BeatPickus_CheckMaxDistA, METH_VARARGS, NULL },
-	{ "CheckThugsDist", BeatPickus_CheckThugsDistA, METH_VARARGS, NULL },
-	{ "CreateLauncher", BeatPickus_CreateLauncherA, METH_VARARGS, NULL },
-	{ "LaunchPickusFightScene", BeatPickus_LaunchPickusFightSceneA, METH_VARARGS, NULL },
-	{ "CreatePickusBeatenClass", BeatPickus_CreatePickusBeatenClassA, METH_VARARGS, NULL },
-	{ "InitPickusBeaten", BeatPickus_InitPickusBeatenA, METH_VARARGS, NULL },
-	{ "DelThug", BeatPickus_DelThugA, METH_VARARGS, NULL },
-	{ "AskPickus", (PyCFunction)(void (*)(void))BeatPickus_AskPickus, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "OnTalkToPickus", BeatPickus_OnTalkToPickusA, METH_VARARGS, NULL },
-	{ "PreGetFuncShipPlans", BeatPickus_PreGetFuncShipPlansA, METH_VARARGS, NULL },
-	{ "GetFuncShipPlans", BeatPickus_GetFuncShipPlansA, METH_VARARGS, NULL },
-	{ "TakePlanPhoto", BeatPickus_TakePlanPhotoA, METH_VARARGS, NULL },
-	{ "TalkToTraitoriusAgain", BeatPickus_TalkToTraitoriusAgainA, METH_VARARGS, NULL },
-	{ "TraitoriusAgainSpeech", BeatPickus_TraitoriusAgainSpeechA, METH_VARARGS, NULL },
-	{ "LightingActivate", (PyCFunction)(void (*)(void))BeatPickus_LightingActivate, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceBeatPickusMethods[] = {
+	PORT_FN(InitStatus, BeatPickus_InitStatusA),
+	PORT_FN(Init, BeatPickus_InitA),
+	PORT_FN(DisableIAFunctionary, BeatPickus_DisableIAFunctionaryA),
+	PORT_FN(OnTraitoriusRespawn, BeatPickus_OnTraitoriusRespawnA),
+	PORT_FN(OnThugRespawn, BeatPickus_OnThugRespawnA),
+	PORT_FNK(SetThugsState, BeatPickus_SetThugsState),
+	PORT_FN(SetState, BeatPickus_SetStateA),
+	PORT_FN(TraitoriusSpeech, BeatPickus_TraitoriusSpeechA),
+	PORT_FN(HireThugs, BeatPickus_HireThugsA),
+	PORT_FN(ThugLeaderSpeech, BeatPickus_ThugLeaderSpeechA),
+	PORT_FN(ThugNormalSpeech, BeatPickus_ThugNormalSpeechA),
+	PORT_FN(BeatPickus, BeatPickus_BeatPickusA),
+	PORT_FN(OnAlarmActivated, BeatPickus_OnAlarmActivatedA),
+	PORT_FN(CheckMaxDist, BeatPickus_CheckMaxDistA),
+	PORT_FN(CheckThugsDist, BeatPickus_CheckThugsDistA),
+	PORT_FN(CreateLauncher, BeatPickus_CreateLauncherA),
+	PORT_FN(LaunchPickusFightScene, BeatPickus_LaunchPickusFightSceneA),
+	PORT_FN(CreatePickusBeatenClass, BeatPickus_CreatePickusBeatenClassA),
+	PORT_FN(InitPickusBeaten, BeatPickus_InitPickusBeatenA),
+	PORT_FN(DelThug, BeatPickus_DelThugA),
+	PORT_FNK(AskPickus, BeatPickus_AskPickus),
+	PORT_FN(OnTalkToPickus, BeatPickus_OnTalkToPickusA),
+	PORT_FN(PreGetFuncShipPlans, BeatPickus_PreGetFuncShipPlansA),
+	PORT_FN(GetFuncShipPlans, BeatPickus_GetFuncShipPlansA),
+	PORT_FN(TakePlanPhoto, BeatPickus_TakePlanPhotoA),
+	PORT_FN(TalkToTraitoriusAgain, BeatPickus_TalkToTraitoriusAgainA),
+	PORT_FN(TraitoriusAgainSpeech, BeatPickus_TraitoriusAgainSpeechA),
+	PORT_FNK(LightingActivate, BeatPickus_LightingActivate),
+	PORT_FNEND
 };
 
 /* ---- Mission_FicusDead ---- */
@@ -1281,14 +1281,14 @@ LV_FN(FicusDead, AfterDeepThroatMessageShownA, 0, FicusDead_AfterDeepThroatMessa
 LV_FN(FicusDead, DeepThroatSpeechA, 4, FicusDead_DeepThroatSpeech)
 LV_FN(FicusDead, SetNextMissionA, 0, FicusDead_SetNextMission)
 
-PyMethodDef g_PoliceFicusDeadMethods[] = {
-	{ "InitFicusDead", FicusDead_InitFicusDeadA, METH_VARARGS, NULL },
-	{ "Init", FicusDead_InitA, METH_VARARGS, NULL },
-	{ "OnTalkToFicus", FicusDead_OnTalkToFicusA, METH_VARARGS, NULL },
-	{ "AfterDeepThroatMessageShown", FicusDead_AfterDeepThroatMessageShownA, METH_VARARGS, NULL },
-	{ "DeepThroatSpeech", FicusDead_DeepThroatSpeechA, METH_VARARGS, NULL },
-	{ "SetNextMission", FicusDead_SetNextMissionA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceFicusDeadMethods[] = {
+	PORT_FN(InitFicusDead, FicusDead_InitFicusDeadA),
+	PORT_FN(Init, FicusDead_InitA),
+	PORT_FN(OnTalkToFicus, FicusDead_OnTalkToFicusA),
+	PORT_FN(AfterDeepThroatMessageShown, FicusDead_AfterDeepThroatMessageShownA),
+	PORT_FN(DeepThroatSpeech, FicusDead_DeepThroatSpeechA),
+	PORT_FN(SetNextMission, FicusDead_SetNextMissionA),
+	PORT_FNEND
 };
 
 /* ---- Mission_GetAuthorization ---- */
@@ -1783,30 +1783,30 @@ LV_FN(GetAuthorization, CheckMaxDistA, 0, GetAuthorization_CheckMaxDist)
 LV_FN(GetAuthorization, CheckHumanDistA, 0, GetAuthorization_CheckHumanDist)
 LV_FN(GetAuthorization, OnMetroUsedA, 4, GetAuthorization_OnMetroUsed)
 
-PyMethodDef g_PoliceGetAuthorizationMethods[] = {
-	{ "InitStatus", GetAuthorization_InitStatusA, METH_VARARGS, NULL },
-	{ "CreateHuman", GetAuthorization_CreateHumanA, METH_VARARGS, NULL },
-	{ "Init", GetAuthorization_InitA, METH_VARARGS, NULL },
-	{ "AfterDeepThroatMessage", GetAuthorization_AfterDeepThroatMessageA, METH_VARARGS, NULL },
-	{ "DeepThroatSpeech", GetAuthorization_DeepThroatSpeechA, METH_VARARGS, NULL },
-	{ "PreGetAuthorization", GetAuthorization_PreGetAuthorizationA, METH_VARARGS, NULL },
-	{ "GetAuthorization", GetAuthorization_GetAuthorizationA, METH_VARARGS, NULL },
-	{ "ShowNearestConversor", GetAuthorization_ShowNearestConversorA, METH_VARARGS, NULL },
-	{ "ShowAfterConversionMessage", GetAuthorization_ShowAfterConversionMessageA, METH_VARARGS, NULL },
-	{ "OnDataTaken", GetAuthorization_OnDataTakenA, METH_VARARGS, NULL },
-	{ "OnDataDropped", GetAuthorization_OnDataDroppedA, METH_VARARGS, NULL },
-	{ "FreeHuman", GetAuthorization_FreeHumanA, METH_VARARGS, NULL },
-	{ "TalkPepe", GetAuthorization_TalkPepeA, METH_VARARGS, NULL },
-	{ "StartScene", GetAuthorization_StartSceneA, METH_VARARGS, NULL },
-	{ "OnTriggerActivated", GetAuthorization_OnTriggerActivatedA, METH_VARARGS, NULL },
-	{ "GoToPress", GetAuthorization_GoToPressA, METH_VARARGS, NULL },
-	{ "GoToPress2", GetAuthorization_GoToPress2A, METH_VARARGS, NULL },
-	{ "OnPossession", GetAuthorization_OnPossessionA, METH_VARARGS, NULL },
-	{ "OnExitConversor", GetAuthorization_OnExitConversorA, METH_VARARGS, NULL },
-	{ "CheckMaxDist", GetAuthorization_CheckMaxDistA, METH_VARARGS, NULL },
-	{ "CheckHumanDist", GetAuthorization_CheckHumanDistA, METH_VARARGS, NULL },
-	{ "OnMetroUsed", GetAuthorization_OnMetroUsedA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceGetAuthorizationMethods[] = {
+	PORT_FN(InitStatus, GetAuthorization_InitStatusA),
+	PORT_FN(CreateHuman, GetAuthorization_CreateHumanA),
+	PORT_FN(Init, GetAuthorization_InitA),
+	PORT_FN(AfterDeepThroatMessage, GetAuthorization_AfterDeepThroatMessageA),
+	PORT_FN(DeepThroatSpeech, GetAuthorization_DeepThroatSpeechA),
+	PORT_FN(PreGetAuthorization, GetAuthorization_PreGetAuthorizationA),
+	PORT_FN(GetAuthorization, GetAuthorization_GetAuthorizationA),
+	PORT_FN(ShowNearestConversor, GetAuthorization_ShowNearestConversorA),
+	PORT_FN(ShowAfterConversionMessage, GetAuthorization_ShowAfterConversionMessageA),
+	PORT_FN(OnDataTaken, GetAuthorization_OnDataTakenA),
+	PORT_FN(OnDataDropped, GetAuthorization_OnDataDroppedA),
+	PORT_FN(FreeHuman, GetAuthorization_FreeHumanA),
+	PORT_FN(TalkPepe, GetAuthorization_TalkPepeA),
+	PORT_FN(StartScene, GetAuthorization_StartSceneA),
+	PORT_FN(OnTriggerActivated, GetAuthorization_OnTriggerActivatedA),
+	PORT_FN(GoToPress, GetAuthorization_GoToPressA),
+	PORT_FN(GoToPress2, GetAuthorization_GoToPress2A),
+	PORT_FN(OnPossession, GetAuthorization_OnPossessionA),
+	PORT_FN(OnExitConversor, GetAuthorization_OnExitConversorA),
+	PORT_FN(CheckMaxDist, GetAuthorization_CheckMaxDistA),
+	PORT_FN(CheckHumanDist, GetAuthorization_CheckHumanDistA),
+	PORT_FN(OnMetroUsed, GetAuthorization_OnMetroUsedA),
+	PORT_FNEND
 };
 
 /* ---- Mission_InitEpilogue ---- */
@@ -1895,15 +1895,15 @@ LV_FN(InitEpilogue, OnBettySpeechA, 4, InitEpilogue_OnBettySpeech)
 LV_FN(InitEpilogue, OnBertoSpeechA, 4, InitEpilogue_OnBertoSpeech)
 LV_FN(InitEpilogue, SetNextMissionA, 0, InitEpilogue_SetNextMission)
 
-PyMethodDef g_PoliceInitEpilogueMethods[] = {
-	{ "InitStatus", InitEpilogue_InitStatusA, METH_VARARGS, NULL },
-	{ "CreateBettyJail", InitEpilogue_CreateBettyJailA, METH_VARARGS, NULL },
-	{ "CreateBertoJail", InitEpilogue_CreateBertoJailA, METH_VARARGS, NULL },
-	{ "Init", InitEpilogue_InitA, METH_VARARGS, NULL },
-	{ "OnBettySpeech", InitEpilogue_OnBettySpeechA, METH_VARARGS, NULL },
-	{ "OnBertoSpeech", InitEpilogue_OnBertoSpeechA, METH_VARARGS, NULL },
-	{ "SetNextMission", InitEpilogue_SetNextMissionA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceInitEpilogueMethods[] = {
+	PORT_FN(InitStatus, InitEpilogue_InitStatusA),
+	PORT_FN(CreateBettyJail, InitEpilogue_CreateBettyJailA),
+	PORT_FN(CreateBertoJail, InitEpilogue_CreateBertoJailA),
+	PORT_FN(Init, InitEpilogue_InitA),
+	PORT_FN(OnBettySpeech, InitEpilogue_OnBettySpeechA),
+	PORT_FN(OnBertoSpeech, InitEpilogue_OnBertoSpeechA),
+	PORT_FN(SetNextMission, InitEpilogue_SetNextMissionA),
+	PORT_FNEND
 };
 
 /* ---- Mission_JailBreak ---- */
@@ -2234,21 +2234,21 @@ LV_FN(JailBreak, InitA, 1, JailBreak_Init)
 LV_FN(JailBreak, NextMissionA, 2, JailBreak_NextMission)
 LV_FN(JailBreak, LoadPoliceA, 0, JailBreak_LoadPolice)
 
-PyMethodDef g_PoliceJailBreakMethods[] = {
-	{ "InitStatus", JailBreak_InitStatusA, METH_VARARGS, NULL },
-	{ "AfterBrowseNPC", JailBreak_AfterBrowseNPCA, METH_VARARGS, NULL },
-	{ "CreateMCList", JailBreak_CreateMCListA, METH_VARARGS, NULL },
-	{ "CreateGearStay", JailBreak_CreateGearStayA, METH_VARARGS, NULL },
-	{ "CreatePuff", JailBreak_CreatePuffA, METH_VARARGS, NULL },
-	{ "InitPuffReborn", JailBreak_InitPuffRebornA, METH_VARARGS, NULL },
-	{ "StaplerSpeech", JailBreak_StaplerSpeechA, METH_VARARGS, NULL },
-	{ "CheckForJump", JailBreak_CheckForJumpA, METH_VARARGS, NULL },
-	{ "OnPossession", JailBreak_OnPossessionA, METH_VARARGS, NULL },
-	{ "FirstTimeJail", JailBreak_FirstTimeJailA, METH_VARARGS, NULL },
-	{ "Init", JailBreak_InitA, METH_VARARGS, NULL },
-	{ "NextMission", JailBreak_NextMissionA, METH_VARARGS, NULL },
-	{ "LoadPolice", JailBreak_LoadPoliceA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PoliceJailBreakMethods[] = {
+	PORT_FN(InitStatus, JailBreak_InitStatusA),
+	PORT_FN(AfterBrowseNPC, JailBreak_AfterBrowseNPCA),
+	PORT_FN(CreateMCList, JailBreak_CreateMCListA),
+	PORT_FN(CreateGearStay, JailBreak_CreateGearStayA),
+	PORT_FN(CreatePuff, JailBreak_CreatePuffA),
+	PORT_FN(InitPuffReborn, JailBreak_InitPuffRebornA),
+	PORT_FN(StaplerSpeech, JailBreak_StaplerSpeechA),
+	PORT_FN(CheckForJump, JailBreak_CheckForJumpA),
+	PORT_FN(OnPossession, JailBreak_OnPossessionA),
+	PORT_FN(FirstTimeJail, JailBreak_FirstTimeJailA),
+	PORT_FN(Init, JailBreak_InitA),
+	PORT_FN(NextMission, JailBreak_NextMissionA),
+	PORT_FN(LoadPolice, JailBreak_LoadPoliceA),
+	PORT_FNEND
 };
 
 /* ---- Mission_PoliceBossCheats ---- */
@@ -2788,31 +2788,31 @@ LV_FN(PoliceBossCheats, InitAskCrazyGamblerA, 0, PoliceBossCheats_InitAskCrazyGa
 LV_FN(PoliceBossCheats, CrazyGamblerSpeechA, 4, PoliceBossCheats_CrazyGamblerSpeech)
 LV_FN(PoliceBossCheats, SetNextMissionA, 0, PoliceBossCheats_SetNextMission)
 
-PyMethodDef g_PolicePoliceBossCheatsMethods[] = {
-	{ "InitStatus", PoliceBossCheats_InitStatusA, METH_VARARGS, NULL },
-	{ "Init", PoliceBossCheats_InitA, METH_VARARGS, NULL },
-	{ "CreatePoliceFicusPal", PoliceBossCheats_CreatePoliceFicusPalA, METH_VARARGS, NULL },
-	{ "FicusPalMissionSpeech", PoliceBossCheats_FicusPalMissionSpeechA, METH_VARARGS, NULL },
-	{ "CreateFakeChar", PoliceBossCheats_CreateFakeCharA, METH_VARARGS, NULL },
-	{ "CheatingLoop", PoliceBossCheats_CheatingLoopA, METH_VARARGS, NULL },
-	{ "PlayAnm", PoliceBossCheats_PlayAnmA, METH_VARARGS, NULL },
-	{ "WatchEvents", PoliceBossCheats_WatchEventsA, METH_VARARGS, NULL },
-	{ "PlayDumb1", PoliceBossCheats_PlayDumb1A, METH_VARARGS, NULL },
-	{ "CheatPoliceBoss", PoliceBossCheats_CheatPoliceBossA, METH_VARARGS, NULL },
-	{ "PlayDumb2", PoliceBossCheats_PlayDumb2A, METH_VARARGS, NULL },
-	{ "BrupPoliceBoss", PoliceBossCheats_BrupPoliceBossA, METH_VARARGS, NULL },
-	{ "PlayPoliceBoss", PoliceBossCheats_PlayPoliceBossA, METH_VARARGS, NULL },
-	{ "PhotoOn", PoliceBossCheats_PhotoOnA, METH_VARARGS, NULL },
-	{ "PhotoOff", PoliceBossCheats_PhotoOffA, METH_VARARGS, NULL },
-	{ "OnPhoto", PoliceBossCheats_OnPhotoA, METH_VARARGS, NULL },
-	{ "EndOfPhoto", PoliceBossCheats_EndOfPhotoA, METH_VARARGS, NULL },
-	{ "InitAfterPhoto", PoliceBossCheats_InitAfterPhotoA, METH_VARARGS, NULL },
-	{ "InitAfterPhoto2", PoliceBossCheats_InitAfterPhoto2A, METH_VARARGS, NULL },
-	{ "InitAfterPhoto3", PoliceBossCheats_InitAfterPhoto3A, METH_VARARGS, NULL },
-	{ "InitAskCrazyGambler", PoliceBossCheats_InitAskCrazyGamblerA, METH_VARARGS, NULL },
-	{ "CrazyGamblerSpeech", PoliceBossCheats_CrazyGamblerSpeechA, METH_VARARGS, NULL },
-	{ "SetNextMission", PoliceBossCheats_SetNextMissionA, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_PolicePoliceBossCheatsMethods[] = {
+	PORT_FN(InitStatus, PoliceBossCheats_InitStatusA),
+	PORT_FN(Init, PoliceBossCheats_InitA),
+	PORT_FN(CreatePoliceFicusPal, PoliceBossCheats_CreatePoliceFicusPalA),
+	PORT_FN(FicusPalMissionSpeech, PoliceBossCheats_FicusPalMissionSpeechA),
+	PORT_FN(CreateFakeChar, PoliceBossCheats_CreateFakeCharA),
+	PORT_FN(CheatingLoop, PoliceBossCheats_CheatingLoopA),
+	PORT_FN(PlayAnm, PoliceBossCheats_PlayAnmA),
+	PORT_FN(WatchEvents, PoliceBossCheats_WatchEventsA),
+	PORT_FN(PlayDumb1, PoliceBossCheats_PlayDumb1A),
+	PORT_FN(CheatPoliceBoss, PoliceBossCheats_CheatPoliceBossA),
+	PORT_FN(PlayDumb2, PoliceBossCheats_PlayDumb2A),
+	PORT_FN(BrupPoliceBoss, PoliceBossCheats_BrupPoliceBossA),
+	PORT_FN(PlayPoliceBoss, PoliceBossCheats_PlayPoliceBossA),
+	PORT_FN(PhotoOn, PoliceBossCheats_PhotoOnA),
+	PORT_FN(PhotoOff, PoliceBossCheats_PhotoOffA),
+	PORT_FN(OnPhoto, PoliceBossCheats_OnPhotoA),
+	PORT_FN(EndOfPhoto, PoliceBossCheats_EndOfPhotoA),
+	PORT_FN(InitAfterPhoto, PoliceBossCheats_InitAfterPhotoA),
+	PORT_FN(InitAfterPhoto2, PoliceBossCheats_InitAfterPhoto2A),
+	PORT_FN(InitAfterPhoto3, PoliceBossCheats_InitAfterPhoto3A),
+	PORT_FN(InitAskCrazyGambler, PoliceBossCheats_InitAskCrazyGamblerA),
+	PORT_FN(CrazyGamblerSpeech, PoliceBossCheats_CrazyGamblerSpeechA),
+	PORT_FN(SetNextMission, PoliceBossCheats_SetNextMissionA),
+	PORT_FNEND
 };
 
 PORTS(levels_Police)

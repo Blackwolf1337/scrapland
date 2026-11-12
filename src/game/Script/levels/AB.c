@@ -593,25 +593,25 @@ LV_FN(Ff, OnBossRecoversEndPy, 2, Ff_OnBossRecoversEnd)
 LV_FN(Ff, OnBossDestroyedPy, 2, Ff_OnBossDestroyed)
 LV_FN(Ff, PreLoadFinalPy, 0, Ff_PreLoadFinal)
 
-PyMethodDef g_ABFinalFightMethods[] = {
-	{ "GetBossProfile", Ff_GetBossProfilePy, 1, NULL },
-	{ "FakeShips", Ff_FakeShipsPy, 1, NULL },
-	{ "InitStatus", Ff_InitStatusPy, 1, NULL },
-	{ "Init", Ff_InitPy, 1, NULL },
-	{ "CreateBoss", Ff_CreateBossPy, 1, NULL },
-	{ "SetShieldPhase", Ff_SetShieldPhasePy, 1, NULL },
-	{ "MissionScorer", Ff_MissionScorerPy, 1, NULL },
-	{ "SetFase", Ff_SetFasePy, 1, NULL },
-	{ "BossAttacks", Ff_BossAttacksPy, 1, NULL },
-	{ "BossRelax", Ff_BossRelaxPy, 1, NULL },
-	{ "OnPlayerDeath", Ff_OnPlayerDeathPy, 1, NULL },
-	{ "RespawnPlayer", Ff_RespawnPlayerPy, 1, NULL },
-	{ "LaunchTaunt", Ff_LaunchTauntPy, 1, NULL },
-	{ "OnBossRecoversZero", Ff_OnBossRecoversZeroPy, 1, NULL },
-	{ "OnBossRecoversEnd", Ff_OnBossRecoversEndPy, 1, NULL },
-	{ "OnBossDestroyed", Ff_OnBossDestroyedPy, 1, NULL },
-	{ "PreLoadFinal", Ff_PreLoadFinalPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ABFinalFightMethods[] = {
+	PORT_FN(GetBossProfile, Ff_GetBossProfilePy),
+	PORT_FN(FakeShips, Ff_FakeShipsPy),
+	PORT_FN(InitStatus, Ff_InitStatusPy),
+	PORT_FN(Init, Ff_InitPy),
+	PORT_FN(CreateBoss, Ff_CreateBossPy),
+	PORT_FN(SetShieldPhase, Ff_SetShieldPhasePy),
+	PORT_FN(MissionScorer, Ff_MissionScorerPy),
+	PORT_FN(SetFase, Ff_SetFasePy),
+	PORT_FN(BossAttacks, Ff_BossAttacksPy),
+	PORT_FN(BossRelax, Ff_BossRelaxPy),
+	PORT_FN(OnPlayerDeath, Ff_OnPlayerDeathPy),
+	PORT_FN(RespawnPlayer, Ff_RespawnPlayerPy),
+	PORT_FN(LaunchTaunt, Ff_LaunchTauntPy),
+	PORT_FN(OnBossRecoversZero, Ff_OnBossRecoversZeroPy),
+	PORT_FN(OnBossRecoversEnd, Ff_OnBossRecoversEndPy),
+	PORT_FN(OnBossDestroyed, Ff_OnBossDestroyedPy),
+	PORT_FN(PreLoadFinal, Ff_PreLoadFinalPy),
+	PORT_FNEND
 };
 
 /* ---- Map ---- */
@@ -877,15 +877,15 @@ LV_FN(AbMap, detrafficPy, 1, AbMap_detraffic)
 LV_FN(AbMap, OnDeathPy, 2, AbMap_OnDeath)
 LV_FN(AbMap, RealOnDeathPy, 2, AbMap_RealOnDeath)
 
-PyMethodDef g_ABMapMethods[] = {
-	{ "onTrackCreate", AbMap_onTrackCreatePy, 1, NULL },
-	{ "InitStatus", AbMap_InitStatusPy, 1, NULL },
-	{ "Init", AbMap_InitPy, 1, NULL },
-	{ "CreateAsteroid", AbMap_CreateAsteroidPy, 1, NULL },
-	{ "detraffic", AbMap_detrafficPy, 1, NULL },
-	{ "OnDeath", AbMap_OnDeathPy, 1, NULL },
-	{ "RealOnDeath", AbMap_RealOnDeathPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ABMapMethods[] = {
+	PORT_FN(onTrackCreate, AbMap_onTrackCreatePy),
+	PORT_FN(InitStatus, AbMap_InitStatusPy),
+	PORT_FN(Init, AbMap_InitPy),
+	PORT_FN(CreateAsteroid, AbMap_CreateAsteroidPy),
+	PORT_FN(detraffic, AbMap_detrafficPy),
+	PORT_FN(OnDeath, AbMap_OnDeathPy),
+	PORT_FN(RealOnDeath, AbMap_RealOnDeathPy),
+	PORT_FNEND
 };
 
 PORTS(levels_AB)

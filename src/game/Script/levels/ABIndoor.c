@@ -285,14 +285,14 @@ LV_FN(Abi, LaunchCinematicPy, 4, Abi_LaunchCinematic)
 LV_FN(Abi, ShowEndTitlePy, 1, Abi_ShowEndTitle)
 LV_FN(Abi, FadeEndTitlePy, 1, Abi_FadeEndTitle)
 
-PyMethodDef g_ABIndoorMapMethods[] = {
-	{ "InitStatus", Abi_InitStatusPy, 1, NULL },
-	{ "Init", Abi_InitPy, 1, NULL },
-	{ "Goodbye", (PyCFunction)(void (*)(void))Abi_GoodbyePy, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "LaunchCinematic", Abi_LaunchCinematicPy, 1, NULL },
-	{ "ShowEndTitle", Abi_ShowEndTitlePy, 1, NULL },
-	{ "FadeEndTitle", Abi_FadeEndTitlePy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ABIndoorMapMethods[] = {
+	PORT_FN(InitStatus, Abi_InitStatusPy),
+	PORT_FN(Init, Abi_InitPy),
+	PORT_FNK(Goodbye, Abi_GoodbyePy),
+	PORT_FN(LaunchCinematic, Abi_LaunchCinematicPy),
+	PORT_FN(ShowEndTitle, Abi_ShowEndTitlePy),
+	PORT_FN(FadeEndTitle, Abi_FadeEndTitlePy),
+	PORT_FNEND
 };
 
 PORTS(levels_ABIndoor)

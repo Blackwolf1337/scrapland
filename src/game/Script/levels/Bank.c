@@ -168,10 +168,10 @@ LV_CORE0(BankMap_Init)
 LV_FN(BankMap, InitStatusPy, 1, BankMap_InitStatus_C)
 LV_FN(BankMap, InitPy, 1, BankMap_Init_C)
 
-PyMethodDef g_BankMapMethods[] = {
-	{ "InitStatus", BankMap_InitStatusPy, METH_VARARGS, NULL },
-	{ "Init", BankMap_InitPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BankMapMethods[] = {
+	PORT_FN(InitStatus, BankMap_InitStatusPy),
+	PORT_FN(Init, BankMap_InitPy),
+	PORT_FNEND
 };
 
 /* ---- MapTreasure ---- */
@@ -771,17 +771,17 @@ LV_FN(MapTreasure, InitStatusPy, 1, MapTreasure_InitStatus_C)
 LV_FN(MapTreasure, MakeCoinPy, 3, MapTreasure_MakeCoin_C)
 LV_FN(MapTreasure, CreateCoinsPy, 0, MapTreasure_CreateCoins_C)
 
-PyMethodDef g_BankMapTreasureMethods[] = {
-	{ "InitDeal", MapTreasure_InitDealPy, METH_VARARGS, NULL },
-	{ "TakeMiniDeal", MapTreasure_TakeMiniDealPy, METH_VARARGS, NULL },
-	{ "BlinkBigPrize", MapTreasure_BlinkBigPrizePy, METH_VARARGS, NULL },
-	{ "BigPrize", MapTreasure_BigPrizePy, METH_VARARGS, NULL },
-	{ "DeleteShent", MapTreasure_DeleteShentPy, METH_VARARGS, NULL },
-	{ "RestartShents", MapTreasure_RestartShentsPy, METH_VARARGS, NULL },
-	{ "InitStatus", MapTreasure_InitStatusPy, METH_VARARGS, NULL },
-	{ "MakeCoin", MapTreasure_MakeCoinPy, METH_VARARGS, NULL },
-	{ "CreateCoins", MapTreasure_CreateCoinsPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BankMapTreasureMethods[] = {
+	PORT_FN(InitDeal, MapTreasure_InitDealPy),
+	PORT_FN(TakeMiniDeal, MapTreasure_TakeMiniDealPy),
+	PORT_FN(BlinkBigPrize, MapTreasure_BlinkBigPrizePy),
+	PORT_FN(BigPrize, MapTreasure_BigPrizePy),
+	PORT_FN(DeleteShent, MapTreasure_DeleteShentPy),
+	PORT_FN(RestartShents, MapTreasure_RestartShentsPy),
+	PORT_FN(InitStatus, MapTreasure_InitStatusPy),
+	PORT_FN(MakeCoin, MapTreasure_MakeCoinPy),
+	PORT_FN(CreateCoins, MapTreasure_CreateCoinsPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_CatchRudolph ---- */
@@ -854,12 +854,12 @@ LV_FN(CatchRudolph, CreateRudolphPy, 1, CatchRudolph_CreateRudolph_C)
 LV_FN(CatchRudolph, OnCatchRudolphPy, 4, CatchRudolph_OnCatchRudolph_C)
 LV_FN(CatchRudolph, SetNextMissionPy, 0, CatchRudolph_SetNextMission_C)
 
-PyMethodDef g_BankCatchRudolphMethods[] = {
-	{ "InitStatus", CatchRudolph_InitStatusPy, METH_VARARGS, NULL },
-	{ "CreateRudolph", CatchRudolph_CreateRudolphPy, METH_VARARGS, NULL },
-	{ "OnCatchRudolph", CatchRudolph_OnCatchRudolphPy, METH_VARARGS, NULL },
-	{ "SetNextMission", CatchRudolph_SetNextMissionPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BankCatchRudolphMethods[] = {
+	PORT_FN(InitStatus, CatchRudolph_InitStatusPy),
+	PORT_FN(CreateRudolph, CatchRudolph_CreateRudolphPy),
+	PORT_FN(OnCatchRudolph, CatchRudolph_OnCatchRudolphPy),
+	PORT_FN(SetNextMission, CatchRudolph_SetNextMissionPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_GetDataPart2 ---- */
@@ -1439,27 +1439,27 @@ LV_FN(GetDataPart2, OnFuncStartsWorkingPy, 1, GetDataPart2_OnFuncStartsWorking_C
 LV_FN(GetDataPart2, OnDownloadCompletePy, 0, GetDataPart2_OnDownloadComplete_C)
 LV_FN(GetDataPart2, MissionScorerPy, 1, GetDataPart2_MissionScorer_C)
 
-PyMethodDef g_BankGetDataPart2Methods[] = {
-	{ "ComputeAutoUpdateStopValue", GetDataPart2_ComputeAutoUpdateStopValuePy, METH_VARARGS, NULL },
-	{ "InitStatus", GetDataPart2_InitStatusPy, METH_VARARGS, NULL },
-	{ "Init", GetDataPart2_InitPy, METH_VARARGS, NULL },
-	{ "TalkToBoss", GetDataPart2_TalkToBossPy, METH_VARARGS, NULL },
-	{ "BossSpeech", GetDataPart2_BossSpeechPy, METH_VARARGS, NULL },
-	{ "PreInitMission", GetDataPart2_PreInitMissionPy, METH_VARARGS, NULL },
-	{ "InitMission", GetDataPart2_InitMissionPy, METH_VARARGS, NULL },
-	{ "SetDesktopState", GetDataPart2_SetDesktopStatePy, METH_VARARGS, NULL },
-	{ "CreateFuncInit", GetDataPart2_CreateFuncInitPy, METH_VARARGS, NULL },
-	{ "OnFunctionarySpeech", GetDataPart2_OnFunctionarySpeechPy, METH_VARARGS, NULL },
-	{ "OnFuncDefState", GetDataPart2_OnFuncDefStatePy, METH_VARARGS, NULL },
-	{ "SetStopDownloadingState", GetDataPart2_SetStopDownloadingStatePy, METH_VARARGS, NULL },
-	{ "SetNormalState", GetDataPart2_SetNormalStatePy, METH_VARARGS, NULL },
-	{ "AbortDownload", GetDataPart2_AbortDownloadPy, METH_VARARGS, NULL },
-	{ "OnDownloadAborted", GetDataPart2_OnDownloadAbortedPy, METH_VARARGS, NULL },
-	{ "OnBeginDownloadData", GetDataPart2_OnBeginDownloadDataPy, METH_VARARGS, NULL },
-	{ "OnFuncStartsWorking", GetDataPart2_OnFuncStartsWorkingPy, METH_VARARGS, NULL },
-	{ "OnDownloadComplete", GetDataPart2_OnDownloadCompletePy, METH_VARARGS, NULL },
-	{ "MissionScorer", GetDataPart2_MissionScorerPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BankGetDataPart2Methods[] = {
+	PORT_FN(ComputeAutoUpdateStopValue, GetDataPart2_ComputeAutoUpdateStopValuePy),
+	PORT_FN(InitStatus, GetDataPart2_InitStatusPy),
+	PORT_FN(Init, GetDataPart2_InitPy),
+	PORT_FN(TalkToBoss, GetDataPart2_TalkToBossPy),
+	PORT_FN(BossSpeech, GetDataPart2_BossSpeechPy),
+	PORT_FN(PreInitMission, GetDataPart2_PreInitMissionPy),
+	PORT_FN(InitMission, GetDataPart2_InitMissionPy),
+	PORT_FN(SetDesktopState, GetDataPart2_SetDesktopStatePy),
+	PORT_FN(CreateFuncInit, GetDataPart2_CreateFuncInitPy),
+	PORT_FN(OnFunctionarySpeech, GetDataPart2_OnFunctionarySpeechPy),
+	PORT_FN(OnFuncDefState, GetDataPart2_OnFuncDefStatePy),
+	PORT_FN(SetStopDownloadingState, GetDataPart2_SetStopDownloadingStatePy),
+	PORT_FN(SetNormalState, GetDataPart2_SetNormalStatePy),
+	PORT_FN(AbortDownload, GetDataPart2_AbortDownloadPy),
+	PORT_FN(OnDownloadAborted, GetDataPart2_OnDownloadAbortedPy),
+	PORT_FN(OnBeginDownloadData, GetDataPart2_OnBeginDownloadDataPy),
+	PORT_FN(OnFuncStartsWorking, GetDataPart2_OnFuncStartsWorkingPy),
+	PORT_FN(OnDownloadComplete, GetDataPart2_OnDownloadCompletePy),
+	PORT_FN(MissionScorer, GetDataPart2_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_InfiltrateBank ---- */
@@ -1706,21 +1706,21 @@ LV_FN(InfiltrateBank, LaunchScene2Py, 1, InfiltrateBank_LaunchScene2_C)
 LV_FN(InfiltrateBank, BankMasterSpeechPy, 4, InfiltrateBank_BankMasterSpeech_C)
 LV_FN(InfiltrateBank, SetNextMissionPy, 0, InfiltrateBank_SetNextMission_C)
 
-PyMethodDef g_BankInfiltrateBankMethods[] = {
-	{ "InitStatus", InfiltrateBank_InitStatusPy, METH_VARARGS, NULL },
-	{ "Init", InfiltrateBank_InitPy, METH_VARARGS, NULL },
-	{ "UseDoor", InfiltrateBank_UseDoorPy, METH_VARARGS, NULL },
-	{ "TestEndOfElevator", InfiltrateBank_TestEndOfElevatorPy, METH_VARARGS, NULL },
-	{ "ReAssignTarget", InfiltrateBank_ReAssignTargetPy, METH_VARARGS, NULL },
-	{ "AfterDTMessage", InfiltrateBank_AfterDTMessagePy, METH_VARARGS, NULL },
-	{ "ShowDeepThroatMessage", InfiltrateBank_ShowDeepThroatMessagePy, METH_VARARGS, NULL },
-	{ "SetArrowToBankMaster", InfiltrateBank_SetArrowToBankMasterPy, METH_VARARGS, NULL },
-	{ "CreateBankMaster", InfiltrateBank_CreateBankMasterPy, METH_VARARGS, NULL },
-	{ "LaunchScene", InfiltrateBank_LaunchScenePy, METH_VARARGS, NULL },
-	{ "LaunchScene2", InfiltrateBank_LaunchScene2Py, METH_VARARGS, NULL },
-	{ "BankMasterSpeech", InfiltrateBank_BankMasterSpeechPy, METH_VARARGS, NULL },
-	{ "SetNextMission", InfiltrateBank_SetNextMissionPy, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_BankInfiltrateBankMethods[] = {
+	PORT_FN(InitStatus, InfiltrateBank_InitStatusPy),
+	PORT_FN(Init, InfiltrateBank_InitPy),
+	PORT_FN(UseDoor, InfiltrateBank_UseDoorPy),
+	PORT_FN(TestEndOfElevator, InfiltrateBank_TestEndOfElevatorPy),
+	PORT_FN(ReAssignTarget, InfiltrateBank_ReAssignTargetPy),
+	PORT_FN(AfterDTMessage, InfiltrateBank_AfterDTMessagePy),
+	PORT_FN(ShowDeepThroatMessage, InfiltrateBank_ShowDeepThroatMessagePy),
+	PORT_FN(SetArrowToBankMaster, InfiltrateBank_SetArrowToBankMasterPy),
+	PORT_FN(CreateBankMaster, InfiltrateBank_CreateBankMasterPy),
+	PORT_FN(LaunchScene, InfiltrateBank_LaunchScenePy),
+	PORT_FN(LaunchScene2, InfiltrateBank_LaunchScene2Py),
+	PORT_FN(BankMasterSpeech, InfiltrateBank_BankMasterSpeechPy),
+	PORT_FN(SetNextMission, InfiltrateBank_SetNextMissionPy),
+	PORT_FNEND
 };
 
 PORTS(levels_Bank)
