@@ -872,6 +872,9 @@ byte Mode_SaveCopy(const char *name, const char *from);
 /* 1 when min <= n <= max, else 0 with the TypeError of PyArg_ParseTuple for n arguments ("function requires at least
  * 2 arguments; 1 given") */
 byte Mode_Arity(int n, int min, int max);
+/* the least (*min) and the most (*max) arguments of a PyArg format: letters and groups at the top level, the least
+ * those before the '|' */
+void Mode_FmtCount(const char *fmt, int *min, int *max);
 /* the arguments of an adapter with min required and up to max in all ("O..|O.." of PyArg_ParseTuple, max up to 11) as
  * native values of t, one after the other from *a (those not given None): the count given, -1 with the error */
 int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **a);
@@ -992,10 +995,11 @@ PORT_DECL(math, fabs)
 PORT_DECL(math, fmod)
 /* a keyword function of a module (prefix pre): the format (letters O, | before the optional ones, up to 8) and the
  * names of its arguments, then the body of pre_name_K(v, given, out) on the slots of Mode_KwSlots (the defaults of the
- * script with Mode_KwDef*): pre_name_E, its entry, pre_name, its adapter (Mode_KwAdapter), and pre_name_N, the names
- * (the keyword calls through its ref, PORT_DEFK) */
+ * script with Mode_KwDef*): pre_name_E, its entry, pre_name, its adapter (Mode_KwAdapter), pre_name_N, the names, and
+ * pre_name_F, the format (the keyword calls through its ref, PORT_DEFK) */
 #define MODE_KW(pre, name, fmt, ...) \
 	static char *pre##_##name##_N[] = { __VA_ARGS__, NULL }; \
+	[[maybe_unused]] static const char pre##_##name##_F[] = fmt; \
 	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out); \
 	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
@@ -1090,6 +1094,7 @@ PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **nam
  * (below) uses it with the adapter by reference */
 #define MODE_KWBY(adapter, fn, fmt, ...) \
 	static char *fn##_N[] = { __VA_ARGS__, NULL }; \
+	[[maybe_unused]] static const char fn##_F[] = fmt; \
 	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out); \
 	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
@@ -1236,10 +1241,6 @@ long Mode_AsLong(const nativeVal_t *v);
 /* a $name of the .def file that runs = v, for its steps (Script_SetValue; OBJLIB 6: the runner keeps the $names as
  * Python values, an NV_OBJ as the object it is) */
 void Mode_SetValue(const char *name, const nativeVal_t *v);
-/* the port's own function of the row called name of a PyMethodDef table as a function object of its own, held as a
- * value (a native port function; OBJLIB 7: a C function object for a row without a ref): for a call the scheduler
- * keeps whatever the module attribute holds then; made once by the caller. 0 with the error and *fn None */
-byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn);
 /* fn(args...) at the time (as a float) on the scheduler itself, with the function a value (Mode_SchedAt reads it from
  * the module; the entry of a port function, else the call of the value on the tuple of the values): always 1 */
 byte Mode_SchedFn(double time, const nativeVal_t *fn, const nativeVal_t *args, int n, const char *name);

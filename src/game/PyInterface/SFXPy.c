@@ -106,59 +106,18 @@ static char str_PyDoc_SFX_CharacterConversor[];
 static char str_PyDoc_SFX_EmbeddedSet[];
 static char str_PyDoc_SFX_MoneyTransfer[];
 static char str_PyDoc_SFX_ShipExplosion[];
-static const char str_PyMethod_SFX_BishopSellLife[];
-static const char str_PyMethod_SFX_CharacterConversion[];
-static const char str_PyMethod_SFX_CharacterConversor[];
-static const char str_PyMethod_SFX_EmbeddedSet[];
-static const char str_PyMethod_SFX_MoneyTransfer[];
-static const char str_PyMethod_SFX_ShipExplosion[];
-static PyMethodDef SFX_methods[7] = {
-	{
-		.ml_name = (void *)str_PyMethod_SFX_ShipExplosion,
-		.ml_meth = (void *)SFX_ShipExplosion,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_ShipExplosion,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_CharacterConversor,
-		.ml_meth = (void *)SFX_CharacterConversor,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_CharacterConversor,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_CharacterConversion,
-		.ml_meth = (void *)SFX_CharacterConversion,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_CharacterConversion,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_BishopSellLife,
-		.ml_meth = (void *)SFX_BishopSellLife,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_BishopSellLife,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_MoneyTransfer,
-		.ml_meth = (void *)SFX_MoneyTransfer,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_MoneyTransfer,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_EmbeddedSet,
-		.ml_meth = (void *)SFX_EmbeddedSet,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_EmbeddedSet,
-	},
+static const portFn_t SFX_methods[] = {
+	PORT_FND(ShipExplosion, SFX_ShipExplosion, str_PyDoc_SFX_ShipExplosion),
+	PORT_FND(CharacterConversor, SFX_CharacterConversor, str_PyDoc_SFX_CharacterConversor),
+	PORT_FND(CharacterConversion, SFX_CharacterConversion, str_PyDoc_SFX_CharacterConversion),
+	PORT_FND(BishopSellLife, SFX_BishopSellLife, str_PyDoc_SFX_BishopSellLife),
+	PORT_FND(MoneyTransfer, SFX_MoneyTransfer, str_PyDoc_SFX_MoneyTransfer),
+	PORT_FND(EmbeddedSet, SFX_EmbeddedSet, str_PyDoc_SFX_EmbeddedSet),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SFX, 0x42d060)
 
-static const char str_PyMethod_SFX_ShipExplosion[] = "ShipExplosion";
-static const char str_PyMethod_SFX_CharacterConversor[] = "CharacterConversor";
-static const char str_PyMethod_SFX_CharacterConversion[] = "CharacterConversion";
-static const char str_PyMethod_SFX_BishopSellLife[] = "BishopSellLife";
-static const char str_PyMethod_SFX_MoneyTransfer[] = "MoneyTransfer";
-static const char str_PyMethod_SFX_EmbeddedSet[] = "EmbeddedSet";
 
 static char str_PyDoc_SFX_ShipExplosion[] =
 	"ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión "

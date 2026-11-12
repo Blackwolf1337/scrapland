@@ -549,285 +549,47 @@ static char str_PyDoc_SScorer_SetOnSpecialHint[];
 static char str_PyDoc_SScorer_SetSpeechCallback[];
 static char str_PyDoc_SScorer_SetSpeechText[];
 static char str_PyDoc_SScorer_Show[];
-extern const char str_PyMethod_SScorer_Add[];
-static const char str_PyMethod_SScorer_AddChatMsg[];
-static const char str_PyMethod_SScorer_AddModel[];
-static const char str_PyMethod_SScorer_CancelSpeech[];
-static const char str_PyMethod_SScorer_Clear[];
-static const char str_PyMethod_SScorer_Fade[];
-extern const char str_PyMethod_SScorer_Get[];
-static const char str_PyMethod_SScorer_Get2DPos[];
-static const char str_PyMethod_SScorer_GetCurrent[];
-static const char str_PyMethod_SScorer_GetDefault[];
-static const char str_PyMethod_SScorer_GetItem[];
-static const char str_PyMethod_SScorer_GetMenuAccept[];
-static const char str_PyMethod_SScorer_GetTextArea[];
-static const char str_PyMethod_SScorer_Hide[];
-static const char str_PyMethod_SScorer_New[];
-static const char str_PyMethod_SScorer_PreloadTexture[];
-extern const char str_PyMethod_SScorer_Set[];
-static const char str_PyMethod_SScorer_SetCinema[];
-static const char str_PyMethod_SScorer_SetConsole[];
-static const char str_PyMethod_SScorer_SetCursor[];
-static const char str_PyMethod_SScorer_SetDefault[];
-static const char str_PyMethod_SScorer_SetHeadMonitor[];
-static const char str_PyMethod_SScorer_SetLabelText[];
-static const char str_PyMethod_SScorer_SetMPFunc[];
-static const char str_PyMethod_SScorer_SetMarkerSprite[];
-static const char str_PyMethod_SScorer_SetMsgText[];
-static const char str_PyMethod_SScorer_SetOnCancel[];
-static const char str_PyMethod_SScorer_SetOnNext[];
-static const char str_PyMethod_SScorer_SetOnPrev[];
-static const char str_PyMethod_SScorer_SetOnSpecialHint[];
-static const char str_PyMethod_SScorer_SetSpeechCallback[];
-static const char str_PyMethod_SScorer_SetSpeechText[];
-static const char str_PyMethod_SScorer_Show[];
-static PyMethodDef SScorer_methods[36] = {
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Add,
-		.ml_meth = (void *)SScorer_Add,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Add,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Clear,
-		.ml_meth = (void *)SScorer_Clear,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Clear,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Set,
-		.ml_meth = (void *)SScorer_Set,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Set,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Get,
-		.ml_meth = (void *)SScorer_Get,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Get,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Show,
-		.ml_meth = (void *)SScorer_Show,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Show,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Hide,
-		.ml_meth = (void *)SScorer_Hide,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Hide,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetCursor,
-		.ml_meth = (void *)SScorer_SetCursor,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetCursor,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetDefault,
-		.ml_meth = (void *)SScorer_SetDefault,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetDefault,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_GetDefault,
-		.ml_meth = (void *)SScorer_GetDefault,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_GetDefault,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_GetCurrent,
-		.ml_meth = (void *)SScorer_GetCurrent,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_GetCurrent,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetOnCancel,
-		.ml_meth = (void *)SScorer_SetOnCancel,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetOnCancel,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetOnNext,
-		.ml_meth = (void *)SScorer_SetOnNext,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetOnNext,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetOnPrev,
-		.ml_meth = (void *)SScorer_SetOnPrev,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetOnPrev,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetOnSpecialHint,
-		.ml_meth = (void *)SScorer_SetOnSpecialHint,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetOnSpecialHint,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_AddModel,
-		.ml_meth = (void *)SScorer_AddModel,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_AddModel,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetMPFunc,
-		.ml_meth = (void *)SScorer_SetMPFunc,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetMPFunc,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_PreloadTexture,
-		.ml_meth = (void *)SScorer_PreloadTexture,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_PreloadTexture,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_AddChatMsg,
-		.ml_meth = (void *)SScorer_AddChatMsg,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_AddChatMsg,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetConsole,
-		.ml_meth = (void *)SScorer_SetConsole,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetConsole,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetSpeechText,
-		.ml_meth = (void *)SScorer_SetSpeechText,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetSpeechText,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetSpeechCallback,
-		.ml_meth = (void *)SScorer_SetSpeechCallback,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetSpeechCallback,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_CancelSpeech,
-		.ml_meth = (void *)SScorer_CancelSpeech,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_CancelSpeech,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetHeadMonitor,
-		.ml_meth = (void *)SScorer_SetHeadMonitor,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetHeadMonitor,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Fade,
-		.ml_meth = (void *)SScorer_Fade,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Fade,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetCinema,
-		.ml_meth = (void *)SScorer_SetCinema,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetCinema,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetMsgText,
-		.ml_meth = (void *)SScorer_SetMsgText,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetMsgText,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetLabelText,
-		.ml_meth = (void *)SScorer_SetLabelText,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetLabelText,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Get2DPos,
-		.ml_meth = (void *)SScorer_Get2DPos,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_Get2DPos,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_GetTextArea,
-		.ml_meth = (void *)SScorer_GetTextArea,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_GetTextArea,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_GetMenuAccept,
-		.ml_meth = (void *)SScorer_GetMenuAccept,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_GetMenuAccept,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_SetMarkerSprite,
-		.ml_meth = (void *)SScorer_SetMarkerSprite,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_SetMarkerSprite,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_GetItem,
-		.ml_meth = (void *)SScorer_GetItem,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_GetItem,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_New,
-		.ml_meth = (void *)SScorer_New,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SScorer_New,
-	},
-	{
-		.ml_name = "Items",
-		.ml_meth = (void *)SScorer_Items,
-		.ml_flags = 1,
-		.ml_doc = "Items(playernumber) : the item names in draw order (ScrapC)",
-	},
-	{
-		.ml_name = "Accept",
-		.ml_meth = (void *)SScorer_Accept,
-		.ml_flags = 1,
-		.ml_doc = "Accept(playernumber,ItemName) : runs the OnAccept of the item (ScrapC)",
-	},
+static const portFn_t SScorer_methods[] = {
+	PORT_FND(Add, SScorer_Add, str_PyDoc_SScorer_Add),
+	PORT_FND(Clear, SScorer_Clear, str_PyDoc_SScorer_Clear),
+	PORT_FND(Set, SScorer_Set, str_PyDoc_SScorer_Set),
+	PORT_FND(Get, SScorer_Get, str_PyDoc_SScorer_Get),
+	PORT_FND(Show, SScorer_Show, str_PyDoc_SScorer_Show),
+	PORT_FND(Hide, SScorer_Hide, str_PyDoc_SScorer_Hide),
+	PORT_FND(SetCursor, SScorer_SetCursor, str_PyDoc_SScorer_SetCursor),
+	PORT_FND(SetDefault, SScorer_SetDefault, str_PyDoc_SScorer_SetDefault),
+	PORT_FND(GetDefault, SScorer_GetDefault, str_PyDoc_SScorer_GetDefault),
+	PORT_FND(GetActual, SScorer_GetCurrent, str_PyDoc_SScorer_GetCurrent),
+	PORT_FND(SetOnCancel, SScorer_SetOnCancel, str_PyDoc_SScorer_SetOnCancel),
+	PORT_FND(SetOnNext, SScorer_SetOnNext, str_PyDoc_SScorer_SetOnNext),
+	PORT_FND(SetOnPrev, SScorer_SetOnPrev, str_PyDoc_SScorer_SetOnPrev),
+	PORT_FND(SetOnSpecialHint, SScorer_SetOnSpecialHint, str_PyDoc_SScorer_SetOnSpecialHint),
+	PORT_FND(AddModel, SScorer_AddModel, str_PyDoc_SScorer_AddModel),
+	PORT_FND(SetMPFunc, SScorer_SetMPFunc, str_PyDoc_SScorer_SetMPFunc),
+	PORT_FND(PreloadTexture, SScorer_PreloadTexture, str_PyDoc_SScorer_PreloadTexture),
+	PORT_FND(AddChatMsg, SScorer_AddChatMsg, str_PyDoc_SScorer_AddChatMsg),
+	PORT_FND(SetConsole, SScorer_SetConsole, str_PyDoc_SScorer_SetConsole),
+	PORT_FND(SetSpeechText, SScorer_SetSpeechText, str_PyDoc_SScorer_SetSpeechText),
+	PORT_FND(SetSpeechCallback, SScorer_SetSpeechCallback, str_PyDoc_SScorer_SetSpeechCallback),
+	PORT_FND(CancelSpeech, SScorer_CancelSpeech, str_PyDoc_SScorer_CancelSpeech),
+	PORT_FND(SetHeadMonitor, SScorer_SetHeadMonitor, str_PyDoc_SScorer_SetHeadMonitor),
+	PORT_FND(Fade, SScorer_Fade, str_PyDoc_SScorer_Fade),
+	PORT_FND(SetCinema, SScorer_SetCinema, str_PyDoc_SScorer_SetCinema),
+	PORT_FND(SetMsgText, SScorer_SetMsgText, str_PyDoc_SScorer_SetMsgText),
+	PORT_FND(SetLabelText, SScorer_SetLabelText, str_PyDoc_SScorer_SetLabelText),
+	PORT_FND(Get2DPos, SScorer_Get2DPos, str_PyDoc_SScorer_Get2DPos),
+	PORT_FND(GetTextArea, SScorer_GetTextArea, str_PyDoc_SScorer_GetTextArea),
+	PORT_FND(GetMenuAccept, SScorer_GetMenuAccept, str_PyDoc_SScorer_GetMenuAccept),
+	PORT_FND(SetMarkerSprite, SScorer_SetMarkerSprite, str_PyDoc_SScorer_SetMarkerSprite),
+	PORT_FND(GetItem, SScorer_GetItem, str_PyDoc_SScorer_GetItem),
+	PORT_FND(New, SScorer_New, str_PyDoc_SScorer_New),
+	PORT_FN(Items, SScorer_Items),
+	PORT_FN(Accept, SScorer_Accept),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SScorer, 0x42ec68)
 
-static const char str_PyMethod_SScorer_Hide[] = "Hide";
-const char str_PyMethod_SScorer_Add[] = "Add";
-static const char str_PyMethod_SScorer_Clear[] = "Clear";
-static const char str_PyMethod_SScorer_Show[] = "Show";
-static const char str_PyMethod_SScorer_SetCursor[] = "SetCursor";
-static const char str_PyMethod_SScorer_SetDefault[] = "SetDefault";
-static const char str_PyMethod_SScorer_GetDefault[] = "GetDefault";
-static const char str_PyMethod_SScorer_GetCurrent[] = "GetActual";
-static const char str_PyMethod_SScorer_SetOnCancel[] = "SetOnCancel";
-static const char str_PyMethod_SScorer_SetOnNext[] = "SetOnNext";
-static const char str_PyMethod_SScorer_SetOnPrev[] = "SetOnPrev";
-static const char str_PyMethod_SScorer_SetOnSpecialHint[] = "SetOnSpecialHint";
-static const char str_PyMethod_SScorer_AddModel[] = "AddModel";
-static const char str_PyMethod_SScorer_SetMPFunc[] = "SetMPFunc";
-static const char str_PyMethod_SScorer_PreloadTexture[] = "PreloadTexture";
-static const char str_PyMethod_SScorer_AddChatMsg[] = "AddChatMsg";
-static const char str_PyMethod_SScorer_SetConsole[] = "SetConsole";
-static const char str_PyMethod_SScorer_SetSpeechText[] = "SetSpeechText";
-static const char str_PyMethod_SScorer_SetSpeechCallback[] = "SetSpeechCallback";
-static const char str_PyMethod_SScorer_CancelSpeech[] = "CancelSpeech";
-static const char str_PyMethod_SScorer_SetHeadMonitor[] = "SetHeadMonitor";
-static const char str_PyMethod_SScorer_Fade[] = "Fade";
-static const char str_PyMethod_SScorer_SetCinema[] = "SetCinema";
-static const char str_PyMethod_SScorer_SetMsgText[] = "SetMsgText";
-static const char str_PyMethod_SScorer_SetLabelText[] = "SetLabelText";
-static const char str_PyMethod_SScorer_Get2DPos[] = "Get2DPos";
-static const char str_PyMethod_SScorer_GetTextArea[] = "GetTextArea";
-static const char str_PyMethod_SScorer_GetMenuAccept[] = "GetMenuAccept";
-static const char str_PyMethod_SScorer_SetMarkerSprite[] = "SetMarkerSprite";
-static const char str_PyMethod_SScorer_GetItem[] = "GetItem";
-static const char str_PyMethod_SScorer_New[] = "New";
 
 static char str_PyDoc_SScorer_PreloadTexture[] = "PreloadTexture(filename) : Precarga una textura";
 

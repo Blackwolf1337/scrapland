@@ -264,9 +264,9 @@ STATICSTRUCT = re.compile(r'^static struct \{.*?^\} (\w+)\b', re.S | re.M)
 
 
 def c_sources(build):
-	"""file -> (raw text, preprocessed text) of the port files with a static struct (C state) or a PyMethodDef table"""
+	"""file -> (raw text, preprocessed text) of the port files with a static struct (C state) or a function table (portFn_t, or PyMethodDef not converted yet)"""
 	raws = {f: open(os.path.join(SCRIPT, f)).read() for f in ports.sources()}
-	files = [f for f in sorted(raws) if STATICSTRUCT.search(raws[f]) or 'PyMethodDef' in raws[f]]
+	files = [f for f in sorted(raws) if STATICSTRUCT.search(raws[f]) or 'PyMethodDef' in raws[f] or 'portFn_t' in raws[f]]
 	pp = ports.preprocess(files, build)
 	return {f: (raws[f], pp[f]) for f in files}
 

@@ -4171,7 +4171,7 @@ static byte Mode_FmtLetter(char c) {
 
 /* the counts of a format as vgetargs1 of getargs.c takes them: letters and groups at the top level, min those before
  * the '|' */
-static void Mode_FmtCount(const char *fmt, int *min, int *max) {
+void Mode_FmtCount(const char *fmt, int *min, int *max) {
 	int level = 0;
 	*min = -1;
 	*max = 0;
@@ -4802,15 +4802,15 @@ static byte Lib_MathFmod(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Lib_Math2(a, n, out, Lib_Fmod);
 }
 
-portRef_t port_string_find = { "string", "find", NULL, Lib_Find, NULL };
-portRef_t port_string_replace = { "string", "replace", NULL, Lib_Replace, NULL };
-portRef_t port_string_atoi = { "string", "atoi", NULL, Lib_Atoi, NULL };
-portRef_t port_string_atof = { "string", "atof", NULL, Lib_Atof, NULL };
-portRef_t port_string_split = { "string", "split", NULL, Lib_Split, NULL };
-portRef_t port_string_splitfields = { "string", "splitfields", NULL, Lib_Split, NULL };
-portRef_t port_math_sqrt = { "math", "sqrt", NULL, Lib_MathSqrt, NULL };
-portRef_t port_math_fabs = { "math", "fabs", NULL, Lib_MathFabs, NULL };
-portRef_t port_math_fmod = { "math", "fmod", NULL, Lib_MathFmod, NULL };
+portRef_t port_string_find = { .module = "string", .name = "find", .entry = Lib_Find, .twin = 1 };
+portRef_t port_string_replace = { .module = "string", .name = "replace", .entry = Lib_Replace, .twin = 1 };
+portRef_t port_string_atoi = { .module = "string", .name = "atoi", .entry = Lib_Atoi, .twin = 1 };
+portRef_t port_string_atof = { .module = "string", .name = "atof", .entry = Lib_Atof, .twin = 1 };
+portRef_t port_string_split = { .module = "string", .name = "split", .entry = Lib_Split, .twin = 1 };
+portRef_t port_string_splitfields = { .module = "string", .name = "splitfields", .entry = Lib_Split, .twin = 1 };
+portRef_t port_math_sqrt = { .module = "math", .name = "sqrt", .entry = Lib_MathSqrt, .twin = 1 };
+portRef_t port_math_fabs = { .module = "math", .name = "fabs", .entry = Lib_MathFabs, .twin = 1 };
+portRef_t port_math_fmod = { .module = "math", .name = "fmod", .entry = Lib_MathFmod, .twin = 1 };
 
 /* ---- the menus of stage 3 batch B11 ---- */
 
@@ -5539,27 +5539,6 @@ long Mode_AsLong(const nativeVal_t *v) {
 
 void Mode_SetValue(const char *name, const nativeVal_t *v) {
 	Script_SetValue(name, Native_ToPy(v));
-}
-
-byte Mode_OwnFunc(PyMethodDef *table, const char *name, nativeVal_t *fn) {
-	Native_SetNone(fn);
-	for (PyMethodDef *row = table; row->ml_name; row++) {
-		if (!strcmp(row->ml_name, name)) {
-			const portRef_t *ref = Port_OfDef(row);
-			if (ref) {
-				NObj_NewPortFunc(fn, ref);
-				return 1;
-			}
-			PyObject *f = PyCFunction_New(row, NULL);
-			if (!f) {
-				return 0;
-			}
-			Native_SetObj(fn, f);
-			Py_DECREF(f);
-			return 1;
-		}
-	}
-	return Native_Raise(NE_ATTRIBUTE, "%s", name);
 }
 
 byte Mode_SchedFn(double time, const nativeVal_t *fn, const nativeVal_t *args, int n, const char *name) {

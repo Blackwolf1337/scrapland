@@ -219,171 +219,32 @@ static char str_PyDoc_SInput_SetActionSet[];
 static char str_PyDoc_SInput_SetInputFunc[];
 static char str_PyDoc_SInput_SetString[];
 static char str_PyDoc_SInput_SetVirtualKeyboard[];
-static const char str_PyMethod_SInput_AbortListenToDefine[];
-static const char str_PyMethod_SInput_AssingEntry[];
-static const char str_PyMethod_SInput_Bind[];
-static const char str_PyMethod_SInput_CheckPadButton[];
-static const char str_PyMethod_SInput_ClearDefinedList[];
-static const char str_PyMethod_SInput_GetActionSet[];
-static const char str_PyMethod_SInput_GetCursorChar[];
-static const char str_PyMethod_SInput_GetDefinedEntry[];
-static const char str_PyMethod_SInput_GetDefinedList[];
-static const char str_PyMethod_SInput_GetEntry[];
-static const char str_PyMethod_SInput_GetString[];
-static const char str_PyMethod_SInput_GetVirtualKeyboard[];
-static const char str_PyMethod_SInput_ListenToDefine[];
-static const char str_PyMethod_SInput_ResetToDefault[];
-static const char str_PyMethod_SInput_ResetToSplit[];
-static const char str_PyMethod_SInput_Rumble[];
-static const char str_PyMethod_SInput_SetActionSet[];
-static const char str_PyMethod_SInput_SetInputFunc[];
-static const char str_PyMethod_SInput_SetString[];
-static const char str_PyMethod_SInput_SetVirtualKeyboard[];
-static PyMethodDef SInput_methods[21] = {
-	{
-		.ml_name = (void *)str_PyMethod_SInput_SetActionSet,
-		.ml_meth = (void *)SInput_SetActionSet,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_SetActionSet,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_GetActionSet,
-		.ml_meth = (void *)SInput_GetActionSet,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_GetActionSet,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_AssingEntry,
-		.ml_meth = (void *)SInput_AssingEntry,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_AssingEntry,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_GetEntry,
-		.ml_meth = (void *)SInput_GetEntry,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_GetEntry,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_ListenToDefine,
-		.ml_meth = (void *)SInput_ListenToDefine,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_ListenToDefine,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_AbortListenToDefine,
-		.ml_meth = (void *)SInput_AbortListenToDefine,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_AbortListenToDefine,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_GetDefinedList,
-		.ml_meth = (void *)SInput_GetDefinedList,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_GetDefinedList,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_GetDefinedEntry,
-		.ml_meth = (void *)SInput_GetDefinedEntry,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_GetDefinedEntry,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_ClearDefinedList,
-		.ml_meth = (void *)SInput_ClearDefinedList,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_ClearDefinedList,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_ResetToDefault,
-		.ml_meth = (void *)SInput_ResetToDefault,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_ResetToDefault,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_SetString,
-		.ml_meth = (void *)SInput_SetString,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_SetString,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_GetString,
-		.ml_meth = (void *)SInput_GetString,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_GetString,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_GetCursorChar,
-		.ml_meth = (void *)SInput_GetCursorChar,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_GetCursorChar,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_GetVirtualKeyboard,
-		.ml_meth = (void *)SInput_GetVirtualKeyboard,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_GetVirtualKeyboard,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_SetVirtualKeyboard,
-		.ml_meth = (void *)SInput_SetVirtualKeyboard,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_SetVirtualKeyboard,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_SetInputFunc,
-		.ml_meth = (void *)SInput_SetInputFunc,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_SetInputFunc,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_Bind,
-		.ml_meth = (void *)SInput_Bind,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_Bind,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_Rumble,
-		.ml_meth = (void *)SInput_Rumble,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_Rumble,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_ResetToSplit,
-		.ml_meth = (void *)SInput_ResetToSplit,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_ResetToSplit,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SInput_CheckPadButton,
-		.ml_meth = (void *)SInput_CheckPadButton,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SInput_CheckPadButton,
-	},
+static const portFn_t SInput_methods[] = {
+	PORT_FND(SetActionSet, SInput_SetActionSet, str_PyDoc_SInput_SetActionSet),
+	PORT_FND(GetActionSet, SInput_GetActionSet, str_PyDoc_SInput_GetActionSet),
+	PORT_FND(AssingEntry, SInput_AssingEntry, str_PyDoc_SInput_AssingEntry),
+	PORT_FND(GetEntry, SInput_GetEntry, str_PyDoc_SInput_GetEntry),
+	PORT_FND(ListenToDefine, SInput_ListenToDefine, str_PyDoc_SInput_ListenToDefine),
+	PORT_FND(AbortListenToDefine, SInput_AbortListenToDefine, str_PyDoc_SInput_AbortListenToDefine),
+	PORT_FND(GetDefinedList, SInput_GetDefinedList, str_PyDoc_SInput_GetDefinedList),
+	PORT_FND(GetDefinedEntry, SInput_GetDefinedEntry, str_PyDoc_SInput_GetDefinedEntry),
+	PORT_FND(ClearDefinedList, SInput_ClearDefinedList, str_PyDoc_SInput_ClearDefinedList),
+	PORT_FND(ResetToDefault, SInput_ResetToDefault, str_PyDoc_SInput_ResetToDefault),
+	PORT_FND(SetString, SInput_SetString, str_PyDoc_SInput_SetString),
+	PORT_FND(GetString, SInput_GetString, str_PyDoc_SInput_GetString),
+	PORT_FND(GetCursorChar, SInput_GetCursorChar, str_PyDoc_SInput_GetCursorChar),
+	PORT_FND(GetVirtualKeyboard, SInput_GetVirtualKeyboard, str_PyDoc_SInput_GetVirtualKeyboard),
+	PORT_FND(SetVirtualKeyboard, SInput_SetVirtualKeyboard, str_PyDoc_SInput_SetVirtualKeyboard),
+	PORT_FND(SetInputFunc, SInput_SetInputFunc, str_PyDoc_SInput_SetInputFunc),
+	PORT_FND(Bind, SInput_Bind, str_PyDoc_SInput_Bind),
+	PORT_FND(Rumble, SInput_Rumble, str_PyDoc_SInput_Rumble),
+	PORT_FND(ResetToSplit, SInput_ResetToSplit, str_PyDoc_SInput_ResetToSplit),
+	PORT_FND(CheckPadButton, SInput_CheckPadButton, str_PyDoc_SInput_CheckPadButton),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SInput, 0x42d790)
 
-static const char str_PyMethod_SInput_SetActionSet[] = "SetActionSet";
-static const char str_PyMethod_SInput_GetActionSet[] = "GetActionSet";
-static const char str_PyMethod_SInput_AssingEntry[] = "AssingEntry";
-static const char str_PyMethod_SInput_GetEntry[] = "GetEntry";
-static const char str_PyMethod_SInput_ListenToDefine[] = "ListenToDefine";
-static const char str_PyMethod_SInput_AbortListenToDefine[] = "AbortListenToDefine";
-static const char str_PyMethod_SInput_GetDefinedList[] = "GetDefinedList";
-static const char str_PyMethod_SInput_GetDefinedEntry[] = "GetDefinedEntry";
-static const char str_PyMethod_SInput_ClearDefinedList[] = "ClearDefinedList";
-static const char str_PyMethod_SInput_ResetToDefault[] = "ResetToDefault";
-static const char str_PyMethod_SInput_SetString[] = "SetString";
-static const char str_PyMethod_SInput_GetString[] = "GetString";
-static const char str_PyMethod_SInput_GetCursorChar[] = "GetCursorChar";
-static const char str_PyMethod_SInput_GetVirtualKeyboard[] = "GetVirtualKeyboard";
-static const char str_PyMethod_SInput_SetVirtualKeyboard[] = "SetVirtualKeyboard";
-static const char str_PyMethod_SInput_SetInputFunc[] = "SetInputFunc";
-static const char str_PyMethod_SInput_Bind[] = "Bind";
-static const char str_PyMethod_SInput_Rumble[] = "Rumble";
-static const char str_PyMethod_SInput_ResetToSplit[] = "ResetToSplit";
-static const char str_PyMethod_SInput_CheckPadButton[] = "CheckPadButton";
 
 static char str_PyDoc_SInput_SetActionSet[] =
 	"SetActionSet(string name) :  Pone el set de acciones requerido...";

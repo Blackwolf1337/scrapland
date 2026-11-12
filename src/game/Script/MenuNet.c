@@ -24,6 +24,7 @@
 #include "scrap/game.h"
 #include "scrap/input.h"
 #include "scrap/net.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapfont.h"
@@ -320,14 +321,14 @@ static void Net_ConnectionStatus(void) {
 	if (strcmp(last, title)) {
 		MODE_PRINTED(Menu, DrawMenuTitleBar, "ids", 0L, bar, title);
 	}
-	/* a full server ends the polling (the script deleted its own next call). OBJLIB 7: the port's own function as a
-	 * function object of its own, made once from its table row and held as a value (not the module attribute: a case
-	 * that replaces PCMenu.ShowConectionStatus does not change the polling), without arguments; the scheduler takes
-	 * its entry (Port_Scheduled) */
+	/* a full server ends the polling (the script deleted its own next call). The port's own function as a function
+	 * object of its own, made once from its ref and held as a value (not the module attribute: a case that replaces
+	 * PCMenu.ShowConectionStatus does not change the polling), without arguments; the scheduler takes its entry
+	 * (Port_ScheduledOf) */
 	if (!full) {
 		static nativeVal_t status;
 		if (!Native_IsObj(&status)) {
-			Mode_OwnFunc(g_MenuNetMethods, "ShowConectionStatus", &status);
+			NObj_NewPortFunc(&status, &PORT_REF(PCMenu, ShowConectionStatus));
 		}
 		if (Native_IsObj(&status)) {
 			Mode_SchedFn(Timer_GetTime(&g_pWorld->timer) + 0.25f, &status, NULL, 0, "ConectionStatus");

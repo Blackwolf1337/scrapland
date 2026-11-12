@@ -178,15 +178,6 @@ static char str_PyDoc_SAct_GetClass[];
 static char str_PyDoc_SAct_GetCls[];
 static char str_PyDoc_SAct_SetAct[104];
 static char str_PyDoc_SAct_SetCls[];
-static const char str_PyMethod_SAct_CreateAction[];
-static const char str_PyMethod_SAct_CreateClass[];
-static const char str_PyMethod_SAct_DelClass[];
-static const char str_PyMethod_SAct_GetAct[];
-static const char str_PyMethod_SAct_GetAction[];
-static const char str_PyMethod_SAct_GetClass[];
-static const char str_PyMethod_SAct_GetCls[];
-static const char str_PyMethod_SAct_SetAct[];
-static const char str_PyMethod_SAct_SetCls[];
 /* the name of the function of an event: !native, the name of a port entry or a function value ("?" for a value
  * without one), or "" */
 static void Event_FuncName(const cPy_Function *f, char *out, int size) {
@@ -283,67 +274,18 @@ API_FN(SAct, DumpEvents) {
 	return Api_Build(out, "i", 1);
 }
 
-static PyMethodDef SAct_methods[11] = {
-	{
-		.ml_name = (void *)str_PyMethod_SAct_CreateClass,
-		.ml_meth = (void *)SAct_CreateClass,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_CreateClass,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_DelClass,
-		.ml_meth = (void *)SAct_DelClass,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_DelClass,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_GetClass,
-		.ml_meth = (void *)SAct_GetClass,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_GetClass,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_SetCls,
-		.ml_meth = (void *)SAct_SetCls,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_SetCls,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_GetCls,
-		.ml_meth = (void *)SAct_GetCls,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_GetCls,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_CreateAction,
-		.ml_meth = (void *)SAct_CreateAction,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_CreateAction,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_GetAction,
-		.ml_meth = (void *)SAct_GetAction,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_GetAction,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_SetAct,
-		.ml_meth = (void *)SAct_SetAct,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_SetAct,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SAct_GetAct,
-		.ml_meth = (void *)SAct_GetAct,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SAct_GetAct,
-	},
-	{
-		.ml_name = "DumpEvents",
-		.ml_meth = (void *)SAct_DumpEvents,
-		.ml_flags = 1,
-		.ml_doc = "DumpEvents(file) : ScrapC only, every class, action and event into the file",
-	},
+static const portFn_t SAct_methods[] = {
+	PORT_FND(CreateClass, SAct_CreateClass, str_PyDoc_SAct_CreateClass),
+	PORT_FND(DelClass, SAct_DelClass, str_PyDoc_SAct_DelClass),
+	PORT_FND(GetClass, SAct_GetClass, str_PyDoc_SAct_GetClass),
+	PORT_FND(SetCls, SAct_SetCls, str_PyDoc_SAct_SetCls),
+	PORT_FND(GetCls, SAct_GetCls, str_PyDoc_SAct_GetCls),
+	PORT_FND(CreateAction, SAct_CreateAction, str_PyDoc_SAct_CreateAction),
+	PORT_FND(GetAction, SAct_GetAction, str_PyDoc_SAct_GetAction),
+	PORT_FND(SetAct, SAct_SetAct, str_PyDoc_SAct_SetAct),
+	PORT_FND(GetAct, SAct_GetAct, str_PyDoc_SAct_GetAct),
+	PORT_FN(DumpEvents, SAct_DumpEvents),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SAct, 0x429288)
@@ -362,25 +304,16 @@ static char str_PyDoc_SAct_GetCls[] =
 
 static char str_PyDoc_SAct_CreateAction[] = "CreateAction(varname) :  Crea una accion en la clase actual.";
 
-static const char str_PyMethod_SAct_CreateClass[] = "CreateClass";
 
 static char str_PyDoc_SAct_GetAction[] = "GetAction(varname) :  Obtiene una accion de la clase actual.";
 
-static const char str_PyMethod_SAct_DelClass[] = "DelClass";
-static const char str_PyMethod_SAct_GetClass[] = "GetClass";
 
 static char str_PyDoc_SAct_SetAct[104] =
 	"SetAct(varname,value) :  Modifica el valor de una variable de la accion de una clase objeto animado";
 
-static const char str_PyMethod_SAct_SetCls[] = "SetCls";
-static const char str_PyMethod_SAct_GetCls[] = "GetCls";
-static const char str_PyMethod_SAct_CreateAction[] = "CreateAction";
 
 static char str_PyDoc_SAct_GetAct[] =
 	"GetAct(varname) :  Obtiene el valor de una variable de la accion de una clase objeto animado";
 
-static const char str_PyMethod_SAct_GetAction[] = "GetAction";
-static const char str_PyMethod_SAct_SetAct[] = "SetAct";
-static const char str_PyMethod_SAct_GetAct[] = "GetAct";
 
 PORTS(PyInterface_SActPy)

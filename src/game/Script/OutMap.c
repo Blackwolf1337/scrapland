@@ -491,6 +491,7 @@ static byte OutMap_GetNearestFreeSpawnPos_E(const nativeVal_t *a, int n, nativeV
 }
 
 static char *OutMap_GetNearestFreeSpawnPos_N[] = { "initialPos", NULL };
+static const char OutMap_GetNearestFreeSpawnPos_F[] = "|O";
 
 /* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
@@ -503,6 +504,7 @@ static byte OutMap_GetFarthestFreeSpawnPos_E(const nativeVal_t *a, int n, native
 }
 
 static char *OutMap_GetFarthestFreeSpawnPos_N[] = { "initialPos", NULL };
+static const char OutMap_GetFarthestFreeSpawnPos_F[] = "|O";
 
 /* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
 static PyObject *OutMap_GetFarthestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {

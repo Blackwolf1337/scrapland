@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scriptapi.h"
 
 /* the items of a format up to end (')' or the end of the text) at its top level, as countformat counts them */
@@ -108,4 +109,18 @@ byte Api_Object(PyObject *o, nativeVal_t *out) {
 
 byte Api_Handle(const char *name, nativeVal_t *out) {
 	return Native_SetEnt(out, name);
+}
+
+void Api_Module(const char *name, const portFn_t *fns) {
+	static PyMethodDef none[] = { { NULL, NULL, 0, NULL } };
+	PyObject *m = Py_InitModule((char *)name, none), *d = m ? PyModule_GetDict(m) : NULL;
+	for (; d && fns->name; fns++) {
+		const portRef_t *ref = Port_OfFn(name, fns);
+		CHECK(ref);
+		PyObject *f = NObj_PortFuncPy(ref);
+		if (f) {
+			PyDict_SetItemString(d, (char *)fns->name, f);
+			Py_DECREF(f);
+		}
+	}
 }

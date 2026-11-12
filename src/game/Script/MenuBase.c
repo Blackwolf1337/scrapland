@@ -638,6 +638,7 @@ static PyObject *Menu_AddTabs(PyObject *self, PyObject *args, PyObject *kw) {
 /* the keyword names of VerticalMenu (its ref takes keyword calls, PORT_DEFK) */
 static char *Menu_VerticalMenu_N[] = { "id", "title", "menu", "backfunc", "XStart", "VerticalStep", "Font", "MinYStart",
 	"YStart", "FontTitle", NULL };
+static const char Menu_VerticalMenu_F[] = "iOOO|OOsOOs";
 
 /* the entry of VerticalMenu: the slots of "iOOO|OOsOOs" (the arity errors of PyArg_ParseTupleAndKeywords), then the
  * id and the fonts converted in slot order with the errors of "i" and "s" (the fonts "ScrapBig" when not given) */
