@@ -167,9 +167,10 @@ static void MV_FromPy(PyObject *o, nativeVal_t *v) {
 /* *out the form of v a variable holds: lists and dicts as objects (NObj_Share), a vector as the tuple of three floats
  * it is in Python, a tuple with its Python tuple and an entity handle with its Python object (one object for `is`, id
  * and hash, as the dict slot had it; native data in a tuple crosses);
- * SCRAP_NATIVE_REF=0: the value as Python made it. 0 with the error */
+ * SCRAP_NATIVE_REF=0: the value as Python made it, a value that holds native objects (there are no views then) as it
+ * is. 0 with the error */
 static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
-	if (!NObj_RefMode()) {
+	if (!NObj_RefMode() && !Native_Holds(v, 1u << NV_REF)) {
 		PyObject *o = Native_ToPy(v);
 		Native_SetNone(out);
 		if (!o) {

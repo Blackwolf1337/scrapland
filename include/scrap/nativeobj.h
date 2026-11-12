@@ -44,7 +44,8 @@ typedef enum {
 					 * with a context, a method of a list or dict bound to it; as a view also a Python
 					 * function or C function */
 	NO_METHOD,			/* a function of a class bound to an instance, or unbound */
-	NO_MODULE,			/* the registry's module (a view of the module object while Python is linked) */
+	NO_MODULE,			/* a module: a pack module is native (its variables are the registry's; OBJLIB 9: its
+					 * module object of Python is its key, the one object per module), any other one a view */
 } nativeObjKind_t;
 
 typedef struct nativeObj_s nativeObj_t;
@@ -52,6 +53,8 @@ typedef struct nativeObj_s nativeObj_t;
 /* a C callback as a function object: the n arguments in a, the result into *out (None when called): 1, or 0 with the
  * error raised */
 typedef byte (*nativeCall_t)(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out);
+/* the same with the keywords: kw an NV_LIST of (name, value) tuples in the order given, NULL when there are none */
+typedef byte (*nativeCallKw_t)(void *ctx, const nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out);
 
 /* ---- holders ---- */
 
@@ -93,9 +96,28 @@ void NObj_NewDataFunc(nativeVal_t *out, const char *module, const char *name);
  * instances as a method); 0: as a C function (repr "<built-in function name>", never bound) */
 void NObj_NewCallback(nativeVal_t *out, const char *name, nativeCall_t call, void *ctx, void (*drop)(void *ctx),
 	byte binds);
+/* a callback function made by NObj_NewCallback (binds 0) gets a __self__ (copied; not None: its repr is that of a
+ * C function bound to an object of that type, as a function of a C table with a self) and callkw, its call when
+ * keywords are given (NULL: it takes none) */
+void NObj_SetCallback(const nativeVal_t *f, const nativeVal_t *self, nativeCallKw_t callkw);
+/* the C callback and context of a callback function: 1, 0 for any other value */
+byte NObj_CallbackOf(const nativeVal_t *f, nativeCall_t *call, void **ctx);
+/* v as a call through Python hands it to a native callee (NObj_FromPy of Native_ToPy(v)), without the crossing: a
+ * copy with its lists and dicts as new objects (NObj_Share), a vector as the tuple of its floats, a Python value in it
+ * in the form NObj_FromPy gives */
+void NObj_CallArg(const nativeVal_t *v, nativeVal_t *out);
+/* v holds an object whose operations are native: native data, a native function or a pack module, also after it
+ * crossed to Python (0 for a view, which forwards them, and for any other value) */
+byte NObj_Native(const nativeVal_t *v);
+/* the port ref of a port function made by NObj_NewPortFunc, NULL for any other value */
+const portRef_t *NObj_PortRef(const nativeVal_t *f);
 /* the method object of func (a function object) for cls: bound to the instance self, or unbound (self NULL). 0 with a
  * TypeError when func, self or cls is not of that kind */
 byte NObj_NewMethod(nativeVal_t *out, const nativeVal_t *func, const nativeVal_t *self, const nativeVal_t *cls);
+/* cls NULL and self NULL above: an unbound method whose class comes later (a class body that holds a method of its
+ * own class, CharsNPC.CharSpawnPos.__init__); NObj_SetMethodClass gives it (the class and its dict then hold each
+ * other: NObj_SetMethodClass(m, NULL) breaks that again) */
+void NObj_SetMethodClass(const nativeVal_t *m, const nativeVal_t *cls);
 /* the module name as the scripts import it (OBJLIB 9: the view of its module object): 0 with the ImportError */
 byte NObj_Module(nativeVal_t *out, const char *name);
 
@@ -128,6 +150,10 @@ byte NObj_Call(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *o
 /* o.name(a[0], ..., a[n - 1]): NObj_GetAttr, then NObj_Call (the one lookup of the list and dict methods: append,
  * insert, extend, pop, remove, index, count, reverse, sort; keys, values, items, has_key, get, update, clear, copy) */
 byte NObj_CallMethod(const nativeVal_t *o, const char *name, const nativeVal_t *a, int n, nativeVal_t *out);
+/* f(a..., **kw) with kw as nativeCallKw_t has them (NULL or empty: NObj_Call): a callback with its callkw, a class,
+ * instance or method of native data natively, a port function and a Python object through Python (the adapter takes
+ * the keywords); a native function without callkw raises "this function takes no keyword arguments" */
+byte NObj_CallKw(const nativeVal_t *f, const nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out);
 
 /* ---- the hooks of the value functions (ScriptNative.c calls them for an NV_REF) ---- */
 
