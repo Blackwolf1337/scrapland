@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # The refs of the direct calls between script ports (stage 3 of docs/objlib-plan.md, PORT_CALL in
-# include/scrap/scriptnative.h): writes include/scrap/scriptports.h from the PyMethodDef tables of src/game/Script,
-# their registrations in Script.c and Levels.c and the native entries (<adapter>_E, made by MODE_FN and LV_FN or by
-# hand), found in the preprocessed sources (compile_commands.json of a build folder), and the registry of stage 4:
-# src/game/Script/PortTable.c, all refs sorted by module and name (strcmp order) for Port_Find.
+# include/scrap/scriptnative.h): writes include/scrap/scriptports.h from the function tables of src/game/Script
+# (portFn_t, stage 7e; the PyMethodDef tables not converted yet), their registrations in Script.c and Levels.c and the
+# native entries (<fn>_E, made by MODE_FN and LV_FN or by hand), found in the preprocessed sources
+# (compile_commands.json of a build folder), and the registry of stage 4: src/game/Script/PortTable.c, all refs sorted
+# by module and name (strcmp order) for Port_Find.
 #
 #   tools/script/ports.py                 write the header and the table (run it after a table or an entry changes,
 #                                         and to resolve a merge of either)
@@ -13,13 +14,15 @@
 #   --build <dir>                         the build folder for the preprocessor (default build-linux64)
 #
 # The engine modules (stage 7: Scrap, SScorer, ... of src/game/PyInterface, the files with SD_PY_MODULE(<Module>, rva)
-# and its designated-initializer table <Module>_methods) get refs the same way, one per function with an entry, listed
-# under the file's path from src/game (PORTS(PyInterface_ScrapPy) at the end of src/game/PyInterface/ScrapPy.c).
+# and its function table <Module>_methods) get refs the same way, one per function, listed under the file's path from
+# src/game (PORTS(PyInterface_ScrapPy) at the end of src/game/PyInterface/ScrapPy.c).
 #
 # One ref per table function with an entry: port_<Module>_<Func>, or port_<level>_<Module>_<Func> for the modules
-# of a level (Map, Mission_X: Levels.c entries). A keyword entry whose file defines the names of its slots as
-# char *<adapter>_N[] (MODE_KW, the Mode_KwCall adapters) gets PORT_DEFK or PORT_DEFLK: its ref takes keyword calls.
-# portcalls.py imports this file.
+# of a level (Map, Mission_X: Levels.c entries). A row of a function table gives PORT_DEFN (PORT_DEFLN for a level),
+# PORT_DEFNK for a keyword row (PORT_FNK: the names of the slots <fn>_N and their format <fn>_F, as MODE_KW makes
+# them), PORT_DEFND for a row with a __doc__ text (PORT_FND). A row of a PyMethodDef table not converted yet gives
+# PORT_DEF with its adapter, PORT_DEFK when the file defines char *<adapter>_N[] (and <adapter>_F).
+# portcalls.py imports this file; fntable.py converts the PyMethodDef tables of a file.
 import argparse, collections, concurrent.futures, json, os, re, shlex, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

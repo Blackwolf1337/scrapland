@@ -277,11 +277,11 @@ MODE_FNANY(Weapons, InitAmmo, Weap_Run("Ammo", NULL, NULL, NULL))
 MODE_FNANY(Weapons, InitWeapons, Weap_Run("Weapons", NULL, NULL, NULL))
 MODE_FNANY(Weapons, Init, Weapons_InitBoth())
 
-PyMethodDef g_WeaponsMethods[] = {
-	{ "InitAmmo", Weapons_InitAmmo, 1, NULL },
-	{ "InitWeapons", Weapons_InitWeapons, 1, NULL },
-	{ "Init", Weapons_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_WeaponsMethods[] = {
+	PORT_FN(InitAmmo, Weapons_InitAmmo),
+	PORT_FN(InitWeapons, Weapons_InitWeapons),
+	PORT_FN(Init, Weapons_Init),
+	PORT_FNEND
 };
 
 /* LoadResources() of a module (no arity check), and mod_CallLoad, the call of Init through the module (a mission may
@@ -306,24 +306,19 @@ WEAPON(Laser, 0)
 WEAPON(Swarm, 1)
 WEAPON(Inferno, 1)
 
-PyMethodDef g_VulcanMethods[] = {
-	{ "LoadResources", Vulcan_LoadResources, 1, NULL }, { "Init", Vulcan_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
-PyMethodDef g_DevastatorMethods[] = {
-	{ "LoadResources", Devastator_LoadResources, 1, NULL }, { "Init", Devastator_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
-PyMethodDef g_TeslaMethods[] = {
-	{ "LoadResources", Tesla_LoadResources, 1, NULL }, { "Init", Tesla_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
-PyMethodDef g_ATPCMethods[] = {
-	{ "LoadResources", ATPC_LoadResources, 1, NULL }, { "Init", ATPC_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
-PyMethodDef g_LaserMethods[] = {
-	{ "LoadResources", Laser_LoadResources, 1, NULL }, { "Init", Laser_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
+const portFn_t g_VulcanMethods[] = { PORT_FN(LoadResources, Vulcan_LoadResources), PORT_FN(Init, Vulcan_Init), PORT_FNEND };
+const portFn_t g_DevastatorMethods[] = { PORT_FN(LoadResources, Devastator_LoadResources), PORT_FN(Init, Devastator_Init), PORT_FNEND };
+const portFn_t g_TeslaMethods[] = { PORT_FN(LoadResources, Tesla_LoadResources), PORT_FN(Init, Tesla_Init), PORT_FNEND };
+const portFn_t g_ATPCMethods[] = { PORT_FN(LoadResources, ATPC_LoadResources), PORT_FN(Init, ATPC_Init), PORT_FNEND };
+const portFn_t g_LaserMethods[] = { PORT_FN(LoadResources, Laser_LoadResources), PORT_FN(Init, Laser_Init), PORT_FNEND };
 
 /* the missiles of Swarm and Inferno are made by the engine (SWeap.NetExec) */
 #define NET_EXEC(mod) \
 	MODE_FN(mod, ClientCreate, 2, Weap_Client(#mod, a, "Create" #mod, NULL, "LastClientCreate")) \
 	MODE_FN(mod, ClientAfterCreate, 2, Weap_Client(#mod, a, "SetUp" #mod, NULL, "LastClientAfterCreate")) \
-	PyMethodDef g_##mod##Methods[] = { { "ClientCreate", mod##_ClientCreate, 1, NULL }, \
-		{ "ClientAfterCreate", mod##_ClientAfterCreate, 1, NULL }, { "LoadResources", mod##_LoadResources, 1, NULL }, \
-		{ "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
+	const portFn_t g_##mod##Methods[] = { PORT_FN(ClientCreate, mod##_ClientCreate), \
+		PORT_FN(ClientAfterCreate, mod##_ClientAfterCreate), PORT_FN(LoadResources, mod##_LoadResources), \
+		PORT_FN(Init, mod##_Init), PORT_FNEND };
 
 NET_EXEC(Swarm)
 NET_EXEC(Inferno)
@@ -370,15 +365,15 @@ static byte Cloud_SetUp(const nativeVal_t *name, nativeVal_t *out) {
 
 MODE_FN(Cloud, SetUpCloud, 1, Cloud_SetUp(&a[0], out))
 
-PyMethodDef g_CloudMethods[] = {
-	{ "ClientCreate", Cloud_ClientCreate, 1, NULL },
-	{ "ClientAfterCreate", Cloud_ClientAfterCreate, 1, NULL },
-	{ "ActivateHitType", Weap_ActivateHitType, 1, NULL },
-	{ "CreateCloud", Cloud_CreateCloud, 1, NULL },
-	{ "SetUpCloud", Cloud_SetUpCloud, 1, NULL },
-	{ "LoadResources", Cloud_LoadResources, 1, NULL },
-	{ "Init", Cloud_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_CloudMethods[] = {
+	PORT_FN(ClientCreate, Cloud_ClientCreate),
+	PORT_FN(ClientAfterCreate, Cloud_ClientAfterCreate),
+	PORT_FN(ActivateHitType, Weap_ActivateHitType),
+	PORT_FN(CreateCloud, Cloud_CreateCloud),
+	PORT_FN(SetUpCloud, Cloud_SetUpCloud),
+	PORT_FN(LoadResources, Cloud_LoadResources),
+	PORT_FN(Init, Cloud_Init),
+	PORT_FNEND
 };
 
 MODE_FN(EMI, CreateEMI, 7, Weap_Create("EMI", a, emi_create, out))
@@ -403,15 +398,15 @@ static byte EMI_SetUp(const nativeVal_t *name, nativeVal_t *out) {
 
 MODE_FN(EMI, SetUpEMI, 1, EMI_SetUp(&a[0], out))
 
-PyMethodDef g_EMIMethods[] = {
-	{ "ClientCreate", EMI_ClientCreate, 1, NULL },
-	{ "ClientAfterCreate", EMI_ClientAfterCreate, 1, NULL },
-	{ "ActivateHitType", Weap_ActivateHitType, 1, NULL },
-	{ "CreateEMI", EMI_CreateEMI, 1, NULL },
-	{ "SetUpEMI", EMI_SetUpEMI, 1, NULL },
-	{ "LoadResources", EMI_LoadResources, 1, NULL },
-	{ "Init", EMI_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_EMIMethods[] = {
+	PORT_FN(ClientCreate, EMI_ClientCreate),
+	PORT_FN(ClientAfterCreate, EMI_ClientAfterCreate),
+	PORT_FN(ActivateHitType, Weap_ActivateHitType),
+	PORT_FN(CreateEMI, EMI_CreateEMI),
+	PORT_FN(SetUpEMI, EMI_SetUpEMI),
+	PORT_FN(LoadResources, EMI_LoadResources),
+	PORT_FN(Init, EMI_Init),
+	PORT_FNEND
 };
 
 /* the values of SonicHit, freed together */
@@ -578,19 +573,19 @@ static byte Sonic_SetUp(const nativeVal_t *name, nativeVal_t *out) {
 
 MODE_FN(Sonic, SetUpSonic, 1, Sonic_SetUp(&a[0], out))
 
-PyMethodDef g_SonicMethods[] = {
-	{ "ClientCreate", Sonic_ClientCreate, 1, NULL },
-	{ "ClientAfterCreate", Sonic_ClientAfterCreate, 1, NULL },
-	{ "SonicHit", Sonic_SonicHit, 1, NULL },
-	{ "OnHit", Sonic_OnHit, 1, NULL },
-	{ "OnServerHit", Sonic_OnServerHit, 1, NULL },
-	{ "OnDeath", Sonic_OnDeath, 1, NULL },
-	{ "SetUpToDetonate", Sonic_SetUpToDetonate, 1, NULL },
-	{ "CreateSonic", Sonic_CreateSonic, 1, NULL },
-	{ "SetUpSonic", Sonic_SetUpSonic, 1, NULL },
-	{ "LoadResources", Sonic_LoadResources, 1, NULL },
-	{ "Init", Sonic_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SonicMethods[] = {
+	PORT_FN(ClientCreate, Sonic_ClientCreate),
+	PORT_FN(ClientAfterCreate, Sonic_ClientAfterCreate),
+	PORT_FN(SonicHit, Sonic_SonicHit),
+	PORT_FN(OnHit, Sonic_OnHit),
+	PORT_FN(OnServerHit, Sonic_OnServerHit),
+	PORT_FN(OnDeath, Sonic_OnDeath),
+	PORT_FN(SetUpToDetonate, Sonic_SetUpToDetonate),
+	PORT_FN(CreateSonic, Sonic_CreateSonic),
+	PORT_FN(SetUpSonic, Sonic_SetUpSonic),
+	PORT_FN(LoadResources, Sonic_LoadResources),
+	PORT_FN(Init, Sonic_Init),
+	PORT_FNEND
 };
 
 PORTS(Weapons)

@@ -861,6 +861,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_press_MapSnd_News1,
 	&port_press_MapSnd_SetSounds,
 	&port_police_MapSnd_SndElements,
+	&port_townhall_MapSnd_SndElements,
 	&port_bank_MapTreasure_BigPrize,
 	&port_bank_MapTreasure_BlinkBigPrize,
 	&port_bank_MapTreasure_CreateCoins,

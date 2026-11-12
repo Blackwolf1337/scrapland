@@ -30,12 +30,12 @@ extern PyMethodDef g_PoliceJailBreakMethods[];
 extern PyMethodDef g_PolicePoliceBossCheatsMethods[];
 
 /* Townhall (data02.packed levels/townhall) */
-extern PyMethodDef g_TownhallMapMethods[];
-extern PyMethodDef g_TownhallMapSndMethods[];
-extern PyMethodDef g_TownhallApologizeMayorMethods[];
-extern PyMethodDef g_TownhallCatchTrurlMethods[];
-extern PyMethodDef g_TownhallSheriffMayorMethods[];
-extern PyMethodDef g_TownhallTalkToMayorMethods[];
+extern const portFn_t g_TownhallMapMethods[];
+extern const portFn_t g_TownhallMapSndMethods[];
+extern const portFn_t g_TownhallApologizeMayorMethods[];
+extern const portFn_t g_TownhallCatchTrurlMethods[];
+extern const portFn_t g_TownhallSheriffMayorMethods[];
+extern const portFn_t g_TownhallTalkToMayorMethods[];
 
 /* Scrapyard (data02.packed levels/scrapyard) */
 extern PyMethodDef g_ScrapyardMapMethods[];
@@ -97,10 +97,8 @@ byte LvN_PlanesInit(const char *module);
 byte LvN_PlanesPhoto(const nativeVal_t *name, const char *module, const char *ships, const char *engines, nativeVal_t *out);
 
 /* SndElements(Name, x, y, z, angx, angy) of the MapSnd of a level with its table of elements (ends with a NULL name):
- * LvN_SndElements on the six arguments (MODE_FN), Lv_SndElements the adapter body of a table that is not on MODE_FN
- * yet (OBJLIB 7) */
+ * LvN_SndElements on the six arguments (MODE_FN) */
 byte LvN_SndElements(const nativeVal_t *a, const lvSndElement_t *table);
-PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 
 /*
  * ---- native lines of the level scripts (docs/objlib-plan.md, stage 2) ----

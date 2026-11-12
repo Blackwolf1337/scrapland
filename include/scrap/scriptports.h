@@ -1505,26 +1505,26 @@ PORT_DECL(PCMenu, GammaSliderFocus_Sub) /* ? */
 PORT_DECL(PCMenu, GammaSliderFocus_Add) /* ? */
 PORT_DECL(PCMenu, ChangeDisplay) /* ? */
 #define PORTS_MenuVideo \
-	PORT_DEF(PCMenu, VideoMenu, PCMenu_VideoMenu) \
-	PORT_DEF(PCMenu, VideoMenuBack, PCMenu_VideoMenuBack) \
-	PORT_DEF(PCMenu, VideoDefaults, PCMenu_VideoDefaults) \
-	PORT_DEF(PCMenu, ApplyChanges, PCMenu_ApplyChanges) \
-	PORT_DEF(PCMenu, ChangeVideoMode, PCMenu_ChangeVideoMode) \
-	PORT_DEF(PCMenu, PrevVideoMode, PCMenu_PrevVideoMode) \
-	PORT_DEF(PCMenu, NextVideoMode, PCMenu_NextVideoMode) \
-	PORT_DEF(PCMenu, ChangeTextureFilter, PCMenu_ChangeTextureFilter) \
-	PORT_DEF(PCMenu, ChangeTextureDetail, PCMenu_ChangeTextureDetail) \
-	PORT_DEF(PCMenu, ChangeShadowsDetail, PCMenu_ChangeShadowsDetail) \
-	PORT_DEF(PCMenu, ChangeVSync, PCMenu_ChangeVSync) \
-	PORT_DEF(PCMenu, ChangeLock, PCMenu_ChangeLock) \
-	PORT_DEF(PCMenu, ChangeFog, PCMenu_ChangeFog) \
-	PORT_DEF(PCMenu, ChangeBloom, PCMenu_ChangeBloom) \
-	PORT_DEF(PCMenu, ChangeMotionBlur, PCMenu_ChangeMotionBlur) \
-	PORT_DEF(PCMenu, ChangeDuDv, PCMenu_ChangeDuDv) \
-	PORT_DEF(PCMenu, ChangeGamma, PCMenu_ChangeGamma) \
-	PORT_DEF(PCMenu, GammaSliderFocus_Sub, PCMenu_GammaSliderFocus_Sub) \
-	PORT_DEF(PCMenu, GammaSliderFocus_Add, PCMenu_GammaSliderFocus_Add) \
-	PORT_DEF(PCMenu, ChangeDisplay, PCMenu_ChangeDisplay)
+	PORT_DEFN(PCMenu, VideoMenu, PCMenu_VideoMenu) \
+	PORT_DEFN(PCMenu, VideoMenuBack, PCMenu_VideoMenuBack) \
+	PORT_DEFN(PCMenu, VideoDefaults, PCMenu_VideoDefaults) \
+	PORT_DEFN(PCMenu, ApplyChanges, PCMenu_ApplyChanges) \
+	PORT_DEFN(PCMenu, ChangeVideoMode, PCMenu_ChangeVideoMode) \
+	PORT_DEFN(PCMenu, PrevVideoMode, PCMenu_PrevVideoMode) \
+	PORT_DEFN(PCMenu, NextVideoMode, PCMenu_NextVideoMode) \
+	PORT_DEFN(PCMenu, ChangeTextureFilter, PCMenu_ChangeTextureFilter) \
+	PORT_DEFN(PCMenu, ChangeTextureDetail, PCMenu_ChangeTextureDetail) \
+	PORT_DEFN(PCMenu, ChangeShadowsDetail, PCMenu_ChangeShadowsDetail) \
+	PORT_DEFN(PCMenu, ChangeVSync, PCMenu_ChangeVSync) \
+	PORT_DEFN(PCMenu, ChangeLock, PCMenu_ChangeLock) \
+	PORT_DEFN(PCMenu, ChangeFog, PCMenu_ChangeFog) \
+	PORT_DEFN(PCMenu, ChangeBloom, PCMenu_ChangeBloom) \
+	PORT_DEFN(PCMenu, ChangeMotionBlur, PCMenu_ChangeMotionBlur) \
+	PORT_DEFN(PCMenu, ChangeDuDv, PCMenu_ChangeDuDv) \
+	PORT_DEFN(PCMenu, ChangeGamma, PCMenu_ChangeGamma) \
+	PORT_DEFN(PCMenu, GammaSliderFocus_Sub, PCMenu_GammaSliderFocus_Sub) \
+	PORT_DEFN(PCMenu, GammaSliderFocus_Add, PCMenu_GammaSliderFocus_Add) \
+	PORT_DEFN(PCMenu, ChangeDisplay, PCMenu_ChangeDisplay)
 
 /* MenuVideoVars.c */
 PORT_DECL(PCMenu, Apply_SetActive) /* 2 */
@@ -4095,52 +4095,52 @@ PORT_DECL(Sonic, SetUpSonic) /* 1 */
 PORT_DECL(Sonic, LoadResources) /* ? */
 PORT_DECL(Sonic, Init) /* 1 */
 #define PORTS_Weapons \
-	PORT_DEF(Weapons, InitAmmo, Weapons_InitAmmo) \
-	PORT_DEF(Weapons, InitWeapons, Weapons_InitWeapons) \
-	PORT_DEF(Weapons, Init, Weapons_Init) \
-	PORT_DEF(Vulcan, LoadResources, Vulcan_LoadResources) \
-	PORT_DEF(Vulcan, Init, Vulcan_Init) \
-	PORT_DEF(Devastator, LoadResources, Devastator_LoadResources) \
-	PORT_DEF(Devastator, Init, Devastator_Init) \
-	PORT_DEF(Tesla, LoadResources, Tesla_LoadResources) \
-	PORT_DEF(Tesla, Init, Tesla_Init) \
-	PORT_DEF(ATPC, LoadResources, ATPC_LoadResources) \
-	PORT_DEF(ATPC, Init, ATPC_Init) \
-	PORT_DEF(Laser, LoadResources, Laser_LoadResources) \
-	PORT_DEF(Laser, Init, Laser_Init) \
-	PORT_DEF(Swarm, ClientCreate, Swarm_ClientCreate) \
-	PORT_DEF(Swarm, ClientAfterCreate, Swarm_ClientAfterCreate) \
-	PORT_DEF(Swarm, LoadResources, Swarm_LoadResources) \
-	PORT_DEF(Swarm, Init, Swarm_Init) \
-	PORT_DEF(Inferno, ClientCreate, Inferno_ClientCreate) \
-	PORT_DEF(Inferno, ClientAfterCreate, Inferno_ClientAfterCreate) \
-	PORT_DEF(Inferno, LoadResources, Inferno_LoadResources) \
-	PORT_DEF(Inferno, Init, Inferno_Init) \
-	PORT_DEF(Cloud, ClientCreate, Cloud_ClientCreate) \
-	PORT_DEF(Cloud, ClientAfterCreate, Cloud_ClientAfterCreate) \
-	PORT_DEF(Cloud, ActivateHitType, Weap_ActivateHitType) \
-	PORT_DEF(Cloud, CreateCloud, Cloud_CreateCloud) \
-	PORT_DEF(Cloud, SetUpCloud, Cloud_SetUpCloud) \
-	PORT_DEF(Cloud, LoadResources, Cloud_LoadResources) \
-	PORT_DEF(Cloud, Init, Cloud_Init) \
-	PORT_DEF(EMI, ClientCreate, EMI_ClientCreate) \
-	PORT_DEF(EMI, ClientAfterCreate, EMI_ClientAfterCreate) \
-	PORT_DEF(EMI, ActivateHitType, Weap_ActivateHitType) \
-	PORT_DEF(EMI, CreateEMI, EMI_CreateEMI) \
-	PORT_DEF(EMI, SetUpEMI, EMI_SetUpEMI) \
-	PORT_DEF(EMI, LoadResources, EMI_LoadResources) \
-	PORT_DEF(EMI, Init, EMI_Init) \
-	PORT_DEF(Sonic, ClientCreate, Sonic_ClientCreate) \
-	PORT_DEF(Sonic, ClientAfterCreate, Sonic_ClientAfterCreate) \
-	PORT_DEF(Sonic, SonicHit, Sonic_SonicHit) \
-	PORT_DEF(Sonic, OnHit, Sonic_OnHit) \
-	PORT_DEF(Sonic, OnServerHit, Sonic_OnServerHit) \
-	PORT_DEF(Sonic, OnDeath, Sonic_OnDeath) \
-	PORT_DEF(Sonic, SetUpToDetonate, Sonic_SetUpToDetonate) \
-	PORT_DEF(Sonic, CreateSonic, Sonic_CreateSonic) \
-	PORT_DEF(Sonic, SetUpSonic, Sonic_SetUpSonic) \
-	PORT_DEF(Sonic, LoadResources, Sonic_LoadResources) \
-	PORT_DEF(Sonic, Init, Sonic_Init)
+	PORT_DEFN(Weapons, InitAmmo, Weapons_InitAmmo) \
+	PORT_DEFN(Weapons, InitWeapons, Weapons_InitWeapons) \
+	PORT_DEFN(Weapons, Init, Weapons_Init) \
+	PORT_DEFN(Vulcan, LoadResources, Vulcan_LoadResources) \
+	PORT_DEFN(Vulcan, Init, Vulcan_Init) \
+	PORT_DEFN(Devastator, LoadResources, Devastator_LoadResources) \
+	PORT_DEFN(Devastator, Init, Devastator_Init) \
+	PORT_DEFN(Tesla, LoadResources, Tesla_LoadResources) \
+	PORT_DEFN(Tesla, Init, Tesla_Init) \
+	PORT_DEFN(ATPC, LoadResources, ATPC_LoadResources) \
+	PORT_DEFN(ATPC, Init, ATPC_Init) \
+	PORT_DEFN(Laser, LoadResources, Laser_LoadResources) \
+	PORT_DEFN(Laser, Init, Laser_Init) \
+	PORT_DEFN(Swarm, ClientCreate, Swarm_ClientCreate) \
+	PORT_DEFN(Swarm, ClientAfterCreate, Swarm_ClientAfterCreate) \
+	PORT_DEFN(Swarm, LoadResources, Swarm_LoadResources) \
+	PORT_DEFN(Swarm, Init, Swarm_Init) \
+	PORT_DEFN(Inferno, ClientCreate, Inferno_ClientCreate) \
+	PORT_DEFN(Inferno, ClientAfterCreate, Inferno_ClientAfterCreate) \
+	PORT_DEFN(Inferno, LoadResources, Inferno_LoadResources) \
+	PORT_DEFN(Inferno, Init, Inferno_Init) \
+	PORT_DEFN(Cloud, ClientCreate, Cloud_ClientCreate) \
+	PORT_DEFN(Cloud, ClientAfterCreate, Cloud_ClientAfterCreate) \
+	PORT_DEFN(Cloud, ActivateHitType, Weap_ActivateHitType) \
+	PORT_DEFN(Cloud, CreateCloud, Cloud_CreateCloud) \
+	PORT_DEFN(Cloud, SetUpCloud, Cloud_SetUpCloud) \
+	PORT_DEFN(Cloud, LoadResources, Cloud_LoadResources) \
+	PORT_DEFN(Cloud, Init, Cloud_Init) \
+	PORT_DEFN(EMI, ClientCreate, EMI_ClientCreate) \
+	PORT_DEFN(EMI, ClientAfterCreate, EMI_ClientAfterCreate) \
+	PORT_DEFN(EMI, ActivateHitType, Weap_ActivateHitType) \
+	PORT_DEFN(EMI, CreateEMI, EMI_CreateEMI) \
+	PORT_DEFN(EMI, SetUpEMI, EMI_SetUpEMI) \
+	PORT_DEFN(EMI, LoadResources, EMI_LoadResources) \
+	PORT_DEFN(EMI, Init, EMI_Init) \
+	PORT_DEFN(Sonic, ClientCreate, Sonic_ClientCreate) \
+	PORT_DEFN(Sonic, ClientAfterCreate, Sonic_ClientAfterCreate) \
+	PORT_DEFN(Sonic, SonicHit, Sonic_SonicHit) \
+	PORT_DEFN(Sonic, OnHit, Sonic_OnHit) \
+	PORT_DEFN(Sonic, OnServerHit, Sonic_OnServerHit) \
+	PORT_DEFN(Sonic, OnDeath, Sonic_OnDeath) \
+	PORT_DEFN(Sonic, SetUpToDetonate, Sonic_SetUpToDetonate) \
+	PORT_DEFN(Sonic, CreateSonic, Sonic_CreateSonic) \
+	PORT_DEFN(Sonic, SetUpSonic, Sonic_SetUpSonic) \
+	PORT_DEFN(Sonic, LoadResources, Sonic_LoadResources) \
+	PORT_DEFN(Sonic, Init, Sonic_Init)
 
 /* WeaponsTab.c */
 PORT_DECL(WeaponsTab, ShowWeightPrediction) /* 3 */
@@ -6576,6 +6576,7 @@ PORT_DECLL(townhall, Map, InitStatus) /* 1 */
 PORT_DECLL(townhall, Map, CreateGearMayor) /* 1 */
 PORT_DECLL(townhall, Map, Init) /* 1 */
 PORT_DECLL(townhall, Map, OrbitLockMsg) /* 4 */
+PORT_DECLL(townhall, MapSnd, SndElements) /* 6 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, InitStatus) /* 1 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, AfterBrowseNPC) /* 0 */
 PORT_DECLL(townhall, Mission_ApologizeMayor, CreateMayorInit) /* 1 */
@@ -6628,63 +6629,64 @@ PORT_DECLL(townhall, Mission_TalkToMayor, EndOfStealFunctionary) /* 0 */
 PORT_DECLL(townhall, Mission_TalkToMayor, SetNextMission) /* 0 */
 PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 #define PORTS_levels_Townhall \
-	PORT_DEFL(townhall, Map, InitStatus, TownhallMap_InitStatus) \
-	PORT_DEFL(townhall, Map, CreateGearMayor, TownhallMap_CreateGearMayor) \
-	PORT_DEFL(townhall, Map, Init, TownhallMap_Init) \
-	PORT_DEFL(townhall, Map, OrbitLockMsg, TownhallMap_OrbitLockMsg) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, InitStatus, ApologizeMayor_InitStatus) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, AfterBrowseNPC, ApologizeMayor_AfterBrowseNPC) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, CreateMayorInit, ApologizeMayor_CreateMayorInit) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, Init, ApologizeMayor_Init) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, ForbiddenMsg, ApologizeMayor_ForbiddenMsg) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, MayorSpeech, ApologizeMayor_MayorSpeech) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, SetTransportMission, ApologizeMayor_SetTransportMission) \
-	PORT_DEFLK(townhall, Mission_ApologizeMayor, ChooseStapler, ApologizeMayor_ChooseStapler) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, InitStaplerMission, ApologizeMayor_InitStaplerMission) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, StaplerSpeech, ApologizeMayor_StaplerSpeech) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, StaplerDead, ApologizeMayor_StaplerDead) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, MayorMessage, ApologizeMayor_MayorMessage) \
-	PORT_DEFL(townhall, Mission_ApologizeMayor, MissionScorer, ApologizeMayor_MissionScorer) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, InitStatus, CatchTrurl_InitStatus) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, Init, CatchTrurl_Init) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CreateTrurl, CatchTrurl_CreateTrurl) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, OnCatchTrurl, CatchTrurl_OnCatchTrurl) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, OnCatchTrurlAgain, CatchTrurl_OnCatchTrurlAgain) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, FunctionaryMissionSpeech, CatchTrurl_FunctionaryMissionSpeech) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, SetCallbackFuncs, CatchTrurl_SetCallbackFuncs) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, SpawnMap, CatchTrurl_SpawnMap) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CreateMap, CatchTrurl_CreateMap) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, TakeMapPhoto, CatchTrurl_TakeMapPhoto) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, KillFunctionaries, CatchTrurl_KillFunctionaries) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CatchTrurlAgain, CatchTrurl_CatchTrurlAgain) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, SetNextMission, CatchTrurl_SetNextMission) \
-	PORT_DEFL(townhall, Mission_CatchTrurl, CGCalls, CatchTrurl_CGCalls) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, InitStatus, SheriffMayor_InitStatus) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, CreateMayor, SheriffMayor_CreateMayor) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, CreatePoliceBoss, SheriffMayor_CreatePoliceBoss) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, ReadyToTalk, SheriffMayor_ReadyToTalk) \
-	PORT_DEFLK(townhall, Mission_SheriffMayor, Blablibla, SheriffMayor_Blablibla) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, PoliceBossMissionSpeech, SheriffMayor_PoliceBossMissionSpeech) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, OnPay, SheriffMayor_OnPay) \
-	PORT_DEFL(townhall, Mission_SheriffMayor, SetNextMission, SheriffMayor_SetNextMission) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, InitStatus, TalkToMayor_InitStatus) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, AfterBrowseNPC, TalkToMayor_AfterBrowseNPC) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CreateMayorInit, TalkToMayor_CreateMayorInit) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CreateBishopPorkins, TalkToMayor_CreateBishopPorkins) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CreateFunctionaryTamayo, TalkToMayor_CreateFunctionaryTamayo) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, Init, TalkToMayor_Init) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, MayorSpeech, TalkToMayor_MayorSpeech) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, BishopSpeech, TalkToMayor_BishopSpeech) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, FunctionarySpeech, TalkToMayor_FunctionarySpeech) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, StealFunctionary, TalkToMayor_StealFunctionary) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, CheckTamayoMoney, TalkToMayor_CheckTamayoMoney) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, RestoreTamayoState, TalkToMayor_RestoreTamayoState) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, OnBankerSteal, TalkToMayor_OnBankerSteal) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, EndOfStealFunctionary, TalkToMayor_EndOfStealFunctionary) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, SetNextMission, TalkToMayor_SetNextMission) \
-	PORT_DEFL(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
+	PORT_DEFLN(townhall, Map, InitStatus, TownhallMap_InitStatus) \
+	PORT_DEFLN(townhall, Map, CreateGearMayor, TownhallMap_CreateGearMayor) \
+	PORT_DEFLN(townhall, Map, Init, TownhallMap_Init) \
+	PORT_DEFLN(townhall, Map, OrbitLockMsg, TownhallMap_OrbitLockMsg) \
+	PORT_DEFLN(townhall, MapSnd, SndElements, TownhallMapSnd_SndElements) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, InitStatus, ApologizeMayor_InitStatus) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, AfterBrowseNPC, ApologizeMayor_AfterBrowseNPC) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, CreateMayorInit, ApologizeMayor_CreateMayorInit) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, Init, ApologizeMayor_Init) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, ForbiddenMsg, ApologizeMayor_ForbiddenMsg) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, MayorSpeech, ApologizeMayor_MayorSpeech) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, SetTransportMission, ApologizeMayor_SetTransportMission) \
+	PORT_DEFLNK(townhall, Mission_ApologizeMayor, ChooseStapler, ApologizeMayor_ChooseStapler) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, InitStaplerMission, ApologizeMayor_InitStaplerMission) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, StaplerSpeech, ApologizeMayor_StaplerSpeech) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, StaplerDead, ApologizeMayor_StaplerDead) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, MayorMessage, ApologizeMayor_MayorMessage) \
+	PORT_DEFLN(townhall, Mission_ApologizeMayor, MissionScorer, ApologizeMayor_MissionScorer) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, InitStatus, CatchTrurl_InitStatus) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, Init, CatchTrurl_Init) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CreateTrurl, CatchTrurl_CreateTrurl) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, OnCatchTrurl, CatchTrurl_OnCatchTrurl) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, OnCatchTrurlAgain, CatchTrurl_OnCatchTrurlAgain) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, FunctionaryMissionSpeech, CatchTrurl_FunctionaryMissionSpeech) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, SetCallbackFuncs, CatchTrurl_SetCallbackFuncs) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, SpawnMap, CatchTrurl_SpawnMap) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CreateMap, CatchTrurl_CreateMap) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, TakeMapPhoto, CatchTrurl_TakeMapPhoto) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, KillFunctionaries, CatchTrurl_KillFunctionaries) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CatchTrurlAgain, CatchTrurl_CatchTrurlAgain) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, SetNextMission, CatchTrurl_SetNextMission) \
+	PORT_DEFLN(townhall, Mission_CatchTrurl, CGCalls, CatchTrurl_CGCalls) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, InitStatus, SheriffMayor_InitStatus) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, CreateMayor, SheriffMayor_CreateMayor) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, CreatePoliceBoss, SheriffMayor_CreatePoliceBoss) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, ReadyToTalk, SheriffMayor_ReadyToTalk) \
+	PORT_DEFLNK(townhall, Mission_SheriffMayor, Blablibla, SheriffMayor_Blablibla) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, PoliceBossMissionSpeech, SheriffMayor_PoliceBossMissionSpeech) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, OnPay, SheriffMayor_OnPay) \
+	PORT_DEFLN(townhall, Mission_SheriffMayor, SetNextMission, SheriffMayor_SetNextMission) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, InitStatus, TalkToMayor_InitStatus) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, AfterBrowseNPC, TalkToMayor_AfterBrowseNPC) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CreateMayorInit, TalkToMayor_CreateMayorInit) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CreateBishopPorkins, TalkToMayor_CreateBishopPorkins) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CreateFunctionaryTamayo, TalkToMayor_CreateFunctionaryTamayo) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, Init, TalkToMayor_Init) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, MayorSpeech, TalkToMayor_MayorSpeech) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, BishopSpeech, TalkToMayor_BishopSpeech) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, FunctionarySpeech, TalkToMayor_FunctionarySpeech) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, StealFunctionary, TalkToMayor_StealFunctionary) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, CheckTamayoMoney, TalkToMayor_CheckTamayoMoney) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, RestoreTamayoState, TalkToMayor_RestoreTamayoState) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, OnBankerSteal, TalkToMayor_OnBankerSteal) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, EndOfStealFunctionary, TalkToMayor_EndOfStealFunctionary) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, SetNextMission, TalkToMayor_SetNextMission) \
+	PORT_DEFLN(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 3206
+#define PORT_COUNT 3207
 
 #endif

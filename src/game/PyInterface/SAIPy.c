@@ -1,5 +1,5 @@
 /*
- * Python module SAI (method table SAI_methods): AI setup and control of vehicles and characters.
+ * Python module SAI (function table SAI_methods): AI setup and control of vehicles and characters.
  * Original source: PyInterface/SAIPy.cpp, with the state handlers behind SetStateVehicle/SetStateChar (static
  * functions there).
  */

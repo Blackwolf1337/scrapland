@@ -281,6 +281,10 @@ byte Mode_PurgeServerMapList(const char *module);
 
 /* ---- adapters ---- */
 
+/* OBJLIB 7e2: the macros below still make the adapter of a PyMethodDef table next to the entry, [[maybe_unused]]: a
+ * file whose table is a function table (portFn_t, scrap/scriptnative.h) uses only the entry. They go with the last
+ * PyMethodDef table of the ports. */
+
 /* the n arguments of an adapter (the arity error of PyArg_ParseTuple, up to 11) as native values of t, one after the
  * other from *a (Native_Arg: an entity handle as NV_ENT, other objects as NV_OBJ) */
 byte Mode_Args(PyObject *args, int n, modeVals_t *t, nativeVal_t **a);
@@ -295,7 +299,7 @@ PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
 		(void)out; \
 		return n == (nargs) ? (call) : Port_Arity(n, nargs); \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		modeVals_t t = { .n = 0 }; \
 		nativeVal_t *a, *out = Mode_V(&t); \
 		(void)self; \
@@ -887,7 +891,7 @@ int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **
 		(void)out; \
 		return Mode_Arity(n, min, max) ? (call) : 0; \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		modeVals_t t = { .n = 0 }; \
 		nativeVal_t *a, *out = Mode_V(&t); \
 		(void)self; \
@@ -905,7 +909,7 @@ int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **
 		(void)out; \
 		return (call); \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		modeVals_t t = { .n = 0 }; \
 		nativeVal_t *out = Mode_V(&t); \
 		(void)self; \
@@ -954,7 +958,7 @@ PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **n
 		(void)out; \
 		return n != (nargs) ? Port_Arity(n, nargs) : Mode_ArgInt(&a[0], &id) && (call); \
 	} \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_Entry(args, fn##_E); \
 	}
@@ -963,7 +967,7 @@ PyObject *Mode_KwIdEntry(PyObject *args, PyObject *kw, const char *fmt, char **n
 
 /* pre_name, the PyArg adapter of the entry pre_name_E (Mode_Entry) */
 #define MODE_ADAPTER(pre, name) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_Entry(args, pre##_##name##_E); \
 	}
@@ -1007,7 +1011,7 @@ PORT_DECL(math, fmod)
 		byte given[8]; \
 		return Mode_KwSlots(a, n, fmt, v, given) && pre##_##name##_K(v, given, out); \
 	} \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
 		(void)self; \
 		return Mode_KwAdapter(args, kw, fmt, pre##_##name##_N, pre##_##name##_E); \
 	} \
@@ -1027,7 +1031,7 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
 		(void)out; \
 		return Mode_IdControl(a, n, &id, &control) && (call); \
 	} \
-	static PyObject *fn(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_Entry(args, fn##_E); \
 	}
@@ -1102,7 +1106,7 @@ PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **nam
 		byte given[PORT_ARGS]; \
 		return Mode_KwSlots(a, n, fmt, v, given) && fn##_K(v, given, out); \
 	} \
-	static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
+	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
 		(void)self; \
 		return adapter(args, kw, fmt, fn##_N, fn##_E); \
 	} \
@@ -1184,7 +1188,7 @@ byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
  * adapters) and 7). MODE_REFADAPTER(pre, name) is that adapter of the entry pre_name_E */
 PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry);
 #define MODE_REFADAPTER(pre, name) \
-	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
 		(void)self; \
 		return Mode_RefEntry(args, pre##_##name##_E); \
 	}

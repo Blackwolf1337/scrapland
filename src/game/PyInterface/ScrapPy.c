@@ -1,5 +1,5 @@
 /*
- * Python module Scrap (method table Scrap_methods): engine functions for the game scripts.
+ * Python module Scrap (function table Scrap_methods): engine functions for the game scripts.
  * Original file: PyInterface\\ScrapPy.cpp
  */
 #include <math.h>

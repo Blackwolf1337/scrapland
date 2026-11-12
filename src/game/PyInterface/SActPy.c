@@ -1,5 +1,5 @@
 /*
- * Python module SAct (method table SAct_methods): action classes of animated objects. Original
+ * Python module SAct (function table SAct_methods): action classes of animated objects. Original
  * source: PyInterface/SActPy.cpp. Works on a current class (g_pAuxActClass) and a current action (g_pAuxAction)
  * that CreateClass/GetClass and CreateAction/GetAction select.
  */

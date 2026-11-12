@@ -1,5 +1,5 @@
 /*
- * Python module SLogic (method table SLogic_methods): game logic of characters, ships and the
+ * Python module SLogic (function table SLogic_methods): game logic of characters, ships and the
  * domination mode. Original source: PyInterface/SLogic.cpp.
  */
 #include <string.h>

@@ -278,7 +278,7 @@ def c_functions(src):
 	out = collections.defaultdict(list)
 	for level, module, g in ports.registrations():
 		if g in tabs:
-			out[(level, module)] += [name for name, _ in tabs[g][1]]
+			out[(level, module)] += [row[0] for row in tabs[g][1]]
 	return out
 
 

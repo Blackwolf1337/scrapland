@@ -183,12 +183,12 @@ LV_FN(TownhallMap, CreateGearMayor, 1, ThMap_CreateGearMayor)
 LV_FN(TownhallMap, Init, 1, ThMap_Init)
 LV_FN(TownhallMap, OrbitLockMsg, 4, ThMap_OrbitLockMsg)
 
-PyMethodDef g_TownhallMapMethods[] = {
-	{ "InitStatus", TownhallMap_InitStatus, METH_VARARGS, NULL },
-	{ "CreateGearMayor", TownhallMap_CreateGearMayor, METH_VARARGS, NULL },
-	{ "Init", TownhallMap_Init, METH_VARARGS, NULL },
-	{ "OrbitLockMsg", TownhallMap_OrbitLockMsg, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TownhallMapMethods[] = {
+	PORT_FN(InitStatus, TownhallMap_InitStatus),
+	PORT_FN(CreateGearMayor, TownhallMap_CreateGearMayor),
+	PORT_FN(Init, TownhallMap_Init),
+	PORT_FN(OrbitLockMsg, TownhallMap_OrbitLockMsg),
+	PORT_FNEND
 };
 /* ---- MapSnd ---- */
 
@@ -219,16 +219,12 @@ static const lvSndElement_t townhall_snd[] = {
 	{ .name = NULL },
 };
 
-/* SndElements(Name, x, y, z, angx, angy). OBJLIB 7: the adapter of the shared Lv_SndElements of LevelCommon.c, which
- * takes the argument tuple (the Police level uses it too) */
-static PyObject *TownhallMapSnd_SndElements(PyObject *self, PyObject *args) {
-	(void)self;
-	return Lv_SndElements(args, townhall_snd);
-}
+/* SndElements(Name, x, y, z, angx, angy): the shared LvN_SndElements of LevelCommon.c (the Police level uses it too) */
+MODE_FN(TownhallMapSnd, SndElements, 6, LvN_SndElements(a, townhall_snd))
 
-PyMethodDef g_TownhallMapSndMethods[] = {
-	{ "SndElements", TownhallMapSnd_SndElements, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TownhallMapSndMethods[] = {
+	PORT_FN(SndElements, TownhallMapSnd_SndElements),
+	PORT_FNEND
 };
 
 
@@ -591,21 +587,21 @@ LV_FN(ApologizeMayor, StaplerDead, 2, ThAm_StaplerDead)
 LV_FN(ApologizeMayor, MayorMessage, 0, ThAm_MayorMessage)
 LV_FN(ApologizeMayor, MissionScorer, 1, ThAm_MissionScorer)
 
-PyMethodDef g_TownhallApologizeMayorMethods[] = {
-	{ "InitStatus", ApologizeMayor_InitStatus, METH_VARARGS, NULL },
-	{ "AfterBrowseNPC", ApologizeMayor_AfterBrowseNPC, METH_VARARGS, NULL },
-	{ "CreateMayorInit", ApologizeMayor_CreateMayorInit, METH_VARARGS, NULL },
-	{ "Init", ApologizeMayor_Init, METH_VARARGS, NULL },
-	{ "ForbiddenMsg", ApologizeMayor_ForbiddenMsg, METH_VARARGS, NULL },
-	{ "MayorSpeech", ApologizeMayor_MayorSpeech, METH_VARARGS, NULL },
-	{ "SetTransportMission", ApologizeMayor_SetTransportMission, METH_VARARGS, NULL },
-	{ "ChooseStapler", (PyCFunction)(void (*)(void))ApologizeMayor_ChooseStapler, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "InitStaplerMission", ApologizeMayor_InitStaplerMission, METH_VARARGS, NULL },
-	{ "StaplerSpeech", ApologizeMayor_StaplerSpeech, METH_VARARGS, NULL },
-	{ "StaplerDead", ApologizeMayor_StaplerDead, METH_VARARGS, NULL },
-	{ "MayorMessage", ApologizeMayor_MayorMessage, METH_VARARGS, NULL },
-	{ "MissionScorer", ApologizeMayor_MissionScorer, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TownhallApologizeMayorMethods[] = {
+	PORT_FN(InitStatus, ApologizeMayor_InitStatus),
+	PORT_FN(AfterBrowseNPC, ApologizeMayor_AfterBrowseNPC),
+	PORT_FN(CreateMayorInit, ApologizeMayor_CreateMayorInit),
+	PORT_FN(Init, ApologizeMayor_Init),
+	PORT_FN(ForbiddenMsg, ApologizeMayor_ForbiddenMsg),
+	PORT_FN(MayorSpeech, ApologizeMayor_MayorSpeech),
+	PORT_FN(SetTransportMission, ApologizeMayor_SetTransportMission),
+	PORT_FNK(ChooseStapler, ApologizeMayor_ChooseStapler),
+	PORT_FN(InitStaplerMission, ApologizeMayor_InitStaplerMission),
+	PORT_FN(StaplerSpeech, ApologizeMayor_StaplerSpeech),
+	PORT_FN(StaplerDead, ApologizeMayor_StaplerDead),
+	PORT_FN(MayorMessage, ApologizeMayor_MayorMessage),
+	PORT_FN(MissionScorer, ApologizeMayor_MissionScorer),
+	PORT_FNEND
 };
 
 /* ---- Mission_CatchTrurl ---- */
@@ -1030,22 +1026,22 @@ LV_FN(CatchTrurl, CatchTrurlAgain, 0, ThCt_CatchTrurlAgain)
 LV_FN(CatchTrurl, SetNextMission, 0, ThCt_SetNextMission)
 LV_FN(CatchTrurl, CGCalls, 0, ThCt_CGCalls)
 
-PyMethodDef g_TownhallCatchTrurlMethods[] = {
-	{ "InitStatus", CatchTrurl_InitStatus, METH_VARARGS, NULL },
-	{ "Init", CatchTrurl_Init, METH_VARARGS, NULL },
-	{ "CreateTrurl", CatchTrurl_CreateTrurl, METH_VARARGS, NULL },
-	{ "OnCatchTrurl", CatchTrurl_OnCatchTrurl, METH_VARARGS, NULL },
-	{ "OnCatchTrurlAgain", CatchTrurl_OnCatchTrurlAgain, METH_VARARGS, NULL },
-	{ "FunctionaryMissionSpeech", CatchTrurl_FunctionaryMissionSpeech, METH_VARARGS, NULL },
-	{ "SetCallbackFuncs", CatchTrurl_SetCallbackFuncs, METH_VARARGS, NULL },
-	{ "SpawnMap", CatchTrurl_SpawnMap, METH_VARARGS, NULL },
-	{ "CreateMap", CatchTrurl_CreateMap, METH_VARARGS, NULL },
-	{ "TakeMapPhoto", CatchTrurl_TakeMapPhoto, METH_VARARGS, NULL },
-	{ "KillFunctionaries", CatchTrurl_KillFunctionaries, METH_VARARGS, NULL },
-	{ "CatchTrurlAgain", CatchTrurl_CatchTrurlAgain, METH_VARARGS, NULL },
-	{ "SetNextMission", CatchTrurl_SetNextMission, METH_VARARGS, NULL },
-	{ "CGCalls", CatchTrurl_CGCalls, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TownhallCatchTrurlMethods[] = {
+	PORT_FN(InitStatus, CatchTrurl_InitStatus),
+	PORT_FN(Init, CatchTrurl_Init),
+	PORT_FN(CreateTrurl, CatchTrurl_CreateTrurl),
+	PORT_FN(OnCatchTrurl, CatchTrurl_OnCatchTrurl),
+	PORT_FN(OnCatchTrurlAgain, CatchTrurl_OnCatchTrurlAgain),
+	PORT_FN(FunctionaryMissionSpeech, CatchTrurl_FunctionaryMissionSpeech),
+	PORT_FN(SetCallbackFuncs, CatchTrurl_SetCallbackFuncs),
+	PORT_FN(SpawnMap, CatchTrurl_SpawnMap),
+	PORT_FN(CreateMap, CatchTrurl_CreateMap),
+	PORT_FN(TakeMapPhoto, CatchTrurl_TakeMapPhoto),
+	PORT_FN(KillFunctionaries, CatchTrurl_KillFunctionaries),
+	PORT_FN(CatchTrurlAgain, CatchTrurl_CatchTrurlAgain),
+	PORT_FN(SetNextMission, CatchTrurl_SetNextMission),
+	PORT_FN(CGCalls, CatchTrurl_CGCalls),
+	PORT_FNEND
 };
 
 /* ---- Mission_SheriffMayor ---- */
@@ -1234,16 +1230,16 @@ LV_FN(SheriffMayor, PoliceBossMissionSpeech, 4, ThSm_PoliceBossMissionSpeech)
 LV_FN(SheriffMayor, OnPay, 1, ThSm_OnPay)
 LV_FN(SheriffMayor, SetNextMission, 0, ThSm_SetNextMission)
 
-PyMethodDef g_TownhallSheriffMayorMethods[] = {
-	{ "InitStatus", SheriffMayor_InitStatus, METH_VARARGS, NULL },
-	{ "CreateMayor", SheriffMayor_CreateMayor, METH_VARARGS, NULL },
-	{ "CreatePoliceBoss", SheriffMayor_CreatePoliceBoss, METH_VARARGS, NULL },
-	{ "ReadyToTalk", SheriffMayor_ReadyToTalk, METH_VARARGS, NULL },
-	{ "Blablibla", (PyCFunction)(void (*)(void))SheriffMayor_Blablibla, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "PoliceBossMissionSpeech", SheriffMayor_PoliceBossMissionSpeech, METH_VARARGS, NULL },
-	{ "OnPay", SheriffMayor_OnPay, METH_VARARGS, NULL },
-	{ "SetNextMission", SheriffMayor_SetNextMission, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TownhallSheriffMayorMethods[] = {
+	PORT_FN(InitStatus, SheriffMayor_InitStatus),
+	PORT_FN(CreateMayor, SheriffMayor_CreateMayor),
+	PORT_FN(CreatePoliceBoss, SheriffMayor_CreatePoliceBoss),
+	PORT_FN(ReadyToTalk, SheriffMayor_ReadyToTalk),
+	PORT_FNK(Blablibla, SheriffMayor_Blablibla),
+	PORT_FN(PoliceBossMissionSpeech, SheriffMayor_PoliceBossMissionSpeech),
+	PORT_FN(OnPay, SheriffMayor_OnPay),
+	PORT_FN(SetNextMission, SheriffMayor_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_TalkToMayor ---- */
@@ -1708,24 +1704,24 @@ LV_FN(TalkToMayor, EndOfStealFunctionary, 0, ThTm_EndOfStealFunctionary)
 LV_FN(TalkToMayor, SetNextMission, 0, ThTm_SetNextMission)
 LV_FN(TalkToMayor, MissionScorer, 1, ThTm_MissionScorer)
 
-PyMethodDef g_TownhallTalkToMayorMethods[] = {
-	{ "InitStatus", TalkToMayor_InitStatus, METH_VARARGS, NULL },
-	{ "AfterBrowseNPC", TalkToMayor_AfterBrowseNPC, METH_VARARGS, NULL },
-	{ "CreateMayorInit", TalkToMayor_CreateMayorInit, METH_VARARGS, NULL },
-	{ "CreateBishopPorkins", TalkToMayor_CreateBishopPorkins, METH_VARARGS, NULL },
-	{ "CreateFunctionaryTamayo", TalkToMayor_CreateFunctionaryTamayo, METH_VARARGS, NULL },
-	{ "Init", TalkToMayor_Init, METH_VARARGS, NULL },
-	{ "MayorSpeech", TalkToMayor_MayorSpeech, METH_VARARGS, NULL },
-	{ "BishopSpeech", TalkToMayor_BishopSpeech, METH_VARARGS, NULL },
-	{ "FunctionarySpeech", TalkToMayor_FunctionarySpeech, METH_VARARGS, NULL },
-	{ "StealFunctionary", TalkToMayor_StealFunctionary, METH_VARARGS, NULL },
-	{ "CheckTamayoMoney", TalkToMayor_CheckTamayoMoney, METH_VARARGS, NULL },
-	{ "RestoreTamayoState", TalkToMayor_RestoreTamayoState, METH_VARARGS, NULL },
-	{ "OnBankerSteal", TalkToMayor_OnBankerSteal, METH_VARARGS, NULL },
-	{ "EndOfStealFunctionary", TalkToMayor_EndOfStealFunctionary, METH_VARARGS, NULL },
-	{ "SetNextMission", TalkToMayor_SetNextMission, METH_VARARGS, NULL },
-	{ "MissionScorer", TalkToMayor_MissionScorer, METH_VARARGS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TownhallTalkToMayorMethods[] = {
+	PORT_FN(InitStatus, TalkToMayor_InitStatus),
+	PORT_FN(AfterBrowseNPC, TalkToMayor_AfterBrowseNPC),
+	PORT_FN(CreateMayorInit, TalkToMayor_CreateMayorInit),
+	PORT_FN(CreateBishopPorkins, TalkToMayor_CreateBishopPorkins),
+	PORT_FN(CreateFunctionaryTamayo, TalkToMayor_CreateFunctionaryTamayo),
+	PORT_FN(Init, TalkToMayor_Init),
+	PORT_FN(MayorSpeech, TalkToMayor_MayorSpeech),
+	PORT_FN(BishopSpeech, TalkToMayor_BishopSpeech),
+	PORT_FN(FunctionarySpeech, TalkToMayor_FunctionarySpeech),
+	PORT_FN(StealFunctionary, TalkToMayor_StealFunctionary),
+	PORT_FN(CheckTamayoMoney, TalkToMayor_CheckTamayoMoney),
+	PORT_FN(RestoreTamayoState, TalkToMayor_RestoreTamayoState),
+	PORT_FN(OnBankerSteal, TalkToMayor_OnBankerSteal),
+	PORT_FN(EndOfStealFunctionary, TalkToMayor_EndOfStealFunctionary),
+	PORT_FN(SetNextMission, TalkToMayor_SetNextMission),
+	PORT_FN(MissionScorer, TalkToMayor_MissionScorer),
+	PORT_FNEND
 };
 
 PORTS(levels_Townhall)

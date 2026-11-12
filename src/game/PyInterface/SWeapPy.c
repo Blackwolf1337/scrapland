@@ -1,5 +1,5 @@
 /*
- * Python module SWeap (method table SWeap_methods): weapon and ammo descriptors of the world.
+ * Python module SWeap (function table SWeap_methods): weapon and ammo descriptors of the world.
  * Index checks of the tables stop on int3 like the original (TABLE_AT).
  */
 #include <string.h>
