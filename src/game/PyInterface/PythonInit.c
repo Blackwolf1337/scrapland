@@ -38,7 +38,7 @@ byte g_PythonReady;
  */
 
 /* the end of a start line: its error printed, else the line flushed */
-static void Py_LineEnd(byte ok) {
+static void Line_End(byte ok) {
 	if (!ok) {
 		Native_ErrPrint();
 	} else if (!Script_FlushLine()) {
@@ -48,7 +48,7 @@ static void Py_LineEnd(byte ok) {
 
 /* an expression statement of single_input (PRINT_EXPR): a value that is not None printed with its repr and kept in
  * __builtin__._; 0 with the error set */
-static byte Py_LineExpr(const nativeVal_t *v) {
+static byte Line_Expr(const nativeVal_t *v) {
 	nativeVal_t key, none, out;
 	if (v->type == NV_NONE) {
 		return 1;
@@ -72,16 +72,16 @@ static byte Py_LineExpr(const nativeVal_t *v) {
 }
 
 /* name = v in __main__ (STORE_NAME into the registry's variables of __main__) */
-static byte Py_LineStore(const char *name, const nativeVal_t *v) {
+static byte Line_Store(const char *name, const nativeVal_t *v) {
 	modVarRef_t ref;
 	return ModVar_OfVal(Script_Main(), &ref) && ModVar_SetVal(&ref, name, v) == 0;
 }
 
 /* import a, b, ... in __main__ (NULL ends the names; the line stops at the first error) */
-static byte Py_LineImport(const char *const *names) {
+static byte Line_Import(const char *const *names) {
 	for (; *names; names++) {
 		nativeVal_t m;
-		byte ok = Script_Module(*names, &m) && Py_LineStore(*names, &m);
+		byte ok = Script_Module(*names, &m) && Line_Store(*names, &m);
 		Native_Free(&m);
 		if (!ok) {
 			return 0;
@@ -91,12 +91,12 @@ static byte Py_LineImport(const char *const *names) {
 }
 
 /* name(args) as an expression statement of a line ("Init.Init": LOAD_NAME and LOAD_ATTR in __main__), n arguments */
-static byte Py_LineCall(const char *name, const nativeVal_t *a, int n) {
+static byte Line_Call(const char *name, const nativeVal_t *a, int n) {
 	nativeVal_t f, r;
 	byte ok = Script_NameChain(NULL, Script_Main(), name, &f) > 0 && NObj_Call(&f, a, n, &r);
 	Native_Free(&f);
 	if (ok) {
-		ok = Py_LineExpr(&r);
+		ok = Line_Expr(&r);
 		Native_Free(&r);
 	}
 	return ok;
@@ -105,7 +105,7 @@ static byte Py_LineCall(const char *name, const nativeVal_t *a, int n) {
 /* func('text') of a line as the exe builds it (Str_Printf in 0x100 chars): the text between the quotes becomes the
  * string the compiler makes of it (escapes); a quote or a control character in it, or a cut line, is the line's
  * SyntaxError */
-static byte Py_LineCallText(const char *func, const char *text) {
+static byte Line_CallText(const char *func, const char *text) {
 	char cmd[0x100];
 	int n = Str_Printf(cmd, sizeof(cmd), "%s('%s')", func, text), len = (int)strlen(func);
 	nativeVal_t v;
@@ -120,23 +120,23 @@ static byte Py_LineCallText(const char *func, const char *text) {
 		Script_NotRead("start line", cmd);
 		return 0;
 	}
-	ok = Py_LineCall(func, &v, 1);
+	ok = Line_Call(func, &v, 1);
 	Native_Free(&v);
 	return ok;
 }
 
 /* the call of a start line with one text argument */
-static byte Py_LineCallStr(const char *func, const char *a) {
+static byte Line_CallStr(const char *func, const char *a) {
 	nativeVal_t v;
 	Native_SetStr(&v, a);
-	byte ok = Py_LineCall(func, &v, 1);
+	byte ok = Line_Call(func, &v, 1);
 	Native_Free(&v);
 	return ok;
 }
 
 /* write(message) of the classes ConsoleOutput (ctx 0) and ConsoleErrorOutput (1): Scrap.ConsoleOut(message) or
  * Scrap.ConsoleError(message), 'None' for None */
-static byte Py_ConsoleWrite(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+static byte Line_ConsoleWrite(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t none;
 	(void)out;
 	if (!Native_Arity(NULL, n, 1, 1)) {
@@ -147,7 +147,7 @@ static byte Py_ConsoleWrite(void *ctx, const nativeVal_t *a, int n, nativeVal_t 
 	return ctx ? PORT_CALL(Scrap, ConsoleError, NULL, "v", m) : PORT_CALL(Scrap, ConsoleOut, NULL, "v", m);
 }
 
-static byte Py_ConsoleFlush(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+static byte Line_ConsoleFlush(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)ctx;
 	(void)a;
 	(void)out;
@@ -157,12 +157,12 @@ static byte Py_ConsoleFlush(void *ctx, const nativeVal_t *a, int n, nativeVal_t 
 /* class name: softspace = 1, write(message), flush() (C functions in the class, not bound: called from the instance
  * with the message alone), in __main__; the dict filled in the order of the class body, then __doc__ and __module__ as
  * PyClass_New adds them */
-static byte Py_LineConsoleClass(const char *name, byte error) {
+static byte Line_ConsoleClass(const char *name, byte error) {
 	static const char *const keys[] = { "softspace", "write", "flush", "__doc__", "__module__" };
 	nativeVal_t d, v[5], cls, key;
 	Native_SetInt(&v[0], 1);
-	NObj_NewCallback(&v[1], "write", Py_ConsoleWrite, (void *)(intptr_t)error, NULL, 0);
-	NObj_NewCallback(&v[2], "flush", Py_ConsoleFlush, NULL, NULL, 0);
+	NObj_NewCallback(&v[1], "write", Line_ConsoleWrite, (void *)(intptr_t)error, NULL, 0);
+	NObj_NewCallback(&v[2], "flush", Line_ConsoleFlush, NULL, NULL, 0);
 	Native_SetNone(&v[3]);
 	Native_SetStr(&v[4], "__main__");
 	Native_SetEmpty(&d, NV_DICT);
@@ -170,14 +170,14 @@ static byte Py_LineConsoleClass(const char *name, byte error) {
 		Native_SetStr(&key, keys[i]);
 		Native_DictSet(&d, &key, &v[i]);
 	}
-	byte ok = NObj_NewClass(&cls, name, NULL, NULL, &d) && Py_LineStore(name, &cls);
+	byte ok = NObj_NewClass(&cls, name, NULL, NULL, &d) && Line_Store(name, &cls);
 	Native_Free(&cls);
 	Native_Free(&d);
 	return ok;
 }
 
 /* sys.<attr> = <name of a class>() */
-static byte Py_LineSysOutput(const char *attr, const char *cls) {
+static byte Line_SysOutput(const char *attr, const char *cls) {
 	nativeVal_t c, o, sys;
 	Native_SetNone(&sys);
 	byte ok = Script_NameChain(NULL, Script_Main(), cls, &c) > 0 && NObj_Call(&c, NULL, 0, &o);
@@ -191,7 +191,7 @@ static byte Py_LineSysOutput(const char *attr, const char *cls) {
 }
 
 /* print 'Python Ver '+sys.version */
-static byte Py_LineVersion(void) {
+static byte Line_Version(void) {
 	nativeVal_t v, head, t;
 	const nativeVal_t *items[1] = { &t };
 	Native_SetStr(&head, "Python Ver ");
@@ -212,27 +212,27 @@ void Python_Init(void) {
 	/* the modules of Py_Initialize */
 	CHECK(Script_ImportStart());
 	g_PythonReady = 1;
-	Py_LineEnd(Py_LineConsoleClass("ConsoleOutput", 0));
-	Py_LineEnd(Py_LineConsoleClass("ConsoleErrorOutput", 1));
-	Py_LineEnd(Py_LineImport(sys));
-	Py_LineEnd(Py_LineSysOutput("stdout", "ConsoleOutput"));
-	Py_LineEnd(Py_LineSysOutput("stderr", "ConsoleErrorOutput"));
-	Py_LineEnd(Py_LineVersion());
-	Py_LineEnd(Py_LineCallStr("sys.path.append", "Scripts"));
-	Py_LineEnd(Py_LineImport(engine));
+	Line_End(Line_ConsoleClass("ConsoleOutput", 0));
+	Line_End(Line_ConsoleClass("ConsoleErrorOutput", 1));
+	Line_End(Line_Import(sys));
+	Line_End(Line_SysOutput("stdout", "ConsoleOutput"));
+	Line_End(Line_SysOutput("stderr", "ConsoleErrorOutput"));
+	Line_End(Line_Version());
+	Line_End(Line_CallStr("sys.path.append", "Scripts"));
+	Line_End(Line_Import(engine));
 	if (g_IsViewer) {
-		Py_LineEnd(Py_LineImport(viewer));
-		Py_LineEnd(Py_LineCallText("Viewer.Init", g_pApp->levelPath));
+		Line_End(Line_Import(viewer));
+		Line_End(Line_CallText("Viewer.Init", g_pApp->levelPath));
 	} else {
-		Py_LineEnd(Py_LineCallStr("Scrap.OpenPack", "Scripts"));
+		Line_End(Line_CallStr("Scrap.OpenPack", "Scripts"));
 		Native_SetStr(&a[0], "Init");
 		Native_SetStr(&a[1], "Init.pyc");
-		Py_LineEnd(Py_LineCall("Scrap.PreloadLibrary", a, 2));
+		Line_End(Line_Call("Scrap.PreloadLibrary", a, 2));
 		Native_Free(&a[0]);
 		Native_Free(&a[1]);
-		Py_LineEnd(Py_LineCall("Scrap.ClosePack", NULL, 0));
-		Py_LineEnd(Py_LineImport(init));
-		Py_LineEnd(Py_LineCallText("Init.Init", g_pApp->levelPath));
+		Line_End(Line_Call("Scrap.ClosePack", NULL, 0));
+		Line_End(Line_Import(init));
+		Line_End(Line_CallText("Init.Init", g_pApp->levelPath));
 	}
 	/* the engine variable PythonExecute (the command line) was a line of Python run here: there is no interpreter, an
 	 * error says so when it is set */
@@ -260,7 +260,7 @@ void Python_Init(void) {
 void Python_Close(void) {
 	static const char *const init[] = { "Init", NULL };
 
-	Py_LineEnd(Py_LineImport(init) && Py_LineCall("Init.Close", NULL, 0));
+	Line_End(Line_Import(init) && Line_Call("Init.Close", NULL, 0));
 	cPy_Function_ClearAll();
 	CharsNPC_Close();
 	/* the module variables set to None as the module cleanup of Py_Finalize cleared the module dicts */
