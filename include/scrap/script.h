@@ -69,6 +69,7 @@ void Script_ModuleCountLoaded(void);
 /* text (NAME or NAME.NAME...) as module code loads it (LOAD_NAME in locals, which are the globals too, then the
  * builtins; LOAD_ATTR): a new reference, NULL with the error set */
 PyObject *Script_ModuleName(PyObject *locals, const char *text);
+struct nativeVal_s;
 /* the body of a for loop of module code: 1, or 0 with the error set */
 typedef byte (*scriptForBody_t)(PyObject *locals, PyObject *item, void *ctx);
 /*
@@ -77,18 +78,28 @@ typedef byte (*scriptForBody_t)(PyObject *locals, PyObject *item, void *ctx);
  */
 byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptForBody_t body, void *ctx);
 /* the C hooks of the module definitions ("c <name>" lines, module_hooks in ScriptModule.c): 1, or 0 with the error
- * set; locals is the dict the names of the module code go to */
-int Init_ModLoadChars(PyObject *module, PyObject *locals);
-int Init_ModExtraExecs(PyObject *module, PyObject *locals);
-int NewsPanel_ModSettings(PyObject *module, PyObject *locals);
-int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals);
-int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals);
-int MapTreasure_ModCoins(PyObject *module, PyObject *locals);
-/* before Py_Finalize: breaks the cycle of the CharSpawnPos class and its C __init__ (CharsNPC.c) */
+ * set; locals is the module dict (the names of the module code go to its variables), body the dict object of the class
+ * body the line stands in (NULL in the module code) */
+int Init_ModLoadChars(PyObject *module, PyObject *locals, struct nativeVal_s *body);
+int Init_ModExtraExecs(PyObject *module, PyObject *locals, struct nativeVal_s *body);
+int NewsPanel_ModSettings(PyObject *module, PyObject *locals, struct nativeVal_s *body);
+int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals, struct nativeVal_s *body);
+int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals, struct nativeVal_s *body);
+int MapTreasure_ModCoins(PyObject *module, PyObject *locals, struct nativeVal_s *body);
+/* at the end of the program, before the variables of the modules go: breaks the cycle of each CharSpawnPos class and
+ * the method of its C __init__ in its dict (CharsNPC.c) */
 void CharsNPC_Close(void);
-/* the function name of module from the C tables (script_modules, the last table that has it), a new reference; NULL
- * without an error when no table has it */
-PyObject *Script_TableFunction(const char *module, const char *name);
+struct modVarRef_s;
+struct nativeVal_s;
+/* SCRAP_NULL_CHECK is set (the functions of the tables are the wrappers of Script_CheckFunction) */
+byte Script_Checking(void);
+/* the function object of a C function of the script tables into *out: the native function of its port ref
+ * (NObj_NewPortFunc, Port_OfDef), else (no ref, SCRAP_NULL_CHECK) the view of Script_CheckFunction's object; 1, or 0
+ * with the error */
+byte Script_FunctionOf(PyMethodDef *def, const char *module, struct nativeVal_s *out);
+/* the function name of module from the C tables (script_modules, the last table that has it) into *out: 1, 0 with
+ * *out None (an error set when making it failed, none when no table has it) */
+byte Script_TableFunction(const char *module, const char *name, struct nativeVal_s *out);
 /* whether a table of script_modules has the function name of module */
 byte Script_TableHas(const char *module, const char *name);
 /* the dict writes the loader made after the .pyc for a table, on a module made in C with the values in place (the
@@ -97,25 +108,26 @@ void Script_TableReplay(PyObject *module, PyMethodDef *methods);
 /* the dict writes the loader made after the .pyc for the function cur under name, on a module made in C with the
  * values in place: the other names, tuples and dict values that hold cur and name itself (they decide the key order of
  * the module's variables, scrap/modvars.h) */
-struct modVarRef_s;
-struct nativeVal_s;
 void Script_ReplaySet(const struct modVarRef_s *ref, const char *name, const struct nativeVal_s *cur);
 /*
  * after a module made in C: the dict writes the loader made after the .pyc, with the values in place, for
  * every table of script_modules, the level data and the level tables (the functions the script lacks, and the sets
  * that resize a 1.5.2 dict, which decide its key order); defs holds the functions the module code defined, by name
  */
-void Script_ModuleExtras(const char *name, PyObject *module, PyObject *defs);
+void Script_ModuleExtras(const char *name, PyObject *module, const struct nativeVal_s *defs);
 /* the level that loads, lower case ("police"); 0 when Init.Path is not set yet */
 byte Script_LevelName(char *out, int size);
 /* for a module of the level made in C (src/game/Script/Levels.c): its data functions start over in their pool */
 void Script_LevelModuleStart(const char *module);
-/* the C function name of the level table of module in this level, NULL without an error if none */
-PyObject *Script_LevelTableFunction(const char *module, const char *name);
-/* the data function name of the level file of module in this level, NULL without an error if none */
-PyObject *Script_LevelDataFunction(const char *module, const char *name);
+/* the C function name of the level table of module in this level into *out (Script_FunctionOf): 1, 0 with *out None
+ * (an error set when making it failed) */
+byte Script_LevelTableFunction(const char *module, const char *name, struct nativeVal_s *out);
+/* the data function name of the level file of module in this level into *out: a native function (a callback whose
+ * __self__ is the tuple (file index, section, parameter names, defaults); under SCRAP_NULL_CHECK the view of the
+ * checked C function object); 1, 0 with *out None (an error set when making it failed) */
+byte Script_LevelDataFunction(const char *module, const char *name, struct nativeVal_s *out);
 /* the part of Script_ModuleExtras for the level data and the level tables of the module (defs as there) */
-void Script_LevelModuleExtras(const char *name, PyObject *module, PyObject *defs);
+void Script_LevelModuleExtras(const char *name, PyObject *module, const struct nativeVal_s *defs);
 
 /* the core of CreateFixedInit(e) of the level scripts (MapDecont.CreateBishopInit, GamblinDen's Map.CreateFixedInit):
  * the character e stands where it is (src/game/Script/levels/Orbit.c) */

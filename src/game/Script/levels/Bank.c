@@ -240,7 +240,7 @@ static byte Mt_Sched(const nativeVal_t *at, const nativeVal_t *fn, const nativeV
 			Native_Free(&items[k]);
 		}
 	} else {
-		ok = LV_CALL("Scrap", "AddScheduledFunc", NULL, "vOvv", at, Native_PyOf(fn), args, &name);
+		ok = LV_CALL("Scrap", "AddScheduledFunc", NULL, "vvvv", at, fn, args, &name);
 	}
 	Native_Free(&name);
 	return ok;
@@ -731,7 +731,8 @@ static byte Mt_CoinsBody(PyObject *locals, PyObject *f, void *ctx) {
 	return res != NULL;
 }
 /* maptreasure.py:2836, `for f in range(len(Circuit)): ...`: the chain of each circuit as the save variable keeps it */
-int MapTreasure_ModCoins(PyObject *module, PyObject *locals) {
+int MapTreasure_ModCoins(PyObject *module, PyObject *locals, nativeVal_t *body) {
+	(void)body;
 	(void)module;
 	PyObject *range = Script_ModuleName(locals, "range");
 	PyObject *len = range ? Script_ModuleName(locals, "len") : NULL;

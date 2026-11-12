@@ -480,7 +480,8 @@ static byte In_LoadCharBody(PyObject *locals, PyObject *fn, void *ctx) {
 }
 
 /* init.py:205, `for fn in ('Nurse', ...): LoadCharLib(fn)`: the characters of an indoor level and their sounds */
-int Init_ModLoadChars(PyObject *module, PyObject *locals) {
+int Init_ModLoadChars(PyObject *module, PyObject *locals, nativeVal_t *body) {
+	(void)body;
 	static const char *const chars[] = { "Nurse", "Police", "Desktop", "Gear", "Sentinel", "Berto", "BankDirector",
 		"Mayor", "GateKeeper", "Betty", "Dtritus", "Bishop", "Functionary", "Humphrey", "PoliceBoss", "Messenger",
 		"Human", "BankMaster" };
@@ -514,7 +515,8 @@ static byte In_ExtraBody(PyObject *locals, PyObject *func, void *ctx) {
 }
 
 /* init.py:251, `for func in ExtraExecs[UpperMap]: apply(apply, func)`: the extra characters of some levels */
-int Init_ModExtraExecs(PyObject *module, PyObject *locals) {
+int Init_ModExtraExecs(PyObject *module, PyObject *locals, nativeVal_t *body) {
+	(void)body;
 	(void)module;
 	PyObject *table = Script_ModuleName(locals, "ExtraExecs");
 	PyObject *key = table ? Script_ModuleName(locals, "UpperMap") : NULL;
