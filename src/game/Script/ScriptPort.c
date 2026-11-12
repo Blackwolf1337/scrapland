@@ -22,7 +22,7 @@
 static portSite_t *port_sites;
 
 /* OBJLIB 7: SCRAP_PORT_SLOW=1 sends every call the slow way (the same binary compared with itself) */
-static byte Port_Slow(void) {
+byte Port_Slow(void) {
 	static int slow = -1;
 	if (slow < 0) {
 		const char *e = getenv("SCRAP_PORT_SLOW");
@@ -36,11 +36,8 @@ byte Port_IsOwn(const portRef_t *ref, PyObject *f) {
 	if (Port_Slow() || !PyCFunction_Check(f)) {
 		return 0;
 	}
-	/* the C function object of a port function (OBJLIB 7e2) or of an adapter (a table not converted yet) */
-	if ((face = NObj_PortFace(f)) != NULL) {
-		return face->entry == ref->entry;
-	}
-	return ref->adapter && !PyCFunction_GET_SELF(f) && ((PyCFunctionObject *)f)->m_ml->ml_meth == ref->adapter;
+	/* the C function object of a port function (OBJLIB 7e4b: its face) */
+	return (face = NObj_PortFace(f)) != NULL && face->entry == ref->entry;
 }
 
 /* Port_Seam, slow 1: what is there as the hook also when it is the port's own (a call the entry cannot take). The
@@ -367,9 +364,10 @@ static int Port_Twin(const portRef_t *ref, const char *fmt, va_list va, byte dir
 	if (!direct || strchr(fmt, ';') || Port_Slow() || Port_ObjArgs(fmt, va)) {
 		return Port_Look(ref, 0, 1, hook);
 	}
-	PyObject *m = Script_Module(ref->module);
-	Py_XDECREF(m);
-	return m ? 0 : -1;
+	nativeVal_t m;
+	byte ok = Script_Module(ref->module, &m);
+	Native_Free(&m);
+	return ok ? 0 : -1;
 }
 
 /* a call of a site: the result into *out as Native_Arg takes it (pyout NULL), or as the Python object into *pyout;
@@ -476,11 +474,11 @@ static portSite_t *Port_Bound(int kind, int i) {
 	return s;
 }
 
-static int Port_KeyIndex(byte byAdapter, uintptr_t key, const char *name);
+static int Port_KeyIndex(uintptr_t key, const char *name);
 
-/* the index in g_PortTable of the port function the value f may be: a native port function, the C function object of
- * one (OBJLIB 7e2), or a C function object of an adapter without self (a view, an NV_OBJ), by its entry or adapter and
- * its own name (__name__: an alias is the ref of its name); -1 for any other value and under SCRAP_PORT_SLOW=1 */
+/* the index in g_PortTable of the port function the value f may be: a native port function or the C function object
+ * of one (OBJLIB 7e4b: its face), by its entry and its own name (__name__: an alias is the ref of its name); -1 for any
+ * other value and under SCRAP_PORT_SLOW=1 */
 static int Port_FuncIndex(const nativeVal_t *f) {
 	const portRef_t *ref = NObj_PortRef(f);
 	PyObject *py = ref ? NULL : NObj_Py(f);
@@ -490,14 +488,7 @@ static int Port_FuncIndex(const nativeVal_t *f) {
 	if (!ref && py) {
 		ref = NObj_PortFace(py);
 	}
-	if (ref) {
-		return ref->twin ? -1 : Port_KeyIndex(0, (uintptr_t)ref->entry, ref->name);
-	}
-	if (!py || !PyCFunction_Check(py) || PyCFunction_GET_SELF(py)) {
-		return -1;
-	}
-	const PyMethodDef *ml = ((PyCFunctionObject *)py)->m_ml;
-	return Port_KeyIndex(1, (uintptr_t)ml->ml_meth, ml->ml_name);
+	return !ref || ref->twin ? -1 : Port_KeyIndex((uintptr_t)ref->entry, ref->name);
 }
 
 portSite_t *Port_CallbackOf(const char *module, const char *name, const nativeVal_t *f) {
@@ -695,47 +686,45 @@ byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const native
 
 const portRef_t port_value = { .module = "value", .name = "?" };
 
-/* the indices of the refs (not the twins) in the order of their entries (the address), then of g_PortTable, and of the
- * refs with an adapter (a table not converted yet) in the order of their adapters; sorted at the first use */
-static int port_byKey[2][PORT_COUNT];
-static int port_keys[2] = { -1, -1 };
-static byte port_sorting;
+/* the indices of the refs (not the twins) in the order of their entries (the address), then of g_PortTable; sorted at
+ * the first use */
+static int port_byKey[PORT_COUNT];
+static int port_keys = -1;
 
-static uintptr_t Port_Key(byte byAdapter, int i) {
-	return byAdapter ? (uintptr_t)g_PortTable[i]->adapter : (uintptr_t)g_PortTable[i]->entry;
+static uintptr_t Port_Key(int i) {
+	return (uintptr_t)g_PortTable[i]->entry;
 }
 
 static int Port_KeyOrder(const void *x, const void *y) {
 	int a = *(const int *)x, b = *(const int *)y;
-	uintptr_t p = Port_Key(port_sorting, a), q = Port_Key(port_sorting, b);
+	uintptr_t p = Port_Key(a), q = Port_Key(b);
 	return p < q ? -1 : p > q ? 1 : a - b;
 }
 
-/* the index in g_PortTable of the ref of the entry (or adapter) key under the name (one entry under several names: an
- * alias in the table), -1 when there is none */
-static int Port_KeyIndex(byte byAdapter, uintptr_t key, const char *name) {
-	int *by = port_byKey[byAdapter];
-	if (port_keys[byAdapter] < 0) {
+/* the index in g_PortTable of the ref of the entry key under the name (one entry under several names: an alias in the
+ * table), -1 when there is none */
+static int Port_KeyIndex(uintptr_t key, const char *name) {
+	int *by = port_byKey;
+	if (port_keys < 0) {
 		int n = 0;
 		for (int i = 0; i < PORT_COUNT; i++) {
-			if (!g_PortTable[i]->twin && Port_Key(byAdapter, i)) {
+			if (!g_PortTable[i]->twin && Port_Key(i)) {
 				by[n++] = i;
 			}
 		}
-		port_sorting = byAdapter;
 		qsort(by, n, sizeof(by[0]), Port_KeyOrder);
-		port_keys[byAdapter] = n;
+		port_keys = n;
 	}
-	int lo = 0, hi = port_keys[byAdapter];
+	int lo = 0, hi = port_keys;
 	while (lo < hi) {
 		int mid = lo + (hi - lo) / 2;
-		if (Port_Key(byAdapter, by[mid]) < key) {
+		if (Port_Key(by[mid]) < key) {
 			lo = mid + 1;
 		} else {
 			hi = mid;
 		}
 	}
-	for (; lo < port_keys[byAdapter] && Port_Key(byAdapter, by[lo]) == key; lo++) {
+	for (; lo < port_keys && Port_Key(by[lo]) == key; lo++) {
 		if (!strcmp(g_PortTable[by[lo]]->name, name)) {
 			return by[lo];
 		}
@@ -749,41 +738,25 @@ static int Port_OwnIndex(PyObject *f) {
 	if (Port_Slow() || !f || !PyCFunction_Check(f)) {
 		return -1;
 	}
-	if (face) {
-		return Port_KeyIndex(0, (uintptr_t)face->entry, face->name);
-	}
-	if (PyCFunction_GET_SELF(f)) {
-		return -1;
-	}
-	const PyMethodDef *ml = ((PyCFunctionObject *)f)->m_ml;
-	return Port_KeyIndex(1, (uintptr_t)ml->ml_meth, ml->ml_name);
-}
-
-const portRef_t *Port_OfDef(const PyMethodDef *def) {
-	int i = Port_Slow() || def->ml_doc ? -1 : Port_KeyIndex(1, (uintptr_t)def->ml_meth, def->ml_name);
-	if (i < 0 || (def->ml_flags & ~METH_KEYWORDS) != METH_VARARGS ||
-		!(def->ml_flags & METH_KEYWORDS) != !g_PortTable[i]->kw) {
-		return NULL;
-	}
-	return g_PortTable[i];
+	return face ? Port_KeyIndex((uintptr_t)face->entry, face->name) : -1;
 }
 
 int Port_FaceIndex(const portRef_t *ref) {
-	int i = Port_KeyIndex(0, (uintptr_t)ref->entry, ref->name);
+	int i = Port_KeyIndex((uintptr_t)ref->entry, ref->name);
 	if (i < 0) {
 		for (i = 0; i < PORT_COUNT && g_PortTable[i] != ref; i++) {
 		}
 		return i < PORT_COUNT ? i : -1;
 	}
-	/* the first ref of the entry: the run of the entry in port_byKey[0] is in table order */
+	/* the first ref of the entry: the run of the entry in port_byKey is in table order */
 	int lo = 0;
-	while (port_byKey[0][lo] != i) {
+	while (port_byKey[lo] != i) {
 		lo++;
 	}
-	while (lo > 0 && Port_Key(0, port_byKey[0][lo - 1]) == (uintptr_t)ref->entry) {
+	while (lo > 0 && Port_Key(port_byKey[lo - 1]) == (uintptr_t)ref->entry) {
 		lo--;
 	}
-	return port_byKey[0][lo];
+	return port_byKey[lo];
 }
 
 const portRef_t *Port_OfFn(const char *module, const portFn_t *row) {

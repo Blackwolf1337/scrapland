@@ -16,7 +16,7 @@
 #include "scrap/nodestraffic.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 #include "scrap/rendertarget.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrapmodel.h"
@@ -792,8 +792,8 @@ void Scorer_GetCamVarStr(int player, char *buf, const char *name, int size) {
 	}
 }
 
-static void Scorer_DrawPyMemStats(void) {
-	cMemStats *ms = (&g_PyMemStats);
+static void Scorer_DrawScriptMemStats(void) {
+	cMemStats *ms = (&g_ScriptMemStats);
 
 	CFont_PrintfAlign(g_FontHoratioSmall, 48.0f, 40.0f, 0, "%d Bytes. (%d)top", ms->bytes, ms->peakBytes);
 	CFont_PrintfAlign(g_FontHoratioSmall, 48.0f, 60.0f, 0, "%d Blocks. (%d)top", ms->blocks, ms->peakBlocks);
@@ -1783,7 +1783,7 @@ static void Scorer_DrawDebug(void) {
 		Logic_ShowAI(0);
 		break;
 	case CSHOW_PYMEM:
-		Scorer_DrawPyMemStats();
+		Scorer_DrawScriptMemStats();
 		break;
 	case CSHOW_AI:
 		Logic_ShowAI(1);

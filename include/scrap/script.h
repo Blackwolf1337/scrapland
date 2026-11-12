@@ -16,21 +16,18 @@
 #include "scrap/python.h"
 #include "scrap/scriptnative.h"
 
-/* the C functions of one pack module: a function table (stage 7e, scrap/scriptnative.h), or a PyMethodDef table not
- * converted yet (OBJLIB 7e2) */
+/* the C functions of one pack module: a function table (stage 7e, scrap/scriptnative.h) */
 typedef struct scriptModule_s {
 	const char *name;		/* the module name of the script, PCMenu */
-	PyMethodDef *methods;		/* put into the module under their names, the table ends with a NULL name */
-	const portFn_t *fns;		/* the same as a function table (methods NULL) */
+	const portFn_t *fns;		/* put into the module under their names, the table ends with PORT_FNEND */
 } scriptModule_t;
 
-/* a row of such a table: def of a PyMethodDef table or fn of a function table (the other NULL) */
+/* a row of such a table */
 typedef struct scriptRow_s {
-	PyMethodDef *def;
 	const portFn_t *fn;
 } scriptRow_t;
-/* the name of row i of the tables methods or fns (the one that is not NULL), NULL at the end; *row the row */
-const char *Script_Row(PyMethodDef *methods, const portFn_t *fns, int i, scriptRow_t *row);
+/* the name of row i of the table fns, NULL at the end; *row the row */
+const char *Script_Row(const portFn_t *fns, int i, scriptRow_t *row);
 
 /* the function object of a C function of the script tables (PyCFunction_New(def, self)); with SCRAP_NULL_CHECK set
  * a wrapper that reports a NULL return without an error (module names it in the report) */
@@ -38,65 +35,71 @@ PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *mod
 /* with SCRAP_NULL_CHECK set: reports that a C function or helper fails without a Python error (kind names the
  * place), once per kind, function and call site */
 void Script_CheckSilent(const char *kind);
-/* with SCRAP_NULL_CHECK and SCRAP_NULL_CHECK_ENGINE=1: the functions of the engine modules into the same wrapper */
-void Script_CheckEngine(void);
 
+struct nativeVal_s;
 /*
  * a pack module made in C instead of running its .pyc (src/game/Script/ScriptModule.c): when the module has a C
- * definition (a .mod file), *module is the new module (in sys.modules, with its variables, functions and load time
- * calls in the order of the script) and the result 1; 0 when it has none; -1 when a statement failed (error set,
- * *module NULL)
+ * definition (a .mod file), *module is the new module (in the module store, with its variables, functions and load
+ * time calls in the order of the script) and the result 1; 0 when it has none; -1 when a statement failed (error set,
+ * *module None)
  */
-int Script_ModuleMake(const char *name, const char *file, PyObject **module);
+int Script_ModuleMake(const char *name, const char *file, struct nativeVal_s *module);
 /*
- * The modules by name (batch 6b of docs/objlib-plan.md). The module objects stay in sys.modules until stage 7 (the
- * dicts hold the values, the test channel and the cases' `import X` read sys.modules), but a pack module (one the
- * registry of the module variables has a .mod file of, ModVar_HasModule) is looked up there in C, without the import
- * of Python. Only Pack_PreloadLibrary makes a pack module (Script_ModuleMake); an import never did (there is no .pyc
- * reader), so the order of the first loads is the engine's. Every other name (sys, math, strop, __builtin__, the
- * engine modules Scrap, SScorer, ...) and a pack module that is not in sys.modules (deleted from it, not preloaded
- * yet: the import looks for a file, the gate refuses one, the ImportError says which) go through the import of Python
- * as before.
+ * The modules by name (src/game/Script/ScriptImport.c): the module store (sys.modules) and the import of 1.5.2 on it.
+ * Only Pack_PreloadLibrary makes a pack module (Script_ModuleMake); an import never did (there is no .pyc reader), so
+ * the order of the first loads is the engine's. A built-in module (sys, math, strop, __builtin__, the engine modules
+ * Scrap, SScorer, ...) is made into the store at its first import.
  */
-/* `import name`: the module, a new reference; NULL with the ImportError of the import ("No module named <name>" for
- * a pack module whose sys.modules entry is None) */
-PyObject *Script_Module(const char *name);
+/* the start: the modules Py_Initialize made (__builtin__, sys, __main__, signal) into a new store: 0 when that failed */
+byte Script_ImportStart(void);
+/* the end: the store emptied and let go */
+void Script_ImportEnd(void);
+/* the store (a dict object: name -> module), the module __main__ and the builtins dict (the variables of __builtin__) */
+const struct nativeVal_s *Script_Modules(void);
+const struct nativeVal_s *Script_Main(void);
+const struct nativeVal_s *Script_Builtins(void);
+/* a variable of sys (PySys_GetObject: the module the start made, also when sys.modules has another): 1 with *out, 0
+ * without an error when it has none; Script_SetSysVar sets it (PySys_SetObject; v NULL: deleted when it has one) */
+byte Script_SysVar(const char *name, struct nativeVal_s *out);
+void Script_SetSysVar(const char *name, const struct nativeVal_s *v);
+/* `import name`: the module into *out (1); 0 with the ImportError of the import ("No module named <name>", also for
+ * a pack module whose entry is None) */
+byte Script_Module(const char *name, struct nativeVal_s *out);
 /* `import name` in the module code whose globals are given (IMPORT_NAME: a package's globals look in the package
- * first, which no pack module is; such globals go through the import of Python) */
-PyObject *Script_ModuleIn(const char *name, PyObject *globals);
-/* the object loaded under name (sys.modules[name], also None or a non-module a case put there): borrowed, NULL
- * without an error when there is none */
-PyObject *Script_ModuleLoaded(const char *name);
-/* the module object name, made empty into sys.modules when there is none or the entry is no module
- * (PyImport_AddModule): borrowed, NULL with the error set */
-PyObject *Script_ModuleAdd(const char *name);
-/* the lookups by path since the start (reset: back to 0): pack modules found in sys.modules, pack modules whose entry
- * is None, pack modules not loaded (the import's file search), other names (the import of Python), modules made from
- * a .mod file (Script_ModuleMake), PreloadLibrary of a loaded module */
+ * first, which no pack module is) */
+byte Script_ModuleIn(const char *name, const struct nativeVal_s *globals, struct nativeVal_s *out);
+/* the object stored under name (also None or a non-module a case put there): 1 with a copy in *out, 0 without an
+ * error (*out None) when there is none */
+byte Script_ModuleLoaded(const char *name, struct nativeVal_s *out);
+/* the module name, made empty into the store when there is none or the entry is no module (PyImport_AddModule): 1
+ * with *out, 0 with the error */
+byte Script_ModuleAdd(const char *name, struct nativeVal_s *out);
+/* the lookups by path since the start (reset: back to 0): pack modules found in the store, pack modules whose entry
+ * is None, pack modules not loaded, other names, modules made from a .mod file (Script_ModuleMake), PreloadLibrary of
+ * a loaded module */
 enum { SMC_PACK, SMC_NONE, SMC_ABSENT, SMC_OTHER, SMC_ADDED, SMC_MADE, SMC_LOADED, SMC_COUNT };
 void Script_ModuleCounts(unsigned long counts[SMC_COUNT], byte reset);
-/* Pack_PreloadLibrary found the module loaded */
-void Script_ModuleCountLoaded(void);
-/* text (NAME or NAME.NAME...) as module code loads it (LOAD_NAME in locals, which are the globals too, then the
- * builtins; LOAD_ATTR): a new reference, NULL with the error set */
-PyObject *Script_ModuleName(PyObject *locals, const char *text);
-struct nativeVal_s;
+/* one more lookup of the kind (SMC_) */
+void Script_ModuleCount(int kind);
+/* text (NAME or NAME.NAME...) as module code loads it (LOAD_NAME in the namespace ns, which is the locals and the
+ * globals, then the builtins; LOAD_ATTR): OBJLIB 7e4b: as a Python object (a new reference), NULL with the error set */
+PyObject *Script_ModuleName(const struct nativeVal_s *ns, const char *text);
 /* the body of a for loop of module code: 1, or 0 with the error set */
-typedef byte (*scriptForBody_t)(PyObject *locals, PyObject *item, void *ctx);
+typedef byte (*scriptForBody_t)(const struct nativeVal_s *ns, PyObject *item, void *ctx);
 /*
  * for <var> in <seq>: <body> in module code, for the C hooks of the definitions (FOR_LOOP, STORE_NAME): item i of seq
- * up to the IndexError, each stored as var in locals before body runs; 1, or 0 with the error set
+ * up to the IndexError, each stored as var in the namespace ns before body runs; 1, or 0 with the error set
  */
-byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptForBody_t body, void *ctx);
+byte Script_ModuleFor(const struct nativeVal_s *ns, const char *var, PyObject *seq, scriptForBody_t body, void *ctx);
 /* the C hooks of the module definitions ("c <name>" lines, module_hooks in ScriptModule.c): 1, or 0 with the error
- * set; locals is the module dict (the names of the module code go to its variables), body the dict object of the class
- * body the line stands in (NULL in the module code) */
-int Init_ModLoadChars(PyObject *module, PyObject *locals, struct nativeVal_s *body);
-int Init_ModExtraExecs(PyObject *module, PyObject *locals, struct nativeVal_s *body);
-int NewsPanel_ModSettings(PyObject *module, PyObject *locals, struct nativeVal_s *body);
-int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals, struct nativeVal_s *body);
-int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals, struct nativeVal_s *body);
-int MapTreasure_ModCoins(PyObject *module, PyObject *locals, struct nativeVal_s *body);
+ * set; module is the module (its variables are the names of the module code), body the dict object of the class body
+ * the line stands in (NULL in the module code) */
+int Init_ModLoadChars(const struct nativeVal_s *module, struct nativeVal_s *body);
+int Init_ModExtraExecs(const struct nativeVal_s *module, struct nativeVal_s *body);
+int NewsPanel_ModSettings(const struct nativeVal_s *module, struct nativeVal_s *body);
+int CharsNPC_ModSpawnPosInit(const struct nativeVal_s *module, struct nativeVal_s *body);
+int CharsNPC_ModSpawnPosClass(const struct nativeVal_s *module, struct nativeVal_s *body);
+int MapTreasure_ModCoins(const struct nativeVal_s *module, struct nativeVal_s *body);
 /* at the end of the program, before the variables of the modules go: breaks the cycle of each CharSpawnPos class and
  * the method of its C __init__ in its dict (CharsNPC.c) */
 void CharsNPC_Close(void);
@@ -115,7 +118,7 @@ byte Script_TableFunction(const char *module, const char *name, struct nativeVal
 byte Script_TableHas(const char *module, const char *name);
 /* the dict writes the loader made after the .pyc for a table, on a module made in C with the values in place (the
  * functions the script lacks are added) */
-void Script_TableReplay(PyObject *module, PyMethodDef *methods, const portFn_t *fns);
+void Script_TableReplay(const struct nativeVal_s *module, const portFn_t *fns);
 /* the dict writes the loader made after the .pyc for the function cur under name, on a module made in C with the
  * values in place: the other names, tuples and dict values that hold cur and name itself (they decide the key order of
  * the module's variables, scrap/modvars.h) */
@@ -125,7 +128,7 @@ void Script_ReplaySet(const struct modVarRef_s *ref, const char *name, const str
  * every table of script_modules, the level data and the level tables (the functions the script lacks, and the sets
  * that resize a 1.5.2 dict, which decide its key order); defs holds the functions the module code defined, by name
  */
-void Script_ModuleExtras(const char *name, PyObject *module, const struct nativeVal_s *defs);
+void Script_ModuleExtras(const char *name, const struct nativeVal_s *module, const struct nativeVal_s *defs);
 /* the level that loads, lower case ("police"); 0 when Init.Path is not set yet */
 byte Script_LevelName(char *out, int size);
 /* for a module of the level made in C (src/game/Script/Levels.c): its data functions start over in their pool */
@@ -138,7 +141,7 @@ byte Script_LevelTableFunction(const char *module, const char *name, struct nati
  * checked C function object); 1, 0 with *out None (an error set when making it failed) */
 byte Script_LevelDataFunction(const char *module, const char *name, struct nativeVal_s *out);
 /* the part of Script_ModuleExtras for the level data and the level tables of the module (defs as there) */
-void Script_LevelModuleExtras(const char *name, PyObject *module, const struct nativeVal_s *defs);
+void Script_LevelModuleExtras(const char *name, const struct nativeVal_s *module, const struct nativeVal_s *defs);
 
 /* the core of CreateFixedInit(e) of the level scripts (MapDecont.CreateBishopInit, GamblinDen's Map.CreateFixedInit):
  * the character e stands where it is (src/game/Script/levels/Orbit.c) */
@@ -300,36 +303,45 @@ int Script_Eq(PyObject *a, PyObject *b);
 PyObject *Script_Repr(PyObject *o);
 /* item i of a for loop over seq: 1 with a new reference in *item, 0 at the end, -1 with the error set */
 int Script_Next(PyObject *seq, int i, PyObject **item);
-/* the print statement with its items, as ceval prints them: 0 with the error set */
-byte Script_Print(PyObject *const *items, int n);
+/* the print statement with its items, as ceval prints them to sys.stdout (PRINT_ITEM, PRINT_NEWLINE): 0 with the
+ * error set */
+byte Script_Print(const struct nativeVal_s *const *items, int n);
+/* the parts of the print on the file objects of the scripts (an instance with write and softspace, sys.stdout;
+ * fileobject.c): PyFile_SoftSpace (the old flag), PyFile_WriteObject (str of v when raw, else its repr, to f.write),
+ * PyFile_WriteString (nothing while an error is set), Py_FlushLine (the newline sys.stdout's soft space owes);
+ * Script_WriteOut v to sys.stdout. Each 1, or 0 with the error */
+int Script_SoftSpace(const struct nativeVal_s *f, int newflag);
+byte Script_FileWrite(const struct nativeVal_s *f, const struct nativeVal_s *v, byte raw);
+byte Script_FileWriteText(const struct nativeVal_s *f, const char *s);
+byte Script_FlushLine(void);
+byte Script_WriteOut(const struct nativeVal_s *v, byte raw);
 /* Scrap.GetEntity(name), Scrap.UsrEntity(0): new references, NULL with the error set */
 PyObject *Script_Entity(PyObject *name);
 PyObject *Script_Usr(void);
 /* `global last; last = target.name; target.name = name` in a function of the script module (name its global, the
  * chain of callbacks the net weapons and Vehicles put in front of Net's): 0 with the error set */
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last);
-/* eval(text) of a value the game wrote (save and engine variables, network messages, event names, data lines) in
- * globals: the checks of builtin eval (TypeError, ValueError), then Script_Literal of the text after its leading
- * blanks; any other text raises Script_NotRead's SyntaxError, no Python runs. Script_EvalIn the same in the globals
- * of a script module. A new reference, NULL with the error set */
-PyObject *Script_EvalValue(PyObject *globals, PyObject *text);
-PyObject *Script_EvalIn(const char *module, PyObject *text);
-/* the rest of Script_EvalValue for a text s (leading blanks skipped) that the literal reader did not take: a name
- * chain as eval runs it (its value or NameError), else Script_NotRead's SyntaxError, for two names or numbers with
- * blanks between them with the 1.5.2 parser's message and position. Also used by Native_EvalText. NULL with the error
- * set, or a new reference */
-PyObject *Script_EvalOther(PyObject *globals, const char *s);
+/* eval(text) of a value the game wrote (save and engine variables, network messages, event names, data lines) in the
+ * namespace globals (a module or a dict object): the checks of builtin eval (TypeError, ValueError), then the literal
+ * of the text after its leading blanks (Native_LiteralNone, None as LOAD_NAME finds it, when the globals give valid
+ * __builtins__); any other text raises Script_NotRead's SyntaxError, no Python runs. Script_EvalIn the same in the
+ * globals of a script module. 1 with *out, 0 with the error */
+byte Script_EvalText(const struct nativeVal_s *globals, const struct nativeVal_s *text, struct nativeVal_s *out);
+byte Script_EvalIn(const char *module, const struct nativeVal_s *text, struct nativeVal_s *out);
+/* the rest of Script_EvalText for a text s (leading blanks skipped) that the literal reader did not take: a name chain
+ * as eval runs it (its value or NameError), else Script_NotRead's SyntaxError, for two names or numbers with blanks
+ * between them with the 1.5.2 parser's message and position. Also used by Native_EvalText. 1 with *out, 0 with the
+ * error */
+byte Script_EvalOther(const struct nativeVal_s *globals, const char *s, struct nativeVal_s *out);
+/* a line in the log of the gate of the pack modules (SCRAP_PY_GATE, PythonInit.c): the level, what, the module name, a
+ * detail; nothing when it is off */
+void Script_GateNote(const char *what, const char *name, const char *detail);
 /* the error for a text of Python that no C reader takes and nothing runs: SyntaxError "invalid syntax" (the last
  * line of the traceback eval or exec print for it), noted in the gate log (SCRAP_PY_GATE, event "notread", where
  * names the reader); NULL */
 PyObject *Script_NotRead(const char *where, const char *text);
-/* what eval of s (after the blanks eval skips) in globals gives when s is a plain literal: an int, long or float in
- * decimal (with exponent), a string in single or double quotes (with escapes), None, a list, tuple or dict of those,
- * '-' before a number, blanks between (the constants shared and interned as the compiler makes them). A new
- * reference, else NULL without an error (anything else, also when the globals lack valid __builtins__) */
-PyObject *Script_Literal(PyObject *globals, const char *s);
 /* the globals give a frame valid builtins (a dict or a module in __builtins__), as exec and eval need */
-byte Script_HasBuiltins(PyObject *globals);
+byte Script_HasBuiltins(const struct nativeVal_s *globals);
 /* a string constant of len chars as the compiler makes it (interned when it has only name characters) */
 PyObject *Script_StrConst(const char *s, int len);
 /* s[0:len] is a Python 1.5.2 name (ASCII letters, digits and _, not a keyword) */
@@ -337,11 +349,12 @@ byte Script_IsName(const char *s, int len);
 /* o is a string that between single quotes in a line of Python is itself again; the same for the n bytes of s */
 byte Script_IsQuotable(PyObject *o);
 byte Script_IsQuotableText(const char *s, int n);
-/* a NAME(.NAME)* text evaluated with the locals, the globals and their builtins (no blanks; each name may be followed
- * by subscripts [n] of a decimal int as repr writes it, "ShipEdit.editedShips[3].Model"): 1 with a new reference in
- * *out, -1 with the error of the lookup set (NameError, AttributeError, IndexError), 0 when text is not such a
- * chain */
-int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyObject **out);
+/* a NAME(.NAME)* text evaluated with the locals, the globals and their builtins (namespaces: a module or a dict
+ * object; no blanks; each name may be followed by subscripts [n] of a decimal int as repr writes it,
+ * "ShipEdit.editedShips[3].Model"): 1 with *out, -1 with the error of the lookup set (NameError, AttributeError,
+ * IndexError), 0 when text is not such a chain or the globals have no valid builtins */
+int Script_NameChain(const struct nativeVal_s *locals, const struct nativeVal_s *globals, const char *text,
+	struct nativeVal_s *out);
 
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern const portFn_t g_MenuVideoMethods[];

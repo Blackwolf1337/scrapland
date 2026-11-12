@@ -1,20 +1,10 @@
 /*
  * The built-in modules of the Python library of ScrapC.exe, the table of Scrap.exe in its order: the
- * engine modules (src/game/PyInterface), then the standard ones of the 1.5.2 Windows build that the game kept.
+ * engine modules (native, src/game/PyInterface, made by src/game/Script/ScriptImport.c: no init function here, the
+ * names stay for sys.builtin_module_names), then the standard ones of the 1.5.2 Windows build that the game kept.
  */
 #include "Python.h"
 
-extern void initScrap Py_PROTO((void));
-extern void initSInput Py_PROTO((void));
-extern void initSNet Py_PROTO((void));
-extern void initSWeap Py_PROTO((void));
-extern void initSScorer Py_PROTO((void));
-extern void initSVec Py_PROTO((void));
-extern void initSSound Py_PROTO((void));
-extern void initSAI Py_PROTO((void));
-extern void initSAct Py_PROTO((void));
-extern void initSLogic Py_PROTO((void));
-extern void initSFX Py_PROTO((void));
 extern void initerrno Py_PROTO((void));
 extern void initmath Py_PROTO((void));
 extern void initnew Py_PROTO((void));
@@ -26,17 +16,17 @@ extern void PyMarshal_Init Py_PROTO((void));
 extern void initimp Py_PROTO((void));
 
 struct _inittab _PyImport_Inittab[] = {
-	{ "Scrap", initScrap },
-	{ "SInput", initSInput },
-	{ "SNet", initSNet },
-	{ "SWeap", initSWeap },
-	{ "SScorer", initSScorer },
-	{ "SVec", initSVec },
-	{ "SSound", initSSound },
-	{ "SAI", initSAI },
-	{ "SAct", initSAct },
-	{ "SLogic", initSLogic },
-	{ "SFX", initSFX },
+	{ "Scrap", NULL },
+	{ "SInput", NULL },
+	{ "SNet", NULL },
+	{ "SWeap", NULL },
+	{ "SScorer", NULL },
+	{ "SVec", NULL },
+	{ "SSound", NULL },
+	{ "SAI", NULL },
+	{ "SAct", NULL },
+	{ "SLogic", NULL },
+	{ "SFX", NULL },
 	{ "errno", initerrno },
 	{ "math", initmath },
 	{ "new", initnew },

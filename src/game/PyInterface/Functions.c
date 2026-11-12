@@ -249,11 +249,13 @@ static byte cPy_Function_SetValue(cPy_Function *self, const char *module, const 
 	if (!module || !func) {
 		return 0;
 	}
-	PyObject *m = Script_ModuleAdd(module);
-	if (!m) {
+	nativeVal_t m;
+	if (!Script_ModuleAdd(module, &m)) {
 		Con_Warnf("cPy_Function::SetFunc: Module does not exist.\n '%s'.'%s'\n", module, func);
 	} else {
-		ModVar_RefOfDict(PyModule_GetDict(m), &ref);
+		/* the store holds the module while the ref is used */
+		ModVar_OfVal(&m, &ref);
+		Native_Free(&m);
 		if (!ModVar_GetVal(&ref, func, &v)) {
 			Con_Warnf("cPy_Function::SetFunc: No function in module.\n '%s'.'%s'\n", module, func);
 		} else if (!NObj_Callable(&v)) {

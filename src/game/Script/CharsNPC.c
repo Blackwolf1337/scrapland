@@ -62,10 +62,9 @@ static nativeVal_t npc_spawnPosInits;
  * the key order of the class dict) makes the method without a class, and the hook after the class statement gives it
  * the class without a write to the dict. The class and the method then hold each other until CharsNPC_Close.
  */
-int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals, nativeVal_t *body) {
+int CharsNPC_ModSpawnPosInit(const nativeVal_t *module, nativeVal_t *body) {
 	nativeVal_t f, m, key;
 	(void)module;
-	(void)locals;
 	if (!body) {
 		return Native_Raise(NE_SYSTEM, "CharSpawnPos: the __init__ hook outside the class body");
 	}
@@ -85,10 +84,9 @@ int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals, nativeVal_t *bo
 	return ok;
 }
 
-int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals, nativeVal_t *body) {
+int CharsNPC_ModSpawnPosClass(const nativeVal_t *module, nativeVal_t *body) {
 	nativeVal_t cls, m;
 	(void)module;
-	(void)locals;
 	(void)body;
 	if (!Mode_RefG(NPC, "CharSpawnPos", &cls)) {
 		return 0;

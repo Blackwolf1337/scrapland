@@ -1,11 +1,15 @@
 /*
- * The script handles of entities (cEntityRef) and their Python type cPyEntity (method table cPyEntity_methods). The
- * original source file is not known (no CHECK in these functions); the type lives in PyInterface/. Angles are degrees
- * in the script API and radians for the engine (deg * pi / 180 in double, then float). The methods and the attributes
- * work on native values (the handle as NV_ENT, stage 7 batch 7c of docs/objlib-plan.md); the type functions are the
- * Python face on them.
+ * The script handles of entities (cEntityRef), their attributes and methods, and their Python type cPyEntity (method
+ * table cPyEntity_methods). The original source file is not known (no CHECK in these functions); the type lives in
+ * PyInterface/. Angles are degrees in the script API and radians for the engine (deg * pi / 180 in double, then
+ * float). The methods and the attributes work on native values (the handle as NV_ENT, stage 7 batch 7c of
+ * docs/objlib-plan.md; Native_EntGetAttr); the type functions are the Python face on them (OBJLIB 7e4b: the bridge).
  */
+#include <stdlib.h>
+#include <string.h>
+
 #include "scrap/console.h"
+#include "scrap/nativeobj.h"
 #include "scrap/pyentity.h"
 #include "scrap/scriptapi.h"
 
@@ -122,6 +126,63 @@ ENT_FN(IsType) {
 	return Api_Build(out, "i", Entity_IsType(e, type) ? 1 : 0);
 }
 
+/* the methods as a handle gives them (the method table of cPyEntity, in its order) */
+static const portFn_t ent_methods[] = {
+	PORT_FN(Del, cPyEntity_Del),
+	PORT_FN(SetModel, cPyEntity_SetModel),
+	PORT_FN(SetFX, cPyEntity_SetFX),
+	PORT_FN(GetTgAng, cPyEntity_GetTgAng),
+	PORT_FN(DrawWeap, cPyEntity_DrawWeap),
+	PORT_FN(IsType, cPyEntity_IsType),
+	PORT_FNEND
+};
+
+static int Ent_CompareNames(const void *a, const void *b) {
+	return strcmp(*(const char *const *)a, *(const char *const *)b);
+}
+
+byte Native_EntGetAttr(const nativeVal_t *h, const char *name, nativeVal_t *out) {
+	cEntity *e = Native_Ent(h);
+	nativeVal_t v;
+
+	Native_SetNone(out);
+	if (!e) {
+		/* the getattr of the type returns NULL without an error */
+		Con_Errorf("'%s'->%s : Entity invalid.\n", Native_EntName(h), name);
+		return 0;
+	}
+	if (Native_EntRead(e, name, &v)) {
+		/* the variable as the face gives it to Python and back: a vector as the tuple of its floats */
+		NObj_CallArg(&v, out);
+		Native_Free(&v);
+		return 1;
+	}
+	/* Py_FindMethod: __methods__ (the names sorted), then the methods by name; the type has no __doc__ */
+	if (!strcmp(name, "__methods__")) {
+		const char *names[sizeof(ent_methods) / sizeof(ent_methods[0])];
+		int n = 0;
+		for (; ent_methods[n].name; n++) {
+			names[n] = ent_methods[n].name;
+		}
+		qsort((void *)names, (size_t)n, sizeof(names[0]), Ent_CompareNames);
+		Native_SetEmpty(out, NV_LIST);
+		for (int i = 0; i < n; i++) {
+			Native_SetStr(Native_Append(out), names[i]);
+		}
+		NObj_Share(out);
+		return 1;
+	}
+	for (const portFn_t *m = ent_methods; m->name; m++) {
+		if (!strcmp(m->name, name)) {
+			NObj_NewBound(out, m->name, m->entry, h);
+			return 1;
+		}
+	}
+	Native_Raise(NE_ATTRIBUTE, "%s", name);
+	Con_Errorf("'%s'->%s : Member invalid.\n", Native_EntName(h), name);
+	return 0;
+}
+
 /* the handles (cEntityRef) */
 
 cEntityRef *EntRef_New(const char *name) {
@@ -168,6 +229,10 @@ PyObject *PyEntity_Face(cEntityRef *ref) {
 	return (PyObject *)self;
 }
 
+PyTypeObject *PyEntity_Type(void) {
+	return &cPyEntity_Type;
+}
+
 byte PyEntity_Check(PyObject *o) {
 	return o->ob_type == &cPyEntity_Type;
 }
@@ -179,7 +244,7 @@ static void PyEntity_Dealloc(PyObject *self) {
 		ref->face = NULL;
 		EntRef_Drop(ref);
 	}
-	PyPool_Free(self);
+	ScriptPool_Free(self);
 }
 
 /* tp_print: the text goes to fprintf as the format, like in the original */

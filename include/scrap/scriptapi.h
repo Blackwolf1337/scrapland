@@ -29,16 +29,17 @@
 
 #include "scrap/scriptmodes.h"
 
-/* init<name> of an engine module (the built-in module table of Python, src/python/config.c; rva the function in
- * Scrap.exe): the module made from its function table <name>_methods (portFn_t, in the file of the module) */
+/* the maker of an engine module (init<name> of Scrap.exe at rva, in the built-in module table; the import of
+ * src/game/Script/ScriptImport.c calls Api_Make<name>): the module made from its function table <name>_methods
+ * (portFn_t, in the file of the module) */
 #define SD_PY_MODULE(name, rva) \
-	void init##name(void) { \
-		Api_Module(#name, name##_methods); \
+	void Api_Make##name(nativeVal_t *out); \
+	void Api_Make##name(nativeVal_t *out) { \
+		Api_Module(#name, name##_methods, out); \
 	}
-/* the engine module name with a native function object per row of fns (stage 7e: NObj_NewPortFunc of its ref, put in
- * as Py_InitModule put in the C function objects of a PyMethodDef table: in table order, a name twice the last one;
- * OBJLIB 7e3: the module object is Python's, its dict holds the C function objects of the port functions) */
-void Api_Module(const char *name, const portFn_t *fns);
+/* the engine module name into *out with a native function object per row of fns (NObj_NewPortFunc of its ref, put in
+ * as Py_InitModule put in the C function objects of a PyMethodDef table: in table order, a name twice the last one) */
+void Api_Module(const char *name, const portFn_t *fns, nativeVal_t *out);
 
 /* the engine function name of module pre: pre_name_E, its entry, whose body follows the macro (a, n and out may stay
  * unused); its row in the function table is PORT_FN(name, pre_name) */
@@ -53,9 +54,6 @@ void Api_Module(const char *name, const portFn_t *fns);
  * are skipped. Always 1
  */
 byte Api_Build(nativeVal_t *out, const char *fmt, ...);
-/* the Python object o (a new reference, released here: a scorer item of SScorer.GetItem) as an NV_OBJ in *out
- * (OBJLIB 7): 1, or 0 for NULL (the error as it is) */
-byte Api_Object(PyObject *o, nativeVal_t *out);
 /* a new handle of the entity called name as an NV_ENT in *out (Native_SetEnt): 1, or 0 without an error when there is
  * no such entity (the adapter's NULL: the SystemError of the call) */
 byte Api_Handle(const char *name, nativeVal_t *out);

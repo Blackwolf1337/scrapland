@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/nativeobj.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 
@@ -72,11 +73,19 @@ byte Exec_Bound(execScope_t *x, const char *name) {
 	return Exec_Find(x, name) != NULL;
 }
 
-/* the value of a variable as the object a chain goes on with (a new reference, NULL with the error), NULL without an
- * error when the function has no such variable */
-static PyObject *Exec_Local(execScope_t *x, const char *name) {
+/* the value of a variable as the object a chain goes on with (as a call through Python hands it on, NObj_CallArg; a
+ * module by its name): 1 with *out, 0 with the error, -1 without one when the function has no such variable */
+static int Exec_Local(execScope_t *x, const char *name, nativeVal_t *out) {
 	const execVar_t *var = Exec_Find(x, name);
-	return !var ? NULL : var->v ? Native_ToPy(var->v) : Script_Module(var->name);
+	Native_SetNone(out);
+	if (!var) {
+		return -1;
+	}
+	if (var->v) {
+		NObj_CallArg(var->v, out);
+		return 1;
+	}
+	return Script_Module(var->name, out);
 }
 
 /* ---- the reader ---- */
@@ -278,12 +287,16 @@ static byte Exec_Args(const execTrailer_t *t, nativeVal_t *args) {
 	return 1;
 }
 
-/* f(a[0], ...) with f what the chain gave (given away; NULL fails with the error set): the entry of the port or
- * engine function f is, else the call of the value (Port_Values). The result into *out (a new reference), or dropped
- * at once (out NULL: the statement) */
-static byte Exec_CallValue(PyObject *f, const nativeVal_t *a, int n, PyObject **out) {
-	byte ok = f && Port_Values(PORT_VSITE(), f, a, n, NULL, out);
-	Py_XDECREF(f);
+/* f(a[0], ...) with f what the chain gave: the entry of the port or engine function f is, else the call of the value
+ * (Port_ValuesOf). The result into *out, or dropped at once (out NULL: the statement) */
+static byte Exec_CallValue(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t r;
+	byte ok = Port_ValuesOf(PORT_VSITE(), f, a, n, &r, NULL);
+	if (ok && out) {
+		*out = r;
+	} else if (ok) {
+		Native_Free(&r);
+	}
 	return ok || Exec_Fail();
 }
 
@@ -300,7 +313,7 @@ byte Exec_Import(execScope_t *x, const char *name) {
 
 /* a statement as exec runs it: LOAD_NAME through the variables of the function, the globals and the builtins; an
  * import stored in the variables; the value of an assignment made before its target; the result of a call dropped */
-static byte Exec_Run(execScope_t *x, PyObject *globals, const execStmt_t *st) {
+static byte Exec_Run(execScope_t *x, const nativeVal_t *globals, const execStmt_t *st) {
 	char name[EXEC_NAME];
 	nativeVal_t value;
 	if (st->import) {
@@ -311,56 +324,56 @@ static byte Exec_Run(execScope_t *x, PyObject *globals, const execStmt_t *st) {
 		Native_Free(&value);
 		return Exec_Fail();
 	}
-	PyObject *v = Exec_Local(x, st->name);
-	if (!v && !Exec_Bound(x, st->name) && Script_NameChain(NULL, globals, st->name, &v) <= 0) {
-		v = NULL;
+	nativeVal_t v;
+	int found = Exec_Local(x, st->name, &v);
+	if (found < 0 && !Exec_Bound(x, st->name)) {
+		found = Script_NameChain(NULL, globals, st->name, &v);
 	}
 	int last = st->value ? st->n - 1 : st->n;
-	byte ok = v != NULL || Exec_Fail();
+	byte ok = found > 0 || Exec_Fail();
 	for (int i = 0; ok && i < last; i++) {
 		const execTrailer_t *t = &st->t[i];
+		nativeVal_t r;
 		if (t->kind == '.') {
 			Str_Copy(name, t->text, t->len + 1);
-			PyObject *r = Script_GetAttr(v, name);
-			Py_DECREF(v);
+			ok = NObj_GetAttr(&v, name, &r) || Exec_Fail();
+			Native_Free(&v);
 			v = r;
-			ok = v != NULL;
 		} else {
 			nativeVal_t args;
 			byte drop = i == last - 1 && !st->value;
-			PyObject *r = NULL;
-			ok = Exec_Args(t, &args) && Exec_CallValue(Script_Ref(v), args.items, args.n, drop ? NULL : &r);
+			ok = Exec_Args(t, &args) && Exec_CallValue(&v, args.items, args.n, drop ? NULL : &r);
 			Native_Free(&args);
-			if (!drop) {
-				Py_DECREF(v);
+			if (ok && !drop) {
+				Native_Free(&v);
 				v = r;
 			}
 		}
 	}
 	if (ok && st->value) {
 		Str_Copy(name, st->t[last].text, st->t[last].len + 1);
-		ok = Mode_HSet(v, name, &value) || Exec_Fail();
+		ok = Mode_VSet(&v, name, &value) || Exec_Fail();
 	}
-	Py_XDECREF(v);
+	Native_Free(&v);
 	Native_Free(&value);
 	return ok;
 }
 
 byte Exec_Text(execScope_t *x, const nativeVal_t *code) {
-	PyObject *m = Script_Module(x->module);
-	if (!m) {
+	nativeVal_t m;
+	if (!Script_Module(x->module, &m)) {
 		return Exec_Fail();
 	}
 	if (code->type != NV_STR) {
-		Py_DECREF(m);
+		Native_Free(&m);
 		return Native_Raise(NE_TYPE, "exec 1st arg must be string, code or file object");
 	}
 	const char *s = Native_Text(code), *p = s;
 	if ((int)strlen(s) != code->n) {
-		Py_DECREF(m);
+		Native_Free(&m);
 		return Native_Raise(NE_VALUE, "embedded '\\0' in exec string");
 	}
-	PyObject *g = PyModule_GetDict(m);
+	const nativeVal_t *g = &m;
 	execStmt_t st[EXEC_STMTS];
 	int n = 0;
 	/* a line that starts with a blank is exec's SyntaxError (also when it has nothing else); "" is nothing */
@@ -380,7 +393,7 @@ byte Exec_Text(execScope_t *x, const nativeVal_t *code) {
 		/* a line in another form (the console, a hand-edited save, a mod) is Script_NotRead's error */
 		ok = Script_NotRead("exec", s) != NULL;
 	}
-	Py_DECREF(m);
+	Native_Free(&m);
 	return ok;
 }
 
@@ -416,9 +429,15 @@ byte Exec_Cat(nativeVal_t *out, int n, ...) {
 }
 
 byte Exec_Call(execScope_t *x, const char *name, const char *func, const nativeVal_t *a, int n) {
-	PyObject *o = Exec_Local(x, name), *f = o ? Script_GetAttr(o, func) : NULL;
-	Py_XDECREF(o);
-	return Exec_CallValue(f, a, n, NULL);
+	nativeVal_t o, f;
+	byte ok = Exec_Local(x, name, &o) > 0 && (NObj_GetAttr(&o, func, &f) || (Script_Fail(), 0));
+	Native_Free(&o);
+	if (!ok) {
+		return Exec_Fail();
+	}
+	ok = Exec_CallValue(&f, a, n, NULL);
+	Native_Free(&f);
+	return ok;
 }
 
 byte Exec_ImportText(execScope_t *x, const nativeVal_t *name) {

@@ -16,14 +16,9 @@
 #undef PyEval_CallObject
 PyObject *PyEval_CallObject(PyObject *func, PyObject *args);
 
-/*
- * malloc, realloc and free of the interpreter: the engine counts them in its "Python" memory pool (
- * 0x193620, 0x1935c0). The PyMem_ and PyObject_NEW/DEL macros of the headers would call the DLL's CRT instead,
- * so the C code uses these and _PyObject_New.
- */
-void *PyPool_Malloc(size_t size);
-void *PyPool_Realloc(void *p, size_t size);
-void PyPool_Free(void *p);
+/* malloc, realloc and free of the Python library are those of the script pool (scrap/mempool.h). The PyMem_ and
+ * PyObject_NEW/DEL macros of the headers would call the DLL's CRT instead, so the C code uses these and _PyObject_New */
+#include "scrap/mempool.h"
 
 /* None with a new reference, the result of a method that returns nothing */
 static inline PyObject *Py_ReturnNone(void) {
@@ -31,12 +26,11 @@ static inline PyObject *Py_ReturnNone(void) {
 	return Py_None;
 }
 
-/* the engine's flag in its import.c (src/python/import.c) */
-extern int g_PyPackImport;
-/* told of every .py or .pyc the import of Python would read (not the preloaded modules): it refuses each one with
- * ImportError set (the gate of PythonInit.c, SCRAP_PY_GATE) */
-extern void (*g_PyImportGate)(const char *path);
-/* a line in the log of the gate (SCRAP_PY_GATE): the level, what, the module name, a detail; nothing when it is off */
-void Py_GateNote(const char *what, const char *name, const char *detail);
+/* OBJLIB 7e4b: the built-in module name of the library as its init function makes it, without an interpreter (a new
+ * reference, NULL with the error: ImportError for a name the table does not have), and sys.path as Py_Initialize made
+ * it (a new list, src/python/import.c) */
+PyObject *Py_LibModule(const char *name);
+PyObject *Py_LibPath(void);
+
 
 #endif

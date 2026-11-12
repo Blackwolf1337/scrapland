@@ -11,7 +11,7 @@
 #include "scrap/gvar.h"
 #include "scrap/dlist.h"
 #include "scrap/filesys.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 
 #define PACK_MAGIC 0x4b504642		/* "BFPK" */
 #define PACK_VERSION 0

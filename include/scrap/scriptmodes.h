@@ -79,15 +79,8 @@ byte Mode_Print(const nativeVal_t *const *items, int n);
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
 /* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
 byte Mode_NextInSlot(cEntity **e);
-/* handle-or-object helpers: o.var, o.var = v, o.SetModel(file) as the script does them on any value (an entity
- * handle in C, any other object the Python way with its errors) */
-byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out);
-byte Mode_HSet(PyObject *o, const char *var, const nativeVal_t *v);
-byte Mode_HSetModel(PyObject *o, const char *module, const char *modelVar);
-/* o.SetModel(file) with the file given */
-byte Mode_HModel(PyObject *o, const nativeVal_t *file);
-/* the same on a value (an entity handle, NV_ENT, in C without a Python object; another object the Python way; a native
- * value with the error of its getattr or setattr) */
+/* o.var, o.var = v as the script does them on any value: an entity handle with its console lines, any other value
+ * through NObj_GetAttr and NObj_SetAttr with their errors (the attribute as a plain value, NObj_Plain) */
 byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out);
 byte Mode_VSet(const nativeVal_t *o, const char *var, const nativeVal_t *v);
 /* the entity of a handle the script holds by the name it was made with: var of it (an entity that is gone: the
@@ -198,14 +191,11 @@ byte Mode_EntHandle(cEntity *e, nativeVal_t *out);
 /* Scrap.GetEntity(name) as the handle value (NV_ENT) or None */
 byte Mode_EntityH(const nativeVal_t *name, nativeVal_t *out);
 /* h.IsType(type), h.Del(), h.SetModel(file) of a value of the script: an entity handle in C (None and a handle whose
- * entity is gone with the errors of the script), another object the Python way. IsType gives 1 or 0, -1 with the
- * error */
+ * entity is gone with the errors of the script), another object by its attribute (Mode_VBoundV). IsType gives 1 or 0,
+ * -1 with the error */
 int Mode_VIsType(const nativeVal_t *h, const char *type);
 byte Mode_VDel(const nativeVal_t *h);
 byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file);
-/* h.method as a bound method (OBJLIB 7: what the scheduler keeps, e.g. l.Del, the Python way until entities are C): a
- * new reference, NULL with the error */
-PyObject *Mode_VBound(const nativeVal_t *h, const char *method);
 /* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (through the seam with those arguments) */
 byte Mode_PreloadOnes(const nativeVal_t *name);
 /* Scrap.EntityListGet(list, var): a text (None for none), a float or an int; the engine's console line and NULL result
@@ -276,36 +266,17 @@ byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out);
  * module) */
 byte Mode_PurgeServerMapList(const char *module);
 
-/* ---- adapters ---- */
+/* ---- entries ---- */
 
-/* OBJLIB 7e2: the macros below still make the adapter of a PyMethodDef table next to the entry, [[maybe_unused]]: a
- * file whose table is a function table (portFn_t, scrap/scriptnative.h) uses only the entry. They go with the last
- * PyMethodDef table of the ports. */
-
-/* the n arguments of an adapter (the arity error of PyArg_ParseTuple, up to 11) as native values of t, one after the
- * other from *a (Native_Arg: an entity handle as NV_ENT, other objects as NV_OBJ) */
-byte Mode_Args(PyObject *args, int n, modeVals_t *t, nativeVal_t **a);
-/* the result of an adapter: NULL for 0, None when out is None, else out as a Python value; t freed */
-PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
 /* a function of a module (prefix pre) with nargs arguments (a) and the core call; out is the result: pre_name_E, its
- * native entry (portEntry_t: the direct calls of other ports, stage 3), and pre_name, its adapter for the PyMethodDef
- * table (the arguments as native values, the entry, the result as Python) */
+ * native entry (portEntry_t: the row of its function table, the direct calls of other ports) */
 #define MODE_FN(pre, name, nargs, call) \
 	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		(void)a; \
 		(void)out; \
 		return n == (nargs) ? (call) : Port_Arity(n, nargs); \
-	} \
-	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *a, *out = Mode_V(&t); \
-		(void)self; \
-		if (!Mode_Args(args, nargs, &t, &a)) { \
-			return Mode_Done(&t, 0), NULL; \
-		} \
-		return Mode_Out(&t, pre##_##name##_E(a, nargs, out), out); \
 	}
-/* the value as the result of an adapter (freed), NULL for 0 */
+/* OBJLIB 7e4b: the value as the result of a function of a Python face (freed), NULL for 0 */
 PyObject *Mode_Return(byte ok, nativeVal_t *v);
 
 /* ---- helpers of the native super deals (SuperDeals.c) ---- */
@@ -682,9 +653,6 @@ byte Mode_First(nativeVal_t *out);
 /* dict[key] of a dict variable of the module as the object it is (a list in it changed in place): 1 with *out
  * (Native_Free it), 0 with the error (the NameError of the global, the errors of the subscript) */
 byte Mode_AtVal(const char *module, const char *dict, const nativeVal_t *key, nativeVal_t *out);
-/* the arguments of a keyword function (fmt and names of PyArg_ParseTupleAndKeywords, n of them, up to 8) as native
- * values into a (None when not given, given[i] 0 then; given may be NULL) */
-byte Mode_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, int n, nativeVal_t *a, byte *given);
 /* the n arguments of a keyword function freed and the result as the adapter returns it (out NULL or None: None; out
  * freed) */
 PyObject *Mode_KwOut(nativeVal_t *a, int n, byte ok, nativeVal_t *out);
@@ -874,27 +842,14 @@ byte Mode_Arity(int n, int min, int max);
 /* the least (*min) and the most (*max) arguments of a PyArg format: letters and groups at the top level, the least
  * those before the '|' */
 void Mode_FmtCount(const char *fmt, int *min, int *max);
-/* the arguments of an adapter with min required and up to max in all ("O..|O.." of PyArg_ParseTuple, max up to 11) as
- * native values of t, one after the other from *a (those not given None): the count given, -1 with the error */
-int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **a);
-/* MODE_FN for a function with optional arguments: the entry checks min <= n <= max, the adapter takes them with
- * Mode_OptArgs; call sees n, the count given, and MODE_OPT(i) is argument i or NULL when it is not given */
+/* MODE_FN for a function with optional arguments: the entry checks min <= n <= max; call sees n, the count given, and
+ * MODE_OPT(i) is argument i or NULL when it is not given */
 #define MODE_OPT(i) (n > (i) ? &a[i] : NULL)
 #define MODE_FNOPT(pre, name, min, max, call) \
 	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		(void)a; \
 		(void)out; \
 		return Mode_Arity(n, min, max) ? (call) : 0; \
-	} \
-	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *a, *out = Mode_V(&t); \
-		(void)self; \
-		int n = Mode_OptArgs(args, min, max, &t, &a); \
-		if (n < 0) { \
-			return Mode_Done(&t, 0), NULL; \
-		} \
-		return Mode_Out(&t, pre##_##name##_E(a, n, out), out); \
 	}
 /* MODE_FN for a function that does not look at its arguments (any count, none parsed) */
 #define MODE_FNANY(pre, name, call) \
@@ -903,13 +858,6 @@ int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **
 		(void)n; \
 		(void)out; \
 		return (call); \
-	} \
-	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		modeVals_t t = { .n = 0 }; \
-		nativeVal_t *out = Mode_V(&t); \
-		(void)self; \
-		(void)args; \
-		return Mode_Out(&t, pre##_##name##_E(NULL, 0, out), out); \
 	}
 /* ---- native entries of hand and keyword adapters (stage 3, batch A2a) ---- */
 
@@ -929,9 +877,6 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
  * slot order and without outputs (the errors vgetargskeywords gives before an unknown keyword): 1, or 0 with the
  * error */
 byte Mode_ParseSlots(const nativeVal_t *a, int n, const char *fmt);
-/* the adapter of a function whose entry checks its own arguments (Mode_Parse, Port_Arity): the arguments as native
- * values (Native_Arg), the entry, the result as Python (None for None, NULL for 0) */
-PyObject *Mode_Entry(PyObject *args, portEntry_t entry);
 /* the same for a method of an object (the methods of the entity handles): self as the first argument of the entry,
  * the arguments of the call after it (self NULL: Mode_Entry) */
 PyObject *Mode_SelfEntry(PyObject *self, PyObject *args, portEntry_t entry);
@@ -942,27 +887,17 @@ typedef byte (*modeKwCore_t)(const nativeVal_t *const *a, nativeVal_t *out);
 byte Mode_KwEntry(const nativeVal_t *a, int n, const char *fmt, modeKwCore_t core, nativeVal_t *out);
 /* argument i of the n of a keyword entry is given: i < n and not skipped (Mode_KwSkip) */
 byte Mode_KwGiven(const nativeVal_t *a, int n, int i);
-/* a function with its adapter named fn whose first argument is an int id ("i"), nargs arguments in all (the others
- * native values in a): fn_E, its entry, and fn, its adapter */
+/* a function named fn whose first argument is an int id ("i"), nargs arguments in all (the others native values in a):
+ * fn_E, its entry */
 #define MODE_IFN(fn, nargs, call) \
 	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		int id; \
 		(void)out; \
 		return n != (nargs) ? Port_Arity(n, nargs) : Mode_ArgInt(&a[0], &id) && (call); \
-	} \
-	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Mode_Entry(args, fn##_E); \
 	}
 
 /* ---- the native entries of stage 3 batch A1 (hand, keyword and PyArg adapters on their entries) ---- */
 
-/* pre_name, the PyArg adapter of the entry pre_name_E (Mode_Entry) */
-#define MODE_ADAPTER(pre, name) \
-	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Mode_Entry(args, pre##_##name##_E); \
-	}
 /* an argument of a keyword entry that is not given (a keyword call skips it): NV_OBJ without an object, a value no
  * conversion makes; Mode_KwEntry and Mode_KwSlots take it as not given */
 void Mode_KwSkip(nativeVal_t *v);
@@ -977,9 +912,6 @@ byte Mode_KwArity(const nativeVal_t *a, int n, const char *fmt);
 void Mode_KwDefS(nativeVal_t *v, const byte *given, int i, const char *s);
 void Mode_KwDefI(nativeVal_t *v, const byte *given, int i, long l);
 void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f);
-/* a keyword adapter on its entry: the arguments by name (Mode_Kw with fmt and names), the ones not given as
- * Mode_KwSkip, the entry, the result as Mode_KwOut gives it */
-PyObject *Mode_KwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* the native twins of the functions of string (strop) and math that the ports call, through PORT_CALL(string, find,
  * ...): the same results and errors as Python 1.5.2's; no seam (OBJLIB 9: nothing replaces them), an argument that
  * holds an NV_OBJ and SCRAP_PORT_SLOW=1 call the module's function by name */
@@ -994,7 +926,7 @@ PORT_DECL(math, fabs)
 PORT_DECL(math, fmod)
 /* a keyword function of a module (prefix pre): the format (letters O, | before the optional ones, up to 8) and the
  * names of its arguments, then the body of pre_name_K(v, given, out) on the slots of Mode_KwSlots (the defaults of the
- * script with Mode_KwDef*): pre_name_E, its entry, pre_name, its adapter (Mode_KwAdapter), pre_name_N, the names, and
+ * script with Mode_KwDef*): pre_name_E, its entry, pre_name_N, the names, and
  * pre_name_F, the format (the keyword calls through its ref, PORT_DEFK) */
 #define MODE_KW(pre, name, fmt, ...) \
 	static char *pre##_##name##_N[] = { __VA_ARGS__, NULL }; \
@@ -1006,10 +938,6 @@ PORT_DECL(math, fmod)
 		byte given[8]; \
 		return Mode_KwSlots(a, n, fmt, v, given) && pre##_##name##_K(v, given, out); \
 	} \
-	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
-		(void)self; \
-		return Mode_KwAdapter(args, kw, fmt, pre##_##name##_N, pre##_##name##_E); \
-	} \
 	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out)
 
@@ -1017,18 +945,13 @@ PORT_DECL(math, fmod)
 
 /* the arguments (id[, control]) of an entry as Script_Args reads them: control "" when it is no text */
 byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
-/* a menu function (id[, control]) with its adapter named fn (Script_Args): fn_E, its entry, and fn, its adapter
- * (Mode_Entry); call sees id and control */
+/* a menu function (id[, control]) named fn (Script_Args): fn_E, its entry; call sees id and control */
 #define MODE_IDFN(fn, call) \
 	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		int id; \
 		const char *control; \
 		(void)out; \
 		return Mode_IdControl(a, n, &id, &control) && (call); \
-	} \
-	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Mode_Entry(args, fn##_E); \
 	}
 
 /*
@@ -1082,15 +1005,10 @@ byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out);
 
 /* ---- the ports without Python objects (stage 6, batch 6g) ---- */
 
-/* the adapter of a keyword function with a typed format (fmt and names of PyArg_ParseTupleAndKeywords; the letters
- * s, i, d, f and O, up to PORT_ARGS): the arguments parsed with fmt for its errors in their order, then the entry on
- * them as native values (a text, an int and a float as the parse converted them, an object as Native_Arg makes it,
- * one not given as Mode_KwSkip), the result as Mode_KwOut gives it */
-PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* MODE_KW for a function with a typed format: the body gets the slots as they were given (Mode_KwSlots) and converts
- * them with Mode_Parse (the defaults of the script set first: Mode_KwDef*). MODE_KWBY is the form with the adapter
- * and the function named (pasted in the macro the file writes: a module name can be a macro of the file); MODE_REFKW
- * (below) uses it with the adapter by reference */
+ * them with Mode_Parse (the defaults of the script set first: Mode_KwDef*). MODE_KWBY is the form with the function
+ * named (pasted in the macro the file writes: a module name can be a macro of the file); its first argument named the
+ * adapter of the PyMethodDef tables and is not used. MODE_REFKW (below) is the form by reference */
 #define MODE_KWBY(adapter, fn, fmt, ...) MODE_KWBYF(adapter, fn, fmt, fmt, __VA_ARGS__)
 /* MODE_KWBY with the text of fn_F given: "&" in front of the format for an entry that takes its arguments by
  * reference (MODE_REFKW: Port_KwCall hands the values over as they are) */
@@ -1103,10 +1021,6 @@ PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **nam
 		nativeVal_t v[PORT_ARGS]; \
 		byte given[PORT_ARGS]; \
 		return Mode_KwSlots(a, n, fmt, v, given) && fn##_K(v, given, out); \
-	} \
-	[[maybe_unused]] static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
-		(void)self; \
-		return adapter(args, kw, fmt, fn##_N, fn##_E); \
 	} \
 	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out)
@@ -1162,7 +1076,8 @@ byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v);
 byte Mode_RefToMod(const char *module, const char *var, const nativeVal_t *v);
 /* d.has_key(key) of a value of the script (the method of whatever value it is): 1, 0, -1 with the error */
 int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key);
-/* h.method as the bound method by reference (Mode_VBound: what the scheduler keeps, e.g. l.Del; OBJLIB 7) */
+/* h.method as the bound method (what the scheduler keeps, e.g. l.Del: NObj_GetAttr, a getattr that gives nothing
+ * without an error raises the SystemError of ceval) */
 byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out);
 /* eval(text) of a name with attributes and subscripts (NAME(.NAME | [n])*, as the game passes them) in a function of
  * the module of x: the variables and imports of x are the locals of the function, then the globals of the module and
@@ -1181,15 +1096,6 @@ byte Mode_WriteLine(const nativeVal_t *const *items, int n);
 /* o.name as the ports read an attribute (Script_GetAttr: the rules of a module's attributes, the SystemError of an
  * object that fails without an error), by reference */
 byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
-/* Mode_Entry with every argument by reference (an NV_OBJ that holds the caller's object, also a number, a text or a
- * list of plain values): the adapter of a function that keeps or changes the object it is given (OBJLIB 5 (7e:
- * adapters) and 7). MODE_REFADAPTER(pre, name) is that adapter of the entry pre_name_E */
-PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry);
-#define MODE_REFADAPTER(pre, name) \
-	[[maybe_unused]] static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Mode_RefEntry(args, pre##_##name##_E); \
-	}
 /* item i as a for loop of the script takes it from o (Script_Next): 1 with the item by reference, 0 at the IndexError
  * that ends the loop, -1 with another error */
 int Mode_RefNext(const nativeVal_t *o, int i, nativeVal_t *out);
@@ -1201,10 +1107,7 @@ int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b);
 byte Mode_RefRepr(const nativeVal_t *o, nativeVal_t *out);
 byte Mode_RefSlice(const nativeVal_t *o, long lo, long hi, nativeVal_t *out);
 byte Mode_RefIsNone(const nativeVal_t *o);
-/* Mode_KwTyped with the O arguments by reference (the keyword adapter of a function that works on the objects it is
- * given, as MODE_REFADAPTER) */
-PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
-/* MODE_KWT with that adapter */
+/* MODE_KWT with the arguments by reference (an entry that works on the objects it is given) */
 #define MODE_REFKW(pre, name, fmt, ...) MODE_KWBYF(Mode_RefKwAdapter, pre##_##name, fmt, "&" fmt, __VA_ARGS__)
 /* f(args...) of a value by reference with n values: a native object natively (NObj_Call), any other the Python call
  * of the object (Script_CallObject on the tuple of the values: a bound method, a function of a table; Mode_CallArgs

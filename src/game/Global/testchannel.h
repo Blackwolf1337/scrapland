@@ -38,7 +38,7 @@ byte TcX_SetMain(const char *name, const nativeVal_t *v);
  * answered as the game side of the MCP server (the old tools/mcp/mcpgame.py) answered a line: a single expression its
  * repr, statements the repr of the global "result" or ok, an error "error: <type>: <value>" (the statements after it
  * are not run); quiet: only an error answers */
-void TcX_Run(tcBuf *b, const char *line, PyObject *globals, byte quiet);
+void TcX_Run(tcBuf *b, const char *line, const nativeVal_t *globals, byte quiet);
 /* a native function of the channel's verbs (the recorder): call(ctx, a, n, out) runs it on the arguments, drop(ctx)
  * (NULL: nothing) frees the context with the function. The evaluator calls it natively; a call with keywords raises
  * the TypeError of a C function. OBJLIB 9: its object is a C function object of Python named name on the self

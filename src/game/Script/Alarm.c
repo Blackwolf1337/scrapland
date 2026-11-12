@@ -321,7 +321,7 @@ MODE_FN(NewsPanel, UseNewsPanel, 4, Np_UseNewsPanel(&a[1], &a[2]))
 MODE_FN(NewsPanel, EndOfNews, 0, Np_EndOfNews())
 MODE_FN(NewsPanel, SwitchAlarm, 1, Np_SwitchAlarm(&a[0]))
 
-static byte News_SettingsBody(PyObject *locals, PyObject *f, void *ctx) {
+static byte News_SettingsBody(const nativeVal_t *locals, PyObject *f, void *ctx) {
 	(void)ctx;
 	PyObject *apply = Script_ModuleName(locals, "apply");
 	PyObject *set = apply ? Script_ModuleName(locals, "Scrap.Set") : NULL;
@@ -335,7 +335,8 @@ static byte News_SettingsBody(PyObject *locals, PyObject *f, void *ctx) {
 /* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` (OBJLIB 7: a hook of
  * the module code, ScriptModule.c's table: it runs on the dict of the module's names, with the constants of the code
  * object as the compiler made them, `f` left in the module, apply and Scrap.Set looked up there) */
-int NewsPanel_ModSettings(PyObject *module, PyObject *locals, nativeVal_t *body) {
+int NewsPanel_ModSettings(const nativeVal_t *module, nativeVal_t *body) {
+	const nativeVal_t *locals = module;
 	(void)body;
 	static const struct {
 		const char *var;
@@ -350,7 +351,6 @@ int NewsPanel_ModSettings(PyObject *module, PyObject *locals, nativeVal_t *body)
 		{ "NewsPanelCloseSpeed", NULL, 4.0, 1 },
 	};
 	enum { NUM_VARS = sizeof(vars) / sizeof(vars[0]) };
-	(void)module;
 	PyObject *seq = PyTuple_New(NUM_VARS);
 	for (int i = 0; seq && i < NUM_VARS; i++) {
 		PyObject *v = vars[i].text ? Script_StrConst(vars[i].text, (int)strlen(vars[i].text)) :

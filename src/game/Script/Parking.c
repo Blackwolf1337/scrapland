@@ -29,6 +29,7 @@
  */
 #include <string.h>
 
+#include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -420,9 +421,10 @@ static byte Pk_IsCar(const nativeVal_t *v, nativeVal_t *out) {
 		}
 		return k >= 0;
 	}
-	PyObject *m = Mode_VBound(v, "IsType");
-	byte ok = m && Native_Call(m, out, "s", "Car");
-	Py_XDECREF(m);
+	nativeVal_t m, car;
+	Native_SetStr(&car, "Car");
+	byte ok = Mode_VBoundV(v, "IsType", &m) && NObj_Call(&m, &car, 1, out);
+	Native_Free(&m);
 	return ok;
 }
 

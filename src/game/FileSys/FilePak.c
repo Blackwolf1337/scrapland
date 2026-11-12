@@ -7,7 +7,7 @@
 #include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 #include "scrap/scrap.h"
 #include "scrap/platform.h"
 #include "scrap/actions.h"

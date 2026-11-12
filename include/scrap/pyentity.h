@@ -37,6 +37,8 @@ cEntityRef *EntRef_Keep(cEntityRef *ref);
 /* a holder less; the last one takes the link out of the ring and frees the handle */
 void EntRef_Drop(cEntityRef *ref);
 
+/* the type object cPyEntity */
+PyTypeObject *PyEntity_Type(void);
 /* o is an entity handle (cPyEntity) */
 byte PyEntity_Check(PyObject *o);
 
