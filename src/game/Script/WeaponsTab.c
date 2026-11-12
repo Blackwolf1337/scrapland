@@ -9,7 +9,7 @@
  * modules.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
- * PyMethodDef entries are adapters. The module's variables are read where the script reads them, the ship
+ * function table rows name the entries. The module's variables are read where the script reads them, the ship
  * being edited is HangarTab.prevShip as a handle value (OBJLIB 7), the tables of ShipMaker and the lists of
  * ShipEdit are read as their attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL:
  * directly while the attribute holds the port's function, else by name), the module's own functions through its
@@ -407,13 +407,11 @@ static byte WT_HideWeaponDesc_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return WT_HideTwo(a, n, "WeaponDesc", "WeaponDescTab");
 }
-MODE_ADAPTER(WT, HideWeaponDesc)
 
 static byte WT_HideWeaponUpgradeDesc_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return WT_HideTwo(a, n, "WeaponUpgradeDesc", "WeaponUpgradeDescTab");
 }
-MODE_ADAPTER(WT, HideWeaponUpgradeDesc)
 
 /* ShowWeaponUpgradeDesc(id, control, lostfocus): the text of the upgrade of the tile */
 static byte WT_ShowWeaponUpgradeDesc(int id, const nativeVal_t *control) {
@@ -1444,26 +1442,26 @@ static byte WT_HideWeaponsPanel(int id) {
 
 MODE_IFN(WT_HideWeaponsPanelPy, 1, WT_HideWeaponsPanel(id))
 
-PyMethodDef g_WeaponsTabMethods[] = {
-	{ "DoNothing", Mode_PyNone2, 1, NULL },
-	{ "ShowWeightPrediction", WT_ShowWeightPrediction, 1, NULL },
-	{ "HideWeightPrediction", WT_HideWeightPrediction, 1, NULL },
-	{ "ShowWeaponDesc", WT_ShowWeaponDescPy, 1, NULL },
-	{ "HideWeaponDesc", WT_HideWeaponDesc, 1, NULL },
-	{ "ShowWeaponUpgradeDesc", WT_ShowWeaponUpgradeDescPy, 1, NULL },
-	{ "HideWeaponUpgradeDesc", WT_HideWeaponUpgradeDesc, 1, NULL },
-	{ "ShowSlotMarker", WT_ShowSlotMarkerPy, 1, NULL },
-	{ "HideSlotMarker", WT_HideSlotMarkerPy, 1, NULL },
-	{ "LoadWeapon", WT_LoadWeaponPy, 1, NULL },
-	{ "HideSlots", WT_HideSlotsPy, 1, NULL },
-	{ "FillSlots", WT_FillSlotsPy, 1, NULL },
-	{ "UpdateUpgrades", WT_UpdateUpgradesPy, 1, NULL },
-	{ "SelectWeapon", WT_SelectWeaponPy, 1, NULL },
-	{ "SelectUpgrade", WT_SelectUpgradePy, 1, NULL },
-	{ "SetWeaponsPanel", WT_SetWeaponsPanelPy, 1, NULL },
-	{ "ShowWeaponsPanel", WT_ShowWeaponsPanelPy, 1, NULL },
-	{ "HideWeaponsPanel", WT_HideWeaponsPanelPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_WeaponsTabMethods[] = {
+	PORT_FN(DoNothing, Mode_PyNone2),
+	PORT_FN(ShowWeightPrediction, WT_ShowWeightPrediction),
+	PORT_FN(HideWeightPrediction, WT_HideWeightPrediction),
+	PORT_FN(ShowWeaponDesc, WT_ShowWeaponDescPy),
+	PORT_FN(HideWeaponDesc, WT_HideWeaponDesc),
+	PORT_FN(ShowWeaponUpgradeDesc, WT_ShowWeaponUpgradeDescPy),
+	PORT_FN(HideWeaponUpgradeDesc, WT_HideWeaponUpgradeDesc),
+	PORT_FN(ShowSlotMarker, WT_ShowSlotMarkerPy),
+	PORT_FN(HideSlotMarker, WT_HideSlotMarkerPy),
+	PORT_FN(LoadWeapon, WT_LoadWeaponPy),
+	PORT_FN(HideSlots, WT_HideSlotsPy),
+	PORT_FN(FillSlots, WT_FillSlotsPy),
+	PORT_FN(UpdateUpgrades, WT_UpdateUpgradesPy),
+	PORT_FN(SelectWeapon, WT_SelectWeaponPy),
+	PORT_FN(SelectUpgrade, WT_SelectUpgradePy),
+	PORT_FN(SetWeaponsPanel, WT_SetWeaponsPanelPy),
+	PORT_FN(ShowWeaponsPanel, WT_ShowWeaponsPanelPy),
+	PORT_FN(HideWeaponsPanel, WT_HideWeaponsPanelPy),
+	PORT_FNEND
 };
 
 PORTS(WeaponsTab)

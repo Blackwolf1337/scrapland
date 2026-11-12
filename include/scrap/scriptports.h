@@ -567,29 +567,29 @@ PORT_DECL(EnginesTab, HideEnginesPanel) /* 1 */
 PORT_DECL(EnginesTab, ScrollEngineListUp) /* 2 */
 PORT_DECL(EnginesTab, ScrollEngineListDown) /* 2 */
 #define PORTS_EnginesTab \
-	PORT_DEF(EnginesTab, HighlightCurrentMountedEngine, ET_HighlightCurrentMountedEngine) \
-	PORT_DEF(EnginesTab, ShowEngineDesc, ET_ShowEngineDescPy) \
-	PORT_DEF(EnginesTab, HideEngineDesc, ET_HideEngineDesc) \
-	PORT_DEF(EnginesTab, ChangeRecycleButtonState, ET_ChangeRecycleButtonState) \
-	PORT_DEF(EnginesTab, UpdateEnginesList, ET_UpdateEnginesList) \
-	PORT_DEF(EnginesTab, PutEngine, ET_PutEnginePy) \
-	PORT_DEF(EnginesTab, RecycleEngine, ET_RecycleEnginePy) \
-	PORT_DEF(EnginesTab, ShowMoneySellingEngine, ET_ShowMoneySellingEnginePy) \
-	PORT_DEF(EnginesTab, SelectEngineGroup, ET_SelectEngineGroupPy) \
-	PORT_DEF(EnginesTab, SetEnginesPanel, ET_SetEnginesPanelPy) \
-	PORT_DEF(EnginesTab, SetPrevNextEngineVisible, ET_SetPrevNextEngineVisible) \
-	PORT_DEF(EnginesTab, SetRecycleVisible, ET_SetRecycleVisible) \
-	PORT_DEF(EnginesTab, ShowEnginesPanel, ET_ShowEnginesPanelPy) \
-	PORT_DEF(EnginesTab, CreateLayouts, ET_CreateLayoutsPy) \
-	PORT_DEF(EnginesTab, UpdateLayouts, ET_UpdateLayoutsPy) \
-	PORT_DEF(EnginesTab, HideLayouts, ET_HideLayouts) \
-	PORT_DEF(EnginesTab, UpdateLayoutsState, ET_UpdateLayoutsStatePy) \
-	PORT_DEF(EnginesTab, UpdateLayoutsGlow, ET_UpdateLayoutsGlowPy) \
-	PORT_DEF(EnginesTab, LayoutsGainFocus, ET_LayoutsGainFocus) \
-	PORT_DEF(EnginesTab, LayoutsLostFocus, ET_LayoutsLostFocus) \
-	PORT_DEF(EnginesTab, HideEnginesPanel, ET_HideEnginesPanelPy) \
-	PORT_DEF(EnginesTab, ScrollEngineListUp, ET_ScrollEngineListUp) \
-	PORT_DEF(EnginesTab, ScrollEngineListDown, ET_ScrollEngineListDown)
+	PORT_DEFNK(EnginesTab, HighlightCurrentMountedEngine, ET_HighlightCurrentMountedEngine) \
+	PORT_DEFN(EnginesTab, ShowEngineDesc, ET_ShowEngineDescPy) \
+	PORT_DEFN(EnginesTab, HideEngineDesc, ET_HideEngineDesc) \
+	PORT_DEFN(EnginesTab, ChangeRecycleButtonState, ET_ChangeRecycleButtonState) \
+	PORT_DEFN(EnginesTab, UpdateEnginesList, ET_UpdateEnginesList) \
+	PORT_DEFN(EnginesTab, PutEngine, ET_PutEnginePy) \
+	PORT_DEFN(EnginesTab, RecycleEngine, ET_RecycleEnginePy) \
+	PORT_DEFN(EnginesTab, ShowMoneySellingEngine, ET_ShowMoneySellingEnginePy) \
+	PORT_DEFNK(EnginesTab, SelectEngineGroup, ET_SelectEngineGroupPy) \
+	PORT_DEFN(EnginesTab, SetEnginesPanel, ET_SetEnginesPanelPy) \
+	PORT_DEFN(EnginesTab, SetPrevNextEngineVisible, ET_SetPrevNextEngineVisible) \
+	PORT_DEFN(EnginesTab, SetRecycleVisible, ET_SetRecycleVisible) \
+	PORT_DEFN(EnginesTab, ShowEnginesPanel, ET_ShowEnginesPanelPy) \
+	PORT_DEFN(EnginesTab, CreateLayouts, ET_CreateLayoutsPy) \
+	PORT_DEFN(EnginesTab, UpdateLayouts, ET_UpdateLayoutsPy) \
+	PORT_DEFN(EnginesTab, HideLayouts, ET_HideLayouts) \
+	PORT_DEFN(EnginesTab, UpdateLayoutsState, ET_UpdateLayoutsStatePy) \
+	PORT_DEFN(EnginesTab, UpdateLayoutsGlow, ET_UpdateLayoutsGlowPy) \
+	PORT_DEFN(EnginesTab, LayoutsGainFocus, ET_LayoutsGainFocus) \
+	PORT_DEFN(EnginesTab, LayoutsLostFocus, ET_LayoutsLostFocus) \
+	PORT_DEFN(EnginesTab, HideEnginesPanel, ET_HideEnginesPanelPy) \
+	PORT_DEFN(EnginesTab, ScrollEngineListUp, ET_ScrollEngineListUp) \
+	PORT_DEFN(EnginesTab, ScrollEngineListDown, ET_ScrollEngineListDown)
 
 /* Ffa.c */
 PORT_DECL(Ffa, InitFfa) /* 0 */
@@ -809,6 +809,7 @@ PORT_DECL(HangarTab, DisableChangePlatformButtons) /* 1 */
 PORT_DECL(HangarTab, EnableChangePlatformButtons) /* 1 */
 PORT_DECL(HangarTab, PrevPilot) /* 2 */
 PORT_DECL(HangarTab, NextPilot) /* 2 */
+PORT_DECL(HangarTab, DrawBackground) /* ? */
 PORT_DECL(HangarTab, SetSellVisible) /* 2 */
 PORT_DECL(HangarTab, SetSellActive) /* 2 */
 PORT_DECL(HangarTab, SetExitVisible) /* 2 */
@@ -845,46 +846,47 @@ PORT_DECL(HangarTab, AddReferenceShipControls) /* 1 */
 PORT_DECL(HangarTab, ShowShipMiniInfo) /* 3 */
 PORT_DECL(HangarTab, HideShipMiniInfo) /* 3 */
 #define PORTS_HangarTab \
-	PORT_DEF(HangarTab, ShowBoostPrediction, HT_ShowBoostPrediction) \
-	PORT_DEF(HangarTab, DisableChangePlatformButtons, HT_DisableChangePlatformButtons) \
-	PORT_DEF(HangarTab, EnableChangePlatformButtons, HT_EnableChangePlatformButtons) \
-	PORT_DEF(HangarTab, PrevPilot, HT_PrevPilot) \
-	PORT_DEF(HangarTab, NextPilot, HT_NextPilot) \
-	PORT_DEF(HangarTab, SetSellVisible, HT_SetSellVisible) \
-	PORT_DEF(HangarTab, SetSellActive, HT_SetSellActive) \
-	PORT_DEF(HangarTab, SetExitVisible, HT_SetExitVisible) \
-	PORT_DEF(HangarTab, SetShipTypeVisible, HT_SetShipTypeVisible) \
-	PORT_DEF(HangarTab, SetPilotVisible, HT_SetPilotVisible) \
-	PORT_DEF(HangarTab, HideHangarPanel, HT_HideHangarPanel) \
-	PORT_DEF(HangarTab, UpdateHangars, HT_UpdateHangars) \
-	PORT_DEF(HangarTab, ShowHangarPanel, HT_ShowHangarPanel) \
-	PORT_DEF(HangarTab, IsShipValid, HT_IsShipValid) \
-	PORT_DEFK(HangarTab, ComputeShipTotalCost, HT_ComputeShipTotalCost) \
-	PORT_DEF(HangarTab, ShowRebuildShipMoney, HT_ShowRebuildShipMoney) \
-	PORT_DEF(HangarTab, HideRebuildShipMoney, HT_HideRebuildShipMoney) \
-	PORT_DEF(HangarTab, AuxShowMoney, HT_AuxShowMoney) \
-	PORT_DEF(HangarTab, ShowMoneyBuyingShip, HT_ShowMoneyBuyingShip) \
-	PORT_DEF(HangarTab, ShowMoneySellingShip, HT_ShowMoneySellingShip) \
-	PORT_DEF(HangarTab, HideMoney, HT_HideMoney) \
-	PORT_DEFK(HangarTab, ScaleSpeedRamp, HT_ScaleSpeedRamp) \
-	PORT_DEF(HangarTab, GetSpeedRampOffsets, HT_GetSpeedRampOffsets) \
-	PORT_DEF(HangarTab, GetMaxSpeedTime, HT_GetMaxSpeedTime) \
-	PORT_DEF(HangarTab, SetHangarPanel, HT_SetHangarPanel) \
-	PORT_DEF(HangarTab, CmSec2Value, HT_CmSec2Value) \
-	PORT_DEFK(HangarTab, ShowShipInfo, HT_ShowShipInfo) \
-	PORT_DEF(HangarTab, HideShipInfo, HT_HideShipInfo) \
-	PORT_DEF(HangarTab, PrevShipToEdit, HT_PrevShipToEdit) \
-	PORT_DEF(HangarTab, NextShipToEdit, HT_NextShipToEdit) \
-	PORT_DEF(HangarTab, SetShipTypeButtonsState, HT_SetShipTypeButtonsState) \
-	PORT_DEF(HangarTab, SelectShipToEdit, HT_SelectShipToEdit) \
-	PORT_DEFK(HangarTab, SelectHangar, HT_SelectHangar) \
-	PORT_DEF(HangarTab, SelectItem, HT_SelectItem) \
-	PORT_DEF(HangarTab, CreateEmptyShip, HT_CreateEmptyShip) \
-	PORT_DEF(HangarTab, BuyShip, HT_BuyShip) \
-	PORT_DEF(HangarTab, SellShip, HT_SellShip) \
-	PORT_DEF(HangarTab, AddReferenceShipControls, HT_AddReferenceShipControls) \
-	PORT_DEF(HangarTab, ShowShipMiniInfo, HT_ShowShipMiniInfo) \
-	PORT_DEF(HangarTab, HideShipMiniInfo, HT_HideShipMiniInfo)
+	PORT_DEFN(HangarTab, ShowBoostPrediction, HT_ShowBoostPrediction) \
+	PORT_DEFN(HangarTab, DisableChangePlatformButtons, HT_DisableChangePlatformButtons) \
+	PORT_DEFN(HangarTab, EnableChangePlatformButtons, HT_EnableChangePlatformButtons) \
+	PORT_DEFN(HangarTab, PrevPilot, HT_PrevPilot) \
+	PORT_DEFN(HangarTab, NextPilot, HT_NextPilot) \
+	PORT_DEFNK(HangarTab, DrawBackground, HangarTab_DrawBackground) \
+	PORT_DEFN(HangarTab, SetSellVisible, HT_SetSellVisible) \
+	PORT_DEFN(HangarTab, SetSellActive, HT_SetSellActive) \
+	PORT_DEFN(HangarTab, SetExitVisible, HT_SetExitVisible) \
+	PORT_DEFN(HangarTab, SetShipTypeVisible, HT_SetShipTypeVisible) \
+	PORT_DEFN(HangarTab, SetPilotVisible, HT_SetPilotVisible) \
+	PORT_DEFN(HangarTab, HideHangarPanel, HT_HideHangarPanel) \
+	PORT_DEFN(HangarTab, UpdateHangars, HT_UpdateHangars) \
+	PORT_DEFN(HangarTab, ShowHangarPanel, HT_ShowHangarPanel) \
+	PORT_DEFN(HangarTab, IsShipValid, HT_IsShipValid) \
+	PORT_DEFNK(HangarTab, ComputeShipTotalCost, HT_ComputeShipTotalCost) \
+	PORT_DEFN(HangarTab, ShowRebuildShipMoney, HT_ShowRebuildShipMoney) \
+	PORT_DEFN(HangarTab, HideRebuildShipMoney, HT_HideRebuildShipMoney) \
+	PORT_DEFN(HangarTab, AuxShowMoney, HT_AuxShowMoney) \
+	PORT_DEFN(HangarTab, ShowMoneyBuyingShip, HT_ShowMoneyBuyingShip) \
+	PORT_DEFN(HangarTab, ShowMoneySellingShip, HT_ShowMoneySellingShip) \
+	PORT_DEFN(HangarTab, HideMoney, HT_HideMoney) \
+	PORT_DEFNK(HangarTab, ScaleSpeedRamp, HT_ScaleSpeedRamp) \
+	PORT_DEFN(HangarTab, GetSpeedRampOffsets, HT_GetSpeedRampOffsets) \
+	PORT_DEFN(HangarTab, GetMaxSpeedTime, HT_GetMaxSpeedTime) \
+	PORT_DEFN(HangarTab, SetHangarPanel, HT_SetHangarPanel) \
+	PORT_DEFN(HangarTab, CmSec2Value, HT_CmSec2Value) \
+	PORT_DEFNK(HangarTab, ShowShipInfo, HT_ShowShipInfo) \
+	PORT_DEFN(HangarTab, HideShipInfo, HT_HideShipInfo) \
+	PORT_DEFN(HangarTab, PrevShipToEdit, HT_PrevShipToEdit) \
+	PORT_DEFN(HangarTab, NextShipToEdit, HT_NextShipToEdit) \
+	PORT_DEFN(HangarTab, SetShipTypeButtonsState, HT_SetShipTypeButtonsState) \
+	PORT_DEFN(HangarTab, SelectShipToEdit, HT_SelectShipToEdit) \
+	PORT_DEFNK(HangarTab, SelectHangar, HT_SelectHangar) \
+	PORT_DEFN(HangarTab, SelectItem, HT_SelectItem) \
+	PORT_DEFN(HangarTab, CreateEmptyShip, HT_CreateEmptyShip) \
+	PORT_DEFN(HangarTab, BuyShip, HT_BuyShip) \
+	PORT_DEFN(HangarTab, SellShip, HT_SellShip) \
+	PORT_DEFN(HangarTab, AddReferenceShipControls, HT_AddReferenceShipControls) \
+	PORT_DEFN(HangarTab, ShowShipMiniInfo, HT_ShowShipMiniInfo) \
+	PORT_DEFN(HangarTab, HideShipMiniInfo, HT_HideShipMiniInfo)
 
 /* HullTab.c */
 PORT_DECL(HullTab, ShowHullPredictionUp) /* 3 */
@@ -902,20 +904,20 @@ PORT_DECL(HullTab, ShowHullPanel) /* 1 */
 PORT_DECL(HullTab, SetHullVisible) /* 2 */
 PORT_DECL(HullTab, HideHullPanel) /* 1 */
 #define PORTS_HullTab \
-	PORT_DEF(HullTab, ShowHullPredictionUp, HT_ShowHullPredictionUp) \
-	PORT_DEF(HullTab, HideHullPredictionUp, HT_HideHullPredictionUp) \
-	PORT_DEF(HullTab, ShowHullPredictionDown, HT_ShowHullPredictionDown) \
-	PORT_DEF(HullTab, HideHullPredictionDown, HT_HideHullPredictionDown) \
-	PORT_DEF(HullTab, TestArrows, HT_TestArrows) \
-	PORT_DEF(HullTab, IncrementHull, HT_IncrementHull) \
-	PORT_DEF(HullTab, DecrementHull, HT_DecrementHull) \
-	PORT_DEF(HullTab, ChangeHull, HT_ChangeHullPy) \
-	PORT_DEF(HullTab, SetHullState, HT_SetHullStatePy) \
-	PORT_DEF(HullTab, HullSliderChange, HT_HullSliderChange) \
-	PORT_DEF(HullTab, SetHullPanel, HT_SetHullPanel) \
-	PORT_DEF(HullTab, ShowHullPanel, HT_ShowHullPanel) \
-	PORT_DEF(HullTab, SetHullVisible, HT_SetHullVisible) \
-	PORT_DEF(HullTab, HideHullPanel, HT_HideHullPanel)
+	PORT_DEFN(HullTab, ShowHullPredictionUp, HT_ShowHullPredictionUp) \
+	PORT_DEFN(HullTab, HideHullPredictionUp, HT_HideHullPredictionUp) \
+	PORT_DEFN(HullTab, ShowHullPredictionDown, HT_ShowHullPredictionDown) \
+	PORT_DEFN(HullTab, HideHullPredictionDown, HT_HideHullPredictionDown) \
+	PORT_DEFNK(HullTab, TestArrows, HT_TestArrows) \
+	PORT_DEFN(HullTab, IncrementHull, HT_IncrementHull) \
+	PORT_DEFN(HullTab, DecrementHull, HT_DecrementHull) \
+	PORT_DEFN(HullTab, ChangeHull, HT_ChangeHullPy) \
+	PORT_DEFN(HullTab, SetHullState, HT_SetHullStatePy) \
+	PORT_DEFN(HullTab, HullSliderChange, HT_HullSliderChange) \
+	PORT_DEFN(HullTab, SetHullPanel, HT_SetHullPanel) \
+	PORT_DEFN(HullTab, ShowHullPanel, HT_ShowHullPanel) \
+	PORT_DEFN(HullTab, SetHullVisible, HT_SetHullVisible) \
+	PORT_DEFN(HullTab, HideHullPanel, HT_HideHullPanel)
 
 /* InMap.c */
 PORT_DECL(InMap, Init) /* 1 */
@@ -2909,6 +2911,7 @@ PORT_DECL(ShipEdit, RotateShip) /* 1 */
 PORT_DECL(ShipEdit, LoopRotateShip) /* 1 */
 PORT_DECL(ShipEdit, StartRotateLoop) /* 0 */
 PORT_DECL(ShipEdit, StopRotateLoop) /* 0 */
+PORT_DECL(ShipEdit, DrawBackground) /* ? */
 PORT_DECL(ShipEdit, AddShipEditTabs) /* 2 */
 PORT_DECL(ShipEdit, AddDefaultPanelContent) /* 2 */
 PORT_DECL(ShipEdit, ChangeTabLeft) /* 2 */
@@ -2928,37 +2931,38 @@ PORT_DECL(ShipEdit, ExitEditShipMenu) /* 2 */
 PORT_DECL(ShipEdit, SaveShip) /* 1 */
 PORT_DECL(ShipEdit, ShowSpecialHint) /* 0 */
 #define PORTS_ShipEdit \
-	PORT_DEF(ShipEdit, IsEditingMultiplayer, SE_IsEditingMultiplayer) \
-	PORT_DEF(ShipEdit, RustyOnPlatform, SE_RustyOnPlatform) \
-	PORT_DEF(ShipEdit, PointObjectTo, SE_PointObjectTo) \
-	PORT_DEF(ShipEdit, LaunchPlatformAnim, SE_LaunchPlatformAnim) \
-	PORT_DEF(ShipEdit, ChangeShip, SE_ChangeShip) \
-	PORT_DEF(ShipEdit, VerifyChangeShip, SE_VerifyChangeShip) \
-	PORT_DEF(ShipEdit, DoorInitializator, SE_DoorInitializator) \
-	PORT_DEF(ShipEdit, ObjInitializator, SE_ObjInitializator) \
-	PORT_DEF(ShipEdit, EndMoveEngine, SE_EndMoveEngine) \
-	PORT_DEF(ShipEdit, RotateShip, SE_RotateShip) \
-	PORT_DEF(ShipEdit, LoopRotateShip, SE_LoopRotateShip) \
-	PORT_DEF(ShipEdit, StartRotateLoop, SE_StartRotateLoop) \
-	PORT_DEF(ShipEdit, StopRotateLoop, SE_StopRotateLoop) \
-	PORT_DEF(ShipEdit, AddShipEditTabs, SE_AddShipEditTabs) \
-	PORT_DEF(ShipEdit, AddDefaultPanelContent, SE_AddDefaultPanelContent) \
-	PORT_DEF(ShipEdit, ChangeTabLeft, SE_ChangeTabLeft) \
-	PORT_DEF(ShipEdit, ChangeTabRight, SE_ChangeTabRight) \
-	PORT_DEF(ShipEdit, ChangeTab, SE_ChangeTab) \
-	PORT_DEF(ShipEdit, CleanEditedShips, SE_CleanEditedShips) \
-	PORT_DEF(ShipEdit, CreatePlayerShip, SE_CreatePlayerShip) \
-	PORT_DEF(ShipEdit, SetupForEdit, SE_SetupForEdit) \
-	PORT_DEF(ShipEdit, SaveShipInfoInSaveVar, SE_SaveShipInfoInSaveVar) \
-	PORT_DEF(ShipEdit, SaveShipInfoInGVar, SE_SaveShipInfoInGVar) \
-	PORT_DEFK(ShipEdit, CreateShipFromSaveVar, SE_CreateShipFromSaveVar) \
-	PORT_DEF(ShipEdit, AssignShip, SE_AssignShip) \
-	PORT_DEF(ShipEdit, SetupEdit, SE_SetupEdit) \
-	PORT_DEF(ShipEdit, FreeEdit, SE_FreeEdit) \
-	PORT_DEF(ShipEdit, EnterEditShipMenu, SE_EnterEditShipMenu) \
-	PORT_DEF(ShipEdit, ExitEditShipMenu, SE_ExitEditShipMenu) \
-	PORT_DEF(ShipEdit, SaveShip, SE_SaveShip) \
-	PORT_DEF(ShipEdit, ShowSpecialHint, SE_ShowSpecialHint)
+	PORT_DEFN(ShipEdit, IsEditingMultiplayer, SE_IsEditingMultiplayer) \
+	PORT_DEFN(ShipEdit, RustyOnPlatform, SE_RustyOnPlatform) \
+	PORT_DEFN(ShipEdit, PointObjectTo, SE_PointObjectTo) \
+	PORT_DEFN(ShipEdit, LaunchPlatformAnim, SE_LaunchPlatformAnim) \
+	PORT_DEFN(ShipEdit, ChangeShip, SE_ChangeShip) \
+	PORT_DEFN(ShipEdit, VerifyChangeShip, SE_VerifyChangeShip) \
+	PORT_DEFN(ShipEdit, DoorInitializator, SE_DoorInitializator) \
+	PORT_DEFN(ShipEdit, ObjInitializator, SE_ObjInitializator) \
+	PORT_DEFN(ShipEdit, EndMoveEngine, SE_EndMoveEngine) \
+	PORT_DEFN(ShipEdit, RotateShip, SE_RotateShip) \
+	PORT_DEFN(ShipEdit, LoopRotateShip, SE_LoopRotateShip) \
+	PORT_DEFN(ShipEdit, StartRotateLoop, SE_StartRotateLoop) \
+	PORT_DEFN(ShipEdit, StopRotateLoop, SE_StopRotateLoop) \
+	PORT_DEFNK(ShipEdit, DrawBackground, ShipEdit_DrawBackground) \
+	PORT_DEFN(ShipEdit, AddShipEditTabs, SE_AddShipEditTabs) \
+	PORT_DEFN(ShipEdit, AddDefaultPanelContent, SE_AddDefaultPanelContent) \
+	PORT_DEFN(ShipEdit, ChangeTabLeft, SE_ChangeTabLeft) \
+	PORT_DEFN(ShipEdit, ChangeTabRight, SE_ChangeTabRight) \
+	PORT_DEFNK(ShipEdit, ChangeTab, SE_ChangeTab) \
+	PORT_DEFN(ShipEdit, CleanEditedShips, SE_CleanEditedShips) \
+	PORT_DEFN(ShipEdit, CreatePlayerShip, SE_CreatePlayerShip) \
+	PORT_DEFN(ShipEdit, SetupForEdit, SE_SetupForEdit) \
+	PORT_DEFN(ShipEdit, SaveShipInfoInSaveVar, SE_SaveShipInfoInSaveVar) \
+	PORT_DEFN(ShipEdit, SaveShipInfoInGVar, SE_SaveShipInfoInGVar) \
+	PORT_DEFNK(ShipEdit, CreateShipFromSaveVar, SE_CreateShipFromSaveVar) \
+	PORT_DEFN(ShipEdit, AssignShip, SE_AssignShip) \
+	PORT_DEFN(ShipEdit, SetupEdit, SE_SetupEdit) \
+	PORT_DEFN(ShipEdit, FreeEdit, SE_FreeEdit) \
+	PORT_DEFN(ShipEdit, EnterEditShipMenu, SE_EnterEditShipMenu) \
+	PORT_DEFN(ShipEdit, ExitEditShipMenu, SE_ExitEditShipMenu) \
+	PORT_DEFN(ShipEdit, SaveShip, SE_SaveShip) \
+	PORT_DEFN(ShipEdit, ShowSpecialHint, SE_ShowSpecialHint)
 
 /* ShipMaker.c */
 PORT_DECL(ShipMaker, SetShipPrice) /* 2 */
@@ -2986,30 +2990,30 @@ PORT_DECL(ShipMaker, Init) /* 0 */
 PORT_DECL(ShipMaker, SetAnmShip) /* 2 */
 PORT_DECL(ShipMaker, InitAnmShip) /* ? */
 #define PORTS_ShipMaker \
-	PORT_DEF(ShipMaker, SetShipPrice, ShipMaker_SetShipPrice) \
-	PORT_DEF(ShipMaker, GetShipPrice, ShipMaker_GetShipPrice) \
-	PORT_DEF(ShipMaker, SetEnginePrice, ShipMaker_SetEnginePrice) \
-	PORT_DEF(ShipMaker, GetEnginePrice, ShipMaker_GetEnginePrice) \
-	PORT_DEF(ShipMaker, AddShipTon, ShipMaker_AddShipTon) \
-	PORT_DEF(ShipMaker, GetShipTon, ShipMaker_GetShipTon) \
-	PORT_DEF(ShipMaker, AddShipBalance, ShipMaker_AddShipBalance) \
-	PORT_DEF(ShipMaker, GetShipBalance, ShipMaker_GetShipBalance) \
-	PORT_DEFK(ShipMaker, AddShip, ShipMaker_AddShip) \
-	PORT_DEF(ShipMaker, GetShip, ShipMaker_GetShip) \
-	PORT_DEF(ShipMaker, AddMotor, ShipMaker_AddMotor) \
-	PORT_DEF(ShipMaker, GetMotor, ShipMaker_GetMotor) \
-	PORT_DEF(ShipMaker, IncludeMotor, ShipMaker_IncludeMotor) \
-	PORT_DEF(ShipMaker, AddWeapon, ShipMaker_AddWeapon) \
-	PORT_DEF(ShipMaker, GetWeapon, ShipMaker_GetWeapon) \
-	PORT_DEF(ShipMaker, CalculateVerticalBalance, ShipMaker_CalculateVerticalBalance) \
-	PORT_DEF(ShipMaker, SetUpChars, ShipMaker_SetUpChars) \
-	PORT_DEF(ShipMaker, AddChar, ShipMaker_AddChar) \
-	PORT_DEF(ShipMaker, GetBoostFactor, ShipMaker_GetBoostFactor) \
-	PORT_DEF(ShipMaker, SetShipParams, ShipMaker_SetShipParams) \
-	PORT_DEF(ShipMaker, CreateStdShips, ShipMaker_CreateStdShips) \
-	PORT_DEF(ShipMaker, Init, ShipMaker_Init) \
-	PORT_DEF(ShipMaker, SetAnmShip, ShipMaker_SetAnmShip) \
-	PORT_DEFK(ShipMaker, InitAnmShip, ShipMaker_InitAnmShip)
+	PORT_DEFN(ShipMaker, SetShipPrice, ShipMaker_SetShipPrice) \
+	PORT_DEFN(ShipMaker, GetShipPrice, ShipMaker_GetShipPrice) \
+	PORT_DEFN(ShipMaker, SetEnginePrice, ShipMaker_SetEnginePrice) \
+	PORT_DEFN(ShipMaker, GetEnginePrice, ShipMaker_GetEnginePrice) \
+	PORT_DEFN(ShipMaker, AddShipTon, ShipMaker_AddShipTon) \
+	PORT_DEFN(ShipMaker, GetShipTon, ShipMaker_GetShipTon) \
+	PORT_DEFN(ShipMaker, AddShipBalance, ShipMaker_AddShipBalance) \
+	PORT_DEFN(ShipMaker, GetShipBalance, ShipMaker_GetShipBalance) \
+	PORT_DEFNK(ShipMaker, AddShip, ShipMaker_AddShip) \
+	PORT_DEFN(ShipMaker, GetShip, ShipMaker_GetShip) \
+	PORT_DEFN(ShipMaker, AddMotor, ShipMaker_AddMotor) \
+	PORT_DEFN(ShipMaker, GetMotor, ShipMaker_GetMotor) \
+	PORT_DEFN(ShipMaker, IncludeMotor, ShipMaker_IncludeMotor) \
+	PORT_DEFN(ShipMaker, AddWeapon, ShipMaker_AddWeapon) \
+	PORT_DEFN(ShipMaker, GetWeapon, ShipMaker_GetWeapon) \
+	PORT_DEFN(ShipMaker, CalculateVerticalBalance, ShipMaker_CalculateVerticalBalance) \
+	PORT_DEFN(ShipMaker, SetUpChars, ShipMaker_SetUpChars) \
+	PORT_DEFN(ShipMaker, AddChar, ShipMaker_AddChar) \
+	PORT_DEFN(ShipMaker, GetBoostFactor, ShipMaker_GetBoostFactor) \
+	PORT_DEFN(ShipMaker, SetShipParams, ShipMaker_SetShipParams) \
+	PORT_DEFN(ShipMaker, CreateStdShips, ShipMaker_CreateStdShips) \
+	PORT_DEFN(ShipMaker, Init, ShipMaker_Init) \
+	PORT_DEFN(ShipMaker, SetAnmShip, ShipMaker_SetAnmShip) \
+	PORT_DEFNK(ShipMaker, InitAnmShip, ShipMaker_InitAnmShip)
 
 /* Sounds.c */
 PORT_DECL(BankDirectorSound, LoadSounds) /* ? */
@@ -3644,15 +3648,17 @@ PORT_DECL(Sputnik, InitInterface) /* 3 */
 	PORT_DEF(Sputnik, InitInterface, Sputnik_InitInterface)
 
 /* SputnikInterface.c */
+PORT_DECL(SputnikInterface, DrawBackground) /* ? */
 PORT_DECL(SputnikInterface, AddDefaultPanelContent) /* 1 */
 PORT_DECL(SputnikInterface, EnterSputnikInterface) /* 1 */
 PORT_DECL(SputnikInterface, ExitSputnikInterface) /* 2 */
 PORT_DECL(SputnikInterface, SelectShip) /* 2 */
 #define PORTS_SputnikInterface \
-	PORT_DEF(SputnikInterface, AddDefaultPanelContent, SI_AddDefaultPanelContent) \
-	PORT_DEF(SputnikInterface, EnterSputnikInterface, SI_EnterSputnikInterface) \
-	PORT_DEF(SputnikInterface, ExitSputnikInterface, SI_ExitSputnikInterface) \
-	PORT_DEF(SputnikInterface, SelectShip, SI_SelectShip)
+	PORT_DEFNK(SputnikInterface, DrawBackground, ShipEdit_DrawBackground) \
+	PORT_DEFN(SputnikInterface, AddDefaultPanelContent, SI_AddDefaultPanelContent) \
+	PORT_DEFN(SputnikInterface, EnterSputnikInterface, SI_EnterSputnikInterface) \
+	PORT_DEFN(SputnikInterface, ExitSputnikInterface, SI_ExitSputnikInterface) \
+	PORT_DEFN(SputnikInterface, SelectShip, SI_SelectShip)
 
 /* String.c */
 PORT_DECL(string, index) /* ? */
@@ -4157,6 +4163,7 @@ PORT_DECL(Sonic, Init) /* 1 */
 	PORT_DEFN(Sonic, Init, Sonic_Init)
 
 /* WeaponsTab.c */
+PORT_DECL(WeaponsTab, DoNothing) /* ? */
 PORT_DECL(WeaponsTab, ShowWeightPrediction) /* 3 */
 PORT_DECL(WeaponsTab, HideWeightPrediction) /* 3 */
 PORT_DECL(WeaponsTab, ShowWeaponDesc) /* 3 */
@@ -4175,23 +4182,24 @@ PORT_DECL(WeaponsTab, SetWeaponsPanel) /* 1 */
 PORT_DECL(WeaponsTab, ShowWeaponsPanel) /* 1 */
 PORT_DECL(WeaponsTab, HideWeaponsPanel) /* 1 */
 #define PORTS_WeaponsTab \
-	PORT_DEF(WeaponsTab, ShowWeightPrediction, WT_ShowWeightPrediction) \
-	PORT_DEF(WeaponsTab, HideWeightPrediction, WT_HideWeightPrediction) \
-	PORT_DEF(WeaponsTab, ShowWeaponDesc, WT_ShowWeaponDescPy) \
-	PORT_DEF(WeaponsTab, HideWeaponDesc, WT_HideWeaponDesc) \
-	PORT_DEF(WeaponsTab, ShowWeaponUpgradeDesc, WT_ShowWeaponUpgradeDescPy) \
-	PORT_DEF(WeaponsTab, HideWeaponUpgradeDesc, WT_HideWeaponUpgradeDesc) \
-	PORT_DEF(WeaponsTab, ShowSlotMarker, WT_ShowSlotMarkerPy) \
-	PORT_DEF(WeaponsTab, HideSlotMarker, WT_HideSlotMarkerPy) \
-	PORT_DEF(WeaponsTab, LoadWeapon, WT_LoadWeaponPy) \
-	PORT_DEF(WeaponsTab, HideSlots, WT_HideSlotsPy) \
-	PORT_DEF(WeaponsTab, FillSlots, WT_FillSlotsPy) \
-	PORT_DEF(WeaponsTab, UpdateUpgrades, WT_UpdateUpgradesPy) \
-	PORT_DEF(WeaponsTab, SelectWeapon, WT_SelectWeaponPy) \
-	PORT_DEF(WeaponsTab, SelectUpgrade, WT_SelectUpgradePy) \
-	PORT_DEF(WeaponsTab, SetWeaponsPanel, WT_SetWeaponsPanelPy) \
-	PORT_DEF(WeaponsTab, ShowWeaponsPanel, WT_ShowWeaponsPanelPy) \
-	PORT_DEF(WeaponsTab, HideWeaponsPanel, WT_HideWeaponsPanelPy)
+	PORT_DEFN(WeaponsTab, DoNothing, Mode_PyNone2) \
+	PORT_DEFN(WeaponsTab, ShowWeightPrediction, WT_ShowWeightPrediction) \
+	PORT_DEFN(WeaponsTab, HideWeightPrediction, WT_HideWeightPrediction) \
+	PORT_DEFN(WeaponsTab, ShowWeaponDesc, WT_ShowWeaponDescPy) \
+	PORT_DEFN(WeaponsTab, HideWeaponDesc, WT_HideWeaponDesc) \
+	PORT_DEFN(WeaponsTab, ShowWeaponUpgradeDesc, WT_ShowWeaponUpgradeDescPy) \
+	PORT_DEFN(WeaponsTab, HideWeaponUpgradeDesc, WT_HideWeaponUpgradeDesc) \
+	PORT_DEFN(WeaponsTab, ShowSlotMarker, WT_ShowSlotMarkerPy) \
+	PORT_DEFN(WeaponsTab, HideSlotMarker, WT_HideSlotMarkerPy) \
+	PORT_DEFN(WeaponsTab, LoadWeapon, WT_LoadWeaponPy) \
+	PORT_DEFN(WeaponsTab, HideSlots, WT_HideSlotsPy) \
+	PORT_DEFN(WeaponsTab, FillSlots, WT_FillSlotsPy) \
+	PORT_DEFN(WeaponsTab, UpdateUpgrades, WT_UpdateUpgradesPy) \
+	PORT_DEFN(WeaponsTab, SelectWeapon, WT_SelectWeaponPy) \
+	PORT_DEFN(WeaponsTab, SelectUpgrade, WT_SelectUpgradePy) \
+	PORT_DEFN(WeaponsTab, SetWeaponsPanel, WT_SetWeaponsPanelPy) \
+	PORT_DEFN(WeaponsTab, ShowWeaponsPanel, WT_ShowWeaponsPanelPy) \
+	PORT_DEFN(WeaponsTab, HideWeaponsPanel, WT_HideWeaponsPanelPy)
 
 /* levels/AB.c */
 PORT_DECLL(ab, MapFinalFight, GetBossProfile) /* 0 */
@@ -6701,6 +6709,6 @@ PORT_DECLL(townhall, Mission_TalkToMayor, MissionScorer) /* 1 */
 	PORT_DEFLN(townhall, Mission_TalkToMayor, MissionScorer, TalkToMayor_MissionScorer)
 
 /* the number of refs: the size of the registry (g_PortTable, src/game/Script/PortTable.c) */
-#define PORT_COUNT 3214
+#define PORT_COUNT 3218
 
 #endif

@@ -6,7 +6,7 @@
  * module.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
- * PyMethodDef entries are adapters. The variables of the other modules are read where the script reads them
+ * function table rows name the entries. The variables of the other modules are read where the script reads them
  * (HangarTab.prevShip, the ship being edited, as a handle value: OBJLIB 7; ShipMaker.ShipTon and the costs,
  * ShipEdit.armorPieceWeight). HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly
  * while the attribute holds the port's function, else by name), the module's own functions through its globals as
@@ -199,12 +199,8 @@ static byte HT_TestArrows_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Mode_Parse(a, n, "i|O", &id, &change) && HT_Arrows(id, change ? change : &def);
 }
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *HT_TestArrows(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "changeDefault", NULL };
-	(void)self;
-	return Mode_KwIdEntry(args, kw, "i|O", names, HT_TestArrows_E);
-}
+static char *HT_TestArrows_N[] = { "id", "changeDefault", NULL };
+static const char HT_TestArrows_F[] = "i|O";
 
 /* IncrementHull(id, control) and DecrementHull(id, control): one plate on or off, then the boost prediction */
 static byte HT_StepHull(int id, int step) {
@@ -544,22 +540,22 @@ static byte HT_HidePanel(int id) {
 
 MODE_IFN(HT_HideHullPanel, 1, HT_HidePanel(id))
 
-PyMethodDef g_HullTabMethods[] = {
-	{ "ShowHullPredictionUp", HT_ShowHullPredictionUp, 1, NULL },
-	{ "HideHullPredictionUp", HT_HideHullPredictionUp, 1, NULL },
-	{ "ShowHullPredictionDown", HT_ShowHullPredictionDown, 1, NULL },
-	{ "HideHullPredictionDown", HT_HideHullPredictionDown, 1, NULL },
-	{ "TestArrows", (PyCFunction)(void (*)(void))HT_TestArrows, 3, NULL },
-	{ "IncrementHull", HT_IncrementHull, 1, NULL },
-	{ "DecrementHull", HT_DecrementHull, 1, NULL },
-	{ "ChangeHull", HT_ChangeHullPy, 1, NULL },
-	{ "SetHullState", HT_SetHullStatePy, 1, NULL },
-	{ "HullSliderChange", HT_HullSliderChange, 1, NULL },
-	{ "SetHullPanel", HT_SetHullPanel, 1, NULL },
-	{ "ShowHullPanel", HT_ShowHullPanel, 1, NULL },
-	{ "SetHullVisible", HT_SetHullVisible, 1, NULL },
-	{ "HideHullPanel", HT_HideHullPanel, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_HullTabMethods[] = {
+	PORT_FN(ShowHullPredictionUp, HT_ShowHullPredictionUp),
+	PORT_FN(HideHullPredictionUp, HT_HideHullPredictionUp),
+	PORT_FN(ShowHullPredictionDown, HT_ShowHullPredictionDown),
+	PORT_FN(HideHullPredictionDown, HT_HideHullPredictionDown),
+	PORT_FNK(TestArrows, HT_TestArrows),
+	PORT_FN(IncrementHull, HT_IncrementHull),
+	PORT_FN(DecrementHull, HT_DecrementHull),
+	PORT_FN(ChangeHull, HT_ChangeHullPy),
+	PORT_FN(SetHullState, HT_SetHullStatePy),
+	PORT_FN(HullSliderChange, HT_HullSliderChange),
+	PORT_FN(SetHullPanel, HT_SetHullPanel),
+	PORT_FN(ShowHullPanel, HT_ShowHullPanel),
+	PORT_FN(SetHullVisible, HT_SetHullVisible),
+	PORT_FN(HideHullPanel, HT_HideHullPanel),
+	PORT_FNEND
 };
 
 PORTS(HullTab)

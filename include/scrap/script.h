@@ -395,10 +395,10 @@ extern const portFn_t g_InfernoMethods[];
 extern const portFn_t g_CloudMethods[];
 extern const portFn_t g_EMIMethods[];
 extern const portFn_t g_SonicMethods[];
-extern PyMethodDef g_SputnikInterfaceMethods[];
+extern const portFn_t g_SputnikInterfaceMethods[];
 /* the ship editor (src/game/Script/ShipEdit.c, HangarTab.c, data/menus/shipedit.def) */
-extern PyMethodDef g_ShipEditMethods[];
-extern PyMethodDef g_HangarTabMethods[];
+extern const portFn_t g_ShipEditMethods[];
+extern const portFn_t g_HangarTabMethods[];
 extern PyMethodDef g_VehiclesMethods[];
 extern PyMethodDef g_VehiclesNPCMethods[];
 extern PyMethodDef g_SplitMethods[];
@@ -521,7 +521,7 @@ extern PyMethodDef g_OutMapMethods[];
 extern PyMethodDef g_InTrafficMethods[];
 /* the ship tables and SetShipParams (src/game/Script/ShipMaker.c, data/vehicles/shipmaker.def), the player's ship,
  * boarding, parking and the parked ships, the speed rings (src/game/Script/Parking.c) */
-extern PyMethodDef g_ShipMakerMethods[];
+extern const portFn_t g_ShipMakerMethods[];
 extern PyMethodDef g_ParkingMethods[];
 extern PyMethodDef g_AcceleratorMethods[];
 /* the game modes of the single player super deals (src/game/Script/SuperDeals.c) */
@@ -533,9 +533,9 @@ extern PyMethodDef g_DominationMethods[];
 extern PyMethodDef g_MortalRaceMethods[];
 /* the tabs of the ship editor: engines, weapons and hull (src/game/Script/EnginesTab.c, WeaponsTab.c, HullTab.c,
  * data/menus/enginestab.def, weaponstab.def, hulltab.def) */
-extern PyMethodDef g_EnginesTabMethods[];
-extern PyMethodDef g_WeaponsTabMethods[];
-extern PyMethodDef g_HullTabMethods[];
+extern const portFn_t g_EnginesTabMethods[];
+extern const portFn_t g_WeaponsTabMethods[];
+extern const portFn_t g_HullTabMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];

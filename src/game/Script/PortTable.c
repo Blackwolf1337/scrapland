@@ -509,6 +509,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_HangarTab_ComputeShipTotalCost,
 	&port_HangarTab_CreateEmptyShip,
 	&port_HangarTab_DisableChangePlatformButtons,
+	&port_HangarTab_DrawBackground,
 	&port_HangarTab_EnableChangePlatformButtons,
 	&port_HangarTab_GetMaxSpeedTime,
 	&port_HangarTab_GetSpeedRampOffsets,
@@ -2915,6 +2916,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_ShipEdit_CreatePlayerShip,
 	&port_ShipEdit_CreateShipFromSaveVar,
 	&port_ShipEdit_DoorInitializator,
+	&port_ShipEdit_DrawBackground,
 	&port_ShipEdit_EndMoveEngine,
 	&port_ShipEdit_EnterEditShipMenu,
 	&port_ShipEdit_ExitEditShipMenu,
@@ -3082,6 +3084,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Sputnik_ShowInterface,
 	&port_Sputnik_UseShip,
 	&port_SputnikInterface_AddDefaultPanelContent,
+	&port_SputnikInterface_DrawBackground,
 	&port_SputnikInterface_EnterSputnikInterface,
 	&port_SputnikInterface_ExitSputnikInterface,
 	&port_SputnikInterface_SelectShip,
@@ -3198,6 +3201,7 @@ const portRef_t *const g_PortTable[PORT_COUNT] = {
 	&port_Weapons_Init,
 	&port_Weapons_InitAmmo,
 	&port_Weapons_InitWeapons,
+	&port_WeaponsTab_DoNothing,
 	&port_WeaponsTab_FillSlots,
 	&port_WeaponsTab_HideSlotMarker,
 	&port_WeaponsTab_HideSlots,
@@ -6439,6 +6443,10 @@ PORT_TRAMP(3210)
 PORT_TRAMP(3211)
 PORT_TRAMP(3212)
 PORT_TRAMP(3213)
+PORT_TRAMP(3214)
+PORT_TRAMP(3215)
+PORT_TRAMP(3216)
+PORT_TRAMP(3217)
 
 const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp0,
@@ -9655,4 +9663,8 @@ const portTramp_t g_PortTramps[PORT_COUNT] = {
 	Port_Tramp3211,
 	Port_Tramp3212,
 	Port_Tramp3213,
+	Port_Tramp3214,
+	Port_Tramp3215,
+	Port_Tramp3216,
+	Port_Tramp3217,
 };
