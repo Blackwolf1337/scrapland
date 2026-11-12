@@ -1293,8 +1293,8 @@ PyObject *Mode_EntryObj(PyObject *args, portEntry_t entry, unsigned objs);
 /* int(v) of the script into *out: Native_ToInt (numbers and texts), an object through PyNumber_Int (OBJLIB 9: an
  * instance's __int__) */
 byte Mode_Int(const nativeVal_t *v, nativeVal_t *out);
-/* `v` of the script as a text value the Python way (PyObject_Repr of the value as an object; Mode_Repr drops the
- * error of an object's __repr__): 0 with that error and *out None */
+/* `v` of the script as a text value with the error of an object's __repr__ (NObj_Repr; Mode_Repr drops it): 0 with
+ * that error and *out None */
 byte Mode_ReprV(const nativeVal_t *v, nativeVal_t *out);
 /* the global var of module = src.name of another module as the object it is (OBJLIB 5: a function a module keeps to
  * put back later; Mode_ModTo sets the attribute of another module) */

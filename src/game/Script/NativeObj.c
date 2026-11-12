@@ -1507,7 +1507,8 @@ static int Obj_FuncCompare(const nativeObj_t *a, const nativeObj_t *b) {
 		}
 		break;
 	case NF_CALLBACK:
-		if (a->cb == b->cb) {
+		/* one C function on one context (a function of the test channel looked up twice) */
+		if (a->cb == b->cb || (a->cb->call == b->cb->call && a->cb->ctx == b->cb->ctx)) {
 			return 0;
 		}
 		break;
@@ -1610,7 +1611,7 @@ byte NObj_HashQuiet(const nativeVal_t *v, long *out) {
 		} else if (o->func == NF_PORT) {
 			x = (long)(intptr_t)o->ref->adapter;
 		} else if (o->func == NF_CALLBACK) {
-			x = (long)(intptr_t)o->cb;
+			x = (long)(intptr_t)o->cb->ctx ^ (long)(intptr_t)o->cb->call;
 		} else {
 			return 0;
 		}

@@ -5708,14 +5708,15 @@ byte Mode_Int(const nativeVal_t *v, nativeVal_t *out) {
 }
 
 byte Mode_ReprV(const nativeVal_t *v, nativeVal_t *out) {
-	PyObject *o = Native_ToPy(v), *r = o ? PyObject_Repr(o) : NULL;
+	nativeBuf_t b;
 	Native_SetNone(out);
-	if (r) {
-		Native_SetText(out, PyString_AsString(r), PyString_Size(r));
+	Native_BufInit(&b);
+	byte ok = NObj_Repr(&b, v, NR_REPR);
+	if (ok) {
+		Native_SetText(out, b.p, b.len);
 	}
-	Py_XDECREF(r);
-	Py_XDECREF(o);
-	return r != NULL;
+	Native_BufFree(&b);
+	return ok;
 }
 
 byte Mode_PutFromMod(const char *module, const char *var, const char *src, const char *name) {
