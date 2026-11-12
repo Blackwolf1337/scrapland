@@ -583,8 +583,10 @@ static const portFn_t SScorer_methods[] = {
 	PORT_FND(SetMarkerSprite, SScorer_SetMarkerSprite, str_PyDoc_SScorer_SetMarkerSprite),
 	PORT_FND(GetItem, SScorer_GetItem, str_PyDoc_SScorer_GetItem),
 	PORT_FND(New, SScorer_New, str_PyDoc_SScorer_New),
-	PORT_FN(Items, SScorer_Items),
-	PORT_FN(Accept, SScorer_Accept),
+	PORT_FND(Items, SScorer_Items,
+		"Items(playernumber) : the item names in draw order (ScrapC)"),
+	PORT_FND(Accept, SScorer_Accept,
+		"Accept(playernumber,ItemName) : runs the OnAccept of the item (ScrapC)"),
 	PORT_FNEND
 };
 

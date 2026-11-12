@@ -284,7 +284,8 @@ static const portFn_t SAct_methods[] = {
 	PORT_FND(GetAction, SAct_GetAction, str_PyDoc_SAct_GetAction),
 	PORT_FND(SetAct, SAct_SetAct, str_PyDoc_SAct_SetAct),
 	PORT_FND(GetAct, SAct_GetAct, str_PyDoc_SAct_GetAct),
-	PORT_FN(DumpEvents, SAct_DumpEvents),
+	PORT_FND(DumpEvents, SAct_DumpEvents,
+		"DumpEvents(file) : ScrapC only, every class, action and event into the file"),
 	PORT_FNEND
 };
 

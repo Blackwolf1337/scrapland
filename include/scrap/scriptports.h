@@ -2126,7 +2126,7 @@ PORT_DECL(SAI, GetOD) /* ? */
 	PORT_DEFND(SAI, AddVehicleRace, SAI_AddVehicleRace, str_PyDoc_SAI_AddVehicleRace) \
 	PORT_DEFND(SAI, SetRotStaticObj, SAI_SetRotStaticObj, str_PyDoc_SAI_SetRotStaticObj) \
 	PORT_DEFND(SAI, SetInertia, SAI_SetInertia, str_PyDoc_SAI_SetInertia) \
-	PORT_DEFN(SAI, GetOD, SAI_GetOD)
+	PORT_DEFND(SAI, GetOD, SAI_GetOD, "")
 
 /* PyInterface/SActPy.c */
 PORT_DECL(SAct, CreateClass) /* 1 */
@@ -2149,7 +2149,7 @@ PORT_DECL(SAct, DumpEvents) /* 1 */
 	PORT_DEFND(SAct, GetAction, SAct_GetAction, str_PyDoc_SAct_GetAction) \
 	PORT_DEFND(SAct, SetAct, SAct_SetAct, str_PyDoc_SAct_SetAct) \
 	PORT_DEFND(SAct, GetAct, SAct_GetAct, str_PyDoc_SAct_GetAct) \
-	PORT_DEFN(SAct, DumpEvents, SAct_DumpEvents)
+	PORT_DEFND(SAct, DumpEvents, SAct_DumpEvents, "DumpEvents(file) : ScrapC only, every class, action and event into the file")
 
 /* PyInterface/SFXPy.c */
 PORT_DECL(SFX, ShipExplosion) /* 6 */
@@ -2359,8 +2359,8 @@ PORT_DECL(SScorer, Accept) /* 2 */
 	PORT_DEFND(SScorer, SetMarkerSprite, SScorer_SetMarkerSprite, str_PyDoc_SScorer_SetMarkerSprite) \
 	PORT_DEFND(SScorer, GetItem, SScorer_GetItem, str_PyDoc_SScorer_GetItem) \
 	PORT_DEFND(SScorer, New, SScorer_New, str_PyDoc_SScorer_New) \
-	PORT_DEFN(SScorer, Items, SScorer_Items) \
-	PORT_DEFN(SScorer, Accept, SScorer_Accept)
+	PORT_DEFND(SScorer, Items, SScorer_Items, "Items(playernumber) : the item names in draw order (ScrapC)") \
+	PORT_DEFND(SScorer, Accept, SScorer_Accept, "Accept(playernumber,ItemName) : runs the OnAccept of the item (ScrapC)")
 
 /* PyInterface/SSoundPy.c */
 PORT_DECL(SSound, LoadSound) /* 1 */
@@ -2688,7 +2688,7 @@ PORT_DECL(Scrap, ConsoleExec) /* 1 */
 	PORT_DEFND(Scrap, GetSteamTicket, Scrap_GetSteamTicket, str_PyDoc_Scrap_GetSteamTicket) \
 	PORT_DEFND(Scrap, IsSteam, Scrap_IsSteam, str_PyDoc_Scrap_IsSteam) \
 	PORT_DEFND(Scrap, GetGogID, Scrap_GetGogID, str_PyDoc_Scrap_GetGogID) \
-	PORT_DEFN(Scrap, ConsoleExec, Scrap_ConsoleExec)
+	PORT_DEFND(Scrap, ConsoleExec, Scrap_ConsoleExec, "ConsoleExec(line) : runs a line of the console")
 
 /* RaceMaker.c */
 PORT_DECL(RaceMaker, ShowSystemMessage) /* 1 */

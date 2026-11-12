@@ -829,7 +829,7 @@ static const portFn_t SAI_methods[] = {
 	PORT_FND(AddVehicleRace, SAI_AddVehicleRace, str_PyDoc_SAI_AddVehicleRace),
 	PORT_FND(SetRotStaticObj, SAI_SetRotStaticObj, str_PyDoc_SAI_SetRotStaticObj),
 	PORT_FND(SetInertia, SAI_SetInertia, str_PyDoc_SAI_SetInertia),
-	PORT_FN(GetOD, SAI_GetOD),
+	PORT_FND(GetOD, SAI_GetOD, ""),
 	PORT_FNEND
 };
 

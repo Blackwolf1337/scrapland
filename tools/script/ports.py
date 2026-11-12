@@ -35,9 +35,10 @@ TABLEFILE = os.path.join(SCRIPT, 'PortTable.c')
 
 TABLE = re.compile(r'\bPyMethodDef\s+(g_\w+)\s*\[\s*\]\s*=\s*\{')
 # a function table (stage 7e, portFn_t of include/scrap/scriptnative.h) and its rows as the preprocessor gives them:
-# PORT_FN(Name, fn) is { "Name", fn_E, 0, ((void *)0) }, PORT_FNK has 1, PORT_FND(Name, fn, doc) the doc
+# PORT_FN(Name, fn) is { "Name", fn_E, 0, ((void *)0) }, PORT_FNK has 1, PORT_FND(Name, fn, doc) the doc (a symbol
+# or a text)
 FNTABLE = re.compile(r'\bportFn_t\s+(\w+)\s*\[\s*\d*\s*\]\s*=\s*\{')
-FNROW = re.compile(r'\{\s*"(\w+)",\s*(\w+)_E,\s*([01]),\s*(\(\s*\(\s*void\s*\*\s*\)\s*0\s*\)|\w+)\s*\}')
+FNROW = re.compile(r'\{\s*"(\w+)",\s*(\w+)_E,\s*([01]),\s*(\(\s*\(\s*void\s*\*\s*\)\s*0\s*\)|\w+|"(?:[^"\\]|\\.)*")\s*\}')
 # a row: { "Name", adapter, ... }, the adapter maybe cast as (PyCFunction) or (PyCFunction)(void (*)(void)) (keywords)
 ROW = re.compile(r'\{\s*"(\w+)",\s*(?:\(PyCFunction\)\s*)?(?:\(\s*void\s*\(\s*\*\s*\)\s*\(\s*void\s*\)\s*\)\s*)?(\w+)')
 # the parameters maybe [[maybe_unused]] (API_FN of include/scrap/scriptapi.h)

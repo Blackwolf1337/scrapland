@@ -1554,7 +1554,8 @@ static const portFn_t Scrap_methods[] = {
 	PORT_FND(GetSteamTicket, Scrap_GetSteamTicket, str_PyDoc_Scrap_GetSteamTicket),
 	PORT_FND(IsSteam, Scrap_IsSteam, str_PyDoc_Scrap_IsSteam),
 	PORT_FND(GetGogID, Scrap_GetGogID, str_PyDoc_Scrap_GetGogID),
-	PORT_FN(ConsoleExec, Scrap_ConsoleExec),
+	PORT_FND(ConsoleExec, Scrap_ConsoleExec,
+		"ConsoleExec(line) : runs a line of the console"),
 	PORT_FNEND
 };
 
