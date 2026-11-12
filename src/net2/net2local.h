@@ -360,7 +360,7 @@ struct Net2Conn {
 	int closeSends;
 	int forceSend;
 
-	uint64_t packetsSent, packetsRecv, packetsLost, bytesSent, bytesRecv;
+	uint64_t packetsSent, packetsRecv, packetsLost, bytesSent, bytesRecv, resent;
 	uint32_t dropped, bad;
 	uint64_t rateTime;
 	uint32_t secSent, secRecv, sendRate, recvRate;

@@ -669,9 +669,12 @@ static void Test_Transfer(void) {
 		T_ASSERT(st.rtt >= 25 && st.rtt <= 170);
 		float loss = (float)g_link.loss / 100.0f;
 		T_ASSERT(st.loss > loss * 0.3f && st.loss < loss * 1.8f + 0.03f);
-		printf("transfer seed %u: rel %u/%u, rtt %u var %u, loss %.3f (link %d%%), sent %llu lost %llu bad %u\n",
-			seed, sentC, sentS, st.rtt, st.rttVar, (double)st.loss, g_link.loss,
-			(unsigned long long)st.packetsSent, (unsigned long long)st.packetsLost, st.bad);
+		/* every lost packet with a fragment costs a resend, and no fragment goes out more often than once per rto */
+		T_ASSERT(st.resent > 0 && st.resent < st.packetsSent);
+		printf("transfer seed %u: rel %u/%u, rtt %u var %u, loss %.3f (link %d%%), sent %llu lost %llu resent %llu "
+			"bad %u\n", seed, sentC, sentS, st.rtt, st.rttVar, (double)st.loss, g_link.loss,
+			(unsigned long long)st.packetsSent, (unsigned long long)st.packetsLost, (unsigned long long)st.resent,
+			st.bad);
 		Net2_Destroy(srv.h);
 		Net2_Destroy(cli.h);
 	}

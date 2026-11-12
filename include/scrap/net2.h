@@ -157,6 +157,7 @@ typedef struct Net2Stats {
 	uint32_t sendRate, recvRate;	/* bytes per second of the last full second */
 	uint64_t packetsSent, packetsRecv, packetsLost;
 	uint64_t bytesSent, bytesRecv;
+	uint64_t resent;				/* reliable fragments sent again (not acked in time) */
 	uint32_t reliablePending;		/* reliable messages queued or not acked yet */
 	uint32_t dropped;				/* unreliable messages not sent (rate, space) or not kept (inbox full) */
 	uint32_t bad;					/* packets that failed the replay window, the tag or the parse */

@@ -325,6 +325,7 @@ static int Net2Conn_AddReliable(Net2Host *h, Net2Conn *c, Net2Writer *w, Net2Rel
 				if (!Net2Pkt_WriteChunk(w, &ck)) {
 					return added;
 				}
+				c->resent += m->sent[f] != 0;
 				m->sent[f] = h->now + 1;
 				refs[*numRefs].id = m->id;
 				refs[*numRefs].channel = (uint8_t)i;
@@ -448,6 +449,7 @@ void Net2Conn_Stats(const Net2Conn *c, Net2Stats *st) {
 	st->packetsLost = c->packetsLost;
 	st->bytesSent = c->bytesSent;
 	st->bytesRecv = c->bytesRecv;
+	st->resent = c->resent;
 	for (int i = 0; i < NET2_MAX_CHANNELS; i++) {
 		if (c->ch[i].rs) {
 			st->reliablePending += (uint16_t)(c->ch[i].rs->next - c->ch[i].rs->base);
