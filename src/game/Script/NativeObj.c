@@ -308,6 +308,7 @@ static int Obj_PyKind(PyObject *o) {
 }
 
 static PyObject *Obj_Tramp(PyObject *self, PyObject *args, PyObject *kw);
+static nativeFn_t *Obj_TrampFn(PyObject *self);
 
 byte Native_FromPyRef(PyObject *o, nativeVal_t *v) {
 	Native_SetNone(v);
@@ -328,7 +329,7 @@ byte Native_FromPyRef(PyObject *o, nativeVal_t *v) {
 		if (PyCFunction_Check(o) && ((PyCFunctionObject *)o)->m_ml->ml_meth == (PyCFunction)(void (*)(void))Obj_Tramp) {
 			/* the C function object of a native callback whose native object went (Python held it alone): the
 			 * callback again, its call and context shared */
-			nativeFn_t *f = PyCObject_AsVoidPtr(PyCFunction_GET_SELF(o));
+			nativeFn_t *f = Obj_TrampFn(PyCFunction_GET_SELF(o));
 			f->refs++;
 			n->born = 1;
 			n->func = NF_CALLBACK;
@@ -716,8 +717,13 @@ static PyObject *Obj_Conv(const nativeVal_t *v, void *ctx) {
 
 /* the C function object of a callback calls it on the arguments as NObj_FromPy gives them (the keywords as (name,
  * value) pairs in the order of the dict, for a callback that takes them) */
+/* the callback of the self of its C function object: the record, or a tuple with the record first */
+static nativeFn_t *Obj_TrampFn(PyObject *self) {
+	return PyCObject_AsVoidPtr(PyTuple_Check(self) ? PyTuple_GET_ITEM(self, 0) : self);
+}
+
 static PyObject *Obj_Tramp(PyObject *self, PyObject *args, PyObject *kw) {
-	nativeFn_t *f = PyCObject_AsVoidPtr(self);
+	nativeFn_t *f = Obj_TrampFn(self);
 	int n = PyTuple_Size(args);
 	/* the keywords only when the C function object was made with METH_KEYWORDS (else Python passes two arguments) */
 	kw = f->def.ml_flags & METH_KEYWORDS ? kw : NULL;
@@ -810,6 +816,20 @@ static PyObject *Obj_FuncToPy(nativeObj_t *o) {
 			return NULL;
 		}
 		f->refs++;
+		if (f->self.type == NV_TUPLE && f->self.n > 0) {
+			/* a __self__ tuple: the tuple with the record first, as the repr of the C function object shows it */
+			PyObject *t = PyTuple_New(f->self.n);
+			PyTuple_SET_ITEM(t, 0, self);
+			for (int i = 1; i < f->self.n; i++) {
+				PyObject *x = Native_ToPy(&f->self.items[i]);
+				if (!x) {
+					Py_DECREF(t);
+					return NULL;
+				}
+				PyTuple_SET_ITEM(t, i, x);
+			}
+			self = t;
+		}
 		PyObject *r = PyCFunction_New(&f->def, self);
 		Py_DECREF(self);
 		return r;
