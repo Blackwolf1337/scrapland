@@ -1192,8 +1192,6 @@ byte Mode_ListGet(const char *list, const char *var, nativeVal_t *out) {
 	char *s;
 	double d;
 	int i;
-	/* None on an error too: callers free *out on every path (Commercial.c Gd_Flee freed garbage when Funcs was missing) */
-	Native_SetNone(out);
 	switch (EntityList_Get(list, var, &s, &d, &i)) {
 	case -1:
 		return Native_NullResult();

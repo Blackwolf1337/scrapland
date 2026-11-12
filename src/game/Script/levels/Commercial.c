@@ -2007,6 +2007,8 @@ static byte Gd_Target(const nativeVal_t *usr, const nativeVal_t *e) {
  * first in the list is asked for every one) */
 static byte Gd_Flee(const nativeVal_t *usr) {
 	nativeVal_t name, e;
+	/* Mode_ListGet leaves name as it is when the list is missing */
+	Native_SetNone(&name);
 	Native_SetNone(&e);
 	byte ok = Mode_ListGet("Funcs", "First", &name) && Mode_EntityH(&name, &e);
 	while (ok && Native_True(&e)) {
