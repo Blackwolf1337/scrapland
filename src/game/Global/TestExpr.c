@@ -1535,11 +1535,12 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 		for (int i = 0; i < n; i++) {
 			TX_Give(&a[i]);
 		}
-		if (TX_Py(f)) {
-			/* a view (a native function that crossed too): its Python object called as NObj_Call calls a view (the
-			 * entry of a port's own function), the result as TX_FromPy gives it */
+		if (TX_Py(f) || NObj_PortRef(f)) {
+			/* a view (a native function that crossed too) or a port function: the entry of a port's own function, the
+			 * result as the Python object the adapter returns, as TX_FromPy gives it (a tuple of a module variable
+			 * stays that tuple) */
 			PyObject *r = NULL;
-			Port_Values(PORT_VSITE(), TX_Py(f), a, n, NULL, &r);
+			Port_ValuesOf(PORT_VSITE(), f, a, n, NULL, &r);
 			ok = TX_Result(r, out);
 		} else {
 			ok = NObj_Call(f, a, n, out);
