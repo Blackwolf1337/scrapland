@@ -82,7 +82,7 @@ static byte Gd_ResDel(const char *name) {
 }
 
 /* a keyword function with the one optional argument kwname that the core does not read (usr=None, char=None): its
- * adapter and entry (MODE_KW) */
+ * entry (MODE_KW) */
 #define GD_KW1(pre, name, kwname, call) \
 	MODE_KW(pre, name, "|O", kwname) { \
 		return call; \
@@ -833,7 +833,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 	return Mode_Done(&t, Mode_LaterV(delay, "Map", "MercDrink", args, 2, NULL));
 }
 
-/* the keyword adapter and entry of MercDrink(merc, ctr=0) */
+/* the keyword entry of MercDrink(merc, ctr=0) */
 MODE_KW(Den, MercDrink, "O|O", "merc", "ctr") {
 	Mode_KwDefI(v, given, 1, 0);
 	return Den_MercDrinkC(&v[0], &v[1]);
@@ -879,7 +879,7 @@ static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
 	return Mode_Done(&t, Mode_Later(2.5, "Map", "ChatNPCs", args, 2, NULL));
 }
 
-/* the keyword adapter and entry of ChatNPCs(Name, Vals=("PoliceBoss_Default", "CrazyGambler_Default")) */
+/* the keyword entry of ChatNPCs(Name, Vals=("PoliceBoss_Default", "CrazyGambler_Default")) */
 MODE_KW(Den, ChatNPCs, "O|O", "Name", "Vals") {
 	nativeVal_t vals = { 0 };
 	if (!given[1]) {

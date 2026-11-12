@@ -256,7 +256,7 @@ static byte Cm_UsePhone(const nativeVal_t *a, const char *module, const cmPhone_
 	return ok;
 }
 
-/* the adapter of a UsePhoneCab(UsrName, CharName, optId, FullOption) of a mission */
+/* the core of a UsePhoneCab(UsrName, CharName, optId, FullOption) of a mission */
 #define CM_PHONE(fn, module, ...) \
 	static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
 		static const cmPhone_t p = { __VA_ARGS__ }; \

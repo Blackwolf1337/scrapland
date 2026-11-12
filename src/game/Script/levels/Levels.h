@@ -353,8 +353,7 @@ byte LvN_SetOnFloorOf(const nativeVal_t *v);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);
-/* the adapter of a level function: parses the n arguments, runs core(a, out), the result as Python (None for a core
- * that leaves out None) */
+/* the entry of a level function: checks the n arguments, runs core(a, out) (None for a core that leaves out None) */
 #define LV_FN(pre, name, nargs, core) MODE_FN(pre, name, nargs, core(a, out))
 
 #endif

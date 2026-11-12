@@ -706,7 +706,7 @@ static byte Win2nd_CancelMission(void) {
 	return Mode_Done(&t, ok);
 }
 
-/* the keyword adapter of OnCounterMeasure(id=0) */
+/* the keyword entry of OnCounterMeasure(id=0) */
 MODE_KW(Win2nd, OnCounterMeasurePy, "|O", "id") {
 	return Win2nd_OnCounterMeasure();
 }
@@ -1784,7 +1784,7 @@ static byte Merc_MissionScorer(const nativeVal_t *id) {
 	return Mode_Done(&t, ok);
 }
 
-/* the keyword adapter of InitIdentifyMerc(elevator=None) */
+/* the keyword entry of InitIdentifyMerc(elevator=None) */
 MODE_KW(Merc, InitIdentifyMercPy, "|O", "elevator") {
 	return Merc_InitIdentifyMerc();
 }

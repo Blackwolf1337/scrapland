@@ -398,7 +398,7 @@ static byte Menu_cremeteoro(const nativeVal_t *vec, const nativeVal_t *tim) {
 	return Mode_Done(&t, Native_Compare(n, Mode_I(&t, len)) < 0 || LvN_PutI(MAP, "globctr", 0));
 }
 
-/* ---- the adapters ---- */
+/* ---- the entries ---- */
 
 LV_FN(Menu, InitStatusPy, 1, Menu_InitStatus)
 LV_FN(Menu, FadeOutCreditsEndPy, 0, Menu_FadeOutCreditsEnd)
