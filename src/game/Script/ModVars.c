@@ -13,7 +13,7 @@
  * object gets the one of the value (Native_ToPy: a view's own object, native data crossing once, a number or text
  * made once and kept with the value, nativeVal_t.obj); Python code that reads the module object's attributes comes
  * here through the module type (MV_PyGetattr), and its __dict__ is the module dict filled with the variables first
- * (MV_SyncDict). A dict without variables here (Scrap, __main__, a module a test made, a class body) holds its own
+ * (MV_SyncDict). A dict without variables here (Scrap, a module a test made, a class body) holds its own
  * values as before.
  *
  * The names: the table's, and the overflow list of each module file. A name the table does not have is taken into the
@@ -55,6 +55,8 @@ typedef struct {
 /* one per entry of g_ModVarModules */
 static mvFile_t *mv_files;
 static mvSpace_t *mv_spaces;
+/* the variables of __main__ (ModVar_Keep) */
+static mvSpace_t *mv_kept;
 /* the module type's own getattr and setattr (MV_PyGetattr wraps them) */
 static getattrfunc mv_pyGetattr;
 static setattrfunc mv_pySetattr;
@@ -425,7 +427,12 @@ static void MV_Clear(mvSpace_t *s) {
 	Native_ErrClear();
 }
 
+void ModVar_Keep(PyObject *dict) {
+	mv_kept = MV_Bind(dict, 0);
+}
+
 void ModVar_Close(void) {
+	mv_kept = NULL;
 	for (mvSpace_t *s = mv_spaces; s; s = s->next) {
 		MV_Clear(s);
 	}
@@ -445,6 +452,12 @@ void ModVar_Close(void) {
 byte ModVar_OfDict(PyObject *dict, modVarRef_t *ref) {
 	if (!dict || !PyDict_Check(dict)) {
 		return 0;
+	}
+	if (mv_kept && dict == mv_kept->dict) {
+		ref->file = -1;
+		ref->dict = dict;
+		ref->vars = &mv_kept->vars;
+		return 1;
 	}
 	PyObject *name = PyDict_GetItemString(dict, "__name__");
 	PyObject *file = PyDict_GetItemString(dict, "__file__");
@@ -774,7 +787,7 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names) {
 /* ---- by module name: the one path of the helpers of the ports (Script_Global, Script_Attr, the Mode_ helpers) ---- */
 
 /* the ref of a module object: its variables here (a registry module, or one that had its name), else (Scrap,
- * __main__, a module of the C or of a test) its dict alone (file -1, vars NULL); 0 for an object in sys.modules that
+ * a module of the C or of a test) its dict alone (file -1, vars NULL); 0 for an object in sys.modules that
  * is no module */
 static byte MV_Ref(PyObject *m, modVarRef_t *ref) {
 	if (ModVar_Of(m, ref)) {

@@ -383,6 +383,13 @@ static byte Obj_Norm(nativeVal_t *v) {
 
 /* the items of the Python tuple, list or dict of a view as a native value by value (the items by NObj_FromPy): for the
  * operations that read a view next to native data */
+/* a key or value of a snapshot */
+static byte Obj_SnapItem(PyObject *o, nativeVal_t *v, int depth) {
+	(void)depth;
+	NObj_FromPy(o, v);
+	return 1;
+}
+
 static void Obj_Snap(PyObject *py, nativeVal_t *out) {
 	if (PyList_Check(py)) {
 		Native_SetEmpty(out, NV_LIST);
@@ -391,15 +398,8 @@ static void Obj_Snap(PyObject *py, nativeVal_t *out) {
 		}
 		return;
 	}
-	Native_SetEmpty(out, NV_DICT);
-	PyObject *k, *x;
-	int pos = 0;
-	while (PyDict_Next(py, &pos, &k, &x)) {
-		nativeVal_t nk, nx;
-		NObj_FromPy(k, &nk);
-		NObj_FromPy(x, &nx);
-		Native_DictSet(out, &nk, &nx);
-	}
+	/* the slots as Python has them, so a walk of the snapshot goes in the dict's order (update, items) */
+	Native_DictOfPy(py, out, Obj_SnapItem, 0);
 }
 
 /* v as a list (type NV_LIST) or dict (NV_DICT) of items to read: the value itself, the data of its object, or a
@@ -1299,6 +1299,11 @@ static byte Obj_PyRepr(nativeBuf_t *b, PyObject *py, nativeRepr_t mode) {
 	return 1;
 }
 
+/* the lists and dicts whose repr runs (Py_ReprEnter's list) */
+#define OBJ_REPR_MAX 256
+static const nativeObj_t *obj_repring[OBJ_REPR_MAX];
+static int obj_reprDepth;
+
 byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 	if (v->type != NV_REF) {
 		Native_Repr(b, v, mode);
@@ -1313,8 +1318,19 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 	switch (o->kind) {
 	case NO_LIST:
 	case NO_DICT:
-		/* the items as the value by value prints them */
+		/* the items as the value by value prints them; one that holds itself as Py_ReprEnter cuts it */
+		for (int i = 0; i < obj_reprDepth && i < OBJ_REPR_MAX; i++) {
+			if (obj_repring[i] == o) {
+				Native_BufAdd(b, o->kind == NO_LIST ? "[...]" : "{...}", 5);
+				return 1;
+			}
+		}
+		if (obj_reprDepth < OBJ_REPR_MAX) {
+			obj_repring[obj_reprDepth] = o;
+		}
+		obj_reprDepth++;
 		Native_Repr(b, &o->data, mode);
+		obj_reprDepth--;
 		return 1;
 	case NO_INSTANCE: {
 		/* instance_repr, and for str the __str__ of PyObject_Str first */
@@ -1394,9 +1410,9 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 		}
 		const char *n = name.type == NV_STR ? Native_Text(&name) : "?";
 		if (file.type == NV_STR) {
-			Obj_Addf(b, "<module '%.50s' from '%.80s'>", n, Native_Text(&file));
+			Obj_Addf(b, "<module '%.50s' from '%.255s'>", n, Native_Text(&file));
 		} else {
-			Obj_Addf(b, "<module '%.80s'>", n);
+			Obj_Addf(b, "<module '%.80s' (built-in)>", n);
 		}
 		Native_Free(&name);
 		Native_Free(&file);

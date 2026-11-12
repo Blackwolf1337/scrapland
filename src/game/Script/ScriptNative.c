@@ -2786,6 +2786,33 @@ typedef struct {
 	nativePyEntry_t *ma_table;
 } nativePyDict_t;
 
+byte Native_DictOfPy(PyObject *o, nativeVal_t *v, byte (*conv)(PyObject *, nativeVal_t *, int), int depth) {
+	int pos = 0;
+	byte ok = 1;
+	PyObject *k, *x;
+	const nativePyDict_t *pd = (const nativePyDict_t *)o;
+	Native_SetEmpty(v, NV_DICT);
+	if (pd->ma_size) {
+		Native_Table(v, pd->ma_size);
+	}
+	/* the deleted keys stay dummies in their slots (a key past one on its probe chain is found) */
+	v->i = pd->ma_fill;
+	for (int i = 0; i < pd->ma_size; i++) {
+		if (pd->ma_table[i].me_key && !pd->ma_table[i].me_value) {
+			Native_Clear(&v->items[2 * i], NV_DUMMY);
+		}
+	}
+	while (ok && PyDict_Next(o, &pos, &k, &x)) {
+		nativeVal_t *slot = &v->items[2 * (pos - 1)];
+		v->n++;
+		ok = conv(k, slot, depth + 1) && conv(x, slot + 1, depth + 1);
+	}
+	if (!ok) {
+		Native_Free(v);
+	}
+	return ok;
+}
+
 static byte Native_FromPyIn(PyObject *o, nativeVal_t *v, int depth) {
 	Native_SetNone(v);
 	if (o == Py_None) {
@@ -2824,26 +2851,7 @@ static byte Native_FromPyIn(PyObject *o, nativeVal_t *v, int depth) {
 				depth + 1);
 		}
 	} else if (PyDict_Check(o)) {
-		/* each key and value in the slot Python has it in */
-		int pos = 0;
-		PyObject *k, *x;
-		const nativePyDict_t *pd = (const nativePyDict_t *)o;
-		Native_SetEmpty(v, NV_DICT);
-		if (pd->ma_size) {
-			Native_Table(v, pd->ma_size);
-		}
-		/* the deleted keys stay dummies in their slots (a key past one on its probe chain is found) */
-		v->i = pd->ma_fill;
-		for (int i = 0; i < pd->ma_size; i++) {
-			if (pd->ma_table[i].me_key && !pd->ma_table[i].me_value) {
-				Native_Clear(&v->items[2 * i], NV_DUMMY);
-			}
-		}
-		while (ok && PyDict_Next(o, &pos, &k, &x)) {
-			nativeVal_t *slot = &v->items[2 * (pos - 1)];
-			v->n++;
-			ok = Native_FromPyIn(k, slot, depth + 1) && Native_FromPyIn(x, slot + 1, depth + 1);
-		}
+		return Native_DictOfPy(o, v, Native_FromPyIn, depth);
 	} else {
 		ok = 0;
 	}

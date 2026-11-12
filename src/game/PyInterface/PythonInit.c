@@ -77,11 +77,10 @@ static byte Py_LineExpr(PyObject *v) {
 	return err == 0;
 }
 
-/* name = v in __main__ (STORE_NAME, v given away) */
+/* name = v in __main__ (STORE_NAME into the registry's variables of __main__, v given away) */
 static byte Py_LineStore(const char *name, PyObject *v) {
-	PyObject *m = v ? PyImport_AddModule("__main__") : NULL, *k = m ? PyString_InternFromString((char *)name) : NULL;
-	int bad = !k || PyDict_SetItem(PyModule_GetDict(m), k, v) != 0;
-	Py_XDECREF(k);
+	PyObject *m = v ? PyImport_AddModule("__main__") : NULL;
+	int bad = !m || ModVar_DictSet(PyModule_GetDict(m), name, v) != 0;
 	Py_XDECREF(v);
 	return !bad;
 }
@@ -215,6 +214,8 @@ void Python_Init(void) {
 
 	Py_Initialize();
 	g_PythonReady = 1;
+	/* the variables of __main__ (the start lines' imports, the test channel's names) are native values */
+	ModVar_Keep(PyModule_GetDict(PyImport_AddModule("__main__")));
 	Py_LineEnd(Py_LineConsoleClass("ConsoleOutput", py_consoleOut));
 	Py_LineEnd(Py_LineConsoleClass("ConsoleErrorOutput", py_consoleError));
 	Py_LineEnd(Py_LineImport(sys));

@@ -21,8 +21,9 @@
  * Native_Put, the Mode_ helpers of scrap/scriptmodes.h and the LvN_ wrappers on them), the module code of the .mod
  * files (its stores, loads and deletes, from the start of the module code on: ModVar_Making, and its from-import), the
  * C hooks of module code, the writes of the loader (Script_ReplaySet), the .def runner, Script_NameChain and
- * Script_GetAttr read and write module variables only through here. A dict without variables here (Scrap, __main__,
- * a module of the C or one a test made, a class body) holds its own values.
+ * Script_GetAttr read and write module variables only through here. The variables of __main__ are here too
+ * (ModVar_Keep). A dict without variables here (Scrap, a module of the C or one a test made, a class body) holds its
+ * own values.
  *
  * The 107 variables with a C place (the place text of the table) keep a C copy in their port that follows the value
  * here: the port refreshes it where it reads the variable (Mode_Read, Native_Import at its entry points) and writes
@@ -99,6 +100,9 @@ void ModVar_Made(const char *module, const char *level, PyObject *dict);
 void ModVar_Making(const char *module, const char *level, PyObject *dict, modVarRef_t *ref, modVarRef_t *was);
 /* the module code failed: the binding of the module's files as before ModVar_Making */
 void ModVar_Unmade(const char *module, const modVarRef_t *was);
+/* the variables of the dict of a module that has no .mod file (__main__, made by Py_Initialize) are kept here from now
+ * on, as those of a pack module without a table (file -1): ModVar_OfDict leads from the dict to them */
+void ModVar_Keep(PyObject *dict);
 /* before Py_Finalize: the variables of every module set to None as the module cleanup clears a module dict, then
  * freed (the module dicts keep only what the module object needs, which the cleanup clears) */
 void ModVar_Close(void);
@@ -157,7 +161,7 @@ const char *ModVar_ModuleName(const modVarRef_t *ref);
 byte ModVar_HasModule(const char *module);
 
 /* ---- by module name: the module imported as the scripts import it (Script_Module, its error), a pack module through
- * the registry, another module (Scrap, __main__, a pack module while its code runs) by its dict ---- */
+ * the registry, another module (Scrap, a pack module while its code runs) by its dict ---- */
 
 /* the variable name of module as its code reads a global: a new reference, NULL when it has none (no error set, the
  * caller raises NameError or ImportError) or when the import failed (*imported 0, its error set) */
@@ -183,7 +187,7 @@ int ModVar_SetObjAttr(PyObject *o, const char *name, PyObject *v);
 
 /* ---- by namespace dict (batch 5c): the globals and locals of the .mod evaluator, of Script_NameChain (the .def
  * runner's code strings, the save code strings, the names of Script_Literal) and of the C hooks of module code; a pack
- * module's dict through the registry, another dict (a class body, __main__, the $names of a .def file) as it is ---- */
+ * module's dict through the registry, another dict (a class body) as it is ---- */
 
 /* the name of the dict (LOAD_NAME's look into one dict): borrowed, NULL without an error when it has none */
 PyObject *ModVar_DictGet(PyObject *dict, const char *name);
