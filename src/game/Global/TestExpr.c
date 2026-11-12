@@ -1507,6 +1507,7 @@ static byte TX_CallPy(const nativeVal_t *f, const nativeVal_t *a, int n, const n
  * gives, -1 (nothing done) for any other callable */
 static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out);
 static byte TX_NullResult(void);
+static byte TX_Pairs(const nativeVal_t *kw, nativeVal_t *pairs);
 
 /* f(a[0..n-1], **kw): kw NULL, or the dict of the keywords. The values of a may be taken (they are None then). 0 with
  * the error set */
@@ -1517,6 +1518,15 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 	int r = TX_Native(f, a, n, kw, out);
 	if (r >= 0) {
 		ok = (byte)r;
+	} else if (kw && NObj_Native(f) && !NObj_PortRef(f)) {
+		/* keywords to a native class, instance, method or callback: natively */
+		nativeVal_t pairs;
+		ok = TX_Pairs(kw, &pairs);
+		for (int i = 0; ok && i < n; i++) {
+			TX_Give(&a[i]);
+		}
+		ok = ok && NObj_CallKw(f, a, n, &pairs, out);
+		Native_Free(&pairs);
 	} else if (kw) {
 		/* OBJLIB 9: keywords to a callable that is no lambda (a port function): through Python */
 		TX_Count("call", "keywords");
@@ -2081,48 +2091,48 @@ static PyObject *TX_ResultOut(byte ok, nativeVal_t *r) {
 	return res;
 }
 
-/* OBJLIB 9: the C function object of Python of a channel function: the record rec (freed by drop with the object) in
- * the self (record, items[0], items[1], items[2]), the 4-tuple the module dump of the channel shows (the self of a
- * lambda and of a recorder before batch 8a) */
-static byte TX_PyFunc(PyMethodDef *def, void *rec, void (*drop)(void *), PyObject *const items[3], nativeVal_t *out) {
-	PyObject *cf = PyCObject_FromVoidPtr(rec, drop);
-
-	Native_SetNone(out);
-	if (!cf) {
-		drop(rec);
-		return 0;
-	}
-	PyObject *self = Py_BuildValue("(OOOO)", cf, items[0], items[1], items[2]);
-	PyObject *fn = self ? PyCFunction_New(def, self) : NULL;
-	Py_XDECREF(self);
-	Py_DECREF(cf);
-	return TX_Result(fn, out);
-}
-
-/* OBJLIB 9: the C function of the Python object of a lambda; self: (the record, None, globals, None) */
-static PyObject *TX_LambdaPy(PyObject *self, PyObject *args, PyObject *kw) {
-	tcFunc *f = PyCObject_AsVoidPtr(PyTuple_GetItem(self, 0));
-	int n;
-	nativeVal_t *a = TX_ArgsIn(args, &n), pairs, r;
-
-	Native_SetEmpty(&pairs, NV_LIST);
-	if (kw) {
-		PyObject *k, *v;
-		int pos = 0;
-		while (PyDict_Next(kw, &pos, &k, &v)) {
-			nativeVal_t *pair = Native_Append(&pairs);
-			Native_SetEmpty(pair, NV_TUPLE);
-			NObj_FromPy(k, Native_Append(pair));
-			TX_FromPy(v, Native_Append(pair));
+/*
+ * A function of the channel (a lambda, a function of the verbs) is a native callback function (NObj_NewCallback) on its
+ * record, called natively by the evaluator, by the game (NObj_Call) and through the seams. Its __self__ is a 4-tuple:
+ * the self its C function object of Python had (the record, then three values), the record as None, so the reprs
+ * ("<built-in method <lambda> of tuple object at ...>") and the module dump ("self=?", or data(...) of a recorder that
+ * raises a string) stay as they were
+ */
+static void TX_FuncNew(nativeVal_t *out, const char *name, nativeCall_t call, void *rec, void (*drop)(void *),
+	nativeCallKw_t callkw, const nativeVal_t items[3]) {
+	nativeVal_t self;
+	Native_SetEmpty(&self, NV_TUPLE);
+	for (int i = 0; i < 4; i++) {
+		if (i && items) {
+			Native_Copy(Native_Append(&self), &items[i - 1]);
+		} else {
+			Native_SetNone(Native_Append(&self));
 		}
 	}
-	byte ok = TX_LambdaRun(f, a, n, kw ? &pairs : NULL, &r);
-	TX_ArgsFree(a, n);
-	Native_Free(&pairs);
-	return TX_ResultOut(ok, &r);
+	NObj_NewCallback(out, name, call, rec, drop, 0);
+	NObj_SetCallback(out, &self, callkw);
+	Native_Free(&self);
 }
 
-static PyMethodDef tx_lambdaDef = { "<lambda>", (PyCFunction)(void (*)(void))TX_LambdaPy, METH_VARARGS | METH_KEYWORDS, NULL };
+/* a lambda called with the keywords pairs (NULL: none): the record on copies of the arguments (TX_LambdaRun takes
+ * them) */
+static byte TX_LambdaKw(void *ctx, const nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
+	nativeVal_t *c = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*c)));
+
+	for (int i = 0; i < n; i++) {
+		Native_Copy(&c[i], &a[i]);
+	}
+	byte ok = TX_LambdaRun(ctx, c, n, kw, out);
+	for (int i = 0; i < n; i++) {
+		Native_Free(&c[i]);
+	}
+	Mem_Free(c);
+	return ok;
+}
+
+static byte TX_LambdaCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	return TX_LambdaKw(ctx, a, n, NULL, out);
+}
 
 static byte X_Lambda(tcNode *x, tcScope *s, nativeVal_t *out) {
 	tcFunc *f = Mem_Alloc((uint32_t)(sizeof(tcFunc) + (size_t)x->nkw * sizeof(nativeVal_t)));
@@ -2149,8 +2159,8 @@ static byte X_Lambda(tcNode *x, tcScope *s, nativeVal_t *out) {
 	}
 	f->globals = s->globals;
 	Py_INCREF(f->globals);
-	PyObject *items[3] = { Py_None, f->globals, Py_None };
-	return TX_PyFunc(&tx_lambdaDef, f, TX_FuncFree, items, out);
+	TX_FuncNew(out, "<lambda>", TX_LambdaCall, f, TX_FuncFree, TX_LambdaKw, NULL);
+	return 1;
 }
 
 /* a native function of the channel's verbs (TcX_NewFunc) */
@@ -2158,8 +2168,6 @@ typedef struct tcCFn {
 	nativeCall_t call;
 	void *ctx;
 	void (*drop)(void *ctx);
-	PyMethodDef def;		/* OBJLIB 9: of its C function object */
-	char name[];
 } tcCFn;
 
 static void TX_CFnFree(void *p) {
@@ -2171,85 +2179,39 @@ static void TX_CFnFree(void *p) {
 	Mem_Free(f);
 }
 
-/* OBJLIB 7: the C function of its Python object, for the callers through Python (the game calling a module
- * variable); self: (the record, ...) */
-static PyObject *TX_CFnPy(PyObject *self, PyObject *args) {
-	tcCFn *f = PyCObject_AsVoidPtr(PyTuple_GetItem(self, 0));
-	int n;
-	nativeVal_t *a = TX_ArgsIn(args, &n), r;
+static byte TX_CFnCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	tcCFn *f = ctx;
 
-	Native_SetNone(&r);
-	byte ok = f->call(f->ctx, a, n, &r);
-	TX_ArgsFree(a, n);
-	return TX_ResultOut(ok, &r);
+	return f->call(f->ctx, a, n, out);
 }
 
 byte TcX_NewFunc(nativeVal_t *out, const char *name, nativeCall_t call, void *ctx, void (*drop)(void *ctx),
 	const nativeVal_t self[3]) {
-	size_t len = strlen(name) + 1;
-	PyObject *items[3] = { NULL, NULL, NULL };
-	tcCFn *f = Mem_Alloc((uint32_t)(sizeof(tcCFn) + len));
+	tcCFn *f = Mem_Alloc(sizeof(tcCFn));
 
-	memset(f, 0, sizeof(tcCFn));
 	f->call = call;
 	f->ctx = ctx;
 	f->drop = drop;
-	memcpy(f->name, name, len);
-	f->def.ml_name = f->name;
-	f->def.ml_meth = TX_CFnPy;
-	f->def.ml_flags = METH_VARARGS;
-	byte ok = 1;
-	for (int i = 0; i < 3 && ok; i++) {
-		ok = (items[i] = TX_ToPy(&self[i])) != NULL;
-	}
-	if (ok) {
-		ok = TX_PyFunc(&f->def, f, TX_CFnFree, items, out);
-	} else {
-		Native_SetNone(out);
-		TX_CFnFree(f);
-	}
-	for (int i = 0; i < 3; i++) {
-		Py_XDECREF(items[i]);
-	}
-	return ok;
-}
-
-/* OBJLIB 9: the record of a lambda or a function of the verbs, the first item of the self of its C function object */
-static void *TX_RecOf(PyCFunctionObject *cf) {
-	return PyCObject_AsVoidPtr(PyTuple_GetItem(cf->m_self, 0));
-}
-
-/* a lambda as the C function of a seam: the record on copies of the arguments (TX_LambdaRun takes them) */
-static byte TX_HookLambda(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
-	nativeVal_t c[NATIVE_ARGS];
-
-	for (int i = 0; i < n; i++) {
-		Native_Copy(&c[i], &a[i]);
-	}
-	byte ok = TX_LambdaRun(ctx, c, n, NULL, out);
-	for (int i = 0; i < n; i++) {
-		Native_Free(&c[i]);
-	}
-	return ok;
+	TX_FuncNew(out, name, TX_CFnCall, f, TX_CFnFree, NULL, self);
+	return 1;
 }
 
 /* the C function and record of a channel function a case put at a seam (Native_HookFinder) */
 static byte TX_HookFind(const nativeVal_t *f, nativeHook_t *hook) {
-	PyObject *py = TX_Py(f);
+	nativeCall_t call;
+	void *ctx;
 
-	if (!py || !PyCFunction_Check(py)) {
+	if (!NObj_CallbackOf(f, &call, &ctx)) {
 		return 0;
 	}
-	PyCFunctionObject *cf = (PyCFunctionObject *)py;
-	if (cf->m_ml == &tx_lambdaDef) {
-		hook->call = TX_HookLambda;
-		hook->ctx = TX_RecOf(cf);
+	if (call == TX_LambdaCall) {
+		hook->call = TX_LambdaCall;
+		hook->ctx = ctx;
 		return 1;
 	}
-	if (cf->m_ml->ml_meth == TX_CFnPy) {
-		tcCFn *rec = TX_RecOf(cf);
-		hook->call = rec->call;
-		hook->ctx = rec->ctx;
+	if (call == TX_CFnCall) {
+		hook->call = ((tcCFn *)ctx)->call;
+		hook->ctx = ((tcCFn *)ctx)->ctx;
 		return 1;
 	}
 	return 0;
@@ -3436,25 +3398,22 @@ static PyObject *TX_AttrTwin(const char *name, PyObject *builtin) {
 static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
 	PyObject *py = TX_Py(f);
 	int i = TX_NATIVES;
+	nativeCall_t call;
+	void *ctx;
 
-	if (!py || !PyCFunction_Check(py)) {
-		return -1;
-	}
-	PyCFunctionObject *cf = (PyCFunctionObject *)py;
-	if (cf->m_ml == &tx_lambdaDef) {
+	if (NObj_CallbackOf(f, &call, &ctx) && call == TX_LambdaCall) {
 		nativeVal_t pairs;
-		tcFunc *rec = TX_RecOf(cf);
 		if (kw && !TX_Pairs(kw, &pairs)) {
 			return 0;
 		}
-		byte ok = TX_LambdaRun(rec, a, n, kw ? &pairs : NULL, out);
+		byte ok = TX_LambdaRun(ctx, a, n, kw ? &pairs : NULL, out);
 		if (kw) {
 			Native_Free(&pairs);
 		}
 		return ok;
 	}
-	if (cf->m_ml->ml_meth == TX_CFnPy) {
-		tcCFn *rec = TX_RecOf(cf);
+	if (NObj_CallbackOf(f, &call, &ctx) && call == TX_CFnCall) {
+		tcCFn *rec = ctx;
 		if (TX_HasKw(kw)) {
 			return Native_Raise(NE_TYPE, "this function takes no keyword arguments");
 		}
@@ -3467,6 +3426,10 @@ static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVa
 		}
 		return ok;
 	}
+	if (!py || !PyCFunction_Check(py)) {
+		return -1;
+	}
+	PyCFunctionObject *cf = (PyCFunctionObject *)py;
 	if (cf->m_ml >= tx_defs && cf->m_ml < tx_defs + TX_OWN) {
 		i = (int)(cf->m_ml - tx_defs);
 	} else if (!cf->m_self) {
