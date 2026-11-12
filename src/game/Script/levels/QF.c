@@ -195,13 +195,13 @@ LV_FN(Bc, OnEndOfSuperCrazyDealPy, 0, Bc_OnEndOfSuperCrazyDeal_C)
 LV_FN(Bc, BankersAttackPlayerPy, 0, Bc_BankersAttackPlayer_C)
 LV_FN(Bc, SetNextMissionPy, 0, Bc_SetNextMission_C)
 
-PyMethodDef g_QfBankersCombatMethods[] = {
-	{ "CreatePlans", Bc_CreatePlansPy, 1, NULL },
-	{ "TakePlanPhoto", Bc_TakePlanPhotoPy, 1, NULL },
-	{ "OnEndOfSuperCrazyDeal", Bc_OnEndOfSuperCrazyDealPy, 1, NULL },
-	{ "BankersAttackPlayer", Bc_BankersAttackPlayerPy, 1, NULL },
-	{ "SetNextMission", Bc_SetNextMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_QfBankersCombatMethods[] = {
+	PORT_FN(CreatePlans, Bc_CreatePlansPy),
+	PORT_FN(TakePlanPhoto, Bc_TakePlanPhotoPy),
+	PORT_FN(OnEndOfSuperCrazyDeal, Bc_OnEndOfSuperCrazyDealPy),
+	PORT_FN(BankersAttackPlayer, Bc_BankersAttackPlayerPy),
+	PORT_FN(SetNextMission, Bc_SetNextMissionPy),
+	PORT_FNEND
 };
 
 PORTS(levels_QF)

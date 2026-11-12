@@ -67,9 +67,9 @@ static byte Tuc_Init(const nativeVal_t *a, nativeVal_t *out) {
 
 LV_FN(Tuc, InitPy, 1, Tuc_Init)
 
-PyMethodDef g_TucZoneMapMethods[] = {
-	{ "Init", Tuc_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TucZoneMapMethods[] = {
+	PORT_FN(Init, Tuc_InitPy),
+	PORT_FNEND
 };
 
 /* ---- Nano ---- */
@@ -110,10 +110,10 @@ static byte Nano_Init(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(Nano, InitStatusPy, 1, Nano_InitStatus)
 LV_FN(Nano, InitPy, 1, Nano_Init)
 
-PyMethodDef g_NanoMapMethods[] = {
-	{ "InitStatus", Nano_InitStatusPy, 1, NULL },
-	{ "Init", Nano_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_NanoMapMethods[] = {
+	PORT_FN(InitStatus, Nano_InitStatusPy),
+	PORT_FN(Init, Nano_InitPy),
+	PORT_FNEND
 };
 
 /* ---- ShipEdit ---- */
@@ -156,14 +156,14 @@ LV_FN(Se, InitPy, 1, Se_Init)
 /* MapSnd.Init(LevelPath): returns at once (the editor has no map sounds) */
 LV_FN(Se, SndInitPy, 1, LvN_Pass)
 
-PyMethodDef g_ShipEditMapMethods[] = {
-	{ "Init", Se_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ShipEditMapMethods[] = {
+	PORT_FN(Init, Se_InitPy),
+	PORT_FNEND
 };
 
-PyMethodDef g_ShipEditMapSndMethods[] = {
-	{ "Init", Se_SndInitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ShipEditMapSndMethods[] = {
+	PORT_FN(Init, Se_SndInitPy),
+	PORT_FNEND
 };
 
 PORTS(levels_Small)

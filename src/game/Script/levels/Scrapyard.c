@@ -337,10 +337,10 @@ static byte Map_InitN(void) {
 MODE_FN(Scrapyard, InitStatus, 1, Map_InitStatusN())
 MODE_FN(Scrapyard, Init, 1, Map_InitN())
 
-PyMethodDef g_ScrapyardMapMethods[] = {
-	{ "InitStatus", Scrapyard_InitStatus, 1, NULL },
-	{ "Init", Scrapyard_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardMapMethods[] = {
+	PORT_FN(InitStatus, Scrapyard_InitStatus),
+	PORT_FN(Init, Scrapyard_Init),
+	PORT_FNEND
 };
 
 /* ---- MapTriggers: the triggers that launch the mosquitos and the mad hunters from their lairs ---- */
@@ -551,18 +551,18 @@ MODE_FN(MT, OnMadHunterTriggerTaken, 2, MT_TriggerTakenN(a, &mt_madhunter_taken)
 MODE_FN(MT, CreateMosquito, 1, MT_CreateShipN(&a[0], "Mosquito", "Mosquitos", 25, 1))
 MODE_FN(MT, CreateMadHunter, 1, MT_CreateShipN(&a[0], "MadHunter", "MadHunters", 100, 0))
 
-PyMethodDef g_ScrapyardMapTriggersMethods[] = {
-	{ "GetMadHunterProfile", MT_GetMadHunterProfile, 1, NULL },
-	{ "GetMosquitoProfile", MT_GetMosquitoProfile, 1, NULL },
-	{ "Init", MT_Init, 1, NULL },
-	{ "CheckMosquitoCadenceShoot", MT_CheckMosquitoCadenceShoot, 1, NULL },
-	{ "CreateMosquitosTriggers", MT_CreateMosquitosTriggers, 1, NULL },
-	{ "OnMosquitoTriggerTaken", MT_OnMosquitoTriggerTaken, 1, NULL },
-	{ "CreateMosquito", MT_CreateMosquito, 1, NULL },
-	{ "CreateMadHuntersTriggers", MT_CreateMadHuntersTriggers, 1, NULL },
-	{ "OnMadHunterTriggerTaken", MT_OnMadHunterTriggerTaken, 1, NULL },
-	{ "CreateMadHunter", MT_CreateMadHunter, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardMapTriggersMethods[] = {
+	PORT_FN(GetMadHunterProfile, MT_GetMadHunterProfile),
+	PORT_FN(GetMosquitoProfile, MT_GetMosquitoProfile),
+	PORT_FN(Init, MT_Init),
+	PORT_FN(CheckMosquitoCadenceShoot, MT_CheckMosquitoCadenceShoot),
+	PORT_FN(CreateMosquitosTriggers, MT_CreateMosquitosTriggers),
+	PORT_FN(OnMosquitoTriggerTaken, MT_OnMosquitoTriggerTaken),
+	PORT_FN(CreateMosquito, MT_CreateMosquito),
+	PORT_FN(CreateMadHuntersTriggers, MT_CreateMadHuntersTriggers),
+	PORT_FN(OnMadHunterTriggerTaken, MT_OnMadHunterTriggerTaken),
+	PORT_FN(CreateMadHunter, MT_CreateMadHunter),
+	PORT_FNEND
 };
 
 /* ---- Mission_Ambush: call Traitorius, destroy the probes among the mad hunters, call Deep Throat ---- */
@@ -761,23 +761,23 @@ MODE_FN(Ambush, CallDeepThroat, 0, Mode_PhoneCab("Mission_Ambush.UsePhoneCab2", 
 MODE_FN(Ambush, UsePhoneCab2, 4, Sy_UsePhone(a, AM, &am_phone2))
 MODE_FN(Ambush, SetNextMission, 0, Ambush_SetNextMissionN())
 
-PyMethodDef g_ScrapyardAmbushMethods[] = {
-	{ "GetMadHuntersProfile", Ambush_GetMadHuntersProfile, 1, NULL },
-	{ "InitStatus", Ambush_InitStatus, 1, NULL },
-	{ "Init", Ambush_Init, 1, NULL },
-	{ "CallTraitorius", Ambush_CallTraitorius, 1, NULL },
-	{ "UsePhoneCab", Ambush_UsePhoneCab, 1, NULL },
-	{ "DeepThroatCom", Ambush_DeepThroatCom, 1, NULL },
-	{ "IsValidPos", Ambush_IsValidPos, 1, NULL },
-	{ "CreateProbe", Ambush_CreateProbe, 1, NULL },
-	{ "CreateMadHunter", Ambush_CreateMadHunter, 1, NULL },
-	{ "CreateMadHunters", Ambush_CreateMadHunters, 1, NULL },
-	{ "OnProbeDeath", Ambush_OnProbeDeath, 1, NULL },
-	{ "PreCallDeepThroat", Ambush_PreCallDeepThroat, 1, NULL },
-	{ "CallDeepThroat", Ambush_CallDeepThroat, 1, NULL },
-	{ "UsePhoneCab2", Ambush_UsePhoneCab2, 1, NULL },
-	{ "SetNextMission", Ambush_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardAmbushMethods[] = {
+	PORT_FN(GetMadHuntersProfile, Ambush_GetMadHuntersProfile),
+	PORT_FN(InitStatus, Ambush_InitStatus),
+	PORT_FN(Init, Ambush_Init),
+	PORT_FN(CallTraitorius, Ambush_CallTraitorius),
+	PORT_FN(UsePhoneCab, Ambush_UsePhoneCab),
+	PORT_FN(DeepThroatCom, Ambush_DeepThroatCom),
+	PORT_FN(IsValidPos, Ambush_IsValidPos),
+	PORT_FN(CreateProbe, Ambush_CreateProbe),
+	PORT_FN(CreateMadHunter, Ambush_CreateMadHunter),
+	PORT_FN(CreateMadHunters, Ambush_CreateMadHunters),
+	PORT_FN(OnProbeDeath, Ambush_OnProbeDeath),
+	PORT_FN(PreCallDeepThroat, Ambush_PreCallDeepThroat),
+	PORT_FN(CallDeepThroat, Ambush_CallDeepThroat),
+	PORT_FN(UsePhoneCab2, Ambush_UsePhoneCab2),
+	PORT_FN(SetNextMission, Ambush_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_DefeatCrazyGambler2: kill the crazy gambler's lives among the waves of mosquitos ---- */
@@ -961,18 +961,18 @@ MODE_FN(Gambler, CreateCrazyGambler, 0, Gambler_CreateCrazyGamblerN())
 MODE_FN(Gambler, OnCrazyGamblerDeath, 2, Gambler_OnCrazyGamblerDeathN(a))
 MODE_FN(Gambler, MissionScorer, 1, Gambler_MissionScorerN(&a[0]))
 
-PyMethodDef g_ScrapyardDefeatCrazyGambler2Methods[] = {
-	{ "GetCrazyGamblerProfile", Gambler_GetCrazyGamblerProfile, 1, NULL },
-	{ "GetMosquitoProfile", Gambler_GetMosquitoProfile, 1, NULL },
-	{ "InitStatus", Gambler_InitStatus, 1, NULL },
-	{ "Init", Gambler_Init, 1, NULL },
-	{ "LaunchTaunts", Gambler_LaunchTaunts, 1, NULL },
-	{ "CreateMosquito", Gambler_CreateMosquito, 1, NULL },
-	{ "CreateMosquitos", Gambler_CreateMosquitos, 1, NULL },
-	{ "CreateCrazyGambler", Gambler_CreateCrazyGambler, 1, NULL },
-	{ "OnCrazyGamblerDeath", Gambler_OnCrazyGamblerDeath, 1, NULL },
-	{ "MissionScorer", Gambler_MissionScorer, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardDefeatCrazyGambler2Methods[] = {
+	PORT_FN(GetCrazyGamblerProfile, Gambler_GetCrazyGamblerProfile),
+	PORT_FN(GetMosquitoProfile, Gambler_GetMosquitoProfile),
+	PORT_FN(InitStatus, Gambler_InitStatus),
+	PORT_FN(Init, Gambler_Init),
+	PORT_FN(LaunchTaunts, Gambler_LaunchTaunts),
+	PORT_FN(CreateMosquito, Gambler_CreateMosquito),
+	PORT_FN(CreateMosquitos, Gambler_CreateMosquitos),
+	PORT_FN(CreateCrazyGambler, Gambler_CreateCrazyGambler),
+	PORT_FN(OnCrazyGamblerDeath, Gambler_OnCrazyGamblerDeath),
+	PORT_FN(MissionScorer, Gambler_MissionScorer),
+	PORT_FNEND
 };
 
 /* ---- Mission_FindDtritusMatrix: take the lonely mercenary's ship into his lair, photograph the plans, take the
@@ -1449,25 +1449,25 @@ MODE_FN(Dtritus, CreateDtritusMatrix, 0, Dtritus_CreateDtritusMatrixN())
 MODE_FN(Dtritus, TakeMatrix, 2, Dtritus_TakeMatrixN(a))
 MODE_FN(Dtritus, CheckEndOfMission, 0, Dtritus_CheckEndOfMissionN(out))
 
-PyMethodDef g_ScrapyardFindDtritusMatrixMethods[] = {
-	{ "SetLonelyMercProfile", Dtritus_SetLonelyMercProfile, 1, NULL },
-	{ "InitStatus", Dtritus_InitStatus, 1, NULL },
-	{ "Init", Dtritus_Init, 1, NULL },
-	{ "CreateLonelyMercShip", Dtritus_CreateLonelyMercShip, 1, NULL },
-	{ "OnLonelyMercShipDeath", Dtritus_OnLonelyMercShipDeath, 1, NULL },
-	{ "CheckLonelyMercShipExist", Dtritus_CheckLonelyMercShipExist, 1, NULL },
-	{ "TestForLonelyMercShip", Dtritus_TestForLonelyMercShip, 1, NULL },
-	{ "CheckCreateBadGuy", Dtritus_CheckCreateBadGuy, 1, NULL },
-	{ "OutOfLonelyMercShip", Dtritus_OutOfLonelyMercShip, 1, NULL },
-	{ "ActivateMissionObjects", Dtritus_ActivateMissionObjects, 1, NULL },
-	{ "CreateBadGuy", Dtritus_CreateBadGuy, 1, NULL },
-	{ "OnBadGuyDeath", Dtritus_OnBadGuyDeath, 1, NULL },
-	{ "CreatePlan", Dtritus_CreatePlan, 1, NULL },
-	{ "TakePlanPhoto", Dtritus_TakePlanPhoto, 1, NULL },
-	{ "CreateDtritusMatrix", Dtritus_CreateDtritusMatrix, 1, NULL },
-	{ "TakeMatrix", Dtritus_TakeMatrix, 1, NULL },
-	{ "CheckEndOfMission", Dtritus_CheckEndOfMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardFindDtritusMatrixMethods[] = {
+	PORT_FN(SetLonelyMercProfile, Dtritus_SetLonelyMercProfile),
+	PORT_FN(InitStatus, Dtritus_InitStatus),
+	PORT_FN(Init, Dtritus_Init),
+	PORT_FN(CreateLonelyMercShip, Dtritus_CreateLonelyMercShip),
+	PORT_FN(OnLonelyMercShipDeath, Dtritus_OnLonelyMercShipDeath),
+	PORT_FN(CheckLonelyMercShipExist, Dtritus_CheckLonelyMercShipExist),
+	PORT_FN(TestForLonelyMercShip, Dtritus_TestForLonelyMercShip),
+	PORT_FN(CheckCreateBadGuy, Dtritus_CheckCreateBadGuy),
+	PORT_FN(OutOfLonelyMercShip, Dtritus_OutOfLonelyMercShip),
+	PORT_FN(ActivateMissionObjects, Dtritus_ActivateMissionObjects),
+	PORT_FN(CreateBadGuy, Dtritus_CreateBadGuy),
+	PORT_FN(OnBadGuyDeath, Dtritus_OnBadGuyDeath),
+	PORT_FN(CreatePlan, Dtritus_CreatePlan),
+	PORT_FN(TakePlanPhoto, Dtritus_TakePlanPhoto),
+	PORT_FN(CreateDtritusMatrix, Dtritus_CreateDtritusMatrix),
+	PORT_FN(TakeMatrix, Dtritus_TakeMatrix),
+	PORT_FN(CheckEndOfMission, Dtritus_CheckEndOfMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_MeetBerto and Mission_TalkToDeepThroat: a call from a phone cab ---- */
@@ -1541,12 +1541,12 @@ MODE_FN(Berto, Init, 1, Sy_PhoneInitN(MB, "Mission_MeetBerto.UsePhoneCab", 1))
 MODE_FN(Berto, UsePhoneCab, 4, Sy_UsePhone(a, MB, &mb_phone))
 MODE_FN(Berto, SetNextMission, 0, Berto_SetNextMissionN())
 
-PyMethodDef g_ScrapyardMeetBertoMethods[] = {
-	{ "InitStatus", Berto_InitStatus, 1, NULL },
-	{ "Init", Berto_Init, 1, NULL },
-	{ "UsePhoneCab", Berto_UsePhoneCab, 1, NULL },
-	{ "SetNextMission", Berto_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardMeetBertoMethods[] = {
+	PORT_FN(InitStatus, Berto_InitStatus),
+	PORT_FN(Init, Berto_Init),
+	PORT_FN(UsePhoneCab, Berto_UsePhoneCab),
+	PORT_FN(SetNextMission, Berto_SetNextMission),
+	PORT_FNEND
 };
 
 MODE_FN(Throat, InitStatus, 1, LvN_AcShips(TD, "[\"SPoliBoss1\", \"SMerc1\",\"SMerc2\",\"SMerc3\",\"SLMerc\",\"SMayor1\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]"))
@@ -1554,12 +1554,12 @@ MODE_FN(Throat, Init, 1, Sy_PhoneInitN(TD, "Mission_TalkToDeepThroat.UsePhoneCab
 MODE_FN(Throat, UsePhoneCab, 4, Sy_UsePhone(a, TD, &td_phone))
 MODE_FN(Throat, SetNextMission, 0, Throat_SetNextMissionN())
 
-PyMethodDef g_ScrapyardTalkToDeepThroatMethods[] = {
-	{ "InitStatus", Throat_InitStatus, 1, NULL },
-	{ "Init", Throat_Init, 1, NULL },
-	{ "UsePhoneCab", Throat_UsePhoneCab, 1, NULL },
-	{ "SetNextMission", Throat_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardTalkToDeepThroatMethods[] = {
+	PORT_FN(InitStatus, Throat_InitStatus),
+	PORT_FN(Init, Throat_Init),
+	PORT_FN(UsePhoneCab, Throat_UsePhoneCab),
+	PORT_FN(SetNextMission, Throat_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- Mission_MosquitoClue: the swarms of the three lairs, the data pack of the last mosquito, the call to the police
@@ -1789,18 +1789,18 @@ MODE_FN(Clue, TakeDataPack, 2, Clue_TakeDataPackN())
 MODE_FN(Clue, InitPoliChat, 0, Sy_CallFrom(MC, "Mission_MosquitoClue", "PoliChat", "Mission_Get2ndClue_MissionText1", "Mission_MosquitoClue.UsePhoneCab"))
 MODE_FN(Clue, SetNextMission, 0, Clue_SetNextMissionN())
 
-PyMethodDef g_ScrapyardMosquitoClueMethods[] = {
-	{ "GetMosquitoProfile", Clue_GetMosquitoProfile, 1, NULL },
-	{ "InitStatus", Clue_InitStatus, 1, NULL },
-	{ "Init", Clue_Init, 1, NULL },
-	{ "InitSwarm", Clue_InitSwarm, 1, NULL },
-	{ "InitMosquito", Clue_InitMosquito, 1, NULL },
-	{ "CreateMosquito", Clue_CreateMosquito, 1, NULL },
-	{ "MosquitoDeath", Clue_MosquitoDeath, 1, NULL },
-	{ "TakeDataPack", Clue_TakeDataPack, 1, NULL },
-	{ "InitPoliChat", Clue_InitPoliChat, 1, NULL },
-	{ "SetNextMission", Clue_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardMosquitoClueMethods[] = {
+	PORT_FN(GetMosquitoProfile, Clue_GetMosquitoProfile),
+	PORT_FN(InitStatus, Clue_InitStatus),
+	PORT_FN(Init, Clue_Init),
+	PORT_FN(InitSwarm, Clue_InitSwarm),
+	PORT_FN(InitMosquito, Clue_InitMosquito),
+	PORT_FN(CreateMosquito, Clue_CreateMosquito),
+	PORT_FN(MosquitoDeath, Clue_MosquitoDeath),
+	PORT_FN(TakeDataPack, Clue_TakeDataPack),
+	PORT_FN(InitPoliChat, Clue_InitPoliChat),
+	PORT_FN(SetNextMission, Clue_SetNextMission),
+	PORT_FNEND
 };
 
 /* ---- the stupid mercenary: Mission_StupidMerc and Mission_StupidMercAgain follow him along his waypoints ---- */
@@ -2224,19 +2224,19 @@ MODE_FN(Merc, CreateATPCPlans, 1, Merc_CreateATPCPlansN(&a[0]))
 MODE_FN(Merc, AddATPCPlans, 1, Merc_AddATPCPlansN(&a[0], out))
 MODE_FN(Merc, SetNextMission, 0, Merc_SetNextMissionN())
 
-PyMethodDef g_ScrapyardStupidMercMethods[] = {
-	{ "InitStatus", Merc_InitStatus, 1, NULL },
-	{ "Init", Merc_Init, 1, NULL },
-	{ "CreateMerc", (PyCFunction)(void (*)(void))Merc_CreateMerc, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "OnStupidMercDeath", Merc_OnStupidMercDeath, 1, NULL },
-	{ "OnStupidMercDamage", Merc_OnStupidMercDamage, 1, NULL },
-	{ "CheckAITakesLife", Merc_CheckAITakesLife, 1, NULL },
-	{ "CheckLife", Merc_CheckLife, 1, NULL },
-	{ "GotoNext", Merc_GotoNext, 1, NULL },
-	{ "CreateATPCPlans", Merc_CreateATPCPlans, 1, NULL },
-	{ "AddATPCPlans", Merc_AddATPCPlans, 1, NULL },
-	{ "SetNextMission", Merc_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardStupidMercMethods[] = {
+	PORT_FN(InitStatus, Merc_InitStatus),
+	PORT_FN(Init, Merc_Init),
+	PORT_FNK(CreateMerc, Merc_CreateMerc),
+	PORT_FN(OnStupidMercDeath, Merc_OnStupidMercDeath),
+	PORT_FN(OnStupidMercDamage, Merc_OnStupidMercDamage),
+	PORT_FN(CheckAITakesLife, Merc_CheckAITakesLife),
+	PORT_FN(CheckLife, Merc_CheckLife),
+	PORT_FN(GotoNext, Merc_GotoNext),
+	PORT_FN(CreateATPCPlans, Merc_CreateATPCPlans),
+	PORT_FN(AddATPCPlans, Merc_AddATPCPlans),
+	PORT_FN(SetNextMission, Merc_SetNextMission),
+	PORT_FNEND
 };
 
 static const char *const sa_mercs_profile[] = { "StupidPathFinding=0", "ControlStrafe=2", "CadenceShootCM=5", "UsePercSonic=70",
@@ -2504,22 +2504,22 @@ MODE_FN(Again, CheckEvasion, 0, Again_CheckEvasionN())
 MODE_FN(Again, InitTalkBishop, 0, Sy_CallFrom(SA, "Mission_StupidMercAgain", "TalkBishop", NULL, "Mission_StupidMercAgain.UsePhoneCab"))
 MODE_FN(Again, SetNextMission, 0, Again_SetNextMissionN())
 
-PyMethodDef g_ScrapyardStupidMercAgainMethods[] = {
-	{ "GetMercsEnemiesProfile", Again_GetMercsEnemiesProfile, 1, NULL },
-	{ "InitStatus", Again_InitStatus, 1, NULL },
-	{ "Init", Again_Init, 1, NULL },
-	{ "InitFollow", Again_InitFollow, 1, NULL },
-	{ "CreateMerc", Again_CreateMerc, 1, NULL },
-	{ "CreateMercs", Again_CreateMercs, 1, NULL },
-	{ "SmartMerDeath", Again_SmartMerDeath, 1, NULL },
-	{ "GotoNext", Again_GotoNext, 1, NULL },
-	{ "CreateMercPlans", Again_CreateMercPlans, 1, NULL },
-	{ "AddMercPlans", Again_AddMercPlans, 1, NULL },
-	{ "StartEvasion", Again_StartEvasion, 1, NULL },
-	{ "CheckEvasion", Again_CheckEvasion, 1, NULL },
-	{ "InitTalkBishop", Again_InitTalkBishop, 1, NULL },
-	{ "SetNextMission", Again_SetNextMission, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ScrapyardStupidMercAgainMethods[] = {
+	PORT_FN(GetMercsEnemiesProfile, Again_GetMercsEnemiesProfile),
+	PORT_FN(InitStatus, Again_InitStatus),
+	PORT_FN(Init, Again_Init),
+	PORT_FN(InitFollow, Again_InitFollow),
+	PORT_FN(CreateMerc, Again_CreateMerc),
+	PORT_FN(CreateMercs, Again_CreateMercs),
+	PORT_FN(SmartMerDeath, Again_SmartMerDeath),
+	PORT_FN(GotoNext, Again_GotoNext),
+	PORT_FN(CreateMercPlans, Again_CreateMercPlans),
+	PORT_FN(AddMercPlans, Again_AddMercPlans),
+	PORT_FN(StartEvasion, Again_StartEvasion),
+	PORT_FN(CheckEvasion, Again_CheckEvasion),
+	PORT_FN(InitTalkBishop, Again_InitTalkBishop),
+	PORT_FN(SetNextMission, Again_SetNextMission),
+	PORT_FNEND
 };
 
 PORTS(levels_Scrapyard)

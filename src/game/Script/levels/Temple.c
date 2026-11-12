@@ -242,11 +242,11 @@ LV_FN(TpMap, InitStatusPy, 1, TpMap_InitStatus_C)
 LV_FN(TpMap, InitPy, 1, TpMap_Init_C)
 LV_FN(TpMap, EndOfAppearsPy, 1, TpMap_EndOfAppears_C)
 
-PyMethodDef g_TempleMapMethods[] = {
-	{ "InitStatus", TpMap_InitStatusPy, 1, NULL },
-	{ "Init", TpMap_InitPy, 1, NULL },
-	{ "EndOfAppears", TpMap_EndOfAppearsPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TempleMapMethods[] = {
+	PORT_FN(InitStatus, TpMap_InitStatusPy),
+	PORT_FN(Init, TpMap_InitPy),
+	PORT_FN(EndOfAppears, TpMap_EndOfAppearsPy),
+	PORT_FNEND
 };
 
 /* ---- MapExtraLifes: the extra lives of the temple, back after TimeToSpawn; raised while the alarm is on ---- */
@@ -548,14 +548,14 @@ LV_FN(Xl, SwitchAlarmPy, 1, Xl_SwitchAlarm_C)
 LV_FN(Xl, InitPy, 1, Xl_Init_C)
 LV_FN(Xl, GetMoneyPy, 1, Xl_GetMoney_C)
 
-PyMethodDef g_TempleXlMethods[] = {
-	{ "TakeExtraLife", Xl_TakeExtraLifePy, 1, NULL },
-	{ "SetRespawnTime", Xl_SetRespawnTimePy, 1, NULL },
-	{ "MoveLifes", Xl_MoveLifesPy, 1, NULL },
-	{ "SwitchAlarm", Xl_SwitchAlarmPy, 1, NULL },
-	{ "Init", Xl_InitPy, 1, NULL },
-	{ "GetMoney", Xl_GetMoneyPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TempleXlMethods[] = {
+	PORT_FN(TakeExtraLife, Xl_TakeExtraLifePy),
+	PORT_FN(SetRespawnTime, Xl_SetRespawnTimePy),
+	PORT_FN(MoveLifes, Xl_MoveLifesPy),
+	PORT_FN(SwitchAlarm, Xl_SwitchAlarmPy),
+	PORT_FN(Init, Xl_InitPy),
+	PORT_FN(GetMoney, Xl_GetMoneyPy),
+	PORT_FNEND
 };
 
 /* ---- the missions ---- */
@@ -715,14 +715,14 @@ LV_FN(Ad, ViewProofPy, 4, Ad_ViewProof_C)
 LV_FN(Ad, TakeProofPhotoPy, 1, Ad_TakeProofPhoto_C)
 LV_FN(Ad, AfterDeepThroatMessageShownPy, 0, Ad_AfterDeepThroatMessageShown_C)
 
-PyMethodDef g_TempleArchbishopDeadMethods[] = {
-	{ "Init", Ad_InitPy, 1, NULL },
-	{ "ForbiddenMsg", Ad_ForbiddenMsgPy, 1, NULL },
-	{ "CreateViscProofs", Ad_CreateViscProofsPy, 1, NULL },
-	{ "ViewProof", Ad_ViewProofPy, 1, NULL },
-	{ "TakeProofPhoto", Ad_TakeProofPhotoPy, 1, NULL },
-	{ "AfterDeepThroatMessageShown", Ad_AfterDeepThroatMessageShownPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TempleArchbishopDeadMethods[] = {
+	PORT_FN(Init, Ad_InitPy),
+	PORT_FN(ForbiddenMsg, Ad_ForbiddenMsgPy),
+	PORT_FN(CreateViscProofs, Ad_CreateViscProofsPy),
+	PORT_FN(ViewProof, Ad_ViewProofPy),
+	PORT_FN(TakeProofPhoto, Ad_TakeProofPhotoPy),
+	PORT_FN(AfterDeepThroatMessageShown, Ad_AfterDeepThroatMessageShownPy),
+	PORT_FNEND
 };
 
 /* Deep Throat's desktop as the target, its dialog by module.DeepThroatSpeech (CallDeepThroat of AskGus, Init of
@@ -889,16 +889,16 @@ LV_FN(Ag, PreCallDeepThroatPy, 0, Ag_PreCallDeepThroat_C)
 LV_FN(Ag, CallDeepThroatPy, 0, Ag_CallDeepThroat_C)
 LV_FN(Ag, DeepThroatSpeechPy, 4, Ag_DeepThroatSpeech_C)
 
-PyMethodDef g_TempleAskGusMethods[] = {
-	{ "InitStatus", Ag_InitStatusPy, 1, NULL },
-	{ "AfterBrowseNPC", Ag_AfterBrowseNPCPy, 1, NULL },
-	{ "CreateGusInit", Ag_CreateGusInitPy, 1, NULL },
-	{ "Init", Ag_InitPy, 1, NULL },
-	{ "DeepThroatAppears", Ag_DeepThroatAppearsPy, 1, NULL },
-	{ "PreCallDeepThroat", Ag_PreCallDeepThroatPy, 1, NULL },
-	{ "CallDeepThroat", Ag_CallDeepThroatPy, 1, NULL },
-	{ "DeepThroatSpeech", Ag_DeepThroatSpeechPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TempleAskGusMethods[] = {
+	PORT_FN(InitStatus, Ag_InitStatusPy),
+	PORT_FN(AfterBrowseNPC, Ag_AfterBrowseNPCPy),
+	PORT_FN(CreateGusInit, Ag_CreateGusInitPy),
+	PORT_FN(Init, Ag_InitPy),
+	PORT_FN(DeepThroatAppears, Ag_DeepThroatAppearsPy),
+	PORT_FN(PreCallDeepThroat, Ag_PreCallDeepThroatPy),
+	PORT_FN(CallDeepThroat, Ag_CallDeepThroatPy),
+	PORT_FN(DeepThroatSpeech, Ag_DeepThroatSpeechPy),
+	PORT_FNEND
 };
 
 static byte Td_Init_C(const nativeVal_t *a, nativeVal_t *out) {
@@ -915,10 +915,10 @@ static byte Td_DeepThroatSpeech_C(const nativeVal_t *a, nativeVal_t *out) {
 LV_FN(Td, InitPy, 1, Td_Init_C)
 LV_FN(Td, DeepThroatSpeechPy, 4, Td_DeepThroatSpeech_C)
 
-PyMethodDef g_TempleTalkToDeepThroatMethods[] = {
-	{ "Init", Td_InitPy, 1, NULL },
-	{ "DeepThroatSpeech", Td_DeepThroatSpeechPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TempleTalkToDeepThroatMethods[] = {
+	PORT_FN(Init, Td_InitPy),
+	PORT_FN(DeepThroatSpeech, Td_DeepThroatSpeechPy),
+	PORT_FNEND
 };
 
 /* the global fn of the mission at Scrap.GetTime() + 0.1 */
@@ -1069,12 +1069,12 @@ LV_FN(Ma, TestEndOfElevatorPy, 0, Ma_TestEndOfElevator_C)
 LV_FN(Ma, CreateFakeSpeechPy, 0, Ma_CreateFakeSpeech_C)
 LV_FN(Ma, InitPy, 1, Ma_Init_C)
 
-PyMethodDef g_TempleMeetArchbishopMethods[] = {
-	{ "UseDoor", Ma_UseDoorPy, 1, NULL },
-	{ "TestEndOfElevator", Ma_TestEndOfElevatorPy, 1, NULL },
-	{ "CreateFakeSpeech", Ma_CreateFakeSpeechPy, 1, NULL },
-	{ "Init", Ma_InitPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_TempleMeetArchbishopMethods[] = {
+	PORT_FN(UseDoor, Ma_UseDoorPy),
+	PORT_FN(TestEndOfElevator, Ma_TestEndOfElevatorPy),
+	PORT_FN(CreateFakeSpeech, Ma_CreateFakeSpeechPy),
+	PORT_FN(Init, Ma_InitPy),
+	PORT_FNEND
 };
 
 PORTS(levels_Temple)

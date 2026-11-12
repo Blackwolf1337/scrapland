@@ -383,14 +383,14 @@ LV_FN(GDB, EndOfAppearsPy, 1, GDB_EndOfAppears_C)
 LV_FN(GDB, GiveLifePy, 0, GDB_GiveLife_C)
 LV_FN(GDB, NextWavePy, 0, GDB_NextWave_C)
 
-PyMethodDef g_GDBMapMethods[] = {
-	{ "InitStatus", GDB_InitStatusPy, 1, NULL },
-	{ "Init", GDB_InitPy, 1, NULL },
-	{ "InitPoliceBishops", GDB_InitPoliceBishopsPy, 1, NULL },
-	{ "EndOfAppears", GDB_EndOfAppearsPy, 1, NULL },
-	{ "GiveLife", GDB_GiveLifePy, 1, NULL },
-	{ "NextWave", GDB_NextWavePy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GDBMapMethods[] = {
+	PORT_FN(InitStatus, GDB_InitStatusPy),
+	PORT_FN(Init, GDB_InitPy),
+	PORT_FN(InitPoliceBishops, GDB_InitPoliceBishopsPy),
+	PORT_FN(EndOfAppears, GDB_EndOfAppearsPy),
+	PORT_FN(GiveLife, GDB_GiveLifePy),
+	PORT_FN(NextWave, GDB_NextWavePy),
+	PORT_FNEND
 };
 
 /* ---- MapMatrix ---- */
@@ -409,9 +409,9 @@ MODE_KW(Matrix, EndOFScene, "|O", "usr") {
 	return ok;
 }
 
-PyMethodDef g_GDBMapMatrixMethods[] = {
-	{ "EndOFScene", (PyCFunction)(void (*)(void))Matrix_EndOFScene, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GDBMapMatrixMethods[] = {
+	PORT_FNK(EndOFScene, Matrix_EndOFScene),
+	PORT_FNEND
 };
 
 /* ---- Mission_IntoTheGDB: scan the bishops for the traitor, kill him for Gus' matrix and reinsert it ---- */
@@ -1059,26 +1059,26 @@ LV_FN(Into, LaunchRestoreMatrixAnimPy, 4, Into_LaunchRestoreMatrixAnim_C)
 LV_FN(Into, RelaxBishopsPy, 0, Into_RelaxBishops_C)
 LV_FN(Into, MissionScorerPy, 1, Into_MissionScorer_C)
 
-PyMethodDef g_GDBIntoTheGDBMethods[] = {
-	{ "GetBishopProfile", Into_GetBishopProfile, 1, NULL },
-	{ "Init", Into_InitPy, 1, NULL },
-	{ "CreateBishop", Into_CreateBishopPy, 1, NULL },
-	{ "CreateBishops", Into_CreateBishopsPy, 1, NULL },
-	{ "InitMission", Into_InitMissionPy, 1, NULL },
-	{ "ScanShip", Into_ScanShipPy, 1, NULL },
-	{ "CheckContinueScanning", Into_CheckContinueScanningPy, 1, NULL },
-	{ "ResetScan", Into_ResetScanPy, 1, NULL },
-	{ "OnFinishScan", Into_OnFinishScanPy, 1, NULL },
-	{ "OnBishopsDeath", Into_OnBishopsDeathPy, 1, NULL },
-	{ "OnBishopsDamage", Into_OnBishopsDamagePy, 1, NULL },
-	{ "DropMatrix", Into_DropMatrixPy, 1, NULL },
-	{ "ActivateMatrix", Into_ActivateMatrixPy, 1, NULL },
-	{ "TakeMatrix", Into_TakeMatrixPy, 1, NULL },
-	{ "RestoreMatrix", Into_RestoreMatrixPy, 1, NULL },
-	{ "LaunchRestoreMatrixAnim", Into_LaunchRestoreMatrixAnimPy, 1, NULL },
-	{ "RelaxBishops", Into_RelaxBishopsPy, 1, NULL },
-	{ "MissionScorer", Into_MissionScorerPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GDBIntoTheGDBMethods[] = {
+	PORT_FN(GetBishopProfile, Into_GetBishopProfile),
+	PORT_FN(Init, Into_InitPy),
+	PORT_FN(CreateBishop, Into_CreateBishopPy),
+	PORT_FN(CreateBishops, Into_CreateBishopsPy),
+	PORT_FN(InitMission, Into_InitMissionPy),
+	PORT_FN(ScanShip, Into_ScanShipPy),
+	PORT_FN(CheckContinueScanning, Into_CheckContinueScanningPy),
+	PORT_FN(ResetScan, Into_ResetScanPy),
+	PORT_FN(OnFinishScan, Into_OnFinishScanPy),
+	PORT_FN(OnBishopsDeath, Into_OnBishopsDeathPy),
+	PORT_FN(OnBishopsDamage, Into_OnBishopsDamagePy),
+	PORT_FN(DropMatrix, Into_DropMatrixPy),
+	PORT_FN(ActivateMatrix, Into_ActivateMatrixPy),
+	PORT_FN(TakeMatrix, Into_TakeMatrixPy),
+	PORT_FN(RestoreMatrix, Into_RestoreMatrixPy),
+	PORT_FN(LaunchRestoreMatrixAnim, Into_LaunchRestoreMatrixAnimPy),
+	PORT_FN(RelaxBishops, Into_RelaxBishopsPy),
+	PORT_FN(MissionScorer, Into_MissionScorerPy),
+	PORT_FNEND
 };
 
 /* ---- Mission_ReinsertOwnMatrix and Mission_ReinsertOwnMatrix2: reinsert Dtritus' matrix among eight bishops ---- */
@@ -1238,26 +1238,26 @@ static byte Re_PreSetNextMission(const char *module, byte second) {
 RE_FNS(1, R1, "Mission_ReinsertOwnMatrix.PreSetNextMission", 0)
 RE_FNS(2, R2, "Mission_ReinsertOwnMatrix2.PreSetNextMission", 1)
 
-PyMethodDef g_GDBReinsertOwnMatrixMethods[] = {
-	{ "GetBishopProfile", Re1_GetBishopProfile, 1, NULL },
-	{ "InitMission", Re1_InitMissionPy, 1, NULL },
-	{ "BishopsAttackPlayer", Re1_BishopsAttackPlayerPy, 1, NULL },
-	{ "CreateBishop", Re1_CreateBishopPy, 1, NULL },
-	{ "CreateBishops", Re1_CreateBishopsPy, 1, NULL },
-	{ "OnBishopsDeath", Re1_OnBishopsDeathPy, 1, NULL },
-	{ "PreSetNextMission", Re1_PreSetNextMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GDBReinsertOwnMatrixMethods[] = {
+	PORT_FN(GetBishopProfile, Re1_GetBishopProfile),
+	PORT_FN(InitMission, Re1_InitMissionPy),
+	PORT_FN(BishopsAttackPlayer, Re1_BishopsAttackPlayerPy),
+	PORT_FN(CreateBishop, Re1_CreateBishopPy),
+	PORT_FN(CreateBishops, Re1_CreateBishopsPy),
+	PORT_FN(OnBishopsDeath, Re1_OnBishopsDeathPy),
+	PORT_FN(PreSetNextMission, Re1_PreSetNextMissionPy),
+	PORT_FNEND
 };
 
-PyMethodDef g_GDBReinsertOwnMatrix2Methods[] = {
-	{ "GetBishopProfile", Re2_GetBishopProfile, 1, NULL },
-	{ "InitMission", Re2_InitMissionPy, 1, NULL },
-	{ "BishopsAttackPlayer", Re2_BishopsAttackPlayerPy, 1, NULL },
-	{ "CreateBishop", Re2_CreateBishopPy, 1, NULL },
-	{ "CreateBishops", Re2_CreateBishopsPy, 1, NULL },
-	{ "OnBishopsDeath", Re2_OnBishopsDeathPy, 1, NULL },
-	{ "PreSetNextMission", Re2_PreSetNextMissionPy, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_GDBReinsertOwnMatrix2Methods[] = {
+	PORT_FN(GetBishopProfile, Re2_GetBishopProfile),
+	PORT_FN(InitMission, Re2_InitMissionPy),
+	PORT_FN(BishopsAttackPlayer, Re2_BishopsAttackPlayerPy),
+	PORT_FN(CreateBishop, Re2_CreateBishopPy),
+	PORT_FN(CreateBishops, Re2_CreateBishopsPy),
+	PORT_FN(OnBishopsDeath, Re2_OnBishopsDeathPy),
+	PORT_FN(PreSetNextMission, Re2_PreSetNextMissionPy),
+	PORT_FNEND
 };
 
 PORTS(levels_GDB)
