@@ -4,7 +4,7 @@
  * 1) and a Desktop entry at the front of the video modes (VideoDesktop: the size of the desktop).
  *
  * Native C (docs/objlib-plan.md, stage 2): the state is the struct video, the functions call the engine in C; the
- * PyMethodDef entries are adapters (id and the control as a text, anything else as ""). The options menu after Apply
+ * function table rows name the entries (id and the control as a text, anything else as ""). The options menu after Apply
  * is called through its ref (PORT_CALL: directly while PCMenu holds the port's function, else by name), after Back
  * by name through the alias Menu.OptionsMenu (OBJLIB 5 (9c: a variable of Menu, PCMenu's or XBMenu's function)); a
  * failure is printed as before.

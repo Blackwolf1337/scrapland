@@ -5,8 +5,8 @@
  * the countermeasures Cloud, EMI and Sonic. File names, forces and times stay variables of the modules, the file and
  * other scripts read them.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The variables of the modules are read where the script reads them as its globals and IDWeap,
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the function
+ * tables name their entries. The variables of the modules are read where the script reads them as its globals and IDWeap,
  * IDAmmo and SwarmPos written where it writes them. The module's own functions a mission may replace are
  * called through their refs (directly while the module holds the port's function, else by name): Weapons.InitAmmo
  * and InitWeapons, LoadResources through the module (PORT_CALL), OnHit, OnServerHit and the creation functions the

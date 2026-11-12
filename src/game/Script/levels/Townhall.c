@@ -434,7 +434,7 @@ static byte ThAm_ChooseStaplerN(const nativeVal_t *not) {
 	return Mode_Done(&t, ok);
 }
 
-/* the keyword adapter and entry of ChooseStapler(NotName="") */
+/* the keyword entry of ChooseStapler(NotName="") */
 MODE_KW(ApologizeMayor, ChooseStapler, "|O", "NotName") {
 	Mode_KwDefS(v, given, 0, "");
 	return ThAm_ChooseStaplerN(&v[0]);
@@ -1131,7 +1131,7 @@ static byte ThSm_BlabliblaN(const nativeVal_t *name) {
 	return Mode_Done(&t, Mode_Later(2.0, SM, "Blablibla", next, 1, NULL));
 }
 
-/* the keyword adapter and entry of Blablibla(EntityName="Mayor_SheriffMayor") */
+/* the keyword entry of Blablibla(EntityName="Mayor_SheriffMayor") */
 MODE_KW(SheriffMayor, Blablibla, "|O", "EntityName") {
 	Mode_KwDefS(v, given, 0, "Mayor_SheriffMayor");
 	return ThSm_BlabliblaN(&v[0]);
