@@ -5,11 +5,11 @@
  * calls none of them. They are here so that PCMenu, made in C from data/modules/pcmenu.mod, has every function of
  * the script; each does what the script does, line by line on the module variables (a missing one is a NameError).
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * module variables are read as globals where the script reads them and written at once. The scorer and
- * engine calls the script made by name go through their seams (SScorer.Get, SScorer.Set, SScorer.Add, Scrap.Get,
- * Scrap.Set; OBJLIB 7); the video modes, the language texts and string.find are C. GammaFormula is called with its
- * keyword through its ref (PORT_OWN, stage 3).
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries.
+ * The module variables are read as globals where the script reads them and written at once. The scorer and engine calls
+ * the script made by name go through their seams (SScorer.Get, SScorer.Set, SScorer.Add, Scrap.Get, Scrap.Set; OBJLIB
+ * 7); the video modes, the language texts and string.find are C. GammaFormula is called with its keyword through its
+ * ref (PORT_OWN, stage 3).
  */
 #include <string.h>
 
@@ -504,22 +504,22 @@ static byte Vv_GetLast(void) {
 
 MODE_FN(PCMenu, VideoGetLast, 1, Vv_GetLast())
 
-PyMethodDef g_MenuVideoVarsMethods[] = {
-	{ "Apply_SetActive", PCMenu_Apply_SetActive, 1, NULL },
-	{ "Apply_SetFog", PCMenu_Apply_SetFog, 1, NULL },
-	{ "Apply_SetTextureFilter", PCMenu_Apply_SetTextureFilter, 1, NULL },
-	{ "Apply_SetVideoLock", PCMenu_Apply_SetVideoLock, 1, NULL },
-	{ "ChangeBoolean", PCMenu_ChangeBoolean, 1, NULL },
-	{ "DrawLine", (PyCFunction)(void (*)(void))PCMenu_DrawLine, 3, NULL },
-	{ "FillShadowsDetail", PCMenu_FillShadowsDetail, 1, NULL },
-	{ "FillTextureDetail", PCMenu_FillTextureDetail, 1, NULL },
-	{ "FillTextureFilter", PCMenu_FillTextureFilter, 1, NULL },
-	{ "FillVideoModes", PCMenu_FillVideoModes, 1, NULL },
-	{ "GammaFormula", (PyCFunction)(void (*)(void))PCMenu_GammaFormula, 3, NULL },
-	{ "MouseSensitivityFormula", (PyCFunction)(void (*)(void))PCMenu_MouseSensitivityFormula, 3, NULL },
-	{ "UpdateVideoOptions", PCMenu_UpdateVideoOptions, 1, NULL },
-	{ "VideoGetLast", PCMenu_VideoGetLast, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuVideoVarsMethods[] = {
+	PORT_FN(Apply_SetActive, PCMenu_Apply_SetActive),
+	PORT_FN(Apply_SetFog, PCMenu_Apply_SetFog),
+	PORT_FN(Apply_SetTextureFilter, PCMenu_Apply_SetTextureFilter),
+	PORT_FN(Apply_SetVideoLock, PCMenu_Apply_SetVideoLock),
+	PORT_FN(ChangeBoolean, PCMenu_ChangeBoolean),
+	PORT_FNK(DrawLine, PCMenu_DrawLine),
+	PORT_FN(FillShadowsDetail, PCMenu_FillShadowsDetail),
+	PORT_FN(FillTextureDetail, PCMenu_FillTextureDetail),
+	PORT_FN(FillTextureFilter, PCMenu_FillTextureFilter),
+	PORT_FN(FillVideoModes, PCMenu_FillVideoModes),
+	PORT_FNK(GammaFormula, PCMenu_GammaFormula),
+	PORT_FNK(MouseSensitivityFormula, PCMenu_MouseSensitivityFormula),
+	PORT_FN(UpdateVideoOptions, PCMenu_UpdateVideoOptions),
+	PORT_FN(VideoGetLast, PCMenu_VideoGetLast),
+	PORT_FNEND
 };
 
 PORTS(MenuVideoVars)

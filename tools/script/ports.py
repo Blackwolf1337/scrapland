@@ -232,6 +232,8 @@ def refs(build, pp=None):
 	ents, kws = {}, {}
 	for f, lines in pp.items():
 		ents[f], kws[f] = entries(lines)
+	# the keyword names of an entry of another file (ShipEdit_DrawBackground_N, extern in ShipEdit.h)
+	allkw = set().union(*kws.values())
 	seen, dup = {}, set()
 	for level, module, g in registrations():
 		if g not in tabs:
@@ -245,7 +247,7 @@ def refs(build, pp=None):
 					' of ' + level if level else '', seen[key].file if seen[key] else '?', f))
 				dup.add(key)
 			elif len(row) == 4:
-				seen[key] = fn_ref(f, level, module, row, ents[f], kws[f], problems)
+				seen[key] = fn_ref(f, level, module, row, ents[f], allkw, problems)
 			elif adapter in ents[f]:
 				seen[key] = Ref(f, level, module, name, adapter, ents[f][adapter],
 					'K' if adapter in kws[f] else '')

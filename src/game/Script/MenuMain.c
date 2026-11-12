@@ -3,21 +3,21 @@
  * options, the skill, new, saved and loaded games, the death screen, entering and leaving the menu during a game
  * and the scorer of a movie. The layout is data/menus/main.def.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters that
- * parse the arguments as before (the same TypeErrors). The variables of other modules are read where the C read them
- * (Init.inMainMenu, isShipEdit, isDemo, Outdoor, isJunkYard, MultiPlayer, Menu.LastMode, LastTimeSpeed,
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries,
+ * which parse the arguments as before (the same TypeErrors). The variables of other modules are read where the C read
+ * them (Init.inMainMenu, isShipEdit, isDemo, Outdoor, isJunkYard, MultiPlayer, Menu.LastMode, LastTimeSpeed,
  * currentSoundPitch, saveGamesList, saveGamesSlots, slotToLoad, slotToOverwrite, fromSinglePlayer, isXbox, HeadBoss,
  * OutHeadMessenger, MovieScorerCall, Scorer.MarginH and MarginV, the sounds of Sound), the variables of Menu are
- * written at once. The menus, SaveGame, Speech and MissionsFuncs are called through their refs (PORT_CALL:
- * directly while the attribute holds the port's function, else by name, as a mod, a mission or a case may replace
- * them); the aliases and callbacks of Menu and the scorers (Menu.onCreateMainMenu, MovieScorerCall,
- * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5 (9c); BackMenuFunc through
- * the entry of the function it holds, MODE_PRINTEDCALL), the Init of the scorer of the mode by its module chosen at
- * run time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and
- * Scrap.Exit, GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams; the death camera
- * schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list of saved
- * games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun). Every function of the table has a native entry (stage 6, batch 6h: Mode_IdControl,
- * Mode_Parse, MODE_FNANY).
+ * written at once. The menus, SaveGame, Speech and MissionsFuncs are called through their refs (PORT_CALL: directly
+ * while the attribute holds the port's function, else by name, as a mod, a mission or a case may replace them); the
+ * aliases and callbacks of Menu and the scorers (Menu.onCreateMainMenu, MovieScorerCall, RacerScorer.BackMenuFunc,
+ * CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5 (9c); BackMenuFunc through the entry of the function
+ * it holds, MODE_PRINTEDCALL), the Init of the scorer of the mode by its module chosen at run time (MODE_CBATTR; both
+ * are the entry Mode_PyNone_E); SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit, GetCam, GetEntity, UsrEntity,
+ * CreateEntity and TestLine go through their seams; the death camera schedules functions of Menu and Scrap.SetCam (the
+ * scheduler takes their entries, Port_Scheduled); the list of saved games comes from the engine as a C array and the
+ * .def sections get their $names as values (Mode_DefRun). Every function of the table has a native entry (stage 6,
+ * batch 6h: Mode_IdControl, Mode_Parse, MODE_FNANY).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -635,7 +635,7 @@ static void Main_Initialize(void) {
 		Mode_I(&t, messenger));
 	Mode_Done(&t, 1);
 	if (!main) {
-		/* the module chosen at run time (OBJLIB 7: both Init are Mode_PyNone, no ref: the call through Python) */
+		/* the module chosen at run time (both Init are the entry Mode_PyNone_E) */
 		const char *scorer = outdoor && !shipEdit ? "RacerScorer" : "CharScorer";
 		Mode_Printed(MODE_CBATTR(scorer, "Init", NULL, ""), scorer, "Init");
 	}
@@ -912,7 +912,7 @@ static void Main_TVOffEnd(void) {
 	Main_Sound("TVOffSound", "TVOffVolume");
 }
 
-/* ---- the functions of Menu (adapters) ---- */
+/* ---- the functions of Menu (entries) ---- */
 
 #define MAIN_ARGS(a, n) \
 	int id; \
@@ -928,7 +928,6 @@ static byte Menu_SinglePlayerMenu_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	Main_Single(id);
 	return 1;
 }
-MODE_ADAPTER(Menu, SinglePlayerMenu)
 
 static byte Menu_AudioMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -938,7 +937,6 @@ static byte Menu_AudioMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_Run(id, "Audio", 0);
 	return 1;
 }
-MODE_ADAPTER(Menu, AudioMenu)
 
 static byte Main_VolumeStepArgs(const nativeVal_t *a, int n, double sign) {
 	int id;
@@ -953,13 +951,11 @@ static byte Menu_AudioVolumeSliderFocus_Sub_E(const nativeVal_t *a, int n, nativ
 	(void)out;
 	return Main_VolumeStepArgs(a, n, -1.0);
 }
-MODE_ADAPTER(Menu, AudioVolumeSliderFocus_Sub)
 
 static byte Menu_AudioVolumeSliderFocus_Add_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Main_VolumeStepArgs(a, n, 1.0);
 }
-MODE_ADAPTER(Menu, AudioVolumeSliderFocus_Add)
 
 static byte Menu_AudioVolumeChange_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -968,7 +964,6 @@ static byte Menu_AudioVolumeChange_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Main_ApplyVolumes(id);
 	return 1;
 }
-MODE_ADAPTER(Menu, AudioVolumeChange)
 
 MODE_IDFN(Menu_MainMenu, (Main_MainMenu(id, control), 1))
 
@@ -984,7 +979,6 @@ static byte Menu_CreateMainMenu_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	Main_Create(id, back);
 	return 1;
 }
-MODE_ADAPTER(Menu, CreateMainMenu)
 
 MODE_IDFN(Menu_BackToGame, (Main_BackToGame(id), 1))
 
@@ -998,7 +992,6 @@ static byte Menu_DrawScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_DrawScorer(id, mode);
 	return 1;
 }
-MODE_ADAPTER(Menu, DrawScorer)
 
 static byte Menu_InitMenuSys_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	double speed;
@@ -1009,7 +1002,6 @@ static byte Menu_InitMenuSys_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_InitMenuSys(speed);
 	return 1;
 }
-MODE_ADAPTER(Menu, InitMenuSys)
 
 static byte Menu_MovieScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1020,7 +1012,6 @@ static byte Menu_MovieScorer_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_MovieScorer(id);
 	return 1;
 }
-MODE_ADAPTER(Menu, MovieScorer)
 
 static byte Menu_Init_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
@@ -1031,7 +1022,6 @@ static byte Menu_Init_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_Init(id);
 	return 1;
 }
-MODE_ADAPTER(Menu, Init)
 
 MODE_IFN(Menu_DeathInfo, 1, (Main_DeathInfo(id), 1))
 
@@ -1042,7 +1032,6 @@ static byte Menu_ExitGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Mode_Printed(Mode_Exit(), "Scrap", "Exit");
 	return 1;
 }
-MODE_ADAPTER(Menu, ExitGame)
 
 static byte Menu_ByeMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1051,7 +1040,6 @@ static byte Menu_ByeMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_YesNo(id, "Menu_ExitGame_Question", "Menu.ExitGame", "Menu.MainMenu");
 	return 1;
 }
-MODE_ADAPTER(Menu, ByeMenu)
 
 static byte Menu_SetSkillMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1060,14 +1048,12 @@ static byte Menu_SetSkillMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_SkillMenu(id, "Menu.SetSkill", "Menu.OptionsMenu", 1);
 	return 1;
 }
-MODE_ADAPTER(Menu, SetSkillMenu)
 
 static byte Menu_SetSkill_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	MAIN_ARGS(a, n);
 	return Main_SetSkill(id, control);
 }
-MODE_ADAPTER(Menu, SetSkill)
 
 static byte Menu_StartNewGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1076,7 +1062,6 @@ static byte Menu_StartNewGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_SkillMenu(id, "Menu.NewGame", "Menu.MainMenu", 0);
 	return 1;
 }
-MODE_ADAPTER(Menu, StartNewGame)
 
 static byte Menu_NewGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char skill[0x10];
@@ -1088,7 +1073,6 @@ static byte Menu_NewGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	SaveVar_Set("GameSkill", skill);
 	return 1;
 }
-MODE_ADAPTER(Menu, NewGame)
 
 static byte Menu_AuxAbortGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -1098,7 +1082,6 @@ static byte Menu_AuxAbortGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_QLoad("Levels/Menu");
 	return 1;
 }
-MODE_ADAPTER(Menu, AuxAbortGame)
 
 static byte Menu_AbortGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1107,7 +1090,6 @@ static byte Menu_AbortGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_YesNo(id, "Menu_AbortGame_Question", "Menu.AuxAbortGame", "Menu.SinglePlayerMenu");
 	return 1;
 }
-MODE_ADAPTER(Menu, AbortGame)
 
 /* AuxLoadGame(id, control): the game of slotToLoad, then back to it */
 static void Main_AuxLoadGame(int id, const char *control) {
@@ -1123,7 +1105,6 @@ static byte Menu_LoadGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_LoadGame(id, control);
 	return 1;
 }
-MODE_ADAPTER(Menu, LoadGame)
 
 static byte Menu_LoadLastSavedGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -1132,7 +1113,6 @@ static byte Menu_LoadLastSavedGame_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Main_LoadLast();
 	return 1;
 }
-MODE_ADAPTER(Menu, LoadLastSavedGame)
 
 static byte Menu_AuxSaveGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1140,7 +1120,6 @@ static byte Menu_AuxSaveGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_AuxSaveGame(id, control);
 	return 1;
 }
-MODE_ADAPTER(Menu, AuxSaveGame)
 
 static byte Menu_SaveGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1148,7 +1127,6 @@ static byte Menu_SaveGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_SaveGame(id, control);
 	return 1;
 }
-MODE_ADAPTER(Menu, SaveGame)
 
 static byte Menu_LoadGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1157,7 +1135,6 @@ static byte Menu_LoadGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_GamesMenu(id, 0);
 	return 1;
 }
-MODE_ADAPTER(Menu, LoadGameMenu)
 
 static byte Menu_SaveGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1166,7 +1143,6 @@ static byte Menu_SaveGameMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_GamesMenu(id, 1);
 	return 1;
 }
-MODE_ADAPTER(Menu, SaveGameMenu)
 
 static byte Menu_isAutoSave_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *name;
@@ -1176,7 +1152,6 @@ static byte Menu_isAutoSave_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Native_SetInt(out, Main_IsAutoSave(name));
 	return 1;
 }
-MODE_ADAPTER(Menu, isAutoSave)
 
 static byte Menu_ComposeSaveGameName_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *name;
@@ -1188,7 +1163,6 @@ static byte Menu_ComposeSaveGameName_E(const nativeVal_t *a, int n, nativeVal_t 
 	Native_SetText(out, text, (int)strlen(text));
 	return 1;
 }
-MODE_ADAPTER(Menu, ComposeSaveGameName)
 
 /* Initialize takes any arguments (stage 3: its entry for the call of InitLevel through its ref) */
 MODE_FNANY(Menu, Initialize, (Main_Initialize(), 1))
@@ -1202,7 +1176,6 @@ static byte Menu_CreditsMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_QLoad("levels/menu");
 	return 1;
 }
-MODE_ADAPTER(Menu, CreditsMenu)
 
 /* GameOver(id): the death of the player in a single player game, the television switches off */
 static byte Menu_GameOver_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1216,7 +1189,6 @@ static byte Menu_GameOver_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_Cinema(0, 0);
 	return 1;
 }
-MODE_ADAPTER(Menu, GameOver)
 
 static byte Menu_DebugMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1225,7 +1197,6 @@ static byte Menu_DebugMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_DebugMenu(id);
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugMenu)
 
 /* a debug entry that steps an engine variable (any arguments) */
 #define MAIN_CYCLE(name, var, max) MODE_FNANY(Menu, name, (Main_Cycle(var, 0, max), 1))
@@ -1247,7 +1218,6 @@ static byte Menu_DebugSet_Level_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	Script_SetStr(id, "Item1", "Text", text);
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugSet_Level)
 
 static byte Menu_DebugSet_StencilShadows_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -1256,7 +1226,6 @@ static byte Menu_DebugSet_StencilShadows_E(const nativeVal_t *a, int n, nativeVa
 	GVar_SetNum("R_StencilTog", 1);
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugSet_StencilShadows)
 
 static byte Menu_DebugSet_AI_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1264,7 +1233,6 @@ static byte Menu_DebugSet_AI_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_DebugAI(id, control);
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugSet_AI)
 
 /* the Python code of XboxPyDebug ran here (a debug line typed by the user): there is no interpreter, an error says so */
 static byte Menu_DebugSet_XboxPyDebug_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1276,7 +1244,6 @@ static byte Menu_DebugSet_XboxPyDebug_E(const nativeVal_t *a, int n, nativeVal_t
 	Con_Errorf("XboxPyDebug: no Python interpreter in this build\n");
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugSet_XboxPyDebug)
 
 /* DebugSet_CycleVar(var, min, max) */
 static byte Menu_DebugSet_CycleVar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -1289,7 +1256,6 @@ static byte Menu_DebugSet_CycleVar_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Main_Cycle(var, min, max);
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugSet_CycleVar)
 
 static byte Menu_DebugSet_ChangeMapMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -1299,7 +1265,6 @@ static byte Menu_DebugSet_ChangeMapMenu_E(const nativeVal_t *a, int n, nativeVal
 	Main_Run(id, "ChangeMap", 0);
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugSet_ChangeMapMenu)
 
 static byte Menu_DebugSet_ChangeMapExec_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	char level[0x100];
@@ -1309,7 +1274,6 @@ static byte Menu_DebugSet_ChangeMapExec_E(const nativeVal_t *a, int n, nativeVal
 	Main_QLoad(level);
 	return 1;
 }
-MODE_ADAPTER(Menu, DebugSet_ChangeMapExec)
 
 /* TVOff(): any arguments; 0 without an error where the C returned it (the errors of the calls were printed) */
 MODE_FNANY(Menu, TVOff, Main_TVOff())
@@ -1324,7 +1288,6 @@ static byte Menu_TVOffEnd_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Main_TVOffEnd();
 	return 1;
 }
-MODE_ADAPTER(Menu, TVOffEnd)
 
 static byte Menu_BlackTV_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -1333,64 +1296,62 @@ static byte Menu_BlackTV_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	MODE_PRINTED(Menu, DeathInfo, "i", 0L);
 	return 1;
 }
-MODE_ADAPTER(Menu, BlackTV)
 
-PyMethodDef g_MenuMainMethods[] = {
-	{ "SinglePlayerMenu", Menu_SinglePlayerMenu, 1, NULL },
-	{ "AudioMenu", Menu_AudioMenu, 1, NULL },
-	{ "AudioVolumeSliderFocus_Sub", Menu_AudioVolumeSliderFocus_Sub, 1, NULL },
-	{ "AudioVolumeSliderFocus_Add", Menu_AudioVolumeSliderFocus_Add, 1, NULL },
-	{ "AudioVolumeChange", Menu_AudioVolumeChange, 1, NULL },
-	{ "MainMenu", Menu_MainMenu, 1, NULL },
-	{ "CreateMainMenu", Menu_CreateMainMenu, 1, NULL },
-	/* the store page of another game of the studio; there is no store here */
-	{ "PlaySpacelords", Mode_PyNone, 1, NULL },
-	{ "BackToGame", Menu_BackToGame, 1, NULL },
-	{ "DrawScorer", Menu_DrawScorer, 1, NULL },
-	{ "InitMenuSys", Menu_InitMenuSys, 1, NULL },
-	{ "MovieScorer", Menu_MovieScorer, 1, NULL },
-	{ "Init", Menu_Init, 1, NULL },
-	{ "DeathInfo", Menu_DeathInfo, 1, NULL },
-	{ "ExitGame", Menu_ExitGame, 1, NULL },
-	{ "ByeMenu", Menu_ByeMenu, 1, NULL },
-	{ "SetSkillMenu", Menu_SetSkillMenu, 1, NULL },
-	{ "SetSkill", Menu_SetSkill, 1, NULL },
-	{ "StartNewGame", Menu_StartNewGame, 1, NULL },
-	{ "NewGame", Menu_NewGame, 1, NULL },
-	{ "AuxAbortGame", Menu_AuxAbortGame, 1, NULL },
-	{ "AbortGame", Menu_AbortGame, 1, NULL },
-	{ "AuxLoadGame", Menu_AuxLoadGame, 1, NULL },
-	{ "LoadGame", Menu_LoadGame, 1, NULL },
-	{ "LoadLastSavedGame", Menu_LoadLastSavedGame, 1, NULL },
-	{ "AuxSaveGame", Menu_AuxSaveGame, 1, NULL },
-	{ "SaveGame", Menu_SaveGame, 1, NULL },
-	{ "LoadGameMenu", Menu_LoadGameMenu, 1, NULL },
-	{ "SaveGameMenu", Menu_SaveGameMenu, 1, NULL },
-	{ "isAutoSave", Menu_isAutoSave, 1, NULL },
-	{ "ComposeSaveGameName", Menu_ComposeSaveGameName, 1, NULL },
-	{ "Initialize", Menu_Initialize, 1, NULL },
-	{ "CreditsMenu", Menu_CreditsMenu, 1, NULL },
-	{ "GameOver", Menu_GameOver, 1, NULL },
-	{ "DebugMenu", Menu_DebugMenu, 1, NULL },
-	{ "DebugSet_Level", Menu_DebugSet_Level, 1, NULL },
-	{ "DebugSet_Console", Menu_DebugSet_Console, 1, NULL },
-	{ "DebugSet_RenderInfo", Menu_DebugSet_RenderInfo, 1, NULL },
-	{ "DebugSet_SoundInfo", Menu_DebugSet_SoundInfo, 1, NULL },
-	{ "DebugSet_WorldInfo", Menu_DebugSet_WorldInfo, 1, NULL },
-	{ "DebugSet_ObjectPool", Menu_DebugSet_ObjectPool, 1, NULL },
-	{ "DebugSet_SceneRenderTarget", Menu_DebugSet_SceneRenderTarget, 1, NULL },
-	{ "DebugSet_StencilShadows", Menu_DebugSet_StencilShadows, 1, NULL },
-	{ "DebugSet_AI", Menu_DebugSet_AI, 1, NULL },
-	{ "DebugSet_MapCollision", Menu_DebugSet_MapCollision, 1, NULL },
-	{ "DebugSet_XboxPyDebug", Menu_DebugSet_XboxPyDebug, 1, NULL },
-	{ "DebugSet_CycleVar", Menu_DebugSet_CycleVar, 1, NULL },
-	{ "DebugSet_ChangeMapMenu", Menu_DebugSet_ChangeMapMenu, 1, NULL },
-	{ "DebugSet_ChangeMapExec", Menu_DebugSet_ChangeMapExec, 1, NULL },
-	{ "TVOff", Menu_TVOff, 1, NULL },
-	{ "SetCam", Menu_SetCam, 1, NULL },
-	{ "TVOffEnd", Menu_TVOffEnd, 1, NULL },
-	{ "BlackTV", Menu_BlackTV, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuMainMethods[] = {
+	PORT_FN(SinglePlayerMenu, Menu_SinglePlayerMenu),
+	PORT_FN(AudioMenu, Menu_AudioMenu),
+	PORT_FN(AudioVolumeSliderFocus_Sub, Menu_AudioVolumeSliderFocus_Sub),
+	PORT_FN(AudioVolumeSliderFocus_Add, Menu_AudioVolumeSliderFocus_Add),
+	PORT_FN(AudioVolumeChange, Menu_AudioVolumeChange),
+	PORT_FN(MainMenu, Menu_MainMenu),
+	PORT_FN(CreateMainMenu, Menu_CreateMainMenu),
+	PORT_FN(PlaySpacelords, Mode_PyNone),
+	PORT_FN(BackToGame, Menu_BackToGame),
+	PORT_FN(DrawScorer, Menu_DrawScorer),
+	PORT_FN(InitMenuSys, Menu_InitMenuSys),
+	PORT_FN(MovieScorer, Menu_MovieScorer),
+	PORT_FN(Init, Menu_Init),
+	PORT_FN(DeathInfo, Menu_DeathInfo),
+	PORT_FN(ExitGame, Menu_ExitGame),
+	PORT_FN(ByeMenu, Menu_ByeMenu),
+	PORT_FN(SetSkillMenu, Menu_SetSkillMenu),
+	PORT_FN(SetSkill, Menu_SetSkill),
+	PORT_FN(StartNewGame, Menu_StartNewGame),
+	PORT_FN(NewGame, Menu_NewGame),
+	PORT_FN(AuxAbortGame, Menu_AuxAbortGame),
+	PORT_FN(AbortGame, Menu_AbortGame),
+	PORT_FN(AuxLoadGame, Menu_AuxLoadGame),
+	PORT_FN(LoadGame, Menu_LoadGame),
+	PORT_FN(LoadLastSavedGame, Menu_LoadLastSavedGame),
+	PORT_FN(AuxSaveGame, Menu_AuxSaveGame),
+	PORT_FN(SaveGame, Menu_SaveGame),
+	PORT_FN(LoadGameMenu, Menu_LoadGameMenu),
+	PORT_FN(SaveGameMenu, Menu_SaveGameMenu),
+	PORT_FN(isAutoSave, Menu_isAutoSave),
+	PORT_FN(ComposeSaveGameName, Menu_ComposeSaveGameName),
+	PORT_FN(Initialize, Menu_Initialize),
+	PORT_FN(CreditsMenu, Menu_CreditsMenu),
+	PORT_FN(GameOver, Menu_GameOver),
+	PORT_FN(DebugMenu, Menu_DebugMenu),
+	PORT_FN(DebugSet_Level, Menu_DebugSet_Level),
+	PORT_FN(DebugSet_Console, Menu_DebugSet_Console),
+	PORT_FN(DebugSet_RenderInfo, Menu_DebugSet_RenderInfo),
+	PORT_FN(DebugSet_SoundInfo, Menu_DebugSet_SoundInfo),
+	PORT_FN(DebugSet_WorldInfo, Menu_DebugSet_WorldInfo),
+	PORT_FN(DebugSet_ObjectPool, Menu_DebugSet_ObjectPool),
+	PORT_FN(DebugSet_SceneRenderTarget, Menu_DebugSet_SceneRenderTarget),
+	PORT_FN(DebugSet_StencilShadows, Menu_DebugSet_StencilShadows),
+	PORT_FN(DebugSet_AI, Menu_DebugSet_AI),
+	PORT_FN(DebugSet_MapCollision, Menu_DebugSet_MapCollision),
+	PORT_FN(DebugSet_XboxPyDebug, Menu_DebugSet_XboxPyDebug),
+	PORT_FN(DebugSet_CycleVar, Menu_DebugSet_CycleVar),
+	PORT_FN(DebugSet_ChangeMapMenu, Menu_DebugSet_ChangeMapMenu),
+	PORT_FN(DebugSet_ChangeMapExec, Menu_DebugSet_ChangeMapExec),
+	PORT_FN(TVOff, Menu_TVOff),
+	PORT_FN(SetCam, Menu_SetCam),
+	PORT_FN(TVOffEnd, Menu_TVOffEnd),
+	PORT_FN(BlackTV, Menu_BlackTV),
+	PORT_FNEND
 };
 
 PORTS(MenuMain)

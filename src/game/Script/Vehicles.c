@@ -6,18 +6,17 @@
  * module code (the crash speeds) stays in the script. ShipMaker, OutSound, Parking and the other modules are called
  * through their modules.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * variables of the module are read where the script reads them as its globals (the missions and the cases set
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries.
+ * The variables of the module are read where the script reads them as its globals (the missions and the cases set
  * OnDeathCallback, ForceDeathTaunt and the factors). The ships, missiles and cameras are handle values (OBJLIB 7). The
- * other ports are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else
- * by name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
+ * other ports are called through their refs (PORT_CALL: directly while the attribute holds the port's function, else by
+ * name), the module's own functions through its globals as the script calls them (PORT_OWN, the same seam on the
  * global: a mission, a net weapon or a case may replace one). The net chain stays Script_Hook on Net's functions, the
  * hooks LastClientCreate and LastClientAfterCreate are called through the module's globals by name and OnDeathCallback
  * and the ShipCallback functions of ShipMaker as values (OBJLIB 5 (9c: functions as values)). SAI, SWeap, SLogic and
  * Scrap.SetCam go through their refs (stage 7), SFX, SNet.GetObjName and SSound.PlaySound (its six arguments) too;
- * Scrap.GetEntity, CreateEntity, UsrEntity,
- * GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go through their seams. The texts of
- * the net resources of the lost engines ("DmM:<model>") stay as they were.
+ * Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, EntityListGet, Set, ConsoleError and AddScheduledFunc go
+ * through their seams. The texts of the net resources of the lost engines ("DmM:<model>") stay as they were.
  */
 #include <string.h>
 
@@ -919,12 +918,6 @@ static char *Vehicles_SetProperties_N[] = { "EntityName", "Model", "MaxLife", "P
 		"PlayerName", "localedit", NULL };
 static const char Vehicles_SetProperties_F[] = "OOOOOOOOOO|O";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *Vehicles_SetProperties(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Mode_KwCall(args, kw, "OOOOOOOOOO|O", Vehicles_SetProperties_N, Veh_SetPropertiesN);
-}
-
 MODE_FN(Vehicles, ClientCreate, 2, Veh_ClientCreateN(&a[0], &a[1]))
 MODE_FN(Vehicles, ClientAfterCreate, 2, Veh_ClientAfterCreateN(&a[0], &a[1]))
 MODE_FN(Vehicles, ServerMotorHit, 3, Veh_ServerMotorHitN(&a[0], &a[1], &a[2]))
@@ -942,26 +935,26 @@ MODE_FN(Vehicles, ReSpawnShip, 1, Veh_ReSpawnShipN(&a[0]))
 MODE_FN(Vehicles, SetStdProperties, 3, Veh_SetStdPropertiesN(&a[0], &a[1], &a[2]))
 MODE_FN(Vehicles, Init, 0, Veh_InitN())
 
-PyMethodDef g_VehiclesMethods[] = {
-	{ "ClientCreate", Vehicles_ClientCreate, 1, NULL },
-	{ "ClientAfterCreate", Vehicles_ClientAfterCreate, 1, NULL },
-	{ "ServerMotorHit", Vehicles_ServerMotorHit, 1, NULL },
-	{ "MotorHit", Vehicles_MotorHit, 1, NULL },
-	{ "CreateDumbMotor", Vehicles_CreateDumbMotor, 1, NULL },
-	{ "SetUpDumbMotor", Vehicles_SetUpDumbMotor, 1, NULL },
-	{ "DumbShipHit", Vehicles_DumbShipHit, 1, NULL },
-	{ "OnClientDeath", Vehicles_OnClientDeath, 1, NULL },
-	{ "ActivateHitType", Vehicles_ActivateHitType, 1, NULL },
-	{ "GetCoin", Vehicles_GetCoin, 1, NULL },
-	{ "GetRandomMercenaryHead", Vehicles_GetRandomMercenaryHead, 1, NULL },
-	{ "OnDeath", Vehicles_OnDeath, 1, NULL },
-	{ "SwitchView", Vehicles_SwitchView, 1, NULL },
-	{ "SetActiveCam", Vehicles_SetActiveCam, 1, NULL },
-	{ "ReSpawnShip", Vehicles_ReSpawnShip, 1, NULL },
-	{ "SetProperties", (PyCFunction)(void (*)(void))Vehicles_SetProperties, 3, NULL },
-	{ "SetStdProperties", Vehicles_SetStdProperties, 1, NULL },
-	{ "Init", Vehicles_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_VehiclesMethods[] = {
+	PORT_FN(ClientCreate, Vehicles_ClientCreate),
+	PORT_FN(ClientAfterCreate, Vehicles_ClientAfterCreate),
+	PORT_FN(ServerMotorHit, Vehicles_ServerMotorHit),
+	PORT_FN(MotorHit, Vehicles_MotorHit),
+	PORT_FN(CreateDumbMotor, Vehicles_CreateDumbMotor),
+	PORT_FN(SetUpDumbMotor, Vehicles_SetUpDumbMotor),
+	PORT_FN(DumbShipHit, Vehicles_DumbShipHit),
+	PORT_FN(OnClientDeath, Vehicles_OnClientDeath),
+	PORT_FN(ActivateHitType, Vehicles_ActivateHitType),
+	PORT_FN(GetCoin, Vehicles_GetCoin),
+	PORT_FN(GetRandomMercenaryHead, Vehicles_GetRandomMercenaryHead),
+	PORT_FN(OnDeath, Vehicles_OnDeath),
+	PORT_FN(SwitchView, Vehicles_SwitchView),
+	PORT_FN(SetActiveCam, Vehicles_SetActiveCam),
+	PORT_FN(ReSpawnShip, Vehicles_ReSpawnShip),
+	PORT_FNK(SetProperties, Vehicles_SetProperties),
+	PORT_FN(SetStdProperties, Vehicles_SetStdProperties),
+	PORT_FN(Init, Vehicles_Init),
+	PORT_FNEND
 };
 
 PORTS(Vehicles)

@@ -6,21 +6,19 @@
  * MultiPlayer, UpperMap, the tables) is data/modules/init.mod; its two for loops are the C hooks at the end of this
  * file. The map scripts change the flags while Init runs, so they are read where the script reads them.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters (Init,
- * LoadCharLib, AddMLib, MLibInitStatus, MLibInit and PreloadMlibs parse their one argument, isMission, SetArrowSize,
- * SetMapLabelText and Close take any arguments, as before). The flags and tables of the module are read as its globals
- * where the script reads them; Path is written at once and MapLibs changed in place (the map libraries are
- * module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries
+ * (Init, LoadCharLib, AddMLib, MLibInitStatus, MLibInit and PreloadMlibs parse their one argument, isMission,
+ * SetArrowSize, SetMapLabelText and Close take any arguments, as before). The flags and tables of the module are read
+ * as its globals where the script reads them; Path is written at once and MapLibs changed in place (the map libraries
+ * are module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
  * script calls as its globals and the other ports go through their refs (PORT_OWN, PORT_CALL: the seam, OBJLIB 5 (9c)).
  * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time, their functions
- * called through the entries of the level's ports (MODE_CBATTR, PORT_VALUE);
- * string.find and replace are the native twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements,
- * CreateSaveVar, GetLevelPath, GetNewLevelPath and SAI.IniAI go through their refs (stage 7), dir and __import__ stay
- * by name (OBJLIB 6, 7). Scrap.Set,
- * OpenPack, ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and
- * SetLabelText go through their seams. The evals of the save texts read literals with the native reader
- * (Mode_EvalIn; a bare name is looked up in the module, OBJLIB 6), and the C hooks of the module code keep working on
- * the module's dict (OBJLIB 6).
+ * called through the entries of the level's ports (MODE_CBATTR, PORT_VALUE); string.find and replace are the native
+ * twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements, CreateSaveVar, GetLevelPath, GetNewLevelPath and
+ * SAI.IniAI go through their refs (stage 7), dir and __import__ stay by name (OBJLIB 6, 7). Scrap.Set, OpenPack,
+ * ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and SetLabelText go
+ * through their seams. The evals of the save texts read literals with the native reader (Mode_EvalIn; a bare name is
+ * looked up in the module, OBJLIB 6), and the C hooks of the module code keep working on the module's dict (OBJLIB 6).
  */
 #include <string.h>
 
@@ -448,7 +446,7 @@ static byte In_CloseN(void) {
 		Mode_ConsoleError(msg) && Mode_GVarSetDef("ProgressBar"));
 }
 
-/* the adapters: the argument formats of the C port */
+/* the entries: the argument formats of the C port */
 MODE_FN(Init, LoadCharLib, 1, In_LoadCharLibN(&a[0]))
 MODE_FN(Init, AddMLib, 1, Mode_Append(IN, "MapLibs", &a[0]))
 MODE_FN(Init, MLibInitStatus, 1, In_ForLibs(&a[0], "InitStatus"))
@@ -534,18 +532,18 @@ int Init_ModExtraExecs(PyObject *module, PyObject *locals, nativeVal_t *body) {
 	return ok;
 }
 
-PyMethodDef g_InitMethods[] = {
-	{ "LoadCharLib", Init_LoadCharLib, 1, NULL },
-	{ "AddMLib", Init_AddMLib, 1, NULL },
-	{ "MLibInitStatus", Init_MLibInitStatus, 1, NULL },
-	{ "MLibInit", Init_MLibInit, 1, NULL },
-	{ "isMission", Init_isMission, 1, NULL },
-	{ "PreloadMlibs", Init_PreloadMlibs, 1, NULL },
-	{ "SetArrowSize", Init_SetArrowSize, 1, NULL },
-	{ "Init", Init_Init, 1, NULL },
-	{ "SetMapLabelText", Init_SetMapLabelText, 1, NULL },
-	{ "Close", Init_Close, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_InitMethods[] = {
+	PORT_FN(LoadCharLib, Init_LoadCharLib),
+	PORT_FN(AddMLib, Init_AddMLib),
+	PORT_FN(MLibInitStatus, Init_MLibInitStatus),
+	PORT_FN(MLibInit, Init_MLibInit),
+	PORT_FN(isMission, Init_isMission),
+	PORT_FN(PreloadMlibs, Init_PreloadMlibs),
+	PORT_FN(SetArrowSize, Init_SetArrowSize),
+	PORT_FN(Init, Init_Init),
+	PORT_FN(SetMapLabelText, Init_SetMapLabelText),
+	PORT_FN(Close, Init_Close),
+	PORT_FNEND
 };
 
 PORTS(InitLevel)

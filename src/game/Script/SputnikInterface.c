@@ -4,7 +4,7 @@
  * (ShipEdit, HangarTab) is called through its modules. offsetX, offsetY, rebuildCost and EndSputnikCallBack stay
  * variables of the module.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters.
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries.
  * rebuildCost and EndSputnikCallBack are read where the script reads them and the callback cleared at once.
  * The variables of ShipEdit and HangarTab (editedShips with the ship handles, destroyedShips, currentHangar,
  * fromSputnik) are read and set as their attributes, destroyedShips changed in place (OBJLIB 7). Menu,
@@ -252,13 +252,13 @@ MODE_FN(SI, EnterSputnikInterface, 1, SI_EnterSputnikInterfaceN(&a[0]))
 MODE_FN(SI, ExitSputnikInterface, 2, SI_ExitSputnikInterfaceN(&a[0]))
 MODE_FN(SI, SelectShip, 2, SI_SelectShipN(&a[0], &a[1]))
 
-PyMethodDef g_SputnikInterfaceMethods[] = {
-	{ "DrawBackground", (PyCFunction)(void (*)(void))ShipEdit_DrawBackground, 3, NULL },
-	{ "AddDefaultPanelContent", SI_AddDefaultPanelContent, 1, NULL },
-	{ "EnterSputnikInterface", SI_EnterSputnikInterface, 1, NULL },
-	{ "ExitSputnikInterface", SI_ExitSputnikInterface, 1, NULL },
-	{ "SelectShip", SI_SelectShip, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SputnikInterfaceMethods[] = {
+	PORT_FNK(DrawBackground, ShipEdit_DrawBackground),
+	PORT_FN(AddDefaultPanelContent, SI_AddDefaultPanelContent),
+	PORT_FN(EnterSputnikInterface, SI_EnterSputnikInterface),
+	PORT_FN(ExitSputnikInterface, SI_ExitSputnikInterface),
+	PORT_FN(SelectShip, SI_SelectShip),
+	PORT_FNEND
 };
 
 PORTS(SputnikInterface)

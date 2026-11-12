@@ -3,13 +3,13 @@
  * the actions and the pad. The layout is data/menus/options.def, one section per menu.
  *
  * Native C (docs/objlib-plan.md, stage 2): the state of the keys menu is the struct controls, the functions call the
- * engine in C and work on C values; the PyMethodDef entries are adapters. The pad menu keeps its state in the module
- * variables options and currentActionSet as the script (read where the C read them, written at once, the
- * option rows of optionsChar and optionsShip put into options as the objects they are). The helpers of the pad menu
- * the script calls through its globals are called so through their refs (PORT_OWN: directly while the global holds
- * the port's function, else by name; PlaceMenuOption, SetOptionValue, ShowPadConfig, FillControllerMenu), and
- * Menu.YesNoMenu through the module (PORT_CALL, a failure printed); the scorer and engine calls the C made by name go
- * through their seams (SScorer.Get, Set and Add, Scrap.Get and Set, SInput.ResetToDefault).
+ * engine in C and work on C values; the function table rows name the entries. The pad menu keeps its state in the
+ * module variables options and currentActionSet as the script (read where the C read them, written at once, the option
+ * rows of optionsChar and optionsShip put into options as the objects they are). The helpers of the pad menu the script
+ * calls through its globals are called so through their refs (PORT_OWN: directly while the global holds the port's
+ * function, else by name; PlaceMenuOption, SetOptionValue, ShowPadConfig, FillControllerMenu), and Menu.YesNoMenu
+ * through the module (PORT_CALL, a failure printed); the scorer and engine calls the C made by name go through their
+ * seams (SScorer.Get, Set and Add, Scrap.Get and Set, SInput.ResetToDefault).
  */
 #include <string.h>
 
@@ -464,7 +464,6 @@ static byte PCMenu_CreateControlMenu_E(const nativeVal_t *a, int n, nativeVal_t 
 	Native_Free(&m);
 	return ok;
 }
-MODE_ADAPTER(PCMenu, CreateControlMenu)
 
 static byte PCMenu_RefreshControlMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
@@ -473,7 +472,6 @@ static byte PCMenu_RefreshControlMenu_E(const nativeVal_t *a, int n, nativeVal_t
 	Controls_Refresh();
 	return 1;
 }
-MODE_ADAPTER(PCMenu, RefreshControlMenu)
 
 static byte PCMenu_ClearKeyEntry_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -486,7 +484,6 @@ static byte PCMenu_ClearKeyEntry_E(const nativeVal_t *a, int n, nativeVal_t *out
 	Controls_Refresh();
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ClearKeyEntry)
 
 /* the next key pressed is added to the action; Escape aborts */
 static byte PCMenu_WaitForKeyPress_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -506,7 +503,6 @@ static byte PCMenu_WaitForKeyPress_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Input_SelectActionSetNamed("Inactive");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, WaitForKeyPress)
 
 /* AbortWaitRedefine(id) and KetRedefineFunc() (sic): the key is defined or Escape was pressed */
 static byte PCMenu_AbortWaitRedefine_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -516,7 +512,6 @@ static byte PCMenu_AbortWaitRedefine_E(const nativeVal_t *a, int n, nativeVal_t 
 	Controls_AbortWait();
 	return 1;
 }
-MODE_ADAPTER(PCMenu, AbortWaitRedefine)
 
 static byte PCMenu_ResetEverything_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	static const char *const pad_vars[] = { "XBInvertCharYPad", "XBCDigitalAsAnalog", "XBCameraAutoPad",
@@ -534,7 +529,6 @@ static byte PCMenu_ResetEverything_E(const nativeVal_t *a, int n, nativeVal_t *o
 	Controls_RunMenu(id, "Controls", 0);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ResetEverything)
 
 static byte PCMenu_ResetToDefault_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -544,7 +538,6 @@ static byte PCMenu_ResetToDefault_E(const nativeVal_t *a, int n, nativeVal_t *ou
 		"PCMenu.ResetEverything", "PCMenu.ControlsMenu");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, ResetToDefault)
 
 /* OptionYesNo(id, control): switches the engine variable named control between 0 and 1 */
 static void Controls_YesNo(int id, const char *control) {
@@ -559,7 +552,6 @@ static byte PCMenu_OptionYesNo_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	Controls_YesNo(id, control);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, OptionYesNo)
 
 static byte PCMenu_InvertMouse_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -568,7 +560,6 @@ static byte PCMenu_InvertMouse_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	Controls_YesNo(id, "InvertMouse");
 	return 1;
 }
-MODE_ADAPTER(PCMenu, InvertMouse)
 
 /* AlwaysRun(id, control): not in a menu of the game */
 static byte PCMenu_AlwaysRun_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -581,7 +572,6 @@ static byte PCMenu_AlwaysRun_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Script_SetStr(id, control, "Text", text);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, AlwaysRun)
 
 static byte PCMenu_MouseSensitivityChange_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
@@ -590,7 +580,6 @@ static byte PCMenu_MouseSensitivityChange_E(const nativeVal_t *a, int n, nativeV
 	Mouse_Apply(id);
 	return 1;
 }
-MODE_ADAPTER(PCMenu, MouseSensitivityChange)
 
 /* the dummies left and right of a sensitivity title step its slider and give the focus back; 0 with the error */
 static byte Mouse_StepSlider(int id, const char *prev, double sign) {
@@ -619,13 +608,11 @@ static byte PCMenu_MouseSensitivitySliderFocus_Sub_E(const nativeVal_t *a, int n
 	(void)out;
 	return Mouse_Step(a, n, -1.0);
 }
-MODE_ADAPTER(PCMenu, MouseSensitivitySliderFocus_Sub)
 
 static byte PCMenu_MouseSensitivitySliderFocus_Add_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	return Mouse_Step(a, n, 1.0);
 }
-MODE_ADAPTER(PCMenu, MouseSensitivitySliderFocus_Add)
 
 /*
  * The pad menus as the script opens them: `global options, currentActionSet`, the action set (NULL: already set) and
@@ -658,15 +645,14 @@ static byte Pad_Config(int id, const nativeVal_t *control) {
 	return w < 0 ? 0 : w ? Pad_Open(id, control, NULL, 0) : Pad_Open(id, control, "Racer", 1);
 }
 
-/* the adapters of the functions (id, control) with control any value */
+/* the entries of the functions (id, control) with control any value */
 #define PAD_FN(name, call) \
 	static byte PCMenu_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		int id; \
 		const nativeVal_t *c; \
 		(void)out; \
 		return Mode_Parse(a, n, "iO", &id, &c) && (call); \
-	} \
-	MODE_ADAPTER(PCMenu, name)
+	}
 
 PAD_FN(ControllerConfig, Pad_Config(id, c))
 PAD_FN(ControllerConfigCharMenu, Pad_Open(id, c, "Walk", 0))
@@ -681,7 +667,6 @@ static byte PCMenu_FillControllerMenu_E(const nativeVal_t *a, int n, nativeVal_t
 	(void)out;
 	return Mode_Parse(a, n, "iOs", &id, &control, &tab) && Pad_Fill(id, tab);
 }
-MODE_ADAPTER(PCMenu, FillControllerMenu)
 
 /*
  * The helpers of the pad menu in pcmenu.py, called through the module as the script calls them (the step padoptions:
@@ -711,7 +696,6 @@ static byte PCMenu_PlaceMenuOption_E(const nativeVal_t *a, int n, nativeVal_t *o
 	(void)out;
 	return Mode_Parse(a, n, "iOO", &id, &num, &name) && Pad_PlaceOption(id, num, name);
 }
-MODE_ADAPTER(PCMenu, PlaceMenuOption)
 
 /* SetOptionValue(id, control): the text of the value of a pad option (an unknown control does nothing) */
 static void Pad_SetValue(int id, const char *control) {
@@ -752,31 +736,16 @@ static byte Pad_ShowConfig(int id, const nativeVal_t *set, double yoff) {
 	return Pad_TextOf(id, set);
 }
 
+/* the keyword names of ShowPadConfig (its ref takes keyword calls) */
+static char *PCMenu_ShowPadConfig_N[] = { "id", "ActionSet", "YOffset", NULL };
+static const char PCMenu_ShowPadConfig_F[] = "iO|d";
+
 static byte PCMenu_ShowPadConfig_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const nativeVal_t *set;
 	double yoff = 0;
 	int id;
 	(void)out;
-	return Mode_Parse(a, n, "iO|d", &id, &set, &yoff) && Pad_ShowConfig(id, set, yoff);
-}
-
-/* OBJLIB 7: the keyword adapter (the keywords and the errors of PyArg_ParseTupleAndKeywords as before), then the
- * entry by position */
-static PyObject *PCMenu_ShowPadConfig(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *kwlist[] = { "id", "ActionSet", "YOffset", NULL };
-	int id;
-	PyObject *set;
-	double yoff = 0;
-	nativeVal_t a[3], out;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "iO|d", kwlist, &id, &set, &yoff)) {
-		return NULL;
-	}
-	Native_SetInt(&a[0], id);
-	Native_Arg(set, &a[1]);
-	Native_SetFloat(&a[2], yoff);
-	Native_SetNone(&out);
-	return Mode_KwOut(a, 3, PCMenu_ShowPadConfig_E(a, 3, &out), &out);
+	return Mode_KwArity(a, n, "iO|d") && Mode_Parse(a, n, "iO|d", &id, &set, &yoff) && Pad_ShowConfig(id, set, yoff);
 }
 
 /*
@@ -810,38 +779,38 @@ static byte Pad_SwitchOption(int id, const nativeVal_t *control) {
 
 PAD_FN(SwitchOption, Pad_SwitchOption(id, c))
 
-PyMethodDef g_MenuControlsMethods[] = {
-	{ "OptionsMenu", PCMenu_OptionsMenu, 1, NULL },
-	{ "ControlsMenu", PCMenu_ControlsMenu, 1, NULL },
-	{ "MouseControlsMenu", PCMenu_MouseControlsMenu, 1, NULL },
-	{ "RacerMoveControlsMenu", PCMenu_RacerMoveControlsMenu, 1, NULL },
-	{ "RacerAttackControlsMenu", PCMenu_RacerAttackControlsMenu, 1, NULL },
-	{ "WalkCharControlsMenu", PCMenu_WalkCharControlsMenu, 1, NULL },
-	{ "UseCharControlsMenu", PCMenu_UseCharControlsMenu, 1, NULL },
-	{ "CreateControlMenu", PCMenu_CreateControlMenu, 1, NULL },
-	{ "RefreshControlMenu", PCMenu_RefreshControlMenu, 1, NULL },
-	{ "ClearKeyEntry", PCMenu_ClearKeyEntry, 1, NULL },
-	{ "WaitForKeyPress", PCMenu_WaitForKeyPress, 1, NULL },
-	{ "AbortWaitRedefine", PCMenu_AbortWaitRedefine, 1, NULL },
-	{ "KetRedefineFunc", PCMenu_AbortWaitRedefine, 1, NULL },
-	{ "ResetEverything", PCMenu_ResetEverything, 1, NULL },
-	{ "ResetToDefault", PCMenu_ResetToDefault, 1, NULL },
-	{ "OptionYesNo", PCMenu_OptionYesNo, 1, NULL },
-	{ "InvertMouse", PCMenu_InvertMouse, 1, NULL },
-	{ "AlwaysRun", PCMenu_AlwaysRun, 1, NULL },
-	{ "MouseSensitivityChange", PCMenu_MouseSensitivityChange, 1, NULL },
-	{ "MouseSensitivitySliderFocus_Sub", PCMenu_MouseSensitivitySliderFocus_Sub, 1, NULL },
-	{ "MouseSensitivitySliderFocus_Add", PCMenu_MouseSensitivitySliderFocus_Add, 1, NULL },
-	{ "ControllerConfig", PCMenu_ControllerConfig, 1, NULL },
-	{ "ControllerConfigCharMenu", PCMenu_ControllerConfigCharMenu, 1, NULL },
-	{ "ControllerConfigShipMenu", PCMenu_ControllerConfigShipMenu, 1, NULL },
-	{ "FillControllerMenu", PCMenu_FillControllerMenu, 1, NULL },
-	{ "PlaceMenuOption", PCMenu_PlaceMenuOption, 1, NULL },
-	{ "SetOptionValue", PCMenu_SetOptionValue, 1, NULL },
-	{ "ShowPadConfig", (PyCFunction)(void (*)(void))PCMenu_ShowPadConfig, 3, NULL },
-	{ "UpdatePadText", PCMenu_UpdatePadText, 1, NULL },
-	{ "SwitchOption", PCMenu_SwitchOption, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MenuControlsMethods[] = {
+	PORT_FN(OptionsMenu, PCMenu_OptionsMenu),
+	PORT_FN(ControlsMenu, PCMenu_ControlsMenu),
+	PORT_FN(MouseControlsMenu, PCMenu_MouseControlsMenu),
+	PORT_FN(RacerMoveControlsMenu, PCMenu_RacerMoveControlsMenu),
+	PORT_FN(RacerAttackControlsMenu, PCMenu_RacerAttackControlsMenu),
+	PORT_FN(WalkCharControlsMenu, PCMenu_WalkCharControlsMenu),
+	PORT_FN(UseCharControlsMenu, PCMenu_UseCharControlsMenu),
+	PORT_FN(CreateControlMenu, PCMenu_CreateControlMenu),
+	PORT_FN(RefreshControlMenu, PCMenu_RefreshControlMenu),
+	PORT_FN(ClearKeyEntry, PCMenu_ClearKeyEntry),
+	PORT_FN(WaitForKeyPress, PCMenu_WaitForKeyPress),
+	PORT_FN(AbortWaitRedefine, PCMenu_AbortWaitRedefine),
+	PORT_FN(KetRedefineFunc, PCMenu_AbortWaitRedefine),
+	PORT_FN(ResetEverything, PCMenu_ResetEverything),
+	PORT_FN(ResetToDefault, PCMenu_ResetToDefault),
+	PORT_FN(OptionYesNo, PCMenu_OptionYesNo),
+	PORT_FN(InvertMouse, PCMenu_InvertMouse),
+	PORT_FN(AlwaysRun, PCMenu_AlwaysRun),
+	PORT_FN(MouseSensitivityChange, PCMenu_MouseSensitivityChange),
+	PORT_FN(MouseSensitivitySliderFocus_Sub, PCMenu_MouseSensitivitySliderFocus_Sub),
+	PORT_FN(MouseSensitivitySliderFocus_Add, PCMenu_MouseSensitivitySliderFocus_Add),
+	PORT_FN(ControllerConfig, PCMenu_ControllerConfig),
+	PORT_FN(ControllerConfigCharMenu, PCMenu_ControllerConfigCharMenu),
+	PORT_FN(ControllerConfigShipMenu, PCMenu_ControllerConfigShipMenu),
+	PORT_FN(FillControllerMenu, PCMenu_FillControllerMenu),
+	PORT_FN(PlaceMenuOption, PCMenu_PlaceMenuOption),
+	PORT_FN(SetOptionValue, PCMenu_SetOptionValue),
+	PORT_FNK(ShowPadConfig, PCMenu_ShowPadConfig),
+	PORT_FN(UpdatePadText, PCMenu_UpdatePadText),
+	PORT_FN(SwitchOption, PCMenu_SwitchOption),
+	PORT_FNEND
 };
 
 PORTS(MenuControls)

@@ -138,7 +138,7 @@ static double MC_Num(const nativeVal_t *v) {
 	return v->type == NV_INT ? (double)v->i : v->type == NV_FLOAT ? v->f : 0.0;
 }
 
-/* the same for an argument of an adapter (NULL: not given, def) */
+/* the same for an argument of an entry (NULL: not given, def) */
 static double MC_ArgNum(const nativeVal_t *v, double def) {
 	return v ? MC_Num(v) : def;
 }
@@ -245,8 +245,6 @@ static byte MakeChar_AddDiscover_E(const nativeVal_t *a, int n, nativeVal_t *out
 	return 1;
 }
 
-MODE_ADAPTER(MakeChar, AddDiscover)
-
 static void MC_Move(const char *ch, const char *action, const char *anm, double turn, double disp, int loop) {
 	MC_Create(action);
 	MC_Anm(ch, anm);
@@ -272,8 +270,6 @@ static byte MakeChar_AddMove_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	MC_Move(ch, action, anm, MC_ArgNum(turn, 0.0), MC_ArgNum(disp, 0.0), loop);
 	return 1;
 }
-
-MODE_ADAPTER(MakeChar, AddMove)
 
 /* the moves of a list (AddWalkActions and its Init and End kin), list NULL for the four of def; the list's length as
  * PySequence_Length takes it (its TypeError left set, as the port went on), items that are no text "" */
@@ -492,8 +488,6 @@ static byte MakeChar_AddMorphAction_E(const nativeVal_t *a, int n, nativeVal_t *
 	return 1;
 }
 
-MODE_ADAPTER(MakeChar, AddMorphAction)
-
 /* the morphs of the eyes and the lips of the characters of the lists */
 static void MC_DefMorphs(const char *ch) {
 	char file[0x80];
@@ -516,8 +510,6 @@ static byte MakeChar_AddDefMorphActions_E(const nativeVal_t *a, int n, nativeVal
 	MC_DefMorphs(ch);
 	return 1;
 }
-
-MODE_ADAPTER(MakeChar, AddDefMorphActions)
 
 /* EventAnimCommand(time, name[, discard]): an animation command; a negative time is the end of the animation */
 MODE_KWT(MakeChar, EventAnimCommand, "Os|i", "Time", "Name", "Discard") {
@@ -596,8 +588,6 @@ static byte MakeChar_AddBreakLoopAction_E(const nativeVal_t *a, int n, nativeVal
 	return 1;
 }
 
-MODE_ADAPTER(MakeChar, AddBreakLoopAction)
-
 /* flashed by the camera: the end of each part leads to the next; the police listen */
 MODE_KWT(MakeChar, AddFlashedAction, "s|i", "CharName", "ListenPolice") {
 	const char *ch;
@@ -626,8 +616,6 @@ static byte MakeChar_AddCrazyAction_E(const nativeVal_t *a, int n, nativeVal_t *
 	MC_BreakLoop(ch, "Crazy", 1);
 	return 1;
 }
-
-MODE_ADAPTER(MakeChar, AddCrazyAction)
 
 /* dazed by the mayor: a coin falls a quarter into the start; the character goes into DazedChars */
 MODE_KWT(MakeChar, AddDazeAction, "s|i", "CharName", "ListenMayor") {
@@ -674,8 +662,6 @@ static byte MakeChar_SetSitActions_E(const nativeVal_t *a, int n, nativeVal_t *o
 	return 1;
 }
 
-MODE_ADAPTER(MakeChar, SetSitActions)
-
 /* InitChar(name): a new class with the defaults of a character, MaxSpeed and MinSpeed back to theirs */
 static byte MakeChar_InitChar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *ch;
@@ -717,8 +703,6 @@ static byte MakeChar_InitChar_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	MC_DefMorphs(ch);
 	return 1;
 }
-
-MODE_ADAPTER(MakeChar, InitChar)
 
 /* SetNodeRotation(set, node, x, y): the angle pair of a node in hundredths */
 static void MC_NodeRotation(const nativeVal_t *set, const nativeVal_t *node, const nativeVal_t *x, const nativeVal_t *y) {
@@ -819,35 +803,33 @@ MODE_KWT(MakeChar, AddTurretTalkAct, "ss|O", "CharName", "ActName", "NodeModifie
 	return 1;
 }
 
-#define MC_KW(f) (PyCFunction)(void (*)(void))f, 3
-
-PyMethodDef g_MakeCharMethods[] = {
-	{ "CreateRelaxAction", MC_KW(MakeChar_CreateRelaxAction), NULL },
-	{ "AddRelaxActions", MC_KW(MakeChar_AddRelaxActions), NULL },
-	{ "AddDiscover", MakeChar_AddDiscover, 1, NULL },
-	{ "AddMove", MakeChar_AddMove, 1, NULL },
-	{ "AddWalkActions", MC_KW(MakeChar_AddWalkActions), NULL },
-	{ "AddInitWalkActions", MC_KW(MakeChar_AddInitWalkActions), NULL },
-	{ "AddEndWalkActions", MC_KW(MakeChar_AddEndWalkActions), NULL },
-	{ "AddFallAction", MC_KW(MakeChar_AddFallAction), NULL },
-	{ "AddTalkAction", MC_KW(MakeChar_AddTalkAction), NULL },
-	{ "AddTalkMorph", MakeChar_AddTalkMorph, 1, NULL },
-	{ "AddMorphAction", MakeChar_AddMorphAction, 1, NULL },
-	{ "AddDefMorphActions", MakeChar_AddDefMorphActions, 1, NULL },
-	{ "EventAnimCommand", MC_KW(MakeChar_EventAnimCommand), NULL },
-	{ "AddTalkAct", MC_KW(MakeChar_AddTalkAct), NULL },
-	{ "AddFlashedAction", MC_KW(MakeChar_AddFlashedAction), NULL },
-	{ "AddCrazyAction", MakeChar_AddCrazyAction, 1, NULL },
-	{ "AddDazeAction", MC_KW(MakeChar_AddDazeAction), NULL },
-	{ "ListenAction", MC_KW(MakeChar_ListenAction), NULL },
-	{ "AddBreakLoopAction", MakeChar_AddBreakLoopAction, 1, NULL },
-	{ "SetSitActions", MakeChar_SetSitActions, 1, NULL },
-	{ "InitChar", MakeChar_InitChar, 1, NULL },
-	{ "SetNodeRotation", MakeChar_SetNodeRotation, 1, NULL },
-	{ "TurretBasicActions", MC_KW(MakeChar_TurretBasicActions), NULL },
-	{ "AddTurretTalkAction", MC_KW(MakeChar_AddTurretTalkAction), NULL },
-	{ "AddTurretTalkAct", MC_KW(MakeChar_AddTurretTalkAct), NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_MakeCharMethods[] = {
+	PORT_FNK(CreateRelaxAction, MakeChar_CreateRelaxAction),
+	PORT_FNK(AddRelaxActions, MakeChar_AddRelaxActions),
+	PORT_FN(AddDiscover, MakeChar_AddDiscover),
+	PORT_FN(AddMove, MakeChar_AddMove),
+	PORT_FNK(AddWalkActions, MakeChar_AddWalkActions),
+	PORT_FNK(AddInitWalkActions, MakeChar_AddInitWalkActions),
+	PORT_FNK(AddEndWalkActions, MakeChar_AddEndWalkActions),
+	PORT_FNK(AddFallAction, MakeChar_AddFallAction),
+	PORT_FNK(AddTalkAction, MakeChar_AddTalkAction),
+	PORT_FN(AddTalkMorph, MakeChar_AddTalkMorph),
+	PORT_FN(AddMorphAction, MakeChar_AddMorphAction),
+	PORT_FN(AddDefMorphActions, MakeChar_AddDefMorphActions),
+	PORT_FNK(EventAnimCommand, MakeChar_EventAnimCommand),
+	PORT_FNK(AddTalkAct, MakeChar_AddTalkAct),
+	PORT_FNK(AddFlashedAction, MakeChar_AddFlashedAction),
+	PORT_FN(AddCrazyAction, MakeChar_AddCrazyAction),
+	PORT_FNK(AddDazeAction, MakeChar_AddDazeAction),
+	PORT_FNK(ListenAction, MakeChar_ListenAction),
+	PORT_FN(AddBreakLoopAction, MakeChar_AddBreakLoopAction),
+	PORT_FN(SetSitActions, MakeChar_SetSitActions),
+	PORT_FN(InitChar, MakeChar_InitChar),
+	PORT_FN(SetNodeRotation, MakeChar_SetNodeRotation),
+	PORT_FNK(TurretBasicActions, MakeChar_TurretBasicActions),
+	PORT_FNK(AddTurretTalkAction, MakeChar_AddTurretTalkAction),
+	PORT_FNK(AddTurretTalkAct, MakeChar_AddTurretTalkAct),
+	PORT_FNEND
 };
 
 PORTS(MakeChar)

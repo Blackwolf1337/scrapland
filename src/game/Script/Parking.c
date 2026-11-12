@@ -13,19 +13,19 @@
  * PR_ComeFrom, PR_Spawn, DtritusPlateModel, DtritusPlateNode, AlarmProbOnParkedShipDeath) and
  * Accelerator.ACCELERATOR_RADIUS. The module code (the save variables, the engine callbacks) stays in the scripts.
  *
- * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters with
- * the argument formats of the C port. The variables of the module are read where the script reads them as its globals
- * and written at once (the missions, Doors, the levels and the cases read and set them); AllShips is changed
- * in place. The ships, cameras, boxes and the plate are handle values (OBJLIB 7). The module's own functions the script
- * calls as its globals (Parking's and Accelerator's) and the other ports (ShipMaker, Sputnik, Menu, RacerScorer,
- * CharScorer, Chars, ShipEdit, Vehicles, SaveGame, Speech, RaceMaker) go through their refs (PORT_OWN, PORT_CALL: the
- * seam, OBJLIB 5 (9c); a mission or a case may replace one), and so do Scrap.SetCam, SwitchMissionArrows,
- * AddParkingZone, CreateEntityList and EntityListGet (stage 7); string.split of other values than texts stays by name
- * (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
- * NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc,
- * SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor,
- * SAct.GetAction and SetAct go through their seams (the cases record or swap them). The evals of the save texts read
- * literals with the native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB 6).
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the function table rows name the entries,
+ * which take the argument formats of the C port. The variables of the module are read where the script reads them as
+ * its globals and written at once (the missions, Doors, the levels and the cases read and set them); AllShips is
+ * changed in place. The ships, cameras, boxes and the plate are handle values (OBJLIB 7). The module's own functions
+ * the script calls as its globals (Parking's and Accelerator's) and the other ports (ShipMaker, Sputnik, Menu,
+ * RacerScorer, CharScorer, Chars, ShipEdit, Vehicles, SaveGame, Speech, RaceMaker) go through their refs (PORT_OWN,
+ * PORT_CALL: the seam, OBJLIB 5 (9c); a mission or a case may replace one), and so do Scrap.SetCam,
+ * SwitchMissionArrows, AddParkingZone, CreateEntityList and EntityListGet (stage 7); string.split of other values than
+ * texts stays by name (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine,
+ * StartDummySearch, NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet,
+ * AddScheduledFunc, SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain,
+ * SLogic.SetOnFloor, SAct.GetAction and SetAct go through their seams (the cases record or swap them). The evals of the
+ * save texts read literals with the native reader (Mode_EvalIn); a bare name is looked up in the module (OBJLIB 6).
  */
 #include <string.h>
 
@@ -1427,7 +1427,7 @@ static byte Pk_InitN(void) {
 	return Mode_Done(&t, arrive >= 0 && (!arrive || Pk_Arrive(comeFrom, spawn)));
 }
 
-/* the adapters (the argument formats of the C port: the arity errors of PyArg_ParseTuple, the keyword functions with
+/* the entries (the argument formats of the C port: the arity errors of PyArg_ParseTuple, the keyword functions with
  * the names of the script) */
 MODE_FN(Parking, RestoreDeathPlayerShip, 0, Pk_RestoreDeathPlayerShipN())
 MODE_FN(Parking, SetInvunerable, 1, Pk_SetInvunerableN(&a[0]))
@@ -1486,42 +1486,42 @@ MODE_KW(Parking, CreateParkedShip, "OO|O", "Pos", "Angle", "Type") {
 	return Pk_CreateParkedShipN(p, out);
 }
 
-PyMethodDef g_ParkingMethods[] = {
-	{ "RestoreDeathPlayerShip", Parking_RestoreDeathPlayerShip, 1, NULL },
-	{ "SetInvunerable", Parking_SetInvunerable, 1, NULL },
-	{ "CharOnShip", Parking_CharOnShip, 1, NULL },
-	{ "UseShip", (PyCFunction)(void (*)(void))Parking_UseShip, 3, NULL },
-	{ "PlayVoiceChannel", Parking_PlayVoiceChannel, 1, NULL },
-	{ "ExecSwitchVehicleMissionCallback", Parking_ExecSwitchVehicleMissionCallback, 1, NULL },
-	{ "EndPathCam", Parking_EndPathCam, 1, NULL },
-	{ "SetCameraStart", (PyCFunction)(void (*)(void))Parking_SetCameraStart, 3, NULL },
-	{ "isValidToPark", Parking_isValidToPark, 1, NULL },
-	{ "OnPark", Parking_OnPark, 1, NULL },
-	{ "SetDtritusPlate", Parking_SetDtritusPlate, 1, NULL },
-	{ "CreateDtritusPlate", Parking_CreateDtritusPlate, 1, NULL },
-	{ "CreatePlayerShip", Parking_CreatePlayerShip, 1, NULL },
-	{ "ShowChar", Parking_ShowChar, 1, NULL },
-	{ "EndJunkerPathCam", Parking_EndJunkerPathCam, 1, NULL },
-	{ "JunkerPark", Parking_JunkerPark, 1, NULL },
-	{ "OnParkingOccupied", Parking_OnParkingOccupied, 1, NULL },
-	{ "OnParkedOut", Parking_OnParkedOut, 1, NULL },
-	{ "CreateBox", Parking_CreateBox, 1, NULL },
-	{ "SetShipRadius", Parking_SetShipRadius, 1, NULL },
-	{ "SetOnFloor", Parking_SetOnFloor, 1, NULL },
-	{ "SetShipAsParked", Parking_SetShipAsParked, 1, NULL },
-	{ "ParkedDeat", Parking_ParkedDeat, 1, NULL },
-	{ "BrowseItemPos", Parking_BrowseItemPos, 1, NULL },
-	{ "CreateLonelyMercParkings", Parking_CreateLonelyMercParkings, 1, NULL },
-	{ "CreateParkedShip", (PyCFunction)(void (*)(void))Parking_CreateParkedShip, 3, NULL },
-	{ "CheckWeapons", Parking_CheckWeapons, 1, NULL },
-	{ "BrowseParkedPos", Parking_BrowseParkedPos, 1, NULL },
-	{ "ChangeLevel", Parking_ChangeLevel, 1, NULL },
-	{ "BrowseParkingAreas", Parking_BrowseParkingAreas, 1, NULL },
-	{ "BrowseSwitchLevel", Parking_BrowseSwitchLevel, 1, NULL },
-	{ "ShowNextMap", Parking_ShowNextMap, 1, NULL },
-	{ "DoorInitializator", Parking_DoorInitializator, 1, NULL },
-	{ "Init", Parking_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ParkingMethods[] = {
+	PORT_FN(RestoreDeathPlayerShip, Parking_RestoreDeathPlayerShip),
+	PORT_FN(SetInvunerable, Parking_SetInvunerable),
+	PORT_FN(CharOnShip, Parking_CharOnShip),
+	PORT_FNK(UseShip, Parking_UseShip),
+	PORT_FN(PlayVoiceChannel, Parking_PlayVoiceChannel),
+	PORT_FN(ExecSwitchVehicleMissionCallback, Parking_ExecSwitchVehicleMissionCallback),
+	PORT_FN(EndPathCam, Parking_EndPathCam),
+	PORT_FNK(SetCameraStart, Parking_SetCameraStart),
+	PORT_FN(isValidToPark, Parking_isValidToPark),
+	PORT_FN(OnPark, Parking_OnPark),
+	PORT_FN(SetDtritusPlate, Parking_SetDtritusPlate),
+	PORT_FN(CreateDtritusPlate, Parking_CreateDtritusPlate),
+	PORT_FN(CreatePlayerShip, Parking_CreatePlayerShip),
+	PORT_FN(ShowChar, Parking_ShowChar),
+	PORT_FN(EndJunkerPathCam, Parking_EndJunkerPathCam),
+	PORT_FN(JunkerPark, Parking_JunkerPark),
+	PORT_FN(OnParkingOccupied, Parking_OnParkingOccupied),
+	PORT_FN(OnParkedOut, Parking_OnParkedOut),
+	PORT_FN(CreateBox, Parking_CreateBox),
+	PORT_FN(SetShipRadius, Parking_SetShipRadius),
+	PORT_FN(SetOnFloor, Parking_SetOnFloor),
+	PORT_FN(SetShipAsParked, Parking_SetShipAsParked),
+	PORT_FN(ParkedDeat, Parking_ParkedDeat),
+	PORT_FN(BrowseItemPos, Parking_BrowseItemPos),
+	PORT_FN(CreateLonelyMercParkings, Parking_CreateLonelyMercParkings),
+	PORT_FNK(CreateParkedShip, Parking_CreateParkedShip),
+	PORT_FN(CheckWeapons, Parking_CheckWeapons),
+	PORT_FN(BrowseParkedPos, Parking_BrowseParkedPos),
+	PORT_FN(ChangeLevel, Parking_ChangeLevel),
+	PORT_FN(BrowseParkingAreas, Parking_BrowseParkingAreas),
+	PORT_FN(BrowseSwitchLevel, Parking_BrowseSwitchLevel),
+	PORT_FN(ShowNextMap, Parking_ShowNextMap),
+	PORT_FN(DoorInitializator, Parking_DoorInitializator),
+	PORT_FN(Init, Parking_Init),
+	PORT_FNEND
 };
 
 /* ---- Accelerator ---- */
@@ -1590,10 +1590,10 @@ MODE_KW(Accelerator, CreateAccelerator, "OOO|O", "Pos", "Angx", "Angy", "Radius"
 
 MODE_FN(Accelerator, Init, 0, Acc_InitN())
 
-PyMethodDef g_AcceleratorMethods[] = {
-	{ "CreateAccelerator", (PyCFunction)(void (*)(void))Accelerator_CreateAccelerator, 3, NULL },
-	{ "Init", Accelerator_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_AcceleratorMethods[] = {
+	PORT_FNK(CreateAccelerator, Accelerator_CreateAccelerator),
+	PORT_FN(Init, Accelerator_Init),
+	PORT_FNEND
 };
 
 PORTS(Parking)

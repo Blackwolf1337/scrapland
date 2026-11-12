@@ -250,66 +250,39 @@ static byte Gs_SetPSSlots(const nativeVal_t *const *v, byte interval) {
 	return Gs_SetPS(a, interval);
 }
 
-/* OBJLIB 7: the keyword adapters of SetPSLoop and SetPSInterval (the names and the errors of
- * PyArg_ParseTupleAndKeywords; the slots of the two formats differ) */
-static PyObject *Sound_SetPSArgs(PyObject *args, PyObject *kw, byte interval) {
-	static char *loopNames[] = { "Name", "Pos", "Snd", "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler", NULL };
-	static char *intNames[] = { "Name", "Pos", "Snd", "MinInterval", "MaxInterval", "Volume", "Pitch", "AttenIni",
-		"AttenEnd", "Doppler", NULL };
-	PyObject *o[10] = { NULL };
-	nativeVal_t a[10];
-	const nativeVal_t *v[10];
-	if (interval ? !PyArg_ParseTupleAndKeywords(args, kw, "OOOOO|OOOOO", intNames, &o[0], &o[1], &o[2], &o[3], &o[4],
-			&o[5], &o[6], &o[7], &o[8], &o[9]) :
-		!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OOOOO", loopNames, &o[0], &o[1], &o[2], &o[5], &o[6], &o[7], &o[8],
-			&o[9])) {
-		return NULL;
-	}
-	for (int i = 0; i < 10; i++) {
-		Native_SetNone(&a[i]);
-		v[i] = o[i] && Native_Arg(o[i], &a[i]) ? &a[i] : NULL;
-	}
-	byte ok = Gs_SetPSSlots(v, interval);
-	for (int i = 0; i < 10; i++) {
-		Native_Free(&a[i]);
-	}
-	return Mode_Result(ok);
-}
+/* the entries of SetPSLoop and SetPSInterval (the slots of the two formats differ): the arguments by position or the
+ * keyword slots of their names; SetPSLoop's fourth slot on is Volume, slot 5 of Gs_SetPSSlots */
+static char *Sound_SetPSLoop_N[] = { "Name", "Pos", "Snd", "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler", NULL };
+static const char Sound_SetPSLoop_F[] = "OOO|OOOOO";
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *Sound_SetPSLoop(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Sound_SetPSArgs(args, kw, 0);
-}
-
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *Sound_SetPSInterval(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Sound_SetPSArgs(args, kw, 1);
-}
-
-/* the entries (the arguments by position; maybe unused: tools/script/ports.py gives a keyword adapter no ref yet):
- * SetPSLoop's fourth argument on is Volume, slot 5 */
-[[maybe_unused]] static byte Sound_SetPSLoop_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+static byte Sound_SetPSLoop_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const nativeVal_t *v[10] = { NULL };
+	nativeVal_t s[8];
+	byte given[8];
 	(void)out;
-	if (!Mode_Arity(n, 3, 8)) {
+	if (!Mode_KwSlots(a, n, Sound_SetPSLoop_F, s, given)) {
 		return 0;
 	}
-	for (int i = 0; i < n; i++) {
-		v[i < 3 ? i : i + 2] = &a[i];
+	for (int i = 0; i < 8; i++) {
+		v[i < 3 ? i : i + 2] = given[i] ? &a[i] : NULL;
 	}
 	return Gs_SetPSSlots(v, 0);
 }
 
-[[maybe_unused]] static byte Sound_SetPSInterval_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+static char *Sound_SetPSInterval_N[] = { "Name", "Pos", "Snd", "MinInterval", "MaxInterval", "Volume", "Pitch",
+	"AttenIni", "AttenEnd", "Doppler", NULL };
+static const char Sound_SetPSInterval_F[] = "OOOOO|OOOOO";
+
+static byte Sound_SetPSInterval_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const nativeVal_t *v[10] = { NULL };
+	nativeVal_t s[10];
+	byte given[10];
 	(void)out;
-	if (!Mode_Arity(n, 5, 10)) {
+	if (!Mode_KwSlots(a, n, Sound_SetPSInterval_F, s, given)) {
 		return 0;
 	}
-	for (int i = 0; i < n; i++) {
-		v[i] = &a[i];
+	for (int i = 0; i < 10; i++) {
+		v[i] = given[i] ? &a[i] : NULL;
 	}
 	return Gs_SetPSSlots(v, 1);
 }
@@ -330,21 +303,21 @@ MODE_FN(Sound, WayPoints, 0, Gs_WayPoints())
 MODE_FN(Sound, SetOutMusic, 0, Gs_SetOutMusic())
 MODE_FN(Sound, Init, 0, Gs_SoundInit())
 
-PyMethodDef g_SoundMethods[] = {
-	{ "SetStdDamageSounds", Sound_SetStdDamageSounds, 1, NULL },
-	{ "SetStdDamageSoundLoops", Sound_SetStdDamageSoundLoops, 1, NULL },
-	{ "LoadDamageSounds", Sound_LoadDamageSounds, 1, NULL },
-	{ "LoadMenuSounds", Sound_LoadMenuSounds, 1, NULL },
-	{ "ScorerSounds", Sound_ScorerSounds, 1, NULL },
-	{ "WayPoints", Sound_WayPoints, 1, NULL },
-	{ "PhotoSounds", Sound_PhotoSounds, 1, NULL },
-	{ "CharConversionSounds", Sound_CharConversionSounds, 1, NULL },
-	{ "LoadShipEditInterfaceSounds", Sound_LoadShipEditInterfaceSounds, 1, NULL },
-	{ "Init", Sound_Init, 1, NULL },
-	{ "SetOutMusic", Sound_SetOutMusic, 1, NULL },
-	{ "SetPSLoop", (PyCFunction)(void (*)(void))Sound_SetPSLoop, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "SetPSInterval", (PyCFunction)(void (*)(void))Sound_SetPSInterval, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_SoundMethods[] = {
+	PORT_FN(SetStdDamageSounds, Sound_SetStdDamageSounds),
+	PORT_FN(SetStdDamageSoundLoops, Sound_SetStdDamageSoundLoops),
+	PORT_FN(LoadDamageSounds, Sound_LoadDamageSounds),
+	PORT_FN(LoadMenuSounds, Sound_LoadMenuSounds),
+	PORT_FN(ScorerSounds, Sound_ScorerSounds),
+	PORT_FN(WayPoints, Sound_WayPoints),
+	PORT_FN(PhotoSounds, Sound_PhotoSounds),
+	PORT_FN(CharConversionSounds, Sound_CharConversionSounds),
+	PORT_FN(LoadShipEditInterfaceSounds, Sound_LoadShipEditInterfaceSounds),
+	PORT_FN(Init, Sound_Init),
+	PORT_FN(SetOutMusic, Sound_SetOutMusic),
+	PORT_FNK(SetPSLoop, Sound_SetPSLoop),
+	PORT_FNK(SetPSInterval, Sound_SetPSInterval),
+	PORT_FNEND
 };
 
 /* ---- OutSound ---- */
@@ -417,16 +390,16 @@ MODE_FN(OutSound, LoadCrash, 0, Gs_OutSection("LoadCrash", 0))
 MODE_FN(OutSound, LoadVehicles, 0, Gs_LoadVehicles())
 MODE_FN(OutSound, Init, 0, Gs_OutInit())
 
-PyMethodDef g_OutSoundMethods[] = {
-	{ "SetVehicleSounds", OutSound_SetVehicleSounds, 1, NULL },
-	{ "LoadEngines", OutSound_LoadEngines, 1, NULL },
-	{ "LoadWeapons", OutSound_LoadWeapons, 1, NULL },
-	{ "LoadScorer", OutSound_LoadScorer, 1, NULL },
-	{ "LoadMisc", OutSound_LoadMisc, 1, NULL },
-	{ "LoadCrash", OutSound_LoadCrash, 1, NULL },
-	{ "LoadVehicles", OutSound_LoadVehicles, 1, NULL },
-	{ "Init", OutSound_Init, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_OutSoundMethods[] = {
+	PORT_FN(SetVehicleSounds, OutSound_SetVehicleSounds),
+	PORT_FN(LoadEngines, OutSound_LoadEngines),
+	PORT_FN(LoadWeapons, OutSound_LoadWeapons),
+	PORT_FN(LoadScorer, OutSound_LoadScorer),
+	PORT_FN(LoadMisc, OutSound_LoadMisc),
+	PORT_FN(LoadCrash, OutSound_LoadCrash),
+	PORT_FN(LoadVehicles, OutSound_LoadVehicles),
+	PORT_FN(Init, OutSound_Init),
+	PORT_FNEND
 };
 
 /* ---- DoorSound ---- */
@@ -524,16 +497,9 @@ static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	return ok;
 }
 
-/* the adapter of LoadSndList: the list (argument 0) as the object it is (sorted in place; OBJLIB 5 (7e: Mode_EntryObj))
- * */
-static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
-	(void)self;
-	return Mode_EntryObj(args, DoorSound_LoadSndList_E, 1 << 0);
-}
-
 /* run initsound <args>: SetInitDoorSound(args) through the module's globals, as SetSlide calls it (an error is left
  * set, it stops the file): the function as a value, applied to the arguments of the line (Mode_Apply: the entry of
- * a port function; SetInitDoorSound, a keyword adapter of its own, has no entry and no ref, OBJLIB 7) */
+ * a port function) */
 static void DoorSound_StepInitSound(int id, const nativeVal_t *args, int n) {
 	nativeVal_t f = { 0 }, a;
 	(void)id;
@@ -567,22 +533,11 @@ static byte Gs_SetInitDoorSound(const nativeVal_t *a) {
 		LvN_SetAct("EventFunc", Mode_S(&t, "!AnmSoundEvent")));
 }
 
-/* OBJLIB 7: a keyword adapter (the parameter names and the errors of PyArg_ParseTupleAndKeywords) */
-static PyObject *DoorSound_SetInitDoorSound(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "DoorClass", "ActionName", "SoundName", "Vol", "Pitch", NULL };
-	nativeVal_t a[5];
-	byte given[5];
-	(void)self;
-	if (!Mode_Kw(args, kw, "OOO|OO", names, 5, a, given)) {
-		return NULL;
-	}
-	if (!given[3]) {
-		Native_SetInt(&a[3], 1);
-	}
-	if (!given[4]) {
-		Native_SetInt(&a[4], 0);
-	}
-	return Mode_KwOut(a, 5, Gs_SetInitDoorSound(a), NULL);
+/* the keyword entry of SetInitDoorSound(DoorClass, ActionName, SoundName, Vol=1, Pitch=0) */
+MODE_KW(DoorSound, SetInitDoorSound, "OOO|OO", "DoorClass", "ActionName", "SoundName", "Vol", "Pitch") {
+	Mode_KwDefI(v, given, 3, 1);
+	Mode_KwDefI(v, given, 4, 0);
+	return Gs_SetInitDoorSound(v);
 }
 
 /* ConversorSetSounds(CharName): the sounds of the conversion point's action */
@@ -594,13 +549,13 @@ MODE_FN(DoorSound, LoadSounds, 0, Gs_LoadSounds())
 MODE_FN(DoorSound, SetSlide, 1, Gs_SetSlide(&a[0]))
 MODE_FN(DoorSound, ConversorSetSounds, 1, Gs_ConversorSetSounds(&a[0]))
 
-PyMethodDef g_DoorSoundMethods[] = {
-	{ "LoadSounds", DoorSound_LoadSounds, 1, NULL },
-	{ "LoadSndList", DoorSound_LoadSndList, 1, NULL },
-	{ "SetSlide", DoorSound_SetSlide, 1, NULL },
-	{ "SetInitDoorSound", (PyCFunction)(void (*)(void))DoorSound_SetInitDoorSound, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "ConversorSetSounds", DoorSound_ConversorSetSounds, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_DoorSoundMethods[] = {
+	PORT_FN(LoadSounds, DoorSound_LoadSounds),
+	PORT_FN(LoadSndList, DoorSound_LoadSndList),
+	PORT_FN(SetSlide, DoorSound_SetSlide),
+	PORT_FNK(SetInitDoorSound, DoorSound_SetInitDoorSound),
+	PORT_FN(ConversorSetSounds, DoorSound_ConversorSetSounds),
+	PORT_FNEND
 };
 
 PORTS(GameSounds)

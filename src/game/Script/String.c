@@ -8,9 +8,9 @@
  * the module, then the builtins).
  *
  * The functions work on values held by reference (OBJLIB 7 and 9: the operators of any object and the builtins are
- * Python's until the object library goes; the Mode_Ref helpers of scrap/scriptmodes.h): the adapters hand the
- * caller's objects over as they are (MODE_REFADAPTER, MODE_REFKW), so a function that gives its argument back gives
- * the same object.
+ * Python's until the object library goes; the Mode_Ref helpers of scrap/scriptmodes.h): the entries take the
+ * caller's objects as they are (the native calls; MODE_REFKW for keywords), so a function that gives its argument
+ * back gives the same object.
  */
 #include <limits.h>
 
@@ -128,9 +128,6 @@ static byte String_rjust_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return n == 2 ? Str_Just(&a[0], &a[1], 1, out) : Port_Arity(n, 2);
 }
 
-MODE_REFADAPTER(String, ljust)
-MODE_REFADAPTER(String, rjust)
-
 /* `if v:` of a value made by an operator (released): 1, 0, -1 with the error (made: the operator gave it) */
 static int Str_True(byte made, nativeVal_t *v) {
 	int t = made ? Mode_Truth(v) : -1;
@@ -171,8 +168,6 @@ static byte Str_Center(const nativeVal_t *s, const nativeVal_t *width, nativeVal
 static byte String_center_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return n == 2 ? Str_Center(&a[0], &a[1], out) : Port_Arity(n, 2);
 }
-
-MODE_REFADAPTER(String, center)
 
 /* zfill(x, width): the string (or the repr of x) with zeros after its sign up to width */
 static byte Str_Zfill(const nativeVal_t *x, const nativeVal_t *width, nativeVal_t *out) {
@@ -222,8 +217,6 @@ static byte String_zfill_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return n == 2 ? Str_Zfill(&a[0], &a[1], out) : Port_Arity(n, 2);
 }
 
-MODE_REFADAPTER(String, zfill)
-
 /* capwords(s, sep=None): join(map(capitalize, split(s, sep)), sep or ' ') with the functions of the module */
 MODE_REFKW(String, capwords, "O|O", "s", "sep") {
 	nativeVal_t join = { 0 }, map = { 0 }, cap = { 0 }, split = { 0 }, words = { 0 }, caps = { 0 }, blank;
@@ -242,15 +235,15 @@ MODE_REFKW(String, capwords, "O|O", "s", "sep") {
 	return ok;
 }
 
-PyMethodDef g_StringMethods[] = {
-	{ "index", (PyCFunction)(void (*)(void))String_index, 3, NULL },
-	{ "rindex", (PyCFunction)(void (*)(void))String_rindex, 3, NULL },
-	{ "ljust", String_ljust, 1, NULL },
-	{ "rjust", String_rjust, 1, NULL },
-	{ "center", String_center, 1, NULL },
-	{ "zfill", String_zfill, 1, NULL },
-	{ "capwords", (PyCFunction)(void (*)(void))String_capwords, 3, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_StringMethods[] = {
+	PORT_FNK(index, String_index),
+	PORT_FNK(rindex, String_rindex),
+	PORT_FN(ljust, String_ljust),
+	PORT_FN(rjust, String_rjust),
+	PORT_FN(center, String_center),
+	PORT_FN(zfill, String_zfill),
+	PORT_FNK(capwords, String_capwords),
+	PORT_FNEND
 };
 
 PORTS(String)

@@ -4,11 +4,11 @@
  * received lines, the console, the six quick messages). The chat line itself is data/menus/chat.def.
  *
  * Native C (docs/objlib-plan.md, the pilot of stage 2): the functions call the engine in C and work on C texts; the
- * PyMethodDef entries are adapters. SendID (the receiver of each player: "ALL" or the ship "net<n>") and MyShip (the
- * ship of this machine, skipped while cycling) are variables of the module (chat.mod sets them, the tests read and
- * write them): an entry point reads them from the registry into a chatVars_t for its call and writes a change there
- * at once. A line goes over the network as
- * "<receiver>\t<text>"; the server shows it and sends it on (to all, or to the one receiver).
+ * function table rows name the entries. SendID (the receiver of each player: "ALL" or the ship "net<n>") and MyShip
+ * (the ship of this machine, skipped while cycling) are variables of the module (chat.mod sets them, the tests read and
+ * write them): an entry point reads them from the registry into a chatVars_t for its call and writes a change there at
+ * once. A line goes over the network as "<receiver>\t<text>"; the server shows it and sends it on (to all, or to the
+ * one receiver).
  */
 #include <string.h>
 
@@ -290,7 +290,7 @@ static byte Chat_Init(chatVars_t *c, int id) {
 }
 
 /* ---- the functions of the module table: the entries parse their arguments with the formats of the port (Mode_Parse:
- * the errors of PyArg_ParseTuple), the adapters are MODE_ADAPTER ---- */
+ * the errors of PyArg_ParseTuple) ---- */
 
 /* the text of an argument, NULL when it is no text */
 static const char *Chat_Text(const nativeVal_t *v) {
@@ -305,8 +305,6 @@ static byte Chat_GetID_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	Chat_Free(&c);
 	return ok;
 }
-
-MODE_ADAPTER(Chat, GetID)
 
 /* CycleUp(AndSet), CycleDown(AndSet): the cycle and, with set, the receiver on the chat line */
 static byte Chat_CycleSet(const nativeVal_t *a, int n, int step, byte set) {
@@ -323,8 +321,7 @@ static byte Chat_CycleSet(const nativeVal_t *a, int n, int step, byte set) {
 	static byte Chat_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		(void)out; \
 		return Chat_CycleSet(a, n, step, set); \
-	} \
-	MODE_ADAPTER(Chat, name)
+	}
 
 CHAT_CYCLE(CycleUp, 1, 0)
 CHAT_CYCLE(CycleUpAndSet, 1, 1)
@@ -366,15 +363,12 @@ static byte Chat_SendChatString_E(const nativeVal_t *a, int n, nativeVal_t *out)
 	return ok;
 }
 
-MODE_ADAPTER(Chat, SendChatString)
-
 static byte Chat_EndChat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	int id;
 	(void)out;
 	return Mode_Parse(a, n, "i", &id) && Chat_End(id);
 }
 
-MODE_ADAPTER(Chat, EndChat)
 MODE_FN(Chat, GetMyShip, 0, Chat_GetMyShip_C())
 
 static byte Chat_InitChat_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -394,8 +388,6 @@ static byte Chat_SendRead(int id, const char *text) {
 	return ok;
 }
 
-MODE_ADAPTER(Chat, InitChat)
-
 /* ConsoleChatString(estrin): a line of the full screen console goes to the receiver of player 0 */
 MODE_FN(Chat, ConsoleChatString, 1, Chat_SendRead(0, Chat_Text(&a[0])))
 
@@ -414,8 +406,7 @@ static byte Chat_Quick(const nativeVal_t *a, int n, int num) {
 	static byte Chat_qchat##num##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		(void)out; \
 		return Chat_Quick(a, n, num); \
-	} \
-	MODE_ADAPTER(Chat, qchat##num)
+	}
 
 CHAT_QUICK(1)
 CHAT_QUICK(2)
@@ -439,27 +430,27 @@ static void Chat_SetProcs(void) {
 
 MODE_FN(Chat, SetChatProc, 0, (Chat_SetProcs(), 1))
 
-PyMethodDef g_ChatMethods[] = {
-	{ "GetID", Chat_GetID, 1, NULL },
-	{ "CycleUp", Chat_CycleUp, 1, NULL },
-	{ "CycleUpAndSet", Chat_CycleUpAndSet, 1, NULL },
-	{ "CycleDown", Chat_CycleDown, 1, NULL },
-	{ "CycleDownAndSet", Chat_CycleDownAndSet, 1, NULL },
-	{ "ServerReSendChat", Chat_ServerReSendChat, 1, NULL },
-	{ "PrintChatString", Chat_PrintChatString, 1, NULL },
-	{ "SendChatString", Chat_SendChatString, 1, NULL },
-	{ "EndChat", Chat_EndChat, 1, NULL },
-	{ "GetMyShip", Chat_GetMyShip, 1, NULL },
-	{ "InitChat", Chat_InitChat, 1, NULL },
-	{ "ConsoleChatString", Chat_ConsoleChatString, 1, NULL },
-	{ "qchat1", Chat_qchat1, 1, NULL },
-	{ "qchat2", Chat_qchat2, 1, NULL },
-	{ "qchat3", Chat_qchat3, 1, NULL },
-	{ "qchat4", Chat_qchat4, 1, NULL },
-	{ "qchat5", Chat_qchat5, 1, NULL },
-	{ "qchat6", Chat_qchat6, 1, NULL },
-	{ "SetChatProc", Chat_SetChatProc, 1, NULL },
-	{ NULL, NULL, 0, NULL },
+const portFn_t g_ChatMethods[] = {
+	PORT_FN(GetID, Chat_GetID),
+	PORT_FN(CycleUp, Chat_CycleUp),
+	PORT_FN(CycleUpAndSet, Chat_CycleUpAndSet),
+	PORT_FN(CycleDown, Chat_CycleDown),
+	PORT_FN(CycleDownAndSet, Chat_CycleDownAndSet),
+	PORT_FN(ServerReSendChat, Chat_ServerReSendChat),
+	PORT_FN(PrintChatString, Chat_PrintChatString),
+	PORT_FN(SendChatString, Chat_SendChatString),
+	PORT_FN(EndChat, Chat_EndChat),
+	PORT_FN(GetMyShip, Chat_GetMyShip),
+	PORT_FN(InitChat, Chat_InitChat),
+	PORT_FN(ConsoleChatString, Chat_ConsoleChatString),
+	PORT_FN(qchat1, Chat_qchat1),
+	PORT_FN(qchat2, Chat_qchat2),
+	PORT_FN(qchat3, Chat_qchat3),
+	PORT_FN(qchat4, Chat_qchat4),
+	PORT_FN(qchat5, Chat_qchat5),
+	PORT_FN(qchat6, Chat_qchat6),
+	PORT_FN(SetChatProc, Chat_SetChatProc),
+	PORT_FNEND
 };
 
 PORTS(Chat)
