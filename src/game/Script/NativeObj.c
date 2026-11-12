@@ -1189,6 +1189,17 @@ static PyObject *Obj_ToPy(nativeObj_t *o) {
 		if (!py) {
 			return NULL;
 		}
+		/* its repr reads the dict of the face: the file of the module there too */
+		modVarRef_t mv = { .file = -1, .vars = &o->data };
+		nativeVal_t file;
+		if (ModVar_GetVal(&mv, "__file__", &file) && file.type == NV_STR) {
+			PyObject *f = PyString_FromStringAndSize((char *)Native_Text(&file), file.n);
+			if (!f || PyDict_SetItemString(PyModule_GetDict(py), "__file__", f) != 0) {
+				Native_ErrClear();
+			}
+			Py_XDECREF(f);
+		}
+		Native_Free(&file);
 		ModVar_FaceHook();
 		Obj_Crossed(o, py);
 		Py_INCREF(o->py);
