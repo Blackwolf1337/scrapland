@@ -1393,7 +1393,7 @@ static byte Pr_MissionTarget(const char *name, const char *use, const long *pos)
 	/* CharsNPC.CreateChar(CharsNPC.CharRes[name]) (OBJLIB 5: the character object of CharsNPC) */
 	LvN_Str(&k, name);
 	nativeVal_t ch;
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch) && PORT_CALL(CharsNPC, CreateChar, NULL, "O", Native_PyOf(&ch));
+	byte ok = Mode_CharRes(&k, &ch) && PORT_CALL(CharsNPC, CreateChar, NULL, "v", &ch);
 	Native_Free(&k);
 	Native_Free(&ch);
 	if (!ok || !LvN_Entity(name, &e)) {
@@ -1637,7 +1637,7 @@ static byte Pr_CheckHumanDist(const char *module, nativeVal_t *out) {
 static byte Pr_ResSet(const char *key, const char *var, long x, long y, long z) {
 	nativeVal_t k, v, ch;
 	LvN_Str(&k, key);
-	byte ok = Mode_RefTake(Mode_CharRes(&k), &ch);
+	byte ok = Mode_CharRes(&k, &ch);
 	Native_Free(&k);
 	Mode_Ints3(&v, x, y, z);
 	ok = ok && Mode_VSet(&ch, var, &v);

@@ -881,15 +881,23 @@ static void TC_DumpVar(tcBuf *b, const char *module, const char *key, const nati
 	TC_Add(b, "\n", 1);
 }
 
-/* OBJLIB 9b: a value read from the dict of a module (NULL: none) as TC_DumpVar shows it */
-static void TC_DumpPy(tcBuf *b, const char *module, const char *key, PyObject *o, tcSeen *seen) {
+/* a variable of the registry (none: shown as "?") as TC_DumpVar shows it */
+static void TC_DumpReg(tcBuf *b, const char *module, const modVarRef_t *ref, const char *key, tcSeen *seen) {
 	nativeVal_t v;
 
-	if (!o) {
+	if (!ModVar_GetVal(ref, key, &v)) {
 		TC_DumpVar(b, module, key, NULL, seen);
 		return;
 	}
-	NObj_FromPy(o, &v);
+	if (Native_Holds(&v, 1u << NV_OBJ)) {
+		/* a value with a Python object in it: in the form a view's operations give it (a tuple by value) */
+		PyObject *o = ModVar_Get(ref, key);
+		Native_Free(&v);
+		if (o) {
+			NObj_FromPy(o, &v);
+		}
+		Native_ErrClear();
+	}
 	TC_DumpVar(b, module, key, &v, seen);
 	Native_Free(&v);
 }
@@ -938,7 +946,7 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 			const char **vars;
 			int n = ModVar_Names(&ref, &vars);
 			for (int j = 0; j < n; j++) {
-				TC_DumpPy(b, name, vars[j], ModVar_Get(&ref, vars[j]), &seen);
+				TC_DumpReg(b, name, &ref, vars[j], &seen);
 			}
 			Mem_Free(vars);
 		}

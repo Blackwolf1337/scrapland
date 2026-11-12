@@ -11,10 +11,10 @@
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
  * module where the script reads them (a missing one is the NameError of the script) and write them back at once,
- * the dicts and lists in place (OBJLIB 5). The spawn points are instances of the Python class CharSpawnPos and the
- * characters handle values (OBJLIB 5, 7): their attributes are read and set the Python way, and the lists of
- * functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read again on
- * each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
+ * the dicts and lists in place (OBJLIB 5). The spawn points are native instances of the class CharSpawnPos of the
+ * module code and the characters handle values (OBJLIB 7): their attributes are read and set as objects, and the
+ * lists of functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read
+ * again on each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
  * SLogic.SetOnFloor, SScorer.SetMsgText, Scrap.GetLangEntries and the scheduler go through their seams; the
  * save variables, the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice,
  * DTritusDesktop, CharConversor, MissionsFuncs, Speech, Challenge) are called through their refs (PORT_CALL: directly
@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -34,123 +35,93 @@
 
 #define NPC "CharsNPC"
 
-/* ---- the class CharSpawnPos (OBJLIB 7: a class of the Python object library with a C __init__, made by the hooks of
- * the module code; its instances are the spawn points other modules and the cases hold, so the class, its method
- * objects and the instances stay Python objects until the classes are native) ---- */
+/* ---- the class CharSpawnPos: a native class of the module code with a C __init__, made by the hooks of the class
+ * statement; its instances are the spawn points other modules and the cases hold ---- */
 
 /* CharSpawnPos.__init__(self) of charsnpc.py:20: self.CallbackFunc = [] */
-static PyObject *Npc_SpawnPosInit(PyObject *self, PyObject *args) {
-	PyObject *inst;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &inst)) {
-		return NULL;
+static byte Npc_SpawnPosInit(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
+	nativeVal_t list;
+	(void)ctx;
+	(void)out;
+	if (n != 1) {
+		return Port_Arity(n, 1);
 	}
-	PyObject *list = PyList_New(0);
-	int err = list ? PyObject_SetAttrString(inst, "CallbackFunc", list) : -1;
-	Py_XDECREF(list);
-	return err ? NULL : Py_ReturnNone();
+	NObj_NewList(&list);
+	byte ok = NObj_SetAttr(&a[0], "CallbackFunc", &list);
+	Native_Free(&list);
+	return ok;
 }
 
-static PyMethodDef npc_spawnPosInit = { "__init__", Npc_SpawnPosInit, 1, NULL };
-
-/* the __init__ methods made since the interpreter started (a list, NULL before the first), for CharsNPC_Close */
-static PyObject *npc_spawnPosInits;
+/* the __init__ methods made by CharsNPC_ModSpawnPosInit, until CharsNPC_Close (an NV_LIST) */
+static nativeVal_t npc_spawnPosInits;
 
 /*
- * The __init__ of CharSpawnPos is a method object around the C function: instance_getattr binds it to the instance
- * as it binds a Python function (a C function alone in the class would get no self). The class does not exist yet
- * when the body of the class statement runs, so the hook in the body (where the script defines __init__, which
- * keeps the key order of the class dict) makes the method with None as its class, and the hook after the class
- * statement puts the class in (im_class) without a write to the dict. The class and the method then hold each other,
- * which the module cleanup of Py_Finalize does not break (a Python function holds the module dict, which the cleanup
- * clears): CharsNPC_Close does.
+ * The __init__ of CharSpawnPos is an unbound method around the C function (a C function alone in the class would get
+ * no self, and the script's class dict held the method of its Python function there). The class does not exist yet
+ * when the body of the class statement runs, so the hook in the body (where the script defines __init__, which keeps
+ * the key order of the class dict) makes the method without a class, and the hook after the class statement gives it
+ * the class without a write to the dict. The class and the method then hold each other until CharsNPC_Close.
  */
-int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals) {
+int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals, nativeVal_t *body) {
+	nativeVal_t f, m, key;
 	(void)module;
-	PyObject *f = Script_CheckFunction(&npc_spawnPosInit, NULL, "CharsNPC");
-	PyObject *m = f ? PyMethod_New(f, NULL, Py_None) : NULL;
-	if (m && !npc_spawnPosInits) {
-		npc_spawnPosInits = PyList_New(0);
+	(void)locals;
+	if (!body) {
+		return Native_Raise(NE_SYSTEM, "CharSpawnPos: the __init__ hook outside the class body");
 	}
-	int err = m && npc_spawnPosInits ? PyList_Append(npc_spawnPosInits, m) : -1;
-	err = err ? err : PyDict_SetItemString(locals, "__init__", m);
-	Py_XDECREF(m);
-	Py_XDECREF(f);
-	return err == 0;
+	NObj_NewCallback(&f, "__init__", Npc_SpawnPosInit, NULL, NULL, 0);
+	byte ok = NObj_NewMethod(&m, &f, NULL, NULL);
+	Native_Free(&f);
+	if (ok) {
+		if (npc_spawnPosInits.type != NV_LIST) {
+			Native_SetEmpty(&npc_spawnPosInits, NV_LIST);
+		}
+		Native_Copy(Native_Append(&npc_spawnPosInits), &m);
+		Native_SetStr(&key, "__init__");
+		ok = NObj_SetItem(body, &key, &m);
+		Native_Free(&key);
+	}
+	Native_Free(&m);
+	return ok;
 }
 
-int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals) {
+int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals, nativeVal_t *body) {
+	nativeVal_t cls, m;
 	(void)module;
-	PyObject *cls = Script_ModuleName(locals, "CharSpawnPos");
-	PyObject *m = cls && PyClass_Check(cls) ? PyDict_GetItemString(((PyClassObject *)cls)->cl_dict, "__init__") : NULL;
-	if (m && PyMethod_Check(m) && PyMethod_GET_CLASS(m) == Py_None) {
-		Py_INCREF(cls);
-		((PyMethodObject *)m)->im_class = cls;
-		Py_DECREF(Py_None);
-	} else if (cls) {
-		Native_Raise(NE_TYPE, "CharSpawnPos: the class of the module definition without its __init__");
+	(void)locals;
+	(void)body;
+	if (!Mode_RefG(NPC, "CharSpawnPos", &cls)) {
+		return 0;
 	}
-	Py_XDECREF(cls);
-	return !Native_Failed();
+	byte ok = NObj_Kind(&cls) == NO_CLASS && NObj_Native(&cls) && NObj_GetAttr(&cls, "__dict__", &m);
+	if (ok) {
+		nativeVal_t key, init;
+		Native_SetStr(&key, "__init__");
+		ok = NObj_GetItem(&m, &key, &init) && NObj_Kind(&init) == NO_METHOD;
+		Native_Free(&m);
+		Native_Free(&key);
+		if (ok) {
+			NObj_GetAttr(&init, "im_class", &m);
+			ok = m.type == NV_NONE;
+			Native_Free(&m);
+		}
+		if (ok) {
+			NObj_SetMethodClass(&init, &cls);
+		}
+		Native_Free(&init);
+	}
+	Native_ErrClear();
+	Native_Free(&cls);
+	return ok || Native_Raise(NE_TYPE, "CharSpawnPos: the class of the module definition without its __init__");
 }
 
-/*
- * Before Py_Finalize: the __init__ methods made by CharsNPC_ModSpawnPosInit let go of their class (im_class None
- * again), so the module cleanup frees the class, its dict and the method as it frees a class of Python functions
- */
+/* at the end: the __init__ methods made by CharsNPC_ModSpawnPosInit let go of their class, so the class, its dict and
+ * the method are freed with the module's variables */
 void CharsNPC_Close(void) {
-	PyObject *list = npc_spawnPosInits;
-	npc_spawnPosInits = NULL;
-	for (int i = 0; list && i < PyList_GET_SIZE(list); i++) {
-		PyMethodObject *m = (PyMethodObject *)PyList_GET_ITEM(list, i);
-		PyObject *cls = m->im_class;
-		Py_INCREF(Py_None);
-		m->im_class = Py_None;
-		Py_XDECREF(cls);
+	for (int i = 0; npc_spawnPosInits.type == NV_LIST && i < npc_spawnPosInits.n; i++) {
+		NObj_SetMethodClass(&npc_spawnPosInits.items[i], NULL);
 	}
-	Py_XDECREF(list);
-}
-
-/*
- * CharSpawnPos(): when the class is the module's own with the __init__ of the pack (self.CallbackFunc = [], the
- * bytecode of scripts/chars/charsnpc.py:20 compared byte for byte, no base class, no __setattr__), the instance is
- * made as PyInstance_New makes it and the attribute set without running the bytecode; any other class is called
- * (the class of data/modules/charsnpc.mod has the C __init__ above, so no Python runs either)
- */
-static PyObject *Npc_NewSpawnPos(PyObject *cls) {
-	/* SET_LINENO 20, SET_LINENO 21, BUILD_LIST 0, LOAD_FAST 0 (self), STORE_ATTR 1 (CallbackFunc), LOAD_CONST 0 (None),
-	 * RETURN_VALUE */
-	static const char code[] = "\x7f\x14\x00\x7f\x15\x00\x67\x00\x00\x7c\x00\x00\x5f\x01\x00\x64\x00\x00\x53";
-	PyClassObject *c = PyClass_Check(cls) ? (PyClassObject *)cls : NULL;
-	PyObject *init = c && PyTuple_Size(c->cl_bases) == 0 && !PyDict_GetItemString(c->cl_dict, "__setattr__") ?
-		PyDict_GetItemString(c->cl_dict, "__init__") : NULL;
-	PyCodeObject *co = init && PyFunction_Check(init) && !PyFunction_GET_DEFAULTS(init) ?
-		(PyCodeObject *)PyFunction_GET_CODE(init) : NULL;
-	byte pack = co && co->co_argcount == 1 && PyString_Check(co->co_code) &&
-		PyString_GET_SIZE(co->co_code) == (int)sizeof(code) - 1 &&
-		!memcmp(PyString_AS_STRING(co->co_code), code, sizeof(code) - 1) &&
-		PyTuple_Check(co->co_consts) && PyTuple_GET_SIZE(co->co_consts) >= 1 &&
-		PyTuple_GET_ITEM(co->co_consts, 0) == Py_None && PyTuple_Check(co->co_names) &&
-		PyTuple_GET_SIZE(co->co_names) >= 2 && PyString_Check(PyTuple_GET_ITEM(co->co_names, 1)) &&
-		!strcmp(PyString_AS_STRING(PyTuple_GET_ITEM(co->co_names, 1)), "CallbackFunc");
-	if (!pack) {
-		return Script_Invoke(cls, PyTuple_New(0));
-	}
-	PyInstanceObject *inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
-	if (!inst) {
-		return NULL;
-	}
-	Py_INCREF(cls);
-	inst->in_class = c;
-	inst->in_dict = PyDict_New();
-	PyObject *list = inst->in_dict ? PyList_New(0) : NULL;
-	int err = list ? PyDict_SetItemString(inst->in_dict, "CallbackFunc", list) : -1;
-	Py_XDECREF(list);
-	if (err) {
-		Py_DECREF(inst);
-		return NULL;
-	}
-	return (PyObject *)inst;
+	Native_Free(&npc_spawnPosInits);
 }
 
 /* ---- the values of the module ---- */
@@ -188,7 +159,7 @@ static void Npc_Insert0(nativeVal_t *lst, const nativeVal_t *v) {
 	Native_Copy(&lst->items[0], v);
 }
 
-/* CharRes[key] (the global) as the object it is (OBJLIB 5: the spawn points are instances of the Python class) */
+/* CharRes[key] (the global) as the object it is (the spawn points are native instances of CharSpawnPos) */
 static byte Npc_Res(const nativeVal_t *key, nativeVal_t *out) {
 	nativeVal_t res, o = { 0 };
 	Native_SetNone(out);
@@ -201,12 +172,12 @@ static byte Npc_Res(const nativeVal_t *key, nativeVal_t *out) {
 	return ok;
 }
 
-/* CharSpawnPos() of the global class (OBJLIB 7: the class object and its new instance), the instance by reference */
+/* CharSpawnPos() of the global class (the class of the module code: a native instance), the instance by reference */
 static byte Npc_SpawnPos(nativeVal_t *out) {
-	PyObject *cls = Mode_GlobalPy(NPC, "CharSpawnPos");
-	PyObject *csp = cls ? Npc_NewSpawnPos(cls) : NULL;
-	Py_XDECREF(cls);
-	return Mode_RefTake(csp, out);
+	nativeVal_t cls;
+	byte ok = Mode_RefG(NPC, "CharSpawnPos", &cls) && Mode_RefApply(&cls, NULL, 0, out);
+	Native_Free(&cls);
+	return ok;
 }
 
 /* string.find(s, sub) != -1 (the native twin of strop's find): 1, 0, -1 with the error set */

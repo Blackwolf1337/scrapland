@@ -2429,19 +2429,39 @@ byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {
 	return ok;
 }
 
+byte Native_NativeVar(const char *module, const char *name, nativeVal_t *f) {
+	modVarRef_t ref;
+	/* a loaded pack module only (no import here); its global and its attribute are the same variable */
+	if (!ModVar_Named(module, &ref) || !ModVar_GetVal(&ref, name, f)) {
+		Native_SetNone(f);
+		return 0;
+	}
+	if (NObj_Native(f) && !NObj_PortRef(f)) {
+		return 1;
+	}
+	Native_Free(f);
+	return 0;
+}
+
 byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
+	nativeVal_t f;
 	va_start(va, fmt);
-	byte ok = Native_CallVa(Script_Attr(module, name), out, fmt, va);
+	byte ok = Native_NativeVar(module, name, &f) ? Port_NativeCallVa(&f, out, fmt, va) :
+		Native_CallVa(Script_Attr(module, name), out, fmt, va);
 	va_end(va);
+	Native_Free(&f);
 	return ok;
 }
 
 byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
+	nativeVal_t f;
 	va_start(va, fmt);
-	byte ok = Native_CallVa(Script_Global(module, name), out, fmt, va);
+	byte ok = Native_NativeVar(module, name, &f) ? Port_NativeCallVa(&f, out, fmt, va) :
+		Native_CallVa(Script_Global(module, name), out, fmt, va);
 	va_end(va);
+	Native_Free(&f);
 	return ok;
 }
 
@@ -3038,6 +3058,12 @@ static void Native_PassIn(const nativeVal_t *v, nativeVal_t *out) {
 byte Native_Pass(const nativeVal_t *v, nativeVal_t *out) {
 	if (!Native_PassPy(v, 0)) {
 		Native_PassIn(v, out);
+		return 1;
+	}
+	if (NObj_Native(v)) {
+		/* an object of native data, a native function or module: what Python would hand back, without the crossing
+		 * (a list or dict of plain values as a copy, any other object itself) */
+		NObj_ArgOf(v, out);
 		return 1;
 	}
 	PyObject *o = Native_ToPy(v);

@@ -29,8 +29,10 @@ enum {
 typedef struct nativeFn_s {
 	int refs;
 	nativeCall_t call;
+	nativeCallKw_t callkw;		/* the call with keywords, NULL when it takes none */
 	void *ctx;
 	void (*drop)(void *ctx);
+	nativeVal_t self;		/* its __self__ (None: a function of the C table) */
 	PyMethodDef def;		/* OBJLIB 9: the method definition of its C function object */
 	char name[];
 } nativeFn_t;
@@ -142,6 +144,7 @@ static void Obj_FnDrop(nativeFn_t *f) {
 		if (f->drop) {
 			f->drop(f->ctx);
 		}
+		Native_Free(&f->self);
 		Mem_Free(f);
 	}
 }
@@ -263,9 +266,10 @@ static uintptr_t Obj_Addr(const nativeObj_t *o) {
 }
 
 /* the Python object the operations of o are forwarded to (borrowed), NULL for native data. A native function keeps
- * its own behaviour after it crossed (its Python object is a C function object made for it) */
+ * its own behaviour after it crossed (its Python object is a C function object made for it), and so does the module
+ * object of a pack module (its variables are the registry's) */
 static PyObject *Obj_View(const nativeObj_t *o) {
-	return o->born && o->kind == NO_FUNCTION ? NULL : o->py;
+	return o->born && (o->kind == NO_FUNCTION || o->kind == NO_MODULE) ? NULL : o->py;
 }
 
 /* the Python object an operation on v goes to (a new reference): the view's, an NV_OBJ, the face of an entity handle;
@@ -303,6 +307,9 @@ static int Obj_PyKind(PyObject *o) {
 	return PyModule_Check(o) ? NO_MODULE : -1;
 }
 
+static PyObject *Obj_Tramp(PyObject *self, PyObject *args, PyObject *kw);
+static nativeFn_t *Obj_TrampFn(PyObject *self);
+
 byte Native_FromPyRef(PyObject *o, nativeVal_t *v) {
 	Native_SetNone(v);
 	int kind = Obj_PyKind(o);
@@ -313,9 +320,22 @@ byte Native_FromPyRef(PyObject *o, nativeVal_t *v) {
 	if (n) {
 		NObj_Keep(n);
 	} else {
+		modVarRef_t mv;
 		n = Obj_New((byte)kind);
-		n->born = 0;
+		/* a pack module is native from the start: the registry has its variables, the module object is its key and
+		 * what it gives to Python (OBJLIB 9: the module objects are Python's until stage 7e) */
+		n->born = kind == NO_MODULE && ModVar_Of(o, &mv);
 		n->binds = PyFunction_Check(o) != 0;
+		if (PyCFunction_Check(o) && ((PyCFunctionObject *)o)->m_ml->ml_meth == (PyCFunction)(void (*)(void))Obj_Tramp) {
+			/* the C function object of a native callback whose native object went (Python held it alone): the
+			 * callback again, its call and context shared */
+			nativeFn_t *f = Obj_TrampFn(PyCFunction_GET_SELF(o));
+			f->refs++;
+			n->born = 1;
+			n->func = NF_CALLBACK;
+			n->cb = f;
+			n->name = Obj_Text(f->name);
+		}
 		Py_INCREF(o);
 		n->py = o;
 		Obj_TableAdd(n);
@@ -436,9 +456,15 @@ void NObj_Share(nativeVal_t *v) {
 	}
 }
 
-/* a copy of v to keep in an object: shared (NObj_Share) */
+static byte Obj_Norm(nativeVal_t *v);
+
+/* a copy of v to keep in an object: shared (NObj_Share), a Python value in it in the form a view's operations give it
+ * (a number by value, an object as its view: what the object holds is the same either way) */
 static void Obj_Store(nativeVal_t *slot, const nativeVal_t *v) {
 	Native_Copy(slot, v);
+	if (!Obj_Norm(slot)) {
+		Native_ErrClear();
+	}
 	NObj_Share(slot);
 }
 
@@ -579,6 +605,7 @@ void NObj_NewCallback(nativeVal_t *out, const char *name, nativeCall_t call, voi
 	f->call = call;
 	f->ctx = ctx;
 	f->drop = drop;
+	Native_SetNone(&f->self);
 	memcpy(f->name, name, n);
 	nativeObj_t *o = Obj_New(NO_FUNCTION);
 	o->func = NF_CALLBACK;
@@ -586,6 +613,41 @@ void NObj_NewCallback(nativeVal_t *out, const char *name, nativeCall_t call, voi
 	o->cb = f;
 	o->name = Obj_Text(name);
 	Obj_SetRef(out, o);
+}
+
+void NObj_SetCallback(const nativeVal_t *f, const nativeVal_t *self, nativeCallKw_t callkw) {
+	nativeFn_t *fn = f->ref->cb;
+	Native_Free(&fn->self);
+	Native_Copy(&fn->self, self);
+	fn->callkw = callkw;
+}
+
+byte NObj_CallbackOf(const nativeVal_t *f, nativeCall_t *call, void **ctx) {
+	if (f->type != NV_REF || f->ref->kind != NO_FUNCTION || f->ref->func != NF_CALLBACK) {
+		return 0;
+	}
+	*call = f->ref->cb->call;
+	*ctx = f->ref->cb->ctx;
+	return 1;
+}
+
+void NObj_CallArg(const nativeVal_t *v, nativeVal_t *out) {
+	if (v->type == NV_VEC) {
+		Native_SetEmpty(out, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetFloat(Native_Append(out), v->v[i]);
+		}
+		return;
+	}
+	Obj_Store(out, v);
+}
+
+byte NObj_Native(const nativeVal_t *v) {
+	return v->type == NV_REF && !Obj_View(v->ref);
+}
+
+const portRef_t *NObj_PortRef(const nativeVal_t *f) {
+	return f->type == NV_REF && f->ref->kind == NO_FUNCTION && f->ref->func == NF_PORT ? f->ref->ref : NULL;
 }
 
 static byte Obj_CallPy(PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out);
@@ -613,15 +675,24 @@ void NObj_NewDataFunc(nativeVal_t *out, const char *module, const char *name) {
 
 byte NObj_NewMethod(nativeVal_t *out, const nativeVal_t *func, const nativeVal_t *self, const nativeVal_t *cls) {
 	Native_SetNone(out);
-	if (!Obj_IsKind(func, NO_FUNCTION) || !Obj_IsKind(cls, NO_CLASS) || (self && !Obj_IsKind(self, NO_INSTANCE))) {
+	if (!Obj_IsKind(func, NO_FUNCTION) || (cls ? !Obj_IsKind(cls, NO_CLASS) : self != NULL) ||
+		(self && !Obj_IsKind(self, NO_INSTANCE))) {
 		return Native_Raise(NE_TYPE, "a method takes a function, an instance and a class");
 	}
 	nativeObj_t *o = Obj_New(NO_METHOD);
 	o->fn = NObj_Keep(func->ref);
-	o->cls = NObj_Keep(cls->ref);
+	o->cls = cls ? NObj_Keep(cls->ref) : NULL;
 	o->self = self ? NObj_Keep(self->ref) : NULL;
 	Obj_SetRef(out, o);
 	return 1;
+}
+
+void NObj_SetMethodClass(const nativeVal_t *m, const nativeVal_t *cls) {
+	nativeObj_t *o = m->ref, *old = o->cls;
+	o->cls = cls ? NObj_Keep(cls->ref) : NULL;
+	if (old) {
+		NObj_Drop(old);
+	}
 }
 
 byte NObj_Module(nativeVal_t *out, const char *name) {
@@ -644,16 +715,36 @@ static PyObject *Obj_Conv(const nativeVal_t *v, void *ctx) {
 	return Native_ToPy(v);
 }
 
-/* the C function object of a callback calls it on the arguments as NObj_FromPy gives them */
-static PyObject *Obj_Tramp(PyObject *self, PyObject *args) {
-	nativeFn_t *f = PyCObject_AsVoidPtr(self);
+/* the C function object of a callback calls it on the arguments as NObj_FromPy gives them (the keywords as (name,
+ * value) pairs in the order of the dict, for a callback that takes them) */
+/* the callback of the self of its C function object: the record, or a tuple with the record first */
+static nativeFn_t *Obj_TrampFn(PyObject *self) {
+	return PyCObject_AsVoidPtr(PyTuple_Check(self) ? PyTuple_GET_ITEM(self, 0) : self);
+}
+
+static PyObject *Obj_Tramp(PyObject *self, PyObject *args, PyObject *kw) {
+	nativeFn_t *f = Obj_TrampFn(self);
 	int n = PyTuple_Size(args);
-	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), r;
+	/* the keywords only when the C function object was made with METH_KEYWORDS (else Python passes two arguments) */
+	kw = f->def.ml_flags & METH_KEYWORDS ? kw : NULL;
+	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), r, pairs;
 	for (int i = 0; i < n; i++) {
 		NObj_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
 	}
 	Native_SetNone(&r);
-	byte ok = f->call(f->ctx, a, n, &r);
+	Native_SetEmpty(&pairs, NV_LIST);
+	if (kw) {
+		PyObject *k, *x;
+		int pos = 0;
+		while (PyDict_Next(kw, &pos, &k, &x)) {
+			nativeVal_t *pair = Native_Append(&pairs);
+			Native_SetEmpty(pair, NV_TUPLE);
+			NObj_FromPy(k, Native_Append(pair));
+			NObj_FromPy(x, Native_Append(pair));
+		}
+	}
+	byte ok = f->callkw && kw ? f->callkw(f->ctx, a, n, &pairs, &r) : f->call(f->ctx, a, n, &r);
+	Native_Free(&pairs);
 	for (int i = 0; i < n; i++) {
 		Native_Free(&a[i]);
 	}
@@ -718,13 +809,27 @@ static PyObject *Obj_FuncToPy(nativeObj_t *o) {
 	case NF_CALLBACK: {
 		nativeFn_t *f = o->cb;
 		f->def.ml_name = f->name;
-		f->def.ml_meth = Obj_Tramp;
-		f->def.ml_flags = METH_VARARGS;
+		f->def.ml_meth = (PyCFunction)(void (*)(void))Obj_Tramp;
+		f->def.ml_flags = METH_VARARGS | (f->callkw ? METH_KEYWORDS : 0);
 		PyObject *self = PyCObject_FromVoidPtr(f, Obj_TrampFree);
 		if (!self) {
 			return NULL;
 		}
 		f->refs++;
+		if (f->self.type == NV_TUPLE && f->self.n > 0) {
+			/* a __self__ tuple: the tuple with the record first, as the repr of the C function object shows it */
+			PyObject *t = PyTuple_New(f->self.n);
+			PyTuple_SET_ITEM(t, 0, self);
+			for (int i = 1; i < f->self.n; i++) {
+				PyObject *x = Native_ToPy(&f->self.items[i]);
+				if (!x) {
+					Py_DECREF(t);
+					return NULL;
+				}
+				PyTuple_SET_ITEM(t, i, x);
+			}
+			self = t;
+		}
 		PyObject *r = PyCFunction_New(&f->def, self);
 		Py_DECREF(self);
 		return r;
@@ -865,7 +970,7 @@ static PyObject *Obj_ToPy(nativeObj_t *o) {
 	case NO_METHOD:
 		a = Obj_ToPy(o->fn);
 		b = a && o->self ? Obj_ToPy(o->self) : NULL;
-		c = a && (b || !o->self) ? Obj_ToPy(o->cls) : NULL;
+		c = !a || (!b && o->self) ? NULL : o->cls ? Obj_ToPy(o->cls) : (Py_INCREF(Py_None), Py_None);
 		py = c ? PyMethod_New(a, b, c) : NULL;
 		Py_XDECREF(a);
 		Py_XDECREF(b);
@@ -1097,6 +1202,10 @@ static byte Obj_MethodParts(nativeObj_t *m, nativeObj_t **fn, nativeObj_t **cls)
 		*cls = c.ref;
 		return 1;
 	}
+	if (!m->cls) {
+		/* an unbound method whose class is not made yet (NObj_NewMethod) */
+		return 0;
+	}
 	*fn = NObj_Keep(m->fn);
 	*cls = NObj_Keep(m->cls);
 	return 1;
@@ -1265,10 +1374,34 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 				o->self->kind == NO_LIST ? "list" : "dictionary", (long)Obj_Addr(o->self));
 		} else if (o->binds) {
 			Obj_Addf(b, "<function %.100s at %lx>", o->name, (long)Obj_Addr(o));
+		} else if (o->func == NF_CALLBACK && o->cb->self.type != NV_NONE) {
+			/* meth_repr with a self: the address of the callback for the self's (a value by value has none) */
+			Obj_Addf(b, "<built-in method %.80s of %.80s object at %lx>", o->name, Native_TypeName(&o->cb->self),
+				(long)(uintptr_t)o->cb);
 		} else {
 			Obj_Addf(b, "<built-in function %.80s>", o->name);
 		}
 		return 1;
+	case NO_MODULE: {
+		/* module_repr, the name and file of the module dict (the registry's variables) */
+		modVarRef_t mv;
+		nativeVal_t name, file;
+		Native_SetNone(&name);
+		Native_SetNone(&file);
+		if (ModVar_Of(o->py, &mv)) {
+			ModVar_GetVal(&mv, "__name__", &name);
+			ModVar_GetVal(&mv, "__file__", &file);
+		}
+		const char *n = name.type == NV_STR ? Native_Text(&name) : "?";
+		if (file.type == NV_STR) {
+			Obj_Addf(b, "<module '%.50s' from '%.80s'>", n, Native_Text(&file));
+		} else {
+			Obj_Addf(b, "<module '%.80s'>", n);
+		}
+		Native_Free(&name);
+		Native_Free(&file);
+		return 1;
+	}
 	case NO_METHOD: {
 		/* instancemethod_repr */
 		char fname[0x80] = "?";
@@ -1283,7 +1416,7 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 			Native_ErrClear();
 		}
 		if (!o->self) {
-			Obj_Addf(b, "<unbound method %.100s.%.100s>", Obj_ClassName(o->cls), fname);
+			Obj_Addf(b, "<unbound method %.100s.%.100s>", o->cls ? Obj_ClassName(o->cls) : "?", fname);
 		} else if (o->self->py) {
 			PyObject *n = ((PyInstanceObject *)o->self->py)->in_class->cl_name;
 			Obj_Addf(b, "<method %.60s.%.60s of %.60s instance at %lx>", Obj_ClassName(o->cls), fname,
@@ -1471,6 +1604,10 @@ byte NObj_HashQuiet(const nativeVal_t *v, long *out) {
 			return 0;
 		}
 		x ^= y;
+		break;
+	case NO_MODULE:
+		/* the address of its module object, as Python hashes it */
+		x = (long)Obj_Addr(o);
 		break;
 	default:
 		x = (long)(intptr_t)o;
@@ -2068,6 +2205,8 @@ byte NObj_GetAttr(const nativeVal_t *v, const char *name, nativeVal_t *out) {
 		if (!o->binds && !strcmp(name, "__self__")) {
 			if (o->func == NF_BUILTIN) {
 				Obj_SetRef(out, NObj_Keep(o->self));
+			} else if (o->func == NF_CALLBACK) {
+				Native_Copy(out, &o->cb->self);
 			}
 			return 1;
 		}
@@ -2097,7 +2236,9 @@ byte NObj_GetAttr(const nativeVal_t *v, const char *name, nativeVal_t *out) {
 			return 1;
 		}
 		if (!strcmp(name, "im_class")) {
-			Obj_SetRef(out, NObj_Keep(o->cls));
+			if (o->cls) {
+				Obj_SetRef(out, NObj_Keep(o->cls));
+			}
 			return 1;
 		}
 		break;
@@ -2557,12 +2698,14 @@ byte NObj_Call(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *o
 		Native_Free(&call);
 		return ok;
 	}
+	case NO_MODULE:
+		return Native_Raise(NE_TYPE, "call of non-function (type module)");
 	}
 	/* a method: the instance first; unbound, the first argument is an instance of its class */
 	nativeVal_t fn;
 	Obj_SetRef(&fn, o->fn);
 	if (!o->self) {
-		if (n < 1 || !Obj_IsKind(&a[0], NO_INSTANCE) || !Obj_InstanceOf(a[0].ref, o->cls)) {
+		if (n < 1 || !o->cls || !Obj_IsKind(&a[0], NO_INSTANCE) || !Obj_InstanceOf(a[0].ref, o->cls)) {
 			return Native_Raise(NE_TYPE, "unbound method must be called with class instance 1st argument");
 		}
 		return NObj_Call(&fn, a, n, out);
@@ -2575,6 +2718,112 @@ byte NObj_Call(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *o
 	byte ok = NObj_Call(&fn, args, n + 1, out);
 	Mem_Free(args);
 	return ok;
+}
+
+/* the keyword pairs as the dict a call through Python takes (NULL with the error) */
+static PyObject *Obj_KwToPy(const nativeVal_t *kw) {
+	PyObject *d = PyDict_New();
+	for (int i = 0; d && i < kw->n; i++) {
+		const nativeVal_t *pair = &kw->items[i];
+		PyObject *k = Native_ToPy(&pair->items[0]), *x = k ? Native_ToPy(&pair->items[1]) : NULL;
+		int r = x ? PyDict_SetItem(d, k, x) : -1;
+		Py_XDECREF(k);
+		Py_XDECREF(x);
+		if (r != 0) {
+			Py_DECREF(d);
+			d = NULL;
+		}
+	}
+	return d;
+}
+
+byte NObj_CallKw(const nativeVal_t *f, const nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
+	nativeVal_t call;
+	Native_SetNone(out);
+	if (!kw || !kw->n) {
+		return NObj_Call(f, a, n, out);
+	}
+	nativeObj_t *o = f->type == NV_REF && !Obj_View(f->ref) ? f->ref : NULL;
+	if (o && o->kind == NO_FUNCTION && o->func != NF_PORT) {
+		if (o->func != NF_CALLBACK || !o->cb->callkw) {
+			return Native_Raise(NE_TYPE, "this function takes no keyword arguments");
+		}
+		if (!Script_Enter((uintptr_t)__builtin_frame_address(0))) {
+			return 0;
+		}
+		byte ok = o->cb->callkw(o->cb->ctx, a, n, kw, out);
+		Script_Leave();
+		if (!ok) {
+			Native_Free(out);
+			if (!Native_Failed()) {
+				Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
+			}
+		}
+		return ok;
+	}
+	if (o && o->kind == NO_INSTANCE) {
+		if (!Obj_InstLook(o, "__call__", &call)) {
+			return Native_Raise(NE_ATTRIBUTE, "no __call__ method defined");
+		}
+		byte ok = NObj_CallKw(&call, a, n, kw, out);
+		Native_Free(&call);
+		return ok;
+	}
+	if (o && o->kind == NO_CLASS) {
+		/* PyInstance_New: the keywords go to __init__ */
+		nativeVal_t inst, init, r;
+		nativeObj_t *i = Obj_New(NO_INSTANCE);
+		i->cls = NObj_Keep(o);
+		i->dict = Obj_NewDictObj();
+		Obj_SetRef(&inst, i);
+		byte ok = Obj_InstLook(i, "__init__", &init) ? NObj_CallKw(&init, a, n, kw, &r) :
+			Native_Raise(NE_TYPE, "this constructor takes no arguments");
+		if (ok && r.type != NV_NONE) {
+			ok = Native_Raise(NE_TYPE, "__init__() should return None");
+		}
+		Native_Free(&init);
+		Native_Free(&r);
+		if (!ok) {
+			Native_Free(&inst);
+			return 0;
+		}
+		*out = inst;
+		return 1;
+	}
+	if (o && o->kind == NO_METHOD) {
+		nativeVal_t fn;
+		Obj_SetRef(&fn, o->fn);
+		if (!o->self) {
+			if (n < 1 || !o->cls || !Obj_IsKind(&a[0], NO_INSTANCE) || !Obj_InstanceOf(a[0].ref, o->cls)) {
+				return Native_Raise(NE_TYPE, "unbound method must be called with class instance 1st argument");
+			}
+			return NObj_CallKw(&fn, a, n, kw, out);
+		}
+		nativeVal_t *args = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*args)));
+		Obj_SetRef(&args[0], o->self);
+		for (int k = 0; k < n; k++) {
+			args[k + 1] = a[k];
+		}
+		byte ok = NObj_CallKw(&fn, args, n + 1, kw, out);
+		Mem_Free(args);
+		return ok;
+	}
+	/* a port function, a Python object: through Python (the port's adapter takes the keywords) */
+	PyObject *py = Native_ToPy(f), *t = py ? PyTuple_New(n) : NULL, *d = t ? Obj_KwToPy(kw) : NULL;
+	for (int k = 0; d && k < n; k++) {
+		PyObject *x = Native_ToPy(&a[k]);
+		if (!x) {
+			Py_DECREF(d);
+			d = NULL;
+			break;
+		}
+		PyTuple_SET_ITEM(t, k, x);
+	}
+	PyObject *r = d ? Script_CallObject(py, t, d) : NULL;
+	Py_XDECREF(py);
+	Py_XDECREF(t);
+	Py_XDECREF(d);
+	return Obj_Result(r, out);
 }
 
 byte NObj_CallMethod(const nativeVal_t *o, const char *name, const nativeVal_t *a, int n, nativeVal_t *out) {
