@@ -591,6 +591,9 @@ byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const native
 	nativeVal_t v[PORT_ARGS], r;
 	signed char slot[PORT_ARGS];
 	int nk = kw ? kw->n : 0, names = 0, m = n, given = n;
+	/* "&": an entry that takes the caller's values as they are (MODE_REFKW: its adapter took the objects by reference) */
+	byte byRef = ref->kwfmt && ref->kwfmt[0] == '&';
+	const char *kwfmt = ref->kwfmt ? ref->kwfmt + byRef : NULL;
 	Native_SetNone(out);
 	if (nk && !ref->kw) {
 		return Native_Raise(NE_TYPE, "this function takes no keyword arguments");
@@ -628,7 +631,7 @@ byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const native
 		nativeVal_t d;
 		const nativeVal_t *key, *x;
 		int pos = 0, min, max, len = n;
-		Mode_FmtCount(ref->kwfmt, &min, &max);
+		Mode_FmtCount(kwfmt, &min, &max);
 		for (int k = n; k < min; k++) {
 			len += Port_KwFind(kw, ref->kw[k]) >= 0;
 		}
@@ -643,7 +646,7 @@ byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const native
 		for (int i = 0; i < given; i++) {
 			slots[(int)slot[i]] = v[i];
 		}
-		if (!Mode_ParseSlots(slots, m, ref->kwfmt)) {
+		if (!Mode_ParseSlots(slots, m, kwfmt)) {
 			return 0;
 		}
 		Native_SetEmpty(&d, NV_DICT);
@@ -667,7 +670,23 @@ byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const native
 		Native_Free(&d);
 		return ok;
 	}
-	byte ok = Port_Fast(ref, NULL, v, given, slot, m, &r) && Native_Pass(&r, out);
+	byte ok;
+	if (byRef) {
+		nativeVal_t slots[PORT_ARGS];
+		for (int k = 0; k < m; k++) {
+			Mode_KwSkip(&slots[k]);
+		}
+		for (int i = 0; i < given; i++) {
+			Native_Copy(&slots[(int)slot[i]], &v[i]);
+		}
+		ok = Port_Entry(ref, slots, m, &r);
+		for (int k = 0; k < m; k++) {
+			Native_Free(&slots[k]);
+		}
+	} else {
+		ok = Port_Fast(ref, NULL, v, given, slot, m, &r);
+	}
+	ok = ok && Native_Pass(&r, out);
 	Native_Free(&r);
 	return ok;
 }
@@ -747,6 +766,24 @@ const portRef_t *Port_OfDef(const PyMethodDef *def) {
 		return NULL;
 	}
 	return g_PortTable[i];
+}
+
+int Port_FaceIndex(const portRef_t *ref) {
+	int i = Port_KeyIndex(0, (uintptr_t)ref->entry, ref->name);
+	if (i < 0) {
+		for (i = 0; i < PORT_COUNT && g_PortTable[i] != ref; i++) {
+		}
+		return i < PORT_COUNT ? i : -1;
+	}
+	/* the first ref of the entry: the run of the entry in port_byKey[0] is in table order */
+	int lo = 0;
+	while (port_byKey[0][lo] != i) {
+		lo++;
+	}
+	while (lo > 0 && Port_Key(0, port_byKey[0][lo - 1]) == (uintptr_t)ref->entry) {
+		lo--;
+	}
+	return port_byKey[0][lo];
 }
 
 const portRef_t *Port_OfFn(const char *module, const portFn_t *row) {

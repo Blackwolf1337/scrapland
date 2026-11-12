@@ -663,6 +663,19 @@ portSite_t *Port_Sites(void);
  * name served by the modules of several levels (Map, Mission_X) has a ref per level, after each other.
  */
 extern const portRef_t *const g_PortTable[];
+/* OBJLIB 7e2: the C function of the C function object of ref i of g_PortTable (PortTable.c, PORT_TRAMP): the call of
+ * the native function (NObj_PortCallPy) on the arguments of the C function object; one per ref, so the object has no
+ * self (its repr is "<built-in function Name>" in Python too) */
+typedef PyObject *(*portTramp_t)(PyObject *self, PyObject *args, PyObject *kw);
+extern const portTramp_t g_PortTramps[];
+PyObject *NObj_PortCallPy(int i, PyObject *args, PyObject *kw);
+#define PORT_TRAMP(i) \
+	static PyObject *Port_Tramp##i([[maybe_unused]] PyObject *self, PyObject *args, PyObject *kw) { \
+		return NObj_PortCallPy(i, args, kw); \
+	}
+/* the index in g_PortTable of the first ref of the entry of ref (the C function object of an alias is that of its
+ * entry: equal in Python as before), -1 when ref is not in the table */
+int Port_FaceIndex(const portRef_t *ref);
 /* the first ref of module.name (binary search), NULL when there is none */
 const portRef_t *Port_Find(const char *module, const char *name);
 /* the port's own function of ref: f is the C function of its table entry (the adapter: Mission_X.Init and

@@ -776,29 +776,29 @@ static void Obj_TrampFree(void *p) {
 }
 
 /* OBJLIB 7e2: the C function object of a port function calls it natively (Port_KwCall) on the arguments as NObj_FromPy
- * gives them; its self is a C object of the ref (one per entry: aliases compare equal there too) */
-static PyObject *Obj_PortTramp(PyObject *self, PyObject *args, PyObject *kw) {
-	const portRef_t *ref = PyCObject_AsVoidPtr(self);
+ * gives them (g_PortTramps: one C function per ref, no self) */
+PyObject *NObj_PortCallPy(int i, PyObject *args, PyObject *kw) {
+	const portRef_t *ref = g_PortTable[i];
 	int n = PyTuple_Size(args);
 	nativeVal_t *a = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*a))), r, pairs;
-	for (int i = 0; i < n; i++) {
-		NObj_FromPy(PyTuple_GET_ITEM(args, i), &a[i]);
+	for (int k = 0; k < n; k++) {
+		NObj_FromPy(PyTuple_GET_ITEM(args, k), &a[k]);
 	}
 	Native_SetEmpty(&pairs, NV_LIST);
 	if (kw) {
-		PyObject *k, *x;
+		PyObject *key, *x;
 		int pos = 0;
-		while (PyDict_Next(kw, &pos, &k, &x)) {
+		while (PyDict_Next(kw, &pos, &key, &x)) {
 			nativeVal_t *pair = Native_Append(&pairs);
 			Native_SetEmpty(pair, NV_TUPLE);
-			NObj_FromPy(k, Native_Append(pair));
+			NObj_FromPy(key, Native_Append(pair));
 			NObj_FromPy(x, Native_Append(pair));
 		}
 	}
 	byte ok = Port_KwCall(ref, a, n, &pairs, &r);
 	Native_Free(&pairs);
-	for (int i = 0; i < n; i++) {
-		Native_Free(&a[i]);
+	for (int k = 0; k < n; k++) {
+		Native_Free(&a[k]);
 	}
 	Mem_Free(a);
 	PyObject *res = ok ? Native_ToPy(&r) : NULL;
@@ -806,50 +806,45 @@ static PyObject *Obj_PortTramp(PyObject *self, PyObject *args, PyObject *kw) {
 	return res;
 }
 
-/* the method definition and the self of a port function for a C function object of its own: one per ref, kept for
- * good (a C function object points at them as long as it lives) */
+/* the flag that marks the method definition of a port function's C function object (call_builtin of 1.5.2 looks only
+ * at METH_VARARGS and METH_KEYWORDS) */
+#define OBJ_PORTDEF 0x100
+
+/* the method definition of a port function for a C function object of its own: one per ref, kept for good (a C
+ * function object points at it as long as it lives) */
 typedef struct portDef_s {
 	const portRef_t *ref;
 	PyMethodDef def;
-	PyObject *self;
 	struct portDef_s *next;
 } portDef_t;
 
 static portDef_t *Obj_PortDef(const portRef_t *ref) {
 	static portDef_t *defs;
-	PyObject *self = NULL;
 	for (portDef_t *d = defs; d; d = d->next) {
 		if (d->ref == ref) {
 			return d;
 		}
-		if (d->ref->entry == ref->entry) {
-			self = d->self;
-		}
 	}
-	if (!self && !(self = PyCObject_FromVoidPtr((void *)ref, NULL))) {
-		return NULL;
-	}
+	int i = Port_FaceIndex(ref);
+	CHECK(i >= 0);
 	portDef_t *d = Mem_Alloc(sizeof(*d));
 	memset(d, 0, sizeof(*d));
 	d->ref = ref;
 	d->def.ml_name = (char *)ref->name;
-	d->def.ml_meth = (PyCFunction)(void (*)(void))Obj_PortTramp;
-	d->def.ml_flags = METH_VARARGS | METH_KEYWORDS;
+	d->def.ml_meth = (PyCFunction)(void (*)(void))g_PortTramps[i];
+	d->def.ml_flags = METH_VARARGS | METH_KEYWORDS | OBJ_PORTDEF;
 	d->def.ml_doc = (char *)ref->doc;
-	d->self = self;
 	d->next = defs;
 	defs = d;
 	return d;
 }
 
 PyObject *NObj_PortFuncPy(const portRef_t *ref) {
-	portDef_t *d = Obj_PortDef(ref);
-	return d ? PyCFunction_New(&d->def, d->self) : NULL;
+	return PyCFunction_New(&Obj_PortDef(ref)->def, NULL);
 }
 
 const portRef_t *NObj_PortFace(PyObject *f) {
-	if (!f || !PyCFunction_Check(f) ||
-		((PyCFunctionObject *)f)->m_ml->ml_meth != (PyCFunction)(void (*)(void))Obj_PortTramp) {
+	if (!f || !PyCFunction_Check(f) || PyCFunction_GET_SELF(f) || !(((PyCFunctionObject *)f)->m_ml->ml_flags & OBJ_PORTDEF)) {
 		return NULL;
 	}
 	/* the ref of the name the object was made for (its method definition is in that ref's portDef_t) */

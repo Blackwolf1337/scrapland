@@ -1097,9 +1097,12 @@ PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **nam
  * them with Mode_Parse (the defaults of the script set first: Mode_KwDef*). MODE_KWBY is the form with the adapter
  * and the function named (pasted in the macro the file writes: a module name can be a macro of the file); MODE_REFKW
  * (below) uses it with the adapter by reference */
-#define MODE_KWBY(adapter, fn, fmt, ...) \
+#define MODE_KWBY(adapter, fn, fmt, ...) MODE_KWBYF(adapter, fn, fmt, fmt, __VA_ARGS__)
+/* MODE_KWBY with the text of fn_F given: "&" in front of the format for an entry that takes its arguments by
+ * reference (MODE_REFKW: Port_KwCall hands the values over as they are) */
+#define MODE_KWBYF(adapter, fn, fmt, ffmt, ...) \
 	static char *fn##_N[] = { __VA_ARGS__, NULL }; \
-	[[maybe_unused]] static const char fn##_F[] = fmt; \
+	[[maybe_unused]] static const char fn##_F[] = ffmt; \
 	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out); \
 	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
@@ -1208,7 +1211,7 @@ byte Mode_RefIsNone(const nativeVal_t *o);
  * given, as MODE_REFADAPTER) */
 PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry);
 /* MODE_KWT with that adapter */
-#define MODE_REFKW(pre, name, fmt, ...) MODE_KWBY(Mode_RefKwAdapter, pre##_##name, fmt, __VA_ARGS__)
+#define MODE_REFKW(pre, name, fmt, ...) MODE_KWBYF(Mode_RefKwAdapter, pre##_##name, fmt, "&" fmt, __VA_ARGS__)
 /* f(args...) of a value by reference with n values: a native object natively (NObj_Call), any other the Python call
  * of the object (Script_CallObject on the tuple of the values: a bound method, a function of a table; Mode_CallArgs
  * takes the entry of a port function), the result by reference into out (NULL: dropped) */

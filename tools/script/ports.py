@@ -347,6 +347,13 @@ def table(byfile):
 		'const portRef_t *const g_PortTable[PORT_COUNT] = {']
 	o += ['\t&%s,' % refname(r) for r in rs]
 	o.append('};')
+	o.append('')
+	o.append('/* OBJLIB 7e2: the C functions of the C function objects of the refs (NObj_PortFuncPy), one per ref */')
+	o += ['PORT_TRAMP(%d)' % i for i in range(len(rs))]
+	o.append('')
+	o.append('const portTramp_t g_PortTramps[PORT_COUNT] = {')
+	o += ['\tPort_Tramp%d,' % i for i in range(len(rs))]
+	o.append('};')
 	return '\n'.join(o) + '\n'
 
 
