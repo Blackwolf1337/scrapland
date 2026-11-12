@@ -612,8 +612,6 @@ typedef byte (*portEntry_t)(const nativeVal_t *a, int n, nativeVal_t *out);
 typedef struct {
 	const char *module;
 	const char *name;
-	PyCFunction adapter;		/* OBJLIB 7e2: the adapter of a PyMethodDef table not converted yet, NULL for a row of
-					 * a function table (portFn_t) and a twin */
 	portEntry_t entry;
 	char **kw;			/* the names of the entry's slots for keyword calls, NULL for none */
 	const char *kwfmt;		/* the PyArg format of those slots (the order of the keyword errors) */
@@ -693,6 +691,8 @@ PyObject *NObj_PortCallPy(int i, PyObject *args, PyObject *kw);
 int Port_FaceIndex(const portRef_t *ref);
 /* the first ref of module.name (binary search), NULL when there is none */
 const portRef_t *Port_Find(const char *module, const char *name);
+/* SCRAP_PORT_SLOW=1 is set (read once): every port call goes the slow way, by its module attribute */
+byte Port_Slow(void);
 /* the port's own function of ref: f is the C function of its table entry (the adapter: Mission_X.Init and
  * Mission_Y.Init share the name), without self (a recorder of the test channel has one); never under
  * SCRAP_PORT_SLOW=1 (OBJLIB 7). The test of the seam (Port_Seam) and of the callbacks (Port_Callback). */
@@ -735,10 +735,6 @@ byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v
  * and under SCRAP_PORT_SLOW=1 (OBJLIB 7).
  */
 const portRef_t *Port_Own(PyObject *f);
-/* the ref of the function a port table entry makes (its adapter under its name, the flags of a ref: METH_VARARGS, and
- * METH_KEYWORDS when the ref takes keywords, no doc), for a native function object of it (NObj_NewPortFunc); NULL when
- * there is none and under SCRAP_PORT_SLOW=1 */
-const portRef_t *Port_OfDef(const PyMethodDef *def);
 /* the ref of a row of the function table of module (stage 7e: its name and entry; a level's module has a ref per
  * level, told apart by the entry); NULL when there is none (the row is in two tables: tools/script/ports.py says so) */
 const portRef_t *Port_OfFn(const char *module, const portFn_t *row);
@@ -798,26 +794,12 @@ extern const portRef_t port_value;
 #define PORT_LASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 0), __VA_ARGS__)
 #define PORT_LOWNASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 1), __VA_ARGS__)
 
-/* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one, PORT_DEF defines it (the list of a
- * file, PORTS(file), at the end of the file of the table, after the adapters and entries); PORT_DECLL and PORT_DEFL
- * for the modules of a level (the cast through void (*)(void) as in the tables: a keyword adapter has three
- * parameters); PORT_DEFK and PORT_DEFLK for a keyword entry with the names of its slots (adapter_N) */
+/* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one (PORT_DECLL for a module of a level);
+ * the list of a file, PORTS(file), at the end of the file of the table, defines them, one per row of a function table
+ * (portFn_t): N the entry fn_E, NK with the keyword slots fn_N and their format fn_F, ND with a __doc__ text, LN and
+ * LNK for the modules of a level */
 #define PORT_DECL(module, name) extern portRef_t port_##module##_##name;
 #define PORT_DECLL(level, module, name) extern portRef_t port_##level##_##module##_##name;
-#define PORT_DEF(M, N, A) \
-	portRef_t port_##M##_##N = { .module = #M, .name = #N, \
-		.adapter = (PyCFunction)(void (*)(void))A, .entry = A##_E };
-#define PORT_DEFL(L, M, N, A) \
-	portRef_t port_##L##_##M##_##N = { .module = #M, .name = #N, \
-		.adapter = (PyCFunction)(void (*)(void))A, .entry = A##_E };
-#define PORT_DEFK(M, N, A) \
-	portRef_t port_##M##_##N = { .module = #M, .name = #N, \
-		.adapter = (PyCFunction)(void (*)(void))A, .entry = A##_E, .kw = A##_N, .kwfmt = A##_F };
-#define PORT_DEFLK(L, M, N, A) \
-	portRef_t port_##L##_##M##_##N = { .module = #M, .name = #N, \
-		.adapter = (PyCFunction)(void (*)(void))A, .entry = A##_E, .kw = A##_N, .kwfmt = A##_F };
-/* the refs of the rows of a function table (portFn_t, stage 7e): no A; N the entry fn_E, NK with the keyword
- * slots fn_N and their format fn_F, ND with a __doc__ text, LN and LNK for the modules of a level */
 #define PORT_DEFN(M, N, fn) portRef_t port_##M##_##N = { .module = #M, .name = #N, .entry = fn##_E };
 #define PORT_DEFNK(M, N, fn) \
 	portRef_t port_##M##_##N = { .module = #M, .name = #N, .entry = fn##_E, .kw = fn##_N, \

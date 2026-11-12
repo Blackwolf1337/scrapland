@@ -1455,32 +1455,6 @@ byte Mode_PurgeServerMapList(const char *module) {
 	return ok;
 }
 
-/* ---- adapters ---- */
-
-byte Mode_Args(PyObject *args, int n, modeVals_t *t, nativeVal_t **a) {
-	static const char fmts[12][12] = { "", "O", "OO", "OOO", "OOOO", "OOOOO", "OOOOOO", "OOOOOOO", "OOOOOOOO", "OOOOOOOOO",
-		"OOOOOOOOOO", "OOOOOOOOOOO" };
-	PyObject *o[11];
-	if (!PyArg_ParseTuple(args, (char *)fmts[n], &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7], &o[8], &o[9], &o[10])) {
-		return 0;
-	}
-	/* n values one after the other */
-	*a = n ? Mode_V(t) : NULL;
-	for (int i = 1; i < n; i++) {
-		Mode_V(t);
-	}
-	for (int i = 0; i < n; i++) {
-		Native_Arg(o[i], &(*a)[i]);
-	}
-	return 1;
-}
-
-PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out) {
-	PyObject *r = ok ? (out->type == NV_NONE ? Py_ReturnNone() : Native_ToPy(out)) : NULL;
-	Mode_Done(t, 0);
-	return r;
-}
-
 PyObject *Mode_Return(byte ok, nativeVal_t *v) {
 	PyObject *r = ok ? Native_ToPy(v) : NULL;
 	Native_Free(v);
@@ -3295,25 +3269,6 @@ byte Mode_AtVal(const char *module, const char *dict, const nativeVal_t *key, na
 	return Mode_At(module, dict, key, out);
 }
 
-byte Mode_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, int n, nativeVal_t *a, byte *given) {
-	PyObject *o[8] = { NULL };
-	for (int i = 0; i < n; i++) {
-		Native_SetNone(&a[i]);
-	}
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7])) {
-		return 0;
-	}
-	for (int i = 0; i < n; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &a[i]);
-		}
-		if (given) {
-			given[i] = o[i] != NULL;
-		}
-	}
-	return 1;
-}
-
 PyObject *Mode_KwOut(nativeVal_t *a, int n, byte ok, nativeVal_t *out) {
 	for (int i = 0; i < n; i++) {
 		Native_Free(&a[i]);
@@ -3985,32 +3940,6 @@ byte Mode_Arity(int n, int min, int max) {
 		m == 1 ? "" : "s", n);
 }
 
-int Mode_OptArgs(PyObject *args, int min, int max, modeVals_t *t, nativeVal_t **a) {
-	PyObject *o[11] = { NULL };
-	char fmt[16];
-	int k = 0, n = 0;
-	CHECK(min >= 0 && min <= max && max <= 11);
-	for (int i = 0; i < max; i++) {
-		if (i == min) {
-			fmt[k++] = '|';
-		}
-		fmt[k++] = 'O';
-	}
-	fmt[k] = 0;
-	if (!PyArg_ParseTuple(args, fmt, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7], &o[8], &o[9], &o[10])) {
-		return -1;
-	}
-	/* max values one after the other, those not given None */
-	*a = max ? Mode_V(t) : NULL;
-	for (int i = 1; i < max; i++) {
-		Mode_V(t);
-	}
-	for (; n < max && o[n]; n++) {
-		Native_Arg(o[n], &(*a)[n]);
-	}
-	return n;
-}
-
 /* ---- native entries of hand and keyword adapters (stage 3, batch A2a) ---- */
 
 byte Mode_ArgInt(const nativeVal_t *v, int *out) {
@@ -4299,10 +4228,6 @@ PyObject *Mode_SelfEntry(PyObject *self, PyObject *args, portEntry_t entry) {
 	return r;
 }
 
-PyObject *Mode_Entry(PyObject *args, portEntry_t entry) {
-	return Mode_SelfEntry(NULL, args, entry);
-}
-
 byte Mode_KwGiven(const nativeVal_t *a, int n, int i) {
 	return i < n && !Native_IsMissing(&a[i]);
 }
@@ -4372,25 +4297,6 @@ void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f) {
 	if (!given[i]) {
 		Native_SetFloat(&v[i], f);
 	}
-}
-
-PyObject *Mode_KwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
-	nativeVal_t a[8], out;
-	byte given[8];
-	int n = 0;
-	while (names[n]) {
-		n++;
-	}
-	if (!Mode_Kw(args, kw, fmt, names, n, a, given)) {
-		return NULL;
-	}
-	for (int i = 0; i < n; i++) {
-		if (!given[i]) {
-			Mode_KwSkip(&a[i]);
-		}
-	}
-	Native_SetNone(&out);
-	return Mode_KwOut(a, n, entry(a, n, &out), &out);
 }
 
 /* ---- string and math of the ports (stage 3, batch B1): native twins of the functions of strop and math that the
@@ -4880,60 +4786,6 @@ byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out) {
 	return ok;
 }
 
-/* ---- the ports without Python objects (stage 6, batch 6g) ---- */
-
-/* Mode_KwTyped; ref: an O argument by reference (Native_SetObj), else as Native_Arg makes it */
-static PyObject *Mode_KwParsed(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry, byte ref) {
-	union {
-		char *s;
-		int i;
-		double d;
-		float f;
-		PyObject *o;
-	} u[PORT_ARGS];
-	PyObject *o[PORT_ARGS] = { NULL };
-	char plain[PORT_ARGS + 2], type[PORT_ARGS];
-	nativeVal_t a[PORT_ARGS], out;
-	int n = 0, k = 0;
-	for (const char *f = fmt; *f; f++) {
-		CHECK(k < (int)sizeof(plain) - 1);
-		if (*f != '|') {
-			CHECK(n < PORT_ARGS && strchr("sidfO", *f));
-			type[n++] = *f;
-		}
-		plain[k++] = *f == '|' ? '|' : 'O';
-	}
-	plain[k] = 0;
-	/* the parse of the format, then the objects given (the same parse without conversions: it cannot fail) */
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6],
-		&u[7], &u[8], &u[9], &u[10]) ||
-		!PyArg_ParseTupleAndKeywords(args, kw, plain, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7],
-		&o[8], &o[9], &o[10])) {
-		return NULL;
-	}
-	for (int i = 0; i < n; i++) {
-		if (!o[i]) {
-			Mode_KwSkip(&a[i]);
-		} else if (type[i] == 's') {
-			Native_SetText(&a[i], u[i].s, (int)strlen(u[i].s));
-		} else if (type[i] == 'i') {
-			Native_SetInt(&a[i], u[i].i);
-		} else if (type[i] == 'd' || type[i] == 'f') {
-			Native_SetFloat(&a[i], type[i] == 'd' ? u[i].d : (double)u[i].f);
-		} else if (ref) {
-			Native_SetObj(&a[i], o[i]);
-		} else {
-			Native_Arg(o[i], &a[i]);
-		}
-	}
-	Native_SetNone(&out);
-	return Mode_KwOut(a, n, entry(a, n, &out), &out);
-}
-
-PyObject *Mode_KwTyped(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
-	return Mode_KwParsed(args, kw, fmt, names, entry, 0);
-}
-
 /* the object r as a value into out (r released): 0 for NULL, with its error */
 static byte Mode_ObjOut(PyObject *r, nativeVal_t *out) {
 	Native_SetNone(out);
@@ -5264,17 +5116,6 @@ byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
 	return ok;
 }
 
-PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry) {
-	nativeVal_t a[PORT_ARGS], out;
-	/* more than PORT_ARGS arguments: no entry takes them, its arity error comes before it reads one (Mode_Entry) */
-	int n = (int)PyTuple_Size(args), m = n < PORT_ARGS ? n : PORT_ARGS;
-	for (int i = 0; i < m; i++) {
-		Native_SetObj(&a[i], PyTuple_GET_ITEM(args, i));
-	}
-	Native_SetNone(&out);
-	return Mode_KwOut(a, m, entry(a, n, &out), &out);
-}
-
 int Mode_RefNext(const nativeVal_t *o, int i, nativeVal_t *out) {
 	if (NObj_Native(o)) {
 		/* Script_Next: PySequence_Check, then the item up to the IndexError */
@@ -5360,10 +5201,6 @@ byte Mode_RefSlice(const nativeVal_t *o, long lo, long hi, nativeVal_t *out) {
 
 byte Mode_RefIsNone(const nativeVal_t *o) {
 	return o->type == NV_NONE || (Native_IsObj(o) && Native_PyOf(o) == Py_None);
-}
-
-PyObject *Mode_RefKwAdapter(PyObject *args, PyObject *kw, const char *fmt, char **names, portEntry_t entry) {
-	return Mode_KwParsed(args, kw, fmt, names, entry, 1);
 }
 
 byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeVal_t *out) {

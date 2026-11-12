@@ -74,166 +74,166 @@
 #define SCRIPT_MAX_NESTED 4
 
 static const scriptModule_t script_modules[] = {
-	{ "PCMenu", NULL, g_MenuVideoMethods },
-	{ "PCMenu", NULL, g_MenuControlsMethods },
-	{ "PCMenu", NULL, g_MenuNetMethods },
-	{ "PCMenu", NULL, g_MenuVideoVarsMethods },
-	{ "Menu", NULL, g_MenuBaseMethods },
-	{ "Menu", NULL, g_MenuMainMethods },
-	{ "Menu", NULL, g_MenuMissionMethods },
-	{ "Scorer", NULL, g_ScorerMethods },
-	{ "CharScorer", NULL, g_CharScorerMethods },
-	{ "RacerScorer", NULL, g_RacerScorerMethods },
-	{ "Chars", NULL, g_CharsMethods },
-	{ "MakeChar", NULL, g_MakeCharMethods },
-	{ "CharAct", NULL, g_CharActMethods },
-	{ "Speech", NULL, g_SpeechMethods },
-	{ "SaveGame", NULL, g_SaveGameMethods },
-	{ "Fx", NULL, g_FxMethods },
-	{ "Items", NULL, g_ItemsMethods },
-	{ "Net", NULL, g_NetMethods },
-	{ "NDeathMatch", NULL, g_NDeathMatchMethods },
-	{ "NDeathMatchBots", NULL, g_NDeathMatchBotsMethods },
-	{ "NTeamDM", NULL, g_NTeamDMMethods },
-	{ "NTeamFlag", NULL, g_NTeamFlagMethods },
-	{ "NFlagHunt", NULL, g_NFlagHuntMethods },
-	{ "NPostman", NULL, g_NPostmanMethods },
-	{ "NTeamPost", NULL, g_NTeamPostMethods },
-	{ "Weapons", NULL, g_WeaponsMethods },
-	{ "Vulcan", NULL, g_VulcanMethods },
-	{ "Devastator", NULL, g_DevastatorMethods },
-	{ "Tesla", NULL, g_TeslaMethods },
-	{ "ATPC", NULL, g_ATPCMethods },
-	{ "Laser", NULL, g_LaserMethods },
-	{ "Swarm", NULL, g_SwarmMethods },
-	{ "Inferno", NULL, g_InfernoMethods },
-	{ "Cloud", NULL, g_CloudMethods },
-	{ "EMI", NULL, g_EMIMethods },
-	{ "Sonic", NULL, g_SonicMethods },
-	{ "SputnikInterface", NULL, g_SputnikInterfaceMethods },
-	{ "ShipEdit", NULL, g_ShipEditMethods },
-	{ "HangarTab", NULL, g_HangarTabMethods },
-	{ "Vehicles", NULL, g_VehiclesMethods },
-	{ "VehiclesNPC", NULL, g_VehiclesNPCMethods },
-	{ "Split", NULL, g_SplitMethods },
-	{ "SDeathMatch", NULL, g_SDeathMatchMethods },
-	{ "SFlagHunt", NULL, g_SFlagHuntMethods },
-	{ "SPostman", NULL, g_SPostmanMethods },
-	{ "SRace", NULL, g_SRaceMethods },
-	{ "Init", NULL, g_InitMethods },
-	{ "string", NULL, g_StringMethods },
-	{ "BankDirectorSound", NULL, g_BankDirectorSoundMethods },
-	{ "BankMasterSound", NULL, g_BankMasterSoundMethods },
-	{ "BertoSound", NULL, g_BertoSoundMethods },
-	{ "BettySound", NULL, g_BettySoundMethods },
-	{ "BishopSound", NULL, g_BishopSoundMethods },
-	{ "BossSound", NULL, g_BossSoundMethods },
-	{ "CrazyGamblerSound", NULL, g_CrazyGamblerSoundMethods },
-	{ "DesktopSound", NULL, g_DesktopSoundMethods },
-	{ "DtritusSound", NULL, g_DtritusSoundMethods },
-	{ "FunctionarySound", NULL, g_FunctionarySoundMethods },
-	{ "GateKeeperSound", NULL, g_GateKeeperSoundMethods },
-	{ "GearSound", NULL, g_GearSoundMethods },
-	{ "HumanSound", NULL, g_HumanSoundMethods },
-	{ "HumphreySound", NULL, g_HumphreySoundMethods },
-	{ "MaintenanceSound", NULL, g_MaintenanceSoundMethods },
-	{ "MayorSound", NULL, g_MayorSoundMethods },
-	{ "MercenarySound", NULL, g_MercenarySoundMethods },
-	{ "MessengerSound", NULL, g_MessengerSoundMethods },
-	{ "NurseSound", NULL, g_NurseSoundMethods },
-	{ "PoliceBossSound", NULL, g_PoliceBossSoundMethods },
-	{ "PoliceSound", NULL, g_PoliceSoundMethods },
-	{ "RustySound", NULL, g_RustySoundMethods },
-	{ "SebastianSound", NULL, g_SebastianSoundMethods },
-	{ "SentinelSound", NULL, g_SentinelSoundMethods },
-	{ "SputnikJunkyardSound", NULL, g_SputnikJunkyardSoundMethods },
-	{ "SputnikSound", NULL, g_SputnikSoundMethods },
-	{ "TestCSound", NULL, g_TestCSoundMethods },
-	{ "CharsNPC", NULL, g_CharsNPCMethods },
-	{ "Betty", NULL, g_BettyMethods },
-	{ "BankDirector", NULL, g_BankDirectorMethods },
-	{ "Boss", NULL, g_BossMethods },
-	{ "Boss", NULL, g_BossFuncs },
-	{ "CrazyGambler", NULL, g_CrazyGamblerMethods },
-	{ "CrazyGambler", NULL, g_CrazyGamblerFuncs },
-	{ "Humphrey", NULL, g_HumphreyMethods },
-	{ "Maintenance", NULL, g_MaintenanceMethods },
-	{ "Maintenance", NULL, g_MaintenanceFuncs },
-	{ "Mayor", NULL, g_MayorMethods },
-	{ "Mayor", NULL, g_MayorFuncs },
-	{ "Rusty", NULL, g_RustyMethods },
-	{ "Rusty", NULL, g_RustyFuncs },
-	{ "Sebastian", NULL, g_SebastianMethods },
-	{ "Sentinel", NULL, g_SentinelMethods },
-	{ "SputnikJunkyard", NULL, g_SputnikJunkyardMethods },
-	{ "SputnikJunkyard", NULL, g_SputnikJunkyardFuncs },
-	{ "Bishop", NULL, g_BishopMethods },
-	{ "Bishop", NULL, g_BishopFuncs },
-	{ "Functionary", NULL, g_FunctionaryMethods },
-	{ "Functionary", NULL, g_FunctionaryFuncs },
-	{ "Gear", NULL, g_GearMethods },
-	{ "Gear", NULL, g_GearFuncs },
-	{ "Gear", NULL, g_GearDefFuncs },
-	{ "BankMaster", NULL, g_BankMasterMethods },
-	{ "Berto", NULL, g_BertoMethods },
-	{ "Nurse", NULL, g_NurseMethods },
-	{ "Desktop", NULL, g_DesktopMethods },
-	{ "Police", NULL, g_PoliceMethods },
-	{ "Police", NULL, g_PoliceFuncs },
-	{ "Police", NULL, g_PoliceDefFuncs },
-	{ "GateKeeper", NULL, g_GateKeeperMethods },
-	{ "GateKeeper", NULL, g_GateKeeperFuncs },
-	{ "Dtritus", NULL, g_DtritusMethods },
-	{ "Sputnik", NULL, g_SputnikMethods },
-	{ "Sputnik", NULL, g_SputnikFuncs },
-	{ "PoliceBoss", NULL, g_PoliceBossMethods },
-	{ "Messenger", NULL, g_MessengerMethods },
-	{ "Messenger", NULL, g_MessengerFuncs },
-	{ "Human", NULL, g_HumanMethods },
-	{ "MercenaryA", NULL, g_MercenaryAMethods },
-	{ "MercenaryB", NULL, g_MercenaryBMethods },
-	{ "MercenaryC", NULL, g_MercenaryCMethods },
-	{ "MercenaryL", NULL, g_MercenaryLMethods },
-	{ "InMap", NULL, g_InMapMethods },
-	{ "Bureaucracy", NULL, g_BureaucracyMethods },
-	{ "Chat", NULL, g_ChatMethods },
-	{ "Ffa", NULL, g_FfaMethods },
-	{ "CreditsText", NULL, g_CreditsTextMethods },
-	{ "Traffic", NULL, g_TrafficMethods },
-	{ "OutPolice", NULL, g_OutPoliceMethods },
-	{ "InPolice", NULL, g_InPoliceMethods },
-	{ "PhoneCab", NULL, g_PhoneCabMethods },
-	{ "DTritusDesktop", NULL, g_DTritusDesktopMethods },
-	{ "Metro", NULL, g_MetroMethods },
-	{ "Challenge", NULL, g_ChallengeMethods },
-	{ "Alarm", NULL, g_AlarmMethods },
-	{ "NewsPanel", NULL, g_NewsPanelMethods },
-	{ "Doors", NULL, g_DoorsMethods },
-	{ "Elevator", NULL, g_ElevatorMethods },
-	{ "Teleport", NULL, g_TeleportMethods },
-	{ "MisItems", NULL, g_MisItemsMethods },
-	{ "CrazyWing", NULL, g_CrazyWingMethods },
-	{ "MissionsFuncs", NULL, g_MissionsFuncsMethods },
-	{ "Scene", NULL, g_SceneMethods },
-	{ "CharConversor", NULL, g_CharConversorMethods },
-	{ "RaceMaker", NULL, g_RaceMakerMethods },
-	{ "Sound", NULL, g_SoundMethods },
-	{ "OutSound", NULL, g_OutSoundMethods },
-	{ "DoorSound", NULL, g_DoorSoundMethods },
-	{ "OutMap", NULL, g_OutMapMethods },
-	{ "InTraffic", NULL, g_InTrafficMethods },
-	{ "ShipMaker", NULL, g_ShipMakerMethods },
-	{ "Parking", NULL, g_ParkingMethods },
-	{ "Accelerator", NULL, g_AcceleratorMethods },
-	{ "DeathMatch", NULL, g_DeathMatchMethods },
-	{ "TeamDeathMatch", NULL, g_TeamDeathMatchMethods },
-	{ "Versus", NULL, g_VersusMethods },
-	{ "CTF", NULL, g_CTFMethods },
-	{ "Domination", NULL, g_DominationMethods },
-	{ "MortalRace", NULL, g_MortalRaceMethods },
-	{ "EnginesTab", NULL, g_EnginesTabMethods },
-	{ "WeaponsTab", NULL, g_WeaponsTabMethods },
-	{ "HullTab", NULL, g_HullTabMethods },
+	{ "PCMenu", g_MenuVideoMethods },
+	{ "PCMenu", g_MenuControlsMethods },
+	{ "PCMenu", g_MenuNetMethods },
+	{ "PCMenu", g_MenuVideoVarsMethods },
+	{ "Menu", g_MenuBaseMethods },
+	{ "Menu", g_MenuMainMethods },
+	{ "Menu", g_MenuMissionMethods },
+	{ "Scorer", g_ScorerMethods },
+	{ "CharScorer", g_CharScorerMethods },
+	{ "RacerScorer", g_RacerScorerMethods },
+	{ "Chars", g_CharsMethods },
+	{ "MakeChar", g_MakeCharMethods },
+	{ "CharAct", g_CharActMethods },
+	{ "Speech", g_SpeechMethods },
+	{ "SaveGame", g_SaveGameMethods },
+	{ "Fx", g_FxMethods },
+	{ "Items", g_ItemsMethods },
+	{ "Net", g_NetMethods },
+	{ "NDeathMatch", g_NDeathMatchMethods },
+	{ "NDeathMatchBots", g_NDeathMatchBotsMethods },
+	{ "NTeamDM", g_NTeamDMMethods },
+	{ "NTeamFlag", g_NTeamFlagMethods },
+	{ "NFlagHunt", g_NFlagHuntMethods },
+	{ "NPostman", g_NPostmanMethods },
+	{ "NTeamPost", g_NTeamPostMethods },
+	{ "Weapons", g_WeaponsMethods },
+	{ "Vulcan", g_VulcanMethods },
+	{ "Devastator", g_DevastatorMethods },
+	{ "Tesla", g_TeslaMethods },
+	{ "ATPC", g_ATPCMethods },
+	{ "Laser", g_LaserMethods },
+	{ "Swarm", g_SwarmMethods },
+	{ "Inferno", g_InfernoMethods },
+	{ "Cloud", g_CloudMethods },
+	{ "EMI", g_EMIMethods },
+	{ "Sonic", g_SonicMethods },
+	{ "SputnikInterface", g_SputnikInterfaceMethods },
+	{ "ShipEdit", g_ShipEditMethods },
+	{ "HangarTab", g_HangarTabMethods },
+	{ "Vehicles", g_VehiclesMethods },
+	{ "VehiclesNPC", g_VehiclesNPCMethods },
+	{ "Split", g_SplitMethods },
+	{ "SDeathMatch", g_SDeathMatchMethods },
+	{ "SFlagHunt", g_SFlagHuntMethods },
+	{ "SPostman", g_SPostmanMethods },
+	{ "SRace", g_SRaceMethods },
+	{ "Init", g_InitMethods },
+	{ "string", g_StringMethods },
+	{ "BankDirectorSound", g_BankDirectorSoundMethods },
+	{ "BankMasterSound", g_BankMasterSoundMethods },
+	{ "BertoSound", g_BertoSoundMethods },
+	{ "BettySound", g_BettySoundMethods },
+	{ "BishopSound", g_BishopSoundMethods },
+	{ "BossSound", g_BossSoundMethods },
+	{ "CrazyGamblerSound", g_CrazyGamblerSoundMethods },
+	{ "DesktopSound", g_DesktopSoundMethods },
+	{ "DtritusSound", g_DtritusSoundMethods },
+	{ "FunctionarySound", g_FunctionarySoundMethods },
+	{ "GateKeeperSound", g_GateKeeperSoundMethods },
+	{ "GearSound", g_GearSoundMethods },
+	{ "HumanSound", g_HumanSoundMethods },
+	{ "HumphreySound", g_HumphreySoundMethods },
+	{ "MaintenanceSound", g_MaintenanceSoundMethods },
+	{ "MayorSound", g_MayorSoundMethods },
+	{ "MercenarySound", g_MercenarySoundMethods },
+	{ "MessengerSound", g_MessengerSoundMethods },
+	{ "NurseSound", g_NurseSoundMethods },
+	{ "PoliceBossSound", g_PoliceBossSoundMethods },
+	{ "PoliceSound", g_PoliceSoundMethods },
+	{ "RustySound", g_RustySoundMethods },
+	{ "SebastianSound", g_SebastianSoundMethods },
+	{ "SentinelSound", g_SentinelSoundMethods },
+	{ "SputnikJunkyardSound", g_SputnikJunkyardSoundMethods },
+	{ "SputnikSound", g_SputnikSoundMethods },
+	{ "TestCSound", g_TestCSoundMethods },
+	{ "CharsNPC", g_CharsNPCMethods },
+	{ "Betty", g_BettyMethods },
+	{ "BankDirector", g_BankDirectorMethods },
+	{ "Boss", g_BossMethods },
+	{ "Boss", g_BossFuncs },
+	{ "CrazyGambler", g_CrazyGamblerMethods },
+	{ "CrazyGambler", g_CrazyGamblerFuncs },
+	{ "Humphrey", g_HumphreyMethods },
+	{ "Maintenance", g_MaintenanceMethods },
+	{ "Maintenance", g_MaintenanceFuncs },
+	{ "Mayor", g_MayorMethods },
+	{ "Mayor", g_MayorFuncs },
+	{ "Rusty", g_RustyMethods },
+	{ "Rusty", g_RustyFuncs },
+	{ "Sebastian", g_SebastianMethods },
+	{ "Sentinel", g_SentinelMethods },
+	{ "SputnikJunkyard", g_SputnikJunkyardMethods },
+	{ "SputnikJunkyard", g_SputnikJunkyardFuncs },
+	{ "Bishop", g_BishopMethods },
+	{ "Bishop", g_BishopFuncs },
+	{ "Functionary", g_FunctionaryMethods },
+	{ "Functionary", g_FunctionaryFuncs },
+	{ "Gear", g_GearMethods },
+	{ "Gear", g_GearFuncs },
+	{ "Gear", g_GearDefFuncs },
+	{ "BankMaster", g_BankMasterMethods },
+	{ "Berto", g_BertoMethods },
+	{ "Nurse", g_NurseMethods },
+	{ "Desktop", g_DesktopMethods },
+	{ "Police", g_PoliceMethods },
+	{ "Police", g_PoliceFuncs },
+	{ "Police", g_PoliceDefFuncs },
+	{ "GateKeeper", g_GateKeeperMethods },
+	{ "GateKeeper", g_GateKeeperFuncs },
+	{ "Dtritus", g_DtritusMethods },
+	{ "Sputnik", g_SputnikMethods },
+	{ "Sputnik", g_SputnikFuncs },
+	{ "PoliceBoss", g_PoliceBossMethods },
+	{ "Messenger", g_MessengerMethods },
+	{ "Messenger", g_MessengerFuncs },
+	{ "Human", g_HumanMethods },
+	{ "MercenaryA", g_MercenaryAMethods },
+	{ "MercenaryB", g_MercenaryBMethods },
+	{ "MercenaryC", g_MercenaryCMethods },
+	{ "MercenaryL", g_MercenaryLMethods },
+	{ "InMap", g_InMapMethods },
+	{ "Bureaucracy", g_BureaucracyMethods },
+	{ "Chat", g_ChatMethods },
+	{ "Ffa", g_FfaMethods },
+	{ "CreditsText", g_CreditsTextMethods },
+	{ "Traffic", g_TrafficMethods },
+	{ "OutPolice", g_OutPoliceMethods },
+	{ "InPolice", g_InPoliceMethods },
+	{ "PhoneCab", g_PhoneCabMethods },
+	{ "DTritusDesktop", g_DTritusDesktopMethods },
+	{ "Metro", g_MetroMethods },
+	{ "Challenge", g_ChallengeMethods },
+	{ "Alarm", g_AlarmMethods },
+	{ "NewsPanel", g_NewsPanelMethods },
+	{ "Doors", g_DoorsMethods },
+	{ "Elevator", g_ElevatorMethods },
+	{ "Teleport", g_TeleportMethods },
+	{ "MisItems", g_MisItemsMethods },
+	{ "CrazyWing", g_CrazyWingMethods },
+	{ "MissionsFuncs", g_MissionsFuncsMethods },
+	{ "Scene", g_SceneMethods },
+	{ "CharConversor", g_CharConversorMethods },
+	{ "RaceMaker", g_RaceMakerMethods },
+	{ "Sound", g_SoundMethods },
+	{ "OutSound", g_OutSoundMethods },
+	{ "DoorSound", g_DoorSoundMethods },
+	{ "OutMap", g_OutMapMethods },
+	{ "InTraffic", g_InTrafficMethods },
+	{ "ShipMaker", g_ShipMakerMethods },
+	{ "Parking", g_ParkingMethods },
+	{ "Accelerator", g_AcceleratorMethods },
+	{ "DeathMatch", g_DeathMatchMethods },
+	{ "TeamDeathMatch", g_TeamDeathMatchMethods },
+	{ "Versus", g_VersusMethods },
+	{ "CTF", g_CTFMethods },
+	{ "Domination", g_DominationMethods },
+	{ "MortalRace", g_MortalRaceMethods },
+	{ "EnginesTab", g_EnginesTabMethods },
+	{ "WeaponsTab", g_WeaponsTabMethods },
+	{ "HullTab", g_HullTabMethods },
 };
 
 /* whether an item of the tuple t is the object cur */
@@ -482,10 +482,9 @@ PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *mod
 	return f;
 }
 
-const char *Script_Row(PyMethodDef *methods, const portFn_t *fns, int i, scriptRow_t *row) {
-	row->def = methods ? &methods[i] : NULL;
-	row->fn = methods ? NULL : &fns[i];
-	return methods ? methods[i].ml_name : fns[i].name;
+const char *Script_Row(const portFn_t *fns, int i, scriptRow_t *row) {
+	row->fn = &fns[i];
+	return fns[i].name;
 }
 
 /* the last row of module's tables that has name (as the loader put them in): 1 with *found, 0 if none */
@@ -498,7 +497,7 @@ static byte Script_TableDef(const char *module, const char *name, scriptRow_t *f
 		if (strcmp(sm->name, module)) {
 			continue;
 		}
-		for (int k = 0; (rn = Script_Row(sm->methods, sm->fns, k, &row)) != NULL; k++) {
+		for (int k = 0; (rn = Script_Row(sm->fns, k, &row)) != NULL; k++) {
 			if (!strcmp(rn, name)) {
 				*found = row;
 				any = 1;
@@ -513,29 +512,13 @@ byte Script_Checking(void) {
 }
 
 byte Script_FunctionOf(const scriptRow_t *row, const char *module, nativeVal_t *out) {
+	/* the native function of its ref (SCRAP_NULL_CHECK has no wrapper for it) */
+	const portRef_t *ref = Port_OfFn(module, row->fn);
 	Native_SetNone(out);
-	if (row->fn) {
-		/* a function table: the native function of its ref (OBJLIB 7e2: SCRAP_NULL_CHECK has no wrapper for it) */
-		const portRef_t *ref = Port_OfFn(module, row->fn);
-		if (!ref) {
-			return Native_Raise(NE_SYSTEM, "%s.%s has no port ref", module, row->fn->name);
-		}
-		NObj_NewPortFunc(out, ref);
-		return 1;
+	if (!ref) {
+		return Native_Raise(NE_SYSTEM, "%s.%s has no port ref", module, row->fn->name);
 	}
-	const portRef_t *ref = Script_CheckOn() ? NULL : Port_OfDef(row->def);
-	if (ref) {
-		NObj_NewPortFunc(out, ref);
-		return 1;
-	}
-	/* OBJLIB 7e2: a function the entries do not take, and every one under SCRAP_NULL_CHECK (its wrapper), as the C
-	 * function object of Python */
-	PyObject *f = Script_CheckFunction(row->def, NULL, module);
-	if (!f) {
-		return 0;
-	}
-	NObj_FromPy(f, out);
-	Py_DECREF(f);
+	NObj_NewPortFunc(out, ref);
 	return 1;
 }
 
@@ -557,7 +540,7 @@ byte Script_TableHas(const char *module, const char *name) {
  * 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
  * as they did after the .pyc (Sound modules of 21 keys).
  */
-void Script_TableReplay(const nativeVal_t *module, PyMethodDef *methods, const portFn_t *fns) {
+void Script_TableReplay(const nativeVal_t *module, const portFn_t *fns) {
 	modVarRef_t ref;
 	scriptRow_t row;
 	const char *name;
@@ -565,7 +548,7 @@ void Script_TableReplay(const nativeVal_t *module, PyMethodDef *methods, const p
 	if (!ModVar_OfVal(module, &ref) || !ModVar_GetVal(&ref, "__name__", &mname)) {
 		return;
 	}
-	for (int k = 0; (name = Script_Row(methods, fns, k, &row)) != NULL; k++) {
+	for (int k = 0; (name = Script_Row(fns, k, &row)) != NULL; k++) {
 		nativeVal_t cur;
 		if (ModVar_GetVal(&ref, name, &cur)) {
 			Script_ReplaySet(&ref, name, &cur);
@@ -595,7 +578,7 @@ void Script_ReplaySet(const modVarRef_t *ref, const char *name, const nativeVal_
 void Script_ModuleExtras(const char *name, const nativeVal_t *module, const nativeVal_t *defs) {
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
 		if (!strcmp(script_modules[i].name, name)) {
-			Script_TableReplay(module, script_modules[i].methods, script_modules[i].fns);
+			Script_TableReplay(module, script_modules[i].fns);
 		}
 	}
 	Script_LevelModuleExtras(name, module, defs);
@@ -1418,35 +1401,6 @@ static void Def_ArgsFree(defArgs_t *a) {
 	}
 }
 
-/* the positional arguments as the tuple a call through Python takes (NULL with the error) */
-static PyObject *Def_PyArgs(const defArgs_t *a) {
-	PyObject *t = PyTuple_New(a->npos);
-	for (int i = 0; t && i < a->npos; i++) {
-		PyObject *o = Native_ToPy(&a->v[i]);
-		if (!o) {
-			Py_DECREF(t);
-			return NULL;
-		}
-		PyTuple_SET_ITEM(t, i, o);
-	}
-	return t;
-}
-
-/* the keyword arguments as the dict of a call through Python, in the order of the line (NULL when there are none) */
-static PyObject *Def_PyKw(const defArgs_t *a) {
-	char name[SCRIPT_MAX_TEXT];
-	PyObject *kw = a->n > a->npos ? PyDict_New() : NULL;
-	for (int i = a->npos; kw && i < a->n; i++) {
-		PyObject *o = Native_ToPy(&a->v[i]);
-		Str_Copy(name, a->names[i], a->lens[i] + 1);
-		if (o) {
-			PyDict_SetItemString(kw, name, o);
-		}
-		Py_XDECREF(o);
-	}
-	return kw;
-}
-
 /* OBJLIB 7: the calls of the call lines by path, for the test channel: through the registry (def_site: fast through
  * the entry, slow through Python when the entry cannot take the keywords; the site names the function it called
  * last), by name to a function of the registry that something else replaced, by name to any other function */
@@ -1493,26 +1447,26 @@ static byte Def_Letters(const defArgs_t *a, char *fmt, int size) {
 }
 
 /* module.func(args) of a call line: 1, or 0 with the error set. Through the registry (Port_Invoke: the entry, the
- * arguments packed as the adapter gets them) while the module attribute is the port's or the engine's own function of
- * module.func (the seam, OBJLIB 7: Port_Own of what is there, SCRAP_PORT_SLOW=1 never), else the call by name through
- * Python as before: a recorder, a replaced or deleted function, a function of another name or module there, a function
- * that is no port, the keywords of a call the registry cannot take */
+ * arguments packed as a call through Python hands them over) while the module attribute is the port's or the engine's
+ * own function of module.func (the seam; SCRAP_PORT_SLOW=1 never), else the call by name of what is there with the
+ * arguments as a call through Python hands them over (NObj_CallArg) and the keywords in the order of the line: a
+ * recorder, a replaced or deleted function, a function of another name or module there, a function that is no port,
+ * the keywords of a call the registry cannot take */
 static byte Def_Call(const char *module, const char *func, const defArgs_t *a) {
 	static_assert(PORT_ARGS == 11, "one pointer per argument");
 	char fmt[PORT_ARGS * (DEF_KWNAME + 3) + 2];
-	PyObject *f = Script_Attr(module, func);
-	if (!f) {
+	nativeVal_t f, args[SCRIPT_MAX_TOKENS], kw, r;
+	if (!ModVar_ModAttrVal(module, func, &f)) {
 		return 0;
 	}
 	byte known = Port_Find(module, func) != NULL;
-	const portRef_t *ref = known ? Port_Own(f) : NULL;
-	byte ok;
+	const portRef_t *ref = known && !Port_Slow() ? NObj_PortRef(&f) : NULL;
 	if (ref && !strcmp(ref->module, module) && !strcmp(ref->name, func) && Def_Letters(a, fmt, sizeof(fmt))) {
 		const nativeVal_t *p[PORT_ARGS] = { NULL };
 		for (int i = 0; i < a->n; i++) {
 			p[i] = &a->v[i];
 		}
-		Py_DECREF(f);
+		Native_Free(&f);
 		def_site.ref = ref;
 		return Port_Invoke(&def_site, NULL, fmt, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 	}
@@ -1521,13 +1475,36 @@ static byte Def_Call(const char *module, const char *func, const defArgs_t *a) {
 	} else {
 		def_other++;
 	}
-	PyObject *t = Def_PyArgs(a), *kw = t ? Def_PyKw(a) : NULL;
-	PyObject *r = t ? Script_CallObject(f, t, kw) : NULL;
-	ok = r != NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(kw);
-	Py_XDECREF(t);
-	Py_DECREF(f);
+	Native_SetEmpty(&kw, NV_LIST);
+	for (int i = 0; i < a->n; i++) {
+		if (i < a->npos) {
+			NObj_CallArg(&a->v[i], &args[i]);
+		} else {
+			/* a name given twice keeps its first place with the last value, as in the dict of the keywords */
+			nativeVal_t *pair = NULL;
+			for (int k = 0; k < kw.n && !pair; k++) {
+				const nativeVal_t *name = &kw.items[k].items[0];
+				pair = name->n == a->lens[i] && !memcmp(Native_Text(name), a->names[i], a->lens[i]) ? &kw.items[k] :
+					NULL;
+			}
+			if (pair) {
+				Native_Free(&pair->items[1]);
+				NObj_CallArg(&a->v[i], &pair->items[1]);
+				continue;
+			}
+			pair = Native_Append(&kw);
+			Native_SetEmpty(pair, NV_TUPLE);
+			Native_SetText(Native_Append(pair), a->names[i], a->lens[i]);
+			NObj_CallArg(&a->v[i], Native_Append(pair));
+		}
+	}
+	byte ok = NObj_CallKw(&f, args, a->npos, kw.n ? &kw : NULL, &r);
+	Native_Free(&r);
+	for (int i = 0; i < a->npos; i++) {
+		Native_Free(&args[i]);
+	}
+	Native_Free(&kw);
+	Native_Free(&f);
 	return ok;
 }
 

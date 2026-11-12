@@ -16,21 +16,18 @@
 #include "scrap/python.h"
 #include "scrap/scriptnative.h"
 
-/* the C functions of one pack module: a function table (stage 7e, scrap/scriptnative.h), or a PyMethodDef table not
- * converted yet (OBJLIB 7e2) */
+/* the C functions of one pack module: a function table (stage 7e, scrap/scriptnative.h) */
 typedef struct scriptModule_s {
 	const char *name;		/* the module name of the script, PCMenu */
-	PyMethodDef *methods;		/* put into the module under their names, the table ends with a NULL name */
-	const portFn_t *fns;		/* the same as a function table (methods NULL) */
+	const portFn_t *fns;		/* put into the module under their names, the table ends with PORT_FNEND */
 } scriptModule_t;
 
-/* a row of such a table: def of a PyMethodDef table or fn of a function table (the other NULL) */
+/* a row of such a table */
 typedef struct scriptRow_s {
-	PyMethodDef *def;
 	const portFn_t *fn;
 } scriptRow_t;
-/* the name of row i of the tables methods or fns (the one that is not NULL), NULL at the end; *row the row */
-const char *Script_Row(PyMethodDef *methods, const portFn_t *fns, int i, scriptRow_t *row);
+/* the name of row i of the table fns, NULL at the end; *row the row */
+const char *Script_Row(const portFn_t *fns, int i, scriptRow_t *row);
 
 /* the function object of a C function of the script tables (PyCFunction_New(def, self)); with SCRAP_NULL_CHECK set
  * a wrapper that reports a NULL return without an error (module names it in the report) */
@@ -121,7 +118,7 @@ byte Script_TableFunction(const char *module, const char *name, struct nativeVal
 byte Script_TableHas(const char *module, const char *name);
 /* the dict writes the loader made after the .pyc for a table, on a module made in C with the values in place (the
  * functions the script lacks are added) */
-void Script_TableReplay(const struct nativeVal_s *module, PyMethodDef *methods, const portFn_t *fns);
+void Script_TableReplay(const struct nativeVal_s *module, const portFn_t *fns);
 /* the dict writes the loader made after the .pyc for the function cur under name, on a module made in C with the
  * values in place: the other names, tuples and dict values that hold cur and name itself (they decide the key order of
  * the module's variables, scrap/modvars.h) */
