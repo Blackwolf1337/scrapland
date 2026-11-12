@@ -701,11 +701,18 @@ static PyObject *Obj_FuncToPy(nativeObj_t *o) {
 	case NF_PORT: {
 		/* the function object the module holds while it is the port's own and no other native object is its view */
 		modVarRef_t mv;
-		PyObject *f = ModVar_Named(o->ref->module, &mv) ? ModVar_Get(&mv, o->ref->name) : NULL;
+		nativeVal_t cur;
+		PyObject *f = NULL;
+		if (ModVar_Named(o->ref->module, &mv) && ModVar_GetVal(&mv, o->ref->name, &cur)) {
+			/* the object the module's value has (no conversion: the value may be this function itself) */
+			f = NObj_Py(&cur);
+			Py_XINCREF(f);
+			Native_Free(&cur);
+		}
 		if (f && Port_IsOwn(o->ref, f) && !Obj_TableFind(f)) {
-			Py_INCREF(f);
 			return f;
 		}
+		Py_XDECREF(f);
 		return PyCFunction_New(Obj_PortDef(o->ref), NULL);
 	}
 	case NF_CALLBACK: {
@@ -890,6 +897,113 @@ PyObject *NObj_ToPy(const nativeVal_t *v) {
 
 PyObject *NObj_Py(const nativeVal_t *v) {
 	return v->type == NV_REF ? v->ref->py : v->type == NV_OBJ ? v->obj : NULL;
+}
+
+nativeVal_t *NObj_DictData(const nativeVal_t *d) {
+	return d->type == NV_REF && d->ref->kind == NO_DICT && !d->ref->py ? &d->ref->data : NULL;
+}
+
+/* NObj_Plain of a value at a depth inside a container (as Native_FromPyAt) */
+static byte Obj_Plain(const nativeVal_t *v, nativeVal_t *out, int depth) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	Native_SetNone(out);
+	switch (v->type) {
+	case NV_NONE:
+	case NV_INT:
+	case NV_FLOAT:
+	case NV_STR:
+	case NV_LONG:
+		Native_Copy(out, v);
+		Py_XDECREF(out->obj);
+		out->obj = NULL;
+		return 1;
+	case NV_OBJ:
+		return Native_FromPyAt(v->obj, out, depth);
+	case NV_ENT:
+		return 0;
+	case NV_REF:
+		if (v->ref->py) {
+			return Native_FromPyAt(v->ref->py, out, depth);
+		}
+		if (v->ref->kind != NO_LIST && v->ref->kind != NO_DICT) {
+			return 0;
+		}
+		v = &v->ref->data;
+		break;
+	}
+	if (depth >= NATIVE_DEPTH) {
+		return 0;
+	}
+	switch (v->type) {
+	case NV_VEC:
+		Native_SetEmpty(out, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetFloat(Native_Append(out), v->v[i]);
+		}
+		return 1;
+	case NV_LIST:
+	case NV_TUPLE:
+		Native_SetEmpty(out, v->type);
+		for (int i = 0; i < v->n; i++) {
+			if (!Obj_Plain(&v->items[i], Native_Append(out), depth + 1)) {
+				Native_Free(out);
+				return 0;
+			}
+		}
+		return 1;
+	case NV_DICT:
+		/* the table as it is: Python's dict made from it has it, and Native_FromPyIn copies the slots of that */
+		Native_Copy(out, v);
+		while (Native_DictNext(out, &pos, &k, &x)) {
+			nativeVal_t pk, px;
+			if (!Obj_Plain(k, &pk, depth + 1)) {
+				Native_Free(out);
+				return 0;
+			}
+			if (!Obj_Plain(x, &px, depth + 1)) {
+				Native_Free(&pk);
+				Native_Free(out);
+				return 0;
+			}
+			/* the slots of out itself */
+			Native_Free((nativeVal_t *)k);
+			*(nativeVal_t *)k = pk;
+			Native_Free((nativeVal_t *)x);
+			*(nativeVal_t *)x = px;
+		}
+		return 1;
+	}
+	return 0;
+}
+
+byte NObj_Plain(const nativeVal_t *v, nativeVal_t *out) {
+	return Obj_Plain(v, out, 0);
+}
+
+void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out) {
+	if (v->type != NV_ENT && Obj_Plain(v, out, 0)) {
+		return;
+	}
+	if (v->type == NV_OBJ) {
+		Native_SetObj(out, v->obj);
+		return;
+	}
+	if (v->type == NV_ENT || (v->type == NV_REF && NObj_RefMode())) {
+		/* the same handle or object */
+		Native_Copy(out, v);
+		Py_XDECREF(out->obj);
+		out->obj = NULL;
+		return;
+	}
+	/* a tuple, list or dict that holds an object or a handle: as Python has it (a tuple keeps its object) */
+	PyObject *o = v->type == NV_TUPLE && v->obj && PyTuple_Check(v->obj) ? (Py_INCREF(v->obj), v->obj) : Native_ToPy(v);
+	if (o) {
+		Native_SetObj(out, o);
+		Py_DECREF(o);
+	} else {
+		PyErr_Clear();
+	}
 }
 
 /* ---- classes and instances (classobject.c) ---- */
@@ -1884,6 +1998,11 @@ static byte Obj_PyGetAttr(PyObject *py, const char *name, nativeVal_t *out) {
 }
 
 byte NObj_GetAttr(const nativeVal_t *v, const char *name, nativeVal_t *out) {
+	modVarRef_t mv;
+	if (ModVar_OfVal(v, &mv)) {
+		/* a pack module: its variable in the registry */
+		return ModVar_AttrVal(&mv, name, out);
+	}
 	PyObject *py = Obj_Forward(v);
 	Native_SetNone(out);
 	if (py) {
@@ -1995,6 +2114,10 @@ static byte Obj_Dunder(const char *name) {
 
 /* setattr (v given) and delattr (v NULL) */
 static byte Obj_SetAttr(const nativeVal_t *t, const char *name, const nativeVal_t *v) {
+	modVarRef_t mv;
+	if (ModVar_OfVal(t, &mv)) {
+		return ModVar_SetAttrVal(&mv, name, v);
+	}
 	PyObject *py = Obj_Forward(t);
 	if (py) {
 		PyObject *x = v ? Native_ToPy(v) : NULL;

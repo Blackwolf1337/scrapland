@@ -54,6 +54,7 @@
 #include "scrap/crt.h"
 #include "scrap/filepak.h"
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/pyentity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
@@ -235,68 +236,85 @@ static const scriptModule_t script_modules[] = {
 	{ "HullTab", g_HullTabMethods },
 };
 
-/* whether an item of the tuple t is v */
-static byte Script_TupleHas(PyObject *t, PyObject *v) {
-	for (int i = 0; i < PyTuple_GET_SIZE(t); i++) {
-		if (PyTuple_GET_ITEM(t, i) == v) {
+/* whether an item of the tuple t is the object cur */
+static byte Script_TupleHas(const nativeVal_t *t, const nativeVal_t *cur) {
+	for (int i = 0; i < t->n; i++) {
+		if (NObj_Is(&t->items[i], cur)) {
 			return 1;
 		}
 	}
 	return 0;
 }
 
-/* (k, v) for a set after the walk of a dict: a set may resize the dict under PyDict_Next (later made at the first) */
-static void Script_Defer(PyObject **later, PyObject *k, PyObject *v) {
-	PyObject *kv = (*later || (*later = PyList_New(0))) ? Py_BuildValue("(OO)", k, v) : NULL;
-	if (kv) {
-		PyList_Append(*later, kv);
-		Py_DECREF(kv);
+/* (k, v) for a set after the walk of a dict: a set may resize the dict under the walk (later made at the first) */
+static void Script_Defer(nativeVal_t *later, const nativeVal_t *k, const nativeVal_t *v) {
+	nativeVal_t *kv;
+	if (later->type != NV_LIST) {
+		Native_SetEmpty(later, NV_LIST);
 	}
+	kv = Native_Append(later);
+	Native_SetEmpty(kv, NV_TUPLE);
+	Native_Copy(Native_Append(kv), k);
+	Native_Copy(Native_Append(kv), v);
 }
 
-static void Script_SetDeferred(PyObject *d, PyObject *later) {
-	for (int i = 0; later && i < PyList_GET_SIZE(later); i++) {
-		PyObject *kv = PyList_GET_ITEM(later, i);
-		PyDict_SetItem(d, PyTuple_GET_ITEM(kv, 0), PyTuple_GET_ITEM(kv, 1));
+static void Script_SetDeferred(const nativeVal_t *d, nativeVal_t *later) {
+	for (int i = 0; later->type == NV_LIST && i < later->n; i++) {
+		if (!NObj_SetItem(d, &later->items[i].items[0], &later->items[i].items[1])) {
+			PyErr_Clear();
+		}
 	}
-	Py_XDECREF(later);
+	Native_Free(later);
 }
 
 /*
  * The writes the loader made after the .pyc for the function cur under key, with the values in place: the other
- * names of the module dict that hold cur, the tuples that hold it (set again under their names: Doors.DefDoorInfo =
- * 800, StdInitializator, StdObjInitializator, 0, 0) and the dict values that hold it, one level deep (not
- * __builtins__). The sets come after the walk of the dict. When the .pyc ran, the loader put the C function in the
- * place of the Python one there (and rebound the engine callbacks to it); no Python code loads now, so nothing is
- * replaced and only the writes stay. OBJLIB 5: they decide the key order of the module dict (PyDict_SetItem doubles a
- * dict that is 2/3 full before a write, also for a key that is in it); they go when the variables leave the dicts.
+ * names of the module that hold cur, the tuples that hold it (set again under their names: Doors.DefDoorInfo = 800,
+ * StdInitializator, StdObjInitializator, 0, 0) and the dict values that hold it, one level deep (not __builtins__). The
+ * sets come after the walk of the variables. When the .pyc ran, the loader put the C function in the place of the
+ * Python one there (and rebound the engine callbacks to it); no Python code loads now, so nothing is replaced and only
+ * the writes stay. They decide the key order of the module's variables (PyDict_SetItem doubles a dict that is 2/3 full
+ * before a write, also for a key that is in it, and the registry's table does the same).
  */
-static void Script_ReplayRefs(PyObject *dict, PyObject *key, PyObject *cur) {
-	PyObject *k, *v, *later = NULL;
+static void Script_ReplayRefs(const modVarRef_t *ref, const nativeVal_t *space, const nativeVal_t *key,
+	const nativeVal_t *cur) {
+	nativeVal_t k, v, later;
 	int pos = 0;
-	while (PyDict_Next(dict, &pos, &k, &v)) {
-		if (v == cur) {
-			if (PyObject_Compare(k, key) != 0) {
-				Script_Defer(&later, k, cur);
+	Native_SetNone(&later);
+	while (ModVar_Next(ref, &pos, &k, &v)) {
+		if (NObj_Is(&v, cur)) {
+			if (!Native_Equal(&k, key)) {
+				Script_Defer(&later, &k, cur);
 			}
-		} else if (PyTuple_Check(v)) {
-			if (Script_TupleHas(v, cur)) {
-				Script_Defer(&later, k, v);
+		} else if (v.type == NV_TUPLE) {
+			if (Script_TupleHas(&v, cur)) {
+				Script_Defer(&later, &k, &v);
 			}
-		} else if (PyDict_Check(v) && v != dict && !(PyString_Check(k) && !strcmp(PyString_AS_STRING(k), "__builtins__"))) {
-			PyObject *inner = NULL, *ik, *iv;
-			int ipos = 0;
-			while (PyDict_Next(v, &ipos, &ik, &iv)) {
-				if (iv == cur) {
-					Script_Defer(&inner, ik, cur);
+		} else if (NObj_Kind(&v) == NO_DICT && !NObj_Is(&v, space) && !Native_IsStr(&k, "__builtins__")) {
+			nativeVal_t items, inner;
+			Native_SetNone(&inner);
+			if (NObj_CallMethod(&v, "items", NULL, 0, &items)) {
+				int n = NObj_Len(&items);
+				for (int i = 0; i < n; i++) {
+					nativeVal_t ik, kv;
+					Native_SetInt(&ik, i);
+					if (NObj_GetItem(&items, &ik, &kv) && kv.type == NV_TUPLE && kv.n == 2 &&
+						NObj_Is(&kv.items[1], cur)) {
+						Script_Defer(&inner, &kv.items[0], cur);
+					}
+					Native_Free(&kv);
 				}
 			}
-			Script_SetDeferred(v, inner);
+			Native_Free(&items);
+			Script_SetDeferred(&v, &inner);
 		}
+		Native_Free(&k);
+		Native_Free(&v);
 	}
-	Script_SetDeferred(dict, later);
+	Script_SetDeferred(space, &later);
 	PyErr_Clear();
 }
+
 
 /*
  * ---- the check of NULL returns (SCRAP_NULL_CHECK) ----
@@ -531,30 +549,35 @@ byte Script_TableHas(const char *module, const char *name) {
  * as they did after the .pyc (Sound modules of 21 keys).
  */
 void Script_TableReplay(PyObject *module, PyMethodDef *methods) {
-	PyObject *dict = PyModule_GetDict(module);
+	modVarRef_t ref;
+	if (!ModVar_RefOf(module, &ref)) {
+		return;
+	}
 	for (PyMethodDef *m = methods; m->ml_name; m++) {
-		PyObject *cur = PyDict_GetItemString(dict, m->ml_name);
-		if (cur) {
-			Script_ReplaySet(dict, m->ml_name, cur);
+		nativeVal_t cur;
+		if (ModVar_GetVal(&ref, m->ml_name, &cur)) {
+			Script_ReplaySet(&ref, m->ml_name, &cur);
+			Native_Free(&cur);
 			continue;
 		}
 		PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
 		if (f) {
-			PyDict_SetItemString(dict, m->ml_name, f);
+			ModVar_Set(&ref, m->ml_name, f);
 			Py_DECREF(f);
 		}
 	}
 }
 
-void Script_ReplaySet(PyObject *dict, const char *name, PyObject *cur) {
-	PyObject *key = PyString_FromString(name);
-	Py_INCREF(cur);
-	if (key) {
-		Script_ReplayRefs(dict, key, cur);
-		Py_DECREF(key);
-	}
-	PyDict_SetItemString(dict, (char *)name, cur);
-	Py_DECREF(cur);
+void Script_ReplaySet(const modVarRef_t *ref, const char *name, const nativeVal_t *cur) {
+	nativeVal_t key, space, v;
+	Native_SetStr(&key, name);
+	Native_Copy(&v, cur);
+	ModVar_Space(ref, &space);
+	Script_ReplayRefs(ref, &space, &key, &v);
+	ModVar_SetVal(ref, name, &v);
+	Native_Free(&space);
+	Native_Free(&key);
+	Native_Free(&v);
 }
 
 void Script_ModuleExtras(const char *name, PyObject *module, PyObject *defs) {
@@ -1634,9 +1657,16 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		/* an attribute of a Python object, as `obj.var = value` of a script (a pack module's variable through the
 		 * registry; OBJLIB 7: the value as its Python object) */
 		nativeVal_t nv;
-		PyObject *v = Def_Value(m, value, quoted, &nv) ? Native_ToPy(&nv) : NULL;
+		modVarRef_t mv;
+		byte got = Def_Value(m, value, quoted, &nv), bad = 0;
+		PyObject *v = NULL;
+		if (got && m->object && ModVar_Of(m->object, &mv)) {
+			bad = !ModVar_SetAttrVal(&mv, var, &nv);
+		} else if (got && (v = Native_ToPy(&nv)) != NULL && m->object) {
+			bad = ModVar_SetObjAttr(m->object, var, v) < 0;
+		}
 		Native_Free(&nv);
-		if (v && m->object && ModVar_SetObjAttr(m->object, var, v) < 0) {
+		if (bad) {
 			if (m->stop) {
 				/* an entity handle the engine refuses without an exception: ceval's SystemError */
 				if (!PyErr_Occurred()) {

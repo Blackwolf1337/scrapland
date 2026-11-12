@@ -932,34 +932,22 @@ static void TC_Dump(tcBuf *b, const char *arg) {
 	}
 	for (int i = 0; i < names.n; i++) {
 		const char *name = names.names[i];
-		/* OBJLIB 9b: the module object and, for one without a .mod file, its dict */
+		/* OBJLIB 9b: the module object; the names of the registry, a module without a table by its string keys (both
+		 * sorted) */
 		PyObject *m = Script_ModuleLoaded(name);
 		if (!m || !PyModule_Check(m)) {
 			TC_Addf(b, "== %s missing\n", name);
 			continue;
 		}
 		TC_Addf(b, "== %s\n", name);
-		if (ModVar_Of(m, &ref)) {
+		if (ModVar_RefOf(m, &ref)) {
 			const char **vars;
 			int n = ModVar_Names(&ref, &vars);
 			for (int j = 0; j < n; j++) {
 				TC_DumpPy(b, name, vars[j], ModVar_Get(&ref, vars[j]), &seen);
 			}
 			Mem_Free(vars);
-			continue;
 		}
-		PyObject *d = PyModule_GetDict(m), *keys = PyDict_Keys(d);
-		if (!keys) {
-			continue;
-		}
-		PyList_Sort(keys);
-		for (int j = 0; j < PyList_Size(keys); j++) {
-			PyObject *k = PyList_GetItem(keys, j);
-			if (PyString_Check(k)) {
-				TC_DumpPy(b, name, PyString_AsString(k), PyDict_GetItem(d, k), &seen);
-			}
-		}
-		Py_DECREF(keys);
 	}
 	PyErr_Clear();
 	for (int i = 0; i < seen.n; i++) {
@@ -1227,7 +1215,8 @@ static void TC_In(tcBuf *b, const char *arg) {
 		quiet = 1;
 		arg += 3;
 	}
-	/* OBJLIB 9b: the module's dict as the globals of the statements */
+	/* the module dict as the key of the module: a pack module's variables are in the registry (TestExpr reads and
+	 * writes them there, ModVar_OfDict) */
 	TcX_Run(b, arg, PyModule_GetDict(Native_PyOf(&m)), quiet);
 	Native_Free(&m);
 }

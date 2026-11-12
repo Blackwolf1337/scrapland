@@ -736,7 +736,7 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
  * parsestr) on native values, the same texts taken. OBJLIB 6: Script_Literal goes over to this one when the data
  * paths are native (its constants are shared and interned as the compiler does, which Python code can see).
  */
-#define NLIT_DEPTH 32
+#define NLIT_DEPTH NATIVE_DEPTH
 
 typedef struct {
 	const char *p;
@@ -2898,6 +2898,10 @@ byte Native_FromPyAny(PyObject *o, nativeVal_t *v) {
 	return Native_FromPyIn(o, v, 0);
 }
 
+byte Native_FromPyAt(PyObject *o, nativeVal_t *v, int depth) {
+	return Native_FromPyIn(o, v, depth);
+}
+
 /* a value of the mirror from Python into *v (what *v owned is freed first): the short forms of Native_FromPy, and
  * with a long int, list, tuple or dict among the types any value of those types (texts of any length too) */
 static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
@@ -2926,25 +2930,80 @@ static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
 	return 0;
 }
 
-/* the variables from the dict of module: a missing one is the AttributeError of a module attribute (global 0) or the
- * NameError of a global the script reads (global 1) */
+/* v holds an object of native data (one that has no Python object yet), also inside a tuple */
+static byte Native_HoldsData(const nativeVal_t *v) {
+	if (v->type == NV_REF) {
+		return NObj_Py(v) == NULL;
+	}
+	for (int i = 0; v->type == NV_TUPLE && i < v->n; i++) {
+		if (Native_HoldsData(&v->items[i])) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* a variable's value v into *out (what *out owned is freed first) as Native_Take takes its Python object: a number,
+ * text or None of the types as it is, a value with native data by NObj_ArgOf (types with NV_OBJ) or NObj_Plain
+ * without a crossing, anything else through the Python object it has or makes by value */
+static byte Native_TakeVal(const nativeVal_t *v, unsigned types, nativeVal_t *out) {
+	Native_Free(out);
+	if ((v->type == NV_NONE || v->type == NV_INT || v->type == NV_FLOAT ||
+		(v->type == NV_STR && v->n < NATIVE_TEXT && (int)strlen(Native_Text(v)) == v->n)) && types & 1u << v->type) {
+		Native_Copy(out, v);
+		Py_XDECREF(out->obj);
+		out->obj = NULL;
+		return 1;
+	}
+	if (Native_HoldsData(v)) {
+		if (types & 1u << NV_OBJ) {
+			NObj_ArgOf(v, out);
+			return 1;
+		}
+		if (NObj_Plain(v, out) && types & 1u << out->type) {
+			return 1;
+		}
+		Native_Free(out);
+		return 0;
+	}
+	PyObject *o = NObj_Py(v) ? NObj_Py(v) : v->type != NV_ENT ? v->obj : NULL;
+	if (o) {
+		Py_INCREF(o);
+	} else if ((o = Native_ToPy(v)) == NULL) {
+		return 0;
+	}
+	byte ok = Native_Take(o, types, out);
+	Py_DECREF(o);
+	return ok;
+}
+
+/* v holds a list of n items */
+static byte Native_IsListOf(const nativeVal_t *v, int n) {
+	return (NObj_Kind(v) == NO_LIST || (v->type == NV_OBJ && PyList_Check(v->obj))) && NObj_Len(v) == n;
+}
+
+/* the variables of module: a missing one is the AttributeError of a module attribute (global 0) or the NameError of a
+ * global the script reads (global 1) */
 static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte global) {
 	for (const nativeVar_t *var = vars; var->name; var++) {
-		PyObject *o = global ? Script_Global(module, var->name) : Script_Attr(module, var->name);
-		if (!o) {
+		nativeVal_t o;
+		if (!(global ? ModVar_GlobalVal(module, var->name, &o) : ModVar_ModAttrVal(module, var->name, &o))) {
 			return 0;
 		}
 		byte ok = 1;
 		if (!var->count) {
-			ok = Native_Take(o, var->types, var->values);
-		} else if (!PyList_Check(o) || PyList_Size(o) != var->count) {
+			ok = Native_TakeVal(&o, var->types, var->values);
+		} else if (!Native_IsListOf(&o, var->count)) {
 			ok = 0;
 		} else {
 			for (int i = 0; ok && i < var->count; i++) {
-				ok = Native_Take(PyList_GetItem(o, i), var->types, &var->values[i]);
+				nativeVal_t k, item;
+				Native_SetInt(&k, i);
+				ok = NObj_GetItem(&o, &k, &item) && Native_TakeVal(&item, var->types, &var->values[i]);
+				Native_Free(&item);
 			}
 		}
-		Py_DECREF(o);
+		Native_Free(&o);
 		if (!ok) {
 			/* a value only Python code can have put there (the C writes the forms it takes) */
 			return Native_Raise(NE_TYPE, var->count ? "%s.%s: not a list of %d values the C module takes" :
@@ -3062,20 +3121,26 @@ byte Native_ImportGlobals(const char *module, const nativeVar_t *vars) {
 
 byte Native_Put(const char *module, const nativeVar_t *var, int index) {
 	const nativeVal_t *v = var->count ? &var->values[index] : var->values;
-	PyObject *o = Native_ToPy(v);
-	if (!o) {
+	nativeVal_t list, k;
+	if (!var->count) {
+		return ModVar_SetModAttrVal(module, var->name, v);
+	}
+	if (!ModVar_ModAttrVal(module, var->name, &list)) {
 		return 0;
 	}
-	int r;
-	if (var->count) {
-		PyObject *list = Script_Attr(module, var->name);
-		r = list ? PySequence_SetItem(list, index, o) : -1;
-		Py_XDECREF(list);
+	byte ok;
+	if (NObj_Kind(&list) == NO_LIST) {
+		Native_SetInt(&k, index);
+		ok = NObj_SetItem(&list, &k, v);
 	} else {
-		r = ModVar_SetModAttr(module, var->name, o);
+		/* PySequence_SetItem's errors for another value */
+		PyObject *l = Native_ToPy(&list), *o = l ? Native_ToPy(v) : NULL;
+		ok = o && PySequence_SetItem(l, index, o) == 0;
+		Py_XDECREF(o);
+		Py_XDECREF(l);
 	}
-	Py_DECREF(o);
-	return r == 0;
+	Native_Free(&list);
+	return ok;
 }
 
 /* ---- the native level files of batch G ---- */

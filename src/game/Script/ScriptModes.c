@@ -15,6 +15,7 @@
 #include "scrap/logic.h"
 #include "scrap/mathlib.h"
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/net.h"
 #include "scrap/pyentity.h"
 #include "scrap/ai.h"
@@ -289,8 +290,17 @@ static byte Mode_AttrFail(void) {
 }
 
 byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out) {
+	modVarRef_t mv;
 	if (PyEntity_Check(o)) {
 		return Native_EntVar(PyEntity_Get(o), ((cPyEntity *)o)->ref->name, var, out);
+	}
+	if (ModVar_Of(o, &mv)) {
+		/* a pack module's variable in the registry */
+		nativeVal_t v;
+		byte ok = ModVar_AttrVal(&mv, var, &v) &&
+			(NObj_Plain(&v, out) || Native_Raise(NE_TYPE, "%s: not a value native C takes", var));
+		Native_Free(&v);
+		return ok;
 	}
 	PyObject *r = ModVar_ObjAttr(o, var);
 	if (!r) {
@@ -302,8 +312,12 @@ byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out) {
 }
 
 byte Mode_HSet(PyObject *o, const char *var, const nativeVal_t *v) {
+	modVarRef_t mv;
 	if (PyEntity_Check(o)) {
 		return Native_EntSet(PyEntity_Get(o), ((cPyEntity *)o)->ref->name, var, v);
+	}
+	if (ModVar_Of(o, &mv)) {
+		return ModVar_SetAttrVal(&mv, var, v);
 	}
 	PyObject *x = Native_ToPy(v);
 	int r = x ? ModVar_SetObjAttr(o, var, x) : -1;
@@ -1304,42 +1318,54 @@ PyObject *Mode_GlobalPy(const char *module, const char *name) {
 }
 
 byte Mode_SetModVar(const char *module, const char *var, const nativeVal_t *v) {
-	PyObject *o = Native_ToPy(v);
-	byte ok = Mode_SetModPy(module, var, o);
-	Py_XDECREF(o);
-	return ok;
+	return ModVar_SetModAttrVal(module, var, v);
 }
 
 byte Mode_ModVar(const char *module, const char *var, nativeVal_t *out) {
-	PyObject *o = Script_Attr(module, var);
-	if (!o) {
+	nativeVal_t o;
+	if (!ModVar_ModAttrVal(module, var, &o)) {
 		return 0;
 	}
-	byte ok = Native_FromPyAny(o, out) ||
-		Native_Raise(NE_TYPE, "%s.%s: not a value native C takes", module, var);
-	Py_DECREF(o);
+	byte ok = NObj_Plain(&o, out) || Native_Raise(NE_TYPE, "%s.%s: not a value native C takes", module, var);
+	Native_Free(&o);
 	return ok;
 }
 
+/* the value of a variable of module: its global (NameError), or its attribute for another module */
+static byte Mode_VarOf(const char *module, const char *var, byte global, nativeVal_t *out) {
+	return global ? ModVar_GlobalVal(module, var, out) : ModVar_ModAttrVal(module, var, out);
+}
+
+/* the value holds a list or dict object (native data or a view): the in-place changes go to it natively */
+static byte Mode_IsContainer(const nativeVal_t *o) {
+	return NObj_Kind(o) == NO_LIST || NObj_Kind(o) == NO_DICT;
+}
+
 /* var[key] = v (v NULL: del var[key]) on the dict object of a module variable (its global, or its attribute for
- * another module), then the dict read back into *d (NULL: not kept) */
+ * another module), then the dict read back into *d (NULL: not kept). A value that is no list or dict: the item store
+ * of Python, with its error */
 static byte Mode_DictChange(const char *module, const char *var, byte global, nativeVal_t *d, const nativeVal_t *key,
 	const nativeVal_t *v) {
-	PyObject *o = global ? Script_Global(module, var) : Script_Attr(module, var);
-	PyObject *k = o ? Native_ToPy(key) : NULL;
-	PyObject *x = k && v ? Native_ToPy(v) : NULL;
-	int r = !k || (v && !x) ? -1 : v ? PyObject_SetItem(o, k, x) : PyObject_DelItem(o, k);
-	Py_XDECREF(x);
-	Py_XDECREF(k);
-	if (r == 0 && d) {
-		Native_Free(d);
-		if (!Native_FromPyAny(o, d)) {
-			r = -1;
-			Native_Raise(NE_TYPE, "%s.%s: not a value native C takes", module, var);
-		}
+	nativeVal_t o;
+	byte ok;
+	if (!Mode_VarOf(module, var, global, &o)) {
+		return 0;
 	}
-	Py_XDECREF(o);
-	return r == 0;
+	if (Mode_IsContainer(&o)) {
+		ok = v ? NObj_SetItem(&o, key, v) : NObj_DelItem(&o, key);
+	} else {
+		PyObject *po = Native_ToPy(&o), *k = po ? Native_ToPy(key) : NULL, *x = k && v ? Native_ToPy(v) : NULL;
+		ok = k && (!v || x) && (v ? PyObject_SetItem(po, k, x) : PyObject_DelItem(po, k)) == 0;
+		Py_XDECREF(x);
+		Py_XDECREF(k);
+		Py_XDECREF(po);
+	}
+	if (ok && d) {
+		Native_Free(d);
+		ok = NObj_Plain(&o, d) || Native_Raise(NE_TYPE, "%s.%s: not a value native C takes", module, var);
+	}
+	Native_Free(&o);
+	return ok;
 }
 
 byte Mode_DictPut(const char *module, const char *var, nativeVal_t *d, const nativeVal_t *key, const nativeVal_t *v) {
@@ -1364,32 +1390,55 @@ byte Mode_G(const char *module, const char *name, nativeVal_t *out) {
 	return Native_ImportGlobals(module, vars);
 }
 
-/* var.method(args) of a variable of a module (a new reference, NULL with the error) */
-static PyObject *Mode_VarMethod(const char *module, const char *var, byte global, const char *method, PyObject *arg) {
-	PyObject *o = global ? Script_Global(module, var) : Script_Attr(module, var);
-	PyObject *r = o ? (arg ? Script_Method(o, method, "(O)", arg) : Script_Method(o, method, "()")) : NULL;
-	Py_XDECREF(o);
-	return r;
+/* var.method(a[0], ..., a[n - 1]) of a variable of a module (n at most 2) into *out (Native_Free it): on a list or dict
+ * object natively, on another value through Python (Script_Method, its errors); 0 with the error */
+static byte Mode_VarMethod(const char *module, const char *var, byte global, const char *method, const nativeVal_t *a,
+	int n, nativeVal_t *out) {
+	nativeVal_t o;
+	byte ok;
+	Native_SetNone(out);
+	if (!Mode_VarOf(module, var, global, &o)) {
+		return 0;
+	}
+	if (Mode_IsContainer(&o)) {
+		ok = NObj_CallMethod(&o, method, a, n, out);
+	} else {
+		PyObject *po = Native_ToPy(&o), *x = po && n > 0 ? Native_ToPy(&a[0]) : NULL;
+		PyObject *y = x && n > 1 ? Native_ToPy(&a[1]) : NULL, *r = NULL;
+		if (po && (n < 1 || x) && (n < 2 || y)) {
+			r = n == 0 ? Script_Method(po, method, "()") : n == 1 ? Script_Method(po, method, "(O)", x) :
+				Script_Method(po, method, "(OO)", x, y);
+		}
+		ok = r != NULL;
+		if (r) {
+			Native_Arg(r, out);
+		}
+		Py_XDECREF(r);
+		Py_XDECREF(y);
+		Py_XDECREF(x);
+		Py_XDECREF(po);
+	}
+	Native_Free(&o);
+	return ok;
 }
 
 /* var.method() of a variable of a module (keys, values) as a native value */
 static byte Mode_VarList(const char *module, const char *var, byte global, const char *method, nativeVal_t *out) {
-	PyObject *r = Mode_VarMethod(module, var, global, method, NULL);
-	if (!r) {
+	nativeVal_t r;
+	if (!Mode_VarMethod(module, var, global, method, NULL, 0, &r)) {
 		return 0;
 	}
-	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.%s(): not a value native C takes", module, var, method);
-	Py_DECREF(r);
+	byte ok = NObj_Plain(&r, out) || Native_Raise(NE_TYPE, "%s.%s.%s(): not a value native C takes", module, var, method);
+	Native_Free(&r);
 	return ok;
 }
 
 /* var.method(v) of a variable of a module (append, remove), in place */
 byte Mode_VarCall(const char *module, const char *var, byte global, const char *method, const nativeVal_t *v) {
-	PyObject *x = Native_ToPy(v);
-	PyObject *r = x ? Mode_VarMethod(module, var, global, method, x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	return r != NULL;
+	nativeVal_t r;
+	byte ok = Mode_VarMethod(module, var, global, method, v, 1, &r);
+	Native_Free(&r);
+	return ok;
 }
 
 byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *out) {
@@ -1397,11 +1446,9 @@ byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *ou
 }
 
 int Mode_HasKey(const char *module, const char *var, byte global, const nativeVal_t *key) {
-	PyObject *k = Native_ToPy(key);
-	PyObject *r = k ? Mode_VarMethod(module, var, global, "has_key", k) : NULL;
-	int t = r ? PyObject_IsTrue(r) : -1;
-	Py_XDECREF(r);
-	Py_XDECREF(k);
+	nativeVal_t r;
+	int t = Mode_VarMethod(module, var, global, "has_key", key, 1, &r) ? Native_True(&r) : -1;
+	Native_Free(&r);
 	return t;
 }
 
@@ -1440,8 +1487,7 @@ byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out) {
 }
 
 byte Mode_Put(const char *module, const char *var, nativeVal_t *slot, const nativeVal_t *v) {
-	PyObject *o = Native_ToPy(v);
-	if (!o || !Script_SetGlobal(module, var, o)) {
+	if (!ModVar_SetGlobalVal(module, var, v)) {
 		return 0;
 	}
 	if (slot && slot != v) {
@@ -3353,21 +3399,45 @@ byte Mode_PreloadTexture(const nativeVal_t *name) {
 }
 
 byte Mode_ListAddG(const char *module, const char *var, const nativeVal_t *v, byte first) {
-	/* OBJLIB 5: PyList_Append or PyList_Insert on the list object of the global (the SystemError of a value that is no
-	 * list, as the C ports changed it) */
-	PyObject *l = Script_Global(module, var), *x = l ? Native_ToPy(v) : NULL;
-	int r = !x ? -1 : first ? PyList_Insert(l, 0, x) : PyList_Append(l, x);
-	Py_XDECREF(x);
-	Py_XDECREF(l);
-	return r == 0;
+	/* PyList_Append or PyList_Insert on the list object of the global (the SystemError of a value that is no list, as
+	 * the C ports changed it) */
+	nativeVal_t o, a[2], r;
+	byte ok;
+	if (!ModVar_GlobalVal(module, var, &o)) {
+		return 0;
+	}
+	if (NObj_Kind(&o) == NO_LIST) {
+		Native_SetInt(&a[0], 0);
+		a[1] = *v;
+		ok = first ? NObj_CallMethod(&o, "insert", a, 2, &r) : NObj_CallMethod(&o, "append", v, 1, &r);
+		Native_Free(&r);
+	} else {
+		PyObject *l = Native_ToPy(&o), *x = l ? Native_ToPy(v) : NULL;
+		ok = x && (first ? PyList_Insert(l, 0, x) : PyList_Append(l, x)) == 0;
+		Py_XDECREF(x);
+		Py_XDECREF(l);
+	}
+	Native_Free(&o);
+	return ok;
 }
 
 byte Mode_DelItemG(const char *module, const char *var, int i) {
-	/* OBJLIB 5: PySequence_DelItem on the object of the global */
-	PyObject *l = Script_Global(module, var);
-	int r = l ? PySequence_DelItem(l, i) : -1;
-	Py_XDECREF(l);
-	return r == 0;
+	/* PySequence_DelItem on the object of the global */
+	nativeVal_t o, k;
+	byte ok;
+	if (!ModVar_GlobalVal(module, var, &o)) {
+		return 0;
+	}
+	if (NObj_Kind(&o) == NO_LIST) {
+		Native_SetInt(&k, i);
+		ok = NObj_DelItem(&o, &k);
+	} else {
+		PyObject *l = Native_ToPy(&o);
+		ok = l && PySequence_DelItem(l, i) == 0;
+		Py_XDECREF(l);
+	}
+	Native_Free(&o);
+	return ok;
 }
 /* ---- the vehicle modules of batch L (Vehicles, VehiclesNPC, ShipMaker, SputnikInterface) ---- */
 
@@ -5079,7 +5149,15 @@ byte Mode_VBoundV(const nativeVal_t *h, const char *method, nativeVal_t *out) {
 }
 
 int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out) {
-	PyObject *g = Script_Attr(x->module, "__dict__"), *loc = g ? PyDict_New() : NULL, *v = NULL;
+	/* the module dict as the globals: the key of its variables in the registry (Script_NameChain reads through it) */
+	PyObject *m = Script_Module(x->module), *g = m && PyModule_Check(m) ? PyModule_GetDict(m) : NULL;
+	PyObject *loc = g ? PyDict_New() : NULL, *v = NULL;
+	if (m && !g) {
+		/* what module_getattr of no module gives for __dict__ */
+		Py_DECREF(m);
+		m = NULL;
+		PyErr_SetString(PyExc_AttributeError, "__dict__");
+	}
 	byte ok = loc != NULL;
 	Native_SetNone(out);
 	for (int i = 0; ok && i < x->n; i++) {
@@ -5089,7 +5167,7 @@ int Mode_EvalChain(const execScope_t *x, const char *text, nativeVal_t *out) {
 	}
 	int found = ok ? Script_NameChain(loc, g, text, &v) : -1;
 	Py_XDECREF(loc);
-	Py_XDECREF(g);
+	Py_XDECREF(m);
 	if (!ok) {
 		return 0;
 	}
@@ -5332,9 +5410,10 @@ byte Mode_SchedFn(double time, const nativeVal_t *fn, const nativeVal_t *args, i
 }
 
 byte Mode_VarCall0(const char *module, const char *var, byte global, const char *method) {
-	PyObject *r = Mode_VarMethod(module, var, global, method, NULL);
-	Py_XDECREF(r);
-	return r != NULL;
+	nativeVal_t r;
+	byte ok = Mode_VarMethod(module, var, global, method, NULL, 0, &r);
+	Native_Free(&r);
+	return ok;
 }
 
 /* Mode_NumOp with the result as Native_Arg makes it (Mode_RefOp keeps it by reference); *out None when it fails */
@@ -5453,12 +5532,10 @@ byte Mode_PutFromMod(const char *module, const char *var, const char *src, const
 
 byte Mode_VarCall2(const char *module, const char *var, byte global, const char *method, const nativeVal_t *a,
 	const nativeVal_t *b) {
-	PyObject *o = global ? Script_Global(module, var) : Script_Attr(module, var);
-	PyObject *x = o ? Native_ToPy(a) : NULL, *y = x ? Native_ToPy(b) : NULL;
-	PyObject *r = y ? Script_Method(o, method, "(OO)", x, y) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(y);
-	Py_XDECREF(x);
-	Py_XDECREF(o);
-	return r != NULL;
+	nativeVal_t ab[2], r;
+	ab[0] = *a;
+	ab[1] = *b;
+	byte ok = Mode_VarMethod(module, var, global, method, ab, 2, &r);
+	Native_Free(&r);
+	return ok;
 }
