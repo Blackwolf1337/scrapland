@@ -14,12 +14,12 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the PyMethodDef entries are adapters with
  * the argument formats of the C port. The variables of the module are read where the script reads them and written at
- * once (OBJLIB 5); the ships, the camera and the platform are handle values (OBJLIB 7), editedShips and tabPixelX are
+ * once; the ships, the camera and the platform are handle values (OBJLIB 7), editedShips and tabPixelX are
  * changed in place on their objects. HangarTab, the tabs, Elevator, Vehicles, Parking, Menu, SaveGame, Ffa and the
  * module's own functions the script calls as its globals go through their refs (PORT_CALL, PORT_OWN: the seam,
- * OBJLIB 5); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time and
- * called through the entries of the functions there (MODE_CBATTR); the engine calls go through their refs (stage 7,
- * those of SScorer and SSound among them); the .def runner takes Python values
+ * OBJLIB 5 (9c)); the menu of the multiplayer game (PCMenu or XboxMenu) and Menu's link functions are named at run time
+ * and called through the entries of the functions there (MODE_CBATTR); the engine calls go through their refs (stage
+ * 7, those of SScorer and SSound among them); the .def runner takes Python values
  * (OBJLIB 6). The texts of the ships in the save and engine variables are made as before.
  */
 #include <stdarg.h>

@@ -10,15 +10,15 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the variables where the script
  * reads them as its globals; GateKeepers and GKDoors change in place, LocalCallFunc and LocalParams are written at
- * once (OBJLIB 5). The gatekeeper objects of GateKeepers, the door functions and the callbacks are the objects
- * themselves (OBJLIB 5 and 7: they are set and called the Python way), and DoorFoe keeps the foe group it gets (the
+ * once. The gatekeeper objects of GateKeepers, the door functions and the callbacks are the objects themselves
+ * (OBJLIB 5 (9c) and 7: they are set and called the Python way), and DoorFoe keeps the foe group it gets (the
  * group tuples of the module keep their identity). Entities are handle values; Scrap.GetEntity, GetAlarm,
  * ConsoleError and SScorer.SetMsgText go through their seams (fc-gk-po records or swaps them).
  *
- * Direct calls (stage 3): Elevator and Speech through their refs (PORT_CALL: the port seam, OBJLIB 5). apply of
+ * Direct calls (stage 3): Elevator and Speech through their refs (PORT_CALL: the port seam, OBJLIB 5 (9c)). apply of
  * LocalCallFunc and the door functions take the entry when the value is a port's own function (stage 4:
  * MODE_CBAPPLYSEQV, Mode_CallArgs), else they are called the Python way; EndOfSpeech is put into Speech as the object
- * it is (OBJLIB 5).
+ * it is (OBJLIB 5 (9c)).
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -27,7 +27,7 @@
 
 #define GK "GateKeeper"
 
-/* GateKeepers[name] into gc (the object itself, OBJLIB 5) */
+/* GateKeepers[name] into gc (the object itself, OBJLIB 5 (9c: an instance)) */
 static byte Gk_At(const nativeVal_t *name, nativeVal_t *gc) {
 	nativeVal_t gks = { 0 };
 	byte ok = Mode_G(GK, "GateKeepers", &gks) && Mode_Sub(&gks, name, gc);
@@ -252,8 +252,8 @@ static byte GateKeeper_DoorFoe_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 	return Mode_AtSet(GK, "GateKeepers", &a[0], "FoeType", &a[1]) && Mode_AtSet(GK, "GateKeepers", &a[0], "MPass", &zero);
 }
 
-/* DoorFoe through Python: FoeType (argument 1) kept as the object it is (OBJLIB 5: the group list
- * GateKeeper.PoliceGroupGateKeeper itself; Mode_EntryObj) */
+/* DoorFoe through Python: FoeType (argument 1) kept as the object it is (OBJLIB 5 (7e: Mode_EntryObj): the
+ * group list GateKeeper.PoliceGroupGateKeeper itself) */
 static PyObject *GateKeeper_DoorFoe(PyObject *self, PyObject *args) {
 	(void)self;
 	return Mode_EntryObj(args, GateKeeper_DoorFoe_E, 1 << 1);

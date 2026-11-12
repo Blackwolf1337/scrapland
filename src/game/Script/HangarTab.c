@@ -12,7 +12,7 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the PyMethodDef entries are adapters with
  * the argument formats of the C port. The variables of the module are read where the script reads them and written at
- * once (OBJLIB 5); prevShip, miniShip and the ships of ShipEdit.editedShips are handle values (OBJLIB 7), the lists of
+ * once; prevShip, miniShip and the ships of ShipEdit.editedShips are handle values (OBJLIB 7), the lists of
  * ShipEdit are changed in place on their objects. ShipEdit, ShipMaker and Vehicles are called through their refs
  * (PORT_CALL: directly while the attribute holds the port's function, else by name), the module's own functions through
  * its globals as the script calls them (PORT_OWN, the same seam on the global). Menu's link functions are named at run

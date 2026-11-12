@@ -107,9 +107,10 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
  *
  * The lines the level scripts repeat, on native values (scrap/scriptmodes.h). Each returns 1, or 0
  * with the error of the script raised; conditions are 1, 0, or -1 with the error. Entities the script holds are
- * handle values (NV_OBJ, OBJLIB 7). Calls of other ports go through PORT_CALL (the port seam, OBJLIB 5); the .def
- * sections, builtins and engine functions stay by name (OBJLIB 6, 9, 7), the functions of the level module through its globals (a mission may replace one), the
- * variables of the level module are read where the script reads them and written through at once (OBJLIB 5).
+ * handle values (NV_OBJ, OBJLIB 7). Calls of other ports go through PORT_CALL (the port seam, OBJLIB 5 (9c)); the .def
+ * sections, builtins and engine functions stay by name (OBJLIB 6, 9, 7), the functions of the level module through its
+ * globals (a mission may replace one), the variables of the level module are read where the script reads them and
+ * written through at once.
  */
 
 /* by name: a .def section of the module through its global, a builtin or an engine function (OBJLIB 6, 9, 7) */
@@ -118,7 +119,7 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 
 /* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
 #define LvN_ModGet Mode_ModGet
-/* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5) */
+/* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5 (9c)) */
 #define LvN_ModSetGlobal Mode_ModSetGlobal
 /* module.var = None */
 #define LvN_ModNone Mode_ModNone
@@ -127,7 +128,7 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v);
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v);
 /* module.var.append(name) with name the global of gmod (a function): the variable, then the global, then the append
- * method of whatever value is there (OBJLIB 5: the list of another module in place) */
+ * method of whatever value is there (the list of another module in place) */
 #define LvN_ModAppendG Mode_AppendG
 /* the global name of module (a function, a list: any object) as a value */
 byte LvN_GObj(const char *module, const char *name, nativeVal_t *out);
@@ -283,7 +284,7 @@ byte LvN_SetOnFloor(const nativeVal_t *name);
 /* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar(...)) in the
  * globals of module */
 byte LvN_AcShips(const char *module, const char *ships);
-/* module.var = a list of texts (NULL ends them) of another module (OBJLIB 5) */
+/* module.var = a list of texts (NULL ends them) of another module */
 byte LvN_ModTexts(const char *module, const char *var, const char *const *texts);
 /* h.var = (x, y, z) of three ints */
 byte LvN_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z);
@@ -308,7 +309,7 @@ byte LvN_GAttr(const char *module, const char *name, const char *var, nativeVal_
 byte LvN_PutNone(const char *module, const char *name);
 /* h.var = the global name of module */
 byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name);
-/* module.var = v of another module as Script_SetVar sets it: an error is dropped (OBJLIB 5) */
+/* module.var = v of another module as Script_SetVar sets it: an error is dropped */
 #define LvN_SetVar Mode_ModPut
 /* the player is there (usr into *usr): 1, 0, -1 */
 int LvN_Usr(nativeVal_t *usr);

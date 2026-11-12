@@ -7,7 +7,7 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
  * PyMethodDef entries are adapters. The variables of the other modules are read where the script reads them
- * (HangarTab.prevShip, the ship being edited, as a handle value: OBJLIB 5 and 7; ShipMaker.ShipTon and the costs,
+ * (HangarTab.prevShip, the ship being edited, as a handle value: OBJLIB 7; ShipMaker.ShipTon and the costs,
  * ShipEdit.armorPieceWeight). HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly
  * while the attribute holds the port's function, else by name), the module's own functions through its globals as
  * the script calls them (PORT_OWN, the same seam on the global). The link functions of Menu come from a from import

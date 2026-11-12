@@ -984,6 +984,17 @@ static byte Mod_Unary(modParse_t *m, nativeVal_t *out) {
 	return 1;
 }
 
+/* a + b or a * b where a list object of native data takes part: its items by value (shared as they are) with
+ * Native_Arith; 1 with *ok its result, 0 when the operands are no such list and plain values (Python decides) */
+static byte Mod_SeqOp(const nativeVal_t *a, const nativeVal_t *b, char op, nativeVal_t *r, byte *ok) {
+	const nativeVal_t *da = NObj_Kind(a) == NO_LIST ? NObj_ListData(a) : a, *db = NObj_Kind(b) == NO_LIST ? NObj_ListData(b) : b;
+	if (!da || !db || (da == a && !Mod_Plain(a)) || (db == b && !Mod_Plain(b))) {
+		return 0;
+	}
+	*ok = Native_Arith(op, da, db, r);
+	return 1;
+}
+
 /* a op b into *a (b made: b was made without an error; both freed): Native_Arith on plain values (long ints only add
  * and subtract there), else PyNumber_Add and the others */
 static byte Mod_Binary(modParse_t *m, nativeVal_t *a, char op, nativeVal_t *b, byte made) {
@@ -994,6 +1005,8 @@ static byte Mod_Binary(modParse_t *m, nativeVal_t *a, char op, nativeVal_t *b, b
 		if (Mod_Plain(a) && Mod_Plain(b) &&
 			(op == '+' || op == '-' || !(Native_Holds(a, 1u << NV_LONG) || Native_Holds(b, 1u << NV_LONG)))) {
 			ok = Native_Arith(op, a, b, &r);
+		} else if ((op == '+' || op == '*') && (NObj_Native(a) || NObj_Native(b)) && Mod_SeqOp(a, b, op, &r, &ok)) {
+			/* a list object of native data concatenated or repeated (the items themselves, as list_concat) */
 		} else {
 			PyObject *pa = Mod_ToPy(m, a), *pb = pa ? Mod_ToPy(m, b) : NULL, *pr = NULL;
 			if (pb) {
@@ -1073,6 +1086,18 @@ static int Mod_Relation(modParse_t *m, const nativeVal_t *a, const nativeVal_t *
 		}
 		*cmp = Native_Compare(a, b);
 		return 1;
+	}
+	if ((NObj_Native(a) || NObj_Native(b)) && (NObj_Native(a) || Mod_Plain(a)) && (NObj_Native(b) || Mod_Plain(b))) {
+		/* the same on a list, dict or other object of native data and plain values */
+		if (is) {
+			return NObj_Is(a, b) != not;
+		}
+		if (in) {
+			int r = NObj_Contains(b, a);
+			return r < 0 ? -1 : r != not;
+		}
+		*cmp = NObj_Compare(a, b);
+		return *cmp && Native_Failed() ? -1 : 1;
 	}
 	PyObject *pa = Mod_ToPy(m, a), *pb = pa ? Mod_ToPy(m, b) : NULL;
 	int r = -1;

@@ -16,7 +16,7 @@
  * code (the save variables and the entity list it creates). The scorer is data/menus/race.def.
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the state and the tables
- * where the script reads them and write them back at once, the lists and dicts changed in place (OBJLIB 5). The save
+ * where the script reads them and write them back at once, the lists and dicts changed in place. The save
  * and engine variables, the money, the language texts, the camera name and the entity lists are C; Scrap.Set, SetMoney,
  * SetAlarm, IncSaveVar, UsrEntity, GetEntity, CreateEntity, Preload3DObject, the dummy search, the scheduler,
  * SInput.Bind, SScorer.Set and SetMsgText, SSound.Play and LoadSound and SAI.GetStateVehicle go through their seams,
@@ -24,10 +24,10 @@
  * SaveGame, VehiclesNPC, OutMap, RacerScorer) and the module's own functions (through its globals, as the script calls
  * them) go through their refs (PORT_CALL, PORT_OWN, stage 3), string.find and replace through the native twins, and so
  * do SAI.SetStateVehicle, InitVehicleRace and AddVehicleRace, Scrap.SetCam, the call function of Scrap, SVec.GetAngle
- * and CProd and SInput.GetActionSet (stage 7). The class VehiclesNPC.cShipAI stays by name (OBJLIB 5: a class the .mod
- * defines); the hooks, GetDealType and the races of MapRace are called as the values
- * the script calls, through the entries of port functions (Mode_CallArgs, MODE_CBGLOBAL; OBJLIB 5: the variables); the
- * scorer file takes its $names as a dict (OBJLIB 6).
+ * and CProd and SInput.GetActionSet (stage 7). The class VehiclesNPC.cShipAI stays by name (OBJLIB 5 (9c: a class the
+ * .mod defines)); the hooks, GetDealType and the races of MapRace are called as the values
+ * the script calls, through the entries of port functions (Mode_CallArgs, MODE_CBGLOBAL; OBJLIB 5 (9c: functions as
+ * values)); the scorer file takes its $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
 
@@ -361,8 +361,8 @@ static byte Rm_Result(const nativeVal_t *veh) {
 }
 
 /* EndOfRace(ItemName, VehicleName): the end of a race; VehicleName is the winner, or "Alarm", "Killed",
- * "CounterMeasure", "Left" (or None for no result). EndOfRaceCallback replaces the result (OBJLIB 5: the callbacks
- * of Menu, Parking and Alarm set to None in their modules) */
+ * "CounterMeasure", "Left" (or None for no result). EndOfRaceCallback replaces the result (the callbacks of
+ * Menu, Parking and Alarm set to None in their modules) */
 static byte Rm_EndOfRace(const nativeVal_t *item, const nativeVal_t *veh) {
 	static const char *const mods[] = { "Speech", "Parking", "Alarm", "Menu", "SaveGame", "Challenge", "string" };
 	modeVals_t t = { .n = 0 };
@@ -847,8 +847,8 @@ static byte Rm_Counter(const nativeVal_t *num, nativeVal_t *const *rgb) {
 	return Mode_Done(&t, Mode_ScorerSet(Mode_I(&t, 0), item, "Text", num));
 }
 
-/* a new AI profile of the save variable Race.Profile (OBJLIB 5: the class VehiclesNPC.cShipAI by name; the attribute
- * SetAIProfile looked up after the save variable, which cannot fail) */
+/* a new AI profile of the save variable Race.Profile (OBJLIB 5 (9c: the class VehiclesNPC.cShipAI by name); the
+ * attribute SetAIProfile looked up after the save variable, which cannot fail) */
 static byte Rm_Profile(nativeVal_t *pd) {
 	nativeVal_t prof;
 	if (!Native_CallMod("VehiclesNPC", "cShipAI", pd, "")) {
@@ -1113,8 +1113,8 @@ static byte Rm_NameOponGoItem(const nativeVal_t *item, nativeVal_t *out) {
 	return Mode_Done(&t, 1);
 }
 
-/* GetDealType() == "Race": 1, 0, -1 (OBJLIB 5: GetDealType is a variable of the module, LocalGetDealType by its .mod
- * line or what a mission puts there, called through its entry) */
+/* GetDealType() == "Race": 1, 0, -1 (OBJLIB 5 (9c: a function as a value): GetDealType is a variable of the module,
+ * LocalGetDealType by its .mod line or what a mission puts there, called through its entry) */
 static int Rm_IsRace(void) {
 	nativeVal_t r = { 0 };
 	int is = MODE_CBGLOBAL(RM, "GetDealType", &r, "") ? LvN_EqS(&r, "Race") : -1;
@@ -1669,7 +1669,7 @@ static byte Rm_MissionScorer(const nativeVal_t *id) {
 }
 
 /* InitShipIAProfile(ChallengeFoeType, profileType): an AI profile in VehiclesNPC.AIProf for each ship of the kind in
- * AISHIPS ("S<kind><n>_<profile>"); OBJLIB 5: the profile objects of the class VehiclesNPC.cShipAI by name */
+ * AISHIPS ("S<kind><n>_<profile>"); OBJLIB 5 (9c: the profile objects of the class VehiclesNPC.cShipAI by name) */
 static byte Rm_InitShipIAProfile(const nativeVal_t *foe, const nativeVal_t *profile) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cntr = Mode_V(&t), *ais = Mode_V(&t), *ships = Mode_V(&t);

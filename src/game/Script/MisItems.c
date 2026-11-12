@@ -10,11 +10,11 @@
  *
  * Native C (docs/objlib-plan.md, stages 2 and 3): the functions call the engine in C and work on C values; the
  * PyMethodDef entries are adapters. The variables are read where the script reads them (its globals, Init.Outdoor
- * and Init.SuperDealModule as attributes, OBJLIB 5); CrazyWingList is appended to in place. The module's own
- * functions the script calls as its globals (GetMoneyModel, GetObjModel, CreateItem, CreateCoin, GetTargetReward,
- * InitCrazyWing, SetCrazy, AllInList) go through their refs as globals (PORT_OWN), Items and SaveGame.SaveMoney
- * through theirs (PORT_CALL). The Activate functions given to CreateItem and the functions the scheduler keeps
- * (DeCrazy, CrazyWing) are values the scheduler takes as entries (stage 4: Port_Scheduled). Entities are handle values
+ * and Init.SuperDealModule as attributes, OBJLIB 5 (9c: a module as a value)); CrazyWingList is appended to in place.
+ * The module's own functions the script calls as its globals (GetMoneyModel, GetObjModel, CreateItem, CreateCoin,
+ * GetTargetReward, InitCrazyWing, SetCrazy, AllInList) go through their refs as globals (PORT_OWN), Items and
+ * SaveGame.SaveMoney through theirs (PORT_CALL). The Activate functions given to CreateItem and the functions the
+ * scheduler keeps (DeCrazy, CrazyWing) are values the scheduler takes as entries (stage 4: Port_Scheduled). Entities are handle values
  * (OBJLIB 7): the engine gives them to the callbacks and the scripts pass them on.
  */
 #include <string.h>
@@ -732,7 +732,7 @@ static byte Cw_Photo(const nativeVal_t *e, nativeVal_t *out) {
 	if (seen > 0) {
 		ok = Cw_Prize("SecondPrize", "CrazyWindRepeat", NULL);
 	} else if (seen == 0) {
-		/* CrazyWingList.append(ctr), the list of the module in place (OBJLIB 5) */
+		/* CrazyWingList.append(ctr), the list of the module in place */
 		ok = Mode_Append("CrazyWing", "CrazyWingList", ctr) && PORT_OWN(CrazyWing, AllInList, all, "");
 		if (ok && Native_True(all)) {
 			/* then Scrap.Achievement(12), which does nothing on the PC */

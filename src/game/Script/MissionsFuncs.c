@@ -11,7 +11,7 @@
  * them as their globals.
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
- * script reads them and write them back at once (OBJLIB 5: the missions and the cases read and set them); the lists
+ * script reads them and write them back at once (the missions and the cases read and set them); the lists
  * targetsList and currentBertos change in place, and the list SetMultipleMissionTargets gets becomes targetsList itself.
  * The save variables, the engine variables, the time, the language texts, the entity lists and string.upper are C;
  * the save texts are made with the 1.5.2 repr and read with the literal reader of the native layer. Scrap.UsrEntity,
@@ -21,12 +21,12 @@
  * Entities are handle values and the characters of CharsNPC.CharRes and their option lists the objects they are
  * (OBJLIB 7, 5). The other ports (SaveGame, Speech, Menu, Challenge, PhoneCab, Items, VehiclesNPC, Vehicles,
  * RacerScorer, Scorer) and the functions of the module the script calls through its globals are called through their
- * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5). The hooks OnNewWaveCallback and OnBertoDeathCallback (values
- * a mission puts into the module, OBJLIB 5) and the builders of the super deal types (a table of names) are called
- * through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler by name or
- * value, the revenge and the auto save among them, take their entries (stage 4: Port_Scheduled). The code strings of
- * OnAbort and OnVictory run through the reader of the lines the game execs (ScriptExec.c), on native values with the
- * calls through the entries.
+ * refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5 (9c)). The hooks OnNewWaveCallback and OnBertoDeathCallback
+ * (values a mission puts into the module, OBJLIB 5 (9c)) and the builders of the super deal types (a table of names)
+ * are called through the entries of the functions they hold (MODE_CBGLOBAL). The functions given to the scheduler by
+ * name or value, the revenge and the auto save among them, take their entries (stage 4: Port_Scheduled). The code
+ * strings of OnAbort and OnVictory run through the reader of the lines the game execs (ScriptExec.c), on native
+ * values with the calls through the entries.
  */
 #include <limits.h>
 #include <stdlib.h>
@@ -320,7 +320,7 @@ static byte Mf_SetMissionTarget(const nativeVal_t *tgt) {
 	return ok;
 }
 
-/* SetMultipleMissionTargets(tgtList): several targets; the list becomes targetsList itself (OBJLIB 5: the mission
+/* SetMultipleMissionTargets(tgtList): several targets; the list becomes targetsList itself (the mission
  * keeps it and sees DelMissionTarget take its names out) */
 static byte Mf_SetMultipleMissionTargets(const nativeVal_t *list) {
 	/* a reference is the object itself, a native list becomes a new list object (as its call through Python makes it) */
@@ -383,8 +383,8 @@ static int Mf_AttrTrue(const nativeVal_t *cls, const char *name) {
 
 /* CharMissionDialog(UsrName, CharName, optId, FullOption): the talk of a mission character from its spawn point in
  * CharsNPC.CharRes (initMsg, initAns, speechOptionsList, afterInitSpeechFunc once); the character and its lists are
- * the objects of CharsNPC, held by reference (OBJLIB 5 and 7: the character is a class instance; its attributes go to
- * Speech as the objects they are) */
+ * the objects of CharsNPC, held by reference (OBJLIB 5 (9c: the character is a class instance) and 7; its attributes go
+ * to Speech as the objects they are) */
 static byte Mf_CharMissionDialog(const nativeVal_t *usr, const nativeVal_t *name, const nativeVal_t *opt) {
 	if (!Mode_Import("Speech") || !Mode_Import("CharsNPC") || !Mode_SetModVar("Speech", "PlayerName", usr) ||
 		!Mode_SetModVar("Speech", "NPCName", name)) {
@@ -651,7 +651,7 @@ static byte Mf_CreateBertos(void) {
 	if (!Mode_Import("Parking") || !LvN_PutI(MF, "launchNewWave", 1)) {
 		return Mode_Done(&t, 0);
 	}
-	/* the hook is a value a mission puts into the module (OBJLIB 5), called through its entry */
+	/* the hook is a value a mission puts into the module (OBJLIB 5 (9c)), called through its entry */
 	int hook = LvN_GTrue(MF, "OnNewWaveCallback");
 	if (hook < 0 || (hook && !MODE_CBGLOBAL(MF, "OnNewWaveCallback", NULL, "")) || !Mode_ModNone("Parking", "SwitchVehicleMissionCallback") ||
 		!Mode_UsrHandle(usr)) {
@@ -711,7 +711,7 @@ static byte Mf_OnBertoDeath(const nativeVal_t *looser, const nativeVal_t *winner
 			}
 		}
 	}
-	/* the hook is a value a mission puts into the module (OBJLIB 5), called through its entry */
+	/* the hook is a value a mission puts into the module (OBJLIB 5 (9c)), called through its entry */
 	int hook = LvN_GTrue(MF, "OnBertoDeathCallback");
 	if (hook <= 0) {
 		return Mode_Done(&t, hook == 0);
@@ -1314,7 +1314,7 @@ MODE_ADAPTER(MissionsFuncs, CreatePhotoObject)
 MODE_ADAPTER(MissionsFuncs, SetInvulnerableShipsInList)
 MODE_ADAPTER(MissionsFuncs, OnSuperDealFinish)
 
-/* SetMultipleMissionTargets(tgtList): the list object itself into targetsList (OBJLIB 5: the adapter hands it over
+/* SetMultipleMissionTargets(tgtList): the list object itself into targetsList (OBJLIB 5 (7e): the adapter hands it over
  * by reference; a native caller's list becomes a new list object, as its call through Python makes it) */
 static byte MissionsFuncs_SetMultipleMissionTargets_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;

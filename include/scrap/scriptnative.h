@@ -6,8 +6,9 @@
  * against the texts the interpreter gave, stored before it was removed).
  *
  * Transitional parts are marked OBJLIB <stage> where they are used (the stage of the plan that removes them): the
- * mirror of module state in the module dict (OBJLIB 5), the generic calls of the seams of engine functions a test replaces (OBJLIB 7),
- * the Python errors behind Native_Raise (OBJLIB 7), the conversions to and from Python objects (OBJLIB 9).
+ * functions, classes and modules held as Python values (OBJLIB 5 (9c)), the generic calls of the seams of engine
+ * functions a test replaces (OBJLIB 7), the Python errors behind Native_Raise (OBJLIB 7), the conversions to and from
+ * Python objects (OBJLIB 9).
  */
 #ifndef SCRAP_SCRIPTNATIVE_H
 #define SCRAP_SCRIPTNATIVE_H
@@ -90,7 +91,7 @@ typedef struct nativeVal_s {
 	char *text;			/* NV_STR, NV_LONG: a text of NATIVE_TEXT or more bytes (owned), else NULL */
 	struct nativeVal_s *items;	/* NV_LIST, NV_TUPLE, NV_DICT (owned), else NULL */
 	PyObject *obj;			/* NV_OBJ: the value (a reference owned). A number or text may keep the Python object it
-					 * came from here (the .mod evaluator, OBJLIB 5; a reference owned, copied and freed with
+					 * came from here (the .mod evaluator, OBJLIB 5 (9c); a reference owned, copied and freed with
 					 * the value, read by nobody else), else NULL */
 	struct cEntityRef *ent;		/* NV_ENT: the handle (held once by this value), else NULL */
 	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL */
@@ -427,7 +428,9 @@ void Native_HookFinder(byte (*find)(const nativeVal_t *f, nativeHook_t *hook));
 /*
  * OBJLIB 7: calls of Python callables with native arguments, for the calls of names known at run time and the seams
  * (a value that may hold a port function goes through Port_Value instead). fmt has one letter per argument: v a const
- * nativeVal_t *, i a long, d a double, s a text (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL). The
+ * nativeVal_t *, i a long, d a double, s a text (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL), r a
+ * const nativeVal_t * that holds an object the callee keeps or changes (a native entry gets the object itself, as P
+ * gives a Python object; v would give a copy of a list or dict of plain values, as Native_Arg makes it). The
  * result goes into *out (Native_Free it; NULL drops it) as Native_Arg makes it. 0 with the error of the call.
  */
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
@@ -496,23 +499,18 @@ int Native_NetOff(void);
 /* Scrap.GetNetFlags()[i] (0 client, 1 server, 2 dedicated): 1 or 0, -1 with the error set (through the seam) */
 int Native_NetFlag(int i);
 
-/* ---- module state mirrored into the module dict (OBJLIB 5) ---- */
+/* ---- module variables a port reads in the forms its C takes ---- */
 
-/*
- * A variable of a module kept in C. While other code (the module code of the .mod file, the scripts' readers of
- * other modules, the test cases) still reads and writes the module dict, the dict keeps the value between calls:
- * Native_Import at the start of every entry point of the module takes the dict values into C, Native_Put writes a
- * C change through to the dict at once (a list is changed in place, so references to it see the change). Both go
- * through the variable registry (scrap/modvars.h, batch 5b); the dict slot keeps the value until batch 5h.
- */
-typedef struct nativeVar_s {
-	const char *name;		/* the variable of the module */
-	nativeVal_t *values;		/* the C value, or the count items of a list */
-	int count;			/* 0: a plain variable; else a list of exactly count items */
-	unsigned types;			/* the NV_ types the C takes (1 << NV_STR | ...); with NV_LONG, NV_LIST, NV_TUPLE or
-					 * NV_DICT among them any value of the types (texts of any length too), else the short
-					 * forms of Native_FromPy */
-} nativeVar_t;
+/* the variable name of module (global 1: as a function of the script reads its global, a missing one the NameError of
+ * the script; 0: the module's attribute, AttributeError) into *out (what it owned is freed) in the form the C takes:
+ * types the NV_ types it takes (1 << NV_STR | ...; with NV_LONG, NV_LIST, NV_TUPLE or NV_DICT among them any value of
+ * those types, texts of any length too, else the short forms of Native_FromPy; with NV_OBJ the object itself). 0 with
+ * the error, a TypeError naming the variable for a value of another form */
+byte Native_VarTake(const char *module, const char *name, byte global, unsigned types, nativeVal_t *out);
+/* the same for the attribute name that holds a list of exactly count items: each into out[i] */
+byte Native_VarItems(const char *module, const char *name, int count, unsigned types, nativeVal_t *out);
+/* the item index of the list attribute name of module set to v (in place): 0 with the error */
+byte Native_VarSetItem(const char *module, const char *name, int index, const nativeVal_t *v);
 
 /* an argument of an adapter as a native value (Native_Free it): the native types as Native_FromPyAny takes them, an
  * entity handle (cPyEntity) as NV_ENT, any other value (a function, a class instance, or a container that holds one
@@ -520,16 +518,6 @@ typedef struct nativeVar_s {
  * class, function, method or module, else NV_OBJ (a tuple that holds objects); always 1. SCRAP_NATIVE_REF=0 gives the
  * NV_OBJ of before for all of them (one more round, for comparison) */
 byte Native_Arg(PyObject *o, nativeVal_t *v);
-/* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
- * is missing or of a form the C does not take (TypeError naming it) */
-byte Native_Import(const char *module, const nativeVar_t *vars);
-/* Native_Import for variables a function of the script reads as its globals: a missing one is the NameError of the
- * script ("global name"), not the AttributeError of the module attribute */
-byte Native_ImportGlobals(const char *module, const nativeVar_t *vars);
-/* the C value of var (index: the item of a list, ignored for a plain variable) into the dict of module: 0 with the
- * error set */
-byte Native_Put(const char *module, const nativeVar_t *var, int index);
-
 /* the value as a new Python object (NULL with the error set): for adapters and mirrors only. A dict gets its keys in
  * slot order; Python's table can order them otherwise when two keys collide (OBJLIB 6: the literal reader of the
  * saves keeps Script_Literal until then). A native object gives its Python object (NObj_ToPy: the same one each
@@ -558,8 +546,8 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
 
 /*
  * A port function that another port calls by its module and name is called directly when the module attribute still
- * holds the port's own C function (the seam, OBJLIB 5: until the variable registry owns the writes of module
- * attributes), else the old way through Python with the same arguments (the slow path, OBJLIB 7): a recorder of the
+ * holds the port's own C function (the seam, OBJLIB 5 (9c: functions as Python values in the
+ * registry)), else the old way through Python with the same arguments (the slow path, OBJLIB 7): a recorder of the
  * test cases, an alias, a mission's or a mod's function there gets the call, and a deleted or non-callable attribute
  * raises the error it raised.
  *
@@ -605,7 +593,7 @@ typedef byte (*portEntry_t)(const nativeVal_t *a, int n, nativeVal_t *out);
 typedef struct {
 	const char *module;
 	const char *name;
-	PyCFunction adapter;		/* OBJLIB 5: what the attribute holds while it is the port's own function */
+	PyCFunction adapter;		/* OBJLIB 5 (7e): what the attribute holds while it is the port's own function */
 	portEntry_t entry;
 	char **kw;			/* the names of the entry's slots for keyword calls, NULL for none */
 } portRef_t;
@@ -830,8 +818,8 @@ PyObject *Native_PyOf(const nativeVal_t *v);
 /* the argument of a keyword entry that is not given (an NV_OBJ without an object) */
 void Native_SetMissing(nativeVal_t *v);
 byte Native_IsMissing(const nativeVal_t *v);
-/* OBJLIB 5: the Python object a number or text came from, kept with the value (the constants of the .mod evaluator):
- * set (a new reference) and read (borrowed, NULL for none; of an NV_OBJ its object) */
+/* OBJLIB 5 (9c): the Python object a number or text came from, kept with the value (the constants of the .mod
+ * evaluator): set (a new reference) and read (borrowed, NULL for none; of an NV_OBJ its object) */
 void Native_KeepPy(nativeVal_t *v, PyObject *o);
 PyObject *Native_KeptPy(const nativeVal_t *v);
 /* v or a value in it (an item, a key, a value of a dict, at any depth) has one of types (a mask of 1 << NV_) */

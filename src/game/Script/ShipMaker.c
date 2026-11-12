@@ -10,15 +10,15 @@
  * lonely mercenary, AmorPieceWeight) stays in the script.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters. The
- * tables are read where the script reads them as its globals and changed in place on the module's objects (OBJLIB 5:
+ * tables are read where the script reads them as its globals and changed in place on the module's objects (
  * the .mod file, the editor tabs, Vehicles and the cases read them). The module's own functions are called through
  * its globals as the script calls them (PORT_OWN: directly while the global holds the port's function, else by name,
  * so a mission's replacement such as AB's FakeShips for CreateStdShips, or a case's, still gets the call), Fx and
  * VehiclesNPC through their refs (PORT_CALL); the ships (handle values) and the functions ShipCallback holds stay
  * Python values (OBJLIB 7). Scrap.GetEntity, Preload3DObject and the SAct calls go through their seams (fc-om-dt,
  * fc-r7b-fb and the scene cases swap or record them, OBJLIB 7); Scrap.PreloadAnm, Verbose, SWeap.GetNWeap and GetSWeap
- * go through their refs (stage 7). The .def runner takes its $names as a dict and its step stdship the values of its line
- * (OBJLIB 6).
+ * go through their refs (stage 7). The .def runner takes its $names as a dict and its step stdship the values of its
+ * line (OBJLIB 6).
  */
 #include <string.h>
 

@@ -11,7 +11,7 @@
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
  * module where the script reads them (a missing one is the NameError of the script) and write them back at once,
- * the dicts and lists in place (OBJLIB 5). The spawn points are native instances of the class CharSpawnPos of the
+ * the dicts and lists in place. The spawn points are native instances of the class CharSpawnPos of the
  * module code and the characters handle values (OBJLIB 7): their attributes are read and set as objects, and the
  * lists of functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read
  * again on each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,

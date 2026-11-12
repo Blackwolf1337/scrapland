@@ -5,8 +5,9 @@
  * module, other scripts and the file read them.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
- * entries are adapters. The motor classes FXMOTOR_* that GetMotorClass gives are mirrored from the module dict
- * (OBJLIB 5): fx.mod sets them, other scripts read them there. Init.isJunkYard and Init.isShipEdit stay by name.
+ * entries are adapters. The motor classes FXMOTOR_* that GetMotorClass gives are variables of the module (fx.mod sets
+ * them, other scripts read them), read from the registry at each call. Init.isJunkYard and Init.isShipEdit stay by
+ * name.
  */
 #include <string.h>
 
@@ -31,10 +32,6 @@ static const char *const fx_motors[] = { "NONE", "LIFEBOAT", "MOSQUITO", "MPOLI1
 	"MARCHBISHOP1", "MFUNC1", "MBERTO1", "MHUMP1", "MBETTY1", "MBOSS1" };
 #define FX_MOTORS ((int)(sizeof(fx_motors) / sizeof(fx_motors[0])))
 
-static struct {
-	nativeVal_t motor[FX_MOTORS];	/* FXMOTOR_<name> */
-} fx;
-
 /* v == 0 of the script (cmp of 1.5.2: a number equal to 0; a text is never equal) */
 static byte Fx_IsZero(const nativeVal_t *v) {
 	nativeVal_t zero;
@@ -47,7 +44,7 @@ static byte Fx_Init(void) {
 	nativeVal_t xbox = { 0 }, dudvRT = { 0 }, junk = { 0 }, edit = { 0 }, v[2];
 	int off = -1;
 	if (Native_GVarGet("isXbox", &xbox) && Native_GVarGet("R_SceneDuDvRTarget", &dudvRT)) {
-		/* OBJLIB 5: variables of Init (any value: the truth of an object is its own) */
+		/* variables of Init (any value: the truth of an object is its own) */
 		off = Mode_G("Init", "isJunkYard", &junk) && Mode_G("Init", "isShipEdit", &edit) ? Native_NetOff() : -1;
 	}
 	int a = Fx_IsZero(&xbox) || !Fx_IsZero(&dudvRT);
@@ -81,14 +78,7 @@ static byte Fx_MotorClass(const nativeVal_t *name, nativeVal_t *out) {
 	Native_Free(&up);
 	char var[0x20];
 	Str_Printf(var, sizeof(var), "FXMOTOR_%s", fx_motors[k]);
-	/* OBJLIB 5: the variable from the module dict */
-	const nativeVar_t vars[] = { { var, &fx.motor[k], 0, NV_ANY }, { NULL, NULL, 0, 0 } };
-	if (!Native_ImportGlobals("Fx", vars)) {
-		return 0;
-	}
-	/* a copy: the caller frees the result, the slot keeps its value (a list there was freed twice) */
-	Native_Copy(out, &fx.motor[k]);
-	return 1;
+	return Mode_G("Fx", var, out);
 }
 
 /* v * 0.6 of the script on a variable of the entity */

@@ -6,7 +6,7 @@
  * Native C (docs/objlib-plan.md, stage 2): the state is the struct net (the servers of the browser, the page, the
  * sort, the message of the day), the functions call the engine in C; the PyMethodDef entries are adapters (the
  * argument formats as before). The variables of other modules are read where the C read them (Init.inMainMenu,
- * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps; OBJLIB 5),
+ * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps),
  * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword and Net.PurgeServerMapList are called through their
  * refs (PORT_CALL: directly while the attribute holds the port's function, else by name), and so are Scrap.SaveConfig
  * and Scrap.Exit (stage 7), their failures printed as before; the connection status schedules itself (a function
@@ -452,7 +452,7 @@ static void Net_SetServerMaps(const netMapList_t *list) {
 	GVar_SetStr("ServerMapList", text);
 }
 
-/* a list or other variable of the Net script into *out (OBJLIB 5: read as the attribute of Net): 1, else 0 with None
+/* a list or other variable of the Net script into *out (read as the attribute of Net): 1, else 0 with None
  * when it is not there (no error); a list that holds objects is made native item by item */
 static byte Net_Script(const char *var, nativeVal_t *out) {
 	if (!Mode_ModGet("Net", var, out)) {

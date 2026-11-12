@@ -13,7 +13,7 @@
  * layout of the interface data/menus/charconv.def.
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
- * module where the script reads them and write them back at once (OBJLIB 5). The save variables, the engine
+ * module where the script reads them and write them back at once. The save variables, the engine
  * variables, the camera name, the floor, the loading screen and the language texts are C; Scrap.Set, UsrEntity,
  * GetEntity, CreateEntity, IncSaveVar, ConsoleError, SetTimeSpeed, the dummy search, SLogic.SetOnFloor,
  * SScorer.Set, SetMsgText, Fade, SAct.GetClass, SInput.SetActionSet and the scheduler go through their seams, and the

@@ -8,26 +8,26 @@
  * functions read and write them as their globals.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
- * script reads them and write them back at once (OBJLIB 5; the lists and dicts of the modules are changed in place),
+ * script reads them and write them back at once (the registry; the lists and dicts are changed in place),
  * and call the engine in C: save variables, engine variables, entities, the dummy search, the entity lists, the money,
  * the scorer heads, the ammunition table, the parkings. The engine functions the cases record or swap go through
  * their seams (AddScheduledFunc, CreateEntity, UsrEntity, Set, ConsoleError, Preload3DObject, GetAlarm,
  * SAI.GetStateVehicle, DeleteScheduledFuncs, SScorer.Add and Set; OBJLIB 7). The entities the script holds are handle
  * values (OBJLIB 7). SAI.SetStateVehicle, SAI.GetNearestItemLife (a case swaps it) and Scrap.GetNearestParked of a
  * position that is no vector go through their refs (stage 7); the profile objects of VehiclesNPC are the objects they
- * are (OBJLIB 5).
+ * are (OBJLIB 5 (9c: instances)).
  *
  * Direct calls (stage 3): the functions of the other ports (Elevator, Metro, Parking, VehiclesNPC, Traffic,
  * MissionsFuncs, Speech, PhoneCab, Items, OutMap, RaceMaker, Vehicles), the keyword calls of Speech.ForceRemoteCom and
  * VehiclesNPC.MakeAI and the own functions of the modules (their globals, the profile functions included) go through
  * their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_SCORERG, LvN_OnEndRef; the seam takes the call by name when a mission or
- * a case has put something else there, OBJLIB 5). By name: the sections of the .def files (LaunchAmbush and
+ * a case has put something else there, OBJLIB 5 (9c)). By name: the sections of the .def files (LaunchAmbush and
  * PreLaunchAmbush of Mission_Ambush, PreSetNextMission of Mission_DefeatCrazyGambler2, BadGuyAppears,
  * CreateMissionPlans and SetNextMission of Mission_FindDtritusMatrix, InitEvasion of Mission_StupidMercAgain; OBJLIB 6)
- * and the class VehiclesNPC.cShipAI (OBJLIB 5); the functions given to the scheduler and to the entities (Mode_Later,
- * Mode_AtG, the trigger schedules, the OnDeath and UseFunc texts) take the entry of a port's own function (stage 4:
- * Port_Scheduled, PYF_ENTRY; bound methods stay Python, OBJLIB 7), the ones given to Parking and CharAct as callbacks
- * (LvN_ModSetGlobal) are values of their variables (OBJLIB 5).
+ * and the class VehiclesNPC.cShipAI (OBJLIB 5 (9c)); the functions given to the scheduler and to the entities
+ * (Mode_Later, Mode_AtG, the trigger schedules, the OnDeath and UseFunc texts) take the entry of a port's own function
+ * (stage 4: Port_Scheduled, PYF_ENTRY; bound methods stay Python, OBJLIB 7), the ones given to Parking and CharAct as
+ * callbacks (LvN_ModSetGlobal) are values of their variables (OBJLIB 5 (9c: functions as values)).
  */
 #include <string.h>
 
@@ -358,7 +358,7 @@ static const char *const mt_mosquito_profile[] = { "Ship=SMOSQUITO", "ControlBra
 static const char *const mt_mosquito_reprogram[] = { "FactorDamageGetAway=1.0", "CadenceShoot=75", "ControlAim=1", "TimeMaxStrafe=2",
 	"VelMaxStrafe=0.25", NULL };
 
-/* aiprof = VehiclesNPC.GetIAProf("SMosquito") (the profile object, OBJLIB 5) */
+/* aiprof = VehiclesNPC.GetIAProf("SMosquito") (the profile object, OBJLIB 5 (9c: an instance)) */
 static byte Sy_MosquitoProf(nativeVal_t *aiprof) {
 	Native_SetNone(aiprof);
 	return PORT_CALL(VehiclesNPC, GetIAProf, aiprof, "s", "SMosquito");
@@ -983,7 +983,7 @@ static const char *const fd_lonelymerc_profile[] = { "Ship=SLMERC", "CadenceShoo
 	"ControlBoost=1", "ControlBoostItemLife=1", "ControlBoostItemAmmo=1", "FactorDamageGetAway=0.45", "FactorDamageItemLife=0.35",
 	"FactorItemAmmo=0.1", "ControlStrafeEvasion=1", "UsePercHookGetAway=80", "TimeMaxStrafe=10", "VelMaxStrafe=1.0", NULL };
 
-/* SetLonelyMercProfile(): the profile, also VehiclesNPC.AIProf[sp.Ship] (OBJLIB 5, 7: the profile objects of
+/* SetLonelyMercProfile(): the profile, also VehiclesNPC.AIProf[sp.Ship] (OBJLIB 5 (9c), 7: the profile objects of
  * VehiclesNPC) */
 static byte Dtritus_SetLonelyMercProfileN(nativeVal_t *out) {
 	nativeVal_t ship = { 0 };
@@ -1036,7 +1036,7 @@ static byte Dtritus_InitN(void) {
 		own = Mode_VIsType(usr, "Car");
 	}
 	if (own > 0) {
-		/* OBJLIB 5: Parking.PlayerShip is a handle of Parking */
+		/* Parking.PlayerShip is a handle of Parking (OBJLIB 7) */
 		own = LvN_ModGet("Parking", "PlayerShip", ps) ? Native_True(ps) : -1;
 	}
 	if (own > 0) {
@@ -1491,7 +1491,7 @@ static byte Sy_PhoneInitN(const char *module, const char *use, byte berto) {
 static const syPhone_t mb_phone = { "Generics_StillPolice1_Berto", "Berto", &PORT_LREF(Mission_MeetBerto, SetNextMission), "DeepThroat",
 	"Mission_MeetBerto_ComDeepThroat_NI_1Msg", 1, 0 };
 
-/* module.var = MissionsFuncs.ReassignBertosPlayerTarget (the function object, OBJLIB 5) */
+/* module.var = MissionsFuncs.ReassignBertosPlayerTarget (the function object, OBJLIB 5 (9c)) */
 static byte Mb_Reassign(const char *var) {
 	nativeVal_t fn = { 0 };
 	byte ok = LvN_ModGet("MissionsFuncs", "ReassignBertosPlayerTarget", &fn) && Mode_SetModVar("Parking", var, &fn);
@@ -2245,8 +2245,8 @@ static const char *const sa_mercs_profile[] = { "StupidPathFinding=0", "ControlS
 	"FactorDamageItemLife=0.2", "FactorItemAmmo=0.1", "ControlStrafeEvasion=1", "UsePercHookGetAway=2", "TimeMaxStrafe=4",
 	"VelMaxStrafe=0.5", NULL };
 
-/* GetMercsEnemiesProfile(TypeShip): the smart mercenaries (OBJLIB 5: the class VehiclesNPC.cShipAI by name, a variable of
- * VehiclesNPC made by its .mod code, until the variable registry holds it) */
+/* GetMercsEnemiesProfile(TypeShip): the smart mercenaries (OBJLIB 5 (9c: the class VehiclesNPC.cShipAI by name,
+ * a variable of VehiclesNPC made by its .mod code)) */
 static byte Again_GetMercsEnemiesProfileN(const nativeVal_t *type, nativeVal_t *out) {
 	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_VSet(out, "Ship", type) &&
 		Mode_SetAttrs(out, sa_mercs_profile);

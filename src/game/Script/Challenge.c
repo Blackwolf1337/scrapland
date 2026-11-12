@@ -10,7 +10,7 @@
  * code reads them as globals like the script (a missing one is a NameError).
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
- * script reads them and write them back at once (OBJLIB 5). The save variables, the money and the language texts are C;
+ * script reads them and write them back at once. The save variables, the money and the language texts are C;
  * Scrap.SetMoney, UsrEntity, GetEntity, DeleteScheduledFuncs and SInput.SetActionSet go through their seams and the
  * characters and vehicles are handle values (OBJLIB 7). The other ports (RaceMaker, Speech, Menu, SaveGame,
  * MissionsFuncs, PhoneCab, Chars) are called through their refs, the keyword calls too (PORT_CALL, stage 3), and
@@ -185,7 +185,7 @@ static byte Chal_Spch(byte obj, const nativeVal_t *foe, const nativeVal_t *cad, 
 		PORT_CALL(Speech, OnChallengeSpch, NULL, "vv", a, b));
 }
 
-/* Speech.OnEndOfSpeech = the function name of the module (OBJLIB 5: the function object itself) */
+/* Speech.OnEndOfSpeech = the function name of the module (OBJLIB 5 (9c: the function object itself)) */
 static byte Chal_OnEnd(const char *name) {
 	return Mode_ModSetGlobal("Speech", "OnEndOfSpeech", "Challenge", name);
 }
@@ -516,7 +516,7 @@ static byte Chal_Release(nativeVal_t *seq) {
 }
 
 /* CancelChallenge(challType): the player left the race or the combat: the bet is lost, the foes go back to their
- * lists and a revenge is pending (OBJLIB 5: the callbacks of Parking and Alarm set to None in their modules) */
+ * lists and a revenge is pending (the callbacks of Parking and Alarm set to None in their modules) */
 static byte Chal_CancelChallenge(const nativeVal_t *type) {
 	static const char *const mods[] = { "Speech", "Menu", "Parking", "Alarm", "RaceMaker", "string" };
 	modeVals_t t = { .n = 0 };

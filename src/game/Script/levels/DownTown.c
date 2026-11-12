@@ -12,7 +12,7 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h) and call the engine in C
  * (save variables, Scrap.Get, the alarm, the entity lists, the scorer items, the vector math, the money). The variables
  * of the modules are read where the script reads them and written through at once; the lists of the transports, the
- * functionaries and the taunts are changed in place on the objects of the modules (OBJLIB 5). The ships, the items,
+ * functionaries and the taunts are changed in place on the objects of the modules. The ships, the items,
  * the phone cabs and the cameras are handle values, the profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine
  * functions the cases record or swap go through their seams: Scrap.AddScheduledFunc, DeleteScheduledFuncs,
  * DelSaveVars, CreateEntity, Set, SetAlarm, UsrEntity, Rand and GetAlarm, SScorer.Set, SetMsgText and SAct. Through
@@ -29,10 +29,10 @@
  * replace one; the profile functions and the keyword functions InitKillThemMission and InitKillBadGuys have entries
  * for this) go through their refs, the callbacks handed to Speech and Menu by the refs of their functions (LV_COM,
  * LV_ONEND, LV_SCORERG). By name stay: the sections of the .def files, called and given as callbacks (OBJLIB 6); the
- * class VehiclesNPC.cShipAI (OBJLIB 5); the functions handed on as values: to the scheduler (Mode_Later, the Rusty
+ * class VehiclesNPC.cShipAI (OBJLIB 5 (9c)); the functions handed on as values: to the scheduler (Mode_Later, the Rusty
  * message with Scorer.ShowMissionScorer: the entry of a port's own function, stage 4: Port_Scheduled), as the callbacks
  * of Parking, Vehicles, RaceMaker, MissionsFuncs and Chars, and the Speech.OnOutOfRange kept in outOfRange (values of
- * their variables, OBJLIB 5).
+ * their variables, OBJLIB 5 (9c)).
  */
 #include <limits.h>
 
@@ -2021,7 +2021,7 @@ static byte Plus_InitRace(void) {
 
 static byte Plus_AfterInitRaceTaunt(void) {
 	byte called;
-	/* OBJLIB 5: outOfRange holds the Speech.OnOutOfRange of before (a variable) */
+	/* OBJLIB 5 (9c): outOfRange holds the Speech.OnOutOfRange of before (a function value) */
 	return Mode_CallIf(MR, "outOfRange", &called) && (!called || Mode_GVarSetN("RemainTalkTime", 0.0));
 }
 
@@ -2254,8 +2254,8 @@ static const char *const merc_profile[] = {
 
 /* GetMercEnemiesProfile(TypeShip) */
 static byte Escort_GetMercEnemiesProfile_C(const nativeVal_t *a, nativeVal_t *out) {
-	/* OBJLIB 5: the class cShipAI, a variable of VehiclesNPC made by its .mod code (a mod may replace it), called by name
-	 * until the variable registry holds it; its instances are Python objects (OBJLIB 7) */
+	/* OBJLIB 5 (9c): the class cShipAI, a variable of VehiclesNPC made by its .mod code (a mod may replace it), called
+	 * by name; its instances are Python objects (OBJLIB 7) */
 	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_VSet(out, "Ship", &a[0]) &&
 		Mode_SetAttrs(out, merc_profile);
 }

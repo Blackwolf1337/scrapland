@@ -426,6 +426,15 @@ static void MV_Clear(mvSpace_t *s) {
 }
 
 void ModVar_Close(void) {
+	const char *e = getenv("SCRAP_NATIVE_COUNT");
+	if (e && !strcmp(e, "1")) {
+		nativeBuf_t b;
+		Native_BufInit(&b);
+		ModVar_Report(&b);
+		fputs(b.p, stdout);
+		fflush(stdout);
+		Native_BufFree(&b);
+	}
 	for (mvSpace_t *s = mv_spaces; s; s = s->next) {
 		MV_Clear(s);
 	}
@@ -944,26 +953,39 @@ int ModVar_DictDel(PyObject *dict, const char *name) {
 	return ModVar_Del(&ref, name);
 }
 
-/* ---- the measure: what the variables hold at the end of the program (SCRAP_NATIVE_COUNT=1) ---- */
+/* ---- the measure: what the variables hold (SCRAP_NATIVE_COUNT=1 at the end, the channel's "native vars") ---- */
 
-/* each value of v at any depth inside tuples counted by kind: [0] by value, [1] native data, [2] a view, [3] an
- * NV_OBJ, [4] an entity handle */
-static void MV_Count(const nativeVal_t *v, unsigned long counts[5]) {
+/* the kinds of values counted: by value, entity handle, NV_OBJ, then the NO_ kinds of objects */
+enum { MVC_PLAIN, MVC_ENT, MVC_OBJ, MVC_KINDS };
+#define MVC_OBJKINDS 7
+
+typedef struct {
+	unsigned long other[MVC_KINDS];
+	unsigned long obj[MVC_OBJKINDS][3];	/* per NO_ kind: native data, view of a Python object, crossed */
+} mvCounts_t;
+
+/* each value of v at any depth inside tuples counted */
+static void MV_Count(const nativeVal_t *v, mvCounts_t *c) {
 	if (v->type == NV_TUPLE) {
 		for (int i = 0; i < v->n; i++) {
-			MV_Count(&v->items[i], counts);
+			MV_Count(&v->items[i], c);
 		}
 		return;
 	}
-	counts[v->type == NV_REF ? (NObj_Py(v) ? 2 : 1) : v->type == NV_OBJ ? 3 : v->type == NV_ENT ? 4 : 0]++;
+	if (v->type == NV_REF && NObj_Kind(v) < MVC_OBJKINDS) {
+		c->obj[NObj_Kind(v)][NObj_State(v)]++;
+	} else {
+		c->other[v->type == NV_OBJ ? MVC_OBJ : v->type == NV_ENT ? MVC_ENT : MVC_PLAIN]++;
+	}
 }
 
-__attribute__((destructor)) static void MV_AtExit(void) {
-	const char *e = getenv("SCRAP_NATIVE_COUNT");
-	unsigned long counts[5] = { 0 }, spaces = 0, vars = 0, crossed = 0;
-	if (!e || strcmp(e, "1")) {
-		return;
-	}
+void ModVar_Report(nativeBuf_t *b) {
+	static const char *const kinds[MVC_OBJKINDS] = { "lists", "dicts", "instances", "classes", "functions", "methods",
+		"modules" };
+	mvCounts_t c;
+	unsigned long spaces = 0, vars = 0, crossed = 0, builtins = 0;
+	char line[0x100];
+	memset(&c, 0, sizeof(c));
 	for (mvSpace_t *s = mv_spaces; s; s = s->next) {
 		nativeVal_t *t = NObj_DictData(&s->vars);
 		const nativeVal_t *k, *v;
@@ -975,11 +997,21 @@ __attribute__((destructor)) static void MV_AtExit(void) {
 		}
 		while (Native_DictNext(t, &pos, &k, &v)) {
 			vars++;
-			MV_Count(v, counts);
+			if (k->type == NV_STR && !strcmp(Native_Text(k), "__builtins__")) {
+				/* the builtins dict of Python every module holds, counted apart */
+				builtins++;
+				continue;
+			}
+			MV_Count(v, &c);
 		}
 	}
-	printf("module variables at exit: %lu in %lu modules (%lu crossed, %lu __dict__ reads by Python): by value %lu, "
-		"native objects %lu, views %lu, Python objects %lu, entity handles %lu\n", vars, spaces, crossed, mv_synced,
-		counts[0], counts[1], counts[2], counts[3], counts[4]);
-	fflush(stdout);
+	snprintf(line, sizeof(line), "module variables %lu in %lu modules (%lu crossed, %lu __dict__ reads by Python): by "
+		"value %lu, entity handles %lu, Python objects %lu, __builtins__ %lu\n", vars, spaces, crossed, mv_synced,
+		c.other[MVC_PLAIN], c.other[MVC_ENT], c.other[MVC_OBJ], builtins);
+	Native_BufAdd(b, line, -1);
+	for (int i = 0; i < MVC_OBJKINDS; i++) {
+		snprintf(line, sizeof(line), "module variables %s native %lu views %lu crossed %lu\n", kinds[i], c.obj[i][0],
+			c.obj[i][1], c.obj[i][2]);
+		Native_BufAdd(b, line, -1);
+	}
 }

@@ -4,9 +4,9 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the pages work on C texts and values. The save variables, the engine
  * variables, the scorer and the language texts are C; Init.Outdoor, HasSuperDeal, isDemo and Menu.UseTxt are read as
- * the attributes of those modules (OBJLIB 5); MissionsFuncs.CrazyDealStatus and the Menu functions are called through
+ * the attributes of those modules; MissionsFuncs.CrazyDealStatus and the Menu functions are called through
  * their refs (PORT_CALL: directly while the attribute holds the port's function, else by name), the GetMenuDescription
- * of the running super deal through its entry (Mode_CallArgs; OBJLIB 5: its module is a variable of Init); their
+ * of the running super deal through its entry (Mode_CallArgs; OBJLIB 5 (9c: its module is a variable of Init)); their
  * errors are printed as before (OBJLIB 7). The .def runner takes its $names as a dict and the texts of the content
  * step as Python values (OBJLIB 6).
  */
@@ -224,7 +224,8 @@ static void Mission_Notes(int id) {
 /* the description of the crazy deal page, and its objectives */
 static void Mission_DealDesc(int id, char *desc, int size) {
 	if (Mission_ModInt("Init", "HasSuperDeal", 0)) {
-		/* Init.SuperDealModule.GetMenuDescription() (OBJLIB 5: the module of the running super deal, a variable) */
+		/* Init.SuperDealModule.GetMenuDescription() (OBJLIB 5 (9c: the module of the running super deal, a variable))
+		 * */
 		nativeVal_t mod = { 0 }, f = { 0 }, r = { 0 };
 		desc[0] = 0;
 		if (Mode_ModGet("Init", "SuperDealModule", &mod) && Mode_VObj(&mod, "GetMenuDescription", &f) &&

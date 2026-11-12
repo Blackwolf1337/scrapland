@@ -5,7 +5,7 @@
  * the news panel). Every call stops the start where the script would stop.
  *
  * Native C (docs/objlib-plan.md, stages 2 and 3): the engine calls are C; the module has no state. The calls of the
- * other ports go through their refs (PORT_CALL); Init.UpperMap stays by name (OBJLIB 5).
+ * other ports go through their refs (PORT_CALL); Init.UpperMap is read by name.
  */
 #include <string.h>
 
@@ -33,7 +33,7 @@ static byte InMap_Start(void) {
 		!PORT_CALL(Elevator, PlayerCreatedElevator, NULL, "") || !PORT_CALL(InPolice, Init, NULL, "")) {
 		return 0;
 	}
-	/* the mercenaries only stay friends in Gamblinden and the Junkyard (OBJLIB 5: Init.UpperMap is a variable of
+	/* the mercenaries only stay friends in Gamblinden and the Junkyard (Init.UpperMap is a variable of
 	 * Init) */
 	nativeVal_t upper;
 	if (!Mode_ModGet("Init", "UpperMap", &upper)) {

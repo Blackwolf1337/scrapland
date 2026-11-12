@@ -6,8 +6,8 @@
  * Native C (docs/objlib-plan.md, stage 2): the state is the struct video, the functions call the engine in C; the
  * PyMethodDef entries are adapters (id and the control as a text, anything else as ""). The options menu after Apply
  * is called through its ref (PORT_CALL: directly while PCMenu holds the port's function, else by name), after Back
- * by name through the alias Menu.OptionsMenu (OBJLIB 5: a variable of Menu, PCMenu's or XBMenu's function); a failure
- * is printed as before.
+ * by name through the alias Menu.OptionsMenu (OBJLIB 5 (9c: a variable of Menu, PCMenu's or XBMenu's function)); a
+ * failure is printed as before.
  */
 #include <stdio.h>
 #include <string.h>
@@ -496,7 +496,7 @@ static byte PCMenu_VideoMenuBack_E(const nativeVal_t *a, int n, nativeVal_t *out
 	GVar_SetNum("R_FogEnable", video.lastFog);
 	GVar_SetNum("R_VideoLockMode", video.lastLockMode);
 	GVar_SetNum("R_VideoLockBuf", video.lastLockBuf);
-	/* OBJLIB 5: the alias Menu.OptionsMenu (= MLib.OptionsMenu of menu.mod) by name */
+	/* OBJLIB 5 (9c): the alias Menu.OptionsMenu (= MLib.OptionsMenu of menu.mod) by name */
 	Mode_Printed(Native_CallMod("Menu", "OptionsMenu", NULL, "is", (long)id, control), "Menu", "OptionsMenu");
 	return 1;
 }

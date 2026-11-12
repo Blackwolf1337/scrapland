@@ -1,8 +1,8 @@
 /*
  * Direct calls between the script ports (include/scrap/scriptnative.h, stage 3 of docs/objlib-plan.md): the seam
- * that tells whether a module attribute is still the port's own C function (OBJLIB 5), the call of its native entry
- * with the arguments packed as the adapter would get them, and the old call through Python when something else is
- * there (OBJLIB 7, with SCRAP_PORT_SLOW=1 forcing it and the counters of each call site for the test channel).
+ * that tells whether a module attribute is still the port's own C function (OBJLIB 5 (9c)), the call of its native
+ * entry with the arguments packed as the adapter would get them, and the old call through Python when something else
+ * is there (OBJLIB 7, with SCRAP_PORT_SLOW=1 forcing it and the counters of each call site for the test channel).
  * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable), the callbacks bound
  * to port functions (Port_CallbackOf, cPy_Function PYF_ENTRY), the functions given to the scheduler (Port_ScheduledOf,
  * cScheduledFunc), the call of such a bound site (Port_BoundCall), and the calls of values that hold port functions
@@ -181,6 +181,13 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 	switch (x->type) {
 	case 'v':
 		return Native_Pass(x->v, v);
+	case 'r':
+		/* the object itself (P for a native value) */
+		if (Native_IsObj(x->v) || x->v->type == NV_ENT) {
+			Native_Copy(v, x->v);
+			return 1;
+		}
+		return Native_Pass(x->v, v);
 	case 'i':
 		Native_SetInt(v, x->i);
 		return 1;
@@ -341,7 +348,7 @@ static __attribute__((noinline)) byte Port_ObjArgs(const char *fmt, va_list va) 
 	Port_Read(fmt, c, &p);
 	va_end(c);
 	for (int i = 0; !obj && i < p.n; i++) {
-		obj = p.a[i].type == 'O' || p.a[i].type == 'P' || (p.a[i].type == 'v' && Port_HoldsObj(p.a[i].v));
+		obj = p.a[i].type == 'O' || p.a[i].type == 'P' || ((p.a[i].type == 'v' || p.a[i].type == 'r') && Port_HoldsObj(p.a[i].v));
 	}
 	return obj;
 }
