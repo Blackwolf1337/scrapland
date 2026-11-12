@@ -6,9 +6,9 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
  * entries are adapters. The module variables (MissionMap, OutOfMetro, WalkCharSpeed; PlayerName and CallParams, which
- * the script creates on the first use) are mirrored from the module dict where the script reads them and written
- * through where it writes them (OBJLIB 5). The calls of Elevator, Menu and Chars go through their refs (stage 3);
- * Init.Path and Menu.BackButtonYStart stay by name (OBJLIB 5).
+ * the script creates on the first use) are read from the registry where the script reads them and written there where
+ * it writes them. The calls of Elevator, Menu and Chars go through their refs (stage 3); Init.Path and
+ * Menu.BackButtonYStart are read by name.
  */
 #include <limits.h>
 #include <string.h>
@@ -27,37 +27,23 @@ static const char metro_def[] = {
 
 #define METRO_FILE "menus/metro.def"
 
-static struct {
-	nativeVal_t missionMap;		/* MissionMap: the station of the main mission */
-	nativeVal_t outOfMetro;		/* OutOfMetro: maps without a station and the station outside */
-	nativeVal_t walkCharSpeed;	/* WalkCharSpeed: the walk of each character class into the train */
-	nativeVal_t playerName;		/* PlayerName: the character that walks in */
-	nativeVal_t callParams;		/* CallParams: the arguments of OnUse, for the ride */
-} metro;
-
-/* OBJLIB 5: the mirror in the module dict, read where the script reads each variable as a global */
-static const nativeVar_t metro_vars[] = {
-	{ "MissionMap", &metro.missionMap, 0, NV_ANY },
-	{ "OutOfMetro", &metro.outOfMetro, 0, NV_ANY },
-	{ "WalkCharSpeed", &metro.walkCharSpeed, 0, NV_ANY },
-	{ "PlayerName", &metro.playerName, 0, NV_ANY },
-	{ "CallParams", &metro.callParams, 0, NV_ANY },
-	{ NULL, NULL, 0, 0 },
-};
+/* the variables of the module the script reads as globals: MissionMap (the station of the main mission), OutOfMetro
+ * (maps without a station and the station outside), WalkCharSpeed (the walk of each character class into the
+ * train), PlayerName (the character that walks in), CallParams (the arguments of OnUse, for the ride) */
+static const char *const metro_names[] = { "MissionMap", "OutOfMetro", "WalkCharSpeed", "PlayerName", "CallParams" };
 enum { MV_MAP, MV_OUT, MV_SPEED, MV_PLAYER, MV_PARAMS };
 
-/* the variable k from the module: 0 with the NameError of the script's global */
-static byte Metro_Read(int k) {
-	const nativeVar_t one[] = { metro_vars[k], { NULL, NULL, 0, 0 } };
-	return Native_ImportGlobals("Metro", one);
+/* the variable k from the module into *out (Native_Free it): 0 with the NameError of the script's global */
+static byte Metro_Read(int k, nativeVal_t *out) {
+	Native_SetNone(out);
+	return Native_VarTake("Metro", metro_names[k], 1, NV_ANY, out);
 }
 
-/* `global name; name = v` of the script for the variable k (v taken over): 0 with the error set */
+/* `global name; name = v` of the script for the variable k (v freed): 0 with the error set */
 static byte Metro_Write(int k, nativeVal_t *v) {
-	Native_Free(metro_vars[k].values);
-	*metro_vars[k].values = *v;
-	Native_SetNone(v);
-	return Native_Put("Metro", &metro_vars[k], 0);
+	byte ok = Mode_SetModVar("Metro", metro_names[k], v);
+	Native_Free(v);
+	return ok;
 }
 
 /* d.has_key(key) of the script: 1 with *has, else 0 with the AttributeError of a value that is no dict */
@@ -86,24 +72,25 @@ static byte Metro_MissionMap(void) {
 	} else {
 		Native_SetNone(&v);
 	}
+	nativeVal_t outOf, map;
+	int has;
+	Native_SetNone(&outOf);
+	Native_SetNone(&map);
 	byte ok = Native_Upper(&v, &up);
 	Native_Free(&v);
-	if (!ok || !Metro_Write(MV_MAP, &up) || !Metro_Read(MV_OUT) || !Metro_Read(MV_MAP)) {
-		return 0;
-	}
-	int has;
-	if (!Metro_HasKey(&metro.outOfMetro, &metro.missionMap, &has)) {
-		return 0;
-	}
-	if (has) {
-		if (!Metro_Read(MV_MAP)) {
-			return 0;
+	ok = ok && Metro_Write(MV_MAP, &up) && Metro_Read(MV_OUT, &outOf) && Metro_Read(MV_MAP, &map) &&
+		Metro_HasKey(&outOf, &map, &has);
+	if (ok && has) {
+		ok = Metro_Read(MV_MAP, &map);
+		if (ok) {
+			nativeVal_t out;
+			Native_Copy(&out, Native_DictGet(&outOf, &map));
+			ok = Metro_Write(MV_MAP, &out);
 		}
-		nativeVal_t out;
-		Native_Copy(&out, Native_DictGet(&metro.outOfMetro, &metro.missionMap));
-		return Metro_Write(MV_MAP, &out);
 	}
-	return 1;
+	Native_Free(&outOf);
+	Native_Free(&map);
+	return ok;
 }
 
 /* Scrap.GetEntity(name).var = v of the script: the TypeError of GetEntity for a name that is no text, the error of
@@ -121,9 +108,11 @@ static byte Metro_EntSet(const nativeVal_t *name, const char *var, const nativeV
 
 /* RecoverUsr(EntityName, EventName, Time): the event near the end of the door going down gives the player back */
 static byte Metro_RecoverUsr(void) {
-	nativeVal_t zero;
+	nativeVal_t zero, player;
 	Native_SetInt(&zero, 0);
-	return Metro_Read(MV_PLAYER) && Metro_EntSet(&metro.playerName, "UsrControl", &zero);
+	byte ok = Metro_Read(MV_PLAYER, &player) && Metro_EntSet(&player, "UsrControl", &zero);
+	Native_Free(&player);
+	return ok;
 }
 
 /* OutDoorInitializator(DoorClass, val=0): the door of Elevator with the event Recover 0.1 s before the end of Down;
@@ -164,29 +153,39 @@ static byte Metro_SetUsrParams(const nativeVal_t *name, const nativeVal_t *ang) 
 	}
 	const char *ref = Native_Text(name);
 	Native_SetInt(&v, -1);
-	nativeVal_t act;
+	nativeVal_t act, speed;
 	int has;
-	if (!Native_EntSet(ply, ref, "UsrControl", &v) || !Metro_Read(MV_SPEED) || !Native_EntVar(ply, ref, "ActCtrl", &act)) {
+	if (!Native_EntSet(ply, ref, "UsrControl", &v) || !Metro_Read(MV_SPEED, &speed)) {
 		return 0;
 	}
-	byte ok = Metro_HasKey(&metro.walkCharSpeed, &act, &has);
+	if (!Native_EntVar(ply, ref, "ActCtrl", &act)) {
+		Native_Free(&speed);
+		return 0;
+	}
+	byte ok = Metro_HasKey(&speed, &act, &has);
 	Native_Free(&act);
 	if (!ok) {
+		Native_Free(&speed);
 		return 0;
 	}
 	nativeVal_t walk;
 	if (has) {
-		if (!Metro_Read(MV_SPEED) || !Native_EntVar(ply, ref, "ActCtrl", &act)) {
+		if (!Metro_Read(MV_SPEED, &speed) || !Native_EntVar(ply, ref, "ActCtrl", &act)) {
+			Native_Free(&speed);
 			return 0;
 		}
-		const nativeVal_t *w = Native_DictGet(&metro.walkCharSpeed, &act);
+		const nativeVal_t *w = Native_DictGet(&speed, &act);
 		ok = w || Native_RaiseKey(&act);
 		Native_Free(&act);
+		if (ok) {
+			Native_Copy(&walk, w);
+		}
+		Native_Free(&speed);
 		if (!ok) {
 			return 0;
 		}
-		Native_Copy(&walk, w);
 	} else {
+		Native_Free(&speed);
 		Native_SetFloat(&walk, 0.0);
 	}
 	ok = Native_EntSet(ply, ref, "InCtrl_Walk", &walk);
@@ -238,7 +237,8 @@ static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 				Native_Free(&tail);
 			}
 		} else {
-			const nativeVal_t *p = Metro_Read(MV_PARAMS) ? Native_GetItem(&metro.callParams, i, 1, &tmp) : NULL;
+			nativeVal_t params;
+			const nativeVal_t *p = Metro_Read(MV_PARAMS, &params) ? Native_GetItem(&params, i, 1, &tmp) : NULL;
 			ok = p != NULL;
 			if (p) {
 				Native_Copy(&cp[i], p);
@@ -246,23 +246,27 @@ static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 			if (p == &tmp) {
 				Native_Free(&tmp);
 			}
+			Native_Free(&params);
 		}
 	}
 	ok = ok && PORT_CALL(Elevator, UseElevator, NULL, "vvvv", &cp[0], &cp[1], &cp[2], &cp[3]);
 	for (int i = 0; i < 4; i++) {
 		Native_Free(&cp[i]);
 	}
-	if (!ok || !Metro_Read(MV_PARAMS)) {
+	nativeVal_t tmp, zero, first, params;
+	if (!ok || !Metro_Read(MV_PARAMS, &params)) {
 		return 0;
 	}
-	nativeVal_t tmp, zero, first;
-	const nativeVal_t *p = Native_GetItem(&metro.callParams, 0, 1, &tmp);
-	if (!p) {
-		return 0;
+	const nativeVal_t *p = Native_GetItem(&params, 0, 1, &tmp);
+	if (p) {
+		Native_Copy(&first, p);
 	}
-	Native_Copy(&first, p);
 	if (p == &tmp) {
 		Native_Free(&tmp);
+	}
+	Native_Free(&params);
+	if (!p) {
+		return 0;
 	}
 	Native_SetInt(&zero, 0);
 	ok = Metro_SetUsrParams(&first, &zero);
@@ -290,9 +294,11 @@ static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 			if (!Native_EntVar(e, ref, "Name", &name)) {
 				return 0;
 			}
-			ok = Metro_Read(MV_PLAYER);
-			byte hide = ok && !Native_Equal(&name, &metro.playerName);
+			nativeVal_t player;
+			ok = Metro_Read(MV_PLAYER, &player);
+			byte hide = ok && !Native_Equal(&name, &player);
 			Native_Free(&name);
+			Native_Free(&player);
 			if (!ok) {
 				return 0;
 			}
@@ -331,8 +337,10 @@ static byte Metro_Station(const nativeVal_t *x, const nativeVal_t *y, const nati
 	if (!Script_Import(mods) || !Native_Upper(name, &up)) {
 		return 0;
 	}
-	byte ok = Metro_Read(MV_MAP);
-	int mission = ok && Native_Equal(&up, &metro.missionMap);
+	nativeVal_t map;
+	byte ok = Metro_Read(MV_MAP, &map);
+	int mission = ok && Native_Equal(&up, &map);
+	Native_Free(&map);
 	/* OBJLIB 6: the .def runner takes its $names as a dict (one dict for the sections of a station) */
 	nativeVal_t mv;
 	PyObject *vars = ok ? Mode_DefVars(5, "x", x, "y", y, "name", name, "sprite", sprite, "mission", Mode_IntVal(&mv, mission)) : NULL;
@@ -433,7 +441,7 @@ static byte Metro_OnUse(nativeVal_t *params) {
 	if (!Script_Import(mods) || !Metro_Write(MV_PARAMS, params)) {
 		return 0;
 	}
-	/* OBJLIB 5: from Menu import BackButtonYStart */
+	/* from Menu import BackButtonYStart */
 	nativeVal_t back;
 	if (!Mode_FromV("Menu", "BackButtonYStart", &back)) {
 		return 0;
@@ -469,7 +477,7 @@ static byte Metro_SetAsMetro(const nativeVal_t *name) {
 	if (!Script_Import(mods)) {
 		return 0;
 	}
-	/* Elevator.ConnectElevators([EntityName], [Init.Path[7:]]) (OBJLIB 5: Init.Path is a variable of Init) */
+	/* Elevator.ConnectElevators([EntityName], [Init.Path[7:]]) (Init.Path is a variable of Init) */
 	nativeVal_t path, names, maps;
 	Native_SetEmpty(&names, NV_LIST);
 	Native_SetEmpty(&maps, NV_LIST);

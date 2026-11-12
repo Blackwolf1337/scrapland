@@ -12,7 +12,7 @@
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
  * module where the script reads them and write them back at once, the lists TalkNI and RemoteCom changed in place
- * (OBJLIB 5: the missions, the levels and the cases read and set them). The functions call each other in C as the
+ * (the missions, the levels and the cases read and set them). The functions call each other in C as the
  * port did; the scheduled ones, the hooks (OnEndOfSpeech, PlayerAnsCallback, OnOutOfRange, the SpeechRoutines) and
  * the functions RunNI calls (OnSpch, OnObjSpch) are the values of the module. The entities are handle values; the
  * voices, SScorer.SetSpeechText, SetSpeechCallback, SetHeadMonitor, CancelSpeech, SetMsgText and Set, Scrap.Set,

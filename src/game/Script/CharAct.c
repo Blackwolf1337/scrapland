@@ -11,7 +11,8 @@
  * SScorer.Fade and SetMsgText go through their seams (the cases record or swap them); CrazyWing.CrazyPhoto
  * is called through its ref (PORT_CALL: directly while the attribute holds the port's function, else by name). The
  * calls the scheduler keeps by name (CharsNPC.Respawn, MisItems.CreateBattery and CreateCoin) take their entries
- * (stage 4: Port_Scheduled); the variable CharsNPC.CharRes (OBJLIB 5) and the imports (OBJLIB 6) stay.
+ * (stage 4: Port_Scheduled); the variable CharsNPC.CharRes (OBJLIB 5 (9c: instances)) and the imports
+ (OBJLIB 6) stay.
  */
 #include "scrap/scrap.h"
 #include "scrap/script.h"

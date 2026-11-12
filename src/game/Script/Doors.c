@@ -11,15 +11,15 @@
  * DoorInfo is filled from the table below as the script's InitDoorInfo did, with the functions of the modules.
  *
  * The three modules are native C (docs/objlib-plan.md, stage 2): their functions work on C values, read the tables
- * and the state where the script reads them and change the dicts of the modules in place (OBJLIB 5). The SAct calls
+ * and the state where the script reads them and change the dicts of the modules in place. The SAct calls
  * of the classes (the scene cases record them), Scrap.Set, UsrEntity, GetEntity, CreateEntity, GetNetFlags,
  * DeleteScheduledFuncs, the dummy search, the scheduler, SLogic.SetOnFloor, SScorer.SetMsgText and Fade and
  * SInput.SetActionSet go through their seams, and the doors, elevators and riders are handle values (OBJLIB 7). The
  * other ports (Menu, CharScorer, Chars, SaveGame, DoorSound, Elevator, Teleport, CharConversor, PhoneCab,
  * DTritusDesktop) and the module's own functions through its globals go through their refs (PORT_CALL, PORT_OWN: a
  * mission may replace them), and so do Scrap.SetCallFunc, AddParams, AddParami and Execute (stage 7); the functions
- * of DoorInfo and DefDoorInfo and the hooks are called as the values of the variables (OBJLIB 5) through the entries of
- * port functions (Mode_CallArgs), and the functions given to the scheduler (Metro.SetUsrParams,
+ * of DoorInfo and DefDoorInfo and the hooks are called as the values of the variables (OBJLIB 5 (9c)) through the
+ * entries of port functions (Mode_CallArgs), and the functions given to the scheduler (Metro.SetUsrParams,
  * TryToElevatorLaunchFirst) take their entries (stage 4: Port_Scheduled). An option of ConnectElevators whose text does
  * not paste between quotes runs the exec line of the script (OBJLIB 6).
  */
@@ -166,7 +166,7 @@ static const doorInfo_t door_datatmaker = { "DataTMaker", 500, "Messenger", "Doo
 static const doorInfo_t door_editship = { "EditShip", 1400, "ShipEdit", "DoorInitializator", "ShipEdit", "ObjInitializator", 0, 1 };
 
 /* a function of the table as a value: a global of Doors as its functions read it, else an attribute of the imported
- * module (OBJLIB 5: the function objects go into DoorInfo; their calls take the entries, Mode_CallArgs) */
+ * module (OBJLIB 5 (9c): the function objects go into DoorInfo; their calls take the entries, Mode_CallArgs) */
 static byte Dr_Func(const char *module, const char *name, nativeVal_t *out) {
 	return strcmp(module, "Doors") ? LvN_ModGet(module, name, out) : LvN_GObj("Doors", name, out);
 }
@@ -694,8 +694,9 @@ static byte Elv_ElevatorHaveClose(const nativeVal_t *name, const nativeVal_t *ev
 	return ok;
 }
 
-/* the hook var of the module, called with arg (the entity of that name with entity) when it is set (OBJLIB 5: the
- * value of the variable) */
+/* the hook var of the module, called with arg (the entity of that name with entity) when it is set (OBJLIB 5 (9c:
+ * a function value of the variable)) */
+
 static byte Elv_Hook(const char *var, const nativeVal_t *arg, byte entity) {
 	nativeVal_t hook = { 0 }, e = { 0 };
 	byte ok = LvN_GObj(ELV, var, &hook) && (!Native_True(&hook) ||

@@ -23,10 +23,10 @@
 # Script_ModuleExtras) and the names the C state of a port keeps that no line gives (MVK_VAR of every type: a C hook
 # or a load time call makes them). Flags: MVF_COND (only a
 # line in a branch of an if gives it), MVF_DEL (a del line of the module code removes it again). The place is the C
-# state of the port that keeps the variable (the file and the field): a slot the Mode_Read/Mode_Put/Mode_DictPut
-# family reads and writes (&<static struct>.<field>), a row of a nativeVar_t table of the file, or a computed name
-# (COMPUTED below). Names a mod or the game adds at run time are not here: they go to the overflow list of the
-# module (src/game/Script/ModVars.c).
+# state of a port that would keep a copy of the variable (the file and the field: a slot the Mode_Read/Mode_Put/
+# Mode_DictPut family reads and writes, &<static struct>.<field>); since batch 9b2 no port keeps one, the registry
+# holds every value, and a place found again is a copy to fold. Names a mod or the game adds at run time are not here:
+# they go to the overflow list of the module (src/game/Script/ModVars.c).
 import argparse, collections, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -42,8 +42,6 @@ KINDS = ['MVK_VAR', 'MVK_FUNC', 'MVK_MODULE', 'MVK_IMPORT', 'MVK_CLASS', 'MVK_SY
 TYPES = ['NONE', 'INT', 'FLOAT', 'STR', 'VEC', 'LONG', 'LIST', 'TUPLE', 'DICT', 'OBJ']
 ANY = (1 << len(TYPES)) - 1
 SYS = ['__builtins__', '__doc__', '__file__', '__name__']
-# names the C builds at run time, not as a literal: (module, prefix, file, array of the suffixes, place with %d)
-COMPUTED = [('Fx', 'FXMOTOR_', 'Fx.c', 'fx_motors', 'fx.motor[%d]')]
 
 Name = collections.namedtuple('Name', 'kind types flags place')
 
@@ -262,9 +260,6 @@ def module_files():
 # ---- the C state of the ports ----
 
 SLOT = re.compile(r'\bMode_(?:Read|Put|DictPut|DictDel)\s*\(\s*"(\w+)"\s*,\s*"(\w+)"\s*,\s*&\s*(\w+)\s*\.\s*(\w+(?:\s*\[\s*\w+\s*\])?)')
-VARTAB = re.compile(r'\bnativeVar_t\s+\w+\s*\[\s*\]\s*=\s*\{')
-VARROW = re.compile(r'\{\s*"(\w+)"\s*,\s*&?\s*(\w+)\s*\.\s*(\w+(?:\s*\[\s*\w+\s*\])?)\s*,\s*(\w+)')
-NATIVEMOD = re.compile(r'\bNative_(?:Import|ImportGlobals|Put)\s*\(\s*"(\w+)"')
 STATICSTRUCT = re.compile(r'^static struct \{.*?^\} (\w+)\b', re.S | re.M)
 
 
@@ -299,21 +294,6 @@ def c_places(src):
 		for m in SLOT.finditer(text):
 			if m.group(3) in structs:
 				places[(m.group(1), m.group(2))].add('%s %s.%s' % (base, m.group(3), re.sub(r'\s+', '', m.group(4))))
-		mods = set(NATIVEMOD.findall(text))
-		for t in VARTAB.finditer(text):
-			end = text.index('};', t.end())
-			for r in VARROW.finditer(text, t.end(), end):
-				if r.group(2) not in structs:
-					continue
-				if len(mods) != 1:
-					sys.exit('modvars: %s: the nativeVar_t rows name no single module (%s)' % (f, sorted(mods)))
-				count = '' if r.group(4) == '0' else '[%s]' % r.group(4)
-				places[(next(iter(mods)), r.group(1))].add('%s %s.%s%s' % (base, r.group(2), r.group(3), count))
-	for module, prefix, f, array, fmt in COMPUTED:
-		raw = open(os.path.join(SCRIPT, f)).read()
-		m = re.search(r'\b%s\s*\[\s*\]\s*=\s*\{([^}]*)\}' % array, raw)
-		for i, s in enumerate(re.findall(r'"(\w+)"', m.group(1))):
-			places[(module, prefix + s)].add('%s %s' % (f, fmt % i))
 	return places
 
 

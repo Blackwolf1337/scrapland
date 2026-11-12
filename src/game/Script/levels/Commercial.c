@@ -8,7 +8,7 @@
  * MapRace.Races) stay in the scripts; the functions read and write them as their globals.
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
- * script reads them and write them back at once (OBJLIB 5; the lists of the missions are changed in place), and call
+ * script reads them and write them back at once (the lists of the missions are changed in place), and call
  * the engine in C: save variables, engine variables, entity lists, the money, the scorer, the language texts. The
  * engine functions the cases record or swap go through their seams (AddScheduledFunc, DeleteScheduledFuncs,
  * CreateEntity, UsrEntity, Set, SetAlarm, GetAlarm, Rand, Preload3DObject, TestLine, DelSaveVars, SAI.GetStateVehicle,
@@ -21,7 +21,7 @@
  * native entries (stage 7: SAI.SetStateVehicle and SetInertia, Scrap.Achievement and Scrap.SetMoney of a long,
  * SScorer.AddModel and CancelSpeech). By name stay the functions handed on as values: to the scheduler (the entry of a
  * port's own function, stage 4: Port_Scheduled), as the callbacks of Parking and Alarm, the AfterRemoteComFunc of
- * Speech.ForceRemoteCom (values of their variables, OBJLIB 5). The InitStatus functions that only set the traffic
+ * Speech.ForceRemoteCom (values of their variables, OBJLIB 5 (9c)). The InitStatus functions that only set the traffic
  * ships, the start positions of the races (LvN_StartPos) and Mission_DestroyCommSats2 are LevelCommon's.
  */
 #include "scrap/game.h"
@@ -96,7 +96,7 @@ static byte Cm_PreloadG(const char *module, const char *name) {
 	return ok;
 }
 
-/* module.var = the global name of src (a function) and = None (OBJLIB 5) */
+/* module.var = the global name of src (a function) and = None (OBJLIB 5 (9c)) */
 #define CM_HOOK(module, var, src, name) LvN_ModSetGlobal(module, var, src, name)
 
 /* Scrap.Set("CurrentWaypointName", v) */
@@ -2738,9 +2738,9 @@ static byte Gambler_CreateCrazyGamblers(const nativeVal_t *a, nativeVal_t *out) 
 		Mode_LaterV(d, CG, "RefreshScorer", Mode_I(&t, 0), 1, NULL));
 }
 
-/* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = ()) with func the global of module (OBJLIB 5:
- * a function handed on as a value; Speech keeps it in its variable OnEndOfSpeech and calls it with Mode_Apply, the
- * entry of a port's own function) */
+/* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = ()) with func the global of module (OBJLIB 5
+ * (9c): a function handed on as a value; Speech keeps it in its variable OnEndOfSpeech and calls it with Mode_Apply,
+ * the entry of a port's own function) */
 static byte Cm_ForceCom(const char *key, const char *who, const char *module, const char *func) {
 	nativeVal_t args[2], fn;
 	if (!Mode_RefG(module, func, &fn)) {

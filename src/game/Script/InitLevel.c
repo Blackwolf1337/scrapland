@@ -9,9 +9,9 @@
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters (Init,
  * LoadCharLib, AddMLib, MLibInitStatus, MLibInit and PreloadMlibs parse their one argument, isMission, SetArrowSize,
  * SetMapLabelText and Close take any arguments, as before). The flags and tables of the module are read as its globals
- * where the script reads them (OBJLIB 5); Path is written at once and MapLibs changed in place (the map libraries are
+ * where the script reads them; Path is written at once and MapLibs changed in place (the map libraries are
  * module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
- * script calls as its globals and the other ports go through their refs (PORT_OWN, PORT_CALL: the seam, OBJLIB 5).
+ * script calls as its globals and the other ports go through their refs (PORT_OWN, PORT_CALL: the seam, OBJLIB 5 (9c)).
  * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time, their functions
  * called through the entries of the level's ports (MODE_CBATTR, PORT_VALUE);
  * string.find and replace are the native twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements,
@@ -19,10 +19,12 @@
  * by name (OBJLIB 6, 7). Scrap.Set,
  * OpenPack, ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and
  * SetLabelText go through their seams. The evals of the save texts read literals with the native reader
- * (Mode_EvalIn; a bare name is looked up in the module, OBJLIB 6), and the C hooks of the module code keep working on the module's dict (OBJLIB 6).
+ * (Mode_EvalIn; a bare name is looked up in the module, OBJLIB 6), and the C hooks of the module code keep working on
+ * the module's dict (OBJLIB 6).
  */
 #include <string.h>
 
+#include "scrap/modvars.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -109,7 +111,7 @@ static byte In_PreloadMlibsN(void) {
 	if (!Mode_Import("Map")) {
 		return 0;
 	}
-	/* OBJLIB 7: the module object itself for dir(), by reference */
+	/* the module object itself, by reference */
 	nativeVal_t map;
 	int m = Mode_RefModule("Map", &map) ? In_IsMission() : -1;
 	byte ok = m >= 0;
@@ -118,7 +120,11 @@ static byte In_PreloadMlibsN(void) {
 		ok = LvN_ModAppend("Map", "Libraries", &lib);
 	}
 	int has = -1;
-	if (ok && Native_CallMod("__builtin__", "dir", &names, "v", &map)) {
+	modVarRef_t mv;
+	if (ok && ModVar_OfVal(&map, &mv)) {
+		/* "Libraries" in dir(Map): the names of the module's variables */
+		has = ModVar_Has(&mv, "Libraries");
+	} else if (ok && Native_CallMod("__builtin__", "dir", &names, "v", &map)) {
 		LvN_Str(&key, "Libraries");
 		has = Native_Contains(&names, &key);
 	}

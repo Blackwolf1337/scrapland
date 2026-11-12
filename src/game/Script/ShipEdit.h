@@ -21,7 +21,7 @@ PyObject *HangarTab_DrawBackground(PyObject *self, PyObject *args, PyObject *kw)
  *
  * The same lines for the functions that work on native values (scrap/scriptmodes.h): each returns 1, or 0 with the
  * error of the script raised; conditions 1, 0, or -1 with the error. The ships are handle values (NV_OBJ, OBJLIB 7),
- * the lists of ShipEdit and the variables of HangarTab stay in the module dicts (OBJLIB 5).
+ * the lists of ShipEdit and the variables of HangarTab are read from the registry.
  */
 
 /* ShipEdit.IsEditingMultiplayer() through its ref (own: as ShipEdit calls its own global): 1, 0, -1 */

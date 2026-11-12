@@ -861,7 +861,7 @@ byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target) {
 }
 
 byte LvN_Callback(const char *name, const char *module, const char *func) {
-	/* OBJLIB 5 and 7: the character object of CharsNPC, its list and the function, by reference */
+	/* OBJLIB 5 (9c: an instance) and 7: the character object of CharsNPC, its list and the function, by reference */
 	nativeVal_t key, ch = { 0 }, cb = { 0 }, append = { 0 }, fn = { 0 };
 	LvN_Str(&key, name);
 	byte ok = Mode_CharRes(&key, &ch);
@@ -1495,7 +1495,7 @@ byte LvN_ClosePressHangar(void) {
 }
 
 byte LvN_RoutineCall(const char *kind, const nativeVal_t *a) {
-	/* OBJLIB 5: the functions of Speech as the objects its table holds, by reference */
+	/* OBJLIB 5 (9c): the functions of Speech as the objects its table holds, by reference */
 	nativeVal_t r, k, fn = { 0 };
 	Native_SetText(&k, kind, (int)strlen(kind));
 	byte ok = Mode_RefMod("Speech", "SpeechRoutines", &r) && Mode_RefSub(&r, &k, &fn) && Mode_RefApply(&fn, a, 4, NULL);

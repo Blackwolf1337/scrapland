@@ -9,8 +9,8 @@
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
  * PyMethodDef entries are adapters. The module's variables are read where the script reads them, canBeMounted,
- * nEngSlots and enginesList changed in place on the module's objects (OBJLIB 5); the ship being edited is
- * HangarTab.prevShip as a handle value (OBJLIB 5 and 7), the tables of ShipMaker and ShipEdit are read as their
+ * nEngSlots and enginesList changed in place on the module's objects; the ship being edited is
+ * HangarTab.prevShip as a handle value (OBJLIB 7), the tables of ShipMaker and ShipEdit are read as their
  * attributes. HangarTab, ShipEdit and ShipMaker are called through their refs (PORT_CALL: directly while the attribute
  * holds the port's function, else by name), string.atoi and string.find through their native twins, and the module's
  * own functions through its globals as the script calls them (PORT_OWN, the same seam on the global). The link
@@ -1108,7 +1108,7 @@ static PyObject *ET_SelectEngineGroupPy(PyObject *self, PyObject *args, PyObject
 	return Mode_KwIdEntry(args, kw, "iO|O", names, ET_SelectEngineGroupPy_E);
 }
 
-/* the method of a list variable of the module called in place (OBJLIB 5: sort and append of the script's lists) */
+/* the method of a list variable of the module called in place (sort and append of the script's lists) */
 static byte ET_ListMethod(const char *var, const char *method, const nativeVal_t *arg) {
 	return arg ? Mode_VarCall(MOD, var, 1, method, arg) : Mode_VarCall0(MOD, var, 1, method);
 }

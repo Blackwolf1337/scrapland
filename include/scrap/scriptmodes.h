@@ -75,7 +75,7 @@ byte Mode_Preload(const nativeVal_t *name);
  * (OBJLIB 7: through Python's sys.stdout until the console takes C texts) */
 #define MODE_PRINT_MAX 12
 byte Mode_Print(const nativeVal_t *const *items, int n);
-/* module.var = v of a Python object as it is (OBJLIB 5: a value passed between modules keeps its identity) */
+/* module.var = v of a Python object as it is (OBJLIB 5 (7e: a PyObject of an adapter); the value keeps its identity) */
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
 /* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
 byte Mode_NextInSlot(cEntity **e);
@@ -144,7 +144,7 @@ byte Mode_Rand(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
 byte Mode_RandD(double a, double b, nativeVal_t *out);
 /* Scrap.ConsoleError(text) */
 byte Mode_ConsoleError(const nativeVal_t *text);
-/* SSound.Play(Sound.<sound>, Sound.<volume>) (OBJLIB 5: the names are variables of the Sound module) */
+/* SSound.Play(Sound.<sound>, Sound.<volume>) (the names are variables of the Sound module) */
 byte Mode_Sound(const char *sound, const char *volume);
 /* SSound.Play(sound, volume) on values */
 byte Mode_Play(const nativeVal_t *sound, const nativeVal_t *volume);
@@ -243,8 +243,7 @@ byte Mode_VRead(const nativeVal_t *h, const char *var, nativeVal_t *slot);
 
 /* the PyObject of a module variable as its functions read it (a new reference; the NameError of a missing global) */
 PyObject *Mode_GlobalPy(const char *module, const char *name);
-/* module.var = v of another module, through the variable registry (scrap/modvars.h; OBJLIB 5: the value in the slot
- * of its dict until batch 5h) */
+/* module.var = v of another module, through the variable registry (scrap/modvars.h) */
 byte Mode_SetModVar(const char *module, const char *var, const nativeVal_t *v);
 /* module.var of another module into *out (any native value; a TypeError for other objects) */
 byte Mode_ModVar(const char *module, const char *var, nativeVal_t *out);
@@ -337,7 +336,7 @@ PyObject *Mode_From(const char *module, const char *name);
  * AttributeError of the module attribute */
 byte Mode_PrevShip(nativeVal_t *ship);
 /* HangarTab.prevShip.<var> and its set: the ship being edited, read as the attribute of HangarTab at every use
- * (OBJLIB 5 and 7: a handle in a variable of another module) */
+ * (OBJLIB 7: a handle in a variable of another module) */
 byte Mode_ShipGet(const char *var, nativeVal_t *out);
 byte Mode_ShipSet(const char *var, const nativeVal_t *v);
 /* ShipMaker.<table>[string.upper(HangarTab.prevShip.Model)][i] (the model read before the table, as the C ports read
@@ -477,8 +476,8 @@ byte Mode_SpeechMsg(const nativeVal_t *cad);
 /* the colour Scorer.MissionScorerText_Color of a scorer item: SScorer.Set(id, item, "Red", colour[0]) and Green, Blue,
  * Alpha */
 byte Mode_TextColour(const nativeVal_t *id, const char *item);
-/* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5: the group lists of GateKeeper keep
- * their identity) */
+/* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5 (9c: DoorFoe is called the Python
+ * way); the group lists of GateKeeper keep their identity) */
 byte Mode_DoorFoe(const char *gk, const char *group);
 /* Scrap.GetLangStr(key) of a value (the TypeError of "s" for one that is no text) into out */
 byte Mode_LangV(const nativeVal_t *key, nativeVal_t *out);
@@ -573,7 +572,8 @@ byte Mode_EqI(const nativeVal_t *a, long i);
 byte Mode_RaiseText(const char *text);
 /* `usr and usr.Name == name`: 1, 0, -1 */
 int Mode_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name);
-/* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5) */
+/* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5 (9c:
+ * functions as values)) */
 byte Mode_ModSetGlobal(const char *module, const char *var, const char *src, const char *name);
 /* the global name of the module op v, op i: 1, 0, -1 (a missing global: its NameError) */
 int Mode_GCmp(const char *module, const char *name, const char *op, const nativeVal_t *v);
@@ -681,9 +681,9 @@ byte Mode_StopAllSounds(void);
 /* Scrap.GetFirst(): the handle value of the first entity, None when there is none */
 byte Mode_First(nativeVal_t *out);
 
-/* dict[key] of a dict variable of the module as the object it is (OBJLIB 5: a list in it changed in place): a new
- * reference, NULL with the error (the NameError of the global, the errors of the subscript) */
-PyObject *Mode_AtPy(const char *module, const char *dict, const nativeVal_t *key);
+/* dict[key] of a dict variable of the module as the object it is (a list in it changed in place): 1 with *out
+ * (Native_Free it), 0 with the error (the NameError of the global, the errors of the subscript) */
+byte Mode_AtVal(const char *module, const char *dict, const nativeVal_t *key, nativeVal_t *out);
 /* the arguments of a keyword function (fmt and names of PyArg_ParseTupleAndKeywords, n of them, up to 8) as native
  * values into a (None when not given, given[i] 0 then; given may be NULL) */
 byte Mode_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, int n, nativeVal_t *a, byte *given);
@@ -698,7 +698,7 @@ byte Mode_PreloadTexture(const nativeVal_t *name);
  * a tuple (Mode_CbApply, a site per call) */
 #define Mode_Apply(f, args, out) Mode_CbApply(PORT_VSITE(), f, args, out)
 /* the list of a global of the module changed in place as the C ports change it: v appended (first: inserted at 0), and
- * item i deleted (OBJLIB 5: other modules and the cases hold the list) */
+ * item i deleted (other modules and the cases hold the list) */
 byte Mode_ListAddG(const char *module, const char *var, const nativeVal_t *v, byte first);
 byte Mode_DelItemG(const char *module, const char *var, int i);
 /* ---- the vehicle modules of batch L (Vehicles, VehiclesNPC, ShipMaker, SputnikInterface) ---- */
@@ -717,7 +717,8 @@ byte Mode_Set0I(const char *item, const char *var, long i);
 /* the failure of a call (ok 0) printed as the menus printed it ("Script: <module>.<func> failed" and the error;
  * OBJLIB 7): ok passed on */
 byte Mode_Printed(byte ok, const char *module, const char *func);
-/* PORT_CALL(Module, Func, NULL, fmt, ...) with its failure printed so (Script_Call, Mode_PrintedCall of a known name) */
+/* PORT_CALL(Module, Func, NULL, fmt, ...) with its failure printed so (Script_Call, Mode_PrintedCall of a known name)
+ * */
 #define MODE_PRINTED(module, name, ...) \
 	Mode_Printed(Port_Invoke(PORT_SITE(port_##module##_##name, 0), NULL, __VA_ARGS__), #module, #name)
 
@@ -1087,12 +1088,13 @@ byte Mode_ScheduleV(const nativeVal_t *time, const nativeVal_t *func, const nati
 /* h.SetModel(<the global modelVar of module>) of a value of the script (Mode_HSetModel: the handle looked at before
  * the global is read) */
 byte Mode_VSetModel(const nativeVal_t *h, const char *module, const char *modelVar);
-/* module.var = o.name as the object it is, o a value of the script (the module a variable holds; OBJLIB 5: a list of
- * that module keeps its identity) */
+/* module.var = o.name as the object it is, o a value of the script (the module a variable holds; OBJLIB 5 (9c: a module
+ * as a value); a list of that module keeps its identity) */
 byte Mode_ModToV(const char *module, const char *var, const nativeVal_t *o, const char *name);
-/* <the global var of module>.name as any value, for the module a variable holds (ModLib; OBJLIB 5): the attribute as
- * PyObject_GetAttrString gives it (an object that fails without an exception, the handle of a deleted entity, leaves
- * none set: the caller's function then fails as a call without an error does; Mode_VObj sets ceval's SystemError) */
+/* <the global var of module>.name as any value, for the module a variable holds (ModLib; OBJLIB 5 (9c: a module as a
+ * value)): the attribute as PyObject_GetAttrString gives it (an object that fails without an exception, the handle of a
+ * deleted entity, leaves none set: the caller's function then fails as a call without an error does; Mode_VObj sets
+ * ceval's SystemError) */
 byte Mode_GObjAttr(const char *module, const char *var, const char *name, nativeVal_t *out);
 /* the global var of module = the handle of entity e (None for NULL; OBJLIB 7: the module keeps the handle) */
 byte Mode_PutHandle(const char *module, const char *var, cEntity *e);
@@ -1197,8 +1199,8 @@ byte Mode_WriteLine(const nativeVal_t *const *items, int n);
  * object that fails without an error), by reference */
 byte Mode_RefGetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
 /* Mode_Entry with every argument by reference (an NV_OBJ that holds the caller's object, also a number, a text or a
- * list of plain values): the adapter of a function that keeps or changes the object it is given (OBJLIB 5 and 7).
- * MODE_REFADAPTER(pre, name) is that adapter of the entry pre_name_E */
+ * list of plain values): the adapter of a function that keeps or changes the object it is given (OBJLIB 5 (7e:
+ * adapters) and 7). MODE_REFADAPTER(pre, name) is that adapter of the entry pre_name_E */
 PyObject *Mode_RefEntry(PyObject *args, portEntry_t entry);
 #define MODE_REFADAPTER(pre, name) \
 	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
@@ -1291,9 +1293,9 @@ byte Mode_Quotable(const nativeVal_t *text);
 /* apply(f, args) as the builtin apply takes args, with the function a value (Mode_CbApplySeq) */
 byte Mode_CbApplySeqV(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
 #define MODE_CBAPPLYSEQV(f, args, out) Mode_CbApplySeqV(PORT_VSITE(), f, args, out)
-/* the adapter of a function that keeps or changes an argument as the object it is (OBJLIB 5: a list stored by
- * identity or sorted in place): Mode_Entry with the arguments whose bits are set in objs given to the entry as the
- * objects themselves (NV_OBJ, whatever they are; Native_Arg would copy a plain list) */
+/* the adapter of a function that keeps or changes an argument as the object it is (OBJLIB 5 (7e: the adapter); a list
+ * stored by identity or sorted in place): Mode_Entry with the arguments whose bits are set in objs given to the entry
+ * as the objects themselves (NV_OBJ, whatever they are; Native_Arg would copy a plain list) */
 PyObject *Mode_EntryObj(PyObject *args, portEntry_t entry, unsigned objs);
 /* int(v) of the script into *out: Native_ToInt (numbers and texts), an object through PyNumber_Int (OBJLIB 9: an
  * instance's __int__) */
@@ -1301,8 +1303,8 @@ byte Mode_Int(const nativeVal_t *v, nativeVal_t *out);
 /* `v` of the script as a text value the Python way (PyObject_Repr of the value as an object; Mode_Repr drops the
  * error of an object's __repr__): 0 with that error and *out None */
 byte Mode_ReprV(const nativeVal_t *v, nativeVal_t *out);
-/* the global var of module = src.name of another module as the object it is (OBJLIB 5: a function a module keeps to
- * put back later; Mode_ModTo sets the attribute of another module) */
+/* the global var of module = src.name of another module as the object it is (OBJLIB 5 (9c: functions as values): a
+ * function a module keeps to put back later; Mode_ModTo sets the attribute of another module) */
 byte Mode_PutFromMod(const char *module, const char *var, const char *src, const char *name);
 /* var.method(a, b) of a variable of a module (global as for Mode_Keys), in place, the result dropped (the append of
  * 1.5.2 with two arguments, which appends the pair) */

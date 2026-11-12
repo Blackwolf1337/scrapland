@@ -8,13 +8,13 @@
  * (Init.inMainMenu, isShipEdit, isDemo, Outdoor, isJunkYard, MultiPlayer, Menu.LastMode, LastTimeSpeed,
  * currentSoundPitch, saveGamesList, saveGamesSlots, slotToLoad, slotToOverwrite, fromSinglePlayer, isXbox, HeadBoss,
  * OutHeadMessenger, MovieScorerCall, Scorer.MarginH and MarginV, the sounds of Sound), the variables of Menu are
- * written at once (OBJLIB 5). The menus, SaveGame, Speech and MissionsFuncs are called through their refs (PORT_CALL:
+ * written at once. The menus, SaveGame, Speech and MissionsFuncs are called through their refs (PORT_CALL:
  * directly while the attribute holds the port's function, else by name, as a mod, a mission or a case may replace
  * them); the aliases and callbacks of Menu and the scorers (Menu.onCreateMainMenu, MovieScorerCall,
- * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5; BackMenuFunc through the
- * entry of the function it holds, MODE_PRINTEDCALL), the Init of the scorer of the mode by its module chosen at run
- * time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and Scrap.Exit,
- * GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams; the death camera
+ * RacerScorer.BackMenuFunc, CharScorer.BackMenuFunc) are variables called by name (OBJLIB 5 (9c); BackMenuFunc through
+ * the entry of the function it holds, MODE_PRINTEDCALL), the Init of the scorer of the mode by its module chosen at
+ * run time (MODE_CBATTR; OBJLIB 7: both are Mode_PyNone, with no ref); SScorer.SetCinema, Fade, SSound.Play and
+ * Scrap.Exit, GetCam, GetEntity, UsrEntity, CreateEntity and TestLine go through their seams; the death camera
  * schedules functions of Menu and Scrap.SetCam (the scheduler takes their entries, Port_Scheduled); the list of saved
  * games comes from the engine as a C array and the .def sections get their $names as values (Mode_DefRun; OBJLIB 6:
  * a dict inside the runner). Every function of the table has a native entry (stage 6, batch 6h: Mode_IdControl,
@@ -188,7 +188,7 @@ static void Main_Create(int id, const char *back) {
 static void Main_MainMenu(int id, const char *control) {
 	char mode[0x20];
 	Main_LastMode(mode, sizeof(mode));
-	/* OBJLIB 5: the alias Menu.onCreateMainMenu (= CreateMainMenu of menu.mod) by name */
+	/* OBJLIB 5 (9c): the alias Menu.onCreateMainMenu (= CreateMainMenu of menu.mod) by name */
 	Mode_Printed(Native_CallMod("Menu", "onCreateMainMenu", NULL, "iss", (long)id, control,
 		strcmp(mode, "Menu") ? "Menu.BackToGame" : ""), "Menu", "onCreateMainMenu");
 }
@@ -224,7 +224,7 @@ static void Main_MovieScorer(int id) {
 	modeVals_t t = { .n = 0 };
 	Main_Run(id, "Movie", 1, "talky", Mode_I(&t, 475 - marginV));
 	Mode_Done(&t, 1);
-	/* OBJLIB 5: the callback variable of Menu */
+	/* OBJLIB 5 (9c): the callback variable of Menu */
 	Mode_CallVarIf("Menu", "MovieScorerCall", id);
 }
 
@@ -274,8 +274,8 @@ static void Main_BackToGame(int id) {
 
 /* DrawScorer(id, mode): the scorer of a ship, of the character, or of a movie */
 static void Main_DrawScorer(int id, const char *mode) {
-	/* OBJLIB 5: the aliases BackMenuFunc (= Create of racerscorer.mod and charscorer.mod) by name, called through the
-	 * entry of the function they hold */
+	/* OBJLIB 5 (9c): the aliases BackMenuFunc (= Create of racerscorer.mod and charscorer.mod) by name, called through
+	 * the entry of the function they hold */
 	if (!strcmp(mode, "Racer")) {
 		MODE_PRINTEDCALL("RacerScorer", "BackMenuFunc", id);
 	} else if (!strcmp(mode, "Walk")) {

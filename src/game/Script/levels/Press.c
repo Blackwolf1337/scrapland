@@ -16,7 +16,7 @@
  * Mission_WhoIsTheBaddie (BAD_REPUTATION, STD_SHIPS_PROFILE, libname).
  *
  * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
- * script reads them and write them back at once (OBJLIB 5; the lists of the modules are changed in place), and call
+ * script reads them and write them back at once (the registry; the lists are changed in place), and call
  * the engine in C: save variables, engine variables, the dummy search, the language texts, the time speed and the
  * action set. The engine functions the cases record or swap go through their seams (AddScheduledFunc,
  * DeleteScheduledFuncs, CreateEntity, UsrEntity, Set, SetAlarm, GetAlarm, Rand, DelSaveVars, SScorer.SetLabelText,
@@ -25,14 +25,14 @@
  * (PORT_CALL: directly while the attribute holds the port's function, else by name) and the module's own functions
  * through their globals (PORT_LOWN, the same seam on the global: a mission may replace one). The callbacks of Speech
  * and of the CharsNPC characters are named by their refs (LV_ONEND, LV_COM, LV_CALLBACK, LV_MISSIONCHAR); they and the
- * hooks of PR_HOOK are the values of the variables (OBJLIB 5). SAI.SetStateChar and GetStateChar,
+ * hooks of PR_HOOK are the values of the variables (OBJLIB 5 (9c)). SAI.SetStateChar and GetStateChar,
  * SLogic.SendSentinelToWatch, Scrap.CallElements, SScorer.AddModel and SSound.UsePS go through their refs (stage 7);
  * the plain
  * functions of the .def files are data, called and given as callbacks by name (OBJLIB 6); the call lines of the scene
  * tables and of News1 are data in C (Mode_Calls: a port's function through its entry); CharsNPC.CharRes and the
- * GateKeeper groups are the objects they are (OBJLIB 5); the scheduler takes the entry of a port's own function
- * (stage 4: Port_Scheduled) and of SScorer.Fade (stage 7), the bound methods stay Python (OBJLIB 7). MapPlanes is
- * LevelCommon's.
+ * GateKeeper groups are the objects they are (OBJLIB 5 (9c: instances, groups to GateKeeper)); the scheduler takes the
+ * entry of a port's own function (stage 4: Port_Scheduled) and of SScorer.Fade (stage 7), the bound methods stay
+ * Python (OBJLIB 7). MapPlanes is LevelCommon's.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -60,7 +60,7 @@
 
 /* SAI.SetStateChar(...) through its ref (the seam sees the recorder of a case) */
 #define CHAR_STATE(...) PORT_CALL(SAI, SetStateChar, NULL, __VA_ARGS__)
-/* module.var = the global name of src (a function) (OBJLIB 5) */
+/* module.var = the global name of src (a function) (OBJLIB 5 (9c)) */
 #define PR_HOOK(module, var, src, name) LvN_ModSetGlobal(module, var, src, name)
 /* the scheduled call of a global function of module after delay s without arguments, and with one */
 #define PR_LATER(s, module, func) Mode_Later(s, module, func, NULL, 0, NULL)
@@ -433,7 +433,7 @@ static byte PressMap_BrowseAlarmLaunchers(const nativeVal_t *a, nativeVal_t *out
 	return PORT_LOWN(Map, CreateActivators, NULL, "");
 }
 
-/* CharConversor.AvailableChars.remove(v) of the list of CharConversor in place (OBJLIB 5) */
+/* CharConversor.AvailableChars.remove(v) of the list of CharConversor in place */
 static byte Pr_NotAvailable(const char *name) {
 	nativeVal_t v, l;
 	LvN_Str(&v, name);
@@ -1390,7 +1390,7 @@ static byte Pr_MissionTarget(const char *name, const char *use, const long *pos)
 	if (!PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", name)) {
 		return 0;
 	}
-	/* CharsNPC.CreateChar(CharsNPC.CharRes[name]) (OBJLIB 5: the character object of CharsNPC) */
+	/* CharsNPC.CreateChar(CharsNPC.CharRes[name]) (OBJLIB 5 (9c: the character object, an instance)) */
 	LvN_Str(&k, name);
 	nativeVal_t ch;
 	byte ok = Mode_CharRes(&k, &ch) && PORT_CALL(CharsNPC, CreateChar, NULL, "v", &ch);
@@ -1633,7 +1633,7 @@ static byte Pr_CheckHumanDist(const char *module, nativeVal_t *out) {
 	return near >= 0;
 }
 
-/* CharsNPC.CharRes[key].var = (x, y, z) (OBJLIB 5: the character objects of CharsNPC) */
+/* CharsNPC.CharRes[key].var = (x, y, z) (OBJLIB 5 (9c: the character objects, instances)) */
 static byte Pr_ResSet(const char *key, const char *var, long x, long y, long z) {
 	nativeVal_t k, v, ch;
 	LvN_Str(&k, key);
@@ -2136,7 +2136,7 @@ static byte MeetBoss_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 		Mode_GVarSetI("DefActionRadius", 1000);
 }
 
-/* `if CharsNPC.CharRes.has_key(name): del CharsNPC.CharRes[name]` (OBJLIB 5) */
+/* `if CharsNPC.CharRes.has_key(name): del CharsNPC.CharRes[name]` */
 static byte Pr_ResDel(const char *name) {
 	nativeVal_t k;
 	LvN_Str(&k, name);
@@ -2482,7 +2482,7 @@ static byte MeetBoss_OnActionPressed(const nativeVal_t *a, nativeVal_t *out) {
 	return Mode_LangMsg("Mission_TalkToCrazy_SystemMessage1");
 }
 
-/* Speech.RemoteCom.remove(the last queued com of key) (OBJLIB 5: the list of Speech in place) */
+/* Speech.RemoteCom.remove(the last queued com of key) (the list of Speech in place) */
 static byte Mb_UnqueueCom(const char *key) {
 	nativeVal_t list, found = { 0 };
 	if (!Mode_RefMod("Speech", "RemoteCom", &list)) {

@@ -7,20 +7,20 @@
  * Orbit.Decontaminated) stay in the scripts.
  *
  * The functions are native C (docs/objlib-plan.md, stage 2): they work on C values, read the variables of the level
- * modules where the script reads them (OBJLIB 5) and call the engine in C. The engine functions the cases record go
+ * modules where the script reads them and call the engine in C. The engine functions the cases record go
  * through their seams or their refs (Scrap.CreateEntity, Set, SetAlarm, SetLockAlarm, UsrEntity, AddScheduledFunc,
  * SScorer.SetMsgText, SAct.GetAct and SetAct, SSound.SetMusic through seams; Scrap.OpenPack, PreloadLibrary,
  * ClosePack, SetCallFunc, AddParams, Execute, Achievement and SetDebrisSys through their refs, stage 7). Entities are
  * handle values (OBJLIB 7).
  *
- * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene, GateKeeper,
- * MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN; the callbacks
- * of AfterBrowseNPC by the names of their refs), Items.Hint too; the scene tables and the function value gc.CanPassFunc
+ * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene,
+ * GateKeeper, MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN;
+ * the callbacks of AfterBrowseNPC by the names of their refs), Items.Hint too; the scene tables and the function value gc.CanPassFunc
  * call a port's function through its entry (Mode_Calls, PORT_VALUE), and so do the scheduled calls (Mode_Later,
  * Mode_LaterIn, Mode_Schedule; Port_Scheduled, SScorer.SetMsgText's engine entry too). By name stay the functions
  * set as callbacks or given as values (EndOfSceneCallback,
  * AfterBrowseNPC, Speech.OnEndOfSpeech, GateKeeper.LocalCallFunc, the door functions of SetDoor, the hint function of
- * Items.Hint; OBJLIB 5).
+ * Items.Hint; OBJLIB 5 (9c: functions as values)).
  */
 #include <string.h>
 
@@ -124,7 +124,7 @@ static byte Ob_KeyHint(long x, long y, long z, const char *key, long mission) {
 	return ok;
 }
 
-/* Scene.EndOfSceneCallback = the global func of module (OBJLIB 5); Scene.Play(scene) */
+/* Scene.EndOfSceneCallback = the global func of module (OBJLIB 5 (9c)); Scene.Play(scene) */
 static byte Ob_Play(const char *module, const char *func, const char *scene) {
 	return LvN_ModSetGlobal("Scene", "EndOfSceneCallback", module, func) && PORT_CALL(Scene, Play, NULL, "s", scene);
 }
@@ -357,7 +357,7 @@ static byte Decont_InitN(void) {
 	if (!Mode_Import("GateKeeper")) {
 		return 0;
 	}
-	/* GateKeeper.SetDoor with the door functions of the module (OBJLIB 5: the functions as values); the lookup of
+	/* GateKeeper.SetDoor with the door functions of the module (OBJLIB 5 (9c: the functions as values)); the lookup of
 	 * SetDoor comes after the two functions now (it differs only when both fail) */
 	byte ok = LvN_GObj(MD, "OpenGateKeeperDoor", &fn1) && LvN_GObj(MD, "CloseGateKeeperDoor", &fn2) &&
 		PORT_CALL(GateKeeper, SetDoor, NULL, "ssvv", "GateKeeper_Portalis", "DM_Door_OrbitDoorA_00", &fn1, &fn2);
@@ -367,8 +367,8 @@ static byte Decont_InitN(void) {
 		!Mode_EntSetS("DM_Door_Teleporter_01", "UseFunc", "MapDecont.CantUseElevator") || !Mode_Import("Items")) {
 		return 0;
 	}
-	/* Items.Hint(<the teleporter door>.Pos, the text, 5, 1, SetFirstInfoPointAsMission) (OBJLIB 5: the function as a
-	 * value); the lookup of Hint comes after its arguments now (it differs only when it fails: the door and the
+	/* Items.Hint(<the teleporter door>.Pos, the text, 5, 1, SetFirstInfoPointAsMission) (OBJLIB 5 (9c: the function as
+	 * a value)); the lookup of Hint comes after its arguments now (it differs only when it fails: the door and the
 	 * function are read before its AttributeError then) */
 	Native_SetNone(&pos);
 	Native_SetNone(&fn1);
@@ -438,7 +438,7 @@ static byte Decont_OpenGateKeeperDoorN(const nativeVal_t *door) {
 	return ok;
 }
 
-/* AfterBrowseNPC(): the callbacks of the special characters (OBJLIB 5: the functions as values, by the names of
+/* AfterBrowseNPC(): the callbacks of the special characters (OBJLIB 5 (9c: the functions as values), by the names of
  * their refs) */
 static byte Decont_AfterBrowseNPCN(void) {
 	static const struct {
@@ -475,7 +475,7 @@ static byte Decont_ShowSkipConvsMsgN(void) {
 	return Ob_KeyMsg("Mission_Decontamination_SystemMessage8", "Use", 10);
 }
 
-/* Speech.OnEndOfSpeech = GateKeeper.EndOfSpeech (OBJLIB 5: a function of another port) */
+/* Speech.OnEndOfSpeech = GateKeeper.EndOfSpeech (OBJLIB 5 (9c: a function of another port as a value)) */
 static byte Ob_GateKeeperEnd(void) {
 	nativeVal_t fn = { 0 };
 	byte ok = LvN_ModGet("GateKeeper", "EndOfSpeech", &fn) && Mode_SetModVar("Speech", "OnEndOfSpeech", &fn);
@@ -500,7 +500,8 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 	if (!Mode_EntityH(charName, ch) || !Mode_EntityH(usrName, usr) || !LvN_Speakers(usrName, charName)) {
 		return Mode_Done(&t, 0);
 	}
-	/* OBJLIB 5 and 7: GateKeeper.GateKeepers holds the gatekeeper objects; GateKeepers[CharName] by reference */
+	/* OBJLIB 5 (9c: instances) and 7: GateKeeper.GateKeepers holds the gatekeeper objects; GateKeepers[CharName] by
+	 * reference */
 	nativeVal_t *gks = Mode_V(&t), *g = Mode_V(&t);
 	if (!Mode_RefMod("GateKeeper", "GateKeepers", gks) || !Mode_RefSub(gks, charName, g)) {
 		return Mode_Done(&t, 0);

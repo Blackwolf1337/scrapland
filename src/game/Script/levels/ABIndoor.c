@@ -8,13 +8,14 @@
  * variables, the scorer items, the action set, the camera and the music are C; Scrap.Set, SScorer.Set, SScorer.Fade,
  * SSound.SetMusic, Scrap.MusicPlayer, Scrap.CreateEntity, Scrap.AddScheduledFunc and the dummy search (fc-abi swaps
  * Scrap.StartDummySearch and NextDummySearch) go through their seams; the ship and the camera are handle
- * values (OBJLIB 7); Init.Outdoor and Scene.EndOfSceneCallback are variables of other modules (OBJLIB 5).
+ * values (OBJLIB 7); Init.Outdoor and Scene.EndOfSceneCallback are variables of other modules (OBJLIB 5 (9c: a function
+ * value)).
  *
  * Direct calls (stage 3): the functions of SaveGame, Elevator, Chars, Menu, MissionsFuncs and Scene and the map's own
  * Goodbye go through their refs (PORT_CALL, PORT_LOWN; the seam takes the call by name when a case has put something
- * else there, OBJLIB 5). By name: the sections of map.def (LoadSceneA, LoadSceneB and the Create functions of the
+ * else there, OBJLIB 5 (9c)). By name: the sections of map.def (LoadSceneA, LoadSceneB and the Create functions of the
  * mission characters; OBJLIB 6); PlaySceneA, Credits and SaveGame.SaveGame given to the scheduler take their entries
- * (stage 4: Port_Scheduled), PlaySceneA and Credits given to Scene are values of its variables (OBJLIB 5).
+ * (stage 4: Port_Scheduled), PlaySceneA and Credits given to Scene are values of its variables (OBJLIB 5 (9c)).
  */
 #include <string.h>
 

@@ -14,22 +14,22 @@
  * tamayoHasJustReceivedMoney). Mission_CatchTrurl keeps its state in save variables.
  *
  * The functions are native C (docs/objlib-plan.md, stage 2): they work on C values, read the variables of the
- * missions where the script reads them and write them back to the module at once (OBJLIB 5), and call the engine in C:
+ * missions from the registry where the script reads them and write them back at once, and call the engine in C:
  * save variables, texts, money, entity variables, the scorer; Scrap.UsrEntity, Scrap.Set, Scrap.SetLockAlarm,
  * Scrap.CreateEntity, Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, SScorer.SetMsgText, SetLabelText, Set and
  * the SAct functions through their seams. Entities are handle values (OBJLIB 7). CharsNPC.CharRes and
- * Speech.SpeechRoutines are read the Python way (OBJLIB 5). MapSnd.SndElements is LevelCommon's shared Lv_SndElements,
- * native since batch F (Lv_SndCore on values).
+ * Speech.SpeechRoutines are read the Python way (OBJLIB 5 (9c: instances and functions)). MapSnd.SndElements is
+ * LevelCommon's shared Lv_SndElements, native since batch F (Lv_SndCore on values).
  *
  * Direct calls (stage 3): the functions of the other ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Elevator, Metro,
  * InTraffic, Items, RaceMaker, Fx, Scorer) and the own functions of the modules (their globals, the keyword functions
  * ChooseStapler and Blablibla included) go through their refs (PORT_CALL, PORT_LOWN, LV_COM, LV_ONEND, LV_CALLBACK,
  * LV_MISSIONCHAR, LV_SCORERG; the seam takes the call by name when a mission or a case has put something else there,
- * OBJLIB 5); string.find is the native twin, apply on MissionsFuncs.SetNextMission takes its entry (Mode_ApplyNext).
- * SVec.GetAngle goes through its ref (stage 7). By name: the section PreStealFunctionary of the .def file (OBJLIB 6).
- * The functions given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the UseFunc texts) take the
- * entry of a port's own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to Speech, CharAct and
- * CharConversor as callbacks are values of their variables (OBJLIB 5).
+ * OBJLIB 5 (9c)); string.find is the native twin, apply on MissionsFuncs.SetNextMission takes its entry
+ * (Mode_ApplyNext). SVec.GetAngle goes through its ref (stage 7). By name: the section PreStealFunctionary of the .def
+ * file (OBJLIB 6). The functions given to the scheduler and to the entities (Mode_Later, Mode_Schedule, the UseFunc
+ * texts) take the entry of a port's own function (stage 4: Port_Scheduled, PYF_ENTRY), the ones given to Speech,
+ * CharAct and CharConversor as callbacks are values of their variables (OBJLIB 5 (9c: functions as values)).
  */
 #include "scrap/scrap.h"
 #include "scrap/scorer.h"
@@ -256,7 +256,7 @@ static byte ThAm_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("CharsNPC") || !LV_CALLBACK("Mayor_Default", Mission_ApologizeMayor, CreateMayorInit)) {
 		return 0;
 	}
-	/* del CharsNPC.CharRes["Gear_Mayor"] (OBJLIB 5) */
+	/* del CharsNPC.CharRes["Gear_Mayor"] */
 	LvN_Str(&key, "Gear_Mayor");
 	byte ok = Mode_ModDictDel("CharsNPC", "CharRes", &key);
 	Native_Free(&key);
@@ -366,7 +366,7 @@ static byte ThAm_SetTransportMission(const nativeVal_t *a, nativeVal_t *out) {
 	if (!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_ProtectMayorTransport", "DownTown")) {
 		return 0;
 	}
-	/* OBJLIB 5: Speech.NPCName as the value it is */
+	/* Speech.NPCName as the value it is */
 	byte ok = LvN_ModGet("Speech", "NPCName", &npc) && Th_Activate(&npc, 0);
 	Native_Free(&npc);
 	if (!ok || !Mode_MMDesc("Mission_ProtectMayorTransport_MissionText1", 1L)) {
@@ -383,7 +383,7 @@ static byte ThAm_ChooseStaplerN(const nativeVal_t *not) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *mmt = Mode_V(&t), *keys = Mode_V(&t), *stapler = Mode_V(&t), *name = Mode_V(&t);
 	Native_SetEmpty(mmt, NV_LIST);
-	/* for ky in CharsNPC.CharRes.keys(): CharRes read again at each key, as the script reads it (OBJLIB 5) */
+	/* for ky in CharsNPC.CharRes.keys(): CharRes read again at each key, as the script reads it */
 	if (!Mode_Keys("CharsNPC", "CharRes", 0, keys)) {
 		return Mode_Done(&t, 0);
 	}
@@ -700,7 +700,7 @@ static byte ThCt_FunctionaryMissionSpeech(const nativeVal_t *a, nativeVal_t *out
 		(!LvN_EqS(&a[2], "Talk") || Mode_Spch("Mission_GetMayorOutlines_InitMsg1", "Mission_GetMayorOutlines_InitAns1", NULL));
 }
 
-/* module.var = SpawnMap when it is None (OBJLIB 5: the hook of another module as the value it is) */
+/* module.var = SpawnMap when it is None (OBJLIB 5 (9c: the hook of another module, a function value)) */
 static byte Ct_HookSpawn(const char *module, const char *var) {
 	nativeVal_t v = { 0 };
 	if (!LvN_ModGet(module, var, &v)) {
@@ -1265,7 +1265,7 @@ static byte ThTm_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("CharsNPC") || !LV_CALLBACK("Mayor_Default", Mission_TalkToMayor, CreateMayorInit)) {
 		return 0;
 	}
-	/* CharsNPC.CharRes["Gear_Mayor"].ExtraInfo = "STAY" (OBJLIB 5) */
+	/* CharsNPC.CharRes["Gear_Mayor"].ExtraInfo = "STAY" (OBJLIB 5 (9c: an instance)) */
 	LvN_Str(&key, "Gear_Mayor");
 	nativeVal_t gear;
 	byte ok = Mode_ModAt("CharsNPC", "CharRes", &key, &gear);
@@ -1684,7 +1684,7 @@ static byte ThTm_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *item = Mode_V(&t), *back = Mode_V(&t), *mainc = Mode_V(&t), *black = Mode_V(&t), *mx = Mode_V(&t), *v = Mode_V(&t);
 	(void)out;
 	LvN_Str(item, "TamayoMoneyBar");
-	/* Scorer.MissionScorerBar_SetDefaults with the colours of Scorer read by name (OBJLIB 5) */
+	/* Scorer.MissionScorerBar_SetDefaults with the colours of Scorer read by name */
 	return Mode_Done(&t, Th_ScorerLabel(&a[0], "TamayoMoney", "Mission_Campaign1_Scorer1") && Mode_ScorerAdd(&a[0], item, "Bar") &&
 		LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", back) && LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", mainc) &&
 		LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", black) &&

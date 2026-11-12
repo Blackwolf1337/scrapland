@@ -17,17 +17,17 @@
  * text made once and kept with the value), so the identity holds both ways; Python code on the module object comes
  * here through the getattr and setattr of the module type, and its __dict__ is the module dict filled with every
  * variable first. The test channel (src/game/Global/TestChannel.c, TestExpr.c: names, __globals__, X.__dict__, dump),
- * the helpers of the ports by module name (Script_Global, Script_SetGlobal, Script_Attr, Script_SetVar, Native_Import,
- * Native_Put, the Mode_ helpers of scrap/scriptmodes.h and the LvN_ wrappers on them), the module code of the .mod
- * files (its stores, loads and deletes, from the start of the module code on: ModVar_Making, and its from-import), the
+ * the helpers of the ports by module name (Script_Global, Script_SetGlobal, Script_Attr, Script_SetVar,
+ * Native_VarTake, Native_VarSetItem, the Mode_ helpers of scrap/scriptmodes.h and the LvN_ wrappers on them), the
+ * module code of the .mod files (its stores, loads and deletes, from the start of the module code on: ModVar_Making, and its from-import), the
  * C hooks of module code, the writes of the loader (Script_ReplaySet), the .def runner, Script_NameChain and
  * Script_GetAttr read and write module variables only through here. A dict without variables here (Scrap, __main__,
  * a module of the C or one a test made, a class body) holds its own values.
  *
- * The 107 variables with a C place (the place text of the table) keep a C copy in their port that follows the value
- * here: the port refreshes it where it reads the variable (Mode_Read, Native_Import at its entry points) and writes
- * both (Mode_Put, Native_Put); the value here stays the one that counts, because other holders change the shared lists
- * and dicts in place and a case can put a value of any type there (the port's TypeError comes where it reads it).
+ * The variables with a C place (the place text of the table: the port that reads and writes them) have no C copy: the
+ * port reads the value here where the script reads it and writes it here where the script writes it, so the value
+ * here is the only one (other holders change the shared lists and dicts in place, and a case can put a value of any
+ * type there: the port's TypeError comes where it reads it).
  */
 #ifndef SCRAP_MODVARS_H
 #define SCRAP_MODVARS_H
@@ -155,6 +155,10 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names);
 const char *ModVar_ModuleName(const modVarRef_t *ref);
 /* whether the registry has a .mod file (of any level) of the module name: a pack module (Script_Module) */
 byte ModVar_HasModule(const char *module);
+
+/* what the variables of every module hold now, counted by kind (native data, views, crossed), as lines added to b:
+ * the measure of stage 9b (the channel's "native vars"; SCRAP_NATIVE_COUNT=1 prints it at the end) */
+void ModVar_Report(nativeBuf_t *b);
 
 /* ---- by module name: the module imported as the scripts import it (Script_Module, its error), a pack module through
  * the registry, another module (Scrap, __main__, a pack module while its code runs) by its dict ---- */

@@ -13,11 +13,11 @@
  * Scrap.MusicPlayer, LoadLevel and Achievement go through their refs (stage 7: the cases record them, the seam calls
  * what they put there), and so do SNet.CloseServer and CloseClient (the online games run through them).
  * The other ports (Scorer, Challenge, Speech, MissionsFuncs) and the functions of the module the script calls through
- * its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5); string.zfill has a twin in
- * the file. The function given to the scheduler by name takes its entry (Port_Scheduled); the Menu object a script may
- * put into the module is a global (OBJLIB 5) whose ShowTextBox is called through its entry (PORT_VALUE). The registers
- * keep their Python objects: SaveReg reads the attributes of any object and GetReg makes a class whose attributes are
- * read with the Python literal reader (OBJLIB 6).
+ * its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5 (9c)); string.zfill has a
+ * twin in the file. The function given to the scheduler by name takes its entry (Port_Scheduled); the Menu object a
+ * script may put into the module is a global (OBJLIB 5 (9c)) whose ShowTextBox is called through its entry
+ * (PORT_VALUE). The registers keep their Python objects: SaveReg reads the attributes of any object and GetReg makes
+ * a class whose attributes are read with the Python literal reader (OBJLIB 6).
  */
 #include <limits.h>
 #include <string.h>
@@ -494,7 +494,7 @@ static byte SG_LoadGame(const nativeVal_t *slot) {
 		Mode_SaveVar("Map", map);
 		return Mode_Done(&t, PORT_OWN(SaveGame, QLoad, NULL, "vi", map, 0L));
 	}
-	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 5:
+	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 5 (9c):
 	 * the global; the function of the object through its entry) */
 	nativeVal_t *menu = Mode_V(&t), *box = Mode_V(&t);
 	if (!Mode_RefG(SG, "Menu", menu)) {
