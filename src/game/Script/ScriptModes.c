@@ -3519,7 +3519,7 @@ int Mode_ModTrue(const char *module, const char *var) {
 
 /* module.var.append(gmod.name): a function appended to the list of another module in place */
 byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name) {
-	nativeVal_t o, fn, r;
+	nativeVal_t o, fn = { 0 }, r = { 0 };
 	if (!ModVar_ModAttrVal(module, var, &o)) {
 		return 0;
 	}
