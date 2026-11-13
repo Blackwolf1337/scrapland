@@ -7,6 +7,7 @@
 #include "scrap/ai.h"
 #include "scrap/crt.h"
 #include "scrap/embeddedfxvehicle.h"
+#include "scrap/faction.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
 #include "scrap/vehicleentity.h"
@@ -485,10 +486,12 @@ static void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	if (!self->owner->visible || !(Veh(v)->active > 0.0f) || !(self->owner->alpha >= 0.8f)) {
 		return;
 	}
-	if (Vehicle_Player(v) && !g_pApp->flags) {
+	/* not in the original: a player's ship of the network flashes while its siren is on (include/scrap/faction.h) */
+	int net = Faction_SirenOf(v);
+	if (net == 0 || (net < 0 && Vehicle_Player(v) && !g_pApp->flags)) {
 		return;
 	}
-	byte alarm = g_pWorld->alarm.on;
+	byte alarm = net > 0 ? 1 : g_pWorld->alarm.on;
 	float dt = cTimer_GetDelta(&g_pWorld->timer);
 	cEmbeddedFXVehicle *fx = self->owner;
 	if (fx->followed) {

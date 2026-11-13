@@ -15,6 +15,7 @@
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/platform.h"
@@ -593,6 +594,7 @@ void Play_PostFrame(float dt) {
 	if (play.e && !play.bot) {
 		NetPl_Accumulate(play.e, &play.acc, dt);
 	}
+	Faction_ClientFrame();
 }
 
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs) {
@@ -657,6 +659,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 	}
 	play.lastServer = (vec3_t){ sp[0], sp[1], sp[2] };
 	WLife(e)->life = st->life;
+	Faction_EntityFlags(e, st->flags);
 	float err = NetRepPredHist_Error(&play.hist, tick, sp);
 	play.st.states++;
 	if (err < 0.0f) {

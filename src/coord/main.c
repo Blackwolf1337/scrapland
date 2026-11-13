@@ -3,6 +3,7 @@
  *
  *   ScrapCoord [-port:28100] [-bind:<IPv4>] [-name:<world>] [-data:<folder>] [-gamedir:<game folder>] [-exe:<ScrapC>]
  *              [-levels:<comma list>] [-keep:<comma list>] [-start:<level>] [-maxplayers:64] [-pvp:1] [-money:2000]
+ *              [-mode:sandbox|freeroam]
  *              [-grace:<s>] [-instargs:"<more instance arguments>"] [-stopinstances]
  *
  * Lines on the standard input: status, save, kick <name or key>, start <level> (keep it up), stop <level>, quit.
@@ -145,6 +146,8 @@ int main(int argc, char **argv) {
 			cfg.pvp = atoi(v) != 0;
 		} else if ((v = Main_Arg(a, "money"))) {
 			cfg.money = atoi(v);
+		} else if ((v = Main_Arg(a, "mode"))) {
+			snprintf(cfg.mode, sizeof(cfg.mode), "%s", v);
 		} else if ((v = Main_Arg(a, "grace"))) {
 			cfg.grace = atoi(v);
 		} else if ((v = Main_Arg(a, "instargs"))) {

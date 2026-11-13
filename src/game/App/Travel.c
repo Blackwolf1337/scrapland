@@ -17,6 +17,7 @@
 #include "scrap/console.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/netrep.h"
@@ -120,9 +121,8 @@ static void Tr_State(int i) {
 	CoordKv_Set(p->state, &p->len, sizeof(p->state), "money", v);
 	Str_PrintfQuiet(v, sizeof(v), "%.3f", (double)Players_Alarm(i)->value);
 	CoordKv_Set(p->state, &p->len, sizeof(p->state), "alarm", v);
-	if (e && NetPl_Kind(e) == NETREP_CHAR && WLife(e)->actCtrl && WLife(e)->actCtrl->cls) {
-		CoordKv_Set(p->state, &p->len, sizeof(p->state), "char", WLife(e)->actCtrl->cls->name);
-	}
+	/* char, faction, rank, arrests, wanted (include/scrap/faction.h) */
+	Faction_State(i, p->state, &p->len, sizeof(p->state));
 	if (e && NetPl_Kind(e) == NETREP_SHIP) {
 		Travel_Boarded(i, e);
 	}
@@ -443,6 +443,7 @@ byte Travel_Admit(int conn, int player, TravelSpawn *sp) {
 	TrPlayer *p = &tr.pl[player];
 	memset(p, 0, sizeof(*p));
 	if (!Travel_Coordinated()) {
+		Faction_Admit(player, NULL, 0);
 		return 1;
 	}
 	TrPending *pd = Tr_Pending(conn);
@@ -464,6 +465,7 @@ byte Travel_Admit(int conn, int player, TravelSpawn *sp) {
 	Coord_Hex(p->key, NET2_KEY_SIZE, p->hex);
 	memcpy(p->state, t->state, (size_t)t->stateLen);
 	p->len = t->stateLen;
+	Faction_Admit(player, p->state, p->len);
 	Str_Copy(p->entrance, t->entrance, sizeof(p->entrance));
 	Str_Copy(p->door, t->door, sizeof(p->door));
 	p->lastReport = tr.now;

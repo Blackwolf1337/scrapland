@@ -10,6 +10,7 @@
 #include "scrap/console.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/netrep.h"
@@ -120,6 +121,8 @@ static void Join_Host(void) {
 	Str_Copy(cfg.keep, join.hostKeep[0] ? join.hostKeep : cfg.start, sizeof(cfg.keep));
 	Str_PrintfQuiet(cfg.name, sizeof(cfg.name), "%s's world", join.name[0] ? join.name : "Player");
 	cfg.stopInstances = 1;
+	/* -mode of this game for its world (include/scrap/faction.h) */
+	Str_Copy(cfg.mode, Faction_ModeName(), sizeof(cfg.mode));
 	cfg.log = Join_Log;
 	join.coord = Coord_Create(&cfg);
 	if (!join.coord) {

@@ -13,6 +13,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
+#include "scrap/faction.h"
 #include "scrap/players.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -395,6 +396,7 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 	if (g_Instance) {
 		cEntity *by = w->attack.hitBy.target ? World_FindEntity(Nto1Node_TargetName(&w->attack.hitBy)) : NULL;
 		Players_BindEntity(Players_Is(by) ? by : self);
+		Faction_Crime(self, by, damage == NULL);
 	}
 	cPy_Function_AddParamS(own, self->name);
 	cPy_Function_AddParamS(own, Nto1Node_TargetName(&w->attack.hitBy));

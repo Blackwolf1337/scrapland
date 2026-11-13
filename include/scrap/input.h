@@ -121,6 +121,8 @@ byte Input_SelectActionSetNamed(const char *name);
 byte Input_MenuAccept(int player);
 uint32_t Input_GetActionSet(void);
 int Input_AssignEntry(const char *a, const char *b, int c, const char *d, const char *e);
+/* the largest value of the device entries bound to the action of the set for the player, whatever set is on */
+float Input_BoundValue(int set, int action, int player);
 int Input_GetEntry(const char *a, const char *b, const char *c, int *index, char **name);
 int Input_ListenToDefine(int player, const char *a, const char *b, const char *c);
 void Input_AbortListenToDefine(void);

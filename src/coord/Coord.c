@@ -162,7 +162,7 @@ static void Co_SetInfo(void) {
 	info.flags = COORD_INFO_WORLD | (coord.cfg.dedicated ? COORD_INFO_DEDICATED : 0);
 	snprintf(info.name, sizeof(info.name), "%s", coord.cfg.name);
 	snprintf(info.map, sizeof(info.map), "%.32s", coord.cfg.start);
-	snprintf(info.mode, sizeof(info.mode), "%s", COORD_MODE);
+	snprintf(info.mode, sizeof(info.mode), "%s", coord.cfg.mode[0] ? coord.cfg.mode : COORD_MODE);
 	Net2_SetServerInfo(coord.host, &info);
 }
 
@@ -225,7 +225,7 @@ static void Co_SetState(CoInst *in, int state) {
 
 static void Co_Start(CoInst *in) {
 	char exe[COORD_PATH + 16], cwd[COORD_PATH + 8], logPath[COORD_PATH + 64], token[65], key[65];
-	char a[10][96];
+	char a[11][96];
 	char extra[256];
 	const char *argv[40];
 	int n = 0;
@@ -264,6 +264,10 @@ static void Co_Start(CoInst *in) {
 	if (coord.cfg.bind[0]) {
 		snprintf(a[9], sizeof(a[9]), "-bind:%s", coord.cfg.bind);
 		argv[n++] = a[9];
+	}
+	if (coord.cfg.mode[0]) {
+		snprintf(a[10], sizeof(a[10]), "-mode:%s", coord.cfg.mode);
+		argv[n++] = a[10];
 	}
 	snprintf(extra, sizeof(extra), "%s", coord.cfg.instArgs);
 	for (char *p = strtok(extra, " "); p && n < 38; p = strtok(NULL, " ")) {

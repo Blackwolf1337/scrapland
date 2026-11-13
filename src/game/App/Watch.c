@@ -16,6 +16,7 @@
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/misc.h"
@@ -244,6 +245,8 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 		cEntity *e = cWorld_CreateEntity(g_pWorld, name, x, y, z, TYEN_WALKCHAR);
 		if (e) {
 			Obj(e)->proxy = proxy;
+			/* a class the level does not load (a player's of the freeroam factions) */
+			Faction_EnsureClass(part[1]);
 			WithLife_SetActCtrl(e, part[1]);
 			Con_Printf("watch: character %s (%s) at %.0f %.0f %.0f\n", name, part[1], (double)x, (double)y, (double)z);
 		}
@@ -557,7 +560,11 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		Watch_MissileHit(p, sn, !(sn->flags & NETREP_FL_ACTIVE));
 		on = on && e->active;
 	}
-	if (on != e->active) {
+	if (on != e->active && p->kind == NETREP_SHIP && !g_pWorld->weapons.count) {
+		/* a ship of an indoor level (no weapons there): the vehicle's stop of its weapons would read the empty
+		 * weapon table */
+		cWithLifeEntity_SetActive(e, on);
+	} else if (on != e->active) {
 		Entity_SetActive(e, on);
 	}
 	if (p->kind == NETREP_MISSILE) {
@@ -573,6 +580,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		v->controls.str = sa->ctrl[1] / 127.0f;
 		v->speed = sqrtf(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
 		Watch_Weapon(e, sa);
+		Faction_EntityFlags(e, p->s[p->n - 1].st.flags);
 	} else {
 		cWalkCharEntity *c = WChar(e);
 		w->life = sa->life;
@@ -793,12 +801,21 @@ byte Watch_MetroPick(const char *station) {
 	return 1;
 }
 
+byte Watch_SendReliable(const uint8_t *data, int size) {
+	if (!watch.host || watch.phase != WATCH_RUN) {
+		return 0;
+	}
+	Net2_Send(watch.host, 0, REP_CH_RELIABLE, data, size);
+	return 1;
+}
+
 /* the connection to the instance and everything of it gone (a travel to another instance) */
 static void Watch_Reset(void) {
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		Watch_Free(s);
 	}
 	Play_Reset();
+	Faction_ClientReset();
 	if (watch.host) {
 		Net2_Destroy(watch.host);
 		watch.host = NULL;
@@ -906,6 +923,8 @@ void Watch_PreFrame(void) {
 				Watch_Player(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == COORD_MSG_METRO) {
 				Watch_Metro(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == FACTION_MSG_STATUS) {
+				Faction_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SNAP && watch.phase == WATCH_RUN) {
 				Watch_Snapshot(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SHOTS && watch.phase == WATCH_RUN) {

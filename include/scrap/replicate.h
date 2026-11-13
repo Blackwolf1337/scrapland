@@ -25,6 +25,7 @@
 #ifndef SCRAP_REPLICATE_H
 #define SCRAP_REPLICATE_H
 
+#include "scrap/mathlib.h"
 #include "scrap/net2.h"
 #include "scrap/netrep.h"
 #include "scrap/shared.h"
@@ -49,6 +50,9 @@ void Rep_Close(void);
 int Rep_PlayerConn(int i);
 int Rep_ConnPlayer(int conn);
 void Rep_Respawn(int i);
+/* player i's character again (its class of now, include/scrap/faction.h) where it stands, or at pos (out of its ship
+ * then); pos NULL and the player in a ship: nothing */
+void Rep_Rebody(int i, const vec3_t *pos, float yaw);
 /* tests: the switch of player i (into the nearest parked ship or out of its ship), or a ship called beside it */
 void Rep_TestSwitch(int i, byte call);
 
@@ -74,6 +78,8 @@ void Watch_ProxiesBack(void);
 void Watch_Adopt(int slot, struct cEntity *e, int kind);
 /* the proxy is a player's entity */
 byte Watch_IsPlayer(struct cEntity *e);
+/* a message to the instance on the reliable channel while the level runs: 1 sent */
+byte Watch_SendReliable(const uint8_t *data, int size);
 /* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the tick of an input of now; the server time
  * the proxies are drawn at (s) */
 byte Watch_ClockReady(void);

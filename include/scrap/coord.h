@@ -237,6 +237,7 @@ typedef struct CoordConfig {
 	char instArgs[256];				/* more arguments for the instances (space separated) */
 	int maxPlayers;
 	int pvp, money;					/* -pvp and -money of the instances */
+	char mode[16];					/* -mode of the instances and the server info, "" COORD_MODE */
 	int grace;						/* s, 0 COORD_GRACE_SECS */
 	int saveSecs;					/* s, 0 COORD_SAVE_SECS */
 	int dedicated;
