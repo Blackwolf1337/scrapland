@@ -2789,6 +2789,11 @@ static int TB_Id(nativeVal_t *a, int n, nativeVal_t *out) {
 	if (!Native_Arity("id", n, 1, 1)) {
 		return 0;
 	}
+	if (a->type == NV_ENT) {
+		/* the address of the handle, which its repr and hash show */
+		Native_SetInt(out, (long)Native_EntAddr(a));
+		return 1;
+	}
 	/* OBJLIB 9: the address of the Python object of a view (a value without one is made into one by Python's id) */
 	PyObject *py = NObj_Py(a);
 	if (!py) {

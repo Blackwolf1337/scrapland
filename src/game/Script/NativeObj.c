@@ -1336,10 +1336,12 @@ byte NObj_Plain(const nativeVal_t *v, nativeVal_t *out) {
  * handles themselves), a tuple as a tuple of such items, a vector as the tuple of its floats */
 static void Obj_ArgOfData(const nativeVal_t *v, nativeVal_t *out) {
 	if (v->type == NV_TUPLE) {
+		/* the same tuple: Python hands the tuple object itself back */
 		Native_SetEmpty(out, NV_TUPLE);
 		for (int i = 0; i < v->n; i++) {
 			Obj_ArgOfData(&v->items[i], Native_Append(out));
 		}
+		out->id = v->id;
 	} else if (v->type == NV_LIST || v->type == NV_DICT) {
 		NObj_CallArg(v, out);
 	} else if (v->type == NV_ENT || v->type == NV_REF || !Obj_Plain(v, out, 0)) {
