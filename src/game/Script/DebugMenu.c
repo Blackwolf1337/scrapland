@@ -402,7 +402,7 @@ void DebugMenu_Draw(float top, float bottom) {
 	static const char *const titles[] = { "Debug menu", "Missions by level", "", "Cutscenes", "Videos",
 		"Arenas and super deals", "Levels", "Network levels in split screen" };
 	char title[0x80];
-	const float row = 9.0f, x = 6.0f;
+	const float row = CONSOLEVIEW_ROW, x = 6.0f;
 	int page = dm.page[dm.depth];
 
 	Str_PrintfQuiet(title, sizeof(title), "%s%s%s", page == DM_MISSIONS ? dm.level : titles[page],

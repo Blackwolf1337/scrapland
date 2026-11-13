@@ -29,6 +29,8 @@ void ConsoleView_Wheel(int notches);
 /* F11 and the console command debugmenu: the debug menu of debug builds in the console (opened when it is closed),
  * or back to the console text */
 void ConsoleView_ToggleMenu(void);
+/* the height of a text row in pixels of the scorer (the fixed font drawn at 3/4 of its size) */
+#define CONSOLEVIEW_ROW 7.0f
 /* drawing in the console panel for the debug menu: a rectangle (ARGB) and a line of the fixed font (RGB) */
 void ConsoleView_Rect(float x, float y, float w, float h, uint32_t argb);
 void ConsoleView_Text(float x, float y, uint32_t rgb, const char *text);

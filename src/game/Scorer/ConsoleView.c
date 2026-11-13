@@ -32,7 +32,8 @@
 #define CV_H 240.0f			/* the height of the open console */
 #define CV_MENU_H 400.0f		/* with the debug menu */
 #define CV_MARGIN 6.0f
-#define CV_ROW 9.0f			/* the height of a text row */
+#define CV_ROW CONSOLEVIEW_ROW
+#define CV_FONT_SCALE 0.75f		/* of the fixed font, smaller than in the scorer */
 #define CV_SLIDE_MS 150			/* the slide down */
 #define CV_BLINK_MS 500
 #define CV_WHEEL_ROWS 3
@@ -421,9 +422,9 @@ static float CV_CharWidth(CFont *f) {
 	return dim[0] > 0.0f ? dim[0] / 20.0f : 6.0f;
 }
 
-void ConsoleView_Draw(void) {
-	char buf[CV_LINE + 2];
+static void CV_Draw(CFont *f);
 
+void ConsoleView_Draw(void) {
 #ifdef SCRAP_DEBUG_MENU
 	DebugMenu_Frame();
 #endif
@@ -438,7 +439,19 @@ void ConsoleView_Draw(void) {
 			return;
 		}
 	}
+	/* the font is shared with the scorer: its scale only while the console draws */
 	CFont *f = CV_Font();
+	float *scale = f->Font->graphic->scale2;
+	float keep[2] = { scale[0], scale[1] };
+	scale[0] = keep[0] * CV_FONT_SCALE;
+	scale[1] = keep[1] * CV_FONT_SCALE;
+	CV_Draw(f);
+	scale[0] = keep[0];
+	scale[1] = keep[1];
+}
+
+static void CV_Draw(CFont *f) {
+	char buf[CV_LINE + 2];
 	uint32_t now = Plat_Ticks();
 	uint32_t t = now - cv.openTime;
 	float frac = t >= CV_SLIDE_MS ? 1.0f : (float)t / (float)CV_SLIDE_MS;
