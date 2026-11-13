@@ -14,6 +14,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 /* the states the functionary adds to the GENCHAR_ ones */
 enum {
@@ -546,7 +547,7 @@ void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 	if (self->escapeInRadius) {
 		cBaseLocalLogic_Update(&self->base.base.logic, dt);
-		cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
+		cEntity *usr = Players_Nearest(&Func_Parent(self)->pos);
 		if (!b->idle && !b->alwaysLock && usr) {
 			const vec3_t *up = Entity_GetPos(usr, &t1);
 			cEntity *p = Func_Parent(self);

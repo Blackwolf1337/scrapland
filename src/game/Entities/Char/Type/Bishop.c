@@ -9,6 +9,7 @@
 #include "scrap/fxelements.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_BishopHitSound (GVar_BishopHitSound.value.s)
 #define g_BishopAngleVariation (GVar_BishopAngleVariation.value.f)
@@ -44,10 +45,10 @@ static void ChType_EndActionEnd(cAbstractFile *params) {
 
 	ChType_ReadParams(params, name, event);
 	cEntity *v = World_FindEntity(name);
-	cEntity *usr = ChType_Usr0();
+	byte usr = Players_Is(v);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	if ((usr != v || !(WChar(v)->energyBarDecr > 1.0f - WChar(v)->energyUsed)) && WChar(v)->control.act) {
+	if ((!usr || !(WChar(v)->energyBarDecr > 1.0f - WChar(v)->energyUsed)) && WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Action", 1);
 	}

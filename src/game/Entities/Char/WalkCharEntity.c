@@ -1415,6 +1415,8 @@ static void cWalkCharEntity_SetUsrControl(cEntity *self, int slot) {
 		if ((uint32_t)old <= 3 && cWorld_GetUsrEntity(g_pWorld, old) == self) {
 			g_pWorld->owners[old] = NULL;
 			ArrowIndicator_ClearSel();
+		} else if (Players_Net() && old >= PLAYERS_NET_SLOT && Players_Get(old - PLAYERS_NET_SLOT) == self) {
+			Players_SetOwner(old, NULL);
 		}
 	} else {
 		w->wl.obj.slot->minDiff = 0.0166666675f;

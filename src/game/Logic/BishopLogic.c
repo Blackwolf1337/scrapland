@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/players.h"
 
 #define CBISHOPLOCALLOGIC_VFTABLE (&cBishopLocalLogic_vftable.base)
 static const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable;
@@ -66,7 +67,7 @@ static cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
 		return NULL;
 	}
 	self->searchTime = g_GenCharMinSpecialActionTime * 0.5f;
-	if (!cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (!Players_Any()) {
 		return NULL;
 	}
 	cEntity *p = self->base.parent;

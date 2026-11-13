@@ -9,6 +9,7 @@
 #include "scrap/chartype.h"
 #include "scrap/input.h"
 #include "scrap/world.h"
+#include "scrap/players.h"
 
 #define CENEMIESLOCALLOGIC_VFTABLE (&cEnemiesLocalLogic_vftable)
 static const cLocalLogicVtbl cEnemiesLocalLogic_vftable;
@@ -113,7 +114,7 @@ static void cEnemies_Think(cEnemies *self) {
 	if (num && *num == 0) {
 		return;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Any();
 	if (self->attacking) {
 		cEnemies_Attack(self, usr);
 		return;

@@ -16,6 +16,7 @@
 #include "scrap/world.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 static cGVar GVar_ParkingCheckRadius;
 #define g_ParkingCheckRadius (GVar_ParkingCheckRadius.value.f)
@@ -172,7 +173,7 @@ static inline float Parking_Dist2(const cParkingZone *z, const vec3_t *p) {
 /* one zone of each ring; 1 when the player is not in a ship */
 static int Parking_Think(cParking *self) {
 	vec3_t tmp;
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Any();
 	byte inShip = 0;
 	float d;
 

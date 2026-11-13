@@ -11,6 +11,7 @@
 #include "scrap/chartype.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define CGENCHARLOCALLOGIC_VFTABLE (&cGenCharLocalLogic_vftable.base)
 #define g_OnDefStateCallback (((cPy_Function *)&GVar_OnDefStateCallback.func))	/* (name) after RestartState */
@@ -72,7 +73,7 @@ void cGenCharLocalLogic_UpdateView(cLocalLogic *elem) {
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
 	const char *type = Logic_TypeName(p);
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&p->pos);
 
 	if (usr && Entity_IsType(usr, TYEN_WALKCHAR) && Logic_IsSuspectType(type) &&
 		!strcmp(type, Logic_TypeName(usr))) {
@@ -181,7 +182,7 @@ void cGenCharLocalLogic_Update(cLocalLogic *elem, float dt) {
 		GenChar_BreakWork(self, 1);
 		return;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&b->parent->pos);
 	if (!usr || !Entity_IsType(usr, TYEN_WALKCHAR)) {
 		return;
 	}
@@ -474,7 +475,7 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 				cAIChar *a2 = Entity_GetAI(b->parent);
 				AIChar_SetState(a2, AIC_CHASE_WITH_ACTION, target, (double)g_GenCharAttackSpeed);
 			} else {
-				float speed = target == cWorld_GetUsrEntity(g_pWorld, 0) ? g_GenCharAttackSpeed : 1.0f;
+				float speed = Players_Is(target) ? g_GenCharAttackSpeed : 1.0f;
 				AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)speed);
 			}
 		}

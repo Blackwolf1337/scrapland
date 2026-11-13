@@ -3,6 +3,7 @@
  * aggressive mode; an attack makes it fight back (state 4) at random (include/scrap/logic.h).
  */
 #include "scrap/chartype.h"
+#include "scrap/players.h"
 
 #define CBANKMASTERLOCALLOGIC_VFTABLE (&cBankMasterLocalLogic_vftable.base)
 static const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable;
@@ -22,8 +23,7 @@ static void cBankMasterLocalLogic_Free(cLocalLogic *elem) {
 
 byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance) {
 	if (l->idle || l->alwaysLock) {
-		cEntity *usr = ChType_Usr0();
-		if (usr != attacker || l->busy) {
+		if (!Players_Is(attacker) || l->busy) {
 			return 0;
 		}
 	}
@@ -37,7 +37,7 @@ static cEntity *cBankMasterLocalLogic_FindTarget(cLocalLogic *elem) {
 		return NULL;
 	}
 	self->searchTime = g_GenCharMinSpecialActionTime * 0.5f;
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&self->base.parent->pos);
 	if (!usr) {
 		return NULL;
 	}

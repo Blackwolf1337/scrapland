@@ -10,6 +10,7 @@
 #include "scrap/chartype.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 /* the states of the nurse */
 enum {
@@ -195,7 +196,7 @@ static void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 /* the escape from the player */
 static void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
-	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != NURSE_ATTACK) {
+	if (!self->base.busy && Nurse_Rand101() && Players_Is(e) && self->base.state != NURSE_ATTACK) {
 		Logic_SetState(self, NURSE_FLEE, e);
 	}
 }

@@ -14,6 +14,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define CLOCALLOGIC_VFTABLE (&cLocalLogic_vftable)
 #define CBASELOCALLOGIC_VFTABLE (&cBaseLocalLogic_vftable)
@@ -443,7 +444,7 @@ void cBaseLocalLogic_Update(cLocalLogic *base, float dt) {
 		self->rageTime = dt + self->rageTime;
 		if (self->rageTime > g_GearRageMaxTime && !g_pWorld->alarm.on) {
 			cEntity *t = World_FindEntity(Nto1Node_TargetName(&WChar(p)->collide));
-			if (t && t != cWorld_GetUsrEntity(g_pWorld, 0) &&
+			if (t && !Players_Is(t) &&
 				strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, g_NotCleanableByGear)) {
 				cEntity *victim = t;
 				if (Entity_IsType(t, TYEN_WALKCHAR) &&

@@ -11,6 +11,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define CLITTLEPOLICELOCALLOGIC_VFTABLE (&cLittlePoliceLocalLogic_vftable.base)
 #define g_LittlePoliceStopAcusingMaxDistFromUser (GVar_LittlePoliceStopAcusingMaxDistFromUser.value.f)
@@ -76,7 +77,7 @@ static void cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *self) {
 
 	if (!b->busy && b->state == GENCHAR_ATTACK) {
 		cEntity *t = b->target.target;
-		if (t == ChType_Usr0()) {
+		if (Players_Is(t)) {
 			usrAttack = 1;
 			if (!cGenCharGroup_TakeAttack((&g_pWorld->logic.genChars))) {
 				Logic_RestartState(self);
@@ -171,7 +172,7 @@ static cEntity *cLittlePoliceLocalLogic_FindTarget(cLocalLogic *elem) {
 		return NULL;
 	}
 	self->base.searchTime = g_GenCharMinSpecialActionTime * 0.5f;
-	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
+	cEntity *usr = Players_Nearest(&LP_BASE(self)->parent->pos);
 	if (!usr) {
 		return NULL;
 	}
@@ -298,7 +299,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	} else if (st == GENCHAR_ACCUSE || st == LPOLICE_DISCOVER || st == LPOLICE_CHASE) {
 		cBaseLocalLogic_Update(&b->logic, dt);
 		GenChar_UpdateView(self);
-		cEntity *usr = ChType_Usr0();
+		cEntity *usr = Players_Nearest(&p->pos);
 		if (!usr || b->busy) {
 			return;
 		}
@@ -423,7 +424,7 @@ alert:
 /* the alarm when the player hits it */
 static void cLittlePoliceLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
-	if (attacker == ChType_Usr0()) {
+	if (Players_Is(attacker)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 	}
 	cGenCharLocalLogic_OnHit(&self->base.base.logic, attacker);
@@ -435,7 +436,7 @@ static void cLittlePoliceLocalLogic_OnSeen(cLocalLogic *base, cEntity *e) {
 	if (LP_BASE(self)->busy) {
 		return;
 	}
-	if (e == ChType_Usr0()) {
+	if (Players_Is(e)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		Logic_SetState(self, GENCHAR_ACCUSE, e);
 	}
@@ -458,12 +459,12 @@ static void cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self) {
 		WLife(p)->arrow.coneStatus = 0;
 		return;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&p->pos);
 	WLife(p)->arrow.coneFov = g_GenCharStdFovY;
 	WLife(p)->arrow.coneDist = g_LittlePoliceMaxDistFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *te = b->target.target;
-		if (te && b->state == GENCHAR_ACCUSE && te == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (te && b->state == GENCHAR_ACCUSE && Players_Is(te)) {
 			WLife(p)->arrow.coneStatus = 3;
 		} else {
 			WLife(p)->arrow.coneStatus = 2;
@@ -492,7 +493,7 @@ static void cLittlePoliceLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, 
 	if (b->idle || b->alwaysLock) {
 		return;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&b->parent->pos);
 	if (usr && Entity_IsType(usr, TYEN_WALKCHAR)) {
 		cEntity *p = b->parent;
 		const vec3_t *up = Entity_GetPos(usr, &t1);

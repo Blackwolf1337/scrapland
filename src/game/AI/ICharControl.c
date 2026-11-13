@@ -15,6 +15,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define CAICHARCONTROL_VFTABLE (&cAICharControl_vftable)
 #define g_MarginDetectCollCharAI (GVar_MarginDetectCollCharAI.value.f)	/* "MarginDetectCollCharAI" */
@@ -874,12 +875,11 @@ void cAICharControl_AwayWalk(cAICharControl *self) {
 			if (!AICC_CharsNear(self)) {
 				continue;
 			}
-			if (g_AICCNumNear <= 1 && g_AICCNear[0] == ChType_Usr0()) {
+			if (g_AICCNumNear <= 1 && Players_Is(g_AICCNear[0])) {
 				continue;
 			}
 			for (int i = 0; i < g_AICCNumNear; i++) {
-				cEntity *usr = ChType_Usr0();
-				if (g_AICCNear[i] != usr && AICC_InFront(self, g_AICCNear[i], 0.785398185f)) {
+				if (!Players_Is(g_AICCNear[i]) && AICC_InFront(self, g_AICCNear[i], 0.785398185f)) {
 					self->seen = 1;
 					break;
 				}

@@ -9,6 +9,7 @@
 #include "scrap/fxelements.h"
 #include "scrap/primitive.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_FXHammerHitFile (GVar_FXHammerHitFile.value.s)
 #define g_NurseAlarmHit (GVar_NurseAlarmHit.value.f)
@@ -35,7 +36,7 @@ static void ChType_NurseSphereHit(cAbstractFile *params) {
 		return;
 	}
 	CHECK(Entity_IsType(e, TYEN_WALKCHAR));
-	if (e != cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (!Players_Is(e)) {
 		g_NurseTarget = e;
 	}
 }
@@ -328,7 +329,7 @@ found:
 	if (!g_NurseTarget) {
 		goto fail;
 	}
-	byte usr = cWorld_GetUsrEntity(g_pWorld, 0) == v;
+	byte usr = Players_Is(v);
 	const vec3_t *tp = Entity_GetPos(g_NurseTarget, &t1);
 	const vec3_t *vp = Entity_GetPos(v, &t2);
 	d.x = vp->x - tp->x;

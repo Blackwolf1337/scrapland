@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/players.h"
 
 #define CHUMANLOCALLOGIC_VFTABLE (&cHumanLocalLogic_vftable)
 static const cBaseLocalLogicVtbl cHumanLocalLogic_vftable;
@@ -21,7 +22,7 @@ static void HumanLogic_Escape(cAbstractFile *params) {
 	if (!e) {
 		return;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&e->pos);
 	if (!usr || usr == e || !g_HumanEnt || g_HumanEnt == e) {
 		return;
 	}

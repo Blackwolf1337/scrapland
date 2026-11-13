@@ -27,6 +27,7 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 static cGVar GVar_MaxTrafficEnemy;
 #define g_MaxTrafficEnemy (GVar_MaxTrafficEnemy.value.i)
@@ -274,7 +275,7 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 			self->bossRobots = !strcmp(s, "1");
 		}
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Any();
 	cEntity *f1 = NULL;
 	cEntity *f2 = NULL;
 	byte alarm = g_pWorld->alarm.on;
@@ -460,7 +461,7 @@ static void Traffic_DamageNative(cAbstractFile *params) {
 	CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 	cAIVehicle *ai = Traffic_AI(e);
 	cEntity *a = World_FindEntity(attacker);
-	if (!a || a != ChType_Usr0()) {
+	if (!a || !Players_Is(a)) {
 		return;
 	}
 	if (WLife(e)->life + g_TrafficDamageTolerance > Veh(e)->maxLife) {
@@ -488,7 +489,7 @@ static void Traffic_DeathNative(cAbstractFile *params) {
 	cEntity *e = World_FindEntity(name);
 	CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 	cEntity *k = World_FindEntity(killer);
-	if (!k || k != ChType_Usr0()) {
+	if (!k || !Players_Is(k)) {
 		return;
 	}
 	if (!ExtPolice_IsChased(e)) {

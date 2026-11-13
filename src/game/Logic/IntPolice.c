@@ -13,6 +13,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_CreatePolice (((cPy_Function *)&GVar_CreatePolice.func))	/* (name, x, y, z) */
 #define g_CreateGear (((cPy_Function *)&GVar_CreateGear.func))	/* (name, x, y, z) */
@@ -227,7 +228,7 @@ static void AICtrl_Think(void *ctrl) {
 
 	self->level = -1;
 	self->alarmOn = g_pWorld->alarm.on;
-	self->usr = ChType_Usr0();
+	self->usr = Players_Any();
 	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarm.lastChars, g_pWorld->alarm.chars);
 	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 	if (!self->usr) {
@@ -334,7 +335,7 @@ call:
 		}
 	}
 bishops:
-	if (g_BishopAttackOnAlarm && target && target == cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (g_BishopAttackOnAlarm && target && Players_Is(target)) {
 		cEntity *b = cEntityList_Nearest(g_pWorld->logic.genChars.bishops, Entity_GetPos(target, &t1),
 			target, &d);
 		cBaseLocalLogic *l;
@@ -479,7 +480,7 @@ byte AICtrl_SendAccuser(void *ctrl, byte check) {
 	if (!g_pWorld->alarm.on) {
 		return 0;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Any();
 	if (!usr || !Entity_IsType(usr, TYEN_WALKCHAR)) {
 		return 0;
 	}
@@ -573,7 +574,7 @@ void AICtrl_GearsChase(void *ctrl, cEntity *e) {
 			continue;
 		}
 		cEntity *t = l->target.target;
-		if (t == ChType_Usr0()) {
+		if (Players_Is(t)) {
 			Logic_SetState(l, l->state, e);
 			found = 1;
 		}

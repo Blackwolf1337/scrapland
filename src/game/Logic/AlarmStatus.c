@@ -12,6 +12,7 @@
 #include "scrap/input.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_AlarmCallback (((cPy_Function *)&GVar_AlarmCallback.func))	/* AlarmCallback (on) */
 #define g_AlarmFallDelta (GVar_AlarmFallDelta.value.f)
@@ -108,7 +109,7 @@ void Alarm_SetOn(cAlarm *self, byte on) {
 	if (g_IsMapOutDoor == 1) {
 		return;
 	}
-	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
+	cEntity *usr = Players_Any();
 	if (!usr || !Entity_IsType(usr, TYEN_WITH_LIFE)) {
 		return;
 	}
@@ -192,7 +193,7 @@ void Alarm_Update(cAlarm *self, float dt) {
 		return;
 	}
 	Alarm_Set(self, self->grow * dt + self->value);
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Any();
 	if (!usr) {
 		return;
 	}

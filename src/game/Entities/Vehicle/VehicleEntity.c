@@ -925,6 +925,8 @@ static void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 		sc->minDiff = 0.05f;
 		if ((uint32_t)old <= 3 && cWorld_GetUsrEntity(g_pWorld, old) == Veh_Ent(self)) {
 			g_pWorld->owners[old] = NULL;
+		} else if (Players_Net() && old >= PLAYERS_NET_SLOT && Players_Get(old - PLAYERS_NET_SLOT) == Veh_Ent(self)) {
+			Players_SetOwner(old, NULL);
 		}
 	} else {
 		sc->minDiff = 0x1.111112p-6f;	/* 1 / 60 */

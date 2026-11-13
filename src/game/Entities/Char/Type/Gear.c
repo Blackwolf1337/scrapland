@@ -13,6 +13,7 @@
 #include "scrap/vehicleattack.h"
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_GearMissileSoundVol (GVar_GearMissileSoundVol.value.f)
 #define g_GearLoadWeaponSound (GVar_GearLoadWeaponSound.value.s)
@@ -97,7 +98,7 @@ static void ChType_GearHitChar(const char *name, byte noLogic) {
 	byte withLife = Entity_IsType(e, TYEN_WITH_LIFE);
 	if (g_GearTarget[0] && (gear = World_FindEntity(g_GearTarget)) != NULL) {
 		CHECK(Entity_IsType(gear, TYEN_WALKCHAR));
-		usr = gear == cWorld_GetUsrEntity(g_pWorld, 0);
+		usr = Players_Is(gear);
 	} else {
 		usr = 0;
 	}
@@ -113,7 +114,7 @@ static void ChType_GearHitChar(const char *name, byte noLogic) {
 		if (l && !noLogic) {
 			Logic_OnHit(l, gear);
 		}
-		if (usr && gear == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (usr && Players_Is(gear)) {
 			if (WChar(e)->wl.life <= damage) {
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
 				SaveVar_Inc("Stats.Gear", 1);
@@ -161,10 +162,10 @@ static void ChType_GearEndAction(cAbstractFile *params) {
 
 	ChType_ReadParams(params, name, event);
 	cEntity *v = World_FindEntity(name);
-	cEntity *usr = ChType_Usr0();
+	byte usr = Players_Is(v);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	if (!WChar(v)->control.act || (usr == v && WChar(v)->energyBarDecr > 1.0f - WChar(v)->energyUsed)) {
+	if (!WChar(v)->control.act || (usr && WChar(v)->energyBarDecr > 1.0f - WChar(v)->energyUsed)) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
 		*(uint16_t *)&WChar(v)->control.act = 0;
@@ -211,7 +212,7 @@ static void ChType_GearInitAction(cAbstractFile *params) {
 
 	ChType_ReadParams(params, name, event);
 	cEntity *v = ChType_CheckChar(name);
-	Gear_Sound(v, ChType_Usr0() == v, &g_GearLoadWeaponSound, &g_GearLoadWeaponSoundVol);
+	Gear_Sound(v, Players_Is(v), &g_GearLoadWeaponSound, &g_GearLoadWeaponSoundVol);
 }
 
 /* params: the gear, an event, a float. The missile "GearMissile" from the gun of the gear: aimed for an AI or a
@@ -252,7 +253,7 @@ static void ChType_GearShoot(cAbstractFile *params) {
 	if (target) {
 		Entity_IsType(target, TYEN_WITH_LIFE);
 	}
-	if (ChType_Usr0() == v) {
+	if (Players_Is(v)) {
 		usr = 1;
 		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, Entity_GetPos(v, &t2));
 		Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_GearShootFailAlarm);

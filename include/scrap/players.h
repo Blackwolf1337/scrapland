@@ -17,6 +17,7 @@
 #ifndef SCRAP_PLAYERS_H
 #define SCRAP_PLAYERS_H
 
+#include "scrap/mathlib.h"
 #include "scrap/shared.h"
 
 #define PLAYERS_MAX 64

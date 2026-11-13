@@ -12,6 +12,7 @@
 #include "scrap/sound.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define CITEMENTITY_VFTABLE (&cItemEntity_vftable.base)
 #define g_ItemFxDist (GVar_FXItemFadeMaxDist.value.f)		/* the fade effects only nearer (60000) */
@@ -103,11 +104,11 @@ static void cItemEntity_Free(cEntity *base) {
 
 static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const vec3_t *dir) {
 	cItemEntity *self = (cItemEntity *)elem;
-	cEntity *pl = Item_Usr0();
+	cEntity *pl = Players_Net() ? NULL : Item_Usr0();
 
 	(void)point;
 	(void)dir;
-	if (self->onlyUser && (!pl || pl != other)) {
+	if (self->onlyUser && (Players_Net() ? !Players_Is(other) : !pl || pl != other)) {
 		return;
 	}
 	if (self->typeMask != 0xffff && (!Entity_IsType(other, TYEN_WITH_LIFE) ||

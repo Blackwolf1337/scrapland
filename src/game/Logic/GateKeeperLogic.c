@@ -8,6 +8,7 @@
 #include "scrap/chartype.h"
 #include "scrap/objentity.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 /* the states of the gatekeeper */
 enum {
@@ -132,14 +133,14 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 		return;
 	}
 	if (!b->idle && !b->alwaysLock) {
-		cEntity *u = cWorld_GetUsrEntity(g_pWorld, 0);
+		cEntity *u = Players_Nearest(&p->pos);
 		if (u) {
-			u = cWorld_GetUsrEntity(g_pWorld, 0);
+			u = Players_Nearest(&p->pos);
 			if (Logic_InView(p, Entity_GetPos(u, &tmp), g_GateKeeperStdFar, g_GateKeeperStdFovY,
 				g_GateKeeperStdFovX, 1)) {
 				if (cActCtrl_IsActive(ChType_ActCtrl(p), "Relax")) {
 					cActCtrl_PlayNew(ChType_ActCtrl(p), "FaceToTalk", 0, 1.0f);
-					cEntity_AddLink(cWorld_GetUsrEntity(g_pWorld, 0), &WChar(p)->listen);
+					cEntity_AddLink(Players_Nearest(&p->pos), &WChar(p)->listen);
 				}
 				goto alarm;
 			}

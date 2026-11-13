@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_FXBankerStealFile (GVar_FXBankerStealFile.value.s)
 static cGVar GVar_FXBankerStealFile;
@@ -76,7 +77,7 @@ static void ChType_BankerAttack(cAbstractFile *params) {
 	cEntity *v = World_FindEntity(name);
 	cEntity *thief = v;
 	CHECK(v && Entity_IsType(v, TYEN_WALKCHAR));
-	if (v == ChType_Usr0()) {
+	if (Players_Is(v)) {
 		victim = ChType_BankerVictim(v);
 	}
 	ChType_Steal(&thief, &victim, g_BankerStealAmount, "Stats.BankDirector", 1.0f);
@@ -109,10 +110,10 @@ cEntity *ChType_BankerVictim(cEntity *v) {
 	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
 		return NULL;
 	}
-	if (WChar(e)->money <= 0 && e != cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (WChar(e)->money <= 0 && !Players_Is(e)) {
 		return NULL;
 	}
-	if (g_pWorld->money <= 0 && e == cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (g_pWorld->money <= 0 && Players_Is(e)) {
 		return NULL;
 	}
 	return e;
@@ -124,10 +125,10 @@ static byte ChType_CanRob(cEntity *thief, cEntity *v) {
 	if (!v || !Entity_IsType(v, TYEN_WALKCHAR)) {
 		return 0;
 	}
-	if (WChar(v)->money <= 0 && v != cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (WChar(v)->money <= 0 && !Players_Is(v)) {
 		return 0;
 	}
-	if (g_pWorld->money <= 0 && v == cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (g_pWorld->money <= 0 && Players_Is(v)) {
 		return 0;
 	}
 	return 1;
@@ -144,7 +145,7 @@ cEntity *cWorld_GetUsrEntity(cWorld *world, int player) {
 }
 
 byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *stat, float frac) {
-	if (*thief == ChType_Usr0()) {
+	if (Players_Is(*thief)) {
 		cEntity *v = *victim;
 		if (!v) {
 			return 0;
@@ -173,7 +174,7 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 		return 0;
 	}
 	cEntity *v = *victim;
-	if (v == cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (Players_Is(v)) {
 		if (g_pWorld->money <= 0) {
 			return 0;
 		}

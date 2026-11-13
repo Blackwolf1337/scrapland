@@ -6,6 +6,7 @@
  */
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define CBANKDIRECTORLOCALLOGIC_VFTABLE (&cBankDirectorLocalLogic_vftable.base)
 static const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable;
@@ -57,7 +58,7 @@ byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
 	if (!t || !Entity_IsType(t, TYEN_WALKCHAR)) {
 		return 1;
 	}
-	int money = t == cWorld_GetUsrEntity(g_pWorld, 0) ? g_pWorld->money : WChar(t)->money;
+	int money = Players_Is(t) ? g_pWorld->money : WChar(t)->money;
 	cEntity *p = self->base.parent;
 	if (money <= 25 || self->specialTime > g_GenCharSpecialActionTime) {
 		return 1;
@@ -75,7 +76,7 @@ static cEntity *cBankDirectorLocalLogic_FindTarget(cLocalLogic *elem) {
 		return NULL;
 	}
 	self->searchTime = g_GenCharMinSpecialActionTime * 0.5f;
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&self->base.parent->pos);
 	if (!usr) {
 		return NULL;
 	}

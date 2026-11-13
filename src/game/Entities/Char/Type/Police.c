@@ -9,6 +9,7 @@
 #include "scrap/actions.h"
 #include "scrap/modmove.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_FXPoliceGearConversionFile (GVar_FXPoliceGearConversionFile.value.s)
 #define g_FXPoliceStealFile (GVar_FXPoliceStealFile.value.s)
@@ -224,7 +225,7 @@ static void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 			cLocalLogic *vl = Logic_GetLocalLogic(victim);
 			if (vl) {
 				const char *cls = ChType_ActClass(ChType_ActCtrl(victim))->name;
-				if (me == cWorld_GetUsrEntity(g_pWorld, 0) &&
+				if (Players_Is(me) &&
 					(!strcmp(cls, "Police") || !strcmp(cls, "Sentinel") || !strcmp(cls, "Gear"))) {
 					act = "Relax";
 				}

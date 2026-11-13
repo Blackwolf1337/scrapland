@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 /* params: the sentinel: ActionInit unless it runs */
 static void ChType_SentinelActionPress(cAbstractFile *params) {
@@ -64,7 +65,7 @@ static void ChType_SentinelPoint(cAbstractFile *params) {
 
 	ChType_ReadParams(params, name, event);
 	cEntity *v = ChType_CheckChar(name);
-	if (v != ChType_Usr0()) {
+	if (!Players_Is(v)) {
 		return;
 	}
 	cEntity *t = WChar_Victim(v);

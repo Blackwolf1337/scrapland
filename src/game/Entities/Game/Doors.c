@@ -11,6 +11,7 @@
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define TYEN_OBJECT "Obj"
 
@@ -121,7 +122,7 @@ static void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	VFile_Read(params, &unused, 4);
-	if (g_IsMapOutDoor && !World_Usr0()) {
+	if (g_IsMapOutDoor && !(Players_Net() ? Players_Any() : World_Usr0())) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
@@ -205,10 +206,10 @@ static void Doors_SphereEntity(cAbstractFile *params) {
 	if (!e) {
 		return;
 	}
-	cEntity *usr = World_Usr0();
+	byte isUsr = Players_Net() ? Players_Is(e) : World_Usr0() == e;
 	if (!Entity_IsType(e, TYEN_WALKCHAR) ||
 		!strcmp("GateKeeper", ActCtrl_ClassName(WithLife_GetActCtrl(e)))) {
-		if (usr != e && (!Entity_IsType(e, TYEN_CAR) || !Entity_GetAI(e))) {
+		if (!isUsr && (!Entity_IsType(e, TYEN_CAR) || !Entity_GetAI(e))) {
 			return;
 		}
 	}
@@ -219,12 +220,12 @@ static void Doors_SphereEntity(cAbstractFile *params) {
 	side = NormAng(side + g_DoorAngY);
 	if (side > 0.0f) {
 		g_DoorFront = 1;
-		if (usr == e) {
+		if (isUsr) {
 			g_DoorUsrFront = 1;
 		}
 	} else {
 		g_DoorBack = 1;
-		if (usr == e) {
+		if (isUsr) {
 			g_DoorUsrBack = 1;
 		}
 	}
@@ -238,13 +239,17 @@ static void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	VFile_Read(params, &unused, 4);
-	cEntity *usr = World_Usr0();
+	cEntity *usr = Players_Net() ? Players_Any() : World_Usr0();
 	if (!usr) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
 	if (!Door_HasClass(door)) {
 		return;
+	}
+	/* the instance: the player nearest to the door */
+	if (Players_Net()) {
+		usr = Players_Nearest(&door->pos);
 	}
 	float r = ActCtrl_Radius(WithLife_GetActCtrl(door)) + WLife(usr)->prim.radius;
 	const vec3_t *pu = Entity_GetPos(usr, &t1);

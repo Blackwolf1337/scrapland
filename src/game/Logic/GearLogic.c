@@ -12,6 +12,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define CGEARLOCALLOGIC_VFTABLE (&cGearLocalLogic_vftable)
 static const cBaseLocalLogicVtbl cGearLocalLogic_vftable;
@@ -130,7 +131,7 @@ static void cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float 
 	WLife(p)->arrow.coneDist = g_GearStdFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *t = b->target.target;
-		if (t && b->state == GEAR_ATTACK && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (t && b->state == GEAR_ATTACK && Players_Is(t)) {
 			WLife(p)->arrow.coneStatus = 3;
 		} else {
 			WLife(p)->arrow.coneStatus = 2;
@@ -200,7 +201,7 @@ static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 		WLife(p)->arrow.coneStatus = 0;
 		return;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&p->pos);
 	if (!usr) {
 		return;
 	}
@@ -257,7 +258,7 @@ attack:
 			Logic_SetState(self, GEAR_RELAX, NULL);
 			goto check;
 		}
-		if (!alarm && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (!alarm && Players_Is(t)) {
 			goto deflt;
 		}
 		if (Gear_AIHasTarget(Gear_AI(self))) {
@@ -280,7 +281,7 @@ attack:
 		goto check;
 	}
 	case GEAR_ATTACK: {
-		if (same && seen && b->target.target == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (same && seen && Players_Is(b->target.target)) {
 			AICtrl_RaiseLevel(&g_pWorld->logic.aiCtrl, 0);
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
@@ -313,7 +314,7 @@ attack:
 			goto check;
 		}
 		self->lostTime = 0.0f;
-		if (same || b->target.target != cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (same || !Players_Is(b->target.target)) {
 			goto check;
 		}
 		goto deflt;
@@ -336,7 +337,7 @@ anim:
 static void cGearLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GearRobberyDetection + amount)) {
-		if (e == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (Players_Is(e)) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		Logic_SetState(self, GEAR_ATTACK, e);
@@ -348,7 +349,7 @@ static byte Gear_React(cGearLocalLogic *self, cEntity *e) {
 	if (self->base.busy || !(101.0f > (float)(Weap_Rand01() * 100.0 + 0.0))) {
 		return 0;
 	}
-	if (e == ChType_Usr0()) {
+	if (Players_Is(e)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 	}
 	return 1;
@@ -360,7 +361,7 @@ static void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	if (!Gear_React(self, attacker)) {
 		return;
 	}
-	if (self->base.state != GEAR_ATTACK || self->base.target.target != cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (self->base.state != GEAR_ATTACK || !Players_Is(self->base.target.target)) {
 		Logic_SetState(self, GEAR_ATTACK, attacker);
 	}
 }
@@ -412,7 +413,7 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	cBaseLocalLogic *b = &self->base;
 	cAIChar *ai = Gear_AI(self);
 	byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, state, target);
-	cEntity *usr = ChType_Usr0();
+	byte usr = Players_Is(target);
 
 	switch (b->state) {
 	case GEAR_RELAX:
@@ -422,14 +423,14 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 		break;
 	case GEAR_CHASE:
 		if (ok) {
-			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
+			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(usr ? g_GearChaseSpeed : 1.0f));
 		}
 		self->lostTime = 0.0f;
 		break;
 	case GEAR_ATTACK:
 		if (ok) {
-			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
-			if (target != cWorld_GetUsrEntity(g_pWorld, 0)) {
+			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(usr ? g_GearAttackSpeed : 1.0f));
+			if (!Players_Is(target)) {
 				self->lostTime = g_GearLostTargetTime - g_GearAttackNPCTime;
 			}
 		}

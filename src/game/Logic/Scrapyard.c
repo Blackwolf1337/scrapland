@@ -18,6 +18,7 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 static const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
 #define CSCRAPYARDLOCALLOGIC_VFTABLE (&cScrapyardLocalLogic_vftable)
@@ -123,7 +124,7 @@ static void cShipGroupData_Think(cShipGroupData *self) {
 	}
 	g_ShipGroupFound = 0;
 	int count = 0;
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Any();
 	if (!strcmp(self->list->name, "Mosquitos")) {
 		maxDist = g_MaxMosquitosDist;
 		maxAttack = (int)((float)g_MaxMosquitos * g_MinPercMosquitosAttackingIntruder);
@@ -220,8 +221,7 @@ static void ShipGroup_SphereNative(cAbstractFile *params) {
 	if (!e) {
 		return;
 	}
-	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
-	if (!Entity_GetAI(e) && e != usr) {
+	if (!Entity_GetAI(e) && !Players_Is(e)) {
 		return;
 	}
 	const char *list = cEntity_GetListName(e);

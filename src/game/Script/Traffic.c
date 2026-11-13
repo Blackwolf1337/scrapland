@@ -24,6 +24,7 @@
  */
 #include <string.h>
 
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -164,12 +165,19 @@ static byte Traffic_OnPlayerHelpedPoliceN(void) {
 static byte Traffic_RailDeath(const nativeVal_t *killer) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *u = Mode_V(&t), *name = Mode_V(&t);
-	if (!Mode_UsrHandle(u)) {
-		return Mode_Done(&t, 0);
-	}
-	int hit = Native_True(u);
-	if (hit) {
-		hit = Mode_VObj(u, "Name", name) ? Mode_Cmp(name, "==", killer) : -1;
+	int hit;
+	/* the headless instance: a player of the network killed it (include/scrap/players.h) */
+	if (Players_Net()) {
+		const char *k = Native_Text(killer);
+		hit = k && Players_Is(World_FindEntity(k));
+	} else {
+		if (!Mode_UsrHandle(u)) {
+			return Mode_Done(&t, 0);
+		}
+		hit = Native_True(u);
+		if (hit) {
+			hit = Mode_VObj(u, "Name", name) ? Mode_Cmp(name, "==", killer) : -1;
+		}
 	}
 	return Mode_Done(&t, hit >= 0 && (!hit || (Mode_SetAlarm(Mode_I(&t, 1)) && Mode_IncSaveVar("Stats.Traffic"))));
 }

@@ -15,6 +15,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_ExtPoliceChasing (GVar_DoResetOutPolice.value.i)		/* the cars were sent after the player */
 #define g_PoliceWaveEliminated (((cPy_Function *)&GVar_PoliceWaveEliminated.func))	/* no police car left */
@@ -92,7 +93,7 @@ static void ExtPolice_CopDamage(const char *name, const char *attacker, byte die
 	if (!a) {
 		return;
 	}
-	if (a == cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (Players_Is(a)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		if (died && strstr(((cVehicleEntity *)cop)->typeName, "Poli")) {
 			SaveVar_Inc("Stats.OutPolice", 1);
@@ -112,8 +113,7 @@ static void ExtPolice_CopDamage(const char *name, const char *attacker, byte die
 	if (!cEntity_GetListName(a) || strcmp(cEntity_GetListName(a), "Friends")) {
 		return;
 	}
-	if (cAIVehicle_GetState(ai) == AIV_STATE_ATTACK && AIMove_GetTargetEnt(ai) == cWorld_GetUsrEntity(g_pWorld,
-		0)) {
+	if (cAIVehicle_GetState(ai) == AIV_STATE_ATTACK && Players_Is(AIMove_GetTargetEnt(ai))) {
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 	}
 }
@@ -151,7 +151,8 @@ static void cExtPolice_Think(cExtPolice *self) {
 	} else {
 		self->raised = -1;
 	}
-	cEntity *usr = ChType_Usr0();
+	/* the wave follows some player (one alarm for all); each car goes for the player nearest to it */
+	cEntity *usr = Players_Any();
 	if (!usr) {
 		return;
 	}
@@ -162,6 +163,7 @@ static void cExtPolice_Think(cExtPolice *self) {
 		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai && "ai");
 		n = Logic_ListNext(n);
+		cEntity *near = Players_Nearest(Entity_GetPos(e, &tmp));
 		if (g_ExtPoliceChasing && !alarm) {
 			float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &tmp));
 			if (d > g_MaxDistReposAI * g_MaxDistReposAI * 9.0f * 0.0625f &&
@@ -170,7 +172,7 @@ static void cExtPolice_Think(cExtPolice *self) {
 				continue;
 			}
 		} else if (alarm) {
-			if (cAIVehicle_ControlFlag(ai) && AIMove_GetTargetEnt(ai) == usr) {
+			if (cAIVehicle_ControlFlag(ai) && AIMove_GetTargetEnt(ai) == near) {
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
 				self->raised = 1;
 			}
@@ -215,8 +217,8 @@ static void cExtPolice_Think(cExtPolice *self) {
 			} else if (0.0f >= self->retarget) {
 				int st = cAIVehicle_GetState(ai);
 				if ((st != AIV_STATE_ATTACK && cAIVehicle_GetState(ai) != AIV_STATE_CHASE) ||
-					AIMove_GetTargetEnt(ai) != usr) {
-					ExtPolice_Hunt(ai, usr);
+					AIMove_GetTargetEnt(ai) != near) {
+					ExtPolice_Hunt(ai, near);
 				}
 			}
 			continue;
@@ -224,7 +226,7 @@ static void cExtPolice_Think(cExtPolice *self) {
 		if (!e->active) {
 			Entity_SetActive(e, 1);
 		}
-		ExtPolice_Hunt(ai, usr);
+		ExtPolice_Hunt(ai, near);
 	}
 	self->alarm = alarm;
 	self->usr = usr;

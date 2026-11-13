@@ -17,6 +17,7 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 static const cBaseLocalLogicVtbl cSentinelLocalLogic_vftable;
 #define CSENTINELLOCALLOGIC_VFTABLE (&cSentinelLocalLogic_vftable)
@@ -114,7 +115,7 @@ void cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet) 
 	vec3_t tmp;
 
 	self->seen = 0;
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&p->pos);
 	cBaseLocalLogic_Update(&b->logic, dt);
 	WLife(p)->arrow.tgType = g_pWorld->alarm.on ? 0 : 2;
 	if (b->busy) {
@@ -164,7 +165,7 @@ static void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float a
 	if (self->base.busy) {
 		return;
 	}
-	if (e == ChType_Usr0()) {
+	if (Players_Is(e)) {
 		if (amount > 0.0f && g_SentinelBankerDetect + amount >= (float)(Weap_Rand01() * 100.0 + 0.0)) {
 			Logic_SetState(self, SENTINEL_ACCUSE, e);
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
@@ -182,7 +183,7 @@ static void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
 	if (self->base.busy) {
 		return;
 	}
-	if (e == ChType_Usr0()) {
+	if (Players_Is(e)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		Logic_SetState(self, SENTINEL_ACCUSE, e);
 		return;
@@ -196,7 +197,7 @@ static void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 	if (self->base.busy) {
 		return;
 	}
-	if (e == ChType_Usr0()) {
+	if (Players_Is(e)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		Logic_SetState(self, SENTINEL_ACCUSE, e);
 	}
@@ -206,7 +207,7 @@ static void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 static byte cSentinelLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (!self->base.busy) {
-		if (e == ChType_Usr0()) {
+		if (Players_Is(e)) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		Logic_SetState(self, SENTINEL_ACCUSE, e);
@@ -256,8 +257,8 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 		WLife(p)->arrow.coneStatus = 3;
 		AICtrl_RaiseLevel(&g_pWorld->logic.aiCtrl, 1);
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		if (cWorld_GetUsrEntity(g_pWorld, 0)) {
-			AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, cWorld_GetUsrEntity(g_pWorld, 0), 0);
+		if (Players_Nearest(&p->pos)) {
+			AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, Players_Nearest(&p->pos), 0);
 		}
 		return;
 	case SENTINEL_INSPECT:

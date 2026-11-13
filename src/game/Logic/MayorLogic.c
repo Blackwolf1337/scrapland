@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/players.h"
 
 #define CMAYORLOCALLOGIC_VFTABLE (&cMayorLocalLogic_vftable.base)
 static const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable;
@@ -102,7 +103,7 @@ static void Mayor_SphereFunc(cAbstractFile *params) {
 	if (!e) {
 		return;
 	}
-	cEntity *usr = ChType_Usr0();
+	cEntity *usr = Players_Nearest(&e->pos);
 	if (!usr || usr == e || g_MayorSearchEnt == e) {
 		return;
 	}
