@@ -55,7 +55,9 @@ typedef struct RepConn {
 typedef struct RepPlayer {
 	byte used;
 	int conn;
-	cEntity *own;					/* the character or ship it was given */
+	cEntity *own;					/* the character or ship it was given (maybe freed: compared, read only
+									   while World_FindEntity(ownName) is it) */
+	char ownName[REP_NAME];
 	int told, toldKind;				/* the replication slot and kind of it the client was told, -1 */
 	NetRepInBuf in;
 	uint32_t shown[NETREP_INBUF];	/* by tick: the server time (ms) the client showed the others at */
@@ -348,6 +350,17 @@ static void Rep_SetVarS(cEntity *e, const char *var, const char *value) {
 	Entity_VarS(e, var, &v, 1);
 }
 
+static void Rep_SetOwn(RepPlayer *pl, cEntity *e) {
+	pl->own = e;
+	Str_Copy(pl->ownName, e ? e->name : "", sizeof(pl->ownName));
+}
+
+/* the entity the player was given while it is still in the world, else NULL */
+static cEntity *Rep_Own(const RepPlayer *pl) {
+	cEntity *e = pl->own && pl->ownName[0] ? World_FindEntity(pl->ownName) : NULL;
+	return e && e == pl->own && !e->deadNode.target ? e : NULL;
+}
+
 /* the player's Dtritus at pos (a ring around the spawn point when pos is NULL) */
 static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	char name[REP_NAME];
@@ -376,7 +389,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	ang = (vec3_t){ 0.0f, yaw, 0.0f };
 	Obj_SetAng(e, &ang);
 	Obj(e)->netStep = 1;
-	pl->own = e;
+	Rep_SetOwn(pl, e);
 	pl->lost = 0;
 	return e;
 }
@@ -432,7 +445,7 @@ static void Rep_Switch(int i, cEntity *e) {
 		Entity_SetActive(best, 1);
 		Obj(best)->netStep = 1;
 		cEntity_Del(e);
-		pl->own = best;
+		Rep_SetOwn(pl, best);
 		pl->boards++;
 		Con_Printf("instance: player %d into %s\n", i, name);
 		return;
@@ -461,10 +474,10 @@ static void Rep_Switch(int i, cEntity *e) {
 /* the player's entity gone: a character away, a ship parked */
 static void Rep_DropOwn(int i) {
 	RepPlayer *pl = &rep.pl[i];
-	cEntity *e = pl->own;
+	cEntity *e = Rep_Own(pl);
 
-	pl->own = NULL;
-	if (!e || World_FindEntity(e->name) != e || e->deadNode.target) {
+	Rep_SetOwn(pl, NULL);
+	if (!e) {
 		return;
 	}
 	Obj(e)->netStep = 0;
@@ -494,7 +507,7 @@ static int Rep_Join(int conn) {
 		}
 		pl->used = 1;
 		rep.players++;
-		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->own->name);
+		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->ownName);
 		return i;
 	}
 	return -1;
@@ -665,7 +678,7 @@ static void Rep_Hello(Net2Host *host, int conn, uint32_t rate, int flags) {
 		rep.watchers++;
 	}
 	int i = rep.conn[conn].player;
-	cEntity *p = i >= 0 ? rep.pl[i].own : Players_Any();
+	cEntity *p = i >= 0 ? Rep_Own(&rep.pl[i]) : Players_Any();
 	if (p) {
 		view[0] = p->pos.x;
 		view[1] = p->pos.y;
@@ -759,7 +772,7 @@ static void Rep_PlayerStatus(int i) {
 	RepPlayer *pl = &rep.pl[i];
 	NetRepInBuf *b = &pl->in, *l = &pl->last;
 	uint32_t got = b->got - l->got, leadN = b->leadN - l->leadN;
-	cEntity *e = pl->own;
+	cEntity *e = Rep_Own(pl);
 	Con_Printf("  player %d (%s): %u inputs, %u late, %u again, %u missed, lead avg %.2f ticks, %u shots %u hits, "
 		"rewind avg %.0f ms, %u boards %u leaves, at %.0f %.0f %.0f\n", i, e ? e->name : "-", got, b->late - l->late,
 		b->dup - l->dup, b->missed - l->missed, leadN ? (double)(b->leadSum - l->leadSum) / leadN : 0.0, pl->shots,

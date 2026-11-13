@@ -338,11 +338,11 @@ static void Play_Bot(double now) {
 	play.acc.weapon = (uint8_t)g_VulcanIDWeap;
 }
 
-void Play_PreFrame(double now, double rtt, double rttVar) {
+void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	if (!play.e || !Watch_ClockReady()) {
 		return;
 	}
-	uint32_t target = Watch_InputTick(now, rtt, PLAY_LEAD + rttVar);
+	uint32_t target = Watch_InputTick(now, rtt, PLAY_LEAD + rttVar + (loss > 0.01f ? PLAY_LOSS_LEAD : 0.0));
 	if (!play.tick || target > play.tick + PLAY_MAX_CATCHUP * 4 || target + PLAY_MAX_CATCHUP * 4 < play.tick) {
 		play.tick = target ? target - 1 : 0;
 	}

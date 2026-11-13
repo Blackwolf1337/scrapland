@@ -66,6 +66,7 @@ static struct {
 	float start[3];					/* the view point of the welcome */
 	NetRepClock clock;
 	double rtt, rttVar;				/* s, of Net2 */
+	float loss;						/* of Net2, 0..1 */
 	double shown;					/* the server time the proxies are drawn at, s */
 	uint64_t lastNs, lastAck, lastStatus;
 	int retries;
@@ -566,7 +567,7 @@ void Watch_PreFrame(void) {
 	double rt = NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - REP_INTERP_MS / 1000.0;
 	watch.shown = rt;
 	if (g_Play) {
-		Play_PreFrame(now, watch.rtt, watch.rttVar);
+		Play_PreFrame(now, watch.rtt, watch.rttVar, watch.loss);
 	}
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		if (watch.px[s].e && watch.px[s].n) {
@@ -598,6 +599,7 @@ void Watch_PostFrame(void) {
 	if (Net2_GetStats(watch.host, 0, &st) && st.rtt) {
 		watch.rtt = st.rtt / 1000.0;
 		watch.rttVar = st.rttVar / 1000.0;
+		watch.loss = st.loss;
 	}
 	if (g_Play && watch.phase == WATCH_RUN) {
 		Play_PostFrame(watch.lastNs ? (float)((double)(ns - watch.lastNs) / 1e9) : 0.0f);

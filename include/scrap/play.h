@@ -39,6 +39,7 @@
 #define PLAY_SMOOTH_HALF 0.08f			/* s: half life of the drawn offset of a correction */
 #define PLAY_SMOOTH_SNAP 3000.0f		/* units: a larger correction is a jump */
 #define PLAY_LEAD 0.075					/* s the input should be at the server before its tick */
+#define PLAY_LOSS_LEAD 0.07				/* s more with loss: a later copy of a lost input comes in time */
 #define PLAY_STEPS 2					/* slot ticks per tick: 1/60 s each, as a player's of single player */
 #define PLAY_SPAWN_RING 400.0f			/* units between the players at a spawn point */
 
@@ -104,7 +105,7 @@ void Play_OwnRemove(void);
 struct cEntity *Play_Entity(void);
 /* the level runs: the camera; each frame before and after App_Frame (Watch.c) */
 void Play_Start(void);
-void Play_PreFrame(double now, double rtt, double rttVar);
+void Play_PreFrame(double now, double rtt, double rttVar, float loss);
 /* 1 when an ack with the inputs is due now: its inputs (newest first) and the shown server time */
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs);
 void Play_PostFrame(float dt);
