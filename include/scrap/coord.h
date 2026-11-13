@@ -42,6 +42,17 @@
  *     'k' kick: key 32, reason u8
  *     'r' refuse: key 32, text str (a travel that cannot go: the instance gives the player back)
  *     'x' console: text str (a line for the instance's console, as its standard input takes them)
+ *     'v' story (coop, both ways): count u16, then each change: kind u8 (COORD_OP_*), name str, (set) value u16
+ *         length + bytes; the coordinator applies an instance's changes to the party's story and sends them on to the
+ *         other instances of the world
+ *     'w' story (instance -> coordinator, coop): as 'v', the changes made while the instance's level started (its own
+ *         level is not stale by them)
+ *     'V' whole story (coordinator -> instance, coop): text u32 length + bytes (CoordKv text of the save variables)
+ *     'g' summon (coordinator -> instance, coop): key 32, level str, entrance str, door str (the player travels
+ *         there with its party)
+ *     'y' party notice (instance -> coordinator, coop): text str (for the members in the other instances)
+ *   coordinator -> client (coop):
+ *     'o' cue: kind u8 (COORD_CUE_*), text str
  *   client <-> instance (the instance connection's reliable channel, beside the replication's messages):
  *     'T' ticket: u16 length + bytes (before the hello of the replication)
  *     'M' metro: door str, count u8, stations str each (the station map of a metro door the player used)
@@ -99,6 +110,12 @@
 #define COORD_MSG_ITICKET 'T'
 #define COORD_MSG_METRO 'M'
 #define COORD_MSG_PICK 'K'
+#define COORD_MSG_STORY 'v'
+#define COORD_MSG_STORYALL 'V'
+#define COORD_MSG_STORYINIT 'w'
+#define COORD_MSG_SUMMON 'g'
+#define COORD_MSG_PNOTICE 'y'
+#define COORD_MSG_CUE 'o'
 
 #define COORD_JF_RESUME 0x01			/* the client plays in an instance already (the coordinator came back) */
 
@@ -117,6 +134,7 @@
 #define COORD_SR_REPORT 2				/* every COORD_REPORT_SECS, and for all players when the coordinator came back */
 #define COORD_SR_LEAVE 3
 #define COORD_SR_TRAVEL 4
+#define COORD_SR_PARTY 5				/* coop: a travel of the story that takes every member of the party along */
 
 /* Coord_TicketOpen */
 #define COORD_TK_OK 0
@@ -145,6 +163,8 @@ int CoordKv_Next(const char *text, int len, int *pos, char *key, int kcap, char 
 int CoordKv_Merge(char *text, int *len, int cap, const char *from, int fromLen);
 /* every line is a pair with a good key */
 int CoordKv_Valid(const char *text, int len);
+
+typedef void (*coordlogfn_t)(const char *fmt, ...);
 
 /* ---- tickets ---- */
 
@@ -179,6 +199,63 @@ int CoordStore_Load(const char *dir, const uint8_t key[NET2_KEY_SIZE], char *tex
 /* written atomically (see above): 1 ok */
 int CoordStore_Save(const char *dir, const uint8_t key[NET2_KEY_SIZE], const char *text, int len);
 
+/* ---- any text in the store's file format (the coop story): <base>.<ext>, the one before <base>.<ext>bak, a bad
+ * one kept as <base>.<ext>corrupt; COORD_LD_*, and 1 / 0 for the save ---- */
+
+int CoordStore_LoadText(const char *base, const char *ext, char *text, int *len, int cap);
+int CoordStore_SaveText(const char *base, const char *ext, const char *text, int len);
+
+/* ---- the coop story (stage M7a, src/coord/Party.c) ----
+ * Coop (-mode:coop): one party per world, at most COORD_COOP_MAX players. The story (the save variables of the single
+ * player game: missions, flags, plans, hangar) belongs to the party: one CoordKv text kept by the coordinator
+ * (<data>/party.story), changed by the instances (their changes come as story messages), sent on to every other
+ * instance of the world, given to an instance that starts (a file named by -story) and saved into each member's
+ * store as a copy (<players>/<key>.story). A member that joins with a copy unlike the party's takes the party's
+ * story; its copy stays as <key>.own (the one before as <key>.ownbak). A party without a story takes the copy of
+ * its first member; a new party starts the single player's new game (the instance of the start level makes it). The
+ * story owner is the first member (<data>/party.owner). */
+
+struct NetRepBuf;
+struct NetRepReader;
+
+#define COORD_STORY_MAX 32768			/* bytes of the story text */
+#define COORD_STORY_VALUE 4096			/* bytes of one value (the save game's limit) */
+#define COORD_COOP_MAX 8
+#define COORD_COOP_START "Orbit"
+#define COORD_COOP_LEVELS COORD_CITY ",Orbit,Fake,Junkyard,AB,ABIndoor,QF,OM,FZ,CA"
+#define COORD_OP_SET 0
+#define COORD_OP_DEL 1
+#define COORD_CUE_INTRO 1				/* a new party's start: the intro video (text: its file) */
+#define COORD_CUE_NOTICE 2				/* a line on the screen (text) */
+#define COORD_STORY_MISSION 0x01		/* CoordStory_Apply: Mission.Map or Mission.Library changed */
+
+int CoordKv_Del(char *text, int *len, const char *key);
+/* one change of a story message: 1 read (kind, name, value), 0 at the end of count, -1 malformed */
+int CoordStory_Next(struct NetRepReader *r, int *kind, char *name, int ncap, char *val, int vcap);
+/* the changes of a story message (from its count on) applied to text: the number applied, -1 malformed; *flags
+ * COORD_STORY_* */
+int CoordStory_Apply(char *text, int *len, int cap, const uint8_t *msg, int size, int *flags);
+
+typedef struct CoordParty {
+	char base[COORD_PATH];			/* <data>/party */
+	char playersDir[COORD_PATH];
+	char owner[2 * NET2_KEY_SIZE + 1];
+	uint32_t seq;					/* changes so far (the members' copies follow it) */
+	int dirty;
+	int len;
+	char story[COORD_STORY_MAX];
+} CoordParty;
+
+/* the party of the data folder loaded (1), 0 when its file could not be read */
+int CoordParty_Load(CoordParty *p, const char *dataDir, const char *playersDir, coordlogfn_t log);
+/* a member joins: the party's story, its copy kept (see above); the first member becomes the owner */
+void CoordParty_Join(CoordParty *p, const uint8_t key[NET2_KEY_SIZE], coordlogfn_t log);
+/* the party's story into the member's copy, the party's file when dirty: 1 ok */
+int CoordParty_SaveMember(CoordParty *p, const uint8_t key[NET2_KEY_SIZE]);
+int CoordParty_Save(CoordParty *p);
+/* the story as a plain CoordKv file for an instance's -story (absolute path into out): 1 ok */
+int CoordParty_StoryFile(const CoordParty *p, const char *dataDir, char *out, int cap);
+
 /* ---- system helpers (src/coord/Sys.c) ---- */
 
 uint64_t Coord_UnixMs(void);
@@ -191,6 +268,8 @@ int Coord_ReadFile(const char *path, char *buf, int cap);
 int Coord_WriteAtomic(const char *path, const void *data, int size, const char *bak);
 /* the 32 byte seed in a hex file, made (random, mode 0600) when it is missing: 1 ok */
 int Coord_LoadSeed(const char *path, uint8_t seed[NET2_SEED_SIZE], int *made);
+/* the absolute path of an existing path: 1 ok */
+int Coord_AbsPath(const char *path, char *out, int cap);
 
 /* ---- the console of the dedicated programs ScrapCoord and ScrapList (src/coord/Cli.c) ---- */
 

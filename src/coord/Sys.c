@@ -13,7 +13,9 @@
 #include <unistd.h>
 #endif
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/coord.h"
@@ -63,6 +65,20 @@ int Coord_MkDir(const char *path) {
 	return 0;
 #else
 	return mkdir(path, 0700) == 0 || errno == EEXIST;
+#endif
+}
+
+int Coord_AbsPath(const char *path, char *out, int cap) {
+#ifdef _WIN32
+	DWORD n = GetFullPathNameA(path, (DWORD)cap, out, NULL);
+	return n > 0 && (int)n < cap;
+#else
+	char buf[PATH_MAX];
+	if (!realpath(path, buf) || (int)strlen(buf) >= cap) {
+		return 0;
+	}
+	snprintf(out, (size_t)cap, "%s", buf);
+	return 1;
 #endif
 }
 

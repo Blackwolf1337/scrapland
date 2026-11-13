@@ -12,6 +12,7 @@
 #include "scrap/cmdquote.h"
 #include "scrap/coord.h"
 #include "scrap/coordlist.h"
+#include "scrap/netrep.h"
 
 static int checks, failed;
 
@@ -496,6 +497,112 @@ static void Test_Quote(void) {
 	CHECK(CmdQuote_Arg("-name:a-b", out, 12) == 11);
 }
 
+static void Quiet(const char *fmt, ...) {
+	(void)fmt;
+}
+
+/* a story message: n changes of (kind, name, value) */
+static int StoryMsg(uint8_t *buf, int cap, int n, const int *kinds, const char *const *names, const char *const *vals) {
+	NetRepBuf w;
+	NetRepBuf_Init(&w, buf, cap);
+	NetRep_PutU16(&w, (uint32_t)n);
+	for (int i = 0; i < n; i++) {
+		NetRep_PutU8(&w, (uint32_t)kinds[i]);
+		NetRep_PutStr(&w, names[i]);
+		if (kinds[i] == COORD_OP_SET) {
+			NetRep_PutU16(&w, (uint32_t)strlen(vals[i]));
+			CoordMsg_PutBytes(&w, vals[i], (int)strlen(vals[i]));
+		}
+	}
+	return w.bad ? -1 : w.size;
+}
+
+static void Test_Story(const char *dir) {
+	static CoordParty party;
+	static char text[COORD_STORY_MAX], out[COORD_STORY_VALUE + 1];
+	char players[COORD_PATH], path[COORD_PATH + 32];
+	uint8_t msg[2048], key1[NET2_KEY_SIZE], key2[NET2_KEY_SIZE];
+	int len = 0, flags, n;
+
+	/* delete */
+	CHECK(CoordKv_Set(text, &len, sizeof(text), "a", "1") && CoordKv_Set(text, &len, sizeof(text), "b", "2") &&
+		CoordKv_Set(text, &len, sizeof(text), "c", "3"));
+	CHECK(CoordKv_Del(text, &len, "b") && !CoordKv_Get(text, len, "b", out, sizeof(out)));
+	CHECK(!CoordKv_Del(text, &len, "b"));
+	CHECK(CoordKv_Get(text, len, "a", out, sizeof(out)) && !strcmp(out, "1"));
+	CHECK(CoordKv_Get(text, len, "c", out, sizeof(out)) && !strcmp(out, "3") && len == 8);
+	/* changes */
+	len = 0;
+	{
+		const int k[] = { COORD_OP_SET, COORD_OP_SET, COORD_OP_SET, COORD_OP_DEL };
+		const char *const nm[] = { "Mission.Map", "Mission.Library", "Hangar.availableWeaponsList", "nothing" };
+		const char *const v[] = { "Levels/Orbit", "MapDecont", "[\"Vulcan\"]", "" };
+		n = StoryMsg(msg, sizeof(msg), 4, k, nm, v);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 3 && flags == COORD_STORY_MISSION);
+		CHECK(CoordKv_Get(text, len, "Hangar.availableWeaponsList", out, sizeof(out)) && !strcmp(out, "[\"Vulcan\"]"));
+		/* the same again: no mission change */
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 3 && flags == 0);
+	}
+	{
+		const int k[] = { COORD_OP_SET, COORD_OP_DEL };
+		const char *const nm[] = { "Orbit.Decontaminated", "Mission.Library" };
+		const char *const v[] = { "yes", "" };
+		n = StoryMsg(msg, sizeof(msg), 2, k, nm, v);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 2 && flags == COORD_STORY_MISSION);
+		CHECK(!CoordKv_Get(text, len, "Mission.Library", out, sizeof(out)));
+		/* malformed: cut, a bad kind */
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n - 2, &flags) == -1);
+		msg[2] = 7;
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == -1);
+	}
+	/* a bad key is not applied */
+	{
+		const int k[] = { COORD_OP_SET };
+		const char *const nm[] = { "a b" };
+		const char *const v[] = { "x" };
+		n = StoryMsg(msg, sizeof(msg), 1, k, nm, v);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 0);
+	}
+	/* the store's text files */
+	snprintf(path, sizeof(path), "%s/text", dir);
+	int l2 = 0;
+	CHECK(CoordStore_SaveText(path, "story", text, len));
+	static char back[COORD_STORY_MAX];
+	CHECK(CoordStore_LoadText(path, "story", back, &l2, sizeof(back)) == COORD_LD_OK && l2 == len && !memcmp(back, text, len));
+	CHECK(CoordStore_LoadText(path, "none", back, &l2, sizeof(back)) == COORD_LD_NEW && l2 == 0);
+	/* the party: a new one takes the copy of its first member; another member with an older copy keeps it as own */
+	snprintf(players, sizeof(players), "%s/pp", dir);
+	CHECK(Coord_MkDir(players));
+	snprintf(path, sizeof(path), "%s/party.story", dir);
+	remove(path);
+	snprintf(path, sizeof(path), "%s/party.owner", dir);
+	remove(path);
+	memset(key1, 0x11, sizeof(key1));
+	memset(key2, 0x22, sizeof(key2));
+	char base[COORD_PATH + 80], hex[65];
+	Coord_Hex(key1, NET2_KEY_SIZE, hex);
+	snprintf(base, sizeof(base), "%s/%s", players, hex);
+	CHECK(CoordStore_SaveText(base, "story", text, len));
+	CHECK(CoordParty_Load(&party, dir, players, Quiet) && party.len == 0 && !party.owner[0]);
+	CoordParty_Join(&party, key1, Quiet);
+	CHECK(party.len == len && !memcmp(party.story, text, len) && party.dirty && !strcmp(party.owner, hex));
+	CHECK(CoordParty_Save(&party) && !party.dirty);
+	Coord_Hex(key2, NET2_KEY_SIZE, hex);
+	snprintf(base, sizeof(base), "%s/%s", players, hex);
+	CHECK(CoordStore_SaveText(base, "story", "Mission.Library=Old\n", 20));
+	CoordParty_Join(&party, key2, Quiet);
+	CHECK(CoordStore_LoadText(base, "own", back, &l2, sizeof(back)) == COORD_LD_OK && l2 == 20);
+	CHECK(CoordParty_SaveMember(&party, key2));
+	CHECK(CoordStore_LoadText(base, "story", back, &l2, sizeof(back)) == COORD_LD_OK && l2 == len);
+	/* again: the party's file and owner come back */
+	CHECK(CoordParty_Load(&party, dir, players, Quiet) && party.len == len);
+	Coord_Hex(key1, NET2_KEY_SIZE, hex);
+	CHECK(!strcmp(party.owner, hex));
+	char abs[COORD_PATH];
+	CHECK(CoordParty_StoryFile(&party, dir, abs, sizeof(abs)) && abs[0] != 0);
+	CHECK(Coord_ReadFile(abs, back, sizeof(back)) == len);
+}
+
 int main(int argc, char **argv) {
 	Test_Kv();
 	Test_Hex();
@@ -503,6 +610,7 @@ int main(int argc, char **argv) {
 	Test_Store(argc > 1 ? argv[1] : "coord_test_data");
 	Test_List();
 	Test_Quote();
+	Test_Story(argc > 1 ? argv[1] : "coord_test_data");
 	printf("coord_test: %d checks, %d failed\n", checks, failed);
 	return failed != 0;
 }

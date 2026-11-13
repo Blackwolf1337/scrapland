@@ -183,3 +183,13 @@ int CoordKv_Valid(const char *text, int len) {
 	}
 	return 1;
 }
+
+int CoordKv_Del(char *text, int *len, const char *key) {
+	int ls, vs, ve, next;
+	if (!Kv_Find(text, *len, key, &ls, &vs, &ve, &next)) {
+		return 0;
+	}
+	memmove(text + ls, text + next, (size_t)(*len - next));
+	*len -= next - ls;
+	return 1;
+}

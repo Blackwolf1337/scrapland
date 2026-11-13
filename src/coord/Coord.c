@@ -41,6 +41,7 @@ typedef struct CoPlayer {
 	uint64_t kickAt;				/* a join that waits for the old connection to go (ms), 0 */
 	int dirty;
 	uint64_t saved;					/* ms */
+	uint32_t storySeq;				/* coop: the party's changes its copy has */
 	int len;
 	char text[COORD_STATE_MAX];
 } CoPlayer;
@@ -57,6 +58,7 @@ typedef struct CoInst {
 	int wanted;						/* a player waits for it */
 	uint64_t since;					/* ms of the last state change */
 	uint64_t empty;					/* ms since it has no player, 0 */
+	int stale;						/* coop: started before the story's mission changed (ends once empty) */
 } CoInst;
 
 struct Coord {
@@ -73,6 +75,8 @@ struct Coord {
 	int instFileDirty;
 	uint64_t passes;
 	ListClient list;				/* the registration with the list server */
+	int coop;						/* -mode:coop: one party, its story (CoordParty) */
+	CoordParty party;
 };
 
 static Coord coord;
@@ -245,7 +249,7 @@ static void Co_SetState(CoInst *in, int state) {
 static void Co_Start(CoInst *in) {
 	char exe[COORD_PATH + 16], cwd[COORD_PATH + 8], logPath[COORD_PATH + 64], token[65], key[65];
 	char a[11][96];
-	char extra[256], loop[48];
+	char extra[256], loop[48], story[COORD_PATH + 16];
 	const char *argv[40];
 	int n = 0;
 
@@ -288,6 +292,15 @@ static void Co_Start(CoInst *in) {
 		snprintf(a[10], sizeof(a[10]), "-mode:%s", coord.cfg.mode);
 		argv[n++] = a[10];
 	}
+	if (coord.coop) {
+		char path[COORD_PATH];
+		if (!CoordParty_StoryFile(&coord.party, coord.cfg.dataDir, path, sizeof(path))) {
+			Co_Log("coordinator: cannot write the story for %s\n", in->level);
+		} else {
+			snprintf(story, sizeof(story), "-story:%s", path);
+			argv[n++] = story;
+		}
+	}
 	snprintf(extra, sizeof(extra), "%s", coord.cfg.instArgs);
 	for (char *p = strtok(extra, " "); p && n < 38; p = strtok(NULL, " ")) {
 		argv[n++] = p;
@@ -302,6 +315,7 @@ static void Co_Start(CoInst *in) {
 	Net2_Wipe(token, sizeof(token));
 	Co_SetState(in, CI_STARTING);
 	in->empty = 0;
+	in->stale = 0;
 	Co_Log("coordinator: instance %s starting (pid %u, port %u, log %s)\n", in->level, in->proc.pid, in->port, logPath);
 }
 
@@ -335,6 +349,13 @@ static int Co_FindPlayer(const uint8_t key[NET2_KEY_SIZE]) {
 }
 
 static void Co_Save(CoPlayer *p) {
+	if (coord.coop && p->storySeq != coord.party.seq) {
+		if (CoordParty_SaveMember(&coord.party, p->key)) {
+			p->storySeq = coord.party.seq;
+		} else {
+			Co_Log("coordinator: cannot save the story copy of %s (%.8s)\n", p->name, p->hex);
+		}
+	}
 	if (!CoordStore_Save(coord.playersDir, p->key, p->text, p->len)) {
 		Co_Log("coordinator: cannot save player %s (%.8s)\n", p->name, p->hex);
 		return;
@@ -448,6 +469,126 @@ static void Co_Send2Level(CoPlayer *p, int i) {
 	coord.inst[i].wanted = 1;
 }
 
+/* ---- coop: the party ---- */
+
+static void Co_Cue(int conn, int kind, const char *text) {
+	uint8_t buf[CO_MSG];
+	NetRepBuf w;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COORD_MSG_CUE);
+	NetRep_PutU8(&w, (uint32_t)kind);
+	NetRep_PutStr(&w, text);
+	Co_Send(conn, &w);
+}
+
+/* the instance the party's leader plays in (the owner, else the first member in an instance), -1 */
+static int Co_LeaderInst(const CoPlayer *except) {
+	int first = -1;
+	for (int k = 0; k < CO_PLAYERS; k++) {
+		const CoPlayer *q = &coord.pl[k];
+		if (!q->used || q == except || q->conn < 0 || q->inst < 0 || q->wantTicket) {
+			continue;
+		}
+		if (!strcmp(q->hex, coord.party.owner)) {
+			return q->inst;
+		}
+		first = first < 0 ? q->inst : first;
+	}
+	return first;
+}
+
+/* the whole story to an instance (its start file may be older) */
+static void Co_SendStory(int conn) {
+	static uint8_t buf[COORD_STORY_MAX + 16];
+	NetRepBuf w;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COORD_MSG_STORYALL);
+	NetRep_PutU32(&w, (uint32_t)coord.party.len);
+	CoordMsg_PutBytes(&w, coord.party.story, coord.party.len);
+	Co_Send(conn, &w);
+}
+
+/* the changes of an instance: into the party's story, on to the other instances, the members' copies due */
+static void Co_Story(int conn, const uint8_t *data, int size) {
+	static uint8_t fwd[NET2_MAX_MESSAGE];
+	int flags, from = coord.conn[conn].inst;
+	int n = CoordStory_Apply(coord.party.story, &coord.party.len, sizeof(coord.party.story), data + 1, size - 1, &flags);
+	if (n < 0) {
+		Co_Log("coordinator: bad story message from %s\n", coord.inst[from].level);
+		return;
+	}
+	if (!n) {
+		return;
+	}
+	coord.party.dirty = 1;
+	coord.party.seq++;
+	memcpy(fwd, data, (size_t)size);
+	fwd[0] = COORD_MSG_STORY;
+	for (int i = 0; i < coord.ninst; i++) {
+		if (i != from && coord.inst[i].state == CI_UP && coord.inst[i].conn >= 0) {
+			Net2_Send(coord.host, coord.inst[i].conn, CO_CHANNEL, fwd, size);
+		}
+		/* a level loaded for the mission of before gets it again once its players are gone (not the level whose start
+		 * made the change) */
+		coord.inst[i].stale |= (flags & COORD_STORY_MISSION) && coord.inst[i].state != CI_DOWN &&
+			(i != from || data[0] != COORD_MSG_STORYINIT);
+	}
+	for (int k = 0; k < CO_PLAYERS; k++) {
+		coord.pl[k].dirty |= coord.pl[k].used;
+	}
+	if (flags & COORD_STORY_MISSION) {
+		char lib[64], map[64];
+		CoordKv_Get(coord.party.story, coord.party.len, "Mission.Library", lib, sizeof(lib));
+		CoordKv_Get(coord.party.story, coord.party.len, "Mission.Map", map, sizeof(map));
+		Co_Log("coordinator: the story goes on: mission %s in %s (from %s)\n", lib, map, coord.inst[from].level);
+	}
+}
+
+/* a party notice of an instance (a cutscene there) for the members elsewhere */
+static void Co_PartyNotice(int conn, NetRepReader *r) {
+	char text[200];
+	int from = coord.conn[conn].inst;
+	NetRep_GetStr(r, text, sizeof(text));
+	if (r->bad) {
+		return;
+	}
+	for (int k = 0; k < CO_PLAYERS; k++) {
+		CoPlayer *q = &coord.pl[k];
+		if (q->used && q->conn >= 0 && q->inst != from) {
+			Co_Cue(q->conn, COORD_CUE_NOTICE, text);
+		}
+	}
+}
+
+/* the members of the party go along with p's travel to level k (the story moves everyone) */
+static void Co_Summon(const CoPlayer *p, int k, const char *entrance, const char *door) {
+	uint8_t buf[CO_MSG];
+	NetRepBuf w;
+	for (int j = 0; j < CO_PLAYERS; j++) {
+		CoPlayer *q = &coord.pl[j];
+		if (!q->used || q == p || q->conn < 0) {
+			continue;
+		}
+		if (q->inst >= 0 && !q->wantTicket && coord.inst[q->inst].conn >= 0) {
+			NetRepBuf_Init(&w, buf, sizeof(buf));
+			NetRep_PutU8(&w, COORD_MSG_SUMMON);
+			CoordMsg_PutBytes(&w, q->key, NET2_KEY_SIZE);
+			NetRep_PutStr(&w, coord.inst[k].level);
+			NetRep_PutStr(&w, entrance);
+			NetRep_PutStr(&w, door);
+			Co_Send(coord.inst[q->inst].conn, &w);
+			Co_Log("coordinator: %s (%.8s) goes along to %s\n", q->name, q->hex, coord.inst[k].level);
+		} else {
+			/* between two instances: its ticket goes to the party's level */
+			CoordKv_Set(q->text, &q->len, sizeof(q->text), "level", coord.inst[k].level);
+			CoordKv_Set(q->text, &q->len, sizeof(q->text), "entrance", entrance);
+			CoordKv_Set(q->text, &q->len, sizeof(q->text), "door", door);
+			q->dirty = 1;
+			Co_Send2Level(q, k);
+		}
+	}
+}
+
 static void Co_Hello(int conn, NetRepReader *r) {
 	uint8_t buf[CO_MSG];
 	NetRepBuf w;
@@ -524,6 +665,18 @@ static void Co_Join(int conn, NetRepReader *r) {
 	p->conn = conn;
 	memcpy(p->name, c->name, sizeof(p->name));
 	CoordKv_Set(p->text, &p->len, sizeof(p->text), "name", p->name);
+	if (coord.coop) {
+		char seen[8], dec[8];
+		CoordParty_Join(&coord.party, key, Co_Log);
+		p->storySeq = coord.party.seq - 1;
+		p->dirty = 1;
+		/* the start of a new story: the intro once for each member */
+		CoordKv_Get(coord.party.story, coord.party.len, "Orbit.Decontaminated", dec, sizeof(dec));
+		if (!CoordKv_Get(p->text, p->len, "intro", seen, sizeof(seen)) && strcmp(dec, "yes")) {
+			Co_Cue(conn, COORD_CUE_INTRO, "Video/Intro.avi");
+			CoordKv_Set(p->text, &p->len, sizeof(p->text), "intro", "1");
+		}
+	}
 	c->kind = CK_PLAYER;
 	c->player = i;
 	coord.online++;
@@ -551,6 +704,13 @@ static void Co_Join(int conn, NetRepReader *r) {
 	char level[COORD_LEVEL + 1];
 	CoordKv_Get(p->text, p->len, "level", level, sizeof(level));
 	int k = Co_Level(level);
+	int lead = coord.coop ? Co_LeaderInst(p) : -1;
+	if (lead >= 0 && lead != k) {
+		/* coop: a member starts where its party's leader plays */
+		k = lead;
+		CoordKv_Set(p->text, &p->len, sizeof(p->text), "entrance", "");
+		CoordKv_Set(p->text, &p->len, sizeof(p->text), "door", "");
+	}
 	if (k < 0) {
 		k = Co_Level(coord.cfg.start);
 		CoordKv_Set(p->text, &p->len, sizeof(p->text), "entrance", "");
@@ -627,7 +787,8 @@ static void Co_State(int conn, NetRepReader *r) {
 		}
 		Co_Release(i);
 		break;
-	case COORD_SR_TRAVEL: {
+	case COORD_SR_TRAVEL:
+	case COORD_SR_PARTY: {
 		int k = Co_Level(level);
 		if (k < 0) {
 			Co_Log("coordinator: %s (%.8s) cannot go to %s (not a level of this world)\n", p->name, p->hex, level);
@@ -644,6 +805,9 @@ static void Co_State(int conn, NetRepReader *r) {
 		Co_Log("coordinator: %s (%.8s) travels from %s to %s (%s, %s)\n", p->name, p->hex, coord.inst[from].level,
 			coord.inst[k].level, entrance[0] ? entrance : "spawn", door[0] ? door : "-");
 		Co_Send2Level(p, k);
+		if (reason == COORD_SR_PARTY && coord.coop) {
+			Co_Summon(p, k, entrance, door);
+		}
 		break;
 	}
 	}
@@ -681,6 +845,9 @@ static void Co_Inst(int conn, NetRepReader *r) {
 		CoordProc_Adopt(&in->proc, pid);
 	}
 	Co_Log("coordinator: instance %s up (pid %u, port %u)\n", in->level, pid, in->port);
+	if (coord.coop) {
+		Co_SendStory(conn);
+	}
 }
 
 static void Co_Disconnect(int conn) {
@@ -738,10 +905,24 @@ static void Co_Net(void) {
 				Co_Inst(ev.conn, &r);
 			} else if (c->kind == CK_INST && ev.data[0] == COORD_MSG_STATE) {
 				Co_State(ev.conn, &r);
+			} else if (c->kind == CK_INST && (ev.data[0] == COORD_MSG_STORY || ev.data[0] == COORD_MSG_STORYINIT) &&
+				coord.coop && ev.size <= NET2_MAX_MESSAGE) {
+				Co_Story(ev.conn, ev.data, ev.size);
+			} else if (c->kind == CK_INST && ev.data[0] == COORD_MSG_PNOTICE && coord.coop) {
+				Co_PartyNotice(ev.conn, &r);
 			}
 			break;
 		}
 	}
+}
+
+/* the players in instance i (not those on their way there) */
+static int Co_Present(int i) {
+	int n = 0;
+	for (int k = 0; k < CO_PLAYERS; k++) {
+		n += coord.pl[k].used && coord.pl[k].inst == i && !coord.pl[k].wantTicket;
+	}
+	return n;
 }
 
 /* the processes, the starts, the ends of empty instances */
@@ -797,6 +978,8 @@ static void Co_Instances(void) {
 				in->empty = in->players ? 0 : in->empty ? in->empty : coord.now;
 				if (!in->keep && in->empty && coord.now - in->empty > grace) {
 					Co_Stop(in, "no player");
+				} else if (in->stale && !Co_Present(i)) {
+					Co_Stop(in, "the story moved on");
 				}
 				break;
 			case CI_STOPPING:
@@ -829,6 +1012,9 @@ static void Co_Instances(void) {
 }
 
 static void Co_SaveAll(int all) {
+	if (coord.coop && !CoordParty_Save(&coord.party)) {
+		Co_Log("coordinator: cannot save the party's story\n");
+	}
 	for (int i = 0; i < CO_PLAYERS; i++) {
 		if (coord.pl[i].used && coord.pl[i].dirty && (all || coord.now - coord.pl[i].saved >= 1000u)) {
 			Co_Save(&coord.pl[i]);
@@ -850,6 +1036,20 @@ Coord *Coord_Create(const CoordConfig *cfg) {
 	if (!c->instPort) {
 		c->instPort = (uint16_t)(c->port + NET2_LAN_PORTS);
 	}
+	coord.coop = !strcmp(c->mode, "coop");
+	if (coord.coop) {
+		/* coop: a party of up to 8, the story's levels, the start of the single player game; only the start is kept */
+		c->maxPlayers = c->maxPlayers < 1 || c->maxPlayers > COORD_COOP_MAX ? COORD_COOP_MAX : c->maxPlayers;
+		if (!c->levels[0]) {
+			snprintf(c->levels, sizeof(c->levels), "%s", COORD_COOP_LEVELS);
+		}
+		if (!c->start[0]) {
+			snprintf(c->start, sizeof(c->start), "%s", COORD_COOP_START);
+		}
+		if (!c->keep[0]) {
+			snprintf(c->keep, sizeof(c->keep), "%s", c->start);
+		}
+	}
 	if (!c->start[0]) {
 		snprintf(c->start, sizeof(c->start), "DownTown");
 	}
@@ -865,6 +1065,9 @@ Coord *Coord_Create(const CoordConfig *cfg) {
 	}
 	if (!Coord_MkDir(c->dataDir) || !Coord_MkDir(coord.playersDir) || !Coord_MkDir(coord.logsDir)) {
 		Co_Log("coordinator: cannot make the data folder %s\n", c->dataDir);
+		return NULL;
+	}
+	if (coord.coop && !CoordParty_Load(&coord.party, c->dataDir, coord.playersDir, Co_Log)) {
 		return NULL;
 	}
 	if (!Coord_LoadSeed(seedPath, coord.seed, &made)) {
@@ -934,11 +1137,18 @@ void Coord_Status(Coord *c) {
 		return;
 	}
 	Co_Log("coordinator %s: %d players online\n", coord.cfg.name, coord.online);
+	if (coord.coop) {
+		char lib[64], map[64];
+		CoordKv_Get(coord.party.story, coord.party.len, "Mission.Library", lib, sizeof(lib));
+		CoordKv_Get(coord.party.story, coord.party.len, "Mission.Map", map, sizeof(map));
+		Co_Log("  coop party: owner %.8s, story %d bytes, %u changes, mission %s in %s\n", coord.party.owner,
+			coord.party.len, coord.party.seq, lib[0] ? lib : "-", map[0] ? map : "-");
+	}
 	for (int i = 0; i < coord.ninst; i++) {
 		CoInst *in = &coord.inst[i];
 		if (in->state != CI_DOWN || in->keep) {
-			Co_Log("  %s: %s, port %u, pid %u, %d players%s\n", in->level, states[in->state], in->port, in->proc.pid,
-				in->players, in->keep ? ", kept up" : "");
+			Co_Log("  %s: %s, port %u, pid %u, %d players%s%s\n", in->level, states[in->state], in->port, in->proc.pid,
+				in->players, in->keep ? ", kept up" : "", in->stale ? ", stale" : "");
 		}
 	}
 	for (int k = 0; k < CO_PLAYERS; k++) {

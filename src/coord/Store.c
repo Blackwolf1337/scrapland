@@ -10,12 +10,18 @@
 #define STORE_HEAD "scrapplayer 1\n"
 #define STORE_SUM "sum "
 #define STORE_SUM_BYTES 16
-#define STORE_FILE (COORD_STATE_MAX + 128)
+#define STORE_FILE (COORD_STORY_MAX + 128)
 
-static int Store_Path(char *out, int cap, const char *dir, const uint8_t key[NET2_KEY_SIZE], const char *ext) {
+/* <base>.<ext><tail> */
+static int Store_At(char *out, int cap, const char *base, const char *ext, const char *tail) {
+	return snprintf(out, (size_t)cap, "%s.%s%s", base, ext, tail) < cap;
+}
+
+/* <dir>/<hex key> */
+static int Store_Base(char *out, int cap, const char *dir, const uint8_t key[NET2_KEY_SIZE]) {
 	char hex[2 * NET2_KEY_SIZE + 1];
 	Coord_Hex(key, NET2_KEY_SIZE, hex);
-	return snprintf(out, (size_t)cap, "%s/%s.%s", dir, hex, ext) < cap;
+	return snprintf(out, (size_t)cap, "%s/%s", dir, hex) < cap;
 }
 
 /* a file's text when it is whole: 1 with the state in text, else 0 */
@@ -49,7 +55,9 @@ static int Store_Parse(const char *buf, int n, char *text, int *len, int cap) {
 	return 1;
 }
 
-int CoordStore_Load(const char *dir, const uint8_t key[NET2_KEY_SIZE], char *text, int *len, int cap) {
+/* the file <base>.<ext> (the one before: bakExt, a bad one kept as badExt) */
+static int Store_Load(const char *base, const char *ext, const char *bakExt, const char *badExt, char *text, int *len,
+	int cap) {
 	static char buf[STORE_FILE];
 	char path[COORD_PATH], bak[COORD_PATH], bad[COORD_PATH];
 
@@ -57,8 +65,8 @@ int CoordStore_Load(const char *dir, const uint8_t key[NET2_KEY_SIZE], char *tex
 	if (cap > 0) {
 		text[0] = 0;
 	}
-	if (!Store_Path(path, sizeof(path), dir, key, "dat") || !Store_Path(bak, sizeof(bak), dir, key, "bak") ||
-		!Store_Path(bad, sizeof(bad), dir, key, "corrupt")) {
+	if (!Store_At(path, sizeof(path), base, ext, "") || !Store_At(bak, sizeof(bak), base, bakExt, "") ||
+		!Store_At(bad, sizeof(bad), base, badExt, "")) {
 		return COORD_LD_IO;
 	}
 	int n = Coord_ReadFile(path, buf, sizeof(buf));
@@ -93,14 +101,14 @@ int CoordStore_Load(const char *dir, const uint8_t key[NET2_KEY_SIZE], char *tex
 	return COORD_LD_CORRUPT;
 }
 
-int CoordStore_Save(const char *dir, const uint8_t key[NET2_KEY_SIZE], const char *text, int len) {
+static int Store_Save(const char *base, const char *ext, const char *bakExt, const char *text, int len, int max) {
 	static char buf[STORE_FILE];
 	char path[COORD_PATH], bak[COORD_PATH], sum[2 * STORE_SUM_BYTES + 1];
 	uint8_t hash[STORE_SUM_BYTES];
 	int head = (int)sizeof(STORE_HEAD) - 1;
 
-	if (len < 0 || len > COORD_STATE_MAX || !CoordKv_Valid(text, len) || !Store_Path(path, sizeof(path), dir, key, "dat") ||
-		!Store_Path(bak, sizeof(bak), dir, key, "bak")) {
+	if (len < 0 || len > max || !CoordKv_Valid(text, len) || !Store_At(path, sizeof(path), base, ext, "") ||
+		!Store_At(bak, sizeof(bak), base, bakExt, "")) {
 		return 0;
 	}
 	memcpy(buf, STORE_HEAD, (size_t)head);
@@ -113,4 +121,31 @@ int CoordStore_Save(const char *dir, const uint8_t key[NET2_KEY_SIZE], const cha
 	Coord_Hex(hash, STORE_SUM_BYTES, sum);
 	n += snprintf(buf + n, sizeof(buf) - (size_t)n, STORE_SUM "%s\n", sum);
 	return Coord_WriteAtomic(path, buf, n, bak);
+}
+
+int CoordStore_Load(const char *dir, const uint8_t key[NET2_KEY_SIZE], char *text, int *len, int cap) {
+	char base[COORD_PATH];
+	*len = 0;
+	if (!Store_Base(base, sizeof(base), dir, key)) {
+		return COORD_LD_IO;
+	}
+	return Store_Load(base, "dat", "bak", "corrupt", text, len, cap);
+}
+
+int CoordStore_Save(const char *dir, const uint8_t key[NET2_KEY_SIZE], const char *text, int len) {
+	char base[COORD_PATH];
+	return Store_Base(base, sizeof(base), dir, key) && Store_Save(base, "dat", "bak", text, len, COORD_STATE_MAX);
+}
+
+int CoordStore_LoadText(const char *base, const char *ext, char *text, int *len, int cap) {
+	char bak[32], bad[32];
+	snprintf(bak, sizeof(bak), "%sbak", ext);
+	snprintf(bad, sizeof(bad), "%scorrupt", ext);
+	return Store_Load(base, ext, bak, bad, text, len, cap);
+}
+
+int CoordStore_SaveText(const char *base, const char *ext, const char *text, int len) {
+	char bak[32];
+	snprintf(bak, sizeof(bak), "%sbak", ext);
+	return Store_Save(base, ext, bak, text, len, COORD_STORY_MAX);
 }
