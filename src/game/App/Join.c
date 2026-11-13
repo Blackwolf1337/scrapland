@@ -143,7 +143,7 @@ static void Join_Host(void) {
 	char dir[COORD_PATH];
 
 	Coord_DefaultConfig(&cfg);
-	/* the menu's mode, else -mode of this game (include/scrap/coop.h, include/scrap/arena.h, include/scrap/faction.h) */
+	/* the menu's mode, else -mode of this game (include/scrap/coop.h, arena.h, faction.h) */
 	Str_Copy(cfg.mode, join.hostMode[0] ? join.hostMode : Coop_Asked() ? "coop" : Arena_ModeName() ? Arena_ModeName() :
 		Faction_ModeName(), sizeof(cfg.mode));
 	byte coop = !strcmp(cfg.mode, "coop");

@@ -43,7 +43,8 @@
 enum { WP_LAN, WP_LIST, WP_ADDRESS, WP_HOST };
 enum { WL_IDLE, WL_CONNECTING, WL_PAGES };
 static const char *const world_pages[] = { "Lan", "List", "Address", "Host" };
-/* the modes of a world: the sandbox, the factions, the coop story and the PvP modes of the original (include/scrap/arena.h) */
+/* the modes of a world: the sandbox, the factions, the coop story and the PvP modes of the original
+ * (include/scrap/arena.h) */
 static const char *const world_modes[] = { "sandbox", "freeroam", "coop", "dm", "dmbots", "tdm", "flaghunt", "teamflag",
 	"postman", "teampost" };
 #define WORLD_MODES (int)(sizeof(world_modes) / sizeof(world_modes[0]))
