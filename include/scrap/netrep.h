@@ -116,6 +116,7 @@
 #define NETREP_FL_WALKING 0x04
 #define NETREP_FL_PLAYER 0x08		/* a player's entity */
 #define NETREP_FL_FIRE 0x10			/* ship: the fire key is down */
+#define NETREP_FL_SIREN 0x20		/* ship: its player's siren is on (include/scrap/faction.h) */
 
 /* message types */
 #define NETREP_MSG_HELLO 'H'

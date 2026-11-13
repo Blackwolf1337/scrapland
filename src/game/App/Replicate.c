@@ -16,6 +16,7 @@
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/model.h"
@@ -41,7 +42,6 @@
 #define REP_HASH 4096				/* pointer table, twice the slots */
 #define REP_NAME 64
 #define REP_REWIND_MAX 0.5					/* s the lag compensation goes back at most */
-#define REP_CHAR_CLASS "Dtritus"
 #define REP_PARK_HEIGHT 1500.0f			/* units above the floor a ship left by its player is parked at most */
 #define REP_SPAWNS 32					/* spawn points of a level kept */
 #define REP_SPAWN_CROWD 2500.0f			/* units around a spawn point its players are counted in */
@@ -317,7 +317,7 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 		s->ctrl[0] = NetRep_QCtrl(v->controls.acc);
 		s->ctrl[1] = NetRep_QCtrl(v->controls.str);
 		s->weapon = (uint8_t)v->weapons.curWeap;
-		s->flags |= v->controls.fire ? NETREP_FL_FIRE : 0;
+		s->flags |= (v->controls.fire ? NETREP_FL_FIRE : 0) | Faction_Flags(e);
 		return;
 	}
 	cWalkCharEntity *c = WChar(e);
@@ -544,7 +544,8 @@ static void Rep_DropCorpse(RepPlayer *pl) {
 	pl->corpse = NULL;
 }
 
-/* the player's Dtritus at pos (a spawn point when pos is NULL) */
+/* the player's character at pos (a spawn point when pos is NULL): its class of the faction or the state
+ * (include/scrap/faction.h), Dtritus by default */
 static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	char name[REP_NAME];
 	vec3_t p, ang;
@@ -562,7 +563,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	if (!e) {
 		return NULL;
 	}
-	WithLife_SetActCtrl(e, REP_CHAR_CLASS);
+	WithLife_SetActCtrl(e, Faction_CharClass(i));
 	Rep_SetSlot(e, PLAYERS_NET_SLOT + i);
 	Rep_SetVarS(e, "TgType", "Green");
 	/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
@@ -576,6 +577,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	pl->dead = 0;
 	pl->spawnTick = rep.tick;
 	pl->spawnY = p.y;
+	Faction_Spawned(i, e);
 	return e;
 }
 
@@ -694,7 +696,7 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 		Rep_Disown(i, 0);
 	}
 	/* the player's own ship when it has one (include/scrap/travel.h), else a new one */
-	if ((ship = Travel_OwnShip(i, &p, yaw)) == NULL) {
+	if ((ship = Faction_CallShip(i, &p, yaw)) == NULL && (ship = Travel_OwnShip(i, &p, yaw)) == NULL) {
 		Native_SetFloat(&c[0], p.x);
 		Native_SetFloat(&c[1], p.y);
 		Native_SetFloat(&c[2], p.z);
@@ -748,7 +750,7 @@ static void Rep_Switch(int i, cEntity *e) {
 			return;
 		}
 		Str_Copy(name, best->name, sizeof(name));
-		Rep_SetVarS(best, "MPil0", "P_" REP_CHAR_CLASS);
+		Rep_SetVarS(best, "MPil0", Faction_Pilot(i));
 		PORT_CALL(ShipMaker, SetUpChars, NULL, "s", name);
 		int zero = 0;
 		Entity_VarI(best, "ArrowCanUse", &zero, 1);
@@ -847,6 +849,7 @@ static void Rep_Death(int i, cEntity *e) {
 	pl->dead = 1;
 	Players_Bind(i);
 	Alarm_Set(&g_pWorld->alarm, 0.0f);
+	Faction_Died(i);
 	if (sand.rebuild && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) == i) {
 		pl->rebuild = Rep_ShipPrice(e);
 	}
@@ -913,6 +916,7 @@ static void Rep_Leave(int i) {
 	Con_Printf("instance: player %d left (%u inputs, %u late, %u missed, %u shots, %u hits)\n", i, pl->in.got,
 		pl->in.late, pl->in.missed, pl->shots, pl->hits);
 	Travel_Left(i);
+	Faction_Left(i);
 	Rep_DropOwn(i);
 	Rep_DropCorpse(pl);
 	/* its called ships stay in the world, owned by no one */
@@ -954,6 +958,22 @@ void Rep_Respawn(int i) {
 	}
 	Rep_DropOwn(i);
 	Rep_SpawnChar(i, NULL, 0.0f);
+	NetRepInBuf_Restart(&pl->in);
+	pl->told = -2;
+}
+
+void Rep_Rebody(int i, const vec3_t *pos, float yaw) {
+	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? &rep.pl[i] : NULL;
+	cEntity *e = pl ? Rep_Own(pl) : NULL;
+	if (!e || (!pos && NetPl_Kind(e) != NETREP_CHAR)) {
+		return;
+	}
+	vec3_t p = pos ? *pos : e->pos;
+	if (!pos) {
+		yaw = WChar(e)->view.y;
+	}
+	Rep_DropOwn(i);
+	Rep_SpawnChar(i, &p, yaw);
 	NetRepInBuf_Restart(&pl->in);
 	pl->told = -2;
 }

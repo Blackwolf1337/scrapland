@@ -133,6 +133,26 @@ byte cAbstractIDevice_SetEntry(cAbstractIDevice *self, int entry, int set, int p
 }
 
 /* AssingEntry(device, entry, player, set, action): 1 no device, 2 no entry, 3 bad player, 4 no set, 5 no action */
+/* not in the original: the value of the keys bound to an action of a set whatever set is on (the multiplayer's
+ * faction keys, include/scrap/faction.h); a walk of its own over the ring, the iterator of the list stays */
+float Input_BoundValue(int set, int action, int player) {
+	float v = 0.0f;
+	cInputDevNode *n = g_InputDevices.head;
+	for (int guard = 0; n && guard < 64; guard++) {
+		for (int i = 0; n->dev && i < n->dev->nEntries; i++) {
+			const cDevEntry *e = &n->dev->entries[i];
+			if (e->sets[set].action == action && e->sets[set].player == player && e->value > v) {
+				v = e->value;
+			}
+		}
+		n = n->next;
+		if (n == g_InputDevices.head) {
+			break;
+		}
+	}
+	return v;
+}
+
 int Input_AssignEntry(const char *a, const char *b, int c, const char *d, const char *e) {
 	uint32_t set, act;
 

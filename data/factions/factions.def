@@ -1,0 +1,87 @@
+# The factions of the freeroam mode (multiplayer, not in the original), read by src/faction/FactionDef.c. The six
+# groups of data/modules/challenge.mod with their characters (the classes of the group), the class a member plays as,
+# the ships of the group, the office (a level and an entity or dummy there where a player joins and leaves), the
+# ranks (arrests from which each rank starts), the relations to the other groups and the abilities (cooldown in
+# seconds). Only the Police has abilities in this stage; the other groups are rows for the next one.
+# One statement per line, # starts a comment; "faction <Name>" starts the lines of a group.
+
+# the wanted level of a player: the points from which levels 1..5 start
+wanted 1 6 14 26 45
+# points lost a second while the player's alarm is on, while it is off
+decay 0.02 0.1
+# points of a crime; the same crime of a player counts once in crimegap seconds
+crime hurt_police 2
+crime hurt_civilian 0.5
+crime kill_police 8
+crime kill_civilian 3
+crime hurt_player 1
+crime kill_player 6
+crimegap 1
+# an arrest: the fine of the arrested player and the reward of the officer, per wanted level
+fine 300
+reward 150
+# units from an officer to the wanted player it arrests: on foot, in a ship; from a player to the office's desk
+reach 900 2000
+deskreach 1200
+# the siren: traffic within the radius moves away from the ship to the distance, held for the time (s)
+siren 6000 4000 5
+# backup outdoors: police ships of the wave type, so many; indoors the gears of the level chase the suspect
+backup SPoli2_Rookie 2
+
+faction Police
+	chars Police PoliceBoss Gear Sentinel
+	play Police
+	armour Gear 300
+	ships SPoli1 SPoli2 SPoli3 SPoli4 SPoli5 SPoliBoss1
+	office Police DM_DesktopFunctionary_00
+	jail DM_Player_Spawn_Jail
+	ranks 0 2 5 10 20
+	relation Mercs hostile
+	relation Bureaucracy friend
+	ability join 2
+	ability siren 1
+	ability armour 6
+	ability arrest 4
+	ability backup 45
+	ability ship 10
+
+faction Bishops
+	chars Bishop Nurse
+	play Bishop
+	ships SBishop1 SArchbishop1
+	office Temple
+	ranks 0 3 8 15 30
+	relation Bankers hostile
+
+faction Bankers
+	chars BankDirector BankMaster CrazyGambler Desktop
+	play BankDirector
+	ships SBanker1 SBankMaster1 SCrazyGambler1
+	office Bank
+	ranks 0 3 8 15 30
+	relation Bishops hostile
+	relation Bureaucracy friend
+
+faction Bureaucracy
+	chars Functionary Mayor
+	play Functionary
+	ships SFunc1 SMayor1
+	office TownHall
+	ranks 0 3 8 15 30
+	relation Police friend
+	relation Bankers friend
+
+faction Press
+	chars Berto Betty Humphrey Messenger
+	play Messenger
+	ships SBerto1 SBetty1 SHump1
+	office Press
+	ranks 0 3 8 15 30
+
+faction Mercs
+	chars MercenaryA MercenaryB MercenaryC
+	play MercenaryA
+	ships SMerc1 SMerc2 SMerc3
+	office GamblinDen
+	ranks 0 3 8 15 30
+	relation Police hostile

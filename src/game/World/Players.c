@@ -5,6 +5,7 @@
 #include <float.h>
 
 #include "scrap/alarm.h"
+#include "scrap/faction.h"
 #include "scrap/game.h"
 #include "scrap/instance.h"
 #include "scrap/mathlib.h"
@@ -350,7 +351,8 @@ const cAlarm *Players_Alarm(int i) {
 }
 
 byte Players_MayHurt(cEntity *attacker, cEntity *victim) {
-	return !Players_Net() || Instance_PvP() || attacker == victim || Players_Of(attacker) < 0 || Players_Of(victim) < 0;
+	return !Players_Net() || Instance_PvP() || attacker == victim || Players_Of(attacker) < 0 || Players_Of(victim) < 0 ||
+		Faction_MayHurt(attacker, victim);
 }
 
 cEntity *Players_NearestWanted(const vec3_t *pos) {

@@ -72,6 +72,8 @@ typedef struct TravelSpawn {
 byte Travel_Admit(int conn, int player, TravelSpawn *sp);
 /* the player's entity is there: its alarm, the ride down of its entrance, the report */
 void Travel_Joined(int player);
+/* the state of the player to the coordinator now (a change that must not wait for the next report) */
+void Travel_Report(int player);
 /* the player left (its connection closed): the report, unless it travelled */
 void Travel_Left(int player);
 /* the level change of the rider (an entity name) to level (a folder of Levels) with the spawn dummy and the door

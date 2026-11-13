@@ -11,6 +11,7 @@
 #include "scrap/console.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
@@ -149,7 +150,8 @@ static void Join_Host(void) {
 	Str_Copy(cfg.start, join.hostLevel[0] ? join.hostLevel : "DownTown", sizeof(cfg.start));
 	Str_Copy(cfg.keep, join.hostKeep[0] ? join.hostKeep : cfg.start, sizeof(cfg.keep));
 	Str_PrintfQuiet(cfg.name, sizeof(cfg.name), "%s's world", join.name[0] ? join.name : "Player");
-	Str_Copy(cfg.mode, join.hostMode, sizeof(cfg.mode));
+	/* the menu's mode, else -mode of this game (include/scrap/faction.h) */
+	Str_Copy(cfg.mode, join.hostMode[0] ? join.hostMode : Faction_ModeName(), sizeof(cfg.mode));
 	if (join.hostPvp >= 0) {
 		cfg.pvp = join.hostPvp;
 	}
