@@ -86,6 +86,8 @@ typedef struct RepPlayer {
 	int lives;						/* lives left (-lives), 0 with infinite lives */
 	int rebuild;					/* the price of its own ship that died: the next call costs it (-rebuild) */
 	byte dead;						/* died, no new character yet (the player message says so) */
+	cEntity *corpse;				/* its dead character (compared, read while World_FindEntity(corpseName) is it) */
+	char corpseName[REP_NAME];
 	int spawnAt;					/* the spawn point of its character, -1 */
 	uint64_t spawnTick;
 	float spawnY;
@@ -530,6 +532,15 @@ static cEntity *Rep_Own(const RepPlayer *pl) {
 	return e && e == pl->own && !e->deadNode.target ? e : NULL;
 }
 
+/* the dead character the player left, away */
+static void Rep_DropCorpse(RepPlayer *pl) {
+	cEntity *c = pl->corpse ? World_FindEntity(pl->corpseName) : NULL;
+	if (c && c == pl->corpse && !c->deadNode.target) {
+		cEntity_Del(c);
+	}
+	pl->corpse = NULL;
+}
+
 /* the player's Dtritus at pos (a spawn point when pos is NULL) */
 static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	char name[REP_NAME];
@@ -551,9 +562,12 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	WithLife_SetActCtrl(e, REP_CHAR_CLASS);
 	Rep_SetSlot(e, PLAYERS_NET_SLOT + i);
 	Rep_SetVarS(e, "TgType", "Green");
+	/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
+	Rep_SetVarS(e, "OnDeath", "");
 	ang = (vec3_t){ 0.0f, yaw, 0.0f };
 	Obj_SetAng(e, &ang);
 	Obj(e)->netStep = 1;
+	Rep_DropCorpse(pl);
 	Rep_SetOwn(pl, e);
 	pl->lost = 0;
 	pl->dead = 0;
@@ -803,7 +817,13 @@ static void Rep_DropOwn(int i) {
 		}
 	} else {
 		Rep_SetSlot(e, -1);
-		cEntity_Del(e);
+		if (WLife(e)->life > 0) {
+			cEntity_Del(e);
+		} else {
+			/* a dead character lies there until the player's next one */
+			pl->corpse = e;
+			Str_Copy(pl->corpseName, e->name, sizeof(pl->corpseName));
+		}
 	}
 	Players_BindTurn();
 }
@@ -863,6 +883,7 @@ static void Rep_Leave(int i) {
 	Con_Printf("instance: player %d left (%u inputs, %u late, %u missed, %u shots, %u hits)\n", i, pl->in.got,
 		pl->in.late, pl->in.missed, pl->shots, pl->hits);
 	Rep_DropOwn(i);
+	Rep_DropCorpse(pl);
 	/* its called ships stay in the world, owned by no one */
 	while (pl->nships) {
 		Rep_Disown(i, 0);

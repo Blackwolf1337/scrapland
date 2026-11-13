@@ -895,8 +895,9 @@ static byte Pk_ParkedDeatN(const nativeVal_t *v, const nativeVal_t *attacker, na
 		return Mode_Done(&t, 0);
 	}
 	if (other) {
+		/* the instance: a parked ship may die away from its place (a box there can be refused: None) */
 		if (!Mode_IncSaveVar("Stats.Parking") || !Mode_VObjRead(v, "MovePos", vPos) || !Pk_BoxAt(Mode_S(&t, "Parking"), vPos, l) ||
-			!LvN_SetF(l, "rTime", 0.1) || !Mode_VDel(v) || !Mode_UsrHandle(usr)) {
+			(!(Players_Net() && l->type == NV_NONE) && !LvN_SetF(l, "rTime", 0.1)) || !Mode_VDel(v) || !Mode_UsrHandle(usr)) {
 			return Mode_Done(&t, 0);
 		}
 		int by = Native_True(usr);
