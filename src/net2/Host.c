@@ -277,6 +277,7 @@ void Net2_Poll(Net2Host *h, uint64_t now) {
 	Net2Addr from;
 
 	h->now = now;
+	h->acceptsLeft = N2_ACCEPTS_PER_POLL;
 	for (int k = 0; k < N2_POLL_PACKETS; k++) {
 		int n = h->io.recv(h->io.ctx, &from, buf, sizeof(buf));
 		if (n <= 0) {
