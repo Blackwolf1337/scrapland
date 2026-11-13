@@ -1,0 +1,163 @@
+# bankmastersound (the sound script sound/bankmastersound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/bankmastersound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes pasada-billete1.wav
+	AddSoundRes pasada-billete2.wav
+	AddSoundRes pasada-billete3.wav
+	AddSoundRes loop-levita7-master.wav
+	AddSoundRes mecanismo-T1.wav
+	AddSoundRes mecanismo-T.wav
+	AddSoundRes giro111.wav
+if %BankMasterSound.isPC
+	class
+		AddSoundRes giro222.wav
+end
+	AddSoundRes pasada-bishop1.wav
+	AddSoundRes golpe.wav
+	AddSoundRes roce-masaje.wav
+	AddSoundRes roce-masaje2.wav
+	AddSoundRes roce-masaje3.wav
+
+section SetSounds
+let act BackInit
+call Chars.ActSound $char $act 2 giro111 0.055
+call Chars.ActSound $char $act 2 mecanismo-T 0.018 +7
+let act BackEnd
+call Chars.ActSound $char $act 51 giro111 0.055
+call Chars.ActSound $char $act 51 mecanismo-T1 0.018 +7
+let act ActionInit
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $act 2 giro222 0.055
+else
+	call Chars.ActSound $char $act 2 giro111 0.055
+end
+call Chars.ActSound $char $act 2 mecanismo-T 0.018 +7
+let act Action
+call Chars.ActSound $char $act 14 pasada-bishop1 0.05 +7
+call Chars.ActSound $char $act 24 pasada-bishop1 0.05 +7
+call Chars.ActSound $char $act 34 pasada-bishop1 0.05 +7
+call Chars.ActSound $char $act 44 pasada-bishop1 0.05 +7
+let act ActionEnd
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $act 70 giro222 0.055
+else
+	call Chars.ActSound $char $act 70 giro111 0.055
+end
+call Chars.ActSound $char $act 70 mecanismo-T1 0.018 +7
+let act Crazy
+call Chars.ActSound $char $act 14 golpe 0.1 +3
+call Chars.ActSound $char $act 19 golpe 0.1 +2
+call Chars.ActSound $char $act 25 golpe 0.1 +4
+call Chars.ActSound $char $act 31 golpe 0.1 +3
+call Chars.ActSound $char $act 37 golpe 0.1 +2
+call Chars.ActSound $char $act 43 golpe 0.1 +4
+call Chars.ActSound $char $act 49 golpe 0.1 +3
+call Chars.ActSound $char $act 55 golpe 0.1 +2
+call Chars.ActSound $char $act 61 golpe 0.1 +2
+call Chars.ActSound $char $act 67 golpe 0.1 +3
+call Chars.ActSound $char $act 73 golpe 0.1 +2
+call Chars.ActSound $char $act 79 golpe 0.1 +4
+call Chars.ActSound $char $act 85 golpe 0.1 +2
+call Chars.ActSound $char $act 91 golpe 0.1 +3
+call Chars.ActSound $char $act 97 golpe 0.1 +3
+call Chars.ActSound $char $act 103 golpe 0.1 +3
+call Chars.ActSound $char $act 109 golpe 0.1 +2
+call Chars.ActSound $char $act 115 golpe 0.1 +4
+call Chars.ActSound $char $act 123 golpe 0.1 +2
+call Chars.ActSound $char $act 131 golpe 0.1 +2
+let act Relax0
+call Chars.ActSound $char $act 3 giro111 0.055 +4
+call Chars.ActSound $char $act 3 mecanismo-T 0.018 +8
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $act 55 giro222 0.055 +8
+else
+	call Chars.ActSound $char $act 55 giro111 0.055 +8
+end
+call Chars.ActSound $char $act 55 mecanismo-T1 0.018 +15
+call Chars.ActSound $char $act 80 giro111 0.055 +5
+call Chars.ActSound $char $act 80 mecanismo-T 0.018 +6
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $act 121 giro222 0.055 +8
+else
+	call Chars.ActSound $char $act 121 giro111 0.055 +8
+end
+call Chars.ActSound $char $act 121 mecanismo-T1 0.018 +15
+call Chars.ActSound $char $act 165 giro111 0.055 +4
+call Chars.ActSound $char $act 165 mecanismo-T 0.018 +8
+let act Relax1
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $act 2 giro222 0.055 +8
+else
+	call Chars.ActSound $char $act 2 giro111 0.055 +8
+end
+call Chars.ActSound $char $act 2 mecanismo-T1 0.018 +7
+call Chars.ActSound $char $act 42 roce-masaje 0.02
+call Chars.ActSound $char $act 75 roce-masaje2 0.02
+call Chars.ActSound $char $act 108 roce-masaje3 0.02
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $act 139 giro222 0.055
+else
+	call Chars.ActSound $char $act 139 giro111 0.055
+end
+call Chars.ActSound $char $act 139 mecanismo-T1 0.018 +7
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 11 giro111 0.06 +6
+call Chars.ActSound $char $talk 11 mecanismo-T1 0.016 +10
+call Chars.ActSound $char $talk 40 giro111 0.06 +5
+call Chars.ActSound $char $talk 40 mecanismo-T 0.016 +8
+
+section Talk1Snd
+call Chars.ActSound $char $talk 2 giro111 0.06 +5
+call Chars.ActSound $char $talk 5 golpe 0.1 +2
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $talk 15 giro222 0.055 +4
+else
+	call Chars.ActSound $char $talk 15 giro111 0.055 +4
+end
+call Chars.ActSound $char $talk 20 golpe 0.1 +3
+call Chars.ActSound $char $talk 31 giro111 0.06 +4
+call Chars.ActSound $char $talk 36 golpe 0.1 +4
+if %BankMasterSound.isPC
+	call Chars.ActSound $char $talk 53 giro222 0.055 +3
+else
+	call Chars.ActSound $char $talk 53 giro111 0.055 +3
+end
+
+section InitLoops
+object $e
+	snd_n 1
+	snd00_name Loop-levita7-master
+	snd00_loop 1
+	snd00_pitch0 -7.0
+	snd00_vol0 0.03
+	snd00_pitch1 +5.0
+	snd00_vol1 0.08
+	snd00_time1 0.6
+	snd00_int0 1
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

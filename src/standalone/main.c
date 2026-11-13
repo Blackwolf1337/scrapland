@@ -8,8 +8,13 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#ifdef __linux__
+#include <sys/personality.h>
+#include <unistd.h>
+#endif
 
 #include "scrap/game.h"
+#include "scrap/testdet.h"
 
 int Game_Dir(char *dir, size_t size);
 int Game_Start(const char *dir);
@@ -38,6 +43,22 @@ int main(int argc, char **argv) {
 	static char cmd[4096];
 	size_t n = 0;
 
+#ifdef __linux__
+	/* the deterministic test mode: the same addresses in every run (they show in the reprs of the script objects, and
+	 * whatever is ordered by address follows them), so the program starts itself again without the random layout of
+	 * its address space. Linux only */
+	if (TestDet_On()) {
+		char exe[1024];
+		int p = personality(0xffffffff);
+		ssize_t len = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
+
+		/* by its path, so the process keeps its name */
+		if (len > 0 && p != -1 && !(p & ADDR_NO_RANDOMIZE) && personality(p | ADDR_NO_RANDOMIZE) != -1) {
+			exe[len] = 0;
+			execv(exe, argv);
+		}
+	}
+#endif
 	for (int i = 1; i < argc; i++) {
 		byte quote = strchr(argv[i], ' ') != NULL;
 		int w = snprintf(cmd + n, sizeof(cmd) - n, "%s%s%s%s", i > 1 ? " " : "", quote ? "\"" : "", argv[i],

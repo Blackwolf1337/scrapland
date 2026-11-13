@@ -1,0 +1,16 @@
+# Temple: Mission_TalkToDeepThroat started like the game (Mission.Map, Mission.Library, state), then its functions with recorders
+Scrap.SetSaveVar('Mission.Map', 'Temple'); Scrap.SetSaveVar('Mission.Library', 'Mission_TalkToDeepThroat'); Scrap.LoadLevel('Levels/Temple'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_TalkToDeepThroat'))
+_r6hooks()
+_sdmod('Mission_TalkToDeepThroat', ('InitStatus',))
+(_r6ent(('DM_DTritusDesktop',), ('UseFunc', 'ArrowCanMission', 'RadarShow')), _r6hooks()[11:12], _r6hooks()[15:17])
+_r6on()
+_sd(__import__('Mission_TalkToDeepThroat').DeepThroatSpeech, 'Player0', 'DM_DTritusDesktop', 'Talk', 'x')
+_r6hooks()[:4]
+_sd(__import__('Mission_TalkToDeepThroat').SetNextMission)
+(_r6hooks()[11:12], _r6sv(('Mission.Map', 'Mission.Library', 'MayorAtGambinDen', 'MayorAtTownHall', 'BankMasterAtBank', 'Journalist.Humphrey_Defaut', 'Journalist.Berto_Defaut')))
+_sd(__import__('Mission_TalkToDeepThroat').Init, 'Levels/Temple')
+__import__('Mission_TalkToDeepThroat').DeepThroatSpeech('a', 'b', 'c')

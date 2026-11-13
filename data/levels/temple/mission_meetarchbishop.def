@@ -1,0 +1,84 @@
+# The functions of Mission_MeetArchbishop in level temple (the script levels/temple/scripts/mission_meetarchbishop.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Temple.c): UseDoor, TestEndOfElevator, CreateFakeSpeech, Init.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/temple/mission_meetarchbishop.def replaces this file.
+section InitStatus LevelPath
+setvar NewsPanel.MissionUse 1
+
+section SetNextMission usr=None
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_HumphreyArchbishopKilled" "Press"
+call SaveGame.MMDesc "Mission_ArchBishopKilled_MissionText1" 1
+call Scrap.SetSaveVar "Char" "Dtritus"
+call SaveGame.MarkWayPoint "Levels/Press" "DM_Player_Spawn_DownTown" ""
+call Scrap.SetSaveVar "GameAct" "1stMurder"
+call Scrap.SetSaveVar "BadReputation" "1"
+call Scrap.SetSaveVar "StdShipAIProfile" "Pilot"
+call Scrap.Set "PlayVideo" "Video/Bishop.avi"
+call Scrap.Achievement 2
+call SaveGame.StartGame
+
+section LoadYakuzziScene
+call Scene.Load "Yakuzzi"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 40 "Dtritus" "Relax"
+call Scene.ActorAction 50 "Dtritus" "Talk"
+call Scene.ActorAction 130 "Dtritus" "Talk1"
+call Scene.ActorAction 190 "Dtritus" "Relax"
+call Scene.ActorAction 435 "Dtritus" "TalkIam"
+call Scene.ActorAction 480 "Dtritus" "Talk"
+call Scene.ActorAction 560 "Dtritus" "Relax"
+call Scene.ActorAction 720 "Dtritus" "Talk"
+call Scene.ActorAction 770 "Dtritus" "Talk1"
+call Scene.ActorAction 830 "Dtritus" "Relax"
+call Scene.ActorAction 960 "Dtritus" "Talk"
+call Scene.ActorAction 1015 "Dtritus" "TalkTranki"
+call Scene.ActorAction 1085 "Dtritus" "Relax"
+call Scene.ActorAction 1190 "Dtritus" "Walk"
+call Scene.ActorAction 0 "ArchBishop" "RelaxYacuzzi"
+call Scene.ActorAction 200 "ArchBishop" "TalkYacuzzi"
+call Scene.ActorAction 300 "ArchBishop" "Talk1Yacuzzi"
+call Scene.ActorAction 360 "ArchBishop" "TalkYacuzzi"
+call Scene.ActorAction 425 "ArchBishop" "RelaxYacuzzi"
+call Scene.ActorAction 570 "ArchBishop" "TalkYacuzzi"
+call Scene.ActorAction 630 "ArchBishop" "FueraYacuzzi"
+call Scene.ActorAction 710 "ArchBishop" "RelaxYacuzzi"
+call Scene.ActorAction 840 "ArchBishop" "TalkYacuzzi"
+call Scene.ActorAction 890 "ArchBishop" "AvisarYacuzzi"
+call Scene.ActorAction 950 "ArchBishop" "RelaxYacuzzi"
+call Scene.ActorAction 1095 "ArchBishop" "TalkYacuzzi"
+call Scene.ActorAction 1125 "ArchBishop" "LargoYacuzzi"
+call Scene.ActorAction 1195 "ArchBishop" "RelaxYacuzzi"
+call Scene.AddText 50 "Mission_Scene_ArchBishop_1" 5
+call Scene.AddText 200 "Mission_Scene_ArchBishop_2" 7
+call Scene.AddText 435 "Mission_Scene_ArchBishop_3" 5
+call Scene.AddText 570 "Mission_Scene_ArchBishop_4" 5
+call Scene.AddText 720 "Mission_Scene_ArchBishop_5" 5
+call Scene.AddText 840 "Mission_Scene_ArchBishop_6" 5
+call Scene.AddText 960 "Mission_Scene_ArchBishop_7" 5
+call Scene.AddText 1095 "Mission_Scene_ArchBishop_8" 3
+call Scene.AddGeneric 0 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),0.5)"
+call Scene.AddGeneric 1200 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.75)"
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call Scene.CreateLocalAction $CharType 0 "TalkTranki" "TalkTranki" 1
+call Scene.CreateLocalAction $CharType 0 "TalkIam" "TalkIam" 1
+call Scrap.Set "DefInterpTime" 0.6
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "ArchBishop"
+call Scene.AddLocalActor "ArchBishop" $CharType
+call Scene.CreateLocalAction $CharType 0 "RelaxYacuzzi" "RelaxYacuzzi" 1
+call Scene.CreateLocalAction $CharType 0 "Relax1Yacuzzi" "Relax1Yacuzzi" 1
+call Scene.CreateLocalAction $CharType 0 "TalkYacuzzi" "TalkYacuzzi" 1
+call Scene.CreateLocalAction $CharType 0 "Talk1Yacuzzi" "Talk1Yacuzzi" 1
+call Scene.CreateLocalAction $CharType 0 "FueraYacuzzi" "FueraYacuzzi" 1
+call Scene.CreateLocalAction $CharType 0 "AvisarYacuzzi" "AvisarYacuzzi" 1
+call Scene.CreateLocalAction $CharType 0 "LargoYacuzzi" "LargoYacuzzi" 1
+call SAct.SetCls "DefAction" "RelaxYacuzzi"
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneYakuzziFile" %Mission_MeetArchbishop.FXSceneYakuzziFile
+call Scrap.SetDebrisSys %Mission_MeetArchbishop.FXSceneYakuzziFile 1 0 0 1 0 0 %Fx.FXSCENEYAKUZZI

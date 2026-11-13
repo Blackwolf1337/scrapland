@@ -1,0 +1,13 @@
+# Bank: CharsNPC, Betty and the start
+exec "def _res():\n\timport CharsNPC\n\tk = CharsNPC.CharRes.keys()\n\tk.sort()\n\tr = []\n\tfor n in k:\n\t\tc = CharsNPC.CharRes[n]\n\t\tr.append((n, c.Name, c.ActCtrl, c.Pos, c.Ang, c.repos, len(c.CallbackFunc), c.__class__.__name__))\n\treturn r\nimport Init\nInit._res = _res"
+exec "def _npcs():\n\timport CharsNPC, Init\n\tk = CharsNPC.CharRes.keys()\n\tk.sort()\n\tr = []\n\tfor n in k:\n\t\tif Scrap.GetEntity(n): r.append((n, Init._ent(n, ('ActCtrl','Money','MoneyReward','Life','PrevLife','ArrOpt0','ArrnOpt','UseFunc','ViewFunc','AI_Repos','ArrowCanUse','ArrowCanView','EntityList','Descriptor','LLogicIdle','Invulnerable','MoveTime','MoveViewAng'))))\n\treturn r\nimport Init\nInit._npcs = _npcs"
+exec "def _sp(n):\n\timport Init\n\treturn (Init._mod('Speech', ('PlayerName','NPCName','AnsAnima','NPCAnswer','OnEndOfSpeech')), Init._mod('CharsNPC', ('optionsList','subOptionsList','ActualEntityName')), Init._ent(n, ('Action','ArrOpt0','ArrOpt1','ArrOpt2','ArrOpt3','ArrOpt4','ArrnOpt','ArriOpt','LLogicIdle','SelectedEntity')), Init._mod('Challenge', ('challengeType','foeType')))\nimport Init\nInit._sp = _sp"
+__import__('Init')._res()
+__import__('Init')._npcs()
+__import__('CharsNPC').GenericNPCSpeech('Player0', 'Betty_Default', 'Talk', 'Talk')
+__import__('Init')._sp('Betty_Default')
+__import__('Speech').AbortSpeech()
+setattr(Scrap.UsrEntity(0), 'ActCtrl', 'Functionary')
+__import__('CharsNPC').GenericNPCSpeech('Player0', 'Betty_Default', 'Talk', 'Talk')
+__import__('Init')._sp('Betty_Default')
+__import__('Speech').AbortSpeech()

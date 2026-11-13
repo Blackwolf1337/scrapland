@@ -128,6 +128,20 @@ byte PtrTable_Delete(HashTable *self, const char *key) {
 	return 1;
 }
 
+byte PtrTable_DeleteValue(HashTable *self, uint32_t slot, const void *value) {
+	cPtrItem **link = (cPtrItem **)&self->slots[slot];
+	CHECK(!self->locked);
+	for (; *link; link = &(*link)->next) {
+		if ((*link)->value == value) {
+			cPtrItem *it = *link;
+			*link = it->next;
+			HashItem_Free(it);
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void PtrTable_Clear(HashTable *self) {
 	CHECK(!self->locked);
 	if (!self->slots) {

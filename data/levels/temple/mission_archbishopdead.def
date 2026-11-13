@@ -1,0 +1,7 @@
+# The functions of Mission_ArchbishopDead in level temple (the script levels/temple/scripts/mission_archbishopdead.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Temple.c): Init, ForbiddenMsg, CreateViscProofs, ViewProof, TakeProofPhoto, AfterDeepThroatMessageShown.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/temple/mission_archbishopdead.def replaces this file.
+section InitStatus LevelPath
+
+section ShowDeepThroatMessage
+call Speech.AddRemoteCom "Mission_FirstMeetDeepThroat_RemoteMessage3" "DeepThroat" %Mission_ArchbishopDead.AfterDeepThroatMessageShown

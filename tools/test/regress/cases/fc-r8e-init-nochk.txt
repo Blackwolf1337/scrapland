@@ -1,0 +1,14 @@
+# DownTown: values read before anything set them (round 8e): a button before its first text, getters with input
+SScorer.Add(0, 'R8eBtn', 'Button'); map(lambda a: SScorer.Set(0, 'R8eBtn', a[0], a[1]), (('IsMultiSprite', 0), ('Visible', 0), ('X', 100), ('MaxX', 300))); result = 1
+# SizeX of a name:value button without a text read boxH - textH (heap garbage before)
+map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('IsNameValuePair', 'SizeX', 'SizeY', 'MaxX', 'X'))
+# the getters of HighRes and BlendingMode check their input value, the one of ForceWidth sets the width from it
+SScorer.Set(0, 'R8eBtn', 'Text', 'Name: value'); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('SizeX', 'SizeY', 'W', 'H', 'Text'))
+# the handle of a scorer item reads through the same getter
+# a get of SwDthTime writes into the missile (set and get are reversed in the engine): stack garbage before
+p = Scrap.UsrEntity(0).Pos; __import__('Cloud').CreateCloud('R8eCloud', p[0], p[1] + 500, p[2], 0.1, 0.2, 0.3); l = Scrap.GetEntity('R8eCloud'); result = (l.SwDthTime, l.SwDthTime)
+# text attributes of a button that were never set come back as None instead of a garbage pointer
+map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('TextAlign', 'Font'))
+SScorer.Set(0, 'R8eBtn', 'Visible', 1); result = 1
+!sleep 1
+(Scrap.UsrEntity(0).Name, SScorer.Get(0, 'R8eBtn', 'Visible'))

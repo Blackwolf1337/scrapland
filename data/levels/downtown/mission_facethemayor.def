@@ -1,0 +1,23 @@
+# The functions of Mission_FaceTheMayor in level downtown (the script levels/downtown/scripts/mission_facethemayor.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): GetMayorProfile, InitStatus, Init, PreLaunchTaunt, LaunchMayorInitialTaunt, CreateCrazyMayor, MayorOnDeath, SetPhoneCab, UsePhoneCab.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_facethemayor.def replaces this file.
+section FleeFromPolice
+call SaveGame.MMDesc "Mission_TalkToDeepThroat1_MissionText1" 1
+
+section SetAlarmCallback status
+call Speech.AddRemoteCom "Mission_TalkToDeepThroat1_RemoteMessage1" "DeepThroat"
+call SaveGame.QWayPoint
+
+section EndOfMission pc
+object $pc
+UseFunc "PhoneCab.DefUseAudioCom"
+HeadModel ""
+call MissionsFuncs.SetNextMission "Mission_ApologizeMayor" "TownHall"
+call MissionsFuncs.ActivateTarget %Speech.ObjEntity 0
+call SaveGame.MMDesc "Mission_ApologizeMayor_MissionText1" 1
+call Scrap.SetSaveVar "MayorAtTownHall" "1"
+call Scrap.SetSaveVar "MayorAtGambinDen" "0"
+call Scrap.SetSaveVar "BankMasterAtBank" "1"
+call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "Press"
+call Scrap.SetSaveVar "Journalist.Betty_Defaut" "TownHall"
+call Scrap.SetSaveVar "Journalist.Berto_Defaut" "TownHall"

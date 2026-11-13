@@ -1,0 +1,2 @@
+# line 82: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (_sd(IM.OnLonelyMercDamage, L.Name, 'Nobody', 5), _sd(IM.OnLonelyMercDamage, L.Name, U, 5), __import__('SAI').GetStateVehicle(L.Name), _bent((L.Name,), ('TgType',)), _sdfreeze([L.Name]))

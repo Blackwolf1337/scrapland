@@ -740,12 +740,23 @@ static int RenderTarget_Mode(const char *name) {
 }
 
 static byte Scene_Begin(void);
+static void *g_SceneRT2, *g_SceneRT3;
+static byte g_SceneOn;
+void RenderTarget_ReleaseD3D(void);
+void RenderTarget_InitD3D(void);
 byte RenderTarget_Begin(const char *name) {
 	int mode = RenderTarget_Mode(name);
 	CHECK(!g_RTMode);
 	g_RTMode = mode;
 	switch (mode) {
 	case RTARGET_SCENE:
+		/* R_SplitScreen set at run time (the split screen of the scripts): the targets of the halves are only made
+		 * with the device objects, which a level load does not remake here; make them now (else the first frame used
+		 * the missing third target) */
+		if (g_SplitScreen && g_SceneOn && g_SceneRTarget && (!g_SceneRT2 || !g_SceneRT3)) {
+			RenderTarget_ReleaseD3D();
+			RenderTarget_InitD3D();
+		}
 		return Scene_Begin();
 	case RTARGET_NEWSPANEL:
 		return NewsPanel_Begin();

@@ -1,0 +1,32 @@
+# GDB, round 7d: the Map module (no mission): the level start, then direct calls
+Scrap.SetSaveVar('Mission.Map', 'Orbit'); Scrap.SetSaveVar('Mission.Library', 'MapDecont'); Scrap.SetSaveVar('ComeFrom', ''); Scrap.SetSaveVar('GDB.BishopsMsg', '3'); Scrap.SetSaveVar('Player.NumLives', '3'); Scrap.LoadLevel('Levels/GDB'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+MP = _m('Map'); import OutPolice, Elevator; result = 1
+(Scrap.GetLevelPath(), _bfn('Map'), MP.Libraries, MP.CreateBishops, sys.modules.has_key('MapMatrix'), __import__('Init').Outdoor, OutPolice.PoliceActive, _bsv(('Char', 'GDB.BishopsMsg')))
+(len(OutPolice.PoliceWaves), OutPolice.PoliceWaves[-4:], _bgv(('AlarmFallDelta', 'AlarmGrowDelta', 'PoliceTauntRace', 'PoliceWaveEliminated', 'iTrafficNumber', 'CameraCloudRed', 'CameraCloudGreen', 'CameraCloudBlue')))
+(_sdmod('Elevator', ('ElevatorStart', 'LinkedElevator', 'OnElevatorReachDown')), _bent(('DM_Door_TempleTeleporter_Temple',), ('UseFunc', 'ArrnOpt', 'ArrOpt0', 'OnObjSlot', 'ArrowCanUse')))
+_bon()
+(setattr(OutPolice, 'PoliceActive', 1), Scrap.Set('iTrafficNumber', 3), Scrap.SetSaveVar('Char', 'Dtritus'), _sd(MP.InitStatus, 'x'), OutPolice.PoliceActive, _bgv(('iTrafficNumber',)), _bsv(('Char',)), _sdmod('Elevator', ('ElevatorStart',)))
+(_sd(MP.InitStatus), _sd(MP.Init, 1, 2))
+W0 = len(OutPolice.PoliceWaves); result = 1
+(Scrap.Set('CameraCloudRed', 1), Scrap.Set('AlarmFallDelta', 0.5), _sd(MP.Init, 'x'), len(OutPolice.PoliceWaves) - W0, _bgv(('CameraCloudRed', 'AlarmFallDelta', 'PoliceWaveEliminated')), _sdmod('Elevator', ('OnElevatorReachDown', 'LinkedElevator')))
+W0 = len(OutPolice.PoliceWaves); result = 1
+(Scrap.SetSaveVar('ComeFrom', 'DoorTempleTeleporter'), setattr(MP, 'CreateBishops', 0), _sd(MP.Init, 'x'), len(OutPolice.PoliceWaves) - W0, _sdmod('Elevator', ('OnElevatorReachDown',)), setattr(MP, 'CreateBishops', 1))
+(setattr(__import__('Init'), 'MultiPlayer', 1), setattr(Elevator, 'OnElevatorReachDown', None), _sd(MP.Init, 'x'), len(OutPolice.PoliceWaves) - W0, _sdmod('Elevator', ('OnElevatorReachDown',)), setattr(__import__('Init'), 'MultiPlayer', 0), Scrap.SetSaveVar('ComeFrom', ''))
+W0 = len(OutPolice.PoliceWaves); result = 1
+(Scrap.Set('AlarmGrowDelta', 0.7), Scrap.Set('PoliceWaveEliminated', ''), _sd(MP.InitPoliceBishops), len(OutPolice.PoliceWaves) - W0, OutPolice.PoliceWaves[-4:], _bgv(('AlarmFallDelta', 'AlarmGrowDelta', 'PoliceTauntRace', 'PoliceWaveEliminated')), _sd(MP.InitPoliceBishops, 1))
+(setattr(Elevator, 'OnElevatorReachDown', 1), _bsave(), Scrap.SetSaveVar('GDB.BishopsMsg', '3'), _sd(MP.EndOfAppears, None), _ypos((_un(),)), _bback(), _sdmod('Elevator', ('OnElevatorReachDown',)), _bsv(('GDB.BishopsMsg',)))
+(_bsave(), Scrap.SetSaveVar('GDB.BishopsMsg', '0'), _sd(MP.EndOfAppears, 'x'), _bback(), _bsv(('GDB.BishopsMsg',)), Scrap.SetSaveVar('GDB.BishopsMsg', 'x'), _sd(MP.EndOfAppears, 'x'), _bback(), _sd(MP.EndOfAppears))
+(Scrap.Get('MaxPlayerLives'), Scrap.SetSaveVar('Player.NumLives', '2'), Scrap.SetSaveVar('Stats.GDB', '0'), _sd(MP.GiveLife), _bsv(('Player.NumLives', 'Stats.GDB')))
+(Scrap.SetSaveVar('Player.NumLives', str(Scrap.Get('MaxPlayerLives') - 2)), _sd(MP.GiveLife), _bsv(('Player.NumLives', 'Stats.GDB')), _sd(MP.GiveLife), _bsv(('Player.NumLives', 'Stats.GDB')), _sd(MP.GiveLife, 1))
+(Scrap.SetSaveVar('Player.NumLives', 'x'), _sd(MP.GiveLife), Scrap.SetSaveVar('Player.NumLives', '3'))
+(Scrap.SetAlarm(0), Scrap.Set('PoliceWaveEliminated', ''), _sd(MP.NextWave), _bgv(('PoliceWaveEliminated',)), _bsv(('Player.NumLives', 'Stats.GDB')))
+(Scrap.SetAlarm(1), _sd(MP.NextWave), _bsv(('Player.NumLives', 'Stats.GDB')), Scrap.SetAlarm(0), _sd(MP.NextWave, 1))
+del MP.CreateBishops
+_sd(MP.Init, 'x')
+del MP.EndOfAppears
+(Scrap.SetSaveVar('ComeFrom', 'DoorTempleTeleporter'), _sd(MP.Init, 'x'), Scrap.SetSaveVar('ComeFrom', ''))
+_broff()

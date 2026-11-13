@@ -1,0 +1,1516 @@
+/*
+ * Lines the level scripts repeat in their maps and missions (src/game/Script/levels/Levels.h): the discardable
+ * characters of the Xbox, the callbacks of the mission characters, the speakers of a talk, a character that stays
+ * where it is, the text of a mission scorer, the blueprint lists of the save variables, the remote coms, the phone
+ * cabs and the mission items; and Mission_DestroyCommSats1, 2 and 3, one script in three levels.
+ */
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "scrap/actions.h"
+#include "scrap/console.h"
+#include "scrap/input.h"
+#include "scrap/sound.h"
+#include "scrap/scrap.h"
+
+#include "Levels.h"
+
+const int lv_black[4] = { 0, 0, 0, 255 }, lv_clear[4] = { 0, 0, 0, 0 };
+
+/* ---- whole functions the level tables share (native: docs/objlib-plan.md, stage 2) ---- */
+
+/* name + `MapSnd.cntr` (prefix "I" in front with beepI) */
+static byte Lv_SndId(const nativeVal_t *name, byte beepI, nativeVal_t *out) {
+	nativeVal_t cntr, rep, i, x;
+	Native_SetNone(&rep);
+	Native_SetNone(&x);
+	if (!Mode_G("MapSnd", "cntr", &cntr)) {
+		return 0;
+	}
+	Mode_Repr(&cntr, &rep);
+	Native_Free(&cntr);
+	byte ok;
+	if (beepI) {
+		LvN_Str(&i, "I");
+		ok = Native_Arith('+', &i, name, &x) && Native_Arith('+', &x, &rep, out);
+		Native_Free(&i);
+	} else {
+		ok = Native_Arith('+', name, &rep, out);
+	}
+	Native_Free(&rep);
+	Native_Free(&x);
+	return ok;
+}
+
+byte LvN_SndElements(const nativeVal_t *a, const lvSndElement_t *table) {
+	const nativeVal_t *name = &a[0];
+	if (!Mode_Import("Sound") || !LvN_GAdd("MapSnd", "cntr", 1, NULL)) {
+		return 0;
+	}
+	const lvSndElement_t *el = NULL;
+	for (const lvSndElement_t *t = table; t->name && !el; t++) {
+		if (LvN_EqS(name, t->name)) {
+			el = t;
+		}
+	}
+	if (!el) {
+		return 1;
+	}
+	nativeVal_t id, pos, rot, off, sum, v, loop;
+	Native_SetNone(&id);
+	Native_SetNone(&off);
+	Native_SetNone(&sum);
+	Native_SetEmpty(&pos, NV_TUPLE);
+	for (int i = 1; i <= 3; i++) {
+		Native_Copy(Native_Append(&pos), &a[i]);
+	}
+	byte ok = 1;
+	int pc = !el->loop || !el->pc ? 1 : LvN_GTrue("MapSnd", "isPC");
+	if (pc < 0) {
+		ok = 0;
+	} else if (el->loop && pc) {
+		ok = Lv_SndId(name, 0, &id);
+		if (ok && el->front) {
+			/* SVec.Add(pos, SVec.Rotate3D((0, 0, -300), (angx, angy, 0))) */
+			Native_SetVec(&v, 0, 0, -300);
+			Native_SetEmpty(&rot, NV_TUPLE);
+			Native_Copy(Native_Append(&rot), &a[4]);
+			Native_Copy(Native_Append(&rot), &a[5]);
+			Native_SetInt(Native_Append(&rot), 0);
+			ok = Mode_Rotate(&v, &rot, &off) && Mode_VecAdd(&pos, &off, &sum);
+			Native_Free(&rot);
+			if (ok) {
+				Native_Free(&pos);
+				pos = sum;
+				Native_SetNone(&sum);
+			}
+		}
+		if (ok) {
+			LvN_Str(&loop, el->loop);
+			ok = el->hasPitch ? PORT_CALL(Sound, SetPSLoop, NULL, "vvvdi", &id, &pos, &loop, el->vol, (long)el->pitch) :
+				PORT_CALL(Sound, SetPSLoop, NULL, "vvvd", &id, &pos, &loop, el->vol);
+			Native_Free(&loop);
+		}
+	}
+	if (ok && el->beep) {
+		const char *beep = el->beep;
+		if (el->beepXbox) {
+			int isPC = LvN_GTrue("MapSnd", "isPC");
+			ok = isPC >= 0;
+			beep = isPC ? el->beep : el->beepXbox;
+		}
+		Native_Free(&id);
+		Native_Free(&pos);
+		Native_SetEmpty(&pos, NV_TUPLE);
+		for (int i = 1; i <= 3; i++) {
+			Native_Copy(Native_Append(&pos), &a[i]);
+		}
+		ok = ok && Lv_SndId(name, el->beepI, &id) &&
+			PORT_CALL(Sound, SetPSInterval, NULL, "vvsiidi", &id, &pos, beep, (long)el->imin, (long)el->imax, el->ivol, 0L);
+	}
+	Native_Free(&id);
+	Native_Free(&pos);
+	Native_Free(&off);
+	Native_Free(&sum);
+	return ok;
+}
+
+byte LvN_PlanesInit(const char *module) {
+	nativeVal_t dummy, n0, plane, ships, engines, both, ang, name, pre, pln, a2, pos;
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("CharAct") || !LvN_ModSetGlobal("CharAct", "TakenPhotoMap", module, "TakenPhoto")) {
+		return 0;
+	}
+	Mode_DummyStart("DM_LocalPlane_*", 1);
+	byte ok = 1;
+	while (ok) {
+		Mode_DummyNext(&dummy);
+		if (dummy.type == NV_NONE) {
+			break;
+		}
+		Native_SetNone(&n0);
+		Native_SetNone(&plane);
+		Native_SetNone(&ships);
+		Native_SetNone(&engines);
+		Native_SetNone(&both);
+		Native_SetNone(&ang);
+		Native_SetNone(&name);
+		Native_SetNone(&pln);
+		Native_SetNone(&a2);
+		Native_SetNone(&pos);
+		ok = LvN_Item(&dummy, 0, &n0) && Native_Slice(&n0, 14, 0x7fffffff, &plane) && Mode_G(module, "Naves", &ships) &&
+			Mode_G(module, "Motores", &engines) && Native_Arith('+', &ships, &engines, &both);
+		int in = ok ? Native_Contains(&both, &plane) : -1;
+		if (in > 0) {
+			/* "Plano" + dummy[0][14:], dummy[1], (ang[0], ang[1], 0) */
+			LvN_Str(&pre, "Plano");
+			ok = Native_Arith('+', &pre, &plane, &name) && LvN_Item(&dummy, 2, &a2);
+			Native_Free(&pre);
+			if (ok) {
+				Native_SetEmpty(&ang, NV_TUPLE);
+				ok = LvN_Item(&a2, 0, Native_Append(&ang)) && LvN_Item(&a2, 1, Native_Append(&ang));
+				Native_SetInt(Native_Append(&ang), 0);
+			}
+			ok = ok && LvN_Item(&dummy, 1, &pos) && PORT_CALL(MissionsFuncs, CreatePhotoObject, &pln, "vvv", &name, &pos, &ang) &&
+				PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &pln, 0L);
+		} else {
+			ok = in == 0;
+		}
+		Native_Free(&dummy);
+		Native_Free(&n0);
+		Native_Free(&plane);
+		Native_Free(&ships);
+		Native_Free(&engines);
+		Native_Free(&both);
+		Native_Free(&ang);
+		Native_Free(&name);
+		Native_Free(&pln);
+		Native_Free(&a2);
+		Native_Free(&pos);
+	}
+	return ok;
+}
+
+/* the photo of a blueprint into its hangar list: the list of the module (Naves, Motores) loses it and is saved, the
+ * hangar list gets item, the message of key with the name of the ship */
+static byte Lv_PhotoTo(const char *module, const char *var, const char *saveVar, const nativeVal_t *plano, const char *hangar,
+	const nativeVal_t *item, const char *msg, const char *prefix, const nativeVal_t *shipName) {
+	nativeVal_t l, lst, up, pre, key, text, name, r;
+	Native_SetNone(&lst);
+	Native_SetNone(&up);
+	Native_SetNone(&key);
+	Native_SetNone(&r);
+	if (!Mode_Remove(module, var, plano) || !Mode_G(module, var, &l)) {
+		return 0;
+	}
+	LvN_SaveRepr(saveVar, &l);
+	Native_Free(&l);
+	byte ok = LvN_SaveList(hangar, module, &lst) && LvN_SaveAppend(hangar, &lst, item) && Native_Upper(shipName, &up);
+	if (ok) {
+		LvN_Str(&pre, prefix);
+		ok = Native_Arith('+', &pre, &up, &key);
+		Native_Free(&pre);
+	}
+	const char *k = NULL;
+	ok = ok && Native_ArgStr(&key, 1, &k);
+	if (ok) {
+		/* string.replace(Scrap.GetLangStr(msg), "<n1>", Scrap.GetLangStr(key)) */
+		Mode_Lang(msg, &text);
+		Mode_Lang(k, &name);
+		Mode_Replace(&text, "<n1>", &name, &r);
+		ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &r);
+		Native_Free(&text);
+		Native_Free(&name);
+	}
+	Native_Free(&lst);
+	Native_Free(&up);
+	Native_Free(&key);
+	Native_Free(&r);
+	return ok;
+}
+
+byte LvN_PlanesPhoto(const nativeVal_t *name, const char *module, const char *ships, const char *engines, nativeVal_t *out) {
+	nativeVal_t head, plano, list, up, rest, h, zero;
+	Native_SetNone(&head);
+	if (!Native_Slice(name, 0, 5, &head)) {
+		return 0;
+	}
+	int is = LvN_EqS(&head, "Plano");
+	Native_Free(&head);
+	if (!is) {
+		return 1;
+	}
+	Native_SetNone(&plano);
+	Native_SetNone(&up);
+	Native_SetNone(&rest);
+	if (!Mode_Import("string") || !Mode_Import("RaceMaker") || !Native_Slice(name, 5, 0x7fffffff, &plano)) {
+		return 0;
+	}
+	byte ok = Mode_G(module, "Naves", &list);
+	int ship = ok ? Native_Contains(&list, &plano) : -1;
+	Native_Free(&list);
+	int engine = 0;
+	if (ship == 0) {
+		ok = Mode_G(module, "Motores", &list);
+		engine = ok ? Native_Contains(&list, &plano) : -1;
+		Native_Free(&list);
+	}
+	long res = 0;
+	if (ship > 0) {
+		ok = Lv_PhotoTo(module, "Naves", ships, &plano, "Hangar.shipsToEditList", &plano, "OnPhotoShipBlueprints", "SHIP_", &plano);
+		res = 1;
+	} else if (engine > 0) {
+		/* the engine: its name in capitals into the list, the message of SHIP_S + plano[1:] in capitals */
+		ok = Native_Upper(&plano, &up) && Native_Slice(&plano, 1, 0x7fffffff, &rest) &&
+			Lv_PhotoTo(module, "Motores", engines, &plano, "Hangar.availableEnginesList", &up, "OnPhotoEngineBlueprints", "SHIP_S", &rest);
+		res = 1;
+	} else {
+		ok = ship >= 0 && engine >= 0;
+	}
+	Native_Free(&plano);
+	Native_Free(&up);
+	Native_Free(&rest);
+	if (ok && res) {
+		Native_SetNone(&h);
+		Native_SetInt(&zero, 0);
+		ok = Mode_Import("SaveGame") && Mode_EntityH(name, &h) && Mode_VSet(&h, "ArrowCanView", &zero);
+		Native_Free(&h);
+		if (ok) {
+			SaveVar_Inc("NewBluePrintAvaliable", 1);
+			ok = PORT_CALL(SaveGame, CheckAllBlueprints, NULL, "");
+		}
+	}
+	Native_SetInt(out, res);
+	return ok;
+}
+
+byte LvN_AcShips(const char *module, const char *ships) {
+	nativeVal_t v;
+	if (!Mode_Import("Traffic")) {
+		return 0;
+	}
+	SaveVar_Set("Traffic.AcShips", ships);
+	byte ok = LvN_SaveList("Traffic.AcShips", module, &v) && Mode_SetModVar("Traffic", "AcShips", &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_StartPos(const double (*pos)[4], int n) {
+	nativeVal_t empty;
+	Native_SetEmpty(&empty, NV_LIST);
+	if (!Mode_Import("RaceMaker") || !Mode_SetModVar("RaceMaker", "StartPos", &empty)) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		nativeVal_t p;
+		Native_SetEmpty(&p, NV_TUPLE);
+		Native_SetVec(Native_Append(&p), pos[i][0], pos[i][1], pos[i][2]);
+		Native_SetFloat(Native_Append(&p), pos[i][3]);
+		byte ok = LvN_ModAppend("RaceMaker", "StartPos", &p);
+		Native_Free(&p);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* ---- Mission_DestroyCommSats1, 2 and 3 (Outskirts, Commercial, DownTown): one script with the level's details ---- */
+
+/* what differs between the three copies of the script */
+typedef struct {
+	const char *module;
+	long maxChasing;		/* MaxChasingShips in DestroyEnemyShips */
+	const char *map;		/* SetNextMission (NULL: data): the level added to ComSatsMissionsMapsFinished, */
+	const char *const *saves;	/* the save variables set then (pairs, NULL: none) */
+	const char *nextLib, *nextMap, *nextDesc;	/* and the next mission */
+} lvProbes_t;
+
+/* the mercenaries leave D-Tritus after DownTown */
+static const char *const lv_probes_mercs[] = { "MercsHelpDtritus", "0", "MercFriends.MercenaryA_Smartie", "0", "MercFriends.MercenaryC_Brutus",
+	"0", "MercFriends.MercenaryB_Dumber", "0", NULL };
+
+static const lvProbes_t lv_probes[] = {
+	{ "Mission_DestroyCommSats1", 0, NULL, NULL, NULL, NULL, NULL },
+	{ "Mission_DestroyCommSats2", -1, "COMMERCIAL", NULL, "Mission_DestroyCommSats3", "DownTown", "Mission_DestroyCommSats3_MissionText1" },
+	{ "Mission_DestroyCommSats3", 0, "DOWNTOWN", lv_probes_mercs, "Mission_GoWithHuman", "Press", "Mission_GoWithHuman_MissionText1" },
+};
+
+/* InitStatus(LevelPath): the probes are the heavy traffic, none of it at the start */
+static byte Probes_InitStatus(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	nativeVal_t l, zero;
+	(void)a;
+	(void)p;
+	(void)out;
+	if (!Mode_Import("VehiclesNPC") || !Mode_Import("Traffic")) {
+		return 0;
+	}
+	Native_SetEmpty(&l, NV_LIST);
+	LvN_Str(Native_Append(&l), "TProbe");
+	Native_SetInt(&zero, 0);
+	byte ok = Mode_SetModVar("Traffic", "AcHeavyShips", &l) && Mode_SetModVar("Traffic", "NumHeavy", &zero);
+	Native_Free(&l);
+	return ok;
+}
+
+static byte Probes_Init(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LV_OWN(p->module, "CreateProbes", NULL, "") && LvN_ScorerCallG(p->module, "MissionScorer") && LvN_Draw();
+}
+
+/* SVec.Mod(SVec.Sub(a, b)) < the global limit of the module: 1, 0, -1 with the error */
+static int Probes_Near(const nativeVal_t *a, const nativeVal_t *b, const lvProbes_t *p, const char *limit) {
+	nativeVal_t d, m, l;
+	Native_SetNone(&d);
+	Native_SetNone(&m);
+	int r = Mode_VecSub(a, b, &d) && Mode_VecMod(&d, &m) && Mode_G(p->module, limit, &l) ? Native_Compare(&m, &l) < 0 : -1;
+	if (r >= 0) {
+		Native_Free(&l);
+	}
+	Native_Free(&d);
+	Native_Free(&m);
+	return r;
+}
+
+/* IsValidPoint(usrPos, pos, posList): a new point far enough from the player and from the other probes */
+static byte Probes_IsValidPoint(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	const nativeVal_t *usrPos = &a[0], *pos = &a[1], *list = &a[2];
+	int in = Native_Contains(list, pos);
+	if (in != 0) {
+		Native_SetInt(out, 0);
+		return in > 0;
+	}
+	int near = Probes_Near(pos, usrPos, p, "minPlayerDist");
+	if (near != 0) {
+		Native_SetInt(out, 0);
+		return near > 0;
+	}
+	int n = Native_ForCount(list);
+	if (n < 0) {
+		return 0;
+	}
+	for (int k = 0; k < n; k++) {
+		nativeVal_t q;
+		Native_SetNone(&q);
+		near = Native_SeqItem(list, k, &q) ? Probes_Near(&q, pos, p, "minDistBetweenProbes") : -1;
+		Native_Free(&q);
+		if (near != 0) {
+			Native_SetInt(out, 0);
+			return near > 0;
+		}
+	}
+	Native_SetInt(out, 1);
+	return 1;
+}
+
+/* one probe at pos: an AI ship of the traffic path with the life of the module, as a mission target */
+static byte Probes_Make(const lvProbes_t *p, const char *onDeath, const nativeVal_t *pos) {
+	nativeVal_t e, ang, life;
+	Native_SetNone(&e);
+	Native_SetNone(&life);
+	byte ok = PORT_CALL(Traffic, SetPath, NULL, "") && PORT_CALL(VehiclesNPC, MakeAI, &e, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
+		PORT_CALL(Traffic, ResetPath, NULL, "") && LvN_SetS(&e, "OnDeath", onDeath) && Mode_VSet(&e, "MovePos", pos) &&
+		Mode_VSet(&e, "Pos", pos);
+	if (ok) {
+		Native_SetEmpty(&ang, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetInt(Native_Append(&ang), 0);
+		}
+		ok = Mode_VSet(&e, "MoveAng", &ang) && Mode_VSet(&e, "Ang", &ang) && LvN_SetF(&e, "MoveTime", 0.1) &&
+			Mode_G(p->module, "PROBE_LIFE", &life) && Mode_VSet(&e, "Life", &life) && Mode_VSet(&e, "MaxLife", &life) &&
+			Mode_VSet(&e, "MinLife", &life) && PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", &e, 1L);
+		Native_Free(&ang);
+	}
+	Native_Free(&e);
+	Native_Free(&life);
+	return ok;
+}
+
+/* CreateProbes(): the probes left at random visible points */
+static byte Probes_CreateProbes(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	char onDeath[64];
+	nativeVal_t usr, list, usrPos, s, num, i, pos, valid;
+	(void)a;
+	(void)out;
+	Str_Printf(onDeath, sizeof(onDeath), "%s.OnProbeDeath", p->module);
+	if (!Mode_Import("OutMap") || !Mode_Import("VehiclesNPC") || !Mode_Import("Traffic") || !Mode_UsrHandle(&usr)) {
+		return 0;
+	}
+	if (!Native_True(&usr)) {
+		Native_Free(&usr);
+		return 1;
+	}
+	Native_SetEmpty(&list, NV_LIST);
+	Native_SetNone(&usrPos);
+	Native_SetNone(&num);
+	byte ok = Mode_VGet(&usr, "Pos", &usrPos);
+	if (ok) {
+		Mode_SaveVar("NumProbes", &s);
+		ok = Native_ToInt(&s, &num);
+		Native_Free(&s);
+	}
+	long k = 0;
+	while (ok) {
+		Native_SetInt(&i, k);
+		if (Native_Compare(&i, &num) >= 0) {
+			break;
+		}
+		Mode_RandomVisPoint(&pos);
+		Native_SetNone(&valid);
+		ok = LV_OWN(p->module, "IsValidPoint", &valid, "vvv", &usrPos, &pos, &list);
+		if (ok && Native_True(&valid)) {
+			ok = Probes_Make(p, onDeath, &pos);
+			if (ok) {
+				Native_Copy(Native_Append(&list), &pos);
+				k++;
+			}
+		}
+		Native_Free(&pos);
+		Native_Free(&valid);
+	}
+	Native_Free(&usr);
+	Native_Free(&list);
+	Native_Free(&usrPos);
+	Native_Free(&num);
+	return ok;
+}
+
+/* OnProbeDeath(LooserName, WinnerName): one probe fewer; the last one ends the mission */
+static byte Probes_OnProbeDeath(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	char msg[64];
+	nativeVal_t s, num, one, n, args[4], t;
+	(void)out;
+	if (!Mode_Import("Vehicles") || !PORT_CALL(Vehicles, OnDeath, NULL, "vv", &a[0], &a[1])) {
+		return 0;
+	}
+	Mode_SaveVar("NumProbes", &s);
+	Native_SetNone(&num);
+	Native_SetNone(&n);
+	Native_SetInt(&one, 1);
+	byte ok = Native_ToInt(&s, &num) && Native_Arith('-', &num, &one, &n);
+	Native_Free(&s);
+	Native_Free(&num);
+	if (ok && LvN_EqI(&n, 0)) {
+		ok = LV_OWN(p->module, "DestroyEnemyShips", NULL, "") && LvN_ScorerOff();
+		if (ok) {
+			/* Scrap.AddScheduledFunc(Scrap.GetTime() + 2, Speech.AddRemoteCom, (msg, "CrazyGambler", SetNextMission, ())) */
+			Native_SetFloat(&t, Mode_Time() + 2);
+			nativeVal_t fn;
+			ok = Mode_RefMod("Speech", "AddRemoteCom", &fn);
+			Str_Printf(msg, sizeof(msg), "%s_RemoteMessage1", p->module);
+			LvN_Str(&args[0], msg);
+			LvN_Str(&args[1], "CrazyGambler");
+			Native_SetEmpty(&args[3], NV_TUPLE);
+			if (ok) {
+				ok = LvN_GObj(p->module, "SetNextMission", &args[2]) && Mode_ScheduleV(&t, &fn, args, 4, NULL);
+				Native_Free(&args[2]);
+			}
+			Native_Free(&fn);
+			Native_Free(&args[0]);
+			Native_Free(&args[1]);
+			Native_Free(&args[3]);
+		}
+	} else if (ok) {
+		LvN_SaveRepr("NumProbes", &n);
+		ok = PORT_CALL(SaveGame, QWayPoint, NULL, "");
+	}
+	Native_Free(&n);
+	return ok && LvN_Draw();
+}
+
+/* DestroyShipsInList(listName): every ship of the list explodes */
+static byte Probes_DestroyShipsInList(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	const char *list;
+	nativeVal_t name, e;
+	(void)p;
+	(void)out;
+	/* Scrap.EntityListGet(listName, "First") ("ss") */
+	if (!Native_ArgStr(&a[0], 1, &list)) {
+		return 0;
+	}
+	Native_SetNone(&name);
+	Native_SetNone(&e);
+	byte ok = Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, &e);
+	while (ok && Native_True(&e)) {
+		ok = LvN_SetS(&e, "EntityList", "") && LvN_SetI(&e, "Life", 0);
+		Native_Free(&name);
+		Native_Free(&e);
+		ok = ok && Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, &e);
+	}
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
+}
+
+/* DestroyEnemyShips(): no more police (MaxChasingShips of the level) nor traffic, the alarm falls, the ships of the
+ * lists explode one after another */
+static byte Probes_DestroyEnemyShips(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	static const char *const lists[] = { "EnemiesTraffic", "ChasingTraffic", "Traffic", "OutCop" };
+	nativeVal_t v, zero;
+	(void)a;
+	(void)out;
+	Native_SetInt(&v, p->maxChasing);
+	Native_SetInt(&zero, 0);
+	if (!Mode_GVarSet("MaxChasingShips", &v) || !Mode_GVarSet("iTrafficNumber", &zero) || !Mode_GVarSetS("PoliceWaveEliminated", "") ||
+		!Mode_GVarSetN("AlarmFallDelta", -0.05) || !Mode_SetAlarm(&zero)) {
+		return 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		LvN_Str(&v, lists[i]);
+		byte ok = Mode_Later(0.5 * i, p->module, "DestroyShipsInList", &v, 1, NULL);
+		Native_Free(&v);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* SetNextMission() of Commercial and DownTown: the level counts as freed (the save variables of the level), on to the
+ * next mission (Outskirts' is data) */
+static byte Probes_SetNextMission(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	nativeVal_t l, map;
+	(void)a;
+	(void)out;
+	SaveVars_Delete("NumProbes");
+	LvN_Str(&map, p->map);
+	byte ok = LvN_SaveList("ComSatsMissionsMapsFinished", p->module, &l) && LvN_SaveAppend("ComSatsMissionsMapsFinished", &l, &map);
+	Native_Free(&l);
+	Native_Free(&map);
+	if (ok && p->saves) {
+		Mode_Saves(p->saves);
+	}
+	return ok && LvN_Next(p->nextLib, p->nextMap, p->nextDesc) && PORT_CALL(SaveGame, QWayPoint, NULL, "");
+}
+
+/* MissionScorer(id): the probes left */
+static byte Probes_MissionScorer(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	char key[64];
+	nativeVal_t label, num;
+	(void)out;
+	Str_Printf(key, sizeof(key), "%s_Scorer1", p->module);
+	if (!Mode_Import("Scorer")) {
+		return 0;
+	}
+	nativeVal_t x, y;
+	LvN_Label(key, &label);
+	Native_SetNone(&y);
+	byte ok = LvN_TextX(0, &x) && LvN_TextY(0, &y) &&
+		LvN_MissionText(&a[0], "NumProbesText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", NULL);
+	Native_Free(&label);
+	Native_Free(&x);
+	Native_Free(&y);
+	if (ok) {
+		Mode_SaveVar("NumProbes", &num);
+		ok = LvN_TextX(0, &x) && LvN_TextY(20, &y) &&
+			LvN_MissionText(&a[0], "NumProbes", "Text", &x, &y, "Horatio", "Shadow", &num, "Left", NULL);
+		Native_Free(&num);
+		Native_Free(&x);
+		Native_Free(&y);
+	}
+	return ok;
+}
+
+#define PROBES_FN(n, fn) \
+	static byte Probes##n##_##fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
+		return Probes_##fn(a, &lv_probes[n], out); \
+	} \
+	LV_FN(Probes##n, fn, PROBES_ARGS_##fn, Probes##n##_##fn##_C)
+#define PROBES_ARGS_InitStatus 1
+#define PROBES_ARGS_Init 1
+#define PROBES_ARGS_IsValidPoint 3
+#define PROBES_ARGS_CreateProbes 0
+#define PROBES_ARGS_OnProbeDeath 2
+#define PROBES_ARGS_DestroyShipsInList 1
+#define PROBES_ARGS_DestroyEnemyShips 0
+#define PROBES_ARGS_SetNextMission 0
+#define PROBES_ARGS_MissionScorer 1
+#define PROBES(n) \
+	PROBES_FN(n, InitStatus) PROBES_FN(n, Init) PROBES_FN(n, IsValidPoint) PROBES_FN(n, CreateProbes) PROBES_FN(n, OnProbeDeath) \
+	PROBES_FN(n, DestroyShipsInList) PROBES_FN(n, DestroyEnemyShips) PROBES_FN(n, MissionScorer)
+#define PROBES_DEF(n, fn) PORT_FN(fn, Probes##n##_##fn),
+#define PROBES_DEFS(n) \
+	PROBES_DEF(n, InitStatus) PROBES_DEF(n, Init) PROBES_DEF(n, IsValidPoint) PROBES_DEF(n, CreateProbes) PROBES_DEF(n, OnProbeDeath) \
+	PROBES_DEF(n, DestroyShipsInList) PROBES_DEF(n, DestroyEnemyShips) PROBES_DEF(n, MissionScorer)
+
+PROBES(0)
+PROBES(1)
+PROBES(2)
+PROBES_FN(1, SetNextMission)
+PROBES_FN(2, SetNextMission)
+
+const portFn_t g_OutskirtsDestroyCommSats1Methods[] = {
+	PROBES_DEFS(0)
+	PORT_FNEND
+};
+
+const portFn_t g_CommercialDestroyCommSats2Methods[] = {
+	PROBES_DEFS(1)
+	PROBES_DEF(1, SetNextMission)
+	PORT_FNEND
+};
+
+const portFn_t g_DownTownDestroyCommSats3Methods[] = {
+	PROBES_DEFS(2)
+	PROBES_DEF(2, SetNextMission)
+	PORT_FNEND
+};
+
+/* ---- native lines of the level scripts (Levels.h; docs/objlib-plan.md, stage 2) ---- */
+
+void LvN_Int(nativeVal_t *v, long i) {
+	Native_SetInt(v, i);
+}
+
+void LvN_Str(nativeVal_t *v, const char *s) {
+	Native_SetText(v, s, (int)strlen(s));
+}
+
+byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
+	return Mode_VarCall(module, var, 0, method, v);
+}
+
+byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
+	return LvN_ModMethod(module, var, "append", v);
+}
+
+byte LvN_GObj(const char *module, const char *name, nativeVal_t *out) {
+	nativeVal_t o;
+	Native_SetNone(out);
+	if (!Mode_RefG(module, name, &o)) {
+		return 0;
+	}
+	Mode_RefPlain(&o, out);
+	Native_Free(&o);
+	return 1;
+}
+
+byte LvN_GAdd(const char *module, const char *name, long add, nativeVal_t *out) {
+	nativeVal_t v, n, r;
+	Native_SetInt(&n, add);
+	Native_SetNone(&r);
+	byte ok = Mode_G(module, name, &v) && Native_Arith('+', &v, &n, &r) && Mode_Put(module, name, NULL, &r);
+	Native_Free(&v);
+	if (ok && out) {
+		*out = r;
+	} else {
+		Native_Free(&r);
+	}
+	return ok;
+}
+
+byte LvN_PutI(const char *module, const char *name, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_Put(module, name, NULL, &v);
+}
+
+byte LvN_PutS(const char *module, const char *name, const char *s) {
+	nativeVal_t v;
+	LvN_Str(&v, s);
+	byte ok = Mode_Put(module, name, NULL, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+int LvN_GTrue(const char *module, const char *name) {
+	nativeVal_t v;
+	int r = Mode_G(module, name, &v) ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+int LvN_GEqI(const char *module, const char *name, long i) {
+	nativeVal_t v;
+	int r = Mode_G(module, name, &v) ? LvN_EqI(&v, i) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+byte LvN_EqS(const nativeVal_t *a, const char *s) {
+	nativeVal_t b;
+	LvN_Str(&b, s);
+	byte eq = !Native_Compare(a, &b);
+	Native_Free(&b);
+	return eq;
+}
+
+byte LvN_GElems(const char *module, const char *name, nativeVal_t *out) {
+	if (!LvN_GObj(module, name, out)) {
+		return 0;
+	}
+	Mode_Elems(out);
+	return 1;
+}
+
+void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy) {
+	Mode_DummyStart(pattern, flag);
+	Mode_DummyNext(dummy);
+}
+
+byte LvN_DummyPosAng(const nativeVal_t *dummy, nativeVal_t *pos, nativeVal_t *ang) {
+	nativeVal_t p, a;
+	Native_SetNone(&p);
+	Native_SetNone(&a);
+	Native_SetEmpty(pos, NV_TUPLE);
+	Native_SetEmpty(ang, NV_TUPLE);
+	byte ok = LvN_Item(dummy, 1, &p);
+	for (int i = 0; i < 3 && ok; i++) {
+		ok = LvN_Item(&p, i, Native_Append(pos));
+	}
+	ok = ok && LvN_Item(dummy, 2, &a);
+	for (int i = 0; i < 2 && ok; i++) {
+		ok = LvN_Item(&a, i, Native_Append(ang));
+	}
+	if (ok) {
+		Native_SetInt(Native_Append(ang), 0);
+	}
+	Native_Free(&p);
+	Native_Free(&a);
+	return ok;
+}
+
+byte LvN_SaveList(const char *var, const char *module, nativeVal_t *out) {
+	nativeVal_t s;
+	Mode_SaveVar(var, &s);
+	Native_SetNone(out);
+	byte ok = Native_EvalText(module, &s, out);
+	Native_Free(&s);
+	return ok;
+}
+
+void LvN_SaveRepr(const char *var, const nativeVal_t *v) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	SaveVar_Set(var, b.p);
+	Native_BufFree(&b);
+}
+
+byte LvN_Append(nativeVal_t *lst, const nativeVal_t *x) {
+	if (lst->type == NV_LIST) {
+		Native_Copy(Native_Append(lst), x);
+		return 1;
+	}
+	/* the append method of another value: its error, as the script meets it */
+	return Mode_RefCall(lst, "append", x, 1, NULL) && Native_Raise(NE_SYSTEM, "append of a value that is no list");
+}
+
+byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item) {
+	if (!LvN_Append(lst, item)) {
+		return 0;
+	}
+	LvN_SaveRepr(var, lst);
+	return 1;
+}
+
+byte LvN_ListRemove(nativeVal_t *lst, const nativeVal_t *x) {
+	if (lst->type != NV_LIST) {
+		return Mode_RefCall(lst, "remove", x, 1, NULL) && Native_Raise(NE_SYSTEM, "remove of a value that is no list");
+	}
+	for (int i = 0; i < lst->n; i++) {
+		if (!Native_Compare(&lst->items[i], x)) {
+			Native_Free(&lst->items[i]);
+			memmove(&lst->items[i], &lst->items[i + 1], (size_t)(lst->n - i - 1) * sizeof(*lst->items));
+			lst->n--;
+			return 1;
+		}
+	}
+	return Native_Raise(NE_VALUE, "list.remove(x): x not in list");
+}
+
+byte LvN_SaveIs(const char *name, const char *text) {
+	const char *s = SaveVar_Get(name);
+	return s && !strcmp(s, text);
+}
+
+const nativeVal_t *LvN_NoArgs(void) {
+	static nativeVal_t empty = { .type = NV_TUPLE };
+	return &empty;
+}
+
+byte LvN_Com(const char *key, const char *who, const char *module, const char *func, const nativeVal_t *params) {
+	if (!func) {
+		return PORT_CALL(Speech, AddRemoteCom, NULL, "ss", key, who);
+	}
+	/* the function read before Speech.AddRemoteCom (the script after it: the same unless both are gone) */
+	nativeVal_t then;
+	byte ok = Mode_RefG(module, func, &then) && (params ? PORT_CALL(Speech, AddRemoteCom, NULL, "ssvv", key, who, &then, params) :
+		PORT_CALL(Speech, AddRemoteCom, NULL, "ssv", key, who, &then));
+	Native_Free(&then);
+	return ok;
+}
+
+byte LvN_ComRef(const char *key, const char *who, const portRef_t *ref, const nativeVal_t *params) {
+	return LvN_Com(key, who, ref->module, ref->name, params);
+}
+
+byte LvN_Speakers(const nativeVal_t *usr, const nativeVal_t *ch) {
+	return Mode_SetModVar("Speech", "PlayerName", usr) && Mode_SetModVar("Speech", "NPCName", ch);
+}
+
+byte LvN_OnEnd(const char *module, const char *func, const nativeVal_t *params) {
+	return LvN_ModSetGlobal("Speech", "OnEndOfSpeech", module, func) &&
+		Mode_SetModVar("Speech", "OnEndOfSpeechParams", params ? params : LvN_NoArgs());
+}
+
+byte LvN_OnEndRef(const portRef_t *ref, const nativeVal_t *params) {
+	return LvN_OnEnd(ref->module, ref->name, params);
+}
+
+byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target) {
+	return LvN_SetI(e, "LLogicDefaultState", state) && Mode_VSet(e, "LLogicDefaultTarget", target) &&
+		LvN_SetI(e, "LLogicState", state) && Mode_VSet(e, "LLogicTarget", target) && LvN_SetI(e, "LLogicIdle", 1) &&
+		LvN_SetI(e, "LLogicIdle", 0);
+}
+
+byte LvN_Callback(const char *name, const char *module, const char *func) {
+	/* OBJLIB 5 (9c: an instance) and 7: the character object of CharsNPC, its list and the function, by reference */
+	nativeVal_t key, ch = { 0 }, cb = { 0 }, append = { 0 }, fn = { 0 };
+	LvN_Str(&key, name);
+	byte ok = Mode_CharRes(&key, &ch);
+	Native_Free(&key);
+	ok = ok && Mode_RefAttr(&ch, "CallbackFunc", &cb) && Mode_RefAttr(&cb, "append", &append) && Mode_RefG(module, func, &fn) &&
+		Mode_RefApply(&append, &fn, 1, NULL);
+	Native_Free(&fn);
+	Native_Free(&append);
+	Native_Free(&cb);
+	Native_Free(&ch);
+	return ok;
+}
+
+byte LvN_MissionChar(const char *name, const char *module, const char *func) {
+	return PORT_CALL(CharsNPC, CreateMissionChar, NULL, "s", name) && LvN_Callback(name, module, func);
+}
+
+byte LvN_CallbackRef(const char *name, const portRef_t *ref) {
+	return LvN_Callback(name, ref->module, ref->name);
+}
+
+byte LvN_MissionCharRef(const char *name, const portRef_t *ref) {
+	return LvN_MissionChar(name, ref->module, ref->name);
+}
+
+int LvN_PcOr(const char *module, const char *name) {
+	nativeVal_t x;
+	if (!Native_GVarGet("IsXbox", &x)) {
+		return -1;
+	}
+	int r = Native_True(&x) ? LvN_GTrue(module, name) : 1;
+	Native_Free(&x);
+	return r;
+}
+
+byte LvN_ScorerSet(const nativeVal_t *id, const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t it;
+	LvN_Str(&it, item);
+	byte ok = Mode_ScorerSet(id, &it, var, v);
+	Native_Free(&it);
+	return ok;
+}
+
+byte LvN_ScorerTextBegin(const nativeVal_t *id, const char *item, long dy) {
+	nativeVal_t it, x, y, d, v;
+	LvN_Str(&it, item);
+	Native_SetNone(&x);
+	Native_SetNone(&y);
+	Native_SetNone(&v);
+	Native_SetInt(&d, dy);
+	byte ok = Mode_ScorerAdd(id, &it, "Text") && LvN_ModGet("Scorer", "MissionScorerText_X", &x) &&
+		LvN_ScorerSet(id, item, "X", &x) && LvN_ModGet("Scorer", "MissionScorerText_Y", &y) &&
+		(!dy || Native_Arith('+', &y, &d, &v)) && LvN_ScorerSet(id, item, "Y", dy ? &v : &y);
+	if (ok) {
+		LvN_Str(&v, "Horatio");
+		ok = LvN_ScorerSet(id, item, "Font", &v);
+		Native_Free(&v);
+	}
+	if (ok) {
+		LvN_Str(&v, "Shadow");
+		ok = LvN_ScorerSet(id, item, "Effect", &v);
+	}
+	Native_Free(&it);
+	Native_Free(&x);
+	Native_Free(&y);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_ScorerTextEnd(const nativeVal_t *id, const char *item) {
+	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
+	nativeVal_t v, c, k;
+	LvN_Str(&v, "Left");
+	byte ok = LvN_ScorerSet(id, item, "Align", &v);
+	Native_Free(&v);
+	for (int i = 0; i < 4 && ok; i++) {
+		Native_SetNone(&k);
+		ok = LvN_ModGet("Scorer", "MissionScorerText_Color", &c) && LvN_Item(&c, i, &k) &&
+			LvN_ScorerSet(id, item, rgba[i], &k);
+		Native_Free(&c);
+		Native_Free(&k);
+	}
+	return ok;
+}
+
+byte LvN_Life(const nativeVal_t *e, const char *module, const char *life) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, life, &v) && Mode_VSet(e, "Life", &v) && Mode_VSet(e, "MaxLife", &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_Value(const char *text, int len, nativeVal_t *out) {
+	char buf[0x100], *end;
+	Native_SetNone(out);
+	if (len < 0) {
+		len = (int)strlen(text);
+	}
+	if (len <= 0 || len >= (int)sizeof(buf)) {
+		return Native_Raise(NE_SYSTEM, "bad value in a call table");
+	}
+	memcpy(buf, text, len);
+	buf[len] = 0;
+	if (buf[0] == '\'') {
+		LvN_Str(out, buf + 1);
+		return 1;
+	}
+	if (buf[0] == '%' || buf[0] == '^') {
+		char *dot = strchr(buf, '.'), *colon = buf[0] == '^' && dot ? strchr(dot, ':') : NULL;
+		if (!dot || (buf[0] == '^' && !colon)) {
+			return Native_Raise(NE_SYSTEM, "bad value in a call table");
+		}
+		*dot = 0;
+		if (colon) {
+			*colon = 0;
+			return LV_CALL(buf + 1, dot + 1, out, "s", colon + 1);
+		}
+		return LvN_ModGet(buf + 1, dot + 1, out);
+	}
+	if (buf[0] == '-' || (buf[0] >= '0' && buf[0] <= '9')) {
+		if (!strchr(buf, '.')) {
+			long i = strtol(buf, &end, 10);
+			if (*end == 0) {
+				Native_SetInt(out, i);
+				return 1;
+			}
+		} else {
+			double d = strtod(buf, &end);
+			if (*end == 0) {
+				Native_SetFloat(out, d);
+				return 1;
+			}
+		}
+	}
+	LvN_Str(out, buf);
+	return 1;
+}
+
+byte LvN_Profile(const char *const *vars, nativeVal_t *out) {
+	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_SetAttrs(out, vars);
+}
+
+byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd) {
+	nativeVal_t name, ship;
+	Native_SetNone(&name);
+	Native_SetNone(&ship);
+	byte ok = Mode_VGet(e, "Name", &name) && Mode_VGet(pd, "Ship", &ship) &&
+		PORT_CALL(VehiclesNPC, SetStdProperties, NULL, "vv", &name, &ship) &&
+		PORT_CALL(VehiclesNPC, ModAIProff, NULL, "vv", e, pd);
+	Native_Free(&name);
+	Native_Free(&ship);
+	return ok;
+}
+
+byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *e, nativeVal_t *pd) {
+	return LV_OWN(module, profile, pd, "") && LvN_StdAI(e, pd);
+}
+
+byte LvN_Draw(void) {
+	nativeVal_t set;
+	Native_SetStr(&set, TABLE_AT(g_ActionSets, Input_GetActionSet())->name);
+	return PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, &set);
+}
+
+byte LvN_ScorerOff(void) {
+	return LvN_ModNone("Menu", "MissionScorerCall");
+}
+
+byte LvN_ScorerCallG(const char *module, const char *func) {
+	return LvN_ModSetGlobal("Menu", "MissionScorerCall", module, func);
+}
+
+byte LvN_ScorerRef(const portRef_t *ref) {
+	return LvN_ScorerCallG(ref->module, ref->name);
+}
+
+byte LvN_Next(const char *lib, const char *map, const char *desc) {
+	return PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", lib, map) && PORT_CALL(SaveGame, MMDesc, NULL, "si", desc, 1L);
+}
+
+byte LvN_Entity(const char *name, nativeVal_t *out) {
+	nativeVal_t n;
+	LvN_Str(&n, name);
+	byte ok = Mode_EntityH(&n, out);
+	Native_Free(&n);
+	return ok;
+}
+
+byte LvN_LaterObj(double delay, const nativeVal_t *func, const nativeVal_t *args, int n) {
+	nativeVal_t t;
+	Native_SetFloat(&t, Mode_Time() + delay);
+	return Mode_ScheduleV(&t, func, args, n, NULL);
+}
+
+byte LvN_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const char *cls,
+	nativeVal_t *out) {
+	/* the seam of Scrap.CreateEntity */
+	nativeHook_t hook;
+	Native_SetNone(out);
+	int seam = Native_Seam("Scrap", "CreateEntity", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(&hook, out, "vvvvs", name, x, y, z, cls);
+	}
+	cEntity *e;
+	return Mode_Create(name, x, y, z, cls, &e) && Mode_EntHandle(e, out);
+}
+
+byte LvN_CreateAt(const nativeVal_t *name, const nativeVal_t *pos, const char *cls, nativeVal_t *out) {
+	nativeVal_t c[3];
+	int n = 0;
+	byte ok = 1;
+	Native_SetNone(out);
+	for (; ok && n < 3; n++) {
+		ok = LvN_Item(pos, n, &c[n]);
+	}
+	if (!ok) {
+		Native_Free(&c[--n]);
+	}
+	ok = ok && LvN_Create(name, &c[0], &c[1], &c[2], cls, out);
+	while (n-- > 0) {
+		Native_Free(&c[n]);
+	}
+	return ok;
+}
+
+void LvN_Label(const char *key, nativeVal_t *out) {
+	nativeVal_t t, colon;
+	Mode_Lang(key, &t);
+	LvN_Str(&colon, ":");
+	Native_SetNone(out);
+	Native_Arith('+', &t, &colon, out);
+	Native_Free(&t);
+	Native_Free(&colon);
+}
+
+/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */
+#define LV_SEAM(module, name) \
+	nativeHook_t hook; \
+	int seam = Native_Seam(module, name, &hook); \
+	if (seam < 0) { \
+		return 0; \
+	}
+
+byte LvN_GetClass(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "GetClass");
+	if (seam) {
+		return Native_HookCall(&hook, out, "s", name);
+	}
+	Native_SetInt(out, Native_ActClass(name));
+	return 1;
+}
+
+byte LvN_CreateClass(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "CreateClass");
+	if (seam) {
+		return Native_HookCall(&hook, out, "s", name);
+	}
+	CHECK(g_pActClassList);
+	g_pAuxActClass = cActClassList_Create(g_pActClassList, name);
+	Native_SetInt(out, g_pAuxActClass != NULL);
+	return 1;
+}
+
+byte LvN_GetAction(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "GetAction");
+	if (seam) {
+		return Native_HookCall(&hook, out, "s", name);
+	}
+	Native_SetNone(out);
+	Native_ActAction(name);
+	if (g_pAuxActClass) {
+		Native_SetInt(out, g_pAuxAction != NULL);
+	}
+	return 1;
+}
+
+byte LvN_CreateAction(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "CreateAction");
+	if (seam) {
+		return Native_HookCall(&hook, out, "s", name);
+	}
+	Native_SetNone(out);
+	if (!g_pAuxActClass) {
+		Con_Debugf("Caution: SAct.CreateAction(): AuxActClass not defined.\n");
+		return 1;
+	}
+	g_pAuxAction = cActClass_CreateAction(g_pAuxActClass, name);
+	Native_SetInt(out, g_pAuxAction != NULL);
+	return 1;
+}
+
+byte LvN_GetAct(const char *name, nativeVal_t *out) {
+	LV_SEAM("SAct", "GetAct");
+	if (seam) {
+		return Native_HookCall(&hook, out, "s", name);
+	}
+	Native_ActVar(name, out);
+	return 1;
+}
+
+byte LvN_SetAct(const char *name, const nativeVal_t *v) {
+	LV_SEAM("SAct", "SetAct");
+	if (seam) {
+		return Native_HookCall(&hook, NULL, "sv", name, v);
+	}
+	Native_ActSet(name, v);
+	return 1;
+}
+
+byte LvN_SetCls(const char *name, const nativeVal_t *v) {
+	LV_SEAM("SAct", "SetCls");
+	if (seam) {
+		return Native_HookCall(&hook, NULL, "sv", name, v);
+	}
+	return Native_ClsSet(name, v);
+}
+
+byte LvN_SetMusic(const char *name, double volume) {
+	LV_SEAM("SSound", "SetMusic");
+	if (seam) {
+		return Native_HookCall(&hook, NULL, "sd", name, volume);
+	}
+	SoundSys_SetMusicVolume(g_pSound, (float)volume);
+	SoundSys_SetMusic(g_pSound, name);
+	return 1;
+}
+
+/* Scorer.<var> + d */
+static byte LvN_TextAt(const char *var, long d, nativeVal_t *out) {
+	nativeVal_t v, n;
+	Native_SetNone(out);
+	if (!LvN_ModGet("Scorer", var, &v)) {
+		return 0;
+	}
+	if (!d) {
+		*out = v;
+		return 1;
+	}
+	Native_SetInt(&n, d);
+	byte ok = Native_Arith('+', &v, &n, out);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_TextX(long d, nativeVal_t *out) {
+	return LvN_TextAt("MissionScorerText_X", d, out);
+}
+
+byte LvN_TextY(long d, nativeVal_t *out) {
+	return LvN_TextAt("MissionScorerText_Y", d, out);
+}
+
+byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s) {
+	nativeVal_t v;
+	LvN_Str(&v, s);
+	byte ok = LvN_ScorerSet(id, item, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
+	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
+	if ((type && !Mode_ScorerAddS(id, item, type)) || !LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) ||
+		!LvN_ScorerSetS(id, item, "Font", font) || (effect && !LvN_ScorerSetS(id, item, "Effect", effect)) ||
+		!LvN_ScorerSet(id, item, "Text", text) || !LvN_ScorerSetS(id, item, "Align", align)) {
+		return 0;
+	}
+	return Mode_TextColour(id, item) && (!visible || LvN_ScorerSet(id, item, "Visible", visible));
+}
+
+byte LvN_SetOnFloor(const nativeVal_t *name) {
+	LV_SEAM("SLogic", "SetOnFloor");
+	if (seam) {
+		return Native_HookCall(&hook, NULL, "v", name);
+	}
+	return Mode_SetOnFloor(name);
+}
+
+byte LvN_ModSetI(const char *module, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_SetModVar(module, var, &v);
+}
+
+/* ---- helpers both halves of the levels had (batch F and G files) ---- */
+
+byte LvN_ModTexts(const char *module, const char *var, const char *const *texts) {
+	nativeVal_t v;
+	Mode_Texts(&v, texts, -1);
+	byte ok = Mode_SetModVar(module, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z) {
+	nativeVal_t v;
+	Mode_Ints3(&v, x, y, z);
+	byte ok = Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, const char *key) {
+	nativeVal_t p, t, v;
+	LvN_Str(&p, prefix);
+	Mode_Lang(key, &t);
+	Native_SetNone(&v);
+	byte ok = Native_Arith('+', &p, &t, &v) && Mode_VSet(e, var, &v);
+	Native_Free(&p);
+	Native_Free(&t);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_Activate(const nativeVal_t *v, long on) {
+	return PORT_CALL(MissionsFuncs, ActivateTarget, NULL, "vi", v, on);
+}
+
+byte LvN_GActivate(const char *module, const char *var, long on) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, var, &h) && LvN_Activate(&h, on);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_Routine(const char *key, const nativeVal_t *fn) {
+	nativeVal_t k;
+	LvN_Str(&k, key);
+	byte ok = Mode_ModDictPut("Speech", "SpeechRoutines", &k, fn);
+	Native_Free(&k);
+	return ok;
+}
+
+byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n) {
+	nativeVal_t d;
+	byte ok = Mode_G(module, delay, &d) && Mode_LaterV(&d, module, func, args, n, NULL);
+	Native_Free(&d);
+	return ok;
+}
+
+byte LvN_PcDefault(const char *module) {
+	return Mode_GSetS(module, "pc", "UseFunc", "PhoneCab.DefUseAudioCom");
+}
+
+byte LvN_Target(const nativeVal_t *v) {
+	return PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", v);
+}
+
+byte LvN_TargetName(const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && LvN_Target(&n);
+	Native_Free(&n);
+	return ok;
+}
+
+byte LvN_TargetG(const char *module, const char *name) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, name, &h) && LvN_TargetName(&h);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out) {
+	nativeVal_t h;
+	Native_SetNone(out);
+	byte ok = Mode_G(module, name, &h) && Mode_VGet(&h, var, out);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_PutNone(const char *module, const char *name) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	return Mode_Put(module, name, NULL, &v);
+}
+
+byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, name, &v) && Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+int LvN_Usr(nativeVal_t *usr) {
+	return Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+}
+
+int LvN_CtrlIs(const nativeVal_t *usr, const char *ctrl) {
+	nativeVal_t a;
+	Native_SetNone(&a);
+	int r = Mode_VGet(usr, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
+	Native_Free(&a);
+	return r;
+}
+
+byte LvN_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out) {
+	nativeVal_t a;
+	LvN_Str(&a, text);
+	Native_SetNone(out);
+	byte ok = Native_Arith('+', &a, v, out);
+	Native_Free(&a);
+	return ok;
+}
+
+const nativeVal_t *LvN_Empty(void) {
+	static nativeVal_t empty = { .type = NV_STR };
+	return &empty;
+}
+
+byte LvN_SetLang(const nativeVal_t *h, const char *var, const char *key) {
+	nativeVal_t t;
+	Mode_Lang(key, &t);
+	byte ok = Mode_VSet(h, var, &t);
+	Native_Free(&t);
+	return ok;
+}
+
+byte LvN_Repos(const char *name, long n) {
+	return PORT_CALL(CharsNPC, SetReposChars, NULL, "si", name, n);
+}
+
+byte LvN_ScanBlink(int lost) {
+	return LvN_Set0I("ScanRemainingTime", "Blink", lost) && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
+}
+
+byte LvN_InTraffic(const char *list, const char *const *models, int n, const char *num, long count) {
+	nativeVal_t l, c;
+	Mode_Texts(&l, models, n);
+	Native_SetInt(&c, count);
+	byte ok = Mode_SetModVar("InTraffic", list, &l) && Mode_SetModVar("InTraffic", num, &c);
+	Native_Free(&l);
+	return ok;
+}
+
+/* wp = module.missionStartWaypoint read again, out = wp.var (both slots hold a value) of the camera travelling */
+static byte LvN_WayPointAgain(const char *module, nativeVal_t *wp, const char *var, nativeVal_t *out) {
+	return Mode_Read(module, "missionStartWaypoint", wp) && Mode_VRead(wp, var, out);
+}
+
+byte LvN_CamTravel(const char *module, const char *text, byte again) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *uc = Mode_V(&t), *wp = Mode_V(&t), *v = Mode_V(&t), *prev = Mode_V(&t), *wang = Mode_V(&t);
+	nativeVal_t *add = Mode_V(&t), *ang = Mode_V(&t), *rot = Mode_V(&t), *r0 = Mode_V(&t), *wpos = Mode_V(&t), *p0 = Mode_V(&t);
+	nativeVal_t *r1 = Mode_V(&t), *p1 = Mode_V(&t), *cam = Mode_V(&t), *ang1 = Mode_V(&t), *name = Mode_V(&t), *tt = Mode_V(&t);
+	nativeVal_t *now = Mode_V(&t), *at1 = Mode_V(&t), *at = Mode_V(&t), *args = Mode_V(&t), *args2 = Mode_V(&t);
+	int c = Mode_UsrHandle(usr) ? (Native_True(usr) ? (Mode_VGet(usr, "UsrControl", uc) ? !LvN_EqI(uc, 0) : -1) : 0) : -1;
+	if (c != 0) {
+		return Mode_Done(&t, c > 0);
+	}
+	Mode_Ints3(v, 0, 0, 0);
+	byte ok = Mode_Import("Menu") && PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) && LvN_SetI(usr, "UsrControl", -1) && Mode_VSet(usr, "Vel", v) &&
+		Mode_G(module, "missionStartWaypoint", wp) && Mode_VGet(wp, "Pos", wpos) && Mode_VSet(usr, "MovePos", wpos) && Mode_VGet(wp, "Ang", wang) &&
+		Mode_VSet(usr, "MoveAng", wang) && LvN_SetF(usr, "MoveTime", 1.0) && LvN_SetI(usr, "MoveFade", 2) && LvN_SetI(usr, "AvoidCrash", 1) &&
+		Mode_GVarSetS("EscapeEvent", "") && Mode_GVarSetS("MainMissionEvent", "") && PORT_CALL(Scrap, GetCam, prev, "i", 0L);
+	if (ok) {
+		Mode_Ints3(add, 15, 0, 0);
+		Mode_Ints3(rot, 0, 0, -8000);
+		ok = (!again || LvN_WayPointAgain(module, wp, "Ang", wang)) && Mode_VecAdd(wang, add, ang) && Mode_Rotate(rot, ang, r0) &&
+			(!again || LvN_WayPointAgain(module, wp, "Pos", wpos)) && Mode_VecAdd(r0, wpos, p0);
+	}
+	if (ok) {
+		Native_Free(rot);
+		Mode_Ints3(rot, 0, 0, -2000);
+		ok = Mode_Rotate(rot, ang, r1) && (!again || LvN_WayPointAgain(module, wp, "Pos", wpos)) && Mode_VecAdd(r1, wpos, p1) &&
+			LvN_CreateAt(Mode_S(&t, "RaceCamera"), p0, "CamPath", cam) && LvN_SetI(cam, "nWayPoint", 2) && Mode_VSet(cam, "TgtCam00", prev) &&
+			LvN_SetS(cam, "TgtCam00", "") && Mode_VSet(cam, "Pos00", p0) && Mode_VSet(cam, "Ang00", ang) && LvN_SetI(cam, "FadeIn00", 1) &&
+			LvN_SetI(cam, "FadeOut00", 0) && LvN_SetF(cam, "Time00", 5.0) && Mode_VSet(cam, "TgtCam01", prev) && LvN_SetS(cam, "TgtCam01", "") &&
+			Mode_VSet(cam, "Pos01", p1) && (Native_Free(v), LvN_Item(ang, 0, v));
+	}
+	if (ok) {
+		nativeVal_t four = { 0 };
+		Native_SetFloat(&four, 4.0);
+		Native_SetEmpty(ang1, NV_TUPLE);
+		ok = Native_Arith('/', v, &four, Native_Append(ang1)) && LvN_Item(ang, 1, Native_Append(ang1)) && LvN_Item(ang, 2, Native_Append(ang1)) &&
+			Mode_VSet(cam, "Ang01", ang1) && LvN_SetI(cam, "FadeIn01", 0) && LvN_SetI(cam, "FadeOut01", 1) && LvN_SetI(cam, "Time", 0) &&
+			Mode_VGet(cam, "Name", name) && PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, name) && Mode_VGet(cam, "Time00", tt);
+	}
+	if (ok) {
+		nativeVal_t d = { 0 };
+		Native_SetFloat(now, Mode_Time());
+		Native_SetFloat(&d, 0.2);
+		ok = Native_Arith('+', now, tt, at1) && Native_Arith('+', at1, &d, at) && Mode_VGet(usr, "Name", args) && (Native_Copy(args2, prev), 1) &&
+			Mode_AtG(at, module, "AbortCameraTravelling", args, 2) && Mode_Import("Scene") &&
+			PORT_CALL(Scene, SetText, NULL, "sv", text, tt);
+	}
+	return Mode_Done(&t, ok);
+}
+
+byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *cn = Mode_V(&t), *cam = Mode_V(&t);
+	byte ok = 1;
+	if (Native_True(&a[1])) {
+		ok = Mode_EntityH(&a[0], usr) && (!Native_True(usr) || (LvN_SetF(usr, "MoveTime", 0.0) && LvN_SetI(usr, "UsrControl", 0))) &&
+			Mode_GVarSetS("EscapeEvent", "Menu.Init") && Mode_GVarSetS("MainMissionEvent", "MissionsFuncs.ShowMissionInfo") &&
+			PORT_CALL(Scrap, GetCam, cn, "i", 0L) && Mode_EntityH(cn, cam) && Mode_VDel(cam) && PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, &a[1]) &&
+			(!racerScorer || (Mode_Import("RacerScorer") && PORT_CALL(RacerScorer, Create, NULL, "i", 0L)));
+	}
+	return Mode_Done(&t, ok && LV_OWN(module, "LaunchMission", NULL, ""));
+}
+
+byte LvN_SystemMessage(const char *key) {
+	nativeVal_t text = { 0 };
+	if (!Mode_Import("RaceMaker")) {
+		return 0;
+	}
+	Mode_Lang(key, &text);
+	byte ok = PORT_CALL(RaceMaker, ShowSystemMessage, NULL, "v", &text);
+	Native_Free(&text);
+	return ok;
+}
+
+byte LvN_BoostMessage(const char *module) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *text = Mode_V(&t), *key = Mode_V(&t), *msg = Mode_V(&t);
+	byte called;
+	byte ok = Mode_Import("Parking") && Mode_Import("RaceMaker") && Mode_CallIf(module, "prevSwitchVehicleMissionCallback", &called) &&
+		Mode_G(module, "prevSwitchVehicleMissionCallback", prev) && Mode_SetModVar("Parking", "SwitchVehicleMissionCallback", prev);
+	if (ok) {
+		Mode_Lang("Mission_FirstCrazyBet_SystemMessage4", text);
+		ok = PORT_CALL(SInput, GetDefinedEntry, key, "isss", 0L, "Racer", "Boost", "Mouse") && Native_Arith('%', text, key, msg) &&
+			Mode_MsgText(msg, Mode_Time() + 10);
+	}
+	return Mode_Done(&t, ok);
+}
+
+byte LvN_ClosePressHangar(void) {
+	return Mode_Import("RaceMaker") && Mode_EntSetS("DM_Door_CityDoorA_01", "OnObjSlot", "!CloseDoorSlot") &&
+		LvN_ModNone("RaceMaker", "OnCheckPointCallback");
+}
+
+byte LvN_RoutineCall(const char *kind, const nativeVal_t *a) {
+	/* OBJLIB 5 (9c): the functions of Speech as the objects its table holds, by reference */
+	nativeVal_t r, k, fn = { 0 };
+	Native_SetText(&k, kind, (int)strlen(kind));
+	byte ok = Mode_RefMod("Speech", "SpeechRoutines", &r) && Mode_RefSub(&r, &k, &fn) && Mode_RefApply(&fn, a, 4, NULL);
+	Native_Free(&fn);
+	Native_Free(&k);
+	Native_Free(&r);
+	return ok;
+}
+
+byte LvN_HumanFollow(const char *module, const nativeVal_t *usr) {
+	nativeVal_t hn, un;
+	Native_SetNone(&un);
+	byte ok = LvN_GAttr(module, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) &&
+		PORT_CALL(SAI, SetStateChar, NULL, "ivvd", 3L, &hn, &un, 1.0);
+	Native_Free(&hn);
+	Native_Free(&un);
+	return ok;
+}
+
+byte LvN_Pass(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return 1;
+}
+
+byte LvN_SetOnFloorOf(const nativeVal_t *v) {
+	nativeVal_t name = { 0 };
+	byte ok = Mode_VObj(v, "Name", &name) && LvN_SetOnFloor(&name);
+	Native_Free(&name);
+	return ok;
+}
+
+PORTS(levels_LevelCommon)

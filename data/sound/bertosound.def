@@ -1,0 +1,167 @@
+# bertosound (the sound script sound/bertosound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/bertosound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes loop-berto2.wav
+	AddSoundRes init-loop-berto2.wav
+	AddSoundRes end-loop-berto2.wav
+	AddSoundRes paso-berto1.wav
+	AddSoundRes paso-berto2.wav
+	AddSoundRes caida-berto.wav
+	AddSoundRes mecanismo-berto1.wav
+	AddSoundRes mecanismo-berto2.wav
+	AddSoundRes ruede-cabeza1.wav
+	AddSoundRes up-cabeza2.wav
+	AddSoundRes roce-pie1.wav
+	AddSoundRes Flash2.wav
+if %BertoSound.isPC
+	class
+		AddSoundRes vuelta2.wav
+end
+	AddSoundRes pasada-berto.wav
+
+section SetSounds
+let act Turn
+call Chars.ActSound $char $act 3 mecanismo-berto1 0.0069 +10
+call Chars.ActSound $char $act 9 paso-berto1 0.055
+call Chars.ActSound $char $act 11 mecanismo-berto2 0.0069 +10
+call Chars.ActSound $char $act 16 paso-berto2 0.055
+let act Walk
+call Chars.ActSound $char $act 4 paso-berto1 0.055
+call Chars.ActSound $char $act 3 mecanismo-berto1 0.0069 +7
+call Chars.ActSound $char $act 20 mecanismo-berto2 0.0069 +7
+call Chars.ActSound $char $act 21 paso-berto2 0.055
+let act Run
+call Chars.ActSound $char $act 6 mecanismo-berto1 0.0069 +7
+call Chars.ActSound $char $act 6 paso-berto1 0.055
+call Chars.ActSound $char $act 16 mecanismo-berto2 0.0069 +7
+call Chars.ActSound $char $act 17 paso-berto2 0.055
+let act Back
+call Chars.ActSound $char $act 2 mecanismo-berto1 0.0069 +7
+call Chars.ActSound $char $act 3 paso-berto1 0.055
+call Chars.ActSound $char $act 15 mecanismo-berto2 0.007 +7
+call Chars.ActSound $char $act 16 paso-berto2 0.055
+let act StrLeft
+call Chars.ActSound $char $act 6 mecanismo-berto1 0.0069 +7
+call Chars.ActSound $char $act 7 paso-berto1 0.055
+call Chars.ActSound $char $act 16 mecanismo-berto2 0.0069 +7
+call Chars.ActSound $char $act 17 paso-berto2 0.055
+let act StrRight
+call Chars.ActSound $char $act 6 mecanismo-berto1 0.0069 +7
+call Chars.ActSound $char $act 7 paso-berto1 0.055
+call Chars.ActSound $char $act 16 mecanismo-berto2 0.0069 +7
+call Chars.ActSound $char $act 17 paso-berto2 0.055
+let act DazedInit
+call Chars.ActSound $char $act 12 ruede-cabeza1 0.20 0
+let act Relax0
+call Chars.ActSound $char $act 8 roce-pie1 0.015 +7
+call Chars.ActSound $char $act 7 mecanismo-berto1 0.012 +7
+call Chars.ActSound $char $act 47 mecanismo-berto2 0.012 +2
+call Chars.ActSound $char $act 57 mecanismo-berto1 0.012 +6
+call Chars.ActSound $char $act 89 roce-pie1 0.015 +10
+call Chars.ActSound $char $act 90 mecanismo-berto2 0.012 +2
+call Chars.ActSound $char $act 132 mecanismo-berto1 0.012 +4
+call Chars.ActSound $char $act 149 mecanismo-berto2 0.012 +7
+call Chars.ActSound $char $act 168 mecanismo-berto1 0.012 +4
+call Chars.ActSound $char $act 172 roce-pie1 0.015 +10
+let act Relax1
+call Chars.ActSound $char $act 8 up-cabeza2 0.07 +10
+call Chars.ActSound $char $act 27 mecanismo-berto1 0.014 +7
+call Chars.ActSound $char $act 42 ruede-cabeza1 0.10 +4
+call Chars.ActSound $char $act 57 mecanismo-berto1 0.014 +2
+let act CrazyInit
+call Chars.ActSound $char $act 2 mecanismo-berto1 0.01 +10
+let act Crazy
+call Chars.ActSound $char $act 10 mecanismo-berto1 0.012 +10
+call Chars.ActSound $char $act 25 paso-berto1 0.055
+call Chars.ActSound $char $act 28 mecanismo-berto2 0.012 +10
+call Chars.ActSound $char $act 50 paso-berto2 0.055
+let act CrazyEnd
+call Chars.ActSound $char $act 77 paso-berto1 0.055
+let act FlashedInit
+call Chars.ActSound $char $act 5 paso-berto1 0.055
+call Chars.ActSound $char $act 7 mecanismo-berto1 0.008 +8
+call Chars.ActSound $char $act 8 mecanismo-berto2 0.008 +8
+let act FlashedEnd
+call Chars.ActSound $char $act 62 mecanismo-berto1 0.008 +3
+call Chars.ActSound $char $act 63 mecanismo-berto2 0.008 +3
+call Chars.ActSound $char $act 81 paso-berto1 0.055
+let act ActionInit
+call Chars.ActSound $char $act 2 mecanismo-berto1 0.008 +6
+call Chars.ActSound $char $act 5 mecanismo-berto2 0.008 +3
+call Chars.ActSound $char $act 10 init-loop-berto2 0.07 +6
+call Chars.ActSound $char $act 11 mecanismo-berto1 0.008 +3
+call Chars.ActSound $char $act 13 paso-berto1 0.1
+call Chars.ActSound $char $act 17 paso-berto2 0.1
+call Chars.ActSound $char $act 26 mecanismo-berto2 0.008 +3
+let act Action
+if %BertoSound.isPC
+	call Chars.ActSound $char $act 30 vuelta2 0.04 +20
+end
+call Chars.ActSound $char $act 32 pasada-berto 0.08 +1
+let act ActionEnd
+call Chars.ActSound $char $act 45 end-loop-berto2 0.07 +6
+call Chars.ActSound $char $act 43 pasada-berto 0.10 -3
+call Chars.ActSound $char $act 52 mecanismo-berto2 0.009 +3
+call Chars.ActSound $char $act 57 paso-berto1 0.055
+class
+	FallSound caida-berto
+	FallSoundVol 0.08
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 1 mecanismo-berto2 0.013 +2
+call Chars.ActSound $char $talk 18 mecanismo-berto1 0.013 +4
+call Chars.ActSound $char $talk 43 mecanismo-berto2 0.013 +4
+
+section Talk1Snd
+call Chars.ActSound $char $talk 10 mecanismo-berto2 0.013 +5
+call Chars.ActSound $char $talk 18 mecanismo-berto1 0.013 +7
+call Chars.ActSound $char $talk 35 mecanismo-berto2 0.013 +7
+
+section Talk2Snd
+call Chars.ActSound $char $talk 2 mecanismo-berto2 0.013 +7
+call Chars.ActSound $char $talk 33 mecanismo-berto1 0.013 +3
+call Chars.ActSound $char $talk 48 mecanismo-berto1 0.013 +3
+
+section InitLoops
+object $e
+	snd_n 1
+	snd00_name loop-berto2
+	snd00_loop 0
+	snd00_pitch0 -3.0
+	snd00_vol0 0.07
+	snd00_pitch1 0.20
+	snd00_vol1 0.07
+	snd00_time1 0.3
+	snd00_int0 1
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+call Scrap.Set BertoFlashSound Flash2
+call Scrap.Set BertoFlashSoundVol 0.6
+run print "Sounds for $(char) loaded!"

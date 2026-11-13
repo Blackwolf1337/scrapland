@@ -1,0 +1,30 @@
+# The functions of Mission_CatchTrurl in level townhall (the script levels/townhall/scripts/mission_catchtrurl.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Townhall.c): InitStatus, Init, CreateTrurl, SetCallbackFuncs, SpawnMap, CreateMap, TakeMapPhoto, KillFunctionaries, CatchTrurlAgain, SetNextMission, CGCalls.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/townhall/mission_catchtrurl.def replaces this file.
+section OnCatchTrurl UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Scrap.SetSaveVar "CatchTrurlMissionData" "KillFunctionaries"
+	setvar Speech.OnEndOfSpeech %Mission_CatchTrurl.KillFunctionaries
+	setvar Speech.OnEndOfSpeechParams ()
+	call Speech.NISpeech "Messenger"
+	call Speech.AutoAddNI "Mission_GetTrurl_Trurl_NI_1Msg"
+	call Speech.RunNI
+end
+
+section OnCatchTrurlAgain UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	setvar Speech.OnEndOfSpeech %Mission_CatchTrurl.SetNextMission
+	setvar Speech.OnEndOfSpeechParams ()
+	call Speech.OnSpch "Mission_GetTrurlAgain_Trurl_InitMsg1" "Mission_GetTrurlAgain_Trurl_InitAns1"
+end
+
+section FunctionaryMissionSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_GetMayorOutlines_InitMsg1" "Mission_GetMayorOutlines_InitAns1"
+end

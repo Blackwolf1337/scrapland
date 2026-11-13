@@ -1,0 +1,28 @@
+# The functions of Mission_TalkToMayor in level townhall (the script levels/townhall/scripts/mission_talktomayor.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Townhall.c): InitStatus, AfterBrowseNPC, CreateBishopPorkins, CreateFunctionaryTamayo, Init, MayorSpeech, StealFunctionary, CheckTamayoMoney, RestoreTamayoState, OnBankerSteal, EndOfStealFunctionary, SetNextMission, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/townhall/mission_talktomayor.def replaces this file.
+section CreateMayorInit e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Mission_TalkToMayor.MayorSpeech"
+
+section BishopSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+call Speech.OnSpch "Mission_Campaign1_Porkins_InitMsg1" "Mission_Campaign1_Porkins_InitAns1"
+
+section FunctionarySpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+call Speech.OnSpch "Mission_Campaign_Functionary_InitMsg1" "Mission_Campaign_Functionary_InitAns1"
+
+section PreStealFunctionary
+call Scrap.SetSaveVar "MissionState" "StealFunctionary"
+call SaveGame.MMDesc "Mission_Campaign1_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_TalkToMayor.StealFunctionary

@@ -103,7 +103,7 @@
 #include "scrap/prof.h"
 #include "scrap/pyentity.h"
 #include "scrap/pyfunction.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 #include "scrap/python.h"
 #include "scrap/readdata.h"
 #include "scrap/readm3d.h"

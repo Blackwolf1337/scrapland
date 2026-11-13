@@ -1,5 +1,6 @@
 /*
- * Scheduled Python functions, original source World/ScheduledFunctions.cpp (include/scrap/scheduler.h).
+ * Scheduled Python functions, original source World/ScheduledFunctions.cpp (include/scrap/scheduler.h); in ScrapC
+ * function values and the native entries of port functions (stage 4 of docs/objlib-plan.md).
  */
 #include <string.h>
 
@@ -40,55 +41,54 @@ static void SchedList_RemoveHead(cSchedList *list) {
 	DList_RemoveHead(list);
 }
 
+/* the calls of Scheduler_Run by kind, value and port entry (the test channel) */
+static unsigned long g_SchedulerCalls[2];
+
 static void cScheduledFunc_Free(cScheduledFunc *f) {
 	if (f) {
-		Py_XDECREF(f->func);
-		Py_XDECREF(f->params);
+		Native_Free(&f->func);
+		Native_Free(&f->args);
 		operator_delete(f);
 	}
 }
 
-static void cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name) {
-	CHECK(self->func == NULL);
-	CHECK(self->params == NULL);
-	CHECK(func != NULL);
-	CHECK(params != NULL);
-	self->time = time;
-	Str_Copy(self->name, name, sizeof(self->name));
-	self->params = params;
-	self->func = func;
-	Py_INCREF(func);
-	Py_INCREF(params);
+/* a new one at time named name, without a function */
+static cScheduledFunc *cScheduledFunc_New(float time, const char *name) {
+	cScheduledFunc *f = operator_new(sizeof(*f));
+	CHECK(f != NULL);
+	Native_SetNone(&f->func);
+	Native_SetNone(&f->args);
+	f->active = 1;
+	f->site = NULL;
+	f->time = time;
+	Str_Copy(f->name, name, sizeof(f->name));
+	return f;
 }
 
 /* the call with the function marked as running */
 static void cScheduledFunc_Run(cScheduledFunc *self) {
+	byte ok;
 	self->active = 0;
-	PyObject *r = PyEval_CallObject(self->func, self->params);
-	if (!r) {
-		PyErr_Print();
+	g_SchedulerCalls[self->site != NULL]++;
+	if (self->args.type != NV_TUPLE) {
+		ok = Native_Raise(NE_TYPE, "argument list must be a tuple");
 	} else {
-		Py_DECREF(r);
+		ok = Port_CallKept(self->site, &self->func, self->args.items, self->args.n, NULL);
+	}
+	if (!ok) {
+		Native_ErrPrint();
 	}
 	self->active = 1;
 }
 
-void Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name) {
+/* into the list after the ones of the same time or before */
+static void Scheduler_Insert(cScheduledFuncStack *self, cScheduledFunc *f) {
 	cSchedList *list = &self->list;
 
 	list->iter = list->head;
 	cScheduledFunc **it = list->iter ? &list->iter->func : NULL;
-	cScheduledFunc *f = operator_new(sizeof(*f));
-	if (f) {
-		f->func = NULL;
-		f->params = NULL;
-		f->time = 0.0f;
-		f->name[0] = '\0';
-		f->active = 1;
-	}
-	cScheduledFunc_Set(f, time, func, params, name);
 	while (it) {
-		if (time < (*it)->time) {
+		if (f->time < (*it)->time) {
 			SchedList_Insert(list, &f);
 			return;
 		}
@@ -101,6 +101,34 @@ void Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObje
 	SchedList_Add(list, &f);
 	if (list->head) {
 		list->head = list->head->next;
+	}
+}
+
+void Scheduler_Add(cScheduledFuncStack *self, float time, const nativeVal_t *func, const nativeVal_t *params,
+	const char *name) {
+	cScheduledFunc *f = cScheduledFunc_New(time, name);
+	if (params->type == NV_VEC) {
+		Native_SetEmpty(&f->args, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetFloat(Native_Append(&f->args), params->v[i]);
+		}
+	} else {
+		Native_Copy(&f->args, params);
+	}
+	if (f->args.type == NV_TUPLE && f->args.n <= PORT_ARGS) {
+		f->site = Port_ScheduledOf(func);
+	}
+	if (!f->site) {
+		Native_Copy(&f->func, func);
+	}
+	Scheduler_Insert(self, f);
+}
+
+void Scheduler_Counts(unsigned long *value, unsigned long *entry, byte reset) {
+	*value = g_SchedulerCalls[0];
+	*entry = g_SchedulerCalls[1];
+	if (reset) {
+		memset(g_SchedulerCalls, 0, sizeof(g_SchedulerCalls));
 	}
 }
 
@@ -134,18 +162,17 @@ void Scheduler_Delete(cScheduledFuncStack *self, const char *name) {
 void Scheduler_Run(cScheduledFuncStack *self, float now) {
 	cSchedList *list = &self->list;
 
-	list->iter = list->head;
-	cScheduledFunc **it = list->iter ? &list->iter->func : NULL;
-	while (it && (*it)->time < now) {
-		cScheduledFunc *f = *it;
-		cSchedNode *iter = list->iter;
-		cScheduledFunc_Run(f);
-		list->iter = iter;
+	/* differs from the original: the entry leaves the list before its call. The original removed the head after the
+	 * call, which is a function the call scheduled before it (time 0) if there is one, and freed the running one
+	 * while its node stayed in the list. Scheduler_Delete passes over a running entry, so leaving the list keeps
+	 * DeleteScheduledFuncs during the call as it was. */
+	while (list->head && list->head->func->time < now) {
+		cScheduledFunc *f = list->head->func;
 		SchedList_RemoveHead(list);
-		list->iter = list->head;
-		it = list->iter ? &list->iter->func : NULL;
+		cScheduledFunc_Run(f);
 		cScheduledFunc_Free(f);
 	}
+	list->iter = list->head;
 }
 
 void cScheduledFuncStack_dtor(void *stack) {

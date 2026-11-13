@@ -1,0 +1,4 @@
+# The functions of MapDemoClose in level press (the script levels/press/scripts/mapdemoclose.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): Init, OnMetroUsed.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mapdemoclose.def replaces this file.
+section InitStatus LevelPath

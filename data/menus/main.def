@@ -1,0 +1,471 @@
+# The main menu, the single player menu, the audio options, the death screen and the scorer of a movie (the Menu
+# module of the game). The format is described in src/game/Script/Script.c. A pack in mods/ with
+# scrapc/menus/main.def replaces this file.
+
+style blue
+	Red 183
+	Green 220
+	Blue 255
+
+# ---- the main menu: $saves (there are saved games), $back (the function of Escape), $steam ----
+
+section Main
+if $saves
+	list entries
+		"{Menu_Continue}"	Menu.LoadLastSavedGame
+		"{Menu_SinglePlayer}"	Menu.SinglePlayerMenu
+		"{Menu_Multiplayer}"	PCMenu.MultiPlayerMenu
+		"{Menu_Options}"	Menu.OptionsMenu
+		"{Menu_ExitGame}"	Menu.ByeMenu
+	call Menu.VerticalMenu $id "" [entries] $back YStart=%Menu.MainMenuYStart
+else
+	list entries
+		"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+		"{Menu_Multiplayer}"		PCMenu.MultiPlayerMenu
+		"{Menu_Options}"		Menu.OptionsMenu
+		"{Menu_ExitGame}"		Menu.ByeMenu
+	call Menu.VerticalMenu $id "" [entries] $back YStart=%Menu.MainMenuYStart+25
+end
+if $steam
+	item Spacelords Button
+		IsMultiSprite 1
+		HighRes 1
+		File 2D/Menu/spacelords.alpha.tga
+		Complex 0
+		Highlight 1
+		SpriteIndex 1
+		FocusSpriteIndex 2
+		X 10
+		Y 350
+		W 116
+		H 120
+		ScaleX 0.5
+		ScaleY 0.6666666666666666
+		FocusPivotX 0
+		FocusPivotY 0
+		OnAccept Menu.PlaySpacelords
+		MaxHintLineWidth 400
+		Right Item1
+	# the entries without a left neighbour lead to it
+	run spacelords
+end
+call Menu.DrawBackMainMenu $id
+
+# ---- the single player menu: $menu (main: in the main menu or garage, else in a game), $saves, $xbox, $cansave
+# (saving is possible: not on an Xbox that cannot save, lives left) ----
+
+section Single
+if $menu == main
+	if $saves == 0
+		list entries
+			"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+			"{Menu_Back}"			Menu.MainMenu
+	elif $xbox
+		list entries
+			"{Menu_Continue}"		Menu.LoadLastSavedGame
+			"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+			"{Menu_LoadGame}"		Menu.LoadGameMenu
+			"{Menu_Back}"			Menu.MainMenu
+	else
+		list entries
+			"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+			"{Menu_LoadGame}"		Menu.LoadGameMenu
+			"{Menu_Back}"			Menu.MainMenu
+	end
+	call Menu.VerticalMenu $id "{Menu_SinglePlayer}" [entries] Menu.MainMenu YStart=%Menu.SubMenuYStart
+	call Menu.DrawBackSubMenu $id
+elif $saves == 0
+	if $cansave
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_SaveGame}"	Menu.SaveGameMenu
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	else
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	end
+	call Menu.VerticalMenu $id "{Menu_SinglePlayer}" [entries] Menu.BackToGame YStart=%Menu.SubMenuYStart
+	call Menu.DrawBackSubMenu $id
+else
+	if $cansave
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_LoadGame}"	Menu.LoadGameMenu
+			"{Menu_SaveGame}"	Menu.SaveGameMenu
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	else
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_LoadGame}"	Menu.LoadGameMenu
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	end
+	call Menu.VerticalMenu $id "{Menu_SinglePlayer}" [entries] Menu.BackToGame YStart=%Menu.OptionMenuYStart
+	call Menu.DrawBackOptionMenu $id
+end
+
+# ---- the audio options ----
+
+section Audio
+list entries
+	"{Menu_Audio_SoundVolume}:"	Menu.DummyFunc
+	"{Menu_Audio_VoiceVolume}:"	Menu.DummyFunc
+	"{Menu_Audio_MusicVolume}:"	Menu.DummyFunc
+	"{Menu_Back}"			Menu.OptionsMenu
+call Menu.VerticalMenu $id "{Menu_Options_Audio}" [entries] Menu.OptionsMenu XStart=310 YStart=%Menu.SubMenuYStart
+call Menu.SliderMenu 0 SoundSlider 330 @Item1.Y+5
+set SoundSlider MaxValue 1
+set SoundSlider ValueStep 0.1
+run volume SoundSlider SoundMainVolume
+set SoundSlider OnChange Menu.AudioVolumeChange
+call Menu.SliderMenu 0 VoiceSlider 330 @Item2.Y+5
+set VoiceSlider MaxValue 1
+set VoiceSlider ValueStep 0.1
+run volume VoiceSlider VoiceMainVolume
+set VoiceSlider OnChange Menu.AudioVolumeChange
+call Menu.SliderMenu 0 MusicSlider 330 @Item3.Y+5
+set MusicSlider MaxValue 1
+set MusicSlider ValueStep 0.1
+run volume MusicSlider MusicMainVolume
+set MusicSlider OnChange Menu.AudioVolumeChange
+# two dummies left and right of the titles step the sliders
+item DummySliderSub Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus Menu.AudioVolumeSliderFocus_Sub
+item DummySliderAdd Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus Menu.AudioVolumeSliderFocus_Add
+lr SoundSlider Item1
+lr Item1 SoundSlider
+lr DummySliderSub Item1
+lr Item1 DummySliderAdd
+lr VoiceSlider Item2
+lr Item2 VoiceSlider
+lr DummySliderSub Item2
+lr Item2 DummySliderAdd
+lr MusicSlider Item3
+lr Item3 MusicSlider
+lr DummySliderSub Item3
+lr Item3 DummySliderAdd
+call Menu.DrawBackSubMenu $id
+
+# ---- the death screen: $lives (left, -1 for none), $show (lives or jail), $text2 (the lives text) ----
+
+section Death
+style typing
+	Font ScrapBig
+	X 320
+style gold
+	CentralText 1
+	Red 255
+	Green 234
+	Blue 177
+item Info1 TextTyping typing
+	Text "{Menu_GameOver_1}"
+if $show
+	Y 200
+else
+	Y 240
+end
+	use gold
+	Effect Outline
+	TypingTime -0.05
+	TypingSpeed 0.04
+	CursorAtInit 1
+	CursorAtEnd 1
+if $show == lives
+	item Info2 TextTyping typing
+		Text $text2
+		Y 280
+		use gold
+		Effect Shadow
+		TypingTime -0.2
+		TypingSpeed 0.035
+		CursorAtInit 0
+		CursorAtEnd 0
+		TypingSound 0
+elif $show == jail
+	item Info3 TextTyping typing
+		Text "{Menu_GameOver_3}"
+		Y 280
+		use gold
+		Effect Shadow
+		TypingTime -0.15
+		TypingSpeed 0.035
+		CursorAtInit 0
+		CursorAtEnd 0
+		TypingSound 0
+end
+call SScorer.SetOnCancel $id ""
+call Menu.DrawCircuitMenu $id 0
+
+# ---- the scorer while a movie runs: the talk at the bottom, $talky ----
+
+section Movie
+item Talk Talk
+	X 320
+	Y $talky
+	TabVisible 1
+	TabBlendingMode 6
+	TabSprite 2D/Menu/Tabs.alpha.tga
+	TabSpriteIndex 1
+	TabAlpha 192
+	TabRed 100
+	TabGreen 140
+	TabBlue 203
+
+# ---- the skill: $func (SetSkill in a game, NewGame for a new one), $back, $lit (the current skill entry, lit in
+# the options) ----
+
+section Skill
+list entries
+	"{Menu_Skill_Easy}"	$func
+	"{Menu_Skill_Normal}"	$func
+	"{Menu_Skill_Hard}"	$func
+	"{Menu_Back}"		$back
+call Menu.VerticalMenu $id "{Menu_Skill_Level}" [entries] $back YStart=%Menu.SubMenuYStart
+call Menu.DrawBackSubMenu $id
+default $current
+if $lit
+	set $current Red 255
+	set $current Green 241
+	set $current Blue 174
+end
+
+# ---- the saved games: $title, $entries (one per game, then Back), $autosave (the first is the automatic one) ----
+
+section Games
+call Menu.VerticalMenu $id $title $entries Menu.SinglePlayerMenu VerticalStep=30 Font=Horatio YStart=%Menu.OptionMenuYStart
+if $autosave
+	set Item1 Red 255
+	set Item1 Green 241
+	set Item1 Blue 174
+end
+if $current
+	default $current
+end
+call Menu.DrawBackOptionMenu $id
+
+# ---- the textures and talking heads loaded when a level starts (Menu.Initialize). The menu function gives: $main
+# (the main menu), $xbox, $outdoor, $outdoorpc (outdoor, not Xbox), $metro (a level with the metro), $multi (a
+# multiplayer game), $editor (junkyard, garage or network: the ship editor), $heads (the talking heads are needed),
+# $edit (garage or multiplayer), $bosses (police boss and mayor), $boss, $dtritus, $lonelymerc, $bertos (the evil
+# Berto), $messenger ----
+
+section preload
+call SScorer.PreloadTexture 2D/white.tga
+call SScorer.PreloadTexture 2D/arrow.alpha.tga
+if $main
+	call SScorer.PreloadTexture 2D/Menu/Circuit.tga
+	call SScorer.PreloadTexture 2D/Menu/CircuitFlare.tga 1
+elif $xbox == 0
+	call SScorer.PreloadTexture 2D/Menu/Circuit.tga
+	call SScorer.PreloadTexture 2D/Menu/CircuitFlare.tga 1
+end
+if $main
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenu.alpha.tga
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenuGlow.tga
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenuNeon.tga
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenuLighting.tga 1
+	call SScorer.PreloadTexture 2D/Menu/spacelords.alpha.tga 1
+end
+if $main
+	do preloadsub
+elif $xbox == 0
+	do preloadsub
+end
+call SScorer.PreloadTexture 2D/Menu/GenericButtons.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/Slider.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/Tabs.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/TabsMenu.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/TitleBar.alpha.tga 1
+if $main == 0
+	call SScorer.PreloadTexture 2D/HUD/Cannon.alpha.tga 1
+	call SScorer.PreloadTexture 2D/Radar/Radar.alpha.tga 1
+	call SScorer.PreloadTexture 2D/Radar/Icons.alpha.tga 1
+	call SScorer.PreloadTexture 2D/Monitor/Monitor.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/Talk.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/CopMeter.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/Mission.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/HUD.alpha.tga 1
+	if $outdoor
+		call SScorer.PreloadTexture 2D/Racer/Racer.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Racer/Target.alpha.tga 1
+		call SScorer.PreloadTexture 2D/HUD/WeaponIcons3D.alpha.tga 1
+	else
+		call SScorer.PreloadTexture 2D/CharEditor/CharConversor.alpha.tga 1
+		call SScorer.PreloadTexture 2D/HUD/SpecialActions1.alpha.tga 1
+		call SScorer.PreloadTexture 2D/HUD/SpecialActions2.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Circuits.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Buttons.alpha.tga 1
+	end
+	if $metro
+		call SScorer.PreloadTexture 2D/Metro/Metro.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Metro/MetroLogo.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Metro/MetroMap.alpha.tga
+	end
+	if $multi
+		call SScorer.PreloadTexture 2D/HUD/FlagColor.alpha.tga 1
+	end
+	if $outdoorpc
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarPanels.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarOnly.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Racer/AmmoIcons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Buttons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Circuits.tga 1
+	end
+	if $editor
+		call SScorer.PreloadTexture 2D/HUD/WeaponIcons3D.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarPanels.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarOnly.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Racer/AmmoIcons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Buttons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Circuits.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/FullEditor.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Weapons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/MArchbishop1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBanker1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBankMaster1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBerto1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBetty1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBishop1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBoss1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MFunc1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MHump1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMayor1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMerc1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMerc2.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMerc3.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli2.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli3.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli4.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli5.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoliBoss1.alpha.tga
+	end
+end
+if $heads
+	call SScorer.AddModel 0 Police Models/Heads/HeadPolice&Gear/HeadPolice "" 4 22 23
+	call SScorer.AddModel 0 Betty Models/Heads/HeadBetty/HeadBetty "" 4 15
+	call SScorer.AddModel 0 Bishop Models/Heads/HeadBishop/HeadBishop "" 4 30
+	call SScorer.AddModel 0 Functionary Models/Heads/HeadFunctionary/HeadFunctionary "" 4 25
+	call SScorer.AddModel 0 BankDirector Models/Heads/HeadBankDirector/HeadBankDirector "" 4 20
+	call SScorer.AddModel 0 CrazyGambler Models/Heads/HeadGambler/HeadGambler "" 4 20
+	call SScorer.AddModel 0 Humphrey Models/Heads/HeadHumphrey/HeadHumphrey "" 4 18
+	call SScorer.AddModel 0 BankMaster Models/Heads/HeadBankMaster/HeadBankMaster "" 4 20
+	if $bosses
+		call SScorer.AddModel 0 PoliceBoss Models/Heads/HeadPoliceBoss/HeadPoliceBoss "" 4 20
+		call SScorer.AddModel 0 Mayor Models/Heads/HeadMayor/HeadMayor "" 4 22
+	end
+	if $boss
+		call SScorer.AddModel 0 Boss Models/Heads/HeadBoss/HeadBoss "" 4 30
+	end
+	if $edit == 0
+		call SScorer.AddModel 0 DeepThroat Models/Heads/HeadDeepThroat/HeadDeepThroat "" 3 20
+	end
+	if $dtritus
+		call SScorer.AddModel 0 Dtritus Models/Heads/HeadDtritus/HeadDtritus "" 3 15
+	end
+	if $outdoor
+		call SScorer.AddModel 0 MercenaryB Models/Heads/HeadMercenaryB/HeadMercenaryB "" 4 20
+		call SScorer.AddModel 0 MercenaryC Models/Heads/HeadMercenaryC/HeadMercenaryC "" 4 20
+		if $lonelymerc
+			call SScorer.AddModel 0 MercenaryL Models/Heads/HeadMercenaryL/HeadMercenaryL "" 4 20
+		else
+			call SScorer.AddModel 0 MercenaryA Models/Heads/HeadMercenaryA/HeadMercenaryA "" 4 20
+		end
+		if $bertos
+			# the evil Berto outdoors
+			call SScorer.AddModel 0 EvilBerto Models/Heads/HeadEvilBerto/HeadEvilBerto "" 4 25 10
+			call SScorer.AddModel 0 Berto Models/Heads/HeadEvilBerto/HeadEvilBerto "" 4 25 10
+		else
+			call SScorer.AddModel 0 Berto Models/Heads/HeadBerto/HeadBerto "" 4 25 10
+		end
+		if $messenger
+			call SScorer.AddModel 0 Messenger Models/Heads/HeadMessenger/HeadMessenger "" 3 25
+		end
+	else
+		call SScorer.AddModel 0 Human Models/Heads/HeadHuman/HeadHuman "" 3 25
+		call SScorer.AddModel 0 Nurse Models/Heads/HeadNurse/HeadNurse "" 3 20
+		call SScorer.AddModel 0 Gear Models/Heads/HeadPolice&Gear/HeadPolice Models/Heads/HeadPolice&Gear/HeadPoliceGear 3 35 12
+		call SScorer.AddModel 0 Sentinel Models/Chars/Sentinel/Sentinel Models/Chars/Sentinel/Anm/Sentinel 3 35 0 1
+		call SScorer.AddModel 0 Desktop Models/Chars/Desktop/Desktop Models/Chars/Desktop/Anm/Desktop 3 23 0 1
+		call SScorer.AddModel 0 Berto Models/Heads/HeadBerto/HeadBerto "" 4 25 10
+		call SScorer.AddModel 0 Messenger Models/Heads/HeadMessenger/HeadMessenger "" 3 25
+	end
+end
+
+section preloadsub
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenu.alpha.tga
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuGlow.tga
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuLighting.tga 1
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuMask.alpha.tga
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuRingBorder.alpha.tga
+call SScorer.PreloadTexture 2D/Menu/LogoReflection.tga
+
+# ---- the debug menu of the developers: $back, $debug (the level), $ai (the AI display) ----
+
+section Debug
+list entries
+	"Debug Level: X"	Menu.DebugSet_Level
+	Console			Menu.DebugSet_Console
+	"Render Info"		Menu.DebugSet_RenderInfo
+	"Sound Info"		Menu.DebugSet_SoundInfo
+	"World Info"		Menu.DebugSet_WorldInfo
+	"Object Pool Info"	Menu.DebugSet_ObjectPool
+	"Scene Render Target"	Menu.DebugSet_SceneRenderTarget
+	"Stencil Shadows"	Menu.DebugSet_StencilShadows
+	"AI: None"		Menu.DebugSet_AI
+	"Map Collision"		Menu.DebugSet_MapCollision
+	XboxPyDebug		Menu.DebugSet_XboxPyDebug
+	"Change Map"		Menu.DebugSet_ChangeMapMenu
+	"{Menu_Back}"		$back
+call Menu.VerticalMenu $id "Debug Menu" [entries] $back Font=Horatio YStart=%Menu.OptionMenuYStart VerticalStep=19
+set Item1 Text "Debug Level: $(debug)"
+if $ai
+	set Item9 Text "AI: $(ai)"
+end
+call Menu.DrawBackOptionMenu $id
+
+section ChangeMap
+list maps
+	AB		Menu.DebugSet_ChangeMapExec
+	ABIndoor	Menu.DebugSet_ChangeMapExec
+	Bank		Menu.DebugSet_ChangeMapExec
+	CA		Menu.DebugSet_ChangeMapExec
+	Commercial	Menu.DebugSet_ChangeMapExec
+	DownTown	Menu.DebugSet_ChangeMapExec
+	Fake		Menu.DebugSet_ChangeMapExec
+	FZ		Menu.DebugSet_ChangeMapExec
+	GamblinDen	Menu.DebugSet_ChangeMapExec
+	GDB		Menu.DebugSet_ChangeMapExec
+	Junkyard	Menu.DebugSet_ChangeMapExec
+	MCA		Menu.DebugSet_ChangeMapExec
+	MCB		Menu.DebugSet_ChangeMapExec
+	MDA		Menu.DebugSet_ChangeMapExec
+	MDB		Menu.DebugSet_ChangeMapExec
+	Menu		Menu.DebugSet_ChangeMapExec
+	MOA		Menu.DebugSet_ChangeMapExec
+	MOB		Menu.DebugSet_ChangeMapExec
+	MSA		Menu.DebugSet_ChangeMapExec
+	MSB		Menu.DebugSet_ChangeMapExec
+	OM		Menu.DebugSet_ChangeMapExec
+	Orbit		Menu.DebugSet_ChangeMapExec
+	Outskirts	Menu.DebugSet_ChangeMapExec
+	Police		Menu.DebugSet_ChangeMapExec
+	Press		Menu.DebugSet_ChangeMapExec
+	QF		Menu.DebugSet_ChangeMapExec
+	Scrapyard	Menu.DebugSet_ChangeMapExec
+	ShipEdit	Menu.DebugSet_ChangeMapExec
+	Temple		Menu.DebugSet_ChangeMapExec
+	Townhall	Menu.DebugSet_ChangeMapExec
+call Menu.VerticalMenu $id "Change Map" [maps] Menu.DebugMenu Font=HoratioSmall MinYStart=0 YStart=30 VerticalStep=13
+call Menu.DrawCircuitMenu $id

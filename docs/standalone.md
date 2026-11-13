@@ -157,15 +157,16 @@ One macro pair does both: `#define sin crt_sin` together with a function-like `c
 The engine changed three files of its Python. The vendored files stay as they are: `src/python` has files that
 include the vendored file and add the change around it.
 
-- `import.c`: once the startup imports are done (`g_PyPackImport`), reading or writing a .pyc prints
-  "WARNING: import %s (read)" or "(wrote)" with "the library was not preloaded". Macros on the one
-  `PyMarshal_ReadObjectFromFile` call and the one `fflush` put the warnings at the same places as in the exe, also
-  with -v.
-- `pythonrun.c`: `PyRun_ScrapString` is the `PyRun_SimpleString` of the console and the startup. It drops CR, adds
-  a newline, parses as `single_input` in a static buffer and runs under the file name "Scrap input".
-  `Py_FiniObjects` frees the objects of static pointers after `Py_Finalize`, before the engine deletes its pool.
+- `import.c`: once the startup imports are done (`g_PyPackImport`), reading a .pyc prints
+  "WARNING: import %s (read)" with "the library was not preloaded". The write warning went with the compiler:
+  nothing is written any more.
+- `pythonrun.c`: `PyRun_ScrapString` was removed at step B. Only `Py_FiniObjects` is left, which frees the objects of
+  static pointers after `Py_Finalize`, before the engine deletes its pool.
 - `dictobject.c`, `stringobject.c`, `listobject.c`, `classobject.c` and `getpathp.c`: the statics that
   `Py_FiniObjects` frees.
+
+Without the interpreter the wrappers of `src/python` and `src/python/nopy` do not build the runners, the compiler, the
+bytecode loop and the .pyc readers (`NOPY_DROP` in `src/python/pyengine.h`).
 
 The exe also frees the interned names held in function statics of `classobject.c` and the "__path__" of
 `get_parent` in `import.c`. They cannot be reached from outside the vendored files and stay in the pool, which is
@@ -202,7 +203,7 @@ print only written memory now (`Table_New` at rva 0x2c2c60, the trail points aft
 
 What still differs from the exe: `sys.executable` names ScrapC.exe.
 
-`tools/test/py/sdpy.py` (prefix `spy`) runs at the end of sdtest.py and compares the interpreter itself with the exe's:
+This paragraph is history: `tools/test/golden/sdpy.py` (prefix `spy`) was removed at step B of the removal of Python (the tag `interp-final` has it). It ran at the end of sdtest.py and compared the interpreter itself with the exe's:
 int, long and float arithmetic at the edges (overflow checks, shifts, division, pow), `int()`, `long()` and `float()`
 of strings, float formatting with all the % formats and str/repr (inf, nan, denormals, 1e16..1e22), strings and the
 strop module, string formatting with width and precision, `hash()` and the key order of dicts, list.sort with compare
@@ -278,7 +279,7 @@ The runtime does some things that the C standard does not tell, and ScrapC.exe d
 Wine's own versions are the reason for the C of our own. They print denormals rounded wrong, read them wrong
 (`float('1e-310')`), take "1d5" as a number but not "nan(ind)", give "-nan(ind)" for `float('-nan')` where the original
 gives "-nan", print `'%#g' % 0.0` as 0.00000 and `'%#.0e'` of inf as "inf" (Microsoft's gives 'i.nf'), and have other
-error texts ("Numerical result out of range" for "Result too large"). sdpy.py found these. A differential fuzz harness
+error texts ("Numerical result out of range" for "Result too large"). sdpy.py (a tool of the difftest era, removed at step B, tag `interp-final`; the same goes for `sdlib.py` below) found these. A differential fuzz harness
 outside git (a mingw exe that loads `ucrtbase_ms.dll` and compares) found no difference on 2026-10-30 in 2.56 million
 printf cases (all option values 0 to 31, buffer sizes, flags, widths, precisions up to 1200, every size and
 conversion, edge doubles and NaN payloads), 240000 fprintf cases, 2.56 million strtod and atof cases (long mantissas,
@@ -661,8 +662,8 @@ took the rva of a vtable take the pointer. vtables.py checks that each `GAME_VFT
 hook DLL behaves as before, only those helpers add the load address at the caller now.
 
 A test that compares a vtable slot with an rva of the original sees the C function in ScrapC.exe. `isfn(p, rva)` of
-`tools/test/py/sdlib.py` accepts both (the C function is the target of the hook jump at the rva); the check of the fake
-entity in `sdlevel_efxchar.py` uses it.
+`tools/test/golden/sdlib.py` (removed at step B, tag `interp-final`) accepted both (the C function is the target of the hook jump at the rva); the check of the fake
+entity in `sdlevel_efxchar.py` used it.
 
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL
 difftest.

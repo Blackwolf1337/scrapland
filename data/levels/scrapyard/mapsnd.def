@@ -1,0 +1,55 @@
+# The functions of MapSnd in level scrapyard (the script levels/scrapyard/scripts/mapsnd.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Scrapyard.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/scrapyard/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "tunel334-scrap.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "maquina-scrap.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "aire-scrap.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "tube1-scrap.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "horno-scrap.wav"
+end
+
+section SetSounds
+call Sound.SetPSLoop "tunelout1" (-148845.6,-3294.5,-397357.8) "tunel334-scrap" 0.5
+call Sound.SetPSLoop "tunelout2" (-243550.359375,-3539.26416016,-399598.21875) "tunel334-scrap" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+call Sound.SetPSLoop "tunelout3" (-310861.53125,13081.2109375,-545086.75) "tunel334-scrap" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina1" (-198166.828125,-10903.1240234,-390353.9375) "maquina-scrap" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina2" (-229541.625,19457.5273438,-386110.71875) "horno-scrap" Volume=0.1 Pitch=0.0 AttenIni=16320.0 AttenEnd=33576.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina3" (-215823.265625,-13220.5869141,-796292.8125) "maquina-scrap" Volume=0.2 Pitch=-2.0 AttenIni=12992.0 AttenEnd=38056.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina4" (-188534.359375,-17178.1347656,-786862.0) "maquina-scrap" Volume=0.2 Pitch=-2.0 AttenIni=4800.0 AttenEnd=25768.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina5" (-161738.828125,-16591.3007813,-775850.875) "maquina-scrap" Volume=0.2 Pitch=-2.0 AttenIni=4800.0 AttenEnd=25768.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina6" (-148379.71875,-15991.1640625,-770883.625) "maquina-scrap" Volume=0.2 Pitch=-2.0 AttenIni=4800.0 AttenEnd=25768.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina7" (-381979.25,-5689.07324219,-601809.375) "maquina-scrap" Volume=0.2 Pitch=-2.0 AttenIni=10944.0 AttenEnd=46248.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "aire1" (-198216.734375,7815.57568359,-378855.375) "aire-scrap" Volume=0.15 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tube1" (-297560.4375,27670.7226563,-379998.84375) "tube1-scrap" Volume=0.4 Pitch=-2.0 AttenIni=24576.0 AttenEnd=56488.0 Doppler=0.0
+end
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

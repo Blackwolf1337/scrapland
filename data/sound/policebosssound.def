@@ -1,0 +1,204 @@
+# policebosssound (the sound script sound/policebosssound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/policebosssound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes "caida casquillo-h.wav"
+	AddSoundRes "caida casquillo-i.wav"
+	AddSoundRes mecanismo-policeBoss1.wav
+	AddSoundRes mecanismo-policeBoss2.wav
+	AddSoundRes mecanismo-Boss-D.wav
+	AddSoundRes mecanismo-Boss-E.wav
+	AddSoundRes PoliceBoss-paso1.wav
+	AddSoundRes PoliceBoss-paso2.wav
+	AddSoundRes caida-policeboss.wav
+	AddSoundRes golpe-Boss2.wav
+	AddSoundRes golpe-Boss.wav
+if %PoliceBossSound.isPC
+	class
+		AddSoundRes ext-Boss3.wav
+end
+if %PoliceBossSound.isPC
+	class
+		AddSoundRes mano-encantada.wav
+end
+	AddSoundRes voz-Boss10.wav
+	AddSoundRes voz-Boss11.wav
+	AddSoundRes cadena1.wav
+	AddSoundRes cadena.wav
+
+section SetSounds
+let act Turn
+call Chars.ActSound $char $act 1 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 7 PoliceBoss-paso1 0.03 -2
+call Chars.ActSound $char $act 7 mecanismo-policeBoss2 0.016
+call Chars.ActSound $char $act 17 PoliceBoss-paso2 0.03 -2
+let act Run
+call Chars.ActSound $char $act 6 PoliceBoss-paso1 0.03 -2
+call Chars.ActSound $char $act 4 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 16 mecanismo-policeBoss2 0.016
+call Chars.ActSound $char $act 18 PoliceBoss-paso2 0.03 -2
+let act Back
+call Chars.ActSound $char $act 6 PoliceBoss-paso1 0.03 -1
+call Chars.ActSound $char $act 4 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 17 mecanismo-policeBoss2 0.016
+call Chars.ActSound $char $act 19 PoliceBoss-paso2 0.03 -1
+let act Walk
+call Chars.ActSound $char $act 17 PoliceBoss-paso1 0.03 -2
+call Chars.ActSound $char $act 15 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 32 mecanismo-policeBoss2 0.016
+call Chars.ActSound $char $act 34 PoliceBoss-paso2 0.03 -2
+let act StrLeft
+call Chars.ActSound $char $act 6 PoliceBoss-paso1 0.03 -2
+call Chars.ActSound $char $act 4 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 15 mecanismo-policeBoss2 0.016
+call Chars.ActSound $char $act 17 PoliceBoss-paso2 0.03 -2
+let act StrRight
+call Chars.ActSound $char $act 6 PoliceBoss-paso1 0.03 -2
+call Chars.ActSound $char $act 4 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 15 mecanismo-policeBoss2 0.016
+call Chars.ActSound $char $act 17 PoliceBoss-paso2 0.03 -2
+let act Action
+call Chars.ActSound $char $act 3 mecanismo-Boss-D 0.03
+call Chars.ActSound $char $act 4 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 7 voz-Boss10 0.4
+call Chars.ActSound $char $act 24 mecanismo-policeBoss2 0.016
+call Chars.ActSound $char $act 25 mecanismo-Boss-E 0.03
+call Chars.ActSound $char $act 26 voz-Boss11 0.5
+call Chars.ActSound $char $act 26 cadena1 0.15
+call Chars.ActSound $char $act 31 cadena 0.15 -1
+call Chars.ActSound $char $act 54 mecanismo-policeBoss1 0.016
+call Chars.ActSound $char $act 55 mecanismo-Boss-D 0.016
+let act Relax0
+call Chars.ActSound $char $act 4 mecanismo-Boss-D 0.016
+call Chars.ActSound $char $act 5 mecanismo-policeBoss1 0.017
+call Chars.ActSound $char $act 10 PoliceBoss-paso1 0.03 -2
+call Chars.ActSound $char $act 30 mecanismo-policeBoss1 0.017 +2
+call Chars.ActSound $char $act 51 mecanismo-Boss-E 0.016 +2
+call Chars.ActSound $char $act 51 mecanismo-policeBoss2 0.017 +2
+call Chars.ActSound $char $act 104 mecanismo-Boss-D 0.016 +2
+call Chars.ActSound $char $act 104 mecanismo-policeBoss1 0.017 +2
+call Chars.ActSound $char $act 128 mecanismo-policeBoss2 0.017 +2
+call Chars.ActSound $char $act 138 mecanismo-policeBoss1 0.017 +5
+call Chars.ActSound $char $act 174 mecanismo-policeBoss2 0.017 +6
+call Chars.ActSound $char $act 199 mecanismo-Boss-E 0.003
+call Chars.ActSound $char $act 199 mecanismo-policeBoss2 0.005
+call Chars.ActSound $char $act 199 PoliceBoss-paso2 0.03 -2
+call Chars.ActSound $char $act 206 PoliceBoss-paso1 0.03 -2
+let act Relax1
+call Chars.ActSound $char $act 1 mecanismo-Boss-D 0.016
+call Chars.ActSound $char $act 2 mecanismo-policeBoss1 0.017
+call Chars.ActSound $char $act 16 golpe-Boss 0.16
+call Chars.ActSound $char $act 35 mecanismo-Boss-E 0.016
+call Chars.ActSound $char $act 36 mecanismo-policeBoss2 0.017
+call Chars.ActSound $char $act 53 golpe-Boss 0.16
+call Chars.ActSound $char $act 72 mecanismo-Boss-E 0.016
+call Chars.ActSound $char $act 73 mecanismo-policeBoss1 0.017
+if %PoliceBossSound.isPC
+	call Chars.ActSound $char $act 84 ext-Boss3 0.018
+end
+call Chars.ActSound $char $act 129 mecanismo-Boss-D 0.016 -2
+call Chars.ActSound $char $act 130 mecanismo-policeBoss1 0.017
+let act FlashedInit
+call Chars.ActSound $char $act 2 mecanismo-Boss-D 0.016
+call Chars.ActSound $char $act 3 mecanismo-policeBoss1 0.017
+call Chars.ActSound $char $act 10 golpe-Boss 0.12 -3
+call Chars.ActSound $char $act 28 mecanismo-policeBoss2 0.017
+let act Flashed
+call Chars.ActSound $char $act 52 mecanismo-policeBoss1 0.017
+call Chars.ActSound $char $act 72 mecanismo-policeBoss2 0.017
+let act FlashedEnd
+call Chars.ActSound $char $act 88 mecanismo-Boss-D 0.016
+call Chars.ActSound $char $act 89 mecanismo-policeBoss1 0.017
+call Chars.ActSound $char $act 94 PoliceBoss-paso2 0.03 -2
+let act CrazyInit
+call Chars.ActSound $char $act 1 mecanismo-Boss-D 0.016
+call Chars.ActSound $char $act 2 mecanismo-policeBoss1 0.017
+if %PoliceBossSound.isPC
+	call Chars.ActSound $char $act 2 mano-encantada 0.02
+end
+call Chars.ActSound $char $act 25 mecanismo-Boss-E 0.016 +3
+call Chars.ActSound $char $act 25 mecanismo-policeBoss2 0.017 +3
+let act Crazy
+call Chars.ActSound $char $act 28 golpe-Boss2 0.050 -5
+call Chars.ActSound $char $act 28 golpe-Boss 0.050 +3
+call Chars.ActSound $char $act 37 mecanismo-Boss-D 0.016 +6
+call Chars.ActSound $char $act 38 mecanismo-policeBoss1 0.017 +6
+call Chars.ActSound $char $act 42 golpe-Boss2 0.050 -6
+call Chars.ActSound $char $act 42 golpe-Boss 0.050 +4
+call Chars.ActSound $char $act 62 mecanismo-Boss-E 0.016 +8
+call Chars.ActSound $char $act 63 mecanismo-policeBoss2 0.017 +8
+call Chars.ActSound $char $act 68 golpe-Boss2 0.050 -7
+call Chars.ActSound $char $act 68 golpe-Boss 0.050 +5
+call Chars.ActSound $char $act 86 mecanismo-policeBoss2 0.017
+let act CrazyEnd
+call Chars.ActSound $char $act 99 mecanismo-Boss-D 0.016 +2
+call Chars.ActSound $char $act 99 mecanismo-policeBoss1 0.017 +2
+call Chars.ActSound $char $act 108 mecanismo-policeBoss2 0.017
+let act DiscoverInit
+call Chars.ActSound $char $act 4 mecanismo-policeBoss1 0.017
+call Chars.ActSound $char $act 27 mecanismo-Boss-D 0.016 +2
+call Chars.ActSound $char $act 28 mecanismo-policeBoss1 0.017 +2
+call Chars.ActSound $char $act 37 mecanismo-Boss-D 0.016 +6
+call Chars.ActSound $char $act 38 mecanismo-policeBoss1 0.017 +6
+let act Discover
+call Chars.ActSound $char $act 47 mecanismo-Boss-D 0.016 +8
+call Chars.ActSound $char $act 48 mecanismo-policeBoss1 0.017 +8
+call Chars.ActSound $char $act 57 mecanismo-Boss-D 0.016 +8
+call Chars.ActSound $char $act 58 mecanismo-policeBoss1 0.017 +8
+class
+	FallSound caida-policeboss
+	FallSoundVol 0.07
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 2 mecanismo-Boss-D 0.017 +2
+call Chars.ActSound $char $talk 3 mecanismo-policeBoss1 0.018 +2
+call Chars.ActSound $char $talk 31 mecanismo-Boss-E 0.017 +2
+call Chars.ActSound $char $talk 32 mecanismo-policeBoss2 0.018 +2
+
+section Talk1Snd
+call Chars.ActSound $char $talk 20 mecanismo-Boss-E 0.017
+call Chars.ActSound $char $talk 21 mecanismo-policeBoss2 0.018
+
+section Talk2Snd
+call Chars.ActSound $char $talk 1 mecanismo-Boss-E 0.017 +2
+call Chars.ActSound $char $talk 2 mecanismo-policeBoss2 0.018 +2
+call Chars.ActSound $char $talk 7 mecanismo-Boss-D 0.017 +6
+call Chars.ActSound $char $talk 8 mecanismo-policeBoss1 0.018 +7
+call Chars.ActSound $char $talk 27 mecanismo-Boss-E 0.017 +8
+call Chars.ActSound $char $talk 28 mecanismo-policeBoss2 0.018 +8
+call Chars.ActSound $char $talk 35 mecanismo-Boss-E 0.017 +8
+call Chars.ActSound $char $talk 36 mecanismo-policeBoss2 0.018 +8
+call Chars.ActSound $char $talk 54 mecanismo-Boss-E 0.017 +1
+call Chars.ActSound $char $talk 55 mecanismo-policeBoss2 0.018 +1
+call Scrap.Set PoliceBossBrupBounce1Sound "caida casquillo-h"
+call Scrap.Set PoliceBossBrupBounce2Sound "caida casquillo-i"
+call Scrap.Set PoliceBossBrupBounceSoundVol 0.04
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

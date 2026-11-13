@@ -10,7 +10,6 @@
 #include "scrap/mathlib.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrapfont.h"
-#include "scrap/python.h"
 
 typedef struct cScorerItem cScorerItem;
 typedef struct cScorerItemVtbl {
@@ -125,6 +124,9 @@ typedef struct cScorer {
 
 cScorer *Scorer_Get(int player);
 cScorerItem *cScorer_FindItem(cScorer *scorer, const char *name);
+/* runs the OnAccept of the item with the player and the item name, as the accept key of the menu does (SScorer.Accept,
+ * the test channel); 0 when the item or its OnAccept is missing */
+byte Scorer_AcceptItem(int player, const char *name);
 cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte flag);
 void cScorer_Clear(cScorer *scorer);
 void cScorer_SetDefault(cScorer *scorer, const char *name);
@@ -133,21 +135,26 @@ void cScorer_SetMarkerSprite(cScorer *scorer, const char *sprite);
 void *cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
 	float radius, float height, byte head);
 void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time);
+/* 0xAARRGGBB from the (r, g, b, a) values of the scripts (SScorer.Fade) */
+/* SScorer.Get(player, name, var): 1 a text in *s, 2 a float in *d, 3 an int in *i, 0 (None) without the item or
+ * variable */
+int Scorer_GetItemVar(int player, const char *name, const char *var, char **s, double *d, int *i);
+static inline uint32_t Scorer_PackColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
+	return ((a << 8 | r) << 8 | g) << 8 | b;
+}
 void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time);
-/* cPyMenuEntity (type object): Python handle of a scorer item by player and item name */
-typedef struct cPyMenuEntity {
-	PyObject_HEAD
-	int player;
-	char *name;			/* Mem_Alloc copy */
-} cPyMenuEntity;
-
-/* the handle of a scorer item, NULL (no Python error) if there is no such item */
-PyObject *ScorerItem_PyNew(int player, const char *name);
+struct nativeVal_s;
+/* the handle of a scorer item by player and item name (cPyMenuEntity, a native C object): 1 with *out, 0 without an
+ * error and *out None if there is no such item */
+byte ScorerItem_New(int player, const char *name, struct nativeVal_s *out);
 
 void Scorer_AddChatMsg(const char *text, uint32_t rgb);
 void Scorer_SetConsole(int on);
 void Scorer_SetSpeechText(const char *text, float time, int a, int b, int c);
-void Scorer_SetSpeechCallback(const char *func, PyObject *arg);
+struct nativeVal_s;
+/* the talk callback by name (cPy_Function_SetFunc); the items of arg (a list value, NULL: none) that are a text, a
+ * float or an int are its parameters */
+void Scorer_SetSpeechCallback(const char *func, const struct nativeVal_s *arg);
 void Scorer_CancelSpeech(float time);
 void Scorer_SetHeadMonitor(const char *a, const char *b, int c);
 void Scorer_SetMsgText(const char *text, float time, const char *font);

@@ -1,0 +1,13 @@
+# The functions of Mission_BertoMassacre in level downtown (the script levels/downtown/scripts/mission_bertomassacre.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): InitStatus, StartMission, DeepThroatMessage, CheckBertoDeath, OnBertoFound, DropMatrix, TakeMatrix, GetBerto, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_bertomassacre.def replaces this file.
+section Init LevelPath
+call SScorer.AddModel 0 "EvilBerto" "Models/Heads/HeadEvilBerto/HeadEvilBerto" "" 4 25 10
+call Scrap.Preload3DObject %Mission_BertoMassacre.DTritusMatrixModel
+call Scrap.SetSaveVar "CreateBertos" "1"
+call Speech.AddRemoteCom "Mission_GoToDowntown_RemoteMessage1" "DeepThroat" %Mission_BertoMassacre.StartMission ()
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_ReinsertOwnMatrix2" "GDB"
+call SaveGame.MMDesc "Mission_ReinsertOwnMatrix2_MissionText1" 1
+call SaveGame.QWayPoint

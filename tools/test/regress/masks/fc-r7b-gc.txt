@@ -1,0 +1,2 @@
+# line 37: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore (Scrap.SetSaveVar('MissionState', 'FindHumphrey'), _c('Mission_GetCrazyData', 'Init', 'x'))

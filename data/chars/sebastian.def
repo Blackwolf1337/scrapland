@@ -1,0 +1,42 @@
+# Sebastian (the character script chars/sebastian.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sebastian.def replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
+
+section Sebastian
+call MakeChar.InitChar Sebastian
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 1.0
+call MakeChar.TurretBasicActions Sebastian 720 0
+call MakeChar.AddTurretTalkAction Sebastian 0
+call MakeChar.AddTurretTalkAct Sebastian Talk0 0
+call MakeChar.AddTurretTalkAct Sebastian Talk1 0
+call MakeChar.AddTurretTalkAct Sebastian Talk2 0
+call MakeChar.AddTurretTalkAct Sebastian Talk3 0
+class Sebastian
+	WRadius 10
+	VRadius 100
+class Sebastian
+	CanFly 1
+	FlyAccel 2400.0
+	FlySpeed 500.0
+	FlyFric 2.0
+	FlyFallAccel 200.0
+	SkipInitOnChange 0
+	Node0Name "BipBone Cuello_01"
+call MakeChar.SetNodeRotation 0 0 25 25
+class Sebastian
+	OnCreate Sebastian.OnCreate
+	OnFreeResources Sebastian.OnFreeResources
+call SebastianSound.Init Sebastian
+run speech Sebastian CharsNPC GenericNPCSpeech
+call Scrap.Set FXSebastianFlashFile %Sebastian.FXSebastianFlashFile
+call Scrap.SetDebrisSys %Sebastian.FXSebastianFlashFile 1 0 0 1 0 0 %Fx.FXSEBASTIANFLASH
+
+section OnCreate
+entity $name
+	Invulnerable 1
+	Action MorphEyes
+
+section OnFreeResources
+call Scrap.SetDebrisSys %Sebastian.FXSebastianFlashFile 0 0 0 1 0 0 %Fx.FXSEBASTIANFLASH

@@ -1,0 +1,162 @@
+# The functions of MapSnd in level qf (the script levels/qf/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/QF.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/qf/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "ventilador3-quimera.wav"
+	call SSound.LoadSound "tube1-quimera.wav"
+	call SSound.LoadSound "maquina2-quimera.wav"
+	call SSound.LoadSound "transformer3-quimera.wav"
+	call SSound.LoadSound "space-int2-quimera.wav"
+	call SSound.LoadSound "light1-quimera.wav"
+	call SSound.LoadSound "aire2-quimera.wav"
+	call SSound.LoadSound "horno1-quimera.wav"
+	call SSound.LoadSound "horno2-quimera.wav"
+end
+call SSound.LoadSound "tunel334-quimera.wav"
+
+section SetSounds
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Ventilador1" (41357.0,-25084.0,19402.4) "ventilador3-quimera" 0.15
+	call Sound.SetPSLoop "Ventilador2" (41278.9,-16945.1,19459.9) "ventilador3-quimera" 0.15
+	call Sound.SetPSLoop "Ventilador3" (-63094.9,-28050.1,25752.7) "ventilador3-quimera" 0.15 -8
+	call Sound.SetPSLoop "Ventilador4" (-117426.1,-728.2,74659.2) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Ventilador5" (-117994.0,13145.8,74558.0) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Ventilador6" (-128094.5,-653.8,105865.9) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Ventilador7" (-128875.1,13307.0,106001.8) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Ventilador8" (-99007.8,-946.3,802407.7) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Ventilador9" (-128875.1,13307.0,106001.8) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Ventilador10" (-82669.7,-12012.0,87539.3) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Ventilador11" (-98932.2,-907.6,82341.6) "ventilador3-quimera" 0.15 -4
+	call Sound.SetPSLoop "Tubo1" (25284.3,-49813.1,35242.8) "tube1-quimera" 0.2 +3
+	call Sound.SetPSLoop "Tubo2" (24604.3,-48250.0,35396.1) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo3" (25210.4,-45208.0,35357.5) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo4" (24927.4,-34893.4,35104.9) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo5" (25024.4,-29887.8,35081.7) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo6" (24997.0,-25667.2,34861.0) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo7" (31293.4,-39541.7,42253.6) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo8" (31577.6,-43197.9,42662.0) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo9" (32370.8,-50670.8,35081.7) "tube1-quimera" 0.15 -1
+	call Sound.SetPSLoop "Tubo10" (32743.3,-55415.9,43950.9) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo11" (-21601.3,-43256.9,12671.5) "tube1-quimera" 0.2 +6
+	call Sound.SetPSLoop "Tubo12" (-18524.8,-52184.2,12191.5) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo13" (-15719.5,-57958.5,11109.2) "tube1-quimera" 0.2 -1
+	call Sound.SetPSLoop "Tubo14" (-39571.8,-35056.4,18474.7) "tube1-quimera" 0.2 +6
+	call Sound.SetPSLoop "Tubo15" (-48542.6,-34136.3,20899.5) "tube1-quimera" 0.2 +6
+	call Sound.SetPSLoop "Tubo16" (-95131.1,-10754.6,124536.1) "tube1-quimera" 0.1 +6
+	call Sound.SetPSLoop "Tubo17" (-84384.0,-11666.8,119226.7) "tube1-quimera" 0.1 +6
+	call Sound.SetPSLoop "Tubo18" (-77104.7,-15788.2,69366.3) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo19" (-75827.1,-9988.8,70838.5) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo20" (-48542.6,-34136.3,20899.5) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo21" (52264.8,5999.5,55027.5) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo22" (51921.0,6798.6,75446.7) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo23" (-48542.6,-34136.3,20899.5) "tube1-quimera" 0.15 +6
+	call Sound.SetPSLoop "Tubo24" (69561.9,6984.5,65667.9) "tube1-quimera" 0.15 +6
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Maquina1" (26943.0,-53901.2,53869.3) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina2" (22555.7,-53536.6,45805.2) "maquina2-quimera" 0.45 +10
+	call Sound.SetPSLoop "Maquina3" (41743.8,-56146.3,29780.7) "maquina2-quimera" 0.45 +8
+	call Sound.SetPSLoop "Maquina4" (-58138.2,-29785.0,3386.8) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina5" (-83446.1,-16303.7,15969.5) "maquina2-quimera" 0.45 +8
+	call Sound.SetPSLoop "Maquina6" (-85400.3,2924.9,13909.5) "maquina2-quimera" 0.45 +8
+	call Sound.SetPSLoop "Maquina7" (-10373.3,-34693.9,-2538.1) "maquina2-quimera" 0.45 +8
+	call Sound.SetPSLoop "Maquina8" (-9849.6,-17978.9,-2299.4) "maquina2-quimera" 0.45 +8
+	call Sound.SetPSLoop "Maquina9" (-84780.8,-21722.6,61614.4) "maquina2-quimera" 0.45 +10
+	call Sound.SetPSLoop "Maquina10" (-89507.6,-12472.5,121957.6) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina11" (-121160.4,17141.3,122495.6) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina12" (-115156.3,13297.0,126224.5) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina13" (-108704.7,-19628.7,82836.3) "maquina2-quimera" 0.3 +6
+	call Sound.SetPSLoop "Maquina14" (-68255.9,-20225.1,80992.0) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina15" (113757.3,-22089.5,3305.8) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina16" (120119.4,-22990.7,-29668.3) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Maquina17" (-39047.2,-28133.6,-8300.3) "maquina2-quimera" 0.45 +6
+	call Sound.SetPSLoop "Transformer1" (8404.8,-46425.4,208.4) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer2" (1982.4,-46590.3,35299.1) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer3" (2055.3,-36469.4,35234.0) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer4" (8274.0,-34345.4,296.9) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer5" (-79342.5,-11624.3,16328.1) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer6" (-112283.4,-7966.8,104552.8) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer7" (57878.2,8542.6,65259.9) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer8" (110998.6,-19451.5,-9360.6) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer9" (99925.1,-14726.3,19054.1) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer10" (108575.8,-14388.5,-45330.0) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer11" (105219.8,-14987.9,-23663.7) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer12" (-64171.2,28465.4,-59178.7) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer14" (-71683.0,28171.1,-69027.1) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer15" (-65657.6,20969.7,-34098.2) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer16" (-65806.5,8351.8,-338444.5) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer17" (-77802.9,7709.7,-33556.4) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer18" (-76819.0,21101.6,-33186.7) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer19" (-77574.4,106076.5,-22896.1) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer20" (-77613.3,-3155.0,-22559.0) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer21" (-65762.2,16604.3,-22446.8) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer22" (-65348.1,2838.3,-22509.6) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer23" (-27365.4,-28994.6,-24318.6) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer24" (-78482.0,27080.9,-57550.6) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer25" (-80465.5,27574.4,-65726.5) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer26" (-71310.6,27685.9,-77132.7) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer27" (-55181.2,23918.3,-47052.2) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer28" (16778.2,-40069.5,18864.5) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer29" (-27365.4,-28994.6,-24318.6) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer30" (17971.6,-28412.5,19554.4) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer31" (18470.1,-14757.2,19630.6) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer32" (116863.9,-13429.5,-20298.6) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer33" (-67862.8,2246.2,102330.8) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Transformer34" (43484.3,-40444.4,3188.4) "transformer3-quimera" 0.5
+	call Sound.SetPSLoop "Luz1" (36831.9,-22666.3,40300.9) "light1-quimera" 0.1 -1
+	call Sound.SetPSLoop "Luz2" (43686.0,-12727.5,35251.2) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz3" (10107.8,-25520.2,53323.7) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz4" (23311.2,-44158.4,25948.1) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz5" (12022.1,-44465.2,12391.0) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz6" (-84190.4,-17515.7,27007.7) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz7" (-86384.8,-13277.2,127899.2) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz8" (-129508.6,-18436.1,107358.2) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz9" (-129723.0,-22201.8,107485.4) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz10" (-109619.0,-18430.5,124737.3) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz11" (-87322.6,4173.3,65317.0) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz12" (95553.3,-14773.0,-10786.7) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz13" (138068.8,-12363.3,-12148.3) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz14" (106542.1,-12147.0,14203.6) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz15" (-27441.5,-14374.0,-24494.0) "light1-quimera" 0.1 -1
+	call Sound.SetPSLoop "Luz16" (-17082.6,-9268.7,-31922.3) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz17" (-39591.2,-35028.5,-7674.1) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz18" (-30748.8,-29903.6,-41712.0) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Luz19" (49361.9,-12607.5,-35167.3) "light1-quimera" 0.05 -1
+	call Sound.SetPSLoop "Aire1" (3722.9,-28612.2,48895.7) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire2" (3985.6,-32864.9,49007.7) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire3" (44733.8,-20566.1,31604.6) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire4" (43884.2,-24908.5,31277.0) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire5" (43697.2,-43803.0,31528.8) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire6" (44075.3,-48685.9,31536.4) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire7" (130072.5,-16556.1,-14728.3) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire8" (130073.7,-22334.2,-14568.0) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire9" (64685.1,-2321.0,-33720.4) "aire2-quimera" 0.2 -10
+	call Sound.SetPSLoop "Aire10" (43484.3,-40444.4,3188.4) "aire2-quimera" 0.2
+	call Sound.SetPSLoop "Horno1" (-63604.9,-34137.9,25457.0) "horno1-quimera" 0.25 -3
+	call Sound.SetPSLoop "Horno2" (58019.3,-4671.6,65172.4) "horno2-quimera" 0.25 -3
+	call Sound.SetPSLoop "Horno3" (-27266.5,-37216.2,-24509.8) "horno2-quimera" 0.25 -3
+	call Sound.SetPSLoop "Horno4" (67676.3,-50529.2,-63093.1) "horno2-quimera" 0.25 -3
+	call Sound.SetPSLoop "Horno5" (51931.0,-44074.0,-53067.9) "horno1-quimera" 0.25 -3
+	call Sound.SetPSLoop "Horno6" (49743.0,-44095.3,-66972.7) "horno1-quimera" 0.25 -3
+	call Sound.SetPSLoop "Horno7" (79386.4,-19455.2,-21029.4) "horno1-quimera" 0.25 -3
+	call Sound.SetPSLoop "Horno8" (-9983.4,-57691.6,-24978.8) "horno2-quimera" 0.25 -3
+end
+call Sound.SetPSLoop "tunel1" (-20677.0,-6358.2,79835.2) "tunel334-quimera" 0.45
+call Sound.SetPSLoop "tunel2" (1882.3,-17559.8,-76618.0) "tunel334-quimera" 0.45
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Spark10" (66979.2,-24124.5,-64703.0) "transformer3-quimera" 0.25
+	call Sound.SetPSLoop "Spark11" (70022.8,-24169.9,-63721.5) "transformer3-quimera" 0.25
+	call Sound.SetPSLoop "Spark12" (68815.7,-24355.8,-60272.1) "transformer3-quimera" 0.25
+	call Sound.SetPSLoop "Spark13" (65334.6,-24252.7,-61927.8) "transformer3-quimera" 0.25
+	call Sound.SetPSLoop "Spark14" (70631.7,-17169.6,-63901.5) "transformer3-quimera" 0.25
+	call Sound.SetPSLoop "Spark15" (68730.5,-17226.5,-59612.0) "transformer3-quimera" 0.25
+	call Sound.SetPSLoop "Spark16" (64232.4,-17559.1,-61458.5) "transformer3-quimera" 0.25
+	call Sound.SetPSLoop "Spark17" (66076.0,-17447.8,-65694.7) "transformer3-quimera" 0.25
+end
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

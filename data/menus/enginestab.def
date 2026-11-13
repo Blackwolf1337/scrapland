@@ -1,0 +1,308 @@
+# The engines tab of the ship editor (EnginesTab.SetEnginesPanel and CreateLayouts of shipedit/enginestab.py): the
+# description of an engine, the engine bays of every ship, the icons of the bays, the engines the player has, the four
+# tiles of the engine list, the recycle button and the arrows of the list. The format is described in
+# src/game/Script/Script.c. A pack in mods/ with scrapc/menus/enginestab.def replaces this file. The C runs desc, then
+# group for each bay of each ship ($name, the place $x, $y, $w, $h), icons for each bay icon ($n: 0A, 0B .. 3B), inlist
+# for each engine ($n its place in the list from 1, $file its picture), slot for the four tiles ($n 1 to 4, $y),
+# recycle and arrows. recyclevisible and arrowsvisible ($v) show or hide those; hidedesc and hidepredict hide the
+# description and the prediction arrows. The step usehint <key> sets the Hint of the item to the language text key with
+# EnginesTab.UseTxt in it.
+
+style sprite
+	IsMultiSprite 1
+	HighRes 1
+style circuit
+	BlendingMode 2
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/ShipEditor/Circuits.tga"
+style generic
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/Menu/GenericButtons.alpha.tga"
+style line
+	Visible 0
+	Unit 1
+	Red 102
+	Green 192
+	Blue 255
+	Alpha 255
+
+section desc
+item EngineDesc Button
+	isMultisprite 0
+	IsNameValuePair 1
+	Text ""
+	Font HoratioSmall
+	TextAlign Left
+	TextColorRed 251
+	TextColorGreen 241
+	TextColorBlue 174
+	XAlignRight 580
+	Y 182
+	Visible 0
+	MaxX 575
+item EngineDescTab Tab
+call Menu.SetTabDefaults $id EngineDescTab
+	X 360
+	Y 176
+	SizeX 230
+	SizeY 102
+	Type 4
+	Alpha 164
+	Red 255
+	Green 220
+	Blue 50
+	Visible 0
+
+section group
+item $name Button
+	IsMultiSprite 1
+	File "2D/ShipEditor/FullEditor.alpha.tga"
+	SpriteIndex 8
+	FocusSpriteIndex 8
+	X $x
+	Y $y
+	W $w
+	H $h
+	Visible 0
+	Alpha 0
+	Red 57
+	Green 139
+	Blue 202
+	PivotX 0.5
+	PivotY 0.5
+	OnAccept EnginesTab.SelectEngineGroup
+	OnGainFocus EnginesTab.LayoutsGainFocus
+	OnLooseFocus EnginesTab.LayoutsLostFocus
+
+section icons
+item IconEngineGlow$(n) Sprite
+	Visible 0
+	HighRes 1
+	isMultisprite 1
+	BlendingMode 2
+	File "2D/ShipEditor/FullEditor.alpha.tga"
+	SpriteIndex 37
+	Alpha 255
+item IconEngine$(n) Sprite
+	Visible 0
+	HighRes 1
+	isMultisprite 1
+	File "2D/ShipEditor/FullEditor.alpha.tga"
+	SpriteIndex 35
+	Alpha 255
+item IconEngineLineL$(n) Sprite line
+item IconEngineLineC$(n) Sprite line
+item IconEngineLineR$(n) Sprite line
+
+section inlist
+item Engine$(n)InList Sprite
+	IsMultiSprite 0
+	File $file
+	Visible 0
+	W 85
+	H 60
+
+# the tiles at x 52, 62 apart from y 125 on
+section slot
+item Engine$(n) Button
+	BlendingMode 6
+	use sprite
+	File "2D/ShipEditor/FullEditor.alpha.tga"
+	Highlight 1
+	SpriteIndex 16
+	FocusSpriteIndex 17
+	X 52
+	Y $y
+	W 85
+	H 62
+	Alpha 255
+	Red 115
+	Green 150
+	Blue 255
+	HighLightColorRed 255
+	HighLightColorGreen 255
+	HighLightColorBlue 190
+	Visible 0
+	OnAccept EnginesTab.PutEngine
+	OnGainFocus EnginesTab.ShowEngineDesc
+	OnLooseFocus EnginesTab.HideEngineDesc
+	run usehint HINT_Engines2
+	Complex 0
+
+# the recycle button at 480, 402
+section recycle
+item Recycle Button
+	use sprite
+	File "2D/ShipEditor/Buttons.alpha.tga"
+	Highlight 0
+	SpriteIndex 8
+	FocusSpriteIndex 9
+	Complex 0
+	X 480
+	Y 402
+	W 35
+	H 35
+	FocusPivotX -5
+	FocusPivotY -5
+	OnAccept EnginesTab.RecycleEngine
+	OnGainFocus EnginesTab.ShowMoneySellingEngine
+	OnLooseFocus HangarTab.HideMoney
+	run usehint HINT_Engines11
+	Visible 0
+item RecycleBack Sprite
+	use sprite
+	File "2D/ShipEditor/Buttons.alpha.tga"
+	SpriteIndex 1
+	X 475
+	Y 397
+item RecycleCircuit1 Sprite
+	use generic
+	SpriteIndex 16
+	X 505
+	Y 394
+	Rotate 1
+	Mirror 2
+item RecycleCircuit2 Sprite
+	use circuit
+	SpriteIndex 1
+	X 471
+	Y 392
+	Alpha 128
+	Rotate 3
+item RecycleCircuit3 Sprite
+	use circuit
+	SpriteIndex 2
+	X 504
+	Y 389
+	Alpha 128
+	Mirror 0
+item RecycleCircuit4 Sprite
+	use circuit
+	SpriteIndex 5
+	X 486
+	Y 432
+	Alpha 128
+	Mirror 0
+
+# the arrows of the list at x 80, y 92 and 390
+section arrows
+item PrevEngine Button
+	use generic
+	Highlight 1
+	SpriteIndex 3
+	FocusSpriteIndex 4
+	X 80
+	Y 92
+	W 25
+	H 25
+	FocusPivotX -5
+	FocusPivotY -5
+	Visible 0
+	OnAccept EnginesTab.ScrollEngineListUp
+	run usehint HINT_Engines1
+	Complex 0
+	Rotate 1
+	MultiPress 1
+item PrevEngineBack Sprite
+	use generic
+	SpriteIndex 1
+	X 77
+	Y 89
+item PrevEngineCircuit1 Sprite
+	use generic
+	SpriteIndex 16
+	X 68
+	Y 107
+item PrevEngineCircuit2 Sprite
+	use circuit
+	SpriteIndex 3
+	X 61
+	Y 82
+	Alpha 128
+item NextEngine Button
+	use generic
+	Highlight 1
+	SpriteIndex 3
+	FocusSpriteIndex 4
+	X 80
+	Y 390
+	W 25
+	H 25
+	FocusPivotX -5
+	FocusPivotY -5
+	Visible 0
+	OnAccept EnginesTab.ScrollEngineListDown
+	run usehint HINT_Engines1
+	Complex 0
+	Rotate 1
+	Mirror 1
+	MultiPress 1
+item NextEngineBack Sprite
+	use generic
+	SpriteIndex 1
+	X 77
+	Y 387
+item NextEngineCircuit1 Sprite
+	use generic
+	SpriteIndex 16
+	X 68
+	Y 380
+	Mirror 2
+item NextEngineCircuit2 Sprite
+	use circuit
+	SpriteIndex 3
+	X 61
+	Y 382
+	Alpha 128
+	Mirror 2
+
+section recyclevisible
+set Recycle Visible $v
+set RecycleBack Visible $v
+set RecycleCircuit1 Visible $v
+set RecycleCircuit2 Visible $v
+set RecycleCircuit3 Visible $v
+set RecycleCircuit4 Visible $v
+
+section arrowsvisible
+set PrevEngine Visible $v
+set PrevEngineBack Visible $v
+set PrevEngineCircuit1 Visible $v
+set PrevEngineCircuit2 Visible $v
+set NextEngine Visible $v
+set NextEngineBack Visible $v
+set NextEngineCircuit1 Visible $v
+set NextEngineCircuit2 Visible $v
+
+section hidedesc
+set EngineDesc Visible 0
+set EngineDescTab Visible 0
+set WeightUp Visible 0
+set WeightDown Visible 0
+set WeightEqual Visible 0
+set WeightBack Visible 0
+set SpeedUp Visible 0
+set SpeedDown Visible 0
+set SpeedEqual Visible 0
+set SpeedBack Visible 0
+set BoostUp Visible 0
+set BoostDown Visible 0
+set BoostEqual Visible 0
+set BoostBack Visible 0
+set MoneyPredict Visible 0
+
+section hidepredict
+set SpeedUp Visible 0
+set SpeedDown Visible 0
+set SpeedEqual Visible 0
+set SpeedBack Visible 0
+set WeightUp Visible 0
+set WeightDown Visible 0
+set WeightEqual Visible 0
+set WeightBack Visible 0
+set BoostUp Visible 0
+set BoostDown Visible 0
+set BoostEqual Visible 0
+set BoostBack Visible 0

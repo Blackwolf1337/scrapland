@@ -139,13 +139,12 @@ const char *Lang_GetLanguage(void) {
 
 /*
  * GetLangEntries(id, n): the ids from id on in file order while they keep the prefix of id without its last 4
- * characters; of every group of n lines the first id goes into the list, cut to its length - 3 (the group
- * number). At most 10.
+ * characters; of every group of n lines the first id goes into out, cut to its length - 3 (the group number). At
+ * most LANG_ENTRIES (the original checked it after storing the tenth, so a tenth one fails the check).
  */
-PyObject *Lang_GetEntries(const char *name, int n) {
-	char prefix[0x100];
-	char key[0x100];
-	PyObject *items[10];
+int Lang_GetEntries(const char *name, int n, char out[LANG_ENTRIES][LANG_ID]) {
+	char prefix[LANG_ID];
+	char key[LANG_ID];
 	int len = (int)strlen(name);
 	int count = 0, j = 0;
 
@@ -168,8 +167,8 @@ PyObject *Lang_GetEntries(const char *name, int n) {
 				crt_report_rangecheckfailure();
 			}
 			key[len - 3] = 0;
-			items[j++] = PyString_FromString(key);
-			CHECK(j < 10);
+			Str_Copy(out[j++], key, LANG_ID);
+			CHECK(j < LANG_ENTRIES);
 		} else if (count == n) {
 			count = 0;
 			len = (int)strlen(next);
@@ -179,12 +178,7 @@ PyObject *Lang_GetEntries(const char *name, int n) {
 		}
 		Str_Copy(key, next, sizeof(key));
 	}
-	PyObject *list = PyList_New(j);
-	CHECK(list);
-	for (int i = 0; i < j; i++) {
-		PyList_SetItem(list, i, items[i]);
-	}
-	return list;
+	return j;
 }
 
 /* parses the file into the table; a line goes up to CR, or to LF when nothing follows the CR */
@@ -251,21 +245,21 @@ static void Lang_Load(const char *lang, cAbstractFile *f) {
  * Latin-1 bytes, Windows-1250 for Czech, and \x01 with four hex digits for a character of the unicode font
  */
 static const char *const lang_extraKeys[] = { "Menu_Video_Display", "Menu_Video_Windowed", "Menu_Video_Borderless",
-	"Menu_Video_Fullscreen" };
+	"Menu_Video_Fullscreen", "Menu_Video_Desktop" };
 static const struct {
 	const char *lang;
 	const char *text[sizeof(lang_extraKeys) / sizeof(lang_extraKeys[0])];
 } lang_extra[] = {
-	{ "English", { "Display", "Windowed", "Borderless", "Fullscreen" } },
-	{ "Spanish", { "Pantalla", "En ventana", "Sin bordes", "Completa" } },
-	{ "French", { "Affichage", "Fen\xea" "tr\xe9", "Sans bordure", "Plein \xe9" "cran" } },
-	{ "German", { "Anzeige", "Fenster", "Rahmenlos", "Vollbild" } },
-	{ "Italian", { "Schermo", "In finestra", "Senza bordi", "Schermo intero" } },
-	{ "Czech", { "Zobrazen\xed", "V okn\xec", "Bez r\xe1" "mu", "Cel\xe1" " obrazovka" } },
-	{ "Hungarian", { "Megjelen\xed" "t\xe9" "s", "Ablakos", "Keret n\xe9" "lk\xfc" "l", "Teljes k\xe9" "perny\x01" "0151" } },
-	{ "Polish", { "Wy\x01" "015Bwietlanie", "W oknie", "Bez ramki", "Pe\x01" "0142ny ekran" } },
-	{ "Russian", { "\x01" "042D\x01" "043A\x01" "0440\x01" "0430\x01" "043D", "\x01" "041E\x01" "043A\x01" "043E\x01" "043D\x01" "043D\x01" "044B\x01" "0439", "\x01" "0411\x01" "0435\x01" "0437 \x01" "0440\x01" "0430\x01" "043C\x01" "043A\x01" "0438", "\x01" "041F\x01" "043E\x01" "043B\x01" "043D\x01" "044B\x01" "0439" } },
-	{ "Japanese", { "\x01" "8868\x01" "793A", "\x01" "30A6\x01" "30A3\x01" "30F3\x01" "30C9\x01" "30A6", "\x01" "30DC\x01" "30FC\x01" "30C0\x01" "30FC\x01" "30EC\x01" "30B9", "\x01" "30D5\x01" "30EB\x01" "30B9\x01" "30AF\x01" "30EA\x01" "30FC\x01" "30F3" } },
+	{ "English", { "Display", "Windowed", "Borderless", "Fullscreen", "Desktop" } },
+	{ "Spanish", { "Pantalla", "En ventana", "Sin bordes", "Completa", "Escritorio" } },
+	{ "French", { "Affichage", "Fen\xea" "tr\xe9", "Sans bordure", "Plein \xe9" "cran", "Bureau" } },
+	{ "German", { "Anzeige", "Fenster", "Rahmenlos", "Vollbild", "Desktop" } },
+	{ "Italian", { "Schermo", "In finestra", "Senza bordi", "Schermo intero", "Desktop" } },
+	{ "Czech", { "Zobrazen\xed", "V okn\xec", "Bez r\xe1" "mu", "Cel\xe1" " obrazovka", "Plocha" } },
+	{ "Hungarian", { "Megjelen\xed" "t\xe9" "s", "Ablakos", "Keret n\xe9" "lk\xfc" "l", "Teljes k\xe9" "perny\x01" "0151", "Asztali" } },
+	{ "Polish", { "Wy\x01" "015Bwietlanie", "W oknie", "Bez ramki", "Pe\x01" "0142ny ekran", "Pulpit" } },
+	{ "Russian", { "\x01" "042D\x01" "043A\x01" "0440\x01" "0430\x01" "043D", "\x01" "041E\x01" "043A\x01" "043E\x01" "043D\x01" "043D\x01" "044B\x01" "0439", "\x01" "0411\x01" "0435\x01" "0437 \x01" "0440\x01" "0430\x01" "043C\x01" "043A\x01" "0438", "\x01" "041F\x01" "043E\x01" "043B\x01" "043D\x01" "044B\x01" "0439", "\x01" "0420\x01" "0430\x01" "0431\x01" "043E\x01" "0447\x01" "0438\x01" "0439 \x01" "0441\x01" "0442\x01" "043E\x01" "043B" } },
+	{ "Japanese", { "\x01" "8868\x01" "793A", "\x01" "30A6\x01" "30A3\x01" "30F3\x01" "30C9\x01" "30A6", "\x01" "30DC\x01" "30FC\x01" "30C0\x01" "30FC\x01" "30EC\x01" "30B9", "\x01" "30D5\x01" "30EB\x01" "30B9\x01" "30AF\x01" "30EA\x01" "30FC\x01" "30F3", "\x01" "30C7\x01" "30B9\x01" "30AF\x01" "30C8\x01" "30C3\x01" "30D7" } },
 };
 
 /* the extra texts of the language loaded (English for any other), unless its file has them */

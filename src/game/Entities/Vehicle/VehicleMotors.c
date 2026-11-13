@@ -778,6 +778,13 @@ static cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *
 	self->type = 0;
 	self->scale = 1.0f;
 	self->offset = 20.0f;
+	/* differs from the original: the first trail update measures from lastPos before it is set; the glow of a
+	 * FxClass without a color (the default 1) reads the colors; the values of a zeroed block */
+	self->lastPos.x = 0.0f;
+	self->lastPos.y = 0.0f;
+	self->lastPos.z = 0.0f;
+	self->color = 0;
+	self->color2 = 0;
 	return self;
 }
 

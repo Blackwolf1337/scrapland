@@ -1,0 +1,37 @@
+# Press, round 7b: Mission_PressMeeting and Mission_WhoIsDeepThroat started as the game does
+Scrap.SetSaveVar('Mission.Map', 'Press'); Scrap.SetSaveVar('Char', 'Dtritus'); Scrap.SetAlarm(0); Scrap.SetSaveVar('Press.MentalControllerStatus', '0'); Scrap.SetSaveVar('MapPress_BureauExists', '1'); Scrap.SetSaveVar('Mission.Library', 'Mission_PressMeeting'); Scrap.SetSaveVar('Parked.Press', '[]'); Scrap.LoadLevel('Levels/Press'); result = 1
+!sleep 25
+setattr(__import__('Scene'), 'EndOfSceneCallback', None)
+!sleep 30
+execfile('fsd.py')
+execfile('fr6.py')
+execfile('fr6b.py')
+execfile('fr7b.py')
+(Scrap.GetLevelPath(), _bfn('Mission_PressMeeting'), _bsv(('Spawn', 'ComeFrom', 'Parked.Press')))
+_bon()
+_bon(_SPK + ('GateKeeper.SetDoor', 'GateKeeper.DoorFoe', 'SScorer.AddModel', 'SScorer.Fade', 'SSound.UsePS', 'Scrap.Set', 'MissionsFuncs.GetNumCrazyDealCompleted'))
+(_c('Mission_PressMeeting', 'SetNextMission', None), _bsv(('Parked.Press',)))
+(_c('Mission_PressMeeting', 'SetNextMission', 1), _bsv(('Parked.Press',)))
+(Scrap.SetSaveVar('Parked.Press', 'None'), _c('Mission_PressMeeting', 'SetNextMission', 1), _c('Mission_PressMeeting', 'SetNextMission'))
+_broff()
+Scrap.SetSaveVar('Mission.Map', 'Press'); Scrap.SetSaveVar('Char', 'Dtritus'); Scrap.SetAlarm(0); Scrap.SetSaveVar('Press.MentalControllerStatus', '0'); Scrap.SetSaveVar('MapPress_BureauExists', '1'); Scrap.SetSaveVar('Mission.Library', 'Mission_WhoIsDeepThroat'); Scrap.LoadLevel('Levels/Press'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+execfile('fr6b.py')
+execfile('fr7b.py')
+(Scrap.GetLevelPath(), _bfn('Mission_WhoIsDeepThroat'), _btarget(), _hk(('Elevator', 'OnElevatorReachDown')), _bent(('DM_Door_Teleporter_08', 'GateKeeper_DTritusBossRoom', 'DM_Door_PressSlidingDoor_00'), ('UseFunc', 'OnObjSlot', 'Active')))
+_bon()
+_bon(_SPK + ('GateKeeper.SetDoor', 'GateKeeper.DoorFoe', 'SScorer.AddModel', 'SScorer.Fade', 'SSound.UsePS', 'Scrap.Set', 'MissionsFuncs.GetNumCrazyDealCompleted') + ('GateKeeper.UseDoor',))
+(_c('Mission_WhoIsDeepThroat', 'UseTeleporter', 'Player0', 'DM_Door_Teleporter_08', 'x', 'x'), _hk(('Elevator', 'OnElevatorReachDown')))
+_broff()
+_bon()
+_bon(_SPK + ('GateKeeper.SetDoor', 'GateKeeper.DoorFoe', 'SScorer.AddModel', 'SScorer.Fade', 'SSound.UsePS', 'Scrap.Set', 'MissionsFuncs.GetNumCrazyDealCompleted') + (('GateKeeper.UseDoor', 1),))
+(_c('Mission_WhoIsDeepThroat', 'UseTeleporter', 'Player0', 'DM_Door_Teleporter_08', 'x', 'x'), _hk(('Elevator', 'OnElevatorReachDown')))
+(_c('Mission_WhoIsDeepThroat', 'LaunchScene'), _hk(('Elevator', 'OnElevatorReachDown')), _c('Mission_WhoIsDeepThroat', 'LaunchScene', 'x'), _c('Mission_WhoIsDeepThroat', 'LaunchScene', charName = 'x'), _c('Mission_WhoIsDeepThroat', 'LaunchScene', 1, 2), _c('Mission_WhoIsDeepThroat', 'LaunchScene', foo = 1))
+(_c('Mission_WhoIsDeepThroat', 'PlayScene'), _bhooks()[9:10], _bent(('DM_Door_Teleporter_08', 'GateKeeper_DTritusBossRoom', 'DM_Door_PressSlidingDoor_00'), ('UseFunc', 'OnObjSlot', 'Active')))
+_bon(_BSCEN)
+(_c('Mission_WhoIsDeepThroat', 'Init', 'x'), _btarget(), _bent(('DM_Door_Teleporter_08', 'GateKeeper_DTritusBossRoom', 'DM_Door_PressSlidingDoor_00'), ('UseFunc', 'OnObjSlot', 'Active')))
+(_c('Mission_WhoIsDeepThroat', 'Init'), _c('Mission_WhoIsDeepThroat', 'PlayScene', 1), _c('Mission_WhoIsDeepThroat', 'UseTeleporter', 1))
+_broff()
+(setattr(__import__('Scene'), 'EndOfSceneCallback', None), 1)

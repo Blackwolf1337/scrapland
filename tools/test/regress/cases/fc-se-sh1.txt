@@ -1,0 +1,7 @@
+# ShipEdit level (the garage of the network games, Init.isShipEdit): the editor the level opens, its state
+exec(open('fse.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+I._se()
+I._ships()
+I._gvs()
+I._sc()

@@ -1,0 +1,32 @@
+# FZ: split screen FlagHunt (set by the case, then the level loaded): Split and SDeathMatch
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+(Scrap.Set('r_SplitScreen', 1), Scrap.Set('SplitScreen', 1), Scrap.Set('ServerType', 'FlagHunt'), Scrap.Set('CameraDefViewAspect', 2.6666), Scrap.Set('R_SceneRTargetSwap', 0))
+Scrap.LoadLevel('Levels/FZ')
+!sleep 30
+execfile('fst.py')
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+S = __import__('Split')
+I._split()
+(I._ent('Player0', ('Model','TgType','Target','RadarShow','UsrControl','Active')), I._ent('Player1', ('Model','TgType','Target','RadarShow','UsrControl','Active')), I._ent('Cam0', ('camPos','MainTarget','OnSwitch')), I._ent('Cam1', ('MainTarget',)))
+(I._items(0, ('textorl0','textorl1','textorl2','BlackZoneUp'), ('Text','X','Y','Font','Align','Alpha','Visible')), I._items(1, ('textorl0','BlackZoneUp'), ('Text','Y')))
+setattr(__import__('SInput'), 'Bind', I._recn('Bind'))
+setattr(__import__('SaveGame'), 'QLoad', I._recn('QLoad'))
+M = __import__('SFlagHunt')
+(len(M.ZoneList), M.AcFlag, M.Flag.Name, M.Flag.Pos == M.ZoneList[M.AcFlag], M.Flag.Radius, M.Flag.RadarShow, M.Flag.OnTake, Scrap.Get('CurrentWaypointName'))
+I._t(S.StartGame)
+(I._split(), I._ent('Player0', ('TgType',)), I._ent('Player1', ('TgType',)))
+I._sync(M.TakeFlag, 'f', 'Player1')[1]
+(S.Scorer, M.Flag.Pos == M.ZoneList[M.AcFlag], I._items(1, ('MissionBest',), ('Text',)))
+I._sync(M.TakeFlag, 'f', 'Player0')[1]
+I._sync(M.TakeFlag, 'f', 'Other')[1]
+I._sync(M.OnDeathFunc, 'Player0', 'x')[1]
+I._sync(M.OnDeathFunc, 'Nobody', 'x')[1]
+S.Scorer
+I._sync(M.BrowseAreas)[1]
+(len(M.ZoneList), M.ZoneList == map(lambda d: d, M.ZoneList))
+setattr(M, 'ZoneList', [(1, 2, 3)])
+(M.GetRndFlag(), M.AcFlag, M.GetRndFlag(), M.AcFlag)
+setattr(M, 'ZoneList', [])
+M.GetRndFlag()
+M.TakeFlag(1, 2)

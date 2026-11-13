@@ -1,0 +1,16 @@
+# level start: doors, elevators, alarm hooks, mission arrow, news panels (Townhall)
+exec "def _dd(pat):\n\tScrap.StartDummySearch(pat,1)\n\tr = []\n\twhile 1:\n\t\td = Scrap.NextDummySearch()\n\t\tif d == None: return r\n\t\tr.append(d[0])\nimport Init\nInit._dd = _dd"
+exec "def _fn(v):\n\tif type(v) in (type(()), type([])):\n\t\treturn map(_fn, v)\n\tif hasattr(v, '__name__'): return v.__name__\n\treturn v\ndef _di(d):\n\tk = d.keys()\n\tk.sort()\n\treturn map(lambda k, d=d: (k, _fn(d[k])), k)\nimport Init\nInit._fn = _fn\nInit._di = _di\nInit._r = []\ndef _rec(*a, **k):\n\tInit._r.append(a)\n\treturn 1\nInit._rec = _rec\nclass _Rec:\n\tdef __init__(self, n):\n\t\tself.n = n\n\tdef __call__(self, *a, **k):\n\t\tInit._r.append((self.n,) + a + tuple(k.items()))\n\t\treturn 1\nInit._recn = _Rec"
+map(lambda n: __import__('Init')._ent(n, ('ActCtrl','Action','DefLoop','Ang','OnObjSlot','ActiveCMask','MapCollision','UseRealTime','AlwaysUse','UseAngSel','UseAbsAngSel','CamTgt','ArrowCanUse','ArrnOpt','UseFunc','ArrOpt0','ArrOpt1','ArrOpt2','ArrOpt3','VRadius','RadarShow','ArrowCanMission')), __import__('Init')._dd('DM_Door_*'))
+__import__('Init')._di(__import__('Doors').DoorInfo)
+__import__('Init')._fn(__import__('Doors').DefDoorInfo)
+__import__('Init')._mod('Elevator', ('ELEVATORS','ElevatorStart','LinkedElevator','OnElevatorReachDown','OnElevatorReachUp'))
+__import__('Init')._fn(__import__('Alarm').SetAlarmCallback)
+__import__('Init')._fn((__import__('Alarm').AbortMissionCallback, __import__('Alarm').RestoreMissionCallback, __import__('Alarm').TempAbortMissionCallback, __import__('Alarm').TempRestoreMissionCallback))
+__import__('Init')._mod('MissionsFuncs', ('currentTarget','targetsList','currentBertos','launchNewWave','cameraData'))
+map(Scrap.GetSaveVar, ('Mission.Map','Mission.Library','AutoSaveGameOnLoad','InitialMessage','ComeFrom','Spawn','CrazyWing.Status','CrazyWing.List','GameAct','IsSecondMission'))
+(lambda w, a, t: w.has_key(a) and w[a].has_key(t) and __import__('Init')._ent(w[a][t], ('RadarShow','ArrowCanMission','ArrowModMission')))(__import__('MissionsFuncs').WorldMap, __import__('string').upper(__import__('Init').Path[7:]), __import__('string').upper(Scrap.GetSaveVar('Mission.Map')))
+__import__('sys').modules.has_key('NewsPanel') and map(lambda e: __import__('Init')._ent(e.Name, ('Ang','VRadius','Life','ActiveCMask','MapCollision','UseMapCheck','AlwaysUse','ArrowCanUse','UseFunc','ArrnOpt','ArriOpt','ArrOpt0','ArrOpt1','ArrOpt2')), __import__('NewsPanel').Panels)
+__import__('sys').modules.has_key('NewsPanel') and __import__('Init')._mod('NewsPanel', ('ShowingNews','MissionUse','NewsOnMem','act'))
+__import__('Init')._gv(('NewsPanelActive','NewsLogoBmp','IsSecondMission','OnCrazyDealFinished','OnCrazyDealTarget','AlarmCallback'))
+len(__import__('Init')._items())

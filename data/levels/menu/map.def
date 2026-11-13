@@ -1,0 +1,15 @@
+# The functions of Map in level menu (the script levels/menu/scripts/map.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Menu.c): InitStatus, EndCredits, FadeOutCreditsEnd, FadeOutCredits, NextCredit, ShowCredits, SetMotionBlur, Init, drotorito, cremeteoro.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/menu/map.def replaces this file.
+section StartMenu id=0
+call SInput.SetActionSet "Menu"
+call Menu.Init 0
+call Scrap.SetTimeSpeed 1
+call Scrap.Set "EscapeEvent" ""
+call SScorer.SetCinema $id 0 0.25
+call Scrap.Set "R_SceneBlurValue" 0
+call Scrap.Set "MotionBlurOffVar" 0
+call Scrap.Set "MotionBlurTime" 0
+call Scrap.Set "MotionBlurEndTime" 0
+call Scrap.Set "MotionBlurFactorBegin" 0
+call Scrap.Set "MotionBlurFactorEnd" 0

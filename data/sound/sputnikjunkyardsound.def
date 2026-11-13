@@ -1,0 +1,52 @@
+# sputnikjunkyardsound (the sound script sound/sputnikjunkyardsound.py of the game): the sound files of the character
+# class (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the
+# loops of a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is
+# described in src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with
+# scrapc/sound/sputnikjunkyardsound.def replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes arrow-spuknit4J.wav
+	AddSoundRes arrow-spuknit3J.wav
+	AddSoundRes arrow-spuknit2J.wav
+	AddSoundRes loop-sputnikJ.wav
+	AddSoundRes risas.wav
+	AddSoundRes frena.wav
+
+section SetSounds
+let act Laugh
+call Chars.ActSound $char $act 2 risas 0.2
+call Chars.ActSound $char $act 55 arrow-spuknit3J 0.1 -4
+let act Relax0
+call Chars.ActSound $char $act 6 arrow-spuknit4J 0.1
+let act Relax1
+call Chars.ActSound $char $act 2 arrow-spuknit2 0.1
+call Chars.ActSound $char $act 44 arrow-spuknit3J 0.1
+call Chars.ActSound $char $act 71 arrow-spuknit2 0.1
+let act WalkInit
+call Chars.ActSound $char $act 2 arrow-spuknit3J 0.1 -4
+let act WalkEnd
+call Chars.ActSound $char $act 50 frena 0.02 +8
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+
+section TalkSnd
+
+section InitLoops
+object $e
+	snd_n 1
+	snd00_name loop-sputnikJ
+	snd00_loop 1
+	snd00_pitch0 0.0
+	snd00_vol0 0.05
+	snd00_pitch1 10.0
+	snd00_vol1 0.3
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

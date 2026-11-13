@@ -9,18 +9,11 @@
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 void App_GetConfigDir(char *buf, int size);
 
-/* an entry of the save list of SaveGames_GetList */
-typedef struct cSaveGameInfo {
-	char desc[0x40];
-	int32_t time;			/* modification time of the file */
-	int slot;
-} cSaveGameInfo;
-
 #define SAVE_MAGIC "Scrapland savegame"
-#define SAVE_SLOTS 7
 
 static cGVar GVar_LastSaveGameName;
 #define g_SaveDesc (((cString *)&GVar_LastSaveGameName.value))	/* the description of the save loaded last */
@@ -217,13 +210,13 @@ static int SaveGame_CmpTime(const void *a, const void *b) {
 	return ((const cSaveGameInfo *)a)->time < ((const cSaveGameInfo *)b)->time;
 }
 
-/* [(desc, slot), ...] of the saves; the autosave first as "AutoSave-<desc>", slot 0. path is not used. */
-PyObject *SaveGames_GetList(const char *path) {
+/* the saves into saves (their count): the autosave first as "AutoSave-<desc>", slot 0, the others by time. path is not
+ * used. */
+int SaveGames_GetList(const char *path, cSaveGameInfo saves[SAVE_SLOTS]) {
 	char base[0x200];
 	char file[0x200];
 	char desc[0x40];
 	byte st[0x24];		/* struct _stat32, st_mtime at 0x1c */
-	cSaveGameInfo saves[SAVE_SLOTS];
 	int n = 0, autosave = 0;
 
 	(void)path;
@@ -258,16 +251,7 @@ PyObject *SaveGames_GetList(const char *path) {
 	} else {
 		crt_qsort(saves, n, sizeof(saves[0]), SaveGame_CmpTime);
 	}
-	PyObject *list = PyList_New(n);
-	CHECK(list);
-	for (int i = 0; i < n; i++) {
-		PyObject *t = PyTuple_New(2);
-		CHECK(t);
-		CHECK(PyTuple_SetItem(t, 0, PyString_FromString(saves[i].desc)) == 0);
-		CHECK(PyTuple_SetItem(t, 1, PyInt_FromLong(saves[i].slot)) == 0);
-		CHECK(PyList_SetItem(list, i, t) == 0);
-	}
-	return list;
+	return n;
 }
 
 /* the variables of a save game file, after deleting all; 1 if the count matches */
@@ -305,6 +289,9 @@ static byte SaveGame_WriteVars(cAbstractFile *f, const char *desc) {
 	if (!desc) {
 		int32_t t;
 		crt_time32(&t);
+		if (TestDet_On()) {
+			t = TestDet_WallTime(NULL);
+		}
 		char *s = crt_asctime(crt_gmtime32(&t));
 		s[strlen(s) - 1] = 0;
 		cAbstractFile_WriteString(f, s);
@@ -350,6 +337,10 @@ byte SaveGame_Save(const char *name, const char *desc) {
 	SaveGame_WriteVars(&f.base, desc);
 	cFile_Close(&f.base);
 	cFile_dtor(&f);
+	/* the deterministic test mode: the file time, which orders the list of the saved games, by the mode's clock */
+	if (TestDet_On()) {
+		TestDet_WallTime(path);
+	}
 	return 1;
 }
 

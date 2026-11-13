@@ -6,9 +6,11 @@ ScrapC.exe builds for Windows and Linux, 64 bit, from the same sources. CMake re
 
 | Folder | Toolchain file | Target |
 |--------|----------------|--------|
-| `build-win64` | `cmake/mingw-x86_64.cmake` | Windows x86_64 |
-| `build-linux64` | `cmake/linux-x86_64.cmake` | Linux x86_64 |
-| `build-linux64-asan` | `cmake/linux-x86_64.cmake` | Linux x86_64 with `CMAKE_C_FLAGS=-fsanitize=address -fno-omit-frame-pointer`, for the level test |
+| `build-win64` | `cmake/mingw-x86_64.cmake` | Windows x86_64, no Python interpreter |
+| `build-linux64` | `cmake/linux-x86_64.cmake` | Linux x86_64, no Python interpreter |
+| `build-linux64-asan` | `cmake/linux-x86_64.cmake` | Linux x86_64 with `CMAKE_C_FLAGS=-fsanitize=address -fno-omit-frame-pointer`, for the level test, no Python interpreter |
+
+No build has the interpreter since step B (2026-11-08). The test modes that needed it are gone (tag `interp-final`).
 
 The i686 builds and the i686 difftest are retired. The tag `difftest-final` keeps the last state with them. The Linux binary is position independent again, the fixed load address 0x400000 was only for the test scripts.
 
@@ -65,13 +67,13 @@ Save games are name/value strings plus a count, so they do not depend on the poi
 
 ## Testing 64 bit
 
-`tools/test/levels.sh` runs every playable level (29, Nano has no map in the packs) in `build-linux64-asan` headless for `LEVELS_TIME` seconds (default 120) and prints one line per level. A level fails on an ASan error, a fatal error (the message box text in `scrapdecomp.log`) or a Python traceback. The exit code is 0 when all pass. Levels can be given as arguments.
+`tools/test/levels.sh` runs every playable level (29, Nano has no map in the packs) in `build-linux64-asan` headless for `LEVELS_TIME` seconds (default 120) and prints one line per level. A level fails on an ASan error, a fatal error (the message box text in `scrapdecomp.log`) or a Python traceback. The exit code is 0 when all pass. Levels can be given as arguments. The levels run in parallel, `LEVELS_JOBS` at the same time (default 4). Worker n > 0 uses its own game folder `<game>-<n>` (`native.sh` makes it when it is missing). The log of a level is in the game folder of its worker, and the lines still come in the order of the levels. All 29 levels with 60 s each and 6 jobs take about 6 minutes instead of about 45.
 
-`tools/test/golden.sh` runs `tools/test/golden/sdtest.py` (the script functions of the game and the Python interpreter in `sdpy.py`, 9961 checks, in the main menu) on the Linux build and compares the output with `tools/test/golden/sdtest.out`. `GOLDEN_UPDATE=1` stores a new expected output. The stored output was checked against the frozen i686 reference before it was stored. It equals it except where 64 bit differs on purpose: Python ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
+`tools/test/golden.sh` runs checks in the main menu on the Linux build and compares the output with `tools/test/golden/sdtest.out`. It runs only the 1481 checks of the script functions of the game (`tools/test/golden/sdtest.cmd`) through the C test channel. `GOLDEN_UPDATE=1` stores a new expected output. The stored output was checked against the frozen i686 reference before it was stored. It equals it except where 64 bit differs on purpose: Python ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
 
 A failed `CHECK` of the game traps, which shows as an `UNKNOWN SIGNAL` at address 0x1. To debug, run gdb only as a child of `tools/test/headless.sh`, because ptrace of other processes is blocked in the container. A hardware watchpoint on a corrupted field finds the writer.
 
-The scrap MCP server (`tools/mcp`) launches every build with the `exe` argument: `native64` (default), `native64asan`, `c64` (`build-win64` under Wine) and `ref` (the frozen reference exe, for visual comparisons). Its slots are in `build-mcp/`.
+The scrap MCP server (`tools/mcp`) launches every build with the `exe` argument: `native64` (default), `native64asan`, `c64` (`build-win64` under Wine) and `ref` (the frozen reference exe, for visual comparisons). Its slots are in `build-mcp/`. There is no `harness` argument: all C builds talk through the test channel, and a C build without it is refused. `ref` has no test channel, so only screenshot, compare, log, key, mouse, wait kind=log or time and quit work for it (wait kind=ready refuses with a message).
 
 ## State on 2026-11-02
 

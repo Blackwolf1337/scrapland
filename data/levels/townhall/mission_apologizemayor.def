@@ -1,0 +1,24 @@
+# The functions of Mission_ApologizeMayor in level townhall (the script levels/townhall/scripts/mission_apologizemayor.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Townhall.c): InitStatus, AfterBrowseNPC, Init, ForbiddenMsg, MayorSpeech, SetTransportMission, ChooseStapler, InitStaplerMission, StaplerDead, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/townhall/mission_apologizemayor.def replaces this file.
+section CreateMayorInit e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Mission_ApologizeMayor.MayorSpeech"
+
+section StaplerSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+call Speech.OnSpch "Mission_KillStaplers_Desktop_InitMsg1" "Mission_KillStaplers_Desktop_InitAns1"
+
+section MayorMessage
+setvar CharAct.onNPCDeath None
+call Scrap.DelSaveVars "CrazyMayor.StaplerDeads"
+call Scrap.SetSaveVar "CrazyMayor" "AskTheTransport"
+call MissionsFuncs.SetMissionTarget "Mayor_Default"
+call SaveGame.MMDesc "Mission_TalkToMayor1_MissionText1" 1

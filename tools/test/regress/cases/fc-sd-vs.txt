@@ -1,0 +1,48 @@
+# Versus (CA): the first super deal started the way the crazy gambler starts it, then every function directly; the
+# scheduler is recorded in the same line (_sd), the remote messages, the score table and the restart are recorders
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('CA', 'SuperDeal_First', 'Versus'))
+!sleep 40
+execfile('fsd.py')
+V = __import__('Versus')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), Scrap.GetSaveVar('SuperDealType'), Scrap.GetSaveVar('CombatDeaths'), Scrap.GetSaveVar('CombatEnemyProfile'), Scrap.GetSaveVar('NumEnemyDeaths'), Scrap.GetSaveVar('NumPlayerDeaths'))
+_sdmod('Versus', ('combatDeaths', 'playerDeaths', 'enemyName', 'combatEnemyType', 'combatEnemyProfile', 'CharLangTrans'))
+_sdhooks()
+_sdent(('Enemy', 'Enemy1'))
+(__import__('SAI').GetStateVehicle('Enemy'), Scrap.GetEntity('Enemy').Model)
+V.GetMenuDescription()
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), __import__('Parking').PlayerShip.Name, Scrap.UsrEntity(0).Name)
+_sd(V.InitStatus, 'Levels/CA')
+(setattr(__import__('Speech'), 'RemoteCom', ['x']), _sd(V.AbortRemoteMessages), __import__('Speech').RemoteCom)
+# the player boards: the crazy gambler's message; the second boarding does nothing; a later round starts after 3 s
+_sd(__import__('Parking').ExecSwitchVehicleMissionCallback)
+(_sdhooks(), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback))
+(Scrap.SetSaveVar('NumPlayerDeaths', '1'), _sd(V.CrazyGamblerStartCombat), Scrap.SetSaveVar('NumPlayerDeaths', '0'))
+_sd(V.CrazyGamblerStartCombat)
+# the start; the enemy invulnerable again and the engine's deaths to a recorder, so the AI fight changes nothing
+(_sd(V.StartCombat), _sdn(__import__('Vehicles').OnDeathCallback), _sdn(__import__('Menu').MissionScorerCall), _sdent(('Enemy',)), setattr(Scrap.GetEntity('Enemy'), 'Invulnerable', 1), setattr(__import__('Vehicles'), 'OnDeathCallback', _sdrec('death')))
+(_sdlist('Enemies'), _sdmod('RacerScorer', ('missionYou', 'missionBad', 'missionLimit')), _sdmod('Versus', ('combatEnemyType',)))
+# the enemy dies (another ship's death does nothing); it comes back marked as the enemy
+_sd(V.OnEnemyDeath, 'Nobody', 'Player0')
+(_sd(V.OnEnemyDeath, 'Enemy', 'Player0'), Scrap.GetSaveVar('NumEnemyDeaths'), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+(_sd(V.RespawnEnemy), _sdent(('Enemy',)), _sdmod('Versus', ('enemyName', 'combatEnemyType', 'combatEnemyProfile')), setattr(Scrap.GetEntity('Enemy'), 'Invulnerable', 1))
+Scrap.GetEntity('Enemy').Del()
+(_sd(V.CreateEnemy, markAsEnemy = 1), _sdent(('Enemy',)), setattr(Scrap.GetEntity('Enemy'), 'Invulnerable', 1))
+Scrap.GetEntity('Enemy').Del()
+(_sd(V.CreateEnemy), _sdent(('Enemy',)))
+# the player's death (his ship) and its respawn; the enemy's message of its win
+(_sd(V.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy'), Scrap.GetSaveVar('NumPlayerDeaths'), _sdent(('Enemy',)), __import__('SAI').GetStateVehicle('Enemy'), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+(_sd(V.RespawnPlayer, __import__('Parking').PlayerShip.Name, (1000.0, 2000.0, 3000.0), (0.0, 1.5, 0.0)), _sdent(('Enemy',)), __import__('SAI').GetStateVehicle('Enemy'), _sdn(__import__('Parking').PlayerShip.Pos))
+_sd(V.EnemyWins, 'SuperDeal_First_RemoteMessage3')
+# the deleted variables of the module and of the save stop like the script
+del V.combatEnemyType
+_sd(V.StartCombat)
+V.combatEnemyType = 'BankDirector'
+(Scrap.DelSaveVars('NumEnemyDeaths'), _sd(V.OnEnemyDeath, 'Enemy', 'Player0'), Scrap.SetSaveVar('NumEnemyDeaths', '1'))
+# the player wins with the message and without; the enemy wins with the message and without
+(Scrap.SetSaveVar('NumEnemyDeaths', '4'), _sd(V.OnEnemyDeath, 'Enemy', 'Player0'), _sdhooks(), Scrap.GetSaveVar('NumEnemyDeaths'), Scrap.GetSaveVar('NumPlayerDeaths'), Scrap.GetSaveVar('PlayerWinsCombat'), Scrap.UsrEntity(0).Invulnerable)
+(Scrap.SetSaveVar('NumEnemyDeaths', '4'), Scrap.SetSaveVar('NumPlayerDeaths', '0'), Scrap.SetSaveVar('CombatFinishPlayerWinsTextCad', ''), _sd(V.OnEnemyDeath, 'Enemy', 'Player0'))
+(Scrap.SetSaveVar('NumEnemyDeaths', '0'), Scrap.SetSaveVar('NumPlayerDeaths', '4'), _sd(V.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy'), _sdhooks(), Scrap.GetSaveVar('NumPlayerDeaths'), Scrap.GetEntity(Scrap.GetCam(0)).Target)
+(Scrap.SetSaveVar('NumEnemyDeaths', '0'), Scrap.SetSaveVar('NumPlayerDeaths', '4'), Scrap.SetSaveVar('CombatFinishPlayerLoosesTextCad', ''), _sd(V.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy'))
+(_sd(V.RestartCombat, 0, 0), Scrap.GetSaveVar('NumEnemyDeaths'), Scrap.GetSaveVar('NumPlayerDeaths'))
+# the one line that differs on purpose: the C functions are builtins
+(str(type(V.Init)), str(type(V.OnEnemyDeath)))

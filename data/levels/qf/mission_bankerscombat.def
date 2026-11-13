@@ -1,0 +1,39 @@
+# The functions of Mission_BankersCombat in level qf (the script levels/qf/scripts/mission_bankerscombat.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/QF.c): CreatePlans, TakePlanPhoto, OnEndOfSuperCrazyDeal, BankersAttackPlayer, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/qf/mission_bankerscombat.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CombatDeaths" "20"
+call Scrap.SetSaveVar "CombatNumEnemies" "5"
+call Scrap.SetSaveVar "CombatEnemyType" "BankDirector"
+call Scrap.SetSaveVar "CombatEnemyProfile" "ArrangeBankersCombatEnemies"
+call Scrap.SetSaveVar "CombatNumFriends" "4"
+call Scrap.SetSaveVar "CombatFriendType" "Police"
+call Scrap.SetSaveVar "CombatFriendProfile" "ArrangeBankersCombatFriends"
+call Scrap.SetSaveVar "CombatStartTextCad" "Mission_GetBankerShipPlans_RemoteMessage1"
+call Scrap.SetSaveVar "CombatFinishPlayerWinsTextCad" ""
+call Scrap.SetSaveVar "CombatFinishPlayerLoosesTextCad" ""
+let executeOnAbort 'import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_ArrangeBankersCombat", "GamblinDen");Scrap.SetSaveVar("Map", "Levels/GamblinDen");SaveGame.QLoad("Levels/GamblinDen")'
+let executeOnVictory 'Scrap.SetSaveVar("GameAct", "2ndMurder");SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_PressMeeting", "Press");Scrap.SetSaveVar("Map", "Levels/Press");SaveGame.QLoad("Levels/Press")'
+call Scrap.SetSaveVar "GameAct" "2ndMurder"
+call SaveGame.QWayPoint
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
+section InitStatus LevelPath
+call Mission_BankersCombat.SetVars
+
+section Init LevelPath
+setvar TeamDeathMatch.KeepPlaying %Mission_BankersCombat.OnEndOfSuperCrazyDeal
+call Scrap.Preload3DObject "Models/Misc/Blueprint/PlanoMBanker1.m3d"
+call Scrap.Preload3DObject "Models/Misc/Blueprint/PlanoSBanker1.m3d"
+
+section AllBankersAgainstPlayer
+call Mission_BankersCombat.BankersAttackPlayer
+call Speech.AddRemoteCom "Mission_GetBankerShipPlans_RemoteMessage7" "BankDirector"
+
+section SetNextMission2
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_PressMeeting" "Press"
+call Scrap.Set "PlayVideo" "Video/Police.avi"
+call Scrap.Achievement 3
+call SaveGame.QLoad "Levels/Press"

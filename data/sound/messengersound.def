@@ -1,0 +1,170 @@
+# messengersound (the sound script sound/messengersound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/messengersound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes loop-msm.wav
+if %MessengerSound.isPC
+	class
+		AddSoundRes loop-msm2.wav
+end
+	AddSoundRes mecanismo-msm.wav
+	AddSoundRes placas-metalmsm.wav
+	AddSoundRes giro1.wav
+	AddSoundRes giro2.wav
+	AddSoundRes giro3.wav
+	AddSoundRes giro4.wav
+	AddSoundRes giro5.wav
+	AddSoundRes talk-msm8.wav
+	AddSoundRes talk-msm9.wav
+	AddSoundRes MessengerShoot.wav
+	AddSoundRes MessengerTakeDataPack.wav
+
+section SetSounds
+let act Relax0
+call Chars.ActSound $char $act 7 giro1 0.030 -6
+call Chars.ActSound $char $act 9 mecanismo-msm 0.012
+call Chars.ActSound $char $act 5 loop-msm2 0.016 -3
+call Chars.ActSound $char $act 63 giro1 0.030 -6
+call Chars.ActSound $char $act 65 giro2 0.030
+call Chars.ActSound $char $act 65 mecanismo-msm 0.012
+call Chars.ActSound $char $act 90 mecanismo-msm 0.012
+call Chars.ActSound $char $act 68 loop-msm2 0.016 -3
+call Chars.ActSound $char $act 120 giro1 0.030 -6
+call Chars.ActSound $char $act 125 giro3 0.030 -3
+call Chars.ActSound $char $act 140 mecanismo-msm 0.012 +7
+call Chars.ActSound $char $act 148 giro4 0.030 -2
+let act Relax1
+call Chars.ActSound $char $act 1 placas-metalmsm 0.024 +10
+call Chars.ActSound $char $act 7 giro5 0.024 +10
+call Chars.ActSound $char $act 10 loop-msm2 0.016 -3
+call Chars.ActSound $char $act 12 placas-metalmsm 0.024 -2
+call Chars.ActSound $char $act 31 placas-metalmsm 0.024 -4
+call Chars.ActSound $char $act 49 placas-metalmsm 0.024 -2
+call Chars.ActSound $char $act 66 placas-metalmsm 0.024 -5
+call Chars.ActSound $char $act 81 placas-metalmsm 0.024 -2
+call Chars.ActSound $char $act 96 placas-metalmsm 0.024 -3
+call Chars.ActSound $char $act 104 giro5 0.028 +10
+call Chars.ActSound $char $act 114 giro5 0.028 +10
+let act WalkInit
+call Chars.ActSound $char $act 1 talk-msm8 0.2
+call Chars.ActSound $char $act 2 placas-metalmsm 0.024 +8
+let act Walk
+call Chars.ActSound $char $act 19 placas-metalmsm 0.016 +8
+call Chars.ActSound $char $act 34 placas-metalmsm 0.016 +10
+let act WalkEnd
+call Chars.ActSound $char $act 54 placas-metalmsm 0.024 +8
+call Chars.ActSound $char $act 64 giro5 0.024 +10
+let act BackInit
+call Chars.ActSound $char $act 1 talk-msm9 0.2
+call Chars.ActSound $char $act 2 placas-metalmsm 0.024 +8
+call Chars.ActSound $char $act 3 mecanismo-msm 0.012 +6
+let act Back
+call Chars.ActSound $char $act 20 placas-metalmsm 0.016 +10
+call Chars.ActSound $char $act 35 placas-metalmsm 0.016 +12
+let act BackEnd
+call Chars.ActSound $char $act 52 mecanismo-msm 0.012 +6
+call Chars.ActSound $char $act 54 placas-metalmsm 0.024 +8
+call Chars.ActSound $char $act 65 giro5 0.014 +10
+let act StrRightInit
+call Chars.ActSound $char $act 1 placas-metalmsm 0.024 +8
+let act StrRight
+call Chars.ActSound $char $act 19 placas-metalmsm 0.016 +8
+call Chars.ActSound $char $act 34 placas-metalmsm 0.016 +10
+let act StrRightEnd
+call Chars.ActSound $char $act 57 placas-metalmsm 0.024 +8
+call Chars.ActSound $char $act 67 giro5 0.028 +10
+let act StrLeftInit
+call Chars.ActSound $char $act 1 placas-metalmsm 0.024 +8
+let act StrLeft
+call Chars.ActSound $char $act 19 placas-metalmsm 0.016 +8
+call Chars.ActSound $char $act 34 placas-metalmsm 0.016 +10
+let act StrLeftEnd
+call Chars.ActSound $char $act 57 placas-metalmsm 0.024 +8
+call Chars.ActSound $char $act 67 giro5 0.028 +10
+let act FlashedInit
+call Chars.ActSound $char $act 1 placas-metalmsm 0.024 +8
+let act Flashed
+let act FlashedEnd
+call Chars.ActSound $char $act 51 placas-metalmsm 0.024 +8
+call Chars.ActSound $char $act 52 mecanismo-msm 0.012 +6
+call Chars.ActSound $char $act 74 giro5 0.028 +10
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+
+section TalkSnd
+call Chars.ActSound $char $talk 3 placas-metalmsm 0.024 -5
+call Chars.ActSound $char $talk 12 placas-metalmsm 0.024 -6
+call Chars.ActSound $char $talk 24 placas-metalmsm 0.024 -4
+call Chars.ActSound $char $talk 42 placas-metalmsm 0.024 -5
+call Chars.ActSound $char $talk 11 giro5 0.028 +10
+call Chars.ActSound $char $talk 23 giro5 0.028 +10
+call Chars.ActSound $char $talk 34 giro5 0.028 +10
+call Chars.ActSound $char $talk 59 giro5 0.028 +10
+
+section Talk0Snd
+call Chars.ActSound $char $talk 1 placas-metalmsm 0.024 -5
+call Chars.ActSound $char $talk 11 giro5 0.028 +10
+call Chars.ActSound $char $talk 12 placas-metalmsm 0.024 -6
+call Chars.ActSound $char $talk 26 placas-metalmsm 0.024 -4
+call Chars.ActSound $char $talk 40 placas-metalmsm 0.024 -5
+call Chars.ActSound $char $talk 49 giro5 0.028 +10
+call Chars.ActSound $char $talk 59 giro5 0.028 +10
+
+section Talk1Snd
+call Chars.ActSound $char $talk 1 placas-metalmsm 0.024 -5
+call Chars.ActSound $char $talk 11 giro5 0.028 +10
+call Chars.ActSound $char $talk 12 placas-metalmsm 0.024 -6
+call Chars.ActSound $char $talk 21 giro5 0.028 +10
+call Chars.ActSound $char $talk 22 placas-metalmsm 0.024 -7
+call Chars.ActSound $char $talk 35 giro5 0.028 +10
+call Chars.ActSound $char $talk 36 placas-metalmsm 0.024 -5
+call Chars.ActSound $char $talk 46 giro5 0.028 +10
+call Chars.ActSound $char $talk 47 placas-metalmsm 0.024 -7
+call Chars.ActSound $char $talk 59 giro5 0.028 +10
+
+section InitLoops
+if %MessengerSound.isPC
+	object $e
+		snd_n 2
+else
+	object $e
+		snd_n 1
+end
+	snd00_name loop-msm
+	snd00_loop 1
+	snd00_pitch0 0.0
+	snd00_vol0 0.009
+	snd00_pitch1 +10.0
+	snd00_vol1 0.04
+if %MessengerSound.isPC
+	object $e
+		snd01_name loop-msm2
+		snd01_loop 1
+		snd01_vol 0.008
+		snd01_pitch -2.0
+end
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+call Scrap.Set MessengerShootSound MessengerShoot
+call Scrap.Set MessengerShootSoundVol 0.2
+call Scrap.Set MessengerTakeDataPackSound MessengerTakeDataPack
+call Scrap.Set MessengerTakeDataPackSoundVol 0.5
+run print "Sounds for $(char) loaded!"

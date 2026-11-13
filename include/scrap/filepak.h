@@ -11,7 +11,7 @@
 #include "scrap/gvar.h"
 #include "scrap/dlist.h"
 #include "scrap/filesys.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 
 #define PACK_MAGIC 0x4b504642		/* "BFPK" */
 #define PACK_VERSION 0
@@ -99,6 +99,7 @@ int cFilePack_Size(cAbstractFile *base);
 /* 1 unless the file list is being recorded */
 int PackLog_Closed(void);
 byte Pack_FileExists(const char *name);	/* in the index of the packs */
+int Pack_ReadFile(const char *name, void *dst, int max);
 /* the pack name (0x40), offset and size of a file in the packs; 0 if not there or while a list is recorded */
 byte Pack_GetFileInfo(const char *name, char *packName, int *offset, int *size);
 int PackLog_Add(const char *name);

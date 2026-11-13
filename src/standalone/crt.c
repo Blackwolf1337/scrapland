@@ -17,6 +17,7 @@
 #include <time.h>
 
 #include "scrap/crt.h"
+#include "scrap/testdet.h"
 #include "scrap/game.h"
 
 /* ---- heap ---- */
@@ -253,6 +254,9 @@ char *crt_getenv(const char *name) {
 static uint32_t crt_randState = 1;
 
 int crt_rand(void) {
+	if (g_TestDetTrace) {
+		TestDet_Trace("rand %p %08x", __builtin_return_address(0), crt_randState);
+	}
 	crt_randState = crt_randState * 214013u + 2531011u;
 	return (int)(crt_randState >> 16 & 0x7fff);
 }

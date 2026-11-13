@@ -1,0 +1,9 @@
+# Bank: Messenger
+__import__('Init')._mod('Messenger', ('MDP','MakeMDP'))
+Scrap.Get('MessengerDataPack')
+__import__('Messenger').DoorInitializator('x')
+setattr(__import__('Init'), 'NT_NodePos_DC_DataPack', (100.0, 200.0, 300.0))
+__import__('Messenger').ObjInitializator(__import__('Init'), 0)
+(__import__('Init')._mod('Messenger', ('MDP','MakeMDP')), __import__('Messenger').MDP and __import__('Messenger').MDP.Pos)
+__import__('Messenger').MakeDataPack()
+(__import__('Init')._mod('Messenger', ('MDP','MakeMDP')), Scrap.Get('MessengerDataPack'), __import__('Messenger').MDP.Name, __import__('Messenger').MDP.Radius)

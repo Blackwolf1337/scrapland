@@ -5,11 +5,15 @@
  * and the mouse motion and the pads to the input state the devices of the game read. The hotkeys of the accelerator table of the original stay: Shift+Esc quits, F12 starts the tiled screenshot,
  * Ctrl+Shift+Alt+Enter switches fullscreen.
  */
+#ifndef _WIN32
+#define _GNU_SOURCE	/* pthread_getattr_np */
+#endif
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
 #endif
@@ -26,6 +30,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 #define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
 static cGVar GVar_InactiveBackgroundApp;
@@ -505,6 +510,9 @@ static void Plat_Key(const SDL_KeyboardEvent *k) {
 }
 
 static void Plat_Event(const SDL_Event *ev, byte *quit) {
+	if (g_TestDetTrace) {
+		TestDet_Trace("event %x", (unsigned)ev->type);
+	}
 	switch (ev->type) {
 	case SDL_EVENT_QUIT:
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
@@ -548,8 +556,12 @@ static void Plat_Event(const SDL_Event *ev, byte *quit) {
 		Plat_PadRemoved(ev->gdevice.which);
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
-		plat.mouseX += ev->motion.xrel;
-		plat.mouseY += ev->motion.yrel;
+		/* the deterministic test mode: the motion the window gets while it comes up (the pointer enters it, in one
+		 * or two events, before or after the focus) is no input of the test: none counts before the clock starts */
+		if (!TestDet_On() || TestDet_Frame()) {
+			plat.mouseX += ev->motion.xrel;
+			plat.mouseY += ev->motion.yrel;
+		}
 		if (g_Engine && g_Engine->active && g_Engine->ready && g_Engine->device) {
 			Rd_DevSetCursorPosition(g_Engine->device, (int)ev->motion.x, (int)ev->motion.y, 0);
 		}
@@ -720,6 +732,33 @@ uint64_t Plat_VirtualMemoryUsed(void) {
 #endif
 }
 
+byte Plat_StackBounds(uintptr_t *low, uintptr_t *high) {
+#ifdef _WIN32
+	MEMORY_BASIC_INFORMATION mbi = { 0 };
+	if (!VirtualQuery(&mbi, &mbi, sizeof(mbi))) {
+		return 0;
+	}
+	*low = (uintptr_t)mbi.AllocationBase;
+	*high = (uintptr_t)((NT_TIB *)NtCurrentTeb())->StackBase;
+	return 1;
+#else
+	pthread_attr_t attr;
+	void *addr;
+	size_t size;
+	if (pthread_getattr_np(pthread_self(), &attr) != 0) {
+		return 0;
+	}
+	int err = pthread_attr_getstack(&attr, &addr, &size);
+	pthread_attr_destroy(&attr);
+	if (err != 0) {
+		return 0;
+	}
+	*low = (uintptr_t)addr;
+	*high = (uintptr_t)addr + size;
+	return 1;
+#endif
+}
+
 uint32_t Plat_LastError(void) {
 #ifdef _WIN32
 	return GetLastError();
@@ -753,14 +792,22 @@ void Plat_DebugBreak(void) {
 
 /* ---- the timers ---- */
 
+/* in the deterministic test mode both clocks are the clock of the mode (scrap/testdet.h) */
 uint32_t Plat_Ticks(void) {
+	if (TestDet_On()) {
+		return (uint32_t)(TestDet_Counter() / 10000);
+	}
+	return (uint32_t)SDL_GetTicks();
+}
+
+uint32_t Plat_RealTicks(void) {
 	return (uint32_t)SDL_GetTicks();
 }
 
 /* the counter in 100 ns ticks (10 MHz) on every system, as QueryPerformanceCounter on Windows: the game's integer
  * time math was made for that frequency (SDL's counter on Linux counts nanoseconds) */
 int Plat_Counter(int64_t *out) {
-	*out = (int64_t)(SDL_GetTicksNS() / 100);
+	*out = TestDet_On() ? TestDet_Counter() : (int64_t)(SDL_GetTicksNS() / 100);
 	return 1;
 }
 

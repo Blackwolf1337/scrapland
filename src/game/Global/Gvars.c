@@ -136,6 +136,75 @@ cGVar *GVar_Find(const char *name) {
 	return NULL;
 }
 
+static cGVar *GVar_Named(const char *name) {
+	cGVar *v = GVar_Find(name);
+	if (!v) {
+		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
+	}
+	return v;
+}
+
+double GVar_GetNum(const char *name, byte def) {
+	cGVar *v = GVar_Named(name);
+	if (!v) {
+		return 0.0;
+	}
+	if (v->base.type == GVAR_FLOAT) {
+		return def ? v->def.f : v->value.f;
+	}
+	if (v->base.type == GVAR_INT) {
+		return def ? v->def.i : v->value.i;
+	}
+	return 0.0;
+}
+
+const char *GVar_GetStr(const char *name) {
+	cGVar *v = GVar_Named(name);
+	return v && v->base.type == GVAR_STRING && v->value.s ? v->value.s : "";
+}
+
+int GVar_SetNum(const char *name, double d) {
+	cGVar *v = GVar_Named(name);
+	if (!v) {
+		return -1;
+	}
+	if (v->base.type != GVAR_INT && v->base.type != GVAR_FLOAT) {
+		Con_Errorf("ERROR: '%s' global variable must be integer or float\n", name);
+		return -1;
+	}
+	if (v->base.flags & GVAR_READONLY) {
+		Con_Errorf("ERROR: '%s' write only\n", name);
+		return 0;
+	}
+	if (v->base.type == GVAR_INT) {
+		v->value.i = (int)d;
+	} else {
+		v->value.f = (float)d;
+	}
+	return 1;
+}
+
+int GVar_SetStr(const char *name, const char *s) {
+	cGVar *v = GVar_Named(name);
+	if (!v) {
+		return -1;
+	}
+	if (v->base.type != GVAR_STRING && v->base.type != GVAR_SCRIPT_FUNCTION) {
+		Con_Errorf("ERROR: '%s' global variable must be string\n", name);
+		return -1;
+	}
+	if (v->base.flags & GVAR_READONLY) {
+		Con_Errorf("ERROR: '%s' write only\n", name);
+		return 0;
+	}
+	if (v->base.type == GVAR_STRING) {
+		cString_Set(&v->value.s, s);
+	} else {
+		cPy_Function_SetFunc(GVar_Function(v), s);
+	}
+	return 1;
+}
+
 /* the name of the only variable starting with prefix (console completion), else NULL */
 const char *GVar_Complete(const char *prefix) {
 	cGVar *found = NULL;

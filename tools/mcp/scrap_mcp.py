@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """scrap-mcp: an MCP server that runs ScrapC.exe (and the frozen reference exe) of this checkout without a window,
-so an AI assistant can test it: start named games, run Python in them, wait for the menu, a log line or time, take
-screenshots (cropped, zoomed, side by side), read the logs, trace the render calls of one frame and list the Vulkan
-validation errors that are ours.
+so an AI assistant can test it: start named games, run test channel commands in them, wait for the menu, a log line
+or time, take screenshots (cropped, zoomed, side by side), read the logs, trace the render calls of one frame and list
+the Vulkan validation errors that are ours.
 
 Each game runs in a slot of its own (build-mcp/slot-<name>, made by tools/test/mkgame.sh --into: the game data
 linked, Bin, the configs and the Wine prefix copied), through tools/test/wine.sh (gamescope headless, muted). The
-game side is tools/mcp/mcpgame.py, started with -PythonExecute. The server speaks the Model Context Protocol over
-stdio (JSON-RPC 2.0, one message a line) and needs only the Python standard library; Pillow does crops, zoom and
-comparisons.
+game side is the test channel of the game (src/game/Global/TestChannel.c, tools/test/channel.py: no Python of the
+tool runs in the game). The frozen reference exe (exe=ref) has no test channel (its harness, mcpgame.py through
+-PythonExecute, went with the interpreter at tag interp-final): it runs for the tools that need no game side
+(screenshots, compare, logs, key and mouse, wait kind=log or time). The server speaks the Model Context Protocol over stdio (JSON-RPC 2.0, one message a line) and needs only the Python standard
+library; Pillow does crops, zoom and comparisons.
 """
 import ast
 import base64
@@ -24,7 +26,10 @@ import subprocess
 import sys
 import time
 
-VERSION = '0.2.0'
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test'))
+import channel  # noqa: E402
+
+VERSION = '0.4.0'
 PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05')
 ROOT = os.environ.get('SCRAP_MCP_ROOT') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 REF_EXE = os.path.join(ROOT, 'build-ref-noexact', 'ScrapC.exe')
@@ -34,8 +39,8 @@ INSTRUCTIONS = (
     'Runs ScrapC of the Scrapland checkout without a window (gamescope headless, muted, on the AMD 610M). '
     'launch starts a named game (exe native64 = build-linux64/ScrapC by default, native64asan, c64 = the Windows '
     'build under Wine, ref = the frozen reference; map= loads a level), wait kind=ready waits until the menu or the '
-    'level runs. python runs code in the game (Scrap and the other script modules). menu_dump lists the items of the '
-    'open menu, open_menu, click, key and mouse drive it. screenshot and compare show the window, log reads log.html '
+    'level runs. cmd runs test channel commands in the game (values, calls with literal arguments, engine and entity '
+    'variables, module dumps, console lines; not in ref, which has no test channel). menu_dump lists the items of the open menu, open_menu, click, key and mouse drive it. screenshot and compare show the window, log reads log.html '
     'or scrapdecomp.log, trace and vkcheck need launch with trace= or validation=true. quit ends a game. Build '
     'first; launch copies the build into the slot.')
 
@@ -61,6 +66,7 @@ def sockets(since=0.0):
 WIN_BUILDS = {'c64': 'build-win64'}
 NATIVE_BUILDS = {'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
 DEFAULT_NATIVE_BUILDS = dict(NATIVE_BUILDS)
+DEFAULT_WIN_BUILDS = dict(WIN_BUILDS)
 
 
 class Game:
@@ -105,8 +111,7 @@ class Game:
                     shutil.copy2(p, dst)
         with open(os.path.join(binDir, 'scrapdecomp.ini'), 'w') as f:
             f.write('[general]\n')
-        shutil.copy2(os.path.join(ROOT, 'tools', 'mcp', 'mcpgame.py'), self.game)
-        for n in ('mcp_cmd.txt', 'mcp_reply.txt', 'log.html'):
+        for n in ('test_cmd.txt', 'test_reply.txt', 'log.html'):
             p = os.path.join(self.game, n)
             if os.path.exists(p):
                 os.remove(p)
@@ -133,8 +138,7 @@ class Game:
                         shutil.copy2(os.path.join(d, n), binDir)
         with open(os.path.join(binDir, 'scrapdecomp.ini'), 'w') as f:
             f.write('[general]\n')
-        shutil.copy2(os.path.join(ROOT, 'tools', 'mcp', 'mcpgame.py'), self.game)
-        for n in ('mcp_cmd.txt', 'mcp_reply.txt', 'log.html'):
+        for n in ('test_cmd.txt', 'test_reply.txt', 'log.html'):
             p = os.path.join(self.game, n)
             if os.path.exists(p):
                 os.remove(p)
@@ -146,6 +150,8 @@ class Game:
         if exe != 'ref' and exe not in WIN_BUILDS and exe not in NATIVE_BUILDS:
             raise RuntimeError("exe is one of: ref, %s" % ', '.join(list(WIN_BUILDS) + list(NATIVE_BUILDS)))
         self.prepare(exe)
+        if exe != 'ref' and not self.has_channel(exe):
+            raise RuntimeError('the game binary of %s has no test channel (an old build): build it again' % exe)
         self.opts = dict(a, exe=exe)
         env = dict(os.environ)
         env.update({'SCRAP_GAME_DIR': self.game, 'SCRAP_PREFIX': self.prefix,
@@ -158,14 +164,17 @@ class Game:
         if a.get('trace'):
             env['SCRAP_VK_TRACE'] = str(a['trace'])
         env.update({k: str(v) for k, v in (a.get('env') or {}).items()})
-        script = 'mcpgame.py'
         args = [] if exe in NATIVE_BUILDS else ['ScrapC.exe' if exe in WIN_BUILDS else 'ScrapRef.exe']
         args.append('-fullscreen:0')
         if a.get('map'):
             m = a['map']
             args.append('-imap:' + (m if '/' in m else 'Levels/' + m))
         args += list(a.get('args') or [])
-        args.append('-PythonExecute:execfile(%s)' % '+'.join('chr(%d)' % ord(c) for c in script))
+        if a.get('deterministic'):
+            env['SCRAP_TEST_DETERMINISTIC'] = '1'
+        if exe != 'ref':
+            # the regress runner asks for 'step' (the deterministic test mode with the clock held between commands)
+            env['SCRAP_TEST_CHANNEL'] = str((a.get('env') or {}).get('SCRAP_TEST_CHANNEL', '1'))
         before = time.time() - 0.5
         runner = 'native.sh' if exe in NATIVE_BUILDS else 'wine.sh'
         if exe in NATIVE_BUILDS:
@@ -257,28 +266,30 @@ class Game:
         self.socket = None
         return 'game %s stopped (exit code %s)' % (self.name, code)
 
-    def python(self, code, timeout=10.0):
+    def has_channel(self, exe):
+        """whether the prepared game binary has the test channel (builds from before it have none)"""
+        name = 'ScrapC' if exe in NATIVE_BUILDS else 'ScrapC.exe'
+        try:
+            with open(os.path.join(self.game, 'Bin', name), 'rb') as f:
+                return b'test_cmd.txt' in f.read()
+        except OSError:
+            return False
+
+    def channel(self):
+        """whether the game has the test channel (all C builds; not the reference exe)"""
+        return self.opts.get('exe', 'native64') != 'ref'
+
+    def cmd(self, lines, timeout=10.0):
+        """test channel commands (one or more lines); the answers"""
         if not self.running():
             raise RuntimeError('game %s does not run' % self.name)
-        self.seq += 1
-        reply = os.path.join(self.game, 'mcp_reply.txt')
-        tmp = os.path.join(self.game, 'mcp_cmd.tmp')
-        with open(tmp, 'w', newline='\r\n') as f:
-            f.write('%d\n%s\n' % (self.seq, code))
-        os.replace(tmp, os.path.join(self.game, 'mcp_cmd.txt'))
-        end = time.time() + timeout
-        while time.time() < end and self.running():
-            try:
-                with open(reply, 'r', errors='replace') as f:
-                    data = f.read().replace('\r\n', '\n')
-            except OSError:
-                data = ''
-            head, _, rest = data.partition('\n')
-            if head.strip() == str(self.seq) and rest.endswith('.end\n'):
-                return rest[:-len('.end\n')].rstrip('\n')
-            time.sleep(0.1)
-        raise RuntimeError('no answer from game %s in %.0f s (the menu or level may not run yet, or the world timer '
-                           'is stopped)' % (self.name, timeout))
+        if not self.channel():
+            raise RuntimeError('game %s is the reference exe, which has no test channel' % self.name)
+        try:
+            return channel.send(self.game, lines, timeout=timeout, alive=self.running)
+        except channel.NoAnswer:
+            raise RuntimeError('no answer from game %s in %.0f s (the menu or level may not run yet, or a level '
+                               'loads)' % (self.name, timeout))
 
     def logfile(self, which):
         return os.path.join(self.game, 'log.html') if which == 'game' else os.path.join(self.game, 'Bin', 'scrapdecomp.log')
@@ -407,18 +418,21 @@ TOOLS = [
          'exe': {'type': 'string', 'enum': ['native64', 'native64asan', 'c64', 'ref'], 'description': 'native64: build-linux64/ScrapC '
                  '(default), native64asan: build-linux64-asan/ScrapC (AddressSanitizer, its report in the log, '
                  'which=wine), c64: build-win64/ScrapC.exe under Wine, ref: the frozen reference '
-                 'build-ref-noexact/ScrapC.exe (i686, Direct3D 8 through Wine)'},
+                 'build-ref-noexact/ScrapC.exe (i686, Direct3D 8 through Wine; no test channel: screenshots, logs, '
+                 'key and mouse only)'},
          'map': {'type': 'string', 'description': 'a level for -imap: (FZ or Levels/FZ)'},
          'args': {'type': 'array', 'items': {'type': 'string'}, 'description': 'more arguments of the game'},
          'env': {'type': 'object', 'description': 'more environment variables (SCRAP_VK_DEBUG, SCRAP_RD_DUMP, ...)'},
          'validation': {'type': 'boolean', 'description': 'the Vulkan validation layer on (see vkcheck)'},
+         'deterministic': {'type': 'boolean', 'description': 'SCRAP_TEST_DETERMINISTIC=1: fixed random seed, a clock '
+                           'of 60 fixed steps a second and the sound mixed by it, so a run repeats (not ref)'},
          'trace': {'type': 'number', 'description': 'SCRAP_VK_TRACE: the render calls of the first frame this many '
                    'seconds after the device go into scrapdecomp.log (see trace)'},
          'size': {'type': 'string', 'description': 'the display of gamescope, default 1280x720'},
          'timeout': {'type': 'number', 'description': 'seconds until the game is killed, default 3600'}})},
     {'name': 'quit', 'description': 'End a game (all of them with name=all).', 'inputSchema': schema({'name': NAME})},
     {'name': 'status', 'description': 'The games and whether they run.', 'inputSchema': schema()},
-    {'name': 'wait', 'description': 'Wait until the game answers Python (kind=ready: the menu or the level runs), a '
+    {'name': 'wait', 'description': 'Wait until the game answers (kind=ready: the menu or the level runs), a '
      'log line matches (kind=log), or for seconds (kind=time).', 'inputSchema': schema({
          'name': NAME, 'kind': {'type': 'string', 'enum': ['ready', 'log', 'time']},
          'pattern': {'type': 'string', 'description': 'regex for kind=log'},
@@ -427,10 +441,14 @@ TOOLS = [
          'seconds': {'type': 'number', 'description': 'kind=time'},
          'timeout': {'type': 'number', 'description': 'default 120'},
          'screenshot': {'type': 'boolean', 'description': 'a screenshot after the wait'}}, ['kind'])},
-    {'name': 'python', 'description': 'Run Python 1.5.2 in the game (modules Scrap, SAI, SVec, ...). An expression gives '
-     'its repr; statements give the repr of the global result, or ok.', 'inputSchema': schema({
-         'name': NAME, 'code': {'type': 'string'}, 'timeout': {'type': 'number', 'description': 'default 10'},
-         'screenshot': {'type': 'boolean'}}, ['code'])},
+    {'name': 'cmd', 'description': 'Test channel commands in the game (no Python), one a line: an expression gives its '
+     'repr (literals, names, Module.attr, calls with literal or nested arguments and keywords, x[i], x[a:b], '
+     '"is None"); "target = expr" sets a module, entity or item attribute; do <..> (no answer); get <var> ...; '
+     'ent <entity> <var> ...; ents <list> [x y z r]; dump [module ...]; menu [player]; click <item> [player]; '
+     'con <console line>; print <expr>; recorder <Module.attr> <list> [<literal> | raise <Exc> <text>]; '
+     'check <name>\\t<expr>. Errors answer "error: <type>: <value>".', 'inputSchema': schema({
+         'name': NAME, 'lines': {'type': 'string', 'description': 'the commands, one a line'},
+         'timeout': {'type': 'number', 'description': 'default 10'}, 'screenshot': {'type': 'boolean'}}, ['lines'])},
     {'name': 'screenshot', 'description': 'The window of the game (gamescope).', 'inputSchema': schema({
         'name': NAME, 'crop': {'type': 'array', 'items': {'type': 'number'}, 'description': 'x, y, w, h'},
         'zoom': {'type': 'number'}})},
@@ -471,9 +489,9 @@ TOOLS = [
          'button': {'type': 'integer', 'description': '1 left, 2 middle, 3 right'},
          'hold': {'type': 'number', 'description': 'seconds the button is held, default 0.08'},
          'screenshot': {'type': 'boolean'}})},
-    {'name': 'configure', 'description': 'Point native64 or native64asan at another build folder for this server '
-     'process only (e.g. a worktree), or back to the default; applies to the next launch.', 'inputSchema': schema({
-         'exe': {'type': 'string', 'enum': ['native64', 'native64asan']},
+    {'name': 'configure', 'description': 'Point native64, native64asan or c64 at another build folder for this '
+     'server process only (e.g. a worktree), or back to the default; applies to the next launch.', 'inputSchema': schema({
+         'exe': {'type': 'string', 'enum': ['native64', 'native64asan', 'c64']},
          'build': {'type': 'string', 'description': 'build folder, absolute or relative to the repo; empty: default'}},
          ['exe'])},
 ]
@@ -485,26 +503,13 @@ MENU_VARS = ('Text', 'X', 'Y', 'W', 'H', 'Visible', 'Alpha', 'Red', 'Green', 'Bl
              'Right')
 
 
-def py_str(s):
-    """A Python 1.5.2 string literal of s (repr of ASCII text is the same in both)."""
-    return repr(str(s))
-
-
 def menu_items(g, player):
-    code = ('import SScorer\n'
-            'r = []\n'
-            'items = SScorer.Items(%d)\n'
-            'if items is None:\n\titems = []\n'
-            'for n in items:\n'
-            '\trow = [n]\n'
-            '\tfor v in %r:\n'
-            '\t\trow.append(SScorer.Get(%d, n, v))\n'
-            '\tr.append(row)\n'
-            'result = (SScorer.GetActual(%d), r)\n') % (player, MENU_VARS, player, player)
-    out = g.python(code, timeout=15)
+    """(cursor item, rows of the name and the MENU_VARS values) of the scorer items of a player"""
+    out = g.cmd('menu %d' % player, timeout=15)
     if out.startswith('error'):
         raise RuntimeError(out)
-    return ast.literal_eval(out)
+    current, rows = ast.literal_eval(out)
+    return current, [list(r) for r in rows]
 
 
 def fmt_num(v):
@@ -536,18 +541,18 @@ def menu_dump(g, player, rx):
 
 
 def menu_click(g, player, item):
-    code = ('import SScorer\n'
-            'f = SScorer.Get(%d, %s, "OnAccept")\n'
-            'if SScorer.Accept(%d, %s):\n\tresult = "called " + f\n'
-            'else:\n\tresult = "the item has no OnAccept"\n') % (player, py_str(item), player, py_str(item))
-    return g.python(code, timeout=15)
+    if not re.fullmatch(r'\S+', item):
+        raise RuntimeError('an item name has no blanks')
+    out = g.cmd('click %s %d' % (item, player), timeout=15)
+    # the repr, as the old python harness answered
+    return out if out.startswith('error') else repr(out)
 
 
 def menu_open(g, player, menu):
     if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+', menu):
         raise RuntimeError('menu is module.function, e.g. PCMenu.VideoMenu')
-    module = menu.rsplit('.', 1)[0]
-    return g.python('import %s\n%s(%d, "")\nresult = "opened %s"' % (module, menu, player, menu), timeout=15)
+    out = g.cmd('do %s(%d, "")' % (menu, player), timeout=15)
+    return out or repr('opened %s' % menu)
 
 
 # ---- real input (XTEST) into the X display of the game's gamescope
@@ -687,7 +692,7 @@ def call(name, a):
         return [text(game_of(a).stop())]
     if name == 'status':
         rows = ['%s: %s, %s%s' % (n, g.opts.get('exe', 'native64'), 'runs' if g.running() else 'ended',
-                                  ', map ' + g.opts['map'] if g.opts.get('map') else '') for n, g in GAMES.items()]
+                                      ', map ' + g.opts['map'] if g.opts.get('map') else '') for n, g in GAMES.items()]
         return [text('\n'.join(rows) or 'no game')]
     if name == 'wait':
         g = game_of(a)
@@ -704,16 +709,19 @@ def call(name, a):
                     return after_shot(g, a, 'after %.1f s: %s' % (time.time() - start, lines[-1].strip()))
                 time.sleep(0.5)
             raise RuntimeError('no matching log line in %.0f s%s' % (timeout, '' if g.running() else ' (the game ended)'))
+        if not g.channel():
+            raise RuntimeError('game %s is the reference exe, which has no test channel: use kind=log or kind=time'
+                               % g.name)
         while time.time() - start < timeout and g.running():
             try:
-                level = g.python('Scrap.GetLevelPath()', timeout=2)
+                level = g.cmd('Scrap.GetLevelPath()', timeout=2)
                 return after_shot(g, a, 'game %s runs after %.1f s, level %s' % (g.name, time.time() - start, level))
             except RuntimeError:
                 pass
         raise RuntimeError('game %s did not answer in %.0f s%s' % (g.name, timeout, '' if g.running() else ' (it ended)'))
-    if name == 'python':
+    if name == 'cmd':
         g = game_of(a)
-        return after_shot(g, a, g.python(a['code'], float(a.get('timeout', 10))))
+        return after_shot(g, a, g.cmd(a['lines'], float(a.get('timeout', 10))))
     if name == 'screenshot':
         g = game_of(a)
         return [image_content(g.screenshot(), crop=a.get('crop'), zoom=float(a.get('zoom', 1.0)))]
@@ -798,11 +806,13 @@ def call(name, a):
         return after_shot(g, a, msg)
     if name == 'configure':
         exe = a['exe']
-        build = a.get('build') or DEFAULT_NATIVE_BUILDS[exe]
+        builds, defaults, binary = (WIN_BUILDS, DEFAULT_WIN_BUILDS, 'ScrapC.exe') if exe in WIN_BUILDS else \
+            (NATIVE_BUILDS, DEFAULT_NATIVE_BUILDS, 'ScrapC')
+        build = a.get('build') or defaults[exe]
         path = os.path.join(ROOT, build)
-        if not os.path.isfile(os.path.join(path, 'ScrapC')):
-            raise RuntimeError('%s has no ScrapC (build it first)' % path)
-        NATIVE_BUILDS[exe] = build
+        if not os.path.isfile(os.path.join(path, binary)):
+            raise RuntimeError('%s has no %s (build it first)' % (path, binary))
+        builds[exe] = build
         return [text('%s now uses %s (next launch)' % (exe, path))]
     raise RuntimeError('unknown tool %s' % name)
 

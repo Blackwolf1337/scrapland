@@ -1,0 +1,242 @@
+# The metro map (Metro.OnUse and CreateStation of missions/metro.py): the stations on the city map, the station of
+# the main mission and the one the player is at. The format is described in src/game/Script/Script.c. A pack in
+# mods/ with scrapc/menus/metro.def replaces this file. The C runs the station sections for each station of its
+# table ($x, $y the centre, $name, $sprite), then the section menu ($back: Menu.BackButtonYStart).
+
+# the circles around the station of the player ($x, $y)
+style usrhere
+	Discardable 1
+	HighRes 1
+	Highlight 1
+	BlendingMode 2
+	IsMultiSprite 1
+	File 2D/Metro/Metro.alpha.tga
+	SpriteIndex 19
+	PivotX 0.5
+	PivotY 0.5
+	X $x
+	Y $y
+	Red 128
+	Green 128
+	Blue 48
+	Alpha 0
+	Visible 1
+
+# ---- a station: mission (when it is the main mission's), station, then one of here, cantgo (outdoors without a
+# character that can drive) or go ($mission), then usrhere when the player is here ----
+
+section mission
+item MMissionGlow Sprite
+	Discardable 1
+	HighRes 1
+	Highlight 1
+	IsMultiSprite 1
+	BlendingMode 2
+	File 2D/Metro/Metro.alpha.tga
+	SpriteIndex 12
+	X $x-21
+	Y $y-66
+	JumpFX 10
+	Red 255
+	Green 255
+	Blue 255
+	OnRender "!ScorerSpriteFlash"
+item MMission Sprite
+	Discardable 1
+	HighRes 1
+	Highlight 1
+	IsMultiSprite 1
+	File 2D/Metro/Metro.alpha.tga
+	SpriteIndex 11
+	X $x-21
+	Y $y-66
+	JumpFX 10
+
+section station
+item Station_$(name) Button
+	Discardable 1
+	HighRes 1
+	HighLight 1
+	HighLightBlendingMode 2
+	IsMultiSprite 1
+	File 2D/Metro/Metro.alpha.tga
+	OnGainFocus Metro.ShowHint
+	OnLooseFocus Metro.HideHint
+	SpriteIndex $sprite
+	FocusSpriteIndex 19
+	Complex 0
+	X $x-21
+	Y $y-21
+	W 42
+	H 42
+	MaxHintLineWidth 500
+
+section here
+default Station_$(name)
+set Station_$(name) OnAccept Menu.BackToGame
+set Station_$(name) Hint "{Station_URhere}"
+
+section cantgo
+item Station_$(name) Button
+	Hint "{Station_CantGo}"
+	ScaleSmoothWidth 1.1
+	ScaleSmoothHeight 1.1
+	FocusSpriteIndex 19
+	Red 128
+	Green 128
+	Blue 128
+	Alpha 192
+	OnAccept Metro.WrongOpt
+
+section go
+item Station_$(name) Button
+	OnAccept Metro.UseMetro
+if $mission
+	Hint "{Station_MMPoint}"
+else
+	Hint "{Station_ClickMe}"
+end
+
+# the first circle draws the effect
+section usrhere
+item UsrHere0 Sprite usrhere
+	OnRender "!ScorerMetroUsrHere"
+item UsrHere1 Sprite usrhere
+item UsrHere2 Sprite usrhere
+item UsrHere3 Sprite usrhere
+
+# ---- the rest of the menu, after the stations ----
+
+section menu
+item MetroExit Text
+	Font ScrapBig
+	Text "{Menu_Back}"
+	X 320
+	Y $back
+	CentralText 1
+	OnAccept Menu.BackToGame
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+item MetroLogo Sprite
+	Discardable 1
+	HighRes 1
+	IsMultiSprite 1
+	File 2D/Metro/MetroLogo.alpha.tga
+	X 320
+	Y 45
+	PivotX 0.5
+	PivotY 0.5
+	SpriteIndex 1
+item MetroLogoShadow Sprite
+	Discardable 1
+	HighRes 1
+	IsMultiSprite 1
+	File 2D/Metro/MetroLogo.alpha.tga
+	X 322
+	Y 48
+	PivotX 0.5
+	PivotY 0.5
+	Red 0
+	Green 0
+	Blue 0
+	Alpha 128
+	SpriteIndex 1
+item CityMap Sprite
+	Discardable 1
+	File 2D/Metro/MetroMap.alpha.tga
+	X 62
+	Y 46
+	ScaleX 512
+	ScaleY 256
+	Unit 1
+	Alpha 255
+	Red 255
+	Green 255
+	Blue 255
+# the tab of the map
+item TabMetroMap Tab
+call Menu.SetTabDefaults $id TabMetroMap
+	X 52
+	Y 44
+	SizeX 536
+	SizeY 259.0
+	TabInit 0
+	TabEnd 0
+	TabMax 0
+	SizeTabQuad 0
+	Type 0
+	Alpha 128
+	Red 37
+	Green 119
+	Blue 255
+# the hint and the name of the station
+item Hint Hint
+	Font Horatio
+	Effect Shadow
+	Align Center
+	X 320
+	Y 374
+	Red 251
+	Green 241
+	Blue 174
+	Visible 1
+item StationName Text
+	Font Horatio
+	Effect Shadow
+	Align Center
+	X 320
+	Y 340
+	Red 251
+	Green 241
+	Blue 174
+	Visible 1
+# the tab of the texts
+item TabMetroDesc Tab
+call Menu.SetTabDefaults $id TabMetroDesc
+	X 52
+	Y 317.0
+	SizeX 536
+	SizeY 84
+	TabInit 0
+	TabEnd 0
+	TabMax 0
+	SizeTabQuad 0
+	Type 0
+	Alpha 128
+	Red 255
+	Green 255
+	Blue 64
+# the background tab (TAB_MISSION)
+item TabMetroBackground Tab
+call Menu.SetTabDefaults $id TabMetroBackground
+	X 45
+	Y 37
+	SizeX 550
+	SizeY 406
+	TabInit 0
+	TabEnd 0
+	TabMax 0
+	SizeTabQuad 0
+	Type 2
+	Alpha 32
+	Red 140
+	Green 194
+	Blue 240
+lr Station_Commercial Station_Temple
+lr Station_Temple Station_Bank
+lr Station_TownHall Station_Police
+lr Station_Police Station_Outskirts
+lr Station_DownTown Station_Press
+lr Station_Press Station_Scrapyard
+ud Station_Commercial Station_TownHall
+ud Station_TownHall Station_DownTown
+ud Station_Temple Station_Press
+ud Station_Bank Station_Outskirts
+ud Station_Outskirts Station_Scrapyard
+ud Station_DownTown MetroExit
+ud Station_Scrapyard MetroExit
+ud Station_Press MetroExit
+default MetroExit
+call Menu.DrawCircuitMenu $id

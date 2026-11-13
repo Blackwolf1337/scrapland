@@ -1,0 +1,56 @@
+# The functions of MapSnd in level fz (the script levels/fz/scripts/mapsnd.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "light1.wav"
+end
+call SSound.LoadSound "tunel334.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "humo.wav"
+	call SSound.LoadSound "radar1.wav"
+	call SSound.LoadSound "radar5.wav"
+	call SSound.LoadSound "humo.wav"
+end
+
+section SndElements Name x y z angx angy
+setvar MapSnd.cntr %MapSnd.cntr+1
+if $Name == "FZLampara"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "light1" 0.1 Doppler=0.0
+end
+elif $Name == "FZAcelerador"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "tunel334" 0.3 Doppler=0.3
+elif $Name == "FZTunel"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "tunel334" 0.3 Doppler=0.3
+elif $Name == "FZSonda"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "humo" 0.08 Doppler=0.0
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "I0$(Name)$(_cntr)" ($x,$y,$z) "radar1" 4 10 0.01 0 Doppler=0.0
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "I1$(Name)$(_cntr)" ($x,$y,$z) "radar5" 1 15 0.01 0 Doppler=0.0
+end
+elif $Name == "FZSondaTipo0"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "humo" 0.08 Doppler=0.0
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "I0$(Name)$(_cntr)" ($x,$y,$z) "radar1" 4 10 0.01 0 Doppler=0.0
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "I1$(Name)$(_cntr)" ($x,$y,$z) "radar5" 1 15 0.01 0 Doppler=0.0
+end
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

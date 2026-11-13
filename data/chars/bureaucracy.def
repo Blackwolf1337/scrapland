@@ -1,0 +1,46 @@
+# Bureaucracy (the script chars/bureaucracy.py of the game): the action class of a piece of office furniture, made
+# once per class by Bureaucracy.CreateBureaucracyClass (src/game/Script/Bureaucracy.c). The format is described in
+# src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bureaucracy.def replaces this file. The C creates the
+# class Bureaucracy$(cls) and gives $cls (the middle part of the dummy name, DM_DesktopFunctionary_01) and $file (the
+# model folder, Bureaucracy.BureaucracyTableFile; the Press sets DesktopFunctionaryPress).
+
+section Class
+class Bureaucracy$(cls)
+	ModelFilePath Models/Misc/$(file)/$(file).m3d
+	PretransformChan 1
+action Loop
+	AnmFilePath Models/Misc/$(file)/Anm/Loop.M3D
+	InterpTime 0
+	isLoop 1
+# the desk of the functionary: the seat goes up and down, the second channel opens and closes the desk
+if $cls == DesktopFunctionary
+	action Up
+		AnmFilePath Models/Misc/$(file)/Anm/Up.M3D
+		isLoop 0
+	action Down
+		AnmFilePath Models/Misc/$(file)/Anm/Down.M3D
+		isLoop 0
+	action LoopUp
+		AnmFilePath Models/Misc/$(file)/Anm/LoopUp.M3D
+		isLoop 1
+	action Closed
+		AnmFilePath Models/Misc/$(file)/Anm/Closed.M3D
+		isLoop 1
+		Chanel 1
+	action Opened
+		AnmFilePath Models/Misc/$(file)/Anm/Opened.M3D
+		isLoop 1
+		Chanel 1
+	action Close
+		AnmFilePath Models/Misc/$(file)/Anm/Close.M3D
+		isLoop 0
+		Chanel 1
+	event &AnmTotalTime Closed !AnmSetAction
+	action Open
+		AnmFilePath Models/Misc/$(file)/Anm/Open.M3D
+		isLoop 0
+		Chanel 1
+	event &AnmTotalTime Opened !AnmSetAction
+end
+class Bureaucracy$(cls)
+	DefAction Loop

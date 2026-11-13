@@ -1,0 +1,41 @@
+# DownTown: RaceMaker, the ends of a race (left, won, lost, mercenaries, the hooks), the combat, and the outdoor scene of Scene
+exec(open('fmis.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); RM = __import__('RaceMaker'); M = __import__('Menu'); I.nm = lambda o: getattr(o, '__name__', o); I.RV = ('iStartPos','nextStartPos','Players','BayScorer','FoesScorer','YourScore','WayPointlimit','NumOponNotGoNextItem','ChallengeFoeType','challenged_NPCs_Names','prevCamera','cameraItemName','cameraVehicleName','nextIAProfile','OnRaceGoCallback','EndOfRaceCallback','OnInitialTaunt','ChallengerName','LastCmTime','levelPathFind'); result = 1
+I.E = lambda n: I._ent(n, ('Pos','Ang','TgType','EntityList','Money','MovePos','MoveTime','UsrControl','OnTake','Radius','RadarShow')); I.cb = lambda: (I.nm(M.MissionScorerCall), I.nm(__import__('Parking').SwitchVehicleMissionCallback), I.nm(__import__('Parking').SwitchCharMissionCallback), I.nm(__import__('Alarm').AbortMissionCallback)); I.sv = lambda: map(lambda n: (n, Scrap.GetSaveVar(n)), ('Revenge.Type','Revenge.Foe','Revenge.LastWinner','Revenge.NumEnemies','Player.NumLives','Stats.Race.Press','Stats.TotalRaces.Press','Stats.Race.Mercs','Stats.Combat.Mercs','Stats.Combat.Police','Stats.TotalCombats.Police')); result = 1
+map(lambda n: I._rec(n[0], n[1]), (('SScorer','SetMsgText'),('Speech','AddRemoteCom'),('Menu','ShowWarning'),('SScorer','Fade'),('SSound','Play'),('Challenge','SetRevenge'),('Challenge','CleanChallenge'),('SaveGame','SaveMoney'))); result = 1
+I.pre = I._Rec('pre', None); I.ini = I._Rec('ini', None); I.taunt = I._Rec('taunt', None); RM.OnPreInitRace = I.pre; RM.OnInitRace = I.ini; RM.OnInitialTaunt = I.taunt; result = 1
+Scrap.SetSaveVar('Challenge.Money', '50'); Scrap.SetSaveVar('Challenge.NumEnemies', '3'); Scrap.SetSaveVar('Race.Num', '17'); RM.InitRace(numply = 2, foeType = 'MercenaryA', waypointlimit = 4, shower = 1); result = (I._takecalls(), I._mod('RaceMaker', I.RV), I.cb(), Scrap.GetSaveVar('Race.Num'), map(I.E, RM.Players + ['CheckPoint']), RM.StartPos[:2], Scrap.Get('TimeToCancelCurrentMission'))
+!sleep 2
+I._takecalls()
+RM.OnPreInitRace = None; RM.OnInitRace = None; RM.EndOfRace('CheckPoint', None); result = (I._takecalls(), I._mod('RaceMaker', I.RV), I.cb(), I.sv())
+I.mon = Scrap.GetMoney(); RM.challenged_NPCs_Names = list(RM.Players); RM.EndOfRace('CheckPoint', 'Left'); result = (I._takecalls(), Scrap.GetMoney() - I.mon, I.sv(), map(I.E, RM.Players))
+RM.ChallengeFoeType = 'Police'; RM.challenged_NPCs_Names = list(RM.Players); RM.EndOfRace('CheckPoint', 'Left'); result = (I._takecalls(), map(I.E, RM.Players))
+RM.ChallengeFoeType = 'MercenaryA'; Scrap.SetSaveVar('Player.NumLives', '3'); RM.challenged_NPCs_Names = list(RM.Players); I.mon = map(lambda n: Scrap.GetEntity(n).Money, RM.Players); RM.EndOfRace('CheckPoint', Scrap.UsrEntity(0).Name); result = (I._takecalls(), I.sv(), map(lambda n: Scrap.GetEntity(n).Money, RM.Players), I.mon)
+Scrap.SetSaveVar('Player.NumLives', '9999'); RM.EndOfRace('CheckPoint', Scrap.UsrEntity(0).Name); result = (I._takecalls(), I.sv())
+RM.ChallengeFoeType = 'Betty'; I.mon = Scrap.GetMoney(); I.win = I._Rec('win', None); RM.OnPlayerWinsRace = I.win; RM.challenged_NPCs_Names = list(RM.Players); RM.EndOfRace('CheckPoint', Scrap.UsrEntity(0).Name); result = (I._takecalls(), Scrap.GetMoney() - I.mon, I.sv())
+Scrap.SetSaveVar('HumphreyRaceTutorial', '1'); RM.EndOfRace('CheckPoint', Scrap.UsrEntity(0).Name); Scrap.SetSaveVar('HumphreyRaceTutorial', '0'); RM.OnPlayerWinsRace = None; result = (I._takecalls(), I.sv())
+I.lose = I._Rec('lose', None); RM.OnPlayerLoosesRace = I.lose; Scrap.SetSaveVar('Revenge.Type', ''); Scrap.SetSaveVar('Revenge.LastWinner', 'Player'); RM.EndOfRace('CheckPoint', RM.Players[0]); result = (I._takecalls(), I.sv())
+RM.ChallengeFoeType = 'MercenaryB'; Scrap.SetSaveVar('Revenge.Type', ''); Scrap.SetSaveVar('Revenge.LastWinner', 'Player'); RM.EndOfRace('CheckPoint', RM.Players[0]); result = (I._takecalls(), I.sv())
+RM.EndOfRace('CheckPoint', 'Alarm'); RM.ChallengeFoeType = 'Betty'; Scrap.SetSaveVar('HumphreyRaceTutorial', '1'); RM.EndOfRace('CheckPoint', 'Killed'); Scrap.SetSaveVar('HumphreyRaceTutorial', '0'); RM.OnPlayerLoosesRace = None; result = (I._takecalls(), I.sv())
+I.endcb = I._Rec('endcb', None); RM.EndOfRaceCallback = I.endcb; RM.EndOfRace('CheckPoint', 'whatever'); RM.EndOfRaceCallback = None; result = I._takecalls()
+RM.EndOfRace('CheckPoint', 'Nobody')
+RM.ChallengeFoeType = 'Nobody'; result = RM.EndOfRace('CheckPoint', 'Left')
+RM.ChallengeFoeType = 'Betty'; RM.RacerInterruptedByAlarm(); RM.RacerLeft(); result = I._takecalls()
+RM.RacerDamaged('a', 'b', 3)
+RM.challenged_NPCs_Names = ['a', 'b']; RM.ChallengeFoeType = 'MercenaryC'; Scrap.SetSaveVar('Player.NumLives', '2'); RM.NPCCombatKilled('a', 'x'); result = (I._takecalls(), RM.challenged_NPCs_Names)
+RM.NPCCombatKilled('zz', 'x'); RM.NPCCombatKilled('b', 'x'); result = (I._takecalls(), RM.challenged_NPCs_Names, I.sv())
+RM.challenged_NPCs_Names = ['c']; RM.ChallengeFoeType = 'Police'; I.mon = Scrap.GetMoney(); RM.NPCCombatKilled('c', 'x'); result = (I._takecalls(), Scrap.GetMoney() - I.mon, I.sv())
+RM.ChallengeFoeType = 'Nobody'; result = RM.NPCCombatKilled('c', 'x')
+Scrap.SetSaveVar('Challenge.NumEnemies', '2'); Scrap.SetSaveVar('Combat.FirstTime', '1'); RM.challenged_NPCs_Names = []; RM.InitCombat('Betty', 0, numFoes = 2); result = (I._takecalls(), I._mod('RaceMaker', I.RV), I.cb(), map(I.E, RM.challenged_NPCs_Names), Scrap.EntityListGet('Enemies', 'OnDeath'), Scrap.Get('TimeToCancelCurrentMission'))
+!sleep 8
+(I._takecalls(), map(lambda n: __import__('SAI').GetStateVehicle(n), RM.challenged_NPCs_Names))
+RM.MoveCombatNPCsToPos(Scrap.UsrEntity(0).Pos); result = map(lambda n: __import__('SAI').GetStateVehicle(n), RM.challenged_NPCs_Names)
+RM.InitCombat('MercenaryA', isRevenge = 1); result = (I._takecalls(), RM.challenged_NPCs_Names)
+RM.MoveCombatNPCsToPos(5)
+I.S = __import__('Scene'); I.SV = ('HidenChars','InvulnerableChars','PrevInput'); I.par = __import__('Parking'); result = (I.nm(I.par.PlayerShip), I.nm(__import__('Sputnik').spt), SInput.GetActionSet())
+I.S.InitOutDoorScene(); result = (I._takecalls(), I._mod('Scene', I.SV), SInput.GetActionSet(), map(lambda n: I._ent(n, ('Active','TimeSpeed','EntityList')), I.S.HidenChars))
+I.S.EndOutDoorScene(); result = (I._takecalls(), SInput.GetActionSet(), map(lambda n: I._ent(n, ('Active','TimeSpeed')), I.S.HidenChars), I._ent(Scrap.GetCam(0), ('Target','MainTarget','AddTurn')))
+I.S.InitOutDoorScene(HideChars = 0); result = (I._takecalls(), I._mod('Scene', I.SV), SInput.GetActionSet(), I._ent(Scrap.UsrEntity(0).Name, ('Invulnerable','Active')))
+I.S.EndOutDoorScene(); result = (I._takecalls(), SInput.GetActionSet(), I._ent(Scrap.UsrEntity(0).Name, ('Invulnerable','Active')))
+I.S.HideVehiclesToo(); result = (len(I.S.HidenChars), I.S.HidenChars[:5])
+I.S.UnhideChars(); result = map(lambda n: I._ent(n, ('Active','TimeSpeed')), I.S.HidenChars[:5])

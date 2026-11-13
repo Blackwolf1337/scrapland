@@ -1,0 +1,5 @@
+# The functions of Mission_GetDataPart1 in level downtown (the script levels/downtown/scripts/mission_getdatapart1.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): GetFuncEnemiesProfile, InitStatus, Init, InitMission, CreateTransport, CreateFunctionary, AddTransportToList, SpawnFunctionaries, OnFunctionaryDeath, OnTransportsDeath, OnTransportsDamage, SpawnData, DropData, DelData, TakeData, SetNextMission, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_getdatapart1.def replaces this file.
+section StopMission
+setvar Menu.MissionScorerCall None

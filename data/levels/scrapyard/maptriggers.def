@@ -1,0 +1,4 @@
+# The functions of MapTriggers in level scrapyard (the script levels/scrapyard/scripts/maptriggers.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Scrapyard.c): GetMadHunterProfile, GetMosquitoProfile, Init, CheckMosquitoCadenceShoot, CreateMosquitosTriggers, OnMosquitoTriggerTaken, CreateMosquito, CreateMadHuntersTriggers, OnMadHunterTriggerTaken, CreateMadHunter.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/scrapyard/maptriggers.def replaces this file.
+section InitStatus LevelPath

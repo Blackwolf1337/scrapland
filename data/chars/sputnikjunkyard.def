@@ -1,0 +1,46 @@
+# SputnikJunkyard (the character script chars/sputnikjunkyard.py of the game): the Init that builds the action class.
+# The format is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sputnikjunkyard.def replaces
+# this file. The C gives $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new
+# entity) is the callback of the class.
+
+section SputnikJunkyard
+let prev %MakeChar.RelaxRotLimit
+setvar MakeChar.RelaxRotLimit 360
+call MakeChar.InitChar SputnikJunkyard
+class SputnikJunkyard
+	CanFly 1
+	FlyAccel 4800.0
+	FlySpeed 1000.0
+	FlyFric 4.5
+	FlyFallAccel 0.0
+	SkipInitOnChange 0
+	MinTimeToExtraRelax 3600
+	MaxTimeToExtraRelax 3600
+setvar MakeChar.MaxSpeed 1.2
+setvar MakeChar.MinSpeed 0.6
+call MakeChar.AddRelaxActions SputnikJunkyard 360 nExtraRlx=1
+call MakeChar.AddWalkActions SputnikJunkyard 360 0 0 ActList=(Walk,)
+call MakeChar.AddInitWalkActions SputnikJunkyard 360 0 0 ActList=(WalkInit,)
+call MakeChar.AddEndWalkActions SputnikJunkyard 360 0 0 ActList=(WalkEnd,)
+action Laugh
+	AnmFilePath Models/Chars/SputnikJunkyard/Anm/SputnikJunkyard_Laugh.M3D
+	isLoop 0
+	InterpTime 0
+event &AnmTotalTime EndOfLaugh !EndOfLaugh
+class SputnikJunkyard
+	FOV 90
+	CamDist 270
+	CamAng 6
+	CamRot 0
+	OnCreate SputnikJunkyard.OnCreate
+run speech SputnikJunkyard SputnikJunkyard SputnikJunkyardTalk
+call SputnikJunkyardSound.Init SputnikJunkyard
+setvar MakeChar.RelaxRotLimit $prev
+
+section OnCreate
+call CharAct.OnCreate $name
+entity $name
+	OnDeath ""
+	ArrowCanUse 0
+	Descriptor {CharName_Sputnik}
+call SputnikJunkyardSound.InitLoops $name

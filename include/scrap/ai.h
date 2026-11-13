@@ -11,7 +11,6 @@
 #include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/nodesworld.h"
-#include "scrap/python.h"
 #include "scrap/slotcontroller.h"
 
 typedef struct CNodesWorld CNodesWorld;		/* RTTI CNodesWorld: visibility graph of the level */
@@ -822,6 +821,9 @@ void CNodesWorld_Analyze(CNodesWorld *nodes, const vec3_t *size);
 void CNodesWorld_AnalyzeGraph(CNodesWorld *nodes);
 byte CNodesWorld_GetRacePoint(CNodesWorld *nodes, vec3_t *out, const vec3_t *initial, float minDist,
 	float maxDist, int arg);
+/* SAI.GetNextRacePoint(initial, minDist, maxDist) in C: maxDist grows by 1000 until a point is found (outdoors one
+ * try; past 1e8 the CHECK fails); 0 for the None of an outdoor map without a point */
+byte AI_NextRacePoint(const vec3_t *initial, float minDist, float maxDist, vec3_t *out);
 void CNodesWorld2D_Load(CNodesWorld2D *nodes, int arg, const char *name, const vec3_t *pos);
 void CNodesWorld2D_AnalyzeGraph(CNodesWorld2D *nodes);
 

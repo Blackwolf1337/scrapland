@@ -1,0 +1,438 @@
+/*
+ * The Map module of the level Menu in C (levels/menu/scripts/map.py, issue #2): the main menu's scene (the demo camera
+ * flying through the asteroids), the credits and the way back to the menu. StartMenu is data
+ * (data/levels/menu/map.def). Libraries, InitMenu, AstList, initpos, CreditsCtr and the counters of the asteroids
+ * (xctr, rrr, mmr, globctr) stay variables of the module.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of Map are
+ * read where the script reads them and written through at once, CreditsText.EndOfCredits gets the function object of
+ * Map (OBJLIB 5 (9c)). The cameras are handle values (OBJLIB 7). The engine variables, the dummy search, the camera,
+ * the action set, the vector math and the random numbers are C; Scrap.Set, Scrap.CreateEntity, the SAct class and
+ * action functions, SSound.SetMusic and Scrap.AddScheduledFunc go through their seams. Scrap.SetDebrisSys,
+ * SetDebrisValue, DropDebris and MusicPlayer (fc-lvl-menu swaps the last three) and the loading of CreditsText
+ * (Scrap.OpenPack, PreloadLibrary, ClosePack) go through their refs (stage 7).
+ *
+ * Direct calls (stage 3): CreditsText, Menu, PCMenu, SaveGame and the C functions of Map go through their refs
+ * (PORT_CALL, PORT_LOWN; EndCredits and cremeteoro are keyword entries, MODE_KW), the scheduled functions through
+ * their entries (Mode_LaterIn, Port_Scheduled). By name stays StartMenu (data, OBJLIB 6).
+ */
+#include <string.h>
+
+#include "scrap/input.h"
+#include "scrap/scrap.h"
+#include "scrap/world.h"
+#include "Levels.h"
+
+/* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
+#define PORT_LEVEL menu
+
+#define MAP "Map"
+
+/* ---- the engine calls of the scene, through their refs (fc-lvl-menu swaps the debris and the music player, _BSCEN
+ * of fr6b.py records SetDebrisSys: the seam of PORT_CALL calls what they put there) ---- */
+
+/* Scrap.SetDebrisValue(n, x, y, z): 0 position, 1 angles (degrees), 2 velocity, 3 angle speed (degrees) */
+static byte Mn_DebrisValue(long n, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z) {
+	return PORT_CALL(Scrap, SetDebrisValue, NULL, "ivvv", n, x, y, z);
+}
+
+/* the same with three numbers */
+static byte Mn_DebrisValueD(long n, double x, double y, double z) {
+	return PORT_CALL(Scrap, SetDebrisValue, NULL, "iddd", n, x, y, z);
+}
+
+/* Scrap.DropDebris(name, speed): a debris element with the values of SetDebrisValue */
+static byte Mn_DropDebris(const nativeVal_t *name, const nativeVal_t *speed) {
+	return PORT_CALL(Scrap, DropDebris, NULL, "vv", name, speed);
+}
+
+/* Scrap.MusicPlayer(name, cmd[, volume]) (volume < 0: not given) */
+static byte Mn_MusicPlayer(const char *name, const char *cmd, double volume) {
+	return volume < 0 ? PORT_CALL(Scrap, MusicPlayer, NULL, "ss", name, cmd) :
+		PORT_CALL(Scrap, MusicPlayer, NULL, "ssd", name, cmd, volume);
+}
+
+/* Scrap.SetDebrisSys(name, 30, 1000000, 0, 0.02, 0, 0): the debris system of an asteroid model */
+static byte Mn_DebrisSys(const nativeVal_t *name) {
+	return PORT_CALL(Scrap, SetDebrisSys, NULL, "viiidii", name, 30L, 1000000L, 0L, 0.02, 0L, 0L);
+}
+
+/* ---- shared lines ---- */
+
+/* `if Scrap.Get(name):` */
+static int Mn_GetTrue(const char *name) {
+	nativeVal_t v;
+	if (!Native_GVarGet(name, &v)) {
+		return -1;
+	}
+	int r = Native_True(&v);
+	Native_Free(&v);
+	return r;
+}
+
+/* ---- the functions ---- */
+
+/* InitStatus(LevelPath): in the main menu; the credits library when the credits are to be shown */
+static byte Menu_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t one;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Init")) {
+		return 0;
+	}
+	Native_SetInt(&one, 1);
+	LvN_SetVar("Init", "inMainMenu", &one);
+	int s = Mn_GetTrue("ShowCredits");
+	/* OBJLIB 6: the loading of a module stays with the module objects */
+	return s == 0 || (s > 0 && PORT_CALL(Scrap, OpenPack, NULL, "s", "Scripts/Scorer") &&
+		PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "CreditsText", "CreditsText.pyc") && PORT_CALL(Scrap, ClosePack, NULL, "") &&
+		LvN_PutI(MAP, "InitMenu", 0));
+}
+
+/* EndCredits(id=0): the credits end: back to the menu with its music (the Xbox restarts) */
+static byte Menu_EndCredits(const nativeVal_t *id) {
+	if (!Mode_Import("SaveGame") || !Mode_Import("SSound") || !Mode_GVarSetS("EscapeEvent", "")) {
+		return 0;
+	}
+	int x = Mn_GetTrue("IsXbox");
+	if (x < 0) {
+		return 0;
+	}
+	if (x) {
+		return PORT_CALL(SaveGame, Restart, NULL, "");
+	}
+	/* OBJLIB 6: StartMenu is data (data/levels/menu/map.def) */
+	return LV_OWN(MAP, "StartMenu", NULL, "v", id) && Mn_MusicPlayer("", "stop", -1) && LvN_SetMusic("Music/Epic.ogg", 0.8);
+}
+
+/* FadeOutCreditsEnd(): the end of the credits unless they were aborted before */
+static byte Menu_FadeOutCreditsEnd(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t f, zero;
+	(void)a;
+	(void)out;
+	if (!Native_GVarGet("MotionBlurFactorEnd", &f)) {
+		return 0;
+	}
+	Native_SetFloat(&zero, 0.0);
+	int c = Native_Compare(&f, &zero);
+	Native_Free(&f);
+	return c <= 0 || PORT_LOWN(Map, EndCredits, NULL, "");
+}
+
+/* FadeOutCredits(): the music fades in 4 s, then FadeOutCreditsEnd */
+static byte Menu_FadeOutCredits(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("SSound") && Mn_MusicPlayer("", "fadeout", 1 / 4.0) &&
+		Mode_LaterIn(4.0 + 0.1, MAP, "FadeOutCreditsEnd", NULL, 0, NULL);
+}
+
+/* NextCredit(): the next credit page with text (a "-" page is skipped), the fade out after the last */
+static byte Menu_NextCredit(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("CreditsText") || !Mode_Import("Menu")) {
+		return Mode_Done(&t, 0);
+	}
+	for (;;) {
+		int mark = t.n;
+		nativeVal_t *n = Mode_V(&t), *rep = Mode_V(&t), *key = Mode_V(&t), *text = Mode_V(&t);
+		if (!LvN_GAdd(MAP, "CreditsCtr", 1, n)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Repr(n, rep);
+		if (!Mode_Cat(&t, key, 3, Mode_S(&t, "Credits_"), rep, Mode_S(&t, "_1"))) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Lang(Native_Text(key), text);
+		byte end = Native_IsStr(text, ""), skip = Native_IsStr(text, "-");
+		Mode_Release(&t, mark);
+		if (end) {
+			return Mode_Done(&t, PORT_LOWN(Map, FadeOutCredits, NULL, ""));
+		}
+		if (!skip) {
+			break;
+		}
+	}
+	nativeVal_t *ctr = Mode_V(&t);
+	return Mode_Done(&t, Mode_G(MAP, "CreditsCtr", ctr) && PORT_CALL(CreditsText, ShowCredit, NULL, "v", ctr));
+}
+
+/* ShowCredits(): the credits from the first page, Escape ends them, the motion blur a moment later */
+static byte Menu_ShowCredits(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t next;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("CreditsText") || !LvN_PutI(MAP, "CreditsCtr", 0) || !LvN_GObj(MAP, "NextCredit", &next)) {
+		return 0;
+	}
+	/* OBJLIB 5 (9c): the function object of Map */
+	LvN_SetVar("CreditsText", "EndOfCredits", &next);
+	Native_Free(&next);
+	return PORT_LOWN(Map, NextCredit, NULL, "") && Mode_GVarSetS("EscapeEvent", "Map.EndCredits") &&
+		Mode_LaterIn(0.15, MAP, "SetMotionBlur", NULL, 0, NULL);
+}
+
+/* SetMotionBlur(): the blur of the credits while the input is inactive */
+static byte Menu_SetMotionBlur(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (strcmp(TABLE_AT(g_ActionSets, Input_GetActionSet())->name, "Inactive")) {
+		return 1;
+	}
+	return Mode_GVarSetI("MotionBlurOffVar", 0) && Mode_GVarSetI("MotionBlurTime", 0) && Mode_GVarSetN("MotionBlurEndTime", 0.45) &&
+		Mode_GVarSetN("MotionBlurFactorBegin", 0.0) && Mode_GVarSetN("MotionBlurFactorEnd", 0.5);
+}
+
+/* the demo camera on its dummy with its looping flight, and the menu camera linked to it */
+static byte Mn_Cameras(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *zero = Mode_V(&t), *c = Mode_V(&t), *p = Mode_V(&t), *ang = Mode_V(&t);
+	nativeVal_t *a1 = Mode_V(&t), *y = Mode_V(&t), *an = Mode_V(&t), *cls = Mode_V(&t), *cam = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *cn = Mode_V(&t), *act = Mode_V(&t);
+	Native_SetInt(zero, 0);
+	LvN_Dummy("DM_Democam", 1, dummy);
+	byte ok = LvN_Create(Mode_S(&t, "DemoCam"), zero, zero, zero, "WithLife", c) && LvN_Item(dummy, 1, p) &&
+		Mode_VSet(c, "Pos", p) && LvN_Item(dummy, 2, ang) && LvN_Item(ang, 1, a1) && Mode_Arith('-', a1, Mode_I(&t, 180), y);
+	if (ok) {
+		Native_SetEmpty(an, NV_TUPLE);
+		Native_SetInt(Native_Append(an), 0);
+		Native_Copy(Native_Append(an), y);
+		Native_SetInt(Native_Append(an), 0);
+		ok = Mode_VSet(c, "Ang", an) && LvN_CreateClass("DemoCam", cls) &&
+			LvN_SetCls("ModelFilePath", Mode_S(&t, "Levels/Menu/Map/SceneCamera/SceneCamera.M3D")) &&
+			LvN_CreateAction("Relax", act) && LvN_SetAct("AnmFilePath", Mode_S(&t, "Levels/Menu/Map/SceneCamera/Anm/Loop.M3D")) &&
+			LvN_SetAct("isLoop", Mode_I(&t, 1)) && LvN_SetCls("DefAction", Mode_S(&t, "Relax")) && LvN_SetS(c, "ActCtrl", "DemoCam");
+	}
+	ok = ok && LvN_Create(Mode_S(&t, "MenuCamara"), zero, zero, zero, "Cam", cam) && LvN_SetI(cam, "Fov", 60) &&
+		LvN_SetI(cam, "clipNear", 50) && LvN_SetI(cam, "clipFar", 500000) && Mode_VGet(c, "Name", name) &&
+		Mode_VSet(cam, "EntityLink", name) && Mode_VGet(cam, "Name", cn);
+	if (ok) {
+		/* Scrap.SetCam(0, name) */
+		const char *s;
+		ok = Native_ArgStr(cn, 2, &s);
+		if (ok) {
+			cWorld_SetCam(g_pWorld, 0, s);
+		}
+	}
+	return Mode_Done(&t, ok);
+}
+
+/* the asteroids of the start: one each quarter second from 14 s, then the flight goes on (drotorito) */
+static byte Mn_Asteroids(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *list = Mode_V(&t), *item = Mode_V(&t), *pos = Mode_V(&t), *tim = Mode_V(&t), *next = Mode_V(&t);
+	nativeVal_t *quarter = Mode_V(&t);
+	if (!LvN_GElems(MAP, "AstList", list)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_ForCount(list);
+	for (int i = 0; i < n; i++) {
+		Native_Free(item);
+		if (!Native_SeqItem(list, i, item) || !Mn_DebrisSys(item)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	int j = n < 0 ? -1 : Mn_GetTrue("JoinServerOnStartup");
+	if (j < 0 || (j && (!Mode_Import("PCMenu") || !Mode_GVarSetI("JoinServerOnStartup", 0) ||
+		!PORT_CALL(PCMenu, TryJoin, NULL, "is", 0L, "")))) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(tim, 14);
+	Native_SetFloat(quarter, 0.25);
+	if (!LvN_GElems(MAP, "initpos", pos)) {
+		return Mode_Done(&t, 0);
+	}
+	n = Native_ForCount(pos);
+	for (int i = 0; i < n; i++) {
+		Native_Free(item);
+		Native_Free(next);
+		if (!Native_SeqItem(pos, i, item) || !PORT_LOWN(Map, cremeteoro, NULL, "vv", item, tim) ||
+			!Mode_Arith('+', tim, quarter, next)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(tim);
+		Native_Copy(tim, next);
+	}
+	return Mode_Done(&t, n >= 0 && PORT_LOWN(Map, drotorito, NULL, "") && Mode_GVarSetI("IsMapOutDoor", 0));
+}
+
+/* Init(LevelPath): the menu scene, the menu (unless the credits show), the music and the asteroids */
+static byte Menu_Init(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const blur[] = { "MotionBlurOffVar", "MotionBlurTime", "MotionBlurEndTime", "MotionBlurFactorBegin",
+		"MotionBlurFactorEnd" };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Menu") || !Mode_Import("SAct") || !Mode_GVarSetI("DrawNextFrame", 0) || !Mode_GVarSetI("CameraCloudAlpha", 0)) {
+		return 0;
+	}
+	for (int i = 0; i < 5; i++) {
+		if (!Mode_GVarSetI(blur[i], 0)) {
+			return 0;
+		}
+	}
+	if (!Mn_Cameras()) {
+		return 0;
+	}
+	int m = LvN_GTrue(MAP, "InitMenu");
+	/* OBJLIB 6: StartMenu is data */
+	if (m < 0 || (m && !LV_OWN(MAP, "StartMenu", NULL, "")) || !Mode_Import("SSound")) {
+		return 0;
+	}
+	int s = Mn_GetTrue("ShowCredits");
+	if (s < 0) {
+		return 0;
+	}
+	if (s) {
+		if (!Mode_Import("Init") || !Mode_Import("CreditsText") || !PORT_CALL(CreditsText, Init, NULL, "")) {
+			return 0;
+		}
+		Mode_SetActionSet("Inactive");
+		if (!PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) || !PORT_LOWN(Map, ShowCredits, NULL, "") || !Mode_GVarSetI("ShowCredits", 0) ||
+			!LvN_SetMusic("Music/Creditos.ogg", 1.0)) {
+			return 0;
+		}
+	} else if (!LvN_SetMusic("Music/Epic.ogg", 1.0)) {
+		return 0;
+	}
+	return Mn_Asteroids();
+}
+
+/* the centre and the impulse of the next asteroid: every fourth one alternates around the camera, the others go
+ * through the cycles xctr (centre) and rrr (impulse) */
+static byte Mn_Throw(const nativeVal_t *mmr, double *centre, double *impulse) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *m = Mode_V(&t), *q = Mode_V(&t), *qi = Mode_V(&t), *e = Mode_V(&t), *x = Mode_V(&t);
+	if (!Mode_Arith('%', mmr, Mode_I(&t, 4), m)) {
+		return Mode_Done(&t, 0);
+	}
+	if (LvN_EqI(m, 0)) {
+		*centre = Scrap_RandRange(500, -500);
+		if (!Mode_Arith('/', mmr, Mode_I(&t, 4), q) || !Native_ToInt(q, qi) || !Mode_Arith('%', qi, Mode_I(&t, 2), e)) {
+			return Mode_Done(&t, 0);
+		}
+		*impulse = LvN_EqI(e, 0) ? Scrap_RandRange(-1000, -500) : Scrap_RandRange(1000, 500);
+		return Mode_Done(&t, 1);
+	}
+	static const double centres[4][2] = { { -1500, -1000 }, { 1000, 2500 }, { -1000, -500 }, { 500, 1000 } };
+	static const double impulses[3][2] = { { -200, 200 }, { 400, 1000 }, { -1000, -400 } };
+	if (!Mode_G(MAP, "xctr", x)) {
+		return Mode_Done(&t, 0);
+	}
+	int xc = -1;
+	for (int i = 0; i < 3 && xc < 0; i++) {
+		if (LvN_EqI(x, i)) {
+			xc = i;
+		}
+	}
+	int slot = xc < 0 ? 3 : xc;
+	/* the else branch sets xctr before it draws, the others after: the draw itself is the same */
+	*centre = Scrap_RandRange(centres[slot][0], centres[slot][1]);
+	if (!LvN_PutI(MAP, "xctr", xc < 0 ? 0 : xc + 1)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(x);
+	if (!Mode_G(MAP, "rrr", x)) {
+		return Mode_Done(&t, 0);
+	}
+	int rr = -1;
+	for (int i = 0; i < 2 && rr < 0; i++) {
+		if (LvN_EqI(x, i)) {
+			rr = i;
+		}
+	}
+	int rs = rr < 0 ? 2 : rr;
+	*impulse = Scrap_RandRange(impulses[rs][0], impulses[rs][1]);
+	return Mode_Done(&t, LvN_PutI(MAP, "rrr", rr < 0 ? 0 : rr + 1));
+}
+
+/* drotorito(): the next asteroid in front of the flying camera, again a quarter second later */
+static byte Menu_drotorito(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cam = Mode_V(&t), *dmc = Mode_V(&t), *vec = Mode_V(&t), *pos = Mode_V(&t), *sub = Mode_V(&t);
+	nativeVal_t *dis = Mode_V(&t), *mmr = Mode_V(&t), *d0 = Mode_V(&t), *d2 = Mode_V(&t), *imp = Mode_V(&t);
+	nativeVal_t *x = Mode_V(&t), *z = Mode_V(&t), *off = Mode_V(&t), *to = Mode_V(&t);
+	double centre = 0, impulse = 0;
+	(void)a;
+	(void)out;
+	if (!LvN_Entity("MenuCamara", cam) || !LvN_Entity("DemoCam", dmc) || !Mode_VGet(dmc, "NodePos_DM_Camera_01", vec) ||
+		!Mode_VGet(dmc, "Pos", pos) || !Mode_VecSub(vec, pos, sub) || !Mode_VecNorm(sub, dis) || !LvN_GAdd(MAP, "mmr", 1, mmr) ||
+		!Mn_Throw(mmr, &centre, &impulse) || !LvN_Item(dis, 0, d0) || !LvN_Item(dis, 2, d2)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(imp, impulse);
+	if (!Mode_Arith('*', imp, d0, x) || !Mode_Arith('*', imp, d2, z)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(off, NV_TUPLE);
+	Native_Copy(Native_Append(off), x);
+	Native_SetFloat(Native_Append(off), centre);
+	Native_Copy(Native_Append(off), z);
+	return Mode_Done(&t, Mode_VecAdd(vec, off, to) && PORT_LOWN(Map, cremeteoro, NULL, "v", to) &&
+		Mode_LaterIn(0.25, MAP, "drotorito", NULL, 0, NULL));
+}
+
+/* cremeteoro(vec, tim=35): an asteroid at vec with a random push and spin, the models in turn */
+static byte Menu_cremeteoro(const nativeVal_t *vec, const nativeVal_t *tim) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *list = Mode_V(&t), *ctr = Mode_V(&t);
+	nativeVal_t *model = Mode_V(&t), *n = Mode_V(&t), *list2 = Mode_V(&t);
+	if (!LvN_Item(vec, 0, x) || !LvN_Item(vec, 1, y) || !LvN_Item(vec, 2, z) || !Mn_DebrisValue(0, x, y, z)) {
+		return Mode_Done(&t, 0);
+	}
+	double ra = Scrap_RandRange(-180, 180), rb = Scrap_RandRange(-180, 180), rc = Scrap_RandRange(-180, 180);
+	if (!Mn_DebrisValueD(1, ra, rb, rc) || !Mn_DebrisValue(2, Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0))) {
+		return Mode_Done(&t, 0);
+	}
+	ra = Scrap_RandRange(-30, 30), rb = Scrap_RandRange(-30, 30), rc = Scrap_RandRange(-30, 30);
+	if (!Mn_DebrisValueD(3, ra, rb, rc) || !Mode_G(MAP, "AstList", list) || !Mode_G(MAP, "globctr", ctr) ||
+		!Native_Subscript(list, ctr, model) || !Mn_DropDebris(model, tim) || !LvN_GAdd(MAP, "globctr", 1, n) ||
+		!Mode_G(MAP, "AstList", list2)) {
+		return Mode_Done(&t, 0);
+	}
+	int len = Native_Size(list2);
+	if (len < 0) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Native_Compare(n, Mode_I(&t, len)) < 0 || LvN_PutI(MAP, "globctr", 0));
+}
+
+/* ---- the entries ---- */
+
+LV_FN(Menu, InitStatusPy, 1, Menu_InitStatus)
+LV_FN(Menu, FadeOutCreditsEndPy, 0, Menu_FadeOutCreditsEnd)
+LV_FN(Menu, FadeOutCreditsPy, 0, Menu_FadeOutCredits)
+LV_FN(Menu, NextCreditPy, 0, Menu_NextCredit)
+LV_FN(Menu, ShowCreditsPy, 0, Menu_ShowCredits)
+LV_FN(Menu, SetMotionBlurPy, 0, Menu_SetMotionBlur)
+LV_FN(Menu, InitPy, 1, Menu_Init)
+LV_FN(Menu, drotoritoPy, 0, Menu_drotorito)
+
+/* EndCredits(id=0) */
+MODE_KW(Menu, EndCreditsPy, "|O", "id") {
+	Mode_KwDefI(v, given, 0, 0);
+	return Menu_EndCredits(&v[0]);
+}
+
+/* cremeteoro(vec, tim=35) */
+MODE_KW(Menu, cremeteoroPy, "O|O", "vec", "tim") {
+	Mode_KwDefI(v, given, 1, 35);
+	return Menu_cremeteoro(&v[0], &v[1]);
+}
+
+const portFn_t g_MenuMapMethods[] = {
+	PORT_FN(InitStatus, Menu_InitStatusPy),
+	PORT_FNK(EndCredits, Menu_EndCreditsPy),
+	PORT_FN(FadeOutCreditsEnd, Menu_FadeOutCreditsEndPy),
+	PORT_FN(FadeOutCredits, Menu_FadeOutCreditsPy),
+	PORT_FN(NextCredit, Menu_NextCreditPy),
+	PORT_FN(ShowCredits, Menu_ShowCreditsPy),
+	PORT_FN(SetMotionBlur, Menu_SetMotionBlurPy),
+	PORT_FN(Init, Menu_InitPy),
+	PORT_FN(drotorito, Menu_drotoritoPy),
+	PORT_FNK(cremeteoro, Menu_cremeteoroPy),
+	PORT_FNEND
+};
+
+PORTS(levels_Menu)

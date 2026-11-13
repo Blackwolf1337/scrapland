@@ -1,0 +1,9 @@
+# Junkyard: Maintenance, SputnikJunkyard, Rusty
+__import__('Rusty').ActionPress('Rusty_0')
+__import__('Rusty').ActionRelease('Rusty_0')
+__import__('Maintenance').MaintenanceTalk('Player0', 'Maintenance_00', 'Talk', 'x')
+__import__('SScorer').Get(0, 'Msg', 'Text')
+__import__('SputnikJunkyard').SputnikJunkyardTalk('Player0', 'SputnikJunkyard_0', 'Talk', 'x')
+`__import__('HangarTab').prevShip`
+__import__('Maintenance').MaintenanceWorkFX('Maintenance_00', 'X', 0.0)
+Scrap.Rand(0.0, 1.0)

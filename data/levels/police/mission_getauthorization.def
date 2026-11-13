@@ -1,0 +1,103 @@
+# The functions of Mission_GetAuthorization in level police (the script levels/police/scripts/mission_getauthorization.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): InitStatus, CreateHuman, Init, AfterDeepThroatMessage, PreGetAuthorization, ShowNearestConversor, ShowAfterConversionMessage, OnDataTaken, OnDataDropped, FreeHuman, TalkPepe, StartScene, OnTriggerActivated, GoToPress, GoToPress2, OnPossession, OnExitConversor, CheckMaxDist, CheckHumanDist, OnMetroUsed.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_getauthorization.def replaces this file.
+section DeepThroatSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+setvar Speech.OnEndOfSpeech %Mission_GetAuthorization.PreGetAuthorization
+setvar Speech.OnEndOfSpeechParams ()
+call MissionsFuncs.SetMissionTarget None
+call Speech.NISpeech "DeepThroat"
+call Speech.AutoAddNI "Mission_TalkToDeepThroat7__ComDeepThroat_NI_1Msg"
+call Speech.RunNI
+
+section GetAuthorization
+setvar CharConversor.afterExitConversor %Mission_GetAuthorization.ShowAfterConversionMessage
+call Mission_GetAuthorization.ShowNearestConversor
+
+section GetAuthorization2
+call Scrap.Set "MessengerDataPackMissionArrow" 1
+call Scrap.Set "MessengerTakenCallback" "Mission_GetAuthorization.OnDataTaken"
+call Scrap.Set "MessengerDropCallback" "Mission_GetAuthorization.OnDataDropped"
+
+section PreFreeHuman
+call Scrap.Set "MessengerDataPackMissionArrow" 2
+call Scrap.Set "MessengerTakenCallback" ""
+call Scrap.Set "MessengerDropCallback" ""
+call Scrap.SetSaveVar "MissionState" "FreeHuman"
+call SaveGame.MMDesc "Mission_FirstMeetHuman_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_GetAuthorization.FreeHuman
+
+section OnMainCharDeath MainCharnName Param2
+call Scrap.SetAlarm 0
+call Scrap.Set "AlarmFallDelta" %Mission_GetAuthorization.alarmFallDelta
+call MissionsFuncs.FinishGame 0
+
+section LoadScene
+call Scene.Load "MeetHuman"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 50 "Dtritus" "Relax"
+call Scene.ActorAction 115 "Dtritus" "Walk"
+call Scene.ActorAction 195 "Dtritus" "Relax"
+call Scene.ActorAction 300 "Dtritus" "Walk"
+call Scene.ActorAction 420 "Dtritus" "CuriosityLook"
+call Scene.ActorAction 490 "Dtritus" "Talk"
+call Scene.ActorAction 580 "Dtritus" "Relax"
+call Scene.ActorAction 595 "Dtritus" "CuriosityLook"
+call Scene.ActorAction 650 "Dtritus" "Relax"
+call Scene.ActorAction 695 "Dtritus" "WalkTalk0"
+call Scene.ActorAction 735 "Dtritus" "WalkTalk"
+call Scene.ActorAction 775 "Dtritus" "WalkTalk0"
+call Scene.ActorAction 815 "Dtritus" "WalkTalk"
+call Scene.ActorAction 836 "Dtritus" "Relax"
+call Scene.ActorAction 1030 "Dtritus" "Talk1"
+call Scene.ActorAction 1080 "Dtritus" "Talk"
+call Scene.ActorAction 1120 "Dtritus" "Talk3"
+call Scene.ActorAction 1170 "Dtritus" "Talk"
+call Scene.ActorAction 1180 "Dtritus" "Relax"
+call Scene.ActorAction 0 "Human" "Relax"
+call Scene.ActorAction 200 "Human" "Walk"
+call Scene.ActorAction 250 "Human" "Relax"
+call Scene.ActorAction 400 "Human" "CuriosityLook"
+call Scene.ActorAction 460 "Human" "Relax"
+call Scene.ActorAction 590 "Human" "Talk"
+call Scene.ActorAction 680 "Human" "Relax"
+call Scene.ActorAction 700 "Human" "LookDtritus"
+call Scene.ActorAction 785 "Human" "Turn"
+call Scene.ActorAction 815 "Human" "Relax"
+call Scene.ActorAction 845 "Human" "Talk"
+call Scene.ActorAction 925 "Human" "Talk0"
+call Scene.ActorAction 980 "Human" "Talk"
+call Scene.ActorAction 1019 "Human" "Relax"
+call Scene.ActorAction 1190 "Human" "Sad"
+call Scene.AddGeneric 1250 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.5)"
+call Scene.AddText 490 "Mission_Scene_FirstMeetHuman_1" 3
+call Scene.AddText 590 "Mission_Scene_FirstMeetHuman_2" 3
+call Scene.AddText 695 "Mission_Scene_FirstMeetHuman_3" 5
+call Scene.AddText 845 "Mission_Scene_FirstMeetHuman_4" 6
+call Scene.AddText 1030 "Mission_Scene_FirstMeetHuman_5" 5
+call Scrap.Set "DefInterpTime" 0.6
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk3" "Talk3" 1
+call Scene.CreateLocalAction $CharType 0 "CuriosityLook" "CuriosityLook" 1
+call Scene.CreateLocalAction $CharType 0 "WalkTalk" "WalkTalk" 1
+call Scene.CreateLocalAction $CharType 0 "WalkTalk0" "WalkTalk0" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "CuriosityLook" "CuriosityLook" 1
+call Scene.CreateLocalAction $CharType 0 "LookDtritus" "LookDtritus" 0
+call Scene.CreateLocalAction $CharType 0 "Sad" "Sad" 0
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"

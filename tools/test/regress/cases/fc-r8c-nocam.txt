@@ -1,0 +1,8 @@
+# Outskirts, round 8c: the traffic AI without the main camera entity (a script deleted it and set its name again, as Mission_FunctionaryHunting.AbortCameraTravelling does when no camera switch happened): cAIVehicle_GraphTraffic passed the NULL camera to Entity_IsType
+U = Scrap.UsrEntity(0).Name; C = Scrap.GetCam(0); result = (C, Scrap.GetEntity(C).Type, __import__('Traffic').AcShips > 0)
+!sleep 5
+Scrap.GetEntity(C).Del(); Scrap.SetCam(0, C); T0 = Scrap.GetTime(); result = (Scrap.GetCam(0), Scrap.GetEntity(C))
+!sleep 20
+(Scrap.GetTime() - T0 > 4, Scrap.GetCam(0), Scrap.GetEntity(C), Scrap.GetEntity(U).Type)
+!sleep 20
+Scrap.GetTime() - T0 > 8

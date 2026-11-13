@@ -1,0 +1,44 @@
+# The functions of MapSnd in level gdb (the script levels/gdb/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GDB.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gdb/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "tunel334.wav"
+call SSound.LoadSound "maquina-mov999.wav"
+
+section SndElements Name x y z angx angy
+setvar MapSnd.cntr %MapSnd.cntr+1
+if $Name == "GDBAcelerador"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+elif $Name == "GDBGenerador"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "tunel334" 0.0
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+call Sound.SetPSLoop "Computer1" (72922.9,36873.5,9706.6) "maquina-mov999" 0.56 -4
+
+section EnterMatrix
+call SSound.LoadSound "Enter/loop-elect1.wav"
+call SSound.LoadSound "Enter/loop-bishop1.wav"
+call Scene.AddSound 1 "loop-bishop1" 0.3 +2 0
+call Scene.AddStream 79 "beep-matrix" 1.0
+call Scene.AddSound 575 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 590 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 665 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 680 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 755 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 775 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 845 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 865 "loop-elect1" 0.1 -4 0
+call Scene.AddSound 875 "loop-elect1" 0.1 -4 0
+
+section EnterMatrixBishop
+let CharName "EnterMatrixBishop"
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

@@ -1,0 +1,14 @@
+# helpers/holders.py as channel statements: the Python functions still reachable from the loaded modules while the
+# module global of their name is a C function; walks module dicts, lists, tuples, dicts, classes and instances up to
+# depth 5
+import sys
+_tcinst = tc_obj(__name__ + '._HC', {})
+_HT = (type(_tcinst.__class__), type(_tcinst), type([]), type(()), type({}), type(len))
+_hwalk = lambda o, path, depth, st: None if depth > 5 or st[0].has_key(id(o)) else ((lambda n, g: (g.has_key(n)
+	and g[n] is not o and type(g[n]) is _HT[5]) and st[1].append('%s -> %s.%s' % (path, g.get('__name__', '?'), n)))(o.__name__,
+	o.func_globals) if type(o).__name__ == 'function' else (tc_set(st[0], id(o), o), map(lambda i: _hwalk(o[i], '%s[%d]' % (path, i),
+	depth + 1, st), range(len(o))) if type(o) is _HT[2] or type(o) is _HT[3] else (map(lambda kv: _hwalk(kv[1], '%s[%s]' % (path,
+	repr(kv[0])[:30]), depth + 1, st), o.items()) if type(o) is _HT[4] else (map(lambda kv: _hwalk(kv[1], '%s.%s' % (path, kv[0]),
+	depth + 1, st), o.__dict__.items()) if type(o) is _HT[0] or type(o) is _HT[1] else None))))
+_holders = lambda: (lambda st: (map(lambda mm: mm[1] is not None and map(lambda kv: _hwalk(kv[1], mm[0] + '.' + kv[0], 0, st),
+	mm[1].__dict__.items()), sys.modules.items()), st[1].sort(), st[1])[2])(({}, [], None))

@@ -1,0 +1,8 @@
+# line 59: random in C: the traffic ship model of the vehicle maker (random, noted in round 8i)
+ignore I._ent(I.T5, ('isInit','FxEngineTime','FxBoostEngineTime','Model','WeapList','MEng0','Descriptor','MPil0','MaxLife'))
+# Ammo03 (the fourth ammo) refills with game time: the pack runs of 2026-11-06/07 and the C runs show 27, 28 and 29 for
+# the same lines (seen on the old build fd631dd2 too), depending on the game time the lines before took
+sub (\('Ammo#', [-\d.e+]+\), \('Ammo#', [-\d.e+]+\), \('Ammo#', [-\d.e+]+\), )\('Ammo#', [-\d.e+]+\) => \1('Ammo#', REFILL)
+# line 57: the same vehicle as line 59 (I.T5, the traffic ship of the vehicle maker): its model and with it the engine
+# and weapon slots are random, every pack run shows another ship
+ignore (e.Model, e.MaxLife, e.MPil0, e.MEng0, e.MEng1, e.MEng2, e.MEng3, e.WeapList)

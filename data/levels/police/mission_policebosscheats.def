@@ -1,0 +1,115 @@
+# The functions of Mission_PoliceBossCheats in level police (the script levels/police/scripts/mission_policebosscheats.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): InitStatus, Init, FicusPalMissionSpeech, CreateFakeChar, CheatingLoop, WatchEvents, PlayDumb1, CheatPoliceBoss, PlayDumb2, BrupPoliceBoss, PlayPoliceBoss, OnPhoto, InitAfterPhoto, InitAfterPhoto2, InitAfterPhoto3, InitAskCrazyGambler, CrazyGamblerSpeech, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_policebosscheats.def replaces this file.
+section CreatePoliceFicusPal e
+object $e
+UseFunc "Mission_PoliceBossCheats.FicusPalMissionSpeech"
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+
+section InitBossCheats
+call Scrap.SetSaveVar "Mission_PoliceBossCheats" "BossCheats"
+call SaveGame.QWayPoint
+call MissionsFuncs.SetMissionTarget "DM_Mission_PoliceBoss_BossCheater"
+call SaveGame.MMDesc "Mission_PhotoPoliceBoss_MissionText1" 1
+call Mission_PoliceBossCheats.PlayDumb1
+
+section PlayAnm Ent1 Ent2 Action
+object $Ent1
+ForceAction $Action
+object $Ent2
+ForceAction $Action
+
+section PhotoOn EntityName EventName Time
+setvar PoliceBoss.CanPhoto 1
+
+section PhotoOff EntityName EventName Time
+setvar PoliceBoss.CanPhoto 0
+
+section EndOfPhoto
+call SInput.SetActionSet "Walk"
+call Scrap.SetTimeSpeed 1.0
+call SScorer.Fade 0 (0,0,0,255) (0,0,0,0) 1.0
+call Scene.Play "PoliFight"
+setvar Scene.EndOfSceneCallback %Mission_PoliceBossCheats.InitAfterPhoto
+setvar PoliceBossc.Active 0
+setvar Dumb1c.Active 0
+setvar Dumb2c.Active 0
+
+section LoadPoliFightScene
+call Scene.Load "PoliFight"
+call Scene.ActorAction 0 "PoliceBoss" "RelaxDown"
+call Scene.ActorAction 105 "PoliceBoss" "Talk0Down"
+call Scene.ActorAction 160 "PoliceBoss" "TalkDown"
+call Scene.ActorAction 210 "PoliceBoss" "Talk1Down"
+call Scene.ActorAction 255 "PoliceBoss" "TalkDown"
+call Scene.ActorAction 330 "PoliceBoss" "RelaxDown"
+call Scene.ActorAction 440 "PoliceBoss" "TalkSelfishDown"
+call Scene.ActorAction 490 "PoliceBoss" "TalkDown"
+call Scene.ActorAction 570 "PoliceBoss" "Talk1Down"
+call Scene.ActorAction 620 "PoliceBoss" "TalkDown"
+call Scene.ActorAction 670 "PoliceBoss" "RelaxDown"
+call Scene.ActorAction 810 "PoliceBoss" "TalkMemoryDown"
+call Scene.ActorAction 890 "PoliceBoss" "TalkDown"
+call Scene.ActorAction 980 "PoliceBoss" "TalkMenaceDown"
+call Scene.ActorAction 1060 "PoliceBoss" "RelaxDown"
+call Scene.ActorAction 1135 "PoliceBoss" "TalkFightDown"
+call Scene.ActorAction 0 "Police" "RelaxUp"
+call Scene.ActorAction 10 "Police" "TalkUp"
+call Scene.ActorAction 25 "Police" "Talk2Up"
+call Scene.ActorAction 70 "Police" "TalkUp"
+call Scene.ActorAction 100 "Police" "RelaxUp"
+call Scene.ActorAction 335 "Police" "TalkAskUp"
+call Scene.ActorAction 375 "Police" "TalkUp"
+call Scene.ActorAction 435 "Police" "RelaxUp"
+call Scene.ActorAction 675 "Police" "TalkUp"
+call Scene.ActorAction 710 "Police" "Talk1Up"
+call Scene.ActorAction 755 "Police" "TalkUp"
+call Scene.ActorAction 805 "Police" "RelaxUp"
+call Scene.ActorAction 1065 "Police" "TalkUp"
+call Scene.ActorAction 1090 "Police" "TalkNoUp"
+call Scene.ActorAction 1135 "Police" "BeatedUp"
+call Scene.AddText 10 "Mission_Scene_PhotoPoliceBoss_1" 3
+call Scene.AddText 105 "Mission_Scene_PhotoPoliceBoss_2" 8
+call Scene.AddText 335 "Mission_Scene_PhotoPoliceBoss_3" 4
+call Scene.AddText 440 "Mission_Scene_PhotoPoliceBoss_4" 8
+call Scene.AddText 675 "Mission_Scene_PhotoPoliceBoss_5" 4
+call Scene.AddText 810 "Mission_Scene_PhotoPoliceBoss_6" 8
+call Scene.AddText 1065 "Mission_Scene_PhotoPoliceBoss_7" 3
+call Scene.AddText 1135 "Mission_Scene_PhotoPoliceBoss_8" 2
+call Scene.AddGeneric 1198 "SScorer.Fade(0,(255,255,255,128),(0,0,0,0),0.50)"
+call Scene.AddGeneric 1210 "SScorer.Fade(0,(255,255,255,192),(0,0,0,0),0.75)"
+call Scene.AddGeneric 1232 "SScorer.Fade(0,(255,255,255,255),(0,0,0,0),1.00)"
+call Scene.AddGeneric 1290 "SScorer.Fade(0,(0,0,0,0),(255,255,255,255), 0.5)"
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Police"
+call Scene.AddCharActor "Police" $CharType
+call Scene.CreateLocalAction $CharType 0 "RelaxUp" "RelaxUp" 1
+call Scene.CreateLocalAction $CharType 0 "BeatedUp" "BeatedUp" 1
+call Scene.CreateLocalAction $CharType 0 "TalkUp" "TalkUp" 1
+call Scene.CreateLocalAction $CharType 0 "Talk1Up" "Talk1Up" 1
+call Scene.CreateLocalAction $CharType 0 "Talk2Up" "Talk2Up" 1
+call Scrap.Set "DefInterpTime" 0.8
+call Scene.CreateLocalAction $CharType 0 "TalkAskUp" "TalkAskUp" 1
+call Scene.CreateLocalAction $CharType 0 "TalkNoUp" "TalkNoUp" 1
+call Scene.SetDefSounds "Police" $CharType
+call SAct.SetCls "DefAction" "RelaxUp"
+let CharType "PoliceBoss"
+call Scene.AddCharActor "PoliceBoss" $CharType
+call Scene.CreateLocalAction $CharType 0 "RelaxDown" "RelaxDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkDown" "TalkDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkFightDown" "TalkFightDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkSelfishDown" "TalkSelfishDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkMemoryDown" "TalkMemoryDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkMenaceDown" "TalkMenaceDown" 1
+call Scrap.Set "DefInterpTime" 0.6
+call Scene.CreateLocalAction $CharType 0 "Talk0Down" "Talk0Down" 1
+call Scene.CreateLocalAction $CharType 0 "Talk1Down" "Talk1Down" 1
+call Scene.CreateLocalAction $CharType 0 "Talk2Down" "Talk2Down" 1
+call Scene.SetDefSounds "PoliceBoss" $CharType
+call SAct.SetCls "DefAction" "RelaxDown"
+run setdef "DefInterpTime"

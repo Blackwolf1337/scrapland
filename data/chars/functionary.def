@@ -1,0 +1,55 @@
+# Functionary (the character script chars/functionary.py of the game): the Init that builds the action class. The format
+# is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/functionary.def replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
+
+section Functionary
+call MakeChar.InitChar Functionary
+setvar MakeChar.MaxSpeed 1.2
+setvar MakeChar.MinSpeed 0.6
+call MakeChar.AddRelaxActions Functionary 0
+call MakeChar.AddWalkActions Functionary 360 1
+call MakeChar.AddFallAction Functionary 45 1 0
+call MakeChar.AddDazeAction Functionary
+call MakeChar.AddTalkAction Functionary nExtraActions=3
+call MakeChar.AddFlashedAction Functionary
+call MakeChar.AddCrazyAction Functionary
+call MakeChar.AddDiscover Functionary
+call MakeChar.SetSitActions Functionary
+class Functionary
+	WRadius 85
+	VRadius 70
+	SRadius 20
+	CamDist 270
+	CamAng -2
+	CamRot 0
+	FOV %Functionary.MinFov
+	MinFOV %Functionary.MinFov
+	MaxFOV 120
+	FOVInterpTime 0.5
+	OnCreate Functionary.OnCreate
+	OnFreeResources Functionary.OnFreeResources
+	ActionPress Functionary.ActionPress
+	ActionRelease Functionary.ActionRelease
+if $level == LEVELS/GAMBLINDEN
+	call MakeChar.CreateRelaxAction Functionary 180 Dance0 Dance0
+	call MakeChar.CreateRelaxAction Functionary 180 Dance Dance
+	action
+		isLoop 1
+end
+call FunctionarySound.Init Functionary
+if %Init.OutMapSkip == 0
+	run speech Functionary CharsNPC GenericNPCSpeech
+end
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXFunctionarySpecialActionFile %Functionary.FXFunctionarySpecialActionFile
+	call Scrap.SetDebrisSys %Functionary.FXFunctionarySpecialActionFile 2 0 0 1 0 0 %Fx.FXFUNCTIONARYSPECIALACTION
+end
+
+section OnCreate
+call CharAct.OnCreate $name
+entity $name
+	Energy 1.0
+
+section OnFreeResources
+call Scrap.SetDebrisSys %Functionary.FXFunctionarySpecialActionFile 0 0 0 1 0 0 %Fx.FXFUNCTIONARYSPECIALACTION

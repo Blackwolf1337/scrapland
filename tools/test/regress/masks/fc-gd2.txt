@@ -1,0 +1,4 @@
+# line 2: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore __import__('Init')._ent('Police_00', ('LLogicState','LLogicIdle','LLogicGotoMainMission','LLogicPoliceResult','LLogicTarget','ArriOpt','ForceAction','ForceDefLoop','Action'))
+# line 19: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore (__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams')), __import__('Init')._ent('Police_00', ('LLogicState','LLogicIdle','LLogicGotoMainMission','LLogicPoliceResult','LLogicTarget','ArriOpt','ForceAction','ForceDefLoop','Action')), __import__('Init')._mod('Police', ('ResState',)))

@@ -1,0 +1,8 @@
+# line 30: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (_sd(D.GetMaxFragsEnemies), _sdmod('DeathMatch', ('enemiesFrags', 'playerFrags')), _sdent(('Enemy1', 'Enemy3', 'Enemy4')), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+# Enemy1 is inactive between its death and its respawn: whether the respawn came before the line depends on the game
+# time the lines before took (channel runs 2 of 2 show it back, the pack and python runs not yet)
+sub \('Enemy1', 'red', '', 1, [01], => ('Enemy1', 'red', '', 1, ACTIVE,
+# line 43: Enemy3, killed by OnEnemyDeath's caller, is inactive (0) until its respawn: the RTX pack runs read it back
+# (1), the 610M pack runs and pack runs of 2026-11-06 not yet (0); C runs show both
+sub \('Enemy3', 'red', '', 1, [01], => ('Enemy3', 'red', '', 1, ACTIVE,

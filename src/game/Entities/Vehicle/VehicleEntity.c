@@ -152,6 +152,11 @@ cEntity *cVehicleEntity_ctor(void *mem, const char *name, float x, float y, floa
 	self->wl.mass = 2800.0f;
 	self->style = 2800.0f;
 	self->engine = 2800.0f;
+	/* differs from the original: UpdateTrust reads these before the constructor sets them (MinLife 100, slot -1,
+	 * cloud 0 below); the values of a zeroed block */
+	self->minLife = 0;
+	self->cloud = 0.0f;
+	self->slot = 0;
 	cVehicleEntity_UpdateTrust(self);
 	self->wRadius = 150.0f;
 	cPrimitive_SetSize(&self->wl.prim, 130.0f);

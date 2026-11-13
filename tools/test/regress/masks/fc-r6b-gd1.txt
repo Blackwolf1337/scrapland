@@ -1,0 +1,12 @@
+# line 24: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore (setattr(Scrap.GetEntity('Bishop_01'), 'Action', 'Dance'), _sd(__import__('Map').CharDance, 'Bishop_01'), Scrap.GetEntity('Bishop_01').Action, Scrap.GetEntity('Bishop_01').DefLoop)
+# line 25: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore (setattr(Scrap.GetEntity('Bishop_01'), 'Action', 'Relax'), _sd(__import__('Map').CharDance, 'Bishop_01'), Scrap.GetEntity('Bishop_01').Action)
+# line 37: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore (setattr(Scrap.GetEntity('MercenaryC_Brutus'), 'Action', 'Relax'), _sd(__import__('Map').CharUsrDance, 'MercenaryC_Brutus', 2), Scrap.GetEntity('MercenaryC_Brutus').Action, Scrap.GetEntity('MercenaryC_Brutus').DefLoop, __import__('Map').Cheer)
+# line 51: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (setattr(__import__('Map'), 'Cheer', []), _sd(__import__('Map').Init, 'Levels/GamblinDen'), _bsv(('GamblinMusic',)), _bent(('DM_Door_GamblinDenChupito_00', 'DM_Door_Teleporter_00', 'DM_Door_Elevator_Scrapyard'), ('OnObjSlot', 'Active')))
+# lines 33 and 35 (the same text): the level's own MercDrink loop for MercenaryB (scheduled every 3.5 to 5 s) can run
+# between lines 31 and 33 and put it into Cheer first, then the direct call takes the Drink branch (one C channel run on
+# the RTX of ten)
+ignore _sd(__import__('Map').MercDrink, 'MercenaryB_Dumber', 1)

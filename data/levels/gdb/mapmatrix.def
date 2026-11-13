@@ -1,0 +1,49 @@
+# The functions of MapMatrix in level gdb (the script levels/gdb/scripts/mapmatrix.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GDB.c): EndOFScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gdb/mapmatrix.def replaces this file.
+section InitStatus LevelPath
+
+section Init LevelPath
+call MapMatrix.Load
+
+section RestoreMatrix Carlback=None
+setvar Scene.EndOfSceneCallback %MapMatrix.EndOFScene
+call Scene.Play "EnterMatrix"
+setvar MapMatrix.EndFunc $Carlback
+
+section Load
+call Scene.Load "EnterMatrix"
+call Scene.ActorAction 0 "Bishop" "Walk"
+call Scene.ActorAction 60 "Bishop" "PressButton"
+call Scene.ActorAction 170 "Bishop" "PutMatrix"
+call Scene.ActorAction 395 "Bishop" "Astonished"
+call Scene.ActorAction 0 "Matrix" "Relax"
+call Scene.ActorAction 220 "Matrix" "Visible"
+call Scene.AddGeneric 0 "SScorer.Fade(0,(0,0,0,255),(0,0,0,255),3.0)"
+call Scene.AddGeneric 5 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),1.0)"
+call Scene.AddGeneric 550 "SScorer.Fade(0,(255,255,255,0),(255,255,255,255),1.5)"
+call Scene.AddGeneric 580 "SScorer.Fade(0,(255,255,255,255),(255,255,255,0),2.0)"
+call Scene.AddGeneric 670 "SScorer.Fade(0,(255,255,255,0),(255,255,255,255),0.8)"
+call Scene.AddGeneric 700 "SScorer.Fade(0,(255,255,255,255),(255,255,255,0),1.0)"
+call Scene.AddGeneric 760 "SScorer.Fade(0,(0,0,0,0),(255,255,255,255),1.0)"
+call Scene.AddGeneric 790 "SScorer.Fade(0,(255,255,255,255),(255,255,255,0),1.0)"
+call Scene.AddGeneric 950 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.5)"
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Bishop"
+call Scene.AddCharActor "Bishop" $CharType
+call Scene.SetDefSounds "Bishop" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "PressButton" "PressButton" 1
+call Scene.CreateLocalAction $CharType 0 "PutMatrix" "PutMatrix" 1
+call Scene.CreateLocalAction $CharType 0 "Astonished" "Astonished" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Matrix"
+call Scene.AddLocalActor "Matrix" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call Scrap.Set "DefInterpTime" 0.0
+call Scene.CreateLocalAction $CharType 0 "Visible" "Visible" 1
+call Scrap.Set "DefInterpTime" 0.0
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneEnterMatrixFile" %MapMatrix.FXSceneEnterMatrixFile
+call Scrap.SetDebrisSys %MapMatrix.FXSceneEnterMatrixFile 1 0 0 1 0 0 %Fx.FXSCENEENTERMATRIX

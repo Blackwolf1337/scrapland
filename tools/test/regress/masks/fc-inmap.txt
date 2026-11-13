@@ -1,0 +1,3 @@
+# InMap takes one of the desktop functionaries out of the DesktopsFunctionary list at random (another one in every
+# pack and C run)
+sub \('EntityList', 'DesktopsFunctionary'\) => ('EntityList', '')

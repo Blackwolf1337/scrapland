@@ -1,0 +1,33 @@
+# GDB, round 7d: Mission_ReinsertOwnMatrix2
+Scrap.SetSaveVar('Mission.Map', 'GDB'); Scrap.SetSaveVar('Mission.Library', 'Mission_ReinsertOwnMatrix2'); Scrap.SetSaveVar('ComeFrom', ''); Scrap.SetSaveVar('CreateBertos', '1'); Scrap.LoadLevel('Levels/GDB'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+RO = _m('Mission_ReinsertOwnMatrix2'); MX = _m('MapMatrix'); import Parking, SAI, OutPolice; _sdfreeze(_sdlist('Enemies')); result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_ReinsertOwnMatrix2'), _m('Map').CreateBishops, len(RO.bishops), _sdn(RO.rm), _sdn(Parking.SwitchVehicleMissionCallback), Scrap.EntityListGet('Enemies', 'OnDeath'), _btarget() == RO.rm.Name, len(OutPolice.PoliceWaves))
+(_ye((RO.rm.Name,), ('VRadius', 'ArrowCanUse', 'Life', 'ArrnOpt', 'ArrOpt0', 'UseFunc', 'ActiveCMask', 'RadarShow')), _sdn(RO.rm.Ang), _ye(RO.bishops[:2], ('EntityList', 'Life', 'MaxLife', 'TgType', 'RadarShow')))
+_bon()
+(_bprof(RO.GetBishopProfile()), _sd(RO.GetBishopProfile, 1))
+B = RO.bishops[:]; result = 1
+(_sd(RO.BishopsAttackPlayer), _sdn(Parking.SwitchVehicleMissionCallback), map(lambda b: SAI.GetStateVehicle(b), B[:3]), _sd(RO.BishopsAttackPlayer, 1))
+(map(lambda b: SAI.SetStateVehicle(0, b), B), setattr(RO, 'bishops', B[:2] + ['Nobody']), _sd(RO.BishopsAttackPlayer), map(lambda b: SAI.GetStateVehicle(b), B[:3]), setattr(RO, 'bishops', B))
+(_sd(RO.CreateBishop), len(RO.bishops), _ye(RO.bishops[-1:], ('EntityList', 'Life', 'MaxLife', 'TgType')), _sd(RO.CreateBishop, 1))
+_sdfreeze(_sdlist('Enemies'))
+(_sd(RO.CreateBishops, 2), len(RO.bishops), _sd(RO.CreateBishops, 'x'), _sd(RO.CreateBishops))
+_sdfreeze(_sdlist('Enemies'))
+(_sd(RO.OnBishopsDeath, RO.bishops[0], 'x'), len(RO.bishops), _sd(RO.OnBishopsDeath, 'Nobody', 'x'), _sd(RO.OnBishopsDeath, 'x'))
+W0 = len(OutPolice.PoliceWaves); B = RO.bishops[:]; result = 1
+(setattr(RO, 'bishops', ['X']), Scrap.SetSaveVar('Player.NumLives', '3'), _sd(RO.OnBishopsDeath, 'X', 'Nobody'), RO.bishops, _bsv(('Player.NumLives',)), Scrap.GetAlarm()[0] > 0, len(OutPolice.PoliceWaves) - W0, Scrap.SetAlarm(0), setattr(RO, 'bishops', B))
+RM = RO.rm.Name; W0 = len(OutPolice.PoliceWaves); result = 1
+(Scrap.SetSaveVar('Conversor.AvailableChars', "['Gear']"), Scrap.SetSaveVar('CreateBertos', '1'), Scrap.SetAlarm(1), _sd(RO.PreSetNextMission, _un(), RM, 'x', 'y'), _ye((RM,), ('UseFunc', 'Active', 'RadarShow')), _bsv(('Conversor.AvailableChars', 'CreateBertos')), len(_sdlist('Enemies')), len(_sdlist('OutCop')), Scrap.GetAlarm()[0] > 0, len(OutPolice.PoliceWaves) - W0, _sdn(MX.EndFunc), _bhooks()[9:10])
+(setattr(RO, 'rm', None), _sd(RO.PreSetNextMission, _un(), RM, 'x', 'y'), _bsv(('Conversor.AvailableChars',)), _sd(RO.PreSetNextMission, _un()))
+(Scrap.SetSaveVar('Conversor.AvailableChars', 'x'), _sd(RO.PreSetNextMission, _un(), RM, 'x', 'y'), Scrap.SetSaveVar('Conversor.AvailableChars', "['Gear']"))
+(setattr(RO, 'bishops', []), _sd(RO.InitMission), len(RO.bishops), _btarget() == RO.rm.Name, _sdn(Parking.SwitchVehicleMissionCallback), _ye((RO.rm.Name,), ('UseFunc',)), _sd(RO.InitMission, 1))
+_sdfreeze(_sdlist('Enemies'))
+(_sd(RO.SetNextMission), _bsv(('Mission.Map', 'Mission.Library')))
+del RO.bishops
+(_sd(RO.CreateBishop), _sd(RO.BishopsAttackPlayer), _sd(RO.OnBishopsDeath, 'X', 'Y'))
+del RO.rm
+_sd(RO.PreSetNextMission, _un(), RM, 'x', 'y')
+_broff()

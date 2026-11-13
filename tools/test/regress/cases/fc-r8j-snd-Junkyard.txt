@@ -1,0 +1,110 @@
+# r8j (Junkyard): the SetSounds and Talk functions of the character sound modules the level preloaded, called directly, with Chars.ActSound, ActSoundLoop, StrSound, StrSoundStop and Scrap.Set recorded (no effect), isPC 0 and 1, error cases
+exec(open('fsnd.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); I._hm = lambda m: __import__('sys').modules.has_key(m); result = filter(I._hm, ['BankDirectorSound', 'BankMasterSound', 'BertoSound', 'BettySound', 'BishopSound', 'BossSound', 'CrazyGamblerSound', 'DesktopSound', 'DtritusSound', 'FunctionarySound', 'GateKeeperSound', 'GearSound', 'HumanSound', 'HumphreySound', 'MaintenanceSound', 'MayorSound', 'MessengerSound', 'NurseSound', 'PoliceBossSound', 'PoliceSound', 'RustySound', 'SebastianSound', 'SentinelSound', 'SputnikJunkyardSound', 'SputnikSound', 'TestCSound', 'MercenarySound'])
+result = map(lambda m: (m, __import__(m).isPC), filter(I._hm, ['BankDirectorSound', 'BankMasterSound', 'BertoSound', 'BishopSound', 'BossSound', 'CrazyGamblerSound', 'FunctionarySound', 'GateKeeperSound', 'GearSound', 'HumanSound', 'HumphreySound', 'MayorSound', 'MessengerSound', 'PoliceBossSound', 'PoliceSound', 'SebastianSound', 'SputnikSound']))
+map(lambda n: I._rec2(n[0], n[1]), (('Chars','ActSound'),('Chars','ActSoundLoop'),('Chars','StrSound'),('Chars','StrSoundStop'),('Scrap','Set'))); result = I._takecalls()
+result = I._hm('BankDirectorSound') and (setattr(__import__('BankDirectorSound'), 'isPC', 0), I._takecalls(), __import__('BankDirectorSound').SetSounds('R8JBankDirector'), I._takecalls())[2:]
+result = I._hm('BankDirectorSound') and (setattr(__import__('BankDirectorSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('BankDirectorSound'): (t, getattr(M, t)('R8JBankDirector', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BankDirectorSound') and (setattr(__import__('BankDirectorSound'), 'isPC', 1), I._takecalls(), __import__('BankDirectorSound').SetSounds('R8JBankDirector'), I._takecalls())[2:]
+result = I._hm('BankDirectorSound') and (setattr(__import__('BankDirectorSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('BankDirectorSound'): (t, getattr(M, t)('R8JBankDirector', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BankDirectorSound') and setattr(__import__('BankDirectorSound'), 'isPC', 0)
+result = I._hm('BankMasterSound') and (setattr(__import__('BankMasterSound'), 'isPC', 0), I._takecalls(), __import__('BankMasterSound').SetSounds('R8JBankMaster'), I._takecalls())[2:]
+result = I._hm('BankMasterSound') and (setattr(__import__('BankMasterSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('BankMasterSound'): (t, getattr(M, t)('R8JBankMaster', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd')))[2:]
+result = I._hm('BankMasterSound') and (setattr(__import__('BankMasterSound'), 'isPC', 1), I._takecalls(), __import__('BankMasterSound').SetSounds('R8JBankMaster'), I._takecalls())[2:]
+result = I._hm('BankMasterSound') and (setattr(__import__('BankMasterSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('BankMasterSound'): (t, getattr(M, t)('R8JBankMaster', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd')))[2:]
+result = I._hm('BankMasterSound') and setattr(__import__('BankMasterSound'), 'isPC', 0)
+result = I._hm('BertoSound') and (setattr(__import__('BertoSound'), 'isPC', 0), I._takecalls(), __import__('BertoSound').SetSounds('R8JBerto'), I._takecalls())[2:]
+result = I._hm('BertoSound') and (setattr(__import__('BertoSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('BertoSound'): (t, getattr(M, t)('R8JBerto', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BertoSound') and (setattr(__import__('BertoSound'), 'isPC', 1), I._takecalls(), __import__('BertoSound').SetSounds('R8JBerto'), I._takecalls())[2:]
+result = I._hm('BertoSound') and (setattr(__import__('BertoSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('BertoSound'): (t, getattr(M, t)('R8JBerto', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BertoSound') and setattr(__import__('BertoSound'), 'isPC', 0)
+result = I._hm('BettySound') and (I._takecalls(), __import__('BettySound').SetSounds('R8JBetty'), I._takecalls())[1:]
+result = I._hm('BettySound') and (I._takecalls(), map(lambda t, M=__import__('BettySound'): (t, getattr(M, t)('R8JBetty', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[1:]
+result = I._hm('BishopSound') and (setattr(__import__('BishopSound'), 'isPC', 0), I._takecalls(), __import__('BishopSound').SetSounds('R8JBishop'), I._takecalls())[2:]
+result = I._hm('BishopSound') and (setattr(__import__('BishopSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('BishopSound'): (t, getattr(M, t)('R8JBishop', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BishopSound') and (setattr(__import__('BishopSound'), 'isPC', 1), I._takecalls(), __import__('BishopSound').SetSounds('R8JBishop'), I._takecalls())[2:]
+result = I._hm('BishopSound') and (setattr(__import__('BishopSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('BishopSound'): (t, getattr(M, t)('R8JBishop', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BishopSound') and setattr(__import__('BishopSound'), 'isPC', 0)
+result = I._hm('BossSound') and (setattr(__import__('BossSound'), 'isPC', 0), I._takecalls(), __import__('BossSound').SetSounds('R8JBoss'), I._takecalls())[2:]
+result = I._hm('BossSound') and (setattr(__import__('BossSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('BossSound'): (t, getattr(M, t)('R8JBoss', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BossSound') and (setattr(__import__('BossSound'), 'isPC', 1), I._takecalls(), __import__('BossSound').SetSounds('R8JBoss'), I._takecalls())[2:]
+result = I._hm('BossSound') and (setattr(__import__('BossSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('BossSound'): (t, getattr(M, t)('R8JBoss', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('BossSound') and setattr(__import__('BossSound'), 'isPC', 0)
+result = I._hm('CrazyGamblerSound') and (setattr(__import__('CrazyGamblerSound'), 'isPC', 0), I._takecalls(), __import__('CrazyGamblerSound').SetSounds('R8JCrazyGambler'), I._takecalls())[2:]
+result = I._hm('CrazyGamblerSound') and (setattr(__import__('CrazyGamblerSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('CrazyGamblerSound'): (t, getattr(M, t)('R8JCrazyGambler', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('CrazyGamblerSound') and (setattr(__import__('CrazyGamblerSound'), 'isPC', 1), I._takecalls(), __import__('CrazyGamblerSound').SetSounds('R8JCrazyGambler'), I._takecalls())[2:]
+result = I._hm('CrazyGamblerSound') and (setattr(__import__('CrazyGamblerSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('CrazyGamblerSound'): (t, getattr(M, t)('R8JCrazyGambler', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('CrazyGamblerSound') and setattr(__import__('CrazyGamblerSound'), 'isPC', 0)
+result = I._hm('DesktopSound') and (I._takecalls(), __import__('DesktopSound').SetSounds('R8JDesktop'), I._takecalls())[1:]
+result = I._hm('DesktopSound') and (I._takecalls(), map(lambda t, M=__import__('DesktopSound'): (t, getattr(M, t)('R8JDesktop', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd')))[1:]
+result = I._hm('DtritusSound') and (I._takecalls(), __import__('DtritusSound').SetSounds('R8JDtritus'), I._takecalls())[1:]
+result = I._hm('DtritusSound') and (I._takecalls(), map(lambda t, M=__import__('DtritusSound'): (t, getattr(M, t)('R8JDtritus', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd', 'Talk3Snd', 'Talk4Snd', 'Talk5Snd')))[1:]
+result = I._hm('FunctionarySound') and (setattr(__import__('FunctionarySound'), 'isPC', 0), I._takecalls(), __import__('FunctionarySound').SetSounds('R8JFunctionary'), I._takecalls())[2:]
+result = I._hm('FunctionarySound') and (setattr(__import__('FunctionarySound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('FunctionarySound'): (t, getattr(M, t)('R8JFunctionary', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk2Snd', 'Talk1Snd')))[2:]
+result = I._hm('FunctionarySound') and (setattr(__import__('FunctionarySound'), 'isPC', 1), I._takecalls(), __import__('FunctionarySound').SetSounds('R8JFunctionary'), I._takecalls())[2:]
+result = I._hm('FunctionarySound') and (setattr(__import__('FunctionarySound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('FunctionarySound'): (t, getattr(M, t)('R8JFunctionary', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk2Snd', 'Talk1Snd')))[2:]
+result = I._hm('FunctionarySound') and setattr(__import__('FunctionarySound'), 'isPC', 0)
+result = I._hm('GateKeeperSound') and (setattr(__import__('GateKeeperSound'), 'isPC', 0), I._takecalls(), __import__('GateKeeperSound').SetSounds('R8JGateKeeper'), I._takecalls())[2:]
+result = I._hm('GateKeeperSound') and (setattr(__import__('GateKeeperSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('GateKeeperSound'): (t, getattr(M, t)('R8JGateKeeper', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'TalkNoSnd')))[2:]
+result = I._hm('GateKeeperSound') and (setattr(__import__('GateKeeperSound'), 'isPC', 1), I._takecalls(), __import__('GateKeeperSound').SetSounds('R8JGateKeeper'), I._takecalls())[2:]
+result = I._hm('GateKeeperSound') and (setattr(__import__('GateKeeperSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('GateKeeperSound'): (t, getattr(M, t)('R8JGateKeeper', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'TalkNoSnd')))[2:]
+result = I._hm('GateKeeperSound') and setattr(__import__('GateKeeperSound'), 'isPC', 0)
+result = I._hm('GearSound') and (setattr(__import__('GearSound'), 'isPC', 0), I._takecalls(), __import__('GearSound').SetSounds('R8JGear'), I._takecalls())[2:]
+result = I._hm('GearSound') and (setattr(__import__('GearSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('GearSound'): (t, getattr(M, t)('R8JGear', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[2:]
+result = I._hm('GearSound') and (setattr(__import__('GearSound'), 'isPC', 1), I._takecalls(), __import__('GearSound').SetSounds('R8JGear'), I._takecalls())[2:]
+result = I._hm('GearSound') and (setattr(__import__('GearSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('GearSound'): (t, getattr(M, t)('R8JGear', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[2:]
+result = I._hm('GearSound') and setattr(__import__('GearSound'), 'isPC', 0)
+result = I._hm('HumanSound') and (setattr(__import__('HumanSound'), 'isPC', 0), I._takecalls(), __import__('HumanSound').SetSounds('R8JHuman'), I._takecalls())[2:]
+result = I._hm('HumanSound') and (setattr(__import__('HumanSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('HumanSound'): (t, getattr(M, t)('R8JHuman', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd')))[2:]
+result = I._hm('HumanSound') and (setattr(__import__('HumanSound'), 'isPC', 1), I._takecalls(), __import__('HumanSound').SetSounds('R8JHuman'), I._takecalls())[2:]
+result = I._hm('HumanSound') and (setattr(__import__('HumanSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('HumanSound'): (t, getattr(M, t)('R8JHuman', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd')))[2:]
+result = I._hm('HumanSound') and setattr(__import__('HumanSound'), 'isPC', 0)
+result = I._hm('HumphreySound') and (setattr(__import__('HumphreySound'), 'isPC', 0), I._takecalls(), __import__('HumphreySound').SetSounds('R8JHumphrey'), I._takecalls())[2:]
+result = I._hm('HumphreySound') and (setattr(__import__('HumphreySound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('HumphreySound'): (t, getattr(M, t)('R8JHumphrey', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('HumphreySound') and (setattr(__import__('HumphreySound'), 'isPC', 1), I._takecalls(), __import__('HumphreySound').SetSounds('R8JHumphrey'), I._takecalls())[2:]
+result = I._hm('HumphreySound') and (setattr(__import__('HumphreySound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('HumphreySound'): (t, getattr(M, t)('R8JHumphrey', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('HumphreySound') and setattr(__import__('HumphreySound'), 'isPC', 0)
+result = I._hm('MaintenanceSound') and (I._takecalls(), __import__('MaintenanceSound').SetSounds('R8JMaintenance'), I._takecalls())[1:]
+result = I._hm('MaintenanceSound') and (I._takecalls(), map(lambda t, M=__import__('MaintenanceSound'): (t, getattr(M, t)('R8JMaintenance', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[1:]
+result = I._hm('MayorSound') and (setattr(__import__('MayorSound'), 'isPC', 0), I._takecalls(), __import__('MayorSound').SetSounds('R8JMayor'), I._takecalls())[2:]
+result = I._hm('MayorSound') and (setattr(__import__('MayorSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('MayorSound'): (t, getattr(M, t)('R8JMayor', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('MayorSound') and (setattr(__import__('MayorSound'), 'isPC', 1), I._takecalls(), __import__('MayorSound').SetSounds('R8JMayor'), I._takecalls())[2:]
+result = I._hm('MayorSound') and (setattr(__import__('MayorSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('MayorSound'): (t, getattr(M, t)('R8JMayor', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('MayorSound') and setattr(__import__('MayorSound'), 'isPC', 0)
+result = I._hm('MessengerSound') and (setattr(__import__('MessengerSound'), 'isPC', 0), I._takecalls(), __import__('MessengerSound').SetSounds('R8JMessenger'), I._takecalls())[2:]
+result = I._hm('MessengerSound') and (setattr(__import__('MessengerSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('MessengerSound'): (t, getattr(M, t)('R8JMessenger', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd')))[2:]
+result = I._hm('MessengerSound') and (setattr(__import__('MessengerSound'), 'isPC', 1), I._takecalls(), __import__('MessengerSound').SetSounds('R8JMessenger'), I._takecalls())[2:]
+result = I._hm('MessengerSound') and (setattr(__import__('MessengerSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('MessengerSound'): (t, getattr(M, t)('R8JMessenger', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd')))[2:]
+result = I._hm('MessengerSound') and setattr(__import__('MessengerSound'), 'isPC', 0)
+result = I._hm('NurseSound') and (I._takecalls(), __import__('NurseSound').SetSounds('R8JNurse'), I._takecalls())[1:]
+result = I._hm('NurseSound') and (I._takecalls(), map(lambda t, M=__import__('NurseSound'): (t, getattr(M, t)('R8JNurse', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd')))[1:]
+result = I._hm('PoliceBossSound') and (setattr(__import__('PoliceBossSound'), 'isPC', 0), I._takecalls(), __import__('PoliceBossSound').SetSounds('R8JPoliceBoss'), I._takecalls())[2:]
+result = I._hm('PoliceBossSound') and (setattr(__import__('PoliceBossSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('PoliceBossSound'): (t, getattr(M, t)('R8JPoliceBoss', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('PoliceBossSound') and (setattr(__import__('PoliceBossSound'), 'isPC', 1), I._takecalls(), __import__('PoliceBossSound').SetSounds('R8JPoliceBoss'), I._takecalls())[2:]
+result = I._hm('PoliceBossSound') and (setattr(__import__('PoliceBossSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('PoliceBossSound'): (t, getattr(M, t)('R8JPoliceBoss', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('PoliceBossSound') and setattr(__import__('PoliceBossSound'), 'isPC', 0)
+result = I._hm('PoliceSound') and (setattr(__import__('PoliceSound'), 'isPC', 0), I._takecalls(), __import__('PoliceSound').SetSounds('R8JPolice'), I._takecalls())[2:]
+result = I._hm('PoliceSound') and (setattr(__import__('PoliceSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('PoliceSound'): (t, getattr(M, t)('R8JPolice', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('PoliceSound') and (setattr(__import__('PoliceSound'), 'isPC', 1), I._takecalls(), __import__('PoliceSound').SetSounds('R8JPolice'), I._takecalls())[2:]
+result = I._hm('PoliceSound') and (setattr(__import__('PoliceSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('PoliceSound'): (t, getattr(M, t)('R8JPolice', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[2:]
+result = I._hm('PoliceSound') and setattr(__import__('PoliceSound'), 'isPC', 0)
+result = I._hm('RustySound') and (I._takecalls(), __import__('RustySound').SetSounds('R8JRusty'), I._takecalls())[1:]
+result = I._hm('RustySound') and (I._takecalls(), map(lambda t, M=__import__('RustySound'): (t, getattr(M, t)('R8JRusty', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd', 'Talk2Snd')))[1:]
+result = I._hm('SebastianSound') and (setattr(__import__('SebastianSound'), 'isPC', 0), I._takecalls(), __import__('SebastianSound').SetSounds('R8JSebastian'), I._takecalls())[2:]
+result = I._hm('SebastianSound') and (setattr(__import__('SebastianSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('SebastianSound'): (t, getattr(M, t)('R8JSebastian', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk1Snd', 'Talk2Snd', 'Talk3Snd', 'Talk4Snd')))[2:]
+result = I._hm('SebastianSound') and (setattr(__import__('SebastianSound'), 'isPC', 1), I._takecalls(), __import__('SebastianSound').SetSounds('R8JSebastian'), I._takecalls())[2:]
+result = I._hm('SebastianSound') and (setattr(__import__('SebastianSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('SebastianSound'): (t, getattr(M, t)('R8JSebastian', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk1Snd', 'Talk2Snd', 'Talk3Snd', 'Talk4Snd')))[2:]
+result = I._hm('SebastianSound') and setattr(__import__('SebastianSound'), 'isPC', 0)
+result = I._hm('SentinelSound') and (I._takecalls(), __import__('SentinelSound').SetSounds('R8JSentinel'), I._takecalls())[1:]
+result = I._hm('SentinelSound') and (I._takecalls(), map(lambda t, M=__import__('SentinelSound'): (t, getattr(M, t)('R8JSentinel', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd', 'Talk0Snd', 'Talk1Snd')))[1:]
+result = I._hm('SputnikJunkyardSound') and (I._takecalls(), __import__('SputnikJunkyardSound').SetSounds('R8JSputnikJunkyard'), I._takecalls())[1:]
+result = I._hm('SputnikJunkyardSound') and (I._takecalls(), map(lambda t, M=__import__('SputnikJunkyardSound'): (t, getattr(M, t)('R8JSputnikJunkyard', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[1:]
+result = I._hm('SputnikSound') and (setattr(__import__('SputnikSound'), 'isPC', 0), I._takecalls(), __import__('SputnikSound').SetSounds('R8JSputnik'), I._takecalls())[2:]
+result = I._hm('SputnikSound') and (setattr(__import__('SputnikSound'), 'isPC', 0), I._takecalls(), map(lambda t, M=__import__('SputnikSound'): (t, getattr(M, t)('R8JSputnik', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[2:]
+result = I._hm('SputnikSound') and (setattr(__import__('SputnikSound'), 'isPC', 1), I._takecalls(), __import__('SputnikSound').SetSounds('R8JSputnik'), I._takecalls())[2:]
+result = I._hm('SputnikSound') and (setattr(__import__('SputnikSound'), 'isPC', 1), I._takecalls(), map(lambda t, M=__import__('SputnikSound'): (t, getattr(M, t)('R8JSputnik', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[2:]
+result = I._hm('SputnikSound') and setattr(__import__('SputnikSound'), 'isPC', 0)
+result = I._hm('TestCSound') and (I._takecalls(), __import__('TestCSound').SetSounds('R8JTestC'), I._takecalls())[1:]
+result = I._hm('TestCSound') and (I._takecalls(), map(lambda t, M=__import__('TestCSound'): (t, getattr(M, t)('R8JTestC', 'TalkR8J'), __import__('Init')._takecalls()), ('TalkSnd',)))[1:]
+result = I._hm('MercenarySound') and (I._takecalls(), map(lambda c: (c, __import__('MercenarySound').SetSounds(c), I._takecalls()), ('MercenaryA', 'MercenaryB', 'MercenaryC', 'MercenaryD')))[1:]
+I._restore(); result = I._takecalls()

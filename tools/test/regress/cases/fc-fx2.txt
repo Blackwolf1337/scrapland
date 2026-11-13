@@ -1,0 +1,5 @@
+# Fx motors on a parked ship with traffic models
+(lambda e: (setattr(e, 'Model', 'TLight2'), e.Model, __import__('Fx').SetUpShipMotors(e), e.ShipMotorScale, e.ShipMotorOffset))(Scrap.GetEntity('Parked178'))
+(lambda e: (setattr(e, 'Model', 'THeavy1B'), e.Model, __import__('Fx').SetUpShipMotors(e), e.ShipMotorScale, e.ShipMotorOffset))(Scrap.GetEntity('Parked179'))
+(lambda e: (setattr(e, 'Model', 'SLifeBoat'), e.Model, __import__('Fx').SetUpShipMotors(e), e.ShipMotorScale, e.ShipMotorOffset))(Scrap.GetEntity('Parked180'))
+(lambda e: (setattr(e, 'Model', 'TMed3B'), e.Model, __import__('Fx').SetUpShipMotors(e), e.ShipMotorScale, e.ShipMotorOffset))(Scrap.GetEntity('Parked180'))

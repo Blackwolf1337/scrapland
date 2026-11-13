@@ -1,0 +1,87 @@
+# The functions of MapSnd in level bank (the script levels/bank/scripts/mapsnd.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Bank.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/bank/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "bank-loop.wav"
+call SSound.LoadSound "TakeMiniCoin.wav"
+call SSound.LoadSound "TakeDollar.wav"
+call SSound.LoadSound "TakeLastMiniCoin.wav"
+call SSound.LoadSound "MiniCoinTime.wav"
+call SSound.LoadSound "MiniCoinTime2.wav"
+call SSound.LoadSound "BadMiniCoin.wav"
+
+section SetSounds
+call Sound.SetPSLoop "Bank1" (-6401.90917969,-669.323974609,-32226.1777344) "bank-loop" Volume=0.09 Pitch=-10.0 AttenIni=4356.0 AttenEnd=6996.0 Doppler=0.0
+call Sound.SetPSLoop "Bank2" (-12850.4921875,144.347824097,-30241.6191406) "bank-loop" Volume=0.09 Pitch=-10.0 AttenIni=4356.0 AttenEnd=6996.0 Doppler=0.0
+call Sound.SetPSLoop "Bank3" (-6431.58789063,-679.38269043,-25418.5527344) "bank-loop" Volume=0.0900000035763 Pitch=-10.0 AttenIni=4356.0 AttenEnd=6996.0 Doppler=0.0
+call Sound.SetPSLoop "Bank4" (-21278.9433594,166.053939819,-18004.1796875) "bank-loop" Volume=0.0900000035763 Pitch=-8.0 AttenIni=8708.0 AttenEnd=22804.0 Doppler=0.0
+call Sound.SetPSLoop "Bank5" (-21291.6171875,-143.680114746,-36925.0625) "bank-loop" Volume=0.0900000035763 Pitch=-9.0 AttenIni=12548.0 AttenEnd=15060.0 Doppler=0.0
+call Sound.SetPSLoop "Bank6" (-36220.4140625,-1189.32824707,-32041.7304688) "bank-loop" Volume=0.0900000035763 Pitch=-10.0 AttenIni=4356.0 AttenEnd=6996.0 Doppler=0.0
+call Sound.SetPSLoop "Bank7" (-36339.5859375,-999.885742188,-25254.6757813) "bank-loop" Volume=0.0900000035763 Pitch=-10.0 AttenIni=4356.0 AttenEnd=6996.0 Doppler=0.0
+
+section DirectorDiscovered
+call SSound.LoadSound "Director/golpe-mano2.wav"
+call SSound.LoadSound "Director/golpe-mano3.wav"
+call SSound.LoadSound "Director/golpe-mano4.wav"
+call SSound.LoadSound "Director/toque.wav"
+call SSound.LoadSound "Director/golpe-hum2.wav"
+call SSound.LoadSound "Director/loop-levita77.wav"
+call SSound.LoadSound "Director/loop-levita77b.wav"
+call Scene.AddSound 74 "mecanismo-dtritus3" 0.025 0 0
+call Scene.AddSound 76 "paso-detritus3" 0.05 0 0
+call Scene.AddSound 89 "mecanismo-dtritus2" 0.020 0 0
+call Scene.AddSound 90 "paso-detritus1" 0.03 0 0
+call Scene.AddSound 169 "mecanismo-dtritus3" 0.010 0 0
+call Scene.AddSound 170 "paso-detritus3" 0.02 0 0
+call Scene.AddSound 184 "mecanismo-dtritus2" 0.015 0 0
+call Scene.AddSound 185 "paso-detritus1" 0.03 0 0
+call Scene.AddSound 199 "mecanismo-dtritus3" 0.020 0 0
+call Scene.AddSound 200 "paso-detritus3" 0.04 0 0
+call Scene.AddSound 305 "mecanismo-dtritus3" 0.025 0 0
+call Scene.AddSound 306 "paso-detritus1" 0.05 0 0
+call Scene.AddSound 316 "mecanismo-dtritus3" 0.020 0 0
+call Scene.AddSound 317 "paso-detritus3" 0.03 0 0
+call Scene.AddSound 348 "toque" 0.18 -8 0
+call Scene.AddSound 354 "toque" 0.18 -8 0
+call Scene.AddSound 430 "golpe-hum2" 0.4 0 0
+call Scene.AddSound 478 "golpe-mano2" 0.35 0 0
+call Scene.AddSound 486 "golpe-mano3" 0.35 0 0
+call Scene.AddSound 494 "golpe-mano2" 0.35 0 0
+call Scene.AddSound 512 "golpe-mano3" 0.35 0 0
+call Scene.AddSound 515 "golpe-mano2" 0.35 0 0
+call Scene.AddSound 520 "golpe-mano3" 0.35 0 0
+call Scene.AddSound 520 "golpe-mano4" 0.35 0 0
+call Scene.AddSound 660 "loop-levita77" 0.15 +1 0
+call Scene.AddSound 1020 "loop-levita77" 0.15 0 0
+call Scene.AddSound 1100 "loop-levita77" 0.15 +2 0
+call Scene.AddSound 1380 "loop-levita77" 0.15 0 0
+
+section DirectorDiscoveredDtritus
+let CharName "DirectorDiscoveredDtritus"
+let ActName "TalkTouch"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus3" 0.025
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus5" 0.024
+call Chars.ActSound $CharName $ActName 45 "mecanismo-dtritus2" 0.025 +2
+call Chars.ActSound $CharName $ActName 46 "mecanismo-dtritus6" 0.024 +2
+call Chars.ActSound $CharName $ActName 104 "mecanismo-dtritus3" 0.025 +6
+call Chars.ActSound $CharName $ActName 105 "mecanismo-dtritus6" 0.024 +6
+call Chars.ActSound $CharName $ActName 112 "mecanismo-dtritus2" 0.020 +8
+let ActName "TalkSurprise"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus3" 0.025
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus5" 0.024
+let ActName "LookDown"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus3" 0.025 +4
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus6" 0.024 +4
+call Chars.ActSound $CharName $ActName 39 "mecanismo-dtritus3" 0.025 +6
+call Chars.ActSound $CharName $ActName 40 "mecanismo-dtritus6" 0.024 +6
+let ActName "Jump"
+call Chars.ActSound $CharName $ActName 11 "mecanismo-dtritus1" 0.026 +4
+call Chars.ActSound $CharName $ActName 19 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 16 "mecanismo-dtritus1" 0.026 +4
+call Chars.ActSound $CharName $ActName 24 "paso-detritus3" 0.055
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

@@ -1,0 +1,18 @@
+# The functions of SuperDeal_Tenth in level om (the script levels/om/scripts/superdeal_tenth.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/OM.c): SetVars.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/om/superdeal_tenth.def replaces this file.
+section InitStatus LevelPath
+call SuperDeal_Tenth.SetVars
+
+section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "TeslaUpgrade1"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call MissionsFuncs.NewCrazyDeal 1 "Stats.Race.Bureaucracy" 4
+call MissionsFuncs.NewCrazyDeal 2 "Stats.Possession" 10
+call MissionsFuncs.NewCrazyDeal 3 "Stats.Nurse.Dazed" 10
+call MissionsFuncs.SetNextSuperDeal "QF" "SuperDeal_Eleventh" "TeamDeathMatch"
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_Tenth_SystemMessage1"
+call Scrap.SetSaveVar "PlayerRounds" "0"
+call Scrap.SetSaveVar "EnemyRounds" "0"

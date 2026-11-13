@@ -1,0 +1,17 @@
+# The functions of Mission_Ambush in level scrapyard (the script levels/scrapyard/scripts/mission_ambush.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Scrapyard.c): GetMadHuntersProfile, InitStatus, Init, CallTraitorius, UsePhoneCab, DeepThroatCom, IsValidPos, CreateProbe, CreateMadHunter, CreateMadHunters, OnProbeDeath, PreCallDeepThroat, CallDeepThroat, UsePhoneCab2, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/scrapyard/mission_ambush.def replaces this file.
+section PreLaunchAmbush
+setvar Mission_Ambush.numProbes 4
+call Scrap.SetSaveVar "NumProbes" "4"
+call SaveGame.MMDesc "Mission_Ambush2_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_Ambush.LaunchAmbush
+
+section LaunchAmbush
+call Mission_Ambush.CreateProbe
+call Mission_Ambush.CreateMadHunters
+
+section OnMadHunterDeath LooserName WinnerName
+call Mission_Ambush.CreateMadHunter
+call Scrap.IncSaveVar "Stats.MadHunter"

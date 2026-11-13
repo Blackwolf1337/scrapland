@@ -1,0 +1,4 @@
+# line 6: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore _r6res()
+# line 30: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (_sd(__import__('Mission_GetAuthorization').CheckHumanDist), _sd(__import__('Mission_GetAuthorization').CheckMaxDist), __import__('SAI').GetStateChar('Human_Default'))

@@ -11,7 +11,6 @@
 #include "scrap/gvar.h"
 #include "scrap/mathlib.h"
 #include "scrap/pyentity.h"
-#include "scrap/python.h"
 
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
@@ -29,6 +28,14 @@ const char *cWorld_GetCamName(cWorld *world, int i);
 cEntity *cWorld_GetFirstEntity(cWorld *world);
 
 cGVar *GVar_Find(const char *name);
+/* the number of an int or float variable (def: its default), 0 for other types; 0 and a message for an unknown name */
+double GVar_GetNum(const char *name, byte def);
+/* the text of a string variable, "" for other types (and a message for an unknown name) */
+const char *GVar_GetStr(const char *name);
+/* as Scrap.Set: 1 set, 0 read only, -1 unknown name or wrong type (each with its message) */
+int GVar_SetNum(const char *name, double d);
+/* a string or script function variable */
+int GVar_SetStr(const char *name, const char *s);
 /* the base constructor (src/game/Global/Gvars.c): in front of g_GVars, the derived class sets the type */
 cGVar *cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
 /* an int variable with its default, as the static initializers make it */
@@ -51,8 +58,8 @@ typedef struct cFuncGvar {
 } cFuncGvar;
 #define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
 
-/* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of scrap/staticinit.h): its function in place of value
- * and def */
+/* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of scrap/staticinit.h): its function in place of
+ * value and def */
 typedef struct cGVarFunction {
 	union {
 		cGVar var;
@@ -67,9 +74,22 @@ byte SaveVar_Create(const char *name, const char *value);
 void SaveVars_Delete(const char *prefix);
 const char *SaveVar_Get(const char *name);
 int SaveVar_Inc(const char *name, int n);
-PyObject *SaveGames_GetList(const char *path);
+/* the save files Save0.sav (the autosave) to Save6.sav */
+#define SAVE_SLOTS 7
+/* an entry of the save list of SaveGames_GetList: desc is not terminated when it has 64 characters (the original
+ * copied it with strncpy; Scrap.GetSaveGamesList read on into time, as stringobject.c String_FromString does) */
+typedef struct cSaveGameInfo {
+	char desc[0x40];
+	int32_t time;			/* modification time of the file */
+	int slot;
+} cSaveGameInfo;
+int SaveGames_GetList(const char *path, cSaveGameInfo saves[SAVE_SLOTS]);
 
-PyObject *Lang_GetEntries(const char *name, int n);
+/* the most entries and the size of an id of Lang_GetEntries */
+#define LANG_ENTRIES 10
+#define LANG_ID 0x100
+/* the ids of Scrap.GetLangEntries(name, n) into out: their count */
+int Lang_GetEntries(const char *name, int n, char out[LANG_ENTRIES][LANG_ID]);
 const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
 
@@ -151,8 +171,6 @@ void Object3D_Preload(const char *name, const vec3_t *scale);
 cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
 	const char *name);
 /* printf into a string object */
-/* the Display entry of the video options (src/game/PyInterface/PyMenuDisplay.c), after Init of the scripts */
-void PyMenu_AddDisplayOption(void);
 /* imports the compiled module file of the open pack as name (src/game/PyInterface/PythonInit.c) */
 void Pack_PreloadLibrary(const char *name, const char *file);
 void Anm_Preload(const char *a, const char *b);
@@ -190,5 +208,23 @@ typedef struct cSaveVar {
 
 void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f);
 void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f);
+
+/* Scrap.Rand(a, b): a random number between a and b from the game's rand (one call of it) */
+double Scrap_RandRange(double a, double b);
+/* Scrap.TestSphere: the first entity of the list (an entity list name) in the sphere, not the one named exclude ("" for
+ * none), else NULL; *levelHit whether the sphere touches the level */
+cEntity *World_TestSphere(const vec3_t *c, float r, const char *list, const char *exclude, byte *levelHit);
+/* Scrap.TestLine: 1 when the line hits the level or an entity of the list (the point in *hit, the entity in *target,
+ * NULL for the level), else 0 */
+/* Scrap.AddItem(type, name, value) of type "Life" and (type, name, kind, value) of type "Ammo" (kind "Part", "Miss" or
+ * "Ener"): a box of the level logic */
+/* Scrap.SetCallFunc(func), Scrap.AddParamf of the n params, Scrap.Execute(): a call of the function of the engine
+ * ("!name" a C function of the registry) */
+void CallFunc_ExecuteF(const char *func, const float *params, int n);
+/* Scrap.EntityListGet(list, var): 1 a text in *s, 2 a float in *d, 3 an int in *i; 0 (no such variable) and -1 (no
+ * such list) with the console line of the engine */
+int EntityList_Get(const char *listName, const char *var, char **s, double *d, int *i);
+void Logic_AddItem(const char *type, const char *name, const char *kindName, int value);
+byte World_TestLine(const vec3_t *from, const vec3_t *to, const char *list, vec3_t *hit, cEntity **target);
 
 #endif

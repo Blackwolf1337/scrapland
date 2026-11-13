@@ -1,0 +1,240 @@
+# The police of the game: the tuning of the indoor police by reputation (InPolice.SetGVars of
+# missions/inpolice.py) and the attack waves outdoors (OutPolice.InitWaves of missions/outpolice.py). The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/missions/police.def replaces this file.
+#
+# The C picks the section by the save variable BadReputation: in0, in1 or in2 (2 and above) for the indoor police,
+# waves0 to waves5 for the waves (other values have none). "run wave <ship> ..." appends one wave, a list of ships,
+# to OutPolice.PoliceWaves; "run defscale <var> <factor>" sets the engine variable to its default times the factor.
+
+
+section in0
+call Scrap.Set AlarmFallDelta -0.200
+call Scrap.Set AlarmGrowDelta 0.020
+# sentinel
+call Scrap.Set SentinelAcuseSpeed 0.4
+call Scrap.Set SentinelAcuseTime 3.5
+call Scrap.Set SentinelSuspectSpeed 0.3
+call Scrap.Set SentinelSuspectTime 3.0
+call Scrap.Set SentinelInspectSpeed 0.25
+call Scrap.Set SentinelInspectTime 2.0
+call Scrap.Set SentinelBankerDetect 10
+# gear
+call Scrap.Set GearChaseSpeed 1
+call Scrap.Set GearAttackSpeed 0.305
+call Scrap.Set GearLostTargetTime 6.0
+call Scrap.Set GearRobberyDetection 15
+run defscale AngleStrafeUnderAttackGearAI 0.0
+call Scrap.Set ShootGearAI 5
+# bishop
+run defscale AngleStrafeUnderAttackBishopAI 0.0
+call Scrap.Set ShootBishopAI 5
+# messenger
+call Scrap.Set ShootMessengerAI 3
+call Scrap.Set VelRotDinamicMessengerAI 3
+call Scrap.Set MessengerGotoSpeed 0.25
+
+section in1
+call Scrap.Set AlarmFallDelta -0.15
+call Scrap.Set AlarmGrowDelta 0.045
+# sentinel
+call Scrap.Set SentinelAcuseSpeed 0.4
+call Scrap.Set SentinelAcuseTime 3.5
+call Scrap.Set SentinelSuspectSpeed 0.3
+call Scrap.Set SentinelSuspectTime 3.0
+call Scrap.Set SentinelInspectSpeed 0.25
+call Scrap.Set SentinelInspectTime 2.0
+call Scrap.Set SentinelBankerDetect 10
+# gear
+call Scrap.Set GearChaseSpeed 1
+call Scrap.Set GearAttackSpeed 0.305
+call Scrap.Set GearLostTargetTime 6.0
+call Scrap.Set GearRobberyDetection 15
+run defscale AngleStrafeUnderAttackGearAI 0.0
+call Scrap.Set ShootGearAI 5
+# bishop
+run defscale AngleStrafeUnderAttackBishopAI 0.0
+call Scrap.Set ShootBishopAI 5
+# messenger
+call Scrap.Set ShootMessengerAI 3
+call Scrap.Set VelRotDinamicMessengerAI 3
+call Scrap.Set MessengerGotoSpeed 0.25
+
+section in2
+call Scrap.Set AlarmFallDelta -0.15
+call Scrap.Set AlarmGrowDelta 0.045
+# sentinel
+call Scrap.Set SentinelAcuseSpeed 0.6
+call Scrap.Set SentinelAcuseTime 3.0
+call Scrap.Set SentinelSuspectSpeed 0.5
+call Scrap.Set SentinelSuspectTime 3.0
+call Scrap.Set SentinelInspectSpeed 0.25
+call Scrap.Set SentinelInspectTime 3.0
+call Scrap.Set SentinelBankerDetect 30
+# gear
+call Scrap.Set GearChaseSpeed 0.75
+call Scrap.Set GearAttackSpeed 0.25
+call Scrap.Set GearLostTargetTime 5.0
+call Scrap.Set GearRobberyDetection 30
+run defscale AngleStrafeUnderAttackGearAI 1.0
+call Scrap.Set ShootGearAI 3
+# bishop
+run defscale AngleStrafeUnderAttackBishopAI 1.0
+call Scrap.Set ShootBishopAI 3
+# messenger
+call Scrap.Set ShootMessengerAI 2
+call Scrap.Set VelRotDinamicMessengerAI 4
+call Scrap.Set MessengerGotoSpeed 0.35
+
+section waves0
+call Scrap.Set AlarmFallDelta -0.15
+call Scrap.Set AlarmFallMission 1.0
+run wave SPoli1_Rookie SPoli1_Rookie
+run wave SPoli2_Rookie
+run wave SPoli1_Rookie SPoli1_Rookie
+run wave SPoli2_Rookie SPoli2_Rookie
+run wave SPoli1_Pilot
+run wave SPoli1_Pilot SPoli1_Rookie SPoli2_Rookie
+run wave SPoli2_Pilot SPoli1_Rookie SPoli1_Rookie
+run wave SPoli2_Pilot SPoli2_Rookie SPoli1_Rookie
+run wave SPoli2_Pilot SPoli2_Rookie SPoli1_Pilot
+run wave SPoli2_Pilot SPoli2_Pilot SPoli2_Rookie
+run wave SPoli1_Veteran
+run wave SPoli2_Veteran
+run wave SPoli1_Rookie SPoli1_Veteran
+run wave SPoli1_Pilot SPoli1_Veteran
+run wave SPoli1_Rookie SPoli1_Pilot SPoli2_Veteran
+run wave SPoli1_Pilot SPoli2_Pilot SPoli2_Veteran
+run wave SPoli2_Pilot SPoli2_Veteran SPoli2_Veteran
+run wave SPoli1_Elite
+run wave SPoli2_Elite
+run wave SPoli1_Pilot SPoli2_Elite
+run wave SPoli2_Veteran SPoli2_Elite
+run wave SPoli1_Pilot SPoli2_Veteran SPoli2_Elite
+run wave SPoli1_Veteran SPoli2_Veteran SPoli2_Elite
+run wave SPoli1_Elite SPoli2_Elite SPoli2_Elite
+run wave SPoli3_Ace
+
+section waves1
+call Scrap.Set AlarmFallDelta -0.125
+call Scrap.Set AlarmFallMission 1.2
+run wave SPoli1_Pilot
+run wave SPoli1_Rookie SPoli3_Pilot
+run wave SPoli2_Rookie SPoli3_Pilot
+run wave SPoli3_Pilot
+run wave SPoli1_Rookie SPoli2_Pilot SPoli3_Pilot
+run wave SPoli1_Pilot SPoli2_Pilot SPoli3_Pilot
+run wave SPoli2_Pilot SPoli2_Pilot SPoli3_Pilot
+run wave SPoli2_Pilot SPoli3_Pilot SPoli3_Pilot
+run wave SPoli3_Pilot SPoli3_Veteran
+run wave SPoli2_Veteran
+run wave SPoli3_Veteran
+run wave SPoli1_Pilot SPoli3_Veteran
+run wave SPoli2_Pilot SPoli3_Veteran
+run wave SPoli1_Pilot SPoli2_Pilot SPoli3_Veteran
+run wave SPoli2_Pilot SPoli3_Veteran SPoli3_Veteran
+run wave SPoli3_Pilot SPoli3_Veteran SPoli3_Veteran
+run wave SPoli2_Elite
+run wave SPoli3_Elite
+run wave SPoli2_Pilot SPoli3_Elite
+run wave SPoli2_Veteran SPoli3_Elite
+run wave SPoli1_Pilot SPoli2_Veteran SPoli3_Elite
+run wave SPoli1_Veteran SPoli2_Veteran SPoli3_Elite
+run wave SPoli2_Elite SPoli3_Elite SPoli3_Elite
+run wave SPoli4_Ace
+
+section waves2
+call Scrap.Set AlarmFallDelta -0.125
+call Scrap.Set AlarmFallMission 1.2
+run wave SPoli2_Pilot
+run wave SPoli1_Rookie SPoli4_Pilot
+run wave SPoli2_Rookie SPoli4_Pilot
+run wave SPoli4_Veteran
+run wave SPoli1_Pilot SPoli4_Pilot
+run wave SPoli3_Pilot SPoli4_Pilot
+run wave SPoli1_Pilot SPoli2_Pilot SPoli4_Veteran
+run wave SPoli2_Pilot SPoli2_Veteran SPoli4_Veteran
+run wave SPoli2_Pilot SPoli3_Veteran SPoli4_Veteran
+run wave SPoli2_Veteran
+run wave SPoli3_Veteran
+run wave SPoli1_Pilot SPoli4_Veteran
+run wave SPoli2_Pilot SPoli4_Veteran
+run wave SPoli1_Pilot SPoli2_Veteran SPoli4_Veteran
+run wave SPoli2_Pilot SPoli4_Veteran SPoli4_Veteran
+run wave SPoli4_Pilot SPoli4_Veteran SPoli4_Veteran
+run wave SPoli3_Elite
+run wave SPoli4_Elite
+run wave SPoli3_Pilot SPoli4_Elite
+run wave SPoli3_Veteran SPoli4_Elite
+run wave SPoli1_Pilot SPoli2_Veteran SPoli4_Elite
+run wave SPoli2_Veteran SPoli3_Veteran SPoli4_Elite
+run wave SPoli3_Elite SPoli3_Elite SPoli4_Elite
+run wave SPoli5_Ace
+
+section waves3
+call Scrap.Set AlarmFallDelta -0.125
+call Scrap.Set AlarmFallMission 1.2
+run wave SPoli3_Rookie
+run wave SPoli2_Pilot SPoli5_Pilot
+run wave SPoli4_Pilot SPoli5_Pilot
+run wave SPoli5_Veteran
+run wave SPoli1_Veteran SPoli5_Veteran
+run wave SPoli2_Veteran SPoli5_Veteran
+run wave SPoli2_Pilot SPoli4_Veteran SPoli5_Veteran
+run wave SPoli3_Pilot SPoli4_Veteran SPoli5_Veteran
+run wave SPoli4_Pilot SPoli4_Veteran SPoli5_Veteran
+run wave SPoli4_Elite
+run wave SPoli5_Elite
+run wave SPoli1_Veteran SPoli5_Elite
+run wave SPoli2_Veteran SPoli5_Elite
+run wave SPoli1_Veteran SPoli3_Elite SPoli5_Elite
+run wave SPoli2_Veteran SPoli4_Elite SPoli5_Elite
+run wave SPoli4_Elite SPoli4_Elite SPoli5_Elite
+run wave SPoli4_Ace
+run wave SPoli5_Ace
+run wave SPoli3_Elite SPoli5_Ace
+run wave SPoli4_Veteran SPoli5_Ace
+run wave SPoli2_Veteran SPoli4_Veteran SPoli5_Ace
+run wave SPoli3_Veteran SPoli4_Elite SPoli5_Elite
+run wave SPoli4_Elite SPoli4_Elite SPoli5_Elite
+run wave SPoli6_MegaAce
+
+section waves4
+call Scrap.Set AlarmFallDelta -0.125
+call Scrap.Set AlarmFallMission 1.2
+run wave SPoli4_Pilot
+run wave SPoli3_Pilot SPoli4_Pilot
+run wave SPoli5_Pilot SPoli6_Veteran
+run wave SPoli6_Elite
+run wave SPoli1_Veteran SPoli6_Elite
+run wave SPoli1_Veteran SPoli6_Elite
+run wave SPoli2_Pilot SPoli3_Veteran SPoli6_Elite
+run wave SPoli3_Pilot SPoli4_Elite SPoli6_Elite
+run wave SPoli4_Pilot SPoli5_Elite SPoli6_Elite
+run wave SPoli5_Ace
+run wave SPoli6_Ace
+run wave SPoli1_Elite SPoli6_Ace
+run wave SPoli2_Elite SPoli6_Ace
+run wave SPoli1_Veteran SPoli4_Elite SPoli6_Ace
+run wave SPoli2_Veteran SPoli5_Elite SPoli6_Ace
+run wave SPoli4_Veteran SPoli5_Elite SPoli6_Ace
+run wave SPoli6_MegaAce
+
+section waves5
+call Scrap.Set AlarmFallDelta -0.125
+call Scrap.Set AlarmFallMission 1.2
+run wave SPoli5_Pilot
+run wave SPoli4_Pilot SPoli6_Veteran
+run wave SPoli5_Veteran SPoli6_Veteran
+run wave SPoli6_Ace
+run wave SPoli1_Elite SPoli6_Ace
+run wave SPoli1_Elite SPoli6_Ace
+run wave SPoli2_Veteran SPoli3_Elite SPoli6_Ace
+run wave SPoli3_Veteran SPoli4_Ace SPoli6_MegaAce
+run wave SPoli4_Veteran SPoli5_Ace SPoli6_MegaAce
+run wave SPoli5_MegaAce
+run wave SPoli6_MegaAce
+run wave SPoli1_Ace SPoli6_Ace
+run wave SPoli2_Ace SPoli6_Ace
+run wave SPoli1_Elite SPoli4_Elite SPoli6_MegaAce
+run wave SPoli2_Elite SPoli5_Elite SPoli6_MegaAce
+run wave SPoli4_Elite SPoli5_Elite SPoli6_MegaAce

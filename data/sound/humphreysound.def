@@ -1,0 +1,177 @@
+# humphreysound (the sound script sound/humphreysound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/humphreysound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes paso-hum1.wav
+	AddSoundRes paso-hum3.wav
+	AddSoundRes caida-hum.wav
+	AddSoundRes toque.wav
+if %HumphreySound.isPC
+	class
+		AddSoundRes golpe-hum.wav
+end
+	AddSoundRes mecanismo-hum2.wav
+	AddSoundRes mecanismo-hum5.wav
+	AddSoundRes mecanismo-hum6.wav
+	AddSoundRes Keyboard-hum1.wav
+	AddSoundRes Keyboard-hum2.wav
+
+section SetSounds
+let act Walk
+call Chars.ActSound $char $act 2 paso-hum1 0.055
+call Chars.ActSound $char $act 1 mecanismo-hum2 0.026 +4
+call Chars.ActSound $char $act 17 mecanismo-hum2 0.026 +4
+call Chars.ActSound $char $act 18 paso-hum3 0.055
+let act Turn
+call Chars.ActSound $char $act 2 mecanismo-hum2 0.026 +4
+call Chars.ActSound $char $act 9 paso-hum1 0.055
+call Chars.ActSound $char $act 15 mecanismo-hum2 0.026 +4
+call Chars.ActSound $char $act 17 paso-hum3 0.05
+let act Run
+call Chars.ActSound $char $act 4 mecanismo-hum2 0.026 +4
+call Chars.ActSound $char $act 6 paso-hum1 0.055
+call Chars.ActSound $char $act 15 mecanismo-hum2 0.026 +4
+call Chars.ActSound $char $act 17 paso-hum3 0.055
+let act Relax1
+call Chars.ActSound $char $act 8 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $act 19 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 45 toque 0.04 +5
+call Chars.ActSound $char $act 76 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 68 toque 0.04 +5
+call Chars.ActSound $char $act 75 mecanismo-hum6 0.03 +4
+let act Relax0
+call Chars.ActSound $char $act 2 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 4 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 29 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 31 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 66 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 68 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 106 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 108 mecanismo-hum2 0.028 +2
+let act DiscoverInit
+call Chars.ActSound $char $act 2 mecanismo-hum6 0.03 +6
+call Chars.ActSound $char $act 3 mecanismo-hum2 0.028 +3
+call Chars.ActSound $char $act 11 paso-hum3 0.05
+let act Discover
+call Chars.ActSound $char $act 14 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $act 15 mecanismo-hum2 0.028 +4
+call Chars.ActSound $char $act 27 mecanismo-hum2 0.028 +4
+let act DiscoverEnd
+call Chars.ActSound $char $act 38 mecanismo-hum5 0.03 +3
+call Chars.ActSound $char $act 39 mecanismo-hum2 0.028 +3
+call Chars.ActSound $char $act 50 paso-hum3 0.055
+let act DazedInit
+call Chars.ActSound $char $act 1 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 2 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 6 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 13 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 26 mecanismo-hum2 0.028 +2
+let act DazedEnd
+call Chars.ActSound $char $act 72 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 72 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 76 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 81 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $act 82 mecanismo-hum2 0.028 +2
+let act FlashedInit
+call Chars.ActSound $char $act 1 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 2 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 11 paso-hum3 0.05 +4
+if %HumphreySound.isPC
+	call Chars.ActSound $char $act 11 golpe-hum 0.02 +2
+end
+if %HumphreySound.isPC
+	call Chars.ActSound $char $act 12 golpe-hum 0.02 +3
+end
+let act Flashed
+call Chars.ActSound $char $act 16 mecanismo-hum5 0.03 +7
+call Chars.ActSound $char $act 36 mecanismo-hum6 0.03 +6
+let act FlashedEnd
+call Chars.ActSound $char $act 46 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $act 46 mecanismo-hum2 0.028 +2
+let act SitDown
+call Chars.ActSound $char $act 10 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 12 paso-hum3 0.05
+if %HumphreySound.isPC
+	call Chars.ActSound $char $act 22 golpe-hum 0.02
+end
+call Chars.ActSound $char $act 23 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 25 paso-hum1 0.05
+call Chars.ActSound $char $act 25 mecanismo-hum6 0.03 +6
+call Chars.ActSound $char $act 28 mecanismo-hum2 0.028 +2
+if %HumphreySound.isPC
+	call Chars.ActSound $char $act 38 golpe-hum 0.02 -6
+end
+call Chars.ActSound $char $act 44 mecanismo-hum2 0.028 +2
+let act WorkRelax
+call Chars.ActSound $char $act 1 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $act 2 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 32 mecanismo-hum6 0.03 +5
+call Chars.ActSound $char $act 36 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $act 76 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $act 78 mecanismo-hum2 0.028 +2
+let act Work
+call Chars.ActSound $char $act 9 Keyboard-hum1 0.025
+call Chars.ActSound $char $act 12 Keyboard-hum1 0.025
+call Chars.ActSound $char $act 16 Keyboard-hum2 0.025
+call Chars.ActSound $char $act 19 Keyboard-hum1 0.025
+call Chars.ActSound $char $act 20 Keyboard-hum2 0.025
+call Chars.ActSound $char $act 23 Keyboard-hum1 0.025
+call Chars.ActSound $char $act 28 Keyboard-hum2 0.025
+call Chars.ActSound $char $act 31 Keyboard-hum1 0.025
+call Chars.ActSound $char $act 42 Keyboard-hum1 0.025
+call Chars.ActSound $char $act 45 Keyboard-hum1 0.025
+call Chars.ActSound $char $act 50 Keyboard-hum2 0.025
+call Chars.ActSound $char $act 53 Keyboard-hum1 0.025
+class
+	FallSound caida-hum
+	FallSoundVol 0.04
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 1 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $talk 2 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $talk 23 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $talk 41 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $talk 43 mecanismo-hum2 0.028 +2
+
+section Talk1Snd
+call Chars.ActSound $char $talk 1 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $talk 3 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $talk 36 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $talk 38 mecanismo-hum2 0.028 +2
+
+section Talk2Snd
+call Chars.ActSound $char $talk 1 mecanismo-hum6 0.03 +4
+call Chars.ActSound $char $talk 3 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $talk 20 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $talk 30 mecanismo-hum2 0.028 +2
+call Chars.ActSound $char $talk 41 mecanismo-hum5 0.03 +4
+call Chars.ActSound $char $talk 43 mecanismo-hum2 0.028 +2
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

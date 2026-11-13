@@ -1,0 +1,201 @@
+# The functions of Mission_RustyFirstContact in level junkyard (the script levels/junkyard/scripts/mission_rustyfirstcontact.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Junkyard.c): InitStatus, Init, CreateFakeBertoShip, ShowExtras, StartInitialScene, LoadMecanicFinalScene, FXMecanicFinalSputnik, BertoGoHome, BackDownBerto, EndOfBertoBye, StartInitBuildShip, InitBuildShip, EnterEditShipFirstTime, NoTutorialEnterEditShip, OnEndOfShipEditFirstTime, UseElevatorFirstTime, EndOfMission, EnterEditShipTutorial, TutorialMsgInit, EditShipTutorial_Step.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/junkyard/mission_rustyfirstcontact.def replaces this file.
+section LoadMecanicScene
+call Scene.Load "Mecanic"
+call Scene.AddGeneric 200 "import CreditsText;CreditsText.ShowCredit(23)"
+call Scene.AddGeneric 625 "import CreditsText;CreditsText.ShowCredit(24)"
+call Scene.AddGeneric 1050 "import CreditsText;CreditsText.ShowCredit(25)"
+call Scene.AddGeneric 1475 "import CreditsText;CreditsText.ShowCredit(26)"
+call Scene.AddGeneric 1900 "import CreditsText;CreditsText.ShowCredit(27)"
+call Scene.AddGeneric 2325 "import CreditsText;CreditsText.ShowCredit(28)"
+call Scene.ActorAction 160 "Dtritus" "Walk"
+call Scene.ActorAction 280 "Dtritus" "Relax"
+call Scene.ActorAction 605 "Dtritus" "Turn"
+call Scene.ActorAction 620 "Dtritus" "Relax"
+call Scene.ActorAction 1055 "Dtritus" "Talk1"
+call Scene.ActorAction 1100 "Dtritus" "Talk"
+call Scene.ActorAction 1115 "Dtritus" "Relax"
+call Scene.ActorAction 1330 "Dtritus" "RelaxRight"
+call Scene.ActorAction 1350 "Dtritus" "Turn"
+call Scene.ActorAction 1400 "Dtritus" "Relax"
+call Scene.ActorAction 1665 "Dtritus" "Talk"
+call Scene.ActorAction 1787 "Dtritus" "Relax"
+call Scene.ActorAction 1965 "Dtritus" "Talk1"
+call Scene.ActorAction 2000 "Dtritus" "Talk"
+call Scene.ActorAction 2095 "Dtritus" "Relax"
+call Scene.ActorAction 2225 "Dtritus" "LookSputnik"
+call Scene.ActorAction 2390 "Dtritus" "Relax"
+call Scene.ActorAction 2645 "Dtritus" "Turn"
+call Scene.ActorAction 2665 "Dtritus" "Relax"
+call Scene.ActorAction 2950 "Dtritus" "Hi"
+call Scene.ActorAction 160 "Berto" "Walk"
+call Scene.ActorAction 270 "Berto" "Talk"
+call Scene.ActorAction 330 "Berto" "Talk2"
+call Scene.ActorAction 360 "Berto" "Relax"
+call Scene.ActorAction 460 "Berto" "Hi"
+call Scene.ActorAction 510 "Berto" "Talk"
+call Scene.ActorAction 535 "Berto" "Relax"
+call Scene.ActorAction 605 "Berto" "Turn"
+call Scene.ActorAction 620 "Berto" "Talk2"
+call Scene.ActorAction 684 "Berto" "Talk"
+call Scene.ActorAction 812 "Berto" "Talk1"
+call Scene.ActorAction 876 "Berto" "Talk2"
+call Scene.ActorAction 940 "Berto" "Talk"
+call Scene.ActorAction 1045 "Berto" "Relax"
+call Scene.ActorAction 1130 "Berto" "Talk"
+call Scene.ActorAction 1210 "Berto" "TalkIntroduce"
+call Scene.ActorAction 1260 "Berto" "Relax"
+call Scene.ActorAction 1330 "Berto" "RelaxLeft"
+call Scene.ActorAction 1350 "Berto" "Turn"
+call Scene.ActorAction 1400 "Berto" "Relax"
+call Scene.ActorAction 1425 "Berto" "Hi"
+call Scene.ActorAction 1499 "Berto" "Talk"
+call Scene.ActorAction 1585 "Berto" "Relax"
+call Scene.ActorAction 2604 "Berto" "Notas"
+call Scene.ActorAction 2668 "Berto" "Talk1"
+call Scene.ActorAction 2730 "Berto" "Talk"
+call Scene.ActorAction 2820 "Berto" "Talk2"
+call Scene.ActorAction 2880 "Berto" "Hi"
+call Scene.ActorAction 2920 "Berto" "Turn"
+call Scene.ActorAction 2960 "Berto" "Walk"
+call Scene.ActorAction 160 "Rusty" "Walk"
+call Scene.ActorAction 1320 "Rusty" "Walk"
+call Scene.ActorAction 1388 "Rusty" "Turn"
+call Scene.ActorAction 1420 "Rusty" "Relax"
+call Scene.ActorAction 1570 "Rusty" "Turn"
+call Scene.ActorAction 1590 "Rusty" "Talk"
+call Scene.ActorAction 1660 "Rusty" "Relax"
+call Scene.ActorAction 1800 "Rusty" "Talk0"
+call Scene.ActorAction 1860 "Rusty" "Talk"
+call Scene.ActorAction 1960 "Rusty" "Relax"
+call Scene.ActorAction 2100 "Rusty" "Turn"
+call Scene.ActorAction 2120 "Rusty" "Talk"
+call Scene.ActorAction 2160 "Rusty" "Talk2"
+call Scene.ActorAction 2220 "Rusty" "Relax"
+call Scene.ActorAction 2442 "Rusty" "Talk"
+call Scene.ActorAction 2595 "Rusty" "Relax"
+call Scene.ActorAction 2645 "Rusty" "Turn"
+call Scene.ActorAction 2674 "Rusty" "Relax"
+call Scene.ActorAction 2960 "Rusty" "Hi"
+call Scene.ActorAction 160 "Sputnik" "Relax"
+call Scene.ActorAction 480 "Sputnik" "Relax5"
+call Scene.ActorAction 550 "Sputnik" "Relax3"
+call Scene.ActorAction 595 "Sputnik" "Relax"
+call Scene.ActorAction 840 "Sputnik" "Relax1"
+call Scene.ActorAction 910 "Sputnik" "Relax"
+call Scene.ActorAction 950 "Sputnik" "Relax2"
+call Scene.ActorAction 980 "Sputnik" "Relax"
+call Scene.ActorAction 1110 "Sputnik" "Relax4"
+call Scene.ActorAction 1160 "Sputnik" "Relax"
+call Scene.ActorAction 1265 "Sputnik" "Relax2"
+call Scene.ActorAction 1310 "Sputnik" "Relax"
+call Scene.ActorAction 2970 "Sputnik" "Relax2"
+call Scene.AddText 270 "Mission_Scene_Fake_Rusty_1" 3
+call Scene.AddText 460 "Mission_Scene_Fake_Rusty_2" 3
+call Scene.AddText 620 "Mission_Scene_Fake_Rusty_3" 15
+call Scene.AddText 1055 "Mission_Scene_Fake_Rusty_4" 3
+call Scene.AddText 1130 "Mission_Scene_Fake_Rusty_5" 5
+call Scene.AddText 1425 "Mission_Scene_Fake_Rusty_6" 4
+call Scene.AddText 1590 "Mission_Scene_Fake_Rusty_7" 3
+call Scene.AddText 1665 "Mission_Scene_Fake_Rusty_8" 5
+call Scene.AddText 1800 "Mission_Scene_Fake_Rusty_9" 5
+call Scene.AddText 1965 "Mission_Scene_Fake_Rusty_10" 5
+call Scene.AddText 2120 "Mission_Scene_Fake_Rusty_11" 4
+call Scene.AddText 2442 "Mission_Scene_Fake_Rusty_12" 6
+call Scene.AddText 2604 "Mission_Scene_Fake_Rusty_13" 10
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk3" "Talk3" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk4" "Talk4" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxRight" "RelaxRight" 1
+call Scene.CreateLocalAction $CharType 0 "LookSputnik" "LookSputnik" 1
+call Scene.CreateLocalAction $CharType 0 "Hi" "Hi" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxLeft" "RelaxLeft" 1
+call Scene.CreateLocalAction $CharType 0 "Hi" "Hi" 1
+call Scene.CreateLocalAction $CharType 0 "Notas" "Notas" 1
+call Scene.CreateLocalAction $CharType 0 "TalkIntroduce" "TalkIntroduce" 1
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Rusty"
+call Scene.AddCharActor "Rusty" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.CreateLocalAction $CharType 0 "Hi" "Hi" 0
+call Scene.SetDefSounds "Rusty" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Sputnik"
+call Scene.AddCharActor "Sputnik" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax2" "Relax2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax3" "Relax3" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax4" "Relax4" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax5" "Relax5" 1
+call Scene.SetDefSounds "Sputnik" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+
+section RustyFirstSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	setvar Speech.OnEndOfSpeech %Mission_RustyFirstContact.StartInitBuildShip
+	setvar Speech.OnEndOfSpeechParams ()
+	call Speech.NISpeech
+	call Speech.AutoAddNI "Mission_TalkToRusty_Rusty_NI_1Msg"
+	call Speech.RunNI
+end
+
+section OnEndOfShipEditTutorial id control
+call Scrap.Set "EscapeEvent" "Menu.Init"
+call Scrap.Set "MainMissionEvent" "MissionsFuncs.ShowMissionInfo"
+call SInput.SetActionSet "Walk"
+call Mission_RustyFirstContact.OnEndOfShipEditFirstTime $id $control
+
+section TutorialMsg id control msg
+call Scrap.SetTimeSpeed 0
+call SInput.Bind $id "Inactive" "SeleShip" "Mission_RustyFirstContact.TutorialContinue"
+let y 215
+let iname "TutorialMsg"
+call SScorer.Set $id $iname "Text" $msg
+call SScorer.Set $id $iname "X" 320
+call SScorer.Set $id $iname "Y" $y
+call SScorer.Set $id $iname "CentralText" 1
+call SScorer.Set $id $iname "Visible" 1
+call SScorer.Set $id $iname "TypingTime" -0.10
+call SScorer.Set $id $iname "TypingSpeed" 0.03
+let iname "TutorialMsgContinue"
+call SScorer.Set $id $iname "Visible" 1
+call SScorer.Set $id $iname "TypingTime" -1.50
+call SScorer.Set $id $iname "TypingSpeed" 0.03
+call SScorer.Set $id "TutorialMsgBack" "Visible" 1
+call Scrap.Set "ScorerMarker" 0
+
+section TutorialContinue id
+call Scrap.Set "ScorerMarker" 1
+call SInput.Bind $id "Inactive" "SeleShip" ""
+call SScorer.Set $id "TutorialMsg" "Visible" 0
+call SScorer.Set $id "TutorialMsgContinue" "Visible" 0
+call SScorer.Set $id "TutorialMsgBack" "Visible" 0
+call Scrap.SetTimeSpeed 1

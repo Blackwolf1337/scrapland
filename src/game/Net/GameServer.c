@@ -10,10 +10,10 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/net.h"
-#include "scrap/python.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 #define g_NetBrowserCode (GVar_BrowserCode.value.s)	/* BrowserCode (cString) */
 #define g_HeartbeatTime (GVar_HeartbeatTime.value.f)
@@ -59,6 +59,10 @@ byte Net_CloseServer(const char *msg) {
 	NetServer_Goodbye();
 	/* the goodbyes go out until every client answers or times out */
 	while (NetServer_Flush(Net_TimeMs())) {
+		/* the clock of the deterministic test mode goes on only by its steps */
+		if (TestDet_On()) {
+			TestDet_Tick();
+		}
 	}
 	NetServer_Done();
 	g_NetServerHost[0] = 0;

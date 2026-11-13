@@ -1,0 +1,41 @@
+# The functions of SuperDeal_Fourth in level qf (the script levels/qf/scripts/superdeal_fourth.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/QF.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/qf/superdeal_fourth.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CombatDeaths" "20"
+call Scrap.SetSaveVar "CombatNumEnemies" "5"
+call Scrap.SetSaveVar "CombatEnemyType" "BankDirector"
+call Scrap.SetSaveVar "CombatNumFriends" "4"
+call Scrap.SetSaveVar "CombatFriendType" "Bishop"
+run saveint reputation "BadReputation"
+if $reputation < 2
+	call Scrap.SetSaveVar "CombatFriendProfile" "SuperDealFourthFriendsPilot"
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealFourthEnemiesPilot"
+elif $reputation < 4
+	call Scrap.SetSaveVar "CombatFriendProfile" "SuperDealFourthFriendsElite"
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealFourthEnemiesElite"
+else
+	call Scrap.SetSaveVar "CombatFriendProfile" "SuperDealFourthFriendsMegaAce"
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealFourthEnemiesMegaAce"
+end
+call Scrap.SetSaveVar "CombatStartTextCad" "SuperDeal_Fourth_RemoteMessage1"
+call Scrap.SetSaveVar "CombatFinishPlayerWinsTextCad" "SuperDeal_Fourth_RemoteMessage2"
+call Scrap.SetSaveVar "CombatFinishPlayerLoosesTextCad" "SuperDeal_Fourth_RemoteMessage3"
+let executeOnAbort "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')"
+let executeOnVictory "import SuperDeal_Fourth;SuperDeal_Fourth.Victory()"
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
+section InitStatus LevelPath
+call SuperDeal_Fourth.SetVars
+
+section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "SwarmUpgrade1"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call MissionsFuncs.NewCrazyDeal 1 "Stats.Nurse.Dazed" 7
+call MissionsFuncs.NewCrazyDeal 2 "Stats.Traffic" 15
+call MissionsFuncs.NewCrazyDeal 3 "Stats.Gear" 10
+call MissionsFuncs.SetNextSuperDeal "FZ" "SuperDeal_Fifth" "CTF"
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_Fourth_SystemMessage1"

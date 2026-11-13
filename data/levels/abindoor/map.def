@@ -1,0 +1,287 @@
+# The functions of Map in level abindoor (the script levels/abindoor/scripts/map.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/ABIndoor.c): InitStatus, Init, Goodbye, LaunchCinematic, ShowEndTitle, FadeEndTitle.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/abindoor/map.def replaces this file.
+section CreateHuman e
+object $e
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnHumanSpeech"
+
+section CreateBerto e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnBertoSpeech"
+
+section CreateBetty e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnBettySpeech"
+
+section CreateCrazyGambler e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnCrazyGamblerSpeech"
+
+section OnHumanSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg3" "Mission_TheEnd_InitAns3"
+end
+
+section OnBettySpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg4" "Mission_TheEnd_InitAns4"
+end
+
+section OnBertoSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg2" "Mission_TheEnd_InitAns2"
+end
+
+section OnCrazyGamblerSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg1" "Mission_TheEnd_InitAns1"
+end
+
+section PlaySceneA
+call Scene.Play "TheEndA"
+setvar Scene.EndOfSceneCallback %Map.Goodbye
+
+section Credits usr=None
+call Scrap.Achievement 7
+call Scrap.Set "MotionBlurFactorBegin" 0
+call Scrap.Set "MotionBlurFactorEnd" 0
+call Scrap.Set "MotionBlurTime" 0
+call Scrap.Set "MotionBlurEndTime" 0
+call Scrap.Set "MotionBlurOffVar" 0
+call Scrap.Set "R_SceneMotionBlurValue" 0
+call Scrap.Set "ShowCredits" 1
+call Scrap.DelSaveVars ""
+call SaveGame.QLoad "Levels/Menu"
+
+section LoadSceneA
+call Scene.Load "TheEndA"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 385 "Dtritus" "Relax"
+call Scene.ActorAction 405 "Dtritus" "Talk"
+call Scene.ActorAction 405 "Dtritus" "Talk1"
+call Scene.ActorAction 495 "Dtritus" "Relax"
+call Scene.ActorAction 550 "Dtritus" "Talk"
+call Scene.ActorAction 595 "Dtritus" "TalkFly"
+call Scene.ActorAction 646 "Dtritus" "Relax"
+call Scene.ActorAction 0 "CrazyGambler" "Relax"
+call Scene.ActorAction 140 "CrazyGambler" "Talk"
+call Scene.ActorAction 200 "CrazyGambler" "Relax"
+call Scene.ActorAction 0 "Human" "Relax"
+call Scene.ActorAction 80 "Human" "Relax1"
+call Scene.ActorAction 150 "Human" "Relax"
+call Scene.ActorAction 170 "Human" "Walk"
+call Scene.ActorAction 215 "Human" "Relax"
+call Scene.ActorAction 250 "Human" "TalkCongrat"
+call Scene.ActorAction 305 "Human" "Relax"
+call Scene.ActorAction 0 "Betty" "RelaxShy"
+call Scene.ActorAction 370 "Betty" "RelaxShyTrans"
+call Scene.ActorAction 415 "Betty" "Relax"
+call Scene.ActorAction 505 "Betty" "Talk"
+call Scene.ActorAction 500 "Betty" "MorphLips"
+call Scene.ActorAction 541 "Betty" "Relax"
+call Scene.ActorBreakChannel 550 "Betty" 3
+call Scene.ActorAction 655 "Betty" "Talk"
+call Scene.ActorAction 650 "Betty" "MorphLips"
+call Scene.ActorAction 671 "Betty" "TalkCool"
+call Scene.ActorAction 710 "Betty" "RelaxCool"
+call Scene.ActorBreakChannel 720 "Betty" 3
+call Scene.ActorAction 0 "Berto" "Relax"
+call Scene.ActorAction 130 "Berto" "Run"
+call Scene.ActorAction 185 "Berto" "Relax"
+call Scene.ActorAction 200 "Berto" "TalkCongrat"
+call Scene.ActorAction 249 "Berto" "Relax"
+call Scene.ActorAction 0 "Moto" "Relax"
+call Scene.AddGeneric 10 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),3.0)"
+call Scene.AddGeneric 740 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddText 140 "Mission_Scene_TheEnd_Almost1" 2
+call Scene.AddText 200 "Mission_Scene_TheEnd_Almost2" 2
+call Scene.AddText 250 "Mission_Scene_TheEnd_Almost3" 2
+call Scene.AddText 405 "Mission_Scene_TheEnd_Almost4" 3
+call Scene.AddText 505 "Mission_Scene_TheEnd_Almost5" 1
+call Scene.AddText 550 "Mission_Scene_TheEnd_Almost6" 3
+call Scene.AddText 655 "Mission_Scene_TheEnd_Almost7" 2
+call Scrap.Set "DefInterpTime" 0.7
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call Scene.CreateLocalAction $CharType 0 "TalkFly" "TalkFly" 0
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "CrazyGambler"
+call Scene.AddCharActor "CrazyGambler" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call Scene.SetDefSounds "CrazyGambler" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.CreateLocalAction $CharType 0 "TalkCongrat" "TalkCongrat" 0
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call Scene.CreateLocalAction $CharType 0 "TalkCool" "TalkCool" 0
+call Scene.CreateLocalAction $CharType 0 "RelaxShy" "RelaxShy" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxCool" "RelaxCool" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxShyTrans" "RelaxShyTrans" 0
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call Scene.CreateLocalAction $CharType 0 "TalkCongrat" "TalkCongrat" 0
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Moto"
+call Scene.AddLocalActor "Moto" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+
+section LoadSceneB
+call Scene.Load "TheEndB"
+call Scene.ActorAction 0 "Dtritus" "RelaxSit"
+call Scene.ActorAction 55 "Dtritus" "RelaxSitLookBetty"
+call Scene.ActorAction 75 "Dtritus" "TalkSitLookBetty"
+call Scene.ActorAction 99 "Dtritus" "RelaxSitLookBetty"
+call Scene.ActorAction 180 "Dtritus" "TalkSitLookBetty"
+call Scene.ActorAction 210 "Dtritus" "RelaxSit"
+call Scene.ActorAction 250 "Dtritus" "Acel"
+call Scene.ActorAction 270 "Dtritus" "TurnLeft"
+call Scene.ActorAction 300 "Dtritus" "RelaxSit"
+call Scene.ActorAction 370 "Dtritus" "TurnLeft"
+call Scene.ActorAction 485 "Dtritus" "RelaxSitLookPeople"
+call Scene.ActorAction 535 "Dtritus" "RelaxSitByePeople"
+call Scene.ActorAction 580 "Dtritus" "RelaxSitLookPeople"
+call Scene.ActorAction 612 "Dtritus" "RelaxSit"
+call Scene.ActorAction 830 "Dtritus" "Victory"
+call Scene.ActorAction 0 "Betty" "Sit"
+call Scene.ActorAction 65 "Betty" "RelaxSit"
+call Scene.ActorAction 110 "Betty" "TalkSit"
+call Scene.ActorAction 105 "Betty" "MorphLips"
+call Scene.ActorAction 173 "Betty" "RelaxSit"
+call Scene.ActorBreakChannel 180 "Betty" 3
+call Scene.ActorAction 275 "Betty" "TurnLeft"
+call Scene.ActorAction 305 "Betty" "RelaxSit"
+call Scene.ActorAction 375 "Betty" "TurnLeft"
+call Scene.ActorAction 490 "Betty" "LookPeople"
+call Scene.ActorAction 585 "Betty" "RelaxSit"
+call Scene.ActorAction 0 "Moto" "Relax"
+call Scene.ActorAction 55 "Moto" "RelaxLookBetty"
+call Scene.ActorAction 210 "Moto" "Relax"
+call Scene.ActorAction 250 "Moto" "Acel"
+call Scene.ActorAction 270 "Moto" "TurnLeft"
+call Scene.ActorAction 300 "Moto" "Relax"
+call Scene.ActorAction 370 "Moto" "TurnLeft"
+call Scene.ActorAction 485 "Moto" "RelaxLookBetty"
+call Scene.ActorAction 830 "Moto" "Victory"
+call Scene.ActorAction 0 "CrazyGambler" "Relax"
+call Scene.ActorAction 0 "Human" "Relax"
+call Scene.ActorAction 280 "Human" "Turn"
+call Scene.ActorAction 300 "Human" "Relax"
+call Scene.ActorAction 380 "Human" "Turn"
+call Scene.ActorAction 400 "Human" "Relax"
+call Scene.ActorAction 475 "Human" "Turn"
+call Scene.ActorAction 495 "Human" "Relax"
+call Scene.ActorAction 684 "Human" "Bye"
+call Scene.ActorAction 0 "Berto" "Relax"
+call Scene.ActorAction 310 "Berto" "Run"
+call Scene.ActorAction 335 "Berto" "Relax"
+call Scene.ActorAction 460 "Berto" "Turn"
+call Scene.ActorAction 480 "Berto" "Relax"
+call Scene.ActorAction 700 "Berto" "Bye"
+call Scene.AddGeneric 0 "SScorer.Fade(0,(0,0,0,255),(0,0,0,255),3.0)"
+call Scene.AddGeneric 10 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),2.0)"
+call Scene.AddGeneric 1100 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),5)"
+call Scene.AddGeneric 1100 "import Map; Map.FadeEndTitle(0)"
+call Scene.AddText 75 "Mission_Scene_TheEnd_ByeBye1" 1
+call Scene.AddText 110 "Mission_Scene_TheEnd_ByeBye2" 2
+call Scene.AddText 180 "Mission_Scene_TheEnd_ByeBye3" 1
+call Scene.AddText 540 "Mission_Scene_TheEnd_ByeBye4" 2
+call Scene.AddText 835 "Mission_Scene_TheEnd_ByeBye5" 1
+call Scene.AddGeneric 960 "import Map; Map.ShowEndTitle(0)"
+call Scrap.Set "DefInterpTime" 0.7
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call Scene.CreateLocalAction $CharType 0 "RelaxSit" "RelaxSit" 1
+call Scene.CreateLocalAction $CharType 0 "Acel" "Acel" 1
+call Scene.CreateLocalAction $CharType 0 "TurnLeft" "TurnLeft" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxSitLookBetty" "RelaxSitLookBetty" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxSitLookPeople" "RelaxSitLookPeople" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxSitByePeople" "RelaxSitByePeople" 1
+call Scene.CreateLocalAction $CharType 0 "TalkSitLookBetty" "TalkSitLookBetty" 1
+call Scene.CreateLocalAction $CharType 0 "Victory" "Victory" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "RelaxSit"
+let CharType "CrazyGambler"
+call Scene.AddCharActor "CrazyGambler" $CharType
+call Scene.SetDefSounds "CrazyGambler" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "Bye" "Bye" 0
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call Scene.CreateLocalAction $CharType 0 "RelaxSit" "RelaxSit" 1
+call Scene.CreateLocalAction $CharType 0 "LookPeople" "LookPeople" 1
+call Scene.CreateLocalAction $CharType 0 "TalkSit" "TalkSit" 1
+call Scene.CreateLocalAction $CharType 0 "Sit" "Sit" 1
+call Scene.CreateLocalAction $CharType 0 "TurnLeft" "TurnLeft" 1
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "RelaxSit"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "Bye" "Bye" 0
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Moto"
+call Scene.AddLocalActor "Moto" $CharType
+call Scene.CreateLocalAction $CharType 0 "Acel" "Acel" 1
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call Scene.CreateLocalAction $CharType 0 "TurnLeft" "TurnLeft" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxLookBetty" "RelaxLookBetty" 1
+call Scene.CreateLocalAction $CharType 0 "Victory" "Victory" 1
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneTheEndBFile" %Map.FXSceneTheEndBFile
+call Scrap.SetDebrisSys %Map.FXSceneTheEndBFile 1 0 0 1 0 0 %Fx.FXSCENETHEENDB

@@ -1,0 +1,20 @@
+# The functions of Mission_ArrangeIgorCombat in level gamblinden (the script levels/gamblinden/scripts/mission_arrangeigorcombat.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): Init, TalkToIgor, IgorSpeech, TalkToCrazyGambler, CrazyGamblerSpeech.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_arrangeigorcombat.def replaces this file.
+section InitStatus LevelPath
+call Scrap.SetSaveVar "PoliceBossAtPolice" "0"
+call Scrap.SetSaveVar "MayorAtGambinDen" "1"
+call Scrap.SetSaveVar "FunctionaryTwinsAtGambinDen" "0"
+call Scrap.SetSaveVar "BankersAtGambinDen" "1"
+call Scrap.SetSaveVar "BishopsAtGambinDen" "1"
+call Scrap.SetSaveVar "PolicesAtGambinDen" "0"
+
+section LaunchIgorCombat
+call SaveGame.MMDesc "Mission_VersusAgainstIgor_MissionText1" 1
+call Scrap.SetSaveVar "MayorAtTownHall" "1"
+call Scrap.SetSaveVar "PoliceBossAtPolice" "1"
+call Scrap.SetSaveVar "BankMasterAtBank" "1"
+call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "Temple"
+call Scrap.SetSaveVar "Journalist.Betty_Defaut" "Temple"
+call Scrap.SetSaveVar "Journalist.Berto_Defaut" "Press"
+call MissionsFuncs.StartSuperDeal "CA" "Mission_IgorCombat" "Versus"

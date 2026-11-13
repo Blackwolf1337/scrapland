@@ -1,0 +1,42 @@
+# Humphrey (the character script chars/humphrey.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/humphrey.def replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of
+# the class.
+
+section Humphrey
+let prev %MakeChar.RelaxRotLimit
+setvar MakeChar.RelaxRotLimit 360
+call MakeChar.InitChar Humphrey
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.7
+call MakeChar.AddRelaxActions Humphrey 0 3
+call MakeChar.AddWalkActions Humphrey 360 1 ActList=(Walk,)
+call MakeChar.AddTalkAction Humphrey nExtraActions=3
+call MakeChar.AddFlashedAction Humphrey
+call MakeChar.AddFallAction Humphrey 45 1 0
+call MakeChar.AddDazeAction Humphrey
+call MakeChar.AddDiscover Humphrey
+call MakeChar.SetSitActions Humphrey
+class Humphrey
+	WRadius 80
+	VRadius 80
+	SRadius 20
+	YModelDisp -5
+	FOV 90
+	CamDist 330
+	CamAng -5
+	CamRot 0
+	Node0Name "Bip Humphrey Head"
+	Node1Name "Bip Humphrey Spine2"
+	Node2Name "Bip Humphrey Spine1"
+call MakeChar.SetNodeRotation 0 0 40 0
+call MakeChar.SetNodeRotation 0 1 10 0
+call MakeChar.SetNodeRotation 0 2 10 0
+class Humphrey
+	OnCreate Humphrey.OnCreate
+call HumphreySound.Init Humphrey
+run speech Humphrey CharsNPC GenericNPCSpeech
+setvar MakeChar.RelaxRotLimit $prev
+
+section OnCreate
+call CharAct.OnCreate $name

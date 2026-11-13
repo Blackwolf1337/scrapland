@@ -1,0 +1,67 @@
+# CTF (FZ): the fifth super deal started the way the crazy gambler starts it, then every function directly; the
+# scheduler is recorded in the same line (_sd), the remote messages, the score table and the restart are recorders;
+# the ships are made static and invulnerable after each start, so the AI takes no flag and kills nobody
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('FZ', 'SuperDeal_Fifth', 'CTF'))
+!sleep 40
+execfile('fsd.py')
+C = __import__('CTF')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), Scrap.GetSaveVar('SuperDealType'), Scrap.GetSaveVar('CTFFlags'), Scrap.GetSaveVar('CTFNumEnemies'), Scrap.GetSaveVar('CTFNumFriends'), Scrap.GetSaveVar('CTFEnemyProfile'))
+_sdmod('CTF', ('CrazyGamblerStartCTFFirst', 'enemies', 'friends', 'flagsActive', 'flagsSpecial', 'flags', 'maxFlags', 'onDeathSpawnTime', 'flagsEnemies', 'flagsFriends'))
+_sdhooks()
+_sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5', 'Friend1', 'Friend2', 'Friend3', 'Friend4'))
+C.GetMenuDescription()
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), __import__('Parking').PlayerShip.Name, Scrap.UsrEntity(0).Name, _sdfreeze(C.enemies + C.friends))
+_sd(C.InitStatus, 'Levels/FZ')
+_sd(C.SetInvulnerableStatus, __import__('Parking').PlayerShip)
+(setattr(__import__('Speech'), 'RemoteCom', ['x']), _sd(C.AbortRemoteMessages), __import__('Speech').RemoteCom)
+_sd(C.SetProfile, Scrap.GetEntity('Enemy4'), 1)
+_sd(C.SetProfile, Scrap.GetEntity('Friend3'), 0)
+_sd(C.SetProfile, Scrap.GetEntity('Friend3'), 2)
+# Init with too short a respawn time raises before it creates anything
+(Scrap.SetSaveVar('CTFOnDeathSpawnTime', '0.5'), _sd(C.Init, 'Levels/FZ'), _sdmod('CTF', ('flags', 'maxFlags', 'onDeathSpawnTime')), Scrap.SetSaveVar('CTFOnDeathSpawnTime', '5.0'), setattr(C, 'onDeathSpawnTime', 5.0))
+# the player boards: the crazy gambler's message, then boarding again
+_sd(__import__('Parking').ExecSwitchVehicleMissionCallback)
+(__import__('Parking').PlayerShip.Invulnerable, _sdhooks())
+(setattr(__import__('Parking').PlayerShip, 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback), __import__('Parking').PlayerShip.Invulnerable)
+# the start: the first flag, the leader; then the ships static and the engine's deaths to a recorder
+(_sd(C.StartCTF), _sdn(__import__('Vehicles').OnDeathCallback), _sdn(__import__('Menu').MissionScorerCall), _sdfreeze(C.enemies + C.friends), setattr(__import__('Vehicles'), 'OnDeathCallback', _sdrec('death')))
+(_sdmod('CTF', ('flagsActive', 'flagsSpecial', 'flagsEnemies', 'flagsFriends')), _sdlist('CTFEnemies'), _sdlist('CTFFriends'), _sdmod('RacerScorer', ('missionYou', 'missionBad', 'missionLimit')), Scrap.Get('CurrentWaypointName'), Scrap.Get('LeaderFlag'))
+(_sdent(('Enemy1', 'Enemy2', 'Friend1')), _sditems('Flag'))
+# flags taken by the player, the leader, another enemy, nobody
+(_sd(C.TakeFlag, C.flagsActive[0], 'Player0'), _sdmod('CTF', ('flagsActive', 'flagsSpecial', 'flagsEnemies', 'flagsFriends')), Scrap.Get('CurrentWaypointName'), Scrap.Get('LeaderFlag'), Scrap.Get('PlayerCTFTeamIsWinning'), _sditems('Flag'))
+(_sd(C.TakeFlag, C.flagsActive[0], 'Enemy1'), _sdmod('CTF', ('flagsActive', 'flagsEnemies', 'flagsFriends')), Scrap.Get('PlayerCTFTeamIsWinning'), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+(_sd(C.TakeFlag, C.flagsActive[0], 'Enemy2'), _sd(C.TakeFlag, C.flagsActive[0], 'Nobody'), _sdmod('CTF', ('flagsActive', 'flagsEnemies', 'flagsFriends')))
+# a flag nobody took goes back, flags thrown by a dead ship (random directions), the nearest is the way point
+(_sd(C.ResetFlag, C.flagsActive[0]), _sdmod('CTF', ('flagsActive', 'flagsSpecial')), Scrap.Get('CurrentWaypointName'), Scrap.Get('LeaderFlag'))
+(_sd(C.SpawnFlags, Scrap.GetEntity('Friend2').Pos, 2), _sdmod('CTF', ('flagsActive', 'flagsSpecial')), Scrap.Get('CurrentWaypointName'), Scrap.Get('LeaderFlag'), _sditems('Flag'))
+(_sd(C.SpawnFlags, (0.0, 0.0, 0.0), 0), Scrap.Get('CurrentWaypointName'))
+(_sd(C.TakeFlag, C.flagsSpecial[0], 'Player0'), _sdmod('CTF', ('flagsActive', 'flagsSpecial', 'flagsEnemies', 'flagsFriends')), Scrap.Get('LeaderFlag'))
+(_sd(C.RemoveFlag, C.flagsSpecial[0]), _sd(C.RemoveFlag, 'NoFlag'), _sdmod('CTF', ('flagsActive', 'flagsSpecial')))
+(_sd(C.ResetFlag, C.flagsActive[0]), _sdmod('CTF', ('flagsActive', 'flagsSpecial')))
+# deaths: the player drops his flags, the leader drops his and comes back as the leader, an enemy, a friend, nobody
+(setattr(C, 'flagsFriends', 2), _sd(C.OnVehicleDeathCallback, 'Player0', 'Enemy1'), _sdmod('CTF', ('flagsActive', 'flagsSpecial', 'flagsEnemies', 'flagsFriends')), Scrap.Get('CurrentWaypointName'))
+(setattr(C, 'flagsEnemies', 1), _sd(C.OnVehicleDeathCallback, 'Enemy1', 'Player0'), _sdmod('CTF', ('enemies', 'flagsActive', 'flagsSpecial', 'flagsEnemies', 'flagsFriends')), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+(_sd(C.OnVehicleDeathCallback, 'Enemy2', 'Friend1'), _sd(C.OnVehicleDeathCallback, 'Friend1', 'Enemy3'), _sd(C.OnVehicleDeathCallback, 'Nobody', 'Enemy3'), _sdmod('CTF', ('enemies', 'friends')))
+(_sd(C.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy3'), _sd(C.RespawnPlayer, 'Friend2'), _sdent(('Friend2',), ('Target', 'Active')))
+# respawns: the leader, an enemy (keyword), a friend
+(_sd(C.RespawnEnemy, 1), _sdent(('Enemy',)), _sdmod('CTF', ('enemies',)), _sdfreeze(C.enemies))
+(Scrap.GetEntity('Enemy').Del(), _sd(C.RespawnPlayer, 'Friend2'), _sdent(('Friend2',), ('Target', 'Active')))
+(_sd(C.RespawnEnemy, isLeader = 0), _sdent(('Enemy',)), _sdmod('CTF', ('enemies',)), _sdfreeze(C.enemies))
+(_sd(C.RespawnFriend), _sdent(('Friend',)), _sdmod('CTF', ('friends',)), _sdfreeze(C.friends))
+# no flag while the teams carry the most
+(setattr(C, 'flagsFriends', 10), setattr(C, 'flagsEnemies', 9), _sd(C.CreateFlag), _sd(C.CreateFlag, (1.0, 2.0, 3.0)), setattr(C, 'flagsFriends', 0), setattr(C, 'flagsEnemies', 0))
+# the end: the player's tenth flag (victory), the leader's tenth flag (defeat), the end functions directly
+(setattr(C, 'flagsFriends', 9), _sd(C.TakeFlag, C.flagsActive[0], 'Player0'), _sdhooks(), _sdmod('CTF', ('flagsActive', 'flagsSpecial', 'flagsEnemies', 'flagsFriends')), _sdlist('CTFEnemies'), _sdlist('CTFFriends'), Scrap.Get('LeaderFlag'), Scrap.UsrEntity(0).Invulnerable, __import__('Parking').PlayerShip.Invulnerable)
+(_sd(C.CreateFlag), _sd(C.CreateFlag, Scrap.GetEntity('Friend2').Pos), _sdmod('CTF', ('flagsActive', 'flagsSpecial')))
+(map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'CTFEnemies'), C.enemies), setattr(C, 'flagsFriends', 0), setattr(C, 'flagsEnemies', 9), _sd(C.TakeFlag, C.flagsActive[0], 'Enemy'), _sdhooks(), _sdmod('CTF', ('flagsActive', 'flagsSpecial', 'flagsEnemies', 'flagsFriends')), Scrap.Get('LeaderFlag'))
+(setattr(C, 'flagsFriends', 3), _sd(C.EndOfCTF), setattr(C, 'flagsFriends', 10), _sd(C.EndOfCTF))
+(_sd(C.PreRestartMenu), _sd(C.PreOnVictory), _sd(C.RestartCTF, 0, 0))
+# a missing global stops like the script
+del C.flagsSpecial
+_sd(C.ResetFlag, 'NoFlag')
+C.flagsSpecial = []
+# new teams after the old ships went
+(map(lambda n: Scrap.GetEntity(n).Del(), C.enemies + C.friends), setattr(C, 'enemies', []), setattr(C, 'friends', []))
+(_sd(C.CreateEnemies), _sd(C.CreateFriends), _sdmod('CTF', ('enemies', 'friends')), _sdent(('Enemy1', 'Enemy4', 'Friend1', 'Friend3')), _sdfreeze(C.enemies + C.friends))
+# the one line that differs on purpose: the C functions are builtins
+(str(type(C.Init)), str(type(C.TakeFlag)))

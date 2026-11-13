@@ -1,5 +1,5 @@
 /*
- * Python module Scrap (method table Scrap_methods): engine functions for the game scripts.
+ * Python module Scrap (function table Scrap_methods): engine functions for the game scripts.
  * Original file: PyInterface\\ScrapPy.cpp
  */
 #include <math.h>
@@ -9,1381 +9,1102 @@
 #include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
-#include "scrap/python.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/scriptapi.h"
 #include "scrap/staticinit.h"
 
 /* levelpath GetLevelPath() : Obtiene el path del level actual */
-static PyObject *Scrap_GetLevelPath(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("s", g_pApp->levelPath);
+API_FN(Scrap, GetLevelPath) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "s", g_pApp->levelPath);
 }
 
 /* money Scrap.GetMoney() : Devuelve el liquido disponible. */
-static PyObject *Scrap_GetMoney(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", g_pWorld->money);
+API_FN(Scrap, GetMoney) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", g_pWorld->money);
 }
 
 /* --- batch 2: the small functions of the module (A to L) --- */
 
 /* Achievement(n) : NULL for n < 0, else nothing; differs from the original on purpose (no store features): no GOG or
  * Steam achievement is unlocked */
-static PyObject *Scrap_Achievement(PyObject *self, PyObject *args) {
-	int n;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &n) || n < 0) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+API_FN(Scrap, Achievement) {
+	int id;
+	return Mode_Parse(a, n, "i", &id) && id >= 0;
 }
 
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute */
 static cPy_Function g_CallFunc;
 
 /* AddParamf(value) : float parameter for the function of SetCallFunc */
-static PyObject *Scrap_AddParamf(PyObject *self, PyObject *args) {
+API_FN(Scrap, AddParamf) {
 	double v;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "d", &v)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "d", &v)) {
+		return 0;
 	}
 	cPy_Function_AddParamF((&g_CallFunc), (float)v);
-	return Py_ReturnNone();
+	return 1;
+}
+
+void CallFunc_ExecuteF(const char *func, const float *params, int n) {
+	cPy_Function_SetFunc((&g_CallFunc), func);
+	for (int i = 0; i < n; i++) {
+		cPy_Function_AddParamF((&g_CallFunc), params[i]);
+	}
+	cPy_Function_Execute((&g_CallFunc), 0);
 }
 
 /* AddParami(value) */
-static PyObject *Scrap_AddParami(PyObject *self, PyObject *args) {
+API_FN(Scrap, AddParami) {
 	int v;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &v)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &v)) {
+		return 0;
 	}
 	cPy_Function_AddParamI((&g_CallFunc), v);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* AddParams(value) */
-static PyObject *Scrap_AddParams(PyObject *self, PyObject *args) {
-	char *v;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &v)) {
-		return NULL;
+API_FN(Scrap, AddParams) {
+	const char *v;
+	if (!Mode_Parse(a, n, "s", &v)) {
+		return 0;
 	}
 	cPy_Function_AddParamS((&g_CallFunc), v);
-	return Py_ReturnNone();
+	return 1;
 }
 
-/* AddScheduledFunc(time,func,params[,name]) : Ejecuta un codigo en python en un instante de tiempo. */
-static PyObject *Scrap_AddScheduledFunc(PyObject *self, PyObject *args) {
+/* AddScheduledFunc(time,func,params[,name]) : Ejecuta un codigo en python en un instante de tiempo. The scheduler
+ * keeps the function and the arguments as the values given */
+API_FN(Scrap, AddScheduledFunc) {
 	double time;
-	PyObject *func, *params;
-	char *name = "";
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "dOO|s", &time, &func, &params, &name)) {
-		return NULL;
+	const nativeVal_t *func, *params;
+	const char *name = "";
+	if (!Mode_Parse(a, n, "dOO|s", &time, &func, &params, &name)) {
+		return 0;
 	}
 	Scheduler_Add(&g_pWorld->scheduler, (float)time, func, params, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* BuildFont(name, size) */
-static PyObject *Scrap_BuildFont(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(Scrap, BuildFont) {
+	const char *name;
 	int size;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "si", &name, &size)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "si", &name, &size)) {
+		return 0;
 	}
 	Font_Build(name, size);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* CallElements(name) */
-static PyObject *Scrap_CallElements(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(Scrap, CallElements) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	Elements_Call(&g_pWorld->elements, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* ClosePack() : forgets the open pack */
-static PyObject *Scrap_ClosePack(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, ClosePack) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	cString_Set(g_PackName, "");
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* ConsoleError(text) */
-static PyObject *Scrap_ConsoleError(PyObject *self, PyObject *args) {
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
+API_FN(Scrap, ConsoleError) {
+	const char *text;
+	if (!Mode_Parse(a, n, "s", &text)) {
+		return 0;
 	}
 	Con_Print(CON_COLOR_ERROR, text, 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* ConsoleOut(text) */
-static PyObject *Scrap_ConsoleOut(PyObject *self, PyObject *args) {
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
+API_FN(Scrap, ConsoleOut) {
+	const char *text;
+	if (!Mode_Parse(a, n, "s", &text)) {
+		return 0;
 	}
 	Con_Print(0xff0000, text, 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* CreateElements() */
-static PyObject *Scrap_CreateElements(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, CreateElements) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Elements_Create(&g_pWorld->elements);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* CreateEntityList(listName) */
-static PyObject *Scrap_CreateEntityList(PyObject *self, PyObject *args) {
-	char *listName;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &listName)) {
-		return NULL;
+API_FN(Scrap, CreateEntityList) {
+	const char *listName;
+	if (!Mode_Parse(a, n, "s", &listName)) {
+		return 0;
 	}
 	cWorld *World = g_pWorld;
 	CHECK(cWorld_NewEntityList(World, listName));
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *NoProfiles(const char *name) {
+static byte NoProfiles(const char *name, nativeVal_t *out) {
 	Con_Print(CON_COLOR_ERROR, "ERROR : ", 0);
 	Con_Print(CON_COLOR_ERROR, name, 0);
 	Con_Print(CON_COLOR_ERROR, " : Player Profile system not supported on PC\n", 0);
-	return Py_BuildValue("i", 1);
+	return Api_Build(out, "i", 1);
 }
 
 /* CreateSaveProfile(name) : not on PC */
-static PyObject *Scrap_CreateSaveProfile(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	return NoProfiles(name);
+API_FN(Scrap, CreateSaveProfile) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && NoProfiles(name, out);
 }
 
 /* CreateSaveVar(name, value) */
-static PyObject *Scrap_CreateSaveVar(PyObject *self, PyObject *args) {
-	char *name, *value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &name, &value)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", SaveVar_Create(name, value) != 0);
+API_FN(Scrap, CreateSaveVar) {
+	const char *name, *value;
+	return Mode_Parse(a, n, "ss", &name, &value) && Api_Build(out, "i", SaveVar_Create(name, value) != 0);
 }
 
 /* DebugInput(text) */
-static PyObject *Scrap_DebugInput(PyObject *self, PyObject *args) {
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
-	}
-	return Py_BuildValue("s", App_DebugInput(g_pApp, text));
+API_FN(Scrap, DebugInput) {
+	const char *text;
+	return Mode_Parse(a, n, "s", &text) && Api_Build(out, "s", App_DebugInput(g_pApp, text));
 }
 
 /* DeleteProfile(name) : not on PC */
-static PyObject *Scrap_DeleteProfile(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	return NoProfiles(name);
+API_FN(Scrap, DeleteProfile) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && NoProfiles(name, out);
 }
 
 /* DeleteScheduledFuncs(name) */
-static PyObject *Scrap_DeleteScheduledFuncs(PyObject *self, PyObject *args) {
-	char *name = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(Scrap, DeleteScheduledFuncs) {
+	const char *name = NULL;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	Scheduler_Delete(&g_pWorld->scheduler, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* DelSaveVars(prefix) */
-static PyObject *Scrap_DelSaveVars(PyObject *self, PyObject *args) {
-	char *prefix;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &prefix)) {
-		return NULL;
+API_FN(Scrap, DelSaveVars) {
+	const char *prefix;
+	if (!Mode_Parse(a, n, "s", &prefix)) {
+		return 0;
 	}
 	SaveVars_Delete(prefix);
-	return Py_ReturnNone();
+	return 1;
 }
 
-/* Des(name) : description of an engine variable; NULL without exception if there is none */
-static PyObject *Scrap_Des(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+/* Des(name) : description of an engine variable; NULL without exception if there is none (golden records it) */
+API_FN(Scrap, Des) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	cGVar *v = GVar_Find(name);
 	if (!v) {
 		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
-		return NULL;
+		return 0;
 	}
-	return Py_BuildValue("s", v->base.description);
+	return Api_Build(out, "s", v->base.description);
 }
 
 /* DeselectProfile() : not on PC */
-static PyObject *Scrap_DeselectProfile(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, DeselectProfile) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Con_Print(CON_COLOR_ERROR, "ERROR : no Xbox console, no Profile.\n", 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* EndLoading() */
-static PyObject *Scrap_EndLoading(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, EndLoading) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Loading_End();
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* Execute() : Ejecuta una funcion callback (c++). */
-static PyObject *Scrap_Execute(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, Execute) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	cPy_Function_Execute((&g_CallFunc), 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* Exit() sale del juego. */
-static PyObject *Scrap_Exit(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, Exit) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	App_Exit(g_pApp);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* ExtractPack(name) */
-static PyObject *Scrap_ExtractPack(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Pack_Extract(name));
+API_FN(Scrap, ExtractPack) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && Api_Build(out, "i", Pack_Extract(name));
 }
 
 /* GetAlarm() : (on, level, value); level and on are read before the value */
-static PyObject *Scrap_GetAlarm(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, GetAlarm) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	float level = g_pWorld->alarm.value;
 	byte on = g_pWorld->alarm.on;
 	int value = Alarm_GetValue(&g_pWorld->alarm);
-	return Py_BuildValue("ifi", on != 0, (double)level, value);
+	return Api_Build(out, "ifi", on != 0, (double)level, value);
 }
 
 /* GetAlarmChars() */
-static PyObject *Scrap_GetAlarmChars(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("ss", g_pWorld->alarm.chars, g_pWorld->alarm.lastChars);
+API_FN(Scrap, GetAlarmChars) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "ss", g_pWorld->alarm.chars, g_pWorld->alarm.lastChars);
 }
 
 /* GetCam(i) : name of the camera */
-static PyObject *Scrap_GetCam(PyObject *self, PyObject *args) {
+API_FN(Scrap, GetCam) {
 	int i;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &i)) {
-		return NULL;
-	}
-	return Py_BuildValue("s", cWorld_GetCamName(g_pWorld, i));
+	return Mode_Parse(a, n, "i", &i) && Api_Build(out, "s", cWorld_GetCamName(g_pWorld, i));
 }
 
 /* GetFirst() : Retorna la primera entidad de la list o none */
-static PyObject *Scrap_GetFirst(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, GetFirst) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	if (!cWorld_GetFirstEntity(g_pWorld)) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return PyEntity_New(cWorld_GetFirstEntity(g_pWorld)->name);
+	return Api_Handle(cWorld_GetFirstEntity(g_pWorld)->name, out);
 }
 
 /* GetFloor(y) */
-static PyObject *Scrap_GetFloor(PyObject *self, PyObject *args) {
+API_FN(Scrap, GetFloor) {
 	float y;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "f", &y)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Floor_Get(&g_pWorld->floor, y));
+	return Mode_Parse(a, n, "f", &y) && Api_Build(out, "i", Floor_Get(&g_pWorld->floor, y));
 }
 
 /* GetFreeBlocks() : no Xbox, always 50000 */
-static PyObject *Scrap_GetFreeBlocks(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, GetFreeBlocks) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Con_Print(CON_COLOR_ERROR, "ERROR : no Xbox console.\n", 0);
-	return Py_BuildValue("i", 50000);
+	return Api_Build(out, "i", 50000);
 }
 
 /* GetGogID() : None; differs from the original on purpose (no store features), which gave the GalaxyID */
-static PyObject *Scrap_GetGogID(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+API_FN(Scrap, GetGogID) {
+	return Mode_Parse(a, n, "");
 }
 
 /* GetLangEntries(name[, n]) : n default 3 */
-static PyObject *Scrap_GetLangEntries(PyObject *self, PyObject *args) {
-	char *name;
-	int n = 3;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|i", &name, &n)) {
-		return NULL;
+API_FN(Scrap, GetLangEntries) {
+	const char *name;
+	int count = 3;
+	if (!Mode_Parse(a, n, "s|i", &name, &count)) {
+		return 0;
 	}
-	return Lang_GetEntries(name, n);
+	char ids[LANG_ENTRIES][LANG_ID];
+	count = Lang_GetEntries(name, count, ids);
+	Native_SetEmpty(out, NV_LIST);
+	for (int i = 0; i < count; i++) {
+		Native_SetStr(Native_Append(out), ids[i]);
+	}
+	return 1;
 }
 
 /* GetLangStr(name) : "" and a warning when the string is missing */
-static PyObject *Scrap_GetLangStr(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(Scrap, GetLangStr) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	const char *s = Lang_GetStr(name);
 	if (s) {
-		return Py_BuildValue("s", s);
+		return Api_Build(out, "s", s);
 	}
 	Con_Warnf("STRING NOT FOUND: '%s'\n", name);
-	return Py_BuildValue("s", "");
+	return Api_Build(out, "s", "");
 }
 
 /* GetLanguage() */
-static PyObject *Scrap_GetLanguage(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, GetLanguage) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	const char *lang = Lang_GetLanguage();
 	if (!lang) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return Py_BuildValue("s", lang);
+	return Api_Build(out, "s", lang);
 }
 
 /* GetLockAlarm() */
-static PyObject *Scrap_GetLockAlarm(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Alarm_IsLocked(&g_pWorld->alarm) != 0);
+API_FN(Scrap, GetLockAlarm) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", Alarm_IsLocked(&g_pWorld->alarm) != 0);
 }
 
 /* GetNetFlags() : (bit 0, bit 1, bit 2) of the application flags */
-static PyObject *Scrap_GetNetFlags(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, GetNetFlags) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	uint32_t f = g_pApp->flags;
-	return Py_BuildValue("iii", (int)(f & 1), (int)(f >> 1 & 1), (int)(f >> 2 & 1));
+	return Api_Build(out, "iii", (int)(f & 1), (int)(f >> 1 & 1), (int)(f >> 2 & 1));
 }
 
 /* GetNewLevelPath() */
-static PyObject *Scrap_GetNewLevelPath(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("s", g_pApp->newLevelPath);
+API_FN(Scrap, GetNewLevelPath) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "s", g_pApp->newLevelPath);
 }
 
 /* GetSavedProfilesList() : not on PC, empty list */
-static PyObject *Scrap_GetSavedProfilesList(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, GetSavedProfilesList) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Con_Print(CON_COLOR_ERROR, "ERROR : GetSavedProfilesList not supported on PC\n", 0);
-	return PyList_New(0);
+	Native_SetEmpty(out, NV_LIST);
+	return 1;
 }
 
-/* GetSaveGamesList(path) */
-static PyObject *Scrap_GetSaveGamesList(PyObject *self, PyObject *args) {
-	char *path;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &path)) {
-		return NULL;
+/* GetSaveGamesList(path) : [(description, slot), ...] */
+API_FN(Scrap, GetSaveGamesList) {
+	const char *path;
+	if (!Mode_Parse(a, n, "s", &path)) {
+		return 0;
 	}
-	return SaveGames_GetList(path);
+	cSaveGameInfo saves[SAVE_SLOTS];
+	int count = SaveGames_GetList(path, saves);
+	Native_SetEmpty(out, NV_LIST);
+	for (int i = 0; i < count; i++) {
+		nativeVal_t *t = Native_Append(out);
+		Native_SetEmpty(t, NV_TUPLE);
+		Native_SetStr(Native_Append(t), saves[i].desc);
+		Native_SetInt(Native_Append(t), saves[i].slot);
+	}
+	return 1;
 }
 
 /* GetSaveVar(name) */
-static PyObject *Scrap_GetSaveVar(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	return Py_BuildValue("s", SaveVar_Get(name));
+API_FN(Scrap, GetSaveVar) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && Api_Build(out, "s", SaveVar_Get(name));
 }
 
 /* GetSteamID() : None, as the original without Steam (no store features) */
-static PyObject *Scrap_GetSteamID(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+API_FN(Scrap, GetSteamID) {
+	return Mode_Parse(a, n, "");
 }
 
 /* GetSteamTicket() : None, as the original without Steam (no store features) */
-static PyObject *Scrap_GetSteamTicket(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+API_FN(Scrap, GetSteamTicket) {
+	return Mode_Parse(a, n, "");
 }
 
 /* GetTime() : Obtiene el tiempo del world en segundos */
-static PyObject *Scrap_GetTime(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("d", (double)Timer_GetTime(&g_pWorld->timer));
+API_FN(Scrap, GetTime) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "d", (double)Timer_GetTime(&g_pWorld->timer));
 }
 
 /* GetTimeSpeed() */
-static PyObject *Scrap_GetTimeSpeed(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("d", (double)g_pWorld->timer.speed);
+API_FN(Scrap, GetTimeSpeed) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "d", (double)g_pWorld->timer.speed);
 }
 
 /* GetVideoCurrentMode() : Get Video Current Mode Index. No argument check. */
-static PyObject *Scrap_GetVideoCurrentMode(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_BuildValue("i", Video_GetCurrentMode());
+API_FN(Scrap, GetVideoCurrentMode) {
+	return Api_Build(out, "i", Video_GetCurrentMode());
 }
 
 /* IncSaveVar(name[, n]) : n default 1 */
-static PyObject *Scrap_IncSaveVar(PyObject *self, PyObject *args) {
-	char *name;
-	int n = 1;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|i", &name, &n)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", SaveVar_Inc(name, n));
+API_FN(Scrap, IncSaveVar) {
+	const char *name;
+	int inc = 1;
+	return Mode_Parse(a, n, "s|i", &name, &inc) && Api_Build(out, "i", SaveVar_Inc(name, inc));
 }
 
 /* InitLoading() */
-static PyObject *Scrap_InitLoading(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, InitLoading) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Loading_Init();
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* IsSteam() : None, as the original without Steam (no store features) */
-static PyObject *Scrap_IsSteam(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+API_FN(Scrap, IsSteam) {
+	return Mode_Parse(a, n, "");
 }
 
 /* LaunchDashboard(n) : no Xbox, 0 */
-static PyObject *Scrap_LaunchDashboard(PyObject *self, PyObject *args) {
-	int n;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &n)) {
-		return NULL;
+API_FN(Scrap, LaunchDashboard) {
+	int id;
+	if (!Mode_Parse(a, n, "i", &id)) {
+		return 0;
 	}
 	Con_Print(CON_COLOR_ERROR, "ERROR : no Xbox console, no Dashoboard.\n", 0);
-	return Py_BuildValue("i", 0);
+	return Api_Build(out, "i", 0);
 }
 
 /* ListModels() */
-static PyObject *Scrap_ListModels(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, ListModels) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Models_List();
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* --- batch 3: the small functions of the module (L to Z) --- */
 
 /* LoadGameVars(name) */
-static PyObject *Scrap_LoadGameVars(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", SaveGame_Load(name) != 0);
+API_FN(Scrap, LoadGameVars) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && Api_Build(out, "i", SaveGame_Load(name) != 0);
 }
 
 /* LoadLevel(level) */
-static PyObject *Scrap_LoadLevel(PyObject *self, PyObject *args) {
-	char *level;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &level)) {
-		return NULL;
+API_FN(Scrap, LoadLevel) {
+	const char *level;
+	if (!Mode_Parse(a, n, "s", &level)) {
+		return 0;
 	}
 	CWinApp_LoadLevel(g_pApp, level);
-	return Py_BuildValue("i", 1);
+	return Api_Build(out, "i", 1);
 }
 
 /* ModelInfo(name[, arg]) : arg default 1 */
-static PyObject *Scrap_ModelInfo(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(Scrap, ModelInfo) {
+	const char *name;
 	int arg = 1;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|i", &name, &arg)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s|i", &name, &arg)) {
+		return 0;
 	}
 	Model_Info(name, arg);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* MusicPlayer(name[, cmd[, volume]]) : cmd default "play", volume default 0 */
-static PyObject *Scrap_MusicPlayer(PyObject *self, PyObject *args) {
-	char *name, *cmd = "play";
+API_FN(Scrap, MusicPlayer) {
+	const char *name, *cmd = "play";
 	double volume = 0.0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|sd", &name, &cmd, &volume)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s|sd", &name, &cmd, &volume)) {
+		return 0;
 	}
 	Music_Play(name, cmd, (float)volume);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* OpenPack(path) : the pack name becomes "path/" */
-static PyObject *Scrap_OpenPack(PyObject *self, PyObject *args) {
-	char *path;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &path)) {
-		return NULL;
+API_FN(Scrap, OpenPack) {
+	const char *path;
+	if (!Mode_Parse(a, n, "s", &path)) {
+		return 0;
 	}
 	cString_Printf(g_PackName, "%s/", path);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* OpenStore(appid) : NULL for appid < 0, else nothing, as the original without Steam (no store features; with Steam it
  * opened the store page in the overlay) */
-static PyObject *Scrap_OpenStore(PyObject *self, PyObject *args) {
+API_FN(Scrap, OpenStore) {
 	int appId;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &appId) || appId < 0) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+	return Mode_Parse(a, n, "i", &appId) && appId >= 0;
 }
 
 /* PreloadAnm(a, b) */
-static PyObject *Scrap_PreloadAnm(PyObject *self, PyObject *args) {
-	char *a, *b;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
-		return NULL;
+API_FN(Scrap, PreloadAnm) {
+	const char *model, *anim;
+	if (!Mode_Parse(a, n, "ss", &model, &anim)) {
+		return 0;
 	}
-	Anm_Preload(a, b);
-	return Py_ReturnNone();
+	Anm_Preload(model, anim);
+	return 1;
 }
 
 /* PreloadLibrary(a, b) */
-static PyObject *Scrap_PreloadLibrary(PyObject *self, PyObject *args) {
-	char *a, *b;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
-		return NULL;
+API_FN(Scrap, PreloadLibrary) {
+	const char *name, *file;
+	if (!Mode_Parse(a, n, "ss", &name, &file)) {
+		return 0;
 	}
-	Pack_PreloadLibrary(a, b);
-	return Py_ReturnNone();
+	Pack_PreloadLibrary(name, file);
+	return 1;
 }
 
 /* Print(text) */
-static PyObject *Scrap_Print(PyObject *self, PyObject *args) {
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
+API_FN(Scrap, Print) {
+	const char *text;
+	if (!Mode_Parse(a, n, "s", &text)) {
+		return 0;
 	}
 	Con_Print(0, text, 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* ProcessDVF(name, arg) */
-static PyObject *Scrap_ProcessDVF(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(Scrap, ProcessDVF) {
+	const char *name;
 	int arg;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "si", &name, &arg)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "si", &name, &arg)) {
+		return 0;
 	}
 	DVF_Process(name, arg);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* PythonCompileAll() */
-static PyObject *Scrap_PythonCompileAll(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, PythonCompileAll) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Python_CompileAll();
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* Round(v) : the larger of (int)v and (int)(v + 0.5), both truncated */
-static PyObject *Scrap_Round(PyObject *self, PyObject *args) {
+API_FN(Scrap, Round) {
 	double v;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "d", &v)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "d", &v)) {
+		return 0;
 	}
-	int a = (int)v, b = (int)(v + 0.5);
-	return Py_BuildValue("i", b > a ? b : a);
+	int lo = (int)v, hi = (int)(v + 0.5);
+	return Api_Build(out, "i", hi > lo ? hi : lo);
 }
 
 /* SaveConfig() */
-static PyObject *Scrap_SaveConfig(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+API_FN(Scrap, SaveConfig) {
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	Config_Save();
-	return Py_BuildValue("i", 1);
+	return Api_Build(out, "i", 1);
 }
 
 /* SaveGameVars(name[, title]) : title default "Scrapland SaveGame" */
-static PyObject *Scrap_SaveGameVars(PyObject *self, PyObject *args) {
-	char *name, *title = "Scrapland SaveGame";
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|s", &name, &title)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", SaveGame_Save(name, title) != 0);
+API_FN(Scrap, SaveGameVars) {
+	const char *name, *title = "Scrapland SaveGame";
+	return Mode_Parse(a, n, "s|s", &name, &title) && Api_Build(out, "i", SaveGame_Save(name, title) != 0);
 }
 
 /* ScreenShot(name) */
-static PyObject *Scrap_ScreenShot(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(Scrap, ScreenShot) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	Screenshot_Take(name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetAlarm(level) */
-static PyObject *Scrap_SetAlarm(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetAlarm) {
 	float level;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "f", &level)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "f", &level)) {
+		return 0;
 	}
 	Alarm_Set(&g_pWorld->alarm, level);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetAlarmChar(name) */
-static PyObject *Scrap_SetAlarmChar(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(Scrap, SetAlarmChar) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	Alarm_SetChar(&g_pWorld->alarm, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetAlarmGrow(grow) */
-static PyObject *Scrap_SetAlarmGrow(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetAlarmGrow) {
 	int grow;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &grow)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &grow)) {
+		return 0;
 	}
 	Alarm_SetGrow(&g_pWorld->alarm, grow);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetCallFunc(func) : 1 if the function is valid */
-static PyObject *Scrap_SetCallFunc(PyObject *self, PyObject *args) {
-	char *func;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &func)) {
-		return NULL;
+API_FN(Scrap, SetCallFunc) {
+	const char *func;
+	if (!Mode_Parse(a, n, "s", &func)) {
+		return 0;
 	}
 	cPy_Function_SetFunc((&g_CallFunc), func);
-	return Py_BuildValue("i", cPy_Function_IsValid((&g_CallFunc)) ? 1 : 0);
+	return Api_Build(out, "i", cPy_Function_IsValid((&g_CallFunc)) ? 1 : 0);
 }
 
 /* SetCam(i, name) */
-static PyObject *Scrap_SetCam(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetCam) {
 	int i;
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &i, &name)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", cWorld_SetCam(g_pWorld, i, name));
+	const char *name;
+	return Mode_Parse(a, n, "is", &i, &name) && Api_Build(out, "i", cWorld_SetCam(g_pWorld, i, name));
 }
 
 /* SetLanguage(lang[, flag]) */
-static PyObject *Scrap_SetLanguage(PyObject *self, PyObject *args) {
-	char *lang;
+API_FN(Scrap, SetLanguage) {
+	const char *lang;
 	int flag = 0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|i", &lang, &flag)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", Lang_Set(lang, flag != 0) != 0);
+	return Mode_Parse(a, n, "s|i", &lang, &flag) && Api_Build(out, "i", Lang_Set(lang, flag != 0) != 0);
 }
 
 /* SetLockAlarm(lock) */
-static PyObject *Scrap_SetLockAlarm(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetLockAlarm) {
 	int lock;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &lock)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &lock)) {
+		return 0;
 	}
 	Alarm_SetLock(&g_pWorld->alarm, lock != 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetMoney(money) */
-static PyObject *Scrap_SetMoney(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetMoney) {
 	int money;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &money)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &money)) {
+		return 0;
 	}
 	g_pWorld->money = money;
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetSaveVar(name, value) */
-static PyObject *Scrap_SetSaveVar(PyObject *self, PyObject *args) {
-	char *name, *value;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &name, &value)) {
-		return NULL;
-	}
-	return Py_BuildValue("i", SaveVar_Set(name, value) != 0);
+API_FN(Scrap, SetSaveVar) {
+	const char *name, *value;
+	return Mode_Parse(a, n, "ss", &name, &value) && Api_Build(out, "i", SaveVar_Set(name, value) != 0);
 }
 
-/* SetTime(t) : returns Py_BuildValue("") (None) like the original */
-static PyObject *Scrap_SetTime(PyObject *self, PyObject *args) {
+/* SetTime(t) : returns modsupport.c BuildValue("") (None) like the original */
+API_FN(Scrap, SetTime) {
 	double t;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "d", &t)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "d", &t)) {
+		return 0;
 	}
 	Timer_SetTime(&g_pWorld->timer, (float)t);
-	return Py_BuildValue("");
+	return Api_Build(out, "");
 }
 
 /* SetTimeSpeed(speed) */
-static PyObject *Scrap_SetTimeSpeed(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetTimeSpeed) {
 	double speed;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "d", &speed)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "d", &speed)) {
+		return 0;
 	}
 	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
-	return Py_BuildValue("");
+	return Api_Build(out, "");
 }
 
 /* SetVideoCurrentMode(mode) */
-static PyObject *Scrap_SetVideoCurrentMode(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetVideoCurrentMode) {
 	int mode;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &mode)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &mode)) {
+		return 0;
 	}
 	Video_SetCurrentMode(mode);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* ShowGVars([filter]) */
-static PyObject *Scrap_ShowGVars(PyObject *self, PyObject *args) {
-	char *filter = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "|s", &filter)) {
-		return NULL;
+API_FN(Scrap, ShowGVars) {
+	const char *filter = NULL;
+	if (!Mode_Parse(a, n, "|s", &filter)) {
+		return 0;
 	}
 	GVars_Show(filter);
-	return Py_ReturnNone();
+	return 1;
+}
+
+/* ConsoleExec(line) : runs a line of the console (Console_Execute); not in the original, the test path of the console
+ * command table */
+API_FN(Scrap, ConsoleExec) {
+	const char *line;
+	if (!Mode_Parse(a, n, "s", &line)) {
+		return 0;
+	}
+	Console_Execute(line);
+	return 1;
 }
 
 /* StartDummySearch(name[, flag]) : flag default 1 */
-static PyObject *Scrap_StartDummySearch(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(Scrap, StartDummySearch) {
+	const char *name;
 	int flag = 1;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|i", &name, &flag)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s|i", &name, &flag)) {
+		return 0;
 	}
 	DummySearch_Start(name, flag != 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SwitchMissionArrows(a, b) */
-static PyObject *Scrap_SwitchMissionArrows(PyObject *self, PyObject *args) {
-	char *a, *b;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
-		return NULL;
+API_FN(Scrap, SwitchMissionArrows) {
+	const char *on, *off;
+	if (!Mode_Parse(a, n, "ss", &on, &off)) {
+		return 0;
 	}
-	MissionArrows_Switch(a, b);
-	return Py_ReturnNone();
+	MissionArrows_Switch(on, off);
+	return 1;
 }
 
-/* UsrEntity(player) : the entity of a local player; NULL without exception for a player above 3 */
-static PyObject *Scrap_UsrEntity(PyObject *self, PyObject *args) {
-	uint32_t player;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &player) || player > 3) {
-		return NULL;
+/* UsrEntity(player) : the entity of a local player; NULL without exception for a player above 3 (golden records it;
+ * a negative player is above 3 as unsigned) */
+API_FN(Scrap, UsrEntity) {
+	int player;
+	if (!Mode_Parse(a, n, "i", &player) || (uint32_t)player > 3) {
+		return 0;
 	}
-	cEntity *e = cWorld_GetUsrEntity(g_pWorld, (int)player);
+	cEntity *e = cWorld_GetUsrEntity(g_pWorld, player);
 	if (!e) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return PyEntity_New(e->name);
+	return Api_Handle(e->name, out);
 }
 
 /* Ver() Obtiene la version del juego. */
-static PyObject *Scrap_Ver(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_BuildValue("s", Version_Get());
+API_FN(Scrap, Ver) {
+	return Mode_Parse(a, n, "") && Api_Build(out, "s", Version_Get());
 }
 
 /* Verbose(text) : debug color */
-static PyObject *Scrap_Verbose(PyObject *self, PyObject *args) {
-	char *text;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &text)) {
-		return NULL;
+API_FN(Scrap, Verbose) {
+	const char *text;
+	if (!Mode_Parse(a, n, "s", &text)) {
+		return 0;
 	}
 	Con_Print(CON_COLOR_DEBUG, text, 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
-/* the callback of the video of Scrap.VideoPlayer, until it ends */
-static PyObject *videoPlayerDone;
+/* the callback of the video of Scrap.VideoPlayer (a copy of the value), until it ends */
+static nativeVal_t videoPlayerDone;
 
 static void VideoPlayer_Done(int result) {
-	PyObject *f = videoPlayerDone;
-	videoPlayerDone = NULL;
-	PyObject *args = Py_BuildValue("(i)", result);
-	PyObject *r = args ? PyEval_CallObject(f, args) : NULL;
-	if (!r) {
-		PyErr_Print();
+	nativeVal_t f = videoPlayerDone, r;
+	Native_SetNone(&videoPlayerDone);
+	Native_SetInt(&r, result);
+	if (!Port_CallKept(NULL, &f, &r, 1, NULL)) {
+		Native_ErrPrint();
 	}
-	Py_XDECREF(r);
-	Py_XDECREF(args);
-	Py_DECREF(f);
+	Native_Free(&f);
 }
 
 /*
  * VideoPlayer(name[, cmd[, done]]) : cmd default "play". differs from the original on purpose (no blocking waits):
  * it returns at once, the video plays on and the frame waits for it; done(result) is called when it ends (an
- * addition: 0 not found, 1 played to the end or not opened, 2 stopped by a key)
+ * addition: 0 not found, 1 played to the end or not opened, 2 stopped by a key). done is kept as the value given;
+ * for "a|b" the video keeps its own copy of b until it plays
  */
-static PyObject *Scrap_VideoPlayer(PyObject *self, PyObject *args) {
-	char *name, *cmd = "play";
-	PyObject *done = NULL;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|sO", &name, &cmd, &done)) {
-		return NULL;
+API_FN(Scrap, VideoPlayer) {
+	const char *name, *cmd = "play";
+	const nativeVal_t *done = NULL;
+	if (!Mode_Parse(a, n, "s|sO", &name, &cmd, &done)) {
+		return 0;
 	}
-	if (done && done != Py_None && !PyCallable_Check(done)) {
+	if (done && done->type != NV_NONE && !NObj_Callable(done)) {
 		Con_Warnf("VideoPlayer: done is not callable, ignored\n");
 		done = NULL;
 	}
-	if (!done || done == Py_None || crt_stricmp(cmd, "play")) {
+	if (!done || done->type == NV_NONE || crt_stricmp(cmd, "play")) {
 		Video_Play(name, cmd, 0.0f);
-		return Py_ReturnNone();
+		return 1;
 	}
-	Py_INCREF(done);
-	videoPlayerDone = done;
+	Native_Copy(&videoPlayerDone, done);
 	Video_PlayThen(name, VideoPlayer_Done);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* --- batch 4: engine variables, entities, files, random numbers, Steam apps --- */
 
-/* Get(name) / Def(name) : current or default value of an engine variable in its type */
-static PyObject *GVarValue(PyObject *args, int def, int checkLine) {
-	char *name;
-
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
-	}
-	cGVar *v = GVar_Find(name);
-	if (!v) {
-		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
-		return NULL;
-	}
-	switch (v->base.type) {
-	case GVAR_STRING:
-		return Py_BuildValue("s", def ? v->def.s : v->value.s);
-	case GVAR_INT:
-		return Py_BuildValue("i", def ? v->def.i : v->value.i);
-	case GVAR_FLOAT:
-		return Py_BuildValue("d", (double)(def ? v->def.f : v->value.f));
-	case GVAR_FUNCTION:
-		return Py_BuildValue("s", "<function>");
-	case GVAR_SCRIPT_FUNCTION:
-		return Py_BuildValue("s", "<Script function>");
-	}
-	/* CHECK(0) at line checkLine of the original */
-	(void)checkLine;
-	CHECK(0);
-	return NULL;
+/* Get(name) / Def(name) : current or default value of an engine variable in its type; NULL without exception for an
+ * unknown name (golden records it): Native_GVarGet and Native_GVarDef */
+API_FN(Scrap, Get) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && Native_GVarGet(name, out);
 }
 
-static PyObject *Scrap_Get(PyObject *self, PyObject *args) {
-	(void)self;
-	return GVarValue(args, 0, 0x11d);
-}
-
-static PyObject *Scrap_Def(PyObject *self, PyObject *args) {
-	(void)self;
-	return GVarValue(args, 1, 0x13f);
+API_FN(Scrap, Def) {
+	const char *name;
+	return Mode_Parse(a, n, "s", &name) && Native_GVarDef(name, out);
 }
 
 /*
  * Set(name, value) : string ("ss") for string and script function variables, number ("sd") for int and float
- * ones. A read only variable gives 0 and a message; a wrong type or an unknown name NULL without exception.
+ * ones. A read only variable gives 0 and a message; a wrong type or an unknown name NULL without exception (golden
+ * records both). The value is read as "ss", else "sd" read it (Native_GVarStore)
  */
-static PyObject *Scrap_Set(PyObject *self, PyObject *args) {
-	char *name, *s;
-	double d;
-	cGVar *v;
-
-	(void)self;
-	if (PyArg_ParseTuple(args, "ss", &name, &s)) {
-		if (!(v = GVar_Find(name))) {
-			goto notdefined;
-		}
-		if (v->base.type == GVAR_STRING) {
-			if (v->base.flags & 1) {
-				goto readonly;
-			}
-			cString_Set(&v->value.s, s);
-			return Py_BuildValue("i", 1);
-		}
-		if (v->base.type != GVAR_SCRIPT_FUNCTION) {
-			Con_Errorf("ERROR: '%s' global variable must be string\n", name);
-			return NULL;
-		}
-		if (v->base.flags & 1) {
-			goto readonly;
-		}
-		cPy_Function_SetFunc(GVar_Function(v), s);
-		return Py_BuildValue("i", 1);
+API_FN(Scrap, Set) {
+	const char *name;
+	const nativeVal_t *v;
+	if (!Mode_Parse(a, n, "sO", &name, &v)) {
+		return 0;
 	}
-	PyErr_Clear();
-	if (!PyArg_ParseTuple(args, "sd", &name, &d)) {
-		return NULL;
-	}
-	if (!(v = GVar_Find(name))) {
-		goto notdefined;
-	}
-	if (v->base.type == GVAR_INT) {
-		if (v->base.flags & 1) {
-			goto readonly;
-		}
-		v->value.i = (int)d;
-		return Py_BuildValue("i", 1);
-	}
-	if (v->base.type != GVAR_FLOAT) {
-		Con_Errorf("ERROR: '%s' global variable must be integer or float\n", name);
-		return NULL;
-	}
-	if (v->base.flags & 1) {
-		goto readonly;
-	}
-	v->value.f = (float)d;
-	return Py_BuildValue("i", 1);
-
-readonly:
-	Con_Errorf("ERROR: '%s' write only\n", name);
-	return Py_BuildValue("i", 0);
-notdefined:
-	Con_Errorf("ERROR: '%s' global variable not defined\n", name);
-	return NULL;
+	int r = Native_GVarStore(name, v);
+	return r >= 0 && Api_Build(out, "i", r);
 }
 
-/* Rand(a, b) : random number between a and b (CRT rand); a result equal to a bound becomes the middle */
-static PyObject *Scrap_Rand(PyObject *self, PyObject *args) {
-	double da, db;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "dd", &da, &db)) {
-		return NULL;
-	}
+/* a random number between a and b (CRT rand); a result equal to a bound becomes the middle */
+double Scrap_RandRange(double da, double db) {
 	float a = (float)da, b = (float)db;
 	int r = crt_rand();
 	double v = (double)(float)((double)(r & 0x7fff) * (1.0 / 32767.0) * (double)(b - a) + (double)a);
 	if (v == db || v == da) {
 		v = (da + db) * 0.5;
 	}
-	return Py_BuildValue("d", v);
+	return v;
+}
+
+/* Rand(a, b) : random number between a and b */
+API_FN(Scrap, Rand) {
+	double da, db;
+	return Mode_Parse(a, n, "dd", &da, &db) && Api_Build(out, "d", Scrap_RandRange(da, db));
 }
 
 /* FileExist(name) : looks in the packs and on disk */
-static PyObject *Scrap_FileExist(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(Scrap, FileExist) {
+	const char *name;
 	cFilePack pack;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	cFilePack_ctor(&pack);
-	PyObject *r = Py_BuildValue("i", cFilePack_Exists(&pack.file.base, name));
+	Api_Build(out, "i", cFilePack_Exists(&pack.file.base, name));
 	cFilePack_dtor(&pack);
-	return r;
+	return 1;
 }
 
 /* GetEntity(name) : the entity handle, None if there is no such entity */
-static PyObject *Scrap_GetEntity(PyObject *self, PyObject *args) {
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return NULL;
+API_FN(Scrap, GetEntity) {
+	const char *name;
+	if (!Mode_Parse(a, n, "s", &name)) {
+		return 0;
 	}
 	if (World_FindEntity(name)) {
-		return PyEntity_New(name);
+		return Api_Handle(name, out);
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* CreateEntity(className, x, y, z, name) : the handle of the new entity, None if it was not made */
-static PyObject *Scrap_CreateEntity(PyObject *self, PyObject *args) {
-	char *className, *name;
+API_FN(Scrap, CreateEntity) {
+	const char *className, *name;
 	double x, y, z;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sddds", &className, &x, &y, &z, &name)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "sddds", &className, &x, &y, &z, &name)) {
+		return 0;
 	}
 	cEntity *e = cWorld_CreateEntity(g_pWorld, className, (float)x, (float)y, (float)z, name);
 	if (!e) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return PyEntity_New(e->name);
+	return Api_Handle(e->name, out);
 }
 
 /* IsApp(appid) : NULL for appid < 0, else 1, as the original without Steam (no store features; with Steam it asked
  * whether the app is owned and installed) */
-static PyObject *Scrap_IsApp(PyObject *self, PyObject *args) {
+API_FN(Scrap, IsApp) {
 	int appId;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &appId) || appId < 0) {
-		return NULL;
-	}
-	return Py_BuildValue("i", 1);
+	return Mode_Parse(a, n, "i", &appId) && appId >= 0 && Api_Build(out, "i", 1);
 }
 
 /* RunApp(exe, cmdLine) : starts a program; "" for the game itself */
-static PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
-	char *exe, *cmdLine;
+API_FN(Scrap, RunApp) {
+	const char *exe, *cmdLine;
 	char path[128];
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &exe, &cmdLine)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ss", &exe, &cmdLine)) {
+		return 0;
 	}
 	if (!*exe) {
 		App_GetPath(path, sizeof(path));
 		exe = path;
 	}
 	App_RunApp(g_pApp, exe, cmdLine, 0);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* --- batch 5: entity lists, cameras, parking zones, video modes, grid --- */
 
-/* EntityListGet(listName, var) : value in its type; NULL without exception for a missing list or a bad type */
-static PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
-	char *listName, *var, *s;
-	double d;
-	int i;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &listName, &var)) {
-		return NULL;
-	}
+/*
+ * EntityListGet(listName, var) : value in its type. The original returns NULL without an exception (SystemError in
+ * Python) for a missing list and for a variable the list cannot give. A missing list still does so: tools/test/golden
+ * records it. differs from the original: an unknown variable raises an AttributeError.
+ */
+int EntityList_Get(const char *listName, const char *var, char **s, double *d, int *i) {
+	/* differs from the original: the values start at 0, as in SScorer.Get */
+	*s = NULL;
+	*d = 0.0;
+	*i = 0;
 	void *list = cWorld_GetList(g_pWorld, listName);
 	if (!list) {
 		Con_Errorf("ERROR: EntityListGet '%s','%s' List Not Found.\n", listName, var);
-		return NULL;
+		return -1;
 	}
-	switch (cEntityList_Var(list, var, 0, &s, &d, &i)) {
-	case 1:
-		return Py_BuildValue("s", s);
-	case 2:
-		return Py_BuildValue("d", d);
-	case 3:
-		return Py_BuildValue("i", i);
+	int kind = cEntityList_Var(list, var, 0, s, d, i);
+	if (kind < 1 || kind > 3) {
+		Con_Errorf("ERROR: EntityListGet '%s','%s' Typecast error.\n", listName, var);
+		return 0;
 	}
-	Con_Errorf("ERROR: EntityListGet '%s','%s' Typecast error.\n", listName, var);
-	return NULL;
+	return kind;
 }
 
-/* EntityListSet(listName, var, value) */
-static PyObject *Scrap_EntityListSet(PyObject *self, PyObject *args) {
-	char *listName, *var, *value;
+API_FN(Scrap, EntityListGet) {
+	const char *listName, *var;
+	char *s;
+	double d;
+	int i;
+	if (!Mode_Parse(a, n, "ss", &listName, &var)) {
+		return 0;
+	}
+	switch (EntityList_Get(listName, var, &s, &d, &i)) {
+	case -1:
+		return 0;
+	case 1:
+		return Api_Build(out, "s", s);
+	case 2:
+		return Api_Build(out, "d", d);
+	case 3:
+		return Api_Build(out, "i", i);
+	}
+	return Native_Raise(NE_ATTRIBUTE, "EntityListGet: list '%.64s' has no variable '%.64s'", listName, var);
+}
 
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sss", &listName, &var, &value)) {
-		return NULL;
+/* EntityListSet(listName, var, value) : NULL without exception for a missing list (golden records it) */
+API_FN(Scrap, EntityListSet) {
+	const char *listName, *var, *value;
+	if (!Mode_Parse(a, n, "sss", &listName, &var, &value)) {
+		return 0;
 	}
 	void *list = cWorld_GetList(g_pWorld, listName);
 	if (!list) {
 		Con_Errorf("ERROR: EntityListSet '%s','%s','%s' list not found.\n", listName, var, value);
-		return NULL;
+		return 0;
 	}
-	return Py_BuildValue("i", cEntityList_Var(list, var, 1, &value, NULL, NULL));
+	/* the setter only reads the text */
+	char *text = (char *)value;
+	return Api_Build(out, "i", cEntityList_Var(list, var, 1, &text, NULL, NULL));
 }
 
 /* GetMinCamDist(x, y, z) : sqrt in double of the squared distance, then float */
-static PyObject *Scrap_GetMinCamDist(PyObject *self, PyObject *args) {
+API_FN(Scrap, GetMinCamDist) {
 	vec3_t pos;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "fff", &pos.x, &pos.y, &pos.z)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "fff", &pos.x, &pos.y, &pos.z)) {
+		return 0;
 	}
 	double d = (double)cWorld_GetMinCamDistSq(g_pWorld, &pos);
-	return Py_BuildValue("d", (double)(float)sqrt(d));
+	return Api_Build(out, "d", (double)(float)sqrt(d));
 }
 
 /* GetVideoModes(i) : the number of modes for i < 0, else the name of mode i */
-static PyObject *Scrap_GetVideoModes(PyObject *self, PyObject *args) {
+API_FN(Scrap, GetVideoModes) {
 	int i = 0;
 	char buf[256];
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &i)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "i", &i)) {
+		return 0;
 	}
-	int n = Video_GetModes(i, buf);
+	int count = Video_GetModes(i, buf);
 	if (i < 0) {
-		return Py_BuildValue("i", n);
+		return Api_Build(out, "i", count);
 	}
-	return Py_BuildValue("s", buf);
+	return Api_Build(out, "s", buf);
 }
 
 /* SetGrid(x, y, z) */
-static PyObject *Scrap_SetGrid(PyObject *self, PyObject *args) {
+API_FN(Scrap, SetGrid) {
 	double x, y, z;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ddd", &x, &y, &z)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ddd", &x, &y, &z)) {
+		return 0;
 	}
 	vec3_t size = { (float)x, (float)y, (float)z };
 	Grid_Set(&g_pWorld->grid, &size);
-	return Py_BuildValue("i", 1);
+	return Api_Build(out, "i", 1);
 }
 
 /* SetSaveProfile(a, b) : not on PC */
-static PyObject *Scrap_SetSaveProfile(PyObject *self, PyObject *args) {
-	char *a, *b;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
-		return NULL;
+API_FN(Scrap, SetSaveProfile) {
+	const char *first, *second;
+	if (!Mode_Parse(a, n, "ss", &first, &second)) {
+		return 0;
 	}
 	Con_Print(CON_COLOR_ERROR, "ERROR : ", 0);
-	Con_Print(CON_COLOR_ERROR, a, 0);
+	Con_Print(CON_COLOR_ERROR, first, 0);
 	Con_Print(CON_COLOR_ERROR, " , ", 0);
-	Con_Print(CON_COLOR_ERROR, b, 0);
+	Con_Print(CON_COLOR_ERROR, second, 0);
 	Con_Print(CON_COLOR_ERROR, " : Player Profile system not supported on PC\n", 0);
-	return Py_BuildValue("i", 1);
+	return Api_Build(out, "i", 1);
 }
 
 /* Preload3DObject(name[, sx, sy, sz]) : scale default 1 */
-static PyObject *Scrap_Preload3DObject(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(Scrap, Preload3DObject) {
+	const char *name;
 	double sx = 1.0, sy = 1.0, sz = 1.0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|ddd", &name, &sx, &sy, &sz)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s|ddd", &name, &sx, &sy, &sz)) {
+		return 0;
 	}
 	vec3_t scale = { (float)sx, (float)sy, (float)sz };
 	Object3D_Preload(name, &scale);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* AddParkingZone(flag, (x,y,z), name) */
-static PyObject *Scrap_AddParkingZone(PyObject *self, PyObject *args) {
+API_FN(Scrap, AddParkingZone) {
 	int flag;
 	float x, y, z;
-	char *name;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i(fff)s", &flag, &x, &y, &z, &name)) {
-		return NULL;
+	const char *name;
+	if (!Mode_Parse(a, n, "i(fff)s", &flag, &x, &y, &z, &name)) {
+		return 0;
 	}
 	vec3_t pos = { x, y, z };
 	Parking_AddZone(&g_pWorld->logic.parking, flag != 0, &pos, name);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* GetNearestParked / GetFarestParked([flag[, (x,y,z)]]) : (name, (x, y, z)); default position: current camera */
-static PyObject *FindParked(PyObject *args, int farest) {
+static byte FindParked(const nativeVal_t *a, int n, nativeVal_t *out, int farest) {
 	vec3_t pos = g_pWorld->camPos[g_pWorld->curCam];
 	int flag = 1;
 
-	if (!PyArg_ParseTuple(args, "|i(fff)", &flag, &pos.x, &pos.y, &pos.z)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "|i(fff)", &flag, &pos.x, &pos.y, &pos.z)) {
+		return 0;
 	}
-	vec3_t out = pos;
-	const char *name = Parking_Find(&g_pWorld->logic.parking, flag != 0, &pos, &out, farest);
+	vec3_t found = pos;
+	const char *name = Parking_Find(&g_pWorld->logic.parking, flag != 0, &pos, &found, farest);
 	if (!name) {
-		return Py_BuildValue("s(fff)", "", 0.0, 0.0, 0.0);
+		return Api_Build(out, "s(fff)", "", 0.0, 0.0, 0.0);
 	}
-	return Py_BuildValue("s(fff)", name, (double)out.x, (double)out.y, (double)out.z);
+	return Api_Build(out, "s(fff)", name, (double)found.x, (double)found.y, (double)found.z);
 }
 
-static PyObject *Scrap_GetNearestParked(PyObject *self, PyObject *args) {
-	(void)self;
-	return FindParked(args, 0);
+API_FN(Scrap, GetNearestParked) {
+	return FindParked(a, n, out, 0);
 }
 
-static PyObject *Scrap_GetFarestParked(PyObject *self, PyObject *args) {
-	(void)self;
-	return FindParked(args, 1);
+API_FN(Scrap, GetFarestParked) {
+	return FindParked(a, n, out, 1);
 }
 
 /* --- batch 6: collision tests, debris, items, dummy search --- */
@@ -1392,106 +1113,108 @@ static PyObject *Scrap_GetFarestParked(PyObject *self, PyObject *args) {
  * TestLine((x1,y1,z1), (x2,y2,z2), listName) : ((x, y, z) hit, name) against the level and the entities of the
  * list; "" for a level hit only, None for no hit.
  */
-static PyObject *Scrap_TestLine(PyObject *self, PyObject *args) {
-	double x1, y1, z1, x2, y2, z2;
-	char *listName;
+byte World_TestLine(const vec3_t *from, const vec3_t *to, const char *list, vec3_t *hit, cEntity **target) {
+	vec3_t end = *to;
+	*target = NULL;
+	*hit = end;
+	byte levelHit = Engine_TestLine(from, &end, hit, 0);
+	end = *hit;
+	cWorld_TestLineEntities(g_pWorld, 0, EntityLists_Get(list), from, &end, hit, target, 1);
+	return *target || levelHit;
+}
 
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(ddd)(ddd)s", &x1, &y1, &z1, &x2, &y2, &z2, &listName)) {
-		return NULL;
+API_FN(Scrap, TestLine) {
+	double x1, y1, z1, x2, y2, z2;
+	const char *listName;
+	if (!Mode_Parse(a, n, "(ddd)(ddd)s", &x1, &y1, &z1, &x2, &y2, &z2, &listName)) {
+		return 0;
 	}
-	cEntity *target = NULL;
+	cEntity *target;
 	vec3_t from = { (float)x1, (float)y1, (float)z1 };
 	vec3_t to = { (float)x2, (float)y2, (float)z2 };
-	vec3_t hit = to;
-	byte levelHit = Engine_TestLine(&from, &to, &hit, 0);
-	to = hit;
-	cWorld_TestLineEntities(g_pWorld, 0, EntityLists_Get(listName), &from, &to, &hit, &target, 1);
-	if (!target && !levelHit) {
-		return Py_ReturnNone();
+	vec3_t hit;
+	if (!World_TestLine(&from, &to, listName, &hit, &target)) {
+		return 1;
 	}
-	return Py_BuildValue("(ddd)s", (double)hit.x, (double)hit.y, (double)hit.z, target ? target->name : "");
+	return Api_Build(out, "(ddd)s", (double)hit.x, (double)hit.y, (double)hit.z, target ? target->name : "");
 }
 
 /* TestSphere(x, y, z, radius, listName[, exclude]) : name of the entity hit, "" for the level, None for none */
-static PyObject *Scrap_TestSphere(PyObject *self, PyObject *args) {
-	double x, y, z, r;
-	char *listName, *excludeName = "";
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "dddds|s", &x, &y, &z, &r, &listName, &excludeName)) {
-		return NULL;
-	}
+cEntity *World_TestSphere(const vec3_t *c, float r, const char *list, const char *exclude, byte *levelHit) {
 	cEntity *target = NULL;
-	vec3_t c = { (float)x, (float)y, (float)z };
-	byte levelHit = Engine_TestSphere(&c, &c, (float)r, 0, 0);
-	cEntity *exclude = NULL;
-	if (*excludeName) {
-		HashNode *node = HashTable_Find(&g_pWorld->entities, excludeName, HashTable_Hash(&g_pWorld->entities,
-			excludeName));
+	*levelHit = Engine_TestSphere(c, c, r, 0, 0);
+	cEntity *ex = NULL;
+	if (*exclude) {
+		HashNode *node = HashTable_Find(&g_pWorld->entities, exclude, HashTable_Hash(&g_pWorld->entities, exclude));
 		if (node) {
-			exclude = node->value;
+			ex = node->value;
 		}
 	}
-	cWorld_TestSphereEntities(g_pWorld, exclude, EntityLists_Get(listName), &c, (float)r, &target, 1, 0);
+	cWorld_TestSphereEntities(g_pWorld, ex, EntityLists_Get(list), c, r, &target, 1, 0);
+	return target;
+}
+
+API_FN(Scrap, TestSphere) {
+	double x, y, z, r;
+	const char *listName, *excludeName = "";
+	if (!Mode_Parse(a, n, "dddds|s", &x, &y, &z, &r, &listName, &excludeName)) {
+		return 0;
+	}
+	vec3_t c = { (float)x, (float)y, (float)z };
+	byte levelHit;
+	cEntity *target = World_TestSphere(&c, (float)r, listName, excludeName, &levelHit);
 	if (target) {
-		return Py_BuildValue("s", target->name);
+		return Api_Build(out, "s", target->name);
 	}
 	if (levelHit) {
-		return Py_BuildValue("s", "");
+		return Api_Build(out, "s", "");
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SphereCall(x, y, z, radius, listName, func[, flag]) or ((x,y,z), radius, ...) : func for the entities inside */
-static PyObject *Scrap_SphereCall(PyObject *self, PyObject *args) {
+API_FN(Scrap, SphereCall) {
 	double x, y, z, r;
-	char *listName, *func;
+	const char *listName, *func;
 	int flag = 1;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ddddss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
-		PyErr_Clear();
-		if (!PyArg_ParseTuple(args, "(ddd)dss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
-			return NULL;
+	if (!Mode_Parse(a, n, "ddddss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
+		Native_ErrClear();
+		if (!Mode_Parse(a, n, "(ddd)dss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
+			return 0;
 		}
 	}
 	vec3_t c = { (float)x, (float)y, (float)z };
-	return Py_BuildValue("i", cWorld_SphereCall(g_pWorld, EntityLists_Get(listName), &c, (float)r, func,
+	return Api_Build(out, "i", cWorld_SphereCall(g_pWorld, EntityLists_Get(listName), &c, (float)r, func,
 		flag != 0) != 0);
 }
 
 /* NextDummySearch() : (name, (x, y, z), (angx, angy) degrees, flag) of the next dummy, None at the end */
-static PyObject *Scrap_NextDummySearch(PyObject *self, PyObject *args) {
+API_FN(Scrap, NextDummySearch) {
 	char name[0x40];
 	vec3_t pos;
 	float ang[2];
 	byte flag;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	if (!Mode_Parse(a, n, "")) {
+		return 0;
 	}
 	if (!DummySearch_Next(name, sizeof(name), &pos, ang, &flag)) {
-		return Py_ReturnNone();
+		return 1;
 	}
-	return Py_BuildValue("s(ddd)(dd)i", name, (double)pos.x, (double)pos.y, (double)pos.z,
+	return Api_Build(out, "s(ddd)(dd)i", name, (double)pos.x, (double)pos.y, (double)pos.z,
 		(double)ang[0] * DEG_PER_PI / M_PI_D, (double)ang[1] * DEG_PER_PI / M_PI_D, flag != 0);
 }
 
 /* SetDebrisSys(name[, n, radius, b, c, d, flag, e]) : n <= 0 deletes the system */
-static PyObject *Scrap_SetDebrisSys(PyObject *self, PyObject *args) {
-	char *name;
-	int n = 4, flag = 0, e = 0;
+API_FN(Scrap, SetDebrisSys) {
+	const char *name;
+	int count = 4, flag = 0, e = 0;
 	double radius = 10000.0, b = 1.0, c = 1.0, d = (double)g_DebrisDefault;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|iddddii", &name, &n, &radius, &b, &c, &d, &flag, &e)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "s|iddddii", &name, &count, &radius, &b, &c, &d, &flag, &e)) {
+		return 0;
 	}
-	if (n <= 0) {
+	if (count <= 0) {
 		cWorld_DeleteDebrisSys(g_pWorld, name);
-		return Py_ReturnNone();
+		return 1;
 	}
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, name);
 	sys->b = (float)b;
@@ -1500,18 +1223,16 @@ static PyObject *Scrap_SetDebrisSys(PyObject *self, PyObject *args) {
 	sys->radiusSq = rf * rf;
 	sys->c = (float)c;
 	sys->flag = flag != 0;
-	cDebrisSys_Init(sys, n, e);
-	return Py_ReturnNone();
+	cDebrisSys_Init(sys, count, e);
+	return 1;
 }
 
 /* DropDebris(name, speed) : a debris element with the values of SetDebrisValue */
-static PyObject *Scrap_DropDebris(PyObject *self, PyObject *args) {
-	char *name;
+API_FN(Scrap, DropDebris) {
+	const char *name;
 	double speed;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "sd", &name, &speed)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "sd", &name, &speed)) {
+		return 0;
 	}
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, name);
 	cDebris *deb = cDebrisSys_NewElement(sys);
@@ -1520,33 +1241,31 @@ static PyObject *Scrap_DropDebris(PyObject *self, PyObject *args) {
 	}
 	deb->life = (float)speed;
 	cDebrisSys_Drop(sys, deb);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* SetDebrisValue(n, x, y, z) : 0 position, 1 angles (degrees), 2 velocity, 3 angle speed (degrees) */
-static PyObject *Scrap_SetDebrisValue(PyObject *self, PyObject *args) {
-	int n;
+API_FN(Scrap, SetDebrisValue) {
+	int which;
 	double x, y, z;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iddd", &n, &x, &y, &z)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "iddd", &which, &x, &y, &z)) {
+		return 0;
 	}
-	switch (n) {
+	switch (which) {
 	case 0:
 	case 2:
-		g_DebrisDrop[n] = (vec3_t){ (float)x, (float)y, (float)z };
+		g_DebrisDrop[which] = (vec3_t){ (float)x, (float)y, (float)z };
 		break;
 	case 1:
 	case 3:
-		g_DebrisDrop[n] = (vec3_t){ (float)(x * M_PI_D / DEG_PER_PI), (float)(y * M_PI_D / DEG_PER_PI),
+		g_DebrisDrop[which] = (vec3_t){ (float)(x * M_PI_D / DEG_PER_PI), (float)(y * M_PI_D / DEG_PER_PI),
 			(float)(z * M_PI_D / DEG_PER_PI) };
 		break;
 	default:
-		Con_Warnf("WARNING SetDebrisValue: %d not found\n", n);
+		Con_Warnf("WARNING SetDebrisValue: %d not found\n", which);
 		break;
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /*
@@ -1554,29 +1273,15 @@ static PyObject *Scrap_SetDebrisValue(PyObject *self, PyObject *args) {
  * As compiled: another kind passes the string pointer of the first argument as kind, and another item type does
  * nothing (no argument check at all).
  */
-static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
-	char *type = PyString_AsString(PyTuple_GetItem(args, 0));
-	char *name, *kindName;
+void Logic_AddItem(const char *type, const char *name, const char *kindName, int value) {
 	cItemDesc item;
-
-	(void)self;
+	cString_ctor(&item.name);
+	cString_Set(&item.name, name);
+	item.value = value;
 	if (!strcmp(type, "Life")) {
-		cString_ctor(&item.name);
-		if (!PyArg_ParseTuple(args, "ssi", &type, &name, &item.value)) {
-			cString_dtor(&item.name);
-			return NULL;
-		}
-		cString_Set(&item.name, name);
 		cInfItem_AddLife(&g_pWorld->logic.items, &item);
-		cString_dtor(&item.name);
 	}
-	else if (!strcmp(type, "Ammo")) {
-		cString_ctor(&item.name);
-		if (!PyArg_ParseTuple(args, "sssi", &type, &name, &kindName, &item.value)) {
-			cString_dtor(&item.name);
-			return NULL;
-		}
-		cString_Set(&item.name, name);
+	else {
 		int kind = (int)(intptr_t)type;
 		if (!strcmp(kindName, "Part")) {
 			kind = 0;
@@ -1588,9 +1293,36 @@ static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 			kind = 2;
 		}
 		cInfItem_AddAmmo(&g_pWorld->logic.items, kind, &item);
-		cString_dtor(&item.name);
 	}
-	return Py_ReturnNone();
+	cString_dtor(&item.name);
+}
+
+/* the type is the text of the first argument up to its first 0 byte (stringobject.c String_AsString), the formats after
+ * it. differs from the original: without arguments, or with a first one that is no text, the adapter gave strcmp a NULL
+ * (a crash); the entry raises the error tupleobject.c Tuple_GetItem or stringobject.c String_AsString had set */
+API_FN(Scrap, AddItem) {
+	const char *type, *name, *kindName;
+	int value;
+	if (n < 1) {
+		return Native_Raise(NE_INDEX, "tuple index out of range");
+	}
+	if (a[0].type != NV_STR) {
+		return Native_Raise(NE_SYSTEM, "bad argument to internal function");
+	}
+	type = Native_Text(&a[0]);
+	if (!strcmp(type, "Life")) {
+		if (!Mode_Parse(a, n, "ssi", &type, &name, &value)) {
+			return 0;
+		}
+		Logic_AddItem(type, name, NULL, value);
+	}
+	else if (!strcmp(type, "Ammo")) {
+		if (!Mode_Parse(a, n, "sssi", &type, &name, &kindName, &value)) {
+			return 0;
+		}
+		Logic_AddItem(type, name, kindName, value);
+	}
+	return 1;
 }
 
 static char str_PyDoc_Scrap_Achievement[];
@@ -1706,1013 +1438,220 @@ static char str_PyDoc_Scrap_UsrEntity[];
 static char str_PyDoc_Scrap_Ver[40];
 static char str_PyDoc_Scrap_Verbose[];
 static char str_PyDoc_Scrap_VideoPlayer[];
-extern const char str_PyMethod_SScorer_Get[];
-extern const char str_PyMethod_SScorer_Set[];
-static const char str_PyMethod_Scrap_Achievement[];
-static const char str_PyMethod_Scrap_AddItem[];
-static const char str_PyMethod_Scrap_AddParamf[];
-static const char str_PyMethod_Scrap_AddParami[];
-static const char str_PyMethod_Scrap_AddParams[];
-static const char str_PyMethod_Scrap_AddParkingZone[];
-static const char str_PyMethod_Scrap_AddScheduledFunc[];
-static const char str_PyMethod_Scrap_BuildFont[];
-static const char str_PyMethod_Scrap_CallElements[];
-static const char str_PyMethod_Scrap_ClosePack[];
-static const char str_PyMethod_Scrap_ConsoleError[];
-static const char str_PyMethod_Scrap_ConsoleOut[];
-static const char str_PyMethod_Scrap_CreateElements[];
-static const char str_PyMethod_Scrap_CreateEntity[];
-static const char str_PyMethod_Scrap_CreateEntityList[];
-static const char str_PyMethod_Scrap_CreateSaveProfile[];
-static const char str_PyMethod_Scrap_CreateSaveVar[];
-static const char str_PyMethod_Scrap_DebugInput[];
-static const char str_PyMethod_Scrap_Def[];
-static const char str_PyMethod_Scrap_DelSaveVars[];
-static const char str_PyMethod_Scrap_DeleteProfile[];
-static const char str_PyMethod_Scrap_DeleteScheduledFuncs[];
-static const char str_PyMethod_Scrap_Des[];
-static const char str_PyMethod_Scrap_DeselectProfile[];
-static const char str_PyMethod_Scrap_DropDebris[];
-static const char str_PyMethod_Scrap_EndLoading[];
-static const char str_PyMethod_Scrap_EntityListGet[];
-static const char str_PyMethod_Scrap_EntityListSet[];
-static const char str_PyMethod_Scrap_Execute[];
-static const char str_PyMethod_Scrap_Exit[];
-static const char str_PyMethod_Scrap_ExtractPack[];
-static const char str_PyMethod_Scrap_FileExist[];
-static const char str_PyMethod_Scrap_GetAlarm[];
-static const char str_PyMethod_Scrap_GetAlarmChars[];
-static const char str_PyMethod_Scrap_GetCam[];
-static const char str_PyMethod_Scrap_GetEntity[];
-static const char str_PyMethod_Scrap_GetFarestParked[];
-static const char str_PyMethod_Scrap_GetFirst[];
-static const char str_PyMethod_Scrap_GetFloor[];
-static const char str_PyMethod_Scrap_GetFreeBlocks[];
-static const char str_PyMethod_Scrap_GetGogID[];
-static const char str_PyMethod_Scrap_GetLangEntries[];
-static const char str_PyMethod_Scrap_GetLangStr[];
-static const char str_PyMethod_Scrap_GetLanguage[];
-static const char str_PyMethod_Scrap_GetLevelPath[];
-static const char str_PyMethod_Scrap_GetLockAlarm[];
-static const char str_PyMethod_Scrap_GetMinCamDist[];
-static const char str_PyMethod_Scrap_GetMoney[];
-static const char str_PyMethod_Scrap_GetNearestParked[];
-static const char str_PyMethod_Scrap_GetNetFlags[];
-static const char str_PyMethod_Scrap_GetNewLevelPath[];
-static const char str_PyMethod_Scrap_GetSaveGamesList[];
-static const char str_PyMethod_Scrap_GetSaveVar[];
-static const char str_PyMethod_Scrap_GetSavedProfilesList[];
-static const char str_PyMethod_Scrap_GetSteamID[];
-static const char str_PyMethod_Scrap_GetSteamTicket[];
-static const char str_PyMethod_Scrap_GetTime[];
-static const char str_PyMethod_Scrap_GetTimeSpeed[];
-static const char str_PyMethod_Scrap_GetVideoCurrentMode[];
-static const char str_PyMethod_Scrap_GetVideoModes[];
-static const char str_PyMethod_Scrap_IncSaveVar[];
-static const char str_PyMethod_Scrap_InitLoading[];
-static const char str_PyMethod_Scrap_IsApp[];
-static const char str_PyMethod_Scrap_IsSteam[];
-static const char str_PyMethod_Scrap_LaunchDashboard[];
-static const char str_PyMethod_Scrap_ListModels[];
-static const char str_PyMethod_Scrap_LoadGameVars[];
-static const char str_PyMethod_Scrap_LoadLevel[];
-static const char str_PyMethod_Scrap_ModelInfo[];
-static const char str_PyMethod_Scrap_MusicPlayer[];
-static const char str_PyMethod_Scrap_NextDummySearch[];
-static const char str_PyMethod_Scrap_OpenPack[];
-static const char str_PyMethod_Scrap_OpenStore[];
-static const char str_PyMethod_Scrap_Preload3DObject[];
-static const char str_PyMethod_Scrap_PreloadAnm[];
-static const char str_PyMethod_Scrap_PreloadLibrary[];
-static const char str_PyMethod_Scrap_Print[];
-static const char str_PyMethod_Scrap_ProcessDVF[];
-static const char str_PyMethod_Scrap_PythonCompileAll[];
-static const char str_PyMethod_Scrap_Rand[];
-static const char str_PyMethod_Scrap_Round[];
-static const char str_PyMethod_Scrap_RunApp[];
-static const char str_PyMethod_Scrap_SaveConfig[];
-static const char str_PyMethod_Scrap_SaveGameVars[];
-static const char str_PyMethod_Scrap_ScreenShot[];
-static const char str_PyMethod_Scrap_SetAlarm[];
-static const char str_PyMethod_Scrap_SetAlarmChar[];
-static const char str_PyMethod_Scrap_SetAlarmGrow[];
-static const char str_PyMethod_Scrap_SetCallFunc[];
-static const char str_PyMethod_Scrap_SetCam[];
-static const char str_PyMethod_Scrap_SetDebrisSys[];
-static const char str_PyMethod_Scrap_SetDebrisValue[];
-static const char str_PyMethod_Scrap_SetGrid[];
-static const char str_PyMethod_Scrap_SetLanguage[];
-static const char str_PyMethod_Scrap_SetLockAlarm[];
-static const char str_PyMethod_Scrap_SetMoney[];
-static const char str_PyMethod_Scrap_SetSaveProfile[];
-static const char str_PyMethod_Scrap_SetSaveVar[];
-static const char str_PyMethod_Scrap_SetTime[];
-static const char str_PyMethod_Scrap_SetTimeSpeed[];
-static const char str_PyMethod_Scrap_SetVideoCurrentMode[];
-static const char str_PyMethod_Scrap_ShowGVars[];
-static const char str_PyMethod_Scrap_SphereCall[];
-static const char str_PyMethod_Scrap_StartDummySearch[];
-static const char str_PyMethod_Scrap_SwitchMissionArrows[];
-static const char str_PyMethod_Scrap_TestLine[];
-static const char str_PyMethod_Scrap_TestSphere[];
-static const char str_PyMethod_Scrap_UsrEntity[];
-static const char str_PyMethod_Scrap_Ver[];
-static const char str_PyMethod_Scrap_Verbose[];
-static const char str_PyMethod_Scrap_VideoPlayer[];
-static PyMethodDef Scrap_methods[115] = {
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Print,
-		.ml_meth = (void *)Scrap_Print,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Print,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ConsoleOut,
-		.ml_meth = (void *)Scrap_ConsoleOut,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ConsoleOut,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ConsoleError,
-		.ml_meth = (void *)Scrap_ConsoleError,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ConsoleError,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_DebugInput,
-		.ml_meth = (void *)Scrap_DebugInput,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_DebugInput,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Verbose,
-		.ml_meth = (void *)Scrap_Verbose,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Verbose,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Ver,
-		.ml_meth = (void *)Scrap_Ver,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Ver,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ExtractPack,
-		.ml_meth = (void *)Scrap_ExtractPack,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ExtractPack,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_OpenPack,
-		.ml_meth = (void *)Scrap_OpenPack,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_OpenPack,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ClosePack,
-		.ml_meth = (void *)Scrap_ClosePack,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ClosePack,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_PreloadLibrary,
-		.ml_meth = (void *)Scrap_PreloadLibrary,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_PreloadLibrary,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Preload3DObject,
-		.ml_meth = (void *)Scrap_Preload3DObject,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Preload3DObject,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_PreloadAnm,
-		.ml_meth = (void *)Scrap_PreloadAnm,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_PreloadAnm,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_PythonCompileAll,
-		.ml_meth = (void *)Scrap_PythonCompileAll,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_PythonCompileAll,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Get,
-		.ml_meth = (void *)Scrap_Get,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Get,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Def,
-		.ml_meth = (void *)Scrap_Def,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Def,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Des,
-		.ml_meth = (void *)Scrap_Des,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Des,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SScorer_Set,
-		.ml_meth = (void *)Scrap_Set,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Set,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ShowGVars,
-		.ml_meth = (void *)Scrap_ShowGVars,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ShowGVars,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SwitchMissionArrows,
-		.ml_meth = (void *)Scrap_SwitchMissionArrows,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SwitchMissionArrows,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetTime,
-		.ml_meth = (void *)Scrap_GetTime,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetTime,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetTimeSpeed,
-		.ml_meth = (void *)Scrap_GetTimeSpeed,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetTimeSpeed,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetTime,
-		.ml_meth = (void *)Scrap_SetTime,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetTime,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetTimeSpeed,
-		.ml_meth = (void *)Scrap_SetTimeSpeed,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetTimeSpeed,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_AddScheduledFunc,
-		.ml_meth = (void *)Scrap_AddScheduledFunc,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_AddScheduledFunc,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_DeleteScheduledFuncs,
-		.ml_meth = (void *)Scrap_DeleteScheduledFuncs,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_DeleteScheduledFuncs,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetCam,
-		.ml_meth = (void *)Scrap_SetCam,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetCam,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetCam,
-		.ml_meth = (void *)Scrap_GetCam,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetCam,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetMinCamDist,
-		.ml_meth = (void *)Scrap_GetMinCamDist,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetMinCamDist,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetEntity,
-		.ml_meth = (void *)Scrap_GetEntity,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetEntity,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetFirst,
-		.ml_meth = (void *)Scrap_GetFirst,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetFirst,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_CreateEntity,
-		.ml_meth = (void *)Scrap_CreateEntity,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_CreateEntity,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_UsrEntity,
-		.ml_meth = (void *)Scrap_UsrEntity,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_UsrEntity,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_EntityListGet,
-		.ml_meth = (void *)Scrap_EntityListGet,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_EntityListGet,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_EntityListSet,
-		.ml_meth = (void *)Scrap_EntityListSet,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_EntityListSet,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_CreateEntityList,
-		.ml_meth = (void *)Scrap_CreateEntityList,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_CreateEntityList,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_LoadLevel,
-		.ml_meth = (void *)Scrap_LoadLevel,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_LoadLevel,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetLevelPath,
-		.ml_meth = (void *)Scrap_GetLevelPath,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetLevelPath,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetNewLevelPath,
-		.ml_meth = (void *)Scrap_GetNewLevelPath,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetNewLevelPath,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetGrid,
-		.ml_meth = (void *)Scrap_SetGrid,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetGrid,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetFloor,
-		.ml_meth = (void *)Scrap_GetFloor,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetFloor,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_CreateElements,
-		.ml_meth = (void *)Scrap_CreateElements,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_CreateElements,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_CallElements,
-		.ml_meth = (void *)Scrap_CallElements,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_CallElements,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetNetFlags,
-		.ml_meth = (void *)Scrap_GetNetFlags,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetNetFlags,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_StartDummySearch,
-		.ml_meth = (void *)Scrap_StartDummySearch,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_StartDummySearch,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_NextDummySearch,
-		.ml_meth = (void *)Scrap_NextDummySearch,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_NextDummySearch,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Rand,
-		.ml_meth = (void *)Scrap_Rand,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Rand,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Round,
-		.ml_meth = (void *)Scrap_Round,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Round,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetDebrisSys,
-		.ml_meth = (void *)Scrap_SetDebrisSys,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetDebrisSys,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_DropDebris,
-		.ml_meth = (void *)Scrap_DropDebris,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_DropDebris,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetDebrisValue,
-		.ml_meth = (void *)Scrap_SetDebrisValue,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetDebrisValue,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ModelInfo,
-		.ml_meth = (void *)Scrap_ModelInfo,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ModelInfo,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ListModels,
-		.ml_meth = (void *)Scrap_ListModels,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ListModels,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_BuildFont,
-		.ml_meth = (void *)Scrap_BuildFont,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_BuildFont,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ScreenShot,
-		.ml_meth = (void *)Scrap_ScreenShot,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ScreenShot,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_ProcessDVF,
-		.ml_meth = (void *)Scrap_ProcessDVF,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_ProcessDVF,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_VideoPlayer,
-		.ml_meth = (void *)Scrap_VideoPlayer,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_VideoPlayer,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_MusicPlayer,
-		.ml_meth = (void *)Scrap_MusicPlayer,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_MusicPlayer,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetVideoCurrentMode,
-		.ml_meth = (void *)Scrap_GetVideoCurrentMode,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetVideoCurrentMode,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetVideoCurrentMode,
-		.ml_meth = (void *)Scrap_SetVideoCurrentMode,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetVideoCurrentMode,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetVideoModes,
-		.ml_meth = (void *)Scrap_GetVideoModes,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetVideoModes,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_TestLine,
-		.ml_meth = (void *)Scrap_TestLine,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_TestLine,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_TestSphere,
-		.ml_meth = (void *)Scrap_TestSphere,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_TestSphere,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SphereCall,
-		.ml_meth = (void *)Scrap_SphereCall,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SphereCall,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetCallFunc,
-		.ml_meth = (void *)Scrap_SetCallFunc,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetCallFunc,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_AddParamf,
-		.ml_meth = (void *)Scrap_AddParamf,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_AddParamf,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_AddParami,
-		.ml_meth = (void *)Scrap_AddParami,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_AddParami,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_AddParams,
-		.ml_meth = (void *)Scrap_AddParams,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_AddParams,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Execute,
-		.ml_meth = (void *)Scrap_Execute,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Execute,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_DelSaveVars,
-		.ml_meth = (void *)Scrap_DelSaveVars,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_DelSaveVars,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_CreateSaveVar,
-		.ml_meth = (void *)Scrap_CreateSaveVar,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_CreateSaveVar,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetSaveVar,
-		.ml_meth = (void *)Scrap_GetSaveVar,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetSaveVar,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetSaveVar,
-		.ml_meth = (void *)Scrap_SetSaveVar,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetSaveVar,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_IncSaveVar,
-		.ml_meth = (void *)Scrap_IncSaveVar,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_IncSaveVar,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_LoadGameVars,
-		.ml_meth = (void *)Scrap_LoadGameVars,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_LoadGameVars,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_CreateSaveProfile,
-		.ml_meth = (void *)Scrap_CreateSaveProfile,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_CreateSaveProfile,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_DeleteProfile,
-		.ml_meth = (void *)Scrap_DeleteProfile,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_DeleteProfile,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetSaveProfile,
-		.ml_meth = (void *)Scrap_SetSaveProfile,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetSaveProfile,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetSavedProfilesList,
-		.ml_meth = (void *)Scrap_GetSavedProfilesList,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetSavedProfilesList,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetFreeBlocks,
-		.ml_meth = (void *)Scrap_GetFreeBlocks,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetFreeBlocks,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetFreeBlocks,
-		.ml_meth = (void *)Scrap_GetFreeBlocks,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetFreeBlocks,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_LaunchDashboard,
-		.ml_meth = (void *)Scrap_LaunchDashboard,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_LaunchDashboard,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_DeselectProfile,
-		.ml_meth = (void *)Scrap_DeselectProfile,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_DeselectProfile,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SaveGameVars,
-		.ml_meth = (void *)Scrap_SaveGameVars,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SaveGameVars,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SaveConfig,
-		.ml_meth = (void *)Scrap_SaveConfig,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SaveConfig,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetSaveGamesList,
-		.ml_meth = (void *)Scrap_GetSaveGamesList,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetSaveGamesList,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetLanguage,
-		.ml_meth = (void *)Scrap_SetLanguage,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetLanguage,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetLanguage,
-		.ml_meth = (void *)Scrap_GetLanguage,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetLanguage,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetLangStr,
-		.ml_meth = (void *)Scrap_GetLangStr,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetLangStr,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetLangEntries,
-		.ml_meth = (void *)Scrap_GetLangEntries,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetLangEntries,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetAlarm,
-		.ml_meth = (void *)Scrap_GetAlarm,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetAlarm,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetAlarm,
-		.ml_meth = (void *)Scrap_SetAlarm,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetAlarm,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetAlarmGrow,
-		.ml_meth = (void *)Scrap_SetAlarmGrow,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetAlarmGrow,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetAlarmChars,
-		.ml_meth = (void *)Scrap_GetAlarmChars,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetAlarmChars,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetAlarmChar,
-		.ml_meth = (void *)Scrap_SetAlarmChar,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetAlarmChar,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetLockAlarm,
-		.ml_meth = (void *)Scrap_GetLockAlarm,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetLockAlarm,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetLockAlarm,
-		.ml_meth = (void *)Scrap_SetLockAlarm,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetLockAlarm,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetMoney,
-		.ml_meth = (void *)Scrap_GetMoney,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetMoney,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_SetMoney,
-		.ml_meth = (void *)Scrap_SetMoney,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_SetMoney,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_AddParkingZone,
-		.ml_meth = (void *)Scrap_AddParkingZone,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_AddParkingZone,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetFarestParked,
-		.ml_meth = (void *)Scrap_GetFarestParked,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetFarestParked,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetNearestParked,
-		.ml_meth = (void *)Scrap_GetNearestParked,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetNearestParked,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_AddItem,
-		.ml_meth = (void *)Scrap_AddItem,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_AddItem,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_InitLoading,
-		.ml_meth = (void *)Scrap_InitLoading,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_InitLoading,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_EndLoading,
-		.ml_meth = (void *)Scrap_EndLoading,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_EndLoading,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Exit,
-		.ml_meth = (void *)Scrap_Exit,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Exit,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_FileExist,
-		.ml_meth = (void *)Scrap_FileExist,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_FileExist,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_RunApp,
-		.ml_meth = (void *)Scrap_RunApp,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_RunApp,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_Achievement,
-		.ml_meth = (void *)Scrap_Achievement,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_Achievement,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_OpenStore,
-		.ml_meth = (void *)Scrap_OpenStore,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_OpenStore,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_IsApp,
-		.ml_meth = (void *)Scrap_IsApp,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_IsApp,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetSteamID,
-		.ml_meth = (void *)Scrap_GetSteamID,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetSteamID,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetSteamTicket,
-		.ml_meth = (void *)Scrap_GetSteamTicket,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetSteamTicket,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_IsSteam,
-		.ml_meth = (void *)Scrap_IsSteam,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_IsSteam,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_Scrap_GetGogID,
-		.ml_meth = (void *)Scrap_GetGogID,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_Scrap_GetGogID,
-	},
+static const portFn_t Scrap_methods[] = {
+	PORT_FND(Print, Scrap_Print, str_PyDoc_Scrap_Print),
+	PORT_FND(ConsoleOut, Scrap_ConsoleOut, str_PyDoc_Scrap_ConsoleOut),
+	PORT_FND(ConsoleError, Scrap_ConsoleError, str_PyDoc_Scrap_ConsoleError),
+	PORT_FND(DebugInput, Scrap_DebugInput, str_PyDoc_Scrap_DebugInput),
+	PORT_FND(Verbose, Scrap_Verbose, str_PyDoc_Scrap_Verbose),
+	PORT_FND(Ver, Scrap_Ver, str_PyDoc_Scrap_Ver),
+	PORT_FND(ExtractPack, Scrap_ExtractPack, str_PyDoc_Scrap_ExtractPack),
+	PORT_FND(OpenPack, Scrap_OpenPack, str_PyDoc_Scrap_OpenPack),
+	PORT_FND(ClosePack, Scrap_ClosePack, str_PyDoc_Scrap_ClosePack),
+	PORT_FND(PreloadLibrary, Scrap_PreloadLibrary, str_PyDoc_Scrap_PreloadLibrary),
+	PORT_FND(Preload3DObject, Scrap_Preload3DObject, str_PyDoc_Scrap_Preload3DObject),
+	PORT_FND(PreloadAnm, Scrap_PreloadAnm, str_PyDoc_Scrap_PreloadAnm),
+	PORT_FND(PythonCompileAll, Scrap_PythonCompileAll, str_PyDoc_Scrap_PythonCompileAll),
+	PORT_FND(Get, Scrap_Get, str_PyDoc_Scrap_Get),
+	PORT_FND(Def, Scrap_Def, str_PyDoc_Scrap_Def),
+	PORT_FND(Des, Scrap_Des, str_PyDoc_Scrap_Des),
+	PORT_FND(Set, Scrap_Set, str_PyDoc_Scrap_Set),
+	PORT_FND(ShowGVars, Scrap_ShowGVars, str_PyDoc_Scrap_ShowGVars),
+	PORT_FND(SwitchMissionArrows, Scrap_SwitchMissionArrows, str_PyDoc_Scrap_SwitchMissionArrows),
+	PORT_FND(GetTime, Scrap_GetTime, str_PyDoc_Scrap_GetTime),
+	PORT_FND(GetTimeSpeed, Scrap_GetTimeSpeed, str_PyDoc_Scrap_GetTimeSpeed),
+	PORT_FND(SetTime, Scrap_SetTime, str_PyDoc_Scrap_SetTime),
+	PORT_FND(SetTimeSpeed, Scrap_SetTimeSpeed, str_PyDoc_Scrap_SetTimeSpeed),
+	PORT_FND(AddScheduledFunc, Scrap_AddScheduledFunc, str_PyDoc_Scrap_AddScheduledFunc),
+	PORT_FND(DeleteScheduledFuncs, Scrap_DeleteScheduledFuncs, str_PyDoc_Scrap_DeleteScheduledFuncs),
+	PORT_FND(SetCam, Scrap_SetCam, str_PyDoc_Scrap_SetCam),
+	PORT_FND(GetCam, Scrap_GetCam, str_PyDoc_Scrap_GetCam),
+	PORT_FND(GetMinCamDist, Scrap_GetMinCamDist, str_PyDoc_Scrap_GetMinCamDist),
+	PORT_FND(GetEntity, Scrap_GetEntity, str_PyDoc_Scrap_GetEntity),
+	PORT_FND(GetFirst, Scrap_GetFirst, str_PyDoc_Scrap_GetFirst),
+	PORT_FND(CreateEntity, Scrap_CreateEntity, str_PyDoc_Scrap_CreateEntity),
+	PORT_FND(UsrEntity, Scrap_UsrEntity, str_PyDoc_Scrap_UsrEntity),
+	PORT_FND(EntityListGet, Scrap_EntityListGet, str_PyDoc_Scrap_EntityListGet),
+	PORT_FND(EntityListSet, Scrap_EntityListSet, str_PyDoc_Scrap_EntityListSet),
+	PORT_FND(CreateEntityList, Scrap_CreateEntityList, str_PyDoc_Scrap_CreateEntityList),
+	PORT_FND(LoadLevel, Scrap_LoadLevel, str_PyDoc_Scrap_LoadLevel),
+	PORT_FND(GetLevelPath, Scrap_GetLevelPath, str_PyDoc_Scrap_GetLevelPath),
+	PORT_FND(GetNewLevelPath, Scrap_GetNewLevelPath, str_PyDoc_Scrap_GetNewLevelPath),
+	PORT_FND(SetGrid, Scrap_SetGrid, str_PyDoc_Scrap_SetGrid),
+	PORT_FND(GetFloor, Scrap_GetFloor, str_PyDoc_Scrap_GetFloor),
+	PORT_FND(CreateElements, Scrap_CreateElements, str_PyDoc_Scrap_CreateElements),
+	PORT_FND(CallElements, Scrap_CallElements, str_PyDoc_Scrap_CallElements),
+	PORT_FND(GetNetFlags, Scrap_GetNetFlags, str_PyDoc_Scrap_GetNetFlags),
+	PORT_FND(StartDummySearch, Scrap_StartDummySearch, str_PyDoc_Scrap_StartDummySearch),
+	PORT_FND(NextDummySearch, Scrap_NextDummySearch, str_PyDoc_Scrap_NextDummySearch),
+	PORT_FND(Rand, Scrap_Rand, str_PyDoc_Scrap_Rand),
+	PORT_FND(Round, Scrap_Round, str_PyDoc_Scrap_Round),
+	PORT_FND(SetDebrisSys, Scrap_SetDebrisSys, str_PyDoc_Scrap_SetDebrisSys),
+	PORT_FND(DropDebris, Scrap_DropDebris, str_PyDoc_Scrap_DropDebris),
+	PORT_FND(SetDebrisValue, Scrap_SetDebrisValue, str_PyDoc_Scrap_SetDebrisValue),
+	PORT_FND(ModelInfo, Scrap_ModelInfo, str_PyDoc_Scrap_ModelInfo),
+	PORT_FND(ListModels, Scrap_ListModels, str_PyDoc_Scrap_ListModels),
+	PORT_FND(BuildFont, Scrap_BuildFont, str_PyDoc_Scrap_BuildFont),
+	PORT_FND(ScreenShot, Scrap_ScreenShot, str_PyDoc_Scrap_ScreenShot),
+	PORT_FND(ProcessDVF, Scrap_ProcessDVF, str_PyDoc_Scrap_ProcessDVF),
+	PORT_FND(VideoPlayer, Scrap_VideoPlayer, str_PyDoc_Scrap_VideoPlayer),
+	PORT_FND(MusicPlayer, Scrap_MusicPlayer, str_PyDoc_Scrap_MusicPlayer),
+	PORT_FND(GetVideoCurrentMode, Scrap_GetVideoCurrentMode, str_PyDoc_Scrap_GetVideoCurrentMode),
+	PORT_FND(SetVideoCurrentMode, Scrap_SetVideoCurrentMode, str_PyDoc_Scrap_SetVideoCurrentMode),
+	PORT_FND(GetVideoModes, Scrap_GetVideoModes, str_PyDoc_Scrap_GetVideoModes),
+	PORT_FND(TestLine, Scrap_TestLine, str_PyDoc_Scrap_TestLine),
+	PORT_FND(TestSphere, Scrap_TestSphere, str_PyDoc_Scrap_TestSphere),
+	PORT_FND(SphereCall, Scrap_SphereCall, str_PyDoc_Scrap_SphereCall),
+	PORT_FND(SetCallFunc, Scrap_SetCallFunc, str_PyDoc_Scrap_SetCallFunc),
+	PORT_FND(AddParamf, Scrap_AddParamf, str_PyDoc_Scrap_AddParamf),
+	PORT_FND(AddParami, Scrap_AddParami, str_PyDoc_Scrap_AddParami),
+	PORT_FND(AddParams, Scrap_AddParams, str_PyDoc_Scrap_AddParams),
+	PORT_FND(Execute, Scrap_Execute, str_PyDoc_Scrap_Execute),
+	PORT_FND(DelSaveVars, Scrap_DelSaveVars, str_PyDoc_Scrap_DelSaveVars),
+	PORT_FND(CreateSaveVar, Scrap_CreateSaveVar, str_PyDoc_Scrap_CreateSaveVar),
+	PORT_FND(GetSaveVar, Scrap_GetSaveVar, str_PyDoc_Scrap_GetSaveVar),
+	PORT_FND(SetSaveVar, Scrap_SetSaveVar, str_PyDoc_Scrap_SetSaveVar),
+	PORT_FND(IncSaveVar, Scrap_IncSaveVar, str_PyDoc_Scrap_IncSaveVar),
+	PORT_FND(LoadGameVars, Scrap_LoadGameVars, str_PyDoc_Scrap_LoadGameVars),
+	PORT_FND(CreateSaveProfile, Scrap_CreateSaveProfile, str_PyDoc_Scrap_CreateSaveProfile),
+	PORT_FND(DeleteProfile, Scrap_DeleteProfile, str_PyDoc_Scrap_DeleteProfile),
+	PORT_FND(SetSaveProfile, Scrap_SetSaveProfile, str_PyDoc_Scrap_SetSaveProfile),
+	PORT_FND(GetSavedProfilesList, Scrap_GetSavedProfilesList, str_PyDoc_Scrap_GetSavedProfilesList),
+	PORT_FND(GetFreeBlocks, Scrap_GetFreeBlocks, str_PyDoc_Scrap_GetFreeBlocks),
+	PORT_FND(GetFreeBlocks, Scrap_GetFreeBlocks, str_PyDoc_Scrap_GetFreeBlocks),
+	PORT_FND(LaunchDashboard, Scrap_LaunchDashboard, str_PyDoc_Scrap_LaunchDashboard),
+	PORT_FND(DeselectProfile, Scrap_DeselectProfile, str_PyDoc_Scrap_DeselectProfile),
+	PORT_FND(SaveGameVars, Scrap_SaveGameVars, str_PyDoc_Scrap_SaveGameVars),
+	PORT_FND(SaveConfig, Scrap_SaveConfig, str_PyDoc_Scrap_SaveConfig),
+	PORT_FND(GetSaveGamesList, Scrap_GetSaveGamesList, str_PyDoc_Scrap_GetSaveGamesList),
+	PORT_FND(SetLanguage, Scrap_SetLanguage, str_PyDoc_Scrap_SetLanguage),
+	PORT_FND(GetLanguage, Scrap_GetLanguage, str_PyDoc_Scrap_GetLanguage),
+	PORT_FND(GetLangStr, Scrap_GetLangStr, str_PyDoc_Scrap_GetLangStr),
+	PORT_FND(GetLangEntries, Scrap_GetLangEntries, str_PyDoc_Scrap_GetLangEntries),
+	PORT_FND(GetAlarm, Scrap_GetAlarm, str_PyDoc_Scrap_GetAlarm),
+	PORT_FND(SetAlarm, Scrap_SetAlarm, str_PyDoc_Scrap_SetAlarm),
+	PORT_FND(SetAlarmGrow, Scrap_SetAlarmGrow, str_PyDoc_Scrap_SetAlarmGrow),
+	PORT_FND(GetAlarmChars, Scrap_GetAlarmChars, str_PyDoc_Scrap_GetAlarmChars),
+	PORT_FND(SetAlarmChar, Scrap_SetAlarmChar, str_PyDoc_Scrap_SetAlarmChar),
+	PORT_FND(GetLockAlarm, Scrap_GetLockAlarm, str_PyDoc_Scrap_GetLockAlarm),
+	PORT_FND(SetLockAlarm, Scrap_SetLockAlarm, str_PyDoc_Scrap_SetLockAlarm),
+	PORT_FND(GetMoney, Scrap_GetMoney, str_PyDoc_Scrap_GetMoney),
+	PORT_FND(SetMoney, Scrap_SetMoney, str_PyDoc_Scrap_SetMoney),
+	PORT_FND(AddParkingZone, Scrap_AddParkingZone, str_PyDoc_Scrap_AddParkingZone),
+	PORT_FND(GetFarestParked, Scrap_GetFarestParked, str_PyDoc_Scrap_GetFarestParked),
+	PORT_FND(GetNearestParked, Scrap_GetNearestParked, str_PyDoc_Scrap_GetNearestParked),
+	PORT_FND(AddItem, Scrap_AddItem, str_PyDoc_Scrap_AddItem),
+	PORT_FND(InitLoading, Scrap_InitLoading, str_PyDoc_Scrap_InitLoading),
+	PORT_FND(EndLoading, Scrap_EndLoading, str_PyDoc_Scrap_EndLoading),
+	PORT_FND(Exit, Scrap_Exit, str_PyDoc_Scrap_Exit),
+	PORT_FND(FileExist, Scrap_FileExist, str_PyDoc_Scrap_FileExist),
+	PORT_FND(RunApp, Scrap_RunApp, str_PyDoc_Scrap_RunApp),
+	PORT_FND(Achievement, Scrap_Achievement, str_PyDoc_Scrap_Achievement),
+	PORT_FND(OpenStore, Scrap_OpenStore, str_PyDoc_Scrap_OpenStore),
+	PORT_FND(IsApp, Scrap_IsApp, str_PyDoc_Scrap_IsApp),
+	PORT_FND(GetSteamID, Scrap_GetSteamID, str_PyDoc_Scrap_GetSteamID),
+	PORT_FND(GetSteamTicket, Scrap_GetSteamTicket, str_PyDoc_Scrap_GetSteamTicket),
+	PORT_FND(IsSteam, Scrap_IsSteam, str_PyDoc_Scrap_IsSteam),
+	PORT_FND(GetGogID, Scrap_GetGogID, str_PyDoc_Scrap_GetGogID),
+	PORT_FND(ConsoleExec, Scrap_ConsoleExec,
+		"ConsoleExec(line) : runs a line of the console"),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(Scrap, 0x42c610)
 
-static const char str_PyMethod_Scrap_ScreenShot[] = "ScreenShot";
-static const char str_PyMethod_Scrap_ProcessDVF[] = "ProcessDVF";
-static const char str_PyMethod_Scrap_VideoPlayer[] = "VideoPlayer";
-static const char str_PyMethod_Scrap_MusicPlayer[] = "MusicPlayer";
-static const char str_PyMethod_Scrap_GetVideoCurrentMode[] = "GetVideoCurrentMode";
-static const char str_PyMethod_Scrap_SetVideoCurrentMode[] = "SetVideoCurrentMode";
-static const char str_PyMethod_Scrap_GetVideoModes[] = "GetVideoModes";
-static const char str_PyMethod_Scrap_TestLine[] = "TestLine";
-static const char str_PyMethod_Scrap_TestSphere[] = "TestSphere";
-static const char str_PyMethod_Scrap_SphereCall[] = "SphereCall";
-static const char str_PyMethod_Scrap_SetCallFunc[] = "SetCallFunc";
-static const char str_PyMethod_Scrap_AddParamf[] = "AddParamf";
-static const char str_PyMethod_Scrap_AddParami[] = "AddParami";
-static const char str_PyMethod_Scrap_AddParams[] = "AddParams";
-static const char str_PyMethod_Scrap_Execute[] = "Execute";
-static const char str_PyMethod_Scrap_DelSaveVars[] = "DelSaveVars";
-static const char str_PyMethod_Scrap_CreateSaveVar[] = "CreateSaveVar";
-static const char str_PyMethod_Scrap_GetSaveVar[] = "GetSaveVar";
-static const char str_PyMethod_Scrap_SetSaveVar[] = "SetSaveVar";
-static const char str_PyMethod_Scrap_IncSaveVar[] = "IncSaveVar";
-static const char str_PyMethod_Scrap_LoadGameVars[] = "LoadGameVars";
-static const char str_PyMethod_Scrap_CreateSaveProfile[] = "CreateSaveProfile";
-static const char str_PyMethod_Scrap_DeleteProfile[] = "DeleteProfile";
-static const char str_PyMethod_Scrap_SetSaveProfile[] = "SetSaveProfile";
-static const char str_PyMethod_Scrap_GetSavedProfilesList[] = "GetSavedProfilesList";
-static const char str_PyMethod_Scrap_GetFreeBlocks[] = "GetFreeBlocks";
-static const char str_PyMethod_Scrap_LaunchDashboard[] = "LaunchDashboard";
-static const char str_PyMethod_Scrap_DeselectProfile[] = "DeselectProfile";
-static const char str_PyMethod_Scrap_SaveGameVars[] = "SaveGameVars";
-static const char str_PyMethod_Scrap_SaveConfig[] = "SaveConfig";
-static const char str_PyMethod_Scrap_GetSaveGamesList[] = "GetSaveGamesList";
-static const char str_PyMethod_Scrap_SetLanguage[] = "SetLanguage";
-static const char str_PyMethod_Scrap_GetLanguage[] = "GetLanguage";
-static const char str_PyMethod_Scrap_GetLangStr[] = "GetLangStr";
-static const char str_PyMethod_Scrap_GetLangEntries[] = "GetLangEntries";
-static const char str_PyMethod_Scrap_GetAlarm[] = "GetAlarm";
-static const char str_PyMethod_Scrap_SetAlarm[] = "SetAlarm";
-static const char str_PyMethod_Scrap_SetAlarmGrow[] = "SetAlarmGrow";
-static const char str_PyMethod_Scrap_GetAlarmChars[] = "GetAlarmChars";
-static const char str_PyMethod_Scrap_SetAlarmChar[] = "SetAlarmChar";
-static const char str_PyMethod_Scrap_GetLockAlarm[] = "GetLockAlarm";
-static const char str_PyMethod_Scrap_SetLockAlarm[] = "SetLockAlarm";
-static const char str_PyMethod_Scrap_GetMoney[] = "GetMoney";
-static const char str_PyMethod_Scrap_SetMoney[] = "SetMoney";
-static const char str_PyMethod_Scrap_AddParkingZone[] = "AddParkingZone";
-static const char str_PyMethod_Scrap_GetFarestParked[] = "GetFarestParked";
-static const char str_PyMethod_Scrap_GetNearestParked[] = "GetNearestParked";
-static const char str_PyMethod_Scrap_AddItem[] = "AddItem";
-static const char str_PyMethod_Scrap_InitLoading[] = "InitLoading";
-static const char str_PyMethod_Scrap_EndLoading[] = "EndLoading";
-static const char str_PyMethod_Scrap_Exit[] = "Exit";
-static const char str_PyMethod_Scrap_FileExist[] = "FileExist";
-static const char str_PyMethod_Scrap_RunApp[] = "RunApp";
-static const char str_PyMethod_Scrap_Achievement[] = "Achievement";
-static const char str_PyMethod_Scrap_OpenStore[] = "OpenStore";
-static const char str_PyMethod_Scrap_IsApp[] = "IsApp";
-static const char str_PyMethod_Scrap_GetSteamID[] = "GetSteamID";
-static const char str_PyMethod_Scrap_GetSteamTicket[] = "GetSteamTicket";
-static const char str_PyMethod_Scrap_IsSteam[] = "IsSteam";
-static const char str_PyMethod_Scrap_GetGogID[] = "GetGogID";
-static const char str_PyMethod_Scrap_Print[] = "Print";
-static const char str_PyMethod_Scrap_ConsoleOut[] = "ConsoleOut";
-static const char str_PyMethod_Scrap_ConsoleError[] = "ConsoleError";
-static const char str_PyMethod_Scrap_DebugInput[] = "DebugInput";
-static const char str_PyMethod_Scrap_Verbose[] = "Verbose";
-static const char str_PyMethod_Scrap_Ver[] = "Ver";
 
 static char str_PyDoc_Scrap_EntityListGet[] =
 	"(value)Scrap.EntityListGet(listName, varName) :  Obtiene el valor de una variable de una lista de en"
 	"tidades";
 
-static const char str_PyMethod_Scrap_ExtractPack[] = "ExtractPack";
-static const char str_PyMethod_Scrap_OpenPack[] = "OpenPack";
-static const char str_PyMethod_Scrap_ClosePack[] = "ClosePack";
 
 static char str_PyDoc_Scrap_CreateEntityList[] = "CreateEntityList(listName) :  Crea una lista de entidades";
 
-static const char str_PyMethod_Scrap_PreloadLibrary[] = "PreloadLibrary";
 
 static char str_PyDoc_Scrap_SetCam[] = "SetCam(i,name) :  Activa una camara";
 
-static const char str_PyMethod_Scrap_Preload3DObject[] = "Preload3DObject";
 
 static char str_PyDoc_Scrap_GetCam[] = "name GetCam(i) :  Obtiene el nombre de una entidad camara";
 
-static const char str_PyMethod_Scrap_PreloadAnm[] = "PreloadAnm";
-static const char str_PyMethod_Scrap_PythonCompileAll[] = "PythonCompileAll";
 
 static char str_PyDoc_Scrap_GetMinCamDist[] =
 	"GetMinCamDist(x,y,z) :  Obtiene la distancia de un punto a la camara";
 
-const char str_PyMethod_SScorer_Get[] = "Get";
-static const char str_PyMethod_Scrap_Def[] = "Def";
 
 static char str_PyDoc_Scrap_LoadLevel[] = "LoadLevel(string name) :  Carga un nivel en el siguiente frame";
 
-static const char str_PyMethod_Scrap_Des[] = "Des";
-const char str_PyMethod_SScorer_Set[] = "Set";
 
 static char str_PyDoc_Scrap_GetLevelPath[] = "levelpath GetLevelPath() :  Obtiene el path del nivel actual";
 
-static const char str_PyMethod_Scrap_ShowGVars[] = "ShowGVars";
-static const char str_PyMethod_Scrap_SwitchMissionArrows[] = "SwitchMissionArrows";
 
 static char str_PyDoc_Scrap_GetNewLevelPath[] =
 	"levelpath GetNewLevelPath() :  Obtiene el path del próximo nivel";
 
-static const char str_PyMethod_Scrap_GetTime[] = "GetTime";
-static const char str_PyMethod_Scrap_GetTimeSpeed[] = "GetTimeSpeed";
 
 static char str_PyDoc_Scrap_GetFloor[] = "i GetFloor(y) :  Obtiene el numero de piso en el que esta.";
 
-static const char str_PyMethod_Scrap_SetTime[] = "SetTime";
 
 static char str_PyDoc_Scrap_CreateElements[88] =
 	"CreateElements() :  Crea una lista de elementos estaticos que pertenecen al mapa.";
 
-static const char str_PyMethod_Scrap_SetTimeSpeed[] = "SetTimeSpeed";
-static const char str_PyMethod_Scrap_AddScheduledFunc[] = "AddScheduledFunc";
 
 static char str_PyDoc_Scrap_CallElements[] =
 	"CallElements('Function') :  llama una funcion Function(Name,x,y,z,angx,angy)";
 
-static const char str_PyMethod_Scrap_DeleteScheduledFuncs[] = "DeleteScheduledFuncs";
-static const char str_PyMethod_Scrap_SetCam[] = "SetCam";
 
 static char str_PyDoc_Scrap_SetGrid[] = "SetGrid(x,y,z) :  Modifica las dimensiones del grid de colision";
 
-static const char str_PyMethod_Scrap_GetCam[] = "GetCam";
-static const char str_PyMethod_Scrap_GetMinCamDist[] = "GetMinCamDist";
 
 static char str_PyDoc_Scrap_GetNetFlags[] =
 	"GetNetFlags() :  Obtiene la tupla de flags : client, server, dedicated";
 
-static const char str_PyMethod_Scrap_GetEntity[] = "GetEntity";
-static const char str_PyMethod_Scrap_GetFirst[] = "GetFirst";
 
 static char str_PyDoc_Scrap_Rand[] = "Rand(min,max) :  Obtiene un numero seudo-aleatorio entre (min,max)";
 
-static const char str_PyMethod_Scrap_CreateEntity[] = "CreateEntity";
 
 static char str_PyDoc_Scrap_Round[] = "Round(num) : Redondea un numero real al entero más cercano.";
 
-static const char str_PyMethod_Scrap_UsrEntity[] = "UsrEntity";
-static const char str_PyMethod_Scrap_EntityListGet[] = "EntityListGet";
 
 static char str_PyDoc_Scrap_NextDummySearch[] =
 	"(s(ddd)(dd)i) NextDummySearch() : Obtiene el proximo dummy, sino None";
 
-static const char str_PyMethod_Scrap_EntityListSet[] = "EntityListSet";
-static const char str_PyMethod_Scrap_CreateEntityList[] = "CreateEntityList";
 
 static char str_PyDoc_Scrap_StartDummySearch[] =
 	"StartDummySearch(name,usewildcards) : Inicia la busqueda de dummies en el mapa";
 
-static const char str_PyMethod_Scrap_LoadLevel[] = "LoadLevel";
-static const char str_PyMethod_Scrap_GetLevelPath[] = "GetLevelPath";
 
 static char str_PyDoc_Scrap_ModelInfo[] =
 	"ModelInfo(name) : Muestra información sobre la jerarquía de nodos del modelo";
 
-static const char str_PyMethod_Scrap_GetNewLevelPath[] = "GetNewLevelPath";
 
 static char str_PyDoc_Scrap_ListModels[] = "ListModels() : Muestra una lista de modelos y escenas";
 
-static const char str_PyMethod_Scrap_SetGrid[] = "SetGrid";
-static const char str_PyMethod_Scrap_GetFloor[] = "GetFloor";
 
 static char str_PyDoc_Scrap_BuildFont[] =
 	"BuildFont(name,size) : Construye un archivo de fuente de letras a partir de un .TGA dado";
 
-static const char str_PyMethod_Scrap_CreateElements[] = "CreateElements";
-static const char str_PyMethod_Scrap_CallElements[] = "CallElements";
 
 static char str_PyDoc_Scrap_ScreenShot[] = "ScreenShot(filename) : Screenshot of the current frame";
 
-static const char str_PyMethod_Scrap_GetNetFlags[] = "GetNetFlags";
-static const char str_PyMethod_Scrap_StartDummySearch[] = "StartDummySearch";
 
 static char str_PyDoc_Scrap_ProcessDVF[] = "ProcessDVF(filename,command) : send a dvf command";
 
-static const char str_PyMethod_Scrap_NextDummySearch[] = "NextDummySearch";
 
 static char str_PyDoc_Scrap_VideoPlayer[] = "VideoPlayer(filename[,command]) : play video file";
 
-static const char str_PyMethod_Scrap_Rand[] = "Rand";
 
 static char str_PyDoc_Scrap_MusicPlayer[] = "MusicPlayer(filename[,command,param1]) : play music file";
 
-static const char str_PyMethod_Scrap_Round[] = "Round";
-static const char str_PyMethod_Scrap_SetDebrisSys[] = "SetDebrisSys";
 
 static char str_PyDoc_Scrap_GetVideoCurrentMode[] = "GetVideoCurrentMode() : Get Video Current Mode Index";
 
-static const char str_PyMethod_Scrap_DropDebris[] = "DropDebris";
-static const char str_PyMethod_Scrap_SetDebrisValue[] = "SetDebrisValue";
 
 static char str_PyDoc_Scrap_SetVideoCurrentMode[] = "SetVideoCurrentMode() : Set Video Current Mode Index";
 
-static const char str_PyMethod_Scrap_ModelInfo[] = "ModelInfo";
-static const char str_PyMethod_Scrap_ListModels[] = "ListModels";
 
 static char str_PyDoc_Scrap_GetVideoModes[] = "GetVideoModes(NumMode) : Get Video Mode Info";
 
-static const char str_PyMethod_Scrap_BuildFont[] = "BuildFont";
 
 static char str_PyDoc_Scrap_SetDebrisSys[] =
 	"SetDebrisSys(name,initialnumber,MaxDist,Friction,Scale,Grav,bounce)  crea/modifica un sistema de deb"
@@ -2947,3 +1886,5 @@ static char str_PyDoc_Scrap_EntityListSet[] =
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_cPy_Function_CallFunc, &g_CallFunc, cPy_Function_dtor)
 INIT_OBJECT(Init_cPy_Function_CallFunc, Fini_cPy_Function_CallFunc, &g_CallFunc, cPy_Function_ctor)
+
+PORTS(Engine_ScrapPy)

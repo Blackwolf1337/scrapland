@@ -1,0 +1,5 @@
+# Fx at the level start and by direct calls
+__import__('Init')._gv(('FXItemFadeFile','FXCharacterDeathFile','FXVehicleEmbeddedFile','FXTrafficEmbeddedFile','WindFxSmokeFile','FXVehicleDamageFile','FXMotorSmokeFile','FXDumbMotorFile','FXShipExplosionFile','FXFiredDebrisFile','FXMotorCalimaFile','FXItemBlinkFile','FXItemTakeFile','FXCharacterTeleportFile','FXMoneyTransferFile','FXShipEditBuildFile','FXEngineGlowDistFadeMult'))
+__import__('Init')._veh()
+map(__import__('Fx').GetMotorClass, ('mpoli1', 'MBOSS1', 'Lifeboat', 'nothing', 'MMerc3'))
+__import__('Fx').GetMotorClass(3)

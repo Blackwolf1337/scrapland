@@ -1,0 +1,12 @@
+# The functions of Mission_StealMayorShip in level downtown (the script levels/downtown/scripts/mission_stealmayorship.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): InitStatus, Init, CreateMissionShip, TestForMissionShip, SetPlatformTarget, TestForCorrectPlatform, UseParkedMayorShip, UsePhoneCab, SetNextMission, CGCalls, StartMission, ContinueMission, SetPoliceListTargetStatus, ComeBack, MissionScorer, OnPoliceDeath, ParkMayorShip.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_stealmayorship.def replaces this file.
+section SetPoliceTargets
+setvar OutPolice.OnPoliceCreatedCallback %Mission_StealMayorShip.SetPoliceShipTargetStatus
+call Mission_StealMayorShip.SetPoliceListTargetStatus 1
+call Mission_StealMayorShip.MissionScorer 0
+setvar Menu.MissionScorerCall %Mission_StealMayorShip.MissionScorer
+setvar Parking.SwitchCharMissionCallback %Mission_StealMayorShip.ComeBack
+
+section SetPoliceShipTargetStatus e status=1
+call MissionsFuncs.ActivateTarget $e $status

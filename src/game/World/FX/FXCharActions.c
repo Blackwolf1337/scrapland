@@ -333,6 +333,11 @@ void *cObjElementFXGearMissile_ctor(void *self) {
 	s->fadeLife = 0.5f;
 	s->time = 0.0f;
 	s->trailStep = 0.0f;
+	/* differs from the original: the first updates (Run makes eight at the start) aim the sparks from lastPos
+	 * before it is set; 0 as in a zeroed block */
+	s->lastPos.x = 0.0f;
+	s->lastPos.y = 0.0f;
+	s->lastPos.z = 0.0f;
 	return s;
 }
 
@@ -386,6 +391,10 @@ void *cObjElementFXPoliceGearConversion_ctor(void *self) {
 	s->ent = NULL;
 	s->time = 0.0f;
 	s->t2 = 0.0f;
+	/* differs from the original: Attach takes the times from fxa_gearPieces by their flat index, and the third
+	 * armor's start at 31, so its first piece is read without a time; 0 as in a zeroed block (that piece then never
+	 * falls off) */
+	memset(s->pieceTime, 0, sizeof(s->pieceTime));
 	return s;
 }
 

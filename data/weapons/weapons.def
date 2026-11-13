@@ -1,0 +1,304 @@
+# The weapons of the outdoor levels (the scripts weapons/*.py of the game): the ammo types (section Ammo), the weapon
+# list (section Weapons), and per weapon module its resources (<Module>Res, the script's LoadResources) and its
+# settings (<Module>, the rest of Init). $idWeap and $idAmmo are the arguments of Init; Swarm and Inferno get $server
+# (the first net flag), the C (src/game/Script/Weapons.c) does the net hooks and the module variables IDWeap/IDAmmo.
+# File names, forces and times that are variables of a module are read from it (%Vulcan.BulletFile).
+# A pack in mods/ with scrapc/weapons/weapons.def replaces this file.
+
+section Ammo
+call SWeap.InitAmmo 4
+call SWeap.SetSAmmo 0 "Name" "Particle"
+call SWeap.SetFAmmo 0 "Charger" 0.0
+call SWeap.SetFAmmo 0 "Max" 1000.0
+call SWeap.SetSAmmo 1 "Name" "Missile"
+call SWeap.SetFAmmo 1 "Charger" 0.0
+call SWeap.SetFAmmo 1 "Max" 500.0
+call SWeap.SetSAmmo 2 "Name" "Energy"
+call SWeap.SetFAmmo 2 "Charger" 0.0
+call SWeap.SetFAmmo 2 "Max" 1500.0
+call SWeap.SetSAmmo 3 "Name" "Photon"
+call SWeap.SetFAmmo 3 "Charger" 20.0
+call SWeap.SetFAmmo 3 "Max" 200.0
+
+section Weapons
+run print "Creating Weapons..."
+call SWeap.InitWeap 7
+call Vulcan.Init 0 0
+call Devastator.Init 3 0
+call Cloud.Init 0
+call Swarm.Init 1 1
+call Inferno.Init 5 1
+call Sonic.Init 1
+call Tesla.Init 2 2
+call ATPC.Init 4 2
+call EMI.Init 2
+call Laser.Init 6 3
+call SWeap.FillPriority
+call Scrap.GetNetFlags
+run print "Weapon.Init() executed."
+
+section VulcanRes
+call Scrap.Set "VulcanBulletFile" %Vulcan.BulletFile
+call Scrap.SetDebrisSys %Vulcan.BulletFile 20 10000 1 0.7 9800 1
+call Scrap.Set "VulcanHitFile" %Vulcan.HitFile
+call Scrap.SetDebrisSys %Vulcan.HitFile 1 0 0 1 0 0 %Fx.FXSISTPART
+
+section Vulcan
+call SWeap.SetSWeap $idWeap "Name" "Vulcan"
+call SWeap.SetFWeap $idWeap "iAmmo" $idAmmo
+call SWeap.SetFWeap $idWeap "Upgrd01" 1
+call SWeap.SetFWeap $idWeap "Upgrd02" 1
+call Scrap.GetNetFlags
+call Scrap.Set "VulcanIDWeap" $idWeap
+call Scrap.Set "VulcanIDAmmo" $idAmmo
+call Scrap.Set "VulcanHitForce" %Vulcan.HitForce
+call Scrap.Set "VulcanRange" 40000
+call Scrap.Set "VulcanDistLimit" 26666
+call Scrap.Set "VulcanDistLimitUPG" 40000
+call Scrap.Set "VulcanAmmoCost" 0.5
+call Scrap.Set "VulcanTimeDelay" 0.1
+call Scrap.Set "VulcanTimeDelayUPG" 0.075
+call SWeap.SetSWeap $idWeap "OnPress" "!VulcanPress"
+call SWeap.SetSWeap $idWeap "OnRelease" "!VulcanRelease"
+call SWeap.SetSWeap $idWeap "OnHit" "!VulcanCreate"
+call SWeap.SetSWeap $idWeap "OnFire" "!VulcanFire"
+call SWeap.SetSWeap $idWeap "SetFX" "!VulcanFX"
+run print "Vulcan loaded!"
+
+section DevastatorRes
+call Scrap.Set "DevastatorBulletFile" %Devastator.BulletFile
+call Scrap.SetDebrisSys %Devastator.BulletFile 10 10000 1 0.7 9800 1
+call Scrap.Set "DevastatorHitFile" %Devastator.HitFile
+call Scrap.SetDebrisSys %Devastator.HitFile 1 0 0 1 0 0 %Fx.FXSISTPART
+call Scrap.Set "DevastatorSparksFile" %Devastator.SparksFile
+call Scrap.SetDebrisSys %Devastator.SparksFile 1 0 0 1 0 0 %Fx.FXSPARKS
+call Scrap.Set "DevastatorShootFile" %Devastator.ShootFile
+call Scrap.SetDebrisSys %Devastator.ShootFile 6 0 0 1 0 0 %Fx.FXDEVASTATORSHOOT
+
+section Devastator
+call SWeap.SetSWeap $idWeap "Name" "Devastator"
+call SWeap.SetFWeap $idWeap "iAmmo" $idAmmo
+call SWeap.SetFWeap $idWeap "Upgrd07" 1
+call SWeap.SetFWeap $idWeap "Upgrd08" 1
+call Scrap.GetNetFlags
+call Scrap.Set "DevastatorIDWeap" $idWeap
+call Scrap.Set "DevastatorIDAmmo" $idAmmo
+call Scrap.Set "DevastatorHitForce" 12000
+call Scrap.Set "DevastatorRange" 40000
+call Scrap.Set "DevastatorDistLimit" 40000
+call Scrap.Set "DevastatorAmmoCost" 1.0
+call Scrap.Set "DevastatorSpreadAngle" 3.5
+call Scrap.Set "DevastatorRechargeTime" 0.25
+call Scrap.Set "DevastatorExplosionRadius" 1500.0
+call Scrap.Set "DevastatorMinDamage" 2.0
+call Scrap.Set "DevastatorExtraDamage" 5.0
+call SWeap.SetSWeap $idWeap "OnPress" "!DevastatorPress"
+call SWeap.SetSWeap $idWeap "OnRelease" "!DevastatorRelease"
+call SWeap.SetSWeap $idWeap "OnHit" "!DevastatorCreate"
+call SWeap.SetSWeap $idWeap "OnFire" "!DevastatorFire"
+call SWeap.SetSWeap $idWeap "SetFX" "!DevastatorFX"
+run print "Devastator loaded!"
+
+section TeslaRes
+call Scrap.Set "TeslaShootFile" %Tesla.ShootFile
+call Scrap.SetDebrisSys %Tesla.ShootFile 3 0 0 1 0 0 %Fx.FXTESLA
+
+section Tesla
+call SWeap.SetSWeap $idWeap "Name" "Tesla"
+call SWeap.SetFWeap $idWeap "iAmmo" $idAmmo
+call SWeap.SetFWeap $idWeap "Upgrd05" 1
+call SWeap.SetFWeap $idWeap "Upgrd06" 1
+call Scrap.GetNetFlags
+call Scrap.Set "TeslaIDWeap" $idWeap
+call Scrap.Set "TeslaIDAmmo" $idAmmo
+call Scrap.Set "TeslaHitForce" 500000
+call Scrap.Set "TeslaTrackForce" 20000
+call Scrap.Set "TeslaRange" 20000
+call Scrap.Set "TeslaDistLimit" 20000
+call Scrap.Set "TeslaMinAngRange" 5
+call Scrap.Set "TeslaMinAngRangeUpg" 12
+call Scrap.Set "TeslaMaxAngRange" 25
+call Scrap.Set "TeslaDownRangeTime" 0.5
+call Scrap.Set "TeslaUpRangeTime" 0.25
+call Scrap.Set "TeslaAmmoCost" 0.3
+call SWeap.SetSWeap $idWeap "SetFX" "!TeslaFX"
+call SWeap.SetSWeap $idWeap "OnPress" "!TeslaPress"
+call SWeap.SetSWeap $idWeap "OnRelease" "!TeslaRelease"
+call SWeap.SetSWeap $idWeap "OnHit" "!TeslaCreate"
+call SWeap.SetSWeap $idWeap "OnFire" "!TeslaFire"
+run print "Tesla loaded!"
+
+section ATPCRes
+call Scrap.Set "ATPCShootFile" %ATPC.ShootFile
+call Scrap.SetDebrisSys %ATPC.ShootFile 3 0 0 1 0 0 %Fx.FXATPC
+
+section ATPC
+call SWeap.SetSWeap $idWeap "Name" "ATPC"
+call SWeap.SetFWeap $idWeap "iAmmo" $idAmmo
+call SWeap.SetFWeap $idWeap "Upgrd09" 1
+call SWeap.SetFWeap $idWeap "Upgrd10" 1
+call Scrap.GetNetFlags
+call Scrap.Set "ATPCIDWeap" $idWeap
+call Scrap.Set "ATPCIDAmmo" $idAmmo
+call Scrap.Set "ATPCHitForce" 10000
+call Scrap.Set "ATPCRange" 100000
+call Scrap.Set "ATPCAmmoCost" 10.0
+call Scrap.Set "ATPCDelay" 2.0
+call Scrap.Set "ATPCUpgradeDelay" 1.0
+call Scrap.Set "ATPCConvDist" 2000.0
+call Scrap.Set "ATPCExplosionRadius" 1000.0
+call Scrap.Set "ATPCMainDamage" 18
+call Scrap.Set "ATPCExtraDamage" 7
+call SWeap.SetSWeap $idWeap "OnEnd" "!ATPCOnEnd"
+call SWeap.SetSWeap $idWeap "OnStart" "!ATPCOnStart"
+call SWeap.SetSWeap $idWeap "OnHit" "!ATPCCreate"
+call SWeap.SetSWeap $idWeap "OnFire" "!ATPCFire"
+call SWeap.SetSWeap $idWeap "SetFX" "!ATPCFX"
+run print "ATPC loaded!"
+
+section LaserRes
+call Scrap.Set "LaserShootFile" %Laser.ShootFile
+call Scrap.SetDebrisSys %Laser.ShootFile 4 0 0 1 0 0 %Fx.FXLASER
+call Scrap.Set "LaserHitFile" %Laser.HitFile
+call Scrap.SetDebrisSys %Laser.HitFile 1 0 0 1 0 0 %Fx.FXSISTPART
+call Scrap.Set "LaserHookFile" %Laser.HookFile
+call Scrap.SetDebrisSys %Laser.HookFile 6 0 0 1 0 0 %Fx.FXHOOK
+call Scrap.Set "LaserHookSparksFile" %Laser.HookSparksFile
+call Scrap.SetDebrisSys %Laser.HookSparksFile 1 0 0 1 0 0 %Fx.FXSPARKS
+
+section Laser
+call SWeap.SetSWeap $idWeap "Name" "Laser"
+call SWeap.SetFWeap $idWeap "iAmmo" $idAmmo
+call Scrap.GetNetFlags
+call Scrap.Set "LaserIDWeap" $idWeap
+call Scrap.Set "LaserIDAmmo" $idAmmo
+call Scrap.Set "LaserHitForce" %Laser.HitForce
+call Scrap.Set "LaserRange" 30000
+call Scrap.Set "LaserDistLimit" 20000
+call Scrap.Set "LaserAmmoCost" 10.0
+call Scrap.Set "LaserTimeDelay" 0.2
+call Scrap.Set "HookRange" 20000.0
+call Scrap.Set "HookAccel" 20000.0
+call Scrap.Set "HookPlugFunc" "!HookPlugFX"
+call SWeap.SetSWeap $idWeap "OnPress" "!LaserPress"
+call SWeap.SetSWeap $idWeap "OnRelease" "!LaserRelease"
+call SWeap.SetSWeap $idWeap "OnHit" "!LaserCreate"
+call SWeap.SetSWeap $idWeap "OnFire" "!LaserFire"
+call SWeap.SetSWeap $idWeap "SetFX" "!LaserFX"
+call SWeap.SetSAmmo $idAmmo "OnFire" "!HookFire"
+call SWeap.SetSAmmo $idAmmo "OnPress" "!HookActivate"
+call SWeap.SetSAmmo $idAmmo "OnRelease" "!HookDeActivate"
+run print "Laser loaded!"
+
+section SwarmRes
+call Scrap.Preload3DObject %Swarm.MissileFile
+call Scrap.Set "SwarmMissileFile" %Swarm.MissileFile
+call Scrap.SetDebrisSys %Swarm.MissileFile 32 50000 0 1 0 0 %Fx.FXSWARMMISSILE
+call Scrap.Set "SwarmExplosionFile" %Swarm.ExplosionFile
+call Scrap.SetDebrisSys %Swarm.ExplosionFile 3 50000 0 1 0 0 %Fx.FXSISTPART
+call Scrap.Set "SwarmBeeExplosionFile" %Swarm.BeeExplosionFile
+call Scrap.SetDebrisSys %Swarm.BeeExplosionFile 1 0 0 1 0 0 %Fx.FXSISTPART
+call SNet.AddResource %Swarm.NetResName
+
+section Swarm
+call Scrap.Set "SwarmTurnSpeed" 60
+call Scrap.Set "SwarmTurnSpeedUPG" 100
+call SWeap.SetSWeap $idWeap "Name" "Swarm"
+call SWeap.SetFWeap $idWeap "iAmmo" $idAmmo
+call SWeap.SetFWeap $idWeap "Upgrd03" 1
+call SWeap.SetFWeap $idWeap "Upgrd04" 1
+call Scrap.Set "SwarmIDWeap" $idWeap
+call Scrap.GetNetFlags
+call SWeap.SetSWeap $idWeap "OnEnd" "!SwarmOnEnd"
+call SWeap.SetSWeap $idWeap "OnStart" "!SwarmOnStart"
+if $server
+	call SWeap.SetSWeap $idWeap "OnFire" "!SwarmClientFire"
+	call SWeap.SetSWeap $idWeap "OnPress" "!SwarmPress"
+	call SWeap.SetSWeap $idWeap "OnRelease" "!SwarmRelease"
+else
+	call SWeap.SetSWeap $idWeap "OnPress" "!SwarmPress"
+	call SWeap.SetSWeap $idWeap "OnRelease" "!SwarmRelease"
+	call SWeap.SetSWeap $idWeap "OnFire" "!SwarmFire"
+end
+call SWeap.SetSWeap $idWeap "SetFX" "!SwarmFX"
+run print "Swarm loaded!"
+
+section InfernoRes
+call Scrap.Preload3DObject %Inferno.MissileFile
+call Scrap.Set "InfernoMissileFile" %Inferno.MissileFile
+call Scrap.SetDebrisSys %Inferno.MissileFile 4 50000 0 1 0 0 %Fx.FXINFERNOMISSILE
+call Scrap.Set "InfernoExplosionFile" %Inferno.ExplosionFile
+call Scrap.SetDebrisSys %Inferno.ExplosionFile 1 0 0 1 0 0 %Fx.FXINFERNOEXPLOSION
+call SNet.AddResource %Inferno.NetResName
+
+section Inferno
+call SWeap.SetSWeap $idWeap "Name" "Inferno"
+call SWeap.SetFWeap $idWeap "iAmmo" $idAmmo
+call SWeap.SetFWeap $idWeap "Upgrd11" 1
+call SWeap.SetFWeap $idWeap "Upgrd12" 1
+call SWeap.SetFWeap $idWeap "MinAmmo" 124
+call Scrap.Set "InfernoIDWeap" $idWeap
+call Scrap.GetNetFlags
+call SWeap.SetSWeap $idWeap "OnEnd" "!InfernoOnEnd"
+call SWeap.SetSWeap $idWeap "OnStart" "!InfernoOnStart"
+if $server
+	call SWeap.SetSWeap $idWeap "OnFire" "!InfernoClientFire"
+	call SWeap.SetSWeap $idWeap "OnPress" "!InfernoPress"
+	call SWeap.SetSWeap $idWeap "OnRelease" "!InfernoRelease"
+else
+	call SWeap.SetSWeap $idWeap "OnPress" "!InfernoPress"
+	call SWeap.SetSWeap $idWeap "OnRelease" "!InfernoRelease"
+	call SWeap.SetSWeap $idWeap "OnFire" "!InfernoFire"
+end
+call SWeap.SetSWeap $idWeap "SetFX" "!InfernoFX"
+run print "Inferno loaded!"
+
+section CloudRes
+call Scrap.Set "CloudFile" %Cloud.CloudFile
+call Scrap.SetDebrisSys %Cloud.CloudFile 2 0 0 1 0 0 %Fx.FXDEBRISCLOUD
+call SNet.AddResource %Cloud.NetResName
+
+section Cloud
+call Scrap.Set "CloudIDAmmo" $idAmmo
+call Scrap.Set "CloudAmmoNeed" %Cloud.AmmoNeed
+call Scrap.Set "CloudRechargeTime" -1.5
+call Scrap.Set "CloudLifeTime" %Cloud.LifeTime
+call Scrap.Set "CreateCloudFunc" "Cloud.CreateCloud"
+call Scrap.Set "SetUpCloudFunc" "Cloud.SetUpCloud"
+call SWeap.SetSAmmo $idAmmo "OnFire" "!CloudFire"
+run print "Cloud loaded!"
+
+section EMIRes
+call Scrap.Set "EMIFile" %EMI.ModelFile
+call Scrap.SetDebrisSys %EMI.ModelFile 2 0 0 1 0 0 %Fx.FXEMI
+call SNet.AddResource %EMI.NetResName
+
+section EMI
+call Scrap.Set "EMIIDAmmo" $idAmmo
+call Scrap.Set "EMIAmmoNeed" %EMI.AmmoNeed
+call Scrap.Set "EMIRechargeTime" %EMI.RechargeTime
+call Scrap.Set "EMILifeTime" %EMI.LifeTime
+call Scrap.Set "EMILowRadiusFactor" %EMI.LowRadiusFactor
+call Scrap.Set "EMIRadius" %EMI.Radius
+call Scrap.Set "CreateEMIFunc" "EMI.CreateEMI"
+call Scrap.Set "SetUpEMIFunc" "EMI.SetUpEMI"
+call SWeap.SetSAmmo $idAmmo "OnFire" "!EMIFire"
+run print "EMI loaded!"
+
+section SonicRes
+call Scrap.Preload3DObject %Sonic.MineFile
+call Scrap.Set "FXSonicXpldeFile" %Sonic.SonicXpldeFile
+call Scrap.SetDebrisSys %Sonic.SonicXpldeFile 2 0 0 1 0 0 %Fx.FXSONICEXPLOSION
+call SNet.AddResource %Sonic.NetResName
+
+section Sonic
+call Scrap.Set "SonicIDAmmo" $idAmmo
+call Scrap.Set "SonicRechargeTime" -0.75
+call Scrap.Set "SonicAmmoNeed" 2
+call Scrap.Set "SonicLifeTime" %Sonic.LifeTime
+call Scrap.Set "SonicArmor" 25
+call Scrap.Set "CreateSonicFunc" "Sonic.CreateSonic"
+call Scrap.Set "SetUpSonicFunc" "Sonic.SetUpSonic"
+call Scrap.Set "FXSonicRadius" %Sonic.FXSonicRadius
+call SWeap.SetSAmmo $idAmmo "OnFire" "!SonicFire"
+run print "Sonic loaded!"

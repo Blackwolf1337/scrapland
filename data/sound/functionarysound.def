@@ -1,0 +1,362 @@
+# functionarysound (the sound script sound/functionarysound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/functionarysound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes paso-funcionario1.wav
+	AddSoundRes paso-funcionario2.wav
+	AddSoundRes mecanismo-funcionario1.wav
+if %FunctionarySound.isPC
+	class
+		AddSoundRes mecanismo-funcionario2.wav
+end
+	AddSoundRes mecanismo-funcionario3.wav
+if %FunctionarySound.isPC
+	class
+		AddSoundRes mecanismo-funcionario4.wav
+end
+	AddSoundRes mecanismo-funcionario5.wav
+	AddSoundRes mecanismo-funcionario6.wav
+	AddSoundRes caida-funcionario.wav
+	AddSoundRes keyboard1.wav
+	AddSoundRes keyboard2.wav
+	AddSoundRes effectfast.wav
+
+section SetSounds
+let act Turn
+call Chars.ActSound $char $act 1 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 10 paso-funcionario1 0.057
+call Chars.ActSound $char $act 13 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 20 paso-funcionario2 0.057
+let act Run
+call Chars.ActSound $char $act 1 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 7 paso-funcionario1 0.057
+call Chars.ActSound $char $act 13 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 19 paso-funcionario2 0.057
+let act Walk
+call Chars.ActSound $char $act 1 paso-funcionario1 0.057
+call Chars.ActSound $char $act 7 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 18 paso-funcionario2 0.057
+call Chars.ActSound $char $act 24 mecanismo-funcionario1 0.163
+let act Back
+call Chars.ActSound $char $act 4 paso-funcionario1 0.057
+call Chars.ActSound $char $act 10 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 17 paso-funcionario2 0.057
+call Chars.ActSound $char $act 23 mecanismo-funcionario1 0.163
+let act StrLeft
+call Chars.ActSound $char $act 2 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 8 paso-funcionario1 0.057
+call Chars.ActSound $char $act 14 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 20 paso-funcionario2 0.057
+let act StrRight
+call Chars.ActSound $char $act 2 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 8 paso-funcionario1 0.057
+call Chars.ActSound $char $act 15 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 21 paso-funcionario2 0.057
+let act Relax0
+call Chars.ActSound $char $act 2 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 17 paso-funcionario1 0.055
+call Chars.ActSound $char $act 29 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 29 mecanismo-funcionario5 0.04
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 75 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 75 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 75 mecanismo-funcionario6 0.04
+call Chars.ActSound $char $act 88 paso-funcionario2 0.057
+call Chars.ActSound $char $act 95 paso-funcionario1 0.057
+call Chars.ActSound $char $act 121 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 121 mecanismo-funcionario5 0.04
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 160 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 160 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 160 mecanismo-funcionario6 0.04
+call Chars.ActSound $char $act 182 paso-funcionario2 0.057
+let act Relax1
+call Chars.ActSound $char $act 4 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 5 mecanismo-funcionario5 0.04
+call Chars.ActSound $char $act 19 mecanismo-funcionario1 0.165
+call Chars.ActSound $char $act 52 mecanismo-funcionario6 0.04 +2
+call Chars.ActSound $char $act 70 mecanismo-funcionario3 0.163
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 72 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 72 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 94 mecanismo-funcionario3 0.163
+call Chars.ActSound $char $act 96 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 121 mecanismo-funcionario3 0.163
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 123 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 123 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 142 mecanismo-funcionario5 0.04 +1
+call Chars.ActSound $char $act 152 mecanismo-funcionario1 0.163
+let act CrazyInit
+call Chars.ActSound $char $act 1 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 5 paso-funcionario1 0.057
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 21 mecanismo-funcionario4 0.163
+else
+	call Chars.ActSound $char $act 21 mecanismo-funcionario3 0.163
+end
+call Chars.ActSound $char $act 29 mecanismo-funcionario3 0.163
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 39 mecanismo-funcionario4 0.163
+else
+	call Chars.ActSound $char $act 39 mecanismo-funcionario3 0.163
+end
+call Chars.ActSound $char $act 41 mecanismo-funcionario6 0.04
+let act Crazy
+call Chars.ActSound $char $act 49 mecanismo-funcionario3 0.155
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 59 mecanismo-funcionario4 0.163
+else
+	call Chars.ActSound $char $act 59 mecanismo-funcionario3 0.163
+end
+call Chars.ActSound $char $act 70 mecanismo-funcionario6 0.04 +1
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 72 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 72 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 80 mecanismo-funcionario5 0.03 +1
+call Chars.ActSound $char $act 82 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 94 mecanismo-funcionario6 0.04
+call Chars.ActSound $char $act 96 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 107 mecanismo-funcionario5 0.04 +1
+call Chars.ActSound $char $act 109 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 135 mecanismo-funcionario6 0.04
+call Chars.ActSound $char $act 137 mecanismo-funcionario1 0.163
+let act CrazyEnd
+call Chars.ActSound $char $act 155 mecanismo-funcionario6 0.04
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 157 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 157 mecanismo-funcionario1 0.163
+end
+let act FlashedInit
+call Chars.ActSound $char $act 2 mecanismo-funcionario6 0.04
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 2 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 2 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 8 paso-funcionario1 0.057
+call Chars.ActSound $char $act 28 mecanismo-funcionario1 0.163
+let act Flashed
+call Chars.ActSound $char $act 45 mecanismo-funcionario6 0.03 +2
+call Chars.ActSound $char $act 45 mecanismo-funcionario1 0.163 +2
+call Chars.ActSound $char $act 63 mecanismo-funcionario6 0.03 +2
+call Chars.ActSound $char $act 63 mecanismo-funcionario1 0.163 +2
+let act FlashedEnd
+call Chars.ActSound $char $act 79 mecanismo-funcionario6 0.04
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 79 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 79 mecanismo-funcionario1 0.163
+end
+let act DiscoverInit
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 4 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 4 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 8 paso-funcionario1 0.057
+call Chars.ActSound $char $act 22 mecanismo-funcionario5 0.04 +4
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 22 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 22 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 32 mecanismo-funcionario5 0.04 +6
+let act Discover
+call Chars.ActSound $char $act 46 mecanismo-funcionario6 0.045 +4
+call Chars.ActSound $char $act 58 mecanismo-funcionario5 0.045 +4
+let act DiscoverEnd
+call Chars.ActSound $char $act 70 mecanismo-funcionario6 0.045 +2
+call Chars.ActSound $char $act 70 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 83 paso-funcionario1 0.057
+let act DazedInit
+call Chars.ActSound $char $act 8 mecanismo-funcionario5 0.045
+call Chars.ActSound $char $act 10 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 34 mecanismo-funcionario6 0.045
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 34 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 34 mecanismo-funcionario1 0.163
+end
+let act DazedEnd
+call Chars.ActSound $char $act 128 mecanismo-funcionario5 0.055
+call Chars.ActSound $char $act 130 mecanismo-funcionario1 0.163
+let act DanceInit
+call Chars.ActSound $char $act 2 mecanismo-funcionario5 0.055
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 2 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 2 mecanismo-funcionario1 0.163
+end
+let act DanceEnd
+call Chars.ActSound $char $act 100 mecanismo-funcionario5 0.055
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 100 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 100 mecanismo-funcionario1 0.163
+end
+let act Dance0Init
+call Chars.ActSound $char $act 2 mecanismo-funcionario5 0.055
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 2 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 2 mecanismo-funcionario1 0.163
+end
+let act Dance0
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 11 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 11 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 21 mecanismo-funcionario1 0.163 +1
+call Chars.ActSound $char $act 37 mecanismo-funcionario1 0.163 +2
+call Chars.ActSound $char $act 51 mecanismo-funcionario1 0.163 +1
+call Chars.ActSound $char $act 58 mecanismo-funcionario1 0.163 +3
+call Chars.ActSound $char $act 68 mecanismo-funcionario1 0.163 +1
+call Chars.ActSound $char $act 78 mecanismo-funcionario1 0.163 +2
+call Chars.ActSound $char $act 88 mecanismo-funcionario1 0.163 +1
+let act Dance0End
+call Chars.ActSound $char $act 100 mecanismo-funcionario6 0.055
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 100 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 100 mecanismo-funcionario1 0.163
+end
+let act SitDown
+call Chars.ActSound $char $act 3 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 12 paso-funcionario1 0.057
+call Chars.ActSound $char $act 20 mecanismo-funcionario1 0.164
+call Chars.ActSound $char $act 28 paso-funcionario2 0.057
+call Chars.ActSound $char $act 30 mecanismo-funcionario5 0.045
+call Chars.ActSound $char $act 42 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 57 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 67 mecanismo-funcionario6 0.045 +2
+call Chars.ActSound $char $act 71 mecanismo-funcionario5 0.045 +2
+let act GetUp
+call Chars.ActSound $char $act 1 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 3 paso-funcionario1 0.057
+call Chars.ActSound $char $act 16 paso-funcionario2 0.057
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 12 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 12 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 16 mecanismo-funcionario5 0.045
+call Chars.ActSound $char $act 32 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 44 paso-funcionario1 0.057
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 52 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 52 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 55 paso-funcionario2 0.057
+call Chars.ActSound $char $act 67 paso-funcionario1 0.057
+call Chars.ActSound $char $act 70 mecanismo-funcionario1 0.163
+call Chars.ActSound $char $act 74 paso-funcionario2 0.057
+let act WorkRelax
+call Chars.ActSound $char $act 2 mecanismo-funcionario5 0.045
+call Chars.ActSound $char $act 15 mecanismo-funcionario1 0.163
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $act 38 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $act 38 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $act 67 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 73 mecanismo-funcionario5 0.045
+let act Work
+call Chars.ActSound $char $act 2 keyboard2 0.068
+call Chars.ActSound $char $act 8 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 17 keyboard2 0.068
+call Chars.ActSound $char $act 19 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 20 keyboard2 0.068
+call Chars.ActSound $char $act 31 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 44 keyboard2 0.068
+call Chars.ActSound $char $act 47 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 51 keyboard2 0.068
+call Chars.ActSound $char $act 59 keyboard2 0.068
+call Chars.ActSound $char $act 63 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 66 keyboard2 0.068
+call Chars.ActSound $char $act 71 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 76 keyboard2 0.068
+call Chars.ActSound $char $act 79 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 83 keyboard2 0.068
+call Chars.ActSound $char $act 93 keyboard2 0.068
+call Chars.ActSound $char $act 95 mecanismo-funcionario1 0.156
+call Chars.ActSound $char $act 98 keyboard2 0.068
+call Chars.ActSound $char $act 105 mecanismo-funcionario1 0.156
+class
+	FallSound caida-funcionario
+	FallSoundVol 0.09
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 9 mecanismo-funcionario1 0.176
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $talk 22 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $talk 22 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $talk 21 mecanismo-funcionario5 0.065
+call Chars.ActSound $char $talk 48 mecanismo-funcionario1 0.176
+call Chars.ActSound $char $talk 49 mecanismo-funcionario6 0.065
+
+section Talk2Snd
+call Chars.ActSound $char $talk 9 mecanismo-funcionario5 0.065
+call Chars.ActSound $char $talk 10 mecanismo-funcionario1 0.176
+call Chars.ActSound $char $talk 27 mecanismo-funcionario6 0.065 +6
+if %FunctionarySound.isPC
+	call Chars.ActSound $char $talk 28 mecanismo-funcionario2 0.163
+else
+	call Chars.ActSound $char $talk 28 mecanismo-funcionario1 0.163
+end
+call Chars.ActSound $char $talk 40 mecanismo-funcionario5 0.065 +6
+call Chars.ActSound $char $talk 41 mecanismo-funcionario2 0.176
+call Chars.ActSound $char $talk 48 mecanismo-funcionario6 0.065 +2
+call Chars.ActSound $char $talk 49 mecanismo-funcionario2 0.176
+
+section Talk1Snd
+call Chars.ActSound $char $talk 3 mecanismo-funcionario1 0.176
+call Chars.ActSound $char $talk 9 mecanismo-funcionario5 0.065 +5
+
+section InitLoops
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+call Scrap.Set FunctionaryEffectFastSound effectfast
+call Scrap.Set FunctionaryEffectFastSoundVol 0.4
+run print "Sounds for $(char) loaded!"

@@ -1,0 +1,306 @@
+# bishopsound (the sound script sound/bishopsound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/bishopsound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes loop-bishop.wav
+	AddSoundRes rasca-bishop1.wav
+	AddSoundRes rasca-bishop2.wav
+	AddSoundRes pasada-bishop.wav
+	AddSoundRes mecanismo-bishop1.wav
+	AddSoundRes mecanismo-bishop2.wav
+	AddSoundRes mecanismo-bishop3.wav
+	AddSoundRes mecanismo-bishop4.wav
+if %BishopSound.isPC
+	class
+		AddSoundRes mecanismo-bishop5.wav
+end
+	AddSoundRes BishopShoot3.wav
+	AddSoundRes BishopHit.wav
+	AddSoundRes hologram-orbit.wav
+	AddSoundRes pasada-orbit.wav
+	AddSoundRes fe.wav
+
+section SetSounds
+let act Relax0
+call Chars.ActSound $char $act 7 mecanismo-bishop1 0.018
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 35 mecanismo-bishop5 0.02
+else
+	call Chars.ActSound $char $act 35 mecanismo-bishop4 0.018 +4
+end
+call Chars.ActSound $char $act 98 mecanismo-bishop3 0.018 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 139 mecanismo-bishop5 0.02 +2
+end
+call Chars.ActSound $char $act 140 mecanismo-bishop4 0.018 +1
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 230 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 230 mecanismo-bishop2 0.018
+let act Relax1
+call Chars.ActSound $char $act 2 mecanismo-bishop4 0.018
+call Chars.ActSound $char $act 21 mecanismo-bishop1 0.018
+call Chars.ActSound $char $act 26 rasca-bishop1 0.02
+call Chars.ActSound $char $act 31 rasca-bishop2 0.02
+call Chars.ActSound $char $act 49 rasca-bishop1 0.02
+call Chars.ActSound $char $act 60 rasca-bishop2 0.02
+call Chars.ActSound $char $act 73 rasca-bishop2 0.02
+call Chars.ActSound $char $act 90 mecanismo-bishop1 0.018
+call Chars.ActSound $char $act 100 mecanismo-bishop2 0.018 +2
+let act FlashedInit
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 3 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 6 mecanismo-bishop4 0.018
+let act FlashedEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 54 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 55 mecanismo-bishop3 0.018
+let act CrazyInit
+call Chars.ActSound $char $act 2 mecanismo-bishop3 0.018
+call Chars.ActSound $char $act 27 mecanismo-bishop4 0.018 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 30 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 31 pasada-bishop 0.14
+let act Crazy
+call Chars.ActSound $char $act 45 pasada-bishop 0.14
+let act CrazyEnd
+call Chars.ActSound $char $act 64 pasada-bishop 0.12 -4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 108 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 109 mecanismo-bishop3 0.016
+let act DiscoverInit
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 2 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 3 mecanismo-bishop3 0.016
+call Chars.ActSound $char $act 3 mecanismo-bishop4 0.016 +3
+let act Discover
+call Chars.ActSound $char $act 27 mecanismo-bishop4 0.016
+call Chars.ActSound $char $act 31 mecanismo-bishop3 0.016
+let act DiscoverEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 41 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 42 mecanismo-bishop1 0.016
+let act DazedInit
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 8 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 9 mecanismo-bishop4 0.016
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 21 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 21 mecanismo-bishop3 0.016 +4
+let act DazedEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 102 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 103 mecanismo-bishop1 0.016
+call Chars.ActSound $char $act 118 mecanismo-bishop2 0.016
+let act BackInit
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 4 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 5 mecanismo-bishop3 0.016
+let act BackEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 48 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 49 mecanismo-bishop1 0.016
+let act StrLeftInit
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 2 mecanismo-bishop4 0.016
+let act StrLeftEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 55 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 56 mecanismo-bishop2 0.016
+let act StrRightInit
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 2 mecanismo-bishop4 0.016
+let act StrRightEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 55 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 56 mecanismo-bishop4 0.016
+let act WalkEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 55 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 56 mecanismo-bishop3 0.016
+let act ActionInit
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 2 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 3 mecanismo-bishop3 0.016
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 12 mecanismo-bishop5 0.02 +12
+end
+call Chars.ActSound $char $act 13 mecanismo-bishop3 0.016 +12
+let act ActionEnd
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 36 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 37 mecanismo-bishop3 0.016
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 53 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 54 mecanismo-bishop4 0.016
+let act Dance0
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 5 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 5 mecanismo-bishop3 0.016
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 20 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 21 mecanismo-bishop4 0.016
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 50 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 51 mecanismo-bishop1 0.016
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 70 mecanismo-bishop5 0.02
+end
+call Chars.ActSound $char $act 71 mecanismo-bishop2 0.016
+let act SellLife
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 2 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $act 3 mecanismo-bishop1 0.016 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 22 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $act 23 mecanismo-bishop3 0.016 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 51 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $act 52 mecanismo-bishop4 0.016 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 70 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $act 71 mecanismo-bishop2 0.016 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 98 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $act 99 mecanismo-bishop1 0.016 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 121 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $act 122 mecanismo-bishop3 0.016 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $act 154 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $act 154 mecanismo-bishop2 0.016 +6
+call Chars.ActSound $char $act 1 fe 0.7 -3
+call Chars.ActSound $char $act 23 pasada-orbit 0.5 +1
+call Chars.ActSound $char $act 22 hologram-orbit 0.8
+call Chars.ActSound $char $act 32 hologram-orbit 0.8
+call Chars.ActSound $char $act 33 pasada-orbit 0.7 +2
+call Chars.ActSound $char $act 42 hologram-orbit 0.8
+call Chars.ActSound $char $act 43 pasada-orbit 0.7 +1
+call Chars.ActSound $char $act 52 hologram-orbit 0.8
+call Chars.ActSound $char $act 53 pasada-orbit 0.7 +3
+call Chars.ActSound $char $act 62 hologram-orbit 0.8
+call Chars.ActSound $char $act 63 pasada-orbit 0.7 +2
+call Chars.ActSound $char $act 72 hologram-orbit 0.8
+call Chars.ActSound $char $act 73 pasada-orbit 0.7 +1
+call Chars.ActSound $char $act 82 hologram-orbit 0.8
+call Chars.ActSound $char $act 83 pasada-orbit 0.7 +3
+call Chars.ActSound $char $act 92 hologram-orbit 0.8
+call Chars.ActSound $char $act 93 pasada-orbit 0.7 +1
+call Chars.ActSound $char $act 102 hologram-orbit 0.8
+call Chars.ActSound $char $act 103 pasada-orbit 0.7 +2
+call Chars.ActSound $char $act 112 hologram-orbit 0.6
+call Chars.ActSound $char $act 113 pasada-orbit 0.7 +2
+call Chars.ActSound $char $act 122 hologram-orbit 0.8
+call Chars.ActSound $char $act 123 pasada-orbit 0.7 +2
+call Chars.ActSound $char $act 132 hologram-orbit 0.8
+call Chars.ActSound $char $act 133 pasada-orbit 0.7 +2
+call Chars.ActSound $char $act 142 hologram-orbit 0.8
+call Chars.ActSound $char $act 143 pasada-orbit 0.7 +2
+call Chars.ActSound $char $act 152 hologram-orbit 0.8
+call Chars.ActSound $char $act 153 pasada-orbit 0.7 +2
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+if %BishopSound.isPC
+	call Chars.ActSound $char $talk 3 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $talk 4 mecanismo-bishop3 0.018 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $talk 31 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $talk 32 mecanismo-bishop3 0.018 +4
+
+section Talk1Snd
+if %BishopSound.isPC
+	call Chars.ActSound $char $talk 1 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $talk 2 mecanismo-bishop1 0.018 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $talk 37 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $talk 38 mecanismo-bishop3 0.018 +4
+
+section Talk2Snd
+if %BishopSound.isPC
+	call Chars.ActSound $char $talk 1 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $talk 2 mecanismo-bishop3 0.018 +4
+if %BishopSound.isPC
+	call Chars.ActSound $char $talk 40 mecanismo-bishop5 0.02 +4
+end
+call Chars.ActSound $char $talk 41 mecanismo-bishop1 0.018 +4
+
+section InitLoops
+object $e
+	snd_n 1
+	snd00_name loop-bishop
+	snd00_loop 1
+	snd00_pitch0 -7.0
+	snd00_vol0 0.05
+	snd00_pitch1 -0.0
+	snd00_vol1 0.14
+	snd00_time1 0.6
+	snd00_int0 1
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+call Scrap.Set BishopShootSound BishopShoot3
+call Scrap.Set BishopShootSoundVol 0.14
+call Scrap.Set BishopHitSound BishopHit
+call Scrap.Set BishopHitSoundVol 0.17
+run print "Sounds for $(char) loaded!"

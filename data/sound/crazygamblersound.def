@@ -1,0 +1,299 @@
+# crazygamblersound (the sound script sound/crazygamblersound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with
+# scrapc/sound/crazygamblersound.def replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes loop-crazy2.wav
+	AddSoundRes FXCrazyChispasSound.wav
+	AddSoundRes mecanismoGG1.wav
+	AddSoundRes mecanismoGG2.wav
+	AddSoundRes down.wav
+if %CrazyGamblerSound.isPC
+	class
+		AddSoundRes giro111-gate.wav
+end
+if %CrazyGamblerSound.isPC
+	class
+		AddSoundRes giro222-gate.wav
+end
+	AddSoundRes CrazyGambler.wav
+
+section SetSounds
+let act Relax0
+call Chars.ActSound $char $act 1 mecanismoGG1 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 1 giro111-gate 0.028
+end
+call Chars.ActSound $char $act 9 mecanismoGG2 0.018
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 9 giro222-gate 0.028
+end
+call Chars.ActSound $char $act 35 mecanismoGG1 0.015 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 35 giro111-gate 0.028 +6
+end
+call Chars.ActSound $char $act 60 mecanismoGG1 0.018 +5
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 60 giro222-gate 0.028 +5
+end
+call Chars.ActSound $char $act 90 mecanismoGG2 0.015 +4
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 90 giro111-gate 0.028 +4
+end
+call Chars.ActSound $char $act 131 mecanismoGG1 0.015 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 131 giro222-gate 0.028 +6
+end
+call Chars.ActSound $char $act 160 mecanismoGG1 0.015 +7
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 160 giro111-gate 0.028 +7
+end
+call Chars.ActSound $char $act 194 mecanismoGG2 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 194 giro222-gate 0.028
+end
+let act Relax1
+call Chars.ActSound $char $act 20 mecanismoGG1 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 20 giro222-gate 0.028
+end
+call Chars.ActSound $char $act 44 mecanismoGG2 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 44 giro111-gate 0.028
+end
+call Chars.ActSound $char $act 45 FXCrazyChispasSound 0.1
+call Chars.ActSound $char $act 45 CrazyGambler 0.1
+call Chars.ActSound $char $act 55 mecanismoGG1 0.015 +5
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 55 giro222-gate 0.028 +5
+end
+call Chars.ActSound $char $act 61 mecanismoGG2 0.015 +4
+call Chars.ActSound $char $act 66 mecanismoGG1 0.015 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 66 giro222-gate 0.028 +6
+end
+call Chars.ActSound $char $act 71 mecanismoGG2 0.015 +5
+call Chars.ActSound $char $act 83 mecanismoGG1 0.015 +4
+call Chars.ActSound $char $act 96 mecanismoGG1 0.015 +5
+call Chars.ActSound $char $act 122 mecanismoGG2 0.015 +8
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 122 giro222-gate 0.028
+end
+call Chars.ActSound $char $act 158 mecanismoGG1 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 158 giro111-gate 0.028
+end
+call Chars.ActSound $char $act 181 mecanismoGG1 0.015 -3
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 181 giro111-gate 0.028
+end
+let act FlashedInit
+call Chars.ActSound $char $act 2 mecanismoGG1 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 2 giro111-gate 0.028
+end
+call Chars.ActSound $char $act 11 mecanismoGG2 0.018 -3
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 11 giro222-gate 0.028
+end
+let act Flashed
+call Chars.ActSound $char $act 48 mecanismoGG1 0.015 +3
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 48 giro111-gate 0.028
+end
+call Chars.ActSound $char $act 81 mecanismoGG2 0.015 +4
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 81 giro222-gate 0.028
+end
+let act FlashedEnd
+call Chars.ActSound $char $act 98 mecanismoGG1 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 98 giro222-gate 0.028
+end
+let act Crazy
+call Chars.ActSound $char $act 16 down 0.15
+call Chars.ActSound $char $act 36 down 0.15
+let act CrazyEnd
+call Chars.ActSound $char $act 56 down 0.2 +2
+call Chars.ActSound $char $act 60 mecanismoGG1 0.015
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 60 giro111-gate 0.028
+end
+let act StrRightInit
+call Chars.ActSound $char $act 1 mecanismoGG1 0.013 +5
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 1 giro222-gate 0.026
+end
+let act StrRightEnd
+call Chars.ActSound $char $act 58 mecanismoGG2 0.013 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 56 giro111-gate 0.026
+end
+let act StrLeftInit
+call Chars.ActSound $char $act 2 mecanismoGG1 0.013
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 2 giro222-gate 0.026
+end
+let act StrLeftEnd
+call Chars.ActSound $char $act 62 mecanismoGG2 0.013 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 60 giro222-gate 0.026
+end
+call Chars.ActSound $char $act 72 mecanismoGG1 0.013 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 70 giro111-gate 0.026
+end
+let act Walk
+call Chars.ActSound $char $act 22 mecanismoGG1 0.008 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 22 giro222-gate 0.016
+end
+call Chars.ActSound $char $act 32 mecanismoGG2 0.0008 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 32 giro111-gate 0.016
+end
+let act WalkEnd
+call Chars.ActSound $char $act 52 mecanismoGG1 0.013 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 50 giro222-gate 0.026
+end
+call Chars.ActSound $char $act 61 mecanismoGG2 0.013 +4
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 59 giro111-gate 0.026
+end
+call Chars.ActSound $char $act 70 mecanismoGG1 0.013 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 68 giro222-gate 0.026
+end
+let act BackInit
+call Chars.ActSound $char $act 2 mecanismoGG1 0.013 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 1 giro222-gate 0.026
+end
+call Chars.ActSound $char $act 12 mecanismoGG2 0.013 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 10 giro111-gate 0.026
+end
+let act BackEnd
+call Chars.ActSound $char $act 60 mecanismoGG1 0.013 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 58 giro222-gate 0.026
+end
+call Chars.ActSound $char $act 64 mecanismoGG2 0.013 +5
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 62 giro111-gate 0.026
+end
+call Chars.ActSound $char $act 69 mecanismoGG1 0.013 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 67 giro222-gate 0.026
+end
+call Chars.ActSound $char $act 81 mecanismoGG2 0.013 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $act 79 giro111-gate 0.026
+end
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+call Chars.ActSound $char $talk 1 mecanismoGG1 0.014 +4
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 1 giro222-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 10 mecanismoGG1 0.014 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 10 giro111-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 16 mecanismoGG2 0.014 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 16 giro222-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 23 mecanismoGG1 0.014 +8
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 23 giro111-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 32 mecanismoGG2 0.014 +6
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 32 giro222-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 42 mecanismoGG1 0.014 +3
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 42 giro111-gate 0.028 +4
+end
+
+section Talk0Snd
+call Chars.ActSound $char $talk 2 mecanismoGG1 0.014 +3
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 2 giro222-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 15 mecanismoGG2 0.014 +5
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 15 giro111-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 31 mecanismoGG1 0.014
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 31 giro222-gate 0.028 +4
+end
+
+section Talk1Snd
+call Chars.ActSound $char $talk 1 mecanismoGG1 0.014 +4
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 1 giro222-gate 0.028 +4
+end
+call Chars.ActSound $char $talk 15 mecanismoGG2 0.014 +3
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 15 giro111-gate 0.028 +3
+end
+call Chars.ActSound $char $talk 28 mecanismoGG1 0.014 +1
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 28 giro222-gate 0.028 +1
+end
+
+section Talk2Snd
+call Chars.ActSound $char $talk 1 mecanismoGG1 0.014 +1
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 1 giro222-gate 0.028 +1
+end
+call Chars.ActSound $char $talk 10 mecanismoGG2 0.014 +3
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 10 giro111-gate 0.028 +3
+end
+call Chars.ActSound $char $talk 31 mecanismoGG1 0.014 +2
+if %CrazyGamblerSound.isPC
+	call Chars.ActSound $char $talk 31 giro222-gate 0.028 +2
+end
+
+section InitLoops
+object $e
+	snd_n 1
+	snd00_name loop-crazy2
+	snd00_loop 1
+	snd00_pitch0 0.0
+	snd00_vol0 0.03
+	snd00_pitch1 4.0
+	snd00_vol1 0.10
+	snd00_time1 0.6
+	snd00_int0 1
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

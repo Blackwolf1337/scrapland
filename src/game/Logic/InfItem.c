@@ -11,7 +11,9 @@
 
 
 cInfItem *cInfItem_ctor(cInfItem *self) {
-	memset(&self->life, 0, sizeof(*self) - 4);
+	/* the original (0x14ddf0) sets its vtable, then zeroes the four lists (+4..+0x60); this struct has no vtable,
+	 * so sizeof - 4 from life left the last field (ammo1.maxFree) unset */
+	memset(self, 0, sizeof(*self));
 	return self;
 }
 

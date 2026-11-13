@@ -559,7 +559,6 @@ static int Transport_RecvFrom(uint32_t s, byte *buf, int len, int flags, NetAddr
 	byte pkt[NET_PKT_MAX], key[0x20], polyKey[0x20], nonce[12], mac[16];
 	cChaCha ctx;
 	cNetBuffer nb;
-	(void)len;
 
 	(void)flags, (void)fromlen;
 	int n = Sock_RecvFrom(s, pkt, NET_PKT_MAX, from);
@@ -582,8 +581,14 @@ static int Transport_RecvFrom(uint32_t s, byte *buf, int len, int flags, NetAddr
 		return -1;
 	}
 	/* nonce, 4 zeros, the data, padding, then the two lengths (8 bytes each) and the tag */
+	/* the length comes from the sender: it must fit the received ciphertext (n less the padded nonce, the two
+	 * lengths and the tag) and the caller's buffer */
 	uint32_t size;
 	memcpy(&size, pkt + n - 0x18, 4);
+	if (len < 0 || size > (uint32_t)(n - 0x30) || size > (uint32_t)len) {
+		cNetBuffer_dtor(&nb);
+		return -1;
+	}
 	cChaCha_Crypt(&ctx, key, 1, nonce, pkt + 0x10, buf, size);
 	cNetBuffer_dtor(&nb);
 	return (int)size;
@@ -596,6 +601,12 @@ static int Transport_SendTo(uint32_t s, const void *data, int len, int flags, co
 	cChaCha ctx;
 	cNetBuffer nb;
 
+	/* ct holds the plain text: a longer message is dropped (the receiver's packet is NET_PKT_MAX with the padded
+	 * nonce, the two lengths and the tag around the data) */
+	if (len < 0 || len > NET_PKT_MAX - 0x30) {
+		Con_Printf("Transport: message of %d bytes too long, dropped\n", len);
+		return -1;
+	}
 	cChaCha_ctor(&ctx);
 	cNetBuffer_ctor(&nb, NET_PKT_MAX);
 	memset(nonce, 0, sizeof(nonce));

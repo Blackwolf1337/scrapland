@@ -1,0 +1,47 @@
+# The functions of Mission_MortalRace in level fz (the script levels/fz/scripts/mission_mortalrace.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/mission_mortalrace.def replaces this file.
+section SetVars
+run newlist race
+run evalappend $race "((71611.59375, 18231.6992188, 93232.796875), 422.337219238)"
+run evalappend $race "((45388.4140625, 14599.3476563, 79622.6640625), 400.984222412)"
+run evalappend $race "((25194.9804688, 18783.4863281, 59759.296875), 404.390136719)"
+run evalappend $race "((-433.664245605, 26340.1289063, 34561.0898438), 409.718261719)"
+run evalappend $race "((-38229.3671875, 26457.5292969, 679.068054199), 449.472442627)"
+run evalappend $race "((-107464.132813, 19331.875, 3288.328125), 528.452758789)"
+run evalappend $race "((-113911.117188, 14331.4462891, 40812.9414063), 558.054199219)"
+run evalappend $race "((-102532.132813, 11236.1474609, 75072.375), 630.567077637)"
+run evalappend $race "((-58177.6289063, 6282.20654297, 74209.3515625), 673.615478516)"
+run evalappend $race "((-24157.5449219, 7054.30419922, 43223.1679688), 630.510681152)"
+run evalappend $race "((33550.1445313, 15480.2402344, 41122.5820313), -55.4565696716)"
+run evalappend $race "((56201.6054688, 15587.5126953, 24649.8496094), 23.7488441467)"
+run evalappend $race "((26343.9511719, 22077.8789063, -32317.0292969), 90.5086135864)"
+run evalappend $race "((-13835.4755859, 26276.8730469, -31975.1582031), 145.932754517)"
+run evalappend $race "((-29244.3652344, 26745.4667969, -2544.81738281), -892.995666504)"
+run evalappend $race "((-23808.9570313, 27246.9980469, 32018.1816406), -819.383483887)"
+run evalappend $race "((21584.3066406, 29452.4667969, 41221.6171875), -822.313781738)"
+run evalappend $race "((54026.796875, 24611.7421875, 42694.0898438), -802.188171387)"
+run evalappend $race "((95732.015625, 16516.8085938, 36323.546875), -872.699890137)"
+run evalappend $race "((113450.46875, 12325.5195313, 77796.75), -969.003662109)"
+run repr _rrace $race
+call Scrap.SetSaveVar "MortalRaceRace" $_rrace
+call Scrap.SetSaveVar "MortalRaceWaypoints" "20"
+call Scrap.SetSaveVar "MortalRaceRacers" "['ArchBishop', 'BankDirector', 'Functionary', 'MercenaryA', 'MercenaryB']"
+call Scrap.SetSaveVar "MortalRaceRacersProfile" "MortalRace"
+call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "4"
+call Scrap.SetSaveVar "MortalRaceRespawnTime" "5.0"
+call Scrap.SetSaveVar "MortalRaceStartTextCad" "Mission_WinMortalRace_RemoteMessage1"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerLoosesTextCad" "Mission_WinMortalRace_RemoteMessage2"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerLoosesTextFoe" "Messenger"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerWinsTextCad" "Mission_WinMortalRace_RemoteMessage3"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerWinsTextFoe" "Messenger"
+let _q0 'import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_BackFromMortalRace", "GamblinDen");Scrap.SetSaveVar("Map", "Levels/GamblinDen");import SaveGame; SaveGame.QLoad("Levels/GamblinDen");Scrap.SetSaveVar('
+let executeOnVictory "$(_q0)'MapPress_BureauExists','1')"
+let executeOnAbort 'import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_ArrangeMortalRace", "GamblinDen");Scrap.SetSaveVar("Map", "Levels/GamblinDen");import SaveGame; SaveGame.QLoad("Levels/GamblinDen");'
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+
+section InitStatus LevelPath
+call Mission_MortalRace.SetVars
+
+section Init LevelPath

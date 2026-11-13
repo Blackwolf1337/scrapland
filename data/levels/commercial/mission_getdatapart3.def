@@ -1,0 +1,24 @@
+# The functions of Mission_GetDataPart3 in level commercial (the script levels/commercial/scripts/mission_getdatapart3.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Commercial.c): GetFunctionariesEnemiesProfile, InitStatus, Init, InitMission, CreateWave, CreateFunctionary, ReinsertFunctionaryInWave, OnFunctionaryDeath, OnFunctionaryDamage, DropData, CheckAITakesData, CheckAI, TakeData, CallBoss, UsePhoneCab, PreGetData, CallDeepThroat, UsePhoneCab2, SetNextMission, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/commercial/mission_getdatapart3.def replaces this file.
+section StopMission
+setvar Menu.MissionScorerCall None
+
+section GetData
+call Scrap.CreateEntityList "Funcs"
+call Scrap.EntityListSet "Funcs" "OnDeath" "Mission_GetDataPart3.OnFunctionaryDeath"
+call Scrap.EntityListSet "Funcs" "OnDamage" "Mission_GetDataPart3.OnFunctionaryDamage"
+call Scrap.EntityListSet "Enemies" "OnDeath" "Mission_GetDataPart3.OnFunctionaryDeath"
+call Scrap.EntityListSet "Enemies" "OnDamage" "Mission_GetDataPart3.OnFunctionaryDamage"
+call Scrap.Set "OnItemTakenAI" "Mission_GetDataPart3.CheckAITakesData"
+run saveint numData "NumData"
+call Mission_GetDataPart3.CreateWave $numData+1
+
+section PreCallDeepThroat
+call Speech.AddRemoteCom "Mission_GetDataPart3_RemoteMessage2" "DeepThroat" %Mission_GetDataPart3.PreCallDeepThroat2 ()
+
+section PreCallDeepThroat2
+call Scrap.SetSaveVar "MissionState" "CallDeepThroat"
+call SaveGame.MMDesc "Mission_TalkToDeepThroat8_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_GetDataPart3.CallDeepThroat

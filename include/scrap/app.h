@@ -24,7 +24,7 @@ extern cGVar GVar_SelectedLanguage;
 extern cGVar GVar_LogFile;
 #define g_LogName (GVar_LogFile.value.s)
 
-extern void *g_AppPyOne;		/* Py_BuildValue("i", 1) of each level */
+extern byte g_AppOneMade;		/* the int 1 of the levels (SAI.GetOD) was made: a level started */
 
 /* App.c */
 CApp *CApp_ctor(CApp *self, const char *cmdLine);
@@ -48,6 +48,20 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext);
 void CApp_ResetParams(CApp *self);
 double CApp_GetGameTime(CApp *self);
 void Console_Execute(const char *cmd);
+/* the forms of ConsoleCmd.c for the test channel: Python 1.5.2 repr() of a float and of a string, and of an engine
+ * variable as Scrap.Get gives it (0 when there is none) */
+void Console_ReprFloat(char *buf, int size, double d);
+void Console_ReprString(char *buf, int size, const char *s);
+byte Console_ReprVar(const char *name, char *buf, int size);
+/* the test channel (TestChannel.c): on by -TestChannel or SCRAP_TEST_CHANNEL=1; the check once a frame (now: the
+ * real time in seconds, at most one check in 5 ms); while the world clock runs the check is TestChannel_WorldFrame,
+ * called by cWorld_Update right after the scheduled functions */
+void TestChannel_Enable(void);
+void TestChannel_Frame(double now);
+void TestChannel_WorldFrame(void);
+/* SCRAP_TEST_CHANNEL=step in the deterministic test mode (scrap/testdet.h): 1 while the clock of the mode has to stand:
+ * no command file waits, or the one that waits has had its pace */
+int TestChannel_Hold(void);
 void CWinApp_LoadLevel(CApp *app, const char *level);
 void Loading_Init(void);
 void Loading_End(void);
@@ -75,7 +89,6 @@ void Python_Init(void);
 void Python_Close(void);
 void Python_Shutdown(void);
 int Str_WrapText(char *text, char **lines, float maxWidth, int maxLines, const char *fontName);
-int PyRun_ScrapString(const char *code);
 
 /* other modules of the exe (src/imports.inc) */
 void InputMaps_Done(void);

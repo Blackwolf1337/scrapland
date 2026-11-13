@@ -1,0 +1,11 @@
+# The functions of Map in level townhall (the script levels/townhall/scripts/map.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Townhall.c): InitStatus, Init, OrbitLockMsg.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/townhall/map.def replaces this file.
+section CreateGearMayor ch
+object $ch
+LLogicDefaultState 4
+LLogicDefaultTarget "Mayor_Default"
+LLogicState 4
+LLogicTarget "Mayor_Default"
+LLogicIdle 1
+LLogicIdle 0

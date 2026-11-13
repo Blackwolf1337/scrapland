@@ -1,0 +1,160 @@
+# Fx (the script fx/fx.py of the game): the effect files a level loads (section Init: outdoors, indoors, the junkyard
+# and the ship editor) and the motor effects of a ship model (section Motors, $model the model in capitals without the B
+# of the indoor traffic, $name the ship). The values FX... are the constants of the module. The C (src/game/Script/Fx.c)
+# gives $dudv (not the Xbox, or the DuDv render target) and $shipedit (the junkyard, the ship editor or a network game).
+# A pack in mods/ with scrapc/fx/fx.def replaces this file.
+
+section Init
+call Scrap.Set FXItemFadeFile %Fx.ItemFadeFile
+call Scrap.SetDebrisSys %Fx.ItemFadeFile 4 0 0 1 0 0 %Fx.FXITEMFADE
+if %Init.Outdoor == 1
+	call Scrap.Set FXCharacterDeathFile %Fx.CharacterDeathFile
+	call Scrap.SetDebrisSys %Fx.CharacterDeathFile 1 0 0 1 0 0 %Fx.FXCHARACTERDEATH
+	call Scrap.Set FXVehicleEmbeddedFile %Fx.VehicleEmbeddedFile
+	call Scrap.Preload3DObject %Fx.VehicleEmbeddedFile
+	call Scrap.Set FXTrafficEmbeddedFile %Fx.TrafficEmbeddedFile
+	call Scrap.Preload3DObject %Fx.TrafficEmbeddedFile
+	call Scrap.Set WindFxSmokeFile %Fx.WindFxSmokeFile
+	call Scrap.SetDebrisSys %Fx.WindFxSmokeFile 1 0 0 1 0 0 %Fx.FXSISTPART
+	call Scrap.Set FXVehicleDamageFile %Fx.VehicleDamageFile
+	call Scrap.SetDebrisSys %Fx.VehicleDamageFile 2 0 0 1 0 0 %Fx.FXVEHICLEDAMAGE
+	call Scrap.Set FXMotorSmokeFile %Fx.MotorSmokeFile
+	call Scrap.SetDebrisSys %Fx.MotorSmokeFile 1 0 0 1 0 0 %Fx.FXSISTPART
+	call Scrap.Set FXDumbMotorFile %Fx.DumbMotorFile
+	call Scrap.SetDebrisSys %Fx.DumbMotorFile 4 0 0 1 0 0 %Fx.FXFIREDENTITY
+	call Scrap.Set FXShipExplosionFile %Fx.ShipExplosionFile
+	call Scrap.SetDebrisSys %Fx.ShipExplosionFile 4 0 0 1 0 0 %Fx.FXSISTPART
+	call Scrap.Set FXVehicleDeathTrailFile %Fx.VehicleDeathTrailFile
+	call Scrap.SetDebrisSys %Fx.VehicleDeathTrailFile 3 0 0 1 0 0 %Fx.FXVEHICLEDEATHTRAIL
+	call Scrap.Set FXVehicleEMIFile %Fx.VehicleEMIFile
+	call Scrap.SetDebrisSys %Fx.VehicleEMIFile 2 0 0 1 0 0 %Fx.FXVEHICLEEMI
+	call Scrap.Set FXVehicleSputnikFile %Fx.VehicleSputnikFile
+	call Scrap.SetDebrisSys %Fx.VehicleSputnikFile 1 0 0 1 0 0 %Fx.FXVEHICLESPUTNIK
+	call Scrap.Set FXFiredDebrisFile %Fx.FiredDebrisFile
+	call Scrap.SetDebrisSys %Fx.FiredDebrisFile 4 0 1.0 1 9800 1 %Fx.FXFIREDDEBRIS
+	call Scrap.Set FXSmokeDebrisFile %Fx.SmokeDebrisFile
+	call Scrap.SetDebrisSys %Fx.SmokeDebrisFile 6 0 1.0 1 6500 0 %Fx.FXSMOKEDEBRIS
+	call Scrap.Set FXVehicleFireFile %Fx.VehicleFireFile
+	call Scrap.SetDebrisSys %Fx.VehicleFireFile 1 0 0 1 0 0 %Fx.FXVEHICLEFIRE
+	call Scrap.Preload3DObject %Fx.MotorCalimaFile
+	if $dudv
+		call Scrap.Set FXMotorCalimaFile %Fx.MotorCalimaFile
+		call Scrap.SetDebrisSys %Fx.MotorCalimaFile 1 0 0 1 0 0 %Fx.FXSISTPARTDUDV
+	end
+else
+	call Scrap.Set FXCharacterDeathFile %Fx.CharacterDeathFile
+	call Scrap.SetDebrisSys %Fx.CharacterDeathFile 2 0 0 1 0 0 %Fx.FXCHARACTERDEATH
+	call Scrap.Set FXItemBlinkFile %Fx.ItemBlinkFile
+	call Scrap.SetDebrisSys %Fx.ItemBlinkFile 1 0 0 1 0 0 %Fx.FXSISTPART
+	call Scrap.Set FXItemTakeFile %Fx.ItemTakeFile
+	call Scrap.SetDebrisSys %Fx.ItemTakeFile 2 0 0 1 0 0 %Fx.FXITEMTAKE
+	call Scrap.Set FXCharacterDazedFile %Fx.CharacterDazedFile
+	call Scrap.SetDebrisSys %Fx.CharacterDazedFile 1 0 0 1 0 0 %Fx.FXSISTPART
+	call Scrap.Set FXCharacterTeleportFile %Fx.CharacterTeleportFile
+	call Scrap.SetDebrisSys %Fx.CharacterTeleportFile 1 0 0 1 0 0 %Fx.FXCHARACTERTELEPORT
+	call Scrap.Set FXCharacterConversorFile %Fx.CharacterConversorFile
+	call Scrap.SetDebrisSys %Fx.CharacterConversorFile 2 0 0 1 0 0 %Fx.FXCHARACTERCONVERSOR
+	call Scrap.Set FXCharacterConversionFile %Fx.CharacterConversionFile
+	call Scrap.SetDebrisSys %Fx.CharacterConversionFile 1 0 0 1 0 0 %Fx.FXCHARACTERCONVERSION
+	call Scrap.Set FXCharacterBlaBliBlaFile %Fx.CharacterBlaBliBlaFile
+	call Scrap.SetDebrisSys %Fx.CharacterBlaBliBlaFile 1 0 0 1 0 0 %Fx.FXSISTPART
+	call Scrap.Set FXMoneyTransferFile %Fx.MoneyTransferFile
+	call Scrap.SetDebrisSys %Fx.MoneyTransferFile 1 0 0 1 0 0 %Fx.FXMONEYTRANSFER
+end
+if $shipedit
+	call Scrap.Set FXShipEditBuildFile %Fx.FXShipEditBuildFile
+	call Scrap.SetDebrisSys %Fx.FXShipEditBuildFile 1 0 0 1 0 0 %Fx.FXMODELNOISE
+end
+call Scrap.Set FXEngineGlowDistFadeMult 1.0
+run print "Fx.Init() Executed!"
+
+section Motors
+if $model == SLIFEBOAT
+	entity $name
+		FxClass %Fx.FXMOTOR_LIFEBOAT
+		ShipMotorColorR 255
+		ShipMotorColorG 65
+		ShipMotorColorB 10
+elif $model == MADHUNT
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 255
+		ShipMotorColorG 25
+		ShipMotorColorB 25
+elif $model == SMOSQUITO
+	entity $name
+		FxClass %Fx.FXMOTOR_MOSQUITO
+		ShipMotorColorR 255
+		ShipMotorColorG 15
+		ShipMotorColorB 15
+elif $model == TLIGHT1
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 255
+		ShipMotorColorG 40
+		ShipMotorColorB 20
+elif $model == TLIGHT2
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 240
+		ShipMotorColorG 130
+		ShipMotorColorB 40
+		ShipMotorScale 0.9
+		ShipMotorOffset 15
+elif $model == TLIGHT3
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 255
+		ShipMotorColorG 60
+		ShipMotorColorB 20
+		ShipMotorScale 0.8
+		ShipMotorOffset 15
+elif $model == THEAVY1
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 60
+		ShipMotorColorG 90
+		ShipMotorColorB 220
+		ShipMotorScale 1.7
+		ShipMotorOffset 10
+elif $model == TMED1
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 60
+		ShipMotorColorG 90
+		ShipMotorColorB 220
+		ShipMotorScale 1.7
+		ShipMotorOffset 10
+elif $model == THEAVY2
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 80
+		ShipMotorColorG 80
+		ShipMotorColorB 210
+		ShipMotorScale 1.8
+		ShipMotorOffset 8
+elif $model == TMED2
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 80
+		ShipMotorColorG 80
+		ShipMotorColorB 210
+		ShipMotorScale 1.8
+		ShipMotorOffset 8
+elif $model == THEAVY3
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 230
+		ShipMotorColorG 60
+		ShipMotorColorB 50
+		ShipMotorScale 2.0
+		ShipMotorOffset 0
+elif $model == TMED3
+	entity $name
+		FxClass %Fx.FXMOTOR_TRAFFIC
+		ShipMotorColorR 230
+		ShipMotorColorG 60
+		ShipMotorColorB 50
+		ShipMotorScale 2.0
+		ShipMotorOffset 0
+end

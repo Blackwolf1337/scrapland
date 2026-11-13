@@ -1,0 +1,20 @@
+# The functions of Mission_MultiplusRace in level downtown (the script levels/downtown/scripts/mission_multiplusrace.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): GetFunctionaryProfile, InitStatus, Init, RaceList, GetDealType, EndOfRace, SetPhoneCab, UsePhoneCab, InitRace, AfterInitRaceTaunt, InitKill, SpawnStupidus, SpawnStupidusFriends, StupidusFriendOnDeath, RestoreEnemies, StupidusOnDeath, MissionScorer, SetNextMission, CGCalls.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_multiplusrace.def replaces this file.
+section PreKillStupidus
+call Scrap.SetSaveVar "MultiplusRace" "KillStupidus"
+call SaveGame.MMDesc "Mission_TalkToFicus4_MissionText1" 1
+
+section PreInitKill
+call Scrap.SetSaveVar "MultiplusRace" "Killing"
+call SaveGame.MMDesc "Mission_KillStupidus_MissionText1" 1
+call Mission_MultiplusRace.InitKill
+
+section HeyYouFight
+call Speech.AddRemoteCom "Mission_KillStupidus_RemoteMessage5" "Ficus"
+call Mission_MultiplusRace.MissionScorer 0
+
+section StupidusDamage Looser Winner damage
+setvar Stupidus.EntityList "Enemies"
+setvar Stupidus.OnDamage ""
+call Speech.RemoteComunication "Mission_KillStupidus_RemoteMessage1" "Stupidus"

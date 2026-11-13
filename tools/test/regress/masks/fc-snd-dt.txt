@@ -1,0 +1,3 @@
+# accepted in round 3 (handback-a88905ac7d0c2eacf): with Traffic.PrevVal deleted the C reads the test before the
+# sound loads that come first in the script; same exception, the ship's sound slots stay empty in C
+ignore I.x = T.PrevVal; del T.PrevVal

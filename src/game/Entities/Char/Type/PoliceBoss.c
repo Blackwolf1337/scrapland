@@ -31,7 +31,6 @@ static cGVar GVar_PoliceBossBrupBounce1Sound;
 static cGVar GVar_PoliceBossBrupBaseFile;
 static cGVar GVar_PoliceBossActionRadius;
 #define PB_SYSTEMS 5		/* the debris systems <PoliceBossBrupBaseFile>A.M3D .. E.M3D */
-#define PB_Started(el) (((FXElemHead *)(el))->started)
 
 /* params: the boss, an event and the life factor of the debris: PoliceBossBrupDebrisMin..Max debris out of the
  * mouth in random directions */
@@ -120,13 +119,15 @@ static void ChType_FXPoliceBossBrup(cAbstractFile *params) {
 		d->drop[3].y = py * m;
 		d->drop[3].z = pz * m;
 		d->drop[3].x = FxElem_Rand(12.566370964050293, -6.2831854820251465) * m;
-		void *el = Debris_Element(d);
+		/* the debris are FXMODELFADE (policeboss.def): its fields directly; the generic FXElemHead of the setters by
+		 * name has an entity pointer second, which on 64 bit moves the later fields (and read one past the object) */
+		cObjElementFXModelFade *el = Debris_Element(d);
 		if (el) {
-			if (!PB_Started(el)) {
-				PB_Started(el) = 1;
+			if (!el->unused_10) {
+				el->unused_10 = 1;
 			}
-			FXMisc_SetF8(el, 0.0500000007f);
-			FXMisc_SetFC(el, 0.25f);
+			el->duration = 0.0500000007f;
+			el->fadeOut = 0.25f;
 		}
 	}
 }

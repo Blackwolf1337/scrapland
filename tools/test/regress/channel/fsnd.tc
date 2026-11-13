@@ -1,0 +1,81 @@
+# helpers/fsnd.py as channel statements (sound cases): sound variables of entities, point sounds, recorders that keep
+# or replace the real function
+import Scrap, SAct, SSound, string
+include fmis
+# vol is the volume the engine sets while the ship moves (InTraffic sets it once: _sndvars(..., vs=_SNDVV))
+_SNDV = ('name', 'loop', 'int0', 'int1', 'ini', 'end', 'dopp', 'pitch0', 'pitch1', 'pitch2', 'vol0', 'vol1', 'vol2', 'time0', 'time1', 'time2')
+_SNDVV = _SNDV + ('vol',)
+_tcr = lambda x, n: round(x, n) if type(x) == type(0.0) else x
+_sndvars = lambda n, pre='snd', count=32, vs=None: (lambda vs, e: [(pre + '_n', tc_try(getattr, (e, pre + '_n'), '?'))]
+	+ map(lambda i: map(lambda v: tc_try(lambda: _tcr(getattr(e, '%s%02d_%s' % (pre, i, v)), 4), (), '?'), vs), range(count)))(
+	vs or _SNDV, Scrap.GetEntity(n))
+_allsnd = lambda n: (_sndvars(n, 'snd', 32), _sndvars(n, 'sdd', 9), _sndvars(n, 'sdl', 5))
+_vehs = lambda: (lambda n: (setattr(__import__('Init'), '_vc', lambda x: n.append(x)),
+	Scrap.SphereCall(0.0, 0.0, 0.0, 3000000.0, 'v', 'Init._vc'), n.sort(), n)[3])([])
+# the sound variables of every ship, one entry per model (the traffic picks models at random)
+_vehbymodel = lambda: (lambda d: (map(lambda x: (lambda m, s: (d.has_key(m) or tc_set(d, m, []), s in d[m] or d[m].append(s)))(
+	tc_try(lambda: Scrap.GetEntity(x).Model, (), '?'), `_allsnd(x)`), _vehs()), tc_sorted(d.items()))[1])({})
+_ps = lambda names, vs=('Sound', 'X', 'Y', 'Z', 'Volume', 'Pitch', 'Loop', 'AttenIni', 'AttenEnd', 'Doppler', 'MaxInterval', 'MinInterval'):
+	map(lambda n: [n] + map(lambda v: tc_try(lambda: _tcr(SSound.GetPS(n, v), 3), (), '?'), vs), names)
+# the events of actions of a class: (time, name, function)
+_acts = lambda cls, acts: (SAct.DumpEvents('sndev.txt'), _tcdump('sndev.txt', lambda c: c == cls, 0))[1]
+_SNDG = ('SndLoopCharNPCMul', 'OnAcceptSound', 'OnAcceptSoundVol', 'OnFocusSound', 'OnFocusSoundVol', 'CharacterDeathSound', 'CharacterDeathSoundVol',
+	'DangerLifeSound', 'DangerLifeSoundVol', 'RegenerationSound', 'RegenerationSoundVol', 'RegenerationSoundPitchMin', 'RegenerationSoundPitchMax',
+	'InitRegenerationSound', 'InitRegenerationSoundVol', 'EndRegenerationSound', 'EndRegenerationSoundVol', 'TextTypingSound', 'TextTypingSoundVol',
+	'CharacterConversionSound', 'CharacterConversionSoundVol', 'OutRelaxMusic', 'iOutRelaxMusic', 'OutRelaxMusicVolume', 'OutActionMusic',
+	'iOutActionMusic', 'OutActionMusicVolume', 'isActionIndoor', 'ActionMusicTimeFade', 'MusicTimeChange', 'CharacterTeleportUpSound',
+	'CharacterTeleportDownSound', 'CharacterTeleportSoundVol', 'SoundAutoplayVolume', 'SoundDopplerLevel', 'SoundDistAttenuation', 'NPCSndMotorVolFactor',
+	'EMIThunderSoundVol', 'EMIThunderSoundAttIni', 'EMIThunderSoundAttEnd', 'EMIThunder1Sound', 'EMIThunder2Sound', 'SwarmBeeSoundAttIni',
+	'SwarmBeeSoundAttEnd', 'SwarmBeeSoundVol', 'SwarmHitSoundAttIni', 'SwarmHitSoundAttEnd', 'SwarmHitSoundVol', 'SwarmEngineSoundAttIni',
+	'SwarmEngineSoundAttEnd', 'SwarmEngineSoundVol', 'VulcanRic0SoundVol', 'VulcanRic0Sound', 'VulcanRic1SoundVol', 'VulcanRic1Sound',
+	'VulcanRic2SoundVol', 'VulcanRic2Sound', 'DevastatorBoomSoundVol', 'DevastatorBoomSoundAttIni', 'DevastatorBoomSoundAttEnd', 'DevastatorBoomSound',
+	'ATPCHitSoundVol', 'ATPCHitSound', 'ATPCCapsuleSoundVol', 'ATPCCapsuleSound', 'ATPCCapsuleExtendedSoundVol', 'ATPCCapsuleExtendedSound',
+	'InfernoHitSoundVol', 'InfernoHitSoundAttIniRadius', 'InfernoHitSoundAttEndRadius', 'InfernoEngineSoundAttIni', 'InfernoEngineSoundAttEnd',
+	'InfernoEngineSoundVol', 'LaserRicSoundVol', 'LaserRicSound', 'TargetScorerSwitchSound', 'TargetScorerSwitchSoundVol', 'CannonScorerNoAmmoSound',
+	'CannonScorerNoAmmoSoundVol', 'WindFxScorerSound', 'WindFxScorerSoundVol', 'WindFxScorerSpeedVol', 'WindFxScorerSpeedPitch', 'WindFxScorerHorizontal',
+	'WindFxScorerVertical', 'WindFxScorerFadeFactor', 'WindFxScorerFwAngle', 'WindFxScorerShow', 'FXElementsFireDropSound', 'FXElementsFireDropSoundVol',
+	'FXElementsFireDropSoundAttIni', 'FXElementsFireDropSoundAttEnd')
+_MAPG = ('FileNameMap2D', 'CharGrav', 'AtmosphereLimit', 'TopLimit', 'GridUseTopLimit', 'Max_Rad_Obj', 'CameraCloudDistance', 'CameraCloudPlaneSize',
+	'CameraCloudThickness', 'CameraCloudAlpha', 'CameraCloudRed', 'CameraCloudGreen', 'CameraCloudBlue', 'OnTaunt', 'SuperDealAvaliable', 'EnergyBarActive',
+	'ShipPathFmt')
+_SNDM = ('WaySound', 'WayVolume', 'EneWaySound', 'EneWayVolume', 'PhotoSound', 'PhotoVolume', 'DeathSound', 'DeathVolume', 'TVOffSound', 'TVOffVolume',
+	'RotateShipSound', 'RotateShipVolume', 'RotateShipFastSound', 'RotateShipFastVolume', 'HologramStartSound', 'HologramStartVolume', 'HologramLoopSound',
+	'HologramLoopVolume', 'ShipEditLoadShipSound', 'ShipEditLoadShipVolume', 'ShipEditLoadWeaponSound', 'ShipEditLoadWeaponVolume',
+	'ShipEditLoadEngineSound', 'ShipEditLoadEngineVolume', 'ShipEditUnLoadSound', 'ShipEditUnLoadVolume', 'FlashSound')
+_gvq = lambda vs: map(lambda v: (v, tc_try(lambda: _tcr(Scrap.Get(v), 4), (), '?')), vs)
+_take = lambda: (map(__import__, ('Sound',)), tc_sorted(Sound.ItemTake.items()))[1]
+_recall = lambda calls: (map(lambda n: _rec(n[0], n[1]), calls), None)[1]
+# a recorder that also runs the real function (for calls whose effect the case reads back)
+_Keep = lambda name, fn: tc_obj(__name__ + '._Keep', {'name': name, 'fn': fn},
+	lambda *a, **kw: (_calls.append((name, a, kw)), apply(fn, a, kw))[1])
+_keep = lambda mod, func: (lambda m: (lambda f: (hasattr(f, 'fn') or setattr(m, func, _Keep(mod + '.' + func, f)), None)[1])(
+	getattr(m, func)))(__import__(mod))
+_unkeep = lambda mod, func: (lambda m: (lambda f: (hasattr(f, 'fn') and setattr(m, func, f.fn), None)[1])(getattr(m, func)))(
+	__import__(mod))
+# the point sounds prefix<i> (i from 1 to n) that exist
+_psall = lambda prefixes, n: _ps(reduce(lambda acc, p: acc + filter(lambda nm: SSound.GetPS(nm, 'Sound') != None,
+	map(lambda i: p + `i`, range(1, n + 1))), prefixes, []))
+# a recorder that returns the given values in turn (the last one again at the end)
+_Seq = lambda name, values: (lambda c: tc_obj(__name__ + '._Seq', {'name': name, 'values': values, 'i': 0},
+	lambda *a, **kw: (_calls.append((name, a, kw)), values[min(c[0], len(values) - 1)], tc_set(c, 0, c[0] + 1))[1]))([0])
+_saved = {}
+_tcsave = lambda mod, func: _saved.has_key((mod, func)) or tc_set(_saved, (mod, func), getattr(__import__(mod), func))
+_seq = lambda mod, func, values: (_tcsave(mod, func), setattr(__import__(mod), func, _Seq(mod + '.' + func, values)))[1]
+_rec2 = lambda mod, func, ret=None: (_tcsave(mod, func), setattr(__import__(mod), func, _Rec(mod + '.' + func, ret)))[1]
+_restore = lambda: (map(lambda kf: setattr(__import__(kf[0][0]), kf[0][1], kf[1]), _saved.items()), _saved.clear())[1]
+_FakeEnt = lambda name: (lambda o: (setattr(o, '__repr__', lambda: 'Ent' + `filter(lambda kv: kv[0] != '__repr__',
+	tc_sorted(o.__dict__.items()))`), o)[1])(tc_obj(__name__ + '._FakeEnt', {'Name': name}))
+# Scrap.CreateEntity and GetEntity for CreatePlayers: fake entities that keep what is set on them
+_MakeEnt = lambda name: (lambda made: tc_obj(__name__ + '._MakeEnt', {'name': name, 'made': made},
+	lambda *a: (_calls.append((name, a)), (lambda e: (made.append(e), e)[1])(_FakeEnt(a[0])))[1]))([])
+# a ship with the model (OutTraffic models with out=1)
+_model = lambda name, model, out=0: (map(__import__, ('Traffic',)), (lambda prev: (lambda v: (v.SetModel(model), out and Scrap.Set('ShipPathFmt', prev), v.Model)[2])(
+	Scrap.GetEntity(name) or Scrap.CreateEntity(name, 1000.0, 50000.0, 1000.0, 'Car')))(
+	out and (lambda p: (Scrap.Set('ShipPathFmt', Traffic.Path + '%s.m3d'), p)[1])(Scrap.Get('ShipPathFmt')) or None))[1]
+_vs = lambda model, out=0, tag='': (map(__import__, ('OutSound',)), (lambda n: (_model(n, model, out), (lambda r: (model, r, _allsnd(n)))(OutSound.SetVehicleSounds(n)))[1])(
+	'SndT' + tag + model))[1]
+# f(*a, **kw), or the exception it raised
+_t = lambda f, *a, **kw: tc_catch(f, a, kw, lambda t, v: ('raised', str(t), str(v)))
+# f(*a, **kw) with the sound pack open (as the loading function that calls it has it): (result, calls)
+_pk = lambda pack, f, *a, **kw: (Scrap.OpenPack(pack), _takecalls(), (lambda r: (lambda c: (Scrap.ClosePack(), _takecalls(), (r, c))[2])(
+	_takecalls()))(apply(_t, (f,) + a, kw)))[2]

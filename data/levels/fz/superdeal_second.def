@@ -1,0 +1,56 @@
+# The functions of SuperDeal_Second in level fz (the script levels/fz/scripts/superdeal_second.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/superdeal_second.def replaces this file.
+section SetVars
+run newlist race
+run evalappend $race "((24882.9921875, 4248.33691406, -78245.59375), -225.729370117)"
+run evalappend $race "((330.28225708, 3249.24072266, -54269.7734375), -221.858901978)"
+run evalappend $race "((-19835.9882813, 3161.20141602, -31116.53125), 177.852828979)"
+run evalappend $race "((-20604.3261719, 6695.70849609, 8657.6640625), -148.988983154)"
+run evalappend $race "((-5126.09228516, 6289.13623047, 42809.1367188), -269.494140625)"
+run evalappend $race "((-43999.7226563, 6447.99121094, 42855.9179688), -268.86630249)"
+run evalappend $race "((-80636.3046875, 6716.60693359, 42240.8789063), -335.239898682)"
+run evalappend $race "((-94206.8203125, 6412.18212891, 12916.5664063), -360.065216064)"
+run evalappend $race "((-94078.3828125, 7153.421875, -37735.1835938), -423.939239502)"
+run evalappend $race "((-56839.6914063, 6203.47998047, -52876.8984375), -393.91784668)"
+run evalappend $race "((-17541.7597656, 6449.93505859, -86478.1796875), -1540.24304199)"
+run repr _rrace $race
+call Scrap.SetSaveVar "MortalRaceRace" $_rrace
+call Scrap.SetSaveVar "MortalRaceWaypoints" "50"
+call Scrap.SetSaveVar "MortalRaceRacers" "['ArchBishop', 'BankDirector', 'Functionary', 'MercenaryA', 'MercenaryB']"
+run saveint reputation "BadReputation"
+if $reputation < 2
+	call Scrap.SetSaveVar "MortalRaceRacersProfile" "SuperDealSecondPilot"
+	call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "4"
+elif $reputation < 4
+	call Scrap.SetSaveVar "MortalRaceRacersProfile" "SuperDealSecondElite"
+	call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "4"
+else
+	call Scrap.SetSaveVar "MortalRaceRacersProfile" "SuperDealSecondMegaAce"
+	call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "6"
+end
+call Scrap.SetSaveVar "MortalRaceRespawnTime" "5.0"
+call Scrap.SetSaveVar "MortalRaceStartTextCad" "SuperDeal_Second_RemoteMessage1"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerLoosesTextCad" "SuperDeal_Second_RemoteMessage3"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerLoosesTextFoe" "CrazyGambler"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerWinsTextCad" "SuperDeal_Second_RemoteMessage2"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerWinsTextFoe" "CrazyGambler"
+call Scrap.SetSaveVar "MortalRaceAutoRestart" "0"
+let executeOnAbort "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')"
+let executeOnVictory "import SuperDeal_Second;SuperDeal_Second.Victory()"
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
+section InitStatus LevelPath
+call SuperDeal_Second.SetVars
+
+section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "SwarmUpgrade2"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call MissionsFuncs.NewCrazyDeal 1 "Stats.Race.Police" 3
+call MissionsFuncs.NewCrazyDeal 2 "Stats.Nurse.Kill" 3
+call MissionsFuncs.NewCrazyDeal 3 "Stats.Possession" 5
+call MissionsFuncs.SetNextSuperDeal "CA" "SuperDeal_Third" "DeathMatch"
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_Second_SystemMessage1"

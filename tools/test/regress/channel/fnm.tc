@@ -1,0 +1,33 @@
+# helpers/fnm.py as channel statements (online mode cases, round 8b): one list of recorded calls (names instead of
+# object reprs), recorders that return fixed values, a list of values in turn or run the real function, the scheduler
+# recorded for one call
+import Scrap, sys
+include fsd
+_nr = []
+_NRec = lambda n, ret=None, fn=None, seq=None: tc_obj(__name__ + '._NRec', {'n': n, 'ret': ret, 'fn': fn, 'seq': seq},
+	lambda *a: (_nr.append((n, _sdn(a))), apply(fn, a) if fn else ((lambda v: (len(seq) > 1 and tc_del(seq, 0), v)[1])(seq[0])
+	if seq else ret))[1])
+_nsaved = {}
+_non = lambda mod, func, ret=None, run=0, seq=None: (_nsaved.has_key((mod, func)) or tc_set(_nsaved, (mod, func),
+	getattr(__import__(mod), func)), setattr(__import__(mod), func, _NRec(mod + '.' + func, ret,
+	run and _nsaved[(mod, func)] or None, seq)), 1)[2]
+_noff = lambda: (map(lambda kf: setattr(__import__(kf[0][0]), kf[0][1], kf[1]), _nsaved.items()), _nsaved.clear(), 1)[2]
+# Scrap.Rand(a, b) as a + frac * (b - a), recorded
+_NRand = lambda frac: tc_obj(__name__ + '._NRand', {'frac': frac},
+	lambda a, b: (_nr.append(('Scrap.Rand', (a, b))), a + frac * (b - a))[1])
+_nrand = lambda frac: (_nsaved.has_key(('Scrap', 'Rand')) or tc_set(_nsaved, ('Scrap', 'Rand'), Scrap.Rand),
+	setattr(Scrap, 'Rand', _NRand(frac)), 1)[2]
+_nsch = lambda t, fn, args, name=None: _nr.append(('sched', round(t - Scrap.GetTime(), 2), _sdn(fn), _sdn(args), name))
+_nm = lambda f, *a: (lambda r: (r[1], _nr))((tc_set(__globals__, '_nr', []),
+	tc_swap(Scrap, 'AddScheduledFunc', _nsch,
+		lambda: tc_catch(lambda: _sdn(apply(f, a)), (), None, lambda t, v: 'error: %s: %s' % (t, v))),
+	Scrap.SetTimeSpeed(1)))
+_nload = lambda names: (Scrap.OpenPack('Scripts/Net'), map(lambda n: (Scrap.PreloadLibrary(n, n + '.pyc'), (lambda m: (n,
+	filter(lambda k: callable(getattr(m, k)) and k[0] != '_', dir(m))))(__import__(n)))[1], names), Scrap.ClosePack())[1]
+_nent = lambda n, vs: (lambda e: [n] + map(lambda v: tc_try(lambda: (v, _sdn(getattr(e, v))), (), (v, '?')), vs)
+	if e else (n, None))(Scrap.GetEntity(n))
+_nmod = lambda m, vs: (lambda mod: map(lambda v: tc_try(lambda: (lambda x: (v, _sdn(x)))((lambda x: map(lambda k: (k, _sdn(x[k])),
+	tc_sorted(x.keys())) if type(x) == type({}) else x)(getattr(mod, v))), (), (v, '?')), vs))(__import__(m))
+# _nbots on the C build: the module made from data/modules/ndeathmatchbots.mod (the pack source runs only in pack runs)
+_nbots = lambda: (Scrap.PreloadLibrary('NDeathMatchBots', 'nmbots.pyc'), (lambda m: filter(lambda k: callable(getattr(m, k))
+	and k[0] != '_', dir(m)))(__import__('NDeathMatchBots')))[1]

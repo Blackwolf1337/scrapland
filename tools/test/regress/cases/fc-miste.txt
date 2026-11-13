@@ -1,0 +1,30 @@
+exec "def _dd(pat):\n\tScrap.StartDummySearch(pat,1)\n\tr = []\n\twhile 1:\n\t\td = Scrap.NextDummySearch()\n\t\tif d == None: return r\n\t\tr.append(d[0])\nimport Init\nInit._dd = _dd"
+exec "def _fn(v):\n\tif type(v) in (type(()), type([])):\n\t\treturn map(_fn, v)\n\tif hasattr(v, '__name__'): return v.__name__\n\treturn v\ndef _di(d):\n\tk = d.keys()\n\tk.sort()\n\treturn map(lambda k, d=d: (k, _fn(d[k])), k)\nimport Init\nInit._fn = _fn\nInit._di = _di\nInit._r = []\ndef _rec(*a, **k):\n\tInit._r.append(a)\n\treturn 1\nInit._rec = _rec\nclass _Rec:\n\tdef __init__(self, n):\n\t\tself.n = n\n\tdef __call__(self, *a, **k):\n\t\tInit._r.append((self.n,) + a + tuple(k.items()))\n\t\treturn 1\nInit._recn = _Rec"
+# Temple: to another level by the teleporter (the load recorded), the cant-drive message
+setattr(__import__('SaveGame'), 'StartGame', __import__('Init')._recn('StartGame'))
+setattr(__import__('SaveGame'), 'MarkWayPoint', __import__('Init')._recn('MarkWayPoint'))
+__import__('Init')._ent('DM_Door_TempleTeleporter_GDB', ('ActCtrl','ArrnOpt','ArrOpt0','UseFunc'))
+setattr(__import__('Chars'), 'CanDrive', lambda u: 0)
+__import__('Elevator').UseElevator('Player0', 'DM_Door_TempleTeleporter_GDB', 'MoveLevel GDB', 'full')
+(Scrap.Get('RemainTalkTime'), __import__('Elevator').LinkedElevator)
+setattr(__import__('Chars'), 'CanDrive', lambda u: 1)
+__import__('Elevator').UseElevator('Player0', 'DM_Door_TempleTeleporter_GDB', 'MoveLevel Bank', 'full')
+__import__('Init')._mod('Elevator', ('LinkedElevator',))
+__import__('Init')._ent('DM_Door_TempleTeleporter_GDB', ('Action','DefLoop','OnObjSlot','ArrowCanUse'))
+__import__('Init')._ent('Player0', ('LinkModel','OffModPos','DeltaOffMul','OffMul','ForceAction','Invulnerable','UsrControl'))
+(SInput.GetActionSet(), Scrap.GetEntity(Scrap.GetCam(0)).EntityLink, __import__('Init')._r)
+!sleep 3
+__import__('Init')._mod('Elevator', ('LinkedElevator',))
+__import__('Init')._ent('DM_Door_TempleTeleporter_GDB', ('Action','DefLoop','OnObjSlot','ArrowCanUse'))
+__import__('Init')._ent('Player0', ('LinkModel','OffModPos','DeltaOffMul','OffMul','ForceAction','Invulnerable','UsrControl'))
+(SInput.GetActionSet(), Scrap.GetEntity(Scrap.GetCam(0)).EntityLink, __import__('Init')._r)
+!sleep 3
+__import__('Init')._mod('Elevator', ('LinkedElevator',))
+__import__('Init')._ent('DM_Door_TempleTeleporter_GDB', ('Action','DefLoop','OnObjSlot','ArrowCanUse'))
+__import__('Init')._ent('Player0', ('LinkModel','OffModPos','DeltaOffMul','OffMul','ForceAction','Invulnerable','UsrControl'))
+(SInput.GetActionSet(), Scrap.GetEntity(Scrap.GetCam(0)).EntityLink, __import__('Init')._r)
+!sleep 4
+__import__('Init')._mod('Elevator', ('LinkedElevator',))
+__import__('Init')._ent('DM_Door_TempleTeleporter_GDB', ('Action','DefLoop','OnObjSlot','ArrowCanUse'))
+__import__('Init')._ent('Player0', ('LinkModel','OffModPos','DeltaOffMul','OffMul','ForceAction','Invulnerable','UsrControl'))
+(SInput.GetActionSet(), Scrap.GetEntity(Scrap.GetCam(0)).EntityLink, __import__('Init')._r)

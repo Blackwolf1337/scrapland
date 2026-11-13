@@ -1,0 +1,36 @@
+# The functions of SuperDeal_First in level ca (the script levels/ca/scripts/superdeal_first.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/ca/superdeal_first.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CombatDeaths" "5"
+call Scrap.SetSaveVar "CombatEnemyType" "BankDirector"
+call Scrap.SetSaveVar "CombatEnemyTypeHead" "CrazyGambler"
+run saveint reputation "BadReputation"
+if $reputation < 2
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealFirstPilot"
+elif $reputation < 4
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealFirstElite"
+else
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealFirstMegaAce"
+end
+call Scrap.SetSaveVar "CombatStartTextCad" "SuperDeal_First_RemoteMessage1"
+call Scrap.SetSaveVar "CombatFinishPlayerWinsTextCad" "SuperDeal_First_RemoteMessage2"
+call Scrap.SetSaveVar "CombatFinishPlayerLoosesTextCad" "SuperDeal_First_RemoteMessage3"
+let executeOnAbort "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')"
+let executeOnVictory "import SuperDeal_First;SuperDeal_First.Victory()"
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
+section InitStatus LevelPath
+call SuperDeal_First.SetVars
+
+section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "VulcanUpgrade2"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call MissionsFuncs.NewCrazyDeal 1 "Stats.Dtritus" 5
+call MissionsFuncs.NewCrazyDeal 2 "Stats.Parking" 3
+call MissionsFuncs.NewCrazyDeal 3 "Stats.Battery" 5
+call MissionsFuncs.SetNextSuperDeal "FZ" "SuperDeal_Second" "MortalRace"
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_First_SystemMessage1"

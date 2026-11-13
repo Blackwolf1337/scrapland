@@ -1,0 +1,161 @@
+# bettysound (the sound script sound/bettysound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/bettysound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes paso-fem-metal1.wav
+	AddSoundRes paso-fem-metal2.wav
+	AddSoundRes mecanismo-betty1.wav
+	AddSoundRes mecanismo-betty2.wav
+	AddSoundRes roce-pelo1.wav
+	AddSoundRes caida-betty.wav
+	AddSoundRes action-betty.wav
+	AddSoundRes esfuerzo-betty.wav
+	AddSoundRes esfuerzo-betty2.wav
+
+section SetSounds
+let act Turn
+call Chars.ActSound $char $act 1 mecanismo-betty1 0.17
+call Chars.ActSound $char $act 7 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 14 mecanismo-betty1 0.17
+call Chars.ActSound $char $act 20 paso-fem-metal2 0.055
+let act Run
+call Chars.ActSound $char $act 1 mecanismo-betty1 0.17 +8
+call Chars.ActSound $char $act 7 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 13 mecanismo-betty2 0.17 +8
+call Chars.ActSound $char $act 19 paso-fem-metal2 0.055
+let act Walk
+call Chars.ActSound $char $act 11 mecanismo-betty1 0.17
+call Chars.ActSound $char $act 17 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 26 mecanismo-betty2 0.17
+call Chars.ActSound $char $act 32 paso-fem-metal2 0.055
+let act Back
+call Chars.ActSound $char $act 1 mecanismo-betty1 0.17 +4
+call Chars.ActSound $char $act 5 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 11 mecanismo-betty2 0.17 +4
+call Chars.ActSound $char $act 17 paso-fem-metal2 0.055
+let act StrLeft
+call Chars.ActSound $char $act 1 mecanismo-betty1 0.2 +4
+call Chars.ActSound $char $act 6 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 11 mecanismo-betty2 0.2 +4
+call Chars.ActSound $char $act 16 paso-fem-metal2 0.055
+let act StrRight
+call Chars.ActSound $char $act 1 mecanismo-betty1 0.17 +4
+call Chars.ActSound $char $act 5 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 11 mecanismo-betty2 0.17 +4
+call Chars.ActSound $char $act 16 paso-fem-metal2 0.055
+let act Relax0
+call Chars.ActSound $char $act 5 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 14 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 55 mecanismo-betty1 0.2 +8
+call Chars.ActSound $char $act 98 mecanismo-betty2 0.2 +7
+call Chars.ActSound $char $act 131 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 173 mecanismo-betty2 0.2 +8
+call Chars.ActSound $char $act 207 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 215 mecanismo-betty2 0.2
+let act Relax1
+call Chars.ActSound $char $act 2 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 12 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 19 roce-pelo1 0.022 +3
+call Chars.ActSound $char $act 21 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 34 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 53 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 60 roce-pelo1 0.022 +4
+call Chars.ActSound $char $act 83 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 109 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 116 paso-fem-metal2 0.055
+let act CrazyInit
+call Chars.ActSound $char $act 3 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 7 mecanismo-betty2 0.2
+let act Crazy
+call Chars.ActSound $char $act 12 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 15 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 20 paso-fem-metal2 0.055
+call Chars.ActSound $char $act 25 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 31 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 33 mecanismo-betty2 0.2
+let act CrazyEnd
+call Chars.ActSound $char $act 40 paso-fem-metal1 0.055
+call Chars.ActSound $char $act 42 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 45 paso-fem-metal2 0.055
+let act FlashedInit
+call Chars.ActSound $char $act 2 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 10 paso-fem-metal2 0.055
+let act FlashedEnd
+call Chars.ActSound $char $act 62 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 73 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 77 paso-fem-metal2 0.055
+let act DazedInit
+call Chars.ActSound $char $act 11 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 15 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 21 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 34 paso-fem-metal2 0.055
+let act DazedEnd
+call Chars.ActSound $char $act 95 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 102 mecanismo-betty1 0.2
+call Chars.ActSound $char $act 113 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 124 paso-fem-metal2 0.055
+let act DiscoverInit
+call Chars.ActSound $char $act 2 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 10 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 13 paso-fem-metal2 0.055
+call Chars.ActSound $char $act 21 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 28 mecanismo-betty2 0.2
+let act Discover
+call Chars.ActSound $char $act 31 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 38 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 44 mecanismo-betty2 0.2
+call Chars.ActSound $char $act 51 mecanismo-betty2 0.2
+let act Action
+call Chars.ActSound $char $act 28 esfuerzo-betty 0.25
+call Chars.ActSound $char $act 42 action-betty 0.5
+call Chars.ActSound $char $act 40 esfuerzo-betty2 0.25
+class
+	FallSound caida-betty
+	FallSoundVol 0.06
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 3 mecanismo-betty2 0.25
+call Chars.ActSound $char $talk 35 mecanismo-betty1 0.25
+
+section Talk1Snd
+call Chars.ActSound $char $talk 1 mecanismo-betty2 0.25
+call Chars.ActSound $char $talk 41 mecanismo-betty1 0.25
+
+section Talk2Snd
+call Chars.ActSound $char $talk 1 mecanismo-betty2 0.25 +7
+call Chars.ActSound $char $talk 8 mecanismo-betty1 0.25 +2
+call Chars.ActSound $char $talk 26 mecanismo-betty2 0.25 +7
+call Chars.ActSound $char $talk 33 mecanismo-betty1 0.25 +7
+call Chars.ActSound $char $talk 44 mecanismo-betty2 0.25 +1
+
+section InitLoops
+
+section Init
+run print "Sounds/Chars/$(char)"
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

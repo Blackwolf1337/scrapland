@@ -1,0 +1,8 @@
+# Press: Boss
+__import__('Boss').ActionPress('Boss_00')
+__import__('Init')._ent('Boss_00', ('Action',))
+(Scrap.UsrEntity(0).isFalling, Scrap.UsrEntity(0).ActionPriority)
+__import__('Boss').BossSpeech('Player0', 'Boss_00', 'Other', 'x')
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams'))
+__import__('Boss').BossSpeech('Player0', 'Boss_00', 'Talk', 'x')
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams'))

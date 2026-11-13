@@ -30,6 +30,9 @@ cMissionScorer *cMissionScorer_ctor(cMissionScorer *self) {
 	cString_ctorStr(&self->forceMap, "");
 	self->font = g_FontHoratio;
 	self->nextText = Lang_GetStr("NextMissionMapText");
+	/* differs from the original: the scripts set only TextRed, TextGreen and TextBlue, the alpha byte stayed what
+	 * the heap held */
+	self->textColor = 0;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	self->tab = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
 	self->tabIndex = 0;

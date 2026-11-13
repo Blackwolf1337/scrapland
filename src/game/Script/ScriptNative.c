@@ -1,0 +1,3047 @@
+/*
+ * The native layer of the script ports (include/scrap/scriptnative.h, docs/objlib-plan.md): C values with the hash,
+ * dict order, repr and literal reader of Python 1.5.2, the errors a native function raises, the engine reads with
+ * their test seams and the mirror of module state in the module dict.
+ */
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "scrap/actions.h"
+#include "scrap/console.h"
+#include "scrap/global.h"
+#include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
+#include "scrap/pyentity.h"
+#include "scrap/scorer.h"
+#include "scrap/scrap.h"
+#include "scrap/script.h"
+#include "scrap/scriptlib.h"
+#include "scrap/scriptmodes.h"
+#include "scrap/scriptnative.h"
+
+/* ---- values ---- */
+
+/* the key of a free slot of a dict, and of a slot whose key was deleted (the dummy of dictobject.c) */
+#define NV_FREE 0xff
+#define NV_DUMMY 0xfe
+/* the digits of a long int this file works with (base 2^15, 3840 bits): a longer one has no hash */
+#define NATIVE_DIGITS 256
+
+static void Native_Clear(nativeVal_t *v, byte type) {
+	v->type = type;
+	v->n = 0;
+	v->max = 0;
+	v->text = NULL;
+	v->items = NULL;
+	v->id = 0;
+	v->ent = NULL;
+	v->ref = NULL;
+}
+
+void Native_SetNone(nativeVal_t *v) {
+	Native_Clear(v, NV_NONE);
+}
+
+void Native_SetInt(nativeVal_t *v, long i) {
+	Native_Clear(v, NV_INT);
+	v->i = i;
+}
+
+void Native_SetFloat(nativeVal_t *v, double f) {
+	Native_Clear(v, NV_FLOAT);
+	v->f = f;
+}
+
+void Native_SetVec(nativeVal_t *v, double x, double y, double z) {
+	Native_Clear(v, NV_VEC);
+	v->v[0] = x;
+	v->v[1] = y;
+	v->v[2] = z;
+}
+
+void Native_SetStr(nativeVal_t *v, const char *s) {
+	Native_Clear(v, NV_STR);
+	Str_Copy(v->s, s, sizeof(v->s));
+	v->n = (int)strlen(v->s);
+}
+
+void Native_SetText(nativeVal_t *v, const char *s, int len) {
+	Native_Clear(v, NV_STR);
+	char *t = v->s;
+	if (len >= NATIVE_TEXT) {
+		v->s[0] = '\0';
+		t = v->text = Mem_Alloc((uint32_t)len + 1);
+	}
+	memcpy(t, s, (size_t)len);
+	t[len] = '\0';
+	v->n = len;
+}
+
+void Native_SetLong(nativeVal_t *v, const char *digits, int len) {
+	Native_SetText(v, digits, len);
+	v->type = NV_LONG;
+}
+
+const char *Native_Text(const nativeVal_t *v) {
+	if (v->type != NV_STR && v->type != NV_LONG) {
+		return "";
+	}
+	return v->text ? v->text : v->s;
+}
+
+void Native_SetEmpty(nativeVal_t *v, nativeType_t type) {
+	Native_Clear(v, (byte)type);
+	/* a dict: the slots used or deleted (ma_fill) */
+	v->i = 0;
+}
+
+nativeVal_t *Native_Append(nativeVal_t *list) {
+	if (list->n == list->max) {
+		list->max = list->max ? list->max * 2 : 4;
+		list->items = Mem_Realloc(list->items, (uint32_t)(list->max * sizeof(nativeVal_t)));
+	}
+	nativeVal_t *v = &list->items[list->n++];
+	Native_SetNone(v);
+	return v;
+}
+
+void Native_Free(nativeVal_t *v) {
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			Native_Free(&v->items[i]);
+		}
+	} else if (v->type == NV_DICT) {
+		for (int i = 0; i < v->max * 2; i++) {
+			if (v->items[i].type != NV_FREE && v->items[i].type != NV_DUMMY) {
+				Native_Free(&v->items[i]);
+			}
+		}
+	}
+	Mem_Free(v->text);
+	Mem_Free(v->items);
+	if (v->ent) {
+		EntRef_Drop(v->ent);
+	}
+	if (v->ref) {
+		NObj_Drop(v->ref);
+	}
+	Native_Clear(v, NV_NONE);
+}
+
+void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
+	*out = *v;
+	if (v->ent) {
+		EntRef_Keep(v->ent);
+	}
+	if (v->ref) {
+		NObj_Keep(v->ref);
+	}
+	if (v->text) {
+		out->text = Mem_Alloc((uint32_t)v->n + 1);
+		memcpy(out->text, v->text, (size_t)v->n + 1);
+	}
+	if (v->items) {
+		/* a list or tuple has max items of room, a dict 2 * max slots (free ones copied as they are) */
+		int n = v->type == NV_DICT ? 2 * v->max : v->max, used = v->type == NV_DICT ? n : v->n;
+		out->items = Mem_Alloc((uint32_t)(n * sizeof(nativeVal_t)));
+		for (int i = 0; i < used; i++) {
+			if (v->items[i].type == NV_FREE) {
+				out->items[i] = v->items[i];
+			} else {
+				Native_Copy(&out->items[i], &v->items[i]);
+			}
+		}
+	}
+}
+
+/* ---- identity ---- */
+
+/* the shared objects of 1.5.2: the small ints (small_ints of intobject.c), the texts of one character and the empty
+ * one (characters and nullstring of stringobject.c), the empty tuple (free_tuples[0]) */
+#define NATIVE_ID_INT 0x100		/* + i + 1 for i from -1 to 99 */
+#define NATIVE_ID_CHAR 0x200		/* + the character */
+#define NATIVE_ID_EMPTY 0x300		/* the empty text */
+#define NATIVE_ID_ETUPLE 0x303
+/* the first id Native_NewId gives */
+#define NATIVE_ID_FIRST 0x1000
+
+static uintptr_t nv_lastId = NATIVE_ID_FIRST;
+/* the interned texts: text -> its id (an int) */
+static nativeVal_t nv_interned;
+
+uintptr_t Native_NewId(void) {
+	return ++nv_lastId;
+}
+
+uintptr_t Native_IdOf(const nativeVal_t *v) {
+	if (v->id) {
+		return v->id;
+	}
+	switch (v->type) {
+	case NV_INT:
+		return v->i >= -1 && v->i < 100 ? (uintptr_t)(NATIVE_ID_INT + v->i + 1) : 0;
+	case NV_STR:
+		return v->n == 0 ? NATIVE_ID_EMPTY : v->n == 1 ? NATIVE_ID_CHAR + (unsigned char)Native_Text(v)[0] : 0;
+	case NV_TUPLE:
+		return v->n == 0 ? NATIVE_ID_ETUPLE : 0;
+	}
+	return 0;
+}
+
+void Native_PinTop(nativeVal_t *v) {
+	if ((v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG || v->type == NV_TUPLE) &&
+		!Native_IdOf(v)) {
+		v->id = Native_NewId();
+	}
+}
+
+void Native_Pin(nativeVal_t *v) {
+	Native_PinTop(v);
+	if (v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			Native_Pin(&v->items[i]);
+		}
+	}
+}
+
+uintptr_t Native_InternId(const char *s, int len) {
+	nativeVal_t key, id;
+	if (len <= 1) {
+		return len ? NATIVE_ID_CHAR + (unsigned char)s[0] : NATIVE_ID_EMPTY;
+	}
+	if (nv_interned.type != NV_DICT) {
+		Native_SetEmpty(&nv_interned, NV_DICT);
+	}
+	Native_SetText(&key, s, len);
+	const nativeVal_t *x = Native_DictGet(&nv_interned, &key);
+	if (x) {
+		Native_Free(&key);
+		return (uintptr_t)x->i;
+	}
+	uintptr_t n = Native_NewId();
+	Native_SetInt(&id, (long)n);
+	Native_DictSet(&nv_interned, &key, &id);
+	return n;
+}
+
+void Native_SetBool(nativeVal_t *v, int t) {
+	Native_SetInt(v, t != 0);
+	v->id = t ? NATIVE_ID_TRUE : NATIVE_ID_FALSE;
+}
+
+byte Native_Is(const nativeVal_t *a, const nativeVal_t *b) {
+	switch (a->type) {
+	case NV_INT:
+	case NV_FLOAT:
+	case NV_STR:
+	case NV_LONG:
+	case NV_TUPLE:
+		if (a->type != b->type) {
+			return 0;
+		}
+		uintptr_t x = Native_IdOf(a);
+		return x && x == Native_IdOf(b);
+	}
+	return NObj_Is(a, b);
+}
+
+void Native_KwOrder(const nativeVal_t *pairs, nativeVal_t *out) {
+	nativeVal_t d, k, v;
+	const nativeVal_t *dk, *dv;
+	int pos = 0;
+	Native_SetEmpty(&d, NV_DICT);
+	for (int i = 0; i < pairs->n; i++) {
+		Native_Copy(&k, &pairs->items[i].items[0]);
+		Native_Copy(&v, &pairs->items[i].items[1]);
+		Native_DictSet(&d, &k, &v);
+	}
+	Native_SetEmpty(out, NV_LIST);
+	while (Native_DictNext(&d, &pos, &dk, &dv)) {
+		nativeVal_t *pair = Native_Append(out);
+		Native_SetEmpty(pair, NV_TUPLE);
+		Native_Copy(Native_Append(pair), dk);
+		Native_Copy(Native_Append(pair), dv);
+	}
+	Native_Free(&d);
+}
+
+byte Native_IsStr(const nativeVal_t *v, const char *text) {
+	return v->type == NV_STR && !strcmp(Native_Text(v), text);
+}
+
+/* a vector is the tuple of three floats the engine gives: its count and items as a tuple's (the item made in *tmp) */
+static byte Native_SeqType(const nativeVal_t *v) {
+	return v->type == NV_VEC ? NV_TUPLE : v->type;
+}
+
+static int Native_Count(const nativeVal_t *v) {
+	return v->type == NV_VEC ? 3 : v->n;
+}
+
+static const nativeVal_t *Native_Item(const nativeVal_t *v, int i, nativeVal_t *tmp) {
+	if (v->type == NV_VEC) {
+		Native_SetFloat(tmp, v->v[i]);
+		return tmp;
+	}
+	return &v->items[i];
+}
+
+/* the digits of a long int from its decimal text, the lowest first: their count, -1 for more than NATIVE_DIGITS */
+static int Native_LongDigits(const char *text, unsigned short *dig) {
+	int n = 0;
+	for (const char *p = text + (*text == '-'); *p; p++) {
+		unsigned long carry = (unsigned long)(*p - '0');
+		for (int i = 0; i < n; i++) {
+			carry += (unsigned long)dig[i] * 10;
+			dig[i] = (unsigned short)(carry & 0x7fff);
+			carry >>= 15;
+		}
+		if (carry) {
+			if (n == NATIVE_DIGITS) {
+				return -1;
+			}
+			dig[n++] = (unsigned short)carry;
+		}
+	}
+	return n;
+}
+
+/* longobject.c Long_AsDouble of the long int text (inf beyond the digits) */
+static double Native_LongDouble(const char *text) {
+	unsigned short dig[NATIVE_DIGITS];
+	int n = Native_LongDigits(text, dig);
+	double x = n < 0 ? HUGE_VAL : 0.0;
+	while (--n >= 0) {
+		x = x * 32768.0 + (double)dig[n];
+	}
+	return *text == '-' ? -x : x;
+}
+
+static byte Native_IsNum(const nativeVal_t *v) {
+	return v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_LONG;
+}
+
+/* numbers as object.c Object_Compare coerces them: an int with a long as two longs, a float with any number as
+ * floats */
+static byte Native_NumEqual(const nativeVal_t *a, const nativeVal_t *b) {
+	if (a->type == NV_LONG || b->type == NV_LONG) {
+		const nativeVal_t *l = a->type == NV_LONG ? a : b, *o = a->type == NV_LONG ? b : a;
+		char t[0x20];
+		switch (o->type) {
+		case NV_LONG:
+			return l->n == o->n && !memcmp(Native_Text(l), Native_Text(o), (size_t)l->n);
+		case NV_INT:
+			snprintf(t, sizeof(t), "%ld", o->i);
+			return !strcmp(t, Native_Text(l));
+		}
+		return Native_LongDouble(Native_Text(l)) == o->f;
+	}
+	if (a->type == NV_INT && b->type == NV_INT) {
+		return a->i == b->i;
+	}
+	return (a->type == NV_INT ? (double)a->i : a->f) == (b->type == NV_INT ? (double)b->i : b->f);
+}
+
+byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b) {
+	if (a->type == NV_REF || b->type == NV_REF) {
+		return NObj_Equal(a, b);
+	}
+	if (Native_IsNum(a) && Native_IsNum(b)) {
+		return Native_NumEqual(a, b);
+	}
+	if (Native_SeqType(a) != Native_SeqType(b)) {
+		return 0;
+	}
+	switch (Native_SeqType(a)) {
+	case NV_NONE:
+		return 1;
+	case NV_STR:
+		return a->n == b->n && !memcmp(Native_Text(a), Native_Text(b), (size_t)a->n);
+	case NV_LIST:
+	case NV_TUPLE:
+		if (Native_Count(a) != Native_Count(b)) {
+			return 0;
+		}
+		for (int i = 0; i < Native_Count(a); i++) {
+			nativeVal_t ta, tb;
+			if (!Native_Equal(Native_Item(a, i, &ta), Native_Item(b, i, &tb))) {
+				return 0;
+			}
+		}
+		return 1;
+	case NV_OBJ:
+		return 1;
+	case NV_ENT:
+		/* the cPyEntity has no compare: a handle is equal only to itself */
+		return a->ent == b->ent;
+	case NV_DICT: {
+		const nativeVal_t *k, *x, *y;
+		int pos = 0;
+		if (a->n != b->n) {
+			return 0;
+		}
+		while (Native_DictNext(a, &pos, &k, &x)) {
+			if (!(y = Native_DictGet(b, k)) || !Native_Equal(x, y)) {
+				return 0;
+			}
+		}
+		return 1;
+	}
+	}
+	return 0;
+}
+
+/* ---- hash and dicts (dictobject.c of 1.5.2) ---- */
+
+/* long_hash over the digits: its "32-bit circular shift" on a C long, as the build's Python computes it */
+static long Native_DigitHash(const unsigned short *dig, int n, byte neg) {
+	long x = 0;
+	while (--n >= 0) {
+		x = (long)((((unsigned long)x << 15) & ~0x7ffful) | ((unsigned long)(x >> 17) & 0x7fff));
+		x = (long)((unsigned long)x + dig[n]);
+	}
+	if (neg) {
+		x = (long)(0ul - (unsigned long)x);
+	}
+	return x == -1 ? -2 : x;
+}
+
+/* float_hash: an integral float beyond 32 bits through the long int longobject.c Long_FromDouble makes of it */
+static long Native_FloatHash(double v) {
+	double intpart, fractpart = modf(v, &intpart);
+	unsigned long x;
+	if (fractpart == 0.0) {
+		if (intpart > 0x7fffffffL || -intpart > 0x7fffffffL) {
+			unsigned short dig[NATIVE_DIGITS];
+			int expo, n = 0;
+			double frac = frexp(v < 0.0 ? -v : v, &expo);
+			if (expo > 0) {
+				n = (expo - 1) / 15 + 1;
+				frac = ldexp(frac, (expo - 1) % 15 + 1);
+				for (int i = n; --i >= 0;) {
+					long bits = (long)frac;
+					dig[i] = (unsigned short)bits;
+					frac = ldexp(frac - (double)bits, 15);
+				}
+			}
+			return Native_DigitHash(dig, n, v < 0.0);
+		}
+		x = (unsigned long)(long)intpart;
+	} else {
+		int expo;
+		fractpart = frexp(fractpart, &expo) * 2147483648.0;
+		long hipart = (long)fractpart;
+		fractpart = (fractpart - (double)hipart) * 2147483648.0;
+		x = (unsigned long)hipart + (unsigned long)(long)fractpart + (unsigned long)(long)intpart +
+			((unsigned long)(long)expo << 15);
+	}
+	return (long)x == -1 ? -2 : (long)x;
+}
+
+/* the object None is, for its address */
+static const char native_none;
+
+byte Native_Hash(const nativeVal_t *v, long *out) {
+	unsigned long x;
+	switch (Native_SeqType(v)) {
+	case NV_NONE:
+		/* the hash of a type without hash and compare: the address of the object (None is one object) */
+		*out = (long)(intptr_t)&native_none;
+		return 1;
+	case NV_INT:
+		*out = v->i == -1 ? -2 : v->i;
+		return 1;
+	case NV_FLOAT:
+		*out = Native_FloatHash(v->f);
+		return 1;
+	case NV_LONG: {
+		unsigned short dig[NATIVE_DIGITS];
+		int n = Native_LongDigits(Native_Text(v), dig);
+		*out = Native_DigitHash(dig, n, *Native_Text(v) == '-');
+		return n >= 0;
+	}
+	case NV_STR: {
+		/* string_hash: the first byte (the 0 after an empty text) shifted, then every byte */
+		const unsigned char *p = (const unsigned char *)Native_Text(v);
+		x = (unsigned long)p[0] << 7;
+		for (int i = 0; i < v->n; i++) {
+			x = (1000003ul * x) ^ p[i];
+		}
+		x ^= (unsigned long)v->n;
+		break;
+	}
+	case NV_TUPLE:
+		x = 0x345678ul;
+		for (int i = 0; i < Native_Count(v); i++) {
+			nativeVal_t tmp;
+			long y;
+			if (!Native_Hash(Native_Item(v, i, &tmp), &y)) {
+				return 0;
+			}
+			x = (1000003ul * x) ^ (unsigned long)y;
+		}
+		x ^= (unsigned long)Native_Count(v);
+		break;
+	case NV_OBJ:
+		return 0;
+	case NV_ENT:
+		/* the pointer hash of a type without hash (object.c) */
+		x = (unsigned long)(uintptr_t)v->ent;
+		break;
+	case NV_REF:
+		return NObj_HashQuiet(v, out);
+	default:
+		return 0;
+	}
+	*out = (long)x == -1 ? -2 : (long)x;
+	return 1;
+}
+
+/* the polynomial of a table of size slots (polys of dictobject.c) */
+static unsigned Native_Poly(int size) {
+	static const unsigned polys[] = { 4 + 3, 8 + 3, 16 + 3, 32 + 5, 64 + 3, 128 + 3, 256 + 29, 512 + 17, 1024 + 9,
+		2048 + 5, 4096 + 83, 8192 + 27, 16384 + 43, 32768 + 3, 65536 + 45, 131072 + 9, 262144 + 39, 524288 + 39,
+		1048576 + 9, 2097152 + 5, 4194304 + 3, 8388608 + 33, 16777216 + 27, 33554432 + 9, 67108864 + 71,
+		134217728 + 39, 268435456 + 9, 536870912 + 5, 1073741824 + 83 };
+	int i = 0;
+	while ((4 << i) < size) {
+		i++;
+	}
+	return polys[i];
+}
+
+/* the slot that holds a key equal to key (same hash and equal), else the slot it goes to (the first deleted one
+ * on its way, else the free one that ends it): lookdict */
+static int Native_Look(const nativeVal_t *d, const nativeVal_t *key, long hash) {
+	unsigned mask = (unsigned)d->max - 1, i = (unsigned)~hash & mask, j = i;
+	unsigned incr = (unsigned)(((unsigned long)hash ^ ((unsigned long)hash >> 3)) & mask);
+	int freeslot = -1;
+	if (!incr) {
+		incr = mask;
+	}
+	for (;;) {
+		const nativeVal_t *k = &d->items[2 * j];
+		long h;
+		if (k->type == NV_FREE) {
+			return freeslot >= 0 ? freeslot : (int)j;
+		}
+		if (k->type == NV_DUMMY) {
+			if (freeslot < 0) {
+				freeslot = (int)j;
+			}
+		} else if (Native_Hash(k, &h) && h == hash && Native_Equal(k, key)) {
+			return (int)j;
+		}
+		/* cycle through GF(2^n) - {0} */
+		j = (i + incr) & mask;
+		incr <<= 1;
+		if (incr > mask) {
+			incr ^= Native_Poly(d->max);
+		}
+	}
+}
+
+/* a table of size free slots */
+static void Native_Table(nativeVal_t *d, int size) {
+	d->items = Mem_Alloc((uint32_t)(size * 2 * sizeof(nativeVal_t)));
+	d->max = size;
+	for (int i = 0; i < size; i++) {
+		Native_Clear(&d->items[2 * i], NV_FREE);
+		Native_Clear(&d->items[2 * i + 1], NV_NONE);
+	}
+}
+
+/* dictresize: the smallest power of 2 from 4 above minused, the keys put in again in slot order */
+static void Native_Resize(nativeVal_t *d, int minused) {
+	nativeVal_t *old = d->items;
+	int oldMax = d->max, size = 4;
+	while (size <= minused) {
+		size <<= 1;
+	}
+	Native_Table(d, size);
+	d->i = d->n;
+	for (int i = 0; i < oldMax; i++) {
+		long h;
+		if (old[2 * i].type != NV_FREE && old[2 * i].type != NV_DUMMY && Native_Hash(&old[2 * i], &h)) {
+			int j = Native_Look(d, &old[2 * i], h);
+			d->items[2 * j] = old[2 * i];
+			d->items[2 * j + 1] = old[2 * i + 1];
+		}
+	}
+	Mem_Free(old);
+}
+
+/* insertdict: key (its hash given) and value moved into the table, which has a free slot */
+static void Native_Insert(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value, long hash) {
+	nativeVal_t *k = &d->items[2 * Native_Look(d, key, hash)];
+	if (k->type == NV_FREE || k->type == NV_DUMMY) {
+		if (k->type == NV_FREE) {
+			d->i++;
+		}
+		*k = *key;
+		d->n++;
+	} else {
+		Native_Free(key);
+	}
+	Native_Free(&k[1]);
+	k[1] = *value;
+	Native_SetNone(key);
+	Native_SetNone(value);
+}
+
+byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value) {
+	long hash;
+	if (!Native_Hash(key, &hash)) {
+		Native_Free(key);
+		Native_Free(value);
+		return 0;
+	}
+	/* dictobject.c Dict_SetItem: from 2/3 filled (deleted slots count) the table grows first, also when the key is
+	 * there already */
+	if (d->i * 3 >= d->max * 2) {
+		Native_Resize(d, d->n * 2);
+	}
+	Native_Insert(d, key, value, hash);
+	return 1;
+}
+
+void Native_DictMerge(nativeVal_t *d, const nativeVal_t *other, byte copy) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	if (copy ? other->n > 0 : (d->i + other->n) * 3 >= d->max * 2) {
+		Native_Resize(d, (copy ? other->n : d->n + other->n) * 3 / 2);
+	}
+	while (Native_DictNext(other, &pos, &k, &x)) {
+		nativeVal_t nk, nx;
+		long hash;
+		if (Native_Hash(k, &hash)) {
+			Native_Copy(&nk, k);
+			Native_Copy(&nx, x);
+			Native_Insert(d, &nk, &nx, hash);
+		}
+	}
+}
+
+nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key) {
+	long hash;
+	if (!d->max || !Native_Hash(key, &hash)) {
+		return NULL;
+	}
+	nativeVal_t *k = &d->items[2 * Native_Look(d, key, hash)];
+	return k->type == NV_FREE || k->type == NV_DUMMY ? NULL : &k[1];
+}
+
+byte Native_DictDel(nativeVal_t *d, const nativeVal_t *key) {
+	nativeVal_t *v = Native_DictGet(d, key);
+	if (!v) {
+		return 0;
+	}
+	/* dictobject.c Dict_DelItem: the slot keeps its place in the probe chains as a dummy, the table does not shrink */
+	Native_Free(v - 1);
+	Native_Free(v);
+	Native_Clear(v - 1, NV_DUMMY);
+	d->n--;
+	return 1;
+}
+
+byte Native_DictNext(const nativeVal_t *d, int *pos, const nativeVal_t **key, const nativeVal_t **value) {
+	while (*pos < d->max && (d->items[2 * *pos].type == NV_FREE || d->items[2 * *pos].type == NV_DUMMY)) {
+		(*pos)++;
+	}
+	if (*pos >= d->max) {
+		return 0;
+	}
+	*key = &d->items[2 * *pos];
+	*value = &d->items[2 * *pos + 1];
+	(*pos)++;
+	return 1;
+}
+
+/* ---- texts of values ---- */
+
+void Native_BufInit(nativeBuf_t *b) {
+	b->p = b->fixed;
+	b->len = 0;
+	b->max = sizeof(b->fixed);
+	b->fixed[0] = '\0';
+}
+
+void Native_BufAdd(nativeBuf_t *b, const char *s, int len) {
+	if (len < 0) {
+		len = (int)strlen(s);
+	}
+	if (b->len + len + 1 > b->max) {
+		int max = b->max * 2;
+		while (b->len + len + 1 > max) {
+			max *= 2;
+		}
+		if (b->p == b->fixed) {
+			b->p = Mem_Alloc((uint32_t)max);
+			memcpy(b->p, b->fixed, (size_t)b->len);
+		} else {
+			b->p = Mem_Realloc(b->p, (uint32_t)max);
+		}
+		b->max = max;
+	}
+	memcpy(b->p + b->len, s, (size_t)len);
+	b->len += len;
+	b->p[b->len] = '\0';
+}
+
+void Native_BufFree(nativeBuf_t *b) {
+	if (b->p != b->fixed) {
+		Mem_Free(b->p);
+	}
+	Native_BufInit(b);
+}
+
+/* floatobject.c Float_AsString (12 digits, ".0" after a text of digits alone), or the 17 digits of check() */
+static void Native_FloatRepr(nativeBuf_t *b, double f, nativeRepr_t mode) {
+	char t[0x40];
+	if (mode == NR_CHECK) {
+		snprintf(t, sizeof(t), "%.17g", f);
+		Native_BufAdd(b, strstr(t, "nan") ? "nan" : t, -1);
+		return;
+	}
+	snprintf(t, sizeof(t), "%.12g", f);
+	const char *c = t + (*t == '-');
+	while (isdigit((unsigned char)*c)) {
+		c++;
+	}
+	Native_BufAdd(b, t, -1);
+	if (!*c) {
+		Native_BufAdd(b, ".0", 2);
+	}
+}
+
+/* string_repr: single quotes, double ones when the text has a single and no double quote (strchr, so up to its first
+ * 0 byte); the quote and the backslash escaped, a byte below 32 or from 127 as \ooo */
+static void Native_TextRepr(nativeBuf_t *b, const char *s, int n) {
+	char q = strchr(s, '\'') && !strchr(s, '"') ? '"' : '\'';
+	int plain = 0;
+	Native_BufAdd(b, &q, 1);
+	for (int i = 0; i <= n; i++) {
+		unsigned char c = i < n ? (unsigned char)s[i] : (unsigned char)q;
+		if (i < n && c != q && c != '\\' && c >= ' ' && c < 0177) {
+			plain++;
+			continue;
+		}
+		Native_BufAdd(b, s + i - plain, plain);
+		plain = 0;
+		if (i < n) {
+			char e[8];
+			if (c == q || c == '\\') {
+				e[0] = '\\';
+				e[1] = (char)c;
+				e[2] = '\0';
+			} else {
+				snprintf(e, sizeof(e), "\\%03o", c);
+			}
+			Native_BufAdd(b, e, -1);
+		}
+	}
+	Native_BufAdd(b, &q, 1);
+}
+
+void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
+	/* items of containers as repr; check() walks only tuples */
+	nativeRepr_t sub = mode == NR_CHECK ? NR_CHECK : NR_REPR;
+	char t[0x20];
+	switch (v->type) {
+	case NV_NONE:
+		Native_BufAdd(b, "None", 4);
+		return;
+	case NV_OBJ:
+		/* the repr of no object */
+		Native_BufAdd(b, "<NULL>", 6);
+		return;
+	case NV_ENT: {
+		/* object.c Object_Repr of a type without repr and str */
+		char at[0x40];
+		snprintf(at, sizeof(at), "<cPyEntity object at %lx>", (long)Native_EntAddr(v));
+		Native_BufAdd(b, at, -1);
+		return;
+	}
+	case NV_REF:
+		/* a repr that fails adds nothing */
+		if (!NObj_Repr(b, v, mode)) {
+			Native_ErrClear();
+		}
+		return;
+	case NV_INT:
+		snprintf(t, sizeof(t), "%ld", v->i);
+		Native_BufAdd(b, t, -1);
+		return;
+	case NV_FLOAT:
+		Native_FloatRepr(b, v->f, mode);
+		return;
+	case NV_LONG:
+		Native_BufAdd(b, Native_Text(v), v->n);
+		Native_BufAdd(b, "L", 1);
+		return;
+	case NV_STR:
+		if (mode == NR_STR) {
+			Native_BufAdd(b, Native_Text(v), v->n);
+		} else {
+			Native_TextRepr(b, Native_Text(v), v->n);
+		}
+		return;
+	case NV_VEC:
+	case NV_TUPLE:
+	case NV_LIST: {
+		byte list = v->type == NV_LIST;
+		Native_BufAdd(b, list ? "[" : "(", 1);
+		for (int i = 0; i < Native_Count(v); i++) {
+			nativeVal_t tmp;
+			if (i) {
+				Native_BufAdd(b, ", ", 2);
+			}
+			Native_Repr(b, Native_Item(v, i, &tmp), list ? NR_REPR : sub);
+		}
+		if (!list && Native_Count(v) == 1 && mode != NR_CHECK) {
+			Native_BufAdd(b, ",", 1);
+		}
+		Native_BufAdd(b, list ? "]" : ")", 1);
+		return;
+	}
+	case NV_DICT: {
+		const nativeVal_t *k, *x;
+		int pos = 0;
+		byte first = 1;
+		Native_BufAdd(b, "{", 1);
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (!first) {
+				Native_BufAdd(b, ", ", 2);
+			}
+			first = 0;
+			Native_Repr(b, k, NR_REPR);
+			Native_BufAdd(b, ": ", 2);
+			Native_Repr(b, x, NR_REPR);
+		}
+		Native_BufAdd(b, "}", 1);
+		return;
+	}
+	}
+}
+
+/*
+ * The literal reader: Script_Literal of ScriptValue.c (which see for the rules of the tokenizer, parsenumber and
+ * parsestr) on native values, the same texts taken. OBJLIB 6: Script_Literal goes over to this one when the data
+ * paths are native (its constants are shared and interned as the compiler does, which Python code can see).
+ */
+#define NLIT_DEPTH NATIVE_DEPTH
+
+typedef struct {
+	const char *p;
+	int depth;
+	const nativeVal_t *none;	/* what the name None gives (NULL: a literal refused) */
+} nativeLit_t;
+
+static byte NLit_Item(nativeLit_t *l, nativeVal_t *out);
+
+static void NLit_Blanks(nativeLit_t *l) {
+	while (*l->p == ' ' || *l->p == '\t') {
+		l->p++;
+	}
+}
+
+/* the end of a token: a blank, a comma, a colon, a closing bracket or the end of the text */
+static byte NLit_End(char c) {
+	return c == '\0' || c == ' ' || c == '\t' || c == ',' || c == ':' || c == ')' || c == ']' || c == '}';
+}
+
+static byte NLit_Digit(char c) {
+	return c >= '0' && c <= '9';
+}
+
+/* 0, 123, 0.5, 12., 1e-05, 2.5E+12, 7L, negative after a '-' (as UNARY_NEGATIVE makes it) */
+static byte NLit_Number(nativeLit_t *l, byte neg, nativeVal_t *out) {
+	const char *s = l->p, *e = s;
+	char buf[66];
+	byte isFloat = 0, isLong = 0;
+	if (*e == '0') {
+		e++;
+	} else {
+		while (NLit_Digit(*e)) {
+			e++;
+		}
+	}
+	if (*e == 'l' || *e == 'L') {
+		isLong = 1;
+		e++;
+	} else {
+		if (*e == '.') {
+			isFloat = 1;
+			for (e++; NLit_Digit(*e); e++) {
+			}
+		}
+		if ((*e == 'e' || *e == 'E') && (isFloat || *s != '0')) {
+			const char *x = e + 1;
+			if (*x == '+' || *x == '-') {
+				x++;
+			}
+			if (!NLit_Digit(*x)) {
+				return 0;
+			}
+			while (NLit_Digit(*x)) {
+				x++;
+			}
+			isFloat = 1;
+			e = x;
+		}
+	}
+	if (!NLit_End(*e) || e - s >= 64) {
+		return 0;
+	}
+	/* a '-' in front of the digits for a long int other than 0 */
+	byte sign = isLong && neg && !(e - s == 2 && *s == '0');
+	buf[0] = '-';
+	memcpy(buf + sign, s, (size_t)(e - s));
+	buf[sign + (e - s)] = '\0';
+	l->p = e;
+	if (isFloat) {
+		Native_SetFloat(out, neg ? -atof(buf) : atof(buf));
+	} else if (isLong) {
+		Native_SetLong(out, buf, sign + (int)(e - s) - 1);
+	} else {
+		char *end;
+		errno = 0;
+		long x = strtol(buf, &end, 10);
+		if (*end || errno) {
+			return 0;
+		}
+		Native_SetInt(out, neg ? -x : x);
+	}
+	return 1;
+}
+
+/* a byte the tokenizer and parsestr keep as it is inside a string without escapes */
+static byte NLit_Plain(unsigned char c) {
+	return c >= 0x20 && c != 0x7f && c != '\\';
+}
+
+/* the escapes of parsestr in s[0:len] (no newline after a backslash) into out: its length */
+static int NLit_Unescape(const char *s, int len, char *out) {
+	const char *end = s + len;
+	char *p = out;
+	while (s < end) {
+		if (*s != '\\') {
+			*p++ = *s++;
+			continue;
+		}
+		s++;
+		switch (*s++) {
+		case '\\': *p++ = '\\'; break;
+		case '\'': *p++ = '\''; break;
+		case '"': *p++ = '"'; break;
+		case 'b': *p++ = '\b'; break;
+		case 'f': *p++ = '\014'; break;
+		case 't': *p++ = '\t'; break;
+		case 'n': *p++ = '\n'; break;
+		case 'r': *p++ = '\r'; break;
+		case 'v': *p++ = '\013'; break;
+		case 'a': *p++ = '\007'; break;
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': {
+			int c = s[-1] - '0';
+			if ('0' <= *s && *s <= '7') {
+				c = (c << 3) + *s++ - '0';
+				if ('0' <= *s && *s <= '7') {
+					c = (c << 3) + *s++ - '0';
+				}
+			}
+			*p++ = (char)c;
+			break;
+		}
+		case 'x':
+			/* every hex digit that follows, the last 8 bits kept */
+			if (isxdigit((unsigned char)*s)) {
+				unsigned int x = 0;
+				do {
+					int c = (unsigned char)*s++;
+					x = (x << 4) & ~0xFu;
+					x += isdigit(c) ? (unsigned int)(c - '0') : islower(c) ? (unsigned int)(10 + c - 'a') :
+						(unsigned int)(10 + c - 'A');
+				} while (isxdigit((unsigned char)*s));
+				*p++ = (char)x;
+				break;
+			}
+			/* fall through */
+		default:
+			*p++ = '\\';
+			*p++ = s[-1];
+			break;
+		}
+	}
+	return (int)(p - out);
+}
+
+/* 'text' or "text", with backslash escapes */
+static byte NLit_String(nativeLit_t *l, nativeVal_t *out) {
+	char q = *l->p;
+	const char *s = l->p + 1, *e = s;
+	byte escapes = 0;
+	if (s[0] == q && s[1] == q) {
+		return 0;
+	}
+	while (*e != q) {
+		if (*e == '\\' && (e[1] == '\\' || NLit_Plain((unsigned char)e[1]))) {
+			/* the tokenizer takes the byte after a backslash as it is, a quote too */
+			escapes = 1;
+			e += 2;
+			continue;
+		}
+		if (!NLit_Plain((unsigned char)*e)) {
+			return 0;
+		}
+		e++;
+	}
+	if (!NLit_End(e[1])) {
+		return 0;
+	}
+	l->p = e + 1;
+	int len = (int)(e - s);
+	if (!escapes) {
+		Native_SetText(out, s, len);
+		return 1;
+	}
+	char tmp[NATIVE_TEXT], *t = len <= (int)sizeof(tmp) ? tmp : Mem_Alloc((uint32_t)len);
+	Native_SetText(out, t, NLit_Unescape(s, len, t));
+	if (t != tmp) {
+		Mem_Free(t);
+	}
+	return 1;
+}
+
+/* the items up to close (')' or ']', '\0' at the top) appended to the list: *commas tells whether a comma came */
+static byte NLit_Items(nativeLit_t *l, char close, nativeVal_t *list, byte *commas) {
+	*commas = 0;
+	NLit_Blanks(l);
+	while (*l->p != close) {
+		if (!NLit_Item(l, Native_Append(list))) {
+			return 0;
+		}
+		NLit_Blanks(l);
+		if (*l->p == ',') {
+			*commas = 1;
+			l->p++;
+			NLit_Blanks(l);
+		} else if (*l->p != close) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* the list of items as eval makes it of them: (x) is x, (x,) and () are tuples */
+static void NLit_Tuple(nativeVal_t *list, byte commas) {
+	if (list->n == 1 && !commas) {
+		nativeVal_t one = list->items[0];
+		list->n = 0;
+		Native_Free(list);
+		*list = one;
+	} else {
+		list->type = NV_TUPLE;
+	}
+}
+
+/* {key: value, ...}: each pair set as STORE_SUBSCR does (an unhashable key fails here and raises in eval) */
+static byte NLit_Dict(nativeLit_t *l, nativeVal_t *out) {
+	byte ok = 1;
+	Native_SetEmpty(out, NV_DICT);
+	l->p++;
+	l->depth++;
+	NLit_Blanks(l);
+	while (ok && *l->p != '}') {
+		nativeVal_t k, v;
+		Native_SetNone(&k);
+		Native_SetNone(&v);
+		ok = NLit_Item(l, &k);
+		if (ok) {
+			NLit_Blanks(l);
+			ok = *l->p == ':';
+		}
+		if (ok) {
+			l->p++;
+			NLit_Blanks(l);
+			ok = NLit_Item(l, &v);
+		}
+		if (!ok) {
+			Native_Free(&k);
+			Native_Free(&v);
+		} else if ((ok = Native_DictSet(out, &k, &v))) {
+			NLit_Blanks(l);
+			if (*l->p == ',') {
+				l->p++;
+				NLit_Blanks(l);
+			} else if (*l->p != '}') {
+				ok = 0;
+			}
+		}
+	}
+	l->depth--;
+	return ok && NLit_End(*++l->p);
+}
+
+/* one value; on failure *out is left for the caller to free */
+static byte NLit_Item(nativeLit_t *l, nativeVal_t *out) {
+	char c = *l->p;
+	if (c == '\'' || c == '"') {
+		return NLit_String(l, out);
+	}
+	if (!strncmp(l->p, "None", 4) && NLit_End(l->p[4])) {
+		l->p += 4;
+		if (!l->none) {
+			return 0;
+		}
+		Native_Copy(out, l->none);
+		return 1;
+	}
+	if (NLit_Digit(c)) {
+		return NLit_Number(l, 0, out);
+	}
+	if (c == '-') {
+		l->p++;
+		NLit_Blanks(l);
+		return NLit_Digit(*l->p) && NLit_Number(l, 1, out);
+	}
+	if (c == '{' && l->depth < NLIT_DEPTH) {
+		return NLit_Dict(l, out);
+	}
+	if ((c != '[' && c != '(') || l->depth >= NLIT_DEPTH) {
+		return 0;
+	}
+	char close = c == '[' ? ']' : ')';
+	byte commas;
+	Native_SetEmpty(out, NV_LIST);
+	l->p++;
+	l->depth++;
+	byte ok = NLit_Items(l, close, out, &commas);
+	l->depth--;
+	if (!ok || !NLit_End(*++l->p)) {
+		return 0;
+	}
+	if (close == ')') {
+		NLit_Tuple(out, commas);
+	}
+	return 1;
+}
+
+byte Native_Literal(const char *s, nativeVal_t *out) {
+	static const nativeVal_t none = { .type = NV_NONE };
+	return Native_LiteralNone(s, &none, out);
+}
+
+byte Native_LiteralNone(const char *s, const nativeVal_t *none, nativeVal_t *out) {
+	nativeLit_t l = { .p = s, .depth = 0, .none = none };
+	byte commas;
+	Native_SetEmpty(out, NV_LIST);
+	if (!s || *s == ' ' || *s == '\t' || *s == '\0' || !NLit_Items(&l, '\0', out, &commas)) {
+		Native_Free(out);
+		return 0;
+	}
+	/* a, b is a tuple, a alone is a */
+	NLit_Tuple(out, commas);
+	return 1;
+}
+
+/* ---- errors (the state: NativeErr.c) ---- */
+
+const char *Native_TypeName(const nativeVal_t *v) {
+	static const char *const names[] = {
+		[NV_NONE] = "None",
+		[NV_INT] = "int",
+		[NV_FLOAT] = "float",
+		[NV_STR] = "string",
+		[NV_VEC] = "tuple",
+		[NV_LONG] = "long int",
+		[NV_LIST] = "list",
+		[NV_TUPLE] = "tuple",
+		[NV_DICT] = "dictionary",
+		[NV_ENT] = "cPyEntity",
+	};
+	if (v->type == NV_REF) {
+		return NObj_TypeName(v);
+	}
+	return v->type == NV_OBJ ? "NULL" : names[v->type];
+}
+
+byte Native_Arity(const char *fname, int n, int min, int max) {
+	if (n >= min && n <= max) {
+		return 1;
+	}
+	int k = n < min ? min : max;
+	return Native_Raise(NE_TYPE, "%s requires %s %d argument%s; %d given", fname ? fname : "function",
+		min == max ? "exactly" : n < min ? "at least" : "at most", k, k == 1 ? "" : "s", n);
+}
+
+byte Native_ArgTextOf(const char *fname, int i, const nativeVal_t *v, byte nul) {
+	const char *expected = "string";
+
+	if (v->type == NV_STR) {
+		if (!nul || strlen(Native_Text(v)) == (size_t)v->n) {
+			return 1;
+		}
+		expected = "string without null bytes";
+	}
+	if (fname) {
+		return Native_Raise(NE_TYPE, "%s, argument %d: expected %s, %s found", fname, i, expected, Native_TypeName(v));
+	}
+	return Native_Raise(NE_TYPE, "argument %d: expected %s, %s found", i, expected, Native_TypeName(v));
+}
+
+byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out) {
+	/* "s" of getargs.c */
+	if (v->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument %d: expected string, %s found", arg, Native_TypeName(v));
+	}
+	if (strlen(Native_Text(v)) != (size_t)v->n) {
+		return Native_Raise(NE_TYPE, "argument %d: expected string without null bytes, string found", arg);
+	}
+	*out = Native_Text(v);
+	return 1;
+}
+
+byte Native_Upper(const nativeVal_t *in, nativeVal_t *out) {
+	/* strop.upper ("t#": any text, 0 bytes too; islower and toupper of the C library) */
+	if (in->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "read-only character buffer, %s", Native_TypeName(in));
+	}
+	const char *t = Native_Text(in);
+	Native_SetText(out, t, in->n);
+	char *o = out->text ? out->text : out->s;
+	for (int i = 0; i < out->n; i++) {
+		int c = (unsigned char)o[i];
+		if (islower(c)) {
+			o[i] = (char)toupper(c);
+		}
+	}
+	return 1;
+}
+
+byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
+	/* strop.split ("t#|z#i": any text, 0 bytes too; maxsplit 0) */
+	if (s->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument 1: expected read-only character buffer, %s found", Native_TypeName(s));
+	}
+	return Native_SplitText(Native_Text(s), s->n, sep, sep ? (int)strlen(sep) : 0, 0, out);
+}
+
+byte Native_SplitText(const char *t, int len, const char *sep, int n, int maxsplit, nativeVal_t *out) {
+	/* split_whitespace and strop_splitfields of stropmodule.c */
+	int i = 0, j = 0, count = 0;
+	nativeVal_t list;
+	if (sep && !n) {
+		return Native_Raise(NE_VALUE, "empty separator");
+	}
+	Native_SetEmpty(&list, NV_LIST);
+	if (!sep) {
+		while (i < len) {
+			while (i < len && isspace((unsigned char)t[i])) {
+				i++;
+			}
+			j = i;
+			while (i < len && !isspace((unsigned char)t[i])) {
+				i++;
+			}
+			if (j < i) {
+				Native_SetText(Native_Append(&list), t + j, i - j);
+				count++;
+				while (i < len && isspace((unsigned char)t[i])) {
+					i++;
+				}
+				if (maxsplit && count >= maxsplit && i < len) {
+					Native_SetText(Native_Append(&list), t + i, len - i);
+					i = len;
+				}
+			}
+		}
+		*out = list;
+		return 1;
+	}
+	while (i + n <= len) {
+		if (t[i] == sep[0] && (n == 1 || !memcmp(t + i, sep, (size_t)n))) {
+			Native_SetText(Native_Append(&list), t + j, i - j);
+			i = j = i + n;
+			if (maxsplit && ++count >= maxsplit) {
+				break;
+			}
+		} else {
+			i++;
+		}
+	}
+	Native_SetText(Native_Append(&list), t + j, len - j);
+	*out = list;
+	return 1;
+}
+
+byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *out) {
+	/* Script_EvalValue: the checks of builtin eval, then the literal after the leading blanks */
+	if (text->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "eval() argument 1 must be string or code object");
+	}
+	const char *s = Native_Text(text);
+	if (strlen(s) != (size_t)text->n) {
+		return Native_Raise(NE_VALUE, "embedded '\\0' in string arg");
+	}
+	if (Native_LiteralText(text, out)) {
+		return 1;
+	}
+	s += strspn(s, " \t");
+	/* a name chain in the module's globals, else the error of a text no reader takes (and its note in the gate log),
+	 * as Script_EvalText gives them; the value in the form a call through Python gave it */
+	nativeVal_t m, v;
+	byte ok = Script_Module(module, &m) && Script_EvalOther(&m, s, &v);
+	Native_Free(&m);
+	if (ok) {
+		NObj_ArgOf(&v, out);
+		Native_Free(&v);
+	}
+	return ok;
+}
+
+byte Native_Len(const nativeVal_t *seq, int *n) {
+	*n = 0;
+	switch (seq->type) {
+	case NV_LIST:
+	case NV_TUPLE:
+	case NV_STR:
+		*n = seq->n;
+		return 1;
+	case NV_VEC:
+		*n = 3;
+		return 1;
+	}
+	return Native_Raise(NE_TYPE, "len() of unsized object");
+}
+
+const nativeVal_t *Native_GetItem(const nativeVal_t *seq, long i, byte subscript, nativeVal_t *tmp) {
+	int n;
+	if (seq->type == NV_DICT && subscript) {
+		/* d[i] */
+		nativeVal_t key;
+		Native_SetInt(&key, i);
+		const nativeVal_t *v = Native_DictGet(seq, &key);
+		if (!v) {
+			Native_RaiseKey(&key);
+		}
+		return v;
+	}
+	if (seq->type == NV_DICT || !Native_Len(seq, &n)) {
+		Native_ErrClear();
+		Native_Raise(NE_TYPE, subscript ? "unsubscriptable object" : "unindexable object");
+		return NULL;
+	}
+	if (i < 0) {
+		i += n;
+	}
+	if (i < 0 || i >= n) {
+		Native_Raise(NE_INDEX, "%s index out of range", seq->type == NV_LIST ? "list" : seq->type == NV_STR ? "string" :
+			"tuple");
+		return NULL;
+	}
+	switch (seq->type) {
+	case NV_STR:
+		Native_SetText(tmp, Native_Text(seq) + i, 1);
+		return tmp;
+	case NV_VEC:
+		Native_SetFloat(tmp, seq->v[i]);
+		return tmp;
+	}
+	return &seq->items[i];
+}
+
+byte Native_Index(long i, int count, int *out) {
+	if (i < 0) {
+		i += count;
+	}
+	if (i < 0 || i >= count) {
+		return Native_Raise(NE_INDEX, "list index out of range");
+	}
+	*out = (int)i;
+	return 1;
+}
+
+byte Native_IntOfText(const char *text, long *out) {
+	/* int_from_string of abstract.c over mystrtoul.c OS_strtol (mystrtoul.c), base 10 */
+	const char *s = text;
+	while (*s && isspace((unsigned char)*s)) {
+		s++;
+	}
+	const char *p = s;
+	char sign = *p;
+	if (sign == '+' || sign == '-') {
+		p++;
+	}
+	unsigned long result = 0;
+	byte range = 0;
+	for (; isdigit((unsigned char)*p); p++) {
+		unsigned long c = (unsigned long)(*p - '0'), prev = result;
+		result = result * 10 + c;
+		if ((long)(result - c) / 10 != (long)prev) {
+			range = 1;
+		}
+	}
+	const char *end = p;
+	if (range) {
+		result = ~0UL;
+	}
+	/* a result that looks negative overflows, except the largest negative long (without the overflow of -v) */
+	byte lowest = sign == '-' && result == (unsigned long)LONG_MAX + 1;
+	long v;
+	if (result > (unsigned long)LONG_MAX && !lowest) {
+		range = 1;
+		v = 0x7fffffff;
+	} else {
+		v = lowest ? LONG_MIN : (long)result;
+	}
+	if (sign == '-' && !lowest) {
+		v = -v;
+	}
+	if (end == s || !isdigit((unsigned char)end[-1])) {
+		return Native_Raise(NE_VALUE, "invalid literal for int(): %.200s", s);
+	}
+	while (*end && isspace((unsigned char)*end)) {
+		end++;
+	}
+	if (*end) {
+		return Native_Raise(NE_VALUE, "invalid literal for int(): %.200s", s);
+	}
+	if (range) {
+		return Native_Raise(NE_VALUE, "int() literal too large: %.200s", s);
+	}
+	*out = v;
+	return 1;
+}
+
+/* ---- operations of the scripts (Objects/ of 1.5.2: the number, sequence and compare rules with their errors) ---- */
+
+
+
+/* the sign of a long int text compared with another (long_compare) */
+static int Native_LongCompare(const char *a, const char *b) {
+	byte na = *a == '-', nb = *b == '-';
+	if (na != nb) {
+		return na ? -1 : 1;
+	}
+	size_t la = strlen(a), lb = strlen(b);
+	int c = la != lb ? (la < lb ? -1 : 1) : strcmp(a, b);
+	c = c < 0 ? -1 : c > 0;
+	return na ? -c : c;
+}
+
+int Native_Compare(const nativeVal_t *a, const nativeVal_t *b) {
+	if (a->type == NV_REF || b->type == NV_REF) {
+		return NObj_Compare(a, b);
+	}
+	if (Native_IsNum(a) && Native_IsNum(b)) {
+		/* coerced: a float with any number as floats, an int with a long as longs */
+		if (a->type == NV_FLOAT || b->type == NV_FLOAT) {
+			double x = a->type == NV_FLOAT ? a->f : a->type == NV_INT ? (double)a->i : Native_LongDouble(Native_Text(a));
+			double y = b->type == NV_FLOAT ? b->f : b->type == NV_INT ? (double)b->i : Native_LongDouble(Native_Text(b));
+			return x < y ? -1 : x > y;
+		}
+		if (a->type == NV_LONG || b->type == NV_LONG) {
+			char ta[0x20], tb[0x20];
+			snprintf(ta, sizeof(ta), "%ld", a->i);
+			snprintf(tb, sizeof(tb), "%ld", b->i);
+			return Native_LongCompare(a->type == NV_LONG ? Native_Text(a) : ta, b->type == NV_LONG ? Native_Text(b) : tb);
+		}
+		return a->i < b->i ? -1 : a->i > b->i;
+	}
+	byte ta = Native_SeqType(a), tb = Native_SeqType(b);
+	if (ta != tb || ta == NV_OBJ) {
+		/* by the names of the types; the numbers are smaller than all others */
+		int c = strcmp(Native_IsNum(a) ? "" : Native_TypeName(a), Native_IsNum(b) ? "" : Native_TypeName(b));
+		return c < 0 ? -1 : c > 0;
+	}
+	switch (ta) {
+	case NV_STR: {
+		int la = a->n, lb = b->n, n = la < lb ? la : lb;
+		int c = n > 0 ? memcmp(Native_Text(a), Native_Text(b), (size_t)n) : 0;
+		if (c) {
+			return c < 0 ? -1 : 1;
+		}
+		return la < lb ? -1 : la > lb;
+	}
+	case NV_LIST:
+	case NV_TUPLE: {
+		int la = Native_Count(a), lb = Native_Count(b);
+		for (int i = 0; i < la && i < lb; i++) {
+			nativeVal_t xa, xb;
+			int c = Native_Compare(Native_Item(a, i, &xa), Native_Item(b, i, &xb));
+			if (c) {
+				return c;
+			}
+		}
+		return la < lb ? -1 : la > lb;
+	}
+	case NV_DICT:
+		/* dict_compare: the lengths first; two different dicts of one length are ordered by their keys and values in
+		 * 1.5.2, here only told apart */
+		if (a->n != b->n) {
+			return a->n < b->n ? -1 : 1;
+		}
+		return Native_Equal(a, b) ? 0 : 1;
+	case NV_ENT:
+		/* object.c Object_Compare of two objects of a type without compare: by their addresses */
+		return a->ent == b->ent ? 0 : (uintptr_t)a->ent < (uintptr_t)b->ent ? -1 : 1;
+	}
+	/* None with None */
+	return 0;
+}
+
+/* the operator text of the errors */
+static const char *Native_OpName(char op) {
+	switch (op) {
+	case '+':
+		return "+";
+	case '-':
+		return "-";
+	case '*':
+		return "*";
+	case '/':
+		return "/";
+	}
+	return "%";
+}
+
+/* int op int of intobject.c (the overflow and division errors, i_divmod's rounding down) */
+static byte Native_IntOp(char op, long a, long b, nativeVal_t *out) {
+	long x;
+	switch (op) {
+	case '+':
+		if (__builtin_add_overflow(a, b, &x)) {
+			return Native_Raise(NE_OVERFLOW, "integer addition");
+		}
+		break;
+	case '-':
+		if (__builtin_sub_overflow(a, b, &x)) {
+			return Native_Raise(NE_OVERFLOW, "integer subtraction");
+		}
+		break;
+	case '*':
+		if (__builtin_mul_overflow(a, b, &x)) {
+			return Native_Raise(NE_OVERFLOW, "integer multiplication");
+		}
+		break;
+	default: {
+		if (b == 0) {
+			return Native_Raise(NE_ZERODIV, "integer division or modulo");
+		}
+		long d = a / b, m = a - d * b;
+		if ((m < 0 && b > 0) || (m > 0 && b < 0)) {
+			m += b;
+			d -= 1;
+		}
+		x = op == '/' ? d : m;
+	}
+	}
+	Native_SetInt(out, x);
+	return 1;
+}
+
+/* float op float of floatobject.c */
+static byte Native_FloatOp(char op, double a, double b, nativeVal_t *out) {
+	double x;
+	switch (op) {
+	case '+':
+		x = a + b;
+		break;
+	case '-':
+		x = a - b;
+		break;
+	case '*':
+		x = a * b;
+		break;
+	case '/':
+		if (b == 0.0) {
+			return Native_Raise(NE_ZERODIV, "float division");
+		}
+		x = a / b;
+		break;
+	default:
+		if (b == 0.0) {
+			return Native_Raise(NE_ZERODIV, "float modulo");
+		}
+		x = fmod(a, b);
+		if (b * x < 0) {
+			x += b;
+		}
+	}
+	Native_SetFloat(out, x);
+	return 1;
+}
+
+/* the items of a and b in a new list or tuple of the type (sq_concat of lists and tuples, a vector as a tuple) */
+static void Native_Join(nativeType_t type, const nativeVal_t *a, const nativeVal_t *b, int times, nativeVal_t *out) {
+	nativeVal_t r, tmp;
+	Native_SetEmpty(&r, type);
+	for (int t = 0; t < times; t++) {
+		for (int i = 0; i < Native_Count(a); i++) {
+			Native_Copy(Native_Append(&r), Native_Item(a, i, &tmp));
+		}
+		for (int i = 0; b && i < Native_Count(b); i++) {
+			Native_Copy(Native_Append(&r), Native_Item(b, i, &tmp));
+		}
+	}
+	*out = r;
+}
+
+/* |x| + |y| or |x| - |y| (|x| >= |y|) of decimal digit texts into r (the digits reversed, their count back) */
+static int Native_DigitsOp(const char *x, int nx, const char *y, int ny, byte sub, char *r) {
+	int carry = 0, n = 0;
+	for (int i = 0; i < nx || i < ny || carry; i++) {
+		int d = (i < nx ? x[nx - 1 - i] - '0' : 0) + (sub ? -1 : 1) * (i < ny ? y[ny - 1 - i] - '0' : 0) + carry;
+		carry = d < 0 ? -1 : d > 9;
+		r[n++] = (char)('0' + (d < 0 ? d + 10 : d % 10));
+	}
+	while (n > 1 && r[n - 1] == '0') {
+		n--;
+	}
+	return n;
+}
+
+/* a + b or a - b of two long int texts into a long int (long_add, long_sub) */
+static void Native_LongAdd(const char *a, const char *b, byte sub, nativeVal_t *out) {
+	byte na = *a == '-', nb = (*b == '-') != sub;
+	a += *a == '-';
+	b += *b == '-';
+	int la = (int)strlen(a), lb = (int)strlen(b);
+	char *r = Mem_Alloc((uint32_t)(la + lb + 3)), *t = Mem_Alloc((uint32_t)(la + lb + 3));
+	int n;
+	byte neg;
+	if (na == nb) {
+		n = Native_DigitsOp(a, la, b, lb, 0, r);
+		neg = na;
+	} else {
+		/* the larger magnitude minus the smaller, with its sign */
+		int c = la != lb ? (la < lb ? -1 : 1) : strcmp(a, b);
+		n = c >= 0 ? Native_DigitsOp(a, la, b, lb, 1, r) : Native_DigitsOp(b, lb, a, la, 1, r);
+		neg = c >= 0 ? na : nb;
+	}
+	int k = 0;
+	if (neg && !(n == 1 && r[0] == '0')) {
+		t[k++] = '-';
+	}
+	while (n > 0) {
+		t[k++] = r[--n];
+	}
+	Native_SetLong(out, t, k);
+	Mem_Free(r);
+	Mem_Free(t);
+}
+
+byte Native_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	byte sa = Native_SeqType(a);
+	if (op == '%' && a->type == NV_STR) {
+		return Native_Format(a, b, out);
+	}
+	if (op == '+' && (sa == NV_STR || sa == NV_LIST || sa == NV_TUPLE)) {
+		/* sq_concat: the other must be of the same type (errors.c Err_BadArgument) */
+		if (Native_SeqType(b) != sa) {
+			return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+		}
+		if (sa == NV_STR) {
+			nativeBuf_t t;
+			Native_BufInit(&t);
+			Native_BufAdd(&t, Native_Text(a), a->n);
+			Native_BufAdd(&t, Native_Text(b), b->n);
+			Native_SetText(out, t.p, t.len);
+			Native_BufFree(&t);
+		} else {
+			Native_Join(sa, a, b, 1, out);
+		}
+		return 1;
+	}
+	if (op == '*') {
+		/* number * sequence is sequence * number; a sequence takes an int to repeat */
+		const nativeVal_t *s = sa == NV_STR || sa == NV_LIST || sa == NV_TUPLE ? a : NULL, *n = b;
+		byte sb = Native_SeqType(b);
+		if (Native_IsNum(a) && (sb == NV_STR || sb == NV_LIST || sb == NV_TUPLE)) {
+			s = b;
+			n = a;
+		}
+		if (s) {
+			if (n->type != NV_INT) {
+				return Native_Raise(NE_TYPE, "can't multiply sequence with non-int");
+			}
+			int times = n->i > 0 ? (int)n->i : 0;
+			if (s->type == NV_STR) {
+				nativeBuf_t t;
+				Native_BufInit(&t);
+				for (int i = 0; i < times; i++) {
+					Native_BufAdd(&t, Native_Text(s), s->n);
+				}
+				Native_SetText(out, t.p, t.len);
+				Native_BufFree(&t);
+			} else {
+				Native_Join(Native_SeqType(s), s, NULL, times, out);
+			}
+			return 1;
+		}
+	}
+	if (!Native_IsNum(a)) {
+		return Native_Raise(NE_TYPE, "bad operand type(s) for %s", Native_OpName(op));
+	}
+	if (!Native_IsNum(b)) {
+		return Native_Raise(NE_TYPE, "number coercion failed");
+	}
+	if (a->type == NV_FLOAT || b->type == NV_FLOAT) {
+		double x = a->type == NV_FLOAT ? a->f : a->type == NV_INT ? (double)a->i : Native_LongDouble(Native_Text(a));
+		double y = b->type == NV_FLOAT ? b->f : b->type == NV_INT ? (double)b->i : Native_LongDouble(Native_Text(b));
+		return Native_FloatOp(op, x, y, out);
+	}
+	if (a->type == NV_LONG || b->type == NV_LONG) {
+		if (op == '+' || op == '-') {
+			char ta[0x20], tb[0x20];
+			snprintf(ta, sizeof(ta), "%ld", a->i);
+			snprintf(tb, sizeof(tb), "%ld", b->i);
+			Native_LongAdd(a->type == NV_LONG ? Native_Text(a) : ta, b->type == NV_LONG ? Native_Text(b) : tb, op == '-', out);
+			return 1;
+		}
+		/* longobject.c (scrap/scriptlib.h) */
+		return Long_Op(op, a, b, out);
+	}
+	return Native_IntOp(op, a->i, b->i, out);
+}
+
+byte Native_ToInt(const nativeVal_t *v, nativeVal_t *out) {
+	switch (v->type) {
+	case NV_INT:
+		Native_SetInt(out, v->i);
+		return 1;
+	case NV_FLOAT: {
+		double x = v->f;
+		if (x < 0 ? (x = ceil(x)) < (double)LONG_MIN : (x = floor(x)) > (double)LONG_MAX) {
+			return Native_Raise(NE_OVERFLOW, "float too large to convert");
+		}
+		Native_SetInt(out, (long)x);
+		return 1;
+	}
+	case NV_LONG: {
+		errno = 0;
+		long l = strtol(Native_Text(v), NULL, 10);
+		if (errno == ERANGE) {
+			return Native_Raise(NE_OVERFLOW, "long int too long to convert");
+		}
+		Native_SetInt(out, l);
+		return 1;
+	}
+	case NV_STR: {
+		/* int_from_string: the literal up to a 0 byte, then the 0 byte itself is the error */
+		long l;
+		if (!Native_IntOfText(Native_Text(v), &l)) {
+			return 0;
+		}
+		if (strlen(Native_Text(v)) != (size_t)v->n) {
+			return Native_Raise(NE_VALUE, "null byte in argument for int()");
+		}
+		Native_SetInt(out, l);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "object can't be converted to int");
+}
+
+byte Native_ToFloat(const nativeVal_t *v, nativeVal_t *out) {
+	switch (v->type) {
+	case NV_INT:
+		Native_SetFloat(out, (double)v->i);
+		return 1;
+	case NV_FLOAT:
+		Native_SetFloat(out, v->f);
+		return 1;
+	case NV_LONG:
+		Native_SetFloat(out, Native_LongDouble(Native_Text(v)));
+		return 1;
+	case NV_STR: {
+		/* float_from_string */
+		const char *s = Native_Text(v), *last = s + v->n;
+		while (*s && isspace((unsigned char)*s)) {
+			s++;
+		}
+		if (!*s) {
+			return Native_Raise(NE_VALUE, "empty string for float()");
+		}
+		char *end;
+		errno = 0;
+		double x = strtod(s, &end);
+		if (end > last) {
+			end = (char *)last;
+		}
+		while (*end && isspace((unsigned char)*end)) {
+			end++;
+		}
+		if (*end) {
+			return Native_Raise(NE_VALUE, "invalid literal for float(): %.200s", s);
+		}
+		if (end != last) {
+			return Native_Raise(NE_VALUE, "null byte in argument for float()");
+		}
+		if (errno) {
+			return Native_Raise(NE_VALUE, "float() literal too large: %.200s", s);
+		}
+		Native_SetFloat(out, x);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "object can't be converted to float");
+}
+
+/* a text, list, tuple or vector */
+static byte Native_IsSeq(const nativeVal_t *v) {
+	byte t = Native_SeqType(v);
+	return t == NV_STR || t == NV_LIST || t == NV_TUPLE;
+}
+
+int Native_ForCount(const nativeVal_t *seq) {
+	if (!Native_IsSeq(seq)) {
+		Native_Raise(NE_TYPE, "loop over non-sequence");
+		return -1;
+	}
+	return Native_Count(seq);
+}
+
+int Native_Size(const nativeVal_t *v) {
+	/* object.c Object_Length: a dict too */
+	if (!Native_IsSeq(v) && v->type != NV_DICT) {
+		Native_Raise(NE_TYPE, "len() of unsized object");
+		return -1;
+	}
+	return Native_Count(v);
+}
+
+byte Native_SeqItem(const nativeVal_t *v, long i, nativeVal_t *out) {
+	nativeVal_t tmp;
+	const nativeVal_t *x = Native_GetItem(v, i, 0, &tmp);
+	if (!x) {
+		return 0;
+	}
+	if (x == &tmp) {
+		*out = tmp;
+	} else {
+		Native_Copy(out, x);
+	}
+	return 1;
+}
+
+byte Native_Subscript(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
+	if (v->type == NV_DICT) {
+		long h;
+		if (!Native_Hash(key, &h)) {
+			return Native_Raise(NE_TYPE, "unhashable type");
+		}
+		const nativeVal_t *x = Native_DictGet(v, key);
+		if (!x) {
+			return Native_RaiseKey(key);
+		}
+		Native_Copy(out, x);
+		return 1;
+	}
+	if (!Native_IsSeq(v)) {
+		return Native_Raise(NE_TYPE, "unsubscriptable object");
+	}
+	if (key->type != NV_INT) {
+		return Native_Raise(NE_TYPE, "sequence index must be integer");
+	}
+	nativeVal_t tmp;
+	const nativeVal_t *x = Native_GetItem(v, key->i, 1, &tmp);
+	if (!x) {
+		return 0;
+	}
+	if (x == &tmp) {
+		*out = tmp;
+	} else {
+		Native_Copy(out, x);
+	}
+	return 1;
+}
+
+byte Native_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {
+	if (!Native_IsSeq(v)) {
+		return Native_Raise(NE_TYPE, "unsliceable object");
+	}
+	/* abstract.c Sequence_GetSlice adds the length to a negative end, the slice clamps */
+	long n = Native_Count(v);
+	lo = lo < 0 ? lo + n : lo;
+	hi = hi < 0 ? hi + n : hi;
+	lo = lo < 0 ? 0 : lo > n ? n : lo;
+	hi = hi < lo ? lo : hi > n ? n : hi;
+	if (v->type == NV_STR) {
+		Native_SetText(out, Native_Text(v) + lo, (int)(hi - lo));
+		return 1;
+	}
+	nativeVal_t r, tmp;
+	Native_SetEmpty(&r, Native_SeqType(v));
+	for (long i = lo; i < hi; i++) {
+		Native_Copy(Native_Append(&r), Native_Item(v, (int)i, &tmp));
+	}
+	*out = r;
+	return 1;
+}
+
+int Native_Contains(const nativeVal_t *seq, const nativeVal_t *x) {
+	if (seq->type == NV_STR) {
+		if (x->type != NV_STR || x->n != 1) {
+			Native_Raise(NE_TYPE, "string member test needs char left operand");
+			return -1;
+		}
+		return memchr(Native_Text(seq), Native_Text(x)[0], (size_t)seq->n) != NULL;
+	}
+	if (!Native_IsSeq(seq)) {
+		Native_Raise(NE_TYPE, "'in' or 'not in' needs sequence right argument");
+		return -1;
+	}
+	for (int i = 0; i < Native_Count(seq); i++) {
+		nativeVal_t tmp;
+		if (!Native_Compare(Native_Item(seq, i, &tmp), x)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* the number of a % argument as formatint ("l") or formatfloat ("d") of 1.5.2 reads it: 0 when it is no number */
+static byte Native_FmtNum(const nativeVal_t *v, byte asLong, long *l, double *d) {
+	switch (v->type) {
+	case NV_INT:
+		*l = v->i;
+		*d = (double)v->i;
+		return 1;
+	case NV_FLOAT:
+		if (asLong) {
+			nativeVal_t i;
+			if (!Native_ToInt(v, &i)) {
+				return 0;
+			}
+			*l = i.i;
+		}
+		*d = v->f;
+		return 1;
+	case NV_LONG:
+		if (asLong) {
+			nativeVal_t i;
+			if (!Native_ToInt(v, &i)) {
+				return 0;
+			}
+			*l = i.i;
+		}
+		*d = Native_LongDouble(Native_Text(v));
+		return 1;
+	}
+	/* getargs.c Arg_Parse "l;int argument required": intobject.c Int_AsLong (floatobject.c Float_AsDouble) set its own
+	 * error first */
+	(void)asLong;
+	return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+}
+
+byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal_t *out) {
+	/* stringobject.c String_Format: a tuple gives the arguments in turn, any other value is the one argument; a dict is
+	 * the mapping of "%(key)" */
+	const char *fmt = Native_Text(format);
+	int fmtcnt = format->n, argidx, arglen;
+	const nativeVal_t *dict = args->type == NV_DICT ? args : NULL;
+	nativeVal_t keyed;
+	byte keyedOwned = 0;
+	nativeBuf_t res;
+	byte ok = 0;
+	if (Native_SeqType(args) == NV_TUPLE) {
+		arglen = Native_Count(args);
+		argidx = 0;
+	} else {
+		arglen = -1;
+		argidx = -2;
+	}
+	Native_BufInit(&res);
+	while (--fmtcnt >= 0) {
+		if (*fmt != '%') {
+			Native_BufAdd(&res, fmt++, 1);
+			continue;
+		}
+		int flags = 0, width = -1, prec = -1, c = 0, fill = ' ', sign = 0, len;
+		const nativeVal_t *v = NULL;
+		nativeVal_t tmp;
+		char tmpbuf[120], cfmt[20];
+		const char *buf = NULL;
+		nativeBuf_t str;
+		byte strUsed = 0;
+		fmt++;
+		/* the next argument (getnextarg) */
+#define NFMT_NEXT() \
+	do { \
+		if (argidx >= arglen) { \
+			Native_Raise(NE_TYPE, "not enough arguments for format string"); \
+			goto error; \
+		} \
+		v = arglen < 0 ? (argidx++, args) : Native_Item(args, argidx++, &tmp); \
+	} while (0)
+		if (*fmt == '(') {
+			if (!dict) {
+				Native_Raise(NE_TYPE, "format requires a mapping");
+				goto error;
+			}
+			const char *keystart = ++fmt;
+			int pcount = 1;
+			--fmtcnt;
+			while (pcount > 0 && --fmtcnt >= 0) {
+				if (*fmt == ')') {
+					--pcount;
+				} else if (*fmt == '(') {
+					++pcount;
+				}
+				fmt++;
+			}
+			if (fmtcnt < 0 || pcount > 0) {
+				Native_Raise(NE_VALUE, "incomplete format key");
+				goto error;
+			}
+			nativeVal_t key;
+			Native_SetText(&key, keystart, (int)(fmt - keystart - 1));
+			if (keyedOwned) {
+				Native_Free(&keyed);
+				keyedOwned = 0;
+			}
+			ok = Native_Subscript(dict, &key, &keyed);
+			Native_Free(&key);
+			if (!ok) {
+				goto error;
+			}
+			ok = 0;
+			keyedOwned = 1;
+			args = &keyed;
+			arglen = -1;
+			argidx = -2;
+		}
+		while (--fmtcnt >= 0) {
+			c = (unsigned char)*fmt++;
+			if (c == '-') {
+				flags |= 1;
+			} else if (c == '+') {
+				flags |= 2;
+			} else if (c == ' ') {
+				flags |= 4;
+			} else if (c == '#') {
+				flags |= 8;
+			} else if (c == '0') {
+				flags |= 16;
+			} else {
+				break;
+			}
+		}
+		if (c == '*') {
+			NFMT_NEXT();
+			if (v->type != NV_INT) {
+				Native_Raise(NE_TYPE, "* wants int");
+				goto error;
+			}
+			width = v->i < 0 ? 0 : (int)v->i;
+			if (--fmtcnt >= 0) {
+				c = (unsigned char)*fmt++;
+			}
+		} else if (isdigit(c)) {
+			width = c - '0';
+			while (--fmtcnt >= 0) {
+				c = (unsigned char)*fmt++;
+				if (!isdigit(c)) {
+					break;
+				}
+				width = width * 10 + (c - '0');
+			}
+		}
+		if (c == '.') {
+			prec = 0;
+			if (--fmtcnt >= 0) {
+				c = (unsigned char)*fmt++;
+			}
+			if (c == '*') {
+				NFMT_NEXT();
+				if (v->type != NV_INT) {
+					Native_Raise(NE_TYPE, "* wants int");
+					goto error;
+				}
+				prec = v->i < 0 ? 0 : (int)v->i;
+				if (--fmtcnt >= 0) {
+					c = (unsigned char)*fmt++;
+				}
+			} else if (isdigit(c)) {
+				prec = c - '0';
+				while (--fmtcnt >= 0) {
+					c = (unsigned char)*fmt++;
+					if (!isdigit(c)) {
+						break;
+					}
+					prec = prec * 10 + (c - '0');
+				}
+			}
+		}
+		if (fmtcnt >= 0 && (c == 'h' || c == 'l' || c == 'L') && --fmtcnt >= 0) {
+			c = (unsigned char)*fmt++;
+		}
+		if (fmtcnt < 0) {
+			Native_Raise(NE_VALUE, "incomplete format");
+			goto error;
+		}
+		if (c != '%') {
+			NFMT_NEXT();
+		}
+		switch (c) {
+		case '%':
+			buf = "%";
+			len = 1;
+			break;
+		case 's':
+			Native_BufInit(&str);
+			strUsed = 1;
+			Native_Repr(&str, v, NR_STR);
+			buf = str.p;
+			len = str.len;
+			if (prec >= 0 && len > prec) {
+				len = prec;
+			}
+			break;
+		case 'i':
+		case 'd':
+		case 'u':
+		case 'o':
+		case 'x':
+		case 'X': {
+			/* set only on the paths that use them; the compiler cannot tell once Native_Raise is in another file */
+			long l = 0;
+			double d = 0.0;
+			if (c == 'i') {
+				c = 'd';
+			}
+			if (!Native_FmtNum(v, 1, &l, &d)) {
+				goto error;
+			}
+			snprintf(cfmt, sizeof(cfmt), "%%%s.%dl%c", flags & 8 ? "#" : "", prec < 0 ? 1 : prec, c);
+			len = snprintf(tmpbuf, sizeof(tmpbuf), cfmt, l);
+			buf = tmpbuf;
+			sign = c == 'd';
+			if (flags & 16) {
+				fill = '0';
+				if ((flags & 8) && (c == 'x' || c == 'X') && buf[0] == '0' && buf[1] == c) {
+					Native_BufAdd(&res, buf, 2);
+					buf += 2;
+					len -= 2;
+					width = width - 2 < 0 ? 0 : width - 2;
+				}
+			}
+			break;
+		}
+		case 'e':
+		case 'E':
+		case 'f':
+		case 'g':
+		case 'G': {
+			long l = 0;
+			double d = 0.0;
+			if (!Native_FmtNum(v, 0, &l, &d)) {
+				goto error;
+			}
+			int p = prec < 0 ? 6 : prec > 50 ? 50 : prec;
+			snprintf(cfmt, sizeof(cfmt), "%%%s.%d%c", flags & 8 ? "#" : "", p, c == 'f' && fabs(d) / 1e25 >= 1e25 ? 'g' : c);
+			len = snprintf(tmpbuf, sizeof(tmpbuf), cfmt, d);
+			buf = tmpbuf;
+			sign = 1;
+			if (flags & 16) {
+				fill = '0';
+			}
+			break;
+		}
+		case 'c':
+			if (v->type == NV_STR && v->n == 1) {
+				tmpbuf[0] = Native_Text(v)[0];
+			} else if (v->type == NV_INT && v->i >= 0 && v->i <= 255) {
+				tmpbuf[0] = (char)v->i;
+			} else {
+				Native_Raise(NE_TYPE, "%%c requires int or char");
+				goto error;
+			}
+			buf = tmpbuf;
+			len = 1;
+			break;
+		default:
+			Native_Raise(NE_VALUE, "unsupported format character '%c' (0x%x)", c, c);
+			goto error;
+		}
+		if (sign) {
+			if (*buf == '-' || *buf == '+') {
+				sign = *buf++;
+				len--;
+			} else {
+				sign = flags & 2 ? '+' : flags & 4 ? ' ' : 0;
+			}
+		}
+		if (width < len) {
+			width = len;
+		}
+		if (sign) {
+			if (fill != ' ') {
+				char sc = (char)sign;
+				Native_BufAdd(&res, &sc, 1);
+			}
+			if (width > len) {
+				width--;
+			}
+		}
+		if (width > len && !(flags & 1)) {
+			char fc = (char)fill;
+			do {
+				Native_BufAdd(&res, &fc, 1);
+			} while (--width > len);
+		}
+		if (sign && fill == ' ') {
+			char sc = (char)sign;
+			Native_BufAdd(&res, &sc, 1);
+		}
+		Native_BufAdd(&res, buf, len);
+		while (--width >= len) {
+			Native_BufAdd(&res, " ", 1);
+		}
+		if (strUsed) {
+			Native_BufFree(&str);
+		}
+		if (dict && argidx < arglen && c != '%') {
+			Native_Raise(NE_TYPE, "not all arguments converted");
+			goto error;
+		}
+#undef NFMT_NEXT
+	}
+	if (argidx < arglen && !dict) {
+		Native_Raise(NE_TYPE, "not all arguments converted");
+		goto error;
+	}
+	Native_SetText(out, res.p, res.len);
+	ok = 1;
+error:
+	Native_BufFree(&res);
+	if (keyedOwned) {
+		Native_Free(&keyed);
+	}
+	return ok;
+}
+
+/* ---- the engine ---- */
+
+byte Native_NullResult(void) {
+	return Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
+}
+
+byte Native_EntRead(cEntity *e, const char *name, nativeVal_t *out) {
+	/* the values start at 0 (the original leaves them unset: a get of SwDthTime writes the value into the missile,
+	 * which was stack garbage), the types in this order */
+	int i = 0;
+	double d = 0.0, x = 0.0, y = 0.0, z = 0.0;
+	char *s = NULL;
+	if (Entity_VarI(e, name, &i, 0)) {
+		Native_SetInt(out, i);
+	} else if (Entity_VarF(e, name, &d, 0)) {
+		Native_SetFloat(out, d);
+	} else if (Entity_VarV(e, name, &x, &y, &z, 0)) {
+		Native_SetVec(out, x, y, z);
+	} else if (Entity_VarS(e, name, &s, 0)) {
+		if (s) {
+			Native_SetText(out, s, (int)strlen(s));
+		} else {
+			Native_SetNone(out);
+		}
+	} else {
+		return 0;
+	}
+	return 1;
+}
+
+byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out) {
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
+	if (!Native_EntRead(e, name, out)) {
+		/* no variable: the handle looks for a method of that name (none is a variable name of the ports) */
+		Con_Errorf("'%s'->%s : Member invalid.\n", ref, name);
+		return Native_Raise(NE_ATTRIBUTE, "%s", name);
+	}
+	if (out->text) {
+		/* the short form the ports take */
+		nativeVal_t whole = *out;
+		Native_SetStr(out, whole.text);
+		Native_Free(&whole);
+	}
+	return 1;
+}
+
+/* the number of a value as the "i" (int 0) or "d" (int 1) of getargs.c Arg_Parse reads it (intobject.c Int_AsLong and
+ * floatobject.c Float_AsDouble of 1.5.2 through the number methods, no range check for "i"): 0 when it reads none */
+static byte Native_ArgNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
+	switch (v->type) {
+	case NV_INT:
+		*i = (int)v->i;
+		*d = (double)v->i;
+		return 1;
+	case NV_FLOAT:
+		if (!asDouble && (v->f < (double)LONG_MIN || v->f > (double)LONG_MAX)) {
+			/* float_int: "float too large to convert" */
+			return 0;
+		}
+		*i = (int)(long)v->f;
+		*d = v->f;
+		return 1;
+	case NV_LONG: {
+		/* longobject.c Long_AsLong and longobject.c Long_AsDouble: the value must fit */
+		errno = 0;
+		const char *t = Native_Text(v);
+		long l = strtol(t, NULL, 10);
+		if (!asDouble && errno == ERANGE) {
+			return 0;
+		}
+		*i = (int)l;
+		/* longobject.c Long_AsDouble of 1.5.2 has no overflow check (inf) */
+		*d = strtod(t, NULL);
+		return 1;
+	}
+	}
+	return 0;
+}
+
+
+byte Native_ArgDouble(const nativeVal_t *v, double *out) {
+	int i;
+	if (!Native_ArgNum(v, 1, out, &i)) {
+		/* floatobject.c Float_AsDouble of a value without number methods */
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	}
+	return 1;
+}
+
+byte Native_ArgInt(const nativeVal_t *v, int *out) {
+	double d;
+	if (!Native_ArgNum(v, 0, &d, out)) {
+		/* intobject.c Int_AsLong: the OverflowError of longobject.c Long_AsLong and float_int for a long int or a float
+		 * beyond a long, the TypeError of a value without number methods */
+		if (v->type == NV_LONG) {
+			return Native_Raise(NE_OVERFLOW, "long int too long to convert");
+		}
+		if (v->type == NV_FLOAT) {
+			return Native_Raise(NE_OVERFLOW, "float too large to convert");
+		}
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	}
+	return 1;
+}
+
+byte Native_True(const nativeVal_t *v) {
+	switch (v->type) {
+	case NV_INT:
+		return v->i != 0;
+	case NV_FLOAT:
+		return v->f != 0.0;
+	case NV_STR:
+	case NV_LIST:
+	case NV_TUPLE:
+	case NV_DICT:
+		return v->n != 0;
+	case NV_LONG:
+		return strcmp(Native_Text(v), "0") != 0;
+	case NV_VEC:
+		return 1;
+	case NV_ENT:
+		return 1;
+	case NV_REF:
+		return NObj_True(v);
+	}
+	return 0;
+}
+
+/* the number of a value an entity variable is set from: Native_ArgNum, an object through its number methods (an
+ * instance's __int__ and __float__): 0 without an error when it reads none */
+static byte Native_EntNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
+	long l;
+	if (!Native_IsObj(v)) {
+		return Native_ArgNum(v, asDouble, d, i);
+	}
+	if (v->type != NV_REF || !(asDouble ? Lib_AsDouble(v, d) : Lib_AsLong(v, &l))) {
+		Native_ErrClear();
+		return 0;
+	}
+	if (!asDouble) {
+		*i = (int)l;
+	}
+	return 1;
+}
+
+byte Native_EntStore(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
+	/* getargs.c Arg_Parse of the value as "i", "d", the tuple "ddd" and "s" in the original */
+	byte parsed = 0;
+	double d, x[3];
+	int i;
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
+		return 0;
+	}
+	if (Native_EntNum(v, 0, &d, &i)) {
+		parsed = 1;
+		if (Entity_VarI(e, name, &i, 1)) {
+			return 1;
+		}
+	}
+	if (Native_EntNum(v, 1, &d, &i)) {
+		parsed = 1;
+		if (Entity_VarF(e, name, &d, 1)) {
+			return 1;
+		}
+	}
+	byte vec = v->type == NV_VEC;
+	if (vec) {
+		x[0] = v->v[0];
+		x[1] = v->v[1];
+		x[2] = v->v[2];
+	} else if (v->type == NV_TUPLE && v->n == 3) {
+		vec = 1;
+		for (int k = 0; vec && k < 3; k++) {
+			vec = Native_EntNum(&v->items[k], 1, &x[k], &i);
+		}
+	}
+	if (vec) {
+		parsed = 1;
+		if (Entity_VarV(e, name, &x[0], &x[1], &x[2], 1)) {
+			return 1;
+		}
+	}
+	/* "s": a text without 0 bytes */
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		char *s = (char *)Native_Text(v);
+		if (Entity_VarS(e, name, &s, 1)) {
+			return 1;
+		}
+	} else if (!parsed) {
+		Con_Errorf("'%s'->%s : Invalid type.\n", ref, name);
+		return 0;
+	}
+	Con_Errorf("'%s'->%s : Member invalid.\n", ref, name);
+	return 0;
+}
+
+byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
+	/* the attribute set gives -1 without an exception: ceval's SystemError */
+	return Native_EntStore(e, ref, name, v) || Native_Raise(NE_SYSTEM, "error return without exception set");
+}
+
+int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
+	int n = (int)strlen(fmt);
+	CHECK(n <= NATIVE_ARGS);
+	for (int i = 0; i < n; i++) {
+		a[i].type = fmt[i];
+		switch (fmt[i]) {
+		case 'v':
+		case 'r':
+			a[i].v = va_arg(va, const nativeVal_t *);
+			break;
+		case 'i':
+			a[i].i = va_arg(va, long);
+			break;
+		case 'd':
+			a[i].d = va_arg(va, double);
+			break;
+		case 's':
+			a[i].s = va_arg(va, const char *);
+			break;
+		}
+	}
+	return n;
+}
+
+byte Native_NativeVar(const char *module, const char *name, nativeVal_t *f) {
+	modVarRef_t ref;
+	/* a loaded pack module only (no import here); its global and its attribute are the same variable */
+	if (!ModVar_Named(module, &ref) || !ModVar_GetVal(&ref, name, f)) {
+		Native_SetNone(f);
+		return 0;
+	}
+	if (NObj_Native(f) && !NObj_PortRef(f)) {
+		return 1;
+	}
+	Native_Free(f);
+	return 0;
+}
+
+byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	nativeVal_t f;
+	va_start(va, fmt);
+	byte ok = ModVar_ModAttrVal(module, name, &f) && Port_NativeCallVa(&f, out, fmt, va);
+	va_end(va);
+	Native_Free(&f);
+	return ok;
+}
+
+byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	nativeVal_t f;
+	va_start(va, fmt);
+	byte ok = ModVar_GlobalVal(module, name, &f) && Port_NativeCallVa(&f, out, fmt, va);
+	va_end(va);
+	Native_Free(&f);
+	return ok;
+}
+
+byte Native_GetEntity(const nativeVal_t *name, cEntity **out) {
+	const char *s;
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	*out = World_FindEntity(s);
+	return 1;
+}
+
+byte Native_ActClass(const char *name) {
+	CHECK(g_pActClassList);
+	g_pAuxActClass = cActClassList_Get(g_pActClassList, name);
+	return g_pAuxActClass != NULL;
+}
+
+void Native_ActAction(const char *name) {
+	if (!g_pAuxActClass) {
+		Con_Debugf("Caution: SAct.GetAction(): AuxActClass not defined.\n");
+		return;
+	}
+	g_pAuxAction = cActClass_GetAction(g_pAuxActClass, name);
+}
+
+void Native_ActVar(const char *name, nativeVal_t *out) {
+	/* GetVar of SActPy.c on the current action */
+	char *s = NULL;
+	double d = 0.0;
+	int i = 0;
+	Native_SetNone(out);
+	if (!g_pAuxAction) {
+		Con_Debugf("Caution: SAct.GetAct('%s'): AuxActClass not defined.\n", name);
+		return;
+	}
+	switch (cAction_Var(g_pAuxAction, name, 0, &s, &d, &i)) {
+	case ACTVAR_STRING:
+		if (s) {
+			Native_SetText(out, s, (int)strlen(s));
+		}
+		return;
+	case ACTVAR_DOUBLE:
+		Native_SetFloat(out, d);
+		return;
+	case ACTVAR_INT:
+		Native_SetInt(out, i);
+		return;
+	}
+	Con_Debugf("Caution: SAct.GetAct('%s'): element not found.\n", name);
+}
+
+/* SetVar of SActPy.c: "ss", else "sd" (the int cut from the number); 0 when the value is neither (no error set) */
+static byte Native_ActSetVar(int (*var)(void *obj, const char *name, int set, char **s, double *d, int *i), void *obj,
+	const char *name, const nativeVal_t *v) {
+	double d;
+	int i;
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		char *s = (char *)Native_Text(v);
+		var(obj, name, 1, &s, NULL, NULL);
+		return 1;
+	}
+	if (!Native_ArgNum(v, 1, &d, &i)) {
+		return 0;
+	}
+	i = (int)d;
+	var(obj, name, 1, NULL, &d, &i);
+	return 1;
+}
+
+void Native_ActSet(const char *name, const nativeVal_t *v) {
+	if (!g_pAuxAction || !Native_ActSetVar((int (*)(void *, const char *, int, char **, double *, int *))cAction_Var,
+		g_pAuxAction, name, v)) {
+		Con_Debugf("Caution: SAct.SetAct(): AuxActClass not defined.\n");
+	}
+}
+
+byte Native_ClsSet(const char *name, const nativeVal_t *v) {
+	if (!g_pAuxActClass) {
+		Con_Print(CON_COLOR_ERROR, "ERROR SAct.SetCls(): AuxActClass not defined.\n", 0);
+		return Native_NullResult();
+	}
+	return Native_ActSetVar((int (*)(void *, const char *, int, char **, double *, int *))cActClass_Var, g_pAuxActClass,
+		name, v) || Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+}
+
+/* GVarValue of Scrap.Get (def 0) and Scrap.Def (def 1) */
+static byte Native_GVarValue(const char *name, byte def, nativeVal_t *out) {
+	cGVar *v = GVar_Find(name);
+	if (!v) {
+		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
+		return Native_NullResult();
+	}
+	switch (v->base.type) {
+	case GVAR_STRING: {
+		/* modsupport.c BuildValue "s" of NULL is None */
+		const char *str = def ? v->def.s : v->value.s;
+		if (str) {
+			Native_SetText(out, str, (int)strlen(str));
+		} else {
+			Native_SetNone(out);
+		}
+		return 1;
+	}
+	case GVAR_INT:
+		Native_SetInt(out, def ? v->def.i : v->value.i);
+		return 1;
+	case GVAR_FLOAT:
+		Native_SetFloat(out, (double)(def ? v->def.f : v->value.f));
+		return 1;
+	case GVAR_FUNCTION:
+		Native_SetStr(out, "<function>");
+		return 1;
+	case GVAR_SCRIPT_FUNCTION:
+		Native_SetStr(out, "<Script function>");
+		return 1;
+	}
+	CHECK(0);
+	return 0;
+}
+
+byte Native_GVarGet(const char *name, nativeVal_t *out) {
+	return Native_GVarValue(name, 0, out);
+}
+
+byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out) {
+	/* "s|i", n 3 when not given */
+	char ids[LANG_ENTRIES][LANG_ID];
+	const char *s;
+	nativeHook_t hook;
+	Native_SetNone(out);
+	int seam = Native_Seam("Scrap", "GetLangEntries", &hook);
+	if (seam) {
+		return seam > 0 && (n < 0 ? Native_HookCall(&hook, out, "v", name) : Native_HookCall(&hook, out, "vi", name, (long)n));
+	}
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	int count = Lang_GetEntries(s, n < 0 ? 3 : n, ids);
+	Native_SetEmpty(out, NV_LIST);
+	for (int i = 0; i < count; i++) {
+		Native_SetText(Native_Append(out), ids[i], (int)strlen(ids[i]));
+	}
+	return 1;
+}
+
+int Native_GVarStore(const char *name, const nativeVal_t *v) {
+	/* Scrap.Set: "ss", else "sd" */
+	double d;
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		return GVar_SetStr(name, Native_Text(v));
+	}
+	return Native_ArgDouble(v, &d) ? GVar_SetNum(name, d) : -2;
+}
+
+byte Native_GVarSet(const char *name, const nativeVal_t *v) {
+	/* a variable of another type or no variable gives NULL without an exception */
+	nativeHook_t hook;
+	int seam = Native_Seam("Scrap", "Set", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(&hook, NULL, "sv", name, v);
+	}
+	int r = Native_GVarStore(name, v);
+	return r == -2 ? 0 : r < 0 ? Native_NullResult() : 1;
+}
+
+byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v) {
+	nativeHook_t hook;
+	int seam = Native_Seam("SScorer", "Set", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(&hook, NULL, "issv", (long)id, item, var, v);
+	}
+	int r;
+	return Native_ScorerStore(id, item, var, v, &r) >= 0;
+}
+
+int Native_ScorerStore(int id, const char *item, const char *var, const nativeVal_t *v, int *r) {
+	/* SScorer.Set: "isss", else "issd" (the int the double cut) */
+	double d = 0.0;
+	int i = 0;
+	char *s = NULL;
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		s = (char *)Native_Text(v);
+	} else if (Native_ArgDouble(v, &d)) {
+		i = (int)d;
+	} else {
+		return -1;
+	}
+	cScorer *sc = Scorer_Get(id);
+	cScorerItem *it = sc ? cScorer_FindItem(sc, item) : NULL;
+	if (!it) {
+		return 0;
+	}
+	*r = s ? ScorerItem_Var(it, var, 1, &s, NULL, NULL) : ScorerItem_Var(it, var, 1, NULL, &d, &i);
+	return 1;
+}
+
+int Native_NetOff(void) {
+	nativeHook_t hook;
+	nativeVal_t flags, off;
+	int s = Native_Seam("Scrap", "GetNetFlags", &hook);
+	if (s == 0) {
+		return (g_pApp->flags & 7) == 0;
+	}
+	if (s < 0 || !Native_HookCall(&hook, &flags, "")) {
+		return -1;
+	}
+	/* GetNetFlags() == (0, 0, 0) with what the test put there */
+	Native_SetEmpty(&off, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		Native_SetInt(Native_Append(&off), 0);
+	}
+	int r = Native_Equal(&flags, &off);
+	Native_Free(&off);
+	Native_Free(&flags);
+	return r;
+}
+
+int Native_NetFlag(int i) {
+	nativeHook_t hook;
+	nativeVal_t flags, k, f;
+	int s = Native_Seam("Scrap", "GetNetFlags", &hook);
+	if (s == 0) {
+		return (int)(g_pApp->flags >> i & 1);
+	}
+	if (s < 0 || !Native_HookCall(&hook, &flags, "")) {
+		return -1;
+	}
+	Native_SetInt(&k, i);
+	int r = NObj_GetItem(&flags, &k, &f) ? Mode_Truth(&f) : -1;
+	Native_Free(&f);
+	Native_Free(&flags);
+	return r;
+}
+
+/* ---- module state mirrored into the module dict ---- */
+
+/* the short forms of a variable's value: None, an int, a float, a text shorter than NATIVE_TEXT without 0 bytes, a
+ * vector of a tuple of three numbers, when its type is one of types: 1 with *out, else 0 without an error */
+static byte Native_TakeShort(const nativeVal_t *v, unsigned types, nativeVal_t *out) {
+	double x[3];
+	if (v->type == NV_NONE && types & 1u << NV_NONE) {
+		Native_SetNone(out);
+	} else if (v->type == NV_INT && types & 1u << NV_INT) {
+		Native_SetInt(out, v->i);
+	} else if (v->type == NV_FLOAT && types & 1u << NV_FLOAT) {
+		Native_SetFloat(out, v->f);
+	} else if (v->type == NV_STR && types & 1u << NV_STR && v->n < NATIVE_TEXT &&
+		(int)strlen(Native_Text(v)) == v->n) {
+		Native_SetStr(out, Native_Text(v));
+	} else if (v->type == NV_VEC && types & 1u << NV_VEC) {
+		Native_SetVec(out, v->v[0], v->v[1], v->v[2]);
+	} else if (v->type == NV_TUPLE && v->n == 3 && types & 1u << NV_VEC) {
+		for (int i = 0; i < 3; i++) {
+			if (!Native_ArgDouble(&v->items[i], &x[i])) {
+				Native_ErrClear();
+				return 0;
+			}
+		}
+		Native_SetVec(out, x[0], x[1], x[2]);
+	} else {
+		return 0;
+	}
+	return 1;
+}
+
+/* v holds an object, also inside a tuple */
+static byte Native_HoldsData(const nativeVal_t *v) {
+	if (v->type == NV_REF) {
+		return 1;
+	}
+	for (int i = 0; v->type == NV_TUPLE && i < v->n; i++) {
+		if (Native_HoldsData(&v->items[i])) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* a variable's value v into *out (what *out owned is freed first) as the mirror takes it: a number, text or None of
+ * the types as it is, a value that holds objects by NObj_ArgOf (types with NV_OBJ) or NObj_Plain, a tuple of plain
+ * values when the types take tuples, the short forms, else a long int, list, tuple or dict of the types by value */
+static byte Native_TakeVal(const nativeVal_t *v, unsigned types, nativeVal_t *out) {
+	Native_Free(out);
+	if ((v->type == NV_NONE || v->type == NV_INT || v->type == NV_FLOAT ||
+		(v->type == NV_STR && v->n < NATIVE_TEXT && (int)strlen(Native_Text(v)) == v->n)) && types & 1u << v->type) {
+		Native_Copy(out, v);
+		out->id = 0;
+		return 1;
+	}
+	if (Native_HoldsData(v)) {
+		if (types & 1u << NV_OBJ) {
+			NObj_ArgOf(v, out);
+			return 1;
+		}
+		if (NObj_Plain(v, out) && types & 1u << out->type) {
+			return 1;
+		}
+		Native_Free(out);
+		return 0;
+	}
+	/* a tuple of three ints stays a tuple of ints where tuples are taken (the short forms would make it a vector) */
+	if (types & 1u << NV_TUPLE && (v->type == NV_TUPLE || v->type == NV_VEC)) {
+		if (NObj_Plain(v, out)) {
+			return 1;
+		}
+		if (types & 1u << NV_OBJ) {
+			NObj_ArgOf(v, out);
+			return 1;
+		}
+		return 0;
+	}
+	if (Native_TakeShort(v, types, out)) {
+		return 1;
+	}
+	if (types & 1u << NV_OBJ) {
+		NObj_ArgOf(v, out);
+		return 1;
+	}
+	if (!(types & (1u << NV_LONG | 1u << NV_LIST | 1u << NV_TUPLE | 1u << NV_DICT)) || !NObj_Plain(v, out)) {
+		return 0;
+	}
+	if (types & 1u << out->type) {
+		return 1;
+	}
+	Native_Free(out);
+	return 0;
+}
+
+/* v holds a list of n items */
+static byte Native_IsListOf(const nativeVal_t *v, int n) {
+	return NObj_Kind(v) == NO_LIST && NObj_Len(v) == n;
+}
+
+/* the variable of module: a missing one is the AttributeError of a module attribute (global 0) or the NameError of a
+ * global the script reads (global 1) */
+static byte Native_Var(const char *module, const char *name, byte global, nativeVal_t *out) {
+	return global ? ModVar_GlobalVal(module, name, out) : ModVar_ModAttrVal(module, name, out);
+}
+
+byte Native_VarTake(const char *module, const char *name, byte global, unsigned types, nativeVal_t *out) {
+	nativeVal_t o;
+	if (!Native_Var(module, name, global, &o)) {
+		return 0;
+	}
+	byte ok = Native_TakeVal(&o, types, out);
+	Native_Free(&o);
+	/* a value only Python code can have put there (the C writes the forms it takes) */
+	return ok || Native_Raise(NE_TYPE, "%s.%s: not a value the C module takes", module, name);
+}
+
+byte Native_VarItems(const char *module, const char *name, int count, unsigned types, nativeVal_t *out) {
+	nativeVal_t o;
+	if (!ModVar_ModAttrVal(module, name, &o)) {
+		return 0;
+	}
+	byte ok = Native_IsListOf(&o, count);
+	for (int i = 0; ok && i < count; i++) {
+		nativeVal_t k, item;
+		Native_SetInt(&k, i);
+		ok = NObj_GetItem(&o, &k, &item) && Native_TakeVal(&item, types, &out[i]);
+		Native_Free(&item);
+	}
+	Native_Free(&o);
+	return ok || Native_Raise(NE_TYPE, "%s.%s: not a list of %d values the C module takes", module, name, count);
+}
+
+byte Native_VarSetItem(const char *module, const char *name, int index, const nativeVal_t *v) {
+	nativeVal_t list, k;
+	if (!ModVar_ModAttrVal(module, name, &list)) {
+		return 0;
+	}
+	byte ok;
+	if (NObj_Kind(&list) == NO_LIST) {
+		Native_SetInt(&k, index);
+		ok = NObj_SetItem(&list, &k, v);
+	} else {
+		/* the errors of a sequence item set for another value */
+		ok = Mode_RefSetItem(&list, index, v);
+	}
+	Native_Free(&list);
+	return ok;
+}
+
+/* the value is not plain data in Native_Pass: it holds an NV_OBJ or an object, an entity handle inside a container, a
+ * long int in another than its plain digits ("-0", leading zeros), or a container nested NLIT_DEPTH deep or more */
+static byte Native_PassPy(const nativeVal_t *v, int depth) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	switch (v->type) {
+	case NV_OBJ:
+	case NV_REF:
+		return 1;
+	case NV_ENT:
+		return depth > 0;
+	case NV_LONG: {
+		const char *d = Native_Text(v) + (Native_Text(v)[0] == '-');
+		return !*d || strspn(d, "0123456789") != strlen(d) || (d[0] == '0' && (d[1] || d != Native_Text(v)));
+	}
+	case NV_VEC:
+		return depth >= NLIT_DEPTH;
+	case NV_LIST:
+	case NV_TUPLE:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		for (int i = 0; i < v->n; i++) {
+			if (Native_PassPy(&v->items[i], depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	case NV_DICT:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Native_PassPy(k, depth + 1) || Native_PassPy(x, depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+	return 0;
+}
+
+/* Native_Pass of a value Native_PassPy leaves to C */
+static void Native_PassIn(const nativeVal_t *v, nativeVal_t *out) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	switch (v->type) {
+	case NV_VEC:
+		Native_SetEmpty(out, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetFloat(Native_Append(out), v->v[i]);
+		}
+		break;
+	case NV_LIST:
+	case NV_TUPLE:
+		Native_SetEmpty(out, v->type);
+		for (int i = 0; i < v->n; i++) {
+			Native_PassIn(&v->items[i], Native_Append(out));
+		}
+		break;
+	case NV_DICT:
+		/* the keys into a new dict in the slot order, as a call through Python handed a dict over */
+		Native_SetEmpty(out, NV_DICT);
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			nativeVal_t nk, nx;
+			Native_PassIn(k, &nk);
+			Native_PassIn(x, &nx);
+			Native_DictSet(out, &nk, &nx);
+		}
+		break;
+	default:
+		Native_Copy(out, v);
+	}
+}
+
+byte Native_Pass(const nativeVal_t *v, nativeVal_t *out) {
+	if (!Native_PassPy(v, 0)) {
+		Native_PassIn(v, out);
+		return 1;
+	}
+	if (v->type == NV_LONG) {
+		/* the long int in its plain digits */
+		const char *end;
+		return Long_FromText(Native_Text(v), 10, out, &end);
+	}
+	/* an object, a value that holds objects or handles, a deep nesting: what a call through Python handed back (a
+	 * list or dict of plain values as a copy, any other object itself) */
+	NObj_ArgOf(v, out);
+	return 1;
+}
+
+/* ---- the native level files of batch G ---- */
+
+byte Native_GVarDef(const char *name, nativeVal_t *out) {
+	return Native_GVarValue(name, 1, out);
+}
+
+/* ---- the values of the .mod evaluator (stage 6) ---- */
+
+byte Native_IsObj(const nativeVal_t *v) {
+	return v->type == NV_OBJ || v->type == NV_REF;
+}
+
+void Native_SetMissing(nativeVal_t *v) {
+	Native_Clear(v, NV_OBJ);
+}
+
+byte Native_IsMissing(const nativeVal_t *v) {
+	return v->type == NV_OBJ;
+}
+
+/* ---- entity handles as values (stage 7, batch 7c) ---- */
+
+byte Native_SetEnt(nativeVal_t *v, const char *name) {
+	Native_Clear(v, NV_NONE);
+	v->ent = EntRef_New(name);
+	if (!v->ent) {
+		return 0;
+	}
+	v->type = NV_ENT;
+	return 1;
+}
+
+cEntity *Native_Ent(const nativeVal_t *v) {
+	return v->ent->link.target;
+}
+
+const char *Native_EntName(const nativeVal_t *v) {
+	return v->ent->name;
+}
+
+uintptr_t Native_EntAddr(const nativeVal_t *v) {
+	return (uintptr_t)v->ent;
+}
+
+void Native_EntPrint(const char *name, char *buf, int size) {
+	if (World_FindEntity(name)) {
+		Str_Printf(buf, size, "Entity: %s", name);
+	} else {
+		Str_Printf(buf, size, " : The Entity called '%s' is invalid.", name);
+	}
+}
+
+byte Native_Holds(const nativeVal_t *v, unsigned types) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	if (types & 1u << v->type) {
+		return 1;
+	}
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			if (Native_Holds(&v->items[i], types)) {
+				return 1;
+			}
+		}
+	} else if (v->type == NV_DICT) {
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Native_Holds(k, types) || Native_Holds(x, types)) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+byte Native_LiteralText(const nativeVal_t *text, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (text->type != NV_STR || strlen(Native_Text(text)) != (size_t)text->n) {
+		return 0;
+	}
+	return Native_Literal(Native_Text(text) + strspn(Native_Text(text), " \t"), out);
+}

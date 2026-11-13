@@ -1,0 +1,9 @@
+# The functions of Mission_TalkToTraitoriusAfterCTF in level gamblinden (the script levels/gamblinden/scripts/mission_talktotraitoriusafterctf.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): InitStatus, Init, CreateTraitoriusInit, LaunchTraitoriusSpeech, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_talktotraitoriusafterctf.def replaces this file.
+section TraitoriusSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_CTFAgainstBankers_Traitorius_InitMsg1" "Mission_CTFAgainstBankers_Traitorius_InitAns1"
+end

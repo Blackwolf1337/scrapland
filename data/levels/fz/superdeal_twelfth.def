@@ -1,0 +1,63 @@
+# The functions of SuperDeal_Twelfth in level fz (the script levels/fz/scripts/superdeal_twelfth.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/superdeal_twelfth.def replaces this file.
+section SetVars
+run newlist race
+run evalappend $race "((-46414.6796875, 35024.4609375, 47343.5), 360.12991333)"
+run evalappend $race "((-46530.3476563, 33180.5546875, 22593.3203125), 358.648956299)"
+run evalappend $race "((-46795.6757813, 35396.71875, -25562.2851563), 350.34967041)"
+run evalappend $race "((-41877.9023438, 28821.6601563, -53633.5429688), 348.154632568)"
+run evalappend $race "((-36093.5195313, 20746.3203125, -80354.9921875), 275.747253418)"
+run evalappend $race "((11166.0537109, 9452.56445313, -86632.5234375), 273.927154541)"
+run evalappend $race "((48732.5117188, 3231.88500977, -87215.375), 232.795303345)"
+run evalappend $race "((69952.171875, 2278.20825195, -70901.359375), 222.285476685)"
+run evalappend $race "((87838.328125, 5187.86279297, -47442.6875), 180.509078979)"
+run evalappend $race "((90337.0234375, 20625.4589844, -18598.6933594), 177.096481323)"
+run evalappend $race "((89944.234375, 31569.6699219, -5597.65380859), -271.815063477)"
+run evalappend $race "((47801.0390625, 29478.515625, -6470.97851563), -239.107025146)"
+run evalappend $race "((23268.4433594, 28873.0, 7510.97998047), -269.21270752)"
+run evalappend $race "((-4521.32763672, 25513.2421875, 9866.68652344), -198.371841431)"
+run evalappend $race "((-7789.78466797, 25789.0253906, 31425.0273438), -110.983558655)"
+run evalappend $race "((27529.6035156, 26442.1835938, 47121.7070313), -182.917800903)"
+run evalappend $race "((26164.0175781, 25703.2851563, 84629.390625), -251.604522705)"
+run evalappend $race "((-538.049560547, 27534.3984375, 92779.6484375), 89.8326950073)"
+run evalappend $race "((-39478.4492188, 31659.8261719, 90776.5390625), 10.2656888962)"
+run repr _rrace $race
+call Scrap.SetSaveVar "MortalRaceRace" $_rrace
+call Scrap.SetSaveVar "MortalRaceWaypoints" "50"
+call Scrap.SetSaveVar "MortalRaceRacers" "['ArchBishop', 'BankDirector', 'Functionary', 'MercenaryA', 'MercenaryB']"
+call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "4"
+call Scrap.SetSaveVar "MortalRaceRespawnTime" "5.0"
+run saveint reputation "BadReputation"
+if $reputation < 2
+	call Scrap.SetSaveVar "MortalRaceRacersProfile" "SuperDealTwelfthPilot"
+	call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "4"
+elif $reputation < 4
+	call Scrap.SetSaveVar "MortalRaceRacersProfile" "SuperDealTwelfthElite"
+	call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "4"
+else
+	call Scrap.SetSaveVar "MortalRaceRacersProfile" "SuperDealTwelfthMegaAce"
+	call Scrap.SetSaveVar "MortalRaceFightingFreezeControlAim" "6"
+end
+call Scrap.SetSaveVar "MortalRaceStartTextCad" "SuperDeal_Twelfth_RemoteMessage1"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerWinsTextCad" "SuperDeal_Twelfth_RemoteMessage2"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerWinsTextFoe" "CrazyGambler"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerLoosesTextCad" "SuperDeal_Twelfth_RemoteMessage3"
+call Scrap.SetSaveVar "MortalRaceFinishPlayerLoosesTextFoe" "CrazyGambler"
+call Scrap.SetSaveVar "MortalRaceAutoRestart" "0"
+let executeOnAbort "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')"
+let executeOnVictory "import SuperDeal_Twelfth;SuperDeal_Twelfth.Victory()"
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
+section InitStatus LevelPath
+call SuperDeal_Twelfth.SetVars
+
+section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "InfernoUpgrade2"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call Scrap.SetSaveVar "JackInTheBox.Active" "2"
+call Scrap.Achievement 11
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_Twelfth_SystemMessage1"

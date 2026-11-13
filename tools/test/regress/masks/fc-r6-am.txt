@@ -1,0 +1,6 @@
+# line 8: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore _r6ent(('Mayor_Default', 'Gear_Mayor', 'Desktop_01', 'Desktop_02', 'Desktop_03'))
+# line 28: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore (_sd(__import__('Mission_ApologizeMayor').CreateMayorInit, Scrap.GetEntity('Mayor_Default')), _r6ent(('Mayor_Default',)))
+# the spawn points of the NPCs (CharsNPC.CharRes positions) are picked at random at the level start
+ignore _r6res()

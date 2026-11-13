@@ -1,0 +1,16 @@
+# Outskirts: ShipMaker after the level start (the tables, the player ship, the ships of the level by model)
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); SM = __import__('ShipMaker'); P = __import__('Parking'); result = 1
+d = SM.ShipValues.items(); d.sort(); result = d
+d = SM.ShipTon.items(); d.sort(); result = d
+d = SM.ShipBalance.items(); d.sort(); result = d
+d = SM.MotorValues.items(); d.sort(); result = d
+d = (SM.WeaponValues.items(), SM.WeaponCosts.items(), SM.shipsCosts.items(), SM.enginesCosts.items()); map(lambda x: x.sort(), d); result = d
+d = SM.StdShips.items(); d.sort(); result = d
+d = SM.Chars.items(); d.sort(); result = (d, SM.PilotsList)
+d = map(lambda x: (x[0], x[1][1:], x[1][0].__name__), SM.ShipCallback.items()); d.sort(); result = d
+I._v(P.PlayerShip.Name, I._SHIPV + I._PARKV)
+I._ships()
+I._ships(I._SHIPV + ('Life', 'TgType', 'UsrControl'))
+(I._pk(), I._spt(), I._usr())
+filter(lambda x: x[:4] == 'Park', I._its())

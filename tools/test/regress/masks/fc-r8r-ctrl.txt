@@ -1,0 +1,3 @@
+# Init._md(0) starts with the menu item that has the focus: the item under the cursor gets it during the frame, the
+# channel (answering in cWorld_Update) sees it set where the pack and python runs see None (round nopy-6b and 2026-11-07)
+sub ^\((?:None|'\w+'), \[\('Background' => (FOCUS, [('Background'

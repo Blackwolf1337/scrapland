@@ -6,7 +6,7 @@
 // only header types that are no placeholder themselves.
 //
 // Headless: tools/ghidra/headless.sh ReplacePlaceholders.java <names.tsv> <header dir> ...
-// rebuild.sh runs it last: tools/rename/names.tsv include/scrap third_party/python-1.5.2/Include
+// rebuild.sh runs it last: tools/rename/names.tsv include/scrap tools/ghidra/python152/Include
 // @category Scrapland
 
 import java.io.File;

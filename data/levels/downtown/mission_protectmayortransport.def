@@ -1,0 +1,17 @@
+# The functions of Mission_ProtectMayorTransport in level downtown (the script levels/downtown/scripts/mission_protectmayortransport.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): GetMercEnemiesProfile, InitStatus, Init, MissionInit, OnMissionStart, OnMissionStart2, TransGoto, CreateBadGuy, AppearsBadGuys, AppearsBadGuys2, NextBadGuy, BackToTheTransport, BackToPlayer, MadGuyDeath, PreLaunchTraitorius, SetNextMission, MadGuyDamage, MercTauntMessager, OnTravelComplete, ActualizeScorer, MissionScorer, KillThem, InitKillThemMission, InitKillBadGuys, RestoreTransport.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_protectmayortransport.def replaces this file.
+section AbortConversation id
+call Scrap.Set "RemainTalkTime" 0
+
+section OnPlayerDeathScorting MainCharnName Param2
+call Scrap.SetSaveVar "CrazyMayor" "KillThem"
+call MissionsFuncs.FinishGame 0
+
+section TraitoriusCom
+call Speech.AddRemoteCom "Mission_KillMercs_RemoteMessage2" "Traitorius" HeadIndex=-1 AfterRemoteComFunc=%Mission_ProtectMayorTransport.SetNextMission
+
+section FailMission MeName YouName
+call Speech.AddRemoteCom "Mission_ProtectMayorTransport_RemoteMessage4" "Mayor" %Mission_ProtectMayorTransport.InitKillBadGuys
+call Vehicles.OnDeath $MeName $YouName
+setvar Mission_ProtectMayorTransport.trans None

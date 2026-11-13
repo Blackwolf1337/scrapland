@@ -58,6 +58,11 @@ cStatusScorer *cStatusScorer_ctor(cStatusScorer *self) {
 	self->moneyBlink = 0.0f;
 	self->boostIconIndex = 0;
 	self->boostTurboIndex = 0;
+	/* not set by the original: only BoostScorer (the vehicle HUD) writes them, but the segments are drawn whenever
+	 * the camera follows a car, also under the HUD on foot; heap garbage there drew up to millions of segments a
+	 * frame and the world clock crawled */
+	self->boostStatus = 0;
+	self->boostRemaining = 0.0f;
 	self->boostTime = 1.0f;
 	self->backColor = 0x5cffcc00;
 	self->textBackColor = 0xffffffff;
@@ -260,6 +265,11 @@ static void Status_DrawBoost(cStatusScorer *self, float frameTime) {
 	float frac = f - (float)n;
 	if (n < 0) {
 		return;
+	}
+	/* BoostScorer gives 0..1 (n 0..7); a value below 0 set by a script stops at the full bar */
+	if (n > STATUS_SEGMENTS) {
+		n = STATUS_SEGMENTS;
+		frac = 0.0f;
 	}
 	int ai = 0, j = STATUS_SEGMENTS, off = 0x1c;
 	uint32_t a = 0x20000000;

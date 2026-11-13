@@ -1,0 +1,20 @@
+# The functions of Mission_DestroyBadDebtors in level outskirts (the script levels/outskirts/scripts/mission_destroybaddebtors.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Outskirts.c): GetMercenariesProfile, GetBankDirectorProfile, GetBankerProfile, InitStatus, CreateWaypoint, CreateShip, OnInitMission, ShowScorer, EnableMissionWaypoint, SelectNewMissionTarget, OnMissionTargetDeath, BankMasterAttacksMissionTarget, DropTreasure, DelTreasure, SendShipToGetTreasure, GetPossibleMercTargets, CreateMercs, CreateBankMaster, CreateBanker, RespawnBankMaster, OnBankMasterDeath, CheckMercsFreezed, OnBankerDeath, OnMercDeath, OnTreasureReached, OnShipReachedTreasurePos, OnCoinTaken, BankMasterSpeech, ShowDeepThroatMessage, SetNextMission, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_destroybaddebtors.def replaces this file.
+section Init LevelPath
+call Scrap.Preload3DObject %Mission_DestroyBadDebtors.TreasureModel
+call Scrap.Set "MaxFightingTrafficSize" 0
+call Mission_DestroyBadDebtors.CreateWaypoint
+
+section OnMissionTargetDamage LooserName WinnerName Damage
+
+section OnBankMasterDamage LooserName WinnerName Damage
+
+section OnBankerDamage LooserName WinnerName Damage
+
+section OnMercDamage LooserName WinnerName Damage
+
+section MercsAppear
+call Speech.AddRemoteCom "Mission_DestroyBadDebtors_RemoteMessage1" "MercenaryB"
+call Speech.AddRemoteCom "Mission_DestroyBadDebtors_RemoteMessage2" "MercenaryC" %Mission_DestroyBadDebtors.BankMasterSpeech ()
+call Mission_DestroyBadDebtors.CreateMercs 2

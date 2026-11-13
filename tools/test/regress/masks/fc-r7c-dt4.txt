@@ -1,0 +1,2 @@
+# line 19: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (setattr(__import__('Mission_DistractHumphrey'), 'shipNameForTaunt', Scrap.EntityListGet('Traffic', 'First')), _sd(__import__('Mission_DistractHumphrey').AssignNewHumphreyTarget), __import__('SAI').GetStateVehicle(__import__('Mission_DistractHumphrey').humphreyName), _sdfreeze([__import__('Mission_DistractHumphrey').humphreyName]))

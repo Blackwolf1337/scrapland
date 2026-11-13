@@ -1,0 +1,39 @@
+# Scrapyard, round 7d: Mission_DefeatCrazyGambler2
+Scrap.SetSaveVar('Mission.Map', 'Scrapyard'); Scrap.SetSaveVar('Mission.Library', 'Mission_DefeatCrazyGambler2'); Scrap.SetSaveVar('NumCrazyGamblerLifes', '9'); Scrap.SetSaveVar('RobotsControlledByBoss', '0'); Scrap.LoadLevel('Levels/Scrapyard'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+CG = _m('Mission_DefeatCrazyGambler2'); _sdfreeze(_sdlist('Enemies')); result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_DefeatCrazyGambler2'), _sdmod('Mission_DefeatCrazyGambler2', ('crazyGamblerName', 'numTaunt', 'givesSomething', 'pilotName')), _bhooks()[8:9], _bhooks()[12:13], _sdmod('MapTriggers', ('WithScrapyardInhabitants',)), _bsv(('Traffic.AcShips',)))
+(_ye((CG.crazyGamblerName,), ('LaunchTaunts', 'MPil0', 'TgType', 'EntityList', 'Life', 'MaxLife', 'RadarShow')), Scrap.EntityListGet('Enemies', 'OnDeath'))
+_bitems(0, ('RemainingLifesText', 'RemainingLifes'), _BTEXT)
+_bon()
+(setattr(__import__('MapTriggers'), 'WithScrapyardInhabitants', 1), _sd(CG.InitStatus, 'x'), _sdmod('MapTriggers', ('WithScrapyardInhabitants',)), __import__('Traffic').AcShips)
+(_bprof(CG.GetCrazyGamblerProfile()), _bprof(CG.GetMosquitoProfile()), _sd(CG.GetMosquitoProfile, 2))
+(setattr(CG, 'numTaunt', 4), _sd(CG.LaunchTaunts), CG.numTaunt, _sd(CG.LaunchTaunts), CG.numTaunt)
+(setattr(CG, 'crazyGamblerName', 'Nobody'), _sd(CG.LaunchTaunts), CG.numTaunt, setattr(CG, 'crazyGamblerName', _btarget()))
+(setattr(CG, 'numTaunt', 'x'), _sd(CG.LaunchTaunts), setattr(CG, 'numTaunt', 0))
+EN0 = _sdlist('Enemies'); M0 = len(CG.mosquitos); result = 1
+(setattr(CG, 'givesSomething', 1), _sd(CG.CreateMosquito), CG.givesSomething, len(CG.mosquitos) - M0, _ye(_ynew('Enemies', EN0), ('EntityList', 'Life', 'MaxLife', 'Money', 'Ammo00', 'TgType')))
+EN0 = _sdlist('Enemies'); _sdfreeze(EN0); result = 1
+(_sd(CG.CreateMosquito), CG.givesSomething, _ye(_ynew('Enemies', EN0), ('EntityList', 'Life', 'Money')), CG.mosquitos[-1] in _ynew('Enemies', EN0))
+EN0 = _sdlist('Enemies'); _sdfreeze(EN0); MQ = CG.mosquitos; result = 1
+(setattr(CG, 'mosquitos', ['a', 'b', 'c']), _sd(CG.CreateMosquitos), setattr(CG, 'mosquitos', range(12)), _sd(CG.CreateMosquitos), setattr(CG, 'mosquitos', MQ))
+(_sd(CG.CreateCrazyGambler), CG.crazyGamblerName in _ynew('Enemies', EN0), _ye((CG.crazyGamblerName,), ('LaunchTaunts', 'MPil0', 'TgType', 'EntityList', 'Life', 'MaxLife')), _btarget() == CG.crazyGamblerName)
+_sdfreeze(_sdlist('Enemies'))
+(Scrap.SetSaveVar('NumCrazyGamblerLifes', '8'), _sd(CG.OnCrazyGamblerDeath, CG.crazyGamblerName, 'Nobody'), _bsv(('NumCrazyGamblerLifes',)), _bhooks()[8:9], _bitems(0, ('RemainingLifes',), ('Text',)))
+(_sd(CG.OnCrazyGamblerDeath, CG.crazyGamblerName, _un()), _bsv(('NumCrazyGamblerLifes',)), _bhooks()[8:9])
+(setattr(CG, 'mosquitos', CG.mosquitos + ['FakeMosquito']), _sd(CG.OnCrazyGamblerDeath, 'FakeMosquito', 'Nobody'), 'FakeMosquito' in CG.mosquitos)
+_sd(CG.OnCrazyGamblerDeath, 'Other', 'Nobody')
+(setattr(__import__('Menu'), 'MissionScorerCall', None), _sd(CG.MissionScorer, 0), _bitems(0, ('RemainingLifesText', 'RemainingLifes'), _BTEXT))
+(_sd(CG.MissionScorer), _sd(CG.MissionScorer, 0, 1))
+(Scrap.SetSaveVar('NumCrazyGamblerLifes', '6'), _sd(CG.Init, 'x'), _bhooks()[8:9])
+(Scrap.SetSaveVar('NumCrazyGamblerLifes', '9'), setattr(CG, 'crazyGamblerName', ''), _sd(CG.Init, 'x'), _bhooks()[8:9], CG.crazyGamblerName in _sdlist('Enemies'), Scrap.EntityListGet('Enemies', 'OnDeath'))
+_sdfreeze(_sdlist('Enemies'))
+(Scrap.SetSaveVar('NumCrazyGamblerLifes', 'x'), _sd(CG.Init, 'x'), _sd(CG.OnCrazyGamblerDeath, CG.crazyGamblerName, 'Nobody'), Scrap.SetSaveVar('NumCrazyGamblerLifes', '9'))
+del CG.mosquitos
+(_sd(CG.CreateMosquitos), _sd(CG.OnCrazyGamblerDeath, 'Other', 'Nobody'))
+del CG.pilotName
+_sd(CG.CreateCrazyGambler)
+_broff()

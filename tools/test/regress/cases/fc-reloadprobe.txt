@@ -1,0 +1,4 @@
+# FZ reload alone
+Scrap.LoadLevel('Levels/FZ')
+!sleep 30
+Scrap.GetEntity('Player0') != None

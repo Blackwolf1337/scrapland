@@ -1,0 +1,19 @@
+# helpers/fmis.py as channel statements: one list of recorded calls, scorer and entity dumps
+import Scrap, SScorer, SAct
+_calls = []
+_Rec = lambda name, ret: tc_obj(__name__ + '._Rec', {'name': name, 'ret': ret},
+	lambda *a, **kw: (_calls.append((name, a, kw)), ret)[1])
+_rec = lambda mod, func, ret=None: setattr(__import__(mod), func, _Rec(mod + '.' + func, ret))
+_takecalls = lambda: (lambda r: (tc_clear(_calls), r)[1])(_calls[:])
+_sc = lambda items, attrs=('X','Y','W','H','Red','Green','Blue','Alpha','Text','Visible','OnAccept','Hint','SizeX','SizeY','Font','Type','File'):
+	map(lambda i: (i, map(lambda a: tc_try(SScorer.Get, (0, i, a), '?'), attrs)), items)
+_el = lambda name: tc_try(Scrap.EntityListGet, (name, 'Num'), '?')
+_entl = lambda name, vs: map(lambda e: _ent(e.Name, vs),
+	tc_walk(Scrap.GetEntity(Scrap.EntityListGet(name, 'First')), lambda e: Scrap.GetEntity(e.NextInList)))
+_prof = lambda k: (map(__import__, ('VehiclesNPC',)), tc_sorted(VehiclesNPC.AIProf[k].__dict__.items()))[1]
+# the lines of a file written by SAct.DumpEvents for the classes that pass keep(class name), with ("class " lines too
+# when head is set)
+_tcdump = lambda path, keep, head: (lambda r: (reduce(lambda on, l: (lambda on2: ((on2 and (head or l[:6] != 'class ')
+	and r.append(string.rstrip(l))), on2)[1])(keep(string.strip(l[6:])) if l[:6] == 'class ' else on),
+	open(path).readlines(), 0), r)[1])([])
+_cldump = lambda names: (SAct.DumpEvents('misev.txt'), _tcdump('misev.txt', lambda c: c in names, 1))[1]

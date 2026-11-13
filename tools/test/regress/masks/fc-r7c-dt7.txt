@@ -1,0 +1,2 @@
+# line 22: a timer or a moving item read between frames
+ignore (_sd(__import__('Mission_MultiplusRace').AfterInitRaceTaunt), _bgv(('RemainTalkTime',)))

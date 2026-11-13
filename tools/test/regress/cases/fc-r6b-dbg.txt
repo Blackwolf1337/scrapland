@@ -1,0 +1,9 @@
+# debug: OnFunctionaryDamage of the data holder in the first wave
+Scrap.SetSaveVar('Mission.Map', 'Commercial'); Scrap.SetSaveVar('Mission.Library', 'Mission_GetDataPart3'); Scrap.SetSaveVar('MissionState', 'GetData'); Scrap.SetSaveVar('NumData', '0'); Scrap.SetAlarm(0); Scrap.LoadLevel('Levels/Commercial'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+(_sdfreeze(__import__('Mission_GetDataPart3').funcsInWave), __import__('Mission_GetDataPart3').funcsInWave, _bent(__import__('Mission_GetDataPart3').funcsInWave, ('EntityList', 'RadarShow')))
+(__import__('SAI').SetStateVehicle(3, __import__('Mission_GetDataPart3').funcsInWave[0], 0), __import__('SAI').GetStateVehicle(__import__('Mission_GetDataPart3').funcsInWave[0]), _sd(__import__('Mission_GetDataPart3').OnFunctionaryDamage, __import__('Mission_GetDataPart3').funcsInWave[0], 'x', 1), _bent(__import__('Mission_GetDataPart3').funcsInWave, ('EntityList', 'RadarShow')))
+(__import__('SAI').GetStateVehicle(__import__('Mission_GetDataPart3').funcsInWave[0]), Scrap.GetSaveVar('NumData'), Scrap.GetEntity(__import__('Mission_GetDataPart3').funcsInWave[0]).RadarShow == 1)
+(Scrap.GetEntity(__import__('Mission_GetDataPart3').funcsInWave[0]).EntityList, setattr(Scrap.GetEntity(__import__('Mission_GetDataPart3').funcsInWave[0]), 'EntityList', 'Enemies'), Scrap.GetEntity(__import__('Mission_GetDataPart3').funcsInWave[0]).EntityList)

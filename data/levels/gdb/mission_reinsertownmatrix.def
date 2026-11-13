@@ -1,0 +1,20 @@
+# The functions of Mission_ReinsertOwnMatrix in level gdb (the script levels/gdb/scripts/mission_reinsertownmatrix.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GDB.c): GetBishopProfile, InitMission, BishopsAttackPlayer, CreateBishop, CreateBishops, OnBishopsDeath, PreSetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gdb/mission_reinsertownmatrix.def replaces this file.
+section InitStatus LevelPath
+setvar Map.CreateBishops 0
+
+section Init LevelPath
+call Scrap.EntityListSet "Enemies" "OnDeath" "Mission_ReinsertOwnMatrix.OnBishopsDeath"
+setvar Parking.SwitchVehicleMissionCallback %Mission_ReinsertOwnMatrix.BishopsAttackPlayer
+call Mission_ReinsertOwnMatrix.InitMission
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_TalkToDeepThroat" "Temple"
+call SaveGame.MMDesc "Mission_TalkToDeepThroat5_MissionText1" 1
+call Scrap.SetSaveVar "MayorAtTownHall" "1"
+call Scrap.SetSaveVar "BankMasterAtBank" "1"
+call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "Temple"
+call Scrap.SetSaveVar "Journalist.Betty_Defaut" "Press"
+call Scrap.SetSaveVar "Journalist.Berto_Defaut" "Temple"
+call SaveGame.QWayPoint

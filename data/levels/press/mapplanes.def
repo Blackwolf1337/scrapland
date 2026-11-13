@@ -1,0 +1,4 @@
+# The functions of MapPlanes in level press (the script levels/press/scripts/mapplanes.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): Init, TakenPhoto.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mapplanes.def replaces this file.
+section InitStatus LevelPath

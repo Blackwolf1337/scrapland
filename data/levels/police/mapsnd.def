@@ -1,0 +1,539 @@
+# The functions of MapSnd in level police (the script levels/police/scripts/mapsnd.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "loop-elect2.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "ventilador3.wav"
+end
+call SSound.LoadSound "ambience1.wav"
+call SSound.LoadSound "space-int3.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "tube1.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "gas3.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "gas4.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "gas5.wav"
+end
+call SSound.LoadSound "Atmosfera-Press1.wav"
+call SSound.LoadSound "Atmosfera-Press2.wav"
+call SSound.LoadSound "horno22-out.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "holograma2.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "light1.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "light2.wav"
+end
+
+section SndElements Name x y z angx angy
+setvar MapSnd.cntr %MapSnd.cntr+1
+if $Name == "PoliceFXLighting01"
+	let _cntr %MapSnd.cntr
+	run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+	call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "loop-elect2" 0.0
+elif $Name == "PoliceFXLighting02"
+	let _cntr %MapSnd.cntr
+	run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+	call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "loop-elect2" 0.0
+elif $Name == "PoliceFXLighting03"
+	let _cntr %MapSnd.cntr
+	run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+	call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "loop-elect2" 0.0
+elif $Name == "TownhallHelix"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "ventilador3" 0.4 -4
+end
+elif $Name == "PoliceSlight"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "light1" 0.1
+end
+elif $Name == "PoliceSLLight"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "light1" 0.1
+end
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+call Sound.SetPSLoop "Police1" (-126.754577637,-1109.08691406,23383.0234375) "ambience1" Volume=0.19 Pitch=-40.0 AttenIni=1860.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police2" (-436.010284424,-169.165100098,27118.3828125) "ambience1" Volume=0.19 Pitch=-40.0 AttenIni=3204.0 AttenEnd=3412.0 Doppler=0.0
+call Sound.SetPSLoop "Police3" (2183.11572266,-394.636871338,25541.1289063) "ambience1" Volume=0.19 Pitch=-40.0 AttenIni=1860.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police4" (4293.94482422,-1739.60253906,30718.0605469) "space-int3" Volume=0.16 Pitch=0.0 AttenIni=1860.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police5" (4890.51123047,-1710.76916504,27493.5585938) "space-int3" Volume=0.16 Pitch=0.0 AttenIni=1860.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police6" (-4965.85498047,-818.778808594,26874.7753906) "ambience1" Volume=0.19 Pitch=-40.0 AttenIni=2564.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police7" (-574.46295166,-2295.86157227,31240.5527344) "space-int3" Volume=0.16 Pitch=0.0 AttenIni=3200.0 AttenEnd=3200.0 Doppler=0.0
+call Sound.SetPSLoop "Police8" (-430.371246338,-4690.95019531,26303.7773438) "space-int3" Volume=0.16 Pitch=0.0 AttenIni=3168.0 AttenEnd=3840.0 Doppler=0.0
+call Sound.SetPSLoop "Police9" (1308.6204834,-2409.40136719,24976.8222656) "ambience1" Volume=0.189999997616 Pitch=-40.0 AttenIni=900.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police10" (2160.58129883,-2404.71972656,23199.9785156) "ambience1" Volume=0.189999997616 Pitch=-40.0 AttenIni=1348.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police11" (-2239.76904297,-1388.66003418,22683.0449219) "ambience1" Volume=0.19 Pitch=-40.0 AttenIni=900.0 AttenEnd=3156.0 Doppler=0.0
+call Sound.SetPSLoop "Police12" (-2190.20849609,-2303.95336914,24513.8046875) "space-int3" Volume=0.16 Pitch=0.0 AttenIni=768.0 AttenEnd=1600.0 Doppler=0.0
+call Sound.SetPSLoop "Police13" (-3310.31420898,-1389.45983887,35762.4765625) "ambience1" Volume=0.19 Pitch=-40.0 AttenIni=1924.0 AttenEnd=3092.0 Doppler=0.0
+call Sound.SetPSLoop "Police14" (-609.973754883,-1070.32165527,38044.3710938) "ambience1" Volume=0.189999997616 Pitch=-40.0 AttenIni=2948.0 AttenEnd=3092.0 Doppler=0.0
+call Sound.SetPSLoop "Police15" (2159.62109375,-1103.09057617,35800.921875) "ambience1" Volume=0.189999997616 Pitch=-40.0 AttenIni=1924.0 AttenEnd=3092.0 Doppler=0.0
+call Sound.SetPSLoop "Police16" (710.820739746,6143.99951172,29276.8105469) "ambience1" Volume=0.189999997616 Pitch=-40.0 AttenIni=3140.0 AttenEnd=3204.0 Doppler=0.0
+call Sound.SetPSLoop "Police17" (167.90524292,-5310.02050781,29893.2617188) "space-int3" Volume=0.16 Pitch=0.0 AttenIni=896.0 AttenEnd=1088.0 Doppler=0.0
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tube1" (-168.710449219,-1555.70678711,27862.6445313) "tube1" Volume=0.2 Pitch=0.0 AttenIni=896.0 AttenEnd=1792.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tube2" (1017.68029785,-2092.7421875,26198.7460938) "tube1" Volume=0.20000000298 Pitch=0.0 AttenIni=896.0 AttenEnd=1792.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tube3" (-2027.37084961,-2090.71191406,26278.2695313) "tube1" Volume=0.20000000298 Pitch=0.0 AttenIni=896.0 AttenEnd=1792.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma1" (-551.736450195,-895.691833496,38117.1953125) "holograma2" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma2" (444.680664063,-1008.35510254,38103.6757813) "holograma2" Volume=0.300000011921 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma3" (-617.892211914,-284.784698486,39366.0742188) "holograma2" Volume=0.300000011921 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma4" (-1667.78881836,-897.838928223,38367.1132813) "holograma2" Volume=0.300000011921 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma5" (-2590.61328125,-1233.23120117,37117.0859375) "holograma2" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma6" (1395.09118652,-1270.10839844,37104.296875) "holograma2" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma7" (-976.643432617,-1628.40539551,28554.6210938) "holograma2" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma8" (695.43560791,-1463.29650879,28701.4375) "holograma2" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "holograma9" (4584.83447266,-1534.27050781,28374.4863281) "holograma2" Volume=0.300000011921 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "tube-int2" (-1578.79040527,-2846.19091797,30388.5449219) "tube1" MinInterval=1.0 MaxInterval=12.0 Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "tube-int3" (-574.316162109,-2721.83837891,29607.0644531) "tube1" MinInterval=1.0 MaxInterval=12.0 Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "tube-int4" (-619.497131348,-2756.3137207,32819.578125) "tube1" MinInterval=1.0 MaxInterval=12.0 Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "tube-int5" (585.393798828,-2706.50390625,32347.9746094) "tube1" MinInterval=1.0 MaxInterval=18.0 Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "tube-int6" (-1637.52905273,-2783.15405273,31317.4296875) "tube1" MinInterval=1.0 MaxInterval=12.0 Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "tube-int7" (-1749.81481934,-2818.68945313,32362.453125) "tube1" MinInterval=1.0 MaxInterval=16.0 Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "tube-int8" (211.038619995,-5013.01367188,27292.0371094) "tube1" MinInterval=1.0 MaxInterval=12.0 Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas1" (-1578.79040527,-2846.19091797,30388.5449219) "gas3" MinInterval=1.0 MaxInterval=20.0 Volume=0.04 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas2" (-574.316162109,-2721.83837891,29607.0644531) "gas4" MinInterval=1.0 MaxInterval=17.0 Volume=0.08 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas3" (-619.497131348,-2756.3137207,32819.578125) "gas5" MinInterval=1.0 MaxInterval=24.0 Volume=0.08 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas4" (585.393798828,-2706.50390625,32347.9746094) "gas3" MinInterval=1.0 MaxInterval=22.0 Volume=0.04 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas5" (-1637.52905273,-2783.15405273,31317.4296875) "gas4" MinInterval=1.0 MaxInterval=20.0 Volume=0.08 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas6" (-1749.81481934,-2818.68945313,32362.453125) "gas5" MinInterval=1.0 MaxInterval=14.0 Volume=0.08 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas7" (176.49118042,-2761.23242188,25129.6992188) "gas3" MinInterval=1.0 MaxInterval=20.0 Volume=0.04 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas8" (65.8320083618,-2775.22851563,26550.9453125) "gas5" MinInterval=1.0 MaxInterval=16.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas9" (-940.620727539,-2691.28735352,26517.1855469) "gas3" MinInterval=1.0 MaxInterval=18.0 Volume=0.04 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "gas10" (-945.188171387,-2794.61376953,24976.1933594) "gas4" MinInterval=1.0 MaxInterval=15.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+call Sound.SetPSLoop "Press39" (2045.39501953,-1259.42480469,22527.9042969) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=368.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press40" (2045.39501953,-1259.42480469,22527.9042969) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=368.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press41" (1877.08093262,-1296.67749023,21984.6699219) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=368.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press42" (1877.08093262,-1296.67749023,21984.6699219) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=368.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press43" (1337.35107422,-1213.11694336,21437.4257813) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=368.0 AttenEnd=2656.0 Doppler=0.0
+call Sound.SetPSLoop "Press44" (1337.35107422,-1213.11694336,21437.4257813) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=368.0 AttenEnd=2656.0 Doppler=0.0
+call Sound.SetPSLoop "Press46" (626.114074707,-1420.04187012,20788.4140625) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=688.0 AttenEnd=1008.0 Doppler=0.0
+call Sound.SetPSLoop "Press47" (626.114074707,-1420.04187012,20788.4140625) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=688.0 AttenEnd=1008.0 Doppler=0.0
+call Sound.SetPSLoop "Press48" (155.382446289,-1194.51281738,20216.0488281) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=368.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press49" (155.382446289,-1194.51281738,20216.0488281) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=368.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press50" (-559.42376709,-1295.99816895,20144.4550781) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=432.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press51" (-559.42376709,-1295.99816895,20144.4550781) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=432.0 AttenEnd=608.0 Doppler=0.0
+call Sound.SetPSLoop "Press52" (-1033.20324707,-1222.34777832,20583.3007813) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=944.0 AttenEnd=1184.0 Doppler=0.0
+call Sound.SetPSLoop "Press53" (-1033.20324707,-1222.34777832,20583.3007813) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=944.0 AttenEnd=1184.0 Doppler=0.0
+call Sound.SetPSLoop "Press54" (-2172.25805664,-1155.51782227,21431.234375) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=944.0 AttenEnd=1184.0 Doppler=0.0
+call Sound.SetPSLoop "Press55" (-2172.25805664,-1155.51782227,21431.234375) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=944.0 AttenEnd=1184.0 Doppler=0.0
+call Sound.SetPSLoop "Press56" (-620.459777832,-1082.37573242,41453.59375) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press57" (-620.459777832,-1082.37573242,41453.59375) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press58" (1805.97021484,-1548.45556641,41357.4960938) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press59" (1805.97021484,-1548.45556641,41357.4960938) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press60" (2880.68652344,-1133.82250977,38956.3554688) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press61" (2880.68652344,-1133.82250977,38956.3554688) "Atmosfera-Press2" Volume=0.75 Pitch=-4.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press62" (-4363.74951172,-1691.89587402,38446.2851563) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press63" (-4363.74951172,-1691.89587402,38446.2851563) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press64" (-3194.51757813,-1382.05371094,41010.3828125) "Atmosfera-Press1" Volume=0.75 Pitch=-2.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Press65" (-3194.51757813,-1382.05371094,41010.3828125) "Atmosfera-Press2" Volume=0.55 Pitch=-4.0 AttenIni=1328.0 AttenEnd=1904.0 Doppler=0.0
+call Sound.SetPSLoop "Maquina1" (-148.117553711,-2033.42578125,24494.6972656) "horno22-out" Volume=0.2 Pitch=0.0 AttenIni=496.0 AttenEnd=1376.0 Doppler=0.0
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco1" (2837.90014648,-1406.08398438,20231.3417969) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco2" (-52.1613235474,-1341.66052246,19054.7792969) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco3" (-2913.91650391,-1241.98376465,20520.8886719) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco4" (3974.70800781,-1575.11682129,39368.8476563) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco5" (1546.26708984,-1656.97277832,42450.71875) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco6" (-508.832733154,-1286.43139648,43233.9804688) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco7" (-2120.55102539,-1544.09082031,42514.1015625) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Foco8" (-2120.55102539,-1544.09082031,42514.1015625) "light2" Volume=0.40000000596 Pitch=0.0 AttenIni=580.0 AttenEnd=2260.0 Doppler=0.0
+end
+call Sound.SetPSLoop "Rayo1" (3783.88110352,-1710.99230957,31012.4570313) "loop-elect2" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+call Sound.SetPSLoop "Rayo2" (4688.65625,-1740.47912598,30982.8417969) "loop-elect2" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+call Sound.SetPSLoop "Rayo3" (3430.87036133,-1676.08178711,28383.4023438) "loop-elect2" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+call Sound.SetPSLoop "Rayo4" (5014.45068359,-1695.96582031,27175.6484375) "loop-elect2" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+call Sound.SetPSLoop "Rayo5" (5049.81640625,-1764.67932129,28431.1894531) "loop-elect2" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+call Sound.SetPSLoop "Rayo6" (6292.50439453,-1746.03845215,27465.1777344) "loop-elect2" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+
+section Beating
+let SceneName "Beating"
+call SSound.LoadSound "Beating/golpe-mano2.wav"
+call SSound.LoadSound "Beating/golpe-mano-poker.wav"
+call SSound.LoadSound "Beating/punch11.wav"
+call SSound.LoadSound "Beating/FXRustyChispasSound.wav"
+call Scene.AddSound 1250 "FXRustyChispasSound" 0.1 0 0
+call Scene.AddSound 1252 "FXRustyChispasSound" 0.1 1 0
+call Scene.AddSound 1270 "FXRustyChispasSound" 0.1 0 0
+call Scene.AddSound 1273 "FXRustyChispasSound" 0.1 1 0
+call Scene.AddSound 1285 "FXRustyChispasSound" 0.1 0 0
+call Scene.AddSound 1287 "FXRustyChispasSound" 0.1 2 0
+call Scene.AddSound 1305 "FXRustyChispasSound" 0.1 0 0
+call Scene.AddSound 1320 "FXRustyChispasSound" 0.1 0 0
+call Scene.AddSound 1340 "FXRustyChispasSound" 0.1 0 0
+call Scene.AddSound 1343 "FXRustyChispasSound" 0.1 1 0
+call Scene.AddSound 1360 "FXRustyChispasSound" 0.1 0 0
+
+section BeatingDtritus
+let CharName "BeatingDtritus"
+let ActName "RelaxAstonished"
+call Chars.ActSound $CharName $ActName 6 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 42 "mecanismo-dtritus4" 0.021
+let ActName "RelaxDownLeft"
+call Chars.ActSound $CharName $ActName 10 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 34 "mecanismo-dtritus4" 0.021
+let ActName "TalkDown1"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus4" 0.021 +2
+call Chars.ActSound $CharName $ActName 11 "mecanismo-dtritus6" 0.022 +2
+call Chars.ActSound $CharName $ActName 11 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 41 "mecanismo-dtritus3" 0.021
+let ActName "TalkDown2"
+call Chars.ActSound $CharName $ActName 11 "mecanismo-dtritus4" 0.021 +2
+call Chars.ActSound $CharName $ActName 11 "mecanismo-dtritus6" 0.022 +2
+call Chars.ActSound $CharName $ActName 41 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 41 "mecanismo-dtritus6" 0.026 +1
+
+section BeatingPoliceMaton extra
+let CharName "BeatingPoliceMaton$(extra)"
+let ActName "WalkMenacing"
+call Chars.ActSound $CharName $ActName 16 "Police-paso11" 0.045
+call Chars.ActSound $CharName $ActName 14 "mecanismo-police1" 0.03
+call Chars.ActSound $CharName $ActName 32 "mecanismo-police2" 0.03
+call Chars.ActSound $CharName $ActName 34 "Police-paso12" 0.045
+let ActName "BeatingJump"
+call Chars.ActSound $CharName $ActName 1 "sesgado2" 0.1 +2
+call Chars.ActSound $CharName $ActName 15 "golpe-mano2" 0.25
+let ActName "BeatingHammer"
+call Chars.ActSound $CharName $ActName 9 "mecanismo-police1" 0.03 +4
+call Chars.ActSound $CharName $ActName 6 "sesgado2" 0.1 +2
+call Chars.ActSound $CharName $ActName 9 "mecanismo-police2" 0.03
+call Chars.ActSound $CharName $ActName 19 "golpe-mano2" 0.15
+call Chars.ActSound $CharName $ActName 19 "punch11" 0.2
+call Chars.ActSound $CharName $ActName 17 "Police-paso11" 0.045
+call Chars.ActSound $CharName $ActName 18 "Police-paso12" 0.045
+call Chars.ActSound $CharName $ActName 18 "mecanismo-police1" 0.03 +4
+let ActName "BeatingFist"
+call Chars.ActSound $CharName $ActName 12 "punch11" 0.2
+let ActName "BeatingHeadbutt"
+call Chars.ActSound $CharName $ActName 20 "punch11" 0.2
+call Chars.ActSound $CharName $ActName 20 "golpe-mano2" 0.25
+
+section BeatingPoliceJefe
+let CharName "BeatingPoliceJefe"
+let ActName "Talk1UpRight"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-police1" 0.03
+call Chars.ActSound $CharName $ActName 20 "mecanismo-police2" 0.03 +4
+call Chars.ActSound $CharName $ActName 45 "mecanismo-police1" 0.03
+let ActName "TalkComeOn"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-police1" 0.03
+call Chars.ActSound $CharName $ActName 34 "mecanismo-police2" 0.03 +4
+call Chars.ActSound $CharName $ActName 45 "mecanismo-police1" 0.03
+let ActName "Talk2Up"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-police1" 0.03
+call Chars.ActSound $CharName $ActName 12 "mecanismo-police2" 0.03 +4
+call Chars.ActSound $CharName $ActName 50 "mecanismo-police1" 0.03
+
+section BeatingPickusBeaten
+let CharName "BeatingPickusBeaten"
+let ActName "Relax"
+
+section BeatingPoliceMaton1
+call MapSnd.BeatingPoliceMaton "1"
+
+section BeatingPoliceMaton2
+call MapSnd.BeatingPoliceMaton "2"
+
+section BeatingPoliceMaton3
+call MapSnd.BeatingPoliceMaton "3"
+
+section BeatingPoliceMaton4
+call MapSnd.BeatingPoliceMaton "4"
+
+section BeatingPoliceMaton5
+call MapSnd.BeatingPoliceMaton "5"
+
+section PoliFight
+let SceneName "PoliFight"
+call SSound.LoadSound "PoliFight/flap2.wav"
+call SSound.LoadSound "PoliFight/flash5.wav"
+
+section PoliFightPolice
+let CharName "PoliFightPolice"
+let ActName "Talk1Up"
+call Chars.ActSound $CharName $ActName 5 "mecanismo-police1" 0.03 +3
+call Chars.ActSound $CharName $ActName 19 "mecanismo-police2" 0.03 +4
+call Chars.ActSound $CharName $ActName 41 "mecanismo-police1" 0.03 +3
+let ActName "Talk2Up"
+call Chars.ActSound $CharName $ActName 5 "mecanismo-police1" 0.03 +3
+call Chars.ActSound $CharName $ActName 12 "mecanismo-police2" 0.03 +4
+call Chars.ActSound $CharName $ActName 41 "mecanismo-police1" 0.03 +3
+let ActName "TalkAskUp"
+call Chars.ActSound $CharName $ActName 5 "mecanismo-police1" 0.03 +3
+call Chars.ActSound $CharName $ActName 40 "mecanismo-police2" 0.03 +3
+let ActName "TalkNoUp"
+call Chars.ActSound $CharName $ActName 5 "mecanismo-police1" 0.03 +4
+call Chars.ActSound $CharName $ActName 21 "mecanismo-police2" 0.03 +5
+call Chars.ActSound $CharName $ActName 42 "mecanismo-police1" 0.03 +3
+let ActName "BeatedUp"
+call Chars.ActSound $CharName $ActName 45 "mecanismo-police1" 0.03 +2
+call Chars.ActSound $CharName $ActName 60 "mecanismo-police2" 0.03 +8
+call Chars.ActSound $CharName $ActName 74 "mecanismo-police1" 0.03 +9
+call Chars.ActSound $CharName $ActName 80 "mecanismo-police2" 0.03 +8
+
+section PoliFightPoliceBoss
+let CharName "PoliFightPoliceBoss"
+let ActName "Talk0Down"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-Boss-E" 0.057 +2
+call Chars.ActSound $CharName $ActName 4 "mecanismo-policeBoss2" 0.03 +2
+call Chars.ActSound $CharName $ActName 28 "mecanismo-Boss-D" 0.057 +2
+call Chars.ActSound $CharName $ActName 29 "mecanismo-policeBoss1" 0.03 +2
+let ActName "TalkSelfishDown"
+call Chars.ActSound $CharName $ActName 12 "mecanismo-Boss-E" 0.057 +2
+call Chars.ActSound $CharName $ActName 13 "mecanismo-policeBoss2" 0.03 +2
+call Chars.ActSound $CharName $ActName 49 "mecanismo-Boss-D" 0.057 +4
+call Chars.ActSound $CharName $ActName 50 "mecanismo-policeBoss2" 0.03 +4
+let ActName "TalkMemoryDown"
+call Chars.ActSound $CharName $ActName 19 "mecanismo-Boss-E" 0.057 +2
+call Chars.ActSound $CharName $ActName 20 "mecanismo-policeBoss2" 0.03 +2
+call Chars.ActSound $CharName $ActName 51 "mecanismo-Boss-e" 0.057 +4
+call Chars.ActSound $CharName $ActName 52 "mecanismo-policeBoss2" 0.03 +4
+let ActName "TalkMenaceDown"
+call Chars.ActSound $CharName $ActName 6 "mecanismo-Boss-D" 0.056
+call Chars.ActSound $CharName $ActName 7 "mecanismo-policeBoss1" 0.03
+call Chars.ActSound $CharName $ActName 23 "golpe-Boss" 0.16
+call Chars.ActSound $CharName $ActName 43 "mecanismo-Boss-E" 0.056
+call Chars.ActSound $CharName $ActName 44 "mecanismo-policeBoss2" 0.03
+call Chars.ActSound $CharName $ActName 60 "golpe-Boss" 0.16
+call Chars.ActSound $CharName $ActName 80 "mecanismo-Boss-E" 0.056
+call Chars.ActSound $CharName $ActName 81 "mecanismo-policeBoss1" 0.03
+let ActName "TalkFightDown"
+call Chars.ActSound $CharName $ActName 10 "mecanismo-Boss-D" 0.056
+call Chars.ActSound $CharName $ActName 11 "mecanismo-policeBoss1" 0.03
+call Chars.ActSound $CharName $ActName 23 "golpe-Boss" 0.16
+call Chars.ActSound $CharName $ActName 43 "mecanismo-Boss-E" 0.056
+call Chars.ActSound $CharName $ActName 44 "mecanismo-policeBoss2" 0.03
+call Chars.ActSound $CharName $ActName 60 "flap2" 0.77
+call Chars.ActSound $CharName $ActName 64 "golpe-Boss2" 0.50
+call Chars.ActSound $CharName $ActName 64 "flash5" 0.70
+call Chars.ActSound $CharName $ActName 64 "golpe-Boss" 0.3
+call Chars.ActSound $CharName $ActName 92 "flap2" 0.77
+call Chars.ActSound $CharName $ActName 97 "golpe-Boss2" 0.50
+call Chars.ActSound $CharName $ActName 97 "flash5" 0.70
+call Chars.ActSound $CharName $ActName 97 "golpe-Boss" 0.3
+call Chars.ActSound $CharName $ActName 111 "mecanismo-Boss-D" 0.056
+call Chars.ActSound $CharName $ActName 110 "mecanismo-policeBoss1" 0.03
+call Chars.ActSound $CharName $ActName 133 "mecanismo-Boss-E" 0.056
+call Chars.ActSound $CharName $ActName 134 "mecanismo-policeBoss2" 0.03
+call Chars.ActSound $CharName $ActName 154 "mecanismo-Boss-D" 0.056
+call Chars.ActSound $CharName $ActName 155 "mecanismo-policeBoss1" 0.03
+call Chars.ActSound $CharName $ActName 154 "flap2" 0.77
+call Chars.ActSound $CharName $ActName 157 "golpe-Boss2" 0.50
+call Chars.ActSound $CharName $ActName 157 "flash5" 0.70
+call Chars.ActSound $CharName $ActName 157 "golpe-Boss" 0.17
+
+section MeetHuman
+let SceneName "MeetHuman"
+
+section MeetHumanDtritus
+let CharName "MeetHumanDtritus"
+let ActName "CuriosityLook"
+call Chars.ActSound $CharName $ActName 12 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 40 "mecanismo-dtritus2" 0.021
+let ActName "WalkTalk"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.05
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 15 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 17 "paso-detritus3" 0.05
+let ActName "WalkTalk0"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.05
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 15 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 17 "paso-detritus3" 0.05
+
+section MeetHumanHuman
+let CharName "MeetHumanHuman"
+let ActName "CuriosityLook"
+call Chars.ActSound $CharName $ActName 10 "mecanismo-human2" 0.015 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 10 "mecanismo-human3" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 43 "mecanismo-human2" 0.015 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 43 "mecanismo-human3" 0.013 +4
+end
+let ActName "LookDtritus"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-human2" 0.015 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 3 "mecanismo-human3" 0.013 +4
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 38 "mecanismo-human1" 0.013 +3
+else
+	call Chars.ActSound $CharName $ActName 38 "mecanismo-human2" 0.013 +3
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 38 "mecanismo-human3" 0.013 +3
+end
+call Chars.ActSound $CharName $ActName 75 "mecanismo-human2" 0.015 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 75 "mecanismo-human3" 0.013 +4
+end
+let ActName "Sad"
+call Chars.ActSound $CharName $ActName 4 "mecanismo-human2" 0.015 +3
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 4 "mecanismo-human3" 0.013 +3
+end
+
+section PoliceCheats
+let CharName "Police"
+let ActName "CheatPoker"
+call Chars.ActSound $CharName $ActName 30 "mecanismo-police1" 0.03 +5
+call Chars.ActSound $CharName $ActName 58 "mecanismo-police2" 0.03 +9
+call Chars.ActSound $CharName $ActName 89 "mecanismo-police1" 0.03 +7
+call Chars.ActSound $CharName $ActName 122 "mecanismo-police2" 0.03 +5
+let ActName "BrupPoker"
+call Chars.StrSound $CharName $ActName 32 "Anm_comeon_police6" 0.5
+call Chars.ActSound $CharName $ActName 41 "mecanismo-police1" 0.03 +5
+call Chars.ActSound $CharName $ActName 56 "golpe-mano-poker" 0.1
+call Chars.ActSound $CharName $ActName 73 "mecanismo-police2" 0.03 +6
+call Chars.ActSound $CharName $ActName 88 "golpe-mano-poker" 0.1
+call Chars.ActSound $CharName $ActName 120 "mecanismo-police1" 0.03 +6
+let ActName "Stay0Poker"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-police1" 0.03 +6
+call Chars.ActSound $CharName $ActName 26 "mecanismo-police1" 0.03 +7
+call Chars.ActSound $CharName $ActName 51 "mecanismo-police1" 0.03 +6
+let ActName "PlayPoker"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-police1" 0.03 +6
+call Chars.ActSound $CharName $ActName 20 "mecanismo-police2" 0.03 +4
+call Chars.ActSound $CharName $ActName 26 "golpe-mano-poker" 0.1
+call Chars.ActSound $CharName $ActName 32 "mecanismo-police1" 0.03 +4
+
+section PoliceBossCheats
+let CharName "PoliceBoss"
+let ActName "BrupPoker"
+call Chars.ActSound $CharName $ActName 16 "mecanismo-policeBoss1" 0.016
+call Chars.ActSound $CharName $ActName 33 "voz-Boss11" 0.4
+call Chars.ActSound $CharName $ActName 33 "cadena1" 0.15
+call Chars.ActSound $CharName $ActName 38 "cadena" 0.15 -1
+call Chars.ActSound $CharName $ActName 77 "mecanismo-policeBoss2" 0.016
+let ActName "CheatPoker"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-policeBoss1" 0.03 +6
+call Chars.ActSound $CharName $ActName 16 "mecanismo-policeBoss2" 0.03
+call Chars.ActSound $CharName $ActName 24 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 25 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 34 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 35 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 44 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 45 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 54 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 55 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 64 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 65 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 74 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 75 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 84 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 85 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 94 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 95 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 104 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 105 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 114 "mecanismo-Boss-D" 0.016 +8
+call Chars.ActSound $CharName $ActName 115 "mecanismo-policeBoss1" 0.03 +8
+call Chars.ActSound $CharName $ActName 50 "mecanismo-policeBoss1" 0.03 +5
+call Chars.ActSound $CharName $ActName 51 "mecanismo-Boss-D" 0.016 +16
+call Chars.ActSound $CharName $ActName 65 "mecanismo-policeBoss1" 0.03
+call Chars.ActSound $CharName $ActName 82 "mecanismo-policeBoss2" 0.03
+call Chars.ActSound $CharName $ActName 119 "mecanismo-policeBoss1" 0.03
+call Chars.ActSound $CharName $ActName 146 "mecanismo-policeBoss2" 0.03 +6
+let ActName "PlayPoker"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-policeBoss1" 0.03 +2
+call Chars.ActSound $CharName $ActName 10 "mecanismo-policeBoss2" 0.03 +4
+call Chars.ActSound $CharName $ActName 23 "mecanismo-policeBoss1" 0.03 +4
+call Chars.ActSound $CharName $ActName 29 "golpe-mano-poker" 0.1
+call Chars.ActSound $CharName $ActName 36 "mecanismo-policeBoss2" 0.03
+let ActName "Stay0Poker"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-policeBoss1" 0.03 +6
+call Chars.ActSound $CharName $ActName 31 "mecanismo-policeBoss2" 0.03 +5
+call Chars.ActSound $CharName $ActName 63 "mecanismo-policeBoss1" 0.03 +6
+call Chars.ActSound $CharName $ActName 98 "mecanismo-policeBoss2" 0.03 +6
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

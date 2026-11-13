@@ -25,7 +25,7 @@ Until 2026-11-01 the work was done with a hook DLL (the re3 method: a proxy `din
 | `third_party/python-1.5.2/` | Python 1.5.2 headers, `COPYRIGHT` |
 | `tools/git/pre-commit` | size check hook |
 | `tools/codecmp.sh` | compares two builds of the C code |
-| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies `build-win64/ScrapC.exe` and the FFmpeg and SDL3 DLLs to `game/Bin`), `mkgame.sh` (a game and prefix copy for a slot or worktree), `golden.sh` (script functions and Python interpreter against a stored output), `levels.sh` (every playable level in the ASan build), `native.sh` (runs the Linux build headless), `vkcheck.sh` (a run with the Vulkan validation layer, prints the errors of ours) |
+| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies `build-win64/ScrapC.exe` and the FFmpeg and SDL3 DLLs to `game/Bin`), `mkgame.sh` (a game and prefix copy for a slot or worktree), `golden.sh` (the script functions of the game through the test channel against a stored output), `litfuzz.sh` (the native literal reader against the stored texts of 1.5.2), `levels.sh` (every playable level in the ASan build), `native.sh` (runs the Linux build headless), `vkcheck.sh` (a run with the Vulkan validation layer, prints the errors of ours) |
 | `tools/ffmpeg.sh` | builds FFmpeg (DLLs or shared libraries) for the video player |
 | `tools/sdl3.sh` | builds SDL3 for the Windows 64 bit build |
 | `tools/mcp/` | the scrap MCP server, headless game tests for an AI assistant, see [tools/mcp/README.md](../tools/mcp/README.md) |
@@ -47,3 +47,7 @@ Code calls a slot through a named function, `Class_Slot(obj, ...)`, for example 
 - A Vulkan-only renderer replacing Direct3D 8 (done 2026-11-02). Videos play through FFmpeg and the 30 pixel shaders and the fixed function are GLSL. See [vulkan.md](vulkan.md).
 - Readable calls and names (done, merged into main on 2026-11-03 and 2026-11-04). Every call through a vtable slot is a `Class_Slot(obj, ...)` function, 30 vtable types with a single implementation are gone (direct calls), unnamed slots got names, and state and action numbers became enums.
 - The i686 builds and the difftest are retired. The tag `difftest-final` keeps the last state with them.
+
+## Scripts
+
+The menus, HUD, characters and missions still run from the Python scripts of the packs, and are moved to C module by module. See [scripts.md](scripts.md).

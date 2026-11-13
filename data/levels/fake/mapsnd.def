@@ -1,0 +1,164 @@
+# The functions of MapSnd in level fake (the script levels/fake/scripts/mapsnd.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Fake.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fake/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "atmosfera-oscura-loop8.wav"
+call SSound.LoadSound "maquina2.wav"
+call SSound.LoadSound "Fake/bajada-ascensor-Dtritus2.wav"
+call SSound.LoadSound "Fake/flap-berto.wav"
+call SSound.LoadSound "Fake/NurseLoop1.wav"
+call SSound.LoadSound "Fake/ey.wav"
+
+section Fake0Dtritus
+let CharName "Fake0Dtritus"
+let ActName "Landing"
+call Chars.ActSound $CharName $ActName 41 "caida-Dtritus" 0.7
+call Chars.ActSound $CharName $ActName 55 "paso-detritus1" 0.5
+call Chars.ActSound $CharName $ActName 75 "mecanismo-dtritus6" 0.052
+call Chars.ActSound $CharName $ActName 76 "mecanismo-dtritus1" 0.051
+call Chars.ActSound $CharName $ActName 85 "paso-detritus3" 0.5
+call Chars.ActSound $CharName $ActName 90 "paso-detritus1" 0.5
+call Chars.ActSound $CharName $ActName 94 "mecanismo-dtritus6" 0.052
+call Chars.ActSound $CharName $ActName 95 "mecanismo-dtritus2" 0.051
+call Chars.ActSound $CharName $ActName 120 "mecanismo-dtritus6" 0.052 +5
+call Chars.ActSound $CharName $ActName 121 "mecanismo-dtritus1" 0.051
+call Chars.ActSound $CharName $ActName 145 "mecanismo-dtritus6" 0.052
+call Chars.ActSound $CharName $ActName 146 "mecanismo-dtritus2" 0.051
+call Chars.ActSound $CharName $ActName 162 "paso-detritus3" 0.5
+call Chars.ActSound $CharName $ActName 191 "mecanismo-dtritus6" 0.052
+call Chars.ActSound $CharName $ActName 192 "mecanismo-dtritus1" 0.051
+call Chars.ActSound $CharName $ActName 208 "mecanismo-dtritus6" 0.052 +6
+call Chars.ActSound $CharName $ActName 235 "ey" 0.9
+call Chars.ActSound $CharName $ActName 209 "mecanismo-dtritus2" 0.051
+call Chars.ActSound $CharName $ActName 223 "mecanismo-dtritus6" 0.052 +2
+call Chars.ActSound $CharName $ActName 224 "mecanismo-dtritus1" 0.051
+call Chars.ActSound $CharName $ActName 235 "mecanismo-dtritus6" 0.052 +5
+call Chars.ActSound $CharName $ActName 236 "mecanismo-dtritus2" 0.051
+
+section Fake0Berto
+let CharName "Fake0Berto"
+let ActName "Cartel"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-berto1" 0.0065 +10
+call Chars.ActSound $CharName $ActName 19 "mecanismo-berto1" 0.0065 +10
+
+section Fake0
+call Scene.AddStream 1 "bajada-ascensor-Dtritus" 0.6
+
+section Fake1Dtritus
+let CharName "Fake1Dtritus"
+let ActName "TalkHi"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 34 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 35 "mecanismo-dtritus1" 0.021
+let ActName "WalkLook"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 15 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 17 "paso-detritus3" 0.055
+let ActName "WalkTalk"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 15 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 17 "paso-detritus3" 0.055
+let ActName "WalkTalk0"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 15 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 17 "paso-detritus3" 0.055
+let ActName "NotUnderstand"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus1" 0.021
+let ActName "TalkRight"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus1" 0.021
+let ActName "Elevator"
+call Chars.ActSound $CharName $ActName 10 "arriba" 0.25
+call Chars.ActSound $CharName $ActName 43 "subida-ascensor" 0.2
+
+section Fake1Berto
+let CharName "Fake1Berto"
+let ActName "Cartel"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-berto1" 0.0065 +10
+call Chars.ActSound $CharName $ActName 19 "mecanismo-berto1" 0.0065 +10
+let ActName "TiraCartel"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-berto1" 0.013 +10
+call Chars.ActSound $CharName $ActName 25 "mecanismo-berto2" 0.013 +15
+call Chars.ActSound $CharName $ActName 29 "flap-berto" 0.1
+call Chars.ActSound $CharName $ActName 39 "mecanismo-berto1" 0.013 +8
+call Chars.ActSound $CharName $ActName 71 "mecanismo-berto2" 0.013 +10
+let ActName "Vamos"
+call Chars.ActSound $CharName $ActName 50 "mecanismo-berto1" 0.013 +12
+call Chars.ActSound $CharName $ActName 68 "mecanismo-berto1" 0.013 +9
+let ActName "WalkTalk"
+call Chars.ActSound $CharName $ActName 5 "paso-berto1" 0.02
+call Chars.ActSound $CharName $ActName 20 "paso-berto2" 0.02
+let ActName "WalkTalk0"
+call Chars.ActSound $CharName $ActName 5 "paso-berto1" 0.02
+call Chars.ActSound $CharName $ActName 10 "mecanismo-berto1" 0.0065 +9
+call Chars.ActSound $CharName $ActName 20 "paso-berto2" 0.02
+let ActName "WalkLook"
+call Chars.ActSound $CharName $ActName 5 "paso-berto1" 0.02
+call Chars.ActSound $CharName $ActName 20 "paso-berto2" 0.02
+let ActName "VamosLeft"
+call Chars.ActSound $CharName $ActName 41 "mecanismo-berto1" 0.0065 +10
+call Chars.ActSound $CharName $ActName 66 "mecanismo-berto2" 0.0065 +8
+let ActName "Elevator"
+
+section Fake1
+call Scene.AddSound 2 "NurseLoop1" 0.17 -2 -3
+call Scene.AddStream 75 "loop-bank1" 0.30
+call Scene.AddStream 327 "loop-sentinel11" 0.26
+call Scene.AddStream 705 "loop-bank1" 0.30
+call Scene.AddSound 970 "NurseLoop1" 0.17 -2 3
+call Scene.AddStream 1100 "loop-sentinel11" 0.26
+call Scene.AddStream 1165 "loop-bank1" 0.32
+call Scene.AddStream 1225 "loop-bishop1" 0.3
+call Scene.AddStream 1565 "loop-sentinel11" 0.28
+call Scene.AddStream 2075 "loop-bishop1" 0.32
+call Scene.AddSound 2280 "NurseLoop1" 0.09 0 0
+call Scene.AddStream 2420 "arriba" 1.0
+
+section Fake2Dtritus
+let CharName "Fake2Dtritus"
+let ActName "FallElevator"
+call Chars.ActSound $CharName $ActName 1 "bajada-ascensor-Dtritus2" 0.5 +5
+call Chars.ActSound $CharName $ActName 18 "caida-Dtritus" 0.5
+let ActName "WalkAstonished"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 21 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 23 "paso-detritus3" 0.055
+let ActName "WalkSide"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 24 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 26 "paso-detritus3" 0.055
+let ActName "LookShip"
+call Chars.ActSound $CharName $ActName 5 "mecanismo-dtritus6" 0.022 +5
+call Chars.ActSound $CharName $ActName 6 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 44 "mecanismo-dtritus6" 0.022 +4
+call Chars.ActSound $CharName $ActName 45 "mecanismo-dtritus1" 0.021
+
+section Fake2Berto
+let CharName "Fake2Berto"
+let ActName "FallElevator"
+call Chars.ActSound $CharName $ActName 1 "bajada-ascensor-Dtritus2" 0.5 +6
+call Chars.ActSound $CharName $ActName 20 "caida-Berto" 0.5 +6
+let ActName "TalkAboutShip"
+call Chars.ActSound $CharName $ActName 8 "mecanismo-berto1" 0.013 +8
+call Chars.ActSound $CharName $ActName 42 "mecanismo-berto1" 0.013 +10
+
+section Fake2
+call Scene.AddStream 1 "atmosfera-space1" 1.0
+
+section SetSounds
+call Sound.SetPSLoop "Fake1" (-342680.84375,-469.624084473,512486.75) "atmosfera-oscura-loop8" Volume=0.5 Pitch=0.0 AttenIni=19112.0 AttenEnd=19368.0 Doppler=0.0
+call Sound.SetPSLoop "Fake2" (-342680.84375,-469.624084473,512486.75) "maquina2" 0.3 -5 AttenIni=4300 AttenEnd=5800 Doppler=1.0
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds
+call Scrap.Set "SoundDistAttenuation" 2.0

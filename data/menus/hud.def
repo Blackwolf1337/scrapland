@@ -1,0 +1,461 @@
+# The HUD (the Scorer and CharScorer modules of the game): status, police meter, monitor, messages, talk, mission
+# scorer, radar and the special action of a character. The C functions in src/game/Script/MenuHud.c give the
+# margins of the screen as $mh, $mv, $right (640 - $mh) and $bottom (480 - $mv) and pick a section. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/menus/hud.def replaces this file.
+
+# ---- the status at the top right: life, lives, money, hull, boost; $char (on foot), $multi (garage or network),
+# $split (split screen) ----
+
+section status
+item Status Status
+if $multi
+	X $right
+elif $split
+	X $right
+else
+	X $right-16
+end
+if $id == 1
+	Y $mv+246
+else
+	Y $mv+6
+end
+	Sprite 2D/HUD/HUD.alpha.tga
+	BackOffX -84
+	BackOffY 0
+	BackIndex 2
+if $char
+		LifeIconIndex 17
+		LifeIconOffX -44
+		LifeIconOffY 14
+else
+		LifeIconIndex 14
+		LifeIconOffX -46
+		LifeIconOffY 20
+end
+	LifeTextOffX -58
+	LifeTextOffY 66
+	LifeFont BigNumbers
+	LifeTextRed 232
+	LifeTextGreen 99
+	LifeTextBlue 255
+	LifeTextAlpha 255
+	FontBackIndex 26
+	FontBackOffX -61
+	FontBackOffY 65
+	LivesBackIndex 25
+	LivesBackOffX -10.5
+	LivesBackOffY 6
+	LivesTextOffX -6
+	LivesTextOffY -10
+	LivesFont Horatio
+	LivesTextRed 251
+	LivesTextGreen 188
+	LivesTextBlue 239
+	LivesTextAlpha 255
+if $multi == 0
+	if $split == 0
+		MoneyIconOffX -85
+		MoneyIconOffY 8
+		MoneyIconIndex 15
+		MoneyTextOffX -86
+		MoneyTextOffY 8
+		MoneyFont Horatio
+		MoneyTextRed 143
+		MoneyTextGreen 255
+		MoneyTextBlue 82
+		MoneyTextAlpha 255
+		MoneyBackIndex 25
+		MoneyBackOffX -80.5
+		MoneyBackOffY 24
+	end
+end
+if $char == 0
+		HullIconOffX -54
+		HullIconOffY 13
+		HullIconIndex 13
+		BoostIconIndex 18
+		BoostTurboIndex 19
+		BoostOnRender !BoostScorer
+	if $multi
+		SpriteFlag 2D/HUD/FlagColor.alpha.tga
+		FlagOffX -129
+		FlagOffY 12
+	elif $split
+		SpriteFlag 2D/HUD/FlagColor.alpha.tga
+		FlagOffX -129
+		FlagOffY 12
+	end
+end
+
+# ---- the police meter at the bottom left ----
+
+section copmeter
+item CopMeter CopMeter
+	X $mh+102
+	Y $bottom-67
+	Sprite 2D/HUD/CopMeter.alpha.tga
+	BackOffX 0
+	BackOffY 0
+	BackIndex 1
+	BarOffX 2.5
+	BarOffY 1.5
+	BarIndex 2
+	LightOffX 30
+	LightOffY -6
+	LightIndex 3
+
+# ---- the monitor at the bottom right; in a ship with the weapons and upgrades: $char ----
+
+section monitor
+item Monitor Monitor
+	X $right-121
+	Y $bottom-99
+	TargetView 1
+	PanelSprite 2D/Monitor/Monitor.alpha.tga
+	PanelIndex 1
+	FrameSprite 2D/Monitor/Monitor.alpha.tga
+	FrameIndex 2
+	MaskSprite 2D/Monitor/Monitor.alpha.tga
+	MaskIndex 3
+	StaticSprite 2D/Monitor/Monitor.alpha.tga
+	StaticIndex 4
+	ObjetiveSprite 2D/Monitor/Monitor.alpha.tga
+	ObjetiveIndex 5
+	ObjetiveChargeIndex 6
+	ObjetiveWhiteIndex 7
+	ObjetiveBlackIndex 8
+	CanPossessIndex 8
+	CanPossessGlowIndex 9
+	NoiseSprite 2D/Noise.tga
+if $char == 0
+		WeaponOffX 82
+		WeaponOffY 6
+		WeaponSprite 2D/HUD/WeaponIcons3D.alpha.tga
+		WeaponIconScale 0.65
+		WeaponIconAc 6
+		WeaponIconIndex 0
+		WeaponIconAc 0
+		WeaponIconIndex 1
+		WeaponIconAc 3
+		WeaponIconIndex 4
+		WeaponIconAc 2
+		WeaponIconIndex 7
+		WeaponIconAc 4
+		WeaponIconIndex 10
+		WeaponIconAc 1
+		WeaponIconIndex 13
+		WeaponIconAc 5
+		WeaponIconIndex 16
+		UpgradeIconAc 0
+		UpgradeIconIndex 0
+		UpgradeIconAc 1
+		UpgradeIconIndex 2
+		UpgradeIconAc 2
+		UpgradeIconIndex 3
+		UpgradeIconAc 7
+		UpgradeIconIndex 5
+		UpgradeIconAc 8
+		UpgradeIconIndex 6
+		UpgradeIconAc 5
+		UpgradeIconIndex 9
+		UpgradeIconAc 6
+		UpgradeIconIndex 8
+		UpgradeIconAc 9
+		UpgradeIconIndex 11
+		UpgradeIconAc 10
+		UpgradeIconIndex 12
+		UpgradeIconAc 3
+		UpgradeIconIndex 14
+		UpgradeIconAc 4
+		UpgradeIconIndex 15
+		UpgradeIconAc 11
+		UpgradeIconIndex 17
+		UpgradeIconAc 12
+		UpgradeIconIndex 18
+end
+
+# ---- the messages, and outside split screen the label, the talk and the mission scorer: $splitnow (the engine
+# variable SplitScreen now), $enabled ----
+
+section msg
+item Msg Msg
+	X 320
+	Y $mv+33
+if $splitnow == 1
+	if $id == 0
+		Y $mv+33
+	else
+		Y $mv+273
+	end
+else
+	do label
+end
+
+section label
+item Label Label
+	X $mh+5
+	Y 286
+	Red 183
+	Green 220
+	Blue 255
+	TabBlendingMode 6
+	TabSprite 2D/Menu/Tabs.alpha.tga
+	TabSpriteIndex 1
+	TabAlpha 128
+	TabRed 100
+	TabGreen 140
+	TabBlue 203
+call Scrap.Set MaxTalkLineSizePix 225
+item Talk Talk
+	X 320
+	Y $bottom-12
+	Sprite 2D/HUD/Talk.alpha.tga
+	UseIndex 1
+	NextBackIndex 2
+	NextIndex 3
+	TabVisible 1
+	TabBlendingMode 6
+	TabSprite 2D/Menu/Tabs.alpha.tga
+	TabSpriteIndex 1
+	TabAlpha 192
+	TabRed 100
+	TabGreen 140
+	TabBlue 203
+do mission
+
+# ---- the mission scorer at the left; $enabled shows it when a status is on ----
+
+section mission
+item Mission Mission
+	X $mh
+	Y 230
+	W 95
+	H 101
+	IsMultiSprite 1
+	HighRes 1
+	File 2D/HUD/Mission.alpha.tga
+	BackIndex 1
+	PrimaryIndex 2
+	SecondaryIndex 3
+	Visible 0
+	TextRed 183
+	TextGreen 220
+	TextBlue 255
+	TabBlendingMode 6
+	TabSprite 2D/Menu/Tabs.alpha.tga
+	TabSpriteIndex 1
+	TabAlpha 192
+	TabRed 100
+	TabGreen 140
+	TabBlue 203
+if $enabled
+	run missionvisible
+end
+
+# ---- the radar at the bottom left ----
+
+section radar
+item Radar Radar
+	X $mh+9
+	Y $bottom-120
+	RadarSprite 2D/Radar/Radar.alpha.tga
+	RadarIndex 1
+	MaskSprite 2D/Radar/Radar.alpha.tga
+	MaskIndex 2
+	NoiseSprite 2D/Noise.tga
+	IconsSprite 2D/Radar/Icons.alpha.tga
+	IconAc 0
+	IconIndex 18
+	IconAc 1
+	IconIndex 15
+	IconAc 2
+	IconIndex 26
+	IconAc 3
+	IconIndex 29
+	IconAc 4
+	IconIndex 7
+	IconAc 5
+	IconIndex 23
+	IconAc 6
+	IconIndex 37
+	IconAc 7
+	IconIndex 39
+	IconAc 8
+	IconIndex 4
+	IconAc 9
+	IconIndex 40
+	IconAc 10
+	IconIndex 41
+	IconAc 11
+	IconIndex 42
+	IconAc 12
+	IconIndex 36
+	IconAc 13
+	IconIndex 37
+	IconAc 14
+	IconIndex 38
+	IconAc 15
+	IconIndex 16
+	IconAc 16
+	IconIndex 27
+	IconAc 18
+	IconIndex 35
+	IconAc 19
+	IconIndex 30
+	IconAc 20
+	IconIndex 28
+	IconAc 21
+	IconIndex 31
+	IconAc 22
+	IconIndex 43
+
+# ---- the radar of the character: $outdoor ----
+
+section charradar
+call Scorer.CreateRadarScorer $id
+if $outdoor
+	set Radar Map2dScale 100.0
+else
+	set Radar Map2dScale 40.0
+end
+set Radar Map2dScaleFactor 0.01
+set Radar OutAlphaFactor 25
+
+# ---- the special action of the character the player controls (top left): $act (its ActCtrl) ----
+
+section specialaction
+item SpecialAction SpecialAction
+	X $mh
+	Y $mv+6
+	W 64
+	H 64
+	Visible 1
+	Sprite 2D/HUD/HUD.alpha.tga
+	BackOffX 0
+	BackOffY 0
+	BackIndex 1
+	EnergyBackIndex 26
+	EnergyBackOffX 36
+	EnergyBackOffY 67
+	EnergyBarOffX 61.5
+	EnergyBarOffY 37
+	EnergyBarIndex 6
+	BatteryBarIndex 16
+	BatteryBarOffX 56
+	BatteryBarOffY 74
+	CannonSprite 2D/HUD/Cannon.alpha.tga
+	CannonIndex 7
+	CrossHairIndex 2
+	TextOffX 76
+	TextOffY 8
+	TextFont Horatio
+	TextColorRed 251
+	TextColorGreen 241
+	TextColorBlue 174
+	TextColorAlpha 255
+	IconSprite1 2D/HUD/SpecialActions1.alpha.tga
+	IconSprite2 2D/HUD/SpecialActions2.alpha.tga
+	IconOffX 12
+	IconOffY 18
+	IconIndexSprite0 19
+	InactiveColorRed 255
+	InactiveColorGreen 64
+	InactiveColorBlue 64
+	InactiveColorAlpha 222
+	ActiveColorRed 255
+	ActiveColorGreen 255
+	ActiveColorBlue 255
+	ActiveColorAlpha 255
+	GlowColorRed 244
+	GlowColorGreen 255
+	GlowColorBlue 75
+	GlowColorAlpha 255
+if $act == Dtritus
+		CharAction 0
+		IconIndex 8
+		GlowIconIndex 9
+elif $act == BankDirector
+		CharAction 1
+		IconIndex 11
+		GlowIconIndex 0
+elif $act == Police
+		CharAction 2
+		IconIndex 18
+		GlowIconIndex 0
+elif $act == Gear
+		CharAction 3
+		IconIndex 19
+		GlowIconIndex 20
+		CannonIndex 8
+elif $act == Sentinel
+		CharAction 4
+		IconIndex 4
+		GlowIconIndex 5
+elif $act == Nurse
+		CharAction 5
+		IconIndex 1
+		GlowIconIndex 0
+elif $act == Desktop
+		CharAction 6
+		IconIndex 2
+		GlowIconIndex 0
+elif $act == Mayor
+		CharAction 7
+		IconIndex 3
+		GlowIconIndex 0
+elif $act == Berto
+		CharAction 8
+		IconIndex 14
+		GlowIconIndex 15
+elif $act == Functionary
+		CharAction 9
+		IconIndex 16
+		GlowIconIndex 17
+elif $act == Betty
+		CharAction 10
+		IconIndex 10
+		GlowIconIndex 0
+elif $act == Bishop
+		CharAction 11
+		IconIndex 6
+		GlowIconIndex 0
+		CannonIndex 11
+elif $act == Messenger
+		CharAction 12
+		IconIndex 7
+		GlowIconIndex 0
+		CannonIndex 7
+elif $act == PoliceBoss
+		CharAction 13
+		IconIndex 12
+		GlowIconIndex 0
+elif $act == BankMaster
+		CharAction 14
+		IconIndex 13
+		GlowIconIndex 0
+end
+
+# ---- the defaults of a bar of a mission: $name, $x, $y, the colours $back, $main, $black as (red, green, blue,
+# alpha) given as $backr ... $blacka ----
+
+section missionbar
+set $name IsMultiSprite 1
+set $name File 2D/Racer/racer.alpha.tga
+set $name X $x
+set $name Y $y
+set $name BackIndex 34
+set $name BackRed $backr
+set $name BackGreen $backg
+set $name BackBlue $backb
+set $name BackAlpha $backa
+set $name MainBarIndex 32
+set $name MainRed $mainr
+set $name MainGreen $maing
+set $name MainBlue $mainb
+set $name MainAlpha $maina
+set $name BlackBarIndex 32
+set $name BlackRed $blackr
+set $name BlackGreen $blackg
+set $name BlackBlue $blackb
+set $name BlackAlpha $blacka

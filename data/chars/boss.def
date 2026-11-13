@@ -1,0 +1,60 @@
+# Boss (the character script chars/boss.py of the game): the Init that builds the action class. The format is described
+# in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/boss.def replaces this file. The C gives $xbox and
+# $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of the class.
+
+section Boss
+call MakeChar.InitChar Boss
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.5
+call MakeChar.AddRelaxActions Boss 360
+call MakeChar.AddWalkActions Boss 360 0 ActList=(Walk,)
+call MakeChar.AddInitWalkActions Boss 360 0 ActList=(WalkInit,)
+call MakeChar.AddEndWalkActions Boss 360 0 ActList=(WalkEnd,)
+call MakeChar.AddFallAction Boss 45 1 0
+call MakeChar.AddDazeAction Boss
+call MakeChar.AddTalkAction Boss nExtraActions=3
+call MakeChar.AddFlashedAction Boss
+call MakeChar.AddDiscover Boss
+action Work
+	AnmFilePath Models/Chars/Boss/Anm/Boss_Work.M3D
+	isLoop 1
+	InterpTime 0.5
+	RotSpeed 0
+	UseDisp 0
+	PriorityLevel 0
+action WorkInit
+	AnmFilePath Models/Chars/Boss/Anm/Boss_WorkInit.M3D
+	isLoop 0
+	InterpTime 0.5
+	RotSpeed 0
+	UseDisp 0
+	PriorityLevel 1
+action WorkEnd
+	AnmFilePath Models/Chars/Boss/Anm/Boss_WorkEnd.M3D
+	isLoop 0
+	InterpTime 0.5
+	RotSpeed 0
+	UseDisp 0
+	PriorityLevel 1
+class Boss
+	WRadius 120
+	VRadius 120
+	SRadius 30
+	YModelDisp -70
+	FOV 90
+	CamDist 350
+	CamAng 2
+	CamRot 0
+	Node0Name "Bip_01 BossA Head"
+	Node1Name "Bip_01 BossA"
+call MakeChar.SetNodeRotation 0 0 20 80
+call MakeChar.SetNodeRotation 0 1 0 20
+class Boss
+	OnCreate Boss.OnCreate
+	ActionPress Boss.ActionPress
+call BossSound.Init Boss
+run speech Boss Boss BossSpeech
+
+section OnCreate
+call CharAct.OnCreate $name
+call BossSound.InitLoops $name

@@ -1,34 +1,30 @@
 /*
- * Python module SFX (method table SFX_methods): effects. Original source: PyInterface/SFXPy.cpp.
+ * Python module SFX (function table SFX_methods): effects. Original source: PyInterface/SFXPy.cpp.
  * Entities are given by name; a missing entity or one of the wrong type fails a CHECK like in the original.
  */
 #include "scrap/fx.h"
 #include "scrap/global.h"
-#include "scrap/python.h"
+#include "scrap/scriptapi.h"
 
 /* ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión de la nave */
-static PyObject *SFX_ShipExplosion(PyObject *self, PyObject *args) {
+API_FN(SFX, ShipExplosion) {
 	vec3_t pos, vel;
 	float scale = 1.0f, time = 1.0f;
 	int numFlames = 0, collision = 0;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "(fff)(fff)ffii", &pos.x, &pos.y, &pos.z, &vel.x, &vel.y, &vel.z, &scale, &time,
-			&numFlames, &collision)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "(fff)(fff)ffii", &pos.x, &pos.y, &pos.z, &vel.x, &vel.y, &vel.z, &scale, &time, &numFlames,
+			&collision)) {
+		return 0;
 	}
 	FX_ShipExplosion(pos, vel, scale, time, numFlames, collision);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXCharacterConversor(CharacterName, ConversorName, phase) : Conversor de Personajes */
-static PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
-	char *characterName, *conversorName;
+API_FN(SFX, CharacterConversor) {
+	const char *characterName, *conversorName;
 	int phase = 1;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssi", &characterName, &conversorName, &phase)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ssi", &characterName, &conversorName, &phase)) {
+		return 0;
 	}
 	cEntity *vCharacter = World_FindEntity(characterName);
 	CHECK(vCharacter);
@@ -37,17 +33,15 @@ static PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
 	CHECK(vConversor);
 	CHECK(Entity_IsType(vConversor, TYEN_WITH_LIFE));
 	FX_CharacterConversor(vCharacter, vConversor, phase, 1.7f, 0.2f);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXCharacterConversion(AttackerName, AttackedName, time) : Conversión de Personajes */
-static PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
-	char *attackerName, *attackedName;
+API_FN(SFX, CharacterConversion) {
+	const char *attackerName, *attackedName;
 	float time = 1.0f;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssf", &attackerName, &attackedName, &time)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ssf", &attackerName, &attackedName, &time)) {
+		return 0;
 	}
 	cEntity *vAttacker = World_FindEntity(attackerName);
 	CHECK(vAttacker);
@@ -56,16 +50,14 @@ static PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
 	CHECK(vAttacked);
 	CHECK(Entity_IsType(vAttacked, TYEN_WITH_LIFE));
 	FX_CharacterConversion(vAttacker, vAttacked, time);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXBishopSellLife(AttackerName, AttackedName) : Efecto de dar vida (de Attacker [Bishop ó NULL] a Attacked) */
-static PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
-	char *attackerName, *attackedName;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &attackerName, &attackedName)) {
-		return NULL;
+API_FN(SFX, BishopSellLife) {
+	const char *attackerName, *attackedName;
+	if (!Mode_Parse(a, n, "ss", &attackerName, &attackedName)) {
+		return 0;
 	}
 	cEntity *vAttacker = World_FindEntity(attackerName);
 	if (vAttacker) {
@@ -75,17 +67,15 @@ static PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
 	CHECK(vAttacked);
 	CHECK(Entity_IsType(vAttacked, TYEN_WITH_LIFE));
 	FX_BishopSellLife(vAttacker, vAttacked);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXMoneyTransfer(EntityFrom, EntityTo, Time) : Transferencia de dinero */
-static PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
-	char *fromName, *toName;
+API_FN(SFX, MoneyTransfer) {
+	const char *fromName, *toName;
 	float time;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssf", &fromName, &toName, &time)) {
-		return NULL;
+	if (!Mode_Parse(a, n, "ssf", &fromName, &toName, &time)) {
+		return 0;
 	}
 	cEntity *vFrom = World_FindEntity(fromName);
 	CHECK(vFrom);
@@ -94,21 +84,19 @@ static PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
 	CHECK(vTo);
 	CHECK(Entity_IsType(vTo, TYEN_WITH_LIFE));
 	FX_MoneyTransfer(vFrom, vTo, time);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de effects embedidos */
-static PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
-	char *entityName, *fxType;
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &entityName, &fxType)) {
-		return NULL;
+API_FN(SFX, EmbeddedSet) {
+	const char *entityName, *fxType;
+	if (!Mode_Parse(a, n, "ss", &entityName, &fxType)) {
+		return 0;
 	}
 	cEntity *vEntity = World_FindEntity(entityName);
 	CHECK(vEntity);
 	Entity_SetEmbeddedFX(vEntity, fxType);
-	return Py_ReturnNone();
+	return 1;
 }
 
 static char str_PyDoc_SFX_BishopSellLife[];
@@ -117,59 +105,18 @@ static char str_PyDoc_SFX_CharacterConversor[];
 static char str_PyDoc_SFX_EmbeddedSet[];
 static char str_PyDoc_SFX_MoneyTransfer[];
 static char str_PyDoc_SFX_ShipExplosion[];
-static const char str_PyMethod_SFX_BishopSellLife[];
-static const char str_PyMethod_SFX_CharacterConversion[];
-static const char str_PyMethod_SFX_CharacterConversor[];
-static const char str_PyMethod_SFX_EmbeddedSet[];
-static const char str_PyMethod_SFX_MoneyTransfer[];
-static const char str_PyMethod_SFX_ShipExplosion[];
-static PyMethodDef SFX_methods[7] = {
-	{
-		.ml_name = (void *)str_PyMethod_SFX_ShipExplosion,
-		.ml_meth = (void *)SFX_ShipExplosion,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_ShipExplosion,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_CharacterConversor,
-		.ml_meth = (void *)SFX_CharacterConversor,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_CharacterConversor,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_CharacterConversion,
-		.ml_meth = (void *)SFX_CharacterConversion,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_CharacterConversion,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_BishopSellLife,
-		.ml_meth = (void *)SFX_BishopSellLife,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_BishopSellLife,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_MoneyTransfer,
-		.ml_meth = (void *)SFX_MoneyTransfer,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_MoneyTransfer,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_SFX_EmbeddedSet,
-		.ml_meth = (void *)SFX_EmbeddedSet,
-		.ml_flags = 1,
-		.ml_doc = (void *)str_PyDoc_SFX_EmbeddedSet,
-	},
+static const portFn_t SFX_methods[] = {
+	PORT_FND(ShipExplosion, SFX_ShipExplosion, str_PyDoc_SFX_ShipExplosion),
+	PORT_FND(CharacterConversor, SFX_CharacterConversor, str_PyDoc_SFX_CharacterConversor),
+	PORT_FND(CharacterConversion, SFX_CharacterConversion, str_PyDoc_SFX_CharacterConversion),
+	PORT_FND(BishopSellLife, SFX_BishopSellLife, str_PyDoc_SFX_BishopSellLife),
+	PORT_FND(MoneyTransfer, SFX_MoneyTransfer, str_PyDoc_SFX_MoneyTransfer),
+	PORT_FND(EmbeddedSet, SFX_EmbeddedSet, str_PyDoc_SFX_EmbeddedSet),
+	PORT_FNEND
 };
 
 SD_PY_MODULE(SFX, 0x42d060)
 
-static const char str_PyMethod_SFX_ShipExplosion[] = "ShipExplosion";
-static const char str_PyMethod_SFX_CharacterConversor[] = "CharacterConversor";
-static const char str_PyMethod_SFX_CharacterConversion[] = "CharacterConversion";
-static const char str_PyMethod_SFX_BishopSellLife[] = "BishopSellLife";
-static const char str_PyMethod_SFX_MoneyTransfer[] = "MoneyTransfer";
-static const char str_PyMethod_SFX_EmbeddedSet[] = "EmbeddedSet";
 
 static char str_PyDoc_SFX_ShipExplosion[] =
 	"ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión "
@@ -191,3 +138,4 @@ static char str_PyDoc_SFX_MoneyTransfer[] =
 static char str_PyDoc_SFX_EmbeddedSet[] =
 	"FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos.";
 
+PORTS(Engine_SFXPy)

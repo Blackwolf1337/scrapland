@@ -1,0 +1,8 @@
+# The functions of Map in level 999 (the script levels/999/scripts/map.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/999/map.def replaces this file.
+section InitStatus LevelPath
+setvar Init.isDemo 1
+
+section Init LevelPath
+call Menu.Init 0

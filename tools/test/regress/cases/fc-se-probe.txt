@@ -1,0 +1,8 @@
+# probe of the editor state at the level start
+I = __import__('Init')
+I._mod('ShipEdit', ('editShipPosDummy','editPlatform','prevTab','tabs','editedShips','destroyedShips','fromSputnik','auxShipsToEditList','shipsToEditList','EndShipEditCallBack','camera','lastCam','ctnRotating','isRotating','UseTxt','armorPieceWeight'))
+I._mod('HangarTab', ('prevItem','prevShip','miniShip','prevHangar','currentHangar','currentShipToEdit','currentPilot','holograms','shipTotalCost','UseTxt'))
+map(lambda v: (v, Scrap.GetSaveVar(v)), ('Hangar.HangarShip1','Hangar.HangarShip2','Hangar.HangarShip3','Hangar.HangarShipAux','Hangar.DestroyedShips','Hangar.iHangarShip'))
+(Scrap.Get('isXbox'), I.isShipEdit, Scrap.GetNetFlags(), Scrap.GetMoney(), Scrap.GetCam(0))
+len(__import__('SScorer').Items(0) or [])
+(__import__('HangarTab').prevShip and __import__('HangarTab').prevShip.Name, __import__('ShipMaker').PilotsList)

@@ -1,0 +1,14 @@
+# The functions of Mission_ThreeStooges in level gamblinden (the script levels/gamblinden/scripts/mission_threestooges.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): InitStatus, Init, AfterBrowseNPC, MercenaryASpeech, MercenaryCSpeech, MercenaryBSpeech, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_threestooges.def replaces this file.
+section CreateMercenaryAInit e
+object $e
+UseFunc "Mission_ThreeStooges.MercenaryASpeech"
+
+section CreateMercenaryBInit e
+object $e
+UseFunc "Mission_ThreeStooges.MercenaryBSpeech"
+
+section CreateMercenaryCInit e
+object $e
+UseFunc "Mission_ThreeStooges.MercenaryCSpeech"

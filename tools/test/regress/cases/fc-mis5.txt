@@ -1,0 +1,20 @@
+# GamblinDen: the challenge options of a Mercenary (CharsNPC.GenericNPCSpeech) and of a Police (Police.PoliceSpeech)
+exec(open('fmis.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); CH = __import__('Challenge'); SP = __import__('Speech'); NPC = __import__('CharsNPC')
+map(lambda n: I._rec(n[0], n[1]), (('SaveGame','MarkWayPoint'),('SaveGame','StartGame'),('Speech','OnChallengeSpch'),('Menu','MovieScorer'),('SInput','SetActionSet'),('MissionsFuncs','SetSecondary')))
+Scrap.SetSaveVar('Challenge', '1'); Scrap.SetSaveVar('Player.InfiniteLives', '0'); Scrap.SetMoney(20000); Scrap.SetSaveVar('Player.NumLives', '6')
+NPC.GenericNPCSpeech('Player0', 'MercenaryA_Smartie', 'ChallengeRaceStdOpt0', 'x'); result = (CH.challengeType, CH.foeType, I._ent('MercenaryA_Smartie', ('ArrnOpt','ArrOpt0','ArrOpt1','ArrOpt2','ArriOpt')))
+!sleep 8
+NPC.GenericNPCSpeech('Player0', 'MercenaryA_Smartie', 'ChallengeRaceStdOpt2', 'x'); result = (I._takecalls(), Scrap.GetSaveVar('Player.NumLives'), Scrap.GetSaveVar('Challenge.Money'), CH.numChallengeEnemies, SP.OnEndOfSpeech.__name__, Scrap.GetSaveVar('Spawn'), Scrap.GetSaveVar('Race.Profile'))
+SP.OnEndOfSpeech = None
+NPC.GenericNPCSpeech('Player0', 'MercenaryB_Dumber', 'ChallengeCombatStdOpt0', 'x'); result = (CH.challengeType, CH.foeType, I._ent('MercenaryB_Dumber', ('ArrnOpt','ArrOpt0','ArrOpt1','ArrOpt2','ArriOpt')))
+!sleep 8
+NPC.GenericNPCSpeech('Player0', 'MercenaryB_Dumber', 'ChallengeRaceStdOpt3', 'x'); result = (I._takecalls(), CH.numChallengeEnemies)
+__import__('Police').PoliceSpeech('Player0', 'Police_00', 'ChallengeCombatStdOpt0', 'x'); result = (CH.challengeType, CH.foeType, I._ent('Police_00', ('ArrnOpt','ArrOpt0','ArrOpt1','ArrOpt2','ArrOpt3','ArriOpt')))
+!sleep 8
+__import__('Police').PoliceSpeech('Player0', 'Police_00', 'ChallengeRaceStdOpt3', 'x'); result = (I._takecalls(), Scrap.GetMoney(), CH.numChallengeEnemies, Scrap.GetSaveVar('Challenge.Money'), SP.OnEndOfSpeech.__name__, Scrap.GetSaveVar('Combat.Profile'))
+SP.OnEndOfSpeech = None; Scrap.SetMoney(10); result = (__import__('Police').PoliceSpeech('Player0', 'Police_00', 'ChallengeRaceStdOpt1', 'x'), I._takecalls(), I._ent('Police_00', ('ArriOpt',)))
+!sleep 8
+__import__('Police').PoliceSpeech('Player0', 'Police_00', 'ChallengeRaceStdOpt4', 'x'); result = (I._takecalls(), I._ent('Police_00', ('ArrnOpt','ArrOpt0','ArrOpt1','ArrOpt2','ArrOpt3','ArrOpt4','ArriOpt')))
+!sleep 8
+CH.LaunchChallenge(); result = (I._takecalls(), map(Scrap.GetSaveVar, ('Challenge.Type','Challenge.Foe','Challenge.NumEnemies')))

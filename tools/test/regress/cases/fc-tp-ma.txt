@@ -1,0 +1,15 @@
+# Temple: Mission_MeetArchbishop started like the game (Mission.Map, Mission.Library, state), then its functions with recorders
+Scrap.SetSaveVar('Mission.Map', 'Temple'); Scrap.SetSaveVar('Mission.Library', 'Mission_MeetArchbishop'); Scrap.LoadLevel('Levels/Temple'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_MeetArchbishop'))
+_r6hooks()
+_sdmod('Mission_MeetArchbishop', ('FXSceneYakuzziFile',))
+(_r6ent(('DM_Door_Teleporter_01', 'FakeSpeech'), ('UseFunc', 'ActCtrl', 'Ang')), _r6gv(('NewsHead', 'NewsLogoBmp', 'BackNewsBmp', 'NewsPanelShowHead', 'NewsPanelW', 'NewsPanelH', 'NewsPanelMove', 'DefInterpTime', 'FXSceneYakuzziFile')), _sdmod('Scene', ('SceneName', 'Actors', 'LocalActors')))
+_r6on()
+(setattr(__import__('GateKeeper'), 'UseDoor', lambda *a: 1), _sd(__import__('Mission_MeetArchbishop').UseDoor, 'Player0', 'DM_Door_Teleporter_01', 'x', 'y'))
+(setattr(__import__('GateKeeper'), 'UseDoor', lambda *a: 0), _sd(__import__('Mission_MeetArchbishop').UseDoor, 'Player0', 'DM_Door_Teleporter_01', 'x', 'y'))
+(__import__('SInput').SetActionSet('Menu'), _sd(__import__('Mission_MeetArchbishop').TestEndOfElevator), __import__('SInput').SetActionSet('Walk'), _sd(__import__('Mission_MeetArchbishop').TestEndOfElevator), _r6hooks()[13:14], Scrap.GetEntity(Scrap.Get('NewsHead')).Active)
+(_sd(__import__('Mission_MeetArchbishop').SetNextMission), _r6sv(('Mission.Map', 'Mission.Library', 'Char', 'GameAct', 'BadReputation', 'StdShipAIProfile')), Scrap.Get('PlayVideo'))
+(_r6ceon(), _sd(__import__('Mission_MeetArchbishop').CreateFakeSpeech)[1][:3], _r6ceoff(), Scrap.Get('NewsHead'))

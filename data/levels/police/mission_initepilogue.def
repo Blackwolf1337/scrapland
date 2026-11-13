@@ -1,0 +1,19 @@
+# The functions of Mission_InitEpilogue in level police (the script levels/police/scripts/mission_initepilogue.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): InitStatus, CreateBettyJail, CreateBertoJail, Init, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_initepilogue.def replaces this file.
+section OnBettySpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_DestroyHumphrey_Betty_InitMsg1" "Mission_DestroyHumphrey_Betty_InitAns1"
+end
+
+section OnBertoSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_DestroyHumphrey_Berto_InitMsg1" "Mission_DestroyHumphrey_Berto_InitAns1"
+end
+
+section PreSetNextMission
+call Speech.AddRemoteCom "Mission_DestroyHumphrey_RemoteMessage1" "CrazyGambler" %Mission_InitEpilogue.SetNextMission ()

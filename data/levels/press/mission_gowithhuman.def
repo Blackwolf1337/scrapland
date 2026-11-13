@@ -1,0 +1,97 @@
+# The functions of Mission_GoWithHuman in level press (the script levels/press/scripts/mission_gowithhuman.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): InitStatus, CreateHuman, Init, OnPossession, OnExitConversor, CheckMaxDist, CheckHumanDist, LoadNextMission, LoadScene2, CreateFakeSpeech, NormCamera, SetTalk.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_gowithhuman.def replaces this file.
+section LaunchScene
+call Scrap.SetAlarm 0
+call Mission_GoWithHuman.CreateFakeSpeech
+call MissionsFuncs.SetMissionTarget ""
+call Scrap.DeleteScheduledFuncs "CheckMaxDist"
+call Scrap.Set "isActionIndoor" 0
+call SSound.SetMusic "Music/HumanCD1.ogg" 1.0
+call Scene.Play "HumanCD"
+setvar Scene.EndOfSceneCallback %Mission_GoWithHuman.PlayHumanCD2
+
+section PlayHumanCD2 name=None
+call Scrap.Set "isActionIndoor" 0
+call SSound.SetMusic "Music/HumanCD2.ogg" 1.0
+call Scene.Play "HumanCD2"
+setvar Scene.EndOfSceneCallback %Mission_GoWithHuman.LoadNextMission
+
+section LoadScene
+call Scene.Load "HumanCD"
+call Scene.ActorAction 0 "Human" "Walk"
+call Scene.ActorAction 110 "Human" "Relax"
+call Scene.ActorAction 130 "Human" "OpenCase"
+call Scene.ActorAction 352 "Human" "WalkB"
+call Scene.ActorAction 435 "Human" "Look"
+call Scene.ActorAction 0 "Case" "Relax"
+call Scene.ActorAction 130 "Case" "OpenCase"
+call Scene.ActorAction 330 "Case" "Opened"
+call Scene.ActorAction 0 "CD" "Relax"
+call Scene.ActorAction 130 "CD" "OpenCase"
+call Scene.ActorAction 380 "CD" "Relax"
+call Scene.ActorAction 0 "Machine" "Relax"
+call Scene.ActorAction 355 "Machine" "On"
+call Scene.ActorAction 375 "Machine" "Loop"
+call Scene.AddGeneric 0 "SScorer.Fade(0,(0,0,0,255),(0,0,0,255),3.0)"
+call Scene.AddGeneric 10 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),2.0)"
+call Scene.AddGeneric 635 "SScorer.Fade(0,(255,255,0,0),(255,255,255,255),0.5)"
+call Scene.AddGeneric 650 "SScorer.Fade(0,(255,255,255,255),(255,255,0,0),0.5)"
+call Scene.AddGeneric 745 "SScorer.Fade(0,(255,255,0,0),(255,255,255,255),0.5)"
+call Scene.AddGeneric 760 "SScorer.Fade(0,(255,255,255,255),(255,255,0,0),0.5)"
+call Scene.AddGeneric 895 "SScorer.Fade(0,(255,255,0,0),(255,255,255,255),0.5)"
+call Scene.AddGeneric 910 "SScorer.Fade(0,(255,255,255,255),(255,255,0,0),0.5)"
+call Scene.AddGeneric 965 "SScorer.Fade(0,(255,255,0,0),(255,255,255,255),0.5)"
+call Scene.AddGeneric 980 "SScorer.Fade(0,(255,255,255,255),(255,255,0,0),0.5)"
+call Scene.AddGeneric 1110 "SScorer.Fade(0,(255,255,0,0),(255,255,255,255),1.0)"
+call Scrap.Set "DefInterpTime" 0.7
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "OpenCase" "OpenCase" 1
+call Scene.CreateLocalAction $CharType 0 "WalkB" "WalkB" 1
+call Scene.CreateLocalAction $CharType 0 "Look" "Look" 1
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Case"
+call Scene.AddLocalActor "Case" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call Scene.CreateLocalAction $CharType 0 "OpenCase" "OpenCase" 1
+call Scene.CreateLocalAction $CharType 0 "Opened" "Opened" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "CD"
+call Scene.AddLocalActor "CD" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call Scene.CreateLocalAction $CharType 0 "OpenCase" "OpenCase" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Machine"
+call Scene.AddLocalActor "Machine" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call Scene.CreateLocalAction $CharType 0 "On" "On" 1
+call Scene.CreateLocalAction $CharType 0 "Loop" "Loop" 1
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneHumanCDFile" %Mission_GoWithHuman.FXSceneHumanCDFile
+call Scrap.SetDebrisSys %Mission_GoWithHuman.FXSceneHumanCDFile 1 0 0 1 0 0 %Fx.FXSCENEHUMANCD
+
+section EyeCamera
+call Scrap.Set "NewsPanelDistance" 120
+call Scrap.Set "NewsPanelDisplacement" 135
+call Scrap.Set "NewsPanelMove" -10
+call Scrap.Set "NewsPanelX" 0
+call Scrap.Set "NewsPanelY" 20
+call Scrap.Set "NewsPanelW" 27
+call Scrap.Set "NewsPanelH" 18
+call Scrap.Set "NewsHead" "FakeSpeech"
+call Mission_GoWithHuman.SetTalk
+
+section NearCamera
+call Scrap.Set "NewsPanelDistance" 150
+call Scrap.Set "NewsPanelDisplacement" 130
+call Scrap.Set "NewsPanelMove" 0
+call Scrap.Set "NewsPanelX" 0
+call Scrap.Set "NewsPanelY" 0
+call Scrap.Set "NewsPanelW" 27
+call Scrap.Set "NewsPanelH" 18
+call Scrap.Set "NewsHead" "FakeSpeech"
+call Mission_GoWithHuman.SetTalk

@@ -7,7 +7,7 @@
 #include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
-#include "scrap/pymempool.h"
+#include "scrap/mempool.h"
 #include "scrap/scrap.h"
 #include "scrap/platform.h"
 #include "scrap/actions.h"
@@ -412,6 +412,20 @@ byte Pack_GetFileInfo(const char *name, char *packName, int *offset, int *size) 
 		*size = loc->size;
 	}
 	return 1;
+}
+
+/* the file name of the packs (up to max bytes) into dst; its size, -1 when it is not there or longer */
+int Pack_ReadFile(const char *name, void *dst, int max) {
+	if (g_LstFile) {
+		return -1;
+	}
+	cPackLocation *loc = PackIndex_Find(name);
+	if (!loc || loc->size > max) {
+		return -1;
+	}
+	cFile2 *f = &g_PackFiles[loc->pack];
+	cFile2_SkipTo(f, loc->offset, name);
+	return VFile_Read(f, dst, loc->size) == loc->size ? loc->size : -1;
 }
 
 /*
@@ -826,22 +840,8 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	cFile_dtor(&in);
 }
 
-/* compiles one Python file with its time stamp through PyCompile.py */
-static void Python_CompileFile(const char *path) {
-	byte st[0x24];		/* struct _stat32, st_mtime at 0x1c */
-	char cmd[0x100];
-
-	path += g_PackDirLen;
-	CHECK(!crt_stat32(path, st));
-	int mtime;
-	memcpy(&mtime, st + 0x1c, sizeof(mtime));
-	Str_Printf(cmd, sizeof(cmd), "import PyCompile; PyCompile.compile('%s',%d)", path, mtime);
-	Console_Execute(cmd);
-}
-
 void Python_CompileAll(void) {
-	g_PackDirLen = 2;
-	Dir_Walk("./", "py", Python_CompileFile);
+	Con_Errorf("PythonCompileAll: no Python interpreter in this build\n");
 }
 
 /* the vtable of cFile */

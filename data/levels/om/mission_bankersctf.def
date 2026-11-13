@@ -1,0 +1,25 @@
+# The functions of Mission_BankersCTF in level om (the script levels/om/scripts/mission_bankersctf.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/OM.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/om/mission_bankersctf.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CTFFlags" "5"
+call Scrap.SetSaveVar "CTFNumEnemies" "5"
+call Scrap.SetSaveVar "CTFNumFriends" "5"
+call Scrap.SetSaveVar "CTFEnemyType" "BankDirector"
+call Scrap.SetSaveVar "CTFFriendType" "Functionary"
+call Scrap.SetSaveVar "CTFFriendHead" "Functionary"
+call Scrap.SetSaveVar "CTFEnemyProfile" "BankersCTFEnemies"
+call Scrap.SetSaveVar "CTFFriendProfile" "BankersCTFFriends"
+call Scrap.SetSaveVar "CTFOnDeathSpawnTime" "5.0"
+call Scrap.SetSaveVar "CTFStartTextCad" "Mission_CTFAgainstBankers_RemoteMessage1"
+call Scrap.SetSaveVar "CTFFinishPlayerWinsTextCad" "Mission_CTFAgainstBankers_RemoteMessage2"
+call Scrap.SetSaveVar "CTFFinishPlayerLoosesTextCad" "Mission_CTFAgainstBankers_RemoteMessage3"
+let executeOnAbort 'import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_ArrangeBankersCTF", "GamblinDen");Scrap.SetSaveVar("Map", "Levels/GamblinDen");import SaveGame; SaveGame.QLoad("Levels/GamblinDen")'
+let executeOnVictory 'import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_TalkToTraitoriusAfterCTF", "GamblinDen");Scrap.SetSaveVar("Map", "Levels/GamblinDen");import SaveGame; SaveGame.QLoad("Levels/GamblinDen")'
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
+section InitStatus LevelPath
+call Mission_BankersCTF.SetVars
+
+section Init LevelPath

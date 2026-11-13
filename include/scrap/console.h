@@ -25,6 +25,9 @@ extern int g_ConLine;		/* the line written now */
 extern cGVar GVar_debug;
 #define g_DebugLevel (GVar_debug.value.i)
 
+/* set while the test channel (TestChannel.c) runs a console line: gets a copy of every text the console shows */
+extern void (*g_ConCapture)(const char *text);
+
 /* prints text in a color; flag set: only into the second log */
 void Con_Print(int color, const char *text, int flag);
 /* printf in the error color */

@@ -1,0 +1,72 @@
+# The functions of Mission_WhoIsTheBaddie in level press (the script levels/press/scripts/mission_whoisthebaddie.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): InitStatus, Init, GoForHuman, OnBureauUsed, PlayScene, EndOfScene, CreateFakeSpeech, NormCamera, SetTalk, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_whoisthebaddie.def replaces this file.
+section AfterScene
+call MissionsFuncs.SetMissionTarget ""
+call Scrap.SetSaveVar "MissionState" "GoForHuman"
+call SaveGame.MMDesc "Mission_TalkToHuman_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_WhoIsTheBaddie.GoForHuman
+
+section SetNextMission
+call Scrap.DelSaveVars "MissionState"
+call MissionsFuncs.SetNextMission "Mission_GoToGamblinDen" "GamblinDen"
+call SaveGame.MMDesc "Mission_GoToGamblingDen_MissionText1" 1
+call SaveGame.QWayPoint
+
+section InitStatusScene LevelPath
+setvar NewsPanel.MissionUse 1
+call Chars.AddNewCharRes "Betty"
+call Scrap.SetSaveVar "Journalist.Berto_Defaut" "NoPlace"
+call Scrap.SetSaveVar "Journalist.Betty_Defaut" "NoPlace"
+call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "NoPlace"
+
+section InitScene LevelPath
+call SAct.GetClass "Boss"
+call MakeChar.CreateRelaxAction "Boss" 0 "TalkAngry" "TalkAngry" 1
+call SAct.GetClass "Betty"
+call MakeChar.CreateRelaxAction "Betty" 0 "TalkAlarmed" "TalkAlarmed" 1
+call Mission_WhoIsTheBaddie.LoadScene
+
+section EyeCamera
+call Scrap.Set "NewsPanelDistance" 120
+call Scrap.Set "NewsPanelDisplacement" 135
+call Scrap.Set "NewsPanelMove" 13
+call Scrap.Set "NewsPanelX" 0
+call Scrap.Set "NewsPanelY" 20
+call Scrap.Set "NewsPanelW" 27
+call Scrap.Set "NewsPanelH" 18
+call Scrap.Set "NewsHead" "FakeSpeech"
+call Mission_WhoIsTheBaddie.SetTalk
+
+section EyeCamera2
+call Scrap.Set "NewsPanelDistance" 120
+call Scrap.Set "NewsPanelDisplacement" 135
+call Scrap.Set "NewsPanelMove" -10
+call Scrap.Set "NewsPanelX" 0
+call Scrap.Set "NewsPanelY" 20
+call Scrap.Set "NewsPanelW" 27
+call Scrap.Set "NewsPanelH" 18
+call Scrap.Set "NewsHead" "FakeSpeech"
+call Mission_WhoIsTheBaddie.SetTalk
+
+section NearCamera
+call Scrap.Set "NewsPanelDistance" 150
+call Scrap.Set "NewsPanelDisplacement" 130
+call Scrap.Set "NewsPanelMove" 0
+call Scrap.Set "NewsPanelX" 0
+call Scrap.Set "NewsPanelY" 0
+call Scrap.Set "NewsPanelW" 27
+call Scrap.Set "NewsPanelH" 18
+call Scrap.Set "NewsHead" "FakeSpeech"
+call Mission_WhoIsTheBaddie.SetTalk
+
+section BettyCamera
+call Scrap.Set "NewsPanelDistance" 100
+call Scrap.Set "NewsPanelDisplacement" 20
+call Scrap.Set "NewsPanelMove" 0
+call Scrap.Set "NewsPanelX" 0
+call Scrap.Set "NewsPanelY" 0
+call Scrap.Set "NewsPanelW" 27
+call Scrap.Set "NewsPanelH" 18
+call Scrap.Set "NewsHead" "FakeSpeech2"

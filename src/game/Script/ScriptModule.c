@@ -1,0 +1,1683 @@
+/*
+ * Pack modules made in C (the way to a build without Python, stage 0). When the engine would load a pack module
+ * (Pack_PreloadLibrary) and the module has a definition, the module is made here and its .pyc is not read: the module
+ * object, its variables with the values and types of the script, its functions (the C tables and the level data,
+ * in the order the old loader put them in), its classes and its load time calls, in the order of the script. Every
+ * other module, the C ports and the engine then see the same module.
+ *
+ * A definition is a .mod file: data/modules/<module>.mod, or data/levels/<level>/<module>.mod for a module of a level
+ * (a level file wins), built in (ModuleFiles.inc, made by tools/modules/gen.py from the .pyc of the packs with
+ * tools/modules/pyc2mod.py). A pack in mods/ with scrapc/modules/<module>.mod or scrapc/levels/<level>/<module>.mod
+ * replaces it. One statement per line, # starts a comment line, a line goes on while a bracket is open:
+ *	import A B ...			the modules A, B under their names (IMPORT_NAME, STORE_NAME)
+ *	from M import a b | *		names of the module M (IMPORT_FROM)
+ *	def f g ...			the functions: a level table (level_modules) wins over script_modules, which
+ *					wins over the data of the level file; none is an error
+ *	let x = <expr>			a variable (STORE_NAME)
+ *	set <target>.a = <expr>		an attribute or item of another object (STORE_ATTR, STORE_SUBSCR), the value
+ *	set <target>[k] = <expr>	first, as in ceval
+ *	call <expr>			an expression whose value is dropped (a load time call)
+ *	del x				(DELETE_NAME)
+ *	if <expr> / else / end		the lines between only when the value is true
+ *	class C[(B, ...)] ... end	a class, the lines between make its dict (a method through a C hook)
+ *	c <name>			a C hook (module_hooks) for what the lines cannot say: a for loop of the
+ *					module code (Script_ModuleFor), a method of a class
+ * An <expr> is a Python expression as the module code had it: numbers (parsenumber: ints through strtol or strtoul,
+ * L longs, floats through atof as marshal read them), strings in quotes with the escapes of parsestr, None, tuple,
+ * list and dict displays (a dict value before its key, as com_dictmaker), names (the locals, the module, the
+ * builtins), attributes, calls with keywords, subscripts and slices, + - * / %, comparisons, not, and, or. The values
+ * are native (scrap/scriptnative.h, see "the values" below): a call of a port or engine function runs its entry, and
+ * the value becomes a Python object where it goes into the module dict or into Python. Equal constants of one code
+ * object (the module, a class body) are one object there and a text that looks like a name is interned (com_addconst,
+ * compile.c Code_New). eval(s) of the definitions (the save variables) reads a plain literal with the reader of the
+ * saves, anything else with the same parser in the namespace of the module; what that cannot read goes to
+ * Script_EvalValue (the literals of builtin eval, else its SyntaxError, logged as "notread" by the gate,
+ * SCRAP_PY_GATE). No Python runs.
+ *
+ * Off (the .pyc runs as before) with SCRAP_PACK_SCRIPTS=1 or SCRAP_CMOD=0.
+ */
+#include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "scrap/console.h"
+#include "scrap/filepak.h"
+#include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
+#include "scrap/script.h"
+#include "scrap/scriptlib.h"
+#include "scrap/scriptnative.h"
+
+typedef struct {
+	const char *level;		/* the level folder in lower case, NULL for a module of every level */
+	const char *module;		/* the module name: "Sound" */
+	const char *name;		/* the file for the packs (scrapc/<name>): "modules/sound.mod" */
+	const char *text;		/* the built-in copy */
+} moduleFile_t;
+
+#include "ModuleFiles.inc"
+
+typedef int (*moduleHook_t)(const nativeVal_t *module, nativeVal_t *body);
+
+/* the C hooks of the definitions ("c <name>"): module, name, function (0 with an error set when it fails); body is the
+ * dict object of the class body the hook stands in, NULL in the module code */
+static const struct {
+	const char *module;
+	const char *name;
+	moduleHook_t fn;
+} module_hooks[] = {
+	{ "Init", "LoadChars", Init_ModLoadChars },
+	{ "Init", "ExtraExecs", Init_ModExtraExecs },
+	{ "NewsPanel", "Settings", NewsPanel_ModSettings },
+	{ "CharsNPC", "SpawnPosInit", CharsNPC_ModSpawnPosInit },
+	{ "CharsNPC", "SpawnPosClass", CharsNPC_ModSpawnPosClass },
+	{ "MapTreasure", "Coins", MapTreasure_ModCoins },
+	{ NULL, NULL, NULL },
+};
+
+byte Script_ModuleName(const nativeVal_t *ns, const char *text, nativeVal_t *out) {
+	int found = Script_NameChain(ns, ns, text, out);
+	if (found == 0) {
+		Native_Raise(NE_SYSTEM, "module code: cannot load %.100s", text);
+	}
+	if (found <= 0) {
+		Native_Free(out);
+	}
+	return found > 0;
+}
+
+byte Script_ModuleFor(const nativeVal_t *ns, const char *var, const nativeVal_t *seq, scriptForBody_t body, void *ctx) {
+	modVarRef_t ref;
+	byte ok = ModVar_RefOfNs(ns, &ref);
+	for (int i = 0; ok; i++) {
+		nativeVal_t item;
+		int n = Script_ForItem(seq, i, &item);
+		if (n <= 0) {
+			ok = n == 0;
+			break;
+		}
+		ok = ModVar_SetVal(&ref, var, &item) == 0 && body(ns, &item, ctx);
+		Native_Free(&item);
+	}
+	return ok;
+}
+
+enum { MOD_NAME = 0x80, MOD_DEPTH = 64 };
+
+typedef struct {
+	const char *p;			/* where the parser is */
+	const char *text;		/* the whole text, for the line of an error */
+	const char *file;		/* the definition (or "eval") */
+	const char *module;		/* the module name */
+	const nativeVal_t *mod;		/* the module: the globals and the locals of the module code */
+	nativeVal_t *body;		/* the dict object a class body's names go to, NULL in the module code */
+	nativeVal_t *consts;		/* the constants of this code object with their identities, a list */
+	int depth;			/* open brackets: newlines are blanks inside them */
+	int skip;			/* > 0: parse only (the branch not taken, the right side of and/or) */
+	int nest;			/* expressions inside each other */
+	byte syntax;			/* the error is one of the text, not of a value */
+	nativeVal_t defs;		/* the functions the module code defined, by name (an NV_DICT; Script_ModuleExtras) */
+	modVarRef_t ref;		/* the module in the registry of the module variables (ModVar_Making): its globals */
+} modParse_t;
+
+/* ---- errors ---- */
+
+static int Mod_Line(modParse_t *m) {
+	int line = 1;
+	for (const char *s = m->text; s < m->p && *s; s++) {
+		line += *s == '\n';
+	}
+	return line;
+}
+
+static byte Mod_Syntax(modParse_t *m, const char *what) {
+	if (!Native_Failed()) {
+		char near[24];
+		int n = 0;
+		while (n < (int)sizeof(near) - 1 && m->p[n] && m->p[n] != '\n') {
+			near[n] = m->p[n];
+			n++;
+		}
+		near[n] = 0;
+		Native_Raise(NE_SYNTAX, "%.100s:%d: %.100s at '%.24s'", m->file, Mod_Line(m), what, near);
+	}
+	m->syntax = 1;
+	return 0;
+}
+
+/* ---- the scanner ---- */
+
+static void Mod_Blanks(modParse_t *m) {
+	for (;;) {
+		char c = *m->p;
+		if (c == ' ' || c == '\t' || c == '\r' || (m->depth > 0 && c == '\n')) {
+			m->p++;
+		} else if (c == '#' && m->depth > 0) {
+			while (*m->p && *m->p != '\n') {
+				m->p++;
+			}
+		} else {
+			return;
+		}
+	}
+}
+
+static byte Mod_IsName(char c) {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (c >= '0' && c <= '9');
+}
+
+/* the word at p (a name) into out, advancing; 0 when there is none */
+static byte Mod_Word(modParse_t *m, char *out, int size) {
+	Mod_Blanks(m);
+	const char *s = m->p;
+	if (!Mod_IsName(*s) || (*s >= '0' && *s <= '9')) {
+		return 0;
+	}
+	int n = 0;
+	while (Mod_IsName(s[n])) {
+		n++;
+	}
+	if (n >= size) {
+		return 0;
+	}
+	memcpy(out, s, n);
+	out[n] = 0;
+	m->p = s + n;
+	return 1;
+}
+
+/* the keyword kw follows (a whole word): advance past it */
+static byte Mod_Keyword(modParse_t *m, const char *kw) {
+	Mod_Blanks(m);
+	size_t n = strlen(kw);
+	if (strncmp(m->p, kw, n) || Mod_IsName(m->p[n])) {
+		return 0;
+	}
+	m->p += n;
+	return 1;
+}
+
+/* the operator op follows: advance past it */
+static byte Mod_Op(modParse_t *m, const char *op) {
+	Mod_Blanks(m);
+	size_t n = strlen(op);
+	if (strncmp(m->p, op, n)) {
+		return 0;
+	}
+	m->p += n;
+	return 1;
+}
+
+/* the value of a branch not taken for the statements that make Python objects (import, def): None */
+/* ---- the values ---- */
+
+/*
+ * The expressions are native values (scrap/scriptnative.h): the numbers, texts, None, tuples, lists and dicts of the
+ * text are made in C, and the operators, comparisons, subscripts and slices of plain values run in C. What a name,
+ * an attribute or a call of Python gives is taken as Mod_FromPy takes it: a number or a text as a native value, any
+ * other object (a list or dict a module holds, a module, a function, a class, an entity) by reference as an NV_OBJ, so
+ * that lists and dicts stay shared and change in place. An operation on a value that holds such an object or a dict
+ * goes through Python (the same result and error). The stores and loads of the module's own names and the attributes
+ * of pack modules go to the registry as native values (scrap/modvars.h, batch 9b1). The functions of a def line, the
+ * classes of a class statement (the body's names in a dict object of their own) and their instances are native
+ * objects (scrap/nativeobj.h, batch 9c): their calls, attributes, items, comparisons and `is` run natively. A value
+ * becomes a Python object where it goes into Python: the call of a callable of Python, a call with keywords of a port
+ * function, the set of an attribute or item of a Python object, the operations through Python (Mod_ToPy). `is` goes by
+ * the identities of the values (scrap/scriptnative.h): a constant has the one of its code object's constants
+ * (Mod_Leaf), a value that came from Python one of its own, a value an operation made none (it is the constant of the
+ * same value when it is compared, as it became that object when it crossed to Python).
+ */
+
+/* plain: no NV_OBJ, no entity handle and no dict at any depth, the values the native operations take as Python takes
+ * them */
+static byte Mod_Plain(const nativeVal_t *v) {
+	return !Native_Holds(v, NV_REFS | 1u << NV_DICT);
+}
+
+/* the same constant: the same type and value, a float by its bits (0.0 and -0.0, NaN) */
+static byte Mod_Same(const nativeVal_t *a, const nativeVal_t *b) {
+	if (a->type != b->type) {
+		return 0;
+	}
+	if (a->type == NV_FLOAT) {
+		return !memcmp(&a->f, &b->f, sizeof(a->f));
+	}
+	return Native_Compare(a, b) == 0;
+}
+
+/*
+ * the identity of the number or text v (one without an identity) as a constant of this code object (the module, a
+ * class body, an eval): the one of the equal constant of the same type it made before (com_addconst: equal constants
+ * are one object), else a new one, kept for the next; the small ints and the short texts are the shared objects, a
+ * text that looks like a name is interned (as compile.c Code_New interns the constants)
+ */
+static uintptr_t Mod_Leaf(modParse_t *m, const nativeVal_t *v) {
+	for (int i = m->consts->n; --i >= 0;) {
+		if (Mod_Same(&m->consts->items[i], v)) {
+			return m->consts->items[i].id;
+		}
+	}
+	nativeVal_t *c = Native_Append(m->consts);
+	Native_Copy(c, v);
+	c->id = Script_ConstId(v);
+	return c->id;
+}
+
+/* the identity `is` compares for v: its own or the shared one, else the constant's of a number or text (Mod_Leaf) */
+static uintptr_t Mod_IdOf(modParse_t *m, const nativeVal_t *v) {
+	uintptr_t id = Native_IdOf(v);
+	if (!id && (v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG)) {
+		id = Mod_Leaf(m, v);
+	}
+	return id;
+}
+
+/* the numbers and texts in *v that have no identity get the one of their constant now (Mod_Leaf): the constants of an
+ * eval, which are those of its own code */
+static void Mod_Pin(modParse_t *m, nativeVal_t *v) {
+	if (Native_IdOf(v)) {
+		return;
+	}
+	if (v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG) {
+		v->id = Mod_Leaf(m, v);
+	} else if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			Mod_Pin(m, &v->items[i]);
+		}
+	} else if (v->type == NV_DICT) {
+		const nativeVal_t *k, *x;
+		int pos = 0;
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			/* the slots of v itself */
+			Mod_Pin(m, (nativeVal_t *)k);
+			Mod_Pin(m, (nativeVal_t *)x);
+		}
+	}
+}
+
+/* a is b of two values that are no native objects (those are NObj_Is): None with None, a Python value and an entity
+ * handle as NObj_Is, numbers, texts and tuples by Mod_IdOf; a vector, list or dict by value is a new object */
+static byte Mod_Is(modParse_t *m, const nativeVal_t *a, const nativeVal_t *b) {
+	if (a->type != b->type) {
+		return 0;
+	}
+	switch (a->type) {
+	case NV_INT:
+	case NV_FLOAT:
+	case NV_STR:
+	case NV_LONG:
+	case NV_TUPLE: {
+		uintptr_t x = Mod_IdOf(m, a);
+		return x && x == Mod_IdOf(m, b);
+	}
+	}
+	return NObj_Is(a, b);
+}
+
+/* `if v:` */
+static int Mod_Truth(const nativeVal_t *v) {
+	return v->type == NV_REF ? NObj_True(v) : Native_True(v);
+}
+
+/* ---- the scanner of constants ---- */
+
+/* longobject.c Long_FromString(s, NULL, 0) of a number of the text (it starts with a digit or '.'): the base of its
+ * prefix (0x 16, 0 8, else 10), the digits of that base up to the first other character (the rest is ignored), the
+ * value as the decimal text of an NV_LONG; 0 with its ValueError when there is no digit */
+static byte Mod_LongText(const char *s, nativeVal_t *out) {
+	/* the decimal digits of the value, the lowest first */
+	char dec[0x100];
+	int n = 1, base = s[0] != '0' ? 10 : s[1] == 'x' || s[1] == 'X' ? 16 : 8;
+	const char *p = base == 16 ? s + 2 : s, *start = p;
+	dec[0] = 0;
+	for (;; p++) {
+		int k = *p <= '9' ? *p - '0' : *p >= 'a' ? *p - 'a' + 10 : *p >= 'A' ? *p - 'A' + 10 : -1;
+		if (k < 0 || k >= base) {
+			break;
+		}
+		for (int i = 0; i < n; i++) {
+			k += dec[i] * base;
+			dec[i] = (char)(k % 10);
+			k /= 10;
+		}
+		while (k && n < (int)sizeof(dec)) {
+			dec[n++] = (char)(k % 10);
+			k /= 10;
+		}
+	}
+	if (p == start) {
+		return Native_Raise(NE_VALUE, "no digits in long int constant");
+	}
+	while (n > 1 && !dec[n - 1]) {
+		n--;
+	}
+	char text[sizeof(dec)];
+	for (int i = 0; i < n; i++) {
+		text[i] = (char)('0' + dec[n - 1 - i]);
+	}
+	Native_SetLong(out, text, n);
+	return 1;
+}
+
+/* a number as parsenumber of compile.c reads it */
+static byte Mod_Number(modParse_t *m, nativeVal_t *out) {
+	const char *s = m->p, *e = s;
+	char buf[128];
+	byte hex = s[0] == '0' && (s[1] == 'x' || s[1] == 'X');
+	Native_SetNone(out);
+	while (Mod_IsName(*e) || *e == '.' ||
+		(!hex && (*e == '+' || *e == '-') && e > s && (e[-1] == 'e' || e[-1] == 'E'))) {
+		e++;
+	}
+	if (e - s >= (int)sizeof(buf)) {
+		Mod_Syntax(m, "number too long");
+		return 0;
+	}
+	memcpy(buf, s, e - s);
+	buf[e - s] = 0;
+	m->p = e;
+	size_t len = strlen(buf);
+	char *end;
+	if (buf[len - 1] == 'l' || buf[len - 1] == 'L') {
+		/* a decimal long int as it is, octal and hex as longobject.c Long_FromString reads them */
+		if (len > 1 && (buf[0] != '0' || len == 2) && strspn(buf, "0123456789") == len - 1) {
+			Native_SetLong(out, buf, (int)len - 1);
+			return 1;
+		}
+		return Mod_LongText(buf, out);
+	}
+	errno = 0;
+	long x = buf[0] == '0' ? (long)Lib_StrToUL(buf, &end, 0) : Lib_StrToL(buf, &end, 0);
+	if (*end == 0) {
+		if (errno != 0) {
+			Native_Raise(NE_OVERFLOW, "integer literal too large");
+			return 0;
+		}
+		Native_SetInt(out, x);
+		return 1;
+	}
+	Native_SetFloat(out, atof(buf));
+	return 1;
+}
+
+static int Mod_Hex(int c) {
+	return c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
+}
+
+/* one string in quotes as parsestr of compile.c reads it (no raw or triple quoted strings), added to b */
+static byte Mod_String1(modParse_t *m, nativeBuf_t *b) {
+	char q = *m->p++;
+	for (;;) {
+		int c = (unsigned char)*m->p;
+		if (c == 0 || c == '\n') {
+			Mod_Syntax(m, "string without its end");
+			return 0;
+		}
+		m->p++;
+		if (c == q) {
+			return 1;
+		}
+		if (c == '\\') {
+			int e = (unsigned char)*m->p++;
+			switch (e) {
+			case '\n': c = -1; break;
+			case '\\': case '\'': case '"': c = e; break;
+			case 'b': c = '\b'; break;
+			case 'f': c = '\014'; break;
+			case 't': c = '\t'; break;
+			case 'n': c = '\n'; break;
+			case 'r': c = '\r'; break;
+			case 'v': c = '\013'; break;
+			case 'a': c = '\007'; break;
+			case 'x':
+				if (Mod_Hex((unsigned char)*m->p) >= 0) {
+					unsigned x = 0;
+					while (Mod_Hex((unsigned char)*m->p) >= 0) {
+						x = ((x << 4) & ~0xFu) + (unsigned)Mod_Hex((unsigned char)*m->p++);
+					}
+					c = (int)(x & 0xff);
+					break;
+				}
+				/* fall through */
+			default:
+				if (e >= '0' && e <= '7') {
+					c = e - '0';
+					if (*m->p >= '0' && *m->p <= '7') {
+						c = (c << 3) + *m->p++ - '0';
+						if (*m->p >= '0' && *m->p <= '7') {
+							c = (c << 3) + *m->p++ - '0';
+						}
+					}
+					c &= 0xff;
+				} else {
+					/* an unknown escape stays as it is: the backslash and the character */
+					Native_BufAdd(b, "\\", 1);
+					c = e;
+				}
+			}
+			if (c < 0) {
+				continue;
+			}
+		}
+		char ch = (char)c;
+		Native_BufAdd(b, &ch, 1);
+	}
+}
+
+/* a string, adjacent strings joined (parsestrplus) */
+static byte Mod_String(modParse_t *m, nativeVal_t *out) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_SetNone(out);
+	do {
+		if (!Mod_String1(m, &b)) {
+			Native_BufFree(&b);
+			return 0;
+		}
+		Mod_Blanks(m);
+	} while (*m->p == '\'' || *m->p == '"');
+	Native_SetText(out, b.p, b.len);
+	Native_BufFree(&b);
+	return 1;
+}
+
+/* ---- the evaluator ---- */
+
+/*
+ * Each part of an expression makes its value into *out (None first): 1, or 0 with the error set and *out None. In a
+ * branch not taken (skip) the text is read and every value is None
+ */
+static byte Mod_Expr(modParse_t *m, nativeVal_t *out);
+
+/* LOAD_NAME: the locals (a class body's), the module (through the registry), the builtins; NameError with the name */
+static byte Mod_Load(modParse_t *m, const char *name, nativeVal_t *out) {
+	byte ok = 0;
+	Native_SetNone(out);
+	if (m->body) {
+		nativeVal_t key;
+		Native_SetStr(&key, name);
+		const nativeVal_t *x = Native_DictGet(NObj_DictData(m->body), &key);
+		Native_Free(&key);
+		if (x) {
+			Native_Copy(out, x);
+			return 1;
+		}
+	}
+	if (ModVar_GetVal(&m->ref, name, out)) {
+		return 1;
+	}
+	/* the builtins: the module's __builtins__ (a module: its variables; a dict) */
+	nativeVal_t b, key;
+	if (ModVar_GetVal(&m->ref, "__builtins__", &b)) {
+		const nativeVal_t *vars = NObj_ModuleVars(&b);
+		Native_SetStr(&key, name);
+		if (vars || b.type == NV_DICT || NObj_Kind(&b) == NO_DICT) {
+			ok = NObj_GetItem(vars ? vars : &b, &key, out);
+			if (!ok) {
+				Native_ErrClear();
+			}
+		}
+		Native_Free(&key);
+		Native_Free(&b);
+	}
+	return ok || Native_Raise(NE_NAME, "%s", name);
+}
+
+/* the items up to close into a new list (*comma: a comma came) */
+static byte Mod_Items(modParse_t *m, char close, byte *comma, nativeVal_t *out) {
+	Native_SetEmpty(out, NV_LIST);
+	*comma = 0;
+	m->depth++;
+	Mod_Blanks(m);
+	while (*m->p != close) {
+		byte ok = Mod_Expr(m, Native_Append(out));
+		if (ok && Mod_Op(m, ",")) {
+			*comma = 1;
+			Mod_Blanks(m);
+		} else if (ok && *m->p != close) {
+			Mod_Syntax(m, "',' or a closing bracket expected");
+			ok = 0;
+		}
+		if (!ok) {
+			Native_Free(out);
+			m->depth--;
+			return 0;
+		}
+	}
+	m->depth--;
+	m->p++;
+	return 1;
+}
+
+/* d[k] = v of a display (k and v freed by the caller): the TypeError of an unhashable key */
+static byte Mod_DictPut(nativeVal_t *d, nativeVal_t *k, nativeVal_t *v) {
+	long h;
+	if (!Native_Hash(k, &h)) {
+		return Native_Raise(NE_TYPE, "unhashable type");
+	}
+	Native_DictSet(d, k, v);
+	return 1;
+}
+
+static byte Mod_Dict(modParse_t *m, nativeVal_t *out) {
+	byte ok = 1;
+	Native_SetEmpty(out, NV_DICT);
+	m->depth++;
+	Mod_Blanks(m);
+	while (ok && *m->p != '}') {
+		/* com_dictmaker: the value is made before the key */
+		const char *key = m->p;
+		nativeVal_t k, v;
+		m->skip++;
+		ok = Mod_Expr(m, &k);
+		m->skip--;
+		Native_Free(&k);
+		if (!ok || !Mod_Op(m, ":")) {
+			if (ok) {
+				Mod_Syntax(m, "':' expected");
+			}
+			ok = 0;
+			break;
+		}
+		ok = Mod_Expr(m, &v);
+		const char *after = m->p;
+		m->p = key;
+		Native_SetNone(&k);
+		ok = ok && Mod_Expr(m, &k);
+		m->p = after;
+		if (ok && !m->skip) {
+			ok = Mod_DictPut(out, &k, &v);
+		}
+		Native_Free(&k);
+		Native_Free(&v);
+		if (ok && !Mod_Op(m, ",") && (Mod_Blanks(m), *m->p != '}')) {
+			Mod_Syntax(m, "',' or '}' expected");
+			ok = 0;
+		}
+		if (ok) {
+			Mod_Blanks(m);
+		}
+	}
+	m->depth--;
+	if (!ok) {
+		Native_Free(out);
+		return 0;
+	}
+	m->p++;
+	return 1;
+}
+
+static byte Mod_Atom(modParse_t *m, nativeVal_t *out) {
+	Mod_Blanks(m);
+	char c = *m->p, name[MOD_NAME];
+	Native_SetNone(out);
+	if (c == '\'' || c == '"') {
+		return Mod_String(m, out);
+	}
+	if ((c >= '0' && c <= '9') || (c == '.' && m->p[1] >= '0' && m->p[1] <= '9')) {
+		return Mod_Number(m, out);
+	}
+	if (c == '(' || c == '[') {
+		byte comma;
+		m->p++;
+		if (!Mod_Items(m, c == '(' ? ')' : ']', &comma, out)) {
+			return 0;
+		}
+		if (c == '[') {
+			return 1;
+		}
+		/* (x) is x, (x,) and () are tuples */
+		if (out->n == 1 && !comma) {
+			nativeVal_t x = out->items[0];
+			out->n = 0;
+			Native_Free(out);
+			*out = x;
+		} else {
+			out->type = NV_TUPLE;
+		}
+		return 1;
+	}
+	if (c == '{') {
+		m->p++;
+		return Mod_Dict(m, out);
+	}
+	if (!Mod_Word(m, name, sizeof(name))) {
+		Mod_Syntax(m, "a value expected");
+		return 0;
+	}
+	if (!strcmp(name, "None") || m->skip) {
+		return 1;
+	}
+	return Mod_Load(m, name, out);
+}
+
+/* the builtin eval with one string: the definitions read the save variables through it */
+static byte Mod_IsEval(const nativeVal_t *f, const nativeVal_t *args, const nativeVal_t *kw) {
+	const libFn_t *row = Lib_FnOf(f);
+	return row && row == Lib_Builtin("eval") && !kw->n && args->n == 1 && args->items[0].type == NV_STR;
+}
+
+static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *out);
+
+/*
+ * f(args, keywords) when not skipped: a port or engine function (a native port function, also the view of its C
+ * function object) through its entry on the native values, as its adapter runs it; any other value as NObj_CallKw
+ * calls it (a native object natively, a call with keywords of a port function and one with more arguments than an
+ * entry takes through Port_KwCall, a view through Python). A native object gets the keywords in their order, any
+ * other value as the dict of keywords of a call through Python has them (Native_KwOrder)
+ */
+static byte Mod_Invoke(const nativeVal_t *f, nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
+	const portRef_t *own = NObj_PortRef(f);
+	if (own && !kw->n && args->n <= PORT_ARGS) {
+		/* a dict goes as a dict object with the table of its display (Native_Pass would lay it out anew) */
+		for (int i = 0; i < args->n; i++) {
+			if (Native_Holds(&args->items[i], 1u << NV_DICT)) {
+				NObj_Share(&args->items[i]);
+			}
+		}
+		return Port_ValuesOf(PORT_VSITE(), f, args->items, args->n, out, 0);
+	}
+	if (!own && NObj_Native(f)) {
+		return NObj_CallKw(f, args->items, args->n, kw, out);
+	}
+	nativeVal_t pairs;
+	Native_KwOrder(kw, &pairs);
+	byte ok = NObj_CallKw(f, args->items, args->n, &pairs, out);
+	Native_Free(&pairs);
+	return ok;
+}
+
+static byte Mod_Call(modParse_t *m, const nativeVal_t *f, nativeVal_t *out) {
+	/* the positional values, and the keywords as (name, value) in their order */
+	nativeVal_t args, kw;
+	byte ok = 1;
+	Native_SetNone(out);
+	Native_SetEmpty(&args, NV_LIST);
+	Native_SetEmpty(&kw, NV_LIST);
+	m->depth++;
+	Mod_Blanks(m);
+	while (ok && *m->p != ')') {
+		const char *at = m->p;
+		char name[MOD_NAME];
+		nativeVal_t *slot;
+		if (Mod_Word(m, name, sizeof(name)) && Mod_Op(m, "=") && *m->p != '=') {
+			nativeVal_t *pair = Native_Append(&kw);
+			Native_SetEmpty(pair, NV_TUPLE);
+			Native_SetStr(Native_Append(pair), name);
+			slot = Native_Append(pair);
+		} else {
+			m->p = at;
+			slot = Native_Append(&args);
+		}
+		ok = Mod_Expr(m, slot);
+		if (ok && !Mod_Op(m, ",") && (Mod_Blanks(m), *m->p != ')')) {
+			Mod_Syntax(m, "',' or ')' expected");
+			ok = 0;
+		}
+		if (ok) {
+			Mod_Blanks(m);
+		}
+	}
+	m->depth--;
+	if (ok) {
+		m->p++;
+		if (!m->skip) {
+			ok = Mod_IsEval(f, &args, &kw) ? Mod_Eval(m, &args.items[0], out) : Mod_Invoke(f, &args, &kw, out);
+		}
+	}
+	Native_Free(&args);
+	Native_Free(&kw);
+	return ok;
+}
+
+/* slice_index of ceval: an int index (v NULL: not given), else TypeError */
+static byte Mod_SliceIndex(const nativeVal_t *v, int *pi) {
+	if (v == NULL) {
+		return 1;
+	}
+	if (v->type != NV_INT) {
+		Native_Raise(NE_TYPE, "slice index must be int");
+		return 0;
+	}
+	long x = v->i;
+	*pi = x > INT_MAX ? INT_MAX : x < -INT_MAX ? -INT_MAX : (int)x;
+	return 1;
+}
+
+/* o[lo:hi] and o[k] of 1.5.2 (the sequence slice, the subscript): of plain values, else of the object */
+static byte Mod_Get(const nativeVal_t *o, const nativeVal_t *k, int lo, int hi, nativeVal_t *out) {
+	if (Mod_Plain(o) && (!k || Mod_Plain(k))) {
+		return k ? Native_Subscript(o, k, out) : Native_Slice(o, lo, hi, out);
+	}
+	return k ? NObj_GetItem(o, k, out) : NObj_GetSlice(o, lo, hi, out);
+}
+
+static byte Mod_Subscript(modParse_t *m, const nativeVal_t *o, nativeVal_t *out) {
+	nativeVal_t lo, hi;
+	byte haveLo = 0, haveHi = 0, slice = 0, ok = 1;
+	Native_SetNone(&lo);
+	Native_SetNone(&hi);
+	Native_SetNone(out);
+	m->depth++;
+	Mod_Blanks(m);
+	if (*m->p != ':') {
+		haveLo = Mod_Expr(m, &lo);
+	}
+	if ((haveLo || *m->p == ':') && Mod_Op(m, ":")) {
+		slice = 1;
+		Mod_Blanks(m);
+		if (*m->p != ']') {
+			haveHi = Mod_Expr(m, &hi);
+			if (!haveHi) {
+				Native_Free(&lo);
+				m->depth--;
+				return 0;
+			}
+		}
+	}
+	m->depth--;
+	if ((!haveLo && !slice) || !Mod_Op(m, "]")) {
+		Native_Free(&lo);
+		Native_Free(&hi);
+		if (haveLo || slice) {
+			Mod_Syntax(m, "']' expected");
+		}
+		return 0;
+	}
+	if (m->skip) {
+		/* None */
+	} else if (slice) {
+		int ilow = 0, ihigh = INT_MAX;
+		ok = Mod_SliceIndex(haveLo ? &lo : NULL, &ilow) && Mod_SliceIndex(haveHi ? &hi : NULL, &ihigh) &&
+			Mod_Get(o, NULL, ilow, ihigh, out);
+	} else {
+		ok = Mod_Get(o, &lo, 0, 0, out);
+	}
+	Native_Free(&lo);
+	Native_Free(&hi);
+	return ok;
+}
+
+/* o.name (a pack module's variable in the registry); an attribute the engine fails to give without an exception (the
+ * handle of a deleted entity) raises ceval's SystemError */
+static byte Mod_Attr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
+	modVarRef_t mv;
+	if (ModVar_OfVal(o, &mv)) {
+		return ModVar_AttrVal(&mv, name, out);
+	}
+	return NObj_GetAttr(o, name, out) || Script_Fail();
+}
+
+/* an atom and its attributes, calls and subscripts */
+static byte Mod_Postfix(modParse_t *m, nativeVal_t *out) {
+	if (!Mod_Atom(m, out)) {
+		return 0;
+	}
+	for (;;) {
+		nativeVal_t r;
+		byte ok;
+		Mod_Blanks(m);
+		Native_SetNone(&r);
+		if (*m->p == '.' && !(m->p[1] >= '0' && m->p[1] <= '9')) {
+			char name[MOD_NAME];
+			m->p++;
+			if (!Mod_Word(m, name, sizeof(name))) {
+				Native_Free(out);
+				Mod_Syntax(m, "a name expected after '.'");
+				return 0;
+			}
+			ok = m->skip || Mod_Attr(out, name, &r);
+		} else if (*m->p == '(') {
+			m->p++;
+			ok = Mod_Call(m, out, &r);
+		} else if (*m->p == '[') {
+			m->p++;
+			ok = Mod_Subscript(m, out, &r);
+		} else {
+			return 1;
+		}
+		Native_Free(out);
+		*out = r;
+		if (!ok) {
+			return 0;
+		}
+	}
+}
+
+/* -v and +v: ints and floats in C; long ints, the OverflowError of -LONG_MIN and the TypeError of a value without the
+ * operation by the number rules of 1.5.2 (Lib_Unary) */
+static byte Mod_Unary(modParse_t *m, nativeVal_t *out) {
+	char op = Mod_Op(m, "-") ? '-' : Mod_Op(m, "+") ? '+' : 0;
+	if (!op) {
+		return Mod_Postfix(m, out);
+	}
+	if (!Mod_Unary(m, out)) {
+		return 0;
+	}
+	if (m->skip) {
+		Native_Free(out);
+	} else if (op == '+' && (out->type == NV_INT || out->type == NV_FLOAT)) {
+		/* int_pos, float_pos: the value itself */
+	} else if (out->type == NV_INT && out->i != LONG_MIN) {
+		long i = out->i;
+		Native_Free(out);
+		Native_SetInt(out, -i);
+	} else if (out->type == NV_FLOAT) {
+		double f = out->f;
+		Native_Free(out);
+		Native_SetFloat(out, -f);
+	} else {
+		nativeVal_t r;
+		byte ok = Lib_Unary(op, out, &r);
+		Native_Free(out);
+		*out = r;
+		return ok;
+	}
+	return 1;
+}
+
+/* a + b or a * b where a list object of native data takes part: its items by value (shared as they are) with
+ * Native_Arith; 1 with *ok its result, 0 when the operands are no such list and plain values (Python decides) */
+static byte Mod_SeqOp(const nativeVal_t *a, const nativeVal_t *b, char op, nativeVal_t *r, byte *ok) {
+	const nativeVal_t *da = NObj_Kind(a) == NO_LIST ? NObj_ListData(a) : a, *db = NObj_Kind(b) == NO_LIST ? NObj_ListData(b) : b;
+	if (!da || !db || (da == a && !Mod_Plain(a)) || (db == b && !Mod_Plain(b))) {
+		return 0;
+	}
+	*ok = Native_Arith(op, da, db, r);
+	return 1;
+}
+
+/* a op b into *a (b made: b was made without an error; both freed): Native_Arith on plain values (long ints only add
+ * and subtract there), else the number rules of 1.5.2 (Lib_BinOp) */
+static byte Mod_Binary(modParse_t *m, nativeVal_t *a, char op, nativeVal_t *b, byte made) {
+	nativeVal_t r;
+	byte ok = made;
+	Native_SetNone(&r);
+	if (ok && !m->skip) {
+		if (Mod_Plain(a) && Mod_Plain(b) &&
+			(op == '+' || op == '-' || !(Native_Holds(a, 1u << NV_LONG) || Native_Holds(b, 1u << NV_LONG)))) {
+			ok = Native_Arith(op, a, b, &r);
+		} else if ((op == '+' || op == '*') && (NObj_Native(a) || NObj_Native(b)) && Mod_SeqOp(a, b, op, &r, &ok)) {
+			/* a list object of native data concatenated or repeated (the items themselves, as list_concat) */
+		} else {
+			ok = Lib_BinOp(op, a, b, &r);
+		}
+	}
+	Native_Free(a);
+	Native_Free(b);
+	*a = r;
+	return ok;
+}
+
+static byte Mod_Term(modParse_t *m, nativeVal_t *out) {
+	if (!Mod_Unary(m, out)) {
+		return 0;
+	}
+	for (;;) {
+		nativeVal_t b;
+		Mod_Blanks(m);
+		char op = *m->p;
+		if ((op != '*' && op != '/' && op != '%') || m->p[1] == '*') {
+			return 1;
+		}
+		m->p++;
+		byte made = Mod_Unary(m, &b);
+		if (!Mod_Binary(m, out, op, &b, made)) {
+			return 0;
+		}
+	}
+}
+
+static byte Mod_Sum(modParse_t *m, nativeVal_t *out) {
+	if (!Mod_Term(m, out)) {
+		return 0;
+	}
+	for (;;) {
+		nativeVal_t b;
+		Mod_Blanks(m);
+		char op = *m->p;
+		if (op != '+' && op != '-') {
+			return 1;
+		}
+		m->p++;
+		byte made = Mod_Term(m, &b);
+		if (!Mod_Binary(m, out, op, &b, made)) {
+			return 0;
+		}
+	}
+}
+
+/* a is b (the objects themselves), a in b (the contains of 1.5.2), cmp(a, b) (its compare): 1, 0, -1 with the error;
+ * not is the negation of is and in. `is` (Mod_Is, NObj_Is), plain values (Native_Contains, Native_Compare), objects
+ * (NObj_Contains, NObj_Compare), the rest by the rules of 1.5.2 (Lib_Cmp) */
+static int Mod_Relation(modParse_t *m, const nativeVal_t *a, const nativeVal_t *b, byte is, byte in, byte not, int *cmp) {
+	if (is) {
+		/* an object is only itself */
+		return (a->type == NV_REF || b->type == NV_REF ? NObj_Is(a, b) : Mod_Is(m, a, b)) != not;
+	}
+	if ((NObj_Native(a) || NObj_Native(b)) && !Native_Holds(a, 1u << NV_OBJ) && !Native_Holds(b, 1u << NV_OBJ)) {
+		/* an object: its own compare and contains */
+		if (in) {
+			int r = NObj_Contains(b, a);
+			return r < 0 ? -1 : r != not;
+		}
+		*cmp = NObj_Compare(a, b);
+		return 1;
+	}
+	if (Mod_Plain(a) && Mod_Plain(b)) {
+		if (in) {
+			int r = Native_Contains(b, a);
+			return r < 0 ? -1 : r != not;
+		}
+		*cmp = Native_Compare(a, b);
+		return 1;
+	}
+	if ((NObj_Native(a) || NObj_Native(b)) && (NObj_Native(a) || Mod_Plain(a)) && (NObj_Native(b) || Mod_Plain(b))) {
+		/* the same on a list, dict or other object of native data and plain values */
+		if (in) {
+			int r = NObj_Contains(b, a);
+			return r < 0 ? -1 : r != not;
+		}
+		*cmp = NObj_Compare(a, b);
+		return *cmp && Native_Failed() ? -1 : 1;
+	}
+	if (in) {
+		int r = NObj_Contains(b, a);
+		return r < 0 ? -1 : r != not;
+	}
+	*cmp = Lib_Cmp(a, b);
+	return *cmp && Native_Failed() ? -1 : 1;
+}
+
+/* a comparison as cmp_outcome of ceval makes it (an int 0 or 1, intobject.c False or intobject.c True) */
+static byte Mod_Compare(modParse_t *m, nativeVal_t *out) {
+	static const char *const ops[] = { "<=", ">=", "==", "!=", "<>", "<", ">", NULL };
+	if (!Mod_Sum(m, out)) {
+		return 0;
+	}
+	int op = -1;
+	for (int i = 0; ops[i] && op < 0; i++) {
+		if (Mod_Op(m, ops[i])) {
+			op = i;
+		}
+	}
+	byte not = 0, in = 0, is = 0;
+	if (op < 0) {
+		const char *at = m->p;
+		if (Mod_Keyword(m, "not") && Mod_Keyword(m, "in")) {
+			not = in = 1;
+		} else {
+			m->p = at;
+			if (Mod_Keyword(m, "in")) {
+				in = 1;
+			} else if (Mod_Keyword(m, "is")) {
+				is = 1;
+				not = Mod_Keyword(m, "not");
+			} else {
+				return 1;
+			}
+		}
+	}
+	nativeVal_t b;
+	byte made = Mod_Sum(m, &b);
+	if (!made || m->skip) {
+		Native_Free(out);
+		*out = b;
+		return made;
+	}
+	int cmp = 0, res = Mod_Relation(m, out, &b, is, in, not, &cmp);
+	if (res > 0 && !is && !in) {
+		switch (op) {
+		case 0: res = cmp <= 0; break;
+		case 1: res = cmp >= 0; break;
+		case 2: res = cmp == 0; break;
+		case 3: case 4: res = cmp != 0; break;
+		case 5: res = cmp < 0; break;
+		default: res = cmp > 0; break;
+		}
+	}
+	Native_Free(out);
+	Native_Free(&b);
+	if (res < 0) {
+		return 0;
+	}
+	Native_SetBool(out, res);
+	return 1;
+}
+
+static byte Mod_Not(modParse_t *m, nativeVal_t *out) {
+	if (!Mod_Keyword(m, "not")) {
+		return Mod_Compare(m, out);
+	}
+	byte ok = Mod_Not(m, out);
+	if (!ok || m->skip) {
+		return ok;
+	}
+	int t = Mod_Truth(out);
+	Native_Free(out);
+	if (t < 0) {
+		return 0;
+	}
+	Native_SetBool(out, !t);
+	return 1;
+}
+
+/* a and b, a or b: the right side is made only when the left one does not decide (JUMP_IF_FALSE, JUMP_IF_TRUE) */
+static byte Mod_Logic(modParse_t *m, byte (*side)(modParse_t *, nativeVal_t *), const char *kw, int stopWhen,
+	nativeVal_t *out) {
+	if (!side(m, out)) {
+		return 0;
+	}
+	while (Mod_Keyword(m, kw)) {
+		int t = m->skip ? 0 : Mod_Truth(out);
+		if (t < 0) {
+			Native_Free(out);
+			return 0;
+		}
+		if (!m->skip && t == stopWhen) {
+			nativeVal_t r;
+			m->skip++;
+			byte ok = side(m, &r);
+			m->skip--;
+			Native_Free(&r);
+			if (!ok) {
+				Native_Free(out);
+				return 0;
+			}
+		} else {
+			Native_Free(out);
+			if (!side(m, out)) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+static byte Mod_And(modParse_t *m, nativeVal_t *out) {
+	return Mod_Logic(m, Mod_Not, "and", 0, out);
+}
+
+static byte Mod_Expr(modParse_t *m, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (m->nest >= MOD_DEPTH) {
+		Mod_Syntax(m, "nested too deep");
+		return 0;
+	}
+	m->nest++;
+	byte ok = Mod_Logic(m, Mod_And, "or", 1, out);
+	m->nest--;
+	return ok;
+}
+
+/*
+ * eval(text) in the namespace of the module (the save variables): a plain literal through the reader of the saves
+ * (Native_LiteralText, as Mode_EvalSave), else this parser, else the eval of Python (Script_EvalValue: the ValueError
+ * of a text with a 0 byte, its literals, its SyntaxError). The constants are those of the eval's own code (Mod_Pin)
+ */
+static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *out) {
+	const char *s = Native_Text(text);
+	if ((int)strlen(s) == text->n) {
+		nativeVal_t consts;
+		modParse_t m = { .p = s, .text = s, .file = "eval", .module = outer->module, .mod = outer->mod,
+			.consts = &consts, .ref = outer->ref };
+		Native_SetEmpty(&consts, NV_LIST);
+		m.depth = 1;
+		byte ok = Native_LiteralText(text, out), literal = ok;
+		if (!literal) {
+			ok = Mod_Expr(&m, out);
+			Mod_Blanks(&m);
+			if (ok && *m.p) {
+				Native_Free(out);
+				Mod_Syntax(&m, "the end expected");
+				ok = 0;
+			}
+		}
+		if (ok) {
+			Mod_Pin(&m, out);
+		}
+		Native_Free(&consts);
+		if (ok || literal || !m.syntax) {
+			return ok;
+		}
+		Native_ErrClear();
+	}
+	return Script_EvalText(outer->mod, text, out);
+}
+
+/* ---- the statements ---- */
+
+/* the end of the line: only blanks may follow */
+static byte Mod_EndLine(modParse_t *m) {
+	Mod_Blanks(m);
+	if (*m->p && *m->p != '\n') {
+		Mod_Syntax(m, "the end of the line expected");
+		return 0;
+	}
+	if (*m->p) {
+		m->p++;
+	}
+	return 1;
+}
+
+/* name = v (native, not freed) into a class body's dict: its numbers and texts with the identities of the body's
+ * constants (Mod_Pin), a tuple of plain values with one of its own as a variable keeps it (one object for `is`) */
+static byte Mod_BodyPut(modParse_t *m, const char *name, const nativeVal_t *v) {
+	nativeVal_t key, c;
+	Native_Copy(&c, v);
+	Mod_Pin(m, &c);
+	if (c.type == NV_TUPLE && !Native_Holds(&c, 1u << NV_REF)) {
+		Native_PinTop(&c);
+	}
+	Native_SetStr(&key, name);
+	byte ok = NObj_SetItem(m->body, &key, &c);
+	Native_Free(&key);
+	Native_Free(&c);
+	return ok;
+}
+
+
+/* name = v (not freed) in the locals: the module's variables through the registry, a class body's dict; the numbers
+ * and texts with the identities of this code's constants (Mod_Leaf): `is` finds them */
+static byte Mod_PutVal(modParse_t *m, const char *name, const nativeVal_t *v) {
+	if (m->body) {
+		return Mod_BodyPut(m, name, v);
+	}
+	nativeVal_t c;
+	Native_Copy(&c, v);
+	Mod_Pin(m, &c);
+	byte ok = ModVar_SetVal(&m->ref, name, &c) == 0;
+	Native_Free(&c);
+	return ok;
+}
+
+/* the same for a value of the evaluator when not skipped (freed) */
+static byte Mod_StoreVal(modParse_t *m, const char *name, nativeVal_t *v) {
+	byte ok = m->skip || Mod_PutVal(m, name, v);
+	Native_Free(v);
+	return ok;
+}
+
+/* the function name of the module into *out: a level table, script_modules, the level data; 0 with the error */
+static byte Mod_Function(modParse_t *m, const char *name, nativeVal_t *out) {
+	byte ok = Script_LevelTableFunction(m->module, name, out);
+	if (!ok && !Native_Failed()) {
+		ok = Script_TableFunction(m->module, name, out);
+	}
+	if (!ok && !Native_Failed()) {
+		ok = Script_LevelDataFunction(m->module, name, out);
+	}
+	if (!ok && !Native_Failed()) {
+		Native_Raise(NE_SYSTEM, "%.100s:%d: %.60s.%.60s has no C definition", m->file, Mod_Line(m), m->module,
+			name);
+	}
+	return ok;
+}
+
+static byte Mod_Import(modParse_t *m) {
+	char name[MOD_NAME];
+	while (Mod_Word(m, name, sizeof(name))) {
+		nativeVal_t v;
+		if (!m->skip && (!Script_ModuleIn(name, m->mod, &v) || !Mod_StoreVal(m, name, &v))) {
+			return 0;
+		}
+	}
+	return Mod_EndLine(m);
+}
+
+/* from M import a b, from M import * (import_from of ceval: * takes the names without a leading _) */
+static byte Mod_From(modParse_t *m) {
+	char name[MOD_NAME];
+	if (!Mod_Word(m, name, sizeof(name)) || !Mod_Keyword(m, "import")) {
+		return Mod_Syntax(m, "from <module> import <names>"), 0;
+	}
+	nativeVal_t mod;
+	Native_SetNone(&mod);
+	if (!m->skip && !Script_ModuleIn(name, m->mod, &mod)) {
+		return 0;
+	}
+	modVarRef_t from;
+	byte has = !m->skip && ModVar_OfVal(&mod, &from), ok = 1;
+	nativeVal_t k, v;
+	if (Mod_Op(m, "*")) {
+		int pos = 0;
+		/* the walk of the module's variables in the slot order of its dict (the order of the stores) */
+		while (ok && has && ModVar_Next(&from, &pos, &k, &v)) {
+			if (k.type == NV_STR && Native_Text(&k)[0] != '_') {
+				ok = Mod_PutVal(m, Native_Text(&k), &v);
+			}
+			Native_Free(&k);
+			Native_Free(&v);
+		}
+	} else {
+		while (ok && Mod_Word(m, name, sizeof(name))) {
+			if (!has) {
+				continue;
+			}
+			if (!ModVar_GetVal(&from, name, &v)) {
+				Native_Raise(NE_IMPORT, "cannot import name %.200s", name);
+				ok = 0;
+			} else {
+				ok = m->skip || Mod_PutVal(m, name, &v);
+				Native_Free(&v);
+			}
+		}
+	}
+	Native_Free(&mod);
+	return ok && Mod_EndLine(m);
+}
+
+static byte Mod_Def(modParse_t *m) {
+	char name[MOD_NAME];
+	while (Mod_Word(m, name, sizeof(name))) {
+		nativeVal_t f, key, held;
+		if (m->skip) {
+			continue;
+		}
+		if (!Mod_Function(m, name, &f) || !Mod_PutVal(m, name, &f)) {
+			Native_Free(&f);
+			return 0;
+		}
+		if (!m->body) {
+			/* the value the variable holds now */
+			Native_SetStr(&key, name);
+			if (!ModVar_GetVal(&m->ref, name, &held) || !Native_DictSet(&m->defs, &key, &held)) {
+				Native_Free(&f);
+				return 0;
+			}
+		}
+		Native_Free(&f);
+	}
+	return Mod_EndLine(m);
+}
+
+static byte Mod_Let(modParse_t *m) {
+	char name[MOD_NAME];
+	nativeVal_t v;
+	if (!Mod_Word(m, name, sizeof(name)) || !Mod_Op(m, "=")) {
+		return Mod_Syntax(m, "let <name> = <value>"), 0;
+	}
+	return Mod_Expr(m, &v) && Mod_StoreVal(m, name, &v) && Mod_EndLine(m);
+}
+
+/* o.name = v (STORE_ATTR through the registry for a pack module) and o[k] = v (STORE_SUBSCR) on the objects */
+static byte Mod_SetOn(modParse_t *m, const nativeVal_t *o, const char *name, const nativeVal_t *k, const nativeVal_t *v) {
+	modVarRef_t mv;
+	if (!k && ModVar_OfVal(o, &mv)) {
+		return ModVar_SetAttrVal(&mv, name, v);
+	}
+	if (NObj_Native(o)) {
+		/* a native object keeps the value as it is (its numbers and texts with their identities, Mod_Pin) */
+		nativeVal_t c;
+		Native_Copy(&c, v);
+		Mod_Pin(m, &c);
+		byte ok = k ? NObj_SetItem(o, k, &c) : NObj_SetAttr(o, name, &c);
+		Native_Free(&c);
+		return ok;
+	}
+	return k ? NObj_SetItem(o, k, v) : NObj_SetAttr(o, name, v);
+}
+
+/*
+ * set <target> = <value>: the value first, then the object of the target and its key (STORE_ATTR, STORE_SUBSCR); the
+ * target is an expression whose last part is an attribute or a subscript
+ */
+static byte Mod_Set(modParse_t *m) {
+	const char *target = m->p, *last = NULL;
+	nativeVal_t o, v, k;
+	/* the parts of the target without making them: where the last one starts */
+	m->skip++;
+	byte ok = Mod_Atom(m, &o);
+	while (ok) {
+		nativeVal_t r;
+		Mod_Blanks(m);
+		if (*m->p != '.' && *m->p != '(' && *m->p != '[') {
+			break;
+		}
+		last = m->p++;
+		Native_SetNone(&r);
+		ok = *last == '.' ? Mod_Word(m, (char[MOD_NAME]){ 0 }, MOD_NAME) : *last == '(' ? Mod_Call(m, &o, &r) :
+			Mod_Subscript(m, &o, &r);
+		Native_Free(&o);
+		o = r;
+	}
+	m->skip--;
+	Native_Free(&o);
+	if (!ok || !last || *last == '(' || !Mod_Op(m, "=")) {
+		return Mod_Syntax(m, "set <object>.<name> = <value> or set <object>[<key>] = <value>"), 0;
+	}
+	if (!Mod_Expr(m, &v)) {
+		return 0;
+	}
+	const char *end = m->p;
+	/* the object: the target up to its last part, made now */
+	nativeBuf_t head;
+	Native_BufInit(&head);
+	Native_BufAdd(&head, target, (int)(last - target));
+	modParse_t h = *m;
+	h.p = h.text = head.p;
+	ok = Mod_Expr(&h, &o);
+	Native_BufFree(&head);
+	m->p = last;
+	if (ok && *last == '.') {
+		char name[MOD_NAME];
+		m->p++;
+		Mod_Word(m, name, sizeof(name));
+		ok = m->skip || Mod_SetOn(m, &o, name, NULL, &v);
+	} else if (ok) {
+		m->p++;
+		m->depth++;
+		ok = Mod_Expr(m, &k);
+		m->depth--;
+		ok = ok && (m->skip || Mod_SetOn(m, &o, NULL, &k, &v));
+		Native_Free(&k);
+	}
+	Native_Free(&o);
+	Native_Free(&v);
+	m->p = end;
+	return ok && Mod_EndLine(m);
+}
+
+static byte Mod_Call1(modParse_t *m) {
+	nativeVal_t v;
+	byte ok = Mod_Expr(m, &v);
+	Native_Free(&v);
+	return ok && Mod_EndLine(m);
+}
+
+static byte Mod_Del(modParse_t *m) {
+	char name[MOD_NAME];
+	if (!Mod_Word(m, name, sizeof(name))) {
+		return Mod_Syntax(m, "del <name>"), 0;
+	}
+	if (!m->skip && m->body) {
+		nativeVal_t key;
+		Native_SetStr(&key, name);
+		byte ok = Native_DictDel(NObj_DictData(m->body), &key);
+		Native_Free(&key);
+		if (!ok) {
+			return Native_Raise(NE_NAME, "%s", name);
+		}
+	} else if (!m->skip && ModVar_Del(&m->ref, name) != 0) {
+		return Native_Raise(NE_NAME, "%s", name);
+	}
+	return Mod_EndLine(m);
+}
+
+static byte Mod_Hook(modParse_t *m) {
+	char name[MOD_NAME];
+	if (!Mod_Word(m, name, sizeof(name)) || !Mod_EndLine(m)) {
+		return Mod_Syntax(m, "c <hook>"), 0;
+	}
+	for (int i = 0; module_hooks[i].fn; i++) {
+		if (!strcmp(module_hooks[i].module, m->module) && !strcmp(module_hooks[i].name, name)) {
+			return m->skip || module_hooks[i].fn(m->mod, m->body);
+		}
+	}
+	Native_Raise(NE_SYSTEM, "%.100s:%d: no C hook %.60s", m->file, Mod_Line(m), name);
+	return 0;
+}
+
+static int Mod_Block(modParse_t *m, char *stop, int size);
+
+/* if <expr> ... [else ...] end */
+static byte Mod_If(modParse_t *m) {
+	nativeVal_t v;
+	if (!Mod_Expr(m, &v) || !Mod_EndLine(m)) {
+		Native_Free(&v);
+		return 0;
+	}
+	int t = m->skip ? 0 : Mod_Truth(&v);
+	Native_Free(&v);
+	if (t < 0) {
+		return 0;
+	}
+	char stop[16];
+	int skipped = !t;
+	m->skip += skipped;
+	int r = Mod_Block(m, stop, sizeof(stop));
+	m->skip -= skipped;
+	if (r && !strcmp(stop, "else")) {
+		skipped = !!t;
+		m->skip += skipped;
+		r = Mod_Block(m, stop, sizeof(stop));
+		m->skip -= skipped;
+	}
+	if (r && strcmp(stop, "end")) {
+		return Mod_Syntax(m, "end expected"), 0;
+	}
+	return r;
+}
+
+/* class C[(B, ...)] ... end: the bases, the body into a new dict object (its own constants), a native class as
+ * build_class makes it (NObj_NewClass: __doc__ and __module__ as classobject.c Class_New puts them in) */
+static byte Mod_Class(modParse_t *m) {
+	char name[MOD_NAME];
+	if (!Mod_Word(m, name, sizeof(name))) {
+		return Mod_Syntax(m, "class <name>"), 0;
+	}
+	nativeVal_t bases;
+	byte ok = 1;
+	Native_SetEmpty(&bases, NV_TUPLE);
+	Mod_Blanks(m);
+	if (*m->p == '(') {
+		byte comma;
+		m->p++;
+		Native_Free(&bases);
+		ok = Mod_Items(m, ')', &comma, &bases);
+		bases.type = NV_TUPLE;
+	}
+	if (!ok || !Mod_EndLine(m)) {
+		Native_Free(&bases);
+		return 0;
+	}
+	modParse_t body = *m;
+	nativeVal_t dict, cls, modname;
+	NObj_NewDict(&dict);
+	body.body = &dict;
+	nativeVal_t consts;
+	Native_SetEmpty(&consts, NV_LIST);
+	body.consts = &consts;
+	char stop[16];
+	int r = Mod_Block(&body, stop, sizeof(stop));
+	m->p = body.p;
+	if (r && strcmp(stop, "end")) {
+		r = 0;
+		Mod_Syntax(m, "end expected");
+	}
+	if (r && !m->skip) {
+		/* classobject.c Class_New takes __module__ from the globals of the frame that runs, which is not this module's
+		 * here */
+		ModVar_GetVal(&m->ref, "__name__", &modname);
+		r = NObj_NewClass(&cls, name, modname.type == NV_STR ? Native_Text(&modname) : NULL, &bases, &dict) &&
+			Mod_StoreVal(m, name, &cls);
+		Native_Free(&modname);
+	}
+	Native_Free(&dict);
+	Native_Free(&consts);
+	Native_Free(&bases);
+	return r;
+}
+
+/*
+ * the statements up to else, end or the end of the text: 1, the word that stopped them in stop ("" at the end of the
+ * text); 0 with an error set when one failed
+ */
+static int Mod_Block(modParse_t *m, char *stop, int size) {
+	static const struct {
+		const char *word;
+		byte (*fn)(modParse_t *m);
+	} stmts[] = {
+		{ "import", Mod_Import }, { "from", Mod_From }, { "def", Mod_Def }, { "let", Mod_Let }, { "set", Mod_Set },
+		{ "call", Mod_Call1 }, { "del", Mod_Del }, { "if", Mod_If }, { "class", Mod_Class }, { "c", Mod_Hook },
+		{ NULL, NULL },
+	};
+	for (;;) {
+		Mod_Blanks(m);
+		if (*m->p == '#') {
+			while (*m->p && *m->p != '\n') {
+				m->p++;
+			}
+		}
+		if (*m->p == '\n') {
+			m->p++;
+			continue;
+		}
+		if (!*m->p) {
+			stop[0] = 0;
+			return 1;
+		}
+		char word[16];
+		if (!Mod_Word(m, word, sizeof(word))) {
+			return Mod_Syntax(m, "a statement expected"), 0;
+		}
+		if (!strcmp(word, "else") || !strcmp(word, "end")) {
+			Str_Copy(stop, word, size);
+			return Mod_EndLine(m);
+		}
+		int i = 0;
+		while (stmts[i].word && strcmp(stmts[i].word, word)) {
+			i++;
+		}
+		if (!stmts[i].word) {
+			return Mod_Syntax(m, "unknown statement"), 0;
+		}
+		if (!stmts[i].fn(m)) {
+			if (!Native_Failed()) {
+				Native_Raise(NE_SYSTEM, "%.100s:%d: %s failed", m->file, Mod_Line(m), word);
+			}
+			return 0;
+		}
+	}
+}
+
+/* ---- the loader ---- */
+
+
+static byte Mod_On(void) {
+	const char *e = getenv("SCRAP_PACK_SCRIPTS");
+	if (e && *e == '1') {
+		return 0;
+	}
+	e = getenv("SCRAP_CMOD");
+	return !(e && *e == '0');
+}
+
+/* the definition of module name: the level's, else the one of every level */
+static const moduleFile_t *Mod_Find(const char *name) {
+	char level[MOD_NAME];
+	byte inLevel = Script_LevelName(level, sizeof(level));
+	const moduleFile_t *any = NULL;
+	for (size_t i = 0; i < sizeof(module_files) / sizeof(module_files[0]); i++) {
+		const moduleFile_t *f = &module_files[i];
+		if (strcmp(f->module, name)) {
+			continue;
+		}
+		if (f->level && inLevel && !strcmp(f->level, level)) {
+			return f;
+		}
+		if (!f->level) {
+			any = f;
+		}
+	}
+	return any;
+}
+
+/* import.c Import_AddModule of a pack module: the module in the store, a new empty one when there is none or the entry
+ * is no module; 1 with *m, 0 with the error */
+static byte Mod_Add(const char *name, nativeVal_t *m) {
+	if (Script_ModuleLoaded(name, m) && NObj_Kind(m) == NO_MODULE) {
+		return 1;
+	}
+	nativeVal_t key;
+	Native_Free(m);
+	NObj_NewModule(m, name);
+	Native_SetStr(&key, name);
+	byte ok = NObj_SetItem(Script_Modules(), &key, m);
+	Native_Free(&key);
+	if (!ok) {
+		Native_Free(m);
+	}
+	return ok;
+}
+
+/* name = v into the variables of module m (the dict's store) */
+static void Mod_SysVar(const nativeVal_t *m, const char *name, const nativeVal_t *v) {
+	nativeVal_t key;
+	Native_SetStr(&key, name);
+	NObj_SetItem(NObj_ModuleVars(m), &key, v);
+	Native_Free(&key);
+}
+
+int Script_ModuleMake(const char *name, const char *file, nativeVal_t *module) {
+	Native_SetNone(module);
+	if (!Mod_On()) {
+		return 0;
+	}
+	const moduleFile_t *mf = Mod_Find(name);
+	if (!mf) {
+		return 0;
+	}
+	/* the copy of a mod pack (scrapc/<name>) wins over the built-in one */
+	char path[0x100], packName[0x40];
+	int offset, size;
+	char *own = NULL;
+	const char *text = mf->text;
+	Str_Printf(path, sizeof(path), "scrapc/%s", mf->name);
+	if (Pack_GetFileInfo(path, packName, &offset, &size) && (own = malloc(size + 1)) != NULL) {
+		if (Pack_ReadFile(path, own, size) == size) {
+			own[size] = 0;
+			text = own;
+			Con_Verbosef("Script: %s from the packs\n", path);
+		}
+	}
+	nativeVal_t m;
+	nativeVal_t consts;
+	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = &m, .consts = &consts };
+	modVarRef_t was, ref;
+	int ok = Mod_Add(name, &m), bound = 0;
+	Native_SetEmpty(&consts, NV_LIST);
+	Native_SetEmpty(&mp.defs, NV_DICT);
+	/* as import.c Import_ExecCodeModuleEx: the builtins and __file__ before the module code */
+	if (ok && ModVar_OfVal(&m, &ref) && !ModVar_Has(&ref, "__builtins__")) {
+		Mod_SysVar(&m, "__builtins__", Script_Builtins());
+	}
+	if (ok) {
+		char fpath[0x100];
+		nativeVal_t v;
+		Str_Printf(fpath, sizeof(fpath), "PACK: %s", file);
+		Native_SetStr(&v, fpath);
+		Mod_SysVar(&m, "__file__", &v);
+		Native_Free(&v);
+		/* the module code stores and loads its names through the registry */
+		ModVar_Making(name, mf->level, &m, &mp.ref, &was);
+		bound = 1;
+		char stop[16];
+		ok = Mod_Block(&mp, stop, sizeof(stop));
+		if (ok && stop[0]) {
+			ok = 0;
+			Mod_Syntax(&mp, "else or end without if");
+		}
+	}
+	Native_Free(&consts);
+	free(own);
+	if (ok) {
+		/* the writes the loader makes after the module code (the functions of the C tables the script does not have,
+		 * the sets that may resize the dict), as after the .pyc */
+		Script_ModuleExtras(name, &m, &mp.defs);
+		/* the names of the module for the registry of the module variables (a mod's own, the hooks' too) */
+		ModVar_Made(name, mf->level, &m);
+	} else if (bound) {
+		ModVar_Unmade(name, &was);
+	}
+	Native_Free(&mp.defs);
+	if (!ok) {
+		Native_Free(&m);
+		return -1;
+	}
+	Script_ModuleCount(SMC_MADE);
+	*module = m;
+	Con_Verbosef("Script: %s made in C from %s\n", name, mf->name);
+	return 1;
+}

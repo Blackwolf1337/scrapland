@@ -1,0 +1,146 @@
+# bosssound (the sound script sound/bosssound.py of the game): the sound files of the character class (LoadSounds), the
+# sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/bosssound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes loop-boss11.wav
+if %BossSound.isPC
+	class
+		AddSoundRes mecanismo-andar-boss1.wav
+end
+	AddSoundRes mecanismo-andar-boss2.wav
+if %BossSound.isPC
+	class
+		AddSoundRes mecanismo-raro-boss2.wav
+end
+	AddSoundRes mecanismo-boss.wav
+	AddSoundRes placas-metalboss.wav
+	AddSoundRes KeyboardBoss1.wav
+	AddSoundRes KeyboardBoss2.wav
+
+section SetSounds
+let act Walk
+if %BossSound.isPC
+	call Chars.ActSound $char $act 25 mecanismo-andar-boss1 0.016
+else
+	call Chars.ActSound $char $act 25 mecanismo-andar-boss2 0.016
+end
+call Chars.ActSound $char $act 53 mecanismo-andar-boss2 0.016
+let act WalkEnd
+call Chars.ActSound $char $act 60 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 60 mecanismo-andar-boss2 0.016
+if %BossSound.isPC
+	call Chars.ActSound $char $act 56 mecanismo-raro-boss2 0.018 -4
+end
+let act DazedInit
+call Chars.ActSound $char $act 3 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 3 mecanismo-andar-boss2 0.018
+if %BossSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-raro-boss2 0.02 -4
+end
+call Chars.ActSound $char $act 16 placas-metalboss 0.022 -2
+call Chars.ActSound $char $act 16 mecanismo-andar-boss2 0.02
+if %BossSound.isPC
+	call Chars.ActSound $char $act 13 mecanismo-raro-boss2 0.018 -4
+end
+let act DazedEnd
+call Chars.ActSound $char $act 95 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 95 mecanismo-andar-boss2 0.02
+if %BossSound.isPC
+	call Chars.ActSound $char $act 92 mecanismo-raro-boss2 0.018 -4
+end
+let act FallInit
+call Chars.ActSound $char $act 4 placas-metalboss 0.022
+call Chars.ActSound $char $act 4 mecanismo-andar-boss2 0.016
+if %BossSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-raro-boss2 0.016
+end
+let act Relax0
+call Chars.ActSound $char $act 1 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 1 mecanismo-boss 0.019 +2
+call Chars.ActSound $char $act 60 mecanismo-boss 0.019 +5
+call Chars.ActSound $char $act 119 mecanismo-boss 0.019 +3
+call Chars.ActSound $char $act 119 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 164 mecanismo-boss 0.019 +2
+call Chars.ActSound $char $act 168 placas-metalboss 0.022 -4
+let act Relax1
+call Chars.ActSound $char $act 2 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 2 mecanismo-boss 0.019 +2
+call Chars.ActSound $char $act 68 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 64 mecanismo-boss 0.019 +2
+let act FlashedInit
+call Chars.ActSound $char $act 1 placas-metalboss 0.022 -4
+call Chars.ActSound $char $act 1 mecanismo-boss 0.019 +5
+let act Flashed
+call Chars.ActSound $char $act 13 mecanismo-boss 0.019 +6
+call Chars.ActSound $char $act 21 mecanismo-boss 0.019 +6
+call Chars.ActSound $char $act 27 mecanismo-boss 0.019 +2
+call Chars.ActSound $char $act 38 mecanismo-boss 0.019 +5
+let act FlashedEnd
+call Chars.ActSound $char $act 50 placas-metalboss 0.022 -5
+call Chars.ActSound $char $act 50 mecanismo-boss 0.019 +2
+let act Work
+call Chars.ActSound $char $act 18 keyboardBoss1 0.068
+call Chars.ActSound $char $act 20 keyboardBoss2 0.068
+call Chars.ActSound $char $act 38 keyboardBoss1 0.068
+call Chars.ActSound $char $act 39 keyboardBoss2 0.068
+call Chars.ActSound $char $act 51 keyboardBoss1 0.068
+call Chars.ActSound $char $act 58 keyboardBoss2 0.068
+call Chars.ActSound $char $act 60 keyboardBoss1 0.068
+call Chars.ActSound $char $act 77 keyboardBoss2 0.068
+call Chars.ActSound $char $act 82 keyboardBoss1 0.068
+call Chars.ActSound $char $act 90 keyboardBoss2 0.068
+call Chars.ActSound $char $act 104 keyboardBoss1 0.068
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 1 mecanismo-boss 0.019
+call Chars.ActSound $char $talk 38 mecanismo-boss 0.019
+
+section Talk1Snd
+call Chars.ActSound $char $talk 1 mecanismo-boss 0.019 +2
+call Chars.ActSound $char $talk 24 mecanismo-boss 0.019 +2
+call Chars.ActSound $char $talk 35 mecanismo-boss 0.019
+
+section Talk2Snd
+call Chars.ActSound $char $talk 3 mecanismo-boss 0.019
+call Chars.ActSound $char $talk 35 mecanismo-boss 0.019 -2
+
+section InitLoops
+object $e
+	snd_n 1
+	snd00_name loop-boss11
+	snd00_loop 1
+	snd00_pitch0 -15.0
+	snd00_vol0 0.03
+	snd00_pitch1 0.0
+	snd00_vol1 0.12
+	snd00_time1 0.6
+	snd00_int0 1
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

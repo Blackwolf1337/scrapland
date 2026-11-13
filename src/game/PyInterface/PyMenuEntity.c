@@ -1,53 +1,40 @@
 /*
- * The Python type cPyMenuEntity (type object): a handle of a scorer item (HUD and menu element) by
- * player and name. The item is looked up again on every access. Its attributes are the variables of the item
- * (cScorerItem Var: 1 string, 2 double, 3 int); the type has no methods. The original source file is not known.
+ * The script handle of a scorer item (HUD and menu element) by player and name, the type cPyMenuEntity of the exe (a
+ * native C object here, NObj_NewCObj). The item is looked up again on every access. Its
+ * attributes are the variables of the item (cScorerItem Var: 1 string, 2 double, 3 int); the type has no methods. The
+ * original source file is not known.
  */
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scorer.h"
+#include "scrap/scriptnative.h"
 
-static PyTypeObject cPyMenuEntity_Type;
-PyObject *ScorerItem_PyNew(int player, const char *name) {
-	cScorer *scorer = Scorer_Get(player);
-	if (!scorer || !cScorer_FindItem(scorer, name)) {
-		return NULL;
-	}
-	cPyMenuEntity *self = (cPyMenuEntity *)_PyObject_New(&cPyMenuEntity_Type);
-	if (!self) {
-		return NULL;
-	}
-	size_t size = strlen(name) + 1;
-	self->player = player;
-	self->name = Mem_Alloc(size);
-	memcpy(self->name, name, size);
-	return (PyObject *)self;
-}
+typedef struct {
+	int player;
+	char *name;			/* Mem_Alloc copy */
+} menuItem_t;
 
-/* tp_dealloc */
-static void PyMenuEntity_Dealloc(PyObject *self) {
-	Mem_Free(((cPyMenuEntity *)self)->name);
-	PyPool_Free(self);
+static void MenuItem_Drop(void *ctx) {
+	menuItem_t *m = ctx;
+	Mem_Free(m->name);
+	Mem_Free(m);
 }
 
 /* tp_print: the text goes to fprintf as the format, like in the original */
-static int PyMenuEntity_Print(PyObject *self, FILE *fp, int flags) {
-	static char buf[0x100];
-	cPyMenuEntity *m = (cPyMenuEntity *)self;
+static void MenuItem_Print(void *ctx, char *buf, int size) {
+	menuItem_t *m = ctx;
 	cScorer *scorer = Scorer_Get(m->player);
 
-	(void)flags;
 	if (scorer && cScorer_FindItem(scorer, m->name)) {
-		Str_Printf(buf, sizeof(buf), "Menu item: %d %s", m->player, m->name);
+		Str_Printf(buf, size, "Menu item: %d %s", m->player, m->name);
 	} else {
-		Str_Printf(buf, sizeof(buf), " : The menu item called '%s' at scorer %d is invalid.", m->name, m->player);
+		Str_Printf(buf, size, " : The menu item called '%s' at scorer %d is invalid.", m->name, m->player);
 	}
-	crt_fprintf(fp, buf);
-	return 0;
 }
 
-static cScorerItem *PyMenuEntity_Item(cPyMenuEntity *m, const char *attr) {
+static cScorerItem *MenuItem_Item(menuItem_t *m, const char *attr) {
 	cScorer *scorer = Scorer_Get(m->player);
 	if (!scorer) {
 		Con_Errorf("(%d,'%s')->%s : Menu invalid Scorer.\n", m->player, m->name, attr);
@@ -60,85 +47,121 @@ static cScorerItem *PyMenuEntity_Item(cPyMenuEntity *m, const char *attr) {
 	return item;
 }
 
-/* tp_getattr */
-static PyObject *PyMenuEntity_GetAttr(PyObject *self, char *name) {
-	cPyMenuEntity *m = (cPyMenuEntity *)self;
-	cScorerItem *item = PyMenuEntity_Item(m, name);
-	char *s;
-	double d;
-	int i;
-
-	if (!item) {
-		return NULL;
-	}
-	switch (ScorerItem_Var(item, name, 0, &s, &d, &i)) {
-	case 1:
-		return Py_BuildValue("s", s);
-	case 2:
-		return Py_BuildValue("d", d);
-	case 3:
-		return Py_BuildValue("i", i);
-	}
-	Con_Errorf("(%d,'%s')->%s : Menu invalid member.\n", m->player, m->name, name);
-	return NULL;
-}
-
-/*
- * tp_setattr: the value is tried as int, float and string, each type that parses goes to the item until the
- * variable has that type. A missing scorer or item returns 0 (no error) like in the original. The original
- * passes the other two values uninitialized; they are 0 here.
- */
-static int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
-	cPyMenuEntity *m = (cPyMenuEntity *)self;
-	cScorerItem *item = PyMenuEntity_Item(m, name);
-	int parsed = 0;
+/* tp_getattr; NULL without an error for a missing item or member */
+static byte MenuItem_GetAttr(void *ctx, const char *name, nativeVal_t *out) {
+	menuItem_t *m = ctx;
+	cScorerItem *item = MenuItem_Item(m, name);
+	/* differs from the original: 0 as in SScorer.Get */
 	char *s = NULL;
 	double d = 0.0;
 	int i = 0;
 
+	Native_SetNone(out);
 	if (!item) {
 		return 0;
 	}
-	if (PyArg_Parse(v, "i", &i)) {
-		parsed = 1;
-		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 3) {
-			return 0;
+	switch (ScorerItem_Var(item, name, 0, &s, &d, &i)) {
+	case 1:
+		/* modsupport.c BuildValue("s"): None for no text */
+		if (s) {
+			Native_SetText(out, s, (int)strlen(s));
 		}
-	} else {
-		PyErr_Clear();
+		return 1;
+	case 2:
+		Native_SetFloat(out, d);
+		return 1;
+	case 3:
+		Native_SetInt(out, i);
+		return 1;
 	}
-	if (PyArg_Parse(v, "d", &d)) {
-		parsed = 1;
-		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 2) {
-			return 0;
-		}
-	} else {
-		PyErr_Clear();
-	}
-	if (PyArg_Parse(v, "s", &s)) {
-		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 1) {
-			return 0;
-		}
-	} else {
-		PyErr_Clear();
-		if (!parsed) {
-			Con_Errorf("(%d,'%s')->%s : Menu invalid type.\n", m->player, m->name, name);
-			return -1;
-		}
-	}
-	Con_Errorf("(%d,'%s')->%s : Menu invalid Member.\n", m->player, m->name, name);
-	return -1;
+	Con_Errorf("(%d,'%s')->%s : Menu invalid member.\n", m->player, m->name, name);
+	return 0;
 }
 
-static const char str_CPyMenuEntity[] = "cPyMenuEntity";
-extern const char str_CPyMenuEntity[];
-static PyTypeObject cPyMenuEntity_Type = {
-	.ob_refcnt = 1,
-	.ob_type = &PyType_Type,
-	.tp_name = (void *)str_CPyMenuEntity,
-	.tp_basicsize = sizeof(cPyMenuEntity),
-	.tp_dealloc = (void *)PyMenuEntity_Dealloc,
-	.tp_print = (void *)PyMenuEntity_Print,
-	.tp_getattr = (void *)PyMenuEntity_GetAttr,
-	.tp_setattr = (void *)PyMenuEntity_SetAttr,
+/*
+ * tp_setattr: the value is tried as int, float and string (getargs.c Arg_Parse "i", "d", "s"), each type that parses
+ * goes to the item until the variable has that type. A missing scorer or item returns 0 (no error) like in the
+ * original. The original passes the other two values uninitialized; they are 0 here. A delete (v NULL) parses as none
+ * of them.
+ */
+static byte MenuItem_SetAttr(void *ctx, const char *name, const nativeVal_t *v) {
+	menuItem_t *m = ctx;
+	cScorerItem *item = MenuItem_Item(m, name);
+	int parsed = 0;
+	char *s = NULL;
+	double d = 0.0;
+	int i = 0;
+	const char *text;
+	nativeVal_t x;
+
+	if (!item) {
+		return 1;
+	}
+	if (v) {
+		Native_Pass(v, &x);
+	} else {
+		Native_SetMissing(&x);
+	}
+	if (v && Native_ArgInt(&x, &i)) {
+		parsed = 1;
+		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 3) {
+			Native_Free(&x);
+			return 1;
+		}
+	} else {
+		Native_ErrClear();
+	}
+	if (v && Native_ArgDouble(&x, &d)) {
+		parsed = 1;
+		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 2) {
+			Native_Free(&x);
+			return 1;
+		}
+	} else {
+		Native_ErrClear();
+	}
+	if (v && Native_ArgStr(&x, 1, &text)) {
+		s = (char *)text;
+		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 1) {
+			Native_Free(&x);
+			return 1;
+		}
+	} else {
+		Native_ErrClear();
+		if (!parsed) {
+			Native_Free(&x);
+			Con_Errorf("(%d,'%s')->%s : Menu invalid type.\n", m->player, m->name, name);
+			return 0;
+		}
+	}
+	Native_Free(&x);
+	Con_Errorf("(%d,'%s')->%s : Menu invalid Member.\n", m->player, m->name, name);
+	return 0;
+}
+
+static menuItem_t *MenuItem_New(int player, const char *name) {
+	menuItem_t *m = Mem_Alloc(sizeof(*m));
+	size_t size = strlen(name) + 1;
+	m->player = player;
+	m->name = Mem_Alloc(size);
+	memcpy(m->name, name, size);
+	return m;
+}
+
+static const nativeCType_t menu_itemType = {
+	.name = "cPyMenuEntity",
+	.getattr = MenuItem_GetAttr,
+	.setattr = MenuItem_SetAttr,
+	.print = MenuItem_Print,
+	.drop = MenuItem_Drop,
 };
+
+byte ScorerItem_New(int player, const char *name, nativeVal_t *out) {
+	cScorer *scorer = Scorer_Get(player);
+	if (!scorer || !cScorer_FindItem(scorer, name)) {
+		Native_SetNone(out);
+		return 0;
+	}
+	NObj_NewCObj(out, &menu_itemType, MenuItem_New(player, name));
+	return 1;
+}

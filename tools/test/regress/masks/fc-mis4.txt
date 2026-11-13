@@ -1,0 +1,4 @@
+# line 37: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore SP.OnEndOfSpeech = None; Scrap.SetSaveVar('Player.NumLives', '1'); result = (CH.OnChallengeOpt(1, Scrap.GetEntity('Police_01')), I._takecalls())
+# line 38: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore CH.foeType = 'Police'; CH.challengeType = 'Race'; result = (__import__('Police').PoliceSpeech('Player0', 'Police_01', 'ChallengeRaceStdOpt1', 'x'), I._takecalls(), Scrap.GetMoney(), CH.numChallengeEnemies)

@@ -1,0 +1,147 @@
+# gatekeepersound (the sound script sound/gatekeepersound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/gatekeepersound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes mecanismo25.wav
+	AddSoundRes mecanismo21.wav
+	AddSoundRes placas-metal222.wav
+	AddSoundRes clik-mecanismo.wav
+	AddSoundRes cuchilla11.wav
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper1.wav
+end
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper2.wav
+end
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper3.wav
+end
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper4.wav
+end
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper5.wav
+end
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper6.wav
+end
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper8.wav
+end
+if %GateKeeperSound.isPC
+	class
+		AddSoundRes lenguaje-keeper9.wav
+end
+
+section SetSounds
+let act Relax0
+call Chars.ActSound $char $act 3 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 4 mecanismo21 0.014 -3
+call Chars.ActSound $char $act 37 mecanismo25 0.014 +10
+call Chars.ActSound $char $act 37 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 60 placas-metal222 0.018 +1
+call Chars.ActSound $char $act 60 mecanismo21 0.014 -3
+call Chars.ActSound $char $act 115 mecanismo21 0.014 +10
+call Chars.ActSound $char $act 115 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 153 mecanismo21 0.014 -3
+call Chars.ActSound $char $act 156 placas-metal222 0.018 +4
+let act Relax1
+call Chars.ActSound $char $act 4 mecanismo21 0.014
+call Chars.ActSound $char $act 9 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 23 mecanismo25 0.014
+call Chars.ActSound $char $act 24 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 49 mecanismo21 0.014
+call Chars.ActSound $char $act 49 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 55 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 66 mecanismo25 0.014
+call Chars.ActSound $char $act 68 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 76 mecanismo21 0.014
+call Chars.ActSound $char $act 81 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 92 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 93 mecanismo25 0.014
+let act Hide
+call Chars.ActSound $char $act 5 mecanismo21 0.014
+call Chars.ActSound $char $act 1 placas-metal222 0.018 +10
+call Chars.ActSound $char $act 15 mecanismo25 0.014
+call Chars.ActSound $char $act 18 placas-metal222 0.018 +20
+call Chars.ActSound $char $act 38 cuchilla11 0.02 +5
+call Chars.ActSound $char $act 47 clik-mecanismo 0.034
+let act Unhide
+call Chars.ActSound $char $act 1 cuchilla11 0.02 +5
+call Chars.ActSound $char $act 10 clik-mecanismo 0.034 +3
+call Chars.ActSound $char $act 12 mecanismo21 0.014
+call Chars.ActSound $char $act 13 placas-metal222 0.018 +5
+call Chars.ActSound $char $act 20 mecanismo25 0.014
+call Chars.ActSound $char $act 22 placas-metal222 0.018 +4
+call Chars.ActSound $char $act 28 mecanismo21 0.014
+call Chars.ActSound $char $act 30 placas-metal222 0.018 +4
+call Chars.ActSound $char $act 38 mecanismo21 0.014
+call Chars.ActSound $char $act 40 placas-metal222 0.018 +4
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk TalkNo
+do TalkNoSnd
+let talk TalkNoNPC
+do TalkNoSnd
+
+section TalkSnd
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 1 lenguaje-keeper1 0.05
+end
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 17 lenguaje-keeper3 0.05
+end
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 30 lenguaje-keeper4 0.05
+end
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 40 lenguaje-keeper8 0.05
+end
+
+section TalkNoSnd
+call Chars.ActSound $char $talk 2 placas-metal222 0.018 +10
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 2 lenguaje-keeper2 0.05
+end
+call Chars.ActSound $char $talk 15 placas-metal222 0.018 +20
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 17 lenguaje-keeper6 0.05
+end
+call Chars.ActSound $char $talk 23 placas-metal222 0.018 +20
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 24 lenguaje-keeper9 0.05
+end
+call Chars.ActSound $char $talk 30 placas-metal222 0.018 +20
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 30 lenguaje-keeper1 0.05
+end
+call Chars.ActSound $char $talk 36 placas-metal222 0.018 +17
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 37 lenguaje-keeper5 0.05
+end
+if %GateKeeperSound.isPC
+	call Chars.ActSound $char $talk 42 lenguaje-keeper3 0.05
+end
+call Chars.ActSound $char $talk 45 placas-metal222 0.018 +22
+
+section InitLoops
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

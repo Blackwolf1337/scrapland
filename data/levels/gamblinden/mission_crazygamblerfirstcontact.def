@@ -1,0 +1,11 @@
+# The functions of Mission_CrazyGamblerFirstContact in level gamblinden (the script levels/gamblinden/scripts/mission_crazygamblerfirstcontact.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): Init, OnEndOfScene, CrazyGamblerFirstSpeech, EndOfTalk, SetNextMission, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_crazygamblerfirstcontact.def replaces this file.
+section InitStatus LevelPath
+call Scrap.SetSaveVar "ComeFrom" ""
+call Scrap.SetSaveVar "Spawn" "DM_Player_Spawn_Meeting_Room"
+
+section CrazyGamblerSecondSpeech UsrName CharName optId FullOption
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_DestroyPolice_CrazyGambler_InitMsg1" "Mission_DestroyPolice_CrazyGambler_InitAns1"
+end

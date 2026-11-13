@@ -1,0 +1,20 @@
+# The functions of Mission_JailBreak in level police (the script levels/police/scripts/mission_jailbreak.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): InitStatus, AfterBrowseNPC, CreateMCList, CreatePuff, InitPuffReborn, CheckForJump, FirstTimeJail, Init, NextMission, LoadPolice.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_jailbreak.def replaces this file.
+section CreateGearStay ch
+object $ch
+LLogicDefaultState 3
+LLogicDefaultTarget ""
+LLogicState 3
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+
+section StaplerSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+call Speech.OnSpch "Mission_JailBreak_Stapler_InitMsg1" "Mission_JailBreak_Stapler_InitAns1"
+
+section OnPossession name pos
+call Scrap.Set "GuaranteedChars" ",Anyone,"
+setvar CharConversor.OnPossession None

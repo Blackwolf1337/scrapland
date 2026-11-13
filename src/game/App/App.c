@@ -16,7 +16,6 @@
 #include "scrap/model.h"
 #include "scrap/net.h"
 #include "scrap/nodestraffic.h"
-#include "scrap/python.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sound.h"
@@ -24,6 +23,7 @@
 #include "scrap/world.h"
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
+#include "scrap/testdet.h"
 
 #define g_CAppVftable (&CApp_vftable)
 #define g_LoadMsgIndex (GVar_iLoadMsgString.value.i)		/* iLoadMsgString: the next loading tip */
@@ -85,6 +85,7 @@ CApp *CApp_ctor(CApp *self, const char *cmdLine) {
 	cString_ctor(&self->levelPath);
 	cString_ctor(&self->newLevelPath);
 	crt_srand((unsigned int)crt_time32(NULL));
+	TestDet_Seed(0);
 	GVars_Init();
 	size_t n = strlen(cmdLine) + 1;
 	char *p = Mem_Alloc(n);
@@ -201,57 +202,6 @@ void CApp_DoneGame(CApp *self) {
 	Con_Print(0, "World closed.\n", 0);
 	ActClassList_Done();
 	Con_Print(0, "Action class list closed.\n", 0);
-}
-
-/* the lines of the console window: "/f a" QuickConsole.f(a), ":var value" sets, ":var" shows, "?filter" lists */
-void Console_Execute(const char *cmd) {
-	/* the characters after ':var ' that make the value a Python expression ('"' to '9') */
-	static const byte numeric[0x18] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-	char code[0x400], name[0x400];
-	char *val;
-
-	switch (cmd[0]) {
-	case '/':
-		Str_Copy(name, cmd + 1, 0x400);
-		val = strchr(name, ' ');
-		if (val) {
-			*val++ = 0;
-			Str_TrimBlanks(val);
-			Str_TrimBlanks(name);
-			Str_PrintfQuiet(code, 0x400, "import QuickConsole;QuickConsole.%s(%s)", name, val);
-		} else {
-			Str_PrintfQuiet(code, 0x400, "import QuickConsole;QuickConsole.%s()", name);
-		}
-		break;
-	case ':':
-		Str_Copy(name, cmd + 1, 0x400);
-		val = strchr(name, ' ');
-		if (val) {
-			*val++ = 0;
-			Str_TrimBlanks(val);
-			Str_TrimBlanks(name);
-			uint32_t c = (uint32_t)((int)(signed char)*val - '"');
-			if (c < sizeof(numeric) && numeric[c]) {
-				Str_PrintfQuiet(code, 0x400, "if Scrap.Set('%s',%s):\n print '%s = %s'", name, val, name, val);
-			} else {
-				Str_PrintfQuiet(code, 0x400, "if Scrap.Set('%s','%s'):\n print '%s = %s'", name, val, name, val);
-			}
-		} else {
-			Str_TrimBlanks(name);
-			Str_PrintfQuiet(code, 0x400,
-				"Scrap.Print('%s = '+`Scrap.Get('%s')`+' (default = '+`Scrap.Def('%s')`+') ### '+Scrap.Des('%s')+'\\n')",
-				name, name, name, name);
-		}
-		break;
-	case '?':
-		Str_PrintfQuiet(name, 0x400, "Scrap.ShowGVars(\"%s\")", cmd + 1);
-		PyRun_ScrapString(name);
-		return;
-	default:
-		PyRun_ScrapString(cmd);
-		return;
-	}
-	PyRun_ScrapString(code);
 }
 
 /* (CWinApp jumps here too) */
@@ -413,7 +363,7 @@ void CApp_InitGame(CApp *self, const char *level) {
 	self->flags |= Net_IsServer() ? APPF_SERVER : 0;
 	self->flags |= Net_IsClient() ? APPF_CLIENT : 0;
 	CApp_SFLB_0(self);
-	g_AppPyOne = Py_BuildValue("i", 1);
+	g_AppOneMade = 1;
 	g_DisableSkipSlot = g_DisableSkipSlotDefault;
 	Python_Init();
 	Con_Print(0, "Python script subsystem initialized.\n", 0);
@@ -484,6 +434,8 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 		self->onLevelLoaded = NULL;
 	}
 	Engine_LevelLoaded();
+	/* the deterministic test mode: every level starts with the same random numbers */
+	TestDet_Seed(1);
 	double t1 = App_GetTime(self);
 	Con_Printf("Level loaded in %.2f seconds\n", t1 - t0);
 	if (g_XLoadOn) {
@@ -643,6 +595,7 @@ static void CApp_FrameNet(void) {
 /* the frame after the level load */
 static byte CApp_FrameRun(CApp *self) {
 	double t = App_GetTime(self);
+	TestChannel_Frame(t);
 	uint32_t flags = self->flags;
 	self->time = t;
 	if (!flags && !self->active) {
@@ -749,7 +702,7 @@ static int App_MaxPlayers(void) {
 	return n >= 16 ? 16 : n;
 }
 
-/* a -param[:ext] of the command line: an engine variable of the config file, build, dedicated or server */
+/* a -param[:ext] of the command line: an engine variable of the config file, build, TestChannel, dedicated or server */
 byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	cGVar *v = GVar_Find(param);
 	if (v && (v->base.flags & 6)) {
@@ -789,6 +742,10 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 		} else {
 			self->build = 1;
 		}
+		return 1;
+	}
+	if (!crt_stricmp("TestChannel", param)) {
+		TestChannel_Enable();
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {

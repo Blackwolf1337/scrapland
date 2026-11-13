@@ -1,0 +1,430 @@
+# The options and controls menus (PCMenu.OptionsMenu, ControlsMenu, MouseControlsMenu, the key and pad menus of the
+# game). The format is described in src/game/Script/Script.c. A pack in mods/ with scrapc/menus/options.def
+# replaces this file.
+
+# ---- Options ----
+
+section Options
+call Menu.StartNewMenu $id
+if %Menu.fromSinglePlayer
+	list entries
+		"{Menu_Skill_Level}"		Menu.SetSkillMenu
+		"{Menu_Options_Video}"		PCMenu.VideoMenu
+		"{Menu_Options_Audio}"		Menu.AudioMenu
+		"{Menu_Options_Controls}"	PCMenu.ControlsMenu
+		"{Menu_Back}"			Menu.SinglePlayerMenu
+	call Menu.VerticalMenu $id "{Menu_Options}" [entries] Menu.SinglePlayerMenu YStart=%Menu.OptionMenuYStart
+	call Menu.DrawBackOptionMenu $id
+elif %Menu.fromMultiPlayer
+	list entries
+		"{Menu_Options_Video}"		PCMenu.VideoMenu
+		"{Menu_Options_Audio}"		Menu.AudioMenu
+		"{Menu_Options_Controls}"	PCMenu.ControlsMenu
+		"{Menu_Back}"			PCMenu.MultiPlayerMenu
+	call Menu.VerticalMenu $id "{Menu_Options}" [entries] PCMenu.MultiPlayerMenu YStart=%Menu.SubMenuYStart
+	call Menu.DrawBackSubMenu $id
+elif %Init.isDemo
+	list entries
+		"{Menu_Options_Video}"		PCMenu.VideoMenu
+		"{Menu_Options_Audio}"		Menu.AudioMenu
+		"{Menu_Options_Controls}"	PCMenu.ControlsMenu
+		"{Menu_Back}"			Menu.MainMenu
+	call Menu.VerticalMenu $id "{Menu_Options}" [entries] Menu.MainMenu YStart=%Menu.OptionMenuYStart
+	call Menu.DrawBackOptionMenu $id
+else
+	list entries
+		"{Menu_Options_Video}"		PCMenu.VideoMenu
+		"{Menu_Options_Audio}"		Menu.AudioMenu
+		"{Menu_Options_Controls}"	PCMenu.ControlsMenu
+		"{Menu_Credits}"		Menu.CreditsMenu
+		"{Menu_Back}"			Menu.MainMenu
+	call Menu.VerticalMenu $id "{Menu_Options}" [entries] Menu.MainMenu YStart=%Menu.OptionMenuYStart
+	call Menu.DrawBackOptionMenu $id
+end
+
+# ---- Controls ----
+
+section Controls
+call Menu.StartNewMenu $id
+list entries
+	"{Menu_Controls_Mouse}"				PCMenu.MouseControlsMenu
+	"{Menu_Controls_Redefine}"			PCMenu.RacerMoveControlsMenu
+	"{XBox_Menu_Controller_Configuration}"		PCMenu.ControllerConfig
+	"{Menu_Controls_ResetToDefault}"		PCMenu.ResetToDefault
+	"{Menu_Back}"					Menu.OptionsMenu
+call Menu.VerticalMenu $id "{Menu_Options_Controls}" [entries] Menu.OptionsMenu YStart=%Menu.OptionMenuYStart
+call Menu.DrawBackOptionMenu $id
+
+# ---- Mouse ----
+
+section Mouse
+call Menu.StartNewMenu $id
+list entries
+	"{Menu_Controls_Mouse_Invert}:"		PCMenu.InvertMouse
+	"{Menu_Controls_Mouse_SensitivityH}:"	Menu.DummyFunc
+	"{Menu_Controls_Mouse_SensitivityV}:"	Menu.DummyFunc
+	"{Menu_Back}"				PCMenu.ControlsMenu
+call Menu.VerticalMenu $id "{Menu_Controls_Mouse}" [entries] PCMenu.ControlsMenu XStart=310 VerticalStep=36 YStart=%Menu.OptionMenuYStart Font=ScrapMedium
+item InvertMouse Text
+	Font ScrapMedium
+	Text WWW
+	CentralText 1
+	Align Left
+	Red @Item1.Red
+	Green @Item1.Green
+	Blue @Item1.Blue
+	X 330
+	Y @Item1.Y
+	Effect Shadow
+	OnAccept PCMenu.OptionYesNo
+run invert InvertMouse
+call Menu.SliderMenu $id SensitivitySliderX 330 @Item2.Y
+run sensitivity SensitivitySliderX MouseSensitivityH
+set SensitivitySliderX OnChange PCMenu.MouseSensitivityChange
+call Menu.SliderMenu $id SensitivitySliderY 330 @Item3.Y
+run sensitivity SensitivitySliderY MouseSensitivityV
+set SensitivitySliderY OnChange PCMenu.MouseSensitivityChange
+# two dummies left and right of the titles step the sliders
+item DummySliderSub Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus PCMenu.MouseSensitivitySliderFocus_Sub
+item DummySliderAdd Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus PCMenu.MouseSensitivitySliderFocus_Add
+lr SensitivitySliderX Item2
+lr Item2 SensitivitySliderX
+lr DummySliderSub Item2
+lr Item2 DummySliderAdd
+lr SensitivitySliderY Item3
+lr Item3 SensitivitySliderY
+lr DummySliderSub Item3
+lr Item3 DummySliderAdd
+# the panel behind the options instead of the title bar
+set TitleBarL Visible 0
+set TitleBarM Visible 0
+set TitleBarR Visible 0
+item VideoOptionsTab Tab
+call Menu.SetTabDefaults $id VideoOptionsTab
+	X 64.5
+	Y @TitleBarM.Y
+	SizeX 511
+	SizeY 294
+	TabInit 0
+	TabEnd 0
+	TabMax 0
+	SizeTabQuad 0
+	Type 2
+	Alpha 150
+	Red 60
+	Green 150
+	Blue 200
+call Menu.DrawBackOptionMenu $id
+
+# ---- the keys: one section per tab with its actions (text, unused, action), then the common part ----
+
+section Ship
+list keys
+	"{Menu_Controls_Ship_Forward}"		""	Racer.Forward
+	"{Menu_Controls_Ship_Backwards}"	""	Racer.Backward
+	"{Menu_Controls_Ship_Boost}"		""	Racer.Boost
+	"{Menu_Controls_Ship_StrafeUp}"		""	Racer.StrafeUp
+	"{Menu_Controls_Ship_StrafeDown}"	""	Racer.StrafeDown
+	"{Menu_Controls_Ship_StrafeLeft}"	""	Racer.StrafeLeft
+	"{Menu_Controls_Ship_StrafeRight}"	""	Racer.StrafeRight
+	"{Menu_Controls_Ship_BlockStrafe}"	""	Racer.BockStrafe
+	"{Menu_Controls_Ship_RotateUp}"		""	Racer.Up
+	"{Menu_Controls_Ship_RotateDown}"	""	Racer.Down
+	"{Menu_Controls_Ship_RotateLeft}"	""	Racer.Left
+	"{Menu_Controls_Ship_RotateRight}"	""	Racer.Right
+	"{Menu_Controls_Ship_SwitchView}"	""	Racer.SwitchView
+call PCMenu.CreateControlMenu $id None [keys] PCMenu.ControlsMenu $section
+
+section Attack
+list keys
+	"{Menu_Controls_Attack_Fire}"		""	Racer.Fire
+	"{Menu_Controls_Attack_Countermeasure}"	""	Racer.CM
+	"{Menu_Controls_Attack_NextWeapon}"	""	Racer.NextWeapon
+	"{Menu_Controls_Attack_PreviousWeapon}"	""	Racer.PrevWeapon
+	"{Menu_Controls_Attack_Laser}"		""	Racer.Laser
+	"{Menu_Controls_Attack_Vulcan}"		""	Racer.Vulcan
+	"{Menu_Controls_Attack_Devastator}"	""	Racer.Devastator
+	"{Menu_Controls_Attack_Tesla}"		""	Racer.Tesla
+	"{Menu_Controls_Attack_ATPC}"		""	Racer.ATPC
+	"{Menu_Controls_Attack_Swarm}"		""	Racer.Swarm
+	"{Menu_Controls_Attack_Inferno}"	""	Racer.Inferno
+	"{Menu_Controls_Attack_LockEnemyShip}"	""	Racer.TargetNext
+	"{Menu_Controls_Attack_LockShip}"	""	Racer.TargetReticle
+call PCMenu.CreateControlMenu $id None [keys] PCMenu.ControlsMenu $section
+
+section Character
+list keys
+	"{Menu_Controls_Character_Forward}"	""	Walk.Forward
+	"{Menu_Controls_Character_Backwards}"	""	Walk.Backward
+	"{Menu_Controls_Character_StrafeLeft}"	""	Walk.StrafeLeft
+	"{Menu_Controls_Character_StrafeRight}"	""	Walk.StrafeRight
+	"{Menu_Controls_Character_TurnLeft}"	""	Walk.TurnLeft
+	"{Menu_Controls_Character_TurnRight}"	""	Walk.TurnRight
+	"{Menu_Controls_Character_TurnUp}"	""	Walk.TurnUp
+	"{Menu_Controls_Character_TurnDown}"	""	Walk.TurnDown
+	"{Menu_Controls_Character_RunWalk}"	""	Walk.SwitchRunWalk
+	"{Menu_Controls_Character_BlockStrafe}"	""	Walk.BlockStrafe
+call PCMenu.CreateControlMenu $id None [keys] PCMenu.ControlsMenu $section
+
+section Action
+list keys
+	"{Menu_Controls_Action_Action}"		""	Walk.Use
+	"{Menu_Controls_Action_SpecialAction}"	""	Walk.Action
+	"{Menu_Controls_Action_Overwrite}"	""	Walk.Possession
+	"{Menu_Controls_Action_NextOption}"	""	Walk.NextAction
+	"{Menu_Controls_Action_PreviousOption}"	""	Walk.PrevAction
+	"{Menu_Controls_Action_PadLeft}"	""	Walk.StrafeTurnLeft
+	"{Menu_Controls_Action_PadRight}"	""	Walk.StrafeTurnRight
+	"{Menu_Controls_Action_PadBlockStrafe}"	""	Walk.CameraCenter
+	"{Menu_Controls_Action_Chat}"		""	Racer.Chat
+	"{Menu_Controls_Action_ShowScorer}"	""	Racer.Scorer
+call PCMenu.CreateControlMenu $id None [keys] PCMenu.ControlsMenu $section
+
+# CreateControlMenu: $title, $menu (the actions), $back, $tab, $first (the first action)
+section keys
+call Menu.StartNewMenu $id
+call Menu.VerticalMenu $id $title $menu $back 290 Font=Horatio VerticalStep=21 MinYStart=-88
+# the hint how to clear a key
+item Hint Hint
+	Font Horatio
+	Effect Shadow
+	Align Center
+	X 320
+	Y 384
+	Red 255
+	Green 241
+	Blue 174
+	Visible 1
+# the keys of each action, right of it
+run keyitems
+item Back Text
+	Font ScrapBig
+	Text "{Menu_Back}"
+	X 320
+	Y %Menu.BackButtonYStart
+	CentralText 1
+	OnAccept PCMenu.ControlsMenu
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+list tabs
+	Ship		PCMenu.RacerMoveControlsMenu	"{Menu_Controls_Ship}"
+	Attack		PCMenu.RacerAttackControlsMenu	"{Menu_Controls_Attack}"
+	Character	PCMenu.WalkCharControlsMenu	"{Menu_Controls_Character}"
+	Action		PCMenu.UseCharControlsMenu	"{Menu_Controls_Action}"
+call Menu.AddTabs $id [tabs] $tab
+set $tab Up Back
+set $tab Down $first
+set $first Up $tab
+set Back Down $tab
+ud %Menu.VerticalMenuLastControl Back
+call Menu.DrawCircuitMenu $id
+
+# ---- the pad (FillControllerMenu): $tab is the tab, $link Char or Ship (Char for the tab Char), $set Walk or Racer
+# with it; the rows come from the module variable PCMenu.options (run padoptions) ----
+
+section pad
+call Menu.StartNewMenu $id
+if $tab == Ship
+	list options
+		"{XBox_Menu_Controller_Configuration_Option}:"	PCMenu.SwitchOption
+		"{XBox_Menu_Controller_InvertY_Option}:"	PCMenu.SwitchOption
+		"{XBox_Menu_Controller_DigitalCross_Option}:"	PCMenu.SwitchOption
+		"{XBox_Menu_Controller_InvertTriggers_Option}:"	PCMenu.SwitchOption
+		"{Menu_Back}"					PCMenu.ControlsMenu
+else
+	list options
+		"{XBox_Menu_Controller_CameraType}:"		PCMenu.SwitchOption
+		"{XBox_Menu_Controller_InvertY_Option}:"	PCMenu.SwitchOption
+		"{XBox_Menu_Controller_DigitalCross_Option}:"	PCMenu.SwitchOption
+		"{XBox_Menu_Controller_InvertTriggers_Option}:"	PCMenu.SwitchOption
+		"{Menu_Back}"					PCMenu.ControlsMenu
+end
+call Menu.VerticalMenu $id None [options] PCMenu.ControlsMenu YStart=90 MinYStart=90 Font=Horatio VerticalStep=20
+# the values right of the options
+run padoptions
+default Item1
+do padpicture
+run padtext $set
+list tabs
+	Char	PCMenu.ControllerConfigCharMenu	"{XBox_Menu_Controller_Character_Tab}"
+	Ship	PCMenu.ControllerConfigShipMenu	"{XBox_Menu_Controller_Ship_Tab}"
+call Menu.AddTabs $id [tabs] $tab ParamTabSize=37 Hint=0 CenterTextInTabs=1
+ud $link Item1
+ud Item4 $link
+call Menu.DrawCircuitMenu $id
+
+# the picture of the pad with the action of each button and stick (the texts come from run padtext)
+section padpicture
+style button
+	Font Horatio
+style stick
+	Font Horatio
+style line
+	Unit 1
+	Alpha 255
+	Red 40
+	Green 228
+	Blue 240
+	Visible 1
+style sprite
+	Discardable 1
+	HighRes 1
+	IsMultiSprite 1
+	File 2D/Menu/PadS.alpha.tga
+	Highlight 0
+item BACK Text button
+	Align Right
+	X 252
+	Y 284
+	Visible 1
+item WHITE Text button
+	Align Left
+	X 388
+	Y 320
+	Visible 1
+item X Text button
+	Align Left
+	X 388
+	Y 240
+	Visible 1
+item Y Text button
+	Align Left
+	X 388
+	Y 220
+	Visible 1
+item L Text button
+	Align Right
+	X 280
+	Y 175
+	Visible 1
+item BLACK Text button
+	Align Left
+	X 388
+	Y 300
+	Visible 1
+item B Text button
+	Align Left
+	X 388
+	Y 260
+	Visible 1
+item R Text button
+	Align Left
+	X 360
+	Y 175
+	Visible 1
+item START Text button
+	Align Right
+	X 252
+	Y 308
+	Visible 1
+item A Text button
+	Align Left
+	X 388
+	Y 280
+	Visible 1
+item TextRightThumbstickLR Text stick
+	Align Left
+	X 375
+	Y 378
+item TextRightThumbstickUD Text stick
+	Align Left
+	X 375
+	Y 350
+item TextLeftThumbstickLR Text stick
+	Align Right
+	X 215
+	Y 245
+item TextLeftThumbstickUD Text stick
+	Align Right
+	X 215
+	Y 215
+item TextDCrossLR Text stick
+	Align Right
+	X 265
+	Y 378
+item TextDCrossUD Text stick
+	Align Right
+	X 265
+	Y 350
+item RStickLine Sprite
+	X 338
+	Y 281
+	ScaleX 1
+	ScaleY 100
+	use line
+item LStickLine Sprite
+	X 254
+	Y 259
+	ScaleX 28
+	ScaleY 1
+	use line
+item LTrigger Sprite
+	X 273
+	Y 197
+	ScaleX 1
+	ScaleY 44
+	use line
+item RTrigger Sprite
+	X 367
+	Y 197
+	ScaleX 1
+	ScaleY 44
+	use line
+item DCrossLine Sprite
+	X 300
+	Y 281
+	ScaleX 1
+	ScaleY 100
+	use line
+item DCrossLine1 Sprite
+	X 250
+	Y 281
+	ScaleX 50
+	ScaleY 1
+	use line
+item DCrossLine2 Sprite
+	X 250
+	Y 266
+	ScaleX 1
+	ScaleY 15
+	use line
+item Pad Sprite sprite
+	SpriteIndex 1
+	PivotX 0.5
+	PivotY 0.5
+	X 320
+	Y 280
+item DCrossLR Sprite sprite
+	SpriteIndex 2
+	X 270
+	Y 378
+item DCrossUD Sprite sprite
+	SpriteIndex 3
+	X 270
+	Y 350
+item LeftThumbstickLR Sprite sprite
+	SpriteIndex 4
+	X 220
+	Y 245
+item LeftThumbstickUD Sprite sprite
+	SpriteIndex 5
+	X 220
+	Y 215
+item RightThumbstickLR Sprite sprite
+	SpriteIndex 4
+	X 340
+	Y 378
+item RightThumbstickUD Sprite sprite
+	SpriteIndex 5
+	X 340
+	Y 350

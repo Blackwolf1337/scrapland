@@ -1,0 +1,86 @@
+# sebastiansound (the sound script sound/sebastiansound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/sebastiansound.def
+# replaces this file.
+
+section LoadSounds
+if %SebastianSound.isPC
+	class
+		AddSoundRes mecanismo-sebastian1.wav
+end
+	AddSoundRes abre-acordeon1.wav
+	AddSoundRes abre-acordeon2.wav
+	AddSoundRes tapa.wav
+	AddSoundRes pose1.wav
+
+section SetSounds
+let act Relax
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+let talk Talk3
+do Talk3Snd
+let talk TalkNPC3
+do Talk3Snd
+let talk Talk4
+do Talk4Snd
+let talk TalkNPC4
+do Talk4Snd
+
+section TalkSnd
+
+section Talk1Snd
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 2 mecanismo-sebastian1 0.005 +15
+end
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 38 mecanismo-sebastian1 0.005 +7
+end
+
+section Talk2Snd
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 9 mecanismo-sebastian1 0.003 +15
+end
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 22 mecanismo-sebastian1 0.003 +16
+end
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 49 mecanismo-sebastian1 0.003 +7
+end
+
+section Talk3Snd
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 2 mecanismo-sebastian1 0.005 +15
+end
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 48 mecanismo-sebastian1 0.005 +7
+end
+
+section Talk4Snd
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 2 mecanismo-sebastian1 0.005 +15
+end
+if %SebastianSound.isPC
+	call Chars.ActSound $char $talk 38 mecanismo-sebastian1 0.005 +7
+end
+call Chars.ActSound $char $talk 7 pose1 0.015
+call Chars.ActSound $char $talk 14 pose1 0.02
+
+section InitLoops
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

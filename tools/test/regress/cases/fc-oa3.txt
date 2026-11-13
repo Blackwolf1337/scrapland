@@ -1,0 +1,50 @@
+# Outskirts, round 7a: Mission_GoToOutskirts, Mission_KillPolice (Mission_Demo_HumphreyRace cannot load: the pack has no .pyc of it)
+Scrap.SetSaveVar('Mission.Map', 'Outskirts'); Scrap.SetSaveVar('Mission.Library', 'Mission_GoToOutskirts'); Scrap.SetSaveVar('PlayerHasBeenKilled', '0'); Scrap.SetAlarm(0); Scrap.LoadLevel('Levels/Outskirts'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+G = __import__('Mission_GoToOutskirts'); result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_GoToOutskirts'), _bent(('DM_Door_CityDoorA_00', 'DM_Door_CityDoorA_01', 'DM_Door_Outmap_Commercial', 'DM_Door_Outmap_DownTown', 'DM_Door_Outmap_Scrapyard') + ('DM_Door_MetroExt_',), ('Action', 'DefLoop', 'OnObjSlot', 'ArrowCanUse')), _sdmod('Chars', ('OnMainCharDeath',)), _sdmod('Mission_GoToOutskirts', ('numCrazyGamblerComs', 'messageInterval')), __import__('Traffic').AcShips)
+_bon()
+(_sd(G.InitStatus, 'x'), __import__('Traffic').AcShips)
+(Scrap.SetSaveVar('PlayerHasBeenKilled', '1'), _sd(G.Init, 'x'), _bsv(('PlayerHasBeenKilled',)), _sdmod('Chars', ('OnMainCharDeath',)))
+_sd(G.Init, 'x')
+(Scrap.SetSaveVar('PrimaryMissionDesc', 'x'), _sd(G.LaunchCrazyGamblerComunication, 60), _bent(('DM_Door_Elevator_GamblinDen',), ('UseFunc', 'RadarShow')), _bsv(('PrimaryMissionDesc',)), _btarget())
+(Scrap.SetSaveVar('PrimaryMissionDesc', 'Mission_FirstMeetCrazyGambler_MissionText1'), _sd(G.LaunchCrazyGamblerComunication, 60))
+(setattr(G, 'numCrazyGamblerComs', 1), _sd(G.LaunchCrazyGamblerComunication, 5.5))
+(setattr(G, 'numCrazyGamblerComs', 0), _sd(G.PlayCrazyGamblerComunication), G.numCrazyGamblerComs)
+(_sd(G.PlayCrazyGamblerComunication), G.numCrazyGamblerComs)
+(_sd(G.PlayCrazyGamblerComunication), G.numCrazyGamblerComs)
+(_sd(G.LaunchCrazyGamblerComunication, 'x'), _sd(G.PlayCrazyGamblerComunication, 1), _sd(G.Init))
+del G.messageInterval
+(_sd(G.PlayCrazyGamblerComunication), G.numCrazyGamblerComs, _sd(G.Init, 'x'))
+_broff()
+Scrap.SetSaveVar('Mission.Map', 'Outskirts'); Scrap.SetSaveVar('Mission.Library', 'Mission_KillPolice'); Scrap.SetSaveVar('MissionState', 'ListenToBerto'); Scrap.SetSaveVar('PlayerHasBeenKilled', '0'); Scrap.SetAlarm(0); Scrap.LoadLevel('Levels/Outskirts'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+K = __import__('Mission_KillPolice'); I = __import__('Init'); result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_KillPolice'), _sdmod('Chars', ('OnMainCharDeath',)), _sdmod('Mission_KillPolice', ('policesList', 'policesKilled', 'alarmFallDelta')), _bent(('DM_Door_CityDoorA_00', 'DM_Door_CityDoorA_01', 'DM_Door_Outmap_Commercial', 'DM_Door_Outmap_DownTown', 'DM_Door_Outmap_Scrapyard') + ('DM_Door_MetroExt_',), ('Action', 'OnObjSlot', 'ArrowCanUse', 'UseFunc', 'RadarShow')), __import__('Traffic').AcShips, _bsv(('MissionState', 'AlarmActive', 'AlarmStatus')))
+_bon()
+_bon(('Vehicles.OnDeath',))
+(Scrap.SetSaveVar('AlarmActive', '1'), _sd(K.InitStatus, 'x'), _bsv(('AlarmActive', 'AlarmStatus')), __import__('Traffic').AcShips, I.isDemo)
+(setattr(I, 'isDemo', 1), _sd(K.InitStatus, 'x'), __import__('Traffic').AcShips, setattr(I, 'isDemo', 0))
+(Scrap.CreateEntity('KpItem', 0, 0, 0, 'Item').Name, _sd(K.SetPos, Scrap.GetEntity('KpItem'), (100, 200, 300)), Scrap.GetEntity('KpItem').Pos)
+(_sd(K.SetPos, 1, 2), _sd(K.SetPos, 1))
+(_sdlist('OutCop'), _sd(K.InitMission), K.policesList)
+(Scrap.SetSaveVar('MissionState', 'KillPolice'), Scrap.SetSaveVar('PlayerHasBeenKilled', '1'), _sd(K.Init, 'x'), K.policesList, _bsv(('PlayerHasBeenKilled',)))
+(Scrap.SetSaveVar('MissionState', 'ListenToBerto'), _sd(K.Init, 'x'), _bent(('DM_Door_MetroExt_',), ('ArrowCanUse',)))
+(Scrap.Set('AlarmFallDelta', 0.25), _sd(K.OnAlarm, 1), K.alarmFallDelta, _bgv(('AlarmFallDelta',)))
+(setattr(K, 'policesList', ['A', 'B']), setattr(K, 'policesKilled', 0), _sd(K.OnPoliceDeath, 'A', 'Nobody'), K.policesList, K.policesKilled)
+(setattr(K, 'alarmFallDelta', 0.05), _sd(K.OnPoliceDeath, 'B', 'Nobody'), K.policesKilled, _bgv(('AlarmFallDelta',)))
+(_sd(K.OnPoliceDeath, 'C', 'Nobody'), K.policesKilled)
+(setattr(K, 'policesKilled', 5), _sd(K.OnPoliceDeath, 'C', 'Nobody'), K.policesKilled)
+(Scrap.SetSaveVar('Hangar.availableWeaponsList', "['Laser']"), Scrap.SetSaveVar('NewBluePrintAvaliable', '0'), _sd(K.BertoAppears), _bsv(('Hangar.availableWeaponsList', 'MissionState', 'NewBluePrintAvaliable')))
+(Scrap.SetSaveVar('MissionState', 'ListenToBerto'), _sd(K.EnableMetro), _bsv(('MissionState', 'Parked.Police', 'Parked.Mercs', 'Parked.TownHall', 'Parked.Bank', 'Parked.Press', 'Parked.Temple')), _bent(('DM_Door_MetroExt_',), ('UseFunc', 'ArrowCanUse', 'RadarShow')))
+(_sd(K.EnableMetro), _sd(K.EnableMetro, 1))
+(Scrap.SetSaveVar('Hangar.availableWeaponsList', 'x y'), _sd(K.BertoAppears))
+del K.policesList
+(_sd(K.OnPoliceDeath, 'A', 'Nobody'), _sd(K.InitMission))
+del K.alarmFallDelta
+(setattr(K, 'policesList', []), setattr(K, 'policesKilled', 2), _sd(K.OnPoliceDeath, 'A', 'Nobody'))
+_broff()

@@ -1,0 +1,60 @@
+# The functions of MapDecont in level orbit (the script levels/orbit/scripts/mapdecont.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Orbit.c): InitStatus, Decontamination, EndOfScene, SetWaypoint, Init, MsgOffVoice, SetFirstInfoPointAsMission, CantUseElevator, CloseGateKeeperDoor, OpenGateKeeperDoor, AfterBrowseNPC, ShowSkipConvsMsg, GateKeeperSpeech, SentinelSpeech, GaugeBlink, CheckShowNextHowto, CreateBishopsLauncher, EndOfSceneBishops, LoadBishopsScene, FXBishopsPray, PlayBishops, LoadFunctionaryScene, AddDF, SetDFAnm, EndOfSceneFunctionary, CreateDownKeyPad, PlayFalling, LoadFallingScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/orbit/mapdecont.def replaces this file.
+section DecontaminatedWaypoint
+call Scrap.SetSaveVar "Orbit.Decontaminated" "yes"
+call SaveGame.MarkWayPoint "Levels/Orbit" "DM_Player_Spawn_Decontamination"
+
+section LoadDecontamination
+call Scene.Load "Decontamination"
+call Scene.AddGeneric 100 "import CreditsText;CreditsText.ShowCredit(1)"
+call Scene.AddText 50 "Mission_Decontamination_RemoteMessage2" 30
+call Scene.AddText 250 "Mission_Decontamination_RemoteMessage3" 30
+call Scene.AddText 550 "Mission_Decontamination_RemoteMessage4" 30
+call Scene.AddGeneric 110 "SInput.Rumble(0,0.5,0,4)"
+call Scene.AddGeneric 250 "SInput.Rumble(0,0,0.5,8)"
+call Scene.ActorAction 0 "Dtritus" "Decon"
+call Scene.ActorAction 595 "Dtritus" "Walk"
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "Decon" "Decon" 0
+call SAct.SetCls "DefAction" "Decon"
+call Scene.SetDefSounds "Dtritus" $CharType
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneDecontaminationFile" %MapDecont.FXSceneDecontaminationFile
+call Scrap.SetDebrisSys %MapDecont.FXSceneDecontaminationFile 1 0 0 1 0 0 %Fx.FXSCENEDECONTAMINATION
+
+section CreateFunctionaryInit e
+object $e
+ArrowCanUse 1
+UseFunc "MapDecont.PlayFunctionary"
+LLogicProbTalkWhenWalking 1.0
+LLogicKeepWorking 1
+
+section CreateBishopInit e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+
+section CreateGateKeeperInit e
+object $e
+UseFunc "MapDecont.GateKeeperSpeech"
+
+section CreateSentinelInit e
+object $e
+UseFunc "MapDecont.SentinelSpeech"
+
+section JumpNextMission usr
+call Scrap.SetSaveVar "Challenge" "1"
+call SaveGame.MarkWayPoint "Levels/Fake" "DM_Player_Spawn_Orbit"
+call SaveGame.StartGame
+
+section PlayFunctionary UsrName CharName optId FullOption
+setvar Scene.EndOfSceneCallback %MapDecont.EndOfSceneFunctionary
+call Scene.Play "Functionary"

@@ -1,0 +1,76 @@
+# The functions of MapSnd in level junkyard (the script levels/junkyard/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Junkyard.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/junkyard/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "light2.wav"
+call SSound.LoadSound "beep1.wav"
+call SSound.LoadSound "int-garage.wav"
+call SSound.LoadSound "arrow-spuknit4.wav"
+call SSound.LoadSound "arrow-spuknit3.wav"
+call SSound.LoadSound "arrow-spuknit2.wav"
+call SSound.LoadSound "arrow-spuknit1.wav"
+call SSound.LoadSound "arrow-spuknit7.wav"
+call SSound.LoadSound "talk-sebas8.wav"
+call SSound.LoadSound "talk-sebas9.wav"
+call SSound.LoadSound "talk-sebas2.wav"
+call SSound.LoadSound "talk-sebas3.wav"
+
+section SetSounds
+call Sound.SetPSLoop "Computer1" (-2121.3,-2074.5,-1512.2) "beep1" 0.1
+call Sound.SetPSLoop "Computer2" (12.6393585205,-2107.06689453,35.2772827148) "int-garage" Volume=0.08 Pitch=-30 AttenIni=9024.0 AttenEnd=10496.0 Doppler=0.0
+
+section MecanicDtritus
+let CharName "MecanicDtritus"
+
+section MecanicBerto
+let CharName "MecanicBerto"
+let ActName "Hi"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-berto1" 0.013 +2
+call Chars.ActSound $CharName $ActName 49 "mecanismo-berto2" 0.013 +5
+let ActName "Notas"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-berto1" 0.013
+call Chars.ActSound $CharName $ActName 47 "mecanismo-berto2" 0.013
+
+section MecanicRusty
+let CharName "MecanicRusty"
+let ActName "Hi"
+call Chars.ActSound $CharName $ActName 2 "mecanico2" 0.006 -2
+call Chars.ActSound $CharName $ActName 3 "mecanismoG1" 0.0025
+call Chars.ActSound $CharName $ActName 63 "mecanismoG2" 0.0025
+call Chars.ActSound $CharName $ActName 64 "mecanico2" 0.006
+
+section MecanicSputnik
+let CharName "MecanicSputnik"
+
+section Mecanic
+call Scene.AddSound 404 "arrow-spuknit4" 0.2 5 0
+call Scene.AddSound 431 "arrow-spuknit1" 0.2 5 0
+call Scene.AddSound 457 "arrow-spuknit7" 0.2 5 0
+call Scene.AddSound 2226 "arrow-spuknit3" 0.2 5 0
+call Scene.AddSound 2258 "talk-sebas8" 0.2 0 0
+call Scene.AddSound 2288 "arrow-spuknit2" 0.2 5 0
+call Scene.AddSound 2288 "arrow-spuknit2" 0.2 5 0
+call Scene.AddSound 2323 "talk-sebas9" 0.2 0 0
+call Scene.AddSound 2383 "talk-sebas2" 0.2 0 0
+call Scene.AddSound 2345 "arrow-spuknit3" 0.2 5 0
+call Scene.AddSound 2394 "arrow-spuknit4" 0.2 5 0
+call Scene.AddSound 2415 "talk-sebas3" 0.2 0 0
+
+section MecanicFinalRusty
+let CharName "MecanicFinalRusty"
+let ActName "TalkPoint"
+call Chars.ActSound $CharName $ActName 2 "mecanico2" 0.006 -2
+call Chars.ActSound $CharName $ActName 3 "mecanismoG1" 0.0025
+call Chars.ActSound $CharName $ActName 18 "mecanico2" 0.006 -2
+call Chars.ActSound $CharName $ActName 19 "mecanismoG2" 0.0025
+call Chars.ActSound $CharName $ActName 48 "mecanico2" 0.0060 -2
+call Chars.ActSound $CharName $ActName 49 "mecanismoG1" 0.0025
+
+section MecanicFinal
+call Scene.AddSound 510 "arrow-spuknit4" 0.15 -5 0
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

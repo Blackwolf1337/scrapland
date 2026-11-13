@@ -1,0 +1,5 @@
+# the spawn points of the NPCs (CharsNPC.CharRes positions) are picked at random at the level start
+ignore _r6res()
+# Blablibla schedules the next speaker by the readiness of both NPCs at the moment of the call (LLogicIdle, LLogicState
+# and an Action starting with Relax): NPC timing, the pack runs show both speakers too
+sub 'fn:Blablibla', \('(?:Mayor|PoliceBoss)_SheriffMayor',\) => 'fn:Blablibla', (SPEAKER,)

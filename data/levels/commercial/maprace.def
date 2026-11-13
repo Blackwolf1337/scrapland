@@ -1,0 +1,6 @@
+# The functions of MapRace in level commercial (the script levels/commercial/scripts/maprace.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Commercial.c): EasyRaceCommercial1, EasyRaceCommercial2, EasyRaceCommercial3, EasyRaceCommercial4, EasyRaceCommercial5, EasyRaceCommercial6, EasyRaceCommercial7, EasyRaceCommercial8.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/commercial/maprace.def replaces this file.
+section InitStatus LevelPath
+
+section Init LevelPath

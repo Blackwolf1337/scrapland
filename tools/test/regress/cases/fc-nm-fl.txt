@@ -1,0 +1,61 @@
+# FZ offline, round 8b: NFlagHunt and NTeamFlag loaded by hand and called directly; Ffa, the net, the sounds, the scorer labels and the menu recorded, Scrap.Set recorded and run
+exec(open('fnm.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); result = I._nload(['Ffa', 'NFlagHunt', 'NTeamFlag'])
+F = __import__('Ffa'); FH = __import__('NFlagHunt'); TF = __import__('NTeamFlag'); result = (FH.TeamGame, TF.TeamGame, FH.MultiplayerMenuOnGame, FH.MultiplayerMenuSpectator, TF.MultiplayerMenuOnGame, TF.MultiplayerMenuSpectator, FH.FlagModel, FH.ZoneList, FH.Flag, FH.AcFlag, TF.ZoneList, TF.Flag, TF.AcFlag)
+map(lambda n: I._non('Ffa', n), ('ServerEndOfGame', 'ClientJoin', 'ActualizeGameScorer', 'ServerSendPlayerStatus', 'OnUsrClient')) + [I._non('Ffa', 'GetGameTeamDescriptor', 'teams 3 4'), I._non('Menu', 'ShowWarning'), I._non('SNet', 'SendUsrString'), I._non('SSound', 'Play'), I._non('SScorer', 'SetLabelText'), I._non('Scrap', 'Set', run=1)]
+e1 = Scrap.CreateEntity('NmRed', 1000.0, 50000.0, 1000.0, 'Car'); e1.TgType = 'red'; e2 = Scrap.CreateEntity('NmGreen', 2000.0, 50000.0, 1000.0, 'Car'); e2.TgType = 'green'; I.e1 = e1; I.e2 = e2; I.u = Scrap.UsrEntity(0); result = (e1.Name, e2.Name, I.u.Name, I.u.TgType)
+# the zones
+I._nm(FH.BrowseAreas)
+r = FH.ZoneList.items(); r.sort(); result = r
+(I._nm(TF.BrowseAreas), TF.ZoneList == FH.ZoneList, FH.ZoneList.keys() == TF.ZoneList.keys())
+I._nrand(0.0); result = (I._nm(FH.GetRndFlag), FH.AcFlag, I._nm(FH.GetRndFlag), FH.AcFlag, I._nm(FH.GetRndFlag), FH.AcFlag)
+I._nrand(0.6); result = (I._nm(FH.GetRndFlag), FH.AcFlag, I._nm(FH.GetRndFlag), FH.AcFlag, I._nm(TF.GetRndFlag), TF.AcFlag)
+I._nrand(0.999); result = (I._nm(TF.GetRndFlag), TF.AcFlag)
+I.z = FH.ZoneList; FH.ZoneList = {'a': 1}; FH.AcFlag = 'a'; I._nrand(0.0); r = (I._nm(FH.GetRndFlag), FH.AcFlag); FH.ZoneList = {}; r = r + (I._nm(FH.GetRndFlag), FH.AcFlag); I._nrand(1.0); FH.ZoneList = {'a': 1, 'b': 2}; r = r + (I._nm(FH.GetRndFlag), FH.AcFlag); FH.ZoneList = I.z; result = r
+del FH.AcFlag; r = I._nm(FH.GetRndFlag); FH.AcFlag = None; result = r
+del FH.ZoneList; r = (I._nm(FH.GetRndFlag), I._nm(FH.BrowseAreas), len(FH.ZoneList)); result = r
+# the flag of a client and of the server
+I._nrand(0.3); result = (I._nm(FH.CreateFlag, 0), I._nent(FH.Flag.Name, ('Model', 'Radius', 'RadarShow', 'OnTake', 'Pos')), FH.AcFlag)
+I._nrand(0.3); result = (I._nm(FH.CreateFlag, 1), I._nent(FH.Flag.Name, ('Model', 'Radius', 'RadarShow', 'OnTake', 'Pos')), FH.AcFlag, FH.Flag.Pos == FH.ZoneList[FH.AcFlag])
+I._nrand(0.7); result = (I._nm(TF.CreateFlag, 1), I._nent(TF.Flag.Name, ('Model', 'Radius', 'RadarShow', 'OnTake', 'Pos')), TF.AcFlag, TF.Flag.Pos == TF.ZoneList[TF.AcFlag])
+(I._nm(TF.CreateFlag, ''), TF.Flag.Name, I._nm(FH.CreateFlag, [1]), FH.Flag.Name)
+I._nrand(0.1); I.fl = FH.Flag; FH.FlagModel = 'models/Misc/Flag/Flag.m3d'; del FH.FlagModel; r = I._nm(FH.CreateFlag, 1); FH.FlagModel = 'models/Misc/Flag/Flag.m3d'; result = (r, FH.Flag.Name, I._nent(FH.Flag.Name, ('Model', 'Radius', 'OnTake')))
+I._nrand(0.3); result = (I._nm(FH.CreateFlag, 1), FH.AcFlag, I._nm(FH.InitClientMod), FH.Flag.Name, I._nm(TF.InitServerMod), TF.Flag.Name, TF.AcFlag, I._nm(TF.InitClientMod), TF.Flag.Name)
+I._nrand(0.3); result = (I._nm(FH.InitServerMod), FH.Flag.Name, FH.AcFlag, I._nent(FH.Flag.Name, ('OnTake', 'Pos')))
+# taking the flag: the player, another ship, nobody
+FH.AcFlag = FH.ZoneList.keys()[1]; result = (I._nm(FH.TakeFlag, ''), FH.Flag.Pos == FH.ZoneList[FH.AcFlag])
+(I._nm(FH.TakeFlag, I.u.Name), I._nm(FH.TakeFlag, 'NmRed'), I._nm(FH.TakeFlag, 'Nobody'), I._nm(FH.TakeFlag, 5))
+I.u.TgType = 'red'; TF.AcFlag = TF.ZoneList.keys()[2]; result = (I._nm(TF.TakeFlag, I.u.Name), I._nm(TF.TakeFlag, 'NmRed'), I._nm(TF.TakeFlag, 'NmGreen'), I._nm(TF.TakeFlag, 'Nobody'), I._nm(TF.TakeFlag, ''), TF.Flag.Pos == TF.ZoneList[TF.AcFlag])
+I.ac = FH.AcFlag; FH.AcFlag = 'nozone'; r = I._nm(FH.TakeFlag, 'NmRed'); FH.AcFlag = I.ac; result = r
+I.ws = __import__('Sound').WaySound; del __import__('Sound').WaySound; r = (I._nm(FH.TakeFlag, I.u.Name), I._nm(FH.TakeFlag, 'NmRed')); __import__('Sound').WaySound = I.ws; result = r
+# the messages of the server to a client
+(I._nm(FH.OnUsrClient, 0, "F'" + FH.ZoneList.keys()[0] + "','NmRed'"), FH.AcFlag, FH.Flag.Pos == FH.ZoneList[FH.AcFlag])
+(I._nm(FH.OnUsrClient, 1, "F'" + FH.ZoneList.keys()[2] + "',''"), FH.AcFlag)
+# accepted C run (baselines/fc-nm-fl.txt.accepted.xz), next line: eval('(1,') of the 'F' message gives the 1.5.2
+# parser's SyntaxError ('unexpected EOF while parsing', (None, 1, 3, '(1,')) in the pack and the plain 'invalid syntax'
+# of the C reader. The game never sends such a text, and the parser goes at stage 7: not ported.
+(I._nm(FH.OnUsrClient, 0, 'S=abc'), I._nm(FH.OnUsrClient, 0, ''), I._nm(FH.OnUsrClient, 0, 'F1'), I._nm(FH.OnUsrClient, 0, "F'nozone','NmRed'"), FH.AcFlag, I._nm(FH.OnUsrClient, 0, 'F(1,'), I._nm(FH.OnUsrClient, 0, 5), I._nm(FH.OnUsrClient, 0, ['F', 1]))
+(I._nm(TF.OnUsrClient, 0, "F'" + TF.ZoneList.keys()[1] + "','" + I.u.Name + "'"), TF.AcFlag, I._nm(TF.OnUsrClient, 3, 'D(1, 2, 3)'))
+# a client joins the server
+FH.AcFlag = FH.ZoneList.keys()[0]; result = (I._nm(FH.ClientJoin, 'net5', 'SMerc3', 100, 'Usr', 'P_Dtritus', 'm0', 'm1', 'm2', 'm3', 'w', 0), I._nm(TF.ClientJoin, 'net17', 'M', 50.0, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 1))
+(I._nm(FH.ClientJoin, 'netX', 'M', 1, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 0), I._nm(FH.ClientJoin, 5, 'M', 1, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 0))
+I.ac = FH.AcFlag; FH.AcFlag = None; r = I._nm(FH.ClientJoin, 'net6', 'M', 1, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 0); FH.AcFlag = I.ac; result = r
+# the server: a player takes the flag
+F.Scorer = {'NmRed': 0, 'NmGreen': 0, I.u.Name: 0}; F.TotalRed = 0; F.TotalGreen = 0; F.ScorerFraglimit = 2; I._non('Ffa', 'CheckGameStart', seq=[1]); I._nrand(0.5); result = (I._nm(FH.ServerTakeFlag, FH.Flag.Name, 'NmRed'), F.Scorer, FH.AcFlag, I._nent(FH.Flag.Name, ('OnTake',)))
+I._nrand(0.2); result = (I._nm(FH.ServerTakeFlag, FH.Flag.Name, I.u.Name), F.Scorer, FH.AcFlag)
+I._nrand(0.9); result = (I._nm(FH.ServerTakeFlag, FH.Flag.Name, 'NmRed'), F.Scorer, FH.AcFlag, I._nent(FH.Flag.Name, ('OnTake',)))
+(I._nm(FH.ServerTakeFlag, 'x', 'Nobody'), I._nm(FH.ServerTakeFlag, 'x', 7))
+I._non('Ffa', 'CheckGameStart', seq=[0]); result = (I._nm(FH.ServerTakeFlag, 'x', 'NmGreen'), I._nm(TF.ServerTakeFlag, 'x', 'NmGreen'), F.Scorer)
+I._non('Ffa', 'CheckGameStart', seq=[1]); F.Scorer = {'NmRed': 0, 'NmGreen': 0, I.u.Name: 0}; I._nrand(0.4); result = (I._nm(TF.ServerTakeFlag, TF.Flag.Name, 'NmGreen'), F.Scorer, F.TotalRed, F.TotalGreen, TF.AcFlag)
+I._nrand(0.8); result = (I._nm(TF.ServerTakeFlag, TF.Flag.Name, I.u.Name), I._nm(TF.ServerTakeFlag, TF.Flag.Name, 'NmRed'), F.Scorer, F.TotalRed, F.TotalGreen, TF.AcFlag, I._nent(TF.Flag.Name, ('OnTake',)))
+F.Scorer['Nobody'] = 0; result = (I._nm(TF.ServerTakeFlag, 'x', 'Nobody'), F.Scorer, F.TotalRed, F.TotalGreen)
+I._non('Ffa', 'CheckGameStart', seq=['x']); I.cg = TF.CheckEndOfGame; del TF.CheckEndOfGame; r = (I._nm(TF.ServerTakeFlag, 'x', 'NmGreen'), F.Scorer); TF.CheckEndOfGame = I.cg; result = r
+del F.Scorer; r = I._nm(FH.ServerTakeFlag, 'x', 'NmRed'); F.Scorer = {'NmRed': 1}; result = r
+# deaths and the end of the game
+F.Scorer = {'NmRed': 1, 'NmGreen': 0, 'Nobody': 2}; F.TotalRed = 1; F.TotalGreen = 0; result = (I._nm(FH.DeathFunc, 'x', 'NmRed', 1), I._nm(FH.DeathFunc, 'x', 'NmGreen', 1), F.Scorer, I._nm(FH.DeathFunc, 'x', 'Zz', 1))
+(I._nm(TF.DeathFunc, 'x', 'NmRed', 1), I._nm(TF.DeathFunc, 'x', 'NmRed', 1), I._nm(TF.DeathFunc, 'x', 'NmGreen', 1), F.Scorer, F.TotalRed, F.TotalGreen, I._nm(TF.DeathFunc, 'x', 'Nobody', 1), F.Scorer)
+F.TotalGreen = 3; result = (I._nm(TF.DeathFunc, 'x', 'NmGreen', 1), F.TotalGreen)
+F.ScorerFraglimit = 2; result = (I._nm(FH.CheckEndOfGame), I._nm(TF.CheckEndOfGame), F.Scorer, F.TotalRed, F.TotalGreen)
+F.TotalGreen = 0; F.Scorer = {'a': 0}; result = (I._nm(FH.CheckEndOfGame), I._nm(TF.CheckEndOfGame))
+(I._nm(FH.GetGameDescriptor), I._nm(TF.GetGameDescriptor), I._nm(FH.ShowHelp, 0), I._nm(TF.ShowHelp, 1), I._nm(FH.ServerHidePlayer, 'x'), I._nm(TF.ServerHidePlayer, 'x'))
+I._noff()

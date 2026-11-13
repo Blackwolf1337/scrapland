@@ -1,0 +1,15 @@
+# The functions of Mission_DestroyStupidus in level commercial (the script levels/commercial/scripts/mission_destroystupidus.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Commercial.c): GetStupidusProfile, InitStatus, CreateStupidus, OnStupidusDeath, OnStupidusDamage, DropAmplifier, TakeAmplifier.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/commercial/mission_destroystupidus.def replaces this file.
+section Init LevelPath
+call SScorer.AddModel 0 "EvilBerto" "Models/Heads/HeadEvilBerto/HeadEvilBerto" "" 4 25 10
+call Scrap.Preload3DObject %Mission_DestroyStupidus.AmplifierModel
+call Mission_DestroyStupidus.CreateStupidus
+
+section BertoFound
+call Speech.AddRemoteCom "Mission_DestroyStupidus_RemoteMessage2" "DeepThroat" %Mission_DestroyStupidus.SetNextMission
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_BertoMassacre" "DownTown"
+call SaveGame.MMDesc "Mission_GoToDowntown_MissionText1" 1
+call SaveGame.QWayPoint

@@ -1,0 +1,134 @@
+# The functions of MapSnd in level temple (the script levels/temple/scripts/mapsnd.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Temple.c).
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/temple/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "celestial.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "celestial2.wav"
+end
+call SSound.LoadSound "space-int3.wav"
+call SSound.LoadSound "Atmosfera-Temple-ext1.wav"
+call SSound.LoadSound "Atmosfera-bano1.wav"
+call SSound.LoadSound "maquina2.wav"
+call SSound.LoadSound "agua-burbuja.wav"
+
+section SetSounds
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste1" (35428.4,507.1,-3615.7) "celestial" 1 3 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste2" (35467.3,501.2,-3700.3) "celestial2" 1 4 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste3" (35386.3,575.5,-5125.9) "celestial" 1 3 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste4" (35389.7,575.5,-5244.9) "celestial2" 1 4 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste5" (38331.9,551.9,-3489.9) "celestial" 1 3 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste6" (38346.8,551.9,-3614.5) "celestial2" 1 4 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste7" (38409.0,537.1,-5282.0) "celestial" 1 3 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "celeste8" (38400.3,537.1,-5119.5) "celestial2" 1 4 0.2
+end
+call Sound.SetPSLoop "Temple1" (36885.4882813,-262.314117432,-4507.78662109) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=2500.0 AttenEnd=2964.0 Doppler=0.0
+call Sound.SetPSLoop "Temple2" (37009.609375,-235.858398438,-8278.53515625) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=2500.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Temple3" (37316.5117188,108.686584473,5105.72412109) "maquina2" Volume=0.2 Pitch=-1.0 AttenIni=5508.0 AttenEnd=7956.0 Doppler=0.0
+call Sound.SetPSLoop "Temple4" (36728.3398438,151.333297729,911.876281738) "Atmosfera-Temple-ext1" Volume=0.4 Pitch=-5.0 AttenIni=2500.0 AttenEnd=2964.0 Doppler=0.0
+call Sound.SetPSLoop "Temple5" (33797.4570313,269.111450195,836.012878418) "Atmosfera-Temple-ext1" Volume=0.4 Pitch=-5.0 AttenIni=1540.0 AttenEnd=2964.0 Doppler=0.0
+call Sound.SetPSLoop "Temple6" (39305.375,197.784301758,618.433288574) "Atmosfera-Temple-ext1" Volume=0.4 Pitch=-5.0 AttenIni=1732.0 AttenEnd=2964.0 Doppler=0.0
+call Sound.SetPSLoop "Temple7" (32683.2949219,-143.066146851,-2486.36230469) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=2500.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Temple8" (36845.203125,-1267.14013672,-1859.21777344) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=1668.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Temple9" (31257.40625,-872.116455078,-5794.61669922) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=1732.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Temple10" (41472.0898438,-799.062683105,-4785.95458984) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=1732.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Temple11" (43091.6171875,-1602.50756836,-7896.04296875) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=1732.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Temple12" (44332.9414063,-1112.43933105,-5021.05517578) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=1860.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Temple13" (40788.8476563,-1026.31689453,-8230.73730469) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=1316.0 AttenEnd=1460.0 Doppler=0.0
+call Sound.SetPSLoop "Temple14" (31049.6933594,-1669.74279785,-9277.54785156) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=1828.0 AttenEnd=4004.0 Doppler=0.0
+call Sound.SetPSLoop "Temple15" (34229.9335938,-1213.01965332,-5764.14208984) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=352.0 AttenEnd=4004.0 Doppler=0.0
+call Sound.SetPSLoop "Temple16" (34125.8710938,-1236.63098145,-9519.86035156) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=288.0 AttenEnd=4004.0 Doppler=0.0
+call Sound.SetPSLoop "Temple17" (34122.46875,-1317.73535156,-7697.10058594) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=288.0 AttenEnd=4004.0 Doppler=0.0
+call Sound.SetPSLoop "Temple18" (28029.59375,-1566.79162598,-3975.39453125) "space-int3" Volume=0.08 Pitch=-5.0 AttenIni=2016.0 AttenEnd=4004.0 Doppler=0.0
+call Sound.SetPSLoop "Temple19" (26283.1152344,2498.47802734,-4073.55957031) "space-int3" Volume=0.06 Pitch=-5.0 AttenIni=4548.0 AttenEnd=9428.0 Doppler=0.0
+call Sound.SetPSLoop "Bano1" (26235.1640625,2393.01538086,-5435.60351563) "Atmosfera-bano1" Volume=0.8 Pitch=0.0 AttenIni=1860.0 AttenEnd=4180.0 Doppler=0.0
+call Sound.SetPSLoop "Bano2" (26324.203125,2481.61157227,-5489.71728516) "agua-burbuja" Volume=0.45 Pitch=0.0 AttenIni=336.0 AttenEnd=1532.0 Doppler=0.0
+
+section Yakuzzi
+call SSound.LoadSound "Yakuzzi/mecanismo-bishop1.wav"
+call SSound.LoadSound "Yakuzzi/mecanismo-bishop2.wav"
+call SSound.LoadSound "Yakuzzi/mecanismo-bishop5.wav"
+call SSound.LoadSound "Yakuzzi/mov-agua2.wav"
+call Scene.AddSound 81 "mov-agua2" 0.5 0 0
+if %MapSnd.isPC
+	call Scene.AddSound 310 "mecanismo-bishop5" 0.02 6 0
+end
+call Scene.AddSound 311 "mecanismo-bishop1" 0.018 6 0
+if %MapSnd.isPC
+	call Scene.AddSound 352 "mecanismo-bishop5" 0.02 6 0
+end
+call Scene.AddSound 353 "mecanismo-bishop2" 0.018 6 0
+if %MapSnd.isPC
+	call Scene.AddSound 660 "mecanismo-bishop5" 0.02 10 0
+end
+call Scene.AddSound 661 "mecanismo-bishop1" 0.018 10 0
+if %MapSnd.isPC
+	call Scene.AddSound 670 "mecanismo-bishop5" 0.02 10 0
+end
+call Scene.AddSound 671 "mecanismo-bishop2" 0.018 10 0
+if %MapSnd.isPC
+	call Scene.AddSound 688 "mecanismo-bishop5" 0.02 10 0
+end
+call Scene.AddSound 689 "mecanismo-bishop1" 0.018 10 0
+if %MapSnd.isPC
+	call Scene.AddSound 700 "mecanismo-bishop5" 0.02 10 0
+end
+call Scene.AddSound 701 "mecanismo-bishop2" 0.018 10 0
+if %MapSnd.isPC
+	call Scene.AddSound 896 "mecanismo-bishop5" 0.02 2 0
+end
+call Scene.AddSound 897 "mecanismo-bishop1" 0.018 2 0
+if %MapSnd.isPC
+	call Scene.AddSound 930 "mecanismo-bishop5" 0.02 3 0
+end
+call Scene.AddSound 931 "mecanismo-bishop2" 0.018 3 0
+if %MapSnd.isPC
+	call Scene.AddSound 1138 "mecanismo-bishop5" 0.02 2 0
+end
+call Scene.AddSound 1139 "mecanismo-bishop1" 0.018 2 0
+if %MapSnd.isPC
+	call Scene.AddSound 1153 "mecanismo-bishop5" 0.02 4 0
+end
+call Scene.AddSound 1154 "mecanismo-bishop2" 0.018 4 0
+if %MapSnd.isPC
+	call Scene.AddSound 1182 "mecanismo-bishop5" 0.02 2 0
+end
+call Scene.AddSound 1183 "mecanismo-bishop1" 0.018 2 0
+
+section YakuzziDtritus
+let CharName "YakuzziDtritus"
+let ActName "TalkIam"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus5" 0.022 +4
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus1" 0.021 +2
+call Chars.ActSound $CharName $ActName 37 "mecanismo-dtritus5" 0.022 +4
+call Chars.ActSound $CharName $ActName 38 "mecanismo-dtritus1" 0.021 +2
+let ActName "TalkTranki"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus5" 0.022 +4
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus1" 0.021 +2
+call Chars.ActSound $CharName $ActName 23 "mecanismo-dtritus2" 0.021 +2
+call Chars.ActSound $CharName $ActName 34 "mecanismo-dtritus1" 0.021 +2
+call Chars.ActSound $CharName $ActName 49 "mecanismo-dtritus5" 0.022 +4
+call Chars.ActSound $CharName $ActName 50 "mecanismo-dtritus1" 0.021 +2
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

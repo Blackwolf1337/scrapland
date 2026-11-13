@@ -1,0 +1,21 @@
+# Temple: Mission_AskGus started like the game (Mission.Map, Mission.Library, state), then its functions with recorders
+Scrap.SetSaveVar('MissionState', 'AskGus'); Scrap.SetSaveVar('Mission.Map', 'Temple'); Scrap.SetSaveVar('Mission.Library', 'Mission_AskGus'); Scrap.LoadLevel('Levels/Temple'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_AskGus'))
+_r6hooks()
+_sdmod('Mission_AskGus', ('InitStatus',))
+(_r6ent(('Bishop_Gus', 'DM_DTritusDesktop'), ('UseFunc', 'Descriptor', 'ArrowCanMission')), _r6res()[:3], _r6hooks()[15:17], _r6hooks()[22:23])
+_r6on()
+_sd(__import__('Mission_AskGus').GusSpeech, 'Player0', 'Bishop_Gus', 'Talk', 'x')
+(_r6hooks()[:4], _sd(__import__('Mission_AskGus').GusSpeech, 'Player0', 'Bishop_Gus', 'Other', 'x'))
+(_sd(__import__('Mission_AskGus').CreateGusInit, Scrap.GetEntity('Bishop_Gus')), Scrap.SetSaveVar('MissionState', 'X'), _sd(__import__('Mission_AskGus').CreateGusInit, Scrap.GetEntity('Nurse_01')), Scrap.SetSaveVar('MissionState', 'AskGus'))
+(Scrap.SetSaveVar('Hangar.shipsToEditList', "['SMerc1']"), Scrap.SetSaveVar('Hangar.availableEnginesList', "['MBISHOP1']"), _sd(__import__('Mission_AskGus').DeepThroatAppears, 'Bishop_Gus'), _r6sv(('Hangar.shipsToEditList', 'Hangar.availableEnginesList', 'NewBluePrintAvaliable', 'MissionState')), _r6ent(('Bishop_Gus',), ('UseFunc',)))
+_sd(__import__('Mission_AskGus').DeepThroatAppears, 'NoOne')[1][:2]
+(Scrap.SetSaveVar('Conversor.AvailableChars', "['Dtritus', 'Police']"), setattr(__import__('CharConversor'), 'AvailableChars', ['Nurse', 'Dtritus']), _sd(__import__('Mission_AskGus').PreCallDeepThroat), Scrap.GetSaveVar('Conversor.AvailableChars'), __import__('CharConversor').AvailableChars, Scrap.GetSaveVar('MissionState'), _r6hooks()[11:12])
+(Scrap.SetSaveVar('Conversor.AvailableChars', "['Police']"), _sd(__import__('Mission_AskGus').PreCallDeepThroat)[0], Scrap.GetSaveVar('Conversor.AvailableChars'))
+_sd(__import__('Mission_AskGus').DeepThroatSpeech, 'Player0', 'DM_DTritusDesktop', 'Talk', 'x')
+(_sd(__import__('Mission_AskGus').SetNextMission), _r6sv(('MissionState', 'LonelyMercInGamblinDen', 'Mission.Library', 'Parked.Police', 'Parked.Temple')))
+(Scrap.SetSaveVar('MissionState', 'DeepThroatCalls'), _sd(__import__('Mission_AskGus').Init, 'x'), Scrap.SetSaveVar('MissionState', 'AfterDeepThroatCalls'), _sd(__import__('Mission_AskGus').Init, 'x'), Scrap.SetSaveVar('MissionState', 'Z'), _sd(__import__('Mission_AskGus').Init, 'x'))
+(len(__import__('CharsNPC').AfterBrowseNPC), _sd(__import__('Mission_AskGus').InitStatus, 'x'), len(__import__('CharsNPC').AfterBrowseNPC), _sd(__import__('Mission_AskGus').AfterBrowseNPC), len(__import__('CharsNPC').CharRes['Bishop_Gus'].CallbackFunc))

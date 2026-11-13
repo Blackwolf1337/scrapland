@@ -1,0 +1,221 @@
+# The hull tab of the ship editor (HullTab.SetHullPanel of shipedit/hulltab.py): the hull text and bar, the arrows to
+# take a hull plate off and put one on, and the slider. The format is described in src/game/Script/Script.c. A pack in
+# mods/ with scrapc/menus/hulltab.def replaces this file. The C runs panel, visible ($v: SetHullVisible) and hide
+# (the predictions HideHullPanel hides). The step usehint <key> sets the Hint of the item to the language text key
+# with HullTab.UseTxt in it.
+
+style sprite
+	IsMultiSprite 1
+	HighRes 1
+style arrow
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/Menu/GenericButtons.alpha.tga"
+	Highlight 1
+	SpriteIndex 3
+	FocusSpriteIndex 4
+style circuit
+	BlendingMode 2
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/ShipEditor/Circuits.tga"
+style back
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/Menu/GenericButtons.alpha.tga"
+style slidercircuit
+	IsMultiSprite 1
+	HighRes 1
+	BlendingMode 2
+	File "2D/Menu/Slider.alpha.tga"
+
+section panel
+item HullText Text
+	IsMultiSprite 1
+	Font Horatio
+	Align Center
+	Text ""
+	Alpha 255
+	Red 57
+	Green 139
+	Blue 202
+	TextColorAlpha 255
+	TextColorRed 255
+	TextColorGreen 255
+	TextColorBlue 255
+	X 289
+	Y 130
+	Visible 0
+	OnAccept ""
+item HullFill Sprite
+	use sprite
+	File "2D/ShipEditor/FullEditor.alpha.tga"
+	SpriteIndex 2
+	X 308
+	Y 84
+	ScaleY 1170
+	Unit 1
+	Alpha 192
+	Visible 0
+item HullSection Sprite
+	BlendingMode 6
+	use sprite
+	File "2D/ShipEditor/FullEditor.alpha.tga"
+	SpriteIndex 1
+	X 320
+	Y 80
+	Alpha 255
+	PivotX 0.5
+	Visible 0
+
+# the arrow down at x 241, the arrow up at x 381, both at y 185
+item HullDown Button
+	use arrow
+	X 241
+	Y 185
+	W 25
+	H 25
+	FocusPivotX -5
+	FocusPivotY -5
+	Complex 0
+	Visible 0
+	MultiPress 1
+	OnGainFocus HullTab.ShowHullPredictionDown
+	OnLooseFocus HullTab.HideHullPredictionDown
+	OnAccept HullTab.DecrementHull
+	run usehint HINT_Hull2
+item HullDownBack Sprite
+	use back
+	SpriteIndex 1
+	X 238
+	Y 182
+item HullDownCircuit1 Sprite
+	use back
+	SpriteIndex 16
+	X 257
+	Y 173
+	Rotate 1
+	Mirror 2
+item HullDownCircuit2 Sprite
+	use circuit
+	SpriteIndex 3
+	X 231
+	Y 167
+	Alpha 128
+	Rotate 3
+	Mirror 0
+item HullDownCircuit3 Sprite
+	use circuit
+	SpriteIndex 8
+	X 261
+	Y 180
+	Alpha 128
+	Mirror 0
+item HullUp Button
+	use arrow
+	X 381
+	Y 185
+	W 25
+	H 25
+	FocusPivotX -5
+	FocusPivotY -5
+	Complex 0
+	Mirror 1
+	MultiPress 1
+	OnGainFocus HullTab.ShowHullPredictionUp
+	OnLooseFocus HullTab.HideHullPredictionUp
+	OnAccept HullTab.IncrementHull
+	run usehint HINT_Hull1
+item HullUpBack Sprite
+	use back
+	SpriteIndex 1
+	X 378
+	Y 182
+item HullUpCircuit1 Sprite
+	use back
+	SpriteIndex 16
+	X 372
+	Y 173
+	Rotate 1
+	Mirror 0
+item HullUpCircuit2 Sprite
+	use circuit
+	SpriteIndex 3
+	X 373
+	Y 167
+	Alpha 128
+	Rotate 3
+	Mirror 2
+item HullUpCircuit3 Sprite
+	use circuit
+	SpriteIndex 8
+	X 370
+	Y 180
+	Alpha 128
+	Mirror 1
+
+# the slider between the arrows, x 266, y 176
+item HullSlider Slider
+	use sprite
+	File "2D/Menu/Slider.alpha.tga"
+	X 266
+	Y 184
+	W 105
+	H 32
+	FocusPivotX 0
+	FocusPivotY -7
+	BackSpriteIndex 1
+	SliderSpriteIndex 2
+	FocusSpriteIndex 4
+	MinValue 0
+	MaxValue 0
+	Value 0
+	ValueStep 5
+	MarginSize 15
+	OnChange HullTab.HullSliderChange
+	Visible 0
+	MaxValueForced 0
+item HullSliderCircuit1 Sprite
+	use slidercircuit
+	X 266
+	Y 178
+	SpriteIndex 3
+	Alpha 128
+	Visible 0
+item HullSliderCircuit2 Sprite
+	use slidercircuit
+	X 266
+	Y 196
+	SpriteIndex 3
+	Alpha 128
+	Visible 0
+lr HullDown HullSlider
+lr HullSlider HullUp
+
+section visible
+set HullSection Visible $v
+set HullUp Visible $v
+set HullUpBack Visible $v
+set HullUpCircuit1 Visible $v
+set HullUpCircuit2 Visible $v
+set HullUpCircuit3 Visible $v
+set HullDown Visible $v
+set HullDownBack Visible $v
+set HullDownCircuit1 Visible $v
+set HullDownCircuit2 Visible $v
+set HullDownCircuit3 Visible $v
+set HullText Visible $v
+set HullFill Visible $v
+set HullSlider Visible $v
+set HullSliderCircuit1 Visible $v
+set HullSliderCircuit2 Visible $v
+
+section hide
+set WeightUp Visible 0
+set WeightDown Visible 0
+set WeightEqual Visible 0
+set WeightBack Visible 0
+set BoostUp Visible 0
+set BoostDown Visible 0
+set BoostEqual Visible 0
+set BoostBack Visible 0

@@ -1,0 +1,23 @@
+# Townhall, round 8r (coverage): the load and save menus of Menu (MenuMain.c Main_GamesMenu, Main_SaveName,
+# Menu_SaveGame, Menu_AuxSaveGame, Menu_LoadGame): run on a slot without saves (Save<n>.sav) at the start; the save
+# names carry the time of the save (minutes and seconds may differ between the two runs)
+exec(open('fcov.py').read()) in __import__('Init').__dict__; result = 1
+result = map(lambda s: (s[0][:9], s[1]), Scrap.GetSaveGamesList('Save/'))
+I = __import__('Init'); result = I._ce(__import__('Menu').SaveGameMenu, 0, 'x')
+result = __import__('Init')._md(0)
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.SaveGame, 0, 'Item1'), M.slotToOverwrite, map(lambda s: s[1], Scrap.GetSaveGamesList('Save/')))
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.SaveGameMenu, 0, 'x'), len(M.saveGamesList))
+result = __import__('Init')._md(0)
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.SaveGame, 0, 'Item1'), M.slotToOverwrite, map(lambda s: s[1], Scrap.GetSaveGamesList('Save/')))
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.SaveGameMenu, 0, 'x'), len(M.saveGamesList))
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.SaveGame, 0, 'Item3'), M.slotToOverwrite)
+result = __import__('Init')._md(0)
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.SaveGame, 0, 'Item2'), M.slotToOverwrite)
+result = __import__('Init')._md(0)
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.AuxSaveGame, 0, 'x'), map(lambda s: s[1], Scrap.GetSaveGamesList('Save/')))
+result = __import__('Init')._md(0)
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.LoadGameMenu, 0, 'x'), len(M.saveGamesList))
+result = __import__('Init')._md(0)
+I = __import__('Init'); M = __import__('Menu'); M.fromSinglePlayer = 1; result = (I._ce(M.LoadGame, 0, 'Item2'), M.slotToLoad)
+result = __import__('Init')._md(0)
+I = __import__('Init'); M = __import__('Menu'); result = (I._ce(M.isAutoSave, 'AutoSave-x'), I._ce(M.isAutoSave, 'Townhall 12:00:00'), I._ce(M.ComposeSaveGameName, 'Townhall 12:00:00'), I._ce(M.ComposeSaveGameName, 'AutoSave-Police 01:02:03'))

@@ -1,0 +1,4 @@
+# the rail traffic of the level sets ShipPathFmt through Scrap.Set when a rail ship dies while the case runs (SetPath,
+# the new ship, ResetPath): those calls of the passed-on recorder go, they come at random lines
+sub (?:\('(?:Scrap\.)?Set', \('ShipPathFmt', '[^']*'\), \{\}\)(?:, )?)+(.) => \1
+sub , \] => ]

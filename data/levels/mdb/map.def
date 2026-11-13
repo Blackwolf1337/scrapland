@@ -1,0 +1,9 @@
+# The functions of Map in level mdb (the script levels/mdb/scripts/map.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/mdb/map.def replaces this file.
+section InitStatus LevelPath
+setvar Init.Outdoor 1
+setvar OutPolice.PoliceActive 0
+call Scrap.Set "iTrafficNumber" 0
+
+section Init LevelPath

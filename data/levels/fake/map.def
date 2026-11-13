@@ -1,0 +1,396 @@
+# The functions of Map in level fake (the script levels/fake/scripts/map.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Fake.c): Init, PlayFake2, NextLevel, CreateFakeBertoShip, ActivateBertoEngines, LoadFake2Scene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fake/map.def replaces this file.
+section InitStatus LevelPath
+setvar Init.Outdoor 0
+call Chars.AddNewCharRes "Dtritus"
+call Chars.AddNewCharRes "Berto"
+call Chars.AddNewCharRes "Gear"
+call Chars.AddNewCharRes "Police"
+call Chars.AddNewCharRes "Sentinel"
+call Chars.AddNewCharRes "BankDirector"
+call Chars.AddNewCharRes "Bishop"
+call Chars.AddNewCharRes "Nurse"
+call Chars.AddNewCharRes "Functionary"
+call Scrap.OpenPack "Scripts/Scorer"
+call Scrap.PreloadLibrary "CreditsText" "CreditsText.pyc"
+call Scrap.ClosePack
+
+section PlayFake0 usr=None
+call Scene.Play "Fake0"
+setvar Scene.EndOfSceneCallback %Map.PlayFake1
+call SSound.SetMusic "Music/Track1.ogg" 1.0
+
+section PlayFake1 usr=None
+call Scene.Play "Fake1"
+setvar Scene.EndOfSceneCallback %Map.PlayFake2
+
+section LoadFake0Scene
+call Scene.Load "Fake0"
+call Scene.AddGeneric 25 "import CreditsText;CreditsText.ShowCredit(12)"
+call Scene.ActorAction 0 "Dtritus" "Landing"
+call Scene.ActorAction 260 "Dtritus" "Walk"
+call Scene.ActorAction 0 "Berto" "Cartel"
+call Scene.ActorAction 0 "Functionary" "Relax"
+call Scene.ActorAction 260 "Functionary" "Walk"
+call Scene.ActorAction 0 "Cartel" "Loop" "Loop"
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "Landing" "Landing" 0
+call SAct.SetAct "InterpTime" 0.0
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call Scene.CreateLocalAction $CharType 0 "Cartel" "Cartel" 1
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Functionary"
+call Scene.AddCharActor "Functionary" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Functionary" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Cartel"
+call Scene.AddLocalActor "Cartel" $CharType
+call Scene.CreateLocalAction $CharType 0 "Loop" "Loop" 1
+call SAct.SetCls "DefAction" "Loop"
+run setdef "DefInterpTime"
+
+section SetMotionBlur active
+if $active
+	call Scrap.Set "MotionBlurFactorBegin" 0.0
+	call Scrap.Set "MotionBlurFactorEnd" 0.55
+	call Scrap.Set "MotionBlurTime" 0.0
+	call Scrap.Set "MotionBlurEndTime" 0.25
+	call Scrap.Set "MotionBlurOffVar" 0
+else
+	call Scrap.Set "MotionBlurFactorBegin" 0.55
+	call Scrap.Set "MotionBlurFactorEnd" 0.0
+	call Scrap.Set "MotionBlurTime" 0.0
+	call Scrap.Set "MotionBlurEndTime" 1.75
+	call Scrap.Set "MotionBlurOffVar" 0
+end
+
+section LoadFake1Scene
+call Scene.Load "Fake1"
+call Scene.AddGeneric 2465 "import Map; Map.SetMotionBlur(1)"
+call Scene.AddGeneric 2496 "import Map; Map.SetMotionBlur(0)"
+call Scene.AddGeneric 50 "import CreditsText;CreditsText.ShowCredit(13)"
+call Scene.AddGeneric 425 "import CreditsText;CreditsText.ShowCredit(14)"
+call Scene.AddGeneric 850 "import CreditsText;CreditsText.ShowCredit(15)"
+call Scene.AddGeneric 1300 "import CreditsText;CreditsText.ShowCredit(16)"
+call Scene.AddGeneric 1725 "import CreditsText;CreditsText.ShowCredit(17)"
+call Scene.AddGeneric 2150 "import CreditsText;CreditsText.ShowCredit(18)"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 90 "Dtritus" "TalkHi"
+call Scene.ActorAction 130 "Dtritus" "Relax"
+call Scene.ActorAction 270 "Dtritus" "Talk"
+call Scene.ActorAction 342 "Dtritus" "Relax"
+call Scene.ActorAction 496 "Dtritus" "Talk"
+call Scene.ActorAction 526 "Dtritus" "WalkLook"
+call Scene.ActorAction 1042 "Dtritus" "WalkTalk"
+call Scene.ActorAction 1102 "Dtritus" "WalkTalk0"
+call Scene.ActorAction 1132 "Dtritus" "WalkTalk"
+call Scene.ActorAction 1182 "Dtritus" "WalkLook"
+call Scene.ActorAction 1360 "Dtritus" "NotUnderstand"
+call Scene.ActorAction 1420 "Dtritus" "TalkRight"
+call Scene.ActorAction 1480 "Dtritus" "RelaxRight"
+call Scene.ActorAction 1500 "Dtritus" "WalkLook"
+call Scene.ActorAction 1774 "Dtritus" "WalkTalk"
+call Scene.ActorAction 1834 "Dtritus" "WalkLook"
+call Scene.ActorAction 2018 "Dtritus" "WalkTalk"
+call Scene.ActorAction 2048 "Dtritus" "WalkLook"
+call Scene.ActorAction 2120 "Dtritus" "RelaxRight"
+call Scene.ActorAction 2292 "Dtritus" "TalkRight"
+call Scene.ActorAction 2342 "Dtritus" "Walk"
+call Scene.ActorAction 2400 "Dtritus" "Relax"
+call Scene.ActorAction 2425 "Dtritus" "Elevator"
+call Scene.ActorAction 0 "Berto" "Cartel"
+call Scene.ActorAction 90 "Berto" "TiraCartel"
+call Scene.ActorAction 160 "Berto" "Talk"
+call Scene.ActorAction 268 "Berto" "Relax"
+call Scene.ActorAction 344 "Berto" "Talk"
+call Scene.ActorAction 414 "Berto" "Vamos"
+call Scene.ActorAction 494 "Berto" "Relax"
+call Scene.ActorAction 524 "Berto" "WalkLook"
+call Scene.ActorAction 560 "Berto" "WalkTalk"
+call Scene.ActorAction 628 "Berto" "WalkTalk0"
+call Scene.ActorAction 662 "Berto" "WalkTalk"
+call Scene.ActorAction 816 "Berto" "WalkTalk0"
+call Scene.ActorAction 850 "Berto" "WalkTalk"
+call Scene.ActorAction 1040 "Berto" "WalkLook"
+call Scene.ActorAction 1184 "Berto" "WalkTalk"
+call Scene.ActorAction 1364 "Berto" "WalkLook"
+call Scene.ActorAction 1370 "Berto" "RelaxLeft"
+call Scene.ActorAction 1482 "Berto" "WalkTalk"
+call Scene.ActorAction 1610 "Berto" "WalkTalk0"
+call Scene.ActorAction 1644 "Berto" "WalkTalk"
+call Scene.ActorAction 1772 "Berto" "WalkLook"
+call Scene.ActorAction 1836 "Berto" "WalkTalk"
+call Scene.ActorAction 2016 "Berto" "WalkLook"
+call Scene.ActorAction 2090 "Berto" "TalkLeft"
+call Scene.ActorAction 2210 "Berto" "VamosLeft"
+call Scene.ActorAction 2290 "Berto" "RelaxLeft"
+call Scene.ActorAction 2340 "Berto" "Walk"
+call Scene.ActorAction 2402 "Berto" "Relax"
+call Scene.ActorAction 2430 "Berto" "Elevator"
+call Scene.ActorAction 0 "Cartel" "Loop" "Loop"
+call Scene.ActorAction 90 "Cartel" "Fly" "Fly"
+call Scene.ActorAction 0 "BankDirector1" "Walk"
+call Scene.ActorAction 0 "BankDirector2" "Walk"
+call Scene.ActorAction 0 "BankDirector3" "Relax"
+call Scene.ActorAction 1020 "BankDirector3" "Relax0"
+call Scene.ActorAction 1200 "BankDirector3" "Relax"
+call Scene.ActorAction 0 "BankDirector4" "Walk"
+call Scene.ActorAction 0 "BankDirector5" "Relax"
+call Scene.ActorAction 1730 "BankDirector5" "Talk1"
+call Scene.ActorAction 1800 "BankDirector5" "Relax"
+call Scene.ActorAction 0 "Bishop1" "Relax"
+call Scene.ActorAction 1670 "Bishop1" "Talk2"
+call Scene.ActorAction 1720 "Bishop1" "Relax"
+call Scene.ActorAction 1810 "Bishop1" "Talk1"
+call Scene.ActorAction 0 "Bishop2" "Walk"
+call Scene.ActorAction 0 "Bishop3" "Walk"
+call Scene.ActorAction 0 "Bishop4" "Walk"
+call Scene.ActorAction 0 "Gear1" "Relax"
+call Scene.ActorAction 520 "Gear1" "Relax0"
+call Scene.ActorAction 0 "Gear2" "Relax"
+call Scene.ActorAction 0 "Gear3" "Relax"
+call Scene.ActorAction 1490 "Gear3" "Relax1"
+call Scene.ActorAction 1600 "Gear3" "Relax"
+call Scene.ActorAction 0 "Gear4" "Relax"
+call Scene.ActorAction 1810 "Gear4" "Relax1"
+call Scene.ActorAction 1900 "Gear4" "Relax"
+call Scene.ActorAction 0 "Gear5" "Relax"
+call Scene.ActorAction 2230 "Gear5" "Relax0"
+call Scene.ActorAction 0 "Gear6" "Relax"
+call Scene.ActorAction 2000 "Gear6" "Relax1"
+call Scene.ActorAction 2100 "Gear6" "Relax"
+call Scene.ActorAction 0 "Police1" "Walk"
+call Scene.ActorAction 0 "Police2" "Relax"
+call Scene.ActorAction 990 "Police2" "Relax0"
+call Scene.ActorAction 1300 "Police2" "Relax"
+call Scene.ActorAction 0 "Police3" "Relax"
+call Scene.ActorAction 95 "Police3" "Relax0"
+call Scene.ActorAction 170 "Police3" "Relax"
+call Scene.ActorAction 340 "Police3" "Relax1"
+call Scene.ActorAction 460 "Police3" "Relax"
+call Scene.ActorAction 0 "Police4" "Walk"
+call Scene.ActorAction 0 "Sentinel1" "Walk"
+call Scene.ActorAction 0 "Sentinel2" "Walk"
+call Scene.ActorAction 0 "Sentinel3" "Walk"
+call Scene.ActorAction 0 "Sentinel4" "Relax"
+call Scene.ActorAction 155 "Sentinel4" "Relax0"
+call Scene.ActorAction 300 "Sentinel4" "Relax"
+call Scene.ActorAction 0 "Nurse1" "Walk"
+call Scene.ActorAction 0 "Nurse2" "Walk"
+call Scene.ActorAction 0 "Nurse3" "Walk"
+call Scene.ActorAction 0 "Nurse4" "Walk"
+call Scene.ActorAction 0 "Nurse5" "Walk"
+call Scene.AddText 90 "Mission_Scene_Fake_TownHall_1" 4
+call Scene.AddText 160 "Mission_Scene_Fake_TownHall_2" 5
+call Scene.AddText 270 "Mission_Scene_Fake_TownHall_3" 4
+call Scene.AddText 344 "Mission_Scene_Fake_TownHall_4" 6
+call Scene.AddText 496 "Mission_Scene_Fake_TownHall_5" 1
+call Scene.AddText 560 "Mission_Scene_Fake_TownHall_6" 15
+call Scene.AddText 1042 "Mission_Scene_Fake_TownHall_7" 6
+call Scene.AddText 1184 "Mission_Scene_Fake_TownHall_8" 8
+call Scene.AddText 1420 "Mission_Scene_Fake_TownHall_9" 2
+call Scene.AddText 1482 "Mission_Scene_Fake_TownHall_10" 12
+call Scene.AddText 1774 "Mission_Scene_Fake_TownHall_11" 2
+call Scene.AddText 1836 "Mission_Scene_Fake_TownHall_12" 8
+call Scene.AddText 2018 "Mission_Scene_Fake_TownHall_13" 2
+call Scene.AddText 2090 "Mission_Scene_Fake_TownHall_14" 9
+call Scene.AddText 2292 "Mission_Scene_Fake_TownHall_15" 2
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Cartel"
+call Scene.AddLocalActor "Cartel" $CharType
+call Scene.CreateLocalAction $CharType 0 "Loop" "Loop" 1
+call Scene.CreateLocalAction $CharType 0 "Fly" "Fly" 0
+call SAct.SetCls "DefAction" "Loop"
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk3" "Talk3" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk4" "Talk4" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk5" "Talk5" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "NotUnderstand" "NotUnderstand" 0
+call Scene.CreateLocalAction $CharType 0 "Elevator" "Elevator" 0
+call Scene.CreateLocalAction $CharType 0 "TalkRight" "TalkRight" 1
+call Scene.CreateLocalAction $CharType 0 "WalkLook" "WalkLook" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxRight" "RelaxRight" 1
+call SAct.SetAct "InterpTime" 0.3
+call Scene.CreateLocalAction $CharType 0 "TalkHi" "TalkHi" 1
+call Scene.CreateLocalAction $CharType 0 "WalkTalk" "WalkTalk" 1
+call Scene.CreateLocalAction $CharType 0 "WalkTalk0" "WalkTalk0" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "VamosLeft" "VamosLeft" 1
+call SAct.SetAct "InterpTime" 0.3
+call Scene.CreateLocalAction $CharType 0 "Vamos" "Vamos" 1
+call SAct.SetAct "InterpTime" 0.3
+call Scene.CreateLocalAction $CharType 0 "Cartel" "Cartel" 1
+call Scene.CreateLocalAction $CharType 0 "TalkLeft" "TalkLeft" 1
+call Scene.CreateLocalAction $CharType 0 "Elevator" "Elevator" 0
+call Scene.CreateLocalAction $CharType 0 "TiraCartel" "TiraCartel" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxLeft" "RelaxLeft" 1
+call Scene.CreateLocalAction $CharType 0 "WalkLook" "WalkLook" 1
+call Scene.CreateLocalAction $CharType 0 "WalkTalk" "WalkTalk" 1
+call Scene.CreateLocalAction $CharType 0 "WalkTalk0" "WalkTalk0" 1
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Cartel"
+let CharType "BankDirector"
+call Scene.AddCharActor "BankDirector1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "BankDirector1" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "BankDirector"
+call Scene.AddCharActor "BankDirector2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "BankDirector2" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "BankDirector"
+call Scene.AddCharActor "BankDirector3" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call Scene.SetDefSounds "BankDirector3" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "BankDirector"
+call Scene.AddCharActor "BankDirector4" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "BankDirector4" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "BankDirector"
+call Scene.AddCharActor "BankDirector5" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call Scene.SetDefSounds "BankDirector5" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Bishop"
+call Scene.AddCharActor "Bishop1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.SetDefSounds "Bishop1" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Bishop"
+call Scene.AddCharActor "Bishop2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Bishop2" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Bishop"
+call Scene.AddCharActor "Bishop3" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Bishop3" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Bishop"
+call Scene.AddCharActor "Bishop4" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Bishop4" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Nurse"
+call Scene.AddCharActor "Nurse1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Nurse1" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Nurse"
+call Scene.AddCharActor "Nurse2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Nurse2" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Nurse"
+call Scene.AddCharActor "Nurse3" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Nurse3" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Nurse"
+call Scene.AddCharActor "Nurse4" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Nurse4" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Nurse"
+call Scene.AddCharActor "Nurse5" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Nurse5" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Gear"
+call Scene.AddCharActor "Gear1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call Scene.SetDefSounds "Gear1" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Gear"
+call Scene.AddCharActor "Gear2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.SetDefSounds "Gear2" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Gear"
+call Scene.AddCharActor "Gear3" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.SetDefSounds "Gear3" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Gear"
+call Scene.AddCharActor "Gear4" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.SetDefSounds "Gear4" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Gear"
+call Scene.AddCharActor "Gear5" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call Scene.SetDefSounds "Gear5" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Gear"
+call Scene.AddCharActor "Gear6" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.SetDefSounds "Gear6" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "Police1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Police1" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "Police2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call Scene.SetDefSounds "Police2" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "Police3" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.SetDefSounds "Police3" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "Police4" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Police4" $CharType
+call SAct.SetCls "DefAction" "Walk"
+let CharType "Sentinel"
+call Scene.AddCharActor "Sentinel1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Sentinel1" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Sentinel"
+call Scene.AddCharActor "Sentinel2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Sentinel2" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Sentinel"
+call Scene.AddCharActor "Sentinel3" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.SetDefSounds "Sentinel3" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Sentinel"
+call Scene.AddCharActor "Sentinel4" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call Scene.SetDefSounds "Sentinel4" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"

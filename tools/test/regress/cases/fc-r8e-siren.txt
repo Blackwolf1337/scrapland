@@ -1,0 +1,5 @@
+# DownTown: police ships without a pilot near the player: the sirens compare the empty pilot name (read 2 bytes past "" before the fix)
+p = Scrap.UsrEntity(0).Pos; v = Scrap.CreateEntity('R8ePol', p[0] + 800, p[1] + 200, p[2], 'Car'); v.SetModel('SPoli2'); result = (v.Name, v.Model)
+p = Scrap.UsrEntity(0).Pos; v = Scrap.CreateEntity('R8ePol2', p[0] - 800, p[1] + 200, p[2], 'Car'); v.SetModel('SPoli4'); result = (v.Name, v.Model)
+!sleep 4
+(Scrap.GetEntity('R8ePol').Name, Scrap.GetEntity('R8ePol2').Name, Scrap.UsrEntity(0).Name)

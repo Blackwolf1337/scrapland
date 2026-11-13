@@ -1,0 +1,12 @@
+# The functions of Mission_IgorFirstContact in level gamblinden (the script levels/gamblinden/scripts/mission_igorfirstcontact.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): Init, TalkToCrazyGambler, CrazyGamblerSpeech, TalkToIgor, IgorSpeech, TalkToMercenaries, MercenaryASpeech, MercenaryCSpeech, MercenaryBSpeech.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_igorfirstcontact.def replaces this file.
+section InitStatus LevelPath
+
+section SetNextMission
+call SaveGame.QWayPoint
+call MissionsFuncs.ActivateTarget %Mission_IgorFirstContact.mercA 0
+call MissionsFuncs.ActivateTarget %Mission_IgorFirstContact.mercB 0
+call MissionsFuncs.ActivateTarget %Mission_IgorFirstContact.mercC 0
+call MissionsFuncs.SetNextMission "Mission_StupidMercAgain" "Scrapyard"
+call SaveGame.MMDesc "Mission_GetMercShipPlans_MissionText2" 1

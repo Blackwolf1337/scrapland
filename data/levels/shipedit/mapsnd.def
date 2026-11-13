@@ -1,0 +1,6 @@
+# The functions of MapSnd in level shipedit (the script levels/shipedit/scripts/mapsnd.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Small.c): Init.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/shipedit/mapsnd.def replaces this file.
+section LoadSounds
+
+section SetSounds

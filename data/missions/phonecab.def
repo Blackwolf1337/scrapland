@@ -1,0 +1,70 @@
+# The action classes of the phone cabs (PhoneCab.CreatePhoneCabClass and CreateAudioComClass of missions/phonecab.py)
+# and of the desktops in Press (DTritusDesktop.CreateDTritusDesktopClass and CreatePressDesktopClass of
+# missions/dtritusdesktop.py). The format is described in src/game/Script/Script.c. A pack in mods/ with
+# scrapc/missions/phonecab.def replaces this file.
+
+section PhoneCab
+call SAct.CreateClass PhoneCab
+class
+	ModelFilePath "Models/Misc/Phone/Phone.M3D"
+action Relax
+	AnmFilePath "Models/Misc/Phone/Anm/Loop.M3D"
+	isLoop 1
+class
+	DefAction Relax
+
+section AudioCom
+call SAct.CreateClass AudioCom
+class
+	ModelFilePath "Models/Misc/AudioCom/AudioCom.M3D"
+action Relax
+	AnmFilePath "Models/Misc/AudioCom/Anm/Wait.M3D"
+	isLoop 1
+action Talk
+	AnmFilePath "Models/Misc/AudioCom/Anm/Calling.M3D"
+	isLoop 1
+action Listen
+	AnmFilePath "Models/Misc/AudioCom/Anm/Listen.M3D"
+	isLoop 1
+class
+	DefAction Relax
+
+section DTritusDesktop
+call SAct.CreateClass DTritusDesktop
+class
+	ModelFilePath "Models/Misc/DesktopPress/DTritusDesktop.M3D"
+action Relax
+	AnmFilePath "Models/Misc/DesktopPress/Anm/DTritusDesktop_Wait.M3D"
+	isLoop 1
+action Talk
+	AnmFilePath "Models/Misc/DesktopPress/Anm/DTritusDesktop_Calling.M3D"
+	isLoop 1
+action Listen
+	AnmFilePath "Models/Misc/DesktopPress/Anm/DTritusDesktop_Listen.M3D"
+	isLoop 1
+class
+	DefAction Relax
+
+# a desktop of a journalist, $name the class (BertoDesktop, BettyDesktop, HumphreyDesktop)
+section PressDesktop
+call SAct.CreateClass $name
+class
+	ModelFilePath "Models/Misc/DesktopPress/$(name).m3d"
+action Loop
+	AnmFilePath "Models/Misc/DesktopPress/Anm/$(name)_Loop.M3D"
+	Chanel 0
+	isLoop 1
+action LoopUp
+	AnmFilePath "Models/Misc/DesktopPress/Anm/$(name)_LoopUp.M3D"
+	Chanel 0
+	isLoop 1
+action Down
+	AnmFilePath "Models/Misc/DesktopPress/Anm/$(name)_Down.M3D"
+	Chanel 0
+	isLoop 0
+action Up
+	AnmFilePath "Models/Misc/DesktopPress/Anm/$(name)_Up.M3D"
+	Chanel 0
+	isLoop 0
+class
+	DefAction Loop

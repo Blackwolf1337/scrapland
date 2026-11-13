@@ -1,0 +1,85 @@
+# The functions of Mission_GoToPress in level press (the script levels/press/scripts/mission_gotopress.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): Init, CrazySads.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_gotopress.def replaces this file.
+section InitStatus LevelPath
+call Chars.AddNewCharRes "Betty"
+call Chars.AddNewCharRes "Berto"
+call Chars.AddNewCharRes "Humphrey"
+call Scrap.SetSaveVar "Char" "Dtritus"
+
+section LaunchScene charName
+setvar Elevator.OnElevatorReachDown None
+call MissionsFuncs.SetMissionTarget ""
+call Scene.Play "Confesion"
+setvar Scene.EndOfSceneCallback %Mission_GoToPress.CrazySads
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_DefeatCrazyGambler1" "DownTown"
+call SaveGame.MMDesc "Mission_DefeatCrazyGambler1_MissionText1" 1
+call Scrap.SetSaveVar "CrazyGamblerAtGambinDen" "0"
+call SaveGame.QWayPoint
+
+section LoadScene
+call Scene.Load "Confesion"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 130 "Dtritus" "Relax"
+call Scene.ActorAction 450 "Dtritus" "Turn"
+call Scene.ActorAction 470 "Dtritus" "RelaxUp"
+call Scene.ActorAction 550 "Dtritus" "ListenUp"
+call Scene.ActorAction 630 "Dtritus" "RelaxUp"
+call Scene.ActorAction 0 "Humphrey" "Relax"
+call Scene.ActorAction 290 "Humphrey" "Relax1"
+call Scene.ActorAction 390 "Humphrey" "Relax"
+call Scene.ActorAction 0 "Berto" "SitShamedRelax1"
+call Scene.ActorAction 110 "Berto" "SitShamedTalk"
+call Scene.ActorAction 150 "Berto" "SitShamedTalk0"
+call Scene.ActorAction 190 "Berto" "SitShamedTalk"
+call Scene.ActorAction 290 "Berto" "SitShamedTalk0"
+call Scene.ActorAction 340 "Berto" "SitShamedTalk"
+call Scene.ActorAction 365 "Berto" "SitShamedRelax1"
+call Scene.ActorAction 475 "Berto" "SitShamedRelax"
+call Scene.ActorAction 0 "Betty" "Relax"
+call Scene.ActorAction 40 "Betty" "Relax1"
+call Scene.ActorAction 120 "Betty" "Relax"
+call Scene.ActorAction 0 "Boss" "Relax"
+call Scene.ActorAction 375 "Boss" "Talk1"
+call Scene.ActorAction 415 "Boss" "Talk"
+call Scene.ActorAction 600 "Boss" "Talk1"
+call Scene.ActorAction 645 "Boss" "Relax"
+call Scene.AddGeneric 680 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddText 110 "Mission_Scene_GoToPress_1" 13
+call Scene.AddText 375 "Mission_Scene_GoToPress_2" 14
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxUp" "RelaxUp" 1
+call Scene.CreateLocalAction $CharType 0 "ListenUp" "ListenUp" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Humphrey"
+call Scene.AddCharActor "Humphrey" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.SetDefSounds "Humphrey" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call Scene.CreateLocalAction $CharType 0 "SitShamedRelax" "SitShamedRelax" 1
+call Scene.CreateLocalAction $CharType 0 "SitShamedRelax1" "SitShamedRelax1" 1
+call Scene.CreateLocalAction $CharType 0 "SitShamedTalk" "SitShamedTalk" 1
+call Scene.CreateLocalAction $CharType 0 "SitShamedTalk0" "SitShamedTalk0" 1
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "SitShamedRelax"
+let CharType "Boss"
+call Scene.AddCharActor "Boss" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call Scene.SetDefSounds "Boss" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
