@@ -145,6 +145,8 @@ const char *Faction_Pilot(int i);
 /* the player's character is new (a spawn, a transform, a ship left) or the player left */
 void Faction_Spawned(int i, struct cEntity *e);
 void Faction_Left(int i);
+/* the player died: the armour and the siren off, the wanted level cleared (as the alarm of a death) */
+void Faction_Died(int i);
 /* a client's message on the reliable channel; 1 when it was a faction request */
 byte Faction_Message(struct Net2Host *host, int conn, const uint8_t *data, int size);
 /* each tick after the frame: the requests, the crimes, the siren, the wanted levels, the status to the clients */

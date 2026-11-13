@@ -849,6 +849,7 @@ static void Rep_Death(int i, cEntity *e) {
 	pl->dead = 1;
 	Players_Bind(i);
 	Alarm_Set(&g_pWorld->alarm, 0.0f);
+	Faction_Died(i);
 	if (sand.rebuild && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) == i) {
 		pl->rebuild = Rep_ShipPrice(e);
 	}

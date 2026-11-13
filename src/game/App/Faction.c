@@ -317,6 +317,17 @@ void Faction_Spawned(int i, cEntity *e) {
 	w->life = w->prevLife = t->f[p->faction].armourLife;
 }
 
+void Faction_Died(int i) {
+	FrPlayer *p = Fr_Player(i);
+	if (p) {
+		p->armoured = 0;
+		p->siren = 0;
+		p->ship = NULL;
+		FactionWanted_Init(&p->wanted);
+		p->level = 0;
+	}
+}
+
 void Faction_Left(int i) {
 	FrPlayer *p = Fr_Player(i);
 	if (p) {
