@@ -663,6 +663,12 @@ static void Test_InBuf(int lossPct, int delayTicks, int jitterTicks, int lead) {
 	if (lead < delayTicks) {
 		CHECK(exact == 0 && b.late > 0);
 	}
+	/* a restart forgets the waiting inputs and repeats no input */
+	NetRepInput w = Test_MakeInput(TICKS + 2), x;
+	CHECK(NetRepInBuf_Put(&b, &w, TICKS - 1));
+	NetRepInBuf_Restart(&b);
+	CHECK(!NetRepInBuf_Take(&b, TICKS, &x) && x.tick == TICKS && !x.buttons && !x.move[0] && !x.rot[0]);
+	CHECK(!NetRepInBuf_Take(&b, TICKS + 2, &x) && !x.buttons);
 	/* too far ahead and late inputs */
 	NetRepInput far = Test_MakeInput(TICKS + NETREP_INPUT_AHEAD + 5);
 	CHECK(!NetRepInBuf_Put(&b, &far, TICKS - 1));

@@ -60,6 +60,7 @@ static struct {
 	vec3_t drawn;						/* where it was drawn at the end of the last tick */
 	vec3_t lastServer;
 	int pending;						/* ticks stepped since the last ack */
+	byte catchup;						/* the new own entity steps up to the input tick with no input */
 	uint32_t shownMs;
 	double tickLocal;					/* local time of the last tick */
 	cEntity *cam;
@@ -195,7 +196,9 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 	if (kind == NETREP_SHIP) {
 		play.acc.weapon = play.input.weapon = (uint8_t)Veh(e)->controls.weapon;
 	}
-	play.tick = 0;
+	/* the ticks from the record's on: the server ran them with no input since the switch (NetRepInBuf_Restart) */
+	play.tick = tick;
+	play.catchup = 1;
 	play.botStart = 0.0;
 	Con_Printf("play: own %s %s at %.0f %.0f %.0f (tick %u)\n", kind == NETREP_SHIP ? "ship" : "character", name,
 		(double)e->pos.x, (double)e->pos.y, (double)e->pos.z, tick);
@@ -253,12 +256,18 @@ static void Play_Draw(void) {
 	o->slot->time = o->slot->interval;
 }
 
-static void Play_Step(uint32_t tick) {
+static void Play_Step(uint32_t tick, byte none) {
 	cEntity *e = play.e;
 	vec3_t view0 = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view : Obj(e)->ang;
 	vec3_t ang0 = Obj(e)->ang;
 
-	NetPl_Input(&play.acc, &play.input);
+	if (none) {
+		uint8_t weapon = play.input.weapon;
+		memset(&play.input, 0, sizeof(play.input));
+		play.input.weapon = weapon;
+	} else {
+		NetPl_Input(&play.acc, &play.input);
+	}
 	play.input.tick = tick;
 	e->pos = play.truePos;
 	NetPl_Step(e, &play.input, 1, 0);
@@ -365,13 +374,14 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	if (!play.tick || target > play.tick + PLAY_MAX_CATCHUP * 4 || target + PLAY_MAX_CATCHUP * 4 < play.tick) {
 		play.tick = target ? target - 1 : 0;
 	}
-	for (int n = 0; play.tick < target && n < PLAY_MAX_CATCHUP; n++) {
+	for (int n = 0; play.tick < target && (n < PLAY_MAX_CATCHUP || play.catchup); n++) {
 		if (play.bot) {
 			Play_Bot(now);
 		}
-		Play_Step(play.tick + 1);
+		Play_Step(play.tick + 1, play.catchup && play.tick + 1 < target);
 		play.tickLocal = now;
 	}
+	play.catchup = 0;
 	play.shownMs = (uint32_t)(Watch_ShownTime() * 1000.0);
 }
 

@@ -337,6 +337,8 @@ int NetRepInBuf_Put(NetRepInBuf *b, const NetRepInput *in, uint32_t now);
 /* the input for tick: the one of that tick (1), else the last one again with its tick set (0); it is the last
  * input then */
 int NetRepInBuf_Take(NetRepInBuf *b, uint32_t tick, NetRepInput *out);
+/* the player got another entity: the waiting inputs are dropped and a missing input is no input (counters kept) */
+void NetRepInBuf_Restart(NetRepInBuf *b);
 
 /* the client's estimate of the server time: the ticks of the snapshots plus half the round trip */
 typedef struct NetRepClock {

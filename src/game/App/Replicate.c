@@ -446,6 +446,7 @@ static void Rep_Switch(int i, cEntity *e) {
 		Obj(best)->netStep = 1;
 		cEntity_Del(e);
 		Rep_SetOwn(pl, best);
+		NetRepInBuf_Restart(&pl->in);
 		pl->boards++;
 		Con_Printf("instance: player %d into %s\n", i, name);
 		return;
@@ -467,6 +468,7 @@ static void Rep_Switch(int i, cEntity *e) {
 	Obj_SetVel(e, &zero);
 	PORT_CALL(Parking, SetShipAsParked, NULL, "s", name);
 	Rep_SpawnChar(i, &p, yaw);
+	NetRepInBuf_Restart(&pl->in);
 	pl->leaves++;
 	Con_Printf("instance: player %d out of %s\n", i, name);
 }

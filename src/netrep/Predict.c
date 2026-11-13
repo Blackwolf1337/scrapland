@@ -59,6 +59,13 @@ int NetRepInBuf_Take(NetRepInBuf *b, uint32_t tick, NetRepInput *out) {
 	return have;
 }
 
+void NetRepInBuf_Restart(NetRepInBuf *b) {
+	memset(b->have, 0, sizeof(b->have));
+	uint32_t tick = b->last.tick;
+	memset(&b->last, 0, sizeof(b->last));
+	b->last.tick = tick;
+}
+
 /* ---- the client's clock ---- */
 
 void NetRepClock_Init(NetRepClock *c) {
