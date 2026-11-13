@@ -43,6 +43,7 @@
 #define FR_YIELDS 64				/* traffic ships moving away from a siren */
 #define FR_SIREN_EVERY (NETREP_TICK_HZ / 2)	/* ticks between the siren's looks for traffic */
 #define FR_BACKUP_INDOOR 6000.0f	/* units: the gears go for a wanted player this near the officer */
+#define FR_BACKUP_OUTDOOR 30000.0f	/* and the police ships */
 #define FR_SHIPS 64					/* players' ships a client keeps the siren of */
 #define FR_TEXT 160
 #define FR_NOTICE_MS 3000
@@ -593,19 +594,30 @@ static int Fr_Arrest(int i, cEntity *e) {
 static int Fr_Backup(int i, cEntity *e) {
 	const FactionTable *t = Faction_Table();
 	if (cWorld_GetList(g_pWorld, "OutCop") && t->backupShip[0]) {
-		/* outdoors: police ships of the wave type near the bound player (OutPolice.MakePoli) */
+		/* outdoors: police ships of the wave type at a free spawn place near the officer (VehiclesNPC.MakeAI as
+		 * OutPolice.MakePoli does, but not far from it) into the police cars; each goes for the nearest wanted
+		 * player */
 		int prev = Players_Bound();
 		Players_Bind(i);
-		int made = 0;
+		int made = 0, j = Fr_Suspect(i, e, FR_BACKUP_OUTDOOR);
 		for (int k = 0; k < t->backupCount; k++) {
-			if (Mode_Import("OutPolice") && PORT_CALL(OutPolice, MakePoli, NULL, "s", t->backupShip)) {
+			nativeVal_t ship = { 0 }, list;
+			Native_SetStr(&list, "OutCop");
+			if (Mode_Import("VehiclesNPC") && PORT_CALL(VehiclesNPC, MakeAI, &ship, "ssi", t->backupShip, "Police", 0L) &&
+				Mode_VSet(&ship, "EntityList", &list)) {
 				made++;
+				if (j >= 0) {
+					ExtPolice_CallCop(Players_Get(j));
+				}
 			} else {
 				Native_ErrPrint();
 			}
+			Native_Free(&ship);
+			Native_Free(&list);
 		}
 		Players_Bind(prev);
-		Con_Printf("factions: player %d called %d police ships\n", i, made);
+		Con_Printf("factions: player %d called %d police ships%s%d\n", i, made, j >= 0 ? " on player " : ", no suspect ",
+			j);
 	} else {
 		/* indoors: the level's gears go for the nearest wanted player, else a sentinel watches the officer */
 		int j = Fr_Suspect(i, e, FR_BACKUP_INDOOR);
