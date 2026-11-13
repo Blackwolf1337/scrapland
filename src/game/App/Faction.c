@@ -1494,7 +1494,7 @@ static struct {
 	char news[FR_TEXT];
 	double newsUntil;				/* real s */
 	double deskLook;				/* real s of the next look for the desk */
-	byte slowFx;
+	byte slowFx, asleepSeen;
 	double botStart;
 	char bot[256];
 	byte botTried;
@@ -1671,8 +1671,16 @@ static void Fr_ClientSlow(const FactionTable *t, cEntity *own) {
 	if (cTimer_GetSpeed(&Obj(own)->timer) != k) {
 		Timer_SetSpeed(&Obj(own)->timer, k);
 	}
-	if (slow != frc.slowFx && !g_HeadlessPlay) {
-		Char_SlowEffect(slow, 1.0);
+	if (slow != frc.slowFx) {
+		Con_Printf("factions: own bullet time %s\n", slow ? "on" : "off");
+		if (!g_HeadlessPlay) {
+			Char_SlowEffect(slow, 1.0);
+		}
+	}
+	byte asleep = Faction_OwnAsleep();
+	if (asleep != frc.asleepSeen) {
+		Con_Printf("factions: own sleep %s\n", asleep ? "on" : "off");
+		frc.asleepSeen = asleep;
 	}
 	frc.slowFx = slow;
 }
