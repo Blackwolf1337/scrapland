@@ -192,6 +192,16 @@ int Coord_WriteAtomic(const char *path, const void *data, int size, const char *
 /* the 32 byte seed in a hex file, made (random, mode 0600) when it is missing: 1 ok */
 int Coord_LoadSeed(const char *path, uint8_t seed[NET2_SEED_SIZE], int *made);
 
+/* ---- the console of the dedicated programs ScrapCoord and ScrapList (src/coord/Cli.c) ---- */
+
+uint64_t CoordCli_Ms(void);							/* a monotonic clock */
+/* a line of the standard input when one is complete, waiting up to ms for it: 1 with a line, 0 none yet, -1 at its
+ * end */
+int CoordCli_Line(char *line, int cap, int ms);
+/* the value of the argument a when it is -name:value, else NULL */
+const char *CoordCli_Arg(const char *a, const char *name);
+void CoordCli_Wait(int ms);							/* the pause between the passes of a program without input */
+
 /* ---- child processes (src/coord/Proc.c): never waits ---- */
 
 typedef struct CoordProc {

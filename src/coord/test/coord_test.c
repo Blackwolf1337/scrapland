@@ -1,6 +1,7 @@
 /*
  * Unit tests of the pure parts of the coordinator (include/scrap/coord.h): the state text, the tickets (signature,
- * times, malformed ones) and the player store (round trip, the fall back to the file before, corrupt files).
+ * times, malformed ones), the player store (round trip, the fall back to the file before, corrupt files), the list
+ * server's heartbeats, registry and pages, and the quoting of arguments for the game's parser.
  *
  *   coord_test [folder]      the store files go to folder (default coord_test_data in the current folder)
  */
@@ -8,7 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/cmdquote.h"
 #include "scrap/coord.h"
+#include "scrap/coordlist.h"
 
 static int checks, failed;
 
@@ -335,11 +338,171 @@ static void Test_Store(const char *dir) {
 	remove(bad);
 }
 
+static void Beat(ListBeat *b, const uint8_t seed[NET2_SEED_SIZE], const char *name, uint16_t port, uint32_t seq) {
+	memset(b, 0, sizeof(*b));
+	Net2_KeyPublic(seed, b->w.key);
+	b->w.addr.port = port;
+	b->seq = seq;
+	snprintf(b->w.name, sizeof(b->w.name), "%s", name);
+	snprintf(b->w.map, sizeof(b->w.map), "DownTown");
+	snprintf(b->w.mode, sizeof(b->w.mode), "sandbox");
+	b->w.players = 3;
+	b->w.maxPlayers = 16;
+	b->w.flags = COORD_INFO_WORLD;
+	b->w.appVersion = 1;
+}
+
+static void Test_List(void) {
+	uint8_t seed[NET2_SEED_SIZE], seed2[NET2_SEED_SIZE], nonce[COORD_CHALLENGE], nonce2[COORD_CHALLENGE];
+	uint8_t lseed[NET2_SEED_SIZE], lkey[NET2_KEY_SIZE], msg[LIST_MSG];
+	static ListReg reg;
+	static uint8_t page[NET2_MAX_MESSAGE];
+	static ListWorld got[LIST_MAX];
+	ListBeat b, r;
+	Net2Addr peer, loop, a;
+	int isNew, total, first, count;
+
+	for (int i = 0; i < NET2_SEED_SIZE; i++) {
+		seed[i] = (uint8_t)(i + 1);
+		seed2[i] = (uint8_t)(i * 7 + 3);
+		lseed[i] = (uint8_t)(200 - i);
+	}
+	memset(nonce, 0x11, sizeof(nonce));
+	memset(nonce2, 0x22, sizeof(nonce2));
+	Net2_KeyPublic(lseed, lkey);
+	/* heartbeats: the round trip, the signature over the challenge and the list server's key */
+	Beat(&b, seed, "Ann's world", 28100, 1);
+	snprintf(b.address, sizeof(b.address), "192.0.2.7");
+	int n = List_WriteBeat(msg, sizeof(msg), &b, seed, nonce, lkey);
+	CHECK(n > 0);
+	CHECK(List_ReadBeat(msg, n, nonce, lkey, &r) == LIST_OK);
+	CHECK(!memcmp(r.w.key, b.w.key, NET2_KEY_SIZE) && r.seq == 1 && r.w.addr.port == 28100);
+	CHECK(!strcmp(r.w.name, "Ann's world") && !strcmp(r.w.map, "DownTown") && !strcmp(r.w.mode, "sandbox"));
+	CHECK(!strcmp(r.address, "192.0.2.7") && r.w.players == 3 && r.w.maxPlayers == 16 && r.w.flags == COORD_INFO_WORLD);
+	CHECK(List_ReadBeat(msg, n, nonce2, lkey, &r) == LIST_E_SIGNATURE);
+	uint8_t other[NET2_KEY_SIZE];
+	Net2_KeyPublic(seed2, other);
+	CHECK(List_ReadBeat(msg, n, nonce, other, &r) == LIST_E_SIGNATURE);
+	msg[10] ^= 1;
+	CHECK(List_ReadBeat(msg, n, nonce, lkey, &r) == LIST_E_SIGNATURE);
+	msg[10] ^= 1;
+	CHECK(List_ReadBeat(msg, n - 1, nonce, lkey, &r) != LIST_OK);
+	CHECK(List_ReadBeat(msg, 10, nonce, lkey, &r) == LIST_E_BAD);
+	msg[1] = 9;
+	CHECK(List_ReadBeat(msg, n, nonce, lkey, &r) == LIST_E_VERSION);
+	msg[1] = LIST_VERSION;
+	/* signed by another key than the one it names */
+	n = List_WriteBeat(msg, sizeof(msg), &b, seed2, nonce, lkey);
+	CHECK(List_ReadBeat(msg, n, nonce, lkey, &r) == LIST_E_SIGNATURE);
+	/* the registry */
+	ListReg_Init(&reg, 90000, 2);
+	CHECK(Net2_ParseAddr("198.51.100.4:40000", 0, &peer));
+	CHECK(Net2_ParseAddr("127.0.0.1:40001", 0, &loop));
+	Beat(&b, seed, "A", 28100, 1);
+	CHECK(ListReg_Beat(&reg, &b, nonce, &peer, 1000, &isNew) == LIST_OK && isNew);
+	CHECK(ListReg_Count(&reg) == 0);
+	CHECK(ListReg_Beat(&reg, &b, nonce, &peer, 1500, &isNew) == LIST_E_REPLAY);
+	b.seq = 2;
+	CHECK(ListReg_Beat(&reg, &b, nonce, &peer, 2000, &isNew) == LIST_OK && !isNew);
+	b.seq = 1;
+	CHECK(ListReg_Beat(&reg, &b, nonce2, &peer, 2500, &isNew) == LIST_OK && !isNew);
+	/* the address it names: only from loopback */
+	snprintf(b.address, sizeof(b.address), "203.0.113.9");
+	b.seq = 2;
+	CHECK(ListReg_Beat(&reg, &b, nonce2, &peer, 3000, &isNew) == LIST_E_ADDRESS);
+	/* probed, then listed at the address the connection came from */
+	CHECK(ListReg_NextProbe(&reg, 3000, &a));
+	CHECK(a.family == NET2_AF_IPV4 && a.ip[0] == 198 && a.port == 28100);
+	CHECK(!ListReg_NextProbe(&reg, 3001, &a));
+	CHECK(ListReg_NextProbe(&reg, 3000 + LIST_PROBE_MS, &a));
+	Net2ServerInfo info;
+	memset(&info, 0, sizeof(info));
+	info.players = 5;
+	info.maxPlayers = 20;
+	CHECK(ListReg_Answer(&reg, &a, &info));
+	CHECK(ListReg_Count(&reg) == 1);
+	CHECK(!ListReg_NextProbe(&reg, 100000, &a));
+	/* a coordinator on the list server's machine names its public address */
+	ListBeat c;
+	Beat(&c, seed2, "B", 28200, 1);
+	snprintf(c.address, sizeof(c.address), "203.0.113.9");
+	CHECK(ListReg_Beat(&reg, &c, nonce, &loop, 4000, &isNew) == LIST_OK && isNew);
+	CHECK(ListReg_NextProbe(&reg, 4000, &a) && a.ip[0] == 203 && a.ip[3] == 9 && a.port == 28200);
+	CHECK(ListReg_Answer(&reg, &a, &info));
+	/* a page of the listed worlds */
+	n = ListReg_WritePage(&reg, 0, page, sizeof(page), &count);
+	CHECK(n > 0 && count == 2);
+	int k = List_ReadPage(page, n, got, LIST_MAX, &total, &first);
+	CHECK(k == 2 && total == 2 && first == 0);
+	CHECK(!strcmp(got[0].name, "A") && got[0].players == 5 && got[0].addr.port == 28100);
+	CHECK(!memcmp(got[1].key, c.w.key, NET2_KEY_SIZE) && got[1].addr.ip[0] == 203);
+	CHECK(List_ReadPage(page, n - 1, got, LIST_MAX, &total, &first) == 0);
+	page[0] = 'X';
+	CHECK(List_ReadPage(page, n, got, LIST_MAX, &total, &first) == 0);
+	/* the limit of one address */
+	uint8_t s3[NET2_SEED_SIZE];
+	for (int i = 0; i < 3; i++) {
+		memcpy(s3, seed, sizeof(s3));
+		s3[0] = (uint8_t)(50 + i);
+		Beat(&c, s3, "C", (uint16_t)(29000 + i), 1);
+		int res = ListReg_Beat(&reg, &c, nonce, &peer, 5000, &isNew);
+		CHECK(i < 1 ? res == LIST_OK : res == LIST_E_FULL);
+	}
+	/* the times */
+	CHECK(ListReg_Expire(&reg, 2500 + 89999) == 0);
+	CHECK(ListReg_Expire(&reg, 2500 + 90000) == 1);
+	CHECK(ListReg_Expire(&reg, 4000 + 90000) == 1);
+	CHECK(ListReg_Expire(&reg, 5000 + 90000) == 1);
+	CHECK(ListReg_Count(&reg) == 0);
+	/* many worlds in pages */
+	ListReg_Init(&reg, 90000, LIST_PER_ADDR);
+	for (int i = 0; i < 300; i++) {
+		memcpy(s3, seed, sizeof(s3));
+		s3[0] = (uint8_t)i;
+		s3[1] = (uint8_t)(i >> 8);
+		Beat(&c, s3, "Many", 28100, 1);
+		char ip[32];
+		snprintf(ip, sizeof(ip), "10.0.%d.%d:1", i / 200, i % 200 + 1);
+		CHECK(Net2_ParseAddr(ip, 0, &a));
+		CHECK(ListReg_Beat(&reg, &c, nonce, &a, 1000, &isNew) == LIST_OK);
+		a.port = 28100;
+		CHECK(ListReg_Answer(&reg, &a, &info));
+	}
+	CHECK(ListReg_Count(&reg) == 300);
+	int all = 0;
+	for (first = 0; first < 300;) {
+		n = ListReg_WritePage(&reg, first, page, sizeof(page), &count);
+		CHECK(n > 0 && count > 0 && count <= LIST_PAGE);
+		k = List_ReadPage(page, n, got + all, LIST_MAX - all, &total, &first);
+		CHECK(k == count && total == 300);
+		all += k;
+		first += count;
+		if (!count) {
+			break;
+		}
+	}
+	CHECK(all == 300);
+}
+
+static void Test_Quote(void) {
+	char out[64];
+	CHECK(CmdQuote_Arg("-name:a-b c", out, sizeof(out)) == 13 && !strcmp(out, "-name:\"a-b c\""));
+	CHECK(CmdQuote_Arg("-imap:Levels/FZ", out, sizeof(out)) == 15 && !strcmp(out, "-imap:Levels/FZ"));
+	CHECK(CmdQuote_Arg("-join:::1", out, sizeof(out)) > 0 && !strcmp(out, "-join:\"::1\""));
+	CHECK(CmdQuote_Arg("-name:'a b'", out, sizeof(out)) > 0 && !strcmp(out, "-name:'a b'"));
+	CHECK(CmdQuote_Arg("-dedicated", out, sizeof(out)) > 0 && !strcmp(out, "-dedicated"));
+	CHECK(CmdQuote_Arg("two words", out, sizeof(out)) > 0 && !strcmp(out, "\"two words\""));
+	CHECK(CmdQuote_Arg("-name:a-b", out, 10) == -1);
+	CHECK(CmdQuote_Arg("-name:a-b", out, 12) == 11);
+}
+
 int main(int argc, char **argv) {
 	Test_Kv();
 	Test_Hex();
 	Test_Ticket();
 	Test_Store(argc > 1 ? argv[1] : "coord_test_data");
+	Test_List();
+	Test_Quote();
 	printf("coord_test: %d checks, %d failed\n", checks, failed);
 	return failed != 0;
 }

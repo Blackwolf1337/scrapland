@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "scrap/coord.h"
+#include "scrap/coordlist.h"
 #include "scrap/netrep.h"
 
 #define CO_CONNS NET2_MAX_CONNS
@@ -71,6 +72,7 @@ struct Coord {
 	int online;
 	int instFileDirty;
 	uint64_t passes;
+	ListClient list;				/* the registration with the list server */
 };
 
 static Coord coord;
@@ -150,6 +152,23 @@ static void Co_Keep(const char *name) {
 	if (i >= 0) {
 		coord.inst[i].keep = 1;
 	}
+}
+
+/* the heartbeat of the list server from the server info */
+static void Co_ListPass(void) {
+	ListBeat b;
+	memset(&b, 0, sizeof(b));
+	memcpy(b.w.key, coord.pub, NET2_KEY_SIZE);
+	b.w.addr.port = Coord_Port(&coord);
+	b.w.players = (uint8_t)(coord.online > 255 ? 255 : coord.online);
+	b.w.maxPlayers = (uint8_t)(coord.cfg.maxPlayers > 255 ? 255 : coord.cfg.maxPlayers);
+	b.w.flags = COORD_INFO_WORLD | (coord.cfg.dedicated ? COORD_INFO_DEDICATED : 0);
+	b.w.appVersion = 1;
+	snprintf(b.w.name, sizeof(b.w.name), "%s", coord.cfg.name);
+	snprintf(b.w.map, sizeof(b.w.map), "%.32s", coord.cfg.start);
+	snprintf(b.w.mode, sizeof(b.w.mode), "%s", coord.cfg.mode[0] ? coord.cfg.mode : COORD_MODE);
+	snprintf(b.address, sizeof(b.address), "%s", coord.cfg.listPublic);
+	ListClient_Pass(&coord.list, coord.now, &b, coord.seed, Co_Log);
 }
 
 static void Co_SetInfo(void) {
@@ -876,6 +895,7 @@ Coord *Coord_Create(const CoordConfig *cfg) {
 	}
 	Co_SetInfo();
 	Co_ReadInstFile();
+	ListClient_Init(&coord.list, c->listAddr, c->listPort);
 	char hex[65];
 	Coord_Hex(coord.pub, NET2_KEY_SIZE, hex);
 	Co_Log("coordinator %s: port %u on %s, instances from port %u, %d levels, data %s, key %s%s\n", c->name, c->port,
@@ -897,6 +917,7 @@ void Coord_Pass(Coord *c, uint64_t now) {
 	coord.now = now;
 	Co_Net();
 	Co_Instances();
+	Co_ListPass();
 	uint64_t every = (uint64_t)(coord.cfg.saveSecs ? coord.cfg.saveSecs : COORD_SAVE_SECS) * 1000u;
 	if (now - coord.lastSave >= every) {
 		Co_SaveAll(0);
@@ -1027,6 +1048,7 @@ void Coord_Destroy(Coord *c) {
 		}
 		Co_WriteInstFile();
 	}
+	ListClient_Close(&coord.list);
 	Net2_Destroy(coord.host);
 	coord.host = NULL;
 	Net2_Wipe(coord.seed, sizeof(coord.seed));

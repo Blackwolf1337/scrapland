@@ -13,6 +13,7 @@
 
 #include "scrap/console.h"
 #include "scrap/coord.h"
+#include "scrap/coordlist.h"
 #include "scrap/filesys.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
@@ -37,6 +38,7 @@
 #define WORLD_SEARCH_MS 1500		/* the answers of a search come in this time */		/* a world that ended: its text this long after the main menu is up */
 
 enum { WP_LAN, WP_LIST, WP_ADDRESS, WP_HOST };
+enum { WL_IDLE, WL_CONNECTING, WL_PAGES };
 static const char *const world_pages[] = { "Lan", "List", "Address", "Host" };
 static const char *const world_modes[] = { "sandbox", "freeroam" };
 
@@ -65,6 +67,7 @@ static struct {
 	byte pvp, listed;
 	int maxPlayers, port;
 	uint64_t searchEnd;				/* ms: the count shows after this when nothing answered */
+	int listPhase;					/* WL_* */
 	byte waiting;					/* the wait page of a join or host of these pages */
 	uint64_t menuUp;				/* ms the main menu runs since (a world that ended), 0 */
 } wm = { .sort = "Ping", .address = "127.0.0.1", .pvp = 1, .listed = 1, .maxPlayers = 16 };
@@ -210,7 +213,7 @@ static byte World_Open(void) {
 		return 1;
 	}
 	Net2_DefaultConfig(&cfg, 0);
-	cfg.appVersion = INSTANCE_APP_VERSION;
+	cfg.appVersion = LIST_VERSION;
 	wm.net = Net2_Create(&cfg, &err);
 	if (!wm.net) {
 		cfg.ipv6 = 0;
@@ -227,6 +230,7 @@ static void World_Close(void) {
 		Net2_Destroy(wm.net);
 		wm.net = NULL;
 	}
+	wm.listPhase = WL_IDLE;
 }
 
 /* LAN discovery: the broadcast (IPv4) and the group (IPv6) on the ports from worldport on; lanaddr= instead asks
@@ -255,17 +259,72 @@ static void World_Lan(void) {
 
 /* ---- the list server ---- */
 
+/* the worlds of the list server of scrapdecomp.ini: a connection, the query, its pages; then a ping of each world */
 static void World_ListQuery(void) {
 	char addr[64];
+	Net2Addr a;
+	uint64_t now = World_Ms();
 	if (!Game_OptionStr("listserver", addr, sizeof(addr)) || !addr[0]) {
 		World_Status(Script_Lang("MP_NoListServer"));
 		return;
 	}
-	World_Status(Script_Lang("MP_ListNotReached"));
+	if (!Net2_ParseAddr(addr, (uint16_t)Game_OptionOr("listport", COORD_LIST_PORT), &a) || !World_Open()) {
+		World_Status(Script_Lang("MP_ListNotReached"));
+		return;
+	}
+	if (wm.listPhase != WL_IDLE) {
+		Net2_Disconnect(wm.net, 0, NET2_DR_LOCAL);
+	}
+	World_Status(Script_Lang("MP_Searching"));
+	wm.listPhase = Net2_Connect(wm.net, &a, now) == NET2_OK ? WL_CONNECTING : WL_IDLE;
+	if (wm.listPhase == WL_IDLE) {
+		World_Status(Script_Lang("MP_ListNotReached"));
+	}
+}
+
+static void World_ListPage(const Net2Event *ev) {
+	static ListWorld got[LIST_PAGE];
+	char text[64];
+	int total, first;
+	int k = List_ReadPage(ev->data, ev->size, got, LIST_PAGE, &total, &first);
+	uint64_t now = World_Ms();
+	for (int i = 0; i < k && wm.n < WORLD_MAX; i++) {
+		if (World_Find(&got[i].addr)) {
+			continue;
+		}
+		worldEntry_t *e = &wm.e[wm.n++];
+		memset(e, 0, sizeof(*e));
+		e->addr = got[i].addr;
+		e->ping = -1;
+		e->players = got[i].players;
+		e->maxPlayers = got[i].maxPlayers;
+		Str_Copy(e->name, got[i].name, sizeof(e->name));
+		Str_Copy(e->map, got[i].map, sizeof(e->map));
+		Str_Copy(e->mode, got[i].mode, sizeof(e->mode));
+		memcpy(e->key, got[i].key, NET2_KEY_SIZE);
+		e->hasKey = 1;
+		Net2_Query(wm.net, &e->addr, now);
+	}
+	if (!k || first + k >= total) {
+		Net2_Disconnect(wm.net, 0, NET2_DR_LOCAL);
+		wm.listPhase = WL_IDLE;
+		World_Format(text, sizeof(text), "MP_Found", "", wm.n);
+		World_Status(text);
+	}
+	World_Fill();
 }
 
 static void World_ListEvent(const Net2Event *ev) {
-	(void)ev;
+	if (ev->type == NET2_EV_CONNECT && wm.listPhase == WL_CONNECTING) {
+		uint8_t q[3] = { LIST_MSG_QUERY, LIST_VERSION & 0xff, LIST_VERSION >> 8 };
+		Net2_Send(wm.net, 0, 0, q, sizeof(q));
+		wm.listPhase = WL_PAGES;
+	} else if (ev->type == NET2_EV_MESSAGE && ev->size > 0 && ev->data[0] == LIST_MSG_PAGE && wm.listPhase == WL_PAGES) {
+		World_ListPage(ev);
+	} else if (ev->type == NET2_EV_DISCONNECT && wm.listPhase != WL_IDLE) {
+		wm.listPhase = WL_IDLE;
+		World_Status(Script_Lang("MP_ListNotReached"));
+	}
 }
 
 static void World_Refresh(void) {
