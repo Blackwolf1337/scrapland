@@ -84,6 +84,7 @@ static void Test_BuiltIn(void) {
 	CHECK(Near(t.crime[FCRIME_KILL_PLAYER], 6.0f) && Near(t.crime[FCRIME_THEFT], 1.5f));
 	CHECK(t.healLife == 60 && t.healPrice == 120 && t.rayDamage == 30 && Near(t.downed, 15.0f));
 	CHECK(t.steal == 150 && t.loan == 1000 && Near(t.loanOwed, 1.25f) && t.bribe == 400);
+	CHECK(!strcmp(t.vaultLevel, "Bank") && Near(t.vaultEvery, 600.0f) && Near(t.vaultOpen, 60.0f) && t.vaultMoney == 1500);
 	CHECK(t.bounty == 500 && t.bountyMax == 5000 && !strcmp(t.hireShip, "SMerc1") && t.hireCount == 2);
 	CHECK(Near(t.slowSpeed, 0.3f) && Near(t.blablaTime, 4.0f) && t.permitRank == 3);
 	CHECK(t.nroutes == 6 && t.nzones == 2 && !strcmp(t.zones[0].dummy, "*") && Near(t.zones[1].radius, 3000.0f));
@@ -214,6 +215,7 @@ static void Test_Errors(void) {
 	CHECK(FactionTable_Parse(&x, "common join 3\n", err, sizeof(err)) < 0);
 	CHECK(FactionTable_Parse(&x, "loan 100 0.5 0.5 0\n", err, sizeof(err)) < 0);
 	CHECK(FactionTable_Parse(&x, "slow 100 3 0\n", err, sizeof(err)) < 0);
+	CHECK(FactionTable_Parse(&x, "vault Bank D 60 60 100\n", err, sizeof(err)) < 0 && strstr(err, "vault"));
 	CHECK(FactionTable_Parse(&x, "route A\n", err, sizeof(err)) < 0);
 	CHECK(FactionTable_Parse(&x, "route A DM_A_Name_Much_Longer_Than_The_Room_Of_The_Field\n", err, sizeof(err)) < 0 &&
 		strstr(err, "too long"));

@@ -44,6 +44,9 @@ steal 150 900
 suck 60 1200
 loan 1000 1.25 0.5 0.1
 bribe 400
+# the bank vault: in the level, at the dummy, it opens every so many s for so many s; the first player at it takes the
+# money (a banker guards it: a deed; anyone else: a theft)
+vault Bank DM_DesktopFunctionary_25 600 60 1500
 # Mercs: a bounty (a placement, the most on one player, s until it ends), hired ships (model, count, s, price), the
 # heavy loadout (life factor of the ship)
 bounty 500 5000 3600

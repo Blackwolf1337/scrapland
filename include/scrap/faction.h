@@ -26,7 +26,8 @@
  * Bishops: heal another player (sell life: the healed pays the healer), the green ray (damage in front), revive a
  * dead player at its body (a dead player waits the downed time while a reviver is in the level), the sanctuaries.
  * Bankers: steal from the player in front, suck money from the players in front, a loan (money now, the debt paid by
- * a share of later income), bribe the police (a wanted level less; the money to the nearest officer).
+ * a share of later income), bribe the police (a wanted level less; the money to the nearest officer), the vault of the
+ * Bank (it opens now and then: a banker at it secures it, anyone else robs it).
  * Mercs: bounties (any player with a free key: on the last player that hurt it, else the nearest; a merc that kills
  * the target gets it), the contracts of the level, hired merc ships that follow and fight for it, the heavy loadout.
  * Bureaucracy: bullet time in a radius around the functionary (the entities in it run slower: NETREP_FL_SLOW, the
@@ -143,6 +144,9 @@ typedef struct FactionTable {
 	float loanOwed, loanShare, loanCommission;	/* the debt per loaned, the share of an income that pays it, the
 												   banker's part of the loan */
 	int bribe;						/* per wanted level dropped */
+	char vaultLevel[FACTION_NAME], vaultDummy[FACTION_NAME];	/* the bank vault event, "" none */
+	float vaultEvery, vaultOpen;	/* s between two openings, s it stays open */
+	int vaultMoney;
 	/* Mercs */
 	int bounty, bountyMax, bountyTime;	/* a placement, the most on a player, s until it ends */
 	char hireShip[FACTION_NAME];
@@ -284,9 +288,9 @@ byte Faction_Uniform(const char *cls);
 /* NETREP_FL_ flags of a replicated entity (the siren of a player's ship, a slowed or sleeping player) */
 uint8_t Faction_Flags(struct cEntity *e);
 /* a test line of the instance: "faction <player> join|leave|<ability>|status|set <faction>|wanted <points>|deeds
- * <n>|crime <crime>|setbounty <n>|setdebt <n>|setpermit <0|1>|setjob <level>|hit <player> [<damage>]|dump <pattern>" (abilities as the
- * client's requests; hit: as a weapon of the player, 0 kills; dump: the dummies of the pattern and the entities near
- * the player); 1 when it was one */
+ * <n>|crime <crime>|setbounty <n>|setdebt <n>|setpermit <0|1>|setjob <level>|vault|hit <player> [<damage>]|dump
+ * <pattern>" (abilities as the client's requests; hit: as a weapon of the player, 0 kills; vault: the bank vault opens;
+ * dump: the dummies of the pattern and the entities near the player); 1 when it was one */
 byte Faction_Command(const char *line);
 
 /* client: a status message of the instance; each frame (the keys, the text lines); a proxy's or the own entity's

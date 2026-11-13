@@ -58,6 +58,7 @@ static struct {
 	int nslowed;
 	vec3_t zonePos[FACTION_ZONES];
 	int8_t zoneKnown[FACTION_ZONES];	/* 0 not looked, 1 found, -1 none */
+	double vaultNext, vaultUntil;		/* the next opening of the bank vault, the end of this one */
 } fd;
 
 static void Fd_Ref(FdRef *r, cEntity *e) {
@@ -399,6 +400,63 @@ static void Fd_Loans(void) {
 		p->lastMoney = money;
 		p->moneyKnown = 1;
 	}
+}
+
+/* the bank vault opens (a headline) */
+void FrD_OpenVault(void) {
+	const FactionTable *t = Fd_T();
+	if (!t || !t->vaultLevel[0] || crt_stricmp(t->vaultLevel, Instance_Level())) {
+		return;
+	}
+	fd.vaultUntil = Fr_Now() + t->vaultOpen;
+	fd.vaultNext = Fr_Now() + t->vaultEvery;
+	Fr_News(FN_VAULT_OPEN, 0, NULL, NULL);
+}
+
+/* the vault of the level opens every vaultEvery s while players are in it; the first player at it while it is open
+ * takes the money: a banker secures it (a fifth as its bonus, a deed), anyone else robs it (a theft) */
+static void Fd_VaultTick(void) {
+	const FactionTable *t = Fd_T();
+	vec3_t at;
+	double now = Fr_Now();
+	if (!t->vaultLevel[0] || crt_stricmp(t->vaultLevel, Instance_Level())) {
+		return;
+	}
+	byte anyone = 0;
+	for (int i = 0; i < PLAYERS_MAX && !anyone; i++) {
+		anyone = Players_Get(i) != NULL;
+	}
+	if (fd.vaultNext == 0.0 || !anyone) {
+		fd.vaultNext = now + t->vaultEvery;
+	} else if (now >= fd.vaultNext) {
+		FrD_OpenVault();
+	}
+	if (now >= fd.vaultUntil || !Fr_Dummy(t->vaultDummy, &at, NULL)) {
+		return;
+	}
+	int best = -1;
+	float bestD = t->deskReach * t->deskReach;
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		cEntity *e = Fd_Char(i);
+		if (e && Fr_DistSq(e, &at) < bestD) {
+			bestD = Fr_DistSq(e, &at);
+			best = i;
+		}
+	}
+	if (best < 0) {
+		return;
+	}
+	fd.vaultUntil = 0.0;
+	if (Fr_Player(best)->faction == Faction_Find(t, "Bankers")) {
+		Fr_AddMoney(best, t->vaultMoney / 5);
+		Fr_Notice(best, FT_VAULT_GUARD, t->vaultMoney / 5, NULL, NULL);
+		Fr_Deed(best);
+		return;
+	}
+	Fr_AddMoney(best, t->vaultMoney);
+	Fr_AddCrime(best, FCRIME_THEFT);
+	Fr_Notice(best, FT_VAULT_ROB, t->vaultMoney, NULL, NULL);
+	Fr_News(FN_VAULT_ROBBED, 0, Fr_Player(best)->name, NULL);
 }
 
 /* ---- Mercs ---- */
@@ -909,6 +967,7 @@ void FrD_Tick(uint64_t tick) {
 	}
 	if (tick % FD_EVERY == 0) {
 		Fd_HiredTick();
+		Fd_VaultTick();
 		for (int i = 0; i < PLAYERS_MAX; i++) {
 			if (Players_Get(i)) {
 				Fd_JobCheck(i, Players_Get(i));

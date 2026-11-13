@@ -133,6 +133,8 @@ static const char *const g_FactionTexts[FT_COUNT] = {
 	[FT_JOB_LATE] = "Too late: the delivery failed.",
 	[FT_JOB_AT_DESK] = "Take jobs at the Press desk.",
 	[FT_JOB_HAVE] = "Deliver to %s first.",
+	[FT_VAULT_GUARD] = "Vault secured. Bonus: %d.",
+	[FT_VAULT_ROB] = "You emptied the vault: %d!",
 	[FN_ARREST] = "%s arrested %s.",
 	[FN_BOUNTY] = "%s claimed the bounty on %s.",
 	[FN_PHOTO] = "%s caught on camera by %s.",
@@ -140,6 +142,8 @@ static const char *const g_FactionTexts[FT_COUNT] = {
 	[FN_STEAL] = "%s robbed %s.",
 	[FN_DELIVERY] = "%s delivered the news in %d s.",
 	[FN_JOINED] = "%s joined the %s.",
+	[FN_VAULT_OPEN] = "The Bank vault is open!",
+	[FN_VAULT_ROBBED] = "%s emptied the Bank vault.",
 	[FT_HUD_MEMBER] = "%s - %s",
 	[FT_HUD_WANTED] = "Wanted: %d",
 	[FT_HUD_RANK] = "Rank %d",
@@ -1460,6 +1464,10 @@ byte Faction_Command(const char *line) {
 			WLife(v)->life = dmg > 0 ? WLife(v)->life - dmg : 0;
 		}
 		Con_Printf("factions: player %d hits player %d (%d)\n", i, j, dmg);
+		return 1;
+	}
+	if (!strcmp(what, "vault")) {
+		FrD_OpenVault();
 		return 1;
 	}
 	if (!strcmp(what, "setjob")) {

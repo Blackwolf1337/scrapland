@@ -172,6 +172,15 @@ static int Fd_Rules(FactionTable *t, char **tok, int n, int ln, char *err, int c
 		if (t->loanOwed < 1.0f || t->loanShare <= 0.0f || t->loanShare > 1.0f) {
 			return Fd_Err(err, cap, ln, "loan: owed >= 1, share in (0, 1]", NULL);
 		}
+	} else if (Fd_Eq(tok[0], "vault") && n == 6) {
+		Fd_Copy(t->vaultLevel, tok[1], sizeof(t->vaultLevel));
+		Fd_Copy(t->vaultDummy, tok[2], sizeof(t->vaultDummy));
+		t->vaultEvery = (float)atof(tok[3]);
+		t->vaultOpen = (float)atof(tok[4]);
+		t->vaultMoney = atoi(tok[5]);
+		if (t->vaultEvery <= t->vaultOpen || t->vaultOpen <= 0.0f) {
+			return Fd_Err(err, cap, ln, "vault: open for less than the time between", NULL);
+		}
 	} else if (Fd_Nums(tok, n, "bribe", 1, v)) {
 		t->bribe = (int)v[0];
 	} else if (Fd_Nums(tok, n, "bounty", 3, v)) {
