@@ -594,6 +594,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	pl->spawnTick = rep.tick;
 	pl->spawnY = p.y;
 	Faction_Spawned(i, e);
+	Coop_Spawned(e);
 	return e;
 }
 
@@ -922,6 +923,7 @@ static int Rep_Join(int conn) {
 		rep.players++;
 		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->ownName);
 		Travel_Joined(i);
+		Coop_Joined(i);
 		return i;
 	}
 	return -1;
@@ -1048,10 +1050,13 @@ void Rep_PreFrame(uint64_t tick) {
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Faction_Input(i, e, &in);
-		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Rep_UsesDoor(e)) {
-			pl->buttons = in.buttons;
-			Rep_Switch(i, e);
-			continue;
+		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH)) {
+			if (!Rep_UsesDoor(e)) {
+				pl->buttons = in.buttons;
+				Rep_Switch(i, e);
+				continue;
+			}
+			Coop_BeforeUse(i, WChar(e)->listenOn && WChar_Listen(e) ? WChar_Listen(e) : WChar_Victim(e));
 		}
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);

@@ -84,6 +84,8 @@ byte Travel_Request(const char *rider, const char *level, const char *entrance, 
 byte Travel_Go(int i, const char *level, const char *entrance, const char *door, byte party);
 /* the player of a key, -1 */
 int Travel_PlayerOfKey(const uint8_t key[NET2_KEY_SIZE]);
+/* the key of player i (a ticket's), NULL */
+const uint8_t *Travel_KeyOfPlayer(int i);
 /* a message to the coordinator while its connection is up: 1 sent */
 byte Travel_SendCoord(const uint8_t *data, int size);
 /* the use of a metro door by an entity: 1 when it was a player's (its client gets the station map) */

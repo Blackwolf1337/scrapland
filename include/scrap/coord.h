@@ -116,6 +116,9 @@
 #define COORD_MSG_SUMMON 'g'
 #define COORD_MSG_PNOTICE 'y'
 #define COORD_MSG_CUE 'o'
+#define COORD_MSG_LEADER 'l'			/* instance -> coordinator (coop): key: the member goes to its party's leader */
+#define COORD_MSG_RESET 'z'			/* instance -> coordinator (coop): its level starts again for the members in it (they
+										 * travel to it; no ticket until the new start) */
 
 #define COORD_JF_RESUME 0x01			/* the client plays in an instance already (the coordinator came back) */
 
@@ -223,18 +226,27 @@ struct NetRepReader;
 #define COORD_COOP_MAX 8
 #define COORD_COOP_START "Orbit"
 #define COORD_COOP_LEVELS COORD_CITY ",Orbit,Fake,Junkyard,AB,ABIndoor,QF,OM,FZ,CA"
+#define COORD_COOP_AFTER "DownTown"		/* where a member of a finished story starts that left in a chapter level */
+#define COORD_COOP_FINISHED "Coop.Finished"	/* the story's variable of its end ("yes") */
 #define COORD_OP_SET 0
 #define COORD_OP_DEL 1
+#define COORD_OP_ADD 2					/* a counter: the value is a whole number added to the story's (0 when missing) */
 #define COORD_CUE_INTRO 1				/* a new party's start: the intro video (text: its file) */
 #define COORD_CUE_NOTICE 2				/* a line on the screen (text) */
 #define COORD_STORY_MISSION 0x01		/* CoordStory_Apply: Mission.Map or Mission.Library changed */
+#define COORD_STORY_ADDED 0x02			/* a counter was added to (the sender gets the sum too) */
 
 int CoordKv_Del(char *text, int *len, const char *key);
 /* one change of a story message: 1 read (kind, name, value), 0 at the end of count, -1 malformed */
 int CoordStory_Next(struct NetRepReader *r, int *kind, char *name, int ncap, char *val, int vcap);
 /* the changes of a story message (from its count on) applied to text: the number applied, -1 malformed; *flags
- * COORD_STORY_* */
-int CoordStory_Apply(char *text, int *len, int cap, const uint8_t *msg, int size, int *flags);
+ * COORD_STORY_*; out (NULL: none) gets the count and the changes applied as the instances take them (a counter's
+ * addition as the value of the sum) */
+int CoordStory_Apply(char *text, int *len, int cap, const uint8_t *msg, int size, int *flags, struct NetRepBuf *out);
+/* one change written (value NULL for COORD_OP_DEL) */
+void CoordStory_Put(struct NetRepBuf *w, int kind, const char *name, const char *value);
+/* s is a whole number (an optional sign and digits, nothing else): 1 with *out */
+int CoordStory_Int(const char *s, long *out);
 
 typedef struct CoordParty {
 	char base[COORD_PATH];			/* <data>/party */
@@ -255,11 +267,17 @@ int CoordParty_SaveMember(CoordParty *p, const uint8_t key[NET2_KEY_SIZE]);
 int CoordParty_Save(CoordParty *p);
 /* the story as a plain CoordKv file for an instance's -story (absolute path into out): 1 ok */
 int CoordParty_StoryFile(const CoordParty *p, const char *dataDir, char *out, int cap);
+/* the story came to its end (COORD_COOP_FINISHED) */
+int CoordParty_Finished(const CoordParty *p);
+/* a level of the story alone (Orbit, Fake, Junkyard, AB, ABIndoor): a level change into or out of one is a chapter
+ * that takes the whole party along */
+int CoordCoop_Chapter(const char *level);
 
 /* ---- system helpers (src/coord/Sys.c) ---- */
 
 uint64_t Coord_UnixMs(void);
 void Coord_Hex(const uint8_t *b, int n, char *out);			/* 2n digits and a zero */
+int Coord_SameName(const char *a, const char *b);			/* equal but for the case of ASCII letters */
 int Coord_Unhex(const char *s, uint8_t *b, int n);			/* exactly 2n hex digits: 1 */
 int Coord_MkDir(const char *path);							/* 1 when it exists afterwards */
 /* the whole file into buf (zero added): its size, -1 missing, -2 other error or larger than cap - 1 */

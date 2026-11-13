@@ -14,6 +14,7 @@
 
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
 #include "scrap/global.h"
@@ -609,6 +610,7 @@ void Play_PostFrame(float dt) {
 		NetPl_Accumulate(play.e, &play.acc, dt);
 	}
 	Faction_ClientFrame();
+	Coop_ClientFrame();
 }
 
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs) {

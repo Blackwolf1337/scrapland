@@ -113,6 +113,10 @@ int Travel_PlayerOfKey(const uint8_t key[NET2_KEY_SIZE]) {
 	return -1;
 }
 
+const uint8_t *Travel_KeyOfPlayer(int i) {
+	return i >= 0 && i < PLAYERS_MAX && tr.pl[i].used ? tr.pl[i].key : NULL;
+}
+
 /* the state of player i as it is now: its text with the game's values set */
 static void Tr_State(int i) {
 	char v[64];
@@ -732,6 +736,8 @@ void Travel_TestUse(int player, const char *entity, const char *option) {
 				a->iOpt = k;
 			}
 		}
+	} else {
+		Coop_BeforeUse(player, t);
 	}
 	Con_Printf("instance: player %d uses %s (%s)\n", player, entity, a->nOpt ? cArrowIndicator_GetOpt(a, a->iOpt) : "");
 	Players_Bind(player);

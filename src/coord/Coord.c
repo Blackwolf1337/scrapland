@@ -110,11 +110,7 @@ void Coord_DefaultConfig(CoordConfig *cfg) {
 /* the index of level in the list (case-insensitive), -1 */
 static int Co_Level(const char *level) {
 	for (int i = 0; i < coord.ninst; i++) {
-		const char *a = coord.inst[i].level, *b = level;
-		while (*a && *b && (*a | 0x20) == (*b | 0x20)) {
-			a++, b++;
-		}
-		if (!*a && !*b) {
+		if (Coord_SameName(coord.inst[i].level, level)) {
 			return i;
 		}
 	}
@@ -511,8 +507,12 @@ static void Co_SendStory(int conn) {
 /* the changes of an instance: into the party's story, on to the other instances, the members' copies due */
 static void Co_Story(int conn, const uint8_t *data, int size) {
 	static uint8_t fwd[NET2_MAX_MESSAGE];
+	NetRepBuf w;
 	int flags, from = coord.conn[conn].inst;
-	int n = CoordStory_Apply(coord.party.story, &coord.party.len, sizeof(coord.party.story), data + 1, size - 1, &flags);
+	NetRepBuf_Init(&w, fwd, sizeof(fwd));
+	NetRep_PutU8(&w, COORD_MSG_STORY);
+	int n = CoordStory_Apply(coord.party.story, &coord.party.len, sizeof(coord.party.story), data + 1, size - 1, &flags,
+		&w);
 	if (n < 0) {
 		Co_Log("coordinator: bad story message from %s\n", coord.inst[from].level);
 		return;
@@ -522,11 +522,14 @@ static void Co_Story(int conn, const uint8_t *data, int size) {
 	}
 	coord.party.dirty = 1;
 	coord.party.seq++;
-	memcpy(fwd, data, (size_t)size);
-	fwd[0] = COORD_MSG_STORY;
 	for (int i = 0; i < coord.ninst; i++) {
-		if (i != from && coord.inst[i].state == CI_UP && coord.inst[i].conn >= 0) {
-			Net2_Send(coord.host, coord.inst[i].conn, CO_CHANNEL, fwd, size);
+		/* the changes as applied (a counter's sum: to its sender too); the whole story when they do not fit */
+		if ((i != from || (flags & COORD_STORY_ADDED)) && coord.inst[i].state == CI_UP && coord.inst[i].conn >= 0) {
+			if (w.bad) {
+				Co_SendStory(coord.inst[i].conn);
+			} else {
+				Net2_Send(coord.host, coord.inst[i].conn, CO_CHANNEL, fwd, w.size);
+			}
 		}
 		/* a level loaded for the mission of before gets it again once its players are gone (not the level whose start
 		 * made the change) */
@@ -587,6 +590,35 @@ static void Co_Summon(const CoPlayer *p, int k, const char *entrance, const char
 			Co_Send2Level(q, k);
 		}
 	}
+}
+
+/* a member asks to go to the instance of its party's leader: summoned there from its instance */
+static void Co_Leader(int conn, NetRepReader *r) {
+	uint8_t key[NET2_KEY_SIZE], buf[CO_MSG];
+	NetRepBuf w;
+	CoordMsg_GetBytes(r, key, NET2_KEY_SIZE);
+	int i = r->bad ? -1 : Co_FindPlayer(key);
+	CoPlayer *p = i >= 0 ? &coord.pl[i] : NULL;
+	if (!p || p->inst != coord.conn[conn].inst || p->wantTicket) {
+		return;
+	}
+	int k = Co_LeaderInst(p);
+	if (k < 0 || k == p->inst) {
+		Co_Log("coordinator: %s (%.8s) asks for its leader: %s\n", p->name, p->hex, k < 0 ? "none in an instance" :
+			"already there");
+		if (p->conn >= 0) {
+			Co_Cue(p->conn, COORD_CUE_NOTICE, k < 0 ? "MP_CoopNoLeader|" : "MP_CoopLeaderHere|");
+		}
+		return;
+	}
+	Co_Log("coordinator: %s (%.8s) goes to its leader in %s\n", p->name, p->hex, coord.inst[k].level);
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COORD_MSG_SUMMON);
+	CoordMsg_PutBytes(&w, p->key, NET2_KEY_SIZE);
+	NetRep_PutStr(&w, coord.inst[k].level);
+	NetRep_PutStr(&w, "");
+	NetRep_PutStr(&w, "");
+	Co_Send(conn, &w);
 }
 
 static void Co_Hello(int conn, NetRepReader *r) {
@@ -703,6 +735,14 @@ static void Co_Join(int conn, NetRepReader *r) {
 	}
 	char level[COORD_LEVEL + 1];
 	CoordKv_Get(p->text, p->len, "level", level, sizeof(level));
+	if (coord.coop && CoordParty_Finished(&coord.party) && CoordCoop_Chapter(level)) {
+		/* the story is over: the member goes on in the city, not in the chapter it left */
+		Co_Log("coordinator: %s (%.8s): the story is finished, it starts in %s\n", p->name, p->hex, COORD_COOP_AFTER);
+		snprintf(level, sizeof(level), "%s", COORD_COOP_AFTER);
+		CoordKv_Set(p->text, &p->len, sizeof(p->text), "level", level);
+		CoordKv_Set(p->text, &p->len, sizeof(p->text), "entrance", "");
+		CoordKv_Set(p->text, &p->len, sizeof(p->text), "door", "");
+	}
 	int k = Co_Level(level);
 	int lead = coord.coop ? Co_LeaderInst(p) : -1;
 	if (lead >= 0 && lead != k) {
@@ -910,6 +950,12 @@ static void Co_Net(void) {
 				Co_Story(ev.conn, ev.data, ev.size);
 			} else if (c->kind == CK_INST && ev.data[0] == COORD_MSG_PNOTICE && coord.coop) {
 				Co_PartyNotice(ev.conn, &r);
+			} else if (c->kind == CK_INST && ev.data[0] == COORD_MSG_LEADER && coord.coop) {
+				Co_Leader(ev.conn, &r);
+			} else if (c->kind == CK_INST && ev.data[0] == COORD_MSG_RESET && coord.coop) {
+				coord.inst[c->inst].stale = 1;
+				Co_Log("coordinator: instance %s starts again for its members (the level restarts)\n",
+					coord.inst[c->inst].level);
 			}
 			break;
 		}
@@ -1005,7 +1051,9 @@ static void Co_Instances(void) {
 			p->kickAt = 0;
 			p->wantTicket = 1;
 		}
-		if (p->wantTicket && p->inst >= 0 && coord.inst[p->inst].state == CI_UP && coord.inst[p->inst].conn >= 0) {
+		/* a stale instance gets no new player: they wait for its new start */
+		if (p->wantTicket && p->inst >= 0 && coord.inst[p->inst].state == CI_UP && coord.inst[p->inst].conn >= 0 &&
+			!coord.inst[p->inst].stale) {
 			Co_SendTicket(p);
 		}
 	}

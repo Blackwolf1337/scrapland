@@ -211,7 +211,7 @@ static void Instance_NetIn(uint64_t ms) {
 			break;
 		case NET2_EV_MESSAGE:
 			if (ev.channel == REP_CH_RELIABLE && (Travel_Message(inst.host, ev.conn, ev.data, ev.size) ||
-				Faction_Message(inst.host, ev.conn, ev.data, ev.size))) {
+				Faction_Message(inst.host, ev.conn, ev.data, ev.size) || Coop_Message(inst.host, ev.conn, ev.data, ev.size))) {
 				break;
 			}
 			if (ev.channel == REP_CH_RELIABLE && ev.size > 0 && ev.data[0] == NETREP_MSG_HELLO &&

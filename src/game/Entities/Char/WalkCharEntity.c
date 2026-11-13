@@ -333,10 +333,6 @@ static inline byte WCE_AlarmOn(void) {
 	return g_pWorld->alarm.hasGuaranteed || g_pWorld->alarm.on;
 }
 
-/* World.h, inlined: the entity of player slot 0 */
-static inline cEntity *WCE_Usr0(void) {
-	return cWorld_GetUsrEntity(g_pWorld, 0);
-}
 
 /* the push of an AI moves it, once */
 static inline void WCE_ApplyPush(cWalkCharEntity *w, float dt) {
@@ -1259,7 +1255,8 @@ abort:
 	if (w->abortOpt != w->wl.arrow.iOpt || !cActCtrl_IsActive(w->wl.actCtrl, cWalkCharEntity_RelaxName(self))) {
 		w->abortTime = g_TimeToAbortSelectChar;
 	}
-	cEntity *usr = WCE_Usr0();
+	/* the entity of player slot 0 (on the instance the nearest player: the one that talks to it stays near) */
+	cEntity *usr = Players_Closest(&self->pos);
 	if (w->wl.arrow.canUse && !(0.0f >= w->abortTime) && usr) {
 		vec3_t sp, up;
 		const vec3_t *s = Entity_GetPos(self, &sp);

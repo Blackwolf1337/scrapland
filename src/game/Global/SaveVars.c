@@ -65,7 +65,7 @@ static cSaveVar *SaveVar_New(const char *name, const char *value) {
 	}
 	/* not in the original: the coop story's changes (include/scrap/coop.h) */
 	if (g_Instance) {
-		Coop_SaveVarChanged(name);
+		Coop_SaveVarChanged(name, NULL, 0);
 	}
 	return v;
 }
@@ -88,7 +88,7 @@ byte SaveVar_Set(const char *name, const char *value) {
 	cSaveVar *v = SaveVar_Find(name);
 	if (v) {
 		if (g_Instance && strcmp(v->value ? v->value : "", value ? value : "")) {
-			Coop_SaveVarChanged(name);
+			Coop_SaveVarChanged(name, v->value ? v->value : "", 0);
 		}
 		cString_Set(&v->value, value);
 		return 1;
@@ -123,11 +123,14 @@ void SaveVars_Delete(const char *prefix) {
 	size_t len = strlen(prefix);
 	cSaveVar **link = &g_SaveVars;
 
+	if (g_Instance && Coop_KeepStory(prefix)) {
+		return;
+	}
 	while (*link) {
 		if (!crt_strncmp(prefix, (*link)->name, len)) {
 			cSaveVar *v = *link;
 			if (g_Instance) {
-				Coop_SaveVarChanged(v->name);
+				Coop_SaveVarChanged(v->name, v->value ? v->value : "", 0);
 			}
 			*link = v->next;
 			PtrTable_Delete((&g_SaveVarTable), v->name);
@@ -190,7 +193,9 @@ int SaveVar_Inc(const char *name, int n) {
 	int value = crt_atoi(v->value) + n;
 	cString_Printf(&v->value, "%d", value);
 	if (g_Instance && n) {
-		Coop_SaveVarChanged(name);
+		char old[16];
+		Str_PrintfQuiet(old, sizeof(old), "%d", value - n);
+		Coop_SaveVarChanged(name, old, 1);
 	}
 	int now = CrazyDeals_Count();
 	if (deals != now) {

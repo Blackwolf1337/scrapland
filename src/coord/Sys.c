@@ -46,6 +46,13 @@ static int Coord_Digit(char c) {
 	return c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
 }
 
+int Coord_SameName(const char *a, const char *b) {
+	while (*a && *b && (*a | 0x20) == (*b | 0x20)) {
+		a++, b++;
+	}
+	return !*a && !*b;
+}
+
 int Coord_Unhex(const char *s, uint8_t *b, int n) {
 	for (int i = 0; i < n; i++) {
 		int hi = Coord_Digit(s[2 * i]), lo = hi < 0 ? -1 : Coord_Digit(s[2 * i + 1]);

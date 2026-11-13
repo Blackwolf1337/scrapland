@@ -25,6 +25,7 @@
 
 #include "scrap/coop.h"
 #include "scrap/game.h"
+#include "scrap/play.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -411,6 +412,8 @@ static byte Sc_Del(const nativeVal_t *name) {
 static byte Sc_Ended(byte ok) {
 	if (g_Instance) {
 		Coop_SceneEnd();
+	} else if (g_Play) {
+		Coop_ClientSceneEnded();
 	}
 	return ok;
 }

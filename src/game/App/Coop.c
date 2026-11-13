@@ -4,10 +4,12 @@
  */
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/ai.h"
 #include "scrap/camcontrol.h"
+#include "scrap/chartype.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/coord.h"
@@ -15,8 +17,11 @@
 #include "scrap/entity.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
+#include "scrap/graphic2d.h"
+#include "scrap/input.h"
 #include "scrap/instance.h"
 #include "scrap/netrep.h"
+#include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
@@ -37,13 +42,12 @@
 #define CP_SCENE_LINES 256
 #define CP_GATHER 160.0f			/* units between the members placed next to the member of a scene */
 #define CP_VOICES 4
+#define CP_OPTS_MSG (8 + CP_NAME + COOP_OPTS * (COOP_OPT_TEXT + 2))
 #define COOP_CAM "CoopCam"
 
 /* the variables of a player, not of the story (where it goes on, its character, money and alarm, its time) */
 static const char *const cp_local[] = { "Map", "Spawn", "ComeFrom", "PrevMap", "Char", "AcBatteries", "Money", "Alarm",
 	"GameplayTime", NULL };
-/* the levels of the story alone: a level change into or out of one takes the party along */
-static const char *const cp_chapter[] = { "Orbit", "Fake", "Junkyard", "AB", "ABIndoor", NULL };
 
 #define CP_TABLES 4					/* call tables of one scene (its Load table and the actors' after it) */
 
@@ -61,8 +65,14 @@ static struct {
 	byte synced;					/* the whole story came since the coordinator connected */
 	byte overflow;					/* more changes than the list holds: the whole story goes */
 	byte levelSent;					/* the changes of the level's start went (COORD_MSG_STORYINIT) */
+	byte hold;						/* test: the changes wait */
 	int ndirty;
-	char dirty[COOP_DIRTY][CP_NAME];
+	struct {
+		char name[CP_NAME];
+		byte counter;				/* a counter (Stats.*, or SaveVar_Inc): its change goes as an addition */
+		byte hasBase;
+		long base;					/* its number when it became dirty (0 for a new one) */
+	} dirty[COOP_DIRTY];
 	int nscenes;
 	CpScene scenes[COOP_SCENES];
 	int loading;					/* the scene whose Load table ran last (its later tables join it), -1 */
@@ -74,7 +84,21 @@ static struct {
 	int endingTable;
 	char endingCls[CP_NAME], sceneCls[CP_NAME];
 	char voice[CP_VOICES][128];		/* the file opened on each voice channel */
+	struct {
+		uint8_t sent[CP_OPTS_MSG];	/* the options told to the member last */
+		int sentSize;
+		char choiceEnt[CP_NAME];	/* the entity whose option the member chose, "" */
+		int choice;
+	} pl[PLAYERS_MAX];
+	struct {						/* client: the options of the instance */
+		char ent[CP_NAME];
+		int n, cur;
+		char opt[COOP_OPTS][COOP_OPT_TEXT];
+	} copt;
 	char clientScene[CP_NAME];		/* client: the scene it plays for its instance */
+	byte skipped;					/* client: Escape ended it here */
+	double sceneAt;					/* client: when it began */
+	char notice[256];
 } cp = { .scene = -1, .loading = -1 };
 
 static byte Cp_InList(const char *const *list, const char *s) {
@@ -114,22 +138,30 @@ static byte Cp_Story(const char *name) {
 
 static int Cp_DirtyAt(const char *name) {
 	for (int i = 0; i < cp.ndirty; i++) {
-		if (!strcmp(cp.dirty[i], name)) {
+		if (!strcmp(cp.dirty[i].name, name)) {
 			return i;
 		}
 	}
 	return -1;
 }
 
-void Coop_SaveVarChanged(const char *name) {
-	if (!cp.on || cp.applying || !Cp_Story(name) || Cp_DirtyAt(name) >= 0) {
+void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
+	if (!cp.on || cp.applying || !Cp_Story(name)) {
 		return;
 	}
-	if (cp.ndirty == COOP_DIRTY) {
-		cp.overflow = 1;
-		return;
+	int i = Cp_DirtyAt(name);
+	if (i < 0) {
+		if (cp.ndirty == COOP_DIRTY) {
+			cp.overflow = 1;
+			return;
+		}
+		i = cp.ndirty++;
+		Str_Copy(cp.dirty[i].name, name, CP_NAME);
+		cp.dirty[i].base = 0;
+		cp.dirty[i].hasBase = !old || CoordStory_Int(old, &cp.dirty[i].base);
+		cp.dirty[i].counter = !strncmp(name, "Stats.", 6);
 	}
-	Str_Copy(cp.dirty[cp.ndirty++], name, CP_NAME);
+	cp.dirty[i].counter |= inc;
 }
 
 void Coop_LevelStart(void) {
@@ -180,7 +212,7 @@ static void Cp_OutFlush(CpOut *o) {
 	Cp_OutStart(o);
 }
 
-static void Cp_OutPut(CpOut *o, const char *name, const char *value) {
+static void Cp_OutPut(CpOut *o, int kind, const char *name, const char *value) {
 	int vn = value ? (int)strlen(value) : 0;
 	if (vn > COORD_STORY_VALUE) {
 		Con_Printf("coop: the value of %s is too long for the story (%d bytes)\n", name, vn);
@@ -189,25 +221,35 @@ static void Cp_OutPut(CpOut *o, const char *name, const char *value) {
 	if (o->w.size + 4 + (int)strlen(name) + vn > CP_MSG || o->count == 0xffff) {
 		Cp_OutFlush(o);
 	}
-	NetRep_PutU8(&o->w, value ? COORD_OP_SET : COORD_OP_DEL);
-	NetRep_PutStr(&o->w, name);
-	if (value) {
-		NetRep_PutU16(&o->w, (uint32_t)vn);
-		CoordMsg_PutBytes(&o->w, value, vn);
-	}
+	CoordStory_Put(&o->w, kind, name, value);
 	o->count++;
+}
+
+/* a dirty name: its value, a counter's change as the addition since it became dirty (none when it is back) */
+static void Cp_OutDirty(CpOut *o, int i) {
+	char delta[24];
+	long v;
+	const char *value = SaveVar_Get(cp.dirty[i].name);
+	if (value && cp.dirty[i].counter && cp.dirty[i].hasBase && CoordStory_Int(value, &v)) {
+		if (v != cp.dirty[i].base) {
+			Str_PrintfQuiet(delta, sizeof(delta), "%ld", v - cp.dirty[i].base);
+			Cp_OutPut(o, COORD_OP_ADD, cp.dirty[i].name, delta);
+		}
+		return;
+	}
+	Cp_OutPut(o, value ? COORD_OP_SET : COORD_OP_DEL, cp.dirty[i].name, value);
 }
 
 static void Cp_PutAll(const char *name, const char *value, void *u) {
 	if (Cp_Story(name)) {
-		Cp_OutPut(u, name, value);
+		Cp_OutPut(u, COORD_OP_SET, name, value);
 	}
 }
 
 /* the changes to the coordinator now (once the whole story came: before it the coordinator's would go over them) */
 static void Cp_Send(void) {
 	static CpOut o;
-	if (!cp.synced || (!cp.ndirty && !cp.overflow)) {
+	if (!cp.synced || cp.hold || (!cp.ndirty && !cp.overflow)) {
 		return;
 	}
 	Cp_OutStart(&o);
@@ -215,7 +257,7 @@ static void Cp_Send(void) {
 		SaveVars_Each(Cp_PutAll, &o);
 	} else {
 		for (int i = 0; i < cp.ndirty; i++) {
-			Cp_OutPut(&o, cp.dirty[i], SaveVar_Get(cp.dirty[i]));
+			Cp_OutDirty(&o, i);
 		}
 	}
 	Cp_OutFlush(&o);
@@ -238,20 +280,143 @@ void Coop_SceneCamera(void) {
 	cWorld_SetCam(g_pWorld, 0, COOP_CAM);
 }
 
+static void Cp_ToClient(int i, const uint8_t *buf, int size);
+
+/* the entity player e would use: the one it talks to, else the one in front of it with a use arrow */
+static cEntity *Cp_UseTarget(cEntity *e) {
+	cEntity *t = WChar(e)->listenOn ? WChar_Listen(e) : NULL;
+	if (!t) {
+		t = WChar_Victim(e);
+	}
+	return t && Entity_IsType(t, TYEN_WITH_LIFE) && WLife(t)->arrow.canUse ? t : NULL;
+}
+
+/* the options of each member's target when they changed */
+static void Cp_TellOptions(void) {
+	uint8_t buf[CP_OPTS_MSG];
+	NetRepBuf w;
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		cEntity *e = Players_Get(i);
+		if (Rep_PlayerConn(i) < 0) {
+			cp.pl[i].sentSize = 0;
+			continue;
+		}
+		cEntity *t = e && NetPl_Kind(e) == NETREP_CHAR ? Cp_UseTarget(e) : NULL;
+		cArrowIndicator *a = t ? &WLife(t)->arrow : NULL;
+		int n = a ? (a->nOpt < COOP_OPTS ? a->nOpt : COOP_OPTS) : 0;
+		NetRepBuf_Init(&w, buf, sizeof(buf));
+		NetRep_PutU8(&w, COOP_MSG);
+		NetRep_PutU8(&w, COOP_Y_OPTS);
+		NetRep_PutStr(&w, n ? t->name : "");
+		NetRep_PutU8(&w, n ? (uint32_t)a->iOpt : 0);
+		NetRep_PutU8(&w, (uint32_t)n);
+		for (int k = 0; k < n; k++) {
+			const char *o = cArrowIndicator_GetOpt(a, k);
+			char cut[COOP_OPT_TEXT];
+			Str_Copy(cut, o ? o : "", sizeof(cut));
+			NetRep_PutStr(&w, cut);
+		}
+		if (w.bad || (w.size == cp.pl[i].sentSize && !memcmp(buf, cp.pl[i].sent, (size_t)w.size))) {
+			continue;
+		}
+		/* nothing to tell a member that was told nothing */
+		if (!n && !cp.pl[i].sentSize) {
+			continue;
+		}
+		memcpy(cp.pl[i].sent, buf, (size_t)w.size);
+		cp.pl[i].sentSize = n ? w.size : 0;
+		Cp_ToClient(i, buf, w.size);
+		Con_Printf("coop: player %d: %d options of %s (%d)\n", i, n, n ? t->name : "-", n ? a->iOpt : 0);
+	}
+}
+
 void Coop_Pass(void) {
 	if (Coop_On()) {
 		Cp_Send();
+		Cp_TellOptions();
 	}
+}
+
+void Coop_BeforeUse(int i, cEntity *t) {
+	if (!Coop_On() || i < 0 || i >= PLAYERS_MAX || !t || !Entity_IsType(t, TYEN_WITH_LIFE)) {
+		return;
+	}
+	cArrowIndicator *a = &WLife(t)->arrow;
+	if (cp.pl[i].choiceEnt[0] && !strcmp(cp.pl[i].choiceEnt, t->name) && cp.pl[i].choice < a->nOpt) {
+		a->iOpt = cp.pl[i].choice;
+	}
+	/* the scripts move the arrow on after a use: the next choice starts from there */
+	cp.pl[i].choiceEnt[0] = 0;
+}
+
+/* player i asks to go to its party's leader (the coordinator knows where it plays) */
+static void Cp_ToLeader(int i) {
+	uint8_t buf[NET2_KEY_SIZE + 4];
+	NetRepBuf w;
+	const uint8_t *key = Travel_KeyOfPlayer(i);
+	if (!key) {
+		Con_Printf("coop: player %d has no key for the leader travel\n", i);
+		return;
+	}
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COORD_MSG_LEADER);
+	CoordMsg_PutBytes(&w, key, NET2_KEY_SIZE);
+	Travel_SendCoord(buf, w.size);
+	Con_Printf("coop: player %d asks to go to its leader\n", i);
+}
+
+byte Coop_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
+	char ent[CP_NAME];
+	NetRepReader r;
+	(void)host;
+	if (!Coop_On() || size < 2 || data[0] != COOP_MSG) {
+		return 0;
+	}
+	int i = Rep_ConnPlayer(conn);
+	NetRepReader_Init(&r, data + 2, size - 2);
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return 1;
+	}
+	if (data[1] == COOP_C_LEADER) {
+		Cp_ToLeader(i);
+	} else if (data[1] == COOP_C_CHOICE) {
+		NetRep_GetStr(&r, ent, sizeof(ent));
+		int k = (int)NetRep_GetU8(&r);
+		cEntity *t = r.bad ? NULL : World_FindEntity(ent);
+		if (!t || !Entity_IsType(t, TYEN_WITH_LIFE) || k >= WLife(t)->arrow.nOpt) {
+			return 1;
+		}
+		Str_Copy(cp.pl[i].choiceEnt, ent, CP_NAME);
+		cp.pl[i].choice = k;
+		/* shown at once on the arrow (the others near it see the same as in the single player) */
+		WLife(t)->arrow.iOpt = k;
+		Con_Printf("coop: player %d chooses option %d of %s (%s)\n", i, k, ent, cArrowIndicator_GetOpt(&WLife(t)->arrow, k));
+	}
+	return 1;
 }
 
 void Coop_CoordLost(void) {
 	cp.synced = 0;
 }
 
-/* a change of the coordinator into the save variables; a name changed here and not sent yet keeps its value */
+/* a change of the coordinator into the save variables; a name changed here and not sent yet keeps its value, a
+ * counter its own addition on the coordinator's number */
 static void Cp_Apply(int kind, const char *name, const char *value) {
-	if (!Cp_Story(name) || Cp_DirtyAt(name) >= 0) {
+	char sum[24];
+	long m, v;
+	if (!Cp_Story(name)) {
 		return;
+	}
+	int i = Cp_DirtyAt(name);
+	if (i >= 0) {
+		const char *here = SaveVar_Get(name);
+		if (kind != COORD_OP_SET || !cp.dirty[i].counter || !cp.dirty[i].hasBase || !here || !CoordStory_Int(here, &v) ||
+			!CoordStory_Int(value, &m)) {
+			return;
+		}
+		Str_PrintfQuiet(sum, sizeof(sum), "%ld", m + v - cp.dirty[i].base);
+		cp.dirty[i].base = m;
+		value = sum;
 	}
 	cp.applying = 1;
 	if (kind == COORD_OP_SET) {
@@ -388,6 +553,47 @@ static int Cp_Player(void) {
 	return -1;
 }
 
+byte Coop_KeepStory(const char *prefix) {
+	if (!Coop_On() || cp.applying || prefix[0]) {
+		return 0;
+	}
+	/* the single player's end deletes every save variable before the menu: the party keeps its story */
+	Con_Printf("coop: the story is kept (all save variables deleted by the scripts)\n");
+	return 1;
+}
+
+/* the end of the story (QLoad of the menu after the credits' start): kept as finished; every member here sees the
+ * credits in the main menu, the members elsewhere get a notice */
+static void Cp_StoryEnd(void) {
+	uint8_t buf[8], nb[128];
+	NetRepBuf w, nw;
+	SaveVar_Set(COORD_COOP_FINISHED, "yes");
+	Cp_Send();
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_END);
+	Cp_ToAll(buf, w.size);
+	NetRepBuf_Init(&nw, nb, sizeof(nb));
+	NetRep_PutU8(&nw, COORD_MSG_PNOTICE);
+	NetRep_PutStr(&nw, "MP_CoopEnd|");
+	Travel_SendCoord(nb, nw.size);
+	Con_Printf("coop: the story is finished: the credits on the clients\n");
+}
+
+/* the level again (a super deal's restart): the instance starts again, every member here travels to its new start */
+static void Cp_Reset(const char *map) {
+	uint8_t buf[4] = { COORD_MSG_RESET };
+	const char *spawn = SaveVar_Get("Spawn");
+	Cp_Send();
+	Travel_SendCoord(buf, 1);
+	Con_Printf("coop: the level again (QLoad %s): the instance starts again for its members\n", map);
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (Rep_PlayerConn(i) >= 0) {
+			Travel_Go(i, Instance_Level(), spawn ? spawn : "", "", 0);
+		}
+	}
+}
+
 byte Coop_QLoad(const char *map) {
 	if (!Coop_On()) {
 		return 0;
@@ -395,12 +601,12 @@ byte Coop_QLoad(const char *map) {
 	const char *s = strrchr(map, '/');
 	const char *level = s ? s + 1 : map;
 	if (!crt_stricmp(level, "Menu")) {
-		Con_Printf("coop: the story ends (QLoad %s): not yet in coop\n", map);
-		return 0;
+		Cp_StoryEnd();
+		return 1;
 	}
 	if (!crt_stricmp(level, Instance_Level())) {
-		Con_Printf("coop: the same level again (QLoad %s): not yet in coop\n", map);
-		return 0;
+		Cp_Reset(map);
+		return 1;
 	}
 	/* the member of the scene whose end goes on (its callback), else the bound one */
 	int i = cp.inScene && cp.scenePlayer >= 0 && Players_Get(cp.scenePlayer) ? cp.scenePlayer : Cp_Player();
@@ -408,7 +614,7 @@ byte Coop_QLoad(const char *map) {
 		return 0;
 	}
 	const char *spawn = SaveVar_Get("Spawn");
-	byte party = Cp_InList(cp_chapter, level) || Cp_InList(cp_chapter, Instance_Level());
+	byte party = CoordCoop_Chapter(level) || CoordCoop_Chapter(Instance_Level());
 	/* the story of now first: the target instance starts with it */
 	Cp_Send();
 	Con_Printf("coop: mission level change of player %d to %s (%s)%s\n", i, level, spawn ? spawn : "", party ?
@@ -515,9 +721,42 @@ void Coop_SceneTable(const char *module, const char *const *lines) {
 	cp.loading = k;
 }
 
+/* the message of the scene that plays (its table, or the class alone of a scene of the level's own data); 0 when it
+ * does not fit */
+static int Cp_SceneMsg(uint8_t *buf, int size) {
+	NetRepBuf w;
+	NetRepBuf_Init(&w, buf, size);
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_SCENE);
+	if (cp.scene < 0) {
+		NetRep_PutStr(&w, "");
+		NetRep_PutStr(&w, cp.sceneCls);
+		NetRep_PutU16(&w, 0);
+		return w.size;
+	}
+	const CpScene *sc = &cp.scenes[cp.scene];
+	int n = 0;
+	for (int t = 0; t < sc->ntables; t++) {
+		for (const char *const *l = sc->lines[t]; *l && n < CP_SCENE_LINES; l++) {
+			n++;
+		}
+	}
+	NetRep_PutStr(&w, sc->module);
+	NetRep_PutStr(&w, cp.sceneCls);
+	NetRep_PutU16(&w, (uint32_t)n);
+	int m = 0;
+	for (int t = 0; t < sc->ntables; t++) {
+		for (const char *const *l = sc->lines[t]; *l && m < n; l++, m++) {
+			int len = (int)strlen(*l);
+			NetRep_PutU16(&w, (uint32_t)len);
+			CoordMsg_PutBytes(&w, *l, len);
+		}
+	}
+	return w.bad ? 0 : w.size;
+}
+
 void Coop_ScenePlay(const char *cls) {
 	static uint8_t buf[CP_SCENE_MSG];
-	NetRepBuf w;
 	uint8_t nb[256];
 	NetRepBuf nw;
 
@@ -541,46 +780,47 @@ void Coop_ScenePlay(const char *cls) {
 	Str_PrintfQuiet(text, sizeof(text), "MP_CoopScene|%s", Instance_Level());
 	NetRep_PutStr(&nw, text);
 	Travel_SendCoord(nb, nw.size);
-	if (cp.scene < 0) {
-		/* a scene of the level's own data (map.def): the clients have its class from their level's start */
-		NetRepBuf_Init(&w, buf, sizeof(buf));
-		NetRep_PutU8(&w, COOP_MSG);
-		NetRep_PutU8(&w, COOP_Y_SCENE);
-		NetRep_PutStr(&w, "");
-		NetRep_PutStr(&w, cls);
-		NetRep_PutU16(&w, 0);
-		Cp_ToAll(buf, w.size);
-		Con_Printf("coop: scene %s plays (no table: the clients play the class they have)\n", cls);
-		return;
-	}
-	const CpScene *sc = &cp.scenes[cp.scene];
-	int n = 0;
-	for (int t = 0; t < sc->ntables; t++) {
-		for (const char *const *l = sc->lines[t]; *l && n < CP_SCENE_LINES; l++) {
-			n++;
-		}
-	}
-	NetRepBuf_Init(&w, buf, sizeof(buf));
-	NetRep_PutU8(&w, COOP_MSG);
-	NetRep_PutU8(&w, COOP_Y_SCENE);
-	NetRep_PutStr(&w, sc->module);
-	NetRep_PutStr(&w, cls);
-	NetRep_PutU16(&w, (uint32_t)n);
-	int m = 0;
-	for (int t = 0; t < sc->ntables; t++) {
-		for (const char *const *l = sc->lines[t]; *l && m < n; l++, m++) {
-			int len = (int)strlen(*l);
-			NetRep_PutU16(&w, (uint32_t)len);
-			CoordMsg_PutBytes(&w, *l, len);
-		}
-	}
-	if (w.bad) {
+	int size = Cp_SceneMsg(buf, sizeof(buf));
+	if (!size) {
 		Con_Printf("coop: the table of scene %s does not fit a message\n", cls);
 		cp.scene = -1;
+		size = Cp_SceneMsg(buf, sizeof(buf));
+	}
+	Cp_ToAll(buf, size);
+	if (cp.scene < 0) {
+		/* a scene of the level's own data (map.def): the clients have its class from their level's start */
+		Con_Printf("coop: scene %s plays (no table: the clients play the class they have)\n", cls);
+	} else {
+		Con_Printf("coop: scene %s plays on the clients (player %d)\n", cls, cp.scenePlayer);
+	}
+}
+
+void Coop_Spawned(cEntity *e) {
+	if (Coop_On() && NetPl_Kind(e) == NETREP_CHAR) {
+		WChar(e)->listenOn = 1;
+		/* a talk turns the camera of view 0 too */
+		Coop_SceneCamera();
+	}
+}
+
+void Coop_Joined(int i) {
+	static uint8_t buf[CP_SCENE_MSG];
+	nativeVal_t h;
+	if (!Coop_On() || !cp.inScene) {
 		return;
 	}
-	Cp_ToAll(buf, w.size);
-	Con_Printf("coop: scene %s plays on the clients (player %d, %d lines)\n", cls, cp.scenePlayer, n);
+	/* hidden and stopped as the scene's start did to the members there (its end shows it again) */
+	cEntity *e = Players_Get(i);
+	Native_SetNone(&h);
+	if (e && (!Mode_EntHandle(e, &h) || !Mode_Import("Scene") || !PORT_CALL(Scene, HideThis, NULL, "v", &h))) {
+		Native_ErrPrint();
+	}
+	Native_Free(&h);
+	int size = Cp_SceneMsg(buf, sizeof(buf));
+	if (size) {
+		Cp_ToClient(i, buf, size);
+	}
+	Con_Printf("coop: player %d came in during scene %s: it plays on its client too\n", i, cp.sceneCls);
 }
 
 byte Coop_SceneHolds(void) {
@@ -734,12 +974,45 @@ void Coop_PlayVoice(int channel) {
 
 byte Coop_Command(const char *line) {
 	char name[CP_NAME], val[256];
-	if (!Coop_On() || strncmp(line, "story", 5)) {
+	int i;
+	if (!Coop_On()) {
+		return 0;
+	}
+	if (sscanf(line, "leader %d", &i) == 1) {
+		Cp_ToLeader(i);
+		return 1;
+	}
+	if (sscanf(line, "qload %63s", name) == 1 || !strcmp(line, "restart") || !strcmp(line, "theend")) {
+		/* as the scripts do: SaveGame.QLoad, SaveGame.Restart (a super deal), the end's credits section */
+		Players_Bind(Cp_Player());
+		if (!strcmp(line, "theend")) {
+			SaveVars_Delete("");
+			Str_Copy(name, "Levels/Menu", sizeof(name));
+		}
+		byte ok = Mode_Import("SaveGame") && (!strcmp(line, "restart") ? PORT_CALL(SaveGame, Restart, NULL, "") :
+			PORT_CALL(SaveGame, QLoad, NULL, "s", name));
+		if (!ok) {
+			Native_ErrPrint();
+		}
+		Players_BindTurn();
+		return 1;
+	}
+	if (sscanf(line, "travel %d %63s", &i, name) == 2) {
+		Con_Printf("coop: player %d travels alone to %s\n", i, name);
+		Travel_Go(i, name, "", "", 0);
+		return 1;
+	}
+	if (strncmp(line, "story", 5)) {
 		return 0;
 	}
 	if (sscanf(line, "story set %63s %255[^\n]", name, val) == 2) {
 		SaveVar_Set(name, val);
 		Con_Printf("coop: %s = %s\n", name, val);
+	} else if (sscanf(line, "story inc %63s %d", name, &i) == 2) {
+		Con_Printf("coop: %s = %d\n", name, SaveVar_Inc(name, i));
+	} else if (sscanf(line, "story hold %d", &i) == 1) {
+		cp.hold = (byte)(i != 0);
+		Con_Printf("coop: the story changes %s\n", cp.hold ? "wait" : "go");
 	} else if (sscanf(line, "story get %63s", name) == 1) {
 		const char *v = SaveVar_Get(name);
 		Con_Printf("coop: %s %s%s\n", name, v ? "= " : "is not set", v ? v : "");
@@ -809,11 +1082,12 @@ static void Cp_ClientScene(NetRepReader *r) {
 		}
 	}
 	Con_Printf("coop: scene %s of the instance plays here\n", cls);
-	/* line by line, a failing one does not stop the scene; the calls of the level's own module are left out (they
-	 * work on entities the instance's mission made or changed: the client has them as they were) */
+	/* line by line, a failing one does not stop the scene. The "@" calls of the level's module add events that
+	 * animate the level's entities of the client (the functionary's desk, a door): not on a headless client, whose
+	 * models have no animations (a forced action of one is a fatal check) */
 	for (int k = 0; k < n && lines[k]; k++) {
 		const char *one[2] = { lines[k], NULL };
-		if (lines[k][0] != '@' && !Mode_Calls(module, one)) {
+		if ((lines[k][0] != '@' || !g_HeadlessPlay) && !Mode_Calls(module, one)) {
 			Native_ErrPrint();
 		}
 	}
@@ -822,6 +1096,124 @@ static void Cp_ClientScene(NetRepReader *r) {
 		return;
 	}
 	Str_Copy(cp.clientScene, cls, sizeof(cp.clientScene));
+	cp.skipped = 0;
+	cp.sceneAt = Watch_ShownTime();
+}
+
+static void Cp_ClientOptions(NetRepReader *r) {
+	char ent[CP_NAME];
+	NetRep_GetStr(r, ent, sizeof(ent));
+	int cur = (int)NetRep_GetU8(r), n = (int)NetRep_GetU8(r);
+	if (n > COOP_OPTS) {
+		return;
+	}
+	for (int k = 0; k < n; k++) {
+		NetRep_GetStr(r, cp.copt.opt[k], COOP_OPT_TEXT);
+	}
+	if (r->bad) {
+		return;
+	}
+	Str_Copy(cp.copt.ent, ent, sizeof(cp.copt.ent));
+	cp.copt.n = n;
+	cp.copt.cur = cur < n ? cur : 0;
+	if (n) {
+		Con_Printf("coop: %d options of %s, %d: %s\n", n, ent, cp.copt.cur, cp.copt.opt[cp.copt.cur]);
+	}
+}
+
+/* another option of the instance's list: shown here and told to the instance */
+static void Cp_ClientChoose(int k) {
+	uint8_t buf[CP_NAME + 8];
+	NetRepBuf w;
+	cp.copt.cur = k;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_C_CHOICE);
+	NetRep_PutStr(&w, cp.copt.ent);
+	NetRep_PutU8(&w, (uint32_t)k);
+	if (!w.bad && Watch_SendReliable(buf, w.size)) {
+		Con_Printf("coop: option %d of %s chosen: %s\n", k, cp.copt.ent, cp.copt.opt[k]);
+	}
+}
+
+/* the option of the instance's list on the screen, with the keys that pick another */
+static void Cp_ClientOptionsFrame(void) {
+	static float prevNext, prevPrev;
+	char line[COOP_OPT_TEXT + 64], arg[COOP_OPT_TEXT + 16];
+	int n = cp.copt.n;
+	if (!n || cp.clientScene[0]) {
+		return;
+	}
+	float next = Input_BoundValue(ACTSET_WALK, WALK_NEXT_ACTION, 0), prev = Input_BoundValue(ACTSET_WALK, WALK_PREV_ACTION, 0);
+	if (n > 1 && next > 0.5f && prevNext <= 0.5f) {
+		Cp_ClientChoose((cp.copt.cur + 1) % n);
+	} else if (n > 1 && prev > 0.5f && prevPrev <= 0.5f) {
+		Cp_ClientChoose((cp.copt.cur + n - 1) % n);
+	}
+	prevNext = next;
+	prevPrev = prev;
+	if (g_HeadlessPlay) {
+		return;
+	}
+	const char *o = cp.copt.opt[cp.copt.cur], *colon = strchr(o, ':');
+	Str_PrintfQuiet(arg, sizeof(arg), "%d/%d %s", cp.copt.cur + 1, n, colon ? colon + 1 : o);
+	Texts_Format(line, sizeof(line), "MP_CoopOption", arg);
+	int w, h;
+	Graphic2D_GetScreen(&w, &h);
+	Text_Printf((int)((float)w * 0.30f), (int)((float)h * 0.72f), "%s", line);
+}
+
+/* the key that takes this member to its party's leader */
+static void Cp_ClientLeaderKey(void) {
+	static byte was;
+	byte keys[256];
+	Plat_KeyStates(keys);
+	byte down = (keys[COOP_LEADER_KEY] & 0x80) != 0;
+	if (down && !was) {
+		uint8_t buf[2] = { COOP_MSG, COOP_C_LEADER };
+		if (Watch_SendReliable(buf, sizeof(buf))) {
+			Con_Printf("coop: to the party's leader\n");
+			Texts_Format(cp.notice, sizeof(cp.notice), "MP_CoopToLeader", "");
+			Text_Message(COOP_NOTICE_MS, "%s", cp.notice);
+		}
+	}
+	was = down;
+}
+
+void Coop_ClientSceneEnded(void) {
+	if (!cp.clientScene[0] || cp.skipped) {
+		return;
+	}
+	/* Escape here: the scene plays on for the others; this member gets its character back with the instance's end */
+	cp.skipped = 1;
+	Con_Printf("coop: scene %s skipped here, it plays on in the instance\n", cp.clientScene);
+	Texts_Format(cp.notice, sizeof(cp.notice), "MP_CoopSceneSkipped", "");
+	Text_Message(COOP_NOTICE_MS, "%s", cp.notice);
+}
+
+void Coop_ClientFrame(void) {
+	static double skipAfter = -1.0;
+	static int choose = -2;
+	static const char *chooseOf = "";
+	if (skipAfter < 0.0) {
+		const char *s = getenv("SCRAP_COOP_SKIP"), *c = getenv("SCRAP_COOP_CHOOSE");
+		skipAfter = s ? atof(s) : 0.0;
+		choose = c ? atoi(c) : -1;
+		chooseOf = c && strchr(c, ':') ? strchr(c, ':') + 1 : "";
+	}
+	Cp_ClientOptionsFrame();
+	Cp_ClientLeaderKey();
+	/* test (SCRAP_COOP_CHOOSE=<k>[:<entity prefix>]): option k of each list of more options than k */
+	if (choose >= 0 && cp.copt.n > choose && cp.copt.cur != choose && !cp.clientScene[0] &&
+		!strncmp(cp.copt.ent, chooseOf, strlen(chooseOf))) {
+		Cp_ClientChoose(choose);
+	}
+	/* test: Escape the given seconds into each scene of the instance */
+	if (skipAfter > 0.0 && cp.clientScene[0] && !cp.skipped && Watch_ShownTime() - cp.sceneAt >= skipAfter &&
+		(!Mode_Import("Scene") || !PORT_CALL(Scene, AbortScene, NULL, "i", 0L))) {
+		Native_ErrPrint();
+		cp.skipped = 1;
+	}
 }
 
 static void Cp_ClientSceneEnd(NetRepReader *r) {
@@ -831,6 +1223,10 @@ static void Cp_ClientSceneEnd(NetRepReader *r) {
 		return;
 	}
 	cp.clientScene[0] = 0;
+	if (cp.skipped) {
+		Con_Printf("coop: scene %s ended in the instance\n", cls);
+		return;
+	}
 	Str_PrintfQuiet(name, sizeof(name), "DM_Scene_%s", cls);
 	if (World_FindEntity(name) && !PORT_CALL(Scene, EndOfScene, NULL, "ssi", name, "", 0L)) {
 		Native_ErrPrint();
@@ -884,6 +1280,17 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		}
 		break;
 	}
+	case COOP_Y_OPTS:
+		Cp_ClientOptions(&r);
+		break;
+	case COOP_Y_END:
+		/* the credits of the main menu, as the single player's end; the world is left */
+		Con_Printf("coop: the story is finished: the credits\n");
+		if (!Mode_GVarSetI("ShowCredits", 1)) {
+			Native_ErrPrint();
+		}
+		Join_Stop("");
+		break;
 	case COOP_Y_NOTICE:
 		NetRep_GetStr(&r, key, sizeof(key));
 		NetRep_GetStr(&r, arg, sizeof(arg));
@@ -899,4 +1306,6 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 
 void Coop_ClientReset(void) {
 	cp.clientScene[0] = 0;
+	cp.copt.n = 0;
+	cp.skipped = 0;
 }

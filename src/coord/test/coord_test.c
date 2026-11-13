@@ -507,12 +507,7 @@ static int StoryMsg(uint8_t *buf, int cap, int n, const int *kinds, const char *
 	NetRepBuf_Init(&w, buf, cap);
 	NetRep_PutU16(&w, (uint32_t)n);
 	for (int i = 0; i < n; i++) {
-		NetRep_PutU8(&w, (uint32_t)kinds[i]);
-		NetRep_PutStr(&w, names[i]);
-		if (kinds[i] == COORD_OP_SET) {
-			NetRep_PutU16(&w, (uint32_t)strlen(vals[i]));
-			CoordMsg_PutBytes(&w, vals[i], (int)strlen(vals[i]));
-		}
+		CoordStory_Put(&w, kinds[i], names[i], vals[i]);
 	}
 	return w.bad ? -1 : w.size;
 }
@@ -538,22 +533,54 @@ static void Test_Story(const char *dir) {
 		const char *const nm[] = { "Mission.Map", "Mission.Library", "Hangar.availableWeaponsList", "nothing" };
 		const char *const v[] = { "Levels/Orbit", "MapDecont", "[\"Vulcan\"]", "" };
 		n = StoryMsg(msg, sizeof(msg), 4, k, nm, v);
-		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 3 && flags == COORD_STORY_MISSION);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags, NULL) == 3 && flags == COORD_STORY_MISSION);
 		CHECK(CoordKv_Get(text, len, "Hangar.availableWeaponsList", out, sizeof(out)) && !strcmp(out, "[\"Vulcan\"]"));
 		/* the same again: no mission change */
-		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 3 && flags == 0);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags, NULL) == 3 && flags == 0);
 	}
 	{
 		const int k[] = { COORD_OP_SET, COORD_OP_DEL };
 		const char *const nm[] = { "Orbit.Decontaminated", "Mission.Library" };
 		const char *const v[] = { "yes", "" };
 		n = StoryMsg(msg, sizeof(msg), 2, k, nm, v);
-		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 2 && flags == COORD_STORY_MISSION);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags, NULL) == 2 && flags == COORD_STORY_MISSION);
 		CHECK(!CoordKv_Get(text, len, "Mission.Library", out, sizeof(out)));
 		/* malformed: cut, a bad kind */
-		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n - 2, &flags) == -1);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n - 2, &flags, NULL) == -1);
 		msg[2] = 7;
-		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == -1);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags, NULL) == -1);
+	}
+	/* counters: added (0 when missing), the sum forwarded as a value; a value that is no number is set */
+	{
+		const int k[] = { COORD_OP_ADD, COORD_OP_ADD, COORD_OP_ADD, COORD_OP_SET };
+		const char *const nm[] = { "Stats.Killer", "Stats.Killer", "Stats.Odd", "Plain" };
+		const char *const v[] = { "3", "-1", "x", "7" };
+		uint8_t fw[512];
+		NetRepBuf w;
+		NetRepBuf_Init(&w, fw, sizeof(fw));
+		n = StoryMsg(msg, sizeof(msg), 4, k, nm, v);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags, &w) == 4 && flags == COORD_STORY_ADDED);
+		CHECK(CoordKv_Get(text, len, "Stats.Killer", out, sizeof(out)) && !strcmp(out, "2"));
+		CHECK(CoordKv_Get(text, len, "Stats.Odd", out, sizeof(out)) && !strcmp(out, "x"));
+		NetRepReader r;
+		char name[64], val[64];
+		int kind, ok = 1;
+		NetRepReader_Init(&r, fw, w.size);
+		CHECK(!w.bad && NetRep_GetU16(&r) == 4);
+		const char *const want[] = { "3", "2", "x", "7" };
+		for (int i = 0; i < 4; i++) {
+			ok &= CoordStory_Next(&r, &kind, name, sizeof(name), val, sizeof(val)) > 0 && kind == COORD_OP_SET &&
+				!strcmp(name, nm[i]) && !strcmp(val, want[i]);
+		}
+		CHECK(ok);
+		/* another instance's addition goes on the sum */
+		const int k2[] = { COORD_OP_ADD };
+		const char *const v2[] = { "5" };
+		n = StoryMsg(msg, sizeof(msg), 1, k2, nm, v2);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags, NULL) == 1);
+		CHECK(CoordKv_Get(text, len, "Stats.Killer", out, sizeof(out)) && !strcmp(out, "7"));
+		long x;
+		CHECK(CoordStory_Int("-12", &x) && x == -12 && !CoordStory_Int("", &x) && !CoordStory_Int("3a", &x));
 	}
 	/* a bad key is not applied */
 	{
@@ -561,7 +588,7 @@ static void Test_Story(const char *dir) {
 		const char *const nm[] = { "a b" };
 		const char *const v[] = { "x" };
 		n = StoryMsg(msg, sizeof(msg), 1, k, nm, v);
-		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags) == 0);
+		CHECK(CoordStory_Apply(text, &len, sizeof(text), msg, n, &flags, NULL) == 0);
 	}
 	/* the store's text files */
 	snprintf(path, sizeof(path), "%s/text", dir);
