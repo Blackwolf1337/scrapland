@@ -18,7 +18,8 @@
  * channel: e = Scrap.GetEntity("WatchCam"); e.camPos = (x, y, z)). Its position is the view point.
  *
  * Test hooks: SCRAP_REPLOG=<file> writes the positions of the replicated entities as CSV, on the instance every tick
- * (time of the sample, slot, x, y, z), in the watcher every frame (server time shown, slot, x, y, z).
+ * (time of the sample, slot, x, y, z, the count of entities the slot had), in the watcher every frame from the first
+ * sample of a proxy on (server time shown, slot, x, y, z).
  */
 #ifndef SCRAP_REPLICATE_H
 #define SCRAP_REPLICATE_H

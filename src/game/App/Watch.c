@@ -144,6 +144,7 @@ static cEntity *Watch_Build(int slot, int kind, const char *look, const NetRepSt
 		if (e) {
 			Obj(e)->proxy = 1;
 			WithLife_SetActCtrl(e, part[1]);
+			Con_Printf("watch: character %s (%s) at %.0f %.0f %.0f\n", name, part[1], (double)x, (double)y, (double)z);
 		}
 		return e;
 	}
@@ -310,7 +311,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 			cActCtrl_NetDrive(w->actCtrl, act, rates, NETREP_LAYERS, dt);
 		}
 	}
-	if (watch.log) {
+	if (watch.log && rt >= p->s[0].t) {
 		fprintf(watch.log, "%.4f,%d,%.2f,%.2f,%.2f\n", rt, slot, (double)pos.x, (double)pos.y, (double)pos.z);
 	}
 }

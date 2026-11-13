@@ -34,6 +34,7 @@ typedef struct RepEnt {
 	cEntity *e;						/* NULL: the slot has no entity of this world */
 	char name[REP_NAME];
 	int look;
+	uint32_t gen;					/* entities the slot had (SCRAP_REPLOG) */
 } RepEnt;
 
 typedef struct RepConn {
@@ -219,6 +220,7 @@ static void Rep_Gather(uint64_t tick) {
 			rep.ent[s].e = e;
 			Str_Copy(rep.ent[s].name, e->name, REP_NAME);
 			rep.ent[s].look = id;
+			rep.ent[s].gen++;
 		}
 		seen[s] = 1;
 		Rep_State(e, kind, &st);
@@ -242,7 +244,7 @@ static void Rep_Log(uint64_t tick) {
 			rep.log = fopen(path, "w");
 		}
 		if (rep.log) {
-			fputs("time,slot,x,y,z\n", rep.log);
+			fputs("time,slot,x,y,z,gen\n", rep.log);
 		}
 	}
 	if (!rep.log) {
@@ -252,7 +254,8 @@ static void Rep_Log(uint64_t tick) {
 		int s = Rep_Kind(e) ? Rep_Find(e) : -1;
 		if (s >= 0) {
 			double t = (double)tick / INSTANCE_TICK_HZ + Rep_SampleDt(e);
-			fprintf(rep.log, "%.4f,%d,%.2f,%.2f,%.2f\n", t, s, (double)e->pos.x, (double)e->pos.y, (double)e->pos.z);
+			fprintf(rep.log, "%.4f,%d,%.2f,%.2f,%.2f,%u\n", t, s, (double)e->pos.x, (double)e->pos.y, (double)e->pos.z,
+				rep.ent[s].gen);
 		}
 	}
 }
