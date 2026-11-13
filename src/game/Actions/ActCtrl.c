@@ -453,6 +453,45 @@ static void cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 	}
 }
 
+/* the proxy of a watcher (include/scrap/replicate.h): the actions of the layers from the network (index + 1 in the
+ * class, 0 none), each started when it changes and played at rate (its time per second, 0 keeps the speed) with the
+ * model's own animation update; no events and no ends of actions */
+void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt) {
+	CGameModel *m = Ctrl_Model(self);
+
+	for (int k = 0; k < layers && k < ACT_LAYERS; k++) {
+		cActLayer *l = &self->layers[k];
+		cAction *a = act[k] ? self->cls->first : NULL;
+		for (int i = 1; a && i < act[k]; i++) {
+			a = a->next;
+		}
+		if (a != l->action) {
+			if (!a) {
+				if (k > 0) {
+					CGameModel_StopAnim(m, k);
+					l->on = 0;
+					l->action = NULL;
+				}
+				continue;
+			}
+			l->on = 1;
+			l->action = a;
+			l->event = NULL;
+			CGameModel_SetAnimLoop(m, Action_Anim(a), a->isLoop);
+			CGameModel_SetAnim(m, Action_Anim(a), k, 0);
+		}
+		if (l->on && rate[k] > 0.0f) {
+			CGameModel_SetAnimFactor(m, Action_Anim(l->action), rate[k]);
+		}
+	}
+	CGameModel_RootMotion(m, dt, NULL, NULL);
+	for (int k = 0; k < layers && k < ACT_LAYERS; k++) {
+		if (self->layers[k].on) {
+			CGameModel_ChanTime(m, k, &self->layers[k].time);
+		}
+	}
+}
+
 void cActCtrl_Tick(cActCtrl *self, float dt) {
 	if (self->cls->dynShip) {
 		cActCtrl_UpdateShip(self, dt);

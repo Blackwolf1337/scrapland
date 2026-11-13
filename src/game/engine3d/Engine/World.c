@@ -169,7 +169,7 @@ static void CWorld_AddDummy(CWorld *self, WorldDummy *d) {
 }
 
 void CWorld_ReleaseD3D(CWorld *self) {
-	if (!(g_pApp->flags >> 2 & 1)) {
+	if (!App_Headless()) {
 		CHECK(self->ini_D3D);
 		CHECK(g_Engine->device);
 	}

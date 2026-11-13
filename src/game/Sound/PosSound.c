@@ -280,7 +280,7 @@ static void Sound_UpdateMusic(float dt) {
 	char name[256];
 	int want, cur;
 
-	if ((g_pApp->flags >> 2) & 1) {
+	if (App_Headless()) {
 		return;
 	}
 	if (g_ForceNoActionMusic) {

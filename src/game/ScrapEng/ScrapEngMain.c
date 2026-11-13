@@ -72,7 +72,6 @@ extern cGVar GVar_Viewer;
 #define D3DFMT_R5G6B5 23
 #define D3DFMT_X1R5G5B5 24
 #define D3DFMT_A1R5G5B5 25
-#define APP_DEDICATED(app) (((app)->flags >> 2) & 1)
 
 /* the engine callbacks as the exe passes them */
 #define RVA_CON_VERBOSEF 0xbc240
@@ -149,7 +148,7 @@ static int Engine_InitVideos(void) {
 			continue;
 		}
 		/* MSE-Short when MSE.avi did not run to its end */
-		if (APP_DEDICATED(g_pApp) || (step == 4 && eng_videoResult == 1)) {
+		if (App_Headless() || (step == 4 && eng_videoResult == 1)) {
 			continue;
 		}
 		int r = Video_PlayFile(intro[step], 0);
@@ -387,7 +386,7 @@ void Engine_Init(void) {
 
 	CHECK(!g_Engine);
 	Con_Printf("Engine 3D initializing (Version %d)\n", g_EngineVersion);
-	if (APP_DEDICATED(g_pApp)) {
+	if (App_Headless()) {
 		g_RenderOff = 1;
 	}
 	void *hInst = App_GetHInstance();
@@ -400,14 +399,14 @@ void Engine_Init(void) {
 	if (g_VideoDesktop) {
 		Plat_DesktopSize(&g_VideoWidth, &g_VideoHeight);
 	}
-	g_Engine->fullscreen = g_FullScreen == PLAT_FULLSCREEN && !APP_DEDICATED(g_pApp);
-	g_Engine->borderless = g_FullScreen == PLAT_BORDERLESS && !APP_DEDICATED(g_pApp);
+	g_Engine->fullscreen = g_FullScreen == PLAT_FULLSCREEN && !App_Headless();
+	g_Engine->borderless = g_FullScreen == PLAT_BORDERLESS && !App_Headless();
 	g_Engine->width = g_VideoWidth;
 	g_Engine->height = g_VideoHeight;
 	g_Engine->bpp = g_VideoBPP;
 	g_MapTextSavingOn = g_ComputeMapTextSaving == 1;
 	CD3DApplication *m = g_Engine;
-	if (!APP_DEDICATED(g_pApp)) {
+	if (!App_Headless()) {
 		if (D3DApp_Create(m, hInst) < 0) {
 			Err_Printf(1, "Engine3D initialization error");
 		}
@@ -428,7 +427,7 @@ int Engine_IsFullScreen(void) {
 	if (m) {
 		return (int)(((uintptr_t)m & ~(uintptr_t)0xff) | (m->windowed == 0));
 	}
-	if (g_FullScreen == PLAT_FULLSCREEN && !APP_DEDICATED(g_pApp)) {
+	if (g_FullScreen == PLAT_FULLSCREEN && !App_Headless()) {
 		return 1;
 	}
 	return 0;
@@ -490,7 +489,7 @@ void Engine_LevelInit(void) {
 		Err_Printf(1, "ERROR: LevelInitEngine3D()");
 	}
 	g_Engine->device = dev;
-	if (!APP_DEDICATED(g_pApp)) {
+	if (!App_Headless()) {
 		if (D3DApp_InitDeviceObjects(g_Engine) < 0) {
 			Err_Printf(1, "ERROR: LevelInitEngine3D()");
 		}
@@ -924,7 +923,7 @@ static void Engine_ResetAll(void) {
 	}
 	m->width = g_VideoWidth;
 	m->height = g_VideoHeight;
-	CD3DApp_SetWindowMode(m, APP_DEDICATED(g_pApp) ? PLAT_WINDOWED : g_FullScreen);
+	CD3DApp_SetWindowMode(m, App_Headless() ? PLAT_WINDOWED : g_FullScreen);
 	if (CD3DApp_Reset(g_Engine) < 0) {
 		E3D_LogBlue((&g_FileLog), "ERROR: ResetEngine3D_All()");
 	}

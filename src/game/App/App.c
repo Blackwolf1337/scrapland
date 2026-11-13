@@ -13,6 +13,8 @@
 #include "scrap/filepak.h"
 #include "scrap/filesys.h"
 #include "scrap/input.h"
+#include "scrap/instance.h"
+#include "scrap/replicate.h"
 #include "scrap/model.h"
 #include "scrap/net.h"
 #include "scrap/nodestraffic.h"
@@ -227,7 +229,11 @@ void CApp_Shutdown(CApp *self) {
 	InputMaps_Done();
 	Con_Print(0, "Input devices closed.\n", 0);
 	Pack_CloseAll();
-	Config_Save();
+	Instance_Close();
+	Watch_Close();
+	if (!g_Instance) {
+		Config_Save();
+	}
 	DebugLog_CloseAll();
 	Con_Print(0, "Debug subsystem closed.\n", 0);
 	if (*g_ReRunAtExitParams && **g_ReRunAtExitParams) {
@@ -611,7 +617,7 @@ static byte CApp_FrameRun(CApp *self) {
 		dt = 0.1f;
 	}
 	self->gameTime = (double)dt + self->gameTime;
-	if (!(flags >> 2 & 1)) {
+	if (!App_Headless()) {
 		Input_Update(dt);
 	}
 	if (g_DrawNextFrame) {
@@ -702,7 +708,8 @@ static int App_MaxPlayers(void) {
 	return n >= 16 ? 16 : n;
 }
 
-/* a -param[:ext] of the command line: an engine variable of the config file, build, TestChannel, dedicated or server */
+/* a -param[:ext] of the command line: an engine variable of the config file, build, TestChannel, dedicated, server,
+ * instance and its options (scrap/instance.h), or watch and its options (scrap/replicate.h) */
 byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	cGVar *v = GVar_Find(param);
 	if (v && (v->base.flags & 6)) {
@@ -746,6 +753,16 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	}
 	if (!crt_stricmp("TestChannel", param)) {
 		TestChannel_Enable();
+		return 1;
+	}
+	if (!crt_stricmp("instance", param)) {
+		char path[0x100];
+		Str_PrintfQuiet(path, sizeof(path), strchr(ext, '/') ? "%s" : "Levels/%s", ext);
+		cString_Set(g_iMap, path);
+		App_InitDedicated(self);
+		return 1;
+	}
+	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext)) {
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {

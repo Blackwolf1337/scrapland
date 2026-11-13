@@ -332,6 +332,10 @@ byte SaveGame_Save(const char *name, const char *desc) {
 	char path[0x200];
 	cFile f = { { CFILE_VFTABLE, NULL, 0 }, NULL };
 
+	/* the headless instance writes no saved game (several instances share the game folder) */
+	if (g_Instance) {
+		return 1;
+	}
 	SaveGame_Path(path, sizeof(path), name);
 	cFile_Open(&f.base, path, FILE_MODE_WRITE | FILE_MODE_CREATE | FILE_MODE_ABSOLUTE);
 	SaveGame_WriteVars(&f.base, desc);

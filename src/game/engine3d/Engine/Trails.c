@@ -679,7 +679,7 @@ static void *g_TrailsVB;
 static void *g_TrailsIB;
 
 int Trails_Release(void) {
-	if (!(g_pApp->flags >> 2 & 1)) {
+	if (!App_Headless()) {
 		CHECK(g_TrailsIB);
 		CHECK(g_TrailsVB);
 	}

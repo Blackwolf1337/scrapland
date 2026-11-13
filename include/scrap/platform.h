@@ -10,6 +10,8 @@
 
 /* SDL with its video and gamepad parts; 0 on failure (the reason in the log) */
 int Plat_Init(void);
+/* SDL with only its event part, for the headless instance (no window, display or pads); 0 on failure */
+int Plat_InitHeadless(void);
 void Plat_Shutdown(void);
 /* the window with a client area of w x h (resizable unless fixed), hidden until Plat_ShowWindow; 0 on failure */
 int Plat_CreateWindow(const char *title, int w, int h, byte fixed);
@@ -43,6 +45,12 @@ void Plat_DesktopSize(int *w, int *h);
 byte Plat_PumpEvents(byte waiting);
 /* the window closes at the next Plat_PumpEvents */
 void Plat_Quit(void);
+/* the headless instance between its ticks: returns when an event comes or after ms, whichever is first; the event
+ * stays for Plat_PumpEvents */
+void Plat_WaitEvent(int ms);
+/* what waits on the standard input, without waiting: the bytes read (at most size), 0 when none waits, -1 at its end
+ * or when it cannot be read so (Windows: only a pipe; a terminal only while the process is in its foreground) */
+int Plat_ReadStdin(char *buf, int size);
 
 /*
  * The input in the forms the game reads (the DirectInput and XInput states of the original): the keys by DirectInput
@@ -98,6 +106,8 @@ void Plat_DebugBreak(void);
 uint32_t Plat_Ticks(void);
 /* the real ms also in the deterministic test mode, for the loops that draw until a time has passed */
 uint32_t Plat_RealTicks(void);
+/* the real time in ns since the start, never the clock of the deterministic test mode */
+uint64_t Plat_RealNs(void);
 int Plat_Counter(int64_t *out);
 int Plat_Frequency(int64_t *out);
 

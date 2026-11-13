@@ -768,7 +768,7 @@ static void D3DApp_FrameStats(CD3DApplication *self) {
 	g_D3DAppFrames = 0;
 	g_D3DAppLastTime = t;
 	self->fps = (float)(double)frames / d;
-	if (g_pApp->flags & APPF_DEDICATED) {
+	if (App_Headless()) {
 		return;
 	}
 	D3DDisplayMode mode;
@@ -814,10 +814,10 @@ int CD3DApp_Render(CD3DApplication *self) {
 	int hr = 0;
 
 	/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back */
-	if (!(g_pApp->flags & APPF_DEDICATED) && !Engine_FrameDue(self)) {
+	if (!App_Headless() && !Engine_FrameDue(self)) {
 		return 0;
 	}
-	if (!(g_pApp->flags & APPF_DEDICATED)) {
+	if (!App_Headless()) {
 		void *d = self->device;
 		hr = Rd_DevTestCooperativeLevel(d);
 		if (hr < 0) {
@@ -855,7 +855,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 		}
 		self->singleStep = 0;
 	}
-	if (!(g_pApp->flags & APPF_DEDICATED)) {
+	if (!App_Headless()) {
 		hr = D3DApp_Render(self);
 		if (hr < 0) {
 			return hr;
@@ -866,7 +866,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 		return 0;
 	}
 	D3DApp_FrameStats(self);
-	if (!(g_pApp->flags & APPF_DEDICATED)) {
+	if (!App_Headless()) {
 		void *d = self->device;
 		Rd_DevPresent(d, NULL, NULL, NULL, NULL);
 	}
