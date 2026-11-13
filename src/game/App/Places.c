@@ -615,6 +615,30 @@ byte Places_Command(const char *line) {
 		Pl_Census();
 		return 1;
 	}
+	int player;
+	if (sscanf(line, "nearest %d %63s", &player, pat) == 2) {
+		/* the player next to the nearest character or AI ship of the level (screenshots) */
+		cEntity *me = Players_Get(player), *best = NULL;
+		float bestD = 1e30f;
+		byte cars = !strcmp(pat, "car");
+		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); me && e; e = cEntity_Next(e)) {
+			if (Players_Of(e) >= 0 || e->deadNode.target || (cars ? !Entity_IsType(e, TYEN_CAR) || !Entity_GetAI(e) :
+				!Entity_IsType(e, TYEN_WALKCHAR))) {
+				continue;
+			}
+			float dx = e->pos.x - me->pos.x, dy = e->pos.y - me->pos.y, dz = e->pos.z - me->pos.z;
+			float d = dx * dx + dy * dy + dz * dz;
+			if (d < bestD) {
+				bestD = d;
+				best = e;
+			}
+		}
+		Con_Printf("places: nearest %s of player %d: %s\n", pat, player, best ? best->name : "none");
+		if (best) {
+			Travel_TestGoto(player, best->name, cars ? 1500.0f : 400.0f, 0.0f);
+		}
+		return 1;
+	}
 	pat[0] = 0;
 	if (!strncmp(line, "dummies", 7)) {
 		sscanf(line, "dummies %63s", pat);

@@ -42,7 +42,7 @@ byte Places_TestUse(int player, struct cEntity *t, int option);
 byte Places_Entrance(const char *entrance, vec3_t *pos, float *yaw);
 /* the players' spawn points of the table for this level (at most max): their number, 0 for the level's own */
 int Places_Spawns(vec3_t *pos, float *yaw, int max);
-/* tests: "dummies [<pattern>]", "ents [<pattern>]", "census" */
+/* tests: "dummies [<pattern>]", "ents [<pattern>]", "census", "nearest <player> char|car" (the player next to it) */
 byte Places_Command(const char *line);
 
 #endif

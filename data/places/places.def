@@ -40,22 +40,25 @@ place Junkyard listed
 place Outskirts
 	gate Junker DM_Player_Spawn_Junkyard 0 0 0 * to Junkyard:Lift
 
-# the casino: its teleporter leads to the final fight's area and to the room after it; a gate to the arenas of the
-# crazy gambler's deals
+# the casino: a gate at its teleporter leads to the final fight's area and to the room after it (the teleporter
+# itself rides to another level only in the story's scripts); gates to the arenas of the crazy gambler's deals
 place GamblinDen
-	link DM_Door_Teleporter_00 AB,ABIndoor
+	nouse DM_Door_Teleporter_00
+	gate Teleporter DM_Door_Teleporter_00 0 0 0 * to AB:Teleporter ABIndoor:Teleporter
 	gate Deals DM_Player_Spawn_Scrapyard 0 0 0 * to QF:Pad FZ:Pad OM:Pad CA:Pad
 	gate Deals2 DM_Player_Spawn_Scrapyard 400 0 0 * to MCA:Pad MCB:Pad MDA:Pad MDB:Pad MOA:Pad MOB:Pad MSA:Pad MSB:Pad
 
 # the asteroids of the final fight with traffic and police instead of the boss
 place AB listed
-	link DM_Door_Teleporter_GamblinDen GamblinDen
+	nouse DM_Door_Teleporter_GamblinDen
+	gate Teleporter DM_Door_Teleporter_GamblinDen 0 0 0 * to GamblinDen:Teleporter
 	traffic 12
 	police on
 
 # the room after the final fight: Dtritus' friends wait there
 place ABIndoor listed
-	link DM_Door_Teleporter_GamblinDen GamblinDen
+	nouse DM_Door_Teleporter_GamblinDen
+	gate Teleporter DM_Door_Teleporter_GamblinDen 0 0 0 * to GamblinDen:Teleporter
 
 # the arenas of the super deals as districts: traffic and police, a gate at the landing pad back to the casino
 place QF listed
