@@ -279,10 +279,12 @@ void Faction_Crime(struct cEntity *victim, struct cEntity *attacker, byte died);
 int Faction_PvP(struct cEntity *attacker, struct cEntity *victim);
 /* the ship the player calls (its faction's ship after the ship ability), NULL for the others */
 struct cEntity *Faction_CallShip(int i, const void *pos, float yaw);
+/* cls is the class of the faction of the bound player (a member is no stranger in it: the alarm's UsrDefChar test) */
+byte Faction_Uniform(const char *cls);
 /* NETREP_FL_ flags of a replicated entity (the siren of a player's ship, a slowed or sleeping player) */
 uint8_t Faction_Flags(struct cEntity *e);
 /* a test line of the instance: "faction <player> join|leave|<ability>|status|set <faction>|wanted <points>|deeds
- * <n>|crime <crime>|setbounty <n>|setdebt <n>|setpermit <0|1>|hit <player> [<damage>]|dump <pattern>" (abilities as the
+ * <n>|crime <crime>|setbounty <n>|setdebt <n>|setpermit <0|1>|setjob <level>|hit <player> [<damage>]|dump <pattern>" (abilities as the
  * client's requests; hit: as a weapon of the player, 0 kills; dump: the dummies of the pattern and the entities near
  * the player); 1 when it was one */
 byte Faction_Command(const char *line);

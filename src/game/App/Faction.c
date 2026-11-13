@@ -428,6 +428,24 @@ const char *Faction_Pilot(int i) {
 	return p && t && fr.freeroam && p->faction >= 0 ? t->f[p->faction].pilot : "P_" FR_DEFAULT_CHAR;
 }
 
+byte Faction_Uniform(const char *cls) {
+	if (!fr.freeroam || !cls) {
+		return 0;
+	}
+	const FactionTable *t = Faction_Table();
+	FrPlayer *p = Fr_Player(Players_Bound());
+	if (!t || !p || p->faction < 0) {
+		return 0;
+	}
+	const FactionDef *f = &t->f[p->faction];
+	for (int k = 0; k < f->nplay; k++) {
+		if (!crt_stricmp(f->play[k], cls)) {
+			return 1;
+		}
+	}
+	return !crt_stricmp(f->armour, cls);
+}
+
 void Faction_Spawned(int i, cEntity *e) {
 	FrPlayer *p = Fr_Player(i);
 	const FactionTable *t = Faction_Table();
@@ -1442,6 +1460,19 @@ byte Faction_Command(const char *line) {
 			WLife(v)->life = dmg > 0 ? WLife(v)->life - dmg : 0;
 		}
 		Con_Printf("factions: player %d hits player %d (%d)\n", i, j, dmg);
+		return 1;
+	}
+	if (!strcmp(what, "setjob")) {
+		/* tests: a courier job to the route of the level */
+		for (int r = 0; t && r < t->nroutes; r++) {
+			if (!crt_stricmp(t->routes[r].level, arg)) {
+				Str_Copy(p->jobLevel, t->routes[r].level, sizeof(p->jobLevel));
+				Str_Copy(p->jobDummy, t->routes[r].dummy, sizeof(p->jobDummy));
+				p->jobStart = Fr_Unix();
+				p->jobEnds = p->jobStart + t->courierTime;
+			}
+		}
+		Con_Printf("factions: player %d job %s/%s\n", i, p->jobLevel, p->jobDummy);
 		return 1;
 	}
 	if (!strcmp(what, "setbounty") || !strcmp(what, "setdebt") || !strcmp(what, "setpermit")) {

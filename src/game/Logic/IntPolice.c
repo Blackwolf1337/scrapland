@@ -13,6 +13,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
+#include "scrap/faction.h"
 #include "scrap/players.h"
 
 #define g_CreatePolice (((cPy_Function *)&GVar_CreatePolice.func))	/* (name, x, y, z) */
@@ -228,7 +229,7 @@ static byte AICtrl_Voices(cAICtrl *self, byte *alarm, byte *chased) {
 	self->alarmOn = g_pWorld->alarm.on;
 	self->usr = Players_Any();
 	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarm.lastChars, g_pWorld->alarm.chars);
-	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
+	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0 && !Faction_Uniform(g_pWorld->alarm.chars);
 	if (!self->usr) {
 		return 0;
 	}

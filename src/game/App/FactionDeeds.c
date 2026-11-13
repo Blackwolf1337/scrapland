@@ -783,7 +783,7 @@ static int Fd_Photo(int i, cEntity *e) {
 	int j = Fr_Nearest(i, e, t->photoReach, FD_CONE, Fd_Fresh);
 	if (j < 0) {
 		Fr_Notice(i, FT_NO_PHOTO, 0, NULL, NULL);
-		return 1;
+		return 0;
 	}
 	FrPlayer *q = Fr_Player(j);
 	float top = FactionWanted_Points(t, FACTION_LEVELS) * 1.5f;

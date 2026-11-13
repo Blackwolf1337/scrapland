@@ -8,6 +8,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/console.h"
+#include "scrap/faction.h"
 #include "scrap/cstring.h"
 #include "scrap/input.h"
 #include "scrap/vehicleentity.h"
@@ -206,7 +207,8 @@ void Alarm_Update(cAlarm *self, float dt) {
 		}
 	}
 	const char *chars = self->chars;
-	self->notDefChar = cString_CmpStr(g_UsrDefChar, chars) != 0;
+	/* the class of a faction member of the freeroam mode is its own (include/scrap/faction.h) */
+	self->notDefChar = cString_CmpStr(g_UsrDefChar, chars) != 0 && !Faction_Uniform(chars);
 	self->hasGuaranteed = g_GuaranteedChars && *g_GuaranteedChars;
 	if (!self->hasGuaranteed) {
 		self->notGuaranteed = 0;
