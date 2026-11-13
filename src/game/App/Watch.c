@@ -151,6 +151,19 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 		}
 		return e;
 	}
+	if (kind == NETREP_MISSILE && n >= 2) {
+		if (part[1][0] && !Watch_ModelExists(part[1])) {
+			return NULL;
+		}
+		cEntity *e = cWorld_CreateEntity(g_pWorld, name, x, y, z, TYEN_OBJECT);
+		if (e) {
+			Obj(e)->proxy = 1;
+			if (part[1][0]) {
+				Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
+			}
+		}
+		return e;
+	}
 	if (kind != NETREP_SHIP || n < 8) {
 		return NULL;
 	}
@@ -282,7 +295,7 @@ static float Watch_LerpAng(uint16_t a, uint16_t b, float f) {
 static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	cEntity *e = p->e;
 	cWithLifeEntity *w = WLife(e);
-	cObjEntity *o = &w->obj;
+	cObjEntity *o = Obj(e);
 	vec3_t pos, ang, vel, rot = { 0.0f, 0.0f, 0.0f };
 	float rates[NETREP_LAYERS], f = 0.0f, ext = 0.0f;
 	uint16_t act[NETREP_LAYERS];
@@ -328,12 +341,14 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	o->renderAng = ang;
 	o->vel = vel;
 	o->rotVel = rot;
-	w->life = sa->life;
 	byte on = (sa->flags & NETREP_FL_ACTIVE) != 0;
 	if (on != e->active) {
 		Entity_SetActive(e, on);
 	}
-	if (p->kind == NETREP_SHIP) {
+	if (p->kind == NETREP_MISSILE) {
+		/* a projectile proxy is a model that moves */
+	} else if (p->kind == NETREP_SHIP) {
+		w->life = sa->life;
 		cVehicleEntity *v = (cVehicleEntity *)e;
 		/* the proxy knows no maximum: the highest life seen */
 		if (v->maxLife < w->life) {
@@ -344,6 +359,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		v->speed = sqrtf(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
 	} else {
 		cWalkCharEntity *c = WChar(e);
+		w->life = sa->life;
 		c->view.x = Watch_LerpAng(sa->view[0], sb->view[0], f);
 		c->view.y = Watch_LerpAng(sa->view[1], sb->view[1], f);
 		c->view.z = 0.0f;
@@ -425,6 +441,9 @@ static void Watch_Start(void) {
 	cfg.connectTimeout = WATCH_CONNECT_MS;
 	watch.host = Net2_Create(&cfg, &err);
 	watch.view = NetRepCli_Create();
+	if (watch.host) {
+		Instance_TestLink(watch.host, "watch");
+	}
 	if (!watch.host || !watch.view || Net2_Connect(watch.host, addr, Plat_RealNs() / 1000000) != NET2_OK) {
 		Con_Errorf("watch: no Net2 client (error %d)\n", err);
 		return;
@@ -576,7 +595,7 @@ void Watch_PostFrame(void) {
 	if (!watch.host) {
 		return;
 	}
-	if (Net2_GetStats(watch.host, 0, &st) == NET2_OK && st.rtt) {
+	if (Net2_GetStats(watch.host, 0, &st) && st.rtt) {
 		watch.rtt = st.rtt / 1000.0;
 		watch.rttVar = st.rttVar / 1000.0;
 	}

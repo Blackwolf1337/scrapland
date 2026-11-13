@@ -100,6 +100,7 @@ static int Net2_CheckConfig(const Net2Config *cfg) {
 }
 
 static void Net2_FreeHost(Net2Host *h) {
+	Net2Test_Free(h);
 	if (h->conns) {
 		for (int i = 0; i < h->numConns; i++) {
 			Net2Conn_Release(h, &h->conns[i]);
@@ -407,6 +408,7 @@ void Net2_Flush(Net2Host *h, uint64_t now) {
 	for (int i = 0; i < h->numConns; i++) {
 		Net2Conn_Flush(h, &h->conns[i]);
 	}
+	Net2Test_Release(h, 0);
 }
 
 void Net2_Disconnect(Net2Host *h, int conn, int reason) {

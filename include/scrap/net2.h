@@ -181,6 +181,9 @@ void Net2_Disconnect(Net2Host *h, int conn, int reason);
 
 int Net2_IsConnected(const Net2Host *h, int conn);
 int Net2_GetStats(const Net2Host *h, int conn, Net2Stats *st);
+/* tests: the datagrams the host sends from now on are dropped by chance (percent) or held back delay ms plus up to
+ * jitter ms (they may come out of order); once per host */
+int Net2_SetTestLink(Net2Host *h, float lossPercent, uint32_t delayMs, uint32_t jitterMs, uint32_t seed);
 void Net2_SetRate(Net2Host *h, int conn, uint32_t rate);
 int Net2_PeerAddr(const Net2Host *h, int conn, Net2Addr *addr);
 int Net2_ServerKey(const Net2Host *h, uint8_t key[NET2_KEY_SIZE]);	/* server: own; client: the server's */

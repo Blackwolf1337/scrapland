@@ -25,9 +25,11 @@
 #include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/scriptnative.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/weaps2.h"
 #include "scrap/world.h"
 
 #define REP_CONNS 1024				/* NET2_MAX_CONNS */
@@ -139,7 +141,17 @@ static int Rep_Kind(cEntity *e) {
 	if (Entity_IsType(e, TYEN_CAR)) {
 		return NETREP_SHIP;
 	}
+	if (Entity_IsType(e, TYEN_MISSILE)) {
+		return NETREP_MISSILE;
+	}
 	return Entity_IsType(e, TYEN_WALKCHAR) ? NETREP_CHAR : 0;
+}
+
+/* the path the model of an object was loaded from (CGameModel_Name is only its file name), "" */
+static const char *Rep_ModelPath(cEntity *e) {
+	CGameModel *m = &Obj(e)->model;
+	const char *path = CGameModel_IsLoaded(m) && m->Model->scene ? m->Model->scene->name : "";
+	return path ? path : "";
 }
 
 static const char *Rep_VarS(cEntity *e, const char *name) {
@@ -147,8 +159,12 @@ static const char *Rep_VarS(cEntity *e, const char *name) {
 	return Entity_VarS(e, name, &s, 0) && s ? s : "";
 }
 
-/* how the watcher builds the proxy: S|model|pilot|motor 0..3|class or C|class */
+/* how the watcher builds the proxy: S|model|pilot|motor 0..3|class, C|class or M|model */
 static void Rep_Look(cEntity *e, int kind, char *out, int size) {
+	if (kind == NETREP_MISSILE) {
+		Str_PrintfQuiet(out, size, "M|%s", Rep_ModelPath(e));
+		return;
+	}
 	cWithLifeEntity *w = WLife(e);
 	const char *cls = w->actCtrl && w->actCtrl->cls ? w->actCtrl->cls->name : "";
 
@@ -156,10 +172,7 @@ static void Rep_Look(cEntity *e, int kind, char *out, int size) {
 		Str_PrintfQuiet(out, size, "C|%s", cls);
 		return;
 	}
-	/* the path the model was loaded from (CGameModel_Name is only its file name) */
-	CGameModel *m = &w->obj.model;
-	const char *path = CGameModel_IsLoaded(m) && m->Model->scene ? m->Model->scene->name : "";
-	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s", path ? path : "",
+	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s", Rep_ModelPath(e),
 		Rep_VarS(e, "MPil0"), Rep_VarS(e, "MEng0"), Rep_VarS(e, "MEng1"), Rep_VarS(e, "MEng2"), Rep_VarS(e, "MEng3"),
 		cls);
 }
@@ -187,7 +200,7 @@ static float Rep_SampleDt(cEntity *e) {
 
 static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 	cWithLifeEntity *w = WLife(e);
-	cObjEntity *o = &w->obj;
+	cObjEntity *o = Obj(e);
 
 	memset(s, 0, sizeof(*s));
 	s->pos[0] = NetRep_QPos(e->pos.x);
@@ -201,8 +214,12 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 	s->ang[2] = NetRep_QAng(o->ang.z);
 	float dt = Rep_SampleDt(e) * 1000.0f;
 	s->dt = (uint16_t)(dt > 65535.0f ? 65535.0f : dt + 0.5f);
+	s->flags = e->active ? NETREP_FL_ACTIVE : 0;
+	if (kind == NETREP_MISSILE) {
+		return;
+	}
 	s->life = (int16_t)(w->life > 32767 ? 32767 : w->life < -32768 ? -32768 : w->life);
-	s->flags = (e->active ? NETREP_FL_ACTIVE : 0) | (Players_Of(e) >= 0 ? NETREP_FL_PLAYER : 0);
+	s->flags |= Players_Of(e) >= 0 ? NETREP_FL_PLAYER : 0;
 	if (kind == NETREP_SHIP) {
 		cVehicleEntity *v = (cVehicleEntity *)e;
 		s->ctrl[0] = NetRep_QCtrl(v->controls.acc);
@@ -423,9 +440,13 @@ static void Rep_Switch(int i, cEntity *e) {
 	if (NetPl_Kind(e) != NETREP_SHIP || Veh(e)->speed > PLAY_LEAVE_SPEED) {
 		return;
 	}
-	/* out to the right of the ship; the ship stays parked */
+	/* out to the right of the ship, on the floor below it; the ship stays parked */
 	float yaw = Obj(e)->ang.y;
-	vec3_t p = { e->pos.x + cosf(yaw) * 600.0f, e->pos.y, e->pos.z - sinf(yaw) * 600.0f };
+	vec3_t p = { e->pos.x + cosf(yaw) * 600.0f, e->pos.y + 200.0f, e->pos.z - sinf(yaw) * 600.0f };
+	vec3_t down = { p.x, p.y - 100000.0f, p.z }, floor;
+	if (Engine_TestLine(&p, &down, &floor, NULL)) {
+		p.y = floor.y + 150.0f;
+	}
 	vec3_t zero = { 0.0f, 0.0f, 0.0f };
 	Str_Copy(name, e->name, sizeof(name));
 	Obj(e)->netStep = 0;

@@ -384,11 +384,18 @@ struct Net2Host {
 	Net2Event events[N2_EVENTS];
 	int evHead, evCount;
 	uint64_t now;
+	struct Net2TestLink *test;		/* Net2_SetTestLink, NULL */
 };
+
+typedef struct Net2TestLink Net2TestLink;
 
 void *Net2_Alloc(Net2Host *h, size_t size);	/* zeroed */
 void Net2_Free(Net2Host *h, void *p);
 int Net2_RawSend(Net2Host *h, const Net2Addr *to, const uint8_t *data, int size);
+
+/* TestLink.c */
+void Net2Test_Release(Net2Host *h, int force);	/* the held datagrams that are due (all with force) */
+void Net2Test_Free(Net2Host *h);
 
 /* Conn.c */
 int Net2Conn_Init(Net2Host *h, Net2Conn *c);

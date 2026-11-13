@@ -19,6 +19,8 @@
 #include "scrap/input.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/scriptmodes.h"
+#include "scrap/scriptnative.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weaps2.h"
@@ -65,8 +67,7 @@ static struct {
 	PlayStats st;
 	FILE *log;
 	byte bot;
-	double botStart;
-	float botYaw;
+	double botStart;					/* local time the own entity of now came */
 } play = { .slot = -1, .player = -1 };
 
 byte Play_ParseParam(const char *param, const char *ext) {
@@ -109,6 +110,14 @@ static void Play_Camera(void) {
 		Entity_VarS(play.cam, "OnSwitch", &s, 1);
 	}
 	Input_SelectActionSetNamed(play.kind == NETREP_SHIP ? "Racer" : "Walk");
+	/* the HUD of single player for the walker or the racer of view 0 */
+	if (play.kind == NETREP_SHIP) {
+		if (Mode_Import("RacerScorer")) {
+			PORT_CALL(RacerScorer, Create, NULL, "i", 0L);
+		}
+	} else if (Mode_Import("CharScorer")) {
+		PORT_CALL(CharScorer, Create, NULL, "i", 0L);
+	}
 }
 
 void Play_OwnRemove(void) {
@@ -187,6 +196,7 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 		play.acc.weapon = play.input.weapon = (uint8_t)Veh(e)->controls.weapon;
 	}
 	play.tick = 0;
+	play.botStart = 0.0;
 	Con_Printf("play: own %s %s at %.0f %.0f %.0f (tick %u)\n", kind == NETREP_SHIP ? "ship" : "character", name,
 		(double)e->pos.x, (double)e->pos.y, (double)e->pos.z, tick);
 	if (play.started) {
@@ -265,7 +275,8 @@ static void Play_Step(uint32_t tick) {
 	Play_Draw();
 }
 
-/* the bot of the tests: walks a circle, takes a ship, flies, fires at the nearest other player */
+/* the bot of the tests: walks, takes a parked ship, flies, fires at the nearest other player, lands and gets out,
+ * and so on */
 static void Play_Bot(double now) {
 	cEntity *e = play.e;
 	double t;
@@ -285,6 +296,14 @@ static void Play_Bot(double now) {
 		}
 		return;
 	}
+	/* after a while in the ship: slow down and get out */
+	if (t > 45.0) {
+		play.acc.move[0] = Veh(e)->speed > 500.0f ? -1.0f : 0.0f;
+		if (Veh(e)->speed < PLAY_LEAVE_SPEED * 0.8f && fmod(t, 2.0) < 0.2) {
+			play.acc.buttons = NETREP_IN_SWITCH;
+		}
+		return;
+	}
 	/* in the ship: fly up and around, turn to the nearest other player and fire when it is ahead */
 	cEntity *best = NULL;
 	float bestD = 40000.0f * 40000.0f;
@@ -300,7 +319,7 @@ static void Play_Bot(double now) {
 		}
 	}
 	play.acc.move[0] = 0.6f;
-	play.acc.move[2] = e->pos.y < play.lastServer.y + 3000.0f && t < 20.0 ? 0.5f : 0.0f;
+	play.acc.move[2] = t < 6.0 ? 0.5f : 0.0f;
 	if (!best) {
 		play.acc.rot[0] = 0.4f;
 		return;

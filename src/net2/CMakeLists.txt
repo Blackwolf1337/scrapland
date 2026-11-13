@@ -23,6 +23,7 @@ add_library(net2 STATIC
 	Packet.c
 	Reliable.c
 	Sock.c
+	TestLink.c
 	${NET2_ROOT}/third_party/monocypher/monocypher.c
 )
 target_include_directories(net2 PUBLIC ${NET2_ROOT}/include PRIVATE ${NET2_ROOT}/third_party/monocypher)

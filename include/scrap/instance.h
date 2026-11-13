@@ -47,5 +47,9 @@ uint16_t Instance_Port(void);
 double Instance_Time(void);
 /* the Net2 server closed (App shutdown) */
 void Instance_Close(void);
+/* tests: SCRAP_NET2_LOSS (percent), SCRAP_NET2_DELAY and SCRAP_NET2_JITTER (ms) make the host's sends a test link
+ * (Net2_SetTestLink); the instance's and a watcher's or player's host */
+struct Net2Host;
+void Instance_TestLink(struct Net2Host *host, const char *who);
 
 #endif

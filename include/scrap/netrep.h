@@ -80,6 +80,7 @@
 /* entity kinds */
 #define NETREP_SHIP 1
 #define NETREP_CHAR 2
+#define NETREP_MISSILE 3			/* the projectiles of the weapons */
 
 /* record ops */
 #define NETREP_OP_DELTA 0

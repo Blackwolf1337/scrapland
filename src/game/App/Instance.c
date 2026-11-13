@@ -5,6 +5,7 @@
  * single player game, so the level scripts start traffic, police and characters.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/app.h"
@@ -129,9 +130,21 @@ static void Instance_Open(uint64_t now) {
 		Con_Errorf("instance: no Net2 server on port %d (error %d)\n", inst.port, err);
 		return;
 	}
+	Instance_TestLink(inst.host, "instance");
 	Instance_SetInfo();
 	Con_Printf("instance %s: level %s, Net2 server on %s port %d, %d players, %d ticks a second\n", inst.id,
 		Instance_Level(), inst.bind[0] ? inst.bind : "any address", inst.port, inst.maxPlayers, INSTANCE_TICK_HZ);
+}
+
+void Instance_TestLink(Net2Host *host, const char *who) {
+	const char *l = getenv("SCRAP_NET2_LOSS"), *d = getenv("SCRAP_NET2_DELAY"), *j = getenv("SCRAP_NET2_JITTER");
+	float loss = l ? (float)crt_atof(l) : 0.0f;
+	int delay = d ? crt_atoi(d) : 0, jitter = j ? crt_atoi(j) : 0;
+	if (loss > 0.0f || delay > 0 || jitter > 0) {
+		Net2_SetTestLink(host, loss, (uint32_t)(delay > 0 ? delay : 0), (uint32_t)(jitter > 0 ? jitter : 0),
+			(uint32_t)Plat_RealNs() | 1u);
+		Con_Printf("%s: test link, %.1f%% loss, %d ms delay, %d ms jitter\n", who, (double)loss, delay, jitter);
+	}
 }
 
 void Instance_Close(void) {
