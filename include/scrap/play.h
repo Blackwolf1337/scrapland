@@ -6,10 +6,15 @@
  * level ("DM_Player_Spawn*", else "DM_Spawn*"), named NetPlayer<i>; it is told the replication slot of its entity in
  * a player message. Its inputs come in its ack messages; every tick, before the frame, each player's input of that
  * tick drives its entity (NetPl_Step). The switch button gets the character into the nearest parked ship ("Parked"
- * of the parkings, no one in it) within PLAY_BOARD_RADIUS, or out of the ship (the ship stays parked there). A leave
- * removes the character (a ship the player was in stays parked). Hits of the instant-hit weapons (the Vulcan) of a
+ * of the parkings, no one in it) within PLAY_BOARD_RADIUS (with none there a new parked ship beside it: the sandbox has
+ * no shop yet), or out of the ship (the ship stays parked there). A taken ship gets every weapon and full ammo. A
+ * leave removes the character (a ship the player was in stays parked); a dead player's entity is left to the game
+ * and the player comes back on foot. Hits of the instant-hit weapons (Vulcan, Laser, Tesla, ATPC, Devastator) of a
  * player are checked with the other entities where that player saw them (the lag compensation): the server time the
- * client showed came with its input, and the replication's history of samples gives the positions then.
+ * client showed came with its input, and the replication's history of samples gives the positions then. The money,
+ * the alarm and the ammo of a player go to its client in a status message; the hits of every ship in shots messages
+ * (the effects on the proxies). The client fires its own instant-hit weapons itself (the effects at once); its
+ * prediction collides with the other players where they are at the predicted tick (Watch_PlayersAt).
  *
  * Client: ScrapC -play:<IPv4> [-port:<n>] [-imap:Levels/<level>] [-headless]: a watcher (include/scrap/replicate.h)
  * with its own player (-headless: no window, render device, sound or input, the frames at PLAY_HEADLESS_HZ: the bots

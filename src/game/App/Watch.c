@@ -327,14 +327,11 @@ static void Watch_Weapon(cEntity *e, const NetRepState *st) {
 }
 
 /* the proxy at server time rt */
-static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
-	cEntity *e = p->e;
-	cWithLifeEntity *w = WLife(e);
-	cObjEntity *o = Obj(e);
-	vec3_t pos, ang, vel, rot = { 0.0f, 0.0f, 0.0f };
-	float rates[NETREP_LAYERS], f = 0.0f, ext = 0.0f;
-	uint16_t act[NETREP_LAYERS];
-
+/* the samples around server time rt (*a == *b past the newest), the part f of the way from a to b, the seconds ext
+ * ahead of the newest by its velocity */
+static void Watch_Pick(const WatchProxy *p, double rt, const WatchSample **pa, const WatchSample **pb, float *pf,
+	float *pext) {
+	float f = 0.0f, ext = 0.0f;
 	int i = p->n - 1;
 	while (i > 0 && p->s[i].t > rt) {
 		i--;
@@ -357,6 +354,67 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		 * then has not changed (or waits for the budget) */
 		ext = (float)(rt - a->t > WATCH_EXTRAP ? WATCH_EXTRAP : rt - a->t);
 	}
+	*pa = a;
+	*pb = b;
+	*pf = f;
+	*pext = ext;
+}
+
+/* the position of the proxy at server time rt */
+static void Watch_PosAt(const WatchProxy *p, double rt, vec3_t *pos) {
+	const WatchSample *a, *b;
+	float f, ext;
+	Watch_Pick(p, rt, &a, &b, &f, &ext);
+	for (int k = 0; k < 3; k++) {
+		float pa = NetRep_UPos(a->st.pos[k]), v = (float)a->st.vel[k] + (float)(b->st.vel[k] - a->st.vel[k]) * f;
+		(&pos->x)[k] = pa + (NetRep_UPos(b->st.pos[k]) - pa) * f + v * ext;
+	}
+}
+
+/* the other players' proxies where they are at server time t (the own prediction of that tick collides with them
+ * there, not where they are drawn), and back to the drawn places */
+static vec3_t g_PlayersDrawn[NETREP_MAX_ENTS];
+static byte g_PlayersMoved;
+
+void Watch_PlayersAt(double t) {
+	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
+		WatchProxy *p = &watch.px[s];
+		if (p->e && p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && p->kind != NETREP_MISSILE) {
+			vec3_t pos;
+			if (!g_PlayersMoved) {
+				g_PlayersDrawn[s] = p->e->pos;
+			}
+			Watch_PosAt(p, t, &pos);
+			Entity_SetPos(p->e, &pos);
+		}
+	}
+	g_PlayersMoved = 1;
+}
+
+void Watch_PlayersBack(void) {
+	if (!g_PlayersMoved) {
+		return;
+	}
+	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
+		WatchProxy *p = &watch.px[s];
+		if (p->e && p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && p->kind != NETREP_MISSILE) {
+			Entity_SetPos(p->e, &g_PlayersDrawn[s]);
+		}
+	}
+	g_PlayersMoved = 0;
+}
+
+/* the proxy at server time rt */
+static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
+	cEntity *e = p->e;
+	cWithLifeEntity *w = WLife(e);
+	cObjEntity *o = Obj(e);
+	vec3_t pos, ang, vel, rot = { 0.0f, 0.0f, 0.0f };
+	float rates[NETREP_LAYERS], f, ext;
+	uint16_t act[NETREP_LAYERS];
+	const WatchSample *a, *b;
+
+	Watch_Pick(p, rt, &a, &b, &f, &ext);
 	const NetRepState *sa = &a->st, *sb = &b->st;
 	float *pv = &pos.x, *av = &ang.x, *vv = &vel.x, *rv = &rot.x;
 	for (int k = 0; k < 3; k++) {

@@ -26,6 +26,7 @@
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -64,7 +65,8 @@ typedef struct RepPlayer {
 	uint32_t shownNow;				/* of the input of this tick */
 	uint16_t buttons;				/* of the input of the last tick */
 	uint64_t lost;					/* the tick its entity went missing, 0 */
-	uint32_t shots, hits, boards, leaves, spawns;
+	uint32_t shots, hits, boards, leaves, spawns, calls;
+	char called[REP_NAME];			/* the ship it called last (Rep_CallShip) */
 	uint32_t stale;					/* inputs for an entity it no longer has */
 	NetRepStatus status;			/* the last status sent */
 	uint32_t statusSnap;			/* the snapshot it went with */
@@ -414,7 +416,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 
 static byte Rep_IsParked(cEntity *e) {
 	return Entity_IsType(e, TYEN_CAR) && !e->deadNode.target && !Obj(e)->proxy && !strncmp(e->name, "Parked", 6) &&
-		cVehicleEntity_GetOwnerSlot(e) == -1;
+		cVehicleEntity_GetOwnerSlot(e) == -1 && WLife(e)->life > 0;
 }
 
 /* the wall and the view radius of a ship swapped for flying or parked (Parking.SetShipRadius) */
@@ -445,7 +447,39 @@ static void Rep_Loadout(cEntity *ship) {
 	}
 }
 
-/* the switch: into the nearest parked ship, out of the ship */
+/* the sandbox: a player on foot with no parked ship near gets a new one beside it (Parking.CreateParkedShip); the
+ * one called before goes when no one sits in it */
+static cEntity *Rep_CallShip(int i, cEntity *ch) {
+	RepPlayer *pl = &rep.pl[i];
+	nativeVal_t c[3], pos, ang, out;
+	cEntity *ship = NULL;
+
+	cEntity *old = pl->called[0] ? World_FindEntity(pl->called) : NULL;
+	if (old && Rep_IsParked(old)) {
+		cEntity_Del(old);
+	}
+	float yaw = WChar(ch)->view.y;
+	/* in front of the character: yaw 0 looks to -z */
+	Native_SetFloat(&c[0], ch->pos.x - sinf(yaw) * 900.0f);
+	Native_SetFloat(&c[1], ch->pos.y + 200.0f);
+	Native_SetFloat(&c[2], ch->pos.z - cosf(yaw) * 900.0f);
+	Mode_Tuple3(&pos, &c[0], &c[1], &c[2]);
+	Native_SetFloat(&ang, yaw);
+	Native_SetNone(&out);
+	if (PORT_CALL(Parking, CreateParkedShip, &out, "vv", &pos, &ang) && Mode_Ent(&out, &ship) && ship) {
+		Str_Copy(pl->called, ship->name, sizeof(pl->called));
+		pl->calls++;
+		Con_Printf("instance: player %d called %s\n", i, ship->name);
+	} else {
+		ship = NULL;
+		Native_ErrPrint();
+	}
+	Native_Free(&out);
+	Native_Free(&pos);
+	return ship && Rep_IsParked(ship) ? ship : NULL;
+}
+
+/* the switch: into the nearest parked ship (a new one when none is near), out of the ship */
 static void Rep_Switch(int i, cEntity *e) {
 	RepPlayer *pl = &rep.pl[i];
 	char name[REP_NAME];
@@ -464,7 +498,7 @@ static void Rep_Switch(int i, cEntity *e) {
 				best = v;
 			}
 		}
-		if (!best) {
+		if (!best && !(best = Rep_CallShip(i, e))) {
 			return;
 		}
 		Str_Copy(name, best->name, sizeof(name));

@@ -321,7 +321,9 @@ static void Play_Step(uint32_t tick, byte none) {
 	play.input.tick = tick;
 	play.input.slot = (uint16_t)play.slot;
 	e->pos = play.truePos;
+	Watch_PlayersAt((double)tick / NETREP_TICK_HZ);
 	NetPl_Step(e, &play.input, 1, 0);
+	Watch_PlayersBack();
 	play.truePos = e->pos;
 	Play_Record(tick);
 	play.tick = tick;
@@ -384,6 +386,11 @@ static void Play_Bot(double now) {
 			return;
 		}
 		cEntity *ship = Play_BotNearest(e, NETREP_SHIP, 0, 1);
+		/* no free ship near after a while: the switch calls one (the sandbox) */
+		if ((!ship || t > 20.0) && fmod(t, 2.0) < 0.2) {
+			play.acc.buttons = NETREP_IN_ACT3 | NETREP_IN_SWITCH;
+			return;
+		}
 		if (ship) {
 			float dx = ship->pos.x - e->pos.x, dz = ship->pos.z - e->pos.z;
 			float dyaw = remainderf(atan2f(-dx, -dz) - WChar(e)->view.y, M_2PI_F);
@@ -551,7 +558,9 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 				break;
 			}
 			NetRepInput x = *in;
+			Watch_PlayersAt((double)t / NETREP_TICK_HZ);
 			NetPl_Step(e, &x, 1, 1);
+			Watch_PlayersBack();
 			play.input = x;
 			Play_Record(t);
 			replayed++;
