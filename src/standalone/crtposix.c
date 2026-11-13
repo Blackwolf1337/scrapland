@@ -658,8 +658,8 @@ int crt_fpclass(double x) {
 	}
 }
 
-/* ---- the math and strtod of the MSVC runtime, for Python 1.5.2 (src/python/pyshim.h) ----
- * Python turns errno after a libm call into an exception. glibc sets ERANGE on every underflow and on the overflow
+/* ---- the math and strtod of the MSVC runtime, for the math module of the scripts (src/game/Script/ScriptLib.c) ----
+ * The math module of 1.5.2 turns errno after a libm call into an exception. glibc sets ERANGE on every underflow and on the overflow
  * of ldexp, and EDOM for fmod(x, 0) of a finite x; the runtime of Windows does neither (the result is the answer: 0, inf or
  * NaN), but gives EDOM for sqrt and asin of NaN. */
 

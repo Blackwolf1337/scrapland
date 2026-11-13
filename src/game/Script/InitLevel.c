@@ -438,7 +438,7 @@ static byte In_CloseN(void) {
 		!Mode_G(IN, Mode_EqI(xbox, 1) ? "PROGRESSBAR_XBOX" : "PROGRESSBAR_PC", bars)) {
 		return Mode_Done(&t, 0);
 	}
-	/* PyMapping_HasKey: any error of the lookup is no key */
+	/* abstract.c Mapping_HasKey: any error of the lookup is no key */
 	if (Mode_Sub(bars, upper, n)) {
 		return Mode_Done(&t, Native_GVarSet("ProgressBar", n));
 	}

@@ -306,4 +306,4 @@ static char str_PyDoc_SSound_StopVoice[] = "StopVoice(channel) : stop a voice on
 static char str_PyDoc_SSound_VoiceRemain[72] =
 	"VoiceRemain(channel,time) : return the remaining time of a voice.";
 
-PORTS(PyInterface_SSoundPy)
+PORTS(Engine_SSoundPy)

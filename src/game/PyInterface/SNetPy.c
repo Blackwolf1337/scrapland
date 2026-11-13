@@ -335,4 +335,4 @@ static char str_PyDoc_SNet_PingInetSvrs[] =
 
 static char str_PyDoc_SNet_GetPing[60] = "GetPing(EntityName) : Devuelve el ping de un cliente.";
 
-PORTS(PyInterface_SNetPy)
+PORTS(Engine_SNetPy)

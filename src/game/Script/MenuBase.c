@@ -636,8 +636,8 @@ static char *Menu_VerticalMenu_N[] = { "id", "title", "menu", "backfunc", "XStar
 	"YStart", "FontTitle", NULL };
 static const char Menu_VerticalMenu_F[] = "iOOO|OOsOOs";
 
-/* the entry of VerticalMenu: the slots of "iOOO|OOsOOs" (the arity errors of PyArg_ParseTupleAndKeywords), then the
- * id and the fonts converted in slot order with the errors of "i" and "s" (the fonts "ScrapBig" when not given) */
+/* the entry of VerticalMenu: the slots of "iOOO|OOsOOs" (the arity errors of getargs.c Arg_ParseTupleAndKeywords), then
+ * the id and the fonts converted in slot order with the errors of "i" and "s" (the fonts "ScrapBig" when not given) */
 static byte Menu_VerticalMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t v[10], menu;
 	byte given[10];

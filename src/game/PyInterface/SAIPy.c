@@ -519,9 +519,9 @@ static byte SetStateChar9(const nativeVal_t *a, int n, nativeVal_t *out) {
 
 /*
  * SetStateVehicle(state, ...) / SetStateChar(state, ...) : the handler for the state number. The first argument is
- * read the way PyInt_AsLong(PyTuple_GetItem(args, 0)) read it: none gives the TypeError of a NULL item (that of
- * None), and only the low 32 bits of the number count. differs from the original: an empty tuple or a state that is no number
- * raises the error of the read; the original returns None with the error left set.
+ * read the way intobject.c Int_AsLong(tupleobject.c Tuple_GetItem(args, 0)) read it: none gives the TypeError of a NULL
+ * item (that of None), and only the low 32 bits of the number count. differs from the original: an empty tuple or a
+ * state that is no number raises the error of the read; the original returns None with the error left set.
  */
 static const portEntry_t vehicleStates[10] = {
 	SetStateVehicle0, SetStateVehicle1, SetStateVehicle2, SetStateVehicle3, SetStateVehicle4,
@@ -936,4 +936,4 @@ static char str_PyDoc_SAI_SetRotStaticObj[] =
 
 static char str_PyDoc_SAI_SetInertia[72] = "void SetInertia(bool inertia) : Indica si la nave tiene inercia.";
 
-PORTS(PyInterface_SAIPy)
+PORTS(Engine_SAIPy)

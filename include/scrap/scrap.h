@@ -58,8 +58,8 @@ typedef struct cFuncGvar {
 } cFuncGvar;
 #define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
 
-/* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of scrap/staticinit.h): its function in place of value
- * and def */
+/* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of scrap/staticinit.h): its function in place of
+ * value and def */
 typedef struct cGVarFunction {
 	union {
 		cGVar var;
@@ -77,7 +77,7 @@ int SaveVar_Inc(const char *name, int n);
 /* the save files Save0.sav (the autosave) to Save6.sav */
 #define SAVE_SLOTS 7
 /* an entry of the save list of SaveGames_GetList: desc is not terminated when it has 64 characters (the original
- * copied it with strncpy; Scrap.GetSaveGamesList read on into time, as PyString_FromString does) */
+ * copied it with strncpy; Scrap.GetSaveGamesList read on into time, as stringobject.c String_FromString does) */
 typedef struct cSaveGameInfo {
 	char desc[0x40];
 	int32_t time;			/* modification time of the file */

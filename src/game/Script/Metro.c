@@ -513,7 +513,7 @@ static byte Metro_SetAsMetro(const nativeVal_t *name) {
 }
 
 /* ---- the functions of the module table (MODE_FN: the arguments as native values, the arity errors of
- * PyArg_ParseTuple) ---- */
+ * getargs.c Arg_ParseTuple) ---- */
 
 MODE_FN(Metro, CalculateMissionMap, 1, Metro_MissionMap())
 MODE_FN(Metro, RecoverUsrPy, 3, Metro_RecoverUsr())

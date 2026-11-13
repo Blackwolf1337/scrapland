@@ -306,4 +306,4 @@ static char str_PyDoc_SInput_ResetToSplit[96] =
 static char str_PyDoc_SInput_CheckPadButton[] =
 	"CheckPadButton() : Chequea el estado de un determinado botón del pad.";
 
-PORTS(PyInterface_SInputPy)
+PORTS(Engine_SInputPy)

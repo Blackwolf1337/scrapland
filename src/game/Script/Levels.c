@@ -289,7 +289,7 @@ static byte Level_SaveListAddNative(const nativeVal_t *var, const nativeVal_t *s
 		Native_Free(&lst);
 		return 0;
 	}
-	/* in on a list only compares (Native_Compare as PyObject_Compare): no error */
+	/* in on a list only compares (Native_Compare as object.c Object_Compare): no error */
 	if (Native_Contains(&lst, &x) == 0) {
 		nativeBuf_t b;
 		Native_Copy(Native_Append(&lst), &x);
@@ -666,7 +666,8 @@ byte Script_LevelDataFunction(const char *module, const char *name, nativeVal_t 
 	if (i < 0) {
 		return 0;
 	}
-	/* the last section of the name (a script that defines a function twice gives the last one, so does the converter) */
+	/* the last section of the name (a script that defines a function twice gives the last one, so does the
+	 * converter) */
 	const char *p = level_files[i].text, *at = NULL;
 	int atLen = 0;
 	size_t nlen = strlen(name);

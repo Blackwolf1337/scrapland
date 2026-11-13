@@ -4,12 +4,13 @@
  *
  * The store is sys.modules: a dict object of native values, name -> module (a case may put None or another object
  * there). A module is a native object (NObj_NewModule) with its variables in a dict object; a pack module's are the
- * registry's (scrap/modvars.h). Script_ImportStart makes the modules Py_Initialize made, in its order: __builtin__,
- * sys (whose modules is the store and path the path of the library), __main__ (__builtins__ the module __builtin__,
- * its variables the registry's, ModVar_Keep) and signal. The import of a name is that of 1.5.2 (import_module_ex,
- * load_next, import_submodule) without packages and files: the store's entry, else a built-in module made into the
- * store (the engine modules from their function tables, the modules of the library's table), else the ImportError
- * "No module named <name>" (there is no file to find: the pack modules are made by Pack_PreloadLibrary only).
+ * registry's (scrap/modvars.h). Script_ImportStart makes the modules pythonrun.c Initialize made, in its order:
+ * __builtin__, sys (whose modules is the store and path the path of the library), __main__ (__builtins__ the module
+ * __builtin__, its variables the registry's, ModVar_Keep) and signal. The import of a name is that of 1.5.2
+ * (import_module_ex, load_next, import_submodule) without packages and files: the store's entry, else a built-in module
+ * made into the store (the engine modules from their function tables, the modules of the library's table), else the
+ * ImportError "No module named <name>" (there is no file to find: the pack modules are made by Pack_PreloadLibrary
+ * only).
  *
  * The other built-in modules are native too (batch 7e4c): __builtin__, math, strop and signal (scrap/scriptlib.h),
  * sys and imp here (sys with the file objects of stdin, stdout and stderr and the path of PC/getpathp.c). The
@@ -52,21 +53,11 @@ byte Script_ModuleLoaded(const char *name, nativeVal_t *out) {
 		return 0;
 	}
 	Native_SetStr(&key, name);
-	nativeVal_t *t = NObj_DictData(&imp_store);
-	byte ok;
-	if (t) {
-		const nativeVal_t *x = Native_DictGet(t, &key);
-		if (x) {
-			Native_Copy(out, x);
-		}
-		ok = x != NULL;
-	} else {
-		/* OBJLIB 7e4b: the store crossed to Python */
-		ok = NObj_GetItem(&imp_store, &key, out);
-		if (!ok) {
-			Native_ErrClear();
-		}
+	const nativeVal_t *x = Native_DictGet(NObj_DictData(&imp_store), &key);
+	if (x) {
+		Native_Copy(out, x);
 	}
+	byte ok = x != NULL;
 	Native_Free(&key);
 	return ok;
 }
@@ -166,7 +157,8 @@ static int Imp_Builtin(const char *name) {
 	return -1;
 }
 
-/* the copies of the variables of the built-in modules as they were made (_PyImport_FixupExtension), by table index */
+/* the copies of the variables of the built-in modules as they were made (import.c Import_FixupExtension), by table
+ * index */
 static nativeVal_t imp_copies[sizeof(imp_table) / sizeof(imp_table[0])];
 
 /* FixupExtension: the variables of the built-in module m (table index i) kept as made */
@@ -176,8 +168,8 @@ static void Imp_Fixup(int i, const nativeVal_t *m) {
 }
 
 /* init_builtin: the built-in module name made into the store, or a module made before given its variables as made
- * again (_PyImport_FindExtension: the module of the store, or a new one, updated with the copy); 1 with *out, 0 with
- * the error ("Cannot re-init internal module"), -1 without one when name is no built-in module */
+ * again (import.c Import_FindExtension: the module of the store, or a new one, updated with the copy); 1 with *out, 0
+ * with the error ("Cannot re-init internal module"), -1 without one when name is no built-in module */
 static int Imp_InitBuiltin(const char *name, nativeVal_t *out) {
 	int i = Imp_Builtin(name);
 	Native_SetNone(out);
@@ -412,7 +404,7 @@ byte Bi_Import(const nativeVal_t *a, int n, nativeVal_t *out) {
 		Imp_Dotted(Native_Text(&a[0]), 1, out)));
 }
 
-/* there is no frame: the locals vars() asks for (PyEval_GetLocals) are none */
+/* there is no frame: the locals vars() asks for (ceval.c Eval_GetLocals) are none */
 static byte Bi_NoLocals(void) {
 	return Native_Raise(NE_SYSTEM, "no locals!?");
 }
@@ -690,7 +682,7 @@ static byte Imp_GetMagic(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-/* imp.get_suffixes(): _PyImport_Filetab (the extensions of the Windows build, none on Linux) */
+/* imp.get_suffixes(): import.c Import_Filetab (the extensions of the Windows build, none on Linux) */
 static byte Imp_GetSuffixes(const nativeVal_t *a, int n, nativeVal_t *out) {
 	static const struct {
 		const char *suffix, *mode;
@@ -847,9 +839,9 @@ static char *Sys_RegPath(HKEY keyBase) {
 
 static const char sys_sep[2] = { SYS_SEP, 0 }, sys_delim[2] = { SYS_DELIM, 0 };
 
-/* calculate_path of PC/getpathp.c: the module search path (the PYTHONPATH of the environment, the registry's on Windows,
- * the PYTHONPATH of the build with "." for the home, the folder of the program), the prefix (where lib\string.py is
- * found from there) and the program (the exe on Windows, else "python" on the PATH) */
+/* calculate_path of PC/getpathp.c: the module search path (the PYTHONPATH of the environment, the registry's on
+ * Windows, the PYTHONPATH of the build with "." for the home, the folder of the program), the prefix (where
+ * lib\string.py is found from there) and the program (the exe on Windows, else "python" on the PATH) */
 static void Sys_Paths(nativeBuf_t *path, char *prefix, char *prog, int size) {
 	static const char pythonpath[] = ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk";
 	char dir[0x400];
@@ -951,8 +943,8 @@ static void Sys_Paths(nativeBuf_t *path, char *prefix, char *prog, int size) {
 	Native_BufAdd(path, dir, -1);
 }
 
-/* the module sys of _PySys_Init (its functions, the files of stdin, stdout and stderr, the version, the platform, the
- * paths, the names of the built-in modules) */
+/* the module sys of sysmodule.c Sys_Init (its functions, the files of stdin, stdout and stderr, the version, the
+ * platform, the paths, the names of the built-in modules) */
 static void Sys_Make(nativeVal_t *out) {
 	static const char *const files[] = { "stdin", "stdout", "stderr", "__stdin__", "__stdout__", "__stderr__" };
 	char prefix[0x400], prog[0x400];
@@ -1001,7 +993,7 @@ static void Sys_Make(nativeVal_t *out) {
 	Lib_Put(out, "builtin_module_names", &names);
 	Native_Free(&names);
 	Lib_Put(out, "modules", &imp_store);
-	/* the path as Py_Initialize made it from the search path (makepathobject) */
+	/* the path as pythonrun.c Initialize made it from the search path (makepathobject) */
 	Native_SetEmpty(&v, NV_LIST);
 	for (const char *p = path.p;;) {
 		const char *q = strchr(p, SYS_DELIM);
@@ -1029,7 +1021,6 @@ const nativeVal_t *Script_Builtins(void) {
 
 byte Script_ImportStart(void) {
 	nativeVal_t signal;
-	Py_LibStart();
 	NObj_NewDict(&imp_store);
 	Lib_MakeBuiltin(&imp_builtin);
 	Imp_Store("__builtin__", &imp_builtin);
@@ -1052,7 +1043,7 @@ byte Script_ImportStart(void) {
 
 void Script_ImportEnd(void) {
 	nativeVal_t r;
-	/* PyImport_Cleanup: the store emptied (sys holds it) */
+	/* import.c Import_Cleanup: the store emptied (sys holds it) */
 	if (NObj_CallMethod(&imp_store, "clear", NULL, 0, &r)) {
 		Native_Free(&r);
 	}

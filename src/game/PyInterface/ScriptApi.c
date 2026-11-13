@@ -1,7 +1,7 @@
 /*
  * The helpers of the engine modules on native entries (include/scrap/scriptapi.h, stage 7 of docs/objlib-plan.md):
- * the results in the forms of Py_BuildValue (Python/modsupport.c of 1.5.2: countformat, do_mkvalue, do_mktuple) and
- * the entity handles as native values (NV_ENT, no Python object).
+ * the results in the forms of modsupport.c BuildValue (Python/modsupport.c of 1.5.2: countformat, do_mkvalue,
+ * do_mktuple) and the entity handles as native values (NV_ENT, no Python object).
  */
 #include <stdarg.h>
 #include <string.h>

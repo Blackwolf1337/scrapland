@@ -2138,7 +2138,7 @@ PORT_DECL(SAI, AddVehicleRace) /* 1 */
 PORT_DECL(SAI, SetRotStaticObj) /* 3 */
 PORT_DECL(SAI, SetInertia) /* 2 */
 PORT_DECL(SAI, GetOD) /* ? */
-#define PORTS_PyInterface_SAIPy \
+#define PORTS_Engine_SAIPy \
 	PORT_DEFND(SAI, AnalizeMap, SAI_AnalyzeMap, str_PyDoc_SAI_AnalyzeMap) \
 	PORT_DEFND(SAI, AnalizeGraph, SAI_AnalyzeGraph, str_PyDoc_SAI_AnalyzeGraph) \
 	PORT_DEFND(SAI, AnalizeGraph2D, SAI_AnalyzeGraph2D, str_PyDoc_SAI_AnalyzeGraph2D) \
@@ -2173,7 +2173,7 @@ PORT_DECL(SAct, GetAction) /* 1 */
 PORT_DECL(SAct, SetAct) /* ? */
 PORT_DECL(SAct, GetAct) /* ? */
 PORT_DECL(SAct, DumpEvents) /* 1 */
-#define PORTS_PyInterface_SActPy \
+#define PORTS_Engine_SActPy \
 	PORT_DEFND(SAct, CreateClass, SAct_CreateClass, str_PyDoc_SAct_CreateClass) \
 	PORT_DEFND(SAct, DelClass, SAct_DelClass, str_PyDoc_SAct_DelClass) \
 	PORT_DEFND(SAct, GetClass, SAct_GetClass, str_PyDoc_SAct_GetClass) \
@@ -2192,7 +2192,7 @@ PORT_DECL(SFX, CharacterConversion) /* 3 */
 PORT_DECL(SFX, BishopSellLife) /* 2 */
 PORT_DECL(SFX, MoneyTransfer) /* 3 */
 PORT_DECL(SFX, EmbeddedSet) /* 2 */
-#define PORTS_PyInterface_SFXPy \
+#define PORTS_Engine_SFXPy \
 	PORT_DEFND(SFX, ShipExplosion, SFX_ShipExplosion, str_PyDoc_SFX_ShipExplosion) \
 	PORT_DEFND(SFX, CharacterConversor, SFX_CharacterConversor, str_PyDoc_SFX_CharacterConversor) \
 	PORT_DEFND(SFX, CharacterConversion, SFX_CharacterConversion, str_PyDoc_SFX_CharacterConversion) \
@@ -2221,7 +2221,7 @@ PORT_DECL(SInput, Bind) /* 4 */
 PORT_DECL(SInput, Rumble) /* 4 */
 PORT_DECL(SInput, ResetToSplit) /* 0 */
 PORT_DECL(SInput, CheckPadButton) /* 2 */
-#define PORTS_PyInterface_SInputPy \
+#define PORTS_Engine_SInputPy \
 	PORT_DEFND(SInput, SetActionSet, SInput_SetActionSet, str_PyDoc_SInput_SetActionSet) \
 	PORT_DEFND(SInput, GetActionSet, SInput_GetActionSet, str_PyDoc_SInput_GetActionSet) \
 	PORT_DEFND(SInput, AssingEntry, SInput_AssingEntry, str_PyDoc_SInput_AssingEntry) \
@@ -2256,7 +2256,7 @@ PORT_DECL(SLogic, SetDominationZones) /* 1 */
 PORT_DECL(SLogic, ChangeZoneState) /* 2 */
 PORT_DECL(SLogic, ChangeBatonState) /* 2 */
 PORT_DECL(SLogic, UpdateTauntEndTime) /* ? */
-#define PORTS_PyInterface_SLogic \
+#define PORTS_Engine_SLogic \
 	PORT_DEFND(SLogic, SendSentinelToWatch, SLogic_SendSentinelToWatch, str_PyDoc_SLogic_SendSentinelToWatch) \
 	PORT_DEFND(SLogic, GearAttack, SLogic_GearAttack, str_PyDoc_SLogic_GearAttack) \
 	PORT_DEFND(SLogic, SetCharState, SLogic_SetCharState, str_PyDoc_SLogic_SetCharState) \
@@ -2296,7 +2296,7 @@ PORT_DECL(SNet, SendMasterString) /* 1 */
 PORT_DECL(SNet, IsMaster) /* 0 */
 PORT_DECL(SNet, PingInetSvrs) /* 0 */
 PORT_DECL(SNet, GetPing) /* 1 */
-#define PORTS_PyInterface_SNetPy \
+#define PORTS_Engine_SNetPy \
 	PORT_DEFND(SNet, InitServer, SNet_InitServer, str_PyDoc_SNet_InitServer) \
 	PORT_DEFND(SNet, CloseServer, SNet_CloseServer, str_PyDoc_SNet_CloseServer) \
 	PORT_DEFND(SNet, ServerChangeLevel, SNet_ServerChangeLevel, str_PyDoc_SNet_ServerChangeLevel) \
@@ -2359,7 +2359,7 @@ PORT_DECL(SScorer, GetItem) /* 2 */
 PORT_DECL(SScorer, New) /* ? */
 PORT_DECL(SScorer, Items) /* 1 */
 PORT_DECL(SScorer, Accept) /* 2 */
-#define PORTS_PyInterface_SScorerPy \
+#define PORTS_Engine_SScorerPy \
 	PORT_DEFND(SScorer, Add, SScorer_Add, str_PyDoc_SScorer_Add) \
 	PORT_DEFND(SScorer, Clear, SScorer_Clear, str_PyDoc_SScorer_Clear) \
 	PORT_DEFND(SScorer, Set, SScorer_Set, str_PyDoc_SScorer_Set) \
@@ -2414,7 +2414,7 @@ PORT_DECL(SSound, VoiceRemain) /* 2 */
 PORT_DECL(SSound, SetVoiceVolume) /* 2 */
 PORT_DECL(SSound, SetVoiceString) /* 2 */
 PORT_DECL(SSound, DeleteAllSounds) /* 0 */
-#define PORTS_PyInterface_SSoundPy \
+#define PORTS_Engine_SSoundPy \
 	PORT_DEFND(SSound, LoadSound, SSound_LoadSound, str_PyDoc_SSound_LoadSound) \
 	PORT_DEFND(SSound, PlaySound, SSound_PlaySound, str_PyDoc_SSound_PlaySound) \
 	PORT_DEFND(SSound, Play, SSound_Play, str_PyDoc_SSound_Play) \
@@ -2446,7 +2446,7 @@ PORT_DECL(SVec, Rotate3D) /* 2 */
 PORT_DECL(SVec, GetAngle) /* 2 */
 PORT_DECL(SVec, GetRotAng) /* ? */
 PORT_DECL(SVec, NormAng) /* 1 */
-#define PORTS_PyInterface_SVecPy \
+#define PORTS_Engine_SVecPy \
 	PORT_DEFND(SVec, Add, SVec_Add, str_PyDoc_SVec_Add) \
 	PORT_DEFND(SVec, Sub, SVec_Sub, str_PyDoc_SVec_Sub) \
 	PORT_DEFND(SVec, Mod, SVec_Mod, str_PyDoc_SVec_Mod) \
@@ -2476,7 +2476,7 @@ PORT_DECL(SWeap, SetSWeap) /* 3 */
 PORT_DECL(SWeap, FillPriority) /* 0 */
 PORT_DECL(SWeap, GetFirstiWeap) /* 0 */
 PORT_DECL(SWeap, NetExec) /* ? */
-#define PORTS_PyInterface_SWeapPy \
+#define PORTS_Engine_SWeapPy \
 	PORT_DEFND(SWeap, GetNWeap, SWeap_GetNWeap, str_PyDoc_SWeap_GetNWeap) \
 	PORT_DEFND(SWeap, GetNAmmo, SWeap_GetNAmmo, str_PyDoc_SWeap_GetNAmmo) \
 	PORT_DEFND(SWeap, InitWeap, SWeap_InitWeap, str_PyDoc_SWeap_InitWeap) \
@@ -2608,7 +2608,7 @@ PORT_DECL(Scrap, GetSteamTicket) /* 0 */
 PORT_DECL(Scrap, IsSteam) /* 0 */
 PORT_DECL(Scrap, GetGogID) /* 0 */
 PORT_DECL(Scrap, ConsoleExec) /* 1 */
-#define PORTS_PyInterface_ScrapPy \
+#define PORTS_Engine_ScrapPy \
 	PORT_DEFND(Scrap, Print, Scrap_Print, str_PyDoc_Scrap_Print) \
 	PORT_DEFND(Scrap, ConsoleOut, Scrap_ConsoleOut, str_PyDoc_Scrap_ConsoleOut) \
 	PORT_DEFND(Scrap, ConsoleError, Scrap_ConsoleError, str_PyDoc_Scrap_ConsoleError) \

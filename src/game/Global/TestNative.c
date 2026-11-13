@@ -25,20 +25,17 @@
  *                            path: "def calls registry <n> byname <n> other <n> errors <n>" (the
  *                            registry ones also on the line of their site in Script.c)
  *                            and last the native objects (scrap/nativeobj.h, batch 9a, NObj_Counts): "objects made
- *                            <n> freed <n> live <n> views <n> crossed <n>" (made and freed since the start, never
- *                            reset; views: the entries of the identity table now), then up to 16 of those views as
- *                            "view <type> holders <n> <repr>"
+ *                            <n> freed <n> live <n>" (made and freed since the start, never reset)
  *   native ports reset       the counts back to 0
  *   native vars              (batch 9b2) what the module variables hold now (ModVar_Report): the values by kind,
- *                            each kind of object as native data, views of Python objects and crossed native data
+ *                            each kind of object
  *   native objtest           the self-test of the native objects: the checks of ot_script on objects made natively,
  *                            one line "<name>: <repr of the tuple of results>" per check (an error as (type, value),
  *                            as tc_catch gives it), then the objects it made and freed. The same checks run as a
  *                            channel case on Python objects (tools/test/objcase.py writes the case from ot_script);
  *                            the two outputs are equal line by line apart from addresses
- *   native objtest cross     the same with every object sent to Python once when it is stored (the crossing of
- *                            scrap/nativeobj.h: from then on the native object is the view of its Python object)
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -131,12 +128,10 @@ static void TN_Callbacks(nativeBuf_t *out, byte reset) {
 		snprintf(line, sizeof(line), "def calls registry %lu byname %lu other %lu errors %lu\n", entry, python, other,
 			errors);
 		Native_BufAdd(out, line, -1);
-		unsigned long made, freed, views, crossed;
-		NObj_Counts(&made, &freed, &views, &crossed);
-		snprintf(line, sizeof(line), "objects made %lu freed %lu live %lu views %lu crossed %lu\n", made, freed,
-			made - freed, views, crossed);
+		unsigned long made, freed;
+		NObj_Counts(&made, &freed);
+		snprintf(line, sizeof(line), "objects made %lu freed %lu live %lu\n", made, freed, made - freed);
 		Native_BufAdd(out, line, -1);
-		NObj_ListViews(out, 16);
 	}
 }
 
@@ -176,7 +171,7 @@ static void TN_Ports(nativeBuf_t *out, byte reset) {
 /*
  * The checks, one text per step. "-- name" starts a check: its steps give the items of one result tuple, printed as
  * "name: <repr>" (a name with '!' is a check without a Python twin: the functions of Python code the game no longer
- * has; it is left out of the channel case and of the crossing run). A step is "<op> <arguments>" with the arguments
+ * has; it is left out of the channel case). A step is "<op> <arguments>" with the arguments
  * separated by one blank: $x is the variable x of the test, - an omitted bound, anything else a literal of the native
  * reader (written without blanks). "x= <step>" stores the result in x in place of adding an item (at the start of a
  * check only: the channel case makes it a statement before the tuple), as setslice and delslice.
@@ -523,7 +518,6 @@ typedef struct {
 
 static otVar_t ot_vars[OT_VARS];
 static int ot_nvars;
-static byte ot_cross;
 
 static nativeVal_t *OT_Var(const char *name, byte make) {
 	for (int i = 0; i < ot_nvars; i++) {
@@ -799,12 +793,7 @@ static byte OT_Step(char **tok, int n, nativeVal_t *out) {
 	} else if (!strcmp(op, "method")) {
 		ok = NObj_NewMethod(out, &a[0], a[1].type == NV_NONE ? NULL : &a[1], &a[2]);
 	} else if (!strcmp(op, "rt")) {
-		PyObject *py = Native_ToPy(&a[0]);
-		ok = py != NULL;
-		if (ok) {
-			NObj_FromPy(py, out);
-			Py_DECREF(py);
-		}
+		Native_Copy(out, &a[0]);
 	} else if (!strcmp(op, "repr") || !strcmp(op, "str")) {
 		nativeBuf_t b;
 		Native_BufInit(&b);
@@ -880,18 +869,16 @@ static void OT_Error(nativeVal_t *out) {
 	Native_ErrCaught(&out->items[0], &out->items[1]);
 }
 
-static void OT_Run(nativeBuf_t *out, byte cross) {
+static void OT_Run(nativeBuf_t *out) {
 	nativeVal_t results, r;
 	char name[64] = "", text[512];
-	byte skip = 0;
-	unsigned long made0, freed0, views0, crossed0, made, freed, views, crossed;
-	NObj_Counts(&made0, &freed0, &views0, &crossed0);
-	ot_cross = cross;
+	unsigned long made0, freed0, made, freed;
+	NObj_Counts(&made0, &freed0);
 	Native_SetEmpty(&results, NV_TUPLE);
 	for (int line = 0;; line++) {
 		const char *s = ot_script[line];
 		if (!s || !strncmp(s, "-- ", 3)) {
-			if (name[0] && !skip) {
+			if (name[0]) {
 				Native_BufAdd(out, name, -1);
 				Native_BufAdd(out, ": ", 2);
 				Native_Repr(out, &results, NR_REPR);
@@ -903,10 +890,6 @@ static void OT_Run(nativeBuf_t *out, byte cross) {
 				break;
 			}
 			Str_Copy(name, s + 3, sizeof(name));
-			skip = cross && name[0] == '!';
-			continue;
-		}
-		if (skip) {
 			continue;
 		}
 		char *tok[OT_TOKENS] = { NULL }, *target = NULL;
@@ -936,13 +919,6 @@ static void OT_Run(nativeBuf_t *out, byte cross) {
 				Native_Free(v);
 				NObj_Share(&r);
 				*v = r;
-				if (ot_cross && v->type == NV_REF) {
-					PyObject *py = Native_ToPy(v);
-					if (!py) {
-						OT_Error(Native_Append(&results));
-					}
-					Py_XDECREF(py);
-				}
 			} else {
 				Native_Free(&r);
 			}
@@ -961,9 +937,9 @@ static void OT_Run(nativeBuf_t *out, byte cross) {
 	}
 	ot_nvars = 0;
 	/* what the test made is gone again (apart from an object that holds itself) */
-	NObj_Counts(&made, &freed, &views, &crossed);
-	snprintf(text, sizeof(text), "objects made %lu freed %lu left %lu views left %ld crossed %lu\n", made - made0,
-		freed - freed0, (made - made0) - (freed - freed0), (long)views - (long)views0, crossed - crossed0);
+	NObj_Counts(&made, &freed);
+	snprintf(text, sizeof(text), "objects made %lu freed %lu left %lu\n", made - made0, freed - freed0,
+		(made - made0) - (freed - freed0));
 	Native_BufAdd(out, text, -1);
 }
 
@@ -979,8 +955,8 @@ void TestNative_Command(nativeBuf_t *out, const char *arg) {
 	} else if (!strcmp(arg, "vars")) {
 		ModVar_Report(out);
 		return;
-	} else if (!strcmp(arg, "objtest") || !strcmp(arg, "objtest cross")) {
-		OT_Run(out, arg[7] != 0);
+	} else if (!strcmp(arg, "objtest")) {
+		OT_Run(out);
 		return;
 	}
 	if (!strncmp(arg, "str ", 4)) {

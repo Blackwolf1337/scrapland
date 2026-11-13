@@ -12,9 +12,9 @@
  *
  * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
  * script reads them and write them back at once (the missions and the cases read and set them); the lists
- * targetsList and currentBertos change in place, and the list SetMultipleMissionTargets gets becomes targetsList itself.
- * The save variables, the engine variables, the time, the language texts, the entity lists and string.upper are C;
- * the save texts are made with the 1.5.2 repr and read with the literal reader of the native layer. Scrap.UsrEntity,
+ * targetsList and currentBertos change in place, and the list SetMultipleMissionTargets gets becomes targetsList
+ * itself. The save variables, the engine variables, the time, the language texts, the entity lists and string.upper are
+ * C; the save texts are made with the 1.5.2 repr and read with the literal reader of the native layer. Scrap.UsrEntity,
  * GetEntity, CreateEntity, Set, SetAlarm, DelSaveVars, ConsoleError, AddScheduledFunc, SInput.GetActionSet,
  * SetActionSet and SScorer.SetMsgText go through their seams, and so does the Scrap.SetSaveVar of SuperDealOnVictory
  * (OBJLIB 7: the cases record or swap them); Scrap.SetCam and SAI.SetStateVehicle go through their refs (stage 7).
@@ -76,7 +76,8 @@ static int Mf_HasKey(const nativeVal_t *d, const nativeVal_t *key) {
 	return Mode_RefHasKey(d, key);
 }
 
-/* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) (the list a value of the script; GetEntity through its seam) */
+/* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) (the list a value of the script; GetEntity through its
+ * seam) */
 static byte Mf_First(const nativeVal_t *list, nativeVal_t *e) {
 	nativeVal_t name = { 0 };
 	const char *s;
@@ -323,7 +324,8 @@ static byte Mf_SetMissionTarget(const nativeVal_t *tgt) {
 /* SetMultipleMissionTargets(tgtList): several targets; the list becomes targetsList itself (the mission
  * keeps it and sees DelMissionTarget take its names out) */
 static byte Mf_SetMultipleMissionTargets(const nativeVal_t *list) {
-	/* a reference is the object itself, a native list becomes a new list object (as its call through Python makes it) */
+	/* a reference is the object itself, a native list becomes a new list object (as its call through Python makes
+	 * it) */
 	return PORT_OWN(MissionsFuncs, CleanAllTargets, NULL, "") && Mode_Put(MF, "targetsList", NULL, list) &&
 		LvN_PutNone(MF, "currentTarget") && Mf_TargetAll("targetsList", 1);
 }
@@ -1274,8 +1276,8 @@ MODE_FN(MissionsFuncs, BuildVersusData, 1, Mf_BuildVersusData(&a[0], out))
 MODE_FN(MissionsFuncs, BuildDominationData, 1, Mf_BuildDominationData(&a[0], out))
 MODE_FN(MissionsFuncs, BuildCTFData, 1, Mf_BuildCTFData(&a[0], out))
 
-/* the functions with optional arguments: "OO|O" and the like (the arity errors of PyArg_ParseTuple), an argument not
- * given NULL or the default of the script */
+/* the functions with optional arguments: "OO|O" and the like (the arity errors of getargs.c Arg_ParseTuple), an
+ * argument not given NULL or the default of the script */
 static byte MissionsFuncs_ActivateTarget_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const nativeVal_t *e, *status, *arrow = NULL;
 	(void)out;

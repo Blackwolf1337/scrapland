@@ -6,9 +6,9 @@
  * include/scrap/scriptports.h (port_Scrap_GetTime) and in the registry (Port_Find("Scrap", "GetTime")); the module
  * holds the native function object of the ref (Api_Module), so a call, a value or a callback takes the entry.
  *
- * The entry reads its arguments with Mode_Parse in the format of PyArg_ParseTuple the function had (the same letters,
- * arity texts and TypeErrors) and gives its result with Api_Build (the letters of Py_BuildValue). An entity handle is
- * an NV_ENT (Api_Handle: a new handle); a function or argument the engine keeps is a
+ * The entry reads its arguments with Mode_Parse in the format of getargs.c Arg_ParseTuple the function had (the same
+ * letters, arity texts and TypeErrors) and gives its result with Api_Build (the letters of modsupport.c BuildValue). An
+ * entity handle is an NV_ENT (Api_Handle: a new handle); a function or argument the engine keeps is a
  * native value (Scrap.AddScheduledFunc, SScorer.SetSpeechCallback, Scrap.VideoPlayer).
  *
  * A module of the engine gets its entries this way:
@@ -21,7 +21,7 @@
  *   }
  *
  * with the row PORT_FN(GetFloor, Scrap_GetFloor) in Scrap_methods (PORT_FND with the __doc__ text); the line
- * PORTS(PyInterface_ScrapPy) at the end of the file defines the refs, which tools/script/ports.py lists when it runs
+ * PORTS(Engine_ScrapPy) at the end of the file defines the refs, which tools/script/ports.py lists when it runs
  * again (--lines adds a missing PORTS line).
  */
 #ifndef SCRAP_SCRIPTAPI_H
@@ -38,7 +38,8 @@
 		Api_Module(#name, name##_methods, out); \
 	}
 /* the engine module name into *out with a native function object per row of fns (NObj_NewPortFunc of its ref, put in
- * as Py_InitModule put in the C function objects of a PyMethodDef table: in table order, a name twice the last one) */
+ * as modsupport.c InitModule put in the C function objects of a method table: in table order, a name twice the last
+ * one) */
 void Api_Module(const char *name, const portFn_t *fns, nativeVal_t *out);
 
 /* the engine function name of module pre: pre_name_E, its entry, whose body follows the macro (a, n and out may stay
@@ -48,10 +49,10 @@ void Api_Module(const char *name, const portFn_t *fns, nativeVal_t *out);
 		[[maybe_unused]] nativeVal_t *out)
 
 /*
- * *out the value Py_BuildValue(fmt, ...) makes: none of the letters None, one its value, more a tuple of them;
- * "(...)" a tuple of what it holds. Letters: i an int, l a long, d and f a double (a float argument is promoted), s a
- * text (NULL: None), v a const nativeVal_t * (copied: an entity handle of Api_Handle, a list). Blanks and commas between
- * are skipped. Always 1
+ * *out the value modsupport.c BuildValue(fmt, ...) makes: none of the letters None, one its value, more a tuple of
+ * them; "(...)" a tuple of what it holds. Letters: i an int, l a long, d and f a double (a float argument is promoted),
+ * s a text (NULL: None), v a const nativeVal_t * (copied: an entity handle of Api_Handle, a list). Blanks and commas
+ * between are skipped. Always 1
  */
 byte Api_Build(nativeVal_t *out, const char *fmt, ...);
 /* a new handle of the entity called name as an NV_ENT in *out (Native_SetEnt): 1, or 0 without an error when there is

@@ -68,6 +68,6 @@ void cPy_Function_ClearAll(void);
 /* ScrapC: the calls of Execute by kind since the start or the last reset (the test channel's native ports) */
 void cPy_Function_Counts(unsigned long *value, unsigned long *native, unsigned long *entry, byte reset);
 
-byte Py_IsReady(void);
+byte Script_IsReady(void);
 
 #endif

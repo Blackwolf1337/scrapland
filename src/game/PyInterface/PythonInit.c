@@ -24,17 +24,14 @@ cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
 
 #define g_PyStaticBuffer (&cStaticBuffer_PyStaticBuffer[0])
 
-/* OBJLIB 7e4b: frees the free lists of the object types of the library at the end */
-void Py_FiniObjects(void);
-
 byte g_PythonReady;
 
 /*
- * The start and end lines of the exe, each a PyRun_SimpleString of the engine in __main__ (single_input; "Scrap
- * input", CR dropped), made in C on the native modules (src/game/Script/ScriptImport.c): a line that fails prints its
- * error and the next line runs; a value an expression statement gives is printed when it is not None (PRINT_EXPR of
- * the interactive mode); Py_FlushLine ends every line. Names are looked up in __main__ as LOAD_NAME does, imports
- * stored there.
+ * The start and end lines of the exe, each a pythonrun.c Run_SimpleString of the engine in __main__ (single_input;
+ * "Scrap input", CR dropped), made in C on the native modules (src/game/Script/ScriptImport.c): a line that fails
+ * prints its error and the next line runs; a value an expression statement gives is printed when it is not None
+ * (PRINT_EXPR of the interactive mode); ceval.c FlushLine ends every line. Names are looked up in __main__ as LOAD_NAME
+ * does, imports stored there.
  */
 
 /* the end of a start line: its error printed, else the line flushed */
@@ -156,7 +153,7 @@ static byte Line_ConsoleFlush(void *ctx, const nativeVal_t *a, int n, nativeVal_
 
 /* class name: softspace = 1, write(message), flush() (C functions in the class, not bound: called from the instance
  * with the message alone), in __main__; the dict filled in the order of the class body, then __doc__ and __module__ as
- * PyClass_New adds them */
+ * classobject.c Class_New adds them */
 static byte Line_ConsoleClass(const char *name, byte error) {
 	static const char *const keys[] = { "softspace", "write", "flush", "__doc__", "__module__" };
 	nativeVal_t d, v[5], cls, key;
@@ -209,7 +206,7 @@ void Python_Init(void) {
 		*const viewer[] = { "Viewer", NULL };
 	nativeVal_t a[2];
 
-	/* the modules of Py_Initialize */
+	/* the modules of pythonrun.c Initialize */
 	CHECK(Script_ImportStart());
 	g_PythonReady = 1;
 	Line_End(Line_ConsoleClass("ConsoleOutput", 0));
@@ -263,7 +260,7 @@ void Python_Close(void) {
 	Line_End(Line_Import(init) && Line_Call("Init.Close", NULL, 0));
 	cPy_Function_ClearAll();
 	CharsNPC_Close();
-	/* the module variables set to None as the module cleanup of Py_Finalize cleared the module dicts */
+	/* the module variables set to None as the module cleanup of pythonrun.c Finalize cleared the module dicts */
 	ModVar_Close();
 	Native_HookClear();
 	Script_ImportEnd();
@@ -271,7 +268,6 @@ void Python_Close(void) {
 }
 
 void Python_Shutdown(void) {
-	Py_FiniObjects();
 	ScriptPool_Delete();
 }
 
@@ -352,7 +348,7 @@ static int Gate_ModuleMake(const char *name, const char *file, nativeVal_t *m) {
  */
 void Pack_PreloadLibrary(const char *name, const char *file) {
 	nativeVal_t m;
-	CHECK(Py_IsReady());
+	CHECK(Script_IsReady());
 	if (PackLog_Closed()) {
 		if (Script_ModuleLoaded(name, &m)) {
 			Script_ModuleCount(SMC_LOADED);
@@ -378,8 +374,8 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 			Gate_Refuse(name, file);
 		}
 		if (made <= 0) {
-			/* the message of the exe for a failed import here (Py_VerboseFlag is never set); PyFile_WriteString writes
-			 * nothing while the error of the import is set */
+			/* the message of the exe for a failed import here (pythonrun.c VerboseFlag is never set); fileobject.c
+			 * File_WriteString writes nothing while the error of the import is set */
 			nativeVal_t err;
 			if (Script_SysVar("stderr", &err)) {
 				Script_FileWriteText(&err, "'import site' failed; use -v for traceback\n");

@@ -7,10 +7,10 @@
  * function of the old harness ran; else at the start of CApp_FrameRun, also while the window is in the background; a
  * command file that is there before the first frame runs while the clock is still at 0) the game reads the first
  * line of test_cmd.txt, a number (optionally followed by " pace=<seconds>": the file waits until that much game time
- * has passed since the last answer, as the old harness polled every 0.1 s of game time). A number it has not seen runs the rest of the file and writes the answers to
- * test_reply.txt as "<number>\n<answers>\n.end\n" (written to test_reply.tmp, then renamed). The tool writes the
- * command file the same way, so neither side sees a file half written. Nothing waits: no file, the same number or a
- * file that cannot be read is a frame without work.
+ * has passed since the last answer, as the old harness polled every 0.1 s of game time). A number it has not seen runs
+ * the rest of the file and writes the answers to test_reply.txt as "<number>\n<answers>\n.end\n" (written to
+ * test_reply.tmp, then renamed). The tool writes the command file the same way, so neither side sees a file half
+ * written. Nothing waits: no file, the same number or a file that cannot be read is a frame without work.
  *
  * Each line of the command file is one command, its answer one or more lines (none for "do" and "recorder"):
  *   <statements>             channel statements (TestExpr.c), answered as the game side of the MCP server answered a
@@ -27,7 +27,8 @@
  *   ents <list> [x y z r]    the sorted names of the entities of an entity list (Scrap.SphereCall lists: 'r', 'i',
  *                            'v', ...) in the sphere, by default the whole map
  *   dump [module ...]        the module variables (all pack modules without names): "== module", then
- *                            "key\t<type value>" per name in the form of the module dump of the stage checks (scratchpad
+ *                            "key\t<type value>" per name in the form of the module dump of the stage checks
+ * (scratchpad
  *                            nopy0/mdump.py); a pack module's through the registry of the module variables
  *                            (include/scrap/modvars.h), another module's from its dict
  *   menu [player]            the scorer items: (cursor, [[name, Text, X, Y, W, H, Visible, Alpha, Red, Green, Blue,
@@ -39,9 +40,9 @@
  *   native [str|check] <literal>   native values without Python objects (TestNative.c)
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
  * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code). The verbs work on
- * native values (scrap/scriptnative.h, scrap/nativeobj.h) and the error state in C; the names of __main__ and of the pack
- * modules are the registry's (scrap/modvars.h). What still goes through Python is marked: the module objects as the
- * keys of the modules (OBJLIB 9b) and print of a value of a type the native values do not have (OBJLIB 7e).
+ * native values (scrap/scriptnative.h, scrap/nativeobj.h) and the error state in C; the names of __main__ and of the
+ * pack modules are the registry's (scrap/modvars.h). What still goes through Python is marked: the module objects as
+ * the keys of the modules (OBJLIB 9b) and print of a value of a type the native values do not have (OBJLIB 7e).
  */
 #include <math.h>
 #include <stdarg.h>
@@ -279,30 +280,11 @@ static void TC_Check(tcBuf *b, const char *arg) {
 
 #define TC_PRINT_DEPTH 64
 
-/* the lists and dicts being printed (Py_ReprEnter: one that holds itself prints as [...] or {...}) */
+/* the lists and dicts being printed (object.c ReprEnter: one that holds itself prints as [...] or {...}) */
 typedef struct tcPrint {
 	const void *open[TC_PRINT_DEPTH];
 	int depth;
 } tcPrint;
-
-/* OBJLIB 7e: a Python value of a type the native values do not have, through its tp_print (a temporary file) */
-static byte TC_PrintPy(tcBuf *b, PyObject *o, byte raw) {
-	FILE *f = tmpfile();
-	byte ok = f && PyObject_Print(o, f, raw ? Py_PRINT_RAW : 0) == 0;
-
-	if (ok) {
-		char tmp[0x400];
-		size_t n;
-		rewind(f);
-		while ((n = fread(tmp, 1, sizeof(tmp), f)) > 0) {
-			TC_Add(b, tmp, (int)n);
-		}
-	}
-	if (f) {
-		fclose(f);
-	}
-	return ok;
-}
 
 static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr);
 
@@ -372,8 +354,8 @@ static byte TC_PrintDict(tcBuf *b, const nativeVal_t *v, tcPrint *pr) {
 	return ok;
 }
 
-/* v as PyObject_Print writes it (raw: Py_PRINT_RAW, a text as it is): the tp_print of ints, floats, texts, tuples,
- * lists, dicts and entity handles, else str (raw) or repr. 0 with the error set */
+/* v as object.c Object_Print writes it (raw: object.c PRINT_RAW, a text as it is): the tp_print of ints, floats, texts,
+ * tuples, lists, dicts and entity handles, else str (raw) or repr. 0 with the error set */
 static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr) {
 	char tmp[0x100];
 
@@ -389,9 +371,6 @@ static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr) {
 		Native_EntPrint(Native_EntName(v), tmp, sizeof(tmp));
 		TC_Add(b, tmp, -1);
 		return 1;
-	case NV_OBJ:
-		/* a Python value of a type without a native kind, unlike a view (NV_REF below), which prints natively */
-		return TC_PrintPy(b, Native_PyOf(v), raw);
 	case NV_TUPLE:
 	case NV_VEC:
 		return TC_PrintSeq(b, v, "(", ")", pr);
@@ -895,13 +874,6 @@ static void TC_DumpReg(tcBuf *b, const char *module, const modVarRef_t *ref, con
 		TC_DumpVar(b, module, key, NULL, seen);
 		return;
 	}
-	if (Native_Holds(&v, 1u << NV_OBJ)) {
-		/* a value with a Python object in it: in the form a view's operations give it (a tuple by value) */
-		nativeVal_t w;
-		NObj_CallArg(&v, &w);
-		Native_Free(&v);
-		v = w;
-	}
 	TC_DumpVar(b, module, key, &v, seen);
 	Native_Free(&v);
 }
@@ -986,7 +958,8 @@ static void TC_Get(tcBuf *b, const char *arg) {
 	TC_Add(b, "]\n", 2);
 }
 
-/* the value of an entity variable as the attribute of its handle gives it (PyEntity_GetAttr); 0 when it has none */
+/* the value of an entity variable as the attribute of its handle gives it (the getattr of the handle type); 0 when it
+ * has none */
 static byte TC_EntVar(tcBuf *b, cEntity *e, const char *var) {
 	int i = 0;
 	double d = 0.0, x = 0.0, y = 0.0, z = 0.0;

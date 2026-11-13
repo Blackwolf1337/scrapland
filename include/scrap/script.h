@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 
-#include "scrap/python.h"
 #include "scrap/scriptnative.h"
 
 /* the C functions of one pack module: a function table (stage 7e, scrap/scriptnative.h) */
@@ -43,16 +42,19 @@ int Script_ModuleMake(const char *name, const char *file, struct nativeVal_s *mo
  * the order of the first loads is the engine's. A built-in module (sys, math, strop, __builtin__, the engine modules
  * Scrap, SScorer, ...) is made into the store at its first import.
  */
-/* the start: the modules Py_Initialize made (__builtin__, sys, __main__, signal) into a new store: 0 when that failed */
+/* the start: the modules pythonrun.c Initialize made (__builtin__, sys, __main__, signal) into a new store: 0 when that
+ * failed */
 byte Script_ImportStart(void);
 /* the end: the store emptied and let go */
 void Script_ImportEnd(void);
-/* the store (a dict object: name -> module), the module __main__ and the builtins dict (the variables of __builtin__) */
+/* the store (a dict object: name -> module), the module __main__ and the builtins dict (the variables of
+ * __builtin__) */
 const struct nativeVal_s *Script_Modules(void);
 const struct nativeVal_s *Script_Main(void);
 const struct nativeVal_s *Script_Builtins(void);
-/* a variable of sys (PySys_GetObject: the module the start made, also when sys.modules has another): 1 with *out, 0
- * without an error when it has none; Script_SetSysVar sets it (PySys_SetObject; v NULL: deleted when it has one) */
+/* a variable of sys (sysmodule.c Sys_GetObject: the module the start made, also when sys.modules has another): 1 with
+ * *out, 0 without an error when it has none; Script_SetSysVar sets it (sysmodule.c Sys_SetObject; v NULL: deleted when
+ * it has one) */
 byte Script_SysVar(const char *name, struct nativeVal_s *out);
 void Script_SetSysVar(const char *name, const struct nativeVal_s *v);
 /* `import name`: the module into *out (1); 0 with the ImportError of the import ("No module named <name>", also for
@@ -64,8 +66,8 @@ byte Script_ModuleIn(const char *name, const struct nativeVal_s *globals, struct
 /* the object stored under name (also None or a non-module a case put there): 1 with a copy in *out, 0 without an
  * error (*out None) when there is none */
 byte Script_ModuleLoaded(const char *name, struct nativeVal_s *out);
-/* the module name, made empty into the store when there is none or the entry is no module (PyImport_AddModule): 1
- * with *out, 0 with the error */
+/* the module name, made empty into the store when there is none or the entry is no module (import.c Import_AddModule):
+ * 1 with *out, 0 with the error */
 byte Script_ModuleAdd(const char *name, struct nativeVal_s *out);
 /* the lookups by path since the start (reset: back to 0): pack modules found in the store, pack modules whose entry
  * is None, pack modules not loaded, other names, modules made from a .mod file (Script_ModuleMake), PreloadLibrary of
@@ -201,8 +203,6 @@ void Script_SetCursor(int id, const char *item);
 /* a text of the language ("" when it is not there) */
 const char *Script_Lang(const char *key);
 
-/* callable(args), args given away: the result (a new reference, NULL with the error set) */
-PyObject *Script_Invoke(PyObject *callable, PyObject *args);
 /* a string variable of a script module into out ("" when it is not there or not a string) */
 const char *Script_GetString(const char *module, const char *var, char *out, int size);
 /* module.var = value as the script ports set it (an error is dropped; value NULL: the lookup of the value failed, its
@@ -216,39 +216,30 @@ const char *Script_EntStr(const char *ent, const char *var, const char *def);
 /* `if ent.var:` of a script (0 when the entity or the variable is not there) */
 byte Script_EntTrue(const char *ent, const char *var);
 
-/* ---- Python values as the scripts use them (src/game/Script/ScriptValue.c) ---- */
+/* ---- values as the scripts use them (src/game/Script/ScriptValue.c) ---- */
 
 /* the import line of a function (the names end with NULL): 0 with the error set */
 byte Script_Import(const char *const *names);
-/* o.name as a script reads it (a new reference, NULL with the error set; o NULL stays NULL): an attribute the engine
- * fails to give without an exception (the handle of a deleted entity) raises ceval's "SystemError: error return
- * without exception set", as the line of the script does */
-PyObject *Script_GetAttr(PyObject *o, const char *name);
 /* 0 with ceval's SystemError set unless an error is set already: the return of a C function where an engine call
  * failed without an exception */
 byte Script_Fail(void);
-/* callable(*args, **kw) from C (kw may be NULL; nothing given away): the C function making the call counts toward
- * the recursion depth of the interpreter for the time of the call, as the frame of the Python function it replaces
- * does in eval_code2, so a cycle through C functions raises "RuntimeError: Maximum recursion depth exceeded" like
- * the scripts (also when the C stack runs short first) */
-PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw);
-/* the depth check of Script_CallObject for a call from C that does not go through the interpreter (the direct calls
- * between ports, OBJLIB 7): frame is the caller's __builtin_frame_address(0). 1 with the call counted (Script_Leave
- * after it), else 0 with the RuntimeError */
+/* the depth check of a call from C (the direct calls between ports, the calls of function values): the call counts
+ * toward the recursion depth of the interpreter for its time, as the frame of the Python function it replaces did in
+ * eval_code2, so a cycle through C functions raises "RuntimeError: Maximum recursion depth exceeded" like the scripts
+ * (also when the C stack runs short first). frame is the caller's __builtin_frame_address(0). 1 with the call counted
+ * (Script_Leave after it), else 0 with the RuntimeError */
 byte Script_Enter(uintptr_t frame);
 void Script_Leave(void);
-/* item i of a for loop over seq: 1 with a new reference in *item, 0 at the end, -1 with the error set */
-int Script_Next(PyObject *seq, int i, PyObject **item);
-/* the same on a value (an object through Mode_RefNext, a sequence by value natively): 1 with *out (Native_Free it), 0
- * at the end, -1 with the error set */
+/* item i of a for loop over seq (an object through Mode_RefNext, a sequence by value natively): 1 with *out
+ * (Native_Free it), 0 at the end, -1 with the error set */
 int Script_ForItem(const struct nativeVal_s *seq, int i, struct nativeVal_s *out);
 /* the print statement with its items, as ceval prints them to sys.stdout (PRINT_ITEM, PRINT_NEWLINE): 0 with the
  * error set */
 byte Script_Print(const struct nativeVal_s *const *items, int n);
 /* the parts of the print on the file objects of the scripts (an instance with write and softspace, sys.stdout;
- * fileobject.c): PyFile_SoftSpace (the old flag), PyFile_WriteObject (str of v when raw, else its repr, to f.write),
- * PyFile_WriteString (nothing while an error is set), Py_FlushLine (the newline sys.stdout's soft space owes);
- * Script_WriteOut v to sys.stdout. Each 1, or 0 with the error */
+ * fileobject.c): fileobject.c File_SoftSpace (the old flag), fileobject.c File_WriteObject (str of v when raw, else its
+ * repr, to f.write), fileobject.c File_WriteString (nothing while an error is set), ceval.c FlushLine (the newline
+ * sys.stdout's soft space owes); Script_WriteOut v to sys.stdout. Each 1, or 0 with the error */
 int Script_SoftSpace(const struct nativeVal_s *f, int newflag);
 byte Script_FileWrite(const struct nativeVal_s *f, const struct nativeVal_s *v, byte raw);
 byte Script_FileWriteText(const struct nativeVal_s *f, const char *s);
@@ -274,8 +265,8 @@ byte Script_EvalOther(const struct nativeVal_s *globals, const char *s, struct n
 void Script_GateNote(const char *what, const char *name, const char *detail);
 /* the error for a text of Python that no C reader takes and nothing runs: SyntaxError "invalid syntax" (the last
  * line of the traceback eval or exec print for it), noted in the gate log (SCRAP_PY_GATE, event "notread", where
- * names the reader); NULL */
-PyObject *Script_NotRead(const char *where, const char *text);
+ * names the reader); 0 */
+byte Script_NotRead(const char *where, const char *text);
 /* the globals give a frame valid builtins (a dict or a module in __builtins__), as exec and eval need */
 byte Script_HasBuiltins(const struct nativeVal_s *globals);
 /* the len bytes at s are only name characters (ASCII letters, digits and _): the compiler interns such a constant */

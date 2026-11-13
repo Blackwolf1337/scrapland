@@ -258,4 +258,4 @@ static char str_PyDoc_SLogic_ChangeBatonState[] =
 
 static char str_PyDoc_SLogic_UpdateTauntEndTime[60] = "void UpdateTauntEndTime(time): Tiempo final del taunt";
 
-PORTS(PyInterface_SLogic)
+PORTS(Engine_SLogic)

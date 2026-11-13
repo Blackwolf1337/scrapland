@@ -20,9 +20,6 @@
 #include "scrap/scriptlib.h"
 #include "scrap/scriptmodes.h"
 
-/* OBJLIB 9: the Python object of a C object of this file that crosses (a value of a module variable held in a tuple
- * kept for its identity): an object of the library's type with the same contents, the face of the native one */
-
 /* ---- complex ---- */
 
 typedef struct {
@@ -160,11 +157,6 @@ static byte Complex_Truth(void *ctx) {
 	return c->re != 0.0 || c->im != 0.0;
 }
 
-static PyObject *Complex_ToPy(void *ctx) {
-	const libComplex_t *c = ctx;
-	return PyComplex_FromDoubles(c->re, c->im);
-}
-
 static const nativeCMethod_t complex_methods[] = {
 	{ "conjugate", Complex_Conjugate },
 	{ NULL, NULL },
@@ -180,8 +172,6 @@ const nativeCType_t lib_complexType = {
 	.hash = Complex_Hash,
 	.truth = Complex_Truth,
 	.methods = complex_methods,
-	.pytype = &PyComplex_Type,
-	.toPy = Complex_ToPy,
 };
 
 void Lib_NewComplex(nativeVal_t *out, double re, double im) {
@@ -301,7 +291,7 @@ static byte Range_ToList(void *ctx, const nativeVal_t *a, int n, nativeVal_t *ou
 	const libRange_t *r = ctx;
 	(void)a;
 	if (n) {
-		/* PyArg_Parse(args, "") */
+		/* getargs.c Arg_Parse(args, "") */
 		return Native_Raise(NE_TYPE, "function requires no arguments");
 	}
 	Native_SetEmpty(out, NV_LIST);
@@ -309,11 +299,6 @@ static byte Range_ToList(void *ctx, const nativeVal_t *a, int n, nativeVal_t *ou
 		Native_SetInt(Native_Append(out), r->start + (j % r->len) * r->step);
 	}
 	return 1;
-}
-
-static PyObject *Range_ToPy(void *ctx) {
-	const libRange_t *r = ctx;
-	return PyRange_New(r->start, r->len, r->step, r->reps);
 }
 
 static const nativeCMethod_t range_methods[] = {
@@ -331,8 +316,6 @@ const nativeCType_t lib_xrangeType = {
 	.slice = Range_Slice,
 	.compare = Range_Compare,
 	.methods = range_methods,
-	.pytype = &PyRange_Type,
-	.toPy = Range_ToPy,
 };
 
 void Lib_NewXRange(nativeVal_t *out, long start, long len, long step, int reps) {
@@ -412,23 +395,11 @@ static byte Slice_GetAttr(void *ctx, const char *name, nativeVal_t *out) {
 	return Native_Raise(NE_ATTRIBUTE, "%s", name);
 }
 
-static PyObject *Slice_ToPy(void *ctx) {
-	const libSlice_t *s = ctx;
-	PyObject *a = Native_ToPy(&s->start), *b = a ? Native_ToPy(&s->stop) : NULL, *c = b ? Native_ToPy(&s->step) : NULL;
-	PyObject *r = c ? PySlice_New(a, b, c) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(b);
-	Py_XDECREF(c);
-	return r;
-}
-
 const nativeCType_t lib_sliceType = {
 	.name = "slice",
 	.getattr = Slice_GetAttr,
 	.drop = Slice_Drop,
 	.repr = Slice_Repr,
-	.pytype = &PySlice_Type,
-	.toPy = Slice_ToPy,
 };
 
 void Lib_NewSlice(nativeVal_t *out, const nativeVal_t *start, const nativeVal_t *stop, const nativeVal_t *step) {
@@ -458,16 +429,9 @@ static byte Ellipsis_Repr(void *ctx, uintptr_t addr, nativeBuf_t *b, nativeRepr_
 	return 1;
 }
 
-static PyObject *Ellipsis_ToPy(void *ctx) {
-	(void)ctx;
-	Py_INCREF(Py_Ellipsis);
-	return Py_Ellipsis;
-}
-
 const nativeCType_t lib_ellipsisType = {
 	.name = "ellipsis",
 	.repr = Ellipsis_Repr,
-	.toPy = Ellipsis_ToPy,
 };
 
 void Lib_Ellipsis(nativeVal_t *out) {
@@ -554,13 +518,6 @@ static byte Buffer_Hash(void *ctx, long *out) {
 	return ok;
 }
 
-static PyObject *Buffer_ToPy(void *ctx) {
-	const libBuffer_t *b = ctx;
-	PyObject *base = Native_ToPy(&b->base), *r = base ? PyBuffer_FromObject(base, b->offset, b->size) : NULL;
-	Py_XDECREF(base);
-	return r;
-}
-
 const nativeCType_t lib_bufferType = {
 	.name = "buffer",
 	.print = Buffer_Print,
@@ -571,8 +528,6 @@ const nativeCType_t lib_bufferType = {
 	.slice = Buffer_Slice,
 	.compare = Buffer_Compare,
 	.hash = Buffer_Hash,
-	.pytype = &PyBuffer_Type,
-	.toPy = Buffer_ToPy,
 };
 
 /* a buffer of len bytes of base from offset */
@@ -704,7 +659,7 @@ byte Lib_IOError(const char *name) {
 	return 0;
 }
 
-/* PyErr_SetFromErrno(IOError) and clearerr of a failed stream call */
+/* errors.c Err_SetFromErrno(IOError) and clearerr of a failed stream call */
 static byte File_Error(libFile_t *f) {
 	Lib_IOError(NULL);
 	clearerr(f->fp);
@@ -715,7 +670,7 @@ static byte File_Closed(void) {
 	return Native_Raise(NE_VALUE, "I/O operation on closed file");
 }
 
-/* PyArg_NoArgs */
+/* getargs.c Arg_NoArgs */
 static byte File_NoArgs(int n) {
 	return n == 0 || Native_Raise(NE_TYPE, "function requires no arguments");
 }
@@ -767,7 +722,7 @@ static byte File_GetAttr(void *ctx, const char *name, nativeVal_t *out) {
 	return Native_Raise(NE_ATTRIBUTE, "%s", name);
 }
 
-/* file_setattr: PyMember_Set of softspace (T_INT), mode, name and closed read-only */
+/* file_setattr: structmember.c Member_Set of softspace (T_INT), mode, name and closed read-only */
 static byte File_SetAttr(void *ctx, const char *name, const nativeVal_t *v) {
 	libFile_t *f = ctx;
 	if (!v) {
@@ -809,7 +764,7 @@ static byte File_Close(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out)
 	return 1;
 }
 
-/* an offset as file_seek and file_truncate take it (PyInt_AsLong) */
+/* an offset as file_seek and file_truncate take it (intobject.c Int_AsLong) */
 static byte File_Offset(const nativeVal_t *v, long *out) {
 	nativeVal_t x;
 	byte ok;
@@ -1158,12 +1113,6 @@ static const nativeCMethod_t file_methods[] = {
 	{ NULL, NULL },
 };
 
-/* the face shares the stream; the native object closes it */
-static PyObject *File_ToPy(void *ctx) {
-	libFile_t *f = ctx;
-	return PyFile_FromFile(f->fp, f->name, f->mode, NULL);
-}
-
 const nativeCType_t lib_fileType = {
 	.name = "file",
 	.getattr = File_GetAttr,
@@ -1171,8 +1120,6 @@ const nativeCType_t lib_fileType = {
 	.drop = File_Drop,
 	.repr = File_Repr,
 	.methods = file_methods,
-	.pytype = &PyFile_Type,
-	.toPy = File_ToPy,
 };
 
 static libFile_t *File_New(FILE *fp, const char *name, const char *mode, byte close, nativeVal_t *out) {
@@ -1193,7 +1140,7 @@ byte Lib_Open(const char *name, const char *mode, int bufsize, nativeVal_t *out)
 		return Lib_IOError(name);
 	}
 	File_New(fp, name, mode, 1, out);
-	/* PyFile_SetBufSize */
+	/* fileobject.c File_SetBufSize */
 	if (bufsize >= 0) {
 		int type = bufsize == 0 ? _IONBF : bufsize == 1 ? _IOLBF : _IOFBF;
 		setvbuf(fp, NULL, type, bufsize == 1 ? BUFSIZ : (size_t)bufsize);

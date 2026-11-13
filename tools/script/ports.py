@@ -15,7 +15,7 @@
 #
 # The engine modules (stage 7: Scrap, SScorer, ... of src/game/PyInterface, the files with SD_PY_MODULE(<Module>, rva)
 # and its function table <Module>_methods) get refs the same way, one per function, listed under the file's path from
-# src/game (PORTS(PyInterface_ScrapPy) at the end of src/game/PyInterface/ScrapPy.c).
+# src/game (PORTS(Engine_ScrapPy) at the end of src/game/PyInterface/ScrapPy.c).
 #
 # One ref per table function with an entry: port_<Module>_<Func>, or port_<level>_<Module>_<Func> for the modules
 # of a level (Map, Mission_X: Levels.c entries). A row of a function table gives PORT_DEFN (PORT_DEFLN for a level),
@@ -292,6 +292,9 @@ def fn_ref(f, level, module, row, ents, kws, problems):
 
 
 def listname(f):
+	# the engine modules' files by their name alone: PORTS(Engine_ScrapPy) for PyInterface/ScrapPy.c
+	if f.startswith(ENGINE_DIR + '/'):
+		return 'PORTS_Engine_' + f[len(ENGINE_DIR) + 1:-2]
 	return 'PORTS_' + f[:-2].replace('/', '_')
 
 
@@ -348,13 +351,6 @@ def table(byfile):
 		'',
 		'const portRef_t *const g_PortTable[PORT_COUNT] = {']
 	o += ['\t&%s,' % refname(r) for r in rs]
-	o.append('};')
-	o.append('')
-	o.append('/* OBJLIB 7e2: the C functions of the C function objects of the refs (NObj_PortFuncPy), one per ref */')
-	o += ['PORT_TRAMP(%d)' % i for i in range(len(rs))]
-	o.append('')
-	o.append('const portTramp_t g_PortTramps[PORT_COUNT] = {')
-	o += ['\tPort_Tramp%d,' % i for i in range(len(rs))]
 	o.append('};')
 	return '\n'.join(o) + '\n'
 

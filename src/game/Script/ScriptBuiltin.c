@@ -1,11 +1,11 @@
 /*
  * The module __builtin__ of the Python 1.5.2 library in C (include/scrap/scriptlib.h, stage 7e, batch 7e4c):
- * the functions of Python/bltinmodule.c with their argument forms (PyArg_ParseTuple: the arity texts named after the
- * function, the conversion errors), results, docs and errors, and the dict of _PyBuiltin_Init_1 in its order: the
- * functions, __doc__, the names of the standard exceptions (the objects the error state knows them by, OBJLIB 7),
- * None, Ellipsis and __debug__. There is no interpreter: eval, compile, execfile and input raise the SystemError of
- * the build without one; __import__, globals, locals, vars, dir, reload and raw_input are the ones of the import
- * (ScriptImport.c).
+ * the functions of Python/bltinmodule.c with their argument forms (getargs.c Arg_ParseTuple: the arity texts named
+ * after the function, the conversion errors), results, docs and errors, and the dict of the builtins' init
+ * (bltinmodule.c) in its order: the functions, __doc__, the names of the standard exceptions (the objects the error
+ * state knows them by, OBJLIB 7), None, Ellipsis and __debug__. There is no interpreter: eval, compile, execfile and
+ * input raise the SystemError of the build without one; __import__, globals, locals, vars, dir, reload and raw_input
+ * are the ones of the import (ScriptImport.c).
  *
  * map, filter, reduce and apply call through a libCall_t (the test channel's evaluator passes its own call), getattr,
  * hasattr, setattr and delattr through a getter and setter (the channel's twins pass theirs).
@@ -208,7 +208,7 @@ byte Lib_HasKw(const nativeVal_t *kw) {
 	return kw && Lib_IsDict(kw) && (kw->type == NV_DICT ? kw->n > 0 : NObj_Len(kw) > 0);
 }
 
-/* the call of the module's own functions: PyEval_CallObjectWithKeywords */
+/* the call of the module's own functions: ceval.c Eval_CallObjectWithKeywords */
 static byte Bi_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
 	nativeVal_t pairs;
 	for (int i = 0; i < n; i++) {
@@ -519,7 +519,7 @@ byte Lib_MinMax(const nativeVal_t *a, int n, nativeVal_t *out, int sign) {
 	return 1;
 }
 
-/* tuple(v) and list(v): PySequence_Tuple, PySequence_List */
+/* tuple(v) and list(v): abstract.c Sequence_Tuple, abstract.c Sequence_List */
 byte Lib_Seq(const nativeVal_t *a, int n, nativeVal_t *out, nativeType_t type) {
 	if (!Native_Arity(type == NV_TUPLE ? "tuple" : "list", n, 1, 1)) {
 		return 0;
@@ -852,7 +852,7 @@ static byte Bi_Id(const nativeVal_t *a, int n, nativeVal_t *out) {
 		return 0;
 	}
 	uintptr_t x = a->type == NV_REF ? NObj_Addr(a) : a->type == NV_ENT ? Native_EntAddr(a) :
-		a->type == NV_OBJ ? (uintptr_t)a->obj : (uintptr_t)a;
+		(uintptr_t)a;
 	Native_SetInt(out, (long)x);
 	return 1;
 }
@@ -870,7 +870,7 @@ static byte Bi_Int(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return Native_Arity("int", n, 1, 1) && Lib_Int(a, out);
 }
 
-/* PyClass_IsSubclass: cls is base or one of its bases is */
+/* classobject.c Class_IsSubclass: cls is base or one of its bases is */
 static byte Bi_IsSubclass(const nativeVal_t *cls, const nativeVal_t *base, int depth) {
 	nativeVal_t bases;
 	if (NObj_Is(cls, base)) {

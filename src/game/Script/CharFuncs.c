@@ -8,11 +8,11 @@
  * The functions are native C (docs/objlib-plan.md, stage 2): they work on C texts and values and on the entity
  * variables in C. The module variables are read where the port read them (Script_GetInt, Script_GetFloat and
  * Script_GetString forms, errors dropped) and written through at once with the port's dropped errors.
- * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity. The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through
- * their refs (PORT_CALL: directly while the attribute holds the port's function, else what is there); the engine
- * functions the port called by name go through their seams (SetMsgText, CreateEntity, Scrap.Set,
- * SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
- * The entries parse the arguments as before.
+ * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity.
+ * The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through their refs
+ * (PORT_CALL: directly while the attribute holds the port's function, else what is there); the engine functions the
+ * port called by name go through their seams (SetMsgText, CreateEntity, Scrap.Set, SetMoney, SetAlarm) or to the engine
+ * in C where no case replaces them (GetMoney, Get). The entries parse the arguments as before.
  */
 #include <string.h>
 
@@ -575,7 +575,7 @@ const portFn_t g_GearFuncs[] = {
 
 /* ---- Police: his speech, the bribe and the way to the main mission ---- */
 
-/* Speech.StdAnsLst(CharsNPC.optionsList [+ ["Generics_PoliceWereIs"]]) (PySequence_Concat: a value that is no
+/* Speech.StdAnsLst(CharsNPC.optionsList [+ ["Generics_PoliceWereIs"]]) (abstract.c Sequence_Concat: a value that is no
  * sequence can't be concatenated); its length, -1 with the error set */
 static int Police_Options(byte wereIs) {
 	nativeVal_t list = { 0 }, all = { 0 };
@@ -634,8 +634,8 @@ static byte Police_StartChallenge(const char *type, const char *ch) {
 	return ok;
 }
 
-/* the place of opt in CharsNPC.optionsList from 1 (PySequence_In and PySequence_Index), 0 when it is not there or
- * the list can not be searched (no error) */
+/* the place of opt in CharsNPC.optionsList from 1 (abstract.c Sequence_In and abstract.c Sequence_Index), 0 when it is
+ * not there or the list can not be searched (no error) */
 static int Police_OptionIndex(const char *opt) {
 	nativeVal_t list = { 0 }, key;
 	int index = 0;

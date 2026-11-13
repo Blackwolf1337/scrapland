@@ -138,4 +138,4 @@ static char str_PyDoc_SFX_MoneyTransfer[] =
 static char str_PyDoc_SFX_EmbeddedSet[] =
 	"FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos.";
 
-PORTS(PyInterface_SFXPy)
+PORTS(Engine_SFXPy)

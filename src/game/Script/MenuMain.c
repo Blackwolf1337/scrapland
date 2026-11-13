@@ -110,8 +110,8 @@ static void Main_SaveList(nativeVal_t *out) {
 	}
 }
 
-/* len(seq) as PySequence_Length takes it: -1 for a value without length (the error dropped, the -1 kept as the C kept
- * it) */
+/* len(seq) as abstract.c Sequence_Length takes it: -1 for a value without length (the error dropped, the -1 kept as the
+ * C kept it) */
 static int Main_Len(const nativeVal_t *seq) {
 	int n;
 	if (!Native_Len(seq, &n)) {
@@ -828,7 +828,7 @@ static byte Main_TVOff(void) {
 			const nativeVal_t *x = Native_GetItem(&resv, 0, 0, &tx), *z = Native_GetItem(&resv, 2, 0, &tz);
 			nativeVal_t t;
 			Native_SetFloat(&t, top);
-			/* a missing item is the NULL Py_BuildValue refused: no clamped place, as the C had none */
+			/* a missing item is the NULL modsupport.c BuildValue refused: no clamped place, as the C had none */
 			if (x && z) {
 				Mode_Tuple3(&clamped, x, &t, z);
 				Native_Free(&resv);
@@ -1234,7 +1234,8 @@ static byte Menu_DebugSet_AI_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-/* the Python code of XboxPyDebug ran here (a debug line typed by the user): there is no interpreter, an error says so */
+/* the Python code of XboxPyDebug ran here (a debug line typed by the user): there is no interpreter, an error says
+ * so */
 static byte Menu_DebugSet_XboxPyDebug_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
 	(void)n;

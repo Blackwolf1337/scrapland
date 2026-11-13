@@ -803,7 +803,7 @@ MODE_FN(Scene, HideVehiclesToo, 0, Sc_HideType("Car"))
 MODE_FN(Scene, Play, 1, Sc_Play(&a[0]))
 MODE_FN(Scene, EndOutDoorScene, 0, Sc_EndOutDoorScene())
 
-/* the keyword functions: the arguments by PyArg_ParseTupleAndKeywords, the defaults of the script (MODE_KW) */
+/* the keyword functions: the arguments by getargs.c Arg_ParseTupleAndKeywords, the defaults of the script (MODE_KW) */
 MODE_KW(Scene, ActorAction, "OOO|O", "frame", "Actor", "Action", "DefAction") {
 	Mode_KwDefS(v, given, 3, "Relax");
 	return Sc_Action(&v[0], &v[1], &v[2], &v[3], "Scene.ActorActEvent");

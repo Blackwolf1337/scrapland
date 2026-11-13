@@ -12,23 +12,6 @@
  * instance honours __init__ (the creation), __repr__, __str__ and __call__ and no other special method: the three
  * classes of the game data (VehiclesNPC.cShipAI, CharsNPC.CharSpawnPos, GateKeeper.GateKeeperType) define none but
  * the __init__ of CharSpawnPos, and the helper objects of the test cases (tc_obj) use __call__ and __repr__.
- *
- * OBJLIB 9, the bridge while Python is linked. An object is either native data (made by the functions below) or the
- * view of a Python object (made by Native_FromPyRef: it forwards every operation to that object). The identity table
- * maps a Python object to its one native object, and the native object names its Python object, so a value that goes
- * to Python and comes back is the same object on both sides:
- *   - A view holds one reference of its Python object while a native value holds the view. The table entry holds
- *     nothing. When the last native holder goes, the view leaves the table and drops the Python object; while Python
- *     alone holds the object there is no native one, and the next Native_FromPyRef makes a new view. Python never
- *     holds a native object, so neither side keeps the other alive in a ring.
- *   - Native data that must cross to Python (Native_ToPy of the NV_REF) is converted once: the Python object is made
- *     from it (a list with the items, a dict with the same table, an instance, a class, a C function object), the
- *     native data is freed, and from then on the Python object is the master and the native object its view (the
- *     types of 1.5.2 cannot be the view of native data). The value keeps its identity on the native side (the same
- *     nativeObj_t, the same hash); its repr shows the address of the Python object from then on, as a handle shows
- *     the one of its face.
- * A function keeps what it calls (the port ref, the callback) after it crossed, so its native call does not go through
- * Python.
  */
 #ifndef SCRAP_NATIVEOBJ_H
 #define SCRAP_NATIVEOBJ_H
@@ -41,8 +24,7 @@ typedef enum {
 	NO_INSTANCE,			/* a class and an attribute dict */
 	NO_CLASS,			/* a name, the base classes and a dict */
 	NO_FUNCTION,			/* a port function (portRef_t), a data function called by module and name, a C callback
-					 * with a context, a method of a list or dict bound to it; as a view also a Python
-					 * function or C function */
+					 * with a context, a method of a list or dict bound to it */
 	NO_METHOD,			/* a function of a class bound to an instance, or unbound */
 	NO_MODULE,			/* a module: its name and its variables (a dict object; a pack module's are the
 					 * registry's, scrap/modvars.h) */
@@ -56,8 +38,7 @@ typedef struct nativeObj_s nativeObj_t;
  * (1 with *out; 0 with the error raised, or without one as the C type's getattr gives NULL; NULL: none), its setattr
  * (NULL: none; v NULL:
  * delattr; 1, or 0 as getattr), the text the print statement writes for it (tp_print; NULL: str) and the drop of its
- * context with the last holder (NULL: nothing). OBJLIB 7e4b: its Python type and the Python object of a context (a
- * new reference, NULL with the error) for the crossing (the object stays native, the Python object is its face) */
+ * context with the last holder (NULL: nothing) */
 /* a method of a C object type: called with the object's context (a bound method object per lookup, equal for one
  * method of one object) */
 typedef struct nativeCMethod_s {
@@ -71,12 +52,10 @@ typedef struct nativeCType_s {
 	byte (*setattr)(void *ctx, const char *name, const nativeVal_t *v);
 	void (*print)(void *ctx, char *buf, int size);
 	void (*drop)(void *ctx);
-	PyTypeObject *pytype;
-	PyObject *(*toPy)(void *ctx);
 	/* the protocols of the object types of the library (batch 7e4c; NULL: none): repr and str (addr the address the
-	 * object shows; NULL: "<name object at ...>"), sq_length (-1 with the error), sq_item of an index the length made non-negative, sq_slice of bounds made
-	 * so, PyObject_Compare of a and b where one is of the type (the value 1.5.2 gives, not only its sign), tp_hash (0
-	 * with the error; NULL: the address), the truth (NULL: by sq_length, else true) */
+	 * object shows; NULL: "<name object at ...>"), sq_length (-1 with the error), sq_item of an index the length made
+	 * non-negative, sq_slice of bounds made so, the compare of a and b where one is of the type (the value 1.5.2 gives,
+	 * not only its sign), tp_hash (0 with the error; NULL: the address), the truth (NULL: by sq_length, else true) */
 	byte (*repr)(void *ctx, uintptr_t addr, nativeBuf_t *b, nativeRepr_t mode);
 	int (*len)(void *ctx);
 	byte (*item)(void *ctx, long i, nativeVal_t *out);
@@ -84,7 +63,7 @@ typedef struct nativeCType_s {
 	int (*compare)(const nativeVal_t *a, const nativeVal_t *b);
 	byte (*hash)(void *ctx, long *out);
 	byte (*truth)(void *ctx);
-	/* the methods (Py_FindMethod before the getattr: __methods__, then the names), NULL or ended by a NULL name; a
+	/* the methods (looked up before the getattr: __methods__, then the names), NULL or ended by a NULL name; a
 	 * type without getattr and methods has no attributes ("'name' object has no attribute ..."), one without
 	 * setattr read-only ones */
 	const nativeCMethod_t *methods;
@@ -100,19 +79,15 @@ typedef byte (*nativeCallKw_t)(void *ctx, const nativeVal_t *a, int n, const nat
 
 /* one more holder: o */
 nativeObj_t *NObj_Keep(nativeObj_t *o);
-/* a holder less; the last one frees the object (a view leaves the identity table and drops its Python object) */
+/* a holder less; the last one frees the object */
 void NObj_Drop(nativeObj_t *o);
 /* the kind of the object v holds (NO_), -1 for a value that is no NV_REF */
 int NObj_Kind(const nativeVal_t *v);
-/* a is b: both hold the same object (values of other kinds: None with None, the same entity handle, the same Python
- * object; numbers and texts are never the same object here) */
+/* a is b: both hold the same object (values of other kinds: None with None, the same entity handle; numbers and
+ * texts are never the same object here) */
 byte NObj_Is(const nativeVal_t *a, const nativeVal_t *b);
-/* the objects made and freed since the start, the entries of the identity table now (the objects that have a Python
- * object: the views) and the objects of native data that crossed to Python since the start */
-void NObj_Counts(unsigned long *made, unsigned long *freed, unsigned long *views, unsigned long *crossed);
-/* the objects of the identity table now (at most max), one line "view <type> holders <n> <repr>" each added to b: who
- * still holds a view (the test channel) */
-void NObj_ListViews(nativeBuf_t *b, int max);
+/* the objects made and freed since the start */
+void NObj_Counts(unsigned long *made, unsigned long *freed);
 
 /* ---- making objects (each *out an NV_REF held once: Native_Free it) ---- */
 
@@ -124,8 +99,8 @@ void NObj_NewDict(nativeVal_t *out);
  * stay as they are. Every store into an object (an item, an attribute, an argument of append) does it */
 void NObj_Share(nativeVal_t *v);
 /* class name(bases): dict (an NV_DICT by value, NULL for an empty one) is moved into the class; module (NULL: none) is
- * its __module__ when the dict has none, __doc__ None when it has none (PyClass_New). bases: NULL, or a tuple or list
- * of classes. 0 with the TypeError of a base that is no class ("base is not a class object") */
+ * its __module__ when the dict has none, __doc__ None when it has none (classobject.c Class_New). bases: NULL, or a
+ * tuple or list of classes. 0 with the TypeError of a base that is no class ("base is not a class object") */
 byte NObj_NewClass(nativeVal_t *out, const char *name, const char *module, const nativeVal_t *bases, nativeVal_t *dict);
 /* the function object of a port function (repr "<built-in function Name>"; called through Port_BoundCall) */
 void NObj_NewPortFunc(nativeVal_t *out, const portRef_t *ref);
@@ -148,8 +123,7 @@ void NObj_NewBound(nativeVal_t *out, const char *name, portEntry_t entry, const 
 void NObj_SetCallbackDoc(const nativeVal_t *f, const char *doc);
 /* the holders of the object v holds (sys.getrefcount), 0 for a value that is no NV_REF */
 int NObj_Refs(const nativeVal_t *v);
-/* the address the repr of the object v holds shows (its Python object's once it crossed), 0 for a value that is no
- * NV_REF */
+/* the address the repr of the object v holds shows, 0 for a value that is no NV_REF */
 uintptr_t NObj_Addr(const nativeVal_t *v);
 /* the type of the C object a value holds, NULL for any other value */
 const nativeCType_t *NObj_CType(const nativeVal_t *v);
@@ -157,20 +131,13 @@ const nativeCType_t *NObj_CType(const nativeVal_t *v);
 void *NObj_CObjOf(const nativeVal_t *v, const nativeCType_t *type);
 /* the C callback and context of a callback function: 1, 0 for any other value */
 byte NObj_CallbackOf(const nativeVal_t *f, nativeCall_t *call, void **ctx);
-/* v as a call through Python hands it to a native callee (NObj_FromPy of Native_ToPy(v)), without the crossing: a
- * copy with its lists and dicts as new objects (NObj_Share), a vector as the tuple of its floats, a Python value in it
- * in the form NObj_FromPy gives */
+/* v as a call through Python handed it to a callee: a copy with its lists and dicts as new objects (NObj_Share), a
+ * vector as the tuple of its floats */
 void NObj_CallArg(const nativeVal_t *v, nativeVal_t *out);
-/* v holds an object whose operations are native: native data, a native function or a pack module, also after it
- * crossed to Python (0 for a view, which forwards them, and for any other value) */
+/* v holds an object (an NV_REF) */
 byte NObj_Native(const nativeVal_t *v);
 /* the port ref of a port function made by NObj_NewPortFunc, NULL for any other value */
 const portRef_t *NObj_PortRef(const nativeVal_t *f);
-/* OBJLIB 7e2: the ref of the C function object a port function gives to Python (its face: no adapter, the call goes to
- * the native function), NULL for any other object */
-const portRef_t *NObj_PortFace(PyObject *f);
-/* OBJLIB 7e2: a new C function object of the port function of ref (a new reference, NULL with the error) */
-PyObject *NObj_PortFuncPy(const portRef_t *ref);
 /* the method object of func (a function object) for cls: bound to the instance self, or unbound (self NULL). 0 with a
  * TypeError when func, self or cls is not of that kind */
 byte NObj_NewMethod(nativeVal_t *out, const nativeVal_t *func, const nativeVal_t *self, const nativeVal_t *cls);
@@ -189,14 +156,14 @@ void NObj_NewCObj(nativeVal_t *out, const nativeCType_t *type, void *ctx);
 byte NObj_PrintText(const nativeVal_t *v, char *buf, int size);
 /* the module name as the scripts import it (Script_Module): 0 with the ImportError */
 byte NObj_Module(nativeVal_t *out, const char *name);
-/* a new module name (PyModule_New: its variables __name__ and __doc__ None), in no module store */
+/* a new module name (as 1.5.2's module_new: its variables __name__ and __doc__ None), in no module store */
 void NObj_NewModule(nativeVal_t *out, const char *name);
 /* the variables of the module m (a dict object, held by the module: the pointer is the module's key while it lives),
  * NULL for any other value */
 const nativeVal_t *NObj_ModuleVars(const nativeVal_t *m);
 
 /* ---- operations on a value (an NV_REF by its object; the kinds by value as Native_ of scriptnative.h has them, an
- * NV_OBJ and an entity handle through Python). Each: 1 with *out made (Native_Free it), 0 with the error raised ---- */
+ * entity handle as its handle). Each: 1 with *out made (Native_Free it), 0 with the error raised ---- */
 
 /* repr(v), str(v) or the check() form added to b (Native_Repr with the errors of __repr__ and __str__ kept) */
 byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode);
@@ -224,12 +191,11 @@ byte NObj_Call(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *o
 /* o.name(a[0], ..., a[n - 1]): NObj_GetAttr, then NObj_Call (the one lookup of the list and dict methods: append,
  * insert, extend, pop, remove, index, count, reverse, sort; keys, values, items, has_key, get, update, clear, copy) */
 byte NObj_CallMethod(const nativeVal_t *o, const char *name, const nativeVal_t *a, int n, nativeVal_t *out);
-/* callable(v) as PyCallable_Check: a function, a method, a class, an instance that has __call__, a view or Python
- * value by its object; 0 for anything else */
+/* callable(v): a function, a method, a class, an instance that has __call__; 0 for anything else */
 byte NObj_Callable(const nativeVal_t *v);
 /* f(a..., **kw) with kw as nativeCallKw_t has them (NULL or empty: NObj_Call): a callback with its callkw, a class,
- * instance or method of native data natively, a port function and a Python object through Python (the adapter takes
- * the keywords); a native function without callkw raises "this function takes no keyword arguments" */
+ * instance or method, a port function (its keyword entry); a native function without callkw raises "this function takes
+ * no keyword arguments" */
 byte NObj_CallKw(const nativeVal_t *f, const nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out);
 
 /* ---- the hooks of the value functions (ScriptNative.c calls them for an NV_REF) ---- */
@@ -246,47 +212,17 @@ byte NObj_True(const nativeVal_t *v);
  * method", "module", "type" */
 const char *NObj_TypeName(const nativeVal_t *v);
 
-/* ---- OBJLIB 9: the bridge ---- */
-
-/* the NV_REF of a Python list, dict, instance, class, function, C function, method or module: its native object when
- * it has one, else a new view (1, Native_Free *v); 0 without an error and *v None for an object of another type */
-byte Native_FromPyRef(PyObject *o, nativeVal_t *v);
-/* a Python value as the operations of a view give it: a number, text or None by value, a tuple by value with its
- * items by this rule, an entity handle as NV_ENT, an object Native_FromPyRef takes as its NV_REF (a list or dict of
- * plain values too: it keeps its identity), anything else as NV_OBJ */
-void NObj_FromPy(PyObject *o, nativeVal_t *v);
-/* Native_ToPy of an NV_REF: its Python object (a new reference), made from the native data at the first crossing
- * (see the head comment); NULL with the error */
-PyObject *NObj_ToPy(const nativeVal_t *v);
-/* the Python object behind the value now (borrowed): the one of a view, of an NV_OBJ; NULL for native data that never
- * crossed and the kinds by value (no conversion, unlike Native_PyOf) */
-PyObject *NObj_Py(const nativeVal_t *v);
-/* the table of a dict object of native data (NV_DICT, changed in place by the caller with the Native_Dict functions);
- * NULL for a view, a dict that crossed, another value */
+/* the table of a dict object (NV_DICT, changed in place by the caller with the Native_Dict functions); NULL for
+ * another value */
 nativeVal_t *NObj_DictData(const nativeVal_t *d);
-/* the items of a list object of native data (an NV_LIST by value, changed in place by the caller); NULL for a view,
- * a list that crossed, another value */
+/* the items of a list object (an NV_LIST by value, changed in place by the caller); NULL for another value */
 const nativeVal_t *NObj_ListData(const nativeVal_t *l);
-/* the identity of the Python object o for v, the value it was made into: True, False and the standard exceptions their
- * own ones, any other number, text or tuple one of its own (Native_Pin) */
-void NObj_PyId(PyObject *o, nativeVal_t *v);
-/* NObj_FromPy with NObj_PyId, as a variable holds a value of Python */
-void NObj_FromPyKept(PyObject *o, nativeVal_t *v);
-/* Native_FromPyAny(Native_ToPy(v)) without the crossing of native data: numbers, texts, None, and lists, tuples and
- * dicts (by value, objects, views) of them by value, 32 deep (a dict with its table); 1 with *out (Native_Free it),
- * 0 without an error and *out None when v holds another value (an instance, a function, a module, an entity handle) */
+/* the plain data of v: numbers, texts, None, and lists, tuples and dicts (by value or objects) of them by value, 32
+ * deep (a dict with its table); 1 with *out (Native_Free it), 0 without an error and *out None when v holds another
+ * value (an instance, a function, a module, an entity handle) */
 byte NObj_Plain(const nativeVal_t *v, nativeVal_t *out);
-/* Native_Arg(Native_ToPy(v)) the same way: NObj_Plain, else the object or handle itself (an NV_OBJ as Native_SetObj
- * gives it), a tuple, list or dict by value that holds objects or handles natively (a list or dict as a new object, a
- * tuple of such items); one that holds a view or a Python value as its Python object gives it (OBJLIB 9) */
+/* v as a call through Python handed it back: NObj_Plain, else the object or handle itself, a tuple, list or dict by
+ * value that holds objects or handles (a list or dict as a new object, a tuple of such items) */
 void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out);
-/* v or a value in it is a view or a Python value (NV_OBJ) */
-byte NObj_HoldsPy(const nativeVal_t *v);
-/* 1 by default: Native_SetObj and Native_Arg give the NV_REF view of an object Native_FromPyRef takes. 0 under
- * SCRAP_NATIVE_REF=0 (read once): the NV_OBJ of before batch 9a2, kept one more round for comparison */
-byte NObj_RefMode(void);
-/* the measure of what stays native: 0 native data, 1 the view of an object Python made, 2 native data that crossed to
- * Python (now a view too); -1 for a value that is no NV_REF */
-int NObj_State(const nativeVal_t *v);
 
 #endif

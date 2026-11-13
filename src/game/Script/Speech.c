@@ -47,7 +47,7 @@ static byte Sp_Has(const char *var, nativeVal_t *out) {
 
 /* ---- values ---- */
 
-/* `v` == n of the script (PyObject_Compare): -1, 0, 1 */
+/* `v` == n of the script (object.c Object_Compare): -1, 0, 1 */
 static int Sp_NumCmp(const nativeVal_t *v, long n) {
 	nativeVal_t b;
 	Native_SetInt(&b, n);
@@ -71,7 +71,7 @@ static byte Sp_CatS(const char *text, const nativeVal_t *b, nativeVal_t *out) {
 	return ok;
 }
 
-/* v[i] as PySequence_GetItem takes it (a dict is no sequence; an NV_OBJ the Python way) */
+/* v[i] as abstract.c Sequence_GetItem takes it (a dict is no sequence; an NV_OBJ the Python way) */
 static byte Sp_Item(const nativeVal_t *v, long i, nativeVal_t *out) {
 	nativeVal_t tmp;
 	Native_SetNone(out);

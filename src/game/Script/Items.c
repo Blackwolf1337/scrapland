@@ -29,7 +29,7 @@
 /* the 17 keys of the upgrades (1 to 17) the loops of the script look at */
 #define IT_UPGRADES 17
 
-/* ups.has_key(key) as PyMapping_HasKey answers it: ups[key] gives a value (any error is no) */
+/* ups.has_key(key) as abstract.c Mapping_HasKey answers it: ups[key] gives a value (any error is no) */
 static int It_Has(const nativeVal_t *ups, const nativeVal_t *key) {
 	nativeVal_t v;
 	if (!Native_Subscript(ups, key, &v)) {
@@ -650,7 +650,8 @@ static byte It_Hint(const nativeVal_t *pos, const nativeVal_t *text, const nativ
 /* "OO|OOO" */
 MODE_FNOPT(Items, Hint, 2, 5, It_Hint(&a[0], &a[1], MODE_OPT(2), MODE_OPT(3), MODE_OPT(4)))
 
-/* SetInteractiveObjOnFloor(c): the object on the floor below it (c a handle the script gave, any value the Python way) */
+/* SetInteractiveObjOnFloor(c): the object on the floor below it (c a handle the script gave, any value the Python
+ * way) */
 static byte It_OnFloor(const nativeVal_t *c) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pos = Mode_V(&t), *off = Mode_V(&t), *down = Mode_V(&t), *res = Mode_V(&t), *p = Mode_V(&t);

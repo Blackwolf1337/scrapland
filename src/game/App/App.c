@@ -16,7 +16,6 @@
 #include "scrap/model.h"
 #include "scrap/net.h"
 #include "scrap/nodestraffic.h"
-#include "scrap/python.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sound.h"

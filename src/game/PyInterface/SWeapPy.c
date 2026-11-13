@@ -247,4 +247,4 @@ static char str_PyDoc_SWeap_GetFirstiWeap[] = "GetFirstiWeap() : Obtiene el arma
 
 static char str_PyDoc_SWeap_NetExec[] = "NetExec() : Rutinas de red de los misiles";
 
-PORTS(PyInterface_SWeapPy)
+PORTS(Engine_SWeapPy)

@@ -35,8 +35,8 @@ static const char racer_def[] = {
 
 /* ---- values ---- */
 
-/* a value as the C set it on the scorer item: a float as it is, else PyInt_AsLong of it (an int, a long int that fits,
- * an object's int; -1 for the rest, the error dropped) */
+/* a value as the C set it on the scorer item: a float as it is, else intobject.c Int_AsLong of it (an int, a long int
+ * that fits, an object's int; -1 for the rest, the error dropped) */
 static double Hud_Num(const nativeVal_t *v) {
 	switch (v->type) {
 	case NV_INT:
@@ -72,8 +72,8 @@ static const char *Hud_Repr(const nativeVal_t *v, char *out, int size) {
 	return out;
 }
 
-/* seq[i] as PySequence_GetItem gives it, a copy in *out (Native_Free it), lists and tuples held as one NV_OBJ made
- * native (Mode_Elems): 0 when it is not there (the error dropped) */
+/* seq[i] as abstract.c Sequence_GetItem gives it, a copy in *out (Native_Free it), lists and tuples held as one NV_OBJ
+ * made native (Mode_Elems): 0 when it is not there (the error dropped) */
 static byte Hud_Item(const nativeVal_t *seq, int i, nativeVal_t *out) {
 	nativeVal_t tmp = { 0 };
 	const nativeVal_t *e = seq ? Native_GetItem(seq, i, 0, &tmp) : NULL;

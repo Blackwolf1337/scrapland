@@ -36,8 +36,8 @@
  * &AnmTotalTime). @, %, $ and & values may end in operations with numbers, done left to right with Python's numbers:
  * $x+10, &AnmTotalTime/4*2.
  * $(name) inside a word or text is the value name as text.
- * The values are native values (nativeVal_t, see the comment above Def_Lookup). A call line calls the entry of a port or
- * engine function through the registry of stage 4 (Port_Invoke) while the module attribute is that function itself,
+ * The values are native values (nativeVal_t, see the comment above Def_Lookup). A call line calls the entry of a port
+ * or engine function through the registry of stage 4 (Port_Invoke) while the module attribute is that function itself,
  * else by name through Python as a script did (Def_Call).
  */
 #define _GNU_SOURCE
@@ -60,7 +60,6 @@
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
 #include "scrap/timer.h"
-#include "compile.h"
 
 #define SCRIPT_MAX_FILE 0x10000
 #define SCRIPT_MAX_TOKENS 16
@@ -269,8 +268,8 @@ static void Script_SetDeferred(const nativeVal_t *d, nativeVal_t *later) {
  * StdInitializator, StdObjInitializator, 0, 0) and the dict values that hold it, one level deep (not __builtins__). The
  * sets come after the walk of the variables. When the .pyc ran, the loader put the C function in the place of the
  * Python one there (and rebound the engine callbacks to it); no Python code loads now, so nothing is replaced and only
- * the writes stay. They decide the key order of the module's variables (PyDict_SetItem doubles a dict that is 2/3 full
- * before a write, also for a key that is in it, and the registry's table does the same).
+ * the writes stay. They decide the key order of the module's variables (dictobject.c Dict_SetItem doubles a dict that
+ * is 2/3 full before a write, also for a key that is in it, and the registry's table does the same).
  */
 static void Script_ReplayRefs(const modVarRef_t *ref, const nativeVal_t *space, const nativeVal_t *key,
 	const nativeVal_t *cur) {
@@ -361,9 +360,9 @@ byte Script_TableHas(const char *module, const char *name) {
 /*
  * The dict writes the loader made after the .pyc for a table, on a module made in C with the values in place: per
  * function of the table the other names, tuple items and dict values that hold it (Script_ReplayRefs) and the name
- * itself, which a function the script lacks gets here as the loader gave it. PyDict_SetItem doubles a dict that is
- * 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
- * as they did after the .pyc (Sound modules of 21 keys).
+ * itself, which a function the script lacks gets here as the loader gave it. dictobject.c Dict_SetItem doubles a dict
+ * that is 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module
+ * dict as they did after the .pyc (Sound modules of 21 keys).
  */
 void Script_TableReplay(const nativeVal_t *module, const portFn_t *fns) {
 	modVarRef_t ref;
@@ -538,12 +537,6 @@ byte Script_EntTrue(const char *ent, const char *var) {
 		return 1;
 	}
 	return Entity_VarS(e, var, &s, 0) && s && *s;
-}
-
-PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
-	PyObject *r = callable && args ? Script_CallObject(callable, args, NULL) : NULL;
-	Py_XDECREF(args);
-	return r;
 }
 
 void Script_StepPrint(int id, const nativeVal_t *args, int n) {
@@ -981,7 +974,7 @@ static byte Def_IsSequence(const nativeVal_t *v) {
 	if (NObj_Native(v)) {
 		return NObj_Kind(v) == NO_LIST;
 	}
-	return v->type == NV_LIST || v->type == NV_TUPLE || (Native_IsObj(v) && (PyList_Check(Native_PyOf(v)) || PyTuple_Check(Native_PyOf(v))));
+	return v->type == NV_LIST || v->type == NV_TUPLE;
 }
 
 /* the list name as a tuple of lists, one per entry line, into *out (as Def_Value) */
@@ -1159,7 +1152,7 @@ static byte Def_Call(const char *module, const char *func, const defArgs_t *a) {
 		return 0;
 	}
 	byte known = Port_Find(module, func) != NULL;
-	const portRef_t *ref = known && !Port_Slow() ? NObj_PortRef(&f) : NULL;
+	const portRef_t *ref = known ? NObj_PortRef(&f) : NULL;
 	if (ref && !strcmp(ref->module, module) && !strcmp(ref->name, func) && Def_Letters(a, fmt, sizeof(fmt))) {
 		const nativeVal_t *p[PORT_ARGS] = { NULL };
 		for (int i = 0; i < a->n; i++) {

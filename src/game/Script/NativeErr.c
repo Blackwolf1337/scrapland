@@ -1,11 +1,10 @@
 /*
  * The error state of the scripts in C (include/scrap/scriptnative.h, stage 7d of docs/objlib-plan.md): the error a
  * native function raises, its test, fetch and restore, and its print as the script printed its traceback
- * (PyErr_PrintEx of Python/pythonrun.c: there is no traceback without the interpreter, so the lines are the file and
- * line of a SyntaxError and "<type>: <value>").
+ * (errors.c Err_PrintEx of Python/pythonrun.c: there is no traceback without the interpreter, so the lines are the file
+ * and line of a SyntaxError and "<type>: <value>").
  *
- * OBJLIB 7: at the end the boundary to the object library of Python 1.5.2, whose error functions
- * (src/python/errors.c) work on this state, and the sys module parts of the print (sys.last_type, sys.stdout's
+ * At the end the exception objects of __builtin__ and the sys module parts of the print (sys.last_type, sys.stdout's
  * softspace, the missing sys.stderr, SystemExit).
  */
 #include <stdarg.h>
@@ -56,7 +55,7 @@ const char *Native_ErrName(nativeError_t kind) {
 }
 
 /* the error kind with type (NE_OTHER) and value, both taken over (NULL: None); the old one freed after, as
- * PyErr_Restore frees it (its values may run code that looks at the state) */
+ * errors.c Err_Restore frees it (its values may run code that looks at the state) */
 static void NErr_Set(nativeError_t kind, nativeVal_t *type, nativeVal_t *value) {
 	nativeErr_t old = ne_err;
 	ne_err.kind = kind;
@@ -191,7 +190,7 @@ byte Native_ErrValueStr(nativeBuf_t *b, const nativeErr_t *e) {
 	return NObj_Repr(b, &e->value, NR_STR);
 }
 
-/* cls is base or derived from it (PyClass_IsSubclass): both classes */
+/* cls is base or derived from it (classobject.c Class_IsSubclass): both classes */
 static byte NErr_IsSub(const nativeVal_t *cls, const nativeVal_t *base, int depth) {
 	nativeVal_t bases, b;
 	if (NObj_Is(cls, base)) {
@@ -212,7 +211,7 @@ static byte NErr_IsSub(const nativeVal_t *cls, const nativeVal_t *base, int dept
 }
 
 void Native_ErrNormalize(nativeErr_t *e) {
-	/* PyErr_NormalizeException: only a class as the exception has an instance as its value */
+	/* errors.c Err_NormalizeException: only a class as the exception has an instance as its value */
 	while (e->kind == NE_OTHER && NObj_Kind(&e->type) == NO_CLASS) {
 		nativeVal_t inclass, r;
 		Native_SetNone(&inclass);
@@ -246,7 +245,7 @@ void Native_ErrNormalize(nativeErr_t *e) {
 /* ---- the print ---- */
 
 /* one write to sys.stderr of the script (the write of ConsoleErrorOutput: Scrap.ConsoleError, through its seam); none
- * while an error is set (PyFile_WriteString) */
+ * while an error is set (fileobject.c File_WriteString) */
 static byte NErr_Write(const char *s, int len) {
 	nativeVal_t t;
 	if (Native_Failed()) {
@@ -258,7 +257,7 @@ static byte NErr_Write(const char *s, int len) {
 	return ok;
 }
 
-/* the text item of a value that is a text or None (PyArg "z"): 1 with *s (NULL for None) */
+/* the text item of a value that is a text or None (getargs.c "z"): 1 with *s (NULL for None) */
 static byte NErr_Z(const nativeVal_t *v, const char **s) {
 	*s = v->type == NV_STR ? Native_Text(v) : NULL;
 	return v->type == NV_STR || v->type == NV_NONE;
@@ -314,7 +313,7 @@ static byte NErr_SyntaxLines(const nativeVal_t *v, nativeVal_t *msg) {
 	return 1;
 }
 
-/* the exception as PyErr_Print writes it: a class as "module.name" (no module for the standard ones, "<unknown>"
+/* the exception as errors.c Err_Print writes it: a class as "module.name" (no module for the standard ones, "<unknown>"
  * without __module__), else its str */
 static byte NErr_WriteType(const nativeErr_t *e) {
 	nativeVal_t a;
@@ -391,136 +390,63 @@ void Native_ErrPrint(void) {
 	}
 }
 
-/* ---- OBJLIB 7: the boundary to Python's error state and sys ---- */
+/* ---- the exception objects and sys ---- */
 
-static PyObject **const ne_py[NE_KINDS] = {
-	[NE_INDEX] = &PyExc_IndexError,
-	[NE_VALUE] = &PyExc_ValueError,
-	[NE_TYPE] = &PyExc_TypeError,
-	[NE_ATTRIBUTE] = &PyExc_AttributeError,
-	[NE_SYSTEM] = &PyExc_SystemError,
-	[NE_OVERFLOW] = &PyExc_OverflowError,
-	[NE_ZERODIV] = &PyExc_ZeroDivisionError,
-	[NE_NAME] = &PyExc_NameError,
-	[NE_KEY] = &PyExc_KeyError,
-	[NE_RUNTIME] = &PyExc_RuntimeError,
-	[NE_IMPORT] = &PyExc_ImportError,
-	[NE_SYNTAX] = &PyExc_SyntaxError,
-	[NE_MEMORY] = &PyExc_MemoryError,
-	[NE_IO] = &PyExc_IOError,
-	[NE_EOF] = &PyExc_EOFError,
-	[NE_OS] = &PyExc_OSError,
-	[NE_FLOAT] = &PyExc_FloatingPointError,
-	[NE_ASSERTION] = &PyExc_AssertionError,
-	[NE_INTERRUPT] = &PyExc_KeyboardInterrupt,
-	[NE_NOTIMPL] = &PyExc_NotImplementedError,
-	[NE_SYSTEMEXIT] = &PyExc_SystemExit,
-	[NE_EXCEPTION] = &PyExc_Exception,
-	[NE_STANDARD] = &PyExc_StandardError,
-	[NE_ARITHMETIC] = &PyExc_ArithmeticError,
-	[NE_LOOKUP] = &PyExc_LookupError,
-	[NE_ENVIRONMENT] = &PyExc_EnvironmentError,
-};
+/* the standard exceptions in the order of bltin_exc of bltinmodule.c, for the tuple of StandardError */
+static const nativeError_t ne_order[] = { NE_ARITHMETIC, NE_LOOKUP, NE_ASSERTION, NE_ATTRIBUTE, NE_EOF, NE_FLOAT,
+	NE_ENVIRONMENT, NE_IO, NE_OS, NE_IMPORT, NE_INDEX, NE_KEY, NE_INTERRUPT, NE_MEMORY, NE_NAME, NE_OVERFLOW,
+	NE_RUNTIME, NE_NOTIMPL, NE_SYNTAX, NE_SYSTEM, NE_SYSTEMEXIT, NE_TYPE, NE_VALUE, NE_ZERODIV };
+
+/* the exception object of kind as initerrors of bltinmodule.c makes the string exceptions: a leaf one its name, the
+ * groups the tuples of their members (LookupError, ArithmeticError, EnvironmentError, StandardError: all but
+ * SystemExit, Exception: SystemExit and StandardError), each object with the identity of its kind */
+static void NErr_Object(nativeError_t kind, nativeVal_t *out) {
+	static const nativeError_t lookup[] = { NE_INDEX, NE_KEY }, arith[] = { NE_OVERFLOW, NE_ZERODIV, NE_FLOAT },
+		env[] = { NE_IO, NE_OS }, exc[] = { NE_SYSTEMEXIT, NE_STANDARD };
+	const nativeError_t *items = NULL;
+	int n = 0;
+	switch (kind) {
+	case NE_LOOKUP:
+		items = lookup, n = 2;
+		break;
+	case NE_ARITHMETIC:
+		items = arith, n = 3;
+		break;
+	case NE_ENVIRONMENT:
+		items = env, n = 2;
+		break;
+	case NE_EXCEPTION:
+		items = exc, n = 2;
+		break;
+	case NE_STANDARD:
+		Native_SetEmpty(out, NV_TUPLE);
+		for (size_t i = 0; i < sizeof(ne_order) / sizeof(ne_order[0]); i++) {
+			if (ne_order[i] != NE_SYSTEMEXIT) {
+				NErr_Object(ne_order[i], Native_Append(out));
+			}
+		}
+		out->id = NATIVE_ID_ERR + (uintptr_t)kind;
+		return;
+	default:
+		Native_SetStr(out, ne_names[kind]);
+		out->id = NATIVE_ID_ERR + (uintptr_t)kind;
+		return;
+	}
+	Native_SetEmpty(out, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		NErr_Object(items[i], Native_Append(out));
+	}
+	out->id = NATIVE_ID_ERR + (uintptr_t)kind;
+}
 
 void Native_ErrObject(const char *name, nativeVal_t *out) {
 	for (int k = 0; k < NE_OTHER; k++) {
 		if (!strcmp(ne_names[k], name)) {
-			NObj_FromPyKept(*ne_py[k], out);
+			NErr_Object((nativeError_t)k, out);
 			return;
 		}
 	}
 	Native_SetNone(out);
-}
-
-/* the kind whose exception object o is (string exceptions match by identity), NE_OTHER for any other */
-static nativeError_t NErr_KindOfPy(PyObject *o) {
-	for (int k = 0; o && k < NE_OTHER; k++) {
-		if (*ne_py[k] == o) {
-			return (nativeError_t)k;
-		}
-	}
-	return NE_OTHER;
-}
-
-uintptr_t Py_ErrIdOf(PyObject *o) {
-	nativeError_t kind = NErr_KindOfPy(o);
-	return kind == NE_OTHER ? 0 : NATIVE_ID_ERR + (uintptr_t)kind;
-}
-
-/* the Python objects of the values of the error that crossed (Py_ErrType and Py_ErrTake give them borrowed), with the
- * identities of the values they were made for */
-static PyObject *ne_pyObj[2];
-static uintptr_t ne_pyId[2];
-
-/* the native value of an object of Python's error state (a number, text or tuple with an identity of its own: the way
- * back gives the same object) */
-static void NErr_FromPy(PyObject *o, nativeVal_t *v, int slot) {
-	NObj_FromPyKept(o, v);
-	if (Native_IdOf(v) && !(v->id >= NATIVE_ID_ERR && v->id < NATIVE_ID_ERR + NE_KINDS)) {
-		Py_INCREF(o);
-		Py_XDECREF(ne_pyObj[slot]);
-		ne_pyObj[slot] = o;
-		ne_pyId[slot] = Native_IdOf(v);
-	}
-}
-
-/* the Python object of a value of the error (borrowed: held by the slot until the next value of another identity) */
-static PyObject *NErr_Py(nativeVal_t *v, int slot) {
-	if (v->type == NV_REF || v->type == NV_OBJ) {
-		PyObject *o = Native_PyOf(v);
-		return o ? o : Py_None;
-	}
-	Native_PinTop(v);
-	uintptr_t id = Native_IdOf(v);
-	if (id >= NATIVE_ID_ERR && id < NATIVE_ID_ERR + NE_OTHER) {
-		return *ne_py[id - NATIVE_ID_ERR];
-	}
-	if (!id || !ne_pyObj[slot] || ne_pyId[slot] != id) {
-		PyObject *o = Native_ToPy(v);
-		if (!o) {
-			return Py_None;
-		}
-		Py_XDECREF(ne_pyObj[slot]);
-		ne_pyObj[slot] = o;
-		ne_pyId[slot] = id;
-	}
-	return ne_pyObj[slot];
-}
-
-void Py_ErrSet(PyObject *type, PyObject *value, PyObject *tb) {
-	nativeError_t kind = type ? NErr_KindOfPy(type) : NE_NONE;
-	nativeVal_t t, v;
-	Native_SetNone(&t);
-	Native_SetNone(&v);
-	if (kind == NE_OTHER) {
-		NErr_FromPy(type, &t, 0);
-	}
-	if (kind != NE_NONE && value) {
-		NErr_FromPy(value, &v, 1);
-	}
-	Py_XDECREF(type);
-	Py_XDECREF(value);
-	Py_XDECREF(tb);
-	NErr_Set(kind, &t, &v);
-}
-
-PyObject *Py_ErrType(void) {
-	if (ne_err.kind == NE_NONE) {
-		return NULL;
-	}
-	return ne_err.kind == NE_OTHER ? NErr_Py(&ne_err.type, 0) : *ne_py[ne_err.kind];
-}
-
-void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb) {
-	*type = Py_ErrType();
-	*value = NULL;
-	*tb = NULL;
-	if (*type) {
-		Py_INCREF(*type);
-		*value = NErr_Py(&ne_err.value, 1);
-		Py_INCREF(*value);
-	}
-	Native_ErrClear();
 }
 
 /* sys.last_type, sys.last_value and (deleted) sys.last_traceback, sys.stdout's soft space ended: 0 when there is no

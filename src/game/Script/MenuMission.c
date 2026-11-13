@@ -116,7 +116,7 @@ static byte Mission_DealStatus(int num, nativeVal_t *out) {
 	return 0;
 }
 
-/* item i of a status as PySequence_GetItem takes it, NULL when there is none (tmp: Native_Free it) */
+/* item i of a status as abstract.c Sequence_GetItem takes it, NULL when there is none (tmp: Native_Free it) */
 static const nativeVal_t *Mission_Item(const nativeVal_t *res, long i, nativeVal_t *tmp) {
 	Native_SetNone(tmp);
 	return Native_GetItem(res, i, 0, tmp);

@@ -686,4 +686,4 @@ static char str_PyDoc_SScorer_AddModel[] =
 static char str_PyDoc_SScorer_SetMPFunc[104] =
 	"SetMPFunc(playernumber,Callback) : Callback(id,showmpscorer) (muestra oculta el scorer multiplayer)";
 
-PORTS(PyInterface_SScorerPy)
+PORTS(Engine_SScorerPy)

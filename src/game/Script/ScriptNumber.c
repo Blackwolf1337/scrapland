@@ -1,10 +1,10 @@
 /*
  * The number protocol of the Python 1.5.2 library on native values (include/scrap/scriptlib.h, stage 7e, batch
  * 7e4c): the binary and unary operators and conversions of Objects/abstract.c with the coercions of object.c
- * (PyNumber_Coerce), the number methods of ints, long ints, floats and complex numbers (intobject.c, longobject.c
- * through ScriptLong.c, floatobject.c, complexobject.c), the operators of class instances (PyInstance_DoBinOp of
- * classobject.c: __coerce__, __add__ / __radd__ ...), the concat and repeat of the sequences, PyObject_Compare with the
- * values it gives, and the sequence protocol of the builtins.
+ * (abstract.c Number_Coerce), the number methods of ints, long ints, floats and complex numbers (intobject.c,
+ * longobject.c through ScriptLong.c, floatobject.c, complexobject.c), the operators of class instances (classobject.c
+ * Instance_DoBinOp of classobject.c: __coerce__, __add__ / __radd__ ...), the concat and repeat of the sequences,
+ * object.c Object_Compare with the values it gives, and the sequence protocol of the builtins.
  */
 #include <ctype.h>
 #include <errno.h>
@@ -80,9 +80,10 @@ static void Num_Complex(const nativeVal_t *v, double *re, double *im) {
 	}
 }
 
-/* ---- the compare (PyObject_Compare) ---- */
+/* ---- the compare (object.c Object_Compare) ---- */
 
-/* the last rule of PyObject_Compare: values of different types by the names of the types, a number before all others */
+/* the last rule of object.c Object_Compare: values of different types by the names of the types, a number before all
+ * others */
 static int Num_TypeOrder(const nativeVal_t *a, const nativeVal_t *b) {
 	return strcmp(Lib_IsNumber(a) ? "" : Native_TypeName(a), Lib_IsNumber(b) ? "" : Native_TypeName(b));
 }
@@ -103,7 +104,7 @@ static const nativeVal_t *Num_Items(const nativeVal_t *v, nativeVal_t *tmp) {
 	return NObj_ListData(v);
 }
 
-/* the keys of a dict sorted by the compare (PyList_Sort) */
+/* the keys of a dict sorted by the compare (listobject.c List_Sort) */
 static void Num_SortedKeys(const nativeVal_t *d, nativeVal_t *keys) {
 	const nativeVal_t *k, *x;
 	int pos = 0;
@@ -387,7 +388,7 @@ static byte Float_Pow(double iv, double iw, const double *z, nativeVal_t *out) {
 		errno = ERANGE;
 	}
 	if (errno != 0) {
-		/* PyErr_SetFromErrno(OverflowError) */
+		/* errors.c Err_SetFromErrno(OverflowError) */
 		nativeVal_t v;
 		const char *text = strerror(errno);
 		Native_SetEmpty(&v, NV_TUPLE);
@@ -566,7 +567,7 @@ static const char *Num_OpText(int op) {
 	return "|";
 }
 
-/* the special method names of an operator of PyNumber_* */
+/* the special method names of an operator of abstract.c Number_* */
 static void Num_OpNames(int op, const char **name, const char **rname) {
 	static const struct {
 		int op;
@@ -645,7 +646,7 @@ static int Num_HalfBinOp(int op, const nativeVal_t *v, const nativeVal_t *w, con
 	return ok ? 0 : -1;
 }
 
-/* PyInstance_DoBinOp */
+/* classobject.c Instance_DoBinOp */
 static byte Num_InstanceOp(int op, const nativeVal_t *v, const nativeVal_t *w, nativeVal_t *out) {
 	const char *name, *rname;
 	Num_OpNames(op, &name, &rname);

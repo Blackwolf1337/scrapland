@@ -146,7 +146,7 @@ byte LvN_EqS(const nativeVal_t *a, const char *s);
 #define LvN_SetS Mode_VSetS
 #define LvN_SetF Mode_VSetF
 /* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
- * item as Native_Arg makes it) */
+ * item as NObj_ArgOf makes it) */
 #define LvN_Item Mode_Item
 /* the global name of module as a value whose items a loop takes one by one (Mode_Elems) */
 byte LvN_GElems(const char *module, const char *name, nativeVal_t *out);

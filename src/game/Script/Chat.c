@@ -290,7 +290,7 @@ static byte Chat_Init(chatVars_t *c, int id) {
 }
 
 /* ---- the functions of the module table: the entries parse their arguments with the formats of the port (Mode_Parse:
- * the errors of PyArg_ParseTuple) ---- */
+ * the errors of getargs.c Arg_ParseTuple) ---- */
 
 /* the text of an argument, NULL when it is no text */
 static const char *Chat_Text(const nativeVal_t *v) {

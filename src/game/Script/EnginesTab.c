@@ -58,7 +58,8 @@ static const scriptStep_t enginestab_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of enginestab.def with its $names, n pairs of a name and a value (Mode_DefRun): 0 with the error of the file */
+/* a section of enginestab.def with its $names, n pairs of a name and a value (Mode_DefRun): 0 with the error of the
+ * file */
 #define ET_Run(id, section, n, ...) \
 	Mode_DefRun(id, ENGINESTAB_FILE, section, enginestab_def, enginestab_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
@@ -550,7 +551,7 @@ static byte ET_Desc(int id, const nativeVal_t *n, const nativeVal_t *eng) {
 	return Mode_Done(&t, 1);
 }
 
-/* abs(v) of a number (PyNumber_Absolute: the OverflowError of the smallest int) */
+/* abs(v) of a number (abstract.c Number_Absolute: the OverflowError of the smallest int) */
 static byte ET_Abs(const nativeVal_t *v, nativeVal_t *out) {
 	switch (v->type) {
 	case NV_INT:
