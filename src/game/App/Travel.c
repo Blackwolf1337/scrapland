@@ -723,6 +723,7 @@ void Travel_TestGoto(int player, const char *entity, float dx, float dz) {
 	}
 	vec3_t p = { t->pos.x + dx, t->pos.y + 100.0f, t->pos.z + dz };
 	e->pos = p;
+	Rep_Placed(player);
 	/* facing it (yaw 0 looks to -z): its use arrow selected */
 	float yaw = atan2f(-(t->pos.x - p.x), -(t->pos.z - p.z));
 	Obj(e)->ang.y = yaw;
