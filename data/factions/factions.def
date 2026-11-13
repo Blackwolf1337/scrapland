@@ -8,7 +8,7 @@
 # the wanted level of a player: the points from which levels 1..5 start
 wanted 1 6 14 26 45
 # points lost a second while the player's alarm is on, while it is off
-decay 0.02 0.25
+decay 0.02 0.1
 # points of a crime; the same crime of a player counts once in crimegap seconds
 crime hurt_police 2
 crime hurt_civilian 0.5

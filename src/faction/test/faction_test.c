@@ -150,6 +150,8 @@ static void Test_Wanted(void) {
 	FactionWanted_Decay(&t, &w, 100.0f, 1);
 	CHECK(Near(w.points, 65.5f));
 	FactionWanted_Decay(&t, &w, 100.0f, 0);
+	CHECK(Near(w.points, 55.5f) && FactionWanted_Level(&t, &w) == 5);
+	FactionWanted_Decay(&t, &w, 150.0f, 0);
 	CHECK(Near(w.points, 40.5f) && FactionWanted_Level(&t, &w) == 4);
 	FactionWanted_Decay(&t, &w, 1000.0f, 0);
 	CHECK(Near(w.points, 0.0f) && FactionWanted_Level(&t, &w) == 0);

@@ -52,7 +52,7 @@ static void Fd_Defaults(FactionTable *t) {
 	memset(t, 0, sizeof(*t));
 	memcpy(t->wanted, wanted, sizeof(wanted));
 	t->decayOn = 0.02f;
-	t->decayOff = 0.25f;
+	t->decayOff = 0.1f;
 	t->crimeGap = 1.0f;
 	t->fine = 300;
 	t->reward = 150;
