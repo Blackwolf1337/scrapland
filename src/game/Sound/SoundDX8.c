@@ -418,7 +418,8 @@ cGVar GVar_S_Show;
 #define g_S_Show (GVar_S_Show.value.i)		/* S_Show: 1 the channels, 3 the memory */
 
 /* (DebugDraw): S_Show 3 the memory of the samples, 1 the channels with their state and the volume, pan and
- * frequency of each in two columns (the original also listed FMOD's hardware channels) */
+ * frequency of each in columns of 22 (the original: two columns of 16 with the priority; it also listed FMOD's
+ * hardware channels) */
 static void CSoundXBox_DebugDraw(CSoundSys *base, int xi, int yi) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	uint32_t cur, max;
@@ -439,29 +440,27 @@ static void CSoundXBox_DebugDraw(CSoundSys *base, int xi, int yi) {
 	CFont_PrintfColorShadow(f, x, (float)yi, 0xffff00, "SoundXBox: %s", Snd_DeviceName());
 	float y = (float)yi + 10.0f;
 	CFont_PrintfColorShadow(f, x, y, playing ? 0xff0000 : 0xff00, "Channels playing: %d", playing);
-	for (int i = 0, k = 0; i < SND_CHANNELS; i++, k += 5) {
+	/* 128 channels on the 640 wide screen of the fonts: 4 pixels a mark, the list in columns of 22 rows 100 apart
+	 * (volume, pan, frequency; the priority is the same for all, SND_PRIORITY) */
+	for (int i = 0, k = 0; i < SND_CHANNELS; i++, k += 4) {
 		float cx = (float)k + x + 30.0f;
 		CFont_PrintfColorShadow(f, cx, y + 10.0f, 0xff00, "%s", Snd_IsPlaying(i) ? "*" : ".");
 		CFont_PrintfColorShadow(f, cx, y + 20.0f, 0xff00, "%s", Snd_GetReserved(i) ? "R" : "");
 	}
-	y = y + 20.0f;
-	float top = y;
-	float cx = x + 10.0f;
+	enum { ROWS = 22 };
+	float top = y + 20.0f;
 	for (int i = 0; i < SND_CHANNELS; i++) {
-		if (i == SND_CHANNELS / 2) {
-			cx = cx + 300.0f;
-			y = top;
-		}
-		y = y + 10.0f;
-		CFont_PrintfColorShadow(f, cx, y, 0xff00, "%2d", i);
+		float cx = x + 10.0f + (float)(i / ROWS) * 100.0f;
+		float cy = top + (float)(i % ROWS + 1) * 9.0f;
+		CFont_PrintfColorShadow(f, cx, cy, 0xff00, "%3d", i);
 		if (Snd_IsPlaying(i)) {
-			CFont_PrintfColorShadow(f, f->x, y, 0xff00, "  %s", Snd_GetLoop(i) ? "L" : " ");
-			CFont_PrintfColorShadow(f, f->x, y, 0xff00, "  vpf: %3d %3d %5d %3d", Snd_GetVolume(i), Snd_GetPan(i),
-				Snd_GetFrequency(i), SND_PRIORITY);
+			CFont_PrintfColorShadow(f, f->x, cy, 0xff00, "%s%3d %3d %5d", Snd_GetLoop(i) ? "L" : " ", Snd_GetVolume(i),
+				Snd_GetPan(i), Snd_GetFrequency(i));
 		} else {
-			CFont_PrintfColorShadow(f, f->x, y, 0x8000, "  ---");
+			CFont_PrintfColorShadow(f, f->x, cy, 0x8000, " ---");
 		}
 	}
+	y = top + (float)ROWS * 9.0f;
 	Snd_MemoryStats(&cur, &max);
 	CFont_PrintfColorShadow(f, x, y + 10.0f, 0xffff00, "channels: %d/%d", playing, SND_CHANNELS);
 	CFont_PrintfColorShadow(f, x, y + 20.0f, 0xffff00, "memory: %d %d", cur >> 10, max >> 10);

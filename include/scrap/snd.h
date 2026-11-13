@@ -10,7 +10,7 @@
 
 #include "scrap/shared.h"
 
-#define SND_CHANNELS 32
+#define SND_CHANNELS 128		/* the original asked FSOUND_Init for 32; more, so big fights steal fewer sounds */
 #define SND_RATE 44100			/* the output */
 #define SND_PAN_STEREO (-1)
 #define SND_PRIORITY 128		/* of every channel (FMOD's default) */
