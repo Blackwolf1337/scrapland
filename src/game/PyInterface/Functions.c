@@ -17,7 +17,7 @@
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
 
-byte Py_IsReady(void) {
+byte Script_IsReady(void) {
 	return g_PythonReady;
 }
 
@@ -83,13 +83,13 @@ static unsigned long g_PyFunctionCalls[3];
 extern cPy_Function g_ChTypeSphereFunc;
 #define g_SphereFunc ((&g_ChTypeSphereFunc))
 
-static void PyFunction_FiniSphereFunc(void) {
+static void Function_FiniSphereFunc(void) {
 	cPy_Function_dtor(g_SphereFunc);
 }
 
 static cPy_Function *g_PyFunctions;
 
-void PyFunction_InitSphereFunc(void) {
+void Function_InitSphereFunc(void) {
 	cPy_Function *head = g_PyFunctions, *self = g_SphereFunc;
 
 	if (!head) {
@@ -102,7 +102,7 @@ void PyFunction_InitSphereFunc(void) {
 		head->prev = self;
 	}
 	g_PyFunctions = self;
-	crt_atexit(PyFunction_FiniSphereFunc);
+	crt_atexit(Function_FiniSphereFunc);
 }
 
 cPy_Function *cPy_Function_ctor(cPy_Function *self) {
@@ -329,7 +329,7 @@ byte cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	}
 	memcpy(module, name, len);
 	module[len] = 0;
-	if (!Py_IsReady()) {
+	if (!Script_IsReady()) {
 		return 1;
 	}
 	return cPy_Function_SetValue(self, module, dot + 1);
@@ -435,8 +435,8 @@ void cPy_Function_AddParamS(cPy_Function *self, const char *v) {
 }
 
 /*
- * The call of a port entry (site, the parameters a, n) as PyEval_CallObject called its adapter (Mode_Args, the entry,
- * Mode_Out), with the depth check of the direct calls (Port_BoundCall), or of a function value f natively
+ * The call of a port entry (site, the parameters a, n) as ceval.c Eval_CallObject called its adapter (Mode_Args, the
+ * entry, Mode_Out), with the depth check of the direct calls (Port_BoundCall), or of a function value f natively
  * (Port_CallKept): the int result, else 0; a failure printed as the Python call printed it. The result of an entry
  * goes through the conversions of the adapter and the int check (Native_Pass: they can fail). Not inlined: the result
  * value stays off the frame of cPy_Function_Execute, which is on the stack during a call.
@@ -466,7 +466,7 @@ int cPy_Function_Execute(cPy_Function *self, byte clear) {
 	self->flags |= PYF_BLOCKED;
 	if (self->flags & PYF_ENTRY) {
 		g_PyFunctionCalls[2]++;
-		if (!Py_IsReady()) {
+		if (!Script_IsReady()) {
 			Con_Warnf("WARNING : Impossible to execute \n Python closed!.\n");
 		} else {
 			portSite_t *site = self->func;
@@ -484,7 +484,7 @@ int cPy_Function_Execute(cPy_Function *self, byte clear) {
 		}
 	} else if (self->flags & PYF_VALUE) {
 		g_PyFunctionCalls[0]++;
-		if (!Py_IsReady()) {
+		if (!Script_IsReady()) {
 			Con_Warnf("WARNING : Impossible to execute \n Python closed!.\n");
 		} else {
 			/* the call holds the function (the callback may bind this function again) and owns the parameters, as

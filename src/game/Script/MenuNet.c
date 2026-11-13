@@ -366,7 +366,7 @@ static void Step_InGame(int id, const nativeVal_t *args, int n) {
 	const nativeVal_t *func = NULL;
 	(void)args;
 	(void)n;
-	/* PCMenu.MultiplayerMenu[1] as PySequence_GetItem takes it (a list that holds objects item by item) */
+	/* PCMenu.MultiplayerMenu[1] as abstract.c Sequence_GetItem takes it (a list that holds objects item by item) */
 	if (Mode_ModGet("PCMenu", "MultiplayerMenu", &opt)) {
 		Mode_Elems(&opt);
 		func = Native_GetItem(&opt, 1, 0, &tmp);
@@ -463,14 +463,15 @@ static byte Net_Script(const char *var, nativeVal_t *out) {
 	return 1;
 }
 
-/* the C text of seq[i] (PySequence_GetItem; a character of a text goes into tmp, Native_Free it), NULL when it is no
- * text (the error of the item left set) */
+/* the C text of seq[i] (abstract.c Sequence_GetItem; a character of a text goes into tmp, Native_Free it), NULL when it
+ * is no text (the error of the item left set) */
 static const char *Net_Item(const nativeVal_t *seq, int i, nativeVal_t *tmp) {
 	const nativeVal_t *e = Native_GetItem(seq, i, 0, tmp);
 	return e && e->type == NV_STR ? Native_Text(e) : NULL;
 }
 
-/* the maps of the current mode, Net.ModesMap[ServerType] (PyDict_GetItemString: nothing when ModesMap is no dict) */
+/* the maps of the current mode, Net.ModesMap[ServerType] (dictobject.c Dict_GetItemString: nothing when ModesMap is no
+ * dict) */
 static void Net_ModeMaps(netMapList_t *list) {
 	nativeVal_t modes, key, sub = { 0 }, *maps = NULL;
 	Net_Script("ModesMap", &modes);

@@ -10,7 +10,6 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
-#include "scrap/python.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
@@ -702,7 +701,7 @@ API_FN(Scrap, SetSaveVar) {
 	return Mode_Parse(a, n, "ss", &name, &value) && Api_Build(out, "i", SaveVar_Set(name, value) != 0);
 }
 
-/* SetTime(t) : returns Py_BuildValue("") (None) like the original */
+/* SetTime(t) : returns modsupport.c BuildValue("") (None) like the original */
 API_FN(Scrap, SetTime) {
 	double t;
 	if (!Mode_Parse(a, n, "d", &t)) {
@@ -1298,9 +1297,9 @@ void Logic_AddItem(const char *type, const char *name, const char *kindName, int
 	cString_dtor(&item.name);
 }
 
-/* the type is the text of the first argument up to its first 0 byte (PyString_AsString), the formats after it.
- * differs from the original: without arguments, or with a first one that is no text, the adapter gave strcmp a NULL
- * (a crash); the entry raises the error PyTuple_GetItem or PyString_AsString had set */
+/* the type is the text of the first argument up to its first 0 byte (stringobject.c String_AsString), the formats after
+ * it. differs from the original: without arguments, or with a first one that is no text, the adapter gave strcmp a NULL
+ * (a crash); the entry raises the error tupleobject.c Tuple_GetItem or stringobject.c String_AsString had set */
 API_FN(Scrap, AddItem) {
 	const char *type, *name, *kindName;
 	int value;
@@ -1888,4 +1887,4 @@ static char str_PyDoc_Scrap_EntityListSet[] =
 FINI_CALL(Fini_cPy_Function_CallFunc, &g_CallFunc, cPy_Function_dtor)
 INIT_OBJECT(Init_cPy_Function_CallFunc, Fini_cPy_Function_CallFunc, &g_CallFunc, cPy_Function_ctor)
 
-PORTS(PyInterface_ScrapPy)
+PORTS(Engine_ScrapPy)

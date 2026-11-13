@@ -2024,7 +2024,7 @@ static byte Se_ShowSpecialHint(nativeVal_t *out) {
 	return 1;
 }
 
-/* ---- entries: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
+/* ---- entries: the argument formats of the C port (the errors of getargs.c), the objects as native values ---- */
 
 MODE_FN(SE, IsEditingMultiplayer, 0, Se_IsEditingMultiplayer(out))
 MODE_FN(SE, RustyOnPlatform, 1, Se_RustyOnPlatform(&a[0], out))

@@ -36,18 +36,14 @@
  * &AnmTotalTime). @, %, $ and & values may end in operations with numbers, done left to right with Python's numbers:
  * $x+10, &AnmTotalTime/4*2.
  * $(name) inside a word or text is the value name as text.
- * The values are native values (nativeVal_t, see the comment above Def_Lookup). A call line calls the entry of a port or
- * engine function through the registry of stage 4 (Port_Invoke) while the module attribute is that function itself,
+ * The values are native values (nativeVal_t, see the comment above Def_Lookup). A call line calls the entry of a port
+ * or engine function through the registry of stage 4 (Port_Invoke) while the module attribute is that function itself,
  * else by name through Python as a script did (Def_Call).
  */
 #define _GNU_SOURCE
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(__GLIBC__)
-#include <dlfcn.h>
-#include <execinfo.h>
-#endif
 
 #include "scrap/actions.h"
 #include "scrap/console.h"
@@ -64,7 +60,6 @@
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
 #include "scrap/timer.h"
-#include "compile.h"
 
 #define SCRIPT_MAX_FILE 0x10000
 #define SCRIPT_MAX_TOKENS 16
@@ -273,8 +268,8 @@ static void Script_SetDeferred(const nativeVal_t *d, nativeVal_t *later) {
  * StdInitializator, StdObjInitializator, 0, 0) and the dict values that hold it, one level deep (not __builtins__). The
  * sets come after the walk of the variables. When the .pyc ran, the loader put the C function in the place of the
  * Python one there (and rebound the engine callbacks to it); no Python code loads now, so nothing is replaced and only
- * the writes stay. They decide the key order of the module's variables (PyDict_SetItem doubles a dict that is 2/3 full
- * before a write, also for a key that is in it, and the registry's table does the same).
+ * the writes stay. They decide the key order of the module's variables (dictobject.c Dict_SetItem doubles a dict that
+ * is 2/3 full before a write, also for a key that is in it, and the registry's table does the same).
  */
 static void Script_ReplayRefs(const modVarRef_t *ref, const nativeVal_t *space, const nativeVal_t *key,
 	const nativeVal_t *cur) {
@@ -316,172 +311,6 @@ static void Script_ReplayRefs(const modVarRef_t *ref, const nativeVal_t *space, 
 }
 
 
-/*
- * ---- the check of NULL returns (SCRAP_NULL_CHECK) ----
- *
- * A C function must return NULL only with a Python error set, else ceval raises "SystemError: error return without
- * exception set" where the script raised something else or nothing. SCRAP_NULL_CHECK=<file> (or 1 for the console)
- * puts every C function of the script tables into a wrapper that reports a NULL without an error and a result with an
- * error left pending. A report names the kind, the
- * innermost C function that runs, the line of the Python code that called it and (glibc) the return addresses as
- * ScrapC+offset for addr2line -f -i -e ScrapC. Off, nothing changes: the functions are the plain PyCFunctions.
- * SCRAP_NULL_CHECK_ENGINE=1 as well wraps the functions of the engine modules (Scrap, SAI, SAct, ...) when Python
- * starts, also with SCRAP_PACK_SCRIPTS=1, so both versions report; then the Python line is part of what a report is
- * deduplicated by, and a call made while an error is pending reports "call with error pending" (where a stale error
- * is carried to).
- */
-typedef struct {
-	PyMethodDef def;		/* the wrapper: the name of the function, Script_CheckCall */
-	PyMethodDef orig;		/* the C function */
-	PyObject *self;			/* its self */
-	char name[64];
-	char label[96];			/* Module.Func */
-} scriptChecked_t;
-
-#define SCRIPT_CHECK_DEPTH 64
-#define SCRIPT_CHECK_SEEN 1024
-static int script_check = -1;
-static byte script_checkEngine;
-static FILE *script_checkFile;
-static const char *script_checkStack[SCRIPT_CHECK_DEPTH];
-static int script_checkDepth;
-static unsigned script_checkSeen[SCRIPT_CHECK_SEEN];
-
-static byte Script_CheckOn(void) {
-	if (script_check < 0) {
-		const char *e = getenv("SCRAP_NULL_CHECK");
-		script_check = e && *e && strcmp(e, "0");
-		if (script_check && strcmp(e, "1")) {
-			script_checkFile = fopen(e, "a");
-		}
-		e = getenv("SCRAP_NULL_CHECK_ENGINE");
-		script_checkEngine = script_check && e && *e == '1';
-	}
-	return script_check > 0;
-}
-
-static unsigned Script_CheckHash(unsigned h, const char *s) {
-	while (s && *s) {
-		h = (h ^ (byte)*s++) * 16777619u;
-	}
-	return h;
-}
-
-void Script_CheckSilent(const char *kind) {
-	if (!Script_CheckOn()) {
-		return;
-	}
-	const char *label = script_checkDepth > 0 ? script_checkStack[script_checkDepth - 1] : "?";
-	char where[160] = "-", trace[400] = "";
-	/* there is no Python frame to name */
-	unsigned h = Script_CheckHash(Script_CheckHash(2166136261u, kind), label);
-	if (script_checkEngine) {
-		h = Script_CheckHash(h, where);
-	}
-#if defined(__GLIBC__)
-	void *addr[8];
-	int n = backtrace(addr, 8);
-	for (int i = 1; i < n; i++) {
-		Dl_info info;
-		size_t len = strlen(trace);
-		if (dladdr(addr[i], &info) && info.dli_fname) {
-			const char *base = strrchr(info.dli_fname, '/');
-			Str_Printf(trace + len, sizeof(trace) - len, " %s+0x%lx", base ? base + 1 : info.dli_fname,
-				(unsigned long)((char *)addr[i] - (char *)info.dli_fbase));
-		} else {
-			Str_Printf(trace + len, sizeof(trace) - len, " %p", addr[i]);
-		}
-		if (i <= 3) {
-			h = (h ^ (unsigned)(size_t)addr[i]) * 16777619u;
-		}
-	}
-#endif
-	for (int i = 0; i < SCRIPT_CHECK_SEEN; i++) {
-		if (script_checkSeen[i] == h) {
-			return;
-		}
-		if (!script_checkSeen[i]) {
-			script_checkSeen[i] = h;
-			break;
-		}
-	}
-	if (script_checkFile) {
-		fprintf(script_checkFile, "NULLCHECK %s: %s (python %s)%s\n", kind, label, where, trace);
-		fflush(script_checkFile);
-	} else {
-		Con_Warnf("NULLCHECK %s: %s (python %s)%s\n", kind, label, where, trace);
-	}
-}
-
-/* the call of the C function as call_builtin of ceval makes it */
-static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) {
-	scriptChecked_t *c = PyCObject_AsVoidPtr(self);
-	int flags = c->orig.ml_flags;
-	PyObject *arg = args, *r;
-	byte pending = Native_Failed();
-	if (!(flags & METH_VARARGS)) {
-		int size = PyTuple_Size(args);
-		arg = size == 1 ? PyTuple_GET_ITEM(args, 0) : size == 0 ? NULL : args;
-	}
-	if (script_checkDepth < SCRIPT_CHECK_DEPTH) {
-		script_checkStack[script_checkDepth] = c->label;
-	}
-	script_checkDepth++;
-	if (pending && script_checkEngine) {
-		Script_CheckSilent("call with error pending");
-	}
-	if (flags & METH_KEYWORDS) {
-		r = ((PyCFunctionWithKeywords)(void (*)(void))c->orig.ml_meth)(c->self, arg, kw);
-	} else if (kw && PyDict_Size(kw) != 0) {
-		Native_Raise(NE_TYPE, "this function takes no keyword arguments");
-		r = NULL;
-	} else {
-		r = c->orig.ml_meth(c->self, arg);
-	}
-	if (!r && !Native_Failed()) {
-		Script_CheckSilent("return");
-	} else if (r && !pending && Native_Failed()) {
-		/* the error stays pending and raises at a later line (one pending before the call is an engine
-		 * function's that returned a value with an error set, as the original does) */
-		Script_CheckSilent("return with error set");
-	}
-	script_checkDepth--;
-	return r;
-}
-
-static void Script_CheckFree(void *p) {
-	scriptChecked_t *c = p;
-	Py_XDECREF(c->self);
-	free(c);
-}
-
-PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *module) {
-	if (!Script_CheckOn()) {
-		return PyCFunction_New(def, self);
-	}
-	scriptChecked_t *c = calloc(1, sizeof(*c));
-	if (!c) {
-		return Native_RaiseVal(NE_MEMORY, NULL), NULL;
-	}
-	c->orig = *def;
-	c->self = self;
-	Py_XINCREF(self);
-	Str_Copy(c->name, def->ml_name, sizeof(c->name));
-	Str_Printf(c->label, sizeof(c->label), "%s.%s", module ? module : "?", def->ml_name);
-	c->def.ml_name = c->name;
-	c->def.ml_meth = (PyCFunction)(void (*)(void))Script_CheckCall;
-	c->def.ml_flags = METH_VARARGS | METH_KEYWORDS;
-	c->def.ml_doc = def->ml_doc;
-	PyObject *o = PyCObject_FromVoidPtr(c, Script_CheckFree);
-	if (!o) {
-		Script_CheckFree(c);
-		return NULL;
-	}
-	PyObject *f = PyCFunction_New(&c->def, o);
-	Py_DECREF(o);
-	return f;
-}
-
 const char *Script_Row(const portFn_t *fns, int i, scriptRow_t *row) {
 	row->fn = &fns[i];
 	return fns[i].name;
@@ -507,12 +336,7 @@ static byte Script_TableDef(const char *module, const char *name, scriptRow_t *f
 	return any;
 }
 
-byte Script_Checking(void) {
-	return Script_CheckOn();
-}
-
 byte Script_FunctionOf(const scriptRow_t *row, const char *module, nativeVal_t *out) {
-	/* the native function of its ref (SCRAP_NULL_CHECK has no wrapper for it) */
 	const portRef_t *ref = Port_OfFn(module, row->fn);
 	Native_SetNone(out);
 	if (!ref) {
@@ -536,9 +360,9 @@ byte Script_TableHas(const char *module, const char *name) {
 /*
  * The dict writes the loader made after the .pyc for a table, on a module made in C with the values in place: per
  * function of the table the other names, tuple items and dict values that hold it (Script_ReplayRefs) and the name
- * itself, which a function the script lacks gets here as the loader gave it. PyDict_SetItem doubles a dict that is
- * 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
- * as they did after the .pyc (Sound modules of 21 keys).
+ * itself, which a function the script lacks gets here as the loader gave it. dictobject.c Dict_SetItem doubles a dict
+ * that is 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module
+ * dict as they did after the .pyc (Sound modules of 21 keys).
  */
 void Script_TableReplay(const nativeVal_t *module, const portFn_t *fns) {
 	modVarRef_t ref;
@@ -713,12 +537,6 @@ byte Script_EntTrue(const char *ent, const char *var) {
 		return 1;
 	}
 	return Entity_VarS(e, var, &s, 0) && s && *s;
-}
-
-PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
-	PyObject *r = callable && args ? Script_CallObject(callable, args, NULL) : NULL;
-	Py_XDECREF(args);
-	return r;
 }
 
 void Script_StepPrint(int id, const nativeVal_t *args, int n) {
@@ -1156,7 +974,7 @@ static byte Def_IsSequence(const nativeVal_t *v) {
 	if (NObj_Native(v)) {
 		return NObj_Kind(v) == NO_LIST;
 	}
-	return v->type == NV_LIST || v->type == NV_TUPLE || (Native_IsObj(v) && (PyList_Check(Native_PyOf(v)) || PyTuple_Check(Native_PyOf(v))));
+	return v->type == NV_LIST || v->type == NV_TUPLE;
 }
 
 /* the list name as a tuple of lists, one per entry line, into *out (as Def_Value) */
@@ -1334,7 +1152,7 @@ static byte Def_Call(const char *module, const char *func, const defArgs_t *a) {
 		return 0;
 	}
 	byte known = Port_Find(module, func) != NULL;
-	const portRef_t *ref = known && !Port_Slow() ? NObj_PortRef(&f) : NULL;
+	const portRef_t *ref = known ? NObj_PortRef(&f) : NULL;
 	if (ref && !strcmp(ref->module, module) && !strcmp(ref->name, func) && Def_Letters(a, fmt, sizeof(fmt))) {
 		const nativeVal_t *p[PORT_ARGS] = { NULL };
 		for (int i = 0; i < a->n; i++) {
@@ -1486,7 +1304,6 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 			if (m->stop) {
 				/* an entity handle the engine refuses without an exception: ceval's SystemError */
 				if (!Native_Failed()) {
-					Script_CheckSilent("def object set (engine)");
 					Script_Fail();
 				}
 				m->failed = 1;
@@ -1505,7 +1322,6 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 			m->stop) {
 			/* the attribute set of the handle fails without an exception: ceval's SystemError */
 			if (!Native_Failed()) {
-				Script_CheckSilent("def entity set (engine)");
 				Native_Raise(NE_SYSTEM, "error return without exception set");
 			}
 			m->failed = 1;
@@ -1880,7 +1696,6 @@ byte Script_RunFileTry(int id, const char *name, const char *section, const char
 	const nativeVal_t *vars) {
 	if (!Def_RunFile(id, name, section, builtin, steps, vars, 1)) {
 		if (!Native_Failed()) {
-			Script_CheckSilent("Script_RunFileTry");
 			Native_Raise(NE_SYSTEM, "%s could not be read", name);
 		}
 		return 0;

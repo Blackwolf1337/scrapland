@@ -288,8 +288,8 @@ static byte Veh_DumbShipHitN(const nativeVal_t *missile, nativeVal_t *out) {
 	return Mode_Done(&t, 1);
 }
 
-/* f(*args) of the script with args a value: a tuple (or vector) in C, the TypeError of PyEval_CallObject for other
- * values */
+/* f(*args) of the script with args a value: a tuple (or vector) in C, the TypeError of ceval.c Eval_CallObject for
+ * other values */
 static byte Veh_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out) {
 	nativeVal_t t;
 	if (args->type != NV_TUPLE && args->type != NV_VEC) {
@@ -347,7 +347,8 @@ static byte Veh_Hull(const nativeVal_t *v, const nativeVal_t *name, const native
 	return Mode_Done(&t, isusr || Veh_Boom(at, vel, v, "WRadius", 0.6, 0.8, 750, 0.8, 1.0, 0, NULL, "SoloMotorBoom"));
 }
 
-/* OnClientDeath(LooserName, WinnerName): the hull falls on when the ship moved (always the player's), else it explodes */
+/* OnClientDeath(LooserName, WinnerName): the hull falls on when the ship moved (always the player's), else it
+ * explodes */
 static byte Veh_OnClientDeathN(const nativeVal_t *looser) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *usr = Mode_V(&t), *pos = Mode_V(&t), *vel = Mode_V(&t), *ang = Mode_V(&t), *speed = Mode_V(&t);

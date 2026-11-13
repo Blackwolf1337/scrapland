@@ -10,8 +10,8 @@
  * the .def keys read and set it: the map tables, MortalProfiles, PlayersReady, Scorer, FirstTime, RespawnTime,
  * ModLib, OnDeathFunc and the spawn functions FuncGetSpawnPos/FuncGetReSpawnPos (the race replaces them) of Split;
  * ZoneList, AcFlag, BattonOwner, FlagInitPos, race and the model and sound names of the modes. The C works on them in
- * values of the call; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles,
- * held by reference (NV_OBJ) until entities are native values (OBJLIB 7). The .def sections take their $names
+ * values of the call; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity
+ * handles, held by reference (NV_OBJ) until entities are native values (OBJLIB 7). The .def sections take their $names
  * (Mode_DefRun) and the steps their arguments as native values.
  *
  * State on values (stage 6, batch 6f): apart from that dict and the steps no function works on Python objects. ModLib
@@ -131,7 +131,7 @@ static byte Split_Add(const char *name, nativeVal_t *slot, const nativeVal_t *id
 		Mode_DictPut("Split", name, slot, idx, n));
 }
 
-/* the int of a player id as PyInt_AsLong reads it */
+/* the int of a player id as intobject.c Int_AsLong reads it */
 static byte Split_Id(const nativeVal_t *id, int *out) {
 	return Native_ArgInt(id, out);
 }

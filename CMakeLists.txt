@@ -35,8 +35,6 @@ set_source_files_properties(src/sound/ma.c third_party/stb/stb_vorbis.c PROPERTI
 target_include_directories(scrapcode PUBLIC
 	include
 	src
-	third_party/python-1.5.2/config
-	third_party/python-1.5.2/Include
 	third_party/vulkan/include
 	third_party/miniaudio
 	third_party/stb
@@ -109,90 +107,6 @@ endif()
 add_dependencies(scrapcode shaders)
 target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include ${SDL3_INCLUDE})
 
-# Python 1.5.2 for ScrapC.exe from third_party/python-1.5.2 (unchanged), configured like the one in Scrap.exe: our
-# config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
-# src/python that add the engine's changes around the vendored ones (docs/standalone.md)
-# There is no interpreter (stage 7 of the removal of Python, docs/scripts.md): no parser, tokenizer, grammar,
-# compiler or bytecode loop, no import of .py/.pyc files, no PyRun_*; eval, execfile, compile and input of the builtins
-# and code objects of marshal and new raise. The object library stays. The files of src/python/nopy wrap the vendored
-# ones that keep a part; the functions of the interpreter in them are not built (NOPY_DROP, src/python/pyengine.h).
-set(PY152 third_party/python-1.5.2)
-add_library(python152 STATIC
-	src/python/classobject.c
-	src/python/config.c
-	src/python/dictobject.c
-	src/python/errors.c
-	src/python/getpathp.c
-	src/python/import.c
-	src/python/intobject.c
-	src/python/listobject.c
-	src/python/nopy/bltinmodule.c
-	src/python/nopy/ceval.c
-	src/python/nopy/compile.c
-	src/python/nopy/marshal.c
-	src/python/nopy/newmodule.c
-	src/python/nopy/nopy.c
-	src/python/pythonrun.c
-	src/python/stringobject.c
-	${PY152}/Modules/errnomodule.c
-	${PY152}/Modules/getbuildinfo.c
-	${PY152}/Modules/_localemodule.c
-	${PY152}/Modules/mathmodule.c
-	${PY152}/Modules/regexmodule.c
-	${PY152}/Modules/regexpr.c
-	${PY152}/Modules/signalmodule.c
-	${PY152}/Modules/stropmodule.c
-	${PY152}/Objects/abstract.c
-	${PY152}/Objects/bufferobject.c
-	${PY152}/Objects/cobject.c
-	${PY152}/Objects/complexobject.c
-	${PY152}/Objects/fileobject.c
-	${PY152}/Objects/floatobject.c
-	${PY152}/Objects/frameobject.c
-	${PY152}/Objects/funcobject.c
-	${PY152}/Objects/longobject.c
-	${PY152}/Objects/methodobject.c
-	${PY152}/Objects/moduleobject.c
-	${PY152}/Objects/object.c
-	${PY152}/Objects/rangeobject.c
-	${PY152}/Objects/sliceobject.c
-	${PY152}/Objects/tupleobject.c
-	${PY152}/Objects/typeobject.c
-	${PY152}/Parser/myreadline.c
-	${PY152}/Python/frozen.c
-	${PY152}/Python/getargs.c
-	${PY152}/Python/getcompiler.c
-	${PY152}/Python/getcopyright.c
-	${PY152}/Python/getmtime.c
-	${PY152}/Python/getplatform.c
-	${PY152}/Python/getversion.c
-	${PY152}/Python/importdl.c
-	${PY152}/Python/modsupport.c
-	${PY152}/Python/mystrtoul.c
-	${PY152}/Python/pyfpe.c
-	${PY152}/Python/pystate.c
-	${PY152}/Python/structmember.c
-	${PY152}/Python/sysmodule.c
-	${PY152}/Python/traceback.c
-)
-# --gc-sections (ScrapC below) drops what nothing calls of the object library: 16 KB of code on linux64, 19 KB on
-# win64 (2026-11-08)
-target_compile_options(python152 PRIVATE -ffunction-sections -fdata-sections)
-if(WIN32)
-	# the registry lookup of modules and the DLL handle of the Windows build
-	target_sources(python152 PRIVATE ${PY152}/PC/dl_nt.c ${PY152}/PC/import_nt.c)
-endif()
-set_target_properties(python152 PROPERTIES C_STANDARD 90 C_EXTENSIONS ON) # gnu89
-target_compile_definitions(python152 PRIVATE NDEBUG) # a release build in the exe: no assert of longobject.c and regexpr.c
-target_include_directories(python152 PRIVATE src/python ${PY152}/Include ${PY152} ${PY152}/Python include)
-# -fwrapv: the overflow checks of 1.5.2 (i_divmod of INT_MIN, int_mul ...) rely on signed overflow wrapping, as MSVC
-# does; without it gcc may drop them
-target_compile_options(python152 PRIVATE -include ${CMAKE_SOURCE_DIR}/src/python/pyshim.h -O2 -g
-	-fno-strict-aliasing -fwrapv -msse2 -mfpmath=sse -ffp-contract=off -fno-builtin)
-# sys.version of the exe: "1.5.2 (#0, Nov 24 2021, 15:23:52) [MSC 32 bit (Intel)]"
-set_source_files_properties(${PY152}/Modules/getbuildinfo.c PROPERTIES
-	COMPILE_DEFINITIONS "DATE=\"Nov 24 2021\";TIME=\"15:23:52\"")
-
 # ScrapC: the standalone game (docs/standalone.md), in game/Bin; neither the build nor the game needs the original
 # exe
 if(WIN32)
@@ -205,16 +119,14 @@ if(WIN32)
 	set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
 	add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtwin.c
 		src/standalone/crtinit.c src/standalone/crtxc.c $<TARGET_OBJECTS:scrapres>)
-	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} wsock32 advapi32 user32
+	target_link_libraries(ScrapC PRIVATE scrapcode ${FFMPEG_LIBS} ${SDL3_LIB} wsock32 advapi32 user32
 		kernel32)
 	# the default base of ld with dynamic base (ASLR)
 	target_link_options(ScrapC PRIVATE -Wl,--dynamicbase)
 else()
 	add_executable(ScrapC src/standalone/main.c src/standalone/crt.c src/standalone/crtposix.c
 		src/standalone/crtinit.c src/standalone/crtxc.c)
-	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
+	target_link_libraries(ScrapC PRIVATE scrapcode ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
 	# the FFmpeg libraries next to the game
 	set_target_properties(ScrapC PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
 endif()
-# the unused functions of python152 (above)
-target_link_options(ScrapC PRIVATE -Wl,--gc-sections)

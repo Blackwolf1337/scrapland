@@ -6,7 +6,6 @@
 
 #include "scrap/global.h"
 #include "scrap/logic.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 #include "scrap/vehicleentity.h"
 
@@ -259,4 +258,4 @@ static char str_PyDoc_SLogic_ChangeBatonState[] =
 
 static char str_PyDoc_SLogic_UpdateTauntEndTime[60] = "void UpdateTauntEndTime(time): Tiempo final del taunt";
 
-PORTS(PyInterface_SLogic)
+PORTS(Engine_SLogic)

@@ -53,7 +53,8 @@ static const scriptStep_t hulltab_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of hulltab.def with its $names, n pairs of a name and a value (Mode_DefRun): 0 with the error of the file */
+/* a section of hulltab.def with its $names, n pairs of a name and a value (Mode_DefRun): 0 with the error of the
+ * file */
 #define HT_Run(id, section, n, ...) \
 	Mode_DefRun(id, HULLTAB_FILE, section, hulltab_def, hulltab_steps, 1, n __VA_OPT__(, ) __VA_ARGS__)
 
@@ -384,7 +385,7 @@ static byte HT_ChangeHull(int id, const nativeVal_t *v, nativeVal_t *out) {
 	}
 	byte ok;
 	if (neg) {
-		/* -value (PyNumber_Negative: the overflow of the smallest int) */
+		/* -value (abstract.c Number_Negative: the overflow of the smallest int) */
 		ok = v->type == NV_INT && v->i == LONG_MIN ? Native_Raise(NE_OVERFLOW, "integer negation") :
 			Native_Arith('-', &zero, v, &value) && HT_TakeOff(id, &value, out);
 	} else {

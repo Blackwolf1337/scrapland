@@ -272,7 +272,7 @@ static byte MakeChar_AddMove_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 }
 
 /* the moves of a list (AddWalkActions and its Init and End kin), list NULL for the four of def; the list's length as
- * PySequence_Length takes it (its TypeError left set, as the port went on), items that are no text "" */
+ * abstract.c Sequence_Length takes it (its TypeError left set, as the port went on), items that are no text "" */
 static void MC_WalkList(const char *ch, double turn, int isRun, double disp, nativeVal_t *list, const char *const *def,
 	const char *run, int loop, byte end) {
 	int n = 4;

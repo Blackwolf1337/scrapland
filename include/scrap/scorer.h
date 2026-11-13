@@ -10,7 +10,6 @@
 #include "scrap/mathlib.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrapfont.h"
-#include "scrap/python.h"
 
 typedef struct cScorerItem cScorerItem;
 typedef struct cScorerItemVtbl {

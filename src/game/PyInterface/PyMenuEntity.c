@@ -1,6 +1,6 @@
 /*
  * The script handle of a scorer item (HUD and menu element) by player and name, the type cPyMenuEntity of the exe (a
- * Python type there; a native C object here, NObj_NewCObj). The item is looked up again on every access. Its
+ * native C object here, NObj_NewCObj). The item is looked up again on every access. Its
  * attributes are the variables of the item (cScorerItem Var: 1 string, 2 double, 3 int); the type has no methods. The
  * original source file is not known.
  */
@@ -62,7 +62,7 @@ static byte MenuItem_GetAttr(void *ctx, const char *name, nativeVal_t *out) {
 	}
 	switch (ScorerItem_Var(item, name, 0, &s, &d, &i)) {
 	case 1:
-		/* Py_BuildValue("s"): None for no text */
+		/* modsupport.c BuildValue("s"): None for no text */
 		if (s) {
 			Native_SetText(out, s, (int)strlen(s));
 		}
@@ -79,9 +79,10 @@ static byte MenuItem_GetAttr(void *ctx, const char *name, nativeVal_t *out) {
 }
 
 /*
- * tp_setattr: the value is tried as int, float and string (PyArg_Parse "i", "d", "s"), each type that parses goes to
- * the item until the variable has that type. A missing scorer or item returns 0 (no error) like in the original. The
- * original passes the other two values uninitialized; they are 0 here. A delete (v NULL) parses as none of them.
+ * tp_setattr: the value is tried as int, float and string (getargs.c Arg_Parse "i", "d", "s"), each type that parses
+ * goes to the item until the variable has that type. A missing scorer or item returns 0 (no error) like in the
+ * original. The original passes the other two values uninitialized; they are 0 here. A delete (v NULL) parses as none
+ * of them.
  */
 static byte MenuItem_SetAttr(void *ctx, const char *name, const nativeVal_t *v) {
 	menuItem_t *m = ctx;
@@ -147,75 +148,12 @@ static menuItem_t *MenuItem_New(int player, const char *name) {
 	return m;
 }
 
-/* ---- OBJLIB 7e4b: the Python face of a scorer item (the same type functions on a copy of the handle) ---- */
-
-typedef struct {
-	PyObject_HEAD
-	menuItem_t *m;
-} menuItemFace_t;
-
-static PyTypeObject menu_itemFaceType;
-
-static PyObject *MenuItem_ToPy(void *ctx) {
-	menuItem_t *m = ctx;
-	menuItemFace_t *f = (menuItemFace_t *)_PyObject_New(&menu_itemFaceType);
-	if (f) {
-		f->m = MenuItem_New(m->player, m->name);
-	}
-	return (PyObject *)f;
-}
-
-static void MenuItemFace_Dealloc(PyObject *self) {
-	MenuItem_Drop(((menuItemFace_t *)self)->m);
-	ScriptPool_Free(self);
-}
-
-static int MenuItemFace_Print(PyObject *self, FILE *fp, int flags) {
-	static char buf[0x100];
-	(void)flags;
-	MenuItem_Print(((menuItemFace_t *)self)->m, buf, sizeof(buf));
-	crt_fprintf(fp, buf);
-	return 0;
-}
-
-static PyObject *MenuItemFace_GetAttr(PyObject *self, char *name) {
-	nativeVal_t v;
-	PyObject *r = MenuItem_GetAttr(((menuItemFace_t *)self)->m, name, &v) ? Native_ToPy(&v) : NULL;
-	Native_Free(&v);
-	return r;
-}
-
-static int MenuItemFace_SetAttr(PyObject *self, char *name, PyObject *v) {
-	nativeVal_t x;
-	if (v) {
-		Native_Arg(v, &x);
-	}
-	byte ok = MenuItem_SetAttr(((menuItemFace_t *)self)->m, name, v ? &x : NULL);
-	if (v) {
-		Native_Free(&x);
-	}
-	return ok ? 0 : -1;
-}
-
-static PyTypeObject menu_itemFaceType = {
-	.ob_refcnt = 1,
-	.ob_type = &PyType_Type,
-	.tp_name = "cPyMenuEntity",
-	.tp_basicsize = sizeof(menuItemFace_t),
-	.tp_dealloc = (void *)MenuItemFace_Dealloc,
-	.tp_print = (void *)MenuItemFace_Print,
-	.tp_getattr = (void *)MenuItemFace_GetAttr,
-	.tp_setattr = (void *)MenuItemFace_SetAttr,
-};
-
 static const nativeCType_t menu_itemType = {
 	.name = "cPyMenuEntity",
 	.getattr = MenuItem_GetAttr,
 	.setattr = MenuItem_SetAttr,
 	.print = MenuItem_Print,
 	.drop = MenuItem_Drop,
-	.pytype = &menu_itemFaceType,
-	.toPy = MenuItem_ToPy,
 };
 
 byte ScorerItem_New(int player, const char *name, nativeVal_t *out) {

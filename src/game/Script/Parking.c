@@ -148,7 +148,8 @@ static byte Pk_BoxAt(const nativeVal_t *name, const nativeVal_t *pos, nativeVal_
 	return ok;
 }
 
-/* the use arrow of a parked ship: ArrowCanUse 1, ArrnOpt 0, ArrOpt0 "UseShip:" + Scrap.GetLangStr("UseShip"), UseFunc */
+/* the use arrow of a parked ship: ArrowCanUse 1, ArrnOpt 0, ArrOpt0 "UseShip:" + Scrap.GetLangStr("UseShip"),
+ * UseFunc */
 static byte Pk_UseArrow(const nativeVal_t *v) {
 	nativeVal_t lang = { 0 }, opt = { 0 };
 	Mode_Lang("UseShip", &lang);
@@ -1429,8 +1430,8 @@ static byte Pk_InitN(void) {
 	return Mode_Done(&t, arrive >= 0 && (!arrive || Pk_Arrive(comeFrom, spawn)));
 }
 
-/* the entries (the argument formats of the C port: the arity errors of PyArg_ParseTuple, the keyword functions with
- * the names of the script) */
+/* the entries (the argument formats of the C port: the arity errors of getargs.c Arg_ParseTuple, the keyword functions
+ * with the names of the script) */
 MODE_FN(Parking, RestoreDeathPlayerShip, 0, Pk_RestoreDeathPlayerShipN())
 MODE_FN(Parking, SetInvunerable, 1, Pk_SetInvunerableN(&a[0]))
 MODE_FN(Parking, CharOnShip, 1, Pk_CharOnShipN(&a[0]))

@@ -30,14 +30,6 @@ byte Script_Import(const char *const *names) {
 	return 1;
 }
 
-PyObject *Script_GetAttr(PyObject *o, const char *name) {
-	PyObject *v = o ? ModVar_ObjAttr(o, name) : NULL;
-	if (!v && o) {
-		Script_Fail();
-	}
-	return v;
-}
-
 byte Script_Fail(void) {
 	if (!Native_Failed()) {
 		Native_Raise(NE_SYSTEM, "error return without exception set");
@@ -82,36 +74,6 @@ void Script_Leave(void) {
 	script_depth--;
 }
 
-PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw) {
-	/* the frame address, not a local's: ASan may keep locals on its fake stack */
-	if (!Script_Enter((uintptr_t)__builtin_frame_address(0))) {
-		return NULL;
-	}
-	PyObject *r = PyEval_CallObjectWithKeywords(callable, args, kw);
-	Script_Leave();
-	return r;
-}
-
-int Script_Next(PyObject *seq, int i, PyObject **item) {
-	*item = NULL;
-	if (!seq) {
-		return -1;
-	}
-	if (!PySequence_Check(seq)) {
-		Native_Raise(NE_TYPE, "loop over non-sequence");
-		return -1;
-	}
-	*item = PySequence_GetItem(seq, i);
-	if (*item) {
-		return 1;
-	}
-	if (Native_ErrIs(NE_INDEX)) {
-		Native_ErrClear();
-		return 0;
-	}
-	return -1;
-}
-
 int Script_ForItem(const nativeVal_t *seq, int i, nativeVal_t *out) {
 	Native_SetNone(out);
 	if (Native_IsObj(seq)) {
@@ -124,21 +86,12 @@ int Script_ForItem(const nativeVal_t *seq, int i, nativeVal_t *out) {
 	return i >= n ? 0 : Native_SeqItem(seq, i, out) ? 1 : -1;
 }
 
-/* ---- the print statement and the writes to sys.stdout (PyFile_* of fileobject.c on the objects of the scripts) ---- */
-
-/* OBJLIB 7e4b: f is a file object of the library (sys.__stdout__ put in place) */
-static PyObject *Val_PyFile(const nativeVal_t *f) {
-	PyObject *py = NObj_Py(f);
-	return py && PyFile_Check(py) ? py : NULL;
-}
+/* ---- the print statement and the writes to sys.stdout (the file functions of fileobject.c on the objects of the
+ * scripts) ---- */
 
 int Script_SoftSpace(const nativeVal_t *f, int newflag) {
-	PyObject *py = Val_PyFile(f);
 	nativeVal_t v;
 	int old = 0;
-	if (py) {
-		return PyFile_SoftSpace(py, newflag);
-	}
 	if (NObj_GetAttr(f, "softspace", &v)) {
 		old = v.type == NV_INT ? (int)v.i : 0;
 		Native_Free(&v);
@@ -153,15 +106,8 @@ int Script_SoftSpace(const nativeVal_t *f, int newflag) {
 }
 
 byte Script_FileWrite(const nativeVal_t *f, const nativeVal_t *v, byte raw) {
-	PyObject *py = Val_PyFile(f);
 	nativeVal_t w, t, r;
 	nativeBuf_t b;
-	if (py) {
-		PyObject *o = Native_ToPy(v);
-		byte ok = o && PyFile_WriteObject(o, py, raw ? Py_PRINT_RAW : 0) == 0;
-		Py_XDECREF(o);
-		return ok;
-	}
 	if (!NObj_GetAttr(f, "write", &w)) {
 		return 0;
 	}
@@ -181,7 +127,7 @@ byte Script_FileWrite(const nativeVal_t *f, const nativeVal_t *v, byte raw) {
 byte Script_FileWriteText(const nativeVal_t *f, const char *s) {
 	nativeVal_t t;
 	if (Native_Failed()) {
-		/* PyFile_WriteString writes nothing while an error is set */
+		/* the write of a text writes nothing while an error is set */
 		return 0;
 	}
 	Native_SetText(&t, s, (int)strlen(s));
@@ -255,10 +201,9 @@ byte Script_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out
 	return ok;
 }
 
-PyObject *Script_NotRead(const char *where, const char *text) {
+byte Script_NotRead(const char *where, const char *text) {
 	Script_GateNote("notread", where, text);
-	Native_Raise(NE_SYNTAX, "invalid syntax");
-	return NULL;
+	return Native_Raise(NE_SYNTAX, "invalid syntax");
 }
 
 /* the end of a name or a decimal number at p, else p */
@@ -305,7 +250,7 @@ static byte Eval_Juxtaposed(const char *s) {
 }
 
 /* the builtins of the frame of eval: the dict object of the globals' __builtins__ (a module: its variables), 1 with a
- * copy in *out, 0 when it has none valid (PyFrame_New raises) */
+ * copy in *out, 0 when it has none valid (frameobject.c Frame_New raises) */
 static byte Val_Builtins(const nativeVal_t *globals, nativeVal_t *out) {
 	modVarRef_t ref;
 	Native_SetNone(out);

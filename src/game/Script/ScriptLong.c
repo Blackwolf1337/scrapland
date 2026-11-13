@@ -57,7 +57,7 @@ static void L_Copy(lnum_t *z, const lnum_t *a) {
 	z->size = a->size;
 }
 
-/* PyLong_FromLong */
+/* longobject.c Long_FromLong */
 static void L_FromLong(lnum_t *z, long ival) {
 	unsigned long t = (unsigned long)ival;
 	L_New(z, 5);
@@ -417,7 +417,7 @@ static void L_Invert(lnum_t *z, const lnum_t *v) {
 	z->size = -z->size;
 }
 
-/* PyLong_AsLong: 0 with the OverflowError */
+/* longobject.c Long_AsLong: 0 with the OverflowError */
 static byte L_AsLong(const lnum_t *v, long *out) {
 	unsigned long x = 0, prev;
 	int i = L_ABS(v->size), sign = v->size < 0 ? -1 : 1;
@@ -766,7 +766,7 @@ byte Long_FromText(const char *s, int base, nativeVal_t *out, const char **end) 
 	if ((base != 0 && base < 2) || base > 36) {
 		return Native_Raise(NE_VALUE, "invalid base for long literal");
 	}
-	/* PyLong_FromString: blanks, a sign, blanks, the prefix of the base */
+	/* longobject.c Long_FromString: blanks, a sign, blanks, the prefix of the base */
 	while (*s && isspace((unsigned char)*s)) {
 		s++;
 	}

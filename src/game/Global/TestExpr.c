@@ -12,11 +12,11 @@
  *                  ** * / % + - << >> & ^ |, the comparisons < > == >= <= <> != in, not in, is, is not (chained),
  *                  and, or, "a if c else b" and lambda (parameters with defaults, *args, **kw).
  * Names are found in the locals of the lambdas around them (nested lambdas see the parameters of the outer ones),
- * then in the globals the line runs in (__globals__ is that dict itself), the builtins, the channel's own functions (tc_..., below), the loaded
- * modules, else the module is imported (a name nothing gives raises NameError as Python does). The variables of a pack
- * module (its attributes, and its globals in the lines "in <module>" runs) are read, set and deleted through the
- * registry of the module variables (include/scrap/modvars.h), with the errors of the module object of 1.5.2; the
- * builtins getattr, setattr, hasattr and delattr are twins that do the same.
+ * then in the globals the line runs in (__globals__ is that dict itself), the builtins, the channel's own functions
+ * (tc_..., below), the loaded modules, else the module is imported (a name nothing gives raises NameError as Python
+ * does). The variables of a pack module (its attributes, and its globals in the lines "in <module>" runs) are read, set
+ * and deleted through the registry of the module variables (include/scrap/modvars.h), with the errors of the module
+ * object of 1.5.2; the builtins getattr, setattr, hasattr and delattr are twins that do the same.
  * The operators and comparisons do what the byte code of Python 1.5.2 does (the abstract object calls of ceval.c).
  *
  * The channel's own functions, for the helpers of the regression cases (tools/test/regress/channel/<name>.tc):
@@ -1137,35 +1137,8 @@ static const nativeVal_t *TX_Main(void) {
 	return Script_Main();
 }
 
-/* OBJLIB 9: the Python object behind a value (borrowed): the one of a view or of an NV_OBJ; NULL for native data and
- * the kinds by value */
-static PyObject *TX_Py(const nativeVal_t *v) {
-	return NObj_Py(v);
-}
-
-/* o as the value the evaluator works on: numbers, texts, None and tuples by value, a handle as NV_ENT, a list, dict,
- * instance, class, function, method or module as its view. A tuple has an identity of its own, so `is` finds one tuple
- * twice */
-static void TX_FromPy(PyObject *o, nativeVal_t *out) {
-	NObj_FromPy(o, out);
-	if (out->type == NV_TUPLE && PyTuple_Check(o)) {
-		Native_PinTop(out);
-	}
-}
-
-/* r (a new reference, given away; NULL: the error is set) as TX_FromPy gives it */
-static byte TX_Result(PyObject *r, nativeVal_t *out) {
-	Native_SetNone(out);
-	if (!r) {
-		return 0;
-	}
-	TX_FromPy(r, out);
-	Py_DECREF(r);
-	return 1;
-}
-
-/* a value by value before it leaves the evaluator (an argument, a stored value): a dict in it becomes a dict object,
- * which crosses to Python with its table as it is (Native_FillPyDict); a dict by value would be laid out anew */
+/* a value by value before it leaves the evaluator (an argument, a stored value): a dict in it becomes a dict object
+ * with its table as it is; a dict by value would be laid out anew */
 static void TX_Give(nativeVal_t *v) {
 	if (Native_Holds(v, 1u << NV_DICT)) {
 		NObj_Share(v);
@@ -1311,11 +1284,9 @@ static void X_NoError(void) {
 }
 
 /* o.name: a variable of an entity through the core of its handle (Native_EntRead), the variable of a pack module
- * through the registry, the attribute of a native object, of a view through Python (NObj_GetAttr does the three);
- * 0 with the error set, or without one for a handle that gives none */
+ * through the registry, the attribute of an object (NObj_GetAttr does both); 0 with the error set, or without one for
+ * a handle that gives none */
 static byte TX_GetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
-	modVarRef_t mv;
-
 	Native_SetNone(out);
 	if (o->type == NV_ENT) {
 		cEntity *e = Native_Ent(o);
@@ -1331,9 +1302,6 @@ static byte TX_GetAttr(const nativeVal_t *o, const char *name, nativeVal_t *out)
 			return 1;
 		}
 		/* gone, a method, or no such member: the handle's own path, with its console lines */
-	} else if (TX_Py(o) && NObj_Kind(o) != NO_FUNCTION && !ModVar_OfVal(o, &mv)) {
-		/* a view: the attribute of its Python object (as NObj_GetAttr gets it), a tuple with its object */
-		return TX_Result(ModVar_ObjAttr(TX_Py(o), name), out);
 	}
 	return NObj_GetAttr(o, name, out);
 }
@@ -1437,9 +1405,9 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 		for (int i = 0; i < n; i++) {
 			TX_Give(&a[i]);
 		}
-		if (TX_Py(f) || NObj_PortRef(f)) {
-			/* a view (a native function that crossed too) or a port function: the entry of a port's own function, the
-			 * result as the adapter returns it through Python, as TX_FromPy gives it */
+		if (NObj_PortRef(f)) {
+			/* a port function: the entry of a port's own function, the result as the adapter returns it through
+			 * Python */
 			ok = Port_ValuesOf(PORT_VSITE(), f, a, n, out, 1);
 			if (ok && out->type == NV_TUPLE) {
 				Native_PinTop(out);
@@ -1491,7 +1459,7 @@ static byte X_Call(tcNode *x, tcScope *s, nativeVal_t *out) {
 	return ok;
 }
 
-/* the binary operators and - + ~ of PyNumber_* (scrap/scriptlib.h) */
+/* the binary operators and - + ~ of abstract.c Number_* (scrap/scriptlib.h) */
 static byte X_Binary(byte op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 	return Lib_BinOp(op, a, b, out);
 }
@@ -1588,7 +1556,8 @@ static byte X_Eval(tcNode *x, tcScope *s, nativeVal_t *out) {
 			long lo, hi;
 			ok = X_Bounds(x, s, &lo, &hi);
 			if (ok && a.type == NV_TUPLE && a.id && (lo < 0 ? lo + a.n : lo) <= 0 && (hi < 0 ? hi + a.n : hi) >= a.n) {
-				/* tupleslice: the whole tuple (the bounds as PySequence_GetSlice takes them) is the tuple itself */
+				/* tupleslice: the whole tuple (the bounds as abstract.c Sequence_GetSlice takes them) is the tuple
+				 * itself */
 				Native_Copy(out, &a);
 			} else if (ok) {
 				ok = NObj_GetSlice(&a, lo, hi, out);
@@ -2103,8 +2072,8 @@ static int TP_Sdn(nativeVal_t *a, int n, nativeVal_t *out) {
 	return Native_Arity(NULL, n, 1, 1) && TP_SdnVal(a, 0, out);
 }
 
-/* f(*args, **kw) as PyEval_CallObjectWithKeywords takes the arguments (args a tuple, kw None or a dict): 0 with the
- * error */
+/* f(*args, **kw) as ceval.c Eval_CallObjectWithKeywords takes the arguments (args a tuple, kw None or a dict): 0 with
+ * the error */
 static byte TP_CallArgs(nativeVal_t *f, const nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
 	nativeVal_t list;
 
@@ -2222,7 +2191,7 @@ static byte TP_MakeClass(const nativeVal_t *name, const nativeVal_t *attrs, nati
 		}
 		Native_Free(&pairs);
 	}
-	/* __module__ before PyClass_New adds __doc__ */
+	/* __module__ before classobject.c Class_New adds __doc__ */
 	Native_SetStr(&k, "__module__");
 	if (dot) {
 		Native_SetText(&v, full, (int)(dot - full));
@@ -2451,15 +2420,11 @@ static int TX_Native(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVa
 
 /* ---- statements ---- */
 
-/* the items of a sequence a tuple or list of targets takes (PySequence_Length, then PySequence_GetItem): by value, of
- * a native list object, of a Python object */
+/* the items of a sequence a tuple or list of targets takes (the sequence length, then the items): by value, of a list
+ * object */
 static int X_SeqLength(const nativeVal_t *v) {
-	PyObject *py = TX_Py(v);
 	int n;
 
-	if (py) {
-		return PySequence_Length(py);
-	}
 	if (v->type == NV_REF) {
 		if (NObj_Kind(v) == NO_LIST || NObj_Kind(v) == NO_INSTANCE) {
 			return NObj_Len(v);

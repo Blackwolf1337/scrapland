@@ -1,9 +1,9 @@
 /*
  * The built-in modules math, strop and signal of the Python 1.5.2 library in C (include/scrap/scriptlib.h, stage 7e,
  * batch 7e4c): Modules/mathmodule.c on the math of the Windows runtime as the library sees it (crtposix.c on Linux),
- * stropmodule.c and signalmodule.c, with their argument forms (the old PyArg_Parse form of the functions of flag 0:
- * no argument, the one argument, else the tuple of all), results, docs and error texts, and the order of their dicts.
- * The functions of strop and math the ports call directly (PORT_CALL(string, find, ...), the twins declared in
+ * stropmodule.c and signalmodule.c, with their argument forms (the old getargs.c Arg_Parse form of the functions of
+ * flag 0: no argument, the one argument, else the tuple of all), results, docs and error texts, and the order of their
+ * dicts. The functions of strop and math the ports call directly (PORT_CALL(string, find, ...), the twins declared in
  * scrap/scriptmodes.h) are the entries of the module functions.
  *
  * The other modules of the library's table are gone: errno, new, regex, _locale and marshal had no user (no game code,
@@ -196,7 +196,7 @@ static byte Lib_Bytes(const nativeVal_t *v, int arg, byte chars, const char **s,
 		Native_TypeName(v));
 }
 
-/* "t#" of the old argument form (PyArg_Parse): none, the argument, or the tuple of several */
+/* "t#" of the old argument form (getargs.c Arg_Parse): none, the argument, or the tuple of several */
 static byte Lib_OldBytes(const nativeVal_t *a, int n, const char **s, int *len) {
 	if (n == 0) {
 		return Native_Raise(NE_TYPE, "function requires at least one argument");
@@ -512,7 +512,80 @@ static byte Strop_Replace(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-/* atoi(s [,base]): PyOS_strtol (PyOS_strtoul for base 0 and a leading 0) on the text after its blanks */
+unsigned long Lib_StrToUL(const char *str, char **ptr, int base) {
+	unsigned long result = 0;
+	byte ovf = 0;
+	if (base != 0 && (base < 2 || base > 36)) {
+		if (ptr) {
+			*ptr = (char *)str;
+		}
+		return 0;
+	}
+	while (*str && isspace((unsigned char)*str)) {
+		str++;
+	}
+	if (base == 0) {
+		if (*str == '0') {
+			str++;
+			if (*str == 'x' || *str == 'X') {
+				str++;
+				base = 16;
+			} else {
+				base = 8;
+			}
+		} else {
+			base = 10;
+		}
+	} else if (base == 16 && *str == '0' && (str[1] == 'x' || str[1] == 'X')) {
+		str += 2;
+	}
+	for (int c; (c = (unsigned char)*str) != '\0'; str++) {
+		if (isdigit(c) && c - '0' < base) {
+			c -= '0';
+		} else {
+			c = tolower(c);
+			if (c < 'a' || c > 'z' || c - ('a' - 10) >= base) {
+				break;
+			}
+			c -= 'a' - 10;
+		}
+		unsigned long temp = result;
+		result = result * (unsigned long)base + (unsigned long)c;
+		/* the overflow test of mystrtoul.c: base 10 through a signed division */
+		if (base == 10 ? (long)(result - (unsigned long)c) / base != (long)temp :
+			(result - (unsigned long)c) / (unsigned long)base != temp) {
+			ovf = 1;
+		}
+	}
+	if (ptr) {
+		*ptr = (char *)str;
+	}
+	if (ovf) {
+		result = ~0UL;
+		errno = ERANGE;
+	}
+	return result;
+}
+
+long Lib_StrToL(const char *str, char **ptr, int base) {
+	while (*str && isspace((unsigned char)*str)) {
+		str++;
+	}
+	char sign = *str;
+	if (sign == '+' || sign == '-') {
+		str++;
+	}
+	unsigned long u = Lib_StrToUL(str, ptr, base);
+	long result = (long)u;
+	/* an overflow when the result looks negative, but for the largest negative number */
+	if (result < 0 && !(sign == '-' && u == 0UL - u)) {
+		errno = ERANGE;
+		result = 0x7fffffff;
+	}
+	return sign == '-' ? (long)(0UL - (unsigned long)result) : result;
+}
+
+/* atoi(s [,base]): Lib_StrToL (Lib_StrToUL for base 0 and a leading 0) on the text after its blanks */
 static byte Strop_Atoi(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *s;
 	char *end;
@@ -527,7 +600,7 @@ static byte Strop_Atoi(const nativeVal_t *a, int n, nativeVal_t *out) {
 		s++;
 	}
 	errno = 0;
-	long x = base == 0 && s[0] == '0' ? (long)PyOS_strtoul((char *)s, &end, base) : PyOS_strtol((char *)s, &end, base);
+	long x = base == 0 && s[0] == '0' ? (long)Lib_StrToUL(s, &end, base) : Lib_StrToL(s, &end, base);
 	byte bad = end == s || !isalnum((unsigned char)end[-1]);
 	while (!bad && *end && isspace((unsigned char)*end)) {
 		end++;
@@ -542,7 +615,7 @@ static byte Strop_Atoi(const nativeVal_t *a, int n, nativeVal_t *out) {
 	return 1;
 }
 
-/* atol(s [,base]): PyLong_FromString on the text after its blanks, an L for base 0 */
+/* atol(s [,base]): longobject.c Long_FromString on the text after its blanks, an L for base 0 */
 static byte Strop_Atol(const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *s, *end;
 	int base = 10;
@@ -739,7 +812,7 @@ static byte Math_Out(double x, nativeVal_t *out) {
 		return Native_Raise(NE_OVERFLOW, "math range error");
 	}
 	if (errno) {
-		/* the (errno, text) value of PyErr_SetFromErrno */
+		/* the (errno, text) value of errors.c Err_SetFromErrno */
 		nativeVal_t v;
 		const char *text = strerror(errno);
 		Native_SetEmpty(&v, NV_TUPLE);
@@ -753,7 +826,8 @@ static byte Math_Out(double x, nativeVal_t *out) {
 	return 1;
 }
 
-/* PyArg_Parse(args, "d") of the old form: no argument, the one, else the tuple (which PyFloat_AsDouble refuses) */
+/* getargs.c Arg_Parse(args, "d") of the old form: no argument, the one, else the tuple (which floatobject.c
+ * Float_AsDouble refuses) */
 static byte Math_Arg1(const nativeVal_t *a, int n, double *x) {
 	nativeVal_t t;
 	if (!n) {
@@ -765,7 +839,7 @@ static byte Math_Arg1(const nativeVal_t *a, int n, double *x) {
 	return ok;
 }
 
-/* PyArg_Parse(args, "(dd)"): the arguments (or the one value) as a sequence of two numbers */
+/* getargs.c Arg_Parse(args, "(dd)"): the arguments (or the one value) as a sequence of two numbers */
 static byte Math_Arg2(const nativeVal_t *a, int n, double x[2]) {
 	nativeVal_t t, tmp;
 	if (!n) {
@@ -1035,7 +1109,7 @@ static byte Signal_Signal(const nativeVal_t *a, int n, nativeVal_t *out) {
 		func = Signal_Taken;
 	}
 	if (signal(sig, func) == SIG_ERR) {
-		/* PyErr_SetFromErrno(RuntimeError) */
+		/* errors.c Err_SetFromErrno(RuntimeError) */
 		nativeVal_t v;
 		const char *text = strerror(errno);
 		Native_SetEmpty(&v, NV_TUPLE);
@@ -1239,7 +1313,7 @@ void Lib_Put(const nativeVal_t *m, const char *name, const nativeVal_t *v) {
 
 void Lib_Module(nativeVal_t *out, const char *name, const libFn_t *table, const char *doc) {
 	nativeVal_t f, d;
-	/* PyModule_New (__name__, __doc__ None), the functions, then __doc__ (Py_InitModule4) */
+	/* moduleobject.c Module_New (__name__, __doc__ None), the functions, then __doc__ (modsupport.c InitModule4) */
 	NObj_NewModule(out, name);
 	for (const libFn_t *row = table; row->name; row++) {
 		/* the rows of one C function on the first one's: equal function objects (meth_compare) */

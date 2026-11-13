@@ -145,7 +145,7 @@ static byte Bureaucracy_Init(int fromViewer) {
 
 /* ---- the entries of the module table ---- */
 
-/* CreateBureaucracyClass(cls, file): an argument without a native form (an NV_OBJ of Native_Arg) is None, which the
+/* CreateBureaucracyClass(cls, file): an argument that is not given (an NV_OBJ) is None, which the
  * function refuses with the same error (only a class instance with __radd__ could do otherwise) */
 static byte Bureaucracy_CreateBureaucracyClass_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t none;

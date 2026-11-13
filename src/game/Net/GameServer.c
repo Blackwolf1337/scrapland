@@ -10,7 +10,6 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/net.h"
-#include "scrap/python.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"

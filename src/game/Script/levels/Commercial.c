@@ -24,6 +24,8 @@
  * Speech.ForceRemoteCom (values of their variables, OBJLIB 5 (9c)). The InitStatus functions that only set the traffic
  * ships, the start positions of the races (LvN_StartPos) and Mission_DestroyCommSats2 are LevelCommon's.
  */
+#include <string.h>
+
 #include "scrap/game.h"
 #include "scrap/input.h"
 #include "scrap/scrap.h"

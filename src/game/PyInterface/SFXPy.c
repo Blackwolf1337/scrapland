@@ -4,7 +4,6 @@
  */
 #include "scrap/fx.h"
 #include "scrap/global.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 
 /* ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión de la nave */
@@ -139,4 +138,4 @@ static char str_PyDoc_SFX_MoneyTransfer[] =
 static char str_PyDoc_SFX_EmbeddedSet[] =
 	"FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos.";
 
-PORTS(PyInterface_SFXPy)
+PORTS(Engine_SFXPy)

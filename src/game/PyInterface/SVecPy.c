@@ -10,7 +10,6 @@
 
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 
 static inline double Deg2Rad(double deg) {
@@ -198,4 +197,4 @@ static char str_PyDoc_SVec_GetRotAng[] = "AngX,AngY GetRotAng(vec) : Obtiene la 
 
 static char str_PyDoc_SVec_NormAng[44] = "rAng NormAng(Ang) : Normaliza un angulo";
 
-PORTS(PyInterface_SVecPy)
+PORTS(Engine_SVecPy)

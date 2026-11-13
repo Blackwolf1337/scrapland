@@ -27,7 +27,7 @@ typedef struct cScheduledFunc {
 
 /* func(*params) at time, both values copied: the entry when func is a port function and params a tuple (a vector: the
  * tuple of its three floats) of at most PORT_ARGS items, else the native call of the value; a params that is no tuple
- * fails at the call with the TypeError of PyEval_CallObject */
+ * fails at the call with the TypeError of ceval.c Eval_CallObject */
 void Scheduler_Add(cScheduledFuncStack *self, float time, const nativeVal_t *func, const nativeVal_t *params,
 	const char *name);
 /* the one named name, unless it is running */

@@ -2,7 +2,6 @@
  * Python module SSound (function table SSound_methods): sounds, music, voices and sound property
  * sets. The original source file is not known (no CHECK in it); the other modules are PyInterface/S*Py.cpp.
  */
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 #include "scrap/sound.h"
 
@@ -307,4 +306,4 @@ static char str_PyDoc_SSound_StopVoice[] = "StopVoice(channel) : stop a voice on
 static char str_PyDoc_SSound_VoiceRemain[72] =
 	"VoiceRemain(channel,time) : return the remaining time of a voice.";
 
-PORTS(PyInterface_SSoundPy)
+PORTS(Engine_SSoundPy)

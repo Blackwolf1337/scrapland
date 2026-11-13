@@ -2076,7 +2076,7 @@ static byte Ht_SellShip(int id) {
 	return Mode_Done(&t, ok);
 }
 
-/* ---- entries: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
+/* ---- entries: the argument formats of the C port (the errors of getargs.c), the objects as native values ---- */
 
 MODE_IFN(HT_ShowBoostPrediction, 2, Ht_BoostPrediction(id, &a[1]))
 MODE_IFN(HT_DisableChangePlatformButtons, 1, Ht_Platform(id, 0))

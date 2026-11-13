@@ -20,52 +20,54 @@ byte Long_Pow(const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c, 
 /* -a, +a, ~a, abs(a) ('a') */
 void Long_Unary(int op, const nativeVal_t *a, nativeVal_t *out);
 void Long_FromLong(long l, nativeVal_t *out);
-/* PyLong_FromDouble */
+/* longobject.c Long_FromDouble */
 void Long_FromDouble(double d, nativeVal_t *out);
-/* PyLong_AsDouble */
+/* longobject.c Long_AsDouble */
 double Long_AsDouble(const nativeVal_t *v);
-/* PyLong_AsLong: 0 with the OverflowError "long int too long to convert" */
+/* longobject.c Long_AsLong: 0 with the OverflowError "long int too long to convert" */
 byte Long_AsLong(const nativeVal_t *v, long *out);
 /* long_format with the L: base 8 ("0...L"), 10, 16 ("0x...L", capital digits) */
 void Long_Format(const nativeVal_t *v, int base, nativeBuf_t *out);
-/* PyLong_FromString: blanks, a sign, blanks, the digits of base (0: by the prefix); *end after them. 0 with the
- * ValueError ("invalid base for long literal", "no digits in long int constant") */
+/* longobject.c Long_FromString: blanks, a sign, blanks, the digits of base (0: by the prefix); *end after them. 0 with
+ * the ValueError ("invalid base for long literal", "no digits in long int constant") */
 byte Long_FromText(const char *s, int base, nativeVal_t *out, const char **end);
 
 /* ---- the number protocol (abstract.c) and the compare (object.c) on any value ---- */
 
-/* v op w of PyNumber_*: + - * / % 'p' (power) '<' '>' & | ^ 'd' (divmod); the coercions, the instance operators
- * (__coerce__, __add__ / __radd__ ...), the sequences (concat, repeat, % of a text) */
+/* v op w of abstract.c Number_*: + - * / % 'p' (power) '<' '>' & | ^ 'd' (divmod); the coercions, the instance
+ * operators (__coerce__, __add__ / __radd__ ...), the sequences (concat, repeat, % of a text) */
 byte Lib_BinOp(int op, const nativeVal_t *v, const nativeVal_t *w, nativeVal_t *out);
-/* pow(v, w, z) of PyNumber_Power (z NULL or None: two arguments) */
+/* pow(v, w, z) of abstract.c Number_Power (z NULL or None: two arguments) */
 byte Lib_Power(const nativeVal_t *v, const nativeVal_t *w, const nativeVal_t *z, nativeVal_t *out);
 /* -v, +v, ~v, abs(v) ('a') */
 byte Lib_Unary(int op, const nativeVal_t *v, nativeVal_t *out);
-/* PyNumber_Int, PyNumber_Long, PyNumber_Float (texts too) */
+/* abstract.c Number_Int, abstract.c Number_Long, abstract.c Number_Float (texts too) */
 byte Lib_Int(const nativeVal_t *v, nativeVal_t *out);
 byte Lib_Long(const nativeVal_t *v, nativeVal_t *out);
 byte Lib_Float(const nativeVal_t *v, nativeVal_t *out);
 /* hex(v), oct(v) of the number methods */
 byte Lib_HexOct(const nativeVal_t *v, int base, nativeVal_t *out);
-/* PyNumber_Coerce: *a and *b replaced by their coerced values (owned copies, Native_Free both); 1, 0 with the error
- * "number coercion failed" (the error only when raise; else 0 without one) */
+/* abstract.c Number_Coerce: *a and *b replaced by their coerced values (owned copies, Native_Free both); 1, 0 with the
+ * error "number coercion failed" (the error only when raise; else 0 without one) */
 byte Lib_Coerce(nativeVal_t *a, nativeVal_t *b, byte raise);
-/* PyObject_Compare: the value 1.5.2 gives (the byte difference of texts, the length difference of lists ...), 0 for
- * a value equal; an error of an instance's __cmp__ is left set */
+/* object.c Object_Compare: the value 1.5.2 gives (the byte difference of texts, the length difference of lists ...), 0
+ * for a value equal; an error of an instance's __cmp__ is left set */
 int Lib_Cmp(const nativeVal_t *a, const nativeVal_t *b);
 /* the value has the number methods (tp_as_number): ints, longs, floats, complex, instances */
 byte Lib_IsNumber(const nativeVal_t *v);
-/* PyInt_AsLong and PyFloat_AsDouble: a number through its nb_int, nb_float (an instance's __int__, the TypeError of a
- * complex), else the TypeError "illegal argument type for built-in operation"; 0 with the error */
+/* intobject.c Int_AsLong and floatobject.c Float_AsDouble: a number through its nb_int, nb_float (an instance's
+ * __int__, the TypeError of a complex), else the TypeError "illegal argument type for built-in operation"; 0 with the
+ * error */
 byte Lib_AsLong(const nativeVal_t *v, long *out);
 byte Lib_AsDouble(const nativeVal_t *v, double *out);
 
-/* the sequence protocol of the builtins (PySequence_Check, PySequence_Length, PySequence_GetItem): 1 for a text, tuple,
- * list, vector, list object, instance (its specials raise), xrange, buffer, a Python sequence; 0 for anything else */
+/* the sequence protocol of the builtins (abstract.c Sequence_Check, abstract.c Sequence_Length, abstract.c
+ * Sequence_GetItem): 1 for a text, tuple, list, vector, list object, instance (its specials raise), xrange, buffer, a
+ * Python sequence; 0 for anything else */
 byte Lib_IsSeq(const nativeVal_t *v);
 int Lib_SeqLen(const nativeVal_t *v);
 byte Lib_SeqItem(const nativeVal_t *v, int i, nativeVal_t *out);
-/* the items as a list or tuple by value (PySequence_List, PySequence_Tuple): 0 with the error */
+/* the items as a list or tuple by value (abstract.c Sequence_List, abstract.c Sequence_Tuple): 0 with the error */
 byte Lib_SeqList(const nativeVal_t *v, nativeType_t type, nativeVal_t *out);
 
 /* ---- the object types of the library ---- */
@@ -76,11 +78,11 @@ extern const nativeCType_t lib_complexType, lib_xrangeType, lib_sliceType, lib_b
 void Lib_NewComplex(nativeVal_t *out, double re, double im);
 /* the parts of a complex value: 1, 0 for any other value */
 byte Lib_ComplexOf(const nativeVal_t *v, double *re, double *im);
-/* PyRange_New */
+/* rangeobject.c Range_New */
 void Lib_NewXRange(nativeVal_t *out, long start, long len, long step, int reps);
-/* PySlice_New (NULL: None) */
+/* sliceobject.c Slice_New (NULL: None) */
 void Lib_NewSlice(nativeVal_t *out, const nativeVal_t *start, const nativeVal_t *stop, const nativeVal_t *step);
-/* buffer(obj, offset, size) of PyBuffer_FromObject (size -1: to the end) */
+/* buffer(obj, offset, size) of bufferobject.c Buffer_FromObject (size -1: to the end) */
 byte Lib_NewBuffer(const nativeVal_t *obj, int offset, int size, nativeVal_t *out);
 /* the text of a buffer object: its bytes; 1, 0 for any other value */
 byte Lib_BufferOf(const nativeVal_t *v, const char **p, int *len);
@@ -92,6 +94,10 @@ byte Lib_Open(const char *name, const char *mode, int bufsize, nativeVal_t *out)
 void Lib_StdFile(nativeVal_t *out, int which);
 /* the IOError of errno with the file name (NULL: none): (errno, text[, name]) */
 byte Lib_IOError(const char *name);
+/* strtoul and strtol of 1.5.2 (mystrtoul.c): blanks, a sign (strtol), the prefix of base 0 or 16, the digits; an
+ * overflow sets errno ERANGE (strtoul ~0, strtol 0x7fffffff); *ptr after the digits */
+unsigned long Lib_StrToUL(const char *str, char **ptr, int base);
+long Lib_StrToL(const char *str, char **ptr, int base);
 
 /* ---- the modules ---- */
 
@@ -138,8 +144,8 @@ byte Bi_Vars(const nativeVal_t *a, int n, nativeVal_t *out);
 byte Bi_Dir(const nativeVal_t *a, int n, nativeVal_t *out);
 byte Bi_Reload(const nativeVal_t *a, int n, nativeVal_t *out);
 byte Bi_RawInput(const nativeVal_t *a, int n, nativeVal_t *out);
-/* OBJLIB 7: the standard exception name as the error state knows it (the text or tuple of __builtin__ with the object
- * of the library, src/game/Script/NativeErr.c), None for another name */
+/* the standard exception name as __builtin__ has it (the text of a leaf one, the tuple of a group, each with the
+ * identity of its kind: src/game/Script/NativeErr.c), None for another name */
 void Native_ErrObject(const char *name, nativeVal_t *out);
 /* a function of a table of Lib_Module (a builtin of __builtin__ ...): its row, NULL for any other value */
 const libFn_t *Lib_FnOf(const nativeVal_t *f);
@@ -150,9 +156,9 @@ void Lib_MakeMath(nativeVal_t *out);
 void Lib_MakeStrop(nativeVal_t *out);
 void Lib_MakeSignal(nativeVal_t *out);
 /* a module name whose dict gets __name__, __doc__ (doc NULL: None) and the functions of table in order, as
- * Py_InitModule4 makes it */
+ * modsupport.c InitModule4 makes it */
 void Lib_Module(nativeVal_t *out, const char *name, const libFn_t *table, const char *doc);
-/* name = v into the dict of module m (PyDict_SetItemString) */
+/* name = v into the dict of module m (dictobject.c Dict_SetItemString) */
 void Lib_Put(const nativeVal_t *m, const char *name, const nativeVal_t *v);
 /* xrange * n (range_repeat): 1, 0 for a value that is no xrange */
 byte Lib_RangeRepeat(const nativeVal_t *v, long n, nativeVal_t *out);

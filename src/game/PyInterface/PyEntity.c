@@ -1,9 +1,9 @@
 /*
- * The script handles of entities (cEntityRef), their attributes and methods, and their Python type cPyEntity (method
+ * The script handles of entities (cEntityRef), their attributes and methods (the type cPyEntity of the original, method
  * table cPyEntity_methods). The original source file is not known (no CHECK in these functions); the type lives in
  * PyInterface/. Angles are degrees in the script API and radians for the engine (deg * pi / 180 in double, then
  * float). The methods and the attributes work on native values (the handle as NV_ENT, stage 7 batch 7c of
- * docs/objlib-plan.md; Native_EntGetAttr); the type functions are the Python face on them (OBJLIB 7e4b: the bridge).
+ * docs/objlib-plan.md; Native_EntGetAttr).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -17,14 +17,9 @@ static inline float Deg2RadF(double deg) {
 	return (float)(deg * M_PI_D / DEG_PER_PI);
 }
 
-/* a method of the handles: cPyEntity_<name>_E, its entry on native values (the handle is a[0], the arguments of the call
- * follow), whose body follows the macro, and cPyEntity_<name>, the method of the type on it */
-#define ENT_FN(name) \
-	static byte cPyEntity_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out); \
-	static PyObject *cPyEntity_##name(PyObject *self, PyObject *args) { \
-		return Mode_SelfEntry(self, args, cPyEntity_##name##_E); \
-	} \
-	static byte cPyEntity_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out)
+/* a method of the handles: cPyEntity_<name>_E, its entry on native values (the handle is a[0], the arguments of the
+ * call follow), whose body follows the macro */
+#define ENT_FN(name) static byte cPyEntity_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out)
 
 /* the entity of the handle a method is called on, NULL when it is gone */
 static cEntity *Ent_Self(const nativeVal_t *a) {
@@ -152,12 +147,13 @@ byte Native_EntGetAttr(const nativeVal_t *h, const char *name, nativeVal_t *out)
 		return 0;
 	}
 	if (Native_EntRead(e, name, &v)) {
-		/* the variable as the face gives it to Python and back: a vector as the tuple of its floats */
+		/* the variable as the handle gave it to the script: a vector as the tuple of its floats */
 		NObj_CallArg(&v, out);
 		Native_Free(&v);
 		return 1;
 	}
-	/* Py_FindMethod: __methods__ (the names sorted), then the methods by name; the type has no __doc__ */
+	/* the method lookup of the type: __methods__ (the names sorted), then the methods by name; the type has no
+	 * __doc__ */
 	if (!strcmp(name, "__methods__")) {
 		const char *names[sizeof(ent_methods) / sizeof(ent_methods[0])];
 		int n = 0;
@@ -196,7 +192,6 @@ cEntityRef *EntRef_New(const char *name) {
 	cEntity_AddLink(e, &ref->link);
 	Str_Copy(ref->name, name, sizeof(ref->name));
 	ref->holders = 1;
-	ref->face = NULL;
 	return ref;
 }
 
@@ -210,160 +205,6 @@ void EntRef_Drop(cEntityRef *ref) {
 		Nto1Node_Done(&ref->link);
 		operator_delete(ref);
 	}
-}
-
-/* type functions of cPyEntity (type object) */
-
-static PyTypeObject cPyEntity_Type;
-PyObject *PyEntity_Face(cEntityRef *ref) {
-	if (ref->face) {
-		Py_INCREF(ref->face);
-		return (PyObject *)ref->face;
-	}
-	cPyEntity *self = (cPyEntity *)_PyObject_New(&cPyEntity_Type);
-	if (!self) {
-		return NULL;
-	}
-	self->ref = EntRef_Keep(ref);
-	ref->face = self;
-	return (PyObject *)self;
-}
-
-PyTypeObject *PyEntity_Type(void) {
-	return &cPyEntity_Type;
-}
-
-byte PyEntity_Check(PyObject *o) {
-	return o->ob_type == &cPyEntity_Type;
-}
-
-/* tp_dealloc */
-static void PyEntity_Dealloc(PyObject *self) {
-	cEntityRef *ref = ((cPyEntity *)self)->ref;
-	if (ref) {
-		ref->face = NULL;
-		EntRef_Drop(ref);
-	}
-	ScriptPool_Free(self);
-}
-
-/* tp_repr, tp_hash, tp_compare: the face shows, hashes and orders as its handle (Native_Repr, Native_Hash, Native_Compare
- * of the NV_ENT), whose address the scripts see */
-static void PyEntity_Val(PyObject *self, nativeVal_t *v) {
-	Native_SetNone(v);
-	v->type = NV_ENT;
-	v->ent = ((cPyEntity *)self)->ref;
-}
-
-static PyObject *PyEntity_Repr(PyObject *self) {
-	nativeVal_t v;
-	nativeBuf_t b;
-	PyEntity_Val(self, &v);
-	Native_BufInit(&b);
-	Native_Repr(&b, &v, NR_REPR);
-	PyObject *r = PyString_FromStringAndSize(b.p, b.len);
-	Native_BufFree(&b);
-	return r;
-}
-
-static long PyEntity_Hash(PyObject *self) {
-	nativeVal_t v;
-	long h = -1;
-	PyEntity_Val(self, &v);
-	Native_Hash(&v, &h);
-	return h;
-}
-
-static int PyEntity_Compare(PyObject *a, PyObject *b) {
-	nativeVal_t x, y;
-	PyEntity_Val(a, &x);
-	PyEntity_Val(b, &y);
-	return Native_Compare(&x, &y);
-}
-
-/* tp_print: the text goes to fprintf as the format, like in the original */
-static int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
-	static char buf[0x100];
-
-	(void)flags;
-	Native_EntPrint(((cPyEntity *)self)->ref->name, buf, sizeof(buf));
-	crt_fprintf(fp, buf);
-	return 0;
-}
-
-static const char str_PyMethod_cPyEntity_Del[];
-static const char str_PyMethod_cPyEntity_DrawWeap[];
-static const char str_PyMethod_cPyEntity_GetTgAng[];
-static const char str_PyMethod_cPyEntity_IsType[];
-static const char str_PyMethod_cPyEntity_SetFX[];
-static const char str_PyMethod_cPyEntity_SetModel[];
-static PyMethodDef cPyEntity_methods[7] = {
-	{ .ml_name = (void *)str_PyMethod_cPyEntity_Del, .ml_meth = (void *)cPyEntity_Del, .ml_flags = 1 },
-	{
-		.ml_name = (void *)str_PyMethod_cPyEntity_SetModel,
-		.ml_meth = (void *)cPyEntity_SetModel,
-		.ml_flags = 1,
-	},
-	{ .ml_name = (void *)str_PyMethod_cPyEntity_SetFX, .ml_meth = (void *)cPyEntity_SetFX, .ml_flags = 1 },
-	{
-		.ml_name = (void *)str_PyMethod_cPyEntity_GetTgAng,
-		.ml_meth = (void *)cPyEntity_GetTgAng,
-		.ml_flags = 1,
-	},
-	{
-		.ml_name = (void *)str_PyMethod_cPyEntity_DrawWeap,
-		.ml_meth = (void *)cPyEntity_DrawWeap,
-		.ml_flags = 1,
-	},
-	{ .ml_name = (void *)str_PyMethod_cPyEntity_IsType, .ml_meth = (void *)cPyEntity_IsType, .ml_flags = 1 },
-};
-
-/* a method of cPyEntity by name */
-static PyObject *PyEntity_FindMethod(PyObject *self, char *name) {
-	return Py_FindMethod(cPyEntity_methods, self, name);
-}
-
-/* tp_getattr: script variable of the entity (int, float, vector, string: Native_EntRead), else a method */
-static PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
-	cEntityRef *ref = ((cPyEntity *)self)->ref;
-	cEntity *e = ref->link.target;
-	nativeVal_t v;
-
-	if (!e) {
-		Con_Errorf("'%s'->%s : Entity invalid.\n", ref->name, name);
-		return NULL;
-	}
-	if (Native_EntRead(e, name, &v)) {
-		return Mode_Return(1, &v);
-	}
-	PyObject *method = PyEntity_FindMethod(self, name);
-	if (!method) {
-		Con_Errorf("'%s'->%s : Member invalid.\n", ref->name, name);
-	}
-	return method;
-}
-
-/*
- * a script variable of an entity from a Python value, as the attribute set of its handle (Native_EntStore on the value
- * as Native_Arg makes it). ref names the entity in the messages. -1 with the message printed when no variable took it.
- * v NULL is `del handle.name`: the original parses the NULL value (a crash when the entity lives); here it is a value
- * of none of the forms ("Invalid type").
- */
-static int PyEntity_SetVar(cEntity *e, const char *ref, const char *name, PyObject *v) {
-	nativeVal_t x;
-	if (v) {
-		Native_Arg(v, &x);
-	} else {
-		Mode_KwSkip(&x);
-	}
-	byte ok = Native_EntStore(e, ref, name, &x);
-	Native_Free(&x);
-	return ok ? 0 : -1;
-}
-
-static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
-	cEntityRef *ref = ((cPyEntity *)self)->ref;
-	return PyEntity_SetVar(ref->link.target, ref->name, name, v);
 }
 
 /* Global/Nto1Links.h instances */
@@ -385,25 +226,3 @@ void cEntity_AddLink(cEntity *self, Nto1Node *node) {
 	self->links.next->prev = node;
 	self->links.next = node;
 }
-
-static const char str_CPyEntity[] = "cPyEntity";
-static const char str_PyMethod_cPyEntity_Del[] = "Del";
-static const char str_PyMethod_cPyEntity_SetModel[] = "SetModel";
-static const char str_PyMethod_cPyEntity_SetFX[] = "SetFX";
-static const char str_PyMethod_cPyEntity_GetTgAng[] = "GetTgAng";
-static const char str_PyMethod_cPyEntity_DrawWeap[] = "DrawWeap";
-static const char str_PyMethod_cPyEntity_IsType[] = "IsType";
-extern const char str_CPyEntity[];
-static PyTypeObject cPyEntity_Type = {
-	.ob_refcnt = 1,
-	.ob_type = &PyType_Type,
-	.tp_name = (void *)str_CPyEntity,
-	.tp_basicsize = sizeof(cPyEntity),
-	.tp_dealloc = (void *)PyEntity_Dealloc,
-	.tp_print = (void *)PyEntity_Print,
-	.tp_getattr = (void *)PyEntity_GetAttr,
-	.tp_setattr = (void *)PyEntity_SetAttr,
-	.tp_compare = (void *)PyEntity_Compare,
-	.tp_repr = (void *)PyEntity_Repr,
-	.tp_hash = (void *)PyEntity_Hash,
-};

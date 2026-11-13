@@ -21,6 +21,7 @@
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
 #include "scrap/script.h"
+#include "scrap/scriptlib.h"
 #include "scrap/scriptmodes.h"
 
 #define EXEC_STMTS 8
@@ -391,7 +392,7 @@ byte Exec_Text(execScope_t *x, const nativeVal_t *code) {
 		}
 	} else {
 		/* a line in another form (the console, a hand-edited save, a mod) is Script_NotRead's error */
-		ok = Script_NotRead("exec", s) != NULL;
+		ok = Script_NotRead("exec", s);
 	}
 	Native_Free(&m);
 	return ok;
@@ -409,12 +410,8 @@ byte Exec_Cat(nativeVal_t *out, int n, ...) {
 		if (!Native_IsObj(&acc) && !Native_IsObj(b)) {
 			ok = Native_Arith('+', &acc, b, &r);
 		} else {
-			/* OBJLIB 7: an instance adds with its __add__ or __radd__ */
-			PyObject *x = Native_ToPy(&acc), *y = x ? Native_ToPy(b) : NULL, *sum = y ? PyNumber_Add(x, y) : NULL;
-			ok = sum != NULL && Native_Arg(sum, &r);
-			Py_XDECREF(sum);
-			Py_XDECREF(y);
-			Py_XDECREF(x);
+			/* an instance adds with its __add__ or __radd__ */
+			ok = Lib_BinOp('+', &acc, b, &r);
 		}
 		Native_Free(&acc);
 		acc = r;

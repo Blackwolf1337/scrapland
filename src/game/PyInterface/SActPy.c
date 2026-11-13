@@ -7,7 +7,6 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/pyfunction.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 
 #include <stdio.h>
@@ -317,4 +316,4 @@ static char str_PyDoc_SAct_GetAct[] =
 	"GetAct(varname) :  Obtiene el valor de una variable de la accion de una clase objeto animado";
 
 
-PORTS(PyInterface_SActPy)
+PORTS(Engine_SActPy)

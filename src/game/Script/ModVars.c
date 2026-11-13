@@ -7,10 +7,7 @@
  * The values: every module is a native object whose variables are a dict object of native values (name -> value, in
  * the slot order the dict of 1.5.2 gives the same stores and deletes, so keys(), items() and a from-import walk go as
  * they went), and those variables are the key of the module here. A shared list, dict, instance, function or module
- * is held as its NV_REF, a number, text, None or tuple by value. OBJLIB 7e4b: a reader that needs a Python object
- * gets the one of the value (Native_ToPy: a view's own object, native data crossing once, a number or text made once
- * and cached with the value, nativeVal_t.obj); Python code on the face of a module comes here through the module type
- * (MV_PyGetattr).
+ * is held as its NV_REF, a number, text, None or tuple by value.
  *
  * The names: the table's, and the overflow list of each module file. A name the table does not have is taken into the
  * overflow list when ModVar_Find meets it among the variables (a lookup, a write, the walk of ModVar_Names) and when
@@ -53,11 +50,6 @@ static mvFile_t *mv_files;
 static mvSpace_t *mv_spaces;
 /* the variables of __main__ (ModVar_Keep) */
 static mvSpace_t *mv_kept;
-/* OBJLIB 7e4b: the module type's own getattr and setattr (MV_PyGetattr wraps them for the faces of the modules) */
-static getattrfunc mv_pyGetattr;
-static setattrfunc mv_pySetattr;
-/* the times Python code read a module's __dict__, which crossed all its variables (SCRAP_NATIVE_COUNT) */
-static unsigned long mv_synced;
 
 static mvFile_t *MV_File(int file) {
 	if (!mv_files) {
@@ -134,12 +126,9 @@ static void MV_Key(nativeVal_t *key, const char *name) {
 	Native_SetText(key, name, (int)strlen(name));
 }
 
-/* the native table of ref's variables, or NULL with *py the Python dict that holds them (OBJLIB 7e4b: variables
- * whose dict object crossed to Python) */
-static nativeVal_t *MV_Table(const modVarRef_t *ref, PyObject **py) {
-	nativeVal_t *t = NObj_DictData(ref->vars);
-	*py = t ? NULL : NObj_Py(ref->vars);
-	return t;
+/* the table of ref's variables */
+static nativeVal_t *MV_Table(const modVarRef_t *ref) {
+	return NObj_DictData(ref->vars);
 }
 
 /* the value of name in a native table (borrowed, valid until the table changes), NULL when it has none */
@@ -153,20 +142,8 @@ static nativeVal_t *MV_Slot(nativeVal_t *t, const char *name) {
 
 /* *out the form of v a variable holds: lists and dicts as objects (NObj_Share), a vector as the tuple of three floats
  * it is in Python, a tuple with an identity of its own and of its items (Native_Pin: one object for `is`, as the dict
- * slot had it);
- * SCRAP_NATIVE_REF=0: the value as Python made it, a value that holds native objects (there are no views then) as it
- * is. 0 with the error */
-static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
-	if (!NObj_RefMode() && !Native_Holds(v, 1u << NV_REF)) {
-		PyObject *o = Native_ToPy(v);
-		Native_SetNone(out);
-		if (!o) {
-			return 0;
-		}
-		NObj_FromPyKept(o, out);
-		Py_DECREF(o);
-		return 1;
-	}
+ * slot had it) */
+static void MV_Form(const nativeVal_t *v, nativeVal_t *out) {
 	if (v->type == NV_VEC) {
 		Native_SetEmpty(out, NV_TUPLE);
 		for (int i = 0; i < 3; i++) {
@@ -179,25 +156,6 @@ static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
 	if (out->type == NV_TUPLE) {
 		Native_Pin(out);
 	}
-	return 1;
-}
-
-/* the Python object of a variable's value (borrowed, kept by the value): an object's, native data crossing here; a
- * value by value gets its object made once */
-static PyObject *MV_Py(nativeVal_t *s) {
-	if (s->type == NV_OBJ) {
-		return s->obj;
-	}
-	if (s->type == NV_REF) {
-		PyObject *o = NObj_ToPy(s);
-		Py_XDECREF(o);
-		return o;
-	}
-	if (!s->obj) {
-		/* the Python form, made once for the borrowed readers */
-		s->obj = Native_ToPy(s);
-	}
-	return s->obj;
 }
 
 /* name has a value now (a name of the table or a new one, which goes to the overflow list) */
@@ -230,9 +188,6 @@ static mvSpace_t *MV_SpaceOf(const nativeVal_t *vars) {
 	}
 	return NULL;
 }
-
-static PyObject *MV_PyGetattr(PyObject *m, char *name);
-static int MV_PySetattr(PyObject *m, char *name, PyObject *v);
 
 /* the module mod as the registry keeps it */
 static mvSpace_t *MV_Bind(const nativeVal_t *mod) {
@@ -304,8 +259,9 @@ void ModVar_Unmade(const char *module, const modVarRef_t *was) {
 	}
 }
 
-/* the variables of a module set to None as _PyModule_Clear sets the values of its dict (PyImport_Cleanup of
- * Py_Finalize): the names with a single underscore first, then every name but __builtins__ */
+/* the variables of a module set to None as moduleobject.c Module_Clear sets the values of its dict (import.c
+ * Import_Cleanup of pythonrun.c Finalize): the names with a single underscore first, then every name but
+ * __builtins__ */
 static void MV_Clear(mvSpace_t *s) {
 	modVarRef_t ref = { .file = -1, .vars = s->vars };
 	for (int pass = 0; pass < 2; pass++) {
@@ -423,91 +379,41 @@ const modVar_t *ModVar_Find(const modVarRef_t *ref, const char *name) {
 }
 
 byte ModVar_Has(const modVarRef_t *ref, const char *name) {
-	PyObject *py;
-	nativeVal_t *t = MV_Table(ref, &py);
-	return t ? MV_Slot(t, name) != NULL : PyDict_GetItemString(py, (char *)name) != NULL;
+	nativeVal_t *t = MV_Table(ref);
+	return t && MV_Slot(t, name) != NULL;
 }
 
 byte ModVar_GetVal(const modVarRef_t *ref, const char *name, nativeVal_t *out) {
-	PyObject *py, *o;
-	nativeVal_t *t = MV_Table(ref, &py), *s;
+	nativeVal_t *t = MV_Table(ref), *s;
 	Native_SetNone(out);
-	if (!t) {
-		if ((o = PyDict_GetItemString(py, (char *)name)) == NULL) {
-			return 0;
-		}
-		NObj_FromPyKept(o, out);
-	} else if ((s = MV_Slot(t, name)) != NULL) {
-		Native_Copy(out, s);
-	} else {
+	if (!t || (s = MV_Slot(t, name)) == NULL) {
 		return 0;
 	}
+	Native_Copy(out, s);
 	MV_Seen(ref, name);
 	return 1;
 }
 
 int ModVar_SetVal(const modVarRef_t *ref, const char *name, const nativeVal_t *v) {
-	PyObject *py;
-	nativeVal_t *t = MV_Table(ref, &py), key, x;
+	nativeVal_t *t = MV_Table(ref), key, x;
 	if (!t) {
-		PyObject *o = Native_ToPy(v);
-		int r = o ? PyDict_SetItemString(py, (char *)name, o) : -1;
-		Py_XDECREF(o);
-		if (r == 0) {
-			MV_Seen(ref, name);
-		}
-		return r;
-	}
-	if (!MV_Form(v, &x)) {
+		Native_Raise(NE_SYSTEM, "module variables without their dict");
 		return -1;
 	}
+	MV_Form(v, &x);
 	MV_Key(&key, name);
 	Native_DictSet(t, &key, &x);
 	MV_Seen(ref, name);
 	return 0;
 }
 
-PyObject *ModVar_Get(const modVarRef_t *ref, const char *name) {
-	PyObject *py, *o;
-	nativeVal_t *t = MV_Table(ref, &py), *s;
-	if (!t) {
-		o = PyDict_GetItemString(py, (char *)name);
-	} else {
-		o = (s = MV_Slot(t, name)) != NULL ? MV_Py(s) : NULL;
-	}
-	if (o) {
-		MV_Seen(ref, name);
-	}
-	return o;
-}
-
-int ModVar_Set(const modVarRef_t *ref, const char *name, PyObject *v) {
-	PyObject *py;
-	nativeVal_t *t = MV_Table(ref, &py), key, x;
-	if (!t) {
-		if (PyDict_SetItemString(py, (char *)name, v) != 0) {
-			return -1;
-		}
-	} else {
-		NObj_FromPyKept(v, &x);
-		MV_Key(&key, name);
-		Native_DictSet(t, &key, &x);
-	}
-	MV_Seen(ref, name);
-	return 0;
-}
-
 int ModVar_Del(const modVarRef_t *ref, const char *name) {
 	/* the name stays in the table or the overflow list */
-	PyObject *py;
-	nativeVal_t *t = MV_Table(ref, &py), key;
-	if (!t) {
-		return PyDict_DelItemString(py, (char *)name);
-	}
+	nativeVal_t *t = MV_Table(ref), key;
 	MV_Key(&key, name);
-	byte ok = Native_DictDel(t, &key);
+	byte ok = t && Native_DictDel(t, &key);
 	if (!ok) {
-		/* PyDict_DelItemString's KeyError */
+		/* the KeyError of a dict delete */
 		Native_RaiseKey(&key);
 	}
 	Native_Free(&key);
@@ -518,20 +424,11 @@ int ModVar_Del(const modVarRef_t *ref, const char *name) {
 }
 
 byte ModVar_Next(const modVarRef_t *ref, int *pos, nativeVal_t *key, nativeVal_t *value) {
-	PyObject *py, *k, *v;
-	nativeVal_t *t = MV_Table(ref, &py);
+	nativeVal_t *t = MV_Table(ref);
 	const nativeVal_t *nk, *nv;
 	Native_SetNone(key);
 	Native_SetNone(value);
-	if (!t) {
-		if (!PyDict_Next(py, pos, &k, &v)) {
-			return 0;
-		}
-		NObj_FromPyKept(k, key);
-		NObj_FromPyKept(v, value);
-		return 1;
-	}
-	if (!Native_DictNext(t, pos, &nk, &nv)) {
+	if (!t || !Native_DictNext(t, pos, &nk, &nv)) {
 		return 0;
 	}
 	Native_Copy(key, nk);
@@ -541,36 +438,6 @@ byte ModVar_Next(const modVarRef_t *ref, int *pos, nativeVal_t *key, nativeVal_t
 
 void ModVar_Space(const modVarRef_t *ref, nativeVal_t *out) {
 	Native_Copy(out, ref->vars);
-}
-
-PyObject *ModVar_Attr(const modVarRef_t *ref, const char *name) {
-	if (!strcmp(name, "__dict__")) {
-		/* OBJLIB 7e4b: the dict object of the variables crosses (Python is its master from here on) */
-		mv_synced++;
-		return Native_ToPy(ref->vars);
-	}
-	PyObject *v = ModVar_Get(ref, name);
-	if (!v) {
-		Native_Raise(NE_ATTRIBUTE, "%s", name);
-		return NULL;
-	}
-	Py_INCREF(v);
-	return v;
-}
-
-int ModVar_SetAttr(const modVarRef_t *ref, const char *name, PyObject *v) {
-	if (name[0] == '_' && !strcmp(name, "__dict__")) {
-		Native_Raise(NE_TYPE, "read-only special attribute");
-		return -1;
-	}
-	if (v) {
-		return ModVar_Set(ref, name, v);
-	}
-	if (ModVar_Del(ref, name) != 0) {
-		Native_Raise(NE_ATTRIBUTE, "delete non-existing module attribute");
-		return -1;
-	}
-	return 0;
 }
 
 byte ModVar_AttrVal(const modVarRef_t *ref, const char *name, nativeVal_t *out) {
@@ -603,17 +470,14 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names) {
 	int n = 0;
 	if (ref->file < 0) {
 		/* the string keys of the dict, as texts that live while the module has them */
-		PyObject *py, *k, *v;
 		int pos = 0;
-		nativeVal_t *t = MV_Table(ref, &py);
+		nativeVal_t *t = MV_Table(ref);
 		const nativeVal_t *nk, *nv;
-		int cap = t ? t->n : PyDict_Size(py);
+		int cap = t ? t->n : 0;
 		*names = cap ? Mem_Alloc((uint32_t)(sizeof(const char *) * (size_t)cap)) : NULL;
-		while (n < cap && (t ? Native_DictNext(t, &pos, &nk, &nv) : PyDict_Next(py, &pos, &k, &v))) {
-			if (t && nk->type == NV_STR && (int)strlen(Native_Text(nk)) == nk->n) {
+		while (n < cap && Native_DictNext(t, &pos, &nk, &nv)) {
+			if (nk->type == NV_STR && (int)strlen(Native_Text(nk)) == nk->n) {
 				(*names)[n++] = Native_Text(nk);
-			} else if (!t && PyString_Check(k)) {
-				(*names)[n++] = PyString_AsString(k);
 			}
 		}
 		if (n) {
@@ -640,7 +504,8 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names) {
 	return n;
 }
 
-/* ---- by module name: the one path of the helpers of the ports (ModVar_GlobalVal, ModVar_ModAttrVal, the Mode_ helpers) ---- */
+/* ---- by module name: the one path of the helpers of the ports (ModVar_GlobalVal, ModVar_ModAttrVal, the Mode_
+ * helpers) ---- */
 
 /* the module name as the scripts import it into *m (Script_Module): 1 with *m (a module, or another object a case put
  * in the store), 0 with the error of the import */
@@ -688,15 +553,6 @@ int ModVar_DelGlobal(const char *module, const char *name) {
 	return r;
 }
 
-PyObject *ModVar_ObjAttr(PyObject *o, const char *name) {
-	nativeVal_t v;
-	modVarRef_t ref;
-	PyObject *r = Native_FromPyRef(o, &v) && ModVar_OfVal(&v, &ref) ? ModVar_Attr(&ref, name) :
-		PyObject_GetAttrString(o, (char *)name);
-	Native_Free(&v);
-	return r;
-}
-
 byte ModVar_ModAttrVal(const char *module, const char *name, nativeVal_t *out) {
 	nativeVal_t m;
 	modVarRef_t ref;
@@ -721,42 +577,15 @@ byte ModVar_SetModAttrVal(const char *module, const char *name, const nativeVal_
 	return ok;
 }
 
-/* ---- OBJLIB 7e4b: Python code on the faces of the modules: getattr and setattr of the module type ---- */
-
-static PyObject *MV_PyGetattr(PyObject *m, char *name) {
-	nativeVal_t v;
-	modVarRef_t ref;
-	PyObject *r = Native_FromPyRef(m, &v) && ModVar_OfVal(&v, &ref) ? ModVar_Attr(&ref, name) : mv_pyGetattr(m, name);
-	Native_Free(&v);
-	return r;
-}
-
-static int MV_PySetattr(PyObject *m, char *name, PyObject *v) {
-	nativeVal_t x;
-	modVarRef_t ref;
-	int r = Native_FromPyRef(m, &x) && ModVar_OfVal(&x, &ref) ? ModVar_SetAttr(&ref, name, v) : mv_pySetattr(m, name, v);
-	Native_Free(&x);
-	return r;
-}
-
-void ModVar_FaceHook(void) {
-	if (!mv_pyGetattr) {
-		mv_pyGetattr = PyModule_Type.tp_getattr;
-		mv_pySetattr = PyModule_Type.tp_setattr;
-		PyModule_Type.tp_getattr = MV_PyGetattr;
-		PyModule_Type.tp_setattr = MV_PySetattr;
-	}
-}
-
 /* ---- the measure: what the variables hold (SCRAP_NATIVE_COUNT=1 at the end, the channel's "native vars") ---- */
 
-/* the kinds of values counted: by value, entity handle, NV_OBJ, then the NO_ kinds of objects */
-enum { MVC_PLAIN, MVC_ENT, MVC_OBJ, MVC_KINDS };
+/* the kinds of values counted: by value, entity handle, then the NO_ kinds of objects */
+enum { MVC_PLAIN, MVC_ENT, MVC_KINDS };
 #define MVC_OBJKINDS 7
 
 typedef struct {
 	unsigned long other[MVC_KINDS];
-	unsigned long obj[MVC_OBJKINDS][3];	/* per NO_ kind: native data, view of a Python object, crossed */
+	unsigned long obj[MVC_OBJKINDS];	/* per NO_ kind */
 } mvCounts_t;
 
 /* each value of v at any depth inside tuples counted */
@@ -768,9 +597,9 @@ static void MV_Count(const nativeVal_t *v, mvCounts_t *c) {
 		return;
 	}
 	if (v->type == NV_REF && NObj_Kind(v) < MVC_OBJKINDS) {
-		c->obj[NObj_Kind(v)][NObj_State(v)]++;
+		c->obj[NObj_Kind(v)]++;
 	} else {
-		c->other[v->type == NV_OBJ ? MVC_OBJ : v->type == NV_ENT ? MVC_ENT : MVC_PLAIN]++;
+		c->other[v->type == NV_ENT ? MVC_ENT : MVC_PLAIN]++;
 	}
 }
 
@@ -778,7 +607,7 @@ void ModVar_Report(nativeBuf_t *b) {
 	static const char *const kinds[MVC_OBJKINDS] = { "lists", "dicts", "instances", "classes", "functions", "methods",
 		"modules" };
 	mvCounts_t c;
-	unsigned long spaces = 0, vars = 0, crossed = 0, builtins = 0;
+	unsigned long spaces = 0, vars = 0, builtins = 0;
 	char line[0x100];
 	memset(&c, 0, sizeof(c));
 	for (mvSpace_t *s = mv_spaces; s; s = s->next) {
@@ -787,7 +616,6 @@ void ModVar_Report(nativeBuf_t *b) {
 		int pos = 0;
 		spaces++;
 		if (!t) {
-			crossed++;
 			continue;
 		}
 		while (Native_DictNext(t, &pos, &k, &v)) {
@@ -800,13 +628,11 @@ void ModVar_Report(nativeBuf_t *b) {
 			MV_Count(v, &c);
 		}
 	}
-	snprintf(line, sizeof(line), "module variables %lu in %lu modules (%lu crossed, %lu __dict__ reads by Python): by "
-		"value %lu, entity handles %lu, Python objects %lu, __builtins__ %lu\n", vars, spaces, crossed, mv_synced,
-		c.other[MVC_PLAIN], c.other[MVC_ENT], c.other[MVC_OBJ], builtins);
+	snprintf(line, sizeof(line), "module variables %lu in %lu modules: by value %lu, entity handles %lu, __builtins__ "
+		"%lu\n", vars, spaces, c.other[MVC_PLAIN], c.other[MVC_ENT], builtins);
 	Native_BufAdd(b, line, -1);
 	for (int i = 0; i < MVC_OBJKINDS; i++) {
-		snprintf(line, sizeof(line), "module variables %s native %lu views %lu crossed %lu\n", kinds[i], c.obj[i][0],
-			c.obj[i][1], c.obj[i][2]);
+		snprintf(line, sizeof(line), "module variables %s %lu\n", kinds[i], c.obj[i]);
 		Native_BufAdd(b, line, -1);
 	}
 }
