@@ -275,6 +275,25 @@ static void Play_Step(uint32_t tick) {
 	Play_Draw();
 }
 
+/* the nearest proxy within 40000 units: a player's (player), or a ship standing still of no player (kind) */
+static cEntity *Play_BotNearest(cEntity *e, int kind, byte player) {
+	cEntity *best = NULL;
+	float bestD = 40000.0f * 40000.0f;
+	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
+		if (o == e || !Obj(o)->proxy || o->deadNode.target || Watch_IsPlayer(o) != player ||
+			(kind && (NetPl_Kind(o) != kind || Obj(o)->vel.x != 0.0f || Obj(o)->vel.z != 0.0f))) {
+			continue;
+		}
+		float dx = o->pos.x - e->pos.x, dy = o->pos.y - e->pos.y, dz = o->pos.z - e->pos.z;
+		float d = dx * dx + dy * dy + dz * dz;
+		if (d < bestD) {
+			bestD = d;
+			best = o;
+		}
+	}
+	return best;
+}
+
 /* the bot of the tests: walks, takes a parked ship, flies, fires at the nearest other player, lands and gets out,
  * and so on */
 static void Play_Bot(double now) {
@@ -288,11 +307,21 @@ static void Play_Bot(double now) {
 	memset(&play.acc, 0, sizeof(play.acc));
 	play.acc.time = 1.0f;
 	if (play.kind == NETREP_CHAR) {
+		/* a while around, then to the nearest ship that stands still and no player has, and into it */
 		play.acc.move[0] = t < 6.0 ? 1.0f : 0.5f;
 		play.acc.rot[0] = (float)sin(t * 0.7) * 0.6f;
-		/* the parked ships stand around the spawn point: get into one after a while */
-		if (t > 12.0 && fmod(t, 2.0) < 0.2) {
-			play.acc.buttons = NETREP_IN_ACT3 | NETREP_IN_SWITCH;
+		if (t < 8.0) {
+			return;
+		}
+		cEntity *ship = Play_BotNearest(e, NETREP_SHIP, 0);
+		if (ship) {
+			float dx = ship->pos.x - e->pos.x, dz = ship->pos.z - e->pos.z;
+			float dyaw = remainderf(atan2f(-dx, -dz) - WChar(e)->view.y, M_2PI_F);
+			play.acc.rot[0] = dyaw > 0.5f ? 1.0f : dyaw < -0.5f ? -1.0f : dyaw * 2.0f;
+			play.acc.move[0] = fabsf(dyaw) < 0.6f ? 1.0f : 0.2f;
+			if (dx * dx + dz * dz < PLAY_BOARD_RADIUS * PLAY_BOARD_RADIUS * 0.5f && fmod(t, 2.0) < 0.2) {
+				play.acc.buttons = NETREP_IN_ACT3 | NETREP_IN_SWITCH;
+			}
 		}
 		return;
 	}
@@ -305,19 +334,9 @@ static void Play_Bot(double now) {
 		return;
 	}
 	/* in the ship: fly up and around, turn to the nearest other player and fire when it is ahead */
-	cEntity *best = NULL;
-	float bestD = 40000.0f * 40000.0f;
-	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
-		if (o == e || !Obj(o)->proxy || o->deadNode.target || !Watch_IsPlayer(o)) {
-			continue;
-		}
-		float dx = o->pos.x - e->pos.x, dy = o->pos.y - e->pos.y, dz = o->pos.z - e->pos.z;
-		float d = dx * dx + dy * dy + dz * dz;
-		if (d < bestD) {
-			bestD = d;
-			best = o;
-		}
-	}
+	cEntity *best = Play_BotNearest(e, 0, 1);
+	float bestD = best ? (best->pos.x - e->pos.x) * (best->pos.x - e->pos.x) + (best->pos.y - e->pos.y) *
+		(best->pos.y - e->pos.y) + (best->pos.z - e->pos.z) * (best->pos.z - e->pos.z) : 0.0f;
 	play.acc.move[0] = 0.6f;
 	play.acc.move[2] = t < 6.0 ? 0.5f : 0.0f;
 	if (!best) {
