@@ -813,16 +813,15 @@ static byte Sp_AddNI(const nativeVal_t *text, const nativeVal_t *ans, const nati
 	return ok;
 }
 
-/* AutoAddNI(TextBase, _AnsAnima_="TalkNPC", HeadName=None): the lines Msg/Ans of the language entries of a base (the
- * head is passed on only with the anima, as the port did) */
+/* AutoAddNI(TextBase, _AnsAnima_="TalkNPC", HeadName=None): the lines Msg/Ans of the language entries of a base with
+ * the head given (HeadName=... alone too, as Mission_AttackTraitorius gives DeepThroat's lines his head) */
 static byte Sp_AutoAddNI(const nativeVal_t *base, const nativeVal_t *anima, const nativeVal_t *head) {
-	nativeVal_t keys = { 0 }, txt = { 0 }, msg = { 0 }, ans = { 0 }, none;
-	Native_SetNone(&none);
+	nativeVal_t keys = { 0 }, txt = { 0 }, msg = { 0 }, ans = { 0 };
 	int n = Native_LangEntries(base, 2, &keys) ? Mode_Len(&keys) : -1;
 	byte ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
 		ok = Sp_Item(&keys, i, &txt) && Sp_Cat(&txt, "Msg", &msg) && Sp_Cat(&txt, "Ans", &ans) &&
-			Sp_AddNI(&msg, &ans, anima, anima ? head ? head : &none : NULL);
+			Sp_AddNI(&msg, &ans, anima, head);
 		Native_Free(&txt);
 		Native_Free(&msg);
 		Native_Free(&ans);
