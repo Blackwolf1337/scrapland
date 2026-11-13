@@ -29,13 +29,6 @@ typedef struct scriptRow_s {
 /* the name of row i of the table fns, NULL at the end; *row the row */
 const char *Script_Row(const portFn_t *fns, int i, scriptRow_t *row);
 
-/* the function object of a C function of the script tables (PyCFunction_New(def, self)); with SCRAP_NULL_CHECK set
- * a wrapper that reports a NULL return without an error (module names it in the report) */
-PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *module);
-/* with SCRAP_NULL_CHECK set: reports that a C function or helper fails without a Python error (kind names the
- * place), once per kind, function and call site */
-void Script_CheckSilent(const char *kind);
-
 struct nativeVal_s;
 /*
  * a pack module made in C instead of running its .pyc (src/game/Script/ScriptModule.c): when the module has a C
@@ -105,11 +98,8 @@ int MapTreasure_ModCoins(const struct nativeVal_s *module, struct nativeVal_s *b
 void CharsNPC_Close(void);
 struct modVarRef_s;
 struct nativeVal_s;
-/* SCRAP_NULL_CHECK is set (the functions of the tables are the wrappers of Script_CheckFunction) */
-byte Script_Checking(void);
 /* the function object of a C function of the script tables into *out: the native function of its port ref
- * (NObj_NewPortFunc; Port_OfFn, Port_OfDef), else (a PyMethodDef row without a ref, SCRAP_NULL_CHECK) the view of
- * Script_CheckFunction's object; 1, or 0 with the error */
+ * (NObj_NewPortFunc; Port_OfFn); 1, or 0 with the error */
 byte Script_FunctionOf(const scriptRow_t *row, const char *module, struct nativeVal_s *out);
 /* the function name of module from the C tables (script_modules, the last table that has it) into *out: 1, 0 with
  * *out None (an error set when making it failed, none when no table has it) */
@@ -131,14 +121,11 @@ void Script_ReplaySet(const struct modVarRef_s *ref, const char *name, const str
 void Script_ModuleExtras(const char *name, const struct nativeVal_s *module, const struct nativeVal_s *defs);
 /* the level that loads, lower case ("police"); 0 when Init.Path is not set yet */
 byte Script_LevelName(char *out, int size);
-/* for a module of the level made in C (src/game/Script/Levels.c): its data functions start over in their pool */
-void Script_LevelModuleStart(const char *module);
 /* the C function name of the level table of module in this level into *out (Script_FunctionOf): 1, 0 with *out None
  * (an error set when making it failed) */
 byte Script_LevelTableFunction(const char *module, const char *name, struct nativeVal_s *out);
 /* the data function name of the level file of module in this level into *out: a native function (a callback whose
- * __self__ is the tuple (file index, section, parameter names, defaults); under SCRAP_NULL_CHECK the view of the
- * checked C function object); 1, 0 with *out None (an error set when making it failed) */
+ * __self__ is the tuple (file index, section, parameter names, defaults)); 1, 0 with *out None when there is none */
 byte Script_LevelDataFunction(const char *module, const char *name, struct nativeVal_s *out);
 /* the part of Script_ModuleExtras for the level data and the level tables of the module (defs as there) */
 void Script_LevelModuleExtras(const char *name, const struct nativeVal_s *module, const struct nativeVal_s *defs);
@@ -235,9 +222,8 @@ PyObject *Script_Attr(const char *module, const char *name);
 /* a number variable of a script module (def when it is not there or no number) */
 double Script_GetFloat(const char *module, const char *var, double def);
 
-/* entity handles and values as a script uses them (0 or -1 with the error set): handle.var = v (v given away),
- * handle.var == text, handle.var[0:len(prefix)] == prefix, cmp(value, n) (-2 on an error) */
-byte Script_HSet(PyObject *e, const char *var, PyObject *v);
+/* entity handles and values as a script uses them (-1 with the error set): handle.var == text,
+ * handle.var[0:len(prefix)] == prefix, cmp(value, n) (-2 on an error) */
 int Script_HIs(PyObject *e, const char *var, const char *text);
 int Script_HPrefix(PyObject *e, const char *var, const char *prefix);
 int Script_NumCmp(PyObject *a, long n);

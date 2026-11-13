@@ -6,7 +6,6 @@
  * a table per module in src/game/Script/levels/<Level>.c (level_modules), put in after the data. The functions neither
  * has stay Python, and so do the module variables and the module code.
  */
-#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/console.h"
@@ -193,38 +192,7 @@ static const levelModule_t level_modules[] = {
 	{ NULL, NULL, NULL },
 };
 
-enum { LEVEL_FUNCS = 96, LEVEL_POOLS = 256, LEVEL_NAME = 0x40 };
-
-/* the method definitions of the functions of one module name; reused when the module loads again */
-typedef struct {
-	char module[LEVEL_NAME];
-	int used;			/* the slots a module made in C took (Script_LevelDataFunction) */
-	PyMethodDef defs[LEVEL_FUNCS];
-	char names[LEVEL_FUNCS][LEVEL_NAME];
-} levelPool_t;
-
-/* one pool per module name seen (104 in the packs, more with mods), made on first use: its method definitions stay
- * in use by the module's functions until the end */
-static levelPool_t *g_LevelPools[LEVEL_POOLS];
-
-static levelPool_t *Level_Pool(const char *module) {
-	int i = 0;
-	for (; i < LEVEL_POOLS && g_LevelPools[i]; i++) {
-		if (!strcmp(g_LevelPools[i]->module, module)) {
-			return g_LevelPools[i];
-		}
-	}
-	if (i == LEVEL_POOLS) {
-		Con_Warnf("Levels: more than %d level module names, %s stays Python\n", LEVEL_POOLS, module);
-		return NULL;
-	}
-	levelPool_t *pool = calloc(1, sizeof(*pool));
-	if (pool) {
-		Str_Copy(pool->module, module, sizeof(pool->module));
-		g_LevelPools[i] = pool;
-	}
-	return pool;
-}
+enum { LEVEL_NAME = 0x40 };
 
 /* the folder of the level that loads: the last part of Init.Path in lower case ("Levels/Police" -> "police") */
 static byte Level_Current(char *out, int size) {
@@ -448,10 +416,9 @@ static const scriptStep_t level_steps[] = {
 
 /*
  * a function of a level module: self is (file index, section, parameter names, defaults dict); the arguments bound
- * like those of a Python function (the error texts of ceval), then the section runs with them as $names. OBJLIB 7:
- * the data functions of the level modules are function objects (a C function bound to that self tuple, with keyword
- * arguments and defaults), made by Level_SectionFunction for the module dicts; they and the functions below that
- * make, replay and look them up stay on Python objects until the tables go
+ * like those of a Python function (the error texts of ceval), then the section runs with them as $names. The data
+ * functions of the level modules are native functions bound to that self tuple, with keyword arguments and defaults,
+ * made by Level_SectionFunction for the module dicts
  */
 static byte Level_Run(int file, const char *section, nativeVal_t *vars) {
 	const levelFile_t *lf = &level_files[file];
@@ -475,84 +442,7 @@ static void Level_VarSet(nativeVal_t *vars, const nativeVal_t *key, const native
 	}
 }
 
-/* the same with Python's key and value (Level_Call) */
-static void Level_VarSetPy(nativeVal_t *vars, PyObject *key, PyObject *v) {
-	nativeVal_t x;
-	if (PyString_Check(key)) {
-		NObj_FromPy(v, &x);
-		Script_DefVar(vars, PyString_AsString(key), &x);
-		Native_Free(&x);
-	}
-}
-
-/* the Python key is in the $names */
-static byte Level_HasPy(const nativeVal_t *vars, PyObject *key) {
-	nativeVal_t k;
-	NObj_FromPy(key, &k);
-	byte has = Level_VarOf(vars, &k) != NULL;
-	Native_Free(&k);
-	return has;
-}
-
-static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
-	int file = (int)PyInt_AsLong(PyTuple_GetItem(self, 0));
-	PyObject *section = PyTuple_GetItem(self, 1), *params = PyTuple_GetItem(self, 2), *defs = PyTuple_GetItem(self, 3);
-	int np = PyTuple_Size(params), na = PyTuple_Size(args);
-	if (np == 0 && (na > 0 || (kw && PyDict_Size(kw) > 0))) {
-		Native_Raise(NE_TYPE, "no arguments expected");
-		return NULL;
-	}
-	if (na > np) {
-		char msg[0x80];
-		Str_Printf(msg, sizeof(msg), "too many arguments; expected %d, got %d", np, na);
-		Native_Raise(NE_TYPE, "%s", msg);
-		return NULL;
-	}
-	nativeVal_t vars;
-	Native_SetNone(&vars);
-	for (int i = 0; i < na; i++) {
-		Level_VarSetPy(&vars, PyTuple_GetItem(params, i), PyTuple_GetItem(args, i));
-	}
-	if (kw) {
-		PyObject *key, *value;
-		int pos = 0;
-		while (PyDict_Next(kw, &pos, &key, &value)) {
-			int known = 0;
-			for (int i = 0; i < np && !known; i++) {
-				known = PyObject_Compare(key, PyTuple_GetItem(params, i)) == 0;
-			}
-			const char *err = !known ? "unexpected keyword argument: %.400s" : Level_HasPy(&vars, key) ? "keyword parameter redefined" : NULL;
-			if (err) {
-				char msg[0x80];
-				Str_Printf(msg, sizeof(msg), err, PyString_Check(key) ? PyString_AsString(key) : "?");
-				Native_Raise(NE_TYPE, "%s", msg);
-				Native_Free(&vars);
-				return NULL;
-			}
-			Level_VarSetPy(&vars, key, value);
-		}
-	}
-	for (int i = 0; i < np; i++) {
-		PyObject *p = PyTuple_GetItem(params, i);
-		if (Level_HasPy(&vars, p)) {
-			continue;
-		}
-		PyObject *d = PyDict_GetItem(defs, p);
-		if (!d) {
-			char msg[0x80];
-			Str_Printf(msg, sizeof(msg), "not enough arguments; expected %d, got %d", np - PyDict_Size(defs), i);
-			Native_Raise(NE_TYPE, "%s", msg);
-			Native_Free(&vars);
-			return NULL;
-		}
-		Level_VarSetPy(&vars, p, d);
-	}
-	byte ok = Level_Run(file, PyString_AsString(section), &vars);
-	Native_Free(&vars);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* the data function of a level module as a native function object: the self tuple of Level_Call as native values */
+/* the data function of a level module as a native function object */
 typedef struct {
 	int file;
 	nativeVal_t self;		/* (file index, section, parameter names, defaults dict) */
@@ -564,7 +454,7 @@ static void Level_FnFree(void *ctx) {
 	Mem_Free(f);
 }
 
-/* the TypeError of a binding: the text cut as Level_Call cuts it */
+/* the TypeError of a binding, its text cut to 0x80 bytes */
 static byte Level_BindError(const char *fmt, const char *s, int x, int y) {
 	char msg[0x80];
 	if (s) {
@@ -575,8 +465,8 @@ static byte Level_BindError(const char *fmt, const char *s, int x, int y) {
 	return Native_Raise(NE_TYPE, "%s", msg);
 }
 
-/* the call of a native data function: the binding of Level_Call on native values (the keywords in the slot order of
- * the dict a call through Python gives them in), then the section with the $names */
+/* the call of a native data function: the binding of the arguments (the keywords in the slot order of the dict a call
+ * through Python gives them in), then the section with the $names */
 static byte Level_NCallKw(void *ctx, const nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out) {
 	levelFn_t *f = ctx;
 	const nativeVal_t *params = &f->self.items[2], *defs = &f->self.items[3], *k, *x;
@@ -657,14 +547,6 @@ static byte Level_DefaultN(const char *text, nativeVal_t *out) {
 	return ok;
 }
 
-/* the same as a Python value (a new reference, NULL without one; OBJLIB 7, for Level_Call) */
-static PyObject *Level_Default(const char *text) {
-	nativeVal_t v;
-	PyObject *o = Level_DefaultN(text, &v) ? Native_ToPy(&v) : NULL;
-	Native_Free(&v);
-	return o;
-}
-
 /* the words of a section line "section <Func> <params>" (line: the text after "section ", len chars) into line and
  * tok; the number of words */
 static int Level_SectionWords(const char *text, int len, char line[0x200], char *tok[24]) {
@@ -676,30 +558,8 @@ static int Level_SectionWords(const char *text, int len, char line[0x200], char 
 	return nt;
 }
 
-/* the self of the function of the section tok of file i: (i, name, parameter names, defaults dict); a new reference,
- * NULL on an error */
-static PyObject *Level_SectionSelf(int i, char *tok[24], int nt) {
-	PyObject *params = PyTuple_New(nt - 1), *defs = PyDict_New();
-	for (int k = 1; params && defs && k < nt; k++) {
-		char *eq = strchr(tok[k], '=');
-		if (eq) {
-			*eq = 0;
-			PyObject *d = Level_Default(eq + 1);
-			if (d) {
-				PyDict_SetItemString(defs, tok[k], d);
-				Py_DECREF(d);
-			}
-		}
-		PyTuple_SET_ITEM(params, k - 1, PyString_FromString(tok[k]));
-	}
-	PyObject *self = params && defs ? Py_BuildValue("(isOO)", i, tok[0], params, defs) : NULL;
-	Py_XDECREF(params);
-	Py_XDECREF(defs);
-	return self;
-}
-
-/* the same self as native values into *out: (i, name, parameter names, defaults dict by value) */
-static void Level_SectionSelfN(int i, char *tok[24], int nt, nativeVal_t *out) {
+/* the self of the function of the section tok of file i into *out: (i, name, parameter names, defaults dict) */
+static void Level_SectionSelf(int i, char *tok[24], int nt, nativeVal_t *out) {
 	nativeVal_t *params, *defs;
 	Native_SetEmpty(out, NV_TUPLE);
 	Native_SetInt(Native_Append(out), i);
@@ -722,37 +582,13 @@ static void Level_SectionSelfN(int i, char *tok[24], int nt, nativeVal_t *out) {
 	}
 }
 
-/* the function of the section tok of file i into *out: a native function on the self as native values; under
- * SCRAP_NULL_CHECK the C function object of Python, its method definition in slot n of the pool (OBJLIB 7, see
- * Level_Call). 1, 0 with the error */
-static byte Level_SectionFunction(int i, levelPool_t *pool, int n, char *tok[24], int nt, nativeVal_t *out) {
-	Native_SetNone(out);
-	if (!Script_Checking()) {
-		levelFn_t *f = Mem_Alloc(sizeof(*f));
-		f->file = i;
-		Level_SectionSelfN(i, tok, nt, &f->self);
-		NObj_NewCallback(out, tok[0], Level_NCall, f, Level_FnFree, 0);
-		NObj_SetCallback(out, &f->self, Level_NCallKw);
-		return 1;
-	}
-	PyObject *self = Level_SectionSelf(i, tok, nt);
-	if (!self) {
-		return 0;
-	}
-	Str_Copy(pool->names[n], tok[0], LEVEL_NAME);
-	PyMethodDef *def = &pool->defs[n];
-	def->ml_name = pool->names[n];
-	def->ml_meth = (PyCFunction)(void (*)(void))Level_Call;
-	def->ml_flags = METH_VARARGS | METH_KEYWORDS;
-	def->ml_doc = NULL;
-	PyObject *f = Script_CheckFunction(def, self, level_files[i].module);
-	Py_DECREF(self);
-	if (!f) {
-		return 0;
-	}
-	NObj_FromPy(f, out);
-	Py_DECREF(f);
-	return 1;
+/* the function of the section tok of file i into *out: a native function on that self */
+static void Level_SectionFunction(int i, char *tok[24], int nt, nativeVal_t *out) {
+	levelFn_t *f = Mem_Alloc(sizeof(*f));
+	f->file = i;
+	Level_SectionSelf(i, tok, nt, &f->self);
+	NObj_NewCallback(out, tok[0], Level_NCall, f, Level_FnFree, 0);
+	NObj_SetCallback(out, &f->self, Level_NCallKw);
 }
 
 /*
@@ -767,7 +603,7 @@ static void Level_ReplaySections(int i, const nativeVal_t *module, const nativeV
 	if (!ModVar_OfVal(module, &ref)) {
 		return;
 	}
-	while (*p && n < LEVEL_FUNCS) {
+	while (*p) {
 		const char *eol = strchr(p, '\n');
 		int len = eol ? (int)(eol - p) : (int)strlen(p);
 		if (len > 8 && !strncmp(p, "section ", 8)) {
@@ -810,13 +646,6 @@ static int Level_File(const char *module) {
 	return -1;
 }
 
-void Script_LevelModuleStart(const char *module) {
-	levelPool_t *pool = Level_File(module) >= 0 ? Level_Pool(module) : NULL;
-	if (pool) {
-		pool->used = 0;
-	}
-}
-
 /* the table and data functions of a level module as function objects */
 byte Script_LevelTableFunction(const char *module, const char *name, nativeVal_t *out) {
 	char level[LEVEL_NAME];
@@ -841,9 +670,8 @@ byte Script_LevelTableFunction(const char *module, const char *name, nativeVal_t
 
 byte Script_LevelDataFunction(const char *module, const char *name, nativeVal_t *out) {
 	int i = Level_File(module);
-	levelPool_t *pool = i >= 0 ? Level_Pool(module) : NULL;
 	Native_SetNone(out);
-	if (!pool) {
+	if (i < 0) {
 		return 0;
 	}
 	/* the last section of the name (a script that defines a function twice gives the last one, so does the converter) */
@@ -864,12 +692,13 @@ byte Script_LevelDataFunction(const char *module, const char *name, nativeVal_t 
 	if (!at) {
 		return 0;
 	}
-	if (pool->used >= LEVEL_FUNCS) {
-		return Native_Raise(NE_SYSTEM, "more than %d data functions in %s", LEVEL_FUNCS, module);
-	}
 	char line[0x200], *tok[24];
 	int nt = Level_SectionWords(at, atLen, line, tok);
-	return nt && Level_SectionFunction(i, pool, pool->used++, tok, nt, out);
+	if (!nt) {
+		return 0;
+	}
+	Level_SectionFunction(i, tok, nt, out);
+	return 1;
 }
 
 void Script_LevelModuleExtras(const char *name, const nativeVal_t *module, const nativeVal_t *defs) {

@@ -44,10 +44,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(__GLIBC__)
-#include <dlfcn.h>
-#include <execinfo.h>
-#endif
 
 #include "scrap/actions.h"
 #include "scrap/console.h"
@@ -316,172 +312,6 @@ static void Script_ReplayRefs(const modVarRef_t *ref, const nativeVal_t *space, 
 }
 
 
-/*
- * ---- the check of NULL returns (SCRAP_NULL_CHECK) ----
- *
- * A C function must return NULL only with a Python error set, else ceval raises "SystemError: error return without
- * exception set" where the script raised something else or nothing. SCRAP_NULL_CHECK=<file> (or 1 for the console)
- * puts every C function of the script tables into a wrapper that reports a NULL without an error and a result with an
- * error left pending. A report names the kind, the
- * innermost C function that runs, the line of the Python code that called it and (glibc) the return addresses as
- * ScrapC+offset for addr2line -f -i -e ScrapC. Off, nothing changes: the functions are the plain PyCFunctions.
- * SCRAP_NULL_CHECK_ENGINE=1 as well wraps the functions of the engine modules (Scrap, SAI, SAct, ...) when Python
- * starts, also with SCRAP_PACK_SCRIPTS=1, so both versions report; then the Python line is part of what a report is
- * deduplicated by, and a call made while an error is pending reports "call with error pending" (where a stale error
- * is carried to).
- */
-typedef struct {
-	PyMethodDef def;		/* the wrapper: the name of the function, Script_CheckCall */
-	PyMethodDef orig;		/* the C function */
-	PyObject *self;			/* its self */
-	char name[64];
-	char label[96];			/* Module.Func */
-} scriptChecked_t;
-
-#define SCRIPT_CHECK_DEPTH 64
-#define SCRIPT_CHECK_SEEN 1024
-static int script_check = -1;
-static byte script_checkEngine;
-static FILE *script_checkFile;
-static const char *script_checkStack[SCRIPT_CHECK_DEPTH];
-static int script_checkDepth;
-static unsigned script_checkSeen[SCRIPT_CHECK_SEEN];
-
-static byte Script_CheckOn(void) {
-	if (script_check < 0) {
-		const char *e = getenv("SCRAP_NULL_CHECK");
-		script_check = e && *e && strcmp(e, "0");
-		if (script_check && strcmp(e, "1")) {
-			script_checkFile = fopen(e, "a");
-		}
-		e = getenv("SCRAP_NULL_CHECK_ENGINE");
-		script_checkEngine = script_check && e && *e == '1';
-	}
-	return script_check > 0;
-}
-
-static unsigned Script_CheckHash(unsigned h, const char *s) {
-	while (s && *s) {
-		h = (h ^ (byte)*s++) * 16777619u;
-	}
-	return h;
-}
-
-void Script_CheckSilent(const char *kind) {
-	if (!Script_CheckOn()) {
-		return;
-	}
-	const char *label = script_checkDepth > 0 ? script_checkStack[script_checkDepth - 1] : "?";
-	char where[160] = "-", trace[400] = "";
-	/* there is no Python frame to name */
-	unsigned h = Script_CheckHash(Script_CheckHash(2166136261u, kind), label);
-	if (script_checkEngine) {
-		h = Script_CheckHash(h, where);
-	}
-#if defined(__GLIBC__)
-	void *addr[8];
-	int n = backtrace(addr, 8);
-	for (int i = 1; i < n; i++) {
-		Dl_info info;
-		size_t len = strlen(trace);
-		if (dladdr(addr[i], &info) && info.dli_fname) {
-			const char *base = strrchr(info.dli_fname, '/');
-			Str_Printf(trace + len, sizeof(trace) - len, " %s+0x%lx", base ? base + 1 : info.dli_fname,
-				(unsigned long)((char *)addr[i] - (char *)info.dli_fbase));
-		} else {
-			Str_Printf(trace + len, sizeof(trace) - len, " %p", addr[i]);
-		}
-		if (i <= 3) {
-			h = (h ^ (unsigned)(size_t)addr[i]) * 16777619u;
-		}
-	}
-#endif
-	for (int i = 0; i < SCRIPT_CHECK_SEEN; i++) {
-		if (script_checkSeen[i] == h) {
-			return;
-		}
-		if (!script_checkSeen[i]) {
-			script_checkSeen[i] = h;
-			break;
-		}
-	}
-	if (script_checkFile) {
-		fprintf(script_checkFile, "NULLCHECK %s: %s (python %s)%s\n", kind, label, where, trace);
-		fflush(script_checkFile);
-	} else {
-		Con_Warnf("NULLCHECK %s: %s (python %s)%s\n", kind, label, where, trace);
-	}
-}
-
-/* the call of the C function as call_builtin of ceval makes it */
-static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) {
-	scriptChecked_t *c = PyCObject_AsVoidPtr(self);
-	int flags = c->orig.ml_flags;
-	PyObject *arg = args, *r;
-	byte pending = Native_Failed();
-	if (!(flags & METH_VARARGS)) {
-		int size = PyTuple_Size(args);
-		arg = size == 1 ? PyTuple_GET_ITEM(args, 0) : size == 0 ? NULL : args;
-	}
-	if (script_checkDepth < SCRIPT_CHECK_DEPTH) {
-		script_checkStack[script_checkDepth] = c->label;
-	}
-	script_checkDepth++;
-	if (pending && script_checkEngine) {
-		Script_CheckSilent("call with error pending");
-	}
-	if (flags & METH_KEYWORDS) {
-		r = ((PyCFunctionWithKeywords)(void (*)(void))c->orig.ml_meth)(c->self, arg, kw);
-	} else if (kw && PyDict_Size(kw) != 0) {
-		Native_Raise(NE_TYPE, "this function takes no keyword arguments");
-		r = NULL;
-	} else {
-		r = c->orig.ml_meth(c->self, arg);
-	}
-	if (!r && !Native_Failed()) {
-		Script_CheckSilent("return");
-	} else if (r && !pending && Native_Failed()) {
-		/* the error stays pending and raises at a later line (one pending before the call is an engine
-		 * function's that returned a value with an error set, as the original does) */
-		Script_CheckSilent("return with error set");
-	}
-	script_checkDepth--;
-	return r;
-}
-
-static void Script_CheckFree(void *p) {
-	scriptChecked_t *c = p;
-	Py_XDECREF(c->self);
-	free(c);
-}
-
-PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *module) {
-	if (!Script_CheckOn()) {
-		return PyCFunction_New(def, self);
-	}
-	scriptChecked_t *c = calloc(1, sizeof(*c));
-	if (!c) {
-		return Native_RaiseVal(NE_MEMORY, NULL), NULL;
-	}
-	c->orig = *def;
-	c->self = self;
-	Py_XINCREF(self);
-	Str_Copy(c->name, def->ml_name, sizeof(c->name));
-	Str_Printf(c->label, sizeof(c->label), "%s.%s", module ? module : "?", def->ml_name);
-	c->def.ml_name = c->name;
-	c->def.ml_meth = (PyCFunction)(void (*)(void))Script_CheckCall;
-	c->def.ml_flags = METH_VARARGS | METH_KEYWORDS;
-	c->def.ml_doc = def->ml_doc;
-	PyObject *o = PyCObject_FromVoidPtr(c, Script_CheckFree);
-	if (!o) {
-		Script_CheckFree(c);
-		return NULL;
-	}
-	PyObject *f = PyCFunction_New(&c->def, o);
-	Py_DECREF(o);
-	return f;
-}
-
 const char *Script_Row(const portFn_t *fns, int i, scriptRow_t *row) {
 	row->fn = &fns[i];
 	return fns[i].name;
@@ -507,12 +337,7 @@ static byte Script_TableDef(const char *module, const char *name, scriptRow_t *f
 	return any;
 }
 
-byte Script_Checking(void) {
-	return Script_CheckOn();
-}
-
 byte Script_FunctionOf(const scriptRow_t *row, const char *module, nativeVal_t *out) {
-	/* the native function of its ref (SCRAP_NULL_CHECK has no wrapper for it) */
 	const portRef_t *ref = Port_OfFn(module, row->fn);
 	Native_SetNone(out);
 	if (!ref) {
@@ -691,17 +516,6 @@ double Script_GetFloat(const char *module, const char *var, double def) {
 }
 
 /* ---- entity handles and values as a script uses them ---- */
-
-byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
-	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
-	if (v && !ok && !Native_Failed()) {
-		/* an entity variable the engine refuses fails without an exception; ceval reports it so */
-		Script_CheckSilent("Script_HSet (engine)");
-		Native_Raise(NE_SYSTEM, "error return without exception set");
-	}
-	Py_XDECREF(v);
-	return ok;
-}
 
 int Script_HIs(PyObject *e, const char *var, const char *text) {
 	PyObject *v = Script_GetAttr(e, var);
@@ -1612,7 +1426,6 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 			if (m->stop) {
 				/* an entity handle the engine refuses without an exception: ceval's SystemError */
 				if (!Native_Failed()) {
-					Script_CheckSilent("def object set (engine)");
 					Script_Fail();
 				}
 				m->failed = 1;
@@ -1631,7 +1444,6 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 			m->stop) {
 			/* the attribute set of the handle fails without an exception: ceval's SystemError */
 			if (!Native_Failed()) {
-				Script_CheckSilent("def entity set (engine)");
 				Native_Raise(NE_SYSTEM, "error return without exception set");
 			}
 			m->failed = 1;
@@ -2006,7 +1818,6 @@ byte Script_RunFileTry(int id, const char *name, const char *section, const char
 	const nativeVal_t *vars) {
 	if (!Def_RunFile(id, name, section, builtin, steps, vars, 1)) {
 		if (!Native_Failed()) {
-			Script_CheckSilent("Script_RunFileTry");
 			Native_Raise(NE_SYSTEM, "%s could not be read", name);
 		}
 		return 0;

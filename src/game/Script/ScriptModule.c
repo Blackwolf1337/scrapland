@@ -1818,7 +1818,6 @@ int Script_ModuleMake(const char *name, const char *file, nativeVal_t *module) {
 		/* the module code stores and loads its names through the registry */
 		ModVar_Making(name, mf->level, &m, &mp.ref, &was);
 		bound = 1;
-		Script_LevelModuleStart(name);
 		char stop[16];
 		ok = Mod_Block(&mp, stop, sizeof(stop));
 		if (ok && stop[0]) {
