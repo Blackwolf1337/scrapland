@@ -79,6 +79,13 @@ void Travel_Left(int player);
 /* the level change of the rider (an entity name) to level (a folder of Levels) with the spawn dummy and the door
  * class the original would use: 1 when it was a player's (handed to the coordinator) */
 byte Travel_Request(const char *rider, const char *level, const char *entrance, const char *door);
+/* the travel of player i (the level change of Travel_Request; party: the story takes the members of its party
+ * along, include/scrap/coop.h): 1 when it was handed to the coordinator or refused with the player given back */
+byte Travel_Go(int i, const char *level, const char *entrance, const char *door, byte party);
+/* the player of a key, -1 */
+int Travel_PlayerOfKey(const uint8_t key[NET2_KEY_SIZE]);
+/* a message to the coordinator while its connection is up: 1 sent */
+byte Travel_SendCoord(const uint8_t *data, int size);
 /* the use of a metro door by an entity: 1 when it was a player's (its client gets the station map) */
 byte Travel_MetroUse(const char *usr, const char *door);
 /* the player took ship: its owned ship */

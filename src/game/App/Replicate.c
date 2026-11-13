@@ -15,6 +15,7 @@
 #include "scrap/alarm.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
 #include "scrap/global.h"
@@ -519,6 +520,15 @@ static byte Rep_PickSpawn(vec3_t *pos, float *yaw, int *at) {
 	return 0;
 }
 
+byte Rep_FreeSpot(const vec3_t *at, int first, vec3_t *out) {
+	for (int k = first; k < REP_SPOT_TRIES; k++) {
+		if (Rep_Spot(at, k, REP_SPAWN_DROP, REP_CHAR_CLEAR, 200.0f, NULL, out)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static void Rep_SetSlot(cEntity *e, int slot) {
 	Entity_VarI(e, "UsrControl", &slot, 1);
 }
@@ -680,8 +690,8 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	cEntity *ship = NULL;
 	vec3_t at, p;
 
-	/* the money is the bound player's (Rep_PreFrame binds it) */
-	if (pl->rebuild > 0 && g_pWorld->money < pl->rebuild) {
+	/* the money is the bound player's (Rep_PreFrame binds it); the coop story calls no ship indoors */
+	if ((pl->rebuild > 0 && g_pWorld->money < pl->rebuild) || Coop_NoShipCall()) {
 		return NULL;
 	}
 	float yaw = WChar(ch)->view.y;
@@ -881,7 +891,7 @@ static byte Rep_UsesDoor(cEntity *e) {
 		return 0;
 	}
 	const char *f = cPy_Function_Name(&WLife(t)->arrow.onUse);
-	return !strcmp(f, "UseElevator") || !strcmp(f, "OnUse");
+	return !strcmp(f, "UseElevator") || !strcmp(f, "OnUse") || Coop_UseAny(t);
 }
 
 static int Rep_Join(int conn) {
@@ -1000,6 +1010,9 @@ void Rep_PreFrame(uint64_t tick) {
 			Rep_Death(i, e);
 			Rep_DropOwn(i);
 			e = NULL;
+		}
+		if (!e && Coop_SceneHolds()) {
+			continue;		/* hidden by a scene of the coop story (include/scrap/coop.h) */
 		}
 		if (e != pl->own || !e) {
 			/* dead or deleted by the game: a new Dtritus after a while */

@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 set(COORD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-add_library(coord STATIC Cli.c Coord.c Kv.c List.c Proc.c Store.c Sys.c Ticket.c)
+add_library(coord STATIC Cli.c Coord.c Kv.c List.c Party.c Proc.c Store.c Sys.c Ticket.c)
 target_include_directories(coord PUBLIC ${COORD_ROOT}/include)
 target_link_libraries(coord PUBLIC net2 netrep)
 target_compile_options(coord PRIVATE -Wall -Wextra -O2 -g)

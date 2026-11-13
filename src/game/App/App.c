@@ -13,6 +13,7 @@
 #include "scrap/filepak.h"
 #include "scrap/filesys.h"
 #include "scrap/input.h"
+#include "scrap/coop.h"
 #include "scrap/instance.h"
 #include "scrap/play.h"
 #include "scrap/travel.h"
@@ -367,6 +368,10 @@ byte CApp_InitResume(CApp *self) {
 /* the level path, the network flags, the world and Python */
 static void CApp_SFLB_0(CApp *self);
 void CApp_InitGame(CApp *self, const char *level) {
+	/* not in the original: the coop story into the save variables before the level's scripts (include/scrap/coop.h) */
+	if (g_Instance) {
+		Coop_LevelStart();
+	}
 	cString_Set(&self->levelPath, level);
 	if (cString_CmpStr(&self->newLevelPath, level)) {
 		cString_Set(&self->newLevelPath, level);

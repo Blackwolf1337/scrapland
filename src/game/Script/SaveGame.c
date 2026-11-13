@@ -24,6 +24,7 @@
 
 #include "scrap/alarm.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/filepak.h"
 #include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
@@ -260,10 +261,13 @@ static byte SG_QWayPoint(void) {
 /* QLoad(MapName, useGameplayTime=1): the level after this frame, the music and voices off, the gameplay time kept */
 static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 	static const char *const credits[] = { "LEVELS/MENU", "LEVELS/ORBIT", "LEVELS/FAKE", "LEVELS/JUNKYARD", NULL };
-	/* an instance keeps its level and the save variables of the world (include/scrap/travel.h) */
+	/* an instance keeps its level and the save variables of the world (include/scrap/travel.h); in coop the travel of
+	 * the player of the mission (include/scrap/coop.h) */
 	if (g_Instance) {
 		const char *m = Native_Text(map);
-		Con_Printf("instance: QLoad(%s) refused (the coordinator owns the level changes)\n", m ? m : "?");
+		if (!m || !Coop_QLoad(m)) {
+			Con_Printf("instance: QLoad(%s) refused (the coordinator owns the level changes)\n", m ? m : "?");
+		}
 		return 1;
 	}
 	modeVals_t t = { .n = 0 };
@@ -617,6 +621,18 @@ static byte SG_NewGame(void) {
 	}
 	Mode_SaveVar("Map", map);
 	return Mode_Done(&t, PORT_OWN(SaveGame, QLoad, NULL, "vi", map, 0L));
+}
+
+void SaveGame_CoopNewGame(void) {
+	SaveVars_Delete("");
+	SaveVar_Set("AutoSaveGameOnLoad", "0");
+	SaveVar_Create("GameAct", "Prologue");
+	SaveVar_Create("BankDebt", "0");
+	SaveVar_Create("Map", "Levels/Orbit");
+	SaveVar_Create("Mission.Library", "MapDecont");
+	SG_CreateVars(sg_newVars, SG_COUNT(sg_newVars), 0);
+	SG_CreateVars(sg_gamePlans, SG_COUNT(sg_gamePlans), 0);
+	SG_CreateVars(sg_newVars2, SG_COUNT(sg_newVars2), 0);
 }
 
 /* CheckAllBlueprints(): the achievement for all 38 plans of ships and engines */

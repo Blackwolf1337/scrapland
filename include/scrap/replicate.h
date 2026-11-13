@@ -57,6 +57,8 @@ void Rep_Rebody(int i, const vec3_t *pos, float yaw);
 #define REP_PLAYER_PREFIX "NetPlayer"
 /* the replication slot of an entity of the last snapshot, -1 */
 int Rep_SlotOf(const struct cEntity *e);
+/* a free place for a character around at (the place k of the rings around it on, 0 at itself): 1 with *out */
+byte Rep_FreeSpot(const vec3_t *at, int first, vec3_t *out);
 /* tests: the switch of player i (into the nearest parked ship or out of its ship), or a ship called beside it */
 void Rep_TestSwitch(int i, byte call);
 

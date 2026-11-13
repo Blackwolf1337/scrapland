@@ -10,6 +10,7 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
@@ -83,7 +84,7 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 		inst.money = crt_atoi(ext);
 		return 1;
 	}
-	return Rep_ParseParam(param, ext) || Faction_ParseParam(param, ext);
+	return Rep_ParseParam(param, ext) || Coop_ParseParam(param, ext) || Faction_ParseParam(param, ext);
 }
 
 byte Instance_PvP(void) {
@@ -226,7 +227,9 @@ static void Instance_NetIn(uint64_t ms) {
 		}
 	}
 	for (int i = 0; i < INST_SLOTS; i++) {
-		if (inst.live[i] && !Rep_IsWatcher(i) && ms - inst.since[i] >= INSTANCE_TEST_HOLD * 1000u) {
+		/* a coop client's level load can play the intro video first: its hello comes within its ticket's life */
+		uint64_t hold = Coop_On() ? COORD_TICKET_LIFE : INSTANCE_TEST_HOLD * 1000u;
+		if (inst.live[i] && !Rep_IsWatcher(i) && ms - inst.since[i] >= hold) {
 			inst.since[i] = ms;
 			Net2_Disconnect(inst.host, i, INSTANCE_DR_NOGAME);
 		}
@@ -294,7 +297,7 @@ void Instance_Line(char *line) {
 		Players_BindTurn();
 		return;
 	}
-	if (Rep_Command(line) || Faction_Command(line)) {
+	if (Rep_Command(line) || Faction_Command(line) || Coop_Command(line)) {
 		return;
 	}
 	Console_Execute(line);
@@ -362,6 +365,7 @@ void Instance_Pass(void) {
 	Rep_PreFrame(inst.ticks);
 	App_Frame(g_pApp);
 	Faction_Tick(inst.host, inst.ticks);
+	Coop_Pass();
 	if (inst.host) {
 		Rep_Tick(inst.host, inst.ticks);
 	}

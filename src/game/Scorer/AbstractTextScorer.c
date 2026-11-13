@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "scrap/app.h"
+#include "scrap/coop.h"
+#include "scrap/game.h"
 #include "scrap/net.h"
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
@@ -570,6 +572,10 @@ void Scorer_SetLabelText(const char *text, float time) {
 static char g_MsgText[62500];
 
 void Scorer_SetMsgText(const char *text, float time, const char *font) {
+	/* not in the original: the coop story's mission messages on the clients (include/scrap/coop.h) */
+	if (g_Instance) {
+		Coop_MsgText(text, time, font);
+	}
 	Str_Copy(g_MsgText, text, 0xf424);
 	/* differs from the original on purpose: it allowed 0xfa lines in the 20 slots and wrote over g_LabelText and the
 	 * globals after it; ScrapC.exe has no fixed layout, so the lines stop at the slots */

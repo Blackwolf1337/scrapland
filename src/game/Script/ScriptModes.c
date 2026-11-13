@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/input.h"
 #include "scrap/logic.h"
 #include "scrap/mathlib.h"
@@ -1611,6 +1612,10 @@ byte Mode_GVarSetI(const char *name, long i) {
 /* ---- the native level files of batch G ---- */
 
 byte Mode_Calls(const char *module, const char *const *lines) {
+	/* not in the original: the scenes of the coop story's clients (include/scrap/coop.h) */
+	if (g_Instance) {
+		Coop_SceneTable(module, lines);
+	}
 	for (; *lines; lines++) {
 		const char *p = *lines, *bar = strchr(p, '|');
 		char name[0x80];
@@ -3064,6 +3069,9 @@ byte Mode_PlayVoice(const nativeVal_t *ch, const nativeVal_t *text) {
 	}
 	SoundSys_PlayVoice(g_pSound, i);
 	SoundSys_SetVoiceString(g_pSound, i, s);
+	if (g_Instance) {
+		Coop_PlayVoice(i);
+	}
 	return 1;
 }
 
@@ -3079,6 +3087,9 @@ byte Mode_OpenVoice(const nativeVal_t *file, const nativeVal_t *ch, const native
 		return 0;
 	}
 	SoundSys_OpenVoice(g_pSound, s, i, a);
+	if (g_Instance) {
+		Coop_OpenVoice(s, i);
+	}
 	return 1;
 }
 
