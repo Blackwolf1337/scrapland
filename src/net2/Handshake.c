@@ -167,11 +167,6 @@ static void Net2Hs_Connect(Net2Host *h, const Net2Addr *from, const uint8_t *pkt
 		Net2Hs_Deny(h, from, q.salt, NET2_DR_CHANNELS);
 		return;
 	}
-	/* a connect storm is spread over the next polls (the clients send CONNECT again) instead of one long frame */
-	if (h->acceptsLeft <= 0) {
-		return;
-	}
-	h->acceptsLeft--;
 	for (int i = 0; i < h->numConns; i++) {
 		if (h->conns[i].state == N2C_FREE) {
 			c = &h->conns[i];

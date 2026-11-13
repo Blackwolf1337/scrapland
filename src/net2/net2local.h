@@ -80,7 +80,6 @@
 #define N2_CLOSE_SENDS 3			/* packets with the disconnect chunk */
 #define N2_COOKIE_PERIOD 10000		/* ms; a cookie is good for this and the period before */
 #define N2_POLL_PACKETS 4096		/* datagrams handled per poll */
-#define N2_ACCEPTS_PER_POLL 16		/* new connections per poll: two X25519 and a signature each (about 0.2 ms) */
 
 /* byte writer: overflow is sticky, the caller checks it once */
 typedef struct Net2Writer {
@@ -384,7 +383,6 @@ struct Net2Host {
 	uint32_t queryToken;
 	Net2Event events[N2_EVENTS];
 	int evHead, evCount;
-	int acceptsLeft;				/* of N2_ACCEPTS_PER_POLL in this poll */
 	uint64_t now;
 };
 

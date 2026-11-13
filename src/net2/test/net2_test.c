@@ -1199,62 +1199,6 @@ static void Test_CookieRefresh(void) {
 }
 
 /* the rate budget holds the send rate near the configured one */
-/* more clients than N2_ACCEPTS_PER_POLL connect in the same frame: no poll makes more, all get in */
-static void Test_ConnectStorm(void) {
-	enum { STORM = 3 * N2_ACCEPTS_PER_POLL + 5 };
-	static Peer cli[STORM];
-	Peer srv;
-	Net2Config cfg;
-	Net2Addr sa;
-	Net2Event ev;
-	char addr[32];
-
-	Link_Reset(0, 0, 5, 0, 11);
-	Net2_DefaultConfig(&cfg, 1);
-	cfg.maxConns = STORM;
-	cfg.appVersion = 7;
-	Peer_Make(&srv, "10.0.0.1:29000", 1, &cfg);
-	Net2_ParseAddr("10.0.0.1:29000", 0, &sa);
-	for (int i = 0; i < STORM; i++) {
-		snprintf(addr, sizeof(addr), "10.0.1.%d:29001", i + 1);
-		Peer_Make(&cli[i], addr, 0, NULL);
-		T_ASSERT(Net2_Connect(cli[i].h, &sa, g_link.now) == NET2_OK);
-	}
-	int most = 0, connected = 0;
-	for (int step = 0; step < 400 && connected < STORM; step++) {
-		int before = 0, after = 0;
-		for (int i = 0; i < srv.h->numConns; i++) {
-			before += srv.h->conns[i].state != N2C_FREE;
-		}
-		Net2_Poll(srv.h, g_link.now);
-		for (int i = 0; i < srv.h->numConns; i++) {
-			after += srv.h->conns[i].state != N2C_FREE;
-		}
-		most = after - before > most ? after - before : most;
-		while (Net2_Receive(srv.h, &ev)) {
-			Peer_Event(&srv, &ev);
-		}
-		connected = 0;
-		for (int i = 0; i < STORM; i++) {
-			Net2_Poll(cli[i].h, g_link.now);
-			while (Net2_Receive(cli[i].h, &ev)) {
-				Peer_Event(&cli[i], &ev);
-			}
-			connected += cli[i].connects;
-			Net2_Flush(cli[i].h, g_link.now);
-		}
-		Net2_Flush(srv.h, g_link.now);
-		g_link.now += 10;
-	}
-	printf("connect storm: %d clients, at most %d new connections per poll\n", STORM, most);
-	T_ASSERT(connected == STORM && most > 0 && most <= N2_ACCEPTS_PER_POLL);
-	for (int i = 0; i < STORM; i++) {
-		T_ASSERT(cli[i].disconnects == 0);
-		Net2_Destroy(cli[i].h);
-	}
-	Net2_Destroy(srv.h);
-}
-
 static void Test_Rate(void) {
 	static uint8_t buf[NET2_MAX_MESSAGE];
 	Peer srv, cli;
@@ -1307,7 +1251,6 @@ int main(void) {
 	Test_Query();
 	Test_CookieRefresh();
 	Test_Rate();
-	Test_ConnectStorm();
 	Test_Fuzz();
 	printf("net2_test: %d checks, %d failed\n", g_checks, g_fails);
 	return g_fails != 0;
