@@ -2061,7 +2061,7 @@ byte Mode_DelSaveVars(const char *prefix) {
 	if (seam) {
 		return Native_HookCall(&hook, NULL, "s", prefix);
 	}
-	SaveVars_Delete(prefix);
+	SaveVars_ScriptDelete(prefix);
 	return 1;
 }
 

@@ -72,6 +72,8 @@ typedef struct cGVarFunction {
 
 byte SaveVar_Create(const char *name, const char *value);
 void SaveVars_Delete(const char *prefix);
+/* the scripts' Scrap.DelSaveVars: SaveVars_Delete, but a coop instance keeps the party's story (Coop_KeepStory) */
+void SaveVars_ScriptDelete(const char *prefix);
 const char *SaveVar_Get(const char *name);
 int SaveVar_Inc(const char *name, int n);
 /* the save files Save0.sav (the autosave) to Save6.sav */

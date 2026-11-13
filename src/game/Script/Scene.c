@@ -522,6 +522,10 @@ static byte Sc_LoadSounds(const nativeVal_t *cls, const nativeVal_t *path) {
  * EndOfScene, the MapSnd sounds of the scene; a new list of actors */
 static byte Sc_Load(const nativeVal_t *cls) {
 	modeVals_t t = { .n = 0 };
+	/* not in the original: the coop story's clients load it as the instance did (include/scrap/coop.h) */
+	if (g_Instance && Native_Text(cls)) {
+		Coop_SceneLoad(Native_Text(cls));
+	}
 	nativeVal_t *ipath = Mode_V(&t), *path = Mode_V(&t), *sname = Mode_V(&t), *r = Mode_V(&t), *file = Mode_V(&t);
 	nativeVal_t *total = Mode_V(&t), *end = Mode_V(&t), *tenth = Mode_V(&t), *pack = Mode_V(&t), *scene = Mode_V(&t);
 	nativeVal_t *empty = Mode_V(&t);

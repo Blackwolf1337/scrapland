@@ -125,6 +125,8 @@ void Script_ReplaySet(const struct modVarRef_s *ref, const char *name, const str
 void Script_ModuleExtras(const char *name, const struct nativeVal_s *module, const struct nativeVal_s *defs);
 /* the level that loads, lower case ("police"); 0 when Init.Path is not set yet */
 byte Script_LevelName(char *out, int size);
+/* the data section of a level module of this level run without arguments (a scene's load on a coop client): 1 ok */
+byte Script_LevelSection(const char *module, const char *section);
 /* the C function name of the level table of module in this level into *out (Script_FunctionOf): 1, 0 with *out None
  * (an error set when making it failed) */
 byte Script_LevelTableFunction(const char *module, const char *name, struct nativeVal_s *out);

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/script.h"
@@ -418,7 +419,15 @@ static byte Level_Run(int file, const char *section, nativeVal_t *vars) {
 	Native_SetStr(&mod, lf->module);
 	Script_DefVar(vars, "__module__", &mod);
 	Native_Free(&mod);
-	return Script_RunFileTry(0, lf->name, section, lf->text, level_steps, vars);
+	/* not in the original: a scene this section loads plays on the coop story's clients (include/scrap/coop.h) */
+	if (g_Instance) {
+		Coop_DataSection(lf->module, section);
+	}
+	byte ok = Script_RunFileTry(0, lf->name, section, lf->text, level_steps, vars);
+	if (g_Instance) {
+		Coop_DataSection(NULL, NULL);
+	}
+	return ok;
 }
 
 /* the value of the parameter name in the $names, by its text (NULL: none) */
@@ -622,6 +631,17 @@ static void Level_ReplaySections(int i, const nativeVal_t *module, const nativeV
 
 byte Script_LevelName(char *out, int size) {
 	return Level_Current(out, size);
+}
+
+static int Level_File(const char *module);
+
+byte Script_LevelSection(const char *module, const char *section) {
+	int i = Level_File(module);
+	nativeVal_t vars;
+	Native_SetNone(&vars);
+	byte ok = i >= 0 && Level_Run(i, section, &vars);
+	Native_Free(&vars);
+	return ok;
 }
 
 /* the data file of module in the level that loads, -1 if none */

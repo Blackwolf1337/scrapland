@@ -123,9 +123,6 @@ void SaveVars_Delete(const char *prefix) {
 	size_t len = strlen(prefix);
 	cSaveVar **link = &g_SaveVars;
 
-	if (g_Instance && Coop_KeepStory(prefix)) {
-		return;
-	}
 	while (*link) {
 		if (!crt_strncmp(prefix, (*link)->name, len)) {
 			cSaveVar *v = *link;
@@ -142,6 +139,14 @@ void SaveVars_Delete(const char *prefix) {
 			link = &(*link)->next;
 		}
 	}
+}
+
+void SaveVars_ScriptDelete(const char *prefix) {
+	/* not in the original: the coop story stays (include/scrap/coop.h) */
+	if (g_Instance && Coop_KeepStory(prefix)) {
+		return;
+	}
+	SaveVars_Delete(prefix);
 }
 
 /*

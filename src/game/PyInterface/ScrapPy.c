@@ -207,7 +207,7 @@ API_FN(Scrap, DelSaveVars) {
 	if (!Mode_Parse(a, n, "s", &prefix)) {
 		return 0;
 	}
-	SaveVars_Delete(prefix);
+	SaveVars_ScriptDelete(prefix);
 	return 1;
 }
 

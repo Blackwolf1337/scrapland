@@ -335,6 +335,10 @@ void Join_PreFrame(void) {
 	if (!join.active) {
 		return;
 	}
+	if (Coop_ClientEnded()) {
+		Join_Stop("");
+		return;
+	}
 	if (!join.haveKey) {
 		join.haveKey = 1;
 		if (!join.port) {

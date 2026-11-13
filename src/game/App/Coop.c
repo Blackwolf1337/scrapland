@@ -27,6 +27,7 @@
 #include "scrap/replicate.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
+#include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/sound.h"
@@ -48,6 +49,9 @@
 /* the variables of a player, not of the story (where it goes on, its character, money and alarm, its time) */
 static const char *const cp_local[] = { "Map", "Spawn", "ComeFrom", "PrevMap", "Char", "AcBatteries", "Money", "Alarm",
 	"GameplayTime", NULL };
+/* the way point of a chapter's travel, given to the start of the target level (its scripts read them at once) */
+static const char *const cp_entry[] = { "Map", "Spawn", "ComeFrom", "PrevMap", NULL };
+#define CP_ENTRY "Coop.Entry."
 
 #define CP_TABLES 4					/* call tables of one scene (its Load table and the actors' after it) */
 
@@ -56,6 +60,7 @@ typedef struct CpScene {
 	const char *module;
 	int ntables;
 	const char *const *lines[CP_TABLES];
+	char dataModule[CP_NAME], dataSection[CP_NAME];	/* the level data section that loads it, "" */
 } CpScene;
 
 static struct {
@@ -76,6 +81,7 @@ static struct {
 	int nscenes;
 	CpScene scenes[COOP_SCENES];
 	int loading;					/* the scene whose Load table ran last (its later tables join it), -1 */
+	char dataModule[CP_NAME], dataSection[CP_NAME];	/* the level data section that runs, "" */
 	byte inScene;					/* a scene of the scripts plays */
 	int scene;						/* its table (the clients play it), -1 none */
 	int scenePlayer;				/* the member bound when it started */
@@ -97,6 +103,7 @@ static struct {
 	} copt;
 	char clientScene[CP_NAME];		/* client: the scene it plays for its instance */
 	byte skipped;					/* client: Escape ended it here */
+	byte ended;						/* client: the story is finished, the world is left */
 	double sceneAt;					/* client: when it began */
 	char notice[256];
 } cp = { .scene = -1, .loading = -1 };
@@ -164,7 +171,7 @@ void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
 	cp.dirty[i].counter |= inc;
 }
 
-void Coop_LevelStart(void) {
+void Coop_LevelStart(const char *level) {
 	static char text[COORD_STORY_MAX];
 	static char key[CP_NAME], val[COORD_STORY_VALUE + 1];
 
@@ -183,6 +190,18 @@ void Coop_LevelStart(void) {
 	int count = 0;
 	for (int pos = 0; CoordKv_Next(text, n, &pos, key, sizeof(key), val, sizeof(val)); count++) {
 		SaveVar_Set(key, val);
+	}
+	/* the level a chapter's travel came to: its way point as the single player's level start has it */
+	const char *map = SaveVar_Get(CP_ENTRY "Map");
+	const char *s = map ? strrchr(map, '/') : NULL, *here = level ? strrchr(level, '/') : NULL;
+	if (s && here && !crt_stricmp(s, here)) {
+		for (int k = 0; cp_entry[k]; k++) {
+			Str_PrintfQuiet(key, sizeof(key), CP_ENTRY "%s", cp_entry[k]);
+			const char *v = SaveVar_Get(key);
+			SaveVar_Set(cp_entry[k], v ? v : "");
+		}
+		Con_Printf("coop: the way point of the chapter: %s, spawn %s, from %s\n", map, SaveVar_Get("Spawn"),
+			SaveVar_Get("ComeFrom"));
 	}
 	cp.applying = 0;
 	Con_Printf("coop: the party's story, %d variables, mission %s in %s\n", count, SaveVar_Get("Mission.Library") ?
@@ -615,6 +634,14 @@ byte Coop_QLoad(const char *map) {
 	}
 	const char *spawn = SaveVar_Get("Spawn");
 	byte party = CoordCoop_Chapter(level) || CoordCoop_Chapter(Instance_Level());
+	if (party) {
+		char key[CP_NAME];
+		for (int k = 0; cp_entry[k]; k++) {
+			const char *v = SaveVar_Get(cp_entry[k]);
+			Str_PrintfQuiet(key, sizeof(key), CP_ENTRY "%s", cp_entry[k]);
+			SaveVar_Set(key, !strcmp(cp_entry[k], "Map") ? map : v ? v : "");
+		}
+	}
 	/* the story of now first: the target instance starts with it */
 	Cp_Send();
 	Con_Printf("coop: mission level change of player %d to %s (%s)%s\n", i, level, spawn ? spawn : "", party ?
@@ -622,7 +649,10 @@ byte Coop_QLoad(const char *map) {
 	if (party) {
 		Cp_Notice(-1, "MP_CoopTravel", level);
 	}
-	return Travel_Go(i, level, spawn ? spawn : "", "", party);
+	/* a way point from a door class (ComeFrom "DoorEditShip"): the members arrive in that door, as the single player's
+	 * start puts the player in its elevator */
+	const char *from = SaveVar_Get("ComeFrom");
+	return Travel_Go(i, level, spawn ? spawn : "", from && !strncmp(from, "Door", 4) ? from : "", party);
 }
 
 /* a free place next to member m, the k-th around it */
@@ -684,6 +714,20 @@ static byte Cp_SceneLines(const char *const *lines) {
 	return 0;
 }
 
+/* the entry of scene cls (a new one when missing), NULL when the list is full */
+static CpScene *Cp_SceneSlot(const char *cls) {
+	int k = 0;
+	while (k < cp.nscenes && strcmp(cp.scenes[k].cls, cls)) {
+		k++;
+	}
+	if (k == COOP_SCENES) {
+		return NULL;
+	}
+	cp.nscenes += k == cp.nscenes;
+	Str_Copy(cp.scenes[k].cls, cls, CP_NAME);
+	return &cp.scenes[k];
+}
+
 void Coop_SceneTable(const char *module, const char *const *lines) {
 	static const char head[] = "Scene.Load|";
 	char cls[CP_NAME];
@@ -706,19 +750,36 @@ void Coop_SceneTable(const char *module, const char *const *lines) {
 	}
 	memcpy(cls, c, (size_t)n);
 	cls[n] = 0;
-	int k = 0;
-	while (k < cp.nscenes && strcmp(cp.scenes[k].cls, cls)) {
-		k++;
-	}
-	if (k == COOP_SCENES) {
+	CpScene *sc = Cp_SceneSlot(cls);
+	if (!sc) {
 		return;
 	}
-	cp.nscenes += k == cp.nscenes;
-	Str_Copy(cp.scenes[k].cls, cls, CP_NAME);
-	cp.scenes[k].module = module;
-	cp.scenes[k].ntables = 1;
-	cp.scenes[k].lines[0] = lines;
-	cp.loading = k;
+	sc->module = module;
+	sc->ntables = 1;
+	sc->lines[0] = lines;
+	sc->dataModule[0] = sc->dataSection[0] = 0;
+	cp.loading = (int)(sc - cp.scenes);
+}
+
+void Coop_DataSection(const char *module, const char *section) {
+	if (!Coop_On()) {
+		return;
+	}
+	Str_Copy(cp.dataModule, module ? module : "", CP_NAME);
+	Str_Copy(cp.dataSection, section ? section : "", CP_NAME);
+}
+
+void Coop_SceneLoad(const char *cls) {
+	CpScene *sc;
+	/* only the load of a data section (a call table's load is kept by Coop_SceneTable) */
+	if (!Coop_On() || !cp.dataSection[0] || !(sc = Cp_SceneSlot(cls))) {
+		return;
+	}
+	sc->module = "";
+	sc->ntables = 0;
+	Str_Copy(sc->dataModule, cp.dataModule, CP_NAME);
+	Str_Copy(sc->dataSection, cp.dataSection, CP_NAME);
+	Con_Printf("coop: scene %s loads from the data section %s of %s\n", cls, cp.dataSection, cp.dataModule);
 }
 
 /* the message of the scene that plays (its table, or the class alone of a scene of the level's own data); 0 when it
@@ -732,6 +793,8 @@ static int Cp_SceneMsg(uint8_t *buf, int size) {
 		NetRep_PutStr(&w, "");
 		NetRep_PutStr(&w, cp.sceneCls);
 		NetRep_PutU16(&w, 0);
+		NetRep_PutStr(&w, "");
+		NetRep_PutStr(&w, "");
 		return w.size;
 	}
 	const CpScene *sc = &cp.scenes[cp.scene];
@@ -752,6 +815,8 @@ static int Cp_SceneMsg(uint8_t *buf, int size) {
 			CoordMsg_PutBytes(&w, *l, len);
 		}
 	}
+	NetRep_PutStr(&w, sc->dataModule);
+	NetRep_PutStr(&w, sc->dataSection);
 	return w.bad ? 0 : w.size;
 }
 
@@ -986,7 +1051,7 @@ byte Coop_Command(const char *line) {
 		/* as the scripts do: SaveGame.QLoad, SaveGame.Restart (a super deal), the end's credits section */
 		Players_Bind(Cp_Player());
 		if (!strcmp(line, "theend")) {
-			SaveVars_Delete("");
+			SaveVars_ScriptDelete("");
 			Str_Copy(name, "Levels/Menu", sizeof(name));
 		}
 		byte ok = Mode_Import("SaveGame") && (!strcmp(line, "restart") ? PORT_CALL(SaveGame, Restart, NULL, "") :
@@ -994,6 +1059,15 @@ byte Coop_Command(const char *line) {
 		if (!ok) {
 			Native_ErrPrint();
 		}
+		Players_BindTurn();
+		return 1;
+	}
+	if (!strncmp(line, "call ", 5) && line[5] != '@') {
+		/* a call of the scripts as a call table line ("Module.Func|arg|..."), for the bound player */
+		const char *one[2] = { line + 5, NULL };
+		Players_Bind(Cp_Player());
+		Con_Printf("coop: call %s: %s\n", line + 5, Mode_Calls(NULL, one) ? "done" : "failed");
+		Native_ErrPrint();
 		Players_BindTurn();
 		return 1;
 	}
@@ -1063,23 +1137,40 @@ static void Cp_ClientScene(NetRepReader *r) {
 		at += len + 1;
 		lines[k + 1] = NULL;
 	}
+	char dmod[CP_NAME], dsec[CP_NAME];
+	NetRep_GetStr(r, dmod, sizeof(dmod));
+	NetRep_GetStr(r, dsec, sizeof(dsec));
 	if (r->bad) {
 		return;
 	}
-	if (!n) {
-		nativeVal_t sname, have;
-		char text2[CP_NAME + 8];
-		Str_PrintfQuiet(text2, sizeof(text2), "Scene%s", cls);
-		Native_SetText(&sname, text2, (int)strlen(text2));
+	/* a class the client has already (made by its level's start, or a scene of the level's own data) plays as it
+	 * is: its table again would add its actions a second time (a fatal check) */
+	nativeVal_t sname, have;
+	char text2[CP_NAME + 8];
+	Str_PrintfQuiet(text2, sizeof(text2), "Scene%s", cls);
+	Native_SetText(&sname, text2, (int)strlen(text2));
+	Native_SetNone(&have);
+	byte got = Mode_SActV("GetClass", &sname, &have) && Native_True(&have);
+	Native_Free(&have);
+	Native_ErrClear();
+	/* a scene of a level data section: the client runs that section */
+	if (!got && dsec[0]) {
+		if (!Script_LevelSection(dmod, dsec)) {
+			Native_ErrPrint();
+		}
 		Native_SetNone(&have);
-		byte got = Mode_SActV("GetClass", &sname, &have) && Native_True(&have);
-		Native_Free(&sname);
+		got = Mode_SActV("GetClass", &sname, &have) && Native_True(&have);
 		Native_Free(&have);
 		Native_ErrClear();
-		if (!got) {
-			Con_Printf("coop: scene %s of the instance: no class here\n", cls);
-			return;
-		}
+		Con_Printf("coop: scene %s from the data section %s of %s: %s\n", cls, dsec, dmod, got ? "loaded" : "no class");
+	}
+	Native_Free(&sname);
+	if (!n && !got) {
+		Con_Printf("coop: scene %s of the instance: no class here\n", cls);
+		return;
+	}
+	if (got) {
+		n = 0;
 	}
 	Con_Printf("coop: scene %s of the instance plays here\n", cls);
 	/* line by line, a failing one does not stop the scene. The "@" calls of the level's module add events that
@@ -1289,7 +1380,8 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		if (!Mode_GVarSetI("ShowCredits", 1)) {
 			Native_ErrPrint();
 		}
-		Join_Stop("");
+		/* not here in the middle of the instance's messages: the join ends in its next pass */
+		cp.ended = 1;
 		break;
 	case COOP_Y_NOTICE:
 		NetRep_GetStr(&r, key, sizeof(key));
@@ -1302,6 +1394,12 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		break;
 	}
 	return 1;
+}
+
+byte Coop_ClientEnded(void) {
+	byte e = cp.ended;
+	cp.ended = 0;
+	return e;
 }
 
 void Coop_ClientReset(void) {

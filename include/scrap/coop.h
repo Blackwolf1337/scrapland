@@ -22,14 +22,16 @@
  * (include/scrap/travel.h): the bound player goes to the level at the spawn of its way point (the save variable
  * Spawn); a change into or out of a level of the story alone (Orbit, Fake, Junkyard, AB, ABIndoor) is a chapter of the
  * story and takes every member of the party along (COORD_SR_PARTY: the coordinator summons the others from their
- * instances). The level of the main menu is the end of the story: the single player's deletion of every save
+ * instances). A chapter's way point (Map, Spawn, ComeFrom, PrevMap of the travel) goes into the story as
+ * Coop.Entry.*; the target level's start takes them as the single player's start would have them, and a ComeFrom of
+ * a door class ("DoorEditShip") is the door the members arrive in (its elevator ride). The level of the main menu is the end of the story: the single player's deletion of every save
  * variable before it is skipped, the story gets COORD_COOP_FINISHED, the members in the instance see the credits in
  * their main menu (COOP_Y_END: the client leaves the world), a member of a finished story that joins again starts in
  * the city (COORD_COOP_AFTER). The same level again (SaveGame.Restart of a super deal) starts the instance again for
  * its members: they travel to its new start (COORD_MSG_RESET).
  *
  * Cutscenes: a scene of the scripts (Scene.Play) whose table of lines (the "Scene.Load|<class>" call table of the
- * level, Mode_Calls) was seen plays on every client in the instance: the instance sends the table and the class
+ * level, Mode_Calls, or the level data section that loaded it) was seen plays on every client in the instance: the instance sends the table and the class
  * (COOP_Y_SCENE), the client runs the table and Scene.Play itself (the actors, the camera, the subtitles and voices
  * of the scene; no callback of the scripts), and ends it with the instance's end (COOP_Y_SCENEEND). The members in
  * other instances get a notice through the coordinator. Outside such a scene the speech texts of the scripts go to
@@ -56,7 +58,8 @@
 #include "scrap/shared.h"
 
 #define COOP_MSG 'Y'					/* instance -> client, reliable: kind u8 (COOP_Y_*), then its fields */
-#define COOP_Y_SCENE 1					/* module str, class str, count u16, lines (u16 length + bytes each) */
+#define COOP_Y_SCENE 1					/* module str, class str, count u16, lines (u16 length + bytes each), the data
+										 * section that loads it (module str, section str; "" none) */
 #define COOP_Y_SCENEEND 2				/* class str */
 #define COOP_Y_SPEECH 3					/* text u16 length + bytes, time f32 (ms u32), r g b u8 */
 #define COOP_Y_MSG 4					/* text u16 length + bytes, ms u32, font str */
@@ -85,8 +88,9 @@ byte Coop_ParseParam(const char *param, const char *ext);
 /* the instance plays the coop story; -mode:coop was given (a game that hosts: its world's mode) */
 byte Coop_On(void);
 byte Coop_Asked(void);
-/* before the level's scripts start: the story into the save variables */
-void Coop_LevelStart(void);
+/* before the level's scripts start (level: its path): the story into the save variables, the way point of a
+ * chapter's travel to this level (ComeFrom, PrevMap, Spawn, Map) into the player's variables its start reads */
+void Coop_LevelStart(const char *level);
 /* the scripts delete the save variables with prefix: 1 when they stay (all of them: the single player's end) */
 byte Coop_KeepStory(const char *prefix);
 /* a save variable was made (old NULL), changed or deleted by the game (SaveVars.c); inc: by SaveVar_Inc (a counter) */
@@ -102,6 +106,10 @@ void Coop_CoordLost(void);
 byte Coop_QLoad(const char *map);
 /* a call table of the scripts ran (Mode_Calls): a scene's is kept */
 void Coop_SceneTable(const char *module, const char *const *lines);
+/* a data section of a level module runs (module NULL: it ended); Scene.Load(cls) in it: the clients run the same
+ * section for that scene (a scene made from the level's .def data has no call table) */
+void Coop_DataSection(const char *module, const char *section);
+void Coop_SceneLoad(const char *cls);
 /* Scene.Play(cls) started; EndOfScene of it begins (the member of the scene bound for its callback) and ended */
 void Coop_ScenePlay(const char *cls);
 /* the camera of view 0 a scene or a talk uses (the instance has none of its own): made when missing */
@@ -133,7 +141,8 @@ void Coop_BeforeUse(int i, struct cEntity *t);
 /* test lines: "story" (the count, the mission), "story get <name>", "story set <name> <value>", "story inc <name>
  * <n>", "story hold 1|0" (the changes wait, go), "leader <player>"
  * (as the client's key), "travel <player> <level>" (alone, at the level's start), "qload <map>" and "restart" (as
- * the scripts' SaveGame.QLoad and SaveGame.Restart), "theend" (as the end's credits: all variables deleted, the menu) */
+ * the scripts' SaveGame.QLoad and SaveGame.Restart), "theend" (as the end's credits: all variables deleted, the menu),
+ * "call <Module.Func|arg|...>" (a function of the scripts, as a line of a call table) */
 byte Coop_Command(const char *line);
 
 /* ---- client ---- */
@@ -144,6 +153,8 @@ void Coop_Cue(int kind, const char *text);
 byte Coop_ClientMessage(const uint8_t *data, int size);
 /* the instance connection is gone */
 void Coop_ClientReset(void);
+/* the story is finished (COOP_Y_END came): 1 once, the join ends (Join_Stop: the credits of the main menu) */
+byte Coop_ClientEnded(void);
 /* the scene ended here (EndOfScene of the client): an Escape before the instance's end skips it for this member alone
  * (its character comes back with the instance's end, so it does not walk off where the instance has none) */
 void Coop_ClientSceneEnded(void);
