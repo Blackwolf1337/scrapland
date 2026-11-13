@@ -81,7 +81,8 @@ typedef struct RepRewind {
 } RepRewind;
 
 typedef struct RepShot {
-	cEntity *shooter, *target;
+	cEntity *shooter, *target;		/* compared only: read while World_FindEntity of the name is them */
+	char shooterName[REP_NAME], targetName[REP_NAME];
 	uint8_t weapon, count;
 	vec3_t from, to;
 } RepShot;
@@ -670,8 +671,10 @@ void Rep_RewindBegin(cEntity *v) {
 	pl->rewindSum += now - t;
 	pl->rewindN++;
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
+		/* the entities of the last snapshot: one may be gone since (World_FindEntity of its name is not it) */
 		cEntity *e = rep.ent[s].e;
-		if (!e || e == v || e->deadNode.target || !NetRepSrv_PosAt(rep.srv, s, t, &p.x)) {
+		if (!e || e == v || World_FindEntity(rep.ent[s].name) != e || e->deadNode.target ||
+			!NetRepSrv_PosAt(rep.srv, s, t, &p.x)) {
 			continue;
 		}
 		rep.rewind[rep.rewound].e = e;
@@ -787,6 +790,8 @@ void Rep_Shot(cEntity *shooter, int weapon, int count, const vec3_t *from, const
 	RepShot *x = &rep.shots[rep.nshots++];
 	x->shooter = shooter;
 	x->target = target;
+	Str_Copy(x->shooterName, shooter->name, REP_NAME);
+	Str_Copy(x->targetName, target ? target->name : "", REP_NAME);
 	x->weapon = (uint8_t)weapon;
 	x->count = (uint8_t)(count > 255 ? 255 : count);
 	x->from = *from;
@@ -802,12 +807,13 @@ static void Rep_SendShots(Net2Host *host) {
 
 	for (int i = 0; i < rep.nshots; i++) {
 		RepShot *x = &rep.shots[i];
-		int slot = Rep_Find(x->shooter);
+		/* the entities may be gone since their shot */
+		int slot = World_FindEntity(x->shooterName) == x->shooter ? Rep_Find(x->shooter) : -1;
 		if (slot < 0) {
 			continue;
 		}
 		NetRepShot *w = &rep.wire[n];
-		int t = x->target ? Rep_Find(x->target) : -1;
+		int t = x->target && World_FindEntity(x->targetName) == x->target ? Rep_Find(x->target) : -1;
 		w->slot = (uint16_t)slot;
 		w->weapon = x->weapon;
 		w->count = x->count;

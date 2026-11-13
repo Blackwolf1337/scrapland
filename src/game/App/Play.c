@@ -358,14 +358,24 @@ static cEntity *Play_BotNearest(cEntity *e, int kind, byte player, byte still) {
 	return best;
 }
 
-/* the weapon of the bot: the Vulcan, or with SCRAP_PLAYBOT_WEAPONS=1 each weapon for 6 s of aiming in turn */
+/* the weapon of the bot: the Vulcan, or with SCRAP_PLAYBOT_WEAPONS=1 (or a list of names) each weapon for 6 s of
+ * aiming in turn */
 static int Play_BotWeapon(void) {
+	static const char *const names[] = { "Vulcan", "Laser", "Devastator", "Tesla", "ATPC", "Swarm", "Inferno" };
 	const int w[] = { g_VulcanIDWeap, g_LaserIDWeap, g_DevastatorIDWeap, g_TeslaIDWeap, g_ATPCIDWeap, g_SwarmIDWeap,
 		g_InfernoIDWeap };
+	int pick[7], n = 0;
 	if (!play.botCycle) {
 		return g_VulcanIDWeap;
 	}
-	return w[(int)(play.botNear / 6.0) % (int)(sizeof(w) / sizeof(w[0]))];
+	/* SCRAP_PLAYBOT_WEAPONS=1 all of them, else the names in it */
+	const char *list = getenv("SCRAP_PLAYBOT_WEAPONS");
+	for (int i = 0; i < 7; i++) {
+		if (!strcmp(list, "1") || strstr(list, names[i])) {
+			pick[n++] = w[i];
+		}
+	}
+	return n ? pick[(int)(play.botNear / 6.0) % n] : g_VulcanIDWeap;
 }
 
 /* the bot of the tests: walks, takes a parked ship, flies, fires at the nearest other player, lands and gets out,
@@ -439,8 +449,12 @@ static void Play_Bot(double now) {
 	play.acc.rot[1] = pitch > 0.3f ? 0.6f : pitch < -0.3f ? -0.6f : pitch * 2.0f;
 	play.acc.move[0] = bestD > 8000.0f * 8000.0f ? 0.8f : 0.1f;
 	/* trying the weapons: stops about 4000 units away and fires in bursts of 1.5 s (the missiles fly at a release) */
-	if (play.botCycle && bestD < 6000.0f * 6000.0f) {
-		play.acc.move[0] = Veh(e)->speed > 200.0f ? -1.0f : 0.0f;
+	if (play.botCycle) {
+		/* level with the target (the narrow aim cones of some weapons) */
+		play.acc.move[2] = dy > 500.0f ? 0.8f : dy < -500.0f ? -0.8f : dy / 625.0f;
+		if (bestD < 6000.0f * 6000.0f) {
+			play.acc.move[0] = Veh(e)->speed > 200.0f ? -1.0f : 0.0f;
+		}
 	}
 	if (fabsf(dyaw) < 0.15f && fmod(t, play.botCycle ? 2.0 : 3.0) < (play.botCycle ? 1.5 : 2.0)) {
 		play.acc.buttons = NETREP_IN_ACT;
