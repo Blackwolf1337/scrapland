@@ -1190,12 +1190,12 @@ static void Cp_ClientScene(NetRepReader *r) {
 		n = 0;
 	}
 	Con_Printf("coop: scene %s of the instance plays here\n", cls);
-	/* line by line, a failing one does not stop the scene. The "@" calls of the level's module add events that
-	 * animate the level's entities of the client (the functionary's desk, a door): not on a headless client, whose
-	 * models have no animations (a forced action of one is a fatal check) */
+	/* line by line, a failing one does not stop the scene. The "@" calls of the level's module are left out: their
+	 * events force actions on the level's entities of the client (Orbit's desk functionary), whose models lack the
+	 * animations the instance's mission gave them (CGameModel_Link's fatal check, headless and rendered alike) */
 	for (int k = 0; k < n && lines[k]; k++) {
 		const char *one[2] = { lines[k], NULL };
-		if ((lines[k][0] != '@' || !g_HeadlessPlay) && !Mode_Calls(module, one)) {
+		if (lines[k][0] != '@' && !Mode_Calls(module, one)) {
 			Native_ErrPrint();
 		}
 	}
