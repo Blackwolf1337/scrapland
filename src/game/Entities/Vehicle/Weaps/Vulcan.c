@@ -3,6 +3,7 @@
  * bay and shot), see include/scrap/weaps2.h. Its upgrades 1 (faster) and 2 (wider aim, the HUD item spins) use up
  * their own ammo.
  */
+#include "scrap/play.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
@@ -524,10 +525,13 @@ static void Vulcan_FireNative(cAbstractFile *f) {
 	ang.y = Veh(v)->autoAim.ay;
 	ang.z = 0.0f;
 	dist = g_VulcanRange;
+	/* a player's shot of the headless instance hits what its client saw (include/scrap/play.h) */
+	Rep_RewindBegin(v);
 	Entity_GetTargetAngle(v, &ang.x, dist, &target);
 	Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
+	Rep_RewindEnd(v, isLife ? target : NULL, n);
 	if (isCar) {
 		cVehicleAttack_ShotAt(Veh_HitInfo(v), target->name, 1);
 	} else {

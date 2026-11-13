@@ -14,6 +14,7 @@
 #include "scrap/filesys.h"
 #include "scrap/input.h"
 #include "scrap/instance.h"
+#include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/model.h"
 #include "scrap/net.h"
@@ -762,7 +763,7 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 		App_InitDedicated(self);
 		return 1;
 	}
-	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext)) {
+	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext) || Play_ParseParam(param, ext)) {
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {

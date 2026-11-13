@@ -94,6 +94,7 @@ cEntity *cObjEntity_ctor(void *mem, const char *name, float x, float y, float z)
 	self->cam = NULL;
 	self->netRes = 0;
 	self->proxy = 0;
+	self->netStep = 0;
 	self->slotAng = self->ang;
 	self->slotPos = self->base.pos;
 	self->renderAng = self->ang;
@@ -681,7 +682,7 @@ void cObjEntity_Update(cEntity *self) {
 				cPy_Function_AddParamF(&o->onObjSlot, iv);
 				cPy_Function_Execute(&o->onObjSlot, 0);
 			}
-			if (!o->proxy) {
+			if (!o->proxy && !o->netStep) {
 				Obj_Tick(self, iv);
 			}
 			if (o->cam) {

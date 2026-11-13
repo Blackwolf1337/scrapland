@@ -513,8 +513,9 @@ void cWithLifeEntity_Update(cEntity *self) {
 	}
 	cSndInterface_Tick(&w->hitSounds, dt);
 	cSndInterface_Tick(&w->lifeSounds, dt);
-	/* a character proxy's actions come from the watcher (cActCtrl_NetDrive) */
-	if (w->actCtrl && (!w->obj.proxy || w->actCtrl->cls->dynShip)) {
+	/* a character proxy's actions come from the watcher (cActCtrl_NetDrive), a player's of the network are run by
+	 * tick (NetPl_Step) */
+	if (w->actCtrl && (!w->obj.proxy || w->actCtrl->cls->dynShip) && !w->obj.netStep) {
 		cActCtrl_Tick(w->actCtrl, dt);
 	}
 	cObjEntity_Update(self);

@@ -25,6 +25,7 @@
 #define SCRAP_REPLICATE_H
 
 #include "scrap/net2.h"
+#include "scrap/netrep.h"
 #include "scrap/shared.h"
 
 #define REP_CH_RELIABLE 0
@@ -54,5 +55,15 @@ byte Watch_ParseParam(const char *param, const char *ext);
 void Watch_PreFrame(void);
 void Watch_PostFrame(void);
 void Watch_Close(void);
+/* an entity of a look string (S|model|pilot|motor 0..3|class or C|class) at the position of st: a proxy, or the
+ * player's own entity (include/scrap/play.h) */
+struct cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy);
+/* the proxy is a player's entity */
+byte Watch_IsPlayer(struct cEntity *e);
+/* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the tick of an input of now; the server time
+ * the proxies are drawn at (s) */
+byte Watch_ClockReady(void);
+uint32_t Watch_InputTick(double now, double rtt, double lead);
+double Watch_ShownTime(void);
 
 #endif

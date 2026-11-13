@@ -12,6 +12,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
 #include "scrap/instance.h"
+#include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
@@ -43,7 +44,8 @@ static CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char
 		cString_Set((cString *)&g_LogName, "logtxf.html");
 	}
 	g_Instance = (byte)CWinApp_HasArg(self, "instance");
-	g_Watch = !g_Instance && (byte)CWinApp_HasArg(self, "watch");
+	g_Play = !g_Instance && (byte)CWinApp_HasArg(self, "play");
+	g_Watch = !g_Instance && ((byte)CWinApp_HasArg(self, "watch") || g_Play);
 	return self;
 }
 

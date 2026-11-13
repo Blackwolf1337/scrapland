@@ -14,6 +14,7 @@
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/platform.h"
+#include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/world.h"
 
@@ -272,6 +273,7 @@ void Instance_Pass(void) {
 	if (inst.host) {
 		Instance_NetIn(now / 1000000);
 	}
+	Rep_PreFrame(inst.ticks);
 	App_Frame(g_pApp);
 	if (inst.host) {
 		Rep_Tick(inst.host, inst.ticks);

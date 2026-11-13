@@ -87,7 +87,9 @@ typedef struct cObjEntity {
 	vec3_t rotVel;
 	byte netRes;			/* "NetRes": the index of the network resource */
 	byte proxy;			/* a watcher's copy of a replicated entity: no slot ticks (include/scrap/replicate.h) */
-	byte pad_ee[2];
+	byte netStep;			/* a player's entity of the network: its actions and slot ticks run by tick
+					   (NetPl_Step, include/scrap/play.h), not by the frame */
+	byte pad_ef;
 	cEntity *cam;			/* the follow camera of the object ("CamName") */
 	cNetController *net;		/* only in a network game */
 	vec3_t camOff;			/* "CamTgt" (0, 50, -50) */
