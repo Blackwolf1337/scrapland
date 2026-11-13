@@ -239,7 +239,7 @@ static void Join_Net(uint64_t now) {
 		}
 		case NET2_EV_DISCONNECT:
 			Con_Printf("join: coordinator %s (%s)\n", join.phase == JOIN_CONNECTING ? "not reached" : "lost",
-				Net2_ReasonString(ev.reason));
+				ev.reason > NET2_DR_APP ? Coord_DenyText(ev.reason - NET2_DR_APP) : Net2_ReasonString(ev.reason));
 			if (ev.reason >= NET2_DR_APP || (!join.played && ++join.tries >= JOIN_TRIES)) {
 				join.phase = JOIN_GONE;
 				if (!join.played) {

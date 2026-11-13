@@ -163,6 +163,9 @@ int Coord_TicketSeal(const CoordTicket *t, const uint8_t seed[NET2_SEED_SIZE], u
 /* a ticket checked against the coordinator's public key at the time now (ms of the Unix epoch): COORD_TK_* */
 int Coord_TicketOpen(const uint8_t *data, int size, const uint8_t pub[NET2_KEY_SIZE], uint64_t now, CoordTicket *out);
 
+/* the text of a deny reason (also of the disconnect reason NET2_DR_APP + reason) */
+const char *Coord_DenyText(int reason);
+
 /* the hash a client signs to join: the coordinator's challenge, its identity key and the player's name */
 void Coord_JoinHash(uint8_t hash[64], const uint8_t nonce[COORD_CHALLENGE], const uint8_t serverKey[NET2_KEY_SIZE],
 	const char *name);
