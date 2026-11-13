@@ -381,6 +381,44 @@ static int Mod_Truth(const nativeVal_t *v) {
 
 /* ---- the scanner of constants ---- */
 
+/* PyLong_FromString(s, NULL, 0) of a number of the text (it starts with a digit or '.'): the base of its prefix (0x
+ * 16, 0 8, else 10), the digits of that base up to the first other character (the rest is ignored), the value as the
+ * decimal text of an NV_LONG; 0 with its ValueError when there is no digit */
+static byte Mod_LongText(const char *s, nativeVal_t *out) {
+	/* the decimal digits of the value, the lowest first */
+	char dec[0x100];
+	int n = 1, base = s[0] != '0' ? 10 : s[1] == 'x' || s[1] == 'X' ? 16 : 8;
+	const char *p = base == 16 ? s + 2 : s, *start = p;
+	dec[0] = 0;
+	for (;; p++) {
+		int k = *p <= '9' ? *p - '0' : *p >= 'a' ? *p - 'a' + 10 : *p >= 'A' ? *p - 'A' + 10 : -1;
+		if (k < 0 || k >= base) {
+			break;
+		}
+		for (int i = 0; i < n; i++) {
+			k += dec[i] * base;
+			dec[i] = (char)(k % 10);
+			k /= 10;
+		}
+		while (k && n < (int)sizeof(dec)) {
+			dec[n++] = (char)(k % 10);
+			k /= 10;
+		}
+	}
+	if (p == start) {
+		return Native_Raise(NE_VALUE, "no digits in long int constant");
+	}
+	while (n > 1 && !dec[n - 1]) {
+		n--;
+	}
+	char text[sizeof(dec)];
+	for (int i = 0; i < n; i++) {
+		text[i] = (char)('0' + dec[n - 1 - i]);
+	}
+	Native_SetLong(out, text, n);
+	return 1;
+}
+
 /* a number as parsenumber of compile.c reads it */
 static byte Mod_Number(modParse_t *m, nativeVal_t *out) {
 	const char *s = m->p, *e = s;
@@ -401,12 +439,12 @@ static byte Mod_Number(modParse_t *m, nativeVal_t *out) {
 	size_t len = strlen(buf);
 	char *end;
 	if (buf[len - 1] == 'l' || buf[len - 1] == 'L') {
-		/* a decimal long int in C; octal, hex and the ValueError of a bad one through PyLong_FromString (OBJLIB 9) */
+		/* a decimal long int as it is, octal and hex as PyLong_FromString reads them */
 		if (len > 1 && (buf[0] != '0' || len == 2) && strspn(buf, "0123456789") == len - 1) {
 			Native_SetLong(out, buf, (int)len - 1);
 			return 1;
 		}
-		return Mod_Took(PyLong_FromString(buf, NULL, 0), out);
+		return Mod_LongText(buf, out);
 	}
 	errno = 0;
 	long x = buf[0] == '0' ? (long)PyOS_strtoul(buf, &end, 0) : PyOS_strtol(buf, &end, 0);

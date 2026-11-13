@@ -16,7 +16,7 @@
  * its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5 (9c)); string.zfill has a
  * twin in the file. The function given to the scheduler by name takes its entry (Port_Scheduled); the Menu object a
  * script may put into the module is a global (OBJLIB 5 (9c)) whose ShowTextBox is called through its entry
- * (PORT_VALUE). SaveReg reads the attributes of any object, GetReg makes a native class whose attributes are read
+ * (Port_ValueOf). SaveReg reads the attributes of any object, GetReg makes a native class whose attributes are read
  * with the literal reader.
  */
 #include <limits.h>

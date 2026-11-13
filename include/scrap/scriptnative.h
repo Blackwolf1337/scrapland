@@ -468,9 +468,9 @@ typedef struct {
 	void *ctx;
 } nativeHook_t;
 int Native_Seam(const char *module, const char *name, nativeHook_t *hook);
-/* the call of a hook (taken over) with the letters of Native_Call; the result into *out (NULL: dropped) in the form
- * the script got it (Native_Pass). A channel function runs in C on the arguments as its adapter got them (Port_Pack,
- * the depth check of the calls), any other callable through Python as before (OBJLIB 7). 0 with the error */
+/* the call of a hook (taken over) with the letters of the mini format; the result into *out (NULL: dropped) in the
+ * form the script got it (Native_Pass). A channel function runs in C on the arguments as its adapter got them
+ * (Port_Pack, the depth check of the calls), any other callable as Port_NativeCallVa calls it. 0 with the error */
 byte Native_HookCall(nativeHook_t *hook, nativeVal_t *out, const char *fmt, ...);
 void Native_HookFree(nativeHook_t *hook);
 /* o.name = v (v NULL: del o.name) was done: when o is a module and module.name has a seam entry, it follows */
@@ -604,7 +604,7 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
  *   PORT_XCALL(level, Module, Func, ...)     PORT_LCALL and PORT_LOWN with the level named at the call
  *   PORT_XOWN(level, Module, Func, ...)
  *
- * fmt and the arguments are those of Native_Call (v, i, d, s, O; a NULL s is None); out and the result as there. The
+ * fmt and the arguments are those of the mini format (v, i, d, s, O; a NULL s is None); out and the result as there. The
  * ref of Module.Func comes from include/scrap/scriptports.h (tools/script/ports.py makes it from the PyMethodDef
  * tables).
  *
@@ -732,7 +732,7 @@ portSite_t *Port_ScheduledOf(const nativeVal_t *f);
 /* the functions scheduled as entries since the start, the last one first (OBJLIB 7: the counters of the test
  * channel) */
 portSite_t *Port_ScheduledSites(void);
-/* the call of a bound site (a callback, a scheduled call, a value that holds a port function: Port_Value) as the
+/* the call of a bound site (a callback, a scheduled call, a value that holds a port function: Port_ValuesOf) as the
  * Python call of its adapter on n arguments: the letters x, each one as the adapter gets it ('v' a native value
  * through Native_Pass, 'O' an object through Native_Arg, as Port_Invoke packs them), or with x NULL the native values
  * v through Native_Pass; the entry (Port_Entry), the result through the conversions of the adapter (Native_Pass) into
@@ -761,7 +761,7 @@ byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const native
  * ports" as "value").
  */
 byte Port_ValuesOf(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out, byte raw);
-/* the same on the letters of Native_Call (no keywords): a port function's entry gets them packed as its adapter does,
+/* the same on the letters of the mini format (no keywords): a port function's entry gets them packed as its adapter does,
  * any other value each as Port_ValuesOf passes a native value */
 byte Port_ValueOf(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const char *fmt, ...);
 byte Port_ValueOfVa(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const char *fmt, va_list va);

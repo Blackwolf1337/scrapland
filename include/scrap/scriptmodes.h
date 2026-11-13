@@ -524,7 +524,7 @@ byte Mode_ModList1(const char *module, const char *var, const char *src, const c
 byte Mode_ModListG(const char *module, const char *var, const char *src, const char *name);
 /* `if fn: fn()` of the global function fn of module (*called: it was set) */
 byte Mode_CallIf(const char *module, const char *name, byte *called);
-/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module (Mode_CbApplySeq: the entry while the attribute
+/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module (Mode_CbApplySeqV: the entry while the attribute
  * holds the port's function) */
 byte Mode_ApplyNext(const char *module);
 /* a op the global name of the module: 1, 0, -1 */
@@ -955,7 +955,7 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
  *   Mode_CbLinkV    fn(id, a, b) of a link function (Mode_LinkCallV)
  *   Mode_CbGlobal   name(...) of the global of module (Native_CallGlobal: the NameError of the script; MODE_CBGLOBAL)
  *   Mode_CbAttr     module.name(...) by a name known at run time (Native_CallMod; MODE_CBATTR)
- * fmt and the arguments as Native_Call takes them (no keywords).
+ * fmt and the arguments in the mini format of scrap/scriptnative.h (no keywords).
  */
 byte Mode_CbArgs(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
 byte Mode_CbApply(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
@@ -1046,8 +1046,8 @@ byte Mode_RefDelSub(const nativeVal_t *o, const nativeVal_t *key);
 /* o.name by reference (PyObject_GetAttrString: no error is set where the object sets none), o.name = v */
 byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
 byte Mode_RefSetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v);
-/* o.method(args...) of n values (an NV_OBJ argument is the object itself) as the ports call a method (Script_Method:
- * the method read as Mode_RefGetAttr reads an attribute), the result as Native_Arg makes it into out (NULL: dropped) */
+/* o.method(args...) of n values (an NV_OBJ argument is the object itself) as the ports call a method (the method read
+ * as Mode_RefGetAttr reads an attribute), the result as Native_Arg makes it into out (NULL: dropped) */
 byte Mode_RefCall(const nativeVal_t *o, const char *method, const nativeVal_t *args, int n, nativeVal_t *out);
 /* PyList_Insert(o, at, v) and PyList_Append(o, v) (at < 0) as the C ports changed a list (the SystemError of a value
  * that is no list) */

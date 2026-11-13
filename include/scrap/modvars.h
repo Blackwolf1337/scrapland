@@ -13,7 +13,7 @@
  * it go as they went. Those variables are the key of the module here (ModVar_OfVal leads from a module value to its
  * table and overflow list, ModVar_RefOfNs from a namespace: a module or a dict object). The test channel
  * (src/game/Global/TestChannel.c, TestExpr.c: names, __globals__, X.__dict__, dump), the helpers of the ports by
- * module name (Script_Global, Script_SetGlobal, Script_Attr, Script_SetVar, the Mode_ helpers of scrap/scriptmodes.h
+ * module name (ModVar_GlobalVal, ModVar_ModAttrVal, Script_SetVar, the Mode_ helpers of scrap/scriptmodes.h
  * and the LvN_ wrappers on them), the module code of the .mod files (its stores, loads and deletes, from the start of
  * the module code on: ModVar_Making, and its from-import), the C hooks of module code, the writes of the loader
  * (Script_ReplaySet), the .def runner, Script_NameChain and the getattr and setattr of modules read and write module

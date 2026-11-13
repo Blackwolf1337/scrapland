@@ -640,7 +640,7 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names) {
 	return n;
 }
 
-/* ---- by module name: the one path of the helpers of the ports (Script_Global, Script_Attr, the Mode_ helpers) ---- */
+/* ---- by module name: the one path of the helpers of the ports (ModVar_GlobalVal, ModVar_ModAttrVal, the Mode_ helpers) ---- */
 
 /* the module name as the scripts import it into *m (Script_Module): 1 with *m (a module, or another object a case put
  * in the store), 0 with the error of the import */

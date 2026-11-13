@@ -6,7 +6,7 @@
  * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable), the callbacks bound
  * to port functions (Port_CallbackOf, cPy_Function PYF_ENTRY), the functions given to the scheduler (Port_ScheduledOf,
  * cScheduledFunc), the call of such a bound site (Port_BoundCall), and the calls of values that hold port functions
- * (Port_Own by the adapter, Port_Value and Port_Values). Last the seams of the engine functions as C hooks
+ * (Port_ValuesOf, Port_ValueOf; a view through Port_Values). Last the seams of the engine functions as C hooks
  * (Native_Seam, stage 7d).
  */
 #include <stdint.h>
@@ -298,33 +298,37 @@ static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, const po
  * (Native_KwOrder; NObj_CallKw), each as Port_CallArg makes it; the result as Native_Arg took it (NObj_ArgOf) into *out (NULL: dropped) */
 static __attribute__((noinline)) byte Port_HookCallVa(const nativeVal_t *hook, nativeVal_t *out, const char *fmt,
 	va_list va) {
-	portArgs_t p;
-	nativeVal_t a[PORT_ARGS], given, kw, r;
+	/* off the stack: a self call through an alias recurses through this frame (see Port_FastVa) */
+	struct {
+		portArgs_t p;
+		nativeVal_t a[PORT_ARGS], given, kw, r;
+	} *c = Mem_Alloc(sizeof(*c));
 	int k = 0;
 	byte ok = 1;
-	Port_Read(fmt, va, &p);
-	for (; ok && k < p.n; k++) {
-		ok = Port_CallArg(&p.a[k], &a[k]);
+	Port_Read(fmt, va, &c->p);
+	for (; ok && k < c->p.n; k++) {
+		ok = Port_CallArg(&c->p.a[k], &c->a[k]);
 	}
-	Native_SetEmpty(&given, NV_LIST);
-	for (int i = p.npos; ok && i < p.n; i++) {
-		nativeVal_t *pair = Native_Append(&given);
+	Native_SetEmpty(&c->given, NV_LIST);
+	for (int i = c->p.npos; ok && i < c->p.n; i++) {
+		nativeVal_t *pair = Native_Append(&c->given);
 		Native_SetEmpty(pair, NV_TUPLE);
-		Native_SetText(Native_Append(pair), p.names[i], p.lens[i]);
-		Native_Copy(Native_Append(pair), &a[i]);
+		Native_SetText(Native_Append(pair), c->p.names[i], c->p.lens[i]);
+		Native_Copy(Native_Append(pair), &c->a[i]);
 	}
-	Native_KwOrder(&given, &kw);
-	Native_SetNone(&r);
-	ok = ok && NObj_CallKw(hook, a, p.npos, kw.n ? &kw : NULL, &r);
-	Native_Free(&given);
-	Native_Free(&kw);
+	Native_KwOrder(&c->given, &c->kw);
+	Native_SetNone(&c->r);
+	ok = ok && NObj_CallKw(hook, c->a, c->p.npos, c->kw.n ? &c->kw : NULL, &c->r);
+	Native_Free(&c->given);
+	Native_Free(&c->kw);
 	while (k-- > 0) {
-		Native_Free(&a[k]);
+		Native_Free(&c->a[k]);
 	}
 	if (ok && out) {
-		NObj_ArgOf(&r, out);
+		NObj_ArgOf(&c->r, out);
 	}
-	Native_Free(&r);
+	Native_Free(&c->r);
+	Mem_Free(c);
 	return ok;
 }
 

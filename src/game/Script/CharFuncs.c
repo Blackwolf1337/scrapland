@@ -9,7 +9,7 @@
  * variables in C. The module variables are read where the port read them (Script_GetInt, Script_GetFloat and
  * Script_GetString forms, errors dropped) and written through at once with the port's dropped errors.
  * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity. The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through
- * their refs (PORT_CALL, PORT_ASK: directly while the attribute holds the port's function, else by name); the engine
+ * their refs (PORT_CALL: directly while the attribute holds the port's function, else what is there); the engine
  * functions the port called by name go through their seams (SetMsgText, CreateEntity, Scrap.Set,
  * SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
  * The entries parse the arguments as before.

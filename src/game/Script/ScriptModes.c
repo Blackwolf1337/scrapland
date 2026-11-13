@@ -3511,7 +3511,7 @@ void Mode_CallVarIf(const char *module, const char *var, long id) {
 	nativeVal_t f, a;
 	if (Mode_ModGet(module, var, &f) && Native_True(&f)) {
 		Native_SetInt(&a, id);
-		/* the callback through its entry while it is a port's own function (Port_Value) */
+		/* the callback through its entry while it is a port's own function (Port_ValuesOf) */
 		if (!Mode_CallArgs(&f, NULL, &a, 1)) {
 			Native_ErrPrint();
 		}
@@ -4535,7 +4535,7 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control) 
 }
 
 /* ---- calls of values (stage 4 of docs/objlib-plan.md, batch 4d): the entry of the port function a value holds
- * (Port_Value), else the call through Python; one site per call site through the macros of scrap/scriptmodes.h ---- */
+ * (Port_ValuesOf), else the call of the value; one site per call site through the macros of scrap/scriptmodes.h ---- */
 
 byte Mode_CbArgs(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n) {
 	/* a native object natively; a value that is no object is called the Python way too: the TypeError of a value that

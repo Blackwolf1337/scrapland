@@ -13,7 +13,7 @@
  * are module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
  * script calls as its globals and the other ports go through their refs (PORT_OWN, PORT_CALL: the seam, OBJLIB 5 (9c)).
  * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time, their functions
- * called through the entries of the level's ports (MODE_CBATTR, PORT_VALUE); string.find and replace are the native
+ * called through the entries of the level's ports (MODE_CBATTR, Port_ValueOf); string.find and replace are the native
  * twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements, CreateSaveVar, GetLevelPath, GetNewLevelPath and
  * SAI.IniAI go through their refs (stage 7), dir and __import__ stay by name (OBJLIB 6, 7). Scrap.Set, OpenPack,
  * ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and SetLabelText go
