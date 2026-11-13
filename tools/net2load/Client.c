@@ -98,6 +98,14 @@ static void Client_Join(Clients *cs, Client *c) {
 static void Client_Message(Clients *cs, Client *c, const Net2Event *ev) {
 	Net2Reader r;
 
+	if (cs->o->raw) {
+		if (ev->channel == LOAD_CH_SEQUENCED) {
+			c->snaps++;
+		} else {
+			c->events++;
+		}
+		return;
+	}
 	Net2R_Init(&r, ev->data, ev->size);
 	int type = (int)Net2R_U8(&r);
 	/* after STATS nothing more is counted: what arrives later was sent after the server's counts */
@@ -164,7 +172,12 @@ static void Client_Events(Clients *cs, Client *c) {
 			c->connected = 1;
 			c->state = CS_CONNECTED;
 			Hist_Add(&cs->connect, (uint32_t)((cs->now - c->connectStart) / 1000));
-			Client_Join(cs, c);
+			if (cs->o->raw) {
+				c->joined = 1;
+				c->state = CS_JOINED;
+			} else {
+				Client_Join(cs, c);
+			}
 		} else if (ev.type == NET2_EV_DISCONNECT) {
 			c->reason = ev.reason;
 			if (c->state == CS_CLOSING) {
@@ -206,7 +219,7 @@ static void Client_Input(Clients *cs, Client *c) {
 	Net2W_Zeros(&w, cs->o->inputSize - w.pos);
 	Client_Send(c, LOAD_CH_UNRELIABLE, cs->buf, w.pos, &c->inputsSent);
 
-	if (cs->o->chatEvery > 0 && cs->now >= c->nextChat) {
+	if (cs->o->chatEvery > 0 && !cs->o->raw && cs->now >= c->nextChat) {
 		Net2W_Init(&w, cs->buf, cs->o->chatSize);
 		Net2W_U8(&w, LM_CHAT);
 		Net2W_U32(&w, c->chatSeq);
@@ -321,7 +334,7 @@ static void Client_Report(Clients *cs, uint64_t cpuUs, uint64_t wallUs) {
 	uint32_t eventBad = 0, eventMiss = 0, relayMiss = 0, chatBad = 0, sendFull = 0, srvSendFull = 0;
 	uint64_t inSent = 0, inGot = 0, snapSent = 0, snapGot = 0, filtered = 0, resent = 0, srvResent = 0;
 	uint64_t pktOut = 0, pktIn = 0, bytesOut = 0, bytesIn = 0, srvPktIn = 0, srvPktOut = 0, srvKbIn = 0;
-	uint64_t srvKbOut = 0, srvDropped = 0, srvSockDrops = 0;
+	uint64_t srvKbOut = 0, srvDropped = 0, srvSockDrops = 0, otherGot = 0;
 	double winSum = 0, lossSum = 0;
 	uint32_t reasons[NET2_DR_APP + 1] = { 0 };
 	const uint32_t *g = NULL;
@@ -348,13 +361,14 @@ static void Client_Report(Clients *cs, uint64_t cpuUs, uint64_t wallUs) {
 			continue;
 		}
 		const uint32_t *v = c->stats;
-		if (!g || v[LS_WINDOW_MS] > g[LS_WINDOW_MS]) {
+		if (!o->raw && (!g || v[LS_WINDOW_MS] > g[LS_WINDOW_MS])) {
 			g = v;
 		}
 		inSent += c->inputsSent;
 		inGot += v[LS_INPUTS];
 		snapSent += v[LS_SNAPS];
 		snapGot += c->snaps;
+		otherGot += c->events;
 		eventBad += c->eventBad;
 		eventMiss += c->events != v[LS_EVENTS];
 		relayMiss += c->relays != v[LS_RELAYS];
@@ -390,6 +404,11 @@ static void Client_Report(Clients *cs, uint64_t cpuUs, uint64_t wallUs) {
 	}
 	uint32_t cliSockDrops = Load_SockDrops((uint16_t)o->clientPort) - cs->markDrops;
 	uint32_t integrity = eventBad + eventMiss + relayMiss + chatBad + welcomeBad;
+	if (o->raw) {
+		integrity = 0;
+		inLoss = 0;
+		snapLoss = 0;
+	}
 	Load_Memory(&rss, &hwm);
 
 	printf("== %s: %d clients, loss %.1f%%, window %.1f s\n", o->label, cs->n, o->loss, win);
@@ -406,6 +425,10 @@ static void Client_Report(Clients *cs, uint64_t cpuUs, uint64_t wallUs) {
 	printf("per client: c>s %.0f B/s %.1f pkt/s, s>c %.0f B/s %.1f pkt/s; resent c>s %llu s>c %llu; send full "
 		"client %u server %u\n", (double)bytesOut * perC, (double)pktOut * perC, (double)bytesIn * perC,
 		(double)pktIn * perC, (unsigned long long)resent, (unsigned long long)srvResent, sendFull, srvSendFull);
+	if (o->raw) {
+		printf("raw: received %llu sequenced and %llu other messages; no server counts\n",
+			(unsigned long long)snapGot, (unsigned long long)otherGot);
+	}
 	printf("reliable integrity errors %u (event order %u, event count %u, relay count %u, chat %u, welcome %u)\n",
 		integrity, eventBad, eventMiss, relayMiss, chatBad, welcomeBad);
 	if (g) {
@@ -581,7 +604,14 @@ int Client_Run(const LoadOpts *o) {
 			phase = "quit";
 			for (int i = 0; i < cs->n; i++) {
 				Client *c = &cs->c[i];
-				if (c->state == CS_JOINED) {
+				if (c->state == CS_JOINED && o->raw) {
+					c->haveStats = 1;	/* no STATS to wait for: the client side numbers only */
+					Net2_GetStats(c->h, 0, &c->fin);
+					c->finTime = now;
+					Net2_Disconnect(c->h, 0, 0);
+					c->state = CS_CLOSING;
+					c->closeTime = now;
+				} else if (c->state == CS_JOINED) {
 					c->state = CS_QUITTING;
 				} else if (c->state < CS_JOINED && c->state != CS_IDLE) {
 					Net2_Disconnect(c->h, 0, 0);

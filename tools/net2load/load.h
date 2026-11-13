@@ -127,6 +127,8 @@ typedef struct LoadOpts {
 	double warmup, connectWait, drain;
 	const char *csv, *label;
 	int pin;
+	int raw;						/* client: any Net2 server (the headless instance): no JOIN, chat or STATS,
+									   input from the connect on, received messages only counted */
 } LoadOpts;
 
 int Server_Run(const LoadOpts *o);

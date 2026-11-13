@@ -248,7 +248,8 @@ static void Usage(void) {
 		"        address per client) --client-port N (29301) --input-hz N (30) --input-size N (50)\n"
 		"        --chat-every S (10, 0 none) --chat-size N (96) --loss PCT (0, each direction)\n"
 		"        --ramp MS (0, between connects) --warmup S (2) --connect-wait S (15) --seconds S (30)\n"
-		"        --drain S (10) --csv FILE (appends one line) --label TEXT --pin (pin the seed's server key)\n",
+		"        --drain S (10) --csv FILE (appends one line) --label TEXT --pin (pin the seed's server key)\n"
+		"        --raw (a server without the tool's messages: transport numbers only)\n",
 		stderr);
 }
 
@@ -302,6 +303,9 @@ int main(int argc, char **argv) {
 			used = 0;
 		} else if (!strcmp(k, "--pin")) {
 			o.pin = 1;
+			used = 0;
+		} else if (!strcmp(k, "--raw")) {
+			o.raw = 1;
 			used = 0;
 		} else if (!strcmp(k, "--seed") && v) {
 			o.seed = strtoull(v, NULL, 0);

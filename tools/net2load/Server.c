@@ -33,7 +33,7 @@ typedef struct Server {
 	uint16_t port;
 	uint32_t memTick;				/* /proc is read once per tick, not per STATS */
 	uint32_t rssKb, hwmKb, sockDrops;
-	uint32_t ticks, late, joins, joinBad, sendFull, conns, everJoined;
+	uint32_t ticks, late, joins, joinBad, sendFull, conns, everConnected;
 	uint32_t reasons[NET2_DR_APP + 1];
 	uint64_t ivPktIn, ivPktOut, ivBytesIn, ivBytesOut;
 	FILE *timeline;
@@ -88,7 +88,6 @@ static void Server_Join(Server *s, int conn, Net2Reader *r) {
 		s->joinBad++;
 	} else {
 		s->joins++;
-		s->everJoined = 1;
 		p->joined = 1;
 		p->index = index;
 	}
@@ -224,6 +223,7 @@ static void Server_Events(Server *s) {
 				Net2_GetStats(s->h, ev.conn, &p->base);
 			}
 			s->conns++;
+			s->everConnected = 1;
 		} else if (ev.type == NET2_EV_DISCONNECT) {
 			s->reasons[ev.reason > NET2_DR_APP ? NET2_DR_APP : ev.reason]++;
 			memset(p, 0, sizeof(*p));
@@ -408,7 +408,7 @@ int Server_Run(const LoadOpts *o) {
 		if (o->seconds > 0 && now - start >= (uint64_t)(o->seconds * 1e6)) {
 			break;
 		}
-		if (o->exitEmpty && s->everJoined && s->conns == 0) {
+		if (o->exitEmpty && s->everConnected && s->conns == 0) {
 			break;
 		}
 	}
