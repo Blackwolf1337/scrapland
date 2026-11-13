@@ -15,8 +15,8 @@
 #include "scrap/alarm.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
-#include "scrap/faction.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/model.h"
@@ -962,8 +962,8 @@ void Rep_Respawn(int i) {
 }
 
 void Rep_Rebody(int i, const vec3_t *pos, float yaw) {
-	RepPlayer *pl = &rep.pl[i];
-	cEntity *e = i >= 0 && i < PLAYERS_MAX && pl->used ? Rep_Own(pl) : NULL;
+	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? &rep.pl[i] : NULL;
+	cEntity *e = pl ? Rep_Own(pl) : NULL;
 	if (!e || (!pos && NetPl_Kind(e) != NETREP_CHAR)) {
 		return;
 	}
