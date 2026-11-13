@@ -16,6 +16,7 @@
 #include "scrap/console.h"
 #include "scrap/consoleview.h"
 #include "scrap/crt.h"
+#include "scrap/debugmenu.h"
 #include "scrap/global.h"
 #include "scrap/platform.h"
 #include "scrap/scorer.h"
@@ -29,6 +30,7 @@
 #define CV_HISTORY_FILE "ConsoleHistory.txt"
 #define CV_W 640.0f			/* the screen of the scorer */
 #define CV_H 240.0f			/* the height of the open console */
+#define CV_MENU_H 400.0f		/* with the debug menu */
 #define CV_MARGIN 6.0f
 #define CV_ROW 9.0f			/* the height of a text row */
 #define CV_SLIDE_MS 150			/* the slide down */
@@ -53,6 +55,7 @@ static struct {
 	int histPos;			/* -1: the line being typed; else the history line shown */
 	char typed[CV_LINE];		/* the line being typed while the history is shown */
 	byte histLoaded;
+	byte menu;			/* the debug menu instead of the text (debug builds) */
 	CPsaImage *white;
 } cv = { .histPos = -1 };
 
@@ -137,6 +140,7 @@ static void CV_History(int step) {
 /* ---- open and close ---- */
 
 void ConsoleView_Toggle(void) {
+	cv.menu = 0;
 	if (Scorer_ConsoleOn()) {
 		Scorer_SetConsole(0);
 		return;
@@ -150,6 +154,25 @@ void ConsoleView_Toggle(void) {
 	}
 	cv.openTime = Plat_Ticks();
 	cv.back = 0;
+}
+
+void ConsoleView_ToggleMenu(void) {
+#ifdef SCRAP_DEBUG_MENU
+	if (Scorer_ConsoleOn() && cv.menu) {
+		cv.menu = 0;
+		return;
+	}
+	if (!Scorer_ConsoleOn()) {
+		ConsoleView_Toggle();
+		if (!Scorer_ConsoleOn()) {
+			return;
+		}
+	}
+	cv.menu = 1;
+	DebugMenu_Open();
+#else
+	Con_Echo(CON_COLOR_ERROR, "The debug menu is in debug builds only (CMake option SCRAP_DEBUG_MENU)\n");
+#endif
 }
 
 /* ---- the input line ---- */
@@ -222,10 +245,23 @@ void ConsoleView_Key(int key, int mods) {
 	int n = (int)strlen(cv.line);
 	int page = ctrl || (mods & CVK_SHIFT) ? CV_PAGE_ROWS * 4 : CV_PAGE_ROWS;
 
-	switch (key) {
-	case CVK_ESC:
+	if (key == CVK_ESC) {
 		Scorer_SetConsole(0);
 		return;
+	}
+#ifdef SCRAP_DEBUG_MENU
+	if (cv.menu) {
+		if (!DebugMenu_Key(key, mods)) {
+			/* something started (or Backspace on the first page): the menu closes */
+			cv.menu = 0;
+			if (key != CVK_BACKSPACE) {
+				Scorer_SetConsole(0);
+			}
+		}
+		return;
+	}
+#endif
+	switch (key) {
 	case CVK_ENTER:
 		CV_Run();
 		return;
@@ -320,10 +356,22 @@ void ConsoleView_Char(int c) {
 	if ((byte)c < 0x20 || c == 0x7f) {
 		return;
 	}
+#ifdef SCRAP_DEBUG_MENU
+	if (cv.menu) {
+		DebugMenu_Char(c);
+		return;
+	}
+#endif
 	CV_Insert(s);
 }
 
 void ConsoleView_Wheel(int notches) {
+#ifdef SCRAP_DEBUG_MENU
+	if (cv.menu) {
+		DebugMenu_Wheel(notches);
+		return;
+	}
+#endif
 	cv.back += notches * CV_WHEEL_ROWS;
 	if (cv.back < 0) {
 		cv.back = 0;
@@ -351,6 +399,21 @@ static void CV_Rect(float x, float y, float w, float h, uint32_t argb) {
 	CPsaImage_Draw(cv.white, x, y);
 }
 
+static CFont *CV_Font(void) {
+	CFont *f = Font_Get("Terminal8Fixed");
+	return f ? f : g_FontTerminal8;
+}
+
+void ConsoleView_Rect(float x, float y, float w, float h, uint32_t argb) {
+	if (cv.white) {
+		CV_Rect(x, y, w, h, argb);
+	}
+}
+
+void ConsoleView_Text(float x, float y, uint32_t rgb, const char *text) {
+	CFont_PrintfColor(CV_Font(), x, y, rgb, "%s", text);
+}
+
 /* the advance of a character of the fixed font in pixels of the scorer */
 static float CV_CharWidth(CFont *f) {
 	float pos[2], dim[2];
@@ -361,7 +424,11 @@ static float CV_CharWidth(CFont *f) {
 void ConsoleView_Draw(void) {
 	char buf[CV_LINE + 2];
 
+#ifdef SCRAP_DEBUG_MENU
+	DebugMenu_Frame();
+#endif
 	if (!Scorer_ConsoleOn()) {
+		cv.menu = 0;
 		return;
 	}
 	if (!cv.white) {
@@ -371,23 +438,27 @@ void ConsoleView_Draw(void) {
 			return;
 		}
 	}
-	CFont *f = Font_Get("Terminal8Fixed");
-	if (!f) {
-		f = g_FontTerminal8;
-	}
+	CFont *f = CV_Font();
 	uint32_t now = Plat_Ticks();
 	uint32_t t = now - cv.openTime;
 	float frac = t >= CV_SLIDE_MS ? 1.0f : (float)t / (float)CV_SLIDE_MS;
-	float h = CV_H * frac;
-	float top = h - CV_H;			/* the panel slides in from above */
+	float full = cv.menu ? CV_MENU_H : CV_H;
+	float h = full * frac;
+	float top = h - full;			/* the panel slides in from above */
 	float cw = CV_CharWidth(f);
 	int cols = (int)((CV_W - 2.0f * CV_MARGIN) / cw);
 	if (cols < 10) {
 		cols = 10;
 	}
 
-	CV_Rect(0.0f, top, CV_W, CV_H, CV_BG);
+	CV_Rect(0.0f, top, CV_W, full, CV_BG);
 	CV_Rect(0.0f, h - 1.0f, CV_W, 1.0f, CV_EDGE);
+#ifdef SCRAP_DEBUG_MENU
+	if (cv.menu) {
+		DebugMenu_Draw(top, h);
+		return;
+	}
+#endif
 
 	/* the input line at the bottom: "]" and the part of the line around the cursor */
 	float yIn = h - CV_ROW - 4.0f;

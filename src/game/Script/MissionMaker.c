@@ -203,7 +203,16 @@ static byte MM_QLoad(const char *map) {
 	return Mode_Import("SaveGame") && PORT_CALL(SaveGame, QLoad, NULL, "s", path);
 }
 
+const char *MissionMaker_Char(const char *level) {
+	/* Init preloads the module of the character of the save variable only in the outdoor levels, before the map's
+	 * InitStatus makes the player the bishop of the GDB: with Dtritus the import of Bishop fails there */
+	return !crt_stricmp(level, "GDB") ? "Bishop" : "Dtritus";
+}
+
 byte MissionMaker_Load(const char *level, const char *mission, const char *dealType, const char *ch) {
+	if (!ch) {
+		ch = MissionMaker_Char(level);
+	}
 	/* Init() of missionmaker.py cleared the save variables first; the module set Police.FicusDeath when it loaded */
 	SaveVars_Delete("");
 	SaveVar_Set("Police.FicusDeath", "1");

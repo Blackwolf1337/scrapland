@@ -547,6 +547,14 @@ static void Plat_Key(const SDL_KeyboardEvent *k) {
 	if (k->down && !k->repeat && Plat_Hotkey(k->scancode, k->mod)) {
 		return;
 	}
+#ifdef SCRAP_DEBUG_MENU
+	if (k->scancode == SDL_SCANCODE_F11 && !alt) {
+		if (k->down && !k->repeat) {
+			ConsoleView_ToggleMenu();
+		}
+		return;
+	}
+#endif
 	if (k->scancode == SDL_SCANCODE_GRAVE && !alt) {
 		if (k->down && !k->repeat) {
 			Plat_ConsoleToggle();

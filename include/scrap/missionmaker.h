@@ -27,8 +27,11 @@ const mmEntry *MissionMaker_Find(const char *mission);
 /* the level as the list spells it, NULL for an unknown one */
 const char *MissionMaker_Level(const char *level);
 
+/* the character a level starts with: Bishop in the GDB, else Dtritus */
+const char *MissionMaker_Char(const char *level);
 /* mss(MapName, MissionName="", superDealType="", Char="Dtritus"): the save variables of this session cleared and
- * set to those of a fresh game, the mission set, the level loaded after this frame; 0 on failure */
+ * set to those of a fresh game, the mission set, the level loaded after this frame; 0 on failure. ch NULL: the
+ * character of MissionMaker_Char */
 byte MissionMaker_Load(const char *level, const char *mission, const char *dealType, const char *ch);
 /* split(mapname): a network level in split screen death match */
 byte MissionMaker_Split(const char *map);

@@ -26,6 +26,12 @@ void ConsoleView_Key(int key, int mods);
 void ConsoleView_Char(int c);
 /* the mouse wheel, notches up (positive) or down */
 void ConsoleView_Wheel(int notches);
+/* F11 and the console command debugmenu: the debug menu of debug builds in the console (opened when it is closed),
+ * or back to the console text */
+void ConsoleView_ToggleMenu(void);
+/* drawing in the console panel for the debug menu: a rectangle (ARGB) and a line of the fixed font (RGB) */
+void ConsoleView_Rect(float x, float y, float w, float h, uint32_t argb);
+void ConsoleView_Text(float x, float y, uint32_t rgb, const char *text);
 /* Scorer_SetConsole closed it (the key, Escape, a change of the input set or of the level): its image goes */
 void ConsoleView_Closed(void);
 /* each frame after the scorer: the console sliding in or out, the text, the input line */

@@ -10,6 +10,8 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/consoleview.h"
+#include "scrap/debugmenu.h"
 #include "scrap/crt.h"
 #include "scrap/entity.h"
 #include "scrap/game.h"
@@ -861,7 +863,7 @@ static void Cmd_Map(const char *cmd, const conArg *a) {
 		Con_Errorf("/%s: no level %s (Tab lists them)\n", cmd, a[0].s);
 		return;
 	}
-	if (!MissionMaker_Load(level, "", "", "Dtritus")) {
+	if (!MissionMaker_Load(level, "", "", NULL)) {
 		Con_Errorf("/%s: %s did not load\n", cmd, level);
 	}
 }
@@ -874,7 +876,7 @@ static void Cmd_Mission(const char *cmd, const conArg *a) {
 			a[1].type == CA_STR ? a[1].s : a[0].s);
 		return;
 	}
-	if (!MissionMaker_Load(level, a[0].s, m ? m->dealType : "", "Dtritus")) {
+	if (!MissionMaker_Load(level, a[0].s, m ? m->dealType : "", NULL)) {
 		Con_Errorf("/%s: %s did not start\n", cmd, a[0].s);
 	}
 }
@@ -899,6 +901,23 @@ static void Cmd_Split(const char *cmd, const conArg *a) {
 	}
 }
 
+static void Cmd_DebugMenu(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	ConsoleView_ToggleMenu();
+}
+
+static void Cmd_Scene(const char *cmd, const conArg *a) {
+#ifdef SCRAP_DEBUG_MENU
+	if (!DebugMenu_Scene(a[0].s)) {
+		Con_Errorf("/%s: no cutscene %s (Tab lists them)\n", cmd, a[0].s);
+	}
+#else
+	(void)a;
+	Con_Errorf("/%s: debug builds only (CMake option SCRAP_DEBUG_MENU)\n", cmd);
+#endif
+}
+
 static const conCmd con_cmds[] = {
 	{ "help", Cmd_Help, "show this help", { { NULL } }, 0 },
 	{ "cmdlist", Cmd_CmdList, "list the commands (that start with filter)", { { "filter", 's', "None" }, { NULL } }, 0 },
@@ -911,6 +930,8 @@ static const conCmd con_cmds[] = {
 		{ { "mission", 's', NULL }, { "level", 's', "None" }, { NULL } }, 'm' },
 	{ "missions", Cmd_Missions, "list the missions (of a level, or with a text in the name)",
 		{ { "filter", 's', "None" }, { NULL } }, 'l' },
+	{ "scene", Cmd_Scene, "play a cutscene, in the mission that has it (debug builds)", { { "name", 's', NULL }, { NULL } }, 'c' },
+	{ "debugmenu", Cmd_DebugMenu, "the debug menu (debug builds, also F11)", { { NULL } }, 0 },
 	{ "split", Cmd_Split, "load a network level in split screen", { { "level", 's', NULL }, { NULL } }, 's' },
 	{ "speed", Cmd_Speed, "set the game speed (1 normal, 0 paused)", { { "ts", 'n', NULL }, { NULL } }, 0 },
 	{ "stop", Cmd_Stop, "pause the game and remember the speed", { { NULL } }, 0 },
@@ -1186,6 +1207,13 @@ static void Con_ArgMatches(char kind, const char *prefix) {
 		for (cGVar *v = GVar_First(); v; v = v->base.next) {
 			Con_AddMatch(v->base.name, prefix, NULL, v);
 		}
+		break;
+	case 'c':
+#ifdef SCRAP_DEBUG_MENU
+		for (int i = 0; DebugMenu_SceneName(i); i++) {
+			Con_AddMatch(DebugMenu_SceneName(i), prefix, NULL, NULL);
+		}
+#endif
 		break;
 	case 'e':
 		for (cEntity *e = g_pWorld ? cWorld_GetFirstEntity(g_pWorld) : NULL; e; e = cEntity_Next(e)) {
