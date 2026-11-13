@@ -11,7 +11,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 
 set(NETREP_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-add_library(netrep STATIC Codec.c Interest.c Server.c Client.c)
+add_library(netrep STATIC Codec.c Interest.c Server.c Client.c Predict.c)
 target_include_directories(netrep PUBLIC ${NETREP_ROOT}/include)
 target_compile_options(netrep PRIVATE -Wall -Wextra -O2 -g)
 if(NOT WIN32)

@@ -18,7 +18,7 @@
 #define REP_REC_MAX (32 + NETREP_LOOK_MAX + 3 * 5 * 3 + 2 * 5 * 3)
 
 typedef struct RepHist {
-	uint32_t snap;
+	uint32_t snap, tick;
 	NetRepState st;
 } RepHist;
 
@@ -43,6 +43,7 @@ typedef struct RepSent {
 
 struct NetRepClient {
 	int index;
+	int own;						/* the slot of its player, -1 */
 	float view[3];
 	float radius;
 	uint32_t rate;
@@ -170,6 +171,7 @@ void NetRepSrv_Set(NetRepServer *s, int slot, int kind, int look, const NetRepSt
 	e->z = NetRep_UPos(st->pos[2]);
 	RepHist *h = &s->hist[slot][s->snap % NETREP_HIST];
 	h->snap = s->snap;
+	h->tick = s->tick;
 	h->st = *st;
 	NetRepGrid_Add(&s->grid, slot, e->x, e->z);
 	if (slot >= s->maxSlot) {
@@ -200,6 +202,7 @@ NetRepClient *NetRepSrv_AddClient(NetRepServer *s, uint32_t rate) {
 	}
 	c->rate = rate < NETREP_RATE_MIN ? NETREP_RATE_MIN : rate > NETREP_RATE_MAX ? NETREP_RATE_MAX : rate;
 	c->radius = NETREP_RADIUS;
+	c->own = -1;
 	c->index = s->numClients;
 	s->clients[s->numClients++] = c;
 	return c;
@@ -369,7 +372,8 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 			k->op = NETREP_OP_CREATE;
 			k->prio = NetRep_Priority(d, c->radius, 0.0f, NETREP_OP_CREATE);
 		} else {
-			if (!NetRep_Diff(&c->base[slot], cur)) {
+			/* the own entity every snapshot: its prediction needs the server's state of each one */
+			if (!NetRep_Diff(&c->base[slot], cur) && slot != c->own) {
 				c->accum[slot] = 0.0f;
 				continue;
 			}
@@ -379,7 +383,7 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 			k->op = snap - c->baseSnap[slot] >= NETREP_FULL_AGE ? NETREP_OP_FULL : NETREP_OP_DELTA;
 			k->prio = NetRep_Priority(d, c->radius, sqrtf(ex * ex + ey * ey + ez * ez), k->op);
 		}
-		k->prio += c->accum[slot];
+		k->prio += c->accum[slot] + (slot == c->own ? 1e9f : 0.0f);
 		nc++;
 	}
 	/* the removes: held by the client and out of the interest or gone */
@@ -494,6 +498,44 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 
 const NetRepClientStats *NetRepSrv_Stats(const NetRepClient *c) {
 	return &c->st;
+}
+
+void NetRepSrv_SetOwn(NetRepClient *c, int slot) {
+	c->own = slot >= 0 && slot < NETREP_MAX_ENTS ? slot : -1;
+}
+
+int NetRepSrv_PosAt(const NetRepServer *s, int slot, double t, float *pos) {
+	const RepHist *a = NULL, *b = NULL;
+	double ta = 0.0, tb = 0.0;
+
+	if (slot < 0 || slot >= NETREP_MAX_ENTS) {
+		return 0;
+	}
+	/* a: the newest sample at or before t, b: the oldest after it */
+	for (int i = 0; i < NETREP_HIST; i++) {
+		const RepHist *h = &s->hist[slot][i];
+		if (!h->snap || h->snap + NETREP_HIST <= s->snap) {
+			continue;
+		}
+		double th = (double)h->tick / NETREP_TICK_HZ + h->st.dt / 1000.0;
+		if (th <= t && (!a || th > ta)) {
+			a = h;
+			ta = th;
+		} else if (th > t && (!b || th < tb)) {
+			b = h;
+			tb = th;
+		}
+	}
+	if (!a && !b) {
+		return 0;
+	}
+	const NetRepState *sa = a ? &a->st : &b->st, *sb = b ? &b->st : &a->st;
+	float f = a && b && tb > ta ? (float)((t - ta) / (tb - ta)) : 0.0f;
+	for (int k = 0; k < 3; k++) {
+		float pa = NetRep_UPos(sa->pos[k]);
+		pos[k] = pa + (NetRep_UPos(sb->pos[k]) - pa) * f;
+	}
+	return 1;
 }
 
 const NetRepState *NetRepSrv_Base(const NetRepClient *c, int slot) {

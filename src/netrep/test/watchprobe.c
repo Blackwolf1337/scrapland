@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 			while (Net2_Receive(p->host, &ev)) {
 				if (ev.type == NET2_EV_CONNECT) {
 					uint8_t buf[16];
-					int k = NetRep_WriteHello(buf, sizeof(buf), rate);
+					int k = NetRep_WriteHello(buf, sizeof(buf), rate, 0);
 					Net2_Send(p->host, 0, 0, buf, k);
 					p->up = 1;
 				} else if (ev.type == NET2_EV_DISCONNECT) {

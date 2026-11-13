@@ -306,22 +306,66 @@ static void Rep_GetView(NetRepReader *r, float *view) {
 	}
 }
 
-int NetRep_WriteHello(uint8_t *buf, int cap, uint32_t rate) {
+int NetRep_WriteHello(uint8_t *buf, int cap, uint32_t rate, int flags) {
 	NetRepBuf w;
 	NetRepBuf_Init(&w, buf, cap);
 	NetRep_PutU8(&w, NETREP_MSG_HELLO);
 	NetRep_PutU16(&w, NETREP_VERSION);
 	NetRep_PutU32(&w, rate);
+	NetRep_PutU8(&w, (uint32_t)flags);
 	return w.bad ? 0 : w.size;
 }
 
-int NetRep_ReadHello(const uint8_t *data, int size, uint32_t *rate) {
+int NetRep_ReadHello(const uint8_t *data, int size, uint32_t *rate, int *flags) {
 	NetRepReader r;
 	NetRepReader_Init(&r, data, size);
 	if (NetRep_GetU8(&r) != NETREP_MSG_HELLO || NetRep_GetU16(&r) != NETREP_VERSION) {
 		return 0;
 	}
 	*rate = NetRep_GetU32(&r);
+	*flags = (int)NetRep_GetU8(&r);
+	return !r.bad;
+}
+
+int NetRep_WritePlayer(uint8_t *buf, int cap, int player, int slot, int kind, uint32_t tick, const float *phys,
+	int nphys) {
+	NetRepBuf w;
+	NetRepBuf_Init(&w, buf, cap);
+	nphys = nphys < 0 ? 0 : nphys > NETREP_PHYS_MAX ? NETREP_PHYS_MAX : nphys;
+	NetRep_PutU8(&w, NETREP_MSG_PLAYER);
+	NetRep_PutU8(&w, (uint32_t)player);
+	NetRep_PutU16(&w, (uint32_t)slot);
+	NetRep_PutU8(&w, (uint32_t)kind);
+	NetRep_PutU32(&w, tick);
+	NetRep_PutU8(&w, (uint32_t)nphys);
+	for (int i = 0; i < nphys; i++) {
+		uint32_t bits;
+		memcpy(&bits, &phys[i], sizeof(bits));
+		NetRep_PutU32(&w, bits);
+	}
+	return w.bad ? 0 : w.size;
+}
+
+int NetRep_ReadPlayer(const uint8_t *data, int size, int *player, int *slot, int *kind, uint32_t *tick, float *phys,
+	int *nphys) {
+	NetRepReader r;
+	NetRepReader_Init(&r, data, size);
+	if (NetRep_GetU8(&r) != NETREP_MSG_PLAYER) {
+		return 0;
+	}
+	*player = (int)NetRep_GetU8(&r);
+	*slot = (int)NetRep_GetU16(&r);
+	*kind = (int)NetRep_GetU8(&r);
+	*tick = NetRep_GetU32(&r);
+	int n = (int)NetRep_GetU8(&r);
+	if (n > NETREP_PHYS_MAX) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		uint32_t bits = NetRep_GetU32(&r);
+		memcpy(&phys[i], &bits, sizeof(bits));
+	}
+	*nphys = n;
 	return !r.bad;
 }
 
@@ -362,13 +406,96 @@ int NetRep_WriteAck(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, const
 }
 
 int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bits, float *view) {
+	int n;
+	uint32_t shown;
+	return NetRep_ReadAckInput(data, size, newest, bits, view, NULL, 0, &n, &shown);
+}
+
+int8_t NetRep_QMove(float v) {
+	float q = v * NETREP_MOVE_SCALE;
+	q = q > 127.0f ? 127.0f : q < -127.0f ? -127.0f : q;
+	return (int8_t)lrintf(q);
+}
+
+int16_t NetRep_QRot(float v) {
+	float q = v * NETREP_ROT_SCALE;
+	q = q > 32767.0f ? 32767.0f : q < -32767.0f ? -32767.0f : q;
+	return (int16_t)lrintf(q);
+}
+
+int NetRep_WriteAckInput(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, const float *view,
+	const NetRepInput *in, int n, uint32_t shownMs) {
+	int size = NetRep_WriteAck(buf, cap, newest, bits, view);
+	NetRepBuf w;
+	if (!size) {
+		return 0;
+	}
+	NetRepBuf_Init(&w, buf + size, cap - size);
+	n = n < 0 ? 0 : n > NETREP_INPUT_REDUNDANCY ? NETREP_INPUT_REDUNDANCY : n;
+	NetRep_PutU8(&w, (uint32_t)n);
+	if (n) {
+		NetRep_PutU32(&w, in[0].tick);
+		NetRep_PutU32(&w, shownMs);
+	}
+	for (int i = 0; i < n; i++) {
+		uint32_t back = i ? in[i - 1].tick - in[i].tick : 0;
+		if (back > 255 || (i && !back)) {
+			return 0;
+		}
+		NetRep_PutU8(&w, back);
+		for (int k = 0; k < 3; k++) {
+			NetRep_PutU8(&w, (uint8_t)in[i].move[k]);
+		}
+		NetRep_PutU16(&w, (uint16_t)in[i].rot[0]);
+		NetRep_PutU16(&w, (uint16_t)in[i].rot[1]);
+		NetRep_PutU16(&w, in[i].buttons);
+		NetRep_PutU8(&w, in[i].weapon);
+	}
+	return w.bad ? 0 : size + w.size;
+}
+
+int NetRep_ReadAckInput(const uint8_t *data, int size, uint16_t *newest, uint32_t *bits, float *view,
+	NetRepInput *in, int max, int *n, uint32_t *shownMs) {
 	NetRepReader r;
 	NetRepReader_Init(&r, data, size);
+	*n = 0;
+	*shownMs = 0;
 	if (NetRep_GetU8(&r) != NETREP_MSG_ACK) {
 		return 0;
 	}
 	*newest = (uint16_t)NetRep_GetU16(&r);
 	*bits = NetRep_GetU32(&r);
 	Rep_GetView(&r, view);
+	if (r.bad || r.pos == r.size) {
+		return !r.bad;
+	}
+	int count = (int)NetRep_GetU8(&r);
+	if (count > NETREP_INPUT_REDUNDANCY) {
+		return 0;
+	}
+	uint32_t tick = count ? NetRep_GetU32(&r) : 0;
+	*shownMs = count ? NetRep_GetU32(&r) : 0;
+	for (int i = 0; i < count; i++) {
+		NetRepInput x;
+		uint32_t back = NetRep_GetU8(&r);
+		if (i && !back) {
+			return 0;
+		}
+		tick -= back;
+		x.tick = tick;
+		for (int k = 0; k < 3; k++) {
+			x.move[k] = (int8_t)NetRep_GetU8(&r);
+		}
+		x.rot[0] = (int16_t)NetRep_GetU16(&r);
+		x.rot[1] = (int16_t)NetRep_GetU16(&r);
+		x.buttons = (uint16_t)NetRep_GetU16(&r);
+		x.weapon = (uint8_t)NetRep_GetU8(&r);
+		if (r.bad) {
+			return 0;
+		}
+		if (*n < max) {
+			in[(*n)++] = x;
+		}
+	}
 	return !r.bad;
 }
