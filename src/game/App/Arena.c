@@ -19,6 +19,7 @@
 #include "scrap/logic.h"
 #include "scrap/net2.h"
 #include "scrap/netrep.h"
+#include "scrap/nodesworld.h"
 #include "scrap/play.h"
 #include "scrap/platform.h"
 #include "scrap/players.h"
@@ -277,6 +278,11 @@ static void Ar_LoadBots(void) {
 	nativeVal_t list, bot, it[3], prof;
 	const char *m = g_ArenaModes[ar.mode].module;
 	Native_SetNone(&list);
+	/* the AI of the ships needs the level's graph of AI nodes (the small arenas have none) */
+	if (!NodesWorld_IsCreated(g_NodesWorld)) {
+		Con_Printf("arena: %s has no AI nodes: no bots\n", Instance_Level());
+		return;
+	}
 	if (!Arena_Module(ar.mode) || !Mode_Import("VehiclesNPC") || !Mode_G(m, "BotsList", &list)) {
 		Native_ErrPrint();
 		return;
