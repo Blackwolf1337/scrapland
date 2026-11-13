@@ -32,6 +32,8 @@ cmake -B build-linux64 -DCMAKE_TOOLCHAIN_FILE=cmake/linux-x86_64.cmake && cmake 
 
 The binary is `build-linux64/ScrapC`. Put the FFmpeg `.so` files from `build-linux64/ffmpeg/install/lib` next to it.
 
+The CMake option `SCRAP_DEBUG_MENU` adds the debug menu. It is on by default when `CMAKE_BUILD_TYPE` is Debug. Turn it on with `cmake -B build-linux64 -DSCRAP_DEBUG_MENU=ON`. See [console.md](console.md).
+
 The builds have no Python interpreter, only the object library of Python 1.5.2. The interpreter build went at step B (2026-11-08); the tag `interp-final` has the last state with it.
 
 ## Run

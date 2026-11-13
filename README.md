@@ -42,6 +42,8 @@ There are no ready-made downloads yet. For now you build it yourself. The steps 
 
 Once built, put ScrapC (Linux) or ScrapC.exe (Windows) together with its libraries into the Bin folder of your installed game. Start it from there, the same way you would start the original Scrap.exe.
 
+The key next to 1 (backquote, `^` on a German keyboard) opens a console for commands and engine variables. The commands are described in [docs/console.md](docs/console.md).
+
 On Linux, settings and saves go to your user data folder (`XDG_DATA_HOME`, normally `~/.local/share/MercurySteam/Scrapland`).
 
 ## Plans
