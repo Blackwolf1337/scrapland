@@ -542,7 +542,8 @@ static void Ac_Hud(void) {
 			Str_Copy(top, ac.deathTop, sizeof(top));
 		}
 	}
-	if (want && (ac.dirty || !ac.showing)) {
+	/* again when the state changed or something else cleared the scorer (the death camera, a menu) */
+	if (want && (ac.dirty || !ac.showing || !Script_HasItem(0, "PlyMsg"))) {
 		Ac_ShowScores(top, bottom);
 	} else if (!want && ac.showing && own) {
 		ac.showing = 0;
