@@ -28,6 +28,15 @@ extern cGVar GVar_debug;
 /* set while the test channel (TestChannel.c) runs a console line: gets a copy of every text the console shows */
 extern void (*g_ConCapture)(const char *text);
 
+/* the scrollback of the console view (not in the original): the number of lines, the line fromNewest lines up (0 the
+ * one being written) with its color, and the clear of Ctrl+L and "clear" */
+int Con_BackCount(void);
+const char *Con_BackLine(int fromNewest, uint32_t *color);
+void Con_BackClear(void);
+
+/* the output of the console view and its commands (Con_Print hides most colors at debug level 1) */
+void Con_Echo(uint32_t color, const char *text);
+
 /* prints text in a color; flag set: only into the second log */
 void Con_Print(int color, const char *text, int flag);
 /* printf in the error color */

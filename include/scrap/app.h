@@ -48,6 +48,9 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext);
 void CApp_ResetParams(CApp *self);
 double CApp_GetGameTime(CApp *self);
 void Console_Execute(const char *cmd);
+/* Tab in the console view: the word before the cursor completed (a command or variable, or the argument of a command),
+ * the matches listed when there are more; line holds size bytes, *cursor moves */
+void Console_Complete(char *line, int size, int *cursor);
 /* the forms of ConsoleCmd.c for the test channel: Python 1.5.2 repr() of a float and of a string, and of an engine
  * variable as Scrap.Get gives it (0 when there is none) */
 void Console_ReprFloat(char *buf, int size, double d);

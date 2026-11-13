@@ -114,6 +114,65 @@ static void Con_AddLines(const char *text, uint32_t color) {
 	g_ConCol += (int)strlen(rest);
 }
 
+/* the scrollback of the console view (src/game/Scorer/ConsoleView.c): not in the original, which kept only the 23
+ * lines above. A ring of whole lines; the newest is the one being written (no newline yet) */
+#define CON_BACK_LINES 2048
+#define CON_BACK_LEN 256
+
+static struct {
+	char text[CON_BACK_LEN];
+	uint32_t color;
+} g_ConBack[CON_BACK_LINES];
+static int g_ConBackHead;	/* the line written now */
+static int g_ConBackCount = 1;	/* lines in the ring, the one written now with them */
+static int g_ConBackCol;
+
+static void Con_BackAdd(const char *text, uint32_t color) {
+	for (; *text; text++) {
+		if (*text == '\n') {
+			g_ConBack[g_ConBackHead].text[g_ConBackCol] = 0;
+			g_ConBackHead = (g_ConBackHead + 1) % CON_BACK_LINES;
+			g_ConBack[g_ConBackHead].text[0] = 0;
+			g_ConBackCol = 0;
+			if (g_ConBackCount < CON_BACK_LINES) {
+				g_ConBackCount++;
+			}
+			continue;
+		}
+		if (*text == '\r') {
+			continue;
+		}
+		if (!g_ConBackCol) {
+			g_ConBack[g_ConBackHead].color = color;
+		}
+		if (g_ConBackCol < CON_BACK_LEN - 1) {
+			g_ConBack[g_ConBackHead].text[g_ConBackCol++] = *text;
+			g_ConBack[g_ConBackHead].text[g_ConBackCol] = 0;
+		}
+	}
+}
+
+int Con_BackCount(void) {
+	return g_ConBackCount;
+}
+
+const char *Con_BackLine(int fromNewest, uint32_t *color) {
+	if (fromNewest < 0 || fromNewest >= g_ConBackCount) {
+		*color = 0;
+		return "";
+	}
+	int i = (g_ConBackHead - fromNewest + CON_BACK_LINES) % CON_BACK_LINES;
+	*color = g_ConBack[i].color;
+	return g_ConBack[i].text;
+}
+
+void Con_BackClear(void) {
+	g_ConBackHead = 0;
+	g_ConBackCount = 1;
+	g_ConBackCol = 0;
+	g_ConBack[0].text[0] = 0;
+}
+
 static void *g_LogFile;
 static void *g_LogAIFile;
 
@@ -127,6 +186,7 @@ static void Con_Output(const char *text, uint32_t color) {
 	DebugLog_Write(text, color, g_LogFile);
 	DebugLog_Write(text, color, g_LogAIFile);
 	Con_AddLines(text, color);
+	Con_BackAdd(text, color);
 }
 
 static char g_ConBuf[1024];
@@ -168,6 +228,13 @@ static int Con_Shows(uint32_t color) {
 		return color == CON_COLOR_BLUE || color == CON_COLOR_ERROR || color == 0;
 	}
 	return LEVEL != 2 || color == CON_COLOR_WARNING || color != CON_COLOR_DEBUG;
+}
+
+/* the output of the console view and its commands: shown at any debug level above 0, in any color */
+void Con_Echo(uint32_t color, const char *text) {
+	if (LEVEL) {
+		Con_Output(text, color);
+	}
 }
 
 /* flag: only into logAI.html */

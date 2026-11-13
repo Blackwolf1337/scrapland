@@ -31,6 +31,7 @@
 #include "scrap/ai.h"
 #include "scrap/aivehiclecontrol.h"
 #include "scrap/collisiongrid.h"
+#include "scrap/consoleview.h"
 #include "scrap/logic.h"
 #include "scrap/objentity.h"
 #include "scrap/scrap.h"
@@ -1369,7 +1370,7 @@ static void cScorer_DrawXboxMsgs(cScorer *scorer, int player) {
 }
 
 /* the scorers of the frame (one view, two in split screen), the sound update; always 1 */
-static byte Scorer_DrawConsole(void);
+static void Scorer_DrawConsoleLog(void);
 static void Scorer_DrawDebug(void);
 byte Scorer_Render(void) {
 	CGameCamera *saved = NULL;
@@ -1394,11 +1395,10 @@ byte Scorer_Render(void) {
 		if (g_CameraCloudDistance > 0.0f) {
 			cScorer_DrawClouds(&g_Scorers[n], n);
 		}
-		if (!Scorer_DrawConsole()) {
-			cScorer_Draw(&g_Scorers[n], n);
-			if (g_CShow || g_NWAnalyzeOn) {
-				Scorer_DrawDebug();
-			}
+		Scorer_DrawConsoleLog();
+		cScorer_Draw(&g_Scorers[n], n);
+		if (g_CShow || g_NWAnalyzeOn) {
+			Scorer_DrawDebug();
 		}
 		cScorer_DrawXboxMsgs(&g_Scorers[n], n);
 		n++;
@@ -1413,240 +1413,76 @@ byte Scorer_Render(void) {
 	if (g_NewsPanel) {
 		cNewsPanel_Update(g_NewsPanel);
 	}
+	ConsoleView_Draw();
 	return 1;
 }
 
-/* ---- the full screen console ---- */
+/* ---- the console ---- */
 
-#define CONSOLE_HISTORY 16
-#define CONSOLE_KEYBOARD_SIZE 0x10c
-
+/*
+ * The full screen console of the original (a ring of 23 lines and an input line of g_PlayerInput) is replaced by the
+ * console view (src/game/Scorer/ConsoleView.c), which draws over the scorer and takes the keys itself. What stays
+ * here: while the console is open the input set is "Inactive" and the world reads no input, as in the original.
+ */
 static byte g_ConsoleOn;
-static char *g_ConsoleHistory[16];
-static int g_ConsoleHistoryPos;
+static byte g_ConsoleCheckInput;
+static byte g_ConsoleBusy;
+static uint32_t g_ConsoleSavedSet;
 cPlayerInput g_PlayerInput[4];
 
-/* the line typed into the console: a Python line for FullScreenConsoleCallback, else a console command */
-static void Console_OnInput(int player, const char *text) {
-	(void)player;
-	for (int k = CONSOLE_HISTORY - 1; k > 0; k--) {
-		cString_Assign(&g_ConsoleHistory[k], &g_ConsoleHistory[k - 1]);
-	}
-	cString_Set(&g_ConsoleHistory[1], text);
-	if ((g_pApp->flags || cPy_Function_IsValid(g_FullScreenConsoleCallback)) && text[0] != ':' && text[0] != '/') {
-		if (text[0] == '!') {
-			Console_Execute(text + 1);
-		} else {
-			cPy_Function_AddParamS(g_FullScreenConsoleCallback, text);
-			cPy_Function_Execute(g_FullScreenConsoleCallback, 0);
-		}
-	} else {
-		Console_Execute(text);
-	}
-	cPlayerInput_SetString(&g_PlayerInput[0], str_Empty);
-	g_ConsoleHistoryPos = 0;
-	if (g_ConsoleOn) {
-		g_PlayerInput[0].onDone = (void *)Console_OnInput;
-	}
+byte Scorer_ConsoleOn(void) {
+	return g_ConsoleOn;
 }
-
-static void Console_HistoryUp(void) {
-	if (!g_ConsoleHistoryPos) {
-		cString_Set(&g_ConsoleHistory[0], g_PlayerInput[0].text);
-	}
-	g_ConsoleHistoryPos++;
-	if (g_ConsoleHistoryPos >= CONSOLE_HISTORY) {
-		g_ConsoleHistoryPos = CONSOLE_HISTORY - 1;
-	}
-	if (g_ConsoleHistory[g_ConsoleHistoryPos]) {
-		cPlayerInput_SetString(&g_PlayerInput[0], g_ConsoleHistory[g_ConsoleHistoryPos]);
-	}
-}
-
-static void Console_HistoryDown(void) {
-	g_ConsoleHistoryPos--;
-	if (g_ConsoleHistoryPos < 0) {
-		g_ConsoleHistoryPos = 0;
-	}
-	if (g_ConsoleHistory[g_ConsoleHistoryPos]) {
-		cPlayerInput_SetString(&g_PlayerInput[0], g_ConsoleHistory[g_ConsoleHistoryPos]);
-	}
-}
-
-static byte g_ConsoleCheckInput;
-static byte g_ConsoleClosing;
-static byte g_ConsoleBusy;
-static cVirtualKeyboard g_ConsoleSavedKeyboard;
-static uint32_t g_ConsoleSavedSet;
-static cPlayerInput g_ConsoleSavedInput;
-static CPsaImage *g_ConsoleWhite;
-static float g_ConsoleTime;
 
 void Scorer_SetConsole(int on) {
 	byte b = (byte)on;
 
-	if ((g_ConsoleOn == 0) == (b == 0) || g_ConsoleBusy) {
+	if ((g_ConsoleOn == 0) == (b == 0) || g_ConsoleBusy || (b && !g_pWorld)) {
 		return;
 	}
 	g_ConsoleBusy = 1;
 	g_ConsoleOn = b;
 	if (b) {
 		g_ConsoleSavedSet = Input_GetActionSet();
-		Input_SelectActionSet(2);
-		memcpy((&g_ConsoleSavedInput), &g_PlayerInput[0], sizeof(cPlayerInput));
-		cPlayerInput_SetString(&g_PlayerInput[0], str_Empty);
-		g_PlayerInput[0].onDone = (void *)Console_OnInput;
-		CPsaImage *img = operator_new(sizeof(CPsaImage));
-		g_ConsoleWhite = img ? CPsaImage_ctor(img, "2D/white.tga", 0x24) : NULL;
+		Input_SelectActionSet(ACTSET_INACTIVE);
 		g_ConsoleCheckInput = g_pWorld->checkInput;
 		g_pWorld->checkInput = 0;
-		double t = App_GetGameTime(g_pApp);
-		g_ConsoleClosing = 0;
-		memcpy((&g_ConsoleSavedKeyboard), &g_VirtualKeyboard, CONSOLE_KEYBOARD_SIZE);
-		g_ConsoleTime = (float)t;
-		cVirtualKeyboard_Set(&g_VirtualKeyboard, "Console");
-		g_ConsoleHistoryPos = 0;
 	} else {
 		Input_SelectActionSet((int)g_ConsoleSavedSet);
-		memcpy(&g_PlayerInput[0], (&g_ConsoleSavedInput), sizeof(cPlayerInput));
-		Scorer_FreeImage(g_ConsoleWhite);
-		g_ConsoleWhite = NULL;
-		g_pWorld->checkInput = g_ConsoleCheckInput;
-		memcpy(&g_VirtualKeyboard, (&g_ConsoleSavedKeyboard), CONSOLE_KEYBOARD_SIZE);
+		if (g_pWorld) {
+			g_pWorld->checkInput = g_ConsoleCheckInput;
+		}
+		ConsoleView_Closed();
 	}
 	g_ConsoleBusy = 0;
 }
 
-#define CONSOLE_SPEED 500.0f		/* pixels per second of the slide */
-#define CONSOLE_HEIGHT 234.0f
-#define CONSOLE_FADE 192.0f		/* the background is opaque below this slide */
-#define CONSOLE_BG 0xc0c0c0
 #define CONSOLE_W 640.0f
-#define CONSOLE_LINES_H 208.0f		/* the line part, the input line below */
-#define CONSOLE_INPUT_BG 0xc0000000
-#define CONSOLE_INPUT_H 27.0f
-#define CONSOLE_INPUT_Y 217.0f
 #define CONSOLE_MARGIN 10.0f
 #define CONSOLE_LINE_STEP 9
 #define CONSOLE_LOG_H 211.0f		/* ShowConsoleLog */
 #define CONSOLE_LOG_BG 0x80ffffff
-#define CONSOLE_BLINK 511		/* the cursor blinks every 511/1024 s */
-/* the actions of the input sets: 1 the console key, 2 and 3 the history */
-#define CONSOLE_ACT_KEY 1
-#define CONSOLE_ACT_UP 2
-#define CONSOLE_ACT_DOWN 3
-#define CONSOLE_VK_CONTROL 0x11
-
-static cInputAction *Console_Action(int set, int k) {
-	return InputActionTable_At(&ActionSetTable_At(&g_ActionSets, set)->actions, k);
-}
 
 /* the 0xBBGGRR color of a console line as 0x00RRGGBB */
 static uint32_t Console_LineColor(uint32_t c) {
 	return ((c >> 16) & 0xff) | (c & 0xff) << 16 | (c & 0xff00);
 }
 
-static const cConLine *Console_Line(int i) {
-	return &g_ConLines[(g_ConLine + 1 + i) % CON_LINES];
-}
-
-/* ":name<tab>" in the console: the help of the variable, then its completion */
-static void Console_Complete(void) {
-	char buf[0x80];
-	const char *text = g_PlayerInput[0].text;
-
-	if (text[0] != ':' || !strchr(text, '\t')) {
+/* the console log of ShowConsoleLog (the last 23 lines on a white panel) while the console is closed */
+static void Scorer_DrawConsoleLog(void) {
+	if (g_ConsoleOn || !g_ShowConsoleLog) {
 		return;
 	}
-	Str_Copy(buf, text, sizeof(buf));
-	buf[0] = '?';
-	*strchr(buf, '\t') = 0;
-	Console_Execute(buf);
-	buf[0] = ':';
-	if (GVar_Complete(buf + 1)) {
-		Str_PrintfQuiet(buf, sizeof(buf), ":%s", GVar_Complete(buf + 1));
-	}
-	cPlayerInput_SetString(&g_PlayerInput[0], buf);
-}
-
-/* the full screen console (the ring of the console lines sliding in and out, the input line), else the console
- * log of ShowConsoleLog and the console key: 1 while it is shown (instead of the scorer) */
-static byte Scorer_DrawConsole(void) {
-	float h;
-
-	if (!g_ConsoleOn) {
-		if ((Input_GetActionSet() == ACTSET_MENU && cInputAction_Released(Console_Action(ACTSET_MENU, CONSOLE_ACT_KEY), 0))
-			|| (Input_GetActionSet() == ACTSET_WALK && cInputAction_Released(Console_Action(ACTSET_WALK, CONSOLE_ACT_KEY), 0))
-			|| (Input_GetActionSet() == ACTSET_RACER && cInputAction_Released(Console_Action(ACTSET_RACER, CONSOLE_ACT_KEY), 0))) {
-			if (Plat_KeyDown(CONSOLE_VK_CONTROL)) {
-				Scorer_SetConsole(1);
-			}
-		}
-		if (g_ShowConsoleLog) {
-			Scorer_GetWhite()->color = CONSOLE_LOG_BG;
-			CPsaImage *w = Scorer_GetWhite();
-			w->scaleX = CONSOLE_W;
-			w->scaleY = CONSOLE_LOG_H;
-			CPsaImage_Draw(Scorer_GetWhite(), 0.0f, 0.0f);
-			for (int i = 0, y = 0; y < CON_LINES * CONSOLE_LINE_STEP; i++, y += CONSOLE_LINE_STEP) {
-				const cConLine *l = Console_Line(i);
-				CFont_PrintfColor(g_FontTerminal8, CONSOLE_MARGIN, (float)y + CONSOLE_MARGIN,
-					Console_LineColor(l->color), "%s", l->text);
-			}
-		}
-		return g_ConsoleOn;
-	}
-	Console_Complete();
-	if (g_ConsoleClosing) {
-		double t = App_GetGameTime(g_pApp);
-		h = (float)(t - (double)g_ConsoleTime) * CONSOLE_SPEED;
-		if (h > CONSOLE_HEIGHT) {
-			Scorer_SetConsole(0);
-			return 0;
-		}
-	} else {
-		double t0 = (double)g_ConsoleTime;
-		double t = App_GetGameTime(g_pApp);
-		h = Float_MaxSS(0.0f, (float)(t0 - t) * CONSOLE_SPEED + CONSOLE_HEIGHT);
-		if (cInputAction_Pressed(Console_Action(ACTSET_INACTIVE, CONSOLE_ACT_UP), 0)) {
-			Console_HistoryUp();
-		}
-		if (cInputAction_Pressed(Console_Action(ACTSET_INACTIVE, CONSOLE_ACT_DOWN), 0)) {
-			Console_HistoryDown();
-		}
-	}
-	CPsaImage *img = g_ConsoleWhite;
-	if (CONSOLE_FADE > h) {
-		img->color = (uint32_t)(0xc0 - (int)h) << 24 | CONSOLE_BG;
-	} else {
-		img->color = CONSOLE_BG;
-	}
-	img->scaleX = CONSOLE_W - (h + h);
-	img->scaleY = CONSOLE_LINES_H - h;
-	CPsaImage_Draw(img, h + 0.0f, h * 0.5f + 0.0f);
-	float off = h * 5.0f;
-	img = g_ConsoleWhite;
-	img->color = CONSOLE_INPUT_BG;
-	img->scaleX = CONSOLE_W;
-	img->scaleY = CONSOLE_INPUT_H;
-	CPsaImage_Draw(img, off + 0.0f, CONSOLE_LINES_H);
-	/* the lines fly apart left and right while the console slides */
+	Scorer_GetWhite()->color = CONSOLE_LOG_BG;
+	CPsaImage *w = Scorer_GetWhite();
+	w->scaleX = CONSOLE_W;
+	w->scaleY = CONSOLE_LOG_H;
+	CPsaImage_Draw(Scorer_GetWhite(), 0.0f, 0.0f);
 	for (int i = 0, y = 0; y < CON_LINES * CONSOLE_LINE_STEP; i++, y += CONSOLE_LINE_STEP) {
-		const cConLine *l = Console_Line(i);
-		float sx = (i & 1) ? h : -h;
-		CFont_PrintfColor(g_FontTerminal8, CONSOLE_MARGIN - sx * 5.0f,
-			(float)(i - 11) * h / 5.0f + CONSOLE_MARGIN + (float)y, Console_LineColor(l->color), "%s", l->text);
+		const cConLine *l = &g_ConLines[(g_ConLine + 1 + i) % CON_LINES];
+		CFont_PrintfColor(g_FontTerminal8, CONSOLE_MARGIN, (float)y + CONSOLE_MARGIN, Console_LineColor(l->color), "%s",
+			l->text);
 	}
-	int ms = (int)((App_GetGameTime(g_pApp)) * 1024.0);
-	int blink = ms % CONSOLE_BLINK - 255;
-	CFont_PrintfXY(g_FontTerminal8, off + CONSOLE_MARGIN, CONSOLE_INPUT_Y, (blink < 0 ? -blink : blink) > 128 ? "%s"
-		: "%s_", g_PlayerInput[0].text);
-	g_PlayerInput[0].active = 0;
-	if (!g_ConsoleClosing && cInputAction_Released(Console_Action(ACTSET_INACTIVE, CONSOLE_ACT_KEY), 0) && h == 0.0f) {
-		g_ConsoleClosing = 1;
-		g_ConsoleTime = (float)App_GetGameTime(g_pApp);
-	}
-	return g_ConsoleOn;
 }
 
 /* ---- CShow and the AI debug drawings ---- */
@@ -1916,10 +1752,5 @@ INIT_GVAR_STRING(Init_GVar_XboxSavingMsgStr, Fini_GVar_XboxSavingMsgStr, &GVar_X
 FINI_CALL(Fini_GVar_FullScreenConsoleCallback, &GVar_FullScreenConsoleCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_FullScreenConsoleCallback, Fini_GVar_FullScreenConsoleCallback, &GVar_FullScreenConsoleCallback, "FullScreenConsoleCallback", 0, "This function is called when imput an string on fullscreen console.", "")
 INIT_GVAR_INT(Init_GVar_ShowConsoleLog, &GVar_ShowConsoleLog, "ShowConsoleLog", 0, "1 to show allways the console", 0)
-INIT_CALL(Init_cVirtualKeyboard_ConsoleSavedKeyboard, &g_ConsoleSavedKeyboard, cVirtualKeyboard_ctor)
-FINI_CALL(Fini_cPlayerInput_ConsoleSavedInput, &((cPlayerInput *)&g_ConsoleSavedInput)->func, cPy_Function_dtor)
-INIT_OBJECT(Init_cPlayerInput_ConsoleSavedInput, Fini_cPlayerInput_ConsoleSavedInput, &g_ConsoleSavedInput, cPlayerInput_ctor)
-FINI_VECTOR(Fini_cString_ConsoleHistory, g_ConsoleHistory, sizeof(cString), 16, cString_dtor)
-INIT_VECTOR(Init_cString_ConsoleHistory, Fini_cString_ConsoleHistory, g_ConsoleHistory, sizeof(cString), 16, cString_ctor, cString_dtor)
 INIT_GVAR_INT(Init_GVar_SplitScreen, &GVar_SplitScreen, "SplitScreen", 0, "Is split Screen", 0)
 INIT_GVAR_FLOAT(Init_GVar_R_SceneMotionBlurOff, &GVar_R_SceneMotionBlurOff, "R_SceneMotionBlurOff", 0, "Scene Motion Blur OffScreen", 0.005f)

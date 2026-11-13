@@ -43,6 +43,9 @@ void Plat_DesktopSize(int *w, int *h);
 byte Plat_PumpEvents(byte waiting);
 /* the window closes at the next Plat_PumpEvents */
 void Plat_Quit(void);
+/* the clipboard as Windows-1252 text (the font of the game), at most size - 1 characters; and set from such a text */
+void Plat_ClipboardGet(char *buf, int size);
+void Plat_ClipboardSet(const char *text);
 
 /*
  * The input in the forms the game reads (the DirectInput and XInput states of the original): the keys by DirectInput

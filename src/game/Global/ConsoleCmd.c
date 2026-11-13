@@ -15,7 +15,9 @@
 #include "scrap/game.h"
 #include "scrap/gvar.h"
 #include "scrap/mathlib.h"
+#include "scrap/missionmaker.h"
 #include "scrap/net.h"
+#include "scrap/platform.h"
 #include "scrap/scrap.h"
 #include "scrap/timer.h"
 #include "scrap/world.h"
@@ -24,8 +26,8 @@
 #define CON_MAXARGS 9
 #define CON_TEXT 0x100
 
-static const char con_help1[] = ":name shows a variable, :name value sets it, ?prefix lists variables (? = all)\n";
-static const char con_help2[] = "/command a,b,c runs a command; name=value for named args; help shows this\n";
+static const char con_help1[] = "name shows a variable, name value sets it (also :name); cvarlist filter lists them\n";
+static const char con_help2[] = "command a b c runs a command (commas, name=value and /command work too); Tab completes\n";
 
 /* ---- values ---- */
 
@@ -187,9 +189,8 @@ static void Con_SetVar(const char *name, const char *val) {
 		r = GVar_SetStr(name, s);
 	}
 	if (r == 1) {
-		Str_PrintfQuiet(s, sizeof(s), "%s = %s", name, val);
-		Con_Print(CON_COLOR_OUT, s, 0);
-		Con_Print(CON_COLOR_OUT, "\n", 0);
+		Str_PrintfQuiet(s, sizeof(s), "%s = %s\n", name, val);
+		Con_Echo(CON_COLOR_OUT, s);
 	}
 }
 
@@ -206,6 +207,7 @@ typedef struct conCmd {
 	void (*fn)(const char *cmd, const conArg *a);
 	const char *desc;
 	conParam p[4];
+	char complete;			/* what Tab offers for the first argument (Con_ArgMatches): 0 nothing */
 } conCmd;
 
 static const conCmd *Con_FindCmd(const char *name);
@@ -599,13 +601,13 @@ static void Cmd_MyPos(const char *cmd, const conArg *a) {
 	}
 	Con_FormatVec(vec, sizeof(vec), v[0], v[1], v[2]);
 	Str_PrintfQuiet(line, sizeof(line), "e.Pos =  %s\n", vec);
-	Con_Print(CON_COLOR_OUT, line, 0);
+	Con_Echo(CON_COLOR_OUT, line);
 	if (!Con_EntVec(e, "Ang", v)) {
 		return;
 	}
 	Con_FormatVec(vec, sizeof(vec), v[0], v[1], v[2]);
 	Str_PrintfQuiet(line, sizeof(line), "e.Ang =  %s\n", vec);
-	Con_Print(CON_COLOR_OUT, line, 0);
+	Con_Echo(CON_COLOR_OUT, line);
 }
 
 static void Cmd_SetCam(const char *cmd, const conArg *a) {
@@ -625,7 +627,7 @@ static void Cmd_GetCam(const char *cmd, const conArg *a) {
 	if (cam && Con_EntText(cam, "camPos", pos, sizeof(pos)) && Con_EntText(cam, "camAng", ang, sizeof(ang))
 		&& Con_EntText(cam, "Fov", fov, sizeof(fov))) {
 		Str_PrintfQuiet(line, sizeof(line), "/setcam %s , %s , %s\n", pos, ang, fov);
-		Con_Print(CON_COLOR_OUT, line, 0);
+		Con_Echo(CON_COLOR_OUT, line);
 	}
 }
 
@@ -636,7 +638,7 @@ static void Cmd_CamEnt(const char *cmd, const conArg *a) {
 	cEntity *cam = Con_Need(cmd, Con_Cam(), cWorld_GetCamName(g_pWorld, 0));
 	if (cam && Con_EntText(cam, "Target", target, sizeof(target)) && Con_EntText(cam, "Name", name, sizeof(name))) {
 		Str_PrintfQuiet(line, sizeof(line), "Entity '%s' at camera '%s'\n", target, name);
-		Con_Print(CON_COLOR_OUT, line, 0);
+		Con_Echo(CON_COLOR_OUT, line);
 	}
 }
 
@@ -688,7 +690,7 @@ static void Cmd_Dms(const char *cmd, const conArg *a) {
 
 	(void)cmd;
 	Str_PrintfQuiet(line, sizeof(line), "Searching '%s*'...\n", a[0].s);
-	Con_Print(CON_COLOR_OUT, line, 0);
+	Con_Echo(CON_COLOR_OUT, line);
 	Str_PrintfQuiet(pattern, sizeof(pattern), "%s*", a[0].s);
 	DummySearch_Start(pattern, 1);
 	for (;;) {
@@ -719,7 +721,7 @@ static void Cmd_Dms(const char *cmd, const conArg *a) {
 		Con_FormatFloat(p, sizeof(p), list[i].ang[0]);
 		Con_FormatFloat(q, sizeof(q), list[i].ang[1]);
 		Str_PrintfQuiet(line, sizeof(line), "(%s, (%s, %s, %s), (%s, %s), %d)\n", repr, x, y, z, p, q, list[i].flag);
-		Con_Print(CON_COLOR_OUT, line, 0);
+		Con_Echo(CON_COLOR_OUT, line);
 	}
 	if (list) {
 		Mem_Free(list);
@@ -774,33 +776,175 @@ static void Cmd_Help(const char *cmd, const conArg *a) {
 	Con_Help();
 }
 
+/* ---- the commands of the console view (not in the original) ---- */
+
+#define CON_COLOR_HINT 0x909090		/* grey (0xBBGGRR) */
+#define CON_COLOR_DESC 0x60c060		/* green */
+#define CON_COLOR_NAME 0x80e0ff		/* yellow */
+
+static int Con_NumCmds(void);
+static const conCmd *Con_CmdAt(int i);
+
+/* text in s, case ignored */
+static byte Con_HasText(const char *s, const char *text) {
+	size_t n = strlen(text);
+	for (; *s; s++) {
+		if (!crt_strnicmp(s, text, n)) {
+			return 1;
+		}
+	}
+	return !n;
+}
+
+/* filter: a prefix of the name, or "" for all */
+static byte Con_Matches(const char *name, const char *filter) {
+	return !filter || !*filter || !crt_strnicmp(name, filter, strlen(filter));
+}
+
+static const char *Con_Filter(const conArg *a) {
+	return a->type == CA_STR ? a->s : "";
+}
+
+static void Cmd_CmdList(const char *cmd, const conArg *a) {
+	char line[0x100];
+	int n = 0;
+	(void)cmd;
+	for (int i = 0; i < Con_NumCmds(); i++) {
+		const conCmd *c = Con_CmdAt(i);
+		if (Con_Matches(c->name, Con_Filter(&a[0]))) {
+			Str_PrintfQuiet(line, sizeof(line), "  %-14s %s\n", c->name, c->desc);
+			Con_Echo(0, line);
+			n++;
+		}
+	}
+	Str_PrintfQuiet(line, sizeof(line), "%d commands\n", n);
+	Con_Echo(CON_COLOR_HINT, line);
+}
+
+static void Cmd_CvarList(const char *cmd, const conArg *a) {
+	char line[0x200], val[0x100];
+	int n = 0;
+	(void)cmd;
+	for (cGVar *v = GVar_First(); v; v = v->base.next) {
+		if (Con_Matches(v->base.name, Con_Filter(&a[0]))) {
+			Con_ReprGVar(val, sizeof(val), v, 0, 6);
+			Str_PrintfQuiet(line, sizeof(line), "  %-32s %s\n", v->base.name, val);
+			Con_Echo(0, line);
+			n++;
+		}
+	}
+	Str_PrintfQuiet(line, sizeof(line), "%d variables\n", n);
+	Con_Echo(CON_COLOR_HINT, line);
+}
+
+static void Cmd_Clear(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Con_BackClear();
+}
+
+static void Cmd_Echo(const char *cmd, const conArg *a) {
+	(void)cmd;
+	Con_Echo(0, a[0].type == CA_STR ? a[0].s : "");
+	Con_Echo(0, "\n");
+}
+
+static void Cmd_Quit(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Plat_Quit();
+}
+
+static void Cmd_Map(const char *cmd, const conArg *a) {
+	const char *level = MissionMaker_Level(a[0].s);
+	if (!level) {
+		Con_Errorf("/%s: no level %s (Tab lists them)\n", cmd, a[0].s);
+		return;
+	}
+	if (!MissionMaker_Load(level, "", "", "Dtritus")) {
+		Con_Errorf("/%s: %s did not load\n", cmd, level);
+	}
+}
+
+static void Cmd_Mission(const char *cmd, const conArg *a) {
+	const mmEntry *m = MissionMaker_Find(a[0].s);
+	const char *level = a[1].type == CA_STR ? MissionMaker_Level(a[1].s) : m ? m->level : NULL;
+	if (!level) {
+		Con_Errorf(m || a[1].type == CA_STR ? "/%s: no level %s\n" : "/%s: no mission %s (missions lists them)\n", cmd,
+			a[1].type == CA_STR ? a[1].s : a[0].s);
+		return;
+	}
+	if (!MissionMaker_Load(level, a[0].s, m ? m->dealType : "", "Dtritus")) {
+		Con_Errorf("/%s: %s did not start\n", cmd, a[0].s);
+	}
+}
+
+static void Cmd_Missions(const char *cmd, const conArg *a) {
+	char line[0x100];
+	const char *f = Con_Filter(&a[0]);
+	(void)cmd;
+	for (int i = 0; i < g_MissionMakerCount; i++) {
+		const mmEntry *m = &g_MissionMakerList[i];
+		if (*m->mission && (!*f || Con_HasText(m->mission, f) || !crt_stricmp(m->level, f))) {
+			Str_PrintfQuiet(line, sizeof(line), "  %-12s %s%s%s\n", m->level, m->mission, *m->dealType ? "  " : "", m->dealType);
+			Con_Echo(0, line);
+		}
+	}
+}
+
+static void Cmd_Split(const char *cmd, const conArg *a) {
+	const char *level = MissionMaker_Level(a[0].s);
+	if (!level || !MissionMaker_Split(level)) {
+		Con_Errorf("/%s: %s did not load\n", cmd, a[0].s);
+	}
+}
+
 static const conCmd con_cmds[] = {
-	{ "help", Cmd_Help, "show this help", { { NULL } } },
-	{ "speed", Cmd_Speed, "set the game speed (1 normal, 0 paused)", { { "ts", 'n', NULL }, { NULL } } },
-	{ "stop", Cmd_Stop, "pause the game and remember the speed", { { NULL } } },
-	{ "go", Cmd_Go, "continue at the remembered speed", { { NULL } } },
-	{ "cshow", Cmd_CShow, "set the engine variable cshow", { { "f", 'a', NULL }, { NULL } } },
-	{ "listmodels", Cmd_ListModels, "list the loaded models", { { NULL } } },
+	{ "help", Cmd_Help, "show this help", { { NULL } }, 0 },
+	{ "cmdlist", Cmd_CmdList, "list the commands (that start with filter)", { { "filter", 's', "None" }, { NULL } }, 0 },
+	{ "cvarlist", Cmd_CvarList, "list the variables and their values", { { "filter", 's', "None" }, { NULL } }, 'v' },
+	{ "clear", Cmd_Clear, "clear the console", { { NULL } }, 0 },
+	{ "echo", Cmd_Echo, "print a text", { { "text", 's', "None" }, { NULL } }, 0 },
+	{ "quit", Cmd_Quit, "end the game", { { NULL } }, 0 },
+	{ "map", Cmd_Map, "load a level with the save variables of a new game", { { "level", 's', NULL }, { NULL } }, 'l' },
+	{ "mission", Cmd_Mission, "start a mission (in its level) with the save variables of a new game",
+		{ { "mission", 's', NULL }, { "level", 's', "None" }, { NULL } }, 'm' },
+	{ "missions", Cmd_Missions, "list the missions (of a level, or with a text in the name)",
+		{ { "filter", 's', "None" }, { NULL } }, 'l' },
+	{ "split", Cmd_Split, "load a network level in split screen", { { "level", 's', NULL }, { NULL } }, 's' },
+	{ "speed", Cmd_Speed, "set the game speed (1 normal, 0 paused)", { { "ts", 'n', NULL }, { NULL } }, 0 },
+	{ "stop", Cmd_Stop, "pause the game and remember the speed", { { NULL } }, 0 },
+	{ "go", Cmd_Go, "continue at the remembered speed", { { NULL } }, 0 },
+	{ "cshow", Cmd_CShow, "set the engine variable cshow", { { "f", 'a', NULL }, { NULL } }, 0 },
+	{ "listmodels", Cmd_ListModels, "list the loaded models", { { NULL } }, 0 },
 	{ "modelinfo", Cmd_ModelInfo, "print information about a model",
-		{ { "Ename", 's', "\"\"" }, { "Nmodel", 'n', "1" }, { NULL } } },
-	{ "screenshot", Cmd_Screenshot, "save a screenshot", { { "name", 's', "\"Shot\"" }, { NULL } } },
-	{ "reset3d", Cmd_Reset3D, "restart the video mode", { { NULL } } },
-	{ "hidemap", Cmd_HideMap, "hide the map and the sky", { { NULL } } },
-	{ "showmap", Cmd_ShowMap, "show the map and the sky", { { NULL } } },
-	{ "camrot", Cmd_CamRot, "turn the camera by an angle in degrees", { { "angulus", 'n', "180" }, { NULL } } },
+		{ { "Ename", 's', "\"\"" }, { "Nmodel", 'n', "1" }, { NULL } }, 'e' },
+	{ "screenshot", Cmd_Screenshot, "save a screenshot", { { "name", 's', "\"Shot\"" }, { NULL } }, 0 },
+	{ "reset3d", Cmd_Reset3D, "restart the video mode", { { NULL } }, 0 },
+	{ "hidemap", Cmd_HideMap, "hide the map and the sky", { { NULL } }, 0 },
+	{ "showmap", Cmd_ShowMap, "show the map and the sky", { { NULL } }, 0 },
+	{ "camrot", Cmd_CamRot, "turn the camera by an angle in degrees", { { "angulus", 'n', "180" }, { NULL } }, 0 },
 	{ "mypos", Cmd_MyPos, "move the player, or print position and angles",
-		{ { "x", 'n', "None" }, { "y", 'n', "None" }, { "z", 'n', "None" }, { NULL } } },
+		{ { "x", 'n', "None" }, { "y", 'n', "None" }, { "z", 'n', "None" }, { NULL } }, 0 },
 	{ "setcam", Cmd_SetCam, "place the camera (position, angles, fov)",
-		{ { "pos", 'v', NULL }, { "ang", 'v', NULL }, { "fov", 'n', NULL }, { NULL } } },
-	{ "getcam", Cmd_GetCam, "print the /setcam line for the camera", { { NULL } } },
-	{ "CamEnt", Cmd_CamEnt, "print the entity the camera follows", { { NULL } } },
+		{ { "pos", 'v', NULL }, { "ang", 'v', NULL }, { "fov", 'n', NULL }, { NULL } }, 0 },
+	{ "getcam", Cmd_GetCam, "print the /setcam line for the camera", { { NULL } }, 0 },
+	{ "CamEnt", Cmd_CamEnt, "print the entity the camera follows", { { NULL } }, 0 },
 	{ "act", Cmd_Act, "force an action on an entity",
-		{ { "EntityName", 's', "None" }, { "ActName", 's', "\"Relax\"" }, { NULL } } },
-	{ "dms", Cmd_Dms, "list dummies whose names start with name", { { "name", 's', NULL }, { NULL } } },
-	{ "dmm", Cmd_Dmm, "print a dummy line for the player position", { { "DummyName", 's', "\"DummyName\"" }, { NULL } } },
-	{ "kick", Cmd_Kick, "disconnect a player (server only)", { { "name", 's', NULL }, { NULL } } },
-	{ "join", Cmd_Join, "connect to a server", { { "address", 's', "\"Localhost\"" }, { "port", 'n', "0" }, { NULL } } },
+		{ { "EntityName", 's', "None" }, { "ActName", 's', "\"Relax\"" }, { NULL } }, 'e' },
+	{ "dms", Cmd_Dms, "list dummies whose names start with name", { { "name", 's', NULL }, { NULL } }, 0 },
+	{ "dmm", Cmd_Dmm, "print a dummy line for the player position", { { "DummyName", 's', "\"DummyName\"" }, { NULL } }, 0 },
+	{ "kick", Cmd_Kick, "disconnect a player (server only)", { { "name", 's', NULL }, { NULL } }, 0 },
+	{ "join", Cmd_Join, "connect to a server", { { "address", 's', "\"Localhost\"" }, { "port", 'n', "0" }, { NULL } }, 0 },
 };
+
+static int Con_NumCmds(void) {
+	return (int)(sizeof(con_cmds) / sizeof(con_cmds[0]));
+}
+
+static const conCmd *Con_CmdAt(int i) {
+	return &con_cmds[i];
+}
 
 /* by the exact name, as Python finds QuickConsole's functions */
 static const conCmd *Con_FindCmd(const char *name) {
@@ -818,10 +962,10 @@ static void Con_Help(void) {
 
 	Con_Print(0, con_help1, 0);
 	Con_Print(0, con_help2, 0);
-	Con_Print(0, "Commands (use /name args, separate args with commas):\n", 0);
+	Con_Print(0, "Commands:\n", 0);
 	for (size_t i = 0; i < sizeof(con_cmds) / sizeof(con_cmds[0]); i++) {
 		const conCmd *c = &con_cmds[i];
-		int n = Str_PrintfQuiet(usage, sizeof(usage), "/%s", c->name);
+		int n = Str_PrintfQuiet(usage, sizeof(usage), "%s", c->name);
 		for (const conParam *p = c->p; p->name; p++) {
 			n += Str_PrintfQuiet(usage + n, (int)sizeof(usage) - n, "%s%s%s%s", p == c->p ? " " : ",", p->name,
 				p->def ? "=" : "", p->def ? p->def : "");
@@ -864,7 +1008,10 @@ static void Console_Command(const char *line) {
 	}
 }
 
-/* a line of the console: "/command args", ":name" and ":name value", "?prefix", "help" */
+static void Console_Plain(const char *line);
+
+/* a line of the console: "/command args", ":name" and ":name value", "?prefix", and the plain "name args" (a command,
+ * else a variable shown or set) */
 void Console_Execute(const char *cmd) {
 	char name[0x400];
 
@@ -890,15 +1037,272 @@ void Console_Execute(const char *cmd) {
 		GVars_Show(cmd + 1);
 		return;
 	default:
-		Str_Copy(name, cmd, sizeof(name));
-		Str_TrimBlanks(name);
-		if (!crt_stricmp(name, "help")) {
-			Con_Help();
-			return;
-		}
-		Con_Unknown(cmd);
+		Console_Plain(cmd);
 		return;
 	}
+}
+
+/* ---- the plain lines and Tab of the console view (not in the original) ---- */
+
+/* a command by its name, case ignored */
+static const conCmd *Con_FindCmdI(const char *name) {
+	for (int i = 0; i < Con_NumCmds(); i++) {
+		if (!crt_stricmp(con_cmds[i].name, name)) {
+			return &con_cmds[i];
+		}
+	}
+	return NULL;
+}
+
+/* the arguments of "name a b c" as a /command takes them: without a comma in the line the blanks between the words
+ * become commas (not those in quotes or parentheses) */
+static void Con_PlainArgs(const char *in, char *out, int size) {
+	char quote = 0;
+	int depth = 0, n = 0;
+	byte comma = strchr(in, ',') != NULL, blank = 0;
+
+	for (; *in && n < size - 1; in++) {
+		char c = *in;
+		if (quote) {
+			quote = c == quote ? 0 : quote;
+		} else if (c == '"' || c == '\'') {
+			quote = c;
+		} else if (c == '(') {
+			depth++;
+		} else if (c == ')') {
+			depth--;
+		} else if ((c == ' ' || c == '\t') && !comma && !depth) {
+			blank = 1;
+			continue;
+		}
+		if (blank && n) {
+			out[n++] = ',';
+		}
+		blank = 0;
+		out[n++] = c;
+	}
+	out[n] = 0;
+}
+
+/* "name args": a command (case ignored, blanks or commas between the arguments), else an engine variable shown or
+ * set, else the unknown line */
+static void Console_Plain(const char *line) {
+	char word[0x40], args[0x400];
+	conArg a[4];
+	const char *p = line;
+	int n = 0;
+
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	while (*p && *p != ' ' && *p != '\t' && n < (int)sizeof(word) - 1) {
+		word[n++] = *p++;
+	}
+	word[n] = 0;
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	if (!n) {
+		return;
+	}
+	const conCmd *c = Con_FindCmdI(word);
+	if (c) {
+		Con_PlainArgs(p, args, sizeof(args));
+		memset(a, 0, sizeof(a));
+		if (Con_BindArgs(c, args, a)) {
+			c->fn(c->name, a);
+		}
+		return;
+	}
+	if (GVar_Find(word)) {
+		Str_Copy(args, p, sizeof(args));
+		Str_TrimBlanks(args);
+		if (*args) {
+			Con_SetVar(word, args);
+		} else {
+			Con_ShowVar(word);
+		}
+		return;
+	}
+	Con_Unknown(line);
+}
+
+#define CON_MATCHES 4096
+#define CON_LIST_MAX 400		/* more matches than this are only counted */
+#define CON_DESC_MAX 40			/* the descriptions of the variables only for fewer matches */
+
+typedef struct conMatch {
+	const char *name;
+	const char *desc;		/* of a command */
+	const cGVar *var;
+} conMatch;
+
+static conMatch con_match[CON_MATCHES];
+static int con_nmatch;
+
+static void Con_AddMatch(const char *name, const char *prefix, const char *desc, const cGVar *var) {
+	if (con_nmatch >= CON_MATCHES || crt_strnicmp(name, prefix, strlen(prefix))) {
+		return;
+	}
+	for (int i = 0; i < con_nmatch; i++) {
+		if (!crt_stricmp(con_match[i].name, name)) {
+			return;
+		}
+	}
+	con_match[con_nmatch++] = (conMatch){ name, desc, var };
+}
+
+static int Con_MatchCmp(const void *a, const void *b) {
+	const conMatch *x = a, *y = b;
+	if ((x->var != NULL) != (y->var != NULL)) {
+		return x->var ? 1 : -1;
+	}
+	return crt_stricmp(x->name, y->name);
+}
+
+/* the matches of an argument of the kind of Con_ArgMatches: l levels, s network levels, m missions, v variables, e
+ * entities */
+static void Con_ArgMatches(char kind, const char *prefix) {
+	switch (kind) {
+	case 'l':
+		for (int i = 0; i < g_MissionMakerCount; i++) {
+			Con_AddMatch(g_MissionMakerList[i].level, prefix, NULL, NULL);
+		}
+		Con_AddMatch("Menu", prefix, NULL, NULL);
+		/* fallthrough */
+	case 's':
+		for (int i = 0; i < g_MissionMakerSplitCount; i++) {
+			Con_AddMatch(g_MissionMakerSplitMaps[i], prefix, NULL, NULL);
+		}
+		break;
+	case 'm':
+		for (int i = 0; i < g_MissionMakerCount; i++) {
+			if (*g_MissionMakerList[i].mission) {
+				Con_AddMatch(g_MissionMakerList[i].mission, prefix, g_MissionMakerList[i].level, NULL);
+			}
+		}
+		break;
+	case 'v':
+		for (cGVar *v = GVar_First(); v; v = v->base.next) {
+			Con_AddMatch(v->base.name, prefix, NULL, v);
+		}
+		break;
+	case 'e':
+		for (cEntity *e = g_pWorld ? cWorld_GetFirstEntity(g_pWorld) : NULL; e; e = cEntity_Next(e)) {
+			Con_AddMatch(e->name, prefix, NULL, NULL);
+		}
+		break;
+	}
+}
+
+/* the list of the matches: commands with their text, variables with their value (and description) */
+static void Con_PrintMatches(void) {
+	char line[0x200], val[0x100];
+
+	for (int i = 0; i < con_nmatch && i < CON_LIST_MAX; i++) {
+		const conMatch *m = &con_match[i];
+		if (m->var) {
+			Con_ReprGVar(val, sizeof(val), m->var, 0, 6);
+			Str_PrintfQuiet(line, sizeof(line), "  %-32s = %s\n", m->name, val);
+			Con_Echo(0, line);
+			if (con_nmatch <= CON_DESC_MAX && m->var->base.description && *m->var->base.description) {
+				Str_PrintfQuiet(line, sizeof(line), "      %s\n", m->var->base.description);
+				Con_Echo(CON_COLOR_DESC, line);
+			}
+		} else {
+			Str_PrintfQuiet(line, sizeof(line), m->desc ? "  %-32s %s\n" : "  %s\n", m->name, m->desc);
+			Con_Echo(m->desc ? 0 : CON_COLOR_NAME, line);
+		}
+	}
+	if (con_nmatch > CON_LIST_MAX) {
+		Str_PrintfQuiet(line, sizeof(line), "... %d more, type more letters\n", con_nmatch - CON_LIST_MAX);
+		Con_Echo(CON_COLOR_HINT, line);
+	}
+}
+
+void Console_Complete(char *line, int size, int *cursor) {
+	char tail[0x400], word[0x100], echo[0x420];
+	int pre = line[0] == '/' || line[0] == ':' ? 1 : 0;
+	int cur = *cursor;
+
+	Str_Copy(tail, line + cur, sizeof(tail));
+	line[cur] = 0;
+	con_nmatch = 0;
+	/* the word before the cursor: the name, or the argument after the last blank or comma */
+	int start = cur;
+	while (start > pre && line[start - 1] != ' ' && line[start - 1] != ',' && line[start - 1] != '\t') {
+		start--;
+	}
+	Str_Copy(word, line + start, sizeof(word));
+	byte isName = 1;
+	for (int i = pre; i < start; i++) {
+		if (line[i] != ' ' && line[i] != '\t') {
+			isName = 0;
+		}
+	}
+	if (isName) {
+		if (!word[0]) {
+			Con_Echo(CON_COLOR_HINT, "Type the start of a command or variable, then Tab (cmdlist, cvarlist list all)\n");
+			Str_Copy(line + cur, tail, size - cur);
+			return;
+		}
+		if (line[0] != ':') {
+			for (int i = 0; i < Con_NumCmds(); i++) {
+				Con_AddMatch(con_cmds[i].name, word, con_cmds[i].desc, NULL);
+			}
+		}
+		if (line[0] != '/') {
+			Con_ArgMatches('v', word);
+		}
+	} else {
+		/* the name and which argument the word is */
+		char name[0x40];
+		int n = 0, argc = 0;
+		const char *p = line + pre;
+		while (*p == ' ') {
+			p++;
+		}
+		while (*p && *p != ' ' && *p != ',' && n < (int)sizeof(name) - 1) {
+			name[n++] = *p++;
+		}
+		name[n] = 0;
+		for (; p < line + start; p++) {
+			if ((*p == ' ' || *p == ',') && p[1] != ' ' && p[1] != ',' && p + 1 < line + start) {
+				argc++;
+			}
+		}
+		const conCmd *c = Con_FindCmdI(name);
+		if (c) {
+			char kind = argc == 0 ? c->complete : c->fn == Cmd_Mission && argc == 1 ? 'l' : 0;
+			Con_ArgMatches(kind, word);
+		} else if (GVar_Find(name) && argc == 0 && !word[0]) {
+			Con_ShowVar(name);
+		}
+	}
+	if (con_nmatch) {
+		qsort(con_match, (size_t)con_nmatch, sizeof(con_match[0]), Con_MatchCmp);
+		/* the common start of all the matches, in the spelling of the first */
+		int len = (int)strlen(con_match[0].name);
+		for (int i = 1; i < con_nmatch; i++) {
+			int k = 0;
+			while (k < len && con_match[i].name[k] && crt_strnicmp(con_match[i].name + k, con_match[0].name + k, 1) == 0) {
+				k++;
+			}
+			len = k;
+		}
+		if (con_nmatch > 1) {
+			Str_PrintfQuiet(echo, sizeof(echo), "]%s\n", line);
+			Con_Echo(CON_COLOR_HINT, echo);
+			Con_PrintMatches();
+		}
+		if (len >= (int)strlen(word)) {
+			int n = Str_PrintfQuiet(line + start, size - start, "%.*s%s", len, con_match[0].name,
+				con_nmatch == 1 && !tail[0] ? " " : "");
+			cur = start + n;
+		}
+	}
+	*cursor = cur;
+	Str_Copy(line + cur, tail, size - cur);
 }
 
 /* ---- for the test channel (TestChannel.c) ---- */

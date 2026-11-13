@@ -21,6 +21,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
+#include "scrap/consoleview.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/dxutil.h"
@@ -470,7 +471,14 @@ static int Plat_Cp1252(uint32_t cp) {
 	return '?';
 }
 
+/* the text the console key typed (its character, or a dead key's) is dropped until the next key */
+static byte plat_dropText;
+
 static void Plat_Text(const char *s) {
+	if (plat_dropText) {
+		plat_dropText = 0;
+		return;
+	}
 	while (*s) {
 		uint32_t cp = (byte)*s++;
 		int more = cp >= 0xf0 ? 3 : cp >= 0xe0 ? 2 : cp >= 0xc0 ? 1 : 0;
@@ -478,7 +486,57 @@ static void Plat_Text(const char *s) {
 		for (; more && (*s & 0xc0) == 0x80; more--) {
 			cp = cp << 6 | (byte)(*s++ & 0x3f);
 		}
-		Input_OnChar(Plat_Cp1252(cp));
+		if (ConsoleView_IsOpen()) {
+			ConsoleView_Char(Plat_Cp1252(cp));
+		} else {
+			Input_OnChar(Plat_Cp1252(cp));
+		}
+	}
+}
+
+/* the key for the console view while it is open, CVK_NONE for one it does not take */
+static int Plat_ConsoleKey(SDL_Scancode sc) {
+	switch (sc) {
+	case SDL_SCANCODE_RETURN:
+	case SDL_SCANCODE_KP_ENTER:
+		return CVK_ENTER;
+	case SDL_SCANCODE_ESCAPE:
+		return CVK_ESC;
+	case SDL_SCANCODE_TAB:
+		return CVK_TAB;
+	case SDL_SCANCODE_BACKSPACE:
+		return CVK_BACKSPACE;
+	case SDL_SCANCODE_DELETE:
+		return CVK_DELETE;
+	case SDL_SCANCODE_LEFT:
+		return CVK_LEFT;
+	case SDL_SCANCODE_RIGHT:
+		return CVK_RIGHT;
+	case SDL_SCANCODE_UP:
+		return CVK_UP;
+	case SDL_SCANCODE_DOWN:
+		return CVK_DOWN;
+	case SDL_SCANCODE_HOME:
+		return CVK_HOME;
+	case SDL_SCANCODE_END:
+		return CVK_END;
+	case SDL_SCANCODE_PAGEUP:
+		return CVK_PGUP;
+	case SDL_SCANCODE_PAGEDOWN:
+		return CVK_PGDN;
+	default:
+		return sc >= SDL_SCANCODE_A && sc <= SDL_SCANCODE_Z ? 'A' + (int)(sc - SDL_SCANCODE_A) : CVK_NONE;
+	}
+}
+
+/* the console key (the one next to 1, a dead key on some layouts): the console view opens or closes; the text it
+ * typed and the state of a dead key are dropped */
+static void Plat_ConsoleToggle(void) {
+	ConsoleView_Toggle();
+	plat_dropText = 1;
+	if (plat.window) {
+		SDL_StopTextInput(plat.window);
+		SDL_StartTextInput(plat.window);
 	}
 }
 
@@ -489,6 +547,21 @@ static void Plat_Key(const SDL_KeyboardEvent *k) {
 	if (k->down && !k->repeat && Plat_Hotkey(k->scancode, k->mod)) {
 		return;
 	}
+	if (k->scancode == SDL_SCANCODE_GRAVE && !alt) {
+		if (k->down && !k->repeat) {
+			Plat_ConsoleToggle();
+		}
+		return;
+	}
+	/* the console view takes the pressed keys; the releases go on, so a key held when it opened comes up */
+	if (k->down && ConsoleView_IsOpen()) {
+		int ck = Plat_ConsoleKey(k->scancode);
+		if (ck) {
+			ConsoleView_Key(ck, (ctrl ? CVK_CTRL : 0) | ((k->mod & SDL_KMOD_SHIFT) ? CVK_SHIFT : 0));
+		}
+		return;
+	}
+	plat_dropText = 0;
 	if (!key.dik) {
 		return;
 	}
@@ -546,9 +619,15 @@ static void Plat_Event(const SDL_Event *ev, byte *quit) {
 	case SDL_EVENT_TEXT_INPUT:
 		Plat_Text(ev->text.text);
 		break;
-	case SDL_EVENT_MOUSE_WHEEL:
-		plat.wheel += ev->wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -ev->wheel.y : ev->wheel.y;
+	case SDL_EVENT_MOUSE_WHEEL: {
+		float y = ev->wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -ev->wheel.y : ev->wheel.y;
+		if (ConsoleView_IsOpen()) {
+			ConsoleView_Wheel(y > 0.0f ? 1 : y < 0.0f ? -1 : 0);
+		} else {
+			plat.wheel += y;
+		}
 		break;
+	}
 	case SDL_EVENT_GAMEPAD_ADDED:
 		Plat_PadAdded(ev->gdevice.which);
 		break;
@@ -586,6 +665,46 @@ byte Plat_PumpEvents(byte waiting) {
 		Plat_Event(&ev, &quit);
 	}
 	return quit;
+}
+
+void Plat_ClipboardGet(char *buf, int size) {
+	char *text = SDL_GetClipboardText();
+	int n = 0;
+	for (const char *s = text ? text : ""; *s && n < size - 1;) {
+		uint32_t cp = (byte)*s++;
+		int more = cp >= 0xf0 ? 3 : cp >= 0xe0 ? 2 : cp >= 0xc0 ? 1 : 0;
+		cp &= more ? 0x3f >> more : 0x7f;
+		for (; more && (*s & 0xc0) == 0x80; more--) {
+			cp = cp << 6 | (byte)(*s++ & 0x3f);
+		}
+		buf[n++] = (char)Plat_Cp1252(cp);
+	}
+	buf[n] = 0;
+	SDL_free(text);
+}
+
+void Plat_ClipboardSet(const char *text) {
+	static const uint16_t high[32] = { 0x20ac, 0x81, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030,
+		0x0160, 0x2039, 0x0152, 0x8d, 0x017d, 0x8f, 0x90, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014, 0x02dc,
+		0x2122, 0x0161, 0x203a, 0x0153, 0x9d, 0x017e, 0x0178 };
+	char utf[0x1000];
+	int n = 0;
+	for (; *text && n < (int)sizeof(utf) - 4; text++) {
+		uint32_t c = (byte)*text;
+		uint32_t cp = c >= 0x80 && c < 0xa0 ? high[c - 0x80] : c;
+		if (cp < 0x80) {
+			utf[n++] = (char)cp;
+		} else if (cp < 0x800) {
+			utf[n++] = (char)(0xc0 | cp >> 6);
+			utf[n++] = (char)(0x80 | (cp & 0x3f));
+		} else {
+			utf[n++] = (char)(0xe0 | cp >> 12);
+			utf[n++] = (char)(0x80 | ((cp >> 6) & 0x3f));
+			utf[n++] = (char)(0x80 | (cp & 0x3f));
+		}
+	}
+	utf[n] = 0;
+	SDL_SetClipboardText(utf);
 }
 
 void Plat_Quit(void) {
