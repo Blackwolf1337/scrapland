@@ -11,6 +11,7 @@
 #include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/alarm.h"
+#include "scrap/arena.h"
 #include "scrap/chartype.h"
 #include "scrap/console.h"
 #include "scrap/coord.h"
@@ -1759,7 +1760,8 @@ static void Fr_ClientLines(const FactionTable *t) {
 void Faction_ClientFrame(void) {
 	const FactionTable *t = Faction_Table();
 	cEntity *own = Play_Entity();
-	if (!g_Play || !own || !t) {
+	/* the keys are the PvP modes' there (include/scrap/arena.h) */
+	if (!g_Play || !own || !t || Arena_ClientOn()) {
 		return;
 	}
 	Fr_ClientBot();
