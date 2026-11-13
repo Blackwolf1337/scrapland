@@ -22,6 +22,7 @@
 #include "scrap/nativeobj.h"
 #include "scrap/pyfunction.h"
 #include "scrap/players.h"
+#include "scrap/play.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -171,38 +172,20 @@ MODE_FN(Char, CantTalk, 4, Char_CantTalkC())
 
 /* ---- Functionary: the slow motion of his special action, while the energy bar empties ---- */
 
-static void Functionary_Enter(const char *name) {
-	nativeVal_t v = { 0 };
-	if (LvN_ModGet("Functionary", "charSpeed", &v)) {
-		Char_Set(name, "TimeSpeed", &v);
-	}
-	Native_ErrClear();
-	Native_Free(&v);
-	Timer_SetSpeed(&g_pWorld->timer, (float)Mode_ModGetN("Functionary", "worldSpeed", 1.0));
-	if (GVar_GetNum("R_SceneMotionBlurRTarget", 0) == 1) {
+void Char_SlowEffect(byte on, double speed) {
+	byte blur = GVar_GetNum("R_SceneMotionBlurRTarget", 0) == 1;
+	if (on && blur) {
 		GVar_SetNum("MotionBlurFactorBegin", 0.0);
 		GVar_SetNum("MotionBlurFactorEnd", 0.75);
 		GVar_SetNum("MotionBlurTime", 0.0);
 		GVar_SetNum("MotionBlurEndTime", 0.5);
 		GVar_SetNum("MotionBlurOffVar", 0.05);
-	} else {
+	} else if (on) {
 		GVar_SetNum("NoiseFactorBegin", 128);
 		GVar_SetNum("NoiseFactor", 24);
 		GVar_SetNum("NoiseTime", 0);
 		GVar_SetNum("NoiseEndTime", 0.25);
-	}
-	Char_SetCls("Functionary", "FOVInterpTime", 0.5);
-	GVar_SetNum("S_PitchScale", 0.25);
-}
-
-static void Functionary_Exit(const char *name) {
-	double speed = Mode_ModGetN("Functionary", "speedFactor", 1.0);
-	Char_SetNum(name, "EnergyBarConstantDecr", 0.0);
-	Char_SetText(name, "OnEnergyBarFull", "");
-	Char_SetCls("Functionary", "FOVInterpTime", 0.5 * speed);
-	Char_SetInt(name, "TimeSpeed", 1);
-	Timer_SetSpeed(&g_pWorld->timer, 1.0f);
-	if (GVar_GetNum("R_SceneMotionBlurRTarget", 0) == 1) {
+	} else if (blur) {
 		GVar_SetNum("MotionBlurFactorBegin", 0.75);
 		GVar_SetNum("MotionBlurFactorEnd", 0.0);
 		GVar_SetNum("MotionBlurTime", 0.0);
@@ -214,12 +197,39 @@ static void Functionary_Exit(const char *name) {
 		GVar_SetNum("NoiseTime", 0);
 		GVar_SetNum("NoiseEndTime", 0.25 / speed);
 	}
+}
+
+static void Functionary_Enter(const char *name) {
+	nativeVal_t v = { 0 };
+	if (LvN_ModGet("Functionary", "charSpeed", &v)) {
+		Char_Set(name, "TimeSpeed", &v);
+	}
+	Native_ErrClear();
+	Native_Free(&v);
+	Timer_SetSpeed(&g_pWorld->timer, (float)Mode_ModGetN("Functionary", "worldSpeed", 1.0));
+	Char_SlowEffect(1, 1.0);
+	Char_SetCls("Functionary", "FOVInterpTime", 0.5);
+	GVar_SetNum("S_PitchScale", 0.25);
+}
+
+static void Functionary_Exit(const char *name) {
+	double speed = Mode_ModGetN("Functionary", "speedFactor", 1.0);
+	Char_SetNum(name, "EnergyBarConstantDecr", 0.0);
+	Char_SetText(name, "OnEnergyBarFull", "");
+	Char_SetCls("Functionary", "FOVInterpTime", 0.5 * speed);
+	Char_SetInt(name, "TimeSpeed", 1);
+	Timer_SetSpeed(&g_pWorld->timer, 1.0f);
+	Char_SlowEffect(0, speed);
 	GVar_SetNum("S_PitchScale", 1.0);
 }
 
 /* the player presses the action: slow motion when there is energy enough, the bar empties in 60 s */
 static byte Functionary_Press(const char *name) {
 	Mode_ModPutI("Functionary", "PressOk", 0);
+	/* not in a network game: the world's time is everyone's (the freeroam factions slow an area instead) */
+	if (Players_Net() || g_Play) {
+		return 1;
+	}
 	if (Script_EntNum(name, "UsrControl", -1) == 0 && Script_EntNum(name, "ActionPriority", -1) == 0 &&
 		Script_EntNum(name, "Energy", 0) >= GVar_GetNum("FunctionarySpecialActionLow", 0)) {
 		double speed = Mode_ModGetN("Functionary", "speedFactor", 1.0);

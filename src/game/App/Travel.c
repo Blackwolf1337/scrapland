@@ -15,6 +15,7 @@
 #include "scrap/alarm.h"
 #include "scrap/arrowindicator.h"
 #include "scrap/console.h"
+#include "scrap/collisiongrid.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
@@ -715,16 +716,27 @@ void Travel_TestUse(int player, const char *entity, const char *option) {
 }
 
 void Travel_TestGoto(int player, const char *entity, float dx, float dz) {
+	char found[64];
+	vec3_t at, ang;
 	cEntity *e = Players_Get(player);
 	cEntity *t = World_FindEntity(entity);
-	if (!e || !t) {
+	if (t) {
+		at = t->pos;
+	} else {
+		/* a dummy of the level */
+		DummySearch_Start(entity, 1);
+		if (!DummySearch_NextEuler(found, sizeof(found), &at, &ang)) {
+			e = NULL;
+		}
+	}
+	if (!e) {
 		Con_Printf("instance: goto: no player %d or no entity %s\n", player, entity);
 		return;
 	}
-	vec3_t p = { t->pos.x + dx, t->pos.y + 100.0f, t->pos.z + dz };
+	vec3_t p = { at.x + dx, at.y + 100.0f, at.z + dz };
 	e->pos = p;
 	/* facing it (yaw 0 looks to -z): its use arrow selected */
-	float yaw = atan2f(-(t->pos.x - p.x), -(t->pos.z - p.z));
+	float yaw = atan2f(-(at.x - p.x), -(at.z - p.z));
 	Obj(e)->ang.y = yaw;
 	if (NetPl_Kind(e) == NETREP_CHAR) {
 		WChar(e)->view.y = yaw;

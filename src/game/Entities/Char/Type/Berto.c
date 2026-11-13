@@ -3,6 +3,7 @@
  * (include/scrap/chartype.h). BertoActionPress is ChType_ActionPress, BertoAttack ChType_Attack.
  */
 #include "scrap/chartype.h"
+#include "scrap/fx.h"
 #include "scrap/staticinit.h"
 
 #define g_FXBertoFlashFile (GVar_FXBertoFlashFile.value.s)
@@ -45,7 +46,6 @@ static cEntity *g_BertoEnt;
  * Berto to it and the flash sound at it */
 static void ChType_BertoFlashHit(cAbstractFile *params) {
 	char name[0x80];
-	vec3_t tmp;
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	CHECK(g_BertoEnt);
@@ -57,12 +57,17 @@ static void ChType_BertoFlashHit(cAbstractFile *params) {
 	if (!e || g_BertoEnt == e || !Entity_IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
 		return;
 	}
+	FX_BertoFlash(g_BertoEnt, e);
+}
+
+void FX_BertoFlash(cEntity *from, cEntity *e) {
+	vec3_t tmp;
 	cObjElementFXBertoFlash *el = FX_DropNew(g_FXBertoFlashFile, 0.8f);
 	if (el) {
 		if (!el->started) {
 			el->started = 1;
 		}
-		FXMisc_SetEntity(el, g_BertoEnt);
+		FXMisc_SetEntity(el, from);
 		FXCharActions_SetEntity8(el, e);
 		cObjElementFXBertoFlash_RandomPoints(el);
 	}

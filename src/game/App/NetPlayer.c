@@ -84,13 +84,15 @@ void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 
 void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	cWithLifeEntity *w = WLife(e);
+	/* the entity's time speed: 1, slower in a bullet time of the freeroam factions (the server and the prediction) */
+	float k = cTimer_GetSpeed(&w->obj.timer);
 
 	NetPl_Apply(e, in, local, replay);
 	if (!replay && w->actCtrl) {
-		cActCtrl_Tick(w->actCtrl, NETPL_TICK);
+		cActCtrl_Tick(w->actCtrl, NETPL_TICK * k);
 	}
 	for (int i = 0; i < PLAY_STEPS; i++) {
-		Obj_Tick(e, NETPL_SLOT);
+		Obj_Tick(e, NETPL_SLOT * k);
 	}
 }
 

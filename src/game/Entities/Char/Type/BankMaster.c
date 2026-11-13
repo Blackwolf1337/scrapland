@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/fx.h"
 #include "scrap/staticinit.h"
 
 #define g_FXBankMasterAttackFile (GVar_FXBankMasterAttackFile.value.s)
@@ -121,19 +122,23 @@ static void ChType_BankMasterSuction(cAbstractFile *params) {
 		return;
 	}
 	if (ChType_Steal(&g_BankMasterEnt, &victim, g_BankerStealAmount, "Stats.BankMaster", 0.25f)) {
-		cObjElementFXBankMasterSuction *el = FX_DropNew(g_FXBankMasterSuctionFile, 0.8f);
-		if (el) {
-			if (!el->started) {
-				el->started = 1;
-			}
-			FXMisc_SetEntity(el, g_BankMasterEnt);
-			FXCharActions_SetEntity8(el, victim);
-			cObjElementFXBankMasterSuction_RandomPoints(el);
-		}
+		FX_BankMasterSuction(g_BankMasterEnt, victim);
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l) {
 		Logic_OnAttack(l, g_BankMasterEnt, 100.0f);
+	}
+}
+
+void FX_BankMasterSuction(cEntity *master, cEntity *victim) {
+	cObjElementFXBankMasterSuction *el = FX_DropNew(g_FXBankMasterSuctionFile, 0.8f);
+	if (el) {
+		if (!el->started) {
+			el->started = 1;
+		}
+		FXMisc_SetEntity(el, master);
+		FXCharActions_SetEntity8(el, victim);
+		cObjElementFXBankMasterSuction_RandomPoints(el);
 	}
 }
 

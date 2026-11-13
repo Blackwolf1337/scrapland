@@ -400,12 +400,14 @@ static void Play_Step(uint32_t tick, byte none) {
 	vec3_t view0 = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view : Obj(e)->ang;
 	vec3_t ang0 = Obj(e)->ang;
 
-	if (none) {
+	if (!none) {
+		NetPl_Input(&play.acc, &play.input);
+	}
+	/* asleep (include/scrap/faction.h): no input, as the server steps it */
+	if (none || Faction_OwnAsleep()) {
 		uint8_t weapon = play.input.weapon;
 		memset(&play.input, 0, sizeof(play.input));
 		play.input.weapon = weapon;
-	} else {
-		NetPl_Input(&play.acc, &play.input);
 	}
 	play.input.tick = tick;
 	play.input.slot = (uint16_t)play.slot;
