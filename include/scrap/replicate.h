@@ -61,6 +61,9 @@ struct cEntity *Watch_Build(const char *name, int kind, const char *look, const 
 /* the other players' proxies at server time t for the own prediction of a tick, then back where they are drawn */
 void Watch_PlayersAt(double t);
 void Watch_PlayersBack(void);
+/* the client's own entity of a slot it no longer drives becomes the proxy of that slot (a dead player's wreck stays
+ * in view: the death camera follows it) */
+void Watch_Adopt(int slot, struct cEntity *e, int kind);
 /* the proxy is a player's entity */
 byte Watch_IsPlayer(struct cEntity *e);
 /* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the tick of an input of now; the server time

@@ -80,7 +80,7 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 		inst.money = crt_atoi(ext);
 		return 1;
 	}
-	return 0;
+	return Rep_ParseParam(param, ext);
 }
 
 byte Instance_PvP(void) {
@@ -253,6 +253,9 @@ static void Instance_Command(char *line) {
 		Con_Printf("instance %s: alarm of player %d %.2f%s\n", inst.id, player, (double)g_pWorld->alarm.value,
 			g_pWorld->alarm.on ? " on" : "");
 		Players_BindTurn();
+		return;
+	}
+	if (Rep_Command(line)) {
 		return;
 	}
 	Console_Execute(line);

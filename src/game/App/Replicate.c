@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/alarm.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -36,10 +37,21 @@
 #define REP_CONNS 1024				/* NET2_MAX_CONNS */
 #define REP_HASH 4096				/* pointer table, twice the slots */
 #define REP_NAME 64
-#define REP_RESPAWN_TICKS (3 * NETREP_TICK_HZ)	/* a player without an entity gets a new one after this */
 #define REP_REWIND_MAX 0.5					/* s the lag compensation goes back at most */
 #define REP_CHAR_CLASS "Dtritus"
 #define REP_PARK_HEIGHT 1500.0f			/* units above the floor a ship left by its player is parked at most */
+#define REP_SPAWNS 32					/* spawn points of a level kept */
+#define REP_SPAWN_CROWD 2500.0f			/* units around a spawn point its players are counted in */
+#define REP_SPOT_STEP 350.0f			/* units between the places tried around a spawn point */
+#define REP_SPOT_TRIES 33				/* the point and four rings of eight */
+#define REP_SPAWN_DROP 1500.0f			/* units below a spawn point its floor must be */
+#define REP_SPAWN_FALL 2500.0f			/* a new character that falls further in its first seconds stood over a
+										   shaft (an elevator's, which the instance does not make): that spawn
+										   point is not used again */
+#define REP_SPAWN_CHECK (4 * NETREP_TICK_HZ)
+#define REP_CALL_DROP 3000.0f			/* and below the place of a called ship */
+#define REP_CHAR_CLEAR 120.0f			/* units a character's place keeps from walls and others */
+#define REP_SHIP_CLEAR 450.0f			/* and a called ship's */
 
 typedef struct RepEnt {
 	cEntity *e;						/* NULL: the slot has no entity of this world */
@@ -66,8 +78,17 @@ typedef struct RepPlayer {
 	uint32_t shownNow;				/* of the input of this tick */
 	uint16_t buttons;				/* of the input of the last tick */
 	uint64_t lost;					/* the tick its entity went missing, 0 */
-	uint32_t shots, hits, boards, leaves, spawns, calls;
-	char called[REP_NAME];			/* the ship it called last (Rep_CallShip) */
+	uint32_t shots, hits, boards, leaves, spawns, calls, deaths;
+	cEntity *ships[PLAY_SHIPS_MAX];	/* the ships it called and still owns, oldest first (compared, read while
+									   World_FindEntity(shipNames) is them) */
+	char shipNames[PLAY_SHIPS_MAX][REP_NAME];
+	int nships;
+	int lives;						/* lives left (-lives), 0 with infinite lives */
+	int rebuild;					/* the price of its own ship that died: the next call costs it (-rebuild) */
+	byte dead;						/* died, no new character yet (the player message says so) */
+	int spawnAt;					/* the spawn point of its character, -1 */
+	uint64_t spawnTick;
+	float spawnY;
 	uint32_t stale;					/* inputs for an entity it no longer has */
 	NetRepStatus status;			/* the last status sent */
 	uint32_t statusSnap;			/* the snapshot it went with */
@@ -99,8 +120,10 @@ static struct {
 	int watchers, players;
 	uint64_t tick;					/* of the frame run or running */
 	byte haveSpawn;
-	vec3_t spawn;					/* the players' spawn point and its yaw (radians) */
-	float spawnYaw;
+	vec3_t spawn[REP_SPAWNS];		/* the players' spawn points and their yaws (radians) */
+	float spawnYaw[REP_SPAWNS];
+	byte spawnBad[REP_SPAWNS];		/* a character fell from there (REP_SPAWN_FALL) */
+	int nspawns, spawnNext;
 	RepRewind rewind[NETREP_MAX_ENTS];
 	int rewound;
 	RepShot shots[REP_SHOTS];
@@ -115,6 +138,35 @@ static struct {
 	byte logTried;
 	uint8_t msgs[NETREP_MAX_MSGS][NETREP_MSG_MAX];
 } rep;
+
+/* the sandbox options of the command line (Rep_ParseParam) */
+static struct {
+	int ships;						/* -ships: called ships a player owns at most */
+	int respawnTicks;				/* -respawn: s from a death to the new character */
+	int lives;						/* -lives: 0 infinite */
+	byte rebuild;					/* -rebuild: a player pays for its own ship that died with its next call */
+} sand = { 1, PLAY_RESPAWN_SECS * NETREP_TICK_HZ, 0, 1 };
+
+byte Rep_ParseParam(const char *param, const char *ext) {
+	int n = crt_atoi(ext);
+	if (!crt_stricmp("ships", param)) {
+		sand.ships = n < 1 ? 1 : n > PLAY_SHIPS_MAX ? PLAY_SHIPS_MAX : n;
+		return 1;
+	}
+	if (!crt_stricmp("respawn", param)) {
+		sand.respawnTicks = (n < 1 ? 1 : n > 60 ? 60 : n) * NETREP_TICK_HZ;
+		return 1;
+	}
+	if (!crt_stricmp("lives", param)) {
+		sand.lives = n < 0 ? 0 : n;
+		return 1;
+	}
+	if (!crt_stricmp("rebuild", param)) {
+		sand.rebuild = n != 0;
+		return 1;
+	}
+	return 0;
+}
 
 /* ---- the entities ---- */
 
@@ -343,24 +395,106 @@ static void Rep_Log(uint64_t tick) {
 
 /* ---- the players ---- */
 
-/* the players' spawn point: the first "DM_Player_Spawn*" dummy, else "DM_Spawn*", else the origin */
-static void Rep_FindSpawn(void) {
+static cEntity *Rep_Own(const RepPlayer *pl);
+
+/* the players' spawn points: the "DM_Player_Spawn*" dummies, else "DM_Spawn*", else the origin */
+static void Rep_FindSpawns(void) {
 	static const char *const names[] = { "DM_Player_Spawn*", "DM_Spawn*" };
 	char name[64];
-	vec3_t ang;
+	vec3_t p, ang;
 
 	rep.haveSpawn = 1;
-	for (int i = 0; i < 2; i++) {
+	rep.nspawns = 0;
+	for (int i = 0; i < 2 && !rep.nspawns; i++) {
 		DummySearch_Start(names[i], 1);
-		if (DummySearch_NextEuler(name, sizeof(name), &rep.spawn, &ang)) {
-			rep.spawnYaw = ang.y + M_PI_F;
-			Con_Printf("instance: players spawn at %s (%.0f %.0f %.0f)\n", name, (double)rep.spawn.x,
-				(double)rep.spawn.y, (double)rep.spawn.z);
-			return;
+		while (rep.nspawns < REP_SPAWNS && DummySearch_NextEuler(name, sizeof(name), &p, &ang)) {
+			rep.spawn[rep.nspawns] = p;
+			rep.spawnYaw[rep.nspawns] = ang.y + M_PI_F;
+			rep.nspawns++;
+			Con_Printf("instance: players spawn at %s (%.0f %.0f %.0f)\n", name, (double)p.x, (double)p.y,
+				(double)p.z);
 		}
 	}
-	rep.spawn = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	rep.spawnYaw = 0.0f;
+	if (!rep.nspawns) {
+		rep.spawn[0] = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		rep.spawnYaw[0] = 0.0f;
+		rep.nspawns = 1;
+	}
+}
+
+/* no ship or character (but skip) nearer to p than clear */
+static byte Rep_Clear(const vec3_t *p, float clear, const cEntity *skip) {
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		if (e == skip || e->deadNode.target || (!Entity_IsType(e, TYEN_CAR) && !Entity_IsType(e, TYEN_WALKCHAR))) {
+			continue;
+		}
+		float dx = e->pos.x - p->x, dy = e->pos.y - p->y, dz = e->pos.z - p->z;
+		float r = clear + WLife(e)->prim.radius;
+		if (dx * dx + dy * dy + dz * dz < r * r) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* place k around at (0: at itself, then rings of eight REP_SPOT_STEP apart): on a floor at most drop below, clear of
+ * walls and of others by clear (less than height), at height above the floor: 1 with *out */
+static byte Rep_Spot(const vec3_t *at, int k, float drop, float clear, float height, const cEntity *skip,
+	vec3_t *out) {
+	vec3_t p = *at, hit;
+	if (k > 0) {
+		float r = REP_SPOT_STEP * (float)(1 + (k - 1) / 8);
+		float a = (float)((k - 1) % 8) * (M_2PI_F / 8.0f) + (float)((k - 1) / 8) * 0.4f;
+		p.x += r * sinf(a);
+		p.z += r * cosf(a);
+	}
+	vec3_t top = { p.x, p.y + height, p.z }, down = { p.x, p.y - drop, p.z };
+	/* the way from the point at to the place must be free too (no place behind a wall) */
+	vec3_t from = { at->x, at->y + height, at->z };
+	if ((k > 0 && Engine_TestLine(&from, &top, NULL, NULL)) || !Engine_TestLine(&top, &down, &hit, NULL)) {
+		return 0;
+	}
+	vec3_t c = { hit.x, hit.y + height, hit.z };
+	if (Engine_TestSphere(&c, &c, clear, NULL, NULL) || !Rep_Clear(&c, clear, skip)) {
+		return 0;
+	}
+	*out = c;
+	return 1;
+}
+
+/* the spawn point for a new character: the one with the fewest players near it (in turn among equals), and a
+ * free place there; 0 when no spawn point has one */
+static byte Rep_PickSpawn(vec3_t *pos, float *yaw, int *at) {
+	int count[REP_SPAWNS];
+
+	if (!rep.haveSpawn) {
+		Rep_FindSpawns();
+	}
+	for (int s = 0; s < rep.nspawns; s++) {
+		count[s] = 0;
+		for (int i = 0; i < PLAYERS_MAX; i++) {
+			cEntity *e = rep.pl[i].used ? Rep_Own(&rep.pl[i]) : NULL;
+			float dx = e ? e->pos.x - rep.spawn[s].x : 0.0f, dz = e ? e->pos.z - rep.spawn[s].z : 0.0f;
+			count[s] += e && dx * dx + dz * dz < REP_SPAWN_CROWD * REP_SPAWN_CROWD;
+		}
+	}
+	for (int least = 0; least <= PLAYERS_MAX; least++) {
+		for (int n = 0; n < rep.nspawns; n++) {
+			int s = (rep.spawnNext + n) % rep.nspawns;
+			if (count[s] != least) {
+				continue;
+			}
+			for (int k = 0; k < REP_SPOT_TRIES; k++) {
+				if (!rep.spawnBad[s] && Rep_Spot(&rep.spawn[s], k, REP_SPAWN_DROP, REP_CHAR_CLEAR, 200.0f, NULL, pos)) {
+					*yaw = rep.spawnYaw[s];
+					*at = s;
+					rep.spawnNext = s + 1;
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
 }
 
 static void Rep_SetSlot(cEntity *e, int slot) {
@@ -383,23 +517,19 @@ static cEntity *Rep_Own(const RepPlayer *pl) {
 	return e && e == pl->own && !e->deadNode.target ? e : NULL;
 }
 
-/* the player's Dtritus at pos (a ring around the spawn point when pos is NULL) */
+/* the player's Dtritus at pos (a spawn point when pos is NULL) */
 static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	char name[REP_NAME];
 	vec3_t p, ang;
 
-	if (!rep.haveSpawn) {
-		Rep_FindSpawn();
-	}
+	RepPlayer *pl = &rep.pl[i];
+	pl->spawnAt = -1;
 	if (pos) {
 		p = *pos;
-	} else {
-		float a = (float)i * (M_2PI_F / 8.0f);
-		float r = PLAY_SPAWN_RING * (float)(1 + i / 8);
-		p = (vec3_t){ rep.spawn.x + r * sinf(a), rep.spawn.y, rep.spawn.z + r * cosf(a) };
-		yaw = rep.spawnYaw;
+	} else if (!Rep_PickSpawn(&p, &yaw, &pl->spawnAt)) {
+		p = rep.spawn[0];
+		yaw = rep.spawnYaw[0];
 	}
-	RepPlayer *pl = &rep.pl[i];
 	Str_PrintfQuiet(name, sizeof(name), "NetPlayer%d_%u", i, ++pl->spawns);
 	cEntity *e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR);
 	if (!e) {
@@ -413,12 +543,48 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	Obj(e)->netStep = 1;
 	Rep_SetOwn(pl, e);
 	pl->lost = 0;
+	pl->dead = 0;
+	pl->spawnTick = rep.tick;
+	pl->spawnY = p.y;
 	return e;
 }
 
-static byte Rep_IsParked(cEntity *e) {
-	return Entity_IsType(e, TYEN_CAR) && !e->deadNode.target && !Obj(e)->proxy && !strncmp(e->name, "Parked", 6) &&
-		cVehicleEntity_GetOwnerSlot(e) == -1 && WLife(e)->life > 0;
+/* the k-th ship player i owns while it is in the world, NULL */
+static cEntity *Rep_OwnedShip(const RepPlayer *pl, int k) {
+	cEntity *e = World_FindEntity(pl->shipNames[k]);
+	return e && e == pl->ships[k] && !e->deadNode.target ? e : NULL;
+}
+
+/* the player that owns the ship (one it called), -1 */
+static int Rep_ShipOwner(const cEntity *v) {
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		const RepPlayer *pl = &rep.pl[i];
+		for (int k = 0; pl->used && k < pl->nships; k++) {
+			if (pl->ships[k] == v && Rep_OwnedShip(pl, k) == v) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+/* the k-th ship off the player's list; the newest left is its own ship of the scripts (Parking.PlayerShip) */
+static void Rep_Disown(int i, int k) {
+	RepPlayer *pl = &rep.pl[i];
+	memmove(&pl->ships[k], &pl->ships[k + 1], sizeof(pl->ships[0]) * (size_t)(pl->nships - k - 1));
+	memmove(&pl->shipNames[k], &pl->shipNames[k + 1], sizeof(pl->shipNames[0]) * (size_t)(pl->nships - k - 1));
+	pl->nships--;
+	Players_SetShip(i, pl->nships ? Rep_OwnedShip(pl, pl->nships - 1) : NULL);
+}
+
+/* a parked ship no one sits in that player i may take: no other player owns it */
+static byte Rep_IsParked(cEntity *e, int i) {
+	if (!Entity_IsType(e, TYEN_CAR) || e->deadNode.target || Obj(e)->proxy || strncmp(e->name, "Parked", 6) ||
+		cVehicleEntity_GetOwnerSlot(e) != -1 || WLife(e)->life <= 0) {
+		return 0;
+	}
+	int owner = Rep_ShipOwner(e);
+	return owner < 0 || owner == i;
 }
 
 /* the wall and the view radius of a ship swapped for flying or parked (Parking.SetShipRadius) */
@@ -449,28 +615,71 @@ static void Rep_Loadout(cEntity *ship) {
 	}
 }
 
-/* the sandbox: a player on foot with no parked ship near gets a new one beside it (Parking.CreateParkedShip); the
- * one called before goes when no one sits in it */
+/* the price of the ship's model (ShipMaker.GetShipPrice), 0 */
+static int Rep_ShipPrice(cEntity *v) {
+	nativeVal_t out, n;
+	int price = 0;
+	const char *model = Rep_VarS(v, "Model");
+
+	Native_SetNone(&out);
+	Native_SetNone(&n);
+	if (!model[0] || !Mode_Import("ShipMaker") || !PORT_CALL(ShipMaker, GetShipPrice, &out, "s", model) ||
+		!Native_ToInt(&out, &n) || !Native_ArgInt(&n, &price)) {
+		Native_ErrClear();
+		price = 0;
+	}
+	Native_Free(&out);
+	Native_Free(&n);
+	return price;
+}
+
+/* the sandbox: a player on foot with no parked ship near calls one beside it (Parking.CreateParkedShip): it owns it;
+ * past the -ships limit its oldest goes (or stays to the player that sits in it, owned no more); the ship of a death
+ * is paid first (-rebuild) */
 static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	RepPlayer *pl = &rep.pl[i];
 	nativeVal_t c[3], pos, ang, out;
 	cEntity *ship = NULL;
+	vec3_t at, p;
 
-	cEntity *old = pl->called[0] ? World_FindEntity(pl->called) : NULL;
-	if (old && Rep_IsParked(old)) {
-		cEntity_Del(old);
+	/* the money is the bound player's (Rep_PreFrame binds it) */
+	if (pl->rebuild > 0 && g_pWorld->money < pl->rebuild) {
+		return NULL;
 	}
 	float yaw = WChar(ch)->view.y;
-	/* in front of the character: yaw 0 looks to -z */
-	Native_SetFloat(&c[0], ch->pos.x - sinf(yaw) * 900.0f);
-	Native_SetFloat(&c[1], ch->pos.y + 200.0f);
-	Native_SetFloat(&c[2], ch->pos.z - cosf(yaw) * 900.0f);
+	/* in front of the character (yaw 0 looks to -z), else a free place around that */
+	at = (vec3_t){ ch->pos.x - sinf(yaw) * 900.0f, ch->pos.y, ch->pos.z - cosf(yaw) * 900.0f };
+	int k = 0;
+	while (k < REP_SPOT_TRIES && !Rep_Spot(&at, k, REP_CALL_DROP, REP_SHIP_CLEAR, 600.0f, ch, &p)) {
+		k++;
+	}
+	if (k == REP_SPOT_TRIES) {
+		return NULL;
+	}
+	while (pl->nships >= sand.ships) {
+		cEntity *old = Rep_OwnedShip(pl, 0);
+		if (old && Rep_IsParked(old, i)) {
+			cEntity_Del(old);
+		}
+		Rep_Disown(i, 0);
+	}
+	Native_SetFloat(&c[0], p.x);
+	Native_SetFloat(&c[1], p.y);
+	Native_SetFloat(&c[2], p.z);
 	Mode_Tuple3(&pos, &c[0], &c[1], &c[2]);
 	Native_SetFloat(&ang, yaw);
 	Native_SetNone(&out);
 	if (PORT_CALL(Parking, CreateParkedShip, &out, "vv", &pos, &ang) && out.type == NV_ENT && (ship = Native_Ent(&out))) {
-		Str_Copy(pl->called, ship->name, sizeof(pl->called));
 		pl->calls++;
+		if (pl->rebuild > 0) {
+			g_pWorld->money -= pl->rebuild;
+			Con_Printf("instance: player %d paid %d for its ship\n", i, pl->rebuild);
+			pl->rebuild = 0;
+		}
+		pl->ships[pl->nships] = ship;
+		Str_Copy(pl->shipNames[pl->nships], ship->name, REP_NAME);
+		pl->nships++;
+		Players_SetShip(i, ship);
 		Con_Printf("instance: player %d called %s\n", i, ship->name);
 	} else {
 		ship = NULL;
@@ -478,7 +687,7 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	}
 	Native_Free(&out);
 	Native_Free(&pos);
-	return ship && Rep_IsParked(ship) ? ship : NULL;
+	return ship && Rep_IsParked(ship, i) ? ship : NULL;
 }
 
 /* the switch: into the nearest parked ship (a new one when none is near), out of the ship */
@@ -490,7 +699,7 @@ static void Rep_Switch(int i, cEntity *e) {
 		cEntity *best = NULL;
 		float bestD = PLAY_BOARD_RADIUS * PLAY_BOARD_RADIUS;
 		for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-			if (!Rep_IsParked(v)) {
+			if (!Rep_IsParked(v, i)) {
 				continue;
 			}
 			float dx = v->pos.x - e->pos.x, dy = v->pos.y - e->pos.y, dz = v->pos.z - e->pos.z;
@@ -547,6 +756,7 @@ static void Rep_Switch(int i, cEntity *e) {
 	Rep_SetSlot(e, -1);
 	Obj_SetVel(e, &zero);
 	PORT_CALL(Parking, SetShipAsParked, NULL, "s", name);
+	Native_ErrPrint();
 	Rep_SpawnChar(i, &p, yaw);
 	NetRepInBuf_Restart(&pl->in);
 	pl->told = -2;
@@ -561,7 +771,7 @@ static byte Rep_NearFloor(cEntity *v) {
 }
 
 /* the player's entity gone: a character away, a ship parked when it is near the floor, else left empty (a dead one
- * left to the game: its wreck) */
+ * left to the game: its wreck); the scripts run for that player */
 static void Rep_DropOwn(int i) {
 	RepPlayer *pl = &rep.pl[i];
 	cEntity *e = Rep_Own(pl);
@@ -570,16 +780,43 @@ static void Rep_DropOwn(int i) {
 	if (!e) {
 		return;
 	}
+	Players_Bind(i);
 	Obj(e)->netStep = 0;
 	if (NetPl_Kind(e) == NETREP_SHIP) {
 		Rep_SetSlot(e, -1);
 		if (WLife(e)->life > 0 && Rep_NearFloor(e)) {
 			PORT_CALL(Parking, SetShipAsParked, NULL, "s", e->name);
+			Native_ErrPrint();
 		}
 	} else {
 		Rep_SetSlot(e, -1);
 		cEntity_Del(e);
 	}
+	Players_BindTurn();
+}
+
+/* the game's cost of a death (MissionsFuncs.SinglePlayerDeath and Vehicles.OnDeath of single player): the alarm
+ * off, a life less (-lives; at none left the player starts again: single player's jail is another level), its own
+ * ship lost (-rebuild: the next call costs its price) */
+static void Rep_Death(int i, cEntity *e) {
+	RepPlayer *pl = &rep.pl[i];
+
+	pl->deaths++;
+	pl->dead = 1;
+	Players_Bind(i);
+	Alarm_Set(&g_pWorld->alarm, 0.0f);
+	if (sand.rebuild && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) == i) {
+		pl->rebuild = Rep_ShipPrice(e);
+	}
+	if (sand.lives && --pl->lives <= 0) {
+		pl->lives = sand.lives;
+		g_pWorld->money = Instance_StartMoney();
+		pl->rebuild = 0;
+		Con_Printf("instance: player %d has no lives left: starts again\n", i);
+	}
+	Con_Printf("instance: player %d died in %s (%d lives left, ship cost %d)\n", i, e->name, sand.lives ? pl->lives : -1,
+		pl->rebuild);
+	Players_BindTurn();
 }
 
 static int Rep_Join(int conn) {
@@ -593,6 +830,7 @@ static int Rep_Join(int conn) {
 		pl->conn = conn;
 		pl->told = -1;
 		pl->spawns = spawns;
+		pl->lives = sand.lives;
 		NetRepInBuf_Init(&pl->in);
 		Players_Join(i, Instance_StartMoney());
 		if (!Rep_SpawnChar(i, NULL, 0.0f)) {
@@ -612,6 +850,10 @@ static void Rep_Leave(int i) {
 	Con_Printf("instance: player %d left (%u inputs, %u late, %u missed, %u shots, %u hits)\n", i, pl->in.got,
 		pl->in.late, pl->in.missed, pl->shots, pl->hits);
 	Rep_DropOwn(i);
+	/* its called ships stay in the world, owned by no one */
+	while (pl->nships) {
+		Rep_Disown(i, 0);
+	}
 	Players_Part(i);
 	pl->used = 0;
 	rep.players--;
@@ -629,7 +871,7 @@ void Rep_PreFrame(uint64_t tick) {
 		cEntity *e = Players_Get(i);
 		if (e && e == pl->own && WLife(e)->life <= 0 && !pl->lost) {
 			/* dead: the game's death runs on (the effects, the wreck) without the player */
-			Con_Printf("instance: player %d died in %s\n", i, e->name);
+			Rep_Death(i, e);
 			Rep_DropOwn(i);
 			e = NULL;
 		}
@@ -638,7 +880,7 @@ void Rep_PreFrame(uint64_t tick) {
 			if (!pl->lost) {
 				pl->lost = tick;
 			}
-			if (tick - pl->lost >= REP_RESPAWN_TICKS) {
+			if (tick - pl->lost >= (uint64_t)sand.respawnTicks) {
 				Rep_DropOwn(i);
 				Rep_SpawnChar(i, NULL, 0.0f);
 				NetRepInBuf_Restart(&pl->in);
@@ -647,6 +889,15 @@ void Rep_PreFrame(uint64_t tick) {
 			continue;
 		}
 		pl->lost = 0;
+		if (pl->spawnAt >= 0 && tick - pl->spawnTick < REP_SPAWN_CHECK && e->pos.y < pl->spawnY - REP_SPAWN_FALL) {
+			Con_Printf("instance: player %d fell from spawn point %d: not used again\n", i, pl->spawnAt);
+			rep.spawnBad[pl->spawnAt] = 1;
+			Rep_DropOwn(i);
+			Rep_SpawnChar(i, NULL, 0.0f);
+			NetRepInBuf_Restart(&pl->in);
+			pl->told = -2;
+			continue;
+		}
 		/* the money, the alarm and the scripts' player of this player while its input runs */
 		Players_Bind(i);
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
@@ -660,6 +911,19 @@ void Rep_PreFrame(uint64_t tick) {
 		NetPl_Step(e, &in, 0, 0);
 	}
 	Players_BindTurn();
+}
+
+byte Rep_Command(const char *line) {
+	int i, life;
+	if (sscanf(line, "life %d %d", &i, &life) != 2) {
+		return 0;
+	}
+	cEntity *e = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? Rep_Own(&rep.pl[i]) : NULL;
+	if (e) {
+		WLife(e)->life = life;
+	}
+	Con_Printf("instance: life of player %d (%s) %d\n", i, e ? e->name : "-", life);
+	return 1;
 }
 
 /* the lag compensation: the other entities at the server time the shooter's client showed them */
@@ -765,7 +1029,7 @@ static void Rep_TellSlots(Net2Host *host) {
 		}
 		cEntity *e = pl->own && Players_Get(i) == pl->own ? pl->own : NULL;
 		int slot = e ? Rep_Find(e) : -1;
-		int kind = e ? NetPl_Kind(e) : 0;
+		int kind = e ? NetPl_Kind(e) : pl->dead ? NETREP_DEAD : 0;
 		if (e) {
 			NetRepSrv_SetView(rep.conn[pl->conn].c, e->pos.x, e->pos.y, e->pos.z, 0.0f);
 		}

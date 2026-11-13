@@ -51,7 +51,8 @@
 #define PLAY_LEAD 0.075					/* s the input should be at the server before its tick */
 #define PLAY_LOSS_LEAD 0.07				/* s more with loss: a later copy of a lost input comes in time */
 #define PLAY_STEPS 2					/* slot ticks per tick: 1/60 s each, as a player's of single player */
-#define PLAY_SPAWN_RING 400.0f			/* units between the players at a spawn point */
+#define PLAY_SHIPS_MAX 8					/* called ships a player may own (-ships) */
+#define PLAY_RESPAWN_SECS 3				/* s from a death to the new character (-respawn) */
 #define PLAY_HEADLESS_HZ 60				/* frames a second of a headless player */
 
 struct cEntity;
@@ -100,6 +101,14 @@ void NetPl_SetPhys(struct cEntity *e, const float *phys, int n);
 
 /* ---- the instance's players (Replicate.c) ---- */
 
+/* the sandbox options of the instance's command line (Instance_ParseParam): -ships:<n> called ships a player owns
+ * at once (1; a call past it removes the oldest), -respawn:<s> (PLAY_RESPAWN_SECS), -lives:<n> (0: infinite; at
+ * none left the player starts again with the start money), -rebuild:0|1 (1: a player's own ship that died with it
+ * costs its price at the next call, as single player's rebuild); 1 when param is one of them */
+byte Rep_ParseParam(const char *param, const char *ext);
+/* a test line of the instance's standard input: "life <player> <n>" sets the life of the player's entity (its
+ * damage and death run as for a hit); 1 when it was one */
+byte Rep_Command(const char *line);
 /* before the frame of tick: each player's input of the tick into its entity */
 void Rep_PreFrame(uint64_t tick);
 /* the lag compensation around the aim and hit check of an instant-hit weapon of the vehicle v (only for a

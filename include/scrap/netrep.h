@@ -87,6 +87,7 @@
 #define NETREP_SHIP 1
 #define NETREP_CHAR 2
 #define NETREP_MISSILE 3			/* the projectiles of the weapons */
+#define NETREP_DEAD 4				/* the kind of the player message without a slot: the player died */
 
 /* record ops */
 #define NETREP_OP_DELTA 0

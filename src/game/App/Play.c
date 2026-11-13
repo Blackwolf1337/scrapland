@@ -20,6 +20,8 @@
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/scorer.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/vehicleentity.h"
@@ -29,6 +31,10 @@
 #include "scrap/world.h"
 
 #define PLAY_CAM "PlayCam"
+#define PLAY_DEATH_CAM "PlayDeathCam"
+#define PLAY_DEATH_DIST 1800.0f			/* units of the death camera from the place of the death */
+#define PLAY_DEATH_HIGH 900.0f
+#define PLAY_DEATH_TURN 0.35f			/* radians a second it goes round */
 #define PLAY_NAME "Me%u"
 #define PLAY_MAX_CATCHUP 8				/* ticks stepped in one frame at most; more ahead is a jump */
 #define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */
@@ -71,6 +77,10 @@ static struct {
 	double tickLocal;					/* local time of the last tick */
 	cEntity *cam;
 	byte started;
+	byte dead;							/* the death camera looks at deathAt (the own entity died, no new one yet) */
+	vec3_t deathAt;
+	float deathYaw;
+	float lastYaw;						/* of the own entity at its last tick */
 	NetRepStatus status;				/* the newest status of the server */
 	byte haveStatus;
 	PlayStats st;
@@ -108,6 +118,43 @@ cEntity *Play_Entity(void) {
 
 /* ---- the entity and its camera ---- */
 
+/* the death camera: a camera of its own around the place of the death, no HUD, until the next own entity */
+static void Play_DeathCam(float dt) {
+	cEntity *cam = World_FindEntity(PLAY_DEATH_CAM);
+	int one = 1;
+
+	if (!cam) {
+		cam = cWorld_CreateEntity(g_pWorld, PLAY_DEATH_CAM, play.deathAt.x, play.deathAt.y + PLAY_DEATH_HIGH,
+			play.deathAt.z, TYEN_FCAM);
+		if (!cam) {
+			return;
+		}
+		Entity_VarI(cam, "FreeCam", &one, 1);
+	}
+	if (dt <= 0.0f) {
+		cWorld_SetCam(g_pWorld, 0, PLAY_DEATH_CAM);
+		cScorer *sc = Scorer_Get(0);
+		if (sc) {
+			cScorer_Clear(sc);
+		}
+	}
+	play.deathYaw += PLAY_DEATH_TURN * dt;
+	/* behind the place for the entity's yaw (its yaw 0 looks to -z), nearer when a wall is between; the camera's
+	 * yaw 0 looks to +z, a positive pitch looks down */
+	vec3_t at = { play.deathAt.x, play.deathAt.y + 100.0f, play.deathAt.z }, hit;
+	vec3_t p = { at.x + sinf(play.deathYaw) * PLAY_DEATH_DIST, at.y + PLAY_DEATH_HIGH,
+		at.z + cosf(play.deathYaw) * PLAY_DEATH_DIST };
+	float k = 1.0f;
+	if (Engine_TestLine(&at, &p, &hit, NULL)) {
+		float dx = hit.x - at.x, dz = hit.z - at.z;
+		k = sqrtf(dx * dx + dz * dz) / PLAY_DEATH_DIST * 0.85f;
+		p = (vec3_t){ at.x + (p.x - at.x) * k, at.y + (p.y - at.y) * k, at.z + (p.z - at.z) * k };
+	}
+	CGameCamera *c = &((cCamControl *)cam)->cam;
+	c->pos = p;
+	c->rot = (vec3_t){ atan2f(PLAY_DEATH_HIGH, PLAY_DEATH_DIST), play.deathYaw + M_PI_F, 0.0f };
+}
+
 static void Play_Camera(void) {
 	cEntity *e = play.e;
 	char *s;
@@ -116,6 +163,7 @@ static void Play_Camera(void) {
 	if (!e) {
 		return;
 	}
+	play.dead = 0;
 	play.cam = World_FindEntity(PLAY_CAM);
 	if (!play.cam) {
 		play.cam = cWorld_CreateEntity(g_pWorld, PLAY_CAM, e->pos.x, e->pos.y + 500.0f, e->pos.z, TYEN_FCAM);
@@ -128,10 +176,9 @@ static void Play_Camera(void) {
 	Entity_VarS(play.cam, "MainTarget", &s, 1);
 	Entity_VarS(play.cam, "Target", &s, 1);
 	Entity_VarI(play.cam, "FreeCam", &zero, 1);
-	if (play.kind == NETREP_SHIP) {
-		s = "Vehicles.SwitchView";
-		Entity_VarS(play.cam, "OnSwitch", &s, 1);
-	}
+	/* the ship's camera switches views with its button; a character's has nothing to switch */
+	s = play.kind == NETREP_SHIP ? "Vehicles.SwitchView" : "";
+	Entity_VarS(play.cam, "OnSwitch", &s, 1);
 	Input_SelectActionSetNamed(play.kind == NETREP_SHIP ? "Racer" : "Walk");
 	/* the HUD of single player for the walker or the racer of view 0 */
 	if (play.kind == NETREP_SHIP) {
@@ -165,6 +212,25 @@ void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phy
 			NetPl_SetPhys(play.e, play.phys, play.nphys);
 		}
 		return;
+	}
+	/* after a death the death camera looks at the place until the new entity comes (the own slot may be gone
+	 * already: the look of a wreck is another); the entity of the slot before stays as its proxy */
+	if (slot < 0 && kind == NETREP_DEAD && play.started && !play.dead) {
+		char *none = "";
+		play.dead = 1;
+		play.deathAt = play.truePos;
+		play.deathYaw = play.lastYaw;
+		if (play.cam) {
+			Entity_VarS(play.cam, "OnSwitch", &none, 1);
+		}
+		Play_DeathCam(0.0f);
+		Con_Printf("play: died at %.0f %.0f %.0f\n", (double)play.deathAt.x, (double)play.deathAt.y,
+			(double)play.deathAt.z);
+	}
+	if (play.e && play.slot >= 0 && World_FindEntity(play.e->name) == play.e) {
+		play.e->pos = play.truePos;
+		Watch_Adopt(play.slot, play.e, play.kind);
+		play.e = NULL;
 	}
 	Play_OwnRemove();
 	play.slot = slot;
@@ -331,6 +397,7 @@ static void Play_Step(uint32_t tick, byte none) {
 	NetPl_Step(e, &play.input, 1, 0);
 	Watch_PlayersBack();
 	play.truePos = e->pos;
+	play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
 	Play_Record(tick);
 	play.tick = tick;
 	play.pending++;
@@ -472,6 +539,10 @@ static void Play_Bot(double now) {
 }
 
 void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
+	if (play.dead && !play.e) {
+		Play_DeathCam((float)(now - play.tickLocal));
+		play.tickLocal = now;
+	}
 	if (!play.e || !Watch_ClockReady()) {
 		return;
 	}

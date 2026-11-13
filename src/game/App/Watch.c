@@ -288,6 +288,21 @@ static void Watch_Player(const uint8_t *data, int size) {
 	}
 }
 
+void Watch_Adopt(int slot, cEntity *e, int kind) {
+	int off = -1;
+	if (slot < 0 || slot >= NETREP_MAX_ENTS || !e) {
+		return;
+	}
+	Watch_Free(slot);
+	WatchProxy *p = &watch.px[slot];
+	p->e = e;
+	p->kind = kind;
+	Obj(e)->proxy = 1;
+	Obj(e)->netStep = 0;
+	Entity_VarI(e, "UsrControl", &off, 1);
+	watch.proxies++;
+}
+
 byte Watch_IsPlayer(cEntity *e) {
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		WatchProxy *p = &watch.px[s];
