@@ -23,6 +23,7 @@
 #include "scrap/logic.h"
 #include "scrap/net2.h"
 #include "scrap/netrep.h"
+#include "scrap/nodesworld.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
@@ -133,6 +134,8 @@ typedef struct FrPlayer {
 	char shipName[FR_NAME];
 	FactionWanted wanted;
 	int level;						/* the wanted level of the last tick */
+	int jailFine;					/* arrested and sent to the jail of another level with this fine: its notice
+									   there (state key jailfine), -1 */
 	double ready[FA_COUNT];			/* the instance time the ability is ready again */
 	uint8_t sent[8];				/* the last status sent */
 	byte sentAny;
@@ -142,7 +145,6 @@ typedef struct FrPlayer {
 typedef struct FrYield {
 	cEntity *e;
 	char name[FR_NAME];
-	int state;						/* its state before (AIV_IN_ROUTE or AIV_TRAFFIC) */
 	double until;
 } FrYield;
 
@@ -207,9 +209,13 @@ void Faction_Admit(int i, const char *state, int len) {
 	}
 	memset(p, 0, sizeof(*p));
 	p->faction = FACTION_NONE;
+	p->jailFine = -1;
 	FactionWanted_Init(&p->wanted);
 	if (!state) {
 		return;
+	}
+	if (CoordKv_Get(state, len, "jailfine", v, sizeof(v)) && v[0]) {
+		p->jailFine = crt_atoi(v);
 	}
 	if (CoordKv_Get(state, len, "char", v, sizeof(v))) {
 		Str_Copy(p->charCls, v, sizeof(p->charCls));
@@ -250,12 +256,18 @@ void Faction_State(int i, char *state, int *len, int cap) {
 	CoordKv_Set(state, len, cap, "arrests", v);
 	Str_PrintfQuiet(v, sizeof(v), "%.2f", (double)p->wanted.points);
 	CoordKv_Set(state, len, cap, "wanted", v);
+	Str_PrintfQuiet(v, sizeof(v), "%d", p->jailFine);
+	CoordKv_Set(state, len, cap, "jailfine", p->jailFine >= 0 ? v : "");
 }
 
 /* the class is loaded (its resources, as the conversor's Chars.LoadRes): 1 when it is there */
 static byte Fr_LoadClass(const char *cls) {
 	if (cActClassList_Get(g_pActClassList, cls)) {
 		return 1;
+	}
+	/* outdoors the level loads no character scripts (Init's LoadChars): the class's script and its sound first */
+	if (!Mode_Import("Init") || !PORT_CALL(Init, LoadCharLib, NULL, "s", cls)) {
+		Native_ErrPrint();
 	}
 	if (!Mode_Import("Chars") || !PORT_CALL(Chars, LoadRes, NULL, "s", cls)) {
 		Native_ErrPrint();
@@ -444,6 +456,7 @@ static int Fr_Join(int i, cEntity *e) {
 		Str_Copy(p->charCls, FR_DEFAULT_CHAR, sizeof(p->charCls));
 		Fr_Rebody(i, NULL, 0.0f);
 		Fr_Notice(i, FT_LEFT, 0, t->f[here].name);
+		Travel_Report(i);
 		return 1;
 	}
 	if (p->level > 0) {
@@ -455,6 +468,7 @@ static int Fr_Join(int i, cEntity *e) {
 	Str_Copy(p->charCls, t->f[here].play, sizeof(p->charCls));
 	Fr_Rebody(i, NULL, 0.0f);
 	Fr_Notice(i, FT_JOINED, 0, t->f[here].name);
+	Travel_Report(i);
 	return 1;
 }
 
@@ -501,9 +515,10 @@ static int Fr_Suspect(int i, cEntity *e, float reach) {
 	return best;
 }
 
-/* the arrested player to the jail of the faction's office level: the travel there (a coordinator's world), a place
- * at the jail (this is the office level), else its spawn again */
-static void Fr_Jail(int j, const FactionDef *f) {
+/* the arrested player to the jail of the faction's office level: the travel there (a coordinator's world; the notice
+ * of the fine goes with it, the client leaves this instance at once), a place at the jail (this is the office level),
+ * else its spawn again */
+static void Fr_Jail(int j, const FactionDef *f, int fine) {
 	char found[64];
 	vec3_t pos, ang;
 	cEntity *e = Players_Get(j);
@@ -517,13 +532,19 @@ static void Fr_Jail(int j, const FactionDef *f) {
 		} else {
 			Rep_Respawn(j);
 		}
+		Fr_Notice(j, FT_ARRESTED, fine, NULL);
 		Con_Printf("factions: player %d jailed in %s\n", j, Instance_Level());
 		return;
 	}
-	if (Travel_Coordinated() && Travel_Request(e->name, f->office, f->jail, "")) {
+	/* the state the travel hands over carries the notice */
+	fr.pl[j].jailFine = fine;
+	byte gone = Travel_Coordinated() && Travel_Request(e->name, f->office, f->jail, "");
+	fr.pl[j].jailFine = -1;
+	if (gone) {
 		Con_Printf("factions: player %d sent to the jail of %s\n", j, f->office);
 		return;
 	}
+	Fr_Notice(j, FT_ARRESTED, fine, NULL);
 	Con_Printf("factions: player %d has no way to %s (no coordinator): it starts again here\n", j, f->office);
 	Rep_Respawn(j);
 }
@@ -559,12 +580,13 @@ static int Fr_Arrest(int i, cEntity *e) {
 	p->arrests++;
 	Con_Printf("factions: player %d arrested player %d (wanted %d): fine %d, reward %d, %d arrests\n", i, j, level,
 		fine, t->reward * level, p->arrests);
-	Fr_Notice(j, FT_ARRESTED, fine, NULL);
 	Fr_Notice(i, FT_ARREST_MADE, t->reward * level, NULL);
 	if (Fr_Rank(p) > before) {
 		Fr_Notice(i, FT_RANK_UP, Fr_Rank(p), Fr_RankName(p->faction, Fr_Rank(p), rank, sizeof(rank)));
 	}
-	Fr_Jail(j, &t->f[p->faction]);
+	Fr_Jail(j, &t->f[p->faction], fine);
+	/* the rank and the money in the store at once */
+	Travel_Report(i);
 	return 1;
 }
 
@@ -840,11 +862,8 @@ static void Fr_Sirens(uint64_t tick) {
 		cEntity *e = World_FindEntity(y->name);
 		cAIVehicle *ai = e == y->e && !e->deadNode.target ? Entity_GetAI(e) : NULL;
 		if (ai && cAIVehicle_GetState(ai) == AIV_GET_AWAY_STOP) {
-			if (y->state == AIV_TRAFFIC) {
-				cAIVehicle_SetState(ai, AIV_TRAFFIC);
-			} else {
-				cAIVehicle_SetState(ai, AIV_IN_ROUTE, 1, 5.0, 2.0);
-			}
+			/* the route again with the traffic's defaults (Traffic_Patrol) */
+			cAIVehicle_SetState(ai, AIV_IN_ROUTE, 1, 5.0, 2.0);
 		}
 		y->e = NULL;
 	}
@@ -863,9 +882,10 @@ static void Fr_Sirens(uint64_t tick) {
 				Fr_DistSq(v, &s->pos) > t->sirenRadius * t->sirenRadius) {
 				continue;
 			}
-			cAIVehicle *ai = Entity_GetAI(v);
-			int st = ai ? cAIVehicle_GetState(ai) : -1;
-			if (st != AIV_IN_ROUTE && st != AIV_TRAFFIC) {
+			/* the ships of the routes (the big ones of the fixed lanes, AIV_TRAFFIC, cannot leave them: the graph
+			 * of the AI takes no ship that large) */
+			cAIVehicle *ai = v->active ? Entity_GetAI(v) : NULL;
+			if (!ai || cAIVehicle_GetState(ai) != AIV_IN_ROUTE || !(Obj_GetRadius(v) < g_NWNodeRadius)) {
 				continue;
 			}
 			int free = -1;
@@ -879,7 +899,6 @@ static void Fr_Sirens(uint64_t tick) {
 				FrYield *y = &fr.yield[free];
 				y->e = v;
 				Str_Copy(y->name, v->name, sizeof(y->name));
-				y->state = st;
 				y->until = now + t->sirenTime;
 				Con_Printf("factions: %s gives way to the siren of player %d\n", v->name, i);
 			}
@@ -894,9 +913,15 @@ void Faction_Tick(Net2Host *host, uint64_t tick) {
 	Fr_Crimes();
 	Fr_Sirens(tick);
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		if (host && Players_Get(i)) {
-			Fr_SendState(host, i);
+		FrPlayer *p = &fr.pl[i];
+		if (!host || !Players_Get(i)) {
+			continue;
 		}
+		if (p->jailFine >= 0) {
+			Fr_Notice(i, FT_ARRESTED, p->jailFine, NULL);
+			p->jailFine = -1;
+		}
+		Fr_SendState(host, i);
 	}
 }
 
@@ -925,9 +950,12 @@ byte Faction_Command(const char *line) {
 		cEntity *me = Players_Get(i);
 		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 			cActCtrl *a = Entity_IsType(e, TYEN_WITH_LIFE) ? WLife(e)->actCtrl : NULL;
-			if (me && Fr_DistSq(e, &me->pos) < 3000.0f * 3000.0f) {
-				Con_Printf("factions: entity %s (%s) at %.0f %.0f %.0f\n", e->name, a && a->cls ? a->cls->name : "-",
-					(double)e->pos.x, (double)e->pos.y, (double)e->pos.z);
+			byte car = !strcmp(arg, "cars") && Entity_IsType(e, TYEN_CAR) && Entity_GetAI(e);
+			if (car || (me && Fr_DistSq(e, &me->pos) < 3000.0f * 3000.0f)) {
+				cAIVehicle *ai = Entity_IsType(e, TYEN_CAR) ? Entity_GetAI(e) : NULL;
+				Con_Printf("factions: entity %s (%s) at %.0f %.0f %.0f, ai state %d\n", e->name,
+					a && a->cls ? a->cls->name : "-", (double)e->pos.x, (double)e->pos.y, (double)e->pos.z,
+					ai ? cAIVehicle_GetState(ai) : -1);
 			}
 		}
 		return 1;
@@ -935,6 +963,26 @@ byte Faction_Command(const char *line) {
 	if (!strcmp(what, "wanted")) {
 		p->wanted.points = (float)crt_atof(arg);
 		Con_Printf("factions: player %d wanted points %.1f\n", i, (double)p->wanted.points);
+		return 1;
+	}
+	if (!strcmp(what, "set")) {
+		/* tests: a member without the office */
+		const FactionTable *t = Faction_Table();
+		p->faction = t ? Faction_Find(t, arg) : FACTION_NONE;
+		p->armoured = 0;
+		Str_Copy(p->charCls, t && p->faction >= 0 ? t->f[p->faction].play : FR_DEFAULT_CHAR, sizeof(p->charCls));
+		Fr_Rebody(i, NULL, 0.0f);
+		Con_Printf("factions: player %d set to %s\n", i, t && p->faction >= 0 ? t->f[p->faction].name : "-");
+		return 1;
+	}
+	if (!strcmp(what, "crime")) {
+		for (int c = 0; c < FCRIME_COUNT; c++) {
+			if (!strcmp(arg, Faction_CrimeName(c)) && fr.ncrimes < FR_CRIMES) {
+				fr.crimes[fr.ncrimes].player = (int8_t)i;
+				fr.crimes[fr.ncrimes].crime = (int8_t)c;
+				fr.ncrimes++;
+			}
+		}
 		return 1;
 	}
 	if (!strcmp(what, "arrests")) {
@@ -984,7 +1032,6 @@ void Faction_ClientReset(void) {
 	frc.have = 0;
 	frc.faction = FACTION_NONE;
 	frc.botStart = 0.0;
-	frc.botDone = 0;
 }
 
 void Faction_ClientMessage(const uint8_t *data, int size) {
@@ -1036,7 +1083,7 @@ static void Fr_ClientSend(int a) {
 	}
 }
 
-/* tests: SCRAP_PLAYBOT_FACTION=<s>:<ability>,... sends the requests at those seconds after the level started */
+/* tests: SCRAP_PLAYBOT_FACTION=<s>:<ability>,... sends each request once, that many seconds after a level started */
 static void Fr_ClientBot(void) {
 	if (!frc.botTried) {
 		const char *b = getenv("SCRAP_PLAYBOT_FACTION");

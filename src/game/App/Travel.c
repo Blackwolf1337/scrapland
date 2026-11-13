@@ -516,6 +516,12 @@ void Travel_Joined(int player) {
 	Tr_SendState(player, COORD_SR_JOIN, "", "", "");
 }
 
+void Travel_Report(int player) {
+	if (Travel_Coordinated() && player >= 0 && player < PLAYERS_MAX && tr.pl[player].used && !tr.pl[player].traveled) {
+		Tr_SendState(player, COORD_SR_REPORT, "", "", "");
+	}
+}
+
 void Travel_Left(int player) {
 	TrPlayer *p = &tr.pl[player];
 	if (p->used && !p->traveled && !p->quiet) {

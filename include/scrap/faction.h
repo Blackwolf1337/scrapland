@@ -157,8 +157,9 @@ byte Faction_MayHurt(struct cEntity *attacker, struct cEntity *victim);
 struct cEntity *Faction_CallShip(int i, const void *pos, float yaw);
 /* NETREP_FL_ flags of a replicated entity (the siren of a player's ship) */
 uint8_t Faction_Flags(struct cEntity *e);
-/* a test line of the instance: "faction <player> join|leave|<ability>|wanted <points>|arrests <n>|dump <pattern>"; 1
- * when it was one */
+/* a test line of the instance: "faction <player> join|leave|<ability>|status|wanted <points>|arrests <n>|crime
+ * <crime>|dump <pattern>" (abilities as the client's requests; dump: the dummies of the pattern and the entities near
+ * the player); 1 when it was one */
 byte Faction_Command(const char *line);
 
 /* client: a status message of the instance; each frame (the keys, the text line); a proxy's or the own entity's state

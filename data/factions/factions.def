@@ -24,7 +24,7 @@ reward 150
 reach 900 2000
 deskreach 1200
 # the siren: traffic within the radius moves away from the ship to the distance, held for the time (s)
-siren 3500 2500 5
+siren 6000 4000 5
 # backup outdoors: police ships of the wave type, so many; indoors the gears of the level chase the suspect
 backup SPoli2_Rookie 2
 
