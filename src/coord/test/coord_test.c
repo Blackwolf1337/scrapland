@@ -12,6 +12,7 @@
 #include "scrap/cmdquote.h"
 #include "scrap/coord.h"
 #include "scrap/coordlist.h"
+#include "scrap/placedef.h"
 
 static int checks, failed;
 
@@ -496,6 +497,64 @@ static void Test_Quote(void) {
 	CHECK(CmdQuote_Arg("-name:a-b", out, 12) == 11);
 }
 
+static void Test_Places(void) {
+	static PlaceTable t;
+	char err[128], list[256];
+	const char *ok =
+		"# a comment\n"
+		"place TownHall\n"
+		"\tlink DM_Door_ElevatorOrbit_Orbit Orbit\n"
+		"place Orbit listed\n"
+		"\tlink DM_Door_ElevatorOrbitC_TownHall TownHall,Fake   # two levels\n"
+		"\tnpc Bishop_00\n"
+		"\tnpc Police_F1 DM_Conversion_Point_14 -300 0 10.5 * fixed\n"
+		"\tgate Hall - 1 2 3 90 to TownHall Junkyard:Lift\n"
+		"\ttraffic 12 SBetty1,SFunc1\n"
+		"\trail 1 2 3\n"
+		"\tpolice on\n"
+		"\tspawn DM_Player_Spawn 0 0 0 *\n"
+		"\trepos Functionary 3\n"
+		"\tnouse DM_EditKeyboard\n"
+		"\tai 6000\n"
+		"place QF listed\n";
+	CHECK(PlaceDef_Parse(ok, &t, err, sizeof(err)));
+	CHECK(t.n == 3);
+	const PlaceLevel *l = PlaceDef_Level(&t, "orbit");
+	CHECK(l && l->listed && l->nlinks == 1 && !strcmp(l->link[0].levels, "TownHall,Fake"));
+	CHECK(l && l->nnpcs == 2 && l->npc[0].mission && !l->npc[0].fixed && !strcmp(l->npc[0].name, "Bishop_00"));
+	CHECK(l && !l->npc[1].mission && l->npc[1].fixed && l->npc[1].pos.dummyYaw && l->npc[1].pos.x == -300.0f &&
+		l->npc[1].pos.z == 10.5f && !strcmp(l->npc[1].pos.dummy, "DM_Conversion_Point_14"));
+	const PlaceGate *g = PlaceDef_Gate(l, "hall");
+	CHECK(g && g->nopt == 2 && !g->pos.dummy[0] && g->pos.yaw == 90.0f && g->pos.y == 2.0f);
+	CHECK(g && !strcmp(g->opt[0].level, "TownHall") && !g->opt[0].gate[0] && !strcmp(g->opt[1].level, "Junkyard") &&
+		!strcmp(g->opt[1].gate, "Lift"));
+	CHECK(l && l->traffic == 12 && !strcmp(l->ships, "SBetty1,SFunc1") && l->rail[2] == 3 && l->police == 1);
+	CHECK(l && l->nspawns == 1 && l->nrepos == 1 && l->repos[0].n == 3 && l->nnouse == 1 && l->intraffic[0] == -1);
+	CHECK(l && l->aiStep == 6000.0f);
+	l = PlaceDef_Level(&t, "TownHall");
+	CHECK(l && !l->listed && l->traffic == -1 && l->police == -1);
+	CHECK(PlaceDef_Places(&t, list, sizeof(list)) && !strcmp(list, "Orbit,QF"));
+	CHECK(!PlaceDef_Places(&t, list, 7) && !strcmp(list, "Orbit"));
+	CHECK(!PlaceDef_Parse("\tnpc A_1\n", &t, err, sizeof(err)) && strstr(err, "line 1"));
+	CHECK(!PlaceDef_Parse("place A\nplace a\n", &t, err, sizeof(err)) && strstr(err, "line 2"));
+	CHECK(!PlaceDef_Parse("place A\n\tnpc Nobody\n", &t, err, sizeof(err)));
+	CHECK(!PlaceDef_Parse("place A\n\tgate G - 1 2 3 * to B\n", &t, err, sizeof(err)));
+	CHECK(!PlaceDef_Parse("place A\n\tgate G - 1 2 3 0 B\n", &t, err, sizeof(err)));
+	CHECK(!PlaceDef_Parse("place A\n\tpolice maybe\n", &t, err, sizeof(err)));
+	CHECK(!PlaceDef_Parse("place A\n\ttraffic -1\n", &t, err, sizeof(err)));
+	CHECK(!PlaceDef_Parse("place A\n\twhat 1\n", &t, err, sizeof(err)) && strstr(err, "what"));
+	CHECK(!PlaceDef_Parse("place A\n\tai 10\n", &t, err, sizeof(err)));
+	/* the built-in table: the city comes first in the world's levels, the places after it */
+	const char *w = PlaceDef_WorldLevels();
+	CHECK(!strncmp(w, COORD_CITY, strlen(COORD_CITY)) && strstr(w, ",Orbit") && strstr(w, ",QF"));
+	CHECK(PlaceDef_Level(PlaceDef_Table(), "Orbit") != NULL);
+	int levels = 1;
+	for (const char *p = w; *p; p++) {
+		levels += *p == ',';
+	}
+	CHECK(levels <= COORD_MAX_LEVELS);
+}
+
 int main(int argc, char **argv) {
 	Test_Kv();
 	Test_Hex();
@@ -503,6 +562,7 @@ int main(int argc, char **argv) {
 	Test_Store(argc > 1 ? argv[1] : "coord_test_data");
 	Test_List();
 	Test_Quote();
+	Test_Places();
 	printf("coord_test: %d checks, %d failed\n", checks, failed);
 	return failed != 0;
 }

@@ -22,6 +22,7 @@
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/netrep.h"
+#include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/players.h"
 #include "scrap/play.h"
@@ -485,7 +486,8 @@ byte Travel_Admit(int conn, int player, TravelSpawn *sp) {
 		sp->money = crt_atoi(v);
 	}
 	cEntity *door;
-	if (p->entrance[0] && Tr_Dummy(p->entrance, &sp->pos, &sp->yaw)) {
+	if (p->entrance[0] && (Tr_Dummy(p->entrance, &sp->pos, &sp->yaw) || Places_Entrance(p->entrance, &sp->pos,
+		&sp->yaw))) {
 		sp->have = 1;
 	} else if (p->door[0] && (door = Tr_NearestDoor(p->door, NULL)) != NULL) {
 		/* the level has no spawn dummy for that way in (a metro station): at the door of that kind */
@@ -578,7 +580,11 @@ byte Travel_Name(int player, char *out, int cap) {
 }
 
 byte Travel_Send(int player, const char *level) {
-	return player >= 0 && player < PLAYERS_MAX && tr.pl[player].used && tr.up && Tr_Go(player, level, "", "");
+	return Travel_SendAt(player, level, "");
+}
+
+byte Travel_SendAt(int player, const char *level, const char *entrance) {
+	return player >= 0 && player < PLAYERS_MAX && tr.pl[player].used && tr.up && Tr_Go(player, level, entrance, "");
 }
 
 /* ---- the metro ---- */
@@ -723,6 +729,9 @@ void Travel_TestUse(int player, const char *entity, const char *option) {
 				a->iOpt = k;
 			}
 		}
+	}
+	if (Places_TestUse(player, t, a->iOpt)) {
+		return;
 	}
 	Con_Printf("instance: player %d uses %s (%s)\n", player, entity, a->nOpt ? cArrowIndicator_GetOpt(a, a->iOpt) : "");
 	Players_Bind(player);

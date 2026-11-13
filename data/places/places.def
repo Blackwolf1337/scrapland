@@ -1,0 +1,133 @@
+# The places of the sandbox and freeroam modes (multiplayer, not in the original) that single player keeps closed, and
+# the ways to them from the city; read by src/coord/PlaceDef.c (the format: include/scrap/placedef.h). A listed place
+# is in the coordinator's levels and the level choice of the Host world page; the city levels have lines only where
+# they lead to a place. Positions: "<dummy|-> <x> <y> <z> <yaw|*>" (numbers added to the dummy's position, * its yaw;
+# with - the position itself and the yaw in degrees).
+
+# the town hall's elevator to the orbit (locked in single player until the decontamination)
+place TownHall
+	link DM_Door_ElevatorOrbit_Orbit Orbit
+
+# the space station: the bishops, the functionary at his desk, the sentinel and the gatekeeper stand where the story
+# has them; a gate on the platform of the story's fall goes down to the town hall's orbit elevator or to the hall of
+# Fake (the platform itself is no working elevator: single player only plays a scene there)
+place Orbit listed
+	gate Lift DM_Door_ElevatorOrbitC_TownHall 0 0 0 * to TownHall:DM_Player_Spawn_Orbit Fake:Hall
+	npc Bishop_00
+	npc Bishop_01
+	npc Functionary_00
+	npc Sentinel_Corridor
+
+# the hall the intro walks through: functionaries and a nurse at their places (the level has no graph for the AI, so
+# they stand; no police or messengers, whose AI starts walking at once), the traffic behind the windows
+place Fake listed
+	gate Hall DM_Player_Spawn_Fake 0 0 0 * to TownHall:DM_Player_Spawn_Orbit Orbit:Lift Junkyard:Lift
+	npc Functionary_F1 DM_Conversion_Point_03 300 0 0 * fixed
+	npc Functionary_F2 DM_Conversion_Point_13 300 0 0 * fixed
+	npc Functionary_F3 DM_Conversion_Point_19 0 0 300 * fixed
+	npc Nurse_F1 DM_Conversion_Point_14 -300 0 0 * fixed
+	npc Functionary_F4 DM_Conversion_Point_20 0 0 300 * fixed
+	npc Functionary_F5 DM_Conversion_Point_15 -300 0 0 * fixed
+	intraffic 20 5 0
+
+# Rusty's junkyard, reached from the junker parking of Outskirts; the editor's platform goes back up to Outskirts, the
+# editor itself stays a single player menu
+place Junkyard listed
+	link DM_Door_EditShip_00 Outskirts
+	gate Lift DM_Player_Spawn_ 0 0 0 * to Outskirts:Junker Fake
+	nouse DM_EditKeyboard
+
+place Outskirts
+	gate Junker DM_Player_Spawn_Junkyard 0 0 0 * to Junkyard:Lift
+
+# the casino: its teleporter leads to the final fight's area and to the room after it; a gate to the arenas of the
+# crazy gambler's deals
+place GamblinDen
+	link DM_Door_Teleporter_00 AB,ABIndoor
+	gate Deals DM_Player_Spawn_Scrapyard 0 0 0 * to QF:Pad FZ:Pad OM:Pad CA:Pad
+	gate Deals2 DM_Player_Spawn_Scrapyard 400 0 0 * to MCA:Pad MCB:Pad MDA:Pad MDB:Pad MOA:Pad MOB:Pad MSA:Pad MSB:Pad
+
+# the asteroids of the final fight with traffic and police instead of the boss
+place AB listed
+	link DM_Door_Teleporter_GamblinDen GamblinDen
+	traffic 12
+	police on
+
+# the room after the final fight: Dtritus' friends wait there
+place ABIndoor listed
+	link DM_Door_Teleporter_GamblinDen GamblinDen
+
+# the arenas of the super deals as districts: traffic and police, a gate at the landing pad back to the casino
+place QF listed
+	gate Pad DM_Player_Spawn_QF 0 0 0 * to GamblinDen:Deals
+	traffic 10
+	police on
+
+place FZ listed
+	gate Pad DM_Player_Spawn_FZ 0 0 0 * to GamblinDen:Deals
+	traffic 10
+	police on
+
+place OM listed
+	gate Pad DM_Player_Spawn 0 0 0 * to GamblinDen:Deals
+	traffic 10
+	police on
+
+place CA listed
+	gate Pad DM_Player_Spawn 0 0 0 * to GamblinDen:Deals
+	traffic 10
+	police on
+
+# the small multiplayer arenas as districts: they have no graph of the AI, so the instance makes one from their
+# geometry when it starts (the free space around their DM_NodeIniAI dummies); traffic and police fly in it; a gate at
+# the landing pad back to the casino
+
+place MCA listed
+	ai 6000
+	gate Pad DM_Player_Spawn_MCA 0 0 0 * to GamblinDen:Deals2
+	traffic 8
+	police on
+
+place MCB listed
+	ai 6000
+	gate Pad DM_Player_Spawn_MCB 0 0 0 * to GamblinDen:Deals2
+	traffic 8
+	police on
+
+# no spawn dummy of the players here: the place of the others' pads (beside the parked ship)
+place MDA listed
+	ai 6000
+	spawn DM_Parked_MDA 112 -101 -1444 -5
+	gate Pad DM_Parked_MDA 112 -101 -1444 -5 to GamblinDen:Deals2
+	traffic 8
+	police on
+
+place MDB listed
+	ai 6000
+	gate Pad DM_Player_Spawn_MDB 0 0 0 * to GamblinDen:Deals2
+	traffic 8
+	police on
+
+place MOA listed
+	ai 6000
+	gate Pad DM_Player_Spawn_MOA 0 0 0 * to GamblinDen:Deals2
+	traffic 8
+	police on
+
+place MOB listed
+	ai 6000
+	gate Pad DM_Player_Spawn_MOB 0 0 0 * to GamblinDen:Deals2
+	traffic 8
+	police on
+
+place MSA listed
+	ai 6000
+	gate Pad DM_Player_Spawn_MSA 0 0 0 * to GamblinDen:Deals2
+	traffic 8
+	police on
+
+place MSB listed
+	ai 6000
+	gate Pad DM_Player_Spawn_MSB 0 0 0 * to GamblinDen:Deals2
+	traffic 8
+	police on

@@ -33,7 +33,8 @@
  *     'h' hello: version u16, name str
  *     'c' challenge: version u16, nonce 32, world name str
  *     'j' join: key 32, signature 64, flags u8 (COORD_JF_*), port u16 (COORD_JF_RESUME: the instance it plays in)
- *     't' ticket: port u16, level str, ticket u16 length + bytes (the instance on the coordinator's address)
+ *     't' ticket: port u16, level str, ticket u16 length + bytes (the instance on the coordinator's address), the
+ *         world's mode str (an older coordinator's message ends before it)
  *     'd' deny: reason u8 (COORD_DENY_*), text str (the coordinator disconnects after it)
  *     'n' notice: text str
  *   instance <-> coordinator:
@@ -242,7 +243,7 @@ typedef struct CoordConfig {
 	char dataDir[COORD_PATH];		/* players/, logs/, coordinator.key, instances.txt */
 	char gameDir[COORD_PATH];		/* the game folder (Bin/ScrapC in it), the instances run in its Bin */
 	char exe[COORD_PATH];			/* the ScrapC the instances run, "" gameDir/Bin/ScrapC */
-	char levels[512];				/* the levels a player may go to, comma separated, "" the city */
+	char levels[512];				/* the levels a player may go to, comma separated, "" the city and the places */
 	char keep[512];					/* the levels kept up, "" the city */
 	char start[COORD_LEVEL + 1];	/* where a new player starts, "" DownTown */
 	char instArgs[256];				/* more arguments for the instances (space separated) */

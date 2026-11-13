@@ -20,6 +20,7 @@
  */
 #include <string.h>
 
+#include "scrap/places.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 #include "Levels.h"
@@ -163,9 +164,13 @@ static byte Fk_Init(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Mode_Import("InTraffic") && LvN_ModTexts("InTraffic", "N_TrafficList", light) && LvN_ModSetI("InTraffic", "N_NumTraffic", 0) &&
 		LvN_ModTexts("InTraffic", "M_TrafficList", med) && LvN_ModSetI("InTraffic", "M_NumTraffic", 0) &&
 		LvN_ModTexts("InTraffic", "H_TrafficList", none) && LvN_ModSetI("InTraffic", "H_NumTraffic", 0) &&
-		Mode_SetModVar("InTraffic", "Path", &path) && PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "") &&
-		PORT_LOWN(Map, CreateFakeBertoShip, NULL, "") && Mode_Import("Scene");
+		Mode_SetModVar("InTraffic", "Path", &path) && PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "");
 	Native_Free(&path);
+	/* not in the original: a sandbox or freeroam world has the hall without the intro (include/scrap/places.h) */
+	if (Places_On()) {
+		return ok;
+	}
+	ok = ok && PORT_LOWN(Map, CreateFakeBertoShip, NULL, "") && Mode_Import("Scene");
 	/* LoadFake0Scene, LoadFake1Scene and PlayFake0 are sections of map.def (OBJLIB 6) */
 	ok = ok && LV_OWN(MAP, "LoadFake0Scene", NULL, "") && LV_OWN(MAP, "LoadFake1Scene", NULL, "") &&
 		PORT_LOWN(Map, LoadFake2Scene, NULL, "") && LV_OWN(MAP, "PlayFake0", NULL, "");

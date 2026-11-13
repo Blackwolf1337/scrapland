@@ -22,6 +22,7 @@
 #include "scrap/instance.h"
 #include "scrap/net.h"
 #include "scrap/net2.h"
+#include "scrap/placedef.h"
 #include "scrap/platform.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
@@ -33,7 +34,7 @@
 #include "scrap/worldmenu.h"
 
 #define WORLD_MAX 256				/* worlds in the list */
-#define WORLD_LEVELS 16
+#define WORLD_LEVELS COORD_MAX_LEVELS
 #define WORLD_ROTATION 512
 #define WORLD_MAX_PLAYERS 64
 #define WORLD_CLOSE_MS 2000			/* the browser's socket closes this long after its page went */
@@ -352,12 +353,12 @@ static void World_Refresh(void) {
 
 /* ---- the pages ---- */
 
-/* the levels a host may start in: the city of the coordinator, the maps of a PvP mode (Net.ModesMap, the DeathMatch
+/* the levels a host may start in: the city and the places of the coordinator, the maps of a PvP mode (Net.ModesMap, the DeathMatch
  * maps for the one with bots) */
 static void World_Levels(void) {
 	char maps[WORLD_ROTATION];
 	int a = Arena_ModeOf(world_modes[wm.mode]);
-	const char *p = COORD_CITY;
+	const char *p = PlaceDef_WorldLevels();
 	if (world_numLevels && world_levelsMode == (a >= 0 ? a : -2)) {
 		return;
 	}

@@ -25,6 +25,7 @@
 #include "scrap/netrep.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
+#include "scrap/places.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
@@ -427,7 +428,13 @@ static void Rep_FindSpawns(void) {
 	vec3_t p, ang;
 
 	rep.haveSpawn = 1;
-	rep.nspawns = 0;
+	rep.nspawns = Places_Spawns(rep.spawn, rep.spawnYaw, REP_SPAWNS);
+	for (int k = 0; k < rep.nspawns; k++) {
+		/* the yaw a dummy has (the spawn faces away from it, as below) */
+		rep.spawnYaw[k] += M_PI_F;
+		Con_Printf("instance: players spawn at %.0f %.0f %.0f (places)\n", (double)rep.spawn[k].x,
+			(double)rep.spawn[k].y, (double)rep.spawn[k].z);
+	}
 	for (int i = 0; i < 2 && !rep.nspawns; i++) {
 		DummySearch_Start(names[i], 1);
 		while (rep.nspawns < REP_SPAWNS && DummySearch_NextEuler(name, sizeof(name), &p, &ang)) {
@@ -1059,6 +1066,7 @@ void Rep_PreFrame(uint64_t tick) {
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Faction_Input(i, e, &in);
+		Places_Input(i, e, &in);
 		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Rep_UsesDoor(e) && !Arena_On()) {
 			pl->buttons = in.buttons;
 			Rep_Switch(i, e);

@@ -19,6 +19,7 @@
  */
 #include <string.h>
 
+#include "scrap/places.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 #include "Levels.h"
@@ -94,9 +95,12 @@ static byte Abi_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("Menu") || !Mode_GVarSetI("isActionIndoor", 0) || !LvN_SetMusic("Music/AfterFinalFight.ogg", 1.0)) {
 		return 0;
 	}
-	byte ok;
+	byte ok = 1;
 	/* OBJLIB 6: LoadSceneA and LoadSceneB are sections of map.def */
-	if (LvN_SaveIs("ABIndoor.Scene", "0")) {
+	if (Places_On()) {
+		/* not in the original: a sandbox or freeroam world has the friends without the end of the story
+		 * (include/scrap/places.h) */
+	} else if (LvN_SaveIs("ABIndoor.Scene", "0")) {
 		ok = LV_OWN(MAP, "LoadSceneA", NULL, "") && LV_OWN(MAP, "LoadSceneB", NULL, "");
 		if (ok) {
 			Mode_SetActionSet("Inactive");

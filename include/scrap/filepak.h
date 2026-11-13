@@ -90,6 +90,10 @@ void PackIndexTable_Clear(HashTable *self);
 cFilePack *cFilePack_ctor(cFilePack *self);
 void cFilePack_dtor(cFilePack *self);
 int cFilePack_Open(cAbstractFile *elem, const char *name, uint32_t mode);
+/* not in the original: one file served from memory under name (case-insensitive, read only) before the packs and
+ * the disk; data stays the caller's; NULL removes it (the AI graph a multiplayer instance makes,
+ * include/scrap/places.h) */
+void FilePack_SetMemory(const char *name, const void *data, int size);
 int cFilePack_Exists(cAbstractFile *base, const char *name);
 int cFilePack_Close(cAbstractFile *base);
 int cFilePack_Read(cAbstractFile *elem, void *dst, int size);

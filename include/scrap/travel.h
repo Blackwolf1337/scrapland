@@ -84,6 +84,8 @@ byte Travel_Name(int player, char *out, int cap);
 /* player (with or without an entity) to the players' spawn of level through the coordinator (the next level of the
  * PvP modes, include/scrap/arena.h): 1 when it goes */
 byte Travel_Send(int player, const char *level);
+/* the same to the entrance of level (a spawn dummy, a gate of include/scrap/places.h; "" the players' spawn) */
+byte Travel_SendAt(int player, const char *level, const char *entrance);
 /* the use of a metro door by an entity: 1 when it was a player's (its client gets the station map) */
 byte Travel_MetroUse(const char *usr, const char *door);
 /* the player took ship: its owned ship */

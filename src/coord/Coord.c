@@ -11,6 +11,7 @@
 #include "scrap/coord.h"
 #include "scrap/coordlist.h"
 #include "scrap/netrep.h"
+#include "scrap/placedef.h"
 
 #define CO_CONNS NET2_MAX_CONNS
 #define CO_PLAYERS 256				/* players online or in an instance */
@@ -446,6 +447,7 @@ static void Co_SendTicket(CoPlayer *p) {
 	NetRep_PutStr(&w, in->level);
 	NetRep_PutU16(&w, (uint32_t)n);
 	CoordMsg_PutBytes(&w, tk, n);
+	NetRep_PutStr(&w, coord.cfg.mode[0] ? coord.cfg.mode : COORD_MODE);
 	Co_Send(p->conn, &w);
 	p->wantTicket = 0;
 	Co_Log("coordinator: ticket for %s (%.8s) to %s port %u%s%s\n", p->name, p->hex, in->level, in->port,
@@ -911,7 +913,8 @@ Coord *Coord_Create(const CoordConfig *cfg) {
 	if (!c->start[0]) {
 		snprintf(c->start, sizeof(c->start), "DownTown");
 	}
-	Co_List(c->levels[0] ? c->levels : COORD_CITY, Co_AddLevel);
+	/* the city and the places of the sandbox and freeroam modes (include/scrap/placedef.h) */
+	Co_List(c->levels[0] ? c->levels : PlaceDef_WorldLevels(), Co_AddLevel);
 	Co_List(c->start, Co_AddLevel);
 	Co_List(c->keep[0] ? c->keep : COORD_CITY, Co_Keep);
 	if (snprintf(coord.playersDir, sizeof(coord.playersDir), "%s/players", c->dataDir) >= (int)sizeof(coord.playersDir) ||

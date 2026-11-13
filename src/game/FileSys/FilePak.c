@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
 #include "scrap/mempool.h"
@@ -267,6 +268,21 @@ static cFile2 g_PackFiles[128];
 static int g_PackLocked;
 static void *g_LstFile;
 
+#define PACK_MEMORY -2				/* cFilePack.pack of the memory file */
+static char g_MemName[0x104];
+static const uint8_t *g_MemData;
+static int g_MemSize, g_MemPos;
+
+void FilePack_SetMemory(const char *name, const void *data, int size) {
+	Str_Copy(g_MemName, name && data ? name : "", sizeof(g_MemName));
+	g_MemData = data;
+	g_MemSize = data ? size : 0;
+}
+
+static byte Pack_IsMemory(const char *name) {
+	return g_MemName[0] && !crt_stricmp(name, g_MemName);
+}
+
 /*
  * name is relative to the open pack (g_PackName). A name in the index is read from its pack, else from disk; while
  * a file list is recorded every file is read from disk and listed. Always 1.
@@ -286,6 +302,13 @@ int cFilePack_Open(cAbstractFile *elem, const char *name, uint32_t mode) {
 	self->start = 0;
 	self->size = 0;
 	self->pack = -1;
+	if (Pack_IsMemory(name) && mode == FILE_MODE_READ) {
+		self->start = -1;
+		self->pack = PACK_MEMORY;
+		self->size = g_MemSize;
+		g_MemPos = 0;
+		return 1;
+	}
 	if (!g_LstFile) {
 		cPackLocation *loc = PackIndex_Find(path);
 		if (loc) {
@@ -309,6 +332,9 @@ int cFilePack_Close(cAbstractFile *base) {
 	cFilePack *self = (cFilePack *)base;
 	CHECK(g_PackLocked != 0);
 	g_PackLocked = 0;
+	if (self->pack == PACK_MEMORY) {
+		return 1;
+	}
 	if (!self->start) {
 		return cFile_Close(&self->file.base);
 	}
@@ -319,6 +345,9 @@ int cFilePack_Exists(cAbstractFile *base, const char *name) {
 	cFilePack *self = (cFilePack *)base;
 	char path[0x104];
 
+	if (Pack_IsMemory(name)) {
+		return 1;
+	}
 	if (!g_LstFile) {
 		if (PackIndex_Find(name)) {
 			return 1;
@@ -332,6 +361,12 @@ int cFilePack_Exists(cAbstractFile *base, const char *name) {
 
 int cFilePack_Read(cAbstractFile *elem, void *dst, int size) {
 	cFilePack *self = (cFilePack *)elem;
+	if (self->pack == PACK_MEMORY) {
+		int n = size < g_MemSize - g_MemPos ? size : g_MemSize - g_MemPos;
+		memcpy(dst, g_MemData + g_MemPos, (size_t)n);
+		g_MemPos += n;
+		return n;
+	}
 	if (!self->start) {
 		return cFile_Read(&self->file.base, dst, size);
 	}
@@ -351,6 +386,10 @@ int cFilePack_Write(cAbstractFile *base, const void *src, int size) {
 
 static int cFilePack_Seek(cAbstractFile *base, int pos) {
 	cFilePack *self = (cFilePack *)base;
+	if (self->pack == PACK_MEMORY) {
+		g_MemPos = pos < 0 ? 0 : pos > g_MemSize ? g_MemSize : pos;
+		return g_MemPos;
+	}
 	if (!self->start) {
 		return cFile_Seek(&self->file.base, pos);
 	}
@@ -362,6 +401,9 @@ static int cFilePack_Seek(cAbstractFile *base, int pos) {
 
 static int cFilePack_Tell(cAbstractFile *base) {
 	cFilePack *self = (cFilePack *)base;
+	if (self->pack == PACK_MEMORY) {
+		return g_MemPos;
+	}
 	if (!self->start) {
 		return cFile_Tell(&self->file.base);
 	}
