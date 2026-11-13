@@ -42,6 +42,9 @@
 #define PLAY_BOT_WALK 4					/* the bot walks around and stays on foot (collisions of characters) */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 
+/* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0, =players, else all) */
+enum { PLAY_AHEAD_NONE, PLAY_AHEAD_PLAYERS, PLAY_AHEAD_ALL };
+
 byte g_Play;
 byte g_HeadlessPlay;
 
@@ -88,7 +91,7 @@ static struct {
 	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK */
 	byte botCycle;
 	byte botCm;							/* SCRAP_PLAYBOT_CM=1: also the countermeasure of the weapon now and then */
-	byte noAhead;						/* SCRAP_PLAYAHEAD=0: the others collide where they are drawn (tests) */
+	byte ahead;							/* SCRAP_PLAYAHEAD: PLAY_AHEAD_ */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
 } play = { .slot = -1, .player = -1 };
@@ -336,7 +339,8 @@ void Play_Start(void) {
 	play.bot = !bot || !*bot || *bot == '0' ? 0 : !crt_stricmp(bot, "npc") ? PLAY_BOT_NPC :
 		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : !crt_stricmp(bot, "walk") ? PLAY_BOT_WALK : 1;
 	const char *ahead = getenv("SCRAP_PLAYAHEAD");
-	play.noAhead = ahead && *ahead == '0';
+	play.ahead = !ahead || !*ahead ? PLAY_AHEAD_ALL : *ahead == '0' ? PLAY_AHEAD_NONE : *ahead == 'p' ?
+		PLAY_AHEAD_PLAYERS : PLAY_AHEAD_ALL;
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
 	play.botCycle = cycle && *cycle && *cycle != '0';
 	const char *cm = getenv("SCRAP_PLAYBOT_CM");
@@ -401,11 +405,11 @@ static void Play_Step(uint32_t tick, byte none) {
 	play.input.tick = tick;
 	play.input.slot = (uint16_t)play.slot;
 	e->pos = play.truePos;
-	if (!play.noAhead) {
-		Watch_PlayersAt((double)tick / NETREP_TICK_HZ);
+	if (play.ahead != PLAY_AHEAD_NONE) {
+		Watch_ProxiesAt((double)tick / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
 	}
 	NetPl_Step(e, &play.input, 1, 0);
-	Watch_PlayersBack();
+	Watch_ProxiesBack();
 	play.truePos = e->pos;
 	play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
 	Play_Record(tick);
@@ -665,11 +669,11 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 				break;
 			}
 			NetRepInput x = *in;
-			if (!play.noAhead) {
-				Watch_PlayersAt((double)t / NETREP_TICK_HZ);
+			if (play.ahead != PLAY_AHEAD_NONE) {
+				Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
 			}
 			NetPl_Step(e, &x, 1, 1);
-			Watch_PlayersBack();
+			Watch_ProxiesBack();
 			play.input = x;
 			Play_Record(t);
 			replayed++;

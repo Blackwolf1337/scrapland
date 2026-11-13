@@ -545,6 +545,37 @@ static int Test_SameInput(const NetRepInput *a, const NetRepInput *b) {
 		a->buttons == b->buttons && a->weapon == b->weapon && a->slot == b->slot;
 }
 
+/* a missile's state (Replicate.c): its bees in life, the slot + 1 of its shooter in view[0]; a hit costs a few bytes
+ * and its end (bees and the active flag) reads back */
+static void Test_MissileState(void) {
+	uint8_t buf[64];
+	NetRepState a, b, out;
+	memset(&a, 0, sizeof(a));
+	a.pos[0] = 4000;
+	a.vel[2] = -12000;
+	a.life = 40;
+	a.view[0] = 2048;
+	a.flags = NETREP_FL_ACTIVE;
+	b = a;
+	b.life = 33;
+	uint32_t mask = NetRep_Diff(&a, &b);
+	CHECK(mask == NETREP_F_LIFE);
+	NetRepBuf w;
+	NetRepReader r;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_WriteFields(&w, &a, &b, mask);
+	CHECK(!w.bad && w.size <= 2);
+	b.life = 0;
+	b.flags = 0;
+	mask = NetRep_Diff(&a, &b);
+	CHECK(mask == (NETREP_F_LIFE | NETREP_F_FLAGS));
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_WriteFields(&w, &a, &b, mask);
+	NetRepReader_Init(&r, buf, w.size);
+	CHECK(NetRep_ReadFields(&r, &a, &out, mask) && out.life == 0 && !(out.flags & NETREP_FL_ACTIVE) &&
+		out.view[0] == 2048 && !NetRep_Diff(&out, &b));
+}
+
 static void Test_PlayerMessages(void) {
 	uint8_t buf[256];
 	float view[3] = { 10.0f, -20.0f, 30.0f }, vp[3];
@@ -561,6 +592,10 @@ static void Test_PlayerMessages(void) {
 	CHECK(!NetRep_ReadPlayer(buf, n - 1, &player, &slot, &kind, &tick, got, &nphys));
 	n = NetRep_WritePlayer(buf, sizeof(buf), 1, NETREP_NO_SLOT, 0, 7, NULL, 0);
 	CHECK(NetRep_ReadPlayer(buf, n, &player, &slot, &kind, &tick, got, &nphys) && slot == NETREP_NO_SLOT && !nphys);
+	/* a death: no slot, the kind says why */
+	n = NetRep_WritePlayer(buf, sizeof(buf), 9, NETREP_NO_SLOT, NETREP_DEAD, 77, NULL, 0);
+	CHECK(NetRep_ReadPlayer(buf, n, &player, &slot, &kind, &tick, got, &nphys) && player == 9 &&
+		slot == NETREP_NO_SLOT && kind == NETREP_DEAD && tick == 77 && !nphys);
 	/* an ack of a watcher reads as one without input, with or without the count byte */
 	n = NetRep_WriteAck(buf, sizeof(buf), 5, 0xf0f0f0f0u, view);
 	CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, 4, &kind, &shown) && kind == 0 && newest == 5);
@@ -892,6 +927,7 @@ int main(void) {
 	Test_Garbage();
 	printf("players:\n");
 	Test_PlayerMessages();
+	Test_MissileState();
 	Test_Status();
 	Test_Shots();
 	Test_InBuf(0, 0, 0, 2);

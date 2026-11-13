@@ -43,6 +43,7 @@
 #define WATCH_NAME "netrep%d_%u"
 #define WATCH_CONNECT_MS 15000		/* the first frames after a level load can be slow */
 #define WATCH_RETRIES 5
+#define WATCH_AHEAD_RADIUS 25000.0f	/* units: the proxies this near move to the predicted tick (Watch_ProxiesAt) */
 #define WATCH_MISSILE_LIFE 1e9f		/* s: a missile proxy ends when the instance's missile does, not by itself */
 
 enum { WATCH_OFF, WATCH_CONNECTING, WATCH_HELLO, WATCH_LEVEL, WATCH_RUN, WATCH_GONE };
@@ -129,6 +130,11 @@ static byte Watch_ModelExists(const char *path) {
 	memcpy(alt, path, n + 1);
 	memcpy(alt + n - 3, "sm3", 3);
 	return File_Exists(alt);
+}
+
+static float Watch_DistSq(const cEntity *a, const cEntity *b) {
+	float dx = a->pos.x - b->pos.x, dy = a->pos.y - b->pos.y, dz = a->pos.z - b->pos.z;
+	return dx * dx + dy * dy + dz * dz;
 }
 
 /* the entity of slot (the own entity or a proxy), NULL */
@@ -454,37 +460,54 @@ static void Watch_PosAt(const WatchProxy *p, double rt, vec3_t *pos) {
 	}
 }
 
-/* the other players' proxies where they are at server time t (the own prediction of that tick collides with them
- * there, not where they are drawn), and back to the drawn places */
-static vec3_t g_PlayersDrawn[NETREP_MAX_ENTS];
-static byte g_PlayersMoved;
+/* the proxies (the players' and the other characters near the own entity, or only the players' with players) where
+ * they are at
+ * server time t (the own prediction of that tick collides with them there, not where they are drawn), and back to
+ * the drawn places */
+static vec3_t g_ProxiesDrawn[NETREP_MAX_ENTS];
+static byte g_ProxiesMoved[NETREP_MAX_ENTS];
+static byte g_AnyMoved;
 
-void Watch_PlayersAt(double t) {
+void Watch_ProxiesAt(double t, byte players) {
+	const cEntity *own = Play_Entity();
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		WatchProxy *p = &watch.px[s];
-		if (p->e && p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && p->kind != NETREP_MISSILE) {
-			vec3_t pos;
-			if (!g_PlayersMoved) {
-				g_PlayersDrawn[s] = p->e->pos;
-			}
-			Watch_PosAt(p, t, &pos);
-			Entity_SetPos(p->e, &pos);
+		if (!p->e || !p->n || p->kind == NETREP_MISSILE) {
+			continue;
 		}
+		/* the ships of no player stay: the traffic follows its rails, its path ahead is a worse guess than where it
+		 * is drawn (A/B in the M4b handback) */
+		byte player = (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) != 0;
+		if ((players || p->kind == NETREP_SHIP) && !player) {
+			continue;
+		}
+		if (!player && own && !g_ProxiesMoved[s] && Watch_DistSq(p->e, own) > WATCH_AHEAD_RADIUS * WATCH_AHEAD_RADIUS) {
+			continue;
+		}
+		vec3_t pos;
+		if (!g_ProxiesMoved[s]) {
+			g_ProxiesDrawn[s] = p->e->pos;
+			g_ProxiesMoved[s] = 1;
+		}
+		Watch_PosAt(p, t, &pos);
+		Entity_SetPos(p->e, &pos);
+		g_AnyMoved = 1;
 	}
-	g_PlayersMoved = 1;
 }
 
-void Watch_PlayersBack(void) {
-	if (!g_PlayersMoved) {
+void Watch_ProxiesBack(void) {
+	if (!g_AnyMoved) {
 		return;
 	}
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
-		WatchProxy *p = &watch.px[s];
-		if (p->e && p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && p->kind != NETREP_MISSILE) {
-			Entity_SetPos(p->e, &g_PlayersDrawn[s]);
+		if (g_ProxiesMoved[s]) {
+			if (watch.px[s].e) {
+				Entity_SetPos(watch.px[s].e, &g_ProxiesDrawn[s]);
+			}
+			g_ProxiesMoved[s] = 0;
 		}
 	}
-	g_PlayersMoved = 0;
+	g_AnyMoved = 0;
 }
 
 /* the proxy at server time rt */

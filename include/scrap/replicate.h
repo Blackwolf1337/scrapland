@@ -58,9 +58,10 @@ void Watch_Close(void);
 /* an entity of a look string (S|model|pilot|motor 0..3|class or C|class) at the position of st: a proxy, or the
  * player's own entity (include/scrap/play.h) */
 struct cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy);
-/* the other players' proxies at server time t for the own prediction of a tick, then back where they are drawn */
-void Watch_PlayersAt(double t);
-void Watch_PlayersBack(void);
+/* the proxies at server time t for the own prediction of a tick (the players' and the other characters within
+ * WATCH_AHEAD_RADIUS of the own entity, or only the players' with players), then back where they are drawn */
+void Watch_ProxiesAt(double t, byte players);
+void Watch_ProxiesBack(void);
 /* the client's own entity of a slot it no longer drives becomes the proxy of that slot (a dead player's wreck stays
  * in view: the death camera follows it) */
 void Watch_Adopt(int slot, struct cEntity *e, int kind);

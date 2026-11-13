@@ -14,7 +14,8 @@
  * client showed came with its input, and the replication's history of samples gives the positions then. The money,
  * the alarm and the ammo of a player go to its client in a status message; the hits of every ship in shots messages
  * (the effects on the proxies). The client fires its own instant-hit weapons itself (the effects at once); its
- * prediction collides with the other players where they are at the predicted tick (Watch_PlayersAt).
+ * prediction collides with the other players and the characters near it where they are at the predicted tick
+ * (Watch_ProxiesAt).
  *
  * Client: ScrapC -play:<IPv4> [-port:<n>] [-imap:Levels/<level>] [-headless]: a watcher (include/scrap/replicate.h)
  * with its own player (-headless: no window, render device, sound or input, the frames at PLAY_HEADLESS_HZ: the bots
@@ -34,7 +35,8 @@
  * at ships of no player; =target: it takes a ship and stays in the air; =walk: it walks around on foot;
  * SCRAP_PLAYBOT_WEAPONS=1 (or weapon names): it fires each weapon for 6 s of aiming in turn and stays in the ship;
  * SCRAP_PLAYBOT_CM=1: it also holds the countermeasure of the weapon now and then;
- * SCRAP_PLAYAHEAD=0: the prediction collides with the others where they are drawn (tests). SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
+ * SCRAP_PLAYAHEAD=0: the prediction collides with the others where they are drawn, =players: only the other players
+ * at the predicted tick (tests). SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
  * SCRAP_NET2_JITTER ms) on either side: a test link.
  */
 #ifndef SCRAP_PLAY_H
