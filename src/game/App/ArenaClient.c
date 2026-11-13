@@ -56,6 +56,7 @@ static struct {
 	int nzones;
 	byte zonesMade, flagMade;
 	char lastWay[64];
+	char link[96];					/* the LinkModel the bag item was given ("" none) */
 	char deathTop[AC_MSG];			/* the text of the own death while it has no ship (Ffa.ShowPresFireMessage) */
 	double botStart;				/* SCRAP_ARENA_REQ: local time of the first state */
 	uint32_t botDone;
@@ -279,21 +280,25 @@ static void Ac_Flag(void) {
 		int k = s->carrier - 1;
 		cEntity *c = k >= 0 && s->m[k].slot ? Watch_SlotEntity(s->m[k].slot - 1) : NULL;
 		if (s->flag == ARENA_FL_CARRIED && c) {
-			/* NPostman.TakeFlag: on the carrier's DC_Flag_Player, the model without the pilot for the own one */
+			/* NPostman.TakeFlag: on the carrier's DC_Flag_Player, the model without the pilot for the own one; a link
+			 * before goes first (NPostman.DropFlag) */
 			Str_PrintfQuiet(link, sizeof(link), "%s,DC_Flag_Player", c->name);
-			char *cur = NULL;
-			if (!Entity_VarS(f, "LinkModel", &cur, 0) || !cur || strcmp(cur, link)) {
+			if (strcmp(ac.link, link)) {
+				if (ac.link[0]) {
+					Ac_SetS(f, "LinkModel", ",");
+				}
 				Ac_Model(f, k == Ac_You() ? "FlagNoUsrModel" : "FlagPilotModel");
 				Ac_SetS(f, "LinkModel", link);
 				Ac_SetI(f, "DeltaOffMul", 4);
 				Ac_SetI(f, "OffMul", 0);
 				Ac_SetI(f, "UseLinkAng", 1);
+				Str_Copy(ac.link, link, sizeof(ac.link));
 			}
 		} else {
-			char *cur = NULL;
-			if (Entity_VarS(f, "LinkModel", &cur, 0) && cur && strcmp(cur, ",")) {
+			if (ac.link[0]) {
 				Ac_SetS(f, "LinkModel", ",");
 				Ac_Model(f, "FlagModel");
+				ac.link[0] = 0;
 			}
 			f->pos = p;
 		}
