@@ -68,10 +68,9 @@ static struct {
 	byte dirty;
 	uint64_t lastSent;				/* ms */
 	double now;
-	uint64_t tick;
 	double startAt, endAt;			/* the round counted from, its end screen ends at */
 	ArZone zone[AR_ZONES];
-	int nzones, zoneAt, lastZone;	/* the flag's (FlagHunt) or the bag's target (Postman) */
+	int nzones, zoneAt;				/* the flag's (FlagHunt) or the bag's target (Postman) */
 	vec3_t bagSpawn;
 	double bagDropAt;
 	uint32_t rnd;
@@ -80,7 +79,7 @@ static struct {
 	struct {
 		char desc[ARENA_NAME + 1], ship[32], prof[32];
 	} bot[ARENA_BOTS];
-} ar = { .mode = -1, .endSecs = ARENA_END_SECS, .lastZone = -1, .zoneAt = -1 };
+} ar = { .mode = -1, .endSecs = ARENA_END_SECS, .zoneAt = -1 };
 
 byte Arena_ParseParam(const char *param, const char *ext) {
 	int n = crt_atoi(ext);
@@ -238,7 +237,6 @@ static void Ar_PickZone(void) {
 	if (ar.nzones > 1 && z == ar.zoneAt) {
 		z = (z + 1 + (int)Ar_Rand((uint32_t)ar.nzones - 1)) % ar.nzones;
 	}
-	ar.lastZone = ar.zoneAt;
 	ar.zoneAt = ar.nzones ? z : -1;
 	Str_Copy(ar.st.zone, ar.zoneAt >= 0 ? ar.zone[ar.zoneAt].key : "", sizeof(ar.st.zone));
 	ar.dirty = 1;
@@ -932,7 +930,6 @@ void Arena_Tick(Net2Host *host, uint64_t tick) {
 	if (!Arena_On()) {
 		return;
 	}
-	ar.tick = tick;
 	ar.now = Instance_Time();
 	if (!ar.ready) {
 		Ar_Ready();
