@@ -46,6 +46,7 @@ static CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char
 	g_Instance = (byte)CWinApp_HasArg(self, "instance");
 	g_Play = !g_Instance && (byte)CWinApp_HasArg(self, "play");
 	g_Watch = !g_Instance && ((byte)CWinApp_HasArg(self, "watch") || g_Play);
+	g_HeadlessPlay = g_Play && (byte)CWinApp_HasArg(self, "headless");
 	return self;
 }
 
@@ -220,7 +221,7 @@ static void CWinApp_InitStep(CWinApp *self) {
 static byte CWinApp_Init(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	App_SetExceptionFilter(1);
-	if (g_Instance) {
+	if (g_Instance || g_HeadlessPlay) {
 		if (!Plat_InitHeadless()) {
 			CheckFailed("Plat_InitHeadless()", __FILE__, __TIMESTAMP__, __LINE__);
 		}
@@ -264,10 +265,10 @@ void ConsoleWin_Add(const char *text, uint32_t color) {
 	fflush(stdout);
 }
 
-/* the folder of the configuration (Plat_ConfigDir), "" with the dedicated window and in the headless instance;
+/* the folder of the configuration (Plat_ConfigDir), "" with the dedicated window, in the headless instance and player;
  * differs from the original on purpose (no store features): no subfolder of the GOG id */
 void App_GetConfigDir(char *buf, int size) {
-	if (App_IsDedicatedWin(g_pApp) || g_Instance) {
+	if (App_IsDedicatedWin(g_pApp) || g_Instance || g_HeadlessPlay) {
 		*buf = 0;
 		return;
 	}
@@ -373,7 +374,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		 * original slept in CEngineApp_Render */
 		if (g_Instance) {
 			Instance_Pass();
-		} else if (!g_Engine || Engine_FrameDue(g_Engine)) {
+		} else if (g_HeadlessPlay ? Play_HeadlessDue() : !g_Engine || Engine_FrameDue(g_Engine)) {
 			if (g_Watch) {
 				Watch_PreFrame();
 			}

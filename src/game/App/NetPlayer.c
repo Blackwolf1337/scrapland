@@ -10,6 +10,8 @@
 #include "scrap/play.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/weapons.h"
+#include "scrap/weaps2.h"
 #include "scrap/world.h"
 
 #define NETPL_TICK (1.0f / NETREP_TICK_HZ)
@@ -25,6 +27,11 @@ int NetPl_Kind(cEntity *e) {
 	return Entity_IsType(e, TYEN_WALKCHAR) ? NETREP_CHAR : 0;
 }
 
+byte NetPl_LocalWeapon(int w) {
+	return w == g_VulcanIDWeap || w == g_LaserIDWeap || w == g_TeslaIDWeap || w == g_ATPCIDWeap ||
+		w == g_DevastatorIDWeap;
+}
+
 static inline float NetPl_Move(int8_t v) {
 	return (float)v / NETREP_MOVE_SCALE;
 }
@@ -33,7 +40,7 @@ static inline float NetPl_Rot(int16_t v) {
 	return (float)v / NETREP_ROT_SCALE;
 }
 
-void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local) {
+void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	uint16_t b = local ? 0 : in->buttons;
 
 	switch (NetPl_Kind(e)) {
@@ -56,7 +63,8 @@ void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local) {
 		c->vStr = NetPl_Move(in->move[2]);
 		c->hRot = NetPl_Rot(in->rot[0]);
 		c->vRot = NetPl_Rot(in->rot[1]);
-		c->fire = (b & NETREP_IN_ACT) != 0;
+		/* the client fires its instant-hit weapons itself, not again in a replay */
+		c->fire = ((local ? (replay || !NetPl_LocalWeapon(c->weapon) ? 0 : in->buttons) : b) & NETREP_IN_ACT) != 0;
 		c->cm = (b & NETREP_IN_ACT2) != 0;
 		c->boostKey = (b & NETREP_IN_BOOST) != 0;
 		c->fullThrust = (in->buttons & NETREP_IN_FULL) != 0;
@@ -71,7 +79,7 @@ void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local) {
 void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	cWithLifeEntity *w = WLife(e);
 
-	NetPl_Apply(e, in, local);
+	NetPl_Apply(e, in, local, replay);
 	if (!replay && w->actCtrl) {
 		cActCtrl_Tick(w->actCtrl, NETPL_TICK);
 	}

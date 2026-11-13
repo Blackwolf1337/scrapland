@@ -232,7 +232,7 @@ void CApp_Shutdown(CApp *self) {
 	Pack_CloseAll();
 	Instance_Close();
 	Watch_Close();
-	if (!g_Instance) {
+	if (!g_Instance && !g_HeadlessPlay) {
 		Config_Save();
 	}
 	DebugLog_CloseAll();

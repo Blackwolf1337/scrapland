@@ -428,8 +428,8 @@ static int Video_PlayPath(const char *name, const char *dir, byte warn) {
 			return 0;
 		}
 	}
-	/* the headless instance has nothing to show a video on: played to the end at once */
-	if (g_Instance) {
+	/* the headless instance and player have nothing to show a video on: played to the end at once */
+	if (g_Instance || g_HeadlessPlay) {
 		return 1;
 	}
 	E3D_LogPrint((&g_FileLog), "VIDEO: %s", path);

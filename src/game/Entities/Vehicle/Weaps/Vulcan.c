@@ -531,7 +531,7 @@ static void Vulcan_FireNative(cAbstractFile *f) {
 	Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
-	Rep_RewindEnd(v, isLife ? target : NULL, n);
+	Rep_RewindEnd(v);
 	if (isCar) {
 		cVehicleAttack_ShotAt(Veh_HitInfo(v), target->name, 1);
 	} else {
@@ -539,7 +539,7 @@ static void Vulcan_FireNative(cAbstractFile *f) {
 	}
 	if (isLife) {
 		int damage = Entity_GetAI(v) && World_IsEasySingle() ? g_VulcanDamageEasy : g_VulcanDamage;
-		if (!WLife(target)->god) {
+		if (!WLife(target)->god && Rep_Hurt(v, target, "Vulcan")) {
 			WLife(target)->life -= damage * n;
 		}
 		if (!isCar) {

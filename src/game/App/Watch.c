@@ -3,8 +3,9 @@
  *
  * Connect, hello, welcome (the level, loaded when it is not the one running), then the snapshots: each record gives
  * a sample of its proxy at the server time tick / NETREP_TICK_HZ + dt. Every frame the proxies are placed at the
- * server time now minus REP_INTERP_MS, between the two samples around it (or ahead of the newest by its velocity for
- * up to WATCH_EXTRAP s). The server time is the local clock plus an offset that follows the ticks of the snapshots.
+ * server time now minus the interpolation delay (NetRepDelay: the snapshot gap and the measured jitter), between
+ * the two samples around it (or ahead of the newest by its velocity for up to WATCH_EXTRAP s). The server time is the
+ * local clock plus an offset that follows the ticks of the snapshots.
  */
 #include <math.h>
 #include <stdio.h>
@@ -23,8 +24,10 @@
 #include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
+#include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/weapons.h"
 #include "scrap/world.h"
 
 #define WATCH_SAMPLES 8
@@ -65,6 +68,7 @@ static struct {
 	char level[128];
 	float start[3];					/* the view point of the welcome */
 	NetRepClock clock;
+	NetRepDelay delay;				/* the interpolation delay */
 	double rtt, rttVar;				/* s, of Net2 */
 	float loss;						/* of Net2, 0..1 */
 	double shown;					/* the server time the proxies are drawn at, s */
@@ -74,7 +78,7 @@ static struct {
 	byte taken;						/* a message taken since the last ack */
 	cEntity *cam;
 	FILE *log;
-	uint32_t msgs, notTaken, proxies;
+	uint32_t msgs, notTaken, proxies, shots;
 	uint32_t made;					/* proxies made: their names stay unique while a deleted one waits */
 	uint64_t bytes;
 	WatchProxy px[NETREP_MAX_ENTS];
@@ -124,14 +128,14 @@ static byte Watch_ModelExists(const char *path) {
 	return File_Exists(alt);
 }
 
-/* S|model|pilot|motor 0..3|class or C|class (Replicate.c) */
+/* S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model (Replicate.c) */
 cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy) {
 	char buf[NETREP_LOOK_MAX + 1];
-	char *part[8];
+	char *part[9];
 	int n = 0;
 
 	Str_Copy(buf, look, sizeof(buf));
-	for (char *p = buf; n < 8;) {
+	for (char *p = buf; n < 9;) {
 		part[n++] = p;
 		p = strchr(p, '|');
 		if (!p) {
@@ -194,6 +198,12 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 	if (part[2][0]) {
 		Entity_VarS(e, "MPil0", &part[2], 1);
 	}
+	/* the weapons mounted where the instance has them (the effects of the shots start at them) */
+	if (n > 8 && part[8][0]) {
+		Entity_VarS(e, "WeapList", &part[8], 1);
+	}
+	int one = 1;
+	Entity_VarI(e, "isInit", &one, 1);
 	return e;
 }
 
@@ -292,6 +302,30 @@ static float Watch_LerpAng(uint16_t a, uint16_t b, float f) {
 	return NetRep_UAng(a) + (float)(int16_t)(uint16_t)(b - a) / NETREP_ANG_SCALE * f;
 }
 
+/* the weapon of a ship proxy and the press and release of its fire (the sounds of the instant-hit weapons; the
+ * others do things a proxy must not: their missiles come replicated) */
+static void Watch_Weapon(cEntity *e, const NetRepState *st) {
+	cVehicleEntity *v = Veh(e);
+	int w = st->weapon < g_pWorld->weapons.count ? st->weapon : v->weapons.curWeap;
+	byte fire = (st->flags & NETREP_FL_FIRE) != 0;
+
+	if (w != v->weapons.curWeap) {
+		if (v->controls.firePrev && NetPl_LocalWeapon(v->weapons.curWeap)) {
+			cPy_Function_AddParamS(&TABLE_AT(g_pWorld->weapons, v->weapons.curWeap)->onRelease, e->name);
+			cPy_Function_Execute(&TABLE_AT(g_pWorld->weapons, v->weapons.curWeap)->onRelease, 0);
+		}
+		v->controls.firePrev = 0;
+		v->weapons.curWeap = w;
+		Controls_SetWeapon(&v->controls, w);
+	}
+	if (fire != v->controls.firePrev && NetPl_LocalWeapon(w)) {
+		cPy_Function *f = fire ? &TABLE_AT(g_pWorld->weapons, w)->onPress : &TABLE_AT(g_pWorld->weapons, w)->onRelease;
+		cPy_Function_AddParamS(f, e->name);
+		cPy_Function_Execute(f, 0);
+	}
+	v->controls.fire = v->controls.firePrev = fire;
+}
+
 /* the proxy at server time rt */
 static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	cEntity *e = p->e;
@@ -358,6 +392,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		v->controls.acc = sa->ctrl[0] / 127.0f;
 		v->controls.str = sa->ctrl[1] / 127.0f;
 		v->speed = sqrtf(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+		Watch_Weapon(e, sa);
 	} else {
 		cWalkCharEntity *c = WChar(e);
 		w->life = sa->life;
@@ -431,6 +466,7 @@ static void Watch_Start(void) {
 
 	watch.phase = WATCH_GONE;
 	NetRepClock_Init(&watch.clock);
+	NetRepDelay_Init(&watch.delay);
 	if (!Net2_ParseAddr(watch.addr, Instance_Port(), addr)) {
 		Con_Errorf("watch: '%s' is not a numeric address\n", watch.addr);
 		return;
@@ -485,7 +521,43 @@ static void Watch_Snapshot(const uint8_t *data, int size) {
 		return;
 	}
 	watch.taken = 1;
-	NetRepClock_Sample(&watch.clock, NetRepCli_Tick(watch.view), Watch_Now(), watch.rtt);
+	double now = Watch_Now();
+	NetRepDelay_Sample(&watch.delay, &watch.clock, NetRepCli_Tick(watch.view), now, watch.rtt);
+	NetRepClock_Sample(&watch.clock, NetRepCli_Tick(watch.view), now, watch.rtt);
+}
+
+/* the shots of the instance's ships: their effects on the proxies (the own ship's of a NetPl_LocalWeapon do not
+ * come, the client showed them itself) */
+static void Watch_Shots(const uint8_t *data, int size) {
+	NetRepShot shots[NETREP_SHOTS_MAX];
+	uint32_t tick;
+	int n;
+
+	if (!NetRep_ReadShots(data, size, &tick, shots, NETREP_SHOTS_MAX, &n)) {
+		return;
+	}
+	for (int i = 0; i < n; i++) {
+		const NetRepShot *x = &shots[i];
+		cEntity *e = x->slot == Play_OwnSlot() ? Play_Entity() : watch.px[x->slot].e;
+		if (!e || !Entity_IsType(e, TYEN_VEHICLE)) {
+			continue;
+		}
+		cEntity *t = NULL;
+		if (x->target != NETREP_NO_SLOT && x->target < NETREP_MAX_ENTS) {
+			t = x->target == Play_OwnSlot() ? Play_Entity() : watch.px[x->target].e;
+		}
+		vec3_t from = { NetRep_UPos(x->from[0]), NetRep_UPos(x->from[1]), NetRep_UPos(x->from[2]) };
+		vec3_t to = { NetRep_UPos(x->pos[0]), NetRep_UPos(x->pos[1]), NetRep_UPos(x->pos[2]) };
+		/* the push of a hit on the own entity is in the server's states already (a correction brings it) */
+		cEntity *own = t && t == Play_Entity() ? t : NULL;
+		vec3_t vel = own ? Obj(own)->vel : to, rot = own ? Obj(own)->rotVel : to;
+		cVehicleAttack_Replay(&WLife(e)->attack, x->weapon, x->count, &from, &to, t);
+		if (own) {
+			Obj(own)->vel = vel;
+			Obj(own)->rotVel = rot;
+		}
+		watch.shots++;
+	}
 }
 
 byte Watch_ClockReady(void) {
@@ -541,6 +613,13 @@ void Watch_PreFrame(void) {
 				Watch_Player(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SNAP && watch.phase == WATCH_RUN) {
 				Watch_Snapshot(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SHOTS && watch.phase == WATCH_RUN) {
+				Watch_Shots(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_STATUS && watch.phase == WATCH_RUN) {
+				NetRepStatus st;
+				if (NetRep_ReadStatus(ev.data, ev.size, &st)) {
+					Play_OwnStatus(&st);
+				}
 			}
 			break;
 		}
@@ -564,7 +643,8 @@ void Watch_PreFrame(void) {
 	watch.lastNs = ns;
 	/* the proxies at the time of the newest samples (half a round trip ago) minus the interpolation delay */
 	double now = (double)ns / 1e9;
-	double rt = NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - REP_INTERP_MS / 1000.0;
+	double delay = NetRepDelay_Step(&watch.delay, dt, watch.loss);
+	double rt = NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - delay;
 	watch.shown = rt;
 	if (g_Play) {
 		Play_PreFrame(now, watch.rtt, watch.rttVar, watch.loss);
@@ -576,9 +656,11 @@ void Watch_PreFrame(void) {
 	}
 	if (ns / 1000000 - watch.lastStatus >= WATCH_STATUS_MS) {
 		const vec3_t *c = watch.cam ? &((cCamControl *)watch.cam)->cam.pos : NULL;
-		Con_Printf("watch: %u proxies, %u messages %llu bytes, %u not taken, server time %.2f, rtt %.0f ms, view %.0f "
-			"%.0f %.0f\n", watch.proxies, watch.msgs, (unsigned long long)watch.bytes, watch.notTaken, rt,
-			watch.rtt * 1000.0, c ? (double)c->x : 0.0, c ? (double)c->y : 0.0, c ? (double)c->z : 0.0);
+		Con_Printf("watch: %u proxies, %u messages %llu bytes, %u not taken, %u shots, server time %.2f, delay %.0f ms "
+			"(jitter %.1f ms), rtt %.0f ms, view %.0f %.0f %.0f\n", watch.proxies, watch.msgs,
+			(unsigned long long)watch.bytes, watch.notTaken, watch.shots, rt, watch.delay.delay * 1000.0,
+			watch.delay.dev * 1000.0, watch.rtt * 1000.0, c ? (double)c->x : 0.0, c ? (double)c->y : 0.0,
+			c ? (double)c->z : 0.0);
 		Play_Status();
 		watch.lastStatus = ns / 1000000;
 	}

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/crt.h"
+#include "scrap/play.h"
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
@@ -551,7 +552,7 @@ static void Inferno_SphereHit(cAbstractFile *f) {
 		}
 	}
 	float w = k * k * (2.0f - k);
-	if (!WLife(e)->god) {
+	if (!WLife(e)->god && Rep_Hurt(g_InfernoOwner, e, "Inferno")) {
 		WLife(e)->life -= (int)((g_InfernoMaxDamage - g_InfernoMinDamage) * w);
 	}
 	byte isWalk = Entity_IsType(e, TYEN_WALKCHAR);

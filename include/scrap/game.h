@@ -217,8 +217,11 @@ typedef struct exe_wndclass {
 
 /* the headless instance of a level (-instance:<level>, see include/scrap/instance.h) */
 extern byte g_Instance;
-/* nothing drawn, no render device, sound or input: the dedicated server and the headless instance */
-#define App_Headless() ((g_pApp->flags & APPF_DEDICATED) || g_Instance)
+/* a player game without window, render device, sound and input (-play with -headless, include/scrap/play.h): the
+ * load tests' bots */
+extern byte g_HeadlessPlay;
+/* nothing drawn, no render device, sound or input: the dedicated server, the headless instance and player */
+#define App_Headless() ((g_pApp->flags & APPF_DEDICATED) || g_Instance || g_HeadlessPlay)
 
 struct CApp {
 	const CAppVtbl *vftable;

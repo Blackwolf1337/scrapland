@@ -4,6 +4,7 @@
  * TeslaMaxAngRange to TeslaMinAngRange (Veh_TeslaAng..Veh_TeslaMinAng at the speed Veh_TeslaAngSpeed); a hit widens
  * it again. The shot handler Tesla_Shoot is in Swarm.c (it sits in the Swarm code).
  */
+#include "scrap/play.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
@@ -143,8 +144,10 @@ static void Tesla_FireNative(cAbstractFile *f) {
 	if (!n) {
 		return;
 	}
+	Rep_RewindBegin(v);
 	Entity_GetTargetAngle(v, &ang.x, dist, &target);
 	Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	Rep_RewindEnd(v);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
 	if (isCar) {
@@ -153,7 +156,7 @@ static void Tesla_FireNative(cAbstractFile *f) {
 		cVehicleAttack_ShotAtPoint(Veh_HitInfo(v), &out, 1);
 	}
 	if (isLife) {
-		if (!WLife(target)->god) {
+		if (!WLife(target)->god && Rep_Hurt(v, target, "Tesla")) {
 			WLife(target)->life -= n;
 		}
 		if (!isCar) {

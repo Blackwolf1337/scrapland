@@ -4,6 +4,7 @@
  */
 #include "scrap/ai.h"
 #include "scrap/crt.h"
+#include "scrap/play.h"
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
@@ -404,7 +405,7 @@ static void Swarm_Hit(const char *name, const char *ship, const char *target) {
 			if (owner && Entity_GetAI(owner) && World_IsEasySingle()) {
 				mult = 2;
 			}
-			if (!WLife(e)->god) {
+			if (!WLife(e)->god && Rep_Hurt(owner, e, "Swarm")) {
 				WLife(e)->life -= (Missile(sw)->swarmCount + 1) * mult;
 			}
 			if (ship && !*ship) {

@@ -47,6 +47,10 @@ void cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, int n);
 void cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p, int n);
 /* every frame after the weapons */
 void cVehicleAttack_Update(cVehicleAttack *self);
+/* not in the original: the hits of a ship of the instance on its proxy of a client (include/scrap/play.h, Rep_Shot):
+ * count shots of weapon from the point from to the point to (at target, NULL: a point) through the weapon's OnHit */
+void cVehicleAttack_Replay(cVehicleAttack *self, int weapon, int count, const vec3_t *from, const vec3_t *to,
+	cEntity *target);
 byte cVehicleAttack_VarS(cVehicleAttack *self, const char *name, char **s, int set);
 byte cVehicleAttack_VarV(cVehicleAttack *self, const char *name, double *x, double *y, double *z, int set);
 /* the network flags of a message: *changed if they differ, the count from the low 4 bits; the target bit */

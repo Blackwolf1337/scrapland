@@ -66,6 +66,8 @@ typedef struct RepPlayer {
 	uint64_t lost;					/* the tick its entity went missing, 0 */
 	uint32_t shots, hits, boards, leaves, spawns;
 	uint32_t stale;					/* inputs for an entity it no longer has */
+	NetRepStatus status;			/* the last status sent */
+	uint32_t statusSnap;			/* the snapshot it went with */
 	double rewindSum;
 	uint32_t rewindN;
 	NetRepInBuf last;				/* the counters at the last status line */
@@ -75,6 +77,14 @@ typedef struct RepRewind {
 	cEntity *e;
 	vec3_t pos;
 } RepRewind;
+
+typedef struct RepShot {
+	cEntity *shooter, *target;
+	uint8_t weapon, count;
+	vec3_t from, to;
+} RepShot;
+
+#define REP_SHOTS 512				/* hits of the weapons kept between two snapshots */
 
 static struct {
 	NetRepServer *srv;
@@ -89,6 +99,11 @@ static struct {
 	float spawnYaw;
 	RepRewind rewind[NETREP_MAX_ENTS];
 	int rewound;
+	RepShot shots[REP_SHOTS];
+	int nshots;
+	uint32_t shotsLost;				/* more than REP_SHOTS between two snapshots */
+	NetRepShot wire[REP_SHOTS];		/* the shots of the snapshot with their slots */
+	float wirePos[REP_SHOTS][3];	/* where the shooter is */
 	uint32_t snapTick;				/* snapshots so far: tick * SNAP_HZ / TICK_HZ */
 	uint64_t gatherNs, buildNs, gatherMax, buildMax;
 	uint32_t snaps;
@@ -162,7 +177,7 @@ static const char *Rep_VarS(cEntity *e, const char *name) {
 	return Entity_VarS(e, name, &s, 0) && s ? s : "";
 }
 
-/* how the watcher builds the proxy: S|model|pilot|motor 0..3|class, C|class or M|model */
+/* how the watcher builds the proxy: S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model */
 static void Rep_Look(cEntity *e, int kind, char *out, int size) {
 	if (kind == NETREP_MISSILE) {
 		Str_PrintfQuiet(out, size, "M|%s", Rep_ModelPath(e));
@@ -175,9 +190,9 @@ static void Rep_Look(cEntity *e, int kind, char *out, int size) {
 		Str_PrintfQuiet(out, size, "C|%s", cls);
 		return;
 	}
-	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s", Rep_ModelPath(e),
+	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s|%s", Rep_ModelPath(e),
 		Rep_VarS(e, "MPil0"), Rep_VarS(e, "MEng0"), Rep_VarS(e, "MEng1"), Rep_VarS(e, "MEng2"), Rep_VarS(e, "MEng3"),
-		cls);
+		cls, cWeaponManager_GetWeapList(&Veh(e)->weapons));
 }
 
 /* the index + 1 of the action in its class, 0 none */
@@ -227,6 +242,8 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 		cVehicleEntity *v = (cVehicleEntity *)e;
 		s->ctrl[0] = NetRep_QCtrl(v->controls.acc);
 		s->ctrl[1] = NetRep_QCtrl(v->controls.str);
+		s->weapon = (uint8_t)v->weapons.curWeap;
+		s->flags |= v->controls.fire ? NETREP_FL_FIRE : 0;
 		return;
 	}
 	cWalkCharEntity *c = WChar(e);
@@ -409,6 +426,25 @@ static void Rep_ShipRadius(cEntity *v, byte parked) {
 	}
 }
 
+/* the sandbox has no shop yet: a taken ship gets every weapon (slot A of those it lacks) and full ammo */
+static void Rep_Loadout(cEntity *ship) {
+	char list[256];
+	int pos = 0;
+	cWeaponManager *wm = &Veh(ship)->weapons;
+
+	list[0] = 0;
+	for (int w = 0; w < g_pWorld->weapons.count && pos < (int)sizeof(list) - 12; w++) {
+		uint32_t slots = cWeaponManager_GetSlots(wm, w);
+		Str_PrintfQuiet(list + pos, (int)sizeof(list) - pos, "%s%u", w ? "," : "", slots ? slots : 1u);
+		pos += (int)strlen(list + pos);
+	}
+	char *l = list;
+	cWeaponManager_VarS(wm, "WeapList", &l, 1);
+	for (int k = 0; k < g_pWorld->ammo.count; k++) {
+		cWeaponManager_SetAmmo(wm, k, TABLE_AT(g_pWorld->ammo, k)->max);
+	}
+}
+
 /* the switch: into the nearest parked ship, out of the ship */
 static void Rep_Switch(int i, cEntity *e) {
 	RepPlayer *pl = &rep.pl[i];
@@ -447,6 +483,7 @@ static void Rep_Switch(int i, cEntity *e) {
 		v->thrust = v->turnSpeedX = v->turnSpeedY = v->roll = v->speed = v->boost = v->pushTime = 0.0f;
 		Obj(best)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
 		Obj(best)->rotVel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		Rep_Loadout(best);
 		Rep_SetSlot(best, PLAYERS_NET_SLOT + i);
 		Entity_SetActive(best, 1);
 		Obj(best)->netStep = 1;
@@ -481,7 +518,7 @@ static void Rep_Switch(int i, cEntity *e) {
 	Con_Printf("instance: player %d out of %s\n", i, name);
 }
 
-/* the player's entity gone: a character away, a ship parked */
+/* the player's entity gone: a character away, a ship parked (a dead one left to the game: its wreck) */
 static void Rep_DropOwn(int i) {
 	RepPlayer *pl = &rep.pl[i];
 	cEntity *e = Rep_Own(pl);
@@ -493,7 +530,9 @@ static void Rep_DropOwn(int i) {
 	Obj(e)->netStep = 0;
 	if (NetPl_Kind(e) == NETREP_SHIP) {
 		Rep_SetSlot(e, -1);
-		PORT_CALL(Parking, SetShipAsParked, NULL, "s", e->name);
+		if (WLife(e)->life > 0) {
+			PORT_CALL(Parking, SetShipAsParked, NULL, "s", e->name);
+		}
 	} else {
 		Rep_SetSlot(e, -1);
 		cEntity_Del(e);
@@ -512,7 +551,9 @@ static int Rep_Join(int conn) {
 		pl->told = -1;
 		pl->spawns = spawns;
 		NetRepInBuf_Init(&pl->in);
+		Players_Join(i, Instance_StartMoney());
 		if (!Rep_SpawnChar(i, NULL, 0.0f)) {
+			Players_Part(i);
 			return -1;
 		}
 		pl->used = 1;
@@ -528,6 +569,7 @@ static void Rep_Leave(int i) {
 	Con_Printf("instance: player %d left (%u inputs, %u late, %u missed, %u shots, %u hits)\n", i, pl->in.got,
 		pl->in.late, pl->in.missed, pl->shots, pl->hits);
 	Rep_DropOwn(i);
+	Players_Part(i);
 	pl->used = 0;
 	rep.players--;
 }
@@ -542,7 +584,13 @@ void Rep_PreFrame(uint64_t tick) {
 			continue;
 		}
 		cEntity *e = Players_Get(i);
-		if (e != pl->own) {
+		if (e && e == pl->own && WLife(e)->life <= 0 && !pl->lost) {
+			/* dead: the game's death runs on (the effects, the wreck) without the player */
+			Con_Printf("instance: player %d died in %s\n", i, e->name);
+			Rep_DropOwn(i);
+			e = NULL;
+		}
+		if (e != pl->own || !e) {
 			/* dead or deleted by the game: a new Dtritus after a while */
 			if (!pl->lost) {
 				pl->lost = tick;
@@ -556,6 +604,8 @@ void Rep_PreFrame(uint64_t tick) {
 			continue;
 		}
 		pl->lost = 0;
+		/* the money, the alarm and the scripts' player of this player while its input runs */
+		Players_Bind(i);
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH)) {
@@ -566,6 +616,7 @@ void Rep_PreFrame(uint64_t tick) {
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);
 	}
+	Players_BindTurn();
 }
 
 /* the lag compensation: the other entities at the server time the shooter's client showed them */
@@ -574,7 +625,7 @@ void Rep_RewindBegin(cEntity *v) {
 
 	rep.rewound = 0;
 	int i = g_Instance && rep.srv ? Players_Of(v) : -1;
-	if (i < 0) {
+	if (i < 0 || !rep.pl[i].used) {
 		return;
 	}
 	RepPlayer *pl = &rep.pl[i];
@@ -596,22 +647,64 @@ void Rep_RewindBegin(cEntity *v) {
 	}
 }
 
-void Rep_RewindEnd(cEntity *v, cEntity *target, int shots) {
-	int i = g_Instance && rep.srv ? Players_Of(v) : -1;
-	if (i < 0) {
+void Rep_RewindEnd(cEntity *v) {
+	if (!rep.rewound || Players_Of(v) < 0) {
 		return;
 	}
 	for (int k = 0; k < rep.rewound; k++) {
 		rep.rewind[k].e->pos = rep.rewind[k].pos;
 	}
 	rep.rewound = 0;
-	if (target) {
-		RepPlayer *pl = &rep.pl[i];
-		int j = Players_Of(target);
-		pl->hits++;
-		Con_Printf("instance: hit by player %d (%s) on %s%s%d, %d shots, life %d, shown %.0f ms back\n", i, v->name,
-			target->name, j >= 0 ? " = player " : " ", j, shots, WLife(target)->life,
-			(double)rep.tick * 1000.0 / NETREP_TICK_HZ - pl->shownNow);
+}
+
+byte Rep_Hurt(cEntity *attacker, cEntity *victim, const char *weapon) {
+	if (!g_Instance) {
+		return 1;
+	}
+	if (!Players_MayHurt(attacker, victim)) {
+		return 0;
+	}
+	int i = Players_Of(attacker), j = Players_Of(victim);
+	if (i < 0 || !rep.pl[i].used || attacker == victim) {
+		return 1;
+	}
+	RepPlayer *pl = &rep.pl[i];
+	pl->hits++;
+	Con_Printf("instance: hit by player %d (%s) with %s on %s%s%d, life %d, shown %.0f ms back\n", i, attacker->name,
+		weapon, victim->name, j >= 0 ? " = player " : " ", j, WLife(victim)->life,
+		(double)rep.tick * 1000.0 / NETREP_TICK_HZ - pl->shownNow);
+	return 1;
+}
+
+/* the money, the alarm and the ammo of the player for its HUD, when they changed or a second after the last */
+static void Rep_SendStatus(Net2Host *host, int i, cEntity *e) {
+	RepPlayer *pl = &rep.pl[i];
+	NetRepStatus st;
+	uint8_t buf[16 + 2 * NETREP_AMMO_MAX];
+
+	memset(&st, 0, sizeof(st));
+	st.tick = (uint32_t)rep.tick;
+	st.money = Players_Money(i);
+	const cAlarm *a = Players_Alarm(i);
+	float v = a->value < 0.0f ? 0.0f : a->value > 1.0f ? 1.0f : a->value;
+	st.alarm = (uint8_t)(v * 255.0f + 0.5f);
+	st.flags = a->on ? NETREP_ST_ALARM : 0;
+	if (e && NetPl_Kind(e) == NETREP_SHIP && Veh(e)->weapons.ammo) {
+		int n = g_pWorld->ammo.count < NETREP_AMMO_MAX ? g_pWorld->ammo.count : NETREP_AMMO_MAX;
+		for (int k = 0; k < n; k++) {
+			float x = Veh(e)->weapons.ammo[k];
+			st.ammo[k] = (uint16_t)(x <= 0.0f ? 0.0f : x >= 65535.0f ? 65535.0f : x + 0.5f);
+		}
+		st.nammo = (uint8_t)n;
+	}
+	if (!NetRep_StatusDiffers(&st, &pl->status) && rep.snapTick - pl->statusSnap < NETREP_SNAP_HZ && pl->statusSnap) {
+		return;
+	}
+	int n = NetRep_WriteStatus(buf, sizeof(buf), &st);
+	if (n > 0) {
+		Net2_Send(host, pl->conn, REP_CH_UNRELIABLE, buf, n);
+		pl->status = st;
+		pl->statusSnap = rep.snapTick ? rep.snapTick : 1;
 	}
 }
 
@@ -631,6 +724,7 @@ static void Rep_TellSlots(Net2Host *host) {
 		if (e) {
 			NetRepSrv_SetView(rep.conn[pl->conn].c, e->pos.x, e->pos.y, e->pos.z, 0.0f);
 		}
+		Rep_SendStatus(host, i, e);
 		if (slot == pl->told) {
 			continue;
 		}
@@ -642,6 +736,88 @@ static void Rep_TellSlots(Net2Host *host) {
 			np);
 		if (n > 0) {
 			Net2_Send(host, pl->conn, REP_CH_RELIABLE, buf, n);
+		}
+	}
+}
+
+/* ---- the shots ---- */
+
+void Rep_Shot(cEntity *shooter, int weapon, int count, const vec3_t *from, const vec3_t *to, cEntity *target) {
+	if (!rep.watchers || count <= 0) {
+		return;
+	}
+	if (rep.nshots >= REP_SHOTS) {
+		rep.shotsLost++;
+		return;
+	}
+	RepShot *x = &rep.shots[rep.nshots++];
+	x->shooter = shooter;
+	x->target = target;
+	x->weapon = (uint8_t)weapon;
+	x->count = (uint8_t)(count > 255 ? 255 : count);
+	x->from = *from;
+	x->to = *to;
+}
+
+/* the shots since the last snapshot to each client that sees the shooter; a player does not get the shots of its
+ * own ship that its client shows itself (NetPl_LocalWeapon) */
+static void Rep_SendShots(Net2Host *host) {
+	uint8_t buf[NETREP_MSG_MAX];
+	NetRepShot out[NETREP_SHOTS_MAX];
+	int n = 0;
+
+	for (int i = 0; i < rep.nshots; i++) {
+		RepShot *x = &rep.shots[i];
+		int slot = Rep_Find(x->shooter);
+		if (slot < 0) {
+			continue;
+		}
+		NetRepShot *w = &rep.wire[n];
+		int t = x->target ? Rep_Find(x->target) : -1;
+		w->slot = (uint16_t)slot;
+		w->weapon = x->weapon;
+		w->count = x->count;
+		w->target = t < 0 ? NETREP_NO_SLOT : (uint16_t)t;
+		for (int k = 0; k < 3; k++) {
+			w->pos[k] = NetRep_QPos((&x->to.x)[k]);
+			w->from[k] = NetRep_QPos((&x->from.x)[k]);
+			rep.wirePos[n][k] = (&x->shooter->pos.x)[k];
+		}
+		n++;
+	}
+	rep.nshots = 0;
+	if (!n) {
+		return;
+	}
+	for (int c = 0; c < REP_CONNS; c++) {
+		if (!rep.conn[c].c) {
+			continue;
+		}
+		float view[3];
+		float r = NetRepSrv_GetView(rep.conn[c].c, view) * NETREP_KEEP;
+		int pi = rep.conn[c].player;
+		int own = pi >= 0 ? rep.pl[pi].told : -1;
+		int m = 0;
+		for (int i = 0; i < n; i++) {
+			const NetRepShot *w = &rep.wire[i];
+			float dx = rep.wirePos[i][0] - view[0], dy = rep.wirePos[i][1] - view[1], dz = rep.wirePos[i][2] - view[2];
+			if (dx * dx + dy * dy + dz * dz > r * r || (w->slot == own && NetPl_LocalWeapon(w->weapon))) {
+				continue;
+			}
+			out[m++] = *w;
+			if (m == NETREP_SHOTS_MAX) {
+				int size = NetRep_WriteShots(buf, sizeof(buf), (uint32_t)rep.tick, out, m);
+				if (size > 0) {
+					Net2_Send(host, c, REP_CH_UNRELIABLE, buf, size);
+				}
+				m = 0;
+			}
+		}
+		if (m) {
+			int size = NetRep_WriteShots(buf, sizeof(buf), (uint32_t)rep.tick, out, m);
+			if (size > 0) {
+				Net2_Send(host, c, REP_CH_UNRELIABLE, buf, size);
+			}
 		}
 	}
 }
@@ -767,6 +943,7 @@ void Rep_Tick(Net2Host *host, uint64_t tick) {
 	uint64_t t0 = Plat_RealNs();
 	Rep_Gather(tick);
 	Rep_TellSlots(host);
+	Rep_SendShots(host);
 	uint64_t t1 = Plat_RealNs();
 	for (int i = 0; i < REP_CONNS; i++) {
 		if (!rep.conn[i].c) {
@@ -790,12 +967,14 @@ static void Rep_PlayerStatus(int i) {
 	NetRepInBuf *b = &pl->in, *l = &pl->last;
 	uint32_t got = b->got - l->got, leadN = b->leadN - l->leadN;
 	cEntity *e = Rep_Own(pl);
+	const cAlarm *a = Players_Alarm(i);
 	Con_Printf("  player %d (%s): %u inputs, %u late, %u again, %u missed, %u stale, lead avg %.2f ticks, %u shots %u "
-		"hits, rewind avg %.0f ms, %u boards %u leaves, at %.0f %.0f %.0f\n", i, e ? e->name : "-", got,
-		b->late - l->late, b->dup - l->dup, b->missed - l->missed, pl->stale,
-		leadN ? (double)(b->leadSum - l->leadSum) / leadN : 0.0, pl->shots,
-		pl->hits, pl->rewindN ? pl->rewindSum * 1000.0 / pl->rewindN : 0.0, pl->boards, pl->leaves,
-		e ? (double)e->pos.x : 0.0, e ? (double)e->pos.y : 0.0, e ? (double)e->pos.z : 0.0);
+		"hits, rewind avg %.0f ms, %u boards %u leaves, money %d, alarm %.2f%s, at %.0f %.0f %.0f\n", i,
+		e ? e->name : "-", got, b->late - l->late, b->dup - l->dup, b->missed - l->missed, pl->stale,
+		leadN ? (double)(b->leadSum - l->leadSum) / leadN : 0.0, pl->shots, pl->hits,
+		pl->rewindN ? pl->rewindSum * 1000.0 / pl->rewindN : 0.0, pl->boards, pl->leaves, Players_Money(i),
+		(double)a->value, a->on ? " on" : "", e ? (double)e->pos.x : 0.0, e ? (double)e->pos.y : 0.0,
+		e ? (double)e->pos.z : 0.0);
 	*l = *b;
 }
 

@@ -7,6 +7,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/net.h"
 #include "scrap/objentity.h"
+#include "scrap/play.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
@@ -189,12 +190,38 @@ void cVehicleAttack_Update(cVehicleAttack *self) {
 	cPy_Function_AddParamS(f, Nto1Node_TargetName(&self->target));
 	cPy_Function_AddParamI(f, 0);
 	cPy_Function_Execute(f, 0);
+	if (g_Instance) {
+		Rep_Shot(owner, Veh(owner)->weapons.curWeap, self->count, &self->lastPoint, &self->point,
+			World_FindEntity(Nto1Node_TargetName(&self->target)));
+	}
 	self->count = 0;
 	self->lastPoint = self->point;
 	Nto1Node_LinkAs(&self->last, &self->target);
 	if ((g_pApp->flags & APPF_SERVER) && !Net_GetSendRate() && VAtt_NetFlags(self)) {
 		Nto1Node_LinkAs(&self->sent, &self->target);
 	}
+}
+
+void cVehicleAttack_Replay(cVehicleAttack *self, int weapon, int count, const vec3_t *from, const vec3_t *to,
+	cEntity *target) {
+	cEntity *owner = self->owner;
+	if (!Entity_IsType(owner, TYEN_VEHICLE) || weapon < 0 || weapon >= g_pWorld->weapons.count) {
+		return;
+	}
+	int cur = Veh(owner)->weapons.curWeap;
+	Veh(owner)->weapons.curWeap = weapon;
+	if (target) {
+		cEntity_AddLink(target, &self->target);
+	} else {
+		Nto1Node_Unlink(&self->target);
+	}
+	Nto1Node_LinkAs(&self->last, &self->target);
+	self->lastPoint = *from;
+	self->point = *to;
+	self->count = count;
+	self->hasLast = 1;
+	cVehicleAttack_Update(self);
+	Veh(owner)->weapons.curWeap = cur;
 }
 
 byte cVehicleAttack_VarS(cVehicleAttack *self, const char *name, char **s, int set) {

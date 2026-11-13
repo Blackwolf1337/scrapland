@@ -118,7 +118,8 @@ void NetRepDelay_Sample(NetRepDelay *d, const NetRepClock *c, uint32_t tick, dou
 }
 
 double NetRepDelay_Step(NetRepDelay *d, double dt, float loss) {
-	double t = NETREP_DELAY_BASE + NETREP_DELAY_JITTER * d->dev + (loss > NETREP_DELAY_LOSS ? 1.0 / NETREP_SNAP_HZ : 0.0);
+	double t = NETREP_DELAY_BASE + NETREP_DELAY_JITTER * d->dev;
+	t += loss > NETREP_DELAY_LOSS ? 1.0 / NETREP_SNAP_HZ : 0.0;
 	t = t < NETREP_DELAY_MIN ? NETREP_DELAY_MIN : t > NETREP_DELAY_MAX ? NETREP_DELAY_MAX : t;
 	d->target = t;
 	double step = NETREP_DELAY_RATE * dt;

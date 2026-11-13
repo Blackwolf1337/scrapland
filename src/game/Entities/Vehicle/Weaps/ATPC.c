@@ -7,6 +7,7 @@
 #include "scrap/ai.h"
 #include "scrap/fxmisc.h"
 #include "scrap/net.h"
+#include "scrap/play.h"
 #include "scrap/scorer.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
@@ -363,6 +364,8 @@ static void ATPC_Fire(cAbstractFile *params) {
 	ang[2] = 0.0f;
 	target = NULL;
 	dist = g_ATPCRange;
+	/* the aim and the line of the explosions where the shooter's client saw the others (play.h) */
+	Rep_RewindBegin(v);
 	Entity_GetTargetAngle(v, ang, g_ATPCRange, &target);
 	Entity_AimWeapon(v, ang[0], ang[1], &dist, &hit, &target, 8);
 	if (!(g_ATPCConvDist > dist)) {
@@ -384,6 +387,7 @@ static void ATPC_Fire(cAbstractFile *params) {
 			from.z = pc->z + dz;
 			cWorld_LineCall(g_pWorld, 8, &from, Entity_GetPos(tg, &t), g_ATPCExplosionRadius,
 				"!ATPCXplosionCall");
+			Rep_RewindEnd(v);
 			goto upgrade;
 		}
 	}
@@ -399,6 +403,7 @@ static void ATPC_Fire(cAbstractFile *params) {
 		from.z = pc->z + dz;
 		cWorld_LineCall(g_pWorld, 8, &from, &hit, g_ATPCExplosionRadius, "!ATPCXplosionCall");
 	}
+	Rep_RewindEnd(v);
 upgrade:;
 	/* the upgrades 9 and 10 use up their own ammo, at 0 the script restores the weapon */
 	int up = cWeaponManager_GetUpgrade(wm, g_ATPCIDWeap);
@@ -499,7 +504,7 @@ static void ATPC_XplosionCall(cAbstractFile *params) {
 			dmg = 1;
 		}
 	}
-	if (!WLife(victim)->god) {
+	if (!WLife(victim)->god && Rep_Hurt(shooter, victim, "ATPC")) {
 		WLife(victim)->life -= dmg;
 	}
 	if (oldLife > WLife(victim)->life) {

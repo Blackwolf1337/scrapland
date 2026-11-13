@@ -17,21 +17,26 @@
 #include "scrap/crt.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
+#include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/weapons.h"
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
 #define PLAY_CAM "PlayCam"
 #define PLAY_NAME "Me%u"
 #define PLAY_MAX_CATCHUP 8				/* ticks stepped in one frame at most; more ahead is a jump */
+#define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */
+#define PLAY_BOT_TARGET 3				/* the bot takes a ship and stays in the air (the weapon tests) */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 
 byte g_Play;
+byte g_HeadlessPlay;
 
 typedef struct PlayStats {
 	uint32_t states, corrections, unknown;
@@ -65,11 +70,26 @@ static struct {
 	double tickLocal;					/* local time of the last tick */
 	cEntity *cam;
 	byte started;
+	NetRepStatus status;				/* the newest status of the server */
+	byte haveStatus;
 	PlayStats st;
 	FILE *log;
-	byte bot;
+	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET */
+	byte botCycle;
+	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
 } play = { .slot = -1, .player = -1 };
+
+byte Play_HeadlessDue(void) {
+	static uint64_t next;
+	uint64_t now = Plat_RealNs(), period = 1000000000ull / PLAY_HEADLESS_HZ;
+	if (now < next) {
+		Plat_WaitEvent((int)((next - now + 999999) / 1000000));
+		return 0;
+	}
+	next = now - next > period ? now + period : next + period;
+	return 1;
+}
 
 byte Play_ParseParam(const char *param, const char *ext) {
 	(void)ext;
@@ -151,6 +171,32 @@ void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phy
 	Con_Printf("play: player %d, slot %d, kind %d from tick %u\n", player, slot, kind, tick);
 }
 
+/* the ammo of the status into the own ship */
+static void Play_ApplyAmmo(void) {
+	cEntity *e = play.e;
+	if (!play.haveStatus || !e || NetPl_Kind(e) != NETREP_SHIP || !Veh(e)->weapons.ammo) {
+		return;
+	}
+	int n = play.status.nammo < g_pWorld->ammo.count ? play.status.nammo : g_pWorld->ammo.count;
+	for (int k = 0; k < n; k++) {
+		Veh(e)->weapons.ammo[k] = play.status.ammo[k];
+	}
+}
+
+void Play_OwnStatus(const NetRepStatus *st) {
+	if (play.haveStatus && (int32_t)(st->tick - play.status.tick) < 0) {
+		return;			/* an older one that came late */
+	}
+	play.status = *st;
+	play.haveStatus = 1;
+	g_pWorld->money = st->money;
+	/* the level held where the server has it: the client's alarm does not grow or fall by itself */
+	g_pWorld->alarm.value = st->alarm / 255.0f;
+	g_pWorld->alarm.on = (st->flags & NETREP_ST_ALARM) != 0;
+	g_pWorld->alarm.grow = 0.0f;
+	Play_ApplyAmmo();
+}
+
 /* the state of a record into the entity: position, velocity, angles, the view of a character */
 static void Play_SetState(cEntity *e, const NetRepState *st) {
 	vec3_t v;
@@ -195,6 +241,7 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 	memset(&play.input, 0, sizeof(play.input));
 	if (kind == NETREP_SHIP) {
 		play.acc.weapon = play.input.weapon = (uint8_t)Veh(e)->controls.weapon;
+		Play_ApplyAmmo();
 	}
 	/* the ticks from the record's on: the server ran them with no input since the switch (NetRepInBuf_Restart) */
 	play.tick = tick;
@@ -217,7 +264,10 @@ void Play_Start(void) {
 		}
 	}
 	const char *bot = getenv("SCRAP_PLAYBOT");
-	play.bot = bot && *bot && *bot != '0';
+	play.bot = !bot || !*bot || *bot == '0' ? 0 : !crt_stricmp(bot, "npc") ? PLAY_BOT_NPC :
+		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : 1;
+	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
+	play.botCycle = cycle && *cycle && *cycle != '0';
 	Play_Camera();
 }
 
@@ -285,13 +335,13 @@ static void Play_Step(uint32_t tick, byte none) {
 	Play_Draw();
 }
 
-/* the nearest proxy within 40000 units: a player's (player), or a ship standing still of no player (kind) */
-static cEntity *Play_BotNearest(cEntity *e, int kind, byte player) {
+/* the nearest proxy within 40000 units: a player's (player) or of no player, of a kind (0 any), standing still */
+static cEntity *Play_BotNearest(cEntity *e, int kind, byte player, byte still) {
 	cEntity *best = NULL;
 	float bestD = 40000.0f * 40000.0f;
 	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
 		if (o == e || !Obj(o)->proxy || o->deadNode.target || Watch_IsPlayer(o) != player ||
-			(kind && (NetPl_Kind(o) != kind || Obj(o)->vel.x != 0.0f || Obj(o)->vel.z != 0.0f))) {
+			(kind && NetPl_Kind(o) != kind) || (still && (Obj(o)->vel.x != 0.0f || Obj(o)->vel.z != 0.0f))) {
 			continue;
 		}
 		float dx = o->pos.x - e->pos.x, dy = o->pos.y - e->pos.y, dz = o->pos.z - e->pos.z;
@@ -302,6 +352,16 @@ static cEntity *Play_BotNearest(cEntity *e, int kind, byte player) {
 		}
 	}
 	return best;
+}
+
+/* the weapon of the bot: the Vulcan, or with SCRAP_PLAYBOT_WEAPONS=1 each weapon for 6 s of aiming in turn */
+static int Play_BotWeapon(void) {
+	const int w[] = { g_VulcanIDWeap, g_LaserIDWeap, g_DevastatorIDWeap, g_TeslaIDWeap, g_ATPCIDWeap, g_SwarmIDWeap,
+		g_InfernoIDWeap };
+	if (!play.botCycle) {
+		return g_VulcanIDWeap;
+	}
+	return w[(int)(play.botNear / 6.0) % (int)(sizeof(w) / sizeof(w[0]))];
 }
 
 /* the bot of the tests: walks, takes a parked ship, flies, fires at the nearest other player, lands and gets out,
@@ -323,7 +383,7 @@ static void Play_Bot(double now) {
 		if (t < 8.0) {
 			return;
 		}
-		cEntity *ship = Play_BotNearest(e, NETREP_SHIP, 0);
+		cEntity *ship = Play_BotNearest(e, NETREP_SHIP, 0, 1);
 		if (ship) {
 			float dx = ship->pos.x - e->pos.x, dz = ship->pos.z - e->pos.z;
 			float dyaw = remainderf(atan2f(-dx, -dz) - WChar(e)->view.y, M_2PI_F);
@@ -335,16 +395,23 @@ static void Play_Bot(double now) {
 		}
 		return;
 	}
-	/* after a while in the ship: slow down and get out */
-	if (t > 45.0) {
+	/* the target of the weapon tests climbs a little and stays there */
+	if (play.bot == PLAY_BOT_TARGET) {
+		play.acc.move[2] = t < 4.0 ? 0.6f : 0.0f;
+		play.acc.move[0] = Veh(e)->speed > 300.0f ? -1.0f : 0.0f;
+		return;
+	}
+	/* after a while in the ship: slow down and get out (not while it tries all weapons) */
+	if (t > 45.0 && !play.botCycle) {
 		play.acc.move[0] = Veh(e)->speed > 500.0f ? -1.0f : 0.0f;
 		if (Veh(e)->speed < PLAY_LEAVE_SPEED * 0.8f && fmod(t, 2.0) < 0.2) {
 			play.acc.buttons = NETREP_IN_SWITCH;
 		}
 		return;
 	}
-	/* in the ship: fly up and around, turn to the nearest other player and fire when it is ahead */
-	cEntity *best = Play_BotNearest(e, 0, 1);
+	/* in the ship: fly up and around, turn to the nearest other player (SCRAP_PLAYBOT=npc: ship of no player) and
+	 * fire when it is ahead */
+	cEntity *best = Play_BotNearest(e, play.bot == PLAY_BOT_NPC ? NETREP_SHIP : 0, play.bot != PLAY_BOT_NPC, 0);
 	float bestD = best ? (best->pos.x - e->pos.x) * (best->pos.x - e->pos.x) + (best->pos.y - e->pos.y) *
 		(best->pos.y - e->pos.y) + (best->pos.z - e->pos.z) * (best->pos.z - e->pos.z) : 0.0f;
 	play.acc.move[0] = 0.6f;
@@ -361,10 +428,17 @@ static void Play_Bot(double now) {
 	play.acc.rot[0] = dyaw > 0.6f ? 1.0f : dyaw < -0.6f ? -1.0f : dyaw / 0.6f;
 	play.acc.rot[1] = pitch > 0.3f ? 0.6f : pitch < -0.3f ? -0.6f : pitch * 2.0f;
 	play.acc.move[0] = bestD > 8000.0f * 8000.0f ? 0.8f : 0.1f;
-	if (fabsf(dyaw) < 0.15f && fmod(t, 3.0) < 2.0) {
+	/* trying the weapons: stops about 4000 units away and fires in bursts of 1.5 s (the missiles fly at a release) */
+	if (play.botCycle && bestD < 6000.0f * 6000.0f) {
+		play.acc.move[0] = Veh(e)->speed > 200.0f ? -1.0f : 0.0f;
+	}
+	if (fabsf(dyaw) < 0.15f && fmod(t, play.botCycle ? 2.0 : 3.0) < (play.botCycle ? 1.5 : 2.0)) {
 		play.acc.buttons = NETREP_IN_ACT;
 	}
-	play.acc.weapon = (uint8_t)g_VulcanIDWeap;
+	if (fabsf(dyaw) < 0.3f && bestD < 8000.0f * 8000.0f) {
+		play.botNear += 1.0 / NETREP_TICK_HZ;
+	}
+	play.acc.weapon = (uint8_t)Play_BotWeapon();
 }
 
 void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
@@ -409,6 +483,38 @@ int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs) {
 	return *n > 0;
 }
 
+/* the weapon keys and the times of the next shots of a ship, kept across a replay: the replay fires nothing and
+ * gives no presses or releases (WeaponManager.c sees no change of the keys) */
+typedef struct PlayWeapKeep {
+	byte fire, firePrev, cm, cmPrev;
+	float fireStamp, cmStamp;
+} PlayWeapKeep;
+
+static void Play_KeepWeapons(cEntity *e, PlayWeapKeep *k, byte restore) {
+	if (NetPl_Kind(e) != NETREP_SHIP) {
+		return;
+	}
+	cVehicleControls *c = &Veh(e)->controls;
+	cWeaponManager *w = &Veh(e)->weapons;
+	if (restore) {
+		c->fire = k->fire;
+		c->firePrev = k->firePrev;
+		c->cm = k->cm;
+		c->cmPrev = k->cmPrev;
+		w->fireStamp = k->fireStamp;
+		w->cmStamp = k->cmStamp;
+		return;
+	}
+	k->fire = c->fire;
+	k->firePrev = c->firePrev;
+	k->cm = c->cm;
+	k->cmPrev = c->cmPrev;
+	k->fireStamp = w->fireStamp;
+	k->cmStamp = w->cmStamp;
+	/* no key down and none before during the replay */
+	c->firePrev = c->cmPrev = 0;
+}
+
 /* a server state of the own entity: the error of the prediction of its tick, and the correction */
 void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 	cEntity *e = play.e;
@@ -434,6 +540,8 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 	if (err > PLAY_CORRECT_MIN) {
 		vec3_t before = play.truePos;
 		/* the state of that tick with the server's position, velocity and angles, then the inputs after it */
+		PlayWeapKeep keep = { 0 };
+		Play_KeepWeapons(e, &keep, 0);
 		NetPl_Restore(e, &play.motion[tick % NETREP_PRED]);
 		Play_SetState(e, st);
 		NetPl_Save(e, &play.motion[tick % NETREP_PRED]);
@@ -448,6 +556,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 			Play_Record(t);
 			replayed++;
 		}
+		Play_KeepWeapons(e, &keep, 1);
 		play.input.tick = play.tick;
 		play.truePos = e->pos;
 		NetRepSmooth_Correct(&play.smooth, &before.x, &play.truePos.x);

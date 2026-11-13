@@ -7,6 +7,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
 #include "scrap/net.h"
+#include "scrap/play.h"
 #include "scrap/scorer.h"
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
@@ -526,10 +527,12 @@ static void Devastator_Fire(cAbstractFile *params) {
 			dist = (float)(Weap_Rand01() * (double)r + 0.0) + d;
 		}
 	}
+	Rep_RewindBegin(v);
 	Entity_GetTargetAngle(v, ang, dist, &target);
 	Entity_AimWeapon(v, ang[0], ang[1], &dist, &hit, &target, 8);
+	Rep_RewindEnd(v);
 	if (target) {
-		if (Entity_IsType(target, TYEN_WITH_LIFE) && !WLife(target)->god) {
+		if (Entity_IsType(target, TYEN_WITH_LIFE) && !WLife(target)->god && Rep_Hurt(v, target, "Devastator")) {
 			WLife(target)->life--;
 		}
 		if (target && Entity_IsType(target, TYEN_VEHICLE)) {
@@ -636,7 +639,7 @@ static void Devastator_XplosionCall(cAbstractFile *params) {
 			}
 		}
 	}
-	if (!WLife(victim)->god) {
+	if (!WLife(victim)->god && Rep_Hurt(World_FindEntity(g_DevShooter), victim, "Devastator")) {
 		WLife(victim)->life -= dmg;
 	}
 	if (oldLife > WLife(victim)->life) {

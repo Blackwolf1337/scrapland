@@ -11,7 +11,9 @@
  * player are checked with the other entities where that player saw them (the lag compensation): the server time the
  * client showed came with its input, and the replication's history of samples gives the positions then.
  *
- * Client: ScrapC -play:<IPv4> [-port:<n>] [-imap:Levels/<level>]: a watcher (include/scrap/replicate.h) with its own
+ * Client: ScrapC -play:<IPv4> [-port:<n>] [-imap:Levels/<level>] [-headless]: a watcher (include/scrap/replicate.h)
+ * with its own player (-headless: no window, render device, sound or input, the frames at PLAY_HEADLESS_HZ: the bots
+ * of the load tests) and its own
  * player. Its entity is a real local one (owner slot 0: the camera, the HUD and the controls of single player work
  * on it) that it steps itself once per tick with the input of that tick (NetPl_Step, the same code as the server),
  * NETREP_TICK_HZ times a second ahead of the server by half the round trip plus a lead. The inputs of the last ticks
@@ -23,8 +25,10 @@
  *
  * Controls: those of single player. The switch: Use (Walk set) on foot, Mission info (Racer set) in a ship.
  * SCRAP_PLAYLOG=<file>: a CSV line per server state of the own entity (tick, error, correction, ...). SCRAP_PLAYBOT=1:
- * the client plays itself (walks, takes a ship, flies, fires at the nearest other player) for tests. SCRAP_NET2_LOSS
- * (percent) and SCRAP_NET2_DELAY (ms, each way, + SCRAP_NET2_JITTER ms) on either side: a test link.
+ * the client plays itself (walks, takes a ship, flies, fires at the nearest other player) for tests; =npc: it fires
+ * at ships of no player; =target: it takes a ship and stays in the air; SCRAP_PLAYBOT_WEAPONS=1: it fires each
+ * weapon for 6 s in turn and stays in the ship. SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
+ * SCRAP_NET2_JITTER ms) on either side: a test link.
  */
 #ifndef SCRAP_PLAY_H
 #define SCRAP_PLAY_H
@@ -37,11 +41,12 @@
 #define PLAY_LEAVE_SPEED 3000.0f		/* a ship gets left only below this speed (units/s) */
 #define PLAY_CORRECT_MIN 2.0f			/* units of prediction error that make a correction */
 #define PLAY_SMOOTH_HALF 0.08f			/* s: half life of the drawn offset of a correction */
-#define PLAY_SMOOTH_SNAP 3000.0f		/* units: a larger correction is a jump */
+#define PLAY_SMOOTH_SNAP 8000.0f		/* units: a larger correction is a jump */
 #define PLAY_LEAD 0.075					/* s the input should be at the server before its tick */
 #define PLAY_LOSS_LEAD 0.07				/* s more with loss: a later copy of a lost input comes in time */
 #define PLAY_STEPS 2					/* slot ticks per tick: 1/60 s each, as a player's of single player */
 #define PLAY_SPAWN_RING 400.0f			/* units between the players at a spawn point */
+#define PLAY_HEADLESS_HZ 60				/* frames a second of a headless player */
 
 struct cEntity;
 
@@ -60,8 +65,9 @@ typedef struct NetPlMotion {
 	byte collision[0x20];			/* cVehicleEntity.collision: the state of the world collision */
 } NetPlMotion;
 
-/* the input into the controls of the entity (local: the client's own, its action buttons stay off) */
-void NetPl_Apply(struct cEntity *e, const NetRepInput *in, byte local);
+/* the input into the controls of the entity (local: the client's own, its action buttons stay off but the fire of
+ * a NetPl_LocalWeapon outside a replay) */
+void NetPl_Apply(struct cEntity *e, const NetRepInput *in, byte local, byte replay);
 /* one tick of a player's entity with the input: its actions (not when the input runs again for a correction) and
  * PLAY_STEPS slot ticks */
 void NetPl_Step(struct cEntity *e, const NetRepInput *in, byte local, byte replay);
@@ -76,6 +82,9 @@ void NetPl_Accumulate(struct cEntity *e, NetPlAccum *a, float dt);
 void NetPl_Input(NetPlAccum *a, NetRepInput *out);
 void NetPl_Save(struct cEntity *e, NetPlMotion *m);
 void NetPl_Restore(struct cEntity *e, const NetPlMotion *m);
+/* the client fires weapon w of its own ship itself for the effects at once (the instant-hit weapons; the hits it
+ * makes stay local, the server's count): Vulcan, Laser, Tesla, ATPC, Devastator */
+byte NetPl_LocalWeapon(int w);
 /* the replication kind of a player's entity: NETREP_CHAR, NETREP_SHIP, 0 */
 int NetPl_Kind(struct cEntity *e);
 /* the movement constants the scripts set on a ship (the player message): into phys (NETREP_PHYS_MAX), the count;
@@ -87,14 +96,24 @@ void NetPl_SetPhys(struct cEntity *e, const float *phys, int n);
 
 /* before the frame of tick: each player's input of the tick into its entity */
 void Rep_PreFrame(uint64_t tick);
-/* the lag compensation around a hit check of the vehicle v (only for a player's): the other replicated entities
- * where v's client saw them, and back */
+/* the lag compensation around the aim and hit check of an instant-hit weapon of the vehicle v (only for a
+ * player's): the other replicated entities where v's client saw them, and back */
 void Rep_RewindBegin(struct cEntity *v);
-void Rep_RewindEnd(struct cEntity *v, struct cEntity *target, int shots);
+void Rep_RewindEnd(struct cEntity *v);
+/* the damage of attacker's weapon may go to victim (outside the instance always): the server's PvP setting
+ * (Players_MayHurt); a hit of a player is counted and logged ("hit by player") */
+byte Rep_Hurt(struct cEntity *attacker, struct cEntity *victim, const char *weapon);
+/* the hits of a ship's weapon its cVehicleAttack hands to the weapon's OnHit (the effects): count shots of weapon
+ * from the point from to the point to (at target, NULL for a point), sent to the clients that see the ship */
+void Rep_Shot(struct cEntity *shooter, int weapon, int count, const vec3_t *from, const vec3_t *to,
+	struct cEntity *target);
 
 /* ---- the client (Play.c) ---- */
 
 extern byte g_Play;
+
+/* -headless: the frames of a headless player at PLAY_HEADLESS_HZ; 0 after a wait for an event up to the next one */
+byte Play_HeadlessDue(void);
 
 byte Play_ParseParam(const char *param, const char *ext);
 /* the replication's events of the own slot (Watch.c) */
@@ -103,6 +122,9 @@ void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phy
 void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState *st);
 void Play_OwnUpdate(uint32_t tick, const NetRepState *st);
 void Play_OwnRemove(void);
+/* the status message: the money, the alarm and the ammo of the own player into the world and the own ship (the
+ * HUD of single player shows them) */
+void Play_OwnStatus(const NetRepStatus *st);
 struct cEntity *Play_Entity(void);
 /* the level runs: the camera; each frame before and after App_Frame (Watch.c) */
 void Play_Start(void);

@@ -4,6 +4,7 @@
  * SetUpSonicFunc) sit at the end of the same code.
  */
 #include "scrap/crt.h"
+#include "scrap/play.h"
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
@@ -636,8 +637,10 @@ static void Laser_FireNative(cAbstractFile *f) {
 	ang.z = 0.0f;
 	target = NULL;
 	dist = g_LaserRange;
+	Rep_RewindBegin(v);
 	Entity_GetTargetAngle(v, &ang.x, g_LaserRange, &target);
 	Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	Rep_RewindEnd(v);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
 	if (isCar) {
@@ -646,7 +649,7 @@ static void Laser_FireNative(cAbstractFile *f) {
 		cVehicleAttack_ShotAtPoint(Veh_HitInfo(v), &out, 1);
 	}
 	if (isLife) {
-		if (!WLife(target)->god) {
+		if (!WLife(target)->god && Rep_Hurt(v, target, "Laser")) {
 			WLife(target)->life -= g_LaserDamage * n;
 		}
 		if (!isCar) {
