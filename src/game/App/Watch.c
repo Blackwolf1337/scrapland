@@ -23,7 +23,11 @@
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/coord.h"
+#include "scrap/travel.h"
 #include "scrap/scrap.h"
+#include "scrap/scriptmodes.h"
+#include "scrap/scriptnative.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -59,10 +63,16 @@ typedef struct WatchProxy {
 
 byte g_Watch;
 
+static void Watch_Metro(const uint8_t *data, int size);
+
 static struct {
 	char addr[64];
+	uint16_t port;					/* of the instance, 0 -port */
 	uint32_t rate;
 	int phase;
+	byte target;					/* a ticket's instance to go to (a world of a coordinator) */
+	int ticketLen;
+	uint8_t ticket[COORD_TICKET_MAX];
 	Net2Host *host;
 	NetRepView *view;
 	char level[128];
@@ -525,7 +535,7 @@ static void Watch_Start(void) {
 	watch.phase = WATCH_GONE;
 	NetRepClock_Init(&watch.clock);
 	NetRepDelay_Init(&watch.delay);
-	if (!Net2_ParseAddr(watch.addr, Instance_Port(), addr)) {
+	if (!Net2_ParseAddr(watch.addr, watch.port ? watch.port : Instance_Port(), addr)) {
 		Con_Errorf("watch: '%s' is not a numeric address\n", watch.addr);
 		return;
 	}
@@ -618,6 +628,107 @@ static void Watch_Shots(const uint8_t *data, int size) {
 	}
 }
 
+/* the station map of a metro door the own player used: the map of single player (its pick goes to the instance:
+ * Watch_MetroPick), or for the tests the first station of the list SCRAP_PLAYBOT_METRO that it offers */
+static void Watch_Metro(const uint8_t *data, int size) {
+	char door[COORD_LEVEL + 1], station[COORD_LEVEL + 1];
+	NetRepReader r;
+	const char *want = getenv("SCRAP_PLAYBOT_METRO");
+
+	NetRepReader_Init(&r, data + 1, size - 1);
+	NetRep_GetStr(&r, door, sizeof(door));
+	int n = (int)NetRep_GetU8(&r);
+	char offered[512] = ",";
+	int len = 1;
+	for (int k = 0; k < n && !r.bad; k++) {
+		NetRep_GetStr(&r, station, sizeof(station));
+		len += Str_PrintfQuiet(offered + len, (int)sizeof(offered) - len, "%s,", station);
+		len = len < (int)sizeof(offered) ? len : (int)sizeof(offered) - 1;
+	}
+	if (r.bad || !Play_Entity()) {
+		return;
+	}
+	Con_Printf("watch: metro map of %s (%d stations)\n", door, n);
+	if (want && *want) {
+		/* the first of the comma list that the map offers */
+		char list[256], key[COORD_LEVEL + 3];
+		Str_Copy(list, want, sizeof(list));
+		for (char *tok = strtok(list, ","); tok; tok = strtok(NULL, ",")) {
+			Str_PrintfQuiet(key, sizeof(key), ",%s,", tok);
+			if (strstr(offered, key)) {
+				Watch_MetroPick(tok);
+				break;
+			}
+		}
+		return;
+	}
+	if (!g_HeadlessPlay && !PORT_CALL(Metro, OnUse, NULL, "ssss", Play_Entity()->name, door, "Travel", "")) {
+		Native_ErrPrint();
+	}
+}
+
+byte Watch_MetroPick(const char *station) {
+	uint8_t buf[COORD_LEVEL + 8];
+	NetRepBuf w;
+	if (!watch.host || watch.phase != WATCH_RUN) {
+		return 0;
+	}
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COORD_MSG_PICK);
+	NetRep_PutStr(&w, station);
+	Net2_Send(watch.host, 0, REP_CH_RELIABLE, buf, w.size);
+	Con_Printf("watch: metro to %s\n", station);
+	return 1;
+}
+
+/* the connection to the instance and everything of it gone (a travel to another instance) */
+static void Watch_Reset(void) {
+	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
+		Watch_Free(s);
+	}
+	Play_Reset();
+	if (watch.host) {
+		Net2_Destroy(watch.host);
+		watch.host = NULL;
+	}
+	NetRepCli_Destroy(watch.view);
+	watch.view = NULL;
+	watch.cam = NULL;
+	watch.lastNs = watch.lastAck = 0;
+	watch.retries = 0;
+	watch.taken = 0;
+	watch.phase = WATCH_OFF;
+}
+
+void Watch_Go(const char *addr, uint16_t port, const uint8_t *ticket, int size, const char *level) {
+	char path[COORD_LEVEL + 8];
+	if (size < 0 || size > (int)sizeof(watch.ticket)) {
+		return;
+	}
+	if (watch.phase != WATCH_OFF) {
+		Watch_Reset();
+	}
+	Str_Copy(watch.addr, addr, sizeof(watch.addr));
+	watch.port = port;
+	memcpy(watch.ticket, ticket, (size_t)size);
+	watch.ticketLen = size;
+	watch.target = 1;
+	/* the loading screen at once (the welcome finds the level loading or loaded) */
+	Str_PrintfQuiet(path, sizeof(path), "Levels/%s", level);
+	if (!g_pApp->levelPath || crt_stricmp(g_pApp->levelPath, path)) {
+		CWinApp_LoadLevel(g_pApp, path);
+	}
+	Con_Printf("watch: to %s on %s port %u\n", level, addr, port);
+}
+
+void Watch_Idle(void) {
+	if (watch.host) {
+		uint64_t ms = Plat_RealNs() / 1000000;
+		Net2_Poll(watch.host, ms);
+		Net2_Flush(watch.host, ms);
+	}
+}
+
 byte Watch_ClockReady(void) {
 	return watch.phase == WATCH_RUN && watch.clock.have;
 }
@@ -635,6 +746,9 @@ void Watch_PreFrame(void) {
 	uint64_t ns = Plat_RealNs();
 
 	if (watch.phase == WATCH_OFF) {
+		if (Join_Active() && !watch.target) {
+			return;			/* the coordinator's ticket first */
+		}
 		Watch_Start();
 	}
 	if (!watch.host) {
@@ -645,6 +759,15 @@ void Watch_PreFrame(void) {
 		switch (ev.type) {
 		case NET2_EV_CONNECT: {
 			uint8_t buf[16];
+			/* the coordinator's ticket before the hello */
+			if (watch.ticketLen) {
+				static uint8_t tk[COORD_TICKET_MAX + 3];
+				tk[0] = COORD_MSG_ITICKET;
+				tk[1] = (uint8_t)watch.ticketLen;
+				tk[2] = (uint8_t)(watch.ticketLen >> 8);
+				memcpy(tk + 3, watch.ticket, (size_t)watch.ticketLen);
+				Net2_Send(watch.host, 0, REP_CH_RELIABLE, tk, watch.ticketLen + 3);
+			}
 			int n = NetRep_WriteHello(buf, sizeof(buf), watch.rate ? watch.rate : NETREP_RATE_DEFAULT,
 				g_Play ? NETREP_HELLO_PLAY : 0);
 			Net2_Send(watch.host, 0, REP_CH_RELIABLE, buf, n);
@@ -669,6 +792,8 @@ void Watch_PreFrame(void) {
 				Watch_Welcome(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == NETREP_MSG_PLAYER) {
 				Watch_Player(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == COORD_MSG_METRO) {
+				Watch_Metro(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SNAP && watch.phase == WATCH_RUN) {
 				Watch_Snapshot(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SHOTS && watch.phase == WATCH_RUN) {

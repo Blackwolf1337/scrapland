@@ -44,6 +44,13 @@ void Rep_Tick(Net2Host *host, uint64_t tick);
 /* the status lines: per watcher bytes per second, snapshot sizes, records, interest; time spent */
 void Rep_Status(double secs);
 void Rep_Close(void);
+/* the players of the instance for the travel (include/scrap/travel.h): the connection of player i (-1), the player
+ * of a connection (-1), player i back at the players' spawn ring */
+int Rep_PlayerConn(int i);
+int Rep_ConnPlayer(int conn);
+void Rep_Respawn(int i);
+/* tests: the switch of player i (into the nearest parked ship or out of its ship), or a ship called beside it */
+void Rep_TestSwitch(int i, byte call);
 
 /* ---- watcher (Watch.c) ---- */
 

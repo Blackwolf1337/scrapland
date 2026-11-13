@@ -15,6 +15,7 @@
 #include "scrap/input.h"
 #include "scrap/instance.h"
 #include "scrap/play.h"
+#include "scrap/travel.h"
 #include "scrap/replicate.h"
 #include "scrap/model.h"
 #include "scrap/net.h"
@@ -232,6 +233,7 @@ void CApp_Shutdown(CApp *self) {
 	Pack_CloseAll();
 	Instance_Close();
 	Watch_Close();
+	Join_Close();
 	if (!g_Instance && !g_HeadlessPlay) {
 		Config_Save();
 	}
@@ -694,6 +696,11 @@ int CApp_FrameResume(void) {
 }
 
 void CWinApp_LoadLevel(CApp *app, const char *level) {
+	/* an instance keeps its level: the coordinator moves the players between the levels (include/scrap/travel.h) */
+	if (g_Instance && app->levelPath && app->levelPath[0]) {
+		Con_Printf("instance: the level change to %s is refused (the coordinator owns the level changes)\n", level);
+		return;
+	}
 	cString_Set(&app->newLevelPath, level);
 	app->loadPending = 1;
 	g_DrawNextFrame = 0;
@@ -763,7 +770,8 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 		App_InitDedicated(self);
 		return 1;
 	}
-	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext) || Play_ParseParam(param, ext)) {
+	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext) || Play_ParseParam(param, ext) ||
+		Travel_ParseParam(param, ext) || Join_ParseParam(param, ext)) {
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {

@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "scrap/alarm.h"
+#include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
@@ -259,6 +260,12 @@ static byte SG_QWayPoint(void) {
 /* QLoad(MapName, useGameplayTime=1): the level after this frame, the music and voices off, the gameplay time kept */
 static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 	static const char *const credits[] = { "LEVELS/MENU", "LEVELS/ORBIT", "LEVELS/FAKE", "LEVELS/JUNKYARD", NULL };
+	/* an instance keeps its level and the save variables of the world (include/scrap/travel.h) */
+	if (g_Instance) {
+		const char *m = Native_Text(map);
+		Con_Printf("instance: QLoad(%s) refused (the coordinator owns the level changes)\n", m ? m : "?");
+		return 1;
+	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *file = Mode_V(&t), *msg = Mode_V(&t), *saved = Mode_V(&t), *sum = Mode_V(&t), *text = Mode_V(&t);
 	nativeVal_t *upper = Mode_V(&t);

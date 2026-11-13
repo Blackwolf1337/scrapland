@@ -155,7 +155,8 @@ uintptr_t Net2Sock_Open(int family, const Net2Addr *at, uint16_t port, uint32_t 
 	uintptr_t s;
 
 #ifdef _WIN32
-	SOCKET ws = socket(af, SOCK_DGRAM, IPPROTO_UDP);
+	/* not inherited by child processes (a coordinator's instances) */
+	SOCKET ws = WSASocketW(af, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
 	if (ws == INVALID_SOCKET) {
 		return N2_NOSOCK;
 	}
@@ -173,6 +174,8 @@ uintptr_t Net2Sock_Open(int family, const Net2Addr *at, uint16_t port, uint32_t 
 	if (fd < 0) {
 		return N2_NOSOCK;
 	}
+	/* not inherited by child processes (a coordinator's instances) */
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
 	s = (uintptr_t)fd;
 	int fl = fcntl(fd, F_GETFL, 0);
 	if (fl < 0 || fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0) {

@@ -26,6 +26,9 @@
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/arrowindicator.h"
+#include "scrap/chartype.h"
+#include "scrap/travel.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/vehicleentity.h"
@@ -462,9 +465,16 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	}
 	float yaw = WChar(ch)->view.y;
 	/* in front of the character: yaw 0 looks to -z */
-	Native_SetFloat(&c[0], ch->pos.x - sinf(yaw) * 900.0f);
-	Native_SetFloat(&c[1], ch->pos.y + 200.0f);
-	Native_SetFloat(&c[2], ch->pos.z - cosf(yaw) * 900.0f);
+	vec3_t at = { ch->pos.x - sinf(yaw) * 900.0f, ch->pos.y + 200.0f, ch->pos.z - cosf(yaw) * 900.0f };
+	/* the player's own ship when it has one (include/scrap/travel.h) */
+	if ((ship = Travel_OwnShip(i, &at, yaw)) != NULL) {
+		Str_Copy(pl->called, ship->name, sizeof(pl->called));
+		pl->calls++;
+		return Rep_IsParked(ship) ? ship : NULL;
+	}
+	Native_SetFloat(&c[0], at.x);
+	Native_SetFloat(&c[1], at.y);
+	Native_SetFloat(&c[2], at.z);
 	Mode_Tuple3(&pos, &c[0], &c[1], &c[2]);
 	Native_SetFloat(&ang, yaw);
 	Native_SetNone(&out);
@@ -525,6 +535,7 @@ static void Rep_Switch(int i, cEntity *e) {
 		Obj(best)->netStep = 1;
 		cEntity_Del(e);
 		Rep_SetOwn(pl, best);
+		Travel_Boarded(i, best);
 		NetRepInBuf_Restart(&pl->in);
 		pl->told = -2;
 		pl->boards++;
@@ -582,6 +593,20 @@ static void Rep_DropOwn(int i) {
 	}
 }
 
+/* the use button of a character at a door (an elevator, a metro station, a teleporter): the game's use of its arrow
+ * runs (the step of the input) in place of the switch into a ship */
+static byte Rep_UsesDoor(cEntity *e) {
+	if (NetPl_Kind(e) != NETREP_CHAR) {
+		return 0;
+	}
+	cEntity *t = WChar_Victim(e);
+	if (!t || !Entity_IsType(t, TYEN_WITH_LIFE) || !WLife(t)->arrow.canUse) {
+		return 0;
+	}
+	const char *f = cPy_Function_Name(&WLife(t)->arrow.onUse);
+	return !strcmp(f, "UseElevator") || !strcmp(f, "OnUse");
+}
+
 static int Rep_Join(int conn) {
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		RepPlayer *pl = &rep.pl[i];
@@ -594,14 +619,21 @@ static int Rep_Join(int conn) {
 		pl->told = -1;
 		pl->spawns = spawns;
 		NetRepInBuf_Init(&pl->in);
-		Players_Join(i, Instance_StartMoney());
-		if (!Rep_SpawnChar(i, NULL, 0.0f)) {
+		/* the ticket of a coordinator's world: the player's state and its entrance (include/scrap/travel.h) */
+		TravelSpawn sp;
+		if (!Travel_Admit(conn, i, &sp)) {
+			return -1;
+		}
+		Players_Join(i, sp.money);
+		if (!Rep_SpawnChar(i, sp.have ? &sp.pos : NULL, sp.yaw)) {
 			Players_Part(i);
+			Travel_Left(i);
 			return -1;
 		}
 		pl->used = 1;
 		rep.players++;
 		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->ownName);
+		Travel_Joined(i);
 		return i;
 	}
 	return -1;
@@ -611,10 +643,45 @@ static void Rep_Leave(int i) {
 	RepPlayer *pl = &rep.pl[i];
 	Con_Printf("instance: player %d left (%u inputs, %u late, %u missed, %u shots, %u hits)\n", i, pl->in.got,
 		pl->in.late, pl->in.missed, pl->shots, pl->hits);
+	Travel_Left(i);
 	Rep_DropOwn(i);
 	Players_Part(i);
 	pl->used = 0;
 	rep.players--;
+}
+
+void Rep_TestSwitch(int i, byte call) {
+	cEntity *e = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? Rep_Own(&rep.pl[i]) : NULL;
+	if (!e) {
+		Con_Printf("instance: no player %d\n", i);
+		return;
+	}
+	Players_Bind(i);
+	if (!call) {
+		Rep_Switch(i, e);
+	} else if (NetPl_Kind(e) == NETREP_CHAR) {
+		Rep_CallShip(i, e);
+	}
+	Players_BindTurn();
+}
+
+int Rep_PlayerConn(int i) {
+	return i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? rep.pl[i].conn : -1;
+}
+
+int Rep_ConnPlayer(int conn) {
+	return conn >= 0 && conn < REP_CONNS && rep.conn[conn].c ? rep.conn[conn].player : -1;
+}
+
+void Rep_Respawn(int i) {
+	RepPlayer *pl = &rep.pl[i];
+	if (i < 0 || i >= PLAYERS_MAX || !pl->used) {
+		return;
+	}
+	Rep_DropOwn(i);
+	Rep_SpawnChar(i, NULL, 0.0f);
+	NetRepInBuf_Restart(&pl->in);
+	pl->told = -2;
 }
 
 void Rep_PreFrame(uint64_t tick) {
@@ -651,7 +718,7 @@ void Rep_PreFrame(uint64_t tick) {
 		Players_Bind(i);
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
-		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH)) {
+		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Rep_UsesDoor(e)) {
 			pl->buttons = in.buttons;
 			Rep_Switch(i, e);
 			continue;

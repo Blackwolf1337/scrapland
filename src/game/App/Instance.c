@@ -10,6 +10,7 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
@@ -18,6 +19,7 @@
 #include "scrap/players.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/travel.h"
 #include "scrap/world.h"
 
 #define INST_NS 1000000000ull
@@ -99,8 +101,7 @@ double Instance_Time(void) {
 	return (double)inst.ticks / INSTANCE_TICK_HZ;
 }
 
-/* the level name of the level path ("Levels/DownTown" -> "DownTown") */
-static const char *Instance_Level(void) {
+const char *Instance_Level(void) {
 	const char *p = g_pApp->levelPath ? g_pApp->levelPath : "";
 	const char *s = strrchr(p, '/');
 	return s ? s + 1 : p;
@@ -166,7 +167,12 @@ void Instance_TestLink(Net2Host *host, const char *who) {
 	}
 }
 
+Net2Host *Instance_Host(void) {
+	return inst.host;
+}
+
 void Instance_Close(void) {
+	Travel_InstanceClose();
 	Rep_Close();
 	if (inst.host) {
 		Net2_Destroy(inst.host);
@@ -197,6 +203,7 @@ static void Instance_NetIn(uint64_t ms) {
 		case NET2_EV_DISCONNECT:
 			Con_Printf("instance %s: disconnect %d (%s)\n", inst.id, ev.conn, Net2_ReasonString(ev.reason));
 			Rep_Disconnect(ev.conn);
+			Travel_Drop(ev.conn);
 			if (inst.live[ev.conn]) {
 				inst.live[ev.conn] = 0;
 				inst.players--;
@@ -204,6 +211,15 @@ static void Instance_NetIn(uint64_t ms) {
 			}
 			break;
 		case NET2_EV_MESSAGE:
+			if (ev.channel == REP_CH_RELIABLE && Travel_Message(inst.host, ev.conn, ev.data, ev.size)) {
+				break;
+			}
+			if (ev.channel == REP_CH_RELIABLE && ev.size > 0 && ev.data[0] == NETREP_MSG_HELLO &&
+				!Travel_HelloOk(ev.conn)) {
+				Con_Printf("instance %s: connection %d without a ticket\n", inst.id, ev.conn);
+				Net2_Disconnect(inst.host, ev.conn, NET2_DR_APP + COORD_DENY_TICKET);
+				break;
+			}
 			if (!Rep_Message(inst.host, ev.conn, ev.channel, ev.data, ev.size)) {
 				Net2_Send(inst.host, ev.conn, ev.channel, ev.data, ev.size);
 			}
@@ -229,8 +245,7 @@ static void Instance_Status(void) {
 	inst.busyTicks = 0;
 }
 
-/* a line of the standard input: quit, status, else a console line */
-static void Instance_Command(char *line) {
+void Instance_Line(char *line) {
 	Str_TrimBlanks(line);
 	if (!line[0]) {
 		return;
@@ -244,9 +259,33 @@ static void Instance_Command(char *line) {
 		Instance_Status();
 		return;
 	}
-	/* tests: "alarm <player> <level>" sets one player's alarm (include/scrap/players.h) */
-	int player;
+	/* tests: "alarm <player> <level>" sets one player's alarm (include/scrap/players.h), "money <player> <n>" its
+	 * money, "use <player> <entity> [<option>]" makes it use an entity (include/scrap/travel.h), "goto <player>
+	 * <entity>" puts it next to one, "switch <player>" gets it into the nearest parked ship or out of its ship, "call
+	 * <player>" calls a ship beside it */
+	int player, money;
 	float level;
+	char ent[64], opt[64];
+	if (sscanf(line, "money %d %d", &player, &money) == 2) {
+		Players_Bind(player);
+		g_pWorld->money = money;
+		Players_BindTurn();
+		Con_Printf("instance %s: money of player %d %d\n", inst.id, player, Players_Money(player));
+		return;
+	}
+	opt[0] = 0;
+	if (sscanf(line, "use %d %63s %63[^\n]", &player, ent, opt) >= 2) {
+		Travel_TestUse(player, ent, opt);
+		return;
+	}
+	if (sscanf(line, "goto %d %63s", &player, ent) == 2) {
+		Travel_TestGoto(player, ent);
+		return;
+	}
+	if (sscanf(line, "switch %d", &player) == 1 || sscanf(line, "call %d", &player) == 1) {
+		Rep_TestSwitch(player, line[0] == 'c');
+		return;
+	}
 	if (sscanf(line, "alarm %d %f", &player, &level) == 2) {
 		Players_Bind(player);
 		Alarm_Set(&g_pWorld->alarm, level);
@@ -274,7 +313,7 @@ static void Instance_Commands(uint64_t now) {
 			if (buf[i] == '\n' || buf[i] == '\r') {
 				inst.line[inst.lineLen] = 0;
 				inst.lineLen = 0;
-				Instance_Command(inst.line);
+				Instance_Line(inst.line);
 			} else if (inst.lineLen < INST_LINE - 1) {
 				inst.line[inst.lineLen++] = buf[i];
 			}
@@ -313,6 +352,7 @@ void Instance_Pass(void) {
 	}
 	inst.ticks++;
 	Instance_Commands(now);
+	Travel_InstancePass(now / 1000000);
 	if (inst.host) {
 		Instance_NetIn(now / 1000000);
 	}

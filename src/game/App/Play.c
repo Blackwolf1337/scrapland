@@ -34,6 +34,7 @@
 #define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */
 #define PLAY_BOT_TARGET 3				/* the bot takes a ship and stays in the air (the weapon tests) */
 #define PLAY_BOT_WALK 4					/* the bot walks around and stays on foot (collisions of characters) */
+#define PLAY_BOT_IDLE 5					/* the bot gives no input (the tests drive it from the instance) */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 
 byte g_Play;
@@ -75,7 +76,7 @@ static struct {
 	byte haveStatus;
 	PlayStats st;
 	FILE *log;
-	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK */
+	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK, PLAY_BOT_IDLE */
 	byte botCycle;
 	byte noAhead;						/* SCRAP_PLAYAHEAD=0: the others collide where they are drawn (tests) */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
@@ -267,7 +268,8 @@ void Play_Start(void) {
 	}
 	const char *bot = getenv("SCRAP_PLAYBOT");
 	play.bot = !bot || !*bot || *bot == '0' ? 0 : !crt_stricmp(bot, "npc") ? PLAY_BOT_NPC :
-		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : !crt_stricmp(bot, "walk") ? PLAY_BOT_WALK : 1;
+		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : !crt_stricmp(bot, "walk") ? PLAY_BOT_WALK :
+		!crt_stricmp(bot, "idle") ? PLAY_BOT_IDLE : 1;
 	const char *ahead = getenv("SCRAP_PLAYAHEAD");
 	play.noAhead = ahead && *ahead == '0';
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
@@ -396,6 +398,9 @@ static void Play_Bot(double now) {
 	t = now - play.botStart;
 	memset(&play.acc, 0, sizeof(play.acc));
 	play.acc.time = 1.0f;
+	if (play.bot == PLAY_BOT_IDLE) {
+		return;
+	}
 	if (play.kind == NETREP_CHAR) {
 		/* a while around, then to the nearest ship that stands still and no player has, and into it */
 		play.acc.move[0] = t < 6.0 ? 1.0f : 0.5f;
@@ -638,6 +643,16 @@ void Play_Status(void) {
 		"max %.1f, %u corrections p50 %.2f p95 %.2f p99 %.2f max %.1f, %u ticks run again\n", play.slot, play.kind,
 		play.tick, play.st.states, play.st.unknown, (double)e[0], (double)e[1], (double)e[2], (double)e[3],
 		play.st.corrections, (double)c[0], (double)c[1], (double)c[2], (double)c[3], play.st.replayed);
+}
+
+void Play_Reset(void) {
+	Play_OwnRemove();
+	play.slot = -1;
+	play.player = -1;
+	play.started = 0;
+	play.haveStatus = 0;
+	play.pending = 0;
+	play.cam = NULL;
 }
 
 void Play_Close(void) {

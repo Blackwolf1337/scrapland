@@ -28,6 +28,7 @@
 #include "scrap/scrap.h"
 #include "game/Script/levels/Levels.h"
 #include "ShipEdit.h"
+#include "scrap/travel.h"
 
 static const char shipedit_def[] = {
 #embed "../../../data/menus/shipedit.def"
@@ -1360,6 +1361,18 @@ static byte Se_ShipText(const nativeVal_t *ship, nativeVal_t *out) {
 	Native_Free(&v);
 	Native_Free(&r);
 	Native_Free(&a);
+	return ok;
+}
+
+byte ShipEdit_ShipText(cEntity *ship, char *out, int cap) {
+	nativeVal_t h, text = { 0 };
+	if (!Native_SetEnt(&h, ship->name)) {
+		return 0;
+	}
+	byte ok = Se_ShipText(&h, &text) && text.type == NV_STR;
+	Str_Copy(out, ok ? Native_Text(&text) : "", cap);
+	Native_Free(&h);
+	Native_Free(&text);
 	return ok;
 }
 

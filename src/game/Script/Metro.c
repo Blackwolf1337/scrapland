@@ -14,6 +14,8 @@
 #include <string.h>
 
 #include "scrap/actions.h"
+#include "scrap/play.h"
+#include "scrap/travel.h"
 #include "scrap/pyentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -109,6 +111,10 @@ static byte Metro_EntSet(const nativeVal_t *name, const char *var, const nativeV
 /* RecoverUsr(EntityName, EventName, Time): the event near the end of the door going down gives the player back */
 static byte Metro_RecoverUsr(void) {
 	nativeVal_t zero, player;
+	/* the instance's players keep their controls (their ride sets no PlayerName) */
+	if (g_Instance) {
+		return 1;
+	}
 	Native_SetInt(&zero, 0);
 	byte ok = Metro_Read(MV_PLAYER, &player) && Metro_EntSet(&player, "UsrControl", &zero);
 	Native_Free(&player);
@@ -222,6 +228,16 @@ static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 	static const char *const mods[] = { "Elevator", "Menu", NULL };
 	if (!Script_Import(mods) || !PORT_CALL(Menu, BackToGame, NULL, "vv", id, control)) {
 		return 0;
+	}
+	/* a player of a world: the instance rides (include/scrap/travel.h) */
+	if (g_Play) {
+		nativeVal_t tail;
+		byte ok = Native_Slice(control, 8, INT_MAX, &tail);
+		if (ok) {
+			Watch_MetroPick(Native_Text(&tail));
+			Native_Free(&tail);
+		}
+		return ok;
 	}
 	nativeVal_t cp[4] = { 0 };
 	byte ok = 1;
@@ -430,6 +446,14 @@ static const struct {
 	{ 468, 208, "Scrapyard", 5 },
 };
 
+int Metro_Stations(const char **names, int max) {
+	int n = 0;
+	for (size_t i = 0; i < sizeof(metro_stations) / sizeof(metro_stations[0]) && n < max; i++) {
+		names[n++] = metro_stations[i].name;
+	}
+	return n;
+}
+
 /* the corner of the city map on the screen (320 - 512 / 2 - 2, the description tab + 2) */
 #define METRO_MAPX 62
 #define METRO_MAPY 46
@@ -438,6 +462,22 @@ static const struct {
  * params the tuple of the four arguments (taken over) */
 static byte Metro_OnUse(nativeVal_t *params) {
 	static const char *const mods[] = { "Menu", "Init", NULL };
+	/* an instance has no menus: the player's client shows the map (include/scrap/travel.h) */
+	if (g_Instance) {
+		nativeVal_t tmp1, tmp2;
+		const nativeVal_t *u = Native_GetItem(params, 0, 1, &tmp1), *d = Native_GetItem(params, 1, 1, &tmp2);
+		byte ok = u && d;
+		if (ok) {
+			Travel_MetroUse(Native_Text(u), Native_Text(d));
+		}
+		if (u == &tmp1) {
+			Native_Free(&tmp1);
+		}
+		if (d == &tmp2) {
+			Native_Free(&tmp2);
+		}
+		return ok;
+	}
 	if (!Script_Import(mods) || !Metro_Write(MV_PARAMS, params)) {
 		return 0;
 	}

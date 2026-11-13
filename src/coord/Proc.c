@@ -193,6 +193,10 @@ int CoordProc_Start(CoordProc *p, const char *exe, const char *const *argv, cons
 	posix_spawn_file_actions_addopen(&fa, 0, "/dev/null", O_RDONLY, 0);
 	posix_spawn_file_actions_addopen(&fa, 1, logPath, O_WRONLY | O_CREAT | O_APPEND, 0600);
 	posix_spawn_file_actions_adddup2(&fa, 1, 2);
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 34)
+	/* nothing else of the parent (a hosting game's files and devices) */
+	posix_spawn_file_actions_addclosefrom_np(&fa, 3);
+#endif
 	if (cwd && *cwd) {
 		posix_spawn_file_actions_addchdir_np(&fa, cwd);
 	}

@@ -31,6 +31,8 @@
 
 #include "scrap/shared.h"
 
+struct Net2Host;
+
 #define INSTANCE_TICK_HZ 30
 #define INSTANCE_MAX_BEHIND 8			/* ticks */
 #define INSTANCE_APP_VERSION 1			/* Net2 appVersion of the game's multiplayer */
@@ -53,11 +55,16 @@ double Instance_Time(void);
 /* -pvp (1 without it) and -money of the command line */
 byte Instance_PvP(void);
 int Instance_StartMoney(void);
+/* the level name of the level path ("Levels/DownTown" -> "DownTown") */
+const char *Instance_Level(void);
+/* the instance's Net2 server, NULL */
+struct Net2Host *Instance_Host(void);
+/* a line as the standard input takes it: quit, status, the test lines, else a console line */
+void Instance_Line(char *line);
 /* the Net2 server closed (App shutdown) */
 void Instance_Close(void);
 /* tests: SCRAP_NET2_LOSS (percent), SCRAP_NET2_DELAY and SCRAP_NET2_JITTER (ms) make the host's sends a test link
  * (Net2_SetTestLink); the instance's and a watcher's or player's host */
-struct Net2Host;
 void Instance_TestLink(struct Net2Host *host, const char *who);
 
 #endif

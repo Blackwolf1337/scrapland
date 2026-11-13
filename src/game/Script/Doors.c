@@ -29,6 +29,8 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
+#include "scrap/instance.h"
+#include "scrap/travel.h"
 
 /* ---- Doors ---- */
 
@@ -706,11 +708,23 @@ static byte Elv_Hook(const char *var, const nativeVal_t *arg, byte entity) {
 	return ok;
 }
 
-/* up to the next level: the way point and the start (SaveGame.StartGame with its keyword) */
+/* up to the next level: the way point and the start (SaveGame.StartGame with its keyword); on an instance the
+ * coordinator moves the rider to the instance of that level (include/scrap/travel.h) */
 static byte Elv_NextLevel(const nativeVal_t *name, const nativeVal_t *el, const nativeVal_t *lel) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *map = Mode_V(&t), *level = Mode_V(&t), *path = Mode_V(&t), *tail = Mode_V(&t), *spawn = Mode_V(&t);
 	nativeVal_t *act = Mode_V(&t);
+	if (g_Instance) {
+		nativeVal_t *rider = Mode_V(&t);
+		byte ok = LvN_Item(lel, 0, rider) && PORT_OWN(Elevator, UnlinkFromElevator, NULL, "v", name) &&
+			Mode_Import("Init") && Elv_Opt(lel, 1, map) && LvN_ModGet("Init", "Path", path) &&
+			Native_Slice(path, 7, INT_MAX, tail) && Mode_Cat(&t, spawn, 2, Mode_S(&t, "DM_Player_Spawn_"), tail) &&
+			Mode_VObj(el, "ActCtrl", act);
+		if (ok) {
+			Travel_Request(Native_Text(rider), Native_Text(map), Native_Text(spawn), Native_Text(act));
+		}
+		return Mode_Done(&t, ok);
+	}
 	return Mode_Done(&t, PORT_OWN(Elevator, UnlinkFromElevator, NULL, "v", name) && Mode_Import("SaveGame") &&
 		Mode_Import("Init") && Elv_Opt(lel, 1, map) && Mode_Cat(&t, level, 2, Mode_S(&t, "Levels/"), map) &&
 		LvN_ModGet("Init", "Path", path) && Native_Slice(path, 7, INT_MAX, tail) &&
@@ -950,20 +964,26 @@ static byte Elv_Later0(const nativeVal_t *func, const nativeVal_t *args, int n, 
 	return ok;
 }
 
+/* the player of the instance that arrives and its elevator (Elevator_Arrive), NULL: the scripts' player in the
+ * elevator of ElevatorStart */
+static const char *elv_arriving, *elv_arrivingIn;
+
 /* the player arrives down in the elevator of the door type of ComeFrom (with the metro parameters) */
 static byte Elv_FromDoor(const nativeVal_t *from) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *start = Mode_V(&t), *key = Mode_V(&t), *tn = Mode_V(&t), *tgt = Mode_V(&t), *act = Mode_V(&t);
 	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *reach = Mode_V(&t), *opt = Mode_V(&t), *tname = Mode_V(&t);
 	nativeVal_t *ac = Mode_V(&t), *ac2 = Mode_V(&t);
-	if (!Mode_DelSchedS("TELF") || !Dr_G(ELV, "ElevatorStart", start) || !Native_Slice(from, 4, INT_MAX, key) ||
-		!Mode_Sub(start, key, tn) || !Mode_EntitySeam(tn, tgt) || !Mode_VObj(tgt, "Action", act)) {
+	byte found = elv_arriving ? (LvN_Str(tn, elv_arrivingIn), 1) : Mode_DelSchedS("TELF") &&
+		Dr_G(ELV, "ElevatorStart", start) && Native_Slice(from, 4, INT_MAX, key) && Mode_Sub(start, key, tn);
+	if (!found || !Mode_EntitySeam(tn, tgt) || !Mode_VObj(tgt, "Action", act)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!LvN_EqS(act, "Closed")) {
 		return Mode_Done(&t, 1);
 	}
-	if (!LvN_SetS(tgt, "OnObjSlot", "") || !Elv_Act(tgt, "Down", "Closed") || !Mode_UsrHandle(usr) ||
+	if (!LvN_SetS(tgt, "OnObjSlot", "") || !Elv_Act(tgt, "Down", "Closed") ||
+		!(elv_arriving ? Native_SetEnt(usr, elv_arriving) : Mode_UsrHandle(usr)) ||
 		!Mode_VObj(usr, "Name", un) || !Dr_G(ELV, "ELEVATOR_DOWN_REACH", reach) || !Mode_VObj(tgt, "Name", tname)) {
 		return Mode_Done(&t, 0);
 	}
@@ -980,7 +1000,9 @@ static byte Elv_FromDoor(const nativeVal_t *from) {
 	if (ext < 0) {
 		return Mode_Done(&t, 0);
 	}
-	if (!metro && !ext) {
+	/* the walk out of the train takes the controls of the scripts' player (UsrControl): not for a player of the
+	 * instance */
+	if ((!metro && !ext) || elv_arriving) {
 		return Mode_Done(&t, 1);
 	}
 	/* Metro.SetUsrParams by name, scheduled (its entry) */
@@ -990,6 +1012,17 @@ static byte Elv_FromDoor(const nativeVal_t *from) {
 	nativeVal_t *fn = Mode_V(&t);
 	return Mode_Done(&t, Mode_Import("Metro") && Mode_ModGet("Metro", "SetUsrParams", fn) &&
 		Elv_Later0(fn, args, 2, "MetroSetUsrParams"));
+}
+
+byte Elevator_Arrive(const char *usr, const char *elevator) {
+	nativeVal_t from;
+	LvN_Str(&from, "Door");
+	elv_arriving = usr;
+	elv_arrivingIn = elevator;
+	byte ok = Elv_FromDoor(&from);
+	elv_arriving = elv_arrivingIn = NULL;
+	Native_Free(&from);
+	return ok;
 }
 
 /* the import of the port that places the player, then Scrap.UsrEntity(0) for its SpawnChar */

@@ -70,6 +70,7 @@ struct Coord {
 	CoPlayer pl[CO_PLAYERS];
 	int online;
 	int instFileDirty;
+	uint64_t passes;
 };
 
 static Coord coord;
@@ -884,6 +885,13 @@ Coord *Coord_Create(const CoordConfig *cfg) {
 void Coord_Pass(Coord *c, uint64_t now) {
 	if (!c) {
 		return;
+	}
+	if (!coord.passes++) {
+		/* the instances taken over wait for their connection from now on */
+		for (int i = 0; i < coord.ninst; i++) {
+			coord.inst[i].since = now;
+		}
+		coord.lastSave = now;
 	}
 	coord.now = now;
 	Co_Net();

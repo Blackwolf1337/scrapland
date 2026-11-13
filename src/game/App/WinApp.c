@@ -14,6 +14,7 @@
 #include "scrap/instance.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/travel.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
@@ -44,7 +45,8 @@ static CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char
 		cString_Set((cString *)&g_LogName, "logtxf.html");
 	}
 	g_Instance = (byte)CWinApp_HasArg(self, "instance");
-	g_Play = !g_Instance && (byte)CWinApp_HasArg(self, "play");
+	g_Play = !g_Instance && ((byte)CWinApp_HasArg(self, "play") || (byte)CWinApp_HasArg(self, "join") ||
+		(byte)CWinApp_HasArg(self, "host"));
 	g_Watch = !g_Instance && ((byte)CWinApp_HasArg(self, "watch") || g_Play);
 	g_HeadlessPlay = g_Play && (byte)CWinApp_HasArg(self, "headless");
 	return self;
@@ -353,6 +355,10 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 			quitLater = 1;
 		}
 		if (waiting) {
+			/* the connections of a player kept alive through a level load (include/scrap/travel.h) */
+			if (g_Watch) {
+				Join_Idle();
+			}
 			/* one pass of what the original waited for: the video, the rest of the init or of the level load */
 			if (Video_Busy()) {
 				Video_Step();
@@ -376,6 +382,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 			Instance_Pass();
 		} else if (g_HeadlessPlay ? Play_HeadlessDue() : !g_Engine || Engine_FrameDue(g_Engine)) {
 			if (g_Watch) {
+				Join_PreFrame();
 				Watch_PreFrame();
 			}
 			App_Frame(g_pApp);
