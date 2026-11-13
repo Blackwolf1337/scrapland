@@ -467,22 +467,26 @@ static byte Gs_LoadSndListObj(const nativeVal_t *list) {
 }
 
 /* LoadSndList(SndList) of a native caller: an NV_OBJ list is the object itself, a native list becomes a new list
- * object (as its call through Python makes it) */
+ * object (as its call through Python makes it). The body is the frame of the script's function: a failure without
+ * an error in it (SndList.sort of a handle whose entity is gone) ends as ceval's SystemError "error return without
+ * exception set" (Script_Fail), not as the call_object one of the caller */
 static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *out) {
+	byte ok;
 	(void)out;
 	if (n != 1) {
 		return Port_Arity(n, 1);
 	}
-	/* the list object itself, sorted in place */
 	if (Native_IsObj(&a[0])) {
-		return Gs_LoadSndListObj(&a[0]);
+		/* the list object itself, sorted in place */
+		ok = Gs_LoadSndListObj(&a[0]);
+	} else {
+		nativeVal_t list;
+		Native_Copy(&list, &a[0]);
+		NObj_Share(&list);
+		ok = Gs_LoadSndListObj(&list);
+		Native_Free(&list);
 	}
-	nativeVal_t list;
-	Native_Copy(&list, &a[0]);
-	NObj_Share(&list);
-	byte ok = Gs_LoadSndListObj(&list);
-	Native_Free(&list);
-	return ok;
+	return ok || Script_Fail();
 }
 
 /* run initsound <args>: SetInitDoorSound(args) through the module's globals, as SetSlide calls it (an error is left
