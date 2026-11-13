@@ -171,6 +171,8 @@ void NetPl_Save(cEntity *e, NetPlMotion *m) {
 		m->boost = v->boost;
 		m->pushTime = v->pushTime;
 		m->push = v->push;
+		_Static_assert(sizeof(m->collision) == sizeof(v->collision), "cVehicleEntity.collision");
+		memcpy(m->collision, v->collision, sizeof(m->collision));
 	}
 }
 
@@ -206,6 +208,7 @@ void NetPl_Restore(cEntity *e, const NetPlMotion *m) {
 		v->boost = m->boost;
 		v->pushTime = m->pushTime;
 		v->push = m->push;
+		memcpy(v->collision, m->collision, sizeof(v->collision));
 	}
 }
 

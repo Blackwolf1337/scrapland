@@ -57,6 +57,7 @@ typedef struct NetPlMotion {
 	float speed, smoothSpeed;		/* ships */
 	float thrust, turnSpeedX, turnSpeedY, roll, boost, pushTime;
 	vec3_t push;
+	byte collision[0x20];			/* cVehicleEntity.collision: the state of the world collision */
 } NetPlMotion;
 
 /* the input into the controls of the entity (local: the client's own, its action buttons stay off) */
