@@ -337,13 +337,15 @@ static void Play_Step(uint32_t tick, byte none) {
 	Play_Draw();
 }
 
-/* the nearest proxy within 40000 units: a player's (player) or of no player, of a kind (0 any), standing still */
+/* the nearest proxy within 40000 units: a player's (player) or of no player, of a kind (0 any), standing still
+ * (still 1) or moving (still 2) */
 static cEntity *Play_BotNearest(cEntity *e, int kind, byte player, byte still) {
 	cEntity *best = NULL;
 	float bestD = 40000.0f * 40000.0f;
 	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
 		if (o == e || !Obj(o)->proxy || o->deadNode.target || Watch_IsPlayer(o) != player ||
-			(kind && NetPl_Kind(o) != kind) || (still && (Obj(o)->vel.x != 0.0f || Obj(o)->vel.z != 0.0f))) {
+			(kind && NetPl_Kind(o) != kind) ||
+			(still && (still == 1) == (Obj(o)->vel.x != 0.0f || Obj(o)->vel.z != 0.0f))) {
 			continue;
 		}
 		float dx = o->pos.x - e->pos.x, dy = o->pos.y - e->pos.y, dz = o->pos.z - e->pos.z;
@@ -418,7 +420,8 @@ static void Play_Bot(double now) {
 	}
 	/* in the ship: fly up and around, turn to the nearest other player (SCRAP_PLAYBOT=npc: ship of no player) and
 	 * fire when it is ahead */
-	cEntity *best = Play_BotNearest(e, play.bot == PLAY_BOT_NPC ? NETREP_SHIP : 0, play.bot != PLAY_BOT_NPC, 0);
+	cEntity *best = Play_BotNearest(e, play.bot == PLAY_BOT_NPC ? NETREP_SHIP : 0, play.bot != PLAY_BOT_NPC,
+		play.bot == PLAY_BOT_NPC ? 2 : 0);
 	float bestD = best ? (best->pos.x - e->pos.x) * (best->pos.x - e->pos.x) + (best->pos.y - e->pos.y) *
 		(best->pos.y - e->pos.y) + (best->pos.z - e->pos.z) * (best->pos.z - e->pos.z) : 0.0f;
 	play.acc.move[0] = 0.6f;

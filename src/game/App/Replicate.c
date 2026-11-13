@@ -466,7 +466,7 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	Mode_Tuple3(&pos, &c[0], &c[1], &c[2]);
 	Native_SetFloat(&ang, yaw);
 	Native_SetNone(&out);
-	if (PORT_CALL(Parking, CreateParkedShip, &out, "vv", &pos, &ang) && Mode_Ent(&out, &ship) && ship) {
+	if (PORT_CALL(Parking, CreateParkedShip, &out, "vv", &pos, &ang) && out.type == NV_ENT && (ship = Native_Ent(&out))) {
 		Str_Copy(pl->called, ship->name, sizeof(pl->called));
 		pl->calls++;
 		Con_Printf("instance: player %d called %s\n", i, ship->name);

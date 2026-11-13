@@ -27,12 +27,12 @@ static cGVar GVar_AlarmFallMission;
 static cGVar GVar_AlarmFallDelta;
 static cGVarFunction GVar_AlarmCallback;
 
-/* the alarm takes changes */
+/* the alarm takes changes (the headless instance has no action set of its own: its players play) */
 static int Alarm_Open(const cAlarm *self) {
 	if (self->locked) {
 		return 0;
 	}
-	return Input_GetActionSet() == ACTSET_RACER || Input_GetActionSet() == ACTSET_WALK;
+	return Players_Net() || Input_GetActionSet() == ACTSET_RACER || Input_GetActionSet() == ACTSET_WALK;
 }
 
 /* the strcpy of the original between the 0x200 buffers (both are written by Str_Copy) */
@@ -64,7 +64,7 @@ byte Alarm_IsLocked(cAlarm *self) {
 	if (self->locked) {
 		return 1;
 	}
-	if (Input_GetActionSet() != ACTSET_RACER && Input_GetActionSet() != ACTSET_WALK) {
+	if (!Players_Net() && Input_GetActionSet() != ACTSET_RACER && Input_GetActionSet() != ACTSET_WALK) {
 		return 1;
 	}
 	return 0;

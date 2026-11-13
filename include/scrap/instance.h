@@ -17,8 +17,9 @@
  * reason INSTANCE_DR_NOGAME.
  *
  * The end: the line "quit" on the standard input (a pipe or a terminal; other lines go to the console as typed
- * there, "status" prints the state), the file instance_<id>.quit in the game folder (checked once a second, removed
- * when seen), or SIGINT/SIGTERM through SDL's quit event. The configuration is the game folder's Scrap.cfg (as the
+ * there, "status" prints the state, "alarm <player> <level>" sets a player's alarm for tests), the file
+ * instance_<id>.quit in the game folder (checked once a second, removed when seen), or SIGINT/SIGTERM through SDL's
+ * quit event. The configuration is the game folder's Scrap.cfg (as the
  * dedicated server reads it) and is never saved, and no saved game is written, so several instances share a game
  * folder.
  *

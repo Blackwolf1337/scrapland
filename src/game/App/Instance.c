@@ -15,6 +15,7 @@
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/platform.h"
+#include "scrap/players.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/world.h"
@@ -241,6 +242,17 @@ static void Instance_Command(char *line) {
 	}
 	if (!crt_stricmp(line, "status")) {
 		Instance_Status();
+		return;
+	}
+	/* tests: "alarm <player> <level>" sets one player's alarm (include/scrap/players.h) */
+	int player;
+	float level;
+	if (sscanf(line, "alarm %d %f", &player, &level) == 2) {
+		Players_Bind(player);
+		Alarm_Set(&g_pWorld->alarm, level);
+		Con_Printf("instance %s: alarm of player %d %.2f%s\n", inst.id, player, (double)g_pWorld->alarm.value,
+			g_pWorld->alarm.on ? " on" : "");
+		Players_BindTurn();
 		return;
 	}
 	Console_Execute(line);
