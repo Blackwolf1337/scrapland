@@ -269,6 +269,7 @@ static void Play_Step(uint32_t tick, byte none) {
 		NetPl_Input(&play.acc, &play.input);
 	}
 	play.input.tick = tick;
+	play.input.slot = (uint16_t)play.slot;
 	e->pos = play.truePos;
 	NetPl_Step(e, &play.input, 1, 0);
 	play.truePos = e->pos;

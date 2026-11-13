@@ -39,7 +39,7 @@
  *   'A' ack, client to server, unreliable: newest message u16, bits u32, view point 3 x i32 (whole units); a player
  *       adds: inputs u8, then with inputs the tick of the newest u32, the shown server time u32 (ms) and the inputs,
  *       newest first, each: ticks back from the one before u8 (0 for the newest), move 3 x i8, rot 2 x i16,
- *       buttons u16, weapon u8
+ *       buttons u16, weapon u8, slot u16 (the own slot it was made for: the server drops an input of another)
  *   'S' snapshot, server to client, unreliable: message u16, snapshot u32, tick u32, records u16, records
  * A record: slot varint, op u8 (NETREP_OP_* in bits 0-1, NETREP_REC_LOOK bit 2), then for a remove nothing; else for a
  * delta the age of its base in snapshots (varint), for a create kind u8 and look varint (+ u8 length and the text with
@@ -307,6 +307,7 @@ typedef struct NetRepInput {
 	int16_t rot[2];
 	uint16_t buttons;
 	uint8_t weapon;
+	uint16_t slot;					/* the own entity's slot it was made for */
 } NetRepInput;
 
 int8_t NetRep_QMove(float v);		/* -1..1 */

@@ -534,12 +534,13 @@ static NetRepInput Test_MakeInput(uint32_t tick) {
 	in.rot[1] = (int16_t)-(int)(tick * 37);
 	in.buttons = (uint16_t)(tick * 0x55);
 	in.weapon = (uint8_t)(tick % 7);
+	in.slot = (uint16_t)(tick % 2048);
 	return in;
 }
 
 static int Test_SameInput(const NetRepInput *a, const NetRepInput *b) {
 	return a->tick == b->tick && !memcmp(a->move, b->move, 3) && a->rot[0] == b->rot[0] && a->rot[1] == b->rot[1] &&
-		a->buttons == b->buttons && a->weapon == b->weapon;
+		a->buttons == b->buttons && a->weapon == b->weapon && a->slot == b->slot;
 }
 
 static void Test_PlayerMessages(void) {
@@ -568,7 +569,7 @@ static void Test_PlayerMessages(void) {
 			in[i] = Test_MakeInput(t - (uint32_t)i * (1 + (t % 2)));
 		}
 		n = NetRep_WriteAckInput(buf, sizeof(buf), (uint16_t)t, t * 3, view, in, NETREP_INPUT_REDUNDANCY, t * 33);
-		CHECK(n > 0 && n <= 80);
+		CHECK(n > 0 && n <= 88);
 		int got;
 		CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, NETREP_INPUT_REDUNDANCY, &got, &shown));
 		CHECK(got == NETREP_INPUT_REDUNDANCY && newest == (uint16_t)t && bits == t * 3 && shown == t * 33);

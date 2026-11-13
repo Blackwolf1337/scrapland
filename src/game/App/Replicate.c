@@ -65,6 +65,7 @@ typedef struct RepPlayer {
 	uint16_t buttons;				/* of the input of the last tick */
 	uint64_t lost;					/* the tick its entity went missing, 0 */
 	uint32_t shots, hits, boards, leaves, spawns;
+	uint32_t stale;					/* inputs for an entity it no longer has */
 	double rewindSum;
 	uint32_t rewindN;
 	NetRepInBuf last;				/* the counters at the last status line */
@@ -441,12 +442,18 @@ static void Rep_Switch(int i, cEntity *e) {
 		/* the parked ship is held at its place by a move that ended (Parking.SetShipAsParked): off */
 		double off = 0.0;
 		Entity_VarF(best, "MoveTime", &off, 1);
+		/* it starts from rest, as the client's new copy of it does */
+		cVehicleEntity *v = Veh(best);
+		v->thrust = v->turnSpeedX = v->turnSpeedY = v->roll = v->speed = v->boost = v->pushTime = 0.0f;
+		Obj(best)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		Obj(best)->rotVel = (vec3_t){ 0.0f, 0.0f, 0.0f };
 		Rep_SetSlot(best, PLAYERS_NET_SLOT + i);
 		Entity_SetActive(best, 1);
 		Obj(best)->netStep = 1;
 		cEntity_Del(e);
 		Rep_SetOwn(pl, best);
 		NetRepInBuf_Restart(&pl->in);
+		pl->told = -2;
 		pl->boards++;
 		Con_Printf("instance: player %d into %s\n", i, name);
 		return;
@@ -469,6 +476,7 @@ static void Rep_Switch(int i, cEntity *e) {
 	PORT_CALL(Parking, SetShipAsParked, NULL, "s", name);
 	Rep_SpawnChar(i, &p, yaw);
 	NetRepInBuf_Restart(&pl->in);
+	pl->told = -2;
 	pl->leaves++;
 	Con_Printf("instance: player %d out of %s\n", i, name);
 }
@@ -542,6 +550,8 @@ void Rep_PreFrame(uint64_t tick) {
 			if (tick - pl->lost >= REP_RESPAWN_TICKS) {
 				Rep_DropOwn(i);
 				Rep_SpawnChar(i, NULL, 0.0f);
+				NetRepInBuf_Restart(&pl->in);
+				pl->told = -2;
 			}
 			continue;
 		}
@@ -695,9 +705,14 @@ static void Rep_Hello(Net2Host *host, int conn, uint32_t rate, int flags) {
 	Con_Printf("instance: %s %d, rate %u bytes/s\n", i >= 0 ? "player" : "watcher", conn, rate);
 }
 
-/* the inputs of a player's ack into its buffer, with the server time its client showed */
+/* the inputs of a player's ack into its buffer, with the server time its client showed; an input made for another
+ * entity than the one the client was told last (before a switch reached it) is dropped */
 static void Rep_Inputs(RepPlayer *pl, const NetRepInput *in, int n, uint32_t shownMs) {
 	for (int k = 0; k < n; k++) {
+		if (in[k].slot != pl->told) {
+			pl->stale++;
+			continue;
+		}
 		if (NetRepInBuf_Put(&pl->in, &in[k], (uint32_t)rep.tick)) {
 			uint32_t back = (in[0].tick - in[k].tick) * 1000u / NETREP_TICK_HZ;
 			pl->shown[in[k].tick % NETREP_INBUF] = shownMs > back ? shownMs - back : 0;
@@ -775,9 +790,10 @@ static void Rep_PlayerStatus(int i) {
 	NetRepInBuf *b = &pl->in, *l = &pl->last;
 	uint32_t got = b->got - l->got, leadN = b->leadN - l->leadN;
 	cEntity *e = Rep_Own(pl);
-	Con_Printf("  player %d (%s): %u inputs, %u late, %u again, %u missed, lead avg %.2f ticks, %u shots %u hits, "
-		"rewind avg %.0f ms, %u boards %u leaves, at %.0f %.0f %.0f\n", i, e ? e->name : "-", got, b->late - l->late,
-		b->dup - l->dup, b->missed - l->missed, leadN ? (double)(b->leadSum - l->leadSum) / leadN : 0.0, pl->shots,
+	Con_Printf("  player %d (%s): %u inputs, %u late, %u again, %u missed, %u stale, lead avg %.2f ticks, %u shots %u "
+		"hits, rewind avg %.0f ms, %u boards %u leaves, at %.0f %.0f %.0f\n", i, e ? e->name : "-", got,
+		b->late - l->late, b->dup - l->dup, b->missed - l->missed, pl->stale,
+		leadN ? (double)(b->leadSum - l->leadSum) / leadN : 0.0, pl->shots,
 		pl->hits, pl->rewindN ? pl->rewindSum * 1000.0 / pl->rewindN : 0.0, pl->boards, pl->leaves,
 		e ? (double)e->pos.x : 0.0, e ? (double)e->pos.y : 0.0, e ? (double)e->pos.z : 0.0);
 	*l = *b;
