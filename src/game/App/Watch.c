@@ -29,6 +29,8 @@
 #define WATCH_SAMPLES 8
 #define WATCH_EXTRAP 0.25			/* s ahead of the newest sample at most */
 #define WATCH_EXTRAP_TICKS 2			/* the sample must be from a snapshot at most this many ticks old */
+#define WATCH_HOLD (1.5 / NETREP_SNAP_HZ)	/* s of motion before a sample at most */
+#define WATCH_JUMP_SPEED 50000.0f		/* units per second, faster is a jump */
 #define WATCH_ACK_MS 50				/* an ack at least this often */
 #define WATCH_STATUS_MS 10000
 #define WATCH_CAM_NAME "WatchCam"
@@ -250,8 +252,15 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	const WatchSample *a = &p->s[i];
 	const WatchSample *b = i + 1 < p->n ? &p->s[i + 1] : a;
 	if (b != a) {
-		f = (float)((rt - a->t) / (b->t - a->t));
-		f = f < 0.0f ? 0.0f : f;
+		/* no record for a while: the entity held still (or waited for the budget) until a snapshot before b; a
+		 * jump faster than WATCH_JUMP_SPEED (a respawn, a teleport) is not swept across */
+		double ta = a->t > b->t - WATCH_HOLD ? a->t : b->t - WATCH_HOLD;
+		float dx = NetRep_UPos(b->st.pos[0] - a->st.pos[0]), dy = NetRep_UPos(b->st.pos[1] - a->st.pos[1]);
+		float dz = NetRep_UPos(b->st.pos[2] - a->st.pos[2]);
+		if (dx * dx + dy * dy + dz * dz > WATCH_JUMP_SPEED * WATCH_JUMP_SPEED * (float)((b->t - a->t) * (b->t - a->t))) {
+			ta = b->t;
+		}
+		f = rt <= ta ? 0.0f : (float)((rt - ta) / (b->t - ta));
 	} else if (rt > a->t && a->tick + WATCH_EXTRAP_TICKS >= NetRepCli_Tick(watch.view)) {
 		/* ahead of the newest sample only while it is from the newest snapshots: an entity without a record since
 		 * then has not changed (or waits for the budget) */
