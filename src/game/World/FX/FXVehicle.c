@@ -67,10 +67,13 @@ static CGameModel *FXV_Model(cEntity *e) {
 	return model;
 }
 
-/* the motor exhausts of the ship e that exist */
+/* the motor exhausts of the ship e that exist (a ship may have fewer motor kinds than FXV_MOTORS) */
 static void FXV_Exhausts(cEntity *e, int *num, FXVExhaust *ex) {
 	*num = 0;
 	for (int i = 0; i < FXV_MOTORS; i++) {
+		if (!FXVeh_Motor(e, i)) {
+			continue;
+		}
 		if (FXVeh_MotorNode(FXVeh_Motor(e, i), 0) != -1) {
 			ex[*num].motor = i;
 			ex[*num].side = 0;

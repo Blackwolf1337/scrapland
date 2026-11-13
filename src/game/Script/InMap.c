@@ -12,6 +12,7 @@
 #include "scrap/collisiongrid.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/replicate.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/world.h"
 
@@ -25,6 +26,13 @@ static byte InMap_Start(void) {
 	GVar_SetNum("SoundAutoplayVolume", -60.0);
 	GVar_SetNum("SoundDopplerLevel", 1.0);
 	GVar_SetNum("SoundDistAttenuation", 12.5);
+	/* a watcher (include/scrap/replicate.h): the instance has the player, the NPCs and the police */
+	if (g_Watch) {
+		GVar_SetNum("CameraCloudDistance", 0);
+		GVar_SetNum("AtmosphereLimit", 1000000000);
+		GVar_SetNum("TopLimit", 1000200000);
+		return 1;
+	}
 	if (!PORT_CALL(Chars, CreateStartupPlayer, NULL, "") || !PORT_CALL(CharsNPC, Init, NULL, "")) {
 		return 0;
 	}

@@ -12,6 +12,7 @@
 #include "scrap/scrap.h"
 #include "scrap/game.h"
 #include "scrap/script.h"
+#include "scrap/replicate.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/world.h"
 #include "game/Script/levels/Levels.h"
@@ -374,6 +375,10 @@ static byte Om_InitOutMap(void) {
 	}
 	if (Native_True(f)) {
 		return Mode_Done(&t, OM_START(Ffa, InitClient));
+	}
+	/* a watcher (include/scrap/replicate.h): the instance has the players, traffic and police */
+	if (g_Watch) {
+		return Mode_Done(&t, 1);
 	}
 	int c = OM_START(Accelerator, Init) && Native_GVarGet("SplitScreen", split) ? Mode_CmpI(split, "!=", 0) : -1;
 	if (c) {

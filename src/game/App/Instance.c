@@ -14,6 +14,7 @@
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/platform.h"
+#include "scrap/replicate.h"
 #include "scrap/world.h"
 
 #define INST_NS 1000000000ull
@@ -69,6 +70,10 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 	return 0;
 }
 
+uint16_t Instance_Port(void) {
+	return inst.port;
+}
+
 double Instance_Time(void) {
 	return (double)inst.ticks / INSTANCE_TICK_HZ;
 }
@@ -109,6 +114,8 @@ static void Instance_Open(uint64_t now) {
 	cfg.port = inst.port;
 	cfg.maxConns = inst.maxPlayers;
 	cfg.appVersion = INSTANCE_APP_VERSION;
+	cfg.inboxSize = INSTANCE_CONN_BUFFER;
+	cfg.outboxSize = INSTANCE_CONN_BUFFER;
 	if (inst.bind[0]) {
 		cfg.ipv6 = 0;
 		if (!Net2_ParseAddr(inst.bind, 0, &cfg.bind4) || cfg.bind4.family != NET2_AF_IPV4) {
@@ -127,13 +134,15 @@ static void Instance_Open(uint64_t now) {
 }
 
 void Instance_Close(void) {
+	Rep_Close();
 	if (inst.host) {
 		Net2_Destroy(inst.host);
 		inst.host = NULL;
 	}
 }
 
-/* the events of the clients: test connections are counted, echoed and dropped after INSTANCE_TEST_HOLD s */
+/* the events of the clients: watchers go to the replication; other (test) connections are counted, echoed and
+ * dropped after INSTANCE_TEST_HOLD s */
 static void Instance_NetIn(uint64_t ms) {
 	Net2Event ev;
 	char addr[64];
@@ -154,6 +163,7 @@ static void Instance_NetIn(uint64_t ms) {
 			break;
 		case NET2_EV_DISCONNECT:
 			Con_Printf("instance %s: disconnect %d (%s)\n", inst.id, ev.conn, Net2_ReasonString(ev.reason));
+			Rep_Disconnect(ev.conn);
 			if (inst.live[ev.conn]) {
 				inst.live[ev.conn] = 0;
 				inst.players--;
@@ -161,12 +171,14 @@ static void Instance_NetIn(uint64_t ms) {
 			}
 			break;
 		case NET2_EV_MESSAGE:
-			Net2_Send(inst.host, ev.conn, ev.channel, ev.data, ev.size);
+			if (!Rep_Message(inst.host, ev.conn, ev.channel, ev.data, ev.size)) {
+				Net2_Send(inst.host, ev.conn, ev.channel, ev.data, ev.size);
+			}
 			break;
 		}
 	}
 	for (int i = 0; i < INST_SLOTS; i++) {
-		if (inst.live[i] && ms - inst.since[i] >= INSTANCE_TEST_HOLD * 1000u) {
+		if (inst.live[i] && !Rep_IsWatcher(i) && ms - inst.since[i] >= INSTANCE_TEST_HOLD * 1000u) {
 			inst.since[i] = ms;
 			Net2_Disconnect(inst.host, i, INSTANCE_DR_NOGAME);
 		}
@@ -179,6 +191,7 @@ static void Instance_Status(void) {
 	Con_Printf("instance %s: tick %llu, tick ms avg %.2f max %.2f, %llu dropped, %d players\n", inst.id,
 		(unsigned long long)inst.ticks, avg, (double)inst.busyMax / 1e6, (unsigned long long)inst.dropped,
 		inst.players);
+	Rep_Status((double)inst.busyTicks / INSTANCE_TICK_HZ);
 	inst.busyNs = inst.busyMax = 0;
 	inst.busyTicks = 0;
 }
@@ -241,7 +254,12 @@ void Instance_Pass(void) {
 	}
 	uint64_t due = inst.base + (inst.ticks + 1 - inst.baseTick) * INST_PERIOD;
 	if (now < due) {
-		Plat_WaitEvent((int)((due - now + 999999) / 1000000));
+		/* the sockets emptied a few times between the ticks, so their buffers do not overflow */
+		if (inst.host) {
+			Net2_Poll(inst.host, now / 1000000);
+		}
+		uint64_t wait = (due - now + 999999) / 1000000;
+		Plat_WaitEvent((int)(wait > INSTANCE_POLL_MS ? INSTANCE_POLL_MS : wait));
 		return;
 	}
 	if (now - due > INSTANCE_MAX_BEHIND * INST_PERIOD) {
@@ -255,6 +273,9 @@ void Instance_Pass(void) {
 		Instance_NetIn(now / 1000000);
 	}
 	App_Frame(g_pApp);
+	if (inst.host) {
+		Rep_Tick(inst.host, inst.ticks);
+	}
 	uint64_t end = Plat_RealNs();
 	if (inst.host) {
 		Net2_Flush(inst.host, end / 1000000);

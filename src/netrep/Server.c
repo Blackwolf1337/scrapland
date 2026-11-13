@@ -182,6 +182,10 @@ void NetRepSrv_End(NetRepServer *s) {
 	(void)s;
 }
 
+int NetRepSrv_NumLooks(const NetRepServer *s) {
+	return s->numLooks;
+}
+
 int NetRepSrv_Live(const NetRepServer *s) {
 	return s->live;
 }

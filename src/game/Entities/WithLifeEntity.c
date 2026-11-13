@@ -513,7 +513,8 @@ void cWithLifeEntity_Update(cEntity *self) {
 	}
 	cSndInterface_Tick(&w->hitSounds, dt);
 	cSndInterface_Tick(&w->lifeSounds, dt);
-	if (w->actCtrl) {
+	/* a character proxy's actions come from the watcher (cActCtrl_NetDrive) */
+	if (w->actCtrl && (!w->obj.proxy || w->actCtrl->cls->dynShip)) {
 		cActCtrl_Tick(w->actCtrl, dt);
 	}
 	cObjEntity_Update(self);

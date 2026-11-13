@@ -202,6 +202,7 @@ uint32_t NetRepSrv_Begin(NetRepServer *s, uint32_t tick);
 void NetRepSrv_Set(NetRepServer *s, int slot, int kind, int look, const NetRepState *st);
 void NetRepSrv_End(NetRepServer *s);
 int NetRepSrv_Live(const NetRepServer *s);	/* entities of the last snapshot */
+int NetRepSrv_NumLooks(const NetRepServer *s);
 
 NetRepClient *NetRepSrv_AddClient(NetRepServer *s, uint32_t rate);
 void NetRepSrv_RemoveClient(NetRepServer *s, NetRepClient *c);

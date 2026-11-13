@@ -14,6 +14,7 @@
 #include "scrap/filesys.h"
 #include "scrap/input.h"
 #include "scrap/instance.h"
+#include "scrap/replicate.h"
 #include "scrap/model.h"
 #include "scrap/net.h"
 #include "scrap/nodestraffic.h"
@@ -230,6 +231,7 @@ void CApp_Shutdown(CApp *self) {
 	Con_Print(0, "Input devices closed.\n", 0);
 	Pack_CloseAll();
 	Instance_Close();
+	Watch_Close();
 	if (!g_Instance) {
 		Config_Save();
 	}
@@ -708,7 +710,7 @@ static int App_MaxPlayers(void) {
 }
 
 /* a -param[:ext] of the command line: an engine variable of the config file, build, TestChannel, dedicated, server,
- * or instance and its options (scrap/instance.h) */
+ * instance and its options (scrap/instance.h), or watch and its options (scrap/replicate.h) */
 byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	cGVar *v = GVar_Find(param);
 	if (v && (v->base.flags & 6)) {
@@ -761,7 +763,7 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 		App_InitDedicated(self);
 		return 1;
 	}
-	if (Instance_ParseParam(param, ext)) {
+	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext)) {
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {

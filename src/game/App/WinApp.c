@@ -12,6 +12,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
 #include "scrap/instance.h"
+#include "scrap/replicate.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
@@ -42,6 +43,7 @@ static CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char
 		cString_Set((cString *)&g_LogName, "logtxf.html");
 	}
 	g_Instance = (byte)CWinApp_HasArg(self, "instance");
+	g_Watch = !g_Instance && (byte)CWinApp_HasArg(self, "watch");
 	return self;
 }
 
@@ -370,7 +372,13 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		if (g_Instance) {
 			Instance_Pass();
 		} else if (!g_Engine || Engine_FrameDue(g_Engine)) {
+			if (g_Watch) {
+				Watch_PreFrame();
+			}
 			App_Frame(g_pApp);
+			if (g_Watch) {
+				Watch_PostFrame();
+			}
 		}
 	}
 	App_Shutdown(g_pApp);
