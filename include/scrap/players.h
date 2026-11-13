@@ -97,7 +97,7 @@ int Players_Bound(void);
 int Players_Money(int i);
 const struct cAlarm *Players_Alarm(int i);
 /* a weapon of attacker (a ship or character, or the owner of a missile) may hurt victim: always but on an instance
- * with -pvp:0 between two players' entities */
+ * between two players' entities, where the freeroam factions decide first (include/scrap/faction.h), else -pvp */
 byte Players_MayHurt(struct cEntity *attacker, struct cEntity *victim);
 /* the nearest player whose alarm is on, NULL */
 struct cEntity *Players_NearestWanted(const vec3_t *pos);

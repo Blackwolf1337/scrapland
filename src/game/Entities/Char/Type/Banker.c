@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/fx.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
 
@@ -93,14 +94,18 @@ static void ChType_BankerAttack(cAbstractFile *params) {
 		Logic_OnAttack(l, v, f);
 	}
 	if (v && victim) {
-		cObjElementFXBankerSteal *el = FX_DropNew(g_FXBankerStealFile, 1.35f);
-		if (el) {
-			if (!el->started) {
-				el->started = 1;
-			}
-			cObjElementFXBankerSteal_SetEntity(el, v);
-			((cObjElementFXBankerSteal *)el)->target = victim;
+		FX_BankerSteal(v, victim);
+	}
+}
+
+void FX_BankerSteal(cEntity *thief, cEntity *victim) {
+	cObjElementFXBankerSteal *el = FX_DropNew(g_FXBankerStealFile, 1.35f);
+	if (el) {
+		if (!el->started) {
+			el->started = 1;
 		}
+		cObjElementFXBankerSteal_SetEntity(el, thief);
+		((cObjElementFXBankerSteal *)el)->target = victim;
 	}
 }
 

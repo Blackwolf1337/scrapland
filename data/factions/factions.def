@@ -1,8 +1,9 @@
 # The factions of the freeroam mode (multiplayer, not in the original), read by src/faction/FactionDef.c. The six
-# groups of data/modules/challenge.mod with their characters (the classes of the group), the class a member plays as,
-# the ships of the group, the office (a level and an entity or dummy there where a player joins and leaves), the
-# ranks (arrests from which each rank starts), the relations to the other groups and the abilities (cooldown in
-# seconds). Only the Police has abilities in this stage; the other groups are rows for the next one.
+# groups of data/modules/challenge.mod with their characters (the classes of the group), the class a member of each
+# rank plays as, the pilot of its ships, the ship of each rank, the office (a level and an entity or dummy there where a
+# player joins and leaves), the jail (where an arrested player or a member that died in the office level starts), the
+# ranks (the deeds from which each rank starts), the relations to the other groups and the abilities (cooldown in
+# seconds) in the order of the client's keys (join first).
 # One statement per line, # starts a comment; "faction <Name>" starts the lines of a group.
 
 # the wanted level of a player: the points from which levels 1..5 start
@@ -16,6 +17,7 @@ crime kill_police 8
 crime kill_civilian 3
 crime hurt_player 1
 crime kill_player 6
+crime theft 1.5
 crimegap 1
 # an arrest: the fine of the arrested player and the reward of the officer, per wanted level
 fine 300
@@ -28,9 +30,47 @@ siren 6000 4000 5
 # backup outdoors: police ships of the wave type, so many; indoors the gears of the level chase the suspect
 backup SPoli2_Rookie 2
 
+# Bishops: sell life (life healed, the price the healed pays the healer), the green ray (damage, reach), revive (the s
+# a dead player waits while a reviver is in the level, the units from the reviver to the body, the price)
+heal 60 120
+ray 30 2500
+revive 15 900 100
+# no player hurts another in a sanctuary: a level (*) or the radius around a dummy of a level
+sanctuary Temple * 0
+sanctuary Commercial DM_Door_Elevator_Temple 3000
+# Bankers: steal (money, reach), suck (money from each player in front, reach), a loan (money, the debt per money
+# loaned, the share of each income that pays it, the banker's commission), the bribe per wanted level dropped
+steal 150 900
+suck 60 1200
+loan 1000 1.25 0.5 0.1
+bribe 400
+# Mercs: a bounty (a placement, the most on one player, s until it ends), hired ships (model, count, s, price), the
+# heavy loadout (life factor of the ship)
+bounty 500 5000 3600
+hire SMerc1 2 120 500
+heavy 1.5
+# Bureaucracy: the bullet time (radius, s, time speed inside), the bla-bla (radius, s asleep), permits (price, the rank
+# from which a faction's ship needs one, the fine)
+slow 2500 8 0.3
+blabla 1200 4
+permit 300 3 250
+# Press: photos (reach, s a crime stays news, wanted points, reward), courier jobs (s, reward, bonus within half the
+# time) to the desks of the routes
+photo 4000 15 6 100
+courier 300 400 200
+route Police DM_DesktopFunctionary_00
+route Temple DM_NPC_Repos_Bishop_04
+route Bank DM_NPC_Repos_BankDirector_01
+route TownHall DM_NPC_Repos_Functionary_54
+route Press DM_NPC_Repos_Messenger_01
+route GamblinDen DM_NPC_Spawn_MercenaryA_Smartie
+# abilities of every player (after the keys of its faction while keys are left)
+common bounty 30
+
 faction Police
 	chars Police PoliceBoss Gear Sentinel
-	play Police
+	play Police Police Police Police PoliceBoss
+	pilot P_Police
 	armour Gear 300
 	ships SPoli1 SPoli2 SPoli3 SPoli4 SPoli5 SPoliBoss1
 	office Police DM_DesktopFunctionary_00
@@ -48,40 +88,77 @@ faction Police
 faction Bishops
 	chars Bishop Nurse
 	play Bishop
-	ships SBishop1 SArchbishop1
-	office Temple
+	pilot P_Bishop
+	ships SBishop1 SBishop1 SArchbishop1
+	office Temple DM_NPC_Repos_Bishop_04
+	jail DM_Mission_Bishop_Prayer00
 	ranks 0 3 8 15 30
 	relation Bankers hostile
+	ability join 2
+	ability heal 3
+	ability ray 2
+	ability revive 5
+	ability ship 10
 
 faction Bankers
 	chars BankDirector BankMaster CrazyGambler Desktop
-	play BankDirector
-	ships SBanker1 SBankMaster1 SCrazyGambler1
-	office Bank
+	play BankDirector BankDirector BankDirector BankMaster
+	pilot P_BankDirector
+	ships SBanker1 SBanker1 SBankMaster1
+	office Bank DM_NPC_Repos_BankDirector_01
+	jail DM_DesktopFunctionary_02
 	ranks 0 3 8 15 30
 	relation Bishops hostile
 	relation Bureaucracy friend
+	ability join 2
+	ability steal 4
+	ability suck 8
+	ability loan 20
+	ability bribe 10
+	ability ship 10
 
 faction Bureaucracy
 	chars Functionary Mayor
-	play Functionary
-	ships SFunc1 SMayor1
-	office TownHall
+	play Functionary Functionary Functionary Mayor
+	pilot P_Functionary
+	ships SFunc1 SFunc1 SMayor1
+	office TownHall DM_NPC_Repos_Functionary_54
+	jail DM_NPC_Repos_Functionary_61
 	ranks 0 3 8 15 30
 	relation Police friend
 	relation Bankers friend
+	ability join 2
+	ability slow 30
+	ability blabla 15
+	ability permit 5
+	ability fine 10
+	ability ship 10
 
 faction Press
 	chars Berto Betty Humphrey Messenger
 	play Messenger
-	ships SBerto1 SBetty1 SHump1
-	office Press
+	pilot P_Berto
+	ships SBetty1 SBerto1 SHump1
+	office Press DM_NPC_Repos_Messenger_01
+	jail DM_DesktopFunctionary_00
 	ranks 0 3 8 15 30
+	ability join 2
+	ability photo 5
+	ability courier 3
+	ability ship 10
 
 faction Mercs
 	chars MercenaryA MercenaryB MercenaryC
-	play MercenaryA
-	ships SMerc1 SMerc2 SMerc3
-	office GamblinDen
+	play MercenaryC MercenaryC MercenaryB MercenaryB MercenaryA
+	pilot P_MercenaryB
+	ships SMerc1 SMerc1 SMerc2 SMerc2 SMerc3
+	office GamblinDen DM_NPC_Spawn_MercenaryA_Smartie
+	jail DM_Player_Spawn_Meeting_Room
 	ranks 0 3 8 15 30
 	relation Police hostile
+	ability join 2
+	ability contracts 3
+	ability hire 60
+	ability heavy 30
+	ability ship 10
+	ability bounty 30

@@ -148,8 +148,7 @@ static float Watch_DistSq(const cEntity *a, const cEntity *b) {
 	return dx * dx + dy * dy + dz * dz;
 }
 
-/* the entity of slot (the own entity or a proxy), NULL */
-static cEntity *Watch_SlotEntity(int slot) {
+cEntity *Watch_SlotEntity(int slot) {
 	if (slot < 0 || slot >= NETREP_MAX_ENTS) {
 		return NULL;
 	}

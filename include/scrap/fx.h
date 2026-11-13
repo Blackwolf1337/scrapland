@@ -12,5 +12,10 @@ void FX_CharacterConversor(cEntity *character, cEntity *conversor, int phase, fl
 void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time);
 void FX_BishopSellLife(cEntity *attacker, cEntity *attacked);
 void FX_MoneyTransfer(cEntity *from, cEntity *to, float time);
+/* the effects of the characters' actions between two entities (the freeroam factions show them on the clients) */
+void FX_BankerSteal(cEntity *thief, cEntity *victim);
+void FX_BankMasterSuction(cEntity *master, cEntity *victim);
+void FX_BertoFlash(cEntity *from, cEntity *to);
+void FX_BishopRay(cEntity *bishop, cEntity *target, const vec3_t *hit);
 
 #endif

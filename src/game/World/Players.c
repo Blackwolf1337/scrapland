@@ -351,8 +351,12 @@ const cAlarm *Players_Alarm(int i) {
 }
 
 byte Players_MayHurt(cEntity *attacker, cEntity *victim) {
-	return !Players_Net() || Instance_PvP() || attacker == victim || Players_Of(attacker) < 0 || Players_Of(victim) < 0 ||
-		Faction_MayHurt(attacker, victim);
+	if (!Players_Net() || attacker == victim || Players_Of(attacker) < 0 || Players_Of(victim) < 0) {
+		return 1;
+	}
+	/* the freeroam factions first (sanctuaries, relations, the law), else the server's -pvp */
+	int rule = Faction_PvP(attacker, victim);
+	return rule > 0 || (rule < 0 && Instance_PvP());
 }
 
 cEntity *Players_NearestWanted(const vec3_t *pos) {

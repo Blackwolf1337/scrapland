@@ -117,6 +117,8 @@
 #define NETREP_FL_PLAYER 0x08		/* a player's entity */
 #define NETREP_FL_FIRE 0x10			/* ship: the fire key is down */
 #define NETREP_FL_SIREN 0x20		/* ship: its player's siren is on (include/scrap/faction.h) */
+#define NETREP_FL_SLOW 0x40			/* a player's entity in a bullet time (its steps slower, include/scrap/faction.h) */
+#define NETREP_FL_ASLEEP 0x80		/* a player's character asleep (no input) */
 
 /* message types */
 #define NETREP_MSG_HELLO 'H'

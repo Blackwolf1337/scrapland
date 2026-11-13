@@ -41,20 +41,27 @@ static void Test_BuiltIn(void) {
 	CHECK(Faction_Find(&t, "police") == 0);
 	CHECK(Faction_Find(&t, "Nobody") == FACTION_NONE);
 	const FactionDef *p = &t.f[0];
-	CHECK(!strcmp(p->play, "Police"));
+	CHECK(!strcmp(Faction_PlayClass(p, 1), "Police") && !strcmp(Faction_PlayClass(p, 5), "PoliceBoss"));
+	CHECK(!strcmp(Faction_PlayClass(p, 9), "PoliceBoss") && !strcmp(Faction_PlayClass(p, 0), "Police"));
+	CHECK(!strcmp(p->pilot, "P_Police") && !strcmp(t.f[1].pilot, "P_Bishop"));
 	CHECK(!strcmp(p->armour, "Gear") && p->armourLife == 300);
 	CHECK(!strcmp(p->office, "Police"));
 	CHECK(p->nships == 6 && !strcmp(p->ships[4], "SPoli5"));
 	CHECK(p->nranks == 5 && p->ranks[4] == 20);
-	for (int a = 0; a < FA_COUNT; a++) {
-		CHECK(p->cooldown[a] >= 0.0f);
+	for (int a = 0; a <= FA_SHIP; a++) {
+		CHECK(p->cooldown[a] >= 0.0f && p->keys[a] == a);
 	}
-	/* the other groups have no abilities in this stage */
-	for (int i = 1; i < 6; i++) {
-		for (int a = 0; a < FA_COUNT; a++) {
-			CHECK(t.f[i].cooldown[a] < 0.0f);
-		}
+	CHECK(p->nkeys == 6 && p->cooldown[FA_HEAL] < 0.0f);
+	/* every group can be joined at a desk of its office and has a jail and ships */
+	for (int i = 0; i < 6; i++) {
+		CHECK(t.f[i].keys[0] == FA_JOIN && t.f[i].cooldown[FA_SHIP] >= 0.0f);
+		CHECK(t.f[i].desk[0] && t.f[i].jail[0] && t.f[i].nships > 0 && t.f[i].nplay > 0);
 	}
+	CHECK(!strcmp(Faction_RankShip(p, 1), "SPoli1") && !strcmp(Faction_RankShip(p, 5), "SPoli5"));
+	CHECK(!strcmp(Faction_RankShip(&t.f[1], 5), "SArchbishop1") && !strcmp(Faction_RankShip(&t.f[5], 3), "SMerc2"));
+	CHECK(!strcmp(Faction_PlayClass(&t.f[5], 1), "MercenaryC") && !strcmp(Faction_PlayClass(&t.f[5], 5), "MercenaryA"));
+	CHECK(!strcmp(t.f[3].office, "TownHall") && !strcmp(t.f[5].office, "GamblinDen"));
+	CHECK(!strcmp(t.f[5].desk, "DM_NPC_Spawn_MercenaryA_Smartie") && !strcmp(t.f[1].jail, "DM_Mission_Bishop_Prayer00"));
 	CHECK(Faction_OfClass(&t, "Gear") == 0);
 	CHECK(Faction_OfClass(&t, "Sentinel") == 0);
 	CHECK(Faction_OfClass(&t, "BankMaster") == 2);
@@ -74,7 +81,98 @@ static void Test_BuiltIn(void) {
 	CHECK(Near(t.wanted[0], 1.0f) && Near(t.wanted[4], 45.0f));
 	CHECK(t.fine == 300 && t.reward == 150);
 	CHECK(!strcmp(t.backupShip, "SPoli2_Rookie") && t.backupCount == 2);
-	CHECK(Near(t.crime[FCRIME_KILL_PLAYER], 6.0f));
+	CHECK(Near(t.crime[FCRIME_KILL_PLAYER], 6.0f) && Near(t.crime[FCRIME_THEFT], 1.5f));
+	CHECK(t.healLife == 60 && t.healPrice == 120 && t.rayDamage == 30 && Near(t.downed, 15.0f));
+	CHECK(t.steal == 150 && t.loan == 1000 && Near(t.loanOwed, 1.25f) && t.bribe == 400);
+	CHECK(t.bounty == 500 && t.bountyMax == 5000 && !strcmp(t.hireShip, "SMerc1") && t.hireCount == 2);
+	CHECK(Near(t.slowSpeed, 0.3f) && Near(t.blablaTime, 4.0f) && t.permitRank == 3);
+	CHECK(t.nroutes == 6 && t.nzones == 2 && !strcmp(t.zones[0].dummy, "*") && Near(t.zones[1].radius, 3000.0f));
+	CHECK(t.ncommon == 1 && t.common[0] == FA_BOUNTY);
+}
+
+static void Test_Keys(void) {
+	int bishops = Faction_Find(&t, "Bishops"), mercs = Faction_Find(&t, "Mercs"), press = Faction_Find(&t, "Press");
+	/* no member: join, then the common bounty */
+	CHECK(Faction_KeyAbility(&t, FACTION_NONE, 0) == FA_JOIN);
+	CHECK(Faction_KeyAbility(&t, FACTION_NONE, 1) == FA_BOUNTY);
+	CHECK(Faction_KeyAbility(&t, FACTION_NONE, 2) == -1);
+	CHECK(Faction_KeyAbility(&t, FACTION_NONE, 6) == -1 && Faction_KeyAbility(&t, 0, -1) == -1);
+	/* the police has six of its own: no room for the common one */
+	CHECK(Faction_KeyAbility(&t, 0, 5) == FA_SHIP && Faction_Cooldown(&t, 0, FA_BOUNTY) < 0.0f);
+	CHECK(Faction_KeyAbility(&t, bishops, 1) == FA_HEAL && Faction_KeyAbility(&t, bishops, 3) == FA_REVIVE);
+	CHECK(Faction_KeyAbility(&t, bishops, 5) == FA_BOUNTY && Near(Faction_Cooldown(&t, bishops, FA_BOUNTY), 30.0f));
+	CHECK(Faction_KeyAbility(&t, press, 4) == FA_BOUNTY && Faction_KeyAbility(&t, press, 5) == -1);
+	/* the mercs have the bounty of their own (not twice) */
+	CHECK(Faction_KeyAbility(&t, mercs, 5) == FA_BOUNTY && Faction_KeyAbility(&t, mercs, 1) == FA_CONTRACTS);
+	CHECK(Near(Faction_Cooldown(&t, mercs, FA_BOUNTY), 30.0f) && Near(Faction_Cooldown(&t, FACTION_NONE, FA_BOUNTY), 30.0f));
+	CHECK(Faction_Cooldown(&t, FACTION_NONE, FA_HEAL) < 0.0f && Faction_Cooldown(&t, bishops, FA_STEAL) < 0.0f);
+	CHECK(Near(Faction_Cooldown(&t, FACTION_NONE, FA_JOIN), 0.0f));
+	CHECK(Faction_AbilityOf("courier") == FA_COURIER && Faction_AbilityOf("fly") == -1 && Faction_AbilityOf(NULL) == -1);
+	CHECK(!strcmp(Faction_AbilityName(FA_BLABLA), "blabla"));
+}
+
+static void Test_PvP(void) {
+	int police = 0, bishops = 1, bankers = 2, bur = 3, mercs = 5;
+	FactionSide a = { FACTION_NONE, 0, 0, 0 }, b = { FACTION_NONE, 0, 0, 0 };
+	CHECK(Faction_PvPRule(&t, &a, &b, 1, 1) == -1);
+	/* police and a wanted player, both ways, only with policePvp */
+	a.faction = police;
+	b.wanted = 2;
+	CHECK(Faction_PvPRule(&t, &a, &b, 1, 1) == 1 && Faction_PvPRule(&t, &b, &a, 1, 1) == 1);
+	CHECK(Faction_PvPRule(&t, &a, &b, 0, 0) == -1);
+	/* a wanted officer is no officer for this */
+	a.wanted = 1;
+	CHECK(Faction_PvPRule(&t, &a, &b, 1, 0) == -1);
+	/* the sanctuary wins over all */
+	a.wanted = 0;
+	b.sanctuary = 1;
+	CHECK(Faction_PvPRule(&t, &a, &b, 1, 1) == 0 && Faction_PvPRule(&t, &b, &a, 1, 1) == 0);
+	/* hostile factions with factionPvp, friends never, the same faction never */
+	FactionSide c = { bishops, 0, 0, 0 }, d = { bankers, 0, 0, 0 };
+	CHECK(Faction_PvPRule(&t, &c, &d, 1, 1) == 1 && Faction_PvPRule(&t, &d, &c, 1, 1) == 1);
+	CHECK(Faction_PvPRule(&t, &c, &d, 1, 0) == -1);
+	d.faction = bishops;
+	CHECK(Faction_PvPRule(&t, &c, &d, 1, 1) == 0);
+	FactionSide e = { police, 0, 0, 0 }, f = { bur, 0, 0, 0 };
+	CHECK(Faction_PvPRule(&t, &e, &f, 1, 1) == 0 && Faction_PvPRule(&t, &f, &e, 1, 1) == 0);
+	/* police against a wanted friend: the law first */
+	f.wanted = 3;
+	CHECK(Faction_PvPRule(&t, &e, &f, 1, 1) == 1);
+	/* a merc and a player with a bounty, both ways; mercs and police are hostile */
+	FactionSide m = { mercs, 0, 0, 0 }, v = { FACTION_NONE, 0, 700, 0 };
+	CHECK(Faction_PvPRule(&t, &m, &v, 0, 0) == 1 && Faction_PvPRule(&t, &v, &m, 0, 0) == 1);
+	v.bounty = 0;
+	CHECK(Faction_PvPRule(&t, &m, &v, 1, 1) == -1);
+	CHECK(Faction_PvPRule(&t, &m, &e, 1, 1) == 1 && Faction_PvPRule(&t, &m, &e, 1, 0) == -1);
+}
+
+static void Test_Economy(void) {
+	/* a loan of 1000 owes 1250, half of each income pays it */
+	int debt = (int)((float)t.loan * t.loanOwed);
+	CHECK(debt == 1250);
+	CHECK(FactionLoan_Repay(&t, &debt, 0) == 0 && FactionLoan_Repay(&t, &debt, -50) == 0);
+	CHECK(FactionLoan_Repay(&t, &debt, 300) == 150 && debt == 1100);
+	CHECK(FactionLoan_Repay(&t, &debt, 1) == 1 && debt == 1099);
+	CHECK(FactionLoan_Repay(&t, &debt, 5000) == 1099 && debt == 0);
+	CHECK(FactionLoan_Repay(&t, &debt, 100) == 0);
+	/* bounties add up to the most, end after their time and start again */
+	int b = 0;
+	int64_t ends = 0;
+	CHECK(FactionBounty_Add(&t, &b, &ends, 500, 1000) == 500 && b == 500 && ends == 1000 + 3600);
+	CHECK(FactionBounty_Add(&t, &b, &ends, 4800, 2000) == 4500 && b == 5000 && ends == 2000 + 3600);
+	CHECK(FactionBounty_Add(&t, &b, &ends, 500, 2001) == 0 && b == 5000);
+	CHECK(FactionBounty_Live(&b, &ends, 5599) == 5000);
+	CHECK(FactionBounty_Live(&b, &ends, 5600) == 0 && ends == 0);
+	CHECK(FactionBounty_Add(&t, &b, &ends, 500, 9000) == 500);
+	/* courier routes: never the level of the job's start; the reward with the bonus within half the time */
+	for (uint32_t s = 0; s < 20; s++) {
+		int r = Faction_Route(&t, "Press", s);
+		CHECK(r >= 0 && strcmp(t.routes[r].level, "Press"));
+	}
+	CHECK(Faction_Route(&t, "Press", 0) != Faction_Route(&t, "Press", 1));
+	CHECK(Faction_CourierReward(&t, 100) == 600 && Faction_CourierReward(&t, 150) == 600);
+	CHECK(Faction_CourierReward(&t, 151) == 400 && Faction_CourierReward(&t, 301) == 0);
+	CHECK(!Faction_NeedsPermit(&t, 2) && Faction_NeedsPermit(&t, 3) && Faction_NeedsPermit(&t, 5));
 }
 
 static void Test_Ranks(void) {
@@ -106,6 +204,19 @@ static void Test_Errors(void) {
 	CHECK(FactionTable_Parse(&x, "crime steal 3\n", err, sizeof(err)) < 0 && strstr(err, "steal"));
 	CHECK(FactionTable_Parse(&x, "faction A\n\tplay X\n\toffice L\n\tranks 1 2\n", err, sizeof(err)) < 0);
 	CHECK(FactionTable_Parse(&x, "faction A\n\tplay X\n\toffice L\n\tranks 0 5 3\n", err, sizeof(err)) < 0);
+	CHECK(FactionTable_Parse(&x, "faction A\n\tplay X\n\toffice L\n\tability ship 2\n\tability join 2\n", err,
+		sizeof(err)) < 0 && strstr(err, "first"));
+	CHECK(FactionTable_Parse(&x, "faction A\n\tplay X\n\toffice L\n\tability ship 2\n\tability ship 3\n", err,
+		sizeof(err)) < 0 && strstr(err, "twice"));
+	CHECK(FactionTable_Parse(&x, "faction A\n\tplay X\n\toffice L\n\tability join 1\n\tability heal 1\n\tability ray 1\n"
+		"\tability steal 1\n\tability suck 1\n\tability loan 1\n\tability bribe 1\n", err, sizeof(err)) < 0 &&
+		strstr(err, "line 10") && strstr(err, "keys"));
+	CHECK(FactionTable_Parse(&x, "common join 3\n", err, sizeof(err)) < 0);
+	CHECK(FactionTable_Parse(&x, "loan 100 0.5 0.5 0\n", err, sizeof(err)) < 0);
+	CHECK(FactionTable_Parse(&x, "slow 100 3 0\n", err, sizeof(err)) < 0);
+	CHECK(FactionTable_Parse(&x, "route A\n", err, sizeof(err)) < 0);
+	CHECK(FactionTable_Parse(&x, "route A DM_A_Name_Much_Longer_Than_The_Room_Of_The_Field\n", err, sizeof(err)) < 0 &&
+		strstr(err, "too long"));
 	/* a minimal faction, defaults and comments after statements, CR LF lines */
 	int n = FactionTable_Parse(&x, "fine 10 # each\r\nfaction A\r\n\tplay X\r\n\toffice L D\r\n\tability ship 2\r\n",
 		err, sizeof(err));
@@ -169,6 +280,9 @@ int main(void) {
 	Test_Ranks();
 	Test_Errors();
 	Test_Wanted();
+	Test_Keys();
+	Test_PvP();
+	Test_Economy();
 	printf("faction_test: %d checks, %d failed\n", checks, failed);
 	return failed != 0;
 }

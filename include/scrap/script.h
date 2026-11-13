@@ -483,6 +483,8 @@ extern const portFn_t g_HullTabMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern const portFn_t g_FunctionaryFuncs[];
+/* the motion blur (or the noise) of the functionary's slow motion on or off (speed: its speedFactor) */
+void Char_SlowEffect(byte on, double speed);
 extern const portFn_t g_RustyFuncs[];
 extern const portFn_t g_BossFuncs[];
 extern const portFn_t g_MayorFuncs[];

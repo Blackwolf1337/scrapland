@@ -218,6 +218,10 @@ static int Rep_Find(const cEntity *e) {
 	}
 }
 
+int Rep_SlotOf(const cEntity *e) {
+	return e ? Rep_Find(e) : -1;
+}
+
 static int Rep_Kind(cEntity *e) {
 	if (e->deadNode.target) {
 		return 0;
@@ -321,7 +325,7 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 		return;
 	}
 	cWalkCharEntity *c = WChar(e);
-	s->flags |= (c->falling ? NETREP_FL_FALLING : 0) | (c->walking ? NETREP_FL_WALKING : 0);
+	s->flags |= (c->falling ? NETREP_FL_FALLING : 0) | (c->walking ? NETREP_FL_WALKING : 0) | Faction_Flags(e);
 	s->view[0] = NetRep_QAng(c->view.x);
 	s->view[1] = NetRep_QAng(c->view.y);
 	cActCtrl *ctrl = w->actCtrl;
@@ -554,6 +558,8 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	pl->spawnAt = -1;
 	if (pos) {
 		p = *pos;
+	} else if (Faction_SpawnPlace(i, &p, &yaw)) {
+		/* a member that died in its office level: its jail dummy */
 	} else if (!Rep_PickSpawn(&p, &yaw, &pl->spawnAt)) {
 		p = rep.spawn[0];
 		yaw = rep.spawnYaw[0];
@@ -965,7 +971,8 @@ void Rep_Respawn(int i) {
 void Rep_Rebody(int i, const vec3_t *pos, float yaw) {
 	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? &rep.pl[i] : NULL;
 	cEntity *e = pl ? Rep_Own(pl) : NULL;
-	if (!e || (!pos && NetPl_Kind(e) != NETREP_CHAR)) {
+	/* a dead player only at a place (a revive) */
+	if (!pl || (!e && (!pos || !pl->dead)) || (e && !pos && NetPl_Kind(e) != NETREP_CHAR)) {
 		return;
 	}
 	vec3_t p = pos ? *pos : e->pos;
@@ -999,7 +1006,7 @@ void Rep_PreFrame(uint64_t tick) {
 			if (!pl->lost) {
 				pl->lost = tick;
 			}
-			if (tick - pl->lost >= (uint64_t)sand.respawnTicks) {
+			if (tick - pl->lost >= (uint64_t)sand.respawnTicks + Faction_DownedTicks(i)) {
 				Rep_DropOwn(i);
 				Rep_SpawnChar(i, NULL, 0.0f);
 				NetRepInBuf_Restart(&pl->in);
@@ -1021,6 +1028,7 @@ void Rep_PreFrame(uint64_t tick) {
 		Players_Bind(i);
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
+		Faction_Input(i, e, &in);
 		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Rep_UsesDoor(e)) {
 			pl->buttons = in.buttons;
 			Rep_Switch(i, e);
