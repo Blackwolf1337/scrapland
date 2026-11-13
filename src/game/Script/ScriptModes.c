@@ -463,14 +463,16 @@ byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time
 	double d;
 	MODE_SEAM("SScorer", "Fade");
 	if (seam) {
-		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
-		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(&hook, NULL, "iOOv", id, a, b, time);
-		if (!b) {
-			Native_HookFree(&hook);
+		nativeVal_t a, b;
+		Native_SetEmpty(&a, NV_TUPLE);
+		Native_SetEmpty(&b, NV_TUPLE);
+		for (int i = 0; i < 4; i++) {
+			Native_SetInt(Native_Append(&a), from[i]);
+			Native_SetInt(Native_Append(&b), to[i]);
 		}
-		Py_XDECREF(a);
-		Py_XDECREF(b);
+		byte ok = Native_HookCall(&hook, NULL, "ivvv", id, &a, &b, time);
+		Native_Free(&a);
+		Native_Free(&b);
 		return ok;
 	}
 	if (!Native_ArgDouble(time, &d)) {
@@ -531,15 +533,6 @@ static void Mode_ArgsVal(const nativeVal_t *args, int n, nativeVal_t *t) {
 	for (int i = 0; i < n; i++) {
 		Native_Copy(Native_Append(t), &args[i]);
 	}
-}
-
-/* the same as a Python tuple (NULL with the error) */
-static PyObject *Mode_ArgsTuple(const nativeVal_t *args, int n) {
-	nativeVal_t t;
-	Mode_ArgsVal(args, n, &t);
-	PyObject *params = Native_ToPy(&t);
-	Native_Free(&t);
-	return params;
 }
 
 /* func with the n values args at time on the world's scheduler (a port function as its entry on the values) */
@@ -4774,8 +4767,12 @@ static byte Mode_RefNoSeq(const nativeVal_t *o) {
 }
 
 int Mode_RefLen(const nativeVal_t *o) {
+	int len;
 	if (NObj_Native(o)) {
 		return Mode_RefNoSeq(o) ? (Native_Raise(NE_TYPE, "len() of unsized object"), -1) : NObj_Len(o);
+	}
+	if (!NObj_HoldsPy(o)) {
+		return Native_Len(o, &len) ? len : -1;
 	}
 	PyObject *p = Native_ToPy(o);
 	int n = p ? PySequence_Length(p) : -1;
@@ -4786,6 +4783,9 @@ int Mode_RefLen(const nativeVal_t *o) {
 int Mode_RefSize(const nativeVal_t *o) {
 	if (NObj_Native(o)) {
 		return NObj_Len(o);
+	}
+	if (!NObj_HoldsPy(o)) {
+		return Native_Size(o);
 	}
 	PyObject *p = Native_ToPy(o);
 	int n = p ? PyObject_Length(p) : -1;
@@ -4813,6 +4813,18 @@ static byte Mode_RefSeqAt(const nativeVal_t *o, long i, const nativeVal_t *x, na
 byte Mode_RefItem(const nativeVal_t *o, long i, nativeVal_t *out) {
 	if (NObj_Native(o)) {
 		return Mode_RefSeqAt(o, i, NULL, out);
+	}
+	if (!NObj_HoldsPy(o)) {
+		/* PySequence_GetItem of a value by value, the item as a call through Python hands it over */
+		nativeVal_t tmp;
+		Native_SetNone(&tmp);
+		Native_SetNone(out);
+		const nativeVal_t *x = Native_GetItem(o, i, 0, &tmp);
+		if (x) {
+			NObj_CallArg(x, out);
+		}
+		Native_Free(&tmp);
+		return x != NULL;
 	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = Mode_RefTake(p ? PySequence_GetItem(p, (int)i) : NULL, out);
@@ -4861,7 +4873,7 @@ byte Mode_RefDelSub(const nativeVal_t *o, const nativeVal_t *key) {
 }
 
 byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
-	if (NObj_Native(o)) {
+	if (NObj_Native(o) || !NObj_HoldsPy(o)) {
 		return NObj_GetAttr(o, name, out);
 	}
 	PyObject *p = Native_ToPy(o);
@@ -4892,18 +4904,20 @@ byte Mode_RefCall(const nativeVal_t *o, const char *method, const nativeVal_t *a
 		}
 		return ok;
 	}
-	/* the method as Script_Method reads it (Script_GetAttr: an object that fails without an exception, the handle of a
-	 * deleted entity, gets ceval's SystemError) */
-	PyObject *p = Native_ToPy(o), *f = p ? Script_GetAttr(p, method) : NULL;
-	PyObject *params = f ? Mode_ArgsTuple(args, n) : NULL, *r = params ? Script_CallObject(f, params, NULL) : NULL;
-	Py_XDECREF(params);
-	Py_XDECREF(f);
-	Py_XDECREF(p);
+	/* the method as its attribute gives it (an object that fails without an exception, the handle of a deleted
+	 * entity, gets ceval's SystemError; a list or dict by value is a temporary object of its own), called on the
+	 * arguments as a call through Python hands them over */
+	nativeVal_t f;
 	if (out) {
-		return Mode_ObjOut(r, out);
+		Native_SetNone(out);
 	}
-	Py_XDECREF(r);
-	return r != NULL;
+	if (!NObj_GetAttr(o, method, &f)) {
+		Native_Free(&f);
+		return Script_Fail();
+	}
+	byte ok = Port_ValuesOf(PORT_VSITE(), &f, args, n, out, 0);
+	Native_Free(&f);
+	return ok;
 }
 
 byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v) {
@@ -5037,10 +5051,24 @@ int Mode_RefNext(const nativeVal_t *o, int i, nativeVal_t *out) {
 		}
 		return -1;
 	}
+	Native_SetNone(out);
+	if (!NObj_HoldsPy(o)) {
+		/* a sequence by value: its item as a call through Python hands it over */
+		nativeVal_t item;
+		int n = Native_ForCount(o);
+		if (n < 0 || i >= n) {
+			return n < 0 ? -1 : 0;
+		}
+		if (!Native_SeqItem(o, i, &item)) {
+			return -1;
+		}
+		NObj_CallArg(&item, out);
+		Native_Free(&item);
+		return 1;
+	}
 	PyObject *p = Native_ToPy(o), *item = NULL;
 	int r = p ? Script_Next(p, i, &item) : -1;
 	Py_XDECREF(p);
-	Native_SetNone(out);
 	return r > 0 ? Mode_RefTake(item, out) : r;
 }
 
@@ -5056,13 +5084,39 @@ static PyObject *Mode_NumOp(char op, const nativeVal_t *a, const nativeVal_t *b)
 	return r;
 }
 
+/* a op b of plain values natively ('+', '-', '*', '/', '%' and the long ints the native operations take): 1 with the
+ * result as Native_Arith gives it in *r, 0 with *r None when the operation goes the Python way */
+static byte Mode_PlainOp(char op, const nativeVal_t *a, const nativeVal_t *b, byte *ok, nativeVal_t *r) {
+	Native_SetNone(r);
+	if (op == '&' || Native_Holds(a, NV_REFS | 1u << NV_DICT) || Native_Holds(b, NV_REFS | 1u << NV_DICT) ||
+		(op != '+' && op != '-' && (a->type == NV_LONG || b->type == NV_LONG))) {
+		return 0;
+	}
+	*ok = Native_Arith(op, a, b, r);
+	return 1;
+}
+
 byte Mode_RefOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	nativeVal_t r;
+	byte ok;
+	if (Mode_PlainOp(op, a, b, &ok, &r)) {
+		/* the result by reference, as it comes back from Python */
+		Native_SetNone(out);
+		if (ok) {
+			NObj_CallArg(&r, out);
+		}
+		Native_Free(&r);
+		return ok;
+	}
 	return Mode_RefTake(Mode_NumOp(op, a, b), out);
 }
 
 int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
 	if ((NObj_Native(a) || NObj_Native(b)) && !Native_Holds(a, 1u << NV_OBJ) && !Native_Holds(b, 1u << NV_OBJ)) {
 		return NObj_Compare(a, b);
+	}
+	if (!NObj_HoldsPy(a) && !NObj_HoldsPy(b)) {
+		return Native_Compare(a, b);
 	}
 	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL;
 	int c = y ? PyObject_Compare(x, y) : -2;
@@ -5076,7 +5130,7 @@ int Mode_RefCmp(const nativeVal_t *a, const nativeVal_t *b) {
 }
 
 byte Mode_RefRepr(const nativeVal_t *o, nativeVal_t *out) {
-	if (NObj_Native(o)) {
+	if (NObj_Native(o) || !NObj_HoldsPy(o)) {
 		nativeBuf_t b;
 		Native_BufInit(&b);
 		byte ok = NObj_Repr(&b, o, NR_REPR);
@@ -5118,15 +5172,12 @@ byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeV
 		}
 		return ok;
 	}
-	PyObject *fn = Native_ToPy(f), *params = fn ? Mode_ArgsTuple(args, n) : NULL;
-	PyObject *r = params ? Script_CallObject(fn, params, NULL) : NULL;
-	Py_XDECREF(params);
-	Py_XDECREF(fn);
+	/* any other value on the arguments as a call through Python hands them over, the result by reference (a view
+	 * through Python) */
 	if (out) {
-		return Mode_RefTake(r, out);
+		Native_SetNone(out);
 	}
-	Py_XDECREF(r);
-	return r != NULL;
+	return Port_ValuesOf(PORT_VSITE(), f, args, n, out, 1);
 }
 
 byte Mode_RefDelAttr(const nativeVal_t *o, const char *name) {
@@ -5222,6 +5273,17 @@ byte Mode_VarCall0(const char *module, const char *var, byte global, const char 
 
 /* Mode_NumOp with the result as Native_Arg makes it (Mode_RefOp keeps it by reference); *out None when it fails */
 static byte Mode_PyOp(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	nativeVal_t v;
+	byte ok;
+	if (Mode_PlainOp(op, a, b, &ok, &v)) {
+		/* the result as Native_Arg takes it */
+		Native_SetNone(out);
+		if (ok) {
+			NObj_ArgOf(&v, out);
+		}
+		Native_Free(&v);
+		return ok;
+	}
 	PyObject *r = Mode_NumOp(op, a, b);
 	Native_SetNone(out);
 	if (r) {

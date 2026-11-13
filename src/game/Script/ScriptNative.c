@@ -2968,6 +2968,36 @@ static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
 	return 0;
 }
 
+/* Native_FromPy of the Python object of v without the crossing: None, an int, a float, a text shorter than NATIVE_TEXT
+ * without 0 bytes, a vector of a tuple of three numbers, when its type is one of types: 1 with *out, else 0 without
+ * an error */
+static byte Native_TakeShort(const nativeVal_t *v, unsigned types, nativeVal_t *out) {
+	double x[3];
+	if (v->type == NV_NONE && types & 1u << NV_NONE) {
+		Native_SetNone(out);
+	} else if (v->type == NV_INT && types & 1u << NV_INT) {
+		Native_SetInt(out, v->i);
+	} else if (v->type == NV_FLOAT && types & 1u << NV_FLOAT) {
+		Native_SetFloat(out, v->f);
+	} else if (v->type == NV_STR && types & 1u << NV_STR && v->n < NATIVE_TEXT &&
+		(int)strlen(Native_Text(v)) == v->n) {
+		Native_SetStr(out, Native_Text(v));
+	} else if (v->type == NV_VEC && types & 1u << NV_VEC) {
+		Native_SetVec(out, v->v[0], v->v[1], v->v[2]);
+	} else if (v->type == NV_TUPLE && v->n == 3 && types & 1u << NV_VEC) {
+		for (int i = 0; i < 3; i++) {
+			if (!Native_ArgDouble(&v->items[i], &x[i])) {
+				Native_ErrClear();
+				return 0;
+			}
+		}
+		Native_SetVec(out, x[0], x[1], x[2]);
+	} else {
+		return 0;
+	}
+	return 1;
+}
+
 /* v holds an object of native data (one that has no Python object yet), also inside a tuple */
 static byte Native_HoldsData(const nativeVal_t *v) {
 	if (v->type == NV_REF) {
@@ -3006,14 +3036,43 @@ static byte Native_TakeVal(const nativeVal_t *v, unsigned types, nativeVal_t *ou
 		return 0;
 	}
 	PyObject *o = NObj_Py(v);
-	if (o) {
-		Py_INCREF(o);
-	} else if ((o = Native_ToPy(v)) == NULL) {
+	if (o || NObj_HoldsPy(v)) {
+		/* a view or a value that holds a Python value: its Python object (OBJLIB 9) */
+		if (o) {
+			Py_INCREF(o);
+		} else if ((o = Native_ToPy(v)) == NULL) {
+			return 0;
+		}
+		byte ok = Native_Take(o, types, out);
+		Py_DECREF(o);
+		return ok;
+	}
+	/* Native_Take of the value's Python object, without the crossing */
+	if (types & 1u << NV_TUPLE && (v->type == NV_TUPLE || v->type == NV_VEC)) {
+		if (NObj_Plain(v, out)) {
+			return 1;
+		}
+		if (types & 1u << NV_OBJ) {
+			NObj_ArgOf(v, out);
+			return 1;
+		}
 		return 0;
 	}
-	byte ok = Native_Take(o, types, out);
-	Py_DECREF(o);
-	return ok;
+	if (Native_TakeShort(v, types, out)) {
+		return 1;
+	}
+	if (types & 1u << NV_OBJ) {
+		NObj_ArgOf(v, out);
+		return 1;
+	}
+	if (!(types & (1u << NV_LONG | 1u << NV_LIST | 1u << NV_TUPLE | 1u << NV_DICT)) || !NObj_Plain(v, out)) {
+		return 0;
+	}
+	if (types & 1u << out->type) {
+		return 1;
+	}
+	Native_Free(out);
+	return 0;
 }
 
 /* v holds a list of n items */
@@ -3124,6 +3183,40 @@ static byte Native_PassPy(const nativeVal_t *v, int depth) {
 	return 0;
 }
 
+/* v is nested NLIT_DEPTH deep or more, or holds a long int Native_PassPy leaves to Python */
+static byte Native_PassDeep(const nativeVal_t *v, int depth) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	switch (v->type) {
+	case NV_LONG:
+		return Native_PassPy(v, depth);
+	case NV_VEC:
+		return depth >= NLIT_DEPTH;
+	case NV_LIST:
+	case NV_TUPLE:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		for (int i = 0; i < v->n; i++) {
+			if (Native_PassDeep(&v->items[i], depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	case NV_DICT:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Native_PassDeep(k, depth + 1) || Native_PassDeep(x, depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+	return 0;
+}
+
 /* Native_Pass of a value Native_PassPy leaves to C */
 static void Native_PassIn(const nativeVal_t *v, nativeVal_t *out) {
 	const nativeVal_t *k, *x;
@@ -3162,12 +3255,15 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out) {
 		Native_PassIn(v, out);
 		return 1;
 	}
-	if (NObj_Native(v)) {
-		/* an object of native data, a native function or module: what Python would hand back, without the crossing
-		 * (a list or dict of plain values as a copy, any other object itself) */
+	if (NObj_Native(v) || (!NObj_HoldsPy(v) && v->type != NV_LONG && !Native_PassDeep(v, 0))) {
+		/* an object of native data, a native function or module, a value that holds such objects or handles: what
+		 * Python would hand back, without the crossing (a list or dict of plain values as a copy, any other object
+		 * itself) */
 		NObj_ArgOf(v, out);
 		return 1;
 	}
+	/* a view or a Python value in it, the text of a long int Python writes otherwise, a nesting deeper than the
+	 * literals: as Python has it (OBJLIB 9) */
 	PyObject *o = Native_ToPy(v);
 	Native_SetNone(out);
 	if (!o) {

@@ -772,17 +772,17 @@ API_FN(SAI, SetInertia) {
 	return 1;
 }
 
-void *g_AppPyOne;
+byte g_AppOneMade;
 
 /*
  * GetOD() : the object (the 1 of the level, a folded stub in the original). differs from the original: the result is
  * a new value; the original returned the object without a new reference, so each call took one from it.
  */
 API_FN(SAI, GetOD) {
-	if (!g_AppPyOne) {
+	if (!g_AppOneMade) {
 		return 0;
 	}
-	Native_Arg((PyObject *)g_AppPyOne, out);
+	Native_SetInt(out, 1);
 	return 1;
 }
 

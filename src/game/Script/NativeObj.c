@@ -1331,6 +1331,50 @@ byte NObj_Plain(const nativeVal_t *v, nativeVal_t *out) {
 	return Obj_Plain(v, out, 0);
 }
 
+/* NObj_ArgOf of a tuple, list or dict by value that holds an object or a handle (no view and no NV_OBJ in it): what
+ * Python hands back, without the crossing: a list or dict as a new object (its plain items copied, its objects and
+ * handles themselves), a tuple as a tuple of such items, a vector as the tuple of its floats */
+static void Obj_ArgOfData(const nativeVal_t *v, nativeVal_t *out) {
+	if (v->type == NV_TUPLE) {
+		Native_SetEmpty(out, NV_TUPLE);
+		for (int i = 0; i < v->n; i++) {
+			Obj_ArgOfData(&v->items[i], Native_Append(out));
+		}
+	} else if (v->type == NV_LIST || v->type == NV_DICT) {
+		NObj_CallArg(v, out);
+	} else if (v->type == NV_ENT || v->type == NV_REF || !Obj_Plain(v, out, 0)) {
+		Native_Copy(out, v);
+		out->id = 0;
+	}
+}
+
+/* v or a value in it is a view or a Python value (NV_OBJ): the crossing gives its Python object */
+static byte Obj_HoldsPy(const nativeVal_t *v) {
+	if (v->type == NV_OBJ || (v->type == NV_REF && Obj_View(v->ref))) {
+		return 1;
+	}
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			if (Obj_HoldsPy(&v->items[i])) {
+				return 1;
+			}
+		}
+	} else if (v->type == NV_DICT) {
+		const nativeVal_t *k, *x;
+		int pos = 0;
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Obj_HoldsPy(k) || Obj_HoldsPy(x)) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+byte NObj_HoldsPy(const nativeVal_t *v) {
+	return Obj_HoldsPy(v);
+}
+
 void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out) {
 	if (v->type != NV_ENT && Obj_Plain(v, out, 0)) {
 		return;
@@ -1346,7 +1390,11 @@ void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out) {
 		out->obj = NULL;
 		return;
 	}
-	/* a tuple, list or dict that holds an object or a handle: as Python has it */
+	if (!Obj_HoldsPy(v)) {
+		Obj_ArgOfData(v, out);
+		return;
+	}
+	/* a tuple, list or dict that holds a Python value: as Python has it (OBJLIB 9) */
 	PyObject *o = Native_ToPy(v);
 	if (o) {
 		Native_SetObj(out, o);
