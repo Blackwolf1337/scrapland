@@ -223,6 +223,10 @@ void CApp_Shutdown(CApp *self) {
 	if (Net_IsClient()) {
 		Net_CloseClientMsg("");
 	}
+	/* not in the original: an instance reports its players before the world closes (include/scrap/travel.h) */
+	if (g_Instance) {
+		Travel_InstanceLeave();
+	}
 	App_DoneGame(self);
 	Sound_ResetVolumes();
 	Sound_Done();

@@ -138,7 +138,10 @@ static void Tr_SendState(int i, int reason, const char *level, const char *entra
 	if (!tr.up) {
 		return;
 	}
-	Tr_State(i);
+	/* the game's values while the world is there (not after the shutdown closed it) */
+	if (g_pWorld) {
+		Tr_State(i);
+	}
 	NetRepBuf_Init(&w, buf, sizeof(buf));
 	NetRep_PutU8(&w, COORD_MSG_STATE);
 	NetRep_PutU8(&w, (uint32_t)reason);
@@ -315,12 +318,17 @@ void Travel_InstancePass(uint64_t ms) {
 	}
 }
 
-void Travel_InstanceClose(void) {
+void Travel_InstanceLeave(void) {
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (tr.pl[i].used && !tr.pl[i].traveled && !tr.pl[i].quiet) {
 			Tr_SendState(i, COORD_SR_LEAVE, "", "", "");
+			tr.pl[i].quiet = 1;
 		}
 	}
+}
+
+void Travel_InstanceClose(void) {
+	Travel_InstanceLeave();
 	if (tr.host) {
 		Net2_Flush(tr.host, tr.now);
 		Net2_Destroy(tr.host);

@@ -53,6 +53,8 @@ byte Travel_ParseParam(const char *param, const char *ext);
 byte Travel_Coordinated(void);
 /* each tick: the coordinator connection, the reports, the players given back */
 void Travel_InstancePass(uint64_t ms);
+/* the players' leave states to the coordinator while the world still runs (the shutdown, before the world closes) */
+void Travel_InstanceLeave(void);
 void Travel_InstanceClose(void);
 /* a message of a client on the instance's reliable channel: tickets, metro picks; 1 when taken */
 byte Travel_Message(struct Net2Host *host, int conn, const uint8_t *data, int size);
