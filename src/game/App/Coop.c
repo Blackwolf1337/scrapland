@@ -542,7 +542,15 @@ void Coop_ScenePlay(const char *cls) {
 	NetRep_PutStr(&nw, text);
 	Travel_SendCoord(nb, nw.size);
 	if (cp.scene < 0) {
-		Con_Printf("coop: scene %s plays (no table: its texts and voices go to the clients)\n", cls);
+		/* a scene of the level's own data (map.def): the clients have its class from their level's start */
+		NetRepBuf_Init(&w, buf, sizeof(buf));
+		NetRep_PutU8(&w, COOP_MSG);
+		NetRep_PutU8(&w, COOP_Y_SCENE);
+		NetRep_PutStr(&w, "");
+		NetRep_PutStr(&w, cls);
+		NetRep_PutU16(&w, 0);
+		Cp_ToAll(buf, w.size);
+		Con_Printf("coop: scene %s plays (no table: the clients play the class they have)\n", cls);
 		return;
 	}
 	const CpScene *sc = &cp.scenes[cp.scene];
@@ -642,7 +650,7 @@ void Coop_SceneEnd(void) {
 
 /* a scene the clients play themselves makes its own texts and voices */
 static byte Cp_Quiet(void) {
-	return !Coop_On() || (cp.inScene && cp.scene >= 0);
+	return !Coop_On() || cp.inScene;
 }
 
 void Coop_SpeechText(const char *text, float time, int r, int g, int b) {
@@ -782,8 +790,23 @@ static void Cp_ClientScene(NetRepReader *r) {
 		at += len + 1;
 		lines[k + 1] = NULL;
 	}
-	if (r->bad || !n) {
+	if (r->bad) {
 		return;
+	}
+	if (!n) {
+		nativeVal_t sname, have;
+		char text2[CP_NAME + 8];
+		Str_PrintfQuiet(text2, sizeof(text2), "Scene%s", cls);
+		Native_SetText(&sname, text2, (int)strlen(text2));
+		Native_SetNone(&have);
+		byte got = Mode_SActV("GetClass", &sname, &have) && Native_True(&have);
+		Native_Free(&sname);
+		Native_Free(&have);
+		Native_ErrClear();
+		if (!got) {
+			Con_Printf("coop: scene %s of the instance: no class here\n", cls);
+			return;
+		}
 	}
 	Con_Printf("coop: scene %s of the instance plays here\n", cls);
 	/* line by line, a failing one does not stop the scene; the calls of the level's own module are left out (they
