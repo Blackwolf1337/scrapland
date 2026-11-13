@@ -411,6 +411,7 @@ static void Pl_MakeGate(const PlaceGate *g) {
 	for (int k = 0; k < g->nopt; k++) {
 		Texts_Format(text, sizeof(text), "MP_Place_Go", Pl_LevelText(g->opt[k].level));
 		Str_PrintfQuiet(opt, sizeof(opt), "Go%d:%s", k, text);
+		Con_Printf("places: gate %s option %s\n", name, opt);
 		Str_PrintfQuiet(var, sizeof(var), "ArrOpt%d", k);
 		s = opt;
 		Entity_VarS(e, var, &s, 1);
