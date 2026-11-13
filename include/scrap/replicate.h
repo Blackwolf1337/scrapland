@@ -53,6 +53,8 @@ void Rep_Respawn(int i);
 /* player i's character again (its class of now, include/scrap/faction.h) where it stands, or at pos (out of its ship
  * then); pos NULL and the player in a ship: nothing */
 void Rep_Rebody(int i, const vec3_t *pos, float yaw);
+/* a free place for a character around at (the place k of the rings around it on, 0 at itself): 1 with *out */
+byte Rep_FreeSpot(const vec3_t *at, int first, vec3_t *out);
 /* tests: the switch of player i (into the nearest parked ship or out of its ship), or a ship called beside it */
 void Rep_TestSwitch(int i, byte call);
 

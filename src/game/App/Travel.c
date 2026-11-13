@@ -15,6 +15,7 @@
 #include "scrap/alarm.h"
 #include "scrap/arrowindicator.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
@@ -102,7 +103,7 @@ byte Travel_Coordinated(void) {
 }
 
 
-static int Tr_PlayerOfKey(const uint8_t key[NET2_KEY_SIZE]) {
+int Travel_PlayerOfKey(const uint8_t key[NET2_KEY_SIZE]) {
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (tr.pl[i].used && !memcmp(tr.pl[i].key, key, NET2_KEY_SIZE)) {
 			return i;
@@ -219,8 +220,11 @@ static void Tr_CoordMessage(const uint8_t *data, int size) {
 		}
 		return;
 	}
+	if (Coop_CoordMessage(data, size)) {
+		return;
+	}
 	CoordMsg_GetBytes(&r, key, NET2_KEY_SIZE);
-	int i = r.bad ? -1 : Tr_PlayerOfKey(key);
+	int i = r.bad ? -1 : Travel_PlayerOfKey(key);
 	if (i < 0) {
 		return;
 	}
@@ -260,6 +264,7 @@ static void Tr_Link(void) {
 			}
 			tr.up = 0;
 			tr.lastTry = tr.now;
+			Coop_CoordLost();
 			break;
 		case NET2_EV_MESSAGE:
 			if (ev.channel == TR_CHANNEL && ev.size > 1) {
@@ -463,7 +468,7 @@ byte Travel_Admit(int conn, int player, TravelSpawn *sp) {
 	}
 	CoordTicket *t = &pd->t;
 	/* a newer connection of the same player: the old one goes without a report (the coordinator has the newer) */
-	int old = Tr_PlayerOfKey(t->key);
+	int old = Travel_PlayerOfKey(t->key);
 	if (old >= 0 && old != player) {
 		tr.pl[old].quiet = 1;
 		if (Rep_PlayerConn(old) >= 0) {
@@ -493,6 +498,9 @@ byte Travel_Admit(int conn, int player, TravelSpawn *sp) {
 		sp->have = 1;
 	} else if (p->entrance[0]) {
 		Con_Printf("instance: no entrance %s in %s, the players' spawn\n", p->entrance, Instance_Level());
+	}
+	if (!sp->have) {
+		sp->have = Coop_Spawn(player, &sp->pos, &sp->yaw);
 	}
 	CoordKv_Get(p->state, p->len, "name", v, sizeof(v));
 	Con_Printf("instance: player %d is %s (%.8s), money %d%s%s\n", player, v[0] ? v : "?", p->hex, sp->money,
@@ -548,6 +556,21 @@ byte Travel_Request(const char *rider, const char *level, const char *entrance, 
 			level);
 		return 0;
 	}
+	return Travel_Go(i, level, entrance, door, 0);
+}
+
+byte Travel_SendCoord(const uint8_t *data, int size) {
+	if (!Travel_Coordinated() || !tr.up) {
+		return 0;
+	}
+	Net2_Send(tr.host, 0, TR_CHANNEL, data, size);
+	return 1;
+}
+
+byte Travel_Go(int i, const char *level, const char *entrance, const char *door, byte party) {
+	if (i < 0 || i >= PLAYERS_MAX || !tr.pl[i].used) {
+		return 0;
+	}
 	TrPlayer *p = &tr.pl[i];
 	if (p->traveled) {
 		return 1;
@@ -558,8 +581,9 @@ byte Travel_Request(const char *rider, const char *level, const char *entrance, 
 		return 1;
 	}
 	const char *s = strrchr(level, '/');
-	Con_Printf("instance: player %d travels to %s (%s, %s)\n", i, s ? s + 1 : level, entrance, door);
-	Tr_SendState(i, COORD_SR_TRAVEL, s ? s + 1 : level, entrance, door);
+	Con_Printf("instance: player %d travels to %s (%s, %s)%s\n", i, s ? s + 1 : level, entrance, door,
+		party ? " with its party" : "");
+	Tr_SendState(i, party ? COORD_SR_PARTY : COORD_SR_TRAVEL, s ? s + 1 : level, entrance, door);
 	p->traveled = 1;
 	p->travelAt = tr.now;
 	return 1;

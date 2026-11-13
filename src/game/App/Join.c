@@ -9,6 +9,7 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
@@ -139,19 +140,21 @@ static void Join_Host(void) {
 	char dir[COORD_PATH];
 
 	Coord_DefaultConfig(&cfg);
+	/* the menu's mode, else -mode of this game (include/scrap/faction.h, include/scrap/coop.h) */
+	Str_Copy(cfg.mode, join.hostMode[0] ? join.hostMode : Coop_Asked() ? "coop" : Faction_ModeName(), sizeof(cfg.mode));
+	byte coop = !strcmp(cfg.mode, "coop");
 	Plat_ConfigDir(dir, sizeof(dir));
-	Str_PrintfQuiet(cfg.dataDir, sizeof(cfg.dataDir), "%shost", dir);
+	/* a coop world keeps its party's story apart from the free worlds' players */
+	Str_PrintfQuiet(cfg.dataDir, sizeof(cfg.dataDir), coop ? "%shostcoop" : "%shost", dir);
 	Str_Copy(cfg.gameDir, ".", sizeof(cfg.gameDir));
 	CoordProc_Self(cfg.exe, sizeof(cfg.exe));
 	cfg.port = join.port;
 	/* the command line's -host on loopback unless -hostbind; the menus' on hostbind= of scrapdecomp.ini (any address
 	 * without it) */
 	Str_Copy(cfg.bind, join.hostBind[0] || join.menu ? join.hostBind : "127.0.0.1", sizeof(cfg.bind));
-	Str_Copy(cfg.start, join.hostLevel[0] ? join.hostLevel : "DownTown", sizeof(cfg.start));
+	Str_Copy(cfg.start, coop ? COORD_COOP_START : join.hostLevel[0] ? join.hostLevel : "DownTown", sizeof(cfg.start));
 	Str_Copy(cfg.keep, join.hostKeep[0] ? join.hostKeep : cfg.start, sizeof(cfg.keep));
 	Str_PrintfQuiet(cfg.name, sizeof(cfg.name), "%s's world", join.name[0] ? join.name : "Player");
-	/* the menu's mode, else -mode of this game (include/scrap/faction.h) */
-	Str_Copy(cfg.mode, join.hostMode[0] ? join.hostMode : Faction_ModeName(), sizeof(cfg.mode));
 	if (join.hostPvp >= 0) {
 		cfg.pvp = join.hostPvp;
 	}
@@ -313,6 +316,12 @@ static void Join_Net(uint64_t now) {
 			} else if (ev.data[0] == COORD_MSG_NOTICE) {
 				NetRep_GetStr(&r, text, sizeof(text));
 				Con_Printf("join: %s\n", text);
+			} else if (ev.data[0] == COORD_MSG_CUE) {
+				int kind = (int)NetRep_GetU8(&r);
+				NetRep_GetStr(&r, text, sizeof(text));
+				if (!r.bad) {
+					Coop_Cue(kind, text);
+				}
 			}
 			break;
 		}

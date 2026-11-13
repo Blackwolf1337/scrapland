@@ -15,6 +15,7 @@
 #include "scrap/app.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
 #include "scrap/global.h"
@@ -816,6 +817,7 @@ static void Watch_Reset(void) {
 	}
 	Play_Reset();
 	Faction_ClientReset();
+	Coop_ClientReset();
 	if (watch.host) {
 		Net2_Destroy(watch.host);
 		watch.host = NULL;
@@ -937,6 +939,8 @@ void Watch_PreFrame(void) {
 				Watch_Metro(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == FACTION_MSG_STATUS) {
 				Faction_ClientMessage(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == COOP_MSG) {
+				Coop_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SNAP && watch.phase == WATCH_RUN) {
 				Watch_Snapshot(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SHOTS && watch.phase == WATCH_RUN) {

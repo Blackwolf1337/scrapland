@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include "scrap/coop.h"
+#include "scrap/game.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -405,10 +407,21 @@ static byte Sc_Del(const nativeVal_t *name) {
 	return ok;
 }
 
+/* not in the original: the end of a scene for the coop story's clients (include/scrap/coop.h), after its callback */
+static byte Sc_Ended(byte ok) {
+	if (g_Instance) {
+		Coop_SceneEnd();
+	}
+	return ok;
+}
+
 /* EndOfScene(EntityName, EventName, Time): the scene and its actors go, the characters come back, the camera, the
  * HUD and the input of the player return; EndOfSceneCallback(usr) runs last */
 static byte Sc_EndOfScene(const nativeVal_t *ename) {
 	modeVals_t t = { .n = 0 };
+	if (g_Instance) {
+		Coop_SceneEnding();
+	}
 	nativeVal_t *none = Mode_V(&t), *cam = Mode_V(&t), *sname = Mode_V(&t), *actors = Mode_V(&t), *list = Mode_V(&t);
 	nativeVal_t *actr = Mode_V(&t), *name = Mode_V(&t), *v = Mode_V(&t), *time = Mode_V(&t), *cb = Mode_V(&t);
 	Native_SetNone(none);
@@ -439,9 +452,10 @@ static byte Sc_EndOfScene(const nativeVal_t *ename) {
 		return Mode_Done(&t, 0);
 	}
 	if (cb->type == NV_NONE) {
-		return Mode_Done(&t, 1);
+		return Mode_Done(&t, Sc_Ended(1));
 	}
-	return Mode_Done(&t, Mode_Put(SC, "EndOfSceneCallback", NULL, none) && Mode_Read(SC, "usr", v) && Mode_CallArgs(cb, NULL, v, 1));
+	return Mode_Done(&t, Sc_Ended(Mode_Put(SC, "EndOfSceneCallback", NULL, none) && Mode_Read(SC, "usr", v) &&
+		Mode_CallArgs(cb, NULL, v, 1)));
 }
 
 /* DelClass(SName): the class of the scene and those of its local actors */
@@ -612,6 +626,14 @@ static byte Sc_SetActor(const nativeVal_t *actr, const nativeVal_t *l) {
 	return Mode_Done(&t, morph >= 0 && (!morph || LvN_SetS(a, "Action", "MorphEyes")));
 }
 
+/* not in the original: a scene that plays for the coop story's clients (include/scrap/coop.h) */
+static byte Sc_Started(const nativeVal_t *cls, byte ok) {
+	if (ok && g_Instance && Native_Text(cls)) {
+		Coop_ScenePlay(Native_Text(cls));
+	}
+	return ok;
+}
+
 /* Play(SceneClass): loads the scene, creates its actors and the scene entity at the dummy DM_Scene_<name>, links
  * the camera, hides the characters (and outdoors the ships), the cinema HUD, no input, no doppler, no music */
 static byte Sc_Play(const nativeVal_t *cls) {
@@ -687,7 +709,7 @@ static byte Sc_Play(const nativeVal_t *cls) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, n >= 0);
+	return Mode_Done(&t, Sc_Started(cls, n >= 0));
 }
 
 /* HideThis(o) of the global of the module, the value read before the global as the script reads it */

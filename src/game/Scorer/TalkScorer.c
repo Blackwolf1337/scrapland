@@ -7,6 +7,8 @@
 
 #include "scrap/arrowindicator.h"
 #include "scrap/chartype.h"
+#include "scrap/coop.h"
+#include "scrap/game.h"
 #include "scrap/logic.h"
 #include "scrap/nativeobj.h"
 #include "scrap/scorerhud.h"
@@ -328,6 +330,10 @@ static void Talk_AddCallbackParam(const nativeVal_t *item) {
 }
 
 void Scorer_SetSpeechText(const char *text, float time, int r, int g, int b) {
+	/* not in the original: the coop story's conversations on the clients (include/scrap/coop.h) */
+	if (g_Instance) {
+		Coop_SpeechText(text, time, r, g, b);
+	}
 	g_RemainTalkTime = 0.0f;
 	Taunts_UpdateEndTime(&g_pWorld->logic);
 	Str_Copy(g_TalkText, text, TALK_TEXT_SIZE);

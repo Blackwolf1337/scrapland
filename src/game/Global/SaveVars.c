@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 #include "scrap/staticinit.h"
@@ -62,6 +63,10 @@ static cSaveVar *SaveVar_New(const char *name, const char *value) {
 	if (!PtrTable_Find((&g_SaveVarTable), key, slot)) {
 		PtrTable_Insert((&g_SaveVarTable), key, slot, (void *const *)&v);
 	}
+	/* not in the original: the coop story's changes (include/scrap/coop.h) */
+	if (g_Instance) {
+		Coop_SaveVarChanged(name);
+	}
 	return v;
 }
 
@@ -82,10 +87,35 @@ const char *SaveVar_Get(const char *name) {
 byte SaveVar_Set(const char *name, const char *value) {
 	cSaveVar *v = SaveVar_Find(name);
 	if (v) {
+		if (g_Instance && strcmp(v->value ? v->value : "", value ? value : "")) {
+			Coop_SaveVarChanged(name);
+		}
 		cString_Set(&v->value, value);
 		return 1;
 	}
 	return SaveVar_Create(name, value);
+}
+
+void SaveVar_Delete(const char *name) {
+	cSaveVar **link = &g_SaveVars;
+	while (*link && strcmp((*link)->name, name)) {
+		link = &(*link)->next;
+	}
+	if (*link) {
+		cSaveVar *v = *link;
+		*link = v->next;
+		PtrTable_Delete((&g_SaveVarTable), v->name);
+		g_SaveVarCount--;
+		cString_dtor(&v->value);
+		cString_dtor(&v->name);
+		operator_delete(v);
+	}
+}
+
+void SaveVars_Each(void (*fn)(const char *name, const char *value, void *u), void *u) {
+	for (cSaveVar *v = g_SaveVars; v; v = v->next) {
+		fn(v->name, v->value ? v->value : "", u);
+	}
 }
 
 /* deletes the variables whose name starts with prefix ("" all) */
@@ -96,6 +126,9 @@ void SaveVars_Delete(const char *prefix) {
 	while (*link) {
 		if (!crt_strncmp(prefix, (*link)->name, len)) {
 			cSaveVar *v = *link;
+			if (g_Instance) {
+				Coop_SaveVarChanged(v->name);
+			}
 			*link = v->next;
 			PtrTable_Delete((&g_SaveVarTable), v->name);
 			g_SaveVarCount--;
@@ -156,6 +189,9 @@ int SaveVar_Inc(const char *name, int n) {
 	}
 	int value = crt_atoi(v->value) + n;
 	cString_Printf(&v->value, "%d", value);
+	if (g_Instance && n) {
+		Coop_SaveVarChanged(name);
+	}
 	int now = CrazyDeals_Count();
 	if (deals != now) {
 		if (now > 0 && cPy_Function_IsValid(g_OnCrazyDeal)) {

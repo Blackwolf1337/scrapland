@@ -40,7 +40,8 @@
 enum { WP_LAN, WP_LIST, WP_ADDRESS, WP_HOST };
 enum { WL_IDLE, WL_CONNECTING, WL_PAGES };
 static const char *const world_pages[] = { "Lan", "List", "Address", "Host" };
-static const char *const world_modes[] = { "sandbox", "freeroam" };
+static const char *const world_modes[] = { "sandbox", "freeroam", "coop" };
+#define WORLD_MODES ((int)(sizeof(world_modes) / sizeof(world_modes[0])))
 
 typedef struct {
 	Net2Addr addr;
@@ -564,7 +565,7 @@ WORLD_FN(HostLevelNext) {
 WORLD_FN(HostMode) {
 	char key[32];
 	WORLD_ARGS;
-	wm.mode = !wm.mode;
+	wm.mode = (wm.mode + 1) % WORLD_MODES;
 	Str_PrintfQuiet(key, sizeof(key), "MP_Mode_%s", world_modes[wm.mode]);
 	World_SetChoice(id, "HostMode", Script_Lang(key));
 }
@@ -596,7 +597,8 @@ WORLD_FN(HostFn) {
 	WORLD_ARGS;
 	World_KeepName(id);
 	World_Levels();
-	wm.maxPlayers = World_Clamp(id, "HostPlayers", 1, WORLD_MAX_PLAYERS);
+	wm.maxPlayers = World_Clamp(id, "HostPlayers", 1, strcmp(world_modes[wm.mode], "coop") ? WORLD_MAX_PLAYERS :
+		COORD_COOP_MAX);
 	wm.port = World_Clamp(id, "HostPort", 1, 65535 - NET2_LAN_PORTS - COORD_MAX_LEVELS);
 	memset(&o, 0, sizeof(o));
 	Str_Copy(o.level, world_levels[wm.level], sizeof(o.level));

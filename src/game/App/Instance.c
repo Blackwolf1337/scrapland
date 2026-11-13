@@ -10,6 +10,7 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/faction.h"
@@ -83,7 +84,7 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 		inst.money = crt_atoi(ext);
 		return 1;
 	}
-	return Rep_ParseParam(param, ext) || Faction_ParseParam(param, ext);
+	return Rep_ParseParam(param, ext) || Coop_ParseParam(param, ext) || Faction_ParseParam(param, ext);
 }
 
 byte Instance_PvP(void) {
@@ -294,7 +295,7 @@ void Instance_Line(char *line) {
 		Players_BindTurn();
 		return;
 	}
-	if (Rep_Command(line) || Faction_Command(line)) {
+	if (Rep_Command(line) || Faction_Command(line) || Coop_Command(line)) {
 		return;
 	}
 	Console_Execute(line);
@@ -362,6 +363,7 @@ void Instance_Pass(void) {
 	Rep_PreFrame(inst.ticks);
 	App_Frame(g_pApp);
 	Faction_Tick(inst.host, inst.ticks);
+	Coop_Pass();
 	if (inst.host) {
 		Rep_Tick(inst.host, inst.ticks);
 	}

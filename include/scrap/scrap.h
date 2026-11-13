@@ -182,6 +182,11 @@ void Config_Load(const char *name);
 byte SaveGame_Save(const char *name, const char *title);
 byte SaveGame_Load(const char *name);
 byte SaveVar_Set(const char *name, const char *value);
+/* not in the original: the variable of exactly that name deleted (SaveVars_Delete deletes a prefix), each variable
+ * into fn (the coop story, include/scrap/coop.h); a new coop story: the variables of a new single player game */
+void SaveVar_Delete(const char *name);
+void SaveVars_Each(void (*fn)(const char *name, const char *value, void *u), void *u);
+void SaveGame_CoopNewGame(void);
 void Screenshot_Take(const char *name);
 void Video_SetCurrentMode(int mode);
 byte Video_Play(const char *name, const char *cmd, float arg);
