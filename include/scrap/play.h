@@ -2,20 +2,25 @@
  * The players of the network (stages M2b and M3b of the multiplayer plan). Not in the original.
  *
  * Instance (src/game/App/Replicate.c): a connection whose hello asks for a player (NETREP_HELLO_PLAY of
- * include/scrap/netrep.h) gets a player slot of include/scrap/players.h and a Dtritus on foot at a spawn point of the
- * level ("DM_Player_Spawn*", else "DM_Spawn*"), named NetPlayer<i>; it is told the replication slot of its entity in
- * a player message. Its inputs come in its ack messages; every tick, before the frame, each player's input of that
+ * include/scrap/netrep.h) gets a player slot of include/scrap/players.h and a Dtritus on foot, named NetPlayer<i>, at
+ * the spawn point of the level ("DM_Player_Spawn*", else "DM_Spawn*") with the fewest players near it, on a free place
+ * there (a spawn point a new character falls from is not used again); it is told the replication slot of its entity
+ * in a player message. Its inputs come in its ack messages; every tick, before the frame, each player's input of that
  * tick drives its entity (NetPl_Step). The switch button gets the character into the nearest parked ship ("Parked"
- * of the parkings, no one in it) within PLAY_BOARD_RADIUS (with none there a new parked ship beside it: the sandbox has
- * no shop yet), or out of the ship (the ship stays parked there). A taken ship gets every weapon and full ammo. A
- * leave removes the character (a ship the player was in stays parked); a dead player's entity is left to the game
- * and the player comes back on foot. Hits of the instant-hit weapons (Vulcan, Laser, Tesla, ATPC, Devastator) of a
+ * of the parkings, no one in it, owned by no other player) within PLAY_BOARD_RADIUS (with none there it calls a new
+ * parked ship to a free place beside it: the sandbox has no shop yet; the player owns it, -ships of them at once), or
+ * out of the ship (the ship stays parked there). A taken ship gets every weapon and full ammo. A leave removes the
+ * character (a ship the player was in stays parked); a dead player's entity is left to the game, the death costs of
+ * single player apply (-lives, -rebuild; the alarm goes off) and the player comes back on foot after -respawn s (the
+ * player message without a slot has the kind NETREP_DEAD: the client's death camera). Hits of the instant-hit weapons
+ * (Vulcan, Laser, Tesla, ATPC, Devastator) of a
  * player are checked with the other entities where that player saw them (the lag compensation): the server time the
  * client showed came with its input, and the replication's history of samples gives the positions then. The money,
  * the alarm and the ammo of a player go to its client in a status message; the hits of every ship in shots messages
- * (the effects on the proxies). The client fires its own instant-hit weapons itself (the effects at once); its
- * prediction collides with the other players and the characters near it where they are at the predicted tick
- * (Watch_ProxiesAt).
+ * (the effects on the proxies); missiles are replicated entities (their proxies are the game's network copies with
+ * their effects). The client fires its own instant-hit weapons itself (the effects at once) and launches its missile
+ * weapons (their launch effects); its prediction collides with the other players and the characters near it where
+ * they are at the predicted tick (Watch_ProxiesAt).
  *
  * Client: ScrapC -play:<IPv4> [-port:<n>] [-imap:Levels/<level>] [-headless]: a watcher (include/scrap/replicate.h)
  * with its own player (-headless: no window, render device, sound or input, the frames at PLAY_HEADLESS_HZ: the bots
@@ -110,7 +115,7 @@ void NetPl_SetPhys(struct cEntity *e, const float *phys, int n);
 /* the sandbox options of the instance's command line (Instance_ParseParam): -ships:<n> called ships a player owns
  * at once (1; a call past it removes the oldest), -respawn:<s> (PLAY_RESPAWN_SECS), -lives:<n> (0: infinite; at
  * none left the player starts again with the start money), -rebuild:0|1 (1: a player's own ship that died with it
- * costs its price at the next call, as single player's rebuild), -spawn:<n> (all players at spawn point n, tests;
+ * costs its price at the next call, as single player's rebuild; 0 by default: the sandbox has no income yet), -spawn:<n> (all players at spawn point n, tests;
  * without it they spread over the spawn points); 1 when param is one of them */
 byte Rep_ParseParam(const char *param, const char *ext);
 /* a test line of the instance's standard input: "life <player> <n>" sets the life of the player's entity (its

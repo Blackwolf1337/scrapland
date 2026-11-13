@@ -146,7 +146,7 @@ static struct {
 	int lives;						/* -lives: 0 infinite */
 	byte rebuild;					/* -rebuild: a player pays for its own ship that died with its next call */
 	int spawn;						/* -spawn: all at that spawn point, -1 spread */
-} sand = { 1, PLAY_RESPAWN_SECS * NETREP_TICK_HZ, 0, 1, -1 };
+} sand = { 1, PLAY_RESPAWN_SECS * NETREP_TICK_HZ, 0, 0, -1 };
 
 byte Rep_ParseParam(const char *param, const char *ext) {
 	int n = crt_atoi(ext);
