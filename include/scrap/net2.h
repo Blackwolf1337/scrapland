@@ -199,4 +199,18 @@ void Net2_AddrString(const Net2Addr *a, char *buf, int size);
 int Net2_AddrEqual(const Net2Addr *a, const Net2Addr *b);
 const char *Net2_ReasonString(int reason);
 
+/*
+ * Identity keys for the game's own use (players, the coordinator's tickets): the signature of the server identity of
+ * the handshake (EdDSA on Curve25519 with BLAKE2b, Monocypher's crypto_eddsa). A key is its 32 byte seed; the public
+ * key and the signatures follow from it. The random numbers of the system and a BLAKE2b hash.
+ */
+#define NET2_SEED_SIZE 32
+#define NET2_SIG_SIZE 64
+int Net2_Random(void *buf, size_t size);	/* 1 ok, 0 when the system gives none */
+void Net2_KeyPublic(const uint8_t seed[NET2_SEED_SIZE], uint8_t pub[NET2_KEY_SIZE]);
+void Net2_Sign(const uint8_t seed[NET2_SEED_SIZE], const void *msg, size_t size, uint8_t sig[NET2_SIG_SIZE]);
+int Net2_Verify(const uint8_t pub[NET2_KEY_SIZE], const void *msg, size_t size, const uint8_t sig[NET2_SIG_SIZE]);	/* 1 good */
+void Net2_Hash(uint8_t *out, int outSize, const void *msg, size_t size);	/* BLAKE2b, outSize 1..64 */
+void Net2_Wipe(void *p, size_t size);
+
 #endif

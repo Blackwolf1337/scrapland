@@ -99,3 +99,32 @@ void Net2Crypto_Transcript(uint8_t hash[32], const uint8_t salt[N2_SALT], uint32
 void Net2Crypto_Wipe(void *p, size_t size) {
 	crypto_wipe(p, size);
 }
+
+/* ---- identity keys of the game (net2.h) ---- */
+
+void Net2_KeyPublic(const uint8_t seed[NET2_SEED_SIZE], uint8_t pub[NET2_KEY_SIZE]) {
+	uint8_t s[32], sk[64];
+	memcpy(s, seed, sizeof(s));
+	crypto_eddsa_key_pair(sk, pub, s);	/* wipes s */
+	crypto_wipe(sk, sizeof(sk));
+}
+
+void Net2_Sign(const uint8_t seed[NET2_SEED_SIZE], const void *msg, size_t size, uint8_t sig[NET2_SIG_SIZE]) {
+	uint8_t s[32], sk[64], pk[32];
+	memcpy(s, seed, sizeof(s));
+	crypto_eddsa_key_pair(sk, pk, s);
+	crypto_eddsa_sign(sig, sk, msg, size);
+	crypto_wipe(sk, sizeof(sk));
+}
+
+int Net2_Verify(const uint8_t pub[NET2_KEY_SIZE], const void *msg, size_t size, const uint8_t sig[NET2_SIG_SIZE]) {
+	return crypto_eddsa_check(sig, pub, msg, size) == 0;
+}
+
+void Net2_Hash(uint8_t *out, int outSize, const void *msg, size_t size) {
+	crypto_blake2b(out, (size_t)outSize, msg, size);
+}
+
+void Net2_Wipe(void *p, size_t size) {
+	crypto_wipe(p, size);
+}

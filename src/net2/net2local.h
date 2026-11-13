@@ -217,7 +217,6 @@ int Net2Pkt_CheckChunks(const uint8_t *p, int size, int numChannels, const uint8
 void Net2Pkt_WriteHeader(uint8_t *hdr, uint32_t connId, uint32_t seq);
 
 /* Crypto.c */
-int Net2_Random(void *buf, size_t size);	/* Sock.c: 1 ok */
 void Net2Crypto_Seal(uint8_t *out, const uint8_t key[32], int toClient, uint32_t seq, const uint8_t *hdr,
 	const uint8_t *plain, int size);	/* out: size bytes cipher text and the tag */
 int Net2Crypto_Open(uint8_t *plain, const uint8_t key[32], int toClient, uint32_t seq, const uint8_t *hdr,
