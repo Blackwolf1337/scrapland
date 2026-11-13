@@ -252,9 +252,10 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	const WatchSample *a = &p->s[i];
 	const WatchSample *b = i + 1 < p->n ? &p->s[i + 1] : a;
 	if (b != a) {
-		/* no record for a while: the entity held still (or waited for the budget) until a snapshot before b; a
-		 * jump faster than WATCH_JUMP_SPEED (a respawn, a teleport) is not swept across */
-		double ta = a->t > b->t - WATCH_HOLD ? a->t : b->t - WATCH_HOLD;
+		/* an entity that stood still (no velocity, so no records) starts to move a snapshot before b; a jump faster
+		 * than WATCH_JUMP_SPEED (a respawn, a teleport) is not swept across */
+		byte still = !a->st.vel[0] && !a->st.vel[1] && !a->st.vel[2];
+		double ta = still && a->t < b->t - WATCH_HOLD ? b->t - WATCH_HOLD : a->t;
 		float dx = NetRep_UPos(b->st.pos[0] - a->st.pos[0]), dy = NetRep_UPos(b->st.pos[1] - a->st.pos[1]);
 		float dz = NetRep_UPos(b->st.pos[2] - a->st.pos[2]);
 		if (dx * dx + dy * dy + dz * dz > WATCH_JUMP_SPEED * WATCH_JUMP_SPEED * (float)((b->t - a->t) * (b->t - a->t))) {
