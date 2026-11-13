@@ -104,6 +104,7 @@ static struct {
 	char clientScene[CP_NAME];		/* client: the scene it plays for its instance */
 	byte skipped;					/* client: Escape ended it here */
 	byte ended;						/* client: the story is finished, the world is left */
+	byte coop;						/* client: its instance plays the coop story */
 	double sceneAt;					/* client: when it began */
 	char notice[256];
 } cp = { .scene = -1, .loading = -1 };
@@ -310,6 +311,24 @@ static cEntity *Cp_UseTarget(cEntity *e) {
 	return t && Entity_IsType(t, TYEN_WITH_LIFE) && WLife(t)->arrow.canUse ? t : NULL;
 }
 
+/* the options message of the arrow of t (NULL: none) into w: their count */
+static int Cp_OptionsMsg(NetRepBuf *w, cEntity *t) {
+	cArrowIndicator *a = t ? &WLife(t)->arrow : NULL;
+	int n = a ? (a->nOpt < COOP_OPTS ? a->nOpt : COOP_OPTS) : 0;
+	NetRep_PutU8(w, COOP_MSG);
+	NetRep_PutU8(w, COOP_Y_OPTS);
+	NetRep_PutStr(w, n ? t->name : "");
+	NetRep_PutU8(w, n ? (uint32_t)a->iOpt : 0);
+	NetRep_PutU8(w, (uint32_t)n);
+	for (int k = 0; k < n; k++) {
+		const char *o = cArrowIndicator_GetOpt(a, k);
+		char cut[COOP_OPT_TEXT];
+		Str_Copy(cut, o ? o : "", sizeof(cut));
+		NetRep_PutStr(w, cut);
+	}
+	return n;
+}
+
 /* the options of each member's target when they changed */
 static void Cp_TellOptions(void) {
 	uint8_t buf[CP_OPTS_MSG];
@@ -321,20 +340,8 @@ static void Cp_TellOptions(void) {
 			continue;
 		}
 		cEntity *t = e && NetPl_Kind(e) == NETREP_CHAR ? Cp_UseTarget(e) : NULL;
-		cArrowIndicator *a = t ? &WLife(t)->arrow : NULL;
-		int n = a ? (a->nOpt < COOP_OPTS ? a->nOpt : COOP_OPTS) : 0;
 		NetRepBuf_Init(&w, buf, sizeof(buf));
-		NetRep_PutU8(&w, COOP_MSG);
-		NetRep_PutU8(&w, COOP_Y_OPTS);
-		NetRep_PutStr(&w, n ? t->name : "");
-		NetRep_PutU8(&w, n ? (uint32_t)a->iOpt : 0);
-		NetRep_PutU8(&w, (uint32_t)n);
-		for (int k = 0; k < n; k++) {
-			const char *o = cArrowIndicator_GetOpt(a, k);
-			char cut[COOP_OPT_TEXT];
-			Str_Copy(cut, o ? o : "", sizeof(cut));
-			NetRep_PutStr(&w, cut);
-		}
+		int n = Cp_OptionsMsg(&w, t);
 		if (w.bad || (w.size == cp.pl[i].sentSize && !memcmp(buf, cp.pl[i].sent, (size_t)w.size))) {
 			continue;
 		}
@@ -345,7 +352,7 @@ static void Cp_TellOptions(void) {
 		memcpy(cp.pl[i].sent, buf, (size_t)w.size);
 		cp.pl[i].sentSize = n ? w.size : 0;
 		Cp_ToClient(i, buf, w.size);
-		Con_Printf("coop: player %d: %d options of %s (%d)\n", i, n, n ? t->name : "-", n ? a->iOpt : 0);
+		Con_Printf("coop: player %d: %d options of %s (%d)\n", i, n, n ? t->name : "-", n ? WLife(t)->arrow.iOpt : 0);
 	}
 }
 
@@ -871,7 +878,17 @@ void Coop_Spawned(cEntity *e) {
 void Coop_Joined(int i) {
 	static uint8_t buf[CP_SCENE_MSG];
 	nativeVal_t h;
-	if (!Coop_On() || !cp.inScene) {
+	if (!Coop_On()) {
+		return;
+	}
+	/* an empty list of options: the client knows it plays the coop story (its keys) */
+	uint8_t none[16];
+	NetRepBuf nw;
+	NetRepBuf_Init(&nw, none, sizeof(none));
+	Cp_OptionsMsg(&nw, NULL);
+	cp.pl[i].sentSize = 0;
+	Cp_ToClient(i, none, nw.size);
+	if (!cp.inScene) {
 		return;
 	}
 	/* hidden and stopped as the scene's start did to the members there (its end shows it again) */
@@ -1205,6 +1222,7 @@ static void Cp_ClientOptions(NetRepReader *r) {
 		return;
 	}
 	Str_Copy(cp.copt.ent, ent, sizeof(cp.copt.ent));
+	cp.coop = 1;
 	cp.copt.n = n;
 	cp.copt.cur = cur < n ? cur : 0;
 	if (n) {
@@ -1260,7 +1278,7 @@ static void Cp_ClientLeaderKey(void) {
 	byte keys[256];
 	Plat_KeyStates(keys);
 	byte down = (keys[COOP_LEADER_KEY] & 0x80) != 0;
-	if (down && !was) {
+	if (down && !was && cp.coop) {
 		uint8_t buf[2] = { COOP_MSG, COOP_C_LEADER };
 		if (Watch_SendReliable(buf, sizeof(buf))) {
 			Con_Printf("coop: to the party's leader\n");
@@ -1404,6 +1422,7 @@ byte Coop_ClientEnded(void) {
 
 void Coop_ClientReset(void) {
 	cp.clientScene[0] = 0;
+	cp.coop = 0;
 	cp.copt.n = 0;
 	cp.skipped = 0;
 }
