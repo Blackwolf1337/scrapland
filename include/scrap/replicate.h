@@ -53,6 +53,8 @@ void Rep_Respawn(int i);
 /* player i's character again (its class of now, include/scrap/faction.h) where it stands, or at pos (out of its ship
  * then; a dead player comes back there: a revive); pos NULL and the player in a ship or dead: nothing */
 void Rep_Rebody(int i, const vec3_t *pos, float yaw);
+/* the names of the players' characters on an instance */
+#define REP_PLAYER_PREFIX "NetPlayer"
 /* the replication slot of an entity of the last snapshot, -1 */
 int Rep_SlotOf(const struct cEntity *e);
 /* tests: the switch of player i (into the nearest parked ship or out of its ship), or a ship called beside it */

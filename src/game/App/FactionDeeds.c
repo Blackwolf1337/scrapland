@@ -558,6 +558,7 @@ static void Fd_HiredTick(void) {
 		if (target) {
 			if (cAIVehicle_GetState(ai) != AIV_STATE_ATTACK || AIMove_GetTargetEnt(ai) != target) {
 				cAIVehicle_SetState(ai, AIV_STATE_ATTACK, target);
+				Con_Printf("factions: hired ship %s of player %d goes for player %d\n", v->name, hd->owner, foe);
 			}
 		} else if (cAIVehicle_GetState(ai) != AIV_STATE_CHASE) {
 			cAIVehicle_SetState(ai, AIV_STATE_CHASE, owner, (double)g_AIChaseDefault1, (double)g_AIChaseDefault2);

@@ -282,8 +282,9 @@ struct cEntity *Faction_CallShip(int i, const void *pos, float yaw);
 /* NETREP_FL_ flags of a replicated entity (the siren of a player's ship, a slowed or sleeping player) */
 uint8_t Faction_Flags(struct cEntity *e);
 /* a test line of the instance: "faction <player> join|leave|<ability>|status|set <faction>|wanted <points>|deeds
- * <n>|crime <crime>|bounty <n>|debt <n>|permit <0|1>|dump <pattern>" (abilities as the client's requests; dump: the
- * dummies of the pattern and the entities near the player); 1 when it was one */
+ * <n>|crime <crime>|setbounty <n>|setdebt <n>|setpermit <0|1>|hit <player> [<damage>]|dump <pattern>" (abilities as the
+ * client's requests; hit: as a weapon of the player, 0 kills; dump: the dummies of the pattern and the entities near
+ * the player); 1 when it was one */
 byte Faction_Command(const char *line);
 
 /* client: a status message of the instance; each frame (the keys, the text lines); a proxy's or the own entity's

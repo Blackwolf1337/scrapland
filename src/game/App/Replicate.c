@@ -564,7 +564,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 		p = rep.spawn[0];
 		yaw = rep.spawnYaw[0];
 	}
-	Str_PrintfQuiet(name, sizeof(name), "NetPlayer%d_%u", i, ++pl->spawns);
+	Str_PrintfQuiet(name, sizeof(name), REP_PLAYER_PREFIX "%d_%u", i, ++pl->spawns);
 	cEntity *e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR);
 	if (!e) {
 		return NULL;

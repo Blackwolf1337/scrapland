@@ -36,6 +36,7 @@
 #include "scrap/sound.h"
 #include "scrap/text.h"
 #include "scrap/travel.h"
+#include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
@@ -447,12 +448,21 @@ void Faction_Spawned(int i, cEntity *e) {
 	}
 }
 
+static void Fr_CrimeOf(cEntity *victim, int j, int i, byte died);
+
 void Faction_Died(int i) {
 	FrPlayer *p = Fr_Player(i);
 	const FactionTable *t = Faction_Table();
 	cEntity *e = Players_Get(i);
 	if (!p) {
 		return;
+	}
+	/* the kill: the player whose weapon hit it last */
+	cEntity *by = e && Faction_Freeroam() && WLife(e)->attack.hitBy.target ?
+		World_FindEntity(Nto1Node_TargetName(&WLife(e)->attack.hitBy)) : NULL;
+	int k = by && by != e ? Players_Of(by) : -1;
+	if (k >= 0 && k != i) {
+		Fr_CrimeOf(e, i, k, 1);
 	}
 	p->armoured = 0;
 	p->siren = 0;
@@ -1174,17 +1184,10 @@ static byte Fr_IsPolice(int f) {
 	return f >= 0 && !crt_stricmp(t->f[f].name, "Police");
 }
 
-void Faction_Crime(cEntity *victim, cEntity *attacker, byte died) {
-	if (!Faction_Freeroam() || !attacker || attacker == victim) {
-		return;
-	}
-	int i = Players_Of(attacker);
+/* victim (player j's entity, j -1 for no player) hurt or killed by player i */
+static void Fr_CrimeOf(cEntity *victim, int j, int i, byte died) {
 	FrPlayer *p = Fr_Player(i);
-	if (!p) {
-		return;
-	}
 	int crime;
-	int j = Players_Of(victim);
 	if (j >= 0) {
 		FrPlayer *q = &fr.pl[j];
 		q->lastBy = i;
@@ -1210,11 +1213,27 @@ void Faction_Crime(cEntity *victim, cEntity *attacker, byte died) {
 		if (!Entity_IsType(victim, TYEN_CAR) && !Entity_IsType(victim, TYEN_WALKCHAR)) {
 			return;
 		}
+		/* the body of a dead player (Faction_Died counted the kill) */
+		if (!strncmp(victim->name, REP_PLAYER_PREFIX, sizeof(REP_PLAYER_PREFIX) - 1)) {
+			return;
+		}
 		byte police = Fr_IsPolice(Fr_FactionOf(victim));
 		crime = police ? (died ? FCRIME_KILL_POLICE : FCRIME_HURT_POLICE) :
 			died ? FCRIME_KILL_CIVILIAN : FCRIME_HURT_CIVILIAN;
 	}
 	Fr_AddCrime(i, crime);
+}
+
+void Faction_Crime(cEntity *victim, cEntity *attacker, byte died) {
+	if (!Faction_Freeroam() || !attacker || attacker == victim) {
+		return;
+	}
+	int i = Players_Of(attacker), j = Players_Of(victim);
+	/* a player's death is Faction_Died's (the instance may drop its entity before the game's OnDeath runs) */
+	if (i < 0 || (j >= 0 && died)) {
+		return;
+	}
+	Fr_CrimeOf(victim, j, i, died);
 }
 
 /* the crimes of the frame into the wanted levels; a level that rises turns the player's alarm on */
@@ -1413,13 +1432,25 @@ byte Faction_Command(const char *line) {
 		Con_Printf("factions: player %d deeds %d, rank %d\n", i, p->deeds, Fr_Rank(p));
 		return 1;
 	}
-	if (!strcmp(what, "bounty") || !strcmp(what, "debt") || !strcmp(what, "permit")) {
+	if (!strcmp(what, "hit")) {
+		/* tests: player i hurts player j (faction <i> hit <j> [<damage>, 0 kills]) as a weapon does (its hitBy) */
+		int j = -1, dmg = 0;
+		sscanf(line, "faction %*d %*s %d %d", &j, &dmg);
+		cEntity *a = Players_Get(i), *v = j >= 0 && j < PLAYERS_MAX ? Players_Get(j) : NULL;
+		if (a && v) {
+			cVehicleAttack_HitBy(&WLife(v)->attack, a->name);
+			WLife(v)->life = dmg > 0 ? WLife(v)->life - dmg : 0;
+		}
+		Con_Printf("factions: player %d hits player %d (%d)\n", i, j, dmg);
+		return 1;
+	}
+	if (!strcmp(what, "setbounty") || !strcmp(what, "setdebt") || !strcmp(what, "setpermit")) {
 		int v = crt_atoi(arg);
-		if (what[0] == 'b') {
+		if (what[3] == 'b') {
 			p->bounty = 0;
 			p->bountyEnds = 0;
 			FactionBounty_Add(t, &p->bounty, &p->bountyEnds, v, Fr_Unix());
-		} else if (what[0] == 'd') {
+		} else if (what[3] == 'd') {
 			p->debt = v;
 		} else {
 			p->permit = v != 0;
