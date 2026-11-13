@@ -1,0 +1,27 @@
+# NetRep, the replication of the world to the clients of a headless instance (include/scrap/netrep.h): the pure part,
+# without the engine, linked into ScrapC; its unit test (ctest netrep_test). Also a project of its own:
+#   cmake -S src/netrep -B build-netrep && cmake --build build-netrep && ctest --test-dir build-netrep
+cmake_minimum_required(VERSION 3.25)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+	project(netrep C)
+	set(CMAKE_C_STANDARD 23)
+	set(CMAKE_C_STANDARD_REQUIRED ON)
+	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+	enable_testing()
+endif()
+
+set(NETREP_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+add_library(netrep STATIC Codec.c Interest.c Server.c Client.c)
+target_include_directories(netrep PUBLIC ${NETREP_ROOT}/include)
+target_compile_options(netrep PRIVATE -Wall -Wextra -O2 -g)
+if(NOT WIN32)
+	target_link_libraries(netrep PUBLIC m)
+endif()
+
+add_executable(netrep_test test/netrep_test.c)
+target_link_libraries(netrep_test PRIVATE netrep)
+target_compile_options(netrep_test PRIVATE -Wall -Wextra -O2 -g)
+if(WIN32)
+	target_link_options(netrep_test PRIVATE -static-libgcc)
+endif()
+add_test(NAME netrep_test COMMAND netrep_test)

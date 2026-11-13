@@ -205,14 +205,14 @@ if(WIN32)
 	set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
 	add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtwin.c
 		src/standalone/crtinit.c src/standalone/crtxc.c $<TARGET_OBJECTS:scrapres>)
-	target_link_libraries(ScrapC PRIVATE scrapcode python152 net2 ${FFMPEG_LIBS} ${SDL3_LIB} wsock32 advapi32 user32
+	target_link_libraries(ScrapC PRIVATE scrapcode python152 net2 netrep ${FFMPEG_LIBS} ${SDL3_LIB} wsock32 advapi32 user32
 		kernel32)
 	# the default base of ld with dynamic base (ASLR)
 	target_link_options(ScrapC PRIVATE -Wl,--dynamicbase)
 else()
 	add_executable(ScrapC src/standalone/main.c src/standalone/crt.c src/standalone/crtposix.c
 		src/standalone/crtinit.c src/standalone/crtxc.c)
-	target_link_libraries(ScrapC PRIVATE scrapcode python152 net2 ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
+	target_link_libraries(ScrapC PRIVATE scrapcode python152 net2 netrep ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
 	# the FFmpeg libraries next to the game
 	set_target_properties(ScrapC PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
 endif()
@@ -225,3 +225,5 @@ enable_testing()
 add_subdirectory(src/net2)
 # its load tester (tools/net2load, a host tool: not part of the game)
 add_subdirectory(tools/net2load)
+# NetRep, the replication of a headless instance's world to its watchers (include/scrap/netrep.h), and its unit test
+add_subdirectory(src/netrep)
