@@ -26,6 +26,9 @@ void *Py_NoInterpreter(PyObject *exc, const char *what);
  */
 #define NOPY_DROP(type, name) static type nopy_##name() __attribute__((unused))
 
+/* the objects of the standard exceptions without the module __builtin__ (nopy/bltinmodule.c, for Py_LibStart) */
+void Py_LibErrors(void);
+
 /* the parts of Py_FiniObjects in the files whose statics they free */
 void _PyDict_FiniDummy(void);
 void _PyString_FiniInterned(void);

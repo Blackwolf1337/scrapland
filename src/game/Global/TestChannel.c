@@ -59,6 +59,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
 #include "scrap/script.h"
+#include "scrap/scriptlib.h"
 #include "scrap/scriptnative.h"
 #include "scrap/testdet.h"
 #include "scrap/timer.h"
@@ -307,7 +308,7 @@ static byte TC_PrintVal(tcBuf *b, const nativeVal_t *v, byte raw, tcPrint *pr);
 
 /* the items of a sequence between open and close, each printed as an item (not raw): tuple_print and list_print */
 static byte TC_PrintSeq(tcBuf *b, const nativeVal_t *v, const char *open, const char *close, tcPrint *pr) {
-	int n = TcX_SeqLen(v);
+	int n = Lib_SeqLen(v);
 	byte ok = n >= 0;
 
 	TC_Add(b, open, 1);
@@ -317,7 +318,7 @@ static byte TC_PrintSeq(tcBuf *b, const nativeVal_t *v, const char *open, const 
 		if (i) {
 			TC_Add(b, ", ", 2);
 		}
-		ok = TcX_SeqGet(v, i, &x) && TC_PrintVal(b, &x, 0, pr);
+		ok = Lib_SeqItem(v, i, &x) && TC_PrintVal(b, &x, 0, pr);
 		Native_Free(&x);
 	}
 	if (ok && n == 1 && *open == '(') {
@@ -351,7 +352,7 @@ static byte TC_PrintDict(tcBuf *b, const nativeVal_t *v, tcPrint *pr) {
 	if (!NObj_CallMethod(v, "items", NULL, 0, &items)) {
 		return 0;
 	}
-	int n = TcX_SeqLen(&items);
+	int n = Lib_SeqLen(&items);
 	ok = n >= 0;
 	TC_Add(b, "{", 1);
 	for (int i = 0; ok && i < n; i++) {
@@ -360,7 +361,7 @@ static byte TC_PrintDict(tcBuf *b, const nativeVal_t *v, tcPrint *pr) {
 		if (i) {
 			TC_Add(b, ", ", 2);
 		}
-		ok = TcX_SeqGet(&items, i, &pair) && pair.type == NV_TUPLE && pair.n == 2;
+		ok = Lib_SeqItem(&items, i, &pair) && pair.type == NV_TUPLE && pair.n == 2;
 		ok = ok && TC_PrintVal(b, &pair.items[0], 0, pr);
 		TC_Add(b, ": ", 2);
 		ok = ok && TC_PrintVal(b, &pair.items[1], 0, pr);
@@ -623,7 +624,7 @@ static int TC_KeyCmp(const void *a, const void *b) {
 static void TC_MdDict(tcBuf *b, const nativeVal_t *d, const char *path, tcSeen *seen, int depth) {
 	nativeVal_t keys;
 	Native_SetNone(&keys);
-	int n = NObj_CallMethod(d, "keys", NULL, 0, &keys) ? TcX_SeqLen(&keys) : 0;
+	int n = NObj_CallMethod(d, "keys", NULL, 0, &keys) ? Lib_SeqLen(&keys) : 0;
 
 	if (n <= 0) {
 		Native_ErrClear();
@@ -635,7 +636,7 @@ static void TC_MdDict(tcBuf *b, const nativeVal_t *d, const char *path, tcSeen *
 	for (int i = 0; i < n; i++) {
 		tcBuf r = { 0 };
 		Native_SetNone(&kv[i]);
-		if (!TcX_SeqGet(&keys, i, &kv[i])) {
+		if (!Lib_SeqItem(&keys, i, &kv[i])) {
 			Native_ErrClear();
 		}
 		TC_AddVal(&r, &kv[i], NR_REPR);
@@ -694,7 +695,7 @@ static void TC_MdBuiltin(tcBuf *b, const nativeVal_t *v) {
 	}
 	if (self.type == NV_TUPLE && self.n == 4) {
 		const nativeVal_t *list = &self.items[2];
-		int n = TcX_SeqOf(list) == 1 ? TcX_SeqLen(list) : -1;
+		int n = Lib_IsSeq(list) ? Lib_SeqLen(list) : -1;
 		byte bad = n < 0;
 		TC_Add(&s, " data(", -1);
 		TC_AddVal(&s, &self.items[1], NR_STR);
@@ -705,7 +706,7 @@ static void TC_MdBuiltin(tcBuf *b, const nativeVal_t *v) {
 			if (i) {
 				TC_Add(&s, ",", 1);
 			}
-			bad = !TcX_SeqGet(list, i, &x);
+			bad = !Lib_SeqItem(list, i, &x);
 			if (bad) {
 				TC_Add(&s, "?", 1);
 			} else {
@@ -799,7 +800,7 @@ static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *s
 			return;
 		}
 		if (tuple || v->type == NV_LIST || kind == NO_LIST) {
-			int n = TcX_SeqLen(v);
+			int n = Lib_SeqLen(v);
 			TC_Addf(b, "%s [", tname);
 			for (int i = 0; i < n; i++) {
 				nativeVal_t x;
@@ -808,7 +809,7 @@ static void TC_MdVal(tcBuf *b, const nativeVal_t *v, const char *path, tcSeen *s
 					TC_Add(b, ", ", 2);
 				}
 				snprintf(sub, sizeof(sub), "%s[%d]", path, i);
-				if (TcX_SeqGet(v, i, &x)) {
+				if (Lib_SeqItem(v, i, &x)) {
 					TC_MdVal(b, &x, sub, seen, depth + 1);
 				} else {
 					Native_ErrClear();

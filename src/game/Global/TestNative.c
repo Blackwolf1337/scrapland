@@ -138,7 +138,6 @@ static void TN_Callbacks(nativeBuf_t *out, byte reset) {
 		Native_BufAdd(out, line, -1);
 		NObj_ListViews(out, 16);
 	}
-	TcX_Counts(out, reset);
 }
 
 /* native ports [reset] */
