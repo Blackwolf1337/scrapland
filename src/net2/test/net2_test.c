@@ -1233,6 +1233,37 @@ static void Test_Rate(void) {
 	Net2_Destroy(cli.h);
 }
 
+/* the test link: the round trip grows by the delays of both sides, loss drops sends, reliable data gets through */
+static void Test_TestLink(void) {
+	static uint8_t msg[64];
+	Peer srv, cli;
+	Net2Stats st;
+
+	Link_Reset(0, 0, 0, 0, 99);
+	Peer_Make(&srv, "10.0.0.1:29000", 1, NULL);
+	Peer_Make(&cli, "10.0.0.2:29001", 0, NULL);
+	T_ASSERT(Net2_SetTestLink(srv.h, 0.0f, 0, 0, 1) == NET2_OK && !srv.h->test);
+	T_ASSERT(Net2_SetTestLink(srv.h, 10.0f, 40, 10, 1) == NET2_OK && srv.h->test);
+	T_ASSERT(Net2_SetTestLink(srv.h, 10.0f, 40, 10, 1) == NET2_E_STATE);
+	T_ASSERT(Net2_SetTestLink(cli.h, 10.0f, 40, 10, 2) == NET2_OK);
+	T_ASSERT(Connect(&srv, &cli, "10.0.0.1:29000"));
+	Peer *all[2] = { &srv, &cli };
+	for (int i = 0; i < 400; i++) {
+		if (i < 200) {
+			int n = Msg_Reliable(msg, (uint32_t)i, 16);
+			Net2_Send(cli.h, 0, 0, msg, n);
+		}
+		Step(all, 2, 5);
+	}
+	RUN_UNTIL(all, 2, srv.relNext[0] >= 200, 4000);
+	T_ASSERT(srv.relNext[0] == 200 && srv.relBad == 0);
+	T_ASSERT(Net2_GetStats(cli.h, 0, &st) && st.rtt >= 80 && st.rtt <= 140 && st.packetsLost > 0);
+	printf("  test link: rtt %u ms (2 x 40 + up to 2 x 10 jitter), %llu lost of %llu\n", st.rtt,
+		(unsigned long long)st.packetsLost, (unsigned long long)st.packetsSent);
+	Net2_Destroy(srv.h);
+	Net2_Destroy(cli.h);
+}
+
 int main(void) {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	Test_Wire();
@@ -1251,6 +1282,7 @@ int main(void) {
 	Test_Query();
 	Test_CookieRefresh();
 	Test_Rate();
+	Test_TestLink();
 	Test_Fuzz();
 	printf("net2_test: %d checks, %d failed\n", g_checks, g_fails);
 	return g_fails != 0;
