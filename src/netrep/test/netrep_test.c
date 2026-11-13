@@ -91,6 +91,7 @@ static void RandState(NetRepState *s) {
 		s->act[l] = (uint16_t)Rnd();
 		s->actTime[l] = Rnd() * 3u;
 	}
+	s->weapon = (uint8_t)Rnd();
 }
 
 static void Test_Fields(void) {
@@ -113,6 +114,7 @@ static void Test_Fields(void) {
 		if (pick & NETREP_F_ACT0) { b.act[0] = c.act[0]; b.actTime[0] = c.actTime[0]; }
 		if (pick & NETREP_F_ACT1) { b.act[1] = c.act[1]; b.actTime[1] = c.actTime[1]; }
 		if (pick & NETREP_F_VIEW) memcpy(b.view, c.view, sizeof(b.view));
+		if (pick & NETREP_F_WEAP) b.weapon = c.weapon;
 		uint32_t mask = NetRep_Diff(&a, &b);
 		CHECK((mask & ~pick) == 0);
 		NetRepBuf w;
@@ -590,6 +592,72 @@ static void Test_PlayerMessages(void) {
 	CHECK(NetRep_QRot(1.0f) == 1024 && NetRep_QRot(100.0f) == 32767 && NetRep_QRot(-0.25f) == -256);
 }
 
+static void Test_Status(void) {
+	uint8_t buf[128];
+	NetRepStatus a, b;
+
+	memset(&a, 0, sizeof(a));
+	a.tick = 0xfffffff0u;
+	a.money = -123456;
+	a.alarm = 200;
+	a.flags = NETREP_ST_ALARM;
+	a.nammo = NETREP_AMMO_MAX;
+	for (int i = 0; i < NETREP_AMMO_MAX; i++) {
+		a.ammo[i] = (uint16_t)(i * 4099);
+	}
+	int n = NetRep_WriteStatus(buf, sizeof(buf), &a);
+	CHECK(n > 0 && NetRep_ReadStatus(buf, n, &b) && !NetRep_StatusDiffers(&a, &b) && b.tick == a.tick);
+	for (int k = 0; k < n; k++) {
+		CHECK(!NetRep_ReadStatus(buf, k, &b));
+	}
+	CHECK(!NetRep_WriteStatus(buf, 10, &a));
+	a.nammo = 0;
+	a.money = 7;
+	n = NetRep_WriteStatus(buf, sizeof(buf), &a);
+	CHECK(n == 9 && NetRep_ReadStatus(buf, n, &b) && b.money == 7 && !b.nammo);
+	b.ammo[0] = 9;
+	CHECK(!NetRep_StatusDiffers(&a, &b));
+	b.alarm = 1;
+	CHECK(NetRep_StatusDiffers(&a, &b));
+	buf[8] = NETREP_AMMO_MAX + 1;
+	CHECK(!NetRep_ReadStatus(buf, n, &b));
+}
+
+static void Test_Shots(void) {
+	uint8_t buf[NETREP_MSG_MAX];
+	NetRepShot in[NETREP_SHOTS_MAX], out[NETREP_SHOTS_MAX];
+	uint32_t tick;
+	int n;
+
+	for (int i = 0; i < NETREP_SHOTS_MAX; i++) {
+		NetRepShot *x = &in[i];
+		x->slot = (uint16_t)(i * 41 % NETREP_MAX_ENTS);
+		x->weapon = (uint8_t)(i % 7);
+		x->count = (uint8_t)(1 + i % 5);
+		x->target = i % 3 ? (uint16_t)(i * 7) : NETREP_NO_SLOT;
+		for (int k = 0; k < 3; k++) {
+			x->pos[k] = (int32_t)(i * 100003 * (k + 1)) - 2000000;
+			x->from[k] = x->pos[k] + (i % 2 ? 40000 : -7) * (k + 1);
+		}
+	}
+	int size = NetRep_WriteShots(buf, sizeof(buf), 99, in, NETREP_SHOTS_MAX);
+	CHECK(size > 0 && size <= NETREP_MSG_MAX);
+	CHECK(NetRep_ReadShots(buf, size, &tick, out, NETREP_SHOTS_MAX, &n) && tick == 99 && n == NETREP_SHOTS_MAX);
+	for (int i = 0; i < n; i++) {
+		CHECK(!memcmp(&in[i].pos, &out[i].pos, sizeof(in[i].pos)) && !memcmp(&in[i].from, &out[i].from,
+			sizeof(in[i].from)) && in[i].slot == out[i].slot && in[i].weapon == out[i].weapon &&
+			in[i].count == out[i].count && in[i].target == out[i].target);
+	}
+	for (int k = 0; k < size; k++) {
+		CHECK(!NetRep_ReadShots(buf, k, &tick, out, NETREP_SHOTS_MAX, &n));
+	}
+	CHECK(!NetRep_ReadShots(buf, size, &tick, out, 3, &n));
+	CHECK(!NetRep_WriteShots(buf, sizeof(buf), 1, in, NETREP_SHOTS_MAX + 1));
+	CHECK(!NetRep_WriteShots(buf, 40, 1, in, NETREP_SHOTS_MAX));
+	size = NetRep_WriteShots(buf, sizeof(buf), 5, in, 0);
+	CHECK(size == 6 && NetRep_ReadShots(buf, size, &tick, out, 1, &n) && n == 0);
+}
+
 /* the server's input buffer against a link with loss, duplicates, delay and jitter: what it runs is the client's
  * input of that tick whenever one of the redundant copies came in time, else the input before */
 static void Test_InBuf(int lossPct, int delayTicks, int jitterTicks, int lead) {
@@ -664,12 +732,12 @@ static void Test_InBuf(int lossPct, int delayTicks, int jitterTicks, int lead) {
 	if (lead < delayTicks) {
 		CHECK(exact == 0 && b.late > 0);
 	}
-	/* a restart forgets the waiting inputs and repeats no input */
-	NetRepInput w = Test_MakeInput(TICKS + 2), x;
+	/* a restart forgets the waiting inputs and repeats no input (a tick past the ones the run sent) */
+	NetRepInput w = Test_MakeInput(TICKS + 20), x;
 	CHECK(NetRepInBuf_Put(&b, &w, TICKS - 1));
 	NetRepInBuf_Restart(&b);
 	CHECK(!NetRepInBuf_Take(&b, TICKS, &x) && x.tick == TICKS && !x.buttons && !x.move[0] && !x.rot[0]);
-	CHECK(!NetRepInBuf_Take(&b, TICKS + 2, &x) && !x.buttons);
+	CHECK(!NetRepInBuf_Take(&b, TICKS + 20, &x) && !x.buttons);
 	/* too far ahead and late inputs */
 	NetRepInput far = Test_MakeInput(TICKS + NETREP_INPUT_AHEAD + 5);
 	CHECK(!NetRepInBuf_Put(&b, &far, TICKS - 1));
@@ -741,6 +809,48 @@ static void Test_Predict(void) {
 	float far[3] = { 100000.0f, 0.0f, 0.0f };
 	NetRepSmooth_Correct(&s, far, before);
 	CHECK(s.off[0] == 0.0f && s.off[1] == 0.0f && s.off[2] == 0.0f);
+	/* a large one fades slower at first: 420 units (1.1 knees above the knee) have 2.1 times the half life */
+	float big[3] = { 500.0f, 0.0f, 0.0f };
+	NetRepSmooth_Correct(&s, big, after);
+	CHECK(s.off[0] == 420.0f);
+	NetRepSmooth_Step(&s, 0.1f);
+	CHECK(s.off[0] > 298.0f && s.off[0] < 305.0f);
+}
+
+/* the interpolation delay follows the jitter of the arrivals, slowly and within its bounds */
+static double Test_DelayRun(double jitter, float loss, double secs) {
+	NetRepClock c;
+	NetRepDelay d;
+	double now = 100.0, rtt = 0.05, prev = 0.0;
+	NetRepClock_Init(&c);
+	NetRepDelay_Init(&d);
+	for (uint32_t tick = 3000; now < 100.0 + secs; tick++) {
+		now += 1.0 / NETREP_TICK_HZ;
+		if (tick % 3 == 2) {
+			continue;			/* no snapshot on one tick of three */
+		}
+		double at = now + rtt * 0.5 + (double)(Rnd() % 1000) / 1000.0 * jitter;
+		NetRepDelay_Sample(&d, &c, tick, at, rtt);
+		NetRepClock_Sample(&c, tick, at, rtt);
+		double dl = NetRepDelay_Step(&d, 1.0 / NETREP_TICK_HZ, loss);
+		CHECK(dl >= NETREP_DELAY_MIN - 1e-9 && dl <= NETREP_DELAY_MAX + 1e-9);
+		CHECK(!prev || fabs(dl - prev) <= NETREP_DELAY_RATE * 2.0 / NETREP_TICK_HZ + 1e-9);
+		prev = dl;
+	}
+	return prev;
+}
+
+static void Test_Delay(void) {
+	double calm = Test_DelayRun(0.0, 0.0f, 20.0);
+	double some = Test_DelayRun(0.03, 0.0f, 20.0);
+	double lossy = Test_DelayRun(0.0, 0.05f, 20.0);
+	double wild = Test_DelayRun(0.5, 0.0f, 30.0);
+	printf("  delay: calm %.0f ms, jitter 30 ms %.0f ms, 5%% loss %.0f ms, jitter 500 ms %.0f ms\n", calm * 1000.0,
+		some * 1000.0, lossy * 1000.0, wild * 1000.0);
+	CHECK(calm < 0.075 && calm >= NETREP_DELAY_BASE);
+	CHECK(some > calm + 0.01 && some < 0.15);
+	CHECK(lossy > calm + 0.04);
+	CHECK(wild <= NETREP_DELAY_MAX + 1e-9 && wild > 0.2);
 }
 
 /* the positions of a slot at a server time from the snapshots kept (the lag compensation) */
@@ -782,12 +892,15 @@ int main(void) {
 	Test_Garbage();
 	printf("players:\n");
 	Test_PlayerMessages();
+	Test_Status();
+	Test_Shots();
 	Test_InBuf(0, 0, 0, 2);
 	Test_InBuf(0, 3, 2, 6);
 	Test_InBuf(10, 2, 2, 5);
 	Test_InBuf(30, 2, 3, 6);
 	Test_InBuf(5, 6, 0, 3);
 	Test_Clock();
+	Test_Delay();
 	Test_Predict();
 	Test_PosAt();
 	printf("netrep_test: %d checks, %d failed\n", g_checks, g_fails);

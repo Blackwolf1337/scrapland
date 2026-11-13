@@ -41,18 +41,24 @@
  *       newest first, each: ticks back from the one before u8 (0 for the newest), move 3 x i8, rot 2 x i16,
  *       buttons u16, weapon u8, slot u16 (the own slot it was made for: the server drops an input of another)
  *   'S' snapshot, server to client, unreliable: message u16, snapshot u32, tick u32, records u16, records
+ *   'Q' status of a player, server to its client, unreliable, with a snapshot when it changed (at least once a
+ *       second): tick u32, money svarint, alarm level u8 (255 = 1), flags u8 (NETREP_ST_*), ammo count u8 and the
+ *       ammo of the own ship by kind, u16 each (stage M4a)
  * A record: slot varint, op u8 (NETREP_OP_* in bits 0-1, NETREP_REC_LOOK bit 2), then for a remove nothing; else for a
  * delta the age of its base in snapshots (varint), for a create kind u8 and look varint (+ u8 length and the text with
  * NETREP_REC_LOOK), then the field mask (varint) and the fields of the mask (delta: against the base, full: against
  * zero): pos 3 svarints, ang 3 svarints (16 bit wrap), vel 3 svarints, dt varint, life svarint, flags u8,
- * ctrl 2 x i8, act0 and act1 varint action + varint time, view 2 svarints (16 bit wrap).
+ * ctrl 2 x i8, act0 and act1 varint action + varint time, view 2 svarints (16 bit wrap), weapon u8.
+ *   'E' shots, server to client, unreliable, with a snapshot: tick u32, count u8, then each shot (NetRepShot): shooter
+ *       slot varint, weapon u8, shots u8, target slot u16 (NETREP_NO_SLOT: a point), the point 3 svarints (positions'
+ *       quantum), the point of the shot before 3 svarints (against the point) (stage M4a)
  */
 #ifndef SCRAP_NETREP_H
 #define SCRAP_NETREP_H
 
 #include <stdint.h>
 
-#define NETREP_VERSION 2
+#define NETREP_VERSION 3
 #define NETREP_TICK_HZ 30
 #define NETREP_SNAP_HZ 20
 #define NETREP_MAX_ENTS 2048		/* slots */
@@ -100,13 +106,15 @@
 #define NETREP_F_ACT0 0x080
 #define NETREP_F_ACT1 0x100
 #define NETREP_F_VIEW 0x200
-#define NETREP_F_ALL 0x3ff
+#define NETREP_F_WEAP 0x400
+#define NETREP_F_ALL 0x7ff
 
 /* bits of NetRepState.flags */
 #define NETREP_FL_ACTIVE 0x01
 #define NETREP_FL_FALLING 0x02
 #define NETREP_FL_WALKING 0x04
 #define NETREP_FL_PLAYER 0x08		/* a player's entity */
+#define NETREP_FL_FIRE 0x10			/* ship: the fire key is down */
 
 /* message types */
 #define NETREP_MSG_HELLO 'H'
@@ -114,6 +122,8 @@
 #define NETREP_MSG_ACK 'A'
 #define NETREP_MSG_SNAP 'S'
 #define NETREP_MSG_PLAYER 'P'
+#define NETREP_MSG_STATUS 'Q'
+#define NETREP_MSG_SHOTS 'E'
 
 #define NETREP_HELLO_PLAY 0x01		/* the client wants a player */
 #define NETREP_NO_SLOT 0xffff
@@ -131,6 +141,7 @@ typedef struct NetRepState {
 	uint16_t dt;					/* ms of the sample after the tick of its snapshot */
 	uint16_t act[NETREP_LAYERS];	/* character: action of the layer + 1, 0 none */
 	uint32_t actTime[NETREP_LAYERS];	/* ms in the action */
+	uint8_t weapon;					/* ship: the weapon in use */
 } NetRepState;
 
 /* byte writer and reader; a writer that ran out of room or a reader that ran past the end sets bad */
@@ -232,6 +243,8 @@ int NetRepSrv_NumLooks(const NetRepServer *s);
 NetRepClient *NetRepSrv_AddClient(NetRepServer *s, uint32_t rate);
 void NetRepSrv_RemoveClient(NetRepServer *s, NetRepClient *c);
 void NetRepSrv_SetView(NetRepClient *c, float x, float y, float z, float radius);
+/* the view point and the interest radius of the client */
+float NetRepSrv_GetView(const NetRepClient *c, float *pos);
 void NetRepSrv_Ack(NetRepServer *s, NetRepClient *c, uint16_t newest, uint32_t bits);
 /* the messages of the snapshot for the client into msgs (each NETREP_MSG_MAX), their sizes in sizes; the count */
 int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_MAX], int *sizes, int max);
@@ -276,6 +289,36 @@ int NetRep_WritePlayer(uint8_t *buf, int cap, int player, int slot, int kind, ui
 /* phys takes up to NETREP_PHYS_MAX constants, their count into *nphys */
 int NetRep_ReadPlayer(const uint8_t *data, int size, int *player, int *slot, int *kind, uint32_t *tick, float *phys,
 	int *nphys);
+/* the game state of a player its HUD shows */
+#define NETREP_AMMO_MAX 16
+#define NETREP_ST_ALARM 0x01		/* the alarm is on */
+typedef struct NetRepStatus {
+	uint32_t tick;
+	int32_t money;
+	uint8_t alarm;					/* the alarm level, 255 = 1 */
+	uint8_t flags;					/* NETREP_ST_ */
+	uint8_t nammo;
+	uint16_t ammo[NETREP_AMMO_MAX];	/* the own ship's ammo by kind */
+} NetRepStatus;
+
+int NetRep_WriteStatus(uint8_t *buf, int cap, const NetRepStatus *st);
+int NetRep_ReadStatus(const uint8_t *data, int size, NetRepStatus *st);
+/* the two differ in what the HUD shows (the tick aside) */
+int NetRep_StatusDiffers(const NetRepStatus *a, const NetRepStatus *b);
+/* the hits of a ship's weapon since the ones before (its cVehicleAttack), for the effects of the clients */
+#define NETREP_SHOTS_MAX 32			/* per message (32 of the largest fit NETREP_MSG_MAX) */
+typedef struct NetRepShot {
+	uint16_t slot;					/* the shooter */
+	uint8_t weapon;
+	uint8_t count;					/* shots */
+	uint16_t target;				/* NETREP_NO_SLOT: at the point */
+	int32_t pos[3];					/* the point, 1 / NETREP_POS_SCALE units */
+	int32_t from[3];				/* the point of the shot before: the effects of count shots lie between */
+} NetRepShot;
+
+/* n shots (up to NETREP_SHOTS_MAX), 0 when they do not fit */
+int NetRep_WriteShots(uint8_t *buf, int cap, uint32_t tick, const NetRepShot *shots, int n);
+int NetRep_ReadShots(const uint8_t *data, int size, uint32_t *tick, NetRepShot *shots, int max, int *n);
 int NetRep_WriteWelcome(uint8_t *buf, int cap, uint32_t tick, const float *view, const char *level);
 int NetRep_ReadWelcome(const uint8_t *data, int size, uint32_t *tick, float *view, char *level, int cap);
 int NetRep_WriteAck(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, const float *view);
@@ -356,6 +399,29 @@ double NetRepClock_Server(const NetRepClock *c, double now);
 /* the tick the client's input of now is for: the server time when it gets there (half the round trip) plus lead s */
 uint32_t NetRepClock_InputTick(const NetRepClock *c, double now, double rtt, double lead);
 
+/* the client's interpolation delay (stage M4a): how far behind the newest server time the other entities are
+ * drawn. It must cover the longest gap between two snapshots (NETREP_DELAY_BASE) plus the jitter of their arrival
+ * (the smoothed deviation of each snapshot from the clock), and one snapshot more under loss (a lost one leaves a
+ * double gap); it moves towards that target by at most NETREP_DELAY_RATE s per s, so the drawn time never jumps */
+#define NETREP_DELAY_BASE (2.0 / NETREP_TICK_HZ)	/* snapshots go on 2 ticks of 3 */
+#define NETREP_DELAY_MIN 0.06
+#define NETREP_DELAY_MAX 0.3
+#define NETREP_DELAY_JITTER 2.5		/* deviations of margin */
+#define NETREP_DELAY_RATE 0.05		/* s of change per s */
+#define NETREP_DELAY_LOSS 0.01		/* above this loss one snapshot more */
+
+typedef struct NetRepDelay {
+	double dev;						/* smoothed absolute deviation of the arrivals from the clock, s */
+	double target, delay;			/* s */
+	int have;
+} NetRepDelay;
+
+void NetRepDelay_Init(NetRepDelay *d);
+/* a snapshot of tick came at local time now, before NetRepClock_Sample takes it */
+void NetRepDelay_Sample(NetRepDelay *d, const NetRepClock *c, uint32_t tick, double now, double rtt);
+/* dt s later with the loss (0..1) of the link: the delay to draw at */
+double NetRepDelay_Step(NetRepDelay *d, double dt, float loss);
+
 /* the predicted states of the client's own entity by tick: position, velocity and the view (euler angles of the
  * view, characters) or the angles (ships) */
 typedef struct NetRepPred {
@@ -377,8 +443,10 @@ const NetRepInput *NetRepPredHist_Input(const NetRepPredHist *h, uint32_t tick);
 /* the distance between the server's position of tick and the predicted one; -1 when that tick is not kept */
 float NetRepPredHist_Error(const NetRepPredHist *h, uint32_t tick, const float *serverPos);
 
-/* the visual offset after a correction: added to the drawn position, it fades by half every halfLife s; jumps
- * larger than snap are not smoothed */
+/* the visual offset after a correction: added to the drawn position, it fades by half every halfLife s (an offset
+ * above NETREP_SMOOTH_KNEE units slower, up to NETREP_SMOOTH_SLOW times); jumps larger than snap are not smoothed */
+#define NETREP_SMOOTH_KNEE 200.0f
+#define NETREP_SMOOTH_SLOW 3.0f
 typedef struct NetRepSmooth {
 	float off[3];
 	float halfLife, snap;

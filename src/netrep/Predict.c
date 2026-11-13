@@ -96,6 +96,36 @@ uint32_t NetRepClock_InputTick(const NetRepClock *c, double now, double rtt, dou
 	return t <= 0.0 ? 0 : (uint32_t)(t * NETREP_TICK_HZ);
 }
 
+/* ---- the interpolation delay ---- */
+
+void NetRepDelay_Init(NetRepDelay *d) {
+	memset(d, 0, sizeof(*d));
+	d->target = d->delay = NETREP_DELAY_BASE + 0.03;
+}
+
+void NetRepDelay_Sample(NetRepDelay *d, const NetRepClock *c, uint32_t tick, double now, double rtt) {
+	if (!c->have) {
+		return;
+	}
+	double dev = (double)tick / NETREP_TICK_HZ + rtt * 0.5 - now - c->offset;
+	dev = dev < 0.0 ? -dev : dev;
+	/* a jump of the clock (a stall) is not jitter */
+	if (dev > c->jump) {
+		return;
+	}
+	d->dev = d->have ? d->dev + (dev - d->dev) * 0.0625 : dev;
+	d->have = 1;
+}
+
+double NetRepDelay_Step(NetRepDelay *d, double dt, float loss) {
+	double t = NETREP_DELAY_BASE + NETREP_DELAY_JITTER * d->dev + (loss > NETREP_DELAY_LOSS ? 1.0 / NETREP_SNAP_HZ : 0.0);
+	t = t < NETREP_DELAY_MIN ? NETREP_DELAY_MIN : t > NETREP_DELAY_MAX ? NETREP_DELAY_MAX : t;
+	d->target = t;
+	double step = NETREP_DELAY_RATE * dt;
+	d->delay += t > d->delay + step ? step : t < d->delay - step ? -step : t - d->delay;
+	return d->delay;
+}
+
 /* ---- the predicted states ---- */
 
 void NetRepPredHist_Init(NetRepPredHist *h) {
@@ -149,7 +179,11 @@ void NetRepSmooth_Correct(NetRepSmooth *s, const float *before, const float *aft
 }
 
 void NetRepSmooth_Step(NetRepSmooth *s, float dt) {
-	float k = s->halfLife > 0.0f ? exp2f(-dt / s->halfLife) : 0.0f;
+	/* a large offset fades slower at first (a correction after a collision or a hit glides back) */
+	float len = sqrtf(s->off[0] * s->off[0] + s->off[1] * s->off[1] + s->off[2] * s->off[2]);
+	float grow = len > NETREP_SMOOTH_KNEE ? (len - NETREP_SMOOTH_KNEE) / NETREP_SMOOTH_KNEE : 0.0f;
+	float hl = s->halfLife * (1.0f + (grow > NETREP_SMOOTH_SLOW - 1.0f ? NETREP_SMOOTH_SLOW - 1.0f : grow));
+	float k = hl > 0.0f ? exp2f(-dt / hl) : 0.0f;
 	for (int i = 0; i < 3; i++) {
 		s->off[i] *= k;
 		if (fabsf(s->off[i]) < 0.01f) {

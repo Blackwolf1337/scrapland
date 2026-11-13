@@ -187,6 +187,9 @@ uint32_t NetRep_Diff(const NetRepState *a, const NetRepState *b) {
 	if (a->view[0] != b->view[0] || a->view[1] != b->view[1]) {
 		m |= NETREP_F_VIEW;
 	}
+	if (a->weapon != b->weapon) {
+		m |= NETREP_F_WEAP;
+	}
 	return m;
 }
 
@@ -229,6 +232,9 @@ void NetRep_WriteFields(NetRepBuf *w, const NetRepState *base, const NetRepState
 		for (int i = 0; i < 2; i++) {
 			NetRep_PutSVar(w, (int16_t)(uint16_t)(s->view[i] - base->view[i]));
 		}
+	}
+	if (mask & NETREP_F_WEAP) {
+		NetRep_PutU8(w, s->weapon);
 	}
 }
 
@@ -284,6 +290,9 @@ int NetRep_ReadFields(NetRepReader *r, const NetRepState *base, NetRepState *out
 		for (int i = 0; i < 2; i++) {
 			s.view[i] = (uint16_t)(base->view[i] + (uint16_t)NetRep_GetSVar(r));
 		}
+	}
+	if (mask & NETREP_F_WEAP) {
+		s.weapon = (uint8_t)NetRep_GetU8(r);
 	}
 	if (r->bad) {
 		return 0;
@@ -367,6 +376,108 @@ int NetRep_ReadPlayer(const uint8_t *data, int size, int *player, int *slot, int
 	}
 	*nphys = n;
 	return !r.bad;
+}
+
+int NetRep_WriteStatus(uint8_t *buf, int cap, const NetRepStatus *st) {
+	NetRepBuf w;
+	int n = st->nammo > NETREP_AMMO_MAX ? NETREP_AMMO_MAX : st->nammo;
+	NetRepBuf_Init(&w, buf, cap);
+	NetRep_PutU8(&w, NETREP_MSG_STATUS);
+	NetRep_PutU32(&w, st->tick);
+	NetRep_PutSVar(&w, st->money);
+	NetRep_PutU8(&w, st->alarm);
+	NetRep_PutU8(&w, st->flags);
+	NetRep_PutU8(&w, (uint32_t)n);
+	for (int i = 0; i < n; i++) {
+		NetRep_PutU16(&w, st->ammo[i]);
+	}
+	return w.bad ? 0 : w.size;
+}
+
+int NetRep_ReadStatus(const uint8_t *data, int size, NetRepStatus *st) {
+	NetRepReader r;
+	NetRepReader_Init(&r, data, size);
+	memset(st, 0, sizeof(*st));
+	if (NetRep_GetU8(&r) != NETREP_MSG_STATUS) {
+		return 0;
+	}
+	st->tick = NetRep_GetU32(&r);
+	st->money = NetRep_GetSVar(&r);
+	st->alarm = (uint8_t)NetRep_GetU8(&r);
+	st->flags = (uint8_t)NetRep_GetU8(&r);
+	uint32_t n = NetRep_GetU8(&r);
+	if (n > NETREP_AMMO_MAX) {
+		return 0;
+	}
+	st->nammo = (uint8_t)n;
+	for (uint32_t i = 0; i < n; i++) {
+		st->ammo[i] = (uint16_t)NetRep_GetU16(&r);
+	}
+	return !r.bad && r.pos == size;
+}
+
+int NetRep_StatusDiffers(const NetRepStatus *a, const NetRepStatus *b) {
+	if (a->money != b->money || a->alarm != b->alarm || a->flags != b->flags || a->nammo != b->nammo) {
+		return 1;
+	}
+	return memcmp(a->ammo, b->ammo, a->nammo * sizeof(a->ammo[0])) != 0;
+}
+
+int NetRep_WriteShots(uint8_t *buf, int cap, uint32_t tick, const NetRepShot *shots, int n) {
+	NetRepBuf w;
+	if (n < 0 || n > NETREP_SHOTS_MAX) {
+		return 0;
+	}
+	NetRepBuf_Init(&w, buf, cap);
+	NetRep_PutU8(&w, NETREP_MSG_SHOTS);
+	NetRep_PutU32(&w, tick);
+	NetRep_PutU8(&w, (uint32_t)n);
+	for (int i = 0; i < n; i++) {
+		const NetRepShot *x = &shots[i];
+		NetRep_PutVar(&w, x->slot);
+		NetRep_PutU8(&w, x->weapon);
+		NetRep_PutU8(&w, x->count);
+		NetRep_PutU16(&w, x->target);
+		for (int k = 0; k < 3; k++) {
+			NetRep_PutSVar(&w, x->pos[k]);
+		}
+		for (int k = 0; k < 3; k++) {
+			NetRep_PutSVar(&w, Rep_Sub(x->from[k], x->pos[k]));
+		}
+	}
+	return w.bad ? 0 : w.size;
+}
+
+int NetRep_ReadShots(const uint8_t *data, int size, uint32_t *tick, NetRepShot *shots, int max, int *n) {
+	NetRepReader r;
+	NetRepReader_Init(&r, data, size);
+	if (NetRep_GetU8(&r) != NETREP_MSG_SHOTS) {
+		return 0;
+	}
+	*tick = NetRep_GetU32(&r);
+	int count = (int)NetRep_GetU8(&r);
+	if (count > max || count > NETREP_SHOTS_MAX) {
+		return 0;
+	}
+	for (int i = 0; i < count; i++) {
+		NetRepShot *x = &shots[i];
+		uint32_t slot = NetRep_GetVar(&r);
+		if (slot >= NETREP_MAX_ENTS) {
+			return 0;
+		}
+		x->slot = (uint16_t)slot;
+		x->weapon = (uint8_t)NetRep_GetU8(&r);
+		x->count = (uint8_t)NetRep_GetU8(&r);
+		x->target = (uint16_t)NetRep_GetU16(&r);
+		for (int k = 0; k < 3; k++) {
+			x->pos[k] = NetRep_GetSVar(&r);
+		}
+		for (int k = 0; k < 3; k++) {
+			x->from[k] = Rep_Add(x->pos[k], NetRep_GetSVar(&r));
+		}
+	}
+	*n = count;
+	return !r.bad && r.pos == size;
 }
 
 int NetRep_WriteWelcome(uint8_t *buf, int cap, uint32_t tick, const float *view, const char *level) {

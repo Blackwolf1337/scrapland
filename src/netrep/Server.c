@@ -227,6 +227,13 @@ void NetRepSrv_SetView(NetRepClient *c, float x, float y, float z, float radius)
 	}
 }
 
+float NetRepSrv_GetView(const NetRepClient *c, float *pos) {
+	pos[0] = c->view[0];
+	pos[1] = c->view[1];
+	pos[2] = c->view[2];
+	return c->radius;
+}
+
 static const NetRepState *Rep_Hist(const NetRepServer *s, int slot, uint32_t snap) {
 	const RepHist *h = &s->hist[slot][snap % NETREP_HIST];
 	return h->snap == snap ? &h->st : NULL;
