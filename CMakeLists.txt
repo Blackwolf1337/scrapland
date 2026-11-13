@@ -205,21 +205,21 @@ if(WIN32)
 	set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
 	add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtwin.c
 		src/standalone/crtinit.c src/standalone/crtxc.c $<TARGET_OBJECTS:scrapres>)
-	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} wsock32 advapi32 user32
+	target_link_libraries(ScrapC PRIVATE scrapcode python152 net2 ${FFMPEG_LIBS} ${SDL3_LIB} wsock32 advapi32 user32
 		kernel32)
 	# the default base of ld with dynamic base (ASLR)
 	target_link_options(ScrapC PRIVATE -Wl,--dynamicbase)
 else()
 	add_executable(ScrapC src/standalone/main.c src/standalone/crt.c src/standalone/crtposix.c
 		src/standalone/crtinit.c src/standalone/crtxc.c)
-	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
+	target_link_libraries(ScrapC PRIVATE scrapcode python152 net2 ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
 	# the FFmpeg libraries next to the game
 	set_target_properties(ScrapC PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
 endif()
 # the unused functions of python152 (above)
 target_link_options(ScrapC PRIVATE -Wl,--gc-sections)
 
-# Net2, the transport of the new multiplayer (include/scrap/net2.h; not linked into ScrapC yet), and its tests
-# (ctest: net2_test, net2_loopback)
+# Net2, the transport of the new multiplayer (include/scrap/net2.h; ScrapC's headless instance serves with it, ws2_32
+# and bcrypt on Windows come with the library), and its tests (ctest: net2_test, net2_loopback)
 enable_testing()
 add_subdirectory(src/net2)

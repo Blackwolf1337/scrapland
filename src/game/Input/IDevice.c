@@ -576,7 +576,7 @@ void Input_ReleaseAll(int arg) {
 }
 
 void Input_CloseDevices(void) {
-	if (g_pApp->flags & APPF_DEDICATED) {
+	if (App_Headless()) {
 		g_InputOpen = 0;
 		return;
 	}
@@ -588,7 +588,7 @@ void Input_CloseDevices(void) {
 }
 
 void Input_OpenDevices(void) {
-	if (g_pApp->flags & APPF_DEDICATED) {
+	if (App_Headless()) {
 		g_InputOpen = 0;
 		return;
 	}

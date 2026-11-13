@@ -284,7 +284,7 @@ void UtilScene_FreeAll(void) {
 void UtilScene_ReleaseD3D(void) {
 	void *dev = g_Engine->device;
 
-	CHECK((g_pApp->flags >> 2 & 1) || dev);
+	CHECK(App_Headless() || dev);
 	for (CSceneList *le = g_SceneList; le; le = le->next) {
 		if (le->flags & SCENE_AUTOINIT) {
 			CScene_ReleaseD3D(le->scene, dev);

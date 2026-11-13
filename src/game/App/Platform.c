@@ -13,6 +13,7 @@
 #include <windows.h>
 #else
 #include <errno.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -113,6 +114,15 @@ int Plat_Init(void) {
 	return 1;
 }
 
+int Plat_InitHeadless(void) {
+	if (!SDL_Init(SDL_INIT_EVENTS)) {
+		Com_Printf("SDL_Init failed: %s\n", SDL_GetError());
+		return 0;
+	}
+	plat.start = SDL_GetTicks();
+	return 1;
+}
+
 void Plat_Shutdown(void) {
 	for (int i = 0; i < PLAT_PADS; i++) {
 		if (plat.pads[i]) {
@@ -142,8 +152,10 @@ int Plat_CreateWindow(const char *title, int w, int h, byte fixed) {
 }
 
 void Plat_ShowWindow(void) {
-	SDL_ShowWindow(plat.window);
-	SDL_RaiseWindow(plat.window);
+	if (plat.window) {
+		SDL_ShowWindow(plat.window);
+		SDL_RaiseWindow(plat.window);
+	}
 }
 
 void *Plat_NativeWindow(void) {
@@ -593,6 +605,48 @@ void Plat_Quit(void) {
 	SDL_PushEvent(&q);
 }
 
+void Plat_WaitEvent(int ms) {
+	SDL_WaitEventTimeout(NULL, ms);
+}
+
+int Plat_ReadStdin(char *buf, int size) {
+#ifdef _WIN32
+	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD avail = 0, got = 0;
+
+	if (!h || h == INVALID_HANDLE_VALUE || GetFileType(h) != FILE_TYPE_PIPE
+		|| !PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL)) {
+		return -1;
+	}
+	if (!avail) {
+		return 0;
+	}
+	if (!ReadFile(h, buf, avail < (DWORD)size ? avail : (DWORD)size, &got, NULL)) {
+		return -1;
+	}
+	return (int)got;
+#else
+	struct pollfd p = { .fd = 0, .events = POLLIN };
+
+	/* a read of the terminal from the background would stop the process (SIGTTIN) */
+	if (isatty(0) && tcgetpgrp(0) != getpgrp()) {
+		return 0;
+	}
+	int r = poll(&p, 1, 0);
+	if (r < 0 || (p.revents & POLLNVAL)) {
+		return -1;
+	}
+	if (!r) {
+		return 0;
+	}
+	ssize_t n = read(0, buf, (size_t)size);
+	if (n < 0 && (errno == EINTR || errno == EAGAIN)) {
+		return 0;
+	}
+	return n > 0 ? (int)n : -1;
+#endif
+}
+
 /* ---- message boxes and threads ---- */
 
 int Plat_MessageBox(const char *text, const char *title, uint32_t flags) {
@@ -802,6 +856,10 @@ uint32_t Plat_Ticks(void) {
 
 uint32_t Plat_RealTicks(void) {
 	return (uint32_t)SDL_GetTicks();
+}
+
+uint64_t Plat_RealNs(void) {
+	return SDL_GetTicksNS();
 }
 
 /* the counter in 100 ns ticks (10 MHz) on every system, as QueryPerformanceCounter on Windows: the game's integer

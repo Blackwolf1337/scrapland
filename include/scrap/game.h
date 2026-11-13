@@ -215,6 +215,11 @@ typedef struct exe_wndclass {
 #define APPF_SERVER 2
 #define APPF_DEDICATED 4
 
+/* the headless instance of a level (-instance:<level>, see include/scrap/instance.h) */
+extern byte g_Instance;
+/* nothing drawn, no render device, sound or input: the dedicated server and the headless instance */
+#define App_Headless() ((g_pApp->flags & APPF_DEDICATED) || g_Instance)
+
 struct CApp {
 	const CAppVtbl *vftable;
 	byte pad_04[4];

@@ -11,6 +11,7 @@
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
+#include "scrap/instance.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
@@ -40,6 +41,7 @@ static CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char
 	if ((byte)CWinApp_HasArg(self, "txf_helper")) {
 		cString_Set((cString *)&g_LogName, "logtxf.html");
 	}
+	g_Instance = (byte)CWinApp_HasArg(self, "instance");
 	return self;
 }
 
@@ -167,6 +169,9 @@ static double CWinApp_GetTime(CApp *base) {
 		Timer_GetFreq64(&g_TimeQPStart);
 		g_TimeMsStart = Plat_Ticks();
 	}
+	if (g_Instance) {
+		return Instance_Time();
+	}
 	if (g_TimeUseQP) {
 		int64_t now;
 		Timer_GetFreq64(&now);
@@ -211,7 +216,11 @@ static void CWinApp_InitStep(CWinApp *self) {
 static byte CWinApp_Init(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	App_SetExceptionFilter(1);
-	if (!CWinApp_CreateMainWindow(self)) {
+	if (g_Instance) {
+		if (!Plat_InitHeadless()) {
+			CheckFailed("Plat_InitHeadless()", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+	} else if (!CWinApp_CreateMainWindow(self)) {
 		CheckFailed("CreateMainWindow()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	/* differs from the original on purpose: without the registry LANGUAGE it is english (the original took the one of
@@ -251,10 +260,10 @@ void ConsoleWin_Add(const char *text, uint32_t color) {
 	fflush(stdout);
 }
 
-/* the folder of the configuration (Plat_ConfigDir), "" with the dedicated window; differs from the original on
- * purpose (no store features): no subfolder of the GOG id */
+/* the folder of the configuration (Plat_ConfigDir), "" with the dedicated window and in the headless instance;
+ * differs from the original on purpose (no store features): no subfolder of the GOG id */
 void App_GetConfigDir(char *buf, int size) {
-	if (App_IsDedicatedWin(g_pApp)) {
+	if (App_IsDedicatedWin(g_pApp) || g_Instance) {
 		*buf = 0;
 		return;
 	}
@@ -358,7 +367,9 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		}
 		/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back, the
 		 * original slept in CEngineApp_Render */
-		if (!g_Engine || Engine_FrameDue(g_Engine)) {
+		if (g_Instance) {
+			Instance_Pass();
+		} else if (!g_Engine || Engine_FrameDue(g_Engine)) {
 			App_Frame(g_pApp);
 		}
 	}
