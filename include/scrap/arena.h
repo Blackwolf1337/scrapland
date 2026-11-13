@@ -205,8 +205,8 @@ byte Arena_Message(struct Net2Host *host, int conn, const uint8_t *data, int siz
 /* each tick after the frame: the bots, the flag, the limits, the round, the state to the clients */
 void Arena_Tick(struct Net2Host *host, uint64_t tick);
 /* a test line of the instance: "arena status", "arena score <member> <n>", "arena end", "arena kill <member>
- * <killer>" (as a weapon of the killer, -1 none), "arena flag <member>" (its ship to the flag, the bag or the bag's
- * zone); 1 when it was one */
+ * <killer>" (as a weapon of the killer, -1 none), "arena flag <member> [<dist>]" (its ship to the flag, the bag or
+ * the bag's zone, or dist units east of it looking at it); 1 when it was one */
 byte Arena_Command(const char *line);
 
 /* ---- the client (src/game/App/ArenaClient.c) ---- */

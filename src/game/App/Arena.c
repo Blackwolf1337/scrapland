@@ -1023,16 +1023,22 @@ byte Arena_Command(const char *line) {
 		}
 		return 1;
 	}
-	if (sscanf(line, "flag %d", &k) == 1 && k >= 0 && k < ARENA_MEMBERS && ar.st.m[k].used) {
-		/* the member goes to the flag (FlagHunt), the bag or the bag's zone (Postman) */
+	float dist = 0.0f;
+	if (sscanf(line, "flag %d %f", &k, &dist) >= 1 && k >= 0 && k < ARENA_MEMBERS && ar.st.m[k].used) {
+		/* the member goes to the flag (FlagHunt), the bag or the bag's zone (Postman), or dist units east of it
+		 * looking at it (screenshots) */
 		cEntity *e = k < ARENA_PLAYERS ? Players_Get(k) : Ar_Ship(k);
 		vec3_t at = { (float)ar.st.flagPos[0], (float)ar.st.flagPos[1], (float)ar.st.flagPos[2] };
 		if (ar.st.flag == ARENA_FL_CARRIED && ar.zoneAt >= 0) {
 			at = ar.zone[ar.zoneAt].pos;
 		}
 		if (e) {
-			e->pos = (vec3_t){ at.x, at.y + 300.0f, at.z };
+			vec3_t ang = { 0.0f, M_PI_F * 0.5f, 0.0f };
+			e->pos = (vec3_t){ at.x + dist, at.y + 300.0f, at.z };
 			Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			if (dist > 0.0f) {
+				Obj_SetAng(e, &ang);
+			}
 		}
 		Con_Printf("arena: member %d to %.0f %.0f %.0f\n", k, (double)at.x, (double)at.y, (double)at.z);
 		return 1;
