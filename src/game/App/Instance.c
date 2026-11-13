@@ -88,7 +88,8 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 }
 
 byte Instance_PvP(void) {
-	return inst.pvp;
+	/* the PvP modes are fights between the players whatever -pvp says */
+	return inst.pvp || Arena_On();
 }
 
 int Instance_StartMoney(void) {
