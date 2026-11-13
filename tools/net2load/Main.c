@@ -239,9 +239,11 @@ static void Usage(void) {
 		"       net2load client [options]   N fake clients in this process\n"
 		"both:   --seed N (1) --app-version N (0) --rate BYTES (131072, per connection)\n"
 		"        --interval S (10, progress lines) --timeline FILE (progress lines as CSV)\n"
+		"        --sock-buffer BYTES (Net2 default: server 4 MB, client the system's; 0 the system's)\n"
 		"server: --bind ADDR (127.0.0.1:29300) --max-conns N (512) --tick-hz N (30) --snap-hz N (20)\n"
 		"        --snap-size N (600) --event-hz F (1) --event-size N (48) --welcome-size N (16384)\n"
 		"        --relay 0|1 (1, chat to every client) --seconds S (0: until killed) --exit-empty\n"
+		"        --poll-hz N (0: Net2_Poll only in the tick; more drains the socket between ticks)\n"
 		"client: --server ADDR (127.0.0.1:29300) --clients N (64) --client-base ADDR (127.10.0.1, one\n"
 		"        address per client) --client-port N (29301) --input-hz N (30) --input-size N (50)\n"
 		"        --chat-every S (10, 0 none) --chat-size N (96) --loss PCT (0, each direction)\n"
@@ -256,6 +258,7 @@ int main(int argc, char **argv) {
 	memset(&o, 0, sizeof(o));
 	o.seed = 1;
 	o.rate = 128 * 1024;
+	o.sockBuffer = -1;
 	o.interval = 10;
 	o.maxConns = 512;
 	o.tickHz = 30;
@@ -306,6 +309,8 @@ int main(int argc, char **argv) {
 			o.appVersion = (uint32_t)strtoul(v, NULL, 0);
 		} else if (!strcmp(k, "--rate") && v) {
 			o.rate = (uint32_t)strtoul(v, NULL, 0);
+		} else if (!strcmp(k, "--sock-buffer") && v) {
+			o.sockBuffer = strtol(v, NULL, 0);
 		}
 		OPT_D("--interval", interval)
 		OPT_S("--timeline", timeline)
@@ -314,6 +319,7 @@ int main(int argc, char **argv) {
 		OPT_I("--max-conns", maxConns)
 		OPT_I("--tick-hz", tickHz)
 		OPT_I("--snap-hz", snapHz)
+		OPT_I("--poll-hz", pollHz)
 		OPT_I("--snap-size", snapSize)
 		OPT_D("--event-hz", eventHz)
 		OPT_I("--event-size", eventSize)

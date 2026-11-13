@@ -2,7 +2,8 @@
 # The standard net2load matrix: a fresh reference server per run, the fake clients against it, one CSV line per
 # run (results.csv) and the logs of both sides in OUT.
 #   tools/net2load/run.sh BUILD_DIR OUT_DIR [SECONDS] ["64 128 256"] ["0 2 10"] [extra client options...]
-# Loopback only: server 127.0.0.1:29300, clients 127.10.0.1.. port 29301.
+# SERVER_OPTS (environment) goes to the server. Loopback only: server 127.0.0.1:29300, clients 127.10.0.1..
+# port 29301.
 set -euo pipefail
 
 bin=$1/net2load
@@ -16,7 +17,9 @@ mkdir -p "$out"
 for n in $counts; do
 	for loss in $losses; do
 		label="c${n}-l${loss}"
-		"$bin" server --exit-empty --seconds $((secs + 120)) --interval 5 >"$out/$label.srv.log" 2>&1 &
+		# shellcheck disable=SC2086
+		"$bin" server ${SERVER_OPTS:-} --exit-empty --seconds $((secs + 120)) --interval 5 \
+			>"$out/$label.srv.log" 2>&1 &
 		srv=$!
 		# the server is up when it printed its address
 		for _ in $(seq 50); do

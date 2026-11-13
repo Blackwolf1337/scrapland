@@ -31,6 +31,8 @@ typedef struct Server {
 	uint64_t markTime, markCpu;
 	uint32_t markDrops;
 	uint16_t port;
+	uint32_t memTick;				/* /proc is read once per tick, not per STATS */
+	uint32_t rssKb, hwmKb, sockDrops;
 	uint32_t ticks, late, joins, joinBad, sendFull, conns, everJoined;
 	uint32_t reasons[NET2_DR_APP + 1];
 	uint64_t ivPktIn, ivPktOut, ivBytesIn, ivBytesOut;
@@ -146,6 +148,7 @@ static void Server_Mark(Server *s) {
 	s->markTime = s->now;
 	s->markCpu = Load_ProcessCpu();
 	s->markDrops = Load_SockDrops(s->port);
+	s->memTick = 0;
 	for (int i = 0; i < s->o->maxConns; i++) {
 		if (s->peer[i].used) {
 			Net2_GetStats(s->h, i, &s->peer[i].base);
@@ -186,13 +189,19 @@ static void Server_Stats(Server *s, int conn) {
 	v[LS_WALL_MAX] = s->tickWall.max;
 	uint64_t wall = s->now - s->markTime;
 	v[LS_CPU_PERMILLE] = wall ? (uint32_t)((Load_ProcessCpu() - s->markCpu) * 1000 / wall) : 0;
-	Load_Memory(&v[LS_RSS_KB], &v[LS_HWM_KB]);
+	if (s->memTick != s->ticks + 1) {
+		Load_Memory(&s->rssKb, &s->hwmKb);
+		s->sockDrops = Load_SockDrops(s->port) - s->markDrops;
+		s->memTick = s->ticks + 1;
+	}
+	v[LS_RSS_KB] = s->rssKb;
+	v[LS_HWM_KB] = s->hwmKb;
 	v[LS_NET2_KB] = (uint32_t)(load_memUsed / 1024);
 	v[LS_NET2_PEAK_KB] = (uint32_t)(load_memPeak / 1024);
 	v[LS_CONNS] = s->conns;
 	v[LS_JOINS] = s->joins;
 	v[LS_JOINBAD] = s->joinBad;
-	v[LS_SOCK_DROPS] = Load_SockDrops(s->port) - s->markDrops;
+	v[LS_SOCK_DROPS] = s->sockDrops;
 	Net2W_Init(&w, s_buf, sizeof(s_buf));
 	Net2W_U8(&w, LM_STATS);
 	for (int i = 0; i < LOAD_STAT_COUNT; i++) {
@@ -326,6 +335,9 @@ int Server_Run(const LoadOpts *o) {
 	cfg.maxConns = o->maxConns;
 	cfg.appVersion = o->appVersion;
 	cfg.rate = o->rate;
+	if (o->sockBuffer >= 0) {
+		cfg.sockBuffer = (uint32_t)o->sockBuffer;
+	}
 	Load_Seed32(seed, "server", o->seed, 0);
 	cfg.identitySeed = seed;
 	cfg.alloc = Load_Alloc;
@@ -349,7 +361,8 @@ int Server_Run(const LoadOpts *o) {
 	signal(SIGTERM, Server_Signal);
 
 	uint64_t period = 1000000 / (uint64_t)o->tickHz, snapPeriod = 1000000 / (uint64_t)o->snapHz;
-	uint64_t start = Load_Now(), next = start, nextSnap = start, last = start;
+	uint64_t pollPeriod = o->pollHz > o->tickHz ? 1000000 / (uint64_t)o->pollHz : 0;
+	uint64_t start = Load_Now(), next = start, nextSnap = start, nextPoll = start, last = start;
 	uint64_t interval = (uint64_t)(o->interval * 1e6);
 	uint32_t tick = 0;
 	s->markTime = 0;
@@ -357,7 +370,12 @@ int Server_Run(const LoadOpts *o) {
 	while (!s_stop) {
 		uint64_t now = Load_Now();
 		if (now < next) {
-			Load_Wait(next - now < 2000 ? next - now : 2000);
+			if (pollPeriod && now >= nextPoll) {
+				Net2_Poll(s->h, now / 1000);
+				nextPoll = now + pollPeriod;
+			}
+			uint64_t until = pollPeriod && nextPoll < next ? nextPoll : next;
+			Load_Wait(until > now ? (until - now < 2000 ? until - now : 2000) : 0);
 			continue;
 		}
 		if (now - next > period) {

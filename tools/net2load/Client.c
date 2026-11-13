@@ -267,6 +267,9 @@ static int Client_Create(Clients *cs, Client *c, int i, const Net2Addr *server, 
 	}
 	cfg.appVersion = o->appVersion;
 	cfg.rate = o->rate;
+	if (o->sockBuffer >= 0) {
+		cfg.sockBuffer = (uint32_t)o->sockBuffer;
+	}
 	cfg.serverKey = pin;
 	cfg.filter = Client_Filter;
 	cfg.filterCtx = c;
@@ -527,6 +530,9 @@ int Client_Run(const LoadOpts *o) {
 				c->state = Net2_Connect(c->h, &server, now / 1000) == NET2_OK ? CS_CONNECTING : CS_FAILED;
 			}
 			if (c->state >= CS_DONE) {
+				/* a host nobody polls any more would only fill its socket */
+				Net2_Destroy(c->h);
+				c->h = NULL;
 				continue;
 			}
 			live++;

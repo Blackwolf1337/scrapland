@@ -105,11 +105,13 @@ typedef struct LoadOpts {
 	uint64_t seed;
 	uint32_t appVersion;
 	uint32_t rate;
+	long sockBuffer;				/* cfg.sockBuffer, -1 the Net2 default */
 	double interval;				/* s between progress lines */
 	const char *timeline;			/* CSV of the progress lines */
 	const char *bind;				/* server: its address; client: the server's */
 	int maxConns;
 	int tickHz, snapHz, snapSize;
+	int pollHz;						/* server: Net2_Poll between the ticks too (drains the socket), 0 only per tick */
 	double eventHz;
 	int eventSize, welcomeSize, relay;
 	double seconds;					/* server: 0 runs until killed; client: the measured window */
