@@ -617,8 +617,8 @@ static byte Veh_DeathSingle(const nativeVal_t *v, const nativeVal_t *looser, con
 	if (!LvN_ModGet("Parking", "PlayerShip", ship)) {
 		return Mode_Done(&t, 0);
 	}
-	/* the instance has no player's ship of the module (include/scrap/players.h: each player takes its own) */
-	byte none = Players_Net() && !Native_True(ship);
+	/* the instance: the cost of a player's own ship lost is the instance's (src/game/App/Replicate.c Rep_Death) */
+	byte none = Players_Net();
 	if (!none && (!Mode_VObj(ship, "Name", sname) || !Mode_VObj(v, "Name", vname))) {
 		return Mode_Done(&t, 0);
 	}

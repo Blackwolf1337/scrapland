@@ -154,12 +154,15 @@ static void Parking_Look(const cParkingZone *z) {
 }
 
 static void Parking_Call(cPy_Function *f, cEntity *e, const cParkingZone *z) {
+	/* the instance: the scripts' player is the owner of the ship (its Parking.PlayerShip) */
+	Players_BindEntity(e);
 	cPy_Function_AddParamS(f, e->name);
 	cPy_Function_AddParamF(f, z->pos.x);
 	cPy_Function_AddParamF(f, z->pos.y);
 	cPy_Function_AddParamF(f, z->pos.z);
 	cPy_Function_AddParamS(f, z->name);
 	cPy_Function_Execute(f, 0);
+	Players_BindTurn();
 }
 
 static inline float Parking_Dist2(const cParkingZone *z, const vec3_t *p) {
@@ -170,9 +173,14 @@ static inline float Parking_Dist2(const cParkingZone *z, const vec3_t *p) {
 	return dy * dy + dx * dx + dz * dz;
 }
 
+/* the zone is farther than the square root of d2 from the player (the instance: from every player) */
+static byte Parking_Far(const cParkingZone *z, cEntity *usr, float d2) {
+	vec3_t tmp;
+	return Players_Net() ? Players_MinDistSq(&z->pos) > d2 : Parking_Dist2(z, Entity_GetPos(usr, &tmp)) > d2;
+}
+
 /* one zone of each ring; 1 when the player is not in a ship */
 static int Parking_Think(cParking *self) {
-	vec3_t tmp;
 	cEntity *usr = Players_Any();
 	byte inShip = 0;
 	float d;
@@ -195,7 +203,7 @@ static int Parking_Think(cParking *self) {
 	}
 	if (inShip) {
 		cParkingZone *z = Parking_Next(&self->items);
-		if (z && Parking_Dist2(z, Entity_GetPos(usr, &tmp)) > d2) {
+		if (z && Parking_Far(z, usr, d2)) {
 			Parking_Look(z);
 			if (!g_ParkingShip && g_ParkingOther && Entity_IsType(g_ParkingOther, TYEN_ITEM)) {
 				Parking_Call(g_OnParkedOut, g_ParkingOther, z);
@@ -203,7 +211,7 @@ static int Parking_Think(cParking *self) {
 		}
 	}
 	cParkingZone *z = Parking_Next(&self->ships);
-	if (z && Parking_Dist2(z, Entity_GetPos(usr, &tmp)) > d2) {
+	if (z && Parking_Far(z, usr, d2)) {
 		Parking_Look(z);
 		if (!g_ParkingOther && g_ParkingShip && Entity_IsType(g_ParkingShip, TYEN_CAR)) {
 			Parking_Call(g_OnParkingOccupied, g_ParkingShip, z);

@@ -32,6 +32,8 @@
 #define PLAYERS_MAX 64
 #define PLAYERS_NET_SLOT 4			/* the owner slot of the instance's player 0 */
 #define PLAYERS_NONE PLAYERS_MAX	/* Players_Bind: no player (the world's own state) */
+#define PLAYERS_WANTED_REACH 3000.0f	/* units: an NPC reacts to a wanted player this near before a nearer innocent
+									   one (the distance a character attacks what it sees, GenCharLogic) */
 
 /* the sources of the alarm's level (Alarm_SetGrow of LogicControl_Update) kept per player */
 enum { PLAYERS_LV_POLICE, PLAYERS_LV_AI, PLAYERS_LV_CHARS, PLAYERS_LEVELS };
@@ -48,8 +50,11 @@ int Players_Of(struct cEntity *e);
 byte Players_Is(struct cEntity *e);
 /* some player's entity, NULL when there is none (the instance: the bound player's when it has one) */
 struct cEntity *Players_Any(void);
-/* the player nearest to pos (outside the instance: player 0), NULL */
+/* the player an NPC at pos reacts to (outside the instance: player 0), NULL: the nearest player whose alarm is on
+ * within PLAYERS_WANTED_REACH, else the nearest */
 struct cEntity *Players_Nearest(const vec3_t *pos);
+/* the nearest player to pos whatever its alarm (outside the instance: player 0), NULL */
+struct cEntity *Players_Closest(const vec3_t *pos);
 /* the square of the distance of the nearest player of the instance to pos, FLT_MAX without one (outside the instance
  * always FLT_MAX) */
 float Players_MinDistSq(const vec3_t *pos);
@@ -70,10 +75,22 @@ void Players_Join(int i, int money);
 void Players_Part(int i);
 /* the state of player i (PLAYERS_NONE or an unused one: the world's own) into the world */
 void Players_Bind(int i);
-/* the player of the entity, the one nearest to pos, the one of this frame's turn */
+/* the joins of player slot i so far (0 outside the instance); player i bound when it is still the same join (a
+ * scheduled call runs with the player that scheduled it), else the binding stays */
+uint16_t Players_Joined(int i);
+void Players_BindJoined(int i, uint16_t joined);
+/* the player of the entity (or the owner of the ship: Players_ShipOwner), the one an NPC at pos reacts to
+ * (Players_Nearest), the one of this frame's turn */
 void Players_BindEntity(struct cEntity *e);
 void Players_BindNearest(const vec3_t *pos);
 void Players_BindTurn(void);
+/* the own ship of player i (a ship it called): its Parking.PlayerShip of the scripts (that variable and
+ * Parking.LocalShip are kept per player and bound with the rest); NULL for none */
+void Players_SetShip(int i, struct cEntity *ship);
+/* player i's own ship while it is in the world, NULL */
+struct cEntity *Players_Ship(int i);
+/* the player whose own ship e is, -1 */
+int Players_ShipOwner(struct cEntity *e);
 /* the bound player, PLAYERS_NONE */
 int Players_Bound(void);
 /* the money and the alarm of player i whether it is bound or not */

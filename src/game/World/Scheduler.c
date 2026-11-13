@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/players.h"
 #include "scrap/scheduler.h"
 #include "scrap/world.h"
 
@@ -60,6 +61,8 @@ static cScheduledFunc *cScheduledFunc_New(float time, const char *name) {
 	Native_SetNone(&f->args);
 	f->active = 1;
 	f->site = NULL;
+	f->player = (byte)Players_Bound();
+	f->joined = Players_Joined(f->player);
 	f->time = time;
 	Str_Copy(f->name, name, sizeof(f->name));
 	return f;
@@ -68,8 +71,10 @@ static cScheduledFunc *cScheduledFunc_New(float time, const char *name) {
 /* the call with the function marked as running */
 static void cScheduledFunc_Run(cScheduledFunc *self) {
 	byte ok;
+	int bound = Players_Bound();
 	self->active = 0;
 	g_SchedulerCalls[self->site != NULL]++;
+	Players_BindJoined(self->player, self->joined);
 	if (self->args.type != NV_TUPLE) {
 		ok = Native_Raise(NE_TYPE, "argument list must be a tuple");
 	} else {
@@ -78,6 +83,7 @@ static void cScheduledFunc_Run(cScheduledFunc *self) {
 	if (!ok) {
 		Native_ErrPrint();
 	}
+	Players_Bind(bound);
 	self->active = 1;
 }
 

@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "scrap/nativeobj.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -46,6 +47,12 @@ static byte Pk_Item(const nativeVal_t *x, long i, nativeVal_t *slot) {
 /* the slot freed, then the global name of the module into it */
 static byte Pk_G(const char *name, nativeVal_t *slot) {
 	return Mode_Read(PK, name, slot);
+}
+
+/* the instance: the own ships of its players are the instance's (src/game/App/Replicate.c: called, parked, lost),
+ * the engine's parking callbacks take no ship as the player's own there (Parking.PlayerShip may be None) */
+static byte Pk_NotOwn(void) {
+	return Players_Net();
 }
 
 /* Scrap.GetEntity(name) through its seam, the handle value (None for no entity) */
@@ -775,10 +782,14 @@ static byte Pk_OnParkingOccupiedN(const nativeVal_t *a) {
 	if (park <= 0) {
 		return Mode_Done(&t, park == 0);
 	}
-	if (!Pk_G("PlayerShip", ship) || !Mode_VObjRead(ship, "Name", x) || !Pk_Ent(&a[0], e)) {
+	if (!Pk_G("PlayerShip", ship)) {
 		return Mode_Done(&t, 0);
 	}
-	int own = Mode_Cmp(&a[0], "==", x);
+	byte none = Pk_NotOwn();
+	if ((!none && !Mode_VObjRead(ship, "Name", x)) || !Pk_Ent(&a[0], e)) {
+		return Mode_Done(&t, 0);
+	}
+	int own = none ? 0 : Mode_Cmp(&a[0], "==", x);
 	if (own < 0 || (own ? !LvN_SetI(e, "Active", 0) : !Mode_VDel(e))) {
 		return Mode_Done(&t, 0);
 	}
@@ -872,10 +883,14 @@ static byte Pk_ParkedDeatN(const nativeVal_t *v, const nativeVal_t *attacker, na
 	if (!Mode_EqI(x, 1)) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Pk_G("PlayerShip", ship) || !Mode_VObjRead(ship, "Name", a) || !Mode_VObjRead(v, "Name", x)) {
+	if (!Pk_G("PlayerShip", ship)) {
 		return Mode_Done(&t, 0);
 	}
-	int other = Mode_Cmp(a, "!=", x);
+	byte none = Pk_NotOwn();
+	if ((!none && !Mode_VObjRead(ship, "Name", a)) || !Mode_VObjRead(v, "Name", x)) {
+		return Mode_Done(&t, 0);
+	}
+	int other = none ? 1 : Mode_Cmp(a, "!=", x);
 	if (other < 0) {
 		return Mode_Done(&t, 0);
 	}
