@@ -20,6 +20,7 @@
  */
 #include <string.h>
 
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -613,10 +614,15 @@ static byte Veh_DeathSingle(const nativeVal_t *v, const nativeVal_t *looser, con
 		(!Native_True(parked) && (!Mode_Import("MisItems") || !PORT_CALL(MisItems, OnVehicleDeat, NULL, "v", v)))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!LvN_ModGet("Parking", "PlayerShip", ship) || !Mode_VObj(ship, "Name", sname) || !Mode_VObj(v, "Name", vname)) {
+	if (!LvN_ModGet("Parking", "PlayerShip", ship)) {
 		return Mode_Done(&t, 0);
 	}
-	int mine = Mode_Cmp(sname, "==", vname);
+	/* the instance has no player's ship of the module (include/scrap/players.h: each player takes its own) */
+	byte none = Players_Net() && !Native_True(ship);
+	if (!none && (!Mode_VObj(ship, "Name", sname) || !Mode_VObj(v, "Name", vname))) {
+		return Mode_Done(&t, 0);
+	}
+	int mine = none ? 0 : Mode_Cmp(sname, "==", vname);
 	if (mine > 0) {
 		mine = Mode_G(VEH, "DelPlayerShipOnDeath", del) ? Native_True(del) : -1;
 	}

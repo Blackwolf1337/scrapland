@@ -33,6 +33,8 @@ static struct {
 	char id[NET2_INFO_NAME + 1];
 	char bind[48];					/* numeric IPv4 address, "" for any address of both families */
 	int maxPlayers;
+	byte pvp;
+	int money;
 	uint64_t ticks;					/* ticks run */
 	uint64_t base;					/* Plat_RealNs when tick baseTick was due */
 	uint64_t baseTick;
@@ -46,7 +48,7 @@ static struct {
 	byte stdinEnd;
 	char line[INST_LINE];
 	int lineLen;
-} inst = { .port = NET2_DEFAULT_PORT, .maxPlayers = INSTANCE_MAX_PLAYERS };
+} inst = { .port = NET2_DEFAULT_PORT, .maxPlayers = INSTANCE_MAX_PLAYERS, .pvp = 1, .money = INSTANCE_START_MONEY };
 
 byte Instance_ParseParam(const char *param, const char *ext) {
 	if (!crt_stricmp("port", param)) {
@@ -69,7 +71,23 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 		inst.maxPlayers = n < 1 ? 1 : n >= INST_SLOTS ? INST_SLOTS - 1 : n;
 		return 1;
 	}
+	if (!crt_stricmp("pvp", param)) {
+		inst.pvp = crt_atoi(ext) != 0;
+		return 1;
+	}
+	if (!crt_stricmp("money", param)) {
+		inst.money = crt_atoi(ext);
+		return 1;
+	}
 	return 0;
+}
+
+byte Instance_PvP(void) {
+	return inst.pvp;
+}
+
+int Instance_StartMoney(void) {
+	return inst.money;
 }
 
 uint16_t Instance_Port(void) {

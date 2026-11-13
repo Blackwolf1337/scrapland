@@ -11,6 +11,7 @@
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
 #include "scrap/scorer.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scriptapi.h"
@@ -780,7 +781,7 @@ API_FN(Scrap, UsrEntity) {
 	if (!Mode_Parse(a, n, "i", &player) || (uint32_t)player > 3) {
 		return 0;
 	}
-	cEntity *e = cWorld_GetUsrEntity(g_pWorld, player);
+	cEntity *e = Players_Script(player);
 	if (!e) {
 		return 1;
 	}

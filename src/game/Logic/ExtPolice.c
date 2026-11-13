@@ -142,8 +142,10 @@ static void ExtPolice_Taunt(cExtPolice *self) {
 static void cExtPolice_Think(cExtPolice *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
-	byte alarm = g_pWorld->alarm.on;
+	/* the instance: the police goes for the players whose alarm is on (include/scrap/players.h) */
+	byte alarm = Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : g_pWorld->alarm.on;
 
+	Players_LevelReset(PLAYERS_LV_POLICE);
 	if (alarm && !self->alarm && (byte)Talk_IsShown()) {
 		alarm = 0;
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
@@ -151,7 +153,7 @@ static void cExtPolice_Think(cExtPolice *self) {
 	} else {
 		self->raised = -1;
 	}
-	/* the wave follows some player (one alarm for all); each car goes for the player nearest to it */
+	/* the wave follows some player (the instance: the bound one); each car goes for the player nearest to it */
 	cEntity *usr = Players_Any();
 	if (!usr) {
 		return;
@@ -163,7 +165,8 @@ static void cExtPolice_Think(cExtPolice *self) {
 		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai && "ai");
 		n = Logic_ListNext(n);
-		cEntity *near = Players_Nearest(Entity_GetPos(e, &tmp));
+		cEntity *near = alarm && Players_Net() ? Players_NearestWanted(Entity_GetPos(e, &tmp)) :
+			Players_Nearest(Entity_GetPos(e, &tmp));
 		if (g_ExtPoliceChasing && !alarm) {
 			float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &tmp));
 			if (d > g_MaxDistReposAI * g_MaxDistReposAI * 9.0f * 0.0625f &&
@@ -173,7 +176,9 @@ static void cExtPolice_Think(cExtPolice *self) {
 			}
 		} else if (alarm) {
 			if (cAIVehicle_ControlFlag(ai) && AIMove_GetTargetEnt(ai) == near) {
+				Players_BindEntity(near);
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
+				Players_LevelRaise(PLAYERS_LV_POLICE, 1);
 				self->raised = 1;
 			}
 		}

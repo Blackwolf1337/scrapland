@@ -227,6 +227,7 @@ static void AICtrl_Think(void *ctrl) {
 	vec3_t t;
 
 	self->level = -1;
+	Players_LevelReset(PLAYERS_LV_AI);
 	self->alarmOn = g_pWorld->alarm.on;
 	self->usr = Players_Any();
 	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarm.lastChars, g_pWorld->alarm.chars);
@@ -537,6 +538,7 @@ void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 void AICtrl_RaiseLevel(void *ctrl, int level) {
 	cAICtrl *self = ctrl;
 
+	Players_LevelRaise(PLAYERS_LV_AI, level);
 	if (self->level < level) {
 		self->level = level;
 	}

@@ -11,6 +11,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/players.h"
 #include "scrap/staticinit.h"
 
 #define g_TimeBetweeenTaunts (GVar_TimeBetweeenTaunts.value.f)
@@ -172,7 +173,7 @@ void LogicControl_Update(void *logic, float dt) {
 	if (self->extPolice.raised > level) {
 		level = self->extPolice.raised;
 	}
-	Alarm_SetGrow(&g_pWorld->alarm, level);
+	Players_SetGrow(level);
 	Logic_UpdateTaunts(self, dt);
 }
 

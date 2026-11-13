@@ -4,7 +4,7 @@
  * input and no menu, at a fixed server tick, with a Net2 server (include/scrap/net2.h) on its port. Not in the
  * original.
  *
- *   ScrapC -instance:DownTown [-port:28100] [-id:dt1] [-bind:127.0.0.1] [-maxplayers:64]
+ *   ScrapC -instance:DownTown [-port:28100] [-id:dt1] [-bind:127.0.0.1] [-maxplayers:64] [-pvp:1] [-money:2000]
  *
  * The level is a folder of Levels (or a path "Levels/X"). The ticks follow the real clock; the app time (the frame
  * time of CApp_Frame) goes on by exactly one tick per tick, so the world always steps 1/INSTANCE_TICK_HZ s. A tick
@@ -21,6 +21,9 @@
  * when seen), or SIGINT/SIGTERM through SDL's quit event. The configuration is the game folder's Scrap.cfg (as the
  * dedicated server reads it) and is never saved, and no saved game is written, so several instances share a game
  * folder.
+ *
+ * -pvp:0 keeps the players' weapons off each other (the hits on another player's entity do nothing), -pvp:1 (the
+ * default) lets them hurt each other. -money: the money a player starts with.
  */
 #ifndef SCRAP_INSTANCE_H
 #define SCRAP_INSTANCE_H
@@ -36,8 +39,9 @@
 #define INSTANCE_STATUS_SECS 60			/* s between the status lines in the output */
 #define INSTANCE_POLL_MS 4				/* the sockets are read this often between the ticks */
 #define INSTANCE_CONN_BUFFER (16 * 1024)	/* Net2 inbox and outbox per connection */
+#define INSTANCE_START_MONEY 2000		/* a player's money at the start (-money) */
 
-/* -port, -id, -bind and -maxplayers of the command line; 1 when param is one of them */
+/* -port, -id, -bind, -maxplayers, -pvp and -money of the command line; 1 when param is one of them */
 byte Instance_ParseParam(const char *param, const char *ext);
 /* one pass of the main loop after the init: the tick when it is due, else a wait for an event up to it */
 void Instance_Pass(void);
@@ -45,6 +49,9 @@ void Instance_Pass(void);
 uint16_t Instance_Port(void);
 /* the app time: seconds of the ticks run */
 double Instance_Time(void);
+/* -pvp (1 without it) and -money of the command line */
+byte Instance_PvP(void);
+int Instance_StartMoney(void);
 /* the Net2 server closed (App shutdown) */
 void Instance_Close(void);
 /* tests: SCRAP_NET2_LOSS (percent), SCRAP_NET2_DELAY and SCRAP_NET2_JITTER (ms) make the host's sends a test link

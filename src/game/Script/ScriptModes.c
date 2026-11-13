@@ -30,6 +30,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptlib.h"
+#include "scrap/players.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/sound.h"
 #include "scrap/timer.h"
@@ -176,7 +177,7 @@ byte Mode_ActionSetIs(const char *name) {
 }
 
 cEntity *Mode_Usr(void) {
-	return cWorld_GetUsrEntity(g_pWorld, 0);
+	return Players_Script(0);
 }
 
 byte Mode_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z,
@@ -3400,7 +3401,7 @@ byte Mode_UsrSeam(long id, nativeVal_t *out) {
 	if ((uint32_t)(int)id > 3) {
 		return Native_NullResult();
 	}
-	return Mode_EntHandle(cWorld_GetUsrEntity(g_pWorld, (int)id), out);
+	return Mode_EntHandle(Players_Script((int)id), out);
 }
 
 byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {

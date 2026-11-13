@@ -29,7 +29,7 @@ cEntity *Logic_RichUsrInView(cGenCharLocalLogic *self, cEntity *usr) {
 
 	cEntity *p = self->base.parent;
 	if (Logic_InView(p, Entity_GetPos(usr, &tmp), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1) &&
-		g_pWorld->money > 0) {
+		Players_Money(Players_Of(usr)) > 0) {
 		return usr;
 	}
 	return NULL;
@@ -58,7 +58,7 @@ byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
 	if (!t || !Entity_IsType(t, TYEN_WALKCHAR)) {
 		return 1;
 	}
-	int money = Players_Is(t) ? g_pWorld->money : WChar(t)->money;
+	int money = Players_Is(t) ? Players_Money(Players_Of(t)) : WChar(t)->money;
 	cEntity *p = self->base.parent;
 	if (money <= 25 || self->specialTime > g_GenCharSpecialActionTime) {
 		return 1;

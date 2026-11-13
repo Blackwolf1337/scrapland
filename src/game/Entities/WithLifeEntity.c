@@ -13,6 +13,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
+#include "scrap/players.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weaps2.h"
@@ -390,6 +391,11 @@ void cWithLifeEntity_Tick(cEntity *self, float dt) {
 static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const int *damage) {
 	cWithLifeEntity *w = WLife(self);
 
+	/* the instance: the scripts' player is the attacker when it is a player, else the entity when it is one */
+	if (g_Instance) {
+		cEntity *by = w->attack.hitBy.target ? World_FindEntity(Nto1Node_TargetName(&w->attack.hitBy)) : NULL;
+		Players_BindEntity(Players_Is(by) ? by : self);
+	}
 	cPy_Function_AddParamS(own, self->name);
 	cPy_Function_AddParamS(own, Nto1Node_TargetName(&w->attack.hitBy));
 	if (damage) {

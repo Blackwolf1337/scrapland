@@ -21,6 +21,7 @@
 #include "scrap/input.h"
 #include "scrap/nativeobj.h"
 #include "scrap/pyfunction.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -111,7 +112,7 @@ static void Char_Handle(const char *name, nativeVal_t *out) {
 
 /* the name of the entity the player controls (NULL when there is none) */
 static const char *Char_Usr0(void) {
-	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
+	cEntity *usr = Players_Script(0);
 	return usr ? usr->name : NULL;
 }
 

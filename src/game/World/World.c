@@ -1070,12 +1070,17 @@ void cWorld_Update(cWorld *self, float dt) {
 	}
 	if (cTimer_GetSpeed(timer) > 0.0f) {
 		cTimer_Advance(timer, dt);
+		Players_BindTurn();
 		Scheduler_Run(&self->scheduler, Timer_GetTime(timer));
 		/* not in the original: the test channel answers here while the clock runs, where the script function of the
 		 * old test harness ran (a scheduled function) */
 		TestChannel_WorldFrame();
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
+			/* the instance: the state of the player nearest to it while it updates (include/scrap/players.h) */
+			if (g_Instance) {
+				Players_BindNearest(&e->pos);
+			}
 			if (e->active) {
 				Entity_Update(e);
 			} else {
@@ -1113,7 +1118,7 @@ void cWorld_Update(cWorld *self, float dt) {
 		}
 		Sound_Update(cTimer_GetDelta(timer));
 		cWorld_UpdateListeners(self, cTimer_GetDelta(timer));
-		Alarm_Update(&self->alarm, cTimer_GetDelta(timer));
+		Players_UpdateAlarms(cTimer_GetDelta(timer));
 		cStrMoney_Update(self->strMoney, cTimer_GetDelta(timer));
 		if (g_VehicleGroup) {
 			AIGroup_Update(g_VehicleGroup, cTimer_GetDelta(timer));

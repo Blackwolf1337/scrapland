@@ -113,6 +113,7 @@ cEntity *ChType_BankerVictim(cEntity *v) {
 	if (WChar(e)->money <= 0 && !Players_Is(e)) {
 		return NULL;
 	}
+	Players_BindEntity(e);
 	if (g_pWorld->money <= 0 && Players_Is(e)) {
 		return NULL;
 	}
@@ -128,6 +129,7 @@ static byte ChType_CanRob(cEntity *thief, cEntity *v) {
 	if (WChar(v)->money <= 0 && !Players_Is(v)) {
 		return 0;
 	}
+	Players_BindEntity(v);
 	if (g_pWorld->money <= 0 && Players_Is(v)) {
 		return 0;
 	}
@@ -157,6 +159,7 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 		if (WChar(v)->money < n) {
 			n = WChar(v)->money;
 		}
+		Players_BindEntity(*thief);
 		g_pWorld->money += n;
 		if (stat) {
 			SaveVar_Inc(stat, n);
@@ -175,6 +178,7 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 	}
 	cEntity *v = *victim;
 	if (Players_Is(v)) {
+		Players_BindEntity(v);
 		if (g_pWorld->money <= 0) {
 			return 0;
 		}

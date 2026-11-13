@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/players.h"
 #include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
@@ -45,18 +46,22 @@ byte cGenCharGroup_TakeAttack(cGenCharGroup *self) {
 }
 
 static void GenCharGroup_UpdateList(cEntityListData *list) {
+	vec3_t t;
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
+		Players_BindNearest(Entity_GetPos(n->data, &t));
 		Logic_Update(l, 0.13f);
 	}
 }
 
 static void cGenCharGroup_Think(cGenCharGroup *self) {
 	self->level = -1;
+	Players_LevelReset(PLAYERS_LV_CHARS);
 	GenCharGroup_UpdateList(self->genChars);
 	GenCharGroup_UpdateList(self->police);
 	GenCharGroup_UpdateList(self->bishops);
 	cMessengers_Think(self->messengers);
+	Players_BindTurn();
 }
 
 int cGenCharGroup_GetLevel(cGenCharGroup *self) {
@@ -79,6 +84,7 @@ void cGenCharGroup_Init(cGenCharGroup *self) {
 }
 
 void cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level) {
+	Players_LevelRaise(PLAYERS_LV_CHARS, level);
 	if (self->level < level) {
 		self->level = level;
 	}
