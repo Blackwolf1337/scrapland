@@ -12,6 +12,7 @@
 #include "scrap/input.h"
 #include "scrap/itementity.h"
 #include "scrap/material.h"
+#include "scrap/players.h"
 #include "scrap/missileentity.h"
 #include "scrap/scheduler.h"
 #include "scrap/scrapcollision.h"
@@ -882,7 +883,8 @@ float cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos) {
 			best = Float_MinSS(dy * dy + dx * dx + dz * dz, best);
 		}
 	}
-	return best;
+	/* the instance has no cameras: its players are the viewers */
+	return Players_Net() ? Float_MinSS(Players_MinDistSq(pos), best) : best;
 }
 
 /* the data of the "Obj" entity name of g_pWorld (self is not used) */
@@ -1093,9 +1095,7 @@ void cWorld_Update(cWorld *self, float dt) {
 			PtrTable_Delete(&self->entities, e->name);
 			Entity_Free(e);
 		}
-		for (int i = 0; i < 4; i++) {
-			self->owners[i] = NULL;
-		}
+		Players_Clear();
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			uint32_t slot;
@@ -1109,9 +1109,7 @@ void cWorld_Update(cWorld *self, float dt) {
 			} else {
 				continue;
 			}
-			if (slot < 4) {
-				self->owners[slot] = e;
-			}
+			Players_SetOwner((int)slot, e);
 		}
 		Sound_Update(cTimer_GetDelta(timer));
 		cWorld_UpdateListeners(self, cTimer_GetDelta(timer));

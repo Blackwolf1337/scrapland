@@ -17,6 +17,7 @@
 #include "scrap/primitive.h"
 #include "scrap/scoreritems.h"
 #include "scrap/missileentity.h"
+#include "scrap/players.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/vehicletraffic.h"
 #include "scrap/vehicleentity.h"
@@ -927,7 +928,7 @@ static void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 		}
 	} else {
 		sc->minDiff = 0x1.111112p-6f;	/* 1 / 60 */
-		g_pWorld->owners[self->slot] = Veh_Ent(self);
+		Players_SetOwner(self->slot, Veh_Ent(self));
 	}
 	cVehicleO648_SetSlot(&self->o648, slot);
 	if (Net_IsNetEntity(Veh_Ent(self)) && Veh_IsPlayerSlot(self->slot)) {
@@ -1273,7 +1274,7 @@ static void cVehicleEntity_SetActive(cEntity *elem, byte on) {
 	cVehicleEffects_SetActive(&self->effects, on);
 	cVehicleMotors_SetEnabled(&self->motors, on);
 	if (self->slot != -1 && self->wl.obj.base.active) {
-		g_pWorld->owners[self->slot] = Veh_Ent(self);
+		Players_SetOwner(self->slot, Veh_Ent(self));
 	}
 }
 

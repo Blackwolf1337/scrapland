@@ -929,7 +929,8 @@ static byte Pk_BrowseItemPosN(void) {
 	nativeVal_t *usr = Mode_V(&t), *myPos = Mode_V(&t), *nearest = Mode_V(&t), *nearestDist = Mode_V(&t), *x = Mode_V(&t);
 	nativeVal_t *dummy = Mode_V(&t), *dist = Mode_V(&t), *dname = Mode_V(&t), *dpos = Mode_V(&t), *l = Mode_V(&t);
 	nativeVal_t *box = Mode_V(&t), *zone = Mode_V(&t), *ship = Mode_V(&t), *ang = Mode_V(&t);
-	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr) || !Mode_VObjRead(usr, "Pos", myPos)) {
+	/* the headless instance has no startup player: every parking gets its box, no ship of the player */
+	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr) || (!g_Instance && !Mode_VObjRead(usr, "Pos", myPos))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(nearestDist, 10000000.0);
@@ -954,10 +955,10 @@ static byte Pk_BrowseItemPosN(void) {
 		}
 		Native_Free(dist);
 		Native_Free(l);
-		if (!Pk_Item(dummy, 1, x) || !Mode_VecSub(myPos, x, l) || !Mode_VecMod(l, dist)) {
+		if (!g_Instance && (!Pk_Item(dummy, 1, x) || !Mode_VecSub(myPos, x, l) || !Mode_VecMod(l, dist))) {
 			return Mode_Done(&t, 0);
 		}
-		int closer = Mode_Cmp(nearestDist, ">", dist);
+		int closer = g_Instance ? 0 : Mode_Cmp(nearestDist, ">", dist);
 		if (closer && !fromJY) {
 			closer = Pk_Item(dummy, 0, x) ? Mode_CmpG(x, "!=", PK, "PR_Junk") : -1;
 		}

@@ -7,6 +7,7 @@
 #include "scrap/embeddedfxchar.h"
 #include "scrap/fxelements.h"
 #include "scrap/missileentity.h"
+#include "scrap/players.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
@@ -1279,7 +1280,7 @@ static void cWalkCharEntity_SetActive(cEntity *self, byte on) {
 
 	cWithLifeEntity_SetActive(self, on);
 	if (w->ownerSlot != -1 && self->active) {
-		g_pWorld->owners[w->ownerSlot] = self;
+		Players_SetOwner(w->ownerSlot, self);
 	}
 	cWalkCharEntity_UpdateViewLock(self, 0.0f);
 }
@@ -1417,7 +1418,7 @@ static void cWalkCharEntity_SetUsrControl(cEntity *self, int slot) {
 		}
 	} else {
 		w->wl.obj.slot->minDiff = 0.0166666675f;
-		g_pWorld->owners[w->ownerSlot] = self;
+		Players_SetOwner(w->ownerSlot, self);
 	}
 }
 

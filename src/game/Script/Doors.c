@@ -1002,6 +1002,10 @@ static byte Elv_SpawnUsr(const char *port, nativeVal_t *usr) {
 static byte Elv_PlayerCreatedElevator(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *from = Mode_V(&t), *key = Mode_V(&t), *e = Mode_V(&t), *usr = Mode_V(&t);
+	/* the headless instance has no startup player to place (include/scrap/players.h) */
+	if (g_Instance) {
+		return Mode_Done(&t, 1);
+	}
 	if (!Mode_Import("Init")) {
 		return Mode_Done(&t, 0);
 	}

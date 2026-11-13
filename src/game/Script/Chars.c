@@ -463,6 +463,10 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 	if (off <= 0) {
 		return Mode_Done(&t, off == 0);
 	}
+	/* the headless instance: its players come over the network (include/scrap/players.h) */
+	if (g_Instance) {
+		return Mode_Done(&t, 1);
+	}
 	Mode_SaveVar("Spawn", spawn);
 	if (!Mode_DummyStartV(spawn, 1) || !Mode_DummyNextSeam(dummy)) {
 		return Mode_Done(&t, 0);
