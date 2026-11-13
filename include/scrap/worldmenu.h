@@ -29,6 +29,10 @@ int Net_ScrollIndex(int count, int index, int how);
 void Net_RunWorld(int id, const char *section, const char *tab, const char *world, const char *motd, int n,
 	const char *const *names, const struct nativeVal_s *const *vals);
 
+/* the maps of an original mode (type: "DeathMatch"; Net.ModesMap) as "FZ,OM": all, or (chosen) those chosen on the
+ * create page (ServerMapList); their count */
+int Net_TypeMapList(const char *type, byte chosen, char *out, int size);
+
 /* ---- MenuWorld.c ---- */
 
 /* the native functions of the pages, once */

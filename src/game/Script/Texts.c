@@ -28,6 +28,7 @@ static const struct {
 	{ "MP_CoopLeaderHere", "The party leader is here." },
 	{ "MP_CoopNoLeader", "No party leader in the world." },
 	{ "MP_CoopEnd", "The party finished the story!" },
+	{ "MP_Mode_dmbots", "DeathMatch with bots" },
 	{ "MP_PvP", "PvP" },
 	{ "MP_Public", "List server" },
 	{ "MP_On", "On" },
@@ -47,6 +48,8 @@ static const struct {
 	{ "MP_WorldGone", "The world is gone" },
 	{ "MP_HostFailed", "The world could not be started" },
 	{ "MP_Lost", "Connection lost: %s" },
+	{ "MP_Arena_Delivered", "%s delivered the mail bag" },
+	{ "MP_Arena_BagBack", "The mail bag is back at its start" },
 };
 
 const char *Texts_Get(const char *key) {
@@ -56,6 +59,36 @@ const char *Texts_Get(const char *key) {
 		}
 	}
 	return NULL;
+}
+
+void Texts_Fill(char *out, int cap, const char *fmt, int num, const char *name, const char *name2) {
+	const char *names[2] = { name ? name : "", name2 ? name2 : "" };
+	int n = 0, k = 0;
+	if (cap <= 0) {
+		return;
+	}
+	for (const char *f = fmt ? fmt : ""; *f && n < cap - 1; f++) {
+		char tmp[16];
+		const char *ins = NULL;
+		if (f[0] == '%' && f[1] == 's') {
+			ins = names[k < 2 ? k : 1];
+			k++;
+		} else if (f[0] == '%' && (f[1] == 'd' || f[1] == 'i')) {
+			Str_PrintfQuiet(tmp, sizeof(tmp), "%d", num);
+			ins = tmp;
+		} else if (f[0] == '%' && f[1] == '%') {
+			ins = "%";
+		}
+		if (!ins) {
+			out[n++] = *f;
+			continue;
+		}
+		for (; *ins && n < cap - 1; ins++) {
+			out[n++] = *ins;
+		}
+		f++;
+	}
+	out[n] = 0;
 }
 
 void Texts_Format(char *out, int size, const char *key, const char *arg) {

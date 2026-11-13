@@ -594,6 +594,16 @@ byte Travel_Go(int i, const char *level, const char *entrance, const char *door,
 	return 1;
 }
 
+byte Travel_Name(int player, char *out, int cap) {
+	out[0] = 0;
+	return player >= 0 && player < PLAYERS_MAX && tr.pl[player].used &&
+		CoordKv_Get(tr.pl[player].state, tr.pl[player].len, "name", out, cap) && out[0];
+}
+
+byte Travel_Send(int player, const char *level) {
+	return player >= 0 && player < PLAYERS_MAX && tr.pl[player].used && tr.up && Travel_Go(player, level, "", "", 0);
+}
+
 /* ---- the metro ---- */
 
 byte Travel_MetroUse(const char *usr, const char *door) {

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "scrap/app.h"
+#include "scrap/arena.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/coord.h"
@@ -84,11 +85,13 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 		inst.money = crt_atoi(ext);
 		return 1;
 	}
-	return Rep_ParseParam(param, ext) || Coop_ParseParam(param, ext) || Faction_ParseParam(param, ext);
+	return Rep_ParseParam(param, ext) || Coop_ParseParam(param, ext) || Arena_ParseParam(param, ext) ||
+		Faction_ParseParam(param, ext);
 }
 
 byte Instance_PvP(void) {
-	return inst.pvp;
+	/* the PvP modes are fights between the players whatever -pvp says */
+	return inst.pvp || Arena_On();
 }
 
 int Instance_StartMoney(void) {
@@ -211,7 +214,8 @@ static void Instance_NetIn(uint64_t ms) {
 			break;
 		case NET2_EV_MESSAGE:
 			if (ev.channel == REP_CH_RELIABLE && (Travel_Message(inst.host, ev.conn, ev.data, ev.size) ||
-				Faction_Message(inst.host, ev.conn, ev.data, ev.size) || Coop_Message(inst.host, ev.conn, ev.data, ev.size))) {
+				Faction_Message(inst.host, ev.conn, ev.data, ev.size) || Coop_Message(inst.host, ev.conn, ev.data, ev.size) ||
+				Arena_Message(inst.host, ev.conn, ev.data, ev.size))) {
 				break;
 			}
 			if (ev.channel == REP_CH_RELIABLE && ev.size > 0 && ev.data[0] == NETREP_MSG_HELLO &&
@@ -297,7 +301,7 @@ void Instance_Line(char *line) {
 		Players_BindTurn();
 		return;
 	}
-	if (Rep_Command(line) || Faction_Command(line) || Coop_Command(line)) {
+	if (Rep_Command(line) || Faction_Command(line) || Coop_Command(line) || Arena_Command(line)) {
 		return;
 	}
 	Console_Execute(line);
@@ -366,6 +370,7 @@ void Instance_Pass(void) {
 	App_Frame(g_pApp);
 	Faction_Tick(inst.host, inst.ticks);
 	Coop_Pass();
+	Arena_Tick(inst.host, inst.ticks);
 	if (inst.host) {
 		Rep_Tick(inst.host, inst.ticks);
 	}

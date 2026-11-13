@@ -11,6 +11,7 @@
 #include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/alarm.h"
+#include "scrap/arena.h"
 #include "scrap/chartype.h"
 #include "scrap/console.h"
 #include "scrap/coord.h"
@@ -35,6 +36,7 @@
 #include "scrap/scriptnative.h"
 #include "scrap/sound.h"
 #include "scrap/text.h"
+#include "scrap/texts.h"
 #include "scrap/travel.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
@@ -193,34 +195,8 @@ static const char *Fr_RankName(int f, int rank, char *buf, int cap) {
 	return buf;
 }
 
-/* a text of the table: %s the names in order, %d the number (no format string of printf) */
-static void Fr_Format(char *out, int cap, const char *fmt, int num, const char *name, const char *name2) {
-	const char *names[2] = { name ? name : "", name2 ? name2 : "" };
-	int n = 0, k = 0;
-	for (const char *f = fmt; *f && n < cap - 1; f++) {
-		char tmp[16];
-		const char *ins = NULL;
-		if (f[0] == '%' && f[1] == 's') {
-			ins = names[k < 2 ? k : 1];
-			k++;
-		} else if (f[0] == '%' && f[1] == 'd') {
-			Str_PrintfQuiet(tmp, sizeof(tmp), "%d", num);
-			ins = tmp;
-		}
-		if (!ins) {
-			out[n++] = *f;
-			continue;
-		}
-		for (; *ins && n < cap - 1; ins++) {
-			out[n++] = *ins;
-		}
-		f++;
-	}
-	out[n] = 0;
-}
-
 static void Fr_Text(char *out, int cap, int id, int num, const char *name, const char *name2) {
-	Fr_Format(out, cap, g_FactionTexts[id], num, name, name2);
+	Texts_Fill(out, cap, g_FactionTexts[id], num, name, name2);
 }
 
 /* ================================ the instance ================================ */
@@ -1784,7 +1760,8 @@ static void Fr_ClientLines(const FactionTable *t) {
 void Faction_ClientFrame(void) {
 	const FactionTable *t = Faction_Table();
 	cEntity *own = Play_Entity();
-	if (!g_Play || !own || !t) {
+	/* the keys are the PvP modes' there (include/scrap/arena.h) */
+	if (!g_Play || !own || !t || Arena_ClientOn()) {
 		return;
 	}
 	Fr_ClientBot();

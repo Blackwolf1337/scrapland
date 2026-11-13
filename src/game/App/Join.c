@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/arena.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
@@ -42,6 +43,8 @@ static struct {
 	char hostBind[48];
 	char hostKeep[256];
 	char hostMode[16];				/* "" sandbox */
+	char hostLevels[512];			/* the levels of the world (the rotation of the PvP modes), "" the default */
+	int hostFraglimit;				/* -fraglimit of the PvP modes' instances, 0 their Fraglimit */
 	int hostPvp, hostMax;			/* -1, 0: the coordinator's defaults */
 	byte hostListed;				/* registered with the list server of scrapdecomp.ini */
 	uint8_t serverKey[NET2_KEY_SIZE];	/* pinned (a world of the list server's) */
@@ -140,8 +143,9 @@ static void Join_Host(void) {
 	char dir[COORD_PATH];
 
 	Coord_DefaultConfig(&cfg);
-	/* the menu's mode, else -mode of this game (include/scrap/faction.h, include/scrap/coop.h) */
-	Str_Copy(cfg.mode, join.hostMode[0] ? join.hostMode : Coop_Asked() ? "coop" : Faction_ModeName(), sizeof(cfg.mode));
+	/* the menu's mode, else -mode of this game (include/scrap/coop.h, include/scrap/arena.h, include/scrap/faction.h) */
+	Str_Copy(cfg.mode, join.hostMode[0] ? join.hostMode : Coop_Asked() ? "coop" : Arena_ModeName() ? Arena_ModeName() :
+		Faction_ModeName(), sizeof(cfg.mode));
 	byte coop = !strcmp(cfg.mode, "coop");
 	Plat_ConfigDir(dir, sizeof(dir));
 	/* a coop world keeps its party's story apart from the free worlds' players */
@@ -155,6 +159,14 @@ static void Join_Host(void) {
 	Str_Copy(cfg.start, coop ? COORD_COOP_START : join.hostLevel[0] ? join.hostLevel : "DownTown", sizeof(cfg.start));
 	Str_Copy(cfg.keep, join.hostKeep[0] ? join.hostKeep : cfg.start, sizeof(cfg.keep));
 	Str_PrintfQuiet(cfg.name, sizeof(cfg.name), "%s's world", join.name[0] ? join.name : "Player");
+	/* the PvP modes: their levels are the rotation (the menu's, else -maps of this game, else the start level) */
+	if (Arena_ModeOf(cfg.mode) >= 0) {
+		Str_Copy(cfg.levels, join.hostLevels[0] ? join.hostLevels : Arena_Maps()[0] ? Arena_Maps() : cfg.start,
+			sizeof(cfg.levels));
+		if (join.hostFraglimit > 0) {
+			Str_PrintfQuiet(cfg.instArgs, sizeof(cfg.instArgs), "-fraglimit:%d", join.hostFraglimit);
+		}
+	}
 	if (join.hostPvp >= 0) {
 		cfg.pvp = join.hostPvp;
 	}
@@ -421,6 +433,8 @@ static void Join_Begin(const char *name) {
 	join.hostMax = 0;
 	join.hostListed = 0;
 	join.hostKeep[0] = 0;
+	join.hostLevels[0] = 0;
+	join.hostFraglimit = 0;
 	join.hasServerKey = 0;
 	join.deny[0] = 0;
 	join.why[0] = 0;
@@ -448,6 +462,8 @@ byte Join_StartHost(const JoinHostOpts *o, const char *name) {
 	join.port = o->port;
 	Str_Copy(join.hostLevel, o->level, sizeof(join.hostLevel));
 	Str_Copy(join.hostMode, o->mode, sizeof(join.hostMode));
+	Str_Copy(join.hostLevels, o->levels, sizeof(join.hostLevels));
+	join.hostFraglimit = o->fraglimit;
 	join.hostPvp = o->pvp;
 	join.hostMax = o->maxPlayers;
 	join.hostListed = o->listed;
