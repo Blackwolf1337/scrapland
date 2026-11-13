@@ -1768,7 +1768,8 @@ static void Fr_ClientLines(const FactionTable *t) {
 	}
 	if (frc.news[0] && Fr_RealNow() < frc.newsUntil) {
 		Fr_Text(line, sizeof(line), FT_HUD_NEWS, 0, frc.news, NULL);
-		Text_Printf(x, (int)((float)h * 0.86f), "%s", line);
+		/* above the radar's right edge */
+		Text_Printf((int)((float)w * 0.24f), (int)((float)h * 0.80f), "%s", line);
 	}
 }
 
