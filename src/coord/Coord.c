@@ -162,7 +162,7 @@ static void Co_SetInfo(void) {
 	info.flags = COORD_INFO_WORLD | (coord.cfg.dedicated ? COORD_INFO_DEDICATED : 0);
 	snprintf(info.name, sizeof(info.name), "%s", coord.cfg.name);
 	snprintf(info.map, sizeof(info.map), "%.32s", coord.cfg.start);
-	snprintf(info.mode, sizeof(info.mode), "%s", COORD_MODE);
+	snprintf(info.mode, sizeof(info.mode), "%s", coord.cfg.mode[0] ? coord.cfg.mode : COORD_MODE);
 	Net2_SetServerInfo(coord.host, &info);
 }
 
@@ -225,8 +225,8 @@ static void Co_SetState(CoInst *in, int state) {
 
 static void Co_Start(CoInst *in) {
 	char exe[COORD_PATH + 16], cwd[COORD_PATH + 8], logPath[COORD_PATH + 64], token[65], key[65];
-	char a[10][96];
-	char extra[256];
+	char a[11][96];
+	char extra[256], loop[48];
 	const char *argv[40];
 	int n = 0;
 
@@ -251,9 +251,9 @@ static void Co_Start(CoInst *in) {
 	snprintf(a[0], sizeof(a[0]), "-instance:%s", in->level);
 	snprintf(a[1], sizeof(a[1]), "-port:%u", in->port);
 	snprintf(a[2], sizeof(a[2]), "-id:%s", in->level);
-	snprintf(a[3], sizeof(a[3]), "-coord:%s", coord.cfg.bind[0] ? coord.cfg.bind : "127.0.0.1");
-	snprintf(a[4], sizeof(a[4]), "-coordport:%u", Net2_LocalPort(coord.host, NET2_AF_IPV4) ? Net2_LocalPort(coord.host,
-		NET2_AF_IPV4) : coord.cfg.port);
+	Coord_Loopback(coord.cfg.bind, loop, sizeof(loop));
+	snprintf(a[3], sizeof(a[3]), "-coord:%s", loop);
+	snprintf(a[4], sizeof(a[4]), "-coordport:%u", Coord_Port(&coord) ? Coord_Port(&coord) : coord.cfg.port);
 	snprintf(a[5], sizeof(a[5]), "-coordkey:%s", key);
 	snprintf(a[6], sizeof(a[6]), "-pvp:%d", coord.cfg.pvp);
 	snprintf(a[7], sizeof(a[7]), "-money:%d", coord.cfg.money);
@@ -264,6 +264,10 @@ static void Co_Start(CoInst *in) {
 	if (coord.cfg.bind[0]) {
 		snprintf(a[9], sizeof(a[9]), "-bind:%s", coord.cfg.bind);
 		argv[n++] = a[9];
+	}
+	if (coord.cfg.mode[0] && strcmp(coord.cfg.mode, COORD_MODE)) {
+		snprintf(a[10], sizeof(a[10]), "-mode:%s", coord.cfg.mode);
+		argv[n++] = a[10];
 	}
 	snprintf(extra, sizeof(extra), "%s", coord.cfg.instArgs);
 	for (char *p = strtok(extra, " "); p && n < 38; p = strtok(NULL, " ")) {
@@ -857,12 +861,9 @@ Coord *Coord_Create(const CoordConfig *cfg) {
 	nc.appVersion = 1;
 	nc.timeout = CO_TIMEOUT;
 	nc.identitySeed = coord.seed;
-	if (c->bind[0]) {
-		nc.ipv6 = 0;
-		if (!Net2_ParseAddr(c->bind, 0, &nc.bind4) || nc.bind4.family != NET2_AF_IPV4) {
-			Co_Log("coordinator: -bind needs a numeric IPv4 address, not '%s'\n", c->bind);
-			return NULL;
-		}
+	if (!Net2_SetBind(&nc, c->bind)) {
+		Co_Log("coordinator: -bind needs a numeric address, not '%s'\n", c->bind);
+		return NULL;
 	}
 	coord.host = Net2_Create(&nc, &err);
 	if (!coord.host) {
@@ -995,7 +996,22 @@ void Coord_PublicKey(const Coord *c, uint8_t pub[NET2_KEY_SIZE]) {
 
 uint16_t Coord_Port(const Coord *c) {
 	(void)c;
-	return Net2_LocalPort(coord.host, NET2_AF_IPV4);
+	uint16_t p = Net2_LocalPort(coord.host, NET2_AF_IPV4);
+	return p ? p : Net2_LocalPort(coord.host, NET2_AF_IPV6);
+}
+
+void Coord_Loopback(const char *bind, char *out, int size) {
+	Net2Addr a;
+	if (!bind || !*bind || !Net2_ParseAddr(bind, 0, &a)) {
+		snprintf(out, (size_t)size, "127.0.0.1");
+		return;
+	}
+	static const uint8_t zero[16];
+	if (!memcmp(a.ip, zero, sizeof(zero))) {
+		snprintf(out, (size_t)size, "%s", a.family == NET2_AF_IPV6 ? "::1" : "127.0.0.1");
+	} else {
+		snprintf(out, (size_t)size, "%s", bind);
+	}
 }
 
 void Coord_Destroy(Coord *c) {

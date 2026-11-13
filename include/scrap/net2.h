@@ -195,6 +195,9 @@ int Net2_LanQuery(Net2Host *h, uint16_t basePort, uint64_t now);	/* basePort .. 
 int Net2_LanAddr(int family, uint16_t port, Net2Addr *out);	/* IPv4 broadcast or the IPv6 group */
 
 int Net2_ParseAddr(const char *s, uint16_t defPort, Net2Addr *out);	/* numeric only: no name lookup */
+/* the sockets of cfg bound to the numeric address bind (only its family opened); "" or NULL leaves cfg as it is
+ * (both families, any address); 0 when it is no numeric address */
+int Net2_SetBind(Net2Config *cfg, const char *bind);
 void Net2_AddrString(const Net2Addr *a, char *buf, int size);
 int Net2_AddrEqual(const Net2Addr *a, const Net2Addr *b);
 const char *Net2_ReasonString(int reason);

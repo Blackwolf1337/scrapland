@@ -13,6 +13,10 @@
  * scheduler takes its entry, Port_Scheduled). The $names of the sections are made on native values (Mode_DefRunVa,
  * stage 6 batches 6f and 6h); the .def runner and the steps their arguments as native values. Every function of the
  * table has a native entry (batch 6h; BrowseFormatServerLine in 7e2).
+ *
+ * The pages of the worlds of the new network (src/game/Script/MenuWorld.c, not in the original) are sections of
+ * net.def too: Net_RunWorld runs them, the browser lines and their scrolling are shared (Net_BrowserLine,
+ * Net_FillBrowser, Net_ScrollIndex).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +35,7 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/timer.h"
+#include "scrap/worldmenu.h"
 
 static const char net_def[] = {
 #embed "../../../data/menus/net.def"
@@ -84,9 +89,12 @@ static void Net_RunMenu(int id, const char *section, int n, ...);
 static void Net_RunPage(int id, const char *section, const char *tab);
 
 /* the values every page may use, as values of t: NET_PAIRS(c) are their name and value pairs for Net_RunMenu
- * (NET_COMMON of them), other $names follow */
-#define NET_COMMON 6
-#define NET_PAIRS(c) "tab", c[0], "domain", c[1], "motd", c[2], "motdx", c[3], "motdy", c[4], "serveraddress", c[5]
+ * (NET_COMMON of them), other $names follow; world is "" on the pages of the old network */
+#define NET_COMMON 7
+#define NET_PAIRS(c) "tab", c[0], "domain", c[1], "motd", c[2], "motdx", c[3], "motdy", c[4], "serveraddress", c[5], \
+	"world", c[6]
+static const char *const net_common[NET_COMMON] = { "tab", "domain", "motd", "motdx", "motdy", "serveraddress",
+	"world" };
 static void Net_Common(modeVals_t *t, const char *tab, const nativeVal_t **c);
 static void Net_JoinMenu(int id);
 
@@ -135,17 +143,27 @@ static void Net_Sort(void) {
 	qsort(net.servers, net.numServers, sizeof(net.servers[0]), Net_Compare);
 }
 
-/* one line of the browser: name, mode, players, map, ping in fixed columns */
-static void Net_ServerLine(const netServer_t *s, char *out, int size) {
-	char mode[0x48], players[0x20], ping[0x10];
-	Str_Printf(mode, sizeof(mode), "%c %s", s->flags & SIBF_FORCE_SHIP ? 0x0b : 0x0a, s->type);
-	Str_Printf(players, sizeof(players), "(%d/%d)", s->numPlayers, s->maxPlayers);
-	Str_Printf(ping, sizeof(ping), "%d", s->ping);
-	Str_Printf(out, size, "%-28.28s %-14.14s %7.7s %-19.19s %4.4s", s->name, mode, players, s->map, ping);
+void Net_BrowserLine(const char *name, const char *type, byte forceShip, int players, int maxPlayers, const char *map,
+	const char *ping, char *out, int size) {
+	char mode[0x48], count[0x20];
+	Str_Printf(mode, sizeof(mode), "%c %s", forceShip ? 0x0b : 0x0a, type);
+	Str_Printf(count, sizeof(count), "(%d/%d)", players, maxPlayers);
+	Str_Printf(out, size, "%-28.28s %-14.14s %7.7s %-19.19s %4.4s", name, mode, count, map, ping);
 }
 
-static void Net_UpdateSlider(int id) {
-	int n = net.numServers;
+/* one line of the browser: name, mode, players, map, ping in fixed columns */
+static void Net_ServerLine(const netServer_t *s, char *out, int size) {
+	char ping[0x10];
+	Str_Printf(ping, sizeof(ping), "%d", s->ping);
+	Net_BrowserLine(s->name, s->type, (s->flags & SIBF_FORCE_SHIP) != 0, s->numPlayers, s->maxPlayers, s->map, ping, out,
+		size);
+}
+
+static void Net_OldLine(int i, char *out, int size) {
+	Net_ServerLine(&net.servers[i], out, size);
+}
+
+static void Net_Slider(int id, int n, int index) {
 	if (n <= NET_SLOTS) {
 		Script_SetNum(id, "BrowserSlider", "Y", NET_SLIDER_Y);
 		Script_SetNum(id, "BrowserSlider", "ScaleY", NET_SLIDER_H);
@@ -157,29 +175,32 @@ static void Net_UpdateSlider(int id) {
 		size = 10;
 		step = (NET_SLIDER_H - (size - step)) / (double)(n - NET_SLOTS + 1);
 	}
-	Script_SetNum(id, "BrowserSlider", "Y", NET_SLIDER_Y + net.index * step);
+	Script_SetNum(id, "BrowserSlider", "Y", NET_SLIDER_Y + index * step);
 	Script_SetNum(id, "BrowserSlider", "ScaleY", size);
 }
 
-static void Net_UpdateBrowser(int id) {
+static void Net_UpdateSlider(int id) {
+	Net_Slider(id, net.numServers, net.index);
+}
+
+void Net_FillBrowser(int id, int total, int first, void (*line)(int i, char *out, int size), const char *tab) {
 	int count = 0;
 	for (int i = 0; i < NET_SLOTS; i++) {
-		char name[0x20], link[0x20], line[0x100] = "";
-		if (net.numServers > i + net.index) {
-			Net_ServerLine(&net.servers[i + net.index], line, sizeof(line));
+		char name[0x20], link[0x20], text[0x100] = "";
+		if (total > i + first) {
+			line(i + first, text, sizeof(text));
 		}
 		Str_Printf(name, sizeof(name), "BrowserSlot%d", i + 1);
-		Script_SetStr(id, name, "Text", line);
+		Script_SetStr(id, name, "Text", text);
 		Script_SetNum(id, name, "W", 460);
 		Str_Printf(link, sizeof(link), "BrowserSlot%d", i);
 		Script_SetStr(id, name, "Up", link);
 		Str_Printf(link, sizeof(link), "BrowserSlot%d", i + 2);
 		Script_SetStr(id, name, "Down", link);
 		Script_SetStr(id, name, "Right", "BrowserUp");
-		Script_SetNum(id, name, "Visible", line[0] != 0);
-		count += line[0] != 0;
+		Script_SetNum(id, name, "Visible", text[0] != 0);
+		count += text[0] != 0;
 	}
-	const char *tab = !strcmp(net.domain, "Internet") ? "JoinInternet" : !strcmp(net.domain, "Local") ? "JoinLocal" : NULL;
 	if (tab) {
 		Net_Link(1, id, tab, count ? "BrowserSlot1" : "Refresh");
 	}
@@ -188,7 +209,12 @@ static void Net_UpdateBrowser(int id) {
 		Str_Printf(last, sizeof(last), "BrowserSlot%d", count);
 		Net_Link(1, id, last, "Refresh");
 	}
-	Net_UpdateSlider(id);
+	Net_Slider(id, total, first);
+}
+
+static void Net_UpdateBrowser(int id) {
+	const char *tab = !strcmp(net.domain, "Internet") ? "JoinInternet" : !strcmp(net.domain, "Local") ? "JoinLocal" : NULL;
+	Net_FillBrowser(id, net.numServers, net.index, Net_OldLine, tab);
 }
 
 static void Net_ClearList(void) {
@@ -751,6 +777,7 @@ static const scriptStep_t net_steps[] = {
 /* a section of net.def with its $names: n pairs of a name and a const nativeVal_t * (Mode_DefRunVa) */
 static void Net_RunMenu(int id, const char *section, int n, ...) {
 	va_list va;
+	WorldMenu_Register();
 	va_start(va, n);
 	Mode_DefRunVa(id, NET_FILE, section, net_def, net_steps, 0, n, va);
 	va_end(va);
@@ -765,6 +792,30 @@ static void Net_Common(modeVals_t *t, const char *tab, const nativeVal_t **c) {
 	c[3] = Mode_I(t, marginH + 5);
 	c[4] = Mode_I(t, 480 - marginV - 20);
 	c[5] = Mode_S(t, GVar_GetStr("DefaultServerAddress"));
+	c[6] = Mode_S(t, "");
+}
+
+void Net_RunWorld(int id, const char *section, const char *tab, const char *world, const char *motd, int n,
+	const char *const *names, const nativeVal_t *const *vals) {
+	modeVals_t t = { .n = 0 };
+	const nativeVal_t *c[NET_COMMON];
+	const char *nm[MODE_DEFVARS];
+	const nativeVal_t *v[MODE_DEFVARS];
+	int k = 0;
+	WorldMenu_Register();
+	Net_Common(&t, tab, c);
+	c[2] = Mode_S(&t, motd);
+	c[6] = Mode_S(&t, world);
+	for (int i = 0; i < NET_COMMON; i++, k++) {
+		nm[k] = net_common[i];
+		v[k] = c[i];
+	}
+	for (int i = 0; i < n && k < MODE_DEFVARS; i++, k++) {
+		nm[k] = names[i];
+		v[k] = vals[i];
+	}
+	Mode_DefRunV(id, NET_FILE, section, net_def, net_steps, 0, nm, v, k);
+	Mode_Done(&t, 1);
 }
 
 /* a section with the values every page may use and nothing else */
@@ -1049,27 +1100,28 @@ static byte PCMenu_RefreshBrowseMenuButton_E(const nativeVal_t *a, int n, native
 	return 1;
 }
 
+int Net_ScrollIndex(int count, int index, int how) {
+	if (how == 0) {
+		return count <= index + NET_SLOTS ? -1 : index + 1;
+	}
+	if (how == 1) {
+		return index <= 0 ? -1 : index - 1;
+	}
+	if (how == 2) {
+		return count <= NET_SLOTS ? 0 : count > index + NET_SLOTS * 2 ? index + NET_SLOTS : count - NET_SLOTS;
+	}
+	return index > NET_SLOTS - 1 ? index - NET_SLOTS : 0;
+}
+
 /* the arrows and the page keys of the browser; the names are the script's (Previous scrolls down) */
 static byte Net_Scroll(const nativeVal_t *a, int n, int how) {
 	NET_ARGS(a, n);
 	(void)control;
-	int count = net.numServers;
-	if (how == 0) {
-		if (count <= net.index + NET_SLOTS) {
-			return 1;
-		}
-		net.index++;
-	} else if (how == 1) {
-		if (net.index <= 0) {
-			return 1;
-		}
-		net.index--;
-	} else if (how == 2) {
-		net.index = count <= NET_SLOTS ? 0 : count > net.index + NET_SLOTS * 2 ? net.index + NET_SLOTS :
-			count - NET_SLOTS;
-	} else {
-		net.index = net.index > NET_SLOTS - 1 ? net.index - NET_SLOTS : 0;
+	int i = Net_ScrollIndex(net.numServers, net.index, how);
+	if (i < 0) {
+		return 1;
 	}
+	net.index = i;
 	Net_UpdateBrowser(id);
 	return 1;
 }

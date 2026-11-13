@@ -19,6 +19,7 @@
 #include "scrap/scrap.h"
 #include "scrap/timer.h"
 #include "scrap/world.h"
+#include "scrap/travel.h"
 
 #define CON_COLOR_OUT 0xff0000		/* the color of Python's print (Scrap.ConsoleOut) */
 #define CON_MAXARGS 9
@@ -853,6 +854,11 @@ static void Console_Command(const char *line) {
 		name[n++] = *p++;
 	}
 	name[n] = 0;
+	/* not in the original: a line for the coordinator of the world this game hosts (include/scrap/travel.h) */
+	if (!strcmp(name, "coord")) {
+		Join_Command(p);
+		return;
+	}
 	const conCmd *c = Con_FindCmd(n ? name : "help");
 	if (!c) {
 		Con_Unknown(line);

@@ -812,6 +812,18 @@ static void Watch_Reset(void) {
 	watch.phase = WATCH_OFF;
 }
 
+void Watch_Stop(void) {
+	Watch_Reset();
+	watch.target = 0;
+	watch.ticketLen = 0;
+	watch.port = 0;
+	Net2_Wipe(watch.ticket, sizeof(watch.ticket));
+}
+
+byte Watch_Alive(void) {
+	return (watch.phase != WATCH_OFF && watch.phase != WATCH_GONE) || (watch.phase == WATCH_OFF && watch.target);
+}
+
 void Watch_Go(const char *addr, uint16_t port, const uint8_t *ticket, int size, const char *level) {
 	char path[COORD_LEVEL + 8];
 	if (size < 0 || size > (int)sizeof(watch.ticket)) {

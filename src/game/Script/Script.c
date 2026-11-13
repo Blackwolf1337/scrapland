@@ -58,6 +58,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapfont.h"
 #include "scrap/script.h"
+#include "scrap/texts.h"
 #include "scrap/scriptnative.h"
 #include "scrap/timer.h"
 
@@ -491,6 +492,9 @@ void Script_SetCursor(int id, const char *item) {
 
 const char *Script_Lang(const char *key) {
 	const char *s = Lang_GetStr(key);
+	if (!s) {
+		s = Texts_Get(key);
+	}
 	if (!s) {
 		Con_Warnf("STRING NOT FOUND: '%s'\n", key);
 		return "";

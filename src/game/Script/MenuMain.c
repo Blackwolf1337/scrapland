@@ -32,6 +32,7 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/timer.h"
+#include "scrap/travel.h"
 
 static const char main_def[] = {
 #embed "../../../data/menus/main.def"
@@ -1078,6 +1079,11 @@ static byte Menu_AuxAbortGame_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)a;
 	(void)n;
 	(void)out;
+	/* a player of a world of the new network leaves it (include/scrap/travel.h) */
+	if (Join_Active()) {
+		Join_Stop(NULL);
+		return 1;
+	}
 	SaveVars_Delete("");
 	Main_QLoad("Levels/Menu");
 	return 1;

@@ -262,4 +262,10 @@ extern CApp *g_pApp;
 /* the application is always a CWinApp */
 #define g_pWinApp ((CWinApp *)g_pApp)
 
+/* scrapdecomp.ini next to the exe (src/core/game.c), its [general] section: key=number (def without it), key=text
+ * (1 when the key is there; out "" without it) */
+int Game_Option(const char *key);
+int Game_OptionOr(const char *key, int def);
+int Game_OptionStr(const char *key, char *out, int size);
+
 #endif

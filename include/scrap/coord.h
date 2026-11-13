@@ -82,6 +82,7 @@
 #define COORD_PATH 260
 #define COORD_MAX_LEVELS 32
 #define COORD_CITY "DownTown,Outskirts,Police,Bank,Press,Temple,TownHall,GamblinDen,Commercial,Scrapyard,GDB"
+#define COORD_LIST_PORT 28090			/* the default port of a list server (include/scrap/coordlist.h) */
 
 /* message types */
 #define COORD_MSG_HELLO 'h'
@@ -226,7 +227,7 @@ typedef void (*coordlog_t)(const char *text);
 typedef struct CoordConfig {
 	uint16_t port;					/* of the coordinator; the instances from instPort on */
 	uint16_t instPort;				/* 0: port + NET2_LAN_PORTS (outside the ports of LAN discovery) */
-	char bind[48];					/* numeric IPv4 address of the coordinator, "" any */
+	char bind[48];					/* numeric IPv4 or IPv6 address of the coordinator, "" any */
 	char name[COORD_NAME + 1];		/* of the world (server info) */
 	char dataDir[COORD_PATH];		/* players/, logs/, coordinator.key, instances.txt */
 	char gameDir[COORD_PATH];		/* the game folder (Bin/ScrapC in it), the instances run in its Bin */
@@ -235,6 +236,11 @@ typedef struct CoordConfig {
 	char keep[512];					/* the levels kept up, "" the city */
 	char start[COORD_LEVEL + 1];	/* where a new player starts, "" DownTown */
 	char instArgs[256];				/* more arguments for the instances (space separated) */
+	char mode[16];					/* of the server info, "" COORD_MODE; another one goes to the instances as -mode */
+	char listAddr[64];				/* numeric address of the list server to register with, "" none */
+	uint16_t listPort;				/* 0 COORD_LIST_PORT */
+	char listPublic[48];			/* the address the list server lists (only a list server on loopback takes it), "" the
+									   one it sees */
 	int maxPlayers;
 	int pvp, money;					/* -pvp and -money of the instances */
 	int grace;						/* s, 0 COORD_GRACE_SECS */
@@ -259,5 +265,8 @@ void Coord_Destroy(Coord *c);
 /* the coordinator's identity key (the instances check tickets with it) */
 void Coord_PublicKey(const Coord *c, uint8_t pub[NET2_KEY_SIZE]);
 uint16_t Coord_Port(const Coord *c);
+/* the address a program on this machine reaches a server bound to bind at: bind itself, or the loopback of its family
+ * for "" and the any addresses */
+void Coord_Loopback(const char *bind, char *out, int size);
 
 #endif

@@ -312,6 +312,24 @@ static int Net2_ParsePort(const char *s, uint16_t *port) {
 }
 
 /* "1.2.3.4", "1.2.3.4:5", "::1", "[::1]", "[fe80::1%eth0]:5" */
+int Net2_SetBind(Net2Config *cfg, const char *bind) {
+	Net2Addr a;
+	if (!bind || !*bind) {
+		return 1;
+	}
+	if (!Net2_ParseAddr(bind, 0, &a)) {
+		return 0;
+	}
+	cfg->ipv4 = a.family == NET2_AF_IPV4;
+	cfg->ipv6 = a.family == NET2_AF_IPV6;
+	if (cfg->ipv4) {
+		cfg->bind4 = a;
+	} else {
+		cfg->bind6 = a;
+	}
+	return 1;
+}
+
 int Net2_ParseAddr(const char *s, uint16_t defPort, Net2Addr *out) {
 	char host[96];
 	const char *end, *port = NULL;

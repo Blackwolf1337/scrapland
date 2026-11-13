@@ -13,6 +13,7 @@
 #include <unistd.h>
 #endif
 
+#include "scrap/cmdquote.h"
 #include "scrap/game.h"
 #include "scrap/testdet.h"
 
@@ -38,7 +39,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	return Main_Start(cmd);
 }
 #else
-/* the arguments joined with spaces, the ones with a space quoted: the command line the game parses */
+/* the arguments joined with spaces, quoted for the game's parser (include/scrap/cmdquote.h): the command line the
+ * game parses */
 int main(int argc, char **argv) {
 	static char cmd[4096];
 	size_t n = 0;
@@ -60,10 +62,12 @@ int main(int argc, char **argv) {
 	}
 #endif
 	for (int i = 1; i < argc; i++) {
-		byte quote = strchr(argv[i], ' ') != NULL;
-		int w = snprintf(cmd + n, sizeof(cmd) - n, "%s%s%s%s", i > 1 ? " " : "", quote ? "\"" : "", argv[i],
-			quote ? "\"" : "");
-		if (w < 0 || (size_t)w >= sizeof(cmd) - n) {
+		if (i > 1 && n + 1 < sizeof(cmd)) {
+			cmd[n++] = ' ';
+		}
+		int w = CmdQuote_Arg(argv[i], cmd + n, (int)(sizeof(cmd) - n));
+		if (w < 0) {
+			cmd[n] = 0;
 			break;
 		}
 		n += (size_t)w;

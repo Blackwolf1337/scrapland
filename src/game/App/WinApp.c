@@ -18,6 +18,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
+#include "scrap/worldmenu.h"
 #include "scrap/platform.h"
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
@@ -381,8 +382,12 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		if (g_Instance) {
 			Instance_Pass();
 		} else if (g_HeadlessPlay ? Play_HeadlessDue() : !g_Engine || Engine_FrameDue(g_Engine)) {
+			WorldMenu_Frame();
 			if (g_Watch) {
 				Join_PreFrame();
+			}
+			/* a join can end in its pass (Join_Stop) */
+			if (g_Watch) {
 				Watch_PreFrame();
 			}
 			App_Frame(g_pApp);

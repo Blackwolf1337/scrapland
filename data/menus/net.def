@@ -1,11 +1,22 @@
 # The multiplayer menus (PCMenu.MultiPlayerMenu, NetJoinGameMenu with the server browser, the address and password
-# pages, NetCreateGameMenu with the advanced options, NetDefaultContentMenu of the game). The format is described in src/game/Script/Script.c. A pack in mods/
+# pages, NetCreateGameMenu with the advanced options, NetDefaultContentMenu of the game) and the pages of the worlds of
+# the new network (src/game/Script/MenuWorld.c, not in the original). The format is described in src/game/Script/Script.c. A pack in mods/
 # with scrapc/menus/net.def replaces this file.
 
 style blue
 	Red 183
 	Green 220
 	Blue 255
+style titlecolor
+	Red 143
+	Green 180
+	Blue 215
+	Effect Shadow
+style optioncolor
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
 
 # ---- the multiplayer menu during a game: $server is 1 on the server ----
 
@@ -145,31 +156,42 @@ ud Back Join
 # the item that had the cursor keeps it
 default $current
 
-# ---- the server browser ----
+# ---- the server browser: the functions of the old network; serverlist with the functions in $names ----
 
 section browser
+let slotfn PCMenu.BrowseLocalJoin
+let backfn PCMenu.BrowserMenuBack
+let refreshfn PCMenu.RefreshBrowseMenuButton
+let sortfn PCMenu.BrowserColumnBack_Click
+let nextfn PCMenu.BrowseLocalMenuNext
+let prevfn PCMenu.BrowseLocalMenuPrevious
+let slidergain PCMenu.BrowserSliderGainFocus
+let sliderloose PCMenu.BrowserSliderLooseFocus
+do serverlist
+
+section serverlist
 list slots
-	-	PCMenu.BrowseLocalJoin	BrowserSlot1
-	-	PCMenu.BrowseLocalJoin	BrowserSlot2
-	-	PCMenu.BrowseLocalJoin	BrowserSlot3
-	-	PCMenu.BrowseLocalJoin	BrowserSlot4
-	-	PCMenu.BrowseLocalJoin	BrowserSlot5
-	-	PCMenu.BrowseLocalJoin	BrowserSlot6
-	-	PCMenu.BrowseLocalJoin	BrowserSlot7
-	-	PCMenu.BrowseLocalJoin	BrowserSlot8
-	-	PCMenu.BrowseLocalJoin	BrowserSlot9
-	-	PCMenu.BrowseLocalJoin	BrowserSlot10
-	-	PCMenu.BrowseLocalJoin	BrowserSlot11
-	-	PCMenu.BrowseLocalJoin	BrowserSlot12
-	-	PCMenu.BrowseLocalJoin	BrowserSlot13
-call Menu.VerticalMenu $id "" [slots] PCMenu.BrowserMenuBack 88 VerticalStep=16 Font=Terminal8Fixed YStart=153
+	-	$slotfn	BrowserSlot1
+	-	$slotfn	BrowserSlot2
+	-	$slotfn	BrowserSlot3
+	-	$slotfn	BrowserSlot4
+	-	$slotfn	BrowserSlot5
+	-	$slotfn	BrowserSlot6
+	-	$slotfn	BrowserSlot7
+	-	$slotfn	BrowserSlot8
+	-	$slotfn	BrowserSlot9
+	-	$slotfn	BrowserSlot10
+	-	$slotfn	BrowserSlot11
+	-	$slotfn	BrowserSlot12
+	-	$slotfn	BrowserSlot13
+call Menu.VerticalMenu $id "" [slots] $backfn 88 VerticalStep=16 Font=Terminal8Fixed YStart=153
 item Refresh Text
 	Font Horatio
 	Text "{Menu_MultiPlayer_Refresh}"
 	X 320
 	Y 384
 	CentralText 1
-	OnAccept PCMenu.RefreshBrowseMenuButton
+	OnAccept $refreshfn
 	use blue
 	Effect Shadow
 item BrowserColumnLine_H Sprite
@@ -200,7 +222,7 @@ style back
 	Unit 1
 	ScaleY 18
 	Alpha 64
-	OnAccept PCMenu.BrowserColumnBack_Click
+	OnAccept $sortfn
 	H 18
 item BrowserColumn_Name Text
 	Font Terminal8Fixed
@@ -285,7 +307,7 @@ item BrowserUp Button arrow
 	Complex 0
 	Visible 1
 	Rotate 1
-	OnAccept PCMenu.BrowseLocalMenuNext
+	OnAccept $nextfn
 	MultiPress 1
 item BrowserDown Button arrow
 	Y 344
@@ -297,7 +319,7 @@ item BrowserDown Button arrow
 	Visible 1
 	Rotate 1
 	Mirror 1
-	OnAccept PCMenu.BrowseLocalMenuPrevious
+	OnAccept $prevfn
 	MultiPress 1
 ud BrowserUp BrowserDown
 lr BrowserSlot1 BrowserUp
@@ -325,8 +347,8 @@ item BrowserSliderArea Sprite
 	FocusPivotX -3
 	FocusPivotY 0
 	Alpha 24
-	OnGainFocus PCMenu.BrowserSliderGainFocus
-	OnLooseFocus PCMenu.BrowserSliderLooseFocus
+	OnGainFocus $slidergain
+	OnLooseFocus $sliderloose
 item BrowseTab Tab
 call Menu.SetTabDefaults $id BrowseTab
 	X 72
@@ -339,26 +361,34 @@ call Menu.SetTabDefaults $id BrowseTab
 	Green 255
 	Blue 255
 
-# ---- the address of a server ----
+# ---- the address of a server: address with the function of its join button in $joinfn ----
 
 section ip
+let joinfn PCMenu.MenuJoinGame
+do address
+set Item1 MaxInput 21
+
+section address
 list entries
 	$serveraddress			!EditText
-	"{Menu_Multiplayer_JoinGame}"	PCMenu.MenuJoinGame
+	"{Menu_Multiplayer_JoinGame}"	$joinfn
 call Menu.VerticalMenu $id "" [entries] "" Font=Horatio VerticalStep=45 YStart=140
 set Item1 Font Horatio
-set Item1 MaxInput 21
 set Item1 X 156
 set Item2 Y @Item1.Y+35
 
-# ---- connecting to $address ----
+# ---- connecting to $address: waiting with the function of its abort button in $abortfn ----
 
 section connecting
+let abortfn PCMenu.AbortJoin
+do waiting
+
+section waiting
 call Menu.StartNewMenu $id
 list entries
-	"{Menu_Multiplayer_JoinGame_Abort}"	PCMenu.AbortJoin
+	"{Menu_Multiplayer_JoinGame_Abort}"	$abortfn
 	" "					""
-call Menu.VerticalMenu $id $title [entries] PCMenu.AbortJoin YStart=%Menu.SubMenuYStart
+call Menu.VerticalMenu $id $title [entries] $abortfn YStart=%Menu.SubMenuYStart
 call Menu.DrawBackSubMenu $id
 
 # ---- the password of the server ----
@@ -381,9 +411,17 @@ lr Item2 Item3
 lr Item3 Item2
 call Menu.DrawBackSubMenu $id
 
-# ---- the part the create and join pages share: $tab is Create or Join, $motd and its place ----
+# ---- the part the create and join pages share: $tab is Create or Join, $motd and its place; the pages of the worlds
+# ($world not empty) have their own tabs and no garage ----
 
 section content
+if $world
+	do worldcontent
+else
+	do netcontent
+end
+
+section netcontent
 item Back Text
 	Font ScrapBig
 	Text "{Menu_Back}"
@@ -437,21 +475,22 @@ item MOTD Text
 	Alpha 255
 	Visible 1
 call Menu.DrawCircuitMenu $id
+# the worlds of the new network (not in the original)
+item FreeRoam Text
+	Font ScrapMedium
+	Text "{MP_FreeRoam}"
+	X 120
+	Y %Menu.BackButtonYStart+12
+	CentralText 1
+	OnAccept !WorldMenu
+	use blue
+	Effect Shadow
+lr FreeRoam Back
 
 # ---- create a game: $servername, $players, $fraglimit and $advanced come from the menu function ----
 
 section Create
 call Menu.StartNewMenu $id
-style titlecolor
-	Red 143
-	Green 180
-	Blue 215
-	Effect Shadow
-style optioncolor
-	Red 183
-	Green 220
-	Blue 255
-	Effect Shadow
 # the server name
 item ServerNameTitle Text
 	Font Horatio
@@ -727,3 +766,265 @@ set Item4 Y @Item3.Y+35
 set Item4 X 100
 set Item5 Y @Item4.Y+35
 call Menu.DrawBackSubMenu $id
+
+# ---- the worlds of the new network (src/game/Script/MenuWorld.c, not in the original): $world is Lan, List or Address
+# on the join page, Host on the host page; $tab WorldJoin or WorldHost, $motd the status line, $name the player's name
+# (PlayerName of the garage), $worldaddress the address of the address page ----
+
+section World
+call Menu.StartNewMenu $id
+style worldtab
+	Unit 1
+	Y 81
+	ScaleX 163
+	ScaleY 24
+	W 163
+	H 24
+	Red 32
+	Green 255
+	Blue 255
+	Alpha 10
+style worldtabtext
+	Font Horatio
+	Y 92
+	Red 183
+	Green 220
+	Blue 255
+	CentralText 1
+item WorldButton_Lan Sprite worldtab
+	X 73
+	OnAccept !WorldLanMenu
+item WorldLan Text
+	Text "{Menu_Multiplayer_JoinGame_LocalNetwork}"
+	X 155
+	use worldtabtext
+	OnAccept !WorldLanMenu
+run tabwidth
+item WorldButton_List Sprite worldtab
+	X 238
+	OnAccept !WorldListMenu
+item WorldList Text
+	Text "{MP_ListServer}"
+	X 320
+	use worldtabtext
+	OnAccept !WorldListMenu
+run tabwidth
+item WorldButton_Address Sprite worldtab
+	X 403
+	OnAccept !WorldAddressMenu
+item WorldAddress Text
+	Text "{Menu_Multiplayer_JoinGame_IP}"
+	X 485
+	use worldtabtext
+	OnAccept !WorldAddressMenu
+run tabwidth
+set WorldButton_$(world) Alpha 48
+if $world == Address
+	let serveraddress $worldaddress
+	let joinfn !WorldJoinAddress
+	do address
+	set Item1 MaxInput 46
+else
+	let slotfn !WorldJoinSlot
+	let backfn PCMenu.MultiPlayerMenu
+	let refreshfn !WorldRefresh
+	let sortfn !WorldSort
+	let nextfn !WorldNext
+	let prevfn !WorldPrev
+	let slidergain ""
+	let sliderloose ""
+	do serverlist
+end
+do content
+call SScorer.SetOnCancel $id PCMenu.MultiPlayerMenu
+call SScorer.SetOnNext $id !WorldHostMenu
+call SScorer.SetOnPrev $id !WorldHostMenu
+lr WorldLan WorldList
+lr WorldList WorldAddress
+ud WorldJoin WorldLan
+ud WorldJoin WorldList
+ud WorldJoin WorldAddress
+if $world == Address
+	ud WorldJoin WorldAddress
+	ud WorldAddress Item1
+	ud Item1 Item2
+	ud Item2 Back
+else
+	ud WorldJoin World$(world)
+	ud Refresh Back
+end
+ud Back WorldJoin
+default $current
+
+# ---- the part the pages of the worlds share: the tabs, Back, the player's name, the status line ----
+
+section worldcontent
+item Back Text
+	Font ScrapBig
+	Text "{Menu_Back}"
+	X 320
+	Y %Menu.BackButtonYStart
+	CentralText 1
+	OnAccept PCMenu.MultiPlayerMenu
+	use blue
+	Effect Shadow
+item WorldNameTitle Text
+	Font Horatio
+	Text "{MP_Name}:"
+	X 432
+	Y 36
+	use titlecolor
+measure w Horatio "{MP_Name}:"
+let x 432 $w 8
+item WorldName Text
+	Font Horatio
+	Text $name
+	X $x
+	Y 36
+	OnAccept !EditText
+	MaxInput 16
+	use optioncolor
+default Back
+list tabs
+	WorldJoin	!WorldJoinMenu	"{MP_JoinWorld}"
+	WorldHost	!WorldHostMenu	"{MP_HostWorld}"
+call Menu.AddTabs $id [tabs] $tab ParamTabSize=26 Hint=0
+lr WorldHost WorldName
+lr WorldName WorldJoin
+default $tab
+item MOTD Text
+	Text $motd
+	X $motdx
+	Y $motdy
+	Font HoratioSmall
+	Effect Shadow
+	Align Left
+	use blue
+	Alpha 255
+	Visible 1
+call Menu.DrawCircuitMenu $id
+
+# ---- host a world: $level, $mode, $pvp and $public are the texts of the choices, $players and $port numbers ----
+
+section WorldHost
+call Menu.StartNewMenu $id
+style hosttitle
+	Font Horatio
+	X 74
+	Red 143
+	Green 180
+	Blue 215
+	Effect Shadow
+style hostvalue
+	Font Horatio
+	X 380
+	Align Center
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+item HostLevelTitle Text hosttitle
+	Text "{MP_Level}:"
+	Y 84
+item HostLevel Text
+	Text $level
+	use hostvalue
+	Y 96
+	OnAccept !WorldHostLevelNext
+call Menu.PreviousNextMenuSimple 0 HostLevel 240 96 280
+set HostLevelPrev OnAccept !WorldHostLevelPrev
+set HostLevelNext OnAccept !WorldHostLevelNext
+item HostModeTitle Text hosttitle
+	Text "{MP_Mode}:"
+	Y 124
+item HostMode Text
+	Text $mode
+	use hostvalue
+	Y 136
+	OnAccept !WorldHostMode
+call Menu.PreviousNextMenuSimple 0 HostMode 240 136 280
+set HostModePrev OnAccept !WorldHostMode
+set HostModeNext OnAccept !WorldHostMode
+item HostPvPTitle Text hosttitle
+	Text "{MP_PvP}:"
+	Y 164
+item HostPvP Text
+	Text $pvp
+	use hostvalue
+	Y 176
+	OnAccept !WorldHostPvP
+call Menu.PreviousNextMenuSimple 0 HostPvP 240 176 280
+set HostPvPPrev OnAccept !WorldHostPvP
+set HostPvPNext OnAccept !WorldHostPvP
+item HostPublicTitle Text hosttitle
+	Text "{MP_Public}:"
+	Y 204
+item HostPublic Text
+	Text $public
+	use hostvalue
+	Y 216
+	OnAccept !WorldHostPublic
+call Menu.PreviousNextMenuSimple 0 HostPublic 240 216 280
+set HostPublicPrev OnAccept !WorldHostPublic
+set HostPublicNext OnAccept !WorldHostPublic
+item HostPlayersTitle Text hosttitle
+	Text "{MP_MaxPlayers}:"
+	Y 244
+item HostPlayers Text
+	IsNumeric 1
+	Font Horatio
+	Text $players
+	X 360
+	Y 244
+	OnAccept !EditText
+	MaxInput 2
+	use optioncolor
+item HostPortTitle Text hosttitle
+	Text "{MP_Port}:"
+	Y 284
+item HostPort Text
+	IsNumeric 1
+	Font Horatio
+	Text $port
+	X 360
+	Y 284
+	OnAccept !EditText
+	MaxInput 5
+	use optioncolor
+item HostButton Text
+	Font Horatio
+	Text "{MP_HostButton}"
+	X 320
+	Y 384
+	CentralText 1
+	OnAccept !WorldHost
+	use optioncolor
+do content
+ud WorldHost HostLevelPrev
+ud WorldHost HostLevelNext
+lr HostLevelPrev HostLevelNext
+ud HostLevelPrev HostModePrev
+ud HostLevelNext HostModeNext
+lr HostModePrev HostModeNext
+ud HostModePrev HostPvPPrev
+ud HostModeNext HostPvPNext
+lr HostPvPPrev HostPvPNext
+ud HostPvPPrev HostPublicPrev
+ud HostPvPNext HostPublicNext
+lr HostPublicPrev HostPublicNext
+ud HostPublicPrev HostPlayers
+ud HostPublicNext HostPlayers
+ud HostPlayers HostPort
+ud HostPort HostButton
+ud HostButton Back
+ud Back WorldHost
+call SScorer.SetOnCancel $id PCMenu.MultiPlayerMenu
+call SScorer.SetOnNext $id !WorldJoinMenu
+call SScorer.SetOnPrev $id !WorldJoinMenu
+default WorldHost
+
+# ---- waiting for the world: $title, abort with !WorldAbort ----
+
+section worldwait
+let abortfn !WorldAbort
+do waiting

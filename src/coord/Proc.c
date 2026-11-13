@@ -21,14 +21,16 @@ extern char **environ;
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/cmdquote.h"
 #include "scrap/coord.h"
 
 #define PROC_ENV_MAX 512			/* entries of the environment of a child */
 
 #ifdef _WIN32
 
-/* argv for CommandLineToArgvW / the CRT: quoted where it has blanks or quotes (the game's own parser takes a quoted
- * "-param" as no parameter) */
+/* the command line: the program for CommandLineToArgvW / the CRT (quoted where it has blanks or quotes), the
+ * arguments for the game's own parser, which gets the line after the program as WinMain's (include/scrap/cmdquote.h:
+ * a CRT quoted "-param" would be no parameter there) */
 static int Proc_Quote(char *out, int cap, const char *const *argv) {
 	int o = 0;
 	for (int i = 0; argv[i]; i++) {
@@ -38,6 +40,12 @@ static int Proc_Quote(char *out, int cap, const char *const *argv) {
 		}
 		if (i) {
 			out[o++] = ' ';
+			int w = CmdQuote_Arg(argv[i], out + o, cap - o);
+			if (w < 0) {
+				return 0;
+			}
+			o += w;
+			continue;
 		}
 		if (n && !strpbrk(argv[i], " \t\"")) {
 			memcpy(out + o, argv[i], n);

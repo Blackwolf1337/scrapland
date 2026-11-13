@@ -1,6 +1,7 @@
 /*
  * The client's side of a coordinator: the identity key, the join, the tickets, and the coordinator of a game that
- * hosts, see include/scrap/travel.h and include/scrap/coord.h. Not in the original.
+ * hosts, see include/scrap/travel.h and include/scrap/coord.h; started by the command line or by the menus of the
+ * worlds (Join_Start, Join_StartHost), ended by Join_Stop. Not in the original.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,12 +11,15 @@
 #include "scrap/console.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
+#include "scrap/game.h"
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/netrep.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/scrap.h"
+#include "scrap/script.h"
 #include "scrap/travel.h"
 
 #define JOIN_RETRY_MS 3000			/* the coordinator is tried again this often */
@@ -27,11 +31,18 @@ enum { JOIN_OFF, JOIN_CONNECTING, JOIN_HELLO, JOIN_IN, JOIN_GONE };
 
 static struct {
 	byte active, host;
+	byte menu;						/* started by the menus: a failure goes back to them instead of ending the game */
 	char addr[64];
+	uint16_t port;					/* of the coordinator, 0 -port */
 	char name[COORD_NAME + 1];
 	char hostLevel[COORD_LEVEL + 1];
 	char hostBind[48];
 	char hostKeep[256];
+	char hostMode[16];				/* "" sandbox */
+	int hostPvp, hostMax;			/* -1, 0: the coordinator's defaults */
+	byte hostListed;				/* registered with the list server of scrapdecomp.ini */
+	uint8_t serverKey[NET2_KEY_SIZE];	/* pinned (a world of the list server's) */
+	byte hasServerKey;
 	uint8_t seed[NET2_SEED_SIZE], pub[NET2_KEY_SIZE];
 	byte haveKey;
 	Net2Host *net;
@@ -41,7 +52,10 @@ static struct {
 	byte played;					/* a ticket came: the coordinator going away does not end the game */
 	uint16_t instPort;
 	Coord *coord;
-} join;
+	char deny[128];					/* the text of the coordinator's last deny */
+	int ui;							/* JOIN_UI_* */
+	char why[160];					/* the text of a JOIN_UI_FAILED */
+} join = { .hostPvp = -1 };
 
 byte Join_ParseParam(const char *param, const char *ext) {
 	if (!crt_stricmp("join", param)) {
@@ -72,6 +86,30 @@ byte Join_ParseParam(const char *param, const char *ext) {
 
 byte Join_Active(void) {
 	return join.active;
+}
+
+/* text of the texts table with %s filled in */
+static void Join_Text(char *out, int size, const char *key, const char *arg) {
+	const char *fmt = Script_Lang(key);
+	const char *at = strstr(fmt, "%s");
+	if (at) {
+		Str_PrintfQuiet(out, size, "%.*s%s%s", (int)(at - fmt), fmt, arg, at + 2);
+	} else {
+		Str_Copy(out, fmt, size);
+	}
+}
+
+/* a join that never got a ticket failed: back to the menus with the text, or the end of a game of the command line */
+static void Join_Fail(const char *key, const char *arg) {
+	char text[sizeof(join.why)];
+	Join_Text(text, sizeof(text), key, arg);
+	Con_Errorf("join: %s\n", text);
+	if (!join.menu) {
+		join.phase = JOIN_GONE;
+		Plat_Quit();
+		return;
+	}
+	Join_Stop(text);
 }
 
 static uint64_t Join_Ms(void) {
@@ -114,22 +152,29 @@ static void Join_Host(void) {
 	Str_PrintfQuiet(cfg.dataDir, sizeof(cfg.dataDir), "%shost", dir);
 	Str_Copy(cfg.gameDir, ".", sizeof(cfg.gameDir));
 	CoordProc_Self(cfg.exe, sizeof(cfg.exe));
-	cfg.port = Instance_Port();
-	Str_Copy(cfg.bind, join.hostBind[0] ? join.hostBind : "127.0.0.1", sizeof(cfg.bind));
+	cfg.port = join.port;
+	Str_Copy(cfg.bind, join.hostBind, sizeof(cfg.bind));
 	Str_Copy(cfg.start, join.hostLevel[0] ? join.hostLevel : "DownTown", sizeof(cfg.start));
 	Str_Copy(cfg.keep, join.hostKeep[0] ? join.hostKeep : cfg.start, sizeof(cfg.keep));
 	Str_PrintfQuiet(cfg.name, sizeof(cfg.name), "%s's world", join.name[0] ? join.name : "Player");
+	Str_Copy(cfg.mode, join.hostMode, sizeof(cfg.mode));
+	if (join.hostPvp >= 0) {
+		cfg.pvp = join.hostPvp;
+	}
+	if (join.hostMax > 0) {
+		cfg.maxPlayers = join.hostMax;
+	}
+	if (join.hostListed && Game_OptionStr("listserver", cfg.listAddr, sizeof(cfg.listAddr))) {
+		cfg.listPort = (uint16_t)Game_OptionOr("listport", COORD_LIST_PORT);
+	}
 	cfg.stopInstances = 1;
 	cfg.log = Join_Log;
 	join.coord = Coord_Create(&cfg);
 	if (!join.coord) {
-		Con_Errorf("join: the world could not be hosted\n");
 		join.active = 0;
 		return;
 	}
-	if (join.hostBind[0]) {
-		Str_Copy(join.addr, join.hostBind, sizeof(join.addr));
-	}
+	Coord_Loopback(cfg.bind, join.addr, sizeof(join.addr));
 }
 
 static void Join_Connect(uint64_t now) {
@@ -138,9 +183,8 @@ static void Join_Connect(uint64_t now) {
 	int err = 0;
 
 	join.retryAt = now + JOIN_RETRY_MS;
-	if (!Net2_ParseAddr(join.addr, Instance_Port(), &addr)) {
-		Con_Errorf("join: '%s' is not a numeric address\n", join.addr);
-		join.phase = JOIN_GONE;
+	if (!Net2_ParseAddr(join.addr, join.port, &addr)) {
+		Join_Fail("MP_BadAddress", join.addr);
 		return;
 	}
 	if (!join.net) {
@@ -149,10 +193,11 @@ static void Join_Connect(uint64_t now) {
 		cfg.ipv4 = addr.family == NET2_AF_IPV4;
 		cfg.ipv6 = addr.family == NET2_AF_IPV6;
 		cfg.timeout = JOIN_TIMEOUT;
+		cfg.serverKey = join.hasServerKey ? join.serverKey : NULL;
 		join.net = Net2_Create(&cfg, &err);
 		if (!join.net) {
 			Con_Errorf("join: no Net2 client (error %d)\n", err);
-			join.phase = JOIN_GONE;
+			Join_Fail("MP_NotReached", "");
 			return;
 		}
 	}
@@ -209,6 +254,7 @@ static void Join_Ticket(NetRepReader *r) {
 		return;
 	}
 	join.played = 1;
+	join.ui = JOIN_UI_PLAYING;
 	join.instPort = (uint16_t)port;
 	Con_Printf("join: ticket for %s (port %u)\n", level, port);
 	Watch_Go(join.addr, (uint16_t)port, ticket, n, level);
@@ -237,19 +283,25 @@ static void Join_Net(uint64_t now) {
 			join.tries = 0;
 			break;
 		}
-		case NET2_EV_DISCONNECT:
-			Con_Printf("join: coordinator %s (%s)\n", join.phase == JOIN_CONNECTING ? "not reached" : "lost",
-				ev.reason > NET2_DR_APP ? Coord_DenyText(ev.reason - NET2_DR_APP) : Net2_ReasonString(ev.reason));
-			if (ev.reason >= NET2_DR_APP || (!join.played && ++join.tries >= JOIN_TRIES)) {
-				join.phase = JOIN_GONE;
-				if (!join.played) {
-					Plat_Quit();
+		case NET2_EV_DISCONNECT: {
+			const char *why = ev.reason > NET2_DR_APP ? Coord_DenyText(ev.reason - NET2_DR_APP) :
+				Net2_ReasonString(ev.reason);
+			Con_Printf("join: coordinator %s (%s)\n", join.phase == JOIN_CONNECTING ? "not reached" : "lost", why);
+			if (!join.played && (ev.reason >= NET2_DR_APP || ev.reason == NET2_DR_KEY || ++join.tries >= JOIN_TRIES)) {
+				if (ev.reason >= NET2_DR_APP) {
+					Join_Fail("MP_Refused", join.deny[0] ? join.deny : why);
+				} else if (ev.reason == NET2_DR_KEY) {
+					Join_Fail("MP_Lost", why);
+				} else {
+					Join_Fail("MP_NotReached", "");
 				}
-			} else {
-				join.phase = JOIN_OFF;
-				join.retryAt = now + JOIN_RETRY_MS;
+				return;
 			}
+			join.tries += join.played;
+			join.phase = ev.reason >= NET2_DR_APP ? JOIN_GONE : JOIN_OFF;
+			join.retryAt = now + JOIN_RETRY_MS;
 			break;
+		}
 		case NET2_EV_MESSAGE:
 			if (ev.channel != REP_CH_RELIABLE || ev.size < 1) {
 				break;
@@ -263,6 +315,7 @@ static void Join_Net(uint64_t now) {
 				int reason = (int)NetRep_GetU8(&r);
 				NetRep_GetStr(&r, text, sizeof(text));
 				Con_Errorf("join: refused: %s (%d)\n", text, reason);
+				Str_Copy(join.deny, text, sizeof(join.deny));
 			} else if (ev.data[0] == COORD_MSG_NOTICE) {
 				NetRep_GetStr(&r, text, sizeof(text));
 				Con_Printf("join: %s\n", text);
@@ -281,19 +334,21 @@ void Join_PreFrame(void) {
 	}
 	if (!join.haveKey) {
 		join.haveKey = 1;
+		if (!join.port) {
+			join.port = Instance_Port();
+		}
 		if (!join.name[0]) {
 			const char *n = getenv("SCRAP_PLAYER_NAME");
 			Str_Copy(join.name, n && *n ? n : "Player", sizeof(join.name));
 		}
 		if (!Join_Key()) {
-			join.active = 0;
-			Plat_Quit();
+			Join_Fail("MP_HostFailed", "");
 			return;
 		}
 		if (join.host) {
 			Join_Host();
 			if (!join.active) {
-				Plat_Quit();
+				Join_Fail("MP_HostFailed", "");
 				return;
 			}
 		}
@@ -301,10 +356,24 @@ void Join_PreFrame(void) {
 	if (join.coord) {
 		Coord_Pass(join.coord, now);
 	}
+	/* neither the instance nor the coordinator (it refused the player, or did not answer a few times): the world is
+	 * gone for this player */
+	if (join.played && (join.phase == JOIN_GONE || join.tries >= JOIN_TRIES) && !Watch_Alive()) {
+		char text[sizeof(join.why)];
+		if (join.phase == JOIN_GONE && join.deny[0]) {
+			Join_Text(text, sizeof(text), "MP_Refused", join.deny);
+		} else {
+			Str_Copy(text, Script_Lang("MP_WorldGone"), sizeof(text));
+		}
+		Join_Stop(text);
+		return;
+	}
 	if (join.phase == JOIN_OFF && now >= join.retryAt) {
 		Join_Connect(now);
 	}
-	Join_Net(now);
+	if (join.active) {
+		Join_Net(now);
+	}
 }
 
 void Join_Idle(void) {
@@ -332,4 +401,101 @@ void Join_Close(void) {
 		join.coord = NULL;
 	}
 	Net2_Wipe(join.seed, sizeof(join.seed));
+}
+
+/* a new join or host of the menus: the state of the last one gone */
+static void Join_Begin(const char *name) {
+	if (join.active) {
+		Join_Stop(NULL);
+	}
+	join.host = 0;
+	join.hostMode[0] = 0;
+	join.hostPvp = -1;
+	join.hostMax = 0;
+	join.hostListed = 0;
+	join.hostKeep[0] = 0;
+	join.hasServerKey = 0;
+	join.deny[0] = 0;
+	join.why[0] = 0;
+	Str_Copy(join.name, name && *name ? name : "Player", sizeof(join.name));
+	join.active = join.menu = 1;
+	join.ui = JOIN_UI_WAIT;
+	g_Play = g_Watch = 1;
+}
+
+byte Join_Start(const char *addr, uint16_t port, const char *name, const uint8_t *serverKey) {
+	Join_Begin(name);
+	Str_Copy(join.addr, addr, sizeof(join.addr));
+	join.port = port;
+	if (serverKey) {
+		memcpy(join.serverKey, serverKey, NET2_KEY_SIZE);
+		join.hasServerKey = 1;
+	}
+	Con_Printf("join: from the menu to %s port %u as %s\n", addr, port, join.name);
+	return 1;
+}
+
+byte Join_StartHost(const JoinHostOpts *o, const char *name) {
+	Join_Begin(name);
+	join.host = 1;
+	join.port = o->port;
+	Str_Copy(join.hostLevel, o->level, sizeof(join.hostLevel));
+	Str_Copy(join.hostMode, o->mode, sizeof(join.hostMode));
+	join.hostPvp = o->pvp;
+	join.hostMax = o->maxPlayers;
+	join.hostListed = o->listed;
+	if (!Game_OptionStr("hostbind", join.hostBind, sizeof(join.hostBind))) {
+		join.hostBind[0] = 0;
+	}
+	Con_Printf("join: hosting %s (%s) on port %u as %s\n", o->level, o->mode[0] ? o->mode : COORD_MODE, o->port,
+		join.name);
+	return 1;
+}
+
+void Join_Stop(const char *why) {
+	byte inWorld = join.played;
+	Join_Close();
+	Watch_Stop();
+	join.active = join.host = join.menu = 0;
+	join.phase = JOIN_OFF;
+	join.tries = 0;
+	join.retryAt = 0;
+	join.played = 0;
+	join.instPort = 0;
+	join.haveKey = 0;
+	join.hasServerKey = 0;
+	g_Play = g_Watch = 0;
+	Str_Copy(join.why, why ? why : "", sizeof(join.why));
+	join.ui = join.why[0] ? JOIN_UI_FAILED : JOIN_UI_IDLE;
+	Con_Printf("join: ended%s%s\n", join.why[0] ? ": " : "", join.why);
+	if (g_HeadlessPlay) {
+		Plat_Quit();
+		return;
+	}
+	if (inWorld) {
+		SaveVars_Delete("");
+		CWinApp_LoadLevel(g_pApp, "Levels/Menu");
+	}
+}
+
+void Join_Command(const char *line) {
+	while (*line == ' ') {
+		line++;
+	}
+	if (!join.coord || !Coord_Command(join.coord, line)) {
+		Con_Printf("coord: %s\n", join.coord ? "unknown command (status, save, kick, start, stop, inst)" :
+			"this game hosts no world");
+	}
+}
+
+int Join_UiState(const char **why) {
+	if (why) {
+		*why = join.why;
+	}
+	return join.ui;
+}
+
+void Join_UiClear(void) {
+	join.ui = join.active ? join.ui : JOIN_UI_IDLE;
+	join.why[0] = 0;
 }

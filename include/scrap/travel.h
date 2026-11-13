@@ -27,10 +27,14 @@
  * "host" folder, the instances as headless child processes of this game on loopback, -hostbind for players of other
  * machines) and joins it on 127.0.0.1; the levels start on demand and the start level is kept up (-hostkeep:<list>).
  * Tests: SCRAP_PLAYBOT_METRO=<station,...> makes a client pick the first station of the list the metro map offers.
+ * The menus of the worlds (include/scrap/worldmenu.h) start the same join or host at run time (Join_Start,
+ * Join_StartHost); Join_Stop ends either and goes back to the main menu, also when the instance and the coordinator
+ * are both gone (or the coordinator refused the player) once the game played in the world.
  */
 #ifndef SCRAP_TRAVEL_H
 #define SCRAP_TRAVEL_H
 
+#include "scrap/coord.h"
 #include "scrap/mathlib.h"
 #include "scrap/shared.h"
 
@@ -98,9 +102,38 @@ void Join_PreFrame(void);
 void Join_Idle(void);
 void Join_Close(void);
 
+/* the menus of the worlds (src/game/Script/MenuWorld.c): a join of the world at addr (the coordinator's port; the
+ * world's identity key when the list server gave it, else NULL), a world hosted by this game, and the end of either:
+ * the connections closed, the hosted world's instances stopped, the watcher and player gone, back to the main menu
+ * when a level of the world ran (why: the text the menus show, NULL none; a headless player ends the game). The
+ * state for the menus: JOIN_UI_*, why the text of a failure */
+#define JOIN_UI_IDLE 0
+#define JOIN_UI_WAIT 1					/* connecting or starting, no ticket yet */
+#define JOIN_UI_PLAYING 2				/* a ticket came: the level of the world loads or runs */
+#define JOIN_UI_FAILED 3
+typedef struct JoinHostOpts {
+	char level[COORD_LEVEL + 1];		/* the start level, kept up */
+	char mode[16];						/* "" or "sandbox", "freeroam" (passed to the instances as -mode) */
+	int pvp;							/* 0 or 1 */
+	int maxPlayers;
+	uint16_t port;
+	byte listed;						/* registered with the list server of scrapdecomp.ini (listserver=) */
+} JoinHostOpts;
+byte Join_Start(const char *addr, uint16_t port, const char *name, const uint8_t *serverKey);
+byte Join_StartHost(const JoinHostOpts *o, const char *name);
+void Join_Stop(const char *why);
+int Join_UiState(const char **why);
+/* the console line "/coord <line>": a line for the coordinator of the world this game hosts (status, inst <level>
+ * <line>, ...: Coord_Command) */
+void Join_Command(const char *line);
+void Join_UiClear(void);
+
 /* the watcher's side (Watch.c): the instance of a ticket (a travel when one runs already), the station picked on
- * the metro map, the map of the instance's metro message */
+ * the metro map, the map of the instance's metro message; the end of everything of the instance (Join_Stop), whether
+ * an instance connection is up, being made or about to be made */
 void Watch_Go(const char *addr, uint16_t port, const uint8_t *ticket, int size, const char *level);
+void Watch_Stop(void);
+byte Watch_Alive(void);
 byte Watch_MetroPick(const char *station);
 void Watch_Idle(void);
 

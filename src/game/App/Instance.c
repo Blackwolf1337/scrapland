@@ -34,7 +34,7 @@ static struct {
 	Net2Host *host;
 	uint16_t port;
 	char id[NET2_INFO_NAME + 1];
-	char bind[48];					/* numeric IPv4 address, "" for any address of both families */
+	char bind[48];					/* numeric IPv4 or IPv6 address, "" for any address of both families */
 	int maxPlayers;
 	byte pvp;
 	int money;
@@ -138,12 +138,9 @@ static void Instance_Open(uint64_t now) {
 	cfg.appVersion = INSTANCE_APP_VERSION;
 	cfg.inboxSize = INSTANCE_CONN_BUFFER;
 	cfg.outboxSize = INSTANCE_CONN_BUFFER;
-	if (inst.bind[0]) {
-		cfg.ipv6 = 0;
-		if (!Net2_ParseAddr(inst.bind, 0, &cfg.bind4) || cfg.bind4.family != NET2_AF_IPV4) {
-			Con_Errorf("instance: -bind needs a numeric IPv4 address, not '%s'\n", inst.bind);
-			return;
-		}
+	if (!Net2_SetBind(&cfg, inst.bind)) {
+		Con_Errorf("instance: -bind needs a numeric address, not '%s'\n", inst.bind);
+		return;
 	}
 	inst.host = Net2_Create(&cfg, &err);
 	if (!inst.host) {

@@ -160,10 +160,12 @@ static void Tr_Open(void) {
 	int err = 0;
 
 	tr.lastTry = tr.now;
-	if (!tr.host) {
+	byte parsed = Net2_ParseAddr(tr.addr, tr.port, &addr);
+	if (!tr.host && parsed) {
 		Net2_DefaultConfig(&cfg, 0);
 		cfg.appVersion = 1;
-		cfg.ipv6 = 0;
+		cfg.ipv4 = addr.family == NET2_AF_IPV4;
+		cfg.ipv6 = addr.family == NET2_AF_IPV6;
 		cfg.serverKey = tr.key;
 		tr.host = Net2_Create(&cfg, &err);
 		if (!tr.host) {
@@ -171,7 +173,7 @@ static void Tr_Open(void) {
 			return;
 		}
 	}
-	if (!Net2_ParseAddr(tr.addr, tr.port, &addr) || Net2_Connect(tr.host, &addr, tr.now) != NET2_OK) {
+	if (!parsed || !tr.host || Net2_Connect(tr.host, &addr, tr.now) != NET2_OK) {
 		Con_Errorf("instance: cannot connect to the coordinator %s port %u\n", tr.addr, tr.port);
 	}
 }
