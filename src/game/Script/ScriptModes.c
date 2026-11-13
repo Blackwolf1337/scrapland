@@ -4834,6 +4834,25 @@ byte Mode_RefItem(const nativeVal_t *o, long i, nativeVal_t *out) {
 
 /* op 0: o[key] into out, 1: o[key] = v, 2: del o[key] */
 static byte Mode_RefKey(const nativeVal_t *o, const nativeVal_t *key, int op, const nativeVal_t *v, nativeVal_t *out) {
+	if (!NObj_HoldsPy(o) && !NObj_HoldsPy(key)) {
+		/* a value by value as the new object its Python object is: the item as a call through Python hands it over,
+		 * a change of a list or dict by value made on that temporary (and lost with it) */
+		nativeVal_t tmp, r;
+		byte ok;
+		NObj_CallArg(o, &tmp);
+		if (op == 0) {
+			Native_SetNone(out);
+			ok = NObj_GetItem(&tmp, key, &r);
+			if (ok) {
+				NObj_CallArg(&r, out);
+				Native_Free(&r);
+			}
+		} else {
+			ok = op == 1 ? NObj_SetItem(&tmp, key, v) : NObj_DelItem(&tmp, key);
+		}
+		Native_Free(&tmp);
+		return ok;
+	}
 	PyObject *p = Native_ToPy(o), *k = p ? Native_ToPy(key) : NULL, *x = k && v ? Native_ToPy(v) : NULL;
 	byte ok = k && (!v || x);
 	if (ok && op == 0) {
@@ -4856,6 +4875,14 @@ byte Mode_RefSub(const nativeVal_t *o, const nativeVal_t *key, nativeVal_t *out)
 byte Mode_RefSetItem(const nativeVal_t *o, long i, const nativeVal_t *v) {
 	if (NObj_Native(o)) {
 		return Mode_RefSeqAt(o, i, v, NULL);
+	}
+	if (!NObj_HoldsPy(o)) {
+		/* PySequence_SetItem on the temporary object of a value by value */
+		nativeVal_t tmp;
+		NObj_CallArg(o, &tmp);
+		byte ok = Mode_RefSeqAt(&tmp, i, v, NULL);
+		Native_Free(&tmp);
+		return ok;
 	}
 	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
 	byte ok = x && PySequence_SetItem(p, (int)i, x) == 0;
@@ -4883,7 +4910,7 @@ byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
 }
 
 byte Mode_RefSetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v) {
-	if (NObj_Native(o)) {
+	if (NObj_Native(o) || !NObj_HoldsPy(o)) {
 		return NObj_SetAttr(o, name, v);
 	}
 	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
@@ -4932,6 +4959,11 @@ byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v) {
 		byte ok = at < 0 ? NObj_CallMethod(o, "append", v, 1, &r) : NObj_CallMethod(o, "insert", a, 2, &r);
 		Native_Free(&r);
 		return ok;
+	}
+	if (!NObj_HoldsPy(o)) {
+		/* the insert into the temporary list of a list by value (lost with it), PyList_Insert's PyErr_BadInternalCall
+		 * for any other value */
+		return o->type == NV_LIST || Native_Raise(NE_SYSTEM, "bad argument to internal function");
 	}
 	PyObject *p = Native_ToPy(o), *x = p ? Native_ToPy(v) : NULL;
 	byte ok = x && (at < 0 ? PyList_Append(p, x) : PyList_Insert(p, at, x)) == 0;
@@ -5151,6 +5183,17 @@ byte Mode_RefSlice(const nativeVal_t *o, long lo, long hi, nativeVal_t *out) {
 	if (NObj_Native(o)) {
 		return NObj_GetSlice(o, lo, hi, out);
 	}
+	if (!NObj_HoldsPy(o)) {
+		/* PySequence_GetSlice of a value by value, the slice by reference */
+		nativeVal_t r;
+		Native_SetNone(out);
+		if (!NObj_GetSlice(o, lo, hi, &r)) {
+			return 0;
+		}
+		NObj_CallArg(&r, out);
+		Native_Free(&r);
+		return 1;
+	}
 	PyObject *p = Native_ToPy(o);
 	byte ok = Mode_RefTake(p ? PySequence_GetSlice(p, (int)lo, (int)hi) : NULL, out);
 	Py_XDECREF(p);
@@ -5181,7 +5224,7 @@ byte Mode_RefApply(const nativeVal_t *f, const nativeVal_t *args, int n, nativeV
 }
 
 byte Mode_RefDelAttr(const nativeVal_t *o, const char *name) {
-	if (NObj_Native(o)) {
+	if (NObj_Native(o) || !NObj_HoldsPy(o)) {
 		return NObj_DelAttr(o, name);
 	}
 	PyObject *p = Native_ToPy(o);
@@ -5328,6 +5371,18 @@ byte Mode_Plus(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 }
 
 byte Mode_SetItem(nativeVal_t *v, const nativeVal_t *key, const nativeVal_t *x) {
+	if (v->type == NV_LIST && !NObj_HoldsPy(v)) {
+		/* the store into the list as an object, read back as Native_Arg takes it */
+		nativeVal_t tmp;
+		NObj_CallArg(v, &tmp);
+		byte ok = NObj_SetItem(&tmp, key, x);
+		if (ok) {
+			Native_Free(v);
+			NObj_ArgOf(&tmp, v);
+		}
+		Native_Free(&tmp);
+		return ok;
+	}
 	PyObject *o = Native_ToPy(v), *k = o ? Native_ToPy(key) : NULL, *px = k ? Native_ToPy(x) : NULL;
 	byte ok = px && PyObject_SetItem(o, k, px) == 0;
 	if (ok) {
