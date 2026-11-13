@@ -27,15 +27,22 @@ extern char **environ;
 
 #ifdef _WIN32
 
-/* argv quoted for CommandLineToArgvW / the CRT */
+/* argv for CommandLineToArgvW / the CRT: quoted where it has blanks or quotes (the game's own parser takes a quoted
+ * "-param" as no parameter) */
 static int Proc_Quote(char *out, int cap, const char *const *argv) {
 	int o = 0;
 	for (int i = 0; argv[i]; i++) {
-		if (o + 2 >= cap) {
+		size_t n = strlen(argv[i]);
+		if (o + (int)n + 2 >= cap) {
 			return 0;
 		}
 		if (i) {
 			out[o++] = ' ';
+		}
+		if (n && !strpbrk(argv[i], " \t\"")) {
+			memcpy(out + o, argv[i], n);
+			o += (int)n;
+			continue;
 		}
 		out[o++] = '"';
 		int bs = 0;
