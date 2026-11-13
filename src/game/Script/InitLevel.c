@@ -94,7 +94,7 @@ static byte In_ForLibs(const nativeVal_t *path, const char *func) {
 static int In_IsMission(void) {
 	nativeVal_t mm = { 0 }, a = { 0 }, lv = { 0 }, b = { 0 };
 	/* not in the original: no story in the levels of a sandbox or freeroam world (include/scrap/places.h) */
-	if (Places_NoStory()) {
+	if (Places_On()) {
 		return 0;
 	}
 	if (!Mode_Import("string")) {

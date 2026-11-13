@@ -86,10 +86,6 @@ static const PlaceLevel *Pl_Here(void) {
 	return Places_On() ? PlaceDef_Level(PlaceDef_Table(), Pl_Level()) : NULL;
 }
 
-byte Places_NoStory(void) {
-	return Places_On();
-}
-
 /* a position of the table: 1 with pos and yaw (radians) */
 static byte Pl_Pos(const PlacePos *p, vec3_t *pos, float *yaw) {
 	vec3_t at = { 0.0f, 0.0f, 0.0f }, ang = { 0.0f, 0.0f, 0.0f };

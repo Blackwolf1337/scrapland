@@ -28,8 +28,6 @@ byte Places_ParseParam(const char *param, const char *ext);
 void Places_WorldMode(const char *mode);
 /* an instance of a sandbox or freeroam world, or a client in one */
 byte Places_On(void);
-/* no mission of the level loads (Init.isMission) */
-byte Places_NoStory(void);
 /* the level's start: the characters, the traffic and the police of the table (an instance; 0 with the error of the
  * script), then the doors and the gates (both sides) */
 byte Places_LevelStatus(void);
