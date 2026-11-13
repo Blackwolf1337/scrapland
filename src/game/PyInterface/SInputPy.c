@@ -5,7 +5,6 @@
  */
 #include "scrap/global.h"
 #include "scrap/input.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 
 /* SetActionSet(name) : selects the action set of that name; looks at the first four entries */

@@ -11,7 +11,6 @@
 #define SCRAP_PYFUNCTION_H
 
 #include "scrap/filesys.h"
-#include "scrap/python.h"
 
 #define PYF_VALUE 0x1			/* ScrapC: a function value (the Python function of the original) */
 #define PYF_NATIVE 0x2

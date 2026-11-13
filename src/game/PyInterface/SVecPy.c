@@ -10,7 +10,6 @@
 
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 
 static inline double Deg2Rad(double deg) {

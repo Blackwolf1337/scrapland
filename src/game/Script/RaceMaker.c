@@ -30,6 +30,7 @@
  * values)); the scorer file takes its $names as native values.
  */
 #include <limits.h>
+#include <string.h>
 
 #include "scrap/scrap.h"
 #include "scrap/script.h"

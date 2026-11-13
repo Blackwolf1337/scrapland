@@ -6,7 +6,6 @@
 
 #include "scrap/global.h"
 #include "scrap/logic.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 #include "scrap/vehicleentity.h"
 

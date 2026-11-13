@@ -11,7 +11,6 @@
 #include "scrap/gvar.h"
 #include "scrap/mathlib.h"
 #include "scrap/pyentity.h"
-#include "scrap/python.h"
 
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"

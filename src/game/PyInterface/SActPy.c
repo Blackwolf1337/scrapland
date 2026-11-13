@@ -7,7 +7,6 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/pyfunction.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 
 #include <stdio.h>

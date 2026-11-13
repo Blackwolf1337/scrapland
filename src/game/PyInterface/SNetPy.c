@@ -4,7 +4,6 @@
  * None (or NULL without exception: ModifyUsrData) when there is none, as the original.
  */
 #include "scrap/net.h"
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 
 /* ModifyUsrData(arg) : modifica desde el servidor los datos locales; NULL without a server (golden records it) */

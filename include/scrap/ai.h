@@ -11,7 +11,6 @@
 #include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/nodesworld.h"
-#include "scrap/python.h"
 #include "scrap/slotcontroller.h"
 
 typedef struct CNodesWorld CNodesWorld;		/* RTTI CNodesWorld: visibility graph of the level */

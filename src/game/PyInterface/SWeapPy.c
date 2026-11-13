@@ -4,7 +4,6 @@
  */
 #include <string.h>
 
-#include "scrap/python.h"
 #include "scrap/scriptapi.h"
 #include "scrap/weaps.h"
 #include "scrap/world.h"

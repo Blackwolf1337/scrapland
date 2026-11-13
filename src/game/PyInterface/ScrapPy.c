@@ -10,7 +10,6 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
-#include "scrap/python.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
