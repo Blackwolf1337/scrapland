@@ -175,9 +175,11 @@ static byte Sc_Action(const nativeVal_t *frame, const nativeVal_t *actor, const 
  * action */
 static byte Sc_ActEvent(const nativeVal_t *ename, const nativeVal_t *event, byte actor) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *val = Mode_V(&t), *v = Mode_V(&t), *tail = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
+	/* v takes the three values of the unpack: the two slots after it stay free for v[1] and v[2] */
+	nativeVal_t *val = Mode_V(&t), *v = Mode_V(&t);
 	Mode_V(&t);
 	Mode_V(&t);
+	nativeVal_t *tail = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
 	if (!Native_EvalText(SC, event, val) || !Mode_Unpack(val, 3, v)) {
 		return Mode_Done(&t, 0);
 	}
@@ -203,8 +205,10 @@ static byte Sc_ActorBreakChannel(const nativeVal_t *frame, const nativeVal_t *ac
 /* ActorActBreakChanne(EntityName, EventName, Time) */
 static byte Sc_ActorActBreakChanne(const nativeVal_t *ename, const nativeVal_t *event) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *val = Mode_V(&t), *v = Mode_V(&t), *tail = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
+	/* v takes the two values of the unpack: the slot after it stays free for v[1] */
+	nativeVal_t *val = Mode_V(&t), *v = Mode_V(&t);
 	Mode_V(&t);
+	nativeVal_t *tail = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
 	return Mode_Done(&t, Native_EvalText(SC, event, val) && Mode_Unpack(val, 2, v) && Native_Slice(ename, 9, INT_MAX, tail) &&
 		Native_Arith('+', tail, &v[0], name) && Mode_EntitySeam(name, e) && Mode_VSet(e, "StopSecondary", &v[1]));
 }
