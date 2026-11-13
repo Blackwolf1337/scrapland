@@ -75,8 +75,6 @@ byte Mode_Preload(const nativeVal_t *name);
  * (OBJLIB 7: through Python's sys.stdout until the console takes C texts) */
 #define MODE_PRINT_MAX 12
 byte Mode_Print(const nativeVal_t *const *items, int n);
-/* module.var = v of a Python object as it is (OBJLIB 5 (7e: a PyObject of an adapter); the value keeps its identity) */
-byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
 /* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
 byte Mode_NextInSlot(cEntity **e);
 /* o.var, o.var = v as the script does them on any value: an entity handle with its console lines, any other value
@@ -227,8 +225,6 @@ byte Mode_Read(const char *module, const char *name, nativeVal_t *slot);
 /* Mode_VGet into a slot that may hold a value (it is freed first) */
 byte Mode_VRead(const nativeVal_t *h, const char *var, nativeVal_t *slot);
 
-/* the PyObject of a module variable as its functions read it (a new reference; the NameError of a missing global) */
-PyObject *Mode_GlobalPy(const char *module, const char *name);
 /* module.var = v of another module, through the variable registry (scrap/modvars.h) */
 byte Mode_SetModVar(const char *module, const char *var, const nativeVal_t *v);
 /* module.var of another module into *out (any native value; a TypeError for other objects) */
@@ -298,9 +294,6 @@ void Mode_Repr(const nativeVal_t *v, nativeVal_t *out);
 /* the item name of a scorer call of the ports (Sf_Text): the C text of a text value (up to its first 0 byte), the
  * TypeError "argument 2: expected string found" for any other value */
 byte Mode_ItemText(const nativeVal_t *v, const char **out);
-/* `from module import name` in a function of a script (OBJLIB 6: the import; the link functions of Menu it gives are
- * called through their entries, Mode_LinkCall): a new reference, NULL with the ImportError */
-PyObject *Mode_From(const char *module, const char *name);
 /* the value of HangarTab.prevShip (the handle as NV_ENT, None, or what a test put there; Native_Free it): 0 with the
  * AttributeError of the module attribute */
 byte Mode_PrevShip(nativeVal_t *ship);
@@ -355,7 +348,8 @@ byte Mode_SetLockAlarm(const nativeVal_t *lock);
 /* the same with an int */
 byte Mode_SetLockAlarmI(long lock);
 /* o.var of a value as any value (Mode_VGet takes only native values from an object that is no entity handle: here a
- * function or an instance in the attribute is an NV_OBJ, OBJLIB 7, a handle an NV_ENT); the errors of the attribute */
+ * function or an instance in the attribute is its object, a handle an NV_ENT; a list or dict by value is a temporary
+ * object of its own); the errors of the attribute */
 byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out);
 
 /* (a, b, c) of three ints */
@@ -530,7 +524,7 @@ byte Mode_ModList1(const char *module, const char *var, const char *src, const c
 byte Mode_ModListG(const char *module, const char *var, const char *src, const char *name);
 /* `if fn: fn()` of the global function fn of module (*called: it was set) */
 byte Mode_CallIf(const char *module, const char *name, byte *called);
-/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module (Mode_CbApplySeq: the entry while the attribute
+/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module (Mode_CbApplySeqV: the entry while the attribute
  * holds the port's function) */
 byte Mode_ApplyNext(const char *module);
 /* a op the global name of the module: 1, 0, -1 */
@@ -764,14 +758,9 @@ byte Mode_ActionSetGet(nativeVal_t *out);
  * any other text (a name, a name chain) and the errors through Script_EvalIn (OBJLIB 6), its result as Native_Arg makes
  * it */
 byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out);
-/* the literal of a Python text as eval reads it (a string without 0 bytes, after its leading blanks) with the native
- * reader: 1 with *out (Native_Free it), else 0 without an error and *out None */
-byte Mode_LiteralPy(PyObject *text, nativeVal_t *out);
-/* eval(text) of a game text in the globals of module as a Python object (a new reference, NULL with the error), for
- * the readers whose result stays a Python object: a literal of the native reader made the Python value; any other text
- * (a name, a name chain, the errors) and a value that holds a dict through Script_EvalIn (OBJLIB 6: Native_ToPy lays
- * a dict out in its slot order, where Python's table can order two colliding keys otherwise) */
-PyObject *Mode_EvalPy(const char *module, PyObject *text);
+/* the literal of a text as eval reads it (a string without 0 bytes, after its leading blanks) with the native reader:
+ * 1 with *out (Native_Free it), else 0 without an error and *out None (also for a value that is no text) */
+byte Mode_LiteralVal(const nativeVal_t *text, nativeVal_t *out);
 
 /* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
 
@@ -791,8 +780,6 @@ int Mode_SeqLen(const nativeVal_t *seq);
 byte Mode_LangUse(const char *module, const char *key, nativeVal_t *out);
 void Mode_ItemColor(int id, const char *item, const int *c);
 void Mode_ItemVisible(int id, const char *item, int v);
-/* fn(id, a, b) of a link function of Menu (a from import): its entry while it is Menu's own (Mode_CbLink) */
-#define Mode_LinkCall(fn, id, a, b) Mode_CbLink(PORT_VSITE(), fn, id, a, b)
 byte Mode_SoundOf(const char *name);
 /* the int value i in v (v returned); (a, b, c) of copies of three values; Scrap.Rand(a, b) as the C ports draw it
  * (the C directly); the entry of a script function that does nothing (any arguments, None) */
@@ -870,7 +857,8 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out);
  * PyFloat_AsDouble), "f" into a float * (the same, cut to a float), "s" into a const char ** (the text of an NV_STR
  * without 0 bytes), "S" into a const nativeVal_t ** (an NV_STR of any bytes), "O" into a const nativeVal_t ** (the
  * argument itself), "|" before the optional ones (their outputs keep what they hold), "(...)" a sequence of that many
- * items ("i", "l", "d" and "f" items only). 1, or 0 with the error
+ * items ("i", "l", "d" and "f" items only), ":name" at the end the name of the function in the errors, ";message" the
+ * text of every error instead. 1, or 0 with the error
  */
 byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
 /* the conversion errors of fmt on the n slots of a keyword call (Mode_KwSkip: a slot not given, its item skipped), in
@@ -943,9 +931,9 @@ PORT_DECL(math, fmod)
 
 /* ---- the menus of stage 3 batch B11 ---- */
 
-/* the arguments (id[, control]) of an entry as Script_Args reads them: control "" when it is no text */
+/* the arguments (id[, control]) of an entry as a menu callback reads them: control "" when it is no text */
 byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
-/* a menu function (id[, control]) named fn (Script_Args): fn_E, its entry; call sees id and control */
+/* a menu function (id[, control]) named fn: fn_E, its entry; call sees id and control */
 #define MODE_IDFN(fn, call) \
 	static byte fn##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
 		int id; \
@@ -956,29 +944,24 @@ byte Mode_IdControl(const nativeVal_t *a, int n, int *id, const char **control);
 
 /*
  * Calls of values (stage 4 of docs/objlib-plan.md, batch 4d; the Mode_Cb prefix): a function a variable, a table, a
- * from import or a parameter holds, called through the entry of the port function it is (Port_Value: by its adapter,
- * in any module), else through Python with the same arguments and errors (OBJLIB 7). site is the counter of the call
- * site (PORT_VSITE); the macros give each call site its own.
+ * from import or a parameter holds, called through the entry of the port function it is (Port_ValuesOf: by its
+ * adapter, in any module), else as the value it is with the same arguments and errors. site is the counter of the
+ * call site (PORT_VSITE); the macros give each call site its own.
  *   Mode_CbArgs     f(args...) of a native value f with n values (Mode_CallArgs)
- *   Mode_CbApply    apply(f, args) of native values; Mode_CbApplyPy of a function object (MODE_CBAPPLY): a tuple
- *                   through the entry, any other args through Python (Script_CallObject: its TypeError)
- *   Mode_CbApplySeq apply(fn, args) as the builtin apply takes args (MODE_CBAPPLYSEQ): a tuple or a list through the
- *                   entry (more than PORT_ARGS items through Python), any other value through __builtin__.apply by
- *                   name (a text or another sequence, the TypeError of a value that is none)
- *   Mode_CbLink     fn(id, a, b) of a link function (Mode_LinkCall)
+ *   Mode_CbApply    apply(f, args) of native values: a tuple (a vector is one) through the entry, any other args the
+ *                   TypeError of call_object
+ *   Mode_CbApplySeqV apply(f, args) as the builtin apply takes args (MODE_CBAPPLYSEQV): a tuple or a list through the
+ *                   entry, any other value through __builtin__.apply by name (a text or another sequence, the
+ *                   TypeError of a value that is none)
+ *   Mode_CbLinkV    fn(id, a, b) of a link function (Mode_LinkCallV)
  *   Mode_CbGlobal   name(...) of the global of module (Native_CallGlobal: the NameError of the script; MODE_CBGLOBAL)
  *   Mode_CbAttr     module.name(...) by a name known at run time (Native_CallMod; MODE_CBATTR)
- * fmt and the arguments as Native_Call takes them (no keywords).
+ * fmt and the arguments in the mini format of scrap/scriptnative.h (no keywords).
  */
 byte Mode_CbArgs(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
 byte Mode_CbApply(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
-byte Mode_CbApplyPy(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out);
-byte Mode_CbApplySeq(portSite_t *site, PyObject *fn, const nativeVal_t *args, nativeVal_t *out);
-byte Mode_CbLink(portSite_t *site, PyObject *fn, int id, const char *a, const char *b);
 byte Mode_CbGlobal(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
 byte Mode_CbAttr(portSite_t *site, const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
-#define MODE_CBAPPLY(fn, args, out) Mode_CbApplyPy(PORT_VSITE(), fn, args, out)
-#define MODE_CBAPPLYSEQ(fn, args, out) Mode_CbApplySeq(PORT_VSITE(), fn, args, out)
 #define MODE_CBGLOBAL(module, name, out, ...) Mode_CbGlobal(PORT_VSITE(), module, name, out, __VA_ARGS__)
 #define MODE_CBATTR(module, name, out, ...) Mode_CbAttr(PORT_VSITE(), module, name, out, __VA_ARGS__)
 
@@ -1025,8 +1008,8 @@ byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out);
 	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out)
 #define MODE_KWT(pre, name, fmt, ...) MODE_KWBY(Mode_KwTyped, pre##_##name, fmt, __VA_ARGS__)
-/* `from module import name` as a value (Mode_From: the ImportError of a name the module does not have; an object as
- * NV_OBJ) */
+/* `from module import name` in a function of a script as a value (the import, the ImportError of a name the module
+ * does not have; as Native_Arg takes it) */
 byte Mode_FromV(const char *module, const char *name, nativeVal_t *out);
 /* v[lo:hi] of the script: Native_Slice, an NV_OBJ (an instance, a list that holds handles) the Python way
  * (PySequence_GetSlice, the result as Native_Arg makes it) */
@@ -1042,10 +1025,8 @@ byte Mode_Sliceable(const nativeVal_t *v);
  * the errors of the Python operation: a native object (NObj_Native) natively, a view or another Python value
  * (OBJLIB 7) the Python way, a value by value as the Python value it makes (a new object).
  */
-/* the object o as a reference into out (o released): 0 for NULL, with its error. MODE_REFASK: the result of a port
- * function by reference (PORT_ASK: what a function put in its place returns keeps its identity) */
+/* the object o as a reference into out (o released): 0 for NULL, with its error */
 byte Mode_RefTake(PyObject *o, nativeVal_t *out);
-#define MODE_REFASK(module, name, out, ...) Mode_RefTake(PORT_ASK(module, name, __VA_ARGS__), out)
 /* the global name of module (its NameError) and module.var of another module (its AttributeError) by reference (the
  * registry's value: ModVar_GlobalVal, ModVar_ModAttrVal) */
 byte Mode_RefG(const char *module, const char *name, nativeVal_t *out);
@@ -1066,13 +1047,13 @@ byte Mode_RefDelSub(const nativeVal_t *o, const nativeVal_t *key);
 /* o.name by reference (PyObject_GetAttrString: no error is set where the object sets none), o.name = v */
 byte Mode_RefAttr(const nativeVal_t *o, const char *name, nativeVal_t *out);
 byte Mode_RefSetAttr(const nativeVal_t *o, const char *name, const nativeVal_t *v);
-/* o.method(args...) of n values (an NV_OBJ argument is the object itself) as the ports call a method (Script_Method:
- * the method read as Mode_RefGetAttr reads an attribute), the result as Native_Arg makes it into out (NULL: dropped) */
+/* o.method(args...) of n values (an NV_OBJ argument is the object itself) as the ports call a method (the method read
+ * as Mode_RefGetAttr reads an attribute), the result as Native_Arg makes it into out (NULL: dropped) */
 byte Mode_RefCall(const nativeVal_t *o, const char *method, const nativeVal_t *args, int n, nativeVal_t *out);
 /* PyList_Insert(o, at, v) and PyList_Append(o, v) (at < 0) as the C ports changed a list (the SystemError of a value
  * that is no list) */
 byte Mode_RefInsert(const nativeVal_t *o, int at, const nativeVal_t *v);
-/* module.var = v with a reference kept as the object it is (Mode_SetModPy) */
+/* module.var = v with a reference kept as the object it is */
 byte Mode_RefToMod(const char *module, const char *var, const nativeVal_t *v);
 /* d.has_key(key) of a value of the script (the method of whatever value it is): 1, 0, -1 with the error */
 int Mode_RefHasKey(const nativeVal_t *d, const nativeVal_t *key);
@@ -1133,7 +1114,7 @@ byte Mode_DefRunVa(int id, const char *file, const char *section, const char *bu
 /* the same with the names and the values as arrays */
 byte Mode_DefRunV(int id, const char *file, const char *section, const char *builtin, const struct scriptStep_s *steps,
 	byte stop, const char *const *names, const nativeVal_t *const *vals, int n);
-/* fn(id, a, b) of a link function of Menu held as a value (Mode_LinkCall: its entry while it is Menu's own) */
+/* fn(id, a, b) of a link function of Menu held as a value: its entry while it is Menu's own */
 byte Mode_CbLinkV(portSite_t *site, const nativeVal_t *fn, int id, const char *a, const char *b);
 #define Mode_LinkCallV(fn, id, a, b) Mode_CbLinkV(PORT_VSITE(), fn, id, a, b)
 /* str(v) of the script added to b: a native value as Native_Repr NR_STR writes it, an object's str the Python way
@@ -1166,10 +1147,10 @@ byte Mode_Plus(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
 /* v[key] = x of the script on a native value (OBJLIB 9: the item assignment of the Python value with its errors; *v
  * is the changed value then) */
 byte Mode_SetItem(nativeVal_t *v, const nativeVal_t *key, const nativeVal_t *x);
-/* a text value pasted between quotes reads back as itself (Script_IsQuotable: the exec lines the ports make into
+/* a text value pasted between quotes reads back as itself (Script_IsQuotableText: the exec lines the ports make into
  * direct sets); 0 for any other value */
 byte Mode_Quotable(const nativeVal_t *text);
-/* apply(f, args) as the builtin apply takes args, with the function a value (Mode_CbApplySeq) */
+/* apply(f, args) as the builtin apply takes args, with the function a value */
 byte Mode_CbApplySeqV(portSite_t *site, const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
 #define MODE_CBAPPLYSEQV(f, args, out) Mode_CbApplySeqV(PORT_VSITE(), f, args, out)
 /* int(v) of the script into *out: Native_ToInt (numbers and texts), an object through PyNumber_Int (OBJLIB 9: an

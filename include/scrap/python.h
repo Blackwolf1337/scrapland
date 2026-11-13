@@ -26,11 +26,9 @@ static inline PyObject *Py_ReturnNone(void) {
 	return Py_None;
 }
 
-/* OBJLIB 7e4b: the built-in module name of the library as its init function makes it, without an interpreter (a new
- * reference, NULL with the error: ImportError for a name the table does not have), and sys.path as Py_Initialize made
- * it (a new list, src/python/import.c) */
-PyObject *Py_LibModule(const char *name);
-PyObject *Py_LibPath(void);
+/* OBJLIB 7e4c: the thread state of the object library and the objects of the standard exceptions (src/python/import.c)
+ */
+void Py_LibStart(void);
 
 
 #endif

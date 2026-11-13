@@ -6,7 +6,7 @@
  * At the end the registry of stage 4: the refs by module and name (Port_Find on g_PortTable), the callbacks bound
  * to port functions (Port_CallbackOf, cPy_Function PYF_ENTRY), the functions given to the scheduler (Port_ScheduledOf,
  * cScheduledFunc), the call of such a bound site (Port_BoundCall), and the calls of values that hold port functions
- * (Port_Own by the adapter, Port_Value and Port_Values). Last the seams of the engine functions as C hooks
+ * (Port_ValuesOf, Port_ValueOf; a view through Port_Values). Last the seams of the engine functions as C hooks
  * (Native_Seam, stage 7d).
  */
 #include <stdint.h>
@@ -31,43 +31,22 @@ byte Port_Slow(void) {
 	return (byte)slow;
 }
 
-byte Port_IsOwn(const portRef_t *ref, PyObject *f) {
-	const portRef_t *face;
-	if (Port_Slow() || !PyCFunction_Check(f)) {
-		return 0;
-	}
-	/* the C function object of a port function (OBJLIB 7e4b: its face) */
-	return (face = NObj_PortFace(f)) != NULL && face->entry == ref->entry;
-}
-
-/* Port_Seam, slow 1: what is there as the hook also when it is the port's own (a call the entry cannot take). The
- * variable of a pack module is read natively first: a native function of the adapter is the port's own without a
- * Python object; anything else is read again as the Python object it gives (the hook) */
-static int Port_Look(const portRef_t *ref, byte global, byte slow, PyObject **hook) {
-	if (!slow && ModVar_HasModule(ref->module)) {
-		nativeVal_t v;
-		if (!(global ? ModVar_GlobalVal(ref->module, ref->name, &v) : ModVar_ModAttrVal(ref->module, ref->name, &v))) {
-			return -1;
-		}
-		const portRef_t *r = NObj_PortRef(&v);
-		Native_Free(&v);
-		if (r && r->entry == ref->entry) {
-			return 0;
-		}
-	}
-	PyObject *f = global ? Script_Global(ref->module, ref->name) : Script_Attr(ref->module, ref->name);
-	if (!f) {
+/* Port_Seam, slow 1: what is there as the hook also when it is the port's own (a call the entry cannot take) */
+static int Port_Look(const portRef_t *ref, byte global, byte slow, nativeVal_t *hook) {
+	nativeVal_t v;
+	if (!(global ? ModVar_GlobalVal(ref->module, ref->name, &v) : ModVar_ModAttrVal(ref->module, ref->name, &v))) {
 		return -1;
 	}
-	if (!slow && Port_IsOwn(ref, f)) {
-		Py_DECREF(f);
+	const portRef_t *r = NObj_PortRef(&v);
+	if (!slow && !Port_Slow() && r && r->entry == ref->entry) {
+		Native_Free(&v);
 		return 0;
 	}
-	*hook = f;
+	*hook = v;
 	return 1;
 }
 
-int Port_Seam(const portRef_t *ref, byte global, PyObject **hook) {
+int Port_Seam(const portRef_t *ref, byte global, nativeVal_t *hook) {
 	return Port_Look(ref, global, 0, hook);
 }
 
@@ -219,28 +198,35 @@ static byte Port_Pack(const nativeArg_t *x, nativeVal_t *v) {
 	return 0;
 }
 
+/* one argument as the call through Python handed it to a native callee: 1, or 0 with *v None (a NULL object, an
+ * argument Port_Pack refuses) */
+static byte Port_CallArg(const nativeArg_t *x, nativeVal_t *v) {
+	if (x->type == 'v') {
+		NObj_CallArg(x->v, v);
+		return 1;
+	}
+	if (x->type == 'O' || x->type == 'P') {
+		Native_SetNone(v);
+		if (!x->o) {
+			return 0;
+		}
+		NObj_FromPy(x->o, v);
+		return 1;
+	}
+	if (!Port_Pack(x, v)) {
+		Native_SetNone(v);
+		return 0;
+	}
+	return 1;
+}
+
 byte Port_NativeCallVa(const nativeVal_t *f, nativeVal_t *out, const char *fmt, va_list va) {
 	nativeArg_t x[NATIVE_ARGS];
 	nativeVal_t a[NATIVE_ARGS], r;
 	int n = Native_ReadArgs(fmt, va, x), k = 0;
 	byte ok = 1;
-	/* each argument as the call through Python handed it to the native callee */
 	for (; ok && k < n; k++) {
-		if (x[k].type == 'v') {
-			NObj_CallArg(x[k].v, &a[k]);
-		} else if (x[k].type == 'O' || x[k].type == 'P') {
-			Native_SetNone(&a[k]);
-			if (x[k].o) {
-				NObj_FromPy(x[k].o, &a[k]);
-			} else {
-				ok = 0;
-			}
-		} else {
-			ok = Port_Pack(&x[k], &a[k]);
-			if (!ok) {
-				Native_SetNone(&a[k]);
-			}
-		}
+		ok = Port_CallArg(&x[k], &a[k]);
 	}
 	Native_SetNone(&r);
 	ok = ok && NObj_Call(f, a, n, &r);
@@ -290,16 +276,12 @@ static inline __attribute__((always_inline)) byte Port_Fast(const portRef_t *ref
 
 /* the fast path of Port_Run on the arguments of fmt in their slots */
 static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, const portSlots_t *ps, nativeVal_t *out,
-	PyObject **pyout, const char *fmt, va_list va) {
+	const char *fmt, va_list va) {
 	portArgs_t p;
 	nativeVal_t r, res;
 	Port_Read(fmt, va, &p);
 	byte ok = Port_Fast(ref, p.a, NULL, p.n, ps->slot, ps->m, &r);
-	if (pyout) {
-		/* what the adapter returns (Mode_Out) */
-		*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
-		ok = *pyout != NULL;
-	} else if (ok && (ok = Native_Pass(&r, &res)) != 0) {
+	if (ok && (ok = Native_Pass(&r, &res)) != 0) {
 		/* the result goes through the conversions also when it is dropped (they can fail) */
 		if (out) {
 			*out = res;
@@ -311,36 +293,43 @@ static __attribute__((noinline)) byte Port_FastVa(const portRef_t *ref, const po
 	return ok;
 }
 
-/* the arguments of the call through Python: the positional ones as Native_Call passes them (*t), the keywords as a
- * dict in their order (*kw, NULL without keywords); 0 with the error (*t and *kw to be released) */
-static __attribute__((noinline)) byte Port_SlowArgs(const char *fmt, va_list va, PyObject **t, PyObject **kw) {
-	portArgs_t p;
-	char name[PORT_NAME];
-	Port_Read(fmt, va, &p);
-	*kw = NULL;
-	*t = Native_PyArgs(p.a, p.npos);
-	byte ok = *t != NULL;
-	if (ok && p.n > p.npos) {
-		ok = (*kw = PyDict_New()) != NULL;
-		for (int i = p.npos; ok && i < p.n; i++) {
-			PyObject *v = Native_ArgPy(&p.a[i]);
-			memcpy(name, p.names[i], p.lens[i]);
-			name[p.lens[i]] = 0;
-			ok = v && PyDict_SetItemString(*kw, name, v) == 0;
-			Py_XDECREF(v);
-		}
+/* the call of the hook (what the module holds in place of the port's own function) on the arguments of fmt, as the
+ * call through Python handed them to it: the positional ones and the keywords in the order of its dict of keywords
+ * (Native_KwOrder; NObj_CallKw), each as Port_CallArg makes it; the result as Native_Arg took it (NObj_ArgOf) into *out (NULL: dropped) */
+static __attribute__((noinline)) byte Port_HookCallVa(const nativeVal_t *hook, nativeVal_t *out, const char *fmt,
+	va_list va) {
+	/* off the stack: a self call through an alias recurses through this frame (see Port_FastVa) */
+	struct {
+		portArgs_t p;
+		nativeVal_t a[PORT_ARGS], given, kw, r;
+	} *c = Mem_Alloc(sizeof(*c));
+	int k = 0;
+	byte ok = 1;
+	Port_Read(fmt, va, &c->p);
+	for (; ok && k < c->p.n; k++) {
+		ok = Port_CallArg(&c->p.a[k], &c->a[k]);
 	}
+	Native_SetEmpty(&c->given, NV_LIST);
+	for (int i = c->p.npos; ok && i < c->p.n; i++) {
+		nativeVal_t *pair = Native_Append(&c->given);
+		Native_SetEmpty(pair, NV_TUPLE);
+		Native_SetText(Native_Append(pair), c->p.names[i], c->p.lens[i]);
+		Native_Copy(Native_Append(pair), &c->a[i]);
+	}
+	Native_KwOrder(&c->given, &c->kw);
+	Native_SetNone(&c->r);
+	ok = ok && NObj_CallKw(hook, c->a, c->p.npos, c->kw.n ? &c->kw : NULL, &c->r);
+	Native_Free(&c->given);
+	Native_Free(&c->kw);
+	while (k-- > 0) {
+		Native_Free(&c->a[k]);
+	}
+	if (ok && out) {
+		NObj_ArgOf(&c->r, out);
+	}
+	Native_Free(&c->r);
+	Mem_Free(c);
 	return ok;
-}
-
-/* the call through Python (the hook taken over) */
-static PyObject *Port_SlowCall(PyObject *hook, const char *fmt, va_list va) {
-	PyObject *t, *kw;
-	PyObject *r = Port_SlowArgs(fmt, va, &t, &kw) ? Script_CallObject(hook, t, kw) : NULL;
-	Py_XDECREF(kw);
-	Py_XDECREF(t);
-	Py_DECREF(hook);
-	return r;
 }
 
 /* an argument of fmt holds an object (O, P, or a value with an NV_OBJ), read from a copy of va */
@@ -360,7 +349,7 @@ static __attribute__((noinline)) byte Port_ObjArgs(const char *fmt, va_list va) 
 /* the way of a native twin of a library function (a ref with twin set, OBJLIB 9): its entry (0) after the import
  * of its module, as the lookup by name imported it, or the function by name (1, with *hook) for an argument that
  * holds an object, keywords and under SCRAP_PORT_SLOW=1; -1 with the error of the import or the lookup */
-static int Port_Twin(const portRef_t *ref, const char *fmt, va_list va, byte direct, PyObject **hook) {
+static int Port_Twin(const portRef_t *ref, const char *fmt, va_list va, byte direct, nativeVal_t *hook) {
 	if (!direct || strchr(fmt, ';') || Port_Slow() || Port_ObjArgs(fmt, va)) {
 		return Port_Look(ref, 0, 1, hook);
 	}
@@ -370,10 +359,9 @@ static int Port_Twin(const portRef_t *ref, const char *fmt, va_list va, byte dir
 	return ok ? 0 : -1;
 }
 
-/* a call of a site: the result into *out as Native_Arg takes it (pyout NULL), or as the Python object into *pyout;
- * va is read once, by the path the call takes */
-static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const char *fmt, va_list va) {
-	PyObject *hook = NULL;
+/* a call of a site: the result into *out as Native_Arg takes it; va is read once, by the path the call takes */
+static byte Port_Run(portSite_t *site, nativeVal_t *out, const char *fmt, va_list va) {
+	nativeVal_t hook;
 	portSlots_t ps;
 	byte ok = 0;
 	if (!site->listed) {
@@ -385,20 +373,11 @@ static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const
 	int seam = !site->ref->twin ? Port_Look(site->ref, site->global, !direct, &hook) : Port_Twin(site->ref, fmt, va, direct, &hook);
 	if (seam > 0) {
 		site->slow++;
-		PyObject *r = Port_SlowCall(hook, fmt, va);
-		ok = r != NULL;
-		if (pyout) {
-			*pyout = r;
-		} else {
-			/* any other object is an NV_OBJ (OBJLIB 7) */
-			if (r && out) {
-				Native_Arg(r, out);
-			}
-			Py_XDECREF(r);
-		}
+		ok = Port_HookCallVa(&hook, out, fmt, va);
+		Native_Free(&hook);
 	} else if (seam == 0) {
 		site->fast++;
-		ok = Port_FastVa(site->ref, &ps, out, pyout, fmt, va);
+		ok = Port_FastVa(site->ref, &ps, out, fmt, va);
 	}
 	if (!ok) {
 		site->errors++;
@@ -409,23 +388,9 @@ static byte Port_Run(portSite_t *site, nativeVal_t *out, PyObject **pyout, const
 byte Port_Invoke(portSite_t *site, nativeVal_t *out, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
-	byte ok = Port_Run(site, out, NULL, fmt, va);
+	byte ok = Port_Run(site, out, fmt, va);
 	va_end(va);
 	return ok;
-}
-
-PyObject *Port_AskVa(portSite_t *site, const char *fmt, va_list va) {
-	PyObject *r = NULL;
-	Port_Run(site, NULL, &r, fmt, va);
-	return r;
-}
-
-PyObject *Port_Ask(portSite_t *site, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *r = Port_AskVa(site, fmt, va);
-	va_end(va);
-	return r;
 }
 
 /* ---- the registry (stage 4 of docs/objlib-plan.md) ---- */
@@ -476,17 +441,13 @@ static portSite_t *Port_Bound(int kind, int i) {
 
 static int Port_KeyIndex(uintptr_t key, const char *name);
 
-/* the index in g_PortTable of the port function the value f may be: a native port function or the C function object
- * of one (OBJLIB 7e4b: its face), by its entry and its own name (__name__: an alias is the ref of its name); -1 for any
- * other value and under SCRAP_PORT_SLOW=1 */
+/* the index in g_PortTable of the port function the value f may be (also the view of its C function object), by its
+ * entry and its own name (__name__: an alias is the ref of its name); -1 for any other value and under
+ * SCRAP_PORT_SLOW=1 */
 static int Port_FuncIndex(const nativeVal_t *f) {
 	const portRef_t *ref = NObj_PortRef(f);
-	PyObject *py = ref ? NULL : NObj_Py(f);
 	if (Port_Slow()) {
 		return -1;
-	}
-	if (!ref && py) {
-		ref = NObj_PortFace(py);
 	}
 	return !ref || ref->twin ? -1 : Port_KeyIndex((uintptr_t)ref->entry, ref->name);
 }
@@ -520,18 +481,16 @@ portSite_t *Port_ScheduledSites(void) {
 	return port_boundList[PORT_SCHEDULED];
 }
 
-byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v, int n, nativeVal_t *res,
-	PyObject **pyout) {
+byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v, int n, nativeVal_t *res, byte raw) {
 	static_assert(PORT_ARGS == 11, "one slot per argument");
 	static const signed char slot[PORT_ARGS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 	nativeVal_t r, drop, *out = res ? res : &drop;
 	CHECK(n >= 0 && n <= PORT_ARGS);
 	site->fast++;
 	byte ok = Port_Fast(site->ref, x, v, n, slot, n, &r);
-	if (pyout) {
-		/* what the adapter returns (Mode_Out) */
-		*pyout = !ok ? NULL : r.type == NV_NONE ? Py_ReturnNone() : Native_ToPy(&r);
-		ok = *pyout != NULL;
+	if (ok && raw) {
+		/* what the adapter returns (Mode_Out) as it comes back from Python */
+		NObj_CallArg(&r, out);
 	} else if (ok) {
 		/* the result goes through the conversions of the adapter also when it is dropped (they can fail) */
 		ok = Native_Pass(&r, out);
@@ -539,7 +498,7 @@ byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v
 		Native_SetNone(out);
 	}
 	Native_Free(&r);
-	if (!res && !pyout) {
+	if (!res) {
 		Native_Free(&drop);
 	}
 	if (!ok) {
@@ -732,15 +691,6 @@ static int Port_KeyIndex(uintptr_t key, const char *name) {
 	return -1;
 }
 
-/* the index in g_PortTable of the ref whose own function f is (Port_Own), -1 when there is none */
-static int Port_OwnIndex(PyObject *f) {
-	const portRef_t *face = f ? NObj_PortFace(f) : NULL;
-	if (Port_Slow() || !f || !PyCFunction_Check(f)) {
-		return -1;
-	}
-	return face ? Port_KeyIndex((uintptr_t)face->entry, face->name) : -1;
-}
-
 int Port_FaceIndex(const portRef_t *ref) {
 	int i = Port_KeyIndex((uintptr_t)ref->entry, ref->name);
 	if (i < 0) {
@@ -768,11 +718,6 @@ const portRef_t *Port_OfFn(const char *module, const portFn_t *row) {
 	return NULL;
 }
 
-const portRef_t *Port_Own(PyObject *f) {
-	int i = Port_OwnIndex(f);
-	return i >= 0 ? g_PortTable[i] : NULL;
-}
-
 /* the tuple of the n values (NULL with the error of a conversion) */
 static PyObject *Port_PyValues(const nativeVal_t *a, int n) {
 	PyObject *t = PyTuple_New(n);
@@ -787,28 +732,19 @@ static PyObject *Port_PyValues(const nativeVal_t *a, int n) {
 	return t;
 }
 
-/* the call of the value f on n arguments, as letters (x) or as native values (a): the entry of the port function f is
- * (Port_OwnIndex, through Port_BoundCall as a bound site), else the call through Python of Native_Call; the result
- * into *out as Native_Arg takes it, or as the Python object into *pyout. The packed values are in the frame of
- * Port_BoundCall only: a call through Python keeps a small frame on the stack */
-static byte Port_ValueRun(portSite_t *site, PyObject *f, const nativeArg_t *x, const nativeVal_t *a, int n,
-	nativeVal_t *out, PyObject **pyout) {
-	if (!f) {
-		return 0;
-	}
+/* the site in the list of Port_Sites */
+static void Port_List(portSite_t *site) {
 	if (!site->listed) {
 		site->listed = 1;
 		site->next = port_sites;
 		port_sites = site;
 	}
-	int i = n <= PORT_ARGS ? Port_OwnIndex(f) : -1;
-	if (i >= 0) {
-		/* the site names the port function it called last; Port_BoundCall counts the call and a failure */
-		site->ref = g_PortTable[i];
-		return Port_BoundCall(site, x, a, n, out, pyout);
-	}
+}
+
+byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout) {
+	Port_List(site);
 	site->slow++;
-	PyObject *r = Script_Invoke(f, x ? Native_PyArgs(x, n) : Port_PyValues(a, n));
+	PyObject *r = Script_Invoke(f, Port_PyValues(a, n));
 	byte ok = r != NULL;
 	if (pyout) {
 		*pyout = r;
@@ -825,27 +761,9 @@ static byte Port_ValueRun(portSite_t *site, PyObject *f, const nativeArg_t *x, c
 	return ok;
 }
 
-byte Port_ValueVa(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, va_list va) {
-	nativeArg_t x[NATIVE_ARGS];
-	int n = Native_ReadArgs(fmt, va, x);
-	return Port_ValueRun(site, f, x, NULL, n, out, NULL);
-}
-
-byte Port_Value(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	byte ok = Port_ValueVa(site, f, out, fmt, va);
-	va_end(va);
-	return ok;
-}
-
-byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout) {
-	return Port_ValueRun(site, f, NULL, a, n, out, pyout);
-}
-
 /* NObj_Call of f on the arguments as the call through Python handed them to a native callee (NObj_CallArg), the
- * result as Native_Arg takes it into *out (NULL: dropped) or as the Python object into *pyout */
-static byte Port_ObjCall(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout) {
+ * result as Native_Arg takes it into *out (NULL: dropped), or with raw as it is */
+static byte Port_ObjCall(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out, byte raw) {
 	nativeVal_t r, *c = Mem_Alloc((uint32_t)((size_t)(n + 1) * sizeof(*c)));
 	if (out) {
 		Native_SetNone(out);
@@ -858,47 +776,86 @@ static byte Port_ObjCall(const nativeVal_t *f, const nativeVal_t *a, int n, nati
 		Native_Free(&c[i]);
 	}
 	Mem_Free(c);
-	if (pyout) {
-		*pyout = ok ? Native_ToPy(&r) : NULL;
-		ok = *pyout != NULL;
-	} else if (out && ok) {
+	if (out && ok && raw) {
+		*out = r;
+		return 1;
+	}
+	if (out && ok) {
 		NObj_ArgOf(&r, out);
 	}
 	Native_Free(&r);
 	return ok;
 }
 
-byte Port_ValuesOf(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out,
-	PyObject **pyout) {
+byte Port_ValuesOf(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out, byte raw) {
 	const portRef_t *ref = NObj_PortRef(f);
-	if (ref && n <= PORT_ARGS && !Port_Slow()) {
-		if (!site->listed) {
-			site->listed = 1;
-			site->next = port_sites;
-			port_sites = site;
-		}
-		site->ref = ref;
-		return Port_BoundCall(site, NULL, a, n, out, pyout);
-	}
 	PyObject *py = NObj_Py(f);
+	if (ref && n <= PORT_ARGS && !Port_Slow()) {
+		Port_List(site);
+		site->ref = ref;
+		return Port_BoundCall(site, NULL, a, n, out, raw);
+	}
 	if (py && !ref && !NObj_Native(f)) {
-		return Port_Values(site, py, a, n, out, pyout);
+		/* a view: through Python (OBJLIB 9) */
+		PyObject *r = NULL;
+		byte ok = Port_Values(site, py, a, n, raw ? NULL : out, raw ? &r : NULL);
+		if (raw && out) {
+			Native_SetNone(out);
+			if (r) {
+				NObj_FromPy(r, out);
+			}
+		}
+		Py_XDECREF(r);
+		return ok;
 	}
 	if (f->type == NV_REF && NObj_Native(f) && !ref) {
-		return Port_ObjCall(f, a, n, out, pyout);
+		return Port_ObjCall(f, a, n, out, raw);
 	}
-	/* a value by value (not callable) or a port function the entry cannot take: through Python */
-	py = Native_ToPy(f);
-	byte ok = Port_Values(site, py, a, n, out, pyout);
-	Py_XDECREF(py);
+	/* a port function with more arguments than an entry takes, a value that is no callable (the TypeError of the
+	 * call): counted as the calls the entry does not take */
+	Port_List(site);
+	site->slow++;
+	byte ok = Port_ObjCall(f, a, n, out, raw);
+	if (!ok) {
+		site->errors++;
+	}
+	return ok;
+}
+
+byte Port_ValueOfVa(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const char *fmt, va_list va) {
+	nativeArg_t x[NATIVE_ARGS];
+	nativeVal_t a[NATIVE_ARGS];
+	int n = Native_ReadArgs(fmt, va, x), k = 0;
+	const portRef_t *ref = NObj_PortRef(f);
+	if (ref && n <= PORT_ARGS && !Port_Slow()) {
+		Port_List(site);
+		site->ref = ref;
+		return Port_BoundCall(site, x, NULL, n, out, 0);
+	}
+	byte ok = 1;
+	for (; ok && k < n; k++) {
+		ok = Port_CallArg(&x[k], &a[k]);
+	}
+	ok = ok && Port_ValuesOf(site, f, a, k, out, 0);
+	while (k-- > 0) {
+		Native_Free(&a[k]);
+	}
+	return ok;
+}
+
+byte Port_ValueOf(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	byte ok = Port_ValueOfVa(site, f, out, fmt, va);
+	va_end(va);
 	return ok;
 }
 
 byte Port_CallKept(portSite_t *bound, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out) {
 	if (bound) {
-		return Port_BoundCall(bound, NULL, a, n, out, NULL);
+		return Port_BoundCall(bound, NULL, a, n, out, 0);
 	}
-	return Port_ObjCall(f, a, n, out, NULL);
+	return Port_ObjCall(f, a, n, out, 0);
 }
 
 /* ---- the seams of the engine functions as C hooks (stage 7d) ---- */
@@ -933,9 +890,6 @@ static portHook_t *Port_HookOf(const char *module, const char *name) {
 static byte Port_HookOwn(const char *name, const nativeVal_t *f) {
 	const portRef_t *ref = NObj_PortRef(f);
 	PyObject *py = ref ? NULL : NObj_Py(f);
-	if (!ref && py) {
-		ref = NObj_PortFace(py);
-	}
 	if (ref) {
 		return !strcmp(ref->name, name);
 	}
@@ -969,25 +923,26 @@ static char *Port_Dup(const char *s) {
 int Native_Seam(const char *module, const char *name, nativeHook_t *hook) {
 	portHook_t *h = Port_HookOf(module, name);
 	if (!h) {
-		/* the first question: what the module holds now (OBJLIB 7: its attribute); the stores after it come through
+		/* the first question: what the module holds now (its attribute); the stores after it come through
 		 * Native_HookStore */
-		PyObject *f = Script_Attr(module, name);
-		if (!f && !Native_ErrIs(NE_ATTRIBUTE)) {
+		nativeVal_t f, v;
+		byte has = ModVar_ModAttrVal(module, name, &f);
+		if (!has && !Native_ErrIs(NE_ATTRIBUTE)) {
 			return -1;
 		}
-		nativeVal_t v;
 		h = Mem_Alloc(sizeof(*h));
 		memset(h, 0, sizeof(*h));
 		h->module = Port_Dup(module);
 		h->name = Port_Dup(name);
 		h->next = port_hooks;
 		port_hooks = h;
-		if (f) {
-			Native_Arg(f, &v);
-			Py_DECREF(f);
+		if (has) {
+			/* as the value came back from Python */
+			NObj_ArgOf(&f, &v);
+			Native_Free(&f);
 		}
-		Port_HookSet(h, f ? &v : NULL);
-		if (f) {
+		Port_HookSet(h, has ? &v : NULL);
+		if (has) {
 			Native_Free(&v);
 		}
 	}
@@ -1065,12 +1020,9 @@ byte Native_HookCall(nativeHook_t *hook, nativeVal_t *out, const char *fmt, ...)
 	va_start(va, fmt);
 	if (hook->call) {
 		ok = Port_HookRun(hook, out, fmt, va);
-	} else if (NObj_Native(&hook->f) && !NObj_PortRef(&hook->f)) {
-		/* a native object (an instance with __call__, a class, a method) natively */
-		ok = Port_NativeCallVa(&hook->f, out, fmt, va);
 	} else {
-		/* OBJLIB 7: any other callable through Python, as the script called it */
-		ok = Native_CallVa(Native_ToPy(&hook->f), out, fmt, va);
+		/* any other callable as the script called it (NObj_Call: a view through Python, OBJLIB 9) */
+		ok = Port_NativeCallVa(&hook->f, out, fmt, va);
 	}
 	va_end(va);
 	Native_HookFree(hook);

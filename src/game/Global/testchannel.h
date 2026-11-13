@@ -51,16 +51,4 @@ byte TcX_NewFunc(nativeVal_t *out, const char *name, nativeCall_t call, void *ct
 	const nativeVal_t self[3]);
 /* the channel's functions (recorders, lambdas) as the C hooks of the seams they are put at (Native_HookFinder) */
 void TcX_Init(void);
-/* how the sequence protocol takes v: 1 a sequence the channel reads natively (a text, a tuple or list by value, a
- * list object or view), 0 a value without sequence methods, -1 one only Python reads (an instance, a Python object) */
-int TcX_SeqOf(const nativeVal_t *v);
-/* the length of a sequence of TcX_SeqOf 1, -1 with the error; item i of it into *out: 0 with the error */
-int TcX_SeqLen(const nativeVal_t *v);
-byte TcX_SeqGet(const nativeVal_t *v, int i, nativeVal_t *out);
-/* what the expressions sent through Python since the start (OBJLIB 9), one line "channel <what> <count>" each added
- * to out: "builtin <name>" a builtin function that is not native here or was called in a form the native one does not
- * take, "operator <op>" an operator on a Python object or one the native values do not have, "keywords" a call with
- * keyword arguments of a callable that is no lambda; reset: the counts back to 0, nothing added */
-void TcX_Counts(nativeBuf_t *out, byte reset);
-
 #endif

@@ -90,9 +90,11 @@ typedef struct nativeVal_s {
 	int max;			/* NV_LIST, NV_TUPLE: the room for items; NV_DICT: the slots */
 	char *text;			/* NV_STR, NV_LONG: a text of NATIVE_TEXT or more bytes (owned), else NULL */
 	struct nativeVal_s *items;	/* NV_LIST, NV_TUPLE, NV_DICT (owned), else NULL */
-	PyObject *obj;			/* NV_OBJ: the value (a reference owned). A number or text may keep the Python object it
-					 * came from here (the .mod evaluator, OBJLIB 5 (9c); a reference owned, copied and freed with
-					 * the value, read by nobody else), else NULL */
+	PyObject *obj;			/* NV_OBJ: the value (a reference owned); a module variable's value by value may cache
+					 * its Python form here for the borrowed readers of ModVar_Get (OBJLIB 9; a reference owned,
+					 * copied and freed with the value), else NULL */
+	uintptr_t id;			/* NV_INT, NV_FLOAT, NV_STR, NV_LONG, NV_TUPLE: the identity of the object the value is
+					 * (Native_IdOf), copied with it; 0: none of its own */
 	struct cEntityRef *ent;		/* NV_ENT: the handle (held once by this value), else NULL */
 	struct nativeObj_s *ref;	/* NV_REF: the object (held once by this value), else NULL */
 } nativeVal_t;
@@ -142,6 +144,10 @@ byte Native_Hash(const nativeVal_t *v, long *out);
 /* d[key] = value as PyDict_SetItem does it (the table grows at the same moment, an equal key keeps the old key and
  * gets the new value): key and value are taken over (moved into the dict, or freed); 0 when the key has no hash */
 byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value);
+/* the keyword pairs ((name, value) tuples of an NV_LIST, in the order given) as the dict of keywords of a call through
+ * Python hands them to the callee: in its slot order, a name given twice with its last value; into *out (an NV_LIST of
+ * pairs, Native_Free it) */
+void Native_KwOrder(const nativeVal_t *pairs, nativeVal_t *out);
 /* d.update(other) (copy 0) and the table of other.copy() into the empty dict d (copy 1), as dict_update and dict_copy
  * of dictobject.c lay the keys out: one resize at the start (for 3/2 of the keys), then every key and value of other
  * in its slot order put in without a further growth check; copies of the keys and values. other is not d */
@@ -153,6 +159,37 @@ nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key);
 byte Native_DictDel(nativeVal_t *d, const nativeVal_t *key);
 /* the next key and value of the dict in the order of 1.5.2 from *pos (0 at the start), as PyDict_Next: 0 at the end */
 byte Native_DictNext(const nativeVal_t *d, int *pos, const nativeVal_t **key, const nativeVal_t **value);
+
+/* ---- identity ---- */
+
+/*
+ * What `is` of Python 1.5.2 compares for a number, text or tuple is the object, which the native value does not have:
+ * a value keeps the identity of the object it stands for in nativeVal_t.id (copies keep it, the setters clear it). The
+ * ids are numbers that are never reused. A value without one (0: the result of an operation, a value of the engine) is
+ * the object 1.5.2 shares for it when there is one (Native_IdOf: the ints -1 to 99, the empty text and the texts of one
+ * character, the empty tuple), else an object of its own that nothing else is.
+ */
+#define NATIVE_ID_TRUE 0x301		/* Py_True and Py_False: ints 1 and 0 that are not the small ints */
+#define NATIVE_ID_FALSE 0x302
+#define NATIVE_ID_ERR 0x400		/* + the kind (nativeError_t): the name of a standard exception, as __builtin__ holds it */
+
+/* the identity of v (NV_INT, NV_FLOAT, NV_STR, NV_LONG, NV_TUPLE): its own, else the shared object's, else 0 */
+uintptr_t Native_IdOf(const nativeVal_t *v);
+/* a new identity */
+uintptr_t Native_NewId(void);
+/* v and the items of its tuples (at any depth) get an identity of their own where Native_IdOf has none: a value a
+ * variable holds is one object for every reader */
+void Native_Pin(nativeVal_t *v);
+/* the same for v alone (not its items) */
+void Native_PinTop(nativeVal_t *v);
+/* the identity of a text interned as PyString_InternInPlace does it (one object per text; the empty text and those of
+ * one character are the shared ones) */
+uintptr_t Native_InternId(const char *s, int len);
+/* the int 1 or 0 of a comparison or a not (Py_True, Py_False: cmp_outcome of ceval.c) */
+void Native_SetBool(nativeVal_t *v, int t);
+/* a is b of the scripts: None with None, objects and entity handles as NObj_Is, numbers, texts and tuples by
+ * Native_IdOf (two values without an identity are two objects) */
+byte Native_Is(const nativeVal_t *a, const nativeVal_t *b);
 
 /* ---- texts of values ---- */
 
@@ -197,8 +234,7 @@ byte Native_LiteralNone(const char *s, const nativeVal_t *none, nativeVal_t *out
  * The operators and built-in conversions of Python 1.5.2 on native values, with the errors of Objects/ (the TypeError
  * of a type that does not take the operation, OverflowError, ZeroDivisionError, IndexError, KeyError). Each returns
  * 1 with *out made (Native_Free it), else 0 with the error raised. A vector is a tuple of three floats in all of
- * them. Long ints compare, convert, format, add and subtract, but do not multiply or divide (a TypeError of its own:
- * no script makes them).
+ * them. Long ints as longobject.c has them (scrap/scriptlib.h).
  */
 
 /* cmp(a, b) of 1.5.2 as -1, 0 or 1 (PyObject_Compare: numbers coerced, other types of one kind by their values,
@@ -327,6 +363,8 @@ byte Native_ErrValueStr(nativeBuf_t *b, const nativeErr_t *e);
 void Py_ErrSet(PyObject *type, PyObject *value, PyObject *tb);
 PyObject *Py_ErrType(void);
 void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb);
+/* the identity of the object o when it is a standard exception (NATIVE_ID_ERR + its kind), else 0 */
+uintptr_t Py_ErrIdOf(PyObject *o);
 /* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...;
  * the type name of an NV_OBJ; "cPyEntity" for an entity handle) */
 const char *Native_TypeName(const nativeVal_t *v);
@@ -402,8 +440,8 @@ byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *o
  * vector as a tuple), else __methods__ or a method of the handle (a function bound to h, NObj_NewBound); 1 with *out,
  * 0 with the console line of the handle and the AttributeError, or without an error when the entity is gone */
 byte Native_EntGetAttr(const nativeVal_t *h, const char *name, nativeVal_t *out);
-/* the address the repr of the handle v (NV_ENT) shows: its Python object's while it has one (OBJLIB 7e4b), else its
- * own */
+/* the address the repr of the handle v (NV_ENT) shows, which its id, hash and order go by: the handle's (its Python
+ * face shows the same, OBJLIB 9) */
 uintptr_t Native_EntAddr(const nativeVal_t *v);
 /* the core of the attribute set of a handle: v as an int, float, vector and text, in this order, each form it reads
  * as goes to the variable of that type until one takes it (1); 0 with the console line of the handle (ref names the
@@ -429,9 +467,9 @@ typedef struct {
 	void *ctx;
 } nativeHook_t;
 int Native_Seam(const char *module, const char *name, nativeHook_t *hook);
-/* the call of a hook (taken over) with the letters of Native_Call; the result into *out (NULL: dropped) in the form
- * the script got it (Native_Pass). A channel function runs in C on the arguments as its adapter got them (Port_Pack,
- * the depth check of the calls), any other callable through Python as before (OBJLIB 7). 0 with the error */
+/* the call of a hook (taken over) with the letters of the mini format; the result into *out (NULL: dropped) in the
+ * form the script got it (Native_Pass). A channel function runs in C on the arguments as its adapter got them
+ * (Port_Pack, the depth check of the calls), any other callable as Port_NativeCallVa calls it. 0 with the error */
 byte Native_HookCall(nativeHook_t *hook, nativeVal_t *out, const char *fmt, ...);
 void Native_HookFree(nativeHook_t *hook);
 /* o.name = v (v NULL: del o.name) was done: when o is a module and module.name has a seam entry, it follows */
@@ -441,18 +479,12 @@ void Native_HookClear(void);
 /* the test channel's function that tells its own functions: 1 with the C function and record of f */
 void Native_HookFinder(byte (*find)(const nativeVal_t *f, nativeHook_t *hook));
 /*
- * OBJLIB 7: calls of Python callables with native arguments, for the calls of names known at run time and the seams
- * (a value that may hold a port function goes through Port_Value instead). fmt has one letter per argument: v a const
- * nativeVal_t *, i a long, d a double, s a text (NULL: None), O a PyObject * (borrowed; P the same, see PORT_CALL), r a
- * const nativeVal_t * that holds an object the callee keeps or changes (a native entry gets the object itself, as P
- * gives a Python object; v would give a copy of a list or dict of plain values, as Native_Arg makes it). The
- * result goes into *out (Native_Free it; NULL drops it) as Native_Arg makes it. 0 with the error of the call.
+ * The mini format of the calls of names known at run time and of the seams (Native_Call of before): fmt has one letter
+ * per argument: v a const nativeVal_t *, i a long, d a double, s a text (NULL: None), O a PyObject * (borrowed; P the
+ * same, see PORT_CALL; OBJLIB 9), r a const nativeVal_t * that holds an object the callee keeps or changes (a native
+ * entry gets the object itself, as P gives a Python object; v would give a copy of a list or dict of plain values, as
+ * Native_Arg makes it). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg makes it.
  */
-byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
-/* the same with the result as it is (a new reference, NULL with the error): an entity handle or another object */
-PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...);
-/* Native_Call on a va_list with a reference that the call takes over (the slow path of Port_Invoke) */
-byte Native_CallVa(PyObject *callable, nativeVal_t *out, const char *fmt, va_list va);
 /* the most arguments of one mini format (Native_ReadArgs) */
 #define NATIVE_ARGS 16
 /* one argument of the mini format as read from the arguments of the call: type the letter, then its value */
@@ -466,23 +498,16 @@ typedef struct {
 } nativeArg_t;
 /* the arguments of fmt (at most NATIVE_ARGS) read from va into a: their count */
 int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a);
-/* one argument as Native_Call passes it: a new reference (a NULL text gives None, as for Py_BuildValue; a NULL object
- * gives NULL without an error), NULL with the error of the conversion */
-PyObject *Native_ArgPy(const nativeArg_t *a);
-/* the tuple of n arguments (NULL as for one of them) */
-PyObject *Native_PyArgs(const nativeArg_t *a, int n);
-/* module.name(...) through the module attribute (an AttributeError when it is not there); a native object there (a
- * class, an instance, a callback of a pack module: not a port function) is called natively (Port_NativeCallVa) */
+/* module.name(...) through the module attribute (an AttributeError when it is not there), called as the value it is
+ * (Port_NativeCallVa) */
 byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
-/* name(...) as a function of the module calls a global of its own (the NameError of the script when it is gone); a
- * native object as above */
+/* name(...) as a function of the module calls a global of its own (the NameError of the script when it is gone) */
 byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
 /* the variable module.name of a loaded pack module when it holds a native object a port function is not (a class, an
  * instance, a callback): 1 with *f (Native_Free it), else 0 without an error and *f None (no import is made) */
 byte Native_NativeVar(const char *module, const char *name, nativeVal_t *f);
-/* f(...) of a native object f (NObj_Native) on the letters of Native_Call, each argument as its adapter would get it
- * (the packing of the entries): NObj_Call, the result as Native_Arg makes it into *out (NULL: dropped); 0 with the
- * error */
+/* f(...) of a value f on the letters of the mini format, each argument as a call through Python handed it to the
+ * callee (Port_CallArg): NObj_Call, the result as Native_Arg makes it into *out (NULL: dropped); 0 with the error */
 byte Port_NativeCallVa(const nativeVal_t *f, nativeVal_t *out, const char *fmt, va_list va);
 /* Scrap.GetEntity(name): 1 with the entity in *out (NULL when there is none: the script gets None), 0 with the
  * TypeError of its argument for a value that is no text */
@@ -564,10 +589,9 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
 
 /*
  * A port function that another port calls by its module and name is called directly when the module attribute still
- * holds the port's own C function (the seam, OBJLIB 5 (9c: functions as Python values in the
- * registry)), else the old way through Python with the same arguments (the slow path, OBJLIB 7): a recorder of the
- * test cases, an alias, a mission's or a mod's function there gets the call, and a deleted or non-callable attribute
- * raises the error it raised.
+ * holds the port's own function (the seam), else what is there is called with the same arguments as a call through
+ * Python handed them over (the slow path): a recorder of the test cases, an alias, a mission's or a mod's function
+ * there gets the call, and a deleted or non-callable attribute raises the error it raised.
  *
  *   PORT_CALL(Module, Func, out, fmt, ...)   Module.Func(...) through the module attribute (Native_CallMod)
  *   PORT_OWN(Module, Func, out, fmt, ...)    Func(...) through the module's global, as a function of the module calls
@@ -578,18 +602,14 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out);
  *                                            part, #undef first, or names the level at the call)
  *   PORT_XCALL(level, Module, Func, ...)     PORT_LCALL and PORT_LOWN with the level named at the call
  *   PORT_XOWN(level, Module, Func, ...)
- *   PORT_ASK(Module, Func, fmt, ...)         Script_Ask: the result as the Python object the call gives (a new
- *   PORT_LASK, PORT_OWNASK, PORT_LOWNASK     reference, NULL with the error), the fast path the entry's result as
- *                                            its adapter returns it
  *
- * fmt and the arguments are those of Native_Call (v, i, d, s, O; a NULL s is None); out and the result as there. The
+ * fmt and the arguments are those of the mini format (v, i, d, s, O; a NULL s is None); out and the result as there. The
  * ref of Module.Func comes from include/scrap/scriptports.h (tools/script/ports.py makes it from the PyMethodDef
  * tables).
  *
  * Keyword arguments follow the positional letters after a ';', as name=letter separated by ',', their values after
  * the positional ones: PORT_CALL(Speech, AutoAddNI, NULL, "s;HeadName=s", key, "DeepThroat") is
- * Speech.AutoAddNI(key, HeadName = "DeepThroat"). The slow path passes them as the dict of keywords, in this order
- * (Mode_CallKw); the fast path puts each one into the slot of the entry its name has (the names of the ref, from the
+ * Speech.AutoAddNI(key, HeadName = "DeepThroat"). The slow path passes them as keywords in this order (NObj_CallKw); the fast path puts each one into the slot of the entry its name has (the names of the ref, from the
  * <adapter>_N list of a keyword entry: MODE_KW, Mode_KwEntry), the slots between not given (Mode_KwSkip). A call the
  * entry cannot take that way (a ref without names, a name it does not have, a slot given twice) goes the slow way and
  * gets the error of the adapter.
@@ -656,15 +676,13 @@ typedef struct portSite_s {
 } portSite_t;
 
 /* module.name (global 0) or the global name of module (global 1) is still the port's own function of ref: 0, or 1
- * with *hook a new reference to what is there (always 1 under SCRAP_PORT_SLOW=1, OBJLIB 7), -1 with the error of
- * the lookup (the import, AttributeError, NameError "global name") */
-int Port_Seam(const portRef_t *ref, byte global, PyObject **hook);
+ * with *hook what is there (Native_Free it; always 1 under SCRAP_PORT_SLOW=1), -1 with the error of the lookup (the
+ * import, AttributeError, NameError "global name") */
+int Port_Seam(const portRef_t *ref, byte global, nativeVal_t *hook);
 /* the call of a site: the seam, then the entry on the arguments packed with Native_Pass and the depth check of
- * Script_CallObject, or the call through Python of Native_HookCall */
+ * Script_CallObject, or the call of what is there (NObj_CallKw on the arguments as a call through Python hands them
+ * over) */
 byte Port_Invoke(portSite_t *site, nativeVal_t *out, const char *fmt, ...);
-/* Port_Invoke with the result as the Python object the call gives (a new reference, NULL with the error) */
-PyObject *Port_Ask(portSite_t *site, const char *fmt, ...);
-PyObject *Port_AskVa(portSite_t *site, const char *fmt, va_list va);
 /* the TypeError of PyArg_ParseTuple for n arguments to a function of nargs: 0 */
 byte Port_Arity(int n, int nargs);
 /* the sites that ran since the start, the last one first (OBJLIB 7: the counters of the test channel) */
@@ -691,12 +709,9 @@ PyObject *NObj_PortCallPy(int i, PyObject *args, PyObject *kw);
 int Port_FaceIndex(const portRef_t *ref);
 /* the first ref of module.name (binary search), NULL when there is none */
 const portRef_t *Port_Find(const char *module, const char *name);
-/* SCRAP_PORT_SLOW=1 is set (read once): every port call goes the slow way, by its module attribute */
+/* SCRAP_PORT_SLOW=1 is set (read once): every port call goes the slow way, the call of what its module attribute
+ * holds */
 byte Port_Slow(void);
-/* the port's own function of ref: f is the C function of its table entry (the adapter: Mission_X.Init and
- * Mission_Y.Init share the name), without self (a recorder of the test channel has one); never under
- * SCRAP_PORT_SLOW=1 (OBJLIB 7). The test of the seam (Port_Seam) and of the callbacks (Port_Callback). */
-byte Port_IsOwn(const portRef_t *ref, PyObject *f);
 /* a callback bound by name (cPy_Function PYF_ENTRY): the ref of module.name when the value f is its port function under
  * its own name, else the ref of the port function f is (by its adapter and own name: a variable that holds another
  * module's function, an alias), as the site that counts its calls (fast: the calls, errors: the failed ones; listed
@@ -716,25 +731,14 @@ portSite_t *Port_ScheduledOf(const nativeVal_t *f);
 /* the functions scheduled as entries since the start, the last one first (OBJLIB 7: the counters of the test
  * channel) */
 portSite_t *Port_ScheduledSites(void);
-/* the call of a bound site (a callback, a scheduled call, a value that holds a port function: Port_Value) as the
+/* the call of a bound site (a callback, a scheduled call, a value that holds a port function: Port_ValuesOf) as the
  * Python call of its adapter on n arguments: the letters x, each one as the adapter gets it ('v' a native value
  * through Native_Pass, 'O' an object through Native_Arg, as Port_Invoke packs them), or with x NULL the native values
  * v through Native_Pass; the entry (Port_Entry), the result through the conversions of the adapter (Native_Pass) into
- * *res (Native_Free it either way; NULL: dropped), or with pyout what the adapter returns as the Python object (a new
- * reference, NULL with the error; res unused). Counts the call (fast) and a failure (errors). 1, or 0 with the error
- * set */
-byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v, int n, nativeVal_t *res,
-	PyObject **pyout);
+ * *res (Native_Free it either way; NULL: dropped), or with raw what the adapter returns as a call through Python gives
+ * it back to native code (NObj_CallArg). Counts the call (fast) and a failure (errors). 1, or 0 with the error set */
+byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v, int n, nativeVal_t *res, byte raw);
 
-/*
- * Values that hold port functions (stage 4): a function a module variable, a table, a from import or a parameter
- * holds, called as the value it is. Port_Own finds the ref of the function itself in any module, by its adapter and
- * its own name (__name__: an alias in a table under another name is the ref of that name), so a variable that holds
- * another module's function (Net.ClientCreate = Ffa.ClientCreate) is the entry of that function, as the Python call
- * would run its adapter. NULL for any other value (a recorder, a lambda, a bound method, a class, an engine function),
- * and under SCRAP_PORT_SLOW=1 (OBJLIB 7).
- */
-const portRef_t *Port_Own(PyObject *f);
 /* the ref of a row of the function table of module (stage 7e: its name and entry; a level's module has a ref per
  * level, told apart by the entry); NULL when there is none (the row is in two tables: tools/script/ports.py says so) */
 const portRef_t *Port_OfFn(const char *module, const portFn_t *row);
@@ -745,21 +749,25 @@ const portRef_t *Port_OfFn(const char *module, const portFn_t *row);
  * arity error). 1 with *out, 0 with the error */
 byte Port_KwCall(const portRef_t *ref, const nativeVal_t *a, int n, const nativeVal_t *kw, nativeVal_t *out);
 /*
- * The call of a value f: the entry of the port function f is (Port_Own; the arguments packed as its adapter gets them,
- * the depth check of Port_Entry), else the call through Python of Native_Call (OBJLIB 7: the same object). f NULL
- * fails with the error its lookup set. Port_Value takes the letters of Native_Call (no keywords), Port_Values n native
- * values (more than PORT_ARGS go through Python) with the result as Native_Arg takes it into *out (NULL: dropped) or,
- * with pyout, as the Python object (a new reference, NULL with the error). The site (PORT_VSITE, one per call site)
- * counts the calls: fast through the entry, slow through Python, and names the port function it called last
- * ("value.?" before; listed by the channel's "native ports" as "value").
+ * The call of a value f (values that hold port functions, stage 4: a function a module variable, a table, a from import
+ * or a parameter holds, called as the value it is): the entry of the port function f is (NObj_PortRef, also the view
+ * of its C function object; the arguments packed as its adapter gets them, the depth check of Port_Entry), a view
+ * through Python (Port_Values, OBJLIB 9), any other value through NObj_Call on the arguments as the call through
+ * Python handed them over (NObj_CallArg; the TypeError of a value that is no callable); the result as Native_Arg takes
+ * it into *out (NULL: dropped), or with raw as a call through Python gives it back to native code (NObj_FromPy of the
+ * Python object). The site (PORT_VSITE, one per call site) counts the calls: fast through the entry, slow the others
+ * but native objects, and names the port function it called last ("value.?" before; listed by the channel's "native
+ * ports" as "value").
  */
-byte Port_Value(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, ...);
-byte Port_ValueVa(portSite_t *site, PyObject *f, nativeVal_t *out, const char *fmt, va_list va);
+byte Port_ValuesOf(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out, byte raw);
+/* the same on the letters of the mini format (no keywords): a port function's entry gets them packed as its adapter does,
+ * any other value each as Port_ValuesOf passes a native value */
+byte Port_ValueOf(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const char *fmt, ...);
+byte Port_ValueOfVa(portSite_t *site, const nativeVal_t *f, nativeVal_t *out, const char *fmt, va_list va);
+/* OBJLIB 9: the call through Python of the Python callable f (a view's object) on n native values, counted by the site
+ * as slow: the result as Native_Arg takes it into *out (NULL: dropped) or, with pyout, the Python object (a new
+ * reference, NULL with the error) */
 byte Port_Values(portSite_t *site, PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out, PyObject **pyout);
-/* the same for a value f: a native port function through its entry as above, a view or another Python value through
- * Port_Values on its object, any other native object through NObj_Call (no crossing) */
-byte Port_ValuesOf(portSite_t *site, const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out,
-	PyObject **pyout);
 /* the call of a function value the engine keeps for later (a callback of cPy_Function, a scheduled function, the done
  * of Scrap.VideoPlayer): bound (its site of Port_CallbackOf or Port_ScheduledOf) through the entry (Port_BoundCall),
  * else NObj_Call of f (a native object natively, a view through Python) on the arguments as a call through Python
@@ -768,7 +776,6 @@ byte Port_CallKept(portSite_t *bound, const nativeVal_t *f, const nativeVal_t *a
 /* the ref a value site names before its first call through an entry */
 extern const portRef_t port_value;
 #define PORT_VSITE() (&(static portSite_t){ .ref = &port_value, .global = 2, .file = __FILE__, .line = __LINE__ })
-#define PORT_VALUE(f, out, ...) Port_Value(PORT_VSITE(), f, out, __VA_ARGS__)
 
 /* the ref names: the module and the function pasted at once, in the macro the site writes, so that a module whose
  * name is also a macro of the file (#define CTF "CTF") is not replaced first */
@@ -789,10 +796,6 @@ extern const portRef_t port_value;
 	Port_Invoke(PORT_SITE(PORT_LREF_(level, module##_##name), 0), out, __VA_ARGS__)
 #define PORT_XOWN(level, module, name, out, ...) \
 	Port_Invoke(PORT_SITE(PORT_LREF_(level, module##_##name), 1), out, __VA_ARGS__)
-#define PORT_ASK(module, name, ...) Port_Ask(PORT_SITE(port_##module##_##name, 0), __VA_ARGS__)
-#define PORT_OWNASK(module, name, ...) Port_Ask(PORT_SITE(port_##module##_##name, 1), __VA_ARGS__)
-#define PORT_LASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 0), __VA_ARGS__)
-#define PORT_LOWNASK(module, name, ...) Port_Ask(PORT_SITE(PORT_LREF_(PORT_LEVEL, module##_##name), 1), __VA_ARGS__)
 
 /* the refs, as include/scrap/scriptports.h lists them: PORT_DECL declares one (PORT_DECLL for a module of a level);
  * the list of a file, PORTS(file), at the end of the file of the table, defines them, one per row of a function table
@@ -884,10 +887,6 @@ PyObject *Native_PyOf(const nativeVal_t *v);
 /* the argument of a keyword entry that is not given (an NV_OBJ without an object) */
 void Native_SetMissing(nativeVal_t *v);
 byte Native_IsMissing(const nativeVal_t *v);
-/* OBJLIB 5 (9c): the Python object a number or text came from, kept with the value (the constants of the .mod
- * evaluator): set (a new reference) and read (borrowed, NULL for none; of an NV_OBJ its object) */
-void Native_KeepPy(nativeVal_t *v, PyObject *o);
-PyObject *Native_KeptPy(const nativeVal_t *v);
 /* v or a value in it (an item, a key, a value of a dict, at any depth) has one of types (a mask of 1 << NV_) */
 byte Native_Holds(const nativeVal_t *v, unsigned types);
 /* eval(text) when text is a plain literal: a text without 0 bytes, Native_Literal after its leading blanks (as the

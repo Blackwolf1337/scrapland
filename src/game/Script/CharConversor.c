@@ -22,7 +22,7 @@
  * by name) and string.replace through its native twin; the module's own functions through its globals as the script
  * calls them (PORT_OWN, the same seam on the global), and so do SLogic.Flash, SendSentinelToWatch, SAct.GetCls, the
  * SFX functions, SInput.GetDefinedEntry and SScorer.Add and SetOnCancel (stage 7); Menu.LinkLR and LinkUD come
- * from a from import (OBJLIB 6) and are called through their entries while they are Menu's own (PORT_VALUE); the .def
+ * from a from import (OBJLIB 6) and are called through their entries while they are Menu's own (Mode_LinkCallV); the .def
  * files take their $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
@@ -266,7 +266,7 @@ static byte Cc_Heads(int pid, int total, int *count) {
 
 /* AddInterfaceContent(id): the interface of the characters (data/menus/charconv.def); the game time stops; the
  * description of the player's character, the keyboard links of the buttons, Escape leaves (from Menu import
- * LinkLR, LinkUD: OBJLIB 6, the calls through PORT_VALUE) */
+ * LinkLR, LinkUD: OBJLIB 6, the calls through Mode_LinkCallV) */
 static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *chars = Mode_V(&t), *avl = Mode_V(&t), *sv = Mode_V(&t), *control = Mode_V(&t), *none = Mode_V(&t);

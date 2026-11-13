@@ -25,7 +25,7 @@
  * functions given to the scheduler take their entries (stage 4: Port_Scheduled); the ones handed to Speech as
  * AfterRemoteComFunc are values Speech keeps (OBJLIB 5 (9c: they go to Speech as their Python function objects until
  * functions are native values)) and calls through their entries, apply() on MissionsFuncs.OnSuperDealFinish as the
- * script read it takes its entry (MODE_CBAPPLY); the class VehiclesNPC.cShipAI is a variable the .mod defines
+ * script read it takes its entry (Mode_Apply); the class VehiclesNPC.cShipAI is a variable the .mod defines
  * (OBJLIB 5 (9c: a Python class until the .mod classes are native)); the hooks of the missions (KeepPlaying) and the
  * callbacks set in other modules are variables read from the registry where the script reads them.
  */
@@ -232,7 +232,7 @@ static byte Sd_Remote(const char *how, const nativeVal_t *cad, const nativeVal_t
 }
 
 /* if (cad and cad != ""): Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params) else:
- * apply(func, params) (func a value: its entry while it is a port's own function, MODE_CBAPPLY) */
+ * apply(func, params) (func a value: its entry while it is a port's own function, Mode_Apply) */
 static byte Sd_End(const char *how, const nativeVal_t *cad, const nativeVal_t *who, const nativeVal_t *func,
 	const nativeVal_t *params) {
 	if (Sd_Text(cad)) {

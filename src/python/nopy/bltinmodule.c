@@ -58,3 +58,13 @@ static PyObject *nopy_builtin_module(PyObject *m) {
 #define Py_InitModule4(name, methods, doc, self, api) nopy_builtin_module(Py_InitModule4(name, methods, doc, self, api))
 
 #include "Python/bltinmodule.c"
+
+/* OBJLIB 7e4c: the objects of the standard exceptions (the strings and tuples of initerrors) without the module, for
+ * the error state of ScrapC (src/game/Script/NativeErr.c) */
+void Py_LibErrors(void) {
+	PyObject *d = PyDict_New();
+
+	if (d)
+		initerrors(d);
+	Py_XDECREF(d);
+}

@@ -16,14 +16,15 @@
  * its globals are called through their refs (PORT_CALL, PORT_OWN: the port seam, OBJLIB 5 (9c)); string.zfill has a
  * twin in the file. The function given to the scheduler by name takes its entry (Port_Scheduled); the Menu object a
  * script may put into the module is a global (OBJLIB 5 (9c)) whose ShowTextBox is called through its entry
- * (PORT_VALUE). The registers keep their Python objects: SaveReg reads the attributes of any object and GetReg makes
- * a class whose attributes are read with the Python literal reader (OBJLIB 6).
+ * (Port_ValueOf). SaveReg reads the attributes of any object, GetReg makes a native class whose attributes are read
+ * with the literal reader.
  */
 #include <limits.h>
 #include <string.h>
 
 #include "scrap/alarm.h"
 #include "scrap/filepak.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -683,19 +684,13 @@ static byte SG_QSaveReg(const nativeVal_t *reg) {
 	return PORT_OWN(SaveGame, SaveReg, NULL, "sv", "MissionStatus", reg);
 }
 
-/* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>"). The
- * names and the saved literals are read with the native reader (Mode_EvalSave, Mode_EvalPy); the class and its
- * attributes stay Python objects until stage 7 (OBJLIB 7: the missions read them as attributes of the class) */
-static PyObject *SG_GetReg(const nativeVal_t *name) {
+/* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>"), into
+ * *out. The names and the saved literals are read with the native reader (Mode_EvalSave) */
+static byte SG_GetReg(const nativeVal_t *name, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *lst = Mode_V(&t), *regs = Mode_V(&t);
-	PyObject *cdict = Py_BuildValue("{s:s,s:O}", "__module__", SG, "__doc__", Py_None);
-	PyObject *bases = cdict ? PyTuple_New(0) : NULL, *cname = bases ? PyString_FromString("res") : NULL;
-	PyObject *res = cname ? PyClass_New(bases, cdict, cname) : NULL;
-	Py_XDECREF(cname);
-	Py_XDECREF(bases);
-	Py_XDECREF(cdict);
-	byte ok = res && Mode_SaveVarV(name, lst);
+	Native_SetNone(out);
+	byte ok = NObj_NewClass(out, "res", SG, NULL, NULL) && Mode_SaveVarV(name, lst);
 	if (ok && lst->type == NV_NONE) {
 		Native_SetStr(lst, "[]");
 	}
@@ -703,31 +698,27 @@ static PyObject *SG_GetReg(const nativeVal_t *name) {
 	ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
 		int mark = t.n;
-		nativeVal_t *a = Mode_V(&t), *key = Mode_V(&t), *val = Mode_V(&t), *code = Mode_V(&t);
+		nativeVal_t *a = Mode_V(&t), *key = Mode_V(&t), *val = Mode_V(&t), *code = Mode_V(&t), *lit = Mode_V(&t);
 		ok = Native_SeqItem(regs, i, a) && Mode_Cat(&t, key, 3, name, Mode_S(&t, "."), a) && Mode_SaveVarV(key, val) &&
 			Mode_Cat(&t, code, 4, Mode_S(&t, "res."), a, Mode_S(&t, " = "), val);
 		if (ok) {
 			/* the exec'd res.<reg> = <value> made directly: STORE_ATTR of the literal; another register name or value
 			 * is exec's SyntaxError, nothing runs */
-			PyObject *lit = NULL;
 			if (a->type == NV_STR && Script_IsName(Native_Text(a), a->n) && val->type == NV_STR) {
-				PyObject *v = Native_ToPy(val);
-				lit = v ? Mode_EvalPy(SG, v) : NULL;
-				Py_XDECREF(v);
+				ok = Mode_EvalSave(SG, val, lit);
 			} else {
 				Script_NotRead("SaveGame.GetReg", Native_Text(code));
+				ok = 0;
 			}
-			ok = lit && PyObject_SetAttrString(res, (char *)Native_Text(a), lit) == 0;
-			Py_XDECREF(lit);
+			ok = ok && NObj_SetAttr(out, Native_Text(a), lit);
 		}
 		Mode_Release(&t, mark);
 	}
 	Mode_Done(&t, 0);
 	if (!ok) {
-		Py_XDECREF(res);
-		return NULL;
+		Native_Free(out);
 	}
-	return res;
+	return ok;
 }
 
 /* ---- entries ---- */
@@ -749,8 +740,7 @@ MODE_FN(SaveGame, LoadGame, 1, SG_LoadGame(&a[0]))
 MODE_FN(SaveGame, SaveReg, 2, SG_SaveReg(&a[0], &a[1]))
 MODE_FN(SaveGame, QSaveReg, 1, SG_QSaveReg(&a[0]))
 
-/* GetReg gives the class by reference (OBJLIB 7) */
-MODE_FN(SaveGame, GetReg, 1, Mode_RefTake(SG_GetReg(&a[0]), out))
+MODE_FN(SaveGame, GetReg, 1, SG_GetReg(&a[0], out))
 
 /* the keyword functions (MODE_KW) */
 MODE_KW(SaveGame, MarkWayPoint, "OO|O", "Map", "Spawn", "ExtraComeFrom") {

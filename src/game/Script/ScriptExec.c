@@ -291,7 +291,7 @@ static byte Exec_Args(const execTrailer_t *t, nativeVal_t *args) {
  * (Port_ValuesOf). The result into *out, or dropped at once (out NULL: the statement) */
 static byte Exec_CallValue(const nativeVal_t *f, const nativeVal_t *a, int n, nativeVal_t *out) {
 	nativeVal_t r;
-	byte ok = Port_ValuesOf(PORT_VSITE(), f, a, n, &r, NULL);
+	byte ok = Port_ValuesOf(PORT_VSITE(), f, a, n, &r, 0);
 	if (ok && out) {
 		*out = r;
 	} else if (ok) {
@@ -430,7 +430,7 @@ byte Exec_Cat(nativeVal_t *out, int n, ...) {
 
 byte Exec_Call(execScope_t *x, const char *name, const char *func, const nativeVal_t *a, int n) {
 	nativeVal_t o, f;
-	byte ok = Exec_Local(x, name, &o) > 0 && (NObj_GetAttr(&o, func, &f) || (Script_Fail(), 0));
+	byte ok = Exec_Local(x, name, &o) > 0 && (NObj_GetAttr(&o, func, &f) || Script_Fail());
 	Native_Free(&o);
 	if (!ok) {
 		return Exec_Fail();

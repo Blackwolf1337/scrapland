@@ -264,21 +264,11 @@ static void Level_StepSaveInt(int id, const nativeVal_t *args, int n) {
  * other holders see (Script_EvalIn), and the list of a $name is changed as the object it is */
 
 /* Scrap.SetSaveVar(var, text) of a step, its error printed by the runner */
-static void Level_SetSave(const nativeVal_t *var, PyObject *text) {
-	if (text) {
-		PORT_CALL(Scrap, SetSaveVar, NULL, "vO", var, text);
-		Py_DECREF(text);
-	}
-}
-
-/* the repr of a native value as a Python text (a new reference; OBJLIB 6, for savelistadd) */
-static PyObject *Level_Repr(const nativeVal_t *v) {
-	nativeBuf_t b;
-	Native_BufInit(&b);
-	Native_Repr(&b, v, NR_REPR);
-	PyObject *text = PyString_FromStringAndSize(b.p, b.len);
-	Native_BufFree(&b);
-	return text;
+static void Level_SetSave(const nativeVal_t *var, const nativeBuf_t *text) {
+	nativeVal_t t;
+	Native_SetText(&t, text->p, text->len);
+	PORT_CALL(Scrap, SetSaveVar, NULL, "vv", var, &t);
+	Native_Free(&t);
 }
 
 /* an argument of a step as the native value a call passes on (Native_Pass: a list of a $name that holds only native
@@ -293,16 +283,20 @@ static byte Level_ArgNative(const nativeVal_t *v, nativeVal_t *out) {
 
 /* savelistadd on native values when the save text is a list literal and the item a native value: 1 when it was done
  * that way (the result as the Python lines give it, the same repr), else 0 and nothing done */
-static byte Level_SaveListAddNative(const nativeVal_t *var, PyObject *s, const nativeVal_t *item) {
+static byte Level_SaveListAddNative(const nativeVal_t *var, const nativeVal_t *s, const nativeVal_t *item) {
 	nativeVal_t lst, x;
-	if (!Mode_LiteralPy(s, &lst) || lst.type != NV_LIST || !Level_ArgNative(item, &x)) {
+	if (!Mode_LiteralVal(s, &lst) || lst.type != NV_LIST || !Level_ArgNative(item, &x)) {
 		Native_Free(&lst);
 		return 0;
 	}
 	/* in on a list only compares (Native_Compare as PyObject_Compare): no error */
 	if (Native_Contains(&lst, &x) == 0) {
+		nativeBuf_t b;
 		Native_Copy(Native_Append(&lst), &x);
-		Level_SetSave(var, Level_Repr(&lst));
+		Native_BufInit(&b);
+		Native_Repr(&b, &lst, NR_REPR);
+		Level_SetSave(var, &b);
+		Native_BufFree(&b);
 	}
 	Native_Free(&x);
 	Native_Free(&lst);
@@ -324,24 +318,22 @@ static void Level_StepSaveListAdd(int id, const nativeVal_t *args, int n) {
 	if (!Mode_Parse(args, n, "OO", &var, &item)) {
 		return;
 	}
-	PyObject *s = PORT_ASK(Scrap, GetSaveVar, "v", var);
-	if (s && Level_SaveListAddNative(var, s, item)) {
-		Py_DECREF(s);
-		return;
-	}
 	nativeVal_t text, lst, x, r;
-	if (!s) {
+	if (!PORT_CALL(Scrap, GetSaveVar, &text, "v", var)) {
 		return;
 	}
-	NObj_FromPy(s, &text);
-	Py_DECREF(s);
+	if (Level_SaveListAddNative(var, &text, item)) {
+		Native_Free(&text);
+		return;
+	}
 	if (Script_EvalIn("__main__", &text, &lst)) {
 		NObj_CallArg(item, &x);
 		if (NObj_Contains(&lst, &x) == 0) {
 			nativeBuf_t b;
 			Native_BufInit(&b);
-			byte ok = NObj_CallMethod(&lst, "append", &x, 1, &r) && NObj_Repr(&b, &lst, NR_REPR);
-			Level_SetSave(var, ok ? PyString_FromStringAndSize(b.p, b.len) : NULL);
+			if (NObj_CallMethod(&lst, "append", &x, 1, &r) && NObj_Repr(&b, &lst, NR_REPR)) {
+				Level_SetSave(var, &b);
+			}
 			Native_BufFree(&b);
 			Native_Free(&r);
 		}

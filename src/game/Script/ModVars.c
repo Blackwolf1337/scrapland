@@ -9,7 +9,7 @@
  * they went), and those variables are the key of the module here. A shared list, dict, instance, function or module
  * is held as its NV_REF, a number, text, None or tuple by value. OBJLIB 7e4b: a reader that needs a Python object
  * gets the one of the value (Native_ToPy: a view's own object, native data crossing once, a number or text made once
- * and kept with the value, nativeVal_t.obj); Python code on the face of a module comes here through the module type
+ * and cached with the value, nativeVal_t.obj); Python code on the face of a module comes here through the module type
  * (MV_PyGetattr).
  *
  * The names: the table's, and the overflow list of each module file. A name the table does not have is taken into the
@@ -152,8 +152,8 @@ static nativeVal_t *MV_Slot(nativeVal_t *t, const char *name) {
 }
 
 /* *out the form of v a variable holds: lists and dicts as objects (NObj_Share), a vector as the tuple of three floats
- * it is in Python, a tuple with its Python tuple and an entity handle with its Python object (one object for `is`, id
- * and hash, as the dict slot had it; native data in a tuple crosses);
+ * it is in Python, a tuple with an identity of its own and of its items (Native_Pin: one object for `is`, as the dict
+ * slot had it);
  * SCRAP_NATIVE_REF=0: the value as Python made it, a value that holds native objects (there are no views then) as it
  * is. 0 with the error */
 static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
@@ -176,24 +176,8 @@ static byte MV_Form(const nativeVal_t *v, nativeVal_t *out) {
 		Native_Copy(out, v);
 	}
 	NObj_Share(out);
-	if (out->type == NV_ENT && !Native_KeptPy(out)) {
-		/* the handle's Python object lives while the variable holds it, as in the dict slot: its address is the one
-		 * id, hash, repr and cmp of the handle show */
-		PyObject *o = Native_ToPy(out);
-		if (o) {
-			Native_KeepPy(out, o);
-			Py_DECREF(o);
-		}
-		Native_ErrClear();
-	}
-	if (out->type == NV_TUPLE && !Native_KeptPy(out)) {
-		PyObject *o = Native_ToPy(out);
-		if (!o) {
-			Native_Free(out);
-			return 0;
-		}
-		Native_KeepPy(out, o);
-		Py_DECREF(o);
+	if (out->type == NV_TUPLE) {
+		Native_Pin(out);
 	}
 	return 1;
 }
@@ -210,12 +194,8 @@ static PyObject *MV_Py(nativeVal_t *s) {
 		return o;
 	}
 	if (!s->obj) {
-		PyObject *o = Native_ToPy(s);
-		if (!o) {
-			return NULL;
-		}
-		Native_KeepPy(s, o);
-		Py_DECREF(o);
+		/* the Python form, made once for the borrowed readers */
+		s->obj = Native_ToPy(s);
 	}
 	return s->obj;
 }
@@ -660,22 +640,12 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names) {
 	return n;
 }
 
-/* ---- by module name: the one path of the helpers of the ports (Script_Global, Script_Attr, the Mode_ helpers) ---- */
+/* ---- by module name: the one path of the helpers of the ports (ModVar_GlobalVal, ModVar_ModAttrVal, the Mode_ helpers) ---- */
 
 /* the module name as the scripts import it into *m (Script_Module): 1 with *m (a module, or another object a case put
  * in the store), 0 with the error of the import */
 static byte MV_Import(const char *module, nativeVal_t *m) {
 	return Script_Module(module, m);
-}
-
-PyObject *ModVar_Lookup(const char *module, const char *name, byte *imported) {
-	nativeVal_t m;
-	modVarRef_t ref;
-	*imported = MV_Import(module, &m);
-	PyObject *v = *imported && ModVar_OfVal(&m, &ref) ? ModVar_Get(&ref, name) : NULL;
-	Py_XINCREF(v);
-	Native_Free(&m);
-	return v;
 }
 
 byte ModVar_GlobalVal(const char *module, const char *name, nativeVal_t *out) {
@@ -687,22 +657,6 @@ byte ModVar_GlobalVal(const char *module, const char *name, nativeVal_t *out) {
 		Native_SetNone(out);
 	}
 	return ok || (imported && Native_Raise(NE_NAME, "%s", name));
-}
-
-int ModVar_SetGlobal(const char *module, const char *name, PyObject *v) {
-	nativeVal_t m;
-	modVarRef_t ref;
-	int r = -1;
-	if (MV_Import(module, &m)) {
-		if (ModVar_OfVal(&m, &ref)) {
-			r = ModVar_Set(&ref, name, v);
-		} else {
-			/* PyModule_GetDict's SystemError */
-			Native_Raise(NE_SYSTEM, "bad argument to internal function");
-		}
-	}
-	Native_Free(&m);
-	return r;
 }
 
 byte ModVar_SetGlobalVal(const char *module, const char *name, const nativeVal_t *v) {
@@ -740,43 +694,6 @@ PyObject *ModVar_ObjAttr(PyObject *o, const char *name) {
 	PyObject *r = Native_FromPyRef(o, &v) && ModVar_OfVal(&v, &ref) ? ModVar_Attr(&ref, name) :
 		PyObject_GetAttrString(o, (char *)name);
 	Native_Free(&v);
-	return r;
-}
-
-int ModVar_SetObjAttr(PyObject *o, const char *name, PyObject *v) {
-	nativeVal_t m;
-	modVarRef_t ref;
-	int r = Native_FromPyRef(o, &m) && ModVar_OfVal(&m, &ref) ? ModVar_SetAttr(&ref, name, v) :
-		PyObject_SetAttrString(o, (char *)name, v);
-	Native_Free(&m);
-	return r;
-}
-
-PyObject *ModVar_ModAttr(const char *module, const char *name) {
-	nativeVal_t v;
-	PyObject *r = ModVar_ModAttrVal(module, name, &v) ? Native_ToPy(&v) : NULL;
-	Native_Free(&v);
-	return r;
-}
-
-int ModVar_SetModAttr(const char *module, const char *name, PyObject *v) {
-	nativeVal_t m, x;
-	modVarRef_t ref;
-	int r = -1;
-	if (MV_Import(module, &m)) {
-		if (ModVar_OfVal(&m, &ref)) {
-			r = ModVar_SetAttr(&ref, name, v);
-		} else {
-			if (v) {
-				NObj_FromPy(v, &x);
-			}
-			r = NObj_SetAttr(&m, name, v ? &x : NULL) ? 0 : -1;
-			if (v) {
-				Native_Free(&x);
-			}
-		}
-	}
-	Native_Free(&m);
 	return r;
 }
 

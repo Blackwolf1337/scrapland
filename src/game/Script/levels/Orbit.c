@@ -16,7 +16,7 @@
  * Direct calls (stage 3): the other ports (Teleport, CharsNPC, Speech, SaveGame, CreditsText, Scorer, Scene,
  * GateKeeper, MissionsFuncs, Chars) and the C functions of the modules go through their refs (PORT_CALL, PORT_LOWN;
  * the callbacks of AfterBrowseNPC by the names of their refs), Items.Hint too; the scene tables and the function value gc.CanPassFunc
- * call a port's function through its entry (Mode_Calls, PORT_VALUE), and so do the scheduled calls (Mode_Later,
+ * call a port's function through its entry (Mode_Calls, Port_ValuesOf), and so do the scheduled calls (Mode_Later,
  * Mode_LaterIn, Mode_Schedule; Port_Scheduled, SScorer.SetMsgText's engine entry too). By name stay the functions
  * set as callbacks or given as values (EndOfSceneCallback,
  * AfterBrowseNPC, Speech.OnEndOfSpeech, GateKeeper.LocalCallFunc, the door functions of SetDoor, the hint function of
