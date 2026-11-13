@@ -115,6 +115,9 @@ typedef struct Net2Config {
 	uint32_t maxRecvBuffer;			/* bytes of out-of-order reliable messages per connection */
 	uint32_t inboxSize;				/* bytes of received unreliable messages per connection until Receive */
 	uint32_t outboxSize;			/* bytes of unreliable messages per connection until Flush */
+	uint32_t sockBuffer;			/* bytes of socket receive and send buffer to ask for (the system may give
+									   less), 0 its default; a server polled once per tick needs room for all
+									   datagrams of a tick */
 	const uint8_t *identitySeed;	/* server: 32 bytes of its identity key, NULL: a random one for this host */
 	const uint8_t *serverKey;		/* client: NET2_KEY_SIZE bytes the server's identity must match, or NULL */
 	const Net2Io *io;				/* NULL: UDP sockets */
@@ -157,6 +160,7 @@ typedef struct Net2Stats {
 	uint32_t sendRate, recvRate;	/* bytes per second of the last full second */
 	uint64_t packetsSent, packetsRecv, packetsLost;
 	uint64_t bytesSent, bytesRecv;
+	uint64_t resent;				/* reliable fragments sent again (not acked in time) */
 	uint32_t reliablePending;		/* reliable messages queued or not acked yet */
 	uint32_t dropped;				/* unreliable messages not sent (rate, space) or not kept (inbox full) */
 	uint32_t bad;					/* packets that failed the replay window, the tag or the parse */

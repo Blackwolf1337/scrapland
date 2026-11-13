@@ -235,7 +235,7 @@ void Net2Crypto_Wipe(void *p, size_t size);
 #define N2_NOSOCK UINTPTR_MAX
 int Net2Sock_Startup(void);
 void Net2Sock_Cleanup(void);
-uintptr_t Net2Sock_Open(int family, const Net2Addr *at, uint16_t port);
+uintptr_t Net2Sock_Open(int family, const Net2Addr *at, uint16_t port, uint32_t buffer);	/* buffer 0: default */
 void Net2Sock_Close(uintptr_t s);
 int Net2Sock_Send(uintptr_t s, const Net2Addr *to, const uint8_t *data, int size);
 int Net2Sock_Recv(uintptr_t s, Net2Addr *from, uint8_t *buf, int cap);	/* >0 size, 0 none */
@@ -360,7 +360,7 @@ struct Net2Conn {
 	int closeSends;
 	int forceSend;
 
-	uint64_t packetsSent, packetsRecv, packetsLost, bytesSent, bytesRecv;
+	uint64_t packetsSent, packetsRecv, packetsLost, bytesSent, bytesRecv, resent;
 	uint32_t dropped, bad;
 	uint64_t rateTime;
 	uint32_t secSent, secRecv, sendRate, recvRate;
