@@ -261,7 +261,7 @@ void Instance_Line(char *line) {
 	}
 	/* tests: "alarm <player> <level>" sets one player's alarm (include/scrap/players.h), "money <player> <n>" its
 	 * money, "use <player> <entity> [<option>]" makes it use an entity (include/scrap/travel.h), "goto <player>
-	 * <entity>" puts it next to one, "switch <player>" gets it into the nearest parked ship or out of its ship, "call
+	 * <entity> [<dx> <dz>]" puts it next to one, "switch <player>" gets it into the nearest parked ship or out of its ship, "call
 	 * <player>" calls a ship beside it */
 	int player, money;
 	float level;
@@ -278,8 +278,9 @@ void Instance_Line(char *line) {
 		Travel_TestUse(player, ent, opt);
 		return;
 	}
-	if (sscanf(line, "goto %d %63s", &player, ent) == 2) {
-		Travel_TestGoto(player, ent);
+	float dx = 300.0f, dz = 0.0f;
+	if (sscanf(line, "goto %d %63s %f %f", &player, ent, &dx, &dz) >= 2) {
+		Travel_TestGoto(player, ent, dx, dz);
 		return;
 	}
 	if (sscanf(line, "switch %d", &player) == 1 || sscanf(line, "call %d", &player) == 1) {

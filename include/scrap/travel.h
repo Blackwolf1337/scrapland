@@ -78,9 +78,9 @@ void Travel_Boarded(int player, struct cEntity *ship);
 /* a parked ship of the player's owned ship at pos, NULL when it has none */
 struct cEntity *Travel_OwnShip(int player, const vec3_t *pos, float yaw);
 /* tests (the instance's standard input): a player uses an entity with an option of its arrow, goes next to it, or
- * gets money */
+ * goes next to it (dx, dz units away, facing it) */
 void Travel_TestUse(int player, const char *entity, const char *option);
-void Travel_TestGoto(int player, const char *entity);
+void Travel_TestGoto(int player, const char *entity, float dx, float dz);
 
 /* the parts of the scripts: the metro's stations (Metro.c), the text of a ship as a hangar save variable keeps it
  * (ShipEdit.c), the ride down of a player of the instance in an elevator (Doors.c) */

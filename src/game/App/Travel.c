@@ -2,6 +2,7 @@
  * The instance's side of a coordinator: its connection, the tickets of the players, their states and the travel
  * between the instances, see include/scrap/travel.h and include/scrap/coord.h. Not in the original.
  */
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -695,15 +696,21 @@ void Travel_TestUse(int player, const char *entity, const char *option) {
 	Players_BindTurn();
 }
 
-void Travel_TestGoto(int player, const char *entity) {
+void Travel_TestGoto(int player, const char *entity, float dx, float dz) {
 	cEntity *e = Players_Get(player);
 	cEntity *t = World_FindEntity(entity);
 	if (!e || !t) {
 		Con_Printf("instance: goto: no player %d or no entity %s\n", player, entity);
 		return;
 	}
-	vec3_t p = { t->pos.x + 300.0f, t->pos.y + 100.0f, t->pos.z };
+	vec3_t p = { t->pos.x + dx, t->pos.y + 100.0f, t->pos.z + dz };
 	e->pos = p;
+	/* facing it (yaw 0 looks to -z): its use arrow selected */
+	float yaw = atan2f(-(t->pos.x - p.x), -(t->pos.z - p.z));
+	Obj(e)->ang.y = yaw;
+	if (NetPl_Kind(e) == NETREP_CHAR) {
+		WChar(e)->view.y = yaw;
+	}
 	Con_Printf("instance: player %d next to %s (%.0f %.0f %.0f)\n", player, entity, (double)p.x, (double)p.y,
 		(double)p.z);
 }

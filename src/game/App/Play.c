@@ -35,6 +35,7 @@
 #define PLAY_BOT_TARGET 3				/* the bot takes a ship and stays in the air (the weapon tests) */
 #define PLAY_BOT_WALK 4					/* the bot walks around and stays on foot (collisions of characters) */
 #define PLAY_BOT_IDLE 5					/* the bot gives no input (the tests drive it from the instance) */
+#define PLAY_BOT_USE 6					/* the bot stands and presses use every few seconds (doors) */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 
 byte g_Play;
@@ -76,7 +77,7 @@ static struct {
 	byte haveStatus;
 	PlayStats st;
 	FILE *log;
-	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK, PLAY_BOT_IDLE */
+	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK, PLAY_BOT_IDLE, PLAY_BOT_USE */
 	byte botCycle;
 	byte noAhead;						/* SCRAP_PLAYAHEAD=0: the others collide where they are drawn (tests) */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
@@ -269,7 +270,7 @@ void Play_Start(void) {
 	const char *bot = getenv("SCRAP_PLAYBOT");
 	play.bot = !bot || !*bot || *bot == '0' ? 0 : !crt_stricmp(bot, "npc") ? PLAY_BOT_NPC :
 		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : !crt_stricmp(bot, "walk") ? PLAY_BOT_WALK :
-		!crt_stricmp(bot, "idle") ? PLAY_BOT_IDLE : 1;
+		!crt_stricmp(bot, "idle") ? PLAY_BOT_IDLE : !crt_stricmp(bot, "use") ? PLAY_BOT_USE : 1;
 	const char *ahead = getenv("SCRAP_PLAYAHEAD");
 	play.noAhead = ahead && *ahead == '0';
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
@@ -399,6 +400,10 @@ static void Play_Bot(double now) {
 	memset(&play.acc, 0, sizeof(play.acc));
 	play.acc.time = 1.0f;
 	if (play.bot == PLAY_BOT_IDLE) {
+		return;
+	}
+	if (play.bot == PLAY_BOT_USE) {
+		play.acc.buttons = play.kind == NETREP_CHAR && t > 10.0 && fmod(t, 3.0) < 0.2 ? NETREP_IN_ACT3 | NETREP_IN_SWITCH : 0;
 		return;
 	}
 	if (play.kind == NETREP_CHAR) {
