@@ -32,6 +32,8 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
+#include "scrap/weaps.h"
+#include "scrap/weaps2.h"
 #include "scrap/world.h"
 
 #define WATCH_SAMPLES 8
@@ -45,6 +47,8 @@
 #define WATCH_NAME "netrep%d_%u"
 #define WATCH_CONNECT_MS 15000		/* the first frames after a level load can be slow */
 #define WATCH_RETRIES 5
+#define WATCH_AHEAD_RADIUS 25000.0f	/* units: the proxies this near move to the predicted tick (Watch_ProxiesAt) */
+#define WATCH_MISSILE_LIFE 1e9f		/* s: a missile proxy ends when the instance's missile does, not by itself */
 
 enum { WATCH_OFF, WATCH_CONNECTING, WATCH_HELLO, WATCH_LEVEL, WATCH_RUN, WATCH_GONE };
 
@@ -138,7 +142,86 @@ static byte Watch_ModelExists(const char *path) {
 	return File_Exists(alt);
 }
 
-/* S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model (Replicate.c) */
+static float Watch_DistSq(const cEntity *a, const cEntity *b) {
+	float dx = a->pos.x - b->pos.x, dy = a->pos.y - b->pos.y, dz = a->pos.z - b->pos.z;
+	return dx * dx + dy * dy + dz * dz;
+}
+
+/* the entity of slot (the own entity or a proxy), NULL */
+static cEntity *Watch_SlotEntity(int slot) {
+	if (slot < 0 || slot >= NETREP_MAX_ENTS) {
+		return NULL;
+	}
+	return slot == Play_OwnSlot() ? Play_Entity() : watch.px[slot].e;
+}
+
+/* a missile proxy of M|model|weapon|effect|level: a Swarm's or an Inferno's as the network copy of the game makes it
+ * (its bees, trails and engine sound; its hit effects), another one with its model and embedded effect; the bees of
+ * life, fired by the entity of the slot view[0] - 1 */
+static cEntity *Watch_Missile(const char *name, char *const *part, int n, const NetRepState *st) {
+	vec3_t pos = { NetRep_UPos(st->pos[0]), NetRep_UPos(st->pos[1]), NetRep_UPos(st->pos[2]) };
+	vec3_t dir = { NetRep_UAng(st->ang[0]), NetRep_UAng(st->ang[1]), NetRep_UAng(st->ang[2]) };
+	int weap = n > 2 ? crt_atoi(part[2]) : 0, fx = n > 3 ? crt_atoi(part[3]) : 0, level = n > 4 ? crt_atoi(part[4]) : 0;
+	cEntity *parent = Watch_SlotEntity((int)st->view[0] - 1);
+	cEntity *e;
+
+	if (weap == MISSILE_WEAP_SWARM || weap == MISSILE_WEAP_INFERNO) {
+		e = weap == MISSILE_WEAP_SWARM ? Swarm_NetCreate(name, pos, dir) : Inferno_NetCreate(name, pos, dir);
+		if (!e) {
+			return NULL;
+		}
+		Obj(e)->proxy = 1;
+		cMissileEntity_SetParent(Missile(e), parent ? parent->name : "");
+		if (weap == MISSILE_WEAP_SWARM) {
+			Swarm_NetSetUp(name);
+		} else {
+			Inferno_NetSetUp(name);
+		}
+		Missile(e)->level = level;
+		cMissileEntity_SetSwarm(Missile(e), st->life);
+	} else {
+		if (part[1][0] && !Watch_ModelExists(part[1])) {
+			return NULL;
+		}
+		e = cWorld_CreateEntity(g_pWorld, name, pos.x, pos.y, pos.z, TYEN_MISSILE);
+		if (!e) {
+			return NULL;
+		}
+		Obj(e)->proxy = 1;
+		Obj_SetAng(e, &dir);
+		if (part[1][0]) {
+			Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
+		}
+		if (fx > MISSILE_FX_NONE && fx < MISSILE_FXS) {
+			Entity_SetEmbeddedFX(e, g_MissileFXNames[fx]);
+		}
+		cMissileEntity_SetParent(Missile(e), parent ? parent->name : "");
+	}
+	cMissileEntity_SetLifeTime(Missile(e), WATCH_MISSILE_LIFE);
+	return e;
+}
+
+/* the instance's missile hit: bees lost (its life fell) or the end of it (it went off, or its slot went away while it
+ * was on): its hit and explosion effects on the proxy, at its newest place */
+static void Watch_MissileHit(WatchProxy *p, const NetRepState *st, byte end) {
+	cEntity *e = p->e;
+	if (!e || p->kind != NETREP_MISSILE || !Entity_IsType(e, TYEN_MISSILE) || !e->active) {
+		return;
+	}
+	cMissileEntity *m = Missile(e);
+	int lost = end ? m->swarmCount + 1 : m->swarmCount - st->life;
+	if (lost <= 0) {
+		return;
+	}
+	if (end && p->n) {
+		const NetRepState *s = &p->s[p->n - 1].st;
+		vec3_t at = { NetRep_UPos(s->pos[0]), NetRep_UPos(s->pos[1]), NetRep_UPos(s->pos[2]) };
+		Entity_SetPos(e, &at);
+	}
+	cMissileEntity_Hit(m, lost, 0.0f);
+}
+
+/* S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model|weapon|effect|level (Replicate.c) */
 cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy) {
 	char buf[NETREP_LOOK_MAX + 1];
 	char *part[9];
@@ -167,17 +250,7 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 		return e;
 	}
 	if (kind == NETREP_MISSILE && n >= 2) {
-		if (part[1][0] && !Watch_ModelExists(part[1])) {
-			return NULL;
-		}
-		cEntity *e = cWorld_CreateEntity(g_pWorld, name, x, y, z, TYEN_OBJECT);
-		if (e) {
-			Obj(e)->proxy = 1;
-			if (part[1][0]) {
-				Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
-			}
-		}
-		return e;
+		return Watch_Missile(name, part, n, st);
 	}
 	if (kind != NETREP_SHIP || n < 8) {
 		return NULL;
@@ -275,6 +348,7 @@ static void Ev_Remove(void *ctx, int slot) {
 	if (slot == Play_OwnSlot()) {
 		Play_OwnRemove();
 	}
+	Watch_MissileHit(&watch.px[slot], NULL, 1);
 	Watch_Free(slot);
 }
 
@@ -296,6 +370,21 @@ static void Watch_Player(const uint8_t *data, int size) {
 		Watch_Free(slot);
 		Play_OwnCreate(k, NetRepCli_LookString(watch.view, look), NetRepCli_Tick(watch.view), st);
 	}
+}
+
+void Watch_Adopt(int slot, cEntity *e, int kind) {
+	int off = -1;
+	if (slot < 0 || slot >= NETREP_MAX_ENTS || !e) {
+		return;
+	}
+	Watch_Free(slot);
+	WatchProxy *p = &watch.px[slot];
+	p->e = e;
+	p->kind = kind;
+	Obj(e)->proxy = 1;
+	Obj(e)->netStep = 0;
+	Entity_VarI(e, "UsrControl", &off, 1);
+	watch.proxies++;
 }
 
 byte Watch_IsPlayer(cEntity *e) {
@@ -381,37 +470,54 @@ static void Watch_PosAt(const WatchProxy *p, double rt, vec3_t *pos) {
 	}
 }
 
-/* the other players' proxies where they are at server time t (the own prediction of that tick collides with them
- * there, not where they are drawn), and back to the drawn places */
-static vec3_t g_PlayersDrawn[NETREP_MAX_ENTS];
-static byte g_PlayersMoved;
+/* the proxies (the players' and the other characters near the own entity, or only the players' with players) where
+ * they are at
+ * server time t (the own prediction of that tick collides with them there, not where they are drawn), and back to
+ * the drawn places */
+static vec3_t g_ProxiesDrawn[NETREP_MAX_ENTS];
+static byte g_ProxiesMoved[NETREP_MAX_ENTS];
+static byte g_AnyMoved;
 
-void Watch_PlayersAt(double t) {
+void Watch_ProxiesAt(double t, byte players) {
+	const cEntity *own = Play_Entity();
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		WatchProxy *p = &watch.px[s];
-		if (p->e && p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && p->kind != NETREP_MISSILE) {
-			vec3_t pos;
-			if (!g_PlayersMoved) {
-				g_PlayersDrawn[s] = p->e->pos;
-			}
-			Watch_PosAt(p, t, &pos);
-			Entity_SetPos(p->e, &pos);
+		if (!p->e || !p->n || p->kind == NETREP_MISSILE) {
+			continue;
 		}
+		/* the ships of no player stay: the traffic follows its rails, its path ahead is a worse guess than where it
+		 * is drawn (A/B in the M4b handback); the other characters only on request (players 0) */
+		byte player = (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) != 0;
+		if ((players || p->kind == NETREP_SHIP) && !player) {
+			continue;
+		}
+		if (!player && own && !g_ProxiesMoved[s] && Watch_DistSq(p->e, own) > WATCH_AHEAD_RADIUS * WATCH_AHEAD_RADIUS) {
+			continue;
+		}
+		vec3_t pos;
+		if (!g_ProxiesMoved[s]) {
+			g_ProxiesDrawn[s] = p->e->pos;
+			g_ProxiesMoved[s] = 1;
+		}
+		Watch_PosAt(p, t, &pos);
+		Entity_SetPos(p->e, &pos);
+		g_AnyMoved = 1;
 	}
-	g_PlayersMoved = 1;
 }
 
-void Watch_PlayersBack(void) {
-	if (!g_PlayersMoved) {
+void Watch_ProxiesBack(void) {
+	if (!g_AnyMoved) {
 		return;
 	}
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
-		WatchProxy *p = &watch.px[s];
-		if (p->e && p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && p->kind != NETREP_MISSILE) {
-			Entity_SetPos(p->e, &g_PlayersDrawn[s]);
+		if (g_ProxiesMoved[s]) {
+			if (watch.px[s].e) {
+				Entity_SetPos(watch.px[s].e, &g_ProxiesDrawn[s]);
+			}
+			g_ProxiesMoved[s] = 0;
 		}
 	}
-	g_PlayersMoved = 0;
+	g_AnyMoved = 0;
 }
 
 /* the proxy at server time rt */
@@ -445,11 +551,17 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	o->vel = vel;
 	o->rotVel = rot;
 	byte on = (sa->flags & NETREP_FL_ACTIVE) != 0;
+	if (p->kind == NETREP_MISSILE) {
+		/* the newest sample tells the hits at once (the effects of a hit wait for no delay) */
+		const NetRepState *sn = &p->s[p->n - 1].st;
+		Watch_MissileHit(p, sn, !(sn->flags & NETREP_FL_ACTIVE));
+		on = on && e->active;
+	}
 	if (on != e->active) {
 		Entity_SetActive(e, on);
 	}
 	if (p->kind == NETREP_MISSILE) {
-		/* a projectile proxy is a model that moves */
+		/* a missile proxy moves with the samples; its bees follow it in its update */
 	} else if (p->kind == NETREP_SHIP) {
 		w->life = sa->life;
 		cVehicleEntity *v = (cVehicleEntity *)e;

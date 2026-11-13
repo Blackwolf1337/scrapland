@@ -220,24 +220,21 @@ byte AICtrl_GearToPolice(void *ctrl, cEntity *gear) {
 static void AICtrl_UpdateSentinels(void *ctrl);
 static void AICtrl_UpdateGears(void *ctrl);
 
-/* the alarm state, the voices of the gear nearest to the player ("Chase" at random with the alarm, "Abort" after
- * it), the sentinels and the gears */
-static void AICtrl_Think(void *ctrl) {
-	cAICtrl *self = ctrl;
+/* the alarm state of the bound player and the voices of the gear nearest to it ("Chase" at random with the alarm,
+ * "Abort" after it); alarm and chased: that player's flags of the think before. 0 without a player */
+static byte AICtrl_Voices(cAICtrl *self, byte *alarm, byte *chased) {
 	vec3_t t;
 
-	self->level = -1;
-	Players_LevelReset(PLAYERS_LV_AI);
 	self->alarmOn = g_pWorld->alarm.on;
 	self->usr = Players_Any();
 	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarm.lastChars, g_pWorld->alarm.chars);
 	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 	if (!self->usr) {
-		return;
+		return 0;
 	}
 	if (!self->alarmOn) {
-		if (self->alarm) {
-			self->chased = 1;
+		if (*alarm) {
+			*chased = 1;
 		}
 	} else {
 		if ((float)(Weap_Rand01() * 4.5 - 3.5) > 0.0f) {
@@ -246,17 +243,45 @@ static void AICtrl_Think(void *ctrl) {
 				Sound_PlayVoice(g->name, "Chase", NULL, 1);
 			}
 		}
-		self->chased = 0;
+		*chased = 0;
 	}
-	if (self->chased) {
+	if (*chased) {
 		cEntity *g = cEntityList_Nearest(self->gears, Entity_GetPos(self->usr, &t), NULL, NULL);
 		if (!g) {
 			g = cEntityList_Nearest(g_pWorld->logic.genChars.police, Entity_GetPos(self->usr, &t), NULL,
 				NULL);
 		}
 		if (g && Sound_PlayVoice(g->name, "Abort", NULL, 1)) {
-			self->chased = 0;
+			*chased = 0;
 		}
+	}
+	return 1;
+}
+
+/* the instance: the alarm flags of AICtrl_Voices per player */
+static byte g_AICtrlAlarm[PLAYERS_MAX], g_AICtrlChased[PLAYERS_MAX];
+
+/* the alarm state and the voices (on the instance for each player in turn), the sentinels and the gears */
+static void AICtrl_Think(void *ctrl) {
+	cAICtrl *self = ctrl;
+
+	self->level = -1;
+	Players_LevelReset(PLAYERS_LV_AI);
+	if (Players_Net()) {
+		for (int i = 0; i < PLAYERS_MAX; i++) {
+			if (Players_Get(i)) {
+				Players_Bind(i);
+				AICtrl_Voices(self, &g_AICtrlAlarm[i], &g_AICtrlChased[i]);
+				g_AICtrlAlarm[i] = self->alarmOn;
+			}
+		}
+		Players_BindTurn();
+		AICtrl_UpdateSentinels(self);
+		AICtrl_UpdateGears(self);
+		return;
+	}
+	if (!AICtrl_Voices(self, &self->alarm, &self->chased)) {
+		return;
 	}
 	AICtrl_UpdateSentinels(self);
 	AICtrl_UpdateGears(self);
@@ -353,8 +378,11 @@ static void AICtrl_UpdateGears(void *ctrl) {
 
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
+		/* the instance: each gear for the player it reacts to */
+		Players_BindNearest(&((cEntity *)n->data)->pos);
 		Logic_Update(l, 0.5f);
 	}
+	Players_BindTurn();
 	self->attacking = 0;
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(n->data);
@@ -432,6 +460,7 @@ static void AICtrl_UpdateSentinels(void *ctrl) {
 	Nto1Node_Unlink(w);
 	for (n = Logic_ListFirst(self->sentinels); n; n = Logic_ListNext(n)) {
 		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(n->data);
+		Players_BindNearest(&((cEntity *)n->data)->pos);
 		AICtrl_SentinelUpdate(l, 0.5f, found != NULL);
 		if (l->state == SENTINEL_WATCH) {
 			cEntity *e = n->data;
@@ -451,6 +480,7 @@ static void AICtrl_UpdateSentinels(void *ctrl) {
 			found = l;
 		}
 	}
+	Players_BindTurn();
 	float wt = self->watchTime - 0.5f;
 	self->watchTime = wt;
 	if (0.0f >= wt) {
@@ -555,7 +585,8 @@ void AICtrl_Update(void *ctrl, float dt) {
 	}
 	self->timer = 0.0f;
 	AICtrl_Think(self);
-	if (!g_pWorld->alarm.on) {
+	/* the instance: no fights while some player is wanted */
+	if (!(Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : g_pWorld->alarm.on)) {
 		float r = (float)(Weap_Rand01() * 99.0 + 1.0);
 		if ((float)g_PoliceLogicBelligerant > r) {
 			AICtrl_Belligerant(self);

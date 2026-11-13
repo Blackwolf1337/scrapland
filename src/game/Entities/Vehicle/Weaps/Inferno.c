@@ -104,6 +104,7 @@ cEntity *Inferno_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_InfernoLifeTime);
 	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)Inferno_HitNative);
 	cEntity_SetNetResource(m, "Inferno");
+	Missile(m)->weap = MISSILE_WEAP_INFERNO;
 	return m;
 }
 

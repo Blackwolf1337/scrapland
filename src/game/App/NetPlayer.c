@@ -32,6 +32,10 @@ byte NetPl_LocalWeapon(int w) {
 		w == g_DevastatorIDWeap;
 }
 
+byte NetPl_LaunchWeapon(int w) {
+	return w == g_SwarmIDWeap || w == g_InfernoIDWeap;
+}
+
 static inline float NetPl_Move(int8_t v) {
 	return (float)v / NETREP_MOVE_SCALE;
 }
@@ -63,8 +67,10 @@ void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 		c->vStr = NetPl_Move(in->move[2]);
 		c->hRot = NetPl_Rot(in->rot[0]);
 		c->vRot = NetPl_Rot(in->rot[1]);
-		/* the client fires its instant-hit weapons itself, not again in a replay */
-		c->fire = ((local ? (replay || !NetPl_LocalWeapon(c->weapon) ? 0 : in->buttons) : b) & NETREP_IN_ACT) != 0;
+		/* the client fires its instant-hit weapons itself and launches its missile weapons (their effects: the
+		 * missiles come from the server), not again in a replay */
+		byte own = NetPl_LocalWeapon(c->weapon) || NetPl_LaunchWeapon(c->weapon);
+		c->fire = ((local ? (replay || !own ? 0 : in->buttons) : b) & NETREP_IN_ACT) != 0;
 		c->cm = (b & NETREP_IN_ACT2) != 0;
 		c->boostKey = (b & NETREP_IN_BOOST) != 0;
 		c->fullThrust = (in->buttons & NETREP_IN_FULL) != 0;

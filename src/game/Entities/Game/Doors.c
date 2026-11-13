@@ -249,7 +249,7 @@ static void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 	}
 	/* the instance: the player nearest to the door */
 	if (Players_Net()) {
-		usr = Players_Nearest(&door->pos);
+		usr = Players_Closest(&door->pos);
 	}
 	float r = ActCtrl_Radius(WithLife_GetActCtrl(door)) + WLife(usr)->prim.radius;
 	const vec3_t *pu = Entity_GetPos(usr, &t1);

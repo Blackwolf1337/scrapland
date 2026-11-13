@@ -24,7 +24,8 @@
  * folder.
  *
  * -pvp:0 keeps the players' weapons off each other (the hits on another player's entity do nothing), -pvp:1 (the
- * default) lets them hurt each other. -money: the money a player starts with.
+ * default) lets them hurt each other. -money: the money a player starts with. The options of the sandbox (-ships,
+ * -respawn, -lives, -rebuild, -spawn) are Rep_ParseParam's (include/scrap/play.h).
  */
 #ifndef SCRAP_INSTANCE_H
 #define SCRAP_INSTANCE_H

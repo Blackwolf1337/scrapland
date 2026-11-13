@@ -20,7 +20,10 @@ typedef struct cScheduledFunc {
 	float time;
 	char name[0x80];
 	byte active;			/* 0 while it runs, so Scrap.RemoveScheduledFunc leaves it */
-	byte pad_8d[3];
+	/* ScrapC, the instance: the player bound when it was scheduled and that player's join (include/scrap/players.h),
+	 * bound again for the call */
+	byte player;
+	uint16_t joined;
 	/* ScrapC: a port entry, its ref and counters (Port_ScheduledOf), else NULL */
 	portSite_t *site;
 } cScheduledFunc;

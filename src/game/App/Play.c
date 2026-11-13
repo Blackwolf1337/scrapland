@@ -20,6 +20,8 @@
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/scorer.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/vehicleentity.h"
@@ -29,6 +31,10 @@
 #include "scrap/world.h"
 
 #define PLAY_CAM "PlayCam"
+#define PLAY_DEATH_CAM "PlayDeathCam"
+#define PLAY_DEATH_DIST 1800.0f			/* units of the death camera from the place of the death */
+#define PLAY_DEATH_HIGH 900.0f
+#define PLAY_DEATH_TURN 0.35f			/* radians a second it goes round */
 #define PLAY_NAME "Me%u"
 #define PLAY_MAX_CATCHUP 8				/* ticks stepped in one frame at most; more ahead is a jump */
 #define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */
@@ -37,6 +43,10 @@
 #define PLAY_BOT_IDLE 5					/* the bot gives no input (the tests drive it from the instance) */
 #define PLAY_BOT_USE 6					/* the bot stands and presses use every few seconds (doors) */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
+
+/* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0; the players, the default; =all: the
+ * characters near it too, which made the error of characters in a crowd larger: p95 5.6 to 9.0 with 32 bots) */
+enum { PLAY_AHEAD_NONE, PLAY_AHEAD_PLAYERS, PLAY_AHEAD_ALL };
 
 byte g_Play;
 byte g_HeadlessPlay;
@@ -73,13 +83,18 @@ static struct {
 	double tickLocal;					/* local time of the last tick */
 	cEntity *cam;
 	byte started;
+	byte dead;							/* the death camera looks at deathAt (the own entity died, no new one yet) */
+	vec3_t deathAt;
+	float deathYaw;
+	float lastYaw;						/* of the own entity at its last tick */
 	NetRepStatus status;				/* the newest status of the server */
 	byte haveStatus;
 	PlayStats st;
 	FILE *log;
 	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK, PLAY_BOT_IDLE, PLAY_BOT_USE */
 	byte botCycle;
-	byte noAhead;						/* SCRAP_PLAYAHEAD=0: the others collide where they are drawn (tests) */
+	byte botCm;							/* SCRAP_PLAYBOT_CM=1: also the countermeasure of the weapon now and then */
+	byte ahead;							/* SCRAP_PLAYAHEAD: PLAY_AHEAD_ */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
 } play = { .slot = -1, .player = -1 };
@@ -110,6 +125,43 @@ cEntity *Play_Entity(void) {
 
 /* ---- the entity and its camera ---- */
 
+/* the death camera: a camera of its own around the place of the death, no HUD, until the next own entity */
+static void Play_DeathCam(float dt) {
+	cEntity *cam = World_FindEntity(PLAY_DEATH_CAM);
+	int one = 1;
+
+	if (!cam) {
+		cam = cWorld_CreateEntity(g_pWorld, PLAY_DEATH_CAM, play.deathAt.x, play.deathAt.y + PLAY_DEATH_HIGH,
+			play.deathAt.z, TYEN_FCAM);
+		if (!cam) {
+			return;
+		}
+		Entity_VarI(cam, "FreeCam", &one, 1);
+	}
+	if (dt <= 0.0f) {
+		cWorld_SetCam(g_pWorld, 0, PLAY_DEATH_CAM);
+		cScorer *sc = Scorer_Get(0);
+		if (sc) {
+			cScorer_Clear(sc);
+		}
+	}
+	play.deathYaw += PLAY_DEATH_TURN * dt;
+	/* behind the place for the entity's yaw (its yaw 0 looks to -z), nearer when a wall is between; the camera's
+	 * yaw 0 looks to +z, a positive pitch looks down */
+	vec3_t at = { play.deathAt.x, play.deathAt.y + 100.0f, play.deathAt.z }, hit;
+	vec3_t p = { at.x + sinf(play.deathYaw) * PLAY_DEATH_DIST, at.y + PLAY_DEATH_HIGH,
+		at.z + cosf(play.deathYaw) * PLAY_DEATH_DIST };
+	float k = 1.0f;
+	if (Engine_TestLine(&at, &p, &hit, NULL)) {
+		float dx = hit.x - at.x, dz = hit.z - at.z;
+		k = sqrtf(dx * dx + dz * dz) / PLAY_DEATH_DIST * 0.85f;
+		p = (vec3_t){ at.x + (p.x - at.x) * k, at.y + (p.y - at.y) * k, at.z + (p.z - at.z) * k };
+	}
+	CGameCamera *c = &((cCamControl *)cam)->cam;
+	c->pos = p;
+	c->rot = (vec3_t){ atan2f(PLAY_DEATH_HIGH, PLAY_DEATH_DIST), play.deathYaw + M_PI_F, 0.0f };
+}
+
 static void Play_Camera(void) {
 	cEntity *e = play.e;
 	char *s;
@@ -118,6 +170,7 @@ static void Play_Camera(void) {
 	if (!e) {
 		return;
 	}
+	play.dead = 0;
 	play.cam = World_FindEntity(PLAY_CAM);
 	if (!play.cam) {
 		play.cam = cWorld_CreateEntity(g_pWorld, PLAY_CAM, e->pos.x, e->pos.y + 500.0f, e->pos.z, TYEN_FCAM);
@@ -130,10 +183,9 @@ static void Play_Camera(void) {
 	Entity_VarS(play.cam, "MainTarget", &s, 1);
 	Entity_VarS(play.cam, "Target", &s, 1);
 	Entity_VarI(play.cam, "FreeCam", &zero, 1);
-	if (play.kind == NETREP_SHIP) {
-		s = "Vehicles.SwitchView";
-		Entity_VarS(play.cam, "OnSwitch", &s, 1);
-	}
+	/* the ship's camera switches views with its button; a character's has nothing to switch */
+	s = play.kind == NETREP_SHIP ? "Vehicles.SwitchView" : "";
+	Entity_VarS(play.cam, "OnSwitch", &s, 1);
 	Input_SelectActionSetNamed(play.kind == NETREP_SHIP ? "Racer" : "Walk");
 	/* the HUD of single player for the walker or the racer of view 0 */
 	if (play.kind == NETREP_SHIP) {
@@ -167,6 +219,25 @@ void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phy
 			NetPl_SetPhys(play.e, play.phys, play.nphys);
 		}
 		return;
+	}
+	/* after a death the death camera looks at the place until the new entity comes (the own slot may be gone
+	 * already: the look of a wreck is another); the entity of the slot before stays as its proxy */
+	if (slot < 0 && kind == NETREP_DEAD && play.started && !play.dead) {
+		char *none = "";
+		play.dead = 1;
+		play.deathAt = play.truePos;
+		play.deathYaw = play.lastYaw;
+		if (play.cam) {
+			Entity_VarS(play.cam, "OnSwitch", &none, 1);
+		}
+		Play_DeathCam(0.0f);
+		Con_Printf("play: died at %.0f %.0f %.0f\n", (double)play.deathAt.x, (double)play.deathAt.y,
+			(double)play.deathAt.z);
+	}
+	if (play.e && play.slot >= 0 && World_FindEntity(play.e->name) == play.e) {
+		play.e->pos = play.truePos;
+		Watch_Adopt(play.slot, play.e, play.kind);
+		play.e = NULL;
 	}
 	Play_OwnRemove();
 	play.slot = slot;
@@ -272,9 +343,19 @@ void Play_Start(void) {
 		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : !crt_stricmp(bot, "walk") ? PLAY_BOT_WALK :
 		!crt_stricmp(bot, "idle") ? PLAY_BOT_IDLE : !crt_stricmp(bot, "use") ? PLAY_BOT_USE : 1;
 	const char *ahead = getenv("SCRAP_PLAYAHEAD");
-	play.noAhead = ahead && *ahead == '0';
+	play.ahead = !ahead || !*ahead ? PLAY_AHEAD_PLAYERS : *ahead == '0' ? PLAY_AHEAD_NONE : *ahead == 'a' ?
+		PLAY_AHEAD_ALL : PLAY_AHEAD_PLAYERS;
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
 	play.botCycle = cycle && *cycle && *cycle != '0';
+	const char *cm = getenv("SCRAP_PLAYBOT_CM");
+	play.botCm = cm && *cm == '1';
+	/* the missile weapons fire as the client of the game's network mode: the launch effects, no missile */
+	if (g_SwarmIDWeap >= 0 && g_SwarmIDWeap < g_pWorld->weapons.count) {
+		cPy_Function_SetFunc(&TABLE_AT(g_pWorld->weapons, g_SwarmIDWeap)->onFire, "!SwarmClientFire");
+	}
+	if (g_InfernoIDWeap >= 0 && g_InfernoIDWeap < g_pWorld->weapons.count) {
+		cPy_Function_SetFunc(&TABLE_AT(g_pWorld->weapons, g_InfernoIDWeap)->onFire, "!InfernoClientFire");
+	}
 	Play_Camera();
 }
 
@@ -328,12 +409,13 @@ static void Play_Step(uint32_t tick, byte none) {
 	play.input.tick = tick;
 	play.input.slot = (uint16_t)play.slot;
 	e->pos = play.truePos;
-	if (!play.noAhead) {
-		Watch_PlayersAt((double)tick / NETREP_TICK_HZ);
+	if (play.ahead != PLAY_AHEAD_NONE) {
+		Watch_ProxiesAt((double)tick / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
 	}
 	NetPl_Step(e, &play.input, 1, 0);
-	Watch_PlayersBack();
+	Watch_ProxiesBack();
 	play.truePos = e->pos;
+	play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
 	Play_Record(tick);
 	play.tick = tick;
 	play.pending++;
@@ -475,6 +557,9 @@ static void Play_Bot(double now) {
 	if (fabsf(dyaw) < 0.15f && fmod(t, play.botCycle ? 2.0 : 3.0) < (play.botCycle ? 1.5 : 2.0)) {
 		play.acc.buttons = NETREP_IN_ACT;
 	}
+	if (play.botCm && fabsf(dyaw) < 0.3f && fmod(t, 5.0) >= 3.5) {
+		play.acc.buttons = NETREP_IN_ACT2;
+	}
 	if (fabsf(dyaw) < 0.3f && bestD < 8000.0f * 8000.0f) {
 		play.botNear += 1.0 / NETREP_TICK_HZ;
 	}
@@ -482,6 +567,10 @@ static void Play_Bot(double now) {
 }
 
 void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
+	if (play.dead && !play.e) {
+		Play_DeathCam((float)(now - play.tickLocal));
+		play.tickLocal = now;
+	}
 	if (!play.e || !Watch_ClockReady()) {
 		return;
 	}
@@ -591,11 +680,11 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 				break;
 			}
 			NetRepInput x = *in;
-			if (!play.noAhead) {
-				Watch_PlayersAt((double)t / NETREP_TICK_HZ);
+			if (play.ahead != PLAY_AHEAD_NONE) {
+				Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
 			}
 			NetPl_Step(e, &x, 1, 1);
-			Watch_PlayersBack();
+			Watch_ProxiesBack();
 			play.input = x;
 			Play_Record(t);
 			replayed++;
