@@ -148,7 +148,7 @@ static void Net2Sock_JoinLan6(uintptr_t s) {
 #endif
 }
 
-uintptr_t Net2Sock_Open(int family, const Net2Addr *at, uint16_t port) {
+uintptr_t Net2Sock_Open(int family, const Net2Addr *at, uint16_t port, uint32_t buffer) {
 	int af = family == NET2_AF_IPV6 ? AF_INET6 : AF_INET;
 	struct sockaddr_storage ss;
 	Net2Addr local;
@@ -180,6 +180,10 @@ uintptr_t Net2Sock_Open(int family, const Net2Addr *at, uint16_t port) {
 		return N2_NOSOCK;
 	}
 #endif
+	if (buffer > 0 && buffer <= INT32_MAX) {
+		Net2Sock_Opt(s, SOL_SOCKET, SO_RCVBUF, (int)buffer);	/* best effort: capped by the system */
+		Net2Sock_Opt(s, SOL_SOCKET, SO_SNDBUF, (int)buffer);
+	}
 	if (af == AF_INET6) {
 		Net2Sock_Opt(s, IPPROTO_IPV6, IPV6_V6ONLY, 1);
 	} else {

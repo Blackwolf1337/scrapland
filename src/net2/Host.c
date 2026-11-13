@@ -72,6 +72,8 @@ void Net2_DefaultConfig(Net2Config *cfg, int server) {
 	cfg->maxRecvBuffer = 1 << 20;
 	cfg->inboxSize = 64 * 1024;
 	cfg->outboxSize = 64 * 1024;
+	/* the system defaults (Linux 208 KB, Windows 64 KB) overflow with a few hundred clients polled at 30 Hz */
+	cfg->sockBuffer = server ? 4 << 20 : 0;
 }
 
 static int Net2_CheckConfig(const Net2Config *cfg) {
@@ -175,13 +177,13 @@ Net2Host *Net2_Create(const Net2Config *cfg, int *err) {
 		h->sockStarted = 1;
 		uint16_t port = cfg->port;
 		if (cfg->ipv4) {
-			h->sock4 = Net2Sock_Open(NET2_AF_IPV4, &cfg->bind4, port);
+			h->sock4 = Net2Sock_Open(NET2_AF_IPV4, &cfg->bind4, port, cfg->sockBuffer);
 			if (h->sock4 != N2_NOSOCK && port == 0 && cfg->server) {
 				port = Net2Sock_Port(h->sock4);	/* the same port for IPv6 */
 			}
 		}
 		if (cfg->ipv6) {
-			h->sock6 = Net2Sock_Open(NET2_AF_IPV6, &cfg->bind6, port);
+			h->sock6 = Net2Sock_Open(NET2_AF_IPV6, &cfg->bind6, port, cfg->sockBuffer);
 		}
 		if (h->sock4 == N2_NOSOCK && h->sock6 == N2_NOSOCK) {
 			goto failHost;
