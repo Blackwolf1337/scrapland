@@ -50,6 +50,9 @@ void Rep_Close(void);
 int Rep_PlayerConn(int i);
 int Rep_ConnPlayer(int conn);
 void Rep_Respawn(int i);
+/* player i's character was put somewhere else (the test line goto): a drop from there is no fall from its spawn point
+ * (REP_SPAWN_FALL) */
+void Rep_Placed(int i);
 /* player i's character again (its class of now, include/scrap/faction.h) where it stands, or at pos (out of its ship
  * then; a dead player comes back there: a revive); pos NULL and the player in a ship or dead: nothing */
 void Rep_Rebody(int i, const vec3_t *pos, float yaw);

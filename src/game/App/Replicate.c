@@ -978,6 +978,12 @@ void Rep_Respawn(int i) {
 	pl->told = -2;
 }
 
+void Rep_Placed(int i) {
+	if (i >= 0 && i < PLAYERS_MAX) {
+		rep.pl[i].spawnAt = -1;
+	}
+}
+
 void Rep_Rebody(int i, const vec3_t *pos, float yaw) {
 	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? &rep.pl[i] : NULL;
 	cEntity *e = pl ? Rep_Own(pl) : NULL;
