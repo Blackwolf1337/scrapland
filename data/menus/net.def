@@ -475,17 +475,19 @@ item MOTD Text
 	Alpha 255
 	Visible 1
 call Menu.DrawCircuitMenu $id
-# the worlds of the new network (not in the original)
-item FreeRoam Text
-	Font ScrapMedium
-	Text "{MP_FreeRoam}"
-	X 120
-	Y %Menu.BackButtonYStart+12
-	CentralText 1
-	OnAccept !WorldMenu
-	use blue
-	Effect Shadow
-lr FreeRoam Back
+# the worlds of the new network (not in the original), from the main menu
+if %Init.inMainMenu
+	item FreeRoam Text
+		Font ScrapMedium
+		Text "{MP_FreeRoam}"
+		X 120
+		Y %Menu.BackButtonYStart+12
+		CentralText 1
+		OnAccept !WorldMenu
+		use blue
+		Effect Shadow
+	lr FreeRoam Back
+end
 
 # ---- create a game: $servername, $players, $fraglimit and $advanced come from the menu function ----
 

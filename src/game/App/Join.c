@@ -20,6 +20,7 @@
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/texts.h"
 #include "scrap/travel.h"
 
 #define JOIN_RETRY_MS 3000			/* the coordinator is tried again this often */
@@ -88,21 +89,10 @@ byte Join_Active(void) {
 	return join.active;
 }
 
-/* text of the texts table with %s filled in */
-static void Join_Text(char *out, int size, const char *key, const char *arg) {
-	const char *fmt = Script_Lang(key);
-	const char *at = strstr(fmt, "%s");
-	if (at) {
-		Str_PrintfQuiet(out, size, "%.*s%s%s", (int)(at - fmt), fmt, arg, at + 2);
-	} else {
-		Str_Copy(out, fmt, size);
-	}
-}
-
 /* a join that never got a ticket failed: back to the menus with the text, or the end of a game of the command line */
 static void Join_Fail(const char *key, const char *arg) {
 	char text[sizeof(join.why)];
-	Join_Text(text, sizeof(text), key, arg);
+	Texts_Format(text, sizeof(text), key, arg);
 	Con_Errorf("join: %s\n", text);
 	if (!join.menu) {
 		join.phase = JOIN_GONE;
@@ -361,7 +351,7 @@ void Join_PreFrame(void) {
 	if (join.played && (join.phase == JOIN_GONE || join.tries >= JOIN_TRIES) && !Watch_Alive()) {
 		char text[sizeof(join.why)];
 		if (join.phase == JOIN_GONE && join.deny[0]) {
-			Join_Text(text, sizeof(text), "MP_Refused", join.deny);
+			Texts_Format(text, sizeof(text), "MP_Refused", join.deny);
 		} else {
 			Str_Copy(text, Script_Lang("MP_WorldGone"), sizeof(text));
 		}

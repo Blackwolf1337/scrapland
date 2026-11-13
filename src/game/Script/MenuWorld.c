@@ -84,21 +84,11 @@ static uint16_t World_Port(void) {
 	return (uint16_t)(p > 0 && p < 65536 ? p : NET2_DEFAULT_PORT);
 }
 
-/* a text of the texts table with one %s or %d filled in */
-static void World_Format(char *out, int size, const char *key, const char *s, int d) {
-	const char *fmt = Script_Lang(key);
-	const char *at = strchr(fmt, '%');
-	if (at && (at[1] == 's' || at[1] == 'd')) {
-		char arg[96];
-		if (at[1] == 's') {
-			Str_Copy(arg, s, sizeof(arg));
-		} else {
-			Str_PrintfQuiet(arg, sizeof(arg), "%d", d);
-		}
-		Str_PrintfQuiet(out, size, "%.*s%s%s", (int)(at - fmt), fmt, arg, at + 2);
-	} else {
-		Str_Copy(out, fmt, size);
-	}
+/* a text with a number in it */
+static void World_Count(char *out, int size, const char *key, int n) {
+	char num[16];
+	Str_PrintfQuiet(num, sizeof(num), "%d", n);
+	Texts_Format(out, size, key, num);
 }
 
 static void World_Status(const char *text) {
@@ -199,7 +189,7 @@ static void World_Info(const Net2Event *ev) {
 	Str_Copy(e->name, ev->info.name, sizeof(e->name));
 	Str_Copy(e->map, ev->info.map, sizeof(e->map));
 	Str_Copy(e->mode, ev->info.mode, sizeof(e->mode));
-	World_Format(text, sizeof(text), "MP_Found", "", wm.n);
+	World_Count(text, sizeof(text), "MP_Found", wm.n);
 	World_Status(text);
 	World_Fill();
 }
@@ -308,7 +298,7 @@ static void World_ListPage(const Net2Event *ev) {
 	if (!k || first + k >= total) {
 		Net2_Disconnect(wm.net, 0, NET2_DR_LOCAL);
 		wm.listPhase = WL_IDLE;
-		World_Format(text, sizeof(text), "MP_Found", "", wm.n);
+		World_Count(text, sizeof(text), "MP_Found", wm.n);
 		World_Status(text);
 	}
 	World_Fill();
@@ -439,7 +429,7 @@ static void World_Join(int id, const Net2Addr *a, const uint8_t *key) {
 	Net2_AddrString(a, shown, sizeof(shown));
 	World_Close();
 	Join_Start(host, a->port, World_Name(), key);
-	World_Format(title, sizeof(title), "MP_Connecting", shown, 0);
+	Texts_Format(title, sizeof(title), "MP_Connecting", shown);
 	World_Wait(id, title);
 }
 
@@ -545,7 +535,7 @@ WORLD_FN(JoinAddress) {
 	WORLD_ARGS;
 	Str_Copy(wm.address, Script_GetStr(id, "Item1", "Text"), sizeof(wm.address));
 	if (!Net2_ParseAddr(wm.address, World_Port(), &a)) {
-		World_Format(text, sizeof(text), "MP_BadAddress", wm.address, 0);
+		Texts_Format(text, sizeof(text), "MP_BadAddress", wm.address);
 		World_Status(text);
 		return;
 	}
@@ -686,7 +676,7 @@ static void World_Net(void) {
 	if (wm.searchEnd && now >= wm.searchEnd) {
 		char text[64];
 		wm.searchEnd = 0;
-		World_Format(text, sizeof(text), "MP_Found", "", wm.n);
+		World_Count(text, sizeof(text), "MP_Found", wm.n);
 		World_Status(text);
 	}
 	Net2_Poll(wm.net, now);

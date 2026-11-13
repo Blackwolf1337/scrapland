@@ -3,6 +3,8 @@
  */
 #include <string.h>
 
+#include "scrap/global.h"
+#include "scrap/script.h"
 #include "scrap/texts.h"
 
 static const struct {
@@ -45,4 +47,14 @@ const char *Texts_Get(const char *key) {
 		}
 	}
 	return NULL;
+}
+
+void Texts_Format(char *out, int size, const char *key, const char *arg) {
+	const char *fmt = Script_Lang(key);
+	const char *at = strchr(fmt, '%');
+	if (at && (at[1] == 's' || at[1] == 'd')) {
+		Str_PrintfQuiet(out, size, "%.*s%s%s", (int)(at - fmt), fmt, arg, at + 2);
+	} else {
+		Str_Copy(out, fmt, size);
+	}
 }

@@ -8,5 +8,7 @@
 
 /* the English text of key, NULL when ScrapC has none */
 const char *Texts_Get(const char *key);
+/* the text of key (Script_Lang: the language's, else the table's) with its %s or %d replaced by arg */
+void Texts_Format(char *out, int size, const char *key, const char *arg);
 
 #endif
