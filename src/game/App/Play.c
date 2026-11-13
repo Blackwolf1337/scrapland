@@ -44,6 +44,8 @@
 #define PLAY_BOT_IDLE 5					/* the bot gives no input (the tests drive it from the instance) */
 #define PLAY_BOT_USE 6					/* the bot stands and presses use every few seconds (doors) */
 #define PLAY_BOT_FACE 7					/* the bot stands and turns to the nearest other player (screenshots) */
+#define PLAY_BOT_FACE_SIDE 0.45f		/* radians it looks past it: the camera behind the own character is on the
+										   line to the other one, which the own character would hide */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 
 /* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0; the players, the default; =all: the
@@ -489,7 +491,8 @@ static void Play_Bot(double now) {
 	if (play.bot == PLAY_BOT_FACE) {
 		cEntity *o = play.kind == NETREP_CHAR ? Play_BotNearest(e, 0, 1, 0) : NULL;
 		if (o) {
-			float dyaw = remainderf(atan2f(-(o->pos.x - e->pos.x), -(o->pos.z - e->pos.z)) - WChar(e)->view.y, M_2PI_F);
+			float dyaw = remainderf(atan2f(-(o->pos.x - e->pos.x), -(o->pos.z - e->pos.z)) + PLAY_BOT_FACE_SIDE -
+				WChar(e)->view.y, M_2PI_F);
 			play.acc.rot[0] = dyaw > 0.5f ? 1.0f : dyaw < -0.5f ? -1.0f : dyaw * 2.0f;
 		}
 		return;
