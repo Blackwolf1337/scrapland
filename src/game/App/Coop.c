@@ -102,6 +102,8 @@ static struct {
 		char opt[COOP_OPTS][COOP_OPT_TEXT];
 	} copt;
 	char clientScene[CP_NAME];		/* client: the scene it plays for its instance */
+	int pendingSize;				/* client: a scene message that waits for the client's own level to run */
+	uint8_t pending[CP_SCENE_MSG];
 	byte skipped;					/* client: Escape ended it here */
 	byte ended;						/* client: the story is finished, the world is left */
 	byte coop;						/* client: its instance plays the coop story */
@@ -1310,6 +1312,12 @@ void Coop_ClientFrame(void) {
 		choose = c ? atoi(c) : -1;
 		chooseOf = c && strchr(c, ':') ? strchr(c, ':') + 1 : "";
 	}
+	if (cp.pendingSize) {
+		NetRepReader r;
+		NetRepReader_Init(&r, cp.pending + 2, cp.pendingSize - 2);
+		cp.pendingSize = 0;
+		Cp_ClientScene(&r);
+	}
 	Cp_ClientOptionsFrame();
 	Cp_ClientLeaderKey();
 	/* test (SCRAP_COOP_CHOOSE=<k>[:<entity prefix>]): option k of each list of more options than k */
@@ -1353,9 +1361,15 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 	NetRepReader_Init(&r, data + 2, size - 2);
 	switch (data[1]) {
 	case COOP_Y_SCENE:
-		Cp_ClientScene(&r);
+		/* played in the next frame of the running level (a member that arrives gets it before its level runs: its
+		 * camera would be taken over by the level's start) */
+		if (size <= (int)sizeof(cp.pending)) {
+			memcpy(cp.pending, data, (size_t)size);
+			cp.pendingSize = size;
+		}
 		break;
 	case COOP_Y_SCENEEND:
+		cp.pendingSize = 0;
 		Cp_ClientSceneEnd(&r);
 		break;
 	case COOP_Y_SPEECH:
@@ -1422,6 +1436,7 @@ byte Coop_ClientEnded(void) {
 
 void Coop_ClientReset(void) {
 	cp.clientScene[0] = 0;
+	cp.pendingSize = 0;
 	cp.coop = 0;
 	cp.copt.n = 0;
 	cp.skipped = 0;
