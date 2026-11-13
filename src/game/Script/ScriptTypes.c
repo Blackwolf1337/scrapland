@@ -77,7 +77,6 @@ static byte Complex_GetAttr(void *ctx, const char *name, nativeVal_t *out) {
 
 static byte Complex_Conjugate(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
 	const libComplex_t *c = ctx;
-	(void)a;
 	if (!Mode_Parse(a, n, "")) {
 		return 0;
 	}
