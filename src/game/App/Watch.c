@@ -28,6 +28,8 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
+#include "scrap/weaps.h"
+#include "scrap/weaps2.h"
 #include "scrap/world.h"
 
 #define WATCH_SAMPLES 8
@@ -41,6 +43,7 @@
 #define WATCH_NAME "netrep%d_%u"
 #define WATCH_CONNECT_MS 15000		/* the first frames after a level load can be slow */
 #define WATCH_RETRIES 5
+#define WATCH_MISSILE_LIFE 1e9f		/* s: a missile proxy ends when the instance's missile does, not by itself */
 
 enum { WATCH_OFF, WATCH_CONNECTING, WATCH_HELLO, WATCH_LEVEL, WATCH_RUN, WATCH_GONE };
 
@@ -128,7 +131,81 @@ static byte Watch_ModelExists(const char *path) {
 	return File_Exists(alt);
 }
 
-/* S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model (Replicate.c) */
+/* the entity of slot (the own entity or a proxy), NULL */
+static cEntity *Watch_SlotEntity(int slot) {
+	if (slot < 0 || slot >= NETREP_MAX_ENTS) {
+		return NULL;
+	}
+	return slot == Play_OwnSlot() ? Play_Entity() : watch.px[slot].e;
+}
+
+/* a missile proxy of M|model|weapon|effect|level: a Swarm's or an Inferno's as the network copy of the game makes it
+ * (its bees, trails and engine sound; its hit effects), another one with its model and embedded effect; the bees of
+ * life, fired by the entity of the slot view[0] - 1 */
+static cEntity *Watch_Missile(const char *name, char *const *part, int n, const NetRepState *st) {
+	vec3_t pos = { NetRep_UPos(st->pos[0]), NetRep_UPos(st->pos[1]), NetRep_UPos(st->pos[2]) };
+	vec3_t dir = { NetRep_UAng(st->ang[0]), NetRep_UAng(st->ang[1]), NetRep_UAng(st->ang[2]) };
+	int weap = n > 2 ? crt_atoi(part[2]) : 0, fx = n > 3 ? crt_atoi(part[3]) : 0, level = n > 4 ? crt_atoi(part[4]) : 0;
+	cEntity *parent = Watch_SlotEntity((int)st->view[0] - 1);
+	cEntity *e;
+
+	if (weap == MISSILE_WEAP_SWARM || weap == MISSILE_WEAP_INFERNO) {
+		e = weap == MISSILE_WEAP_SWARM ? Swarm_NetCreate(name, pos, dir) : Inferno_NetCreate(name, pos, dir);
+		if (!e) {
+			return NULL;
+		}
+		Obj(e)->proxy = 1;
+		cMissileEntity_SetParent(Missile(e), parent ? parent->name : "");
+		if (weap == MISSILE_WEAP_SWARM) {
+			Swarm_NetSetUp(name);
+		} else {
+			Inferno_NetSetUp(name);
+		}
+		Missile(e)->level = level;
+		cMissileEntity_SetSwarm(Missile(e), st->life);
+	} else {
+		if (part[1][0] && !Watch_ModelExists(part[1])) {
+			return NULL;
+		}
+		e = cWorld_CreateEntity(g_pWorld, name, pos.x, pos.y, pos.z, TYEN_MISSILE);
+		if (!e) {
+			return NULL;
+		}
+		Obj(e)->proxy = 1;
+		Obj_SetAng(e, &dir);
+		if (part[1][0]) {
+			Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
+		}
+		if (fx > MISSILE_FX_NONE && fx < MISSILE_FXS) {
+			Entity_SetEmbeddedFX(e, g_MissileFXNames[fx]);
+		}
+		cMissileEntity_SetParent(Missile(e), parent ? parent->name : "");
+	}
+	cMissileEntity_SetLifeTime(Missile(e), WATCH_MISSILE_LIFE);
+	return e;
+}
+
+/* the instance's missile hit: bees lost (its life fell) or the end of it (it went off, or its slot went away while it
+ * was on): its hit and explosion effects on the proxy, at its newest place */
+static void Watch_MissileHit(WatchProxy *p, const NetRepState *st, byte end) {
+	cEntity *e = p->e;
+	if (!e || p->kind != NETREP_MISSILE || !Entity_IsType(e, TYEN_MISSILE) || !e->active) {
+		return;
+	}
+	cMissileEntity *m = Missile(e);
+	int lost = end ? m->swarmCount + 1 : m->swarmCount - st->life;
+	if (lost <= 0) {
+		return;
+	}
+	if (end && p->n) {
+		const NetRepState *s = &p->s[p->n - 1].st;
+		vec3_t at = { NetRep_UPos(s->pos[0]), NetRep_UPos(s->pos[1]), NetRep_UPos(s->pos[2]) };
+		Entity_SetPos(e, &at);
+	}
+	cMissileEntity_Hit(m, lost, 0.0f);
+}
+
+/* S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model|weapon|effect|level (Replicate.c) */
 cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy) {
 	char buf[NETREP_LOOK_MAX + 1];
 	char *part[9];
@@ -157,17 +234,7 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 		return e;
 	}
 	if (kind == NETREP_MISSILE && n >= 2) {
-		if (part[1][0] && !Watch_ModelExists(part[1])) {
-			return NULL;
-		}
-		cEntity *e = cWorld_CreateEntity(g_pWorld, name, x, y, z, TYEN_OBJECT);
-		if (e) {
-			Obj(e)->proxy = 1;
-			if (part[1][0]) {
-				Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
-			}
-		}
-		return e;
+		return Watch_Missile(name, part, n, st);
 	}
 	if (kind != NETREP_SHIP || n < 8) {
 		return NULL;
@@ -265,6 +332,7 @@ static void Ev_Remove(void *ctx, int slot) {
 	if (slot == Play_OwnSlot()) {
 		Play_OwnRemove();
 	}
+	Watch_MissileHit(&watch.px[slot], NULL, 1);
 	Watch_Free(slot);
 }
 
@@ -450,11 +518,17 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	o->vel = vel;
 	o->rotVel = rot;
 	byte on = (sa->flags & NETREP_FL_ACTIVE) != 0;
+	if (p->kind == NETREP_MISSILE) {
+		/* the newest sample tells the hits at once (the effects of a hit wait for no delay) */
+		const NetRepState *sn = &p->s[p->n - 1].st;
+		Watch_MissileHit(p, sn, !(sn->flags & NETREP_FL_ACTIVE));
+		on = on && e->active;
+	}
 	if (on != e->active) {
 		Entity_SetActive(e, on);
 	}
 	if (p->kind == NETREP_MISSILE) {
-		/* a projectile proxy is a model that moves */
+		/* a missile proxy moves with the samples; its bees follow it in its update */
 	} else if (p->kind == NETREP_SHIP) {
 		w->life = sa->life;
 		cVehicleEntity *v = (cVehicleEntity *)e;

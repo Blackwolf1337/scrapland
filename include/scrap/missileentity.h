@@ -21,11 +21,21 @@
 #define MISSILE_HIT_INOUT 2			/* OnHit for the entities it went through when it ends */
 #define MISSILE_HIT_INSIDE 3
 
+/* ScrapC: cMissileEntity.fx, the embedded effect it was given (SetEmbeddedFX), and .weap, the weapon whose network
+ * copy it is (Swarm_NetCreate, Inferno_NetCreate): what a watcher of the instance builds its proxy with */
+enum { MISSILE_FX_NONE, MISSILE_FX_DUMBMOTOR, MISSILE_FX_GEARMISSILE, MISSILE_FX_CLOUD, MISSILE_FX_EMI, MISSILE_FXS };
+enum { MISSILE_WEAP_NONE, MISSILE_WEAP_SWARM, MISSILE_WEAP_INFERNO };
+
+/* the names of the MISSILE_FX_ effects ("" for none) */
+extern const char *const g_MissileFXNames[MISSILE_FXS];
+
 typedef struct cMissileEntity {
 	cWithLifeEntity wl;
 	/* cMissileEntity */
 	byte hideMain;			/* the model hidden */
-	byte pad_3e9[3];
+	byte fx;				/* ScrapC: MISSILE_FX_ */
+	byte weap;				/* ScrapC: MISSILE_WEAP_ */
+	byte pad_3eb;
 	float swDthTime;
 	float lifeTime;			/* left */
 	float speed;

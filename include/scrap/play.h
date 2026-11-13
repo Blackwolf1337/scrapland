@@ -33,6 +33,7 @@
  * the client plays itself (walks, takes a ship, flies, fires at the nearest other player) for tests; =npc: it fires
  * at ships of no player; =target: it takes a ship and stays in the air; =walk: it walks around on foot;
  * SCRAP_PLAYBOT_WEAPONS=1 (or weapon names): it fires each weapon for 6 s of aiming in turn and stays in the ship;
+ * SCRAP_PLAYBOT_CM=1: it also holds the countermeasure of the weapon now and then;
  * SCRAP_PLAYAHEAD=0: the prediction collides with the others where they are drawn (tests). SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
  * SCRAP_NET2_JITTER ms) on either side: a test link.
  */
@@ -92,6 +93,9 @@ void NetPl_Restore(struct cEntity *e, const NetPlMotion *m);
 /* the client fires weapon w of its own ship itself for the effects at once (the instant-hit weapons; the hits it
  * makes stay local, the server's count): Vulcan, Laser, Tesla, ATPC, Devastator */
 byte NetPl_LocalWeapon(int w);
+/* the client launches missile weapon w of its own ship itself for the launch effects at once (Swarm, Inferno: their
+ * client fire of the game's network mode, Play_Start); the missiles come replicated */
+byte NetPl_LaunchWeapon(int w);
 /* the replication kind of a player's entity: NETREP_CHAR, NETREP_SHIP, 0 */
 int NetPl_Kind(struct cEntity *e);
 /* the movement constants the scripts set on a ship (the player message): into phys (NETREP_PHYS_MAX), the count;
@@ -104,7 +108,8 @@ void NetPl_SetPhys(struct cEntity *e, const float *phys, int n);
 /* the sandbox options of the instance's command line (Instance_ParseParam): -ships:<n> called ships a player owns
  * at once (1; a call past it removes the oldest), -respawn:<s> (PLAY_RESPAWN_SECS), -lives:<n> (0: infinite; at
  * none left the player starts again with the start money), -rebuild:0|1 (1: a player's own ship that died with it
- * costs its price at the next call, as single player's rebuild); 1 when param is one of them */
+ * costs its price at the next call, as single player's rebuild), -spawn:<n> (all players at spawn point n, tests;
+ * without it they spread over the spawn points); 1 when param is one of them */
 byte Rep_ParseParam(const char *param, const char *ext);
 /* a test line of the instance's standard input: "life <player> <n>" sets the life of the player's entity (its
  * damage and death run as for a hit); 1 when it was one */

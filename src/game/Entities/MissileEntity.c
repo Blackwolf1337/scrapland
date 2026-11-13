@@ -96,6 +96,8 @@ cEntity *cMissileEntity_ctor(void *mem, const char *name, float x, float y, floa
 	self->beeTime = 0.0f;
 	self->wl.fireAtt = -1.0f;
 	self->hideMain = 0;
+	self->fx = MISSILE_FX_NONE;
+	self->weap = MISSILE_WEAP_NONE;
 	for (int i = 0; i < 4; i++) {
 		self->hits[i][0] = 0;
 	}
@@ -792,11 +794,18 @@ static cDebris *Missile_FXDebris(cMissileEntity *self, const char *sysName, byte
 	return d;
 }
 
+const char *const g_MissileFXNames[MISSILE_FXS] = { "", "DumbMotor", "GearMissile", "Cloud", "EMI" };
+
 /* the fire effects DumbMotor, GearMissile, Cloud and EMI (a debris element of the life time) */
 static void cMissileEntity_SetEmbeddedFX(cEntity *elem, const char *name) {
 	cMissileEntity *self = (cMissileEntity *)elem;
 	if (self->wl.obj.base.deadNode.target) {
 		return;
+	}
+	for (int i = 1; i < MISSILE_FXS; i++) {
+		if (!strcmp(name, g_MissileFXNames[i])) {
+			self->fx = (byte)i;
+		}
 	}
 	if (!strcmp(name, "DumbMotor")) {
 		cObjElementFXFiredEntity *el = Debris_Element(Missile_FXDebris(self, g_MissileFXDumbMotor, 1));

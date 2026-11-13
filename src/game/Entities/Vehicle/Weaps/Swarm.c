@@ -183,6 +183,7 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	cPy_Function_SetNative(&Missile(m)->onBeeDeath, (nativefunc_t)Swarm_OnBeeHitNative);
 	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)Swarm_HitFXNative);
 	cEntity_SetNetResource(m, "Swarm");
+	Missile(m)->weap = MISSILE_WEAP_SWARM;
 	return m;
 }
 

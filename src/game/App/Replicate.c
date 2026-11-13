@@ -145,7 +145,8 @@ static struct {
 	int respawnTicks;				/* -respawn: s from a death to the new character */
 	int lives;						/* -lives: 0 infinite */
 	byte rebuild;					/* -rebuild: a player pays for its own ship that died with its next call */
-} sand = { 1, PLAY_RESPAWN_SECS * NETREP_TICK_HZ, 0, 1 };
+	int spawn;						/* -spawn: all at that spawn point, -1 spread */
+} sand = { 1, PLAY_RESPAWN_SECS * NETREP_TICK_HZ, 0, 1, -1 };
 
 byte Rep_ParseParam(const char *param, const char *ext) {
 	int n = crt_atoi(ext);
@@ -163,6 +164,10 @@ byte Rep_ParseParam(const char *param, const char *ext) {
 	}
 	if (!crt_stricmp("rebuild", param)) {
 		sand.rebuild = n != 0;
+		return 1;
+	}
+	if (!crt_stricmp("spawn", param)) {
+		sand.spawn = n < 0 ? -1 : n;
 		return 1;
 	}
 	return 0;
@@ -233,10 +238,12 @@ static const char *Rep_VarS(cEntity *e, const char *name) {
 	return Entity_VarS(e, name, &s, 0) && s ? s : "";
 }
 
-/* how the watcher builds the proxy: S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model */
+/* how the watcher builds the proxy: S|model|pilot|motor 0..3|class|weapon slots, C|class or
+ * M|model|MISSILE_WEAP_|MISSILE_FX_|level */
 static void Rep_Look(cEntity *e, int kind, char *out, int size) {
 	if (kind == NETREP_MISSILE) {
-		Str_PrintfQuiet(out, size, "M|%s", Rep_ModelPath(e));
+		const cMissileEntity *m = Missile(e);
+		Str_PrintfQuiet(out, size, "M|%s|%d|%d|%d", Rep_ModelPath(e), m->weap, m->fx, m->level);
 		return;
 	}
 	cWithLifeEntity *w = WLife(e);
@@ -290,6 +297,12 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 	s->dt = (uint16_t)(dt > 65535.0f ? 65535.0f : dt + 0.5f);
 	s->flags = e->active ? NETREP_FL_ACTIVE : 0;
 	if (kind == NETREP_MISSILE) {
+		/* a missile: its bees in life, the slot + 1 of the entity that fired it in view[0] */
+		cEntity *parent = Missile(e)->parent[0] ? World_FindEntity(Missile(e)->parent) : NULL;
+		int ps = parent ? Rep_Find(parent) : -1;
+		int n = Missile(e)->swarmCount;
+		s->life = (int16_t)(n > 32767 ? 32767 : n < 0 ? 0 : n);
+		s->view[0] = (uint16_t)(ps + 1);
 		return;
 	}
 	s->life = (int16_t)(w->life > 32767 ? 32767 : w->life < -32768 ? -32768 : w->life);
@@ -480,8 +493,8 @@ static byte Rep_PickSpawn(vec3_t *pos, float *yaw, int *at) {
 	}
 	for (int least = 0; least <= PLAYERS_MAX; least++) {
 		for (int n = 0; n < rep.nspawns; n++) {
-			int s = (rep.spawnNext + n) % rep.nspawns;
-			if (count[s] != least) {
+			int s = sand.spawn >= 0 ? sand.spawn % rep.nspawns : (rep.spawnNext + n) % rep.nspawns;
+			if (count[s] != least && sand.spawn < 0) {
 				continue;
 			}
 			for (int k = 0; k < REP_SPOT_TRIES; k++) {

@@ -87,6 +87,7 @@ static struct {
 	FILE *log;
 	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK */
 	byte botCycle;
+	byte botCm;							/* SCRAP_PLAYBOT_CM=1: also the countermeasure of the weapon now and then */
 	byte noAhead;						/* SCRAP_PLAYAHEAD=0: the others collide where they are drawn (tests) */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
@@ -338,6 +339,15 @@ void Play_Start(void) {
 	play.noAhead = ahead && *ahead == '0';
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
 	play.botCycle = cycle && *cycle && *cycle != '0';
+	const char *cm = getenv("SCRAP_PLAYBOT_CM");
+	play.botCm = cm && *cm == '1';
+	/* the missile weapons fire as the client of the game's network mode: the launch effects, no missile */
+	if (g_SwarmIDWeap >= 0 && g_SwarmIDWeap < g_pWorld->weapons.count) {
+		cPy_Function_SetFunc(&TABLE_AT(g_pWorld->weapons, g_SwarmIDWeap)->onFire, "!SwarmClientFire");
+	}
+	if (g_InfernoIDWeap >= 0 && g_InfernoIDWeap < g_pWorld->weapons.count) {
+		cPy_Function_SetFunc(&TABLE_AT(g_pWorld->weapons, g_InfernoIDWeap)->onFire, "!InfernoClientFire");
+	}
 	Play_Camera();
 }
 
@@ -531,6 +541,9 @@ static void Play_Bot(double now) {
 	}
 	if (fabsf(dyaw) < 0.15f && fmod(t, play.botCycle ? 2.0 : 3.0) < (play.botCycle ? 1.5 : 2.0)) {
 		play.acc.buttons = NETREP_IN_ACT;
+	}
+	if (play.botCm && fabsf(dyaw) < 0.3f && fmod(t, 5.0) >= 3.5) {
+		play.acc.buttons = NETREP_IN_ACT2;
 	}
 	if (fabsf(dyaw) < 0.3f && bestD < 8000.0f * 8000.0f) {
 		play.botNear += 1.0 / NETREP_TICK_HZ;
