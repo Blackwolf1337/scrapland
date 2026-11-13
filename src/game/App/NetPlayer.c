@@ -88,6 +88,10 @@ void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	float k = cTimer_GetSpeed(&w->obj.timer);
 
 	NetPl_Apply(e, in, local, replay);
+	/* a stopped entity (paused by a scene) does not step, as the engine's update leaves it */
+	if (OBJ_MIN_DT >= NETPL_SLOT * k) {
+		return;
+	}
 	if (!replay && w->actCtrl) {
 		cActCtrl_Tick(w->actCtrl, NETPL_TICK * k);
 	}

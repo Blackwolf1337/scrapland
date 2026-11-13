@@ -27,7 +27,6 @@ static cGVar GVar_MssnRadarBlinkTime;
 #define OBJ_ONENDMOVE_DESC "<ObjMove.OnEnd> function"
 #define OBJ_ONOBJSLOT_DESC "<OnObjSlot> function"
 
-#define OBJ_MIN_DT 1e-6f			/* no update for a smaller step */
 #define OBJ_SLOT_INTERVAL 0.05f
 #define OBJ_SLOT_JUMP2 9000000.0f		/* a jump of more than 3000 since the slot */
 

@@ -20,6 +20,7 @@
 
 #define TYEN_OBJECT "Obj"
 #define COBJENTITY_SIZE sizeof(cObjEntity)
+#define OBJ_MIN_DT 1e-6f			/* no update for a smaller step */
 
 /* the flags of the network state */
 #define NETC_FULL 0x01			/* full precision (floats), else packed */
