@@ -11,9 +11,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/arena.h"
 #include "scrap/console.h"
 #include "scrap/coord.h"
 #include "scrap/coordlist.h"
+#include "scrap/crt.h"
 #include "scrap/filesys.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
@@ -32,6 +34,7 @@
 
 #define WORLD_MAX 256				/* worlds in the list */
 #define WORLD_LEVELS 16
+#define WORLD_ROTATION 512
 #define WORLD_MAX_PLAYERS 64
 #define WORLD_CLOSE_MS 2000			/* the browser's socket closes this long after its page went */
 #define WORLD_MESSAGE_MS 1000
@@ -40,7 +43,10 @@
 enum { WP_LAN, WP_LIST, WP_ADDRESS, WP_HOST };
 enum { WL_IDLE, WL_CONNECTING, WL_PAGES };
 static const char *const world_pages[] = { "Lan", "List", "Address", "Host" };
-static const char *const world_modes[] = { "sandbox", "freeroam" };
+/* the modes of a world: the sandbox, the factions and the PvP modes of the original (include/scrap/arena.h) */
+static const char *const world_modes[] = { "sandbox", "freeroam", "dm", "dmbots", "tdm", "flaghunt", "teamflag",
+	"postman", "teampost" };
+#define WORLD_MODES (int)(sizeof(world_modes) / sizeof(world_modes[0]))
 
 typedef struct {
 	Net2Addr addr;
@@ -74,6 +80,7 @@ static struct {
 
 static char world_levels[WORLD_LEVELS][COORD_LEVEL + 1];
 static int world_numLevels;
+static int world_levelsMode = -1;		/* the arena mode the levels are of, -2 the city */
 
 static uint64_t World_Ms(void) {
 	return Plat_RealNs() / 1000000;
@@ -142,13 +149,27 @@ static int World_Compare(const void *pa, const void *pb) {
 	return wm.sortOrder ? -c : c;
 }
 
+/* the name of a mode: a PvP mode's of the original's language (Net_Type_<ServerType>), else ScrapC's table */
+static const char *World_ModeText(const char *mode) {
+	char key[0x40];
+	int a = Arena_ModeOf(mode);
+	if (a >= 0) {
+		Str_PrintfQuiet(key, sizeof(key), "Net_Type_%s", g_ArenaModes[a].type);
+		const char *t = Lang_GetStr(key);
+		if (t && *t) {
+			return t;
+		}
+	}
+	Str_PrintfQuiet(key, sizeof(key), "MP_Mode_%s", mode);
+	const char *m = Texts_Get(key);
+	return m ? m : mode;
+}
+
 static void World_Line(int i, char *out, int size) {
 	const worldEntry_t *e = &wm.e[i];
-	char ping[16], mode[0x40];
+	char ping[16];
 	Str_PrintfQuiet(ping, sizeof(ping), e->ping < 0 ? "?" : "%d", e->ping);
-	Str_PrintfQuiet(mode, sizeof(mode), "MP_Mode_%s", e->mode);
-	const char *m = Texts_Get(mode);
-	Net_BrowserLine(e->name, m ? m : e->mode, 0, e->players, e->maxPlayers, e->map, ping, out, size);
+	Net_BrowserLine(e->name, World_ModeText(e->mode), 0, e->players, e->maxPlayers, e->map, ping, out, size);
 }
 
 static void World_Fill(void) {
@@ -331,12 +352,22 @@ static void World_Refresh(void) {
 
 /* ---- the pages ---- */
 
-/* the levels a host may start in: the city of the coordinator */
+/* the levels a host may start in: the city of the coordinator, the maps of a PvP mode (Net.ModesMap, the DeathMatch
+ * maps for the one with bots) */
 static void World_Levels(void) {
+	char maps[WORLD_ROTATION];
+	int a = Arena_ModeOf(world_modes[wm.mode]);
 	const char *p = COORD_CITY;
-	if (world_numLevels) {
+	if (world_numLevels && world_levelsMode == (a >= 0 ? a : -2)) {
 		return;
 	}
+	world_levelsMode = a >= 0 ? a : -2;
+	world_numLevels = 0;
+	if (a >= 0) {
+		Net_TypeMapList(g_ArenaModes[a == ARENA_DMBOTS ? ARENA_DM : a].type, 0, maps, sizeof(maps));
+		p = maps;
+	}
+	wm.level = 0;
 	while (*p && world_numLevels < WORLD_LEVELS) {
 		int n = (int)strcspn(p, ",");
 		Str_PrintfQuiet(world_levels[world_numLevels++], COORD_LEVEL + 1, "%.*s", n, p);
@@ -353,7 +384,7 @@ static const char *World_LevelText(int i) {
 }
 
 static void World_Show(int id, int page) {
-	char players[16], port[16], key[32], title[0x80];
+	char players[16], port[16], title[0x80];
 	cScorer *sc = Scorer_Get(id);
 	modeVals_t t = { .n = 0 };
 	const char *names[10];
@@ -371,9 +402,8 @@ static void World_Show(int id, int page) {
 		World_Levels();
 		Str_PrintfQuiet(players, sizeof(players), "%d", wm.maxPlayers);
 		Str_PrintfQuiet(port, sizeof(port), "%d", wm.port ? wm.port : World_Port());
-		Str_PrintfQuiet(key, sizeof(key), "MP_Mode_%s", world_modes[wm.mode]);
 		names[n] = "level", vals[n++] = Mode_S(&t, World_LevelText(wm.level));
-		names[n] = "mode", vals[n++] = Mode_S(&t, Script_Lang(key));
+		names[n] = "mode", vals[n++] = Mode_S(&t, World_ModeText(world_modes[wm.mode]));
 		names[n] = "pvp", vals[n++] = Mode_S(&t, Script_Lang(wm.pvp ? "MP_On" : "MP_Off"));
 		names[n] = "public", vals[n++] = Mode_S(&t, Script_Lang(wm.listed ? "MP_On" : "MP_Off"));
 		names[n] = "players", vals[n++] = Mode_S(&t, players);
@@ -561,12 +591,33 @@ WORLD_FN(HostLevelNext) {
 	World_StepLevel(params, 1);
 }
 
-WORLD_FN(HostMode) {
-	char key[32];
+static void World_StepMode(cAbstractFile *params, int dir) {
 	WORLD_ARGS;
-	wm.mode = !wm.mode;
-	Str_PrintfQuiet(key, sizeof(key), "MP_Mode_%s", world_modes[wm.mode]);
-	World_SetChoice(id, "HostMode", Script_Lang(key));
+	wm.mode = (wm.mode + dir + WORLD_MODES) % WORLD_MODES;
+	World_SetChoice(id, "HostMode", World_ModeText(world_modes[wm.mode]));
+	World_Levels();
+	World_SetChoice(id, "HostLevel", World_LevelText(wm.level));
+}
+
+WORLD_FN(HostMode) {
+	World_StepMode(params, 1);
+}
+
+WORLD_FN(HostModePrev) {
+	World_StepMode(params, -1);
+}
+
+/* the rotation of a PvP mode: the start level, then the other levels of the create page's list (ServerMapList) of
+ * the mode */
+static void World_Rotation(int a, const char *start, char *out, int size) {
+	char maps[WORLD_ROTATION];
+	int n = Str_PrintfQuiet(out, size, "%s", start);
+	Net_TypeMapList(g_ArenaModes[a == ARENA_DMBOTS ? ARENA_DM : a].type, 1, maps, sizeof(maps));
+	for (char *p = strtok(maps, ","); p; p = strtok(NULL, ",")) {
+		if (crt_stricmp(p, start) && n < size - 1) {
+			n += Str_PrintfQuiet(out + n, size - n, ",%s", p);
+		}
+	}
 }
 
 WORLD_FN(HostPvP) {
@@ -601,10 +652,38 @@ WORLD_FN(HostFn) {
 	memset(&o, 0, sizeof(o));
 	Str_Copy(o.level, world_levels[wm.level], sizeof(o.level));
 	Str_Copy(o.mode, world_modes[wm.mode], sizeof(o.mode));
+	if (Arena_ModeOf(o.mode) >= 0) {
+		World_Rotation(Arena_ModeOf(o.mode), o.level, o.levels, sizeof(o.levels));
+	}
 	o.pvp = wm.pvp;
 	o.maxPlayers = wm.maxPlayers;
 	o.port = (uint16_t)wm.port;
 	o.listed = wm.listed;
+	World_Close();
+	Join_StartHost(&o, World_Name());
+	World_Wait(id, Script_Lang("MP_Starting"));
+}
+
+/* the Create button of the old create page: the mode (ServerType), its chosen maps (all of the mode when none is
+ * chosen, as PCMenu.MenuInitServer), the players and the frag limit of the page, hosted on the new network */
+WORLD_FN(Create) {
+	JoinHostOpts o;
+	WORLD_ARGS;
+	int a = Arena_ModeOf(GVar_GetStr("ServerType"));
+	memset(&o, 0, sizeof(o));
+	a = a < 0 ? ARENA_DM : a;
+	if (!Net_TypeMapList(g_ArenaModes[a].type, 1, o.levels, sizeof(o.levels))) {
+		Net_TypeMapList(g_ArenaModes[a].type, 0, o.levels, sizeof(o.levels));
+	}
+	Str_PrintfQuiet(o.level, sizeof(o.level), "%.*s", (int)strcspn(o.levels, ","), o.levels);
+	Str_Copy(o.mode, g_ArenaModes[a].arg, sizeof(o.mode));
+	o.pvp = 1;
+	o.maxPlayers = (int)GVar_GetNum("DefaultMaxPlayersOnServer", 0) + 1;
+	o.maxPlayers = o.maxPlayers < 2 ? 2 : o.maxPlayers > WORLD_MAX_PLAYERS ? WORLD_MAX_PLAYERS : o.maxPlayers;
+	o.fraglimit = (int)GVar_GetNum("Fraglimit", 0);
+	o.port = World_Port();
+	o.listed = wm.listed;
+	wm.page = WP_HOST;
 	World_Close();
 	Join_StartHost(&o, World_Name());
 	World_Wait(id, Script_Lang("MP_Starting"));
@@ -640,6 +719,8 @@ void WorldMenu_Register(void) {
 		{ "WorldHostLevelPrev", World_HostLevelPrev },
 		{ "WorldHostLevelNext", World_HostLevelNext },
 		{ "WorldHostMode", World_HostMode },
+		{ "WorldHostModePrev", World_HostModePrev },
+		{ "WorldCreate", World_Create },
 		{ "WorldHostPvP", World_HostPvP },
 		{ "WorldHostPublic", World_HostPublic },
 		{ "WorldHost", World_HostFn },

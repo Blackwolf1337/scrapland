@@ -496,12 +496,11 @@ static const char *Net_Item(const nativeVal_t *seq, int i, nativeVal_t *tmp) {
 	return e && e->type == NV_STR ? Native_Text(e) : NULL;
 }
 
-/* the maps of the current mode, Net.ModesMap[ServerType] (dictobject.c Dict_GetItemString: nothing when ModesMap is no
- * dict) */
-static void Net_ModeMaps(netMapList_t *list) {
+/* the maps of a mode, Net.ModesMap[type] (dictobject.c Dict_GetItemString: nothing when ModesMap is no dict) */
+static void Net_TypeMaps(const char *type, netMapList_t *list) {
 	nativeVal_t modes, key, sub = { 0 }, *maps = NULL;
 	Net_Script("ModesMap", &modes);
-	Native_SetStr(&key, GVar_GetStr("ServerType"));
+	Native_SetStr(&key, type);
 	if (modes.type == NV_DICT) {
 		maps = Native_DictGet(&modes, &key);
 	} else if (Native_IsObj(&modes) && Mode_Sub(&modes, &key, &sub)) {
@@ -526,6 +525,11 @@ static void Net_ModeMaps(netMapList_t *list) {
 	Native_Free(&modes);
 }
 
+/* the maps of the current mode, Net.ModesMap[ServerType] */
+static void Net_ModeMaps(netMapList_t *list) {
+	Net_TypeMaps(GVar_GetStr("ServerType"), list);
+}
+
 static byte Net_HasMap(const netMapList_t *list, const char *name) {
 	for (int i = 0; i < list->num; i++) {
 		if (!strcmp(list->names[i], name)) {
@@ -533,6 +537,22 @@ static byte Net_HasMap(const netMapList_t *list, const char *name) {
 		}
 	}
 	return 0;
+}
+
+int Net_TypeMapList(const char *type, byte chosen, char *out, int size) {
+	netMapList_t maps, pick;
+	int n = 0, count = 0;
+	Net_TypeMaps(type, &maps);
+	if (chosen) {
+		Net_GetServerMaps(&pick);
+	}
+	out[0] = 0;
+	for (int i = 0; i < maps.num; i++) {
+		if (!chosen || Net_HasMap(&pick, maps.names[i])) {
+			n += Str_Printf(out + n, size - n, "%s%s", count++ ? "," : "", maps.names[i]);
+		}
+	}
+	return count;
 }
 
 static void Net_UpdateMapSlider(int id) {

@@ -122,7 +122,11 @@ void Join_Close(void);
 #define JOIN_UI_FAILED 3
 typedef struct JoinHostOpts {
 	char level[COORD_LEVEL + 1];		/* the start level, kept up */
-	char mode[16];						/* "" or "sandbox", "freeroam" (passed to the instances as -mode) */
+	char mode[16];						/* "" or "sandbox", "freeroam" or a PvP mode of include/scrap/arena.h ("dm":
+										   passed to the instances as -mode) */
+	char levels[512];					/* the PvP modes: the levels of the rotation, the start level first ("" it
+										   alone) */
+	int fraglimit;						/* the PvP modes: their limit, 0 the Fraglimit of the configuration */
 	int pvp;							/* 0 or 1 */
 	int maxPlayers;
 	uint16_t port;

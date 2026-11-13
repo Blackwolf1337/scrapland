@@ -19,6 +19,7 @@ static const struct {
 	{ "MP_Mode", "Mode" },
 	{ "MP_Mode_sandbox", "Sandbox" },
 	{ "MP_Mode_freeroam", "Free roam" },
+	{ "MP_Mode_dmbots", "DeathMatch with bots" },
 	{ "MP_PvP", "PvP" },
 	{ "MP_Public", "List server" },
 	{ "MP_On", "On" },

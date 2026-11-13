@@ -188,8 +188,9 @@ byte Arena_Module(int mode);
 byte Arena_ParseParam(const char *param, const char *ext);
 /* an arena mode runs on this instance */
 byte Arena_On(void);
-/* the mode's -mode name ("dm"), NULL outside the arena modes */
+/* the mode's -mode name ("dm"), NULL outside the arena modes; -maps ("" none) */
 const char *Arena_ModeName(void);
+const char *Arena_Maps(void);
 /* player i connected (no ship yet: it waits for its join and the spawn), left */
 void Arena_Joined(int i);
 void Arena_Left(int i);

@@ -114,6 +114,10 @@ byte Arena_On(void) {
 	return g_Instance && ar.mode >= 0;
 }
 
+const char *Arena_Maps(void) {
+	return ar.maps;
+}
+
 const char *Arena_ModeName(void) {
 	return ar.mode >= 0 ? g_ArenaModes[ar.mode].arg : NULL;
 }

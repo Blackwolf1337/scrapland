@@ -458,7 +458,7 @@ call Menu.SetTabDefaults $id GarajeButtonTab
 default Back
 list tabs
 	Create	PCMenu.NetCreateGameMenu	"{Menu_Multiplayer_CreateGame}"
-	Join	PCMenu.NetJoinGameMenu		"{Menu_Multiplayer_JoinGame}"
+	Join	!WorldJoinMenu		"{Menu_Multiplayer_JoinGame}"
 call Menu.AddTabs $id [tabs] $tab ParamTabSize=26 Hint=0
 lr Join Garaje
 lr Garaje Create
@@ -704,7 +704,7 @@ item CreateButton Text
 	X 320
 	Y 384
 	CentralText 1
-	OnAccept PCMenu.MenuInitServer
+	OnAccept !WorldCreate
 	use optioncolor
 item AdvancedButton Text
 	Font Horatio
@@ -945,7 +945,7 @@ item HostMode Text
 	Y 136
 	OnAccept !WorldHostMode
 call Menu.PreviousNextMenuSimple 0 HostMode 240 136 280
-set HostModePrev OnAccept !WorldHostMode
+set HostModePrev OnAccept !WorldHostModePrev
 set HostModeNext OnAccept !WorldHostMode
 item HostPvPTitle Text hosttitle
 	Text "{MP_PvP}:"
