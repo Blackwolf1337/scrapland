@@ -221,9 +221,6 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 /* module.var = value as the script ports set it (an error is dropped; value NULL: the lookup of the value failed, its
  * error dropped) */
 void Script_SetVar(const char *module, const char *var, const struct nativeVal_s *value);
-/* an attribute of a script module (a new reference, NULL with the error set); a pack module through the variable
- * registry (scrap/modvars.h), as Script_Global, Script_SetGlobal and Script_SetVar */
-PyObject *Script_Attr(const char *module, const char *name);
 
 /* script variables of entities by name, as the entity handle reads them: the number of a variable (int, else float;
  * def when the entity or the variable is not there) and its text (def likewise) */
@@ -234,15 +231,8 @@ byte Script_EntTrue(const char *ent, const char *var);
 
 /* ---- Python values as the scripts use them (src/game/Script/ScriptValue.c) ---- */
 
-/* a global of a module as a function of its script reads it: a new reference, a NameError with the name when it is
- * missing (a deleted variable) */
-PyObject *Script_Global(const char *module, const char *name);
-/* `global name; name = v` (v given away): 0 with the error set */
-byte Script_SetGlobal(const char *module, const char *name, PyObject *v);
 /* the import line of a function (the names end with NULL): 0 with the error set */
 byte Script_Import(const char *const *names);
-/* o[i] as a script subscripts (a new reference) */
-PyObject *Script_Index(PyObject *o, int i);
 /* o.name as a script reads it (a new reference, NULL with the error set; o NULL stays NULL): an attribute the engine
  * fails to give without an exception (the handle of a deleted entity) raises ceval's "SystemError: error return
  * without exception set", as the line of the script does */

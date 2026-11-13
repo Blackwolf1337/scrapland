@@ -1476,15 +1476,6 @@ byte Mode_ItemText(const nativeVal_t *v, const char **out) {
 	return 1;
 }
 
-PyObject *Mode_From(const char *module, const char *name) {
-	byte imported;
-	PyObject *v = ModVar_Lookup(module, name, &imported);
-	if (imported && !v) {
-		Native_Raise(NE_IMPORT, "cannot import name %.230s", name);
-	}
-	return v;
-}
-
 byte Mode_PrevShip(nativeVal_t *ship) {
 	nativeVal_t o;
 	Native_SetNone(ship);
@@ -4711,7 +4702,19 @@ static byte Mode_ObjOut(PyObject *r, nativeVal_t *out) {
 }
 
 byte Mode_FromV(const char *module, const char *name, nativeVal_t *out) {
-	return Mode_ObjOut(Mode_From(module, name), out);
+	nativeVal_t v;
+	Native_SetNone(out);
+	if (!ModVar_GlobalVal(module, name, &v)) {
+		/* the module was imported: the name it does not have */
+		if (Native_ErrIs(NE_NAME)) {
+			Native_ErrClear();
+			Native_Raise(NE_IMPORT, "cannot import name %.230s", name);
+		}
+		return 0;
+	}
+	NObj_ArgOf(&v, out);
+	Native_Free(&v);
+	return 1;
 }
 
 byte Mode_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {

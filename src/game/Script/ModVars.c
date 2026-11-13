@@ -648,16 +648,6 @@ static byte MV_Import(const char *module, nativeVal_t *m) {
 	return Script_Module(module, m);
 }
 
-PyObject *ModVar_Lookup(const char *module, const char *name, byte *imported) {
-	nativeVal_t m;
-	modVarRef_t ref;
-	*imported = MV_Import(module, &m);
-	PyObject *v = *imported && ModVar_OfVal(&m, &ref) ? ModVar_Get(&ref, name) : NULL;
-	Py_XINCREF(v);
-	Native_Free(&m);
-	return v;
-}
-
 byte ModVar_GlobalVal(const char *module, const char *name, nativeVal_t *out) {
 	nativeVal_t m;
 	modVarRef_t ref;
@@ -667,22 +657,6 @@ byte ModVar_GlobalVal(const char *module, const char *name, nativeVal_t *out) {
 		Native_SetNone(out);
 	}
 	return ok || (imported && Native_Raise(NE_NAME, "%s", name));
-}
-
-int ModVar_SetGlobal(const char *module, const char *name, PyObject *v) {
-	nativeVal_t m;
-	modVarRef_t ref;
-	int r = -1;
-	if (MV_Import(module, &m)) {
-		if (ModVar_OfVal(&m, &ref)) {
-			r = ModVar_Set(&ref, name, v);
-		} else {
-			/* PyModule_GetDict's SystemError */
-			Native_Raise(NE_SYSTEM, "bad argument to internal function");
-		}
-	}
-	Native_Free(&m);
-	return r;
 }
 
 byte ModVar_SetGlobalVal(const char *module, const char *name, const nativeVal_t *v) {
@@ -720,43 +694,6 @@ PyObject *ModVar_ObjAttr(PyObject *o, const char *name) {
 	PyObject *r = Native_FromPyRef(o, &v) && ModVar_OfVal(&v, &ref) ? ModVar_Attr(&ref, name) :
 		PyObject_GetAttrString(o, (char *)name);
 	Native_Free(&v);
-	return r;
-}
-
-int ModVar_SetObjAttr(PyObject *o, const char *name, PyObject *v) {
-	nativeVal_t m;
-	modVarRef_t ref;
-	int r = Native_FromPyRef(o, &m) && ModVar_OfVal(&m, &ref) ? ModVar_SetAttr(&ref, name, v) :
-		PyObject_SetAttrString(o, (char *)name, v);
-	Native_Free(&m);
-	return r;
-}
-
-PyObject *ModVar_ModAttr(const char *module, const char *name) {
-	nativeVal_t v;
-	PyObject *r = ModVar_ModAttrVal(module, name, &v) ? Native_ToPy(&v) : NULL;
-	Native_Free(&v);
-	return r;
-}
-
-int ModVar_SetModAttr(const char *module, const char *name, PyObject *v) {
-	nativeVal_t m, x;
-	modVarRef_t ref;
-	int r = -1;
-	if (MV_Import(module, &m)) {
-		if (ModVar_OfVal(&m, &ref)) {
-			r = ModVar_SetAttr(&ref, name, v);
-		} else {
-			if (v) {
-				NObj_FromPy(v, &x);
-			}
-			r = NObj_SetAttr(&m, name, v ? &x : NULL) ? 0 : -1;
-			if (v) {
-				Native_Free(&x);
-			}
-		}
-	}
-	Native_Free(&m);
 	return r;
 }
 

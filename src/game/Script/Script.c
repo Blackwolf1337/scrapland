@@ -674,12 +674,6 @@ const char *Script_Lang(const char *key) {
 	return s;
 }
 
-/* ---- the scripts ---- */
-
-PyObject *Script_Attr(const char *module, const char *func) {
-	return ModVar_ModAttr(module, func);
-}
-
 /* ---- script variables of entities, as the Python entity handle reads and writes them ---- */
 
 double Script_EntNum(const char *ent, const char *var, double def) {

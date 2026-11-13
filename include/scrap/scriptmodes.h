@@ -294,9 +294,6 @@ void Mode_Repr(const nativeVal_t *v, nativeVal_t *out);
 /* the item name of a scorer call of the ports (Sf_Text): the C text of a text value (up to its first 0 byte), the
  * TypeError "argument 2: expected string found" for any other value */
 byte Mode_ItemText(const nativeVal_t *v, const char **out);
-/* `from module import name` in a function of a script (OBJLIB 6: the import; the link functions of Menu it gives are
- * called through their entries, Mode_LinkCall): a new reference, NULL with the ImportError */
-PyObject *Mode_From(const char *module, const char *name);
 /* the value of HangarTab.prevShip (the handle as NV_ENT, None, or what a test put there; Native_Free it): 0 with the
  * AttributeError of the module attribute */
 byte Mode_PrevShip(nativeVal_t *ship);
@@ -1010,8 +1007,8 @@ byte Mode_FlagGet(const char *module, const char *var, nativeVal_t *out);
 	static byte fn##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
 		[[maybe_unused]] nativeVal_t *out)
 #define MODE_KWT(pre, name, fmt, ...) MODE_KWBY(Mode_KwTyped, pre##_##name, fmt, __VA_ARGS__)
-/* `from module import name` as a value (Mode_From: the ImportError of a name the module does not have; an object as
- * NV_OBJ) */
+/* `from module import name` in a function of a script as a value (the import, the ImportError of a name the module
+ * does not have; as Native_Arg takes it) */
 byte Mode_FromV(const char *module, const char *name, nativeVal_t *out);
 /* v[lo:hi] of the script: Native_Slice, an NV_OBJ (an instance, a list that holds handles) the Python way
  * (PySequence_GetSlice, the result as Native_Arg makes it) */

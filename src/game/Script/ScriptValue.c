@@ -18,21 +18,6 @@
 
 #define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
-PyObject *Script_Global(const char *module, const char *name) {
-	byte imported;
-	PyObject *v = ModVar_Lookup(module, name, &imported);
-	if (imported && !v) {
-		Native_Raise(NE_NAME, "%s", name);
-	}
-	return v;
-}
-
-byte Script_SetGlobal(const char *module, const char *name, PyObject *v) {
-	byte ok = v && ModVar_SetGlobal(module, name, v) == 0;
-	Py_XDECREF(v);
-	return ok;
-}
-
 byte Script_Import(const char *const *names) {
 	for (; *names; names++) {
 		nativeVal_t m;
@@ -43,13 +28,6 @@ byte Script_Import(const char *const *names) {
 		}
 	}
 	return 1;
-}
-
-PyObject *Script_Index(PyObject *o, int i) {
-	PyObject *k = o ? PyInt_FromLong(i) : NULL;
-	PyObject *v = k ? PyObject_GetItem(o, k) : NULL;
-	Py_XDECREF(k);
-	return v;
 }
 
 PyObject *Script_GetAttr(PyObject *o, const char *name) {

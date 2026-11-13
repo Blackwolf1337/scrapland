@@ -1240,38 +1240,18 @@ static byte Mod_BodyPut(modParse_t *m, const char *name, const nativeVal_t *v) {
 	return ok;
 }
 
-/* name = v into the locals (STORE_NAME): the module's through the registry, a class body's dict (an interned key
- * either way, as the compiler's names); v is not stolen */
-static byte Mod_Put(modParse_t *m, const char *name, PyObject *v) {
-	if (m->body) {
-		nativeVal_t x;
-		NObj_FromPy(v, &x);
-		byte ok = Mod_BodyPut(m, name, &x);
-		Native_Free(&x);
-		return ok;
-	}
-	return ModVar_Set(&m->ref, name, v) == 0;
-}
 
-
-/* name = v (not freed) in the locals: a native value into the module's variables, an object into a class body's dict
- * (Mod_ToPy, OBJLIB 9) */
+/* name = v (not freed) in the locals: the module's variables through the registry, a class body's dict; the numbers
+ * and texts with the identities of this code's constants (Mod_Leaf): `is` finds them */
 static byte Mod_PutVal(modParse_t *m, const char *name, const nativeVal_t *v) {
 	if (m->body) {
 		return Mod_BodyPut(m, name, v);
 	}
-	if (NObj_RefMode() || Native_Holds(v, 1u << NV_REF)) {
-		/* the numbers and texts with the identities of this code's constants (Mod_Leaf): `is` finds them */
-		nativeVal_t c;
-		Native_Copy(&c, v);
-		Mod_Pin(m, &c);
-		byte ok = ModVar_SetVal(&m->ref, name, &c) == 0;
-		Native_Free(&c);
-		return ok;
-	}
-	PyObject *o = Mod_ToPy(m, v);
-	byte ok = o && Mod_Put(m, name, o);
-	Py_XDECREF(o);
+	nativeVal_t c;
+	Native_Copy(&c, v);
+	Mod_Pin(m, &c);
+	byte ok = ModVar_SetVal(&m->ref, name, &c) == 0;
+	Native_Free(&c);
 	return ok;
 }
 
@@ -1399,12 +1379,7 @@ static byte Mod_SetOn(modParse_t *m, const nativeVal_t *o, const char *name, con
 		Native_Free(&c);
 		return ok;
 	}
-	PyObject *pv = Mod_ToPy(m, v), *po = pv ? Mod_ToPy(m, o) : NULL, *pk = po && k ? Mod_ToPy(m, k) : NULL;
-	byte ok = po && (k ? pk && PyObject_SetItem(po, pk, pv) == 0 : ModVar_SetObjAttr(po, name, pv) == 0);
-	Py_XDECREF(pv);
-	Py_XDECREF(po);
-	Py_XDECREF(pk);
-	return ok;
+	return k ? NObj_SetItem(o, k, v) : NObj_SetAttr(o, name, v);
 }
 
 /*

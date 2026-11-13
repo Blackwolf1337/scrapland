@@ -154,27 +154,19 @@ void ModVar_Report(nativeBuf_t *b);
 /* ---- by module name: the module imported as the scripts import it (Script_Module, its error), a pack module through
  * the registry, another module (Scrap, a pack module while its code runs) by its dict ---- */
 
-/* the variable name of module as its code reads a global: a new reference, NULL when it has none (no error set, the
- * caller raises NameError or ImportError) or when the import failed (*imported 0, its error set) */
-PyObject *ModVar_Lookup(const char *module, const char *name, byte *imported);
 /* the same on native values: 1 with *out, 0 with the error of the import or NameError(name) */
 byte ModVar_GlobalVal(const char *module, const char *name, nativeVal_t *out);
-/* the global name of module set to v (not stolen): 0, -1 with the error set */
-int ModVar_SetGlobal(const char *module, const char *name, PyObject *v);
 /* the same for a native value: 1, 0 with the error */
 byte ModVar_SetGlobalVal(const char *module, const char *name, const nativeVal_t *v);
 /* the global name of module deleted: 0, -1 with the error of the import or NameError(name) */
 int ModVar_DelGlobal(const char *module, const char *name);
-/* getattr(module, name) of the imported module: a new reference, NULL with the error set */
-PyObject *ModVar_ModAttr(const char *module, const char *name);
-/* setattr(module, name, v) of the imported module (v not stolen, NULL: delattr): 0, -1 with the error set */
-int ModVar_SetModAttr(const char *module, const char *name, PyObject *v);
-/* the same on native values (v NULL: delattr): 1 (with *out), 0 with the error */
+/* getattr(module, name) and setattr(module, name, v) of the imported module (v NULL: delattr): 1 (with *out), 0 with
+ * the error */
 byte ModVar_ModAttrVal(const char *module, const char *name, nativeVal_t *out);
 byte ModVar_SetModAttrVal(const char *module, const char *name, const nativeVal_t *v);
-/* OBJLIB 7e4b: getattr and setattr of any Python object (v NULL: delattr), the face of a module through the registry */
+/* OBJLIB 9: getattr of any Python object (a new reference, NULL with the error), the face of a module through the
+ * registry */
 PyObject *ModVar_ObjAttr(PyObject *o, const char *name);
-int ModVar_SetObjAttr(PyObject *o, const char *name, PyObject *v);
 /* OBJLIB 7e4b: the getattr and setattr of the module type go to the native module of a face (NObj_ToPy of a module) */
 void ModVar_FaceHook(void);
 
