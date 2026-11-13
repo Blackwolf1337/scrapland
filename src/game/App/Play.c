@@ -125,6 +125,10 @@ cEntity *Play_Entity(void) {
 	return play.e;
 }
 
+byte Play_DeathCamOn(void) {
+	return play.dead && !play.e;
+}
+
 /* ---- the entity and its camera ---- */
 
 /* the death camera: a camera of its own around the place of the death, no HUD, until the next own entity */

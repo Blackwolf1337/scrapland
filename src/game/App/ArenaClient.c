@@ -42,7 +42,7 @@ static struct {
 	byte have;
 	ArenaState st;
 	byte joined;					/* the join request went */
-	byte spect;						/* the own member is a spectator (the free camera is on) */
+	byte freeCam;					/* the free camera is on (Ac_SpectCam) */
 	byte showing;					/* the scores are up */
 	byte held;						/* the scores held with the Scorer key */
 	byte dirty;						/* the state changed since the HUD was set */
@@ -56,6 +56,9 @@ static struct {
 	int nzones;
 	byte zonesMade, flagMade;
 	char lastWay[64];
+	char deathTop[AC_MSG];			/* the text of the own death while it has no ship (Ffa.ShowPresFireMessage) */
+	double botStart;				/* SCRAP_ARENA_REQ: local time of the first state */
+	uint32_t botDone;
 } ac = { .yourPos = 1 };
 
 static double Ac_Now(void) {
@@ -79,7 +82,7 @@ static const char *Ac_Name(int k) {
 }
 
 void Arena_ClientReset(void) {
-	if (World_FindEntity(AC_CAM) && ac.spect) {
+	if (World_FindEntity(AC_CAM) && ac.freeCam) {
 		cEntity_Del(World_FindEntity(AC_CAM));
 	}
 	memset(&ac, 0, sizeof(ac));
@@ -182,10 +185,13 @@ static void Ac_Join(void) {
 	if (env && *env) {
 		team = *env == 'g' ? ARENA_TEAM_GREEN : ARENA_TEAM_RED;
 	}
-	int size = Arena_WriteJoin(buf, sizeof(buf), GVar_GetStr("PlayerName"), team, ship);
+	/* the name of the garage (a coordinator's world names the player by its ticket); tests: SCRAP_PLAYER_NAME */
+	const char *name = getenv("SCRAP_PLAYER_NAME");
+	name = name && *name ? name : GVar_GetStr("PlayerName");
+	int size = Arena_WriteJoin(buf, sizeof(buf), name, team, ship);
 	if (size > 0 && Watch_SendReliable(buf, size)) {
 		ac.joined = 1;
-		Con_Printf("arena: join as %s, team %d\n", GVar_GetStr("PlayerName"), team);
+		Con_Printf("arena: join as %s, team %d\n", name, team);
 	}
 }
 
@@ -487,10 +493,10 @@ static void Ac_Places(void) {
 
 /* the free camera of a spectator from the first spawn point (Ffa.CameraSpectator) */
 static void Ac_SpectCam(byte on) {
-	if (on == ac.spect) {
+	if (on == ac.freeCam) {
 		return;
 	}
-	ac.spect = on;
+	ac.freeCam = on;
 	if (!on) {
 		cEntity *c = World_FindEntity(AC_CAM);
 		if (c) {
@@ -532,6 +538,9 @@ static void Ac_Hud(void) {
 		Str_Copy(bottom, "Spectator mode", sizeof(bottom));
 	} else if (!own && ac.lost > 0.0) {
 		Str_Copy(bottom, Script_Lang("Net_Bott_Press_Fire"), sizeof(bottom));
+		if (ac.deathTop[0]) {
+			Str_Copy(top, ac.deathTop, sizeof(top));
+		}
 	}
 	if (want && (ac.dirty || !ac.showing)) {
 		Ac_ShowScores(top, bottom);
@@ -563,6 +572,7 @@ static void Ac_Event(int ev, int a, int b, int num) {
 			} else {
 				Str_Copy(text, Script_Lang("Net_Title_Death_Suicide"), sizeof(text));
 			}
+			Str_Copy(ac.deathTop, text, sizeof(ac.deathTop));
 			Ac_ShowScores(text, Script_Lang("Net_Bott_Press_Fire"));
 			Con_Printf("arena: %s\n", text);
 		} else if (a == you && you >= 0 && b >= 0) {
@@ -641,6 +651,7 @@ static void Ac_Event(int ev, int a, int b, int num) {
 		Con_Printf("arena: round %d\n", num);
 		if (!g_HeadlessPlay) {
 			static const int dark[4] = { 0, 0, 0, 128 }, clear[4] = { 0, 0, 0, 0 };
+			Mode_GVarSetN("NoiseFactor", 0);
 			Mode_Fade(0, dark, clear, 0.5);
 		}
 		break;
@@ -737,6 +748,37 @@ static void Ac_Keys(byte own, byte spect) {
 	memcpy(ac.keys, keys, sizeof(keys));
 }
 
+/* tests: SCRAP_ARENA_REQ=<s>:spect|red|green|fire,... sends each request once, that many seconds after the first
+ * state */
+static void Ac_Bot(void) {
+	const char *env = getenv("SCRAP_ARENA_REQ");
+	char list[256];
+	uint32_t k = 0;
+	if (!env || !*env) {
+		return;
+	}
+	double now = Ac_Now();
+	if (ac.botStart == 0.0) {
+		ac.botStart = now;
+	}
+	Str_Copy(list, env, sizeof(list));
+	for (char *tok = strtok(list, ","); tok && k < 32; tok = strtok(NULL, ","), k++) {
+		char *c = strchr(tok, ':');
+		if (!c || (ac.botDone >> k & 1) || now - ac.botStart < crt_atof(tok)) {
+			continue;
+		}
+		ac.botDone |= 1u << k;
+		c++;
+		if (!strcmp(c, "spect")) {
+			Ac_Request(ARENA_RQ_SPECT, 0);
+		} else if (!strcmp(c, "red") || !strcmp(c, "green")) {
+			Ac_Request(ARENA_RQ_TEAM, *c == 'r' ? ARENA_TEAM_RED : ARENA_TEAM_GREEN);
+		} else if (!strcmp(c, "fire")) {
+			Ac_Request(ARENA_RQ_RESPAWN, 0);
+		}
+	}
+}
+
 void Arena_ClientFrame(void) {
 	if (!g_Play || !ac.have || !Watch_ClockReady()) {
 		return;
@@ -750,11 +792,15 @@ void Arena_ClientFrame(void) {
 	double now = Ac_Now();
 	if (own) {
 		ac.lost = 0.0;
+		ac.deathTop[0] = 0;
 	} else if (ac.lost == 0.0) {
 		ac.lost = now;
 	}
 	Ac_Keys(own, spect);
-	Ac_SpectCam(spect && !own);
+	Ac_Bot();
+	/* the free camera while there is no own ship and no death camera: a spectator, a player before its first ship
+	 * or at the end of a round */
+	Ac_SpectCam(!own && !Play_DeathCamOn());
 	if (ac.rejoinUntil > 0.0 && now - ac.lastCount >= 1.0) {
 		/* Ffa.RejoinMsg: the count down of a team change */
 		char text[AC_MSG];
