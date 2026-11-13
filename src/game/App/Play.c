@@ -42,7 +42,8 @@
 #define PLAY_BOT_WALK 4					/* the bot walks around and stays on foot (collisions of characters) */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 
-/* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0, =players, else all) */
+/* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0; the players, the default; =all: the
+ * characters near it too, which made the error of characters in a crowd larger: p95 5.6 to 9.0 with 32 bots) */
 enum { PLAY_AHEAD_NONE, PLAY_AHEAD_PLAYERS, PLAY_AHEAD_ALL };
 
 byte g_Play;
@@ -339,8 +340,8 @@ void Play_Start(void) {
 	play.bot = !bot || !*bot || *bot == '0' ? 0 : !crt_stricmp(bot, "npc") ? PLAY_BOT_NPC :
 		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : !crt_stricmp(bot, "walk") ? PLAY_BOT_WALK : 1;
 	const char *ahead = getenv("SCRAP_PLAYAHEAD");
-	play.ahead = !ahead || !*ahead ? PLAY_AHEAD_ALL : *ahead == '0' ? PLAY_AHEAD_NONE : *ahead == 'p' ?
-		PLAY_AHEAD_PLAYERS : PLAY_AHEAD_ALL;
+	play.ahead = !ahead || !*ahead ? PLAY_AHEAD_PLAYERS : *ahead == '0' ? PLAY_AHEAD_NONE : *ahead == 'a' ?
+		PLAY_AHEAD_ALL : PLAY_AHEAD_PLAYERS;
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
 	play.botCycle = cycle && *cycle && *cycle != '0';
 	const char *cm = getenv("SCRAP_PLAYBOT_CM");

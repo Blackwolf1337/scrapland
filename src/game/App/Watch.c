@@ -476,7 +476,7 @@ void Watch_ProxiesAt(double t, byte players) {
 			continue;
 		}
 		/* the ships of no player stay: the traffic follows its rails, its path ahead is a worse guess than where it
-		 * is drawn (A/B in the M4b handback) */
+		 * is drawn (A/B in the M4b handback); the other characters only on request (players 0) */
 		byte player = (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) != 0;
 		if ((players || p->kind == NETREP_SHIP) && !player) {
 			continue;
