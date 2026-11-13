@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/arena.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -521,8 +522,8 @@ static void Play_Bot(double now) {
 		play.acc.move[0] = Veh(e)->speed > 300.0f ? -1.0f : 0.0f;
 		return;
 	}
-	/* after a while in the ship: slow down and get out (not while it tries all weapons) */
-	if (t > 45.0 && !play.botCycle) {
+	/* after a while in the ship: slow down and get out (not while it tries all weapons, nor in the PvP modes) */
+	if (t > 45.0 && !play.botCycle && !Arena_ClientOn()) {
 		play.acc.move[0] = Veh(e)->speed > 500.0f ? -1.0f : 0.0f;
 		if (Veh(e)->speed < PLAY_LEAVE_SPEED * 0.8f && fmod(t, 2.0) < 0.2) {
 			play.acc.buttons = NETREP_IN_SWITCH;
@@ -537,6 +538,21 @@ static void Play_Bot(double now) {
 		(best->pos.y - e->pos.y) + (best->pos.z - e->pos.z) * (best->pos.z - e->pos.z) : 0.0f;
 	play.acc.move[0] = 0.6f;
 	play.acc.move[2] = t < 6.0 ? 0.5f : 0.0f;
+	/* the PvP modes: to the flag, the mail bag or its zone (include/scrap/arena.h); fire at a player ahead */
+	float goal[3];
+	if (Arena_BotGoal(goal)) {
+		float gx = goal[0] - e->pos.x, gy = goal[1] + 600.0f - e->pos.y, gz = goal[2] - e->pos.z;
+		float gyaw = remainderf(atan2f(-gx, -gz) - Obj(e)->ang.y, M_2PI_F);
+		play.acc.rot[0] = gyaw > 0.6f ? 1.0f : gyaw < -0.6f ? -1.0f : gyaw / 0.6f;
+		play.acc.move[2] = gy > 500.0f ? 0.8f : gy < -500.0f ? -0.8f : gy / 625.0f;
+		play.acc.move[0] = fabsf(gyaw) < 0.5f ? 1.0f : 0.3f;
+		if (best) {
+			float byaw = remainderf(atan2f(-(best->pos.x - e->pos.x), -(best->pos.z - e->pos.z)) - Obj(e)->ang.y, M_2PI_F);
+			play.acc.buttons = fabsf(byaw) < 0.15f && bestD < 8000.0f * 8000.0f ? NETREP_IN_ACT : 0;
+		}
+		play.acc.weapon = (uint8_t)Play_BotWeapon();
+		return;
+	}
 	if (!best) {
 		play.acc.rot[0] = 0.4f;
 		return;
@@ -597,6 +613,7 @@ void Play_PostFrame(float dt) {
 		NetPl_Accumulate(play.e, &play.acc, dt);
 	}
 	Faction_ClientFrame();
+	Arena_ClientFrame();
 }
 
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs) {

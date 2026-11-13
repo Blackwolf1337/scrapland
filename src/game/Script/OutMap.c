@@ -9,6 +9,7 @@
  * N_NumTraffic, M_NumTraffic, H_NumTraffic and Path (the map scripts set them before LoadFakeTraffic and FakeTraffic).
  * Both modules are native C (docs/objlib-plan.md, stage 2, see their sections).
  */
+#include "scrap/arena.h"
 #include "scrap/scrap.h"
 #include "scrap/game.h"
 #include "scrap/script.h"
@@ -376,8 +377,9 @@ static byte Om_InitOutMap(void) {
 	if (Native_True(f)) {
 		return Mode_Done(&t, OM_START(Ffa, InitClient));
 	}
-	/* a watcher (include/scrap/replicate.h): the instance has the players, traffic and police */
-	if (g_Watch) {
+	/* a watcher (include/scrap/replicate.h): the instance has the players, traffic and police; an instance of the PvP
+	 * modes (include/scrap/arena.h) has the players and bots of the mode, as the original's server had */
+	if (g_Watch || Arena_On()) {
 		return Mode_Done(&t, 1);
 	}
 	int c = OM_START(Accelerator, Init) && Native_GVarGet("SplitScreen", split) ? Mode_CmpI(split, "!=", 0) : -1;

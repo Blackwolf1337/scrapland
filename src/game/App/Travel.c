@@ -541,14 +541,8 @@ void Travel_Left(int player) {
 	p->used = 0;
 }
 
-byte Travel_Request(const char *rider, const char *level, const char *entrance, const char *door) {
-	cEntity *e = World_FindEntity(rider);
-	int i = e ? Players_Of(e) : -1;
-	if (i < 0 || !tr.pl[i].used) {
-		Con_Printf("instance: level change of %s to %s refused (the coordinator owns the level changes)\n", rider,
-			level);
-		return 0;
-	}
+/* player i to level (a folder of Levels or a name) through the coordinator: 1 when it goes or went */
+static byte Tr_Go(int i, const char *level, const char *entrance, const char *door) {
 	TrPlayer *p = &tr.pl[i];
 	if (p->traveled) {
 		return 1;
@@ -564,6 +558,27 @@ byte Travel_Request(const char *rider, const char *level, const char *entrance, 
 	p->traveled = 1;
 	p->travelAt = tr.now;
 	return 1;
+}
+
+byte Travel_Request(const char *rider, const char *level, const char *entrance, const char *door) {
+	cEntity *e = World_FindEntity(rider);
+	int i = e ? Players_Of(e) : -1;
+	if (i < 0 || !tr.pl[i].used) {
+		Con_Printf("instance: level change of %s to %s refused (the coordinator owns the level changes)\n", rider,
+			level);
+		return 0;
+	}
+	return Tr_Go(i, level, entrance, door);
+}
+
+byte Travel_Name(int player, char *out, int cap) {
+	out[0] = 0;
+	return player >= 0 && player < PLAYERS_MAX && tr.pl[player].used &&
+		CoordKv_Get(tr.pl[player].state, tr.pl[player].len, "name", out, cap) && out[0];
+}
+
+byte Travel_Send(int player, const char *level) {
+	return player >= 0 && player < PLAYERS_MAX && tr.pl[player].used && tr.up && Tr_Go(player, level, "", "");
 }
 
 /* ---- the metro ---- */

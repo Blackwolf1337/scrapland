@@ -50,6 +50,9 @@ void Rep_Close(void);
 int Rep_PlayerConn(int i);
 int Rep_ConnPlayer(int conn);
 void Rep_Respawn(int i);
+/* player i's entity gone without a death (a ship of the PvP modes is deleted, include/scrap/arena.h): no new one
+ * before the mode or the respawn time gives it */
+void Rep_Remove(int i);
 /* player i's character again (its class of now, include/scrap/faction.h) where it stands, or at pos (out of its ship
  * then; a dead player comes back there: a revive); pos NULL and the player in a ship or dead: nothing */
 void Rep_Rebody(int i, const vec3_t *pos, float yaw);

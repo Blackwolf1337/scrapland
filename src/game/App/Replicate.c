@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "scrap/alarm.h"
+#include "scrap/arena.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -556,26 +557,34 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 
 	RepPlayer *pl = &rep.pl[i];
 	pl->spawnAt = -1;
-	if (pos) {
-		p = *pos;
-	} else if (Faction_SpawnPlace(i, &p, &yaw)) {
-		/* a member that died in its office level: its jail dummy */
-	} else if (!Rep_PickSpawn(&p, &yaw, &pl->spawnAt)) {
-		p = rep.spawn[0];
-		yaw = rep.spawnYaw[0];
-	}
 	Str_PrintfQuiet(name, sizeof(name), REP_PLAYER_PREFIX "%d_%u", i, ++pl->spawns);
-	cEntity *e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR);
-	if (!e) {
-		return NULL;
+	cEntity *e;
+	if (Arena_On()) {
+		/* the PvP modes: its garage ship at a free spawn point of the ships */
+		if ((e = Arena_MakeShip(i, name)) == NULL) {
+			return NULL;
+		}
+		p = e->pos;
+	} else {
+		if (pos) {
+			p = *pos;
+		} else if (Faction_SpawnPlace(i, &p, &yaw)) {
+			/* a member that died in its office level: its jail dummy */
+		} else if (!Rep_PickSpawn(&p, &yaw, &pl->spawnAt)) {
+			p = rep.spawn[0];
+			yaw = rep.spawnYaw[0];
+		}
+		if ((e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR)) == NULL) {
+			return NULL;
+		}
+		WithLife_SetActCtrl(e, Faction_CharClass(i));
+		Rep_SetVarS(e, "TgType", "Green");
+		/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
+		Rep_SetVarS(e, "OnDeath", "");
+		ang = (vec3_t){ 0.0f, yaw, 0.0f };
+		Obj_SetAng(e, &ang);
 	}
-	WithLife_SetActCtrl(e, Faction_CharClass(i));
 	Rep_SetSlot(e, PLAYERS_NET_SLOT + i);
-	Rep_SetVarS(e, "TgType", "Green");
-	/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
-	Rep_SetVarS(e, "OnDeath", "");
-	ang = (vec3_t){ 0.0f, yaw, 0.0f };
-	Obj_SetAng(e, &ang);
 	Obj(e)->netStep = 1;
 	Rep_DropCorpse(pl);
 	Rep_SetOwn(pl, e);
@@ -828,7 +837,9 @@ static void Rep_DropOwn(int i) {
 	Obj(e)->netStep = 0;
 	if (NetPl_Kind(e) == NETREP_SHIP) {
 		Rep_SetSlot(e, -1);
-		if (WLife(e)->life > 0 && Rep_NearFloor(e)) {
+		if (WLife(e)->life > 0 && Arena_On()) {
+			cEntity_Del(e);
+		} else if (WLife(e)->life > 0 && Rep_NearFloor(e)) {
 			PORT_CALL(Parking, SetShipAsParked, NULL, "s", e->name);
 			Native_ErrPrint();
 		}
@@ -856,6 +867,7 @@ static void Rep_Death(int i, cEntity *e) {
 	Players_Bind(i);
 	Alarm_Set(&g_pWorld->alarm, 0.0f);
 	Faction_Died(i);
+	Arena_Died(i, e);
 	if (sand.rebuild && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) == i) {
 		pl->rebuild = Rep_ShipPrice(e);
 	}
@@ -903,7 +915,11 @@ static int Rep_Join(int conn) {
 			return -1;
 		}
 		Players_Join(i, sp.money);
-		if (!Rep_SpawnChar(i, sp.have ? &sp.pos : NULL, sp.yaw)) {
+		if (Arena_On()) {
+			/* the PvP modes: no ship before its join and its first spawn (Arena_SpawnDue) */
+			pl->lost = rep.tick ? rep.tick : 1;
+			Arena_Joined(i);
+		} else if (!Rep_SpawnChar(i, sp.have ? &sp.pos : NULL, sp.yaw)) {
 			Players_Part(i);
 			Travel_Left(i);
 			return -1;
@@ -923,6 +939,7 @@ static void Rep_Leave(int i) {
 		pl->in.late, pl->in.missed, pl->shots, pl->hits);
 	Travel_Left(i);
 	Faction_Left(i);
+	Arena_Left(i);
 	Rep_DropOwn(i);
 	Rep_DropCorpse(pl);
 	/* its called ships stay in the world, owned by no one */
@@ -968,6 +985,18 @@ void Rep_Respawn(int i) {
 	pl->told = -2;
 }
 
+void Rep_Remove(int i) {
+	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? &rep.pl[i] : NULL;
+	if (!pl) {
+		return;
+	}
+	Rep_DropOwn(i);
+	pl->lost = rep.tick ? rep.tick : 1;
+	pl->dead = 0;
+	NetRepInBuf_Restart(&pl->in);
+	pl->told = -2;
+}
+
 void Rep_Rebody(int i, const vec3_t *pos, float yaw) {
 	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? &rep.pl[i] : NULL;
 	cEntity *e = pl ? Rep_Own(pl) : NULL;
@@ -1006,7 +1035,8 @@ void Rep_PreFrame(uint64_t tick) {
 			if (!pl->lost) {
 				pl->lost = tick;
 			}
-			if (tick - pl->lost >= (uint64_t)sand.respawnTicks + Faction_DownedTicks(i)) {
+			if (Arena_On() ? Arena_SpawnDue(i, tick - pl->lost) :
+				tick - pl->lost >= (uint64_t)sand.respawnTicks + Faction_DownedTicks(i)) {
 				Rep_DropOwn(i);
 				Rep_SpawnChar(i, NULL, 0.0f);
 				NetRepInBuf_Restart(&pl->in);
@@ -1029,7 +1059,7 @@ void Rep_PreFrame(uint64_t tick) {
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Faction_Input(i, e, &in);
-		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Rep_UsesDoor(e)) {
+		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Rep_UsesDoor(e) && !Arena_On()) {
 			pl->buttons = in.buttons;
 			Rep_Switch(i, e);
 			continue;
@@ -1311,7 +1341,7 @@ static void Rep_Hello(Net2Host *host, int conn, uint32_t rate, int flags) {
 		view[1] = p->pos.y;
 		view[2] = p->pos.z;
 	}
-	NetRepSrv_SetView(rep.conn[conn].c, view[0], view[1], view[2], 0.0f);
+	NetRepSrv_SetView(rep.conn[conn].c, view[0], view[1], view[2], Arena_On() ? ARENA_INTEREST : 0.0f);
 	int n = NetRep_WriteWelcome(buf, sizeof(buf), (uint32_t)(Instance_Time() * INSTANCE_TICK_HZ + 0.5), view,
 		g_pApp->levelPath ? g_pApp->levelPath : "");
 	if (n > 0) {

@@ -79,6 +79,11 @@ void Travel_Left(int player);
 /* the level change of the rider (an entity name) to level (a folder of Levels) with the spawn dummy and the door
  * class the original would use: 1 when it was a player's (handed to the coordinator) */
 byte Travel_Request(const char *rider, const char *level, const char *entrance, const char *door);
+/* the name of the player its ticket gave (a coordinator's world): 1 with one */
+byte Travel_Name(int player, char *out, int cap);
+/* player (with or without an entity) to the players' spawn of level through the coordinator (the next level of the
+ * PvP modes, include/scrap/arena.h): 1 when it goes */
+byte Travel_Send(int player, const char *level);
 /* the use of a metro door by an entity: 1 when it was a player's (its client gets the station map) */
 byte Travel_MetroUse(const char *usr, const char *door);
 /* the player took ship: its owned ship */
