@@ -35,6 +35,7 @@ typedef struct nativeFn_s {
 	void *ctx;
 	void (*drop)(void *ctx);
 	nativeVal_t self;		/* its __self__ (None: a function of the C table) */
+	const char *doc;		/* its __doc__ (NULL: None) */
 	PyMethodDef def;		/* OBJLIB 9: the method definition of its C function object */
 	char name[];
 } nativeFn_t;
@@ -661,6 +662,26 @@ void NObj_SetCallback(const nativeVal_t *f, const nativeVal_t *self, nativeCallK
 	Native_Free(&fn->self);
 	Native_Copy(&fn->self, self);
 	fn->callkw = callkw;
+}
+
+void NObj_SetCallbackDoc(const nativeVal_t *f, const char *doc) {
+	f->ref->cb->doc = doc;
+}
+
+int NObj_Refs(const nativeVal_t *v) {
+	return v->type == NV_REF ? v->ref->refs : 0;
+}
+
+uintptr_t NObj_Addr(const nativeVal_t *v) {
+	return v->type == NV_REF ? Obj_Addr(v->ref) : 0;
+}
+
+const nativeCType_t *NObj_CType(const nativeVal_t *v) {
+	return v->type == NV_REF && v->ref->kind == NO_COBJ ? v->ref->ctype : NULL;
+}
+
+void *NObj_CObjOf(const nativeVal_t *v, const nativeCType_t *type) {
+	return v->type == NV_REF && v->ref->kind == NO_COBJ && v->ref->ctype == type ? v->ref->ctx : NULL;
 }
 
 /* the type objects made, one per name, kept for good (chained by next) */
@@ -1689,9 +1710,9 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 			Obj_Addf(b, "<built-in method %.80s of %.80s object at %lx>", o->name, Native_TypeName(&o->data),
 				(long)Native_EntAddr(&o->data));
 		} else if (o->func == NF_CALLBACK && o->cb->self.type != NV_NONE) {
-			/* meth_repr with a self: the address of the callback for the self's (a value by value has none) */
+			/* meth_repr with a self: the address of the self (a value by value has none: the callback's) */
 			Obj_Addf(b, "<built-in method %.80s of %.80s object at %lx>", o->name, Native_TypeName(&o->cb->self),
-				(long)(uintptr_t)o->cb);
+				o->cb->self.type == NV_REF ? (long)Obj_Addr(o->cb->self.ref) : (long)(uintptr_t)o->cb);
 		} else {
 			Obj_Addf(b, "<built-in function %.80s>", o->name);
 		}
@@ -1700,6 +1721,9 @@ byte NObj_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 		Obj_Addf(b, "<type '%.80s'>", o->name);
 		return 1;
 	case NO_COBJ:
+		if (o->ctype->repr) {
+			return o->ctype->repr(o->ctx, Obj_Addr(o), b, mode);
+		}
 		/* the repr of a type without repr and str */
 		Obj_Addf(b, "<%.80s object at %lx>", o->ctype->name, (long)Obj_Addr(o));
 		return 1;
@@ -1778,6 +1802,10 @@ byte NObj_True(const nativeVal_t *v) {
 		Native_ErrClear();
 		return t > 0;
 	}
+	if (o->kind == NO_COBJ) {
+		/* nb_nonzero, else sq_length */
+		return o->ctype->truth ? o->ctype->truth(o->ctx) : o->ctype->len ? o->ctype->len(o->ctx) != 0 : 1;
+	}
 	/* a list or dict by its length; an instance is true (no __nonzero__ and __len__ of native instances) */
 	return o->kind == NO_LIST || o->kind == NO_DICT ? o->data.n != 0 : 1;
 }
@@ -1836,6 +1864,13 @@ int NObj_Compare(const nativeVal_t *a, const nativeVal_t *b) {
 	int c;
 	if (a->type == NV_REF && b->type == NV_REF && a->ref == b->ref) {
 		return 0;
+	}
+	/* an object of a type with its own compare (the library's: complex with the numbers, xrange, buffer) */
+	for (int k = 0; k < 2; k++) {
+		const nativeVal_t *x = k ? b : a;
+		if (NObj_Kind(x) == NO_COBJ && x->ref->ctype->compare) {
+			return Obj_Sign(x->ref->ctype->compare(a, b));
+		}
 	}
 	/* two Python objects, each a view or an NV_OBJ (the same object can come as either), as Python compares them */
 	PyObject *pa = a->type == NV_REF ? Obj_View(a->ref) : a->type == NV_OBJ ? a->obj : NULL;
@@ -1945,6 +1980,20 @@ byte NObj_HashQuiet(const nativeVal_t *v, long *out) {
 		/* the address of its module or type object, as Python hashes it */
 		x = (long)Obj_Addr(o);
 		break;
+	case NO_COBJ:
+		if (o->ctype->hash) {
+			if (!o->ctype->hash(o->ctx, &x)) {
+				Native_ErrClear();
+				return 0;
+			}
+			break;
+		}
+		if (o->ctype->compare) {
+			/* PyObject_Hash of a type with a compare and no hash */
+			return 0;
+		}
+		x = (long)Obj_Addr(o);
+		break;
 	default:
 		x = (long)(intptr_t)o;
 	}
@@ -1958,6 +2007,10 @@ byte NObj_Hash(const nativeVal_t *v, long *out) {
 		*out = PyObject_Hash(py);
 		Py_DECREF(py);
 		return *out != -1;
+	}
+	if (NObj_Kind(v) == NO_COBJ && v->ref->ctype->hash) {
+		/* the error of the type's hash */
+		return v->ref->ctype->hash(v->ref->ctx, out);
 	}
 	if (Native_Hash(v, out)) {
 		return 1;
@@ -2463,6 +2516,38 @@ static byte Obj_FindMethod(nativeObj_t *o, const char *name, nativeVal_t *out) {
 
 /* ---- attributes ---- */
 
+/* getattr of a C object: Py_FindMethod on the methods of its type (the names sorted for __methods__), then the getattr
+ * of the type */
+static byte Obj_CGetAttr(const nativeVal_t *v, const char *name, nativeVal_t *out) {
+	const nativeObj_t *o = v->ref;
+	const nativeCMethod_t *m = o->ctype->methods;
+	if (m && !strcmp(name, "__methods__")) {
+		nativeVal_t r;
+		Native_SetEmpty(out, NV_LIST);
+		for (; m->name; m++) {
+			Native_SetStr(Native_Append(out), m->name);
+		}
+		NObj_Share(out);
+		NObj_CallMethod(out, "sort", NULL, 0, &r);
+		Native_Free(&r);
+		return 1;
+	}
+	for (; m && m->name; m++) {
+		if (!strcmp(m->name, name)) {
+			NObj_NewCallback(out, m->name, m->fn, o->ctx, NULL, 0);
+			NObj_SetCallback(out, v, NULL);
+			return 1;
+		}
+	}
+	if (o->ctype->getattr) {
+		return o->ctype->getattr(o->ctx, name, out);
+	}
+	if (o->ctype->methods) {
+		return Native_Raise(NE_ATTRIBUTE, "%s", name);
+	}
+	return Native_Raise(NE_ATTRIBUTE, "'%.50s' object has no attribute '%.400s'", o->ctype->name, name);
+}
+
 /* getattr of a Python object (a pack module through the registry of the module variables, as the channel reads it) */
 static byte Obj_PyGetAttr(PyObject *py, const char *name, nativeVal_t *out) {
 	PyObject *r = PyObject_GetAttrString(py, (char *)name);
@@ -2540,6 +2625,8 @@ byte NObj_GetAttr(const nativeVal_t *v, const char *name, nativeVal_t *out) {
 				Native_SetText(out, obj_methods[o->method].doc, (int)strlen(obj_methods[o->method].doc));
 			} else if (o->func == NF_PORT && o->ref->doc) {
 				Native_SetText(out, o->ref->doc, (int)strlen(o->ref->doc));
+			} else if (o->func == NF_CALLBACK && o->cb->doc) {
+				Native_SetText(out, o->cb->doc, (int)strlen(o->cb->doc));
 			}
 			return 1;
 		}
@@ -2587,7 +2674,7 @@ byte NObj_GetAttr(const nativeVal_t *v, const char *name, nativeVal_t *out) {
 		break;
 	}
 	case NO_COBJ:
-		return o->ctype->getattr(o->ctx, name, out);
+		return Obj_CGetAttr(v, name, out);
 	case NO_TYPE:
 		/* type_getattr */
 		if (!strcmp(name, "__name__")) {
@@ -2629,7 +2716,13 @@ static byte Obj_SetAttr(const nativeVal_t *t, const char *name, const nativeVal_
 		return ModVar_SetAttrVal(&mv, name, v);
 	}
 	if (Obj_IsKind(t, NO_COBJ)) {
-		return t->ref->ctype->setattr(t->ref->ctx, name, v);
+		const nativeCType_t *ct = t->ref->ctype;
+		if (!ct->setattr) {
+			/* PyObject_SetAttr of a type without tp_setattr */
+			return Native_Raise(NE_TYPE, ct->getattr || ct->methods ? "object has read-only attributes" :
+				"attribute-less object (assign or del)");
+		}
+		return ct->setattr(t->ref->ctx, name, v);
 	}
 	if (t->type == NV_ENT) {
 		/* the attribute set of the handle (a script variable of the entity, the value as the handle's set takes it; a
@@ -2768,6 +2861,8 @@ int NObj_Len(const nativeVal_t *v) {
 	}
 	if (v->ref->kind == NO_INSTANCE) {
 		Obj_NoSpecial("__len__");
+	} else if (v->ref->kind == NO_COBJ && v->ref->ctype->len) {
+		return v->ref->ctype->len(v->ref->ctx);
 	} else {
 		Native_Raise(NE_TYPE, "len() of unsized object");
 	}
@@ -2789,6 +2884,21 @@ byte NObj_GetItem(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out
 	}
 	if (v->ref->kind == NO_LIST || v->ref->kind == NO_DICT) {
 		return Native_Subscript(&v->ref->data, key, out);
+	}
+	if (v->ref->kind == NO_COBJ && v->ref->ctype->item) {
+		/* PyObject_GetItem of a sequence: an int index, the length added to a negative one */
+		long i = key->type == NV_INT ? key->i : 0;
+		if (key->type != NV_INT) {
+			return Native_Raise(NE_TYPE, "sequence index must be integer");
+		}
+		if (i < 0 && v->ref->ctype->len) {
+			int n = v->ref->ctype->len(v->ref->ctx);
+			if (n < 0) {
+				return 0;
+			}
+			i += n;
+		}
+		return v->ref->ctype->item(v->ref->ctx, i, out);
 	}
 	return v->ref->kind == NO_INSTANCE ? Obj_NoSpecial("__getitem__") : Native_Raise(NE_TYPE, "unsubscriptable object");
 }
@@ -2885,6 +2995,18 @@ byte NObj_GetSlice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {
 	if (v->ref->kind == NO_LIST) {
 		return Native_Slice(&v->ref->data, lo, hi, out);
 	}
+	if (v->ref->kind == NO_COBJ && v->ref->ctype->slice) {
+		/* PySequence_GetSlice: the length added once to a negative bound */
+		if ((lo < 0 || hi < 0) && v->ref->ctype->len) {
+			int n = v->ref->ctype->len(v->ref->ctx);
+			if (n < 0) {
+				return 0;
+			}
+			lo += lo < 0 ? n : 0;
+			hi += hi < 0 ? n : 0;
+		}
+		return v->ref->ctype->slice(v->ref->ctx, lo, hi, out);
+	}
 	return v->ref->kind == NO_INSTANCE ? Obj_NoSpecial("__getslice__") : Native_Raise(NE_TYPE, "unsliceable object");
 }
 
@@ -2971,6 +3093,24 @@ int NObj_Contains(const nativeVal_t *seq, const nativeVal_t *x) {
 	}
 	if (seq->ref->kind == NO_LIST) {
 		return Native_Contains(&seq->ref->data, x);
+	}
+	if (seq->ref->kind == NO_COBJ && seq->ref->ctype->item) {
+		/* cmp_member: the items until the IndexError */
+		for (long i = 0;; i++) {
+			nativeVal_t item;
+			if (!seq->ref->ctype->item(seq->ref->ctx, i, &item)) {
+				if (!Native_ErrIs(NE_INDEX)) {
+					return -1;
+				}
+				Native_ErrClear();
+				return 0;
+			}
+			int c = Native_Compare(x, &item);
+			Native_Free(&item);
+			if (c == 0) {
+				return 1;
+			}
+		}
 	}
 	if (seq->ref->kind == NO_INSTANCE) {
 		Obj_NoSpecial("__getitem__");

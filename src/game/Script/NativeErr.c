@@ -16,6 +16,7 @@
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
 #include "scrap/script.h"
+#include "scrap/scriptlib.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
@@ -420,6 +421,16 @@ static PyObject **const ne_py[NE_KINDS] = {
 	[NE_LOOKUP] = &PyExc_LookupError,
 	[NE_ENVIRONMENT] = &PyExc_EnvironmentError,
 };
+
+void Native_ErrObject(const char *name, nativeVal_t *out) {
+	for (int k = 0; k < NE_OTHER; k++) {
+		if (!strcmp(ne_names[k], name)) {
+			NObj_FromPyKept(*ne_py[k], out);
+			return;
+		}
+	}
+	Native_SetNone(out);
+}
 
 /* the kind whose exception object o is (string exceptions match by identity), NE_OTHER for any other */
 static nativeError_t NErr_KindOfPy(PyObject *o) {

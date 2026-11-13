@@ -857,7 +857,8 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out);
  * PyFloat_AsDouble), "f" into a float * (the same, cut to a float), "s" into a const char ** (the text of an NV_STR
  * without 0 bytes), "S" into a const nativeVal_t ** (an NV_STR of any bytes), "O" into a const nativeVal_t ** (the
  * argument itself), "|" before the optional ones (their outputs keep what they hold), "(...)" a sequence of that many
- * items ("i", "l", "d" and "f" items only). 1, or 0 with the error
+ * items ("i", "l", "d" and "f" items only), ":name" at the end the name of the function in the errors, ";message" the
+ * text of every error instead. 1, or 0 with the error
  */
 byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...);
 /* the conversion errors of fmt on the n slots of a keyword call (Mode_KwSkip: a slot not given, its item skipped), in

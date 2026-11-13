@@ -234,8 +234,7 @@ byte Native_LiteralNone(const char *s, const nativeVal_t *none, nativeVal_t *out
  * The operators and built-in conversions of Python 1.5.2 on native values, with the errors of Objects/ (the TypeError
  * of a type that does not take the operation, OverflowError, ZeroDivisionError, IndexError, KeyError). Each returns
  * 1 with *out made (Native_Free it), else 0 with the error raised. A vector is a tuple of three floats in all of
- * them. Long ints compare, convert, format, add and subtract, but do not multiply or divide (a TypeError of its own:
- * no script makes them).
+ * them. Long ints as longobject.c has them (scrap/scriptlib.h).
  */
 
 /* cmp(a, b) of 1.5.2 as -1, 0 or 1 (PyObject_Compare: numbers coerced, other types of one kind by their values,

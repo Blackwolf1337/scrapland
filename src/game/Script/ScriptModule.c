@@ -46,6 +46,7 @@
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/script.h"
+#include "scrap/scriptlib.h"
 #include "scrap/scriptnative.h"
 
 typedef struct {
@@ -731,12 +732,8 @@ static byte Mod_Atom(modParse_t *m, nativeVal_t *out) {
 
 /* the builtin eval with one string: the definitions read the save variables through it */
 static byte Mod_IsEval(const nativeVal_t *f, const nativeVal_t *args, const nativeVal_t *kw) {
-	if (!Native_IsObj(f) || NObj_Native(f) || kw->n || args->n != 1 || args->items[0].type != NV_STR) {
-		return 0;
-	}
-	PyObject *o = NObj_Py(f);
-	return o && PyCFunction_Check(o) && !strcmp(((PyCFunctionObject *)o)->m_ml->ml_name, "eval") &&
-		((PyCFunctionObject *)o)->m_self == NULL;
+	const libFn_t *row = Lib_FnOf(f);
+	return row && row == Lib_Builtin("eval") && !kw->n && args->n == 1 && args->items[0].type == NV_STR;
 }
 
 static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *out);

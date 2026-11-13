@@ -28,6 +28,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptlib.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/sound.h"
 #include "scrap/timer.h"
@@ -3858,6 +3859,15 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out) {
 	if (!Native_IsObj(v)) {
 		return Native_ArgInt(v, out);
 	}
+	if (NObj_Native(v)) {
+		/* a native object by its number methods (scrap/scriptlib.h) */
+		long x;
+		if (!Lib_AsLong(v, &x)) {
+			return 0;
+		}
+		*out = (int)x;
+		return 1;
+	}
 	/* "i" of getargs.c: PyInt_AsLong through the number methods of the object */
 	long l = PyInt_AsLong(Native_PyOf(v));
 	if (l == -1 && Native_Failed()) {
@@ -3870,6 +3880,9 @@ byte Mode_ArgInt(const nativeVal_t *v, int *out) {
 /* the number of v as "l" of PyArg reads it: PyInt_AsLong as Mode_ArgInt takes it, not cut to an int */
 static byte Mode_ArgLong(const nativeVal_t *v, long *out) {
 	int i;
+	if (NObj_Native(v)) {
+		return Lib_AsLong(v, out);
+	}
 	if (Native_IsObj(v)) {
 		*out = PyInt_AsLong(Native_PyOf(v));
 		return *out != -1 || !Native_Failed();
@@ -3887,6 +3900,9 @@ static byte Mode_ArgLong(const nativeVal_t *v, long *out) {
 static byte Mode_ArgDouble(const nativeVal_t *v, double *out) {
 	if (!Native_IsObj(v)) {
 		return Native_ArgDouble(v, out);
+	}
+	if (NObj_Native(v)) {
+		return Lib_AsDouble(v, out);
 	}
 	*out = PyFloat_AsDouble(Native_PyOf(v));
 	return !Native_Failed();
@@ -4041,27 +4057,40 @@ static const char *Mode_ParseItem(const nativeVal_t *v, const char **f, va_list 
 	return msg;
 }
 
-/* seterror of getargs.c for argument i: "argument <i>[, item <j>...]: expected <msg> found" (0; none when an error is
- * set already) */
-static byte Mode_ParseError(int i, const int *levels, const char *msg) {
+/* seterror of getargs.c for argument i: "[<fname>, ]argument <i>[, item <j>...]: expected <msg> found", or the message
+ * of the format (";<message>") (0; none when an error is set already) */
+static byte Mode_ParseErrorOf(int i, const int *levels, const char *msg, const char *fname, const char *message) {
 	if (Native_Failed()) {
 		return 0;
 	}
+	if (message) {
+		return Native_Raise(NE_TYPE, "%s", message);
+	}
 	char where[128];
-	int k = snprintf(where, sizeof(where), "argument %d", i);
+	int k = snprintf(where, sizeof(where), "%.50s%sargument %d", fname ? fname : "", fname ? ", " : "", i);
 	for (int l = 0; levels[l] > 0 && k < (int)sizeof(where); l++) {
 		k += snprintf(where + k, sizeof(where) - k, ", item %d", levels[l] - 1);
 	}
 	return Native_Raise(NE_TYPE, "%s: expected %s found", where, msg);
 }
 
+static byte Mode_ParseError(int i, const int *levels, const char *msg) {
+	return Mode_ParseErrorOf(i, levels, msg, NULL, NULL);
+}
+
 byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 	int min, max, levels[32];
 	char buf[256];
-	const char *f = fmt, *msg = NULL;
+	const char *f = fmt, *msg = NULL, *fname = NULL, *message = NULL, *end = fmt + strcspn(fmt, ":;");
 	va_list va;
+	if (*end) {
+		*end == ':' ? (fname = end + 1) : (message = end + 1);
+	}
 	Mode_FmtCount(fmt, &min, &max);
-	if (!Mode_Arity(n, min, max)) {
+	if (message && (n < min || n > max)) {
+		return Native_Raise(NE_TYPE, "%s", message);
+	}
+	if (!(fname ? Native_Arity(fname, n, min, max) : Mode_Arity(n, min, max))) {
 		return 0;
 	}
 	va_start(va, fmt);
@@ -4073,7 +4102,7 @@ byte Mode_Parse(const nativeVal_t *a, int n, const char *fmt, ...) {
 		msg = Mode_ParseItem(&a[i], &f, &va, levels, buf, sizeof(buf), 1);
 	}
 	va_end(va);
-	return !msg || Mode_ParseError(i, levels, msg);
+	return !msg || Mode_ParseErrorOf(i, levels, msg, fname, message);
 }
 
 /* item *f of a format on v with its outputs into the pointers after msg (scratch: only the conversion errors count) */
@@ -4210,318 +4239,6 @@ void Mode_KwDefF(nativeVal_t *v, const byte *given, int i, double f) {
 		Native_SetFloat(&v[i], f);
 	}
 }
-
-/* ---- string and math of the ports (stage 3, batch B1): native twins of the functions of strop and math that the
- * ports call (PORT_CALL(string, find, ...) on the refs below: no seam, OBJLIB 9; an NV_OBJ argument and
- * SCRAP_PORT_SLOW=1 call the module's function by name, include/scrap/scriptnative.h) ---- */
-
-#ifndef _WIN32
-/* src/standalone/crtposix.c: the libm of the Windows runtime, as the math module of Python sees it (pyshim.h) */
-double crt_ms_fmod(double x, double y);
-double crt_ms_sqrt(double x);
-#define LIB_FMOD crt_ms_fmod
-#define LIB_SQRT crt_ms_sqrt
-#else
-#define LIB_FMOD fmod
-#define LIB_SQRT sqrt
-#endif
-
-/* "t#" of getargs.c: the bytes of a text, 0 bytes too */
-static byte Lib_Text(const nativeVal_t *v, int arg, const char **s, int *len) {
-	if (v->type != NV_STR) {
-		return Native_Raise(NE_TYPE, "argument %d: expected read-only character buffer, %s found", arg, Native_TypeName(v));
-	}
-	*s = Native_Text(v);
-	*len = v->n;
-	return 1;
-}
-
-/* mymemfind of stropmodule.c: the first place of pat in the len bytes of mem, -1 when it is not there */
-static int Lib_MemFind(const char *mem, int len, const char *pat, int plen) {
-	len -= plen;
-	for (int i = 0; i <= len; i++) {
-		if (mem[i] == pat[0] && (plen == 1 || !memcmp(&mem[i + 1], &pat[1], (size_t)(plen - 1)))) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-/* find(s, sub[, start[, end]]): the first index of sub in s[start:end], -1 when it is not there */
-static byte Lib_Find(const nativeVal_t *a, int n, nativeVal_t *out) {
-	const char *s = NULL, *sub = NULL;
-	int len = 0, m = 0, i = 0, last = INT_MAX;
-	if (!Mode_Arity(n, 2, 4) || !Lib_Text(&a[0], 1, &s, &len) || !Lib_Text(&a[1], 2, &sub, &m) ||
-		(n > 2 && !Native_ArgInt(&a[2], &i)) || (n > 3 && !Native_ArgInt(&a[3], &last))) {
-		return 0;
-	}
-	if (last > len) {
-		last = len;
-	}
-	if (last < 0) {
-		last += len;
-	}
-	if (last < 0) {
-		last = 0;
-	}
-	if (i < 0) {
-		i += len;
-	}
-	if (i < 0) {
-		i = 0;
-	}
-	if (m == 0 && i <= last) {
-		Native_SetInt(out, i);
-		return 1;
-	}
-	last -= m;
-	for (; i <= last; i++) {
-		if (s[i] == sub[0] && (m == 1 || !memcmp(&s[i + 1], &sub[1], (size_t)(m - 1)))) {
-			Native_SetInt(out, i);
-			return 1;
-		}
-	}
-	Native_SetInt(out, -1);
-	return 1;
-}
-
-/* replace(str, old, new[, maxsplit]): mymemreplace of stropmodule.c (maxsplit 0 or below: all) */
-static byte Lib_Replace(const nativeVal_t *a, int n, nativeVal_t *out) {
-	const char *str = NULL, *pat = NULL, *sub = NULL;
-	int len = 0, plen = 0, slen = 0, count = 0;
-	if (!Mode_Arity(n, 3, 4) || !Lib_Text(&a[0], 1, &str, &len) || !Lib_Text(&a[1], 2, &pat, &plen) ||
-		!Lib_Text(&a[2], 3, &sub, &slen) || (n > 3 && !Native_ArgInt(&a[3], &count))) {
-		return 0;
-	}
-	if (plen <= 0) {
-		return Native_Raise(NE_VALUE, "empty pattern string");
-	}
-	/* mymemcnt: the number of places (none for an empty text or a longer pattern) */
-	int found = 0;
-	if (len && plen <= len) {
-		for (int rest = len, at = 0, off; rest >= 0 && (off = Lib_MemFind(str + at, rest, pat, plen)) != -1; found++) {
-			at += off + plen;
-			rest -= off + plen;
-		}
-	}
-	if (count > 0 && found > count) {
-		found = count;
-	}
-	if (!found) {
-		Native_SetText(out, str, len);
-		return 1;
-	}
-	nativeBuf_t b;
-	Native_BufInit(&b);
-	while (len > 0) {
-		int off = Lib_MemFind(str, len, pat, plen);
-		if (off == -1) {
-			break;
-		}
-		Native_BufAdd(&b, str, off);
-		Native_BufAdd(&b, sub, slen);
-		str += off + plen;
-		len -= off + plen;
-		if (--count == 0) {
-			break;
-		}
-	}
-	if (len > 0) {
-		Native_BufAdd(&b, str, len);
-	}
-	Native_SetText(out, b.p ? b.p : "", b.len);
-	Native_BufFree(&b);
-	return 1;
-}
-
-/* atoi(s[, base]): PyOS_strtol of Python (PyOS_strtoul for base 0 and a leading 0) on the text after its blanks */
-static byte Lib_Atoi(const nativeVal_t *a, int n, nativeVal_t *out) {
-	const char *s;
-	char *end;
-	int base = 10;
-	if (!Mode_Arity(n, 1, 2) || !Native_ArgStr(&a[0], 1, &s) || (n > 1 && !Native_ArgInt(&a[1], &base))) {
-		return 0;
-	}
-	if ((base != 0 && base < 2) || base > 36) {
-		return Native_Raise(NE_VALUE, "invalid base for atoi()");
-	}
-	while (*s && isspace((unsigned char)*s)) {
-		s++;
-	}
-	errno = 0;
-	long x = base == 0 && s[0] == '0' ? (long)PyOS_strtoul((char *)s, &end, base) : PyOS_strtol((char *)s, &end, base);
-	byte bad = end == s || !isalnum((unsigned char)end[-1]);
-	while (!bad && *end && isspace((unsigned char)*end)) {
-		end++;
-	}
-	if (bad || *end) {
-		return Native_Raise(NE_VALUE, "invalid literal for atoi(): %.200s", s);
-	}
-	if (errno) {
-		return Native_Raise(NE_VALUE, "atoi() literal too large: %.200s", s);
-	}
-	Native_SetInt(out, x);
-	return 1;
-}
-
-/* atof(s): strtod of the Windows runtime (crt_strtod) on the text after its blanks */
-static byte Lib_Atof(const nativeVal_t *a, int n, nativeVal_t *out) {
-	const char *s;
-	char *end;
-	if (!Mode_Arity(n, 1, 1) || !Native_ArgStr(&a[0], 1, &s)) {
-		return 0;
-	}
-	while (*s && isspace((unsigned char)*s)) {
-		s++;
-	}
-	if (!*s) {
-		return Native_Raise(NE_VALUE, "empty string for atof()");
-	}
-	errno = 0;
-	double x = crt_strtod(s, &end);
-	while (*end && isspace((unsigned char)*end)) {
-		end++;
-	}
-	if (*end) {
-		return Native_Raise(NE_VALUE, "invalid literal for atof(): %.200s", s);
-	}
-	if (errno) {
-		return Native_Raise(NE_VALUE, "atof() literal too large: %.200s", s);
-	}
-	Native_SetFloat(out, x);
-	return 1;
-}
-
-/* split(s[, sep[, maxsplit]]) and splitfields, the same function of strop ("t#|z#i") */
-static byte Lib_Split(const nativeVal_t *a, int n, nativeVal_t *out) {
-	const char *s = NULL, *sep = NULL;
-	int len = 0, m = 0, maxsplit = 0;
-	if (!Mode_Arity(n, 1, 3) || !Lib_Text(&a[0], 1, &s, &len)) {
-		return 0;
-	}
-	if (n > 1 && a[1].type != NV_NONE) {
-		if (a[1].type != NV_STR) {
-			return Native_Raise(NE_TYPE, "argument 2: expected read-only buffer, %s found", Native_TypeName(&a[1]));
-		}
-		sep = Native_Text(&a[1]);
-		m = a[1].n;
-	}
-	if (n > 2 && !Native_ArgInt(&a[2], &maxsplit)) {
-		return 0;
-	}
-	return Native_SplitText(s, len, sep, m, maxsplit, out);
-}
-
-/* the result of a function of math: CHECK and math_error of mathmodule.c (a NaN is a range error) */
-static byte Lib_MathOut(double x, nativeVal_t *out) {
-	if (errno == 0 && !(-HUGE_VAL <= x && x <= HUGE_VAL)) {
-		errno = ERANGE;
-	}
-	if (errno == EDOM) {
-		return Native_Raise(NE_VALUE, "math domain error");
-	}
-	if (errno == ERANGE) {
-		return Native_Raise(NE_OVERFLOW, "math range error");
-	}
-	if (errno) {
-		/* the (errno, text) value of PyErr_SetFromErrno */
-		nativeVal_t v;
-		const char *text = strerror(errno);
-		Native_SetEmpty(&v, NV_TUPLE);
-		Native_SetInt(Native_Append(&v), errno);
-		Native_SetText(Native_Append(&v), text, (int)strlen(text));
-		Native_RaiseVal(NE_VALUE, &v);
-		Native_Free(&v);
-		return 0;
-	}
-	Native_SetFloat(out, x);
-	return 1;
-}
-
-/* math_1 of mathmodule.c: PyArg_Parse(args, "d") of a function of old arguments (none: NULL; one: that value; more:
- * the tuple, which PyFloat_AsDouble refuses) */
-static byte Lib_Math1(const nativeVal_t *a, int n, nativeVal_t *out, double (*fn)(double)) {
-	nativeVal_t t;
-	double x;
-	if (!n) {
-		return Native_Raise(NE_TYPE, "function requires at least one argument");
-	}
-	Native_SetEmpty(&t, NV_TUPLE);
-	byte ok = Native_ArgDouble(n == 1 ? &a[0] : &t, &x);
-	Native_Free(&t);
-	if (!ok) {
-		return 0;
-	}
-	errno = 0;
-	return Lib_MathOut(fn(x), out);
-}
-
-/* math_2: PyArg_Parse(args, "(dd)"), the arguments (or the one value) as a sequence of two numbers */
-static byte Lib_Math2(const nativeVal_t *a, int n, nativeVal_t *out, double (*fn)(double, double)) {
-	nativeVal_t t, tmp;
-	double x[2];
-	if (!n) {
-		return Native_Raise(NE_TYPE, "function requires at least one argument");
-	}
-	/* the arguments as the tuple of old arguments (a view of them, not freed) */
-	Native_SetNone(&t);
-	t.type = NV_TUPLE;
-	t.items = (nativeVal_t *)a;
-	t.n = n;
-	const nativeVal_t *seq = n == 1 ? &a[0] : &t;
-	int len = seq->type == NV_STR || seq->type == NV_LIST || seq->type == NV_TUPLE ? seq->n : seq->type == NV_VEC ? 3 : -1;
-	byte ok = 1;
-	if (len < 0) {
-		ok = Native_Raise(NE_TYPE, "2-sequence, %s", Native_TypeName(seq));
-	} else if (len != 2) {
-		ok = Native_Raise(NE_TYPE, "2-sequence, %d-sequence", len);
-	}
-	for (int i = 0; ok && i < 2; i++) {
-		Native_SetNone(&tmp);
-		const nativeVal_t *item = Native_GetItem(seq, i, 0, &tmp);
-		ok = item && Native_ArgDouble(item, &x[i]);
-		Native_Free(&tmp);
-	}
-	if (!ok) {
-		return 0;
-	}
-	errno = 0;
-	return Lib_MathOut(fn(x[0], x[1]), out);
-}
-
-static double Lib_Fabs(double x) {
-	return fabs(x);
-}
-
-static double Lib_Sqrt(double x) {
-	return LIB_SQRT(x);
-}
-
-static double Lib_Fmod(double x, double y) {
-	return LIB_FMOD(x, y);
-}
-
-static byte Lib_MathSqrt(const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Lib_Math1(a, n, out, Lib_Sqrt);
-}
-
-static byte Lib_MathFabs(const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Lib_Math1(a, n, out, Lib_Fabs);
-}
-
-static byte Lib_MathFmod(const nativeVal_t *a, int n, nativeVal_t *out) {
-	return Lib_Math2(a, n, out, Lib_Fmod);
-}
-
-portRef_t port_string_find = { .module = "string", .name = "find", .entry = Lib_Find, .twin = 1 };
-portRef_t port_string_replace = { .module = "string", .name = "replace", .entry = Lib_Replace, .twin = 1 };
-portRef_t port_string_atoi = { .module = "string", .name = "atoi", .entry = Lib_Atoi, .twin = 1 };
-portRef_t port_string_atof = { .module = "string", .name = "atof", .entry = Lib_Atof, .twin = 1 };
-portRef_t port_string_split = { .module = "string", .name = "split", .entry = Lib_Split, .twin = 1 };
-portRef_t port_string_splitfields = { .module = "string", .name = "splitfields", .entry = Lib_Split, .twin = 1 };
-portRef_t port_math_sqrt = { .module = "math", .name = "sqrt", .entry = Lib_MathSqrt, .twin = 1 };
-portRef_t port_math_fabs = { .module = "math", .name = "fabs", .entry = Lib_MathFabs, .twin = 1 };
-portRef_t port_math_fmod = { .module = "math", .name = "fmod", .entry = Lib_MathFmod, .twin = 1 };
 
 /* ---- the menus of stage 3 batch B11 ---- */
 

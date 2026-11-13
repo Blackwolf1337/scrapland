@@ -22,6 +22,7 @@
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptlib.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
@@ -1723,8 +1724,8 @@ byte Native_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal
 			Native_LongAdd(a->type == NV_LONG ? Native_Text(a) : ta, b->type == NV_LONG ? Native_Text(b) : tb, op == '-', out);
 			return 1;
 		}
-		/* the native values multiply and divide no long ints (no script makes long ints) */
-		return Native_Raise(NE_TYPE, "long int %s: not done on native values", Native_OpName(op));
+		/* longobject.c (scrap/scriptlib.h) */
+		return Long_Op(op, a, b, out);
 	}
 	return Native_IntOp(op, a->i, b->i, out);
 }
