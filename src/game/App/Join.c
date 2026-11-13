@@ -143,7 +143,9 @@ static void Join_Host(void) {
 	Str_Copy(cfg.gameDir, ".", sizeof(cfg.gameDir));
 	CoordProc_Self(cfg.exe, sizeof(cfg.exe));
 	cfg.port = join.port;
-	Str_Copy(cfg.bind, join.hostBind, sizeof(cfg.bind));
+	/* the command line's -host on loopback unless -hostbind; the menus' on hostbind= of scrapdecomp.ini (any address
+	 * without it) */
+	Str_Copy(cfg.bind, join.hostBind[0] || join.menu ? join.hostBind : "127.0.0.1", sizeof(cfg.bind));
 	Str_Copy(cfg.start, join.hostLevel[0] ? join.hostLevel : "DownTown", sizeof(cfg.start));
 	Str_Copy(cfg.keep, join.hostKeep[0] ? join.hostKeep : cfg.start, sizeof(cfg.keep));
 	Str_PrintfQuiet(cfg.name, sizeof(cfg.name), "%s's world", join.name[0] ? join.name : "Player");
