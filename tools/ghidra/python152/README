@@ -1,0 +1,2 @@
+The headers and the copyright notice of Python 1.5.2, kept only for tools/ghidra/rebuild.sh: the original
+Scrap.exe links Python 1.5.2, and Ghidra imports these types to read it. The game no longer uses Python.

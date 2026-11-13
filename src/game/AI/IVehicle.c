@@ -2594,11 +2594,16 @@ static void AIV_LifeIfLow(cAIVehicle *self) {
 }
 
 /* FIGHTING: the chase distances for inside a hangar (an elevator of the group near the target) and back; the hook
- * at random (USE_PERC_HOOK) when the target is in range */
+ * at random (USE_PERC_HOOK) when the target is in range.
+ * FIGHTING_HOOK falls through to here after ReactHook. When ReactHook goes back to FIGHTING and the path to the
+ * target fails, the AI is in FREEZE_OBJ_NOT_ACCESS and the target is gone; the original dereferenced it anyway. */
 static void cAIVehicle_ReactFighting(cAIVehicle *self) {
 	vec3_t a;
 	float dist = g_MaxDistElevatorAI;
 	cEntity *t = AIV_Target(self);
+	if (!t) {
+		return;
+	}
 	const vec3_t *p = Entity_GetPos(t, &a);
 	byte near = cAIVehicleGroup_ElevatorNear(g_VehicleGroup, p, dist);
 	float cm = self->chaseMin;

@@ -3,7 +3,7 @@
 //
 // Headless: tools/ghidra/headless.sh ImportHeaders.java <header> [-I<include dir> ...] [-D<define> ...]
 //                                    [-C<from>=<to> ...]
-// rebuild.sh imports third_party/python-1.5.2/Include/Python.h and tools/ghidra/include/scrap_all.h (the engine
+// rebuild.sh imports tools/ghidra/python152/Include/Python.h and tools/ghidra/include/scrap_all.h (the engine
 // headers of include/scrap) with the stand-in headers of tools/ghidra/include.
 //
 // Between the preprocessor and the parser the bodies of function definitions (the static inline functions of the

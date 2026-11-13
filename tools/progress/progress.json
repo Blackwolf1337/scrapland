@@ -1,6 +1,6 @@
 {
  "title": "ScrapC progress",
- "date": "2026-11-09",
+ "date": "2026-11-12",
  "steps": [
   {
    "step": 1,
@@ -157,14 +157,14 @@
      "weight": 3,
      "percent": 100,
      "status": "done",
-     "note": "interpreter code, build option and reference build removed (tag interp-final keeps the last state)"
+     "note": "interpreter and build option gone (tag interp-final)"
     },
     {
      "item": "Python object library removed",
      "weight": 3,
-     "percent": 66,
+     "percent": 92,
      "status": "in progress",
-     "note": "stages 1 to 4 done (native modules, direct calls, callbacks and scheduler on C entries); variables, data paths and engine API under way"
+     "note": "all native C up to the last step: Python out of the build"
     }
    ]
   },
@@ -177,9 +177,9 @@
     {
      "item": "Design",
      "weight": 1,
-     "percent": 0,
-     "status": "not started",
-     "note": "waits for the design"
+     "percent": 40,
+     "status": "in progress",
+     "note": "decisions made: sandbox, factions, coop, new protocol"
     },
     {
      "item": "Server and client",

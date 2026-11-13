@@ -19,16 +19,16 @@ mkdir -p "$dir"
 cd "$root" || exit 1
 "$ghidra/support/analyzeHeadless" "$dir" "$name" -import game/Bin/Scrap.exe -processor x86:LE:32:default \
 	-cspec windows -analysisTimeoutPerFile 7200 -scriptPath tools/ghidra \
-	-postScript ImportHeaders.java third_party/python-1.5.2/Include/Python.h -Itools/ghidra/include -Ithird_party/python-1.5.2/config \
-	-Ithird_party/python-1.5.2/Include \
+	-postScript ImportHeaders.java tools/ghidra/python152/Include/Python.h -Itools/ghidra/include -Itools/ghidra/python152/config \
+	-Itools/ghidra/python152/Include \
 	-postScript ImportHeaders.java tools/ghidra/include/scrap_all.h -Itools/ghidra/include -Iinclude \
-	-Ithird_party/python-1.5.2/config -Ithird_party/python-1.5.2/Include -DSD_GHIDRA -C__vectorcall=__thiscall \
+	-Itools/ghidra/python152/config -Itools/ghidra/python152/Include -DSD_GHIDRA -C__vectorcall=__thiscall \
 	-postScript CheckLayouts.java include/scrap \
 	-postScript NamePyBindings.java \
 	-postScript NameVtables.java \
 	-postScript NameFromStrings.java symbols/srcstrings.tsv \
 	-postScript ImportSymbols.java symbols \
-	-postScript ReplacePlaceholders.java tools/rename/names.tsv include/scrap third_party/python-1.5.2/Include 2>&1 |
+	-postScript ReplacePlaceholders.java tools/rename/names.tsv include/scrap tools/ghidra/python152/Include 2>&1 |
 	grep -E '(Symbols|Bindings|Vtables|Strings|Headers|Layouts|Placeholders): |REPORT: (Analysis|Import|Save)|Exception|ERROR' |
 	grep -v 'Invalid PNG data'
 exit "${PIPESTATUS[0]}"
