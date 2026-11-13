@@ -645,6 +645,9 @@ static byte Sc_Play(const nativeVal_t *cls) {
 	nativeVal_t *args = Mode_V(&t);
 	Mode_V(&t);
 	const nativeVal_t *zero = Mode_I(&t, 0);
+	if (g_Instance) {
+		Coop_SceneCamera();
+	}
 	if (!Mode_Import("MakeChar") || !Mode_Import("Init") || !Sc_NoBlur() || !Mode_GVarSetI("DrawNextFrame", 0) ||
 		!PORT_OWN(Scene, Load, NULL, "v", cls) || !Sc_G("Actors", actors) || !Mode_Sub(actors, cls, list)) {
 		return Mode_Done(&t, 0);

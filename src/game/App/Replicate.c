@@ -684,8 +684,8 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	cEntity *ship = NULL;
 	vec3_t at, p;
 
-	/* the money is the bound player's (Rep_PreFrame binds it) */
-	if (pl->rebuild > 0 && g_pWorld->money < pl->rebuild) {
+	/* the money is the bound player's (Rep_PreFrame binds it); the coop story calls no ship indoors */
+	if ((pl->rebuild > 0 && g_pWorld->money < pl->rebuild) || Coop_NoShipCall()) {
 		return NULL;
 	}
 	float yaw = WChar(ch)->view.y;

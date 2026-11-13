@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "scrap/ai.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
@@ -68,6 +69,10 @@ static struct {
 	byte inScene;					/* a scene of the scripts plays */
 	int scene;						/* its table (the clients play it), -1 none */
 	int scenePlayer;				/* the member bound when it started */
+	uint32_t serial;				/* scenes started so far */
+	uint32_t endingSerial;			/* the one whose end runs (its callback may start the next) */
+	int endingTable;
+	char endingCls[CP_NAME], sceneCls[CP_NAME];
 	char voice[CP_VOICES][128];		/* the file opened on each voice channel */
 	char clientScene[CP_NAME];		/* client: the scene it plays for its instance */
 } cp = { .scene = -1, .loading = -1 };
@@ -219,8 +224,10 @@ static void Cp_Send(void) {
 	cp.levelSent = 1;
 }
 
-/* the scenes link the camera of view 0 (Scene.Play): the instance has none of its own */
-static void Cp_Camera(void) {
+void Coop_SceneCamera(void) {
+	if (!Coop_On() || !g_pWorld) {
+		return;
+	}
 	const char *name = cWorld_GetCamName(g_pWorld, 0);
 	if (name && *name && World_FindEntity(name)) {
 		return;
@@ -232,8 +239,7 @@ static void Cp_Camera(void) {
 }
 
 void Coop_Pass(void) {
-	if (Coop_On() && g_pWorld) {
-		Cp_Camera();
+	if (Coop_On()) {
 		Cp_Send();
 	}
 }
@@ -449,6 +455,10 @@ byte Coop_Spawn(int player, vec3_t *pos, float *yaw) {
 	return 0;
 }
 
+byte Coop_NoShipCall(void) {
+	return Coop_On() && !g_IsMapOutDoor;
+}
+
 byte Coop_UseAny(cEntity *t) {
 	return Coop_On() && t && !Entity_IsType(t, TYEN_CAR);
 }
@@ -515,8 +525,10 @@ void Coop_ScenePlay(const char *cls) {
 		return;
 	}
 	cp.inScene = 1;
+	cp.serial++;
 	cp.scenePlayer = Cp_Player();
 	cp.scene = -1;
+	Str_Copy(cp.sceneCls, cls, sizeof(cp.sceneCls));
 	for (int k = 0; k < cp.nscenes; k++) {
 		if (!strcmp(cp.scenes[k].cls, cls)) {
 			cp.scene = k;
@@ -591,7 +603,13 @@ static void Cp_Gather(void) {
 }
 
 void Coop_SceneEnding(void) {
-	if (Coop_On() && cp.inScene && cp.scenePlayer >= 0 && Players_Get(cp.scenePlayer)) {
+	if (!Coop_On() || !cp.inScene) {
+		return;
+	}
+	cp.endingSerial = cp.serial;
+	cp.endingTable = cp.scene;
+	Str_Copy(cp.endingCls, cp.sceneCls, sizeof(cp.endingCls));
+	if (cp.scenePlayer >= 0 && Players_Get(cp.scenePlayer)) {
 		Players_Bind(cp.scenePlayer);
 	}
 }
@@ -599,20 +617,24 @@ void Coop_SceneEnding(void) {
 void Coop_SceneEnd(void) {
 	uint8_t buf[128];
 	NetRepBuf w;
-	if (!Coop_On() || !cp.inScene) {
+	if (!Coop_On() || !cp.inScene || cp.endingSerial == 0) {
 		return;
 	}
-	if (cp.scene >= 0) {
+	if (cp.endingTable >= 0) {
 		NetRepBuf_Init(&w, buf, sizeof(buf));
 		NetRep_PutU8(&w, COOP_MSG);
 		NetRep_PutU8(&w, COOP_Y_SCENEEND);
-		NetRep_PutStr(&w, cp.scenes[cp.scene].cls);
+		NetRep_PutStr(&w, cp.endingCls);
 		Cp_ToAll(buf, w.size);
 	}
-	Cp_Gather();
-	Con_Printf("coop: scene %s ended\n", cp.scene >= 0 ? cp.scenes[cp.scene].cls : "?");
-	cp.inScene = 0;
-	cp.scene = -1;
+	Con_Printf("coop: scene %s ended\n", cp.endingCls);
+	/* the callback started the next scene: that one plays on */
+	if (cp.serial == cp.endingSerial) {
+		Cp_Gather();
+		cp.inScene = 0;
+		cp.scene = -1;
+	}
+	cp.endingSerial = 0;
 	Players_BindTurn();
 }
 

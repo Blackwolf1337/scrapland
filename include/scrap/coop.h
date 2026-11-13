@@ -77,6 +77,8 @@ byte Coop_QLoad(const char *map);
 void Coop_SceneTable(const char *module, const char *const *lines);
 /* Scene.Play(cls) started; EndOfScene of it begins (the member of the scene bound for its callback) and ended */
 void Coop_ScenePlay(const char *cls);
+/* the camera of view 0 a scene links (the instance has none of its own): made when missing */
+void Coop_SceneCamera(void);
 void Coop_SceneEnding(void);
 void Coop_SceneEnd(void);
 /* the texts and voices of the scripts (TalkScorer.c, AbstractTextScorer.c, ScriptModes.c) */
@@ -89,6 +91,8 @@ void Coop_PlayVoice(int channel);
 byte Coop_Spawn(int player, vec3_t *pos, float *yaw);
 /* a scene plays here: the characters it hid are no lost players */
 byte Coop_SceneHolds(void);
+/* the level has no room for a called ship (indoors): coop calls none there */
+byte Coop_NoShipCall(void);
 /* the use arrow of t runs on the instance for a player's character (not only a door's) */
 byte Coop_UseAny(struct cEntity *t);
 /* test lines: "story" (the count, the mission), "story get <name>", "story set <name> <value>" */
