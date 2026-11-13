@@ -40,6 +40,7 @@ static void Native_Clear(nativeVal_t *v, byte type) {
 	v->text = NULL;
 	v->items = NULL;
 	v->obj = NULL;
+	v->id = 0;
 	v->ent = NULL;
 	v->ref = NULL;
 }
@@ -160,6 +161,117 @@ void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
 			}
 		}
 	}
+}
+
+/* ---- identity ---- */
+
+/* the shared objects of 1.5.2: the small ints (small_ints of intobject.c), the texts of one character and the empty
+ * one (characters and nullstring of stringobject.c), the empty tuple (free_tuples[0]) */
+#define NATIVE_ID_INT 0x100		/* + i + 1 for i from -1 to 99 */
+#define NATIVE_ID_CHAR 0x200		/* + the character */
+#define NATIVE_ID_EMPTY 0x300		/* the empty text */
+#define NATIVE_ID_ETUPLE 0x303
+/* the first id Native_NewId gives */
+#define NATIVE_ID_FIRST 0x1000
+
+static uintptr_t nv_lastId = NATIVE_ID_FIRST;
+/* the interned texts: text -> its id (an int) */
+static nativeVal_t nv_interned;
+
+uintptr_t Native_NewId(void) {
+	return ++nv_lastId;
+}
+
+uintptr_t Native_IdOf(const nativeVal_t *v) {
+	if (v->id) {
+		return v->id;
+	}
+	switch (v->type) {
+	case NV_INT:
+		return v->i >= -1 && v->i < 100 ? (uintptr_t)(NATIVE_ID_INT + v->i + 1) : 0;
+	case NV_STR:
+		return v->n == 0 ? NATIVE_ID_EMPTY : v->n == 1 ? NATIVE_ID_CHAR + (unsigned char)Native_Text(v)[0] : 0;
+	case NV_TUPLE:
+		return v->n == 0 ? NATIVE_ID_ETUPLE : 0;
+	}
+	return 0;
+}
+
+void Native_PinTop(nativeVal_t *v) {
+	if ((v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG || v->type == NV_TUPLE) &&
+		!Native_IdOf(v)) {
+		v->id = Native_NewId();
+	}
+}
+
+void Native_Pin(nativeVal_t *v) {
+	Native_PinTop(v);
+	if (v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			Native_Pin(&v->items[i]);
+		}
+	}
+}
+
+uintptr_t Native_InternId(const char *s, int len) {
+	nativeVal_t key, id;
+	if (len <= 1) {
+		return len ? NATIVE_ID_CHAR + (unsigned char)s[0] : NATIVE_ID_EMPTY;
+	}
+	if (nv_interned.type != NV_DICT) {
+		Native_SetEmpty(&nv_interned, NV_DICT);
+	}
+	Native_SetText(&key, s, len);
+	const nativeVal_t *x = Native_DictGet(&nv_interned, &key);
+	if (x) {
+		Native_Free(&key);
+		return (uintptr_t)x->i;
+	}
+	uintptr_t n = Native_NewId();
+	Native_SetInt(&id, (long)n);
+	Native_DictSet(&nv_interned, &key, &id);
+	return n;
+}
+
+void Native_SetBool(nativeVal_t *v, int t) {
+	Native_SetInt(v, t != 0);
+	v->id = t ? NATIVE_ID_TRUE : NATIVE_ID_FALSE;
+}
+
+byte Native_Is(const nativeVal_t *a, const nativeVal_t *b) {
+	switch (a->type) {
+	case NV_INT:
+	case NV_FLOAT:
+	case NV_STR:
+	case NV_LONG:
+	case NV_TUPLE:
+		if (a->type != b->type) {
+			return 0;
+		}
+		uintptr_t x = Native_IdOf(a);
+		return x && x == Native_IdOf(b);
+	}
+	return NObj_Is(a, b);
+}
+
+void Native_KwOrder(const nativeVal_t *pairs, nativeVal_t *out) {
+	nativeVal_t d, k, v;
+	const nativeVal_t *dk, *dv;
+	int pos = 0;
+	Native_SetEmpty(&d, NV_DICT);
+	for (int i = 0; i < pairs->n; i++) {
+		Native_Copy(&k, &pairs->items[i].items[0]);
+		Native_Copy(&v, &pairs->items[i].items[1]);
+		Native_DictSet(&d, &k, &v);
+	}
+	Native_SetEmpty(out, NV_LIST);
+	while (Native_DictNext(&d, &pos, &dk, &dv)) {
+		nativeVal_t *pair = Native_Append(out);
+		Native_SetEmpty(pair, NV_TUPLE);
+		Native_Copy(Native_Append(pair), dk);
+		Native_Copy(Native_Append(pair), dv);
+	}
+	Native_Free(&d);
 }
 
 byte Native_IsStr(const nativeVal_t *v, const char *text) {
@@ -662,8 +774,7 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 		return;
 	}
 	case NV_ENT: {
-		/* PyObject_Repr of a type without repr and str; the address is the one of its Python object while it has
-		 * one (the text Python gives for it then) */
+		/* PyObject_Repr of a type without repr and str */
 		char at[0x40];
 		snprintf(at, sizeof(at), "<cPyEntity object at %lx>", (long)Native_EntAddr(v));
 		Native_BufAdd(b, at, -1);
@@ -2391,80 +2502,6 @@ int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
 	return n;
 }
 
-PyObject *Native_ArgPy(const nativeArg_t *a) {
-	/* another letter fails the call without an error, as it always did */
-	switch (a->type) {
-	case 'v':
-	case 'r':
-		return Native_ToPy(a->v);
-	case 'i':
-		return PyInt_FromLong(a->i);
-	case 'd':
-		return PyFloat_FromDouble(a->d);
-	case 's':
-		/* a NULL text is None, as for Py_BuildValue */
-		return a->s ? PyString_FromString((char *)a->s) : Py_ReturnNone();
-	case 'O':
-	case 'P':
-		Py_XINCREF(a->o);
-		return a->o;
-	}
-	return NULL;
-}
-
-PyObject *Native_PyArgs(const nativeArg_t *a, int n) {
-	PyObject *t = PyTuple_New(n);
-	for (int i = 0; t && i < n; i++) {
-		PyObject *o = Native_ArgPy(&a[i]);
-		if (!o) {
-			Py_DECREF(t);
-			return NULL;
-		}
-		PyTuple_SET_ITEM(t, i, o);
-	}
-	return t;
-}
-
-/* the argument tuple of the mini format of Native_Call (NULL with the error set) */
-static PyObject *Native_Args(const char *fmt, va_list va) {
-	nativeArg_t a[NATIVE_ARGS];
-	int n = Native_ReadArgs(fmt, va, a);
-	return Native_PyArgs(a, n);
-}
-
-/* callable(args) (a reference taken over), the result into *out (NULL: dropped) */
-byte Native_CallVa(PyObject *callable, nativeVal_t *out, const char *fmt, va_list va) {
-	PyObject *args = callable ? Native_Args(fmt, va) : NULL;
-	PyObject *r = args ? Script_Invoke(callable, args) : NULL;
-	Py_XDECREF(callable);
-	if (!r) {
-		return 0;
-	}
-	/* any other object is an NV_OBJ (OBJLIB 7) */
-	if (out) {
-		Native_Arg(r, out);
-	}
-	Py_DECREF(r);
-	return 1;
-}
-
-PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Native_Args(fmt, va);
-	va_end(va);
-	return args ? Script_Invoke(callable, args) : NULL;
-}
-
-byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	Py_XINCREF(callable);
-	byte ok = Native_CallVa(callable, out, fmt, va);
-	va_end(va);
-	return ok;
-}
-
 byte Native_NativeVar(const char *module, const char *name, nativeVal_t *f) {
 	modVarRef_t ref;
 	/* a loaded pack module only (no import here); its global and its attribute are the same variable */
@@ -2483,8 +2520,7 @@ byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, cons
 	va_list va;
 	nativeVal_t f;
 	va_start(va, fmt);
-	byte ok = Native_NativeVar(module, name, &f) ? Port_NativeCallVa(&f, out, fmt, va) :
-		Native_CallVa(Script_Attr(module, name), out, fmt, va);
+	byte ok = ModVar_ModAttrVal(module, name, &f) && Port_NativeCallVa(&f, out, fmt, va);
 	va_end(va);
 	Native_Free(&f);
 	return ok;
@@ -2494,8 +2530,7 @@ byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, c
 	va_list va;
 	nativeVal_t f;
 	va_start(va, fmt);
-	byte ok = Native_NativeVar(module, name, &f) ? Port_NativeCallVa(&f, out, fmt, va) :
-		Native_CallVa(Script_Global(module, name), out, fmt, va);
+	byte ok = ModVar_GlobalVal(module, name, &f) && Port_NativeCallVa(&f, out, fmt, va);
 	va_end(va);
 	Native_Free(&f);
 	return ok;
@@ -2933,6 +2968,36 @@ static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
 	return 0;
 }
 
+/* Native_FromPy of the Python object of v without the crossing: None, an int, a float, a text shorter than NATIVE_TEXT
+ * without 0 bytes, a vector of a tuple of three numbers, when its type is one of types: 1 with *out, else 0 without
+ * an error */
+static byte Native_TakeShort(const nativeVal_t *v, unsigned types, nativeVal_t *out) {
+	double x[3];
+	if (v->type == NV_NONE && types & 1u << NV_NONE) {
+		Native_SetNone(out);
+	} else if (v->type == NV_INT && types & 1u << NV_INT) {
+		Native_SetInt(out, v->i);
+	} else if (v->type == NV_FLOAT && types & 1u << NV_FLOAT) {
+		Native_SetFloat(out, v->f);
+	} else if (v->type == NV_STR && types & 1u << NV_STR && v->n < NATIVE_TEXT &&
+		(int)strlen(Native_Text(v)) == v->n) {
+		Native_SetStr(out, Native_Text(v));
+	} else if (v->type == NV_VEC && types & 1u << NV_VEC) {
+		Native_SetVec(out, v->v[0], v->v[1], v->v[2]);
+	} else if (v->type == NV_TUPLE && v->n == 3 && types & 1u << NV_VEC) {
+		for (int i = 0; i < 3; i++) {
+			if (!Native_ArgDouble(&v->items[i], &x[i])) {
+				Native_ErrClear();
+				return 0;
+			}
+		}
+		Native_SetVec(out, x[0], x[1], x[2]);
+	} else {
+		return 0;
+	}
+	return 1;
+}
+
 /* v holds an object of native data (one that has no Python object yet), also inside a tuple */
 static byte Native_HoldsData(const nativeVal_t *v) {
 	if (v->type == NV_REF) {
@@ -2956,6 +3021,7 @@ static byte Native_TakeVal(const nativeVal_t *v, unsigned types, nativeVal_t *ou
 		Native_Copy(out, v);
 		Py_XDECREF(out->obj);
 		out->obj = NULL;
+		out->id = 0;
 		return 1;
 	}
 	if (Native_HoldsData(v)) {
@@ -2969,15 +3035,44 @@ static byte Native_TakeVal(const nativeVal_t *v, unsigned types, nativeVal_t *ou
 		Native_Free(out);
 		return 0;
 	}
-	PyObject *o = NObj_Py(v) ? NObj_Py(v) : v->type != NV_ENT ? v->obj : NULL;
-	if (o) {
-		Py_INCREF(o);
-	} else if ((o = Native_ToPy(v)) == NULL) {
+	PyObject *o = NObj_Py(v);
+	if (o || NObj_HoldsPy(v)) {
+		/* a view or a value that holds a Python value: its Python object (OBJLIB 9) */
+		if (o) {
+			Py_INCREF(o);
+		} else if ((o = Native_ToPy(v)) == NULL) {
+			return 0;
+		}
+		byte ok = Native_Take(o, types, out);
+		Py_DECREF(o);
+		return ok;
+	}
+	/* Native_Take of the value's Python object, without the crossing */
+	if (types & 1u << NV_TUPLE && (v->type == NV_TUPLE || v->type == NV_VEC)) {
+		if (NObj_Plain(v, out)) {
+			return 1;
+		}
+		if (types & 1u << NV_OBJ) {
+			NObj_ArgOf(v, out);
+			return 1;
+		}
 		return 0;
 	}
-	byte ok = Native_Take(o, types, out);
-	Py_DECREF(o);
-	return ok;
+	if (Native_TakeShort(v, types, out)) {
+		return 1;
+	}
+	if (types & 1u << NV_OBJ) {
+		NObj_ArgOf(v, out);
+		return 1;
+	}
+	if (!(types & (1u << NV_LONG | 1u << NV_LIST | 1u << NV_TUPLE | 1u << NV_DICT)) || !NObj_Plain(v, out)) {
+		return 0;
+	}
+	if (types & 1u << out->type) {
+		return 1;
+	}
+	Native_Free(out);
+	return 0;
 }
 
 /* v holds a list of n items */
@@ -3088,6 +3183,40 @@ static byte Native_PassPy(const nativeVal_t *v, int depth) {
 	return 0;
 }
 
+/* v is nested NLIT_DEPTH deep or more, or holds a long int Native_PassPy leaves to Python */
+static byte Native_PassDeep(const nativeVal_t *v, int depth) {
+	const nativeVal_t *k, *x;
+	int pos = 0;
+	switch (v->type) {
+	case NV_LONG:
+		return Native_PassPy(v, depth);
+	case NV_VEC:
+		return depth >= NLIT_DEPTH;
+	case NV_LIST:
+	case NV_TUPLE:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		for (int i = 0; i < v->n; i++) {
+			if (Native_PassDeep(&v->items[i], depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	case NV_DICT:
+		if (depth >= NLIT_DEPTH) {
+			return 1;
+		}
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Native_PassDeep(k, depth + 1) || Native_PassDeep(x, depth + 1)) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+	return 0;
+}
+
 /* Native_Pass of a value Native_PassPy leaves to C */
 static void Native_PassIn(const nativeVal_t *v, nativeVal_t *out) {
 	const nativeVal_t *k, *x;
@@ -3126,12 +3255,15 @@ byte Native_Pass(const nativeVal_t *v, nativeVal_t *out) {
 		Native_PassIn(v, out);
 		return 1;
 	}
-	if (NObj_Native(v)) {
-		/* an object of native data, a native function or module: what Python would hand back, without the crossing
-		 * (a list or dict of plain values as a copy, any other object itself) */
+	if (NObj_Native(v) || (!NObj_HoldsPy(v) && v->type != NV_LONG && !Native_PassDeep(v, 0))) {
+		/* an object of native data, a native function or module, a value that holds such objects or handles: what
+		 * Python would hand back, without the crossing (a list or dict of plain values as a copy, any other object
+		 * itself) */
 		NObj_ArgOf(v, out);
 		return 1;
 	}
+	/* a view or a Python value in it, the text of a long int Python writes otherwise, a nesting deeper than the
+	 * literals: as Python has it (OBJLIB 9) */
 	PyObject *o = Native_ToPy(v);
 	Native_SetNone(out);
 	if (!o) {
@@ -3189,16 +3321,6 @@ byte Native_IsMissing(const nativeVal_t *v) {
 	return v->type == NV_OBJ && !v->obj;
 }
 
-void Native_KeepPy(nativeVal_t *v, PyObject *o) {
-	Py_INCREF(o);
-	Py_XDECREF(v->obj);
-	v->obj = o;
-}
-
-PyObject *Native_KeptPy(const nativeVal_t *v) {
-	return v->obj;
-}
-
 /* ---- entity handles as values (stage 7, batch 7c) ---- */
 
 byte Native_SetEnt(nativeVal_t *v, const char *name) {
@@ -3220,7 +3342,7 @@ const char *Native_EntName(const nativeVal_t *v) {
 }
 
 uintptr_t Native_EntAddr(const nativeVal_t *v) {
-	return v->ent->face ? (uintptr_t)v->ent->face : (uintptr_t)v->ent;
+	return (uintptr_t)v->ent;
 }
 
 void Native_EntPrint(const char *name, char *buf, int size) {

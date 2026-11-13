@@ -674,64 +674,6 @@ const char *Script_Lang(const char *key) {
 	return s;
 }
 
-/* ---- the scripts ---- */
-
-PyObject *Script_Attr(const char *module, const char *func) {
-	return ModVar_ModAttr(module, func);
-}
-
-double Script_GetFloat(const char *module, const char *var, double def) {
-	PyObject *v = Script_Attr(module, var);
-	double d = v && PyFloat_Check(v) ? PyFloat_AsDouble(v) : v && PyInt_Check(v) ? (double)PyInt_AsLong(v) : def;
-	if (!v) {
-		Native_ErrClear();
-	}
-	Py_XDECREF(v);
-	return d;
-}
-
-/* ---- entity handles and values as a script uses them ---- */
-
-byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
-	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
-	if (v && !ok && !Native_Failed()) {
-		/* an entity variable the engine refuses fails without an exception; ceval reports it so */
-		Script_CheckSilent("Script_HSet (engine)");
-		Native_Raise(NE_SYSTEM, "error return without exception set");
-	}
-	Py_XDECREF(v);
-	return ok;
-}
-
-int Script_HIs(PyObject *e, const char *var, const char *text) {
-	PyObject *v = Script_GetAttr(e, var);
-	if (!v) {
-		return -1;
-	}
-	int is = PyString_Check(v) && !strcmp(PyString_AsString(v), text);
-	Py_DECREF(v);
-	return is;
-}
-
-int Script_HPrefix(PyObject *e, const char *var, const char *prefix) {
-	PyObject *v = Script_GetAttr(e, var);
-	PyObject *head = v ? PySequence_GetSlice(v, 0, (int)strlen(prefix)) : NULL;
-	Py_XDECREF(v);
-	if (!head) {
-		return -1;
-	}
-	int is = PyString_Check(head) && !strcmp(PyString_AsString(head), prefix);
-	Py_DECREF(head);
-	return is;
-}
-
-int Script_NumCmp(PyObject *a, long n) {
-	PyObject *b = PyInt_FromLong(n);
-	int c = b ? PyObject_Compare(a, b) : 0;
-	Py_XDECREF(b);
-	return Native_Failed() ? -2 : c;
-}
-
 /* ---- script variables of entities, as the Python entity handle reads and writes them ---- */
 
 double Script_EntNum(const char *ent, const char *var, double def) {
@@ -779,17 +721,6 @@ PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
 	return r;
 }
 
-PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	PyObject *f = Script_Attr(module, func);
-	PyObject *r = Script_Invoke(f, args);
-	Py_XDECREF(f);
-	return r;
-}
-
 void Script_StepPrint(int id, const nativeVal_t *args, int n) {
 	const char *text;
 	(void)id;
@@ -802,75 +733,22 @@ void Script_StepPrint(int id, const nativeVal_t *args, int n) {
 	Native_Free(&out);
 }
 
-PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	PyObject *f = Script_GetAttr(obj, name);
-	PyObject *r = Script_Invoke(f, args);
-	Py_XDECREF(f);
-	return r;
-}
-
-byte Script_Try(const char *module, const char *func, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	PyObject *f = Script_Attr(module, func);
-	PyObject *r = Script_Invoke(f, args);
-	Py_XDECREF(f);
-	Py_XDECREF(r);
-	return r != NULL;
-}
-
-int Script_GetInt(const char *module, const char *var, int def) {
-	PyObject *v = Script_Attr(module, var);
-	int r = def;
-	if (v && PyInt_Check(v)) {
-		r = (int)PyInt_AsLong(v);
-	} else if (v && PyFloat_Check(v)) {
-		r = (int)PyFloat_AsDouble(v);
-	}
-	if (!v) {
-		Native_ErrClear();
-	}
-	Py_XDECREF(v);
-	return r;
-}
-
 const char *Script_GetString(const char *module, const char *var, char *out, int size) {
-	PyObject *v = Script_Attr(module, var);
+	nativeVal_t v;
 	out[0] = 0;
-	if (v && PyString_Check(v)) {
-		Str_Copy(out, PyString_AsString(v), size);
-	}
-	if (!v) {
+	if (!ModVar_ModAttrVal(module, var, &v)) {
 		Native_ErrClear();
+	} else if (v.type == NV_STR) {
+		Str_Copy(out, Native_Text(&v), size);
 	}
-	Py_XDECREF(v);
+	Native_Free(&v);
 	return out;
 }
 
-void Script_SetVar(const char *module, const char *var, PyObject *value) {
-	if (!value || ModVar_SetModAttr(module, var, value) < 0) {
+void Script_SetVar(const char *module, const char *var, const nativeVal_t *value) {
+	if (!value || !ModVar_SetModAttrVal(module, var, value)) {
 		Native_ErrClear();
 	}
-	Py_XDECREF(value);
-}
-
-void Script_SetInt(const char *module, const char *var, int value) {
-	Script_SetVar(module, var, PyInt_FromLong(value));
-}
-
-byte Script_Args(PyObject *args, int *id, const char **control) {
-	PyObject *c = NULL;
-	if (!PyArg_ParseTuple(args, "i|O", id, &c)) {
-		return 0;
-	}
-	*control = c && PyString_Check(c) ? PyString_AsString(c) : "";
-	return 1;
 }
 
 /* ---- the .def files ---- */
@@ -1329,11 +1207,7 @@ static void Def_Set(scriptDef_t *m, const char *item, const char *var, const cha
 			Script_SetStr(m->id, item, var, Native_Text(&v));
 		} else if (ok && m->stop) {
 			/* another value goes to SScorer.Set as in the script, with its TypeError (through its ref) */
-			PyObject *o = Native_ToPy(&v);
-			PyObject *r = o ? PORT_ASK(SScorer, Set, "issO", (long)m->id, item, var, o) : NULL;
-			m->failed = r == NULL;
-			Py_XDECREF(r);
-			Py_XDECREF(o);
+			m->failed = !PORT_CALL(SScorer, Set, NULL, "issv", (long)m->id, item, var, &v);
 		}
 		Native_Free(&v);
 		return;

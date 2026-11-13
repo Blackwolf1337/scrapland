@@ -9,7 +9,7 @@
  *                            reads lines; litfuzz.sh sends the stored texts that have a line end this way)
  *   native ports             (OBJLIB 7) the counts of the direct calls between ports (PORT_CALL, PORT_OWN) per
  *                            call site that ran: "<file>:<line> <Module>.<Func> attr|own fast <n> slow <n> errors
- *                            <n>", and the calls of values (Port_Value, stage 4) as "<file>:<line> <Module>.<Func>
+ *                            <n>", and the calls of values (Port_ValuesOf, stage 4) as "<file>:<line> <Module>.<Func>
  *                            value ..." with the port function the site called last through its entry ("value.?"
  *                            when none), sorted by file and line ("no sites" when none ran); then the callbacks by name
  *                            bound to a port's entry (cPy_Function PYF_ENTRY, stage 4) since the start: "callback

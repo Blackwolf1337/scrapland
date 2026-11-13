@@ -13,7 +13,7 @@
  * are module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
  * script calls as its globals and the other ports go through their refs (PORT_OWN, PORT_CALL: the seam, OBJLIB 5 (9c)).
  * The map modules Map and MapSnd, the super deal module and the map libraries are named at run time, their functions
- * called through the entries of the level's ports (MODE_CBATTR, PORT_VALUE); string.find and replace are the native
+ * called through the entries of the level's ports (MODE_CBATTR, Port_ValueOf); string.find and replace are the native
  * twins (OBJLIB 9); Scrap.PreloadLibrary, PreloadAnm, CreateElements, CreateSaveVar, GetLevelPath, GetNewLevelPath and
  * SAI.IniAI go through their refs (stage 7), dir and __import__ stay by name (OBJLIB 6, 7). Scrap.Set, OpenPack,
  * ClosePack, Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and SetLabelText go
@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -472,15 +473,15 @@ MODE_FNANY(Init, Close, In_CloseN())
  * they run on the dict of the module's names, with the constants as the compiler made them and the loop variable left
  * in the module) ---- */
 
-static byte In_LoadCharBody(const nativeVal_t *locals, PyObject *fn, void *ctx) {
+static byte In_LoadCharBody(const nativeVal_t *locals, const nativeVal_t *fn, void *ctx) {
+	nativeVal_t f, res;
 	(void)ctx;
-	PyObject *f = Script_ModuleName(locals, "LoadCharLib");
-	PyObject *args = f ? Py_BuildValue("(O)", fn) : NULL;
-	PyObject *res = args ? Script_CallObject(f, args, NULL) : NULL;
-	Py_XDECREF(args);
-	Py_XDECREF(f);
-	Py_XDECREF(res);
-	return res != NULL;
+	byte ok = Script_ModuleName(locals, "LoadCharLib", &f) && NObj_Call(&f, fn, 1, &res);
+	if (ok) {
+		Native_Free(&res);
+	}
+	Native_Free(&f);
+	return ok;
 }
 
 /* init.py:205, `for fn in ('Nurse', ...): LoadCharLib(fn)`: the characters of an indoor level and their sounds */
@@ -490,45 +491,45 @@ int Init_ModLoadChars(const nativeVal_t *module, nativeVal_t *body) {
 	static const char *const chars[] = { "Nurse", "Police", "Desktop", "Gear", "Sentinel", "Berto", "BankDirector",
 		"Mayor", "GateKeeper", "Betty", "Dtritus", "Bishop", "Functionary", "Humphrey", "PoliceBoss", "Messenger",
 		"Human", "BankMaster" };
-	enum { NUM_CHARS = sizeof(chars) / sizeof(chars[0]) };
-	PyObject *seq = PyTuple_New(NUM_CHARS);
-	for (int i = 0; seq && i < NUM_CHARS; i++) {
-		PyObject *v = Script_StrConst(chars[i], (int)strlen(chars[i]));
-		if (!v) {
-			Py_DECREF(seq);
-			seq = NULL;
-			break;
-		}
-		PyTuple_SET_ITEM(seq, i, v);
+	nativeVal_t seq;
+	Native_SetEmpty(&seq, NV_TUPLE);
+	for (size_t i = 0; i < sizeof(chars) / sizeof(chars[0]); i++) {
+		Script_StrConstVal(Native_Append(&seq), chars[i]);
 	}
-	byte ok = seq && Script_ModuleFor(locals, "fn", seq, In_LoadCharBody, NULL);
-	Py_XDECREF(seq);
+	byte ok = Script_ModuleFor(locals, "fn", &seq, In_LoadCharBody, NULL);
+	Native_Free(&seq);
 	return ok;
 }
 
 /* apply(apply, func): func is (Scrap.PreloadLibrary, (module, file)) */
-static byte In_ExtraBody(const nativeVal_t *locals, PyObject *func, void *ctx) {
+static byte In_ExtraBody(const nativeVal_t *locals, const nativeVal_t *func, void *ctx) {
+	nativeVal_t a[2], res;
 	(void)ctx;
-	PyObject *apply = Script_ModuleName(locals, "apply");
-	PyObject *args = apply ? Py_BuildValue("(OO)", apply, func) : NULL;
-	PyObject *res = args ? Script_CallObject(apply, args, NULL) : NULL;
-	Py_XDECREF(args);
-	Py_XDECREF(apply);
-	Py_XDECREF(res);
-	return res != NULL;
+	if (!Script_ModuleName(locals, "apply", &a[0])) {
+		return 0;
+	}
+	Native_Copy(&a[1], func);
+	byte ok = NObj_Call(&a[0], a, 2, &res);
+	if (ok) {
+		Native_Free(&res);
+	}
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	return ok;
 }
 
 /* init.py:251, `for func in ExtraExecs[UpperMap]: apply(apply, func)`: the extra characters of some levels */
 int Init_ModExtraExecs(const nativeVal_t *module, nativeVal_t *body) {
 	const nativeVal_t *locals = module;
 	(void)body;
-	PyObject *table = Script_ModuleName(locals, "ExtraExecs");
-	PyObject *key = table ? Script_ModuleName(locals, "UpperMap") : NULL;
-	PyObject *seq = key ? PyObject_GetItem(table, key) : NULL;
-	byte ok = seq && Script_ModuleFor(locals, "func", seq, In_ExtraBody, NULL);
-	Py_XDECREF(table);
-	Py_XDECREF(key);
-	Py_XDECREF(seq);
+	nativeVal_t table, key, seq;
+	Native_SetNone(&key);
+	Native_SetNone(&seq);
+	byte ok = Script_ModuleName(locals, "ExtraExecs", &table) && Script_ModuleName(locals, "UpperMap", &key) &&
+		NObj_GetItem(&table, &key, &seq) && Script_ModuleFor(locals, "func", &seq, In_ExtraBody, NULL);
+	Native_Free(&table);
+	Native_Free(&key);
+	Native_Free(&seq);
 	return ok;
 }
 

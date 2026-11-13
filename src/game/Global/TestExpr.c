@@ -1179,12 +1179,12 @@ static PyObject *TX_Py(const nativeVal_t *v) {
 }
 
 /* o as the value the evaluator works on: numbers, texts, None and tuples by value, a handle as NV_ENT, a list, dict,
- * instance, class, function, method or module as its view. OBJLIB 9: a tuple keeps its Python object in .obj (copied
- * and freed with the value), so `is` finds one tuple twice and the tuple goes back to Python as that object */
+ * instance, class, function, method or module as its view. A tuple has an identity of its own, so `is` finds one tuple
+ * twice */
 static void TX_FromPy(PyObject *o, nativeVal_t *out) {
 	NObj_FromPy(o, out);
-	if (out->type == NV_TUPLE && PyTuple_Check(o) && !Native_KeptPy(out)) {
-		Native_KeepPy(out, o);
+	if (out->type == NV_TUPLE && PyTuple_Check(o)) {
+		Native_PinTop(out);
 	}
 }
 
@@ -1212,11 +1212,6 @@ static void TX_Give(nativeVal_t *v) {
 static PyObject *TX_ToPy(const nativeVal_t *v) {
 	nativeVal_t t;
 
-	if (v->type == NV_TUPLE && Native_KeptPy(v) && PyTuple_Check(Native_KeptPy(v))) {
-		/* the tuple it came from (TX_FromPy) */
-		Py_INCREF(Native_KeptPy(v));
-		return Native_KeptPy(v);
-	}
 	if (!Native_Holds(v, 1u << NV_DICT)) {
 		return Native_ToPy(v);
 	}
@@ -1524,11 +1519,11 @@ static byte TX_Call(const nativeVal_t *f, nativeVal_t *a, int n, const nativeVal
 		}
 		if (TX_Py(f) || NObj_PortRef(f)) {
 			/* a view (a native function that crossed too) or a port function: the entry of a port's own function, the
-			 * result as the Python object the adapter returns, as TX_FromPy gives it (a tuple of a module variable
-			 * stays that tuple) */
-			PyObject *r = NULL;
-			Port_ValuesOf(PORT_VSITE(), f, a, n, NULL, &r);
-			ok = TX_Result(r, out);
+			 * result as the adapter returns it through Python, as TX_FromPy gives it */
+			ok = Port_ValuesOf(PORT_VSITE(), f, a, n, out, 1);
+			if (ok && out->type == NV_TUPLE) {
+				Native_PinTop(out);
+			}
 		} else {
 			ok = NObj_Call(f, a, n, out);
 		}
@@ -1724,20 +1719,15 @@ static byte X_Unary(byte op, const nativeVal_t *a, nativeVal_t *out) {
 	return TX_Result(r, out);
 }
 
-/* v is w: one object (NObj_Is). Numbers and texts by value have no identity: the ints and the texts 1.5.2 keeps one
- * object of (-1 to 99, the empty text and the texts of one character) are the same when they are equal */
+/* v is w: one object (Native_Is). Numbers and texts have no identity here but the shared objects of 1.5.2 (the ints
+ * -1 to 99, the empty text and the texts of one character) */
 static byte X_Is(const nativeVal_t *v, const nativeVal_t *w) {
-	if (v->type == NV_INT && w->type == NV_INT) {
-		return v->i == w->i && v->i >= -1 && v->i < 100;
+	if (v->type == NV_INT || v->type == NV_FLOAT || v->type == NV_STR || v->type == NV_LONG) {
+		nativeVal_t a = *v, b = *w;
+		a.id = b.id = 0;
+		return Native_Is(&a, &b);
 	}
-	if (v->type == NV_STR && w->type == NV_STR) {
-		return v->n <= 1 && Native_Equal(v, w);
-	}
-	if (v->type == NV_TUPLE && w->type == NV_TUPLE) {
-		/* the empty tuple is one object; another tuple is the same one when both came from one Python tuple */
-		return (!v->n && !w->n) || (Native_KeptPy(v) && Native_KeptPy(v) == Native_KeptPy(w));
-	}
-	return NObj_Is(v, w);
+	return Native_Is(v, w);
 }
 
 /* cmp_outcome of ceval.c: 1, 0, -1 with the error set */
@@ -1816,7 +1806,7 @@ static byte X_Eval(tcNode *x, tcScope *s, nativeVal_t *out) {
 		if (X_Eval(x->a, s, &a)) {
 			long lo, hi;
 			ok = X_Bounds(x, s, &lo, &hi);
-			if (ok && a.type == NV_TUPLE && Native_KeptPy(&a) && (lo < 0 ? lo + a.n : lo) <= 0 && (hi < 0 ? hi + a.n : hi) >= a.n) {
+			if (ok && a.type == NV_TUPLE && a.id && (lo < 0 ? lo + a.n : lo) <= 0 && (hi < 0 ? hi + a.n : hi) >= a.n) {
 				/* tupleslice: the whole tuple (the bounds as PySequence_GetSlice takes them) is the tuple itself */
 				Native_Copy(out, &a);
 			} else if (ok) {
@@ -2798,6 +2788,11 @@ static int TB_Callable(nativeVal_t *a, int n, nativeVal_t *out) {
 static int TB_Id(nativeVal_t *a, int n, nativeVal_t *out) {
 	if (!Native_Arity("id", n, 1, 1)) {
 		return 0;
+	}
+	if (a->type == NV_ENT) {
+		/* the address of the handle, which its repr and hash show */
+		Native_SetInt(out, (long)Native_EntAddr(a));
+		return 1;
 	}
 	/* OBJLIB 9: the address of the Python object of a view (a value without one is made into one by Python's id) */
 	PyObject *py = NObj_Py(a);

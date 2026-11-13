@@ -24,7 +24,7 @@ extern cGVar GVar_SelectedLanguage;
 extern cGVar GVar_LogFile;
 #define g_LogName (GVar_LogFile.value.s)
 
-extern void *g_AppPyOne;		/* Py_BuildValue("i", 1) of each level */
+extern byte g_AppOneMade;		/* the int 1 of the levels (SAI.GetOD) was made: a level started */
 
 /* App.c */
 CApp *CApp_ctor(CApp *self, const char *cmdLine);

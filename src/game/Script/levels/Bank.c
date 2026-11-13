@@ -40,6 +40,7 @@
 
 #include "scrap/input.h"
 #include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "Levels.h"
 
@@ -693,58 +694,84 @@ static byte MapTreasure_CreateCoins(void) {
  * Scrap.CreateSaveVar(varname, "0"); Coins.append(Circuit[f][int(Scrap.GetSaveVar(varname))]) (OBJLIB 7: a hook of
  * the module code, ScriptModule.c's table: it and MapTreasure_ModCoins run on the dict of the module's names, with the
  * loop variables f and varname left in the module and every name looked up there) */
-static byte Mt_CoinsBody(const nativeVal_t *locals, PyObject *f, void *ctx) {
-	(void)ctx;
-	PyObject *repr = Script_Repr(f);
-	PyObject *name = repr ? Script_SPlus("Bank.Circuit.", repr) : NULL;
+static byte Mt_CoinsBody(const nativeVal_t *locals, const nativeVal_t *f, void *ctx) {
+	nativeVal_t name, fn, a[2], res, row, index;
+	nativeBuf_t b;
 	modVarRef_t ref;
-	byte ok = name && ModVar_RefOfNs(locals, &ref) && ModVar_Set(&ref, "varname", name) == 0;
-	Py_XDECREF(repr);
-	Py_XDECREF(name);
-	PyObject *create = ok ? Script_ModuleName(locals, "Scrap.CreateSaveVar") : NULL;
-	PyObject *var = create ? Script_ModuleName(locals, "varname") : NULL;
-	PyObject *res = var ? Script_Invoke(create, Py_BuildValue("(ON)", var, Script_StrConst("0", 1))) : NULL;
-	Py_XDECREF(create);
-	Py_XDECREF(var);
-	ok = res != NULL;
-	Py_XDECREF(res);
-	PyObject *append = ok ? Script_ModuleName(locals, "Coins.append") : NULL;
-	PyObject *circuit = append ? Script_ModuleName(locals, "Circuit") : NULL;
-	PyObject *row = circuit ? PyObject_GetItem(circuit, f) : NULL;
-	PyObject *toInt = row ? Script_ModuleName(locals, "int") : NULL;
-	PyObject *get = toInt ? Script_ModuleName(locals, "Scrap.GetSaveVar") : NULL;
-	var = get ? Script_ModuleName(locals, "varname") : NULL;
-	PyObject *saved = var ? Script_Invoke(get, Py_BuildValue("(O)", var)) : NULL;
-	PyObject *index = saved ? Script_Invoke(toInt, Py_BuildValue("(O)", saved)) : NULL;
-	PyObject *coin = index ? PyObject_GetItem(row, index) : NULL;
-	res = coin ? Script_Invoke(append, Py_BuildValue("(O)", coin)) : NULL;
-	Py_XDECREF(append);
-	Py_XDECREF(circuit);
-	Py_XDECREF(row);
-	Py_XDECREF(toInt);
-	Py_XDECREF(get);
-	Py_XDECREF(var);
-	Py_XDECREF(saved);
-	Py_XDECREF(index);
-	Py_XDECREF(coin);
-	Py_XDECREF(res);
-	return res != NULL;
+	(void)ctx;
+	Native_BufInit(&b);
+	Native_BufAdd(&b, "Bank.Circuit.", -1);
+	byte ok = NObj_Repr(&b, f, NR_REPR);
+	if (ok) {
+		Native_SetText(&name, b.p, b.len);
+		ok = ModVar_RefOfNs(locals, &ref) && ModVar_SetVal(&ref, "varname", &name) == 0;
+		Native_Free(&name);
+	}
+	Native_BufFree(&b);
+	/* Scrap.CreateSaveVar(varname, "0") */
+	if (!ok || !Script_ModuleName(locals, "Scrap.CreateSaveVar", &fn)) {
+		return 0;
+	}
+	ok = Script_ModuleName(locals, "varname", &a[0]);
+	if (ok) {
+		Script_StrConstVal(&a[1], "0");
+		ok = NObj_Call(&fn, a, 2, &res);
+		Native_Free(&a[0]);
+		Native_Free(&a[1]);
+	}
+	Native_Free(&fn);
+	if (!ok) {
+		return 0;
+	}
+	Native_Free(&res);
+	/* Coins.append(Circuit[f][int(Scrap.GetSaveVar(varname))]) */
+	nativeVal_t append, circuit, toInt, get, var, saved;
+	Native_SetNone(&circuit);
+	Native_SetNone(&row);
+	Native_SetNone(&toInt);
+	Native_SetNone(&get);
+	Native_SetNone(&var);
+	Native_SetNone(&saved);
+	Native_SetNone(&index);
+	ok = Script_ModuleName(locals, "Coins.append", &append) && Script_ModuleName(locals, "Circuit", &circuit) &&
+		NObj_GetItem(&circuit, f, &row) && Script_ModuleName(locals, "int", &toInt) &&
+		Script_ModuleName(locals, "Scrap.GetSaveVar", &get) && Script_ModuleName(locals, "varname", &var) &&
+		NObj_Call(&get, &var, 1, &saved) && NObj_Call(&toInt, &saved, 1, &index) && NObj_GetItem(&row, &index, &a[0]);
+	if (ok) {
+		ok = NObj_Call(&append, &a[0], 1, &res);
+		Native_Free(&a[0]);
+	}
+	if (ok) {
+		Native_Free(&res);
+	}
+	Native_Free(&append);
+	Native_Free(&circuit);
+	Native_Free(&row);
+	Native_Free(&toInt);
+	Native_Free(&get);
+	Native_Free(&var);
+	Native_Free(&saved);
+	Native_Free(&index);
+	return ok;
 }
+
 /* maptreasure.py:2836, `for f in range(len(Circuit)): ...`: the chain of each circuit as the save variable keeps it */
 int MapTreasure_ModCoins(const nativeVal_t *module, nativeVal_t *body) {
 	const nativeVal_t *locals = module;
+	nativeVal_t range, len, circuit, n, seq;
 	(void)body;
-	PyObject *range = Script_ModuleName(locals, "range");
-	PyObject *len = range ? Script_ModuleName(locals, "len") : NULL;
-	PyObject *circuit = len ? Script_ModuleName(locals, "Circuit") : NULL;
-	PyObject *n = circuit ? Script_Invoke(len, Py_BuildValue("(O)", circuit)) : NULL;
-	PyObject *seq = n ? Script_Invoke(range, Py_BuildValue("(O)", n)) : NULL;
-	byte ok = seq && Script_ModuleFor(locals, "f", seq, Mt_CoinsBody, NULL);
-	Py_XDECREF(range);
-	Py_XDECREF(len);
-	Py_XDECREF(circuit);
-	Py_XDECREF(n);
-	Py_XDECREF(seq);
+	Native_SetNone(&len);
+	Native_SetNone(&circuit);
+	Native_SetNone(&n);
+	Native_SetNone(&seq);
+	byte ok = Script_ModuleName(locals, "range", &range) && Script_ModuleName(locals, "len", &len) &&
+		Script_ModuleName(locals, "Circuit", &circuit) && NObj_Call(&len, &circuit, 1, &n) &&
+		NObj_Call(&range, &n, 1, &seq) && Script_ModuleFor(locals, "f", &seq, Mt_CoinsBody, NULL);
+	Native_Free(&range);
+	Native_Free(&len);
+	Native_Free(&circuit);
+	Native_Free(&n);
+	Native_Free(&seq);
 	return ok;
 }
 

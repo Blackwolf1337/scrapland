@@ -93,7 +93,7 @@ static byte Sp_Item(const nativeVal_t *v, long i, nativeVal_t *out) {
 	return x != NULL;
 }
 
-/* e.var == text (a text variable): 1, 0, -1 with the error (Script_HIs) */
+/* e.var == text (a text variable): 1, 0, -1 with the error (as the handle reads it) */
 static int Sp_HIs(const nativeVal_t *e, const char *var, const char *text) {
 	nativeVal_t v = { 0 };
 	int r = Mode_VObj(e, var, &v) ? Native_IsStr(&v, text) : -1;
@@ -101,7 +101,7 @@ static int Sp_HIs(const nativeVal_t *e, const char *var, const char *text) {
 	return r;
 }
 
-/* e.var[0:len(prefix)] == prefix (Script_HPrefix) */
+/* e.var[0:len(prefix)] == prefix (as the handle reads it) */
 static int Sp_HPrefix(const nativeVal_t *e, const char *var, const char *prefix) {
 	nativeVal_t v = { 0 }, head = { 0 };
 	int r = Mode_VObj(e, var, &v) && Native_Slice(&v, 0, (long)strlen(prefix), &head) ? Native_IsStr(&head, prefix) : -1;

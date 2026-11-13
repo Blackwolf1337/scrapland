@@ -387,11 +387,17 @@ void NObj_FromPy(PyObject *o, nativeVal_t *v) {
 	}
 }
 
+void NObj_PyId(PyObject *o, nativeVal_t *v) {
+	if (o == Py_True || o == Py_False) {
+		v->id = o == Py_True ? NATIVE_ID_TRUE : NATIVE_ID_FALSE;
+	} else if ((v->id = Py_ErrIdOf(o)) == 0) {
+		Native_Pin(v);
+	}
+}
+
 void NObj_FromPyKept(PyObject *o, nativeVal_t *v) {
 	NObj_FromPy(o, v);
-	if (v->type != NV_OBJ && v->type != NV_REF) {
-		Native_KeepPy(v, o);
-	}
+	NObj_PyId(o, v);
 }
 
 /* the result r of a Python call (a new reference, given away) into *out: 1, or 0 with *out None when r is NULL (the
@@ -783,14 +789,13 @@ const portRef_t *NObj_PortRef(const nativeVal_t *f) {
 	return f->type == NV_REF && f->ref->kind == NO_FUNCTION && f->ref->func == NF_PORT ? f->ref->ref : NULL;
 }
 
-static byte Obj_CallPy(PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out);
-
-/* a data function: ctx the module name, then the function name; the global looked up and called as a value */
+/* a data function: ctx the module name, then the function name; the global looked up and called as a value (the
+ * arguments and the result as a call through Python hands them over) */
 static byte Obj_DataCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *module = ctx, *name = module + strlen(module) + 1;
-	PyObject *f = Script_Global(module, name);
-	byte ok = f && Obj_CallPy(f, a, n, out);
-	Py_XDECREF(f);
+	nativeVal_t f;
+	byte ok = ModVar_GlobalVal(module, name, &f) && Port_ValuesOf(PORT_VSITE(), &f, a, n, out, 1);
+	Native_Free(&f);
 	return ok;
 }
 
@@ -996,7 +1001,8 @@ static PyObject *Obj_FuncToPy(nativeObj_t *o) {
 			Py_XINCREF(f);
 			Native_Free(&cur);
 		}
-		if (f && Port_IsOwn(o->ref, f) && !Obj_TableFind(f)) {
+		const portRef_t *face = f ? NObj_PortFace(f) : NULL;
+		if (face && face->entry == o->ref->entry && !Port_Slow() && !Obj_TableFind(f)) {
 			return f;
 		}
 		Py_XDECREF(f);
@@ -1260,6 +1266,7 @@ static byte Obj_Plain(const nativeVal_t *v, nativeVal_t *out, int depth) {
 		Native_Copy(out, v);
 		Py_XDECREF(out->obj);
 		out->obj = NULL;
+		out->id = 0;
 		return 1;
 	case NV_OBJ:
 		return Native_FromPyAt(v->obj, out, depth);
@@ -1324,6 +1331,52 @@ byte NObj_Plain(const nativeVal_t *v, nativeVal_t *out) {
 	return Obj_Plain(v, out, 0);
 }
 
+/* NObj_ArgOf of a tuple, list or dict by value that holds an object or a handle (no view and no NV_OBJ in it): what
+ * Python hands back, without the crossing: a list or dict as a new object (its plain items copied, its objects and
+ * handles themselves), a tuple as a tuple of such items, a vector as the tuple of its floats */
+static void Obj_ArgOfData(const nativeVal_t *v, nativeVal_t *out) {
+	if (v->type == NV_TUPLE) {
+		/* the same tuple: Python hands the tuple object itself back */
+		Native_SetEmpty(out, NV_TUPLE);
+		for (int i = 0; i < v->n; i++) {
+			Obj_ArgOfData(&v->items[i], Native_Append(out));
+		}
+		out->id = v->id;
+	} else if (v->type == NV_LIST || v->type == NV_DICT) {
+		NObj_CallArg(v, out);
+	} else if (v->type == NV_ENT || v->type == NV_REF || !Obj_Plain(v, out, 0)) {
+		Native_Copy(out, v);
+		out->id = 0;
+	}
+}
+
+/* v or a value in it is a view or a Python value (NV_OBJ): the crossing gives its Python object */
+static byte Obj_HoldsPy(const nativeVal_t *v) {
+	if (v->type == NV_OBJ || (v->type == NV_REF && Obj_View(v->ref))) {
+		return 1;
+	}
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			if (Obj_HoldsPy(&v->items[i])) {
+				return 1;
+			}
+		}
+	} else if (v->type == NV_DICT) {
+		const nativeVal_t *k, *x;
+		int pos = 0;
+		while (Native_DictNext(v, &pos, &k, &x)) {
+			if (Obj_HoldsPy(k) || Obj_HoldsPy(x)) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+byte NObj_HoldsPy(const nativeVal_t *v) {
+	return Obj_HoldsPy(v);
+}
+
 void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out) {
 	if (v->type != NV_ENT && Obj_Plain(v, out, 0)) {
 		return;
@@ -1339,8 +1392,12 @@ void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out) {
 		out->obj = NULL;
 		return;
 	}
-	/* a tuple, list or dict that holds an object or a handle: as Python has it (a tuple keeps its object) */
-	PyObject *o = v->type == NV_TUPLE && v->obj && PyTuple_Check(v->obj) ? (Py_INCREF(v->obj), v->obj) : Native_ToPy(v);
+	if (!Obj_HoldsPy(v)) {
+		Obj_ArgOfData(v, out);
+		return;
+	}
+	/* a tuple, list or dict that holds a Python value: as Python has it (OBJLIB 9) */
+	PyObject *o = Native_ToPy(v);
 	if (o) {
 		Native_SetObj(out, o);
 		Py_DECREF(o);
@@ -2970,7 +3027,7 @@ static byte Obj_CallFunc(nativeObj_t *o, const nativeVal_t *a, int n, nativeVal_
 			return Port_KwCall(o->ref, a, n, NULL, out) && Obj_Norm(out);
 		}
 		site.ref = o->ref;
-		return Port_BoundCall(&site, NULL, a, n, out, NULL) && Obj_Norm(out);
+		return Port_BoundCall(&site, NULL, a, n, out, 0) && Obj_Norm(out);
 	}
 	case NF_CALLBACK:
 		/* the depth check of a call, as Port_Entry has it */
@@ -3190,8 +3247,12 @@ byte NObj_CallKw(const nativeVal_t *f, const nativeVal_t *a, int n, const native
 		Mem_Free(args);
 		return ok;
 	}
-	/* a Python object: through Python */
-	PyObject *py = Native_ToPy(f), *t = py ? PyTuple_New(n) : NULL, *d = t ? Obj_KwToPy(kw) : NULL;
+	/* a view: through Python; any other value is no callable (NObj_Call's TypeError) */
+	PyObject *py = Obj_Forward(f);
+	if (!py) {
+		return NObj_Call(f, a, n, out);
+	}
+	PyObject *t = PyTuple_New(n), *d = t ? Obj_KwToPy(kw) : NULL;
 	for (int k = 0; d && k < n; k++) {
 		PyObject *x = Native_ToPy(&a[k]);
 		if (!x) {

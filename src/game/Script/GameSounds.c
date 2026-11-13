@@ -466,20 +466,6 @@ static byte Gs_LoadSndListObj(const nativeVal_t *list) {
 	return ok;
 }
 
-/* the same for a list made from a value (the new list of a call through Python) */
-static byte Gs_LoadSndListPy(PyObject *list) {
-	PyObject *r = Script_Method(list, "sort", "()");
-	if (!r) {
-		return 0;
-	}
-	Py_DECREF(r);
-	nativeVal_t v;
-	Native_Arg(list, &v);
-	byte ok = Gs_LoadSndList(&v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* LoadSndList(SndList) of a native caller: an NV_OBJ list is the object itself, a native list becomes a new list
  * object (as its call through Python makes it) */
 static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *out) {
@@ -491,9 +477,11 @@ static byte DoorSound_LoadSndList_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	if (Native_IsObj(&a[0])) {
 		return Gs_LoadSndListObj(&a[0]);
 	}
-	PyObject *list = Native_ToPy(&a[0]);
-	byte ok = list && Gs_LoadSndListPy(list);
-	Py_XDECREF(list);
+	nativeVal_t list;
+	Native_Copy(&list, &a[0]);
+	NObj_Share(&list);
+	byte ok = Gs_LoadSndListObj(&list);
+	Native_Free(&list);
 	return ok;
 }
 

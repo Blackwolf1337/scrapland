@@ -9,7 +9,7 @@
  * variables in C. The module variables are read where the port read them (Script_GetInt, Script_GetFloat and
  * Script_GetString forms, errors dropped) and written through at once with the port's dropped errors.
  * The lists of CharsNPC that its functions hand over (optionsList, the result of ClassifyOptions) keep their identity. The other ports (Speech, CharsNPC, Challenge, Menu, MissionsFuncs, SaveGame) are called through
- * their refs (PORT_CALL, PORT_ASK: directly while the attribute holds the port's function, else by name); the engine
+ * their refs (PORT_CALL: directly while the attribute holds the port's function, else what is there); the engine
  * functions the port called by name go through their seams (SetMsgText, CreateEntity, Scrap.Set,
  * SetMoney, SetAlarm) or to the engine in C where no case replaces them (GetMoney, Get).
  * The entries parse the arguments as before.
@@ -19,6 +19,7 @@
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/input.h"
+#include "scrap/nativeobj.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -383,9 +384,11 @@ static byte Char_OptionsFirst(const char *text) {
 /* CharsNPC.optionsList, CharsNPC.subOptionsList = lists[0], lists[1] of a result of CharsNPC.ClassifyOptions (the
  * objects themselves, Script_SetVar's dropped errors): 0 with the error of an item */
 static byte Char_SetOptionLists(const nativeVal_t *lists) {
-	nativeVal_t a, b;
-	byte ok = Mode_RefItem(lists, 0, &a);
-	ok = Mode_RefItem(lists, 1, &b) && ok;
+	nativeVal_t a, b, i;
+	Native_SetInt(&i, 0);
+	byte ok = NObj_GetItem(lists, &i, &a);
+	Native_SetInt(&i, 1);
+	ok = NObj_GetItem(lists, &i, &b) && ok;
 	if (ok) {
 		if (!Mode_RefToMod("CharsNPC", "optionsList", &a) || !Mode_RefToMod("CharsNPC", "subOptionsList", &b)) {
 			Native_ErrClear();
@@ -684,7 +687,12 @@ static byte Police_Talk(const char *usr, const char *ch) {
 		return r == 0;
 	}
 	nativeVal_t lists;
-	byte ok = MODE_REFASK(CharsNPC, ClassifyOptions, &lists, "s", "Police") && Char_SetOptionLists(&lists);
+	/* the lists as the result of the call through Python held them: objects of their own */
+	byte ok = PORT_CALL(CharsNPC, ClassifyOptions, &lists, "s", "Police");
+	if (ok) {
+		NObj_Share(&lists);
+		ok = Char_SetOptionLists(&lists);
+	}
 	Native_Free(&lists);
 	if (!ok) {
 		return 0;

@@ -96,7 +96,12 @@ byte Native_RaiseVal(nativeError_t kind, const nativeVal_t *value) {
 	return 0;
 }
 
-static nativeError_t NErr_KindOf(const nativeVal_t *type);
+/* the kind of a value raised as the exception: a standard one only as its own object (an object of another type or a
+ * text made anew is no standard exception) */
+static nativeError_t NErr_KindOf(const nativeVal_t *type) {
+	uintptr_t id = type->type == NV_STR ? Native_IdOf(type) : 0;
+	return id >= NATIVE_ID_ERR && id < NATIVE_ID_ERR + NE_OTHER ? (nativeError_t)(id - NATIVE_ID_ERR) : NE_OTHER;
+}
 
 byte Native_RaiseObj(const nativeVal_t *type, const nativeVal_t *value) {
 	nativeError_t kind = NErr_KindOf(type);
@@ -159,6 +164,7 @@ void Native_ErrType(const nativeErr_t *e, nativeVal_t *out) {
 		Native_SetNone(out);
 	} else {
 		Native_SetStr(out, ne_names[e->kind]);
+		out->id = NATIVE_ID_ERR + (uintptr_t)e->kind;
 	}
 }
 
@@ -425,36 +431,49 @@ static nativeError_t NErr_KindOfPy(PyObject *o) {
 	return NE_OTHER;
 }
 
-/* the kind of a value raised as the exception: a standard one only as its own object (an object of another type or a
- * text made anew is no standard exception) */
-static nativeError_t NErr_KindOf(const nativeVal_t *type) {
-	return NErr_KindOfPy(Native_KeptPy(type));
+uintptr_t Py_ErrIdOf(PyObject *o) {
+	nativeError_t kind = NErr_KindOfPy(o);
+	return kind == NE_OTHER ? 0 : NATIVE_ID_ERR + (uintptr_t)kind;
 }
 
-/* the native value of an object of Python's error state; a number, text, tuple or handle keeps the object, so the way
- * back gives the same one */
-static void NErr_FromPy(PyObject *o, nativeVal_t *v) {
-	NObj_FromPy(o, v);
-	if (v->type != NV_OBJ && v->type != NV_REF) {
-		Native_KeepPy(v, o);
+/* the Python objects of the values of the error that crossed (Py_ErrType and Py_ErrTake give them borrowed), with the
+ * identities of the values they were made for */
+static PyObject *ne_pyObj[2];
+static uintptr_t ne_pyId[2];
+
+/* the native value of an object of Python's error state (a number, text or tuple with an identity of its own: the way
+ * back gives the same object) */
+static void NErr_FromPy(PyObject *o, nativeVal_t *v, int slot) {
+	NObj_FromPyKept(o, v);
+	if (Native_IdOf(v) && !(v->id >= NATIVE_ID_ERR && v->id < NATIVE_ID_ERR + NE_KINDS)) {
+		Py_INCREF(o);
+		Py_XDECREF(ne_pyObj[slot]);
+		ne_pyObj[slot] = o;
+		ne_pyId[slot] = Native_IdOf(v);
 	}
 }
 
-/* the Python object of a value of the error (borrowed: kept with the value) */
-static PyObject *NErr_Py(nativeVal_t *v) {
-	PyObject *o = Native_KeptPy(v);
-	if (!o && v->type == NV_REF) {
-		o = Native_PyOf(v);
+/* the Python object of a value of the error (borrowed: held by the slot until the next value of another identity) */
+static PyObject *NErr_Py(nativeVal_t *v, int slot) {
+	if (v->type == NV_REF || v->type == NV_OBJ) {
+		PyObject *o = Native_PyOf(v);
+		return o ? o : Py_None;
 	}
-	if (!o) {
-		o = Native_ToPy(v);
+	Native_PinTop(v);
+	uintptr_t id = Native_IdOf(v);
+	if (id >= NATIVE_ID_ERR && id < NATIVE_ID_ERR + NE_OTHER) {
+		return *ne_py[id - NATIVE_ID_ERR];
+	}
+	if (!id || !ne_pyObj[slot] || ne_pyId[slot] != id) {
+		PyObject *o = Native_ToPy(v);
 		if (!o) {
 			return Py_None;
 		}
-		Native_KeepPy(v, o);
-		Py_DECREF(o);
+		Py_XDECREF(ne_pyObj[slot]);
+		ne_pyObj[slot] = o;
+		ne_pyId[slot] = id;
 	}
-	return o;
+	return ne_pyObj[slot];
 }
 
 void Py_ErrSet(PyObject *type, PyObject *value, PyObject *tb) {
@@ -463,10 +482,10 @@ void Py_ErrSet(PyObject *type, PyObject *value, PyObject *tb) {
 	Native_SetNone(&t);
 	Native_SetNone(&v);
 	if (kind == NE_OTHER) {
-		NErr_FromPy(type, &t);
+		NErr_FromPy(type, &t, 0);
 	}
 	if (kind != NE_NONE && value) {
-		NErr_FromPy(value, &v);
+		NErr_FromPy(value, &v, 1);
 	}
 	Py_XDECREF(type);
 	Py_XDECREF(value);
@@ -478,7 +497,7 @@ PyObject *Py_ErrType(void) {
 	if (ne_err.kind == NE_NONE) {
 		return NULL;
 	}
-	return ne_err.kind == NE_OTHER ? NErr_Py(&ne_err.type) : *ne_py[ne_err.kind];
+	return ne_err.kind == NE_OTHER ? NErr_Py(&ne_err.type, 0) : *ne_py[ne_err.kind];
 }
 
 void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb) {
@@ -487,7 +506,7 @@ void Py_ErrTake(PyObject **type, PyObject **value, PyObject **tb) {
 	*tb = NULL;
 	if (*type) {
 		Py_INCREF(*type);
-		*value = NErr_Py(&ne_err.value);
+		*value = NErr_Py(&ne_err.value, 1);
 		Py_INCREF(*value);
 	}
 	Native_ErrClear();
@@ -500,8 +519,8 @@ static byte NErr_PrintStart(nativeErr_t *e) {
 	if (e->kind == NE_OTHER) {
 		Native_Copy(&t, &e->type);
 	} else {
-		/* the name of the standard exception as __builtin__ has it (OBJLIB 7e4b: with its object) */
-		NObj_FromPyKept(*ne_py[e->kind], &t);
+		/* the name of the standard exception as __builtin__ has it */
+		Native_ErrType(e, &t);
 	}
 	Script_SetSysVar("last_type", &t);
 	Native_Free(&t);

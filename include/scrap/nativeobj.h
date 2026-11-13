@@ -233,16 +233,21 @@ nativeVal_t *NObj_DictData(const nativeVal_t *d);
 /* the items of a list object of native data (an NV_LIST by value, changed in place by the caller); NULL for a view,
  * a list that crossed, another value */
 const nativeVal_t *NObj_ListData(const nativeVal_t *l);
-/* NObj_FromPy, a value by value with o kept (Native_KeepPy: the same object goes back to Python), as a variable holds
- * a value of Python */
+/* the identity of the Python object o for v, the value it was made into: True, False and the standard exceptions their
+ * own ones, any other number, text or tuple one of its own (Native_Pin) */
+void NObj_PyId(PyObject *o, nativeVal_t *v);
+/* NObj_FromPy with NObj_PyId, as a variable holds a value of Python */
 void NObj_FromPyKept(PyObject *o, nativeVal_t *v);
 /* Native_FromPyAny(Native_ToPy(v)) without the crossing of native data: numbers, texts, None, and lists, tuples and
  * dicts (by value, objects, views) of them by value, 32 deep (a dict with its table); 1 with *out (Native_Free it),
  * 0 without an error and *out None when v holds another value (an instance, a function, a module, an entity handle) */
 byte NObj_Plain(const nativeVal_t *v, nativeVal_t *out);
 /* Native_Arg(Native_ToPy(v)) the same way: NObj_Plain, else the object or handle itself (an NV_OBJ as Native_SetObj
- * gives it, a tuple that holds an object as its Python tuple) */
+ * gives it), a tuple, list or dict by value that holds objects or handles natively (a list or dict as a new object, a
+ * tuple of such items); one that holds a view or a Python value as its Python object gives it (OBJLIB 9) */
 void NObj_ArgOf(const nativeVal_t *v, nativeVal_t *out);
+/* v or a value in it is a view or a Python value (NV_OBJ) */
+byte NObj_HoldsPy(const nativeVal_t *v);
 /* 1 by default: Native_SetObj and Native_Arg give the NV_REF view of an object Native_FromPyRef takes. 0 under
  * SCRAP_NATIVE_REF=0 (read once): the NV_OBJ of before batch 9a2, kept one more round for comparison */
 byte NObj_RefMode(void);

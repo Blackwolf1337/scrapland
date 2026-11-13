@@ -364,7 +364,7 @@ void CApp_InitGame(CApp *self, const char *level) {
 	self->flags |= Net_IsServer() ? APPF_SERVER : 0;
 	self->flags |= Net_IsClient() ? APPF_CLIENT : 0;
 	CApp_SFLB_0(self);
-	g_AppPyOne = Py_BuildValue("i", 1);
+	g_AppOneMade = 1;
 	g_DisableSkipSlot = g_DisableSkipSlotDefault;
 	Python_Init();
 	Con_Print(0, "Python script subsystem initialized.\n", 0);
