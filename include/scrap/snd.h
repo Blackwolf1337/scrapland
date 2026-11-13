@@ -47,7 +47,9 @@ void Snd_SampleFree(SndSample *s);
 byte Snd_SampleStereo(const SndSample *s);
 int Snd_SampleRate(const SndSample *s);
 
-/* channels: Snd_Play returns the lowest free channel that is not reserved, or -1 */
+/* channels: Snd_Play returns a handle as FMOD 3's (index | count << 12, see Snd.c): the next free channel that is
+ * not reserved, else the quietest playing one is stolen; -1 when all are reserved. The channel functions take a
+ * handle (a stale one does nothing and returns 0) or a plain index below 0x1000 */
 int Snd_Play(SndSample *s, byte paused);
 byte Snd_Stop(int ch);
 byte Snd_IsPlaying(int ch);
@@ -72,7 +74,7 @@ void Snd_MemoryStats(uint32_t *cur, uint32_t *max);
 SndStream *Snd_StreamOpen(const char *path, uint32_t offset, uint32_t size, byte loop);
 /* a stream that cb fills with 16 bit PCM of channels at rate */
 SndStream *Snd_StreamPcm(int rate, int channels, SndPcmCallback cb, void *user);
-/* plays the stream on a free channel (from its start), the channel or -1 */
+/* plays the stream (from its start) on a channel picked as by Snd_Play, its handle or -1 */
 int Snd_StreamPlay(SndStream *s, byte paused);
 void Snd_StreamClose(SndStream *s);
 int Snd_StreamRate(const SndStream *s);
