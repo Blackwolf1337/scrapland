@@ -2,6 +2,8 @@
 
 Since 2026-11-01 the hook DLL, the rva tooling and the generators (`tools/standalone`, `tools/rename`, `hookcheck.py`, `testsyms.py`, the `datacheck` target, `src/hooks.inc`, `src/imports.inc`) are gone, see tag `hooked-final`. ScrapC.exe is the only build target. The difftest compares ScrapC.exe with a frozen reference ScrapC.exe built from that tag (`DIFFTEST_REF=build-ref/ScrapC.exe tools/test/difftest.sh`). Since 2026-11-02 the exactness code is gone too: the own MSVC math (`crtlibm.c` and friends, `src/core/libm.c`), `ucrtbase_ms.dll` and `tools/test/getucrt.sh`, the own printf, scanf and strtod (`crtfmt.c`, `crtscan.c`, `crtnum.c`), `StdioInline.c`, the x87 helpers and the Python wrappers for float and complex hash and float pow. The game uses the platform libc and libm, and the reference is now the tag `ref-noexact` (`DIFFTEST_REF=build-ref-noexact/ScrapC.exe`). The text below is the history of the stages and names those tools as they were.
 
+Since 2026-11-13 Python 1.5.2 is gone as well: the interpreter (2026-11-08, tag `interp-final`) and then the object library. The `python152` target, `src/python` and `third_party/python-1.5.2` no longer exist, and the scripts are C and data (see [scripts.md](scripts.md) and [objlib-plan.md](objlib-plan.md)). Stage 2a below, and every mention of the vendored Python, `src/python`, `pyshim.h`, `pymap.py`, `origpython.h` and the Python tests in the later stages, describe the state of that time. The 1.5.2 headers for the Ghidra import of the original exe are in `tools/ghidra/python152`.
+
 Goal: a `scrap.exe` built only from the C code of `src/` and real libraries, with no code of the original Scrap.exe.
 It is reached in stages, each one runs the difftest.
 
@@ -126,6 +128,8 @@ libpng 1.0.5, IJG libjpeg, D3DX8. The `GAME_DATA` addresses of library data (`in
 for Python and the CRT, all of this is still to do.
 
 ### Stage 2a: the real Python
+
+History: this library is gone (see the top of this file).
 
 `ScrapC.exe` links a real Python 1.5.2. It is built from the unchanged sources of `third_party/python-1.5.2` (CMake
 target `python152`, `-std=gnu89`, `NDEBUG`). `src/python/config.h` is derived from the MSVC part of `PC/config.h`
@@ -1403,7 +1407,7 @@ GOG listeners) is `unused_84`, the size stays 0x90.
 - The player name stays the one of the config. The original took the GOG or Steam persona name.
 - `App_GetConfigDir` is My Documents\MercurySteam\Scrapland\ without the subfolder of the GOG id.
 
-The Python API keeps every `Scrap.*` name. `GetGogID`, `GetSteamID`, `GetSteamTicket` and `IsSteam` return None,
+The script API keeps every `Scrap.*` name. `GetGogID`, `GetSteamID`, `GetSteamTicket` and `IsSteam` return None,
 `OpenStore` does nothing, `IsApp` returns 1 and `Achievement` does nothing. The argument checks and the error returns
 are as before.
 

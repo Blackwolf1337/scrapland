@@ -1,6 +1,6 @@
 # Removing the Python object library
 
-This is the plan for the second half of removing Python (see Removing Python in scripts.md). The interpreter stages leave a build where no Python code runs. The C ports of the game scripts still work on Python 1.5.2 objects: `PyObject` values, module dicts, the `Sf_` frame helpers, `PyMethodDef` tables and the engine's script API. This plan moves them to native C state and types, module by module, and ends with python152 out of the build.
+This is the plan for the second half of removing Python (see Removing Python in scripts.md). It is complete: all stages are done (see the last section). The text below is the plan and its history, written in the tense of the time, and it names code that is gone. The interpreter stages leave a build where no Python code runs. The C ports of the game scripts still work on Python 1.5.2 objects: `PyObject` values, module dicts, the `Sf_` frame helpers, `PyMethodDef` tables and the engine's script API. This plan moves them to native C state and types, module by module, and ends with python152 out of the build.
 
 The survey numbers are from branch objlib-0 (base script-loader f2f57b62). The worktrees of nopy-3 (172 level .mod files), nopy-s4 (Init, string, NewsPanel, PCMenu, CharsNPC) and nopy-6b (`TestExpr.c`, regress in the repo) add to them.
 
@@ -356,7 +356,7 @@ After this stage the channel parses its expressions into native values and calls
 
 ### Stage 9: python152 out of the build
 
-After this stage `src/python` and `third_party/python-1.5.2` are out of `CMakeLists.txt`, `python.h`, `PyPool` and `pymempool.c` are deleted, and no Py identifier is left in `src/game` or `include/scrap`. The link proves it. Golden, sweep, levels, regress, saves and the online pair test are the final check.
+After this stage `src/python` and `third_party/python-1.5.2` are out of `CMakeLists.txt`, `python.h`, `PyPool` and `pymempool.c` are deleted,. The link proves it. Golden, sweep, levels, regress, saves and the online pair test are the final check.
 
 ## Checks per stage
 
@@ -406,3 +406,7 @@ The checks of the pilot:
 - fc-r8t-chat and the edge file `rd/fc-ol0-chat.txt` are identical line by line between the build before and after. The edge file has 55 lines: Car Descriptor, negative ids, `int()` forms, non-text arguments, and flags and client ship swapped. The same runs under ASan give 0 reports.
 - Sweep gives 29 of 29, golden gives 1481, and there are 0 warnings.
 - The online pair test (`rd/r8g.py`, DeathMatch, a real server and client) reaches the native paths that the cases record. The chat steps (to all from each side, a private line) give the same results and the same chat lines in both game logs before and after. The other differing lines of that run are in the join and spectate steps, the timing races that round 8g reported.
+
+## Result
+
+The plan is complete (2026-11-13). All nine stages are done. Module variables, functions, classes, instances, modules, errors, the function tables of the engine and the ports, long integers, the number rules of 1.5.2 and the library modules (`math`, `strop`, `builtins`, `sys`, `imp`, `signal`) are native C. `errno`, `new`, `regex`, `_locale` and `marshal` were dropped because nothing used them. There is no `python152` library, no `src/python` and no `third_party/python-1.5.2` any more,. Only `tools/ghidra/python152` keeps the 1.5.2 headers and copyright for the Ghidra import of the original Scrap.exe. The debug switches `SCRAP_NULL_CHECK`, `SCRAP_NULL_CHECK_ENGINE`, `SCRAP_NATIVE_REF` and `SCRAP_PORT_SLOW` are removed. Every regress run now repeats byte for byte (deterministic test mode, see [testing.md](testing.md)), so each stage was compared exactly against the build before it.

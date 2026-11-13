@@ -1,6 +1,6 @@
 {
  "title": "ScrapC progress",
- "date": "2026-11-12",
+ "date": "2026-11-13",
  "steps": [
   {
    "step": 1,
@@ -162,9 +162,9 @@
     {
      "item": "Python object library removed",
      "weight": 3,
-     "percent": 92,
-     "status": "in progress",
-     "note": "all native C up to the last step: Python out of the build"
+     "percent": 100,
+     "status": "done",
+     "note": "no Python left in the build or the repo"
     }
    ]
   },
@@ -177,16 +177,16 @@
     {
      "item": "Design",
      "weight": 1,
-     "percent": 40,
+     "percent": 60,
      "status": "in progress",
-     "note": "decisions made: sandbox, factions, coop, new protocol"
+     "note": "decided and planned; protocol, instances and players working"
     },
     {
      "item": "Server and client",
      "weight": 3,
-     "percent": 0,
-     "status": "not started",
-     "note": "the old PvP modes work as before"
+     "percent": 30,
+     "status": "in progress",
+     "note": "new protocol, headless instances, players with prediction"
     }
    ]
   }

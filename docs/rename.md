@@ -2,6 +2,8 @@
 
 The tools named here (`tools/rename`, `tools/standalone`, `testsyms.py`, `rvacheck.py`, `hookcheck.py`, the `datacheck` target) and `src/hooks.inc` are gone since 2026-11-01, see tag `hooked-final`.
 
+The vendored Python 1.5.2 and its `python152` library named below are gone too (2026-11-13). The run in the results below is history.
+
 Stage 4 translated the Spanish names of the original to English. Everything was done by the tool in `tools/rename`, so
 the run can be repeated, and it was checked against the objects of the build before the rename.
 
@@ -174,7 +176,7 @@ the others.
 
 The results of 2026-10-29:
 
-- Both builds are clean (`cmake --build build --clean-first`: no warning but the two of the vendored Python, as before).
+- Both builds are clean (`cmake --build build --clean-first`: no warning but the two of the vendored Python at that time, as before).
 - `objcmp.py`: all 882 objects of the build before the rename (`scrapcode`, `scrapcode_sa`, `scrapdata_check`,
   `python152`, `ScrapC`, `dinput8`) are the same after it but for the names. The only difference is the order of the
   table of `testmod.c` (`testsyms.inc` is sorted by name).
