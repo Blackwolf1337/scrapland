@@ -33,6 +33,7 @@
 #define PLAY_MAX_CATCHUP 8				/* ticks stepped in one frame at most; more ahead is a jump */
 #define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */
 #define PLAY_BOT_TARGET 3				/* the bot takes a ship and stays in the air (the weapon tests) */
+#define PLAY_BOT_WALK 4					/* the bot walks around and stays on foot (collisions of characters) */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 
 byte g_Play;
@@ -74,8 +75,9 @@ static struct {
 	byte haveStatus;
 	PlayStats st;
 	FILE *log;
-	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET */
+	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK */
 	byte botCycle;
+	byte noAhead;						/* SCRAP_PLAYAHEAD=0: the others collide where they are drawn (tests) */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
 } play = { .slot = -1, .player = -1 };
@@ -265,7 +267,9 @@ void Play_Start(void) {
 	}
 	const char *bot = getenv("SCRAP_PLAYBOT");
 	play.bot = !bot || !*bot || *bot == '0' ? 0 : !crt_stricmp(bot, "npc") ? PLAY_BOT_NPC :
-		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : 1;
+		!crt_stricmp(bot, "target") ? PLAY_BOT_TARGET : !crt_stricmp(bot, "walk") ? PLAY_BOT_WALK : 1;
+	const char *ahead = getenv("SCRAP_PLAYAHEAD");
+	play.noAhead = ahead && *ahead == '0';
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
 	play.botCycle = cycle && *cycle && *cycle != '0';
 	Play_Camera();
@@ -321,7 +325,9 @@ static void Play_Step(uint32_t tick, byte none) {
 	play.input.tick = tick;
 	play.input.slot = (uint16_t)play.slot;
 	e->pos = play.truePos;
-	Watch_PlayersAt((double)tick / NETREP_TICK_HZ);
+	if (!play.noAhead) {
+		Watch_PlayersAt((double)tick / NETREP_TICK_HZ);
+	}
 	NetPl_Step(e, &play.input, 1, 0);
 	Watch_PlayersBack();
 	play.truePos = e->pos;
@@ -394,7 +400,7 @@ static void Play_Bot(double now) {
 		/* a while around, then to the nearest ship that stands still and no player has, and into it */
 		play.acc.move[0] = t < 6.0 ? 1.0f : 0.5f;
 		play.acc.rot[0] = (float)sin(t * 0.7) * 0.6f;
-		if (t < 8.0) {
+		if (t < 8.0 || play.bot == PLAY_BOT_WALK) {
 			return;
 		}
 		cEntity *ship = Play_BotNearest(e, NETREP_SHIP, 0, 1);
@@ -575,7 +581,9 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 				break;
 			}
 			NetRepInput x = *in;
-			Watch_PlayersAt((double)t / NETREP_TICK_HZ);
+			if (!play.noAhead) {
+				Watch_PlayersAt((double)t / NETREP_TICK_HZ);
+			}
 			NetPl_Step(e, &x, 1, 1);
 			Watch_PlayersBack();
 			play.input = x;

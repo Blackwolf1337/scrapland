@@ -39,6 +39,7 @@
 #define REP_RESPAWN_TICKS (3 * NETREP_TICK_HZ)	/* a player without an entity gets a new one after this */
 #define REP_REWIND_MAX 0.5					/* s the lag compensation goes back at most */
 #define REP_CHAR_CLASS "Dtritus"
+#define REP_PARK_HEIGHT 1500.0f			/* units above the floor a ship left by its player is parked at most */
 
 typedef struct RepEnt {
 	cEntity *e;						/* NULL: the slot has no entity of this world */
@@ -553,7 +554,14 @@ static void Rep_Switch(int i, cEntity *e) {
 	Con_Printf("instance: player %d out of %s\n", i, name);
 }
 
-/* the player's entity gone: a character away, a ship parked (a dead one left to the game: its wreck) */
+/* the ship stands near enough above the floor for a parking box under it (Parking.SetShipAsParked) */
+static byte Rep_NearFloor(cEntity *v) {
+	vec3_t down = { v->pos.x, v->pos.y - REP_PARK_HEIGHT, v->pos.z }, hit;
+	return Engine_TestLine(&v->pos, &down, &hit, NULL) != 0;
+}
+
+/* the player's entity gone: a character away, a ship parked when it is near the floor, else left empty (a dead one
+ * left to the game: its wreck) */
 static void Rep_DropOwn(int i) {
 	RepPlayer *pl = &rep.pl[i];
 	cEntity *e = Rep_Own(pl);
@@ -565,7 +573,7 @@ static void Rep_DropOwn(int i) {
 	Obj(e)->netStep = 0;
 	if (NetPl_Kind(e) == NETREP_SHIP) {
 		Rep_SetSlot(e, -1);
-		if (WLife(e)->life > 0) {
+		if (WLife(e)->life > 0 && Rep_NearFloor(e)) {
 			PORT_CALL(Parking, SetShipAsParked, NULL, "s", e->name);
 		}
 	} else {

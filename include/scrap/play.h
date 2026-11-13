@@ -31,8 +31,9 @@
  * Controls: those of single player. The switch: Use (Walk set) on foot, Mission info (Racer set) in a ship.
  * SCRAP_PLAYLOG=<file>: a CSV line per server state of the own entity (tick, error, correction, ...). SCRAP_PLAYBOT=1:
  * the client plays itself (walks, takes a ship, flies, fires at the nearest other player) for tests; =npc: it fires
- * at ships of no player; =target: it takes a ship and stays in the air; SCRAP_PLAYBOT_WEAPONS=1: it fires each
- * weapon for 6 s in turn and stays in the ship. SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
+ * at ships of no player; =target: it takes a ship and stays in the air; =walk: it walks around on foot;
+ * SCRAP_PLAYBOT_WEAPONS=1 (or weapon names): it fires each weapon for 6 s of aiming in turn and stays in the ship;
+ * SCRAP_PLAYAHEAD=0: the prediction collides with the others where they are drawn (tests). SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
  * SCRAP_NET2_JITTER ms) on either side: a test link.
  */
 #ifndef SCRAP_PLAY_H
