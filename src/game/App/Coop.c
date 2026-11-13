@@ -396,7 +396,8 @@ byte Coop_QLoad(const char *map) {
 		Con_Printf("coop: the same level again (QLoad %s): not yet in coop\n", map);
 		return 0;
 	}
-	int i = Cp_Player();
+	/* the member of the scene whose end goes on (its callback), else the bound one */
+	int i = cp.inScene && cp.scenePlayer >= 0 && Players_Get(cp.scenePlayer) ? cp.scenePlayer : Cp_Player();
 	if (i < 0) {
 		return 0;
 	}
