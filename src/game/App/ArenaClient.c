@@ -792,8 +792,11 @@ void Arena_ClientFrame(void) {
 	byte own = Play_Entity() != NULL;
 	double now = Ac_Now();
 	if (own) {
+		/* the death text goes with the next ship (it comes while the dead ship may still be there) */
+		if (ac.lost > 0.0) {
+			ac.deathTop[0] = 0;
+		}
 		ac.lost = 0.0;
-		ac.deathTop[0] = 0;
 	} else if (ac.lost == 0.0) {
 		ac.lost = now;
 	}
