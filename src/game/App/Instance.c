@@ -227,7 +227,9 @@ static void Instance_NetIn(uint64_t ms) {
 		}
 	}
 	for (int i = 0; i < INST_SLOTS; i++) {
-		if (inst.live[i] && !Rep_IsWatcher(i) && ms - inst.since[i] >= INSTANCE_TEST_HOLD * 1000u) {
+		/* a coop client's level load can play the intro video first: its hello comes within its ticket's life */
+		uint64_t hold = Coop_On() ? COORD_TICKET_LIFE : INSTANCE_TEST_HOLD * 1000u;
+		if (inst.live[i] && !Rep_IsWatcher(i) && ms - inst.since[i] >= hold) {
 			inst.since[i] = ms;
 			Net2_Disconnect(inst.host, i, INSTANCE_DR_NOGAME);
 		}
