@@ -28,6 +28,7 @@ typedef struct LmConn {
 	int used;
 	uint8_t nonce[COORD_CHALLENGE];
 	uint64_t closeAt;				/* ms, 0 never (a coordinator) */
+	int pageNext;					/* the first world of the next page of a query, -1 none */
 } LmConn;
 
 static volatile int lm_quit;
@@ -93,21 +94,24 @@ static void Lm_Beat(Net2Host *h, int conn, const uint8_t *data, int size, uint64
 	Net2_Send(h, conn, LM_CHANNEL, buf, w.size);
 }
 
-static void Lm_Query(Net2Host *h, int conn, uint64_t now) {
+/* the pages of a query while the connection's reliable queue takes them (the rest in the next passes); the
+ * connection closes LM_QUERY_MS after the last one */
+static void Lm_Pages(Net2Host *h, int conn, uint64_t now) {
 	static uint8_t page[NET2_MAX_MESSAGE];
-	int first = 0, total = ListReg_Count(&lm_reg);
-	do {
+	LmConn *c = &lm_conn[conn];
+	int total = ListReg_Count(&lm_reg);
+	while (c->pageNext >= 0) {
 		int count = 0;
-		int n = ListReg_WritePage(&lm_reg, first, page, sizeof(page), &count);
-		if (n <= 0 || Net2_Send(h, conn, LM_CHANNEL, page, n) != NET2_OK) {
-			break;
+		int n = ListReg_WritePage(&lm_reg, c->pageNext, page, sizeof(page), &count);
+		if (n > 0 && Net2_Send(h, conn, LM_CHANNEL, page, n) == NET2_E_FULL) {
+			return;
 		}
-		first += count;
-		if (!count) {
-			break;
+		c->pageNext += count;
+		if (n <= 0 || !count || c->pageNext >= total) {
+			c->pageNext = -1;
 		}
-	} while (first < total);
-	lm_conn[conn].closeAt = now + LM_QUERY_MS;
+	}
+	c->closeAt = now + LM_QUERY_MS;
 }
 
 static void Lm_Net(Net2Host *h, uint64_t now) {
@@ -124,6 +128,7 @@ static void Lm_Net(Net2Host *h, uint64_t now) {
 				break;
 			}
 			c->used = 1;
+			c->pageNext = -1;
 			c->closeAt = now + LM_QUERY_MS * 4;
 			NetRepBuf_Init(&w, buf, sizeof(buf));
 			NetRep_PutU8(&w, LIST_MSG_CHALLENGE);
@@ -144,7 +149,9 @@ static void Lm_Net(Net2Host *h, uint64_t now) {
 			if (ev.data[0] == LIST_MSG_BEAT) {
 				Lm_Beat(h, ev.conn, ev.data, ev.size, now);
 			} else if (ev.data[0] == LIST_MSG_QUERY) {
-				Lm_Query(h, ev.conn, now);
+				c->pageNext = 0;
+				c->closeAt = 0;
+				Lm_Pages(h, ev.conn, now);
 			}
 			break;
 		case NET2_EV_SERVERINFO: {
@@ -168,6 +175,9 @@ static void Lm_Net(Net2Host *h, uint64_t now) {
 		Lm_Log("list: %d worlds expired, %d listed\n", gone, ListReg_Count(&lm_reg));
 	}
 	for (int i = 0; i < NET2_MAX_CONNS; i++) {
+		if (lm_conn[i].used && lm_conn[i].pageNext >= 0) {
+			Lm_Pages(h, i, now);
+		}
 		if (lm_conn[i].used && lm_conn[i].closeAt && now >= lm_conn[i].closeAt) {
 			Net2_Disconnect(h, i, NET2_DR_LOCAL);
 			memset(&lm_conn[i], 0, sizeof(lm_conn[i]));

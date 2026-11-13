@@ -282,6 +282,7 @@ void ListClient_Init(ListClient *c, const char *addr, uint16_t port) {
 	snprintf(c->addr, sizeof(c->addr), "%s", addr ? addr : "");
 	c->port = port ? port : COORD_LIST_PORT;
 	c->lastPlayers = -1;
+	c->lastResult = -1;
 }
 
 static void LC_Log(void (*log)(const char *fmt, ...), const char *fmt, ...) {
@@ -341,6 +342,7 @@ void ListClient_Pass(ListClient *c, uint64_t now, const ListBeat *b, const uint8
 				Net2_ReasonString(ev.reason));
 			c->phase = LC_OFF;
 			c->listed = 0;
+			c->lastResult = -1;
 			c->retryAt = now + LC_RETRY_MS;
 		} else if (ev.type == NET2_EV_MESSAGE && ev.channel == LC_CHANNEL && ev.size >= 1) {
 			NetRepReader r;
@@ -356,9 +358,10 @@ void ListClient_Pass(ListClient *c, uint64_t now, const ListBeat *b, const uint8
 			} else if (ev.data[0] == LIST_MSG_ANSWER) {
 				int result = (int)NetRep_GetU8(&r);
 				int secs = (int)NetRep_GetU16(&r);
-				if (!r.bad && (result == LIST_OK) != c->listed) {
+				if (!r.bad && result != c->lastResult) {
 					LC_Log(log, result == LIST_OK ? "list: registered with %s (%d s)\n" :
 						"list: %s refused the heartbeat (%d)\n", c->addr, result == LIST_OK ? secs : result);
+					c->lastResult = result;
 				}
 				c->listed = !r.bad && result == LIST_OK;
 			}

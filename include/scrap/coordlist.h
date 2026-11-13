@@ -131,6 +131,7 @@ typedef struct ListClient {
 	uint64_t nextBeat, lastBeat, retryAt;
 	int lastPlayers;
 	int listed;						/* the last answer was LIST_OK */
+	int lastResult;					/* of the last answer (logged when it changes), -1 none */
 } ListClient;
 
 /* addr "" switches it off */
