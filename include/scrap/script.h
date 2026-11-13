@@ -82,15 +82,17 @@ void Script_ModuleCounts(unsigned long counts[SMC_COUNT], byte reset);
 /* one more lookup of the kind (SMC_) */
 void Script_ModuleCount(int kind);
 /* text (NAME or NAME.NAME...) as module code loads it (LOAD_NAME in the namespace ns, which is the locals and the
- * globals, then the builtins; LOAD_ATTR): OBJLIB 7e4b: as a Python object (a new reference), NULL with the error set */
-PyObject *Script_ModuleName(const struct nativeVal_s *ns, const char *text);
+ * globals, then the builtins; LOAD_ATTR): 1 with *out (Native_Free it), else 0 with the error set and *out None */
+byte Script_ModuleName(const struct nativeVal_s *ns, const char *text, struct nativeVal_s *out);
 /* the body of a for loop of module code: 1, or 0 with the error set */
-typedef byte (*scriptForBody_t)(const struct nativeVal_s *ns, PyObject *item, void *ctx);
+typedef byte (*scriptForBody_t)(const struct nativeVal_s *ns, const struct nativeVal_s *item, void *ctx);
 /*
  * for <var> in <seq>: <body> in module code, for the C hooks of the definitions (FOR_LOOP, STORE_NAME): item i of seq
- * up to the IndexError, each stored as var in the namespace ns before body runs; 1, or 0 with the error set
+ * up to the IndexError (Script_ForItem), each stored as var in the namespace ns before body runs; 1, or 0 with the
+ * error set
  */
-byte Script_ModuleFor(const struct nativeVal_s *ns, const char *var, PyObject *seq, scriptForBody_t body, void *ctx);
+byte Script_ModuleFor(const struct nativeVal_s *ns, const char *var, const struct nativeVal_s *seq, scriptForBody_t body,
+	void *ctx);
 /* the C hooks of the module definitions ("c <name>" lines, module_hooks in ScriptModule.c): 1, or 0 with the error
  * set; module is the module (its variables are the names of the module code), body the dict object of the class body
  * the line stands in (NULL in the module code) */
@@ -212,35 +214,16 @@ void Script_SetCursor(int id, const char *item);
 /* a text of the language ("" when it is not there) */
 const char *Script_Lang(const char *key);
 
-/* module.func(args) as a line of a script: 0 with the error left set for the caller (not printed), which then
- * stops and returns NULL as the script would */
-byte Script_Try(const char *module, const char *func, const char *fmt, ...);
-/* module.func(args) with the result: a new reference, NULL with the error set (not printed) */
-/* obj.name(args) as a script calls it (the error of a missing attribute reads the same): the result, a new reference,
- * NULL with the error set */
-PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...);
-PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...);
 /* callable(args), args given away: the result (a new reference, NULL with the error set) */
 PyObject *Script_Invoke(PyObject *callable, PyObject *args);
-/* an integer variable of a script module (def when it is not there) */
-int Script_GetInt(const char *module, const char *var, int def);
 /* a string variable of a script module into out ("" when it is not there or not a string) */
 const char *Script_GetString(const char *module, const char *var, char *out, int size);
-/* sets a variable of a script module (value given away) and an integer one */
-void Script_SetVar(const char *module, const char *var, PyObject *value);
-void Script_SetInt(const char *module, const char *var, int value);
+/* module.var = value as the script ports set it (an error is dropped; value NULL: the lookup of the value failed, its
+ * error dropped) */
+void Script_SetVar(const char *module, const char *var, const struct nativeVal_s *value);
 /* an attribute of a script module (a new reference, NULL with the error set); a pack module through the variable
  * registry (scrap/modvars.h), as Script_Global, Script_SetGlobal and Script_SetVar */
 PyObject *Script_Attr(const char *module, const char *name);
-/* a number variable of a script module (def when it is not there or no number) */
-double Script_GetFloat(const char *module, const char *var, double def);
-
-/* entity handles and values as a script uses them (0 or -1 with the error set): handle.var = v (v given away),
- * handle.var == text, handle.var[0:len(prefix)] == prefix, cmp(value, n) (-2 on an error) */
-byte Script_HSet(PyObject *e, const char *var, PyObject *v);
-int Script_HIs(PyObject *e, const char *var, const char *text);
-int Script_HPrefix(PyObject *e, const char *var, const char *prefix);
-int Script_NumCmp(PyObject *a, long n);
 
 /* script variables of entities by name, as the entity handle reads them: the number of a variable (int, else float;
  * def when the entity or the variable is not there) and its text (def likewise) */
@@ -249,23 +232,8 @@ const char *Script_EntStr(const char *ent, const char *var, const char *def);
 /* `if ent.var:` of a script (0 when the entity or the variable is not there) */
 byte Script_EntTrue(const char *ent, const char *var);
 
-/* the arguments of a menu callback: the player and the item (empty when the callback got none) */
-byte Script_Args(PyObject *args, int *id, const char **control);
-
 /* ---- Python values as the scripts use them (src/game/Script/ScriptValue.c) ---- */
 
-/* the temporary references of a C function, released together by Script_Done */
-#define SCRIPT_REFS 48
-typedef struct scriptRefs_s {
-	PyObject *o[SCRIPT_REFS];
-	int n;
-} scriptRefs_t;
-/* o into the references of r (NULL passes through) */
-PyObject *Script_Keep(scriptRefs_t *r, PyObject *o);
-/* releases the references of r, then result */
-PyObject *Script_Done(scriptRefs_t *r, PyObject *result);
-/* a new reference of o (NULL stays NULL) */
-PyObject *Script_Ref(PyObject *o);
 /* a global of a module as a function of its script reads it: a new reference, a NameError with the name when it is
  * missing (a deleted variable) */
 PyObject *Script_Global(const char *module, const char *name);
@@ -279,9 +247,9 @@ PyObject *Script_Index(PyObject *o, int i);
  * fails to give without an exception (the handle of a deleted entity) raises ceval's "SystemError: error return
  * without exception set", as the line of the script does */
 PyObject *Script_GetAttr(PyObject *o, const char *name);
-/* NULL with ceval's SystemError set unless an error is set already: the return of a C function where an engine call
+/* 0 with ceval's SystemError set unless an error is set already: the return of a C function where an engine call
  * failed without an exception */
-PyObject *Script_Fail(void);
+byte Script_Fail(void);
 /* callable(*args, **kw) from C (kw may be NULL; nothing given away): the C function making the call counts toward
  * the recursion depth of the interpreter for the time of the call, as the frame of the Python function it replaces
  * does in eval_code2, so a cycle through C functions raises "RuntimeError: Maximum recursion depth exceeded" like
@@ -292,17 +260,11 @@ PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw);
  * after it), else 0 with the RuntimeError */
 byte Script_Enter(uintptr_t frame);
 void Script_Leave(void);
-/* a + b (a given away), a + "text" (a given away), "text" + b: new references, NULL stays NULL */
-PyObject *Script_Plus(PyObject *a, PyObject *b);
-PyObject *Script_PlusS(PyObject *a, const char *text);
-PyObject *Script_SPlus(const char *text, PyObject *b);
-/* `if o:`, a == b: 1, 0, or -1 with the error set (also for NULL) */
-int Script_True(PyObject *o);
-int Script_Eq(PyObject *a, PyObject *b);
-/* `o` (a new reference, NULL stays NULL) */
-PyObject *Script_Repr(PyObject *o);
 /* item i of a for loop over seq: 1 with a new reference in *item, 0 at the end, -1 with the error set */
 int Script_Next(PyObject *seq, int i, PyObject **item);
+/* the same on a value (an object through Mode_RefNext, a sequence by value natively): 1 with *out (Native_Free it), 0
+ * at the end, -1 with the error set */
+int Script_ForItem(const struct nativeVal_s *seq, int i, struct nativeVal_s *out);
 /* the print statement with its items, as ceval prints them to sys.stdout (PRINT_ITEM, PRINT_NEWLINE): 0 with the
  * error set */
 byte Script_Print(const struct nativeVal_s *const *items, int n);
@@ -315,9 +277,6 @@ byte Script_FileWrite(const struct nativeVal_s *f, const struct nativeVal_s *v, 
 byte Script_FileWriteText(const struct nativeVal_s *f, const char *s);
 byte Script_FlushLine(void);
 byte Script_WriteOut(const struct nativeVal_s *v, byte raw);
-/* Scrap.GetEntity(name), Scrap.UsrEntity(0): new references, NULL with the error set */
-PyObject *Script_Entity(PyObject *name);
-PyObject *Script_Usr(void);
 /* `global last; last = target.name; target.name = name` in a function of the script module (name its global, the
  * chain of callbacks the net weapons and Vehicles put in front of Net's): 0 with the error set */
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last);
@@ -342,14 +301,16 @@ void Script_GateNote(const char *what, const char *name, const char *detail);
 PyObject *Script_NotRead(const char *where, const char *text);
 /* the globals give a frame valid builtins (a dict or a module in __builtins__), as exec and eval need */
 byte Script_HasBuiltins(const struct nativeVal_s *globals);
-/* a string constant of len chars as the compiler makes it (interned when it has only name characters) */
-PyObject *Script_StrConst(const char *s, int len);
 /* the len bytes at s are only name characters (ASCII letters, digits and _): the compiler interns such a constant */
 byte Script_IsNameText(const char *s, int len);
+/* the identity of the constant v as the compiler makes it: the shared object of a small int or short text, the
+ * interned one of a text of name characters, else a new one (scrap/scriptnative.h) */
+uintptr_t Script_ConstId(const struct nativeVal_s *v);
+/* the text s as a constant of the compiler (Native_SetStr with Script_ConstId) */
+void Script_StrConstVal(struct nativeVal_s *out, const char *s);
 /* s[0:len] is a Python 1.5.2 name (ASCII letters, digits and _, not a keyword) */
 byte Script_IsName(const char *s, int len);
-/* o is a string that between single quotes in a line of Python is itself again; the same for the n bytes of s */
-byte Script_IsQuotable(PyObject *o);
+/* the n bytes of s between single quotes in a line of Python are themselves again */
 byte Script_IsQuotableText(const char *s, int n);
 /* a NAME(.NAME)* text evaluated with the locals, the globals and their builtins (namespaces: a module or a dict
  * object; no blanks; each name may be followed by subscripts [n] of a decimal int as repr writes it,

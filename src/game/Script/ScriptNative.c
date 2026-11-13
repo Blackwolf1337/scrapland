@@ -254,6 +254,26 @@ byte Native_Is(const nativeVal_t *a, const nativeVal_t *b) {
 	return NObj_Is(a, b);
 }
 
+void Native_KwOrder(const nativeVal_t *pairs, nativeVal_t *out) {
+	nativeVal_t d, k, v;
+	const nativeVal_t *dk, *dv;
+	int pos = 0;
+	Native_SetEmpty(&d, NV_DICT);
+	for (int i = 0; i < pairs->n; i++) {
+		Native_Copy(&k, &pairs->items[i].items[0]);
+		Native_Copy(&v, &pairs->items[i].items[1]);
+		Native_DictSet(&d, &k, &v);
+	}
+	Native_SetEmpty(out, NV_LIST);
+	while (Native_DictNext(&d, &pos, &dk, &dv)) {
+		nativeVal_t *pair = Native_Append(out);
+		Native_SetEmpty(pair, NV_TUPLE);
+		Native_Copy(Native_Append(pair), dk);
+		Native_Copy(Native_Append(pair), dv);
+	}
+	Native_Free(&d);
+}
+
 byte Native_IsStr(const nativeVal_t *v, const char *text) {
 	return v->type == NV_STR && !strcmp(Native_Text(v), text);
 }
@@ -2482,80 +2502,6 @@ int Native_ReadArgs(const char *fmt, va_list va, nativeArg_t *a) {
 	return n;
 }
 
-PyObject *Native_ArgPy(const nativeArg_t *a) {
-	/* another letter fails the call without an error, as it always did */
-	switch (a->type) {
-	case 'v':
-	case 'r':
-		return Native_ToPy(a->v);
-	case 'i':
-		return PyInt_FromLong(a->i);
-	case 'd':
-		return PyFloat_FromDouble(a->d);
-	case 's':
-		/* a NULL text is None, as for Py_BuildValue */
-		return a->s ? PyString_FromString((char *)a->s) : Py_ReturnNone();
-	case 'O':
-	case 'P':
-		Py_XINCREF(a->o);
-		return a->o;
-	}
-	return NULL;
-}
-
-PyObject *Native_PyArgs(const nativeArg_t *a, int n) {
-	PyObject *t = PyTuple_New(n);
-	for (int i = 0; t && i < n; i++) {
-		PyObject *o = Native_ArgPy(&a[i]);
-		if (!o) {
-			Py_DECREF(t);
-			return NULL;
-		}
-		PyTuple_SET_ITEM(t, i, o);
-	}
-	return t;
-}
-
-/* the argument tuple of the mini format of Native_Call (NULL with the error set) */
-static PyObject *Native_Args(const char *fmt, va_list va) {
-	nativeArg_t a[NATIVE_ARGS];
-	int n = Native_ReadArgs(fmt, va, a);
-	return Native_PyArgs(a, n);
-}
-
-/* callable(args) (a reference taken over), the result into *out (NULL: dropped) */
-byte Native_CallVa(PyObject *callable, nativeVal_t *out, const char *fmt, va_list va) {
-	PyObject *args = callable ? Native_Args(fmt, va) : NULL;
-	PyObject *r = args ? Script_Invoke(callable, args) : NULL;
-	Py_XDECREF(callable);
-	if (!r) {
-		return 0;
-	}
-	/* any other object is an NV_OBJ (OBJLIB 7) */
-	if (out) {
-		Native_Arg(r, out);
-	}
-	Py_DECREF(r);
-	return 1;
-}
-
-PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Native_Args(fmt, va);
-	va_end(va);
-	return args ? Script_Invoke(callable, args) : NULL;
-}
-
-byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	Py_XINCREF(callable);
-	byte ok = Native_CallVa(callable, out, fmt, va);
-	va_end(va);
-	return ok;
-}
-
 byte Native_NativeVar(const char *module, const char *name, nativeVal_t *f) {
 	modVarRef_t ref;
 	/* a loaded pack module only (no import here); its global and its attribute are the same variable */
@@ -2574,8 +2520,7 @@ byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, cons
 	va_list va;
 	nativeVal_t f;
 	va_start(va, fmt);
-	byte ok = Native_NativeVar(module, name, &f) ? Port_NativeCallVa(&f, out, fmt, va) :
-		Native_CallVa(Script_Attr(module, name), out, fmt, va);
+	byte ok = ModVar_ModAttrVal(module, name, &f) && Port_NativeCallVa(&f, out, fmt, va);
 	va_end(va);
 	Native_Free(&f);
 	return ok;
@@ -2585,8 +2530,7 @@ byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, c
 	va_list va;
 	nativeVal_t f;
 	va_start(va, fmt);
-	byte ok = Native_NativeVar(module, name, &f) ? Port_NativeCallVa(&f, out, fmt, va) :
-		Native_CallVa(Script_Global(module, name), out, fmt, va);
+	byte ok = ModVar_GlobalVal(module, name, &f) && Port_NativeCallVa(&f, out, fmt, va);
 	va_end(va);
 	Native_Free(&f);
 	return ok;

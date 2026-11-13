@@ -14,29 +14,9 @@
 #include "scrap/platform.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 #define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
-
-PyObject *Script_Keep(scriptRefs_t *r, PyObject *o) {
-	if (o) {
-		CHECK(r->n < SCRIPT_REFS);
-		r->o[r->n++] = o;
-	}
-	return o;
-}
-
-PyObject *Script_Done(scriptRefs_t *r, PyObject *result) {
-	while (r->n > 0) {
-		r->n--;
-		Py_DECREF(r->o[r->n]);
-	}
-	return result;
-}
-
-PyObject *Script_Ref(PyObject *o) {
-	Py_XINCREF(o);
-	return o;
-}
 
 PyObject *Script_Global(const char *module, const char *name) {
 	byte imported;
@@ -74,14 +54,17 @@ PyObject *Script_Index(PyObject *o, int i) {
 
 PyObject *Script_GetAttr(PyObject *o, const char *name) {
 	PyObject *v = o ? ModVar_ObjAttr(o, name) : NULL;
-	return v || !o ? v : Script_Fail();
+	if (!v && o) {
+		Script_Fail();
+	}
+	return v;
 }
 
-PyObject *Script_Fail(void) {
+byte Script_Fail(void) {
 	if (!Native_Failed()) {
 		Native_Raise(NE_SYSTEM, "error return without exception set");
 	}
-	return NULL;
+	return 0;
 }
 
 /* ceval.c MAX_RECURSION_DEPTH */
@@ -131,39 +114,6 @@ PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw) {
 	return r;
 }
 
-PyObject *Script_Plus(PyObject *a, PyObject *b) {
-	PyObject *r = a && b ? PyNumber_Add(a, b) : NULL;
-	Py_XDECREF(a);
-	return r;
-}
-
-PyObject *Script_PlusS(PyObject *a, const char *text) {
-	PyObject *t = a ? PyString_FromString(text) : NULL;
-	PyObject *r = Script_Plus(a, t);
-	Py_XDECREF(t);
-	return r;
-}
-
-PyObject *Script_SPlus(const char *text, PyObject *b) {
-	return Script_Plus(PyString_FromString(text), b);
-}
-
-int Script_True(PyObject *o) {
-	return o ? PyObject_IsTrue(o) : -1;
-}
-
-int Script_Eq(PyObject *a, PyObject *b) {
-	if (!a || !b) {
-		return -1;
-	}
-	int c = PyObject_Compare(a, b);
-	return Native_Failed() ? -1 : c == 0;
-}
-
-PyObject *Script_Repr(PyObject *o) {
-	return o ? PyObject_Repr(o) : NULL;
-}
-
 int Script_Next(PyObject *seq, int i, PyObject **item) {
 	*item = NULL;
 	if (!seq) {
@@ -182,6 +132,18 @@ int Script_Next(PyObject *seq, int i, PyObject **item) {
 		return 0;
 	}
 	return -1;
+}
+
+int Script_ForItem(const nativeVal_t *seq, int i, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (Native_IsObj(seq)) {
+		return Mode_RefNext(seq, i, out);
+	}
+	int n = Native_ForCount(seq);
+	if (n < 0) {
+		return -1;
+	}
+	return i >= n ? 0 : Native_SeqItem(seq, i, out) ? 1 : -1;
 }
 
 /* ---- the print statement and the writes to sys.stdout (PyFile_* of fileobject.c on the objects of the scripts) ---- */
@@ -297,14 +259,15 @@ byte Script_Print(const nativeVal_t *const *items, int n) {
 }
 
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last) {
-	PyObject *prev = Script_Attr(target, name);
-	if (!prev || !Script_SetGlobal(module, last, prev)) {
+	nativeVal_t prev, mine;
+	byte ok = ModVar_ModAttrVal(target, name, &prev) && ModVar_SetGlobalVal(module, last, &prev);
+	Native_Free(&prev);
+	if (!ok) {
 		return 0;
 	}
-	PyObject *mine = Script_Global(module, name);
-	int bad = !mine || ModVar_SetModAttr(target, name, mine) < 0;
-	Py_XDECREF(mine);
-	return !bad;
+	ok = ModVar_GlobalVal(module, name, &mine) && ModVar_SetModAttrVal(target, name, &mine);
+	Native_Free(&mine);
+	return ok;
 }
 
 byte Script_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out) {
@@ -463,24 +426,22 @@ byte Script_EvalOther(const nativeVal_t *globals, const char *s, nativeVal_t *ou
 	return 0;
 }
 
-PyObject *Script_Entity(PyObject *name) {
-	return name ? PORT_ASK(Scrap, GetEntity, "O", name) : NULL;
-}
-
-PyObject *Script_Usr(void) {
-	return PORT_ASK(Scrap, UsrEntity, "i", 0L);
-}
-
 byte Script_IsNameText(const char *s, int len) {
 	return (int)strspn(s, LIT_NAME_CHARS) == len;
 }
 
-PyObject *Script_StrConst(const char *s, int len) {
-	PyObject *v = PyString_FromStringAndSize((char *)s, len);
-	if (v && Script_IsNameText(PyString_AsString(v), len)) {
-		PyString_InternInPlace(&v);
+uintptr_t Script_ConstId(const nativeVal_t *v) {
+	uintptr_t id = Native_IdOf(v);
+	if (!id) {
+		id = v->type == NV_STR && Script_IsNameText(Native_Text(v), v->n) ? Native_InternId(Native_Text(v), v->n) :
+			Native_NewId();
 	}
-	return v;
+	return id;
+}
+
+void Script_StrConstVal(nativeVal_t *out, const char *s) {
+	Native_SetStr(out, s);
+	out->id = Script_ConstId(out);
 }
 
 /* a character a string literal holds as it is (no escape) */
@@ -510,10 +471,6 @@ byte Script_IsQuotableText(const char *s, int n) {
 		}
 	}
 	return 1;
-}
-
-byte Script_IsQuotable(PyObject *o) {
-	return o && PyString_Check(o) && Script_IsQuotableText(PyString_AsString(o), PyString_Size(o));
 }
 
 /* "[n]" at p (n a decimal int as repr writes it: 0 or no leading zero, no sign): its length and n, else 0 */

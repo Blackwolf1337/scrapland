@@ -789,14 +789,13 @@ const portRef_t *NObj_PortRef(const nativeVal_t *f) {
 	return f->type == NV_REF && f->ref->kind == NO_FUNCTION && f->ref->func == NF_PORT ? f->ref->ref : NULL;
 }
 
-static byte Obj_CallPy(PyObject *f, const nativeVal_t *a, int n, nativeVal_t *out);
-
-/* a data function: ctx the module name, then the function name; the global looked up and called as a value */
+/* a data function: ctx the module name, then the function name; the global looked up and called as a value (the
+ * arguments and the result as a call through Python hands them over) */
 static byte Obj_DataCall(void *ctx, const nativeVal_t *a, int n, nativeVal_t *out) {
 	const char *module = ctx, *name = module + strlen(module) + 1;
-	PyObject *f = Script_Global(module, name);
-	byte ok = f && Obj_CallPy(f, a, n, out);
-	Py_XDECREF(f);
+	nativeVal_t f;
+	byte ok = ModVar_GlobalVal(module, name, &f) && Port_ValuesOf(PORT_VSITE(), &f, a, n, out, 1);
+	Native_Free(&f);
 	return ok;
 }
 
@@ -1002,7 +1001,8 @@ static PyObject *Obj_FuncToPy(nativeObj_t *o) {
 			Py_XINCREF(f);
 			Native_Free(&cur);
 		}
-		if (f && Port_IsOwn(o->ref, f) && !Obj_TableFind(f)) {
+		const portRef_t *face = f ? NObj_PortFace(f) : NULL;
+		if (face && face->entry == o->ref->entry && !Port_Slow() && !Obj_TableFind(f)) {
 			return f;
 		}
 		Py_XDECREF(f);
@@ -2977,7 +2977,7 @@ static byte Obj_CallFunc(nativeObj_t *o, const nativeVal_t *a, int n, nativeVal_
 			return Port_KwCall(o->ref, a, n, NULL, out) && Obj_Norm(out);
 		}
 		site.ref = o->ref;
-		return Port_BoundCall(&site, NULL, a, n, out, NULL) && Obj_Norm(out);
+		return Port_BoundCall(&site, NULL, a, n, out, 0) && Obj_Norm(out);
 	}
 	case NF_CALLBACK:
 		/* the depth check of a call, as Port_Entry has it */
@@ -3197,8 +3197,12 @@ byte NObj_CallKw(const nativeVal_t *f, const nativeVal_t *a, int n, const native
 		Mem_Free(args);
 		return ok;
 	}
-	/* a Python object: through Python */
-	PyObject *py = Native_ToPy(f), *t = py ? PyTuple_New(n) : NULL, *d = t ? Obj_KwToPy(kw) : NULL;
+	/* a view: through Python; any other value is no callable (NObj_Call's TypeError) */
+	PyObject *py = Obj_Forward(f);
+	if (!py) {
+		return NObj_Call(f, a, n, out);
+	}
+	PyObject *t = PyTuple_New(n), *d = t ? Obj_KwToPy(kw) : NULL;
 	for (int k = 0; d && k < n; k++) {
 		PyObject *x = Native_ToPy(&a[k]);
 		if (!x) {

@@ -19,6 +19,7 @@
  */
 #include <string.h>
 
+#include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -321,15 +322,22 @@ MODE_FN(NewsPanel, UseNewsPanel, 4, Np_UseNewsPanel(&a[1], &a[2]))
 MODE_FN(NewsPanel, EndOfNews, 0, Np_EndOfNews())
 MODE_FN(NewsPanel, SwitchAlarm, 1, Np_SwitchAlarm(&a[0]))
 
-static byte News_SettingsBody(const nativeVal_t *locals, PyObject *f, void *ctx) {
+static byte News_SettingsBody(const nativeVal_t *locals, const nativeVal_t *f, void *ctx) {
+	nativeVal_t apply, a[2], res;
 	(void)ctx;
-	PyObject *apply = Script_ModuleName(locals, "apply");
-	PyObject *set = apply ? Script_ModuleName(locals, "Scrap.Set") : NULL;
-	PyObject *res = set ? Script_CallObject(apply, Py_BuildValue("(OO)", set, f), NULL) : NULL;
-	Py_XDECREF(apply);
-	Py_XDECREF(set);
-	Py_XDECREF(res);
-	return res != NULL;
+	Native_SetNone(&a[0]);
+	byte ok = Script_ModuleName(locals, "apply", &apply) && Script_ModuleName(locals, "Scrap.Set", &a[0]);
+	if (ok) {
+		Native_Copy(&a[1], f);
+		ok = NObj_Call(&apply, a, 2, &res);
+		Native_Free(&a[1]);
+	}
+	if (ok) {
+		Native_Free(&res);
+	}
+	Native_Free(&apply);
+	Native_Free(&a[0]);
+	return ok;
 }
 
 /* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` (OBJLIB 7: a hook of
@@ -350,21 +358,26 @@ int NewsPanel_ModSettings(const nativeVal_t *module, nativeVal_t *body) {
 		{ "NewsPanelW", NULL, 270, 0 }, { "NewsPanelH", NULL, 180, 0 }, { "NewsPanelOpenSpeed", NULL, 3.0, 1 },
 		{ "NewsPanelCloseSpeed", NULL, 4.0, 1 },
 	};
-	enum { NUM_VARS = sizeof(vars) / sizeof(vars[0]) };
-	PyObject *seq = PyTuple_New(NUM_VARS);
-	for (int i = 0; seq && i < NUM_VARS; i++) {
-		PyObject *v = vars[i].text ? Script_StrConst(vars[i].text, (int)strlen(vars[i].text)) :
-			vars[i].isFloat ? PyFloat_FromDouble(vars[i].num) : PyInt_FromLong((long)vars[i].num);
-		PyObject *pair = v ? Py_BuildValue("(NN)", Script_StrConst(vars[i].var, (int)strlen(vars[i].var)), v) : NULL;
-		if (!pair) {
-			Py_DECREF(seq);
-			seq = NULL;
-			break;
+	nativeVal_t seq;
+	Native_SetEmpty(&seq, NV_TUPLE);
+	for (size_t i = 0; i < sizeof(vars) / sizeof(vars[0]); i++) {
+		nativeVal_t *pair = Native_Append(&seq), *v;
+		Native_SetEmpty(pair, NV_TUPLE);
+		Script_StrConstVal(Native_Append(pair), vars[i].var);
+		v = Native_Append(pair);
+		if (vars[i].text) {
+			Script_StrConstVal(v, vars[i].text);
+		} else {
+			if (vars[i].isFloat) {
+				Native_SetFloat(v, vars[i].num);
+			} else {
+				Native_SetInt(v, (long)vars[i].num);
+			}
+			v->id = Script_ConstId(v);
 		}
-		PyTuple_SET_ITEM(seq, i, pair);
 	}
-	byte ok = seq && Script_ModuleFor(locals, "f", seq, News_SettingsBody, NULL);
-	Py_XDECREF(seq);
+	byte ok = Script_ModuleFor(locals, "f", &seq, News_SettingsBody, NULL);
+	Native_Free(&seq);
 	return ok;
 }
 

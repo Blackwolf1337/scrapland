@@ -18,6 +18,8 @@
  */
 #include <string.h>
 
+#include "scrap/modvars.h"
+#include "scrap/nativeobj.h"
 #include "scrap/net.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -560,14 +562,17 @@ MODE_FNANY(Items, Init, It_Init())
 
 /* ---- hints and interactive objects ---- */
 
-/* hints[item][i] of the Hints dict object (OBJLIB 5 (9c) and 7: its items hold functions) as a value. The dict stays
- * the Python object in ShowHint until the entity handles are native (7c: the deleted key and the handle's entity) */
-static byte It_HintItem(PyObject *hints, const nativeVal_t *item, int i, nativeVal_t *out) {
-	PyObject *k = Native_ToPy(item), *h = k ? PyObject_GetItem(hints, k) : NULL, *v = h ? Script_Index(h, i) : NULL;
-	byte ok = v && Native_Arg(v, out);
-	Py_XDECREF(v);
-	Py_XDECREF(h);
-	Py_XDECREF(k);
+/* hints[item][i] of the Hints dict object (its items hold functions) as a value */
+static byte It_HintItem(const nativeVal_t *hints, const nativeVal_t *item, int i, nativeVal_t *out) {
+	nativeVal_t h, k, v;
+	Native_SetNone(out);
+	Native_SetInt(&k, i);
+	byte ok = NObj_GetItem(hints, item, &h) && NObj_GetItem(&h, &k, &v);
+	if (ok) {
+		NObj_ArgOf(&v, out);
+		Native_Free(&v);
+	}
+	Native_Free(&h);
 	return ok;
 }
 
@@ -575,16 +580,16 @@ static byte It_HintItem(PyObject *hints, const nativeVal_t *item, int i, nativeV
 static byte It_ShowHint(const nativeVal_t *item) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *text = Mode_V(&t), *time = Mode_V(&t), *now = Mode_V(&t), *when = Mode_V(&t), *extra = Mode_V(&t);
-	nativeVal_t *once = Mode_V(&t), *h = Mode_V(&t);
+	nativeVal_t *once = Mode_V(&t), *h = Mode_V(&t), *hints = Mode_V(&t);
 	cEntity *e;
 	const char *ref = Native_Text(item);
 	if (!Mode_Ent(item, &e) || !Mode_SetI(e, ref, "rTime", 10) || !Mode_SetI(e, ref, "AppearsIfFree", 1) ||
 		!Mode_EntHandle(e, h)) {
 		return Mode_Done(&t, 0);
 	}
-	PyObject *hints = Mode_GlobalPy("Items", "Hints");
+	byte ok = ModVar_GlobalVal("Items", "Hints", hints);
 	Native_SetFloat(now, Mode_Time());
-	byte ok = hints && It_HintItem(hints, item, 0, text) && It_HintItem(hints, item, 1, time) &&
+	ok = ok && It_HintItem(hints, item, 0, text) && It_HintItem(hints, item, 1, time) &&
 		Native_Arith('+', now, time, when);
 	if (ok) {
 		/* SScorer.SetMsgText(text, when) with when as the number it is */
@@ -599,13 +604,10 @@ static byte It_ShowHint(const nativeVal_t *item) {
 	ok = ok && It_HintItem(hints, item, 2, once);
 	if (ok && Native_True(once)) {
 		/* i.Del() of the handle: the entity may be gone after the function */
-		PyObject *k = Native_ToPy(item);
-		ok = k && PyObject_DelItem(hints, k) == 0;
-		Py_XDECREF(k);
+		ok = NObj_DelItem(hints, item);
 		e = Native_Ent(h);
 		ok = ok && (e ? Mode_Del(e) >= 0 : Native_EntVar(NULL, ref, "Del", now));
 	}
-	Py_XDECREF(hints);
 	return Mode_Done(&t, ok);
 }
 

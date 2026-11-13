@@ -75,29 +75,29 @@ static const struct {
 	{ NULL, NULL, NULL },
 };
 
-PyObject *Script_ModuleName(const nativeVal_t *ns, const char *text) {
-	nativeVal_t v;
-	int found = Script_NameChain(ns, ns, text, &v);
+byte Script_ModuleName(const nativeVal_t *ns, const char *text, nativeVal_t *out) {
+	int found = Script_NameChain(ns, ns, text, out);
 	if (found == 0) {
 		Native_Raise(NE_SYSTEM, "module code: cannot load %.100s", text);
 	}
-	PyObject *o = found > 0 ? Native_ToPy(&v) : NULL;
-	Native_Free(&v);
-	return o;
+	if (found <= 0) {
+		Native_Free(out);
+	}
+	return found > 0;
 }
 
-byte Script_ModuleFor(const nativeVal_t *ns, const char *var, PyObject *seq, scriptForBody_t body, void *ctx) {
+byte Script_ModuleFor(const nativeVal_t *ns, const char *var, const nativeVal_t *seq, scriptForBody_t body, void *ctx) {
 	modVarRef_t ref;
 	byte ok = ModVar_RefOfNs(ns, &ref);
 	for (int i = 0; ok; i++) {
-		PyObject *item;
-		int n = Script_Next(seq, i, &item);
+		nativeVal_t item;
+		int n = Script_ForItem(seq, i, &item);
 		if (n <= 0) {
 			ok = n == 0;
 			break;
 		}
-		ok = ModVar_Set(&ref, var, item) == 0 && body(ns, item, ctx);
-		Py_DECREF(item);
+		ok = ModVar_SetVal(&ref, var, &item) == 0 && body(ns, &item, ctx);
+		Native_Free(&item);
 	}
 	return ok;
 }
@@ -288,11 +288,7 @@ static uintptr_t Mod_Leaf(modParse_t *m, const nativeVal_t *v) {
 	}
 	nativeVal_t *c = Native_Append(m->consts);
 	Native_Copy(c, v);
-	c->id = Native_IdOf(v);
-	if (!c->id) {
-		c->id = v->type == NV_STR && Script_IsNameText(Native_Text(v), v->n) ? Native_InternId(Native_Text(v), v->n) :
-			Native_NewId();
-	}
+	c->id = Script_ConstId(v);
 	return c->id;
 }
 
@@ -708,59 +704,31 @@ static byte Mod_IsEval(const nativeVal_t *f, const nativeVal_t *args, const nati
 static byte Mod_Eval(modParse_t *outer, const nativeVal_t *text, nativeVal_t *out);
 
 /*
- * f(args, keywords) when not skipped: a port or engine function (a native port function, or Port_Own: the value is
- * still the port's own C function, not a recorder or another value a case put there) through its entry on the native
- * values, as its adapter runs it; another native object (a class, an instance, a callback) natively (NObj_CallKw);
- * any other callable, a call with keywords of a port function and one with more arguments than an entry takes as
- * before through Python (Script_CallObject)
+ * f(args, keywords) when not skipped: a port or engine function (a native port function, also the view of its C
+ * function object) through its entry on the native values, as its adapter runs it; any other value as NObj_CallKw
+ * calls it (a native object natively, a call with keywords of a port function and one with more arguments than an
+ * entry takes through Port_KwCall, a view through Python). A native object gets the keywords in their order, any
+ * other value as the dict of keywords of a call through Python has them (Native_KwOrder)
  */
-static byte Mod_Invoke(modParse_t *m, const nativeVal_t *f, nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
+static byte Mod_Invoke(const nativeVal_t *f, nativeVal_t *args, const nativeVal_t *kw, nativeVal_t *out) {
 	const portRef_t *own = NObj_PortRef(f);
+	if (own && !kw->n && args->n <= PORT_ARGS) {
+		/* a dict goes as a dict object with the table of its display (Native_Pass would lay it out anew) */
+		for (int i = 0; i < args->n; i++) {
+			if (Native_Holds(&args->items[i], 1u << NV_DICT)) {
+				NObj_Share(&args->items[i]);
+			}
+		}
+		return Port_ValuesOf(PORT_VSITE(), f, args->items, args->n, out, 0);
+	}
 	if (!own && NObj_Native(f)) {
 		return NObj_CallKw(f, args->items, args->n, kw, out);
 	}
-	if (Native_IsObj(f) && !kw->n && args->n <= PORT_ARGS && (own || Port_Own(NObj_Py(f)))) {
-		/* a dict goes as the Python dict with the table of its display (Native_Pass would lay it out anew) */
-		for (int i = 0; i < args->n; i++) {
-			if (Native_Holds(&args->items[i], 1u << NV_DICT)) {
-				PyObject *o = Mod_ToPy(m, &args->items[i]);
-				if (!o) {
-					Native_SetNone(out);
-					return 0;
-				}
-				Native_Free(&args->items[i]);
-				Native_SetObj(&args->items[i], o);
-				Py_DECREF(o);
-			}
-		}
-		return Port_ValuesOf(PORT_VSITE(), f, args->items, args->n, out, NULL);
-	}
-	PyObject *pf = Mod_ToPy(m, f), *t = pf ? PyTuple_New(args->n) : NULL, *pkw = NULL;
-	byte ok = t != NULL;
-	for (int i = 0; ok && i < args->n; i++) {
-		PyObject *x = Mod_ToPy(m, &args->items[i]);
-		ok = x != NULL;
-		if (ok) {
-			PyTuple_SET_ITEM(t, i, x);
-		}
-	}
-	/* the keywords in their order, a name given twice the last value */
-	for (int i = 0; ok && i < kw->n; i++) {
-		const nativeVal_t *pair = &kw->items[i];
-		PyObject *k = PyString_InternFromString((char *)Native_Text(&pair->items[0]));
-		PyObject *x = k ? Mod_ToPy(m, &pair->items[1]) : NULL;
-		if (x && !pkw) {
-			pkw = PyDict_New();
-		}
-		ok = pkw && x && PyDict_SetItem(pkw, k, x) == 0;
-		Py_XDECREF(k);
-		Py_XDECREF(x);
-	}
-	PyObject *r = ok ? Script_CallObject(pf, t, pkw) : NULL;
-	Py_XDECREF(pf);
-	Py_XDECREF(t);
-	Py_XDECREF(pkw);
-	return Mod_Took(r, out);
+	nativeVal_t pairs;
+	Native_KwOrder(kw, &pairs);
+	byte ok = NObj_CallKw(f, args->items, args->n, &pairs, out);
+	Native_Free(&pairs);
+	return ok;
 }
 
 static byte Mod_Call(modParse_t *m, const nativeVal_t *f, nativeVal_t *out) {
@@ -798,7 +766,7 @@ static byte Mod_Call(modParse_t *m, const nativeVal_t *f, nativeVal_t *out) {
 	if (ok) {
 		m->p++;
 		if (!m->skip) {
-			ok = Mod_IsEval(f, &args, &kw) ? Mod_Eval(m, &args.items[0], out) : Mod_Invoke(m, f, &args, &kw, out);
+			ok = Mod_IsEval(f, &args, &kw) ? Mod_Eval(m, &args.items[0], out) : Mod_Invoke(f, &args, &kw, out);
 		}
 	}
 	Native_Free(&args);
@@ -882,18 +850,14 @@ static byte Mod_Subscript(modParse_t *m, const nativeVal_t *o, nativeVal_t *out)
 	return ok;
 }
 
-/* o.name (Script_GetAttr; a pack module's variable in the registry) */
-static byte Mod_Attr(modParse_t *m, const nativeVal_t *o, const char *name, nativeVal_t *out) {
+/* o.name (a pack module's variable in the registry); an attribute the engine fails to give without an exception (the
+ * handle of a deleted entity) raises ceval's SystemError */
+static byte Mod_Attr(const nativeVal_t *o, const char *name, nativeVal_t *out) {
 	modVarRef_t mv;
 	if (ModVar_OfVal(o, &mv)) {
 		return ModVar_AttrVal(&mv, name, out);
 	}
-	if (NObj_Native(o)) {
-		return NObj_GetAttr(o, name, out);
-	}
-	PyObject *po = Mod_ToPy(m, o), *r = po ? Script_GetAttr(po, name) : NULL;
-	Py_XDECREF(po);
-	return Mod_Took(r, out);
+	return NObj_GetAttr(o, name, out) || Script_Fail();
 }
 
 /* an atom and its attributes, calls and subscripts */
@@ -914,7 +878,7 @@ static byte Mod_Postfix(modParse_t *m, nativeVal_t *out) {
 				Mod_Syntax(m, "a name expected after '.'");
 				return 0;
 			}
-			ok = m->skip || Mod_Attr(m, out, name, &r);
+			ok = m->skip || Mod_Attr(out, name, &r);
 		} else if (*m->p == '(') {
 			m->p++;
 			ok = Mod_Call(m, out, &r);

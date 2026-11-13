@@ -20,6 +20,7 @@
  */
 #include <string.h>
 
+#include "scrap/modvars.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -225,7 +226,14 @@ static byte Phone_Class(const char *section, const nativeVal_t *name) {
 
 /* module.var = value of the script (Script_SetVar: an error is dropped) */
 static void Phone_SetVar(const char *module, const char *var, const nativeVal_t *value) {
-	Script_SetVar(module, var, Native_ToPy(value));
+	Script_SetVar(module, var, value);
+}
+
+/* Speech.OnOutOfRange = the global name of module (the function of the module as a value) */
+static void Phone_OnOutOfRange(const char *module, const char *name) {
+	nativeVal_t f;
+	Script_SetVar("Speech", "OnOutOfRange", ModVar_GlobalVal(module, name, &f) ? &f : NULL);
+	Native_Free(&f);
 }
 
 /* ---- PhoneCab ---- */
@@ -326,7 +334,7 @@ static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
 		return Mode_Done(&t, 0);
 	}
 	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 5 (9c: the function of the module as a value)) */
-	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
+	Phone_OnOutOfRange("PhoneCab", "ForceResetPhoneCab");
 	wins = PhoneCab_Wins();
 	if (wins < 0) {
 		return Mode_Done(&t, 0);
@@ -476,7 +484,7 @@ static byte PhoneCab_Use(const nativeVal_t *a) {
 	if (!Phone_Mark(&a[1], e) || !Mode_Put("PhoneCab", "audioComEntity", NULL, e)) {
 		return Mode_Done(&t, 0);
 	}
-	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
+	Phone_OnOutOfRange("PhoneCab", "ForceResetPhoneCab");
 	Mode_SaveVar("Revenge.Foe", foe);
 	Mode_SaveVar("Revenge.Type", type);
 	if (Native_IsStr(type, "") || Native_IsStr(foe, "")) {
@@ -727,7 +735,7 @@ static byte DTritus_Use(const nativeVal_t *a) {
 	if (!Phone_Mark(&a[1], e) || !Mode_Put("DTritusDesktop", "DTritusDesktop", NULL, e)) {
 		return Mode_Done(&t, 0);
 	}
-	Script_SetVar("Speech", "OnOutOfRange", Script_Global("DTritusDesktop", "ForceResetDTritusDesktop"));
+	Phone_OnOutOfRange("DTritusDesktop", "ForceResetDTritusDesktop");
 	if (!Mode_G("DTritusDesktop", "DialogController", dc)) {
 		return Mode_Done(&t, 0);
 	}
