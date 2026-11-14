@@ -12,6 +12,7 @@
 #include "scrap/instance.h"
 #include "scrap/mathlib.h"
 #include "scrap/modvars.h"
+#include "scrap/places.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
@@ -24,12 +25,13 @@
 
 static cEntity *g_NetPlayers[PLAYERS_MAX];	/* the instance's players, found every frame like cWorld.owners */
 
-/* the variables of the scripts' modules that mean "the player's": the player's own ship (Parking) and Sputnik beside it
- * (include/scrap/sputniks.h) */
+/* the variables of the scripts' modules that mean "the player's": the player's own ship (Parking) and, in the sandbox
+ * and freeroam (places), Sputnik beside it (include/scrap/sputniks.h; the coop story's Sputnik is the party's) */
 #define PLAYERS_VAR_MODULE "Parking"
 static const struct {
 	const char *mod, *var;
-} g_PlVars[] = { { PLAYERS_VAR_MODULE, "PlayerShip" }, { PLAYERS_VAR_MODULE, "LocalShip" }, { "Sputnik", "spt" } };
+	byte places;
+} g_PlVars[] = { { PLAYERS_VAR_MODULE, "PlayerShip", 0 }, { PLAYERS_VAR_MODULE, "LocalShip", 0 }, { "Sputnik", "spt", 1 } };
 #define PLAYERS_VARS ((int)(sizeof(g_PlVars) / sizeof(g_PlVars[0])))
 
 /* the game state of a player while it is not bound into the world */
@@ -275,7 +277,7 @@ static void Players_SwapVars(PlayerState *o, PlayerState *n) {
 	if (g_VarRefTurn != g_Turn) {
 		g_VarRefTurn = g_Turn;
 		for (int k = 0; k < PLAYERS_VARS; k++) {
-			g_VarRefOk[k] = ModVar_Named(g_PlVars[k].mod, &g_VarRef[k]);
+			g_VarRefOk[k] = (!g_PlVars[k].places || Places_On()) && ModVar_Named(g_PlVars[k].mod, &g_VarRef[k]);
 		}
 	}
 	for (int k = 0; k < PLAYERS_VARS; k++) {
