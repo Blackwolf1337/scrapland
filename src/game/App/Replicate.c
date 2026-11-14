@@ -598,6 +598,9 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	Obj(e)->netStep = 1;
 	Rep_DropCorpse(pl);
 	Rep_SetOwn(pl, e);
+	/* a switch held from before (the menu's click that started the world, the fire of a death) is no press for the
+	 * new character: only a press after a release */
+	pl->buttons = NETREP_IN_SWITCH | NETREP_IN_ACT3;
 	pl->lost = 0;
 	pl->dead = 0;
 	pl->spawnTick = rep.tick;
@@ -753,15 +756,15 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	return ship && Rep_IsParked(ship, i) ? ship : NULL;
 }
 
-/* the switch: into the nearest parked ship (a new one when none is near), out of the ship */
-static void Rep_Switch(int i, cEntity *e) {
+/* the switch: into want (else the nearest parked ship, a new one when none is near), out of the ship */
+static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 	RepPlayer *pl = &rep.pl[i];
 	char name[REP_NAME];
 
 	if (NetPl_Kind(e) == NETREP_CHAR) {
-		cEntity *best = NULL;
+		cEntity *best = want;
 		float bestD = PLAY_BOARD_RADIUS * PLAY_BOARD_RADIUS;
-		for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		for (cEntity *v = want ? NULL : cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 			if (!Rep_IsParked(v, i)) {
 				continue;
 			}
@@ -971,7 +974,7 @@ void Rep_TestSwitch(int i, byte call) {
 	}
 	Players_Bind(i);
 	if (!call) {
-		Rep_Switch(i, e);
+		Rep_SwitchTo(i, e, NULL);
 	} else if (NetPl_Kind(e) == NETREP_CHAR) {
 		Rep_CallShip(i, e);
 	}
@@ -1080,13 +1083,21 @@ void Rep_PreFrame(uint64_t tick) {
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Faction_Input(i, e, &in);
-		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
-			if (!Rep_UsesDoor(e)) {
-				pl->buttons = in.buttons;
-				Rep_Switch(i, e);
-				continue;
-			}
+		/* a character's use as in single player: the ship its arrow is on boards it, a door runs the game's use; the
+		 * switch (the mission info key on foot, in a ship) is the sandbox's: into the nearest parked or a called
+		 * ship, out of the ship */
+		byte use = (in.buttons & NETREP_IN_ACT3) && !(pl->buttons & NETREP_IN_ACT3) && !Arena_On();
+		if (use && NetPl_Kind(e) == NETREP_CHAR && WChar_Victim(e) && Rep_IsParked(WChar_Victim(e), i)) {
+			pl->buttons = in.buttons;
+			Rep_SwitchTo(i, e, WChar_Victim(e));
+			continue;
+		}
+		if (use && Rep_UsesDoor(e)) {
 			Coop_BeforeUse(i, WChar(e)->listenOn && WChar_Listen(e) ? WChar_Listen(e) : WChar_Victim(e));
+		} else if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
+			pl->buttons = in.buttons;
+			Rep_SwitchTo(i, e, NULL);
+			continue;
 		}
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);

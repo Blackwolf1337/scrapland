@@ -40,6 +40,7 @@
 #include "scrap/world.h"
 
 #define WATCH_SAMPLES 8
+#define WATCH_FOLLOW_JUMP 0.25		/* s: the drawn server time further off its target is taken at once */
 #define WATCH_EXTRAP 0.25			/* s ahead of the newest sample at most */
 #define WATCH_EXTRAP_TICKS 2			/* the sample must be from a snapshot at most this many ticks old */
 #define WATCH_HOLD (1.5 / NETREP_SNAP_HZ)	/* s of motion before a sample at most */
@@ -86,6 +87,7 @@ static struct {
 	float start[3];					/* the view point of the welcome */
 	NetRepClock clock;
 	NetRepDelay delay;				/* the interpolation delay */
+	NetRepFollow follow;			/* the server time the proxies are drawn at, evenly */
 	double rtt, rttVar;				/* s, of Net2 */
 	float loss;						/* of Net2, 0..1 */
 	double shown;					/* the server time the proxies are drawn at, s */
@@ -656,6 +658,7 @@ static void Watch_Start(void) {
 	watch.phase = WATCH_GONE;
 	NetRepClock_Init(&watch.clock);
 	NetRepDelay_Init(&watch.delay);
+	NetRepFollow_Init(&watch.follow, WATCH_FOLLOW_JUMP);
 	if (!Net2_ParseAddr(watch.addr, watch.port ? watch.port : Instance_Port(), addr)) {
 		Con_Errorf("watch: '%s' is not a numeric address\n", watch.addr);
 		return;
@@ -877,8 +880,8 @@ byte Watch_ClockReady(void) {
 	return watch.phase == WATCH_RUN && watch.clock.have;
 }
 
-uint32_t Watch_InputTick(double now, double rtt, double lead) {
-	return NetRepClock_InputTick(&watch.clock, now, rtt, lead);
+double Watch_InputTime(double now, double rtt, double lead) {
+	return NetRepClock_Server(&watch.clock, now) + rtt * 0.5 + lead;
 }
 
 double Watch_ShownTime(void) {
@@ -977,7 +980,7 @@ void Watch_PreFrame(void) {
 	/* the proxies at the time of the newest samples (half a round trip ago) minus the interpolation delay */
 	double now = (double)ns / 1e9;
 	double delay = NetRepDelay_Step(&watch.delay, dt, watch.loss);
-	double rt = NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - delay;
+	double rt = NetRepFollow_Step(&watch.follow, NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - delay, dt);
 	watch.shown = rt;
 	if (g_Play) {
 		Play_PreFrame(now, watch.rtt, watch.rttVar, watch.loss);

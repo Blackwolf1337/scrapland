@@ -403,6 +403,23 @@ double NetRepClock_Server(const NetRepClock *c, double now);
 /* the tick the client's input of now is for: the server time when it gets there (half the round trip) plus lead s */
 uint32_t NetRepClock_InputTick(const NetRepClock *c, double now, double rtt, double lead);
 
+/* a time that runs with the local clock and follows a target time that comes in steps (the server time of the
+ * proxies, the tick time of the own input; stage M10): it runs at most NETREP_FOLLOW_RATE faster or slower and closes
+ * a difference over NETREP_FOLLOW_TAU s, so what is drawn by it moves evenly; a difference above jump is taken at
+ * once */
+#define NETREP_FOLLOW_RATE 0.05
+#define NETREP_FOLLOW_TAU 0.25
+
+typedef struct NetRepFollow {
+	double t;
+	double jump;
+	int have;
+} NetRepFollow;
+
+void NetRepFollow_Init(NetRepFollow *f, double jump);
+/* dt s later with the target time now: the followed time */
+double NetRepFollow_Step(NetRepFollow *f, double target, double dt);
+
 /* the client's interpolation delay (stage M4a): how far behind the newest server time the other entities are
  * drawn. It must cover the longest gap between two snapshots (NETREP_DELAY_BASE) plus the jitter of their arrival
  * (the smoothed deviation of each snapshot from the clock), and one snapshot more under loss (a lost one leaves a

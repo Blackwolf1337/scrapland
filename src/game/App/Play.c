@@ -3,9 +3,11 @@
  * Not in the original.
  *
  * The entity is stepped once per tick (NetPl_Step) with the input of that tick, the controls of the frames since the
- * tick before averaged. The drawn position runs one tick behind the stepped one: the slot of the entity is set to the
- * tick, so cObjEntity_Update draws between the position of the tick before and the new one; a correction adds an
- * offset that fades out (NetRepSmooth). The true predicted position is kept apart and put back before each step.
+ * tick before averaged. The ticks come by a clock that follows the input tick time evenly (NetRepFollow), so they
+ * fall on the frames in a steady rhythm. The drawn position runs one tick behind the stepped one: every frame the
+ * slot of the entity is set to the part of the tick the clock is in, so cObjEntity_Update draws between the position
+ * of the tick before and the new one at that part; a correction adds an offset that fades out (NetRepSmooth). The true
+ * predicted position is kept apart and put back before each step.
  */
 #include <math.h>
 #include <stdio.h>
@@ -39,6 +41,7 @@
 #define PLAY_DEATH_HIGH 900.0f
 #define PLAY_DEATH_TURN 0.35f			/* radians a second it goes round */
 #define PLAY_NAME "Me%u"
+#define PLAY_CLOCK_JUMP 0.25			/* s: the input tick time further off is taken at once */
 #define PLAY_MAX_CATCHUP 8				/* ticks stepped in one frame at most; more ahead is a jump */
 #define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */
 #define PLAY_BOT_TARGET 3				/* the bot takes a ship and stays in the air (the weapon tests) */
@@ -79,10 +82,14 @@ static struct {
 	NetPlMotion motion[NETREP_PRED];	/* the full motion state after each tick, by tick % NETREP_PRED */
 	NetPlAccum acc;
 	uint32_t corrTotal;					/* corrections since the start (the feel log) */
+	uint16_t held;						/* buttons down since the own entity came, not yet released: not sent */
 	NetRepInput input;					/* of the last tick */
 	NetRepSmooth smooth;
 	vec3_t truePos;						/* the predicted position; the entity stands at it plus the offset */
 	vec3_t drawn;						/* where it was drawn at the end of the last tick */
+	vec3_t prevDrawn, prevAng, prevView;	/* and at the end of the tick before (the start of the frames' lerp) */
+	NetRepFollow clock;					/* the input tick time, s */
+	double clockNow;					/* the local time of its last step */
 	vec3_t lastServer;
 	int pending;						/* ticks stepped since the last ack */
 	byte catchup;						/* the new own entity steps up to the input tick with no input */
@@ -320,11 +327,16 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 	Obj(e)->slotPos = e->pos;
 	Obj(e)->renderPos = e->pos;
 	play.truePos = e->pos;
-	play.drawn = e->pos;
+	play.drawn = play.prevDrawn = e->pos;
+	play.prevAng = Obj(e)->ang;
+	play.prevView = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view : Obj(e)->ang;
 	NetRepPredHist_Init(&play.hist);
 	NetRepSmooth_Init(&play.smooth, PLAY_SMOOTH_HALF, PLAY_SMOOTH_SNAP);
 	memset(&play.acc, 0, sizeof(play.acc));
 	memset(&play.input, 0, sizeof(play.input));
+	/* a button held into the new entity (the click on the menu's Host button is the use button of a character, the
+	 * switch that boarded) acts only after it was let go */
+	play.held = UINT16_MAX;
 	if (kind == NETREP_SHIP) {
 		play.acc.weapon = play.input.weapon = (uint8_t)Veh(e)->controls.weapon;
 		Play_ApplyAmmo();
@@ -342,6 +354,9 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 
 void Play_Start(void) {
 	const char *path = getenv("SCRAP_PLAYLOG");
+	if (!play.clock.jump) {
+		NetRepFollow_Init(&play.clock, PLAY_CLOCK_JUMP);
+	}
 	play.started = 1;
 	if (path && *path && !play.log) {
 		play.log = fopen(path, "w");
@@ -405,6 +420,20 @@ static void Play_Draw(void) {
 	o->slot->time = o->slot->interval;
 }
 
+/* the frame's place in the tick: the lerp from the end of the tick before to the newest at part a of it */
+static void Play_DrawAt(float a) {
+	cEntity *e = play.e;
+	cObjEntity *o = Obj(e);
+	a = a < 0.0f ? 0.0f : a > 1.0f ? 1.0f : a;
+	o->slotPos = play.prevDrawn;
+	o->slotAng = play.prevAng;
+	if (NetPl_Kind(e) == NETREP_CHAR) {
+		WChar(e)->slotView = play.prevView;
+	}
+	o->slot->interval = 1.0f / NETREP_TICK_HZ;
+	o->slot->time = (1.0f - a) * o->slot->interval;
+}
+
 static void Play_Step(uint32_t tick, byte none) {
 	cEntity *e = play.e;
 	vec3_t view0 = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view : Obj(e)->ang;
@@ -412,6 +441,8 @@ static void Play_Step(uint32_t tick, byte none) {
 
 	if (!none) {
 		NetPl_Input(&play.acc, &play.input);
+		play.held &= play.input.buttons;
+		play.input.buttons &= (uint16_t)~play.held;
 	}
 	/* asleep (include/scrap/faction.h): no input, as the server steps it */
 	if (none || Faction_OwnAsleep()) {
@@ -429,6 +460,9 @@ static void Play_Step(uint32_t tick, byte none) {
 	Watch_ProxiesBack();
 	play.truePos = e->pos;
 	play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
+	play.prevDrawn = play.drawn;
+	play.prevAng = ang0;
+	play.prevView = view0;
 	Play_Record(tick);
 	play.tick = tick;
 	play.pending++;
@@ -611,7 +645,10 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	if (!play.e || !Watch_ClockReady()) {
 		return;
 	}
-	uint32_t target = Watch_InputTick(now, rtt, PLAY_LEAD + rttVar + (loss > 0.01f ? PLAY_LOSS_LEAD : 0.0));
+	double want = Watch_InputTime(now, rtt, PLAY_LEAD + rttVar + (loss > 0.01f ? PLAY_LOSS_LEAD : 0.0));
+	double tt = NetRepFollow_Step(&play.clock, want, play.clock.have ? now - play.clockNow : 0.0);
+	play.clockNow = now;
+	uint32_t target = tt <= 0.0 ? 0 : (uint32_t)(tt * NETREP_TICK_HZ);
 	if (!play.tick || target > play.tick + PLAY_MAX_CATCHUP * 4 || target + PLAY_MAX_CATCHUP * 4 < play.tick) {
 		play.tick = target ? target - 1 : 0;
 	}
@@ -624,6 +661,9 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	}
 	play.catchup = 0;
 	play.shownMs = (uint32_t)(Watch_ShownTime() * 1000.0);
+	if (play.e) {
+		Play_DrawAt((float)(tt * NETREP_TICK_HZ - (double)play.tick));
+	}
 }
 
 void Play_PostFrame(float dt) {
@@ -787,6 +827,7 @@ void Play_Status(void) {
 
 void Play_Reset(void) {
 	Play_OwnRemove();
+	NetRepFollow_Init(&play.clock, PLAY_CLOCK_JUMP);
 	play.slot = -1;
 	play.player = -1;
 	play.started = 0;

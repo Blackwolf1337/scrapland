@@ -112,8 +112,11 @@ void NetPl_Accumulate(cEntity *e, NetPlAccum *a, float dt) {
 		m[2] = c->jump;
 		r[0] = c->hRot;
 		r[1] = c->vRot;
-		b = (c->act ? NETREP_IN_ACT : 0) | (c->act2 ? NETREP_IN_ACT2 : 0) |
-			(c->act3 ? NETREP_IN_ACT3 | NETREP_IN_SWITCH : 0) | (c->lock ? NETREP_IN_LOCK : 0);
+		cInputAction *info = TABLE_AT(TABLE_AT(g_ActionSets, ACTSET_WALK)->actions, WALK_MISSION_INFO);
+		/* the use button acts as in single player (on what the arrow is on); the switch of the sandbox (the nearest or
+		 * a called ship) is the mission info key, as it leaves the ship */
+		b = (c->act ? NETREP_IN_ACT : 0) | (c->act2 ? NETREP_IN_ACT2 : 0) | (c->act3 ? NETREP_IN_ACT3 : 0) |
+			(c->lock ? NETREP_IN_LOCK : 0) | (info->value[0] > 0.5f ? NETREP_IN_SWITCH : 0);
 		break;
 	}
 	case NETREP_SHIP: {

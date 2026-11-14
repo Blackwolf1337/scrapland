@@ -94,10 +94,10 @@ byte Watch_IsPlayer(struct cEntity *e);
 struct cEntity *Watch_SlotEntity(int slot);
 /* a message to the instance on the reliable channel while the level runs: 1 sent */
 byte Watch_SendReliable(const uint8_t *data, int size);
-/* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the tick of an input of now; the server time
- * the proxies are drawn at (s) */
+/* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the time (s) of the tick an input of now is
+ * for; the server time the proxies are drawn at (s) */
 byte Watch_ClockReady(void);
-uint32_t Watch_InputTick(double now, double rtt, double lead);
+double Watch_InputTime(double now, double rtt, double lead);
 double Watch_ShownTime(void);
 
 #endif

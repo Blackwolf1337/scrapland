@@ -96,6 +96,30 @@ uint32_t NetRepClock_InputTick(const NetRepClock *c, double now, double rtt, dou
 	return t <= 0.0 ? 0 : (uint32_t)(t * NETREP_TICK_HZ);
 }
 
+/* ---- a time that follows another one smoothly ---- */
+
+void NetRepFollow_Init(NetRepFollow *f, double jump) {
+	memset(f, 0, sizeof(*f));
+	f->jump = jump;
+}
+
+double NetRepFollow_Step(NetRepFollow *f, double target, double dt) {
+	if (dt < 0.0) {
+		dt = 0.0;
+	}
+	f->t += dt;
+	double err = target - f->t;
+	if (!f->have || err > f->jump || err < -f->jump) {
+		f->t = target;
+		f->have = 1;
+		return f->t;
+	}
+	double k = dt < NETREP_FOLLOW_TAU ? dt / NETREP_FOLLOW_TAU : 1.0;
+	double step = err * k, lim = NETREP_FOLLOW_RATE * dt;
+	f->t += step > lim ? lim : step < -lim ? -lim : step;
+	return f->t;
+}
+
 /* ---- the interpolation delay ---- */
 
 void NetRepDelay_Init(NetRepDelay *d) {
