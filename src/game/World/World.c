@@ -15,6 +15,7 @@
 #include "scrap/material.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/replicate.h"
 #include "scrap/missileentity.h"
 #include "scrap/scheduler.h"
 #include "scrap/scrapcollision.h"
@@ -83,7 +84,8 @@ static int World_IsIgnoredInline(cWorld *self, cEntity *e) {
 			return 1;
 		}
 	}
-	return 0;
+	/* not in the original: a replay of the client's own entity (include/scrap/play.h) */
+	return g_PlayReplaying && Rep_LocalAmbient(e);
 }
 
 /* the box of a sphere query: the margin of the grid on the radius */

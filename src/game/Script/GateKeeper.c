@@ -21,6 +21,7 @@
  * it is (OBJLIB 5 (9c)).
  */
 #include "scrap/scrap.h"
+#include "scrap/replicate.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -106,6 +107,11 @@ static byte Gk_OnCreate(const nativeVal_t *name) {
  * which starts closed (ClosedFunc); pass and closed NULL when not given */
 static byte Gk_SetDoor(const nativeVal_t *name, const nativeVal_t *door, const nativeVal_t *pass, const nativeVal_t *closed) {
 	nativeVal_t defPass = { 0 }, defClosed = { 0 }, d = { 0 };
+	/* not in the original: a watcher's gatekeepers are proxies of the instance's, which guard the doors there
+	 * (include/scrap/replicate.h) */
+	if (g_Watch) {
+		return 1;
+	}
 	/* the defaults: the attribute DoNothingFunc of the module when the call comes, as the C port read it */
 	byte ok = (pass || Mode_ModGet(GK, "DoNothingFunc", &defPass)) && (closed || Mode_ModGet(GK, "DoNothingFunc", &defClosed));
 	pass = pass ? pass : &defPass;
@@ -248,6 +254,9 @@ static byte GateKeeper_DoorFoe_E(const nativeVal_t *a, int n, nativeVal_t *out) 
 		return Port_Arity(n, 2);
 	}
 	Native_SetInt(&zero, 0);
+	if (g_Watch) {
+		return 1;
+	}
 	return Mode_AtSet(GK, "GateKeepers", &a[0], "FoeType", &a[1]) && Mode_AtSet(GK, "GateKeepers", &a[0], "MPass", &zero);
 }
 

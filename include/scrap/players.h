@@ -32,6 +32,10 @@
 #define PLAYERS_MAX 64
 #define PLAYERS_NET_SLOT 4			/* the owner slot of the instance's player 0 */
 #define PLAYERS_NONE PLAYERS_MAX	/* Players_Bind: no player (the world's own state) */
+#define PLAYERS_SEE_DIST 12000.0f		/* units a player sees in front of it (Players_Sees) */
+#define PLAYERS_SEE_NEAR 1500.0f		/* units around a player it sees whatever its heading (its camera is behind it) */
+#define PLAYERS_SEE_COS 0.5f			/* cosine of the half angle of a player's view */
+#define PLAYERS_EYE 120.0f				/* a player's eyes above its place */
 #define PLAYERS_WANTED_REACH 3000.0f	/* units: an NPC reacts to a wanted player this near before a nearer innocent
 									   one (the distance a character attacks what it sees, GenCharLogic) */
 
@@ -55,6 +59,19 @@ struct cEntity *Players_Any(void);
 struct cEntity *Players_Nearest(const vec3_t *pos);
 /* the nearest player to pos whatever its alarm (outside the instance: player 0), NULL */
 struct cEntity *Players_Closest(const vec3_t *pos);
+/* the direction a player's entity looks into on the ground (a character's view, a ship's heading; the yaw 0 of an
+ * entity looks to -z), length 1 */
+void Players_Forward(struct cEntity *e, vec3_t *dir);
+/* the instance: a player has p in view (nearer than PLAYERS_SEE_NEAR, or in front of it within PLAYERS_SEE_DIST),
+ * with a line of sight from its eyes; outside the instance 0 */
+byte Players_Sees(const vec3_t *p);
+/* a line of sight from the eyes of a player standing at at to p */
+byte Players_LineOfSight(const vec3_t *at, const vec3_t *p);
+struct CGameModel;
+/* the model is visible: outside the instance drawn in the last frame (CGameModel_IsVisible); the headless instance
+ * draws nothing, so a model a player has in view (Players_Sees) counts, which the logic and the AI of the characters
+ * read as single player reads its screen */
+byte Players_SeesModel(const struct CGameModel *m);
 /* the square of the distance of the nearest player of the instance to pos, FLT_MAX without one (outside the instance
  * always FLT_MAX) */
 float Players_MinDistSq(const vec3_t *pos);

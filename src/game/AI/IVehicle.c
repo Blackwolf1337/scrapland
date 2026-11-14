@@ -1524,9 +1524,8 @@ static byte AIV_Viewer(cAIVehicle *self, AivViewer *v) {
 		if (!pl) {
 			return 0;
 		}
-		vec3_t z = { 0.0f, 0.0f, 1.0f }, rot = { 0.0f, Obj(pl)->ang.y, 0.0f };
 		v->pos = pl->pos;
-		Vec3_Rotate(&v->dir, &z, &rot);
+		Players_Forward(pl, &v->dir);
 		v->fov = AIV_NET_FOV;
 		const vec3_t *vel = Obj_GetVel(pl, &tmp);
 		v->slow = g_VelReposBackAI > (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y +

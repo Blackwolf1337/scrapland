@@ -170,7 +170,7 @@ static void cExtPolice_Think(cExtPolice *self) {
 		if (g_ExtPoliceChasing && !alarm) {
 			float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &tmp));
 			if (d > g_MaxDistReposAI * g_MaxDistReposAI * 9.0f * 0.0625f &&
-				!CGameModel_IsVisible(Obj_GetModel(e))) {
+				!Players_SeesModel(Obj_GetModel(e))) {
 				cEntity_Del(e);
 				continue;
 			}

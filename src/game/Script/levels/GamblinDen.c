@@ -26,6 +26,7 @@
 
 #include "scrap/input.h"
 #include "scrap/scrap.h"
+#include "scrap/replicate.h"
 #include "scrap/script.h"
 #include "scrap/sound.h"
 #include "Levels.h"
@@ -559,6 +560,22 @@ static byte Den_ChatOrDance(const char *a, const char *b) {
 	return PORT_LOWN(Map, CharDance, NULL, "s", a) && PORT_LOWN(Map, CharDance, NULL, "s", b);
 }
 
+/* the drinkers of the bar, the police boss' chat, the dancers */
+static byte Den_Life(void) {
+	if (!PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryA_Smartie") || !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryB_Dumber") ||
+		!PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryC_Brutus")) {
+		return 0;
+	}
+	if (LvN_SaveIs("LonelyMercInGamblinDen", "1") && !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryA_LonelyMerc")) {
+		return 0;
+	}
+	if (!PORT_LOWN(Map, ChatNPCs, NULL, "s", "PoliceBoss_Default")) {
+		return 0;
+	}
+	return !LvN_SaveIs("RobotsControlledByBoss", "0") || (PORT_LOWN(Map, CharDance, NULL, "s", "Bishop_Friendly35") &&
+		PORT_LOWN(Map, CharDance, NULL, "s", "Functionary_Friendly00"));
+}
+
 /* Init(LevelPath): the elevators, the life in the den, the music (another track each visit) */
 static byte Den_InitC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const flags[] = { "MayorAndBanker", "Twins", "Bankers", "Bishops", "Polices", "BandH", "BandB" };
@@ -568,24 +585,18 @@ static byte Den_InitC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Elevator") || !Mode_Connect("DM_Door_Elevator_Outskirts", "Outskirts", 0) ||
-		!Mode_Connect("DM_Door_Elevator_Scrapyard", "Scrapyard", 0) || !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryA_Smartie") ||
-		!PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryB_Dumber") || !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryC_Brutus")) {
+		!Mode_Connect("DM_Door_Elevator_Scrapyard", "Scrapyard", 0)) {
 		return 0;
 	}
-	if (LvN_SaveIs("LonelyMercInGamblinDen", "1") && !PORT_LOWN(Map, MercDrink, NULL, "s", "MercenaryA_LonelyMerc")) {
-		return 0;
-	}
-	if (!PORT_LOWN(Map, ChatNPCs, NULL, "s", "PoliceBoss_Default")) {
-		return 0;
-	}
-	if (LvN_SaveIs("RobotsControlledByBoss", "0") && (!PORT_LOWN(Map, CharDance, NULL, "s", "Bishop_Friendly35") ||
-		!PORT_LOWN(Map, CharDance, NULL, "s", "Functionary_Friendly00"))) {
+	/* not in the original: a watcher's characters are proxies of the instance's, whose life is the instance's
+	 * (include/scrap/replicate.h) */
+	if (!g_Watch && !Den_Life()) {
 		return 0;
 	}
 	if (!Mode_EntSetS("DM_Door_GamblinDenChupito_00", "OnObjSlot", "") || !Mode_EntSetI("DM_Door_Teleporter_00", "Active", 0)) {
 		return 0;
 	}
-	for (int i = 0; i < 7; i++) {
+	for (int i = 0; !g_Watch && i < 7; i++) {
 		int on = LvN_GTrue("Map", flags[i]);
 		if (on < 0 || (on && !(i == 0 || i >= 5 ? Den_Chat(two[i][0], two[i][1]) : Den_ChatOrDance(two[i][0], two[i][1])))) {
 			return 0;

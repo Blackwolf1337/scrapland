@@ -43,6 +43,13 @@ FREE = ('Traffic', 'FightingTraffic', 'ChasingTraffic', 'EnemiesTraffic')
 # the frames of the blinking mission marks (RadarScorer.c Radar_DrawMission) as their first one
 RADAR_BLINK = {'13': '12', '14': '12', '10': '9', '11': '9'}
 LOOSE = ('rail traffic', 'traffic', 'police', 'coin', 'missile', 'npc', 'parked ship')
+# kinds that come and go with the moment (coins, batteries and the items of shot traffic dropped in a fight, missiles, gears that police fuse into where a
+# player sees them and that turn back): the clients against what the instance has, not against single player
+TIMED = ('coin', 'item Battery', 'npc Gear', 'item dropped', 'missile')
+# kinds single player has that the multiplayer worlds leave out on purpose (docs: handback-mp-m11.md): not counted as
+# gaps, marked "single player only"
+SP_ONLY = ('npc Sputnik',)
+SOUND_SAMPLES = 6                  # sounds playing taken this many times, 1 s apart
 
 
 class Game:
@@ -191,6 +198,8 @@ def kind_of(e):
         return 'phone cab' if n.endswith('PhoneCab') else 'phone'
     if n.startswith('Usr_Coin'):
         return 'coin'
+    if n.startswith('ItemTraffic'):
+        return 'item dropped'
     if cls == 'item':
         return 'item ' + (base(e['model']) or re.sub(r'[\d_]+$', '', n))
     if cls == 'Missile':
@@ -264,13 +273,31 @@ def hist(lines, key):
 
 
 def collect(g, at, radius, inst=None):
+    """inst: a function that gives the instance's entities of now (a proxy is labelled by the instance's entity at
+    the same moment: the traffic moves)"""
     out = {}
+    fresh = inst() if inst else None
     out['ents'] = parse_ents(g.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], radius), timeout=30))
-    if inst is not None:
-        label_proxies(out['ents'], inst)
+    if fresh is not None:
+        label_proxies(out['ents'], fresh)
     out['radar'] = hist(g.ask('radar'), lambda f: 'icon %s%s' % (RADAR_BLINK.get(f[0], f[0]), ' rim' if f[1] == '1' else ''))
     out['fx'] = hist(g.ask('fx'), lambda f: f[0])
-    out['sounds'] = hist(g.ask('sounds'), lambda f: '%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
+    # the sounds playing near the player, by name: the most of each over a few samples (one-shot sounds such as
+    # steps play only for a moment)
+    out['sounds'] = {}
+    loops = set()
+    for i in range(SOUND_SAMPLES):
+        if i:
+            time.sleep(1.0)
+        text = g.ask('sounds')
+        h = hist(text, lambda f: '%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
+        for k, n in h.items():
+            out['sounds'][k] = max(out['sounds'].get(k, 0), n)
+        for line in (text or '').splitlines():
+            f = line.split('\t')
+            if f[0] == 'ps' or (f[0] == 'ch' and len(f) > 3 and f[3] == '1'):
+                loops.add('%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
+    out['loops'] = sorted(loops)
     menu = g.ask('menu') or ''
     out['hud'] = sorted(set(re.findall(r"\[\s*'([^']*)'", menu)))
     out['kinds'] = count(out['ents'], at, radius)
@@ -367,9 +394,12 @@ def run_level(a, level):
                                    inst=level, timeout=30))
         res['instance'] = {'kinds': count(inst, at, a.radius)}
         res['sp'] = collect(sp, at, a.radius)
-        res['host'] = collect(host, at, a.radius, inst)
+        def inst_now():
+            return parse_ents(host.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
+                                       inst=level, timeout=30))
+        res['host'] = collect(host, at, a.radius, inst_now)
         if join:
-            res['join'] = collect(join, at, a.radius, inst)
+            res['join'] = collect(join, at, a.radius, inst_now)
         shots = []
         for g in [g for g in (sp, host, join) if g]:
             p = os.path.join(a.out, '%s-%s.png' % (level, g.name))
@@ -402,10 +432,15 @@ def gaps(res):
         cnt = [res[s]['kinds'].get(k, {}).get('active', 0) for s in sides]
         loose = any(k.startswith(x) for x in LOOSE)
         worst = min(cnt) if cnt else 0
+        if k in TIMED:
+            # what the instance has there now; single player's count is of its own moment
+            a_sp = res.get('instance', {}).get('kinds', {}).get(k, {}).get('active', 0)
         if loose:
             gap = a_sp > 0 and (worst == 0 or worst < a_sp * 0.5)
         else:
             gap = worst < a_sp
+        if k in SP_ONLY:
+            gap = False
         extra = cnt and max(cnt) > a_sp and not loose
         names = set(sp.get(k, {}).get('names', []))
         for s in sides:
@@ -428,13 +463,42 @@ def hist_gaps(res, key):
     return out
 
 
+def sound_gaps(res):
+    """the steady sounds (loops of the mixer, positional sets) single player plays near the player that a client does
+    not play at all: (name, [sp, host, join]). One-shot sounds (steps, mechanisms, shots) depend on what happens at
+    that moment: only their totals are compared (sound_shots)"""
+    sp = res.get('sp', {}).get('sounds', {})
+    loops = set(res.get('sp', {}).get('loops', []))
+    sides = [s for s in ('host', 'join') if s in res]
+    out = []
+    for k in sorted(sp):
+        if 'loops' in res.get('sp', {}) and k not in loops:
+            continue
+        v = [sp[k]] + [res[s].get('sounds', {}).get(k, 0) for s in sides]
+        if k != 'ch ?' and min(v[1:] or [1]) == 0:
+            out.append((k, v))
+    return out
+
+
+def sound_shots(res):
+    """the most one-shot sounds playing at once over the samples, summed over the names: [sp, host, join]"""
+    out = []
+    for s in ('sp', 'host', 'join'):
+        if s in res:
+            loops = set(res[s].get('loops', []))
+            out.append(sum(n for k, n in res[s].get('sounds', {}).items() if k not in loops and k != 'ch ?'))
+    return out
+
+
 def report(results, out):
-    lines = ['# Parity report (M10)', '',
+    lines = ['# Parity report', '',
              'Single player (SP) against the multiplayer clients at the same place: the host (a -host game, client of '
              'its own world over loopback) and a joined client. Counts are active entities within the radius of '
              'the place, by kind; "gap" marks a kind the clients show less of (loose kinds such as traffic: less '
-             'than half), "extra" more. Generated by tools/test/parity/parity.py.', '']
-    total = 0
+             'than half), "extra" more; coins count against what the instance has at that moment. A sound gap is a '
+             'steady sound (a loop or a positional set) single player plays near the player (the most of each name '
+             'over %d samples) that a client does not play; one-shot sounds are compared by their totals. Generated by tools/test/parity/parity.py.' % SOUND_SAMPLES, '']
+    total = total_snd = 0
     for res in results:
         lines.append('## %s' % res['level'])
         if 'error' in res:
@@ -443,8 +507,11 @@ def report(results, out):
         rows = gaps(res)
         ng = sum(1 for r in rows if r[4])
         total += ng
-        lines += ['', 'Place %.0f %.0f %.0f, radius %.0f; %d gaps.%s' % (res['at'][0], res['at'][1], res['at'][2],
-                                                                     res['radius'], ng,
+        sg = sound_gaps(res)
+        total_snd += len(sg)
+        lines += ['', 'Place %.0f %.0f %.0f, radius %.0f; %d gaps, %d sound gaps.%s' % (
+                                                                     res['at'][0], res['at'][1], res['at'][2],
+                                                                     res['radius'], ng, len(sg),
                                                                      ' Shots: %s' % os.path.basename(res['sheet'])
                                                                      if res.get('sheet') else ''), '',
                   '| kind | SP (all) | SP | host | join | instance | | missing on the clients (examples) |',
@@ -454,8 +521,15 @@ def report(results, out):
             c = cnt + ['-'] * (2 - len(cnt))
             lines.append('| %s | %d | %d | %s | %s | %s | %s | %s |' % (k, n_sp, a_sp, c[0], c[1],
                                                                        ik.get(k, {}).get('active', 0),
-                                                                       'gap' if gap else 'extra' if extra else '',
+                                                                       'gap' if gap else 'extra' if extra else
+                                                                       'single player only' if k in SP_ONLY else '',
                                                                        ', '.join(miss)))
+        lines += ['', 'One-shot sounds (the most of each name, summed; SP, host, join): %s' %
+                  ', '.join(str(x) for x in sound_shots(res))]
+        if sg:
+            lines += ['', 'Sound gaps (steady sounds single player plays near the player, a client not; SP, host, join):',
+                      '']
+            lines += ['- %s: %s' % (k, ', '.join(str(x) for x in v)) for k, v in sg]
         for key, title in (('radar', 'Radar icons'), ('hud', 'HUD items'), ('sounds', 'Sounds playing'),
                            ('fx', 'Particle systems drawn')):
             if key == 'hud':
@@ -475,11 +549,11 @@ def report(results, out):
             if len(hg) > 40:
                 lines.append('- ... %d more' % (len(hg) - 40))
         lines.append('')
-    lines.insert(3, 'Total gaps (entity kinds): %d' % total)
+    lines.insert(3, 'Total gaps (entity kinds): %d; sound gaps (by name): %d' % (total, total_snd))
     lines.insert(4, '')
     with open(out, 'w') as f:
         f.write('\n'.join(lines) + '\n')
-    return total
+    return total + total_snd
 
 
 def main():

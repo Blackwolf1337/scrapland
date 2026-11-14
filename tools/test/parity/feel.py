@@ -12,7 +12,7 @@ A side is one of
 The game writes the feel log (SCRAP_FEELLOG, include/scrap/feellog.h: a line per drawn frame with the monotonic
 clock); real key presses go through XTEST into the game's own gamescope X server (never the desktop), their time
 taken on the same clock. Per side: does the player start on foot (and stay so after a click of the use button,
-the left mouse button, at nothing); walking: W and S held 3 s in turn, six times; then the ship (single player:
+the left mouse button, at nothing); walking: W and S held 3 s in turn, --walks times (12); then the ship (single player:
 Parking.UseShip on the player's ship; a client: F1, the mission info key, the sandbox's switch),
 put 15000 units up, W held 5 s, three times. The results go to --out/<side>.json and the table to --out/feel.md:
   latency    from the key press to the first drawn frame where the own entity left its path (median, max)
@@ -41,6 +41,7 @@ import parity  # noqa: E402
 import scrap_mcp  # noqa: E402
 
 FRAME_BUCKETS = (8, 12, 17.5, 20, 25, 34, 50, 1e9)
+BUMP_AHEAD = 1.5                   # s the rail traffic ship needs to the place the own ship is put
 
 
 class XGame:
@@ -252,9 +253,11 @@ def run_side(a, side):
             press(g, 'F1', 0.12)
             time.sleep(3)
         walks = []
-        # forwards and back in turn (six walks into one direction end at a wall)
-        for k in range(6):
-            time.sleep(1.0)
+        # forwards and back in turn (six walks into one direction end at a wall); the pauses step through a 30 Hz
+        # tick so the presses fall on every part of it (a press waits for the next tick or slot: the latency varies
+        # by up to a tick with the moment of the press)
+        for k in range(a.walks):
+            time.sleep(1.0 + (k * 7 % a.walks) / a.walks / 30.0)
             walks.append(press(g, 'w' if k % 2 == 0 else 's', 3.0))
         time.sleep(1.0)
         # the ship
@@ -266,6 +269,7 @@ def run_side(a, side):
         ok = parity.wait_for(lambda: own_kind(read_log(log), time.monotonic_ns()) == 'S', 15, 0.5)
         res['boarded'] = bool(ok)
         flights = []
+        bumps = []
         if ok:
             time.sleep(3.0)
             for _ in range(3):
@@ -273,11 +277,17 @@ def run_side(a, side):
                 time.sleep(2.5)
                 flights.append(press(g, 'w', 5.0))
                 time.sleep(0.5)
+            # the own ship into the path of a rail traffic ship of this game (a client's own, the server lacks it)
+            for _ in range(a.bumps):
+                b = bump(a, g, inst_dir, side)
+                if b:
+                    bumps.append(b)
         time.sleep(0.5)
         rows = read_log(log)
         res['frames'] = frames([r for r in rows if r['kind'] != '-'])
         res['walk'] = analyse(rows, walks, 3.0)
         res['fly'] = analyse(rows, flights, 5.0)
+        res['bump'] = bump_result(rows, bumps)
     finally:
         g.stop()
         if hostg:
@@ -304,6 +314,60 @@ def lift(a, g, inst_dir, side):
                      ((cars[0]['name'],) + up), inst=a.level)
 
 
+def bump(a, g, inst_dir, side):
+    """the own ship put still where a rail traffic ship of this game will be in BUMP_AHEAD s; the window's start (ns),
+    the ship's name and the own speed before, or None without one near"""
+    rows = read_log(os.path.join(a.scratch, 'feel-%s.csv' % side))
+    if not rows:
+        return None
+    p = rows[-1]['pos']
+    ents = parity.parse_ents(g.try_ask('entinfo %.0f %.0f %.0f 60000' % p, timeout=10))
+    rail = sorted((e for e in ents if e['list'] in parity.RAIL and e['active']), key=lambda e: dist(e['pos'], p))
+    for r in rail[:8]:
+        m = re.search(r"\('Vel', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", g.ask('ent %s Vel' % r['name']) or '')
+        if not m:
+            continue
+        v = tuple(float(x) for x in m.groups())
+        if dist(v, (0.0, 0.0, 0.0)) < 500.0:
+            continue
+        m = re.search(r"\('Pos', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", g.ask('ent %s Pos' % r['name']) or '')
+        if not m:
+            continue
+        at = tuple(float(x) for x in m.groups())
+        to = tuple(x + y * BUMP_AHEAD for x, y in zip(at, v))
+        t0 = time.monotonic_ns()
+        if side == 'sp':
+            g.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' % to)
+        else:
+            iel = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 6000' % p, inst=a.level, timeout=10))
+            cars = sorted((e for e in iel if e['cls'] == 'Car' and e.get('owner', -1) >= 4),
+                          key=lambda e: dist(e['pos'], p))
+            if not cars:
+                return None
+            inst_dir.ask('do e = Scrap.GetEntity("%s"); e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' %
+                         ((cars[0]['name'],) + to), inst=a.level)
+        time.sleep(BUMP_AHEAD + 3.0)
+        return {'t0': t0, 'ship': r['name'], 'to': to}
+    return None
+
+
+def bump_result(rows, bumps):
+    """per bump: the own ship hit (its drawn position left the place it was put more than 100 units within the
+    window) and the corrections in the window"""
+    out = {'tries': len(bumps), 'hits': 0, 'corrections': 0, 'ships': []}
+    for b in bumps:
+        w = [r for r in rows if b['t0'] + 300_000_000 <= r['t'] <= b['t0'] + int((BUMP_AHEAD + 3.0) * 1e9)]
+        if not w:
+            continue
+        # the place it stood at first (the move through the instance arrives after a moment)
+        still = [r for r in w if dist(r['pos'], b['to']) < 200.0]
+        hit = bool(still) and any(dist(r['pos'], still[0]['pos']) > 100.0 for r in w if r['t'] > still[0]['t'])
+        out['hits'] += hit
+        out['corrections'] += w[-1]['corr'] - w[0]['corr']
+        out['ships'].append(b['ship'])
+    return out
+
+
 def analyse(rows, presses, hold):
     if not presses:
         return None
@@ -324,7 +388,9 @@ def analyse(rows, presses, hold):
         if ww:
             corr += ww[-1]['corr'] - ww[0]['corr']
     med = lambda v: round(statistics.median(v), 1) if v else None  # noqa: E731
-    return {'input_ms': med(seen), 'latency_ms': med(moved), 'latency_max': round(max(moved), 1) if moved else None,
+    mean = lambda v: round(statistics.mean(v), 1) if v else None  # noqa: E731
+    return {'input_ms': med(seen), 'latency_ms': med(moved), 'latency_mean': mean(moved),
+            'latency_max': round(max(moved), 1) if moved else None,
             'latencies': [round(m, 1) for m in moved],
             'jitter_entity': max(ent, key=lambda j: j['rms']) if ent else None,
             'jitter_camera': max(cam, key=lambda j: j['rms']) if cam else None, 'corrections': corr,
@@ -332,9 +398,10 @@ def analyse(rows, presses, hold):
 
 
 def table(results, out):
-    lines = ['| side | start on foot | walk input / move ms | walk jitter entity / camera (rms, p95) | walk corr | '
-             'fly input / move ms | fly jitter entity / camera (rms, p95) | fly corr | frame ms p50/p95/p99/max | fps |',
-             '|---|---|---|---|---|---|---|---|---|---|']
+    lines = ['| side | start on foot | walk input / move ms (median, mean) | walk jitter entity / camera (rms, p95) | walk corr | '
+             'fly input / move ms | fly jitter entity / camera (rms, p95) | fly corr | bump hits/tries, corr | '
+             'frame ms p50/p95/p99/max | fps |',
+             '|---|---|---|---|---|---|---|---|---|---|---|']
 
     def j(x):
         return '%.2f/%.2f' % (x['rms'], x['p95']) if x else '-'
@@ -343,13 +410,15 @@ def table(results, out):
             lines.append('| %s | error: %s |' % (r['side'], r['error']))
             continue
         w, f, fr = r.get('walk') or {}, r.get('fly') or {}, r.get('frames') or {}
-        lines.append('| %s | %s (%s%s) | %s / %s | %s ; %s | %s | %s / %s | %s ; %s | %s | %s/%s/%s/%s | %s |' % (
+        b = r.get('bump') or {}
+        lines.append('| %s | %s (%s%s) | %s / %s, %s | %s ; %s | %s | %s / %s | %s ; %s | %s | %s | %s/%s/%s/%s | %s |' % (
             r['side'], 'yes' if r.get('start_on_foot') and r.get('after_click_kind', 'C') == 'C' else 'NO',
             r.get('start_kind'), ', after a click %s' % r['after_click_kind'] if 'after_click_kind' in r else '',
             w.get('input_ms'),
-            w.get('latency_ms'), j(w.get('jitter_entity')), j(w.get('jitter_camera')), w.get('corrections'),
+            w.get('latency_ms'), w.get('latency_mean'), j(w.get('jitter_entity')), j(w.get('jitter_camera')), w.get('corrections'),
             f.get('input_ms'), f.get('latency_ms'), j(f.get('jitter_entity')), j(f.get('jitter_camera')),
-            f.get('corrections'), fr.get('p50'), fr.get('p95'), fr.get('p99'), fr.get('max'), fr.get('fps')))
+            f.get('corrections'), '%s/%s, %s' % (b.get('hits'), b.get('tries'), b.get('corrections')) if b else '-',
+            fr.get('p50'), fr.get('p95'), fr.get('p99'), fr.get('max'), fr.get('fps')))
     lines += ['', 'Frame time histogram (ms buckets <8, 8-12, 12-17.5, 17.5-20, 20-25, 25-34, 34-50, >50):', '']
     for r in results:
         if r.get('frames'):
@@ -368,6 +437,8 @@ def main():
     ap.add_argument('--out', default=os.path.join(REPO, 'build-linux64', 'feel'))
     ap.add_argument('--scratch', default=os.path.join(REPO, 'build-linux64', 'parity-games'))
     ap.add_argument('--timeout', type=int, default=900)
+    ap.add_argument('--walks', type=int, default=12)
+    ap.add_argument('--bumps', type=int, default=4)
     ap.add_argument('--device', default=None)
     ap.add_argument('--report-only', action='store_true')
     a = ap.parse_args()

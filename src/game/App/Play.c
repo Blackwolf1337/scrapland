@@ -3,9 +3,10 @@
  * Not in the original.
  *
  * The entity is stepped once per tick (NetPl_Step) with the input of that tick: the moves of the last frame before
- * it, the turns of the frames since the tick before averaged. The ticks come by a clock that follows the input tick
- * time evenly (NetRepFollow), so they fall on the frames in a steady rhythm; a tick runs in its PLAY_STEPS slots as
- * the clock passes them (the input with the first), as a single player's slots run. The drawn position runs one slot
+ * each of its two slots, the turns of the frames since the tick before averaged. The ticks come by a clock that
+ * follows the input tick time evenly (NetRepFollow), so they fall on the frames in a steady rhythm; a tick runs in its
+ * PLAY_STEPS slots as the clock passes them (the input with the first, the second slot's moves with the second), as
+ * a single player's slots run. The drawn position runs one slot
  * behind the stepped one: every frame the slot of the entity is set to the part of the slot the clock is in, so
  * cObjEntity_Update draws between the position of the slot before and the new one at that part; a correction adds an offset that fades out (NetRepSmooth). The true
  * predicted position is kept apart and put back before each step.
@@ -30,6 +31,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "scrap/texts.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
@@ -54,6 +56,8 @@
 #define PLAY_BOT_FACE_SIDE 0.45f		/* radians it looks past it: the camera behind the own character is on the
 										   line to the other one, which the own character would hide */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
+#define PLAY_HINTS 3					/* times the switch key's hint shows for each kind of own entity */
+#define PLAY_HINT_SECS 8.0				/* s a hint stays on the message line */
 
 /* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0; the players, the default; =all: the
  * characters near it too, which made the error of characters in a crowd larger: p95 5.6 to 9.0 with 32 bots) */
@@ -61,6 +65,7 @@ enum { PLAY_AHEAD_NONE, PLAY_AHEAD_PLAYERS, PLAY_AHEAD_ALL };
 
 byte g_Play;
 byte g_HeadlessPlay;
+byte g_PlayReplaying;
 
 typedef struct PlayStats {
 	uint32_t states, corrections, unknown;
@@ -92,6 +97,8 @@ static struct {
 	vec3_t prevDrawn, prevAng, prevView;	/* and at the end of the tick before (the start of the frames' lerp) */
 	NetRepFollow clock;					/* the input tick time, s */
 	byte half;							/* the first slot of tick tick + 1 ran (with input) */
+	byte live;							/* that tick took the frames' input (its second slot takes the newest moves) */
+	byte bumped;						/* the own ship touched its own rail traffic in the tick under way */
 	double clockNow;					/* the local time of its last step */
 	vec3_t lastServer;
 	int pending;						/* ticks stepped since the last ack */
@@ -114,6 +121,8 @@ static struct {
 	byte ahead;							/* SCRAP_PLAYAHEAD: PLAY_AHEAD_ */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
+	uint32_t hintFor;					/* the own entity (made) whose hint showed */
+	byte hints[2];						/* hints shown on foot, in a ship */
 } play = { .slot = -1, .player = -1 };
 
 byte Play_HeadlessDue(void) {
@@ -455,6 +464,9 @@ static void Play_StepPart(uint32_t tick, int part) {
 	if (play.ahead != PLAY_AHEAD_NONE) {
 		Watch_ProxiesAt(((double)tick - 0.5 * (1 - part)) / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
 	}
+	if (part && play.live) {
+		NetPl_InputSlot(&play.acc, &play.input);
+	}
 	NetPl_StepPart(e, &play.input, 1, 0, part);
 	Watch_ProxiesBack();
 	play.truePos = e->pos;
@@ -464,6 +476,10 @@ static void Play_StepPart(uint32_t tick, int part) {
 	play.half = !part;
 	if (part) {
 		play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
+		if (play.bumped) {
+			NetPl_BumpSave(e, &play.input);
+			play.bumped = 0;
+		}
 		Play_Record(tick);
 		play.tick = tick;
 		play.pending++;
@@ -479,13 +495,16 @@ static void Play_StepPart(uint32_t tick, int part) {
 
 /* the input of tick (the frames' controls since the tick before, none: no input) and its first slot */
 static void Play_Step(uint32_t tick, byte none) {
+	/* a bump is of its own tick (the input of a tick without frames is the one before) */
+	play.input.buttons &= (uint16_t)~NETREP_IN_BUMP;
 	if (!none) {
 		NetPl_Input(&play.acc, &play.input);
 		play.held &= play.input.buttons;
 		play.input.buttons &= (uint16_t)~play.held;
 	}
+	play.live = !none && !Faction_OwnAsleep();
 	/* asleep (include/scrap/faction.h): no input, as the server steps it */
-	if (none || Faction_OwnAsleep()) {
+	if (!play.live) {
 		uint8_t weapon = play.input.weapon;
 		memset(&play.input, 0, sizeof(play.input));
 		play.input.weapon = weapon;
@@ -694,9 +713,32 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	}
 }
 
+/* the hint of the switch key in the game's style (a language format with the key bound to it, on the message line):
+ * on foot how to get into a ship, in a ship how to leave it; the first PLAY_HINTS times of each, not in the PvP
+ * modes, where the key is the mode's help */
+static void Play_Hint(void) {
+	char text[256];
+	nativeVal_t v;
+	byte ship = play.kind == NETREP_SHIP;
+
+	play.hintFor = play.made;
+	if (g_HeadlessPlay || play.bot || Watch_ArenaWorld() || play.hints[ship] >= PLAY_HINTS) {
+		return;
+	}
+	play.hints[ship]++;
+	const char *key = Input_GetDefinedEntry(0, ship ? "Racer" : "Walk", "MissionInfo", "Kb", 0);
+	Texts_Format(text, sizeof(text), ship ? "MP_HintLeave" : "MP_HintBoard", key ? key : "?");
+	Native_SetStr(&v, text);
+	Mode_MsgText(&v, Mode_Time() + PLAY_HINT_SECS);
+	Native_Free(&v);
+}
+
 void Play_PostFrame(float dt) {
 	if (play.e && !play.bot) {
 		NetPl_Accumulate(play.e, &play.acc, dt);
+	}
+	if (play.e && play.started && play.hintFor != play.made) {
+		Play_Hint();
 	}
 	Faction_ClientFrame();
 	Coop_ClientFrame();
@@ -781,6 +823,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 		/* the state of that tick with the server's position, velocity and angles, then the inputs after it */
 		PlayWeapKeep keep = { 0 };
 		Play_KeepWeapons(e, &keep, 0);
+		g_PlayReplaying = 1;
 		NetPl_Restore(e, &play.motion[tick % NETREP_PRED]);
 		Play_SetState(e, st);
 		NetPl_Save(e, &play.motion[tick % NETREP_PRED]);
@@ -794,6 +837,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 				Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
 			}
 			NetPl_Step(e, &x, 1, 1);
+			NetPl_Bump(e, &x, 0.0f);
 			Watch_ProxiesBack();
 			play.input = x;
 			Play_Record(t);
@@ -810,6 +854,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 		} else {
 			play.input.tick = play.tick;
 		}
+		g_PlayReplaying = 0;
 		Play_KeepWeapons(e, &keep, 1);
 		play.truePos = e->pos;
 		NetRepSmooth_Correct(&play.smooth, &before.x, &play.truePos.x);
@@ -845,6 +890,13 @@ static void Play_Pct(const float *v, uint32_t n, float *out) {
 	out[1] = n ? tmp[n * 95 / 100] : 0.0f;
 	out[2] = n ? tmp[n * 99 / 100] : 0.0f;
 	out[3] = n ? tmp[n - 1] : 0.0f;
+}
+
+void Play_Touch(cEntity *e, cEntity *other) {
+	/* the own ship's step that hits the traffic, or the traffic's move that hits the own ship */
+	if (play.e && !g_PlayReplaying && ((e == play.e && Rep_LocalAmbient(other)) || (other == play.e && Rep_LocalAmbient(e)))) {
+		play.bumped = 1;
+	}
 }
 
 void Play_Switch(void) {

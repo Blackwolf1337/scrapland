@@ -122,6 +122,9 @@ byte cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *c
 	const vec3_t *prev);
 /* the weapon energy of a character, 0 or more */
 void cWalkCharEntity_SetEnergy(cEntity *self, float energy);
+/* ScrapC: the loop sound of a watcher's character proxy, which runs no slots: by its velocity (a flying class) or
+ * walking (the others), as the slot's flight or walk sets it */
+void cWalkCharEntity_ProxySound(cEntity *self, byte walking, float dt);
 /* the falling state of a character (0x464), with what goes with it */
 void cWalkCharEntity_SetFalling(cEntity *self, byte on);
 /* WithLifeEntity.h */

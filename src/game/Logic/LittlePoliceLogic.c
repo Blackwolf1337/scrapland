@@ -360,7 +360,7 @@ alert:
 				Logic_RestartState(self);
 				return;
 			}
-			if (!CGameModel_IsVisible(Obj_GetModel(p))) {
+			if (!Players_SeesModel(Obj_GetModel(p))) {
 				const vec3_t *up = Entity_GetPos(usr, &t1);
 				if (LP_DistSq(Entity_GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {
@@ -390,7 +390,7 @@ alert:
 				Logic_RestartState(self);
 				return;
 			}
-			if (!CGameModel_IsVisible(Obj_GetModel(p))) {
+			if (!Players_SeesModel(Obj_GetModel(p))) {
 				const vec3_t *up = Entity_GetPos(usr, &t1);
 				if (LP_DistSq(Entity_GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {

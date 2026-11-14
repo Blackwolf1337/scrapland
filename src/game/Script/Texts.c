@@ -11,6 +11,8 @@ static const struct {
 	const char *key, *text;
 } texts[] = {
 	{ "MP_FreeRoam", "Free roam" },
+	{ "MP_HintBoard", "Press %s to get into a ship" },
+	{ "MP_HintLeave", "Press %s to leave the ship" },
 	{ "MP_JoinWorld", "Join world" },
 	{ "MP_HostWorld", "Host world" },
 	{ "MP_ListServer", "List server" },

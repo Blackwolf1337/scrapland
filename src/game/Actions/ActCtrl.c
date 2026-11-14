@@ -463,8 +463,21 @@ static void cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 /* the proxy of a watcher (include/scrap/replicate.h): the actions of the layers from the network (index + 1 in the
  * class, 0 none), each started when it changes and played at rate (its time per second, 0 keeps the speed) with the
  * model's own animation update; no events and no ends of actions */
+/* the sound events of the layer chan up to t (a proxy's: the other events are its instance's) */
+static void cActCtrl_NetSounds(cActCtrl *self, int chan, float t) {
+	cActLayer *l = &self->layers[chan];
+
+	for (cActEvent *ev = l->event; ev && ev->time < t; ev = l->event) {
+		l->event = ev->next;
+		if (Event_IsSound(ev)) {
+			cActEvent_Fire(ev, self->owner->name);
+		}
+	}
+}
+
 void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt) {
 	CGameModel *m = Ctrl_Model(self);
+	float before[ACT_LAYERS] = { 0 };
 
 	for (int k = 0; k < layers && k < ACT_LAYERS; k++) {
 		cActLayer *l = &self->layers[k];
@@ -483,19 +496,29 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, i
 			}
 			l->on = 1;
 			l->action = a;
-			l->event = NULL;
+			l->event = a->events;
+			l->time = 0.0f;
 			CGameModel_SetAnimLoop(m, Action_Anim(a), a->isLoop);
 			CGameModel_SetAnim(m, Action_Anim(a), k, 0);
 		}
+		before[k] = l->time;
 		if (l->on && rate[k] > 0.0f) {
 			CGameModel_SetAnimFactor(m, Action_Anim(l->action), rate[k]);
 		}
 	}
 	CGameModel_RootMotion(m, dt, NULL, NULL);
 	for (int k = 0; k < layers && k < ACT_LAYERS; k++) {
-		if (self->layers[k].on) {
-			CGameModel_ChanTime(m, k, &self->layers[k].time);
+		cActLayer *l = &self->layers[k];
+		if (!l->on) {
+			continue;
 		}
+		CGameModel_ChanTime(m, k, &l->time);
+		/* a loop that went round: the rest of its sounds, then from the first one again */
+		if (l->time < before[k] && l->action->isLoop) {
+			cActCtrl_NetSounds(self, k, FLT_MAX);
+			l->event = l->action->events;
+		}
+		cActCtrl_NetSounds(self, k, l->time);
 	}
 }
 

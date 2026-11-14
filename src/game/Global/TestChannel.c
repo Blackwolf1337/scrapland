@@ -1164,10 +1164,27 @@ static void TC_Fx(tcBuf *b) {
 	}
 }
 
-/* sounds: "ch <channel> <sound name>" per mixer channel playing (the name of its sample in the sound table, "?" for a
+/* sounds: "ch <channel> <sound name> <loop>" per mixer channel playing (the name of its sample in the sound table, "?" for a
  * stream), "ps <name> <x y z>" per positional property set playing */
-static void TC_Sounds(tcBuf *b) {
+static void TC_Sounds(tcBuf *b, const char *arg) {
 	CSoundXBox *x = (CSoundXBox *)g_pSound;
+	/* "sounds table": the samples loaded, "tb <name> <loop>" */
+	if (arg && !strcmp(arg, "table")) {
+		for (uint32_t k = 0; x && k < x->sounds.numSlots; k++) {
+			for (cSoundStrItem *it = (cSoundStrItem *)x->sounds.slots[k]; it; it = it->next) {
+				TC_Addf(b, "tb\t%s\t%d\n", it->key, it->value.desc.loop);
+			}
+		}
+		return;
+	}
+	/* "sounds ps": every positional set, "pa <name> <sound> <desc volume> <loop> <handle>" */
+	if (arg && !strcmp(arg, "ps")) {
+		for (cSoundPS *ps = SndPS_First(); ps; ps = ps->next) {
+			TC_Addf(b, "pa\t%s\t%s\t%d\t%d\t%d\n", ps->name ? ps->name : "", ps->sound.name, ps->sound.desc.volume,
+				ps->loop, ps->sound.handle);
+		}
+		return;
+	}
 	for (int ch = 0; ch < SND_CHANNELS; ch++) {
 		if (!Snd_IsPlaying(ch)) {
 			continue;
@@ -1181,12 +1198,29 @@ static void TC_Sounds(tcBuf *b) {
 				}
 			}
 		}
-		TC_Addf(b, "ch\t%d\t%s\n", ch, name);
+		TC_Addf(b, "ch\t%d\t%s\t%d\n", ch, name, Snd_GetLoop(ch));
 	}
 	for (cSoundPS *ps = SndPS_First(); ps; ps = ps->next) {
 		if (ps->sound.handle) {
 			TC_Addf(b, "ps\t%s\t%.0f\t%.0f\t%.0f\n", ps->name ? ps->name : "", (double)ps->pos.x, (double)ps->pos.y,
 				(double)ps->pos.z);
+		}
+	}
+}
+
+/* entsnd <entity>: "sn <i> <name> <vol> <playing> <desc volume> <loop> <handle>" per sound of the object */
+static void TC_EntSnd(tcBuf *b, const char *arg) {
+	cEntity *e = World_FindEntity(arg);
+	if (!e || !Entity_IsType(e, "Obj")) {
+		TC_Add(b, "error: entsnd <object>\n", -1);
+		return;
+	}
+	cSndInterface *snd = &Obj(e)->snd;
+	for (int i = 0; i < snd->nsnd; i++) {
+		cSndItem *it = snd->snds[i];
+		if (it) {
+			TC_Addf(b, "sn\t%d\t%s\t%.3f\t%d\t%d\t%d\t%d\n", i, it->sound.name, (double)it->volume, it->playing,
+				it->sound.desc.volume, it->sound.desc.loop, it->sound.handle);
 		}
 	}
 }
@@ -1386,8 +1420,12 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_Fx(b);
 		return;
 	}
+	if (TC_Verb(line, "entsnd", &arg)) {
+		TC_EntSnd(b, arg);
+		return;
+	}
 	if (TC_Verb(line, "sounds", &arg)) {
-		TC_Sounds(b);
+		TC_Sounds(b, arg);
 		return;
 	}
 	if (TC_Verb(line, "click", &arg)) {

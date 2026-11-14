@@ -297,7 +297,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 		break;
 	case SENTINEL_ACCUSE_NPC:
 		if (!g_pWorld->alarm.on && b->target.target && AIChar_GetState(ai)) {
-			if (!CGameModel_IsVisible(Obj_GetModel(p))) {
+			if (!Players_SeesModel(Obj_GetModel(p))) {
 				float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(p, &tmp));
 				float r = g_SentinelAbortyNPCAttDist;
 				if (d > r * r) {

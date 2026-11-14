@@ -27,6 +27,7 @@
 #include "scrap/nativeobj.h"
 #include "scrap/places.h"
 #include "scrap/scrap.h"
+#include "scrap/replicate.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -290,6 +291,19 @@ static byte In_BossRobots(void) {
 	return ok;
 }
 
+/* Map.Init(LevelPath); not in the original: on a watcher (include/scrap/replicate.h) a failure there (a character of
+ * the level the instance has, here a proxy of another name) is printed and the start goes on with the map's sounds */
+static byte In_MapInit(const nativeVal_t *path) {
+	if (MODE_CBATTR("Map", "Init", NULL, "v", path)) {
+		return 1;
+	}
+	if (!g_Watch) {
+		return 0;
+	}
+	Native_ErrPrint();
+	return 1;
+}
+
 /* Init(LevelPath): the start of a level */
 static byte In_InitN(const nativeVal_t *path) {
 	modeVals_t t = { .n = 0 };
@@ -372,7 +386,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	/* not in the original: a coop client's camera for the level's start (include/scrap/coop.h) */
 	Coop_ClientLevelStart();
 	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries) */
-	if (!MODE_CBATTR("Map", "Init", NULL, "v", path) || !MODE_CBATTR("MapSnd", "Init", NULL, "v", path) ||
+	if (!In_MapInit(path) || !MODE_CBATTR("MapSnd", "Init", NULL, "v", path) ||
 		!PORT_OWN(Init, MLibInit, NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
 		(Native_True(deal) && !In_Method(deal, "Init", path)) || !Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL) ||
 		!Places_LevelInit()) {
