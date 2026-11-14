@@ -913,6 +913,8 @@ static void cVehicleEntity_NetWrite(cEntity *elem, float dist2, void *msg, int f
 }
 
 static void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
+	/* not in the original: Coop_UsrSlot (include/scrap/coop.h) */
+	slot = Coop_UsrSlot(Veh_Ent(self), self->slot, slot);
 	if (slot >= 0) {
 		self->money = -1;
 	}

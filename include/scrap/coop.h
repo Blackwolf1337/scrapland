@@ -182,12 +182,17 @@ void Coop_Spawned(struct cEntity *e);
  * instance: a new one for the bound member each time (the single player's Player0 and PlayerZ would be the same
  * entity for two members), NULL elsewhere */
 const char *Coop_MainCharName(void);
-/* player i's slot is on e, a live character other than the one the instance gave it: 1 when it is the member's from
- * now on (a possession or a conversor of the scripts: the member plays as that character, its class kept in its
- * state); 0 elsewhere (the instance gives the player a new character) */
+/* player i's slot is on e, a live character or ship other than the one the instance gave it: 1 when it is the
+ * member's from now on (a possession or a conversor of the scripts: the member plays as that character, its class
+ * kept in its state; a ship the scripts put it in); 0 elsewhere (the instance gives the player a new character) */
 byte Coop_Adopts(int i, struct cEntity *e);
 /* test: the buttons of a test press into player i's input of the tick (the line "press") */
 void Coop_TestInput(int i, struct NetRepInput *in);
+/* the level's start of the missions (MissionsFuncs.Init: the challenge's race and the mission arrow are placed around
+ * the player) on a coop instance without a member yet: a stand-in character at the level's first spawn is the
+ * scripts' player meanwhile (on 1, gone with 0); Coop_StandInEntity: it, NULL */
+void Coop_StandIn(byte on);
+struct cEntity *Coop_StandInEntity(void);
 /* player i came into the instance: a scene that plays is sent to its client, its character hidden until the end */
 void Coop_Joined(int i);
 /* the use arrow of t runs on the instance for a player's character (not only a door's) */
@@ -222,8 +227,10 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * (as the client's key), "travel <player> <level>" (alone, at the level's start), "qload <map>" and "restart" (as
  * the scripts' SaveGame.QLoad and SaveGame.Restart), "theend" (as the end's credits: all variables deleted, the menu),
  * "call <Module.Func|arg|...>" (a function of the scripts, as a line of a call table), "kill <Module.var>" (the
- * entities of that list of the scripts die: Life 0), "press <player> <act|act2|act3|lock,...> [<ticks>]" (the buttons
- * of its client's input for some ticks, 3 by default), "target <player> [<dx> <dz>]" (onto the mission's target) */
+ * entities of that list of the scripts die: Life 0), "show <Module.var>" (its value), "press <player> <act|act2|act3|lock,...> [<ticks>]" (the buttons
+ * of its client's input for some ticks, 3 by default), "target <player> [<dx> <dz>]" (onto the mission's target),
+ * "usetarget <player>" (it uses the target), "race <player> [0|1]" (its ship goes along the race's checkpoints, one
+ * every 2.5 s; 0 stops) */
 byte Coop_Command(const char *line);
 
 /* ---- client ---- */

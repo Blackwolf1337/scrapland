@@ -49,11 +49,14 @@
 #define CP_VOICES 4
 #define CP_OPTS_MSG (8 + CP_NAME + COOP_OPTS * (COOP_OPT_TEXT + 2))
 #define COOP_CAM "CoopCam"
+#define COOP_STANDIN "CoopStandIn"
 #define CP_MENU_MSG 8192			/* bytes of a menu message (the hangar's save variables) */
 #define CP_MENU_TITLE 1024
 #define CP_HANGAR "Hangar."			/* the save variables of the ship editor */
 #define CP_ANSWER_SECS 2.0			/* test: a question's answer after this */
 #define CP_CONV_SECS 3.0			/* test: the conversor's pick after this */
+#define CP_CHECKPOINT "CheckPoint"	/* the checkpoint of a race of RaceMaker */
+#define CP_RACE_GAP 2.5				/* seconds: test: the race's ship at the next checkpoint after this */
 #define CP_LIFEBOAT "SLifeBoat<-<-<-<-<-0,0,0,0,0,0,1<-50<-0,0,0,0,0,0"	/* the hangar's spare ship (a test's ship) */
 
 /* the variables of a player, not of the story (where it goes on, its character, money and alarm, its time) */
@@ -83,6 +86,7 @@ static struct {
 	byte hold;						/* test: the changes wait */
 	byte started;					/* the level's first tick ran */
 	byte waiting;					/* the world waits for its first member (its time stands) */
+	cEntity *standIn;				/* the scripts' player of the level's start without a member (Coop_StandIn) */
 	int ndirty;
 	struct {
 		char name[CP_NAME];
@@ -112,6 +116,9 @@ static struct {
 		char yes[CP_NAME], no[CP_NAME];
 		uint16_t press;				/* test: buttons pressed (NETREP_IN_*) for pressTicks more ticks */
 		int pressTicks;
+		float race;					/* test: its ship flies to the race's checkpoint (0 off) */
+		vec3_t raceAt;				/* where that checkpoint was */
+		double raceSince;			/* since when (instance time) */
 	} pl[PLAYERS_MAX];
 	int conv;						/* the member in a character conversor, -1 */
 	char convMachine[CP_NAME];		/* that conversor */
@@ -223,7 +230,7 @@ void Coop_LevelStart(const char *level) {
 	for (int pos = 0; CoordKv_Next(text, n, &pos, key, sizeof(key), val, sizeof(val)); count++) {
 		SaveVar_Set(key, val);
 	}
-	/* the level a chapter's travel came to: its way point as the single player's level start has it */
+	/* the level a chapter's or a mission's travel came to: its way point as the single player's level start has it */
 	const char *map = SaveVar_Get(CP_ENTRY "Map");
 	const char *s = map ? strrchr(map, '/') : NULL, *here = level ? strrchr(level, '/') : NULL;
 	if (s && here && !crt_stricmp(s, here)) {
@@ -728,7 +735,9 @@ byte Coop_QLoad(const char *map) {
 	}
 	const char *spawn = SaveVar_Get("Spawn");
 	byte party = CoordCoop_Chapter(level) || CoordCoop_Chapter(Instance_Level());
-	if (party) {
+	/* the way point goes with the story: the target level's start reads it as the single player's (its race and
+	 * arrow are placed at the spawn, Coop_StandIn) */
+	{
 		char key[CP_NAME];
 		for (int k = 0; cp_entry[k]; k++) {
 			const char *v = SaveVar_Get(cp_entry[k]);
@@ -973,6 +982,46 @@ void Coop_Spawned(cEntity *e) {
 	}
 }
 
+void Coop_StandIn(byte on) {
+	vec3_t p;
+	float yaw = 0.0f;
+	if (!on) {
+		if (cp.standIn && World_FindEntity(COOP_STANDIN) == cp.standIn) {
+			cEntity_Del(cp.standIn);
+		}
+		cp.standIn = NULL;
+		return;
+	}
+	if (!Coop_On() || Players_Any()) {
+		return;
+	}
+	/* where the single player would stand: the way point's spawn, else the level's start */
+	const char *spawn = SaveVar_Get("Spawn");
+	char found[64];
+	vec3_t ang;
+	if (spawn && spawn[0]) {
+		DummySearch_Start(spawn, 1);
+	}
+	if (spawn && spawn[0] && DummySearch_NextEuler(found, sizeof(found), &p, &ang)) {
+		yaw = ang.y + M_PI_F;
+	} else if (!Coop_Spawn(-1, &p, &yaw)) {
+		return;
+	}
+	cp.standIn = cWorld_CreateEntity(g_pWorld, COOP_STANDIN, p.x, p.y, p.z, TYEN_WALKCHAR);
+	if (cp.standIn) {
+		vec3_t ang = { 0.0f, yaw, 0.0f };
+		Faction_EnsureClass("Dtritus");
+		WithLife_SetActCtrl(cp.standIn, "Dtritus");
+		Obj_SetAng(cp.standIn, &ang);
+		Con_Printf("coop: a stand-in player for the level's start at %.0f %.0f %.0f\n", (double)p.x, (double)p.y,
+			(double)p.z);
+	}
+}
+
+cEntity *Coop_StandInEntity(void) {
+	return cp.standIn;
+}
+
 const char *Coop_MainCharName(void) {
 	int i = Coop_On() ? Players_Bound() : PLAYERS_NONE;
 	if (i == PLAYERS_NONE) {
@@ -983,13 +1032,16 @@ const char *Coop_MainCharName(void) {
 }
 
 byte Coop_Adopts(int i, cEntity *e) {
-	if (!Coop_On() || NetPl_Kind(e) != NETREP_CHAR || WLife(e)->life <= 0) {
+	int kind = Coop_On() ? NetPl_Kind(e) : 0;
+	if ((kind != NETREP_CHAR && kind != NETREP_SHIP) || WLife(e)->life <= 0) {
 		return 0;
 	}
 	cActCtrl *a = WLife(e)->actCtrl;
 	const char *cls = a && a->cls ? a->cls->name : "";
-	Faction_SetChar(i, cls);
-	Coop_Spawned(e);
+	if (kind == NETREP_CHAR) {
+		Faction_SetChar(i, cls);
+		Coop_Spawned(e);
+	}
 	Con_Printf("coop: player %d plays as %s (%s), a character of the scripts\n", i, e->name, cls);
 	return 1;
 }
@@ -1552,8 +1604,38 @@ void Coop_ConvEnd(void) {
 
 /* ---- tests ---- */
 
+/* test: player i's ship along the race route, checkpoint by checkpoint: CP_RACE_GAP seconds after RaceMaker's
+ * checkpoint came to a place (it moves on when taken) the ship is put there, as a pilot that knows the route (the
+ * streets of a level have no straight line between two checkpoints); the race's own take of the checkpoint, its
+ * count down and its score do the rest */
+static void Cp_TestRace(int i) {
+	cEntity *e = Players_Get(i), *c = World_FindEntity(CP_CHECKPOINT);
+	if (!e || !c || NetPl_Kind(e) != NETREP_SHIP) {
+		return;
+	}
+	vec3_t *at = &cp.pl[i].raceAt;
+	double now = Instance_Time();
+	if (at->x != c->pos.x || at->y != c->pos.y || at->z != c->pos.z) {
+		*at = c->pos;
+		cp.pl[i].raceSince = now;
+		Con_Printf("coop: player %d: race checkpoint at %.0f %.0f %.0f\n", i, (double)at->x, (double)at->y, (double)at->z);
+	}
+	if (now - cp.pl[i].raceSince < CP_RACE_GAP) {
+		return;
+	}
+	cp.pl[i].raceSince = now;
+	e->pos = c->pos;
+	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+}
+
 void Coop_TestInput(int i, NetRepInput *in) {
-	if (i < 0 || i >= PLAYERS_MAX || cp.pl[i].pressTicks <= 0) {
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return;
+	}
+	if (cp.pl[i].race > 0.0f) {
+		Cp_TestRace(i);
+	}
+	if (cp.pl[i].pressTicks <= 0) {
 		return;
 	}
 	in->buttons |= cp.pl[i].press;
@@ -1612,6 +1694,24 @@ byte Coop_Command(const char *line) {
 		Players_BindTurn();
 		return 1;
 	}
+	if (sscanf(line, "show %63s", name) == 1 && strchr(name, '.')) {
+		/* a variable of a module of the scripts */
+		nativeVal_t v, r;
+		char *dot = strchr(name, '.');
+		*dot = 0;
+		Native_SetNone(&v);
+		Native_SetNone(&r);
+		if (Mode_ModGet(name, dot + 1, &v)) {
+			Mode_Repr(&v, &r);
+			Con_Printf("coop: %s.%s = %.200s\n", name, dot + 1, r.type == NV_STR ? Native_Text(&r) : "?");
+		} else {
+			Con_Printf("coop: no %s.%s\n", name, dot + 1);
+		}
+		Native_ErrClear();
+		Native_Free(&v);
+		Native_Free(&r);
+		return 1;
+	}
 	if (sscanf(line, "kill %63s", name) == 1 && strchr(name, '.')) {
 		/* the entities of a list of the scripts (the targets of a mission) die as by a weapon of the member the scripts
 		 * act for: their OnDeath runs with it as the winner */
@@ -1646,13 +1746,24 @@ byte Coop_Command(const char *line) {
 		Con_Printf("coop: player %d presses %s (%04x) for %d ticks\n", i, name, cp.pl[i].press, ticks);
 		return 1;
 	}
+	int on = 1;
+	if (sscanf(line, "race %d %d", &i, &on) >= 1 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].race = on ? 1.0f : 0.0f;
+		cp.pl[i].raceAt = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		Con_Printf("coop: player %d flies the race%s\n", i, on ? "" : ": off");
+		return 1;
+	}
 	float dx = 0.0f, dz = 0.0f;
-	if (sscanf(line, "target %d %f %f", &i, &dx, &dz) >= 1) {
-		/* the member onto the mission's target (MissionsFuncs.currentTarget) */
+	if (sscanf(line, "target %d %f %f", &i, &dx, &dz) >= 1 || sscanf(line, "usetarget %d", &i) == 1) {
+		/* the member onto the mission's target (MissionsFuncs.currentTarget), or it uses the target */
 		nativeVal_t t;
 		Native_SetNone(&t);
 		if (Mode_ModGet("MissionsFuncs", "currentTarget", &t) && t.type == NV_STR) {
-			Travel_TestGoto(i, Native_Text(&t), dx, dz);
+			if (line[0] == 'u') {
+				Travel_TestUse(i, Native_Text(&t), "");
+			} else {
+				Travel_TestGoto(i, Native_Text(&t), dx, dz);
+			}
 		} else {
 			Con_Printf("coop: no mission target\n");
 		}
