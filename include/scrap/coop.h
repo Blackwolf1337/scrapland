@@ -83,6 +83,9 @@
  * of that name, the proxy of a replicated one) as the single player's MissionsFuncs does: the radar marks and the
  * mission arrow.
  *
+ * The variables of the story the HUD of the single player shows (EnergyBarActive, SpecialActionActive: the energy
+ * bar and the special action) go to the clients at their join and when they change (COOP_Y_HUDVAR).
+ *
  * Leader travel: a member's key (Walk.CoopLeader of the controls, F7) asks the coordinator through its instance to
  * go where the party's leader plays (COORD_MSG_LEADER); the coordinator summons it there like a chapter travel of one
  * member.
@@ -117,6 +120,8 @@
 #define COOP_Y_TARGETS 12				/* the mission's targets (MissionsFuncs): count u8, then name str (the
 										 * instance's) and replication slot u16 (NETREP_NO_SLOT: a level entity of the
 										 * same name on the client) each */
+#define COOP_Y_HUDVAR 13				/* a variable of the story the client's HUD shows (the energy bar, the special
+										 * action): name str, value str */
 #define COOP_TARGETS 16					/* targets told (a mission's list of targets) */
 #define COOP_TARGETS_MS 2000			/* the targets again (a proxy that came into the interest since) */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
@@ -250,6 +255,10 @@ byte Coop_Warning(const char *text);
 byte Coop_SputnikOpen(void);
 /* the editor of the member the scripts act for is on its client (its tutorial runs there) */
 byte Coop_ShipEditAway(void);
+/* the action set the scripts select (name): on a coop instance, where no input reads it, the one of its members'
+ * play: Inactive while a scene plays, else Walk (a menu, a ride or a talk of one member is on its own client; the
+ * scripts that wait for Walk, a remote communication, a walk out of a teleporter, go on) */
+const char *Coop_ActionSet(const char *name);
 /* the instance's time keeps running for the other members (a menu or a tutorial of the scripts stops it in the single
  * player) */
 byte Coop_KeepTime(void);

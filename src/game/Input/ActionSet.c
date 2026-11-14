@@ -6,6 +6,7 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/scorer.h"
@@ -514,6 +515,8 @@ byte Input_MenuAccept(int player) {
 }
 
 byte Input_SelectActionSetNamed(const char *name) {
+	/* not in the original: Coop_ActionSet (include/scrap/coop.h) */
+	name = Coop_ActionSet(name);
 	for (int i = 0; i < NUM_SETS; i++) {
 		if (ActionSet_IsNamed(TABLE_AT(g_ActionSets, i), name)) {
 			Input_SelectActionSet(i);

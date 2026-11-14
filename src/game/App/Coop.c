@@ -62,6 +62,8 @@
 /* the variables of a player, not of the story (where it goes on, its character, money and alarm, its time) */
 static const char *const cp_local[] = { "Map", "Spawn", "ComeFrom", "PrevMap", "Char", "AcBatteries", "Money", "Alarm",
 	"GameplayTime", NULL };
+/* the variables of the story the HUD shows: the clients get them (and their globals of the same name) */
+static const char *const cp_hud[] = { "EnergyBarActive", "SpecialActionActive", NULL };
 /* the way point of a chapter's travel, given to the start of the target level (its scripts read them at once) */
 static const char *const cp_entry[] = { "Map", "Spawn", "ComeFrom", "PrevMap", NULL };
 #define CP_ENTRY "Coop.Entry."
@@ -150,6 +152,9 @@ static struct {
 	char notice[256];
 } cp = { .scene = -1, .loading = -1, .conv = -1 };
 
+static void Cp_ToClient(int i, const uint8_t *buf, int size);
+static void Cp_ToAll(const uint8_t *buf, int size);
+
 static byte Cp_InList(const char *const *list, const char *s) {
 	for (; *list; list++) {
 		if (!crt_stricmp(*list, s)) {
@@ -194,7 +199,30 @@ static int Cp_DirtyAt(const char *name) {
 	return -1;
 }
 
+/* a variable of the story the HUD shows to client i (-1: all here) */
+static void Cp_HudVar(int i, const char *name) {
+	uint8_t buf[2 * CP_NAME + 8];
+	NetRepBuf w;
+	const char *v = SaveVar_Get(name);
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_HUDVAR);
+	NetRep_PutStr(&w, name);
+	NetRep_PutStr(&w, v ? v : "0");
+	if (w.bad) {
+		return;
+	}
+	if (i < 0) {
+		Cp_ToAll(buf, w.size);
+	} else {
+		Cp_ToClient(i, buf, w.size);
+	}
+}
+
 void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
+	if (cp.on && Cp_InList(cp_hud, name)) {
+		Cp_HudVar(-1, name);
+	}
 	if (!cp.on || cp.applying || !Cp_Story(name)) {
 		return;
 	}
@@ -348,8 +376,6 @@ void Coop_SceneCamera(void) {
 	cWorld_SetCam(g_pWorld, 0, COOP_CAM);
 }
 
-static void Cp_ToClient(int i, const uint8_t *buf, int size);
-static void Cp_ToAll(const uint8_t *buf, int size);
 static void Cp_TellTargets(void);
 static void Cp_MenuFunc(int i, const char *fn);
 static void Cp_ShipEdited(int i, NetRepReader *r);
@@ -1030,6 +1056,7 @@ void Coop_ScenePlay(const char *cls) {
 		return;
 	}
 	cp.inScene = 1;
+	Input_SelectActionSetNamed("");
 	cp.serial++;
 	cp.scenePlayer = Cp_Player();
 	cp.scene = -1;
@@ -1141,6 +1168,9 @@ void Coop_Joined(int i) {
 	}
 	cp.pl[i].menu = 0;
 	cp.pl[i].held[0] = 0;
+	for (int k = 0; cp_hud[k]; k++) {
+		Cp_HudVar(i, cp_hud[k]);
+	}
 	if (cp.waiting) {
 		cp.waiting = 0;
 		Timer_SetSpeed(&g_pWorld->timer, 1.0f);
@@ -1274,6 +1304,7 @@ void Coop_SceneEnd(void) {
 		Cp_Gather();
 		cp.inScene = 0;
 		cp.scene = -1;
+		Input_SelectActionSetNamed("");
 	}
 	cp.endingSerial = 0;
 	Players_BindTurn();
@@ -1439,6 +1470,10 @@ static void Cp_GetVars(NetRepReader *r, byte act) {
 byte Coop_ShipEditAway(void) {
 	int i = Coop_On() ? Cp_Player() : -1;
 	return i >= 0 && cp.pl[i].menu == COOP_MENU_SHIPEDIT;
+}
+
+const char *Coop_ActionSet(const char *name) {
+	return !Coop_On() ? name : cp.inScene ? "Inactive" : "Walk";
 }
 
 byte Coop_KeepTime(void) {
@@ -2640,6 +2675,16 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		if (!r.bad) {
 			Con_Printf("coop: the video %s before the next level\n", file);
 			Cp_ClientVideo(file);
+		}
+		break;
+	case COOP_Y_HUDVAR:
+		NetRep_GetStr(&r, key, sizeof(key));
+		NetRep_GetStr(&r, arg, sizeof(arg));
+		if (!r.bad && Cp_InList(cp_hud, key)) {
+			SaveVar_Set(key, arg);
+			if (!Mode_GVarSetI(key, atoi(arg))) {
+				Native_ErrPrint();
+			}
 		}
 		break;
 	case COOP_Y_TARGETS:
