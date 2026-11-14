@@ -326,8 +326,12 @@ static void cAIVehicle_UpdateGraph(cAIVehicle *self) {
 	do {
 		cWorld *w = g_pWorld;
 		vec3_t cam = w->camPos[w->curCam];
-		/* the headless instance has no camera: its viewers are the players (AIV_Viewer) */
+		/* the headless instance has no camera: its viewers are the players (AIV_Viewer); the rail traffic is every
+		 * client's own (include/scrap/replicate.h Rep_LocalAmbient), it stays off here */
 		if (Players_Net()) {
+			if (self->state == AIV_TRAFFIC || self->state == AIV_TRAFFIC_INDOOR) {
+				return;
+			}
 			vec3_t tmp;
 			cEntity *pl = Players_Closest(Entity_GetPos(self->vehicle, &tmp));
 			if (!pl) {
