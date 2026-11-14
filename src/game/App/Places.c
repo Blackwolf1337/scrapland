@@ -604,6 +604,11 @@ static void Pl_Census(void) {
 		charsMoved, cars, carsAI, carsMoved, classes);
 }
 
+static void Pl_Count(cEntity *e, void *ctx) {
+	(void)e;
+	(*(int *)ctx)++;
+}
+
 byte Places_Command(const char *line) {
 	char pat[64], found[64];
 	vec3_t pos, ang;
@@ -613,6 +618,20 @@ byte Places_Command(const char *line) {
 		return 1;
 	}
 	int player;
+	float r;
+	if (sscanf(line, "sphere %63s %d %f", pat, &player, &r) == 3) {
+		/* the entities of the lists (the letters of Scrap.SphereCall) within r of the player, as the test channel's
+		 * "ents" counts them on a client */
+		cEntity *me = Players_Get(player);
+		int n = 0;
+		if (me) {
+			vec3_t c = me->pos;
+			cWorld_SphereEach(g_pWorld, EntityLists_Get(pat), &c, r, 1, Pl_Count, &n);
+			Con_Printf("places: sphere %s of player %d at %.0f %.0f %.0f r %.0f: %d entities\n", pat, player,
+				(double)c.x, (double)c.y, (double)c.z, (double)r, n);
+		}
+		return 1;
+	}
 	if (sscanf(line, "nearest %d %63s", &player, pat) == 2) {
 		/* the player next to the nearest character or AI ship of the level (screenshots) */
 		cEntity *me = Players_Get(player), *best = NULL;
