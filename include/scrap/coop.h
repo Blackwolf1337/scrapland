@@ -290,7 +290,8 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * 2500 from it; 0 stops), "auto <player> [0|1|2]" (it plays the mission's targets: fights the red ones (else the red
  * ones of the level), flies a race, else goes to the target and uses it; 2 only fights), "board <player> <MODEL>"
  * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
- * nearest entity whose name starts with it, and it uses its arrow) */
+ * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
+ * its arrow is on it, then the possession button) */
 byte Coop_Command(const char *line);
 
 /* player i got into a ship (ship 1) or out of it: the mission's callbacks of single player's parking run for it

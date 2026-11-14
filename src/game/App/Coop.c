@@ -72,6 +72,7 @@
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
+#define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_LIFEBOAT "SLifeBoat<-<-<-<-<-0,0,0,0,0,0,1<-50<-0,0,0,0,0,0"	/* the hangar's spare ship (a test's ship) */
 
@@ -147,6 +148,8 @@ static struct {
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
 		double fightTold;			/* when its state was told last */
+		char possess[CP_NAME];		/* test: the character it possesses ("" none) */
+		double possessSince, possessAt;	/* since when, when it was put next to it last */
 		byte autoOn;				/* test: it plays the mission's targets on its own (fights, races, uses) */
 		char autoAt[CP_NAME];		/* the target it went to last */
 		double autoSince, autoUse;	/* when, when it uses it (0 done) */
@@ -2299,6 +2302,20 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		return;
 	}
 	cEntity *t = Cp_FightTargets("", all, 1, 0) ? all[0] : NULL;
+	/* else the nearest one the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take),
+	 * not a door of the level's exits */
+	float best = 0.0f;
+	for (cEntity *v = t ? NULL : cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || WLife(v)->life <= 0.0f || v->deadNode.target ||
+			Obj(v)->proxy || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
+			continue;
+		}
+		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+		if (!t || d < best) {
+			t = v;
+			best = d;
+		}
+	}
 	if (!t) {
 		return;
 	}
@@ -2337,15 +2354,40 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	Str_Copy(cp.pl[i].autoAt, t->name, sizeof(cp.pl[i].autoAt));
 	cp.pl[i].autoSince = now;
-	/* a target without a use (the arrow over an item to take) is walked onto */
-	byte use = WLife(t)->arrow.canUse;
+	/* a target without a use or a photo (the arrow over an item to take) is walked onto */
+	byte use = WLife(t)->arrow.canUse || WLife(t)->arrow.canPhoto;
 	cp.pl[i].autoUse = use ? now + 2.0 : 0.0;
 	Travel_TestGoto(i, t->name, 0.0f, use ? 250.0f : 0.0f);
+}
+
+/* test: player i possesses the character: next to it, facing it, until its arrow is on it (a walking one moves on),
+ * then the possession button; given up after CP_POSSESS_SECS */
+static void Cp_TestPossess(int i, NetRepInput *in) {
+	cEntity *e = Players_Get(i), *c = World_FindEntity(cp.pl[i].possess);
+	double now = Instance_Time();
+	/* the possessed one goes (the member's new character of its class) */
+	if (!c || e == c || now - cp.pl[i].possessSince > CP_POSSESS_SECS) {
+		Con_Printf("coop: player %d: the possession of %s %s\n", i, cp.pl[i].possess, !c || e == c ? "done" : "given up");
+		cp.pl[i].possess[0] = 0;
+		return;
+	}
+	if (NetPl_Kind(e) != NETREP_CHAR) {
+		return;		/* between its old and its new character */
+	}
+	if (WChar_Victim(e) == c) {
+		in->buttons |= fmod(now, 0.5) < 1.0 / INSTANCE_TICK_HZ ? NETREP_IN_ACT2 : 0;
+	} else if (now - cp.pl[i].possessAt >= 0.5) {
+		cp.pl[i].possessAt = now;
+		Travel_TestGoto(i, c->name, 0.0f, 150.0f);
+	}
 }
 
 void Coop_TestInput(int i, NetRepInput *in, double back) {
 	if (i < 0 || i >= PLAYERS_MAX) {
 		return;
+	}
+	if (cp.pl[i].possess[0]) {
+		Cp_TestPossess(i, in);
 	}
 	if (cp.pl[i].race > 0.0f) {
 		Cp_TestRace(i);
@@ -2485,6 +2527,13 @@ byte Coop_Command(const char *line) {
 		cp.pl[i].autoUse = 0.0;
 		cp.pl[i].fightAt[0] = 0;
 		Con_Printf("coop: player %d plays the mission's targets%s\n", i, !on ? ": off" : on == 2 ? ": fights only" : "");
+		return 1;
+	}
+	if (sscanf(line, "possess %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		Str_Copy(cp.pl[i].possess, name, sizeof(cp.pl[i].possess));
+		cp.pl[i].possessSince = Instance_Time();
+		cp.pl[i].possessAt = 0.0;
+		Con_Printf("coop: player %d goes to possess %s\n", i, name);
 		return 1;
 	}
 	if (sscanf(line, "usenear %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {
