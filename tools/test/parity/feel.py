@@ -6,13 +6,14 @@ in single player and on multiplayer clients, measured on rendered games.
 A side is one of
   sp        single player (-imap:Levels/<level>)
   host      a hosting game from the command line (-host:<level> -mode:freeroam)
-  menuhost  a game that hosts from the menus (Multiplayer, Free roam, Host world, mode free roam, Host clicked: the
-            real left mouse button down and up through XTEST around the button's accept)
+  menuhost  a game that hosts from the menus (Multiplayer, Free roam, Host world, mode free roam, the Host button
+            selected with the arrow keys and clicked with the real left mouse button through XTEST)
   join      a client that joins a host world (a second rendered game hosts it)
 The game writes the feel log (SCRAP_FEELLOG, include/scrap/feellog.h: a line per drawn frame with the monotonic
 clock); real key presses go through XTEST into the game's own gamescope X server (never the desktop), their time
-taken on the same clock. Per side: does the player start on foot; walking: W held 3 s, three times; then the ship
-(single player: Parking.UseShip on the player's ship; a client: the real left mouse button, the sandbox's switch),
+taken on the same clock. Per side: does the player start on foot (and stay so after a click of the use button,
+the left mouse button, at nothing); walking: W held 3 s, three times; then the ship (single player:
+Parking.UseShip on the player's ship; a client: F1, the mission info key, the sandbox's switch),
 put 15000 units up, W held 5 s, twice. The results go to --out/<side>.json and the table to --out/feel.md:
   latency    from the key press to the first drawn frame where the own entity left its path (median, max)
   input      from the key press to the first frame that saw the input
@@ -63,6 +64,12 @@ def press(g, key, hold):
         x.xtst.XTestFakeKeyEvent(x.dpy, code, 0, 0)
         x.x11.XSync(x.dpy, 0)
     return t0
+
+
+def key(g, name, hold=0.08):
+    with scrap_mcp.XInput(XGame(g)) as x:
+        x.key(name, hold)
+    time.sleep(0.4)
 
 
 def click(g, button=1, hold=0.12):
@@ -211,17 +218,15 @@ def run_side(a, side):
                     break
                 g.ask('click HostMode')
                 time.sleep(0.3)
-            # the click on Host: the left mouse button (the use button of a character) goes down, the button's
-            # accept runs (through the channel: XTEST cannot aim the game's own menu cursor), the button comes up
-            # 0.15 s later, as a click of a user does
-            with scrap_mcp.XInput(XGame(g)) as x:
-                x.xtst.XTestFakeButtonEvent(x.dpy, 1, 1, 0)
-                x.x11.XSync(x.dpy, 0)
-                res['host_click'] = time.monotonic_ns()
-                g.ask('click HostButton')
-                time.sleep(0.15)
-                x.xtst.XTestFakeButtonEvent(x.dpy, 1, 0, 0)
-                x.x11.XSync(x.dpy, 0)
+            # the Host button selected with the keys (up twice from the page's tab) and clicked with the real left
+            # mouse button, the use button of a character
+            g.ask('click WorldHost')
+            time.sleep(0.5)
+            for k in ('Up', 'Up'):
+                key(g, k)
+            res['host_selected'] = (g.ask('menu') or '').startswith("('HostButton'")
+            res['host_click'] = time.monotonic_ns()
+            click(g, 1, 0.12)
         if side == 'sp':
             parity.wait_for(lambda: g.try_ask('Scrap.GetLevelPath()', timeout=5), 180, 2)
             me = 'Player0'
@@ -237,9 +242,14 @@ def run_side(a, side):
         rows = read_log(log)
         res['start_kind'] = own_kind(rows, time.monotonic_ns())
         res['start_on_foot'] = res['start_kind'] == 'C'
-        if res['start_kind'] == 'S' and side != 'sp':
-            # (the old fault: the menu's click started the world in a ship) out again for the walk
+        if side != 'sp':
+            # a click of the use button where the arrow is on nothing: single player does nothing, the sandbox used to
+            # board the nearest parked ship
             click(g, 1, 0.12)
+            time.sleep(3)
+            res['after_click_kind'] = own_kind(read_log(log), time.monotonic_ns())
+        if res['start_kind'] == 'S' or res.get('after_click_kind') == 'S':
+            press(g, 'F1', 0.12)
             time.sleep(3)
         walks = []
         for _ in range(3):
@@ -250,7 +260,8 @@ def run_side(a, side):
         if side == 'sp':
             g.ask('Parking.UseShip("Player0", "PlayerShip", "", "")')
         else:
-            click(g, 1, 0.12)
+            # the sandbox's switch (the mission info key, F1): the nearest parked ship or a called one
+            press(g, 'F1', 0.12)
         ok = parity.wait_for(lambda: own_kind(read_log(log), time.monotonic_ns()) == 'S', 15, 0.5)
         res['boarded'] = bool(ok)
         flights = []
@@ -329,8 +340,10 @@ def table(results, out):
             lines.append('| %s | error: %s |' % (r['side'], r['error']))
             continue
         w, f, fr = r.get('walk') or {}, r.get('fly') or {}, r.get('frames') or {}
-        lines.append('| %s | %s (%s) | %s / %s | %s ; %s | %s | %s / %s | %s ; %s | %s | %s/%s/%s/%s | %s |' % (
-            r['side'], 'yes' if r.get('start_on_foot') else 'NO', r.get('start_kind'), w.get('input_ms'),
+        lines.append('| %s | %s (%s%s) | %s / %s | %s ; %s | %s | %s / %s | %s ; %s | %s | %s/%s/%s/%s | %s |' % (
+            r['side'], 'yes' if r.get('start_on_foot') and r.get('after_click_kind', 'C') == 'C' else 'NO',
+            r.get('start_kind'), ', after a click %s' % r['after_click_kind'] if 'after_click_kind' in r else '',
+            w.get('input_ms'),
             w.get('latency_ms'), j(w.get('jitter_entity')), j(w.get('jitter_camera')), w.get('corrections'),
             f.get('input_ms'), f.get('latency_ms'), j(f.get('jitter_entity')), j(f.get('jitter_camera')),
             f.get('corrections'), fr.get('p50'), fr.get('p95'), fr.get('p99'), fr.get('max'), fr.get('fps')))

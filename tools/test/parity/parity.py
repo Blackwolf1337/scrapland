@@ -289,7 +289,7 @@ def side_by_side(paths, labels, out):
         from PIL import Image, ImageDraw
     except ImportError:
         return None
-    ims = [Image.open(p).convert('RGB') if p and os.path.exists(p) else None for p in paths]
+    ims = [Image.open(p).convert('RGB').resize((960, 540)) if p and os.path.exists(p) else None for p in paths]
     w = max((i.width for i in ims if i), default=0)
     h = max((i.height for i in ims if i), default=0)
     if not w:
@@ -338,6 +338,9 @@ def run_level(a, level):
             def join_own():
                 return own_entity(parse_ents(join.try_ask('entinfo', timeout=5)))
             jme = wait_for(join_own, 240, 2)
+            # (a drop in the first seconds after a spawn counts as a fall from a bad spawn point, Replicate.c)
+            time.sleep(6)
+            jme = join_own() or jme
             # the joined player beside the host's (its instance entity: the NetPlayer nearest to the joined client's
             # own entity)
             iel = parse_ents(host.try_ask('entinfo', inst=level, timeout=10))
