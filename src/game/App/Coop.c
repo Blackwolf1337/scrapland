@@ -120,6 +120,9 @@ static struct {
 		vec3_t raceAt;				/* where that checkpoint was */
 		double raceSince;			/* since when (instance time) */
 	} pl[PLAYERS_MAX];
+	char targets[COOP_TARGETS * (CP_NAME + 4)];	/* the targets told last (names and slots), "" */
+	uint64_t targetsAt;				/* when (instance ms) */
+	char ctargets[COOP_TARGETS * CP_NAME];	/* client: the names of its copies it set as the targets */
 	int conv;						/* the member in a character conversor, -1 */
 	char convMachine[CP_NAME];		/* that conversor */
 	byte convAsked;					/* its interface is on the member's client (the machine waits) */
@@ -346,6 +349,8 @@ void Coop_SceneCamera(void) {
 }
 
 static void Cp_ToClient(int i, const uint8_t *buf, int size);
+static void Cp_ToAll(const uint8_t *buf, int size);
+static void Cp_TellTargets(void);
 static void Cp_MenuFunc(int i, const char *fn);
 static void Cp_ShipEdited(int i, NetRepReader *r);
 static void Cp_SputnikDone(int i, NetRepReader *r);
@@ -428,7 +433,64 @@ void Coop_Pass(void) {
 		}
 		Cp_Send();
 		Cp_TellOptions();
+		Cp_TellTargets();
 	}
+}
+
+/* the mission's targets to the clients here when they changed (or every COOP_TARGETS_MS: a proxy of one came into a
+ * client's interest since) */
+static void Cp_TellTargets(void) {
+	uint8_t buf[16 + COOP_TARGETS * (CP_NAME + 4)];
+	char sig[sizeof(cp.targets)];
+	const char *names[COOP_TARGETS];
+	nativeVal_t cur, list, it[COOP_TARGETS];
+	NetRepBuf w;
+	int n = 0, len = 0;
+	byte listed = 0;
+	Native_SetNone(&cur);
+	Native_SetNone(&list);
+	if (Mode_ModGet("MissionsFuncs", "currentTarget", &cur) && cur.type == NV_STR && Native_Text(&cur)[0]) {
+		names[n++] = Native_Text(&cur);
+	} else if (Mode_ModGet("MissionsFuncs", "targetsList", &list)) {
+		listed = 1;
+		int k = Mode_Loop(&list);
+		for (int j = 0; j < k && n < COOP_TARGETS; j++) {
+			Native_SetNone(&it[n]);
+			if (Native_SeqItem(&list, j, &it[n]) && it[n].type == NV_STR) {
+				names[n] = Native_Text(&it[n]);
+				n++;
+			} else {
+				Native_Free(&it[n]);
+			}
+		}
+	}
+	Native_ErrClear();
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_TARGETS);
+	NetRep_PutU8(&w, (uint32_t)n);
+	sig[0] = 0;
+	for (int k = 0; k < n; k++) {
+		int slot = Rep_EntitySlot(World_FindEntity(names[k]));
+		NetRep_PutStr(&w, names[k]);
+		NetRep_PutU16(&w, slot < 0 ? NETREP_NO_SLOT : (uint32_t)slot);
+		len += Str_PrintfQuiet(sig + len, (int)sizeof(sig) - len, "%s:%d,", names[k], slot);
+		len = len < (int)sizeof(sig) ? len : (int)sizeof(sig) - 1;
+	}
+	uint64_t now = (uint64_t)(Instance_Time() * 1000.0);
+	if (!w.bad && (strcmp(sig, cp.targets) || now - cp.targetsAt >= COOP_TARGETS_MS)) {
+		if (strcmp(sig, cp.targets)) {
+			Con_Printf("coop: the mission's targets: %s\n", sig[0] ? sig : "none");
+		}
+		Str_Copy(cp.targets, sig, sizeof(cp.targets));
+		cp.targetsAt = now;
+		Cp_ToAll(buf, w.size);
+	}
+	for (int k = 0; listed && k < n; k++) {
+		Native_Free(&it[k]);
+	}
+	Native_Free(&cur);
+	Native_Free(&list);
 }
 
 void Coop_BeforeUse(int i, cEntity *t) {
@@ -741,6 +803,7 @@ static void Cp_Video(int i) {
 }
 
 byte Coop_QLoad(const char *map) {
+	char key[CP_NAME];
 	if (!Coop_On()) {
 		return 0;
 	}
@@ -763,13 +826,10 @@ byte Coop_QLoad(const char *map) {
 	byte party = CoordCoop_Chapter(level) || CoordCoop_Chapter(Instance_Level());
 	/* the way point goes with the story: the target level's start reads it as the single player's (its race and
 	 * arrow are placed at the spawn, Coop_StandIn) */
-	{
-		char key[CP_NAME];
-		for (int k = 0; cp_entry[k]; k++) {
-			const char *v = SaveVar_Get(cp_entry[k]);
-			Str_PrintfQuiet(key, sizeof(key), CP_ENTRY "%s", cp_entry[k]);
-			SaveVar_Set(key, !strcmp(cp_entry[k], "Map") ? map : v ? v : "");
-		}
+	for (int k = 0; cp_entry[k]; k++) {
+		const char *v = SaveVar_Get(cp_entry[k]);
+		Str_PrintfQuiet(key, sizeof(key), CP_ENTRY "%s", cp_entry[k]);
+		SaveVar_Set(key, !strcmp(cp_entry[k], "Map") ? map : v ? v : "");
 	}
 	/* the story of now first: the target instance starts with it */
 	Cp_Send();
@@ -1696,7 +1756,8 @@ static uint16_t Cp_Buttons(const char *names) {
 	static const struct {
 		const char *name;
 		uint16_t bit;
-	} bits[] = { { "act", NETREP_IN_ACT }, { "act2", NETREP_IN_ACT2 }, { "act3", NETREP_IN_ACT3 }, { "lock", NETREP_IN_LOCK } };
+	} bits[] = { { "act", NETREP_IN_ACT }, { "act2", NETREP_IN_ACT2 }, { "act3", NETREP_IN_ACT3 },
+		{ "lock", NETREP_IN_LOCK } };
 	uint16_t b = 0;
 	for (int k = 0; k < (int)(sizeof(bits) / sizeof(bits[0])); k++) {
 		const char *at = strstr(names, bits[k].name);
@@ -2431,6 +2492,48 @@ void Coop_ClientFrame(void) {
 	}
 }
 
+/* the mission's targets of the instance on the client's copies (the level's entity of the name, the proxy of a
+ * replicated one), as its MissionsFuncs sets them: the radar marks, the mission arrow */
+static void Cp_ClientTargets(NetRepReader *r) {
+	char name[CP_NAME], sig[sizeof(cp.ctargets)];
+	nativeVal_t list;
+	int n = (int)NetRep_GetU8(r), len = 0, got = 0;
+	sig[0] = 0;
+	Native_SetEmpty(&list, NV_LIST);
+	for (int k = 0; k < n && k < COOP_TARGETS && !r->bad; k++) {
+		NetRep_GetStr(r, name, sizeof(name));
+		int slot = (int)NetRep_GetU16(r);
+		cEntity *e = r->bad ? NULL : slot != NETREP_NO_SLOT ? Watch_SlotEntity(slot) : World_FindEntity(name);
+		if (!e) {
+			continue;
+		}
+		Native_SetStr(Native_Append(&list), e->name);
+		len += Str_PrintfQuiet(sig + len, (int)sizeof(sig) - len, "%s,", e->name);
+		len = len < (int)sizeof(sig) ? len : (int)sizeof(sig) - 1;
+		got++;
+	}
+	if (r->bad || !strcmp(sig, cp.ctargets) || !Mode_Import("MissionsFuncs")) {
+		Native_Free(&list);
+		return;
+	}
+	Str_Copy(cp.ctargets, sig, sizeof(cp.ctargets));
+	byte ok;
+	if (got == 1) {
+		ok = PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &list.items[0]);
+	} else if (got) {
+		ok = PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", &list);
+	} else {
+		nativeVal_t none;
+		Native_SetNone(&none);
+		ok = PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &none);
+	}
+	if (!ok) {
+		Native_ErrPrint();
+	}
+	Con_Printf("coop: the mission's targets here: %s\n", sig[0] ? sig : "none");
+	Native_Free(&list);
+}
+
 static void Cp_ClientSceneEnd(NetRepReader *r) {
 	char cls[CP_NAME], name[CP_NAME + 16];
 	NetRep_GetStr(r, cls, sizeof(cls));
@@ -2539,6 +2642,9 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 			Cp_ClientVideo(file);
 		}
 		break;
+	case COOP_Y_TARGETS:
+		Cp_ClientTargets(&r);
+		break;
 	case COOP_Y_END:
 		/* the credits of the main menu, as the single player's end; the world is left */
 		Con_Printf("coop: the story is finished: the credits\n");
@@ -2575,4 +2681,5 @@ void Coop_ClientReset(byte left) {
 	cp.coop = 0;
 	cp.copt.n = 0;
 	cp.skipped = 0;
+	cp.ctargets[0] = 0;
 }

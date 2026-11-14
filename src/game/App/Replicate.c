@@ -1170,6 +1170,10 @@ void Rep_TestSwitch(int i, byte call) {
 	Players_BindTurn();
 }
 
+int Rep_EntitySlot(cEntity *e) {
+	return e ? Rep_Find(e) : -1;
+}
+
 int Rep_PlayerConn(int i) {
 	return i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? rep.pl[i].conn : -1;
 }

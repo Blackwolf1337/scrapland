@@ -78,6 +78,11 @@
  * of view 0 for its level's start; the coordinator tells it at its join that the world plays the coop story
  * (COORD_CUE_COOP).
  *
+ * Mission targets: the instance tells its clients the targets of the mission (MissionsFuncs.currentTarget and
+ * targetsList) when they change and every COOP_TARGETS_MS; a client sets them on its own copies (the level's entity
+ * of that name, the proxy of a replicated one) as the single player's MissionsFuncs does: the radar marks and the
+ * mission arrow.
+ *
  * Leader travel: a member's key (Walk.CoopLeader of the controls, F7) asks the coordinator through its instance to
  * go where the party's leader plays (COORD_MSG_LEADER); the coordinator summons it there like a chapter travel of one
  * member.
@@ -109,6 +114,11 @@
 #define COOP_Y_FADE 10					/* a fade of the scripts' screen 0: from r g b a u8, to r g b a u8, ms u32 */
 #define COOP_Y_VIDEO 11					/* the video the scripts set before a mission's level change (PlayVideo): file
 										 * str; the client plays it before the next level */
+#define COOP_Y_TARGETS 12				/* the mission's targets (MissionsFuncs): count u8, then name str (the
+										 * instance's) and replication slot u16 (NETREP_NO_SLOT: a level entity of the
+										 * same name on the client) each */
+#define COOP_TARGETS 16					/* targets told (a mission's list of targets) */
+#define COOP_TARGETS_MS 2000			/* the targets again (a proxy that came into the interest since) */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
 #define COOP_C_LEADER 21				/* client -> instance: to the party's leader (COORD_MSG_LEADER) */
 #define COOP_C_ANSWER 22				/* client -> instance: the menu's answer: kind u8, then YESNO: yes u8; SHIPEDIT:
@@ -252,10 +262,10 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * (as the client's key), "travel <player> <level>" (alone, at the level's start), "qload <map>" and "restart" (as
  * the scripts' SaveGame.QLoad and SaveGame.Restart), "theend" (as the end's credits: all variables deleted, the menu),
  * "call <Module.Func|arg|...>" (a function of the scripts, as a line of a call table), "kill <Module.var>" (the
- * entities of that list of the scripts die: Life 0), "show <Module.var>" (its value), "press <player> <act|act2|act3|lock,...> [<ticks>]" (the buttons
- * of its client's input for some ticks, 3 by default), "target <player> [<dx> <dz>]" (onto the mission's target),
- * "usetarget <player>" (it uses the target), "race <player> [0|1]" (its ship goes along the race's checkpoints, one
- * every 2.5 s; 0 stops) */
+ * entities of that list of the scripts die: Life 0), "show <Module.var>" (its value), "press <player>
+ * <act|act2|act3|lock,...> [<ticks>]" (the buttons of its client's input for some ticks, 3 by default), "target
+ * <player> [<dx> <dz>]" (onto the mission's target), "usetarget <player>" (it uses the target), "race <player> [0|1]"
+ * (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops) */
 byte Coop_Command(const char *line);
 
 /* ---- client ---- */
