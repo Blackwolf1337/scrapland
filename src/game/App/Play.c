@@ -172,6 +172,17 @@ static void Play_DeathCam(float dt) {
 	c->rot = (vec3_t){ atan2f(PLAY_DEATH_HIGH, PLAY_DEATH_DIST), play.deathYaw + M_PI_F, 0.0f };
 }
 
+cEntity *Play_ViewCamera(float x, float y, float z) {
+	cEntity *c = World_FindEntity(PLAY_CAM);
+	if (!c) {
+		c = cWorld_CreateEntity(g_pWorld, PLAY_CAM, x, y, z, TYEN_FCAM);
+	}
+	if (c) {
+		cWorld_SetCam(g_pWorld, 0, PLAY_CAM);
+	}
+	return c;
+}
+
 static void Play_Camera(void) {
 	cEntity *e = play.e;
 	char *s;
@@ -181,14 +192,10 @@ static void Play_Camera(void) {
 		return;
 	}
 	play.dead = 0;
-	play.cam = World_FindEntity(PLAY_CAM);
-	if (!play.cam) {
-		play.cam = cWorld_CreateEntity(g_pWorld, PLAY_CAM, e->pos.x, e->pos.y + 500.0f, e->pos.z, TYEN_FCAM);
-	}
+	play.cam = Play_ViewCamera(e->pos.x, e->pos.y + 500.0f, e->pos.z);
 	if (!play.cam) {
 		return;
 	}
-	cWorld_SetCam(g_pWorld, 0, PLAY_CAM);
 	s = e->name;
 	Entity_VarS(play.cam, "MainTarget", &s, 1);
 	Entity_VarS(play.cam, "Target", &s, 1);

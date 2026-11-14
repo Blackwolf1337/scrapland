@@ -396,6 +396,10 @@ static byte Sc_AddText(const nativeVal_t *frame, const nativeVal_t *text, const 
 static byte Sc_AbortScene(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *scene = Mode_V(&t);
+	/* not in the original: a coop client's Escape (include/scrap/coop.h) */
+	if (g_Play) {
+		Coop_ClientSceneAbort();
+	}
 	/* the global EndOfScene is looked up after SceneName (the script looked it up first) */
 	return Mode_Done(&t, Sc_G("SceneName", scene) && PORT_OWN(Scene, EndOfScene, NULL, "vsi", scene, "EndOfScene", 0L));
 }
@@ -644,6 +648,10 @@ static byte Sc_Started(const nativeVal_t *cls, byte ok) {
 /* Play(SceneClass): loads the scene, creates its actors and the scene entity at the dummy DM_Scene_<name>, links
  * the camera, hides the characters (and outdoors the ships), the cinema HUD, no input, no doppler, no music */
 static byte Sc_Play(const nativeVal_t *cls) {
+	/* not in the original: a coop client plays the scenes of its instance only (include/scrap/coop.h) */
+	if (Coop_ClientNoScene()) {
+		return 1;
+	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *actors = Mode_V(&t), *list = Mode_V(&t), *actr = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
 	nativeVal_t *dm = Mode_V(&t), *dummy = Mode_V(&t), *msg = Mode_V(&t), *pos = Mode_V(&t), *x = Mode_V(&t);

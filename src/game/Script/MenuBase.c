@@ -15,6 +15,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/console.h"
 #include "scrap/game.h"
 #include "scrap/input.h"
@@ -670,6 +671,10 @@ static byte Menu_YesNoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	(void)out;
 	if (!Mode_Parse(a, n, "iOss", &id, &title, &yes, &no)) {
 		return 0;
+	}
+	/* not in the original: a question of the coop story's scripts goes to the member (include/scrap/coop.h) */
+	if (Coop_MenuYesNo(title->type == NV_STR ? Native_Text(title) : "", yes, no)) {
+		return 1;
 	}
 	Base_NewMenu(id);
 	int y = Mode_ModGetI("Menu", "QuestionMenuYStart", 230);

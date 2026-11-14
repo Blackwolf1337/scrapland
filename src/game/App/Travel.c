@@ -558,12 +558,16 @@ void Travel_Left(int player) {
 byte Travel_Request(const char *rider, const char *level, const char *entrance, const char *door) {
 	cEntity *e = World_FindEntity(rider);
 	int i = e ? Players_Of(e) : -1;
+	/* a coop member's character the scripts took for the ride (include/scrap/coop.h) */
+	if (i < 0) {
+		i = Coop_HeldPlayer(e);
+	}
 	if (i < 0 || !tr.pl[i].used) {
 		Con_Printf("instance: level change of %s to %s refused (the coordinator owns the level changes)\n", rider,
 			level);
 		return 0;
 	}
-	return Travel_Go(i, level, entrance, door, 0);
+	return Travel_Go(i, level, entrance, door, Coop_PartyTravel(level));
 }
 
 byte Travel_SendCoord(const uint8_t *data, int size) {

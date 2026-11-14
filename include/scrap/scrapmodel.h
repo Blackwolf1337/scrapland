@@ -66,6 +66,8 @@ int CGameModel_AddAnim(CGameModel *self, const char *name);
 int CGameModel_FindAnim(CGameModel *self, const char *name);
 const char *CGameModel_AnimName(CGameModel *self, int i);
 byte CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *fps);
+/* the model has animation i (not in the original) */
+byte CGameModel_HasAnim(CGameModel *self, int i);
 byte CGameModel_SetAnimFactor(CGameModel *self, int i, float factor);
 byte CGameModel_SetAnimSpeed(CGameModel *self, int i, float speed);
 byte CGameModel_SetAnimLoop(CGameModel *self, int i, byte loop);

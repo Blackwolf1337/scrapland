@@ -3,6 +3,7 @@
  */
 #include "scrap/chartype.h"
 #include "scrap/actions.h"
+#include "scrap/coop.h"
 #include "scrap/arrowindicator.h"
 #include "scrap/embeddedfxchar.h"
 #include "scrap/fxelements.h"
@@ -1401,6 +1402,8 @@ static byte cWalkCharEntity_SetPush(cEntity *self, const vec3_t *push) {
 /* "UsrControl": the player slot (-1 the AI) */
 static void cWalkCharEntity_SetUsrControl(cEntity *self, int slot) {
 	cWalkCharEntity *w = WChar(self);
+	/* not in the original: Coop_UsrSlot (include/scrap/coop.h) */
+	slot = Coop_UsrSlot(self, w->ownerSlot, slot);
 
 	if (w->ownerSlot >= 0 && w->ownerSlot < 4) {
 		cWalkCharControl_Clear(&w->control);

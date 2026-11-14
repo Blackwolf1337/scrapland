@@ -487,6 +487,10 @@ byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time
 		ScorerFade_Start(&sc->fade, Scorer_PackColor((uint32_t)from[0], (uint32_t)from[1], (uint32_t)from[2], (uint32_t)from[3]),
 			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)d);
 	}
+	/* not in the original: Coop_Fade (include/scrap/coop.h) */
+	if (!id) {
+		Coop_Fade(from, to, d);
+	}
 	return 1;
 }
 
@@ -719,6 +723,10 @@ void Mode_SetActionSet(const char *name) {
 }
 
 void Mode_SetTimeSpeed(double speed) {
+	/* not in the original: Coop_KeepTime (include/scrap/coop.h) */
+	if (Coop_KeepTime()) {
+		return;
+	}
 	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
 }
 

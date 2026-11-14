@@ -63,6 +63,8 @@ extern const int lv_black[4], lv_clear[4];
 /* a race of MapRace (no arguments): import RaceMaker; RaceMaker.StartPos = [] and the n points appended as
  * ((x, y, z), angle) (the entries of the races, MODE_FN) */
 byte LvN_StartPos(const double (*pos)[4], int n);
+/* the player's ship of Hangar.iHangarShip on the ship editor's platform (MapShipEdit.Init of the Junkyard) */
+byte Junkyard_PlatformShip(void);
 /* Mission_DestroyCommSats1, 2 and 3: one script in three levels */
 extern const portFn_t g_OutskirtsDestroyCommSats1Methods[];
 extern const portFn_t g_CommercialDestroyCommSats2Methods[];

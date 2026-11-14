@@ -4,6 +4,7 @@
  * the tracks of the sectors that came into view.
  */
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
@@ -90,6 +91,11 @@ static void CNodesTrafficInDoor_Free(CNodesTraffic *base) {
 /* the engine callback 2 of the indoor levels: UpdateVehicles of g_NodesTrafficInDoor; 1 */
 static void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self);
 static byte TrafficInDoor_Frame(void) {
+	/* not in the original: a coop client's level scripts made the traffic its instance has; the client deletes those
+	 * ships (Watch_Purge), so its traffic must not move them (include/scrap/coop.h) */
+	if (Coop_Client()) {
+		return 1;
+	}
 	CNodesTrafficInDoor_UpdateVehicles((CNodesTrafficInDoor *)g_NodesTrafficInDoor);
 	return 1;
 }

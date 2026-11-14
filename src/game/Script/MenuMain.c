@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/game.h"
@@ -202,7 +203,8 @@ static void Main_InitMenuSys(double timeSpeed) {
 	Input_SelectActionSetNamed("Menu");
 	Native_SetFloat(&v, g_pWorld->timer.speed);
 	Mode_ModPut("Menu", "LastTimeSpeed", &v);
-	if (!Main_NetGame()) {
+	/* not in the original: Coop_KeepTime (include/scrap/coop.h) */
+	if (!Main_NetGame() && !Coop_KeepTime()) {
 		Timer_SetSpeed(&g_pWorld->timer, (float)timeSpeed);
 	}
 }

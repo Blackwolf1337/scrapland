@@ -178,20 +178,31 @@ static cPy_Function g_TalkCallback;
 
 static int g_TalkColor[3] = { 174, 229, 251 };
 
-static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
-	float dt, scroll, w, lh, x, y, hgt;
-	int n, maxLines;
-
+/* the time of the talk runs down by dt; 0 when it is over (its callback runs) */
+static byte Talk_Run(float dt) {
 	if (!(g_RemainTalkTime > 0.01f)) {
 		g_RemainTalkTime = 0.0f;
-		self->useTime = g_TalkUseTime;
 		if (cPy_Function_IsValid((&g_TalkCallback))) {
 			cPy_Function_Execute((&g_TalkCallback), 1);
 		}
+		return 0;
+	}
+	g_RemainTalkTime = g_RemainTalkTime - dt;
+	return 1;
+}
+
+void Scorer_TalkTick(float dt) {
+	Talk_Run(dt);
+}
+
+static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
+	float dt = Scorer_Get(player)->frameTime, scroll, w, lh, x, y, hgt;
+	int n, maxLines;
+
+	if (!Talk_Run(dt)) {
+		self->useTime = g_TalkUseTime;
 		return;
 	}
-	dt = Scorer_Get(player)->frameTime;
-	g_RemainTalkTime = g_RemainTalkTime - dt;
 	n = g_TalkNumLines;
 	maxLines = self->maxLines;
 	if (n > maxLines) {
@@ -236,16 +247,18 @@ static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
 
 static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 	cEntity *t = Talk_GetUseTarget(player);
-	cArrowIndicator *arrow;
 	const char *opt, *p;
 	float x, y, w, h;
-	int n, v;
+	int n, v, nOpt = 0;
 
-	if (!t) {
-		return;
+	if (t) {
+		cArrowIndicator *arrow = &WLife(t)->arrow;
+		opt = cArrowIndicator_GetOpt(arrow, arrow->iOpt);
+		nOpt = arrow->nOpt;
+	} else {
+		/* not in the original: a coop client shows the options of its instance's character (include/scrap/coop.h) */
+		opt = Coop_ClientOption(&nOpt);
 	}
-	arrow = &WLife(t)->arrow;
-	opt = cArrowIndicator_GetOpt(arrow, arrow->iOpt);
 	if (!opt || !(p = strchr(opt, ':'))) {
 		return;
 	}
@@ -275,7 +288,7 @@ static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 	if (self->sprite) {
 		self->sprite->pivotX = 0.5f;
 		self->sprite->pivotY = 0.5f;
-		if (arrow->nOpt > 1) {
+		if (nOpt > 1) {
 			/* the arrow to the next option, blinking */
 			float ny = h * 0.5f + y;
 			float nx = (w + x) - 2.0f;

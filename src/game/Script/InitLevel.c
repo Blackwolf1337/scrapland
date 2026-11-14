@@ -22,6 +22,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/places.h"
@@ -368,6 +369,8 @@ static byte In_InitN(const nativeVal_t *path) {
 		!Mode_GVarSetS("OnCrazyDealTarget", "MissionsFuncs.OnCrazyDealTarget")) {
 		return Mode_Done(&t, 0);
 	}
+	/* not in the original: a coop client's camera for the level's start (include/scrap/coop.h) */
+	Coop_ClientLevelStart();
 	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries) */
 	if (!MODE_CBATTR("Map", "Init", NULL, "v", path) || !MODE_CBATTR("MapSnd", "Init", NULL, "v", path) ||
 		!PORT_OWN(Init, MLibInit, NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
