@@ -643,7 +643,7 @@ static void Co_Hello(int conn, NetRepReader *r) {
 	uint32_t version = NetRep_GetU16(r);
 	NetRep_GetStr(r, c->name, sizeof(c->name));
 	if (r->bad || version != COORD_VERSION) {
-		Co_Deny(conn, COORD_DENY_VERSION, "another version of the game");
+		Co_Deny(conn, COORD_DENY_VERSION, "different game version");
 		return;
 	}
 	for (char *s = c->name; *s; s++) {
@@ -655,7 +655,7 @@ static void Co_Hello(int conn, NetRepReader *r) {
 		snprintf(c->name, sizeof(c->name), "Player");
 	}
 	if (!Net2_Random(c->nonce, sizeof(c->nonce))) {
-		Co_Deny(conn, COORD_DENY_STORE, "no random numbers");
+		Co_Deny(conn, COORD_DENY_STORE, "server error, try again");
 		return;
 	}
 	NetRepBuf_Init(&w, buf, sizeof(buf));
@@ -691,7 +691,7 @@ static void Co_Join(int conn, NetRepReader *r) {
 	Net2_ServerKey(coord.host, skey);
 	Coord_JoinHash(hash, c->nonce, skey, c->name);
 	if (r->bad || !Net2_Verify(key, hash, sizeof(hash), sig)) {
-		Co_Deny(conn, COORD_DENY_SIGNATURE, "the signature of the join is wrong");
+		Co_Deny(conn, COORD_DENY_SIGNATURE, "the join request was not valid");
 		return;
 	}
 	if (coord.online >= coord.cfg.maxPlayers) {
@@ -700,12 +700,12 @@ static void Co_Join(int conn, NetRepReader *r) {
 	}
 	int i = Co_Player(key, &loaded);
 	if (i < 0) {
-		Co_Deny(conn, COORD_DENY_STORE, "the progress could not be read");
+		Co_Deny(conn, COORD_DENY_STORE, "your saved progress could not be read");
 		return;
 	}
 	CoPlayer *p = &coord.pl[i];
 	if (p->conn >= 0) {
-		Co_Deny(conn, COORD_DENY_PLAYING, "this player is in the world already");
+		Co_Deny(conn, COORD_DENY_PLAYING, "you are already in this world");
 		return;
 	}
 	p->conn = conn;
@@ -776,7 +776,7 @@ static void Co_Join(int conn, NetRepReader *r) {
 		k = Co_Level(coord.cfg.start);
 	}
 	if (k < 0 || coord.inst[k].fails >= CO_START_TRIES) {
-		Co_Deny(conn, COORD_DENY_LEVEL, "no level to start in");
+		Co_Deny(conn, COORD_DENY_LEVEL, "no level available for you");
 		return;
 	}
 	Co_Send2Level(p, k);
@@ -1025,7 +1025,7 @@ static void Co_StartFailed(CoInst *in) {
 		} else {
 			p->inst = -1;
 			if (p->conn >= 0) {
-				Co_Deny(p->conn, COORD_DENY_LEVEL, "that level does not start");
+				Co_Deny(p->conn, COORD_DENY_LEVEL, "that level could not start");
 			}
 		}
 	}
@@ -1323,7 +1323,7 @@ int Coord_Command(Coord *c, const char *line) {
 			if (p->used && (!strcmp(p->name, arg) || !strncmp(p->hex, arg, strlen(arg)))) {
 				Co_SendKick(p->inst, p->key, COORD_DENY_KICK);
 				if (p->conn >= 0) {
-					Co_Deny(p->conn, COORD_DENY_KICK, "kicked");
+					Co_Deny(p->conn, COORD_DENY_KICK, "you were kicked");
 				}
 				Co_Log("coordinator: %s kicked\n", p->name);
 			}

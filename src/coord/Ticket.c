@@ -173,8 +173,8 @@ void CoordMsg_GetBytes(NetRepReader *r, void *b, int n) {
 }
 
 const char *Coord_DenyText(int reason) {
-	static const char *const texts[] = { "", "another version of the game", "the signature of the join is wrong",
-		"this player is in the world already", "the world is full", "the progress could not be read",
-		"no level to start in", "no valid ticket", "kicked" };
+	static const char *const texts[] = { "", "different game version", "the join request was not valid",
+		"you are already in this world", "the world is full", "your saved progress could not be read",
+		"no level available for you", "no valid ticket", "you were kicked" };
 	return reason > 0 && reason < (int)(sizeof(texts) / sizeof(texts[0])) ? texts[reason] : "";
 }
