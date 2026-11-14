@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/input.h"
 #include "scrap/scorer.h"
 #include "scrap/scriptapi.h"
@@ -85,6 +86,11 @@ API_FN(SScorer, Fade) {
 	if (sc) {
 		ScorerFade_Start(&sc->fade, Scorer_PackColor((uint32_t)r1, (uint32_t)g1, (uint32_t)b1, (uint32_t)a1),
 			Scorer_PackColor((uint32_t)r2, (uint32_t)g2, (uint32_t)b2, (uint32_t)a2), time);
+	}
+	/* not in the original: the coop story's fades on its members' screens (include/scrap/coop.h) */
+	if (!player) {
+		const int from[4] = { r1, g1, b1, a1 }, to[4] = { r2, g2, b2, a2 };
+		Coop_Fade(from, to, time);
 	}
 	return 1;
 }

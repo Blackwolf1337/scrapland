@@ -79,6 +79,8 @@ static struct {
 	byte overflow;					/* more changes than the list holds: the whole story goes */
 	byte levelSent;					/* the changes of the level's start went (COORD_MSG_STORYINIT) */
 	byte hold;						/* test: the changes wait */
+	byte started;					/* the level's first tick ran */
+	byte waiting;					/* the world waits for its first member (its time stands) */
 	int ndirty;
 	struct {
 		char name[CP_NAME];
@@ -386,6 +388,19 @@ static void Cp_TellOptions(void) {
 }
 
 void Coop_Pass(void) {
+	if (Coop_On() && !cp.started) {
+		/* the level's start (a scene of its Init: GamblinDen's MeetGambler, Fake0) waits for the member that comes,
+		 * as the single player's plays it from its start */
+		cp.started = 1;
+		cp.waiting = 1;
+		for (int i = 0; i < PLAYERS_MAX; i++) {
+			cp.waiting = cp.waiting && Rep_PlayerConn(i) < 0;
+		}
+		if (cp.waiting) {
+			Timer_SetSpeed(&g_pWorld->timer, 0.0f);
+			Con_Printf("coop: the level waits for its first member\n");
+		}
+	}
 	if (Coop_On()) {
 		/* nothing draws the talk scorer here: its time and the end of a remote communication */
 		Scorer_TalkTick(1.0f / INSTANCE_TICK_HZ);
@@ -940,6 +955,11 @@ void Coop_Joined(int i) {
 	}
 	cp.pl[i].menu = 0;
 	cp.pl[i].held[0] = 0;
+	if (cp.waiting) {
+		cp.waiting = 0;
+		Timer_SetSpeed(&g_pWorld->timer, 1.0f);
+		Con_Printf("coop: player %d came: the level goes on\n", i);
+	}
 	/* an empty list of options: the client knows it plays the coop story (its keys) */
 	uint8_t none[16];
 	NetRepBuf nw;
@@ -1115,6 +1135,25 @@ void Coop_MsgText(const char *text, float time, const char *font) {
 	CoordMsg_PutBytes(&w, text, n);
 	NetRep_PutU32(&w, (uint32_t)(time > 0.0f ? time * 1000.0f : 0.0f));
 	NetRep_PutStr(&w, font ? font : "");
+	Cp_ToAll(buf, w.size);
+}
+
+void Coop_Fade(const int *from, const int *to, double time) {
+	uint8_t buf[16];
+	NetRepBuf w;
+	if (!Coop_On()) {
+		return;
+	}
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_FADE);
+	for (int k = 0; k < 4; k++) {
+		NetRep_PutU8(&w, (uint32_t)(from[k] & 255));
+	}
+	for (int k = 0; k < 4; k++) {
+		NetRep_PutU8(&w, (uint32_t)(to[k] & 255));
+	}
+	NetRep_PutU32(&w, (uint32_t)(time > 0.0 ? time * 1000.0 : 0.0));
 	Cp_ToAll(buf, w.size);
 }
 
@@ -1465,6 +1504,8 @@ static void Cp_ClientNoCallback(void) {
 	}
 }
 
+static byte Cp_ClientImport(const char *mod);
+
 /* the scene's table run and the scene played here */
 static void Cp_ClientScene(NetRepReader *r) {
 	static char text[CP_SCENE_MSG];
@@ -1501,6 +1542,10 @@ static void Cp_ClientScene(NetRepReader *r) {
 	byte got = Mode_SActV("GetClass", &sname, &have) && Native_True(&have);
 	Native_Free(&have);
 	Native_ErrClear();
+	/* the events of the scene call the functions of its module (a mission's the client's level start did not load) */
+	if ((dmod[0] && !Cp_ClientImport(dmod)) || (module[0] && !Cp_ClientImport(module))) {
+		Native_ErrPrint();
+	}
 	/* a scene of a level data section: the client runs that section */
 	if (!got && dsec[0]) {
 		if (!Script_LevelSection(dmod, dsec)) {
@@ -1924,6 +1969,18 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 	case COOP_Y_MENU:
 		Cp_ClientMenu(&r);
 		break;
+	case COOP_Y_FADE: {
+		uint32_t c[8];
+		for (int k = 0; k < 8; k++) {
+			c[k] = NetRep_GetU8(&r);
+		}
+		float t = (float)NetRep_GetU32(&r) / 1000.0f;
+		cScorer *sc = Scorer_Get(0);
+		if (!r.bad && sc) {
+			ScorerFade_Start(&sc->fade, Scorer_PackColor(c[0], c[1], c[2], c[3]), Scorer_PackColor(c[4], c[5], c[6], c[7]), t);
+		}
+		break;
+	}
 	case COOP_Y_END:
 		/* the credits of the main menu, as the single player's end; the world is left */
 		Con_Printf("coop: the story is finished: the credits\n");

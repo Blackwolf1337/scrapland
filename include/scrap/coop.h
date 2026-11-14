@@ -88,6 +88,7 @@
 										 * YESNO: title u16 length + bytes; SHIPEDIT: the function of the answer
 										 * that opened it str ("" none), money u32, the hangar's save variables
 										 * (COOP_VARS) */
+#define COOP_Y_FADE 10					/* a fade of the scripts' screen 0: from r g b a u8, to r g b a u8, ms u32 */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
 #define COOP_C_LEADER 21				/* client -> instance: to the party's leader (COORD_MSG_LEADER) */
 #define COOP_C_ANSWER 22				/* client -> instance: the menu's answer: kind u8, then YESNO: yes u8; SHIPEDIT:
@@ -141,6 +142,8 @@ void Coop_ScenePlay(const char *cls);
 void Coop_SceneCamera(void);
 void Coop_SceneEnding(void);
 void Coop_SceneEnd(void);
+/* a fade of the scripts' screen 0 (SScorer.Fade): on every client here (a scene's callback fades in the next scene) */
+void Coop_Fade(const int *from, const int *to, double time);
 /* the texts and voices of the scripts (TalkScorer.c, AbstractTextScorer.c, ScriptModes.c) */
 void Coop_SpeechText(const char *text, float time, int r, int g, int b);
 void Coop_MsgText(const char *text, float time, const char *font);
