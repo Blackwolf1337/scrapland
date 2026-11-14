@@ -45,6 +45,20 @@
  * it talks to, else the one in front of it) when they change (COOP_Y_OPTS); the client shows the option and its
  * next/previous action keys pick another (COOP_C_CHOICE); the member's use runs its choice (Coop_BeforeUse).
  *
+ * Menus of the scripts: a question (Menu.YesNoMenu) goes to the member the scripts act for (COOP_Y_MENU); its client
+ * shows it and sends the answer (COOP_C_ANSWER), the instance runs the function of the answer for that member. The
+ * ship editor (ShipEdit.EnterEditShipMenu) opens on the member's client with the hangar of the story (its save
+ * variables Hangar.* and the member's money): the client builds the ship on its platform and runs the function of
+ * the answer that opened the editor (the Junkyard's tutorial), else the keypad's MapShipEdit.EnterEditShip; when it
+ * closes, the hangar and the money come back, go into the story, the instance puts the ship on its platform and runs
+ * the editor's callback of the scripts. Meanwhile the member's character is held (the scripts took its control:
+ * no new character, Coop_Holds), the scripts' UsrControl 0 gives it back (Coop_UsrSlot), and the instance's time
+ * never stops for a menu or a tutorial (Coop_KeepTime).
+ *
+ * A client plays only the scenes of its instance (its own scripts' Scene.Play does nothing there) and has a camera
+ * of view 0 for its level's start; the coordinator tells it at its join that the world plays the coop story
+ * (COORD_CUE_COOP).
+ *
  * Leader travel: a member's key (COOP_LEADER_KEY) asks the coordinator through its instance to go where the party's
  * leader plays (COORD_MSG_LEADER); the coordinator summons it there like a chapter travel of one member.
  *
@@ -68,9 +82,19 @@
 #define COOP_Y_OPTS 7					/* the arrow options of the entity the player would use: entity str, current u8,
 										 * count u8 (0: none), the options ("name:text" str each) */
 #define COOP_Y_END 8					/* the story is finished: the credits (the client leaves the world for the menu) */
+#define COOP_Y_MENU 9					/* a menu of the scripts for this member: kind u8 (COOP_MENU_*), then
+										 * YESNO: title u16 length + bytes; SHIPEDIT: the function of the answer
+										 * that opened it str ("" none), money u32, the hangar's save variables
+										 * (COOP_VARS) */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
 #define COOP_C_LEADER 21				/* client -> instance: to the party's leader (COORD_MSG_LEADER) */
 #define COOP_LEADER_KEY 0x41			/* the client's key for it (DirectInput code: F7) */
+#define COOP_C_ANSWER 22				/* client -> instance: the menu's answer: kind u8, then YESNO: yes u8; SHIPEDIT:
+										 * money u32, the hangar's save variables (COOP_VARS) */
+#define COOP_MENU_YESNO 1
+#define COOP_MENU_SHIPEDIT 2
+/* COOP_VARS: count u16, then name str and value (u16 length + bytes) each: the save variables Hangar.* (the instance
+ * sends GameAct too) */
 #define COOP_HEAR 2500.0f				/* units: a member this near the speaker hears its conversation */
 #define COOP_DIRTY 1024					/* changed names kept between two sends */
 #define COOP_SCENES 64					/* scene tables kept */
@@ -121,11 +145,20 @@ void Coop_SpeechText(const char *text, float time, int r, int g, int b);
 void Coop_MsgText(const char *text, float time, const char *font);
 void Coop_OpenVoice(const char *file, int channel);
 void Coop_PlayVoice(int channel);
+/* a door's level change to level on a coop instance: 1 when it is a chapter of the story (into or out of a level of
+ * the story alone: the whole party goes, told to the members) */
+byte Coop_PartyTravel(const char *level);
 /* where a member without an entrance starts: next to a member here, else at the single player's first spawn of
  * the level; 1 with *pos */
 byte Coop_Spawn(int player, vec3_t *pos, float *yaw);
 /* a scene plays here: the characters it hid are no lost players */
 byte Coop_SceneHolds(void);
+/* player i's character is held: a scene plays, or the ship editor is open on its client (the scripts took the
+ * character's control, it gets no new one) */
+byte Coop_Holds(int i);
+/* the player slot a script gives a character (UsrControl): the scripts' 0..3 on a coop instance is the bound
+ * member's (the single player's player 0) */
+int Coop_UsrSlot(int slot);
 /* the level has no room for a called ship (indoors): coop calls none there */
 byte Coop_NoShipCall(void);
 /* a player's new character: it selects what it looks at, as the single player's (the conversations need it) */
@@ -134,6 +167,17 @@ void Coop_Spawned(struct cEntity *e);
 void Coop_Joined(int i);
 /* the use arrow of t runs on the instance for a player's character (not only a door's) */
 byte Coop_UseAny(struct cEntity *t);
+/* the scripts' Menu.YesNoMenu (1: it went to the member the scripts act for, its answer runs yes or no with id 0
+ * and control "" here) and ShipEdit.EnterEditShipMenu (1: the editor opens on that member's client, the hangar it
+ * built comes back into the story and the ship editor's callback runs here); the menus of a game without a member
+ * stay as they are */
+byte Coop_MenuYesNo(const char *title, const char *yes, const char *no);
+byte Coop_ShipEditOpen(void);
+/* the editor of the member the scripts act for is on its client (its tutorial runs there) */
+byte Coop_ShipEditAway(void);
+/* the instance's time keeps running for the other members (a menu or a tutorial of the scripts stops it in the single
+ * player) */
+byte Coop_KeepTime(void);
 /* a client's message (COOP_MSG): 1 when taken */
 byte Coop_Message(struct Net2Host *host, int conn, const uint8_t *data, int size);
 /* player i uses the arrow of t: the option it chose on its client is the one that runs */
@@ -151,15 +195,27 @@ byte Coop_Command(const char *line);
 void Coop_Cue(int kind, const char *text);
 /* an instance's COOP_MSG: 1 when taken */
 byte Coop_ClientMessage(const uint8_t *data, int size);
-/* the instance connection is gone */
-void Coop_ClientReset(void);
+/* the instance connection is gone; left: the world too */
+void Coop_ClientReset(byte left);
+/* a level's scripts start on a client (before the level module's Init) */
+void Coop_ClientLevelStart(void);
+/* 1 when a Scene.Play of the client's own scripts does not play (a coop client plays the scenes of its instance) */
+byte Coop_ClientNoScene(void);
 /* the story is finished (COOP_Y_END came): 1 once, the join ends (Join_Stop: the credits of the main menu) */
 byte Coop_ClientEnded(void);
+/* the client keeps e, a ship its level scripts made (the ships of the instance's editor while it is open here) */
+byte Coop_ClientKeeps(struct cEntity *e);
+/* the ship editor of the instance closes here (before its callback): the hangar goes to the instance */
+void Coop_ClientShipEdited(void);
+/* Escape ends the scene here (before its EndOfScene) */
+void Coop_ClientSceneAbort(void);
 /* the scene ended here (EndOfScene of the client): an Escape before the instance's end skips it for this member alone
  * (its character comes back with the instance's end, so it does not walk off where the instance has none) */
 void Coop_ClientSceneEnded(void);
 /* each frame of a client: the options; tests: SCRAP_COOP_SKIP=<s> (Escape that many seconds into a scene),
- * SCRAP_COOP_CHOOSE=<k>[:<entity prefix>] (option k of a list) */
+ * SCRAP_COOP_CHOOSE=<k>[:<entity prefix>] (option k of a list), SCRAP_COOP_ANSWER=yes|no[:<s>] (a question's answer
+ * after 2 s or s), SCRAP_COOP_SHIPEDIT=<s> (the ship editor opens with the lifeboat in the hangar and closes after
+ * that many seconds) */
 void Coop_ClientFrame(void);
 
 #endif

@@ -26,6 +26,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
 #include "Levels.h"
 
@@ -346,6 +347,35 @@ static byte MapShipEdit_UseElevator(const nativeVal_t *a) {
 	return ok;
 }
 
+byte Junkyard_PlatformShip(void) {
+	nativeVal_t ship = { 0 }, posd = { 0 };
+	Native_SetNone(&ship);
+	Native_SetNone(&posd);
+	byte ok = PORT_CALL(ShipEdit, CreatePlayerShip, NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship);
+	if (ok && ship.type != NV_NONE) {
+		nativeVal_t pos = { 0 }, l = { 0 };
+		Native_SetNone(&pos);
+		Native_Free(&ship);
+		ok = LvN_ModGet("ShipEdit", "editShipPosDummy", &posd) && LvN_Item(&posd, 1, &pos) && LvN_ModGet("HangarTab", "prevShip", &ship) &&
+			Mode_VSet(&ship, "Pos", &pos);
+		Native_Free(&ship);
+		ok = ok && LvN_ModGet("HangarTab", "prevShip", &ship) && LvN_SetI(&ship, "ActiveCMask", 1);
+		Native_Free(&ship);
+		if (ok && LvN_ModGet("HangarTab", "prevShip", &ship)) {
+			Native_SetEmpty(&l, NV_LIST);
+			Native_Copy(Native_Append(&l), &ship);
+			ok = PORT_CALL(ShipEdit, SetupForEdit, NULL, "v", &l);
+			Native_Free(&l);
+		} else {
+			ok = 0;
+		}
+		Native_Free(&pos);
+	}
+	Native_Free(&ship);
+	Native_Free(&posd);
+	return ok;
+}
+
 /* Init(LevelPath): the keypad of the editor, the player's ship on the platform, the platform's use */
 static byte MapShipEdit_Init(void) {
 	nativeVal_t dummy = { 0 }, p = { 0 }, c[3] = { 0 }, name = { 0 }, kb = { 0 }, d2 = { 0 }, ay = { 0 }, v = { 0 };
@@ -393,27 +423,7 @@ static byte MapShipEdit_Init(void) {
 		LvN_Str(&v, "No existe el dummy 'DM_Door_EditShip_*'\n");
 		ok = Mode_ConsoleError(&v);
 	} else if (ok) {
-		ok = PORT_CALL(ShipEdit, CreatePlayerShip, NULL, "") && LvN_ModGet("HangarTab", "prevShip", &ship);
-		if (ok && ship.type != NV_NONE) {
-			nativeVal_t pos = { 0 }, l = { 0 };
-			Native_SetNone(&pos);
-			Native_Free(&posd);
-			Native_Free(&ship);
-			ok = LvN_ModGet("ShipEdit", "editShipPosDummy", &posd) && LvN_Item(&posd, 1, &pos) && LvN_ModGet("HangarTab", "prevShip", &ship) &&
-				Mode_VSet(&ship, "Pos", &pos);
-			Native_Free(&ship);
-			ok = ok && LvN_ModGet("HangarTab", "prevShip", &ship) && LvN_SetI(&ship, "ActiveCMask", 1);
-			Native_Free(&ship);
-			if (ok && LvN_ModGet("HangarTab", "prevShip", &ship)) {
-				Native_SetEmpty(&l, NV_LIST);
-				Native_Copy(Native_Append(&l), &ship);
-				ok = PORT_CALL(ShipEdit, SetupForEdit, NULL, "v", &l);
-				Native_Free(&l);
-			} else {
-				ok = 0;
-			}
-			Native_Free(&pos);
-		}
+		ok = Junkyard_PlatformShip();
 		Native_Free(&plat);
 		ok = ok && LvN_ModGet("ShipEdit", "editPlatform", &plat) && LvN_SetS(&plat, "UseFunc", "MapShipEdit.UseElevator");
 	}
@@ -878,6 +888,11 @@ static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 	ok = PORT_LCALL(MapShipEdit, EnterEditShip, NULL, "vsss", &name, "", "", "") &&
 		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditTutorial") && Mode_ActionSet("Inactive");
 	Native_Free(&name);
+	/* not in the original: the tutorial goes with the coop story's editor to the member's client
+	 * (include/scrap/coop.h) */
+	if (ok && Coop_ShipEditAway()) {
+		return 1;
+	}
 	if (ok) {
 		nativeVal_t e = { 0 };
 		LvN_Str(&e, "");

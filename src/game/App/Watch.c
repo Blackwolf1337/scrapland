@@ -616,7 +616,7 @@ static void Watch_Purge(void) {
 			e == Play_Entity()) {
 			continue;
 		}
-		if (!Obj(e)->proxy) {
+		if (!Obj(e)->proxy && !Coop_ClientKeeps(e)) {
 			cEntity_Del(e);
 		}
 	}
@@ -817,7 +817,7 @@ static void Watch_Reset(void) {
 	}
 	Play_Reset();
 	Faction_ClientReset();
-	Coop_ClientReset();
+	Coop_ClientReset(0);
 	Arena_ClientReset();
 	if (watch.host) {
 		Net2_Destroy(watch.host);
@@ -834,6 +834,7 @@ static void Watch_Reset(void) {
 
 void Watch_Stop(void) {
 	Watch_Reset();
+	Coop_ClientReset(1);
 	watch.target = 0;
 	watch.ticketLen = 0;
 	watch.port = 0;

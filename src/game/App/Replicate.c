@@ -1048,8 +1048,8 @@ void Rep_PreFrame(uint64_t tick) {
 			Rep_DropOwn(i);
 			e = NULL;
 		}
-		if (!e && Coop_SceneHolds()) {
-			continue;		/* hidden by a scene of the coop story (include/scrap/coop.h) */
+		if (!e && Coop_Holds(i)) {
+			continue;		/* hidden by a scene of the coop story or in its ship editor (include/scrap/coop.h) */
 		}
 		if (e != pl->own || !e) {
 			/* dead or deleted by the game: a new Dtritus after a while */

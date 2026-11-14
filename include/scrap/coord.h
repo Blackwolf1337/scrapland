@@ -233,6 +233,7 @@ struct NetRepReader;
 #define COORD_OP_ADD 2					/* a counter: the value is a whole number added to the story's (0 when missing) */
 #define COORD_CUE_INTRO 1				/* a new party's start: the intro video (text: its file) */
 #define COORD_CUE_NOTICE 2				/* a line on the screen (text) */
+#define COORD_CUE_COOP 3				/* the world plays the coop story (at each join, before the ticket) */
 #define COORD_STORY_MISSION 0x01		/* CoordStory_Apply: Mission.Map or Mission.Library changed */
 #define COORD_STORY_ADDED 0x02			/* a counter was added to (the sender gets the sum too) */
 

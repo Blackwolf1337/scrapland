@@ -719,6 +719,10 @@ void Mode_SetActionSet(const char *name) {
 }
 
 void Mode_SetTimeSpeed(double speed) {
+	/* not in the original: Coop_KeepTime (include/scrap/coop.h) */
+	if (Coop_KeepTime()) {
+		return;
+	}
 	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
 }
 

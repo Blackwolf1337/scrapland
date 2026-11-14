@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
 #include "game/Script/levels/Levels.h"
 #include "ShipEdit.h"
@@ -1689,6 +1690,10 @@ static byte Se_NextPrev(int id, byte on) {
 /* EnterEditShipMenu(id, control): the editor opens (from the main menu it loads the ShipEdit level first) */
 static byte Se_EnterEditShipMenu(int id) {
 	static const char *const mods[] = { "Menu", HT, "EnginesTab", "WeaponsTab", "HullTab" };
+	/* not in the original: the coop story's editor opens on the member's client (include/scrap/coop.h) */
+	if (Coop_ShipEditOpen()) {
+		return 1;
+	}
 	static const char *const tabNames[] = { "Hangar", "Engines", "Weapons", "Hull" };
 	static const char *const links[] = { "Sell", "Exit", "Hangar2", "Hangar3", "Hangar1", NULL };
 	modeVals_t t = { .n = 0 };
@@ -1849,6 +1854,8 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
+	/* not in the original: the hangar of a coop client's editor to its instance (include/scrap/coop.h) */
+	Coop_ClientShipEdited();
 	c = LvN_GTrue(SE, "EndShipEditCallBack");
 	if (c > 0) {
 		nativeVal_t ca[2];

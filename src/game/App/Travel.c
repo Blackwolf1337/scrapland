@@ -561,7 +561,7 @@ byte Travel_Request(const char *rider, const char *level, const char *entrance, 
 			level);
 		return 0;
 	}
-	return Travel_Go(i, level, entrance, door, 0);
+	return Travel_Go(i, level, entrance, door, Coop_PartyTravel(level));
 }
 
 byte Travel_SendCoord(const uint8_t *data, int size) {
