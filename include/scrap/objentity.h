@@ -90,7 +90,8 @@ typedef struct cObjEntity {
 	byte proxy;			/* a watcher's copy of a replicated entity: no slot ticks (include/scrap/replicate.h) */
 	byte netStep;			/* a player's entity of the network: its actions and slot ticks run by tick
 					   (NetPl_Step, include/scrap/play.h), not by the frame */
-	byte pad_ef;
+	byte proxyIdle;			/* ScrapC: a ship proxy whose ship the instance moved into its place (parked): its
+					   motor idles as cVehicleEntity_InPlace tells (include/scrap/replicate.h) */
 	cEntity *cam;			/* the follow camera of the object ("CamName") */
 	cNetController *net;		/* only in a network game */
 	vec3_t camOff;			/* "CamTgt" (0, 50, -50) */

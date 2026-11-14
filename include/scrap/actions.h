@@ -225,7 +225,7 @@ void cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
 /* the update of the slot: the ship parts with DinaShip, else cActCtrl_Update */
 void cActCtrl_Tick(cActCtrl *self, float dt);
 /* a watcher's proxy: the layers' actions (index + 1 in the class, 0 none) of the network at their rates (time a
- * second, 0 keeps it), the model advanced by dt; no events */
+ * second, 0 keeps it), the model advanced by dt; of the events only the sounds (Event_IsSound) */
 void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt);
 /* layer i (> 0) stopped */
 void cActCtrl_StopChan(cActCtrl *self, int i);
@@ -234,6 +234,10 @@ byte cActCtrl_IsActive(void *ctrl, const char *action);
 /* Actions/Actions.cpp (src/game/Actions/Actions.c) */
 cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name);
 void cActEvent_Fire(cActEvent *self, const char *entity);
+
+/* Actions/Events/SoundEvents.cpp (src/game/Actions/Events/SoundEvents.c) */
+/* ScrapC: 1 for an event that only plays a sound of its entity (AnmSoundEvent, AnmSoundLoopEvent) */
+byte Event_IsSound(const cActEvent *ev);
 int cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i);
 
 extern cActClassList *g_pActClassList;

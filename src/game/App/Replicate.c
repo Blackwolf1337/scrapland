@@ -503,7 +503,8 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 		s->ctrl[0] = NetRep_QCtrl(v->controls.acc);
 		s->ctrl[1] = NetRep_QCtrl(v->controls.str);
 		s->weapon = (uint8_t)v->weapons.curWeap;
-		s->flags |= (v->controls.fire ? NETREP_FL_FIRE : 0) | Faction_Flags(e);
+		s->flags |= (v->controls.fire ? NETREP_FL_FIRE : 0) | (cVehicleEntity_InPlace(e) ? NETREP_FL_INPLACE : 0) |
+			Faction_Flags(e);
 		return;
 	}
 	cWalkCharEntity *c = WChar(e);

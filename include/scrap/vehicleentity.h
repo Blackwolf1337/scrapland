@@ -213,6 +213,8 @@ void cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on);
 void cVehicleEntity_StartFade(cVehicleEntity *self);
 /* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
 int cVehicleEntity_GetOwnerSlot(cEntity *e);
+/* ScrapC: the ship stands where the scripts moved it (a parked ship, its move done): its motor's idle sound */
+byte cVehicleEntity_InPlace(cEntity *e);
 const char *cVehicleEntity_GetPilot(cVehicleEntity *self, int slot);
 byte cVehicleEntity_GetLaunchTaunts(cVehicleEntity *self);
 void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *p2, void *p3);

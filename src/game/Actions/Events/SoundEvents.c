@@ -127,6 +127,11 @@ static void Event_AnmSoundLoopEvent(cAbstractFile *params) {
 	}
 }
 
+byte Event_IsSound(const cActEvent *ev) {
+	return (ev->func.flags & PYF_NATIVE) &&
+		(ev->func.func == (void *)Event_AnmSoundEvent || ev->func.func == (void *)Event_AnmSoundLoopEvent);
+}
+
 static void Event_StopStreamingVoice(cAbstractFile *params) {
 	char name[EVENT_STR];
 

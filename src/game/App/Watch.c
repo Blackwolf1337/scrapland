@@ -309,6 +309,10 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 	}
 	int one = 1;
 	Entity_VarI(e, "isInit", &one, 1);
+	/* the sounds of its motors, weapons and crashes by its model (Vehicles.SetProperties of single player) */
+	if (!Mode_Import("OutSound") || !PORT_CALL(OutSound, SetVehicleSounds, NULL, "s", name)) {
+		Native_ErrPrint();
+	}
 	return e;
 }
 
@@ -610,6 +614,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		v->controls.acc = sa->ctrl[0] / 127.0f;
 		v->controls.str = sa->ctrl[1] / 127.0f;
 		v->speed = sqrtf(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+		o->proxyIdle = (sa->flags & NETREP_FL_INPLACE) != 0;
 		Watch_Weapon(e, sa);
 		Faction_EntityFlags(e, p->s[p->n - 1].st.flags);
 	} else {

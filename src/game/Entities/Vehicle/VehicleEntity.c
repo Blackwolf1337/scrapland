@@ -811,6 +811,11 @@ static void Veh_MotorSnd(cSndItem *s, float t, float f, byte fast) {
 	s->volume = s->vols[0] * u + s->vols[1] * t;
 }
 
+byte cVehicleEntity_InPlace(cEntity *e) {
+	const cObjEntity *o = Obj(e);
+	return (o->move.active && o->move.time >= o->move.moveTime) || o->proxyIdle;
+}
+
 static void cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt) {
 	cSndInterface *snd = &self->wl.obj.snd;
 	cSndItem *a, *b, *c, *d;
@@ -818,7 +823,7 @@ static void cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt) {
 
 	alt = PtrArray_Get(snd, 8) == NULL;
 	if (!alt) {
-		alt = self->wl.obj.cam || (self->wl.obj.move.active && self->wl.obj.move.time >= self->wl.obj.move.moveTime);
+		alt = self->wl.obj.cam || cVehicleEntity_InPlace(Veh_Ent(self));
 		((cSndItem *)PtrArray_Get(snd, alt ? 8 : 0))->volume = 0.0f;
 	}
 	if (!self->cloudOn && !(self->cloud > 0.0f)) {

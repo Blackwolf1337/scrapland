@@ -114,6 +114,7 @@
 /* bits of NetRepState.flags */
 #define NETREP_FL_ACTIVE 0x01
 #define NETREP_FL_FALLING 0x02
+#define NETREP_FL_INPLACE 0x02		/* ship: moved into its place by the scripts (cVehicleEntity_InPlace) */
 #define NETREP_FL_WALKING 0x04
 #define NETREP_FL_PLAYER 0x08		/* a player's entity */
 #define NETREP_FL_FIRE 0x10			/* ship: the fire key is down */
