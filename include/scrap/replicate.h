@@ -51,7 +51,7 @@
 
 /* an entity every game makes for itself around its own camera, which the instance does not replicate and a watcher
  * keeps (the rail traffic: the lists NormalTraffic, MediumTraffic and HeavyTraffic place their ships around the
- * camera, so the headless instance has them all off) */
+ * camera, so the headless instance has them all off; the indoor levels' FakeTraffic ships the same way) */
 byte Rep_LocalAmbient(struct cEntity *e);
 
 /* ---- instance (Replicate.c) ---- */

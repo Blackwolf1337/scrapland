@@ -245,6 +245,10 @@ byte Rep_LocalAmbient(cEntity *e) {
 	static const char *const rail[] = { "NormalTraffic", "MediumTraffic", "HeavyTraffic" };
 	char **list = e->listNode.node.target;
 	const char *name = list ? *list : NULL;
+	/* the indoor levels' traffic behind their windows (InTraffic.FakeTraffic: no list, by its name) */
+	if (e->name && !strncmp(e->name, "FakeTraffic", 11)) {
+		return 1;
+	}
 	for (size_t i = 0; name && i < sizeof(rail) / sizeof(rail[0]); i++) {
 		if (!strcmp(name, rail[i])) {
 			return 1;
