@@ -35,6 +35,7 @@
 #include "scrap/text.h"
 #include "scrap/texts.h"
 #include "scrap/travel.h"
+#include "scrap/vehicleattack.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/world.h"
 #include "game/Script/levels/Levels.h"
@@ -103,6 +104,7 @@ static struct {
 		char choiceEnt[CP_NAME];	/* the entity whose option the member chose, "" */
 		int choice;
 		byte menu;					/* the menu it answers (COOP_MENU_*), 0 */
+		char held[CP_NAME];			/* its character the scripts took (UsrControl -1), "" */
 		char yes[CP_NAME], no[CP_NAME];
 	} pl[PLAYERS_MAX];
 	char via[CP_NAME];				/* the function of a menu's answer that runs ("" none) */
@@ -937,6 +939,7 @@ void Coop_Joined(int i) {
 		return;
 	}
 	cp.pl[i].menu = 0;
+	cp.pl[i].held[0] = 0;
 	/* an empty list of options: the client knows it plays the coop story (its keys) */
 	uint8_t none[16];
 	NetRepBuf nw;
@@ -966,12 +969,42 @@ byte Coop_SceneHolds(void) {
 }
 
 byte Coop_Holds(int i) {
-	return Coop_On() && (cp.inScene || (i >= 0 && i < PLAYERS_MAX && cp.pl[i].menu == COOP_MENU_SHIPEDIT));
+	return Coop_On() && (cp.inScene || (i >= 0 && i < PLAYERS_MAX && (cp.pl[i].menu == COOP_MENU_SHIPEDIT ||
+		cp.pl[i].held[0])));
 }
 
-int Coop_UsrSlot(int slot) {
-	int i = Players_Bound();
-	return Coop_On() && slot >= 0 && slot < MAX_LOCAL_PLAYERS && i != PLAYERS_NONE ? PLAYERS_NET_SLOT + i : slot;
+int Coop_HeldPlayer(cEntity *e) {
+	for (int i = 0; Coop_On() && e && i < PLAYERS_MAX; i++) {
+		if (cp.pl[i].held[0] && !strcmp(cp.pl[i].held, e->name)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int Coop_UsrSlot(cEntity *e, int old, int slot) {
+	if (!Coop_On()) {
+		return slot;
+	}
+	if (slot == -1 && old >= PLAYERS_NET_SLOT && old < PLAYERS_NET_SLOT + PLAYERS_MAX) {
+		Str_Copy(cp.pl[old - PLAYERS_NET_SLOT].held, e->name, CP_NAME);
+		return slot;
+	}
+	if (slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX) {
+		cp.pl[slot - PLAYERS_NET_SLOT].held[0] = 0;
+	}
+	if (slot < 0 || slot >= MAX_LOCAL_PLAYERS) {
+		return slot;
+	}
+	int i = Coop_HeldPlayer(e);
+	if (i < 0) {
+		i = Players_Bound();
+	}
+	if (i == PLAYERS_NONE) {
+		return slot;
+	}
+	cp.pl[i].held[0] = 0;
+	return PLAYERS_NET_SLOT + i;
 }
 
 /* the other members on foot next to the member of the scene */
@@ -1317,19 +1350,24 @@ byte Coop_Command(const char *line) {
 		return 1;
 	}
 	if (sscanf(line, "kill %63s", name) == 1 && strchr(name, '.')) {
-		/* the entities of a list of the scripts (the targets of a mission) die as by a weapon: their OnDeath runs */
-		nativeVal_t list, it, e;
+		/* the entities of a list of the scripts (the targets of a mission) die as by a weapon of the member the scripts
+		 * act for: their OnDeath runs with it as the winner */
+		nativeVal_t list, it;
 		char *dot = strchr(name, '.');
 		*dot = 0;
-		int n = Mode_ModGet(name, dot + 1, &list) ? Mode_Loop(&list) : -1;
+		int p = Cp_Player(), n = Mode_ModGet(name, dot + 1, &list) ? Mode_Loop(&list) : -1;
+		cEntity *by = p >= 0 ? Players_Get(p) : NULL;
 		for (int k = 0; k < n; k++) {
-			Native_SetNone(&e);
 			Native_SetNone(&it);
-			if (Native_SeqItem(&list, k, &it) && Mode_EntitySeam(&it, &e) && Native_True(&e) && LvN_SetI(&e, "Life", 0)) {
-				Con_Printf("coop: %s of %s.%s killed\n", it.type == NV_STR ? Native_Text(&it) : "an entity", name, dot + 1);
+			cEntity *v = Native_SeqItem(&list, k, &it) && it.type == NV_STR ? World_FindEntity(Native_Text(&it)) : NULL;
+			if (v && Entity_IsType(v, TYEN_WITH_LIFE)) {
+				if (by) {
+					cVehicleAttack_HitBy(&WLife(v)->attack, by->name);
+				}
+				WLife(v)->life = 0;
+				Con_Printf("coop: %s of %s.%s killed by %s\n", v->name, name, dot + 1, by ? by->name : "-");
 			}
 			Native_Free(&it);
-			Native_Free(&e);
 		}
 		Native_ErrPrint();
 		if (n >= 0) {

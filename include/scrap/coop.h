@@ -154,12 +154,15 @@ byte Coop_PartyTravel(const char *level);
 byte Coop_Spawn(int player, vec3_t *pos, float *yaw);
 /* a scene plays here: the characters it hid are no lost players */
 byte Coop_SceneHolds(void);
-/* player i's character is held: a scene plays, or the ship editor is open on its client (the scripts took the
- * character's control, it gets no new one) */
+/* player i's character is held: a scene plays, the ship editor is open on its client, or the scripts took the
+ * character's control (a ride of the metro or an elevator): it gets no new one */
 byte Coop_Holds(int i);
-/* the player slot a script gives a character (UsrControl): the scripts' 0..3 on a coop instance is the bound
- * member's (the single player's player 0) */
-int Coop_UsrSlot(int slot);
+/* the player slot a script gives character e (UsrControl; old: its slot now): on a coop instance a member's
+ * character the scripts take (-1) is held for its member, and the scripts' 0..3 is that member's slot again (else
+ * the bound member's: the single player's player 0) */
+int Coop_UsrSlot(struct cEntity *e, int old, int slot);
+/* the member whose character the scripts hold (Coop_UsrSlot), -1 */
+int Coop_HeldPlayer(struct cEntity *e);
 /* the level has no room for a called ship (indoors): coop calls none there */
 byte Coop_NoShipCall(void);
 /* a player's new character: it selects what it looks at, as the single player's (the conversations need it) */

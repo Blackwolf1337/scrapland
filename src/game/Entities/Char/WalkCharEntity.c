@@ -1403,7 +1403,7 @@ static byte cWalkCharEntity_SetPush(cEntity *self, const vec3_t *push) {
 static void cWalkCharEntity_SetUsrControl(cEntity *self, int slot) {
 	cWalkCharEntity *w = WChar(self);
 	/* not in the original: Coop_UsrSlot (include/scrap/coop.h) */
-	slot = Coop_UsrSlot(slot);
+	slot = Coop_UsrSlot(self, w->ownerSlot, slot);
 
 	if (w->ownerSlot >= 0 && w->ownerSlot < 4) {
 		cWalkCharControl_Clear(&w->control);
