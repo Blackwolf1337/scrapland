@@ -323,6 +323,13 @@ def run_level(a, level):
         if not me:
             res['error'] = 'the host has no own entity'
             return res
+        # where it stays (a fall from a bad spawn point respawns it elsewhere, Replicate.c)
+        still, end = 0, time.time() + 40
+        while still < 4 and time.time() < end:
+            time.sleep(1.0)
+            now = host_own() or me
+            still = still + 1 if dist(now['pos'], me['pos']) < 50.0 else 0
+            me = now
         at = me['pos']
         res['at'] = at
         m = re.search(r"\('Ang', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", host.ask('ent %s Ang' % me['name']))
