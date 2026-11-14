@@ -163,6 +163,9 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss);
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs);
 void Play_PostFrame(float dt);
 void Play_Status(void);
+/* the mission info key of the own player: the sandbox's switch (into the nearest parked or a called ship, out of
+ * the ship) with the next tick's input */
+void Play_Switch(void);
 /* the corrections of the own entity's prediction since the start */
 uint32_t Play_Corrections(void);
 /* the own player gone (a travel to another instance) */

@@ -2,8 +2,8 @@
  * The client's own player: input, prediction and correction of its entity, its camera, see include/scrap/play.h.
  * Not in the original.
  *
- * The entity is stepped once per tick (NetPl_Step) with the input of that tick, the controls of the frames since the
- * tick before averaged. The ticks come by a clock that follows the input tick time evenly (NetRepFollow), so they
+ * The entity is stepped once per tick (NetPl_Step) with the input of that tick: the moves of the last frame before
+ * it, the turns of the frames since the tick before averaged. The ticks come by a clock that follows the input tick time evenly (NetRepFollow), so they
  * fall on the frames in a steady rhythm. The drawn position runs one tick behind the stepped one: every frame the
  * slot of the entity is set to the part of the tick the clock is in, so cObjEntity_Update draws between the position
  * of the tick before and the new one at that part; a correction adds an offset that fades out (NetRepSmooth). The true
@@ -806,6 +806,12 @@ static void Play_Pct(const float *v, uint32_t n, float *out) {
 	out[1] = n ? tmp[n * 95 / 100] : 0.0f;
 	out[2] = n ? tmp[n * 99 / 100] : 0.0f;
 	out[3] = n ? tmp[n - 1] : 0.0f;
+}
+
+void Play_Switch(void) {
+	if (play.e) {
+		play.acc.buttons |= NETREP_IN_SWITCH;
+	}
 }
 
 uint32_t Play_Corrections(void) {
