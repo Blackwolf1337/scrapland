@@ -38,6 +38,7 @@ typedef struct SpkPlayer {
 	cEntity *spt;					/* its Sputnik (Sputnik.spt of the player), read while World_FindEntity(name) is it */
 	char name[SPK_NAME];
 	cEntity *ship;					/* the parked ship it stands beside, NULL: away */
+	cEntity *failed;				/* the ship Sputnik.Assign failed at (not tried again there) */
 	vec3_t at;
 	byte open;						/* the hangar screen is on its client */
 } SpkPlayer;
@@ -166,6 +167,7 @@ static void Spk_Assign(int i, SpkPlayer *p, cEntity *ship) {
 		Native_ErrPrint();
 	}
 	Players_BindTurn();
+	p->failed = spt ? NULL : ship;
 	if (!spt) {
 		return;
 	}
@@ -205,7 +207,8 @@ void Sputniks_Frame(void) {
 			continue;
 		}
 		float dx = ship->pos.x - p->at.x, dy = ship->pos.y - p->at.y, dz = ship->pos.z - p->at.z;
-		if (spt && spt->active && p->ship == ship && dx * dx + dy * dy + dz * dz < SPK_MOVED * SPK_MOVED) {
+		if ((spt && spt->active && p->ship == ship && dx * dx + dy * dy + dz * dz < SPK_MOVED * SPK_MOVED) ||
+			p->failed == ship) {
 			continue;
 		}
 		Spk_Assign(i, p, ship);
@@ -388,6 +391,13 @@ byte Sputniks_ClientMessage(const uint8_t *data, int size) {
 		Native_ErrPrint();
 	}
 	Con_Printf("sputniks: the hangar of the instance, money %d\n", money);
+	/* test (SCRAP_PLAYBOT_SPUTNIK=<control>: Exit, HangarAux, Hangar1-9): that control of the screen at once */
+	const char *pick = getenv("SCRAP_PLAYBOT_SPUTNIK");
+	if (pick && *pick && spk.clientOpen && (!strcmp(pick, "Exit") ?
+		!PORT_CALL(SputnikInterface, ExitSputnikInterface, NULL, "is", 0L, pick) :
+		!PORT_CALL(SputnikInterface, SelectShip, NULL, "is", 0L, pick))) {
+		Native_ErrPrint();
+	}
 	return 1;
 }
 

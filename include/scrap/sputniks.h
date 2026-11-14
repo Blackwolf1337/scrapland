@@ -46,7 +46,8 @@ byte Sputniks_Message(struct Net2Host *host, int conn, const uint8_t *data, int 
 
 /* ---- client ---- */
 
-/* the instance's message (SPUTNIKS_MSG): the hangar screen opens */
+/* the instance's message (SPUTNIKS_MSG): the hangar screen opens (test: SCRAP_PLAYBOT_SPUTNIK=<control> picks Exit,
+ * HangarAux or Hangar1-9 of it at once) */
 byte Sputniks_ClientMessage(const uint8_t *data, int size);
 /* the hangar screen closed (SputnikInterface.ExitSputnikInterface): the hangar and the money to the instance */
 void Sputniks_ClientDone(void);
