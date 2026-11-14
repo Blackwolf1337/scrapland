@@ -2302,6 +2302,14 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (!t) {
 		return;
 	}
+	/* a flying ship of the mission (no escort: green) is to shoot down too */
+	char *tg = NULL;
+	if (Entity_IsType(t, TYEN_CAR) && strncmp(t->name, "Parked", 6) && Entity_VarS(t, "TgType", &tg, 0) &&
+		(!tg || crt_stricmp(tg, "green"))) {
+		cp.pl[i].fightList[0] = 0;
+		Cp_TestFight(i, in, back);
+		return;
+	}
 	if (kind == NETREP_SHIP) {
 		in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
 		return;
