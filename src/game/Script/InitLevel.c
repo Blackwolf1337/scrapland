@@ -24,6 +24,7 @@
 
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
+#include "scrap/places.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -92,6 +93,10 @@ static byte In_ForLibs(const nativeVal_t *path, const char *func) {
 /* isMission(): the level is the map of the current mission (1, 0, -1 with the error) */
 static int In_IsMission(void) {
 	nativeVal_t mm = { 0 }, a = { 0 }, lv = { 0 }, b = { 0 };
+	/* not in the original: no story in the levels of a sandbox or freeroam world (include/scrap/places.h) */
+	if (Places_On()) {
+		return 0;
+	}
 	if (!Mode_Import("string")) {
 		return -1;
 	}
@@ -315,7 +320,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	/* Map is the module of the current level: the function it holds through its entry */
 	if (xb < 0 || !Mode_Import("Map") || !Mode_Import("MapSnd") || !MODE_CBATTR("Map", "InitStatus", NULL, "v", path) ||
 		!PORT_OWN(Init, MLibInitStatus, NULL, "v", path) || !In_BossShip() || !Mode_G(IN, "SuperDealModule", deal) ||
-		(Native_True(deal) && !In_Method(deal, "InitStatus", path))) {
+		(Native_True(deal) && !In_Method(deal, "InitStatus", path)) || !Places_LevelStatus()) {
 		return Mode_Done(&t, 0);
 	}
 	/* the size of the mission arrows, the AI */
@@ -366,7 +371,8 @@ static byte In_InitN(const nativeVal_t *path) {
 	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries) */
 	if (!MODE_CBATTR("Map", "Init", NULL, "v", path) || !MODE_CBATTR("MapSnd", "Init", NULL, "v", path) ||
 		!PORT_OWN(Init, MLibInit, NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
-		(Native_True(deal) && !In_Method(deal, "Init", path)) || !Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL)) {
+		(Native_True(deal) && !In_Method(deal, "Init", path)) || !Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL) ||
+		!Places_LevelInit()) {
 		return Mode_Done(&t, 0);
 	}
 	int demo = In_Flag("isDemo");

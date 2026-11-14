@@ -18,6 +18,7 @@
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/net2.h"
+#include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/players.h"
 #include "scrap/play.h"
@@ -85,8 +86,8 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 		inst.money = crt_atoi(ext);
 		return 1;
 	}
-	return Rep_ParseParam(param, ext) || Coop_ParseParam(param, ext) || Arena_ParseParam(param, ext) ||
-		Faction_ParseParam(param, ext);
+	return Places_ParseParam(param, ext) || Rep_ParseParam(param, ext) || Coop_ParseParam(param, ext) ||
+		Arena_ParseParam(param, ext) || Faction_ParseParam(param, ext);
 }
 
 byte Instance_PvP(void) {
@@ -302,7 +303,8 @@ void Instance_Line(char *line) {
 		Players_BindTurn();
 		return;
 	}
-	if (Rep_Command(line) || Faction_Command(line) || Coop_Command(line) || Arena_Command(line)) {
+	if (Rep_Command(line) || Faction_Command(line) || Coop_Command(line) || Arena_Command(line) ||
+		Places_Command(line)) {
 		return;
 	}
 	Console_Execute(line);

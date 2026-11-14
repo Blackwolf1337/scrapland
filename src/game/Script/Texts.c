@@ -50,6 +50,7 @@ static const struct {
 	{ "MP_Lost", "Connection lost: %s" },
 	{ "MP_Arena_Delivered", "%s delivered the mail bag" },
 	{ "MP_Arena_BagBack", "The mail bag is back at its start" },
+	{ "MP_Place_Go", "To %s" },
 };
 
 const char *Texts_Get(const char *key) {

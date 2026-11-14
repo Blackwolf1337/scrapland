@@ -11,6 +11,7 @@
 #include "scrap/coord.h"
 #include "scrap/coordlist.h"
 #include "scrap/netrep.h"
+#include "scrap/placedef.h"
 
 #define CO_CONNS NET2_MAX_CONNS
 #define CO_PLAYERS 256				/* players online or in an instance */
@@ -20,6 +21,8 @@
 #define CO_KICK_WAIT 10000			/* ms a join waits for the instance to let the player's old connection go */
 #define CO_MSG 256
 #define CO_RESTART_MS 5000		/* a level kept up starts again this long after it went down */
+#define CO_RETRY_MS 1000			/* the pause after the first start that failed, doubled for each further one */
+#define CO_START_TRIES 6			/* failed starts in a row before the coordinator gives up on a level */
 
 enum { CK_NONE, CK_NEW, CK_HELLO, CK_PLAYER, CK_INST };
 enum { CI_DOWN, CI_STARTING, CI_UP, CI_STOPPING };
@@ -38,6 +41,7 @@ typedef struct CoPlayer {
 	char name[COORD_NAME + 1];
 	int conn;						/* its coordinator connection, -1 */
 	int inst;						/* the instance it plays in or goes to, -1 */
+	int from;						/* the instance a travel left (it gets the player back if inst never starts), -1 */
 	int wantTicket;					/* a ticket for inst is due once it is up */
 	uint64_t kickAt;				/* a join that waits for the old connection to go (ms), 0 */
 	int dirty;
@@ -60,6 +64,8 @@ typedef struct CoInst {
 	uint64_t since;					/* ms of the last state change */
 	uint64_t empty;					/* ms since it has no player, 0 */
 	int stale;						/* coop: started before the story's mission changed (ends once empty) */
+	int fails;						/* starts in a row that ended before the instance connected */
+	uint64_t retryAt;				/* ms before which it is not started again after a failed start */
 } CoInst;
 
 struct Coord {
@@ -383,7 +389,7 @@ static int Co_Player(const uint8_t key[NET2_KEY_SIZE], int *loaded) {
 	memcpy(p->key, key, NET2_KEY_SIZE);
 	Coord_Hex(key, NET2_KEY_SIZE, p->hex);
 	p->conn = -1;
-	p->inst = -1;
+	p->inst = p->from = -1;
 	int r = CoordStore_Load(coord.playersDir, key, p->text, &p->len, sizeof(p->text));
 	if (r == COORD_LD_IO) {
 		Co_Log("coordinator: cannot read the progress of %.8s\n", p->hex);
@@ -458,6 +464,7 @@ static void Co_SendTicket(CoPlayer *p) {
 	NetRep_PutStr(&w, in->level);
 	NetRep_PutU16(&w, (uint32_t)n);
 	CoordMsg_PutBytes(&w, tk, n);
+	NetRep_PutStr(&w, coord.cfg.mode[0] ? coord.cfg.mode : COORD_MODE);
 	Co_Send(p->conn, &w);
 	p->wantTicket = 0;
 	Co_Log("coordinator: ticket for %s (%.8s) to %s port %u%s%s\n", p->name, p->hex, in->level, in->port,
@@ -466,6 +473,7 @@ static void Co_SendTicket(CoPlayer *p) {
 
 /* the player goes to the instance of level i: a ticket once it is up */
 static void Co_Send2Level(CoPlayer *p, int i) {
+	p->from = -1;
 	p->inst = i;
 	p->wantTicket = 1;
 	coord.inst[i].wanted = 1;
@@ -762,7 +770,10 @@ static void Co_Join(int conn, NetRepReader *r) {
 		CoordKv_Set(p->text, &p->len, sizeof(p->text), "entrance", "");
 		CoordKv_Set(p->text, &p->len, sizeof(p->text), "door", "");
 	}
-	if (k < 0) {
+	if (k >= 0 && coord.inst[k].fails >= CO_START_TRIES) {
+		k = Co_Level(coord.cfg.start);
+	}
+	if (k < 0 || coord.inst[k].fails >= CO_START_TRIES) {
 		Co_Deny(conn, COORD_DENY_LEVEL, "no level to start in");
 		return;
 	}
@@ -836,11 +847,13 @@ static void Co_State(int conn, NetRepReader *r) {
 	case COORD_SR_TRAVEL:
 	case COORD_SR_PARTY: {
 		int k = Co_Level(level);
-		if (k < 0) {
-			Co_Log("coordinator: %s (%.8s) cannot go to %s (not a level of this world)\n", p->name, p->hex, level);
-			Co_Refuse(conn, key, "that level is closed in this world");
+		if (k < 0 || coord.inst[k].fails >= CO_START_TRIES) {
+			const char *why = k < 0 ? "that level is closed in this world" : "that level does not start";
+			Co_Log("coordinator: %s (%.8s) cannot go to %s (%s)\n", p->name, p->hex, level, k < 0 ?
+				"not a level of this world" : "its instance does not start");
+			Co_Refuse(conn, key, why);
 			if (p->conn >= 0) {
-				Co_Notice(p->conn, "that level is closed in this world");
+				Co_Notice(p->conn, why);
 			}
 			break;
 		}
@@ -851,6 +864,7 @@ static void Co_State(int conn, NetRepReader *r) {
 		Co_Log("coordinator: %s (%.8s) travels from %s to %s (%s, %s)\n", p->name, p->hex, coord.inst[from].level,
 			coord.inst[k].level, entrance[0] ? entrance : "spawn", door[0] ? door : "-");
 		Co_Send2Level(p, k);
+		p->from = from;
 		if (reason == COORD_SR_PARTY && coord.coop) {
 			Co_Summon(p, k, entrance, door);
 		}
@@ -887,6 +901,7 @@ static void Co_Inst(int conn, NetRepReader *r) {
 	if (in->state == CI_STARTING) {
 		Co_SetState(in, CI_UP);
 	}
+	in->fails = 0;
 	if (!in->proc.pid && pid) {
 		CoordProc_Adopt(&in->proc, pid);
 	}
@@ -977,6 +992,43 @@ static int Co_Present(int i) {
 	return n;
 }
 
+/* a start of in that ended before the instance connected: the next one after a pause that doubles each time, none
+ * after CO_START_TRIES (the players waiting for it go back where they came from, or are told) */
+static void Co_StartFailed(CoInst *in) {
+	int i = (int)(in - coord.inst);
+	in->fails++;
+	if (in->fails < CO_START_TRIES) {
+		uint64_t pause = (uint64_t)CO_RETRY_MS << (in->fails - 1);
+		in->retryAt = coord.now + pause;
+		Co_Log("coordinator: instance %s failed to start %d time%s in a row, next try in %u s\n", in->level, in->fails,
+			in->fails > 1 ? "s" : "", (unsigned)(pause / 1000u));
+		return;
+	}
+	in->retryAt = UINT64_MAX;
+	Co_Log("coordinator: instance %s failed to start %d times in a row, given up (\"start %s\" tries again)\n",
+		in->level, in->fails, in->level);
+	for (int k = 0; k < CO_PLAYERS; k++) {
+		CoPlayer *p = &coord.pl[k];
+		if (!p->used || p->inst != i || !p->wantTicket) {
+			continue;
+		}
+		p->wantTicket = 0;
+		if (p->from >= 0 && coord.inst[p->from].conn >= 0) {
+			Co_Refuse(coord.inst[p->from].conn, p->key, "that level does not start");
+			if (p->conn >= 0) {
+				Co_Notice(p->conn, "that level does not start");
+			}
+			p->inst = p->from;
+			p->from = -1;
+		} else {
+			p->inst = -1;
+			if (p->conn >= 0) {
+				Co_Deny(p->conn, COORD_DENY_LEVEL, "that level does not start");
+			}
+		}
+	}
+}
+
 /* the processes, the starts, the ends of empty instances */
 static void Co_Instances(void) {
 	int starting = 0;
@@ -999,8 +1051,8 @@ static void Co_Instances(void) {
 			int alive = in->state != CI_DOWN && CoordProc_Alive(&in->proc);
 			if (pass == 1) {
 				/* the starts: the levels players wait for first, then those kept up */
-				if (in->state == CI_DOWN && starting < CO_STARTING && (in->wanted || (in->keep && coord.now - in->since >
-					CO_RESTART_MS))) {
+				if (in->state == CI_DOWN && starting < CO_STARTING && coord.now >= in->retryAt && (in->wanted ||
+					(in->keep && coord.now - in->since > CO_RESTART_MS))) {
 					Co_Start(in);
 					starting += in->state == CI_STARTING;
 				}
@@ -1012,8 +1064,10 @@ static void Co_Instances(void) {
 					Co_Log("coordinator: instance %s ended while starting (see %s/%s.log)\n", in->level, coord.logsDir,
 						in->level);
 					Co_SetState(in, CI_DOWN);
+					Co_StartFailed(in);
 				} else if (coord.now - in->since > COORD_START_SECS * 1000u) {
 					Co_Stop(in, "it did not connect");
+					Co_StartFailed(in);
 				}
 				break;
 			case CI_UP:
@@ -1107,7 +1161,8 @@ Coord *Coord_Create(const CoordConfig *cfg) {
 	if (!c->start[0]) {
 		snprintf(c->start, sizeof(c->start), "DownTown");
 	}
-	Co_List(c->levels[0] ? c->levels : COORD_CITY, Co_AddLevel);
+	/* the city and the places of the sandbox and freeroam modes (include/scrap/placedef.h) */
+	Co_List(c->levels[0] ? c->levels : PlaceDef_WorldLevels(), Co_AddLevel);
 	Co_List(c->start, Co_AddLevel);
 	Co_List(c->keep[0] ? c->keep : COORD_CITY, Co_Keep);
 	if (snprintf(coord.playersDir, sizeof(coord.playersDir), "%s/players", c->dataDir) >= (int)sizeof(coord.playersDir) ||
@@ -1240,6 +1295,8 @@ int Coord_Command(Coord *c, const char *line) {
 			Co_Stop(&coord.inst[i], "asked");
 		} else if (line[2] == 'a') {
 			coord.inst[i].keep = 1;
+			coord.inst[i].fails = 0;
+			coord.inst[i].retryAt = 0;
 		}
 		return 1;
 	}

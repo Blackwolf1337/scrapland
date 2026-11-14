@@ -18,6 +18,7 @@
 #include "scrap/global.h"
 #include "scrap/instance.h"
 #include "scrap/netrep.h"
+#include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
@@ -262,6 +263,12 @@ static void Join_Ticket(NetRepReader *r) {
 		Con_Errorf("join: a bad ticket\n");
 		return;
 	}
+	char mode[COORD_LEVEL + 1];
+	mode[0] = 0;
+	if (r->pos < r->size) {
+		NetRep_GetStr(r, mode, sizeof(mode));
+	}
+	Places_WorldMode(r->bad ? "" : mode);
 	join.played = 1;
 	join.ui = JOIN_UI_PLAYING;
 	join.instPort = (uint16_t)port;
