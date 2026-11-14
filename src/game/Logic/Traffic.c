@@ -312,7 +312,8 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 					continue;
 				}
 				cp = g_pWorld->camPos[g_pWorld->curCam];
-				if (Engine_TestLine(Entity_GetPos(e, &tmp), &cp, NULL, NULL)) {
+				/* the instance's view (Players_SeesModel) had its line of sight from a player */
+				if (!Players_Net() && Engine_TestLine(Entity_GetPos(e, &tmp), &cp, NULL, NULL)) {
 					if (++tries == 4) {
 						break;
 					}
