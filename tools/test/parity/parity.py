@@ -152,7 +152,7 @@ def parse_ents(text):
             continue
         out.append(dict(name=f[0], cls=f[1], list=f[2], active=int(f[3]), model=f[4], act=f[5],
                         pos=(float(f[6]), float(f[7]), float(f[8])), tg=int(f[9]), radar=int(f[10]),
-                        proxy=int(f[11])))
+                        proxy=int(f[11]), owner=int(f[12]) if len(f) > 12 else -1))
     return out
 
 

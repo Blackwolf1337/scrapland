@@ -12,9 +12,9 @@ A side is one of
 The game writes the feel log (SCRAP_FEELLOG, include/scrap/feellog.h: a line per drawn frame with the monotonic
 clock); real key presses go through XTEST into the game's own gamescope X server (never the desktop), their time
 taken on the same clock. Per side: does the player start on foot (and stay so after a click of the use button,
-the left mouse button, at nothing); walking: W held 3 s, three times; then the ship (single player:
+the left mouse button, at nothing); walking: W and S held 3 s in turn, six times; then the ship (single player:
 Parking.UseShip on the player's ship; a client: F1, the mission info key, the sandbox's switch),
-put 15000 units up, W held 5 s, twice. The results go to --out/<side>.json and the table to --out/feel.md:
+put 15000 units up, W held 5 s, three times. The results go to --out/<side>.json and the table to --out/feel.md:
   latency    from the key press to the first drawn frame where the own entity left its path (median, max)
   input      from the key press to the first frame that saw the input
   frames     frame time percentiles and a histogram over the whole run
@@ -252,9 +252,10 @@ def run_side(a, side):
             press(g, 'F1', 0.12)
             time.sleep(3)
         walks = []
-        for _ in range(3):
+        # forwards and back in turn (six walks into one direction end at a wall)
+        for k in range(6):
             time.sleep(1.0)
-            walks.append(press(g, 'w', 3.0))
+            walks.append(press(g, 'w' if k % 2 == 0 else 's', 3.0))
         time.sleep(1.0)
         # the ship
         if side == 'sp':
@@ -267,7 +268,7 @@ def run_side(a, side):
         flights = []
         if ok:
             time.sleep(3.0)
-            for _ in range(2):
+            for _ in range(3):
                 lift(a, g, inst_dir, side)
                 time.sleep(2.5)
                 flights.append(press(g, 'w', 5.0))
@@ -296,7 +297,8 @@ def lift(a, g, inst_dir, side):
         g.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' % up)
         return
     ents = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 6000' % p, inst=a.level, timeout=10))
-    cars = sorted((e for e in ents if e['cls'] == 'Car'), key=lambda e: dist(e['pos'], p))
+    # the ship a player drives (owner slot 4 on: the players of the instance)
+    cars = sorted((e for e in ents if e['cls'] == 'Car' and e.get('owner', -1) >= 4), key=lambda e: dist(e['pos'], p))
     if cars:
         inst_dir.ask('do e = Scrap.GetEntity("%s"); e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' %
                      ((cars[0]['name'],) + up), inst=a.level)
@@ -323,6 +325,7 @@ def analyse(rows, presses, hold):
             corr += ww[-1]['corr'] - ww[0]['corr']
     med = lambda v: round(statistics.median(v), 1) if v else None  # noqa: E731
     return {'input_ms': med(seen), 'latency_ms': med(moved), 'latency_max': round(max(moved), 1) if moved else None,
+            'latencies': [round(m, 1) for m in moved],
             'jitter_entity': max(ent, key=lambda j: j['rms']) if ent else None,
             'jitter_camera': max(cam, key=lambda j: j['rms']) if cam else None, 'corrections': corr,
             'samples': len(moved)}

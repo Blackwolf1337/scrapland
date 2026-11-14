@@ -27,7 +27,8 @@
  *   ents <list> [x y z r]    the sorted names of the entities of an entity list (Scrap.SphereCall lists: 'r', 'i',
  *                            'v', ...) in the sphere, by default the whole map
  *   entinfo [x y z r]        a line per entity (in the sphere, else all): name, class, EntityList, active, model,
- *                            action controller class, position, TgType, RadarShow, proxy (the M10 parity tool)
+ *                            action controller class, position, TgType, RadarShow, proxy, owner slot (the M10
+ *                            parity tool)
  *   radar | fx | sounds      the icons the last radar drew, the particle systems the last frame drew, the sounds
  *                            playing (mixer channels by sound name, positional property sets)
  *   dump [module ...]        the module variables (all pack modules without names): "== module", then
@@ -70,6 +71,8 @@
 #include "scrap/scoreritems.h"
 #include "scrap/snd.h"
 #include "scrap/sound.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/script.h"
 #include "scrap/scriptlib.h"
@@ -1069,7 +1072,7 @@ static void TC_Ents(tcBuf *b, const char *arg) {
 
 /* entinfo [x y z radius]: a line per entity of the world (in the sphere, else all), sorted by name: name, class,
  * EntityList, active, model path, class of the action controller, position, team (TgType), RadarShow, proxy (a
- * watcher's copy of a replicated entity) */
+ * watcher's copy of a replicated entity), owner slot of a ship or character (UsrControl, -1 an AI's) */
 static int TC_CmpEnt(const void *a, const void *b) {
 	return strcmp((*(cEntity *const *)a)->name, (*(cEntity *const *)b)->name);
 }
@@ -1112,7 +1115,7 @@ static void TC_EntInfo(tcBuf *b, const char *arg) {
 		cEntity *e = ents[i];
 		char *list = NULL;
 		const char *model = "", *act = "";
-		int tg = -1, radar = 0, proxy = 0;
+		int tg = -1, radar = 0, proxy = 0, owner = -1;
 		vec3_t p;
 		if (!Entity_VarS(e, "EntityList", &list, 0) || !list) {
 			list = "";
@@ -1127,9 +1130,14 @@ static void TC_EntInfo(tcBuf *b, const char *arg) {
 			tg = WLife(e)->arrow.tgType;
 			act = WLife(e)->actCtrl && WLife(e)->actCtrl->cls ? WLife(e)->actCtrl->cls->name : "";
 		}
+		if (Entity_IsType(e, TYEN_CAR)) {
+			owner = cVehicleEntity_GetOwnerSlot(e);
+		} else if (Entity_IsType(e, TYEN_WALKCHAR)) {
+			owner = WChar(e)->ownerSlot;
+		}
 		Entity_GetPos(e, &p);
-		TC_Addf(b, "%s\t%s\t%s\t%d\t%s\t%s\t%.0f\t%.0f\t%.0f\t%d\t%d\t%d\n", e->name, Entity_GetClassName(e),
-			list, e->active, model, act, (double)p.x, (double)p.y, (double)p.z, tg, radar, proxy);
+		TC_Addf(b, "%s\t%s\t%s\t%d\t%s\t%s\t%.0f\t%.0f\t%.0f\t%d\t%d\t%d\t%d\n", e->name, Entity_GetClassName(e),
+			list, e->active, model, act, (double)p.x, (double)p.y, (double)p.z, tg, radar, proxy, owner);
 	}
 	if (ents) {
 		Mem_Free(ents);
