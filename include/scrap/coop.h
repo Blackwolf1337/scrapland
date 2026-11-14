@@ -56,6 +56,24 @@
  * no new character, Coop_Holds), the scripts' UsrControl 0 gives it back (Coop_UsrSlot), and the instance's time
  * never stops for a menu or a tutorial (Coop_KeepTime).
  *
+ * The character conversor's interface (at the middle of the machine's action) opens on the client of the member in
+ * the machine; the machine waits for its pick, the conversion runs on the instance for that member. Sputnik's hangar
+ * screen opens on the member's client like the ship editor.
+ *
+ * Possession and conversion: the member that possesses a character (the special action key at it, its client's
+ * input) or converts at a conversor plays as the new character from then on, as the single player's player does:
+ * the scripts' new main character gets the member's slot and the instance gives it to the member (Coop_Adopts), its
+ * class stays the member's (its state's "char": a respawn and a travel keep it). The other members stay what they
+ * are: they see the possessed character die, the member's old character go and the new one take its place, the alarm
+ * of the possession is the possessor's own; the story goes on for all (the conversion back into Dtritus that
+ * Mission_MeetBoss asks for counts by whichever member does it). Scripts that read a member's slot (UsrControl) see
+ * the single player's 0 (Coop_UsrRead: a race's checkpoints count for any member's ship); a character or ship the
+ * scripts take from a member (UsrControl -1: a ride, a race's camera travelling) is held and given back to it.
+ *
+ * A level's start of the missions (MissionsFuncs.Init: an outdoor level's challenge race, the mission arrow) without
+ * a member yet has a stand-in player at the spawn of the way point (the mission's travel carries it in the story as
+ * Coop.Entry.*, like a chapter's), where the single player's player would stand.
+ *
  * A client plays only the scenes of its instance (its own scripts' Scene.Play does nothing there) and has a camera
  * of view 0 for its level's start; the coordinator tells it at its join that the world plays the coop story
  * (COORD_CUE_COOP).
@@ -99,6 +117,8 @@
 										 * (Conversor.AvailableChars, u16 length + bytes); C_ANSWER: the class picked
 										 * str ("" none: Escape) */
 #define COOP_MENU_SPUTNIK 4				/* Sputnik's hangar screen: Y_MENU and C_ANSWER: money u32, COOP_VARS */
+#define COOP_MENU_WARNING 5				/* a text box of the scripts (Menu.ShowWarning): Y_MENU: the text u16 length +
+										 * bytes; no answer (the client closes it) */
 /* COOP_VARS: count u16, then name str and value (u16 length + bytes) each: the save variables Hangar.* (the instance
  * sends GameAct too) */
 #define COOP_HEAR 2500.0f				/* units: a member this near the speaker hears its conversation */
@@ -210,6 +230,9 @@ byte Coop_ShipEditOpen(void);
 void Coop_ConvEnter(void);
 byte Coop_ConvMenu(void);
 void Coop_ConvEnd(void);
+/* a text box of the scripts (Menu.ShowWarning: the first possession, a conversion): 1 on a coop instance, where it
+ * went to the client of the member the scripts act for (the instance opens no menu nobody closes) */
+byte Coop_Warning(const char *text);
 /* Sputnik's hangar screen (SputnikInterface.EnterSputnikInterface): 1 when it opened on the client of the member the
  * scripts act for (its money and hangar come back into the story, then EndSputnikCallBack runs here) */
 byte Coop_SputnikOpen(void);
@@ -272,7 +295,8 @@ void Coop_ClientSceneEnded(void);
  * SCRAP_COOP_CHOOSE=<k>[:<entity prefix>] (option k of a list), SCRAP_COOP_ANSWER=yes|no[:<s>] (a question's answer
  * after 2 s or s), SCRAP_COOP_SHIPEDIT=<s> (the ship editor opens with the lifeboat in the hangar and closes after
  * that many seconds), SCRAP_COOP_CONV=<class>[:<s>] (the conversor's interface picks that class after 3 s or s;
- * "none": Escape), SCRAP_COOP_SPUTNIK=<s> (Sputnik's screen closes after s) */
+ * "none": Escape), SCRAP_COOP_SPUTNIK=<s> (Sputnik's screen closes after s), SCRAP_COOP_WARNING=<s> (a text box
+ * of the instance closes after s) */
 void Coop_ClientFrame(void);
 
 #endif

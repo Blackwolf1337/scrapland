@@ -1479,6 +1479,28 @@ static void Cp_ShipEdited(int i, NetRepReader *r) {
 	Players_BindTurn();
 }
 
+byte Coop_Warning(const char *text) {
+	uint8_t buf[CP_MENU_TITLE + 16];
+	NetRepBuf w;
+	if (!Coop_On()) {
+		return 0;
+	}
+	int i = Cp_Player(), n = (int)strlen(text);
+	if (i < 0 || Rep_PlayerConn(i) < 0) {
+		return 1;
+	}
+	n = n > CP_MENU_TITLE ? CP_MENU_TITLE : n;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_MENU);
+	NetRep_PutU8(&w, COOP_MENU_WARNING);
+	NetRep_PutU16(&w, (uint32_t)n);
+	CoordMsg_PutBytes(&w, text, n);
+	Cp_ToClient(i, buf, w.size);
+	Con_Printf("coop: a text box for player %d: %.60s\n", i, text);
+	return 1;
+}
+
 byte Coop_SputnikOpen(void) {
 	static uint8_t buf[CP_MENU_MSG];
 	NetRepBuf w;
@@ -2083,6 +2105,22 @@ static void Cp_ClientMenu(NetRepReader *r) {
 		Cp_ClientConvOpen(r);
 		return;
 	}
+	if (kind == COOP_MENU_WARNING) {
+		int n = (int)NetRep_GetU16(r);
+		if (n > CP_MENU_TITLE) {
+			return;
+		}
+		CoordMsg_GetBytes(r, title, n);
+		title[n] = 0;
+		/* the box of the single player (it waits until the member plays: its entry calls it again) */
+		if (!r->bad && (!Mode_Import("Menu") || !PORT_CALL(Menu, ShowWarning, NULL, "is", 0L, title))) {
+			Native_ErrPrint();
+		}
+		cp.cmenu = COOP_MENU_WARNING;
+		cp.cmenuAt = Watch_ShownTime();
+		Con_Printf("coop: a text box of the instance: %.60s\n", title);
+		return;
+	}
 	if (kind == COOP_MENU_SPUTNIK) {
 		int m = (int)NetRep_GetU32(r);
 		if (r->bad) {
@@ -2271,7 +2309,7 @@ void Coop_ClientSceneEnded(void) {
 }
 
 void Coop_ClientFrame(void) {
-	static double skipAfter = -1.0, editSecs, answerSecs, convSecs, sputnikSecs;
+	static double skipAfter = -1.0, editSecs, answerSecs, convSecs, sputnikSecs, warnSecs;
 	static int choose = -2, answer;
 	static const char *chooseOf = "";
 	static char conv[CP_NAME];
@@ -2288,6 +2326,8 @@ void Coop_ClientFrame(void) {
 		Str_PrintfQuiet(conv, sizeof(conv), "%.*s", cv ? (int)strcspn(cv, ":") : 0, cv ? cv : "");
 		convSecs = cv && strchr(cv, ':') ? atof(strchr(cv, ':') + 1) : CP_CONV_SECS;
 		sputnikSecs = sp ? atof(sp) : 0.0;
+		const char *wn = getenv("SCRAP_COOP_WARNING");
+		warnSecs = wn ? atof(wn) : 0.0;
 	}
 	if (cp.pendingSize) {
 		NetRepReader r;
@@ -2342,6 +2382,13 @@ void Coop_ClientFrame(void) {
 		}
 		if (cp.cmenu == COOP_MENU_SPUTNIK) {
 			Coop_ClientSputnikDone();
+		}
+	}
+	if (warnSecs > 0.0 && cp.cmenu == COOP_MENU_WARNING && Watch_ShownTime() - cp.cmenuAt >= warnSecs) {
+		Con_Printf("coop: test: the text box closes\n");
+		cp.cmenu = 0;
+		if (!PORT_CALL(Menu, BackToGame, NULL, "is", 0L, "")) {
+			Native_ErrPrint();
 		}
 	}
 	/* test: Escape the given seconds into each scene of the instance */

@@ -15,8 +15,8 @@
  */
 #include <string.h>
 
-#include "scrap/coop.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/game.h"
 #include "scrap/input.h"
 #include "scrap/scheduler.h"
@@ -508,6 +508,10 @@ static byte Base_TextBox(int id, const nativeVal_t *desc, const char *accept, co
  * 2 when the player does not play yet (the entry schedules the call again)
  */
 static int Base_ShowWarning(int id, const nativeVal_t *desc) {
+	/* not in the original: on a coop instance the box opens on the client of the member the scripts act for */
+	if (desc->type == NV_STR && Coop_Warning(Native_Text(desc))) {
+		return 1;
+	}
 	cActionSet *set = TABLE_AT(g_ActionSets, Input_GetActionSet());
 	if (!(ActionSet_IsNamed(set, "Walk") || ActionSet_IsNamed(set, "Racer")) || g_pWorld->timer.speed <= 0.0f) {
 		return 2;
