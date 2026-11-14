@@ -42,8 +42,9 @@
  * the instance's end).
  *
  * Conversation options: the instance sends each member the arrow options of the entity it would use (the character
- * it talks to, else the one in front of it) when they change (COOP_Y_OPTS); the client shows the option and its
- * next/previous action keys pick another (COOP_C_CHOICE); the member's use runs its choice (Coop_BeforeUse).
+ * it talks to, else the one in front of it) when they change (COOP_Y_OPTS); the client shows the option in its talk
+ * panel and its next/previous action keys pick another (COOP_C_CHOICE); the member's use runs its choice
+ * (Coop_BeforeUse).
  *
  * Menus of the scripts: a question (Menu.YesNoMenu) goes to the member the scripts act for (COOP_Y_MENU); its client
  * shows it and sends the answer (COOP_C_ANSWER), the instance runs the function of the answer for that member. The
@@ -59,8 +60,9 @@
  * of view 0 for its level's start; the coordinator tells it at its join that the world plays the coop story
  * (COORD_CUE_COOP).
  *
- * Leader travel: a member's key (COOP_LEADER_KEY) asks the coordinator through its instance to go where the party's
- * leader plays (COORD_MSG_LEADER); the coordinator summons it there like a chapter travel of one member.
+ * Leader travel: a member's key (Walk.CoopLeader of the controls, F7) asks the coordinator through its instance to
+ * go where the party's leader plays (COORD_MSG_LEADER); the coordinator summons it there like a chapter travel of one
+ * member.
  *
  * Client: the coordinator's cue (COORD_MSG_CUE) of a new party's start plays the intro video before the first level
  * of the world; its notices show on the screen.
@@ -88,7 +90,6 @@
 										 * (COOP_VARS) */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
 #define COOP_C_LEADER 21				/* client -> instance: to the party's leader (COORD_MSG_LEADER) */
-#define COOP_LEADER_KEY 0x41			/* the client's key for it (DirectInput code: F7) */
 #define COOP_C_ANSWER 22				/* client -> instance: the menu's answer: kind u8, then YESNO: yes u8; SHIPEDIT:
 										 * money u32, the hangar's save variables (COOP_VARS) */
 #define COOP_MENU_YESNO 1
@@ -195,6 +196,9 @@ byte Coop_Command(const char *line);
 byte Coop_Client(void);
 /* the entity's model has no animation for the action (a scene's event of the instance): told once a run per action */
 void Coop_ClientNoAnim(const char *entity, const char *action);
+/* the option of the instance's arrow list this client chose ("name:text"), NULL without one (or in a scene); *count
+ * its options (the talk panel draws it as the single player's use box) */
+const char *Coop_ClientOption(int *count);
 /* a cue of the coordinator (COORD_CUE_*) */
 void Coop_Cue(int kind, const char *text);
 /* an instance's COOP_MSG: 1 when taken */

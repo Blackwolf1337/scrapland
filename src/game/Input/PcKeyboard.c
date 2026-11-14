@@ -67,6 +67,8 @@ static const byte kb_gameDefaults[][3] = {
 	{ 0x3d, 1, 34 }, { 0x3e, 1, 35 }, { 0x3f, 1, 36 }, { 0x40, 1, 37 }, { 0x41, 1, 38 }, { 0xc8, 3, 2 },
 	{ 0xd0, 3, 3 }, { 0xcb, 3, 4 }, { 0xcd, 3, 5 }, { 0x11, 3, 6 }, { 0x1f, 3, 7 }, { 0x1e, 3, 8 },
 	{ 0x20, 3, 9 }, { 0x2a, 3, 15 }, { 0x52, 3, 16 }, { 0x10, 3, 22 }, { 0x12, 3, 21 }, { 0x39, 3, 19 },
+	/* not in the original: F7 for Walk.CoopLeader */
+	{ 0x41, 3, 24 },
 };
 
 static void cPcKeyboard_SetGameDefaults(cPcKeyboard *self);

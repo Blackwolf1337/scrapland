@@ -1661,10 +1661,17 @@ static void Cp_ClientChoose(int k) {
 	}
 }
 
-/* the option of the instance's list on the screen, with the keys that pick another */
+const char *Coop_ClientOption(int *count) {
+	if (!Coop_Client() || !cp.copt.n || cp.clientScene[0]) {
+		return NULL;
+	}
+	*count = cp.copt.n;
+	return cp.copt.opt[cp.copt.cur];
+}
+
+/* the keys that pick another option of the instance's list (the talk panel shows it) */
 static void Cp_ClientOptionsFrame(void) {
 	static float prevNext, prevPrev;
-	char line[COOP_OPT_TEXT + 64], arg[COOP_OPT_TEXT + 16];
 	int n = cp.copt.n;
 	if (!n || cp.clientScene[0]) {
 		return;
@@ -1677,23 +1684,12 @@ static void Cp_ClientOptionsFrame(void) {
 	}
 	prevNext = next;
 	prevPrev = prev;
-	if (g_HeadlessPlay) {
-		return;
-	}
-	const char *o = cp.copt.opt[cp.copt.cur], *colon = strchr(o, ':');
-	Str_PrintfQuiet(arg, sizeof(arg), "%d/%d %s", cp.copt.cur + 1, n, colon ? colon + 1 : o);
-	Texts_Format(line, sizeof(line), "MP_CoopOption", arg);
-	int w, h;
-	Graphic2D_GetScreen(&w, &h);
-	Text_Printf((int)((float)w * 0.30f), (int)((float)h * 0.72f), "%s", line);
 }
 
 /* the key that takes this member to its party's leader */
 static void Cp_ClientLeaderKey(void) {
 	static byte was;
-	byte keys[256];
-	Plat_KeyStates(keys);
-	byte down = (keys[COOP_LEADER_KEY] & 0x80) != 0;
+	byte down = Input_BoundValue(ACTSET_WALK, WALK_COOP_LEADER, 0) > 0.5f;
 	if (down && !was && cp.coop) {
 		uint8_t buf[2] = { COOP_MSG, COOP_C_LEADER };
 		if (Watch_SendReliable(buf, sizeof(buf))) {

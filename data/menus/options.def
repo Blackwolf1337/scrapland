@@ -186,6 +186,7 @@ list keys
 	"{Menu_Controls_Action_PadBlockStrafe}"	""	Walk.CameraCenter
 	"{Menu_Controls_Action_Chat}"		""	Racer.Chat
 	"{Menu_Controls_Action_ShowScorer}"	""	Racer.Scorer
+	"{MP_Controls_CoopLeader}"		""	Walk.CoopLeader
 call PCMenu.CreateControlMenu $id None [keys] PCMenu.ControlsMenu $section
 
 # CreateControlMenu: $title, $menu (the actions), $back, $tab, $first (the first action)

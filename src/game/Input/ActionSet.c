@@ -125,6 +125,8 @@ cActionSetTable *ActionSets_ctor(cActionSetTable *sets) {
 	cInputAction_Init(TABLE_AT(s->actions, WALK_NEXT_ACTION), "NextAction", 1);
 	cInputAction_Init(TABLE_AT(s->actions, WALK_PREV_ACTION), "PrevAction", 1);
 	cInputAction_Init(TABLE_AT(s->actions, WALK_MISSION_INFO), "MissionInfo", 1);
+	/* not in the original: a coop member goes to its party's leader (include/scrap/coop.h) */
+	cInputAction_Init(TABLE_AT(s->actions, WALK_COOP_LEADER), "CoopLeader", 1);
 	return sets;
 }
 
