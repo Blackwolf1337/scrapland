@@ -33,6 +33,8 @@ struct Net2Host;
 
 /* ---- instance ---- */
 
+/* an outdoor level of the city (Init.Outdoor: ships, parkings; not the indoor levels, whatever weapons they load) */
+byte Sputniks_Outdoor(void);
 /* once a tick after the players' inputs: each player's Sputnik beside its parked own ship, away while it flies */
 void Sputniks_Frame(void);
 /* player i used the arrow of t: 1 when t is a player's Sputnik (its own opens the hangar on its client) */

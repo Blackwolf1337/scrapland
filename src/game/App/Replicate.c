@@ -1138,7 +1138,7 @@ static int Rep_Join(int conn) {
 		Coop_Joined(i);
 		/* the sandbox and freeroam: a player who arrives on foot in an outdoor level finds its own ship beside it, as
 		 * single player's waits in the level's parking with Sputnik (include/scrap/sputniks.h) */
-		if (Places_On() && g_pWorld->weapons.count && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
+		if (Places_On() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
 			Players_Bind(i);
 			Rep_CallShip(i, Rep_Own(pl), 1);
 			Players_BindTurn();

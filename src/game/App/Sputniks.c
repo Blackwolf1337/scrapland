@@ -183,8 +183,12 @@ static void Spk_Assign(int i, SpkPlayer *p, cEntity *ship) {
 	p->at = ship->pos;
 }
 
+byte Sputniks_Outdoor(void) {
+	return g_pWorld->weapons.count && Mode_ModGetI("Init", "Outdoor", 0);
+}
+
 void Sputniks_Frame(void) {
-	if (!g_Instance || !Places_On() || !g_pWorld->weapons.count) {
+	if (!g_Instance || !Places_On() || !Sputniks_Outdoor()) {
 		return;
 	}
 	if (!spk.ready) {
