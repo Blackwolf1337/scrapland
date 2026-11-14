@@ -191,6 +191,8 @@ def run_side(a, side):
     if os.path.exists(log):
         os.remove(log)
     env = {'SCRAP_FEELLOG': log}
+    if a.playlog and side != 'sp':
+        env['SCRAP_PLAYLOG'] = os.path.join(a.scratch, 'play-%s.csv' % side)
     port = a.port
     hostg = None
     if side == 'sp':
@@ -365,6 +367,7 @@ def bump_result(rows, bumps):
         out['hits'] += hit
         out['corrections'] += w[-1]['corr'] - w[0]['corr']
         out['ships'].append(b['ship'])
+        out.setdefault('each', []).append({'t0': b['t0'], 'hit': hit, 'corrections': w[-1]['corr'] - w[0]['corr']})
     return out
 
 
@@ -440,6 +443,7 @@ def main():
     ap.add_argument('--walks', type=int, default=12)
     ap.add_argument('--bumps', type=int, default=4)
     ap.add_argument('--device', default=None)
+    ap.add_argument('--playlog', action='store_true', help='the clients\' prediction logs (SCRAP_PLAYLOG) in --scratch')
     ap.add_argument('--report-only', action='store_true')
     a = ap.parse_args()
     a.build = os.path.abspath(a.build)

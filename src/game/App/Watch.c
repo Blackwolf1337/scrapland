@@ -1125,7 +1125,7 @@ void Watch_PostFrame(void) {
 	uint64_t ns = Plat_RealNs(), ms = ns / 1000000;
 	uint16_t newest;
 	uint32_t bits, shown;
-	uint8_t buf[128];
+	uint8_t buf[NETREP_ACKINPUT_MAX];
 	NetRepInput in[NETREP_INPUT_REDUNDANCY];
 	Net2Stats st;
 	int n;

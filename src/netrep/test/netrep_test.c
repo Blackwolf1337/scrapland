@@ -629,6 +629,16 @@ static void Test_PlayerMessages(void) {
 			CHECK(!NetRep_ReadAckInput(buf, k, &newest, &bits, vp, out, NETREP_INPUT_REDUNDANCY, &got, &shown));
 		}
 	}
+	/* the most inputs, each with a bump of the largest values, fit NETREP_ACKINPUT_MAX */
+	for (int i = 0; i < NETREP_INPUT_REDUNDANCY; i++) {
+		in[i] = Test_MakeInput(5000 - (uint32_t)i);
+		in[i].buttons |= NETREP_IN_BUMP;
+		for (int k = 0; k < 6; k++) {
+			in[i].bump[k] = k % 2 ? INT32_MIN : INT32_MAX;
+		}
+	}
+	n = NetRep_WriteAckInput(buf, NETREP_ACKINPUT_MAX, 1, 0, view, in, NETREP_INPUT_REDUNDANCY, 0);
+	CHECK(n > 0 && n <= NETREP_ACKINPUT_MAX && !NetRep_WriteAckInput(buf, n - 1, 1, 0, view, in, NETREP_INPUT_REDUNDANCY, 0));
 	/* inputs out of order or of the same tick are not written */
 	in[1] = in[0];
 	CHECK(!NetRep_WriteAckInput(buf, sizeof(buf), 1, 0, view, in, 2, 0));
