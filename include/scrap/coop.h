@@ -282,14 +282,15 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * "theend" (as the end's credits: all variables deleted, the menu), "call <Module.Func|arg|...>" (a function of the
  * scripts, as a line of a call table), "kill <Module.var>" (the entities of that list of the scripts, or the one it
  * names, die: Life 0), "show <Module.var>" (its value), "press <player> <act|act2|act3|lock,...> [<ticks>]" (the
- * buttons of its client's input for some ticks, 3 by default), "target <player> [<dx> <dz>]" (onto the mission's
- * target), "usetarget <player>" (it uses the target), "race <player> [0|1]" (its ship goes along the race's
- * checkpoints, one every 2.5 s; 0 stops), "fight <player> [<Module.var>|<entity>|red|0]" (it turns to the nearest
- * living target of that list of the scripts, that entity, the red ones of the level or the mission's targets and
- * fires through its input; one further than 6000 units: put 2500 from it; 0 stops), "auto <player> [0|1|2]" (it
- * plays the mission's targets: fights the red ones (else the red ones of the level), flies a race, else goes to the
- * target and uses it; 2 only fights), "board <player> <MODEL>" (next to the nearest parked ship whose model has the
- * text and into it) */
+ * buttons of its client's input for some ticks, 3 by default; a negative count: pressed once in four ticks), "target
+ * <player> [<dx> <dz>]" (onto the mission's target), "usetarget <player>" (it uses the target), "race <player>
+ * [0|1]" (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops), "fight <player>
+ * [<Module.var>|<entity>|red|0]" (it turns to the nearest living target of that list of the scripts, that entity,
+ * the red ones of the level or the mission's targets and fires through its input; one further than 6000 units: put
+ * 2500 from it; 0 stops), "auto <player> [0|1|2]" (it plays the mission's targets: fights the red ones (else the red
+ * ones of the level), flies a race, else goes to the target and uses it; 2 only fights), "board <player> <MODEL>"
+ * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
+ * nearest entity whose name starts with it, and it uses its arrow) */
 byte Coop_Command(const char *line);
 
 /* player i got into a ship (ship 1) or out of it: the mission's callbacks of single player's parking run for it

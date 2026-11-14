@@ -71,7 +71,7 @@
 #define CP_FIGHT_SIZE 250.0f		/* test: it fires when its aim is this near the target's middle */
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
-#define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones of the level */
+#define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_LIFEBOAT "SLifeBoat<-<-<-<-<-0,0,0,0,0,0,1<-50<-0,0,0,0,0,0"	/* the hangar's spare ship (a test's ship) */
 
@@ -138,6 +138,7 @@ static struct {
 		char yes[CP_NAME], no[CP_NAME];
 		uint16_t press;				/* test: buttons pressed (NETREP_IN_*) for pressTicks more ticks */
 		int pressTicks;
+		byte pressPulse;			/* the press comes once in four ticks */
 		float race;					/* test: its ship flies to the race's checkpoint (0 off) */
 		vec3_t raceAt;				/* where that checkpoint was */
 		double raceSince;			/* since when (instance time) */
@@ -1623,7 +1624,8 @@ void Coop_SceneEnding(void) {
 	cp.endingSerial = cp.serial;
 	cp.endingTable = cp.scene;
 	Str_Copy(cp.endingCls, cp.sceneCls, sizeof(cp.endingCls));
-	if (cp.scenePlayer >= 0 && Players_Get(cp.scenePlayer)) {
+	/* the scene's member (hidden by the scene its entity is no player found: its connection counts) */
+	if (cp.scenePlayer >= 0 && Rep_PlayerConn(cp.scenePlayer) >= 0) {
 		Players_Bind(cp.scenePlayer);
 	}
 }
@@ -2115,10 +2117,11 @@ static void Cp_TestRace(int i) {
 	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
 }
 
-/* test: a target of the mission to fight (its radar mark red) */
+/* test: a target of the mission to fight (its radar mark red, or in the scripts' list of enemies) */
 static int Cp_Foe(cEntity *e) {
-	char *tg = NULL;
-	return Entity_VarS(e, "TgType", &tg, 0) && tg && (!crt_stricmp(tg, "red") || !crt_stricmp(tg, "killer"));
+	char *tg = NULL, *list = NULL;
+	return (Entity_VarS(e, "TgType", &tg, 0) && tg && (!crt_stricmp(tg, "red") || !crt_stricmp(tg, "killer"))) ||
+		(Entity_VarS(e, "EntityList", &list, 0) && list && !strcmp(list, "Enemies"));
 }
 
 /* test: the living entities of src (see fightList) that are no player's (foes 1: only targets to fight, 0: only the
@@ -2311,8 +2314,15 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (cp.pl[i].autoUse > 0.0 && now >= cp.pl[i].autoUse) {
 		/* the use of its arrow, as the test line use (the option its client chose) */
 		cp.pl[i].autoUse = 0.0;
-		Con_Printf("coop: player %d (auto) uses %s\n", i, t->name);
-		Travel_TestUse(i, t->name, "");
+		Con_Printf("coop: player %d (auto) %s %s\n", i, WLife(t)->arrow.canPhoto ? "photographs" : "uses", t->name);
+		if (WLife(t)->arrow.canPhoto) {
+			/* a photo is the use button with the arrow on it */
+			cp.pl[i].press = NETREP_IN_ACT3;
+			cp.pl[i].pressTicks = 12;
+			cp.pl[i].pressPulse = 1;
+		} else {
+			Travel_TestUse(i, t->name, "");
+		}
 	}
 	if (!strcmp(cp.pl[i].autoAt, t->name) && now - cp.pl[i].autoSince < CP_AUTO_GAP) {
 		return;
@@ -2340,7 +2350,8 @@ void Coop_TestInput(int i, NetRepInput *in, double back) {
 	if (cp.pl[i].pressTicks <= 0) {
 		return;
 	}
-	in->buttons |= cp.pl[i].press;
+	/* a pulsed press (a negative count of ticks): pressed one tick in every four */
+	in->buttons |= !cp.pl[i].pressPulse || cp.pl[i].pressTicks % 4 == 0 ? cp.pl[i].press : 0;
 	cp.pl[i].pressTicks--;
 }
 
@@ -2446,8 +2457,11 @@ byte Coop_Command(const char *line) {
 	if (sscanf(line, "press %d %63s %d", &i, name, &ticks) >= 2 && i >= 0 && i < PLAYERS_MAX) {
 		/* the buttons as the member's client sends them, for some ticks (the game's own input path) */
 		cp.pl[i].press = Cp_Buttons(name);
-		cp.pl[i].pressTicks = ticks;
-		Con_Printf("coop: player %d presses %s (%04x) for %d ticks\n", i, name, cp.pl[i].press, ticks);
+		cp.pl[i].pressTicks = ticks < 0 ? -ticks : ticks;
+		cp.pl[i].pressPulse = ticks < 0;
+		cEntity *e = Players_Get(i), *v = NetPl_Kind(e) == NETREP_CHAR ? WChar_Victim(e) : NULL;
+		Con_Printf("coop: player %d presses %s (%04x) for %d ticks (arrow on %s)\n", i, name, cp.pl[i].press, ticks,
+			v ? v->name : "-");
 		return 1;
 	}
 	int on = 1;
@@ -2463,6 +2477,27 @@ byte Coop_Command(const char *line) {
 		cp.pl[i].autoUse = 0.0;
 		cp.pl[i].fightAt[0] = 0;
 		Con_Printf("coop: player %d plays the mission's targets%s\n", i, !on ? ": off" : on == 2 ? ": fights only" : "");
+		return 1;
+	}
+	if (sscanf(line, "usenear %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		/* the member next to the nearest entity whose name starts with the text (a conversor, a phone cab), and it uses
+		 * its arrow */
+		cEntity *e = Players_Get(i), *best = NULL;
+		float bestD = 0.0f;
+		size_t n = strlen(name);
+		for (cEntity *v = e ? cWorld_GetFirstEntity(g_pWorld) : NULL; v; v = cEntity_Next(v)) {
+			float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+			if (!strncmp(v->name, name, n) && Entity_IsType(v, TYEN_WITH_LIFE) && (!best || d < bestD)) {
+				best = v;
+				bestD = d;
+			}
+		}
+		if (best) {
+			Travel_TestGoto(i, best->name, 0.0f, 250.0f);
+			Travel_TestUse(i, best->name, "");
+		} else {
+			Con_Printf("coop: no %s for player %d\n", name, i);
+		}
 		return 1;
 	}
 	if (sscanf(line, "board %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {

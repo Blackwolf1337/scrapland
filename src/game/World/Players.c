@@ -315,6 +315,13 @@ void Players_BindEntity(cEntity *e) {
 	}
 }
 
+void Players_BindOwner(cEntity *e) {
+	if (Players_Net() && e) {
+		int i = Players_Slot(e) - PLAYERS_NET_SLOT;
+		Players_Bind(i >= 0 && i < PLAYERS_MAX ? i : Players_ShipOwner(e));
+	}
+}
+
 void Players_BindNearest(const vec3_t *pos) {
 	if (Players_Net()) {
 		Players_Bind(Players_Of(Players_Nearest(pos)));
