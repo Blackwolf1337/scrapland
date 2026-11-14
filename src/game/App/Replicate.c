@@ -1292,6 +1292,7 @@ void Rep_PreFrame(uint64_t tick) {
 		}
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);
+		NetPl_Bump(e, &in, NETPL_BUMP_REACH);
 	}
 	Players_BindTurn();
 }

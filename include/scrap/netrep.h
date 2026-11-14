@@ -58,7 +58,7 @@
 
 #include <stdint.h>
 
-#define NETREP_VERSION 3
+#define NETREP_VERSION 4
 #define NETREP_TICK_HZ 30
 #define NETREP_SNAP_HZ 20
 #define NETREP_MAX_ENTS 2048		/* slots */
@@ -348,16 +348,21 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 #define NETREP_IN_BOOST 0x0010		/* ship: boost */
 #define NETREP_IN_SWITCH 0x0020		/* get into the nearest parked ship, out of the ship (on its press) */
 #define NETREP_IN_FULL 0x0040		/* ship: the full thrust (its second accelerate key) */
+#define NETREP_IN_BUMP 0x0080		/* ship: it bumped the client's own rail traffic (Rep_LocalAmbient) in the tick, which
+									   the server does not have: bump is its state after the tick (NetPl_Bump) */
 
 /* the input of one tick: the controls of a character (walk, strafe, jump; the view turn) or a ship (acceleration,
  * strafe, vertical strafe; the turn) */
 typedef struct NetRepInput {
 	uint32_t tick;					/* the server tick it is meant for */
-	int8_t move[3];
+	int8_t move[3];					/* of the tick's first slot */
+	int8_t move2[3];				/* of its second slot (the moves of the frame before it, as a single player's
+									   slot takes the controls of now) */
 	int16_t rot[2];
 	uint16_t buttons;
 	uint8_t weapon;
 	uint16_t slot;					/* the own entity's slot it was made for */
+	int32_t bump[6];				/* NETREP_IN_BUMP: the position (NetRep_QPos) and velocity (NetRep_QVel) */
 } NetRepInput;
 
 int8_t NetRep_QMove(float v);		/* -1..1 */
