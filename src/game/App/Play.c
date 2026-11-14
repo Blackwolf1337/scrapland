@@ -78,6 +78,7 @@ static struct {
 	NetRepPredHist hist;
 	NetPlMotion motion[NETREP_PRED];	/* the full motion state after each tick, by tick % NETREP_PRED */
 	NetPlAccum acc;
+	uint32_t corrTotal;					/* corrections since the start (the feel log) */
 	NetRepInput input;					/* of the last tick */
 	NetRepSmooth smooth;
 	vec3_t truePos;						/* the predicted position; the entity stands at it plus the offset */
@@ -737,6 +738,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 		corr = sqrtf(dx * dx + dy * dy + dz * dz);
 		play.st.corr[play.st.nc++ % PLAY_ERRS] = corr;
 		play.st.corrections++;
+		play.corrTotal++;
 		play.st.replayed += replayed;
 		e->pos = (vec3_t){ play.truePos.x + play.smooth.off[0], play.truePos.y + play.smooth.off[1],
 			play.truePos.z + play.smooth.off[2] };
@@ -764,6 +766,10 @@ static void Play_Pct(const float *v, uint32_t n, float *out) {
 	out[1] = n ? tmp[n * 95 / 100] : 0.0f;
 	out[2] = n ? tmp[n * 99 / 100] : 0.0f;
 	out[3] = n ? tmp[n - 1] : 0.0f;
+}
+
+uint32_t Play_Corrections(void) {
+	return play.corrTotal;
 }
 
 void Play_Status(void) {

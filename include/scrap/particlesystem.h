@@ -191,6 +191,15 @@ void CParticleSystem_SetActive(CParticleSystem *self, CParticle *p, byte active)
 /* the particle ini loaded (cleared with no name) */
 void ParticleSystem_LoadIni(const char *name, const char *dir);
 void CParticleSystem_Render2(CParticleSystem *self, void *dev);
+/* the particle systems the last frame drew (the test channel, not in the original): type, active particles and the
+ * position of the node */
+typedef struct ParticleDrawn {
+	char type[32];
+	int particles;
+	vec3_t pos;
+} ParticleDrawn;
+#define PARTICLE_DRAWN_MAX 512
+const ParticleDrawn *ParticleSystem_Drawn(int *n);
 void CParticleSystem_SetAlpha(CParticleSystem *self, float alpha);
 
 /* other modules (src/imports.inc) */

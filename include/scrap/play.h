@@ -163,6 +163,8 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss);
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs);
 void Play_PostFrame(float dt);
 void Play_Status(void);
+/* the corrections of the own entity's prediction since the start */
+uint32_t Play_Corrections(void);
 /* the own player gone (a travel to another instance) */
 void Play_Reset(void);
 void Play_Close(void);

@@ -26,6 +26,10 @@
  *   ent <entity> <var> ...   entity variables: [('var', value), ...], '?' for a variable the entity does not have
  *   ents <list> [x y z r]    the sorted names of the entities of an entity list (Scrap.SphereCall lists: 'r', 'i',
  *                            'v', ...) in the sphere, by default the whole map
+ *   entinfo [x y z r]        a line per entity (in the sphere, else all): name, class, EntityList, active, model,
+ *                            action controller class, position, TgType, RadarShow, proxy (the M10 parity tool)
+ *   radar | fx | sounds      the icons the last radar drew, the particle systems the last frame drew, the sounds
+ *                            playing (mixer channels by sound name, positional property sets)
  *   dump [module ...]        the module variables (all pack modules without names): "== module", then
  *                            "key\t<type value>" per name in the form of the module dump of the stage checks
  * (scratchpad
@@ -55,10 +59,18 @@
 #include "scrap/crt.h"
 #include "scrap/entity.h"
 #include "scrap/global.h"
+#include "scrap/game.h"
 #include "scrap/gvar.h"
+#include "scrap/instance.h"
 #include "scrap/modvars.h"
 #include "scrap/pyfunction.h"
+#include "scrap/objentity.h"
+#include "scrap/particlesystem.h"
 #include "scrap/scorer.h"
+#include "scrap/scoreritems.h"
+#include "scrap/snd.h"
+#include "scrap/sound.h"
+#include "scrap/withlifeentity.h"
 #include "scrap/script.h"
 #include "scrap/scriptlib.h"
 #include "scrap/scriptnative.h"
@@ -68,9 +80,12 @@
 #include "testchannel.h"
 
 
-#define TC_CMD "test_cmd.txt"
-#define TC_REPLY "test_reply.txt"
-#define TC_TMP "test_reply.tmp"
+/* the files; an instance (include/scrap/instance.h) adds "_<level>" to each name, so the instances a hosting game
+ * starts in its own game folder answer apart from it */
+static char tc_cmd[0x40] = "test_cmd.txt", tc_reply[0x40] = "test_reply.txt", tc_tmp[0x40] = "test_reply.tmp";
+#define TC_CMD tc_cmd
+#define TC_REPLY tc_reply
+#define TC_TMP tc_tmp
 #define TC_DEPTH 32			/* nesting of channel expressions */
 
 static byte tc_on;
@@ -1052,6 +1067,122 @@ static void TC_Ents(tcBuf *b, const char *arg) {
 	}
 }
 
+/* entinfo [x y z radius]: a line per entity of the world (in the sphere, else all), sorted by name: name, class,
+ * EntityList, active, model path, class of the action controller, position, team (TgType), RadarShow, proxy (a
+ * watcher's copy of a replicated entity) */
+static int TC_CmpEnt(const void *a, const void *b) {
+	return strcmp((*(cEntity *const *)a)->name, (*(cEntity *const *)b)->name);
+}
+
+static void TC_EntInfo(tcBuf *b, const char *arg) {
+	char num[0x40];
+	double v[4] = { 0.0, 0.0, 0.0, -1.0 };
+	int n = 0, cap = 0;
+	cEntity **ents = NULL;
+
+	for (int i = 0; i < 4 && TC_Word(&arg, num, sizeof(num)); i++) {
+		v[i] = atof(num);
+	}
+	if (!g_pWorld) {
+		TC_Add(b, "error: no world\n", -1);
+		return;
+	}
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		vec3_t p;
+		Entity_GetPos(e, &p);
+		double dx = p.x - v[0], dy = p.y - v[1], dz = p.z - v[2];
+		if (!e->name || (v[3] >= 0.0 && dx * dx + dy * dy + dz * dz > v[3] * v[3])) {
+			continue;
+		}
+		if (n == cap) {
+			cap = cap ? cap * 2 : 256;
+			cEntity **grown = Mem_Alloc((uint32_t)(cap * (int)sizeof(*ents)));
+			if (ents) {
+				memcpy(grown, ents, (size_t)n * sizeof(*ents));
+				Mem_Free(ents);
+			}
+			ents = grown;
+		}
+		ents[n++] = e;
+	}
+	if (n) {
+		qsort(ents, (size_t)n, sizeof(*ents), TC_CmpEnt);
+	}
+	for (int i = 0; i < n; i++) {
+		cEntity *e = ents[i];
+		char *list = NULL;
+		const char *model = "", *act = "";
+		int tg = -1, radar = 0, proxy = 0;
+		vec3_t p;
+		if (!Entity_VarS(e, "EntityList", &list, 0) || !list) {
+			list = "";
+		}
+		if (Entity_IsType(e, "Obj")) {
+			CGameModel *m = &Obj(e)->model;
+			model = CGameModel_IsLoaded(m) && m->Model->scene && m->Model->scene->name ? m->Model->scene->name : "";
+			radar = Obj(e)->radarShow;
+			proxy = Obj(e)->proxy;
+		}
+		if (Entity_IsType(e, TYEN_WITH_LIFE)) {
+			tg = WLife(e)->arrow.tgType;
+			act = WLife(e)->actCtrl && WLife(e)->actCtrl->cls ? WLife(e)->actCtrl->cls->name : "";
+		}
+		Entity_GetPos(e, &p);
+		TC_Addf(b, "%s\t%s\t%s\t%d\t%s\t%s\t%.0f\t%.0f\t%.0f\t%d\t%d\t%d\n", e->name, Entity_GetClassName(e),
+			list, e->active, model, act, (double)p.x, (double)p.y, (double)p.z, tg, radar, proxy);
+	}
+	if (ents) {
+		Mem_Free(ents);
+	}
+}
+
+/* radar: a line per icon the last radar drew: icon frame, on the rim (1), color, the point it marks */
+static void TC_Radar(tcBuf *b) {
+	int n;
+	const RadarSeen *r = Radar_Seen(&n);
+	for (int i = 0; i < n; i++) {
+		TC_Addf(b, "%d\t%d\t%08x\t%.0f\t%.0f\t%.0f\n", r[i].icon, r[i].out, r[i].color, (double)r[i].pos.x,
+			(double)r[i].pos.y, (double)r[i].pos.z);
+	}
+}
+
+/* fx: a line per particle system the last frame drew: type, active particles, position */
+static void TC_Fx(tcBuf *b) {
+	int n;
+	const ParticleDrawn *d = ParticleSystem_Drawn(&n);
+	for (int i = 0; i < n; i++) {
+		TC_Addf(b, "%s\t%d\t%.0f\t%.0f\t%.0f\n", d[i].type, d[i].particles, (double)d[i].pos.x,
+			(double)d[i].pos.y, (double)d[i].pos.z);
+	}
+}
+
+/* sounds: "ch <channel> <sound name>" per mixer channel playing (the name of its sample in the sound table, "?" for a
+ * stream), "ps <name> <x y z>" per positional property set playing */
+static void TC_Sounds(tcBuf *b) {
+	CSoundXBox *x = (CSoundXBox *)g_pSound;
+	for (int ch = 0; ch < SND_CHANNELS; ch++) {
+		if (!Snd_IsPlaying(ch)) {
+			continue;
+		}
+		SndSample *smp = Snd_ChannelSample(ch);
+		const char *name = "?";
+		for (uint32_t k = 0; x && smp && k < x->sounds.numSlots; k++) {
+			for (cSoundStrItem *it = (cSoundStrItem *)x->sounds.slots[k]; it; it = it->next) {
+				if (it->value.sample == smp) {
+					name = it->key;
+				}
+			}
+		}
+		TC_Addf(b, "ch\t%d\t%s\n", ch, name);
+	}
+	for (cSoundPS *ps = SndPS_First(); ps; ps = ps->next) {
+		if (ps->sound.handle) {
+			TC_Addf(b, "ps\t%s\t%.0f\t%.0f\t%.0f\n", ps->name ? ps->name : "", (double)ps->pos.x, (double)ps->pos.y,
+				(double)ps->pos.z);
+		}
+	}
+}
+
 /* a value of a scorer item as SScorer.Get gives it */
 static void TC_ItemVar(tcBuf *b, cScorerItem *item, const char *var) {
 	char *s = NULL;
@@ -1233,6 +1364,22 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	if (TC_Verb(line, "menu", &arg)) {
 		TC_Menu(b, arg);
+		return;
+	}
+	if (TC_Verb(line, "entinfo", &arg)) {
+		TC_EntInfo(b, arg);
+		return;
+	}
+	if (TC_Verb(line, "radar", &arg)) {
+		TC_Radar(b);
+		return;
+	}
+	if (TC_Verb(line, "fx", &arg)) {
+		TC_Fx(b);
+		return;
+	}
+	if (TC_Verb(line, "sounds", &arg)) {
+		TC_Sounds(b);
 		return;
 	}
 	if (TC_Verb(line, "click", &arg)) {
@@ -1526,6 +1673,11 @@ static void TC_Start(void) {
 		return;
 	}
 	tc_step = e && !strcmp(e, "step") && TestDet_On();
+	if (g_Instance) {
+		Str_Printf(tc_cmd, sizeof(tc_cmd), "test_cmd_%s.txt", Instance_Level());
+		Str_Printf(tc_reply, sizeof(tc_reply), "test_reply_%s.txt", Instance_Level());
+		Str_Printf(tc_tmp, sizeof(tc_tmp), "test_reply_%s.tmp", Instance_Level());
+	}
 	/* the answer of a run before this start (the same game folder) is not run again */
 	tc_seq = TC_FileSeq(TC_REPLY, NULL, NULL);
 	Con_Printf("Test channel on: %s\n", TC_CMD);

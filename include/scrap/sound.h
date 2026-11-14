@@ -342,6 +342,8 @@ typedef struct cSoundPS {
 	char *name;			/* cString, the key in (&g_SndPSTable) */
 } cSoundPS;
 
+/* the list of the property sets (next on), the test channel's (not in the original) */
+cSoundPS *SndPS_First(void);
 /* the property set of that name or NULL */
 cSoundPS *SndPS_Get(const char *name);
 /* NULL if the name is taken */
