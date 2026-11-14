@@ -122,6 +122,14 @@
 										 * same name on the client) each */
 #define COOP_Y_HUDVAR 13				/* a variable of the story the client's HUD shows (the energy bar, the special
 										 * action): name str, value str */
+#define COOP_Y_SCORER 14				/* the mission's items of the HUD (the race's scores, the timers, the boss' bar):
+										 * the four timers' times and CounterType (str each), count u8, then name str,
+										 * type str, count u8 and its variables (name str, kind u8: 1 text, 2 number,
+										 * 3 integer; value str) each */
+#define COOP_Y_STORY 15					/* the client's copy of the party's story (its level starts: the press'
+										 * blueprints): count u16, then the changes as COORD_MSG_STORY's */
+#define COOP_SCORER_ITEMS 24			/* mission items told */
+#define COOP_SCORER_MS 250				/* the items looked at this often, sent when they changed */
 #define COOP_TARGETS 16					/* targets told (a mission's list of targets) */
 #define COOP_TARGETS_MS 2000			/* the targets again (a proxy that came into the interest since) */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
@@ -223,8 +231,9 @@ const char *Coop_MainCharName(void);
  * member's from now on (a possession or a conversor of the scripts: the member plays as that character, its class
  * kept in its state; a ship the scripts put it in); 0 elsewhere (the instance gives the player a new character) */
 byte Coop_Adopts(int i, struct cEntity *e);
-/* test: the buttons of a test press into player i's input of the tick (the line "press") */
-void Coop_TestInput(int i, struct NetRepInput *in);
+/* test: the buttons of a test press into player i's input of the tick (the line "press"), the race and the fight
+ * helpers; back: how far back its client shows the other entities (s, the shots' lag compensation) */
+void Coop_TestInput(int i, struct NetRepInput *in, double back);
 /* the level's start of the missions (MissionsFuncs.Init: the challenge's race and the mission arrow are placed around
  * the player) on a coop instance without a member yet: a stand-in character at the level's first spawn is the
  * scripts' player meanwhile (on 1, gone with 0); Coop_StandInEntity: it, NULL */
@@ -274,13 +283,30 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * entities of that list of the scripts die: Life 0), "show <Module.var>" (its value), "press <player>
  * <act|act2|act3|lock,...> [<ticks>]" (the buttons of its client's input for some ticks, 3 by default), "target
  * <player> [<dx> <dz>]" (onto the mission's target), "usetarget <player>" (it uses the target), "race <player> [0|1]"
- * (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops) */
+ * (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops), "fight <player> [<Module.var>|<entity>|0]"
+ * (it turns to the nearest living target of that list of the scripts, that entity or the mission's targets and fires
+ * through its input; one further than 6000 units: put 2500 from it; 0 stops), "auto <player> [0|1|2]" (it plays the
+ * mission's targets: fights the red ones, flies a race, else goes to the target and uses it; 2 only fights) */
 byte Coop_Command(const char *line);
+
+/* the name of the key bound to action of set on device: on the coop instance (no keys) a token the member's client
+ * puts its own key's name in (Coop_ClientKeys), else NULL */
+const char *Coop_KeyToken(const char *set, const char *action, const char *device);
+/* an item of the HUD's scorer was made (its class name): the coop instance keeps the type for the clients' copies */
+void Coop_ScorerAdded(const char *name, const char *type);
+/* the HUD's scorer id has its standard items, the mission's call (Menu.MissionScorerCall) adds its own next: the coop
+ * instance sends the clients the items that are not the standard ones */
+void Coop_ScorerBase(int id);
 
 /* ---- client ---- */
 
+/* the key tokens of the instance (Coop_KeyToken) in text replaced by this client's key names */
+void Coop_ClientKeys(char *text, int size);
 /* this game is a client in a world of the coop story */
 byte Coop_Client(void);
+/* the party's whole story from the coordinator at the join (CoordKv text): the client's copy of it, without the
+ * mission's level and library (the client's level starts run no mission) and the auto save */
+void Coop_ClientStory(const char *text, int len);
 /* the entity's model has no animation for the action (a scene's event of the instance): told once a run per action */
 void Coop_ClientNoAnim(const char *entity, const char *action);
 /* the option of the instance's arrow list this client chose ("name:text"), NULL without one (or in a scene); *count

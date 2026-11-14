@@ -36,6 +36,7 @@
 #include "scrap/scrap.h"
 #include "scrap/utild3d.h"
 #include "scrap/weapons.h"
+#include "scrap/coop.h"
 #include "scrap/scorerhud.h"
 #include "scrap/staticinit.h"
 
@@ -411,6 +412,18 @@ static void cScorer_RemoveDeleted(cScorer *scorer, int player) {
 	}
 }
 
+void Scorer_Tick(int player) {
+	cScorer *sc = Scorer_Get(player);
+	if (!sc) {
+		return;
+	}
+	cScorer_RemoveDeleted(sc, player);
+	for (cScorerItem *it = sc->items, *next; it; it = next) {
+		next = it->next;
+		cTimerScorer_Tick(it);
+	}
+}
+
 /* a new item of the class type, first in the list or last (append) */
 cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte append) {
 	/* the item classes of SScorer.Add by type name, in the order the original compares them */
@@ -473,6 +486,8 @@ cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type
 	}
 	cString_Set(&it->name, name);
 	it->player = scorer->player;
+	/* not in the original: include/scrap/coop.h */
+	Coop_ScorerAdded(name, type);
 	if (!append) {
 		it->next = scorer->items;
 		scorer->items = it;

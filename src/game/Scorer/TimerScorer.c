@@ -71,46 +71,40 @@ static int cTimerScorer_Var(cScorerItem *base, const char *name, int set, char *
 	return cAbstractTextScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-static void cTimerScorer_Draw(cScorerItem *base, int player) {
-	cTimerScorer *self = (cTimerScorer *)base;
-	cAbstractTextScorer *t = &self->base;
-	float *var = NULL;
-	float time, left;
-
-	(void)player;
+/* the engine variable of the timer's type into *var and its time after this frame into *left: 0 while it is 0 */
+static byte cTimerScorer_Left(cTimerScorer *self, float **var, float *left) {
 	switch (self->type) {
 	case 0:
-		var = &g_TimeToCancel;
+		*var = &g_TimeToCancel;
 		break;
 	case 1:
-		var = &g_TimeToFinish;
+		*var = &g_TimeToFinish;
 		break;
 	case 2:
-		var = &g_TimeInactive;
+		*var = &g_TimeInactive;
 		break;
 	case 3:
-		var = &g_TimeSpecialUse;
+		*var = &g_TimeSpecialUse;
 		break;
 	default:
 		CHECK(0);
 		break;
 	}
-	time = *var;
+	float time = **var;
 	if (!(time != 0.0f)) {
-		return;
+		return 0;
 	}
-	left = time;
+	*left = time;
 	if (g_TimerMode == 0) {
-		left = Float_MaxSS(0.0f, time - cTimer_GetDelta(&g_pWorld->timer));
+		*left = Float_MaxSS(0.0f, time - cTimer_GetDelta(&g_pWorld->timer));
 	} else if (g_TimerMode == 1) {
-		left = cTimer_GetDelta(&g_pWorld->timer) + time;
+		*left = cTimer_GetDelta(&g_pWorld->timer) + time;
 	}
-	/* no text for the inactive time */
-	if (self->type != 2) {
-		uint32_t min = Float_ToU32(left / 60.0f);
-		uint32_t sec = Float_ToU32(left - (float)(double)min * 60.0f);
-		CFont_PrintfAlignColorShadow(t->font, t->base.x, t->base.y, 4, t->color, "%.2d:%.2d", min, sec);
-	}
+	return 1;
+}
+
+/* the time counted on, the warning and the end */
+static void cTimerScorer_Run(cTimerScorer *self, float *var, float left) {
 	if (!(GVAR_FLAGS(*var) & 1)) {
 		*var = left;
 	}
@@ -123,6 +117,38 @@ static void cTimerScorer_Draw(cScorerItem *base, int player) {
 	if (left == 0.0f) {
 		cPy_Function_Execute(&self->onTimeExpired, 0);
 	}
+}
+
+static void cTimerScorer_Draw(cScorerItem *base, int player) {
+	cTimerScorer *self = (cTimerScorer *)base;
+	cAbstractTextScorer *t = &self->base;
+	float *var = NULL;
+	float left;
+
+	(void)player;
+	if (!cTimerScorer_Left(self, &var, &left)) {
+		return;
+	}
+	/* no text for the inactive time */
+	if (self->type != 2) {
+		uint32_t min = Float_ToU32(left / 60.0f);
+		uint32_t sec = Float_ToU32(left - (float)(double)min * 60.0f);
+		CFont_PrintfAlignColorShadow(t->font, t->base.x, t->base.y, 4, t->color, "%.2d:%.2d", min, sec);
+	}
+	cTimerScorer_Run(self, var, left);
+}
+
+void cTimerScorer_Tick(cScorerItem *base) {
+	cTimerScorer *self = (cTimerScorer *)base;
+	float *var = NULL;
+	float left;
+	if (base->vftable == CTIMERSCORER_VFTABLE && !base->delMe && cTimerScorer_Left(self, &var, &left)) {
+		cTimerScorer_Run(self, var, left);
+	}
+}
+
+int cTimerScorer_Type(const cScorerItem *base) {
+	return base->vftable == CTIMERSCORER_VFTABLE ? ((const cTimerScorer *)base)->type : -1;
 }
 
 /* the vtable of cTimerScorer */

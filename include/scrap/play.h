@@ -109,6 +109,9 @@ byte NetPl_LocalWeapon(int w);
 byte NetPl_LaunchWeapon(int w);
 /* the replication kind of a player's entity: NETREP_CHAR, NETREP_SHIP, 0 */
 int NetPl_Kind(struct cEntity *e);
+/* the turn towards at as the test bots steer (rot[0] by the yaw, rot[1] by the pitch of at, or with rel by the pitch
+ * still to turn, -1..1; a character's yaw is its view's): the yaw still to turn */
+float NetPl_Aim(struct cEntity *e, const vec3_t *at, float rot[2], byte rel);
 /* the movement constants the scripts set on a ship (the player message): into phys (NETREP_PHYS_MAX), the count;
  * and back into the client's copy */
 int NetPl_GetPhys(struct cEntity *e, float *phys);

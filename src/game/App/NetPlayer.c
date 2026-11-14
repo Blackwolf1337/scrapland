@@ -2,10 +2,12 @@
  * The entity of a player of the network on both sides: its input into the controls, one tick of it, the motion state
  * of a correction, see include/scrap/play.h. Not in the original.
  */
+#include <math.h>
 #include <string.h>
 
 #include "scrap/actions.h"
 #include "scrap/global.h"
+#include "scrap/mathlib.h"
 #include "scrap/input.h"
 #include "scrap/play.h"
 #include "scrap/vehicleentity.h"
@@ -34,6 +36,17 @@ byte NetPl_LocalWeapon(int w) {
 
 byte NetPl_LaunchWeapon(int w) {
 	return w == g_SwarmIDWeap || w == g_InfernoIDWeap;
+}
+
+float NetPl_Aim(cEntity *e, const vec3_t *at, float rot[2], byte rel) {
+	/* yaw 0 looks to -z (forward = (-sin yaw, 0, -cos yaw)) */
+	float dx = at->x - e->pos.x, dy = at->y - e->pos.y, dz = at->z - e->pos.z;
+	float want = atan2f(-dx, -dz);
+	float dyaw = remainderf(want - (NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y), M_2PI_F);
+	float pitch = atan2f(dy, sqrtf(dx * dx + dz * dz)) - (rel ? Obj(e)->ang.x : 0.0f);
+	rot[0] = dyaw > 0.6f ? 1.0f : dyaw < -0.6f ? -1.0f : dyaw / 0.6f;
+	rot[1] = pitch > 0.3f ? 0.6f : pitch < -0.3f ? -0.6f : pitch * 2.0f;
+	return dyaw;
 }
 
 static inline float NetPl_Move(int8_t v) {

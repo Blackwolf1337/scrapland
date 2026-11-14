@@ -1283,8 +1283,8 @@ void Rep_PreFrame(uint64_t tick) {
 		/* the money, the alarm and the scripts' player of this player while its input runs */
 		Players_Bind(i);
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
-		Coop_TestInput(i, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
+		Coop_TestInput(i, &in, (double)tick / NETREP_TICK_HZ - pl->shownNow / 1000.0);
 		Faction_Input(i, e, &in);
 		Places_Input(i, e, &in);
 		/* a character's use as in single player: the ship its arrow is on boards it, a door runs the game's use; the

@@ -7,6 +7,7 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/scrap.h"
@@ -283,6 +284,11 @@ static const char *Input_FindBinding(uint32_t player, int set, int action, const
 
 char *Input_GetDefinedEntry(int player, const char *a, const char *b, const char *c, int flag) {
 	uint32_t set, act;
+	/* not in the original: include/scrap/coop.h */
+	const char *token = Coop_KeyToken(a, b, c);
+	if (token) {
+		return (char *)token;
+	}
 
 	if (Input_FindAction(a, b, &set, &act)) {
 		return str_Empty;

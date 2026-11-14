@@ -629,13 +629,8 @@ static void Play_Bot(double now) {
 		play.acc.rot[0] = 0.4f;
 		return;
 	}
-	/* yaw 0 looks to -z (forward = (-sin yaw, 0, -cos yaw)) */
-	float dx = best->pos.x - e->pos.x, dy = best->pos.y - e->pos.y, dz = best->pos.z - e->pos.z;
-	float want = atan2f(-dx, -dz);
-	float dyaw = remainderf(want - Obj(e)->ang.y, M_2PI_F);
-	float pitch = atan2f(dy, sqrtf(dx * dx + dz * dz));
-	play.acc.rot[0] = dyaw > 0.6f ? 1.0f : dyaw < -0.6f ? -1.0f : dyaw / 0.6f;
-	play.acc.rot[1] = pitch > 0.3f ? 0.6f : pitch < -0.3f ? -0.6f : pitch * 2.0f;
+	float dy = best->pos.y - e->pos.y;
+	float dyaw = NetPl_Aim(e, &best->pos, play.acc.rot, 0);
 	play.acc.move[0] = bestD > 8000.0f * 8000.0f ? 0.8f : 0.1f;
 	/* trying the weapons: stops about 4000 units away and fires in bursts of 1.5 s (the missiles fly at a release) */
 	if (play.botCycle) {

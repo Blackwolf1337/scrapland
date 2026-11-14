@@ -352,6 +352,11 @@ typedef struct cTimerScorer {
 } cTimerScorer;
 
 cTimerScorer *cTimerScorer_ctor(cTimerScorer *self);
+/* not in the original: a timer item counted on as its drawing does, where nothing draws (a coop instance); other
+ * items are left */
+void cTimerScorer_Tick(cScorerItem *base);
+/* not in the original: the type of a timer item (0..3), -1 for another item */
+int cTimerScorer_Type(const cScorerItem *base);
 
 /* ---- the menu drawing helpers (between TimerScorer.cpp and WaypointScorer.cpp) ---- */
 
