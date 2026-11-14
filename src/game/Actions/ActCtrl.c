@@ -6,6 +6,7 @@
 
 #include "scrap/actions.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
@@ -316,6 +317,12 @@ byte cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed
 	cAction *a = action;
 
 	if (!a) {
+		return 0;
+	}
+	/* not in the original: a coop client plays the events of its instance's scenes on its own entities, whose models
+	 * may lack an animation the instance's mission gave them (include/scrap/coop.h) */
+	if (Coop_Client() && !CGameModel_HasAnim(Ctrl_Model(self), Action_Anim(a))) {
+		Coop_ClientNoAnim(self->owner->name, a->name);
 		return 0;
 	}
 	int chan = a->chanel;

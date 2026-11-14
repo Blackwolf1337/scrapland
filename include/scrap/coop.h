@@ -191,6 +191,10 @@ byte Coop_Command(const char *line);
 
 /* ---- client ---- */
 
+/* this game is a client in a world of the coop story */
+byte Coop_Client(void);
+/* the entity's model has no animation for the action (a scene's event of the instance): told once a run per action */
+void Coop_ClientNoAnim(const char *entity, const char *action);
 /* a cue of the coordinator (COORD_CUE_*) */
 void Coop_Cue(int kind, const char *text);
 /* an instance's COOP_MSG: 1 when taken */

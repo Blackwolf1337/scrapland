@@ -408,6 +408,10 @@ static CAnimGroup *CGameModel_Link(CGameModel *self, int i) {
 	return g;
 }
 
+byte CGameModel_HasAnim(CGameModel *self, int i) {
+	return self && self->Model && CModel_GetAnim(self->Model, i) != NULL;
+}
+
 byte CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *fps) {
 	GM_CHECK(self);
 	CAnimGroup *g = CModel_GetAnim(self->Model, i);

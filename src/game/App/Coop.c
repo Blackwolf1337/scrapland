@@ -1361,6 +1361,26 @@ void Coop_Cue(int kind, const char *text) {
 	}
 }
 
+byte Coop_Client(void) {
+	return g_Play && cp.world;
+}
+
+void Coop_ClientNoAnim(const char *entity, const char *action) {
+	static char told[16][CP_NAME * 2];
+	static int ntold;
+	char key[CP_NAME * 2];
+	Str_PrintfQuiet(key, sizeof(key), "%s.%s", entity, action);
+	for (int k = 0; k < ntold; k++) {
+		if (!strcmp(told[k], key)) {
+			return;
+		}
+	}
+	if (ntold < 16) {
+		Str_Copy(told[ntold++], key, sizeof(told[0]));
+	}
+	Con_Printf("coop: %s has no animation for %s here: the scene's event is left out\n", entity, action);
+}
+
 void Coop_ClientLevelStart(void) {
 	/* the level's start sets up the camera of view 0 as the single player's (Fake's clip planes, its credits); a
 	 * client has none before its own character came */
@@ -1438,12 +1458,12 @@ static void Cp_ClientScene(NetRepReader *r) {
 		n = 0;
 	}
 	Con_Printf("coop: scene %s of the instance plays here\n", cls);
-	/* line by line, a failing one does not stop the scene. The "@" calls of the level's module are left out: their
-	 * events force actions on the level's entities of the client (Orbit's desk functionary), whose models lack the
-	 * animations the instance's mission gave them (CGameModel_Link's fatal check, headless and rendered alike) */
+	/* line by line, a failing one does not stop the scene. The "@" calls of the level's module run too: an event of
+	 * theirs that forces an action whose animation the client's model lacks (the instance's mission gave it, Orbit's
+	 * desk functionary) is left out (cActCtrl_PlayAction) */
 	for (int k = 0; k < n && lines[k]; k++) {
 		const char *one[2] = { lines[k], NULL };
-		if (lines[k][0] != '@' && !Mode_Calls(module, one)) {
+		if (!Mode_Calls(module, one)) {
 			Native_ErrPrint();
 		}
 	}
