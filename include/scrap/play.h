@@ -87,6 +87,9 @@ void NetPl_Apply(struct cEntity *e, const NetRepInput *in, byte local, byte repl
 /* one tick of a player's entity with the input: its actions (not when the input runs again for a correction) and
  * PLAY_STEPS slot ticks */
 void NetPl_Step(struct cEntity *e, const NetRepInput *in, byte local, byte replay);
+/* slot tick part (0 .. PLAY_STEPS - 1) of such a tick, the actions with part 0: the client steps a tick in parts as
+ * the frames pass its slots, as single player does */
+void NetPl_StepPart(struct cEntity *e, const NetRepInput *in, byte local, byte replay, int part);
 /* the controls of the client's own entity as the input of a frame, added with weight dt into sum (the averages of
  * the tick come from NetPl_Input) */
 typedef struct NetPlAccum {
@@ -165,6 +168,11 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss);
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs);
 void Play_PostFrame(float dt);
 void Play_Status(void);
+/* the mission info key of the own player: the sandbox's switch (into the nearest parked or a called ship, out of
+ * the ship) with the next tick's input */
+void Play_Switch(void);
+/* the corrections of the own entity's prediction since the start */
+uint32_t Play_Corrections(void);
 /* the own player gone (a travel to another instance) */
 void Play_Reset(void);
 void Play_Close(void);

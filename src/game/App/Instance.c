@@ -155,6 +155,7 @@ static void Instance_Open(uint64_t now) {
 	}
 	Instance_TestLink(inst.host, "instance");
 	Instance_SetInfo();
+	Rep_Open();
 	Con_Printf("instance %s: level %s, Net2 server on %s port %d, %d players, %d ticks a second\n", inst.id,
 		Instance_Level(), inst.bind[0] ? inst.bind : "any address", inst.port, inst.maxPlayers, INSTANCE_TICK_HZ);
 }

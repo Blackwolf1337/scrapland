@@ -12,6 +12,7 @@
 #include "scrap/input.h"
 #include "scrap/itementity.h"
 #include "scrap/material.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/missileentity.h"
 #include "scrap/scheduler.h"
@@ -561,7 +562,10 @@ static void World_InputEvents(void) {
 		if (v == 0) {
 			if ((Input_GetActionSet() == ACTSET_RACER && Input_ActionPressed(ACTSET_RACER, RACER_MISSION_INFO, 0)) ||
 				(Input_GetActionSet() == ACTSET_WALK && Input_ActionPressed(ACTSET_WALK, WALK_MISSION_INFO, 0))) {
-				if (Talk_IsShown()) {
+				if (g_Play) {
+					/* a player of the network: the key is the sandbox's switch (include/scrap/play.h) */
+					Play_Switch();
+				} else if (Talk_IsShown()) {
 					g_RemainTalkTime = 0.0f;
 				} else {
 					cPy_Function_AddParamI(g_MainMissionEvent, 0);

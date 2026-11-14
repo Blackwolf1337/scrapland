@@ -15,6 +15,7 @@
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/fxmisc.h"
 #include "scrap/itementity.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/vehicletraffic.h"
@@ -325,6 +326,19 @@ static void cAIVehicle_UpdateGraph(cAIVehicle *self) {
 	do {
 		cWorld *w = g_pWorld;
 		vec3_t cam = w->camPos[w->curCam];
+		/* the headless instance has no camera: its viewers are the players (AIV_Viewer); the rail traffic is every
+		 * client's own (include/scrap/replicate.h Rep_LocalAmbient), it stays off here */
+		if (Players_Net()) {
+			if (self->state == AIV_TRAFFIC || self->state == AIV_TRAFFIC_INDOOR) {
+				return;
+			}
+			vec3_t tmp;
+			cEntity *pl = Players_Closest(Entity_GetPos(self->vehicle, &tmp));
+			if (!pl) {
+				return;
+			}
+			cam = pl->pos;
+		}
 		if (!NodesWorld_InGrid(g_NodesWorld, &cam)) {
 			return;
 		}
@@ -348,22 +362,31 @@ static void cAIVehicle_UpdateGraph(cAIVehicle *self) {
 	} while (cSlotController_FireReset(slot, &t));
 }
 
-/* the camera entity of view 0: its rotation at 0x88, its field of view at 0xa8 */
-#define AIV_CAM_ROT(c) ((const vec3_t *)&((cCamControl *)(c))->cam.rot)
-#define AIV_CAM_FOV(c) (((cCamControl *)(c))->cam.fov)
+/* who the repositioning of the vehicles is near: the camera of view 0, its place, its direction (z axis turned by its
+ * angles), its field of view and whether the entity it follows is slower than VelReposBackAI; 0 without the camera
+ * entity (deleted by a script, Mission_FunctionaryHunting.AbortCameraTravelling). The headless instance has no
+ * camera (stage M10 of issue #1): the player nearest to the vehicle stands for it, with its heading and the field
+ * of view of a camera, so the traffic and the police stay around the players as single player keeps them around the
+ * camera */
+typedef struct AivViewer {
+	vec3_t pos, dir;
+	float fov;
+	byte slow;
+} AivViewer;
 
-/* the vehicle too far from the camera: in view farther than MaxDistReposAI, out of view farther than
+#define AIV_NET_FOV 0x1.921fb6p+0f		/* pi / 2, a camera's default */
+
+static byte AIV_Viewer(cAIVehicle *self, AivViewer *v);
+
+/* the vehicle too far from the viewer: in view farther than MaxDistReposAI, out of view farther than
  * MaxDistReposNotVisAI or (unseen) farther than MinDistReposNotVisAI; the repos distances of the AI reset */
 static byte cAIVehicle_NeedRepos(cAIVehicle *self) {
-	static const vec3_t front = { 0.0f, 0.0f, 1.0f };
-	vec3_t a, d, dir;
-	cWorld *w = g_pWorld;
-	vec3_t cam = w->camPos[w->curCam];
-	cEntity *c = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
-	/* the main camera entity can be deleted by a script (Mission_FunctionaryHunting.AbortCameraTravelling) */
-	if (!c) {
+	vec3_t a, d;
+	AivViewer view;
+	if (!AIV_Viewer(self, &view)) {
 		return 0;
 	}
+	vec3_t cam = view.pos;
 	const vec3_t *v = Entity_GetPos(self->vehicle, &a);
 
 	d.y = v->y - cam.y;
@@ -374,9 +397,8 @@ static byte cAIVehicle_NeedRepos(cAIVehicle *self) {
 	self->minDistRepos = g_MinDistReposAI;
 	self->maxDistReposNotVis = g_MaxDistReposNotVisAI;
 	self->minDistReposNotVis = g_MinDistReposNotVisAI;
-	Vec3_Rotate(&dir, &front, AIV_CAM_ROT(c));
-	double angle = Vec3_Angle(&d, &dir);
-	if (!(angle > (double)(AIV_CAM_FOV(c) * 0.5f * 1.5f))) {
+	double angle = Vec3_Angle(&d, &view.dir);
+	if (!(angle > (double)(view.fov * 0.5f * 1.5f))) {
 		if (!(dist > self->maxDistRepos)) {
 			return 0;
 		}
@@ -1495,6 +1517,31 @@ static int AIV_ReposSlowShip(cCamControl *cam) {
 	return g_VelReposBackAI > speed;
 }
 
+static byte AIV_Viewer(cAIVehicle *self, AivViewer *v) {
+	vec3_t tmp;
+	if (Players_Net()) {
+		cEntity *pl = Players_Closest(Entity_GetPos(self->vehicle, &tmp));
+		if (!pl) {
+			return 0;
+		}
+		vec3_t z = { 0.0f, 0.0f, 1.0f }, rot = { 0.0f, Obj(pl)->ang.y, 0.0f };
+		v->pos = pl->pos;
+		Vec3_Rotate(&v->dir, &z, &rot);
+		v->fov = AIV_NET_FOV;
+		const vec3_t *vel = Obj_GetVel(pl, &tmp);
+		v->slow = g_VelReposBackAI > (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y +
+			vel->z * vel->z));
+		return 1;
+	}
+	cCamControl *cam = AIV_ReposCam(&v->pos, &v->dir);
+	if (!cam) {
+		return 0;
+	}
+	v->fov = cam->cam.fov;
+	v->slow = (byte)AIV_ReposSlowShip(cam);
+	return 1;
+}
+
 /* the old destination dropped, behind kept for the next repos */
 static void AIV_ReposStart(cAIVehicle *self, byte behind) {
 	cAIVehicleControl_ClearDest(self->control);
@@ -1598,33 +1645,35 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 	return r;
 }
 
-/* the vehicle to a point of visibility near the camera, as ReposTraffic without the tracks; then to IN_ROUTE */
+/* the vehicle to a point of visibility near the viewer (AIV_Viewer), as ReposTraffic without the tracks; then to
+ * IN_ROUTE */
 static byte cAIVehicle_Repos(cAIVehicle *self) {
-	vec3_t camPos, dir, back, p;
+	vec3_t back, p;
 	CNodesWorld *nw;
+	AivViewer view;
 	byte behind = 0;
 	byte r;
 
 	if (!cAIVehicleGroup_ReposReady(g_VehicleGroup)) {
 		return 0;
 	}
-	cCamControl *cam = AIV_ReposCam(&camPos, &dir);
-	if (!cam) {
+	if (!AIV_Viewer(self, &view)) {
 		return 0;
 	}
-	if (AIV_ReposSlowShip(cam) && !self->reposBehind && crt_rand() % 2 != 0) {
+	vec3_t camPos = view.pos, dir = view.dir;
+	if (view.slow && !self->reposBehind && crt_rand() % 2 != 0) {
 		back.x = -dir.x;
 		back.y = -dir.y;
 		back.z = -dir.z;
 		nw = g_NodesWorld;
 		r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistReposNotVis, self->maxDistReposNotVis,
-			AIV_FloatArg(g_MaxDistAroundReposAI), &back, M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
+			AIV_FloatArg(g_MaxDistAroundReposAI), &back, M_PI_F - view.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
 		if (r) {
 			behind = 1;
 		} else {
 			nw = g_NodesWorld;
 			r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistRepos, self->maxDistRepos,
-				AIV_FloatArg(g_MaxDistAroundReposAI), &dir, cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
+				AIV_FloatArg(g_MaxDistAroundReposAI), &dir, view.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
 		}
 		if (!r) {
 			return 0;
@@ -1632,7 +1681,7 @@ static byte cAIVehicle_Repos(cAIVehicle *self) {
 	} else {
 		nw = g_NodesWorld;
 		r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistRepos, self->maxDistRepos,
-			AIV_FloatArg(g_MaxDistAroundReposAI), &dir, cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
+			AIV_FloatArg(g_MaxDistAroundReposAI), &dir, view.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
 		if (!r) {
 			if (self->reposBehind) {
 				return 0;
@@ -1642,7 +1691,7 @@ static byte cAIVehicle_Repos(cAIVehicle *self) {
 			back.z = -dir.z;
 			nw = g_NodesWorld;
 			r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistReposNotVis, self->maxDistReposNotVis,
-				AIV_FloatArg(g_MaxDistAroundReposAI), &back, M_PI_F - cam->cam.fov * AIV_REPOS_HALF *
+				AIV_FloatArg(g_MaxDistAroundReposAI), &back, M_PI_F - view.fov * AIV_REPOS_HALF *
 				AIV_REPOS_FOV);
 			if (!r) {
 				return 0;

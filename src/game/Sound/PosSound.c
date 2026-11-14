@@ -87,6 +87,10 @@ static void Sound_UpdateVoice(int voice);
 
 static cSoundPS *g_SndPSList;
 
+cSoundPS *SndPS_First(void) {
+	return g_SndPSList;
+}
+
 static cSoundPS *cSoundPS_ctor(cSoundPS *self) {
 	cSound_Init(&self->sound);
 	cString_ctor(&self->name);

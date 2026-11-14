@@ -8,6 +8,8 @@ and SCRAP_TEST_DETERMINISTIC=1 the game clock stands while no command file waits
   channel.py <game folder> <line> ...         runs the lines (one command file), prints the answers
   channel.py <game folder> -f <file>          the lines of a file
   channel.py <game folder> --wait [seconds]   waits until the game answers (the menu or the level runs)
+  channel.py <game folder> -i <level> ...     the instance of that level (a -host game's children share its game
+                                              folder; an instance answers test_cmd_<level>.txt)
 
 Used by tools/mcp/scrap_mcp.py and tools/test/golden.sh."""
 import os
@@ -15,6 +17,12 @@ import sys
 import time
 
 CMD, REPLY, TMP = 'test_cmd.txt', 'test_reply.txt', 'test_cmd.tmp'
+
+
+def use_instance(level):
+    """the files of the instance of level (src/game/Global/TestChannel.c)"""
+    global CMD, REPLY, TMP
+    CMD, REPLY, TMP = 'test_cmd_%s.txt' % level, 'test_reply_%s.txt' % level, 'test_cmd_%s.tmp' % level
 
 
 class NoAnswer(RuntimeError):
@@ -91,6 +99,9 @@ def main():
     if len(sys.argv) < 3:
         sys.exit(__doc__)
     game = sys.argv[1]
+    if sys.argv[2] == '-i' and len(sys.argv) > 4:
+        use_instance(sys.argv[3])
+        del sys.argv[2:4]
     if sys.argv[2] == '--wait':
         print(wait_ready(game, float(sys.argv[3]) if len(sys.argv) > 3 else 120.0))
         return

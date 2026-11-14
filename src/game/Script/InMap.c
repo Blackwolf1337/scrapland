@@ -26,12 +26,15 @@ static byte InMap_Start(void) {
 	GVar_SetNum("SoundAutoplayVolume", -60.0);
 	GVar_SetNum("SoundDopplerLevel", 1.0);
 	GVar_SetNum("SoundDistAttenuation", 12.5);
-	/* a watcher (include/scrap/replicate.h): the instance has the player, the NPCs and the police */
+	/* a watcher (include/scrap/replicate.h): the instance has the player, the NPCs and the police; the client makes
+	 * the machines single player shows and the instance has as well (the conversors, the desktops, the news panels;
+	 * their uses are the instance's) */
 	if (g_Watch) {
 		GVar_SetNum("CameraCloudDistance", 0);
 		GVar_SetNum("AtmosphereLimit", 1000000000);
 		GVar_SetNum("TopLimit", 1000200000);
-		return 1;
+		return Watch_ArenaWorld() || (PORT_CALL(CharConversor, Init, NULL, "") &&
+			PORT_CALL(DTritusDesktop, Init, NULL, "") && PORT_CALL(NewsPanel, Init, NULL, ""));
 	}
 	if (!PORT_CALL(Chars, CreateStartupPlayer, NULL, "") || !PORT_CALL(CharsNPC, Init, NULL, "")) {
 		return 0;

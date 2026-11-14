@@ -32,6 +32,27 @@
 
 #define REP_CH_RELIABLE 0
 #define REP_CH_UNRELIABLE 2
+/* client -> instance, reliable, no fields: the client's own rail ship (Rep_LocalAmbient) died by its player's hand */
+#define REP_MSG_RAILKILL 'R'
+/* instance -> client, reliable: the level's things the instance made at its start (items, machines, doors, places;
+ * not replicated otherwise) once the client's level runs, so it can make the ones its own start did not; then their
+ * changes. REP_MSG_STATICS: u8 count, per record name, class, model, action class (strings), position (QPos, signed
+ * varints), angles (QAng, u16 each), u8 active. REP_MSG_STATICSET: u8 count, per record name, u8 REP_STATIC_* */
+#define REP_MSG_STATICS 'Z'
+#define REP_RECORD_NAME 64			/* the names in them, with the end */
+#define REP_MSG_STATICSET 'X'
+#define REP_STATIC_OFF 0
+#define REP_STATIC_ON 1
+#define REP_STATIC_GONE 2
+/* the flags of the welcome (NetRep_WriteWelcome): the world has none of the single player setup (the PvP modes) */
+#define REP_WELCOME_ARENA 0x01
+
+/* ---- both ---- */
+
+/* an entity every game makes for itself around its own camera, which the instance does not replicate and a watcher
+ * keeps (the rail traffic: the lists NormalTraffic, MediumTraffic and HeavyTraffic place their ships around the
+ * camera, so the headless instance has them all off; the indoor levels' FakeTraffic ships the same way) */
+byte Rep_LocalAmbient(struct cEntity *e);
 
 /* ---- instance (Replicate.c) ---- */
 
@@ -45,6 +66,9 @@ void Rep_Tick(Net2Host *host, uint64_t tick);
 /* the status lines: per watcher bytes per second, snapshot sizes, records, interest; time spent */
 void Rep_Status(double secs);
 void Rep_Close(void);
+/* the level of the instance has started (its first pass): the items it made then are every game's, the ones made
+ * later are replicated (NETREP_ITEM) */
+void Rep_Open(void);
 /* the players of the instance for the travel (include/scrap/travel.h): the connection of player i (-1), the player
  * of a connection (-1), player i back at the players' spawn ring */
 int Rep_PlayerConn(int i);
@@ -94,10 +118,14 @@ byte Watch_IsPlayer(struct cEntity *e);
 struct cEntity *Watch_SlotEntity(int slot);
 /* a message to the instance on the reliable channel while the level runs: 1 sent */
 byte Watch_SendReliable(const uint8_t *data, int size);
-/* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the tick of an input of now; the server time
- * the proxies are drawn at (s) */
+/* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the time (s) of the tick an input of now is
+ * for; the server time the proxies are drawn at (s) */
 byte Watch_ClockReady(void);
-uint32_t Watch_InputTick(double now, double rtt, double lead);
+double Watch_InputTime(double now, double rtt, double lead);
 double Watch_ShownTime(void);
+/* the welcome said the world has no single player setup (REP_WELCOME_ARENA); 0 before the welcome */
+byte Watch_ArenaWorld(void);
+/* the own player killed a rail ship of this game (Traffic.RailTrafficDeath): told to the instance (REP_MSG_RAILKILL) */
+void Watch_RailKill(void);
 
 #endif

@@ -82,7 +82,7 @@ void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	}
 }
 
-void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
+void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, int part) {
 	cWithLifeEntity *w = WLife(e);
 	/* the entity's time speed: 1, slower in a bullet time of the freeroam factions (the server and the prediction) */
 	float k = cTimer_GetSpeed(&w->obj.timer);
@@ -92,11 +92,15 @@ void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	if (OBJ_MIN_DT >= NETPL_SLOT * k) {
 		return;
 	}
-	if (!replay && w->actCtrl) {
+	if (!part && !replay && w->actCtrl) {
 		cActCtrl_Tick(w->actCtrl, NETPL_TICK * k);
 	}
+	Obj_Tick(e, NETPL_SLOT * k);
+}
+
+void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	for (int i = 0; i < PLAY_STEPS; i++) {
-		Obj_Tick(e, NETPL_SLOT * k);
+		NetPl_StepPart(e, in, local, replay, i);
 	}
 }
 
@@ -112,28 +116,31 @@ void NetPl_Accumulate(cEntity *e, NetPlAccum *a, float dt) {
 		m[2] = c->jump;
 		r[0] = c->hRot;
 		r[1] = c->vRot;
-		b = (c->act ? NETREP_IN_ACT : 0) | (c->act2 ? NETREP_IN_ACT2 : 0) |
-			(c->act3 ? NETREP_IN_ACT3 | NETREP_IN_SWITCH : 0) | (c->lock ? NETREP_IN_LOCK : 0);
+		/* the use button acts as in single player (on what the arrow is on); the switch of the sandbox is the mission
+		 * info key (Play_Switch) */
+		b = (c->act ? NETREP_IN_ACT : 0) | (c->act2 ? NETREP_IN_ACT2 : 0) | (c->act3 ? NETREP_IN_ACT3 : 0) |
+			(c->lock ? NETREP_IN_LOCK : 0);
 		break;
 	}
 	case NETREP_SHIP: {
 		const cVehicleControls *c = &Veh(e)->controls;
-		cInputAction *info = TABLE_AT(TABLE_AT(g_ActionSets, ACTSET_RACER)->actions, RACER_MISSION_INFO);
 		m[0] = c->acc;
 		m[1] = c->str;
 		m[2] = c->vStr;
 		r[0] = c->hRot;
 		r[1] = c->vRot;
 		b = (c->fire ? NETREP_IN_ACT : 0) | (c->cm ? NETREP_IN_ACT2 : 0) | (c->boostKey ? NETREP_IN_BOOST : 0) |
-			(c->fullThrust ? NETREP_IN_FULL : 0) | (info->value[0] > 0.5f ? NETREP_IN_SWITCH : 0);
+			(c->fullThrust ? NETREP_IN_FULL : 0);
 		a->weapon = (uint8_t)c->weapon;
 		break;
 	}
 	default:
 		return;
 	}
+	/* the moves of the last frame, as a single player's slot takes the controls of now (an average with the frames
+	 * before the press started a walk a tick later); the turns summed over the frames */
 	for (int k = 0; k < 3; k++) {
-		a->move[k] += m[k] * dt;
+		a->move[k] = m[k];
 	}
 	a->rot[0] += r[0] * dt;
 	a->rot[1] += r[1] * dt;
@@ -147,7 +154,7 @@ void NetPl_Input(NetPlAccum *a, NetRepInput *out) {
 	}
 	float k = 1.0f / a->time;
 	for (int i = 0; i < 3; i++) {
-		out->move[i] = NetRep_QMove(a->move[i] * k);
+		out->move[i] = NetRep_QMove(a->move[i]);
 	}
 	out->rot[0] = NetRep_QRot(a->rot[0] * k);
 	out->rot[1] = NetRep_QRot(a->rot[1] * k);

@@ -25,6 +25,18 @@ static const cScorerItemVtbl cRadarScorer_vftable;
 #define CamEntity_AngY(e) (((cCamControl *)(e))->cam.rot.y)
 /* the center of an entity (slot 0x74) */
 
+/* the icons of the radar being drawn and of the last one drawn (Radar_Seen) */
+static struct {
+	RadarSeen icons[2][RADAR_SEEN_MAX];
+	int n[2];
+	int cur;
+} radarSeen;
+
+const RadarSeen *Radar_Seen(int *n) {
+	*n = radarSeen.n[radarSeen.cur ^ 1];
+	return radarSeen.icons[radarSeen.cur ^ 1];
+}
+
 static CPsaImage *Radar_White(uint32_t flags) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	return img ? CPsaImage_ctor(img, "2D/white.tga", flags) : NULL;
@@ -344,6 +356,13 @@ static void cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int ico
 		Radar_IconColor(self, idx) = (uint32_t)(int)al << 24 | (ic & 0xffffff);
 	}
 	self->icons->color = Radar_IconColor(self, idx);
+	if (!self->menuMap && radarSeen.n[radarSeen.cur] < RADAR_SEEN_MAX) {
+		RadarSeen *r = &radarSeen.icons[radarSeen.cur][radarSeen.n[radarSeen.cur]++];
+		r->icon = idx;
+		r->out = out;
+		r->color = self->icons->color;
+		r->pos = *pos;
+	}
 	CPsaImage_DrawPoly(self->icons, &verts[0][0], &uv[0][0], NULL, 4, 6);
 }
 
@@ -673,6 +692,10 @@ static void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity 
 	if (!self->menuMap) {
 		self->radar->color = 0xffffffff;
 		CPsaImage_DrawFrame(self->radar, self->radarIndex, self->base.x - 9.0f, self->base.y - 7.0f);
+	}
+	if (!self->menuMap) {
+		radarSeen.cur ^= 1;
+		radarSeen.n[radarSeen.cur] = 0;
 	}
 	if (Radar_IsEMIed(target) && !self->menuMap) {
 		return;

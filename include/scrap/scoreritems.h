@@ -613,6 +613,16 @@ extern cGVar GVar_FileNameMap2D;
 #define g_FileNameMap2D (GVar_FileNameMap2D.value.s)	/* FileNameMap2D, a printf format of the floor */
 
 cRadarScorer *cRadarScorer_ctor(cRadarScorer *self);
+/* the icons the last radar (not the menu map) drew, for the test channel (not in the original): the icon frame, 1 when
+ * it stood on the rim (out of range), its color and the world point it marks */
+typedef struct RadarSeen {
+	int icon;
+	byte out;
+	uint32_t color;
+	vec3_t pos;
+} RadarSeen;
+#define RADAR_SEEN_MAX 256
+const RadarSeen *Radar_Seen(int *n);
 /* the Global/Table.h lookups of the input actions compiled here */
 cInputAction *InputActionTable_At(void *table, uint32_t i);
 cActionSet *ActionSetTable_At(void *table, uint32_t i);

@@ -56,6 +56,8 @@
 										   point is not used again */
 #define REP_SPAWN_CHECK (4 * NETREP_TICK_HZ)
 #define REP_CALL_DROP 3000.0f			/* and below the place of a called ship */
+#define REP_INTEREST 100000.0f			/* units of a client's interest: what single player keeps around the camera
+										   (TrafficRemovalDist, MaxDistReposAI) */
 #define REP_CHAR_CLEAR 120.0f			/* units a character's place keeps from walls and others */
 #define REP_SHIP_CLEAR 450.0f			/* and a called ship's */
 
@@ -69,6 +71,7 @@ typedef struct RepEnt {
 typedef struct RepConn {
 	NetRepClient *c;
 	int player;						/* its player, -1 for a watcher */
+	byte statics;					/* the static records were sent (at its first ack: its level runs) */
 	NetRepClientStats last;			/* at the last status line */
 } RepConn;
 
@@ -118,6 +121,16 @@ typedef struct RepShot {
 } RepShot;
 
 #define REP_SHOTS 512				/* hits of the weapons kept between two snapshots */
+#define REP_STATICS 4096			/* items of the level's start */
+#define REP_RECORDS 2048			/* things of the level's start sent as static records */
+#define REP_RECORD_TICKS 15			/* ticks between the looks at their changes */
+
+/* a thing of the level's start that is not replicated (Rep_Open): a static record for the clients */
+typedef struct RepRecord {
+	cEntity *e;						/* compared only: read while World_FindEntity(name) is it */
+	char name[REP_RECORD_NAME];
+	byte active, gone;
+} RepRecord;
 
 static struct {
 	NetRepServer *srv;
@@ -145,6 +158,10 @@ static struct {
 	FILE *log;
 	byte logTried;
 	uint8_t msgs[NETREP_MAX_MSGS][NETREP_MSG_MAX];
+	uint32_t statics[REP_STATICS];	/* Rep_Open */
+	int nstatic;
+	RepRecord rec[REP_RECORDS];
+	int nrec;
 } rep;
 
 /* the sandbox options of the command line (Rep_ParseParam) */
@@ -225,9 +242,164 @@ int Rep_SlotOf(const cEntity *e) {
 	return e ? Rep_Find(e) : -1;
 }
 
+byte Rep_LocalAmbient(cEntity *e) {
+	static const char *const rail[] = { "NormalTraffic", "MediumTraffic", "HeavyTraffic" };
+	char **list = e->listNode.node.target;
+	const char *name = list ? *list : NULL;
+	/* the indoor levels' traffic behind their windows (InTraffic.FakeTraffic: no list, by its name) */
+	if (e->name && !strncmp(e->name, "FakeTraffic", 11)) {
+		return 1;
+	}
+	for (size_t i = 0; name && i < sizeof(rail) / sizeof(rail[0]); i++) {
+		if (!strcmp(name, rail[i])) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* the items the level's start made (every game makes them too): their names, hashed and sorted */
+static uint32_t Rep_NameHash(const char *s) {
+	uint32_t h = 2166136261u;
+	for (; *s; s++) {
+		h = (h ^ (uint8_t)*s) * 16777619u;
+	}
+	return h;
+}
+
+static int Rep_CmpU32(const void *a, const void *b) {
+	uint32_t x = *(const uint32_t *)a, y = *(const uint32_t *)b;
+	return x < y ? -1 : x > y;
+}
+
+static byte Rep_StaticItem(const cEntity *e) {
+	uint32_t h = Rep_NameHash(e->name);
+	return rep.nstatic && bsearch(&h, rep.statics, (size_t)rep.nstatic, sizeof(h), Rep_CmpU32) != NULL;
+}
+
+static const char *Rep_ModelPath(cEntity *e);
+
+/* the things a static record is sent for: items, machines and doors (with life, not ships or characters), objects */
+static byte Rep_RecordKind(cEntity *e) {
+	const char *cls = Entity_GetClassName(e);
+	return Entity_IsType(e, "item") || !strcmp(cls, "Obj") ||
+		(Entity_IsType(e, TYEN_WITH_LIFE) && !Entity_IsType(e, TYEN_CAR) && !Entity_IsType(e, TYEN_WALKCHAR));
+}
+
+void Rep_Open(void) {
+	rep.nstatic = rep.nrec = 0;
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		if (e->deadNode.target || !e->name || strlen(e->name) >= REP_RECORD_NAME) {
+			continue;
+		}
+		if (Entity_IsType(e, "item") && rep.nstatic < REP_STATICS) {
+			rep.statics[rep.nstatic++] = Rep_NameHash(e->name);
+		}
+		if (Rep_RecordKind(e) && rep.nrec < REP_RECORDS) {
+			RepRecord *r = &rep.rec[rep.nrec++];
+			r->e = e;
+			Str_Copy(r->name, e->name, REP_RECORD_NAME);
+			r->active = e->active;
+			r->gone = 0;
+		}
+	}
+	qsort(rep.statics, (size_t)rep.nstatic, sizeof(*rep.statics), Rep_CmpU32);
+}
+
+/* the static records into reliable messages of at most REP_RECORD_MSG bytes for the connection */
+#define REP_RECORD_MSG 1100
+static void Rep_SendRecords(Net2Host *host, int conn) {
+	uint8_t buf[REP_RECORD_MSG + 600];
+	NetRepBuf w;
+	int count = 0;
+
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, REP_MSG_STATICS);
+	NetRep_PutU8(&w, 0);
+	for (int i = 0; i <= rep.nrec; i++) {
+		RepRecord *r = i < rep.nrec ? &rep.rec[i] : NULL;
+		if (r && (r->gone || World_FindEntity(r->name) != r->e)) {
+			continue;
+		}
+		if (count && (!r || count == 255 || w.size > REP_RECORD_MSG)) {
+			buf[1] = (uint8_t)count;
+			Net2_Send(host, conn, REP_CH_RELIABLE, buf, w.size);
+			NetRepBuf_Init(&w, buf, sizeof(buf));
+			NetRep_PutU8(&w, REP_MSG_STATICS);
+			NetRep_PutU8(&w, 0);
+			count = 0;
+		}
+		if (!r) {
+			break;
+		}
+		cEntity *e = r->e;
+		const char *model = Entity_IsType(e, "Obj") ? Rep_ModelPath(e) : "";
+		cWithLifeEntity *wl = Entity_IsType(e, TYEN_WITH_LIFE) ? WLife(e) : NULL;
+		const char *act = wl && wl->actCtrl && wl->actCtrl->cls ? wl->actCtrl->cls->name : "";
+		NetRep_PutStr(&w, e->name);
+		NetRep_PutStr(&w, Entity_GetClassName(e));
+		NetRep_PutStr(&w, model);
+		NetRep_PutStr(&w, act);
+		NetRep_PutSVar(&w, NetRep_QPos(e->pos.x));
+		NetRep_PutSVar(&w, NetRep_QPos(e->pos.y));
+		NetRep_PutSVar(&w, NetRep_QPos(e->pos.z));
+		const vec3_t *a = Entity_IsType(e, "Obj") ? &Obj(e)->ang : &(vec3_t){ 0.0f, 0.0f, 0.0f };
+		NetRep_PutU16(&w, NetRep_QAng(a->x));
+		NetRep_PutU16(&w, NetRep_QAng(a->y));
+		NetRep_PutU16(&w, NetRep_QAng(a->z));
+		NetRep_PutU8(&w, e->active ? REP_STATIC_ON : REP_STATIC_OFF);
+		count++;
+	}
+}
+
+/* the changes of the static records since the last look (on, off, gone) to every client that has them */
+static void Rep_RecordChanges(Net2Host *host) {
+	uint8_t buf[REP_RECORD_MSG + 300];
+	NetRepBuf w;
+	int count = 0;
+
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, REP_MSG_STATICSET);
+	NetRep_PutU8(&w, 0);
+	for (int i = 0; i <= rep.nrec; i++) {
+		RepRecord *r = i < rep.nrec ? &rep.rec[i] : NULL;
+		int st = -1;
+		if (r && !r->gone) {
+			cEntity *e = World_FindEntity(r->name);
+			if (e != r->e || e->deadNode.target) {
+				r->gone = 1;
+				st = REP_STATIC_GONE;
+			} else if (e->active != r->active) {
+				r->active = e->active;
+				st = e->active ? REP_STATIC_ON : REP_STATIC_OFF;
+			}
+		}
+		if (count && (!r || count == 255 || w.size > REP_RECORD_MSG)) {
+			buf[1] = (uint8_t)count;
+			for (int c = 0; c < REP_CONNS; c++) {
+				if (rep.conn[c].c && rep.conn[c].statics) {
+					Net2_Send(host, c, REP_CH_RELIABLE, buf, w.size);
+				}
+			}
+			NetRepBuf_Init(&w, buf, sizeof(buf));
+			NetRep_PutU8(&w, REP_MSG_STATICSET);
+			NetRep_PutU8(&w, 0);
+			count = 0;
+		}
+		if (st >= 0) {
+			NetRep_PutStr(&w, r->name);
+			NetRep_PutU8(&w, (uint32_t)st);
+			count++;
+		}
+	}
+}
+
 static int Rep_Kind(cEntity *e) {
-	if (e->deadNode.target) {
+	if (e->deadNode.target || Rep_LocalAmbient(e)) {
 		return 0;
+	}
+	if (Entity_IsType(e, "item")) {
+		return Rep_StaticItem(e) ? 0 : NETREP_ITEM;
 	}
 	if (Entity_IsType(e, TYEN_CAR)) {
 		return NETREP_SHIP;
@@ -253,6 +425,10 @@ static const char *Rep_VarS(cEntity *e, const char *name) {
 /* how the watcher builds the proxy: S|model|pilot|motor 0..3|class|weapon slots, C|class or
  * M|model|MISSILE_WEAP_|MISSILE_FX_|level */
 static void Rep_Look(cEntity *e, int kind, char *out, int size) {
+	if (kind == NETREP_ITEM) {
+		Str_PrintfQuiet(out, size, "I|%s", Rep_ModelPath(e));
+		return;
+	}
 	if (kind == NETREP_MISSILE) {
 		const cMissileEntity *m = Missile(e);
 		Str_PrintfQuiet(out, size, "M|%s|%d|%d|%d", Rep_ModelPath(e), m->weap, m->fx, m->level);
@@ -308,6 +484,9 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 	float dt = Rep_SampleDt(e) * 1000.0f;
 	s->dt = (uint16_t)(dt > 65535.0f ? 65535.0f : dt + 0.5f);
 	s->flags = e->active ? NETREP_FL_ACTIVE : 0;
+	if (kind == NETREP_ITEM) {
+		return;
+	}
 	if (kind == NETREP_MISSILE) {
 		/* a missile: its bees in life, the slot + 1 of the entity that fired it in view[0] */
 		cEntity *parent = Missile(e)->parent[0] ? World_FindEntity(Missile(e)->parent) : NULL;
@@ -594,7 +773,10 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 		if ((e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR)) == NULL) {
 			return NULL;
 		}
-		WithLife_SetActCtrl(e, Faction_CharClass(i));
+		/* a level that loads no character scripts of its own (GDB) has not even the default class */
+		const char *cls = Faction_CharClass(i);
+		Faction_EnsureClass(cls);
+		WithLife_SetActCtrl(e, cls);
 		Rep_SetVarS(e, "TgType", "Green");
 		/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
 		Rep_SetVarS(e, "OnDeath", "");
@@ -605,6 +787,9 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	Obj(e)->netStep = 1;
 	Rep_DropCorpse(pl);
 	Rep_SetOwn(pl, e);
+	/* a switch held from before (the menu's click that started the world, the fire of a death) is no press for the
+	 * new character: only a press after a release */
+	pl->buttons = NETREP_IN_SWITCH | NETREP_IN_ACT3;
 	pl->lost = 0;
 	pl->dead = 0;
 	pl->spawnTick = rep.tick;
@@ -760,15 +945,15 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 	return ship && Rep_IsParked(ship, i) ? ship : NULL;
 }
 
-/* the switch: into the nearest parked ship (a new one when none is near), out of the ship */
-static void Rep_Switch(int i, cEntity *e) {
+/* the switch: into want (else the nearest parked ship, a new one when none is near), out of the ship */
+static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 	RepPlayer *pl = &rep.pl[i];
 	char name[REP_NAME];
 
 	if (NetPl_Kind(e) == NETREP_CHAR) {
-		cEntity *best = NULL;
+		cEntity *best = want;
 		float bestD = PLAY_BOARD_RADIUS * PLAY_BOARD_RADIUS;
-		for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		for (cEntity *v = want ? NULL : cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 			if (!Rep_IsParked(v, i)) {
 				continue;
 			}
@@ -978,7 +1163,7 @@ void Rep_TestSwitch(int i, byte call) {
 	}
 	Players_Bind(i);
 	if (!call) {
-		Rep_Switch(i, e);
+		Rep_SwitchTo(i, e, NULL);
 	} else if (NetPl_Kind(e) == NETREP_CHAR) {
 		Rep_CallShip(i, e);
 	}
@@ -1088,13 +1273,21 @@ void Rep_PreFrame(uint64_t tick) {
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Faction_Input(i, e, &in);
 		Places_Input(i, e, &in);
-		if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
-			if (!Rep_UsesDoor(e)) {
-				pl->buttons = in.buttons;
-				Rep_Switch(i, e);
-				continue;
-			}
+		/* a character's use as in single player: the ship its arrow is on boards it, a door runs the game's use; the
+		 * switch (the mission info key on foot, in a ship) is the sandbox's: into the nearest parked or a called
+		 * ship, out of the ship */
+		byte use = (in.buttons & NETREP_IN_ACT3) && !(pl->buttons & NETREP_IN_ACT3) && !Arena_On();
+		if (use && NetPl_Kind(e) == NETREP_CHAR && WChar_Victim(e) && Rep_IsParked(WChar_Victim(e), i)) {
+			pl->buttons = in.buttons;
+			Rep_SwitchTo(i, e, WChar_Victim(e));
+			continue;
+		}
+		if (use && Rep_UsesDoor(e)) {
 			Coop_BeforeUse(i, WChar(e)->listenOn && WChar_Listen(e) ? WChar_Listen(e) : WChar_Victim(e));
+		} else if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
+			pl->buttons = in.buttons;
+			Rep_SwitchTo(i, e, NULL);
+			continue;
 		}
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);
@@ -1358,6 +1551,7 @@ static void Rep_Hello(Net2Host *host, int conn, uint32_t rate, int flags) {
 		return;
 	}
 	if (!rep.conn[conn].c) {
+		rep.conn[conn].statics = 0;
 		rep.conn[conn].c = NetRepSrv_AddClient(rep.srv, rate ? rate : NETREP_RATE_DEFAULT);
 		if (!rep.conn[conn].c) {
 			return;
@@ -1373,9 +1567,9 @@ static void Rep_Hello(Net2Host *host, int conn, uint32_t rate, int flags) {
 		view[1] = p->pos.y;
 		view[2] = p->pos.z;
 	}
-	NetRepSrv_SetView(rep.conn[conn].c, view[0], view[1], view[2], Arena_On() ? ARENA_INTEREST : 0.0f);
+	NetRepSrv_SetView(rep.conn[conn].c, view[0], view[1], view[2], Arena_On() ? ARENA_INTEREST : REP_INTEREST);
 	int n = NetRep_WriteWelcome(buf, sizeof(buf), (uint32_t)(Instance_Time() * INSTANCE_TICK_HZ + 0.5), view,
-		g_pApp->levelPath ? g_pApp->levelPath : "");
+		g_pApp->levelPath ? g_pApp->levelPath : "", Arena_On() ? REP_WELCOME_ARENA : 0);
 	if (n > 0) {
 		Net2_Send(host, conn, REP_CH_RELIABLE, buf, n);
 	}
@@ -1395,6 +1589,21 @@ static void Rep_Inputs(RepPlayer *pl, const NetRepInput *in, int n, uint32_t sho
 			pl->shown[in[k].tick % NETREP_INBUF] = shownMs > back ? shownMs - back : 0;
 		}
 	}
+}
+
+/* a client's rail ship (Rep_LocalAmbient) died by its player's hand: the alarm and the statistics as the rail
+ * traffic's death gives them in single player (Traffic.RailTrafficDeath) */
+static void Rep_RailKill(int i) {
+	if (i < 0 || !rep.pl[i].used) {
+		return;
+	}
+	Players_Bind(i);
+	nativeVal_t one;
+	Native_SetInt(&one, 1);
+	if (!Mode_SetAlarm(&one) || !Mode_IncSaveVar("Stats.Traffic")) {
+		Native_ErrClear();
+	}
+	Players_BindTurn();
 }
 
 byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int size) {
@@ -1418,9 +1627,17 @@ byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int
 	if (!rep.conn[conn].c) {
 		return 0;
 	}
+	if (channel == REP_CH_RELIABLE && data[0] == REP_MSG_RAILKILL && size == 1) {
+		Rep_RailKill(rep.conn[conn].player);
+		return 1;
+	}
 	if (data[0] == NETREP_MSG_ACK &&
 		NetRep_ReadAckInput(data, size, &newest, &bits, view, in, NETREP_INPUT_REDUNDANCY, &n, &shown)) {
 		NetRepSrv_Ack(rep.srv, rep.conn[conn].c, newest, bits);
+		if (!rep.conn[conn].statics) {
+			rep.conn[conn].statics = 1;
+			Rep_SendRecords(host, conn);
+		}
 		int i = rep.conn[conn].player;
 		if (i < 0) {
 			NetRepSrv_SetView(rep.conn[conn].c, view[0], view[1], view[2], 0.0f);
@@ -1435,6 +1652,9 @@ void Rep_Tick(Net2Host *host, uint64_t tick) {
 	int sizes[NETREP_MAX_MSGS];
 
 	Rep_Log(tick);
+	if (rep.watchers && tick % REP_RECORD_TICKS == 0) {
+		Rep_RecordChanges(host);
+	}
 	uint32_t due = (uint32_t)(tick * NETREP_SNAP_HZ / NETREP_TICK_HZ);
 	if (!rep.watchers || due == rep.snapTick) {
 		rep.snapTick = due;

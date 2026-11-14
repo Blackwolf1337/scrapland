@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "scrap/app.h"
+#include "scrap/feellog.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
@@ -394,6 +395,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 			if (g_Watch) {
 				Watch_PostFrame();
 			}
+			FeelLog_Frame();
 		}
 	}
 	App_Shutdown(g_pApp);

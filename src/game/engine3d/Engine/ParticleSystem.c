@@ -9,6 +9,7 @@
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fonts.h"
+#include "scrap/global.h"
 #include "scrap/texture.h"
 #include "scrap/e3dworld.h"
 #include "scrap/particlesystem.h"
@@ -759,6 +760,35 @@ void ParticleSystem_LoadIni(const char *name, const char *dir) {
 	CIniFile_Load((&g_ParticleSystemIni), name, dir, 1);
 }
 
+/* the systems drawn in the frame being drawn and in the one before (ParticleSystem_Drawn) */
+static struct {
+	ParticleDrawn sys[2][PARTICLE_DRAWN_MAX];
+	int n[2];
+	int cur;
+	int frame;
+} psDrawn;
+
+const ParticleDrawn *ParticleSystem_Drawn(int *n) {
+	*n = psDrawn.n[psDrawn.cur ^ 1];
+	return psDrawn.sys[psDrawn.cur ^ 1];
+}
+
+static void ParticleSystem_NoteDrawn(const CParticleSystem *self) {
+	if (psDrawn.frame != g_FrameCount) {
+		psDrawn.frame = g_FrameCount;
+		psDrawn.cur ^= 1;
+		psDrawn.n[psDrawn.cur] = 0;
+	}
+	if (psDrawn.n[psDrawn.cur] < PARTICLE_DRAWN_MAX) {
+		ParticleDrawn *d = &psDrawn.sys[psDrawn.cur][psDrawn.n[psDrawn.cur]++];
+		Str_Copy(d->type, self->type ? self->type : "", sizeof(d->type));
+		d->particles = self->numActive;
+		d->pos.x = self->node->m.m[12];
+		d->pos.y = self->node->m.m[13];
+		d->pos.z = self->node->m.m[14];
+	}
+}
+
 static void CParticleSystem_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	CParticleSystem *self = (CParticleSystem *)base;
 	(void)dev;
@@ -787,6 +817,7 @@ static void CParticleSystem_Render(IObject3D *base, void *dev, CRenderNode *r) {
 		}
 	}
 	if (self->inView) {
+		ParticleSystem_NoteDrawn(self);
 		ParticleSystem_Draw(self, r);
 	}
 }

@@ -509,16 +509,19 @@ static void Test_Garbage(void) {
 	float vp[3];
 	char level[64];
 	uint32_t tick, rate;
+	int wflags;
 	CHECK(!NetRep_ReadAck(buf, 3, &a, &b, vp));
-	CHECK(!NetRep_ReadWelcome(buf, 5, &tick, vp, level, sizeof(level)));
+	CHECK(!NetRep_ReadWelcome(buf, 5, &tick, vp, level, sizeof(level), &wflags));
 	{
 		int flags;
 		int n = NetRep_WriteHello(buf, sizeof(buf), 12345, NETREP_HELLO_PLAY);
 		CHECK(NetRep_ReadHello(buf, n, &rate, &flags) && rate == 12345 && flags == NETREP_HELLO_PLAY);
 		CHECK(!NetRep_ReadHello(buf, n - 1, &rate, &flags));
 		float view[3] = { 1.0f, -2.0f, 300000.0f };
-		n = NetRep_WriteWelcome(buf, sizeof(buf), 777, view, "DownTown");
-		CHECK(NetRep_ReadWelcome(buf, n, &tick, vp, level, sizeof(level)) && tick == 777 && !strcmp(level, "DownTown"));
+		n = NetRep_WriteWelcome(buf, sizeof(buf), 777, view, "DownTown", 5);
+		CHECK(NetRep_ReadWelcome(buf, n, &tick, vp, level, sizeof(level), &wflags) && tick == 777 &&
+			!strcmp(level, "DownTown") && wflags == 5);
+		CHECK(!NetRep_ReadWelcome(buf, n - 1, &tick, vp, level, sizeof(level), &wflags));
 		CHECK(vp[0] == 1.0f && vp[1] == -2.0f && vp[2] == 300000.0f);
 	}
 	NetRepCli_Destroy(v);
@@ -808,6 +811,37 @@ static void Test_Clock(void) {
 	CHECK(fabs(NetRepClock_Server(&c, now) - (100000.0 / NETREP_TICK_HZ + rtt / 2)) < 1e-6);
 }
 
+/* the followed time: even steps for a target that jitters, the rate bound, a jump taken at once */
+static void Test_Follow(void) {
+	NetRepFollow f;
+	NetRepFollow_Init(&f, 0.25);
+	double t = 100.0, prev = 0.0, dt = 1.0 / 60.0;
+	uint32_t seed = 7;
+	for (int i = 0; i < 6000; i++) {
+		t += dt;
+		seed = seed * 1103515245u + 12345u;
+		double jit = ((double)(seed >> 16 & 0xffff) / 65535.0 - 0.5) * 0.016;
+		double v = NetRepFollow_Step(&f, t + jit, dt);
+		if (i > 600) {
+			double step = v - prev;
+			CHECK(step > dt * (1.0 - NETREP_FOLLOW_RATE) - 1e-9 && step < dt * (1.0 + NETREP_FOLLOW_RATE) + 1e-9);
+			CHECK(fabs(v - t) < 0.012);
+		}
+		prev = v;
+	}
+	/* a step of 0.1 s is closed at the rate bound, one of 1 s at once */
+	t += 0.1;
+	double v0 = NetRepFollow_Step(&f, t, 0.0);
+	CHECK(fabs(v0 - (t - 0.1)) < 0.02);
+	for (int i = 0; i < 300; i++) {
+		t += dt;
+		v0 = NetRepFollow_Step(&f, t, dt);
+	}
+	CHECK(fabs(v0 - t) < 0.002);
+	t += 1.0;
+	CHECK(NetRepFollow_Step(&f, t, dt) == t);
+}
+
 static void Test_Predict(void) {
 	NetRepPredHist h;
 	NetRepPred p;
@@ -936,6 +970,7 @@ int main(void) {
 	Test_InBuf(30, 2, 3, 6);
 	Test_InBuf(5, 6, 0, 3);
 	Test_Clock();
+	Test_Follow();
 	Test_Delay();
 	Test_Predict();
 	Test_PosAt();

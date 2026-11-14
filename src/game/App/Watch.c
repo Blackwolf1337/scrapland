@@ -40,6 +40,7 @@
 #include "scrap/world.h"
 
 #define WATCH_SAMPLES 8
+#define WATCH_FOLLOW_JUMP 0.25		/* s: the drawn server time further off its target is taken at once */
 #define WATCH_EXTRAP 0.25			/* s ahead of the newest sample at most */
 #define WATCH_EXTRAP_TICKS 2			/* the sample must be from a snapshot at most this many ticks old */
 #define WATCH_HOLD (1.5 / NETREP_SNAP_HZ)	/* s of motion before a sample at most */
@@ -83,9 +84,11 @@ static struct {
 	Net2Host *host;
 	NetRepView *view;
 	char level[128];
+	int welcome;					/* the flags of the welcome (REP_WELCOME_), 0 before it */
 	float start[3];					/* the view point of the welcome */
 	NetRepClock clock;
 	NetRepDelay delay;				/* the interpolation delay */
+	NetRepFollow follow;			/* the server time the proxies are drawn at, evenly */
 	double rtt, rttVar;				/* s, of Net2 */
 	float loss;						/* of Net2, 0..1 */
 	double shown;					/* the server time the proxies are drawn at, s */
@@ -96,6 +99,7 @@ static struct {
 	cEntity *cam;
 	FILE *log;
 	uint32_t msgs, notTaken, proxies, shots;
+	uint32_t records;				/* things made of the instance's static records */
 	uint32_t made;					/* proxies made: their names stay unique while a deleted one waits */
 	uint64_t bytes;
 	WatchProxy px[NETREP_MAX_ENTS];
@@ -255,6 +259,20 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 	}
 	if (kind == NETREP_MISSILE && n >= 2) {
 		return Watch_Missile(name, part, n, st);
+	}
+	/* an item the instance made after the level's start (I|model): seen, not taken here */
+	if (kind == NETREP_ITEM && n >= 2) {
+		if (part[1][0] && !Watch_ModelExists(part[1])) {
+			return NULL;
+		}
+		cEntity *e = cWorld_CreateEntity(g_pWorld, name, x, y, z, "item");
+		if (e) {
+			Obj(e)->proxy = proxy;
+			if (part[1][0]) {
+				Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
+			}
+		}
+		return e;
 	}
 	if (kind != NETREP_SHIP || n < 8) {
 		return NULL;
@@ -492,7 +510,7 @@ void Watch_ProxiesAt(double t, byte players) {
 		/* the ships of no player stay: the traffic follows its rails, its path ahead is a worse guess than where it
 		 * is drawn (A/B in the M4b handback); the other characters only on request (players 0) */
 		byte player = (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) != 0;
-		if ((players || p->kind == NETREP_SHIP) && !player) {
+		if ((players || p->kind == NETREP_SHIP || p->kind == NETREP_ITEM) && !player) {
 			continue;
 		}
 		if (!player && own && !g_ProxiesMoved[s] && Watch_DistSq(p->e, own) > WATCH_AHEAD_RADIUS * WATCH_AHEAD_RADIUS) {
@@ -536,6 +554,18 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 
 	Watch_Pick(p, rt, &a, &b, &f, &ext);
 	const NetRepState *sa = &a->st, *sb = &b->st;
+	if (p->kind == NETREP_ITEM) {
+		vec3_t at = { NetRep_UPos(sb->pos[0]), NetRep_UPos(sb->pos[1]), NetRep_UPos(sb->pos[2]) };
+		vec3_t an = { NetRep_UAng(sb->ang[0]), NetRep_UAng(sb->ang[1]), NetRep_UAng(sb->ang[2]) };
+		if (at.x != e->pos.x || at.y != e->pos.y || at.z != e->pos.z) {
+			Entity_SetPos(e, &at);
+			Obj_SetAng(e, &an);
+		}
+		if (((sa->flags & NETREP_FL_ACTIVE) != 0) != e->active) {
+			Entity_SetActive(e, (sa->flags & NETREP_FL_ACTIVE) != 0);
+		}
+		return;
+	}
 	float *pv = &pos.x, *av = &ang.x, *vv = &vel.x, *rv = &rot.x;
 	for (int k = 0; k < 3; k++) {
 		float pa = NetRep_UPos(sa->pos[k]);
@@ -609,11 +639,20 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	}
 }
 
-/* characters and ships the level scripts made: the instance has the real ones */
+byte Watch_ArenaWorld(void) {
+	return (watch.welcome & REP_WELCOME_ARENA) != 0;
+}
+
+void Watch_RailKill(void) {
+	uint8_t m = REP_MSG_RAILKILL;
+	Watch_SendReliable(&m, 1);
+}
+
+/* characters and ships the level scripts made: the instance has the real ones (not the client's own rail traffic) */
 static void Watch_Purge(void) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->deadNode.target || (!Entity_IsType(e, TYEN_CAR) && !Entity_IsType(e, TYEN_WALKCHAR)) ||
-			e == Play_Entity()) {
+			e == Play_Entity() || Rep_LocalAmbient(e)) {
 			continue;
 		}
 		if (!Obj(e)->proxy && !Coop_ClientKeeps(e)) {
@@ -656,6 +695,7 @@ static void Watch_Start(void) {
 	watch.phase = WATCH_GONE;
 	NetRepClock_Init(&watch.clock);
 	NetRepDelay_Init(&watch.delay);
+	NetRepFollow_Init(&watch.follow, WATCH_FOLLOW_JUMP);
 	if (!Net2_ParseAddr(watch.addr, watch.port ? watch.port : Instance_Port(), addr)) {
 		Con_Errorf("watch: '%s' is not a numeric address\n", watch.addr);
 		return;
@@ -688,7 +728,7 @@ static void Watch_Start(void) {
 static void Watch_Welcome(const uint8_t *data, int size) {
 	uint32_t tick;
 
-	if (!NetRep_ReadWelcome(data, size, &tick, watch.start, watch.level, sizeof(watch.level))) {
+	if (!NetRep_ReadWelcome(data, size, &tick, watch.start, watch.level, sizeof(watch.level), &watch.welcome)) {
 		Con_Errorf("watch: bad welcome\n");
 		return;
 	}
@@ -713,6 +753,76 @@ static void Watch_Snapshot(const uint8_t *data, int size) {
 	double now = Watch_Now();
 	NetRepDelay_Sample(&watch.delay, &watch.clock, NetRepCli_Tick(watch.view), now, watch.rtt);
 	NetRepClock_Sample(&watch.clock, NetRepCli_Tick(watch.view), now, watch.rtt);
+}
+
+/* the static records of the instance (REP_MSG_STATICS): the things its level's start made that this game's start did
+ * not, made here to be seen (no physics, no uses: the instance has them) */
+static void Watch_Records(const uint8_t *data, int size) {
+	NetRepReader r;
+	char name[REP_RECORD_NAME], cls[32], model[256], act[64];
+
+	NetRepReader_Init(&r, data, size);
+	NetRep_GetU8(&r);
+	int n = (int)NetRep_GetU8(&r);
+	for (int i = 0; i < n && !r.bad; i++) {
+		NetRep_GetStr(&r, name, sizeof(name));
+		NetRep_GetStr(&r, cls, sizeof(cls));
+		NetRep_GetStr(&r, model, sizeof(model));
+		NetRep_GetStr(&r, act, sizeof(act));
+		vec3_t pos, ang;
+		pos.x = NetRep_UPos(NetRep_GetSVar(&r));
+		pos.y = NetRep_UPos(NetRep_GetSVar(&r));
+		pos.z = NetRep_UPos(NetRep_GetSVar(&r));
+		ang.x = NetRep_UAng((uint16_t)NetRep_GetU16(&r));
+		ang.y = NetRep_UAng((uint16_t)NetRep_GetU16(&r));
+		ang.z = NetRep_UAng((uint16_t)NetRep_GetU16(&r));
+		int on = (int)NetRep_GetU8(&r);
+		if (r.bad || !name[0] || World_FindEntity(name)) {
+			continue;
+		}
+		const char *type = !strcmp(cls, "item") ? "item" : !strcmp(cls, "Obj") ? "Obj" :
+			!strcmp(cls, TYEN_WITH_LIFE) ? TYEN_WITH_LIFE : NULL;
+		if (!type || (model[0] && !Watch_ModelExists(model))) {
+			continue;
+		}
+		cEntity *e = cWorld_CreateEntity(g_pWorld, name, pos.x, pos.y, pos.z, type);
+		if (!e) {
+			continue;
+		}
+		Obj(e)->proxy = 1;
+		if (act[0] && Entity_IsType(e, TYEN_WITH_LIFE)) {
+			WithLife_SetActCtrl(e, act);
+		}
+		if (model[0] && !CGameModel_IsLoaded(&Obj(e)->model)) {
+			Entity_SetModel(e, model, 1.0f, 1.0f, 1.0f, 0);
+		}
+		Obj_SetAng(e, &ang);
+		Entity_SetActive(e, on == REP_STATIC_ON);
+		watch.records++;
+	}
+}
+
+/* their changes (REP_MSG_STATICSET): on, off, gone */
+static void Watch_RecordSet(const uint8_t *data, int size) {
+	NetRepReader r;
+	char name[REP_RECORD_NAME];
+
+	NetRepReader_Init(&r, data, size);
+	NetRep_GetU8(&r);
+	int n = (int)NetRep_GetU8(&r);
+	for (int i = 0; i < n && !r.bad; i++) {
+		NetRep_GetStr(&r, name, sizeof(name));
+		int st = (int)NetRep_GetU8(&r);
+		cEntity *e = r.bad ? NULL : World_FindEntity(name);
+		if (!e || Entity_IsType(e, TYEN_CAR) || Entity_IsType(e, TYEN_WALKCHAR)) {
+			continue;
+		}
+		if (st == REP_STATIC_GONE) {
+			cEntity_Del(e);
+		} else if (e->active != (st == REP_STATIC_ON)) {
+			Entity_SetActive(e, st == REP_STATIC_ON);
+		}
+	}
 }
 
 /* the shots of the instance's ships: their effects on the proxies (the own ship's of a NetPl_LocalWeapon do not
@@ -826,6 +936,7 @@ static void Watch_Reset(void) {
 	NetRepCli_Destroy(watch.view);
 	watch.view = NULL;
 	watch.cam = NULL;
+	watch.welcome = 0;
 	watch.lastNs = watch.lastAck = 0;
 	watch.retries = 0;
 	watch.taken = 0;
@@ -878,8 +989,8 @@ byte Watch_ClockReady(void) {
 	return watch.phase == WATCH_RUN && watch.clock.have;
 }
 
-uint32_t Watch_InputTick(double now, double rtt, double lead) {
-	return NetRepClock_InputTick(&watch.clock, now, rtt, lead);
+double Watch_InputTime(double now, double rtt, double lead) {
+	return NetRepClock_Server(&watch.clock, now) + rtt * 0.5 + lead;
 }
 
 double Watch_ShownTime(void) {
@@ -945,6 +1056,10 @@ void Watch_PreFrame(void) {
 				Coop_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == ARENA_MSG) {
 				Arena_ClientMessage(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICS && watch.phase == WATCH_RUN) {
+				Watch_Records(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICSET && watch.phase == WATCH_RUN) {
+				Watch_RecordSet(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SNAP && watch.phase == WATCH_RUN) {
 				Watch_Snapshot(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SHOTS && watch.phase == WATCH_RUN) {
@@ -978,7 +1093,7 @@ void Watch_PreFrame(void) {
 	/* the proxies at the time of the newest samples (half a round trip ago) minus the interpolation delay */
 	double now = (double)ns / 1e9;
 	double delay = NetRepDelay_Step(&watch.delay, dt, watch.loss);
-	double rt = NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - delay;
+	double rt = NetRepFollow_Step(&watch.follow, NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - delay, dt);
 	watch.shown = rt;
 	if (g_Play) {
 		Play_PreFrame(now, watch.rtt, watch.rttVar, watch.loss);
@@ -990,8 +1105,8 @@ void Watch_PreFrame(void) {
 	}
 	if (ns / 1000000 - watch.lastStatus >= WATCH_STATUS_MS) {
 		const vec3_t *c = watch.cam ? &((cCamControl *)watch.cam)->cam.pos : NULL;
-		Con_Printf("watch: %u proxies, %u messages %llu bytes, %u not taken, %u shots, server time %.2f, delay %.0f ms "
-			"(jitter %.1f ms), rtt %.0f ms, view %.0f %.0f %.0f\n", watch.proxies, watch.msgs,
+		Con_Printf("watch: %u proxies, %u records, %u messages %llu bytes, %u not taken, %u shots, server time %.2f, "
+			"delay %.0f ms (jitter %.1f ms), rtt %.0f ms, view %.0f %.0f %.0f\n", watch.proxies, watch.records, watch.msgs,
 			(unsigned long long)watch.bytes, watch.notTaken, watch.shots, rt, watch.delay.delay * 1000.0,
 			watch.delay.dev * 1000.0, watch.rtt * 1000.0, c ? (double)c->x : 0.0, c ? (double)c->y : 0.0,
 			c ? (double)c->z : 0.0);

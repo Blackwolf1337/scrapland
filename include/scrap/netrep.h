@@ -87,6 +87,7 @@
 #define NETREP_SHIP 1
 #define NETREP_CHAR 2
 #define NETREP_MISSILE 3			/* the projectiles of the weapons */
+#define NETREP_ITEM 4				/* the items made after the level's start (the money dead ships drop, ...) */
 #define NETREP_DEAD 4				/* the kind of the player message without a slot: the player died */
 
 /* record ops */
@@ -323,8 +324,9 @@ typedef struct NetRepShot {
 /* n shots (up to NETREP_SHOTS_MAX), 0 when they do not fit */
 int NetRep_WriteShots(uint8_t *buf, int cap, uint32_t tick, const NetRepShot *shots, int n);
 int NetRep_ReadShots(const uint8_t *data, int size, uint32_t *tick, NetRepShot *shots, int max, int *n);
-int NetRep_WriteWelcome(uint8_t *buf, int cap, uint32_t tick, const float *view, const char *level);
-int NetRep_ReadWelcome(const uint8_t *data, int size, uint32_t *tick, float *view, char *level, int cap);
+/* flags: the application's (include/scrap/replicate.h REP_WELCOME_) */
+int NetRep_WriteWelcome(uint8_t *buf, int cap, uint32_t tick, const float *view, const char *level, int flags);
+int NetRep_ReadWelcome(const uint8_t *data, int size, uint32_t *tick, float *view, char *level, int cap, int *flags);
 int NetRep_WriteAck(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, const float *view);
 int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bits, float *view);
 
@@ -402,6 +404,23 @@ void NetRepClock_Sample(NetRepClock *c, uint32_t tick, double now, double rtt);
 double NetRepClock_Server(const NetRepClock *c, double now);
 /* the tick the client's input of now is for: the server time when it gets there (half the round trip) plus lead s */
 uint32_t NetRepClock_InputTick(const NetRepClock *c, double now, double rtt, double lead);
+
+/* a time that runs with the local clock and follows a target time that comes in steps (the server time of the
+ * proxies, the tick time of the own input; stage M10): it runs at most NETREP_FOLLOW_RATE faster or slower and closes
+ * a difference over NETREP_FOLLOW_TAU s, so what is drawn by it moves evenly; a difference above jump is taken at
+ * once */
+#define NETREP_FOLLOW_RATE 0.05
+#define NETREP_FOLLOW_TAU 0.25
+
+typedef struct NetRepFollow {
+	double t;
+	double jump;
+	int have;
+} NetRepFollow;
+
+void NetRepFollow_Init(NetRepFollow *f, double jump);
+/* dt s later with the target time now: the followed time */
+double NetRepFollow_Step(NetRepFollow *f, double target, double dt);
 
 /* the client's interpolation delay (stage M4a): how far behind the newest server time the other entities are
  * drawn. It must cover the longest gap between two snapshots (NETREP_DELAY_BASE) plus the jitter of their arrival
