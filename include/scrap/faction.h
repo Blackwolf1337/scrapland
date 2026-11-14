@@ -262,6 +262,9 @@ const char *Faction_Pilot(int i);
 /* the player's character is new (a spawn, a transform, a ship left) or the player left */
 void Faction_Spawned(int i, struct cEntity *e);
 void Faction_Left(int i);
+/* the class player i plays as from now on (a character the coop story's scripts gave it: a possession, a conversor),
+ * kept in its state */
+void Faction_SetChar(int i, const char *cls);
 /* the player died: the armour and the siren off, the wanted level cleared (as the alarm of a death), its body's place
  * for a revive */
 void Faction_Died(int i);

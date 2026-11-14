@@ -13,6 +13,7 @@
  * called as a value (OBJLIB 5 (9c)); SetMoney goes through its seam (fc-r7b-jy records it).
  */
 #include "scrap/app.h"
+#include "scrap/coop.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -117,6 +118,10 @@ static byte SI_Default(const nativeVal_t *id, modeVals_t *t) {
 static byte SI_EnterSputnikInterfaceN(const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *hint = Mode_V(&t), *cad = Mode_V(&t), *text = Mode_V(&t), *lost = Mode_V(&t), *cur = Mode_V(&t);
+	/* not in the original: on a coop instance the screen opens on the member's client */
+	if (Coop_SputnikOpen()) {
+		return Mode_Done(&t, 1);
+	}
 	Loading_Init();
 	if (!Mode_Import("Menu") || !Mode_Import("ShipEdit") || !Mode_Import("HangarTab") ||
 		!PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) || !PORT_CALL(Menu, StartNewMenu, NULL, "v", id) ||
@@ -178,6 +183,8 @@ static byte SI_ExitSputnikInterfaceN(const nativeVal_t *id) {
 		!Mode_G(MOD, "EndSputnikCallBack", cb)) {
 		return Mode_Done(&t, 0);
 	}
+	/* not in the original: the instance's screen on a coop client: the hangar back to it */
+	Coop_ClientSputnikDone();
 	return Mode_Done(&t, !Native_True(cb) || (Mode_CallArgs(cb, NULL, NULL, 0) && Mode_Put(MOD, "EndSputnikCallBack", NULL, none)));
 }
 

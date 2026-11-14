@@ -446,6 +446,14 @@ void Faction_Spawned(int i, cEntity *e) {
 	}
 }
 
+void Faction_SetChar(int i, const char *cls) {
+	FrPlayer *p = Fr_Player(i);
+	if (p && cls && cls[0] && strcmp(p->charCls, cls)) {
+		Str_Copy(p->charCls, cls, sizeof(p->charCls));
+		Travel_Report(i);
+	}
+}
+
 static void Fr_CrimeOf(cEntity *victim, int j, int i, byte died);
 
 void Faction_Died(int i) {

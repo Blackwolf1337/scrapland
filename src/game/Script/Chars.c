@@ -20,6 +20,7 @@
 
 #include "scrap/actions.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/game.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -410,6 +411,13 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *c = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *v = Mode_V(&t), *hook = Mode_V(&t);
 	nativeVal_t *cam = Mode_V(&t), *cname = Mode_V(&t), *text = Mode_V(&t);
+	/* not in the original: a coop member's own name (include/scrap/coop.h) */
+	const char *own = Coop_MainCharName();
+	nativeVal_t *ownName = Mode_V(&t);
+	if (own) {
+		Native_SetStr(ownName, own);
+		name = ownName;
+	}
 	if (!Mode_Import("CharScorer") || !Mode_EntitySeam(name, c)) {
 		return Mode_Done(&t, 0);
 	}
