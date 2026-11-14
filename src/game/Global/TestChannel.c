@@ -1164,7 +1164,7 @@ static void TC_Fx(tcBuf *b) {
 	}
 }
 
-/* sounds: "ch <channel> <sound name>" per mixer channel playing (the name of its sample in the sound table, "?" for a
+/* sounds: "ch <channel> <sound name> <loop>" per mixer channel playing (the name of its sample in the sound table, "?" for a
  * stream), "ps <name> <x y z>" per positional property set playing */
 static void TC_Sounds(tcBuf *b, const char *arg) {
 	CSoundXBox *x = (CSoundXBox *)g_pSound;
@@ -1198,7 +1198,7 @@ static void TC_Sounds(tcBuf *b, const char *arg) {
 				}
 			}
 		}
-		TC_Addf(b, "ch\t%d\t%s\n", ch, name);
+		TC_Addf(b, "ch\t%d\t%s\t%d\n", ch, name, Snd_GetLoop(ch));
 	}
 	for (cSoundPS *ps = SndPS_First(); ps; ps = ps->next) {
 		if (ps->sound.handle) {

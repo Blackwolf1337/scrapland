@@ -638,6 +638,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		if (w->actCtrl && w->actCtrl->cls) {
 			cActCtrl_NetDrive(w->actCtrl, act, rates, NETREP_LAYERS, dt);
 		}
+		cWalkCharEntity_ProxySound(e, c->walking, dt);
 	}
 	if (watch.log && rt >= p->s[0].t) {
 		fprintf(watch.log, "%.4f,%d,%.2f,%.2f,%.2f\n", rt, slot, (double)pos.x, (double)pos.y, (double)pos.z);
