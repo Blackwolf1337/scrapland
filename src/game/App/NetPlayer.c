@@ -82,7 +82,7 @@ void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	}
 }
 
-void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
+void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, int part) {
 	cWithLifeEntity *w = WLife(e);
 	/* the entity's time speed: 1, slower in a bullet time of the freeroam factions (the server and the prediction) */
 	float k = cTimer_GetSpeed(&w->obj.timer);
@@ -92,11 +92,15 @@ void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	if (OBJ_MIN_DT >= NETPL_SLOT * k) {
 		return;
 	}
-	if (!replay && w->actCtrl) {
+	if (!part && !replay && w->actCtrl) {
 		cActCtrl_Tick(w->actCtrl, NETPL_TICK * k);
 	}
+	Obj_Tick(e, NETPL_SLOT * k);
+}
+
+void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	for (int i = 0; i < PLAY_STEPS; i++) {
-		Obj_Tick(e, NETPL_SLOT * k);
+		NetPl_StepPart(e, in, local, replay, i);
 	}
 }
 

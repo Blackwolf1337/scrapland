@@ -3,10 +3,11 @@
  * Not in the original.
  *
  * The entity is stepped once per tick (NetPl_Step) with the input of that tick: the moves of the last frame before
- * it, the turns of the frames since the tick before averaged. The ticks come by a clock that follows the input tick time evenly (NetRepFollow), so they
- * fall on the frames in a steady rhythm. The drawn position runs one tick behind the stepped one: every frame the
- * slot of the entity is set to the part of the tick the clock is in, so cObjEntity_Update draws between the position
- * of the tick before and the new one at that part; a correction adds an offset that fades out (NetRepSmooth). The true
+ * it, the turns of the frames since the tick before averaged. The ticks come by a clock that follows the input tick
+ * time evenly (NetRepFollow), so they fall on the frames in a steady rhythm; a tick runs in its PLAY_STEPS slots as
+ * the clock passes them (the input with the first), as a single player's slots run. The drawn position runs one slot
+ * behind the stepped one: every frame the slot of the entity is set to the part of the slot the clock is in, so
+ * cObjEntity_Update draws between the position of the slot before and the new one at that part; a correction adds an offset that fades out (NetRepSmooth). The true
  * predicted position is kept apart and put back before each step.
  */
 #include <math.h>
@@ -41,6 +42,7 @@
 #define PLAY_DEATH_HIGH 900.0f
 #define PLAY_DEATH_TURN 0.35f			/* radians a second it goes round */
 #define PLAY_NAME "Me%u"
+#define PLAY_SLOT (1.0f / (NETREP_TICK_HZ * PLAY_STEPS))	/* s of a slot of the own entity */
 #define PLAY_CLOCK_JUMP 0.25			/* s: the input tick time further off is taken at once */
 #define PLAY_MAX_CATCHUP 8				/* ticks stepped in one frame at most; more ahead is a jump */
 #define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */
@@ -89,6 +91,7 @@ static struct {
 	vec3_t drawn;						/* where it was drawn at the end of the last tick */
 	vec3_t prevDrawn, prevAng, prevView;	/* and at the end of the tick before (the start of the frames' lerp) */
 	NetRepFollow clock;					/* the input tick time, s */
+	byte half;							/* the first slot of tick tick + 1 ran (with input) */
 	double clockNow;					/* the local time of its last step */
 	vec3_t lastServer;
 	int pending;						/* ticks stepped since the last ack */
@@ -343,6 +346,7 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 	}
 	/* the ticks from the record's on: the server ran them with no input since the switch (NetRepInBuf_Restart) */
 	play.tick = tick;
+	play.half = 0;
 	play.catchup = 1;
 	play.botStart = 0.0;
 	Con_Printf("play: own %s %s at %.0f %.0f %.0f (tick %u)\n", kind == NETREP_SHIP ? "ship" : "character", name,
@@ -416,11 +420,11 @@ static void Play_Draw(void) {
 	o->slotPos = play.drawn;
 	e->pos = d;
 	play.drawn = d;
-	o->slot->interval = 1.0f / NETREP_TICK_HZ;
+	o->slot->interval = PLAY_SLOT;
 	o->slot->time = o->slot->interval;
 }
 
-/* the frame's place in the tick: the lerp from the end of the tick before to the newest at part a of it */
+/* the frame's place in the slot: the lerp from the end of the slot before to the newest at part a of it */
 static void Play_DrawAt(float a) {
 	cEntity *e = play.e;
 	cObjEntity *o = Obj(e);
@@ -430,15 +434,44 @@ static void Play_DrawAt(float a) {
 	if (NetPl_Kind(e) == NETREP_CHAR) {
 		WChar(e)->slotView = play.prevView;
 	}
-	o->slot->interval = 1.0f / NETREP_TICK_HZ;
+	o->slot->interval = PLAY_SLOT;
 	o->slot->time = (1.0f - a) * o->slot->interval;
 }
 
-static void Play_Step(uint32_t tick, byte none) {
+/* a slot of tick (part 0 takes the input, part 1 ends the tick); drawn from the end of the slot before */
+static void Play_StepPart(uint32_t tick, int part) {
 	cEntity *e = play.e;
 	vec3_t view0 = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view : Obj(e)->ang;
 	vec3_t ang0 = Obj(e)->ang;
 
+	e->pos = play.truePos;
+	if (play.ahead != PLAY_AHEAD_NONE) {
+		Watch_ProxiesAt(((double)tick - 0.5 * (1 - part)) / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
+	}
+	NetPl_StepPart(e, &play.input, 1, 0, part);
+	Watch_ProxiesBack();
+	play.truePos = e->pos;
+	play.prevDrawn = play.drawn;
+	play.prevAng = ang0;
+	play.prevView = view0;
+	play.half = !part;
+	if (part) {
+		play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
+		Play_Record(tick);
+		play.tick = tick;
+		play.pending++;
+		NetRepSmooth_Step(&play.smooth, 1.0f / NETREP_TICK_HZ);
+	}
+	/* the view and angles drawn from the slot before */
+	Obj(e)->slotAng = ang0;
+	if (NetPl_Kind(e) == NETREP_CHAR) {
+		WChar(e)->slotView = view0;
+	}
+	Play_Draw();
+}
+
+/* the input of tick (the frames' controls since the tick before, none: no input) and its first slot */
+static void Play_Step(uint32_t tick, byte none) {
 	if (!none) {
 		NetPl_Input(&play.acc, &play.input);
 		play.held &= play.input.buttons;
@@ -452,27 +485,7 @@ static void Play_Step(uint32_t tick, byte none) {
 	}
 	play.input.tick = tick;
 	play.input.slot = (uint16_t)play.slot;
-	e->pos = play.truePos;
-	if (play.ahead != PLAY_AHEAD_NONE) {
-		Watch_ProxiesAt((double)tick / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
-	}
-	NetPl_Step(e, &play.input, 1, 0);
-	Watch_ProxiesBack();
-	play.truePos = e->pos;
-	play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
-	play.prevDrawn = play.drawn;
-	play.prevAng = ang0;
-	play.prevView = view0;
-	Play_Record(tick);
-	play.tick = tick;
-	play.pending++;
-	NetRepSmooth_Step(&play.smooth, 1.0f / NETREP_TICK_HZ);
-	/* the view and angles drawn from the tick before */
-	Obj(e)->slotAng = ang0;
-	if (NetPl_Kind(e) == NETREP_CHAR) {
-		WChar(e)->slotView = view0;
-	}
-	Play_Draw();
+	Play_StepPart(tick, 0);
 }
 
 /* the nearest proxy within 40000 units: a player's (player) or of no player, of a kind (0 any), standing still
@@ -648,11 +661,19 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	double want = Watch_InputTime(now, rtt, PLAY_LEAD + rttVar + (loss > 0.01f ? PLAY_LOSS_LEAD : 0.0));
 	double tt = NetRepFollow_Step(&play.clock, want, play.clock.have ? now - play.clockNow : 0.0);
 	play.clockNow = now;
-	uint32_t target = tt <= 0.0 ? 0 : (uint32_t)(tt * NETREP_TICK_HZ);
+	/* in slots (PLAY_STEPS a tick) */
+	uint32_t slots = tt <= 0.0 ? 0 : (uint32_t)(tt * NETREP_TICK_HZ * PLAY_STEPS);
+	uint32_t target = slots / PLAY_STEPS;
 	if (!play.tick || target > play.tick + PLAY_MAX_CATCHUP * 4 || target + PLAY_MAX_CATCHUP * 4 < play.tick) {
 		play.tick = target ? target - 1 : 0;
+		play.half = 0;
 	}
-	for (int n = 0; play.tick < target && (n < PLAY_MAX_CATCHUP || play.catchup); n++) {
+	for (int n = 0; play.tick * PLAY_STEPS + play.half < slots && (n < PLAY_MAX_CATCHUP * PLAY_STEPS || play.catchup);
+		n++) {
+		if (play.half) {
+			Play_StepPart(play.tick + 1, 1);
+			continue;
+		}
 		if (play.bot) {
 			Play_Bot(now);
 		}
@@ -662,7 +683,7 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	play.catchup = 0;
 	play.shownMs = (uint32_t)(Watch_ShownTime() * 1000.0);
 	if (play.e) {
-		Play_DrawAt((float)(tt * NETREP_TICK_HZ - (double)play.tick));
+		Play_DrawAt((float)(tt * NETREP_TICK_HZ * PLAY_STEPS - (double)(play.tick * PLAY_STEPS + play.half)));
 	}
 }
 
@@ -749,6 +770,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 	uint32_t replayed = 0;
 	if (err > PLAY_CORRECT_MIN) {
 		vec3_t before = play.truePos;
+		NetRepInput part = play.input;
 		/* the state of that tick with the server's position, velocity and angles, then the inputs after it */
 		PlayWeapKeep keep = { 0 };
 		Play_KeepWeapons(e, &keep, 0);
@@ -770,8 +792,18 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 			Play_Record(t);
 			replayed++;
 		}
+		/* and the first slot of the tick under way */
+		if (play.half) {
+			if (play.ahead != PLAY_AHEAD_NONE) {
+				Watch_ProxiesAt(((double)play.tick + 0.5) / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
+			}
+			NetPl_StepPart(e, &part, 1, 1, 0);
+			Watch_ProxiesBack();
+			play.input = part;
+		} else {
+			play.input.tick = play.tick;
+		}
 		Play_KeepWeapons(e, &keep, 1);
-		play.input.tick = play.tick;
 		play.truePos = e->pos;
 		NetRepSmooth_Correct(&play.smooth, &before.x, &play.truePos.x);
 		float dx = before.x - play.truePos.x, dy = before.y - play.truePos.y, dz = before.z - play.truePos.z;
@@ -834,6 +866,7 @@ void Play_Status(void) {
 void Play_Reset(void) {
 	Play_OwnRemove();
 	NetRepFollow_Init(&play.clock, PLAY_CLOCK_JUMP);
+	play.half = 0;
 	play.slot = -1;
 	play.player = -1;
 	play.started = 0;

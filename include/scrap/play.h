@@ -87,6 +87,9 @@ void NetPl_Apply(struct cEntity *e, const NetRepInput *in, byte local, byte repl
 /* one tick of a player's entity with the input: its actions (not when the input runs again for a correction) and
  * PLAY_STEPS slot ticks */
 void NetPl_Step(struct cEntity *e, const NetRepInput *in, byte local, byte replay);
+/* slot tick part (0 .. PLAY_STEPS - 1) of such a tick, the actions with part 0: the client steps a tick in parts as
+ * the frames pass its slots, as single player does */
+void NetPl_StepPart(struct cEntity *e, const NetRepInput *in, byte local, byte replay, int part);
 /* the controls of the client's own entity as the input of a frame, added with weight dt into sum (the averages of
  * the tick come from NetPl_Input) */
 typedef struct NetPlAccum {
