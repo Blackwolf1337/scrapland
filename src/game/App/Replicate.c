@@ -762,7 +762,10 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 		if ((e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR)) == NULL) {
 			return NULL;
 		}
-		WithLife_SetActCtrl(e, Faction_CharClass(i));
+		/* a level that loads no character scripts of its own (GDB) has not even the default class */
+		const char *cls = Faction_CharClass(i);
+		Faction_EnsureClass(cls);
+		WithLife_SetActCtrl(e, cls);
 		Rep_SetVarS(e, "TgType", "Green");
 		/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
 		Rep_SetVarS(e, "OnDeath", "");
