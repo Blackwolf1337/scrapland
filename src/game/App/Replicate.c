@@ -913,8 +913,9 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 		}
 		Rep_Disown(i, 0);
 	}
-	/* the player's own ship when it has one (include/scrap/travel.h), else a new one */
-	if ((ship = Faction_CallShip(i, &p, yaw)) == NULL && (ship = Travel_OwnShip(i, &p, yaw)) == NULL) {
+	/* the player's own ship when it has one (include/scrap/travel.h), else a new one (the coop story's: the party's
+	 * hangar ship, as single player's call) */
+	if ((ship = Faction_CallShip(i, &p, yaw)) == NULL && (Coop_On() || (ship = Travel_OwnShip(i, &p, yaw)) == NULL)) {
 		Native_SetFloat(&c[0], p.x);
 		Native_SetFloat(&c[1], p.y);
 		Native_SetFloat(&c[2], p.z);
@@ -994,6 +995,7 @@ static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 		pl->told = -2;
 		pl->boards++;
 		Con_Printf("instance: player %d into %s\n", i, name);
+		Coop_Boarded(i, 1);
 		return;
 	}
 	if (NetPl_Kind(e) != NETREP_SHIP || Veh(e)->speed > PLAY_LEAVE_SPEED) {
@@ -1018,6 +1020,7 @@ static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 	pl->told = -2;
 	pl->leaves++;
 	Con_Printf("instance: player %d out of %s\n", i, name);
+	Coop_Boarded(i, 0);
 }
 
 /* the ship stands near enough above the floor for a parking box under it (Parking.SetShipAsParked) */

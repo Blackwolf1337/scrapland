@@ -71,6 +71,7 @@
 #define CP_FIGHT_SIZE 250.0f		/* test: it fires when its aim is this near the target's middle */
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
+#define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones of the level */
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_LIFEBOAT "SLifeBoat<-<-<-<-<-0,0,0,0,0,0,1<-50<-0,0,0,0,0,0"	/* the hangar's spare ship (a test's ship) */
 
@@ -527,6 +528,25 @@ void Coop_Pass(void) {
 			cp.coverflow = 0;
 		}
 	}
+}
+
+void Coop_Boarded(int i, byte ship) {
+	static const char *const cb[2][2] = { { "SwitchCharMissionCallback", "SwitchCharMissionCallbackAux" },
+		{ "SwitchVehicleMissionCallback", "SwitchVehicleMissionCallbackAux" } };
+	byte called;
+	if (!Coop_On() || !Mode_Import("Parking")) {
+		Native_ErrClear();
+		return;
+	}
+	Players_Bind(i);
+	for (int k = 0; k < 2; k++) {
+		if (!Mode_CallIf("Parking", cb[ship != 0][k], &called)) {
+			Native_ErrPrint();
+		} else if (called) {
+			Con_Printf("coop: player %d %s a ship: Parking.%s\n", i, ship ? "into" : "out of", cb[ship != 0][k]);
+		}
+	}
+	Players_BindTurn();
 }
 
 /* ---- key names ---- */
@@ -2107,6 +2127,15 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 	char mod[CP_NAME];
 	nativeVal_t v, it;
 	int n = 0;
+	if (!strcmp(src, CP_FIGHT_RED)) {
+		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e && n < max; e = cEntity_Next(e)) {
+			if (Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && !Obj(e)->proxy &&
+				Players_Of(e) < 0 && Cp_Foe(e) && foes != 0) {
+				out[n++] = e;
+			}
+		}
+		return n;
+	}
 	Native_SetNone(&v);
 	Str_Copy(mod, src[0] ? src : "MissionsFuncs.currentTarget", sizeof(mod));
 	char *dot = strchr(mod, '.');
@@ -2247,8 +2276,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	double now = Instance_Time();
 	byte pulse = fmod(now, 2.0) < 1.0 / INSTANCE_TICK_HZ;
-	if (Cp_FightTargets("", all, CP_FIGHT_MAX, 1)) {
-		cp.pl[i].fightList[0] = 0;
+	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets) */
+	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" :
+		Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1) ? CP_FIGHT_RED : NULL;
+	if (foes) {
+		Str_Copy(cp.pl[i].fightList, foes, sizeof(cp.pl[i].fightList));
 		Cp_TestFight(i, in, back);
 		return;
 	}
@@ -2287,8 +2319,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	Str_Copy(cp.pl[i].autoAt, t->name, sizeof(cp.pl[i].autoAt));
 	cp.pl[i].autoSince = now;
-	cp.pl[i].autoUse = now + 2.0;
-	Travel_TestGoto(i, t->name, 0.0f, 250.0f);
+	/* a target without a use (the arrow over an item to take) is walked onto */
+	byte use = WLife(t)->arrow.canUse;
+	cp.pl[i].autoUse = use ? now + 2.0 : 0.0;
+	Travel_TestGoto(i, t->name, 0.0f, use ? 250.0f : 0.0f);
 }
 
 void Coop_TestInput(int i, NetRepInput *in, double back) {
@@ -2387,11 +2421,12 @@ byte Coop_Command(const char *line) {
 		nativeVal_t list, it;
 		char *dot = strchr(name, '.');
 		*dot = 0;
-		int p = Cp_Player(), n = Mode_ModGet(name, dot + 1, &list) ? Mode_Loop(&list) : -1;
+		int p = Cp_Player(), n = Mode_ModGet(name, dot + 1, &list) ? list.type == NV_STR ? 1 : Mode_Loop(&list) : -1;
 		cEntity *by = p >= 0 ? Players_Get(p) : NULL;
 		for (int k = 0; k < n; k++) {
 			Native_SetNone(&it);
-			cEntity *v = Native_SeqItem(&list, k, &it) && it.type == NV_STR ? World_FindEntity(Native_Text(&it)) : NULL;
+			cEntity *v = list.type == NV_STR ? World_FindEntity(Native_Text(&list)) : Native_SeqItem(&list, k, &it) &&
+				it.type == NV_STR ? World_FindEntity(Native_Text(&it)) : NULL;
 			if (v && Entity_IsType(v, TYEN_WITH_LIFE)) {
 				if (by) {
 					cVehicleAttack_HitBy(&WLife(v)->attack, by->name);
@@ -2428,6 +2463,32 @@ byte Coop_Command(const char *line) {
 		cp.pl[i].autoUse = 0.0;
 		cp.pl[i].fightAt[0] = 0;
 		Con_Printf("coop: player %d plays the mission's targets%s\n", i, !on ? ": off" : on == 2 ? ": fights only" : "");
+		return 1;
+	}
+	if (sscanf(line, "board %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		/* the member next to the nearest parked ship whose model has the text, and into it with its switch */
+		cEntity *e = Players_Get(i), *best = NULL;
+		float bestD = 0.0f;
+		for (cEntity *v = e ? cWorld_GetFirstEntity(g_pWorld) : NULL; v; v = cEntity_Next(v)) {
+			char *model = NULL, up[256];
+			if (!Entity_IsType(v, TYEN_CAR) || strncmp(v->name, "Parked", 6) || v->deadNode.target ||
+				WLife(v)->life <= 0.0f || Players_Of(v) >= 0 || !Entity_VarS(v, "Model", &model, 0) || !model) {
+				continue;
+			}
+			Str_Copy(up, model, sizeof(up));
+			crt_strupr(up);
+			float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+			if (strstr(up, name) && (!best || d < bestD)) {
+				best = v;
+				bestD = d;
+			}
+		}
+		if (best) {
+			Travel_TestGoto(i, best->name, 0.0f, 300.0f);
+			Rep_TestSwitch(i, 0);
+		} else {
+			Con_Printf("coop: no parked ship of %s for player %d\n", name, i);
+		}
 		return 1;
 	}
 	name[0] = 0;
