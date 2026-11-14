@@ -126,7 +126,7 @@ static void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	if (!far) {
 		return;
 	}
-	if (CGameModel_IsVisible(Obj_GetModel(far))) {
+	if (Players_SeesModel(Obj_GetModel(far))) {
 		float r = g_TrafficRemovalDist;
 		if (!(best >= r * r)) {
 			return;
@@ -240,7 +240,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	}
 	float r = g_TrafficFightingMaxDist;
 	float r2 = r * r;
-	if (!tm || CGameModel_IsVisible(tm) || CGameModel_IsVisible(Obj_GetModel(e)) ||
+	if (!tm || Players_SeesModel(tm) || Players_SeesModel(Obj_GetModel(e)) ||
 		!(Traffic_Dist2(Entity_GetPos(e, &tmp), up->x, up->y, up->z) > r2) ||
 		!(Traffic_Dist2(CGameModel_GetPos(tm, &tmp), up->x, up->y, up->z) > r2)) {
 		return Logic_ListNext(n);
@@ -308,7 +308,7 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 				if (!cAIVehicle_GetState(ai)) {
 					Traffic_Patrol(ai);
 				}
-				if (!CGameModel_IsVisible(Obj_GetModel(e))) {
+				if (!Players_SeesModel(Obj_GetModel(e))) {
 					continue;
 				}
 				cp = g_pWorld->camPos[g_pWorld->curCam];

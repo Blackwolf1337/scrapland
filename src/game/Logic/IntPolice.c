@@ -106,7 +106,7 @@ static void AICtrl_Belligerant(void *ctrl) {
 
 	for (n = Logic_ListFirst(g_pWorld->logic.genChars.police); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
-		if (CGameModel_IsVisible((CGameModel *)AICtrl_Model(e))) {
+		if (Players_SeesModel((CGameModel *)AICtrl_Model(e))) {
 			if (first) {
 				second = e;
 			} else {
@@ -132,7 +132,7 @@ static void AICtrl_Belligerant(void *ctrl) {
 	second = NULL;
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
-		if (!CGameModel_IsVisible((CGameModel *)AICtrl_Model(e))) {
+		if (!Players_SeesModel((CGameModel *)AICtrl_Model(e))) {
 			continue;
 		}
 		cBaseLocalLogic *l = e->lLogic;
@@ -338,7 +338,7 @@ void AICtrl_GearAttack(void *ctrl, cEntity *target, int seen) {
 	vec3_t t1, t2, t3;
 	float d1, d2, d;
 
-	if (self->attacking < 2 && AICtrl_Model(target) && CGameModel_IsVisible((CGameModel *)AICtrl_Model(target))) {
+	if (self->attacking < 2 && AICtrl_Model(target) && Players_SeesModel((CGameModel *)AICtrl_Model(target))) {
 		cEntity *gear = cEntityList_Nearest(self->gears, Entity_GetPos(target, &t1), target, &d1);
 		byte free = 0;
 		if (gear) {

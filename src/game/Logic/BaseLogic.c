@@ -200,7 +200,7 @@ static void Logic_ShowChar(Nto1Node *node, const char **names) {
 static void Logic_ShowChars(Nto1Node *node, const char **names, byte visible) {
 	for (; node; node = Logic_ListNext(node)) {
 		cEntity *e = node->data;
-		if (!visible || CGameModel_IsVisible(Obj_GetModel(e))) {
+		if (!visible || Players_SeesModel(Obj_GetModel(e))) {
 			Logic_ShowChar(node, names);
 		}
 	}
@@ -242,7 +242,7 @@ void Logic_ShowShips(void) {
 			continue;
 		}
 		CGameModel *m = Obj_GetModel(e);
-		if (m && CGameModel_IsVisible(m)) {
+		if (m && Players_SeesModel(m)) {
 			Logic_ShowShip(e);
 		}
 	}
@@ -254,7 +254,7 @@ static void Logic_ShowShipList(const char *name, byte visible) {
 
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
-		if (visible && !CGameModel_IsVisible(Obj_GetModel(e))) {
+		if (visible && !Players_SeesModel(Obj_GetModel(e))) {
 			continue;
 		}
 		Logic_ShowShip(Logic_AsCar(e));

@@ -266,6 +266,15 @@ byte cAICharGroup_GetReposPos(cAICharGroup *self, const vec3_t *pos, const char 
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
 	float best = FLT_MAX;
+	AICharViewer view;
+
+	AIChar_Viewer(pos, &view);
+	if (view.net) {
+		if (!view.has) {
+			return 0;
+		}
+		cam = view.pos;
+	}
 	int bestZone = 0, bestPoint = 0;
 	byte found = 0;
 
@@ -304,21 +313,21 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 	byte flag) {
 	byte good = 0, spare = 0, own = 0, front = 0;
 	int ownZone = 0, ownPoint = 0, spareZone = 0, sparePoint = 0, goodZone = 0, goodPoint = 0;
-	vec3_t fwd = {0.0f, 0.0f, 1.0f};
 	vec3_t look, v;
 	cEntity *hit;
 	int zi;
 
 	const char *name = ((cActCtrl *)WithLife_GetActCtrl(e))->cls->name;
-	cWorld *w = g_pWorld;
-	vec3_t cam = w->camPos[w->curCam];
-	cEntity *camEnt = World_FindEntity(cWorld_GetCamName(w, 0));
-	/* no place without the main camera entity (deleted by a script) */
-	if (!camEnt) {
+	AICharViewer view;
+	vec3_t at;
+
+	AIChar_Viewer(Entity_GetPos(e, &at), &view);
+	vec3_t cam = view.pos;
+	/* no place without the main camera entity (deleted by a script), or on the instance without a player */
+	if (!view.has) {
 		return 0;
 	}
-	/* of the camera entity: its angles */
-	Vec3_Rotate(&look, &fwd, &((cCamControl *)camEnt)->cam.rot);
+	look = view.look;
 	for (zi = 0; zi < self->numZones; zi++) {
 		if (!strcmp(name, self->zones[zi].name)) {
 			break;
@@ -373,7 +382,7 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 		v.y = p->pos.y - cam.y;
 		v.z = p->pos.z - cam.z;
 		byte inFront = !(Vec3_Angle(&v, &look) > AICG_PI2);
-		if (flag && (inFront || minDist * minDist > d) && CNodesWorld_PointSeen(g_NodesWorld, &p->pos)) {
+		if (flag && (inFront || minDist * minDist > d) && AIChar_ViewerSees(&view, &p->pos)) {
 			continue;
 		}
 		goodZone = zi;

@@ -288,7 +288,7 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 			return;
 		}
 		float d = dt;
-		if (!CGameModel_IsVisible(Obj_GetModel(p))) {
+		if (!Players_SeesModel(Obj_GetModel(p))) {
 			float cd = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(p, &tmp));
 			if (g_CharProcessReduction * g_CharProcessReduction > cd) {
 				d = dt * 5.0f;

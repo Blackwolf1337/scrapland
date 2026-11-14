@@ -3,6 +3,7 @@
  * include/scrap/players.h. Not in the original.
  */
 #include <float.h>
+#include <math.h>
 
 #include "scrap/alarm.h"
 #include "scrap/faction.h"
@@ -13,6 +14,8 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
+#include "scrap/scrapcollision.h"
+#include "scrap/scrapmodel.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -131,6 +134,49 @@ cEntity *Players_Nearest(const vec3_t *pos) {
 	}
 	cEntity *wanted = Players_NearestOf(pos, 1, &d);
 	return wanted && d < PLAYERS_WANTED_REACH * PLAYERS_WANTED_REACH ? wanted : Players_NearestOf(pos, 0, &d);
+}
+
+byte Players_LineOfSight(const vec3_t *at, const vec3_t *p) {
+	vec3_t eye = { at->x, at->y + PLAYERS_EYE, at->z };
+	return !Engine_TestLine(&eye, p, NULL, NULL);
+}
+
+void Players_Forward(cEntity *e, vec3_t *dir) {
+	float yaw = Entity_IsType(e, TYEN_WALKCHAR) ? WChar(e)->view.y : Obj(e)->ang.y;
+	*dir = (vec3_t){ -sinf(yaw), 0.0f, -cosf(yaw) };
+}
+
+byte Players_Sees(const vec3_t *p) {
+	if (!Players_Net()) {
+		return 0;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		cEntity *e = g_NetPlayers[i];
+		if (!e) {
+			continue;
+		}
+		float dx = p->x - e->pos.x, dz = p->z - e->pos.z, d = Players_DistSq(e, p);
+		if (d > PLAYERS_SEE_DIST * PLAYERS_SEE_DIST) {
+			continue;
+		}
+		if (d > PLAYERS_SEE_NEAR * PLAYERS_SEE_NEAR) {
+			vec3_t f;
+			float h = sqrtf(dx * dx + dz * dz);
+			Players_Forward(e, &f);
+			if (h > 0.0f && (dx * f.x + dz * f.z) / h < PLAYERS_SEE_COS) {
+				continue;
+			}
+		}
+		if (Players_LineOfSight(&e->pos, p)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+byte Players_SeesModel(const CGameModel *m) {
+	vec3_t p;
+	return Players_Net() ? Players_Sees(CGameModel_GetPos(m, &p)) : CGameModel_IsVisible(m);
 }
 
 float Players_MinDistSq(const vec3_t *pos) {
