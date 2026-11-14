@@ -399,10 +399,38 @@ static void Input_SetToDefine(int player, int action, uint32_t set) {
 }
 
 /* the lines "set.action.player = entry" of the device up to "name = <end>" */
+/* not in the original: the bindings of player 0 the game adds to the original's defaults, by entry name; a config
+ * saved before such an action existed gets them at its load, where the entry is free in that set */
+static const struct {
+	const char *entry;
+	int set, action;
+} g_AddedDefaults[] = {
+	{ "F7", ACTSET_WALK, WALK_COOP_LEADER },
+};
+#define ADDED_DEFAULTS ((int)(sizeof(g_AddedDefaults) / sizeof(g_AddedDefaults[0])))
+
+void Device_AddedDefaults(cAbstractIDevice *d, const byte *seen) {
+	for (int k = 0; k < ADDED_DEFAULTS; k++) {
+		if (seen && seen[k]) {
+			continue;
+		}
+		for (int e = 0; e < d->nEntries; e++) {
+			if (!crt_stricmp(g_AddedDefaults[k].entry, InputDev_GetEntryName(d, e))) {
+				if (Dev_Entry(d, e, g_AddedDefaults[k].set)->sets[g_AddedDefaults[k].set].action == -1) {
+					cAbstractIDevice_SetEntry(d, e, g_AddedDefaults[k].set, 0, g_AddedDefaults[k].action, 0);
+				}
+				break;
+			}
+		}
+	}
+}
+
 void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
 	cFuncGvarDevices *self = (cFuncGvarDevices *)elem;
 	char line[0x200];
 	char *value;
+
+	byte seen[ADDED_DEFAULTS] = { 0 };
 
 	cAbstractIDevice_ClearEntries(self->device);
 	while (crt_fgets(line, sizeof(line), f)) {
@@ -456,7 +484,11 @@ void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
 			continue;
 		}
 		InputDev_SetEntry(self->device, e, set, player, a, 0);
+		for (int k = 0; k < ADDED_DEFAULTS; k++) {
+			seen[k] |= g_AddedDefaults[k].set == (int)set && g_AddedDefaults[k].action == (int)a;
+		}
 	}
+	Device_AddedDefaults(self->device, seen);
 }
 
 /* a frame: actions shifted, devices read, the bound functions and the inactivity */

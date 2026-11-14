@@ -15,6 +15,7 @@
 #include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/entity.h"
+#include "scrap/faction.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
 #include "scrap/graphic2d.h"
@@ -48,15 +49,21 @@
 #define CP_VOICES 4
 #define CP_OPTS_MSG (8 + CP_NAME + COOP_OPTS * (COOP_OPT_TEXT + 2))
 #define COOP_CAM "CoopCam"
+#define COOP_STANDIN "CoopStandIn"
 #define CP_MENU_MSG 8192			/* bytes of a menu message (the hangar's save variables) */
 #define CP_MENU_TITLE 1024
 #define CP_HANGAR "Hangar."			/* the save variables of the ship editor */
 #define CP_ANSWER_SECS 2.0			/* test: a question's answer after this */
+#define CP_CONV_SECS 3.0			/* test: the conversor's pick after this */
+#define CP_CHECKPOINT "CheckPoint"	/* the checkpoint of a race of RaceMaker */
+#define CP_RACE_GAP 2.5				/* seconds: test: the race's ship at the next checkpoint after this */
 #define CP_LIFEBOAT "SLifeBoat<-<-<-<-<-0,0,0,0,0,0,1<-50<-0,0,0,0,0,0"	/* the hangar's spare ship (a test's ship) */
 
 /* the variables of a player, not of the story (where it goes on, its character, money and alarm, its time) */
 static const char *const cp_local[] = { "Map", "Spawn", "ComeFrom", "PrevMap", "Char", "AcBatteries", "Money", "Alarm",
 	"GameplayTime", NULL };
+/* the variables of the story the HUD shows: the clients get them (and their globals of the same name) */
+static const char *const cp_hud[] = { "EnergyBarActive", "SpecialActionActive", NULL };
 /* the way point of a chapter's travel, given to the start of the target level (its scripts read them at once) */
 static const char *const cp_entry[] = { "Map", "Spawn", "ComeFrom", "PrevMap", NULL };
 #define CP_ENTRY "Coop.Entry."
@@ -81,6 +88,7 @@ static struct {
 	byte hold;						/* test: the changes wait */
 	byte started;					/* the level's first tick ran */
 	byte waiting;					/* the world waits for its first member (its time stands) */
+	cEntity *standIn;				/* the scripts' player of the level's start without a member (Coop_StandIn) */
 	int ndirty;
 	struct {
 		char name[CP_NAME];
@@ -108,7 +116,20 @@ static struct {
 		byte menu;					/* the menu it answers (COOP_MENU_*), 0 */
 		char held[CP_NAME];			/* its character the scripts took (UsrControl -1), "" */
 		char yes[CP_NAME], no[CP_NAME];
+		uint16_t press;				/* test: buttons pressed (NETREP_IN_*) for pressTicks more ticks */
+		int pressTicks;
+		float race;					/* test: its ship flies to the race's checkpoint (0 off) */
+		vec3_t raceAt;				/* where that checkpoint was */
+		double raceSince;			/* since when (instance time) */
 	} pl[PLAYERS_MAX];
+	char targets[COOP_TARGETS * (CP_NAME + 4)];	/* the targets told last (names and slots), "" */
+	uint64_t targetsAt;				/* when (instance ms) */
+	char ctargets[COOP_TARGETS * CP_NAME];	/* client: the names of its copies it set as the targets */
+	int conv;						/* the member in a character conversor, -1 */
+	char convMachine[CP_NAME];		/* that conversor */
+	byte convAsked;					/* its interface is on the member's client (the machine waits) */
+	uint32_t mainChars;				/* the main characters of the scripts made so far (their names) */
+	char mainChar[CP_NAME];
 	char via[CP_NAME];				/* the function of a menu's answer that runs ("" none) */
 	struct {						/* client: the options of the instance */
 		char ent[CP_NAME];
@@ -129,7 +150,10 @@ static struct {
 	double cmenuAt;
 	double sceneAt;					/* client: when it began */
 	char notice[256];
-} cp = { .scene = -1, .loading = -1 };
+} cp = { .scene = -1, .loading = -1, .conv = -1 };
+
+static void Cp_ToClient(int i, const uint8_t *buf, int size);
+static void Cp_ToAll(const uint8_t *buf, int size);
 
 static byte Cp_InList(const char *const *list, const char *s) {
 	for (; *list; list++) {
@@ -175,7 +199,30 @@ static int Cp_DirtyAt(const char *name) {
 	return -1;
 }
 
+/* a variable of the story the HUD shows to client i (-1: all here) */
+static void Cp_HudVar(int i, const char *name) {
+	uint8_t buf[2 * CP_NAME + 8];
+	NetRepBuf w;
+	const char *v = SaveVar_Get(name);
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_HUDVAR);
+	NetRep_PutStr(&w, name);
+	NetRep_PutStr(&w, v ? v : "0");
+	if (w.bad) {
+		return;
+	}
+	if (i < 0) {
+		Cp_ToAll(buf, w.size);
+	} else {
+		Cp_ToClient(i, buf, w.size);
+	}
+}
+
 void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
+	if (cp.on && Cp_InList(cp_hud, name)) {
+		Cp_HudVar(-1, name);
+	}
 	if (!cp.on || cp.applying || !Cp_Story(name)) {
 		return;
 	}
@@ -214,7 +261,7 @@ void Coop_LevelStart(const char *level) {
 	for (int pos = 0; CoordKv_Next(text, n, &pos, key, sizeof(key), val, sizeof(val)); count++) {
 		SaveVar_Set(key, val);
 	}
-	/* the level a chapter's travel came to: its way point as the single player's level start has it */
+	/* the level a chapter's or a mission's travel came to: its way point as the single player's level start has it */
 	const char *map = SaveVar_Get(CP_ENTRY "Map");
 	const char *s = map ? strrchr(map, '/') : NULL, *here = level ? strrchr(level, '/') : NULL;
 	if (s && here && !crt_stricmp(s, here)) {
@@ -329,9 +376,11 @@ void Coop_SceneCamera(void) {
 	cWorld_SetCam(g_pWorld, 0, COOP_CAM);
 }
 
-static void Cp_ToClient(int i, const uint8_t *buf, int size);
+static void Cp_TellTargets(void);
 static void Cp_MenuFunc(int i, const char *fn);
 static void Cp_ShipEdited(int i, NetRepReader *r);
+static void Cp_SputnikDone(int i, NetRepReader *r);
+static void Cp_ConvPicked(int i, const char *cls);
 
 /* the entity player e would use: the one it talks to, else the one in front of it with a use arrow */
 static cEntity *Cp_UseTarget(cEntity *e) {
@@ -404,9 +453,70 @@ void Coop_Pass(void) {
 	if (Coop_On()) {
 		/* nothing draws the talk scorer here: its time and the end of a remote communication */
 		Scorer_TalkTick(1.0f / INSTANCE_TICK_HZ);
+		if (cp.conv >= 0 && cp.convAsked && Rep_PlayerConn(cp.conv) < 0) {
+			/* the member left with the conversor's interface open: as its Escape */
+			Cp_ConvPicked(cp.conv, "");
+		}
 		Cp_Send();
 		Cp_TellOptions();
+		Cp_TellTargets();
 	}
+}
+
+/* the mission's targets to the clients here when they changed (or every COOP_TARGETS_MS: a proxy of one came into a
+ * client's interest since) */
+static void Cp_TellTargets(void) {
+	uint8_t buf[16 + COOP_TARGETS * (CP_NAME + 4)];
+	char sig[sizeof(cp.targets)];
+	const char *names[COOP_TARGETS];
+	nativeVal_t cur, list, it[COOP_TARGETS];
+	NetRepBuf w;
+	int n = 0, len = 0;
+	byte listed = 0;
+	Native_SetNone(&cur);
+	Native_SetNone(&list);
+	if (Mode_ModGet("MissionsFuncs", "currentTarget", &cur) && cur.type == NV_STR && Native_Text(&cur)[0]) {
+		names[n++] = Native_Text(&cur);
+	} else if (Mode_ModGet("MissionsFuncs", "targetsList", &list)) {
+		listed = 1;
+		int k = Mode_Loop(&list);
+		for (int j = 0; j < k && n < COOP_TARGETS; j++) {
+			Native_SetNone(&it[n]);
+			if (Native_SeqItem(&list, j, &it[n]) && it[n].type == NV_STR) {
+				names[n] = Native_Text(&it[n]);
+				n++;
+			} else {
+				Native_Free(&it[n]);
+			}
+		}
+	}
+	Native_ErrClear();
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_TARGETS);
+	NetRep_PutU8(&w, (uint32_t)n);
+	sig[0] = 0;
+	for (int k = 0; k < n; k++) {
+		int slot = Rep_EntitySlot(World_FindEntity(names[k]));
+		NetRep_PutStr(&w, names[k]);
+		NetRep_PutU16(&w, slot < 0 ? NETREP_NO_SLOT : (uint32_t)slot);
+		len += Str_PrintfQuiet(sig + len, (int)sizeof(sig) - len, "%s:%d,", names[k], slot);
+		len = len < (int)sizeof(sig) ? len : (int)sizeof(sig) - 1;
+	}
+	uint64_t now = (uint64_t)(Instance_Time() * 1000.0);
+	if (!w.bad && (strcmp(sig, cp.targets) || now - cp.targetsAt >= COOP_TARGETS_MS)) {
+		if (strcmp(sig, cp.targets)) {
+			Con_Printf("coop: the mission's targets: %s\n", sig[0] ? sig : "none");
+		}
+		Str_Copy(cp.targets, sig, sizeof(cp.targets));
+		cp.targetsAt = now;
+		Cp_ToAll(buf, w.size);
+	}
+	for (int k = 0; listed && k < n; k++) {
+		Native_Free(&it[k]);
+	}
+	Native_Free(&cur);
+	Native_Free(&list);
 }
 
 void Coop_BeforeUse(int i, cEntity *t) {
@@ -457,6 +567,17 @@ byte Coop_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 		cp.pl[i].menu = 0;
 		if (kind == COOP_MENU_SHIPEDIT) {
 			Cp_ShipEdited(i, &r);
+			return 1;
+		}
+		if (kind == COOP_MENU_SPUTNIK) {
+			Cp_SputnikDone(i, &r);
+			return 1;
+		}
+		if (kind == COOP_MENU_CONV) {
+			NetRep_GetStr(&r, ent, sizeof(ent));
+			if (!r.bad && i == cp.conv) {
+				Cp_ConvPicked(i, ent);
+			}
 			return 1;
 		}
 		int yes = (int)NetRep_GetU8(&r);
@@ -681,7 +802,34 @@ static void Cp_Reset(const char *map) {
 	}
 }
 
+/* the video the scripts set for the level change (Scrap.Set("PlayVideo"), a mission's end) to the client of member
+ * i (-1: all here): it plays it before its next level, as the single player's level load does */
+static void Cp_Video(int i) {
+	uint8_t buf[CP_NAME * 2 + 8];
+	nativeVal_t v;
+	NetRepBuf w;
+	Native_SetNone(&v);
+	if (Native_GVarGet("PlayVideo", &v) && v.type == NV_STR && Native_Text(&v)[0]) {
+		NetRepBuf_Init(&w, buf, sizeof(buf));
+		NetRep_PutU8(&w, COOP_MSG);
+		NetRep_PutU8(&w, COOP_Y_VIDEO);
+		NetRep_PutStr(&w, Native_Text(&v));
+		if (!w.bad) {
+			if (i < 0) {
+				Cp_ToAll(buf, w.size);
+			} else {
+				Cp_ToClient(i, buf, w.size);
+			}
+			Con_Printf("coop: the video %s to %s\n", Native_Text(&v), i < 0 ? "the members here" : "the member");
+		}
+		Mode_GVarSetS("PlayVideo", "");
+	}
+	Native_ErrClear();
+	Native_Free(&v);
+}
+
 byte Coop_QLoad(const char *map) {
+	char key[CP_NAME];
 	if (!Coop_On()) {
 		return 0;
 	}
@@ -702,16 +850,16 @@ byte Coop_QLoad(const char *map) {
 	}
 	const char *spawn = SaveVar_Get("Spawn");
 	byte party = CoordCoop_Chapter(level) || CoordCoop_Chapter(Instance_Level());
-	if (party) {
-		char key[CP_NAME];
-		for (int k = 0; cp_entry[k]; k++) {
-			const char *v = SaveVar_Get(cp_entry[k]);
-			Str_PrintfQuiet(key, sizeof(key), CP_ENTRY "%s", cp_entry[k]);
-			SaveVar_Set(key, !strcmp(cp_entry[k], "Map") ? map : v ? v : "");
-		}
+	/* the way point goes with the story: the target level's start reads it as the single player's (its race and
+	 * arrow are placed at the spawn, Coop_StandIn) */
+	for (int k = 0; cp_entry[k]; k++) {
+		const char *v = SaveVar_Get(cp_entry[k]);
+		Str_PrintfQuiet(key, sizeof(key), CP_ENTRY "%s", cp_entry[k]);
+		SaveVar_Set(key, !strcmp(cp_entry[k], "Map") ? map : v ? v : "");
 	}
 	/* the story of now first: the target instance starts with it */
 	Cp_Send();
+	Cp_Video(party ? -1 : i);
 	Con_Printf("coop: mission level change of player %d to %s (%s)%s\n", i, level, spawn ? spawn : "", party ?
 		", the party goes along" : "");
 	if (party) {
@@ -908,6 +1056,7 @@ void Coop_ScenePlay(const char *cls) {
 		return;
 	}
 	cp.inScene = 1;
+	Input_SelectActionSetNamed("");
 	cp.serial++;
 	cp.scenePlayer = Cp_Player();
 	cp.scene = -1;
@@ -947,6 +1096,70 @@ void Coop_Spawned(cEntity *e) {
 	}
 }
 
+void Coop_StandIn(byte on) {
+	vec3_t p;
+	float yaw = 0.0f;
+	if (!on) {
+		if (cp.standIn && World_FindEntity(COOP_STANDIN) == cp.standIn) {
+			cEntity_Del(cp.standIn);
+		}
+		cp.standIn = NULL;
+		return;
+	}
+	if (!Coop_On() || Players_Any()) {
+		return;
+	}
+	/* where the single player would stand: the way point's spawn, else the level's start */
+	const char *spawn = SaveVar_Get("Spawn");
+	char found[64];
+	vec3_t ang;
+	if (spawn && spawn[0]) {
+		DummySearch_Start(spawn, 1);
+	}
+	if (spawn && spawn[0] && DummySearch_NextEuler(found, sizeof(found), &p, &ang)) {
+		yaw = ang.y + M_PI_F;
+	} else if (!Coop_Spawn(-1, &p, &yaw)) {
+		return;
+	}
+	cp.standIn = cWorld_CreateEntity(g_pWorld, COOP_STANDIN, p.x, p.y, p.z, TYEN_WALKCHAR);
+	if (cp.standIn) {
+		vec3_t ang = { 0.0f, yaw, 0.0f };
+		Faction_EnsureClass("Dtritus");
+		WithLife_SetActCtrl(cp.standIn, "Dtritus");
+		Obj_SetAng(cp.standIn, &ang);
+		Con_Printf("coop: a stand-in player for the level's start at %.0f %.0f %.0f\n", (double)p.x, (double)p.y,
+			(double)p.z);
+	}
+}
+
+cEntity *Coop_StandInEntity(void) {
+	return cp.standIn;
+}
+
+const char *Coop_MainCharName(void) {
+	int i = Coop_On() ? Players_Bound() : PLAYERS_NONE;
+	if (i == PLAYERS_NONE) {
+		return NULL;
+	}
+	Str_PrintfQuiet(cp.mainChar, sizeof(cp.mainChar), REP_PLAYER_PREFIX "%d_c%u", i, ++cp.mainChars);
+	return cp.mainChar;
+}
+
+byte Coop_Adopts(int i, cEntity *e) {
+	int kind = Coop_On() ? NetPl_Kind(e) : 0;
+	if ((kind != NETREP_CHAR && kind != NETREP_SHIP) || WLife(e)->life <= 0) {
+		return 0;
+	}
+	cActCtrl *a = WLife(e)->actCtrl;
+	const char *cls = a && a->cls ? a->cls->name : "";
+	if (kind == NETREP_CHAR) {
+		Faction_SetChar(i, cls);
+		Coop_Spawned(e);
+	}
+	Con_Printf("coop: player %d plays as %s (%s), a character of the scripts\n", i, e->name, cls);
+	return 1;
+}
+
 void Coop_Joined(int i) {
 	static uint8_t buf[CP_SCENE_MSG];
 	nativeVal_t h;
@@ -955,6 +1168,9 @@ void Coop_Joined(int i) {
 	}
 	cp.pl[i].menu = 0;
 	cp.pl[i].held[0] = 0;
+	for (int k = 0; cp_hud[k]; k++) {
+		Cp_HudVar(i, cp_hud[k]);
+	}
 	if (cp.waiting) {
 		cp.waiting = 0;
 		Timer_SetSpeed(&g_pWorld->timer, 1.0f);
@@ -1002,6 +1218,10 @@ int Coop_HeldPlayer(cEntity *e) {
 	return -1;
 }
 
+int Coop_UsrRead(int slot) {
+	return Coop_On() && slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX ? 0 : slot;
+}
+
 int Coop_UsrSlot(cEntity *e, int old, int slot) {
 	if (!Coop_On()) {
 		return slot;
@@ -1015,6 +1235,9 @@ int Coop_UsrSlot(cEntity *e, int old, int slot) {
 	}
 	if (slot < 0 || slot >= MAX_LOCAL_PLAYERS) {
 		return slot;
+	}
+	if (old >= PLAYERS_NET_SLOT && old < PLAYERS_NET_SLOT + PLAYERS_MAX) {
+		return old;		/* a member's own (the scripts read its slot as 0, Coop_UsrRead) */
 	}
 	int i = Coop_HeldPlayer(e);
 	if (i < 0) {
@@ -1081,6 +1304,7 @@ void Coop_SceneEnd(void) {
 		Cp_Gather();
 		cp.inScene = 0;
 		cp.scene = -1;
+		Input_SelectActionSetNamed("");
 	}
 	cp.endingSerial = 0;
 	Players_BindTurn();
@@ -1248,6 +1472,10 @@ byte Coop_ShipEditAway(void) {
 	return i >= 0 && cp.pl[i].menu == COOP_MENU_SHIPEDIT;
 }
 
+const char *Coop_ActionSet(const char *name) {
+	return !Coop_On() ? name : cp.inScene ? "Inactive" : "Walk";
+}
+
 byte Coop_KeepTime(void) {
 	return Coop_On();
 }
@@ -1322,37 +1550,260 @@ static void Cp_MenuFunc(int i, const char *fn) {
 	Players_BindTurn();
 }
 
-/* player i closed the ship editor: its hangar into the story, its money, the ship on the platform as the editor's end
- * leaves it, then the editor's callback of the scripts */
-static void Cp_ShipEdited(int i, NetRepReader *r) {
-	nativeVal_t cb, args[2];
+/* player i's money and hangar from its client into the story (a menu of the hangar closed there): its money, -1 for a
+ * bad message; player i stays bound */
+static int Cp_HangarBack(int i, NetRepReader *r) {
 	int money = (int)NetRep_GetU32(r);
 	if (r->bad) {
-		return;
+		return -1;
 	}
 	Players_Bind(i);
 	Cp_GetVars(r, 0);
 	g_pWorld->money = money;
+	return money;
+}
+
+/* the function a module's variable holds (a menu's callback of the scripts) with the menu's id 0 and control "" when
+ * args; then None in it with clear */
+static void Cp_MenuCallback(const char *mod, const char *var, byte args, byte clear) {
+	nativeVal_t cb, a[2];
+	Native_SetNone(&cb);
+	if (Mode_ModGet(mod, var, &cb) && cb.type != NV_NONE) {
+		Native_SetInt(&a[0], 0);
+		Native_SetStr(&a[1], "");
+		if (clear) {
+			nativeVal_t none;
+			Native_SetNone(&none);
+			Mode_SetModVar(mod, var, &none);
+		}
+		if (!Mode_CallArgs(&cb, NULL, args ? a : NULL, args ? 2 : 0)) {
+			Native_ErrPrint();
+		}
+		Native_Free(&a[1]);
+	}
+	Native_ErrClear();
+	Native_Free(&cb);
+}
+
+/* player i closed the ship editor: its hangar into the story, its money, the ship on the platform as the editor's end
+ * leaves it, then the editor's callback of the scripts */
+static void Cp_ShipEdited(int i, NetRepReader *r) {
+	int money = Cp_HangarBack(i, r);
+	if (money < 0) {
+		return;
+	}
 	if (!Junkyard_PlatformShip()) {
 		Native_ErrPrint();
 	}
 	const char *cur = SaveVar_Get(CP_HANGAR "iHangarShip");
 	Con_Printf("coop: player %d closed the ship editor (hangar %s, money %d)\n", i, cur ? cur : "-", money);
-	Native_SetNone(&cb);
-	if (Mode_ModGet("ShipEdit", "EndShipEditCallBack", &cb) && cb.type != NV_NONE) {
-		Native_SetInt(&args[0], 0);
-		Native_SetStr(&args[1], "");
-		if (!Mode_CallArgs(&cb, NULL, args, 2)) {
-			Native_ErrPrint();
-		}
-		Native_Free(&args[1]);
-	}
-	Native_ErrClear();
-	Native_Free(&cb);
+	Cp_MenuCallback("ShipEdit", "EndShipEditCallBack", 1, 0);
 	Players_BindTurn();
 }
 
+byte Coop_Warning(const char *text) {
+	uint8_t buf[CP_MENU_TITLE + 16];
+	NetRepBuf w;
+	if (!Coop_On()) {
+		return 0;
+	}
+	int i = Cp_Player(), n = (int)strlen(text);
+	if (i < 0 || Rep_PlayerConn(i) < 0) {
+		return 1;
+	}
+	n = n > CP_MENU_TITLE ? CP_MENU_TITLE : n;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_MENU);
+	NetRep_PutU8(&w, COOP_MENU_WARNING);
+	NetRep_PutU16(&w, (uint32_t)n);
+	CoordMsg_PutBytes(&w, text, n);
+	Cp_ToClient(i, buf, w.size);
+	Con_Printf("coop: a text box for player %d: %.60s\n", i, text);
+	return 1;
+}
+
+byte Coop_SputnikOpen(void) {
+	static uint8_t buf[CP_MENU_MSG];
+	NetRepBuf w;
+	int i = Coop_On() ? Cp_Player() : -1;
+	if (i < 0 || Rep_PlayerConn(i) < 0) {
+		return 0;
+	}
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_MENU);
+	NetRep_PutU8(&w, COOP_MENU_SPUTNIK);
+	NetRep_PutU32(&w, (uint32_t)Players_Money(i));
+	Cp_PutVars(&w, 1);
+	if (w.bad) {
+		return 0;
+	}
+	cp.pl[i].menu = COOP_MENU_SPUTNIK;
+	Cp_ToClient(i, buf, w.size);
+	Con_Printf("coop: Sputnik's hangar screen opens on the client of player %d\n", i);
+	return 1;
+}
+
+/* player i closed Sputnik's screen: its hangar and money, then the callback of the scripts (once) */
+static void Cp_SputnikDone(int i, NetRepReader *r) {
+	int money = Cp_HangarBack(i, r);
+	if (money < 0) {
+		return;
+	}
+	const char *cur = SaveVar_Get(CP_HANGAR "iHangarShip");
+	Con_Printf("coop: player %d closed Sputnik's screen (hangar %s, money %d)\n", i, cur ? cur : "-", money);
+	Cp_MenuCallback("SputnikInterface", "EndSputnikCallBack", 0, 1);
+	Players_BindTurn();
+}
+
+/* the machine of the member's conversor runs (1) or waits for its pick (0) */
+static void Cp_ConvMachine(byte run) {
+	cEntity *m = World_FindEntity(cp.convMachine);
+	double speed = run ? 1.0 : 0.0;
+	if (m) {
+		Entity_VarF(m, "TimeSpeed", &speed, 1);
+	}
+}
+
+void Coop_ConvEnter(void) {
+	nativeVal_t c;
+	int i = Coop_On() ? Players_Bound() : PLAYERS_NONE;
+	if (i == PLAYERS_NONE) {
+		return;
+	}
+	Native_SetNone(&c);
+	if (Mode_ModGet("CharConversor", "_charName", &c) && c.type == NV_STR) {
+		cp.conv = i;
+		cp.convAsked = 0;
+		Str_Copy(cp.convMachine, Native_Text(&c), sizeof(cp.convMachine));
+		Con_Printf("coop: player %d enters the conversor %s\n", i, cp.convMachine);
+	}
+	Native_ErrClear();
+	Native_Free(&c);
+}
+
+byte Coop_ConvMenu(void) {
+	static uint8_t buf[CP_MENU_MSG];
+	NetRepBuf w;
+	int i = Coop_On() ? cp.conv : -1;
+	if (i < 0) {
+		return 0;
+	}
+	if (Rep_PlayerConn(i) < 0) {
+		return 1;
+	}
+	const char *avl = SaveVar_Get("Conversor.AvailableChars");
+	cEntity *e = Players_Get(i);
+	cActCtrl *a = e && Entity_IsType(e, TYEN_WITH_LIFE) ? WLife(e)->actCtrl : NULL;
+	int n = avl ? (int)strlen(avl) : 0;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_MENU);
+	NetRep_PutU8(&w, COOP_MENU_CONV);
+	NetRep_PutStr(&w, a && a->cls ? a->cls->name : "Dtritus");
+	NetRep_PutU16(&w, (uint32_t)n);
+	CoordMsg_PutBytes(&w, avl ? avl : "", n);
+	if (w.bad) {
+		return 1;
+	}
+	/* the menu's bookkeeping of the single player (the mode and time to go back to), the machine waits */
+	Players_Bind(i);
+	if (!Mode_Import("Menu") || !PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L)) {
+		Native_ErrPrint();
+	}
+	cp.pl[i].menu = COOP_MENU_CONV;
+	cp.convAsked = 1;
+	Cp_ConvMachine(0);
+	Cp_ToClient(i, buf, w.size);
+	Con_Printf("coop: the conversor's interface opens on the client of player %d\n", i);
+	return 1;
+}
+
+/* player i picked a class in the conversor (cls "": none), as the single player's Convert and Escape run */
+static void Cp_ConvPicked(int i, const char *cls) {
+	char k[CP_NAME + 8];
+	nativeVal_t v;
+	Players_Bind(i);
+	cp.convAsked = 0;
+	Cp_ConvMachine(1);
+	Con_Printf("coop: player %d picks %s in the conversor\n", i, cls[0] ? cls : "nothing");
+	Str_PrintfQuiet(k, sizeof(k), "Char_%s", cls);
+	Native_SetStr(&v, k);
+	byte ok = Mode_Import("CharConversor") && (cls[0] ? Mode_SetModVar("CharConversor", "KONTROL", &v) &&
+		PORT_CALL(CharConversor, ConvertExecute, NULL, "") : PORT_CALL(CharConversor, ExitCharConversor, NULL, "is", 0L, ""));
+	if (!ok) {
+		Native_ErrPrint();
+	}
+	Native_Free(&v);
+	Players_BindTurn();
+}
+
+void Coop_ConvEnd(void) {
+	if (Coop_On() && cp.conv >= 0) {
+		Players_Bind(cp.conv);
+		cp.conv = -1;
+	}
+}
+
 /* ---- tests ---- */
+
+/* test: player i's ship along the race route, checkpoint by checkpoint: CP_RACE_GAP seconds after RaceMaker's
+ * checkpoint came to a place (it moves on when taken) the ship is put there, as a pilot that knows the route (the
+ * streets of a level have no straight line between two checkpoints); the race's own take of the checkpoint, its
+ * count down and its score do the rest */
+static void Cp_TestRace(int i) {
+	cEntity *e = Players_Get(i), *c = World_FindEntity(CP_CHECKPOINT);
+	if (!e || !c || NetPl_Kind(e) != NETREP_SHIP) {
+		return;
+	}
+	vec3_t *at = &cp.pl[i].raceAt;
+	double now = Instance_Time();
+	if (at->x != c->pos.x || at->y != c->pos.y || at->z != c->pos.z) {
+		*at = c->pos;
+		cp.pl[i].raceSince = now;
+		Con_Printf("coop: player %d: race checkpoint at %.0f %.0f %.0f\n", i, (double)at->x, (double)at->y, (double)at->z);
+	}
+	if (now - cp.pl[i].raceSince < CP_RACE_GAP) {
+		return;
+	}
+	cp.pl[i].raceSince = now;
+	e->pos = c->pos;
+	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+}
+
+void Coop_TestInput(int i, NetRepInput *in) {
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return;
+	}
+	if (cp.pl[i].race > 0.0f) {
+		Cp_TestRace(i);
+	}
+	if (cp.pl[i].pressTicks <= 0) {
+		return;
+	}
+	in->buttons |= cp.pl[i].press;
+	cp.pl[i].pressTicks--;
+}
+
+/* the buttons of a test press: act (the action), act2 (the possession), act3 (the use), lock */
+static uint16_t Cp_Buttons(const char *names) {
+	static const struct {
+		const char *name;
+		uint16_t bit;
+	} bits[] = { { "act", NETREP_IN_ACT }, { "act2", NETREP_IN_ACT2 }, { "act3", NETREP_IN_ACT3 },
+		{ "lock", NETREP_IN_LOCK } };
+	uint16_t b = 0;
+	for (int k = 0; k < (int)(sizeof(bits) / sizeof(bits[0])); k++) {
+		const char *at = strstr(names, bits[k].name);
+		size_t n = strlen(bits[k].name);
+		while (at && ((at > names && at[-1] != ',') || (at[n] && at[n] != ','))) {
+			at = strstr(at + 1, bits[k].name);
+		}
+		b |= at ? bits[k].bit : 0;
+	}
+	return b;
+}
 
 byte Coop_Command(const char *line) {
 	char name[CP_NAME], val[256];
@@ -1388,6 +1839,24 @@ byte Coop_Command(const char *line) {
 		Players_BindTurn();
 		return 1;
 	}
+	if (sscanf(line, "show %63s", name) == 1 && strchr(name, '.')) {
+		/* a variable of a module of the scripts */
+		nativeVal_t v, r;
+		char *dot = strchr(name, '.');
+		*dot = 0;
+		Native_SetNone(&v);
+		Native_SetNone(&r);
+		if (Mode_ModGet(name, dot + 1, &v)) {
+			Mode_Repr(&v, &r);
+			Con_Printf("coop: %s.%s = %.200s\n", name, dot + 1, r.type == NV_STR ? Native_Text(&r) : "?");
+		} else {
+			Con_Printf("coop: no %s.%s\n", name, dot + 1);
+		}
+		Native_ErrClear();
+		Native_Free(&v);
+		Native_Free(&r);
+		return 1;
+	}
 	if (sscanf(line, "kill %63s", name) == 1 && strchr(name, '.')) {
 		/* the entities of a list of the scripts (the targets of a mission) die as by a weapon of the member the scripts
 		 * act for: their OnDeath runs with it as the winner */
@@ -1412,6 +1881,39 @@ byte Coop_Command(const char *line) {
 		if (n >= 0) {
 			Native_Free(&list);
 		}
+		return 1;
+	}
+	int ticks = 3;
+	if (sscanf(line, "press %d %63s %d", &i, name, &ticks) >= 2 && i >= 0 && i < PLAYERS_MAX) {
+		/* the buttons as the member's client sends them, for some ticks (the game's own input path) */
+		cp.pl[i].press = Cp_Buttons(name);
+		cp.pl[i].pressTicks = ticks;
+		Con_Printf("coop: player %d presses %s (%04x) for %d ticks\n", i, name, cp.pl[i].press, ticks);
+		return 1;
+	}
+	int on = 1;
+	if (sscanf(line, "race %d %d", &i, &on) >= 1 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].race = on ? 1.0f : 0.0f;
+		cp.pl[i].raceAt = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		Con_Printf("coop: player %d flies the race%s\n", i, on ? "" : ": off");
+		return 1;
+	}
+	float dx = 0.0f, dz = 0.0f;
+	if (sscanf(line, "target %d %f %f", &i, &dx, &dz) >= 1 || sscanf(line, "usetarget %d", &i) == 1) {
+		/* the member onto the mission's target (MissionsFuncs.currentTarget), or it uses the target */
+		nativeVal_t t;
+		Native_SetNone(&t);
+		if (Mode_ModGet("MissionsFuncs", "currentTarget", &t) && t.type == NV_STR) {
+			if (line[0] == 'u') {
+				Travel_TestUse(i, Native_Text(&t), "");
+			} else {
+				Travel_TestGoto(i, Native_Text(&t), dx, dz);
+			}
+		} else {
+			Con_Printf("coop: no mission target\n");
+		}
+		Native_ErrClear();
+		Native_Free(&t);
 		return 1;
 	}
 	if (sscanf(line, "travel %d %63s", &i, name) == 2) {
@@ -1444,15 +1946,20 @@ byte Coop_Command(const char *line) {
 
 /* ================================ client ================================ */
 
+/* the video the next level load plays (a headless client plays none) */
+static void Cp_ClientVideo(const char *file) {
+	if (!g_HeadlessPlay && !Mode_GVarSetS("PlayVideo", file)) {
+		Native_ErrPrint();
+	}
+}
+
 void Coop_Cue(int kind, const char *text) {
 	char key[64], line[256];
 	if (kind == COORD_CUE_COOP) {
 		cp.world = 1;
 	} else if (kind == COORD_CUE_INTRO) {
 		Con_Printf("coop: a new story: the intro %s\n", text);
-		if (!g_HeadlessPlay && !Mode_GVarSetS("PlayVideo", text)) {
-			Native_ErrPrint();
-		}
+		Cp_ClientVideo(text);
 	} else if (kind == COORD_CUE_NOTICE) {
 		const char *bar = strchr(text, '|');
 		int n = bar ? (int)(bar - text) : (int)strlen(text);
@@ -1634,6 +2141,61 @@ static byte Cp_ClientImport(const char *mod) {
 	return ok && Mode_Import(mod);
 }
 
+/* the conversor's interface of the instance: the member's class and the classes the story has, as the single
+ * player's machine opens it */
+static void Cp_ClientConvOpen(NetRepReader *r) {
+	static char avl[COORD_STORY_VALUE + 1];
+	char cls[CP_NAME];
+	nativeVal_t text, list;
+	NetRep_GetStr(r, cls, sizeof(cls));
+	int n = (int)NetRep_GetU16(r);
+	if (r->bad || n > COORD_STORY_VALUE) {
+		return;
+	}
+	CoordMsg_GetBytes(r, avl, n);
+	avl[n] = 0;
+	if (r->bad) {
+		return;
+	}
+	SaveVar_Set("Char", cls);
+	SaveVar_Set("Conversor.AvailableChars", avl);
+	Native_SetStr(&text, avl);
+	Native_SetNone(&list);
+	if (!Mode_Import("CharConversor") || !Native_EvalText("CharConversor", &text, &list) ||
+		!Mode_SetModVar("CharConversor", "AvailableChars", &list)) {
+		Native_ErrPrint();
+	}
+	Native_Free(&text);
+	Native_Free(&list);
+	cp.cmenu = COOP_MENU_CONV;
+	cp.cmenuAt = Watch_ShownTime();
+	if (!PORT_CALL(CharConversor, AddInterfaceContent, NULL, "i", 0L)) {
+		Native_ErrPrint();
+	}
+	Con_Printf("coop: the conversor's interface of the instance (as %s)\n", cls);
+}
+
+byte Coop_ClientConverted(const char *cls) {
+	uint8_t buf[8 + CP_NAME];
+	NetRepBuf w;
+	if (!g_Play || cp.cmenu != COOP_MENU_CONV) {
+		return 0;
+	}
+	cp.cmenu = 0;
+	if (!PORT_CALL(Menu, BackToGame, NULL, "is", 0L, "")) {
+		Native_ErrPrint();
+	}
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_C_ANSWER);
+	NetRep_PutU8(&w, COOP_MENU_CONV);
+	NetRep_PutStr(&w, cls);
+	if (!w.bad && Watch_SendReliable(buf, w.size)) {
+		Con_Printf("coop: the conversor's pick %s to the instance\n", cls[0] ? cls : "(none)");
+	}
+	return 1;
+}
+
 /* a menu of the instance's scripts for this member */
 static void Cp_ClientMenu(NetRepReader *r) {
 	static cPy_NativeFunc natives[2];
@@ -1665,6 +2227,41 @@ static void Cp_ClientMenu(NetRepReader *r) {
 		cp.cmenu = COOP_MENU_YESNO;
 		cp.cmenuAt = Watch_ShownTime();
 		Con_Printf("coop: the instance asks: %s\n", title);
+		return;
+	}
+	if (kind == COOP_MENU_CONV) {
+		Cp_ClientConvOpen(r);
+		return;
+	}
+	if (kind == COOP_MENU_WARNING) {
+		int n = (int)NetRep_GetU16(r);
+		if (n > CP_MENU_TITLE) {
+			return;
+		}
+		CoordMsg_GetBytes(r, title, n);
+		title[n] = 0;
+		/* the box of the single player (it waits until the member plays: its entry calls it again) */
+		if (!r->bad && (!Mode_Import("Menu") || !PORT_CALL(Menu, ShowWarning, NULL, "is", 0L, title))) {
+			Native_ErrPrint();
+		}
+		cp.cmenu = COOP_MENU_WARNING;
+		cp.cmenuAt = Watch_ShownTime();
+		Con_Printf("coop: a text box of the instance: %.60s\n", title);
+		return;
+	}
+	if (kind == COOP_MENU_SPUTNIK) {
+		int m = (int)NetRep_GetU32(r);
+		if (r->bad) {
+			return;
+		}
+		Cp_GetVars(r, 1);
+		g_pWorld->money = m;
+		cp.cmenu = COOP_MENU_SPUTNIK;
+		cp.cmenuAt = Watch_ShownTime();
+		if (!Mode_Import("SputnikInterface") || !PORT_CALL(SputnikInterface, EnterSputnikInterface, NULL, "i", 0L)) {
+			Native_ErrPrint();
+		}
+		Con_Printf("coop: Sputnik's hangar screen of the instance, money %d\n", m);
 		return;
 	}
 	if (kind != COOP_MENU_SHIPEDIT) {
@@ -1713,23 +2310,32 @@ byte Coop_ClientKeeps(cEntity *e) {
 	return cp.cmenu == COOP_MENU_SHIPEDIT && Entity_IsType(e, TYEN_CAR);
 }
 
-void Coop_ClientShipEdited(void) {
+/* the money and the hangar to the instance: the menu of kind closed here */
+static void Cp_ClientHangarBack(int kind) {
 	static uint8_t buf[CP_MENU_MSG];
 	NetRepBuf w;
-	if (!g_Play || cp.cmenu != COOP_MENU_SHIPEDIT) {
+	if (!g_Play || cp.cmenu != kind) {
 		return;
 	}
 	cp.cmenu = 0;
 	NetRepBuf_Init(&w, buf, sizeof(buf));
 	NetRep_PutU8(&w, COOP_MSG);
 	NetRep_PutU8(&w, COOP_C_ANSWER);
-	NetRep_PutU8(&w, COOP_MENU_SHIPEDIT);
+	NetRep_PutU8(&w, (uint32_t)kind);
 	NetRep_PutU32(&w, (uint32_t)g_pWorld->money);
 	Cp_PutVars(&w, 0);
 	if (!w.bad && Watch_SendReliable(buf, w.size)) {
 		Con_Printf("coop: the hangar to the instance (ship %s, money %d)\n", SaveVar_Get(CP_HANGAR "iHangarShip") ?
 			SaveVar_Get(CP_HANGAR "iHangarShip") : "-", g_pWorld->money);
 	}
+}
+
+void Coop_ClientShipEdited(void) {
+	Cp_ClientHangarBack(COOP_MENU_SHIPEDIT);
+}
+
+void Coop_ClientSputnikDone(void) {
+	Cp_ClientHangarBack(COOP_MENU_SPUTNIK);
 }
 
 static void Cp_ClientOptions(NetRepReader *r) {
@@ -1831,9 +2437,10 @@ void Coop_ClientSceneEnded(void) {
 }
 
 void Coop_ClientFrame(void) {
-	static double skipAfter = -1.0, editSecs, answerSecs;
+	static double skipAfter = -1.0, editSecs, answerSecs, convSecs, sputnikSecs, warnSecs;
 	static int choose = -2, answer;
 	static const char *chooseOf = "";
+	static char conv[CP_NAME];
 	if (skipAfter < 0.0) {
 		const char *s = getenv("SCRAP_COOP_SKIP"), *c = getenv("SCRAP_COOP_CHOOSE"), *a = getenv("SCRAP_COOP_ANSWER");
 		const char *e = getenv("SCRAP_COOP_SHIPEDIT");
@@ -1843,6 +2450,12 @@ void Coop_ClientFrame(void) {
 		skipAfter = s ? atof(s) : 0.0;
 		choose = c ? atoi(c) : -1;
 		chooseOf = c && strchr(c, ':') ? strchr(c, ':') + 1 : "";
+		const char *cv = getenv("SCRAP_COOP_CONV"), *sp = getenv("SCRAP_COOP_SPUTNIK");
+		Str_PrintfQuiet(conv, sizeof(conv), "%.*s", cv ? (int)strcspn(cv, ":") : 0, cv ? cv : "");
+		convSecs = cv && strchr(cv, ':') ? atof(strchr(cv, ':') + 1) : CP_CONV_SECS;
+		sputnikSecs = sp ? atof(sp) : 0.0;
+		const char *wn = getenv("SCRAP_COOP_WARNING");
+		warnSecs = wn ? atof(wn) : 0.0;
 	}
 	if (cp.pendingSize) {
 		NetRepReader r;
@@ -1872,12 +2485,88 @@ void Coop_ClientFrame(void) {
 			cp.cmenu = 0;
 		}
 	}
+	/* tests: the conversor's pick (as its button's Convert and ConvertExecute), Sputnik's screen closed */
+	if (conv[0] && cp.cmenu == COOP_MENU_CONV && Watch_ShownTime() - cp.cmenuAt >= convSecs) {
+		char k[CP_NAME + 8];
+		nativeVal_t v;
+		Con_Printf("coop: test: the conversor's pick %s\n", conv);
+		Str_PrintfQuiet(k, sizeof(k), "Char_%s", conv);
+		Native_SetStr(&v, k);
+		byte ok = strcmp(conv, "none") ? Mode_SetModVar("CharConversor", "KONTROL", &v) &&
+			PORT_CALL(CharConversor, ConvertExecute, NULL, "") : PORT_CALL(CharConversor, ExitCharConversor, NULL, "is", 0L, "");
+		if (!ok) {
+			Native_ErrPrint();
+		}
+		Native_Free(&v);
+		if (cp.cmenu == COOP_MENU_CONV) {
+			Con_Printf("coop: test: %s is no class of the conversor here\n", conv);
+			Coop_ClientConverted("");
+		}
+	}
+	if (sputnikSecs > 0.0 && cp.cmenu == COOP_MENU_SPUTNIK && Watch_ShownTime() - cp.cmenuAt >= sputnikSecs) {
+		Con_Printf("coop: test: Sputnik's screen closes\n");
+		if (!PORT_CALL(SputnikInterface, ExitSputnikInterface, NULL, "is", 0L, "Exit")) {
+			Native_ErrPrint();
+		}
+		if (cp.cmenu == COOP_MENU_SPUTNIK) {
+			Coop_ClientSputnikDone();
+		}
+	}
+	if (warnSecs > 0.0 && cp.cmenu == COOP_MENU_WARNING && Watch_ShownTime() - cp.cmenuAt >= warnSecs) {
+		Con_Printf("coop: test: the text box closes\n");
+		cp.cmenu = 0;
+		if (!PORT_CALL(Menu, BackToGame, NULL, "is", 0L, "")) {
+			Native_ErrPrint();
+		}
+	}
 	/* test: Escape the given seconds into each scene of the instance */
 	if (skipAfter > 0.0 && cp.clientScene[0] && !cp.skipped && Watch_ShownTime() - cp.sceneAt >= skipAfter &&
 		(!Mode_Import("Scene") || !PORT_CALL(Scene, AbortScene, NULL, "i", 0L))) {
 		Native_ErrPrint();
 		cp.skipped = 1;
 	}
+}
+
+/* the mission's targets of the instance on the client's copies (the level's entity of the name, the proxy of a
+ * replicated one), as its MissionsFuncs sets them: the radar marks, the mission arrow */
+static void Cp_ClientTargets(NetRepReader *r) {
+	char name[CP_NAME], sig[sizeof(cp.ctargets)];
+	nativeVal_t list;
+	int n = (int)NetRep_GetU8(r), len = 0, got = 0;
+	sig[0] = 0;
+	Native_SetEmpty(&list, NV_LIST);
+	for (int k = 0; k < n && k < COOP_TARGETS && !r->bad; k++) {
+		NetRep_GetStr(r, name, sizeof(name));
+		int slot = (int)NetRep_GetU16(r);
+		cEntity *e = r->bad ? NULL : slot != NETREP_NO_SLOT ? Watch_SlotEntity(slot) : World_FindEntity(name);
+		if (!e) {
+			continue;
+		}
+		Native_SetStr(Native_Append(&list), e->name);
+		len += Str_PrintfQuiet(sig + len, (int)sizeof(sig) - len, "%s,", e->name);
+		len = len < (int)sizeof(sig) ? len : (int)sizeof(sig) - 1;
+		got++;
+	}
+	if (r->bad || !strcmp(sig, cp.ctargets) || !Mode_Import("MissionsFuncs")) {
+		Native_Free(&list);
+		return;
+	}
+	Str_Copy(cp.ctargets, sig, sizeof(cp.ctargets));
+	byte ok;
+	if (got == 1) {
+		ok = PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &list.items[0]);
+	} else if (got) {
+		ok = PORT_CALL(MissionsFuncs, SetMultipleMissionTargets, NULL, "v", &list);
+	} else {
+		nativeVal_t none;
+		Native_SetNone(&none);
+		ok = PORT_CALL(MissionsFuncs, SetMissionTarget, NULL, "v", &none);
+	}
+	if (!ok) {
+		Native_ErrPrint();
+	}
+	Con_Printf("coop: the mission's targets here: %s\n", sig[0] ? sig : "none");
+	Native_Free(&list);
 }
 
 static void Cp_ClientSceneEnd(NetRepReader *r) {
@@ -1981,6 +2670,26 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		}
 		break;
 	}
+	case COOP_Y_VIDEO:
+		NetRep_GetStr(&r, file, sizeof(file));
+		if (!r.bad) {
+			Con_Printf("coop: the video %s before the next level\n", file);
+			Cp_ClientVideo(file);
+		}
+		break;
+	case COOP_Y_HUDVAR:
+		NetRep_GetStr(&r, key, sizeof(key));
+		NetRep_GetStr(&r, arg, sizeof(arg));
+		if (!r.bad && Cp_InList(cp_hud, key)) {
+			SaveVar_Set(key, arg);
+			if (!Mode_GVarSetI(key, atoi(arg))) {
+				Native_ErrPrint();
+			}
+		}
+		break;
+	case COOP_Y_TARGETS:
+		Cp_ClientTargets(&r);
+		break;
 	case COOP_Y_END:
 		/* the credits of the main menu, as the single player's end; the world is left */
 		Con_Printf("coop: the story is finished: the credits\n");
@@ -2017,4 +2726,5 @@ void Coop_ClientReset(byte left) {
 	cp.coop = 0;
 	cp.copt.n = 0;
 	cp.skipped = 0;
+	cp.ctargets[0] = 0;
 }

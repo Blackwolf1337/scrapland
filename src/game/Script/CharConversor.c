@@ -28,6 +28,7 @@
 #include <limits.h>
 
 #include "scrap/app.h"
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -272,6 +273,10 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	nativeVal_t *chars = Mode_V(&t), *avl = Mode_V(&t), *sv = Mode_V(&t), *control = Mode_V(&t), *none = Mode_V(&t);
 	nativeVal_t *name = Mode_V(&t);
 	int pid = 0, total = -1, count = 0;
+	/* not in the original: on a coop instance the interface opens on the member's client */
+	if (Coop_ConvMenu()) {
+		return Mode_Done(&t, 1);
+	}
 	if (!Mode_Import("Menu") || !PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) ||
 		!PORT_CALL(Menu, StartNewMenu, NULL, "v", id) || !Native_ArgInt(id, &pid) ||
 		!Cc_G("ConversionChars", chars) || (total = Mode_Len(chars)) < 0 || !Cc_G("AvailableChars", avl) ||
@@ -407,6 +412,10 @@ static byte Cc_EnterCharConversor(const nativeVal_t *uname, const nativeVal_t *c
 		Mode_Put(CC, "_usrName", NULL, uname) && Mode_Put(CC, "_charName", NULL, cname) && Mode_Put(CC, "_optId", NULL, opt) &&
 		Mode_Put(CC, "_fullOption", NULL, full) && PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) &&
 		Mode_ActionSet("Inactive");
+	/* not in the original: the member in the machine of a coop instance (include/scrap/coop.h) */
+	if (ok) {
+		Coop_ConvEnter();
+	}
 	return Mode_Done(&t, ok);
 }
 
@@ -425,6 +434,8 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *after = Mode_V(&t), *sv = Mode_V(&t), *act = Mode_V(&t);
 	nativeVal_t *msg = Mode_V(&t), *pos = Mode_V(&t);
+	/* not in the original: the member of a coop instance's machine is the player of its end */
+	Coop_ConvEnd();
 	if (!Mode_Import("Menu") || !Mode_Import("CharScorer") || !Mode_CamLink(Mode_S(&t, "")) || !Mode_UsrHandle(usr) ||
 		!LvN_SetI(usr, "AutoSelect", 1) || !LvN_SetI(usr, "MoveTime", 0) || !Mode_EntitySeam(ename, e) ||
 		!Mode_ActionSet("Walk") || !PORT_CALL(CharScorer, Create, NULL, "i", 0L) ||
@@ -457,6 +468,10 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 
 /* ExitCharConversor(id, control): the player appears again, the interface closes */
 static byte Cc_ExitCharConversor(const nativeVal_t *id) {
+	/* not in the original: Escape in a coop instance's interface on its member's client */
+	if (Coop_ClientConverted("")) {
+		return 1;
+	}
 	return Mode_Import("Menu") && Cc_Fx(2) && Mode_GVarSetDef("AbortSelectDistance") &&
 		PORT_CALL(Menu, BackToGame, NULL, "v", id);
 }
@@ -518,6 +533,10 @@ static byte Cc_ConvertExecute(void) {
 		Cc_G("AvailableChars", avl) ? Native_Contains(avl, ch) : -1;
 	if (in <= 0) {
 		return Mode_Done(&t, in == 0);
+	}
+	/* not in the original: the pick in a coop instance's interface goes to the instance */
+	if (ch->type == NV_STR && Coop_ClientConverted(Native_Text(ch))) {
+		return Mode_Done(&t, 1);
 	}
 	if (!Mode_SetSaveVar("Char", ch)) {
 		return Mode_Done(&t, 0);

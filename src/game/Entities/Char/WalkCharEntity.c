@@ -997,7 +997,8 @@ static byte cWalkCharEntity_VarI(cEntity *self, const char *name, int *i, int se
 		if (s) {
 			cWalkCharEntity_SetUsrControl(self, *i);
 		} else {
-			*i = w->ownerSlot;
+			/* not in the original: Coop_UsrRead (include/scrap/coop.h) */
+			*i = Coop_UsrRead(w->ownerSlot);
 		}
 		return 1;
 	}

@@ -5,6 +5,7 @@
 #include <float.h>
 
 #include "scrap/alarm.h"
+#include "scrap/coop.h"
 #include "scrap/faction.h"
 #include "scrap/game.h"
 #include "scrap/instance.h"
@@ -151,7 +152,9 @@ cEntity *Players_Script(int i) {
 	if (!Players_Net()) {
 		return cWorld_GetUsrEntity(g_pWorld, i);
 	}
-	return i == 0 ? Players_Any() : NULL;
+	/* a coop instance's stand-in for the level's start without a member (include/scrap/coop.h) */
+	cEntity *e = i == 0 ? Players_Any() : NULL;
+	return i == 0 && !e ? Coop_StandInEntity() : e;
 }
 
 cEntity *Players_Local(void) {

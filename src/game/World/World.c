@@ -7,6 +7,7 @@
 #include "scrap/app.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
 #include "scrap/hashtable.h"
 #include "scrap/input.h"
@@ -1083,7 +1084,12 @@ void cWorld_Update(cWorld *self, float dt) {
 			cEntity *e = n->data;
 			/* the instance: the state of the player nearest to it while it updates (include/scrap/players.h) */
 			if (g_Instance) {
-				Players_BindNearest(&e->pos);
+				/* a coop member's own character acts for that member (its presses run the scripts for it) */
+				if (Coop_On() && Players_Of(e) >= 0) {
+					Players_BindEntity(e);
+				} else {
+					Players_BindNearest(&e->pos);
+				}
 			}
 			if (e->active) {
 				Entity_Update(e);

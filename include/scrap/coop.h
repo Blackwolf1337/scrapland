@@ -56,9 +56,35 @@
  * no new character, Coop_Holds), the scripts' UsrControl 0 gives it back (Coop_UsrSlot), and the instance's time
  * never stops for a menu or a tutorial (Coop_KeepTime).
  *
+ * The character conversor's interface (at the middle of the machine's action) opens on the client of the member in
+ * the machine; the machine waits for its pick, the conversion runs on the instance for that member. Sputnik's hangar
+ * screen opens on the member's client like the ship editor.
+ *
+ * Possession and conversion: the member that possesses a character (the special action key at it, its client's
+ * input) or converts at a conversor plays as the new character from then on, as the single player's player does:
+ * the scripts' new main character gets the member's slot and the instance gives it to the member (Coop_Adopts), its
+ * class stays the member's (its state's "char": a respawn and a travel keep it). The other members stay what they
+ * are: they see the possessed character die, the member's old character go and the new one take its place, the alarm
+ * of the possession is the possessor's own; the story goes on for all (the conversion back into Dtritus that
+ * Mission_MeetBoss asks for counts by whichever member does it). Scripts that read a member's slot (UsrControl) see
+ * the single player's 0 (Coop_UsrRead: a race's checkpoints count for any member's ship); a character or ship the
+ * scripts take from a member (UsrControl -1: a ride, a race's camera travelling) is held and given back to it.
+ *
+ * A level's start of the missions (MissionsFuncs.Init: an outdoor level's challenge race, the mission arrow) without
+ * a member yet has a stand-in player at the spawn of the way point (the mission's travel carries it in the story as
+ * Coop.Entry.*, like a chapter's), where the single player's player would stand.
+ *
  * A client plays only the scenes of its instance (its own scripts' Scene.Play does nothing there) and has a camera
  * of view 0 for its level's start; the coordinator tells it at its join that the world plays the coop story
  * (COORD_CUE_COOP).
+ *
+ * Mission targets: the instance tells its clients the targets of the mission (MissionsFuncs.currentTarget and
+ * targetsList) when they change and every COOP_TARGETS_MS; a client sets them on its own copies (the level's entity
+ * of that name, the proxy of a replicated one) as the single player's MissionsFuncs does: the radar marks and the
+ * mission arrow.
+ *
+ * The variables of the story the HUD of the single player shows (EnergyBarActive, SpecialActionActive: the energy
+ * bar and the special action) go to the clients at their join and when they change (COOP_Y_HUDVAR).
  *
  * Leader travel: a member's key (Walk.CoopLeader of the controls, F7) asks the coordinator through its instance to
  * go where the party's leader plays (COORD_MSG_LEADER); the coordinator summons it there like a chapter travel of one
@@ -87,14 +113,29 @@
 #define COOP_Y_MENU 9					/* a menu of the scripts for this member: kind u8 (COOP_MENU_*), then
 										 * YESNO: title u16 length + bytes; SHIPEDIT: the function of the answer
 										 * that opened it str ("" none), money u32, the hangar's save variables
-										 * (COOP_VARS) */
+										 * (COOP_VARS); CONV, SPUTNIK: see there */
 #define COOP_Y_FADE 10					/* a fade of the scripts' screen 0: from r g b a u8, to r g b a u8, ms u32 */
+#define COOP_Y_VIDEO 11					/* the video the scripts set before a mission's level change (PlayVideo): file
+										 * str; the client plays it before the next level */
+#define COOP_Y_TARGETS 12				/* the mission's targets (MissionsFuncs): count u8, then name str (the
+										 * instance's) and replication slot u16 (NETREP_NO_SLOT: a level entity of the
+										 * same name on the client) each */
+#define COOP_Y_HUDVAR 13				/* a variable of the story the client's HUD shows (the energy bar, the special
+										 * action): name str, value str */
+#define COOP_TARGETS 16					/* targets told (a mission's list of targets) */
+#define COOP_TARGETS_MS 2000			/* the targets again (a proxy that came into the interest since) */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
 #define COOP_C_LEADER 21				/* client -> instance: to the party's leader (COORD_MSG_LEADER) */
 #define COOP_C_ANSWER 22				/* client -> instance: the menu's answer: kind u8, then YESNO: yes u8; SHIPEDIT:
 										 * money u32, the hangar's save variables (COOP_VARS) */
 #define COOP_MENU_YESNO 1
 #define COOP_MENU_SHIPEDIT 2
+#define COOP_MENU_CONV 3				/* the character conversor: Y_MENU: the member's class str, the available classes
+										 * (Conversor.AvailableChars, u16 length + bytes); C_ANSWER: the class picked
+										 * str ("" none: Escape) */
+#define COOP_MENU_SPUTNIK 4				/* Sputnik's hangar screen: Y_MENU and C_ANSWER: money u32, COOP_VARS */
+#define COOP_MENU_WARNING 5				/* a text box of the scripts (Menu.ShowWarning): Y_MENU: the text u16 length +
+										 * bytes; no answer (the client closes it) */
 /* COOP_VARS: count u16, then name str and value (u16 length + bytes) each: the save variables Hangar.* (the instance
  * sends GameAct too) */
 #define COOP_HEAR 2500.0f				/* units: a member this near the speaker hears its conversation */
@@ -106,6 +147,7 @@
 
 struct Net2Host;
 struct cEntity;
+struct NetRepInput;
 
 /* ---- instance ---- */
 
@@ -164,12 +206,30 @@ byte Coop_Holds(int i);
  * character the scripts take (-1) is held for its member, and the scripts' 0..3 is that member's slot again (else
  * the bound member's: the single player's player 0) */
 int Coop_UsrSlot(struct cEntity *e, int old, int slot);
+/* the slot the scripts read of a character or ship (UsrControl): on a coop instance a member's slot is the single
+ * player's 0 (the scripts' "the player": a race's checkpoints, the coins), else slot */
+int Coop_UsrRead(int slot);
 /* the member whose character the scripts hold (Coop_UsrSlot), -1 */
 int Coop_HeldPlayer(struct cEntity *e);
 /* the level has no room for a called ship (indoors): coop calls none there */
 byte Coop_NoShipCall(void);
 /* a player's new character: it selects what it looks at, as the single player's (the conversations need it) */
 void Coop_Spawned(struct cEntity *e);
+/* the name of a player's character the scripts make (Chars.CreateMainChar of a possession or a conversor) on a coop
+ * instance: a new one for the bound member each time (the single player's Player0 and PlayerZ would be the same
+ * entity for two members), NULL elsewhere */
+const char *Coop_MainCharName(void);
+/* player i's slot is on e, a live character or ship other than the one the instance gave it: 1 when it is the
+ * member's from now on (a possession or a conversor of the scripts: the member plays as that character, its class
+ * kept in its state; a ship the scripts put it in); 0 elsewhere (the instance gives the player a new character) */
+byte Coop_Adopts(int i, struct cEntity *e);
+/* test: the buttons of a test press into player i's input of the tick (the line "press") */
+void Coop_TestInput(int i, struct NetRepInput *in);
+/* the level's start of the missions (MissionsFuncs.Init: the challenge's race and the mission arrow are placed around
+ * the player) on a coop instance without a member yet: a stand-in character at the level's first spawn is the
+ * scripts' player meanwhile (on 1, gone with 0); Coop_StandInEntity: it, NULL */
+void Coop_StandIn(byte on);
+struct cEntity *Coop_StandInEntity(void);
 /* player i came into the instance: a scene that plays is sent to its client, its character hidden until the end */
 void Coop_Joined(int i);
 /* the use arrow of t runs on the instance for a player's character (not only a door's) */
@@ -180,8 +240,25 @@ byte Coop_UseAny(struct cEntity *t);
  * stay as they are */
 byte Coop_MenuYesNo(const char *title, const char *yes, const char *no);
 byte Coop_ShipEditOpen(void);
+/* the character conversor's interface (CharConversor.AddInterfaceContent at the middle of the machine's action, 1:
+ * it went to the client of the member that entered the machine, Coop_ConvEnter; the machine waits until the member
+ * picked a class: the conversion runs here for it) and the end of the machine's action (Coop_ConvEnd: that member
+ * bound for the end's callbacks) */
+void Coop_ConvEnter(void);
+byte Coop_ConvMenu(void);
+void Coop_ConvEnd(void);
+/* a text box of the scripts (Menu.ShowWarning: the first possession, a conversion): 1 on a coop instance, where it
+ * went to the client of the member the scripts act for (the instance opens no menu nobody closes) */
+byte Coop_Warning(const char *text);
+/* Sputnik's hangar screen (SputnikInterface.EnterSputnikInterface): 1 when it opened on the client of the member the
+ * scripts act for (its money and hangar come back into the story, then EndSputnikCallBack runs here) */
+byte Coop_SputnikOpen(void);
 /* the editor of the member the scripts act for is on its client (its tutorial runs there) */
 byte Coop_ShipEditAway(void);
+/* the action set the scripts select (name): on a coop instance, where no input reads it, the one of its members'
+ * play: Inactive while a scene plays, else Walk (a menu, a ride or a talk of one member is on its own client; the
+ * scripts that wait for Walk, a remote communication, a walk out of a teleporter, go on) */
+const char *Coop_ActionSet(const char *name);
 /* the instance's time keeps running for the other members (a menu or a tutorial of the scripts stops it in the single
  * player) */
 byte Coop_KeepTime(void);
@@ -194,7 +271,10 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * (as the client's key), "travel <player> <level>" (alone, at the level's start), "qload <map>" and "restart" (as
  * the scripts' SaveGame.QLoad and SaveGame.Restart), "theend" (as the end's credits: all variables deleted, the menu),
  * "call <Module.Func|arg|...>" (a function of the scripts, as a line of a call table), "kill <Module.var>" (the
- * entities of that list of the scripts die: Life 0) */
+ * entities of that list of the scripts die: Life 0), "show <Module.var>" (its value), "press <player>
+ * <act|act2|act3|lock,...> [<ticks>]" (the buttons of its client's input for some ticks, 3 by default), "target
+ * <player> [<dx> <dz>]" (onto the mission's target), "usetarget <player>" (it uses the target), "race <player> [0|1]"
+ * (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops) */
 byte Coop_Command(const char *line);
 
 /* ---- client ---- */
@@ -222,6 +302,11 @@ byte Coop_ClientEnded(void);
 byte Coop_ClientKeeps(struct cEntity *e);
 /* the ship editor of the instance closes here (before its callback): the hangar goes to the instance */
 void Coop_ClientShipEdited(void);
+/* the conversor's interface of the instance here: a class picked (ConvertExecute) or Escape (ExitCharConversor) goes
+ * to the instance and the menu closes; 1 when it was the instance's */
+byte Coop_ClientConverted(const char *cls);
+/* the instance's Sputnik screen closes here (before its callback): the money and the hangar go to the instance */
+void Coop_ClientSputnikDone(void);
 /* Escape ends the scene here (before its EndOfScene) */
 void Coop_ClientSceneAbort(void);
 /* the scene ended here (EndOfScene of the client): an Escape before the instance's end skips it for this member alone
@@ -230,7 +315,9 @@ void Coop_ClientSceneEnded(void);
 /* each frame of a client: the options; tests: SCRAP_COOP_SKIP=<s> (Escape that many seconds into a scene),
  * SCRAP_COOP_CHOOSE=<k>[:<entity prefix>] (option k of a list), SCRAP_COOP_ANSWER=yes|no[:<s>] (a question's answer
  * after 2 s or s), SCRAP_COOP_SHIPEDIT=<s> (the ship editor opens with the lifeboat in the hangar and closes after
- * that many seconds) */
+ * that many seconds), SCRAP_COOP_CONV=<class>[:<s>] (the conversor's interface picks that class after 3 s or s;
+ * "none": Escape), SCRAP_COOP_SPUTNIK=<s> (Sputnik's screen closes after s), SCRAP_COOP_WARNING=<s> (a text box
+ * of the instance closes after s) */
 void Coop_ClientFrame(void);
 
 #endif

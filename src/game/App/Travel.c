@@ -456,6 +456,31 @@ static cEntity *Tr_NearestDoor(const char *cls, const vec3_t *pos) {
 	return best;
 }
 
+/* the door a player of door class cls comes out of: the nearest of the class, else the single player's door of the
+ * kind in the level (Elevator.ElevatorStart[cls[4:]]: a metro station of another class) within TR_DOOR_NEAR of pos */
+static cEntity *Tr_Door(const char *cls, const vec3_t *pos) {
+	cEntity *e = Tr_NearestDoor(cls, pos);
+	nativeVal_t start, key, name;
+	if (e || strncmp(cls, "Door", 4)) {
+		return e;
+	}
+	Native_SetNone(&start);
+	Native_SetNone(&name);
+	Native_SetStr(&key, cls + 4);
+	if (Mode_ModGet("Elevator", "ElevatorStart", &start) && Native_Subscript(&start, &key, &name) && name.type == NV_STR) {
+		e = World_FindEntity(Native_Text(&name));
+	}
+	Native_ErrClear();
+	Native_Free(&start);
+	Native_Free(&key);
+	Native_Free(&name);
+	if (e && pos) {
+		float dx = e->pos.x - pos->x, dy = e->pos.y - pos->y, dz = e->pos.z - pos->z;
+		e = dx * dx + dy * dy + dz * dz < TR_DOOR_NEAR * TR_DOOR_NEAR ? e : NULL;
+	}
+	return e;
+}
+
 byte Travel_Admit(int conn, int player, TravelSpawn *sp) {
 	char v[64];
 
@@ -498,7 +523,7 @@ byte Travel_Admit(int conn, int player, TravelSpawn *sp) {
 	if (p->entrance[0] && (Tr_Dummy(p->entrance, &sp->pos, &sp->yaw) || Places_Entrance(p->entrance, &sp->pos,
 		&sp->yaw))) {
 		sp->have = 1;
-	} else if (p->door[0] && (door = Tr_NearestDoor(p->door, NULL)) != NULL) {
+	} else if (p->door[0] && (door = Tr_Door(p->door, NULL)) != NULL) {
 		/* the level has no spawn dummy for that way in (a metro station): at the door of that kind */
 		sp->pos = door->pos;
 		sp->yaw = Obj(door)->ang.y;
@@ -528,7 +553,7 @@ void Travel_Joined(int player) {
 		Alarm_Set(&g_pWorld->alarm, (float)crt_atof(v));
 		Players_BindTurn();
 	}
-	cEntity *door = e && p->door[0] ? Tr_NearestDoor(p->door, &e->pos) : NULL;
+	cEntity *door = e && p->door[0] ? Tr_Door(p->door, &e->pos) : NULL;
 	if (door) {
 		Players_Bind(player);
 		byte ok = Elevator_Arrive(e->name, door->name);

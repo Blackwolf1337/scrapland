@@ -1170,6 +1170,10 @@ void Rep_TestSwitch(int i, byte call) {
 	Players_BindTurn();
 }
 
+int Rep_EntitySlot(cEntity *e) {
+	return e ? Rep_Find(e) : -1;
+}
+
 int Rep_PlayerConn(int i) {
 	return i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? rep.pl[i].conn : -1;
 }
@@ -1243,6 +1247,15 @@ void Rep_PreFrame(uint64_t tick) {
 		if (!e && Coop_Holds(i)) {
 			continue;		/* hidden by a scene of the coop story or in its ship editor (include/scrap/coop.h) */
 		}
+		if (e && e != pl->own && Coop_Adopts(i, e)) {
+			/* a character the coop story's scripts gave the player (a possession, a conversor) is its own now */
+			Rep_DropCorpse(pl);
+			Rep_SetOwn(pl, e);
+			Obj(e)->netStep = 1;
+			NetRepInBuf_Restart(&pl->in);
+			pl->buttons = NETREP_IN_SWITCH | NETREP_IN_ACT3 | NETREP_IN_ACT2;
+			pl->told = -2;
+		}
 		if (e != pl->own || !e) {
 			/* dead or deleted by the game: a new Dtritus after a while */
 			if (!pl->lost) {
@@ -1270,6 +1283,7 @@ void Rep_PreFrame(uint64_t tick) {
 		/* the money, the alarm and the scripts' player of this player while its input runs */
 		Players_Bind(i);
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
+		Coop_TestInput(i, &in);
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Faction_Input(i, e, &in);
 		Places_Input(i, e, &in);

@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/nativeobj.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -135,7 +136,7 @@ static byte Mf_TargetAll(const char *name, long status) {
 
 /* Init(): the start of a level: the challenges outdoors, the arrow to the mission, the auto save and the initial
  * message */
-static byte Mf_Init(void) {
+static byte Mf_InitIn(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *outdoor = Mode_V(&t), *msg = Mode_V(&t), *time = Mode_V(&t);
 	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !Mode_ModGet("Init", "Outdoor", outdoor)) {
@@ -163,6 +164,15 @@ static byte Mf_Init(void) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, 1);
+}
+
+static byte Mf_Init(void) {
+	/* not in the original: on a coop instance without a member yet the scripts' player is a stand-in at the level's
+	 * start (the challenge's race and the arrow are placed around the player, include/scrap/coop.h) */
+	Coop_StandIn(1);
+	byte ok = Mf_InitIn();
+	Coop_StandIn(0);
+	return ok;
 }
 
 /* TryMsg(InitMsg): the message when the player walks or flies and no other one shows, else a second later */

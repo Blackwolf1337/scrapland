@@ -9,6 +9,7 @@
 #include "scrap/autoaim.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
 #include "scrap/doors.h"
 #include "scrap/embeddedfxvehicle.h"
@@ -912,6 +913,8 @@ static void cVehicleEntity_NetWrite(cEntity *elem, float dist2, void *msg, int f
 }
 
 static void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
+	/* not in the original: Coop_UsrSlot (include/scrap/coop.h) */
+	slot = Coop_UsrSlot(Veh_Ent(self), self->slot, slot);
 	if (slot >= 0) {
 		self->money = -1;
 	}
@@ -1562,7 +1565,8 @@ static byte cVehicleEntity_VarI(cEntity *base, const char *name, int *i, int set
 		if ((byte)set) {
 			cVehicleEntity_SetUsrControl(self, *i);
 		} else {
-			*i = self->slot;
+			/* not in the original: Coop_UsrRead (include/scrap/coop.h) */
+			*i = Coop_UsrRead(self->slot);
 		}
 		return 1;
 	}
