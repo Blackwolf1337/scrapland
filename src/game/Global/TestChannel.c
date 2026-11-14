@@ -1216,6 +1216,9 @@ static void TC_EntSnd(tcBuf *b, const char *arg) {
 		return;
 	}
 	cSndInterface *snd = &Obj(e)->snd;
+	/* the move that holds a parked ship (its motor idles while it is done: cVehicleEntity_InPlace) */
+	TC_Addf(b, "mv\t%d\t%.3f\t%.3f\t%d\n", Obj(e)->move.active, (double)Obj(e)->move.time,
+		(double)Obj(e)->move.moveTime, Obj(e)->proxyIdle);
 	for (int i = 0; i < snd->nsnd; i++) {
 		cSndItem *it = snd->snds[i];
 		if (it) {
@@ -1394,6 +1397,14 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	if (TC_Verb(line, "get", &arg)) {
 		TC_Get(b, arg);
+		return;
+	}
+	/* an instance's line of its standard input (a -host game's children have none): "iline goto 0 Sputnik 900 0" */
+	if (TC_Verb(line, "iline", &arg) && g_Instance) {
+		char copy[256];
+		Str_Copy(copy, arg, sizeof(copy));
+		Instance_Line(copy);
+		TC_Add(b, "ok\n", -1);
 		return;
 	}
 	if (TC_Verb(line, "ent", &arg)) {

@@ -31,6 +31,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "scrap/sputniks.h"
 #include "scrap/travel.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -726,6 +727,20 @@ void Travel_Boarded(int player, cEntity *ship) {
 		return;
 	}
 	CoordKv_Set(p->state, &p->len, sizeof(p->state), "ship", text);
+	Sputniks_Boarded(player, text);
+}
+
+byte Travel_GetVar(int player, const char *key, char *out, int cap) {
+	if (player < 0 || player >= PLAYERS_MAX || !tr.pl[player].used) {
+		out[0] = 0;
+		return 0;
+	}
+	return CoordKv_Get(tr.pl[player].state, tr.pl[player].len, key, out, cap) != 0;
+}
+
+byte Travel_SetVar(int player, const char *key, const char *value) {
+	TrPlayer *p = player >= 0 && player < PLAYERS_MAX ? &tr.pl[player] : NULL;
+	return p && p->used && CoordKv_Set(p->state, &p->len, sizeof(p->state), key, value);
 }
 
 cEntity *Travel_OwnShip(int player, const vec3_t *pos, float yaw) {
@@ -784,7 +799,7 @@ void Travel_TestUse(int player, const char *entity, const char *option) {
 	} else {
 		Coop_BeforeUse(player, t);
 	}
-	if (Places_TestUse(player, t, a->iOpt)) {
+	if (Places_TestUse(player, t, a->iOpt) || Sputniks_Use(player, t)) {
 		return;
 	}
 	Con_Printf("instance: player %d uses %s (%s)\n", player, entity, a->nOpt ? cArrowIndicator_GetOpt(a, a->iOpt) : "");

@@ -1468,6 +1468,14 @@ static void Cp_GetVars(NetRepReader *r, byte act) {
 	}
 }
 
+void Coop_PutHangar(NetRepBuf *w) {
+	Cp_PutVars(w, 0);
+}
+
+void Coop_GetHangar(NetRepReader *r) {
+	Cp_GetVars(r, 0);
+}
+
 byte Coop_ShipEditAway(void) {
 	int i = Coop_On() ? Cp_Player() : -1;
 	return i >= 0 && cp.pl[i].menu == COOP_MENU_SHIPEDIT;

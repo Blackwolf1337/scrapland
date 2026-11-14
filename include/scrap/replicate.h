@@ -69,6 +69,9 @@ void Rep_Close(void);
 /* the level of the instance has started (its first pass): the items it made then are every game's, the ones made
  * later are replicated (NETREP_ITEM) */
 void Rep_Open(void);
+/* player i's parked own ship old in place of the ship of its state (Travel_OwnShip: the ship its hangar flies now,
+ * include/scrap/sputniks.h): the new one, NULL */
+struct cEntity *Rep_ReplaceShip(int i, struct cEntity *old);
 /* the replication slot of e (the clients' Watch_SlotEntity), -1 when it is not replicated now */
 int Rep_EntitySlot(struct cEntity *e);
 /* the players of the instance for the travel (include/scrap/travel.h): the connection of player i (-1), the player

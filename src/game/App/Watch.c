@@ -31,6 +31,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "scrap/sputniks.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -1062,6 +1063,8 @@ void Watch_PreFrame(void) {
 				Coop_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == ARENA_MSG) {
 				Arena_ClientMessage(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == SPUTNIKS_MSG) {
+				Sputniks_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICS && watch.phase == WATCH_RUN) {
 				Watch_Records(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICSET && watch.phase == WATCH_RUN) {
