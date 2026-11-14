@@ -45,7 +45,10 @@ RADAR_BLINK = {'13': '12', '14': '12', '10': '9', '11': '9'}
 LOOSE = ('rail traffic', 'traffic', 'police', 'coin', 'missile', 'npc', 'parked ship')
 # kinds that come and go with the moment (coins dropped in a fight): the clients against what the instance has, not
 # against single player
-TIMED = ('coin',)
+TIMED = ('coin', 'item Battery')
+# kinds single player has that the multiplayer worlds leave out on purpose (docs: handback-mp-m11.md): not counted as
+# gaps, marked "single player only"
+SP_ONLY = ('npc Sputnik',)
 SOUND_SAMPLES = 6                  # sounds playing taken this many times, 1 s apart
 
 
@@ -421,6 +424,8 @@ def gaps(res):
             gap = a_sp > 0 and (worst == 0 or worst < a_sp * 0.5)
         else:
             gap = worst < a_sp
+        if k in SP_ONLY:
+            gap = False
         extra = cnt and max(cnt) > a_sp and not loose
         names = set(sp.get(k, {}).get('names', []))
         for s in sides:
@@ -486,7 +491,8 @@ def report(results, out):
             c = cnt + ['-'] * (2 - len(cnt))
             lines.append('| %s | %d | %d | %s | %s | %s | %s | %s |' % (k, n_sp, a_sp, c[0], c[1],
                                                                        ik.get(k, {}).get('active', 0),
-                                                                       'gap' if gap else 'extra' if extra else '',
+                                                                       'gap' if gap else 'extra' if extra else
+                                                                       'single player only' if k in SP_ONLY else '',
                                                                        ', '.join(miss)))
         if sg:
             lines += ['', 'Sound gaps (single player plays them near the player, a client not; SP, host, join):', '']
