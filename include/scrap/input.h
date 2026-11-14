@@ -284,6 +284,9 @@ void InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev);
 void Input_UpdateDevices(float dt);
 void Input_ResetInactivity(void);
 void Device_SetEntries(cAbstractIDevice *d, const byte (*t)[3], int n);
+/* not in the original: the bindings added to the original's defaults (Walk.CoopLeader on F7) where the device has
+ * the entry and it is free in that set; seen (one flag a binding, NULL: none seen) skips those a config gave */
+void Device_AddedDefaults(cAbstractIDevice *d, const byte *seen);
 
 extern byte g_InputOpen;		/* the devices are open (Input_OpenDevices, not on a dedicated server) */
 
