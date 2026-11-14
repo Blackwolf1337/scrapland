@@ -100,7 +100,8 @@ int main(int argc, char **argv) {
 					if (ev.channel == 0 && ev.data[0] == NETREP_MSG_WELCOME) {
 						uint32_t tick;
 						char level[128];
-						if (NetRep_ReadWelcome(ev.data, ev.size, &tick, p->center, level, sizeof(level))) {
+						int flags;
+						if (NetRep_ReadWelcome(ev.data, ev.size, &tick, p->center, level, sizeof(level), &flags)) {
 							p->welcomed = 1;
 						}
 					} else if (ev.channel == 2 && ev.data[0] == NETREP_MSG_SNAP && p->welcomed) {

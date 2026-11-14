@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "scrap/players.h"
+#include "scrap/replicate.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -178,6 +179,11 @@ static byte Traffic_RailDeath(const nativeVal_t *killer) {
 		if (hit) {
 			hit = Mode_VObj(u, "Name", name) ? Mode_Cmp(name, "==", killer) : -1;
 		}
+	}
+	/* a watcher's own rail traffic (include/scrap/replicate.h): the instance keeps the alarm and the statistics */
+	if (hit > 0 && g_Watch) {
+		Watch_RailKill();
+		return Mode_Done(&t, 1);
 	}
 	return Mode_Done(&t, hit >= 0 && (!hit || (Mode_SetAlarm(Mode_I(&t, 1)) && Mode_IncSaveVar("Stats.Traffic"))));
 }

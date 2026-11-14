@@ -31,6 +31,8 @@
 
 #include "scrap/nativeobj.h"
 #include "scrap/players.h"
+#include "scrap/replicate.h"
+#include "scrap/world.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -945,8 +947,9 @@ static byte Pk_BrowseItemPosN(void) {
 	nativeVal_t *usr = Mode_V(&t), *myPos = Mode_V(&t), *nearest = Mode_V(&t), *nearestDist = Mode_V(&t), *x = Mode_V(&t);
 	nativeVal_t *dummy = Mode_V(&t), *dist = Mode_V(&t), *dname = Mode_V(&t), *dpos = Mode_V(&t), *l = Mode_V(&t);
 	nativeVal_t *box = Mode_V(&t), *zone = Mode_V(&t), *ship = Mode_V(&t), *ang = Mode_V(&t);
-	/* the headless instance has no startup player: every parking gets its box, no ship of the player */
-	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr) || (!g_Instance && !Mode_VObjRead(usr, "Pos", myPos))) {
+	/* the headless instance and a watcher have no startup player: every parking gets its box, no ship of the player */
+	byte none = g_Instance || g_Watch;
+	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr) || (!none && !Mode_VObjRead(usr, "Pos", myPos))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(nearestDist, 10000000.0);
@@ -971,10 +974,10 @@ static byte Pk_BrowseItemPosN(void) {
 		}
 		Native_Free(dist);
 		Native_Free(l);
-		if (!g_Instance && (!Pk_Item(dummy, 1, x) || !Mode_VecSub(myPos, x, l) || !Mode_VecMod(l, dist))) {
+		if (!none && (!Pk_Item(dummy, 1, x) || !Mode_VecSub(myPos, x, l) || !Mode_VecMod(l, dist))) {
 			return Mode_Done(&t, 0);
 		}
-		int closer = g_Instance ? 0 : Mode_Cmp(nearestDist, ">", dist);
+		int closer = none ? 0 : Mode_Cmp(nearestDist, ">", dist);
 		if (closer && !fromJY) {
 			closer = Pk_Item(dummy, 0, x) ? Mode_CmpG(x, "!=", PK, "PR_Junk") : -1;
 		}
@@ -1400,6 +1403,21 @@ static byte Pk_Arrive(const nativeVal_t *comeFrom, const nativeVal_t *spawn) {
 		PORT_OWN(Parking, UseShip, NULL, "vvssv", x, y, "", "", Mode_V(&t)));
 }
 
+/* a watcher's parking boxes and links: no OnTake (the instance parks and changes levels) */
+static byte Pk_WatchInert(void) {
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		char *list = NULL, *none = "";
+		if (!Entity_IsType(e, "item") || !e->name) {
+			continue;
+		}
+		if (!crt_strncmp(e->name, "DM_OutLink_", 11) || (Entity_VarS(e, "EntityList", &list, 0) && list &&
+				!strcmp(list, "ParkingBox"))) {
+			Entity_VarS(e, "OnTake", &none, 1);
+		}
+	}
+	return 1;
+}
+
 /* Init(): offline: the plate, the parking boxes and the player's ship, the parked ships (unless the save game says
  * the level is desolate), the links and parking areas; the player starts in the junkyard parking or arrives from
  * another outdoor level on a ship */
@@ -1413,6 +1431,13 @@ static byte Pk_InitN(void) {
 	int off = Native_NetOff();
 	if (off <= 0) {
 		return Mode_Done(&t, off == 0);
+	}
+	/* a watcher (include/scrap/replicate.h): the boxes, links and parking areas to see; the parked ships, the plate and
+	 * the player's start are the instance's, so are the uses of the boxes and links (their OnTake off here) */
+	if (g_Watch) {
+		return Mode_Done(&t, Pk_G("PR_Lst", x) && PORT_CALL(Scrap, CreateEntityList, NULL, "v", x) &&
+			PORT_OWN(Parking, BrowseItemPos, NULL, "") && PORT_OWN(Parking, BrowseSwitchLevel, NULL, "") &&
+			PORT_OWN(Parking, BrowseParkingAreas, NULL, "") && Pk_WatchInert());
 	}
 	if (!PORT_OWN(Parking, CreateDtritusPlate, NULL, "") || !Pk_G("PR_Lst", x) ||
 		!PORT_CALL(Scrap, CreateEntityList, NULL, "v", x) || !PORT_OWN(Parking, BrowseItemPos, NULL, "")) {

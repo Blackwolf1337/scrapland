@@ -509,16 +509,19 @@ static void Test_Garbage(void) {
 	float vp[3];
 	char level[64];
 	uint32_t tick, rate;
+	int wflags;
 	CHECK(!NetRep_ReadAck(buf, 3, &a, &b, vp));
-	CHECK(!NetRep_ReadWelcome(buf, 5, &tick, vp, level, sizeof(level)));
+	CHECK(!NetRep_ReadWelcome(buf, 5, &tick, vp, level, sizeof(level), &wflags));
 	{
 		int flags;
 		int n = NetRep_WriteHello(buf, sizeof(buf), 12345, NETREP_HELLO_PLAY);
 		CHECK(NetRep_ReadHello(buf, n, &rate, &flags) && rate == 12345 && flags == NETREP_HELLO_PLAY);
 		CHECK(!NetRep_ReadHello(buf, n - 1, &rate, &flags));
 		float view[3] = { 1.0f, -2.0f, 300000.0f };
-		n = NetRep_WriteWelcome(buf, sizeof(buf), 777, view, "DownTown");
-		CHECK(NetRep_ReadWelcome(buf, n, &tick, vp, level, sizeof(level)) && tick == 777 && !strcmp(level, "DownTown"));
+		n = NetRep_WriteWelcome(buf, sizeof(buf), 777, view, "DownTown", 5);
+		CHECK(NetRep_ReadWelcome(buf, n, &tick, vp, level, sizeof(level), &wflags) && tick == 777 &&
+			!strcmp(level, "DownTown") && wflags == 5);
+		CHECK(!NetRep_ReadWelcome(buf, n - 1, &tick, vp, level, sizeof(level), &wflags));
 		CHECK(vp[0] == 1.0f && vp[1] == -2.0f && vp[2] == 300000.0f);
 	}
 	NetRepCli_Destroy(v);

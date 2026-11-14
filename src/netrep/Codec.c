@@ -480,7 +480,7 @@ int NetRep_ReadShots(const uint8_t *data, int size, uint32_t *tick, NetRepShot *
 	return !r.bad && r.pos == size;
 }
 
-int NetRep_WriteWelcome(uint8_t *buf, int cap, uint32_t tick, const float *view, const char *level) {
+int NetRep_WriteWelcome(uint8_t *buf, int cap, uint32_t tick, const float *view, const char *level, int flags) {
 	NetRepBuf w;
 	NetRepBuf_Init(&w, buf, cap);
 	NetRep_PutU8(&w, NETREP_MSG_WELCOME);
@@ -490,10 +490,11 @@ int NetRep_WriteWelcome(uint8_t *buf, int cap, uint32_t tick, const float *view,
 	NetRep_PutU32(&w, tick);
 	Rep_PutView(&w, view);
 	NetRep_PutStr(&w, level);
+	NetRep_PutU8(&w, (uint8_t)flags);
 	return w.bad ? 0 : w.size;
 }
 
-int NetRep_ReadWelcome(const uint8_t *data, int size, uint32_t *tick, float *view, char *level, int cap) {
+int NetRep_ReadWelcome(const uint8_t *data, int size, uint32_t *tick, float *view, char *level, int cap, int *flags) {
 	NetRepReader r;
 	NetRepReader_Init(&r, data, size);
 	if (NetRep_GetU8(&r) != NETREP_MSG_WELCOME || NetRep_GetU16(&r) != NETREP_VERSION ||
@@ -503,6 +504,7 @@ int NetRep_ReadWelcome(const uint8_t *data, int size, uint32_t *tick, float *vie
 	*tick = NetRep_GetU32(&r);
 	Rep_GetView(&r, view);
 	NetRep_GetStr(&r, level, cap);
+	*flags = NetRep_GetU8(&r);
 	return !r.bad;
 }
 
