@@ -24,6 +24,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -55,6 +56,8 @@ class Game:
         self.proc = None
 
     def start(self):
+        # a fresh world each time: a hosting game keeps its players (their level) in its data folder
+        shutil.rmtree(os.path.join(self.dir, 'xdg-data', 'MercurySteam', 'Scrapland', 'host'), ignore_errors=True)
         if not os.path.isdir(os.path.join(self.dir, 'Bin')):
             subprocess.run([os.path.join(REPO, 'tools/test/mkgame.sh'), '--native', self.dir],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
