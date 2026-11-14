@@ -22,6 +22,7 @@
 #include "scrap/input.h"
 #include "scrap/instance.h"
 #include "scrap/netrep.h"
+#include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -1953,6 +1954,11 @@ static void Cp_ClientVideo(const char *file) {
 	}
 }
 
+/* the notices that name a level get its station's name in the client's language */
+static const char *Cp_NoticeArg(const char *key, const char *arg) {
+	return !strcmp(key, "MP_CoopTravel") || !strcmp(key, "MP_CoopScene") ? Places_LevelText(arg) : arg;
+}
+
 void Coop_Cue(int kind, const char *text) {
 	char key[64], line[256];
 	if (kind == COORD_CUE_COOP) {
@@ -1964,7 +1970,7 @@ void Coop_Cue(int kind, const char *text) {
 		const char *bar = strchr(text, '|');
 		int n = bar ? (int)(bar - text) : (int)strlen(text);
 		Str_PrintfQuiet(key, sizeof(key), "%.*s", n, text);
-		Texts_Format(line, sizeof(line), key, bar ? bar + 1 : "");
+		Texts_Format(line, sizeof(line), key, Cp_NoticeArg(key, bar ? bar + 1 : ""));
 		Con_Printf("coop: %s\n", line);
 		Text_Message(COOP_NOTICE_MS, "%s", line);
 	}
@@ -2703,7 +2709,7 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		NetRep_GetStr(&r, key, sizeof(key));
 		NetRep_GetStr(&r, arg, sizeof(arg));
 		if (!r.bad) {
-			Texts_Format(line, sizeof(line), key, arg);
+			Texts_Format(line, sizeof(line), key, Cp_NoticeArg(key, arg));
 			Con_Printf("coop: %s\n", line);
 			Text_Message(COOP_NOTICE_MS, "%s", line);
 		}
