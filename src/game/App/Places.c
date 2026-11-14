@@ -604,9 +604,18 @@ static void Pl_Census(void) {
 		charsMoved, cars, carsAI, carsMoved, classes);
 }
 
+/* the entities of a sphere: their number and names (as many as fit) */
+typedef struct {
+	int n, len;
+	char names[1024];
+} PlSphere;
+
 static void Pl_Count(cEntity *e, void *ctx) {
-	(void)e;
-	(*(int *)ctx)++;
+	PlSphere *s = ctx;
+	s->n++;
+	if (s->len < (int)sizeof(s->names) - 64) {
+		s->len += Str_PrintfQuiet(s->names + s->len, (int)sizeof(s->names) - s->len, " %s", e->name);
+	}
 }
 
 byte Places_Command(const char *line) {
@@ -623,12 +632,15 @@ byte Places_Command(const char *line) {
 		/* the entities of the lists (the letters of Scrap.SphereCall) within r of the player, as the test channel's
 		 * "ents" counts them on a client */
 		cEntity *me = Players_Get(player);
-		int n = 0;
+		static PlSphere s;
+		s.n = s.len = 0;
+		s.names[0] = 0;
 		if (me) {
 			vec3_t c = me->pos;
-			cWorld_SphereEach(g_pWorld, EntityLists_Get(pat), &c, r, 1, Pl_Count, &n);
+			cWorld_SphereEach(g_pWorld, EntityLists_Get(pat), &c, r, 1, Pl_Count, &s);
 			Con_Printf("places: sphere %s of player %d at %.0f %.0f %.0f r %.0f: %d entities\n", pat, player,
-				(double)c.x, (double)c.y, (double)c.z, (double)r, n);
+				(double)c.x, (double)c.y, (double)c.z, (double)r, s.n);
+			Con_Printf("places: sphere names%s\n", s.names);
 		}
 		return 1;
 	}
