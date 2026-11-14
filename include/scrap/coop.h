@@ -107,6 +107,8 @@
 										 * that opened it str ("" none), money u32, the hangar's save variables
 										 * (COOP_VARS); CONV, SPUTNIK: see there */
 #define COOP_Y_FADE 10					/* a fade of the scripts' screen 0: from r g b a u8, to r g b a u8, ms u32 */
+#define COOP_Y_VIDEO 11					/* the video the scripts set before a mission's level change (PlayVideo): file
+										 * str; the client plays it before the next level */
 #define COOP_C_CHOICE 20				/* client -> instance (COOP_MSG, reliable): entity str, option u8 */
 #define COOP_C_LEADER 21				/* client -> instance: to the party's leader (COORD_MSG_LEADER) */
 #define COOP_C_ANSWER 22				/* client -> instance: the menu's answer: kind u8, then YESNO: yes u8; SHIPEDIT:

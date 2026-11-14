@@ -714,6 +714,32 @@ static void Cp_Reset(const char *map) {
 	}
 }
 
+/* the video the scripts set for the level change (Scrap.Set("PlayVideo"), a mission's end) to the client of member
+ * i (-1: all here): it plays it before its next level, as the single player's level load does */
+static void Cp_Video(int i) {
+	uint8_t buf[CP_NAME * 2 + 8];
+	nativeVal_t v;
+	NetRepBuf w;
+	Native_SetNone(&v);
+	if (Native_GVarGet("PlayVideo", &v) && v.type == NV_STR && Native_Text(&v)[0]) {
+		NetRepBuf_Init(&w, buf, sizeof(buf));
+		NetRep_PutU8(&w, COOP_MSG);
+		NetRep_PutU8(&w, COOP_Y_VIDEO);
+		NetRep_PutStr(&w, Native_Text(&v));
+		if (!w.bad) {
+			if (i < 0) {
+				Cp_ToAll(buf, w.size);
+			} else {
+				Cp_ToClient(i, buf, w.size);
+			}
+			Con_Printf("coop: the video %s to %s\n", Native_Text(&v), i < 0 ? "the members here" : "the member");
+		}
+		Mode_GVarSetS("PlayVideo", "");
+	}
+	Native_ErrClear();
+	Native_Free(&v);
+}
+
 byte Coop_QLoad(const char *map) {
 	if (!Coop_On()) {
 		return 0;
@@ -747,6 +773,7 @@ byte Coop_QLoad(const char *map) {
 	}
 	/* the story of now first: the target instance starts with it */
 	Cp_Send();
+	Cp_Video(party ? -1 : i);
 	Con_Printf("coop: mission level change of player %d to %s (%s)%s\n", i, level, spawn ? spawn : "", party ?
 		", the party goes along" : "");
 	if (party) {
@@ -1823,15 +1850,20 @@ byte Coop_Command(const char *line) {
 
 /* ================================ client ================================ */
 
+/* the video the next level load plays (a headless client plays none) */
+static void Cp_ClientVideo(const char *file) {
+	if (!g_HeadlessPlay && !Mode_GVarSetS("PlayVideo", file)) {
+		Native_ErrPrint();
+	}
+}
+
 void Coop_Cue(int kind, const char *text) {
 	char key[64], line[256];
 	if (kind == COORD_CUE_COOP) {
 		cp.world = 1;
 	} else if (kind == COORD_CUE_INTRO) {
 		Con_Printf("coop: a new story: the intro %s\n", text);
-		if (!g_HeadlessPlay && !Mode_GVarSetS("PlayVideo", text)) {
-			Native_ErrPrint();
-		}
+		Cp_ClientVideo(text);
 	} else if (kind == COORD_CUE_NOTICE) {
 		const char *bar = strchr(text, '|');
 		int n = bar ? (int)(bar - text) : (int)strlen(text);
@@ -2500,6 +2532,13 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		}
 		break;
 	}
+	case COOP_Y_VIDEO:
+		NetRep_GetStr(&r, file, sizeof(file));
+		if (!r.bad) {
+			Con_Printf("coop: the video %s before the next level\n", file);
+			Cp_ClientVideo(file);
+		}
+		break;
 	case COOP_Y_END:
 		/* the credits of the main menu, as the single player's end; the world is left */
 		Con_Printf("coop: the story is finished: the credits\n");
