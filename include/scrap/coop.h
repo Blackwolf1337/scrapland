@@ -187,7 +187,8 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * <n>", "story hold 1|0" (the changes wait, go), "leader <player>"
  * (as the client's key), "travel <player> <level>" (alone, at the level's start), "qload <map>" and "restart" (as
  * the scripts' SaveGame.QLoad and SaveGame.Restart), "theend" (as the end's credits: all variables deleted, the menu),
- * "call <Module.Func|arg|...>" (a function of the scripts, as a line of a call table) */
+ * "call <Module.Func|arg|...>" (a function of the scripts, as a line of a call table), "kill <Module.var>" (the
+ * entities of that list of the scripts die: Life 0) */
 byte Coop_Command(const char *line);
 
 /* ---- client ---- */

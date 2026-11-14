@@ -385,6 +385,8 @@ static void Cp_TellOptions(void) {
 
 void Coop_Pass(void) {
 	if (Coop_On()) {
+		/* nothing draws the talk scorer here: its time and the end of a remote communication */
+		Scorer_TalkTick(1.0f / INSTANCE_TICK_HZ);
 		Cp_Send();
 		Cp_TellOptions();
 	}
@@ -1057,6 +1059,7 @@ void Coop_SpeechText(const char *text, float time, int r, int g, int b) {
 	NetRep_PutU8(&w, (uint32_t)(b & 255));
 	/* the speaker's client shows the conversation */
 	int i = Players_Bound();
+	Con_Printf("coop: speech for player %d: %.60s\n", i == PLAYERS_NONE ? -1 : i, text);
 	if (i != PLAYERS_NONE && Rep_PlayerConn(i) >= 0) {
 		Cp_ToClient(i, buf, w.size);
 	} else {
@@ -1313,6 +1316,27 @@ byte Coop_Command(const char *line) {
 		Players_BindTurn();
 		return 1;
 	}
+	if (sscanf(line, "kill %63s", name) == 1 && strchr(name, '.')) {
+		/* the entities of a list of the scripts (the targets of a mission) die as by a weapon: their OnDeath runs */
+		nativeVal_t list, it, e;
+		char *dot = strchr(name, '.');
+		*dot = 0;
+		int n = Mode_ModGet(name, dot + 1, &list) ? Mode_Loop(&list) : -1;
+		for (int k = 0; k < n; k++) {
+			Native_SetNone(&e);
+			Native_SetNone(&it);
+			if (Native_SeqItem(&list, k, &it) && Mode_EntitySeam(&it, &e) && Native_True(&e) && LvN_SetI(&e, "Life", 0)) {
+				Con_Printf("coop: %s of %s.%s killed\n", it.type == NV_STR ? Native_Text(&it) : "an entity", name, dot + 1);
+			}
+			Native_Free(&it);
+			Native_Free(&e);
+		}
+		Native_ErrPrint();
+		if (n >= 0) {
+			Native_Free(&list);
+		}
+		return 1;
+	}
 	if (sscanf(line, "travel %d %63s", &i, name) == 2) {
 		Con_Printf("coop: player %d travels alone to %s\n", i, name);
 		Travel_Go(i, name, "", "", 0);
@@ -1334,8 +1358,9 @@ byte Coop_Command(const char *line) {
 		Con_Printf("coop: %s %s%s\n", name, v ? "= " : "is not set", v ? v : "");
 	} else {
 		const char *lib = SaveVar_Get("Mission.Library"), *map = SaveVar_Get("Mission.Map");
-		Con_Printf("coop: story %s, %d changes to send, mission %s in %s, scene %s\n", cp.synced ? "in sync" :
-			"waiting for the coordinator", cp.ndirty, lib ? lib : "-", map ? map : "-", cp.inScene ? "playing" : "none");
+		Con_Printf("coop: story %s, %d changes to send, mission %s in %s, scene %s, action set %s\n", cp.synced ?
+			"in sync" : "waiting for the coordinator", cp.ndirty, lib ? lib : "-", map ? map : "-", cp.inScene ? "playing" :
+			"none", TABLE_AT(g_ActionSets, Input_GetActionSet())->name);
 	}
 	return 1;
 }

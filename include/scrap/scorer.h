@@ -156,6 +156,9 @@ struct nativeVal_s;
  * float or an int are its parameters */
 void Scorer_SetSpeechCallback(const char *func, const struct nativeVal_s *arg);
 void Scorer_CancelSpeech(float time);
+/* the talk's time without a talk scorer that draws (a headless instance of the coop story): it runs down, its
+ * callback (the end of a remote communication) runs at its end (not in the original) */
+void Scorer_TalkTick(float dt);
 void Scorer_SetHeadMonitor(const char *a, const char *b, int c);
 void Scorer_SetMsgText(const char *text, float time, const char *font);
 void Scorer_SetLabelText(const char *text, float time);

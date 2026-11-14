@@ -178,20 +178,31 @@ static cPy_Function g_TalkCallback;
 
 static int g_TalkColor[3] = { 174, 229, 251 };
 
-static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
-	float dt, scroll, w, lh, x, y, hgt;
-	int n, maxLines;
-
+/* the time of the talk runs down by dt; 0 when it is over (its callback runs) */
+static byte Talk_Run(float dt) {
 	if (!(g_RemainTalkTime > 0.01f)) {
 		g_RemainTalkTime = 0.0f;
-		self->useTime = g_TalkUseTime;
 		if (cPy_Function_IsValid((&g_TalkCallback))) {
 			cPy_Function_Execute((&g_TalkCallback), 1);
 		}
+		return 0;
+	}
+	g_RemainTalkTime = g_RemainTalkTime - dt;
+	return 1;
+}
+
+void Scorer_TalkTick(float dt) {
+	Talk_Run(dt);
+}
+
+static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
+	float dt = Scorer_Get(player)->frameTime, scroll, w, lh, x, y, hgt;
+	int n, maxLines;
+
+	if (!Talk_Run(dt)) {
+		self->useTime = g_TalkUseTime;
 		return;
 	}
-	dt = Scorer_Get(player)->frameTime;
-	g_RemainTalkTime = g_RemainTalkTime - dt;
 	n = g_TalkNumLines;
 	maxLines = self->maxLines;
 	if (n > maxLines) {
