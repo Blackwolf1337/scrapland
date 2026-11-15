@@ -83,6 +83,8 @@
 #define CP_FIGHT_SIZE 250.0f		/* test: it fires when its aim is this near the target's middle */
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
+#define CP_AMMO_TRIED 6				/* test: ammo boxes remembered as taken */
+#define CP_AMMO_GAP 4.0				/* test: s between two ammo boxes */
 #define CP_FIGHT_USELESS 10.0		/* test: s a weapon fires at a target near ahead that loses no life: not taken again */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
@@ -170,6 +172,10 @@ static struct {
 		double fightTold;			/* when its state was told last */
 		double lockAt;				/* since when its homing missiles' lock is on the target */
 		uint32_t useless;			/* the weapons that did not hurt its target (bits by weapon id) */
+		uint32_t useful;			/* the ones that did */
+		char ammoTried[CP_AMMO_TRIED][CP_NAME];	/* the ammo boxes it took last (the oldest replaced) */
+		int ammoNext;
+		double ammoAt;				/* when it was put at a box last */
 		int lifeWeap;				/* the weapon of the watch of the target's life (-1 none) */
 		float lifeMark;				/* the target's life when that watch began */
 		double lifeSince;			/* when */
@@ -2497,6 +2503,9 @@ static int Cp_FightWeapon(cEntity *e, float d, uint32_t useless) {
  * starts the watch again */
 static void Cp_FightUseless(int i, cEntity *t, int w, byte firing, double now) {
 	float life = WLife(t)->life;
+	if (firing && w == cp.pl[i].lifeWeap && life < cp.pl[i].lifeMark - 0.5f && w >= 0 && w < 32) {
+		cp.pl[i].useful |= 1u << w;
+	}
 	if (!firing || w != cp.pl[i].lifeWeap || fabsf(life - cp.pl[i].lifeMark) >= 0.5f) {
 		cp.pl[i].lifeWeap = firing ? w : -1;
 		cp.pl[i].lifeMark = life;
@@ -2509,6 +2518,56 @@ static void Cp_FightUseless(int i, cEntity *t, int w, byte firing, double now) {
 	cp.pl[i].useless |= 1u << w;
 	cp.pl[i].lifeWeap = -1;
 	Con_Printf("coop: player %d: weapon %d does not hurt %s\n", i, w, t->name);
+}
+
+/* test: the weapons that hurt the target are all out of ammo: player i's ship is put at the nearest ammo box of the
+ * level it did not take lately (its pickup radius takes it, as a player flies through it); 1 while it goes for ammo */
+static byte Cp_FightAmmo(int i, cEntity *e, double now) {
+	cWeaponManager *m = (cWeaponManager *)&Veh(e)->weapons;
+	uint32_t want = cp.pl[i].useful;
+	for (int w = 0; want && w < 32 && w < g_pWorld->weapons.count; w++) {
+		if ((want >> w & 1) && m->weaps[w].slots && cWeaponManager_HasMinAmmo(m, (uint32_t)w)) {
+			return 0;
+		}
+	}
+	if (!want) {
+		return 0;
+	}
+	if (now - cp.pl[i].ammoAt < CP_AMMO_GAP) {
+		return 1;
+	}
+	cEntity *box = NULL;
+	float best = 0.0f;
+	for (cEntity *b = cWorld_GetFirstEntity(g_pWorld); b; b = cEntity_Next(b)) {
+		char *res = NULL;
+		int k = 0;
+		if (!b->active || b->deadNode.target || !Entity_IsType(b, "item") || !Entity_VarS(b, "NetRes", &res, 0) || !res ||
+			strncmp(res, "Box:", 4) || !strcmp(res + 4, "Life")) {
+			continue;
+		}
+		while (k < CP_AMMO_TRIED && strcmp(cp.pl[i].ammoTried[k], b->name)) {
+			k++;
+		}
+		float dx = b->pos.x - e->pos.x, dy = b->pos.y - e->pos.y, dz = b->pos.z - e->pos.z, d = dx * dx + dy * dy + dz * dz;
+		if (k == CP_AMMO_TRIED && (!box || d < best)) {
+			box = b;
+			best = d;
+		}
+	}
+	if (!box) {
+		/* every one taken lately: the oldest again next time */
+		cp.pl[i].ammoTried[cp.pl[i].ammoNext][0] = 0;
+		cp.pl[i].ammoNext = (cp.pl[i].ammoNext + 1) % CP_AMMO_TRIED;
+		return 0;
+	}
+	Str_Copy(cp.pl[i].ammoTried[cp.pl[i].ammoNext], box->name, CP_NAME);
+	cp.pl[i].ammoNext = (cp.pl[i].ammoNext + 1) % CP_AMMO_TRIED;
+	cp.pl[i].ammoAt = now;
+	e->pos = (vec3_t){ box->pos.x, box->pos.y + 200.0f, box->pos.z };
+	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	Rep_Placed(i);
+	Con_Printf("coop: player %d: no ammo for the weapons that hurt its target: ammo box %s\n", i, box->name);
+	return 1;
 }
 
 /* test: player i fights the nearest of its targets through its input, as a player at the keys: turns to it and fires
@@ -2550,7 +2609,7 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	if (strcmp(cp.pl[i].fightAt, t->name)) {
 		Str_Copy(cp.pl[i].fightAt, t->name, sizeof(cp.pl[i].fightAt));
 		Con_Printf("coop: player %d fights %s (%.0f away)\n", i, t->name, (double)d);
-		cp.pl[i].useless = 0;
+		cp.pl[i].useless = cp.pl[i].useful = 0;
 		cp.pl[i].lifeWeap = -1;
 	}
 	if (d > (cp.pl[i].follow ? CP_FIGHT_NEAR : CP_FIGHT_FAR) && now - cp.pl[i].fightSince >= 1.0) {
@@ -2566,6 +2625,9 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		Rep_Placed(i);
 		cp.pl[i].fightSince = now;
 		d = near;
+	}
+	if (kind == NETREP_SHIP && Cp_FightAmmo(i, e, now)) {
+		return;
 	}
 	/* where its client shows it (the server's shot looks there) */
 	back = back < 0.0 ? 0.0 : back > 0.5 ? 0.5 : back;
