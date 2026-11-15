@@ -28,6 +28,7 @@
 #include <limits.h>
 
 #include "scrap/app.h"
+#include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
@@ -436,7 +437,13 @@ static byte Cc_EnterCharConversor(const nativeVal_t *uname, const nativeVal_t *c
 /* SFX.CharacterConversor(_usrName, _charName, step) of the module's globals */
 static byte Cc_Fx(long step) {
 	nativeVal_t u = { 0 }, c = { 0 };
-	byte ok = Cc_G("_usrName", &u) && Cc_G("_charName", &c) && PORT_CALL(SFX, CharacterConversor, NULL, "vvi", &u, &c, step);
+	byte ok = Cc_G("_usrName", &u) && Cc_G("_charName", &c);
+	/* not in the original: a coop member that died or left in the machine has no character for the effect */
+	if (ok && Coop_On() && u.type == NV_STR && !World_FindEntity(Native_Text(&u))) {
+		Con_Printf("coop: the conversor's character %s is gone\n", Native_Text(&u));
+	} else {
+		ok = ok && PORT_CALL(SFX, CharacterConversor, NULL, "vvi", &u, &c, step);
+	}
 	Native_Free(&u);
 	Native_Free(&c);
 	return ok;

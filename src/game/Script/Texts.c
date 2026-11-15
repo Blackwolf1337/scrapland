@@ -29,6 +29,7 @@ static const struct {
 	{ "MP_CoopLeaderHere", "The party leader is here." },
 	{ "MP_CoopNoLeader", "There is no party leader in this world." },
 	{ "MP_CoopEnd", "The party finished the story." },
+	{ "MP_CoopMissionFailed", "Mission failed. The party starts it again." },
 	{ "MP_Controls_CoopLeader", "Go to party leader" },
 	{ "MP_Mode_dmbots", "DeathMatch with bots" },
 	{ "MP_PvP", "PvP" },

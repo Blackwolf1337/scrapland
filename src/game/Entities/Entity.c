@@ -9,7 +9,9 @@
 #include "scrap/ai.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
+#include "scrap/game.h"
 #include "scrap/cstring.h"
 #include "scrap/hashtable.h"
 #include "scrap/logic.h"
@@ -157,6 +159,10 @@ byte cEntity_Del(cEntity *self) {
 		return 0;
 	}
 	Nto1Node_LinkTo(&g_pWorld->deadList, &self->deadNode);
+	/* not in the original: a coop instance tells its clients what its level's start deleted */
+	if (g_Instance) {
+		Coop_EntityGone(self);
+	}
 	return 1;
 }
 

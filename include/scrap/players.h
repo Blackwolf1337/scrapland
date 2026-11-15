@@ -115,6 +115,7 @@ int Players_ShipOwner(struct cEntity *e);
 int Players_Bound(void);
 /* the money and the alarm of player i whether it is bound or not */
 int Players_Money(int i);
+void Players_SetMoney(int i, int money);
 const struct cAlarm *Players_Alarm(int i);
 /* a weapon of attacker (a ship or character, or the owner of a missile) may hurt victim: always but on an instance
  * between two players' entities, where the freeroam factions decide first (include/scrap/faction.h), else -pvp */

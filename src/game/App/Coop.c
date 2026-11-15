@@ -33,6 +33,7 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
 #include "scrap/text.h"
 #include "scrap/texts.h"
@@ -68,12 +69,22 @@
 #define CP_RACE_GAP 2.5				/* seconds: test: the race's ship at the next checkpoint after this */
 #define CP_FIGHT_FAR 6000.0f		/* test: a fighter further from its target is put CP_FIGHT_NEAR from it */
 #define CP_FIGHT_NEAR 2500.0f
+#define CP_FIGHT_HIT 3000.0f		/* test: a target this near is fought with the instant-hit weapons first */
+#define CP_FIGHT_LOCK 0.4			/* test: s a homing missile's lock is on the target before the release */
+#define CP_FIGHT_LOCKCONE 0.5f		/* test: radians: it holds a homing missile while the target is this near ahead */
+#define CP_FIGHT_SHOT 8000.0f		/* test: units a second of a shot, to lead a moving target */
+#define CP_FIGHT_TURN 0.25f			/* test: radians: a ship turns at full speed to a target further aside */
 #define CP_FIGHT_SIZE 250.0f		/* test: it fires when its aim is this near the target's middle */
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
+#define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
+#define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
+#define CP_GONE 128					/* entities deleted by the level's start told to the clients */
+#define CP_GONE_MSG (8 + CP_GONE * (CP_NAME + 2))
+#define CP_FAIL_SECS 5.0			/* a failed mission's restart after this (the single player's after the game over) */
 #define CP_LIFEBOAT "SLifeBoat<-<-<-<-<-0,0,0,0,0,0,1<-50<-0,0,0,0,0,0"	/* the hangar's spare ship (a test's ship) */
 
 /* the variables of a player, not of the story (where it goes on, its character, money and alarm, its time) */
@@ -88,6 +99,7 @@ static const char *const cp_clientNot[] = { "Mission.Map", "Mission.Library", "A
 /* the way point of a chapter's travel, given to the start of the target level (its scripts read them at once) */
 static const char *const cp_entry[] = { "Map", "Spawn", "ComeFrom", "PrevMap", NULL };
 #define CP_ENTRY "Coop.Entry."
+#define CP_PURSE "Coop.Money"		/* the party's money, a counter of the story (Cp_Purse) */
 
 #define CP_TABLES 4					/* call tables of one scene (its Load table and the actors' after it) */
 
@@ -148,11 +160,14 @@ static struct {
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
 		double fightTold;			/* when its state was told last */
+		double lockAt;				/* since when its homing missiles' lock is on the target */
 		char possess[CP_NAME];		/* test: the character it possesses ("" none) */
 		double possessSince, possessAt;	/* since when, when it was put next to it last */
 		byte autoOn;				/* test: it plays the mission's targets on its own (fights, races, uses) */
 		char autoAt[CP_NAME];		/* the target it went to last */
 		double autoSince, autoUse;	/* when, when it uses it (0 done) */
+		uint16_t purseJoined;		/* the join whose money is the party's purse (Cp_Purse) */
+		int purse;					/* the purse it got last */
 	} pl[PLAYERS_MAX];
 	struct {						/* the items of the HUD's scorer made, by name (their class for the clients) */
 		char name[CP_NAME], type[16];
@@ -172,6 +187,15 @@ static struct {
 	char targets[COOP_TARGETS * (CP_NAME + 4)];	/* the targets told last (names and slots), "" */
 	uint64_t targetsAt;				/* when (instance ms) */
 	char ctargets[COOP_TARGETS * CP_NAME];	/* client: the names of its copies it set as the targets */
+	int missionPlayer;				/* the mission's member here (Cp_MissionPlayer), -1 */
+	uint16_t missionJoined;			/* its join */
+	byte remote;					/* a remote communication of the scripts is told (Coop_RemoteCom) */
+	byte partyDead;					/* every member here died: the single player's death runs (Coop_Died) */
+	char gone[CP_GONE][CP_NAME];	/* the entities the level's start deleted (the mission's removals), for the clients */
+	int ngone;
+	uint8_t cgone[CP_GONE_MSG];		/* client: the instance's list, to delete from its level once it runs */
+	int cgoneSize;
+	double failAt;					/* a failed mission: the level starts again then (instance time), 0 */
 	int conv;						/* the member in a character conversor, -1 */
 	char convMachine[CP_NAME];		/* that conversor */
 	byte convAsked;					/* its interface is on the member's client (the machine waits) */
@@ -197,10 +221,15 @@ static struct {
 	double cmenuAt;
 	double sceneAt;					/* client: when it began */
 	char notice[256];
-} cp = { .scene = -1, .loading = -1, .conv = -1 };
+} cp = { .scene = -1, .loading = -1, .conv = -1, .missionPlayer = -1 };
 
 static void Cp_ToClient(int i, const uint8_t *buf, int size);
 static void Cp_ToAll(const uint8_t *buf, int size);
+static void Cp_ToNear(int s, const uint8_t *buf, int size);
+static int Cp_MissionPlayer(void);
+static void Cp_SetMissionPlayer(int i);
+static void Cp_Reset(const char *map);
+static void Cp_TellGone(int i);
 
 static byte Cp_InList(const char *const *list, const char *s) {
 	for (; *list; list++) {
@@ -287,6 +316,10 @@ void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
 	}
 	if (!cp.on || cp.applying || !Cp_Story(name)) {
 		return;
+	}
+	/* the member that sets the next mission is its member */
+	if (g_Instance && !strcmp(name, "Mission.Library") && Players_Bound() != PLAYERS_NONE) {
+		Cp_SetMissionPlayer(Players_Bound());
 	}
 	int i = Cp_DirtyAt(name);
 	if (i < 0) {
@@ -500,11 +533,49 @@ static void Cp_TellOptions(void) {
 	}
 }
 
+/* the party's one purse (include/scrap/coop.h): what the members here earned or spent since the last tick goes into
+ * the story's counter, every member gets the sum; a story without one takes the money of its first member */
+static void Cp_Purse(void) {
+	char text[16];
+	const char *v = SaveVar_Get(CP_PURSE);
+	int purse = v ? crt_atoi(v) : 0, add = 0;
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (Rep_PlayerConn(i) < 0) {
+			continue;
+		}
+		int m = Players_Money(i);
+		if (cp.pl[i].purseJoined == Players_Joined(i)) {
+			add += m - cp.pl[i].purse;
+			continue;
+		}
+		cp.pl[i].purseJoined = Players_Joined(i);
+		cp.pl[i].purse = purse;
+		if (!v) {
+			Str_PrintfQuiet(text, sizeof(text), "%d", m);
+			SaveVar_Set(CP_PURSE, text);
+			v = SaveVar_Get(CP_PURSE);
+			purse = m;
+			cp.pl[i].purse = m;
+		}
+		Con_Printf("coop: player %d has the party's money %d (its own was %d)\n", i, purse, m);
+	}
+	if (add) {
+		purse = SaveVar_Inc(CP_PURSE, add);
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (Rep_PlayerConn(i) >= 0) {
+			Players_SetMoney(i, purse);
+			cp.pl[i].purse = purse;
+		}
+	}
+}
+
 void Coop_Pass(void) {
 	if (Coop_On() && !cp.started) {
 		/* the level's start (a scene of its Init: GamblinDen's MeetGambler, Fake0) waits for the member that comes,
 		 * as the single player's plays it from its start */
 		cp.started = 1;
+		Con_Printf("coop: the level's start deleted %d entities (told to the clients)\n", cp.ngone);
 		cp.waiting = 1;
 		for (int i = 0; i < PLAYERS_MAX; i++) {
 			cp.waiting = cp.waiting && Rep_PlayerConn(i) < 0;
@@ -521,6 +592,11 @@ void Coop_Pass(void) {
 		if (cp.conv >= 0 && cp.convAsked && Rep_PlayerConn(cp.conv) < 0) {
 			/* the member left with the conversor's interface open: as its Escape */
 			Cp_ConvPicked(cp.conv, "");
+		}
+		Cp_Purse();
+		if (cp.failAt > 0.0 && Instance_Time() >= cp.failAt) {
+			cp.failAt = 0.0;
+			Cp_Reset(Instance_Level());
 		}
 		Cp_Send();
 		Cp_TellOptions();
@@ -1157,6 +1233,77 @@ byte Coop_QLoad(const char *map) {
 	return Travel_Go(i, level, spawn ? spawn : "", from && !strncmp(from, "Door", 4) ? from : "", party);
 }
 
+void Coop_EntityGone(cEntity *e) {
+	if (!Coop_On() || cp.started || cp.ngone == CP_GONE || e == cp.standIn || Players_Of(e) >= 0) {
+		return;
+	}
+	for (int k = 0; k < cp.ngone; k++) {
+		if (!strcmp(cp.gone[k], e->name)) {
+			return;
+		}
+	}
+	Str_Copy(cp.gone[cp.ngone++], e->name, CP_NAME);
+}
+
+/* the entities the level's start deleted (a mission's Init: the client's level start runs none) to member i */
+static void Cp_TellGone(int i) {
+	static uint8_t buf[CP_GONE_MSG];
+	NetRepBuf w;
+	if (!cp.ngone) {
+		return;
+	}
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_GONE);
+	NetRep_PutU16(&w, (uint32_t)cp.ngone);
+	for (int k = 0; k < cp.ngone; k++) {
+		NetRep_PutStr(&w, cp.gone[k]);
+	}
+	if (!w.bad) {
+		Cp_ToClient(i, buf, w.size);
+	}
+}
+
+void Coop_Died(int i, cEntity *e) {
+	if (!Coop_On() || cp.partyDead) {
+		return;
+	}
+	for (int k = 0; k < PLAYERS_MAX; k++) {
+		if (k != i && Rep_PlayerConn(k) >= 0 && !Rep_PlayerDead(k) && Players_Get(k)) {
+			return;
+		}
+	}
+	/* the party died: the single player's death (the mission's hook, else the end of the game: Coop_MissionFailed) */
+	Con_Printf("coop: every member here died (player %d last)\n", i);
+	nativeVal_t a[2];
+	Native_SetStr(&a[0], e->name);
+	Native_SetStr(&a[1], "");
+	cp.partyDead = 1;
+	Players_Bind(i);
+	if (!Mode_Import("Chars") || !PORT_CALL(Chars, MainCharDeath, NULL, "vv", &a[0], &a[1])) {
+		Native_ErrPrint();
+	}
+	cp.partyDead = 0;
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+}
+
+byte Coop_PartyDeath(void) {
+	return cp.partyDead;
+}
+
+byte Coop_MissionFailed(void) {
+	if (!Coop_On()) {
+		return 0;
+	}
+	if (cp.failAt <= 0.0) {
+		cp.failAt = Instance_Time() + CP_FAIL_SECS;
+		Cp_Notice(-1, "MP_CoopMissionFailed", "");
+		Con_Printf("coop: the mission failed: the level starts again in %.0f s\n", CP_FAIL_SECS);
+	}
+	return 1;
+}
+
 byte Coop_PartyTravel(const char *level) {
 	const char *s = strrchr(level, '/');
 	level = s ? s + 1 : level;
@@ -1202,6 +1349,46 @@ byte Coop_Spawn(int player, vec3_t *pos, float *yaw) {
 		}
 	}
 	return 0;
+}
+
+cEntity *Coop_HangarShip(const vec3_t *p, float yaw) {
+	char var[CP_NAME];
+	nativeVal_t c[3], pos, cad, out;
+	const char *n = SaveVar_Get("Hangar.iHangarShip");
+	int k = n ? crt_atoi(n) : -1;
+	/* the hangar's aux slot (9) is the junkyard's lifeboat of the story's start: a standard ship then, as the single
+	 * player takes a parked one */
+	Str_PrintfQuiet(var, sizeof(var), "Hangar.HangarShip%d", k + 1);
+	const char *text = k >= 0 && k < 9 ? SaveVar_Get(var) : NULL;
+	if (!text || !text[0] || text[0] == '<') {
+		return NULL;
+	}
+	/* Parking.CreatePlayerShip's ship of the hangar the story flies, a parked one for the member */
+	Native_SetFloat(&c[0], p->x);
+	Native_SetFloat(&c[1], p->y);
+	Native_SetFloat(&c[2], p->z);
+	Mode_Tuple3(&pos, &c[0], &c[1], &c[2]);
+	Native_SetStr(&cad, text);
+	Native_SetNone(&out);
+	cEntity *ship = NULL;
+	if (Mode_Import("ShipEdit") && PORT_CALL(ShipEdit, CreateShipFromSaveVar, &out, "vvs", &cad, &pos, "Parked") &&
+		out.type == NV_ENT && (ship = Native_Ent(&out)) != NULL) {
+		int one = 1;
+		vec3_t ang = { 0.0f, yaw, 0.0f };
+		Entity_VarI(ship, "Active", &one, 1);
+		Entity_VarI(ship, "ActiveCMask", &one, 1);
+		Obj_SetAng(ship, &ang);
+		if (!PORT_CALL(Parking, SetShipAsParked, NULL, "s", ship->name)) {
+			Native_ErrPrint();
+		}
+		Con_Printf("coop: the party's hangar ship %s (%s)\n", ship->name, var);
+	} else {
+		Native_ErrPrint();
+	}
+	Native_Free(&out);
+	Native_Free(&cad);
+	Native_Free(&pos);
+	return ship;
 }
 
 byte Coop_NoShipCall(void) {
@@ -1510,6 +1697,7 @@ void Coop_Joined(int i) {
 	}
 	/* the client's copy of the story for its next level starts */
 	Cp_TellStory(i, 1);
+	Cp_TellGone(i);
 	cp.pl[i].menu = 0;
 	cp.pl[i].held[0] = 0;
 	for (int k = 0; cp_hud[k]; k++) {
@@ -1660,6 +1848,47 @@ void Coop_SceneEnd(void) {
 
 /* ---- the texts and voices of the scripts ---- */
 
+/* to member s and the members within COOP_HEAR of it (s none: to all) */
+static void Cp_ToNear(int s, const uint8_t *buf, int size) {
+	cEntity *se = s >= 0 && s < PLAYERS_MAX ? Players_Get(s) : NULL;
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		cEntity *e = Players_Get(i);
+		if (Rep_PlayerConn(i) < 0 || (!e && i != s)) {
+			continue;
+		}
+		float dx = se && e ? e->pos.x - se->pos.x : 0.0f, dy = se && e ? e->pos.y - se->pos.y : 0.0f;
+		float dz = se && e ? e->pos.z - se->pos.z : 0.0f;
+		if (i == s || dx * dx + dy * dy + dz * dz <= COOP_HEAR * COOP_HEAR) {
+			Cp_ToClient(i, buf, size);
+		}
+	}
+}
+
+/* the mission's member here: the one bound when the story's mission changed last, else the first member that came
+ * while it was gone (the one that traveled to the mission's level); -1 */
+static int Cp_MissionPlayer(void) {
+	int i = cp.missionPlayer;
+	if (i >= 0 && i < PLAYERS_MAX && Rep_PlayerConn(i) >= 0 && Players_Joined(i) == cp.missionJoined) {
+		return i;
+	}
+	cp.missionPlayer = -1;
+	for (i = 0; i < PLAYERS_MAX; i++) {
+		if (Rep_PlayerConn(i) >= 0) {
+			Cp_SetMissionPlayer(i);
+			return i;
+		}
+	}
+	return -1;
+}
+
+static void Cp_SetMissionPlayer(int i) {
+	if (i >= 0 && i < PLAYERS_MAX && Rep_PlayerConn(i) >= 0 && i != cp.missionPlayer) {
+		cp.missionPlayer = i;
+		cp.missionJoined = Players_Joined(i);
+		Con_Printf("coop: player %d is the mission's member here\n", i);
+	}
+}
+
 /* a scene the clients play themselves makes its own texts and voices */
 static byte Cp_Quiet(void) {
 	return !Coop_On() || cp.inScene;
@@ -1682,10 +1911,14 @@ void Coop_SpeechText(const char *text, float time, int r, int g, int b) {
 	NetRep_PutU8(&w, (uint32_t)(r & 255));
 	NetRep_PutU8(&w, (uint32_t)(g & 255));
 	NetRep_PutU8(&w, (uint32_t)(b & 255));
-	/* the speaker's client shows the conversation */
+	/* the speaker's client shows the conversation; a remote communication the mission's member and the members near it
+	 * */
 	int i = Players_Bound();
-	Con_Printf("coop: speech for player %d: %.60s\n", i == PLAYERS_NONE ? -1 : i, text);
-	if (i != PLAYERS_NONE && Rep_PlayerConn(i) >= 0) {
+	Con_Printf("coop: %s for player %d: %.60s\n", cp.remote ? "remote communication" : "speech",
+		i == PLAYERS_NONE ? -1 : i, text);
+	if (cp.remote && i != PLAYERS_NONE) {
+		Cp_ToNear(i, buf, w.size);
+	} else if (i != PLAYERS_NONE && Rep_PlayerConn(i) >= 0) {
 		Cp_ToClient(i, buf, w.size);
 	} else {
 		Cp_ToAll(buf, w.size);
@@ -1747,18 +1980,34 @@ void Coop_PlayVoice(int channel) {
 	NetRep_PutU8(&w, (uint32_t)channel);
 	NetRep_PutStr(&w, cp.voice[channel]);
 	/* the speaker and the members near it hear it */
-	int s = Players_Bound();
-	cEntity *se = s != PLAYERS_NONE ? Players_Get(s) : NULL;
-	for (int i = 0; i < PLAYERS_MAX; i++) {
-		cEntity *e = Players_Get(i);
-		if (!e || Rep_PlayerConn(i) < 0) {
-			continue;
-		}
-		float dx = se ? e->pos.x - se->pos.x : 0.0f, dy = se ? e->pos.y - se->pos.y : 0.0f;
-		float dz = se ? e->pos.z - se->pos.z : 0.0f;
-		if (dx * dx + dy * dy + dz * dz <= COOP_HEAR * COOP_HEAR) {
-			Cp_ToClient(i, buf, w.size);
-		}
+	Cp_ToNear(Players_Bound(), buf, w.size);
+}
+
+void Coop_RemoteCom(byte on) {
+	if (!Coop_On()) {
+		return;
+	}
+	cp.remote = on;
+	int i = on ? Cp_MissionPlayer() : -1;
+	if (i >= 0) {
+		Players_Bind(i);
+	}
+}
+
+void Coop_RemoteHead(const char *model, const char *text, int index) {
+	uint8_t buf[512];
+	NetRepBuf w;
+	if (Cp_Quiet() || !cp.remote) {
+		return;
+	}
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutU8(&w, COOP_MSG);
+	NetRep_PutU8(&w, COOP_Y_HEAD);
+	NetRep_PutStr(&w, model);
+	NetRep_PutStr(&w, text);
+	NetRep_PutU8(&w, (uint32_t)(index & 255));
+	if (!w.bad) {
+		Cp_ToNear(Players_Bound(), buf, w.size);
 	}
 }
 
@@ -2133,10 +2382,13 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 	char mod[CP_NAME];
 	nativeVal_t v, it;
 	int n = 0;
-	if (!strcmp(src, CP_FIGHT_RED)) {
+	if (!strcmp(src, CP_FIGHT_RED) || src[0] == '@') {
+		/* the red ones, or the entities of an entity list of the scripts ("@OutCop": the police ships) */
 		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e && n < max; e = cEntity_Next(e)) {
+			char *list = NULL;
 			if (Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && !Obj(e)->proxy &&
-				Players_Of(e) < 0 && Cp_Foe(e) && foes != 0) {
+				Players_Of(e) < 0 && (src[0] == '@' ? Entity_VarS(e, "EntityList", &list, 0) && list && !strcmp(list, src + 1) :
+				Cp_Foe(e) && foes != 0)) {
 				out[n++] = e;
 			}
 		}
@@ -2173,13 +2425,16 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 	return n;
 }
 
-/* test: the weapon of ship e to fight with: the first it has with ammo of the homing missiles, the heavy and the
- * instant-hit weapons, else its own */
-static int Cp_FightWeapon(cEntity *e) {
+/* test: the weapon of ship e to fight a target d away with: the first it has with ammo of the homing missiles, the
+ * heavy and the instant-hit weapons (near: the instant-hit ones first), else its own */
+static int Cp_FightWeapon(cEntity *e, float d) {
 	cWeaponManager *m = (cWeaponManager *)&Veh(e)->weapons;
-	const int pick[] = { g_SwarmIDWeap, g_InfernoIDWeap, g_ATPCIDWeap, g_DevastatorIDWeap, g_TeslaIDWeap, g_VulcanIDWeap,
+	const int far[] = { g_SwarmIDWeap, g_InfernoIDWeap, g_ATPCIDWeap, g_DevastatorIDWeap, g_TeslaIDWeap, g_VulcanIDWeap,
 		g_LaserIDWeap };
-	for (int k = 0; k < (int)(sizeof(pick) / sizeof(pick[0])); k++) {
+	const int near[] = { g_ATPCIDWeap, g_TeslaIDWeap, g_VulcanIDWeap, g_DevastatorIDWeap, g_SwarmIDWeap, g_InfernoIDWeap,
+		g_LaserIDWeap };
+	const int *pick = d < CP_FIGHT_HIT ? near : far;
+	for (int k = 0; k < (int)(sizeof(far) / sizeof(far[0])); k++) {
 		if (pick[k] >= 0 && pick[k] < g_pWorld->weapons.count && m->weaps[pick[k]].slots &&
 			cWeaponManager_HasMinAmmo(m, (uint32_t)pick[k])) {
 			return pick[k];
@@ -2244,15 +2499,23 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	}
 	/* where its client shows it (the server's shot looks there) */
 	back = back < 0.0 ? 0.0 : back > 0.5 ? 0.5 : back;
-	vec3_t *v = &Obj(t)->vel, at = { t->pos.x - v->x * (float)back, t->pos.y - v->y * (float)back,
-		t->pos.z - v->z * (float)back };
+	/* and ahead of it by the flight of a shot (CP_FIGHT_SHOT units a second), as a player leads a moving target */
+	float lead = kind == NETREP_SHIP ? d / CP_FIGHT_SHOT - (float)back : -(float)back;
+	vec3_t *v = &Obj(t)->vel, at = { t->pos.x + v->x * lead, t->pos.y + v->y * lead, t->pos.z + v->z * lead };
 	float rot[2], dy = at.y - e->pos.y, cone = atan2f(CP_FIGHT_SIZE, d);
 	float dyaw = NetPl_Aim(e, &at, rot, 1);
+	if (kind == NETREP_SHIP) {
+		/* a pilot's quick turn: the full turn until it is this near (NetPl_Aim's own is the bots' slow one) */
+		float hz = sqrtf((at.x - e->pos.x) * (at.x - e->pos.x) + (at.z - e->pos.z) * (at.z - e->pos.z));
+		float pitch = atan2f(dy, hz) - Obj(e)->ang.x;
+		rot[0] = dyaw > CP_FIGHT_TURN ? 1.0f : dyaw < -CP_FIGHT_TURN ? -1.0f : dyaw / CP_FIGHT_TURN;
+		rot[1] = pitch > CP_FIGHT_TURN ? 1.0f : pitch < -CP_FIGHT_TURN ? -1.0f : pitch / CP_FIGHT_TURN;
+	}
 	byte ahead = fabsf(dyaw) < cone && (kind != NETREP_SHIP || fabsf(rot[1]) < cone * 2.0f) && d < CP_FIGHT_RANGE;
 	in->rot[0] = NetRep_QRot(rot[0]);
 	if (kind == NETREP_SHIP) {
 		in->rot[1] = NetRep_QRot(rot[1]);
-		in->weapon = (uint8_t)Cp_FightWeapon(e);
+		in->weapon = (uint8_t)Cp_FightWeapon(e, d);
 		/* closer while far, else its speed (behind it, turning with it) */
 		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > CP_FIGHT_NEAR * 1.5f ? tv + 1500.0f : tv;
 		in->move[0] = NetRep_QMove(Veh(e)->speed > want + 200.0f ? -1.0f : Veh(e)->speed < want ? 1.0f : 0.0f);
@@ -2260,8 +2523,22 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	} else {
 		in->move[0] = NetRep_QMove(d > CP_FIGHT_NEAR * 0.5f && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
 	}
-	/* in bursts: a missile weapon flies at the release */
-	if (ahead && fmod(now, 3.0) < 2.0) {
+	/* the weapons that fire at the release (the homing missiles lock on while held, the Devastator charges) in
+	 * bursts, the others held while the target is ahead */
+	int w = kind == NETREP_SHIP ? (int)in->weapon : -1;
+	if (w >= 0 && (w == g_SwarmIDWeap || w == g_InfernoIDWeap)) {
+		/* a homing missile: held while the target is near ahead until its lock is on it, released then */
+		const char *lk = cTargetLock_GetEntity((cTargetLock *)&Veh(e)->weapons);
+		if (!lk || strcmp(lk, t->name)) {
+			cp.pl[i].lockAt = now;
+		}
+		if (now - cp.pl[i].lockAt >= CP_FIGHT_LOCK) {
+			cp.pl[i].lockAt = now + 0.2;
+		} else if (fabsf(dyaw) < CP_FIGHT_LOCKCONE && d < CP_FIGHT_RANGE && now >= cp.pl[i].lockAt - 0.3) {
+			in->buttons |= NETREP_IN_ACT;
+		}
+	} else if (ahead && (kind != NETREP_SHIP || w != g_DevastatorIDWeap || fmod(now, 3.0) < 2.0)) {
+		/* the Devastator charges while held and fires at the release, the others are held */
 		in->buttons |= NETREP_IN_ACT;
 	}
 	if (now - cp.pl[i].fightTold >= 5.0) {
@@ -2270,6 +2547,25 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 			(double)d, (double)dyaw, (double)WLife(t)->life, kind == NETREP_SHIP ? Veh(e)->controls.weapon : -1,
 			kind == NETREP_SHIP ? (double)cWeaponManager_GetWeapAmmo(&Veh(e)->weapons, (uint32_t)Veh(e)->controls.weapon) : 0.0);
 	}
+}
+
+/* test: where player e stands to use t (its arrow selects only what it sees: a line of sight from it): dist from t on
+ * the side e comes from, else the next of eight sides with floor under it and nothing between it and t */
+static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz) {
+	float a = atan2f(e->pos.x - t->pos.x, e->pos.z - t->pos.z);
+	for (int k = 0; k < 8; k++) {
+		float b = a + (float)((k + 1) / 2) * (k & 1 ? 1.0f : -1.0f) * (M_PI_F / 4.0f);
+		vec3_t at = t->pos, p = { t->pos.x + sinf(b) * dist, t->pos.y + 100.0f, t->pos.z + cosf(b) * dist };
+		vec3_t down = { p.x, p.y - 400.0f, p.z };
+		at.y += 20.0f;
+		if (!Engine_TestLine(&p, &at, NULL, NULL) && Engine_TestLine(&p, &down, NULL, NULL)) {
+			*dx = p.x - t->pos.x;
+			*dz = p.z - t->pos.z;
+			return;
+		}
+	}
+	*dx = 0.0f;
+	*dz = dist;
 }
 
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
@@ -2328,7 +2624,29 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		return;
 	}
 	if (kind == NETREP_SHIP) {
-		in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
+		/* its ship to the target first (a pilot that knows the streets), then out of it */
+		float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
+		if (d > CP_AUTO_LAND && now - cp.pl[i].autoSince >= 1.0) {
+			float k = CP_AUTO_LAND * 0.5f / d;
+			e->pos = (vec3_t){ t->pos.x - dx * k, t->pos.y + 300.0f, t->pos.z - dz * k };
+			Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			Rep_Placed(i);
+			cp.pl[i].autoSince = now;
+			Con_Printf("coop: player %d (auto) flies to %s\n", i, t->name);
+		} else if (d <= CP_AUTO_LAND) {
+			in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
+		}
+		return;
+	}
+	/* a parked ship of the mission (the one to steal): next to it and into it with the switch */
+	if (Entity_IsType(t, TYEN_CAR) && !strncmp(t->name, "Parked", 6)) {
+		if (strcmp(cp.pl[i].autoAt, t->name) || now - cp.pl[i].autoSince >= CP_AUTO_GAP) {
+			Str_Copy(cp.pl[i].autoAt, t->name, sizeof(cp.pl[i].autoAt));
+			cp.pl[i].autoSince = now;
+			Con_Printf("coop: player %d (auto) boards %s\n", i, t->name);
+			Travel_TestGoto(i, t->name, 0.0f, 300.0f);
+			Rep_TestSwitch(i, 0);
+		}
 		return;
 	}
 	/* a talk plays: it listens */
@@ -2339,7 +2657,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (cp.pl[i].autoUse > 0.0 && now >= cp.pl[i].autoUse) {
 		/* the use of its arrow, as the test line use (the option its client chose) */
 		cp.pl[i].autoUse = 0.0;
-		Con_Printf("coop: player %d (auto) %s %s\n", i, WLife(t)->arrow.canPhoto ? "photographs" : "uses", t->name);
+		cEntity *v = WChar_Victim(e);
+		Con_Printf("coop: player %d (auto) %s %s (its arrow on %s)\n", i, WLife(t)->arrow.canPhoto ? "photographs" : "uses",
+			t->name, v ? v->name : "nothing");
 		if (WLife(t)->arrow.canPhoto) {
 			/* a photo is the use button with the arrow on it */
 			cp.pl[i].press = NETREP_IN_ACT3;
@@ -2357,7 +2677,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* a target without a use or a photo (the arrow over an item to take) is walked onto */
 	byte use = WLife(t)->arrow.canUse || WLife(t)->arrow.canPhoto;
 	cp.pl[i].autoUse = use ? now + 2.0 : 0.0;
-	Travel_TestGoto(i, t->name, 0.0f, use ? 250.0f : 0.0f);
+	float dx = 0.0f, dz = 0.0f;
+	if (use) {
+		Cp_Approach(e, t, CP_AUTO_NEAR, &dx, &dz);
+	}
+	Travel_TestGoto(i, t->name, dx, dz);
 }
 
 /* test: player i possesses the character: next to it, facing it, until its arrow is on it (a walking one moves on),
@@ -3230,6 +3554,24 @@ static void Cp_ClientScorerFrame(void) {
 	}
 }
 
+/* the entities the instance's level start deleted go from the client's level too (its own ones, not the proxies of
+ * the instance's) */
+static void Cp_ClientGone(void) {
+	char name[CP_NAME];
+	NetRepReader r;
+	NetRepReader_Init(&r, cp.cgone + 2, cp.cgoneSize - 2);
+	cp.cgoneSize = 0;
+	int n = (int)NetRep_GetU16(&r), del = 0;
+	for (int k = 0; k < n && !r.bad; k++) {
+		NetRep_GetStr(&r, name, sizeof(name));
+		cEntity *e = r.bad ? NULL : World_FindEntity(name);
+		if (e && e != Players_Local() && !(Entity_IsType(e, TYEN_OBJECT) && Obj(e)->proxy) && cEntity_Del(e)) {
+			del++;
+		}
+	}
+	Con_Printf("coop: %d of the %d entities the instance's level start deleted were here\n", del, n);
+}
+
 void Coop_ClientFrame(void) {
 	static double skipAfter = -1.0, editSecs, answerSecs, convSecs, sputnikSecs, warnSecs;
 	static int choose = -2, answer;
@@ -3256,6 +3598,9 @@ void Coop_ClientFrame(void) {
 		NetRepReader_Init(&r, cp.pending + 2, cp.pendingSize - 2);
 		cp.pendingSize = 0;
 		Cp_ClientScene(&r);
+	}
+	if (cp.cgoneSize) {
+		Cp_ClientGone();
 	}
 	Cp_ClientOptionsFrame();
 	Cp_ClientScorerFrame();
@@ -3414,6 +3759,24 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 			cp.pendingSize = 0;
 		}
 		Cp_ClientSceneEnd(&r);
+		break;
+	}
+	case COOP_Y_GONE:
+		/* deleted in the next frame of the running level (the level the client loads makes them first) */
+		if (size <= (int)sizeof(cp.cgone)) {
+			memcpy(cp.cgone, data, (size_t)size);
+			cp.cgoneSize = size;
+		}
+		break;
+	case COOP_Y_HEAD: {
+		char model[128];
+		NetRep_GetStr(&r, model, sizeof(model));
+		NetRep_GetStr(&r, text, sizeof(text));
+		int index = (int)NetRep_GetU8(&r);
+		if (!r.bad) {
+			Scorer_SetHeadMonitor(model, text, index);
+			Con_Printf("coop: a remote communication of %s\n", text);
+		}
 		break;
 	}
 	case COOP_Y_SPEECH:

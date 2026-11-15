@@ -914,9 +914,10 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 		}
 		Rep_Disown(i, 0);
 	}
-	/* the player's own ship when it has one (include/scrap/travel.h), else a new one (the coop story's: the party's
-	 * hangar ship, as single player's call) */
-	if ((ship = Faction_CallShip(i, &p, yaw)) == NULL && (Coop_On() || (ship = Travel_OwnShip(i, &p, yaw)) == NULL)) {
+	/* the player's own ship when it has one (include/scrap/travel.h; the coop story's: the party's hangar ship, as
+	 * single player's own ship), else a standard one */
+	if ((ship = Faction_CallShip(i, &p, yaw)) == NULL && (Coop_On() ? (ship = Coop_HangarShip(&p, yaw)) == NULL :
+		(ship = Travel_OwnShip(i, &p, yaw)) == NULL)) {
 		Native_SetFloat(&c[0], p.x);
 		Native_SetFloat(&c[1], p.y);
 		Native_SetFloat(&c[2], p.z);
@@ -1086,7 +1087,12 @@ static void Rep_Death(int i, cEntity *e) {
 	}
 	Con_Printf("instance: player %d died in %s (%d lives left, ship cost %d)\n", i, e->name, sand.lives ? pl->lives : -1,
 		pl->rebuild);
+	Coop_Died(i, e);
 	Players_BindTurn();
+}
+
+byte Rep_PlayerDead(int i) {
+	return i >= 0 && i < PLAYERS_MAX && rep.pl[i].dead;
 }
 
 /* the use button of a character at a door (an elevator, a metro station, a teleporter): the game's use of its arrow

@@ -399,6 +399,14 @@ int Players_Money(int i) {
 	return g_PlState[i].money;
 }
 
+void Players_SetMoney(int i, int money) {
+	if (!Players_Net() || i == g_Bound || i < 0 || i >= PLAYERS_MAX) {
+		g_pWorld->money = money;
+	} else {
+		g_PlState[i].money = money;
+	}
+}
+
 const cAlarm *Players_Alarm(int i) {
 	if (!Players_Net() || i == g_Bound || i < 0 || i >= PLAYERS_MAX) {
 		return &g_pWorld->alarm;

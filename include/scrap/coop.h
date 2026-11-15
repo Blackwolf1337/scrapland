@@ -90,6 +90,31 @@
  * go where the party's leader plays (COORD_MSG_LEADER); the coordinator summons it there like a chapter travel of one
  * member.
  *
+ * Money: the party has one purse, as the single player has one (the story's counter Coop.Money). Every member's money
+ * on the instances is that purse: what a member earns (a reward, a coin) or spends (the clues of the police boss, a
+ * ship editor) since the last tick goes into the counter (COORD_OP_ADD, so two instances at once lose nothing) and
+ * every member gets the sum. A story without the purse (a world of before) takes the money of its first member. The
+ * member's own money that the coordinator keeps (the other modes' per player money) follows the purse.
+ *
+ * Remote communications (Speech.ForceRemoteComunication: a call with the caller's head on the monitor) go to the
+ * mission's member (the one bound when the story's mission changed, else the first member that came into the instance
+ * while it was gone) and to the members within COOP_HEAR of it, with the caller's head (COOP_Y_HEAD); the scripts act
+ * for that member meanwhile.
+ *
+ * The objects the instance's level start deletes (a mission's Init removes what the level made; the client's level
+ * start runs no mission) go from the clients' levels too: their names go to a member's client at its join
+ * (COOP_Y_GONE), the client deletes its own entities of those names (not the proxies of the instance's).
+ *
+ * Death and a failed mission: a member that dies gets a new character (the party plays on; single player's death is
+ * the end of the game and the way point's reload, and the member's death costs what the instance's death costs: the
+ * alarm off). When every member in the instance is dead, the single player's death runs: the mission's hook
+ * (Chars.OnMainCharDeath: KillPolice's, the final fight's boss that heals), else the end of the game. The end of the
+ * game (MissionsFuncs.FinishGame: such a hook, or a mission's own failure like ProtectMayorTransport's) is the
+ * mission failed in coop: the members are told (MP_CoopMissionFailed) and after CP_FAIL_SECS (the single player's
+ * restart after its game over) the level starts again for them at the way point the mission set (the mission's start
+ * point; the same level's restart, COORD_MSG_RESET); the story stays as it is, as the single player's reload keeps
+ * the save variables.
+ *
  * Client: the coordinator's cue (COORD_MSG_CUE) of a new party's start plays the intro video before the first level
  * of the world; its notices show on the screen.
  */
@@ -128,6 +153,10 @@
 										 * 3 integer; value str) each */
 #define COOP_Y_STORY 15					/* the client's copy of the party's story (its level starts: the press'
 										 * blueprints): count u16, then the changes as COORD_MSG_STORY's */
+#define COOP_Y_HEAD 16					/* the caller's head of a remote communication (the monitor): model str, name
+										 * str, index u8 */
+#define COOP_Y_GONE 17					/* the entities the instance's level start deleted (a mission's Init; the client's
+										 * level start runs no mission): count u16, then name str each */
 #define COOP_SCORER_ITEMS 24			/* mission items told */
 #define COOP_SCORER_MS 250				/* the items looked at this often, sent when they changed */
 #define COOP_TARGETS 16					/* targets told (a mission's list of targets) */
@@ -198,10 +227,26 @@ void Coop_Fade(const int *from, const int *to, double time);
 void Coop_SpeechText(const char *text, float time, int r, int g, int b);
 void Coop_MsgText(const char *text, float time, const char *font);
 void Coop_OpenVoice(const char *file, int channel);
+/* a remote communication of the scripts (Speech.ForceRemoteComunication) begins (on 1: the mission's member bound,
+ * its text and voice go to that member and the members near it) and ends (0); Coop_RemoteHead: the caller's head on
+ * their monitors */
+void Coop_RemoteCom(byte on);
+void Coop_RemoteHead(const char *model, const char *text, int index);
 void Coop_PlayVoice(int channel);
 /* a door's level change to level on a coop instance: 1 when it is a chapter of the story (into or out of a level of
  * the story alone: the whole party goes, told to the members) */
 byte Coop_PartyTravel(const char *level);
+/* the game deletes e (cEntity_Del): on a coop instance before its first tick (the level's start, a mission's Init)
+ * its name is kept for the clients (COOP_Y_GONE at their join) */
+void Coop_EntityGone(struct cEntity *e);
+/* player i died (Rep_Death, entity e): when every member here is dead the single player's death runs (the mission's
+ * hook Chars.OnMainCharDeath, else the end of the game); Coop_PartyDeath: it runs (Chars.MainCharDeath of a member
+ * does nothing otherwise) */
+void Coop_Died(int i, struct cEntity *e);
+byte Coop_PartyDeath(void);
+/* the scripts' end of the game (MissionsFuncs.FinishGame) on a coop instance: the mission failed, the members are
+ * told and the level starts again for them at the way point after CP_FAIL_SECS; 1 there */
+byte Coop_MissionFailed(void);
 /* where a member without an entrance starts: next to a member here, else at the single player's first spawn of
  * the level; 1 with *pos */
 byte Coop_Spawn(int player, vec3_t *pos, float *yaw);
@@ -219,6 +264,10 @@ int Coop_UsrSlot(struct cEntity *e, int old, int slot);
 int Coop_UsrRead(int slot);
 /* the member whose character the scripts hold (Coop_UsrSlot), -1 */
 int Coop_HeldPlayer(struct cEntity *e);
+/* a member's called ship in the coop story: the party's hangar ship the story flies (Hangar.iHangarShip, as single
+ * player's own ship Parking.CreatePlayerShip) parked at p, NULL when the hangar has none or flies its aux slot (the
+ * junkyard's lifeboat): a standard ship then, as the single player takes a parked one */
+struct cEntity *Coop_HangarShip(const vec3_t *p, float yaw);
 /* the level has no room for a called ship (indoors): coop calls none there */
 byte Coop_NoShipCall(void);
 /* a player's new character: it selects what it looks at, as the single player's (the conversations need it) */
@@ -285,8 +334,8 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * buttons of its client's input for some ticks, 3 by default; a negative count: pressed once in four ticks), "target
  * <player> [<dx> <dz>]" (onto the mission's target), "usetarget <player>" (it uses the target), "race <player>
  * [0|1]" (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops), "fight <player>
- * [<Module.var>|<entity>|red|0]" (it turns to the nearest living target of that list of the scripts, that entity,
- * the red ones of the level or the mission's targets and fires through its input; one further than 6000 units: put
+ * [<Module.var>|<entity>|red|@<list>|0]" (it turns to the nearest living target of that list of the scripts, that
+ * entity, the red ones of the level, the entities of that entity list of the scripts or the mission's targets and fires through its input; one further than 6000 units: put
  * 2500 from it; 0 stops), "auto <player> [0|1|2]" (it plays the mission's targets: fights the red ones (else the red
  * ones of the level), flies a race, else goes to the target and uses it; 2 only fights), "board <player> <MODEL>"
  * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
