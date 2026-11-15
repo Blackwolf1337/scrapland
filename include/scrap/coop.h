@@ -362,7 +362,7 @@ byte Coop_Command(const char *line);
 
 /* player i got into ship or out of its ship (NULL): the mission's callbacks of single player's parking run for it
  * (Parking.SwitchVehicleMissionCallback, SwitchCharMissionCallback and their Aux: the final fight's boss comes) */
-void Coop_Boarded(int i, const struct cEntity *ship);
+void Coop_Boarded(int i, struct cEntity *ship);
 /* a mission's revival of the player's dead ship (Vehicles.ReSpawnShip of the final fight's and the super deals'
  * RespawnPlayer) runs: always but on a coop instance, where the dead member has a new character already (Death and a
  * failed mission) and its old ship (name) is gone or no member's */
