@@ -169,7 +169,11 @@ byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem) {
 		cFunctionaryLocalLogic_NormalSpeed(self, Func_Parent(self));
 		return 1;
 	}
-	cEntity *usr = ChType_Usr0();
+	/* not in the original: an instance has no user 0, the member whose input runs is bound (include/scrap/players.h) */
+	cEntity *usr = Players_Net() ? Players_Any() : ChType_Usr0();
+	if (!usr) {
+		return 1;
+	}
 	if (strcmp(ChType_ActClass(ChType_ActCtrl(usr))->name, "Functionary") &&
 		!Functionary_CanTalk(self)) {
 		Logic_SetState(self, GENCHAR_GETAWAY, usr);
