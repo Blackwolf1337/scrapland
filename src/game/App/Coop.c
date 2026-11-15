@@ -2738,6 +2738,25 @@ static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz
 	*dz = dist;
 }
 
+/* test: the nearest entity to e the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take,
+ * a blueprint), not a door of the level's exits; NULL */
+static cEntity *Cp_ArrowTarget(const cEntity *e) {
+	cEntity *t = NULL;
+	float best = 0.0f;
+	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || WLife(v)->life <= 0.0f || v->deadNode.target ||
+			Obj(v)->proxy || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
+			continue;
+		}
+		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+		if (!t || d < best) {
+			t = v;
+			best = d;
+		}
+	}
+	return t;
+}
+
 /* test: the mission's green ship (to follow or escort: StupidMerc's mercenary), NULL */
 static cEntity *Cp_Escorted(void) {
 	cEntity *all[CP_FIGHT_MAX];
@@ -2780,9 +2799,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
 	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
 	cEntity *escort = Cp_Escorted();
+	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones */
+	byte other = Cp_FightTargets("", all, 1, 0) || Cp_ArrowTarget(e);
 	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : (escort ? Cp_RedNear(escort) :
-		(cp.pl[i].autoOn == 2 || !Cp_FightTargets("", all, 1, 0)) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ?
-		CP_FIGHT_RED : NULL;
+		(cp.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
 	if (foes) {
 		Str_Copy(cp.pl[i].fightList, foes, sizeof(cp.pl[i].fightList));
 		Cp_TestFight(i, in, back);
@@ -2807,19 +2827,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* the mission's targets one after the other (the right one of three to talk to: ThreeStooges' mercenaries) */
 	int nt = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
 	cEntity *t = cp.pl[i].autoOn == 2 ? escort : nt ? all[cp.pl[i].autoTurn % nt] : NULL;
-	/* else the nearest one the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take),
-	 * not a door of the level's exits */
-	float best = 0.0f;
-	for (cEntity *v = t ? NULL : cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || WLife(v)->life <= 0.0f || v->deadNode.target ||
-			Obj(v)->proxy || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
-			continue;
-		}
-		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
-		if (!t || d < best) {
-			t = v;
-			best = d;
-		}
+	/* else the nearest one the scripts marked with the mission arrow */
+	if (!t) {
+		t = Cp_ArrowTarget(e);
 	}
 	if (!t) {
 		if (cp.pl[i].autoList[0]) {
