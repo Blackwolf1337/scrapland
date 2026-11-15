@@ -29,6 +29,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/nativeobj.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
@@ -55,6 +56,12 @@ static byte Pk_G(const char *name, nativeVal_t *slot) {
  * the engine's parking callbacks take no ship as the player's own there (Parking.PlayerShip may be None) */
 static byte Pk_NotOwn(void) {
 	return Players_Net();
+}
+
+/* Pk_NotOwn, but the coop story's party ship (the world's own Parking.PlayerShip of the level's start, Pk_BrowseItemPosN)
+ * is single player's own ship while no member is bound (a parking's callback for a ship no member owns) */
+static byte Pk_NotOwnShip(const nativeVal_t *ship) {
+	return Pk_NotOwn() && !(Coop_On() && Players_Bound() == PLAYERS_NONE && Native_True(ship));
 }
 
 /* Scrap.GetEntity(name) through its seam, the handle value (None for no entity) */
@@ -787,7 +794,7 @@ static byte Pk_OnParkingOccupiedN(const nativeVal_t *a) {
 	if (!Pk_G("PlayerShip", ship)) {
 		return Mode_Done(&t, 0);
 	}
-	byte none = Pk_NotOwn();
+	byte none = Pk_NotOwnShip(ship);
 	if ((!none && !Mode_VObjRead(ship, "Name", x)) || !Pk_Ent(&a[0], e)) {
 		return Mode_Done(&t, 0);
 	}
@@ -947,9 +954,25 @@ static byte Pk_BrowseItemPosN(void) {
 	nativeVal_t *usr = Mode_V(&t), *myPos = Mode_V(&t), *nearest = Mode_V(&t), *nearestDist = Mode_V(&t), *x = Mode_V(&t);
 	nativeVal_t *dummy = Mode_V(&t), *dist = Mode_V(&t), *dname = Mode_V(&t), *dpos = Mode_V(&t), *l = Mode_V(&t);
 	nativeVal_t *box = Mode_V(&t), *zone = Mode_V(&t), *ship = Mode_V(&t), *ang = Mode_V(&t);
-	/* the headless instance and a watcher have no startup player: every parking gets its box, no ship of the player */
+	/* the headless instance and a watcher have no startup player: every parking gets its box, no ship of the player;
+	 * not in the original: the coop story's instance has the party's ship and Sputnik as single player has them, at
+	 * the parking nearest to where single player starts (include/scrap/coop.h) */
 	byte none = g_Instance || g_Watch;
-	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr) || (!none && !Mode_VObjRead(usr, "Pos", myPos))) {
+	vec3_t start;
+	float yaw;
+	/* before the search of the parkings: the start's search of its spawn dummy would take its place */
+	byte coop = g_Instance && Coop_StartPos(&start, &yaw);
+	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
+	}
+	if (coop) {
+		nativeVal_t c[3];
+		none = 0;
+		Native_SetFloat(&c[0], start.x);
+		Native_SetFloat(&c[1], start.y);
+		Native_SetFloat(&c[2], start.z);
+		Mode_Tuple3(myPos, &c[0], &c[1], &c[2]);
+	} else if (!none && !Mode_VObjRead(usr, "Pos", myPos)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(nearestDist, 10000000.0);

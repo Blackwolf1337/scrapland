@@ -187,6 +187,7 @@ struct cEntity;
 struct NetRepInput;
 struct NetRepBuf;
 struct NetRepReader;
+struct nativeVal_s;
 
 /* ---- instance ---- */
 
@@ -254,7 +255,8 @@ byte Coop_MissionFailed(void);
 byte Coop_Spawn(int player, vec3_t *pos, float *yaw);
 /* a scene plays here: the characters it hid are no lost players */
 byte Coop_SceneHolds(void);
-/* player i's character is held: a scene plays, the ship editor is open on its client, or the scripts took the
+/* player i's character is held: a scene plays, the ship editor or the party Sputnik's screen is open on its client (or
+ * Sputnik's interface hides it, include/scrap/sputniks.h), or the scripts took the
  * character's control (a ride of the metro or an elevator): it gets no new one */
 byte Coop_Holds(int i);
 /* the player slot a script gives character e (UsrControl; old: its slot now): on a coop instance a member's
@@ -291,6 +293,9 @@ void Coop_TestInput(int i, struct NetRepInput *in, double back);
  * 0); Coop_StandInEntity: it, NULL */
 void Coop_StandIn(byte on);
 struct cEntity *Coop_StandInEntity(void);
+/* where the single player would start in the level on a coop instance (the way point's spawn, else the level's start),
+ * its heading; 0 elsewhere */
+byte Coop_StartPos(vec3_t *p, float *yaw);
 /* player i came into the instance: a scene that plays is sent to its client, its character hidden until the end */
 void Coop_Joined(int i);
 /* the use arrow of t runs on the instance for a player's character (not only a door's) */
@@ -300,6 +305,10 @@ byte Coop_UseAny(struct cEntity *t);
  * built comes back into the story and the ship editor's callback runs here); the menus of a game without a member
  * stay as they are */
 byte Coop_MenuYesNo(const char *title, const char *yes, const char *no);
+/* the scores of a super deal (RacerScorer.ShowScorer, deal 1: Yes or No, 2: Continue) on a coop instance: the question
+ * goes to the member as Coop_MenuYesNo, Continue's action runs CP_DEAL_SECS later (the table is on every member's
+ * HUD); 1 when taken */
+byte Coop_DealScores(int deal, const char *title, const char *yes, const char *no);
 byte Coop_ShipEditOpen(void);
 /* the character conversor's interface (CharConversor.AddInterfaceContent at the middle of the machine's action, 1:
  * it went to the client of the member that entered the machine, Coop_ConvEnter; the machine waits until the member
@@ -347,12 +356,17 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * fights), "board <player> <MODEL>"
  * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
- * its arrow is on it, then the possession button) */
+ * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
+ * goes to, life) */
 byte Coop_Command(const char *line);
 
-/* player i got into a ship (ship 1) or out of it: the mission's callbacks of single player's parking run for it
+/* player i got into ship or out of its ship (NULL): the mission's callbacks of single player's parking run for it
  * (Parking.SwitchVehicleMissionCallback, SwitchCharMissionCallback and their Aux: the final fight's boss comes) */
-void Coop_Boarded(int i, byte ship);
+void Coop_Boarded(int i, const struct cEntity *ship);
+/* a mission's revival of the player's dead ship (Vehicles.ReSpawnShip of the final fight's and the super deals'
+ * RespawnPlayer) runs: always but on a coop instance, where the dead member has a new character already (Death and a
+ * failed mission) and its old ship (name) is gone or no member's */
+byte Coop_Revives(const struct nativeVal_s *name);
 /* the name of the key bound to action of set on device: on the coop instance (no keys) a token the member's client
  * puts its own key's name in (Coop_ClientKeys), else NULL */
 const char *Coop_KeyToken(const char *set, const char *action, const char *device);

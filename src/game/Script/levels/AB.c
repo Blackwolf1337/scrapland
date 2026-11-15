@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "scrap/alarm.h"
+#include "scrap/coop.h"
 #include "scrap/game.h"
 #include "scrap/logic.h"
 #include "scrap/scorer.h"
@@ -399,8 +400,10 @@ static byte Ff_RespawnPlayer(const nativeVal_t *a, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *count = Mode_V(&t), *five = Mode_V(&t), *m = Mode_V(&t);
 	(void)out;
-	if (!Mode_Import("Vehicles") || !Mode_Import("Speech") || !PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", &a[0]) ||
-		!Mode_EntityH(&a[0], usr) || !Mode_VSet(usr, "Pos", &a[1]) || !Mode_VSet(usr, "Ang", &a[2]) ||
+	/* not in the original: no ship of a dead coop member comes back (include/scrap/coop.h) */
+	byte revive = Coop_Revives(&a[0]);
+	if (!Mode_Import("Vehicles") || !Mode_Import("Speech") || (revive && (!PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", &a[0]) ||
+		!Mode_EntityH(&a[0], usr) || !Mode_VSet(usr, "Pos", &a[1]) || !Mode_VSet(usr, "Ang", &a[2]))) ||
 		!LvN_GAdd(FF, "HINT_COUNTER", 1, NULL) || !Mode_G(FF, "HINT_COUNTER", count)) {
 		return Mode_Done(&t, 0);
 	}

@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
 #include "scrap/input.h"
 #include "scrap/logic.h"
@@ -472,6 +473,10 @@ static byte Sd_SpawnAt(const nativeVal_t *usr) {
  * GetSpawnPos for both) */
 static byte Sd_RespawnPlayerC(const nativeVal_t *name) {
 	nativeVal_t me, sp, v;
+	/* not in the original: no ship of a dead coop member comes back (include/scrap/coop.h) */
+	if (!Coop_Revives(name)) {
+		return 1;
+	}
 	if (!Mode_Import("Parking") || !Mode_Import("Vehicles") || !Mode_Import("OutMap") ||
 		!PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", name)) {
 		return 0;

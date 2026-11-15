@@ -784,7 +784,14 @@ static void Watch_Records(const uint8_t *data, int size) {
 		ang.y = NetRep_UAng((uint16_t)NetRep_GetU16(&r));
 		ang.z = NetRep_UAng((uint16_t)NetRep_GetU16(&r));
 		int on = (int)NetRep_GetU8(&r);
-		if (r.bad || !name[0] || World_FindEntity(name)) {
+		cEntity *own = r.bad || !name[0] ? NULL : World_FindEntity(name);
+		if (own && Coop_Client() && !Entity_IsType(own, TYEN_CAR) && !Entity_IsType(own, TYEN_WALKCHAR) &&
+			own->active != (on == REP_STATIC_ON)) {
+			/* a coop member's level start runs no mission: what the instance's mission hid or showed at its start */
+			Entity_SetActive(own, on == REP_STATIC_ON);
+			Con_Printf("coop: %s %s as on the instance\n", name, on == REP_STATIC_ON ? "shown" : "hidden");
+		}
+		if (r.bad || !name[0] || own) {
 			continue;
 		}
 		const char *type = !strcmp(cls, "item") ? "item" : !strcmp(cls, "Obj") ? "Obj" :
