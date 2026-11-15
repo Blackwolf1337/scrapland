@@ -2168,7 +2168,13 @@ byte Coop_DealScores(int deal, const char *title, const char *yes, const char *n
 		return 0;
 	}
 	*dot = 0;
-	if (!Mode_SchedAt(Mode_Time() + CP_DEAL_SECS, mod, dot + 1, NULL, 0, NULL)) {
+	/* the arguments of a menu's action (the player, the control), as Cp_MenuFunc gives them */
+	nativeVal_t args[2];
+	Native_SetInt(&args[0], 0);
+	Native_SetText(&args[1], "", 0);
+	byte ok = Mode_SchedAt(Mode_Time() + CP_DEAL_SECS, mod, dot + 1, args, 2, NULL);
+	Native_Free(&args[1]);
+	if (!ok) {
 		Native_ErrPrint();
 		return 0;
 	}
