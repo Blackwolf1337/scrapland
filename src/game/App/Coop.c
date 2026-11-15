@@ -91,6 +91,8 @@
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
+#define CP_MELEE 90.0f				/* test: units from a character it fights on foot (D-Tritus' punch: 50 ahead, 100 wide) */
+#define CP_MELEE_FAR 600.0f			/* test: a character further is walked to (put next to it) */
 #define CP_GONE 128					/* entities deleted by the level's start told to the clients */
 #define CP_GONE_MSG (8 + CP_GONE * (CP_NAME + 2))
 #define CP_DEAL_SECS 8.0			/* the super deal's scores before their Continue (no member's click on the instance) */
@@ -2466,6 +2468,20 @@ static int Cp_Foe(cEntity *e) {
 		(Entity_VarS(e, "EntityList", &list, 0) && list && !strcmp(list, "Enemies"));
 }
 
+/* test: a character of the mission while the mission's death hook of the characters waits (CharAct.onNPCDeath:
+ * ApologizeMayor's staplers, CatchTrurl's functionaries, FicusBanker's Scrapus): the mission wants it dead, as its text
+ * tells the single player */
+static byte Cp_DeathWanted(cEntity *e) {
+	nativeVal_t v;
+	if (!Entity_IsType(e, TYEN_WALKCHAR)) {
+		return 0;
+	}
+	byte hook = Mode_ModGet("CharAct", "onNPCDeath", &v) && v.type != NV_NONE;
+	Native_Free(&v);
+	Native_ErrClear();
+	return hook;
+}
+
 /* test: the living entities of src (see fightList) that are no player's (foes 1: only targets to fight, 0: only the
  * others, -1: all), into out; their count */
 static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
@@ -2505,7 +2521,7 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 		cEntity *e = v.type == NV_STR ? World_FindEntity(Native_Text(&v)) : Native_SeqItem(&v, j, &it) &&
 			it.type == NV_STR ? World_FindEntity(Native_Text(&it)) : NULL;
 		if (e && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && Players_Of(e) < 0 &&
-			(foes < 0 || Cp_Foe(e) == foes)) {
+			(foes < 0 || (Cp_Foe(e) || Cp_DeathWanted(e)) == foes)) {
 			out[n++] = e;
 		}
 		Native_Free(&it);
@@ -2605,6 +2621,29 @@ static byte Cp_FightAmmo(int i, cEntity *e, double now) {
 	return 1;
 }
 
+static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz);
+
+/* test: player i on foot at character t (d away): next to it on a side with a free line to it, facing it, the action
+ * key when it is near ahead (D-Tritus' punch, the attacks of the other characters) */
+static void Cp_TestMelee(int i, NetRepInput *in, cEntity *t, float d, double now) {
+	cEntity *e = Players_Get(i);
+	if (d > CP_MELEE_FAR) {
+		if (now - cp.pl[i].fightSince >= 1.0) {
+			float dx, dz;
+			Cp_Approach(e, t, CP_MELEE, &dx, &dz);
+			Travel_TestGoto(i, t->name, dx, dz);
+			cp.pl[i].fightSince = now;
+		}
+		return;
+	}
+	float rot[2], dyaw = NetPl_Aim(e, &t->pos, rot, 1);
+	in->rot[0] = NetRep_QRot(rot[0]);
+	in->move[0] = NetRep_QMove(d > CP_MELEE && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+	if (d < CP_MELEE * 2.0f && fabsf(dyaw) < 0.3f && fmod(now, 0.5) < 1.0 / INSTANCE_TICK_HZ) {
+		in->buttons |= NETREP_IN_ACT;
+	}
+}
+
 /* test: player i fights the nearest of its targets through its input, as a player at the keys: turns to it and fires
  * when it is ahead and near (the weapon's own shots and damage, the target's OnDeath with the member as the winner);
  * a target further than CP_FIGHT_FAR: the member is put CP_FIGHT_NEAR from it (once a second at most, as a pilot that
@@ -2646,6 +2685,10 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		Con_Printf("coop: player %d fights %s (%.0f away)\n", i, t->name, (double)d);
 		cp.pl[i].useless = cp.pl[i].useful = 0;
 		cp.pl[i].lifeWeap = -1;
+	}
+	if (kind == NETREP_CHAR) {
+		Cp_TestMelee(i, in, t, d, now);
+		return;
 	}
 	if (d > (cp.pl[i].follow ? CP_FIGHT_NEAR : CP_FIGHT_FAR) && now - cp.pl[i].fightSince >= 1.0) {
 		float k = near / d;
