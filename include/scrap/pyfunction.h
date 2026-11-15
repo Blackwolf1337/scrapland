@@ -55,6 +55,8 @@ int cPy_Function_IsValid(cPy_Function *self);
 /* ScrapC: the name of the function as its __name__ gives it (PYF_VALUE and PYF_ENTRY, without the module), "!native"
  * for a C function of the registry, "" without one or when it has no name (a static buffer until the next call) */
 const char *cPy_Function_Name(cPy_Function *self);
+/* ScrapC: the module of the port function a PYF_ENTRY binds, "" for any other binding */
+const char *cPy_Function_Module(const cPy_Function *self);
 /* binds the C function func (NULL: only cleared); always 1 */
 byte cPy_Function_SetNative(cPy_Function *self, nativefunc_t func);
 void cPy_Function_AddParamI(cPy_Function *self, int v);

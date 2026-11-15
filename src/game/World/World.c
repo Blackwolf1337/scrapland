@@ -1078,7 +1078,9 @@ void cWorld_Update(cWorld *self, float dt) {
 	}
 	if (cTimer_GetSpeed(timer) > 0.0f) {
 		cTimer_Advance(timer, dt);
-		Players_BindTurn();
+		if (!Coop_BindMission()) {
+			Players_BindTurn();
+		}
 		Scheduler_Run(&self->scheduler, Timer_GetTime(timer));
 		/* not in the original: the test channel answers here while the clock runs, where the script function of the
 		 * old test harness ran (a scheduled function) */

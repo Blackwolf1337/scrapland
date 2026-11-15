@@ -23,6 +23,7 @@
 #include "scrap/graphic2d.h"
 #include "scrap/input.h"
 #include "scrap/instance.h"
+#include "scrap/itementity.h"
 #include "scrap/netrep.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
@@ -91,6 +92,13 @@
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
+#define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
+#define CP_WALK_STEP 300.0f			/* test: units of a step */
+#define CP_WALK_GAP 2.0				/* test: s between two steps */
+#define CP_WALK_WAIT 900.0f			/* test: the next step waits for a character this near (one that follows it) */
+#define CP_WALK_ALONE 15.0			/* test: s it waits for one at most */
+#define CP_MELEE 90.0f				/* test: units from a character it fights on foot (D-Tritus' punch: 50 ahead, 100 wide) */
+#define CP_MELEE_FAR 600.0f			/* test: a character further is walked to (put next to it) */
 #define CP_GONE 128					/* entities deleted by the level's start told to the clients */
 #define CP_GONE_MSG (8 + CP_GONE * (CP_NAME + 2))
 #define CP_DEAL_SECS 8.0			/* the super deal's scores before their Continue (no member's click on the instance) */
@@ -167,6 +175,9 @@ static struct {
 		double raceSince;			/* since when (instance time) */
 		byte fight;					/* test: it fights the targets of fightList */
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
+		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
+		byte walk;					/* test: the automatic player on foot steps to its target (followers keep up) */
+		char follower[CP_NAME];		/* the follower it saw last ("" none) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
@@ -638,13 +649,20 @@ byte Coop_Revives(const nativeVal_t *name) {
 	return !Coop_On() || (e && Players_Of(e) >= 0);
 }
 
-void Coop_Boarded(int i, const cEntity *ship) {
+void Coop_Boarded(int i, cEntity *ship) {
 	static const char *const cb[2][2] = { { "SwitchCharMissionCallback", "SwitchCharMissionCallbackAux" },
 		{ "SwitchVehicleMissionCallback", "SwitchVehicleMissionCallbackAux" } };
 	byte called;
 	if (!Coop_On() || !Mode_Import("Parking")) {
 		Native_ErrClear();
 		return;
+	}
+	/* a member without an own ship: the ship it boarded stands for it while the callbacks run (single player always has
+	 * its own there: a super deal's start sets Parking.PlayerShip.Invulnerable); none again after them, so that ship's
+	 * death is no own ship's (Vehicles.OnDeath, the deal's respawns) */
+	cEntity *stand = ship && !Players_Ship(i) ? ship : NULL;
+	if (stand) {
+		Players_SetShip(i, stand);
 	}
 	Players_Bind(i);
 	for (int k = 0; k < 2; k++) {
@@ -655,6 +673,9 @@ void Coop_Boarded(int i, const cEntity *ship) {
 		}
 	}
 	Players_BindTurn();
+	if (stand && Players_Ship(i) == stand) {
+		Players_SetShip(i, NULL);
+	}
 }
 
 /* ---- key names ---- */
@@ -1920,6 +1941,15 @@ static int Cp_MissionPlayer(void) {
 	return -1;
 }
 
+byte Coop_BindMission(void) {
+	int i = Coop_On() ? Cp_MissionPlayer() : -1;
+	if (i < 0) {
+		return 0;
+	}
+	Players_Bind(i);
+	return 1;
+}
+
 static void Cp_SetMissionPlayer(int i) {
 	if (i >= 0 && i < PLAYERS_MAX && Rep_PlayerConn(i) >= 0 && i != cp.missionPlayer) {
 		cp.missionPlayer = i;
@@ -2466,6 +2496,20 @@ static int Cp_Foe(cEntity *e) {
 		(Entity_VarS(e, "EntityList", &list, 0) && list && !strcmp(list, "Enemies"));
 }
 
+/* test: a character of the mission while the mission's death hook of the characters waits (CharAct.onNPCDeath:
+ * ApologizeMayor's staplers, CatchTrurl's functionaries, FicusBanker's Scrapus): the mission wants it dead, as its text
+ * tells the single player */
+static byte Cp_DeathWanted(cEntity *e) {
+	nativeVal_t v;
+	if (!Entity_IsType(e, TYEN_WALKCHAR)) {
+		return 0;
+	}
+	byte hook = Mode_ModGet("CharAct", "onNPCDeath", &v) && v.type != NV_NONE;
+	Native_Free(&v);
+	Native_ErrClear();
+	return hook;
+}
+
 /* test: the living entities of src (see fightList) that are no player's (foes 1: only targets to fight, 0: only the
  * others, -1: all), into out; their count */
 static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
@@ -2505,7 +2549,7 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 		cEntity *e = v.type == NV_STR ? World_FindEntity(Native_Text(&v)) : Native_SeqItem(&v, j, &it) &&
 			it.type == NV_STR ? World_FindEntity(Native_Text(&it)) : NULL;
 		if (e && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && Players_Of(e) < 0 &&
-			(foes < 0 || Cp_Foe(e) == foes)) {
+			(foes < 0 || (Cp_Foe(e) || Cp_DeathWanted(e)) == foes)) {
 			out[n++] = e;
 		}
 		Native_Free(&it);
@@ -2528,6 +2572,19 @@ static int Cp_FightWeapon(cEntity *e, float d, uint32_t useless) {
 		if (pick[k] >= 0 && pick[k] < g_pWorld->weapons.count && m->weaps[pick[k]].slots &&
 			cWeaponManager_HasMinAmmo(m, (uint32_t)pick[k]) && !(pick[k] < 32 && (useless >> pick[k] & 1))) {
 			return pick[k];
+		}
+	}
+	return Veh(e)->controls.weapon;
+}
+
+/* test: the weakest weapon of ship e that has ammo (the laser, else the Vulcan), else its own */
+static int Cp_GentleWeapon(cEntity *e) {
+	cWeaponManager *m = (cWeaponManager *)&Veh(e)->weapons;
+	const int weak[] = { g_LaserIDWeap, g_VulcanIDWeap };
+	for (int k = 0; k < 2; k++) {
+		if (weak[k] >= 0 && weak[k] < g_pWorld->weapons.count && m->weaps[weak[k]].slots &&
+			cWeaponManager_HasMinAmmo(m, (uint32_t)weak[k])) {
+			return weak[k];
 		}
 	}
 	return Veh(e)->controls.weapon;
@@ -2605,11 +2662,34 @@ static byte Cp_FightAmmo(int i, cEntity *e, double now) {
 	return 1;
 }
 
+static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz);
+
+/* test: player i on foot at character t (d away): next to it on a side with a free line to it, facing it, the action
+ * key when it is near ahead (D-Tritus' punch, the attacks of the other characters) */
+static void Cp_TestMelee(int i, NetRepInput *in, cEntity *t, float d, double now) {
+	cEntity *e = Players_Get(i);
+	if (d > CP_MELEE_FAR) {
+		if (now - cp.pl[i].fightSince >= 1.0) {
+			float dx, dz;
+			Cp_Approach(e, t, CP_MELEE, &dx, &dz);
+			Travel_TestGoto(i, t->name, dx, dz);
+			cp.pl[i].fightSince = now;
+		}
+		return;
+	}
+	float rot[2], dyaw = NetPl_Aim(e, &t->pos, rot, 1);
+	in->rot[0] = NetRep_QRot(rot[0]);
+	in->move[0] = NetRep_QMove(d > CP_MELEE && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+	if (d < CP_MELEE * 2.0f && fabsf(dyaw) < 0.3f && fmod(now, 0.5) < 1.0 / INSTANCE_TICK_HZ) {
+		in->buttons |= NETREP_IN_ACT;
+	}
+}
+
 /* test: player i fights the nearest of its targets through its input, as a player at the keys: turns to it and fires
  * when it is ahead and near (the weapon's own shots and damage, the target's OnDeath with the member as the winner);
  * a target further than CP_FIGHT_FAR: the member is put CP_FIGHT_NEAR from it (once a second at most, as a pilot that
  * knows the way through the streets) */
-static void Cp_TestFight(int i, NetRepInput *in, double back) {
+static void Cp_Fight(int i, NetRepInput *in, double back) {
 	cEntity *e = Players_Get(i), *all[CP_FIGHT_MAX], *t = NULL;
 	int kind = NetPl_Kind(e), n = kind ? Cp_FightTargets(cp.pl[i].fightList, all, CP_FIGHT_MAX, -1) : 0;
 	float best = 0.0f;
@@ -2634,6 +2714,15 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
+	/* a ship the mission wants hit but alive (AttackTraitorius: scared under 30% of its life for a minute) is spared
+	 * there, as a player watches its life bar */
+	byte gentle = 0;
+	if (cp.pl[i].spare > 0 && Entity_IsType(t, TYEN_CAR)) {
+		float pct = WLife(t)->life * 100.0f / (float)(Veh(t)->maxLife > 0 ? Veh(t)->maxLife : 1);
+		cp.pl[i].follow |= pct <= (float)cp.pl[i].spare;
+		/* near it the weakest weapon, as a player does not to kill it */
+		gentle = pct <= (float)cp.pl[i].spare * 2.0f;
+	}
 	float d = sqrtf(best), near = cp.pl[i].follow ? CP_FOLLOW_NEAR : CP_FIGHT_NEAR;
 	double now = Instance_Time();
 	if (kind == NETREP_CHAR && Entity_IsType(t, TYEN_CAR)) {
@@ -2646,6 +2735,10 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		Con_Printf("coop: player %d fights %s (%.0f away)\n", i, t->name, (double)d);
 		cp.pl[i].useless = cp.pl[i].useful = 0;
 		cp.pl[i].lifeWeap = -1;
+	}
+	if (kind == NETREP_CHAR) {
+		Cp_TestMelee(i, in, t, d, now);
+		return;
 	}
 	if (d > (cp.pl[i].follow ? CP_FIGHT_NEAR : CP_FIGHT_FAR) && now - cp.pl[i].fightSince >= 1.0) {
 		float k = near / d;
@@ -2682,7 +2775,7 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	in->rot[0] = NetRep_QRot(rot[0]);
 	if (kind == NETREP_SHIP) {
 		in->rot[1] = NetRep_QRot(rot[1]);
-		in->weapon = (uint8_t)Cp_FightWeapon(e, d, cp.pl[i].useless);
+		in->weapon = (uint8_t)(gentle ? Cp_GentleWeapon(e) : Cp_FightWeapon(e, d, cp.pl[i].useless));
 		Cp_FightUseless(i, t, in->weapon, d < CP_FIGHT_RANGE && !cp.pl[i].follow, now);
 		/* closer while far, else its speed (behind it, turning with it) */
 		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > near * 1.5f ? tv + 1500.0f : tv;
@@ -2719,6 +2812,12 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	}
 }
 
+static void Cp_TestFight(int i, NetRepInput *in, double back) {
+	byte follow = cp.pl[i].follow;
+	Cp_Fight(i, in, back);
+	cp.pl[i].follow = follow;
+}
+
 /* test: where player e stands to use t (its arrow selects only what it sees: a line of sight from it): dist from t on
  * the side e comes from, else the next of eight sides with floor under it and nothing between it and t */
 static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz) {
@@ -2738,14 +2837,46 @@ static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz
 	*dz = dist;
 }
 
+/* test: a flying ship to shoot down (not a parked one, not a green one to stay with) */
+static byte Cp_ShipFoe(cEntity *v) {
+	char *tg = NULL;
+	return Entity_IsType(v, TYEN_CAR) && strncmp(v->name, "Parked", 6) && Entity_VarS(v, "TgType", &tg, 0) &&
+		!(tg && !crt_stricmp(tg, "green"));
+}
+
 /* test: the nearest entity to e the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take,
- * a blueprint), not a door of the level's exits; NULL */
+ * a blueprint), not a door of the level's exits; a ship to shoot down before the others (Ambush's probes while the
+ * phone cab of the mission's start keeps its arrow); NULL */
 static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	cEntity *t = NULL;
 	float best = 0.0f;
+	byte ship = 0;
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || WLife(v)->life <= 0.0f || v->deadNode.target ||
 			Obj(v)->proxy || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
+			continue;
+		}
+		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+		byte s = Cp_ShipFoe(v);
+		if (!t || s > ship || (s == ship && d < best)) {
+			t = v;
+			best = d;
+			ship = s;
+		}
+	}
+	return t;
+}
+
+/* test: the nearest item to e the scripts show on the radar with a function of the mission for its taker
+ * (ProtectMayorTransport's meeting point: "a yellow arrow on your radar"; not the level's parkings and links), NULL */
+static cEntity *Cp_RadarItem(const cEntity *e) {
+	const char *mission = SaveVar_Get("Mission.Library");
+	cEntity *t = NULL;
+	float best = 0.0f;
+	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		const cItemEntity *it = (const cItemEntity *)v;
+		if (!v->active || v->deadNode.target || !Entity_IsType(v, "item") || !Obj(v)->radarShow || Obj(v)->proxy ||
+			it->respawn > 0.0f || !mission || strcmp(cPy_Function_Module(&it->onTake), mission)) {
 			continue;
 		}
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
@@ -2784,6 +2915,61 @@ static byte Cp_RedNear(const cEntity *e) {
 	return 0;
 }
 
+/* test: player i on foot (e) further than CP_WALK_FAR from t: a step towards it every CP_WALK_GAP s on the floor
+ * there once a follower is near it again, back to the nearest one that stopped, as a player walks with characters
+ * that follow him (BeatPickus' thugs); 1 while it walks */
+static byte Cp_WalkStep(int i, cEntity *e, cEntity *t, double now) {
+	float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
+	if (d <= CP_WALK_FAR) {
+		return 0;
+	}
+	if (now - cp.pl[i].autoSince < CP_WALK_GAP) {
+		return 1;
+	}
+	/* its followers: the characters whose logic has it as the target (LLogicTarget) */
+	cEntity *back = NULL;
+	float best = 0.0f;
+	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		char *tgt = NULL;
+		float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
+		if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
+			Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) && (!back || vd < best)) {
+			back = v;
+			best = vd;
+		}
+	}
+	if (back) {
+		Str_Copy(cp.pl[i].follower, back->name, sizeof(cp.pl[i].follower));
+	} else if (cp.pl[i].follower[0]) {
+		/* one that stopped follows another now (BeatPickus' thugs behind their leader): back to it */
+		back = World_FindEntity(cp.pl[i].follower);
+		best = CP_WALK_WAIT * CP_WALK_WAIT;
+	}
+	byte near = !back || best < CP_WALK_WAIT * CP_WALK_WAIT;
+	if (!near && now - cp.pl[i].autoSince < CP_WALK_ALONE) {
+		return 1;
+	}
+	cp.pl[i].autoSince = now;
+	cp.pl[i].autoUse = 0.0;
+	cp.pl[i].autoAt[0] = 0;
+	Con_Printf("coop: player %d (auto) walks to %s (%.0f away), its follower %s %.0f away\n", i, t->name, (double)d,
+		back ? back->name : "-", (double)sqrtf(best));
+	if (!near && back) {
+		/* none kept up: back to the nearest one (they stopped where it left them) */
+		Travel_TestGoto(i, back->name, 0.0f, 200.0f);
+		return 1;
+	}
+	vec3_t p = { e->pos.x + dx / d * CP_WALK_STEP, e->pos.y + 150.0f, e->pos.z + dz / d * CP_WALK_STEP };
+	vec3_t down = { p.x, p.y - 2000.0f, p.z }, floor;
+	if (Engine_TestLine(&p, &down, &floor, NULL)) {
+		p.y = floor.y + 100.0f;
+	}
+	e->pos = p;
+	Obj(e)->ang.y = WChar(e)->view.y = atan2f(-dx, -dz);
+	Rep_Placed(i);
+	return 1;
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
  * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
  * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
@@ -2799,9 +2985,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
 	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
 	cEntity *escort = Cp_Escorted();
-	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones */
-	byte other = Cp_FightTargets("", all, 1, 0) || Cp_ArrowTarget(e);
-	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : (escort ? Cp_RedNear(escort) :
+	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones; one on
+	 * a ship to shoot down before the mission's targets to use (Ambush's probes, its phone cab still the target) */
+	cEntity *arrow = Cp_ArrowTarget(e);
+	byte other = Cp_FightTargets("", all, 1, 0) || arrow;
+	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
 		(cp.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
 	if (foes) {
 		Str_Copy(cp.pl[i].fightList, foes, sizeof(cp.pl[i].fightList));
@@ -2831,6 +3019,17 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (!t) {
 		t = Cp_ArrowTarget(e);
 	}
+	/* else an item on the radar: flown or walked onto, as a player takes it */
+	cEntity *item = t ? NULL : Cp_RadarItem(e);
+	if (item) {
+		if (strcmp(cp.pl[i].autoAt, item->name) || now - cp.pl[i].autoSince >= CP_AUTO_GAP) {
+			Str_Copy(cp.pl[i].autoAt, item->name, sizeof(cp.pl[i].autoAt));
+			cp.pl[i].autoSince = now;
+			Con_Printf("coop: player %d (auto) goes onto %s (on the radar)\n", i, item->name);
+			Travel_TestGoto(i, item->name, 0.0f, 0.0f);
+		}
+		return;
+	}
 	if (!t) {
 		if (cp.pl[i].autoList[0]) {
 			Str_Copy(cp.pl[i].fightList, cp.pl[i].autoList, sizeof(cp.pl[i].fightList));
@@ -2853,7 +3052,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	char *tg = NULL;
 	if (Entity_IsType(t, TYEN_CAR) && strncmp(t->name, "Parked", 6) && Entity_VarS(t, "TgType", &tg, 0)) {
 		Str_Copy(cp.pl[i].fightList, t->name, sizeof(cp.pl[i].fightList));
-		cp.pl[i].follow = tg && !crt_stricmp(tg, "green");
+		cp.pl[i].follow = !Cp_ShipFoe(t);
 		Cp_TestFight(i, in, back);
 		cp.pl[i].follow = 0;
 		return;
@@ -2918,6 +3117,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		} else {
 			Travel_TestUse(i, t->name, "");
 		}
+	}
+	if (cp.pl[i].walk && Cp_WalkStep(i, e, t, now)) {
+		return;
 	}
 	if (!strcmp(cp.pl[i].autoAt, t->name) && now - cp.pl[i].autoSince < CP_AUTO_GAP) {
 		return;
@@ -3123,6 +3325,18 @@ byte Coop_Command(const char *line) {
 		cp.pl[i].autoUse = 0.0;
 		cp.pl[i].fightAt[0] = 0;
 		Con_Printf("coop: player %d plays the mission's targets%s\n", i, !on ? ": off" : on == 2 ? ": fights only" : "");
+		return 1;
+	}
+	int pct = 0;
+	if (sscanf(line, "walk %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].walk = pct != 0;
+		cp.pl[i].follower[0] = 0;
+		Con_Printf("coop: player %d %s to its targets\n", i, pct ? "walks" : "goes");
+		return 1;
+	}
+	if (sscanf(line, "spare %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].spare = pct;
+		Con_Printf("coop: player %d spares a ship under %d%% of its life\n", i, pct);
 		return 1;
 	}
 	if (sscanf(line, "possess %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {
@@ -3854,6 +4068,7 @@ void Coop_ClientFrame(void) {
 	static int choose = -2, answer;
 	static const char *chooseOf = "";
 	static char conv[CP_NAME];
+	static int convVisits;
 	if (skipAfter < 0.0) {
 		const char *s = getenv("SCRAP_COOP_SKIP"), *c = getenv("SCRAP_COOP_CHOOSE"), *a = getenv("SCRAP_COOP_ANSWER");
 		const char *e = getenv("SCRAP_COOP_SHIPEDIT");
@@ -3904,19 +4119,26 @@ void Coop_ClientFrame(void) {
 	}
 	/* tests: the conversor's pick (as its button's Convert and ConvertExecute), Sputnik's screen closed */
 	if (conv[0] && cp.cmenu == COOP_MENU_CONV && Watch_ShownTime() - cp.cmenuAt >= convSecs) {
-		char k[CP_NAME + 8];
+		/* a list "A,B,...": each visit the next class of it, the last one again after its end */
+		char k[CP_NAME + 8], pick[CP_NAME];
+		const char *at = conv;
+		for (int n = 0; n < convVisits && strchr(at, ','); n++) {
+			at = strchr(at, ',') + 1;
+		}
+		Str_PrintfQuiet(pick, sizeof(pick), "%.*s", (int)strcspn(at, ","), at);
+		convVisits++;
 		nativeVal_t v;
-		Con_Printf("coop: test: the conversor's pick %s\n", conv);
-		Str_PrintfQuiet(k, sizeof(k), "Char_%s", conv);
+		Con_Printf("coop: test: the conversor's pick %s\n", pick);
+		Str_PrintfQuiet(k, sizeof(k), "Char_%s", pick);
 		Native_SetStr(&v, k);
-		byte ok = strcmp(conv, "none") ? Mode_SetModVar("CharConversor", "KONTROL", &v) &&
+		byte ok = strcmp(pick, "none") ? Mode_SetModVar("CharConversor", "KONTROL", &v) &&
 			PORT_CALL(CharConversor, ConvertExecute, NULL, "") : PORT_CALL(CharConversor, ExitCharConversor, NULL, "is", 0L, "");
 		if (!ok) {
 			Native_ErrPrint();
 		}
 		Native_Free(&v);
 		if (cp.cmenu == COOP_MENU_CONV) {
-			Con_Printf("coop: test: %s is no class of the conversor here\n", conv);
+			Con_Printf("coop: test: %s is no class of the conversor here\n", pick);
 			Coop_ClientConverted("");
 		}
 	}
@@ -4051,6 +4273,12 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		NetRep_GetStr(&r, text, sizeof(text));
 		int index = (int)NetRep_GetU8(&r);
 		if (!r.bad) {
+			/* the client's head of that name may have fewer animations than the instance's (a mission's AddModel there:
+			 * ProtectMayorTransport's Rusty): its talk then */
+			const cScorerModel *m = cScorer_FindModel(Scorer_Get(0), model);
+			if (m && (index >= m->numAnims || -index >= m->numAnims)) {
+				index = index < 0 ? -1 : 1;
+			}
 			Scorer_SetHeadMonitor(model, text, index);
 			Con_Printf("coop: a remote communication of %s\n", text);
 		}

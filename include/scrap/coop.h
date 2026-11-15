@@ -351,18 +351,24 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * [0|1]" (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops), "fight <player>
  * [<Module.var>|<entity>|red|@<list>|0]" (it turns to the nearest living target of that list of the scripts, that
  * entity, the red ones of the level, the entities of that entity list of the scripts or the mission's targets and fires through its input; one further than 6000 units: put
- * 2500 from it; 0 stops), "auto <player> [0|1|2] [<list>]" (it plays the mission's targets: fights the red ones (else the
- * red ones of the level), flies a race, else goes to the target and uses it, else fights list as "fight" does; 2 only
- * fights), "board <player> <MODEL>"
+ * 2500 from it; 0 stops), "auto <player> [0|1|2] [<list>]" (it plays the mission's targets: fights the red ones and a
+ * character the mission's death hook waits for (on foot: next to it, the action key), else the red ones of the level,
+ * flies a race, else goes to the target and uses it, else onto an item of the mission on the radar, else fights list
+ * as "fight" does; 2 only fights), "board <player> <MODEL>"
  * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
  * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
- * goes to, life) */
+ * goes to, life), "spare <player> <percent>" (its fights fire no more at a ship whose life is at or under that percent
+ * of its most: AttackTraitorius' scare; 0 off), "walk <player> <0|1>" (the automatic player on foot steps to a target far
+ * away, its followers keep up: BeatPickus' thugs) */
 byte Coop_Command(const char *line);
+/* the scheduled functions of the scripts run: on a coop instance the mission's member is bound (single player's player:
+ * BeatPickus' check of the thugs near "the player" every second); 0 elsewhere or without a member */
+byte Coop_BindMission(void);
 
 /* player i got into ship or out of its ship (NULL): the mission's callbacks of single player's parking run for it
  * (Parking.SwitchVehicleMissionCallback, SwitchCharMissionCallback and their Aux: the final fight's boss comes) */
-void Coop_Boarded(int i, const struct cEntity *ship);
+void Coop_Boarded(int i, struct cEntity *ship);
 /* a mission's revival of the player's dead ship (Vehicles.ReSpawnShip of the final fight's and the super deals'
  * RespawnPlayer) runs: always but on a coop instance, where the dead member has a new character already (Death and a
  * failed mission) and its old ship (name) is gone or no member's */
@@ -419,8 +425,8 @@ void Coop_ClientSceneEnded(void);
 /* each frame of a client: the options; tests: SCRAP_COOP_SKIP=<s> (Escape that many seconds into a scene),
  * SCRAP_COOP_CHOOSE=<k>[:<entity prefix>] (option k of a list), SCRAP_COOP_ANSWER=yes|no[:<s>] (a question's answer
  * after 2 s or s), SCRAP_COOP_SHIPEDIT=<s> (the ship editor opens with the lifeboat in the hangar and closes after
- * that many seconds), SCRAP_COOP_CONV=<class>[:<s>] (the conversor's interface picks that class after 3 s or s;
- * "none": Escape), SCRAP_COOP_SPUTNIK=<s> (Sputnik's screen closes after s), SCRAP_COOP_WARNING=<s> (a text box
+ * that many seconds), SCRAP_COOP_CONV=<class>[,<class>...][:<s>] (the conversor's interface picks that class after
+ * 3 s or s, a list the next class at each visit and its last one after its end; "none": Escape), SCRAP_COOP_SPUTNIK=<s> (Sputnik's screen closes after s), SCRAP_COOP_WARNING=<s> (a text box
  * of the instance closes after s) */
 void Coop_ClientFrame(void);
 

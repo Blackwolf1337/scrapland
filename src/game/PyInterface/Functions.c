@@ -360,6 +360,11 @@ const char *cPy_Function_Name(cPy_Function *self) {
 	return name;
 }
 
+const char *cPy_Function_Module(const cPy_Function *self) {
+	const portSite_t *site = (self->flags & PYF_ENTRY) ? self->func : NULL;
+	return site && site->ref->module ? site->ref->module : "";
+}
+
 /*
  * A parameter past PORT_ARGS (an entry takes no more; no callback of the engine passes more): the binding becomes the
  * port function as a value (PYF_VALUE) with the parameters as its tuple, so the call is the call of the function
