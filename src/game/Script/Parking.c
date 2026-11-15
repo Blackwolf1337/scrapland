@@ -207,7 +207,12 @@ static byte Pk_RestoreDeathPlayerShipN(void) {
 	byte ok = 1;
 	for (int i = 0; ok && i < 2; i++) {
 		int dead;
-		ok = Pk_G(ships[i], &h) && LvN_SetS(&h, "OnDeath", "Vehicles.OnDeath") && Mode_VObjRead(&h, "Life", &life) &&
+		/* the instance: a member without an own ship parked a ship (Parking.PlayerShip None, Pk_NotOwn) */
+		ok = Pk_G(ships[i], &h);
+		if (ok && i && Pk_NotOwn() && h.type == NV_NONE) {
+			break;
+		}
+		ok = ok && LvN_SetS(&h, "OnDeath", "Vehicles.OnDeath") && Mode_VObjRead(&h, "Life", &life) &&
 			(dead = Mode_CmpI(&life, "<=", 0)) >= 0 && (!dead || LvN_SetI(&h, "Life", 1)) && (i || Mode_DelGlobal(PK, ships[i]));
 	}
 	Native_Free(&h);

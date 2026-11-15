@@ -360,7 +360,8 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
  * goes to, life), "spare <player> <percent>" (its fights fire no more at a ship whose life is at or under that percent
  * of its most: AttackTraitorius' scare; 0 off), "walk <player> <0|1>" (the automatic player on foot steps to a target far
- * away, its followers keep up: BeatPickus' thugs) */
+ * away, its followers keep up: BeatPickus' thugs), "upto <player> <Module.var> <n>" (its fights hold fire while that
+ * variable of the scripts is n or more: DistractHumphrey's count; 0 off) */
 byte Coop_Command(const char *line);
 /* the scheduled functions of the scripts run: on a coop instance the mission's member is bound (single player's player:
  * BeatPickus' check of the thugs near "the player" every second); 0 elsewhere or without a member */
