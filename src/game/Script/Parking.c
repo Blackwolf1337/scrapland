@@ -958,12 +958,14 @@ static byte Pk_BrowseItemPosN(void) {
 	 * not in the original: the coop story's instance has the party's ship and Sputnik as single player has them, at
 	 * the parking nearest to where single player starts (include/scrap/coop.h) */
 	byte none = g_Instance || g_Watch;
+	vec3_t start;
+	float yaw;
+	/* before the search of the parkings: the start's search of its spawn dummy would take its place */
+	byte coop = g_Instance && Coop_StartPos(&start, &yaw);
 	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
-	vec3_t start;
-	float yaw;
-	if (g_Instance && Coop_StartPos(&start, &yaw)) {
+	if (coop) {
 		nativeVal_t c[3];
 		none = 0;
 		Native_SetFloat(&c[0], start.x);
