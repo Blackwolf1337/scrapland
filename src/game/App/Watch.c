@@ -127,6 +127,13 @@ static double Watch_Now(void) {
 static void Watch_Free(int slot) {
 	WatchProxy *p = &watch.px[slot];
 	if (p->e) {
+		if (p->kind == NETREP_MISSILE && Entity_IsType(p->e, TYEN_MISSILE)) {
+			/* a missile freed with bees left (a reset, a travel, the instance's restart) gets its hit in its
+			 * destructor (cMissileEntity_dtor), whose effect looks for it by a name the world has no more (the CHECK
+			 * of Weap_Missile): nothing is called then */
+			cPy_Function_SetNative(&Missile(p->e)->onHit, NULL);
+			cPy_Function_SetNative(&Missile(p->e)->onBeeDeath, NULL);
+		}
 		cEntity_Del(p->e);
 		watch.proxies--;
 	}
