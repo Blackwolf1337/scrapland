@@ -102,6 +102,7 @@
 #define CP_WALK_NEAR 60.0f			/* test: a point of its path this near is passed */
 #define CP_WALK_WAIT 900.0f			/* test: a walker waits for a character this near (one that follows it) */
 #define CP_WALK_ALONE 15.0			/* test: s it waits for one at most */
+#define CP_WALK_LEASH 1500.0f		/* test: followers further than this are none (BeatPickus' thugs stop there) */
 #define CP_WALK_STUCK 4.0			/* test: s without coming CP_WALK_STEP / 4 further: placed at its path's point */
 #define CP_MELEE 90.0f				/* test: units from a character it fights on foot (D-Tritus' punch: 50 ahead, 100 wide) */
 #define CP_MELEE_FAR 600.0f			/* test: a character further is walked to (put next to it) */
@@ -189,6 +190,7 @@ static struct {
 		double walkMoved;			/* when it had come further last (a stuck walk is placed on) */
 		double walkWait;			/* since when it waits for its follower (0 not) */
 		double walkTold;			/* when its walk was told last */
+		double walkBack;			/* since when it is next to its last follower that follows no more (0 not) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
@@ -2970,24 +2972,35 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 		return 0;
 	}
 	if (now - cp.pl[i].autoSince >= CP_WALK_GAP) {
-		/* its followers: the characters whose logic has it as the target (LLogicTarget) */
+		/* its followers: the characters within the scripts' leash whose logic has it as the target (LLogicTarget) */
 		cEntity *back = NULL;
 		float best = 0.0f;
 		for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 			char *tgt = NULL;
 			float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
 			if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
-				Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) && (!back || vd < best)) {
+				vd < CP_WALK_LEASH * CP_WALK_LEASH && Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) &&
+				(!back || vd < best)) {
 				back = v;
 				best = vd;
 			}
 		}
 		if (back) {
 			Str_Copy(cp.pl[i].follower, back->name, sizeof(cp.pl[i].follower));
-		} else if (cp.pl[i].follower[0]) {
-			/* one that stopped follows another now (BeatPickus' thugs behind their leader): back to it */
-			back = World_FindEntity(cp.pl[i].follower);
+			cp.pl[i].walkBack = 0.0;
+		} else if (cp.pl[i].follower[0] && (back = World_FindEntity(cp.pl[i].follower)) != NULL) {
+			/* one that stopped follows another now (BeatPickus' thugs behind their leader): back to it; next to it for
+			 * CP_WALK_ALONE s without it following again it is no follower */
+			float vx = back->pos.x - e->pos.x, vz = back->pos.z - e->pos.z;
 			best = CP_WALK_WAIT * CP_WALK_WAIT;
+			if (vx * vx + vz * vz >= best) {
+				cp.pl[i].walkBack = 0.0;
+			} else if (cp.pl[i].walkBack <= 0.0) {
+				cp.pl[i].walkBack = now;
+			} else if (now - cp.pl[i].walkBack >= CP_WALK_ALONE) {
+				cp.pl[i].follower[0] = 0;
+				back = NULL;
+			}
 		}
 		byte near = !back || best < CP_WALK_WAIT * CP_WALK_WAIT;
 		cp.pl[i].autoSince = now;
