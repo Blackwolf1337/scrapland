@@ -1087,6 +1087,14 @@ static void Rep_Death(int i, cEntity *e) {
 	}
 	Con_Printf("instance: player %d died in %s (%d lives left, ship cost %d)\n", i, e->name, sand.lives ? pl->lives : -1,
 		pl->rebuild);
+	/* the coop story's own ship that died is the member's no more (Parking.PlayerShip would name a gone entity: the
+	 * parking's scripts fail on it; single player's death loads the level again) */
+	for (int k = 0; Coop_On() && k < pl->nships; k++) {
+		if (pl->ships[k] == e) {
+			Rep_Disown(i, k);
+			break;
+		}
+	}
 	Coop_Died(i, e);
 	Players_BindTurn();
 }
