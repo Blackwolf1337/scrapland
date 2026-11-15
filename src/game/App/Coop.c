@@ -2811,15 +2811,16 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (kind == NETREP_SHIP) {
 		/* its ship to the target first (a pilot that knows the streets), then out of it */
 		float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
-		if (d > CP_AUTO_LAND && now - cp.pl[i].autoSince >= 1.0) {
+		if (d > CP_AUTO_LAND * 2.0f && now - cp.pl[i].autoSince >= 1.0) {
 			float k = CP_AUTO_LAND * 0.5f / d;
 			e->pos = (vec3_t){ t->pos.x - dx * k, t->pos.y + 300.0f, t->pos.z - dz * k };
 			Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
 			Rep_Placed(i);
 			cp.pl[i].autoSince = now;
 			Con_Printf("coop: player %d (auto) flies to %s\n", i, t->name);
-		} else if (d <= CP_AUTO_LAND) {
-			in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
+		} else if (d <= CP_AUTO_LAND * 2.0f) {
+			/* out of the ship near the place it goes to (a roof pushes a ship off: no time to wait for a calm one) */
+			in->buttons |= fmod(now, 0.5) < 1.0 / INSTANCE_TICK_HZ ? NETREP_IN_SWITCH : 0;
 		}
 		return;
 	}
