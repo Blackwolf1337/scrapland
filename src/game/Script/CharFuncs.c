@@ -1061,6 +1061,11 @@ const portFn_t g_BishopFuncs[] = {
 /* ---- Messenger: the data pack he carries (Messenger.MDP, MakeMDP stay module variables) ---- */
 
 static byte Messenger_MakePack(void) {
+	/* not in the original: a world's client has the instance's pack (the messengers there carry it, one that lies
+	 * somewhere is an item of the replication); its own would lie at the elevator for ever */
+	if (g_Play) {
+		return 1;
+	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *mdp = Mode_V(&t), *name = Mode_V(&t), *zero = Mode_V(&t);
 	Native_SetInt(zero, 0);

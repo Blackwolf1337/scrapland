@@ -308,6 +308,10 @@ static byte Mf_SetSecondary(const nativeVal_t *val) {
 
 /* FinishGame(id): the end of the game */
 static byte Mf_FinishGame(const nativeVal_t *id) {
+	/* not in the original: on a coop instance the mission failed, the party starts it again */
+	if (Coop_MissionFailed()) {
+		return 1;
+	}
 	return Mode_Import("Menu") && Mode_Import("Init") && Mode_Import("SaveGame") && Mode_Import("Init") &&
 		PORT_CALL(Menu, MovieScorer, NULL, "v", id) && PORT_CALL(Menu, GameOver, NULL, "v", id) &&
 		Mode_ActionSet("Inactive");

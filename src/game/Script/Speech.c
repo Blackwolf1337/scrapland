@@ -22,6 +22,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -1008,7 +1009,7 @@ static int Sp_DoRemote(void) {
 
 /* ForceRemoteComunication(SpeechText, HeadName, HeadIndex=1, AfterRemoteComFunc=None, Parameters=()): the text with
  * the head of the speaker on the monitor, the function after it */
-static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_t *head, const nativeVal_t *index,
+static byte Sp_ForceRemoteCom(const nativeVal_t *text, const nativeVal_t *head, const nativeVal_t *index,
 	const nativeVal_t *after, const nativeVal_t *params) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *time = Mode_V(&t), *e = Mode_V(&t), *full = Mode_V(&t), *txt = Mode_V(&t), *dict = Mode_V(&t), *model = Mode_V(&t);
@@ -1039,10 +1040,23 @@ static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_
 		if (!Mode_HeadMonitor(model, txt, index)) {
 			return Mode_Done(&t, 0);
 		}
+		int k = 0;
+		if (model->type == NV_STR && txt->type == NV_STR && Native_ArgInt(index, &k)) {
+			Coop_RemoteHead(Native_Text(model), Native_Text(txt), k);
+		}
 	}
 	Mode_ModPut(SP, "OnEndOfSpeech", after);
 	Mode_ModPut(SP, "OnEndOfSpeechParams", params);
 	return Mode_Done(&t, Mode_SpeechCallback("Speech.RestoreSpeech"));
+}
+
+/* not in the original: on a coop instance for the mission's member (include/scrap/coop.h) */
+static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_t *head, const nativeVal_t *index,
+	const nativeVal_t *after, const nativeVal_t *params) {
+	Coop_RemoteCom(1);
+	byte ok = Sp_ForceRemoteCom(text, head, index, after, params);
+	Coop_RemoteCom(0);
+	return ok;
 }
 
 /* ForceRemoteComInternal(...): the voice of the text on channel 2 and the communication */
@@ -1053,7 +1067,10 @@ static byte Sp_ForceRemoteComInternal(const nativeVal_t *text, const nativeVal_t
 		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 	}
 	Sp_Lang(Native_Text(text), &lang);
+	/* not in the original: the voice too for the mission's member of a coop instance */
+	Coop_RemoteCom(1);
 	byte ok = Sp_OpenVoice(text, 2) && Sp_PlayVoiceAfterI(2, 0) && Sp_ForceRemoteComunication(&lang, head, index, after, params);
+	Coop_RemoteCom(0);
 	Native_Free(&lang);
 	return ok;
 }

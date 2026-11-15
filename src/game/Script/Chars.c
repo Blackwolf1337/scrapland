@@ -351,6 +351,10 @@ static byte Ch_CanDrive(const nativeVal_t *ch, nativeVal_t *out) {
 /* MainCharDeath(name, param): the hook of a mission, else the end of the game */
 static byte Ch_MainCharDeath(const nativeVal_t *a) {
 	nativeVal_t hook = { 0 };
+	/* not in the original: a member's death on a coop instance is the instance's, until the whole party died */
+	if (Coop_On() && !Coop_PartyDeath()) {
+		return 1;
+	}
 	byte ok = Mode_G(CH, "OnMainCharDeath", &hook);
 	if (ok) {
 		ok = Native_True(&hook) ? Mode_CallArgs(&hook, NULL, a, 2) :
