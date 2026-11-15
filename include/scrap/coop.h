@@ -359,8 +359,12 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
  * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
  * goes to, life), "spare <player> <percent>" (its fights fire no more at a ship whose life is at or under that percent
- * of its most: AttackTraitorius' scare; 0 off) */
+ * of its most: AttackTraitorius' scare; 0 off), "walk <player> <0|1>" (the automatic player on foot steps to a target far
+ * away, its followers keep up: BeatPickus' thugs) */
 byte Coop_Command(const char *line);
+/* the scheduled functions of the scripts run: on a coop instance the mission's member is bound (single player's player:
+ * BeatPickus' check of the thugs near "the player" every second); 0 elsewhere or without a member */
+byte Coop_BindMission(void);
 
 /* player i got into ship or out of its ship (NULL): the mission's callbacks of single player's parking run for it
  * (Parking.SwitchVehicleMissionCallback, SwitchCharMissionCallback and their Aux: the final fight's boss comes) */
@@ -421,8 +425,8 @@ void Coop_ClientSceneEnded(void);
 /* each frame of a client: the options; tests: SCRAP_COOP_SKIP=<s> (Escape that many seconds into a scene),
  * SCRAP_COOP_CHOOSE=<k>[:<entity prefix>] (option k of a list), SCRAP_COOP_ANSWER=yes|no[:<s>] (a question's answer
  * after 2 s or s), SCRAP_COOP_SHIPEDIT=<s> (the ship editor opens with the lifeboat in the hangar and closes after
- * that many seconds), SCRAP_COOP_CONV=<class>[:<s>] (the conversor's interface picks that class after 3 s or s;
- * "none": Escape), SCRAP_COOP_SPUTNIK=<s> (Sputnik's screen closes after s), SCRAP_COOP_WARNING=<s> (a text box
+ * that many seconds), SCRAP_COOP_CONV=<class>[,<class>...][:<s>] (the conversor's interface picks that class after
+ * 3 s or s, a list the next class at each visit and its last one after its end; "none": Escape), SCRAP_COOP_SPUTNIK=<s> (Sputnik's screen closes after s), SCRAP_COOP_WARNING=<s> (a text box
  * of the instance closes after s) */
 void Coop_ClientFrame(void);
 

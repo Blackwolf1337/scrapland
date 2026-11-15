@@ -92,6 +92,11 @@
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
+#define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
+#define CP_WALK_STEP 300.0f			/* test: units of a step */
+#define CP_WALK_GAP 2.0				/* test: s between two steps */
+#define CP_WALK_WAIT 900.0f			/* test: the next step waits for a character this near (one that follows it) */
+#define CP_WALK_ALONE 15.0			/* test: s it waits for one at most */
 #define CP_MELEE 90.0f				/* test: units from a character it fights on foot (D-Tritus' punch: 50 ahead, 100 wide) */
 #define CP_MELEE_FAR 600.0f			/* test: a character further is walked to (put next to it) */
 #define CP_GONE 128					/* entities deleted by the level's start told to the clients */
@@ -171,6 +176,8 @@ static struct {
 		byte fight;					/* test: it fights the targets of fightList */
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
 		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
+		byte walk;					/* test: the automatic player on foot steps to its target (followers keep up) */
+		char follower[CP_NAME];		/* the follower it saw last ("" none) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
@@ -1934,6 +1941,15 @@ static int Cp_MissionPlayer(void) {
 	return -1;
 }
 
+byte Coop_BindMission(void) {
+	int i = Coop_On() ? Cp_MissionPlayer() : -1;
+	if (i < 0) {
+		return 0;
+	}
+	Players_Bind(i);
+	return 1;
+}
+
 static void Cp_SetMissionPlayer(int i) {
 	if (i >= 0 && i < PLAYERS_MAX && Rep_PlayerConn(i) >= 0 && i != cp.missionPlayer) {
 		cp.missionPlayer = i;
@@ -2899,6 +2915,61 @@ static byte Cp_RedNear(const cEntity *e) {
 	return 0;
 }
 
+/* test: player i on foot (e) further than CP_WALK_FAR from t: a step towards it every CP_WALK_GAP s on the floor
+ * there once a follower is near it again, back to the nearest one that stopped, as a player walks with characters
+ * that follow him (BeatPickus' thugs); 1 while it walks */
+static byte Cp_WalkStep(int i, cEntity *e, cEntity *t, double now) {
+	float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
+	if (d <= CP_WALK_FAR) {
+		return 0;
+	}
+	if (now - cp.pl[i].autoSince < CP_WALK_GAP) {
+		return 1;
+	}
+	/* its followers: the characters whose logic has it as the target (LLogicTarget) */
+	cEntity *back = NULL;
+	float best = 0.0f;
+	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		char *tgt = NULL;
+		float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
+		if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
+			Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) && (!back || vd < best)) {
+			back = v;
+			best = vd;
+		}
+	}
+	if (back) {
+		Str_Copy(cp.pl[i].follower, back->name, sizeof(cp.pl[i].follower));
+	} else if (cp.pl[i].follower[0]) {
+		/* one that stopped follows another now (BeatPickus' thugs behind their leader): back to it */
+		back = World_FindEntity(cp.pl[i].follower);
+		best = CP_WALK_WAIT * CP_WALK_WAIT;
+	}
+	byte near = !back || best < CP_WALK_WAIT * CP_WALK_WAIT;
+	if (!near && now - cp.pl[i].autoSince < CP_WALK_ALONE) {
+		return 1;
+	}
+	cp.pl[i].autoSince = now;
+	cp.pl[i].autoUse = 0.0;
+	cp.pl[i].autoAt[0] = 0;
+	Con_Printf("coop: player %d (auto) walks to %s (%.0f away), its follower %s %.0f away\n", i, t->name, (double)d,
+		back ? back->name : "-", (double)sqrtf(best));
+	if (!near && back) {
+		/* none kept up: back to the nearest one (they stopped where it left them) */
+		Travel_TestGoto(i, back->name, 0.0f, 200.0f);
+		return 1;
+	}
+	vec3_t p = { e->pos.x + dx / d * CP_WALK_STEP, e->pos.y + 150.0f, e->pos.z + dz / d * CP_WALK_STEP };
+	vec3_t down = { p.x, p.y - 2000.0f, p.z }, floor;
+	if (Engine_TestLine(&p, &down, &floor, NULL)) {
+		p.y = floor.y + 100.0f;
+	}
+	e->pos = p;
+	Obj(e)->ang.y = WChar(e)->view.y = atan2f(-dx, -dz);
+	Rep_Placed(i);
+	return 1;
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
  * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
  * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
@@ -3046,6 +3117,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		} else {
 			Travel_TestUse(i, t->name, "");
 		}
+	}
+	if (cp.pl[i].walk && Cp_WalkStep(i, e, t, now)) {
+		return;
 	}
 	if (!strcmp(cp.pl[i].autoAt, t->name) && now - cp.pl[i].autoSince < CP_AUTO_GAP) {
 		return;
@@ -3254,6 +3328,12 @@ byte Coop_Command(const char *line) {
 		return 1;
 	}
 	int pct = 0;
+	if (sscanf(line, "walk %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].walk = pct != 0;
+		cp.pl[i].follower[0] = 0;
+		Con_Printf("coop: player %d %s to its targets\n", i, pct ? "walks" : "goes");
+		return 1;
+	}
 	if (sscanf(line, "spare %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
 		cp.pl[i].spare = pct;
 		Con_Printf("coop: player %d spares a ship under %d%% of its life\n", i, pct);
@@ -3988,6 +4068,7 @@ void Coop_ClientFrame(void) {
 	static int choose = -2, answer;
 	static const char *chooseOf = "";
 	static char conv[CP_NAME];
+	static int convVisits;
 	if (skipAfter < 0.0) {
 		const char *s = getenv("SCRAP_COOP_SKIP"), *c = getenv("SCRAP_COOP_CHOOSE"), *a = getenv("SCRAP_COOP_ANSWER");
 		const char *e = getenv("SCRAP_COOP_SHIPEDIT");
@@ -4038,19 +4119,26 @@ void Coop_ClientFrame(void) {
 	}
 	/* tests: the conversor's pick (as its button's Convert and ConvertExecute), Sputnik's screen closed */
 	if (conv[0] && cp.cmenu == COOP_MENU_CONV && Watch_ShownTime() - cp.cmenuAt >= convSecs) {
-		char k[CP_NAME + 8];
+		/* a list "A,B,...": each visit the next class of it, the last one again after its end */
+		char k[CP_NAME + 8], pick[CP_NAME];
+		const char *at = conv;
+		for (int n = 0; n < convVisits && strchr(at, ','); n++) {
+			at = strchr(at, ',') + 1;
+		}
+		Str_PrintfQuiet(pick, sizeof(pick), "%.*s", (int)strcspn(at, ","), at);
+		convVisits++;
 		nativeVal_t v;
-		Con_Printf("coop: test: the conversor's pick %s\n", conv);
-		Str_PrintfQuiet(k, sizeof(k), "Char_%s", conv);
+		Con_Printf("coop: test: the conversor's pick %s\n", pick);
+		Str_PrintfQuiet(k, sizeof(k), "Char_%s", pick);
 		Native_SetStr(&v, k);
-		byte ok = strcmp(conv, "none") ? Mode_SetModVar("CharConversor", "KONTROL", &v) &&
+		byte ok = strcmp(pick, "none") ? Mode_SetModVar("CharConversor", "KONTROL", &v) &&
 			PORT_CALL(CharConversor, ConvertExecute, NULL, "") : PORT_CALL(CharConversor, ExitCharConversor, NULL, "is", 0L, "");
 		if (!ok) {
 			Native_ErrPrint();
 		}
 		Native_Free(&v);
 		if (cp.cmenu == COOP_MENU_CONV) {
-			Con_Printf("coop: test: %s is no class of the conversor here\n", conv);
+			Con_Printf("coop: test: %s is no class of the conversor here\n", pick);
 			Coop_ClientConverted("");
 		}
 	}
