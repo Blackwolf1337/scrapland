@@ -127,16 +127,13 @@ static int cBarScorer_Var(cScorerItem *base, const char *name, int set, char **s
 	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-static void cBarScorer_Draw(cScorerItem *base, int player) {
-	cBarScorer *self = (cBarScorer *)base;
-	cSpriteScorer *sp = &self->base;
+/* the auto update of the bars' value by dt (the frame time) and the speed, OnFinishAutoUpdate at its end */
+static void cBarScorer_Count(cBarScorer *self, float dt) {
 	int mode = g_BarAutoUpdate;
-	float frac;
 
-	(void)player;
 	if (mode == 1) {
 		if (g_BarValue > 0.0f) {
-			g_BarValue = (float)(g_BarValue - (cTimer_GetDelta(&g_pWorld->timer)) * g_BarSpeedFactor);
+			g_BarValue = (float)(g_BarValue - dt * g_BarSpeedFactor);
 			if (0.0f >= g_BarValue) {
 				g_BarValue = 0.0f;
 				if (cPy_Function_IsValid(g_BarOnFinish)) {
@@ -147,7 +144,7 @@ static void cBarScorer_Draw(cScorerItem *base, int player) {
 			}
 		}
 	} else if (mode == 2 && self->maxValue > g_BarValue) {
-		g_BarValue = (float)((cTimer_GetDelta(&g_pWorld->timer)) * g_BarSpeedFactor + g_BarValue);
+		g_BarValue = (float)(dt * g_BarSpeedFactor + g_BarValue);
 		float max = self->maxValue;
 		float v = g_BarValue;
 		if (v >= max) {
@@ -159,6 +156,21 @@ static void cBarScorer_Draw(cScorerItem *base, int player) {
 			g_BarValue = g_BarStopValue;
 		}
 	}
+}
+
+void cBarScorer_Tick(cScorerItem *base) {
+	if (base->vftable == CBARSCORER_VFTABLE && !base->delMe) {
+		cBarScorer_Count((cBarScorer *)base, cTimer_GetDelta(&g_pWorld->timer));
+	}
+}
+
+static void cBarScorer_Draw(cScorerItem *base, int player) {
+	cBarScorer *self = (cBarScorer *)base;
+	cSpriteScorer *sp = &self->base;
+	float frac;
+
+	(void)player;
+	cBarScorer_Count(self, cTimer_GetDelta(&g_pWorld->timer));
 	if (self->blink) {
 		float t = cTimer_GetDelta(&g_pWorld->timer) + self->blinkTime;
 		self->blinkTime = t;

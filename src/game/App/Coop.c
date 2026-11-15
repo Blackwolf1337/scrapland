@@ -79,6 +79,7 @@
 #define CP_FIGHT_FAR 6000.0f		/* test: a fighter further from its target is put CP_FIGHT_NEAR from it */
 #define CP_FIGHT_NEAR 2500.0f
 #define CP_FOLLOW_NEAR 1000.0f		/* test: a ship it stays with (no fight) is kept this near */
+#define CP_FOLLOW_FAR 2000.0f		/* test: and put back that near when it is further */
 #define CP_ESCORT 6000.0f			/* test: the red ones this near a ship it stays with are fought first */
 #define CP_FIGHT_HIT 3000.0f		/* test: a target this near is fought with the instant-hit weapons first */
 #define CP_FIGHT_LOCK 0.4			/* test: s a homing missile's lock is on the target before the release */
@@ -183,6 +184,7 @@ static struct {
 		byte fight;					/* test: it fights the targets of fightList */
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
 		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
+		byte scan;					/* test: the mission's ships that are no foes are followed, not shot (a scan) */
 		byte walk;					/* test: the automatic player on foot steps to its target (followers keep up) */
 		char follower[CP_NAME];		/* the follower it saw last ("" none) */
 		vec3_t walkTo;				/* the point of the level's AI graph it walks to next */
@@ -234,6 +236,7 @@ static struct {
 	uint64_t targetsAt;				/* when (instance ms) */
 	char ctargets[COOP_TARGETS * CP_NAME];	/* client: the names of its copies it set as the targets */
 	int missionPlayer;				/* the mission's member here (Cp_MissionPlayer), -1 */
+	int pilot;						/* the member the parking's mission callbacks of boarding ran for last, -1 */
 	uint16_t missionJoined;			/* its join */
 	int remote;						/* a remote communication of the scripts is told (Coop_RemoteCom, nested) */
 	int remoteWas;					/* the member bound before it */
@@ -269,7 +272,7 @@ static struct {
 	double cmenuAt;
 	double sceneAt;					/* client: when it began */
 	char notice[256];
-} cp = { .scene = -1, .loading = -1, .conv = -1, .missionPlayer = -1 };
+} cp = { .scene = -1, .loading = -1, .conv = -1, .missionPlayer = -1, .pilot = -1 };
 
 static void Cp_ToClient(int i, const uint8_t *buf, int size);
 static void Cp_ToAll(const uint8_t *buf, int size);
@@ -670,6 +673,14 @@ void Coop_Boarded(int i, cEntity *ship) {
 		Native_ErrClear();
 		return;
 	}
+	/* single player has one pilot: the callbacks of boarding run for the first member in a ship, the ones of leaving for
+	 * that member (DestroyMickus' scan: a second member's boarding started a second scan, bound to that member) */
+	cEntity *p = cp.pilot >= 0 && Rep_PlayerConn(cp.pilot) >= 0 ? Players_Get(cp.pilot) : NULL;
+	if (ship ? cp.pilot >= 0 && cp.pilot != i && p && NetPl_Kind(p) == NETREP_SHIP : cp.pilot != i) {
+		Con_Printf("coop: player %d %s a ship: the callbacks stay with player %d\n", i, ship ? "into" : "out of", cp.pilot);
+		return;
+	}
+	cp.pilot = ship ? i : -1;
 	/* a member without an own ship: the ship it boarded stands for it while the callbacks run (single player always has
 	 * its own there: a super deal's start sets Parking.PlayerShip.Invulnerable); none again after them, so that ship's
 	 * death is no own ship's (Vehicles.OnDeath, the deal's respawns) */
@@ -2753,11 +2764,12 @@ static void Cp_Fight(int i, NetRepInput *in, double back) {
 		Cp_TestMelee(i, in, t, d, now);
 		return;
 	}
-	if (d > (cp.pl[i].follow ? CP_FIGHT_NEAR : CP_FIGHT_FAR) && now - cp.pl[i].fightSince >= 1.0) {
+	if (d > (cp.pl[i].follow ? CP_FOLLOW_FAR : CP_FIGHT_FAR) && now - cp.pl[i].fightSince >= (cp.pl[i].follow ? 0.5 : 1.0)) {
 		float k = near / d;
 		e->pos = (vec3_t){ t->pos.x + (e->pos.x - t->pos.x) * k, t->pos.y + (kind == NETREP_SHIP ? 300.0f : 100.0f),
 			t->pos.z + (e->pos.z - t->pos.z) * k };
-		Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		/* a ship it stays with: at its speed, as a pilot behind it (a scan needs it near for seconds) */
+		Obj(e)->vel = cp.pl[i].follow ? Obj(t)->vel : (vec3_t){ 0.0f, 0.0f, 0.0f };
 		/* facing it (yaw 0 looks to -z) */
 		Obj(e)->ang.y = atan2f(-(t->pos.x - e->pos.x), -(t->pos.z - e->pos.z));
 		if (kind == NETREP_CHAR) {
@@ -3051,6 +3063,12 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 	return 1;
 }
 
+/* test: a ship of the mission player i stays near without a shot (test line scan: DestroyMickus' transports until
+ * the scan finds Mickus, who turns red; IntoTheGDB's bishops) */
+static byte Cp_Scanned(int i, cEntity *v) {
+	return cp.pl[i].scan && !Cp_Foe(v);
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
  * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
  * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
@@ -3070,7 +3088,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	 * a ship to shoot down before the mission's targets to use (Ambush's probes, its phone cab still the target) */
 	cEntity *arrow = Cp_ArrowTarget(e);
 	byte other = Cp_FightTargets("", all, 1, 0) || arrow;
-	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
+	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) && !Cp_Scanned(i, arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
 		(cp.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
 	if (foes) {
 		Str_Copy(cp.pl[i].fightList, foes, sizeof(cp.pl[i].fightList));
@@ -3133,7 +3151,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	char *tg = NULL;
 	if (Entity_IsType(t, TYEN_CAR) && strncmp(t->name, "Parked", 6) && Entity_VarS(t, "TgType", &tg, 0)) {
 		Str_Copy(cp.pl[i].fightList, t->name, sizeof(cp.pl[i].fightList));
-		cp.pl[i].follow = !Cp_ShipFoe(t);
+		cp.pl[i].follow = !Cp_ShipFoe(t) || Cp_Scanned(i, t);
 		Cp_TestFight(i, in, back);
 		cp.pl[i].follow = 0;
 		return;
@@ -3439,6 +3457,11 @@ byte Coop_Command(const char *line) {
 		cp.pl[i].walk = pct != 0;
 		cp.pl[i].follower[0] = 0;
 		Con_Printf("coop: player %d %s to its targets\n", i, pct ? "walks" : "goes");
+		return 1;
+	}
+	if (sscanf(line, "scan %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].scan = pct != 0;
+		Con_Printf("coop: player %d %s the mission's ships that are no foes\n", i, pct ? "scans" : "fights");
 		return 1;
 	}
 	if (sscanf(line, "spare %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {

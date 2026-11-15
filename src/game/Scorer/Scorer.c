@@ -422,6 +422,7 @@ void Scorer_Tick(int player) {
 	for (cScorerItem *it = sc->items, *next; it; it = next) {
 		next = it->next;
 		cTimerScorer_Tick(it);
+		cBarScorer_Tick(it);
 	}
 }
 

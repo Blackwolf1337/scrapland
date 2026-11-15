@@ -205,6 +205,9 @@ extern cGVar GVar_IsAutoUpdatable;
 #define g_BarAutoUpdate (GVar_IsAutoUpdatable.value.i)	/* IsAutoUpdatable */
 
 cBarScorer *cBarScorer_ctor(cBarScorer *self);
+/* not in the original: a bar's auto update counted on as its drawing does, where nothing draws (a coop instance:
+ * DestroyMickus' scan); other items are left */
+void cBarScorer_Tick(cScorerItem *base);
 
 /* ---- ButtonScorer.cpp ---- */
 
