@@ -69,6 +69,7 @@
 #define CP_RACE_GAP 2.5				/* seconds: test: the race's ship at the next checkpoint after this */
 #define CP_FIGHT_FAR 6000.0f		/* test: a fighter further from its target is put CP_FIGHT_NEAR from it */
 #define CP_FIGHT_NEAR 2500.0f
+#define CP_FOLLOW_NEAR 1000.0f		/* test: a ship it stays with (no fight) is kept this near */
 #define CP_FIGHT_HIT 3000.0f		/* test: a target this near is fought with the instant-hit weapons first */
 #define CP_FIGHT_LOCK 0.4			/* test: s a homing missile's lock is on the target before the release */
 #define CP_FIGHT_LOCKCONE 0.5f		/* test: radians: it holds a homing missile while the target is this near ahead */
@@ -2490,7 +2491,7 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
-	float d = sqrtf(best);
+	float d = sqrtf(best), near = cp.pl[i].follow ? CP_FOLLOW_NEAR : CP_FIGHT_NEAR;
 	double now = Instance_Time();
 	if (kind == NETREP_CHAR && Entity_IsType(t, TYEN_CAR)) {
 		/* a ship to fight a ship: the switch (into the nearest parked ship, else a called one) */
@@ -2501,8 +2502,8 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		Str_Copy(cp.pl[i].fightAt, t->name, sizeof(cp.pl[i].fightAt));
 		Con_Printf("coop: player %d fights %s (%.0f away)\n", i, t->name, (double)d);
 	}
-	if (d > CP_FIGHT_FAR && now - cp.pl[i].fightSince >= 1.0) {
-		float k = CP_FIGHT_NEAR / d;
+	if (d > (cp.pl[i].follow ? CP_FIGHT_NEAR : CP_FIGHT_FAR) && now - cp.pl[i].fightSince >= 1.0) {
+		float k = near / d;
 		e->pos = (vec3_t){ t->pos.x + (e->pos.x - t->pos.x) * k, t->pos.y + (kind == NETREP_SHIP ? 300.0f : 100.0f),
 			t->pos.z + (e->pos.z - t->pos.z) * k };
 		Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -2513,7 +2514,7 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		}
 		Rep_Placed(i);
 		cp.pl[i].fightSince = now;
-		d = CP_FIGHT_NEAR;
+		d = near;
 	}
 	/* where its client shows it (the server's shot looks there) */
 	back = back < 0.0 ? 0.0 : back > 0.5 ? 0.5 : back;
@@ -2535,11 +2536,11 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 		in->rot[1] = NetRep_QRot(rot[1]);
 		in->weapon = (uint8_t)Cp_FightWeapon(e, d);
 		/* closer while far, else its speed (behind it, turning with it) */
-		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > CP_FIGHT_NEAR * 1.5f ? tv + 1500.0f : tv;
+		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > near * 1.5f ? tv + 1500.0f : tv;
 		in->move[0] = NetRep_QMove(Veh(e)->speed > want + 200.0f ? -1.0f : Veh(e)->speed < want ? 1.0f : 0.0f);
 		in->move[2] = NetRep_QMove(dy > 500.0f ? 0.8f : dy < -500.0f ? -0.8f : dy / 625.0f);
 	} else {
-		in->move[0] = NetRep_QMove(d > CP_FIGHT_NEAR * 0.5f && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+		in->move[0] = NetRep_QMove(d > near * 0.5f && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
 	}
 	/* the weapons that fire at the release (the homing missiles lock on while held, the Devastator charges) in
 	 * bursts, the others held while the target is ahead */
@@ -2598,9 +2599,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	double now = Instance_Time();
 	byte pulse = fmod(now, 2.0) < 1.0 / INSTANCE_TICK_HZ;
-	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets) */
+	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
+	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
 	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" :
-		Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1) ? CP_FIGHT_RED : NULL;
+		(cp.pl[i].autoOn == 2 || !Cp_FightTargets("", all, 1, 0)) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1) ?
+		CP_FIGHT_RED : NULL;
 	if (foes) {
 		Str_Copy(cp.pl[i].fightList, foes, sizeof(cp.pl[i].fightList));
 		Cp_TestFight(i, in, back);
