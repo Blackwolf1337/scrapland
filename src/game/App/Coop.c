@@ -193,7 +193,8 @@ static struct {
 	char ctargets[COOP_TARGETS * CP_NAME];	/* client: the names of its copies it set as the targets */
 	int missionPlayer;				/* the mission's member here (Cp_MissionPlayer), -1 */
 	uint16_t missionJoined;			/* its join */
-	byte remote;					/* a remote communication of the scripts is told (Coop_RemoteCom) */
+	int remote;						/* a remote communication of the scripts is told (Coop_RemoteCom, nested) */
+	int remoteWas;					/* the member bound before it */
 	byte partyDead;					/* every member here died: the single player's death runs (Coop_Died) */
 	char gone[CP_GONE][CP_NAME];	/* the entities the level's start deleted (the mission's removals), for the clients */
 	int ngone;
@@ -1993,13 +1994,21 @@ void Coop_PlayVoice(int channel) {
 }
 
 void Coop_RemoteCom(byte on) {
-	if (!Coop_On()) {
+	if (!Coop_On() || (!on && !cp.remote)) {
 		return;
 	}
-	cp.remote = on;
-	int i = on ? Cp_MissionPlayer() : -1;
-	if (i >= 0) {
-		Players_Bind(i);
+	/* nested (the voice's call around the text's): the outer one binds and gives the binding back */
+	if (on && cp.remote++) {
+		return;
+	}
+	if (on) {
+		int i = Cp_MissionPlayer();
+		cp.remoteWas = Players_Bound();
+		if (i >= 0) {
+			Players_Bind(i);
+		}
+	} else if (!--cp.remote) {
+		Players_Bind(cp.remoteWas);
 	}
 }
 

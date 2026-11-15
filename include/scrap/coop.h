@@ -99,7 +99,7 @@
  * Remote communications (Speech.ForceRemoteComunication: a call with the caller's head on the monitor) go to the
  * mission's member (the one bound when the story's mission changed, else the first member that came into the instance
  * while it was gone) and to the members within COOP_HEAR of it, with the caller's head (COOP_Y_HEAD); the scripts act
- * for that member meanwhile.
+ * for that member during the call.
  *
  * The objects the instance's level start deletes (a mission's Init removes what the level made; the client's level
  * start runs no mission) go from the clients' levels too: their names go to a member's client at its join
@@ -228,8 +228,8 @@ void Coop_SpeechText(const char *text, float time, int r, int g, int b);
 void Coop_MsgText(const char *text, float time, const char *font);
 void Coop_OpenVoice(const char *file, int channel);
 /* a remote communication of the scripts (Speech.ForceRemoteComunication) begins (on 1: the mission's member bound,
- * its text and voice go to that member and the members near it) and ends (0); Coop_RemoteHead: the caller's head on
- * their monitors */
+ * its text and voice go to that member and the members near it) and ends (0: the binding before it again; nested
+ * calls count); Coop_RemoteHead: the caller's head on their monitors */
 void Coop_RemoteCom(byte on);
 void Coop_RemoteHead(const char *model, const char *text, int index);
 void Coop_PlayVoice(int channel);
