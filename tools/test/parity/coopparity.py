@@ -186,11 +186,14 @@ def run_point(a, name, data, level, key):
         ang = tuple(float(x) for x in m.groups()) if m else (0.0, 0.0, 0.0)
         sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
         time.sleep(a.settle)
-        inst = parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
-                                           level, timeout=30))
+        def inst_now():
+            return parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
+                                               level, timeout=30))
+        inst = inst_now()
         res['instance'] = {'kinds': parity.count(inst, at, a.radius)}
         res['sp'] = parity.collect(sp, at, a.radius)
-        res['join'] = parity.collect(member, at, a.radius, inst)
+        # the instance's entities of the member's moment (parity.collect labels the proxies by them, M11)
+        res['join'] = parity.collect(member, at, a.radius, inst_now)
         res['sp_mission'] = (sp.try_ask('Scrap.GetSaveVar("Mission.Library")') or '').strip()
         shots = []
         for g in (sp, member):
