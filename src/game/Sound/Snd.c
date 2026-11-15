@@ -44,6 +44,7 @@ struct SndStream {
 
 typedef struct {
 	byte used, paused, loop, reserved;
+	uint32_t count;			/* the upper part of its handles, one more at each start and stop */
 	SndSample *sample;
 	SndStream *stream;
 	double pos;			/* in frames of the source (sample) or of the stream buffer */
@@ -59,6 +60,7 @@ static struct {
 	ma_mutex lock;
 	char name[320];
 	SndChannel ch[SND_CHANNELS];
+	int last;			/* the channel started last, where the search for the next one begins */
 	uint32_t memCur, memMax;
 	FILE *wav;		/* SCRAP_SND_WAV: the mix also goes into this file (tests) */
 } snd;
@@ -271,6 +273,7 @@ int Snd_Init(void) {
 		return 0;
 	}
 	memset(snd.ch, 0, sizeof(snd.ch));
+	snd.last = SND_CHANNELS - 1;
 	Snd_OpenWav();
 	snd.init = 1;
 	snd.error = SND_ERR_NONE;
@@ -399,26 +402,78 @@ static uint32_t Snd_SampleBytes(const SndSample *s) {
 
 /* ---- channels ---- */
 
+/*
+ * The channel of a handle, as FMOD 3 counts them (checked against the fmod.dll of the game): a start returns
+ * index | count << 12, and the count of the channel goes up at each start and stop, so a handle kept after its
+ * sound ended or was stolen no longer reaches the next sound on that channel. A plain index (below 0x1000) is
+ * taken as it is (the loops over all channels).
+ */
+#define SND_HANDLE_SHIFT 12
+#define SND_COUNT_MASK 0x7ffffu
+
 static SndChannel *Snd_Ch(int ch) {
-	return snd.init && ch >= 0 && ch < SND_CHANNELS ? &snd.ch[ch] : NULL;
+	if (!snd.init || ch < 0) {
+		return NULL;
+	}
+	int i = ch & ((1 << SND_HANDLE_SHIFT) - 1);
+	if (i >= SND_CHANNELS) {
+		return NULL;
+	}
+	SndChannel *c = &snd.ch[i];
+	if (ch >> SND_HANDLE_SHIFT && (uint32_t)ch >> SND_HANDLE_SHIFT != c->count) {
+		return NULL;
+	}
+	return c;
 }
 
-/* a free channel with the source set and the defaults, under the lock; -1 when all are busy or reserved */
+/* the next count of a channel (1..SND_COUNT_MASK, never 0, so a handle is never a plain index) */
+static void Snd_Count(SndChannel *c) {
+	c->count = c->count % SND_COUNT_MASK + 1;
+}
+
+/*
+ * The channel for a new sound, under the lock, as FMOD 3 picks it for FSOUND_FREE (checked with its fmod.dll):
+ * the search begins after the channel started last; the first free one that is not reserved, else the quietest
+ * one that is not reserved is stolen (the first of the search on a tie). -1 when every channel is reserved.
+ */
+static int Snd_Pick(void) {
+	int steal = -1;
+	for (int k = 1; k <= SND_CHANNELS; k++) {
+		int i = (snd.last + k) % SND_CHANNELS;
+		const SndChannel *c = &snd.ch[i];
+		if (c->reserved) {
+			continue;
+		}
+		if (!c->used) {
+			return i;
+		}
+		if (steal < 0 || c->volume < snd.ch[steal].volume) {
+			steal = i;
+		}
+	}
+	return steal;
+}
+
+/* a channel with the source set and the defaults (a playing one is stolen), under the lock; its handle, or -1 when
+ * all are reserved */
 static int Snd_Start(SndSample *smp, SndStream *st, int rate, byte paused) {
 	if (!snd.init) {
 		snd.error = SND_ERR_UNINITIALIZED;
 		return -1;
 	}
 	ma_mutex_lock(&snd.lock);
-	int i;
-	for (i = 0; i < SND_CHANNELS && (snd.ch[i].used || snd.ch[i].reserved); i++) {
-	}
-	if (i == SND_CHANNELS) {
+	int i = Snd_Pick();
+	if (i < 0) {
 		ma_mutex_unlock(&snd.lock);
 		snd.error = SND_ERR_CHANNEL_ALLOC;
 		return -1;
 	}
 	SndChannel *c = &snd.ch[i];
+	if (c->used && c->stream) {
+		c->stream->channel = -1;
+	}
+	snd.last = i;
+	Snd_Count(c);
 	c->used = 1;
 	c->paused = paused;
 	c->loop = 0;
@@ -429,7 +484,7 @@ static int Snd_Start(SndSample *smp, SndStream *st, int rate, byte paused) {
 	c->pan = 128;
 	c->freq = rate;
 	ma_mutex_unlock(&snd.lock);
-	return i;
+	return i | (int)(c->count << SND_HANDLE_SHIFT);
 }
 
 int Snd_Play(SndSample *s, byte paused) {
@@ -446,6 +501,9 @@ byte Snd_Stop(int ch) {
 		return 0;
 	}
 	ma_mutex_lock(&snd.lock);
+	if (c->used) {
+		Snd_Count(c);
+	}
 	c->used = 0;
 	if (c->stream) {
 		c->stream->channel = -1;
@@ -627,9 +685,10 @@ int Snd_StreamPlay(SndStream *s, byte paused) {
 	s->ended = 0;
 	int ch = Snd_Start(NULL, s, s->rate, paused);
 	if (ch >= 0) {
+		int i = ch & ((1 << SND_HANDLE_SHIFT) - 1);
 		ma_mutex_lock(&snd.lock);
-		snd.ch[ch].loop = s->loop;
-		s->channel = ch;
+		snd.ch[i].loop = s->loop;
+		s->channel = i;
 		ma_mutex_unlock(&snd.lock);
 	}
 	return ch;

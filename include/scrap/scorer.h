@@ -149,7 +149,9 @@ struct nativeVal_s;
 byte ScorerItem_New(int player, const char *name, struct nativeVal_s *out);
 
 void Scorer_AddChatMsg(const char *text, uint32_t rgb);
+/* the console open (the input set Inactive, no world input) or closed; Scorer_ConsoleOn whether it is open */
 void Scorer_SetConsole(int on);
+byte Scorer_ConsoleOn(void);
 void Scorer_SetSpeechText(const char *text, float time, int a, int b, int c);
 struct nativeVal_s;
 /* the talk callback by name (cPy_Function_SetFunc); the items of arg (a list value, NULL: none) that are a text, a

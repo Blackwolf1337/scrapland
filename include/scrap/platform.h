@@ -51,6 +51,9 @@ void Plat_WaitEvent(int ms);
 /* what waits on the standard input, without waiting: the bytes read (at most size), 0 when none waits, -1 at its end
  * or when it cannot be read so (Windows: only a pipe; a terminal only while the process is in its foreground) */
 int Plat_ReadStdin(char *buf, int size);
+/* the clipboard as Windows-1252 text (the font of the game), at most size - 1 characters; and set from such a text */
+void Plat_ClipboardGet(char *buf, int size);
+void Plat_ClipboardSet(const char *text);
 
 /*
  * The input in the forms the game reads (the DirectInput and XInput states of the original): the keys by DirectInput

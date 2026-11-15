@@ -205,6 +205,11 @@ int GVar_SetStr(const char *name, const char *s) {
 	return 1;
 }
 
+/* the first variable of the list (the next one is base.next): the listings of the console view */
+cGVar *GVar_First(void) {
+	return g_GVars;
+}
+
 /* the name of the only variable starting with prefix (console completion), else NULL */
 const char *GVar_Complete(const char *prefix) {
 	cGVar *found = NULL;

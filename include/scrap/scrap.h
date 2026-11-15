@@ -33,6 +33,8 @@ double GVar_GetNum(const char *name, byte def);
 /* the text of a string variable, "" for other types (and a message for an unknown name) */
 const char *GVar_GetStr(const char *name);
 /* as Scrap.Set: 1 set, 0 read only, -1 unknown name or wrong type (each with its message) */
+/* the first variable of the list (then base.next), for the console listings and completion */
+cGVar *GVar_First(void);
 int GVar_SetNum(const char *name, double d);
 /* a string or script function variable */
 int GVar_SetStr(const char *name, const char *s);

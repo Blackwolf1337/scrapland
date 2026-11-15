@@ -48,6 +48,16 @@ target_compile_options(scrapcode PUBLIC -Wall -Wextra -O2 -g -fno-omit-frame-poi
 if(WIN32)
 	target_link_options(scrapcode PUBLIC -static-libgcc -Wl,--enable-stdcall-fixup)
 endif()
+# the debug menu (F11, src/game/Script/DebugMenu.c): any mission, cutscene, video or level; on for the Debug build type
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(SCRAP_DEBUG_MENU_DEFAULT ON)
+else()
+	set(SCRAP_DEBUG_MENU_DEFAULT OFF)
+endif()
+option(SCRAP_DEBUG_MENU "the debug menu (F11)" ${SCRAP_DEBUG_MENU_DEFAULT})
+if(SCRAP_DEBUG_MENU)
+	target_compile_definitions(scrapcode PUBLIC SCRAP_DEBUG_MENU=1)
+endif()
 
 # the GLSL shaders of the Vulkan backend (shaders/), as SPIR-V words for #include
 find_program(GLSLANG glslangValidator REQUIRED)

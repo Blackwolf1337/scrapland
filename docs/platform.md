@@ -6,11 +6,11 @@ ScrapC.exe builds for Windows and Linux, 64 bit, from the same sources. CMake re
 
 | Folder | Toolchain file | Target |
 |--------|----------------|--------|
-| `build-win64` | `cmake/mingw-x86_64.cmake` | Windows x86_64, no Python interpreter |
-| `build-linux64` | `cmake/linux-x86_64.cmake` | Linux x86_64, no Python interpreter |
-| `build-linux64-asan` | `cmake/linux-x86_64.cmake` | Linux x86_64 with `CMAKE_C_FLAGS=-fsanitize=address -fno-omit-frame-pointer`, for the level test, no Python interpreter |
+| `build-win64` | `cmake/mingw-x86_64.cmake` | Windows x86_64 |
+| `build-linux64` | `cmake/linux-x86_64.cmake` | Linux x86_64 |
+| `build-linux64-asan` | `cmake/linux-x86_64.cmake` | Linux x86_64 with `CMAKE_C_FLAGS=-fsanitize=address -fno-omit-frame-pointer`, for the level test |
 
-No build has the interpreter since step B (2026-11-08). The test modes that needed it are gone (tag `interp-final`).
+Python 1.5.2 is gone from every build and from the repo. The interpreter went on 2026-11-08 (tag `interp-final` keeps the last state with it), the object library after it.
 
 The i686 builds and the i686 difftest are retired. The tag `difftest-final` keeps the last state with them. The Linux binary is position independent again, the fixed load address 0x400000 was only for the test scripts.
 
@@ -57,7 +57,7 @@ The vtables are typed `*Vtbl` structs with designated initializers, so the compi
 
 Calls go through wrapper functions named `Class_Slot(obj, ...)`, static inline and placed after each vtable type in its header. A wrapper reads the table with `VT(type, obj)` and calls the typed slot, so the slot signature is checked at every call as well. Classes whose vtable had only one implementation have no vtable and are called directly.
 
-`long` differs between the 64-bit targets. Linux x86_64 is LP64 (`long` is 64 bits), Windows x64 is LLP64 (`long` is 32 bits). The Python 1.5.2 config follows that (`src/python/config.h`): Python ints are 64 bits on Linux x86_64 and 32 bits on Windows x64. The pointer-to-long casts of Python itself are only in repr strings and hashes.
+`long` differs between the 64-bit targets. Linux x86_64 is LP64 (`long` is 64 bits), Windows x64 is LLP64 (`long` is 32 bits). The native integer type of the scripts follows the old Python config: 64 bits on Linux x86_64 and 32 bits on Windows x64.
 
 Save games are name/value strings plus a count, so they do not depend on the pointer size.
 
@@ -67,9 +67,9 @@ Save games are name/value strings plus a count, so they do not depend on the poi
 
 ## Testing 64 bit
 
-`tools/test/levels.sh` runs every playable level (29, Nano has no map in the packs) in `build-linux64-asan` headless for `LEVELS_TIME` seconds (default 120) and prints one line per level. A level fails on an ASan error, a fatal error (the message box text in `scrapdecomp.log`) or a Python traceback. The exit code is 0 when all pass. Levels can be given as arguments. The levels run in parallel, `LEVELS_JOBS` at the same time (default 4). Worker n > 0 uses its own game folder `<game>-<n>` (`native.sh` makes it when it is missing). The log of a level is in the game folder of its worker, and the lines still come in the order of the levels. All 29 levels with 60 s each and 6 jobs take about 6 minutes instead of about 45.
+`tools/test/levels.sh` runs every playable level (29, Nano has no map in the packs) in `build-linux64-asan` headless for `LEVELS_TIME` seconds (default 120) and prints one line per level. A level fails on an ASan error, a fatal error (the message box text in `scrapdecomp.log`) or a traceback in the log. The exit code is 0 when all pass. Levels can be given as arguments. The levels run in parallel, `LEVELS_JOBS` at the same time (default 4). Worker n > 0 uses its own game folder `<game>-<n>` (`native.sh` makes it when it is missing). The log of a level is in the game folder of its worker, and the lines still come in the order of the levels. All 29 levels with 60 s each and 6 jobs take about 6 minutes instead of about 45.
 
-`tools/test/golden.sh` runs checks in the main menu on the Linux build and compares the output with `tools/test/golden/sdtest.out`. It runs only the 1481 checks of the script functions of the game (`tools/test/golden/sdtest.cmd`) through the C test channel. `GOLDEN_UPDATE=1` stores a new expected output. The stored output was checked against the frozen i686 reference before it was stored. It equals it except where 64 bit differs on purpose: Python ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
+`tools/test/golden.sh` runs checks in the main menu on the Linux build and compares the output with `tools/test/golden/sdtest.out`. It runs only the 1481 checks of the script functions of the game (`tools/test/golden/sdtest.cmd`) through the C test channel. `GOLDEN_UPDATE=1` stores a new expected output. The stored output was checked against the frozen i686 reference before it was stored. It equals it except where 64 bit differs on purpose: script ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
 
 A failed `CHECK` of the game traps, which shows as an `UNKNOWN SIGNAL` at address 0x1. To debug, run gdb only as a child of `tools/test/headless.sh`, because ptrace of other processes is blocked in the container. A hardware watchpoint on a corrupted field finds the writer.
 

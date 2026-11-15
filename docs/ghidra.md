@@ -53,9 +53,9 @@ ImportHeaders runs the steps of Ghidra's `CParserUtils.parseHeaderFiles`, with t
 
 ### Python 1.5.2
 
-`third_party/python-1.5.2/` holds the `Include/` directory of Python 1.5.2 (plus `PC/config.h` saved as `Include/config_pc.h`, not used for parsing) and `COPYRIGHT` (Stichting Mathematisch Centrum license, which allows redistribution with the notice). It gives the exact struct layouts, for Ghidra and for the C code (the hook DLL that once used it is gone since 2026-11-01, see tag `hooked-final`).
+`tools/ghidra/python152/` holds the `Include/` directory of Python 1.5.2 (plus `PC/config.h` saved as `Include/config_pc.h`, not used for parsing) and `COPYRIGHT` (Stichting Mathematisch Centrum license, which allows redistribution with the notice). The original Scrap.exe links Python 1.5.2, and these types let Ghidra read it. Only Ghidra uses them: the game no longer uses Python, and the library and `third_party/python-1.5.2` are gone from the repo (the hook DLL that once used them is gone since 2026-11-01, see tag `hooked-final`).
 
-`tools/ghidra/include/` has stand-in headers for the Ghidra parse: `stdio.h` with only `typedef struct _iobuf FILE`, `stdarg.h` with `va_list`, `stdint.h` and `stddef.h` with the i686 MSVC sizes (long 4 bytes), and empty `string.h`, `errno.h`, `stdlib.h`. `third_party/python-1.5.2/config/config.h` sets prototypes on, int/long/pointer 4 bytes, `DL_IMPORT`/`DL_EXPORT`.
+`tools/ghidra/include/` has stand-in headers for the Ghidra parse: `stdio.h` with only `typedef struct _iobuf FILE`, `stdarg.h` with `va_list`, `stdint.h` and `stddef.h` with the i686 MSVC sizes (long 4 bytes), and empty `string.h`, `errno.h`, `stdlib.h`. `tools/ghidra/python152/config/config.h` sets prototypes on, int/long/pointer 4 bytes, `DL_IMPORT`/`DL_EXPORT`.
 
 Result: 498 types, no parse errors. `PyTypeObject` is 0x6c bytes, which matches the exe (1.5.2 layout without `COUNT_ALLOCS`).
 
@@ -65,7 +65,7 @@ Result: 498 types, no parse errors. `PyTypeObject` is 0x6c bytes, which matches 
 
 ```
 tools/ghidra/headless.sh ImportHeaders.java tools/ghidra/include/scrap_all.h -Itools/ghidra/include -Iinclude \
-	-Ithird_party/python-1.5.2/config -Ithird_party/python-1.5.2/Include -DSD_GHIDRA -C__vectorcall=__thiscall
+	-Itools/ghidra/python152/config -Itools/ghidra/python152/Include -DSD_GHIDRA -C__vectorcall=__thiscall
 ```
 
 The GCC and C23 parts the parser does not know are handled for the Ghidra parse only, by `tools/ghidra/include/gccext.h` (included by `scrap_all.h` with `SD_GHIDRA`):
@@ -105,7 +105,7 @@ The analysis makes a 1 byte structure for each RTTI class at the root (`/CEscena
 `ReplacePlaceholders.java` replaces each placeholder that has a header type of the same name, or of its English name from `tools/rename/names.tsv` (`CEscena` -> `CScene`). It also maps template class names: a placeholder like `/cGridElements<InfPointVis*>` goes to the header type `cGridElements_InfPointVisPtr` (`*` becomes `Ptr`, `<` and `,` become `_`, `>` and spaces go). Ghidra then points every use at the header type. Only structures without components go, and only for a header type that is no placeholder itself. `rebuild.sh` runs it last.
 
 ```
-tools/ghidra/headless.sh ReplacePlaceholders.java tools/rename/names.tsv include/scrap third_party/python-1.5.2/Include
+tools/ghidra/headless.sh ReplacePlaceholders.java tools/rename/names.tsv include/scrap tools/ghidra/python152/Include
 ```
 
 Result: the new C types for the RTTI classes (commit 13d8691 for the AI and pathfinding classes, bb7b1d1 for the others) replaced 53 more placeholders: 47 by the type of the same name, 6 by the English or template name (`/CEntradaNula` by `/e3dinput.h/CNullInput`, `/CMotorApp` by `/scrapmain.h/CEngineApp`, `/cObjElementFXSistPartDuDv` by `/fxmisc.h/cObjElementFXParticleSystemDuDv`, `/cBinaryHeap<ElemAStar*>` by `/astar.h/cBinaryHeap_ElemAStarPtr`, and the two cGridElements templates). Before that, `/cEntity` was replaced by `/game.h/cEntity`, `/Demangler/PyObject` by `/object.h/PyObject`, `/CEscena` by `/node3d.h/CScene`, `/CNodo3D` by `/node3d.h/CNode3D` and `/CMallaD3D` by `/render.h/CMeshD3D`. 200 stay, all library classes: std exceptions, `type_info`, the CRT demangler nodes (`charNode`, `pcharNode`, `pDNameNode`, `DNameStatusNode`, `pairNode`), the Steam `CCallback` templates, the GOG/Galaxy listeners, and in `/Demangler` the CRT, STL, lambda and Galaxy types. Library code is not decompiled, so they stay.

@@ -377,7 +377,8 @@ int CNodesWorldSup_FileOf(CNodesWorld *self, const cNWNode *node) {
 	uintptr_t p = (uintptr_t)node;
 	uintptr_t base = (uintptr_t)self->sup.nodes;
 
-	/* the last node by its size (the original's 20 bytes a node held only for 32-bit pointers) */
+	/* the original checks against numNodes * 20 bytes, the size of a node on i686; a node holds a pointer, so the
+	 * last node is found by its type here (64 bit: 24 bytes, the old bound put the last sixth of the nodes in file -1) */
 	if (p < base || p > (uintptr_t)&self->sup.nodes[self->sup.numNodes - 1]) {
 		return -1;
 	}
