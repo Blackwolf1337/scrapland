@@ -187,6 +187,7 @@ struct cEntity;
 struct NetRepInput;
 struct NetRepBuf;
 struct NetRepReader;
+struct nativeVal_s;
 
 /* ---- instance ---- */
 
@@ -359,9 +360,14 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * goes to, life) */
 byte Coop_Command(const char *line);
 
-/* player i got into a ship (ship 1) or out of it: the mission's callbacks of single player's parking run for it
+/* player i got into ship (it is its own ship now, as single player's Parking.UseShip makes it) or out of its ship (NULL):
+ * the mission's callbacks of single player's parking run for it
  * (Parking.SwitchVehicleMissionCallback, SwitchCharMissionCallback and their Aux: the final fight's boss comes) */
-void Coop_Boarded(int i, byte ship);
+void Coop_Boarded(int i, struct cEntity *ship);
+/* a mission's revival of the player's dead ship (Vehicles.ReSpawnShip of the final fight's and the super deals'
+ * RespawnPlayer) runs: always but on a coop instance, where the dead member has a new character already (Death and a
+ * failed mission) and its old ship (name) is gone or no member's */
+byte Coop_Revives(const struct nativeVal_s *name);
 /* the name of the key bound to action of set on device: on the coop instance (no keys) a token the member's client
  * puts its own key's name in (Coop_ClientKeys), else NULL */
 const char *Coop_KeyToken(const char *set, const char *action, const char *device);

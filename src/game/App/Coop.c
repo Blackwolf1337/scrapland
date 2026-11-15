@@ -633,7 +633,12 @@ void Coop_Pass(void) {
 	}
 }
 
-void Coop_Boarded(int i, byte ship) {
+byte Coop_Revives(const nativeVal_t *name) {
+	cEntity *e = Coop_On() && name->type == NV_STR ? World_FindEntity(Native_Text(name)) : NULL;
+	return !Coop_On() || (e && Players_Of(e) >= 0);
+}
+
+void Coop_Boarded(int i, cEntity *ship) {
 	static const char *const cb[2][2] = { { "SwitchCharMissionCallback", "SwitchCharMissionCallbackAux" },
 		{ "SwitchVehicleMissionCallback", "SwitchVehicleMissionCallbackAux" } };
 	byte called;
@@ -641,12 +646,17 @@ void Coop_Boarded(int i, byte ship) {
 		Native_ErrClear();
 		return;
 	}
+	/* the ship it boarded is its own now, as single player's Parking.UseShip makes it Parking.PlayerShip (a super
+	 * deal's start sets Parking.PlayerShip.Invulnerable) */
+	if (ship && Players_Ship(i) != ship) {
+		Players_SetShip(i, ship);
+	}
 	Players_Bind(i);
 	for (int k = 0; k < 2; k++) {
-		if (!Mode_CallIf("Parking", cb[ship != 0][k], &called)) {
+		if (!Mode_CallIf("Parking", cb[ship != NULL][k], &called)) {
 			Native_ErrPrint();
 		} else if (called) {
-			Con_Printf("coop: player %d %s a ship: Parking.%s\n", i, ship ? "into" : "out of", cb[ship != 0][k]);
+			Con_Printf("coop: player %d %s a ship: Parking.%s\n", i, ship ? "into" : "out of", cb[ship != NULL][k]);
 		}
 	}
 	Players_BindTurn();

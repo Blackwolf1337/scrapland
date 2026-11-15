@@ -1000,7 +1000,7 @@ static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 		pl->told = -2;
 		pl->boards++;
 		Con_Printf("instance: player %d into %s\n", i, name);
-		Coop_Boarded(i, 1);
+		Coop_Boarded(i, best);
 		return;
 	}
 	if (NetPl_Kind(e) != NETREP_SHIP || Veh(e)->speed > PLAY_LEAVE_SPEED) {
@@ -1025,7 +1025,7 @@ static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 	pl->told = -2;
 	pl->leaves++;
 	Con_Printf("instance: player %d out of %s\n", i, name);
-	Coop_Boarded(i, 0);
+	Coop_Boarded(i, NULL);
 }
 
 /* the ship stands near enough above the floor for a parking box under it (Parking.SetShipAsParked) */

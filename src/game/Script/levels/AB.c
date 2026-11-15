@@ -30,7 +30,6 @@
 #include "scrap/coop.h"
 #include "scrap/game.h"
 #include "scrap/logic.h"
-#include "scrap/players.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
@@ -401,10 +400,8 @@ static byte Ff_RespawnPlayer(const nativeVal_t *a, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *count = Mode_V(&t), *five = Mode_V(&t), *m = Mode_V(&t);
 	(void)out;
-	/* not in the original: on a coop instance the dead member has a new character already (include/scrap/coop.h,
-	 * "Death and a failed mission") and its ship is no member's any more (or gone): no ship of it comes back */
-	cEntity *dead = Coop_On() && a[0].type == NV_STR ? World_FindEntity(Native_Text(&a[0])) : NULL;
-	byte revive = !Coop_On() || (dead && Players_Of(dead) >= 0);
+	/* not in the original: no ship of a dead coop member comes back (include/scrap/coop.h) */
+	byte revive = Coop_Revives(&a[0]);
 	if (!Mode_Import("Vehicles") || !Mode_Import("Speech") || (revive && (!PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", &a[0]) ||
 		!Mode_EntityH(&a[0], usr) || !Mode_VSet(usr, "Pos", &a[1]) || !Mode_VSet(usr, "Ang", &a[2]))) ||
 		!LvN_GAdd(FF, "HINT_COUNTER", 1, NULL) || !Mode_G(FF, "HINT_COUNTER", count)) {
