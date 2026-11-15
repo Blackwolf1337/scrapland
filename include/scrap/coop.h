@@ -156,6 +156,8 @@
 struct Net2Host;
 struct cEntity;
 struct NetRepInput;
+struct NetRepBuf;
+struct NetRepReader;
 
 /* ---- instance ---- */
 
@@ -265,6 +267,10 @@ byte Coop_Warning(const char *text);
 byte Coop_SputnikOpen(void);
 /* the editor of the member the scripts act for is on its client (its tutorial runs there) */
 byte Coop_ShipEditAway(void);
+/* the save variables of the hangar (Hangar.*) into a message and back, as the menus of the hangar carry them (also the
+ * Sputniks of the sandbox and freeroam, include/scrap/sputniks.h) */
+void Coop_PutHangar(struct NetRepBuf *w);
+void Coop_GetHangar(struct NetRepReader *r);
 /* the action set the scripts select (name): on a coop instance, where no input reads it, the one of its members'
  * play: Inactive while a scene plays, else Walk (a menu, a ride or a talk of one member is on its own client; the
  * scripts that wait for Walk, a remote communication, a walk out of a teleporter, go on) */

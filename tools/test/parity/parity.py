@@ -46,9 +46,9 @@ LOOSE = ('rail traffic', 'traffic', 'police', 'coin', 'missile', 'npc', 'parked 
 # kinds that come and go with the moment (coins, batteries and the items of shot traffic dropped in a fight, missiles, gears that police fuse into where a
 # player sees them and that turn back): the clients against what the instance has, not against single player
 TIMED = ('coin', 'item Battery', 'npc Gear', 'item dropped', 'missile')
-# kinds single player has that the multiplayer worlds leave out on purpose (docs: handback-mp-m11.md): not counted as
-# gaps, marked "single player only"
-SP_ONLY = ('npc Sputnik',)
+# kinds single player has that the multiplayer worlds leave out on purpose: not counted as gaps, marked "single player
+# only" (the players' Sputniks since M12, include/scrap/sputniks.h)
+SP_ONLY = ()
 SOUND_SAMPLES = 6                  # sounds playing taken this many times, 1 s apart
 
 
@@ -230,6 +230,7 @@ def label_proxies(ents, inst):
             d = dist(s['pos'], e['pos'])
             if d < bd:
                 best, bd = s, d
+        e['local'] = e['name']
         if best:
             e['name'], e['list'], e['srv'] = best['name'], best['list'], best['name']
         else:
@@ -298,6 +299,7 @@ def collect(g, at, radius, inst=None):
             if f[0] == 'ps' or (f[0] == 'ch' and len(f) > 3 and f[3] == '1'):
                 loops.add('%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
     out['loops'] = sorted(loops)
+    out['parked'] = parked_motors(g, out['ents'], at, radius)
     menu = g.ask('menu') or ''
     out['hud'] = sorted(set(re.findall(r"\[\s*'([^']*)'", menu)))
     out['kinds'] = count(out['ents'], at, radius)
@@ -331,6 +333,28 @@ def side_by_side(paths, labels, out):
             sheet.paste(im, (k * w, 28))
         d.text((k * w + 8, 6), lab, fill=(255, 255, 0))
     sheet.save(out)
+    return out
+
+
+def parked_motors(g, ents, at, radius):
+    """the motor of each parked ship (and single player's own ship) within the radius whose motor plays: the idle one
+    (sound item 0, the ship moved into its place) or the flying one (item 8), with the sound's name (the models of the
+    parked ships are drawn at random by each game, so are their motors' names: compared by what they play, not by
+    name)"""
+    out = []
+    for e in ents:
+        # single player's own ship parked (its name is not a parked ship's; the players' own ships are)
+        if (kind_of(e) != 'parked ship' and e['name'] != 'PlayerShip') or dist(e['pos'], at) > radius:
+            continue
+        snd = {}
+        for line in (g.try_ask('entsnd %s' % e.get('local', e['name']), timeout=5) or '').splitlines():
+            f = line.split('\t')
+            if f[0] == 'sn' and len(f) > 4 and f[1] in ('0', '8'):
+                snd[f[1]] = (f[2], float(f[3]), f[4] == '1')
+        on = [k for k, v in snd.items() if v[2] and v[1] > 0.0]
+        if on:
+            k = on[0]
+            out.append({'name': e['name'], 'role': 'idle' if k == '0' else 'flying', 'sound': snd[k][0]})
     return out
 
 
@@ -471,12 +495,25 @@ def sound_gaps(res):
     loops = set(res.get('sp', {}).get('loops', []))
     sides = [s for s in ('host', 'join') if s in res]
     out = []
+    # the motors of the parked ships by what they play (parked_motors): a name single player's parked ships play as
+    # their idle motor is no gap of its own, the idle motors are counted instead
+    idle = {}
+    for m in res.get('sp', {}).get('parked', []):
+        if m['role'] == 'idle':
+            idle['ch ' + m['sound']] = idle.get('ch ' + m['sound'], 0) + 1
     for k in sorted(sp):
         if 'loops' in res.get('sp', {}) and k not in loops:
+            continue
+        if 'parked' in res.get('sp', {}) and sp[k] <= idle.get(k, 0):
             continue
         v = [sp[k]] + [res[s].get('sounds', {}).get(k, 0) for s in sides]
         if k != 'ch ?' and min(v[1:] or [1]) == 0:
             out.append((k, v))
+    if 'parked' in res.get('sp', {}):
+        v = [sum(1 for m in res[s].get('parked', []) if m['role'] == 'idle') for s in ['sp'] + sides]
+        fly = sum(1 for s in sides for m in res[s].get('parked', []) if m['role'] == 'flying')
+        if fly or min(v[1:] or [v[0]]) < v[0]:
+            out.append(('parked ships idling (flying on the clients: %d)' % fly, v))
     return out
 
 
@@ -526,6 +563,11 @@ def report(results, out):
                                                                        ', '.join(miss)))
         lines += ['', 'One-shot sounds (the most of each name, summed; SP, host, join): %s' %
                   ', '.join(str(x) for x in sound_shots(res))]
+        if 'parked' in res.get('sp', {}):
+            lines += ['', 'Parked ships whose motor plays, idle/flying (SP, host, join): %s' % ', '.join(
+                '%d/%d' % (sum(1 for m in res[s].get('parked', []) if m['role'] == 'idle'),
+                           sum(1 for m in res[s].get('parked', []) if m['role'] == 'flying'))
+                for s in ('sp', 'host', 'join') if s in res)]
         if sg:
             lines += ['', 'Sound gaps (steady sounds single player plays near the player, a client not; SP, host, join):',
                       '']

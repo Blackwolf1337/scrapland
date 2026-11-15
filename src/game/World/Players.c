@@ -12,6 +12,7 @@
 #include "scrap/instance.h"
 #include "scrap/mathlib.h"
 #include "scrap/modvars.h"
+#include "scrap/places.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
@@ -24,9 +25,13 @@
 
 static cEntity *g_NetPlayers[PLAYERS_MAX];	/* the instance's players, found every frame like cWorld.owners */
 
-/* the variables of the scripts' module PLAYERS_VAR_MODULE that mean "the player's" (the player's own ship) */
+/* the variables of the scripts' modules that mean "the player's": the player's own ship (Parking) and, in the sandbox
+ * and freeroam (places), Sputnik beside it (include/scrap/sputniks.h; the coop story's Sputnik is the party's) */
 #define PLAYERS_VAR_MODULE "Parking"
-static const char *const g_PlVars[] = { "PlayerShip", "LocalShip" };
+static const struct {
+	const char *mod, *var;
+	byte places;
+} g_PlVars[] = { { PLAYERS_VAR_MODULE, "PlayerShip", 0 }, { PLAYERS_VAR_MODULE, "LocalShip", 0 }, { "Sputnik", "spt", 1 } };
 #define PLAYERS_VARS ((int)(sizeof(g_PlVars) / sizeof(g_PlVars[0])))
 
 /* the game state of a player while it is not bound into the world */
@@ -45,9 +50,9 @@ typedef struct PlayerState {
 static PlayerState g_PlState[PLAYERS_MAX + 1];	/* + the world's own (PLAYERS_NONE) */
 static int g_Bound = PLAYERS_NONE;
 static int g_Turn;
-static modVarRef_t g_VarRef;		/* the module of g_PlVars, found once a frame (the turn) */
+static modVarRef_t g_VarRef[PLAYERS_VARS];	/* the modules of g_PlVars, found once a frame (the turn) */
 static int g_VarRefTurn = -1;
-static byte g_VarRefOk;
+static byte g_VarRefOk[PLAYERS_VARS];
 
 byte Players_Net(void) {
 	return g_Instance;
@@ -271,18 +276,17 @@ void Players_Part(int i) {
 static void Players_SwapVars(PlayerState *o, PlayerState *n) {
 	if (g_VarRefTurn != g_Turn) {
 		g_VarRefTurn = g_Turn;
-		g_VarRefOk = ModVar_Named(PLAYERS_VAR_MODULE, &g_VarRef);
-	}
-	if (!g_VarRefOk) {
-		return;
+		for (int k = 0; k < PLAYERS_VARS; k++) {
+			g_VarRefOk[k] = (!g_PlVars[k].places || Places_On()) && ModVar_Named(g_PlVars[k].mod, &g_VarRef[k]);
+		}
 	}
 	for (int k = 0; k < PLAYERS_VARS; k++) {
 		nativeVal_t cur;
-		if (!ModVar_GetVal(&g_VarRef, g_PlVars[k], &cur)) {
+		if (!g_VarRefOk[k] || !ModVar_GetVal(&g_VarRef[k], g_PlVars[k].var, &cur)) {
 			continue;
 		}
 		if (!Native_Equal(&cur, &n->vars[k])) {
-			ModVar_SetVal(&g_VarRef, g_PlVars[k], &n->vars[k]);
+			ModVar_SetVal(&g_VarRef[k], g_PlVars[k].var, &n->vars[k]);
 		}
 		Native_Free(&o->vars[k]);
 		o->vars[k] = cur;

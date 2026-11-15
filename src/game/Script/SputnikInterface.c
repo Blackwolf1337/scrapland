@@ -15,6 +15,7 @@
 #include "scrap/app.h"
 #include "scrap/coop.h"
 #include "scrap/script.h"
+#include "scrap/sputniks.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
 
@@ -183,8 +184,10 @@ static byte SI_ExitSputnikInterfaceN(const nativeVal_t *id) {
 		!Mode_G(MOD, "EndSputnikCallBack", cb)) {
 		return Mode_Done(&t, 0);
 	}
-	/* not in the original: the instance's screen on a coop client: the hangar back to it */
+	/* not in the original: the instance's screen on a coop client or a sandbox or freeroam client: the hangar back to
+	 * it */
 	Coop_ClientSputnikDone();
+	Sputniks_ClientDone();
 	return Mode_Done(&t, !Native_True(cb) || (Mode_CallArgs(cb, NULL, NULL, 0) && Mode_Put(MOD, "EndSputnikCallBack", NULL, none)));
 }
 

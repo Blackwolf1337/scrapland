@@ -36,6 +36,7 @@
 #include "scrap/travel.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "scrap/sputniks.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weaps2.h"
@@ -887,7 +888,7 @@ static int Rep_ShipPrice(cEntity *v) {
 /* the sandbox: a player on foot with no parked ship near calls one beside it (Parking.CreateParkedShip): it owns it;
  * past the -ships limit its oldest goes (or stays to the player that sits in it, owned no more); the ship of a death
  * is paid first (-rebuild) */
-static cEntity *Rep_CallShip(int i, cEntity *ch) {
+static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	RepPlayer *pl = &rep.pl[i];
 	nativeVal_t c[3], pos, ang, out;
 	cEntity *ship = NULL;
@@ -898,8 +899,10 @@ static cEntity *Rep_CallShip(int i, cEntity *ch) {
 		return NULL;
 	}
 	float yaw = WChar(ch)->view.y;
-	/* in front of the character (yaw 0 looks to -z), else a free place around that */
-	at = (vec3_t){ ch->pos.x - sinf(yaw) * 900.0f, ch->pos.y, ch->pos.z - cosf(yaw) * 900.0f };
+	/* in front of the character (yaw 0 looks to -z), or to its right (out of the arrow's way), else a free place
+	 * around that */
+	float a = side ? yaw - (float)M_PI_2 : yaw;
+	at = (vec3_t){ ch->pos.x - sinf(a) * 900.0f, ch->pos.y, ch->pos.z - cosf(a) * 900.0f };
 	int k = 0;
 	while (k < REP_SPOT_TRIES && !Rep_Spot(&at, k, REP_CALL_DROP, REP_SHIP_CLEAR, 600.0f, ch, &p)) {
 		k++;
@@ -966,7 +969,7 @@ static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 				best = v;
 			}
 		}
-		if (!best && !(best = Rep_CallShip(i, e))) {
+		if (!best && !(best = Rep_CallShip(i, e, 0))) {
 			return;
 		}
 		Str_Copy(name, best->name, sizeof(name));
@@ -1136,6 +1139,13 @@ static int Rep_Join(int conn) {
 		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->ownName);
 		Travel_Joined(i);
 		Coop_Joined(i);
+		/* the sandbox and freeroam: a player who arrives on foot in an outdoor level finds its own ship beside it, as
+		 * single player's waits in the level's parking with Sputnik (include/scrap/sputniks.h) */
+		if (Places_On() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
+			Players_Bind(i);
+			Rep_CallShip(i, Rep_Own(pl), 1);
+			Players_BindTurn();
+		}
 		return i;
 	}
 	return -1;
@@ -1150,8 +1160,14 @@ static void Rep_Leave(int i) {
 	Arena_Left(i);
 	Rep_DropOwn(i);
 	Rep_DropCorpse(pl);
-	/* its called ships stay in the world, owned by no one */
+	Sputniks_Left(i);
+	/* its called ships stay in the world, owned by no one; in the sandbox and freeroam its parked own ship goes with
+	 * it (its next level gives it the ship again: Rep_Join) */
 	while (pl->nships) {
+		cEntity *v = Rep_OwnedShip(pl, 0);
+		if (v && Places_On() && Rep_IsParked(v, i)) {
+			cEntity_Del(v);
+		}
 		Rep_Disown(i, 0);
 	}
 	Players_Part(i);
@@ -1169,9 +1185,36 @@ void Rep_TestSwitch(int i, byte call) {
 	if (!call) {
 		Rep_SwitchTo(i, e, NULL);
 	} else if (NetPl_Kind(e) == NETREP_CHAR) {
-		Rep_CallShip(i, e);
+		Rep_CallShip(i, e, 0);
 	}
 	Players_BindTurn();
+}
+
+cEntity *Rep_ReplaceShip(int i, cEntity *old) {
+	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? &rep.pl[i] : NULL;
+	int k = 0;
+	while (pl && k < pl->nships && Rep_OwnedShip(pl, k) != old) {
+		k++;
+	}
+	if (!pl || k == pl->nships || !Rep_IsParked(old, i)) {
+		return NULL;
+	}
+	vec3_t p = old->pos, away = { old->pos.x, old->pos.y - 100000.0f, old->pos.z };
+	float yaw = Obj(old)->ang.y;
+	/* out of the way of the new one's floor first (deleted at the end of the frame) */
+	Entity_SetPos(old, &away);
+	cEntity_Del(old);
+	cEntity *ship = Travel_OwnShip(i, &p, yaw);
+	if (!ship) {
+		Rep_Disown(i, k);
+		return NULL;
+	}
+	pl->ships[k] = ship;
+	Str_Copy(pl->shipNames[k], ship->name, REP_NAME);
+	if (k == pl->nships - 1) {
+		Players_SetShip(i, ship);
+	}
+	return ship;
 }
 
 int Rep_EntitySlot(cEntity *e) {
@@ -1300,7 +1343,10 @@ void Rep_PreFrame(uint64_t tick) {
 			Rep_SwitchTo(i, e, WChar_Victim(e));
 			continue;
 		}
-		if (use && Rep_UsesDoor(e)) {
+		if (use && NetPl_Kind(e) == NETREP_CHAR && Sputniks_Use(i, WChar_Victim(e))) {
+			/* a Sputnik's use is the hangar's (include/scrap/sputniks.h), the character steps as its client's does */
+			in.buttons &= (uint16_t)~NETREP_IN_ACT3;
+		} else if (use && Rep_UsesDoor(e)) {
 			Coop_BeforeUse(i, WChar(e)->listenOn && WChar_Listen(e) ? WChar_Listen(e) : WChar_Victim(e));
 		} else if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
 			pl->buttons = in.buttons;
@@ -1312,6 +1358,7 @@ void Rep_PreFrame(uint64_t tick) {
 		NetPl_Bump(e, &in, NETPL_BUMP_REACH);
 	}
 	Players_BindTurn();
+	Sputniks_Frame();
 }
 
 byte Rep_Command(const char *line) {

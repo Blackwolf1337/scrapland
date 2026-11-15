@@ -334,6 +334,9 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 /* ---- input and prediction (stage M3b) ---- */
 
 #define NETREP_INPUT_REDUNDANCY 4	/* inputs per ack message: the newest and the ones of the ticks before */
+/* the bytes of an ack with the most inputs, each with a bump (NetRep_WriteAckInput): the ack 19, the count, tick and
+ * shown time 9, per input 16 and six variable-length ints of up to 5 bytes */
+#define NETREP_ACKINPUT_MAX (28 + NETREP_INPUT_REDUNDANCY * (16 + 6 * 5))
 #define NETREP_INBUF 64				/* ticks of input the server keeps per player */
 #define NETREP_INPUT_AHEAD 32		/* input more ticks ahead of the server than this is dropped */
 #define NETREP_PRED 64				/* ticks of predicted states the client keeps */

@@ -377,8 +377,7 @@ static void Pl_FixedNpc(const PlaceNpc *c) {
 
 #define PL_GATE_PREFIX "PlaceGate_"
 
-/* the language's name of a level (its metro station's), else the level */
-static const char *Pl_LevelText(const char *level) {
+const char *Places_LevelText(const char *level) {
 	char key[PLACE_NAME + 16];
 	Str_PrintfQuiet(key, sizeof(key), "Station_%s", level);
 	const char *t = Script_Lang(key);
@@ -409,7 +408,7 @@ static void Pl_MakeGate(const PlaceGate *g) {
 	/* the options: the list emptied, then each one in turn */
 	Entity_VarI(e, "ArrnOpt", &zero, 1);
 	for (int k = 0; k < g->nopt; k++) {
-		Texts_Format(text, sizeof(text), "MP_Place_Go", Pl_LevelText(g->opt[k].level));
+		Texts_Format(text, sizeof(text), "MP_Place_Go", Places_LevelText(g->opt[k].level));
 		Str_PrintfQuiet(opt, sizeof(opt), "Go%d:%s", k, text);
 		Con_Printf("places: gate %s option %s\n", name, opt);
 		Str_PrintfQuiet(var, sizeof(var), "ArrOpt%d", k);
