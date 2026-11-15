@@ -492,6 +492,11 @@ static byte Music_Start(void) {
 	E3D_LogDebug2((&g_FileLog), "Name      : %s", g_MusicName);
 	E3D_LogDebug2((&g_FileLog), "Frequency : %d", Snd_StreamRate(g_MusicStream));
 	g_MusicChannel = Snd_StreamPlay(g_MusicStream, 1);
+	/* not in the original: no free channel for the stream (every one busy): tried again later, not at once again
+	 * through Music_ApplyVolume and Music_Ready (an endless recursion) */
+	if (g_MusicChannel == -1) {
+		return 0;
+	}
 	Snd_SetReserved(g_MusicChannel, 1);
 	freq = Snd_GetFrequency(g_MusicChannel);
 	if (g_TimerFreqMult > 1) {
