@@ -4,6 +4,7 @@
  */
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
+#include "scrap/play.h"
 #include "scrap/primitive.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
@@ -68,6 +69,10 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 	}
 	cEntity *e = World_FindEntity(name);
 	if (!e || g_DtritusEnt == e || !Entity_IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
+		return;
+	}
+	/* not in the original: on an instance the server's rule for hits between players (no friendly fire in a coop party) */
+	if (!Rep_Hurt(g_DtritusEnt, e, "Punch")) {
 		return;
 	}
 	SaveVar_Inc("Stats.Dtritus", 1);
