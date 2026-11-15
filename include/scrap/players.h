@@ -99,6 +99,9 @@ void Players_BindJoined(int i, uint16_t joined);
 /* the player of the entity (or the owner of the ship: Players_ShipOwner), the one an NPC at pos reacts to
  * (Players_Nearest), the one of this frame's turn */
 void Players_BindEntity(struct cEntity *e);
+/* the player whose owner slot e has, also while e is not one of the players found (made inactive by the scripts),
+ * else the owner of the ship e */
+void Players_BindOwner(struct cEntity *e);
 void Players_BindNearest(const vec3_t *pos);
 void Players_BindTurn(void);
 /* the own ship of player i (a ship it called): its Parking.PlayerShip of the scripts (that variable and

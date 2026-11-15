@@ -335,6 +335,12 @@ static void Join_Net(uint64_t now) {
 			} else if (ev.data[0] == COORD_MSG_NOTICE) {
 				NetRep_GetStr(&r, text, sizeof(text));
 				Con_Printf("join: %s\n", text);
+			} else if (ev.data[0] == COORD_MSG_STORYALL) {
+				/* the party's story (coop) before the first ticket: the client's level starts read it */
+				uint32_t n = NetRep_GetU32(&r);
+				if (!r.bad && n <= (uint32_t)(ev.size - 5)) {
+					Coop_ClientStory((const char *)ev.data + 5, (int)n);
+				}
 			} else if (ev.data[0] == COORD_MSG_CUE) {
 				int kind = (int)NetRep_GetU8(&r);
 				NetRep_GetStr(&r, text, sizeof(text));

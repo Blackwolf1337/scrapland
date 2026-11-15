@@ -385,11 +385,16 @@ static byte In_InitN(const nativeVal_t *path) {
 	}
 	/* not in the original: a coop client's camera for the level's start (include/scrap/coop.h) */
 	Coop_ClientLevelStart();
-	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries) */
-	if (!In_MapInit(path) || !MODE_CBATTR("MapSnd", "Init", NULL, "v", path) ||
-		!PORT_OWN(Init, MLibInit, NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
-		(Native_True(deal) && !In_Method(deal, "Init", path)) || !Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL) ||
-		!Places_LevelInit()) {
+	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries);
+	 * not in the original: a coop instance's stand-in player while no member is there (include/scrap/coop.h: the
+	 * missions' Init read the player, a race's start) */
+	Coop_StandIn(1);
+	byte inited = In_MapInit(path) && MODE_CBATTR("MapSnd", "Init", NULL, "v", path) &&
+		PORT_OWN(Init, MLibInit, NULL, "v", path) && Mode_Read(IN, "SuperDealModule", deal) &&
+		(!Native_True(deal) || In_Method(deal, "Init", path)) && Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL) &&
+		Places_LevelInit();
+	Coop_StandIn(0);
+	if (!inited) {
 		return Mode_Done(&t, 0);
 	}
 	int demo = In_Flag("isDemo");

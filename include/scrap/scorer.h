@@ -159,6 +159,9 @@ void Scorer_CancelSpeech(float time);
 /* the talk's time without a talk scorer that draws (a headless instance of the coop story): it runs down, its
  * callback (the end of a remote communication) runs at its end (not in the original) */
 void Scorer_TalkTick(float dt);
+/* not in the original: the scorer of player where nothing draws it (a coop instance): its deleted items go, its
+ * timers count on (their warning and end run) as their drawing does */
+void Scorer_Tick(int player);
 void Scorer_SetHeadMonitor(const char *a, const char *b, int c);
 void Scorer_SetMsgText(const char *text, float time, const char *font);
 void Scorer_SetLabelText(const char *text, float time);

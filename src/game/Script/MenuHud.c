@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/game.h"
 #include "scrap/net.h"
 #include "scrap/scheduler.h"
@@ -436,7 +437,7 @@ static void Hud_CharCreate(int id) {
 		MODE_PRINTED(CharScorer, CreateSpecialActionScorer, "i", (long)id);
 	}
 	/* OBJLIB 5 (9c): the callback variable of Menu */
-
+	Coop_ScorerBase((int)id);
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 
@@ -506,7 +507,7 @@ static void Racer_CreateRacerCore(int id) {
 	Native_Free(&cam);
 	Native_Free(&camName);
 	/* OBJLIB 5 (9c): the callback variable of Menu */
-
+	Coop_ScorerBase((int)id);
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
 

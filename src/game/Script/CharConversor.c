@@ -29,9 +29,11 @@
 
 #include "scrap/app.h"
 #include "scrap/coop.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/world.h"
 #include "game/Script/levels/Levels.h"
 
 #define CC "CharConversor"
@@ -132,7 +134,7 @@ static byte Cc_Init(void) {
 
 /* ConvertChar(UsrName, CharName, optId, FullOption): the player becomes a new character of the class of the save
  * variable Char at the conversor, with the energy of the old one */
-static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
+static byte Cc_ConvertCharIn(const nativeVal_t *uname, const nativeVal_t *cname) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *u0 = Mode_V(&t), *prev = Mode_V(&t), *usr = Mode_V(&t), *act = Mode_V(&t), *energy = Mode_V(&t);
 	nativeVal_t *sv = Mode_V(&t), *kb = Mode_V(&t), *ch = Mode_V(&t), *p = Mode_V(&t), *a = Mode_V(&t), *c = Mode_V(&t);
@@ -162,6 +164,18 @@ static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
 		Loading_End();
 	}
 	return Mode_Done(&t, ok);
+}
+
+/* not in the original: on a coop instance the conversion is that of the member whose character it is (its new
+ * character and money are that member's, include/scrap/players.h), whoever is bound when the scripts call it */
+static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
+	int bound = Players_Bound();
+	if (uname->type == NV_STR) {
+		Players_BindOwner(World_FindEntity(Native_Text(uname)));
+	}
+	byte ok = Cc_ConvertCharIn(uname, cname);
+	Players_Bind(bound);
+	return ok;
 }
 
 /* CPPos(kb): the place in front of a conversor */

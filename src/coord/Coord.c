@@ -507,7 +507,7 @@ static int Co_LeaderInst(const CoPlayer *except) {
 	return first;
 }
 
-/* the whole story to an instance (its start file may be older) */
+/* the whole story to an instance (its start file may be older), to a member's client at its join (its copy) */
 static void Co_SendStory(int conn) {
 	static uint8_t buf[COORD_STORY_MAX + 16];
 	NetRepBuf w;
@@ -716,8 +716,9 @@ static void Co_Join(int conn, NetRepReader *r) {
 		CoordParty_Join(&coord.party, key, Co_Log);
 		p->storySeq = coord.party.seq - 1;
 		p->dirty = 1;
-		/* the client's level starts know it before its first ticket */
+		/* the client's level starts know it before its first ticket, and the party's story (its copy) */
 		Co_Cue(conn, COORD_CUE_COOP, "");
+		Co_SendStory(conn);
 		/* the start of a new story: the intro once for each member */
 		CoordKv_Get(coord.party.story, coord.party.len, "Orbit.Decontaminated", dec, sizeof(dec));
 		if (!CoordKv_Get(p->text, p->len, "intro", seen, sizeof(seen)) && strcmp(dec, "yes")) {
