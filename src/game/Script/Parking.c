@@ -721,6 +721,11 @@ static byte Pk_JunkerParkN(const nativeVal_t *itemName, const nativeVal_t *vehNa
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *ship = Mode_V(&t), *x = Mode_V(&t), *price = Mode_V(&t);
 	nativeVal_t *res = Mode_V(&t), *money = Mode_V(&t), *lang = Mode_V(&t);
+	/* not in the original: on an instance the players reach their hangar through Sputnik (include/scrap/sputniks.h)
+	 * and the level change of the junkyard's parking is refused; the parking would take the instance's camera */
+	if (Pk_NotOwn()) {
+		return Mode_Done(&t, 1);
+	}
 	if (!Mode_Import("ShipMaker") || !Pk_Ent(vehName, v)) {
 		return Mode_Done(&t, 0);
 	}

@@ -23,6 +23,7 @@
 #include "scrap/graphic2d.h"
 #include "scrap/input.h"
 #include "scrap/instance.h"
+#include "scrap/itementity.h"
 #include "scrap/netrep.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
@@ -2810,6 +2811,27 @@ static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	return t;
 }
 
+/* test: the nearest item to e the scripts show on the radar with a function of the mission for its taker
+ * (ProtectMayorTransport's meeting point: "a yellow arrow on your radar"; not the level's parkings and links), NULL */
+static cEntity *Cp_RadarItem(const cEntity *e) {
+	const char *mission = SaveVar_Get("Mission.Library");
+	cEntity *t = NULL;
+	float best = 0.0f;
+	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		const cItemEntity *it = (const cItemEntity *)v;
+		if (!v->active || v->deadNode.target || !Entity_IsType(v, "item") || !Obj(v)->radarShow || Obj(v)->proxy ||
+			it->respawn > 0.0f || !mission || strcmp(cPy_Function_Module(&it->onTake), mission)) {
+			continue;
+		}
+		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+		if (!t || d < best) {
+			t = v;
+			best = d;
+		}
+	}
+	return t;
+}
+
 /* test: the mission's green ship (to follow or escort: StupidMerc's mercenary), NULL */
 static cEntity *Cp_Escorted(void) {
 	cEntity *all[CP_FIGHT_MAX];
@@ -2883,6 +2905,17 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* else the nearest one the scripts marked with the mission arrow */
 	if (!t) {
 		t = Cp_ArrowTarget(e);
+	}
+	/* else an item on the radar: flown or walked onto, as a player takes it */
+	cEntity *item = t ? NULL : Cp_RadarItem(e);
+	if (item) {
+		if (strcmp(cp.pl[i].autoAt, item->name) || now - cp.pl[i].autoSince >= CP_AUTO_GAP) {
+			Str_Copy(cp.pl[i].autoAt, item->name, sizeof(cp.pl[i].autoAt));
+			cp.pl[i].autoSince = now;
+			Con_Printf("coop: player %d (auto) goes onto %s (on the radar)\n", i, item->name);
+			Travel_TestGoto(i, item->name, 0.0f, 0.0f);
+		}
+		return;
 	}
 	if (!t) {
 		if (cp.pl[i].autoList[0]) {

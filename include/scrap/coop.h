@@ -351,9 +351,10 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * [0|1]" (its ship goes along the race's checkpoints, one every 2.5 s; 0 stops), "fight <player>
  * [<Module.var>|<entity>|red|@<list>|0]" (it turns to the nearest living target of that list of the scripts, that
  * entity, the red ones of the level, the entities of that entity list of the scripts or the mission's targets and fires through its input; one further than 6000 units: put
- * 2500 from it; 0 stops), "auto <player> [0|1|2] [<list>]" (it plays the mission's targets: fights the red ones (else the
- * red ones of the level), flies a race, else goes to the target and uses it, else fights list as "fight" does; 2 only
- * fights), "board <player> <MODEL>"
+ * 2500 from it; 0 stops), "auto <player> [0|1|2] [<list>]" (it plays the mission's targets: fights the red ones and a
+ * character the mission's death hook waits for (on foot: next to it, the action key), else the red ones of the level,
+ * flies a race, else goes to the target and uses it, else onto an item of the mission on the radar, else fights list
+ * as "fight" does; 2 only fights), "board <player> <MODEL>"
  * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
  * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it

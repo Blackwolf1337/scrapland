@@ -26,6 +26,7 @@
 #include "scrap/coop.h"
 #include "scrap/game.h"
 #include "scrap/play.h"
+#include "scrap/players.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -747,6 +748,23 @@ static byte Sc_Invulnerable(const char *module, const char *var, long i) {
 	return ok;
 }
 
+/* not in the original: on a coop instance every member's entity hides with the player's, as the single player's input
+ * stops for the scene (the other members would fight on: ProtectMayorTransport's mercenaries the scene shows) */
+static byte Sc_HideMembers(void) {
+	byte ok = 1;
+	for (int i = 0; ok && Coop_On() && i < PLAYERS_MAX; i++) {
+		cEntity *e = Players_Get(i);
+		if (e) {
+			nativeVal_t name, h = { 0 };
+			Native_SetStr(&name, e->name);
+			ok = Mode_EntitySeam(&name, &h) && Sc_HideOf(&h);
+			Native_Free(&name);
+			Native_Free(&h);
+		}
+	}
+	return ok;
+}
+
 /* InitOutDoorScene(HideChars=1): the police (during an alarm) and the enemies hide; the ship of the player, the
  * player and Sputnik hide too, or (HideChars 0) stay and cannot be hurt; no input, the cinema HUD */
 static byte Sc_InitOutDoorScene(const nativeVal_t *hide) {
@@ -785,7 +803,7 @@ static byte Sc_InitOutDoorScene(const nativeVal_t *hide) {
 		return Mode_Done(&t, 0);
 	}
 	if (on) {
-		if (!LvN_ModGet("Parking", "PlayerShip", o) || !Sc_HideOf(o) || !Mode_UsrHandle(v) || !Sc_HideOf(v)) {
+		if (!LvN_ModGet("Parking", "PlayerShip", o) || !Sc_HideOf(o) || !Mode_UsrHandle(v) || !Sc_HideOf(v) || !Sc_HideMembers()) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(o);
