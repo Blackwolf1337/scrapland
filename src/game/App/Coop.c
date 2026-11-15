@@ -195,6 +195,7 @@ static struct {
 	byte partyDead;					/* every member here died: the single player's death runs (Coop_Died) */
 	char gone[CP_GONE][CP_NAME];	/* the entities the level's start deleted (the mission's removals), for the clients */
 	int ngone;
+	int starting;					/* the level's Init runs (Coop_StandIn, nested) */
 	uint8_t cgone[CP_GONE_MSG];		/* client: the instance's list, to delete from its level once it runs */
 	int cgoneSize;
 	double failAt;					/* a failed mission: the level starts again then (instance time), 0 */
@@ -577,7 +578,6 @@ void Coop_Pass(void) {
 		/* the level's start (a scene of its Init: GamblinDen's MeetGambler, Fake0) waits for the member that comes,
 		 * as the single player's plays it from its start */
 		cp.started = 1;
-		Con_Printf("coop: the level's start deleted %d entities (told to the clients)\n", cp.ngone);
 		cp.waiting = 1;
 		for (int i = 0; i < PLAYERS_MAX; i++) {
 			cp.waiting = cp.waiting && Rep_PlayerConn(i) < 0;
@@ -1236,7 +1236,7 @@ byte Coop_QLoad(const char *map) {
 }
 
 void Coop_EntityGone(cEntity *e) {
-	if (!Coop_On() || cp.started || cp.ngone == CP_GONE || e == cp.standIn || Players_Of(e) >= 0) {
+	if (!Coop_On() || (cp.started && !cp.starting) || cp.ngone == CP_GONE || e == cp.standIn || Players_Of(e) >= 0) {
 		return;
 	}
 	for (int k = 0; k < cp.ngone; k++) {
@@ -1574,6 +1574,11 @@ void Coop_Spawned(cEntity *e) {
 void Coop_StandIn(byte on) {
 	vec3_t p;
 	float yaw = 0.0f;
+	/* the Init of the map and of the mission libraries runs (Coop_EntityGone keeps what it deletes) */
+	cp.starting += on ? 1 : cp.starting > 0 ? -1 : 0;
+	if (!on && !cp.starting && Coop_On()) {
+		Con_Printf("coop: the level's start deleted %d entities so far (told to the clients)\n", cp.ngone);
+	}
 	if (!on) {
 		if (cp.standIn && World_FindEntity(COOP_STANDIN) == cp.standIn) {
 			cEntity_Del(cp.standIn);
