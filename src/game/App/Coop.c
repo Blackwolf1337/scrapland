@@ -638,18 +638,13 @@ byte Coop_Revives(const nativeVal_t *name) {
 	return !Coop_On() || (e && Players_Of(e) >= 0);
 }
 
-void Coop_Boarded(int i, cEntity *ship) {
+void Coop_Boarded(int i, const cEntity *ship) {
 	static const char *const cb[2][2] = { { "SwitchCharMissionCallback", "SwitchCharMissionCallbackAux" },
 		{ "SwitchVehicleMissionCallback", "SwitchVehicleMissionCallbackAux" } };
 	byte called;
 	if (!Coop_On() || !Mode_Import("Parking")) {
 		Native_ErrClear();
 		return;
-	}
-	/* the ship it boarded is its own now, as single player's Parking.UseShip makes it Parking.PlayerShip (a super
-	 * deal's start sets Parking.PlayerShip.Invulnerable) */
-	if (ship && Players_Ship(i) != ship) {
-		Players_SetShip(i, ship);
 	}
 	Players_Bind(i);
 	for (int k = 0; k < 2; k++) {
