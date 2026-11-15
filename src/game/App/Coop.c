@@ -1823,6 +1823,7 @@ void Coop_Joined(int i) {
 		Timer_SetSpeed(&g_pWorld->timer, 1.0f);
 		Con_Printf("coop: player %d came: the level goes on\n", i);
 		Cp_TalkPlayer(i);
+		Elevator_FirstMember();
 	}
 	/* an empty list of options: the client knows it plays the coop story (its keys) */
 	uint8_t none[16];

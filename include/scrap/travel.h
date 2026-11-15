@@ -115,6 +115,10 @@ void Travel_TestGoto(int player, const char *entity, float dx, float dz);
 int Metro_Stations(const char **names, int max);
 byte ShipEdit_ShipText(struct cEntity *ship, char *out, int cap);
 byte Elevator_Arrive(const char *usr, const char *elevator);
+/* a coop instance's first member came: the level's start as the elevator's reach (the scripts' TryToElevatorLaunchFirst,
+ * single player's PlayerCreatedElevator: IdentifyMerc's scene by OnElevatorReachDown), unless a member rode down in an
+ * elevator (Elevator_Arrive) */
+void Elevator_FirstMember(void);
 
 /* ---- client ---- */
 
