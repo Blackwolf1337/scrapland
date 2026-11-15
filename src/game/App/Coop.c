@@ -2754,7 +2754,12 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		return;
 	}
 	if (cp.pl[i].autoOn == 2 && !escort) {
-		return;		/* a helper: it only fights */
+		/* a helper: it only fights (what it was told to when the mission shows nothing) */
+		if (cp.pl[i].autoList[0]) {
+			Str_Copy(cp.pl[i].fightList, cp.pl[i].autoList, sizeof(cp.pl[i].fightList));
+			Cp_TestFight(i, in, back);
+		}
+		return;
 	}
 	if (World_FindEntity(CP_CHECKPOINT)) {
 		if (kind == NETREP_SHIP) {
