@@ -2792,20 +2792,31 @@ static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz
 	*dz = dist;
 }
 
+/* test: a flying ship to shoot down (not a parked one, not a green one to stay with) */
+static byte Cp_ShipFoe(cEntity *v) {
+	char *tg = NULL;
+	return Entity_IsType(v, TYEN_CAR) && strncmp(v->name, "Parked", 6) && Entity_VarS(v, "TgType", &tg, 0) &&
+		!(tg && !crt_stricmp(tg, "green"));
+}
+
 /* test: the nearest entity to e the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take,
- * a blueprint), not a door of the level's exits; NULL */
+ * a blueprint), not a door of the level's exits; a ship to shoot down before the others (Ambush's probes while the
+ * phone cab of the mission's start keeps its arrow); NULL */
 static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	cEntity *t = NULL;
 	float best = 0.0f;
+	byte ship = 0;
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || WLife(v)->life <= 0.0f || v->deadNode.target ||
 			Obj(v)->proxy || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
 			continue;
 		}
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
-		if (!t || d < best) {
+		byte s = Cp_ShipFoe(v);
+		if (!t || s > ship || (s == ship && d < best)) {
 			t = v;
 			best = d;
+			ship = s;
 		}
 	}
 	return t;
@@ -2874,9 +2885,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
 	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
 	cEntity *escort = Cp_Escorted();
-	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones */
-	byte other = Cp_FightTargets("", all, 1, 0) || Cp_ArrowTarget(e);
-	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : (escort ? Cp_RedNear(escort) :
+	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones; one on
+	 * a ship to shoot down before the mission's targets to use (Ambush's probes, its phone cab still the target) */
+	cEntity *arrow = Cp_ArrowTarget(e);
+	byte other = Cp_FightTargets("", all, 1, 0) || arrow;
+	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
 		(cp.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
 	if (foes) {
 		Str_Copy(cp.pl[i].fightList, foes, sizeof(cp.pl[i].fightList));
@@ -2939,7 +2952,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	char *tg = NULL;
 	if (Entity_IsType(t, TYEN_CAR) && strncmp(t->name, "Parked", 6) && Entity_VarS(t, "TgType", &tg, 0)) {
 		Str_Copy(cp.pl[i].fightList, t->name, sizeof(cp.pl[i].fightList));
-		cp.pl[i].follow = tg && !crt_stricmp(tg, "green");
+		cp.pl[i].follow = !Cp_ShipFoe(t);
 		Cp_TestFight(i, in, back);
 		cp.pl[i].follow = 0;
 		return;
