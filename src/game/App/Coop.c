@@ -156,6 +156,7 @@ static struct {
 		vec3_t raceAt;				/* where that checkpoint was */
 		double raceSince;			/* since when (instance time) */
 		byte fight;					/* test: it fights the targets of fightList */
+		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
@@ -2534,7 +2535,9 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	/* the weapons that fire at the release (the homing missiles lock on while held, the Devastator charges) in
 	 * bursts, the others held while the target is ahead */
 	int w = kind == NETREP_SHIP ? (int)in->weapon : -1;
-	if (w >= 0 && (w == g_SwarmIDWeap || w == g_InfernoIDWeap)) {
+	if (cp.pl[i].follow) {
+		/* it stays with the target and shoots nothing */
+	} else if (w >= 0 && (w == g_SwarmIDWeap || w == g_InfernoIDWeap)) {
 		/* a homing missile: held while the target is near ahead until its lock is on it, released then */
 		const char *lk = cTargetLock_GetEntity((cTargetLock *)&Veh(e)->weapons);
 		if (!lk || strcmp(lk, t->name)) {
@@ -2640,12 +2643,13 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		cp.pl[i].autoTold = now;
 		Con_Printf("coop: player %d (auto) at the target %s\n", i, t->name);
 	}
-	/* a flying ship of the mission (no escort: green) is to shoot down too */
+	/* a flying ship of the mission is to shoot down, a green one (to escort or follow) to stay with */
 	char *tg = NULL;
-	if (Entity_IsType(t, TYEN_CAR) && strncmp(t->name, "Parked", 6) && Entity_VarS(t, "TgType", &tg, 0) &&
-		(!tg || crt_stricmp(tg, "green"))) {
-		cp.pl[i].fightList[0] = 0;
+	if (Entity_IsType(t, TYEN_CAR) && strncmp(t->name, "Parked", 6) && Entity_VarS(t, "TgType", &tg, 0)) {
+		Str_Copy(cp.pl[i].fightList, t->name, sizeof(cp.pl[i].fightList));
+		cp.pl[i].follow = tg && !crt_stricmp(tg, "green");
 		Cp_TestFight(i, in, back);
+		cp.pl[i].follow = 0;
 		return;
 	}
 	if (kind == NETREP_SHIP) {
