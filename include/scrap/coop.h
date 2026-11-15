@@ -359,8 +359,9 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
  * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
  * goes to, life), "spare <player> <percent>" (its fights fire no more at a ship whose life is at or under that percent
- * of its most: AttackTraitorius' scare; 0 off), "walk <player> <0|1>" (the automatic player on foot steps to a target far
- * away, its followers keep up: BeatPickus' thugs) */
+ * of its most: AttackTraitorius' scare; 0 off), "walk <player> <0|1>" (the automatic player on foot walks to a target far
+ * away along the level's AI graph, its followers keep up: BeatPickus' thugs), "where <prefix>" (place, life and logic
+ * target of the entities of that name prefix) */
 byte Coop_Command(const char *line);
 /* the scheduled functions of the scripts run: on a coop instance the mission's member is bound (single player's player:
  * BeatPickus' check of the thugs near "the player" every second); 0 elsewhere or without a member */

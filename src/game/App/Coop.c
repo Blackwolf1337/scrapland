@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/aicharcontrol.h"
 #include "scrap/alarm.h"
 #include "scrap/aivehicle.h"
 #include "scrap/camcontrol.h"
@@ -25,6 +26,8 @@
 #include "scrap/instance.h"
 #include "scrap/itementity.h"
 #include "scrap/netrep.h"
+#include "scrap/nodesworld.h"
+#include "scrap/nodesworld2d.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
@@ -46,6 +49,7 @@
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/withlifeentity.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxweapons.h"
 #include "scrap/weapons.h"
@@ -93,10 +97,12 @@
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
 #define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
-#define CP_WALK_STEP 300.0f			/* test: units of a step */
-#define CP_WALK_GAP 2.0				/* test: s between two steps */
-#define CP_WALK_WAIT 900.0f			/* test: the next step waits for a character this near (one that follows it) */
+#define CP_WALK_STEP 300.0f			/* test: a walk comes a quarter of this further within CP_WALK_STUCK */
+#define CP_WALK_GAP 0.5				/* test: s between two looks at its way and its followers */
+#define CP_WALK_NEAR 60.0f			/* test: a point of its path this near is passed */
+#define CP_WALK_WAIT 900.0f			/* test: a walker waits for a character this near (one that follows it) */
 #define CP_WALK_ALONE 15.0			/* test: s it waits for one at most */
+#define CP_WALK_STUCK 4.0			/* test: s without coming CP_WALK_STEP / 4 further: placed at its path's point */
 #define CP_MELEE 90.0f				/* test: units from a character it fights on foot (D-Tritus' punch: 50 ahead, 100 wide) */
 #define CP_MELEE_FAR 600.0f			/* test: a character further is walked to (put next to it) */
 #define CP_GONE 128					/* entities deleted by the level's start told to the clients */
@@ -178,6 +184,11 @@ static struct {
 		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
 		byte walk;					/* test: the automatic player on foot steps to its target (followers keep up) */
 		char follower[CP_NAME];		/* the follower it saw last ("" none) */
+		vec3_t walkTo;				/* the point of the level's AI graph it walks to next */
+		vec3_t walkFrom;			/* where it was at walkMoved */
+		double walkMoved;			/* when it had come further last (a stuck walk is placed on) */
+		double walkWait;			/* since when it waits for its follower (0 not) */
+		double walkTold;			/* when its walk was told last */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
@@ -2915,58 +2926,115 @@ static byte Cp_RedNear(const cEntity *e) {
 	return 0;
 }
 
-/* test: player i on foot (e) further than CP_WALK_FAR from t: a step towards it every CP_WALK_GAP s on the floor
- * there once a follower is near it again, back to the nearest one that stopped, as a player walks with characters
- * that follow him (BeatPickus' thugs); 1 while it walks */
-static byte Cp_WalkStep(int i, cEntity *e, cEntity *t, double now) {
-	float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
-	if (d <= CP_WALK_FAR) {
+/* test: the point player e walks to next on its way to `to`: the walking NPCs' A* on the level's AI graph (CAStar2D,
+ * the graph of the indoor levels), the furthest point of the path its body reaches on a straight line; 0 without a
+ * graph or a path */
+static byte Cp_PathPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
+	static cNWVecList path;
+	if (!g_AStar2D || !g_NodesWorld2D || !NodesWorld_IsCreated(NW2D_SUP(g_NodesWorld2D))) {
 		return 0;
 	}
-	if (now - cp.pl[i].autoSince < CP_WALK_GAP) {
-		return 1;
-	}
-	/* its followers: the characters whose logic has it as the target (LLogicTarget) */
-	cEntity *back = NULL;
-	float best = 0.0f;
-	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-		char *tgt = NULL;
-		float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
-		if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
-			Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) && (!back || vd < best)) {
-			back = v;
-			best = vd;
+	vec3_t from = e->pos, dest = *to;
+	float r = Obj_GetRadius(e), h = WChar(e)->floorDist, fr = WithLife_GetActCtrl(e)->cls->sRadius;
+	byte noPath = 0, reach = 0, got = 0;
+	int res = 0;
+	if (CAStar2D_FindPath(g_AStar2D, &path, &dest, &from, r, 0.0f, h, fr, 0, &noPath, &reach, &res) && path.head) {
+		/* from its end where the walker is */
+		cNWVecNode *n = path.head, *last = path.head->prev;
+		float hx = n->v.x - from.x, hz = n->v.z - from.z, lx = last->v.x - from.x, lz = last->v.z - from.z;
+		byte fwd = hx * hx + hz * hz <= lx * lx + lz * lz;
+		n = fwd ? n : last;
+		for (int k = 0; k < path.count && n; k++, n = fwd ? n->next : n->prev) {
+			float dx = n->v.x - from.x, dz = n->v.z - from.z;
+			if (got && !CNodesWorld2D_TestPath(g_NodesWorld2D, &from, &n->v, r, r, h, fr, NULL)) {
+				break;
+			}
+			if (got || dx * dx + dz * dz > CP_WALK_NEAR * CP_WALK_NEAR) {
+				*next = n->v;
+				got = 1;
+			}
 		}
 	}
-	if (back) {
-		Str_Copy(cp.pl[i].follower, back->name, sizeof(cp.pl[i].follower));
-	} else if (cp.pl[i].follower[0]) {
-		/* one that stopped follows another now (BeatPickus' thugs behind their leader): back to it */
-		back = World_FindEntity(cp.pl[i].follower);
-		best = CP_WALK_WAIT * CP_WALK_WAIT;
+	NWVecList_Free(&path);
+	return got;
+}
+
+/* test: player i on foot (e) further than CP_WALK_FAR from t walks there through its input along the level's AI graph
+ * while a follower is near it, waits for one that fell behind and goes back to it after CP_WALK_ALONE s, as a player
+ * walks with characters that follow him (BeatPickus' thugs); a walk that does not come on is placed at its path's
+ * point; 1 while it walks */
+static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double now) {
+	float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
+	if (d <= CP_WALK_FAR) {
+		cp.pl[i].walkWait = 0.0;
+		return 0;
 	}
-	byte near = !back || best < CP_WALK_WAIT * CP_WALK_WAIT;
-	if (!near && now - cp.pl[i].autoSince < CP_WALK_ALONE) {
+	if (now - cp.pl[i].autoSince >= CP_WALK_GAP) {
+		/* its followers: the characters whose logic has it as the target (LLogicTarget) */
+		cEntity *back = NULL;
+		float best = 0.0f;
+		for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+			char *tgt = NULL;
+			float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
+			if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
+				Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) && (!back || vd < best)) {
+				back = v;
+				best = vd;
+			}
+		}
+		if (back) {
+			Str_Copy(cp.pl[i].follower, back->name, sizeof(cp.pl[i].follower));
+		} else if (cp.pl[i].follower[0]) {
+			/* one that stopped follows another now (BeatPickus' thugs behind their leader): back to it */
+			back = World_FindEntity(cp.pl[i].follower);
+			best = CP_WALK_WAIT * CP_WALK_WAIT;
+		}
+		byte near = !back || best < CP_WALK_WAIT * CP_WALK_WAIT;
+		cp.pl[i].autoSince = now;
+		cp.pl[i].autoUse = 0.0;
+		cp.pl[i].autoAt[0] = 0;
+		if (near) {
+			cp.pl[i].walkWait = 0.0;
+		} else if (cp.pl[i].walkWait <= 0.0) {
+			cp.pl[i].walkWait = now;
+		}
+		/* none kept up for a while: back to the nearest one (they stopped where it left them) */
+		cEntity *to = !near && now - cp.pl[i].walkWait >= CP_WALK_ALONE ? back : t;
+		if (!Cp_PathPoint(e, &to->pos, &cp.pl[i].walkTo)) {
+			cp.pl[i].walkTo = to->pos;
+		}
+		float mx = e->pos.x - cp.pl[i].walkFrom.x, mz = e->pos.z - cp.pl[i].walkFrom.z;
+		if (!near && to == t) {
+			cp.pl[i].walkMoved = now;
+		} else if (mx * mx + mz * mz > CP_WALK_STEP * CP_WALK_STEP * 0.0625f) {
+			cp.pl[i].walkFrom = e->pos;
+			cp.pl[i].walkMoved = now;
+		} else if (now - cp.pl[i].walkMoved >= CP_WALK_STUCK) {
+			/* stuck at a corner or a door the graph's line misses: a step onto its path's point */
+			vec3_t p = { cp.pl[i].walkTo.x, cp.pl[i].walkTo.y + 150.0f, cp.pl[i].walkTo.z };
+			vec3_t down = { p.x, p.y - 2000.0f, p.z }, floor;
+			if (Engine_TestLine(&p, &down, &floor, NULL)) {
+				p.y = floor.y + 100.0f;
+			}
+			e->pos = cp.pl[i].walkFrom = p;
+			cp.pl[i].walkMoved = now;
+			Rep_Placed(i);
+			Con_Printf("coop: player %d (auto) is stuck on its walk: placed at %.0f %.0f %.0f\n", i, (double)p.x,
+				(double)p.y, (double)p.z);
+		}
+		if (now - cp.pl[i].walkTold >= 5.0) {
+			cp.pl[i].walkTold = now;
+			Con_Printf("coop: player %d (auto) walks to %s (%.0f away) by %.0f %.0f, its follower %s %.0f away%s\n", i,
+				to->name, (double)d, (double)cp.pl[i].walkTo.x, (double)cp.pl[i].walkTo.z, back ? back->name : "-",
+				(double)sqrtf(best), !near && to == t ? ", waits for it" : "");
+		}
+	}
+	if (cp.pl[i].walkWait > 0.0 && now - cp.pl[i].walkWait < CP_WALK_ALONE) {
 		return 1;
 	}
-	cp.pl[i].autoSince = now;
-	cp.pl[i].autoUse = 0.0;
-	cp.pl[i].autoAt[0] = 0;
-	Con_Printf("coop: player %d (auto) walks to %s (%.0f away), its follower %s %.0f away\n", i, t->name, (double)d,
-		back ? back->name : "-", (double)sqrtf(best));
-	if (!near && back) {
-		/* none kept up: back to the nearest one (they stopped where it left them) */
-		Travel_TestGoto(i, back->name, 0.0f, 200.0f);
-		return 1;
-	}
-	vec3_t p = { e->pos.x + dx / d * CP_WALK_STEP, e->pos.y + 150.0f, e->pos.z + dz / d * CP_WALK_STEP };
-	vec3_t down = { p.x, p.y - 2000.0f, p.z }, floor;
-	if (Engine_TestLine(&p, &down, &floor, NULL)) {
-		p.y = floor.y + 100.0f;
-	}
-	e->pos = p;
-	Obj(e)->ang.y = WChar(e)->view.y = atan2f(-dx, -dz);
-	Rep_Placed(i);
+	float rot[2], dyaw = NetPl_Aim(e, &cp.pl[i].walkTo, rot, 1);
+	in->rot[0] = NetRep_QRot(rot[0]);
+	in->move[0] = NetRep_QMove(fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
 	return 1;
 }
 
@@ -3118,7 +3186,8 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 			Travel_TestUse(i, t->name, "");
 		}
 	}
-	if (cp.pl[i].walk && Cp_WalkStep(i, e, t, now)) {
+	/* not while its photo's press runs (the walk to the next target would turn it away) */
+	if (cp.pl[i].walk && cp.pl[i].pressTicks <= 0 && Cp_WalkStep(i, in, e, t, now)) {
 		return;
 	}
 	if (!strcmp(cp.pl[i].autoAt, t->name) && now - cp.pl[i].autoSince < CP_AUTO_GAP) {
@@ -3200,11 +3269,36 @@ static uint16_t Cp_Buttons(const char *names) {
 	return b;
 }
 
+/* test line "where <prefix>": the place, life and logic target of the entities whose names start with it (the
+ * followers of a walk, a mission's characters) */
+static byte Cp_TestWhere(const char *line) {
+	char name[CP_NAME];
+	if (sscanf(line, "where %63s", name) != 1) {
+		return 0;
+	}
+	size_t n = strlen(name);
+	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		char *tgt = NULL;
+		if (strncmp(v->name, name, n)) {
+			continue;
+		}
+		Entity_VarS(v, "LLogicTarget", &tgt, 0);
+		Con_Printf("coop: %s at %.0f %.0f %.0f, %s, life %.0f, player %d, logic target %s\n", v->name, (double)v->pos.x,
+			(double)v->pos.y, (double)v->pos.z, v->active ? "active" : "inactive",
+			Entity_IsType(v, TYEN_WALKCHAR) || Entity_IsType(v, TYEN_CAR) ? (double)WLife(v)->life : 0.0, Players_Of(v),
+			tgt ? tgt : "-");
+	}
+	return 1;
+}
+
 byte Coop_Command(const char *line) {
 	char name[CP_NAME], val[256];
 	int i;
 	if (!Coop_On()) {
 		return 0;
+	}
+	if (Cp_TestWhere(line)) {
+		return 1;
 	}
 	if (sscanf(line, "leader %d", &i) == 1) {
 		Cp_ToLeader(i);
