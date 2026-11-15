@@ -637,8 +637,11 @@ void Coop_Pass(void) {
 		}
 	}
 	if (Coop_On()) {
-		/* nothing draws the talk scorer here: its time and the end of a remote communication */
-		Scorer_TalkTick(1.0f / INSTANCE_TICK_HZ);
+		/* nothing draws the talk scorer here: its time and the end of a remote communication (a talk of the level's
+		 * start waits for the first member, as the level does) */
+		if (!cp.waiting) {
+			Scorer_TalkTick(1.0f / INSTANCE_TICK_HZ);
+		}
 		Scorer_Tick(0);
 		if (cp.conv >= 0 && cp.convAsked && Rep_PlayerConn(cp.conv) < 0) {
 			/* the member left with the conversor's interface open: as its Escape */
@@ -1774,6 +1777,33 @@ static void Cp_TellStory(int to, byte all) {
 	Cp_StoryFlush(&o);
 }
 
+/* a talk the level's Init started with the stand-in (TalkToTraitoriusAfterCTF: Traitorius' talk in front of the
+ * player) goes on with member i as its player: Speech.PlayerName (the stand-in is gone after the Init), its line again */
+static void Cp_TalkPlayer(int i) {
+	nativeVal_t pn, v;
+	cEntity *e = Players_Get(i);
+	Native_SetNone(&pn);
+	if (e && Mode_ModGet("Speech", "PlayerName", &pn) && pn.type == NV_STR &&
+		!strncmp(Native_Text(&pn), COOP_STANDIN, sizeof(COOP_STANDIN) - 1)) {
+		Native_SetStr(&v, e->name);
+		/* its line again for the member (the stand-in's had no client and no end) */
+		nativeVal_t cur;
+		Native_SetNone(&cur);
+		Players_Bind(i);
+		if (Mode_SetModVar("Speech", "PlayerName", &v) && Mode_ModGet("Speech", "CurrNI", &cur) && cur.type == NV_INT &&
+			PORT_CALL(Speech, RunNI, NULL, "v", &cur)) {
+			Con_Printf("coop: the talk of the level's start goes on with player %d\n", i);
+		} else {
+			Native_ErrPrint();
+		}
+		Players_BindTurn();
+		Native_Free(&cur);
+		Native_Free(&v);
+	}
+	Native_ErrClear();
+	Native_Free(&pn);
+}
+
 void Coop_Joined(int i) {
 	static uint8_t buf[CP_SCENE_MSG];
 	nativeVal_t h;
@@ -1792,6 +1822,7 @@ void Coop_Joined(int i) {
 		cp.waiting = 0;
 		Timer_SetSpeed(&g_pWorld->timer, 1.0f);
 		Con_Printf("coop: player %d came: the level goes on\n", i);
+		Cp_TalkPlayer(i);
 	}
 	/* an empty list of options: the client knows it plays the coop story (its keys) */
 	uint8_t none[16];

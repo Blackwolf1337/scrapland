@@ -29,6 +29,7 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
+#include "scrap/coop.h"
 #include "scrap/instance.h"
 #include "scrap/travel.h"
 
@@ -1016,6 +1017,10 @@ static byte Elv_FromDoor(const nativeVal_t *from) {
 
 byte Elevator_Arrive(const char *usr, const char *elevator) {
 	nativeVal_t from;
+	/* a member that rides down hears the reach itself, as single player's start in an elevator drops TELF */
+	if (!Mode_DelSchedS("TELF")) {
+		return 0;
+	}
 	LvN_Str(&from, "Door");
 	elv_arriving = usr;
 	elv_arrivingIn = elevator;
@@ -1035,15 +1040,17 @@ static byte Elv_SpawnUsr(const char *port, nativeVal_t *usr) {
 static byte Elv_PlayerCreatedElevator(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *from = Mode_V(&t), *key = Mode_V(&t), *e = Mode_V(&t), *usr = Mode_V(&t);
-	/* the headless instance has no startup player to place (include/scrap/players.h) */
+	/* the global TryToElevatorLaunchFirst: the scheduler takes its entry */
+	nativeVal_t *fn = Mode_V(&t);
+	/* the headless instance has no startup player to place (include/scrap/players.h); a coop instance's mission still
+	 * hears the level's start as the elevator's reach (IdentifyMerc's scene: OnElevatorReachDown), once the level runs
+	 * with its first member */
 	if (g_Instance) {
-		return Mode_Done(&t, 1);
+		return Mode_Done(&t, !Coop_On() || (Mode_G(ELV, "TryToElevatorLaunchFirst", fn) && Elv_Later0(fn, NULL, 0, "TELF")));
 	}
 	if (!Mode_Import("Init")) {
 		return Mode_Done(&t, 0);
 	}
-	/* the global TryToElevatorLaunchFirst: the scheduler takes its entry */
-	nativeVal_t *fn = Mode_V(&t);
 	if (!Mode_G(ELV, "TryToElevatorLaunchFirst", fn) || !Elv_Later0(fn, NULL, 0, "TELF")) {
 		return Mode_Done(&t, 0);
 	}
