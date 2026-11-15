@@ -93,6 +93,7 @@
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
 #define CP_GONE 128					/* entities deleted by the level's start told to the clients */
 #define CP_GONE_MSG (8 + CP_GONE * (CP_NAME + 2))
+#define CP_DEAL_SECS 8.0			/* the super deal's scores before their Continue (no member's click on the instance) */
 #define CP_FAIL_SECS 5.0			/* a failed mission's restart after this (the single player's after the game over) */
 #define CP_LIFEBOAT "SLifeBoat<-<-<-<-<-0,0,0,0,0,0,1<-50<-0,0,0,0,0,0"	/* the hangar's spare ship (a test's ship) */
 
@@ -2149,6 +2150,29 @@ byte Coop_MenuYesNo(const char *title, const char *yes, const char *no) {
 	Str_Copy(cp.pl[i].no, no, CP_NAME);
 	Cp_ToClient(i, buf, w.size);
 	Con_Printf("coop: player %d is asked (%s or %s)\n", i, yes, no);
+	return 1;
+}
+
+byte Coop_DealScores(int deal, const char *title, const char *yes, const char *no) {
+	char mod[CP_NAME];
+	if (!Coop_On()) {
+		return 0;
+	}
+	if (deal == 1) {
+		return Coop_MenuYesNo(title, yes, no);
+	}
+	/* Continue: its action after the members read the table on their HUDs */
+	Str_Copy(mod, yes, sizeof(mod));
+	char *dot = strchr(mod, '.');
+	if (!dot) {
+		return 0;
+	}
+	*dot = 0;
+	if (!Mode_SchedAt(Mode_Time() + CP_DEAL_SECS, mod, dot + 1, NULL, 0, NULL)) {
+		Native_ErrPrint();
+		return 0;
+	}
+	Con_Printf("coop: the super deal's scores, then %s in %.0f s\n", yes, CP_DEAL_SECS);
 	return 1;
 }
 

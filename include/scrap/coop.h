@@ -304,6 +304,10 @@ byte Coop_UseAny(struct cEntity *t);
  * built comes back into the story and the ship editor's callback runs here); the menus of a game without a member
  * stay as they are */
 byte Coop_MenuYesNo(const char *title, const char *yes, const char *no);
+/* the scores of a super deal (RacerScorer.ShowScorer, deal 1: Yes or No, 2: Continue) on a coop instance: the question
+ * goes to the member as Coop_MenuYesNo, Continue's action runs CP_DEAL_SECS later (the table is on every member's
+ * HUD); 1 when taken */
+byte Coop_DealScores(int deal, const char *title, const char *yes, const char *no);
 byte Coop_ShipEditOpen(void);
 /* the character conversor's interface (CharConversor.AddInterfaceContent at the middle of the machine's action, 1:
  * it went to the client of the member that entered the machine, Coop_ConvEnter; the machine waits until the member

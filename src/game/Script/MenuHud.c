@@ -610,6 +610,10 @@ static void Racer_ShowScorerCore(int id, const nativeVal_t *data, int deal, cons
 	Mode_Done(&t, 1);
 	racer_scores = outer;
 	Racer_SchedulePing();
+	/* not in the original: the super deal's question or Continue of a coop instance (include/scrap/coop.h) */
+	if (deal > 0) {
+		Coop_DealScores(deal, top, yes, no);
+	}
 }
 
 /* MultiplayerUpdatePing(): the pings of the scores once a second while they are shown */
