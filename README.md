@@ -30,7 +30,7 @@ ScrapC does not include any game files. You need the game files of a legally own
 
 <p align="center"><img src="docs/images/progress.svg" alt="ScrapC progress" width="840"></p>
 
-More than four fifths of the whole project is done (the graphic shows 89%). The recreation in C, the clean code, the Vulkan renderer with FFmpeg videos and the own mixer, and the Linux and 64 bit builds are done or nearly done (open: Ghidra symbols and some checks on the PC). The port of the Python scripts to C (issue #2) is at 99% and Python 1.5.2 is gone from the game, the build and the repo. Every game and level script is C or data, and 310 pack modules are made in C. The interpreter went first (the tag interp-final keeps the last state with it), then the object library: module variables, functions, classes, instances, modules, errors, the function tables of the engine and the ports, long integers, the number rules of 1.5.2 and the library modules (math, strop, builtins, sys, imp, signal) are native C, and errno, new, regex, _locale and marshal were dropped because nothing used them. Mods can change data (.def and .mod files, assets) but cannot ship Python scripts. Only tools/ghidra/python152 keeps the 1.5.2 headers for the Ghidra import of the original exe. A deterministic test mode makes every test run repeat byte for byte, so each change is compared exactly against the build before it. The free-roam multiplayer (issue #1) is at 38% and is under way on branches that are not merged yet: a new encrypted UDP protocol, headless level instances (`ScrapC -instance:<Level>`), world replication to the clients, and players with client prediction and lag-compensated hits. The old PvP modes work as before. The overall number once went down from 77% because the planned work grew (removing the object library was added), not because something was undone. The percentages are estimates, and each step is weighted by its share of the work (recreation in C 30, clean C code 10, renderer and media 10, Linux and 64 bit 10, Python scripts 25, multiplayer 15).
+More than four fifths of the whole project is done (the graphic shows 89%). The recreation in C, the clean code, the Vulkan renderer with FFmpeg videos and the own mixer, and the Linux and 64 bit builds are done or nearly done (open: Ghidra symbols and some checks on the PC). The port of the Python scripts to C (issue #2) is at 99% and Python 1.5.2 is gone from the game, the build and the repo. Every game and level script is C or data, and 310 pack modules are made in C. The interpreter went first (the tag interp-final keeps the last state with it), then the object library: module variables, functions, classes, instances, modules, errors, the function tables of the engine and the ports, long integers, the number rules of 1.5.2 and the library modules (math, strop, builtins, sys, imp, signal) are native C, and errno, new, regex, _locale and marshal were dropped because nothing used them. Mods can change data (.def and .mod files, assets) but cannot ship Python scripts. Only tools/ghidra/python152 keeps the 1.5.2 headers for the Ghidra import of the original exe. A deterministic test mode makes every test run repeat byte for byte, so each change is compared exactly against the build before it. The multiplayer (issue #1) is merged: a new encrypted UDP protocol, headless level instances, world replication with client prediction, a coordinator for worlds with travel between levels and saved players, the modes Sandbox, Free roam (six factions), Coop story for up to 8 players and the original's seven PvP modes, hosting from the menus or on a dedicated server, and a list server. See [docs/multiplayer.md](docs/multiplayer.md) for what is done and what is not. The overall number once went down from 77% because the planned work grew (removing the object library was added), not because something was undone. The percentages are estimates, and each step is weighted by its share of the work (recreation in C 30, clean C code 10, renderer and media 10, Linux and 64 bit 10, Python scripts 25, multiplayer 15).
 
 For developers: the graphic is drawn by `tools/progress/progress.py` from `tools/progress/progress.json`. Change the JSON when a milestone moves and run the script.
 
@@ -46,9 +46,10 @@ The key next to 1 (backquote, `^` on a German keyboard) opens a console for comm
 
 On Linux, settings and saves go to your user data folder (`XDG_DATA_HOME`, normally `~/.local/share/MercurySteam/Scrapland`).
 
+For multiplayer open Multiplayer in the main menu and press Free roam to join or host a world. See [docs/multiplayer.md](docs/multiplayer.md).
+
 ## Plans
 
-- Free-roam multiplayer, where players meet on the open map instead of only the old PvP modes (issue #1).
 - Porting the game's Python script system to C, step by step (issue #2).
 
 ## Prior work and thanks
@@ -67,5 +68,6 @@ The code is hosted on Gitea at git.lixsl.net and mirrored to GitHub at https://g
 
 - [Building and running](docs/building.md)
 - [Testing](docs/testing.md)
+- [Multiplayer](docs/multiplayer.md)
 - [Development notes](docs/development.md)
 - [All documentation](docs/README.md)

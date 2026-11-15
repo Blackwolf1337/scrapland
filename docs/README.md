@@ -1,8 +1,9 @@
 # Documentation
 
 - [building.md](building.md): setup, building for Windows and Linux, running under Wine, renderer environment variables.
-- [testing.md](testing.md): the golden test, the level test and the native test.
+- [testing.md](testing.md): the golden test, the level test, the native test and the multiplayer tests.
 - [development.md](development.md): goals, rules, repository layout, code conventions and roadmap.
+- [multiplayer.md](multiplayer.md): how to play and host worlds, the modes, the dedicated server, the command line and the known gaps.
 - [console.md](console.md): the console, its commands and the debug menu.
 - [binary.md](binary.md): triage report of the original Scrap.exe.
 - [ghidra.md](ghidra.md): the Ghidra database and the symbol files.

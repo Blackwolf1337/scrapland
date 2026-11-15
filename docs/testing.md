@@ -57,6 +57,46 @@ The store is `tools/test/litfuzz.expected.xz`, 17723 texts of one full run of th
 
 The pack scripts no longer run, because Python is gone from the game. `SCRAP_PACK_SCRIPTS=1` and `SCRAP_CMOD=0` load no script module, and the console says so. The ports were compared with the pack scripts through the regress pack baselines (`tools/test/regress`), which are frozen now. See [scripts.md](scripts.md).
 
+## Multiplayer tests
+
+The unit tests of the multiplayer are ctest targets. They need no game files and no display.
+
+```
+ctest --test-dir build-linux64
+```
+
+| Test | What it checks |
+|------|----------------|
+| `net2_test` | the transport (`src/net2`): handshake, crypto, acks, reliable messages, fragments, LAN query, on an in-memory link with loss, duplicates and reordering, plus a fuzz of the decoders |
+| `net2_loopback` | the same library over real UDP on loopback with several clients and packet loss |
+| `netrep_test` | the replication (`src/netrep`): the codec, snapshots and deltas, the input buffer, prediction and the lag compensation history |
+| `coord_test` | the coordinator library (`src/coord`): the key and ticket formats, the player store, the story and party, the places table, the list server registry, the quoting of command lines |
+| `faction_test` | the faction table `data/factions/factions.def` (parser, errors, ranks, key order, PvP rules, loan, bounty, courier) |
+| `arena_test` | the rules, scores, scorer order and wire format of the seven PvP modes (`src/arena`) |
+
+`coord_test`, `faction_test` and `arena_test` also ran under Wine as win64 programs. `net2_test` passes with `-m32`, with ASan and UBSan and under valgrind, `netrep_test` with `-m32` and with ASan and UBSan.
+
+The scenarios that start a world (coordinator, instances and several clients) are not in the repository. What the repository has are the tools that compare a multiplayer client with single player. They start rendered games, hidden and muted, in their own game folders under `--scratch` and talk to them through the test channel. They use loopback ports from `--port` upward.
+
+```
+python3 tools/test/parity/parity.py [--levels A,B] [--build DIR] --out DIR --scratch DIR [--port 29940]
+python3 tools/test/parity/feel.py [--sides sp,host,join,menuhost] [--build DIR] --out DIR --scratch DIR
+python3 tools/test/parity/coopparity.py --point NAME=DATA:LEVEL[:KEY] ... --build DIR --out DIR --scratch DIR
+python3 tools/test/parity/storyedit.py <data folder> [--level L] [name=value ...]
+```
+
+`parity.py` starts, per level, a single player game, a hosting game (`-host:<level> -mode:freeroam`) and a second game that joins it. It puts the players at the same place and compares the entities by kind, the radar icons, the HUD items, the sounds playing and the particle systems drawn, and writes `<level>.json`, side by side screenshots and `report.md` with the gaps.
+
+`feel.py` measures on rendered games (single player, host, menu host and join) the time from a real key press (XTEST into the game's own gamescope X server, never the desktop) to the first drawn frame that moved, the frame times, the jitter of the drawn positions and the prediction corrections, walking and flying, and bumps against the client's own rail traffic. The game writes the feel log when `SCRAP_FEELLOG` is set. `SCRAP_PLAYLOG` writes the corrections of a client.
+
+`coopparity.py` is the same comparison for the coop story. A story point is the data folder of a coop world and a level. The tool gives a single player game the party's save variables and loads the level, starts a coordinator with a copy of the data and a rendered member, and compares them. `storyedit.py` edits the saved story of such a data folder (variables, level, entrance and door of the players) to make a story point.
+
+The test channel has verbs for this (`src/game/Global/TestChannel.c`). `entinfo` lists the entities around a place (class, list, model, action class, position, radar flag, and for a proxy the entity it stands for), `radar`, `fx` and `sounds` list what the last frame drew and played, `entsnd <object>` the sounds of one object, `ents`, `menu` and `get` are the old ones. `iline <line>` sends a line to the standard input of the instance, and `channel.py <game folder> -i <level> ...` talks to an instance's own channel (it answers `test_cmd_<level>.txt` in the game folder), so a hosting game's children can be reached.
+
+Instances read test lines on their standard input (or through `iline`): `status`, `money`, `use`, `goto`, `switch`, `call`, `alarm`, `life`, `faction ...`, `arena ...`, `story ...`, and a few more for the coop story. A client plays by itself with `SCRAP_PLAYBOT` (modes such as `idle`, `use`, `face`, or `1` to fight) and sends faction requests with `SCRAP_PLAYBOT_FACTION=<s>:<ability>,...`. `SCRAP_NET2_LOSS`, `SCRAP_NET2_DELAY` and `SCRAP_NET2_JITTER` add packet loss, delay and jitter to the sends of the process.
+
+What the multiplayer tests did not cover is listed in [multiplayer.md](multiplayer.md).
+
 ## Retired difftest
 
 The old difftest (i686 build against a frozen reference build, with the test module SDTest) is retired. The tag `difftest-final` keeps the last state with it. No test uses a reference build any more. The scrap MCP server can still start the reference exe for visual comparisons (`exe=ref`, screenshots only, no test channel).
