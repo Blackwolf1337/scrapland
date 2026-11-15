@@ -170,6 +170,7 @@ static struct {
 		double raceSince;			/* since when (instance time) */
 		byte fight;					/* test: it fights the targets of fightList */
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
+		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
@@ -2560,6 +2561,19 @@ static int Cp_FightWeapon(cEntity *e, float d, uint32_t useless) {
 	return Veh(e)->controls.weapon;
 }
 
+/* test: the weakest weapon of ship e that has ammo (the laser, else the Vulcan), else its own */
+static int Cp_GentleWeapon(cEntity *e) {
+	cWeaponManager *m = (cWeaponManager *)&Veh(e)->weapons;
+	const int weak[] = { g_LaserIDWeap, g_VulcanIDWeap };
+	for (int k = 0; k < 2; k++) {
+		if (weak[k] >= 0 && weak[k] < g_pWorld->weapons.count && m->weaps[weak[k]].slots &&
+			cWeaponManager_HasMinAmmo(m, (uint32_t)weak[k])) {
+			return weak[k];
+		}
+	}
+	return Veh(e)->controls.weapon;
+}
+
 /* test: a weapon that fired at t for CP_FIGHT_USELESS s (near enough) while t lost no life is useless against it, as a
  * player sees (the mercury freight that only the ATPC hurts); a life that changes at all (a shield that regenerates)
  * starts the watch again */
@@ -2659,7 +2673,7 @@ static void Cp_TestMelee(int i, NetRepInput *in, cEntity *t, float d, double now
  * when it is ahead and near (the weapon's own shots and damage, the target's OnDeath with the member as the winner);
  * a target further than CP_FIGHT_FAR: the member is put CP_FIGHT_NEAR from it (once a second at most, as a pilot that
  * knows the way through the streets) */
-static void Cp_TestFight(int i, NetRepInput *in, double back) {
+static void Cp_Fight(int i, NetRepInput *in, double back) {
 	cEntity *e = Players_Get(i), *all[CP_FIGHT_MAX], *t = NULL;
 	int kind = NetPl_Kind(e), n = kind ? Cp_FightTargets(cp.pl[i].fightList, all, CP_FIGHT_MAX, -1) : 0;
 	float best = 0.0f;
@@ -2683,6 +2697,15 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 			cp.pl[i].fightAt[0] = 0;
 		}
 		return;
+	}
+	/* a ship the mission wants hit but alive (AttackTraitorius: scared under 30% of its life for a minute) is spared
+	 * there, as a player watches its life bar */
+	byte gentle = 0;
+	if (cp.pl[i].spare > 0 && Entity_IsType(t, TYEN_CAR)) {
+		float pct = WLife(t)->life * 100.0f / (float)(Veh(t)->maxLife > 0 ? Veh(t)->maxLife : 1);
+		cp.pl[i].follow |= pct <= (float)cp.pl[i].spare;
+		/* near it the weakest weapon, as a player does not to kill it */
+		gentle = pct <= (float)cp.pl[i].spare * 2.0f;
 	}
 	float d = sqrtf(best), near = cp.pl[i].follow ? CP_FOLLOW_NEAR : CP_FIGHT_NEAR;
 	double now = Instance_Time();
@@ -2736,7 +2759,7 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	in->rot[0] = NetRep_QRot(rot[0]);
 	if (kind == NETREP_SHIP) {
 		in->rot[1] = NetRep_QRot(rot[1]);
-		in->weapon = (uint8_t)Cp_FightWeapon(e, d, cp.pl[i].useless);
+		in->weapon = (uint8_t)(gentle ? Cp_GentleWeapon(e) : Cp_FightWeapon(e, d, cp.pl[i].useless));
 		Cp_FightUseless(i, t, in->weapon, d < CP_FIGHT_RANGE && !cp.pl[i].follow, now);
 		/* closer while far, else its speed (behind it, turning with it) */
 		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > near * 1.5f ? tv + 1500.0f : tv;
@@ -2771,6 +2794,12 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 			(double)d, (double)dyaw, (double)WLife(t)->life, kind == NETREP_SHIP ? Veh(e)->controls.weapon : -1,
 			kind == NETREP_SHIP ? (double)cWeaponManager_GetWeapAmmo(&Veh(e)->weapons, (uint32_t)Veh(e)->controls.weapon) : 0.0);
 	}
+}
+
+static void Cp_TestFight(int i, NetRepInput *in, double back) {
+	byte follow = cp.pl[i].follow;
+	Cp_Fight(i, in, back);
+	cp.pl[i].follow = follow;
 }
 
 /* test: where player e stands to use t (its arrow selects only what it sees: a line of sight from it): dist from t on
@@ -3222,6 +3251,12 @@ byte Coop_Command(const char *line) {
 		cp.pl[i].autoUse = 0.0;
 		cp.pl[i].fightAt[0] = 0;
 		Con_Printf("coop: player %d plays the mission's targets%s\n", i, !on ? ": off" : on == 2 ? ": fights only" : "");
+		return 1;
+	}
+	int pct = 0;
+	if (sscanf(line, "spare %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].spare = pct;
+		Con_Printf("coop: player %d spares a ship under %d%% of its life\n", i, pct);
 		return 1;
 	}
 	if (sscanf(line, "possess %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {

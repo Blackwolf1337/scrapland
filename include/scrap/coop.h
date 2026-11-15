@@ -358,7 +358,8 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
  * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
- * goes to, life) */
+ * goes to, life), "spare <player> <percent>" (its fights fire no more at a ship whose life is at or under that percent
+ * of its most: AttackTraitorius' scare; 0 off) */
 byte Coop_Command(const char *line);
 
 /* player i got into ship or out of its ship (NULL): the mission's callbacks of single player's parking run for it
