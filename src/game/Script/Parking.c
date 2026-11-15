@@ -485,6 +485,12 @@ static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, 
 	nativeVal_t *dist = Mode_V(&t), *neg = Mode_V(&t), *rv = Mode_V(&t), *a90 = Mode_V(&t), *x0 = Mode_V(&t), *x2 = Mode_V(&t);
 	nativeVal_t *p3 = Mode_V(&t), *args = Mode_V(&t);
 	Native_SetInt(out, 0);
+	/* not in the original: on an instance a player gets out of its ship with its switch (src/game/App/Replicate.c); the
+	 * parking would take the player's ship from it (UsrControl -1), make single player's character and set the camera
+	 * path on the instance (a coop member without an own ship: Parking.PlayerShip None, a TypeError) */
+	if (Pk_NotOwn()) {
+		return Mode_Done(&t, 1);
+	}
 	if (!Mode_Import("Chars") || !Pk_Ent(vehName, v)) {
 		return Mode_Done(&t, 0);
 	}
