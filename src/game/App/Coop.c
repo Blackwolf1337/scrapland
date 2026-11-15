@@ -4273,6 +4273,12 @@ byte Coop_ClientMessage(const uint8_t *data, int size) {
 		NetRep_GetStr(&r, text, sizeof(text));
 		int index = (int)NetRep_GetU8(&r);
 		if (!r.bad) {
+			/* the client's head of that name may have fewer animations than the instance's (a mission's AddModel there:
+			 * ProtectMayorTransport's Rusty): its talk then */
+			const cScorerModel *m = cScorer_FindModel(Scorer_Get(0), model);
+			if (m && (index >= m->numAnims || -index >= m->numAnims)) {
+				index = index < 0 ? -1 : 1;
+			}
 			Scorer_SetHeadMonitor(model, text, index);
 			Con_Printf("coop: a remote communication of %s\n", text);
 		}
