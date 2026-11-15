@@ -418,7 +418,11 @@ byte Players_MayHurt(cEntity *attacker, cEntity *victim) {
 	if (!Players_Net() || attacker == victim || Players_Of(attacker) < 0 || Players_Of(victim) < 0) {
 		return 1;
 	}
-	/* the freeroam factions first (sanctuaries, relations, the law), else the server's -pvp */
+	/* the members of the coop story's party never hurt each other (the single player's one player); else the
+	 * freeroam factions first (sanctuaries, relations, the law), else the server's -pvp */
+	if (Coop_On()) {
+		return 0;
+	}
 	int rule = Faction_PvP(attacker, victim);
 	return rule > 0 || (rule < 0 && Instance_PvP());
 }

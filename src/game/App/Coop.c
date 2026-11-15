@@ -165,7 +165,9 @@ static struct {
 		double possessSince, possessAt;	/* since when, when it was put next to it last */
 		byte autoOn;				/* test: it plays the mission's targets on its own (fights, races, uses) */
 		char autoAt[CP_NAME];		/* the target it went to last */
+		char autoList[CP_NAME];		/* what it fights when the mission shows nothing to do ("" nothing; as fightList) */
 		double autoSince, autoUse;	/* when, when it uses it (0 done) */
+		double autoTold;			/* when its new target was told last */
 		uint16_t purseJoined;		/* the join whose money is the party's purse (Cp_Purse) */
 		int purse;					/* the purse it got last */
 	} pl[PLAYERS_MAX];
@@ -1914,7 +1916,7 @@ void Coop_SpeechText(const char *text, float time, int r, int g, int b) {
 	/* the speaker's client shows the conversation; a remote communication the mission's member and the members near it
 	 * */
 	int i = Players_Bound();
-	Con_Printf("coop: %s for player %d: %.60s\n", cp.remote ? "remote communication" : "speech",
+	Con_Printf("coop: %s for player %d: %.160s\n", cp.remote ? "remote communication" : "speech",
 		i == PLAYERS_NONE ? -1 : i, text);
 	if (cp.remote && i != PLAYERS_NONE) {
 		Cp_ToNear(i, buf, w.size);
@@ -2613,7 +2615,22 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 	}
 	if (!t) {
+		if (cp.pl[i].autoList[0]) {
+			Str_Copy(cp.pl[i].fightList, cp.pl[i].autoList, sizeof(cp.pl[i].fightList));
+			Cp_TestFight(i, in, back);
+		}
 		return;
+	}
+	/* what it was told to fight comes before the rest (not before a parked ship of the mission to board) */
+	if (cp.pl[i].autoList[0] && !(Entity_IsType(t, TYEN_CAR) && !strncmp(t->name, "Parked", 6)) &&
+		Cp_FightTargets(cp.pl[i].autoList, all, 1, -1)) {
+		Str_Copy(cp.pl[i].fightList, cp.pl[i].autoList, sizeof(cp.pl[i].fightList));
+		Cp_TestFight(i, in, back);
+		return;
+	}
+	if (strcmp(cp.pl[i].autoAt, t->name) && now - cp.pl[i].autoTold >= 10.0) {
+		cp.pl[i].autoTold = now;
+		Con_Printf("coop: player %d (auto) at the target %s\n", i, t->name);
 	}
 	/* a flying ship of the mission (no escort: green) is to shoot down too */
 	char *tg = NULL;
@@ -2845,8 +2862,10 @@ byte Coop_Command(const char *line) {
 		Con_Printf("coop: player %d flies the race%s\n", i, on ? "" : ": off");
 		return 1;
 	}
-	if (sscanf(line, "auto %d %d", &i, &on) >= 1 && i >= 0 && i < PLAYERS_MAX) {
+	name[0] = 0;
+	if (sscanf(line, "auto %d %d %63s", &i, &on, name) >= 1 && i >= 0 && i < PLAYERS_MAX) {
 		cp.pl[i].autoOn = (byte)(on < 0 ? 0 : on > 2 ? 2 : on);
+		Str_Copy(cp.pl[i].autoList, name, sizeof(cp.pl[i].autoList));
 		cp.pl[i].autoAt[0] = 0;
 		cp.pl[i].autoUse = 0.0;
 		cp.pl[i].fightAt[0] = 0;
