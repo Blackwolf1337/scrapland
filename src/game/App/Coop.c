@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/aivehicle.h"
 #include "scrap/camcontrol.h"
 #include "scrap/chartype.h"
 #include "scrap/console.h"
@@ -71,6 +72,7 @@
 #define CP_FIGHT_FAR 6000.0f		/* test: a fighter further from its target is put CP_FIGHT_NEAR from it */
 #define CP_FIGHT_NEAR 2500.0f
 #define CP_FOLLOW_NEAR 1000.0f		/* test: a ship it stays with (no fight) is kept this near */
+#define CP_ESCORT 6000.0f			/* test: the red ones this near a ship it stays with are fought first */
 #define CP_FIGHT_HIT 3000.0f		/* test: a target this near is fought with the instant-hit weapons first */
 #define CP_FIGHT_LOCK 0.4			/* test: s a homing missile's lock is on the target before the release */
 #define CP_FIGHT_LOCKCONE 0.5f		/* test: radians: it holds a homing missile while the target is this near ahead */
@@ -2598,8 +2600,37 @@ static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz
 	*dz = dist;
 }
 
+/* test: the mission's green ship (to follow or escort: StupidMerc's mercenary), NULL */
+static cEntity *Cp_Escorted(void) {
+	cEntity *all[CP_FIGHT_MAX];
+	int n = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
+	for (int k = 0; k < n; k++) {
+		char *tg = NULL;
+		if (Entity_IsType(all[k], TYEN_CAR) && strncmp(all[k]->name, "Parked", 6) && Entity_VarS(all[k], "TgType", &tg, 0) &&
+			tg && !crt_stricmp(tg, "green")) {
+			return all[k];
+		}
+	}
+	return NULL;
+}
+
+/* test: a red one within CP_ESCORT of e */
+static byte Cp_RedNear(const cEntity *e) {
+	cEntity *all[CP_FIGHT_MAX];
+	int n = Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1);
+	for (int k = 0; k < n; k++) {
+		float dx = all[k]->pos.x - e->pos.x, dy = all[k]->pos.y - e->pos.y, dz = all[k]->pos.z - e->pos.z;
+		if (dx * dx + dy * dy + dz * dz < CP_ESCORT * CP_ESCORT) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
- * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays */
+ * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
+ * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
+ * too) */
 static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	cEntity *e = Players_Get(i), *all[CP_FIGHT_MAX];
 	int kind = NetPl_Kind(e);
@@ -2610,15 +2641,16 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	byte pulse = fmod(now, 2.0) < 1.0 / INSTANCE_TICK_HZ;
 	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
 	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
-	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" :
-		(cp.pl[i].autoOn == 2 || !Cp_FightTargets("", all, 1, 0)) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1) ?
+	cEntity *escort = Cp_Escorted();
+	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : (escort ? Cp_RedNear(escort) :
+		(cp.pl[i].autoOn == 2 || !Cp_FightTargets("", all, 1, 0)) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ?
 		CP_FIGHT_RED : NULL;
 	if (foes) {
 		Str_Copy(cp.pl[i].fightList, foes, sizeof(cp.pl[i].fightList));
 		Cp_TestFight(i, in, back);
 		return;
 	}
-	if (cp.pl[i].autoOn == 2) {
+	if (cp.pl[i].autoOn == 2 && !escort) {
 		return;		/* a helper: it only fights */
 	}
 	if (World_FindEntity(CP_CHECKPOINT)) {
@@ -2631,7 +2663,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	/* the mission's targets one after the other (the right one of three to talk to: ThreeStooges' mercenaries) */
 	int nt = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
-	cEntity *t = nt ? all[cp.pl[i].autoTurn % nt] : NULL;
+	cEntity *t = cp.pl[i].autoOn == 2 ? escort : nt ? all[cp.pl[i].autoTurn % nt] : NULL;
 	/* else the nearest one the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take),
 	 * not a door of the level's exits */
 	float best = 0.0f;
@@ -2849,6 +2881,26 @@ byte Coop_Command(const char *line) {
 		Native_ErrClear();
 		Native_Free(&v);
 		Native_Free(&r);
+		return 1;
+	}
+	if (sscanf(line, "aiv %63s", name) == 1) {
+		/* a vehicle's AI: its state and sub state, the point it goes to, its life */
+		cEntity *e = World_FindEntity(name);
+		cAIVehicle *ai = e && Entity_IsType(e, TYEN_CAR) ? Entity_GetAI(e) : NULL;
+		char st[256] = "", in[256] = "";
+		vec3_t d, p;
+		if (!ai) {
+			Con_Printf("coop: %s has no vehicle AI\n", name);
+			return 1;
+		}
+		cAIVehicle_GetStateName(ai, st);
+		cAIVehicle_GetInternStateName(ai, in);
+		cAIVehicleControl_GetDest(ai->control, &d);
+		Entity_GetPos(e, &p);
+		double away = sqrt((double)((d.x - p.x) * (d.x - p.x) + (d.y - p.y) * (d.y - p.y) + (d.z - p.z) * (d.z - p.z)));
+		Con_Printf("coop: %s AI %s (%d) %s at %.0f %.0f %.0f, to %.0f %.0f %.0f (%.0f away), life %.0f\n", name, st,
+			ai->state, in, (double)p.x, (double)p.y, (double)p.z, (double)d.x, (double)d.y, (double)d.z, away,
+			(double)WLife(e)->life);
 		return 1;
 	}
 	if (sscanf(line, "kill %63s", name) == 1 && strchr(name, '.')) {

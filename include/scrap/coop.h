@@ -347,7 +347,8 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * fights), "board <player> <MODEL>"
  * (next to the nearest parked ship whose model has the text and into it), "usenear <player> <prefix>" (next to the
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
- * its arrow is on it, then the possession button) */
+ * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
+ * goes to, life) */
 byte Coop_Command(const char *line);
 
 /* player i got into a ship (ship 1) or out of it: the mission's callbacks of single player's parking run for it
