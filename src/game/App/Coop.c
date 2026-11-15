@@ -168,6 +168,7 @@ static struct {
 		char autoList[CP_NAME];		/* what it fights when the mission shows nothing to do ("" nothing; as fightList) */
 		double autoSince, autoUse;	/* when, when it uses it (0 done) */
 		double autoTold;			/* when its new target was told last */
+		int autoTurn;				/* its uses so far: the next of several targets */
 		uint16_t purseJoined;		/* the join whose money is the party's purse (Cp_Purse) */
 		int purse;					/* the purse it got last */
 	} pl[PLAYERS_MAX];
@@ -2604,7 +2605,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
-	cEntity *t = Cp_FightTargets("", all, 1, 0) ? all[0] : NULL;
+	/* the mission's targets one after the other (the right one of three to talk to: ThreeStooges' mercenaries) */
+	int nt = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
+	cEntity *t = nt ? all[cp.pl[i].autoTurn % nt] : NULL;
 	/* else the nearest one the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take),
 	 * not a door of the level's exits */
 	float best = 0.0f;
@@ -2679,6 +2682,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (cp.pl[i].autoUse > 0.0 && now >= cp.pl[i].autoUse) {
 		/* the use of its arrow, as the test line use (the option its client chose) */
 		cp.pl[i].autoUse = 0.0;
+		cp.pl[i].autoTurn++;
 		cEntity *v = WChar_Victim(e);
 		Con_Printf("coop: player %d (auto) %s %s (its arrow on %s)\n", i, WLife(t)->arrow.canPhoto ? "photographs" : "uses",
 			t->name, v ? v->name : "nothing");
