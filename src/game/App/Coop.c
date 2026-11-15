@@ -185,6 +185,7 @@ static struct {
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
 		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
 		byte scan;					/* test: the mission's ships that are no foes are followed, not shot (a scan) */
+		byte waypoint;				/* test: the item of the scripts' waypoint is taken before the fights (CTF's flags) */
 		byte walk;					/* test: the automatic player on foot steps to its target (followers keep up) */
 		char follower[CP_NAME];		/* the follower it saw last ("" none) */
 		vec3_t walkTo;				/* the point of the level's AI graph it walks to next */
@@ -3069,6 +3070,13 @@ static byte Cp_Scanned(int i, cEntity *v) {
 	return cp.pl[i].scan && !Cp_Foe(v);
 }
 
+/* test: the item of the scripts' waypoint (CurrentWaypointName: BankersCTF's flag), NULL */
+static cEntity *Cp_WaypointItem(void) {
+	const char *n = g_CurrentWaypointName;
+	cEntity *v = n && n[0] ? World_FindEntity(n) : NULL;
+	return v && v->active && !v->deadNode.target && Entity_IsType(v, "item") ? v : NULL;
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
  * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
  * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
@@ -3084,6 +3092,17 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
 	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
 	cEntity *escort = Cp_Escorted();
+	/* the waypoint's item (test line waypoint: a flag of the CTF) is flown onto first, as a player follows its arrow */
+	cEntity *wp = cp.pl[i].waypoint ? Cp_WaypointItem() : NULL;
+	if (wp) {
+		if (strcmp(cp.pl[i].autoAt, wp->name) || now - cp.pl[i].autoSince >= 1.0) {
+			Str_Copy(cp.pl[i].autoAt, wp->name, sizeof(cp.pl[i].autoAt));
+			cp.pl[i].autoSince = now;
+			Con_Printf("coop: player %d (auto) goes onto %s (the waypoint)\n", i, wp->name);
+			Travel_TestGoto(i, wp->name, 0.0f, 0.0f);
+		}
+		return;
+	}
 	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones; one on
 	 * a ship to shoot down before the mission's targets to use (Ambush's probes, its phone cab still the target) */
 	cEntity *arrow = Cp_ArrowTarget(e);
@@ -3457,6 +3476,11 @@ byte Coop_Command(const char *line) {
 		cp.pl[i].walk = pct != 0;
 		cp.pl[i].follower[0] = 0;
 		Con_Printf("coop: player %d %s to its targets\n", i, pct ? "walks" : "goes");
+		return 1;
+	}
+	if (sscanf(line, "waypoint %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		cp.pl[i].waypoint = pct != 0;
+		Con_Printf("coop: player %d %s the waypoint's item first\n", i, pct ? "takes" : "leaves");
 		return 1;
 	}
 	if (sscanf(line, "scan %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
