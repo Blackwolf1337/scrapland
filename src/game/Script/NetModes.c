@@ -301,7 +301,7 @@ static byte Bots_RebornC(const nativeVal_t *a) {
 /* TryGarage(id, control): the garage is closed on a server with bots */
 static byte Bots_TryGarageC(const nativeVal_t *a) {
 	nativeVal_t text;
-	Native_SetStr(&text, "Not available in this game");
+	Native_SetStr(&text, "Not in server :-(");
 	return Mode_ScorerSet(&a[0], &a[1], "Text", &text);
 }
 
