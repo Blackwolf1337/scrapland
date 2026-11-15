@@ -33,6 +33,8 @@
 #define SPK_MSG 8192
 #define SPK_MOVED 100.0f			/* units the parked ship moves before its Sputnik follows */
 #define SPK_NAME 64
+#define SPK_HOLD 10.0				/* s: the coop member that used Sputnik is hidden by its interface before the screen */
+#define SPK_BESIDE 1500.0f			/* units: the coop story's Sputnik stands beside a ship this near */
 
 typedef struct SpkPlayer {
 	cEntity *spt;					/* its Sputnik (Sputnik.spt of the player), read while World_FindEntity(name) is it */
@@ -47,6 +49,10 @@ static struct {
 	byte ready;						/* the module Sputnik imported, its class loaded */
 	SpkPlayer pl[PLAYERS_MAX];
 	byte clientOpen;				/* client: the instance's hangar screen is open here */
+	cEntity *coopSpt;				/* the coop story's Sputnik a member used last, read while it is Sputnik.spt */
+	int coopUser;					/* that member */
+	uint16_t coopJoined;			/* its join */
+	double coopSince;				/* the time of its use */
 } spk;
 
 /* the k-th key of the hangar (0..8 the hangars, 9 the spare ship, 10 the one flown, 11 the destroyed ones) */
@@ -255,8 +261,69 @@ static void Spk_Open(int i) {
 		Players_Money(i));
 }
 
+/* the coop story's one Sputnik (single player's, the scripts' Sputnik.spt): the parked ship it stands beside becomes
+ * the own ship of player i, who uses it (its hangar screen comes through the scripts' Sputnik.ChangeShip, include/
+ * scrap/coop.h); 1 when t is that Sputnik */
+static byte Spk_CoopUse(int i, cEntity *t) {
+	nativeVal_t s;
+	Native_SetNone(&s);
+	cEntity *spt = Mode_ModGet("Sputnik", "spt", &s) && s.type == NV_ENT ? Native_Ent(&s) : NULL;
+	Native_Free(&s);
+	Native_ErrClear();
+	if (!t || t != spt) {
+		return 0;
+	}
+	spk.coopSpt = t;
+	spk.coopUser = i;
+	spk.coopJoined = Players_Joined(i);
+	spk.coopSince = Instance_Time();
+	cEntity *ship = NULL;
+	float best = SPK_BESIDE * SPK_BESIDE;
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		float dx = e->pos.x - t->pos.x, dy = e->pos.y - t->pos.y, dz = e->pos.z - t->pos.z, d = dx * dx + dy * dy + dz * dz;
+		if (Entity_IsType(e, TYEN_CAR) && !e->deadNode.target && !Obj(e)->proxy && d < best && WLife(e)->life > 0 &&
+			cVehicleEntity_GetOwnerSlot(e) == -1 && cVehicleEntity_InPlace(e)) {
+			ship = e;
+			best = d;
+		}
+	}
+	if (!ship) {
+		Con_Printf("sputniks: the party's Sputnik stands beside no parked ship\n");
+	} else if (Players_Ship(i) != ship) {
+		for (int k = 0; k < PLAYERS_MAX; k++) {
+			if (k != i && Players_Ship(k) == ship) {
+				Players_SetShip(k, NULL);
+			}
+		}
+		Players_SetShip(i, ship);
+		Con_Printf("sputniks: the party's Sputnik: %s is player %d's ship now\n", ship->name, i);
+	}
+	return 1;
+}
+
+int Sputniks_CoopUser(cEntity *e) {
+	nativeVal_t s;
+	if (!e || e != spk.coopSpt || !Coop_On() || Rep_PlayerConn(spk.coopUser) < 0 || Players_Joined(spk.coopUser) != spk.coopJoined) {
+		return -1;
+	}
+	Native_SetNone(&s);
+	cEntity *spt = Mode_ModGet("Sputnik", "spt", &s) && s.type == NV_ENT ? Native_Ent(&s) : NULL;
+	Native_Free(&s);
+	Native_ErrClear();
+	return spt == e ? spk.coopUser : -1;
+}
+
+byte Sputniks_CoopHolds(int i) {
+	return spk.coopSpt && i == spk.coopUser && Players_Joined(i) == spk.coopJoined && Instance_Time() - spk.coopSince < SPK_HOLD;
+}
+
 byte Sputniks_Use(int i, cEntity *t) {
 	int owner = -1;
+	if (g_Instance && Coop_On()) {
+		/* the use itself is single player's (its Sputnik.ChangeShip with player i bound) */
+		Spk_CoopUse(i, t);
+		return 0;
+	}
 	for (int k = 0; t && k < PLAYERS_MAX; k++) {
 		if (Spk_Entity(&spk.pl[k]) == t) {
 			owner = k;

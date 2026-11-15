@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/alarm.h"
 #include "scrap/aivehicle.h"
 #include "scrap/camcontrol.h"
 #include "scrap/chartype.h"
@@ -37,6 +38,7 @@
 #include "scrap/scriptnative.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
+#include "scrap/sputniks.h"
 #include "scrap/text.h"
 #include "scrap/texts.h"
 #include "scrap/travel.h"
@@ -81,6 +83,7 @@
 #define CP_FIGHT_SIZE 250.0f		/* test: it fires when its aim is this near the target's middle */
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
+#define CP_FIGHT_USELESS 10.0		/* test: s a weapon fires at a target near ahead that loses no life: not taken again */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
@@ -166,6 +169,10 @@ static struct {
 		double fightSince;			/* when it was put near a target last (instance time) */
 		double fightTold;			/* when its state was told last */
 		double lockAt;				/* since when its homing missiles' lock is on the target */
+		uint32_t useless;			/* the weapons that did not hurt its target (bits by weapon id) */
+		int lifeWeap;				/* the weapon of the watch of the target's life (-1 none) */
+		float lifeMark;				/* the target's life when that watch began */
+		double lifeSince;			/* when */
 		char possess[CP_NAME];		/* test: the character it possesses ("" none) */
 		double possessSince, possessAt;	/* since when, when it was put next to it last */
 		byte autoOn;				/* test: it plays the mission's targets on its own (fights, races, uses) */
@@ -1578,6 +1585,24 @@ void Coop_Spawned(cEntity *e) {
 	}
 }
 
+byte Coop_StartPos(vec3_t *p, float *yaw) {
+	/* where the single player would stand: the way point's spawn, else the level's start */
+	const char *spawn = SaveVar_Get("Spawn");
+	char found[64];
+	vec3_t ang;
+	if (!Coop_On()) {
+		return 0;
+	}
+	if (spawn && spawn[0]) {
+		DummySearch_Start(spawn, 1);
+	}
+	if (spawn && spawn[0] && DummySearch_NextEuler(found, sizeof(found), p, &ang)) {
+		*yaw = ang.y + M_PI_F;
+		return 1;
+	}
+	return Coop_Spawn(-1, p, yaw);
+}
+
 void Coop_StandIn(byte on) {
 	vec3_t p;
 	float yaw = 0.0f;
@@ -1593,19 +1618,7 @@ void Coop_StandIn(byte on) {
 		cp.standIn = NULL;
 		return;
 	}
-	if (!Coop_On() || Players_Any()) {
-		return;
-	}
-	/* where the single player would stand: the way point's spawn, else the level's start */
-	const char *spawn = SaveVar_Get("Spawn");
-	char found[64];
-	vec3_t ang;
-	if (spawn && spawn[0]) {
-		DummySearch_Start(spawn, 1);
-	}
-	if (spawn && spawn[0] && DummySearch_NextEuler(found, sizeof(found), &p, &ang)) {
-		yaw = ang.y + M_PI_F;
-	} else if (!Coop_Spawn(-1, &p, &yaw)) {
+	if (!Coop_On() || Players_Any() || !Coop_StartPos(&p, &yaw)) {
 		return;
 	}
 	cp.standIn = cWorld_CreateEntity(g_pWorld, COOP_STANDIN, p.x, p.y, p.z, TYEN_WALKCHAR);
@@ -1752,7 +1765,7 @@ byte Coop_SceneHolds(void) {
 
 byte Coop_Holds(int i) {
 	return Coop_On() && (cp.inScene || (i >= 0 && i < PLAYERS_MAX && (cp.pl[i].menu == COOP_MENU_SHIPEDIT ||
-		cp.pl[i].held[0])));
+		cp.pl[i].menu == COOP_MENU_SPUTNIK || Sputniks_CoopHolds(i) || cp.pl[i].held[0])));
 }
 
 int Coop_HeldPlayer(cEntity *e) {
@@ -2253,7 +2266,13 @@ byte Coop_Warning(const char *text) {
 byte Coop_SputnikOpen(void) {
 	static uint8_t buf[CP_MENU_MSG];
 	NetRepBuf w;
-	int i = Coop_On() ? Cp_Player() : -1;
+	nativeVal_t spt;
+	Native_SetNone(&spt);
+	/* the member that used the party's Sputnik (its interface's events may run while another one is bound) */
+	int user = Coop_On() && Mode_ModGet("Sputnik", "spt", &spt) && spt.type == NV_ENT ? Sputniks_CoopUser(Native_Ent(&spt)) : -1;
+	Native_Free(&spt);
+	Native_ErrClear();
+	int i = user >= 0 ? user : Coop_On() ? Cp_Player() : -1;
 	if (i < 0 || Rep_PlayerConn(i) < 0) {
 		return 0;
 	}
@@ -2456,8 +2475,8 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 }
 
 /* test: the weapon of ship e to fight a target d away with: the first it has with ammo of the homing missiles, the
- * heavy and the instant-hit weapons (near: the instant-hit ones first), else its own */
-static int Cp_FightWeapon(cEntity *e, float d) {
+ * heavy and the instant-hit weapons (near: the instant-hit ones first) but the useless ones (bits), else its own */
+static int Cp_FightWeapon(cEntity *e, float d, uint32_t useless) {
 	cWeaponManager *m = (cWeaponManager *)&Veh(e)->weapons;
 	const int far[] = { g_SwarmIDWeap, g_InfernoIDWeap, g_ATPCIDWeap, g_DevastatorIDWeap, g_TeslaIDWeap, g_VulcanIDWeap,
 		g_LaserIDWeap };
@@ -2466,11 +2485,30 @@ static int Cp_FightWeapon(cEntity *e, float d) {
 	const int *pick = d < CP_FIGHT_HIT ? near : far;
 	for (int k = 0; k < (int)(sizeof(far) / sizeof(far[0])); k++) {
 		if (pick[k] >= 0 && pick[k] < g_pWorld->weapons.count && m->weaps[pick[k]].slots &&
-			cWeaponManager_HasMinAmmo(m, (uint32_t)pick[k])) {
+			cWeaponManager_HasMinAmmo(m, (uint32_t)pick[k]) && !(pick[k] < 32 && (useless >> pick[k] & 1))) {
 			return pick[k];
 		}
 	}
 	return Veh(e)->controls.weapon;
+}
+
+/* test: a weapon that fired at t for CP_FIGHT_USELESS s (near enough) while t lost no life is useless against it, as a
+ * player sees (the mercury freight that only the ATPC hurts); a life that changes at all (a shield that regenerates)
+ * starts the watch again */
+static void Cp_FightUseless(int i, cEntity *t, int w, byte firing, double now) {
+	float life = WLife(t)->life;
+	if (!firing || w != cp.pl[i].lifeWeap || fabsf(life - cp.pl[i].lifeMark) >= 0.5f) {
+		cp.pl[i].lifeWeap = firing ? w : -1;
+		cp.pl[i].lifeMark = life;
+		cp.pl[i].lifeSince = now;
+		return;
+	}
+	if (now - cp.pl[i].lifeSince < CP_FIGHT_USELESS || w < 0 || w >= 32) {
+		return;
+	}
+	cp.pl[i].useless |= 1u << w;
+	cp.pl[i].lifeWeap = -1;
+	Con_Printf("coop: player %d: weapon %d does not hurt %s\n", i, w, t->name);
 }
 
 /* test: player i fights the nearest of its targets through its input, as a player at the keys: turns to it and fires
@@ -2512,6 +2550,8 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	if (strcmp(cp.pl[i].fightAt, t->name)) {
 		Str_Copy(cp.pl[i].fightAt, t->name, sizeof(cp.pl[i].fightAt));
 		Con_Printf("coop: player %d fights %s (%.0f away)\n", i, t->name, (double)d);
+		cp.pl[i].useless = 0;
+		cp.pl[i].lifeWeap = -1;
 	}
 	if (d > (cp.pl[i].follow ? CP_FIGHT_NEAR : CP_FIGHT_FAR) && now - cp.pl[i].fightSince >= 1.0) {
 		float k = near / d;
@@ -2545,7 +2585,8 @@ static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	in->rot[0] = NetRep_QRot(rot[0]);
 	if (kind == NETREP_SHIP) {
 		in->rot[1] = NetRep_QRot(rot[1]);
-		in->weapon = (uint8_t)Cp_FightWeapon(e, d);
+		in->weapon = (uint8_t)Cp_FightWeapon(e, d, cp.pl[i].useless);
+		Cp_FightUseless(i, t, in->weapon, d < CP_FIGHT_RANGE && !cp.pl[i].follow, now);
 		/* closer while far, else its speed (behind it, turning with it) */
 		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > near * 1.5f ? tv + 1500.0f : tv;
 		in->move[0] = NetRep_QMove(Veh(e)->speed > want + 200.0f ? -1.0f : Veh(e)->speed < want ? 1.0f : 0.0f);
@@ -2734,6 +2775,19 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* a talk plays: it listens */
 	if (g_RemainTalkTime > 0.01f) {
 		cp.pl[i].autoSince = now;
+		return;
+	}
+	/* a phone cab or a desktop while the police is after it: it waits for the alarm to fall, as the single player
+	 * does after the call's "the police is still after you" (PhoneCab.UseAudioCom, the missions' UsePhoneCab) */
+	char *fn = NULL;
+	const cAlarm *al = Players_Alarm(i);
+	if (al && al->on && Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
+		strstr(fn, "Desktop"))) {
+		if (now - cp.pl[i].autoTold >= 10.0) {
+			cp.pl[i].autoTold = now;
+			Con_Printf("coop: player %d (auto) waits for its alarm to fall before %s\n", i, t->name);
+		}
+		cp.pl[i].autoUse = 0.0;
 		return;
 	}
 	if (cp.pl[i].autoUse > 0.0 && now >= cp.pl[i].autoUse) {

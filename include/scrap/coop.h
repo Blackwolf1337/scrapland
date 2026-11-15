@@ -254,7 +254,8 @@ byte Coop_MissionFailed(void);
 byte Coop_Spawn(int player, vec3_t *pos, float *yaw);
 /* a scene plays here: the characters it hid are no lost players */
 byte Coop_SceneHolds(void);
-/* player i's character is held: a scene plays, the ship editor is open on its client, or the scripts took the
+/* player i's character is held: a scene plays, the ship editor or the party Sputnik's screen is open on its client (or
+ * Sputnik's interface hides it, include/scrap/sputniks.h), or the scripts took the
  * character's control (a ride of the metro or an elevator): it gets no new one */
 byte Coop_Holds(int i);
 /* the player slot a script gives character e (UsrControl; old: its slot now): on a coop instance a member's
@@ -291,6 +292,9 @@ void Coop_TestInput(int i, struct NetRepInput *in, double back);
  * 0); Coop_StandInEntity: it, NULL */
 void Coop_StandIn(byte on);
 struct cEntity *Coop_StandInEntity(void);
+/* where the single player would start in the level on a coop instance (the way point's spawn, else the level's start),
+ * its heading; 0 elsewhere */
+byte Coop_StartPos(vec3_t *p, float *yaw);
 /* player i came into the instance: a scene that plays is sent to its client, its character hidden until the end */
 void Coop_Joined(int i);
 /* the use arrow of t runs on the instance for a player's character (not only a door's) */

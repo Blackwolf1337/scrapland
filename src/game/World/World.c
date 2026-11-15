@@ -23,6 +23,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/sound.h"
+#include "scrap/sputniks.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
@@ -1089,6 +1090,8 @@ void cWorld_Update(cWorld *self, float dt) {
 				/* a coop member's own character acts for that member (its presses run the scripts for it) */
 				if (Coop_On() && Players_Of(e) >= 0) {
 					Players_BindEntity(e);
+				} else if (Sputniks_CoopUser(e) >= 0) {
+					Players_Bind(Sputniks_CoopUser(e));
 				} else {
 					Players_BindNearest(&e->pos);
 				}

@@ -39,6 +39,13 @@ byte Sputniks_Outdoor(void);
 void Sputniks_Frame(void);
 /* player i used the arrow of t: 1 when t is a player's Sputnik (its own opens the hangar on its client) */
 byte Sputniks_Use(int i, struct cEntity *t);
+/* the coop story's one Sputnik (the scripts' Sputnik.spt, single player's) is used by the member that used it last:
+ * Sputniks_Use makes the parked ship beside it that member's own ship (its Parking.PlayerShip), the scripts' Sputnik.
+ * ChangeShip runs for it, and while Sputnik acts (its interface, the new ship) it acts for that member: its index for e
+ * that Sputnik, else -1 */
+int Sputniks_CoopUser(struct cEntity *e);
+/* player i used that Sputnik a moment ago (its character, hidden by Sputnik's interface, is no lost one) */
+byte Sputniks_CoopHolds(int i);
 /* player i leaves the instance: its Sputnik goes */
 void Sputniks_Left(int i);
 /* player boarded a ship (its text as a hangar keeps it): into its hangar */
