@@ -5,6 +5,7 @@
   tape.py rec <level> <tape> [--secs 60] [--trace FILE]   a recording driven by the test channel (below)
   tape.py play <level> <tape> [--trace FILE]              the replay in single player
   tape.py solo <level> <tape> [--trace FILE]              the solo instance on the tape (-instance:<level> -solo:)
+  tape.py cmp <trace A> <trace B>                         compares the "pl" lines of two traces (below)
   options: --build DIR (default build-linux64 of this checkout), --name NAME (the slot of the game folder under
            build-mcp, see tools/mcp/scrap_mcp.py; default tape-<command>), --vk DEVICE (default 10de:27b0), --timeout S
 
@@ -21,7 +22,12 @@ with a pace of 0.1 s that holds input actions with "tape key" and reads the play
   fly      up, forward, a turn, the fire button, back
   park     down onto the nearest parking box (ParkParking_*) slowly, until the player is on foot again (the scripts'
            parking), then a walk until the time is over
-A part that does not reach its goal in its time goes on to the next; the tape holds what happened."""
+A part that does not reach its goal in its time goes on to the next; the tape holds what happened.
+
+cmp takes the "pl" lines (the state of the player's entity after each of its slot ticks) of two traces without their
+frame numbers (single player and the instance step in other frames) and prints the first line that differs, or
+"equal: <n> slots", and then per field (the kind and type, pos, ang, vel, view, life, act, money, alarm) the first slot
+where it differs. Exit code 0 when equal."""
 import argparse
 import math
 import os
@@ -225,6 +231,55 @@ def drive(r, level):
     r.log.append('end at %.1f s, player %s, set %d' % (r.t, r.player(), r.set()))
 
 
+PL_FIELDS = ('kind', 'pos', 'ang', 'vel', 'view', 'life', 'act', 'money', 'alarm')
+
+
+def pl_lines(path):
+    out = []
+    with open(path, errors='replace') as f:
+        for line in f:
+            p = line.split(' ', 2)
+            if len(p) == 3 and p[1] == 'pl':
+                out.append(p[2].rstrip('\n'))
+    return out
+
+
+def pl_fields(line):
+    """the fields of a pl line body (after "pl ") by name"""
+    w = line.split()
+    out = {'slot': w[0], 'kind': ' '.join(w[1:3])}
+    i = 3
+    while i < len(w):
+        j = i + 1
+        while j < len(w) and w[j] not in PL_FIELDS:
+            j += 1
+        out[w[i]] = ' '.join(w[i + 1:j])
+        i = j
+    return out
+
+
+def compare(a_path, b_path):
+    a, b = pl_lines(a_path), pl_lines(b_path)
+    i = 0
+    while i < min(len(a), len(b)) and a[i] == b[i]:
+        i += 1
+    if i == len(a) == len(b):
+        print('equal: %d slots' % i)
+        return 0
+    print('first difference at slot %d (of %d and %d)' % (i, len(a), len(b)))
+    print('  A: pl %s' % (a[i] if i < len(a) else '-'))
+    print('  B: pl %s' % (b[i] if i < len(b) else '-'))
+    for f in PL_FIELDS:
+        for k in range(min(len(a), len(b))):
+            fa, fb = pl_fields(a[k]).get(f), pl_fields(b[k]).get(f)
+            if fa != fb:
+                print('  %-6s first differs at slot %d: %s | %s' % (f, k, fa, fb))
+                break
+        else:
+            print('  %-6s equal' % f)
+    return 1
+
+
 def env_for(a, trace):
     env = {'SCRAP_TEST_DETERMINISTIC': '1', 'SCRAP_VK_DEVICE': a.vk}
     if trace:
@@ -256,9 +311,9 @@ def run_game(a, args, env, body=None):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('cmd', choices=('rec', 'play', 'solo'))
-    ap.add_argument('level')
-    ap.add_argument('tape')
+    ap.add_argument('cmd', choices=('rec', 'play', 'solo', 'cmp'))
+    ap.add_argument('level', help='the level (cmp: trace A)')
+    ap.add_argument('tape', help='the tape (cmp: trace B)')
     ap.add_argument('--secs', type=float, default=60.0)
     ap.add_argument('--trace')
     ap.add_argument('--build', default=os.path.join(REPO, 'build-linux64'))
@@ -266,6 +321,8 @@ def main():
     ap.add_argument('--vk', default='10de:27b0')
     ap.add_argument('--timeout', type=float, default=1800.0)
     a = ap.parse_args()
+    if a.cmd == 'cmp':
+        return compare(a.level, a.tape)
     a.name = a.name or 'tape-' + a.cmd
     tape = os.path.abspath(a.tape)
     env = env_for(a, a.trace)
