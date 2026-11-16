@@ -38,6 +38,9 @@ FRAME_MS = 1000.0 / 60.0
 # frame of single player, corrections per minute at most 1 at 0 ms and 3 at 150 ms (50 ms: 2, between the two)
 CELLS = {'0': (0, 0, 0.0), '50': (50, 0, 0.0), '150': (150, 10, 2.0)}
 CORR_LIMIT = {'0': 1.0, '50': 2.0, '150': 3.0}
+# a side whose frame time p95 is above this ran on a busy machine: run once more (FEEL_RETRIES), then marked "slow"
+FRAME_SLOW = 20.0
+FEEL_RETRIES = 1
 # the run-to-run noise of the numbers mp2.py diff compares (measured on two runs of one build, see the stage 0.4
 # hand-back): an absolute allowance and a share of the old value, whichever is larger
 NOISE = {
@@ -123,7 +126,8 @@ def feel_row(r, cell):
             'boost_mean': b[0], 'boost_p95': b[1], 'boost_n': b[2], 'boost_misses': b[3], 'jitter_walk': jw,
             'jitter_fly': jf,
             'corr_per_min': r.get('corr_per_min'), 'corrections': r.get('corrections'), 'minutes': r.get('minutes'),
-            'start_on_foot': r.get('start_on_foot'), 'boarded': r.get('boarded')}
+            'start_on_foot': r.get('start_on_foot'), 'boarded': r.get('boarded'),
+            'frame_p95': (r.get('frames') or {}).get('p95')}
 
 
 def feel_marks(rows):
@@ -131,6 +135,8 @@ def feel_marks(rows):
     sp = next((r for r in rows if r['side'] == 'sp'), None)
     for r in rows:
         r['over'] = []
+        if r.get('frame_p95') and r['frame_p95'] > FRAME_SLOW:
+            r['over'].append('slow frames (p95 %.1f ms)' % r['frame_p95'])
         if r['side'] == 'sp' or r.get('error'):
             continue
         for k in ('walk', 'fly', 'boost'):
@@ -149,18 +155,18 @@ def feel_table(rows):
     def n(v, fmt='%.1f'):
         return '-' if v is None else fmt % v
     lines = ['| cell (delay/jitter/loss) | side | walk ms mean/p95 | fly ms mean/p95 | boost ms mean/p95 | '
-             'jitter walk/fly | corr/min | over the limit |', '|---|---|---|---|---|---|---|---|']
+             'jitter walk/fly | corr/min | frame p95 ms | over the limit |', '|---|---|---|---|---|---|---|---|---|']
     for r in rows:
         c = CELLS.get(r['cell'])
         cell = '-' if r['side'] == 'sp' else '%s ms (%d/%d/%g)' % (r['cell'], c[0], c[1], c[2]) if c else r['cell']
         if r.get('error'):
-            lines.append('| %s | %s | error: %s | | | | | |' % (cell, r['side'], r['error']))
+            lines.append('| %s | %s | error: %s | | | | | | |' % (cell, r['side'], r['error']))
             continue
-        lines.append('| %s | %s | %s/%s | %s/%s | %s/%s | %s/%s | %s | %s |' % (
+        lines.append('| %s | %s | %s/%s | %s/%s | %s/%s | %s/%s | %s | %s | %s |' % (
             cell, r['side'], n(r['walk_mean']), n(r['walk_p95']), n(r['fly_mean']), n(r['fly_p95']),
             n(r['boost_mean']) + (' (%d missed)' % r['boost_misses'] if r.get('boost_misses') else ''), n(r['boost_p95']),
             n(r['jitter_walk'], '%.2f'), n(r['jitter_fly'], '%.2f'),
-            n(r['corr_per_min'], '%.2f'), ', '.join(r.get('over', [])) or '-'))
+            n(r['corr_per_min'], '%.2f'), n(r.get('frame_p95')), ', '.join(r.get('over', [])) or '-'))
     return lines
 
 
@@ -179,13 +185,18 @@ def gate_feel(a):
     rows = []
     for cell, side, extra in jobs:
         path = os.path.join(out, side + ('' if side == 'sp' else '-' + cell) + '.json')
-        if not a.report_only:
-            run(base + ['--sides', side] + extra, log=os.path.join(out, 'feel-%s-%s.log' % (cell, side)),
-                timeout=1800)
-        try:
-            r = json.load(open(path))
-        except (OSError, ValueError):
-            r = {'side': side, 'error': 'no result'}
+        for k in range(1 if a.report_only else 1 + FEEL_RETRIES):
+            if not a.report_only:
+                run(base + ['--sides', side] + extra, log=os.path.join(out, 'feel-%s-%s.log' % (cell, side)),
+                    timeout=1800)
+            try:
+                r = json.load(open(path))
+            except (OSError, ValueError):
+                r = {'side': side, 'error': 'no result'}
+            # a run whose frames were slow (the machine busy with other games) measured the machine: once more
+            if (r.get('frames') or {}).get('p95', 0) <= FRAME_SLOW:
+                break
+            print('feel %s %s: frame time p95 %.1f ms, again' % (cell, side, r['frames']['p95']), flush=True)
         rows.append(feel_row(r, cell))
         print('feel %s %s: %s' % (cell, side, r.get('error') or 'done'), flush=True)
     feel_marks(rows)
