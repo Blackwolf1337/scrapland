@@ -3341,11 +3341,24 @@ static byte Cp_BankerSlaps(int i, NetRepInput *in, cEntity *e, cEntity **all, in
 	return 1;
 }
 
+/* test: a messenger of the level (not flashed) within CP_MSG_NEAR of c, NULL */
+static cEntity *Cp_MessengerNear(const cEntity *c) {
+	for (cEntity *m = cWorld_GetFirstEntity(g_pWorld); m; m = cEntity_Next(m)) {
+		float mx = m->pos.x - c->pos.x, mz = m->pos.z - c->pos.z;
+		if (m->active && Entity_IsType(m, TYEN_WALKCHAR) && Players_Of(m) < 0 && mx * mx + mz * mz < CP_MSG_NEAR * CP_MSG_NEAR &&
+			!strcmp(ChType_ActClass(ChType_ActCtrl(m))->name, "Messenger") &&
+			crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(m), 0), "Flashed", 7)) {
+			return m;
+		}
+	}
+	return NULL;
+}
+
 /* test: player i as a messenger plays the messengers' game of the data pack where the mission marks it
  * (MessengerDataPackMissionArrow: GetAuthorization's tube): another messenger's pack is shot off it (the action key
  * held at it: the lightning flashes it, it drops the pack), a free pack or one on an open desk is walked onto (the
  * touch takes it), its own pack goes to the desk with the mission arrow (the messengers' logic drops it there; the
- * messengers that come for it are shot on the way); 0
+ * messengers that come for it are shot on the way), another member's pack is escorted; 0
  * when it is no messenger or no pack is marked */
 static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	cActCtrl *a = NetPl_Kind(e) == NETREP_CHAR ? WithLife_GetActCtrl(e) : NULL;
@@ -3363,19 +3376,12 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	cEntity *carrier = Obj(pack)->mod.link.target, *to = pack;
 	byte shoot = carrier && carrier != e && Entity_IsType(carrier, TYEN_WALKCHAR) && Players_Of(carrier) < 0 &&
 		!strcmp(ChType_ActClass(ChType_ActCtrl(carrier))->name, "Messenger");
-	if (carrier == e) {
-		/* the messengers go for the one that carries it: one near (not flashed) is shot first, as a player keeps them off */
-		to = Cp_ArrowTarget(e);
-		for (cEntity *m = cWorld_GetFirstEntity(g_pWorld); m; m = cEntity_Next(m)) {
-			float mx = m->pos.x - e->pos.x, mz = m->pos.z - e->pos.z;
-			if (m->active && Entity_IsType(m, TYEN_WALKCHAR) && Players_Of(m) < 0 && mx * mx + mz * mz < CP_MSG_NEAR * CP_MSG_NEAR &&
-				!strcmp(ChType_ActClass(ChType_ActCtrl(m))->name, "Messenger") &&
-				crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(m), 0), "Flashed", 7)) {
-				to = m;
-				shoot = 1;
-				break;
-			}
-		}
+	if (carrier == e || (carrier && Players_Of(carrier) >= 0)) {
+		/* the messengers go for the one that carries it: one near it (not flashed) is shot first, as a player keeps them
+		 * off its own pack or a member's; else its own pack goes to the desk, a member's is escorted */
+		cEntity *m = Cp_MessengerNear(carrier);
+		to = m ? m : carrier == e ? Cp_ArrowTarget(e) : carrier;
+		shoot = m != NULL;
 	} else if (shoot) {
 		to = carrier;
 	}
@@ -3385,7 +3391,8 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	if (now - cp.pl[i].autoTold >= 5.0) {
 		cp.pl[i].autoTold = now;
 		Con_Printf("coop: player %d (auto) %s %s (the pack %s)\n", i, shoot ? carrier == e ? "keeps off" : "shoots the pack off" :
-			carrier == e ? "carries the pack to" : "takes the pack at", to->name, carrier ? carrier->name : "free");
+			carrier == e ? "carries the pack to" : carrier && to == carrier ? "escorts" : "takes the pack at", to->name,
+			carrier ? carrier->name : "free");
 	}
 	/* one that comes for its own pack is shot where it stands (no chase away from the desk) */
 	byte keep = shoot && carrier == e;
