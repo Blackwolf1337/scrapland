@@ -109,7 +109,11 @@ void *cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
 void cStaticBuffer_Unlock(cStaticBuffer *self);
 cStaticBuffer *cStaticBuffer_ctor(cStaticBuffer *self);
 void cStaticBuffer_dtor(cStaticBuffer *self);
-/* site names the caller for the network audit (include/scrap/netaudit.h: a read on a headless process counts) */
+/* the square of the distance of the nearest of the world's four view positions to pos (unused views count with their
+ * last position, as in the original) */
+float cWorld_ViewsMinDistSq(cWorld *world, const vec3_t *pos);
+/* the same for the presentation (the instance: Viewers_MinDistSq); site names the caller for the network audit
+ * (include/scrap/netaudit.h: a read on a headless process counts) */
 float cWorld_GetMinCamDistSqAt(cWorld *world, const vec3_t *pos, const char *site);
 #define cWorld_GetMinCamDistSq(world, pos) cWorld_GetMinCamDistSqAt(world, pos, __func__)
 void Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name);

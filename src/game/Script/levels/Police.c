@@ -273,7 +273,7 @@ static byte PoMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	return m == 0 && Mode_Import("Messenger") && Mode_SetModVar("Messenger", "MakeMDP", &v);
 }
 
-/* the fake traffic behind the windows (InTraffic imported; the client's own rail traffic until stage 2.2) */
+/* the fake traffic behind the windows (InTraffic imported) */
 static byte PoMap_FakeTraffic(void) {
 	static const char *const light[] = { "TLight1B", "TLight2B", "TLight3B", NULL };
 	nativeVal_t v;
@@ -340,7 +340,8 @@ static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	return Po_Fade(lv_black, lv_black, 1.0) && Po_FadeLater(0.1, lv_black, lv_clear, 1.0);
 }
 
-/* the client part (Levels.h): the flags of InitStatus; Ficus' class and the fake traffic of Init */
+/* the client part (Levels.h): the flags of InitStatus; Ficus' class of Init (the fake traffic is the server's,
+ * include/scrap/viewers.h) */
 byte Police_ClientStatus(const nativeVal_t *path) {
 	(void)path;
 	return PoMap_Flags();
@@ -348,8 +349,7 @@ byte Police_ClientStatus(const nativeVal_t *path) {
 
 byte Police_ClientInit(const nativeVal_t *path) {
 	(void)path;
-	return PoMap_FicusClass(LvN_SaveIs("Mission.Library", "Mission_FicusDead"), 0) && Mode_Import("InTraffic") &&
-		PoMap_FakeTraffic();
+	return PoMap_FicusClass(LvN_SaveIs("Mission.Library", "Mission_FicusDead"), 0);
 }
 
 LV_FN(PoMap, CreateFicusDeadClassA, 0, PoMap_CreateFicusDeadClass)

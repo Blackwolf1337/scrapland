@@ -4,11 +4,13 @@
  * the tracks of the sectors that came into view.
  */
 #include "scrap/console.h"
+#include "scrap/game.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/staticinit.h"
 
 #define CNODESTRAFFICINDOOR_VFTABLE (&CNodesTrafficInDoor_vftable)
@@ -115,13 +117,33 @@ static void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self) {
 		&self->seenMediumLight.numNodes, 0);
 }
 
-/* the sectors that came into view since the last update */
-static void Sectors_UpdateSeen(cTrafficSector *sectors, int num, int *seen, int *numSeen, int *nodes) {
+/* the sector is in view: the renderer's sectors; a headless process (the instance) has no renderer, there a viewer in
+ * the sector or one that sees a node of its tracks through the portals (include/scrap/viewers.h) */
+static byte Sectors_Seen(CNodesTrafficInDoor *self, const cTrafficSector *s) {
+	if (Viewers_SeesSector(s->sector)) {
+		return 1;
+	}
+	if (!App_Headless()) {
+		return 0;
+	}
+	int step = s->numNodes > 8 ? s->numNodes / 8 : 1;
+	for (int k = 0; k < s->numNodes; k += step) {
+		const InfoTrafficNode *n = &s->nodes[k];
+		if (Viewers_SeesSphere(&self->base.tracks[n->track].nodes[n->node], 0.0f)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* the sectors that came into view since the last update (at most the 20 of cTrafficSeen) */
+static void Sectors_UpdateSeen(CNodesTrafficInDoor *self, cTrafficSector *sectors, int num, int *seen, int *numSeen,
+	int *nodes) {
 	*numSeen = 0;
 	*nodes = 0;
 	for (int i = 0; i < num; i++) {
-		byte vis = Sector_Visible(sectors[i].sector);
-		if (vis && !sectors[i].visible) {
+		byte vis = Sectors_Seen(self, &sectors[i]);
+		if (vis && !sectors[i].visible && *numSeen < 20) {
 			seen[(*numSeen)++] = i;
 			*nodes += sectors[i].numNodes;
 		}
@@ -136,13 +158,13 @@ static void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **
 	int track = 0;
 
 	if (updateA) {
-		Sectors_UpdateSeen(sectorsA, numA, seenA, numSeenA, nodesA);
+		Sectors_UpdateSeen(self, sectorsA, numA, seenA, numSeenA, nodesA);
 	}
 	if (updateB) {
-		Sectors_UpdateSeen(sectorsB, numB, seenB, numSeenB, nodesB);
+		Sectors_UpdateSeen(self, sectorsB, numB, seenB, numSeenB, nodesB);
 	}
 	if (updateC) {
-		Sectors_UpdateSeen(sectorsC, numC, seenC, numSeenC, nodesC);
+		Sectors_UpdateSeen(self, sectorsC, numC, seenC, numSeenC, nodesC);
 	}
 	if (*numSeenA <= 0 && *numSeenB <= 0 && *numSeenC <= 0) {
 		return;

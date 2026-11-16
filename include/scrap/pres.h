@@ -11,8 +11,9 @@
  * PRES_MSG message; the client plays the record through the same sink.
  *
  * The audience of a call:
- *   PRES_NEAR    the players whose view is within NETREP_RADIUS of a position (a sound, an effect); not the player
- *                whose own entity's step started it (the client steps its own entity and plays it itself)
+ *   PRES_NEAR    the players whose viewer (include/scrap/viewers.h) is within NETREP_RADIUS of a position (a sound,
+ *                an effect); not the player whose own entity's step started it (the client steps its own entity and
+ *                plays it itself)
  *   PRES_PLAYER  the current player's context (include/scrap/players.h); in the world's context every player
  *   PRES_PARTY   coop: every player of the instance; else PRES_PLAYER
  *   PRES_LEVEL   every player of the instance

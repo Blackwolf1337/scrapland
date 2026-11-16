@@ -14,6 +14,7 @@
 #include "scrap/objentity.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
@@ -297,8 +298,8 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 		break;
 	case SENTINEL_ACCUSE_NPC:
 		if (!Players_CurAlarm()->on && b->target.target && AIChar_GetState(ai)) {
-			if (!Players_SeesModel(Obj_GetModel(p))) {
-				float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(p, &tmp));
+			if (!Viewers_SeesModel(Obj_GetModel(p))) {
+				float d = Viewers_MinDistSq(Entity_GetPos(p, &tmp));
 				float r = g_SentinelAbortyNPCAttDist;
 				if (d > r * r) {
 					break;

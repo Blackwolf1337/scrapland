@@ -15,10 +15,12 @@
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/fxmisc.h"
 #include "scrap/itementity.h"
+#include "scrap/logic.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/vehicletraffic.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
@@ -153,7 +155,7 @@ void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3) {
 	self->ammoSearch = 3;
 	self->chaseMin = g_AIChaseDefault1;
 	self->chaseMax = g_AIChaseDefault2;
-	self->unused_318 = 0;
+	self->viewer = 0;
 	self->stopAtGoal = 0;
 	self->targetTime = 0.0f;
 	self->hookSide = 0;
@@ -310,6 +312,7 @@ static void cAIVehicle_CheckItems(cAIVehicle *self) {
 	}
 }
 
+static const cViewer *AIV_View(cAIVehicle *self);
 /* the graph slot: the repositioning near the camera while it is in the graph */
 static void cAIVehicle_GraphTraffic(cAIVehicle *self);
 static void cAIVehicle_GraphTrafficInDoor(cAIVehicle *self);
@@ -324,21 +327,12 @@ static void cAIVehicle_UpdateGraph(cAIVehicle *self) {
 		return;
 	}
 	do {
-		cWorld *w = g_pWorld;
-		vec3_t cam = w->camPos[w->curCam];
-		/* the headless instance has no camera: its viewers are the players (AIV_Viewer); the rail traffic is every
-		 * client's own (include/scrap/replicate.h Rep_LocalAmbient), it stays off here */
-		if (Players_Net()) {
-			if (self->state == AIV_TRAFFIC || self->state == AIV_TRAFFIC_INDOOR) {
-				return;
-			}
-			vec3_t tmp;
-			cEntity *pl = Players_Closest(Entity_GetPos(self->vehicle, &tmp));
-			if (!pl) {
-				return;
-			}
-			cam = pl->pos;
+		/* the viewer the vehicle is kept around (AIV_View): single player's camera, the instance's players */
+		const cViewer *v = AIV_View(self);
+		if (!v) {
+			return;
 		}
+		vec3_t cam = v->pos;
 		if (!NodesWorld_InGrid(g_NodesWorld, &cam)) {
 			return;
 		}
@@ -362,28 +356,23 @@ static void cAIVehicle_UpdateGraph(cAIVehicle *self) {
 	} while (cSlotController_FireReset(slot, &t));
 }
 
-/* who the repositioning of the vehicles is near: the camera of view 0, its place, its direction (z axis turned by its
- * angles), its field of view and whether the entity it follows is slower than VelReposBackAI; 0 without the camera
- * entity (deleted by a script, Mission_FunctionaryHunting.AbortCameraTravelling). The headless instance has no
- * camera (stage M10 of issue #1): the player nearest to the vehicle stands for it, with its heading and the field
- * of view of a camera, so the traffic and the police stay around the players as single player keeps them around the
- * camera */
+/* who the repositioning of the vehicles is near: the viewer of the vehicle (AIV_View; single player the camera of
+ * view 0), its place, its direction, its field of view and whether the entity it follows is slower than
+ * VelReposBackAI; 0 without the camera entity (deleted by a script, Mission_FunctionaryHunting.AbortCameraTravelling) */
 typedef struct AivViewer {
 	vec3_t pos, dir;
 	float fov;
 	byte slow;
 } AivViewer;
 
-#define AIV_NET_FOV 0x1.921fb6p+0f		/* pi / 2, a camera's default */
-
-static byte AIV_Viewer(cAIVehicle *self, AivViewer *v);
+static byte AIV_Viewer(cAIVehicle *self, AivViewer *v, byte repos);
 
 /* the vehicle too far from the viewer: in view farther than MaxDistReposAI, out of view farther than
  * MaxDistReposNotVisAI or (unseen) farther than MinDistReposNotVisAI; the repos distances of the AI reset */
 static byte cAIVehicle_NeedRepos(cAIVehicle *self) {
 	vec3_t a, d;
 	AivViewer view;
-	if (!AIV_Viewer(self, &view)) {
+	if (!AIV_Viewer(self, &view, 0)) {
 		return 0;
 	}
 	vec3_t cam = view.pos;
@@ -1488,56 +1477,53 @@ static inline int AIV_FloatArg(float f) {
 	return i;
 }
 
-/* the camera of view 0, its position and its direction (z axis turned by its angles); NULL without the camera
- * entity (deleted by a script) */
-static cCamControl *AIV_ReposCam(vec3_t *camPos, vec3_t *dir) {
-	*camPos = g_pWorld->camPos[g_pWorld->curCam];
-	cCamControl *cam = (cCamControl *)World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
-	if (!cam) {
-		return NULL;
-	}
-	vec3_t z = { 0.0f, 0.0f, 1.0f };
-	Vec3_Rotate(dir, &z, &cam->cam.rot);
-	return cam;
-}
-
-/* the ship the camera follows is slower than VelReposBackAI */
-static int AIV_ReposSlowShip(cCamControl *cam) {
+/* the entity the viewer's camera follows is slower than limit */
+static byte AIV_Slow(const cViewer *v, float limit) {
 	vec3_t tmp;
 
-	if (!Entity_IsType(cam, FCAM_CLASSNAME)) {
+	if (!v->ent) {
 		return 0;
 	}
-	cEntity *ship = cCamEntity_GetTarget(&cam->base);
-	if (!ship) {
-		return 0;
-	}
-	const vec3_t *v = Obj_GetVel(ship, &tmp);
-	float speed = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
-	return g_VelReposBackAI > speed;
+	const vec3_t *vel = Obj_GetVel(v->ent, &tmp);
+	float speed = (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y + vel->z * vel->z));
+	return limit > speed;
 }
 
-static byte AIV_Viewer(cAIVehicle *self, AivViewer *v) {
+/* the viewer the vehicle is kept around (include/scrap/viewers.h): single player's camera; on the instance the leader
+ * whose quota it fills (the traffic), else the viewer nearest to it; NULL when the instance has none */
+static const cViewer *AIV_View(cAIVehicle *self) {
 	vec3_t tmp;
-	if (Players_Net()) {
-		cEntity *pl = Players_Closest(Entity_GetPos(self->vehicle, &tmp));
-		if (!pl) {
-			return 0;
+
+	if (!Viewers_Server()) {
+		return Viewers_At(0);
+	}
+	int i = self->viewer ? Viewers_LeaderIndex(self->viewer - 1) : -1;
+	return i >= 0 ? Viewers_At(i) : Viewers_Near(Entity_GetPos(self->vehicle, &tmp));
+}
+
+/* the viewer of a new place of the vehicle: on the instance a ship of the traffic goes to the leader that has the
+ * fewest of its kind (Traffic_QuotaLeader), else as AIV_View */
+static const cViewer *AIV_ReposView(cAIVehicle *self) {
+	if (Viewers_Server() && Traffic_QuotaKind(self->vehicle) >= 0) {
+		int i = Traffic_QuotaLeader(self->vehicle, self->viewer - 1);
+		if (i >= 0) {
+			self->viewer = (byte)(Viewers_At(i)->id + 1);
+			return Viewers_At(i);
 		}
-		v->pos = pl->pos;
-		Players_Forward(pl, &v->dir);
-		v->fov = AIV_NET_FOV;
-		const vec3_t *vel = Obj_GetVel(pl, &tmp);
-		v->slow = g_VelReposBackAI > (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y +
-			vel->z * vel->z));
-		return 1;
 	}
-	cCamControl *cam = AIV_ReposCam(&v->pos, &v->dir);
-	if (!cam) {
+	return AIV_View(self);
+}
+
+static byte AIV_Viewer(cAIVehicle *self, AivViewer *v, byte repos) {
+	const cViewer *view = repos ? AIV_ReposView(self) : AIV_View(self);
+
+	if (!view || !view->posed) {
 		return 0;
 	}
-	v->fov = cam->cam.fov;
-	v->slow = (byte)AIV_ReposSlowShip(cam);
+	v->pos = view->pos;
+	v->dir = view->dir;
+	v->fov = view->fov;
+	v->slow = AIV_Slow(view, g_VelReposBackAI);
 	return 1;
 }
 
@@ -1573,23 +1559,24 @@ static void AIV_ReposStop(cAIVehicle *self, const vec3_t *d) {
 static void cAIVehicle_PickTrackType(cAIVehicle *self);
 static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis, float maxVis, float minNotVis,
 	float maxNotVis, float around) {
-	vec3_t camPos, dir, back, p;
-	cCamControl *cam = AIV_ReposCam(&camPos, &dir);
+	vec3_t back, p;
+	AivViewer view;
 	int track = self->track;
 	int node = self->node;
 	byte vis = 1;
 	byte behind = 0;
 	byte r;
 
-	if (!cam) {
+	if (!AIV_Viewer(self, &view, 1)) {
 		return 0;
 	}
-	if (AIV_ReposSlowShip(cam) && !self->reposBehind) {
+	vec3_t camPos = view.pos, dir = view.dir;
+	if (view.slow && !self->reposBehind) {
 		vis = crt_rand() % 2 == 0;
 	}
 	cAIVehicle_PickTrackType(self);
 	CNodesTraffic *t = AIV_Outdoor();
-	float cone = cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV;
+	float cone = view.fov * AIV_REPOS_HALF * AIV_REPOS_FOV;
 	if (vis) {
 		r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir, cone,
 			&track, &node);
@@ -1602,7 +1589,7 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 			back.z = -dir.z;
 			t = AIV_Outdoor();
 			r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around),
-				&back, M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
+				&back, M_PI_F - view.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
 			if (!r) {
 				return r;
 			}
@@ -1613,13 +1600,13 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 		back.y = -dir.y;
 		back.z = -dir.z;
 		r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around), &back,
-			M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
+			M_PI_F - view.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
 		if (r) {
 			behind = 1;
 		} else {
 			t = AIV_Outdoor();
 			r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir,
-				cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
+				view.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
 			if (!r) {
 				return r;
 			}
@@ -1656,7 +1643,7 @@ static byte cAIVehicle_Repos(cAIVehicle *self) {
 	if (!cAIVehicleGroup_ReposReady(g_VehicleGroup)) {
 		return 0;
 	}
-	if (!AIV_Viewer(self, &view)) {
+	if (!AIV_Viewer(self, &view, 1)) {
 		return 0;
 	}
 	vec3_t camPos = view.pos, dir = view.dir;
@@ -3274,26 +3261,18 @@ static void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	if (self->internState != AIVI_FINISHING_LINE_DIRECT) {
 		return;
 	}
-	cCamControl *cam = (cCamControl *)World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	const cViewer *view = AIV_View(self);
 	/* without the main camera entity (deleted by a script) the vehicle stays on its track */
-	if (!cam) {
+	if (!view || !view->posed) {
 		return;
 	}
-	vec3_t camPos = g_pWorld->camPos[g_pWorld->curCam];
+	vec3_t camPos = view->pos;
 	const vec3_t *pos = Entity_GetPos(self->vehicle, &tmp);
 	d.x = pos->x - camPos.x;
 	d.y = pos->y - camPos.y;
 	d.z = pos->z - camPos.z;
 	float dist = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
-	int slow = 0;
-	if (Entity_IsType(cam, FCAM_CLASSNAME)) {
-		cEntity *ship = cCamEntity_GetTarget(&cam->base);
-		if (ship) {
-			const vec3_t *v = Obj_GetVel(ship, &tmp);
-			slow = g_VelReposStopAI > (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
-		}
-	}
-	if (slow) {
+	if (AIV_Slow(view, g_VelReposStopAI)) {
 		self->maxDistRepos = g_MaxDistReposStopAI;
 		self->minDistRepos = g_MinDistReposStopAI;
 	} else {
@@ -3302,10 +3281,9 @@ static void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	}
 	self->maxDistReposNotVis = g_MaxDistReposNotVisAI;
 	self->minDistReposNotVis = g_MinDistReposNotVisAI;
-	vec3_t z = { 0.0f, 0.0f, 1.0f };
-	Vec3_Rotate(&dir, &z, &cam->cam.rot);
+	dir = view->dir;
 	double ang = Vec3_Angle(&d, &dir);
-	if (ang > (double)(cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV) && !self->base.trafficPlaced) {
+	if (ang > (double)(view->fov * AIV_REPOS_HALF * AIV_REPOS_FOV) && !self->base.trafficPlaced) {
 		if (!(dist > self->maxDistReposNotVis)) {
 			if (!(dist > self->minDistReposNotVis) || AI_IsVisible(self)) {
 				return;

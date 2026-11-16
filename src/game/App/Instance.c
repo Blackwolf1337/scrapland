@@ -18,6 +18,7 @@
 #include "scrap/global.h"
 #include "scrap/inputtape.h"
 #include "scrap/instance.h"
+#include "scrap/logic.h"
 #include "scrap/net2.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
@@ -28,12 +29,14 @@
 #include "scrap/sputniks.h"
 #include "scrap/testdet.h"
 #include "scrap/travel.h"
+#include "scrap/viewers.h"
 #include "scrap/world.h"
 
 #define INST_NS 1000000000ull
 #define INST_PERIOD (INST_NS / INSTANCE_TICK_HZ)
 #define INST_SLOTS 256				/* Net2ServerInfo counts players in a byte */
 #define INST_LINE 256
+#define INST_HIST 2000				/* buckets of 0.1 ms of the tick time histogram */
 
 byte g_Instance;
 
@@ -52,6 +55,8 @@ static struct {
 	uint64_t dropped;				/* ticks given up as backlog */
 	uint64_t busyNs, busyMax;		/* run time of the ticks since the last status line */
 	uint32_t busyTicks;
+	uint32_t hist[INST_HIST + 1];	/* run time of the ticks since "ticks reset" by 0.1 ms, the last all longer */
+	uint64_t histMax, histNs;
 	uint64_t lastStatus, lastQuitCheck;	/* ns */
 	int players;
 	byte live[INST_SLOTS];
@@ -266,6 +271,30 @@ static void Instance_Status(void) {
 	inst.busyTicks = 0;
 }
 
+/* the tick time of the share q (0..1) of the ticks in the histogram, ms (the upper bound of its bucket) */
+static double Instance_TickPart(uint64_t n, double q) {
+	uint64_t want = (uint64_t)((double)n * q + 0.999999), sum = 0;
+	for (int i = 0; i <= INST_HIST; i++) {
+		sum += inst.hist[i];
+		if (sum >= want && sum) {
+			return i == INST_HIST ? (double)inst.histMax / 1e6 : (i + 1) * 0.1;
+		}
+	}
+	return 0.0;
+}
+
+/* "ticks": tick count, p50, p99, max and mean of the run times since "ticks reset" */
+static void Instance_Ticks(void) {
+	uint64_t n = 0;
+	for (int i = 0; i <= INST_HIST; i++) {
+		n += inst.hist[i];
+	}
+	Con_Printf("instance %s: ticks %llu p50 %.1f p99 %.1f max %.2f avg %.2f ms, %llu dropped, %d viewers, %d leaders\n",
+		inst.id, (unsigned long long)n, Instance_TickPart(n, 0.5), Instance_TickPart(n, 0.99), (double)inst.histMax / 1e6,
+		n ? (double)inst.histNs / (double)n / 1e6 : 0.0, (unsigned long long)inst.dropped, Viewers_Count(),
+		Viewers_Leaders());
+}
+
 void Instance_Line(char *line) {
 	Str_TrimBlanks(line);
 	if (!line[0]) {
@@ -278,6 +307,20 @@ void Instance_Line(char *line) {
 	}
 	if (!crt_stricmp(line, "status")) {
 		Instance_Status();
+		return;
+	}
+	if (!crt_stricmp(line, "ticks")) {
+		Instance_Ticks();
+		return;
+	}
+	if (!crt_stricmp(line, "ticks reset")) {
+		memset(inst.hist, 0, sizeof(inst.hist));
+		inst.histMax = inst.histNs = 0;
+		inst.dropped = 0;
+		Con_Printf("instance %s: ticks reset\n", inst.id);
+		return;
+	}
+	if (Viewers_Command(line) || Traffic_Command(line)) {
 		return;
 	}
 	/* tests: "alarm <player> <level>" sets one player's alarm (include/scrap/players.h), "money <player> <n>" its
@@ -417,6 +460,9 @@ void Instance_Pass(void) {
 	inst.busyNs += busy;
 	inst.busyMax = busy > inst.busyMax ? busy : inst.busyMax;
 	inst.busyTicks++;
+	inst.hist[busy / 100000 < INST_HIST ? busy / 100000 : INST_HIST]++;
+	inst.histMax = busy > inst.histMax ? busy : inst.histMax;
+	inst.histNs += busy;
 	if (end - inst.lastStatus >= INSTANCE_STATUS_SECS * INST_NS) {
 		inst.lastStatus = end;
 		Instance_Status();

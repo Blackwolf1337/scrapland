@@ -11,6 +11,7 @@
 #include "scrap/chartype.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 #include "scrap/faction.h"
@@ -106,7 +107,7 @@ static void AICtrl_Belligerant(void *ctrl) {
 
 	for (n = Logic_ListFirst(g_pWorld->logic.genChars.police); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
-		if (Players_SeesModel((CGameModel *)AICtrl_Model(e))) {
+		if (Viewers_SeesModel((CGameModel *)AICtrl_Model(e))) {
 			if (first) {
 				second = e;
 			} else {
@@ -132,7 +133,7 @@ static void AICtrl_Belligerant(void *ctrl) {
 	second = NULL;
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
-		if (!Players_SeesModel((CGameModel *)AICtrl_Model(e))) {
+		if (!Viewers_SeesModel((CGameModel *)AICtrl_Model(e))) {
 			continue;
 		}
 		cBaseLocalLogic *l = e->lLogic;
@@ -338,7 +339,7 @@ void AICtrl_GearAttack(void *ctrl, cEntity *target, int seen) {
 	vec3_t t1, t2, t3;
 	float d1, d2, d;
 
-	if (self->attacking < 2 && AICtrl_Model(target) && Players_SeesModel((CGameModel *)AICtrl_Model(target))) {
+	if (self->attacking < 2 && AICtrl_Model(target) && Viewers_SeesModel((CGameModel *)AICtrl_Model(target))) {
 		cEntity *gear = cEntityList_Nearest(self->gears, Entity_GetPos(target, &t1), target, &d1);
 		byte free = 0;
 		if (gear) {
@@ -552,7 +553,7 @@ void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	if (!Logic_GetLocalLogic(e)) {
 		return;
 	}
-	float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &t));
+	float d = Viewers_MinDistSq(Entity_GetPos(e, &t));
 	if (!(g_SentinelAbortyNPCAttDist * g_SentinelAbortyNPCAttDist > d)) {
 		return;
 	}
@@ -589,7 +590,7 @@ void AICtrl_Update(void *ctrl, float dt) {
 	self->timer = 0.0f;
 	AICtrl_Think(self);
 	/* the instance: no fights while some player is wanted */
-	if (!(Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : Players_CurAlarm()->on)) {
+	if (!(Players_Net() ? Players_SomeWanted() : Players_CurAlarm()->on)) {
 		float r = (float)(Weap_Rand01() * 99.0 + 1.0);
 		if ((float)g_PoliceLogicBelligerant > r) {
 			AICtrl_Belligerant(self);

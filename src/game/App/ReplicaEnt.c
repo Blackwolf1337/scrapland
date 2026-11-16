@@ -85,7 +85,7 @@ void ReplicaEnt_Created(const char *name, const char *type) {
 	ReplicaEnt_Count(rc.railDepth ? "client.rail.create:" : "client.script.create:", type, name);
 }
 
-/* the modules of the client's own rail traffic (Rep_LocalAmbient), until stage 2.2 runs it on the server */
+/* the modules of the rail traffic (the server's since stage 2.2: their calls on the client are counted apart) */
 static byte ReplicaEnt_RailModule(const char *module) {
 	return !strcmp(module, "Traffic") || !strcmp(module, "VehiclesNPC") || !strcmp(module, "InTraffic");
 }
@@ -298,12 +298,12 @@ static cEntity *ReplicaEnt_BuildOther(RcSlot *s, int kind, const char *look, con
 	return e;
 }
 
-/* the entities the client made itself away: not the replicas, the own entity, the cameras, the client's own rail
- * traffic */
+/* the entities the client made itself away: not the replicas, the own entity, the cameras (the rail traffic is the
+ * server's, include/scrap/viewers.h) */
 static void ReplicaEnt_Purge(void) {
 	cEntity *own = Play_Entity();
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (e->deadNode.target || e->netSlot || e == own || !e->name || Rep_LocalAmbient(e)) {
+		if (e->deadNode.target || e->netSlot || e == own || !e->name) {
 			continue;
 		}
 		const char *cls = Entity_GetClassName(e);

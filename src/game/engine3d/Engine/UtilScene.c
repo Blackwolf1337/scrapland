@@ -103,7 +103,7 @@ static void CModelList_dtor(CModelList *self) {
 	}
 }
 
-static CModelList *g_ModelsRender[1024];
+static CModelList *g_ModelsRender[MAX_MODELS_RENDER];
 static int g_NumModelsRender;
 static int g_MaxModelsRender;
 

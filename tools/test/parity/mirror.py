@@ -12,7 +12,7 @@ difference of one moment, an action that just changed, a door on its way, is not
            with a tolerance: the client draws the moving ones ~100 ms behind)
   journal  the journal of the slot differs (names, order, values)
   readback a journal variable reads back another value from the replica than from the server's entity
-The own entity of the client (its prediction) is left out, so is the rail traffic (the client's own until stage 2.2).
+The own entity of the client (its prediction) is left out (the rail traffic is the server's since stage 2.2 and compared).
 The action times of a ship are not compared: its classes show the ship's parts with times each side derives from its
 smoothed motion (cActCtrl_UpdateShip).
 
@@ -22,6 +22,7 @@ Exit code 0 when no difference is left, 1 otherwise, 2 when a side does not answ
 import argparse
 import json
 import os
+import struct
 import sys
 import time
 
@@ -30,6 +31,12 @@ sys.path.insert(0, os.path.dirname(HERE))
 import channel  # noqa: E402
 
 POS_SCALE = 4.0
+
+
+def fbits(v):
+    """the float whose bits the int v holds (a class block value)"""
+    return struct.unpack('<f', struct.pack('<i', v))[0]
+
 # class block (include/scrap/repent.h REPX_)
 X_NAMES = ['gen', 'act2', 'act2t', 'act3', 'act3t', 'walk', 'head', 'maxlife', 'prevlife', 'burn', 'radar', 'fx',
            'fxp', 'boost', 'cloud', 'emi', 'firew', 'move', 'movet', 'item', 'blink', 'target', 'level', 'arrow']
@@ -153,6 +160,8 @@ def compare(srv, cli, radius, rates=None):
             if n in X_TIMES:
                 if abs(a - b) > 600:
                     diffs[('field', s['slot'], n)] = '%s: %d / %d' % (s['name'], a, b)
+            elif n == 'fxp' and s['x'][i - 1] == c['x'][i - 1] and abs(fbits(a) - fbits(b)) <= 0.25:
+                continue    # the parameter of a running effect (the fade in of a placed traffic ship), ~100 ms behind
             elif a != b:
                 diffs[('field', s['slot'], n)] = '%s: %d / %d' % (s['name'], a, b)
         sj, cj = s['j'], c['j']

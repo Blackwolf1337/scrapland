@@ -115,7 +115,7 @@ static byte DownTown_Outdoor(void) {
 	return Mode_Done(&t, 1);
 }
 
-/* the traffic by who controls the robots (the rail traffic's numbers: the client's own rail traffic reads them) */
+/* the traffic by who controls the robots */
 static byte DownTown_Traffic(void) {
 	if (LvN_SaveIs("RobotsControlledByBoss", "1")) {
 		return Mode_BossTraffic(1);
@@ -140,10 +140,10 @@ static byte DownTown_InitStatus(void) {
 	return Mode_Done(&t, ok);
 }
 
-/* the client part (Levels.h): the flag Outdoor and the rail traffic's numbers of InitStatus */
+/* the client part (Levels.h): the flag Outdoor of InitStatus (the traffic is the server's, include/scrap/viewers.h) */
 byte DownTown_ClientStatus(const nativeVal_t *path) {
 	(void)path;
-	return DownTown_Outdoor() && DownTown_Traffic();
+	return DownTown_Outdoor();
 }
 
 /* Init(LevelPath): the elevators to the townhall and the press, the metro */

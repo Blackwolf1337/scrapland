@@ -279,9 +279,6 @@ static void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point,
 	}
 	self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 	CHECK(Entity_IsType(e, TYEN_VEHICLE));
-	if (g_Play) {
-		Play_Touch(elem, e);
-	}
 	cVehicleEntity *o = Veh(e);
 	vec3_t selfVel = self->wl.obj.vel;
 	vec3_t otherVel = o->wl.obj.vel;

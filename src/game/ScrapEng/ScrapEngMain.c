@@ -980,10 +980,14 @@ byte Engine_FrameSetup(void) {
 	void *dev = g_pd3dDevice;
 	Rd_DevSetRenderState(dev, D3DRS_AMBIENT, amb);
 done:
+	Engine_SetupCallback();
+	return 1;
+}
+
+void Engine_SetupCallback(void) {
 	if (g_EngCallbacks[1] && g_CallbacksOn) {
 		g_EngCallbacks[1]();
 	}
-	return 1;
 }
 
 char g_ScreenshotName[256];

@@ -26,6 +26,7 @@
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
+#include "scrap/viewers.h"
 #include "scrap/world.h"
 
 #include "../Global/testchannel.h"
@@ -120,18 +121,22 @@ static uint64_t Pres_Audience(presTo_t to, const vec3_t *pos) {
 	if (to == PRES_PLAYER && cur != PLAYERS_NONE) {
 		return Pres_Online(cur) ? (uint64_t)1 << cur : 0;
 	}
-	for (int i = 0; i < PLAYERS_MAX; i++) {
-		if (!Pres_Online(i)) {
-			continue;
-		}
-		if (to == PRES_NEAR && pos) {
-			const cPlayer *p = Players_Ctx(i);
-			float dx = p->viewPos.x - pos->x, dy = p->viewPos.y - pos->y, dz = p->viewPos.z - pos->z;
-			if (i == pres.own || dx * dx + dy * dy + dz * dz > NETREP_RADIUS * NETREP_RADIUS) {
-				continue;
+	if (to == PRES_NEAR && pos) {
+		/* the players whose viewer (include/scrap/viewers.h: its camera's pose) is near the place */
+		for (int k = Viewers_Count() - 1; k >= 0; k--) {
+			const cViewer *v = Viewers_At(k);
+			float dx = v->pos.x - pos->x, dy = v->pos.y - pos->y, dz = v->pos.z - pos->z;
+			if (v->id >= 0 && v->id < PLAYERS_MAX && v->id != pres.own && Pres_Online(v->id) &&
+				dx * dx + dy * dy + dz * dz <= NETREP_RADIUS * NETREP_RADIUS) {
+				m |= (uint64_t)1 << v->id;
 			}
 		}
-		m |= (uint64_t)1 << i;
+		return m;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (Pres_Online(i)) {
+			m |= (uint64_t)1 << i;
+		}
 	}
 	return m;
 }

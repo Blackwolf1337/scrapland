@@ -10,6 +10,7 @@
 #include "scrap/net.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
+#include "scrap/viewers.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -384,7 +385,7 @@ void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 			self->syncTicks = Net_GetSendRate() * 5;
 			if (CGameModel_IsLoaded(&self->obj.model)) {
 				byte hide = 1;
-				if (self->fadeOut && !self->noFx && (CGameModel_IsVisible(&self->obj.model) || self->blink) &&
+				if (self->fadeOut && !self->noFx && (Viewers_SeesModel(&self->obj.model) || self->blink) &&
 					Item_FxVisible(self)) {
 					/* the take effect towards the player that took it */
 					cEntity *taker = self->taker.target;

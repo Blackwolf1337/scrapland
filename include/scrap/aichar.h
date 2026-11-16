@@ -66,19 +66,11 @@ struct cAICharGroup {
 	int numZones;
 };
 
-/* ScrapC: who the characters are repositioned and paused for. Single player: the camera of view 0 (pos: camPos of the
- * current camera; look: the z axis turned by the angles of the camera entity, has: 0 without that entity, deleted by
- * a script). The headless instance has no camera (stage M10 of issue #1): the player nearest to near stands for it
- * with its heading (has 0 without a player), as the vehicles' repositioning takes it (IVehicle.c AIV_Viewer) */
-typedef struct AICharViewer {
-	vec3_t pos, look;
-	byte has, net;
-} AICharViewer;
-
-void AIChar_Viewer(const vec3_t *near, AICharViewer *v);
-/* p is seen by the viewer: single player the graph's sectors from the camera (CNodesWorld_PointSeen), the instance
- * a line of sight from the player's eyes */
-byte AIChar_ViewerSees(const AICharViewer *v, const vec3_t *p);
+/* ScrapC: the characters are repositioned and paused for the viewer nearest to them (include/scrap/viewers.h:
+ * single player the camera of view 0). p is seen by the viewer v: single player the graph's sectors from the camera
+ * (CNodesWorld_PointSeen), the instance v's frustum test */
+struct cViewer;
+byte AIChar_ViewerSees(const struct cViewer *v, const vec3_t *p);
 
 /* a point for the repositioning of e out of view between minDist and maxDist from the camera into out; with flag 0 a
  * free point beyond maxDist is taken too, with flag 1 only one the graph does not see from the camera (or in front of

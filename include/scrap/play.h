@@ -99,11 +99,6 @@ typedef struct NetPlAccum {
 } NetPlAccum;
 void NetPl_Accumulate(struct cEntity *e, NetPlAccum *a, float dt);
 void NetPl_Input(NetPlAccum *a, NetRepInput *out);
-/* the client's ship bumped its own rail traffic in the tick (NETREP_IN_BUMP): its state after the tick, which the
- * server (reach NETPL_BUMP_REACH: no farther from its own) and a replay of the client (reach 0) take; 1 if taken */
-#define NETPL_BUMP_REACH 2000.0f
-void NetPl_BumpSave(struct cEntity *e, NetRepInput *in);
-byte NetPl_Bump(struct cEntity *e, const NetRepInput *in, float reach);
 /* the moves of the frame before the tick's second slot into out->move2 (none since the first slot: its moves) */
 void NetPl_InputSlot(const NetPlAccum *a, NetRepInput *out);
 void NetPl_Save(struct cEntity *e, NetPlMotion *m);
@@ -152,11 +147,8 @@ void Rep_Shot(struct cEntity *shooter, int weapon, int count, const vec3_t *from
 /* ---- the client (Play.c) ---- */
 
 extern byte g_Play;
-/* a correction runs the own entity's ticks again: the client's own rail traffic (Rep_LocalAmbient) is left out of the
- * sphere tests of the world then (its bumps came with the inputs, NETREP_IN_BUMP) */
+/* a correction runs the own entity's ticks again */
 extern byte g_PlayReplaying;
-/* the vehicle e touched the vehicle other (cVehicleEntity_Touch): a bump of the own ship and its own rail traffic */
-void Play_Touch(struct cEntity *e, struct cEntity *other);
 
 /* -headless: the frames of a headless player at PLAY_HEADLESS_HZ; 0 after a wait for an event up to the next one */
 byte Play_HeadlessDue(void);

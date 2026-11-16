@@ -104,7 +104,7 @@ static byte RepEnt_Camera(cEntity *e) {
 }
 
 int RepEnt_Kind(cEntity *e) {
-	if (e->deadNode.target || !e->name || RepEnt_Camera(e) || Rep_LocalAmbient(e)) {
+	if (e->deadNode.target || !e->name || RepEnt_Camera(e)) {
 		return 0;
 	}
 	if (Entity_IsType(e, TYEN_CAR)) {

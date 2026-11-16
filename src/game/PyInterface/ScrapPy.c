@@ -11,13 +11,12 @@
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
-#include "scrap/pres.h"
-#include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scriptapi.h"
+#include "scrap/viewers.h"
 #include "scrap/staticinit.h"
 
 /* levelpath GetLevelPath() : Obtiene el path del level actual */
@@ -722,10 +721,7 @@ API_FN(Scrap, SetTimeSpeed) {
 		return 0;
 	}
 	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Scrap.SetTimeSpeed");
-	if (g_Mp2) {
-		Pres_NoRoute(NA_TIMESPEED, "pres.unforwarded:timespeed:", "Scrap.SetTimeSpeed");
-	}
-	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
+	Players_SetTimeSpeed((float)speed);
 	return Api_Build(out, "");
 }
 
@@ -1023,7 +1019,7 @@ API_FN(Scrap, GetMinCamDist) {
 	if (!Mode_Parse(a, n, "fff", &pos.x, &pos.y, &pos.z)) {
 		return 0;
 	}
-	double d = (double)cWorld_GetMinCamDistSq(g_pWorld, &pos);
+	double d = (double)Viewers_MinDistSq(&pos);
 	return Api_Build(out, "d", (double)(float)sqrt(d));
 }
 
@@ -1095,6 +1091,11 @@ API_FN(Scrap, AddParkingZone) {
 static byte FindParked(const nativeVal_t *a, int n, nativeVal_t *out, int farest) {
 	vec3_t pos = g_pWorld->camPos[g_pWorld->curCam];
 	int flag = 1;
+	/* the instance: the camera of the player the script runs for (include/scrap/viewers.h) */
+	int v = Viewers_Server() ? Viewers_Find(Players_Current()) : -1;
+	if (v >= 0) {
+		pos = Viewers_At(v)->pos;
+	}
 
 	if (!Mode_Parse(a, n, "|i(fff)", &flag, &pos.x, &pos.y, &pos.z)) {
 		return 0;

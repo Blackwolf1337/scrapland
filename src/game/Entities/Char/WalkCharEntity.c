@@ -10,6 +10,7 @@
 #include "scrap/missileentity.h"
 #include "scrap/players.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
@@ -844,7 +845,7 @@ static void cWalkCharEntity_Fly(cEntity *self, float dt) {
 		v->z = v->z + add.z;
 	}
 	WCE_Friction(w, dt, maxSpeed);
-	if (!move && WCE_Action0(w)->useFlyFall && CGameModel_IsVisible(Obj_GetModel(self))) {
+	if (!move && WCE_Action0(w)->useFlyFall && Viewers_SeesModel(Obj_GetModel(self))) {
 		cls = WCE_Class(w);
 		a = *pos;
 		a.y = pos->y - ((cls->minFallDist + w->floorDist) - cls->sRadius);
@@ -1408,10 +1409,11 @@ static void cWalkCharEntity_UpdateSlotRate(cEntity *self, float dt) {
 	if (w->ownerSlot != -1) {
 		return;
 	}
-	if (CGameModel_IsVisible(Obj_GetModel(self))) {
+	/* seen or near a viewer (include/scrap/viewers.h; single player the drawn model and the cameras) */
+	if (Viewers_SeesModel(Obj_GetModel(self))) {
 		target = 0.0500000007f;
 	} else {
-		float d = cWorld_GetMinCamDistSq(g_pWorld, &self->pos);
+		float d = Viewers_MinDistSq(&self->pos);
 		target = g_CharProcessReduction * g_CharProcessReduction > d ? 0.0500000007f : 0.100000001f;
 	}
 	Float_Approach(&w->wl.obj.slot->minDiff, target, dt / 10.0f);

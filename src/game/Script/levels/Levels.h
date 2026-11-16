@@ -59,8 +59,8 @@ extern const portFn_t g_GDBReinsertOwnMatrix2Methods[];
 /* ---- the client part of a level (include/scrap/initsteps.h, stage 3.3) ---- */
 
 /* what a -mp2 client runs in place of the level's Map.InitStatus and Map.Init (SIM modules, the server's): the
- * definitions they make (the flags of Init the level start reads, the classes of the level's entities) and the
- * client's own rail traffic (until stage 2.2); the single player order calls the same functions from Map */
+ * definitions they make (the flags of Init the level start reads, the classes of the level's entities); the single
+ * player order calls the same functions from Map. The traffic and the rail traffic are the server's (stage 2.2) */
 typedef struct {
 	const char *level;					/* "DownTown" */
 	byte (*status)(const nativeVal_t *path);		/* in place of Map.InitStatus, NULL for nothing */

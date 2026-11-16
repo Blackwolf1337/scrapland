@@ -11,6 +11,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/slotcontroller.h"
+#include "scrap/viewers.h"
 
 #define CAI_VFTABLE (&cAI_vftable)
 static const cAIBaseVtbl cAI_vftable;
@@ -91,14 +92,15 @@ byte cAI_IsVisible(cAI *self) {
 	if (sector < 0) {
 		return vis;
 	}
-	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 	vec3_t camPos, pos;
-	/* seen without the main camera entity (deleted by a script) */
-	if (!cam) {
+	/* the viewer nearest to it (include/scrap/viewers.h; single player the camera of view 0); seen without the main
+	 * camera entity (deleted by a script) */
+	const cViewer *v = Viewers_Near(Entity_GetPos(self->entity, &pos));
+	if (!v || !v->posed) {
 		return vis;
 	}
-	CamCtl_GetCamPos(cam, &camPos.x, &camPos.y, &camPos.z);
-	int camSector = Video_GetStatus();
+	Viewers_CamPos(v, &camPos);
+	int camSector = Viewers_CamSector(v, &camPos);
 	int atCam = Sector_At(&camPos);
 	if (camSector >= 0 && atCam >= 0 && sector != camSector && sector != atCam) {
 		int s = Collision_Sector(sector, Entity_GetPos(self->entity, &pos), &camPos, 1);

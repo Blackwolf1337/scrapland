@@ -54,7 +54,7 @@ byte InitSteps_LevelInit(const nativeVal_t *path) {
 byte InitStep_Now(const char *step) {
 	netTag_t tag = NetClass_Find(NCT_INITSTEP, step);
 	if (is.client) {
-		return tag == NC_DEF || tag == NC_GROUP || tag == NC_RAIL;
+		return tag == NC_DEF || tag == NC_GROUP;
 	}
 	if (!g_Instance || is.entering || tag != NC_PLAYER_ENTER) {
 		return 1;

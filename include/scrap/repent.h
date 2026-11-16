@@ -21,8 +21,8 @@
  * server's name and class once it has both the create record and the create message of the same generation
  * (REPX_GEN), applies the journal through the same Var functions, places it from the snapshots (Watch.c) and the
  * class block. Its level start runs only the DEF steps (include/scrap/initsteps.h, stage 3.3) and no simulation
- * script runs on it: the audit counts what it still makes itself ("client.script.create:", its own rail traffic as
- * "client.rail.create:") and every call of a SIM module ("client.sim.call:"). On a level without a client part yet
+ * script runs on it: the audit counts what it still makes itself ("client.script.create:"; "client.rail.create:" for
+ * the rail traffic's modules, 0 since stage 2.2) and every call of a SIM module ("client.sim.call:"). On a level without a client part yet
  * it runs the whole start and deletes what that made ("client.purge:"). The own player's entity keeps the
  * prediction path (Play.c) and gets the journal too.
  *
@@ -91,8 +91,7 @@ extern byte g_Mp2;
 
 /* -mp2: 1 when param is it */
 byte RepEnt_ParseParam(const char *param, const char *ext);
-/* the kind of an entity's slot, 0 for an entity that is not replicated (a camera, a deleted one, the client's own
- * rail traffic) */
+/* the kind of an entity's slot, 0 for an entity that is not replicated (a camera, a deleted one) */
 int RepEnt_Kind(struct cEntity *e);
 /* the declared state of e of that kind (the snapshot's), its generation in x[REPX_GEN] left 0 */
 void RepEnt_State(struct cEntity *e, int kind, NetRepState *s);
@@ -139,7 +138,8 @@ void ReplicaEnt_Journal(int slot, struct cEntity *e);
 void ReplicaEnt_Created(const char *name, const char *type);
 /* Port_Entry on a -mp2 client: a call of module.func counted when the module table tags it SIM
  * ("client.sim.call:Module.func"; the client runs no simulation script), as "client.rail.call:" when it is a call of
- * the client's own rail traffic (its modules Traffic, VehiclesNPC and InTraffic, and what they call, until stage 2.2);
+ * the rail traffic's modules (Traffic, VehiclesNPC and InTraffic, and what they call: the server's since stage 2.2,
+ * so a count shows a call the client should not make);
  * ReplicaEnt_ModLeave when the call returns */
 void ReplicaEnt_ModCall(const char *module, const char *func);
 void ReplicaEnt_ModLeave(const char *module);
