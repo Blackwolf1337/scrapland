@@ -2673,7 +2673,7 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 		 * the list (DistractHumphrey's Humphrey among the traffic) */
 		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e && n < max; e = cEntity_Next(e)) {
 			char *list = NULL, *tg = NULL;
-			if (Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && !Obj(e)->proxy &&
+			if (Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && !Obj(e)->replica &&
 				Players_Of(e) < 0 && (src[0] == '@' ? Entity_VarS(e, "EntityList", &list, 0) && list && !strcmp(list, src + 1) &&
 				!(Entity_VarS(e, "TgType", &tg, 0) && tg && !crt_stricmp(tg, "green")) : Cp_Foe(e) && foes != 0)) {
 				out[n++] = e;
@@ -3030,7 +3030,7 @@ static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || (WLife(v)->life <= 0.0f && !Cp_Thing(v)) ||
 			v->deadNode.target ||
-			Obj(v)->proxy || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
+			Obj(v)->replica || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
 			continue;
 		}
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
@@ -3052,7 +3052,7 @@ static cEntity *Cp_RadarItem(const cEntity *e) {
 	float best = 0.0f;
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		const cItemEntity *it = (const cItemEntity *)v;
-		if (!v->active || v->deadNode.target || !Entity_IsType(v, "item") || !Obj(v)->radarShow || Obj(v)->proxy ||
+		if (!v->active || v->deadNode.target || !Entity_IsType(v, "item") || !Obj(v)->radarShow || Obj(v)->replica ||
 			it->respawn > 0.0f || !mission || strcmp(cPy_Function_Module(&it->onTake), mission)) {
 			continue;
 		}
@@ -3111,7 +3111,7 @@ static byte Cp_Follows(cEntity *v, const cEntity *e) {
 	char *tgt = NULL;
 	int st = -1;
 	float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z;
-	if (!v->active || !Entity_IsType(v, TYEN_WALKCHAR) || Players_Of(v) >= 0 || Obj(v)->proxy ||
+	if (!v->active || !Entity_IsType(v, TYEN_WALKCHAR) || Players_Of(v) >= 0 || Obj(v)->replica ||
 		vx * vx + vy * vy + vz * vz >= CP_WALK_LEASH * CP_WALK_LEASH) {
 		return 0;
 	}
@@ -4677,7 +4677,7 @@ static void Cp_ClientGone(void) {
 	for (int k = 0; k < n && !r.bad; k++) {
 		NetRep_GetStr(&r, name, sizeof(name));
 		cEntity *e = r.bad ? NULL : World_FindEntity(name);
-		if (e && e != Players_Local() && !(Entity_IsType(e, TYEN_OBJECT) && Obj(e)->proxy) && cEntity_Del(e)) {
+		if (e && e != Players_Local() && !(Entity_IsType(e, TYEN_OBJECT) && Obj(e)->replica) && cEntity_Del(e)) {
 			del++;
 		}
 	}

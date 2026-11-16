@@ -94,7 +94,7 @@ cEntity *cObjEntity_ctor(void *mem, const char *name, float x, float y, float z)
 	self->rotVel.z = 0.0f;
 	self->cam = NULL;
 	self->netRes = 0;
-	self->proxy = 0;
+	self->replica = 0;
 	self->netStep = 0;
 	self->slotAng = self->ang;
 	self->slotPos = self->base.pos;
@@ -385,7 +385,7 @@ void cObjEntity_UpdateOff(cEntity *self) {
 	if (OBJ_MIN_DT >= dt) {
 		return;
 	}
-	if (self->ai) {
+	if (self->ai && Obj_Advances(self)) {
 		AI_UpdateOff(self->ai, dt);
 	}
 	/* the original passes dt as the unused argument */
@@ -463,10 +463,15 @@ byte cObjEntity_IsType(cEntity *self, const char *type) {
 	return cEntity_IsType(self, type);
 }
 
+/* the slot step: Advance the scripted move and the AI, Present the radar blink */
 void cObjEntity_Tick(cEntity *self, float dt) {
-	cObjMove_Tick(&Obj(self)->move, self, dt);
+	byte adv = Obj_Advances(self);
+
+	if (adv) {
+		cObjMove_Tick(&Obj(self)->move, self, dt);
+	}
 	cObjEntity_RadarTick(self, dt);
-	if (self->ai) {
+	if (self->ai && adv) {
 		AI_Update(self->ai, dt);
 	}
 }
@@ -610,18 +615,12 @@ static inline byte Obj_Extrapolates(const cObjEntity *o) {
 	return g_MissileUpdating && !o->cam;
 }
 
-void cObjEntity_Update(cEntity *self) {
+/* Present: the render state between the state of the last slot and the current one (part f of a slot) */
+static void Obj_RenderLerp(cEntity *self, float f) {
 	cObjEntity *o = Obj(self);
-
-	cObjEntity_UpdateTimer(self);
-	float dt = cTimer_GetDelta(&o->timer);
-	if (OBJ_MIN_DT >= dt) {
-		return;
-	}
-	cSndInterface_Tick(&o->snd, dt);
 	byte ex = Obj_Extrapolates(o);
 	float step = o->slot->interval;
-	float f = o->slot->time / step;
+
 	if (self->pos.x != o->slotPos.x || self->pos.y != o->slotPos.y || self->pos.z != o->slotPos.z || ex) {
 		float cx = self->pos.x, cy = self->pos.y, cz = self->pos.z;
 		if (ex) {
@@ -655,7 +654,79 @@ void cObjEntity_Update(cEntity *self) {
 	} else {
 		o->renderAng = o->ang;
 	}
-	cModMove_Update(&o->mod, dt);
+}
+
+/* Present: the start of the render lerp at a slot */
+static void Obj_SlotRender(cEntity *self) {
+	cObjEntity *o = Obj(self);
+
+	if (Obj_Extrapolates(o)) {
+		float s = o->slot->interval;
+		o->slotPos.x = o->vel.x * s + self->pos.x;
+		o->slotPos.y = self->pos.y + o->vel.y * s;
+		o->slotPos.z = self->pos.z + o->vel.z * s;
+		s = o->slot->interval;
+		o->slotAng.x = o->ang.x + o->rotVel.x * s;
+		o->slotAng.y = o->ang.y + o->rotVel.y * s;
+		o->slotAng.z = o->ang.z + o->rotVel.z * s;
+	} else {
+		o->slotPos = self->pos;
+		o->slotAng = o->ang;
+	}
+}
+
+/* Advance: the slot of the net controller and the script's OnObjSlot */
+static void Obj_SlotAdvance(cEntity *self, float iv) {
+	cObjEntity *o = Obj(self);
+
+	if (o->net) {
+		NetCtl_Reset(o->net);
+	}
+	if ((byte)cPy_Function_IsValid(&o->onObjSlot)) {
+		cPy_Function_AddParamS(&o->onObjSlot, self->name);
+		cPy_Function_AddParamF(&o->onObjSlot, iv);
+		cPy_Function_Execute(&o->onObjSlot, 0);
+	}
+}
+
+/* Present: the render lerp starts again at the current state after a jump of more than 3000 since the slot */
+static void Obj_SlotJump(cEntity *self) {
+	cObjEntity *o = Obj(self);
+	float cx = self->pos.x, cy = self->pos.y, cz = self->pos.z;
+
+	if (Obj_Extrapolates(o)) {
+		float s = o->slot->interval;
+		cy = cy + o->vel.y * s;
+		cx = cx + s * o->vel.x;
+		cz = cz + o->vel.z * s;
+	}
+	float dy = cy - o->slotPos.y;
+	float dx = cx - o->slotPos.x;
+	float dz = cz - o->slotPos.z;
+	if (dy * dy + dx * dx + dz * dz > OBJ_SLOT_JUMP2) {
+		o->slotPos.x = cx;
+		o->slotPos.y = cy;
+		o->slotPos.z = cz;
+	}
+}
+
+/* the frame: the halves of include/scrap/objentity.h in single player's order; the slot step of the class (Obj_Tick)
+ * runs its own pieces by the mode, a player's entity of the network steps by tick (NetPl_Step) */
+void cObjEntity_Update(cEntity *self) {
+	cObjEntity *o = Obj(self);
+	byte adv = Obj_Advances(self);
+
+	cObjEntity_UpdateTimer(self);
+	float dt = cTimer_GetDelta(&o->timer);
+	if (OBJ_MIN_DT >= dt) {
+		return;
+	}
+	cSndInterface_Tick(&o->snd, dt);
+	float f = o->slot->time / o->slot->interval;
+	Obj_RenderLerp(self, f);
+	if (adv) {
+		cModMove_Update(&o->mod, dt);
+	}
 	Obj_UpdateModel(self);
 	if (o->cam) {
 		CamCtl_Lerp(o->cam, f);
@@ -663,28 +734,11 @@ void cObjEntity_Update(cEntity *self) {
 	if ((byte)cSlotController_Tick(o->slot, dt)) {
 		float iv;
 		while (cSlotController_Fire(o->slot, &iv)) {
-			if (Obj_Extrapolates(o)) {
-				float s = o->slot->interval;
-				o->slotPos.x = o->vel.x * s + self->pos.x;
-				o->slotPos.y = self->pos.y + o->vel.y * s;
-				o->slotPos.z = self->pos.z + o->vel.z * s;
-				s = o->slot->interval;
-				o->slotAng.x = o->ang.x + o->rotVel.x * s;
-				o->slotAng.y = o->ang.y + o->rotVel.y * s;
-				o->slotAng.z = o->ang.z + o->rotVel.z * s;
-			} else {
-				o->slotPos = self->pos;
-				o->slotAng = o->ang;
+			Obj_SlotRender(self);
+			if (adv) {
+				Obj_SlotAdvance(self, iv);
 			}
-			if (o->net) {
-				NetCtl_Reset(o->net);
-			}
-			if ((byte)cPy_Function_IsValid(&o->onObjSlot)) {
-				cPy_Function_AddParamS(&o->onObjSlot, self->name);
-				cPy_Function_AddParamF(&o->onObjSlot, iv);
-				cPy_Function_Execute(&o->onObjSlot, 0);
-			}
-			if (!o->proxy && !o->netStep) {
+			if (!o->netStep) {
 				/* not in the original: the input tape (include/scrap/inputtape.h) */
 				byte taped = g_InputTape && InputTape_Slot(self);
 				Obj_Tick(self, iv);
@@ -696,21 +750,7 @@ void cObjEntity_Update(cEntity *self) {
 				CamCtl_Slot(o->cam, iv);
 			}
 		}
-		float cx = self->pos.x, cy = self->pos.y, cz = self->pos.z;
-		if (Obj_Extrapolates(o)) {
-			float s = o->slot->interval;
-			cy = cy + o->vel.y * s;
-			cx = cx + s * o->vel.x;
-			cz = cz + o->vel.z * s;
-		}
-		float dy = cy - o->slotPos.y;
-		float dx = cx - o->slotPos.x;
-		float dz = cz - o->slotPos.z;
-		if (dy * dy + dx * dx + dz * dz > OBJ_SLOT_JUMP2) {
-			o->slotPos.x = cx;
-			o->slotPos.y = cy;
-			o->slotPos.z = cz;
-		}
+		Obj_SlotJump(self);
 	}
 	if (o->fx) {
 		EFX_Update(o->fx, dt);

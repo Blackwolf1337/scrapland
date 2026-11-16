@@ -3,6 +3,14 @@
  * OnTake for the entity that touches it, then hides until the respawn time ("rTime") ran out. It can be pushed
  * ("Vel") and comes back to its origin after "BackTime". src/game/Entities/ItemEntity.c; the original code sits
  * between Doors.cpp and the missiles, its source file has no CHECK.
+ *
+ * The halves of the update (include/scrap/objentity.h):
+ *   Per frame (cItemEntity_Update): Present the turn to the camera (autoFace) and the blink with its effect.
+ *   Per slot (cItemEntity_Tick): Advance the position of the original's network game, the owner, the push and the
+ *   way back, the respawn time and the touch test (Item_Advance: OnTake; the take sound and the fade effects of
+ *   SetRespawn are presentation events the simulation starts); Present the end of noFx; both the collision grid.
+ * State Present reads: respawn (0: there), blink, autoFace, the model (enabled, visible), noFx, the render state and
+ * radarShow of cObjEntity.
  */
 #ifndef SCRAP_ITEMENTITY_H
 #define SCRAP_ITEMENTITY_H

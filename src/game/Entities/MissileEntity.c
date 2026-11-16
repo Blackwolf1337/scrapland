@@ -306,7 +306,9 @@ static const char *cMissileEntity_GetClassName(cEntity *base) {
 static void cMissileEntity_UpdateOff(cEntity *base) {
 	cMissileEntity *self = (cMissileEntity *)base;
 	cObjEntity_UpdateTimer(Missile_Ent(self));
-	cMissileEntity_LifeTick(self);
+	if (Obj_Advances(base)) {
+		cMissileEntity_LifeTick(self);
+	}
 	cWithLifeEntity_UpdateOff(Missile_Ent(self));
 }
 
@@ -627,11 +629,14 @@ static void cMissileEntity_Update(cEntity *base) {
 	cWithLifeEntity_Update(Missile_Ent(self));
 	float dt = cTimer_GetDelta(&self->wl.obj.timer);
 	if (!(1e-6f >= dt)) {
+		/* Present: the bees */
 		for (cDebris *d = self->swarm; d; d = Debris_Next(d)) {
 			cDebris_Step(d, dt);
 		}
 		cMissileEntity_Swarm(self, dt);
-		cMissileEntity_LifeTick(self);
+		if (Obj_Advances(base)) {
+			cMissileEntity_LifeTick(self);
+		}
 		/* only here: a frame without time leaves it set */
 		g_MissileUpdating = saved;
 	}
@@ -1078,9 +1083,15 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 	return 0;
 }
 
-/* (every slot): the flight, the turn to the target and the hits of the world and the entities */
+/* (every slot): the flight, the turn to the target and the hits of the world and the entities; the halves in
+ * include/scrap/missileentity.h */
 static void cMissileEntity_Tick(cEntity *base, float dt) {
 	cMissileEntity *self = (cMissileEntity *)base;
+	if (!Obj_Advances(base)) {
+		cMissileEntity_ScaleSwarmSound(self, dt);
+		cWithLifeEntity_Tick(base, dt);
+		return;
+	}
 	if (Net_IsNetEntity(Missile_Ent(self))) {
 		Missile_NetTick(self, dt);
 	} else if (Missile_LocalTick(self, dt)) {

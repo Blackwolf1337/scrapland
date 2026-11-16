@@ -1131,7 +1131,7 @@ static void TC_EntInfo(tcBuf *b, const char *arg) {
 			CGameModel *m = &Obj(e)->model;
 			model = CGameModel_IsLoaded(m) && m->Model->scene && m->Model->scene->name ? m->Model->scene->name : "";
 			radar = Obj(e)->radarShow;
-			proxy = Obj(e)->proxy;
+			proxy = Obj(e)->replica;
 		}
 		if (Entity_IsType(e, TYEN_WITH_LIFE)) {
 			tg = WLife(e)->arrow.tgType;

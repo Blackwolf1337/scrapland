@@ -8,6 +8,17 @@
  * sphere tests / the mass GetActCtrl) are in src/game/Entities/Char/WalkCharEntity.c, the other
  * prototypes of the class in the headers of their callers (world.h, missileentity.h, vehicleentity.h, net.h,
  * walkcharentity.h, weaps2.h).
+ *
+ * The halves of the update (include/scrap/objentity.h):
+ *   Per frame (cWithLifeEntity_Update): Present the hit and life sounds (cSndInterface_Tick), the arrow
+ *   (cArrowIndicator_Update), a replica's action controller (cActCtrl_Present: the ship parts of DinaShip); Advance
+ *   the action controller (cActCtrl_Tick: layers, events, ends of actions, root motion).
+ *   Per slot (cWithLifeEntity_Tick): Advance CheckLife (OnGeneralDamage, OnDamage, OnDeath) and the life the fire
+ *   takes (cWithLifeEntity_Burn); Present the fire sound while it burns and the fades of the life sounds; both the
+ *   collision grid (Grid_Add: the client's own entity collides with replicas).
+ *   UpdateOff: Advance the fire put out and CheckLife; Present the sounds stopped.
+ * State Present reads: fireRemain, fireDelay, fireAtt (burning), the life sounds (sdl: times, volumes, pitches) and
+ * hit sounds (sdd), the action layers (actCtrl), the arrow (canMission, canUse, canView, shown, alpha), active.
  */
 #ifndef SCRAP_WITHLIFEENTITY_H
 #define SCRAP_WITHLIFEENTITY_H

@@ -253,8 +253,8 @@ static void cWalkCharEntity_UpdateModel(cEntity *self) {
 	}
 }
 
-/* the view lock of the class (and the blend towards it in dt) */
-static void cWalkCharEntity_UpdateViewLock(cEntity *self, float dt) {
+/* Advance: the view lock of the class */
+static void WCE_ViewLock(cEntity *self) {
 	cWalkCharEntity *w = WChar(self);
 	cActCtrl *ctrl = w->wl.actCtrl;
 
@@ -272,11 +272,21 @@ static void cWalkCharEntity_UpdateViewLock(cEntity *self, float dt) {
 			w->walking = 1;
 		}
 	}
+}
+
+/* Present: the blend of the head turn towards the view lock in dt */
+static void WCE_ViewLockBlend(cWalkCharEntity *w, float dt) {
 	float target = 0.0f;
 	if (w->viewLock) {
 		target = 1.0f;
 	}
 	Float_Approach(&w->viewLockF, target, dt + dt);
+}
+
+/* the view lock of the class and the blend towards it in dt */
+static void cWalkCharEntity_UpdateViewLock(cEntity *self, float dt) {
+	WCE_ViewLock(self);
+	WCE_ViewLockBlend(WChar(self), dt);
 }
 
 byte cWalkCharEntity_CanPossess(cEntity *self, byte checkClass) {
@@ -1051,6 +1061,20 @@ byte cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *c
 	return cPrimitive_TestSphere(&WChar(self)->wl.prim, exclude, center, radius, prev);
 }
 
+/* Present: the movement sound of a slot (inside Fall and Fly when the character advances) */
+static void WCE_MoveSound(cWalkCharEntity *w, float dt) {
+	if (!w->wl.actCtrl) {
+		return;
+	}
+	if (WCE_Class(w)->canFly) {
+		cWalkCharEntity_FlySound(w, dt);
+	} else {
+		cWalkCharEntity_WalkSound(w, dt);
+	}
+}
+
+/* the slot step (the halves in include/scrap/walkcharentity.h); the movement sounds of single player run inside the
+ * walk (Fall and Fly), a replica's here */
 static void cWalkCharEntity_Tick(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
@@ -1061,6 +1085,11 @@ static void cWalkCharEntity_Tick(cEntity *self, float dt) {
 		w->slotView.x = w->viewVel.x * iv + w->view.x;
 		w->slotView.y = w->view.y + w->viewVel.y * iv;
 		w->slotView.z = w->view.z + w->viewVel.z * iv;
+	}
+	if (!Obj_Advances(self)) {
+		WCE_MoveSound(w, dt);
+		cWithLifeEntity_Tick(self, dt);
+		return;
 	}
 	if (!w->wl.obj.move.active) {
 		cWalkCharEntity_UpdateSelect(self, dt);
@@ -1499,7 +1528,10 @@ static void cWalkCharEntity_Update(cEntity *self) {
 		return;
 	}
 	float dt = cTimer_GetDelta(&w->wl.obj.timer);
-	cWalkCharEntity_UpdateSlotRate(self, dt);
+	byte adv = Obj_Advances(self);
+	if (adv) {
+		cWalkCharEntity_UpdateSlotRate(self, dt);
+	}
 	cWalkCharEntity_UpdateHitFlash(self, dt);
 	cWithLifeEntity_Update(self);
 	if (WCE_MIN_DT >= dt) {
@@ -1521,8 +1553,11 @@ static void cWalkCharEntity_Update(cEntity *self) {
 	w->renderView.z = a.z * k + base.z;
 	w->renderView.x = a.x * k + base.x;
 	w->renderView.y = a.y * k + base.y;
-	cWalkCharEntity_UpdateViewLock(self, dt);
-	if (w->ownerSlot >= 0 && w->ownerSlot < 4) {
+	if (adv) {
+		WCE_ViewLock(self);
+	}
+	WCE_ViewLockBlend(w, dt);
+	if (adv && w->ownerSlot >= 0 && w->ownerSlot < 4) {
 		cWalkCharControl_Update(&w->control, self, dt);
 	}
 	if (WCE_Action0(w)->anmConeView) {
@@ -1573,18 +1608,12 @@ static void cWalkCharEntity_WalkSound(cWalkCharEntity *w, float dt) {
 	s->volume = WCE_SndMix(s->vols, inv, k) * mul;
 }
 
-void cWalkCharEntity_ProxySound(cEntity *self, byte walking, float dt) {
+void cWalkCharEntity_NetWalking(cEntity *self, byte walking) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->wl.actCtrl) {
-		return;
+	if (w->wl.actCtrl && !WCE_Class(w)->canFly) {
+		w->move = walking ? 1.0f : 0.0f;
 	}
-	if (WCE_Class(w)->canFly) {
-		cWalkCharEntity_FlySound(w, dt);
-		return;
-	}
-	w->move = walking ? 1.0f : 0.0f;
-	cWalkCharEntity_WalkSound(w, dt);
 }
 
 static byte cWalkCharEntity_VarS(cEntity *self, const char *name, char **s, int set) {

@@ -696,8 +696,21 @@ static void cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
 	}
 }
 
+/* Present: the EMI sound stays on while the ship is EMIed */
+static void Veh_EmiSound(cVehicleEntity *self) {
+	if (!(0.0f >= self->emi)) {
+		cWithLifeEntity_SetSndTime(Veh_Ent(self), 0.25f, 3);
+	}
+}
+
+/* the slot step (the halves in include/scrap/vehicleentity.h) */
 static void cVehicleEntity_Tick(cEntity *elem, float dt) {
 	cVehicleEntity *self = (cVehicleEntity *)elem;
+	if (!Obj_Advances(elem)) {
+		Veh_EmiSound(self);
+		cWithLifeEntity_Tick(elem, dt);
+		return;
+	}
 	if ((Net_IsNetEntity(Veh_Ent(self)) && !Veh_IsPlayerSlot(self->slot)) || (Veh_IsServer() && self->netCtrl)) {
 		Controls_FromNet(&self->controls, Veh_Ent(self), dt);
 		if (self->boost == 0.0f && !(Veh_Net(self)->keys & 0x1000)) {
@@ -726,9 +739,8 @@ static void cVehicleEntity_Tick(cEntity *elem, float dt) {
 	self->emi = self->emi - dt;
 	if (0.0f >= self->emi) {
 		self->emi = 0.0f;
-	} else {
-		cWithLifeEntity_SetSndTime(Veh_Ent(self), 0.25f, 3);
 	}
+	Veh_EmiSound(self);
 	cVehicleEntity_NoFireTick(self, dt);
 	cVehicleEntity_UpdateTrust(self);
 	cWeaponManager_Update(&self->weapons, dt);
@@ -754,7 +766,7 @@ static void cVehicleEntity_Update(cEntity *base) {
 		return;
 	}
 	cVehicleEffects_UpdateState(&self->effects, dt);
-	if (Veh_IsPlayerSlot(self->slot)) {
+	if (Veh_IsPlayerSlot(self->slot) && Obj_Advances(base)) {
 		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
 	}
 	cWithLifeEntity_Update(Veh_Ent(self));
@@ -1368,7 +1380,9 @@ static float cVehicleEntity_GetWRadius(cEntity *base) {
 
 static void cVehicleEntity_UpdateOff(cEntity *base) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
-	self->boost = 0.0f;
+	if (Obj_Advances(base)) {
+		self->boost = 0.0f;
+	}
 	cWithLifeEntity_UpdateOff(Veh_Ent(self));
 }
 

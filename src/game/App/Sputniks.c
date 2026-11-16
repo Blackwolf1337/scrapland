@@ -281,7 +281,7 @@ static byte Spk_CoopUse(int i, cEntity *t) {
 	float best = SPK_BESIDE * SPK_BESIDE;
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		float dx = e->pos.x - t->pos.x, dy = e->pos.y - t->pos.y, dz = e->pos.z - t->pos.z, d = dx * dx + dy * dy + dz * dz;
-		if (Entity_IsType(e, TYEN_CAR) && !e->deadNode.target && !Obj(e)->proxy && d < best && WLife(e)->life > 0 &&
+		if (Entity_IsType(e, TYEN_CAR) && !e->deadNode.target && !Obj(e)->replica && d < best && WLife(e)->life > 0 &&
 			cVehicleEntity_GetOwnerSlot(e) == -1 && cVehicleEntity_InPlace(e)) {
 			ship = e;
 			best = d;

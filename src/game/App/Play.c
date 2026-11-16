@@ -520,7 +520,7 @@ static cEntity *Play_BotNearest(cEntity *e, int kind, byte player, byte still) {
 	cEntity *best = NULL;
 	float bestD = 40000.0f * 40000.0f;
 	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
-		if (o == e || !Obj(o)->proxy || o->deadNode.target || Watch_IsPlayer(o) != player ||
+		if (o == e || !Obj(o)->replica || o->deadNode.target || Watch_IsPlayer(o) != player ||
 			(kind && NetPl_Kind(o) != kind) ||
 			(still && (still == 1) == (Obj(o)->vel.x != 0.0f || Obj(o)->vel.z != 0.0f))) {
 			continue;
