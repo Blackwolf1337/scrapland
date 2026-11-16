@@ -648,7 +648,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 			 * replicas do not have */
 			cActCtrl_NetDrive(w->actCtrl, act, rates, NETREP_LAYERS, dt, Event_IsSound);
 		}
-		cWalkCharEntity_ProxySound(e, c->walking, dt);
+		cWalkCharEntity_NetWalking(e, c->walking);
 	}
 	if (watch.log && rt >= p->s[0].t) {
 		fprintf(watch.log, "%.4f,%d,%.2f,%.2f,%.2f\n", rt, slot, (double)pos.x, (double)pos.y, (double)pos.z);

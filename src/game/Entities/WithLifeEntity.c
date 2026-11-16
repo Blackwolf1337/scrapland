@@ -501,7 +501,11 @@ void cWithLifeEntity_SetActive(cEntity *self, byte on) {
 	cArrowIndicator_SetModels(&w->arrow, on);
 	cObjEntity_SetActive(self, on);
 	if (was != on && on && w->actCtrl) {
-		cActCtrl_Tick(w->actCtrl, 0.005f);
+		if (Obj_Advances(self)) {
+			cActCtrl_Tick(w->actCtrl, 0.005f);
+		} else {
+			cActCtrl_Present(w->actCtrl, 0.005f);
+		}
 	}
 }
 

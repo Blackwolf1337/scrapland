@@ -1608,18 +1608,12 @@ static void cWalkCharEntity_WalkSound(cWalkCharEntity *w, float dt) {
 	s->volume = WCE_SndMix(s->vols, inv, k) * mul;
 }
 
-void cWalkCharEntity_ProxySound(cEntity *self, byte walking, float dt) {
+void cWalkCharEntity_NetWalking(cEntity *self, byte walking) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->wl.actCtrl) {
-		return;
+	if (w->wl.actCtrl && !WCE_Class(w)->canFly) {
+		w->move = walking ? 1.0f : 0.0f;
 	}
-	if (WCE_Class(w)->canFly) {
-		cWalkCharEntity_FlySound(w, dt);
-		return;
-	}
-	w->move = walking ? 1.0f : 0.0f;
-	cWalkCharEntity_WalkSound(w, dt);
 }
 
 static byte cWalkCharEntity_VarS(cEntity *self, const char *name, char **s, int set) {

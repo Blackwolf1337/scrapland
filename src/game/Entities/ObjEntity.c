@@ -737,8 +737,7 @@ void cObjEntity_Update(cEntity *self) {
 			if (adv) {
 				Obj_SlotAdvance(self, iv);
 			}
-			/* a replica's class steps run their Present pieces once all classes are split */
-			if (adv && !o->netStep) {
+			if (!o->netStep) {
 				Obj_Tick(self, iv);
 			}
 			if (o->cam) {
