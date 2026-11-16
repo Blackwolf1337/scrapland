@@ -113,6 +113,10 @@ uint16_t Instance_Port(void) {
 }
 
 double Instance_Time(void) {
+	/* the solo instance on a tape of single player's frames: their times (include/scrap/inputtape.h) */
+	if (InputTape_SoloFrames()) {
+		return InputTape_SoloTime();
+	}
 	return (double)inst.ticks / INSTANCE_TICK_HZ;
 }
 
@@ -421,6 +425,10 @@ void Instance_Pass(void) {
 		Instance_Open(now);
 	}
 	uint64_t due = inst.base + (inst.ticks + 1 - inst.baseTick) * INST_PERIOD;
+	/* the solo instance on a tape of single player's frames: a tick per frame of the tape, each pass */
+	if (InputTape_SoloFrames()) {
+		due = now;
+	}
 	if (now < due) {
 		/* the sockets emptied a few times between the ticks, so their buffers do not overflow */
 		if (inst.host) {

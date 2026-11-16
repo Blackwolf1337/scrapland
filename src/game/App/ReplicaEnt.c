@@ -121,6 +121,13 @@ void ReplicaEnt_ModLeave(const char *module) {
 	}
 }
 
+void ReplicaEnt_OwnCreate(int slot, int kind, const char *look, uint32_t tick, const NetRepState *st) {
+	rc.creating = 1;
+	Play_OwnCreate(kind, look, tick, st);
+	ReplicaEnt_Journal(slot, Play_Entity());
+	rc.creating = 0;
+}
+
 byte ReplicaEnt_Busy(void) {
 	return rc.creating || rc.applying;
 }

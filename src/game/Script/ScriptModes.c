@@ -34,6 +34,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptlib.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/sound.h"
@@ -2822,6 +2823,11 @@ byte Mode_TimeSpeed(double speed) {
 
 void Mode_CamName(int i, nativeVal_t *out) {
 	const char *name = cWorld_GetCamName(g_pWorld, i);
+	/* not in the original: with single player's flows of the players (include/scrap/play.h) view 0 in a player's
+	 * context is its own camera */
+	if (i == 0 && Rep_SpFlows() && Players_Current() != PLAYERS_NONE) {
+		name = Players_Cur()->camName;
+	}
 	if (name) {
 		Native_SetText(out, name, (int)strlen(name));
 	} else {

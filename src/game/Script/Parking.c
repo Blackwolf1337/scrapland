@@ -31,6 +31,7 @@
 
 #include "scrap/coop.h"
 #include "scrap/nativeobj.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/world.h"
@@ -52,10 +53,11 @@ static byte Pk_G(const char *name, nativeVal_t *slot) {
 	return Mode_Read(PK, name, slot);
 }
 
-/* the instance: the own ships of its players are the instance's (src/game/App/Replicate.c: called, parked, lost),
- * the engine's parking callbacks take no ship as the player's own there (Parking.PlayerShip may be None) */
+/* the instance on the old path: the own ships of its players are the instance's (src/game/App/Replicate.c: called,
+ * parked, lost), the engine's parking callbacks take no ship as the player's own there (Parking.PlayerShip may be
+ * None); with single player's flows of the players (include/scrap/play.h, Rep_SpFlows) they are single player's */
 static byte Pk_NotOwn(void) {
-	return Players_Net();
+	return Players_Net() && !Rep_SpFlows();
 }
 
 /* Pk_NotOwn, but the coop story's party ship (the world's own Parking.PlayerShip of the level's start, Pk_BrowseItemPosN)
@@ -959,8 +961,9 @@ static byte Pk_ParkNames(const nativeVal_t *dname, nativeVal_t *box, nativeVal_t
 }
 
 /* BrowseItemPos(): the parking boxes of the DM_Parking dummies; the player's ship on the one nearest to the player
- * (the junkyard's only when the player comes from there), Sputnik beside it */
-static byte Pk_BrowseItemPosN(void) {
+ * (the junkyard's only when the player comes from there), Sputnik beside it; join: only the ship and Sputnik of the
+ * current player of the instance (Parking_PlayerJoin), the boxes are the level's start's */
+static byte Pk_BrowseItemPos(byte join) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *myPos = Mode_V(&t), *nearest = Mode_V(&t), *nearestDist = Mode_V(&t), *x = Mode_V(&t);
 	nativeVal_t *dummy = Mode_V(&t), *dist = Mode_V(&t), *dname = Mode_V(&t), *dpos = Mode_V(&t), *l = Mode_V(&t);
@@ -968,11 +971,11 @@ static byte Pk_BrowseItemPosN(void) {
 	/* the headless instance and a watcher have no startup player: every parking gets its box, no ship of the player;
 	 * not in the original: the coop story's instance has the party's ship and Sputnik as single player has them, at
 	 * the parking nearest to where single player starts (include/scrap/coop.h) */
-	byte none = g_Instance || g_Watch;
+	byte none = (g_Instance || g_Watch) && !join;
 	vec3_t start;
 	float yaw;
 	/* before the search of the parkings: the start's search of its spawn dummy would take its place */
-	byte coop = g_Instance && Coop_StartPos(&start, &yaw);
+	byte coop = g_Instance && !join && Coop_StartPos(&start, &yaw);
 	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1026,7 +1029,7 @@ static byte Pk_BrowseItemPosN(void) {
 			*nearestDist = *dist;
 			Native_SetNone(dist);
 		}
-		if (Native_True(dummy)) {
+		if (Native_True(dummy) && !join) {
 			if (!Pk_Item(dummy, 0, dname) || !Pk_Item(dummy, 1, dpos) || !Pk_ParkNames(dname, box, zone) ||
 				!Pk_BoxAt(box, dpos, l) || !Mode_VObjRead(l, "Pos", x) || !Pk_Zone(0, x, zone)) {
 				return Mode_Done(&t, 0);
@@ -1040,6 +1043,12 @@ static byte Pk_BrowseItemPosN(void) {
 	if (!Native_True(nearest)) {
 		return Mode_Done(&t, 1);
 	}
+	/* the player's parking has no box (the search above makes the boxes of the others only): the level's start
+	 * made one there */
+	if (join && (!Pk_Item(nearest, 0, dname) || !Pk_ParkNames(dname, box, zone) || !Pk_Ent(box, l) ||
+		(Native_True(l) && !Mode_VDel(l)))) {
+		return Mode_Done(&t, 0);
+	}
 	if (!Mode_Import("ShipEdit") || !Mode_SetModVar("ShipEdit", "editShipPosDummy", nearest) || !Pk_Item(nearest, 1, x) ||
 		!PORT_OWN(Parking, CreatePlayerShip, NULL, "v", x) || !Pk_G("PlayerShip", ship) || !Pk_Item(nearest, 2, x) ||
 		!Pk_Yaw(x, '+', NULL, ang) || !Mode_VSet(ship, "Ang", ang) || !Mode_VObjRead(ship, "Name", x) ||
@@ -1049,6 +1058,14 @@ static byte Pk_BrowseItemPosN(void) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, PORT_CALL(Sputnik, Assign, NULL, "v", ship));
+}
+
+static byte Pk_BrowseItemPosN(void) {
+	return Pk_BrowseItemPos(0);
+}
+
+byte Parking_PlayerJoin(void) {
+	return Mode_Import("Parking") && Pk_BrowseItemPos(1);
 }
 
 /* CreateLonelyMercParkings(): the parking boxes of the lonely mercenary mission, their names */

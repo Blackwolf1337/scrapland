@@ -1753,7 +1753,7 @@ cEntity *Coop_StandInEntity(void) {
 }
 
 const char *Coop_MainCharName(void) {
-	int i = Coop_On() ? Players_Acting() : PLAYERS_NONE;
+	int i = Coop_On() || Rep_SpFlows() ? Players_Acting() : PLAYERS_NONE;
 	if (i == PLAYERS_NONE) {
 		return NULL;
 	}
@@ -1762,7 +1762,7 @@ const char *Coop_MainCharName(void) {
 }
 
 byte Coop_Adopts(int i, cEntity *e) {
-	int kind = Coop_On() ? NetPl_Kind(e) : 0;
+	int kind = Coop_On() || Rep_SpFlows() ? NetPl_Kind(e) : 0;
 	if ((kind != NETREP_CHAR && kind != NETREP_SHIP) || WLife(e)->life <= 0) {
 		return 0;
 	}
@@ -1772,7 +1772,8 @@ byte Coop_Adopts(int i, cEntity *e) {
 		Faction_SetChar(i, cls);
 		Coop_Spawned(e);
 	}
-	Con_Printf("coop: player %d plays as %s (%s), a character of the scripts\n", i, e->name, cls);
+	Con_Printf("%s: player %d plays as %s (%s), a %s of the scripts\n", Coop_On() ? "coop" : "instance", i, e->name, cls,
+		kind == NETREP_CHAR ? "character" : "ship");
 	return 1;
 }
 
@@ -1957,11 +1958,24 @@ int Coop_HeldPlayer(cEntity *e) {
 }
 
 int Coop_UsrRead(int slot) {
-	return Coop_On() && slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX ? 0 : slot;
+	return (Coop_On() || Rep_SpFlows()) && slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX ? 0 : slot;
 }
 
 int Coop_UsrSlot(cEntity *e, int old, int slot) {
 	if (!Coop_On()) {
+		/* single player's flows of the players (include/scrap/play.h, Rep_SpFlows): the scripts' 0 is the acting
+		 * player's slot */
+		if (!Rep_SpFlows()) {
+			return slot;
+		}
+		if (slot >= 0 && slot < MAX_LOCAL_PLAYERS) {
+			int i = Players_Acting();
+			slot = old >= PLAYERS_NET_SLOT && old < PLAYERS_NET_SLOT + PLAYERS_MAX ? old :
+				i == PLAYERS_NONE ? slot : PLAYERS_NET_SLOT + i;
+		}
+		/* the server steps a player's entity from the moment the scripts give it to the player, as single player's
+		 * from that frame on (Rep_OwnFrame); one they take from it steps by itself again */
+		Obj(e)->netStep = slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX;
 		return slot;
 	}
 	if (slot == -1 && old >= PLAYERS_NET_SLOT && old < PLAYERS_NET_SLOT + PLAYERS_MAX) {

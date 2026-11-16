@@ -124,6 +124,8 @@ int Players_EnterEntityAt(struct cEntity *e, const char *site);
  * the scripts), else the owner of the ship e */
 int Players_EnterOwnerAt(struct cEntity *e, const char *site);
 #define Players_EnterOwner(e) Players_EnterOwnerAt(e, __func__)
+/* player i is a used player of the instance */
+byte Players_InUse(int i);
 /* the joins of player slot i so far (0 outside the instance); Players_Enter for player i when it is still the same
  * join (a scheduled call runs with the player that scheduled it), else the world's */
 uint16_t Players_Joined(int i);

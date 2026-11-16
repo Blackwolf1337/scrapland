@@ -60,6 +60,7 @@
 #define PLAY_LEAD 0.075					/* s the input should be at the server before its tick */
 #define PLAY_LOSS_LEAD 0.07				/* s more with loss: a later copy of a lost input comes in time */
 #define PLAY_STEPS 2					/* slot ticks per tick: 1/60 s each, as a player's of single player */
+#define PLAY_SLOT 0.0166666675f			/* 1/60: s of a slot of a player's character and ship (SetUsrControl) */
 #define PLAY_SHIPS_MAX 8					/* called ships a player may own (-ships) */
 #define PLAY_RESPAWN_SECS 3				/* s from a death to the new character (-respawn) */
 #define PLAY_HEADLESS_HZ 60				/* frames a second of a headless player */
@@ -84,12 +85,18 @@ typedef struct NetPlMotion {
 /* the input into the controls of the entity (local: the client's own, its action buttons stay off but the fire of
  * a NetPl_LocalWeapon outside a replay) */
 void NetPl_Apply(struct cEntity *e, const NetRepInput *in, byte local, byte replay);
-/* one tick of a player's entity with the input: its actions (not when the input runs again for a correction) and
- * PLAY_STEPS slot ticks */
+/* The step of a player's entity, the same functions on the server and in a client's prediction: single player's
+ * frame of the entity at 60 frames a second, its actions (cActCtrl_Tick) and then its slot (Obj_Tick), each of 1/60 s
+ * (times the entity's time speed).
+ * one tick of a player's entity with the input: PLAY_STEPS slot parts */
 void NetPl_Step(struct cEntity *e, const NetRepInput *in, byte local, byte replay);
-/* slot tick part (0 .. PLAY_STEPS - 1) of such a tick, the actions with part 0, the moves of the input's slot: the
- * client steps a tick in parts as the frames pass its slots, as single player does */
+/* slot part (0 .. PLAY_STEPS - 1) of such a tick, the moves of the input's slot: its actions (not when the input runs
+ * again for a correction), then its slot; the client steps a tick in parts as the frames pass its slots */
 void NetPl_StepPart(struct cEntity *e, const NetRepInput *in, byte local, byte replay, int part);
+/* the two halves of a part: the actions of a frame of dt, and a slot of length iv with the input (the solo instance
+ * runs them in single player's own frame pattern: a frame of the tape without a slot, one, or two) */
+void NetPl_Actions(struct cEntity *e, float dt);
+void NetPl_Slot(struct cEntity *e, const NetRepInput *in, byte local, byte replay, int part, float iv);
 /* the controls of the client's own entity as the input of a frame, added with weight dt into sum (the averages of
  * the tick come from NetPl_Input) */
 typedef struct NetPlAccum {
@@ -132,6 +139,17 @@ byte Rep_ParseParam(const char *param, const char *ext);
 byte Rep_Command(const char *line);
 /* before the frame of tick: each player's input of the tick into its entity */
 void Rep_PreFrame(uint64_t tick);
+/* the players of the instance use single player's own flows (stage 3.6 of the second multiplayer design): their own
+ * ship and Sputnik at the level's parking (Parking.PlayerShip, Sputnik.spt per player), boarding a parked ship by its
+ * use arrow (Sputnik.UseShip, Parking.UseShip), parking on a box (Parking.OnPark), with the scripts' UsrControl 0 as
+ * the player's slot (Coop_UsrSlot, Coop_UsrRead) and the scripts' new character or ship as the player's (Coop_Adopts):
+ * the solo instance and -mp2, not in coop (its own rules) nor the PvP modes; the old path keeps the instance's stand-ins
+ * (the switch into the nearest parked ship, a called ship, Sputniks.c) */
+byte Rep_SpFlows(void);
+/* the frame of a player's own entity (cWithLifeEntity_Update, in the world's entity loop where single player steps
+ * its player; dt its frame time): the step Rep_PreFrame gave it for this frame, NetPl_Step of the tick's input; the
+ * solo instance on a tape of single player's frames: the actions of the frame and the frame's slots */
+void Rep_OwnFrame(struct cEntity *e, float dt);
 /* the lag compensation around the aim and hit check of an instant-hit weapon of the vehicle v (only for a
  * player's): the other replicated entities where v's client saw them, and back */
 void Rep_RewindBegin(struct cEntity *v);
