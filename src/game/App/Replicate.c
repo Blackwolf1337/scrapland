@@ -432,9 +432,13 @@ void Rep_LookOf(cEntity *e, int kind, char *out, int size) {
 		Str_PrintfQuiet(out, size, "C|%s", cls);
 		return;
 	}
-	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s|%s", Rep_ModelPath(e),
+	/* the rail traffic (its AI states, the traffic's embedded effect of EmbeddedFXVehicle.c): T, the client's copy has no
+	 * AI and shows the effect by cVehicleTraffic.active */
+	cAIVehicle *ai = Entity_GetAI(e);
+	int st = ai ? cAIVehicle_GetState(ai) : -1;
+	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s|%s|%s", Rep_ModelPath(e),
 		Rep_VarS(e, "MPil0"), Rep_VarS(e, "MEng0"), Rep_VarS(e, "MEng1"), Rep_VarS(e, "MEng2"), Rep_VarS(e, "MEng3"),
-		cls, cWeaponManager_GetWeapList(&Veh(e)->weapons));
+		cls, cWeaponManager_GetWeapList(&Veh(e)->weapons), st == AIV_TRAFFIC || st == AIV_TRAFFIC_INDOOR ? "T" : "");
 }
 
 /* the index + 1 of the action in its class, 0 none */
