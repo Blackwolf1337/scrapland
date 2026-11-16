@@ -126,6 +126,9 @@ void Engine_LevelLoaded(void);
 void Engine_LevelEnd(void);
 void Engine_Render(void);
 byte Engine_FrameSetup(void);
+/* the callback after the frame setup (2: the indoor traffic of g_NodesTrafficInDoor); a process that draws nothing calls
+ * it once a world frame (cWorld_Update), not in the original */
+void Engine_SetupCallback(void);
 int Engine_ToggleOption(int opt);
 void Engine_SetCallback(void (*fn)(void), int which);
 char *Engine_SetIniName(const char *name);

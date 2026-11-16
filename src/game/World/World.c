@@ -1148,8 +1148,12 @@ void cWorld_Update(cWorld *self, float dt) {
 			}
 			Players_SetOwner((int)slot, e);
 		}
-		/* not in the original: the instance's viewers after the owner scan (include/scrap/viewers.h) */
+		/* not in the original: the instance's viewers after the owner scan (include/scrap/viewers.h); a headless process
+		 * runs the frame setup's callback the renderer runs (the indoor traffic) */
 		Viewers_Frame(cTimer_GetDelta(timer));
+		if (App_Headless()) {
+			Engine_SetupCallback();
+		}
 		Sound_Update(cTimer_GetDelta(timer));
 		cWorld_UpdateListeners(self, cTimer_GetDelta(timer));
 		Players_UpdateAlarms(cTimer_GetDelta(timer));
