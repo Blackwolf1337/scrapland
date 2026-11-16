@@ -309,7 +309,10 @@ def run_side(a, side):
         bumps = []
         if ok:
             time.sleep(3.0)
-            for _ in range(3):
+            for k in range(3):
+                if k and a.boost:
+                    # the boost recharges: 12 s more between the flights (the boosts come about 21 s apart)
+                    time.sleep(12.0)
                 lift(a, g, inst_dir, side)
                 time.sleep(2.5)
                 if a.boost:
