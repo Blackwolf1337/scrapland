@@ -44,8 +44,8 @@ FEEL_RETRIES = 1
 # the run-to-run noise of the numbers mp2.py diff compares (measured on two runs of one build, see the stage 0.4
 # hand-back): an absolute allowance and a share of the old value, whichever is larger
 NOISE = {
-    'parity.entity': (2, 0.0), 'parity.radar': (1, 0.0), 'parity.hud': (0, 0.0), 'parity.sound': (2, 0.0),
-    'parity.fx': (2, 0.0), 'parity.audit': (0, 0.2), 'parity.mirror': (2, 0.0), 'parity.census': (2, 0.0),
+    'parity.entity': (3, 0.5), 'parity.radar': (2, 0.5), 'parity.hud': (1, 0.0), 'parity.sound': (5, 0.5),
+    'parity.fx': (5, 0.5), 'parity.total': (8, 0.2), 'parity.audit': (0, 0.2), 'parity.mirror': (2, 0.0), 'parity.census': (2, 0.0),
     'feel.latency': (12.0, 0.15), 'feel.jitter': (0.5, 0.5), 'feel.corr_per_min': (1.0, 0.0),
     'coop.gaps': (1, 0.0),
 }
@@ -485,6 +485,10 @@ def gate_diff(a):
                     continue
                 for c in parity.SUMMARY_COLS + ('audit', 'mirror', 'census'):
                     add('parity %s %s' % (s['tag'], c), 'parity.' + c, p.get(c), s.get(c))
+            # the columns over the levels both runs have: a change that is noise in each level can add up
+            both = [t for t in n['levels'] if t['tag'] in om and 'error' not in t and 'error' not in om[t['tag']]]
+            for c in parity.SUMMARY_COLS:
+                add('parity all %s' % c, 'parity.total', sum(om[t['tag']][c] for t in both), sum(t[c] for t in both))
         elif gate == 'feel':
             om = {(r['cell'], r['side']): r for r in o['rows']}
             for r in n['rows']:

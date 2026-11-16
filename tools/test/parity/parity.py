@@ -61,7 +61,8 @@ FREE = ('Traffic', 'FightingTraffic', 'ChasingTraffic', 'EnemiesTraffic')
 # kinds whose count changes with time (traffic, effects of fights): compared loosely
 # the frames of the blinking mission marks (RadarScorer.c Radar_DrawMission) as their first one
 RADAR_BLINK = {'13': '12', '14': '12', '10': '9', '11': '9'}
-LOOSE = ('rail traffic', 'traffic', 'police', 'coin', 'missile', 'npc', 'parked ship')
+LOOSE = ('rail traffic', 'traffic', 'police', 'coin', 'missile', 'npc', 'parked ship',
+         'ship T')                 # the traffic models (TLight, TMed, TAsteroid: indoor fake traffic, asteroids)
 # kinds that come and go with the moment (coins, batteries and the items of shot traffic dropped in a fight, missiles, gears that police fuse into where a
 # player sees them and that turn back): the clients against what the instance has, not against single player
 TIMED = ('coin', 'item Battery', 'npc Gear', 'item dropped', 'missile')
@@ -234,7 +235,10 @@ def kind_of(e):
     if cls == 'WalkChar':
         return 'npc ' + (e['act'] or base(e['model']))
     if cls == 'Car':
-        return 'ship ' + (e['act'] or base(e['model']))
+        k = e['act'] or base(e['model'])
+        # the traffic models (TLight1B, TMed3B, TAsteroid5, ...) as one kind per family: which variant flies by is
+        # chance
+        return 'ship ' + (re.sub(r'\d+[A-Z]?$', '', k) if k.startswith('T') else k)
     return '%s %s' % (cls, re.sub(r'[\d_]+$', '', n))
 
 
@@ -655,23 +659,40 @@ def tag_of(spec):
     return level if not mode or mode == 'freeroam' else '%s-%s' % (level, mode)
 
 
+def norm_kind(k):
+    """the kind as kind_of names it now (results stored before the traffic models were one kind per family)"""
+    return re.sub(r'\d+[A-Z]?$', '', k) if k.startswith('ship T') else k
+
+
+def norm_kinds(kinds):
+    out = {}
+    for k, v in (kinds or {}).items():
+        d = out.setdefault(norm_kind(k), {'n': 0, 'active': 0, 'names': []})
+        d['n'] += v.get('n', 0)
+        d['active'] += v.get('active', 0)
+        d['names'] = d['names'] + v.get('names', [])
+    return out
+
+
 def gaps(res):
     """the rows of the gap report: kind, sp, host, join, gap flag, missing examples"""
     rows = []
-    sp = res.get('sp', {}).get('kinds', {})
+    sp = norm_kinds(res.get('sp', {}).get('kinds', {}))
     sides = [s for s in ('host', 'join') if s in res]
+    sk = {s: norm_kinds(res[s]['kinds']) for s in sides}
+    ik = norm_kinds(res.get('instance', {}).get('kinds', {}))
     kinds = set(sp)
     for s in sides:
-        kinds |= set(res[s]['kinds'])
+        kinds |= set(sk[s])
     for k in sorted(kinds):
         n_sp = sp.get(k, {}).get('n', 0)
         a_sp = sp.get(k, {}).get('active', 0)
-        cnt = [res[s]['kinds'].get(k, {}).get('active', 0) for s in sides]
+        cnt = [sk[s].get(k, {}).get('active', 0) for s in sides]
         loose = any(k.startswith(x) for x in LOOSE)
         worst = min(cnt) if cnt else 0
         if k in TIMED:
             # what the instance has there now; single player's count is of its own moment
-            a_sp = res.get('instance', {}).get('kinds', {}).get(k, {}).get('active', 0)
+            a_sp = ik.get(k, {}).get('active', 0)
         if loose:
             gap = a_sp > 0 and (worst == 0 or worst < a_sp * 0.5)
         else:
@@ -681,7 +702,7 @@ def gaps(res):
         extra = cnt and max(cnt) > a_sp and not loose
         names = set(sp.get(k, {}).get('names', []))
         for s in sides:
-            names -= set(res[s]['kinds'].get(k, {}).get('names', []))
+            names -= set(sk[s].get(k, {}).get('names', []))
         rows.append((k, n_sp, a_sp, cnt, gap, extra, sorted(names)[:4]))
     return rows
 
@@ -842,7 +863,7 @@ def point_lines(res):
         ' Shots: %s' % os.path.basename(res['sheet']) if res.get('sheet') else ''), '',
         '| kind | SP (all) | SP | host | join | instance | | missing on the clients (examples) |',
         '|---|---|---|---|---|---|---|---|']
-    ik = res.get('instance', {}).get('kinds', {})
+    ik = norm_kinds(res.get('instance', {}).get('kinds', {}))
     for k, n_sp, a_sp, cnt, gap, extra, miss in rows:
         c = cnt + ['-'] * (2 - len(cnt))
         lines.append('| %s | %d | %d | %s | %s | %s | %s | %s |' % (k, n_sp, a_sp, c[0], c[1],
