@@ -265,10 +265,11 @@ byte Coop_SceneHolds(void);
 byte Coop_Holds(int i);
 /* the player slot a script gives character e (UsrControl; old: its slot now): on a coop instance a member's
  * character the scripts take (-1) is held for its member, and the scripts' 0..3 is that member's slot again (else
- * the current member's: the single player's player 0) */
+ * the current member's: the single player's player 0); with single player's flows of the players (Rep_SpFlows) the
+ * scripts' 0..3 is the acting player's slot */
 int Coop_UsrSlot(struct cEntity *e, int old, int slot);
-/* the slot the scripts read of a character or ship (UsrControl): on a coop instance a member's slot is the single
- * player's 0 (the scripts' "the player": a race's checkpoints, the coins), else slot */
+/* the slot the scripts read of a character or ship (UsrControl): on a coop instance (and with Rep_SpFlows) a
+ * player's slot is the single player's 0 (the scripts' "the player": a race's checkpoints, the coins), else slot */
 int Coop_UsrRead(int slot);
 /* the member whose character the scripts hold (Coop_UsrSlot), -1 */
 int Coop_HeldPlayer(struct cEntity *e);
@@ -283,11 +284,12 @@ byte Coop_NoShipCall(void);
 void Coop_Spawned(struct cEntity *e);
 /* the name of a player's character the scripts make (Chars.CreateMainChar of a possession or a conversor) on a coop
  * instance: a new one for the current member each time (the single player's Player0 and PlayerZ would be the same
- * entity for two members), NULL elsewhere */
+ * entity for two members) and with Rep_SpFlows, NULL elsewhere */
 const char *Coop_MainCharName(void);
 /* player i's slot is on e, a live character or ship other than the one the instance gave it: 1 when it is the
  * member's from now on (a possession or a conversor of the scripts: the member plays as that character, its class
- * kept in its state; a ship the scripts put it in); 0 elsewhere (the instance gives the player a new character) */
+ * kept in its state; a ship the scripts put it in), and with Rep_SpFlows (single player's boarding and parking); 0
+ * elsewhere (the instance gives the player a new character) */
 byte Coop_Adopts(int i, struct cEntity *e);
 /* the scripts set the class (ActCtrl) of e: a member's character keeps it as the member's class (InfiltrateBank's
  * scene makes the chief of bankers D-Tritus again: the next level's character) */

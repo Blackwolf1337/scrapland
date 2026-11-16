@@ -37,6 +37,7 @@
 #include "scrap/arrowindicator.h"
 #include "scrap/chartype.h"
 #include "scrap/travel.h"
+#include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/sputniks.h"
@@ -110,6 +111,8 @@ typedef struct RepPlayer {
 	double rewindSum;
 	uint32_t rewindN;
 	NetRepInBuf last;				/* the counters at the last status line */
+	NetRepInput stepIn;				/* the input its entity steps with in this frame (Rep_OwnFrame) */
+	byte step;						/* that step is due */
 } RepPlayer;
 
 typedef struct RepRewind {
@@ -1171,6 +1174,27 @@ static byte Rep_UsesDoor(cEntity *e) {
 	return !strcmp(f, "UseElevator") || !strcmp(f, "OnUse") || Coop_UseAny(t);
 }
 
+byte Rep_SpFlows(void) {
+	return g_Instance && (g_Mp2 || g_InputTape == INPUTTAPE_SOLO) && !Coop_On() && !Arena_On();
+}
+
+/* player i's own ship and Sputnik as single player's at the level's start: at the parking nearest to its character
+ * (Parking.PlayerJoin), its own ship from then on */
+static void Rep_SpShip(int i) {
+	nativeVal_t v;
+	int was = Players_Enter(i);
+	Native_SetNone(&v);
+	if (!Parking_PlayerJoin()) {
+		Native_ErrPrint();
+	} else if (Mode_ModGet("Parking", "PlayerShip", &v) && v.type == NV_ENT && Native_Ent(&v)) {
+		Players_SetShip(i, Native_Ent(&v));
+		Con_Printf("instance: player %d's own ship %s\n", i, Native_Ent(&v)->name);
+	}
+	Native_Free(&v);
+	Native_ErrClear();
+	Players_Leave(was);
+}
+
 static int Rep_Join(int conn) {
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		RepPlayer *pl = &rep.pl[i];
@@ -1210,9 +1234,13 @@ static int Rep_Join(int conn) {
 		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->ownName);
 		Travel_Joined(i);
 		Coop_Joined(i);
-		/* the sandbox and freeroam: a player who arrives on foot in an outdoor level finds its own ship beside it, as
-		 * single player's waits in the level's parking with Sputnik (include/scrap/sputniks.h) */
-		if (Places_On() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
+		/* single player's own ship and Sputnik at the parking; the old path: the sandbox and freeroam's player who
+		 * arrives on foot in an outdoor level finds its own ship beside it (include/scrap/sputniks.h) */
+		if (Rep_SpFlows()) {
+			if (Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
+				Rep_SpShip(i);
+			}
+		} else if (Places_On() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
 			int was = Players_Enter(i);
 			Rep_CallShip(i, Rep_Own(pl), 1);
 			Players_Leave(was);
@@ -1376,6 +1404,9 @@ void Rep_PreFrame(uint64_t tick) {
 		if (!e && Coop_Holds(i)) {
 			continue;		/* hidden by a scene of the coop story or in its ship editor (include/scrap/coop.h) */
 		}
+		if (!e && Rep_SpFlows() && !pl->dead) {
+			continue;		/* between two entities of single player's flows (the parking's camera path) */
+		}
 		if (e && e != pl->own && Coop_Adopts(i, e)) {
 			/* a character the coop story's scripts gave the player (a possession, a conversor) is its own now */
 			Rep_DropCorpse(pl);
@@ -1423,7 +1454,7 @@ void Rep_PreFrame(uint64_t tick) {
 		/* a character's use as in single player: the ship its arrow is on boards it, a door runs the game's use; the
 		 * switch (the mission info key on foot, in a ship) is the sandbox's: into the nearest parked or a called
 		 * ship, out of the ship */
-		byte use = (in.buttons & NETREP_IN_ACT3) && !(pl->buttons & NETREP_IN_ACT3) && !Arena_On();
+		byte use = (in.buttons & NETREP_IN_ACT3) && !(pl->buttons & NETREP_IN_ACT3) && !Arena_On() && !Rep_SpFlows();
 		if (use && NetPl_Kind(e) == NETREP_CHAR && WChar_Victim(e) && Rep_IsParked(WChar_Victim(e), i)) {
 			pl->buttons = in.buttons;
 			Players_Cur()->input = NULL;
@@ -1435,18 +1466,44 @@ void Rep_PreFrame(uint64_t tick) {
 			in.buttons &= (uint16_t)~NETREP_IN_ACT3;
 		} else if (use && Rep_UsesDoor(e)) {
 			Coop_BeforeUse(i, WChar(e)->listenOn && WChar_Listen(e) ? WChar_Listen(e) : WChar_Victim(e));
-		} else if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
+		} else if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On() &&
+			!Rep_SpFlows()) {
 			pl->buttons = in.buttons;
 			Players_Cur()->input = NULL;
 			Rep_SwitchTo(i, e, NULL);
 			continue;
 		}
 		pl->buttons = in.buttons;
-		NetPl_Step(e, &in, 0, 0);
+		/* the step runs in the entity's own update, where single player steps its player (Rep_OwnFrame) */
+		pl->stepIn = in;
+		pl->step = 1;
 		Players_Cur()->input = NULL;
 	}
 	Players_Leave(prev);
 	Sputniks_Frame();
+}
+
+void Rep_OwnFrame(cEntity *e, float dt) {
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		RepPlayer *pl = &rep.pl[i];
+		if (!pl->used || pl->own != e || !pl->step) {
+			continue;
+		}
+		pl->step = 0;
+		if (pl->conn < 0 && InputTape_SoloFrames()) {
+			/* the solo instance on single player's frames: the actions of the frame, its slots (none, one or two) */
+			NetPl_Actions(e, dt);
+			for (int k = 0, n = InputTape_SoloSlots(); k < n; k++) {
+				NetPl_Slot(e, &pl->stepIn, 0, 0, k, PLAY_SLOT);
+			}
+		} else {
+			NetPl_Step(e, &pl->stepIn, 0, 0);
+		}
+		return;
+	}
+	/* a player's entity without a step in this frame (the scripts gave it to the player a moment ago, the input step
+	 * adopts it next frame): the actions of its frame, as single player's */
+	NetPl_Actions(e, dt);
 }
 
 byte Rep_Command(const char *line) {

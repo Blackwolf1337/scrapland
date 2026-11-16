@@ -15,6 +15,7 @@
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
 #include "scrap/faction.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/repent.h"
 #include "scrap/vehicleentity.h"
@@ -560,6 +561,10 @@ void cWithLifeEntity_Update(cEntity *self) {
 		} else {
 			cActCtrl_Present(w->actCtrl, dt);
 		}
+	} else if (w->obj.netStep && g_Instance) {
+		/* not in the original: the server steps a player's entity here, where single player steps its player
+		 * (include/scrap/play.h) */
+		Rep_OwnFrame(self, dt);
 	}
 	cObjEntity_Update(self);
 	cArrowIndicator_Update(&w->arrow);

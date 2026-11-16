@@ -45,7 +45,6 @@
 #define PLAY_DEATH_HIGH 900.0f
 #define PLAY_DEATH_TURN 0.35f			/* radians a second it goes round */
 #define PLAY_NAME "Me%u"
-#define PLAY_SLOT (1.0f / (NETREP_TICK_HZ * PLAY_STEPS))	/* s of a slot of the own entity */
 #define PLAY_CLOCK_JUMP 0.25			/* s: the input tick time further off is taken at once */
 #define PLAY_MAX_CATCHUP 8				/* ticks stepped in one frame at most; more ahead is a jump */
 #define PLAY_BOT_NPC 2					/* the bot hunts ships of no player */

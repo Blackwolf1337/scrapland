@@ -102,6 +102,10 @@ cEntity *cObjEntity_ctor(void *mem, const char *name, float x, float y, float z)
 	self->renderPos = self->base.pos;
 	cSlotController *slot = operator_new(sizeof(cSlotController));
 	self->slot = slot ? cSlotController_ctor(slot, OBJ_SLOT_INTERVAL) : NULL;
+	/* not in the original: the input tape (include/scrap/inputtape.h) */
+	if (g_InputTape) {
+		InputTape_ObjSlot(name, self->slot);
+	}
 	if (!g_pApp->flags) {
 		self->net = NULL;
 	} else {
@@ -740,7 +744,7 @@ void cObjEntity_Update(cEntity *self) {
 			}
 			if (!o->netStep) {
 				/* not in the original: the input tape (include/scrap/inputtape.h) */
-				byte taped = g_InputTape && InputTape_Slot(self);
+				byte taped = g_InputTape && InputTape_Slot(self, iv);
 				Obj_Tick(self, iv);
 				if (taped) {
 					InputTape_SlotDone(self);

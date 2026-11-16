@@ -194,7 +194,8 @@ byte Sputniks_Outdoor(void) {
 }
 
 void Sputniks_Frame(void) {
-	if (!g_Instance || !Places_On() || !Sputniks_Outdoor()) {
+	/* with single player's flows the players' Sputniks are the scripts' (include/scrap/play.h) */
+	if (!g_Instance || !Places_On() || Rep_SpFlows() || !Sputniks_Outdoor()) {
 		return;
 	}
 	if (!spk.ready) {

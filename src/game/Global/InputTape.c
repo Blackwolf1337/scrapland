@@ -17,6 +17,7 @@
 #include "scrap/netrep.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/slotcontroller.h"
 #include "scrap/testdet.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -54,6 +55,14 @@ static struct {
 	byte soloStarted;
 	tapeHold hold[TAPE_HOLDS];
 	int nhold;
+	char **sl;						/* the S lines (the slot phases of single player's entities) */
+	byte *slUsed;
+	int ns;
+	char **f;						/* the F lines (the frames of single player) */
+	int *fc;						/* the first C line after each F line */
+	int nf, fi;						/* the solo instance: the frames and the current one */
+	int count;						/* the solo instance: the C lines of the current tick or frame */
+	double soloTime;				/* the solo instance: the time of the frames so far */
 } tape;
 
 static uint32_t Tape_Bits(float f) {
@@ -94,6 +103,11 @@ static byte Tape_Load(const char *path) {
 	}
 	tape.d = Mem_Alloc((uint32_t)(lines * sizeof(char *)));
 	tape.c = Mem_Alloc((uint32_t)(lines * sizeof(char *)));
+	tape.f = Mem_Alloc((uint32_t)(lines * sizeof(char *)));
+	tape.sl = Mem_Alloc((uint32_t)(lines * sizeof(char *)));
+	tape.slUsed = Mem_Alloc((uint32_t)lines);
+	memset(tape.slUsed, 0, (size_t)lines);
+	tape.fc = Mem_Alloc((uint32_t)(lines * sizeof(int)));
 	for (char *p = tape.text; p && *p;) {
 		char *nl = strchr(p, '\n');
 		if (nl) {
@@ -104,6 +118,11 @@ static byte Tape_Load(const char *path) {
 			tape.endFrame = (uint32_t)strtoul(p + 2, NULL, 10);
 		} else if (p[0] == 'C' && p[1] == ' ') {
 			tape.c[tape.nc++] = p;
+		} else if (p[0] == 'S' && p[1] == ' ') {
+			tape.sl[tape.ns++] = p;
+		} else if (p[0] == 'F' && p[1] == ' ') {
+			tape.fc[tape.nf] = tape.nc;
+			tape.f[tape.nf++] = p;
 		} else if (p[0] == 'E' && p[1] == ' ') {
 			tape.endFrame = (uint32_t)strtoul(p + 2, NULL, 10);
 			tape.haveEnd = 1;
@@ -242,6 +261,34 @@ void InputTape_AfterDevices(void) {
 	fflush(tape.out);
 }
 
+void InputTape_Frame(float dt) {
+	if (g_InputTape == INPUTTAPE_REC && tape.out && !tape.ended) {
+		fprintf(tape.out, "F %u %08x\n", TestDet_Frame(), Tape_Bits(dt));
+	}
+}
+
+void InputTape_ObjSlot(const char *name, cSlotController *slot) {
+	if (!slot || !name || !*name || strchr(name, ' ')) {
+		return;
+	}
+	if (g_InputTape == INPUTTAPE_REC && tape.out && !tape.ended) {
+		fprintf(tape.out, "S %s %08x\n", name, Tape_Bits(slot->time));
+		return;
+	}
+	if (g_InputTape != INPUTTAPE_SOLO) {
+		return;
+	}
+	size_t n = strlen(name);
+	for (int i = 0; i < tape.ns; i++) {
+		const char *p = tape.sl[i] + 2;
+		if (!tape.slUsed[i] && !strncmp(p, name, n) && p[n] == ' ') {
+			tape.slUsed[i] = 1;
+			slot->time = Tape_Float(p + n + 1, NULL);
+			return;
+		}
+	}
+}
+
 /* ---- the control layer ---- */
 
 /* the C line of the controls of e; 0 for an entity that is neither a character nor a ship */
@@ -273,13 +320,15 @@ static int Tape_CLine(cEntity *e, char *line, int size) {
 	return 0;
 }
 
-byte InputTape_Slot(cEntity *e) {
-	char line[0x200], start[0x200];
+byte InputTape_Slot(cEntity *e, float iv) {
+	char line[0x300], start[0x200];
+	int n;
 
 	if ((g_InputTape != INPUTTAPE_REC && g_InputTape != INPUTTAPE_PLAY) || e != Players_Local() ||
-		!Tape_CLine(e, line, sizeof(line))) {
+		!(n = Tape_CLine(e, line, sizeof(line)))) {
 		return 0;
 	}
+	Str_PrintfQuiet(line + n, (int)sizeof(line) - n, " i %08x", Tape_Bits(iv));
 	if (g_InputTape == INPUTTAPE_REC) {
 		if (!tape.out || tape.ended) {
 			return 1;
@@ -299,6 +348,10 @@ byte InputTape_Slot(cEntity *e) {
 		return 1;
 	}
 	const char *want = tape.ci < tape.nc ? tape.c[tape.ci++] : "(the end of the tape)";
+	/* a tape of before the slot lengths: the controls only */
+	if (!strstr(want, " i ")) {
+		line[n] = 0;
+	}
 	if (strcmp(want, line) && tape.mismatches++ == 0) {
 		Con_Printf("inputtape: the controls of slot %u differ from the tape\n  game: %s\n  tape: %s\n", tape.slots,
 			line, want);
@@ -306,7 +359,31 @@ byte InputTape_Slot(cEntity *e) {
 	return 1;
 }
 
+/* SCRAP_TAPE_DUMP=<slot>[,<radius>]: after that slot a trace line per entity within the radius (3000) of the
+ * player's entity: name, class, active, position, action class */
+static void Tape_Dump(cEntity *pe) {
+	const char *env = getenv("SCRAP_TAPE_DUMP");
+	char *end;
+	if (!env || !*env || strtoul(env, &end, 10) != tape.slots) {
+		return;
+	}
+	float r = *end == ',' ? (float)atof(end + 1) : 3000.0f;
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		vec3_t p;
+		Entity_GetPos(e, &p);
+		float dx = p.x - pe->pos.x, dy = p.y - pe->pos.y, dz = p.z - pe->pos.z;
+		if (!e->name || dx * dx + dy * dy + dz * dz > r * r) {
+			continue;
+		}
+		const char *act = Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->actCtrl && WLife(e)->actCtrl->cls ?
+			WLife(e)->actCtrl->cls->name : "";
+		TestDet_Trace("ent %s %s %d %.9g %.9g %.9g %s", e->name, Entity_GetClassName(e), e->active, (double)p.x,
+			(double)p.y, (double)p.z, act);
+	}
+}
+
 void InputTape_SlotDone(cEntity *e) {
+	Tape_Dump(e);
 	if (g_TestDetTrace) {
 		cWithLifeEntity *w = WLife(e);
 		cObjEntity *o = Obj(e);
@@ -348,7 +425,7 @@ byte InputTape_Ended(void) {
 	case INPUTTAPE_PLAY:
 		return tape.di >= tape.nd && TestDet_Frame() >= tape.endFrame;
 	case INPUTTAPE_SOLO:
-		return tape.soloStarted && tape.base >= tape.nc;
+		return tape.soloStarted && (tape.nf ? tape.fi >= tape.nf : tape.base >= tape.nc);
 	}
 	return 0;
 }
@@ -377,10 +454,37 @@ void InputTape_SoloTick(void) {
 	if (g_InputTape != INPUTTAPE_SOLO) {
 		return;
 	}
-	if (tape.soloStarted) {
-		tape.base += PLAY_STEPS;
+	if (!tape.nf) {
+		/* a tape without frames: PLAY_STEPS C lines a tick */
+		tape.base += tape.soloStarted ? PLAY_STEPS : 0;
+		tape.count = PLAY_STEPS;
+	} else {
+		/* single player's frame: its time and the C lines of its slots */
+		tape.fi += tape.soloStarted;
+		if (tape.fi < tape.nf) {
+			tape.base = tape.fc[tape.fi];
+			tape.count = (tape.fi + 1 < tape.nf ? tape.fc[tape.fi + 1] : tape.nc) - tape.base;
+			char *end;
+			strtoul(tape.f[tape.fi] + 2, &end, 10);
+			tape.soloTime += (double)Tape_Float(end, NULL);
+		} else {
+			tape.base = tape.nc;
+			tape.count = 0;
+		}
 	}
 	tape.soloStarted = 1;
+}
+
+byte InputTape_SoloFrames(void) {
+	return g_InputTape == INPUTTAPE_SOLO && tape.nf > 0;
+}
+
+double InputTape_SoloTime(void) {
+	return tape.soloTime;
+}
+
+int InputTape_SoloSlots(void) {
+	return g_InputTape == INPUTTAPE_SOLO ? tape.count : 0;
 }
 
 /* the C line i: its kind (NETREP_CHAR, NETREP_SHIP, 0 past the end), buttons, five floats and for a ship the weapon;
@@ -432,6 +536,12 @@ byte InputTape_SoloInput(cEntity *e, NetRepInput *in) {
 		in->weapon = (uint8_t)w;
 	}
 	return 1;
+}
+
+float InputTape_SoloInterval(int part, float iv) {
+	const char *p = g_InputTape == INPUTTAPE_SOLO && part < tape.count && tape.base + part < tape.nc ?
+		strstr(tape.c[tape.base + part], " i ") : NULL;
+	return p ? Tape_Float(p + 3, NULL) : iv;
 }
 
 void InputTape_SoloApply(cEntity *e, int part) {

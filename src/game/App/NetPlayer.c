@@ -17,8 +17,6 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
-#define NETPL_TICK (1.0f / NETREP_TICK_HZ)
-#define NETPL_SLOT 0.0166666675f		/* 1/60: the slot of a player's character and ship (SetUsrControl) */
 
 int NetPl_Kind(cEntity *e) {
 	if (!e || e->deadNode.target) {
@@ -96,32 +94,50 @@ void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	}
 }
 
-void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, int part) {
+void NetPl_Actions(cEntity *e, float dt) {
 	cWithLifeEntity *w = WLife(e);
-	/* the entity's time speed: 1, slower in a bullet time of the freeroam factions (the server and the prediction) */
-	float k = cTimer_GetSpeed(&w->obj.timer);
+	if (w->actCtrl) {
+		cActCtrl_Tick(w->actCtrl, dt);
+	}
+}
+
+void NetPl_Slot(cEntity *e, const NetRepInput *in, byte local, byte replay, int part, float iv) {
 	NetRepInput slot = *in;
 
 	if (part) {
 		memcpy(slot.move, in->move2, sizeof(slot.move));
 	}
 	NetPl_Apply(e, &slot, local, replay);
-	/* a stopped entity (paused by a scene) does not step, as the engine's update leaves it */
-	if (OBJ_MIN_DT >= NETPL_SLOT * k) {
-		return;
-	}
-	/* the solo instance: the exact controls of the input tape (include/scrap/inputtape.h) */
+	/* the solo instance: the exact controls and slot lengths of the input tape (include/scrap/inputtape.h) */
 	byte taped = g_InputTape == INPUTTAPE_SOLO && !local;
 	if (taped) {
 		InputTape_SoloApply(e, part);
+		iv = InputTape_SoloInterval(part, iv);
 	}
-	if (!part && !replay && w->actCtrl) {
-		cActCtrl_Tick(w->actCtrl, NETPL_TICK * k);
-	}
-	Obj_Tick(e, NETPL_SLOT * k);
+	Obj_Tick(e, iv);
 	if (taped) {
 		InputTape_SlotDone(e);
 	}
+}
+
+void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, int part) {
+	/* the entity's time speed: 1, slower in a bullet time of the freeroam factions (the server and the prediction) */
+	float iv = PLAY_SLOT * cTimer_GetSpeed(&Obj(e)->timer);
+
+	/* a stopped entity (paused by a scene) does not step, as the engine's update leaves it */
+	if (OBJ_MIN_DT >= iv) {
+		NetRepInput slot = *in;
+		if (part) {
+			memcpy(slot.move, in->move2, sizeof(slot.move));
+		}
+		NetPl_Apply(e, &slot, local, replay);
+		return;
+	}
+	/* single player's frame at 60 a second: the actions of the frame, then its slot */
+	if (!replay) {
+		NetPl_Actions(e, iv);
+	}
+	NetPl_Slot(e, in, local, replay, part, iv);
 }
 
 void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {

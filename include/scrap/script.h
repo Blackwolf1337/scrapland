@@ -478,6 +478,10 @@ extern const portFn_t g_InTrafficMethods[];
  * boarding, parking and the parked ships, the speed rings (src/game/Script/Parking.c) */
 extern const portFn_t g_ShipMakerMethods[];
 extern const portFn_t g_ParkingMethods[];
+/* a player of the instance joins with single player's flows (include/scrap/play.h, Rep_SpFlows): in its context, its
+ * own ship (Parking.PlayerShip) and Sputnik at the parking nearest to its character, as Parking.BrowseItemPos gives
+ * single player's at the level's start; 0 with the error set */
+byte Parking_PlayerJoin(void);
 extern const portFn_t g_AcceleratorMethods[];
 /* the game modes of the single player super deals (src/game/Script/SuperDeals.c) */
 extern const portFn_t g_DeathMatchMethods[];

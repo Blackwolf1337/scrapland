@@ -336,9 +336,28 @@ void Players_Leave(int prev) {
 	Players_Switch(prev, NULL);
 }
 
+/* the player whose camera of view 0 e is (cPlayer.camName: its follow camera, a camera path its scripts set), -1 */
+static int Players_OfCam(const cEntity *e) {
+	if (!Players_Net() || !e->name || !Entity_IsType((cEntity *)e, "Cam")) {
+		return -1;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (Players_Used(i) && g_Pl[i].camName[0] && !strcmp(g_Pl[i].camName, e->name)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 int Players_EnterEntityAt(cEntity *e, const char *site) {
 	int i = Players_Of(e);
-	return Players_Switch(i >= 0 ? i : Players_ShipOwner(e), site);
+	if (i < 0) {
+		i = Players_ShipOwner(e);
+	}
+	if (i < 0) {
+		i = Players_OfCam(e);
+	}
+	return Players_Switch(i, site);
 }
 
 int Players_EnterOwnerAt(cEntity *e, const char *site) {

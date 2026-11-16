@@ -9,6 +9,11 @@
  *   ScrapC -instance:DownTown -solo:<file>                 the headless instance without network, one player whose
  *                                                          controls come from the tape
  *
+ * The solo instance runs a world frame per frame of the recording (F lines) with its time, the player's slots in the
+ * frames single player stepped them (the C lines after each F) with their lengths, and the slot phases of single
+ * player's entities (S lines): the same frame timing on the clock of the deterministic test mode. Its player gets
+ * single player's flows (include/scrap/play.h, Rep_SpFlows). A tape without F lines steps PLAY_STEPS slots a tick.
+ *
  * The tape is a text file with two layers:
  *   D  the device layer: the values of all input actions (every set, every local player) right after the devices
  *      wrote them (Input_UpdateDevices, also its calls from a change of the action set), the action set and
@@ -25,9 +30,17 @@
  *   rate <steps a second of the deterministic clock> seed <SCRAP_TEST_DET_SEED or 1>
  *   D <frame> <set> <IsUsingMouse> {<set>.<action>.<player>=<bits>}       the non-zero values
  *   start <level> <class> <x> <y> <z> <yaw> <money>                         before the first C: the player's entity
- *   C <slot> c <name> <buttons> <walk> <strafe> <jump> <hRot> <vRot>       a character (buttons: INPUTTAPE_B_)
+ *   C <slot> c <name> <buttons> <walk> <strafe> <jump> <hRot> <vRot> i <len>   a character (buttons: INPUTTAPE_B_)
  *   C <slot> s <name> <buttons> <acc> <str> <vStr> <hRot> <vRot> <weapon> <fireWait> <emptyTime> <attackTime>
- *     <padBounce>                                                          a ship
+ *     <padBounce> i <len>                                                   a ship
+ *   len: the length of the slot
+ *   F <frame> <time>                                                       before each App_Update of a frame:
+ *     its time (single player's frame timing on the clock of the deterministic test mode); the C lines after it are
+ *     the slots of that frame
+ *   S <name> <time>                                                        an object entity made (the name it
+ *     was made with): the time to
+ *     its first slot (cSlotController.time); the random numbers that set it are shared with single player's drawing,
+ *     sounds and effects, so the solo instance's entity of that name would step in other frames: it takes this one
  *   E <frame>                                                              the end
  * A replay ends after the frame of E (or of the last D without one): the main loop stops before the next step of the
  * clock, as the recording did.
@@ -73,9 +86,16 @@ byte InputTape_ParseParam(const char *param, const char *ext);
 byte InputTape_Devices(void);
 /* Input_UpdateDevices after the devices: the held keys of the test channel, the D line of a recording */
 void InputTape_AfterDevices(void);
-/* a slot tick of e (cObjEntity_Update) before its Obj_Tick: the C line of a recording, the check of a replay; 1 when
- * e is the player's entity of a recording or a replay */
-byte InputTape_Slot(struct cEntity *e);
+/* an object entity's slot controller made (cObjEntity_ctor, name: the name it was made with, before a counter made it
+ * unique): a recording writes its phase (S line), the solo instance takes the phase single player's entity of that
+ * name had (the next unused S line of the name) */
+struct cSlotController;
+void InputTape_ObjSlot(const char *name, struct cSlotController *slot);
+/* before each App_Update of a frame (CApp_FrameRun): the F line of a recording (the frame's time) */
+void InputTape_Frame(float dt);
+/* a slot tick of e (cObjEntity_Update) of length iv before its Obj_Tick: the C line of a recording, the check of a
+ * replay; 1 when e is the player's entity of a recording or a replay */
+byte InputTape_Slot(struct cEntity *e, float iv);
 /* after the Obj_Tick of a slot of the player's entity (single player: InputTape_Slot gave 1; the solo instance: its
  * player's step): the "pl" line of the trace */
 void InputTape_SlotDone(struct cEntity *e);
@@ -88,11 +108,20 @@ byte InputTape_Ended(void);
 /* the solo instance: the player's start (the start line of the tape: the place, the yaw and the money single player
  * had), 0 without one */
 byte InputTape_SoloStart(float pos[3], float *yaw, int *money);
-/* once per instance tick before the players: the next PLAY_STEPS C lines become the tick's */
+/* once per instance tick before the players: the next frame (or PLAY_STEPS C lines) become the tick's */
 void InputTape_SoloTick(void);
 /* the input of the tick for the instance's own rules (use, switch), quantized as a client sends it, from the tick's
  * first C line; 0 when the tape is over */
 byte InputTape_SoloInput(struct cEntity *e, struct NetRepInput *in);
+/* 1 when the tape has single player's frames (F lines): the solo instance runs a world frame per frame of the tape, of
+ * the frame's time, and steps its player's slots in the frames single player stepped them */
+byte InputTape_SoloFrames(void);
+/* the time of the tape's frames so far (the app time of the solo instance) */
+double InputTape_SoloTime(void);
+/* the slots of the player in the current tick (PLAY_STEPS) or frame (0, 1 or 2) */
+int InputTape_SoloSlots(void);
+/* the length of slot part of the current tick or frame, iv for a tape without slot lengths */
+float InputTape_SoloInterval(int part, float iv);
 /* slot part of the tick: the exact controls of its C line into e (when the kinds agree) */
 void InputTape_SoloApply(struct cEntity *e, int part);
 

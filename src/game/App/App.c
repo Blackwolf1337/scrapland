@@ -614,6 +614,14 @@ static void CApp_FrameNet(void) {
 	Net_Update();
 }
 
+/* App_Update; not in the original: the input tape (include/scrap/inputtape.h) keeps the frame's time */
+static void CApp_UpdateTaped(CApp *self, float dt) {
+	if (g_InputTape) {
+		InputTape_Frame(dt);
+	}
+	App_Update(self, dt);
+}
+
 /* the frame after the level load */
 static byte CApp_FrameRun(CApp *self) {
 	double t = App_GetTime(self);
@@ -643,14 +651,14 @@ static byte CApp_FrameRun(CApp *self) {
 	cPy_Function_Execute(g_AfterDrawCallback, 1);
 	if (dt > 0.1f) {
 		dt -= 0.1f;
-		App_Update(self, 0.1f);
+		CApp_UpdateTaped(self, 0.1f);
 		Input_ResetStates();
 		while (dt > 0.1f) {
 			dt -= 0.1f;
-			App_Update(self, 0.1f);
+			CApp_UpdateTaped(self, 0.1f);
 		}
 	}
-	App_Update(self, dt);
+	CApp_UpdateTaped(self, dt);
 	if (Net_IsServer() && (self->flags & APPF_SERVER)) {
 		if (!(self->flags & APPF_DEDICATED)) {
 			while (Net_ServerFrame()) {
