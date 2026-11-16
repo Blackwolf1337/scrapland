@@ -25,6 +25,7 @@
 #include "scrap/input.h"
 #include "scrap/instance.h"
 #include "scrap/itementity.h"
+#include "scrap/missionmaker.h"
 #include "scrap/netrep.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
@@ -97,7 +98,8 @@
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
-#define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
+#define CP_AIR 1500.0f				/* test: an item this high above the floor is flown onto */
+#define CP_WALK_FAR 300.0f			/* test: a walker walks to a target further than this (GoWithHuman: the switch up a step) */
 #define CP_WALK_STEP 300.0f			/* test: a walk comes a quarter of this further within CP_WALK_STUCK */
 #define CP_WALK_GAP 0.5				/* test: s between two looks at its way and its followers */
 #define CP_WALK_NEAR 60.0f			/* test: a point of its path this near is passed */
@@ -105,6 +107,7 @@
 #define CP_WALK_ALONE 15.0			/* test: s it waits for one at most */
 #define CP_WALK_LEASH 1500.0f		/* test: followers further than this are none (BeatPickus' thugs stop there) */
 #define CP_WALK_STUCK 4.0			/* test: s without coming CP_WALK_STEP / 4 further: placed at its path's point */
+#define CP_WALK_END 600.0f			/* test: a walk that comes no nearer within this ends (the goto's last step) */
 #define CP_MELEE 90.0f				/* test: units from a character it fights on foot (D-Tritus' punch: 50 ahead, 100 wide) */
 #define CP_MELEE_FAR 600.0f			/* test: a character further is walked to (put next to it) */
 #define CP_GONE 128					/* entities deleted by the level's start told to the clients */
@@ -194,6 +197,8 @@ static struct {
 		double walkWait;			/* since when it waits for its follower (0 not) */
 		double walkTold;			/* when its walk was told last */
 		double walkBack;			/* since when it is next to its last follower that follows no more (0 not) */
+		float walkNear;				/* the nearest it came to its target on its walk */
+		double walkNearAt;			/* when (0 none yet) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */
@@ -217,6 +222,11 @@ static struct {
 		int autoTurn;				/* its uses so far: the next of several targets */
 		uint16_t purseJoined;		/* the join whose money is the party's purse (Cp_Purse) */
 		int purse;					/* the purse it got last */
+		char upTo[CP_NAME];			/* test: its fights hold fire while this variable of the scripts is at upToMax ("" off) */
+		int upToMax;
+		double talkUntil;			/* a conversation of its own plays until then (instance time) */
+		vec3_t autoItemAt;			/* where the item it went onto last was */
+		char walkWho[CP_NAME];		/* test: the one follower its walk waits for ("" any) */
 	} pl[PLAYERS_MAX];
 	struct {						/* the items of the HUD's scorer made, by name (their class for the clients) */
 		char name[CP_NAME], type[16];
@@ -388,6 +398,15 @@ void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
 	cp.dirty[i].counter |= inc;
 }
 
+void Coop_LevelChar(const char *level) {
+	const char *s = level ? strrchr(level, '/') : NULL;
+	const char *lc = level && (g_Instance || cp.world) ? MissionMaker_Char(s ? s + 1 : level) : NULL;
+	if (lc && strcmp(lc, "Dtritus")) {
+		SaveVar_Set("Char", lc);
+		Con_Printf("coop: the level's start with its own character %s\n", lc);
+	}
+}
+
 void Coop_LevelStart(const char *level) {
 	static char text[COORD_STORY_MAX];
 	static char key[CP_NAME], val[COORD_STORY_VALUE + 1];
@@ -428,6 +447,10 @@ void Coop_LevelStart(const char *level) {
 		}
 	}
 	cp.applying = 0;
+	/* the character the members carry is theirs (cp_local) */
+	if (!SaveVar_Get("Char")) {
+		Coop_LevelChar(level);
+	}
 	Con_Printf("coop: the party's story, %d variables, mission %s in %s\n", count, SaveVar_Get("Mission.Library") ?
 		SaveVar_Get("Mission.Library") : "-", SaveVar_Get("Mission.Map") ? SaveVar_Get("Mission.Map") : "-");
 }
@@ -1736,6 +1759,15 @@ byte Coop_Adopts(int i, cEntity *e) {
 	return 1;
 }
 
+void Coop_ActCtrlSet(cEntity *e) {
+	int i = Coop_On() ? Players_Of(e) : -1;
+	cActCtrl *a = i >= 0 && NetPl_Kind(e) == NETREP_CHAR ? WLife(e)->actCtrl : NULL;
+	if (a && a->cls) {
+		Faction_SetChar(i, a->cls->name);
+		Con_Printf("coop: player %d is a %s now (its class set by the scripts)\n", i, a->cls->name);
+	}
+}
+
 /* the story to the clients' copies: the changed variables (all: the whole story) to client i (-1: all here) */
 typedef struct CpStoryOut {
 	int to;
@@ -2057,6 +2089,9 @@ void Coop_SpeechText(const char *text, float time, int r, int g, int b) {
 	int i = Players_Bound();
 	Con_Printf("coop: %s for player %d: %.160s\n", cp.remote ? "remote communication" : "speech",
 		i == PLAYERS_NONE ? -1 : i, text);
+	if (!cp.remote && i != PLAYERS_NONE) {
+		cp.pl[i].talkUntil = Instance_Time() + time;
+	}
 	if (cp.remote && i != PLAYERS_NONE) {
 		Cp_ToNear(i, buf, w.size);
 	} else if (i != PLAYERS_NONE && Rep_PlayerConn(i) >= 0) {
@@ -2589,12 +2624,13 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 	nativeVal_t v, it;
 	int n = 0;
 	if (!strcmp(src, CP_FIGHT_RED) || src[0] == '@') {
-		/* the red ones, or the entities of an entity list of the scripts ("@OutCop": the police ships) */
+		/* the red ones, or the entities of an entity list of the scripts ("@OutCop": the police ships) but a green one of
+		 * the list (DistractHumphrey's Humphrey among the traffic) */
 		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e && n < max; e = cEntity_Next(e)) {
-			char *list = NULL;
+			char *list = NULL, *tg = NULL;
 			if (Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && !Obj(e)->proxy &&
-				Players_Of(e) < 0 && (src[0] == '@' ? Entity_VarS(e, "EntityList", &list, 0) && list && !strcmp(list, src + 1) :
-				Cp_Foe(e) && foes != 0)) {
+				Players_Of(e) < 0 && (src[0] == '@' ? Entity_VarS(e, "EntityList", &list, 0) && list && !strcmp(list, src + 1) &&
+				!(Entity_VarS(e, "TgType", &tg, 0) && tg && !crt_stricmp(tg, "green")) : Cp_Foe(e) && foes != 0)) {
 				out[n++] = e;
 			}
 		}
@@ -2620,8 +2656,10 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 		Native_SetNone(&it);
 		cEntity *e = v.type == NV_STR ? World_FindEntity(Native_Text(&v)) : Native_SeqItem(&v, j, &it) &&
 			it.type == NV_STR ? World_FindEntity(Native_Text(&it)) : NULL;
+		/* the mission's target whose radar mark and arrow the scripts took away (ActivateTarget 0: DistractHumphrey's phone
+		 * cab after the call) is none for a player */
 		if (e && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && Players_Of(e) < 0 &&
-			(foes < 0 || (Cp_Foe(e) || Cp_DeathWanted(e)) == foes)) {
+			(foes < 0 || (Cp_Foe(e) || Cp_DeathWanted(e)) == foes) && (src[0] || Obj(e)->radarShow || WLife(e)->arrow.canMission)) {
 			out[n++] = e;
 		}
 		Native_Free(&it);
@@ -2885,8 +2923,27 @@ static void Cp_Fight(int i, NetRepInput *in, double back) {
 	}
 }
 
+/* test: player i holds its fire: the variable of the scripts it watches is at its most (DistractHumphrey: ten ships
+ * shot down before the time ends the round too soon, a player watches the count on the HUD) */
+static byte Cp_UpTo(int i) {
+	char mod[CP_NAME];
+	nativeVal_t v;
+	Str_Copy(mod, cp.pl[i].upTo, sizeof(mod));
+	char *dot = strchr(mod, '.');
+	if (!dot) {
+		return 0;
+	}
+	*dot = 0;
+	Native_SetNone(&v);
+	byte at = Mode_ModGet(mod, dot + 1, &v) && v.type == NV_INT && v.i >= cp.pl[i].upToMax;
+	Native_ErrClear();
+	Native_Free(&v);
+	return at;
+}
+
 static void Cp_TestFight(int i, NetRepInput *in, double back) {
 	byte follow = cp.pl[i].follow;
+	cp.pl[i].follow |= Cp_UpTo(i);
 	Cp_Fight(i, in, back);
 	cp.pl[i].follow = follow;
 }
@@ -2961,6 +3018,13 @@ static cEntity *Cp_RadarItem(const cEntity *e) {
 	return t;
 }
 
+/* test: no floor within CP_AIR under entity v (DistractHumphrey's meeting point: a ship takes it, the scripts' camera
+ * travel moves a ship) */
+static byte Cp_InAir(const cEntity *v) {
+	vec3_t p = v->pos, down = { p.x, p.y - CP_AIR, p.z };
+	return !Engine_TestLine(&p, &down, NULL, NULL);
+}
+
 /* test: the mission's green ship (to follow or escort: StupidMerc's mercenary), NULL */
 static cEntity *Cp_Escorted(void) {
 	cEntity *all[CP_FIGHT_MAX];
@@ -2986,6 +3050,15 @@ static byte Cp_RedNear(const cEntity *e) {
 		}
 	}
 	return 0;
+}
+
+/* test: walking character v follows e: its logic's target (LLogicTarget: BeatPickus' thugs) or the target of its AI's
+ * chase without action (SAI.SetStateChar 3: GoWithHuman's human; not one that attacks it) */
+static byte Cp_Follows(cEntity *v, const cEntity *e) {
+	char *tgt = NULL;
+	cAIChar *ai = Entity_GetAI(v);
+	return (Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name)) ||
+		(ai && ai->state == AIC_CHASE_WITHOUT_ACTION && ai->base.target.target == e);
 }
 
 /* test: the point player e walks to next on its way to `to`: the walking NPCs' A* on the level's AI graph (CAStar2D,
@@ -3023,24 +3096,26 @@ static byte Cp_PathPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 
 /* test: player i on foot (e) further than CP_WALK_FAR from t walks there through its input along the level's AI graph
  * while a follower is near it, waits for one that fell behind and goes back to it after CP_WALK_ALONE s, as a player
- * walks with characters that follow him (BeatPickus' thugs); a walk that does not come on is placed at its path's
- * point; 1 while it walks */
+ * walks with characters that follow him (BeatPickus' thugs, or the one of the test line: GoWithHuman's human); a walk
+ * that does not come on is placed at its path's point, one within CP_WALK_END that comes no nearer ends; 1 while it
+ * walks */
 static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double now) {
 	float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
 	if (d <= CP_WALK_FAR) {
 		cp.pl[i].walkWait = 0.0;
+		cp.pl[i].walkNearAt = 0.0;
 		return 0;
 	}
 	if (now - cp.pl[i].autoSince >= CP_WALK_GAP) {
-		/* its followers: the characters within the scripts' leash whose logic has it as the target (LLogicTarget) */
+		/* its followers: the characters within the scripts' leash whose logic or AI has it as the target (or the one
+		 * named by the test line) */
 		cEntity *back = NULL;
 		float best = 0.0f;
 		for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-			char *tgt = NULL;
 			float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
 			if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
-				vd < CP_WALK_LEASH * CP_WALK_LEASH && Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) &&
-				(!back || vd < best)) {
+				vd < CP_WALK_LEASH * CP_WALK_LEASH && (!cp.pl[i].walkWho[0] || !strcmp(v->name, cp.pl[i].walkWho)) &&
+				Cp_Follows(v, e) && (!back || vd < best)) {
 				back = v;
 				best = vd;
 			}
@@ -3073,6 +3148,17 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 		}
 		/* none kept up for a while: back to the nearest one (they stopped where it left them) */
 		cEntity *to = !near && now - cp.pl[i].walkWait >= CP_WALK_ALONE ? back : t;
+		if (!near || to != t) {
+			cp.pl[i].walkNearAt = 0.0;
+		} else if (cp.pl[i].walkNearAt <= 0.0 || d < cp.pl[i].walkNear - CP_WALK_STEP * 0.25f) {
+			cp.pl[i].walkNear = d;
+			cp.pl[i].walkNearAt = now;
+		} else if (d <= CP_WALK_END && now - cp.pl[i].walkNearAt >= CP_WALK_STUCK) {
+			/* its way ends short of the target (BeatPickus' blueprints on a wall, the graph's last node 500 away): the
+			 * goto's last step, as at the end of a walk */
+			cp.pl[i].walkNearAt = 0.0;
+			return 0;
+		}
 		if (!Cp_PathPoint(e, &to->pos, &cp.pl[i].walkTo)) {
 			cp.pl[i].walkTo = to->pos;
 		}
@@ -3135,6 +3221,12 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		return;
 	}
 	double now = Instance_Time();
+	if (now < cp.pl[i].talkUntil) {
+		/* a conversation of its own plays: it listens (single player's input stops there), its next use CP_AUTO_GAP after
+		 * it (a use between two lines started BeatPickus' talk with Traitorius again) */
+		cp.pl[i].autoSince = now;
+		return;
+	}
 	byte pulse = fmod(now, 2.0) < 1.0 / INSTANCE_TICK_HZ;
 	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
 	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
@@ -3184,10 +3276,21 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (!t) {
 		t = Cp_ArrowTarget(e);
 	}
-	/* else an item on the radar: flown or walked onto, as a player takes it */
-	cEntity *item = t ? NULL : Cp_RadarItem(e);
+	/* else, and before a target to use, an item on the radar: flown or walked onto, as a player takes it (DistractHumphrey's
+	 * meeting point while the phone cab of the call stays the mission's target) */
+	cEntity *item = t && Entity_IsType(t, TYEN_CAR) ? NULL : Cp_RadarItem(e);
+	if (item && kind == NETREP_CHAR && Cp_InAir(item)) {
+		/* one in the air is flown onto: into a ship first (the switch) */
+		in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
+		return;
+	}
 	if (item) {
-		if (strcmp(cp.pl[i].autoAt, item->name) || now - cp.pl[i].autoSince >= CP_AUTO_GAP) {
+		/* again at once when it moved on (Win1stRace's buoy, taken at each checkpoint) */
+		vec3_t *at = &cp.pl[i].autoItemAt;
+		float mx = item->pos.x - at->x, my = item->pos.y - at->y, mz = item->pos.z - at->z;
+		if (strcmp(cp.pl[i].autoAt, item->name) || now - cp.pl[i].autoSince >= CP_AUTO_GAP ||
+			mx * mx + my * my + mz * mz > CP_AUTO_NEAR * CP_AUTO_NEAR) {
+			*at = item->pos;
 			Str_Copy(cp.pl[i].autoAt, item->name, sizeof(cp.pl[i].autoAt));
 			cp.pl[i].autoSince = now;
 			Con_Printf("coop: player %d (auto) goes onto %s (on the radar)\n", i, item->name);
@@ -3449,6 +3552,13 @@ byte Coop_Command(const char *line) {
 		cAIVehicle *ai = e && Entity_IsType(e, TYEN_CAR) ? Entity_GetAI(e) : NULL;
 		char st[256] = "", in[256] = "";
 		vec3_t d, p;
+		cAIChar *ac = e && Entity_IsType(e, TYEN_WALKCHAR) ? Entity_GetAI(e) : NULL;
+		if (ac) {
+			/* a walking character's AI: its state and target */
+			Con_Printf("coop: %s char AI state %d intern %d, target %s, at %.0f %.0f %.0f\n", name, ac->state, ac->internState,
+				Nto1Node_TargetName(&ac->base.target), (double)e->pos.x, (double)e->pos.y, (double)e->pos.z);
+			return 1;
+		}
 		if (!ai) {
 			Con_Printf("coop: %s has no vehicle AI\n", name);
 			return 1;
@@ -3519,9 +3629,11 @@ byte Coop_Command(const char *line) {
 		return 1;
 	}
 	int pct = 0;
-	if (sscanf(line, "walk %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+	name[0] = 0;
+	if (sscanf(line, "walk %d %d %63s", &i, &pct, name) >= 2 && i >= 0 && i < PLAYERS_MAX) {
 		cp.pl[i].walk = pct != 0;
 		cp.pl[i].follower[0] = 0;
+		Str_Copy(cp.pl[i].walkWho, name, sizeof(cp.pl[i].walkWho));
 		Con_Printf("coop: player %d %s to its targets\n", i, pct ? "walks" : "goes");
 		return 1;
 	}
@@ -3533,6 +3645,12 @@ byte Coop_Command(const char *line) {
 	if (sscanf(line, "scan %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
 		cp.pl[i].scan = pct != 0;
 		Con_Printf("coop: player %d %s the mission's ships that are no foes\n", i, pct ? "scans" : "fights");
+		return 1;
+	}
+	if (sscanf(line, "upto %d %63s %d", &i, name, &pct) == 3 && i >= 0 && i < PLAYERS_MAX) {
+		Str_Copy(cp.pl[i].upTo, strcmp(name, "0") ? name : "", sizeof(cp.pl[i].upTo));
+		cp.pl[i].upToMax = pct;
+		Con_Printf("coop: player %d holds its fire while %s is at %d\n", i, name, pct);
 		return 1;
 	}
 	if (sscanf(line, "spare %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {

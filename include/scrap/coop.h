@@ -199,6 +199,10 @@ byte Coop_Asked(void);
 /* before the level's scripts start (level: its path): the story into the save variables, the way point of a
  * chapter's travel to this level (ComeFrom, PrevMap, Spawn, Map) into the player's variables its start reads */
 void Coop_LevelStart(const char *level);
+/* a coop level that starts with its own character (GDB: the bishop, MissionMaker_Char): Char for the level's start of
+ * an instance (its members' characters are theirs) and of a member's client, which comes with its own (the leader's
+ * level joined as D-Tritus): Chars.Init loads its scripts before the map's InitStatus makes the player the bishop */
+void Coop_LevelChar(const char *level);
 /* the scripts delete the save variables with prefix: 1 when they stay (all of them: the single player's end) */
 byte Coop_KeepStory(const char *prefix);
 /* a save variable was made (old NULL), changed or deleted by the game (SaveVars.c); inc: by SaveVar_Inc (a counter) */
@@ -285,6 +289,9 @@ const char *Coop_MainCharName(void);
  * member's from now on (a possession or a conversor of the scripts: the member plays as that character, its class
  * kept in its state; a ship the scripts put it in); 0 elsewhere (the instance gives the player a new character) */
 byte Coop_Adopts(int i, struct cEntity *e);
+/* the scripts set the class (ActCtrl) of e: a member's character keeps it as the member's class (InfiltrateBank's
+ * scene makes the chief of bankers D-Tritus again: the next level's character) */
+void Coop_ActCtrlSet(struct cEntity *e);
 /* test: the buttons of a test press into player i's input of the tick (the line "press"), the race and the fight
  * helpers; back: how far back its client shows the other entities (s, the shots' lag compensation) */
 void Coop_TestInput(int i, struct NetRepInput *in, double back);
@@ -360,11 +367,13 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * nearest entity whose name starts with it, and it uses its arrow), "possess <player> <character>" (next to it until
  * its arrow is on it, then the possession button), "aiv <entity>" (a vehicle's AI: state, sub state, place, the point it
  * goes to, life), "spare <player> <percent>" (its fights fire no more at a ship whose life is at or under that percent
- * of its most: AttackTraitorius' scare; 0 off), "walk <player> <0|1>" (the automatic player on foot walks to a target far
- * away along the level's AI graph, its followers keep up: BeatPickus' thugs), "where <prefix>" (place, life and logic
- * target of the entities of that name prefix), "scan <player> <0|1>" (the mission's ships that are no foes are followed,
- * not shot: DestroyMickus' transports until the scan finds Mickus), "waypoint <player> <0|1>" (the item of the scripts'
- * waypoint is taken before the fights: BankersCTF's flags) */
+ * of its most: AttackTraitorius' scare; 0 off), "walk <player> <0|1> [<character>]" (the automatic player on foot walks
+ * to a target far away along the level's AI graph, its followers keep up: BeatPickus' thugs; that one alone:
+ * GoWithHuman's human), "where <prefix>" (place, life and logic target of the entities of that name prefix), "scan
+ * <player> <0|1>" (the mission's ships that are no foes are followed, not shot: DestroyMickus' transports until the
+ * scan finds Mickus), "waypoint <player> <0|1>" (the item of the scripts' waypoint is taken before the fights:
+ * BankersCTF's flags), "upto <player> <Module.var> <n>" (its fights hold fire while that variable of the scripts is n
+ * or more: DistractHumphrey's count; 0 off) */
 byte Coop_Command(const char *line);
 /* the scheduled functions of the scripts run: on a coop instance the mission's member is bound (single player's player:
  * BeatPickus' check of the thugs near "the player" every second); 0 elsewhere or without a member */
