@@ -59,6 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/play.h"
 #include "scrap/pres.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/embeddedfxvehicle.h"
@@ -90,6 +91,7 @@
 #include "scrap/scriptnative.h"
 #include "scrap/testdet.h"
 #include "scrap/timer.h"
+#include "scrap/travel.h"
 #include "scrap/world.h"
 #include "testchannel.h"
 
@@ -1534,6 +1536,27 @@ static void TC_In(tcBuf *b, const char *arg) {
 	Native_Free(&m);
 }
 
+static void TC_Talk(tcBuf *b, const char *arg) {
+	char ent[64], opt[64];
+	float dx = 300.0f, dz = 0.0f;
+
+	opt[0] = 0;
+	if (!strncmp(arg, "mark ", 5)) {
+		NetAudit_Talk("mark", "%s", arg + 5);
+		TC_Add(b, "ok\n", -1);
+	} else if (g_Play) {
+		TC_Add(b, "error: talk is single player's (a client uses through its input)\n", -1);
+	} else if (sscanf(arg, "goto %63s %f %f", ent, &dx, &dz) >= 1) {
+		Travel_TestGoto(0, ent, dx, dz);
+		TC_Add(b, "ok\n", -1);
+	} else if (sscanf(arg, "use %63s %63[^\n]", ent, opt) >= 1) {
+		Travel_TestUse(0, ent, opt);
+		TC_Add(b, "ok\n", -1);
+	} else {
+		TC_Add(b, "error: talk goto <entity> [<dx> <dz>] | talk use <entity> [<option>]\n", -1);
+	}
+}
+
 /* the verb of a line ("word " or the word alone); else 0 */
 static byte TC_Verb(const char *line, const char *verb, const char **arg) {
 	size_t n = strlen(verb);
@@ -1562,6 +1585,13 @@ static void TC_Line(tcBuf *b, const char *line) {
 		Str_Copy(copy, arg, sizeof(copy));
 		Instance_Line(copy);
 		TC_Add(b, "ok\n", -1);
+		return;
+	}
+	/* "talk goto <entity> [<dx> <dz>]", "talk use <entity> [<option>]": single player's player put next to an entity
+	 * or using it, as the instance's lines goto and use do for a network player (include/scrap/travel.h); not on a
+	 * client, whose use goes to the server as its input. "talk mark <text>": a line of the talk trace (netaudit.h) */
+	if (TC_Verb(line, "talk", &arg)) {
+		TC_Talk(b, arg);
 		return;
 	}
 	if (TC_Verb(line, "ent", &arg)) {
